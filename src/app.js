@@ -148,7 +148,7 @@ async function resolveEvent(event,existingResult=null,returnToLanding=false){con
  if(!valid())return;animateItemTransfers(before);if(returnToLanding){run.phase='landing';run.pending={kind:'landing'};saveRun();await resolveLanding();}else if(result.game)await requestGame({id:result.game.id});else if(result.roulette)await requestGame({filter:event.e?.[0]==='casino'?'casino':event.e?.[0]==='classic'?'arcade':'all'});else if(result.task)await requestGame({filter:'taskmaster'});else await finishEncounter();
 }
 function locationVisitors(l,p){
- const owned=availableCharacters(store.profile,p.owner),owner=l.id==='parents'?null:p.owner,reason=l.id==='unlimited-savory-lab'?'lab':'encounter';
+ const owned=availableCharacters(store.profile,p.owner),owner=l.id==='parents'?null:p.owner,reason=l.id==='unlimited-savory-lab'?'lab':l.realm==='horror'?'horror':'encounter';
  let ids=l.characters.filter(id=>canRecruitReward(store.profile,id,owner,reason));
  if(!ids.length)ids=themedCharacters(l.source,{owned}).filter(c=>canRecruitReward(store.profile,c.id,owner)).map(c=>c.id);
  if(!ids.length&&l.source==='Home'&&l.id!=='parents'){

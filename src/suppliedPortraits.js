@@ -2,6 +2,7 @@ const {FACE_ART}=require("src/data/faceArt.js");
 const {FACE_ASSIGNMENTS, FACE_FRAMES}=require("src/data/facePack.js");
 const {characterIdentity}=require("src/characters.js");
 const {ART}=require("src/data/art.js");
+require("src/data/userPortraits.js");
 const aliases={idle:'normal',happy:'win',winning:'win',walking:'walk',thinking:'think',losing:'sad',lose:'sad',mad:'angry'};
 const framed=new Map();
 function suppliedPortraitURL(id,mood='normal'){

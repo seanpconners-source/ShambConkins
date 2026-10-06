@@ -1,4 +1,4 @@
-const {CHARACTERS, characterIdentity}=require("src/characters.js");
+const {CHARACTERS, characterIdentity, SPECIAL_UNLOCKS}=require("src/characters.js");
 const {availableCharacters}=require("src/profile.js");
 const {sourceMatches}=require("src/references.js");
 const {canRecruitReward}=require("src/profile.js");
@@ -43,7 +43,7 @@ function gameRecruitPool(game, profile, player) {
  const identities = new Set();
  const eligible=CHARACTERS.filter(c => {
   const identity = characterIdentity(c.id);
-  if (identity === characterIdentity('loki') || ['item','game-win','lab'].includes(c.unlockBy) || owned.has(identity) || identities.has(identity) || !canRecruitReward(profile,c.id,player.owner,'game')) return false;
+  if (identity === characterIdentity('loki') || SPECIAL_UNLOCKS.includes(c.unlockBy) || owned.has(identity) || identities.has(identity) || !canRecruitReward(profile,c.id,player.owner,'game')) return false;
   identities.add(identity);
   return true;
  });

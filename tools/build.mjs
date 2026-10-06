@@ -21,10 +21,19 @@ const {order, tail} = JSON.parse(read('src/modules.json'));
 const modules = order.map(id => `"${id}":(exports,require)=>{\n${read(id)}`).join('\n},\n');
 const js = `(()=>{'use strict';const modules={${modules}${tail}`;
 
+// Optional drop-in portraits: assets/portraits/<id>.webp -> ART['photo:char:<id>'], <id>.<mood>.webp -> ART['char:<id>:<mood>'].
+const portraitDir = path.join(root, 'assets/portraits'), userPortraits = {};
+if (fs.existsSync(portraitDir)) for (const f of fs.readdirSync(portraitDir)) {
+  const m = f.match(/^([a-z0-9-]+)(?:\.(normal|win|silly|angry|sad|think|walk))?\.(webp|png|jpe?g)$/i);
+  if (!m) continue;
+  const ext = m[3].toLowerCase().replace('jpeg', 'jpg');
+  userPortraits[m[2] ? `char:${m[1]}:${m[2].toLowerCase()}` : `photo:char:${m[1]}`] = `data:${MIME[ext]};base64,` + fs.readFileSync(path.join(portraitDir, f)).toString('base64');
+}
+const js2 = js.replace('/*@@USER_PORTRAITS@@*/{}', () => JSON.stringify(userPortraits));
 const html = read('src/index.template.html')
   .replace('<!--@@STYLE@@-->', () => '<style>' + inlineAssets(read('src/styles.css')) + '</style>')
-  .replace('<!--@@SCRIPT@@-->', () => '<script>' + inlineAssets(js) + '</script>');
+  .replace('<!--@@SCRIPT@@-->', () => '<script>' + inlineAssets(js2) + '</script>');
 
 fs.mkdirSync(path.dirname(out), {recursive: true});
 fs.writeFileSync(out, html);
-console.log(`${path.relative(root, out)}  ${(html.length / 1048576).toFixed(1)} MB  ${order.length} modules`);
+console.log(`${path.relative(root, out)}  ${(html.length / 1048576).toFixed(1)} MB  ${order.length} modules  ${Object.keys(userPortraits).length} drop-in portraits`);

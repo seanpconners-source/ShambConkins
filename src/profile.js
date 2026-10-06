@@ -58,7 +58,7 @@ function canRecruit(profile,id,owner=null,reason='encounter') {
  if(id==='loki'&&reason!=='pair')return false;
  const record=CATALOG.characters.find(c=>c.id===id);
  if(!record&&id!=='gordon-ramsay')return false;
- if(record?.unlockBy==='item'&&reason!=='item'||record?.unlockBy==='game-win'&&reason!=='game')return false;
+ if(record?.unlockBy==='item'&&reason!=='item'||record?.unlockBy==='game-win'&&reason!=='game'||record?.unlockBy==='character-win'&&reason!=='character'||record?.unlockBy==='horror'&&reason!=='horror')return false;
  if(record?.unlockBy==='lab'){
   if(reason!=='lab'||!owner)return false;
   if(id==='uss-carson'&&!LAB_TEAM.every(c=>availableCharacters(profile,owner).includes(c)))return false;

@@ -64,6 +64,18 @@ for(const source of ['Django Unchained','The Color of Money','Kingpin','Happy Gi
 add('Django Unchained','Django|Dr. King Schultz','character','body','supporting-cameo');add('The Color of Money','Fast Eddie Felson|Vincent Lauria','character','body','supporting-cameo');add('Kingpin','Roy Munson|Ernie McCracken','character','body','supporting-cameo');add('Happy Gilmore','Happy Gilmore|Chubbs Peterson','character','body','supporting-cameo');add('Caddyshack','Carl Spackler','character','body','supporting-cameo');
 add('Return of the Living Dead','Tarman','character','spirit','supporting-cameo');
 
+// v0.44 roster expansion: every new source gets a landmark and an encounter.
+add('Chuck Norris','Chuck Norris|Walker, Texas Ranger|Missing in Action','character','body','explicit','A bearded stranger roundhouse-kicks a vending machine. Everything inside is free. Three points.',['points',3]);
+add('Power Rangers','Power Rangers|Mighty Morphin Power Rangers|Zordon|Command Center','character','body','explicit','Zordon has summoned you to the Command Center. Teleport two spaces ahead.',['move',2]);
+add('Mel Gibson','Mel Gibson|Mad Max|Lethal Weapon|Braveheart','director','body','explicit','Someone shouts FREEDOM across the moor. You gain three points and a very loud hat.',['points',3]);
+add('The Beatles','The Beatles|Abbey Road|Yellow Submarine|Sgt. Pepper','music','spirit','explicit','Four lads cross Abbey Road in a perfect line. Cross it too and move two spaces.',['move',2]);
+add('*NSYNC','*NSYNC|Bye Bye Bye|No Strings Attached','music','spirit','explicit','A choreographed puppet scene breaks out. Everyone gets three points for staying in formation.',['points',3]);
+add('Backstreet Boys','Backstreet Boys|I Want It That Way|Millennium','music','spirit','explicit','Backstreet’s back, alright. Three points for correctly guessing the next key change.',['points',3]);
+add('Tupac Shakur','Tupac Shakur|2Pac|California Love','music','spirit','explicit','All Eyez on Me. Three points and a better view of the map.',['points',3]);
+add('Bob Marley','Bob Marley|One Love|Exodus','music','spirit','explicit','Don’t worry about a thing. Gain a penalty shield and three points.',['points',3]);
+add('Stevie Wonder','Stevie Wonder|Superstition|Songs in the Key of Life','music','spirit','explicit','A clavinet riff plays the board a new shortcut. Move two spaces.',['move',2]);
+add('Mortal Kombat','Kitana|Mileena|Jax|Kano|Shang Tsung|Reptile|Shao Kahn|Kung Lao|Baraka|Ermac|Noob Saibot','character','body','explicit','FINISH HIM. Outworld’s tournament has opened a bracket on your route.',['points',3]);
+add('GoldenEye','GoldenEye 007|Bond 64|Facility|Proximity Mines','game','spirit','explicit','Four-player split screen is running. Slappers only. Three points for the quickest reflex.',['points',3]);
 const REFERENCE_GROUPS=GROUPS;
 const REFERENCE_CHECKLIST=GROUPS.flatMap(g=>g.names.map(name=>({name,source:g.source,type:g.type,tier:g.tier})));
 const normalized=s=>String(s).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]/g,'');

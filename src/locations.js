@@ -25,7 +25,16 @@ const LOCATIONS = [
  ['klendathu','Klendathu','Starship Troopers','body','🪲',['rico'],'Would you like to know more? Preferably from behind cover.'],
  ['taskhouse','Taskmaster House','Taskmaster','mind','📏',['taskmaster','alex'],'All the information is on the task. Almost.'],
  ['bowling','Hollywood Star Lanes','The Big Lebowski','spirit','🎳',['the-dude','walter','donny'],'This aggression will probably affect your score.'],
- ['upside-down','The Upside Down','Stranger Things','spirit','🌫️',[],'Something has crawled between the spaces.']
+ ['upside-down','The Upside Down','Stranger Things','spirit','🌫️',[],'Something has crawled between the spaces.'],
+ ['camp-crystal-lake','Camp Crystal Lake','Friday the 13th','horror','🏕️',['jason'],'The dock is quiet. Too quiet. Someone is standing in the lake.'],
+ ['elm-street','Elm Street','A Nightmare on Elm Street','horror','🛌',['freddy'],'Whatever you do, don’t fall asleep on this block.'],
+ ['haddonfield','Haddonfield','Halloween','horror','🎃',['michael-myers'],'A white mask watches from the hedge. It has been there a while.'],
+ ['woodsboro','Woodsboro Kitchen','Scream','horror','📞',['ghostface'],'The landline rings. Do you like scary movies?'],
+ ['lament-chamber','The Lament Chamber','Hellraiser','horror','🧊',['pinhead'],'A puzzle box clicks open. Such sights to show you.'],
+ ['sawyer-farmhouse','The Sawyer Farmhouse','The Texas Chain Saw Massacre','horror','🪚',['leatherface'],'The dinner table has seen better evenings.'],
+ ['good-guys-aisle','Good Guys Toy Aisle','Child’s Play','horror','🧸',['chucky'],'Hi, I’m Chucky. Wanna play?'],
+ ['jigsaw-warehouse','The Jigsaw Warehouse','Saw','horror','🪤',['jigsaw'],'A tape recorder clicks on. Live or die. Make your choice.'],
+ ['hell-gate','The Gates of Hell','South Park','horror','🔥',['satan'],'The elevator only goes down. Satan has a spare room.']
 ].map(([id,name,source,realm,icon,characters,description])=>({id,name,source,realm,icon,characters,description}));
 // Retain every existing landmark and give the full crossover catalog a route
 // into each procedural run. Reference-specific visitor pools cover the long

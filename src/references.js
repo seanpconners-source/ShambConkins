@@ -1,6 +1,6 @@
 const {normalizeSource:normalizeReferenceSource, sourceMatches:referenceSourceMatches, registerReferenceSources, referenceSourceNames}=require("src/referenceSources.js");
 const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
-const {CHARACTERS, characterIdentity}=require("src/characters.js");
+const {CHARACTERS, characterIdentity, SPECIAL_UNLOCKS}=require("src/characters.js");
 const {GAMES, EVENT_GAMES}=require("src/gameRegistry.js");
 const {resolveEncounterGame}=require("src/encounterGames.js");
 const {selectItemDrop}=require("src/itemDrops.js");
@@ -140,7 +140,7 @@ function sourceEntries(kind,source){
 }
 function themedCharacters(source,{owned=[],includeSpecial=false}={}) {
  const existing=new Set(owned.map(characterIdentity)),seen=new Set();
- return sourceEntries('characters',source).filter(c=>{const id=characterIdentity(c.id);if(existing.has(id)||seen.has(id)||(!includeSpecial&&(RESERVED_RECRUITS.includes(c.id)||['item','game-win','lab'].includes(c.unlockBy))))return false;seen.add(id);return true;});
+ return sourceEntries('characters',source).filter(c=>{const id=characterIdentity(c.id);if(existing.has(id)||seen.has(id)||(!includeSpecial&&(RESERVED_RECRUITS.includes(c.id)||SPECIAL_UNLOCKS.includes(c.unlockBy))))return false;seen.add(id);return true;});
 }
 function themedItems(source) { return [...sourceEntries('items',source)]; }
 function themedGames(source) { return sourceEntries('games',source).filter(game=>!game.secret); }
@@ -154,7 +154,7 @@ const REFERENCE_LANDMARKS = SOURCE_UNIVERSE.filter(source=>!['ShambConkins Horro
 
 function playableCard(card,source,owned) {
  if(!sourceMatches(card.source,source)||['horror','team','horrorTrap','unlockFeature','unlockDogs'].includes(card.e?.[0]))return null;
- if(card.e?.[0]==='unlockChar'&&((isMovieBond(card.e[1])?!missingMovieBonds(owned).length:owned.some(id=>characterIdentity(id)===characterIdentity(card.e[1])))||RESERVED_RECRUITS.includes(card.e[1])||!CHARACTERS.some(c=>c.id===card.e[1]&&!['item','game-win','lab'].includes(c.unlockBy))))return null;
+ if(card.e?.[0]==='unlockChar'&&((isMovieBond(card.e[1])?!missingMovieBonds(owned).length:owned.some(id=>characterIdentity(id)===characterIdentity(card.e[1])))||RESERVED_RECRUITS.includes(card.e[1])||!CHARACTERS.some(c=>c.id===card.e[1]&&!SPECIAL_UNLOCKS.includes(c.unlockBy))))return null;
  if(['mg','unlockGame','musicGame'].includes(card.e?.[0])&&typeof card.e[1]==='string'){
   const game=resolveEncounterGame(card.e[1],{source});
   if(!game)return null;

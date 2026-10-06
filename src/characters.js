@@ -11,4 +11,5 @@ function differentCharacters(a,b) { return characterIdentity(a)!==characterIdent
 function characterPerk(id) { const c = character(id); if (c.perk) return c.perk; return { sean: 'Home advantage: +1 point for visiting a location.', amber: 'Lucky break: one extra reroll each realm.', kc: 'Herding duty: +1 movement on rolls.', mylo: 'Zoomies: +2 movement, with a 1-in-5 chance of a detour.', loki: 'Guardian: gains a shield at each realm gate.' }[id] || ['Explorer: +1 point at locations.', 'Competitor: +1 point on a minigame win.', 'Scavenger: bonus item at realm gates.', 'Survivor: starts with a penalty shield.'][hash(id) % 4]; }
 function perkType(id) { if (['sean','amber','kc','mylo','loki','gordon-ramsay'].includes(id)) return id; return character(id).perkType || ['explorer','competitor','scavenger','survivor'][hash(id) % 4]; }
 
-Object.assign(exports,{CHARACTERS,character,characterIdentity,differentCharacters,characterPerk,perkType});
+const SPECIAL_UNLOCKS=['item','game-win','lab','character-win','horror'];
+Object.assign(exports,{SPECIAL_UNLOCKS,CHARACTERS,character,characterIdentity,differentCharacters,characterPerk,perkType});

@@ -8,6 +8,7 @@ const {EXPANDED_TRIVIA_V42}=require("src/data/expandedTriviaV42.js");
 const {PARTY_TRIVIA}=require("src/data/partyTrivia.js");
 const {ITEM_PACK_V43}=require("src/data/itemPackV43.js");
 const {MOVIE_BOND_CHARACTERS, FACE_PACK_CHARACTERS}=require("src/data/movieBonds.js");
+const {NEW_CHARACTERS, HORROR_IDS}=require("src/data/legendsPack.js");
 // Preserve the uploaded catalog byte-for-byte. Sean has explicitly disclaimed
 // Eugenia, so its inherited character, pass and four cards are inactive.
 function activeContent(record){return !/eugenia/i.test([record.id,record.name,record.title,record.source,record.body].filter(Boolean).join(' '));}
@@ -24,6 +25,8 @@ ACTIVE_CATALOG.trivia.push(...ADVANCED_TRIVIA);
 ACTIVE_CATALOG.trivia.push(...PARTY_TRIVIA,...EXPANDED_TRIVIA_V42);
 // Overrides affect the active game only; the uploaded catalog stays intact.
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='bond'?MOVIE_BOND_CHARACTERS[0]:c.id==='chris-parent'?{...c,name:'Dad · Chris Conners',unlockHint:'Meet Dad at My Parents’ House or a Home encounter.'}:c.id==='angie-parent'?{...c,name:'Mom · Angie Conners',unlockHint:'Meet Mom at My Parents’ House or a Home encounter.'}:c);
-ACTIVE_CATALOG.characters.push(...MOVIE_BOND_CHARACTERS.slice(1),...FACE_PACK_CHARACTERS);
+ACTIVE_CATALOG.characters.push(...MOVIE_BOND_CHARACTERS.slice(1),...FACE_PACK_CHARACTERS,...NEW_CHARACTERS);
+// The horror icons only appear in the Level IV horror route.
+ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>HORROR_IDS.includes(c.id)?{...c,unlockBy:'horror',unlockHint:c.id==='satan'?c.unlockHint:'Only found in the Level IV horror route. Look for their landmark deep in the dark.'}:c);
 
 Object.assign(exports,{activeContent,ACTIVE_CATALOG});
