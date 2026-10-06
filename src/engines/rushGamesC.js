@@ -93,7 +93,7 @@ const amber={id:'amber',verb:'CATCH!',theme:'movie',kind:'drag',source:'Jurassic
 // ---------------------------------------------------------------- Mario Kart: banana dodge
 const banana={id:'banana',verb:'STEER!',theme:'game',kind:'drag',source:'Mario Kart',caption:'Mario Kart: dodge the bananas',duration:5,bossDuration:8,bg:'#3a9a46',boss:true,
  init(r,rng,speed,player,boss){const waves=boss?6:3,gap=ramp(speed,1.05,.85),bs=[];let T=1.3;const rw=Math.min(r.w*.7,U(r)*1.5);for(let i=0;i<waves;i++){const free=Math.floor(rng()*3);for(let l=0;l<3;l++)if(l!==free||(boss&&i%2&&rng()<.5&&l!==free&&false))bs.push({T,l});T+=gap*(.95+rng()*.15);}
-  return {u:U(r),bs,rw,rx:(r.w-rw)/2,kx:r.w/2,tx:r.w/2,ky:r.h*.78,vs:r.h*ramp(speed,.6,.8),last:T,spin:0,drag:null};},
+  return {u:U(r),bs,rw,rx:(r.w-rw)/2,kx:r.w/2,tx:r.w/2,ky:r.h*.78,vs:r.h*ramp(speed,.6,.8),last:Math.max(...bs.map(b=>b.T))+.2,spin:0,drag:null};},
  by(st,b){return st.ky-(b.T-st.t)*st.vs;},
  update(st,dt){st.kx+=(st.tx-st.kx)*Math.min(1,dt*18);if(st.spin)st.spin+=dt*10;if(st.result)return;
   for(const b of st.bs){const bx=st.rx+(b.l+.5)*st.rw/3,y=this.by(st,b);if(Math.abs(y-st.ky)<st.u*.1&&Math.abs(bx-st.kx)<st.u*.13){st.result='lose';st.spin=.001;sfx('lose');}}
@@ -127,13 +127,13 @@ const pong={id:'pong',verb:'RETURN!',theme:'game',kind:'drag',source:'Pong',capt
 const trap={id:'trap',verb:'TRAP!',theme:'movie',kind:'drag',source:'Ghostbusters',caption:'Ghostbusters: keep the beam on the ghost',duration:5,bossDuration:8,bg:'#241a45',boss:true,
  init(r,rng,speed,player,boss){return {u:U(r),need:boss?3.2:ramp(speed,1.6,1.3),prog:0,f:null,aim:{x:r.w/2,y:r.h*.55},ph:[rng()*6,rng()*6],om:ramp(speed,1.4,1.9),on:false,cx:r.w/2,cy:r.h*.38};},
  ghost(st,t){const {r}=st;return {x:r.w*.5+Math.sin(st.ph[0]+t*st.om)*r.w*.3,y:st.cy+Math.sin(st.ph[1]+t*st.om*1.37)*r.h*.2};},
- update(st,dt){const g=this.ghost(st,st.t);st.g=g;if(st.result==='win'){st.suck=(st.suck||0)+dt;return;}if(st.result)return;st.on=st.f!==null&&dist(st.aim.x,st.aim.y,g.x,g.y)<st.u*.2;
+ update(st,dt){const g=this.ghost(st,st.t);st.gh=g;if(st.result==='win'){st.suck=(st.suck||0)+dt;return;}if(st.result)return;st.on=st.f!==null&&dist(st.aim.x,st.aim.y,g.x,g.y)<st.u*.2;
   if(st.on)st.prog+=dt;else st.prog=Math.max(0,st.prog-dt*.5);if(st.prog>=st.need){st.result='win';st.suck=.001;sfx('rare');}},
  down(st,p,id){if(st.f===null){st.f=id;st.aim={x:p.x,y:p.y};}},
  move(st,p,id){if(st.f===id)st.aim={x:p.x,y:p.y};},
  up(st,p,id){if(st.f===id)st.f=null;},
  hint(st){const g=this.ghost(st,.3);return {kind:'hold',x:g.x,y:g.y,size:st.u*.12};},
- draw(x,st,r){const u=st.u,g=st.g||this.ghost(st,st.t),k=1-clamp(st.prog/st.need,0,1)*.6-(st.suck?st.suck*2:0);backdrop(x,r,'#241a45',st.t,'#4a2f9a');
+ draw(x,st,r){const u=st.u,g=st.gh||this.ghost(st,st.t),k=1-clamp(st.prog/st.need,0,1)*.6-(st.suck?st.suck*2:0);backdrop(x,r,'#241a45',st.t,'#4a2f9a');
   const hx=r.w/2,hy=r.h-u*.18;if(st.f!==null&&!st.result){const j=()=>(Math.random()-.5)*8;for(const col of ['#ff9a3c','#ffe14a']){x.strokeStyle=col;x.lineWidth=col==='#ff9a3c'?8:3;x.beginPath();x.moveTo(hx,hy);for(let i=1;i<8;i++){const t=i/8;x.lineTo(lerp(hx,st.aim.x,t)+j(),lerp(hy,st.aim.y,t)+j());}x.lineTo(st.aim.x,st.aim.y);x.stroke();}circ(x,st.aim.x,st.aim.y,u*.05,st.on?COL.white:COL.yellow,3);}
   if(k>0){x.save();x.translate(g.x,g.y);x.scale(Math.max(.05,k),Math.max(.05,k));const s=u*.17;x.beginPath();x.arc(0,-s*.2,s,Math.PI,0);x.lineTo(s,s*.8);for(let i=0;i<4;i++)x.quadraticCurveTo(s-(i+.5)*s*.5,s*(i%2?.5:1.3),s-(i+1)*s*.5,s*.8);x.closePath();R.paint(x,'#7dff7d',4);
    circ(x,-s*.35,-s*.3,s*.22,COL.white,3);circ(x,s*.35,-s*.3,s*.22,COL.white,3);circ(x,-s*.3,-s*.27,s*.09,COL.ink,0);circ(x,s*.4,-s*.27,s*.09,COL.ink,0);ell(x,0,s*.25,s*.35,s*.22+(st.on?s*.1:0),COL.ink,3);x.restore();}
@@ -192,20 +192,20 @@ const freeze={id:'freeze',verb:'FREEZE!',theme:'movie',kind:'still',source:'Jura
 
 // ---------------------------------------------------------------- Angry Birds: fling
 const fling={id:'fling',verb:'FLING!',theme:'game',kind:'drag',source:'Angry Birds',caption:'Angry Birds: pull back and let go',duration:5.4,bg:'#8fd8ff',
- init(r,rng,speed){const u=U(r),g=u*3.2;return {u,g,vmax:Math.sqrt(g*1.15*r.w),lmax:u*.42,bx:r.w*.17,by:r.h*.66,gy:r.h*.88,pig:{x:r.w*(.62+rng()*.22),y:r.h*.88-u*.09},shots:2,ball:null,drag:null,pull:null,wait:0};},
+ init(r,rng,speed){const u=U(r),g=u*3.2;return {u,grav:g,vmax:Math.sqrt(g*1.15*r.w),lmax:u*.42,bx:r.w*.17,by:r.h*.66,gy:r.h*.88,pig:{x:r.w*(.62+rng()*.22),y:r.h*.88-u*.09},shots:2,ball:null,drag:null,pull:null,wait:0};},
  vel(st,p){const dx=st.bx-p.x,dy=st.by-p.y,L=Math.min(Math.hypot(dx,dy),st.lmax),a=Math.atan2(dy,dx),sp=st.vmax*L/st.lmax;return {vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,L};},
- update(st,dt){const b=st.ball;if(b){b.vy+=st.g*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.k+=dt;if(!st.result&&dist(b.x,b.y,st.pig.x,st.pig.y)<st.u*.16){st.result='win';st.pigHit=st.t;b.dead=true;sfx('rare');}
-   if(b.y>=st.gy||b.x>st.r.w+40){if(!st.result){st.ball=null;st.wait=.35;}}}
+ update(st,dt){const b=st.ball;if(b){b.vy+=st.grav*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.k+=dt;if(!st.result&&dist(b.x,b.y,st.pig.x,st.pig.y)<st.u*.16){st.result='win';st.pigHit=st.t;b.dead=true;sfx('rare');}
+   if(b.y>=st.gravy||b.x>st.r.w+40){if(!st.result){st.ball=null;st.wait=.35;}}}
   else if(st.wait>0){st.wait-=dt;if(st.wait<=0&&st.shots<=0&&!st.result)st.result='lose';}},
  down(st,p,id){if(st.ball||st.drag||st.shots<=0||st.result)return;if(dist(p.x,p.y,st.bx,st.by)<st.u*.35){st.drag=id;st.pull={x:p.x,y:p.y};}},
  move(st,p,id){if(st.drag!==id)return;const dx=p.x-st.bx,dy=p.y-st.by,L=Math.hypot(dx,dy),m=Math.min(L,st.lmax);st.pull={x:st.bx+dx/(L||1)*m,y:st.by+dy/(L||1)*m};},
  up(st,p,id){if(st.drag!==id)return;st.drag=null;const v=this.vel(st,st.pull);st.pull=null;if(v.L<st.u*.08)return;st.shots--;st.ball={x:st.bx-(st.bx-(st.bx))+0,y:st.by,vx:v.vx,vy:v.vy,k:0};sfx('shot');},
  hint(st){return {kind:'swipe',x:st.bx,y:st.by,x2:st.bx-st.u*.3,y2:st.by+st.u*.12,size:st.u*.12};},
- draw(x,st,r){const u=st.u;backdrop(x,r,'#8fd8ff',st.t,'#fff');ground(x,r,st.gy,'#5fbf4f',COL.ink);x.fillStyle='#4a9a3c';x.fillRect(0,st.gy+4,r.w,r.h);
-  rrect(x,st.bx-u*.03,st.by+u*.06,u*.06,st.gy-st.by-u*.04,3,COL.brown,4);poly(x,[[st.bx-u*.1,st.by-u*.06],[st.bx-u*.03,st.by+u*.08],[st.bx-u*.03,st.by+u*.0]],COL.brown,3);poly(x,[[st.bx+u*.1,st.by-u*.06],[st.bx+u*.03,st.by+u*.08],[st.bx+u*.03,st.by+u*.0]],COL.brown,3);
+ draw(x,st,r){const u=st.u;backdrop(x,r,'#8fd8ff',st.t,'#fff');ground(x,r,st.gravy,'#5fbf4f',COL.ink);x.fillStyle='#4a9a3c';x.fillRect(0,st.gravy+4,r.w,r.h);
+  rrect(x,st.bx-u*.03,st.by+u*.06,u*.06,st.gravy-st.by-u*.04,3,COL.brown,4);poly(x,[[st.bx-u*.1,st.by-u*.06],[st.bx-u*.03,st.by+u*.08],[st.bx-u*.03,st.by+u*.0]],COL.brown,3);poly(x,[[st.bx+u*.1,st.by-u*.06],[st.bx+u*.03,st.by+u*.08],[st.bx+u*.03,st.by+u*.0]],COL.brown,3);
   const pg=st.pig,pf=st.pigHit?Math.sin((st.t-st.pigHit)*20)*3:0;circ(x,pg.x+pf,pg.y,u*.1,'#8fdc4f',4);circ(x,pg.x-u*.03+pf,pg.y-u*.02,u*.025,COL.white,2);circ(x,pg.x+u*.04+pf,pg.y-u*.02,u*.025,COL.white,2);ell(x,pg.x+pf,pg.y+u*.035,u*.04,u*.03,'#6fbf3a',2);
   const drawBird=(bx,by)=>{head(x,st.player,bx,by,u*.26,st.drag?'angry':'normal');};
-  if(st.drag&&st.pull){const v=this.vel(st,st.pull);let px=st.bx,py=st.by,vx=v.vx,vy=v.vy;x.fillStyle=COL.white;for(let i=0;i<18;i++){for(let k=0;k<3;k++){vy+=st.g*.02/3;px+=vx*.02/3;py+=vy*.02/3;}if(py>st.gy)break;circ(x,px,py,u*.012+ (i<6?.5:0),COL.white,1);}
+  if(st.drag&&st.pull){const v=this.vel(st,st.pull);let px=st.bx,py=st.by,vx=v.vx,vy=v.vy;x.fillStyle=COL.white;for(let i=0;i<18;i++){for(let k=0;k<3;k++){vy+=st.grav*.02/3;px+=vx*.02/3;py+=vy*.02/3;}if(py>st.gravy)break;circ(x,px,py,u*.012+ (i<6?.5:0),COL.white,1);}
    path(x,[[st.bx-u*.08,st.by-u*.04],[st.pull.x,st.pull.y],[st.bx+u*.08,st.by-u*.04]],'#5a2d0c',4);drawBird(st.pull.x,st.pull.y);}
   else if(!st.ball&&st.shots>0&&!st.result)drawBird(st.bx,st.by);
   if(st.ball)head(x,st.player,st.ball.x,st.ball.y,u*.26,'angry');

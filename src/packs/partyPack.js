@@ -1,7 +1,7 @@
 // Content pack: partyPack. Slow, social pass-and-play games (hidden information, bluffing, drawing, prediction).
 // Engines are required lazily: packs load early, and the engine modules pull in assets/characters (circular otherwise).
 const lazy=(file,name)=>s=>require(file)[name](s);
-const engines={partyNewlywed:lazy("src/engines/partyNewlywed.js","newlywed"),partyRoast:lazy("src/engines/partyRoast.js","roast"),partyLiarsDice:lazy("src/engines/partyLiarsDice.js","liarsDice"),partyDrawIt:lazy("src/engines/partyDrawIt.js","drawIt"),partyBattleship:lazy("src/engines/partyBattleship.js","battleship")};
+const engines={partyNewlywed:lazy("src/engines/partyNewlywed.js","newlywed"),partyRoast:lazy("src/engines/partyRoast.js","roast"),partyLiarsDice:lazy("src/engines/partyLiarsDice.js","liarsDice"),partyDrawIt:lazy("src/engines/partyDrawIt.js","drawIt"),partyBattleship:lazy("src/engines/partyBattleship.js","battleship"),partySimon:lazy("src/engines/partySimon.js","simon")};
 const games=[
  {id:'newlywed-spirit',engine:'partyNewlywed',family:'partyNewlywed',title:'The Newlywed Game · Spirit Battery',source:'The Newlywed Game',icon:'💞',category:'puzzle',level:'spirit',duration:'7 rounds',
   rules:'Answer a question about yourself in secret while your partner secretly guesses it. Matches charge the sync battery and score points; the last round is worth double.'},
@@ -13,6 +13,8 @@ const games=[
   rules:'Draw a secret pop-culture prompt with your finger in 25 seconds while the other player watches the replay and picks the right answer out of six. Faster guesses score more.'}
  ,{id:'battleship-fog',engine:'partyBattleship',family:'partyBattleship',title:'Battleship · Fog of War',source:'Battleship',icon:'🚢',category:'strategy',level:'mind',duration:'until a fleet sinks',
   rules:'Secretly place your fleet, then take turns firing at the enemy waters. A hit earns another shot, a miss passes the phone. Sink every enemy ship to win.'}
+ ,{id:'simon-faceoff',engine:'partySimon',family:'partySimon',title:'Simon · Face-Off',source:'Simon',icon:'🔴',category:'puzzle',level:'mind',duration:'until a mistake',
+  rules:'Pads light up in a growing pattern. Repeat the whole pattern from the start, then add one new pad for your opponent. The first mistake loses, and the pattern speeds up as it grows.'}
 ];
 const events=[];
 Object.assign(exports,{engines,games,events});

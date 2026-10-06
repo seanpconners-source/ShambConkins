@@ -7,13 +7,14 @@ const {TRIVIA_QUESTIONS, triviaExplanationHTML}=require("src/triviaCatalog.js");
 const {EXPANDED_TRIVIA_THEMES_V42}=require("src/data/expandedTriviaV42.js");
 const {PARTY_TRIVIA_THEMES}=require("src/data/partyTrivia.js");
 const {LEGENDS_TRIVIA_THEMES}=require("src/data/legendsTrivia.js");
+const {TRIVIA3_THEMES}=require("src/data/trivia3.js");
 const {playTriviaMode}=require("src/engines/triviaModes.js");
 const TRIVIA=TRIVIA_QUESTIONS;
 const TRIVIA_LEVELS=['easy','medium','hard','impossible'];
 const triviaPoints=d=>d==='impossible'?4:d==='hard'?3:d==='medium'?2:1;
 const triviaSeconds=d=>({easy:18,medium:22,hard:26,impossible:30}[d]||22);
 const sourceKey=s=>String(s).normalize('NFKD').toLowerCase().replace(/[^a-z0-9]/g,'');
-const topicSources=new Map([...PARTY_TRIVIA_THEMES,...EXPANDED_TRIVIA_THEMES_V42,...LEGENDS_TRIVIA_THEMES].map(t=>[t.tag,new Set(t.sources.map(sourceKey))]));
+const topicSources=new Map([...PARTY_TRIVIA_THEMES,...EXPANDED_TRIVIA_THEMES_V42,...LEGENDS_TRIVIA_THEMES,...TRIVIA3_THEMES].map(t=>[t.tag,new Set(t.sources.map(sourceKey))]));
 function triviaPool(tag='mixed',difficulty=null) {
  const sources=topicSources.get(tag);
  return TRIVIA.filter(q=>(sources?sources.has(sourceKey(q.source)):tag==='dbz'?q.source==='Dragon Ball Z':tag==='hxh'?q.source==='Hunter × Hunter':

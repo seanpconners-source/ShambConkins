@@ -33,7 +33,7 @@ function randomFleet(rand){
 const shipAt=(ships,x,y)=>ships.find(sh=>cellsOf(sh).some(c=>c[0]===x&&c[1]===y));
 
 function layoutFor(W,H,mode){
- if(mode==='place'){const sz=Math.floor(Math.min(W-34,H-40)/N)*N;return {enemy:{x:Math.round((W-sz)/2)+8,y:22,s:sz,c:sz/N}};}
+ if(mode==='place'){const sz=Math.floor(Math.min(W-34,H-40)/N)*N;return {enemy:{x:Math.round((W-sz)/2)+8,y:Math.max(22,Math.round((H-sz)/2)),s:sz,c:sz/N}};}
  if(W>=H*1.2){
   const e=Math.floor(Math.min(H-34,W*.55)/N)*N,o=Math.floor(Math.min(W-e-70,H*.42)/N)*N,ex=26,ey=Math.round((H-e)/2)+8;
   return {enemy:{x:ex,y:ey,s:e,c:e/N},own:{x:ex+e+34,y:ey,s:o,c:o/N},legend:{x:ex+e+34,y:ey+o+22,w:W-(ex+e+34)-10}};
@@ -135,7 +135,6 @@ async function battleship(s){
     const row=(label,ships,col)=>{x.fillStyle='#bfe3ff';x.textAlign='left';x.fillText(label,L.x,ly);ly+=5;let lx=L.x;for(const sh of ships){const w=sh.len*9;const dead=sh.hits>=sh.len;x.fillStyle=dead?'#ff5a3c':col;x.fillRect(lx,ly,w,8);if(dead){x.strokeStyle='#fff';x.lineWidth=1.5;x.beginPath();x.moveTo(lx,ly+8);x.lineTo(lx+w,ly);x.stroke();}lx+=w+5;}ly+=22;};
     row('YOUR SHIPS AFLOAT',me,'#9fd0ff');row('ENEMY SHIPS AFLOAT',en,'#ffd27a');
    }
-   x.fillStyle='#fff';x.font='bold 11px Arial';x.textAlign='left';x.fillText('ENEMY WATERS',e.x,e.y-17>8?e.y-17:e.y-4);
   }
   // particles
   for(const p of v.parts){p.life-=dt;p.vy+=p.g*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;x.globalAlpha=Math.max(0,p.life/p.max);x.fillStyle=p.col;x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fill();}
@@ -146,8 +145,8 @@ async function battleship(s){
  }
  s.frame(render);
 
- const screen=(status,btns,P)=>{ui.set(`<div class="bs-wrap"><div class="bs-status" data-status>${status}</div><div class="bs-cv"><canvas></canvas></div><div class="bs-btns">${btns}</div></div>`);view=null;};
- const setStatus=h=>{const el=ui.root.querySelector('[data-status]');if(el)el.innerHTML=h;};
+ const screen=(status,btns,P)=>{ui.set(`<div class="bs-wrap"><div class="bs-status" data-status><span>${status}</span></div><div class="bs-cv"><canvas></canvas></div><div class="bs-btns">${btns}</div></div>`);view=null;};
+ const setStatus=h=>{const el=ui.root.querySelector('[data-status]');if(el)el.innerHTML='<span>'+h+'</span>';};
  const blank=()=>{view=null;ui.set(`<div class="pk-screen"><div class="pk-q" style="font-size:54px">⚓</div><div class="pk-sub">Pass the phone…</div></div>`);};
 
  function place(P){

@@ -6,7 +6,7 @@ const K=require("src/engines/tarantinoKit.js");
 const {label,rr,lerp,ease,filmOverlay,flash,titleCard,makeFx,makeShake,sfx,voice,halfPointers,keyboard}=K;
 
 const DURATION=40,AMMO=6,RELOAD=.55;
-const QUIPS={bounty:['Dead or alive. Mostly dead.','That one paid for the horse.','Five thousand dollars, easy.'],innocent:['That was the baker!','Oops. Town is not pleased.','Innocent! Maybe look first.']};
+const QUIPS={bounty:['Dead or alive. Mostly dead.','That one paid for the horse.','Five thousand dollars, easy.'],innocent:['Not the baker!','Town is upset.','Look first!']};
 
 function buildSchedule(seed,slots){
  const rnd=seededRandom(seed+':bounty'),out=[];let t=1.4,bounties=0;const busy=Array(slots).fill(0);
@@ -31,7 +31,7 @@ async function bounty(s){
  const fx=[makeFx(),makeFx()],shake=makeShake(),L={};
  let COLS=0,ROWS=0;
  const layout=()=>{const W=s.W,H=s.H,hw=W/2;if(!COLS){COLS=hw<260?2:3;ROWS=COLS===2?4:3;}
-  const top=H*.14,beltY=H*.84,sh=beltY-top-H*.02,cw=(hw-16)/COLS,ch=sh/ROWS;Object.assign(L,{W,H,hw,top,beltY,cw,ch,tw:Math.min(cw*.78,ch*.66),th:Math.min(ch*.92,cw*1.15)});};
+  const top=H*.14,beltY=H*.84,sh=beltY-top-H*.02,cw=(hw-16)/COLS,ch=sh/ROWS;Object.assign(L,{W,H,hw,top,beltY,cw,ch,th:Math.min(ch*1.02,cw*1.3),tw:Math.min(cw*.86,Math.min(ch*1.02,cw*1.3)*.74)});};
  layout();
  const slotXY=(i,slot)=>{const col=slot%COLS,row=Math.floor(slot/COLS);return {x:i*L.hw+8+L.cw*(col+.5),y:L.top+L.ch*(row+1)-L.ch*.06,cx:i*L.hw+8+L.cw*(col+.5),cy:L.top+L.ch*(row+.5)};};
  const sched=buildSchedule(s.seed,COLS*ROWS);
@@ -52,8 +52,8 @@ async function bounty(s){
   best.hp--;fx[i].spark(px,py,8,'#fff2b0',200);
   if(best.hp>0){best.flash=.15;p.score+=3;s.setScores(P.map(a=>a.score));fx[i].pop(tx,ty-L.th*.3,'CLANG +3',{color:'#cfd8de',size:clamp(L.tw*.3,12,20)});sfx.hit();return;}
   best.hit=S.t;const quick=S.t-best.at<.4;
-  if(best.kind==='innocent'){p.score=Math.max(0,p.score-20);p.combo=0;p.innocents++;p.hurt=.5;fx[i].pop(tx,ty-L.th*.3,'-20',{color:'#ff6a5a',size:clamp(L.tw*.5,16,30)});fx[i].pop(tx,ty+L.th*.1,QUIPS.innocent[Math.floor(Math.random()*3)].slice(0,18),{color:'#ffd0c8',size:clamp(L.tw*.22,9,14),life:1.1});sfx.groan();shake.kick(6);s.react?.(i,'sad');}
-  else{const mult=1+Math.floor(p.combo/4);let pts=best.kind==='bounty'?50:best.kind==='armored'?20:10;pts*=best.kind==='bounty'?1:mult;if(quick&&best.kind!=='bounty')pts+=5;p.score+=pts;p.combo++;p.hits++;
+  if(best.kind==='innocent'){p.score=Math.max(0,p.score-20);p.combo=0;p.innocents++;p.hurt=.5;fx[i].pop(tx,ty-L.th*.3,'-20',{color:'#ff6a5a',size:clamp(L.tw*.5,16,30)});fx[i].pop(tx,ty+L.th*.1,QUIPS.innocent[Math.floor(Math.random()*3)],{color:'#ffd0c8',size:clamp(L.tw*.22,9,14),life:1.1});sfx.groan();shake.kick(6);s.react?.(i,'sad');}
+  else{const mult=Math.min(4,1+Math.floor(p.combo/4));let pts=best.kind==='bounty'?50:best.kind==='armored'?20:10;pts*=best.kind==='bounty'?1:mult;if(quick&&best.kind!=='bounty')pts+=5;p.score+=pts;p.combo++;p.hits++;
    if(best.kind==='bounty'){p.bounties++;fx[i].confetti(tx,ty,26,['#ffd23f','#fff4a8','#e8b93a']);fx[i].pop(tx,ty-L.th*.4,'BOUNTY! +50',{color:'#ffe14a',size:clamp(L.tw*.45,16,28),life:1.3});sfx.fanfare();s.react?.(i,'win');}
    else{p.outlaws++;fx[i].pop(tx,ty-L.th*.35,'+'+pts+(quick?' ⚡':''),{color:'#fff',size:clamp(L.tw*.42,14,26)});sfx.coin();}
    fx[i].splat(tx,ty,{n:7,speed:130,size:3,color:'#8a5a2a',decal:false});}
@@ -128,7 +128,7 @@ async function bounty(s){
    const fs=clamp(Math.min(W,H*1.4)*.03,11,20);
    label(x,p.reload>0?'RELOADING…':p.ammo<=0?'◀  SWIPE BELT TO RELOAD  ▶':p.note||'',i*hw+hw/2,H-(H-L.beltY)*.15,fs*.7,{fill:p.ammo<=0?'#ffe48a':'#fff',stroke:'#000',alpha:p.ammo<=0?.7+.3*Math.sin(tt*8):.8});
    label(x,String(p.score),i*hw+hw/2,H*.045,fs*1.8,{fill:i?'#ffd0e4':'#cfe4ff',stroke:'#000'});
-   label(x,p.combo>=4?`×${1+Math.floor(p.combo/4)} streak ${p.combo}`:`streak ${p.combo}`,i*hw+hw/2,H*.045+fs*1.5,fs*.7,{fill:'#fff3b9',stroke:'#000'});
+   label(x,p.combo>=4?`×${Math.min(4,1+Math.floor(p.combo/4))} streak ${p.combo}`:`streak ${p.combo}`,i*hw+hw/2,H*.045+fs*1.5,fs*.7,{fill:'#fff3b9',stroke:'#000'});
    x.restore();}
   x.fillStyle='#000';x.fillRect(hw-2,0,4,H);
   const left=Math.max(0,DURATION-S.t);label(x,String(Math.ceil(left)),W/2,H*.05,clamp(W*.035,16,28),{fill:'#fff3b9',stroke:'#000'});

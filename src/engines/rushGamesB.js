@@ -66,17 +66,17 @@ const konami={id:'konami',verb:'CODE!',theme:'game',kind:'swipe',source:'Contra 
 
 // ---------------------------------------------------------------- Cut the Rope: cut at the right moment
 const cut={id:'cut',verb:'CUT!',theme:'game',kind:'swipe',source:'Cut the Rope',caption:'Cut the Rope: feed Om Nom',duration:5,bg:'#a8e063',
- init(r,rng,speed){const u=U(r);return {u,hy:r.h*.08,L:r.h*.34,A:r.w*.28,om:ramp(speed,1.6,2.1),ph:rng()*6,cut:false,cx:0,cy:0,vx:0,vy:0,g:r.h*2.2,mx:r.w*.5,my:r.h*.86,mr:u*.2,fell:0,hook:null};},
+ init(r,rng,speed){const u=U(r);return {u,hy:r.h*.08,L:r.h*.34,A:r.w*.28,om:ramp(speed,1.6,2.1),ph:rng()*6,cut:false,cx:0,cy:0,vx:0,vy:0,grav:r.h*2.2,mx:r.w*.5,my:r.h*.86,mr:u*.2,fell:0,hook:null};},
  hookX(st,t){return st.r.w*.5+Math.sin(st.ph+t*st.om)*st.A;},
  update(st,dt){const hx=this.hookX(st,st.t),hv=Math.cos(st.ph+st.t*st.om)*st.A*st.om;if(!st.cut){st.cx=hx+hv*.04;st.cy=st.hy+st.L;st.hx=hx;st.hv=hv;}
-  else{st.vy+=st.g*dt;st.cx+=st.vx*dt;st.cy+=st.vy*dt;if(!st.result&&st.cy>=st.my-st.u*.05){if(Math.abs(st.cx-st.mx)<st.mr){st.result='win';st.eat=st.t;sfx('rare');}else{st.result='lose';sfx('lose');}}}},
+  else{st.vy+=st.grav*dt;st.cx+=st.vx*dt;st.cy+=st.vy*dt;if(!st.result&&st.cy>=st.my-st.u*.05){if(Math.abs(st.cx-st.mx)<st.mr){st.result='win';st.eat=st.t;sfx('rare');}else{st.result='lose';sfx('lose');}}}},
  down(st,p,id){fdown(st,p,id);},
  move(st,p,id){const f=st.f?.[id];if(!f||st.cut||st.result)return;trail(st,p);if(segSeg(f.x,f.y,p.x,p.y,st.hx,st.hy,st.cx,st.cy-st.u*.05)){st.cut=true;st.vx=st.hv*.55;st.vy=0;sfx('shot');}f.x=p.x;f.y=p.y;},
  up(st,p,id){if(st.f)delete st.f[id];},
  hint(st){return {kind:'swipe',x:st.r.w*.35,y:st.hy+st.L*.55,x2:st.r.w*.65,y2:st.hy+st.L*.55,size:st.u*.12};},
  draw(x,st,r){const u=st.u;backdrop(x,r,'#a8e063',st.t,'#e4ffb0');ground(x,r,r.h*.9,'#6fb83a',COL.ink);
   // landing preview
-  if(!st.cut&&!st.result){const tf=Math.sqrt(2*(st.my-st.cy)/st.g),lx=st.cx+st.hv*.55*tf;x.setLineDash([6,8]);x.strokeStyle='#ffffff';x.lineWidth=3;x.beginPath();x.moveTo(st.cx,st.cy);x.quadraticCurveTo(st.cx+st.hv*.55*tf*.5,st.cy,lx,st.my);x.stroke();x.setLineDash([]);circ(x,lx,st.my,u*.03,COL.red,2);}
+  if(!st.cut&&!st.result){const tf=Math.sqrt(2*(st.my-st.cy)/st.grav),lx=st.cx+st.hv*.55*tf;x.setLineDash([6,8]);x.strokeStyle='#ffffff';x.lineWidth=3;x.beginPath();x.moveTo(st.cx,st.cy);x.quadraticCurveTo(st.cx+st.hv*.55*tf*.5,st.cy,lx,st.my);x.stroke();x.setLineDash([]);circ(x,lx,st.my,u*.03,COL.red,2);}
   const ph=st.hx??this.hookX(st,0);if(!st.cut){circ(x,ph,st.hy,u*.04,COL.grey,3);x.strokeStyle='#7a4a1a';x.lineWidth=5;x.beginPath();x.moveTo(ph,st.hy);x.lineTo(st.cx,st.cy-u*.05);x.stroke();}
   else{x.strokeStyle='#7a4a1a';x.lineWidth=5;x.beginPath();x.moveTo(ph,st.hy);x.lineTo(ph+(Math.sin(st.t*8)*4),st.hy+st.L*.4);x.stroke();circ(x,this.hookX(st,st.t),st.hy,u*.04,COL.grey,3);}
   // Om Nom
@@ -124,7 +124,7 @@ const throwG={id:'throw',verb:'THROW!',theme:'game',kind:'swipe',source:'Pokémo
 // ---------------------------------------------------------------- The Matrix: dodge the bullets
 const bullets={id:'bullets',verb:'DODGE!',theme:'movie',kind:'swipe',source:'The Matrix',caption:'The Matrix: dodge the bullets',duration:5,bossDuration:8,bg:'#06140c',boss:true,
  init(r,rng,speed,player,boss){const u=U(r),v=r.w*ramp(speed,.75,1.0),nx=r.w*.2,vols=boss?4:3,gap=ramp(speed,1.0,.85),bs=[];let T=1.2;for(let i=0;i<vols;i++){const k=boss&&i>0?2:1,free=Math.floor(rng()*3),lanes=k===2?[0,1,2].filter(l=>l!==free):[Math.floor(rng()*3)];for(const l of lanes)bs.push({T,l});T+=gap*(.95+rng()*.15);}
-  return {u,v,nx,bs,lane:1,ly:[r.h*.2,r.h*.5,r.h*.8],f:{},y:r.h*.5,lean:0,last:T};},
+  return {u,v,nx,bs,lane:1,ly:[r.h*.2,r.h*.5,r.h*.8],f:{},y:r.h*.5,lean:0,last:Math.max(...bs.map(b=>b.T))+.15};},
  update(st,dt){st.y+=(st.ly[st.lane]-st.y)*Math.min(1,dt*14);st.lean=lerp(st.lean,0,dt*6);if(st.result)return;
   for(const b of st.bs){const bx=st.nx+(b.T-st.t)*st.v;if(Math.abs(bx-st.nx)<st.u*.12&&b.l===st.lane){st.result='lose';sfx('lose');}}
   if(st.t>st.last+.1)st.result='win';},

@@ -115,12 +115,12 @@ const mph={id:'mph',verb:'88 MPH!',theme:'movie',kind:'tap',source:'Back to the 
 
 // ---------------------------------------------------------------- The Office: stack the pennies
 const stack={id:'stack',verb:'STACK!',theme:'tv',kind:'tap',source:'The Office',caption:'The Office: stack the pennies',duration:5,bossDuration:8,bg:'#c98d4e',boss:true,
- init(r,rng,speed,player,boss){const u=U(r),n=boss?6:3;return {u,n,cw:u*.34,ch:u*.08,baseY:r.h*.9,placed:[r.w*.5],f:ramp(speed,.4,.55),ph:rng()*6,A:r.w*.28,drop:null,off:null};},
+ init(r,rng,speed,player,boss){const u=U(r),n=boss?5:3;return {u,n,cw:u*.34,ch:u*.08,baseY:r.h*.9,placed:[r.w*.5],f:ramp(speed,.55,.75),ph:rng()*6,A:r.w*.26,drop:null,off:null};},
  mover(st){return st.r.w*.5+Math.sin(st.ph+st.t*TAU*st.f)*st.A;},
  update(st,dt){if(st.drop){st.drop.y+=st.u*3.5*dt;const ty=st.baseY-st.placed.length*st.ch;if(st.drop.y>=ty&&!st.drop.off){st.placed.push(st.drop.x);st.drop=null;sfx('pickup');if(st.placed.length-1>=st.n&&!st.result)st.result='win';}}
   if(st.off){st.off.y+=st.u*3*dt;st.off.x+=st.off.vx*dt;st.off.rot+=dt*5;if(!st.result&&st.off.y>st.r.h)st.result='lose';}},
- down(st){if(st.result||st.drop||st.off)return;const mx=this.mover(st),top=st.placed[st.placed.length-1];
-  if(Math.abs(mx-top)<st.cw*.55)st.drop={x:mx,y:st.u*.3};else{st.off={x:mx,y:st.u*.3,vx:(mx>top?1:-1)*st.u*.5,rot:0};sfx('lose');}},
+ down(st){if(st.result||st.drop||st.off)return;const mx=this.mover(st),top=st.placed[0];
+  if(Math.abs(mx-top)<st.cw*.6)st.drop={x:mx,y:st.u*.3};else{st.off={x:mx,y:st.u*.3,vx:(mx>top?1:-1)*st.u*.5,rot:0};sfx('lose');}},
  hint(st){return {kind:'tap',x:st.r.w*.5,y:st.u*.55,size:st.u*.12};},
  draw(x,st,r){const {u,cw,ch}=st;backdrop(x,r,'#c98d4e',st.t,'#e6b274');for(let i=0;i<5;i++){x.fillStyle='#00000012';x.fillRect(0,i*r.h*.22,r.w,3);}
   const coin=(cx,cy,rot)=>{x.save();x.translate(cx,cy);x.rotate(rot||0);rrect(x,-cw/2,-ch/2,cw,ch,ch*.45,'#e0a63a',3);x.fillStyle='#fff6';x.fillRect(-cw*.4,-ch*.3,cw*.5,ch*.18);x.restore();};
@@ -163,7 +163,7 @@ const simon={id:'simon',verb:'REPEAT!',theme:'game',kind:'tap',source:'Simon (th
  init(r,rng,speed,player,boss){const n=boss?5:3,seq=Array.from({length:n},()=>Math.floor(rng()*4)),step=ramp(speed,.52,.36);return {u:U(r),seq,step,t0:.5,idx:0,lit:-1,litT:0,wrong:false};},
  update(st,dt){const e=st.t-st.t0,showEnd=st.seq.length*st.step;if(e>=0&&e<showEnd){const i=Math.floor(e/st.step),ph=e/st.step-i;st.lit=ph<.75?st.seq[i]:-1;}else if(st.litT>0){st.litT-=dt;if(st.litT<=0)st.lit=-1;}else if(e>=showEnd)st.lit=-1;},
  showing(st){return st.t-st.t0<st.seq.length*st.step+.1;},
- down(st,p){if(st.result||this.showing(st))return;const dx=p.x-st.r.w/2,dy=p.y-st.r.h/2,q=(dy<0?0:2)+(dx<0?0:1),pad=q===0?0:q===1?1:q===2?3:2;
+ down(st,p){if(st.result||this.showing(st))return;const dx=p.x-st.r.w/2,dy=p.y-st.r.h/2,q=(dy<0?0:2)+(dx<0?0:1),pad=q;
   st.lit=pad;st.litT=.18;if(pad===st.seq[st.idx]){st.idx++;sfx('tap');if(st.idx>=st.seq.length)st.result='win';}else{st.result='lose';st.wrong=true;}},
  hint(st){return {kind:'tap',x:st.r.w/2,y:st.r.h/2,size:st.u*.13};},
  draw(x,st,r){const cx=r.w/2,cy=r.h*.54,R=Math.min(r.w*.43,r.h*.44);backdrop(x,r,'#2b2b3d',st.t,'#3f3f5c');
@@ -176,11 +176,11 @@ function paint2(x,f){x.fillStyle=f;x.fill();x.lineWidth=5;x.strokeStyle=COL.ink;
 
 // ---------------------------------------------------------------- Donkey Kong: jump the barrels
 const jump={id:'jump',verb:'JUMP!',theme:'game',kind:'tap',source:'Donkey Kong',caption:'Donkey Kong: jump the barrels',duration:5.4,bossDuration:8.2,bg:'#171a3c',boss:true,
- init(r,rng,speed,player,boss){const u=U(r),n=boss?6:3,v=r.w*ramp(speed,.3,.42),sx=r.w*.84,hx=r.w*.24,T0=(sx-hx)/v,gap=ramp(speed,1.2,1.0),bs=[];let T=T0+.2;for(let i=0;i<n;i++){bs.push({T,x:sx});T+=gap*(1+rng()*.25);}
+ init(r,rng,speed,player,boss){const u=U(r),n=boss?5:3,v=u*ramp(speed,.75,1.0),sx=r.w*.84,hx=r.w*.24,T0=(sx-hx)/v,gap=ramp(speed,1.2,1.0)*(boss?.82:1),bs=[];let T=Math.max(T0+.2,1.4);for(let i=0;i<n;i++){bs.push({T,x:sx});T+=gap*(1+rng()*.25);}
   return {u,gy:r.h*.8,hx,v,sx,bs,jt:-1,jd:ramp(speed,.62,.55),jh:u*.3,hy:0};},
  update(st,dt){if(st.jt>=0){st.jt+=dt;const k=st.jt/st.jd;if(k>=1){st.jt=-1;st.hy=0;}else st.hy=4*k*(1-k)*st.jh;}
   for(const b of st.bs)b.x=st.hx+(b.T-st.t)*st.v;
-  if(st.result)return;for(const b of st.bs)if(Math.abs(b.x-st.hx)<st.u*.15&&st.hy<st.u*.11){st.result='lose';sfx('lose');}
+  if(st.result)return;for(const b of st.bs)if(Math.abs(b.x-st.hx)<st.u*.12&&st.hy<st.u*.1){st.result='lose';sfx('lose');}
   if(st.bs.every(b=>b.x<st.hx-st.u*.2))st.result='win';},
  down(st){if(st.result||st.jt>=0)return;st.jt=0;sfx('tap');},
  hint(st){return {kind:'tap',x:st.hx,y:st.gy-st.u*.5,size:st.u*.12};},
@@ -188,7 +188,7 @@ const jump={id:'jump',verb:'JUMP!',theme:'game',kind:'tap',source:'Donkey Kong',
   x.fillStyle=COL.cyan||'#38d6e8';x.fillRect(0,gy+u*.1,r.w,4);
   // Kong
   const kx=r.w*.9,ky=gy-u*.3;ell(x,kx,ky,u*.28,u*.3,COL.brown,4);ell(x,kx,ky+u*.06,u*.16,u*.18,COL.tan,3);circ(x,kx-u*.04,ky-u*.26,u*.16,COL.brown,4);ell(x,kx-u*.06,ky-u*.22,u*.1,u*.08,COL.tan,3);circ(x,kx-u*.1,ky-u*.3,u*.04,COL.white,2);circ(x,kx+u*.02,ky-u*.3,u*.04,COL.white,2);
-  for(const b of st.bs){if(b.x>r.w+u*.2||b.x<-u*.2)continue;const bx=b.x,by=gy-u*.12,rot=-b.x/(u*.12);x.save();x.translate(bx,by);x.rotate(rot);circ(x,0,0,u*.12,COL.orange,4);x.strokeStyle=COL.ink;x.lineWidth=3;x.beginPath();x.moveTo(-u*.12,0);x.lineTo(u*.12,0);x.moveTo(0,-u*.12);x.lineTo(0,u*.12);x.stroke();x.restore();}
+  for(const b of st.bs){if(b.x>st.sx||b.x<-u*.2)continue;const bx=b.x,by=gy-u*.12,rot=-b.x/(u*.12);x.save();x.translate(bx,by);x.rotate(rot);circ(x,0,0,u*.12,COL.orange,4);x.strokeStyle=COL.ink;x.lineWidth=3;x.beginPath();x.moveTo(-u*.12,0);x.lineTo(u*.12,0);x.moveTo(0,-u*.12);x.lineTo(0,u*.12);x.stroke();x.restore();}
   const hy=gy-u*.2-st.hy;head(x,st.player,st.hx,hy-u*.04,u*.34,st.result==='lose'?'sad':st.jt>=0?'happy':'walking');cap(x,st.hx,hy-u*.04,u*.34,COL.red,'');rrect(x,st.hx-u*.1,hy+u*.1,u*.2,u*.12,4,COL.blue,3);}};
 
 // ---------------------------------------------------------------- Jaws: bigger boat (tap to bail)

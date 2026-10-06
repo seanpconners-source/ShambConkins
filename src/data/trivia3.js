@@ -1039,7 +1039,6 @@ h|What is the name of Homme's rotating-member project of desert recordings?|The 
 @Faith No More|music|Faith_No_More
 e|In which California city did Faith No More form?|San Francisco|Los Angeles|San Diego|Oakland|The band started in 1981.
 m|Who was Faith No More's original lead vocalist before Mike Patton?|Chuck Mosley|Jim Martin|Roddy Bottum|Billy Gould|He sang on We Care a Lot.
-m|Which 1989 Faith No More album includes the hit Epic?|The Real Thing|Angel Dust|King for a Day... Fool for a Lifetime|Album of the Year|It was Patton's first album with the band.
 m|What shows up flopping on the ground at the end of the Epic video?|A fish|A frog|A bird|A lizard|It became an unforgettable image of the video.
 h|Which Commodores song did Faith No More cover in 1993?|Easy|Three Times a Lady|Brick House|Nightshift|Their version hit the UK top ten.
 h|Which Faith No More album was released in 2015, their first in 18 years?|Sol Invictus|Album of the Year|Angel Dust|King for a Day... Fool for a Lifetime|It was the band's comeback after a long hiatus.
@@ -1104,7 +1103,7 @@ const TRIVIA3_THEMES=[
  {tag:'cartoonnet',title:'Cartoon Cartoons · Courage, Dexter, Johnny Bravo & Powerpuff Girls',icon:'🐶',source:'Cartoon Network',description:'Cartoon Network\'s golden-era originals and the creators behind them.',sources:['Courage the Cowardly Dog','Dexter\'s Laboratory','Johnny Bravo','Powerpuff Girls','Samurai Jack']},
  {tag:'anime1',title:'Space Cowboys, Spirit Detectives & Stands · Bebop, Yu Yu Hakusho & JoJo',icon:'🚀',source:'Cowboy Bebop',description:'Spike Spiegel, Yusuke Urameshi and the Joestar bloodline.',sources:['Cowboy Bebop','Yu Yu Hakusho','JoJo\'s Bizarre Adventure']},
  {tag:'anime2',title:'Eva, Akira, Saitama & Denji · Modern Anime Greats',icon:'🤖',source:'Neon Genesis Evangelion',description:'Evangelion, Akira, One Punch Man, Chainsaw Man and Dandadan.',sources:['Neon Genesis Evangelion','Akira','One Punch Man','Chainsaw Man','Dandadan']},
- {tag:'doomriffs',title:'Riff Worship · Doom, Sludge & Drone',icon:'🌿',source:'Sleep',description:'Sleep, Electric Wizard, Melvins, High on Fire, Sunn O))) and the heavy underground.',sources:['Sleep','Electric Wizard','Melvins','High on Fire','Sunn O)))','Boris','YOB','Windhand','Monolord']},
+ {tag:'doomriffs',title:'Riff Worship · Doom, Sludge & Drone',icon:'🌿',source:'Sleep',description:'Sleep, Electric Wizard, Melvins, High on Fire, Sunn O))) and the heavy underground.',sources:['Sleep','Electric Wizard','Melvins','High on Fire','Sunn O)))','Boris','YOB','Windhand']},
  {tag:'desertrock',title:'Generator Parties · Kyuss, QOTSA & Desert Rock',icon:'🏜',source:'Kyuss',description:'Palm Desert, Josh Homme and the Queens of the Stone Age.',sources:['Kyuss','Queens of the Stone Age']},
  {tag:'pattonweird',title:'Weird Rock · Faith No More, Mr. Bungle, Fantômas & Ween',icon:'🐟',source:'Faith No More',description:'Mike Patton\'s many bands, plus the Boognish worshipers of Ween.',sources:['Faith No More','Mr. Bungle','Fantômas','Ween']}
 ];
