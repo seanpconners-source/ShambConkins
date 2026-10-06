@@ -50,14 +50,14 @@ async function coopRivals(s) {
  s.cooperative=true;s.updateScores();
  const steer=delta=>{if(ready&&!roundDone)human.target=clamp(human.target+delta,0,2);};
  const boost=()=>{if(ready&&!roundDone)rivalBoost(human);};
- s.controls([{text:'◀ STEER',click:()=>steer(-1)},{text:'BOOST',click:boost},{text:'STEER ▶',click:()=>steer(1)}]);
+ s.controls([]);
  s.on(document,'keydown',ev=>{if(s.paused||!s.alive)return;if(ev.key==='ArrowLeft'||ev.key==='a'){ev.preventDefault();if(!ev.repeat)steer(-1);}if(ev.key==='ArrowRight'||ev.key==='d'){ev.preventDefault();if(!ev.repeat)steer(1);}if(ev.key===' '||ev.key==='ArrowUp'){ev.preventDefault();boost();}});
  const pointer=ev=>{if(!ready||s.paused||!s.alive)return;const p=s.pointer(ev);if(p.x>W/2)return;human.target=clamp(Math.floor((p.x-28)/94),0,2);};
- s.on(canvas,'pointerdown',ev=>{if(s.paused||!s.alive)return;pointerLane=ev.pointerId;s.capture(ev);pointer(ev);});
+ s.on(canvas,'pointerdown',ev=>{if(s.paused||!s.alive)return;if(s.pointer(ev).x>W/2){boost();return;}pointerLane=ev.pointerId;s.capture(ev);pointer(ev);});
  s.on(canvas,'pointermove',ev=>{if(pointerLane===ev.pointerId)pointer(ev);});
  for(const event of ['pointerup','pointercancel'])s.on(canvas,event,ev=>{if(pointerLane===ev.pointerId)pointerLane=null;s.release(ev);});
  s.on(window,'blur',()=>{pointerLane=null;});
- s.hint('Both humans are one team. Steer between lanes, collect coins, avoid blocks, and use a charged boost. Beat the brothers’ combined actual scores.');
+ s.hint('Both humans are one team. Touch or drag on your road (left side) to steer between lanes; tap the right side to boost. Keys: arrows steer, Space boosts. Collect coins, avoid blocks and use a charged boost. collect coins, avoid blocks, and use a charged boost. Beat the brothers’ combined actual scores.');
  const drawDriver=(actor,offset,isHuman)=>{
   const center=offset+32+actor.lane*94+47,y=H-66;
   x.fillStyle=isHuman?'#397be7':leg?'#3da35b':'#dc5552';

@@ -161,6 +161,6 @@ const bop={id:'bop',verb:'DO IT!',theme:'toy',kind:'mixed',source:'Bop It',capti
   circ(x,w/6,cy,Math.min(w/6-6,u*.26),COL.orange,5);txt(x,'BOP',w/6,cy,u*.1,COL.white);
   const kx=w/2;circ(x,kx,cy,Math.min(w/6-4,u*.27),COL.green,5);x.save();x.translate(kx,cy);x.rotate(st.tw);x.fillStyle=COL.ink;x.fillRect(-4,-u*.25,8,u*.22);circ(x,0,0,u*.1,COL.lime,3);x.restore();txt(x,'TWIST',kx,cy+u*.15,u*.065,COL.white,{lw:3});
   const hx=w*5/6,hy=cy-(Object.values(st.f).find(f=>f.z===2)?0:0);rrect(x,hx-u*.045,cy-u*.3,u*.09,u*.6,u*.04,COL.dark,3);rrect(x,hx-u*.1,cy-u*.12+(st.pull||0),u*.2,u*.24,u*.06,COL.blue,4);txt(x,'PULL',hx,cy+u*.3+0,u*.07,COL.white,{lw:3});
-  head(x,st.player,u*.15,r.h-u*.14,u*.24,st.result==='win'?'happy':st.result==='lose'?'sad':'silly');}};
+  head(x,st.player,u*.14,u*.14,u*.22,st.result==='win'?'happy':st.result==='lose'?'sad':'silly');}};
 
 Object.assign(exports,{GAMES_B:[slice,slap,konami,cut,hadouken,throwG,bullets,bop]});

@@ -1,6 +1,7 @@
 const {clamp, seededRandom, shuffle}=require("src/utils.js");
 const {sound, vibrate, tone}=require("src/audio.js");
-const {duelInputs}=require("src/engines/duelControls.js");
+const {ownedPointers}=require("src/engines/duelControls.js");
+const {touchKeys}=require("src/engines/touchDuel.js");
 const {arcadeRounds}=require("src/engines/arcade.js");
 const {circle}=require("src/engines/session.js");
 // v0.44 additions: Block Battle, Shred Hero, Dodgeball, Fight Night, Gopher Hunt, Archery.
@@ -28,8 +29,7 @@ function tryRotate(st){const rotated={...st.piece,cells:rotateCells(st.piece.cel
 function ghostY(st){let p={...st.piece};while(!collides(st.grid,{...p,y:p.y+1}))p.y++;return p.y;}
 async function blocks(s){
  const[,x]=s.canvas(900,560,{fill:true});s.shared=true;s.updateScores();
- const keys=duelInputs(s,{fire:true,fireLabel:'DROP'}),sequence=blockSequence(s.seed,600),random=seededRandom(s.seed+':garbage');
- for(let i=0;i<2;i++){relabel(i,'u','⟳','rotate');relabel(i,'d','▼','soft drop');}
+ const {keys,virt}=touchKeys(s),sequence=blockSequence(s.seed,600),random=seededRandom(s.seed+':garbage');
  const st=[blockState(sequence),blockState(sequence)];let left=150,over=null;
  const level=p=>1+Math.floor(p.lines/8),fall=p=>Math.max(.07,.85-level(p)*.075);
  const settle=(i)=>{
@@ -38,8 +38,25 @@ async function blocks(s){
   else{me.combo=0;if(me.incoming>0){addGarbage(me.grid,Math.min(8,me.incoming),random);me.incoming=0;sound('shot');}}
   spawn(me);
  };
+ const hardDrop=i=>{const me=st[i];if(me.dead||!me.piece)return;const y=ghostY(me);me.score+=(y-me.piece.y)*2;me.piece.y=y;settle(i);};
+ const nudge=me=>{if(me.lock>0&&me.lockMoves<10){me.lock=0;me.lockMoves++;}};
+ const drags=new Map();
+ ownedPointers(s,(i,p,id)=>{
+  const me=st[i],now=performance.now();let g=drags.get(id);
+  if(!g){drags.set(id,{ax:p.x,sx:p.x,sy:p.y,t0:now,moved:0,hist:[[now,p.y]],soft:false,dropped:false});return;}
+  if(me.dead||g.dropped)return;
+  g.moved=Math.max(g.moved,Math.hypot(p.x-g.sx,p.y-g.sy));g.hist.push([now,p.y]);while(g.hist.length>2&&now-g.hist[0][0]>140)g.hist.shift();
+  const step=clamp(s.W*.045,16,30);let n=Math.trunc((p.x-g.ax)/step);
+  if(n&&Math.abs(p.x-g.sx)>=step*.6){const dx=Math.sign(n);for(let k=Math.abs(n);k--;)if(tryMove(me,dx,0))nudge(me);g.ax+=n*step;}
+  const dy=p.y-g.sy,vy=(p.y-g.hist[0][1])/Math.max(16,now-g.hist[0][0]);
+  if(dy>step*1.4&&vy>1.1&&now-g.t0<650){g.dropped=true;virt[i].d=false;g.soft=false;hardDrop(i);return;}
+  const soft=dy>step*1.2;if(soft!==g.soft){g.soft=soft;virt[i].d=soft;}
+ },(i,id,info)=>{
+  const g=drags.get(id);drags.delete(id);if(!g)return;virt[i].d=false;
+  if(!info.cancelled&&!g.dropped&&g.moved<12&&performance.now()-g.t0<350&&!st[i].dead&&tryRotate(st[i]))nudge(st[i]);
+ });
  spawn(st[0]);spawn(st[1]);
- s.hint('Two boards, one shared piece sequence. Rotate and drop to clear lines; clearing 2+ lines sends garbage to your rival. P1: A/D move, W rotate, S soft drop, Space hard drop. P2: arrows + Enter. Last survivor wins; after 2:30 the higher score wins.');
+ s.hint('Two boards, one shared piece sequence. On your half of the screen: drag left/right to shift the piece, tap to rotate, drag down to soft drop, flick down fast to hard drop. Clearing 2+ lines sends garbage to your rival. Keyboard: P1 A/D move, W rotate, S soft drop, Space hard drop; P2 arrows + Enter. Last survivor wins; after 2:30 the higher score wins.');
  s.debug={engine:'blocks',state:st,keys};
  if(!await s.pass(0,'Block Battle: both players get the identical piece order. Clear lines to send garbage rows to the other board. Top out and you lose.','Both ready — drop!'))return;
  s.frame(dt=>{
@@ -50,7 +67,7 @@ async function blocks(s){
    const stepSide=(dir,dx)=>{if(k[dir]&&!me.prev[dir]){tryMove(me,dx,0);me.das[dir]=0;if(me.lock>0&&me.lockMoves<10){me.lock=0;me.lockMoves++;}}else if(k[dir]&&me.das[dir]>.17){while(me.das[dir]>.17){me.das[dir]-=.055;tryMove(me,dx,0);}}};
    stepSide('l',-1);stepSide('r',1);
    if(k.u&&!me.prev.u&&tryRotate(me)&&me.lock>0&&me.lockMoves<10){me.lock=0;me.lockMoves++;}
-   if(k.fire&&!me.prev.fire){const y=ghostY(me);me.score+=(y-me.piece.y)*2;me.piece.y=y;settle(i);if(me.dead)continue;}
+   if(k.fire&&!me.prev.fire){hardDrop(i);if(me.dead)continue;}
    me.timer+=dt;const interval=k.d?.045:fall(me);
    while(me.timer>=interval){me.timer-=interval;if(!tryMove(me,0,1)){break;}if(k.d)me.score+=1;}
    if(collides(me.grid,{...me.piece,y:me.piece.y+1})){me.lock+=dt;if(me.lock>=.42){settle(i);}}else me.lock=0;
@@ -58,7 +75,7 @@ async function blocks(s){
   }
   if(!over){if(st[0].dead||st[1].dead)over=st[0].dead&&st[1].dead?'draw':st[0].dead?1:0;else if(left<=0)over=st[0].score===st[1].score?'draw':st[0].score>st[1].score?0:1;}
   // draw
-  const W=s.W,H=s.H,cell=Math.floor(Math.min((W-120)/(BW*2+5),(H-86)/BH)),bw=cell*BW,bh=cell*BH,gap=Math.max(cell*4,60),ox=[Math.floor(W/2-gap/2-bw),Math.floor(W/2+gap/2)],oy=Math.floor((H-bh)/2)+14;
+  const W=s.W,H=s.H,port=W<H*.8,cell=port?Math.floor(Math.min((W-14)/(BW*2+2.3),(H-14)/(BH+4.4))):Math.floor(Math.min((W-120)/(BW*2+5),(H-86)/BH)),bw=cell*BW,bh=cell*BH,gap=port?Math.floor(cell*2.3):Math.max(cell*4,60),ox=[Math.floor(W/2-gap/2-bw),Math.floor(W/2+gap/2)],oy=port?Math.floor((H-bh+cell*4.4)/2):Math.floor((H-bh)/2)+14;
   const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#16142a');bg.addColorStop(1,'#241a3a');x.fillStyle=bg;x.fillRect(0,0,W,H);
   for(let i=0;i<2;i++){
    const me=st[i],px=ox[i];x.fillStyle='#0b0a18';x.fillRect(px-4,oy-4,bw+8,bh+8);x.strokeStyle=i?'#ff9fc6':'#78b6ff';x.lineWidth=3;x.strokeRect(px-4,oy-4,bw+8,bh+8);
@@ -67,11 +84,11 @@ async function blocks(s){
    for(let r=0;r<BH;r++)for(let c=0;c<BW;c++){const v=me.grid[r][c];if(v)block(c,r,v==='G'?'#6f7482':PIECES[v].c);}
    if(!me.dead&&me.piece){const gy=ghostY(me);for(const [cx,cy] of me.piece.cells.map(([dx,dy])=>[me.piece.x+dx,gy+dy]))if(cy>=0)block(cx,cy,PIECES[me.piece.type].c,.22);for(const [cx,cy] of pieceCells(me.piece))if(cy>=0)block(cx,cy,PIECES[me.piece.type].c);}
    // garbage meter
-   x.fillStyle='#2a2540';x.fillRect(px+(i?bw+8:-16),oy,8,bh);x.fillStyle='#ff5a4a';const gh=Math.min(bh,me.incoming*cell);x.fillRect(px+(i?bw+8:-16),oy+bh-gh,8,gh);
+   x.fillStyle='#2a2540';const mx=port?px+(i?-12:bw+6):px+(i?bw+8:-16);x.fillRect(mx,oy,6,bh);x.fillStyle='#ff5a4a';const gh=Math.min(bh,me.incoming*cell);x.fillRect(mx,oy+bh-gh,6,gh);
    // next preview
-   const nx=px+(i?bw+22:-22-cell*3.2),nt=sequence[me.index];x.fillStyle='#ffffffaa';x.font=`bold ${Math.max(10,cell*.55)}px monospace`;x.textAlign='left';x.fillText('NEXT',nx,oy+cell*.8);if(nt)for(const [dx,dy] of PIECES[nt].cells){x.fillStyle=PIECES[nt].c;x.fillRect(nx+(dx+1)*cell*.7,oy+cell*1.2+(dy+1)*cell*.7,cell*.66,cell*.66);}
-   x.fillStyle='#fff';x.font=`bold ${Math.max(11,cell*.62)}px monospace`;x.textAlign='left';x.fillText(`${me.score}`,nx,oy+cell*5.6);x.fillStyle='#ffffff99';x.font=`${Math.max(9,cell*.5)}px monospace`;x.fillText(`LINES ${me.lines}`,nx,oy+cell*6.5);x.fillText(`LV ${level(me)}`,nx,oy+cell*7.3);
-   s.sprite(x,i,px+bw/2,oy-cell*.8,clamp(cell*1.6,26,48),{exact:true,mood:me.dead?'sad':'walking'});
+   const nx=port?px+bw-cell*3.2:px+(i?bw+22:-22-cell*3.2),ny=port?oy-cell*4.1:oy,nt=sequence[me.index];x.fillStyle='#ffffffaa';x.font=`bold ${Math.max(9,cell*.55)}px monospace`;x.textAlign='left';x.fillText('NEXT',nx,ny+cell*.8);if(nt)for(const [dx,dy] of PIECES[nt].cells){x.fillStyle=PIECES[nt].c;x.fillRect(nx+(dx+1)*cell*.7,ny+cell*1.2+(dy+1)*cell*.7,cell*.66,cell*.66);}
+   const tx=port?px+cell*2.6:nx,sy0=port?oy-cell*3.1:oy+cell*5.6;x.fillStyle='#fff';x.font=`bold ${Math.max(11,cell*.62)}px monospace`;x.textAlign='left';x.fillText(`${me.score}`,tx,sy0);x.fillStyle='#ffffff99';x.font=`${Math.max(9,cell*.5)}px monospace`;x.fillText(`LINES ${me.lines}`,tx,sy0+cell*(port?.85:.9));x.fillText(`LV ${level(me)}`,tx,sy0+cell*(port?1.65:1.7));
+   if(port)s.sprite(x,i,px+cell*1.2,oy-cell*2.3,clamp(cell*2.1,26,48),{exact:true,mood:me.dead?'sad':'walking'});else s.sprite(x,i,px+bw/2,oy-cell*.8,clamp(cell*1.6,26,48),{exact:true,mood:me.dead?'sad':'walking'});
    if(me.dead){x.fillStyle='#000a';x.fillRect(px,oy,bw,bh);x.fillStyle='#ff8c7a';x.font=`bold ${cell*.9}px monospace`;x.textAlign='center';x.fillText('TOPPED OUT',px+bw/2,oy+bh/2);}
   }
   x.fillStyle='#fff3b9';x.font=`bold ${clamp(W*.022,13,22)}px monospace`;x.textAlign='center';x.fillText(`${Math.floor(Math.max(0,left)/60)}:${String(Math.ceil(Math.max(0,left))%60).padStart(2,'0')}`,W/2,oy+bh/2);
@@ -150,9 +167,22 @@ const DODGE={W:900,H:560,r:26,speed:270,hp:3,rounds:2,throw:640};
 function dodgeInit(round){return {players:[{x:170,y:280,hp:DODGE.hp,ball:null,catching:0,cool:0,face:0,hurt:0},{x:730,y:280,hp:DODGE.hp,ball:null,catching:0,cool:0,face:0,hurt:0}],balls:[0,1,2,3].map(i=>({x:i<2?400:500,y:150+(i%2)*260,vx:0,vy:0,live:false,owner:-1,held:-1,r:13,spin:0})),fx:[],round};}
 async function dodgeball(s){
  const[,x]=s.canvas(900,560,{fill:true});s.shared=true;s.updateScores();
- const keys=duelInputs(s,{fire:true,fireLabel:'THROW/CATCH'});
- let a=dodgeInit(1),wins=[0,0],left=95,pause=0,note='',prevFire=[false,false];
- s.hint('Stay in your half. Walk over a loose ball to grab it, press THROW to fire it (aim a little up or down with the pad). With no ball, press CATCH just before a ball arrives to snatch it and hurt the thrower. Three hearts each; first to win two rounds, or most hearts at the buzzer. P1: WASD + Space. P2: arrows + Enter.');
+ const {keys}=touchKeys(s);
+ let a=dodgeInit(1),wins=[0,0],left=95,pause=0,note='',prevFire=[false,false];const tgt=[null,null],drags=new Map();
+ const doThrow=(i,aim)=>{const p=a.players[i];if(pause>0||!p.ball){return false;}const b=p.ball,dir=i?-1:1,vx=dir,vy=aim===undefined?p.face:aim,len=Math.hypot(vx,vy);b.vx=vx/len*DODGE.throw;b.vy=vy/len*DODGE.throw;b.live=true;b.owner=i;b.held=-1;b.x=p.x+dir*(DODGE.r+b.r+2);b.y=p.y;p.ball=null;sound('shot');vibrate(10);return true;};
+ const doCatch=i=>{const p=a.players[i];if(pause>0||p.ball||p.cool>0)return;p.catching=.26;p.cool=.85;};
+ ownedPointers(s,(i,pt,id)=>{
+  const g=drags.get(id),now=performance.now(),p=a.players[i],sx=s.W/DODGE.W,sy=s.H/DODGE.H;
+  if(!g){drags.set(id,{px:p.x,py:p.y,sx:pt.x,sy:pt.y,t0:now,moved:0,hist:[[now,pt.x,pt.y]]});return;}
+  g.moved=Math.max(g.moved,Math.hypot(pt.x-g.sx,pt.y-g.sy));g.hist.push([now,pt.x,pt.y]);while(g.hist.length>2&&now-g.hist[0][0]>120)g.hist.shift();
+  if(g.moved>=12){tgt[i]={x:g.px+(pt.x-g.sx)/sx*1.25,y:g.py+(pt.y-g.sy)/sy*1.25};}
+ },(i,id,info)=>{
+  const g=drags.get(id);drags.delete(id);tgt[i]=null;if(!g||info.cancelled)return;
+  const now=performance.now(),h=g.hist[0],pt=info.point||{x:h[1],y:h[2]},dtm=Math.max(16,now-h[0]),vx=(pt.x-h[1])/dtm,vy=(pt.y-h[2])/dtm,dir=i?-1:1;
+  if(g.moved<12&&now-g.t0<320){if(!doThrow(i))doCatch(i);}
+  else if(vx*dir>.9&&a.players[i].ball)doThrow(i,clamp(vy/Math.max(.3,vx*dir),-1,1)*.7);
+ });
+ s.hint('Your half of the screen is your side of the court. Drag to move your player (relative to where you first touch). Tap to throw the ball you are holding, or flick toward the other side to throw with aim. Tap with no ball to make a quick catch: time it just as a ball arrives to snatch it and hurt the thrower. Walk over a loose ball to pick it up. Three hearts each; first to two rounds. Keyboard: P1 WASD + Space, P2 arrows + Enter.');
  s.debug={engine:'dodgeball',state:a,keys,wins};
  if(!await s.pass(0,'Dodgeball: a True Underdog Story. Dodge, catch and throw. Three hearts each.','Both ready — dodge!'))return;
  const boundsX=i=>i?[DODGE.W/2+DODGE.r+6,DODGE.W-DODGE.r-8]:[DODGE.r+8,DODGE.W/2-DODGE.r-6];
@@ -164,10 +194,8 @@ async function dodgeball(s){
     const p=a.players[i],k=keys[i];p.hurt=Math.max(0,p.hurt-dt);p.cool=Math.max(0,p.cool-dt);p.catching=Math.max(0,p.catching-dt);
     const dx=(k.r?1:0)-(k.l?1:0),dy=(k.d?1:0)-(k.u?1:0),l=Math.max(1,Math.hypot(dx,dy));const [lo,hi]=boundsX(i);
     p.x=clamp(p.x+dx/l*DODGE.speed*dt,lo,hi);p.y=clamp(p.y+dy/l*DODGE.speed*dt,DODGE.r+8,DODGE.H-DODGE.r-8);if(dy)p.face=dy*.55;
-    if(k.fire&&!prevFire[i]){
-     if(p.ball){const b=p.ball,dir=i?-1:1,vx=dir,vy=p.face,len=Math.hypot(vx,vy);b.vx=vx/len*DODGE.throw;b.vy=vy/len*DODGE.throw;b.live=true;b.owner=i;b.held=-1;b.x=p.x+dir*(DODGE.r+b.r+2);b.y=p.y;p.ball=null;sound('shot');vibrate(10);}
-     else if(p.cool<=0){p.catching=.26;p.cool=.85;}
-    }
+    if(k.fire&&!prevFire[i]){if(!doThrow(i))doCatch(i);}
+    if(!dx&&!dy&&tgt[i]){const tx=tgt[i].x-p.x,ty=tgt[i].y-p.y,d=Math.hypot(tx,ty),stepD=Math.min(d,DODGE.speed*1.5*dt);if(d>1){const [lo2,hi2]=boundsX(i);p.x=clamp(p.x+tx/d*stepD,lo2,hi2);p.y=clamp(p.y+ty/d*stepD,DODGE.r+8,DODGE.H-DODGE.r-8);if(Math.abs(ty)>8)p.face=clamp(ty/90,-1,1)*.55;}}
     prevFire[i]=!!k.fire;
    }
    for(const b of a.balls){
@@ -215,10 +243,21 @@ const BOX={W:900,H:560,hp:100,rounds:3,roundTime:35,reach:[120,150]};
 function boxer(side){return {x:side?640:260,hp:BOX.hp,stamina:100,state:'idle',t:0,charge:0,pw:false,blocking:false,ducking:0,hurt:0,flash:0,combo:0};}
 async function boxing(s){
  const[,x]=s.canvas(900,560,{fill:true});s.shared=true;s.updateScores();
- const keys=duelInputs(s,{fire:true,fireLabel:'PUNCH'});
- for(let i=0;i<2;i++){relabel(i,'u','🛡','block');relabel(i,'d','⤓','duck');}
+ const {keys,virt,pulse}=touchKeys(s);
  let f=[boxer(0),boxer(1)],wins=[0,0],round=1,left=BOX.roundTime,pause=0,note='',shake=0,fx=[],down=[0,0];const prev=[false,false],held=[0,0];
- s.hint('Tap PUNCH for a quick jab. Hold it, then release, for a slow power hook. ▲ (🛡) blocks: it cuts damage but drains stamina. ▼ (⤓) ducks under a jab but not a hook. ◀ ▶ step in and out. KO, or most health at the bell, takes the round; first to two rounds. P1: A/D step, W block, S duck, Space punch. P2: arrows + Enter.');
+ const fingers=new Map(),holdStart=[0,0];
+ const startPunch=(i,power)=>{const me=f[i];if(pause>0||me.state!=='idle'||me.hurt>0||me.stamina<(power?30:8))return;me.state=power?'hook':'jab';me.pw=power;me.t=0;me.stamina-=power?30:8;me.landed=false;};
+ ownedPointers(s,(i,p,id)=>{
+  const g=fingers.get(id),now=performance.now();
+  if(!g){fingers.set(id,{ax:p.x,sx:p.x,sy:p.y,t0:now,mode:null});holdStart[i]=now;return;}
+  const dx=p.x-g.sx,dy=p.y-g.sy;
+  if(!g.mode&&Math.hypot(dx,dy)>=16){g.mode=Math.abs(dx)>Math.abs(dy)?'move':dy<0?'guard':'duck';holdStart[i]=0;if(g.mode==='duck')pulse(i,'d',320);if(g.mode==='guard')virt[i].u=true;g.ax=p.x;}
+  if(g.mode==='move'||g.mode==='duck'){const lead=p.x-g.ax,max=34;if(Math.abs(lead)>max)g.ax=p.x-Math.sign(lead)*max;const l=p.x-g.ax;virt[i].l=l<-12;virt[i].r=l>12;if(g.mode==='duck'&&Math.abs(dx)>40)g.mode='move';}
+ },(i,id,info)=>{
+  const g=fingers.get(id);fingers.delete(id);holdStart[i]=0;virt[i].l=virt[i].r=virt[i].u=false;
+  if(g&&!g.mode&&!info.cancelled)startPunch(i,performance.now()-g.t0>450);
+ });
+ s.hint('Your half of the screen is your corner. Tap to jab. Press and hold still, then release, for a slow power hook. Swipe down to duck under a jab (not a hook). Swipe up and keep your finger down to guard: it cuts damage but drains stamina. Drag left or right to step in and out. KO, or most health at the bell, takes the round; first to two rounds. Keyboard: P1 A/D step, W block, S duck, Space punch; P2 arrows + Enter.');
  s.debug={engine:'boxing',state:f,keys,wins};
  if(!await s.pass(0,'Fight Night: three rounds of thirty-five seconds. Jab to build pressure, hook to finish, block and duck to survive.','Both ready — ding ding!'))return;
  const dist=()=>Math.abs(f[1].x-f[0].x);
@@ -268,6 +307,7 @@ async function boxing(s){
    const reach=(me.state==='jab'?Math.sin(clamp(me.t/.28,0,1)*Math.PI)*BOX.reach[0]:me.state==='hook'?Math.sin(clamp(me.t/.62,0,1)*Math.PI)*BOX.reach[1]:0)*sx,gx=px+dir*(size*.38+reach),gy=base-size*(me.blocking?.78:.5)+duck;
    x.strokeStyle=i?'#b03a72':'#2f5fb8';x.lineWidth=9;x.lineCap='round';x.beginPath();x.moveTo(px+dir*size*.2,base-size*.42+duck);x.lineTo(gx,gy);x.stroke();
    x.fillStyle='#d6342c';x.beginPath();x.arc(gx,gy,size*.13,0,Math.PI*2);x.fill();x.strokeStyle='#7a1d12';x.lineWidth=3;x.stroke();
+   if(holdStart[i]>0&&performance.now()-holdStart[i]>150){const c=Math.min(1,(performance.now()-holdStart[i])/450);x.strokeStyle=c>=1?'#ffd24a':'#ffffff99';x.lineWidth=4;x.beginPath();x.arc(gx,gy,size*(.2+.12*(1-c)),0,Math.PI*2);x.stroke();}
    if(me.blocking){x.strokeStyle='#8fe3ff';x.lineWidth=5;x.beginPath();x.arc(px+dir*size*.4,base-size*.7,size*.32,-1.2,1.2);x.stroke();}
   }
   // HUD

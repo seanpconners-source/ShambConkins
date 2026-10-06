@@ -1,22 +1,24 @@
 const {clamp}=require("src/utils.js");
 const {sound, vibrate}=require("src/audio.js");
-const {duelInputs}=require("src/engines/duelControls.js");
+const {ownedPointers}=require("src/engines/duelControls.js");
+const {touchKeys}=require("src/engines/touchDuel.js");
 const {directionGestures,drawDirectionFeedback}=require("src/engines/directionGestures.js");
 const {circle}=require("src/engines/session.js");
 function sumoState(){return {players:[{x:-.45,y:0,vx:0,vy:0,angle:0},{x:.45,y:0,vx:0,vy:0,angle:Math.PI}]};}
 function sumoStep(a,dt,keys){
- for(let i=0;i<2;i++){const p=a.players[i],k=keys[i];p.angle+=((k.r?1:0)-(k.l?1:0))*4.2*dt;if(k.fire){p.vx+=Math.cos(p.angle)*1.65*dt;p.vy+=Math.sin(p.angle)*1.65*dt;}const drag=Math.exp(-.9*dt);p.vx*=drag;p.vy*=drag;p.x+=p.vx*dt;p.y+=p.vy*dt;}
+ for(let i=0;i<2;i++){const p=a.players[i],k=keys[i];p.angle+=((k.r?1:0)-(k.l?1:0))*4.2*dt;if(p.aim!=null){const d=Math.atan2(Math.sin(p.aim-p.angle),Math.cos(p.aim-p.angle));p.angle+=clamp(d,-9*dt,9*dt);}if(k.fire){p.vx+=Math.cos(p.angle)*1.65*dt;p.vy+=Math.sin(p.angle)*1.65*dt;}const drag=Math.exp(-.9*dt);p.vx*=drag;p.vy*=drag;p.x+=p.vx*dt;p.y+=p.vy*dt;}
  const [p,q]=a.players,dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy),radius=.2;
  if(d<radius*2){const nx=d?dx/d:1,ny=d?dy/d:0,overlap=(radius*2-d)/2;p.x-=nx*overlap;p.y-=ny*overlap;q.x+=nx*overlap;q.y+=ny*overlap;const impact=Math.max(.1,(p.vx-q.vx)*nx+(p.vy-q.vy)*ny);p.vx-=nx*impact*.65;p.vy-=ny*impact*.65;q.vx+=nx*impact*.65;q.vy+=ny*impact*.65;}
  const out=a.players.map(p=>Math.hypot(p.x,p.y)>1.06);return out[0]&&out[1]?'draw':out[0]?1:out[1]?0:null;
 }
 async function compactSumo(s){
  const[,x]=s.canvas(760,500,{fill:true});s.shared=true;s.updateScores();
- const keys=duelInputs(s,{horizontal:true,fire:true,fireLabel:'CHARGE',stacked:true});s.body.classList.add('sumo-overlay-body');s.queueCanvasFit?.();const wins=[0,0];let state=sumoState(),round=1,left=45,breakTime=0,note='';
- s.hint('Each side has TURN LEFT, TURN RIGHT and CHARGE, stacked vertically. Hold a turn to aim your suit; hold CHARGE to push. P1 A/D + Space; P2 arrows + Enter. First to two ring-outs, or most wins in 45 seconds.');
+ const {keys,virt}=touchKeys(s),starts=new Map(),aims=[null,null];const wins=[0,0];let state=sumoState(),round=1,left=45,breakTime=0,note='';
+ ownedPointers(s,(i,p,id)=>{const g=starts.get(id);if(!g){starts.set(id,{sx:p.x,sy:p.y});virt[i].fire=true;return;}const dx=p.x-g.sx,dy=p.y-g.sy;if(Math.hypot(dx,dy)>=14)aims[i]=Math.atan2(dy,dx);},(i,id)=>{starts.delete(id);virt[i].fire=false;aims[i]=null;});
+ s.hint('Your half of the screen is your suit. Touch and hold to charge forward; drag from where you first touched to steer, so your suit turns toward the direction you drag. Let go to coast. Shove the other head out of the ring! Keyboard: P1 A/D turn + Space charge; P2 arrows + Enter. First to two ring-outs, or most wins in 45 seconds.');
  s.debug={engine:'sumo',state,edgeInputs:keys,wins,round,left};
- if(!await s.pass(0,'Aim your inflatable suit and charge. Shove the other head out of the ring! Each player has three stacked buttons on their own edge.','Both players ready'))return;
- s.frame(dt=>{left-=dt;if(breakTime>0){breakTime-=dt;if(breakTime<=0){if(wins.some(n=>n>=2))return s.finish(wins,'Taskmaster Sumo Suit');state=sumoState();round++;}}else{const winner=sumoStep(state,dt,keys);if(winner!==null){if(winner!=='draw'){wins[winner]++;s.setScores(wins);s.react?.(winner,'win');s.react?.(1-winner,'sad');note=s.players[winner].name+' rings out the opponent!';}else note='Double ring-out! Replay the round.';sound('win');vibrate(25);breakTime=.8;}}
+ if(!await s.pass(0,'Aim your inflatable suit and charge. Shove the other head out of the ring! Touch and hold your half to charge; drag to steer.','Both players ready'))return;
+ s.frame(dt=>{left-=dt;if(breakTime>0){breakTime-=dt;if(breakTime<=0){if(wins.some(n=>n>=2))return s.finish(wins,'Taskmaster Sumo Suit');state=sumoState();round++;}}else{state.players[0].aim=aims[0];state.players[1].aim=aims[1];const winner=sumoStep(state,dt,keys);if(winner!==null){if(winner!=='draw'){wins[winner]++;s.setScores(wins);s.react?.(winner,'win');s.react?.(1-winner,'sad');note=s.players[winner].name+' rings out the opponent!';}else note='Double ring-out! Replay the round.';sound('win');vibrate(25);breakTime=.8;}}
   const W=s.W,H=s.H,R=Math.max(30,Math.min(W,H)*.43),cx=W/2,cy=H/2;x.fillStyle='#efe4c8';x.fillRect(0,0,W,H);circle(x,cx,cy,R+8,'#c57b52');circle(x,cx,cy,R,'#ead7ac');x.strokeStyle='#fff';x.lineWidth=5;x.beginPath();x.arc(cx,cy,R*.85,0,Math.PI*2);x.stroke();
   for(let i=0;i<2;i++){const p=state.players[i],px=cx+p.x*R,py=cy+p.y*R;circle(x,px,py,R*.2,i?'#e96aa2':'#e6bf50');x.save();x.translate(px,py);x.rotate(p.angle);x.fillStyle='#fff';x.fillRect(R*.2,-4,R*.2,8);x.beginPath();x.moveTo(R*.48,0);x.lineTo(R*.34,-9);x.lineTo(R*.34,9);x.closePath();x.fill();x.restore();s.sprite(x,i,px,py,clamp(R*.43,48,112),{exact:true,mood:keys[i].fire?'walking':undefined});}
   if(breakTime>0){x.fillStyle='#352b25';x.font='bold '+clamp(W/35,14,25)+'px sans-serif';x.textAlign='center';x.fillText(note,cx,Math.max(25,H*.09));}
