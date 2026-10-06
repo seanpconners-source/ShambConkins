@@ -188,5 +188,15 @@ for(const g of [...GAMES,...EVENT_GAMES]){
  if(g.engine==='sokoban')g.rules='Swipe to push warehouse crates onto marked goals, or hold-drag to keep walking. Tap Undo inside the arena to rescue a mistake. Both humans get the same puzzle and forty-five seconds; no direction pad.';
 }
 
+// v0.44 additions. Each cites a real film, show or game.
+const NEW_GAMES=[
+ {id:'block-battle',engine:'blocks',title:'Tetris · Block Battle',source:'Tetris',icon:'🧱',category:'skill',duration:'up to 2:30',rules:'Two boards, one identical piece order. Move, rotate and drop to clear lines. Clearing two or more sends garbage rows to your rival. Top out and you lose; after 2:30 the higher score wins. P1: A/D, W rotate, S soft drop, Space hard drop. P2: arrows + Enter, or the on-screen pads.'},
+ {id:'shred-hero',engine:'shred',title:'Guitar Hero · Shred Hero',source:'Guitar Hero',icon:'🎸',category:'skill',duration:'75s song',rules:'The same riff and chart for both players, side by side. Tap the four lanes on your half (or A S D F / H J K L) as notes reach the glowing line. Perfect hits and long streaks build a ×4 multiplier. Highest score wins.'},
+ {id:'underdog-dodgeball',engine:'dodgeball',title:'Dodgeball · True Underdog Story',source:'Dodgeball',icon:'🏐',category:'sports',duration:'best of 3 rounds',rules:'Stay on your side. Walk over a loose ball to grab it, then throw it at your rival. With no ball, press CATCH just before a ball arrives to snatch it and hurt the thrower. Three hearts each; first to win two rounds, or most hearts at the buzzer.'},
+ {id:'fight-night',engine:'boxing',title:'Rocky · Fight Night',source:'Rocky',icon:'🥊',category:'sports',duration:'3 rounds of 35s',rules:'Tap PUNCH to jab, hold and release for a slow power hook. BLOCK cuts damage but drains stamina; DUCK slips jabs but not hooks. Step in and out to control range. KO or most health at the bell wins the round; first to two rounds wins.'},
+ {id:'gopher-hunt',engine:'gophers',title:'Caddyshack · Gopher Hunt',source:'Caddyshack',icon:'🐹',category:'arcade',duration:'40s each',rules:'Alternate turns, same pop pattern for both. Tap gophers the instant they pop up. Golden gophers are +3. Hit the golf bag or the groundskeeper and lose 3. Streaks of four add bonus points and the pops get faster.'},
+ {id:'wind-archery',engine:'archery',title:'Brave · Wind Archery',source:'Brave',icon:'🏹',category:'sports',duration:'6 arrows each',rules:'Drag back from the bow to draw, aim along the dotted line, release. Wind pushes the arrow and the target starts moving after the second shot. Six arrows each, bullseye is ten. Same wind and targets for both players.'}
+];
+for(const g of NEW_GAMES)GAMES.push({...g,family:g.engine,quality:'substantial',randomEligible:true,eventOnly:false,reward:8,gameUnlockAt:0});
 for(const g of GAMES)if(SOURCE_FIXES[g.id])g.source=SOURCE_FIXES[g.id];
 Object.assign(exports,{GAMES,EVENT_GAMES,gameById,gameUnlocked,RANDOM_GAMES,PHONE_TASK,TRIVIA_THEME_IDS,selectTriviaGame,triviaIsDue,selectBoardGame,selectGame,resolveLegacyGame});

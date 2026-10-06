@@ -109,6 +109,7 @@
   "src/engines/baseballField.js",
   "src/engines/mobile.js",
   "src/engines/neighborhoodHole.js",
+  "src/engines/newGames.js",
   "src/engines/arcade.js",
   "src/engines/snakeRules.js",
   "src/engines/airHockey.js",
