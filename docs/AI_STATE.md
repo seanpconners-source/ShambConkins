@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.46.0 (`releases/ShambConkins_v0.46.0.html` rebuilt with all fixes below).
+Version 0.46.1 (`releases/ShambConkins_v0.46.1.html`).
 
 ## Implemented systems
 - **Board (generation 7):** per-realm journey map: stem → crossroads → 3 lanes (Calm/Adventurous/High Reward) → gate.
@@ -24,6 +24,10 @@ Version 0.46.0 (`releases/ShambConkins_v0.46.0.html` rebuilt with all fixes belo
 Boss trigger fix + drag flow; 2x heads (board, collection, character select); collection pages fit the screen;
 pinch zoom; warp pipes visible & pass-triggered; bridges; biomes; Parents' House → Mom/Dad only; Planet Coaster park +
 King Coaster; Always Sunny portraits added by owner (optimized to WebP, originals in `assets/originals/`).
+
+- v0.46.1: found challenge items (game/duel kind) offer "Play now / Keep in bag" (`foundChallengeChoices` in `app.js`);
+  Quark's shop is a bottom sheet (`showDialog({sheet:true})`, choice `tag`/`badge`, `itemTag()` in `items.js`).
+  Tests: `tests/itemgame.mjs`, `tests/shop.mjs` (screenshots to /tmp/claude-0/sc).
 
 ## In progress / unverified
 - Nothing in flight. Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus

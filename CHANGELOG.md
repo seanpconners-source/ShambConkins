@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.46.1
+
+**Challenge items start their game.** Finding a challenge item (e.g. Vampire Killer → Evil Dead · Cabin Defense) at a
+supply cache or landmark used to only drop it in the bag, even though the card said it challenged both players. The
+find card now offers "Play … now" (uses the item, game starts) or "Keep it in my bag".
+
+**Streamlined shop.** Quark's shop is a compact bottom sheet: the board stays visible (no dim/blur), each item is one
+row with a category tag (Minigame, Points, Movement, Defense, Attack, ...), a readable effect line and a price button;
+items you can't afford are greyed out. The extra "Business concluded" popup is now a toast.
+
 ## v0.46.0
 
 **Levels (after Chardee MacDennis).** Level I Mind (wine), II Body (beer), III Spirit (hard liquor), and Frank's

@@ -681,3 +681,22 @@ body.route-choosing .bottom-hud{display:none}
 .bi-graze{animation:bi-wave 5s ease-in-out infinite}
 .reduced-motion .jr-biome *{animation:none!important}@media(prefers-reduced-motion:reduce){.jr-biome *{animation:none!important}}
 .board-svg[data-map-detail="overview"] .jr-biome *{animation-play-state:paused}
+/* Bottom-sheet dialogs (shops): compact, anchored low, board stays visible behind. */
+dialog.sheet{margin:auto auto calc(8px + env(safe-area-inset-bottom));width:min(560px,calc(100vw - 16px));max-height:min(62vh,calc(var(--viewport-height,100dvh) - 90px));border-radius:16px}
+dialog.sheet::backdrop{background:#07090430;backdrop-filter:none}
+dialog.sheet .dialog-content{padding:12px 12px 10px;max-height:inherit;animation:sheet-up .25s ease-out}
+dialog.sheet .sheet-source{text-align:center;font:800 10px/1 Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#8a6a1e}
+dialog.sheet h2{font-size:19px;margin:3px 0 2px}
+dialog.sheet .dialog-content p{font-size:12px;line-height:1.35;margin:0 0 4px}
+dialog.sheet .dialog-actions{flex-direction:column;gap:6px;margin-top:6px;padding:0;position:static}
+dialog.sheet .dialog-actions button{flex:none;min-width:0;width:100%;min-height:0;padding:7px 9px;display:flex;align-items:center;gap:9px;text-align:left;border-radius:11px}
+dialog.sheet .dialog-actions button.primary{justify-content:center;padding:10px;text-align:center}
+dialog.sheet .choice-art{width:40px;min-width:40px;height:40px}
+dialog.sheet .choice-art .item-art{width:38px;height:38px}
+dialog.sheet .choice-copy{flex:1;font-size:14px;font-weight:800;line-height:1.2}
+dialog.sheet .dialog-actions button small{font:600 12px/1.35 Arial,sans-serif;color:#26324a;margin-top:2px}
+dialog.sheet .choice-tag{display:block;font:800 9px/1.2 Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;font-style:normal;color:#7a5a12;margin-bottom:2px}
+dialog.sheet .choice-badge{flex:none;font:900 13px/1 Arial,sans-serif;padding:8px 9px;border-radius:9px;background:#1f8a4c;color:#fff;white-space:nowrap}
+dialog.sheet button:disabled{opacity:.55}
+dialog.sheet button:disabled .choice-badge{background:#8b8f99}
+@keyframes sheet-up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
