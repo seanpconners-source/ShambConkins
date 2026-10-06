@@ -264,7 +264,7 @@ async function bossfight(s){
   try{body.draw(b,A);}catch(e){if(!drawBoss.err){drawBoss.err=1;console.error('boss body',e);}}
   b.setTransform(bs*k,0,0,bs*k,Bw/2,Bh/2);b.globalCompositeOperation='source-atop';
   const n=Math.floor(A.dmg*9);if(n>0){b.lineJoin='round';for(let i=0;i<n&&i<cracks.length;i++){const cr=cracks[i];b.beginPath();cr.forEach((p,j)=>j?b.lineTo(p[0],p[1]):b.moveTo(p[0],p[1]));b.strokeStyle='rgba(255,255,255,.35)';b.lineWidth=5;b.stroke();b.strokeStyle='rgba(10,0,0,.8)';b.lineWidth=2.6;b.stroke();}}
-  if(B.flash>0){b.fillStyle=`rgba(255,255,255,${Math.min(.75,B.flash*11)})`;b.fillRect(-300,-300,600,600);}
+  if(B.flash>0){b.fillStyle=`rgba(255,255,255,${Math.min(.3,B.flash*5)})`;b.fillRect(-300,-300,600,600);}
   else if(B.phase>0&&mode!=='ko'){b.fillStyle=`rgba(255,40,20,${.05+Math.sin(T*4)*.03*B.phase})`;b.fillRect(-300,-300,600,600);}
   b.globalCompositeOperation='source-over';
   g.save();g.globalAlpha=B.hidden>0?.12:1;g.fillStyle='rgba(0,0,0,.16)';g.beginPath();g.ellipse(B.drawX,B.drawY+122*bs,100*bs,12*bs,0,0,TAU);g.fill();g.drawImage(bossBuf,B.drawX-Bw/2/k,B.drawY-Bh/2/k,Bw/k,Bh/k);g.restore();}
@@ -363,7 +363,7 @@ async function bossfight(s){
   if(flashWhite>0){x.fillStyle=`rgba(255,255,255,${Math.min(.85,flashWhite)*(reduce?.4:1)})`;x.fillRect(-10,-10,W+20,H+20);}
   x.restore();
   // curtains over the margins + film overlay
-  x.setTransform(1,0,0,1,0,0);if(ox>1){x.fillStyle='rgba(8,4,2,.62)';x.fillRect(0,0,ox,ch);x.fillRect(cw-ox,0,ox,ch);x.fillStyle=pal[2];x.globalAlpha=.7;x.fillRect(ox-2,0,2,ch);x.fillRect(cw-ox,0,2,ch);x.globalAlpha=1;}
+  x.setTransform(1,0,0,1,0,0);if(ox>1){x.fillStyle='rgba(8,4,2,.45)';x.fillRect(0,0,ox,ch);x.fillRect(cw-ox,0,ox,ch);x.fillStyle=pal[2];x.globalAlpha=.7;x.fillRect(ox-2,0,2,ch);x.fillRect(cw-ox,0,2,ch);x.globalAlpha=1;}
   if(oy>1){x.fillStyle='rgba(8,4,2,.62)';x.fillRect(0,0,cw,oy);x.fillRect(0,ch-oy,cw,oy);}
   if(!vignette){vignette=document.createElement('canvas');vignette.width=Math.ceil(W*k);vignette.height=Math.ceil(H*k);const vg=vignette.getContext('2d'),gr=vg.createRadialGradient(vignette.width/2,vignette.height/2,Math.min(vignette.width,vignette.height)*.4,vignette.width/2,vignette.height/2,Math.max(vignette.width,vignette.height)*.72);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(20,8,0,.5)');vg.fillStyle=gr;vg.fillRect(0,0,vignette.width,vignette.height);}
   x.drawImage(vignette,ox,oy);

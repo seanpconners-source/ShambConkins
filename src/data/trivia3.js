@@ -909,6 +909,34 @@ h|What was the title of the 2019 Netflix special that revived Rocko?|Static Clin
 e|What kind of animals are Ren and Stimpy?|A chihuahua and a cat|A dog and a mouse|Two cats|A rabbit and a pig|Ren is a grumpy chihuahua.
 m|Who created The Ren & Stimpy Show?|John Kricfalusi|Joe Murray|Mike Judge|Genndy Tartakovsky|He was fired from the show in 1992.
 m|Which actor voiced Stimpy and later Fry on Futurama?|Billy West|Tom Kenny|Maurice LaMarche|John DiMaggio|He also voiced Doug Funnie.
+@Courage the Cowardly Dog|animation|Courage_the_Cowardly_Dog
+e|In which fictional place do Courage, Muriel and Eustace live?|Nowhere, Kansas|Nowhere, Nebraska|Middleton, Ohio|Lost Hollow, Texas|Their farmhouse is isolated and attracts strange events.
+e|What color is Courage?|Pink|Blue|Yellow|Purple|He is a nervous, loyal dog.
+e|What does Eustace usually say to Courage?|Stupid dog!|Bad boy!|Go away!|Shut up!|Eustace is always grumpy.
+m|What is the name of the sassy talking device in the Bagge house?|The Computer|The Radio|Marvin|Smarty|It often provides sarcastic help.
+m|Who created Courage the Cowardly Dog?|John R. Dilworth|Genndy Tartakovsky|Craig McCracken|Seth MacFarlane|He is also known for animated shorts.
+h|Which 1996 short film became the pilot for Courage the Cowardly Dog?|The Chicken from Outer Space|Dog Gone Scary|Nowhere Kansas|Muriel's Adventure|It was part of Cartoon Network's What a Cartoon! showcase.
+@Dexter's Laboratory|animation|Dexter's_Laboratory
+e|Who is Dexter's annoying older sister?|Dee Dee|Mandark|Ed|Penny|She often wanders into his secret laboratory.
+e|Who is Dexter's genius rival?|Mandark|Monkey|Dad|Johnny|He lives across the street.
+m|Who created Dexter's Laboratory?|Genndy Tartakovsky|Craig McCracken|John R. Dilworth|Butch Hartman|He also created Samurai Jack.
+m|Where is Dexter's secret lab hidden?|Behind a bookcase|Under the garage|In the attic|Behind a mirror|He activates it with a hidden mechanism.
+m|Which of Dexter's superhero segments stars his pet Monkey?|Dial M for Monkey|The Justice Friends|Dee Dee's Dilemma|Dexter's Defense|It parodies old superhero cartoons.
+h|Which actress first voiced Dexter before Candi Milo took over?|Christine Cavanaugh|Cree Summer|E.G. Daily|Kath Soucie|She also voiced Chuckie Finster.
+@Johnny Bravo|animation|Johnny_Bravo
+e|Which singer is Johnny Bravo's voice and look based on?|Elvis Presley|Buddy Holly|Johnny Cash|Chuck Berry|He wears sunglasses and a pompadour.
+m|What does Johnny Bravo say when he sees a pretty woman?|Whoa, Mama!|Hey there!|Check this out!|Looking good!|He is famously unsuccessful with women.
+h|Which creator made Johnny Bravo?|Van Partible|Craig McCracken|Genndy Tartakovsky|Seth Green|It started as a Cartoon Network short.
+@Powerpuff Girls|animation|The_Powerpuff_Girls
+e|What are the Powerpuff Girls made from?|Sugar, spice, everything nice, and Chemical X|Sugar and spice|Flowers and Chemical Y|Slime and Chemical X|The professor accidentally adds Chemical X.
+e|Who is the Powerpuff Girls' arch-nemesis, a monkey with a huge brain?|Mojo Jojo|Him|Fuzzy Lumpkins|Princess Morbucks|He often speaks in repetitive phrases.
+m|In which city do the Powerpuff Girls live?|Townsville|Hillwood|Quahog|Springfield|It is home to the mayor and the Professor.
+m|Which of the Powerpuff Girls is the leader in red?|Blossom|Bubbles|Buttercup|Bunny|She wears a big red bow.
+m|Which actor voices the narrator and the Mayor, and also SpongeBob?|Tom Kenny|Billy West|Rob Paulsen|Maurice LaMarche|He is also the voice of The Ice King.
+h|Who created The Powerpuff Girls?|Craig McCracken|Genndy Tartakovsky|Van Partible|Butch Hartman|He later created Foster's Home for Imaginary Friends.
+@Samurai Jack|animation|Samurai_Jack
+m|Which wizard villain threw Jack into the future?|Aku|Ra|Him|Mojo|Aku is a shapeshifting demon.
+h|Which actor voices Samurai Jack?|Phil LaMarr|Mako|Dee Bradley Baker|Greg Eagles|He is also known for voicing Hermes on Futurama.
 `;
 const levels={e:'easy',m:'medium',h:'hard',i:'impossible'};
 function parseFacts(text){let source,category,page;return text.trim().split('\n').filter(Boolean).flatMap(line=>{
@@ -951,6 +979,7 @@ const TRIVIA3_THEMES=[
  {tag:'ukcomedy',title:'Flats, Fangs & Zooniverse · Peep Show, Boosh & Shadows',icon:'🧛',source:'What We Do in the Shadows',description:'Peep Show, The Mighty Boosh, Toast of London and What We Do in the Shadows.',sources:['Peep Show','The Mighty Boosh','Toast of London','What We Do in the Shadows']},
  {tag:'adultswim',title:'Adult Swim Basement · Aqua Teen, Space Ghost, Beavis & Tim and Eric',icon:'🍔',source:'Aqua Teen Hunger Force',description:'Master Shake, Zorak, Beavis and Butt-Head, Dr. Steve Brule and late-night cartoon weirdness.',sources:['Aqua Teen Hunger Force','Space Ghost Coast to Coast','Beavis and Butt-Head','Tim & Eric']},
  {tag:'nickgames',title:'Slimed! · Nickelodeon Game Shows & Scares',icon:'🟢',source:'Double Dare',description:'Double Dare, GUTS, Legends of the Hidden Temple, Nick Arcade and Are You Afraid of the Dark?',sources:['Double Dare','Legends of the Hidden Temple','Nick Arcade','GUTS','Are You Afraid of the Dark?']},
- {tag:'nicktoons',title:'Nicktoons Reunion · Rugrats, Hey Arnold!, Rocko & Ren and Stimpy',icon:'📺',source:'Nicktoons',description:'The first wave of Nicktoons and the voices behind them.',sources:['Rugrats','Hey Arnold!','Rocko\'s Modern Life','Ren & Stimpy']}
+ {tag:'nicktoons',title:'Nicktoons Reunion · Rugrats, Hey Arnold!, Rocko & Ren and Stimpy',icon:'📺',source:'Nicktoons',description:'The first wave of Nicktoons and the voices behind them.',sources:['Rugrats','Hey Arnold!','Rocko\'s Modern Life','Ren & Stimpy']},
+ {tag:'cartoonnet',title:'Cartoon Cartoons · Courage, Dexter, Johnny Bravo & Powerpuff Girls',icon:'🐶',source:'Cartoon Network',description:'Cartoon Network\'s golden-era originals and the creators behind them.',sources:['Courage the Cowardly Dog','Dexter\'s Laboratory','Johnny Bravo','Powerpuff Girls','Samurai Jack']}
 ];
 Object.assign(exports,{TRIVIA3,TRIVIA3_THEMES});
