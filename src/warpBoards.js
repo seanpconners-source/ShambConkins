@@ -56,7 +56,7 @@ function buildWarpBoard(id,seed='warp'){
  if(id==='chutes')for(const [a,b] of CHUTES_JUMPS){if(a<count-2&&b<count-1){nodes[ids[a]].jump=ids[b];nodes[ids[a]].type=b>a?'bonus':'penalty';jumps.push([a,b]);}}
  if(id==='monopoly'){nodes[ids[0]].label='GO';ids.forEach((nid,i)=>{nodes[nid].label=MONOPOLY_NAMES[i]||'';});}
  if(id==='clue')ids.forEach((nid,i)=>{nodes[nid].label=CLUE_ROOMS[i]||'';});
- const board={format:'warp',generation:0,width:W,height:H,nodes,realms:{warp:{ids,start:ids[0],gate:ids[count-1],cols:count-1,y:0,height:H,color:def.color,title:def.title}},obstacles:[],signs:[],baseSpan:id==='chutes'?1500:1500,pieceScale:1.25,
+ const board={format:'warp',generation:0,width:W,height:H,nodes,realms:{warp:{ids,start:ids[0],gate:ids[count-1],cols:count-1,y:0,height:H,color:def.color,title:def.title}},obstacles:[],signs:[],baseSpan:id==='chutes'?1500:1500,pieceScale:.9,
   warp:{id,title:def.title,source:def.source,icon:def.icon,bossId:def.bossId,intro:def.intro,points,jumps}};
  return board;
 }

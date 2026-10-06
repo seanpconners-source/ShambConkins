@@ -8,6 +8,8 @@ const {sound, vibrate}=require("src/audio.js");
 const {pairPace}=require("src/pairs.js");
 const {inputMode, listenGameInput}=require("src/touchInput.js");
 const spriteCache=new Map();
+// Auto-sized heads (no {exact:true}) are drawn large enough to read faces and expressions on a phone.
+const spriteSize=size=>clamp(size*1.9,50,96);
 function canvasFitSize(W,H,width,height){if(![W,H,width,height].every(Number.isFinite)||W<=0||H<=0||width<=0||height<=0)return {width:0,height:0};const scale=Math.min(width/W,height/H);return {width:W*scale,height:H*scale};}
 class GameSession {
  constructor(game,players,onFinish){this.game=game;this.players=players;this.onFinish=onFinish;this.abort=new AbortController();this.cleanups=[];this.inputResets=[];this.reactions=[null,null];this.lastScoreReaction=[-Infinity,-Infinity];this.paused=false;this.waiting=false;this.finished=false;this.active=0;this.score=[0,0];this.seed=`${store.run?.seed||Date.now()}-${game.id}-${store.profile.played.length}`;this.random=seededRandom(this.seed);this.debug={};this.flickSensitivity=Math.min(1.35,Math.max(.65,Number(store.profile?.settings.flickSensitivity)||1));this.inputMode=inputMode(store.profile?.settings.touchMode);this.mount();}
@@ -49,11 +51,11 @@ class GameSession {
  async wait(ms){return new Promise(resolve=>{if(!this.alive)return resolve(false);let left=ms,last=performance.now();const complete=value=>{clearInterval(id);const index=this.cleanups.indexOf(cancel);if(index>=0)this.cleanups.splice(index,1);resolve(value);},cancel=()=>complete(false);const id=setInterval(()=>{const now=performance.now();if(!this.paused)left-=Math.min(100,now-last);last=now;if(left<=0)complete(this.alive);},20);this.cleanup(cancel);});}
  async delay(ms){return new Promise(resolve=>{if(!this.alive)return resolve(false);const id=setTimeout(()=>resolve(this.alive),ms);this.cleanup(()=>{clearTimeout(id);resolve(false);});});}
  react(player,mood='happy',seconds=1.25){this.reactions[player]={mood,until:performance.now()/1000+seconds};}
- marker(x,player,cx,cy,size=46){const drawn=clamp(size*1.65,42,84)*(this.players[player].large?2:1),px=clamp(cx+38,drawn/2+4,this.W-drawn/2-4),py=clamp(cy-42,drawn/2+5,this.H-drawn/2-5);x.save();x.strokeStyle=player===0?'#78b6ff':'#ff9fc6';x.lineWidth=1.5;x.beginPath();x.moveTo(cx,cy);x.lineTo(px,py);x.stroke();this.sprite(x,player,px,py,size);x.restore();}
+ marker(x,player,cx,cy,size=46){const drawn=spriteSize(size)*(this.players[player].large?2:1),px=clamp(cx+38,drawn/2+4,this.W-drawn/2-4),py=clamp(cy-42,drawn/2+5,this.H-drawn/2-5);x.save();x.strokeStyle=player===0?'#78b6ff':'#ff9fc6';x.lineWidth=1.5;x.beginPath();x.moveTo(cx,cy);x.lineTo(px,py);x.stroke();this.sprite(x,player,px,py,size);x.restore();}
  spriteMood(player,now=performance.now()/1000){const reaction=this.reactions[player];if(reaction&&reaction.until>now)return reaction.mood;if(this.players[player].large)return 'silly';return ['walking','normal','walking','thinking'][Math.floor(now/3+player)%4];}
  sprite(x,player,cx,cy,size=30,options={}){
   const now=performance.now()/1000,id=this.players[player].character,mood=options.mood||this.spriteMood(player,now),src=portraitURL(id,mood)||(id==='gordon-ramsay'?gordonPortrait():null),key=id+':'+mood;queueEntityArt(entityArtSpec('character',character(id)));
-  size=options.exact?size:clamp(size*1.65,42,84);if(options.maxSize)size=Math.min(size,options.maxSize);size*=this.players[player].large?2:1;
+  size=options.exact?size:spriteSize(size);if(options.maxSize)size=Math.min(size,options.maxSize);size*=this.players[player].large?2:1;
   const motion=!store.profile.settings.reducedMotion,celebrate=['happy','win','silly'].includes(mood),sad=['sad','lose','angry'].includes(mood);
   const bob=motion?(celebrate?-Math.abs(Math.sin(now*9))*2.8:sad?0:Math.sin(now*7+player)*1.2):0;
   const lean=motion?(sad?Math.sin(now*19)*.065:celebrate?Math.sin(now*7)*.075:Math.sin(now*4+player)*.035):0;

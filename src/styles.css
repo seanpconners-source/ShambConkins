@@ -624,3 +624,14 @@ body.route-choosing .bottom-hud{display:none}
 .drag-banner b{grid-column:1/-1;font-size:15px}.drag-banner span{opacity:.85}.drag-banner strong{font-size:28px;color:#ff6b6b;text-align:right}
 .drag-banner.bump strong{animation:drag-bump .25s ease-out}.drag-banner.leaving{opacity:0;transition:opacity .3s}
 @keyframes drag-bump{from{transform:scale(1.4)}to{transform:none}}
+
+/* ---- v0.46b: heads twice as big in the collection and on character select; collection pages fit the screen ---- */
+.catalog-shell .roster-card .portrait{width:clamp(100px,22vw,150px)!important;height:clamp(100px,22vw,150px)!important;margin:0 auto 6px!important}
+.catalog-shell .roster-card h3{margin:2px 0}.catalog-shell .roster-card .property-logo{height:30px!important;margin:2px auto!important}.catalog-shell .roster-card p{-webkit-line-clamp:2!important}
+.catalog-shell .catalog-grid{overflow-y:hidden}
+.setup-shell .character-choice .portrait{width:64px!important;height:64px!important}
+.setup-shell .character-choice{min-width:96px;min-height:0}
+.setup-shell .character-choices{max-height:236px!important}
+.setup-shell .selected-character .portrait.big,.setup-shell .portrait.big{width:150px!important;height:150px!important}
+@media(max-width:600px){.setup-shell .selected-character .portrait.big,.setup-shell .portrait.big{width:110px!important;height:110px!important}.setup-shell .character-choice .portrait{width:56px!important;height:56px!important}.setup-shell .character-choice{min-width:80px}}
+@media(max-width:600px){.catalog-shell .section-heading p{display:none}.catalog-shell .section-heading h2{font-size:21px!important}.catalog-shell .roster-card .portrait{width:92px!important;height:92px!important}.catalog-shell .roster-card p{font-size:9px}.setup-shell .selected-character .portrait.big,.setup-shell .portrait.big{width:92px!important;height:92px!important}}
