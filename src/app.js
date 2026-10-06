@@ -1,4 +1,5 @@
 const {triviaSeconds}=require("src/engines/trivia.js");
+const {initFullscreen, toggleFullscreen}=require("src/fullscreen.js");
 const {touchDiagnostic}=require("src/touchDiagnostic.js");
 const {floatingHead}=require("src/headCutouts.js");
 const {triviaExplanationHTML, TRIVIA_QUESTIONS}=require("src/triviaCatalog.js");
@@ -41,6 +42,7 @@ const {obstacleArtHTML}=require("src/obstacleArt.js");
 let movementToken=0;
 let setupSelected=['sean','amber'],setupNames=['Sean','Amber'],catalogQuery='',catalogFilter='all',catalogPage=0;
 const e=escapeHTML;
+initFullscreen();
 store.profile=loadProfile();const saved=readJSON(RUN_KEY);store.run=validRun(saved)?saved:null;if(store.run&&!store.profile.earnedUnlocks['gordon-ramsay'])for(const p of store.run.players)if(p.character==='gordon-ramsay')p.character=p.owner==='Sean'?'sean':'amber';if(store.run&&!differentCharacters(...store.run.players.map(p=>p.character))){store.run.players[1].character=availableCharacters(store.profile,'Amber').find(id=>differentCharacters(id,store.run.players[0].character))||'amber';if(!differentCharacters(...store.run.players.map(p=>p.character)))store.run.players[0].character='sean';}upgradeRunFormat(store.run);updateProgression(store.profile);
 if(store.run)for(const p of store.run.players){if(p.character==='eugenia')p.character=p.owner==='Amber'?'amber':'sean';p.items=p.items.filter(id=>id!=='eugenia-pass');}
 function saveRun(){rememberCollectibles(store.profile,store.run);let saved=true;if(store.run)saved=writeJSON(RUN_KEY,store.run);else removeSaved(RUN_KEY);const profileSaved=saveProfile(store.profile);if((!saved||!profileSaved)&&!store.storageNotice){store.storageNotice=true;toast('Browser storage is unavailable. Use Settings → Export backup before closing.');}}
@@ -353,6 +355,7 @@ async function action(name,target){
   case 'reroll':await roll(true);break;
   case 'item':await useBagItem(+target.dataset.index);break;
   case 'bag':await openBag();break;
+  case 'fullscreen':toggleFullscreen();break;
   case 'roster':case 'arcade':showCatalog(name);break;
   case 'filter':catalogFilter=target.dataset.id;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;
   case 'catalog-page':catalogPage=Math.max(0,+target.dataset.page||0);showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;

@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.46.2
+
+**Full screen on phones.** Browsers (Samsung Internet included) only allow full screen after a tap, so the first tap
+anywhere in the game now switches to full screen (hides the address bar and navigation). The home screen also has a
+"FULL SCREEN" / "EXIT FULL SCREEN" toggle for getting back in after leaving with the back gesture.
+
 ## v0.46.1
 
 **Challenge items start their game.** Finding a challenge item (e.g. Vampire Killer → Evil Dead · Cabin Defense) at a
