@@ -25,7 +25,7 @@ function validRun(run) {
  if(run.phase==='result'&&(!Array.isArray(run.pending?.scores)||!Array.isArray(run.pending?.rewards)||typeof run.pending.gameId!=='string'))return false;
  if(run.phase==='moving'&&(!Number.isFinite(run.pending?.left)||run.pending.kind!=='move'))return false;
  if(run.pending?.routeDecision){const d=run.pending.routeDecision;if(run.phase!=='moving'||typeof d.targetId!=='string'||!run.board.nodes[d.from]?.next.includes(d.targetId)||d.from!==run.players[run.current].node||typeof d.applied!=='boolean'||d.applied&&(!d.result||d.result.blocked!==false))return false;}
- if(run.phase==='event'&&!['event','location','location-result','pair-intro','pair-turn','shop'].includes(run.pending?.kind))return false;
+ if(run.phase==='event'&&!['event','location','location-result','pair-intro','pair-turn','shop','boss-gate'].includes(run.pending?.kind))return false;
  if(run.pending?.kind==='pair-intro'&&(!run.pending.pair?.rule?.id||!Array.isArray(run.pending.pair.unlocked)))return false;
  if(run.pending?.kind==='pair-turn'){
   const pending=run.pending,event=pending.event;if(!event?.title)return false;

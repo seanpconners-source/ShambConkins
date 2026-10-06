@@ -38,3 +38,24 @@ function showLevelCard(realm,{who='',first=true,drinks=true}={}){
  });
 }
 Object.assign(exports,{showLevelCard,dismissLevelCard});
+
+// "INCOMING BOSS": red siren card before a level boss fight.
+function showBossCard(boss){
+ const reduced=store.profile?.settings.reducedMotion;
+ return new Promise(resolve=>{
+  const node=document.createElement('div');node.className=`level-card boss-card ${reduced?'still':''}`;node.style.setProperty('--lv','#d01c2c');
+  node.innerHTML=`<div class="lvc-rays"></div><div class="lvc-inner"><small class="lvc-kicker">⚠ WARNING ⚠</small><div class="lvc-num">INCOMING</div><div class="lvc-name">BOSS</div><div class="boss-card-face">${e(boss?.icon||'👹')}</div><p class="lvc-tag">${e(boss?boss.name+' · '+(boss.epithet||''):'')}</p><small class="lvc-hint">tap to continue</small></div>`;
+  let done=false;const finish=()=>{if(done)return;done=true;node.classList.add('leaving');setTimeout(()=>{node.remove();resolve(true);},reduced?10:380);};
+  node.addEventListener('click',finish);document.body.append(node);
+  if(store.profile?.settings.sound)for(let i=0;i<6;i++)setTimeout(()=>tone(i%2?660:880,.22,.05,'square'),i*260);
+  setTimeout(finish,3200);
+ });
+}
+// Running tally while a player is dragged to the boss.
+function showDragBanner(name,total){
+ const node=document.createElement('div');node.className='drag-banner';document.body.append(node);
+ const update=(n,lost)=>{node.innerHTML=`<b>${e(name)} is dragged to the boss</b><span>${n} / ${total} spaces</span><strong>−${(Math.round(lost*10)/10).toFixed(1)}</strong>`;node.classList.remove('bump');void node.offsetWidth;node.classList.add('bump');};
+ update(0,0);
+ return {update,close(){node.classList.add('leaving');setTimeout(()=>node.remove(),300);}};
+}
+Object.assign(exports,{showBossCard,showDragBanner});

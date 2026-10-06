@@ -13,11 +13,12 @@ const {ITEMS, findItem, randomItem, itemDescription, useItemEffect, pointChange,
 const {selectItemDrop, selectItemStock}=require("src/itemDrops.js");
 const {drawEvent, applyEvent, RARE_EVENTS}=require("src/events.js");
 const {showLevelCard,dismissLevelCard}=require("src/levelCard.js");
-const {levelLabel}=require("src/levels.js");
+const {levelLabel,levelInfo}=require("src/levels.js");
+const {showBossCard,showDragBanner}=require("src/levelCard.js");
 const {warpTransition}=require("src/warpFx.js");
 const {buildWarpBoard,pickWarpId,WARP_DEFS}=require("src/warpBoards.js");
 const {ensureLevelBosses,bossById,castleName}=require("src/bossGate.js");
-const {GAMES, PHONE_TASK}=require("src/gameRegistry.js");
+const {GAMES, PHONE_TASK, gameById}=require("src/gameRegistry.js");
 const {showView, updateBoard, showDialog, resolveDialog, closeDialog, unlockDialog, toast, repaintCamera, cancelCameraAnimation, clearBoardDetailObserver, refreshPortraits}=require("src/ui.js");
 const {brandHTML, portraitHTML, locationArtHTML, itemArtHTML}=require("src/assets.js");
 const {configureLauncher, requestGame, cancelGameLaunch, exitGame, presentResult}=require("src/gameLauncher.js");
@@ -83,7 +84,7 @@ async function continueRun(){if(!store.run)return home();movementToken++;store.b
  else if(run.phase==='landing'){await resolveLanding();}
  else if(run.phase==='game'){toast('Resuming your interrupted challenge.');await requestGame({id:run.pending.gameId,resume:true});}
  else if(run.phase==='result'){store.busy=true;const pending=run.pending;await presentResult(pending);if(!encounterActive(run,pending,token))return;if(!await unlockDialog(pending.unlocked||[],pending.unlockOwner)||!encounterActive(run,pending,token))return;if(pending.returnToRoll)resumeItemTurn();else endTurn();}
- else if(run.phase==='event'){store.busy=true;const pending=run.pending;if(pending.kind==='shop')await visitShop(pending);else if(pending.kind==='pair-intro')await introducePair(pending.pair);else if(pending.kind==='pair-turn')await presentPairTurn(pending);else if(pending.kind==='location')await visitLocation(pending.locationId);else if(pending.kind==='location-result'){if(!await unlockDialog(pending.unlocked,pending.owner)||!encounterActive(run,pending,token))return;await showDialog({title:pending.itemId?'Supplies collected':'Landmark discovered',body:pending.message,html:effectHTML(null,pending.itemId?{item:findItem(pending.itemId)}:{icon:'◆'})});if(!encounterActive(run,pending,token))return;await finishEncounter();}else await resolveEvent(pending.event,pending.applied?pending.result:null,!!pending.returnToLanding);}
+ else if(run.phase==='event'){store.busy=true;const pending=run.pending;if(pending.kind==='shop')await visitShop(pending);else if(pending.kind==='pair-intro')await introducePair(pending.pair);else if(pending.kind==='pair-turn')await presentPairTurn(pending);else if(pending.kind==='boss-gate'){if(pending.stage==='intro'||pending.stage==='drag')await bossGateDrag();else{await startBoss(run.board.realms[run.bossGate.realm].boss,{forced:true});}}else if(pending.kind==='location')await visitLocation(pending.locationId);else if(pending.kind==='location-result'){if(!await unlockDialog(pending.unlocked,pending.owner)||!encounterActive(run,pending,token))return;await showDialog({title:pending.itemId?'Supplies collected':'Landmark discovered',body:pending.message,html:effectHTML(null,pending.itemId?{item:findItem(pending.itemId)}:{icon:'◆'})});if(!encounterActive(run,pending,token))return;await finishEncounter();}else await resolveEvent(pending.event,pending.applied?pending.result:null,!!pending.returnToLanding);}
 }
 async function roll(lucky=false){const run=store.run;if(!run||store.busy||run.phase!=='board'||run.finished)return;const p=run.players[run.current];if(p.rollCommittedTurn===run.turn||lucky&&!p.rerolls)return;focusBoardAction(run);const pair=drawPairTurn(run,random);if(pair){store.busy=true;const before=effectSnapshot(run);const result=pair.effect==='choice'?null:applyPairTurn(run,pair,store.profile);if(result?.acquisition)queueItemDiscovery(result.acquisition);reconcileGates(p);run.phase='event';run.pending={kind:'pair-turn',event:pair,result,applied:pair.effect!=='choice',lucky,before};saveRun();updateBoard(true);await presentPairTurn(run.pending);return;}store.busy=true;p.mood='thinking';const token=++movementToken;
  const {faces,base,note}=rollDice(p,lucky,random);if(lucky)p.rerolls--;const bonus=pairMovementBonus(run)+(p.character==='kc'?1:p.character==='mylo'?(random()<.2?-1:2):0),steps=rollMovement(p,base,bonus);p.rollCommittedTurn=run.turn;
@@ -165,32 +166,84 @@ async function warpJump(p,token){
  p.visited.push(p.node);p.node=to.id;focusBoardAction(store.run);saveRun();updateBoard();await wait(450);
 }
 const run_node=p=>store.run.board.nodes[p.node];
-async function startBoss(bossId,{level=null}={}){
- const run=store.run,boss=bossById(bossId);if(!boss){await finishEncounter();return;}
+async function startBoss(bossId,{level=null,forced=false}={}){
+ const run=store.run,boss=bossById(bossId);if(!boss){if(run.bossGate)await advanceAfterBoss();else await finishEncounter();return;}
  const warp=!!run.warp,lair=castleName(boss);
- const choice=await showDialog({title:`${boss.name} · ${boss.epithet||'Boss'}`,source:boss.source,rare:true,body:`${warp?'You reach the end of the warp zone.':'You reach the end of this level.'} ${lair} looms ahead. Fight together, win together: beat ${boss.name} to unlock a new character.`,html:`<div class="boss-intro"><span class="boss-icon">${e(boss.icon||'👹')}</span><b>${e(lair)}</b></div>`,choices:[{label:'Fight together!',value:'fight',primary:true},{label:warp?'Flee to the map':'Sneak past',value:'flee'}]});
+ const choices=forced?[{label:'Fight together!',value:'fight',primary:true}]:[{label:'Fight together!',value:'fight',primary:true},{label:warp?'Flee to the map':'Sneak past',value:'flee'}];
+ const choice=await showDialog({title:`${boss.name} · ${boss.epithet||'Boss'}`,source:boss.source,rare:true,body:`${warp?'You reach the end of the warp zone.':'The level is over, but '+lair+' blocks the way forward.'} Fight together, win together: beat ${boss.name} to unlock a new character.`,html:`<div class="boss-intro"><span class="boss-icon">${e(boss.icon||'👹')}</span><b>${e(lair)}</b></div>`,choices});
  if(choice===null||store.run!==run)return;
  if(choice!=='fight'){if(warp){await exitWarpZone();}else await finishEncounter();return;}
  await requestGame({id:'boss-'+boss.id,origin:'board'});
 }
-async function levelBoss(n){
- const run=store.run;if(run.mutation||run.endless)return false;run.bossesSeen||={};if(run.bossesSeen[n.realm])return false;
- ensureLevelBosses(run);const id=run.board.realms[n.realm]?.boss;if(!id)return false;
- run.bossesSeen[n.realm]=true;saveRun();await startBoss(id,{level:n.realm});return true;
+// A level gate with a boss that has not been fought yet this run.
+function bossGateReady(run,n){
+ if(run.mutation||run.endless||run.board.format==='warp'||!['mind','body','spirit','horror'].includes(n.realm))return false;
+ if((run.bossesSeen||{})[n.realm])return false;ensureLevelBosses(run);const id=run.board.realms[n.realm]?.boss;return !!(id&&gameById('boss-'+id));
+}
+function shortestPath(run,from,to){
+ const prev=new Map([[from,null]]),queue=[from];
+ while(queue.length){const id=queue.shift();if(id===to)break;for(const next of run.board.nodes[id]?.next||[])if(!prev.has(next)){prev.set(next,id);queue.push(next);}}
+ if(!prev.has(to))return null;const path=[];for(let id=to;id&&id!==from;id=prev.get(id))path.unshift(id);return path;
+}
+// The first player through a level gate wins the level. Everyone else is dragged to
+// the castle along the most direct road, paying half a point per space, then the boss arrives.
+async function levelEndBoss(p,gate){
+ const run=store.run,realm=gate.realm,boss=bossById(run.board.realms[realm].boss);
+ run.bossesSeen||={};run.bossesSeen[realm]=true;run.bossGate={gate:gate.id,realm,winner:run.players.indexOf(p)};
+ run.phase='event';run.pending={kind:'boss-gate',stage:'intro'};saveRun();
+ logRun(`${p.name} wins ${levelLabel(realm)}.`);sound('win');p.mood='win';updateBoard();
+ await showDialog({title:`${p.name} wins ${levelLabel(realm)}!`,source:'ShambConkins',rare:true,body:`${p.name} reached the end of the level first. Everyone else gets dragged to the castle: half a point for every space.`,html:`<div class="result-portraits">${portraitHTML(p.character,'portrait mini','win')}</div>`});
+ if(store.run!==run)return;
+ await bossGateDrag();
+}
+async function bossGateDrag(){
+ const run=store.run,bg=run.bossGate,gate=run.board.nodes[bg.gate];
+ run.pending={kind:'boss-gate',stage:'drag'};saveRun();
+ for(const q of run.players){
+  if(q.node===gate.id)continue;
+  const path=shortestPath(run,q.node,gate.id)||[gate.id];let lost=0;q.mood='sad';
+  const banner=showDragBanner(q.name,path.length);
+  for(const [i,id] of path.entries()){
+   if(store.run!==run){banner.close();return;}
+   q.visited.push(q.node);q.node=id;const before=q.points;q.points=Math.max(0,Math.round((q.points-.5)*10)/10);lost+=before-q.points;
+   banner.update(i+1,lost);run.focusNodes=[id];run.camera='follow';run.pan=null;updateBoard();sound('tick');
+   await wait(store.profile.settings.reducedMotion?60:Math.max(140,420-path.length*12));
+  }
+  banner.close();logRun(`${q.name} was dragged ${path.length} spaces to the boss (−${Math.round(lost*10)/10}).`);
+  q.cleared.includes(gate.realm)||q.cleared.push(gate.realm);
+  await wait(400);
+ }
+ focusBoardAction(run,run.players.map(q=>q.node));updateBoard();
+ run.pending={kind:'boss-gate',stage:'fight'};saveRun();
+ const boss=bossById(run.board.realms[bg.realm].boss);
+ await showBossCard(boss);if(store.run!==run)return;
+ await startBoss(boss.id,{level:bg.realm,forced:true});
+}
+// After a level boss: everyone moves on to the next level together.
+async function advanceAfterBoss(){
+ const run=store.run,bg=run.bossGate;if(!bg){endTurn();return;}run.bossGate=null;
+ const gate=run.board.nodes[bg.gate],next=(gate.next||[]).find(id=>run.board.nodes[id]),final=bg.realm==='horror'||(bg.realm==='spirit'&&!run.horror)||!next;
+ for(const q of run.players){q.mood='happy';if(!q.cleared.includes(bg.realm))q.cleared.push(bg.realm);}
+ if(final){for(const q of run.players)if(!q.finishedPlayer){q.finishedPlayer=true;}saveRun();store.busy=false;endTurn();return;}
+ for(const q of run.players){q.visited.push(q.node);q.node=next;}
+ run.phase='board';run.pending=null;focusBoardAction(run,run.players.map(q=>q.node));saveRun();updateBoard(true);setMusicZone(run.board.nodes[next].realm);
+ const lead=run.players[bg.winner]||run.players[0];await announceLevel(lead);for(const q of run.players)await announceLevel(q);
+ store.busy=false;endTurn();
 }
 async function bossDone(game,coop){
  const run=store.run;if(!run)return;store.busy=false;
- if(coop?.won){(run.bossesBeaten||=[]).push(game.bossId);logRun(`${bossById(game.bossId)?.name||'The boss'} was defeated together.`);saveRun();if(run.warp)await exitWarpZone();else endTurn();return;}
- const again=await showDialog({title:'The boss wins this round',source:game.source,body:'You are both flattened. Fight again, or retreat?',choices:[{label:'Fight again',value:'again',primary:true},{label:run.warp?'Retreat to the map':'Retreat',value:'no'}]});
+ if(coop?.won){(run.bossesBeaten||=[]).push(game.bossId);logRun(`${bossById(game.bossId)?.name||'The boss'} was defeated together.`);saveRun();if(run.warp)await exitWarpZone();else if(run.bossGate)await advanceAfterBoss();else endTurn();return;}
+ const level=!!run.bossGate&&!run.warp;
+ const again=await showDialog({title:'The boss wins this round',source:game.source,body:level?'You are both flattened. Fight again, or limp on to the next level (−3 points each)?':'You are both flattened. Fight again, or retreat?',choices:[{label:'Fight again',value:'again',primary:true},{label:run.warp?'Retreat to the map':level?'Limp on (−3 each)':'Retreat',value:'no'}]});
  if(store.run!==run)return;
  if(again==='again'){store.busy=true;await requestGame({id:game.id,origin:'board'});return;}
- if(run.warp)await exitWarpZone();else endTurn();
+ if(run.warp)await exitWarpZone();else if(level){for(const q of run.players)q.points=Math.max(0,q.points-3);await advanceAfterBoss();}else endTurn();
 }
 async function moveSteps(token){
  const run=store.run,p=run.players[run.current];p.mood='walking';
  while(run.pending?.left>0&&token===movementToken){
   const target=await stepTarget(run,p,token);if(token!==movementToken||store.run!==run)return;if(!target){if(routeOptions(run,p.node).length){store.busy=false;saveRun();return;}run.pending.left=0;break;}
-  p.mood='walking';p.visited.push(p.node);reportJourney(journeyStep(run,p,p.node,target));const fromRealm=run.board.nodes[p.node]?.realm;p.node=target.id;run.pending.left--;delete run.pending.routeDecision;awardGate(p,target);setMusicZone(target.realm);focusBoardAction(run);saveRun();updateBoard();sound('tap');if(target.realm!==fromRealm&&!p.finishedPlayer){await announceLevel(p);if(token!==movementToken||store.run!==run)return;}if(p.finishedPlayer){run.pending.left=0;break;}await wait(store.profile.settings.reducedMotion?35:270);
+  p.mood='walking';p.visited.push(p.node);reportJourney(journeyStep(run,p,p.node,target));const fromRealm=run.board.nodes[p.node]?.realm;p.node=target.id;run.pending.left--;delete run.pending.routeDecision;awardGate(p,target);setMusicZone(target.realm);focusBoardAction(run);saveRun();updateBoard();sound('tap');if(target.type==='gate'&&bossGateReady(run,target)){run.pending.left=0;await levelEndBoss(p,target);return;}if(target.realm!==fromRealm&&!p.finishedPlayer){await announceLevel(p);if(token!==movementToken||store.run!==run)return;}if(p.finishedPlayer){run.pending.left=0;break;}await wait(store.profile.settings.reducedMotion?35:270);
  }
  if(token!==movementToken)return;await warpJump(p,token);if(token!==movementToken)return;p.mood='happy';run.phase='landing';run.pending={kind:'landing'};focusBoardAction(run);saveRun();store.busy=false;updateBoard();await resolveLanding();
 }
@@ -211,7 +264,7 @@ async function resolveLanding(){const run=store.run,token=movementToken;if(!run|
   case 'item':{const before=effectSnapshot(run);const cacheRandom=Number.isFinite(n.cacheSeed)?seededRandom(n.cacheSeed+':'+(n.cacheVisits||0)):random,tool=run.board.obstacles?.length&&(p.travelFinds||0)<2?nearbyTravelTool(run,p,cacheRandom):null,it=tool||randomItem(cacheRandom,{player:p,profile:store.profile}),found=acquireItem(run,store.profile,p,it);if(tool)p.travelFinds=(p.travelFinds||0)+1;n.cacheVisits=(n.cacheVisits||0)+1;logRun(`${p.name}: ${found.message}`);run.phase='event';run.pending={kind:'location-result',message:found.message,unlocked:found.unlocked,owner:found.owner};saveRun();if(found.unlocked.length){sound('unlock');if(!await unlockDialog(found.unlocked,found.owner)||store.run!==run||movementToken!==token)return;}await showDialog({title:'A useful find',source:it.source,body:found.message,html:`${effectHTML(before,{item:it})}<h3 style="text-align:center">${e(it.name)}</h3><div class="how-to">${e(itemDescription(it))}</div>`});if(store.run!==run||movementToken!==token)return;animateItemTransfers(before);await finishEncounter();break;}
   case 'bonus':case 'penalty':{const before=effectSnapshot(run);const fortune=themedFortune(n.type,random),delta=n.type==='bonus'?4:p.cloak?0:-3,r=pointChange(p,delta);logRun(`${p.name}: ${r.blocked?'penalty shield used':(r.delta>=0?'+':'')+r.delta+' points'}.`);run.phase='event';run.pending={kind:'location-result',message:r.blocked?'Your shield took the hit.':`${r.delta>=0?'+':''}${r.delta} points.`,unlocked:[]};saveRun();await showDialog({title:fortune.title,source:fortune.source,body:r.blocked?'Your shield took the hit.':fortune.body,html:`${effectHTML(before,{icon:r.delta<0?'⚡':'✦'})}<div class="reward-delta ${r.delta<0?'bad':''}">${r.delta>=0?'+':''}${r.delta}</div>`});if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}
   case 'warp':await enterWarpZone();break;
-  case 'gate':if(run.board.format==='warp'){await startBoss(run.board.warp.bossId);break;}if(await levelBoss(n))break;await finishEncounter();break;
+  case 'gate':if(run.board.format==='warp'){await startBoss(run.board.warp.bossId);break;}await finishEncounter();break;
   case 'start':default:await finishEncounter();break;
  }
 }
