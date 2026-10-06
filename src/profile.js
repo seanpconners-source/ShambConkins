@@ -4,7 +4,7 @@ const {PROFILE_KEY, readJSON, writeJSON}=require("src/persistence.js");
 const {characterIdentity}=require("src/characters.js");
 const {LAB_TEAM}=require("src/data/savoryLab.js");
 const {isMovieBond, missingMovieBonds}=require("src/data/movieBonds.js");
-function freshProfile() { return { version: 20, starterPolicy:22, earnedUnlocks:{}, xp: 0, runs: 0, completed: 0, minigames:0, modes:['versus'], boards:['Mashup'], played: [], recentGames: [], recentTrivia: [], triviaDifficultyBag: [], recruitDryStreak:{Sean:0,Amber:0}, pairDiscoveries: [], boardUnlocks: [], shared: ['sean','amber'], rosters: { Sean: ['sean'], Amber: ['amber'] }, itemsSeen: [], itemFinds:{Sean:[],Amber:[]},recentItemFinds:{Sean:[],Amber:[]}, locations: [], settings: { sound: true, music: true, reducedMotion: false, originalLogos:true,devMode:false,touchMode:'auto',flickSensitivity:1 }, wins: {}, best: {}, migrated: false }; }
+function freshProfile() { return { version: 20, starterPolicy:22, earnedUnlocks:{}, xp: 0, runs: 0, completed: 0, minigames:0, modes:['versus'], boards:['Mashup'], played: [], recentGames: [], recentTrivia: [], triviaDifficultyBag: [], recruitDryStreak:{Sean:0,Amber:0}, pairDiscoveries: [], boardUnlocks: [], shared: ['sean','amber'], rosters: { Sean: ['sean'], Amber: ['amber'] }, itemsSeen: [], itemFinds:{Sean:[],Amber:[]},recentItemFinds:{Sean:[],Amber:[]}, locations: [], settings: { sound: true, music: true, reducedMotion: false, originalLogos:true,drinkStatus:true,devMode:false,touchMode:'auto',flickSensitivity:1 }, wins: {}, best: {}, migrated: false }; }
 function loadProfile() {
  const saved = readJSON(PROFILE_KEY); const p = freshProfile();
  const strings = value => Array.isArray(value) ? [...new Set(value.filter(v=>typeof v==='string'))] : [];
@@ -18,7 +18,7 @@ function loadProfile() {
   for(const key of ['boards','modes'])if(Array.isArray(saved[key]))p[key]=strings(saved[key]);
   p.shared=strings(saved.shared).filter(id=>ids.has(id));
   for(const owner of ['Sean','Amber'])p.rosters[owner]=strings(saved.rosters?.[owner]).filter(id=>ids.has(id));
-  for(const key of ['sound','music','reducedMotion','originalLogos','devMode'])if(typeof saved.settings?.[key]==='boolean')p.settings[key]=saved.settings[key];
+  for(const key of ['sound','music','reducedMotion','originalLogos','drinkStatus','devMode'])if(typeof saved.settings?.[key]==='boolean')p.settings[key]=saved.settings[key];
   if(Number.isFinite(saved.settings?.flickSensitivity)&&saved.settings.flickSensitivity>0)p.settings.flickSensitivity=Math.min(1.35,Math.max(.65,saved.settings.flickSensitivity));
   if(['auto','touch','pointer'].includes(saved.settings?.touchMode))p.settings.touchMode=saved.settings.touchMode;
   for(const key of ['wins','best'])if(saved[key]&&typeof saved[key]==='object'&&!Array.isArray(saved[key]))p[key]=Object.fromEntries(Object.entries(saved[key]).filter(([,v])=>Number.isFinite(v)&&v>=0));

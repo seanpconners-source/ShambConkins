@@ -23,6 +23,8 @@
   "src/data/legendsPack.js",
   "src/data/legendsItems.js",
   "src/version.js",
+  "src/levels.js",
+  "src/levelCard.js",
   "src/utils.js",
   "src/venues.js",
   "src/profile.js",

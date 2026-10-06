@@ -1,6 +1,7 @@
 const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
 const {shuffle, pick, seededRandom}=require("src/utils.js");
 const {TRIVIA_TOPIC_GAMES}=require("src/triviaCatalog.js");
+const {levelFit}=require("src/levels.js");
 const {TRIVIA_MODE_GAMES}=require("src/data/triviaModes.js");
 const definitions = [
  ['bucketheadland-pinball','pinball','arcade','3 alternating balls each','Bucketheadland: launch your head-ball, hold either or both flippers, hit the bucket bumpers and light BUCKET targets. All six letters or three bumpers plus both lanes earn a jackpot and a multiplier. Three alternating balls each on one seeded table; 22 seconds maximum per ball, with one early ball save.'],
@@ -160,9 +161,11 @@ function selectGame(run, profile, filter = 'all', random = Math.random) {
  bag=bag.filter(f=>families.includes(f));
  if(!bag.length) { bag=shuffle(families,random); const recentFamilies=new Set(profile.recentGames.slice(-8).map(id=>gameById(id)?.family));bag=[...bag.filter(f=>recentFamilies.has(f)),...bag.filter(f=>!recentFamilies.has(f))];const last=run.gameHistory.at(-1)?.family||gameById(profile.recentGames.at(-1))?.family; if(bag.at(-1)===last&&bag.length>1)[bag[0],bag[bag.length-1]]=[bag.at(-1),bag[0]]; }
  const lastFamily=run.gameHistory.at(-1)?.family||gameById(profile.recentGames.at(-1))?.family;if(bag.length>1&&bag.at(-1)===lastFamily){const other=bag.findIndex(f=>f!==lastFamily);[bag[other],bag[bag.length-1]]=[bag.at(-1),bag[other]];}
- const family=bag.pop();run.familyBags[key]=bag;
+ let family=null;const realm=run.levelRealm;
+ if(realm&&random()<.62){const lastFam=run.gameHistory.at(-1)?.family,fit=bag.map((f,i)=>f!==lastFam&&pool.some(g=>g.family===f&&levelFit(g,realm))?i:-1).filter(i=>i>=0);if(fit.length)family=bag.splice(fit[fit.length-1],1)[0];}
+ if(!family)family=bag.pop();run.familyBags[key]=bag;
  let variants=pool.filter(g=>g.family===family);const recent=new Set(profile.recentGames.slice(-12));const fresh=variants.filter(g=>!recent.has(g.id));if(fresh.length)variants=fresh;
- let game=family==='trivia'?selectTriviaGame(run,profile,random):pick(variants,random);if(game.engine==='checkers'&&random()<.22)game=gameById('deadite-four-kings');run.gameHistory.push({id:game.id,family});run.gameHistory=run.gameHistory.slice(-60);return game;
+ let game=family==='trivia'?(realm==='spirit'&&random()<.5&&gameById('trivia-lore')||selectTriviaGame(run,profile,random)):pick(variants,random);if(game.engine==='checkers'&&random()<.22)game=gameById('deadite-four-kings');run.gameHistory.push({id:game.id,family});run.gameHistory=run.gameHistory.slice(-60);return game;
 }
 function resolveLegacyGame(id) { return gameById(id)||null; }
 

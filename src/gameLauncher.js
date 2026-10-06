@@ -1,5 +1,6 @@
 const {store, newPlayer, logRun}=require("src/state.js");
 const {gameById, selectGame, selectBoardGame, PHONE_TASK}=require("src/gameRegistry.js");
+const {levelFit,levelInfo,humiliation}=require("src/levels.js");
 const {ENGINES}=require("src/engines/index.js");
 const {GameSession}=require("src/engines/session.js");
 const {animateRoulette}=require("src/roulette.js");
@@ -20,7 +21,7 @@ function cancelGameLaunch(){launchSerial++;launching=false;}
 function configureLauncher(options){Object.assign(hooks,options);}
 async function requestGame({id=null,filter='all',origin='board',resume=false,returnToRoll=false}={}){
  if(launching||store.session)return false;launching=true;store.busy=true;store.arcade=origin!=='board';
- const run=store.run,serial=++launchSerial,valid=()=>serial===launchSerial&&store.run===run;returnToRoll=returnToRoll||!!(resume&&run?.pending?.returnToRoll);const selectionRun=run||{gameHistory:[],familyBags:{}};
+ const run=store.run,serial=++launchSerial,valid=()=>serial===launchSerial&&store.run===run;returnToRoll=returnToRoll||!!(resume&&run?.pending?.returnToRoll);const selectionRun=run||{gameHistory:[],familyBags:{}};if(run)run.levelRealm=origin==='board'?run.board.nodes[run.players[run.current].node]?.realm:undefined;
  // Practice and arcade play must not consume the saved board's random stream.
  const random=origin==='board'&&run?()=>runRandom(run):Math.random;
  if(origin==='board'&&run?.mutation)id='rainbow-rivals';
@@ -50,6 +51,9 @@ async function settleGame(game,scores,label,origin,players,coop=null,returnToRol
  if(origin==='board'){
   const run=store.run;rewards=players.map((p,i)=>{const didWin=coop?coop.won:i===winner,tied=coop?coop.tied:winner===null;p.mood=tied?'happy':didWin?'win':'sad';let points=tied?4:didWin?game.reward:2;if(p.double&&didWin){points*=2;p.double--;}const itemBonus=(p.bounty||0)+(foodGame(game)?p.rewardFoodBonus||0:0);points=Math.max(0,points+p.rewardBonus+itemBonus);p.rewardBonus=0;p.bounty=0;p.rewardFoodBonus=0;if(didWin&&perkType(p.character)==='competitor')points++;if(p.character==='gordon-ramsay'){if(didWin)points+=2;else if(!tied)points=Math.max(0,points-1);}p.points+=points;if(didWin)p.wins++;if(p.crash){pointChange(p,-2,false);p.crash=false;p.slow++;}return points;});
   if(coop){const record=run.coopRecord||={rounds:0,won:0,lost:0,tied:0,humanScore:0,cpuScore:0};record.rounds++;record.humanScore+=coop.humanTotal;record.cpuScore+=coop.cpuTotal;record[coop.tied?'tied':coop.won?'won':'lost']++;if(run.mutation){if(coop.won){players.forEach(p=>p.points+=4);rewards=rewards.map(n=>n+4);run.mutation.won=(run.mutation.won||0)+1;}run.mutation.remaining--;if(!run.mutation.remaining)run.mutation=null;}}
+  const lvRealm=run.board.nodes[players[run.current]?.node]?.realm;
+  if(!coop&&winner!==null&&lvRealm&&levelFit(game,lvRealm)>0){players[winner].points++;rewards[winner]++;extra+=` ${levelInfo(lvRealm).name} bonus: +1 for ${players[winner].name}.`;}
+  if(!coop&&winner!==null&&lvRealm==='spirit')extra+=` Public humiliation for ${players[1-winner].name}: ${humiliation()}`;
   run.phase='result';run.pending={kind:'result',gameId:game.id,scores,label,winner,rewards,extra,origin,coop,returnToRoll};logRun(`${game.title}: ${coop?extra:scores[0]+'–'+scores[1]+'. '+(winner===null?'Tie.':players[winner].name+' wins.')}`);hooks.save();
  }
  if(winner!==null&&origin!=='dev'){const p=players[winner],pool=gameRecruitPool(game,store.profile,p);if(origin==='board'&&!coop)hooks.journeyWin?.(winner);const chance=recruitmentChance(store.profile,{...p,recruitGuarantee:origin==='board'&&p.recruitGuarantee,triviaRecruitBonus:game.engine==='trivia'&&p.triviaRecruitBonus},gameHasGuaranteedRecruit(game,store.profile,p));if(pool.length&&Math.random()<chance){const c=pick(pool);const actual=recruitReward(store.profile,c.id,p.owner,'game');if(actual){unlocked.push(actual);if(origin==='board')p.recruitGuarantee=false;}}(store.profile.recruitDryStreak||={Sean:0,Amber:0})[p.owner]=unlocked.length?0:1;if(unlocked.length)toast(`${CHARACTERS.find(c=>c.id===unlocked[0])?.name||'New character'} added to ${p.owner}’s roster!`);if(p.recruitBonus)p.recruitBonus=false;if(p.triviaRecruitBonus&&game.engine==='trivia')p.triviaRecruitBonus=false;
