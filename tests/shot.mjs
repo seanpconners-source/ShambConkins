@@ -5,9 +5,7 @@ const [w, h] = size.split('x').map(Number);
 const {browser, page, errors} = await open({viewport: {width: w, height: h}});
 await page.evaluate(async seed => { const S = window.ShambConkins; await S.startRun({seed: +seed}); }, seed).catch(() => {});
 await page.click('text=NEW GAME').catch(() => {}); await page.click('[data-action=start-run]').catch(() => {});
-await page.waitForTimeout(7000);
-await page.evaluate(() => { const d = document.getElementById('dialog'); if (d.open) d.querySelector('button')?.click(); });
-await page.waitForTimeout(1500);
+for (let i = 0; i < 16; i++) { await page.waitForTimeout(700); await page.evaluate(() => { const d = document.getElementById('dialog'); if (d.open) d.querySelector('button')?.click(); }); }
 if (cam === 'overview') { await page.evaluate(() => { const b = document.querySelector('[data-action=camera]'); b?.click(); }); await page.waitForTimeout(1500); }
 await page.screenshot({path: out});
 console.log(errors.slice(0, 3));
