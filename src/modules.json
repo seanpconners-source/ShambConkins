@@ -195,7 +195,8 @@
   "src/engines/tarantinoAdrenaline.js",
   "src/engines/tarantinoCrazy88.js",
   "src/engines/tarantinoBounty.js",
-  "src/engines/tarantinoChase.js"
+  "src/engines/tarantinoChase.js",
+  "src/engines/touchDuel.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
