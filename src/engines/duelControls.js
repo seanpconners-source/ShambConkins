@@ -54,4 +54,25 @@ function ownedPointers(s, move, release = () => {}, chooseOwner = p => p.x<s.W/2
  return owners;
 }
 
-Object.assign(exports,{duelInputs,duelAction,ownedPointers});
+// Keyboard holds without any on-screen buttons: map is {key: fn(isDown)} (keys compared lower-case, ' ' for space).
+function keyHolds(s,map){
+ const down=new Set(),fire=(k,v)=>{const f=map[k];if(f)f(v);};
+ const clear=()=>{for(const k of [...down])fire(k,false);down.clear();};
+ s.on(document,'keydown',ev=>{const k=ev.key.length>1?ev.key:ev.key.toLowerCase();if(!map[k])return;ev.preventDefault();if(s.paused||!s.alive||ev.repeat)return;down.add(k);fire(k,true);});
+ s.on(document,'keyup',ev=>{const k=ev.key.length>1?ev.key:ev.key.toLowerCase();if(!map[k])return;down.delete(k);fire(k,false);});
+ s.on(window,'blur',clear);s.resetOnPause?.(clear);s.cleanup(clear);return clear;
+}
+// Free multi-finger tracker for whole-screen single-player games. Returns {fingers:Map(id->{x,y,sx,sy,dx,dy,t0,moved})}.
+// Callbacks: down(f), move(f), up(f,{cancelled,tap}) (tap = short press that barely moved).
+function touchTrack(s,{down,move,up}={}){
+ const fingers=new Map();
+ const clear=()=>{const all=[...fingers.values()];fingers.clear();for(const f of all){s.release({pointerId:f.id});up?.(f,{cancelled:true,tap:false});}};
+ s.on(s.c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev),f={id:ev.pointerId,x:p.x,y:p.y,sx:p.x,sy:p.y,dx:0,dy:0,t0:performance.now(),moved:0};fingers.set(ev.pointerId,f);s.capture(ev);down?.(f);});
+ s.on(s.c,'pointermove',ev=>{const f=fingers.get(ev.pointerId);if(!f||s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev);f.x=p.x;f.y=p.y;f.dx=p.x-f.sx;f.dy=p.y-f.sy;f.moved=Math.max(f.moved,Math.hypot(f.dx,f.dy));move?.(f);});
+ const end=(ev,cancelled)=>{const f=fingers.get(ev.pointerId);if(!f)return;fingers.delete(ev.pointerId);s.release(ev);up?.(f,{cancelled,tap:!cancelled&&f.moved<14&&performance.now()-f.t0<320});};
+ s.on(s.c,'pointerup',ev=>end(ev,false));s.on(s.c,'pointercancel',ev=>end(ev,true));
+ s.on(window,'blur',clear);s.resetOnPause?.(clear);s.cleanup(clear);
+ return {fingers,clear};
+}
+
+Object.assign(exports,{duelInputs,duelAction,ownedPointers,keyHolds,touchTrack});

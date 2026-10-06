@@ -2,7 +2,7 @@ const {clamp}=require("src/utils.js");
 const {PCOL,PDARK,PLIGHT,Fx,arenaKeys,arenaTouch,Countdown,banner,outlined,rr,heart,snd,noise,jingle,gestureHint,settle,mmss}=require("src/engines/arenaKit.js");
 // Driller Duel (after Mr. Driller): two identical shafts side by side. Drag to walk, tap beside you to drill sideways, hold
 // on your own column to drill down. Four same-colour blocks that touch pop; blocks fall (and crush); air drains.
-const COLS=7,GOAL=120,TIME=75,LIVES=3,COLORS=['#ff5a5a','#4fd06a','#4a90ff','#ffd84d','#b47bff'],COLORS_D=['#b32d2d','#238a3b','#1f55b8','#b8921a','#7a45c4'];
+let COLS=7;const GOAL=120,TIME=75,LIVES=3,COLORS=['#ff5a5a','#4fd06a','#4a90ff','#ffd84d','#b47bff'],COLORS_D=['#b32d2d','#238a3b','#1f55b8','#b8921a','#7a45c4'];
 const DRILL=.24,STEP=.085,FALL=.075,WARN=.42;
 
 function genLayout(rnd){
@@ -30,8 +30,8 @@ function compSize(rows,cur,r,c,col){
 async function driller(s){
  const [c,x]=s.canvas(900,560,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();if(!await settle(s))return;
  const fx=new Fx(),rnd=s.random;let W=s.W,H=s.H;
- const base=genLayout(rnd);
- const mkP=i=>({i,grid:base.map(row=>row.map(cell=>({...cell,wait:0,fall:false,oy:0}))),pr:-1,pc:3,fx:0,air:100,lives:LIVES,act:0,fallT:0,inv:0,stun:0,dir:'d',cam:-4,depth:0,score:0,chain:0,joy:null,combo:0,dead:false,done:false,lowT:0,oy:0,ox:0,tx:3,hold:null,blocksPopped:0,face:1});
+ COLS=W/2<260?6:7;const base=genLayout(rnd);
+ const mkP=i=>({i,grid:base.map(row=>row.map(cell=>({...cell,wait:0,fall:false,oy:0}))),pr:-1,pc:Math.floor(COLS/2),fx:0,air:100,lives:LIVES,act:0,fallT:0,inv:0,stun:0,dir:'d',cam:-4,depth:0,score:0,chain:0,joy:null,combo:0,dead:false,done:false,lowT:0,oy:0,ox:0,tx:Math.floor(COLS/2),hold:null,blocksPopped:0,face:1});
  const ps=[mkP(0),mkP(1)];let phase='intro',clock=TIME,time=0,note='',phaseT=0,winner=-1;
  const intro=new Countdown(3),kb=arenaKeys(s);
  const L=p=>{const half=W/2,top=Math.min(44,H*.08),cell=Math.max(14,Math.floor(Math.min(half*.9/COLS,(H-top-6)/9))),sw=cell*COLS,x0=p.i*half+(half-sw)/2;return {half,top,cell,sw,x0,vis:Math.ceil((H-top)/cell)+2};};
@@ -186,13 +186,13 @@ async function driller(s){
   }
   // driller
   if(!p.dead||p.inv>0){
-   const px=x0+(p.pc+.5-p.ox*.8)*cell,py=top+(p.pr-p.cam+.5-p.oy*.9)*cell,sz=cell*1.05;
+   const px=x0+(p.pc+.5-p.ox*.8)*cell,py=top+(p.pr-p.cam+.5-p.oy*.9)*cell,sz=cell*1.45;
    x.globalAlpha=p.inv>0&&Math.floor(time*16)%2?.5:1;
    x.fillStyle='#00000030';x.beginPath();x.ellipse(px,py+cell*.45,cell*.4,cell*.12,0,0,6.283);x.fill();
    x.fillStyle=PDARK[p.i];rr(x,px-cell*.3,py-cell*.05,cell*.6,cell*.5,cell*.14);x.fill();x.fillStyle=PCOL[p.i];rr(x,px-cell*.27,py-cell*.1,cell*.54,cell*.4,cell*.14);x.fill();
    // drill
    const dv={d:[0,1],l:[-1,0],r:[1,0],u:[0,-1]}[p.dir],spin=p.act>0?time*40:0;x.save();x.translate(px+dv[0]*cell*.3,py+dv[1]*cell*.3+cell*.12);x.rotate(Math.atan2(dv[1],dv[0]));x.fillStyle='#c9ccd6';x.beginPath();x.moveTo(0,-cell*.2);x.lineTo(cell*.5,0);x.lineTo(0,cell*.2);x.closePath();x.fill();x.strokeStyle='#6b6f80';x.lineWidth=2;for(let k=0;k<3;k++){const t=((k/3+spin*.1)%1);x.beginPath();x.moveTo(cell*.5*t,-cell*.2*(1-t));x.lineTo(cell*.5*t,cell*.2*(1-t));x.stroke();}x.restore();
-   s.sprite(x,p.i,px,py-cell*.38,sz,{exact:true,mood:p.stun>0?'sad':p.act>0?'angry':'walking'});x.globalAlpha=1;
+   s.sprite(x,p.i,px,py-cell*.5,sz,{exact:true,mood:p.stun>0?'sad':p.act>0?'angry':'walking'});x.globalAlpha=1;
   }
   fx.draw(x);
   // gauges

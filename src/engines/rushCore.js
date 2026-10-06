@@ -23,6 +23,7 @@ function rays(x,cx,cy,r,n,rot,color){x.fillStyle=color;for(let i=0;i<n;i+=1){con
 function txt(x,str,cx,cy,size,fill=COL.white,o={}){x.save();x.translate(cx,cy);if(o.rot)x.rotate(o.rot);if(o.scale)x.scale(o.scale,o.scale);x.font=`900 ${Math.round(size)}px "Arial Black",Impact,Arial,sans-serif`;x.textAlign=o.align||'center';x.textBaseline='middle';x.lineJoin='round';const lw=o.lw??Math.max(3,size*.2);if(lw){x.lineWidth=lw;x.strokeStyle=o.stroke||ink;x.strokeText(str,0,0);}x.fillStyle=fill;x.fillText(str,0,0);x.restore();}
 // Cap with a letter badge sitting on top of a head drawn at (cx,cy,size).
 function cap(x,cx,cy,size,color=COL.red,letter=''){const ty=cy-size*.33;x.beginPath();x.ellipse(cx,ty,size*.34,size*.22,0,Math.PI,TAU);x.closePath();paint(x,color,3);rrect(x,cx-size*.06,ty-size*.03,size*.5,size*.09,size*.045,color,3);if(letter){circ(x,cx,ty-size*.1,size*.1,COL.white,2);txt(x,letter,cx,ty-size*.09,size*.13,COL.red,{lw:0});}}
+function band(x,cx,cy,size,color=COL.red){rrect(x,cx-size*.32,cy-size*.3,size*.64,size*.09,size*.04,color,3);}
 const lerp=(a,b,t)=>a+(b-a)*t;
 const ramp=(speed,a,b)=>a+(b-a)*clamp((speed-1)/.6,0,1.2);
 const easeOutBack=t=>{t=clamp(t,0,1);const c=1.9;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2);};
@@ -44,4 +45,4 @@ function drawHint(x,h,p){if(!h)return;const k=(p*3)%1,a=Math.sin(p*Math.PI),size
  x.restore();}
 function arrowHead(x,px,py,ang,s){x.save();x.translate(px,py);x.rotate(ang);poly(x,[[s*.5,0],[-s*.4,-s*.5],[-s*.4,s*.5]],COL.white,3);x.restore();}
 function arrow(x,px,py,ang,s){x.save();x.translate(px,py);x.rotate(ang+Math.PI);poly(x,[[0,0],[-s*.4,-s*.4],[-s*.15,-s*.4],[-s*.15,-s*.9],[s*.15,-s*.9],[s*.15,-s*.4],[s*.4,-s*.4]],COL.white,3);x.restore();}
-Object.assign(exports,{COL,TAU,hooks,head,sfx,paint,circ,ell,rrect,boxC,poly,path,star,rays,txt,cap,lerp,ramp,easeOutBack,easeOut,dist,segCirc,inRect,wob,backdrop,ground,drawHint,arrow,arrowHead,clamp});
+Object.assign(exports,{COL,TAU,hooks,head,sfx,paint,circ,ell,rrect,boxC,poly,path,star,rays,txt,cap,lerp,ramp,easeOutBack,easeOut,dist,segCirc,band,inRect,wob,backdrop,ground,drawHint,arrow,arrowHead,clamp});

@@ -56,7 +56,7 @@ const dip={id:'dip',verb:'DIP!',theme:'tv',kind:'drag',source:'Seinfeld',caption
 // ---------------------------------------------------------------- Pac-Man: eat the dots
 const eat={id:'eat',verb:'EAT!',theme:'game',kind:'drag',source:'Pac-Man',caption:'Pac-Man: eat 3 dots (dodge the ghost)',duration:5,bossDuration:8,bg:'#05051a',boss:true,
  init(r,rng,speed,player,boss){const u=U(r),n=boss?6:3,dots=[];for(let i=0;i<n;i++)dots.push({x:r.w*(.15+rng()*.7),y:r.h*(.15+rng()*.7),got:false});
-  return {u,p:{x:r.w*.1,y:r.h*.5},tgt:{x:r.w*.1,y:r.h*.5},dots,gv:u*ramp(speed,.4,.55),vmax:u*ramp(speed,1.9,2.4),touch:false,dir:0,gx:r.w*.92,gy:r.h*.5};},
+  return {u,p:{x:r.w*.17,y:r.h*.5},tgt:{x:r.w*.17,y:r.h*.5},dots,gv:u*ramp(speed,.4,.55),vmax:u*ramp(speed,1.9,2.4),touch:false,dir:0,gx:r.w*.92,gy:r.h*.5};},
  update(st,dt){if(st.t>.5&&!st.result){const dx=st.p.x-st.gx,dy=st.p.y-st.gy,d=Math.hypot(dx,dy)||1;st.gx+=dx/d*st.gv*dt;st.gy+=dy/d*st.gv*dt;}
   if(st.touch){const dx=st.tgt.x-st.p.x,dy=st.tgt.y-st.p.y,d=Math.hypot(dx,dy),m=Math.min(d,st.vmax*dt);if(d>1){st.p.x+=dx/d*m;st.p.y+=dy/d*m;st.dir=Math.atan2(dy,dx);}}
   if(st.result)return;for(const d of st.dots)if(!d.got&&dist(st.p.x,st.p.y,d.x,d.y)<st.u*.13){d.got=true;sfx('pickup');}
@@ -138,7 +138,7 @@ const trap={id:'trap',verb:'TRAP!',theme:'movie',kind:'drag',source:'Ghostbuster
   const hx=r.w/2,hy=r.h-u*.18;if(st.f!==null&&!st.result){const j=()=>(Math.random()-.5)*8;for(const col of ['#ff9a3c','#ffe14a']){x.strokeStyle=col;x.lineWidth=col==='#ff9a3c'?8:3;x.beginPath();x.moveTo(hx,hy);for(let i=1;i<8;i++){const t=i/8;x.lineTo(lerp(hx,st.aim.x,t)+j(),lerp(hy,st.aim.y,t)+j());}x.lineTo(st.aim.x,st.aim.y);x.stroke();}circ(x,st.aim.x,st.aim.y,u*.05,st.on?COL.white:COL.yellow,3);}
   if(k>0){x.save();x.translate(g.x,g.y);x.scale(Math.max(.05,k),Math.max(.05,k));const s=u*.17;x.beginPath();x.arc(0,-s*.2,s,Math.PI,0);x.lineTo(s,s*.8);for(let i=0;i<4;i++)x.quadraticCurveTo(s-(i+.5)*s*.5,s*(i%2?.5:1.3),s-(i+1)*s*.5,s*.8);x.closePath();R.paint(x,'#7dff7d',4);
    circ(x,-s*.35,-s*.3,s*.22,COL.white,3);circ(x,s*.35,-s*.3,s*.22,COL.white,3);circ(x,-s*.3,-s*.27,s*.09,COL.ink,0);circ(x,s*.4,-s*.27,s*.09,COL.ink,0);ell(x,0,s*.25,s*.35,s*.22+(st.on?s*.1:0),COL.ink,3);x.restore();}
-  head(x,st.player,hx,hy,u*.34,st.result==='win'?'happy':'angry');rrect(x,hx-u*.2,hy-u*.27,u*.4,u*.07,u*.03,COL.white,3);
+  head(x,st.player,hx,hy,u*.34,st.result==='win'?'happy':'angry');R.band(x,hx,hy,u*.34,COL.white);
   const bw=r.w*.5;rrect(x,r.w/2-bw/2,u*.06,bw,u*.07,u*.03,COL.dark,3);rrect(x,r.w/2-bw/2+2,u*.06+2,Math.max(0,(bw-4)*clamp(st.prog/st.need,0,1)),u*.07-4,u*.025,COL.green,0);}};
 
 // ---------------------------------------------------------------- Karate Kid: wax on, wax off
@@ -156,7 +156,7 @@ const wax={id:'wax',verb:'WAX!',theme:'movie',kind:'circle',source:'The Karate K
   const word=st.phase===0?'WAX ON':'WAX OFF',col=st.phase===0?COL.red:COL.blue;txt(x,word,cx,r.h*.13,u*.15,COL.yellow,{lw:u*.04});
   x.strokeStyle=col;x.lineWidth=7;x.beginPath();const dir=st.phase===0?1:-1;x.arc(cx,cy,bh*.62,-1.2,-1.2+dir*5.2,dir<0);x.stroke();
   if(st.f!==null||true){const hx=st.hand.x,hy=st.hand.y;circ(x,hx,hy,u*.07,'#f0c8a0',4);}
-  head(x,st.player,u*.17,r.h-u*.17,u*.3,st.result==='win'?'happy':'normal');rrect(x,u*.02,r.h-u*.33,u*.3,u*.05,3,COL.white,3);
+  head(x,st.player,u*.17,r.h-u*.17,u*.3,st.result==='win'?'happy':'normal');R.band(x,u*.17,r.h-u*.17,u*.3,COL.white);
   rrect(x,r.w*.6,r.h-u*.12,r.w*.32,u*.06,u*.03,COL.dark,3);rrect(x,r.w*.6+2,r.h-u*.12+2,Math.max(0,(r.w*.32-4)*prog),u*.06-4,u*.02,col,0);}};
 
 // ---------------------------------------------------------------- Always Sunny: shake the rum ham

@@ -46,7 +46,7 @@ const slap={id:'slap',verb:'SLAP!',theme:'movie',kind:'swipe',source:'Super Troo
   if(show){const k=easeOutBack(e/.12),sw=Math.sin(st.t*14)*.05;x.save();x.translate(s.x,s.y);x.rotate(s.rot+sw);x.scale(k,k);rrect(x,-u*.05,-u*.26,u*.1,u*.52,u*.03,COL.tan,4);rrect(x,-u*.05,-u*.08,u*.1,u*.08,2,COL.red,3);rrect(x,-u*.05,u*.1,u*.1,u*.08,2,COL.red,3);x.restore();
    circ(x,s.x,s.y+u*.34,u*.06,'#e8b89a',3);x.lineWidth=3;x.strokeStyle=COL.white;x.globalAlpha=.8*(1-e/st.life);x.beginPath();x.arc(s.x,s.y,u*.2+e*u*.05,0,TAU);x.stroke();x.globalAlpha=1;}
   if(st.burst&&st.t-st.burst.t<.4){const b=st.burst,k=(st.t-b.t)/.4;star(x,b.x,b.y,u*(.2+.2*k),u*.09,9,k*2,COL.yellow,4);txt(x,'SLAP!',b.x,b.y,u*.12,COL.red,{rot:-.2});}
-  drawTrail(x,st);head(x,st.player,u*.2,r.h-u*.22,u*.36,st.hits?'happy':'angry');rrect(x,u*.1,r.h-u*.1-u*.36,u*.2,u*.06,3,COL.dark,3);txt(x,st.hits+' / '+st.n,r.w-u*.35,u*.12,u*.12,COL.white);}};
+  drawTrail(x,st);head(x,st.player,u*.2,r.h-u*.22,u*.36,st.hits?'happy':'angry');R.band(x,u*.2,r.h-u*.22,u*.36,COL.dark);txt(x,st.hits+' / '+st.n,r.w-u*.35,u*.12,u*.12,COL.white);}};
 
 // ---------------------------------------------------------------- Contra: Konami code
 const DIRS=[[0,-1],[0,1],[-1,0],[1,0]],ARROW=['U','D','L','R'];
@@ -61,7 +61,7 @@ const konami={id:'konami',verb:'CODE!',theme:'game',kind:'swipe',source:'Contra 
  draw(x,st,r){const u=st.u,n=st.seq.length,tw=Math.min(r.w*.9/n,u*.34),x0=r.w/2-tw*n/2;backdrop(x,r,'#1d2b6b',st.t,'#3a52c9');
   for(let i=0;i<n;i++){const cx=x0+(i+.5)*tw,cy=r.h*.38,done=i<st.idx,nxt=i===st.idx&&!st.result;rrect(x,cx-tw*.44,cy-tw*.44,tw*.88,tw*.88,tw*.14,done?COL.green:nxt?COL.yellow:COL.white,4);
    const d=DIRS[st.seq[i]];x.save();x.translate(cx,cy);x.rotate(Math.atan2(d[1],d[0]));poly(x,[[tw*.28,0],[-tw*.1,-tw*.26],[-tw*.1,-tw*.1],[-tw*.28,-tw*.1],[-tw*.28,tw*.1],[-tw*.1,tw*.1],[-tw*.1,tw*.26]],done?COL.white:COL.ink,3);x.restore();}
-  const hy=r.h*.78;head(x,st.player,r.w/2,hy,u*.38,st.result==='win'?'happy':st.wrong?'sad':'angry');rrect(x,r.w/2-u*.19,hy-u*.15,u*.38,u*.06,3,COL.red,3);
+  const hy=r.h*.78;head(x,st.player,r.w/2,hy,u*.38,st.result==='win'?'happy':st.wrong?'sad':'angry');R.band(x,r.w/2,hy,u*.38,COL.red);
   if(st.t-st.flash<.2)star(x,r.w/2,hy,u*.3,u*.15,8,st.t*8,COL.yellow,3);}};
 
 // ---------------------------------------------------------------- Cut the Rope: cut at the right moment
@@ -96,7 +96,7 @@ const hadouken={id:'hadouken',verb:'HADOUKEN!',theme:'game',kind:'swipe',source:
  up(st,p,id){delete st.f[id];},
  hint(st){return {kind:'swipe',x:st.r.w*.25,y:st.r.h*.3,x2:st.r.w*.6,y2:st.r.h*.65,size:st.u*.12};},
  draw(x,st,r){const u=st.u,gy=st.gy;backdrop(x,r,'#e8b04a',st.t,'#fff0a8');ground(x,r,gy+u*.12,'#a06a3a',COL.ink);x.fillStyle='#0003';for(let i=0;i<r.w;i+=u*.3)x.fillRect(i,gy+u*.2,u*.2,4);
-  const lean=st.cast>0&&st.t-st.cast<.3?u*.08:0;head(x,st.player,st.fx+lean,gy-u*.3,u*.4,st.cast>0?'angry':'normal');rrect(x,st.fx-u*.2+lean,gy-u*.48,u*.4,u*.06,3,COL.red,3);rrect(x,st.fx-u*.17,gy-u*.1,u*.34,u*.22,u*.04,COL.white,3);
+  const lean=st.cast>0&&st.t-st.cast<.3?u*.08:0;head(x,st.player,st.fx+lean,gy-u*.3,u*.4,st.cast>0?'angry':'normal');R.band(x,st.fx+lean,gy-u*.3,u*.4,COL.red);rrect(x,st.fx-u*.17,gy-u*.1,u*.34,u*.22,u*.04,COL.white,3);
   const ex=st.ex+(st.hit?Math.min(u*.5,st.dizzy*u*2):0),ey=gy-u*.3-(st.hit?Math.sin(Math.min(st.dizzy*5,3))*u*.25:0);head(x,1-st.player,ex,ey,u*.4,st.hit?'sad':'angry');rrect(x,ex-u*.17,gy-u*.1,u*.34,u*.22,u*.04,COL.red,3);
   if(st.ball){const b=st.ball;circ(x,b.x,b.y,u*.15,'#7fe0ff',4);circ(x,b.x,b.y,u*.08,COL.white,0);for(let i=1;i<4;i++)circ(x,b.x-i*u*.1,b.y+Math.sin(st.t*30+i)*3,u*.12-i*u*.02,'#7fe0ff88',0);}
   if(st.hit&&st.dizzy<.5)txt(x,'HIT!',ex,ey-u*.35,u*.14,COL.red);
@@ -159,8 +159,8 @@ const bop={id:'bop',verb:'DO IT!',theme:'toy',kind:'mixed',source:'Bop It',capti
   const left=clamp(1-(st.t-st.t0)/st.win,0,1);rrect(x,w*.2,r.h*.29,w*.6,u*.045,u*.02,COL.dark,2);rrect(x,w*.2+2,r.h*.29+2,Math.max(0,(w*.6-4)*left),u*.045-4,u*.015,left>.4?COL.green:COL.red,0);
   rrect(x,w*.06,cy-u*.34,w*.88,u*.68,u*.2,'#2b2b3d',5);
   circ(x,w/6,cy,Math.min(w/6-6,u*.26),COL.orange,5);txt(x,'BOP',w/6,cy,u*.1,COL.white);
-  const kx=w/2;circ(x,kx,cy,Math.min(w/6-4,u*.27),COL.green,5);x.save();x.translate(kx,cy);x.rotate(st.tw);x.fillStyle=COL.ink;x.fillRect(-4,-u*.25,8,u*.22);circ(x,0,0,u*.1,COL.lime,3);x.restore();txt(x,'TWIST',kx,cy+u*.22,u*.07,COL.white,{lw:3});
+  const kx=w/2;circ(x,kx,cy,Math.min(w/6-4,u*.27),COL.green,5);x.save();x.translate(kx,cy);x.rotate(st.tw);x.fillStyle=COL.ink;x.fillRect(-4,-u*.25,8,u*.22);circ(x,0,0,u*.1,COL.lime,3);x.restore();txt(x,'TWIST',kx,cy+u*.15,u*.065,COL.white,{lw:3});
   const hx=w*5/6,hy=cy-(Object.values(st.f).find(f=>f.z===2)?0:0);rrect(x,hx-u*.045,cy-u*.3,u*.09,u*.6,u*.04,COL.dark,3);rrect(x,hx-u*.1,cy-u*.12+(st.pull||0),u*.2,u*.24,u*.06,COL.blue,4);txt(x,'PULL',hx,cy+u*.3+0,u*.07,COL.white,{lw:3});
-  head(x,st.player,w/2,r.h-u*.16,u*.28,st.result==='win'?'happy':st.result==='lose'?'sad':'silly');}};
+  head(x,st.player,u*.15,r.h-u*.14,u*.24,st.result==='win'?'happy':st.result==='lose'?'sad':'silly');}};
 
 Object.assign(exports,{GAMES_B:[slice,slap,konami,cut,hadouken,throwG,bullets,bop]});

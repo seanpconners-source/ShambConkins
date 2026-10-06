@@ -213,11 +213,12 @@ const steps={id:'steps',verb:'CLIMB!',theme:'movie',kind:'rapid',source:'Rocky',
  update(st,dt){st.pad[0]=Math.max(0,st.pad[0]-dt);st.pad[1]=Math.max(0,st.pad[1]-dt);if(st.bad>0)st.bad-=dt;},
  down(st,p){if(st.result)return;const side=p.x<st.r.w/2?0:1;st.pad[side]=.12;if(side!==st.last){st.last=side;st.n++;sfx('tap');if(st.n>=st.S)st.result='win';}else st.bad=.2;},
  hint(st){return {kind:'tap',x:st.r.w*.25,y:st.r.h*.8,size:st.u*.12};},
- draw(x,st,r){const {u}=st,w=r.w,h=r.h;backdrop(x,r,'#ffb25a',st.t,'#ffe08a');circ(x,w*.78,h*.28,u*.22,COL.yellow,4);
-  const sh=h*.62/st.S,sw=w*.5/st.S;const k=st.n/st.S;
-  for(let i=0;i<=st.S;i++){const sx=w*.12+i*sw*.9,sy=h*.78-i*sh;rrect(x,sx,sy,w*.12+u*.1,h,0,i%2?'#d9d2c0':'#eee6d2',2);}
-  const px=w*.12+st.n*sw*.9+w*.05,py=h*.78-st.n*sh-u*.17;head(x,st.player,px,py,u*.32,st.bad>0?'angry':st.result==='win'?'happy':'walking');rrect(x,px-u*.1,py+u*.13,u*.2,u*.12,4,'#888',3);
-  for(let i=0;i<2;i++){const bx=w*(i?.76:.24),by=h-u*.2,want=st.last!==i,pr=st.pad[i]>0;circ(x,bx,by,u*.15*(pr?1.1:1),want?COL.yellow:COL.dark,4);txt(x,i?'R':'L',bx,by,u*.14,want?COL.ink:COL.grey,{lw:0});}
+ draw(x,st,r){const {u}=st,w=r.w,h=r.h;backdrop(x,r,'#ffb25a',st.t,'#ffe08a');circ(x,w*.8,h*.27,u*.2,COL.yellow,4);
+  const T=7,tw=w*.76/T,th=(h*.62)/T,x0=w*.12,y0=h*.8;
+  for(let i=0;i<T;i++)rrect(x,x0+i*tw,y0-(i+1)*th,w*.9,h,0,i%2?'#e6dcc4':'#f4ecd6',3);
+  const k=st.n/st.S,px=x0+tw*.4+k*(T-1)*tw,py=y0-(k*(T-1)+1)*th-u*.17;
+  head(x,st.player,px,py,u*.32,st.bad>0?'angry':st.result==='win'?'happy':'walking');rrect(x,px-u*.1,py+u*.13,u*.2,u*.1,4,'#8a8f9c',3);
+  for(let i=0;i<2;i++){const bx=w*(i?.76:.24),by=h-u*.16,want=st.last!==i,pr=st.pad[i]>0;circ(x,bx,by,u*.13*(pr?1.1:1),want?COL.yellow:COL.dark,4);txt(x,i?'R':'L',bx,by,u*.13,want?COL.ink:COL.grey,{lw:0});}
   txt(x,st.n+' / '+st.S,w*.5,u*.12,u*.1,COL.white);}};
 
 // ---------------------------------------------------------------- Karate: break the boards (hold-release)
@@ -231,8 +232,8 @@ const board={id:'board',verb:'BREAK!',theme:'movie',kind:'hold',source:'The Kara
  draw(x,st,r){const {u}=st,w=r.w,h=r.h;backdrop(x,r,'#7fb35a',st.t,'#b9e83c');ground(x,r,h*.82,'#c9a36a',COL.ink);
   const bxm=w*.62;for(let i=0;i<4;i++){const by=h*.82-(i+1)*u*.09;if(i<st.need*0+3&&!(st.fly>0&&i<2)){rrect(x,bxm-u*.36,by,u*.72,u*.09,2,'#e8c48a',3);}else if(st.fly>0&&i<2){x.save();x.translate(bxm,by);x.rotate(st.fly*(i?3:-3));rrect(x,-u*.36,0,u*.36,u*.09,2,'#e8c48a',3);x.restore();}}
   const mx=w*.1,my=h*.1,mh=h*.62;rrect(x,mx,my,u*.1,mh,5,COL.dark,3);const [z0,z1]=st.zone;rrect(x,mx+3,my+mh*(1-z1),u*.1-6,mh*(z1-z0),3,COL.green,0);const py=my+mh*(1-st.pw);poly(x,[[mx+u*.1+4,py],[mx+u*.1+u*.12,py-u*.05],[mx+u*.1+u*.12,py+u*.05]],COL.white,3);
-  const hy=h*.55+(st.hold>=0?-st.pw*u*.12:0);head(x,st.player,w*.35,hy,u*.38,st.broke?'happy':st.hold>=0?'angry':'normal');rrect(x,w*.35-u*.19,hy-u*.17,u*.38,u*.07,3,COL.white,3);
-  const ax=lerp(w*.4,bxm-u*.36,st.strike>0?1-st.strike/.16:(st.fly>0?1:0)),ay=hy-(st.strike>0?0:(st.hold>=0?st.pw*u*.28:0));circ(x,ax,ay+u*.1,u*.08,COL.tan,3);
+  const hy=h*.55+(st.hold>=0?-st.pw*u*.12:0);head(x,st.player,w*.2,hy,u*.38,st.broke?'happy':st.hold>=0?'angry':'normal');R.band(x,w*.2,hy,u*.38,COL.white);
+  const ax=lerp(w*.3,bxm-u*.36,st.strike>0?1-st.strike/.16:(st.fly>0?1:0)),ay=hy-(st.strike>0?0:(st.hold>=0?st.pw*u*.28:0));circ(x,ax,ay+u*.1,u*.08,COL.tan,3);
   txt(x,'TRIES '+Math.max(0,st.tries),w-u*.5,u*.1,u*.09,COL.white);if(st.need>1)txt(x,st.broke+' / '+st.need,w-u*.5,u*.22,u*.1,COL.yellow);}};
 
 Object.assign(exports,{GAMES_A:[stomp,shoot,pick,pull,strum,mph,stack,rotate,simon,jump,bail,steps,board]});
