@@ -188,7 +188,14 @@
   "src/engines/arenaArrow.js",
   "src/engines/arenaDriller.js",
   "src/engines/partySimon.js",
-  "src/engines/arenaBubble.js"
+  "src/engines/arenaBubble.js",
+  "src/data/partyPrice.js",
+  "src/engines/partyPrice.js",
+  "src/engines/tarantinoTwist.js",
+  "src/engines/tarantinoAdrenaline.js",
+  "src/engines/tarantinoCrazy88.js",
+  "src/engines/tarantinoBounty.js",
+  "src/engines/tarantinoChase.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

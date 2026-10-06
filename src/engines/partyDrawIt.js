@@ -16,6 +16,7 @@ const CSS=`
 .dr-tools{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap}
 .pk-stage .dr-sw{appearance:none;width:38px;height:38px;min-height:0;padding:0;border-radius:50%;border:3px solid #fff8;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.3)}
 .pk-stage .dr-sw.sel{border-color:#fff;box-shadow:0 0 0 3px #ff9f1c,0 2px 0 rgba(0,0,0,.3);transform:scale(1.12)}
+.pk-stage .dr-sw:hover{border-color:#fff8}.pk-stage .dr-tool:hover{background:rgba(0,0,0,.3);border-color:#fff6}.pk-stage .dr-tool.sel:hover{background:#ff9f1c}
 .pk-stage .dr-tool{appearance:none;min-height:0;width:42px;height:38px;padding:0;border-radius:10px;border:2px solid #fff6;background:rgba(0,0,0,.3);color:#fff;font:900 18px Arial;cursor:pointer}
 .pk-stage .dr-tool.sel{border-color:#fff;background:#ff9f1c;color:#222}
 .dr-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}

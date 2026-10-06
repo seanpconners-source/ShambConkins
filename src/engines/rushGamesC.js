@@ -22,11 +22,11 @@ const beam={id:'beam',verb:'BEAM!',theme:'tv',kind:'drag',source:'Star Trek',cap
 
 // ---------------------------------------------------------------- The Office: stapler in Jell-O
 const jello={id:'jello',verb:'JELL-O!',theme:'tv',kind:'drag',source:'The Office',caption:'The Office: stapler in Jell-O (avoid the mugs)',duration:5,bg:'#e8d5a8',
- init(r,rng,speed){const u=U(r);return {u,s:{x:r.w*.13,y:r.h*.5},mugs:[{x:r.w*.45,y:r.h*(.2+rng()*.15)},{x:r.w*.58,y:r.h*(.65+rng()*.15)}],j:{x:r.w*.85,y:r.h*(.4+rng()*.2)},drag:null,splash:0,mr:u*.085};},
+ init(r,rng,speed){const u=U(r);return {u,s:{x:r.w*.13,y:r.h*.5},mugs:[{x:r.w*.45,y:r.h*(.14+rng()*.14)},{x:r.w*.58,y:r.h*(.72+rng()*.13)}],j:{x:r.w*.85,y:r.h*(.4+rng()*.2)},drag:null,splash:0,mr:u*.07};},
  update(st,dt){if(st.splash)st.splash+=dt;},
  down(st,p,id){if(!st.drag&&!st.result&&dist(p.x,p.y,st.s.x,st.s.y)<st.u*.28)grab(st,id,p,st.s.x-p.x,st.s.y-p.y);},
  move(st,p,id){if(!st.drag||st.drag.id!==id||st.result)return;st.s.x=clamp(p.x+st.drag.ox,0,st.r.w);st.s.y=clamp(p.y+st.drag.oy,0,st.r.h);
-  for(const m of st.mugs)if(dist(st.s.x,st.s.y,m.x,m.y)<st.mr+st.u*.08){st.result='lose';st.hitMug=m;sfx('lose');return;}
+  for(const m of st.mugs)if(dist(st.s.x,st.s.y,m.x,m.y)<st.mr+st.u*.06){st.result='lose';st.hitMug=m;sfx('lose');return;}
   if(dist(st.s.x,st.s.y,st.j.x,st.j.y)<st.u*.16){st.result='win';st.splash=.001;sfx('rare');}},
  up(st,p,id){if(st.drag&&st.drag.id===id)st.drag=null;},
  hint(st){return {kind:'swipe',x:st.s.x,y:st.s.y,x2:st.j.x,y2:st.j.y,size:st.u*.12};},
@@ -55,27 +55,28 @@ const dip={id:'dip',verb:'DIP!',theme:'tv',kind:'drag',source:'Seinfeld',caption
 
 // ---------------------------------------------------------------- Pac-Man: eat the dots
 const eat={id:'eat',verb:'EAT!',theme:'game',kind:'drag',source:'Pac-Man',caption:'Pac-Man: eat 3 dots (dodge the ghost)',duration:5,bossDuration:8,bg:'#05051a',boss:true,
- init(r,rng,speed,player,boss){const u=U(r),n=boss?7:3,dots=[];for(let i=0;i<n;i++){const top=i%2===0;dots.push({x:r.w*(.2+.6*((i*.37+rng()*.15)%1)),y:r.h*(top?.18+rng()*.14:.68+rng()*.14),got:false});}
-  return {u,p:{x:r.w*.1,y:r.h*.5},tgt:{x:r.w*.1,y:r.h*.5},dots,ghost:{om:ramp(speed,.9,1.3),ph:rng()*6},vmax:u*ramp(speed,1.9,2.4),touch:false,dir:0,gx:0,gy:r.h*.5};},
- update(st,dt){const g=st.ghost;st.gx=st.r.w*.5+Math.sin(g.ph+st.t*g.om)*st.r.w*.4;
+ init(r,rng,speed,player,boss){const u=U(r),n=boss?6:3,dots=[];for(let i=0;i<n;i++)dots.push({x:r.w*(.15+rng()*.7),y:r.h*(.15+rng()*.7),got:false});
+  return {u,p:{x:r.w*.1,y:r.h*.5},tgt:{x:r.w*.1,y:r.h*.5},dots,gv:u*ramp(speed,.4,.55),vmax:u*ramp(speed,1.9,2.4),touch:false,dir:0,gx:r.w*.92,gy:r.h*.5};},
+ update(st,dt){if(st.t>.5&&!st.result){const dx=st.p.x-st.gx,dy=st.p.y-st.gy,d=Math.hypot(dx,dy)||1;st.gx+=dx/d*st.gv*dt;st.gy+=dy/d*st.gv*dt;}
   if(st.touch){const dx=st.tgt.x-st.p.x,dy=st.tgt.y-st.p.y,d=Math.hypot(dx,dy),m=Math.min(d,st.vmax*dt);if(d>1){st.p.x+=dx/d*m;st.p.y+=dy/d*m;st.dir=Math.atan2(dy,dx);}}
   if(st.result)return;for(const d of st.dots)if(!d.got&&dist(st.p.x,st.p.y,d.x,d.y)<st.u*.13){d.got=true;sfx('pickup');}
-  if(st.dots.every(d=>d.got))st.result='win';else if(dist(st.p.x,st.p.y,st.gx,st.gy)<st.u*.15){st.result='lose';sfx('lose');}},
+  if(st.dots.every(d=>d.got))st.result='win';else if(st.t>.4&&dist(st.p.x,st.p.y,st.gx,st.gy)<st.u*.17){st.result='lose';sfx('lose');}},
  down(st,p,id){if(st.result)return;st.touch=true;st.fid=id;st.tgt={x:p.x,y:p.y};},
  move(st,p,id){if(id===st.fid)st.tgt={x:p.x,y:p.y};},
  up(st,p,id){if(id===st.fid)st.touch=false;},
  hint(st){const d=st.dots[0];return {kind:'swipe',x:st.p.x,y:st.p.y,x2:d.x,y2:d.y,size:st.u*.12};},
  draw(x,st,r){const u=st.u;backdrop(x,r,'#05051a',st.t,'#16165a');x.strokeStyle='#2f35ff';x.lineWidth=5;x.strokeRect(6,6,r.w-12,r.h-12);
   for(const d of st.dots)if(!d.got)circ(x,d.x,d.y,u*.045+Math.sin(st.t*8)*1,'#ffe6a8',2);
-  const gx=st.gx,gy=st.gy,s=u*.15;x.save();x.translate(gx,gy);x.beginPath();x.arc(0,-s*.1,s,Math.PI,0);x.lineTo(s,s);for(let i=0;i<4;i++)x.lineTo(s-(i+.5)*s*.5,s*.6+(i%2?0:s*.4)*1);x.lineTo(-s,s);x.closePath();R.paint(x,COL.red,3);circ(x,-s*.35,-s*.15,s*.28,COL.white,2);circ(x,s*.35,-s*.15,s*.28,COL.white,2);circ(x,-s*.28,-s*.12,s*.12,COL.blue,0);circ(x,s*.42,-s*.12,s*.12,COL.blue,0);x.restore();
-  const pr=u*.17,mo=Math.abs(Math.sin(st.t*10))*.6+.1;x.save();x.translate(st.p.x,st.p.y);x.rotate(st.dir);x.beginPath();x.moveTo(0,0);x.arc(0,0,pr,mo,TAU-mo);x.closePath();R.paint(x,COL.yellow,4);x.restore();
+  const gx=st.gx,gy=st.gy,s=u*.12;x.save();x.translate(gx,gy);x.beginPath();x.arc(0,-s*.1,s,Math.PI,0);x.lineTo(s,s);for(let i=0;i<4;i++)x.lineTo(s-(i+.5)*s*.5,s*.6+(i%2?0:s*.4)*1);x.lineTo(-s,s);x.closePath();R.paint(x,COL.red,3);circ(x,-s*.35,-s*.15,s*.28,COL.white,2);circ(x,s*.35,-s*.15,s*.28,COL.white,2);circ(x,-s*.28,-s*.12,s*.12,COL.blue,0);circ(x,s*.42,-s*.12,s*.12,COL.blue,0);x.restore();
+  const pr=u*.13,mo=Math.abs(Math.sin(st.t*10))*.6+.1;x.save();x.translate(st.p.x,st.p.y);x.rotate(st.dir);x.beginPath();x.moveTo(0,0);x.arc(0,0,pr,mo,TAU-mo);x.closePath();R.paint(x,COL.yellow,4);x.restore();
   head(x,st.player,st.p.x-Math.cos(st.dir)*pr*.2,st.p.y-pr*.15,pr*1.05,st.result==='lose'?'sad':'normal');
   txt(x,st.dots.filter(d=>d.got).length+' / '+st.dots.length,r.w-u*.35,u*.11,u*.1,COL.yellow);}};
 
 // ---------------------------------------------------------------- Jurassic Park: catch the amber
 const amber={id:'amber',verb:'CATCH!',theme:'movie',kind:'drag',source:'Jurassic Park',caption:'Jurassic Park: catch the amber (not the rocks)',duration:5,bossDuration:8,bg:'#2e6b3a',boss:true,
- init(r,rng,speed,player,boss){const need=boss?7:3,items=[],gap=ramp(speed,.72,.52),fall=ramp(speed,.8,1.0);let T=.5;const total=need+1+(boss?3:2),rockAt=new Set();while(rockAt.size<(boss?3:2))rockAt.add(1+Math.floor(rng()*(total-1)));
+ init(r,rng,speed,player,boss){const need=boss?5:3,items=[],gap=ramp(speed,.72,.52),fall=ramp(speed,.8,1.0);let T=.5;const total=need+1+2,rockAt=new Set();while(rockAt.size<2)rockAt.add(1+Math.floor(rng()*(total-1)));
   for(let i=0;i<total;i++){items.push({T,x:r.w*(.12+rng()*.76),rock:rockAt.has(i),done:false});T+=gap*(.9+rng()*.2);}
+  items.forEach((it,i)=>{if(!it.rock)return;let best=it.x,bd=-1;for(let k=0;k<8;k++){const cx=r.w*(.1+.8*k/7),d=Math.min(...[items[i-1],items[i+1],items[i-2],items[i+2]].filter(Boolean).map(o=>Math.abs(o.x-cx)));if(d>bd){bd=d;best=cx;}}it.x=best;});
   return {u:U(r),need,items,bx:r.w/2,tx:r.w/2,by:r.h*.86,vs:r.h*fall,got:0,miss:0,drag:null,bounce:0};},
  iy(st,it){return -st.u*.1+(st.t-it.T)*st.vs;},
  update(st,dt){st.bx+=(st.tx-st.bx)*Math.min(1,dt*16);st.bounce=Math.max(0,st.bounce-dt*4);if(st.result)return;

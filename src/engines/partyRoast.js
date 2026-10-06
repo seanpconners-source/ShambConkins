@@ -18,6 +18,7 @@ const CSS=`
 .rb-spot{width:100%;display:flex;justify-content:space-around;align-items:flex-end}
 .rb-rate{display:flex;flex-direction:column;gap:10px}
 .pk-stage .rb-rb{appearance:none;border:0;border-radius:16px;min-height:clamp(62px,11vh,84px);color:#fff;font:900 clamp(20px,5vw,28px)/1 Arial;display:flex;align-items:center;justify-content:space-between;padding:0 18px;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.35);text-shadow:0 2px 0 rgba(0,0,0,.3)}
+.pk-stage .rb-rb.l1:hover{background:#e8a317}.pk-stage .rb-rb.l2:hover{background:#ef6a2b}.pk-stage .rb-rb.l3:hover{background:#d6243a}
 .pk-stage .rb-rb:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.35)}
 .pk-stage .rb-rb small{font:700 13px Arial;opacity:.9;text-shadow:none}
 .pk-stage .rb-rb em{font-style:normal;font-size:1.4em}

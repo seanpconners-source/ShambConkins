@@ -56,6 +56,7 @@ async function driller(s){
   const falling=groups.filter(gr=>!gr.stable);
   falling.sort((u,v)=>Math.max(...v.cells.map(q=>q[0]))-Math.max(...u.cells.map(q=>q[0])));
   for(const gr of falling){
+   if(!gr.cells.every(([a,b])=>g[a][b]))continue;
    const cs=gr.cells.map(([a,b])=>g[a][b]);
    if(!cs.some(o=>o.fall)){
     if(!cs.some(o=>o.warned)){for(const o of cs){o.warned=true;o.wait=WARN;}continue;}
@@ -66,6 +67,7 @@ async function driller(s){
    for(const [a,b] of gr.cells){if(!inG.has((a+1)+','+b)&&g[a+1]?.[b]){free=false;break;}}
    if(!free)continue;
    if(!p.dead&&gr.cells.some(([a,b])=>a+1===p.pr&&b===p.pc))crush(p);
+   if(!gr.cells.every(([a,b])=>g[a][b]))continue;
    gr.cells.sort((u,v)=>v[0]-u[0]);
    for(const [a,b] of gr.cells){const o=g[a][b];g[a][b]=null;o.fall=true;o.oy=-1;g[a+1][b]=o;}
   }

@@ -29,6 +29,8 @@ const CSS=`
 .ld-bid .big{display:flex;align-items:center;gap:10px;font:900 clamp(30px,8vw,46px)/1 Arial}
 .ld-stepper{display:flex;align-items:center;justify-content:center;gap:12px}
 .pk-stage .ld-step{appearance:none;width:56px;height:56px;border-radius:50%;border:0;background:#d99a1e;color:#2a1a10;font:900 30px/1 Arial;box-shadow:0 4px 0 rgba(0,0,0,.4);cursor:pointer;padding:0;min-height:0}
+.pk-stage .ld-step:hover{background:#d99a1e;border:0}
+.pk-stage .ld-face:hover{background:none;border:0}.pk-stage .ld-face.sel:hover{background:#d99a1e}
 .pk-stage .ld-step:active{transform:translateY(3px)}
 .ld-qty{font:900 44px/1 Arial;min-width:70px;text-align:center}
 .pk-stage .ld-face{appearance:none;background:none;border:0;padding:4px;border-radius:14px;cursor:pointer;min-height:0}

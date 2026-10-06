@@ -3,7 +3,7 @@ const {PCOL,PDARK,PLIGHT,Fx,arenaKeys,arenaTouch,Countdown,banner,outlined,rr,sn
 // Bubble Battle (after Puzzle Bobble): two mirrored bubble fields with identical bubbles. Drag to aim, release to fire.
 // Match three or more to pop, orphans drop and send garbage to the other side. Overflow loses; 90 s decided by score.
 const COL=['#ff5a5a','#4fd06a','#4a90ff','#ffd84d','#b47bff','#ff9a3d'],COL_D=['#a82a2a','#1f8a3a','#1c4fb0','#b08a14','#7141c4','#b45a14'];
-const TIME=90,PRESS=14,FIRST_PRESS=11,START_ROWS=5,NCOL=5;
+const TIME=90,PRESS=14,FIRST_PRESS=11,START_ROWS=4,NCOL=5;
 
 async function bubble(s){
  const [c,x]=s.canvas(900,560,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();if(!await settle(s))return;
@@ -14,8 +14,8 @@ async function bubble(s){
  const intro=new Countdown(3),kb=arenaKeys(s);
  const geo=p=>{
   const half=W/2,m=Math.max(4,W*.012),fieldW=half-m*2,COLS=half<260?6:half<420?7:8,top=Math.min(46,H*.08)+2;
-  let r=fieldW/(2*COLS);r=Math.min(r,(H-top)/20.2);const left=p.i*half+(half-2*r*COLS)/2,yL=H-r*2.3,rowH=r*1.732;
-  const MAXR=clamp(Math.floor((yL-4*r-top)/rowH)+1,9,16);
+  let r=fieldW/(2*COLS);r=Math.min(r,(H-top)/24.5);const left=p.i*half+(half-2*r*COLS)/2,yL=H-r*2.3,rowH=r*1.732;
+  const MAXR=clamp(Math.floor((yL-4*r-top)/rowH)+1,10,16);
   return {half,COLS,r,left,top,yL,rowH,MAXR,cx:left+r*COLS,w:2*r*COLS};
  };
  const shift=(p,row)=>(row+p.off)%2,maxC=(p,g,row)=>shift(p,row)?g.COLS-1:g.COLS;

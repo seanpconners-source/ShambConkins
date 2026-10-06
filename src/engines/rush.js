@@ -136,7 +136,7 @@ async function rush(s){
    x.restore();}
  }
  let lastSig='';
- s.debug={engine:'rush',halves:H,scores,get phase(){return phase;},get game(){return cur;},get round(){return round;},get speed(){return curSpeed;},get dur(){return dur;},get pt(){return pt;},force(id,boss){forced=id;if(boss!==undefined)timeline[round+1]={boss,speedUp:false};},skipIntro(){if(phase==='intro')pt=99;},layout:()=>lay,pool:()=>pool.map(g=>g.id)};
+ s.debug={engine:'rush',halves:H,scores,get phase(){return phase;},get game(){return cur;},get round(){return round;},get speed(){return curSpeed;},get dur(){return dur;},get pt(){return pt;},force(id,boss){forced=id;if(boss!==undefined)timeline[round+1]={boss,speedUp:false};},skipIntro(){if(phase==='intro')pt=99;},skip(){if(phase==='play')pt=dur;else if(phase==='result'||phase==='banner')pt=99;},layout:()=>lay,pool:()=>pool.map(g=>g.id)};
  function step(dt){
   pt+=dt;
   if(phase==='intro'){if(pt>2.5)beginRound();return;}

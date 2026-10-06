@@ -63,7 +63,7 @@ const u0=U;
 
 // ---------------------------------------------------------------- Home Alone: pull the paint can
 const pull={id:'pull',verb:'PULL!',theme:'movie',kind:'tap',source:'Home Alone',caption:'Home Alone: pull the paint can',duration:5,bg:'#ffe8a8',
- init(r,rng,speed){const u=U(r);return {u,floor:r.h*.82,cx:r.w*(.4+rng()*.2),cy:r.h*.2,state:'hang',pulls:2,vy:0,bx:-u*.15,dir:1,v:r.w*ramp(speed,.3,.4),hit:0,back:0};},
+ init(r,rng,speed){const u=U(r);return {u,floor:r.h*.82,cx:r.w*(.4+rng()*.2),cy:r.h*.2,state:'hang',pulls:2,vy:0,bx:-u*.15,dir:1,v:r.w*ramp(speed,.3,.36),hit:0,back:0};},
  update(st,dt){const {r,u}=st;if(!st.hit){st.bx+=st.dir*st.v*dt;if(st.bx>r.w+u*.15)st.dir=-1;if(st.bx<-u*.15&&st.dir<0)st.dir=1;}else st.hit+=dt;
   const top=st.floor-u*.62;if(st.state==='fall'){st.cy+=r.h*3.4*dt;if(st.cy>=top){st.cy=top;if(Math.abs(st.bx-st.cx)<u*.2){st.state='landed';st.hit=.001;st.result='win';sfx('shot');}else{st.state='miss';st.back=.45;sfx('lose');}}}
   else if(st.state==='miss'){st.back-=dt;if(st.back<=0){if(st.pulls>0){st.state='hang';st.cy=r.h*.2;}else if(!st.result)st.result='lose';}}},

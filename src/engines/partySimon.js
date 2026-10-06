@@ -11,6 +11,7 @@ const CSS=`
 .sm-board{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:6px 10px 10px}
 .sm-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:clamp(8px,2vw,16px);width:min(100%,calc(100vh - 330px),560px);aspect-ratio:1;min-width:230px}
 .sm-pad{appearance:none;border:0;border-radius:24px;min-height:0;padding:0;color:rgba(255,255,255,.85);font:900 clamp(40px,12vw,84px)/1 Arial;background:var(--c);box-shadow:0 8px 0 rgba(0,0,0,.4),inset 0 -10px 0 rgba(0,0,0,.18),inset 0 8px 0 rgba(255,255,255,.2);filter:brightness(.62);transition:filter .08s,transform .08s;cursor:pointer;touch-action:manipulation}
+.sm-pad:hover,.sm-pad:active{background:var(--c);border:0}
 .sm-pad.on{filter:brightness(1.35) saturate(1.2);transform:scale(1.04);box-shadow:0 0 38px 8px var(--lit),inset 0 8px 0 rgba(255,255,255,.4)}
 .sm-pad.dead{filter:brightness(.4);pointer-events:none}
 .sm-dots{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:12px;padding:0 12px}

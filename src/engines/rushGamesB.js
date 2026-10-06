@@ -123,7 +123,7 @@ const throwG={id:'throw',verb:'THROW!',theme:'game',kind:'swipe',source:'Pokémo
 
 // ---------------------------------------------------------------- The Matrix: dodge the bullets
 const bullets={id:'bullets',verb:'DODGE!',theme:'movie',kind:'swipe',source:'The Matrix',caption:'The Matrix: dodge the bullets',duration:5,bossDuration:8,bg:'#06140c',boss:true,
- init(r,rng,speed,player,boss){const u=U(r),v=r.w*ramp(speed,.75,1.0),nx=r.w*.2,vols=boss?4:3,gap=ramp(speed,1.0,.85),bs=[];let T=1.2;for(let i=0;i<vols;i++){const k=boss&&i>0?2:1,free=Math.floor(rng()*3),lanes=k===2?[0,1,2].filter(l=>l!==free):[Math.floor(rng()*3)];for(const l of lanes)bs.push({T,l});T+=gap*(.95+rng()*.15);}
+ init(r,rng,speed,player,boss){const u=U(r),v=r.w*ramp(speed,.7,.85),nx=r.w*.2,vols=boss?4:3,gap=ramp(speed,1.05,.95)*(boss?1.1:1),bs=[];let T=1.3;for(let i=0;i<vols;i++){const k=boss&&i>0?2:1,free=Math.floor(rng()*3),lanes=k===2?[0,1,2].filter(l=>l!==free):[Math.floor(rng()*3)];for(const l of lanes)bs.push({T,l});T+=gap*(.95+rng()*.15);}
   return {u,v,nx,bs,lane:1,ly:[r.h*.2,r.h*.5,r.h*.8],f:{},y:r.h*.5,lean:0,last:Math.max(...bs.map(b=>b.T))+.15};},
  update(st,dt){st.y+=(st.ly[st.lane]-st.y)*Math.min(1,dt*14);st.lean=lerp(st.lean,0,dt*6);if(st.result)return;
   for(const b of st.bs){const bx=st.nx+(b.T-st.t)*st.v;if(Math.abs(bx-st.nx)<st.u*.12&&b.l===st.lane){st.result='lose';sfx('lose');}}

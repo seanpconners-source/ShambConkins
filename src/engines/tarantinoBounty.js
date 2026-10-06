@@ -34,9 +34,10 @@ async function bounty(s){
   const top=H*.14,beltY=H*.84,sh=beltY-top-H*.02,cw=(hw-16)/COLS,ch=sh/ROWS;Object.assign(L,{W,H,hw,top,beltY,cw,ch,th:Math.min(ch*1.02,cw*1.3),tw:Math.min(cw*.86,Math.min(ch*1.02,cw*1.3)*.74)});};
  layout();
  const slotXY=(i,slot)=>{const col=slot%COLS,row=Math.floor(slot/COLS);return {x:i*L.hw+8+L.cw*(col+.5),y:L.top+L.ch*(row+1)-L.ch*.06,cx:i*L.hw+8+L.cw*(col+.5),cy:L.top+L.ch*(row+.5)};};
- const sched=buildSchedule(s.seed,COLS*ROWS);
+ let sched=buildSchedule(s.seed,COLS*ROWS);
  const mk=i=>({score:0,ammo:AMMO,reload:0,combo:0,hits:0,shots:0,outlaws:0,bounties:0,innocents:0,cursor:0,hurt:0,belt:null,flashMiss:0,note:''});
- const P=[mk(0),mk(1)],items=[0,1].map(()=>sched.map(o=>({...o,hp:o.kind==='armored'?2:1,hit:null,done:false}))),S={t:0,card:0,phase:'card',over:false,white:0,end:0};
+ const mkItems=()=>[0,1].map(()=>sched.map(o=>({...o,hp:o.kind==='armored'?2:1,hit:null,done:false})));
+ let items=mkItems();const P=[mk(0),mk(1)],S={t:0,card:0,phase:'card',over:false,white:0,end:0};
  s.debug={engine:'bounty',P,S,items,sched,slotXY:(i,slot)=>slotXY(i,slot)};
  const active=(it)=>S.t>=it.at&&S.t<=it.at+it.life&&(it.hit===null||S.t-it.hit<.35);
  const up=(it)=>{if(it.hit!==null)return Math.max(0,1-(S.t-it.hit)/.3);const a=S.t-it.at,b=it.at+it.life-S.t;return ease(clamp(Math.min(a/.14,b/.14),0,1));};
@@ -68,6 +69,8 @@ async function bounty(s){
   const col=p.cursor%COLS,row=Math.floor(p.cursor/COLS);if(name==='l')p.cursor=row*COLS+(col+COLS-1)%COLS;if(name==='r')p.cursor=row*COLS+(col+1)%COLS;if(name==='u')p.cursor=((row+ROWS-1)%ROWS)*COLS+col;if(name==='d')p.cursor=((row+1)%ROWS)*COLS+col;void n;});
  s.hint('Tap the outlaws (red WANTED posters) the moment they pop up. Do NOT shoot townsfolk (green). The gold poster with your rival\'s face is worth 50! You have 6 bullets: swipe sideways along your gun belt at the bottom of your half to reload. Chain hits for a x4 multiplier. Keys: P1 WASD aim + Space fire/reload, P2 arrows + Enter.');
  if(!await s.pass(0,'Bounty Hunter: forty seconds on the same street, side by side. Shoot outlaws, spare the townsfolk, and cash in the gold poster with your rival\'s face on it. Swipe the belt to reload.','Both ready — saddle up',{countdown:3}))return;
+ // the canvas has its real size by now: fix the grid and build the (seeded) pattern
+ COLS=0;layout();sched=buildSchedule(s.seed,COLS*ROWS);items=mkItems();s.debug.items=items;s.debug.sched=sched;
 
  s.frame((dt,tt)=>{
   layout();shake.step(dt);for(const f of fx)f.step(dt);S.white=Math.max(0,S.white-dt*3);
