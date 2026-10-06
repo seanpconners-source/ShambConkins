@@ -3,7 +3,7 @@
 import {chromium, root} from './lib.mjs';
 import path from 'node:path';
 const secs = +process.argv[2] || 4, conc = +process.argv[3] || 4, filter = process.argv[4];
-const file = 'file://' + path.join(root, 'dist/ShambConkins.html');
+const file = 'file://' + path.resolve(root, process.env.SHAMB_FILE || 'dist/ShambConkins.html');
 const exe = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const browser = await chromium.launch({executablePath: exe});
 const probe = await browser.newPage(); await probe.goto(file);

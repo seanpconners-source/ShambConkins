@@ -17,7 +17,7 @@ export async function open(opts = {}) {
       return o.call(this, n, v);
     };
   });
-  await page.goto('file://' + path.join(root, opts.file || 'dist/ShambConkins.html'));
+  await page.goto('file://' + path.resolve(root, opts.file || process.env.SHAMB_FILE || 'dist/ShambConkins.html'));
   await page.waitForTimeout(800);
   return {browser, page, errors};
 }

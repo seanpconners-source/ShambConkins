@@ -10,6 +10,7 @@ const {ITEM_PACK_V43}=require("src/data/itemPackV43.js");
 const {MOVIE_BOND_CHARACTERS, FACE_PACK_CHARACTERS}=require("src/data/movieBonds.js");
 const {NEW_CHARACTERS, HORROR_IDS}=require("src/data/legendsPack.js");
 const {LEGENDS_TRIVIA}=require("src/data/legendsTrivia.js");
+const {TRIVIA3}=require("src/data/trivia3.js");
 const {LEGENDS_ITEMS}=require("src/data/legendsItems.js");
 const {balanceItem}=require("src/data/balance.js");
 // Preserve the uploaded catalog byte-for-byte. Sean has explicitly disclaimed
@@ -27,7 +28,7 @@ ACTIVE_CATALOG.characters.push(MIGHTY_DUCKS_CHARACTER);
 ACTIVE_CATALOG.characters.push(...LAB_CHARACTERS);
 ACTIVE_CATALOG.trivia.push(...MIGHTY_DUCKS_TRIVIA);
 ACTIVE_CATALOG.trivia.push(...ADVANCED_TRIVIA);
-ACTIVE_CATALOG.trivia.push(...PARTY_TRIVIA,...EXPANDED_TRIVIA_V42,...LEGENDS_TRIVIA);
+ACTIVE_CATALOG.trivia.push(...PARTY_TRIVIA,...EXPANDED_TRIVIA_V42,...LEGENDS_TRIVIA,...TRIVIA3);
 // Overrides affect the active game only; the uploaded catalog stays intact.
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='bond'?MOVIE_BOND_CHARACTERS[0]:c.id==='chris-parent'?{...c,name:'Dad · Chris Conners',unlockHint:'Meet Dad at My Parents’ House or a Home encounter.'}:c.id==='angie-parent'?{...c,name:'Mom · Angie Conners',unlockHint:'Meet Mom at My Parents’ House or a Home encounter.'}:c);
 ACTIVE_CATALOG.characters.push(...MOVIE_BOND_CHARACTERS.slice(1),...FACE_PACK_CHARACTERS,...NEW_CHARACTERS);

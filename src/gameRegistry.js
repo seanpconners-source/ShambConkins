@@ -201,5 +201,10 @@ const NEW_GAMES=[
  {id:'wind-archery',engine:'archery',title:'Brave · Wind Archery',source:'Brave',icon:'🏹',category:'sports',duration:'6 arrows each',rules:'Drag back from the bow to draw, aim along the dotted line, release. Wind pushes the arrow and the target starts moving after the second shot. Six arrows each, bullseye is ten. Same wind and targets for both players.'}
 ];
 for(const g of NEW_GAMES)GAMES.push({...g,family:g.engine,quality:'substantial',randomEligible:true,eventOnly:false,reward:8,gameUnlockAt:0});
+const PACKS=require("src/packs/index.js");
+for(const g of PACKS.games)GAMES.push({family:g.engine,quality:'substantial',randomEligible:true,eventOnly:false,reward:8,gameUnlockAt:0,...g});
+for(const g of PACKS.events)EVENT_GAMES.push({family:g.engine,quality:'themed-variant',randomEligible:false,eventOnly:true,reward:8,gameUnlockAt:0,...g});
+// RANDOM_GAMES was built before the late additions above; rebuild it in place.
+RANDOM_GAMES.length=0;RANDOM_GAMES.push(...GAMES.filter(g=>g.randomEligible&&g.quality==='substantial'));
 for(const g of GAMES)if(SOURCE_FIXES[g.id])g.source=SOURCE_FIXES[g.id];
 Object.assign(exports,{GAMES,EVENT_GAMES,gameById,gameUnlocked,RANDOM_GAMES,PHONE_TASK,TRIVIA_THEME_IDS,selectTriviaGame,triviaIsDue,selectBoardGame,selectGame,resolveLegacyGame});
