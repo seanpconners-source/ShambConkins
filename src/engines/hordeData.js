@@ -138,7 +138,7 @@ function buildSchedule(mode){
 // drops from destructibles / chests, weights are [gem, coin, chicken, magnet, bomb]
 const DROPS=[['gem',30],['coin',34],['chicken',16],['magnet',9],['bomb',8]];
 const XP_TIERS=[[1,'#58b8ff'],[5,'#62e08a'],[25,'#ff6a6a'],[100,'#d98cff']];
-const xpNeed=lv=>Math.round(5+lv*4.2+lv*lv*.55);
+const xpNeed=lv=>Math.round(5+lv*3.6+lv*lv*.4);
 
 
 // ---------- procedural art (baked once into offscreen canvases) ----------

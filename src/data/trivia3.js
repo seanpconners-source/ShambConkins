@@ -917,14 +917,13 @@ m|What is the name of the sassy talking device in the Bagge house?|The Computer|
 m|Who created Courage the Cowardly Dog?|John R. Dilworth|Genndy Tartakovsky|Craig McCracken|Seth MacFarlane|He is also known for animated shorts.
 h|Which 1996 short film became the pilot for Courage the Cowardly Dog?|The Chicken from Outer Space|Dog Gone Scary|Nowhere Kansas|Muriel's Adventure|It was part of Cartoon Network's What a Cartoon! showcase.
 @Dexter's Laboratory|animation|Dexter's_Laboratory
-e|Who is Dexter's annoying older sister?|Dee Dee|Mandark|Ed|Penny|She often wanders into his secret laboratory.
-e|Who is Dexter's genius rival?|Mandark|Monkey|Dad|Johnny|He lives across the street.
+e|Who is Dexter's genius rival?|Mandark|Monkey|Dad|Johnny|Mandark has his own secret laboratory.
 m|Who created Dexter's Laboratory?|Genndy Tartakovsky|Craig McCracken|John R. Dilworth|Butch Hartman|He also created Samurai Jack.
-m|Where is Dexter's secret lab hidden?|Behind a bookcase|Under the garage|In the attic|Behind a mirror|He activates it with a hidden mechanism.
+m|Where is Dexter's secret lab hidden?|Behind a bookcase|Under the garage|In the attic|Behind a mirror|Dee Dee often finds her way in.
 m|Which of Dexter's superhero segments stars his pet Monkey?|Dial M for Monkey|The Justice Friends|Dee Dee's Dilemma|Dexter's Defense|It parodies old superhero cartoons.
 h|Which actress first voiced Dexter before Candi Milo took over?|Christine Cavanaugh|Cree Summer|E.G. Daily|Kath Soucie|She also voiced Chuckie Finster.
 @Johnny Bravo|animation|Johnny_Bravo
-e|Which singer is Johnny Bravo's voice and look based on?|Elvis Presley|Buddy Holly|Johnny Cash|Chuck Berry|He wears sunglasses and a pompadour.
+e|Which singer's pompadour hairstyle is Johnny Bravo's look based on?|Elvis Presley|Buddy Holly|Johnny Cash|Chuck Berry|He also wears sunglasses and a tight white T-shirt.
 m|What does Johnny Bravo say when he sees a pretty woman?|Whoa, Mama!|Hey there!|Check this out!|Looking good!|He is famously unsuccessful with women.
 h|Which creator made Johnny Bravo?|Van Partible|Craig McCracken|Genndy Tartakovsky|Seth Green|It started as a Cartoon Network short.
 @Powerpuff Girls|animation|The_Powerpuff_Girls
@@ -937,6 +936,128 @@ h|Who created The Powerpuff Girls?|Craig McCracken|Genndy Tartakovsky|Van Partib
 @Samurai Jack|animation|Samurai_Jack
 m|Which wizard villain threw Jack into the future?|Aku|Ra|Him|Mojo|Aku is a shapeshifting demon.
 h|Which actor voices Samurai Jack?|Phil LaMarr|Mako|Dee Bradley Baker|Greg Eagles|He is also known for voicing Hermes on Futurama.
+@Cowboy Bebop|anime|Cowboy_Bebop
+e|What is the name of the bounty hunter protagonist of Cowboy Bebop?|Spike Spiegel|Jet Black|Vicious|Edward|He is a former member of the Red Dragon Syndicate.
+e|What is the name of the ship the bounty hunters live on?|The Bebop|The Swordfish|The Hammerhead|The Red Tail|It is a converted fishing trawler.
+m|Which band performed most of Cowboy Bebop's jazz-heavy soundtrack?|The Seatbelts|The Pillows|Spitz|Yellow Magic Orchestra|The band was led by composer Yoko Kanno.
+m|What is the name of the data dog on the Bebop?|Ein|Edward|Jet|Toto|He is a Pembroke Welsh corgi.
+m|Which martial art does Spike practice?|Jeet Kune Do|Karate|Judo|Capoeira|It is the system developed by Bruce Lee.
+m|Who directed Cowboy Bebop?|Shinichiro Watanabe|Hayao Miyazaki|Hideaki Anno|Satoshi Kon|He also directed Samurai Champloo.
+m|What does the show call its episodes?|Sessions|Chapters|Missions|Episodes|The titles often reference music.
+m|Which actor plays Spike in the 2021 live-action Netflix series?|John Cho|Daniel Dae Kim|Steven Yeun|Randall Park|It was canceled after one season.
+h|Which block first broadcast Cowboy Bebop in the United States in 2001?|Adult Swim|Toonami|Fox Kids|Nickelodeon|It was among the first anime on the block.
+h|What is the name of Spike's rival and former friend?|Vicious|Julia|Jet|Faye|Both belonged to the Red Dragon Syndicate.
+@Yu Yu Hakusho|anime|Yu_Yu_Hakusho
+e|What is the name of the delinquent protagonist of Yu Yu Hakusho?|Yusuke Urameshi|Kazuma Kuwabara|Hiei|Kurama|He becomes a Spirit Detective.
+m|Which creator wrote the Yu Yu Hakusho manga and also Hunter x Hunter?|Yoshihiro Togashi|Akira Toriyama|Masashi Kishimoto|Eiichiro Oda|It ran in Weekly Shonen Jump.
+m|What is Yusuke's signature attack called?|Spirit Gun|Kamehameha|Rasengan|Chidori|He fires it from his finger.
+m|Which character uses a rose whip?|Kurama|Hiei|Kuwabara|Toguro|He is a fox spirit living in a human body.
+h|Which character has a Jagan eye and a Dragon of the Darkness Flame?|Hiei|Kurama|Kuwabara|Toguro|He is a small, fiery demon.
+h|What is the name of the tournament of strongest fighters in the series?|The Dark Tournament|The Spirit Games|The Demon Cup|The Death Match|It is a major arc.
+@JoJo's Bizarre Adventure|anime|JoJo's_Bizarre_Adventure
+e|Who is the creator of JoJo's Bizarre Adventure?|Hirohiko Araki|Akira Toriyama|Tite Kubo|Masashi Kishimoto|The series began in 1987.
+m|What are the spirit-like manifestations used by fighters called?|Stands|Spirits|Auras|Familiars|Many are named for tarot cards or musical acts.
+m|Which Part 3 hero's Stand is called Star Platinum?|Jotaro Kujo|Joseph Joestar|Jonathan Joestar|Josuke Higashikata|His catchphrase is "Yare yare daze."
+m|Who is the main villain of Part 1 and Part 3?|Dio Brando|Kars|Diavolo|Kira|He shouts "Za Warudo."
+h|In which country is Part 5, Golden Wind, set?|Italy|Japan|United States|Egypt|Giorno Giovanna is the hero.
+h|Which studio began adapting the series for TV in 2012?|David Production|MAPPA|Madhouse|Bones|The first season covered Phantom Blood.
+@Neon Genesis Evangelion|anime|Neon_Genesis_Evangelion
+e|Who pilots Evangelion Unit-01?|Shinji Ikari|Rei Ayanami|Asuka Langley Soryu|Kaworu Nagisa|He is the son of NERV commander Gendo Ikari.
+e|What are the giant beings that attack Tokyo-3 called?|Angels|Titans|Kaiju|Daemons|NERV exists to fight them.
+m|What organization employs the Eva pilots?|NERV|SEELE|Wille|GEHIRN|It is headquartered beneath Tokyo-3.
+m|Which studio produced the original Neon Genesis Evangelion series?|Gainax|Sunrise|Madhouse|Production I.G|Hideaki Anno directed it.
+m|Which pilot is the fiery, red-haired Eva Unit-02 pilot?|Asuka Langley Soryu|Rei Ayanami|Misato Katsuragi|Ritsuko Akagi|She pilots Eva Unit-02.
+h|Which song plays over the series' ending credits?|Fly Me to the Moon|A Cruel Angel's Thesis|Tank!|Gurenge|It is a cover of a jazz standard.
+h|Which song is the series' opening theme?|A Cruel Angel's Thesis|Fly Me to the Moon|Tank!|Rewrite|It is performed by Yoko Takahashi.
+h|Who directed Shin Godzilla after Evangelion?|Hideaki Anno|Hayao Miyazaki|Mamoru Hosoda|Makoto Shinkai|He co-directed with Shinji Higuchi.
+@Akira|anime|Akira_(1988_film)
+e|What is the name of the gang leader with the red motorcycle in Akira?|Kaneda|Tetsuo|Ryu|Yamagata|His motorcycle slide is a famous image.
+m|Who directed the Akira film and created the manga?|Katsuhiro Otomo|Hayao Miyazaki|Satoshi Kon|Mamoru Oshii|The film was released in 1988.
+m|In which year is the film Akira set?|2019|1988|2088|2001|The film imagines Tokyo after World War III.
+h|Which 2018 Spielberg film references Kaneda's bike?|Ready Player One|Jurassic World|The Post|West Side Story|It appears in the film's virtual world.
+@One Punch Man|anime|One_Punch_Man
+e|What is the name of the hero who defeats opponents with a single punch?|Saitama|Genos|Garou|Mumen Rider|He trains with a simple daily routine.
+m|What is the name of the cyborg who becomes Saitama's disciple?|Genos|Garou|Sonic|King|He is determined to destroy the cyborg that killed his family.
+m|What is Saitama's training routine, to the amusement of fans?|100 push-ups, sit-ups, squats and a 10 km run|1,000 push-ups and a marathon|Meditation and fasting|Weightlifting and sparring|He trained for three years.
+h|Which artist drew the polished, highly detailed manga remake of One Punch Man?|Yusuke Murata|Tatsuki Fujimoto|Yoshihiro Togashi|Kentaro Miura|He redrew the original webcomic written by ONE.
+@Chainsaw Man|anime|Chainsaw_Man
+e|What is the name of the protagonist of Chainsaw Man?|Denji|Aki Hayakawa|Power|Makima|He becomes a Devil Hunter.
+m|Who is the mysterious public safety devil hunter who controls others?|Makima|Power|Himeno|Kobeni|She is called the Control Devil.
+m|Which studio animated the 2022 anime adaptation?|MAPPA|Wit Studio|Ufotable|CloverWorks|It also animated Jujutsu Kaisen's second season.
+h|Which singer performed the opening theme Kick Back?|Kenshi Yonezu|Yoasobi|Eve|Ado|His song is a fast-paced pop anthem.
+@Dandadan|anime|Dandadan
+e|What is the name of the two teens who bond over ghosts and aliens in Dandadan?|Momo and Okarun|Momo and Jiji|Okarun and Seiko|Jiji and Aira|They each believe in the opposite phenomenon.
+m|Which studio animated the 2024 Dandadan anime?|Science SARU|MAPPA|Ufotable|Wit Studio|It is known for dynamic, experimental animation.
+h|Which singer performed the Dandadan opening Otonoke?|Creepy Nuts|Yoasobi|Eve|Ado|The group is a hip-hop duo.
+@Sleep|music|Sleep_(band)
+m|In which California city did Sleep form?|San Jose|Oakland|Sacramento|San Diego|The band's earlier name was Asbestosdeath.
+m|On which date was Sleep's 2018 album The Sciences famously released by surprise?|April 20|December 25|October 31|July 4|The date is a well-known holiday among stoner-rock fans.
+h|Which label released Sleep's Holy Mountain in 1992?|Earache Records|Sub Pop|Relapse Records|Roadrunner Records|Earache also released early albums by Napalm Death.
+h|Which Neurosis drummer played with Sleep after their reunion?|Jason Roeder|Dave Lombardo|Mike Bordin|Brann Dailor|He also drums in Neurosis.
+h|Which label famously refused to release Sleep's one-hour track Dopesmoker as it was delivered?|London Records|Sub Pop|Matador|Epitaph|The piece eventually saw release on other labels.
+@Electric Wizard|music|Electric_Wizard
+m|From which English county does Electric Wizard hail?|Dorset|Yorkshire|Cornwall|Cumbria|The band formed there in the early 1990s.
+h|Which 2007 Electric Wizard album's title references witchcraft?|Witchcult Today|Black Masses|Time to Die|Come My Fanatics...|Its follow-up was Black Masses in 2010.
+h|Which label, founded by Lee Dorrian, released Electric Wizard's early albums?|Rise Above Records|Earache Records|Peaceville Records|Southern Lord|Dorrian also fronted the band Cathedral.
+h|Which Electric Wizard album title is a pun on a classic Black Sabbath record?|Wizard Bloody Wizard|Black Masses|Time to Die|Let Us Prey|It was released in 2017.
+@Melvins|music|Melvins
+m|In which Washington town did the Melvins form?|Montesano|Seattle|Aberdeen|Olympia|It is near the hometown of Kurt Cobain.
+h|Which Melvins drummer also played on Nirvana's first demo recordings?|Dale Crover|Dave Grohl|Chad Channing|Dan Peters|He has drummed in the Melvins since the mid-1980s.
+h|Which 1993 Melvins album, their Atlantic debut, featured contributions from Kurt Cobain?|Houdini|Stoner Witch|Bullhead|Lysol|It was the band's first major-label release.
+h|Which 1994 Melvins album was their second for Atlantic Records?|Stoner Witch|Bullhead|Lysol|Honky|It followed Houdini in 1993.
+@High on Fire|music|High_on_Fire
+m|In which California city did High on Fire form?|Oakland|San Jose|San Francisco|Sacramento|Matt Pike formed it after the original Sleep split.
+h|Which High on Fire album title honors Motorhead's Lemmy?|Electric Messiah|Surrounded by Thieves|Snakes for the Divine|Luminiferous|It was released in 2018.
+h|The title De Vermis Mysteriis comes from a fictional book created by which author?|Robert Bloch|H.P. Lovecraft|Clark Ashton Smith|Stephen King|Lovecraft later referenced the book in one of his own stories.
+@Sunn O)))|music|Sunn_O)))
+m|In which city was the drone band Sunn O))) formed in 1998?|Seattle|Portland|Los Angeles|Chicago|Stephen O'Malley and Greg Anderson founded it.
+m|What do the members of Sunn O))) typically wear on stage?|Robes|Suits|Costumes of skeletons|Army uniforms|The band is known for incredibly loud amplifier stacks.
+h|The band's name is a play on which brand of amplifier?|Sunn|Marshall|Orange|Ampeg|The brand was popular with heavy bands of the 1970s.
+@Boris|music|Boris_(band)
+m|In which Japanese city did Boris form in 1992?|Tokyo|Osaka|Kyoto|Sapporo|They blend doom, noise and pop sensibilities.
+@YOB|music|Yob_(band)
+m|In which Oregon city was the doom band YOB formed?|Eugene|Portland|Salem|Bend|Mike Scheidt leads the band.
+@Windhand|music|Windhand
+m|In which Virginia city did the doom band Windhand form?|Richmond|Norfolk|Roanoke|Alexandria|The band is known for Dorthia Cottrell's vocals.
+@Monolord|music|Monolord
+@Kyuss|music|Kyuss
+m|In which California desert city did Kyuss form?|Palm Desert|Indio|Yucca Valley|Lancaster|The band's early scene centered on desert gatherings.
+m|What name is given to the remote-desert gigs where Kyuss famously played?|Generator parties|Moonlight gigs|Desert jams|Campfire sets|Bands plugged into portable generators far from town.
+m|Who was the vocalist of Kyuss?|John Garcia|Mark Lanegan|Josh Homme|Nick Oliveri|He later fronted Slo Burn and Vista Chino.
+h|Which Kyuss album includes the song Green Machine?|Blues for the Red Sun|Welcome to Sky Valley|Wretch|...And the Circus Leaves Town|Chris Goss produced it.
+h|What was Kyuss originally called?|Katzenjammer|Gamma Ray|Sons of Kyuss|The Desert Sessions|They changed it before releasing their first album.
+h|What name did the reunited Kyuss lineup of Garcia, Bjork and Oliveri adopt after a legal dispute with Josh Homme?|Vista Chino|Kyuss Lives!|Slo Burn|Unida|They had toured as Kyuss Lives! beforehand.
+@Queens of the Stone Age|music|Queens_of_the_Stone_Age
+m|In which year did Queens of the Stone Age release their self-titled debut album?|1998|1996|2000|2002|Josh Homme formed the band after Kyuss ended.
+m|Which Queens of the Stone Age album features the song Feel Good Hit of the Summer?|Rated R|Songs for the Deaf|Lullabies to Paralyze|Era Vulgaris|It was released in 2000.
+m|Which singer from Screaming Trees contributed vocals to Songs for the Deaf?|Mark Lanegan|Chris Cornell|Layne Staley|Scott Weiland|He is known for his raspy baritone.
+m|What was Queens of the Stone Age originally called?|Gamma Ray|Kyuss Lives|Desert Sessions|Stone Age Queens|They changed it because a German power metal band already used the name.
+m|Which supergroup features Homme, Dave Grohl and John Paul Jones?|Them Crooked Vultures|Eagles of Death Metal|Probot|Mondo Generator|They released an album in 2009.
+h|Which 2013 Queens of the Stone Age album features Elton John?|...Like Clockwork|Era Vulgaris|Villains|Lullabies to Paralyze|He appears on Fairweather Friends.
+h|Which producer helmed Queens of the Stone Age's 2017 album Villains?|Mark Ronson|Rick Rubin|Joe Barresi|Josh Homme|Ronson is also known for Amy Winehouse.
+h|What is the name of Homme's rotating-member project of desert recordings?|The Desert Sessions|Eagles of Death Metal|Mondo Generator|Kyuss Lives|Many QOTSA members appeared in it.
+@Faith No More|music|Faith_No_More
+e|In which California city did Faith No More form?|San Francisco|Los Angeles|San Diego|Oakland|The band started in 1981.
+m|Who was Faith No More's original lead vocalist before Mike Patton?|Chuck Mosley|Jim Martin|Roddy Bottum|Billy Gould|He sang on We Care a Lot.
+m|Which 1989 Faith No More album includes the hit Epic?|The Real Thing|Angel Dust|King for a Day... Fool for a Lifetime|Album of the Year|It was Patton's first album with the band.
+m|What shows up flopping on the ground at the end of the Epic video?|A fish|A frog|A bird|A lizard|It became an unforgettable image of the video.
+h|Which Commodores song did Faith No More cover in 1993?|Easy|Three Times a Lady|Brick House|Nightshift|Their version hit the UK top ten.
+h|Which Faith No More album was released in 2015, their first in 18 years?|Sol Invictus|Album of the Year|Angel Dust|King for a Day... Fool for a Lifetime|It was the band's comeback after a long hiatus.
+@Mr. Bungle|music|Mr._Bungle
+m|Who produced Mr. Bungle's 1991 self-titled debut?|John Zorn|Rick Rubin|Steve Albini|Butch Vig|He is a famous avant-garde saxophonist.
+h|Which 1995 Mr. Bungle album is known for its dense experimentalism?|Disco Volante|California|Mr. Bungle|Raging Wrath of the Easter Bunny|It followed their major-label debut.
+h|Which two metal musicians joined Mr. Bungle for the 2019 reunion?|Scott Ian and Dave Lombardo|Kerry King and Lars Ulrich|Dave Mustaine and Tom Araya|Phil Anselmo and Kirk Hammett|They re-recorded the band's early demo.
+h|Which Mr. Bungle guitarist later founded Secret Chiefs 3?|Trey Spruance|Trevor Dunn|Danny Heifetz|Clinton McKinnon|He is also a multi-instrumentalist.
+@Fantômas|music|Fantômas_(band)
+h|Which supergroup features Mike Patton, Buzz Osborne, Trevor Dunn and Dave Lombardo?|Fantômas|Tomahawk|Dillinger Escape Plan|Probot|It was formed in 1998.
+h|Which record label was co-founded by Mike Patton in 1999?|Ipecac Recordings|Sub Pop|Matador|Epitaph|He started it with Greg Werckman.
+@Ween|music|Ween
+m|In which Pennsylvania town did Ween form?|New Hope|Philadelphia|Bethlehem|Pittsburgh|The founders were in a school together.
+m|Which Ween song plays over the credits of The SpongeBob SquarePants Movie?|Ocean Man|Push th' Little Daisies|Freedom of '76|Voodoo Lady|It is from their 1997 album The Mollusk.
+h|Which Ween song became a hit after being featured on Beavis and Butt-Head?|Push th' Little Daisies|Ocean Man|Freedom of '76|Voodoo Lady|It is from their 1992 album Pure Guava.
+h|Which Ween album was recorded in Nashville with veteran session players in 1996?|12 Golden Country Greats|The Pod|Chocolate and Cheese|The Mollusk|It is a country album.
+h|Which Ween album released in 1994 includes Freedom of '76?|Chocolate and Cheese|The Mollusk|Pure Guava|White Pepper|It was their major-label debut for Elektra.
+h|Which Ween album from 2007 was their last studio release before a hiatus?|La Cucaracha|Quebec|White Pepper|The Mollusk|The band broke up in 2012 and reunited in 2015.
 `;
 const levels={e:'easy',m:'medium',h:'hard',i:'impossible'};
 function parseFacts(text){let source,category,page;return text.trim().split('\n').filter(Boolean).flatMap(line=>{
@@ -980,6 +1101,11 @@ const TRIVIA3_THEMES=[
  {tag:'adultswim',title:'Adult Swim Basement · Aqua Teen, Space Ghost, Beavis & Tim and Eric',icon:'🍔',source:'Aqua Teen Hunger Force',description:'Master Shake, Zorak, Beavis and Butt-Head, Dr. Steve Brule and late-night cartoon weirdness.',sources:['Aqua Teen Hunger Force','Space Ghost Coast to Coast','Beavis and Butt-Head','Tim & Eric']},
  {tag:'nickgames',title:'Slimed! · Nickelodeon Game Shows & Scares',icon:'🟢',source:'Double Dare',description:'Double Dare, GUTS, Legends of the Hidden Temple, Nick Arcade and Are You Afraid of the Dark?',sources:['Double Dare','Legends of the Hidden Temple','Nick Arcade','GUTS','Are You Afraid of the Dark?']},
  {tag:'nicktoons',title:'Nicktoons Reunion · Rugrats, Hey Arnold!, Rocko & Ren and Stimpy',icon:'📺',source:'Nicktoons',description:'The first wave of Nicktoons and the voices behind them.',sources:['Rugrats','Hey Arnold!','Rocko\'s Modern Life','Ren & Stimpy']},
- {tag:'cartoonnet',title:'Cartoon Cartoons · Courage, Dexter, Johnny Bravo & Powerpuff Girls',icon:'🐶',source:'Cartoon Network',description:'Cartoon Network\'s golden-era originals and the creators behind them.',sources:['Courage the Cowardly Dog','Dexter\'s Laboratory','Johnny Bravo','Powerpuff Girls','Samurai Jack']}
+ {tag:'cartoonnet',title:'Cartoon Cartoons · Courage, Dexter, Johnny Bravo & Powerpuff Girls',icon:'🐶',source:'Cartoon Network',description:'Cartoon Network\'s golden-era originals and the creators behind them.',sources:['Courage the Cowardly Dog','Dexter\'s Laboratory','Johnny Bravo','Powerpuff Girls','Samurai Jack']},
+ {tag:'anime1',title:'Space Cowboys, Spirit Detectives & Stands · Bebop, Yu Yu Hakusho & JoJo',icon:'🚀',source:'Cowboy Bebop',description:'Spike Spiegel, Yusuke Urameshi and the Joestar bloodline.',sources:['Cowboy Bebop','Yu Yu Hakusho','JoJo\'s Bizarre Adventure']},
+ {tag:'anime2',title:'Eva, Akira, Saitama & Denji · Modern Anime Greats',icon:'🤖',source:'Neon Genesis Evangelion',description:'Evangelion, Akira, One Punch Man, Chainsaw Man and Dandadan.',sources:['Neon Genesis Evangelion','Akira','One Punch Man','Chainsaw Man','Dandadan']},
+ {tag:'doomriffs',title:'Riff Worship · Doom, Sludge & Drone',icon:'🌿',source:'Sleep',description:'Sleep, Electric Wizard, Melvins, High on Fire, Sunn O))) and the heavy underground.',sources:['Sleep','Electric Wizard','Melvins','High on Fire','Sunn O)))','Boris','YOB','Windhand','Monolord']},
+ {tag:'desertrock',title:'Generator Parties · Kyuss, QOTSA & Desert Rock',icon:'🏜',source:'Kyuss',description:'Palm Desert, Josh Homme and the Queens of the Stone Age.',sources:['Kyuss','Queens of the Stone Age']},
+ {tag:'pattonweird',title:'Weird Rock · Faith No More, Mr. Bungle, Fantômas & Ween',icon:'🐟',source:'Faith No More',description:'Mike Patton\'s many bands, plus the Boognish worshipers of Ween.',sources:['Faith No More','Mr. Bungle','Fantômas','Ween']}
 ];
 Object.assign(exports,{TRIVIA3,TRIVIA3_THEMES});

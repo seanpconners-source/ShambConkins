@@ -7,7 +7,7 @@ const grab=(st,id,p,ox,oy)=>{st.drag={id,ox,oy};};
 
 // ---------------------------------------------------------------- Star Trek: beam me up
 const beam={id:'beam',verb:'BEAM!',theme:'tv',kind:'drag',source:'Star Trek',caption:'Star Trek: beam me up (drag Kirk to the pad)',duration:4.8,bg:'#1a2250',
- init(r,rng,speed){const u=U(r);return {u,k:{x:r.w*.14,y:r.h*(.3+rng()*.4)},pad:{x:r.w*.82,y:r.h*.5,A:r.h*.22,om:ramp(1.2,1.7),ph:rng()*6},drag:null,inside:0,beam:0};},
+ init(r,rng,speed){const u=U(r);return {u,k:{x:r.w*.14,y:r.h*(.3+rng()*.4)},pad:{x:r.w*.82,y:r.h*.5,A:r.h*.22,om:ramp(speed,1.2,1.7),ph:rng()*6},drag:null,inside:0,beam:0};},
  padY(st,t){return st.pad.y+Math.sin(st.pad.ph+t*st.pad.om)*st.pad.A;},
  update(st,dt){if(st.result==='win'){st.beam+=dt;return;}if(st.result)return;const py=this.padY(st,st.t);if(dist(st.k.x,st.k.y,st.pad.x,py)<st.u*.2){st.inside+=dt;if(st.inside>.12){st.result='win';st.beam=.001;sfx('rare');}}else st.inside=0;},
  down(st,p,id){if(!st.drag&&dist(p.x,p.y,st.k.x,st.k.y)<st.u*.3)grab(st,id,p,st.k.x-p.x,st.k.y-p.y);},
@@ -56,7 +56,7 @@ const dip={id:'dip',verb:'DIP!',theme:'tv',kind:'drag',source:'Seinfeld',caption
 // ---------------------------------------------------------------- Pac-Man: eat the dots
 const eat={id:'eat',verb:'EAT!',theme:'game',kind:'drag',source:'Pac-Man',caption:'Pac-Man: eat 3 dots (dodge the ghost)',duration:5,bossDuration:8,bg:'#05051a',boss:true,
  init(r,rng,speed,player,boss){const u=U(r),n=boss?7:3,dots=[];for(let i=0;i<n;i++){const top=i%2===0;dots.push({x:r.w*(.2+.6*((i*.37+rng()*.15)%1)),y:r.h*(top?.18+rng()*.14:.68+rng()*.14),got:false});}
-  return {u,p:{x:r.w*.1,y:r.h*.5},tgt:{x:r.w*.1,y:r.h*.5},dots,ghost:{om:ramp(.9,1.3),ph:rng()*6},vmax:u*ramp(1.9,2.4),touch:false,dir:0,gx:0,gy:r.h*.5};},
+  return {u,p:{x:r.w*.1,y:r.h*.5},tgt:{x:r.w*.1,y:r.h*.5},dots,ghost:{om:ramp(speed,.9,1.3),ph:rng()*6},vmax:u*ramp(speed,1.9,2.4),touch:false,dir:0,gx:0,gy:r.h*.5};},
  update(st,dt){const g=st.ghost;st.gx=st.r.w*.5+Math.sin(g.ph+st.t*g.om)*st.r.w*.4;
   if(st.touch){const dx=st.tgt.x-st.p.x,dy=st.tgt.y-st.p.y,d=Math.hypot(dx,dy),m=Math.min(d,st.vmax*dt);if(d>1){st.p.x+=dx/d*m;st.p.y+=dy/d*m;st.dir=Math.atan2(dy,dx);}}
   if(st.result)return;for(const d of st.dots)if(!d.got&&dist(st.p.x,st.p.y,d.x,d.y)<st.u*.13){d.got=true;sfx('pickup');}
@@ -74,7 +74,7 @@ const eat={id:'eat',verb:'EAT!',theme:'game',kind:'drag',source:'Pac-Man',captio
 
 // ---------------------------------------------------------------- Jurassic Park: catch the amber
 const amber={id:'amber',verb:'CATCH!',theme:'movie',kind:'drag',source:'Jurassic Park',caption:'Jurassic Park: catch the amber (not the rocks)',duration:5,bossDuration:8,bg:'#2e6b3a',boss:true,
- init(r,rng,speed,player,boss){const need=boss?7:3,items=[],gap=ramp(.72,.52),fall=ramp(.8,1.0);let T=.5;const total=need+1+(boss?3:2),rockAt=new Set();while(rockAt.size<(boss?3:2))rockAt.add(1+Math.floor(rng()*(total-1)));
+ init(r,rng,speed,player,boss){const need=boss?7:3,items=[],gap=ramp(speed,.72,.52),fall=ramp(speed,.8,1.0);let T=.5;const total=need+1+(boss?3:2),rockAt=new Set();while(rockAt.size<(boss?3:2))rockAt.add(1+Math.floor(rng()*(total-1)));
   for(let i=0;i<total;i++){items.push({T,x:r.w*(.12+rng()*.76),rock:rockAt.has(i),done:false});T+=gap*(.9+rng()*.2);}
   return {u:U(r),need,items,bx:r.w/2,tx:r.w/2,by:r.h*.86,vs:r.h*fall,got:0,miss:0,drag:null,bounce:0};},
  iy(st,it){return -st.u*.1+(st.t-it.T)*st.vs;},
@@ -92,8 +92,8 @@ const amber={id:'amber',verb:'CATCH!',theme:'movie',kind:'drag',source:'Jurassic
 
 // ---------------------------------------------------------------- Mario Kart: banana dodge
 const banana={id:'banana',verb:'STEER!',theme:'game',kind:'drag',source:'Mario Kart',caption:'Mario Kart: dodge the bananas',duration:5,bossDuration:8,bg:'#3a9a46',boss:true,
- init(r,rng,speed,player,boss){const waves=boss?6:3,gap=ramp(1.05,.85),bs=[];let T=1.3;const rw=Math.min(r.w*.7,U(r)*1.5);for(let i=0;i<waves;i++){const free=Math.floor(rng()*3);for(let l=0;l<3;l++)if(l!==free||(boss&&i%2&&rng()<.5&&l!==free&&false))bs.push({T,l});T+=gap*(.95+rng()*.15);}
-  return {u:U(r),bs,rw,rx:(r.w-rw)/2,kx:r.w/2,tx:r.w/2,ky:r.h*.78,vs:r.h*ramp(.6,.8),last:T,spin:0,drag:null};},
+ init(r,rng,speed,player,boss){const waves=boss?6:3,gap=ramp(speed,1.05,.85),bs=[];let T=1.3;const rw=Math.min(r.w*.7,U(r)*1.5);for(let i=0;i<waves;i++){const free=Math.floor(rng()*3);for(let l=0;l<3;l++)if(l!==free||(boss&&i%2&&rng()<.5&&l!==free&&false))bs.push({T,l});T+=gap*(.95+rng()*.15);}
+  return {u:U(r),bs,rw,rx:(r.w-rw)/2,kx:r.w/2,tx:r.w/2,ky:r.h*.78,vs:r.h*ramp(speed,.6,.8),last:T,spin:0,drag:null};},
  by(st,b){return st.ky-(b.T-st.t)*st.vs;},
  update(st,dt){st.kx+=(st.tx-st.kx)*Math.min(1,dt*18);if(st.spin)st.spin+=dt*10;if(st.result)return;
   for(const b of st.bs){const bx=st.rx+(b.l+.5)*st.rw/3,y=this.by(st,b);if(Math.abs(y-st.ky)<st.u*.1&&Math.abs(bx-st.kx)<st.u*.13){st.result='lose';st.spin=.001;sfx('lose');}}
@@ -110,7 +110,7 @@ const banana={id:'banana',verb:'STEER!',theme:'game',kind:'drag',source:'Mario K
 
 // ---------------------------------------------------------------- Pong: return the ball
 const pong={id:'pong',verb:'RETURN!',theme:'game',kind:'drag',source:'Pong',caption:'Pong: return the ball',duration:5,bossDuration:8,bg:'#0b0b10',boss:true,
- init(r,rng,speed,player,boss){const u=U(r),v=r.w*ramp(.85,1.15);return {u,need:boss?4:2,ret:0,py:r.h/2,ty:r.h/2,ph:r.h*.17,b:{x:r.w*.8,y:r.h*(.3+rng()*.4),vx:-v,vy:(rng()<.5?-1:1)*r.h*(.35+rng()*.25)},v,ay:r.h/2,drag:null,serveT:.4};},
+ init(r,rng,speed,player,boss){const u=U(r),v=r.w*ramp(speed,.85,1.15);return {u,need:boss?4:2,ret:0,py:r.h/2,ty:r.h/2,ph:r.h*.17,b:{x:r.w*.8,y:r.h*(.3+rng()*.4),vx:-v,vy:(rng()<.5?-1:1)*r.h*(.35+rng()*.25)},v,ay:r.h/2,drag:null,serveT:.4};},
  update(st,dt){st.py+=(st.ty-st.py)*Math.min(1,dt*20);if(st.t<st.serveT)return;const b=st.b,{r}=st;b.x+=b.vx*dt;b.y+=b.vy*dt;const br=st.u*.04;if(b.y<br){b.y=br;b.vy=Math.abs(b.vy);}if(b.y>r.h-br){b.y=r.h-br;b.vy=-Math.abs(b.vy);}
   st.ay+=(b.y-st.ay)*Math.min(1,dt*10);const px=r.w*.07;
   if(!st.result){if(b.vx<0&&b.x<=px+br){if(Math.abs(b.y-st.py)<=st.ph+br){b.vx=-b.vx*1.04;b.x=px+br;b.vy+=(b.y-st.py)/st.ph*r.h*.3;st.ret++;sfx('tap');if(st.ret>=st.need)st.result='win';}else if(b.x<0){st.result='lose';sfx('lose');}}
@@ -125,7 +125,7 @@ const pong={id:'pong',verb:'RETURN!',theme:'game',kind:'drag',source:'Pong',capt
 
 // ---------------------------------------------------------------- Ghostbusters: trap the ghost
 const trap={id:'trap',verb:'TRAP!',theme:'movie',kind:'drag',source:'Ghostbusters',caption:'Ghostbusters: keep the beam on the ghost',duration:5,bossDuration:8,bg:'#241a45',boss:true,
- init(r,rng,speed,player,boss){return {u:U(r),need:boss?3.2:ramp(1.6,1.3),prog:0,f:null,aim:{x:r.w/2,y:r.h*.55},ph:[rng()*6,rng()*6],om:ramp(1.4,1.9),on:false,cx:r.w/2,cy:r.h*.38};},
+ init(r,rng,speed,player,boss){return {u:U(r),need:boss?3.2:ramp(speed,1.6,1.3),prog:0,f:null,aim:{x:r.w/2,y:r.h*.55},ph:[rng()*6,rng()*6],om:ramp(speed,1.4,1.9),on:false,cx:r.w/2,cy:r.h*.38};},
  ghost(st,t){const {r}=st;return {x:r.w*.5+Math.sin(st.ph[0]+t*st.om)*r.w*.3,y:st.cy+Math.sin(st.ph[1]+t*st.om*1.37)*r.h*.2};},
  update(st,dt){const g=this.ghost(st,st.t);st.g=g;if(st.result==='win'){st.suck=(st.suck||0)+dt;return;}if(st.result)return;st.on=st.f!==null&&dist(st.aim.x,st.aim.y,g.x,g.y)<st.u*.2;
   if(st.on)st.prog+=dt;else st.prog=Math.max(0,st.prog-dt*.5);if(st.prog>=st.need){st.result='win';st.suck=.001;sfx('rare');}},
@@ -142,7 +142,7 @@ const trap={id:'trap',verb:'TRAP!',theme:'movie',kind:'drag',source:'Ghostbuster
 
 // ---------------------------------------------------------------- Karate Kid: wax on, wax off
 const wax={id:'wax',verb:'WAX!',theme:'movie',kind:'circle',source:'The Karate Kid',caption:'Karate Kid: wax on, wax off',duration:5.4,bg:'#d9c9a0',
- init(r,rng,speed){const need=ramp(5.5,6.2);return {u:U(r),need,acc:0,phase:0,f:null,last:null,cx:r.w/2,cy:r.h*.55,glow:0,hand:{x:r.w*.5,y:r.h*.3}};},
+ init(r,rng,speed){const need=ramp(speed,5.5,6.2);return {u:U(r),need,acc:0,phase:0,f:null,last:null,cx:r.w/2,cy:r.h*.55,glow:0,hand:{x:r.w*.5,y:r.h*.3}};},
  update(st,dt){st.glow=Math.max(0,st.glow-dt);},
  down(st,p,id){if(st.f===null){st.f=id;st.last=Math.atan2(p.y-st.cy,p.x-st.cx);st.hand={x:p.x,y:p.y};}},
  move(st,p,id){if(st.f!==id||st.result)return;st.hand={x:p.x,y:p.y};if(dist(p.x,p.y,st.cx,st.cy)<st.u*.07)return;const a=Math.atan2(p.y-st.cy,p.x-st.cx);let d=a-st.last;if(d>Math.PI)d-=TAU;if(d<-Math.PI)d+=TAU;st.last=a;
@@ -160,7 +160,7 @@ const wax={id:'wax',verb:'WAX!',theme:'movie',kind:'circle',source:'The Karate K
 
 // ---------------------------------------------------------------- Always Sunny: shake the rum ham
 const shake={id:'shake',verb:'SHAKE!',theme:'tv',kind:'scrub',source:'It’s Always Sunny',caption:'Always Sunny: shake the rum ham',duration:4.8,bossDuration:8,bg:'#f08a5d',boss:true,
- init(r,rng,speed,player,boss){return {u:U(r),need:boss?30:Math.round(ramp(13,15)),n:0,f:null,last:null,dirX:0,acc:0,jig:0};},
+ init(r,rng,speed,player,boss){return {u:U(r),need:boss?30:Math.round(ramp(speed,13,15)),n:0,f:null,last:null,dirX:0,acc:0,jig:0};},
  update(st,dt){st.jig=Math.max(0,st.jig-dt*3);},
  down(st,p,id){if(st.f===null){st.f=id;st.last={x:p.x,y:p.y};st.acc=0;st.dirX=0;}},
  move(st,p,id){if(st.f!==id||st.result)return;const dx=p.x-st.last.x,dy=p.y-st.last.y,ax=Math.abs(dx)>=Math.abs(dy)?dx:dy;st.acc+=ax;if(Math.abs(st.acc)>st.u*.07){const d=Math.sign(st.acc);if(st.dirX&&d!==st.dirX){st.n++;st.jig=1;sfx('tap');if(st.n>=st.need){st.result='win';sfx('rare');}}st.dirX=d;st.acc=0;}st.last={x:p.x,y:p.y};},
@@ -175,7 +175,7 @@ const shake={id:'shake',verb:'SHAKE!',theme:'tv',kind:'scrub',source:'It’s Alw
 
 // ---------------------------------------------------------------- Jurassic Park: don't move
 const freeze={id:'freeze',verb:'FREEZE!',theme:'movie',kind:'still',source:'Jurassic Park',caption:'Jurassic Park: don’t move (it can’t see you)',duration:4.4,timeout:'win',bg:'#16301f',
- init(r,rng,speed){return {u:U(r),roar:0,lure:[1.4+rng()*.4,2.8+rng()*.3],lureLen:ramp(.9,.8)};},
+ init(r,rng,speed){return {u:U(r),roar:0,lure:[1.4+rng()*.4,2.8+rng()*.3],lureLen:ramp(speed,.9,.8)};},
  update(st,dt){if(st.roar)st.roar+=dt;},
  lureOn(st){return st.lure.some(l=>st.t>=l&&st.t<l+st.lureLen);},
  down(st){if(st.result)return;st.result='lose';st.roar=.001;sfx('shot');},

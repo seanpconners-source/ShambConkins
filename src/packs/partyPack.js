@@ -1,7 +1,7 @@
 // Content pack: partyPack. Slow, social pass-and-play games (hidden information, bluffing, drawing, prediction).
 // Engines are required lazily: packs load early, and the engine modules pull in assets/characters (circular otherwise).
 const lazy=(file,name)=>s=>require(file)[name](s);
-const engines={partyNewlywed:lazy("src/engines/partyNewlywed.js","newlywed"),partyRoast:lazy("src/engines/partyRoast.js","roast"),partyLiarsDice:lazy("src/engines/partyLiarsDice.js","liarsDice"),partyDrawIt:lazy("src/engines/partyDrawIt.js","drawIt")};
+const engines={partyNewlywed:lazy("src/engines/partyNewlywed.js","newlywed"),partyRoast:lazy("src/engines/partyRoast.js","roast"),partyLiarsDice:lazy("src/engines/partyLiarsDice.js","liarsDice"),partyDrawIt:lazy("src/engines/partyDrawIt.js","drawIt"),partyBattleship:lazy("src/engines/partyBattleship.js","battleship")};
 const games=[
  {id:'newlywed-spirit',engine:'partyNewlywed',family:'partyNewlywed',title:'The Newlywed Game · Spirit Battery',source:'The Newlywed Game',icon:'💞',category:'puzzle',level:'spirit',duration:'7 rounds',
   rules:'Answer a question about yourself in secret while your partner secretly guesses it. Matches charge the sync battery and score points; the last round is worth double.'},
@@ -11,6 +11,8 @@ const games=[
   rules:'Each of you hides five dice under a cup and takes turns raising a bid on how many of one face are on the table. Ones are wild. Call LIAR and the loser of the showdown drops a die; lose them all and you walk the plank.'}
  ,{id:'draw-it',engine:'partyDrawIt',family:'partyDrawIt',title:'Pictionary · Draw It',source:'Pictionary',icon:'🎨',category:'skill',level:'mind',duration:'3 drawings each',
   rules:'Draw a secret pop-culture prompt with your finger in 25 seconds while the other player watches the replay and picks the right answer out of six. Faster guesses score more.'}
+ ,{id:'battleship-fog',engine:'partyBattleship',family:'partyBattleship',title:'Battleship · Fog of War',source:'Battleship',icon:'🚢',category:'strategy',level:'mind',duration:'until a fleet sinks',
+  rules:'Secretly place your fleet, then take turns firing at the enemy waters. A hit earns another shot, a miss passes the phone. Sink every enemy ship to win.'}
 ];
 const events=[];
 Object.assign(exports,{engines,games,events});

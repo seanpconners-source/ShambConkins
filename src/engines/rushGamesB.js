@@ -88,7 +88,7 @@ const cut={id:'cut',verb:'CUT!',theme:'game',kind:'swipe',source:'Cut the Rope',
 
 // ---------------------------------------------------------------- Street Fighter: hadouken
 const hadouken={id:'hadouken',verb:'HADOUKEN!',theme:'game',kind:'swipe',source:'Street Fighter',caption:'Street Fighter: down, down-forward, forward',duration:5,bg:'#e8b04a',
- init(r,rng,speed){return {u:U(r),f:{},ball:null,hit:0,gy:r.h*.78,fx:r.w*.22,ex:r.w*.8,v:r.w*ramp(.9,1.3),cast:-9,dizzy:0};},
+ init(r,rng,speed){return {u:U(r),f:{},ball:null,hit:0,gy:r.h*.78,fx:r.w*.22,ex:r.w*.8,v:r.w*ramp(speed,.9,1.3),cast:-9,dizzy:0};},
  update(st,dt){if(st.ball){st.ball.x+=st.v*dt;if(st.ball.x>=st.ex-st.u*.12&&!st.hit){st.hit=st.t;st.result='win';st.ball=null;sfx('shot');}}if(st.hit)st.dizzy+=dt;},
  down(st,p,id){st.f[id]={sx:p.x,sy:p.y,stage:0,mx:p.x,my:p.y};},
  move(st,p,id){const f=st.f[id];if(!f||st.ball||st.result)return;const u=st.u;if(f.stage===0&&p.y-f.sy>u*.13){f.stage=1;f.mx=p.x;f.my=p.y;}
@@ -104,7 +104,7 @@ const hadouken={id:'hadouken',verb:'HADOUKEN!',theme:'game',kind:'swipe',source:
 
 // ---------------------------------------------------------------- Pokemon: flick the ball
 const throwG={id:'throw',verb:'THROW!',theme:'game',kind:'swipe',source:'Pokémon',caption:'Pokémon: flick the Poké Ball',duration:5,bg:'#7fd8ff',
- init(r,rng,speed){const u=U(r);return {u,f:{},balls:3,flying:[],py:r.h*.28,A:r.w*.3,om:ramp(1.5,2.1),ph:rng()*6,hit:0,rx:r.w*.5,ry:r.h*.9};},
+ init(r,rng,speed){const u=U(r);return {u,f:{},balls:3,flying:[],py:r.h*.28,A:r.w*.3,om:ramp(speed,1.5,2.1),ph:rng()*6,hit:0,rx:r.w*.5,ry:r.h*.9};},
  mon(st,t){return {x:st.r.w*.5+Math.sin(st.ph+t*st.om)*st.A,y:st.py+Math.sin(t*3)*st.u*.03};},
  update(st,dt){const m=this.mon(st,st.t);for(const b of st.flying){if(b.dead)continue;b.x+=b.vx*dt;b.y+=b.vy*dt;b.k+=dt;if(!st.result&&dist(b.x,b.y,m.x,m.y)<st.u*.17){b.dead=true;st.result='win';st.hit=st.t;sfx('rare');}if(b.y<-30||b.x<-30||b.x>st.r.w+30){b.dead=true;}}
   if(st.hit)st.hitD=(st.hitD||0)+dt;if(!st.result&&st.balls<=0&&st.flying.every(b=>b.dead))st.result='lose';},
@@ -123,7 +123,7 @@ const throwG={id:'throw',verb:'THROW!',theme:'game',kind:'swipe',source:'Pokémo
 
 // ---------------------------------------------------------------- The Matrix: dodge the bullets
 const bullets={id:'bullets',verb:'DODGE!',theme:'movie',kind:'swipe',source:'The Matrix',caption:'The Matrix: dodge the bullets',duration:5,bossDuration:8,bg:'#06140c',boss:true,
- init(r,rng,speed,player,boss){const u=U(r),v=r.w*ramp(.75,1.0),nx=r.w*.2,vols=boss?4:3,gap=ramp(1.0,.85),bs=[];let T=1.2;for(let i=0;i<vols;i++){const k=boss&&i>0?2:1,free=Math.floor(rng()*3),lanes=k===2?[0,1,2].filter(l=>l!==free):[Math.floor(rng()*3)];for(const l of lanes)bs.push({T,l});T+=gap*(.95+rng()*.15);}
+ init(r,rng,speed,player,boss){const u=U(r),v=r.w*ramp(speed,.75,1.0),nx=r.w*.2,vols=boss?4:3,gap=ramp(speed,1.0,.85),bs=[];let T=1.2;for(let i=0;i<vols;i++){const k=boss&&i>0?2:1,free=Math.floor(rng()*3),lanes=k===2?[0,1,2].filter(l=>l!==free):[Math.floor(rng()*3)];for(const l of lanes)bs.push({T,l});T+=gap*(.95+rng()*.15);}
   return {u,v,nx,bs,lane:1,ly:[r.h*.2,r.h*.5,r.h*.8],f:{},y:r.h*.5,lean:0,last:T};},
  update(st,dt){st.y+=(st.ly[st.lane]-st.y)*Math.min(1,dt*14);st.lean=lerp(st.lean,0,dt*6);if(st.result)return;
   for(const b of st.bs){const bx=st.nx+(b.T-st.t)*st.v;if(Math.abs(bx-st.nx)<st.u*.12&&b.l===st.lane){st.result='lose';sfx('lose');}}

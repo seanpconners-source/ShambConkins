@@ -183,7 +183,8 @@
   "src/engines/bossFight.js",
   "src/data/partyDraw.js",
   "src/engines/partyDrawIt.js",
-  "src/engines/arenaDisc.js"
+  "src/engines/arenaDisc.js",
+  "src/engines/partyBattleship.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

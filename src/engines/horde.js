@@ -488,7 +488,7 @@ async function horde(s){
  function updatePickups(dt){
   for(let i=G.length-1;i>=0;i--){
    const g=G[i];g.age+=dt;let best=null,bd=1e18;for(let k=0;k<2;k++){const p=P[k];if(p.down)continue;const dx=p.x-g.x,dy=p.y-g.y,d2=dx*dx+dy*dy;if(d2<bd){bd=d2;best=p;}}
-   if(!best)continue;const R=70*best.st.magnet;if(!g.pull&&bd<R*R)g.pull=true;
+   if(!best)continue;const R=92*best.st.magnet;if(!g.pull&&bd<R*R)g.pull=true;
    if(g.pull){g.sp=Math.min(620,g.sp+1100*dt);const d=Math.sqrt(bd)||1;g.x+=(best.x-g.x)/d*g.sp*dt;g.y+=(best.y-g.y)/d*g.sp*dt;}
    if(bd<17*17){gainXp(best,g.v);pickupSound(s);release(G,Gpool,i);}
   }
@@ -496,7 +496,7 @@ async function horde(s){
    const q=K[i];q.age+=dt;if(q.age>q.life){release(K,Kpool,i);continue;}
    let best=null,bd=1e18;for(let k=0;k<2;k++){const p=P[k];if(p.down)continue;const dx=p.x-q.x,dy=p.y-q.y,d2=dx*dx+dy*dy;if(d2<bd){bd=d2;best=p;}}
    if(!best)continue;
-   if(q.k==='coin'){const R=70*best.st.magnet;if(!q.pull&&bd<R*R)q.pull=true;if(q.pull){q.sp=Math.min(560,q.sp+1000*dt);const d=Math.sqrt(bd)||1;q.x+=(best.x-q.x)/d*q.sp*dt;q.y+=(best.y-q.y)/d*q.sp*dt;}}
+   if(q.k==='coin'){const R=92*best.st.magnet;if(!q.pull&&bd<R*R)q.pull=true;if(q.pull){q.sp=Math.min(560,q.sp+1000*dt);const d=Math.sqrt(bd)||1;q.x+=(best.x-q.x)/d*q.sp*dt;q.y+=(best.y-q.y)/d*q.sp*dt;}}
    const tr=q.k==='chest'?34:26;if(bd<tr*tr){
     switch(q.k){
      case 'coin':addCoins(best,q.v);sfx('coin',50,()=>{tone(1318,.05,.03,'square');tone(1760,.08,.03,'square');});break;
@@ -511,14 +511,20 @@ async function horde(s){
  }
  // ---------- players ----------
  const dirOut={x:0,y:0,m:0};
+ const botCache=[{x:0,y:0,m:0,t:0},{x:0,y:0,m:0,t:0}];
  function botDir(i){
-  const p=P[i],o=P[1-i];let fx2=0,fy2=0;
-  for(let k=0;k<E.length;k+=1){const e=E[k];if(e.dead)continue;const dx=p.x-e.x,dy=p.y-e.y,d2=dx*dx+dy*dy,R=70+e.r*2.2+(e.boss?60:0);if(d2<R*R*2.2&&d2>1){const d=Math.sqrt(d2),w=(R*1.5-d)/R*(e.boss?2.2:1);if(w>0){fx2+=dx/d*w;fy2+=dy/d*w;}}}
-  for(const z of Z)if(z.k===3||z.k===1){const dx=p.x-z.x,dy=p.y-z.y,d=Math.sqrt(dx*dx+dy*dy)||1;if(d<z.r+50){fx2+=dx/d*2;fy2+=dy/d*2;}}
-  let best=null,bd=1e18;for(const g of G){const d=(g.x-p.x)**2+(g.y-p.y)**2;if(d<bd){bd=d;best=g;}}for(const k of K)if(k.k!=='bomb'){const d=(k.x-p.x)**2+(k.y-p.y)**2;if(d<bd*1.5){bd=d;best=k;}}
-  if(best&&bd<420*420){const d=Math.sqrt(bd)||1;fx2+=(best.x-p.x)/d*.8;fy2+=(best.y-p.y)/d*.8;}
-  const dx=o.x-p.x,dy=o.y-p.y,d=Math.sqrt(dx*dx+dy*dy)||1;if(o.down&&d>40){fx2+=dx/d*2;fy2+=dy/d*2;}else if(d>240){fx2+=dx/d*1.2;fy2+=dy/d*1.2;}
-  const l=Math.sqrt(fx2*fx2+fy2*fy2);if(l<.05){dirOut.x=0;dirOut.y=0;dirOut.m=0;}else{dirOut.x=fx2/l;dirOut.y=fy2/l;dirOut.m=1;}
+  const c2=botCache[i];if(frameNo-c2.t<3&&frameNo>=c2.t){dirOut.x=c2.x;dirOut.y=c2.y;dirOut.m=c2.m;return;}c2.t=frameNo;
+  const p=P[i],o=P[1-i];let tg=null,bd=1e18;
+  for(const g of G){const d=(g.x-p.x)**2+(g.y-p.y)**2+(i?(g.x-o.x)**2*.3:0);if(d<bd){bd=d;tg=g;}}
+  for(const k of K)if(k.k!=='bomb'){const d=(k.x-p.x)**2+(k.y-p.y)**2;if(d<bd*1.5){bd=d;tg=k;}}
+  let best=-1e18,bx=0,by=0;
+  for(let a=0;a<16;a++){const ang=a/16*TAU,dx=Math.cos(ang),dy=Math.sin(ang),nx=p.x+dx*100,ny=p.y+dy*100;let sc=0;
+   for(let k=0;k<E.length;k++){const e=E[k];if(e.dead)continue;const ex=e.x-nx,ey=e.y-ny;if(ex>260||ex<-260||ey>260||ey<-260)continue;const d=Math.sqrt(ex*ex+ey*ey),R=e.r+36+(e.boss?50:0);if(d<R*3)sc-=(R*3/Math.max(d,R*.6))**2*(e.boss?3:1);}
+   for(const z of Z)if(z.k===3||z.k===1||z.k===0){const zd=Math.hypot(z.x-nx,z.y-ny);if(zd<z.r+30)sc-=40;}
+   if(tg&&bd<500*500)sc-=Math.hypot(tg.x-nx,tg.y-ny)*.07;
+   const pd=Math.hypot(o.x-nx,o.y-ny);if(pd>230)sc-=(pd-230)*.05;if(o.down)sc-=pd*.05;
+   if(sc>best){best=sc;bx=dx;by=dy;}}
+  c2.x=dirOut.x=bx;c2.y=dirOut.y=by;c2.m=dirOut.m=1;
  }
  function readDir(i){
   dirOut.x=0;dirOut.y=0;dirOut.m=0;
@@ -740,7 +746,7 @@ async function horde(s){
   const ks=Math.round(13*ui);x.drawImage(iconG.skull,cx-bw/2-0,Math.round(5*ui),ks,ks);txt(String(totalKills),cx-bw/2+ks+3,Math.round(11*ui),Math.round(12*ui),'#ffe9c8','left',true);
   x.drawImage(iconG.coin,cx+bw/2-ks-38*ui,Math.round(5*ui),ks,ks);txt(String(coinsTeam),cx+bw/2-ks-38*ui+ks+3,Math.round(11*ui),Math.round(12*ui),'#ffe27a','left',true);
   for(let i=0;i<2;i++){
-   const p=P[i],pw=W/2-10,x0=i?W/2+4:6,y0=tb,hs=Math.round(30*ui);
+   const p=P[i],pw=Math.min(W/2-10,300*ui),x0=i?W-pw-6:6,y0=tb,hs=Math.round(30*ui);
    panel(x0,y0,pw,Math.round(52*ui),8,'rgba(10,14,24,.62)',p.down?'#ff5a5a':PCOL[i],1.5);
    s.sprite(x,i,x0+hs/2+3,y0+hs/2+3,hs,{exact:true,mood:p.down?'sad':undefined});
    const bx0=x0+hs+8,bw2=pw-hs-14;
@@ -785,11 +791,12 @@ async function horde(s){
   x.setTransform(1,0,0,1,0,0);x.fillStyle='rgba(5,7,16,.74)';x.fillRect(0,0,W,H);
   const m=modal,p=P[m.pi],n=m.cards.length,chest=m.type==='chest';
   const pulse=.5+.5*Math.sin(uiT*5),hs=Math.round(44*ui),top=Math.round(10*ui);
-  s.sprite(x,m.pi,W/2-Math.min(W/2-30,150*ui),top+hs/2,hs,{exact:true,mood:'win'});
-  txt(m.title,W/2+hs*.3,top+Math.round(14*ui),Math.round(26*ui),m.title==='EVOLUTION!'?'#ffd23a':PCOL[m.pi],'center',true);
-  txt(m.sub,W/2+hs*.3,top+Math.round(38*ui),Math.round(13*ui),'#e8ecf5','center',true);
+  setFont(Math.round(26*ui));const tw0=x.measureText(m.title).width;
+  s.sprite(x,m.pi,Math.max(hs/2+6,W/2-tw0/2-hs*.7),top+hs/2,hs,{exact:true,mood:'win'});
+  txt(m.title,W/2,top+Math.round(14*ui),Math.round(26*ui),m.title==='EVOLUTION!'?'#ffd23a':PCOL[m.pi],'center',true);
+  txt(m.sub,W/2,top+Math.round(38*ui),Math.round(13*ui),'#e8ecf5','center',true);
   const wide=W>=H*1.15&&W>=640,areaTop=top+hs+Math.round(12*ui),areaH=H-areaTop-Math.round(30*ui),gap=10;cardRects.length=0;
-  let cw,ch;if(wide){cw=Math.min(260*ui,(W-30-gap*(n-1))/n);ch=Math.min(areaH,330*ui);}else{cw=Math.min(W-24,520);ch=Math.min((areaH-gap*(n-1))/n,128*ui);}
+  let cw,ch;if(wide){cw=Math.min(260*ui,(W-30-gap*(n-1))/n);ch=Math.min(areaH,290*ui);}else{cw=Math.min(W-24,520);ch=Math.min((areaH-gap*(n-1))/n,128*ui);}
   const tot=wide?cw*n+gap*(n-1):ch*n+gap*(n-1),ox=wide?W/2-tot/2:W/2-cw/2,oy=wide?areaTop+(areaH-ch)/2:areaTop+(areaH-tot)/2;
   for(let i=0;i<n;i++){
    const c2=m.cards[i],cx2=wide?ox+i*(cw+gap):ox,cy2=wide?oy:oy+i*(ch+gap),sel=i===m.sel&&!chest;cardRects.push({x:cx2,y:cy2,w:cw,h:ch});
@@ -852,6 +859,7 @@ async function horde(s){
  s.frame((dt,t)=>{
   const t0=performance.now();layout();uiT+=dt;
   if(state==='menu'){render(t);drawMenu(t);return;}
+  if(modal&&bot.on&&modal.age>.3)botModal();
   if(modal){modal.age+=dt;render(t);drawHUD(t);drawModal(t);return;}
   if(state==='ending'){const sl=endKind==='lose'?.35:1;step(dt*sl);if(endT>3.4){render(t);drawHUD(t);finishRun();return;}}
   else step(dt);
