@@ -64,8 +64,8 @@ async function baseballfield(s) {
  const release=(ev,cancelled)=>{const f=fingers.get(ev.pointerId);if(!f)return;fingers.delete(ev.pointerId);s.release(ev);if(!cancelled&&!s.paused){steer(f.owner,s.pointer(ev),f);if(f.owner===batter)swing(f.owner);}};
  s.on(c,'pointerup',ev=>release(ev,false));s.on(c,'pointercancel',ev=>release(ev,true));s.on(c,'lostpointercapture',ev=>release(ev,true));
  s.on(window,'blur',clear);s.resetOnPause?.(clear);s.cleanup(clear);
- const buttons=s.controls(s.players.map((p,i)=>({text:p.name+' · SWING',click:()=>swing(i)})),'fielding-controls');
- s.shared=true;s.updateScores();s.hint('P1 owns the LEFT half, P2 the RIGHT. BAT: drag vertically to aim; release/tap as the pitch reaches the plate. FIELD: drag your half to move the fielder toward the landing ring. Roles alternate after every pitch. Clean catches +40; retrievals +10; runs +30.');
+ s.on(document,'keydown',ev=>{if(ev.key===' '){ev.preventDefault();swing(0);}else if(ev.key==='Enter'){ev.preventDefault();swing(1);}});
+ s.shared=true;s.updateScores();s.hint('P1 owns the LEFT half, P2 the RIGHT. BAT: drag vertically to aim; release (or tap) as the pitch reaches the plate. Keyboard: Space (P1) / Enter (P2) swings. FIELD: drag your half to move the fielder toward the landing ring. Roles alternate after every pitch. Clean catches +40; retrievals +10; runs +30.');
  reset();
  s.frame(dt=>{
   if(phase==='windup'||phase==='pitch')moveBaseballFielder(fielder,dt);
@@ -73,7 +73,6 @@ async function baseballfield(s) {
   else if(phase==='pitch'){clock+=dt;if(clock>pitches[Math.floor(attempt/2)].duration+.23)swing();}
   else if(phase==='field'){fieldingStep(flight,dt,fielder);if(flight.ended)result(fieldingAward(flight,fielder));}
   else if(phase==='result'){resultLeft-=dt;if(resultLeft<=0){attempt++;if(attempt===12){s.finish(scores,'Major League · six alternating pitches each, two human fielders');return;}reset();}}
-  buttons.forEach((b,i)=>{b.disabled=phase!=='pitch'||batter!==i;});
   const pitch=pitches[Math.floor(attempt/2)],bg=x.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#164a39');bg.addColorStop(1,'#247346');x.fillStyle=bg;x.fillRect(0,0,W,H);
   x.strokeStyle='#347f51';x.lineWidth=35;for(let r=170;r<850;r+=73){x.beginPath();x.arc(HOME.x,HOME.y,r,-.55,.55);x.stroke();}
   x.strokeStyle='#cde8a3';x.lineWidth=8;x.beginPath();x.arc(HOME.x,HOME.y,690,-.43,.32);x.stroke();

@@ -93,7 +93,7 @@ function paintTable(x,table,a,s,player,clock,launchLeft,message) {
  x.strokeStyle='#bff4e977';x.lineWidth=4;x.beginPath();a.trail.forEach((p,i)=>i?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y));x.stroke();
  if(!a.drained)s.sprite(x,player,a.x,a.y,46,{exact:true,mood:a.launched?'walking':'thinking'});
  x.fillStyle='#ead4a1';x.font='bold 20px monospace';x.fillText(`×${a.multiplier}  ·  ${a.launched?Math.ceil(Math.max(0,clock))+'s':'LAUNCH '+Math.ceil(Math.max(0,launchLeft))+'s'}`,230,474);
- if(!a.launched){x.fillStyle='#ffe5a8';x.font='14px Arial';x.fillText('PULL THE RIGHT PLUNGER ↓',236,151);}
+ if(!a.launched){x.fillStyle='#ffe5a8';x.font='14px Arial';x.fillText('PULL DOWN ANYWHERE & RELEASE ↓',230,151);}
  if(message){x.fillStyle='#ffe27f';x.font='bold 18px Arial';x.fillText(message,230,361);}
 }
 async function pinball(s) {
@@ -103,10 +103,12 @@ async function pinball(s) {
  function clear(){for(const id of fingers.keys())s.release({pointerId:id});fingers.clear();buttonHeld.fill(false);}
  function launch(power=1){if(s.paused||phase!=='playing')return;launchPinball(a,power);}
  function reset(){a=newPinballBall(table);clock=22;launchLeft=3;message='';clear();}
- async function next(){phase='handoff';clear();reset();if(await s.pass(player,`Bucketheadland pinball · ball ${ballNumber+1}/3. Hold both flippers with two fingers on the lower left/right, or the FLIP buttons. Pull down the right plunger and release to launch. Light BUCKET or all three bumpers plus both side lanes for a jackpot and higher multiplier. A new head-ball follows a drain; 22 seconds maximum per ball.`))phase='playing';}
- s.controls([{text:'◀ FLIP',key:'a',hold:value=>buttonHeld[0]=value},{text:'LAUNCH',click:()=>launch()},{text:'FLIP ▶',key:'l',hold:value=>buttonHeld[1]=value}],'pinball-controls');
- s.hint('A/L flippers · drag the right plunger down to launch. Both flippers can be held at once. Three alternating balls each on the same table; early drains get one ball save.');
- s.on(c,'pointerdown',ev=>{if(s.paused||phase!=='playing')return;ev.preventDefault();const p=s.pointer(ev);if(p.x>401&&!a.launched)fingers.set(ev.pointerId,{plunger:true,start:p.y,y:p.y});else fingers.set(ev.pointerId,{flipper:p.x<table.W/2?0:1});s.capture(ev);});
+ async function next(){phase='handoff';clear();reset();if(await s.pass(player,`Bucketheadland pinball · ball ${ballNumber+1}/3. Touch and hold the left or right half of the screen to flip (two thumbs for both). Pull down anywhere and release to launch. Light BUCKET or all three bumpers plus both side lanes for a jackpot and higher multiplier. A new head-ball follows a drain; 22 seconds maximum per ball.`))phase='playing';}
+ const keyMap={a:0,arrowleft:0,z:0,l:1,arrowright:1,'/':1};
+ s.on(document,'keydown',ev=>{const k=ev.key.toLowerCase();if(s.paused||phase!=='playing')return;if(k in keyMap){ev.preventDefault();buttonHeld[keyMap[k]]=true;}else if(k===' '||k==='enter'){ev.preventDefault();launch();}});
+ s.on(document,'keyup',ev=>{const k=ev.key.toLowerCase();if(k in keyMap)buttonHeld[keyMap[k]]=false;});
+ s.hint('Tap and hold the left or right half of the screen to raise that flipper (two thumbs work). Before launch, pull down anywhere and release to shoot the plunger: a longer pull is a harder launch. Keyboard: A/L or arrows flip, Space launches. Three alternating balls each on the same table; early drains get one ball save.');
+ s.on(c,'pointerdown',ev=>{if(s.paused||phase!=='playing')return;ev.preventDefault();const p=s.pointer(ev);if(!a.launched)fingers.set(ev.pointerId,{plunger:true,start:p.y,y:p.y});else fingers.set(ev.pointerId,{flipper:p.x<table.W/2?0:1});s.capture(ev);});
  s.on(c,'pointermove',ev=>{const f=fingers.get(ev.pointerId);if(!f||s.paused)return;ev.preventDefault();if(f.plunger)f.y=s.pointer(ev).y;});
  const release=(ev,cancelled)=>{const f=fingers.get(ev.pointerId);if(!f)return;fingers.delete(ev.pointerId);s.release(ev);if(f.plunger&&!cancelled&&!s.paused&&phase==='playing')launch(clamp(.75+Math.max(0,s.pointer(ev).y-f.start)/160,.75,1.12));};
  s.on(c,'pointerup',ev=>release(ev,false));s.on(c,'pointercancel',ev=>release(ev,true));s.on(c,'lostpointercapture',ev=>release(ev,true));s.on(window,'blur',clear);s.resetOnPause?.(clear);s.cleanup(clear);
