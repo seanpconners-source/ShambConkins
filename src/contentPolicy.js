@@ -10,6 +10,8 @@ const {ITEM_PACK_V43}=require("src/data/itemPackV43.js");
 const {MOVIE_BOND_CHARACTERS, FACE_PACK_CHARACTERS}=require("src/data/movieBonds.js");
 const {NEW_CHARACTERS, HORROR_IDS}=require("src/data/legendsPack.js");
 const {LEGENDS_TRIVIA}=require("src/data/legendsTrivia.js");
+const {LEGENDS_ITEMS}=require("src/data/legendsItems.js");
+const {balanceItem}=require("src/data/balance.js");
 // Preserve the uploaded catalog byte-for-byte. Sean has explicitly disclaimed
 // Eugenia, so its inherited character, pass and four cards are inactive.
 function activeContent(record){return !/eugenia/i.test([record.id,record.name,record.title,record.source,record.body].filter(Boolean).join(' '));}
@@ -18,7 +20,9 @@ const ACTIVE_CATALOG=Object.fromEntries(Object.entries(CATALOG).map(([key,value]
 ACTIVE_CATALOG.items.push(...TACTICAL_ITEMS);
 ACTIVE_CATALOG.items.push(...TRAVEL_ITEMS);
 ACTIVE_CATALOG.items.push(...ITEM_PACK_V43);
+ACTIVE_CATALOG.items.push(...LEGENDS_ITEMS);
 ACTIVE_CATALOG.trivia.push(...CASINO_TRIVIA);
+ACTIVE_CATALOG.items=ACTIVE_CATALOG.items.map(balanceItem);
 ACTIVE_CATALOG.characters.push(MIGHTY_DUCKS_CHARACTER);
 ACTIVE_CATALOG.characters.push(...LAB_CHARACTERS);
 ACTIVE_CATALOG.trivia.push(...MIGHTY_DUCKS_TRIVIA);

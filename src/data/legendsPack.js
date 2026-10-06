@@ -4,8 +4,8 @@
 const PERKS={
  explorer:'Explorer: +1 point at every landmark.',
  competitor:'Competitor: +1 point on every minigame win.',
- scavenger:'Scavenger: a bonus supply at each realm gate.',
- survivor:'Survivor: starts with a penalty shield.'
+ scavenger:'Scavenger: a bonus supply at the second and third realm gates.',
+ survivor:'Survivor: starts with a penalty shield and earns another at each realm gate if you have none.'
 };
 // [id, name, source, icon, actor page, perk, flavour line, extras]
 const ROWS=[
