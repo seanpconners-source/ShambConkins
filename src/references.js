@@ -1,6 +1,7 @@
 const {normalizeSource:normalizeReferenceSource, sourceMatches:referenceSourceMatches, registerReferenceSources, referenceSourceNames}=require("src/referenceSources.js");
 const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
 const {CHARACTERS, characterIdentity, SPECIAL_UNLOCKS}=require("src/characters.js");
+const {GENERIC,registerSourceTypes,venueFor}=require("src/venues.js");
 const {GAMES, EVENT_GAMES}=require("src/gameRegistry.js");
 const {resolveEncounterGame}=require("src/encounterGames.js");
 const {selectItemDrop}=require("src/itemDrops.js");
@@ -151,6 +152,10 @@ const REFERENCE_LANDMARKS = SOURCE_UNIVERSE.filter(source=>!['ShambConkins Horro
  return {id:`ref-${slug(source)}`,name:known?.name||`${source} Encounter`,source,realm,icon:known?.icon||'✦',
   characters:themedCharacters(source).map(c=>c.id),description:known?.body||`A ${source} detour has crossed the expedition. A visitor, a recognizable souvenir, or an unexpected challenge could be waiting.`,reference:true};
 });
+// Replace generic stops ("X studio door", "X crossover stop") with a fitting venue.
+registerSourceTypes(REFERENCE_GROUPS.map(g=>[g.source,g.type]));
+for(const l of REFERENCE_LANDMARKS){if(!GENERIC.test(l.name))continue;const v=venueFor(l.source);l.name=v.name;l.venue=v.kind;l.icon=v.icon;}
+
 
 function playableCard(card,source,owned) {
  if(!sourceMatches(card.source,source)||['horror','team','horrorTrap','unlockFeature','unlockDogs'].includes(card.e?.[0]))return null;

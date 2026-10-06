@@ -30,7 +30,7 @@ for (; steps < turns * 25; steps++) {
     await page.mouse.click(550, 350); await page.mouse.move(400 + Math.random() * 300, 300 + Math.random() * 200);
     if (snap.acts.includes('exit-game') && stuck > 10) await page.evaluate(() => document.querySelector('[data-action=exit-game]')?.click());
   } else {
-    const pri = ['roll', 'space', 'reroll', 'end-turn'].find(a => snap.acts.includes(a));
+    const pri = ['route-go', 'roll', 'space', 'reroll', 'end-turn'].find(a => snap.acts.includes(a));
     const a = pri || snap.acts.find(x => !['home', 'settings', 'roster', 'arcade', 'bag'].includes(x));
     if (a) await page.evaluate(a => { const els = [...document.querySelectorAll(`[data-action="${a}"]`)].filter(e => e.offsetParent || e.ownerSVGElement); els[Math.floor(Math.random() * els.length)]?.dispatchEvent(new MouseEvent('click', {bubbles: true})); }, a);
   }

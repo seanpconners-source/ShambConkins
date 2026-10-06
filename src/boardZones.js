@@ -1,5 +1,6 @@
 const {escapeHTML:e,hash,seededRandom}=require("src/utils.js");
 const {sceneProfile,locationSceneSVG}=require("src/locationScenes.js");
+const {venueFor}=require("src/venues.js");
 const {logoURL}=require("src/assets.js");
 // Journey-map rendering (board generation 7): terrain per road, smooth roads with
 // direction arrows, bridges, a crossroads signpost and landmark scenes beside the road.
@@ -8,7 +9,7 @@ const LANE_STYLE=[
  {key:'adventurous',road:'#c99a63',edge:'#6e4a28',tag:'#e08a2c',label:'ADVENTUROUS'},
  {key:'rich',road:'#e5c25a',edge:'#7a5a12',tag:'#8f55d6',label:'HIGH REWARD'}
 ];
-const DECOR={jungle:'trees',park:'trees',home:'houses',town:'houses',pub:'houses',taskhouse:'houses',office:'blocks',city:'blocks',clock:'blocks',kitchen:'blocks',studio:'blocks',casino:'neon',bowling:'neon',stage:'spots',slime:'drips',harbor:'water',sewer:'water',space:'stars',alien:'stars',rainbow:'stars',matrix:'rain',horror:'dead',dojo:'peaks',cards:'peaks',hockey:'ice'};
+const DECOR={arcade:'neon',diner:'blocks',bar:'blocks',drivein:'neon',cabin:'trees',graveyard:'dead',asylum:'dead',haunt:'dead',garage:'blocks',festival:'spots',clubhouse:'trees',playground:'trees',warehouse:'blocks',rooftop:'blocks',gas:'peaks',courthouse:'blocks',depot:'blocks',motel:'neon',theater:'neon',ramen:'neon',shrine:'peaks',laundromat:'blocks',pawn:'blocks',convention:'spots',mall:'blocks',jungle:'trees',park:'trees',home:'houses',town:'houses',pub:'houses',taskhouse:'houses',office:'blocks',city:'blocks',clock:'blocks',kitchen:'blocks',studio:'blocks',casino:'neon',bowling:'neon',stage:'spots',slime:'drips',harbor:'water',sewer:'water',space:'stars',alien:'stars',rainbow:'stars',matrix:'rain',horror:'dead',dojo:'peaks',cards:'peaks',hockey:'ice'};
 const f=n=>Math.round(n*10)/10;
 function laneStyle(lane){return LANE_STYLE[lane]||LANE_STYLE[0];}
 function nodesOf(board,lane){return lane.ids.map(id=>board.nodes[id]);}
@@ -40,8 +41,9 @@ function decorSVG(kind,palette,random,count,xMin,xMax,yMin,yMax,roadAt){
  }
  return out.join('');
 }
+function laneProfile(lane){const base={id:lane.route||lane.kind,name:lane.name,source:lane.source,realm:''},p=sceneProfile(base);return p.kind==='studio'?sceneProfile({...base,venue:venueFor(lane.source).kind}):p;}
 function lanePanel(run,data,lane){
- const board=run.board,pts=nodesOf(board,lane),p=sceneProfile({id:lane.route||lane.kind,name:lane.name,source:lane.source,realm:''}),st=laneStyle(lane.lane),random=seededRandom(board.seed+':terrain:'+data.y+':'+lane.cx);
+ const board=run.board,pts=nodesOf(board,lane),p=laneProfile(lane),st=laneStyle(lane.lane),random=seededRandom(board.seed+':terrain:'+data.y+':'+lane.cx);
  const x=lane.cx-296,w=592,y=lane.top-50,h=lane.bottom-lane.top+170;
  const roadAt=yy=>roadXAt(pts,yy);
  return `<g class="jr-panel" data-lane-key="${lane.key}">

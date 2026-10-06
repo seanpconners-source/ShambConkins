@@ -1,6 +1,8 @@
+const {venueArt}=require("src/venueScenes.js");
+const {STYLE:VENUE_STYLE}=require("src/venues.js");
 const {escapeHTML,hash}=require("src/utils.js");
 // Bundled original scenery. Photographs are separate, credited image sources.
-function sceneProfile(l){const text=(l.id+' '+l.name+' '+l.source).toLowerCase();const profiles=[
+function sceneProfile(l){if(l.venue&&VENUE_STYLE[l.venue])return {kind:l.venue,sky:VENUE_STYLE[l.venue][0],ground:VENUE_STYLE[l.venue][1],accent:VENUE_STYLE[l.venue][2]};const text=(l.id+' '+l.name+' '+l.source).toLowerCase();const profiles=[
  [/teenage mutant|tmnt|turtle lair|sewer/,'sewer','#253c51','#446359','#8ee47f'],
  [/jurassic|predator|jungle/,'jungle','#a5c89a','#426a3e','#dfe577'],
  [/james bond|casino|las vegas|hangover/,'casino','#29334b','#655142','#ebd080'],
@@ -25,6 +27,7 @@ function locationSceneSVG(l,logo=''){const p=sceneProfile(l),name=escapeHTML(l.n
  else if(p.kind==='slime')art='<rect x="90" y="56" width="248" height="150" rx="14" fill="#e87139"/><path d="M84 50q23 35 40 0 25 89 49 0 26 34 50 0 23 67 43 0 39 77 76 0" fill="#b6d861"/><text x="214" y="140" text-anchor="middle" font-family="Arial" font-size="23" fill="#fff6d8">NICKELODEON</text><rect x="151" y="162" width="126" height="44" fill="#73a9a2"/>';
  else if(p.kind==='kitchen')art='<rect x="70" y="70" width="279" height="130" fill="#bfb6a0"/><path d="M70 109h279M70 154h279M125 71v129m55-129v129m55-129v129m55-129v129" stroke="#e8ddc1" stroke-width="3"/><rect x="80" y="150" width="153" height="40" fill="#697878"/><circle cx="110" cy="145" r="14" fill="#333d3e"/><circle cx="168" cy="145" r="14" fill="#333d3e"/><rect x="252" y="83" width="67" height="116" fill="#eff0df"/><path d="M265 126h14" stroke="#74857a" stroke-width="4"/><text x="197" y="55" text-anchor="middle" font-size="18" fill="#5f4231">YES, CHEF!</text>';
  else if(p.kind==='city')art='<path d="M0 177q77-20 162 4t258-7v51H0" fill="#77a2b4"/><path d="M32 161q178-152 354 0M50 160h316" fill="none" stroke="#d0b286" stroke-width="8"/><path d="M62 158V96m65 62V65m86 93V43m77 115V65m62 93V96" stroke="#d0b286" stroke-width="3"/>'+Array.from({length:7},(_,i)=>`<rect x="${i*57+10}" y="${80+(i%3)*18}" width="32" height="70" fill="#5b777c"/>`).join('');
+ else if(venueArt(p.kind))art=venueArt(p.kind);
  else art='<path d="M77 121l133-79 133 79z" fill="#7e604b"/><rect x="105" y="120" width="210" height="82" fill="#d4ba91"/><rect x="191" y="146" width="38" height="56" fill="#8f6244"/>'+windows(130,141,2,1,'#9bc7bf')+windows(257,141,2,1,'#9bc7bf')+'<circle cx="54" cy="145" r="36" fill="#739366"/><path d="M54 158v57" stroke="#805c3e" stroke-width="11"/>';
  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 270"><rect width="420" height="270" rx="25" fill="${p.sky}"/><path d="M0 174q210-35 420 0v96H0" fill="${p.ground}"/>${art}<rect x="6" y="222" width="408" height="42" rx="10" fill="#142523d9"/><text x="210" y="241" text-anchor="middle" font-family="Georgia,serif" font-size="${Math.min(15,365/(l.name.length*.6))}" fill="#fff1cc">${name}</text>${logo?`<image href="${escapeHTML(logo)}" x="153" y="245" width="114" height="18" preserveAspectRatio="xMidYMid meet"/>`:`<text x="210" y="257" text-anchor="middle" font-family="Arial" font-size="9" fill="${p.accent}">${source}</text>`}</svg>`;
 }
