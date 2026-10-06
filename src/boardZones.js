@@ -106,8 +106,9 @@ function roadLayerSVG(run){
 }
 // A themed scene stands beside the road, joined to its space by a short path.
 function landmarkScene(l,n){
- const side=n.side||1,cx=n.x+side*240,cy=n.y-70,p=sceneProfile(l);
- return `<g class="jr-landmark scenery-${p.kind}" data-location="${e(l.id)}"><path d="M${n.x} ${n.y} Q${f((n.x+cx)/2)} ${n.y+8} ${f(cx-side*118)} ${f(cy+60)}" class="jr-landmark-link"/><g transform="translate(${f(cx)},${f(cy)})"><rect x="-154" y="-110" width="308" height="226" rx="26" fill="#fffaf0" stroke="${p.accent}" stroke-width="5"/><svg x="-150" y="-106" width="300" height="193" aria-label="${e(l.name)} scene">${locationSceneSVG(l)}</svg><text y="109" text-anchor="middle" class="jr-landmark-name">${e(l.name.length>30?l.name.slice(0,29)+'…':l.name)}</text></g></g>`;
+ const side=n.side||1,cx=n.x+side*240,cy=n.y-70,p=sceneProfile(l),art=locationSceneSVG(l).replace('<svg xmlns','<svg width="420" height="270" xmlns');
+ const name=l.name.length>26?l.name.slice(0,25)+'…':l.name;
+ return `<g class="jr-landmark scenery-${p.kind}" data-location="${e(l.id)}"><path d="M${n.x} ${n.y} Q${f((n.x+cx)/2)} ${n.y+8} ${f(cx-side*118)} ${f(cy+60)}" class="jr-landmark-link"/><g transform="translate(${f(cx)},${f(cy)})"><rect x="-154" y="-110" width="308" height="214" rx="26" fill="#fffaf0" stroke="${p.accent}" stroke-width="5"/><svg x="-150" y="-106" width="300" height="163" viewBox="0 0 420 228" preserveAspectRatio="xMidYMin slice" aria-label="${e(l.name)} scene">${art}</svg><text y="82" text-anchor="middle" class="jr-landmark-name">${e(name)}</text><text y="98" text-anchor="middle" class="jr-landmark-source">${e(l.source)}</text></g></g>`;
 }
 function laneKey(board,node){const r=board.realms[node.realm];const lane=r?.lanes?.find(l=>l.ids.includes(node.id));return lane?node.realm+':'+lane.lane:null;}
 Object.assign(exports,{LANE_STYLE,laneStyle,smoothPath,zoneLayerSVG,roadLayerSVG,landmarkScene,laneKey});

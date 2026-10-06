@@ -15,6 +15,12 @@ function roadPoints(cx,y0,y1,count,phase,waves,amplitude=ROAD_AMPLITUDE){
  const points=[];let j=0;for(let i=0;i<count;i++){const target=count===1?0:length*i/(count-1);while(j<samples.length-1&&samples[j].length<target)j++;points.push({x:Math.round(samples[j].x),y:Math.round(samples[j].y)});}
  return points;
 }
+// True when the segment a-b passes through the rectangle (grown by `pad`).
+function segmentHitsBox(a,b,box,pad=0){
+ const x0=box.x-pad,y0=box.y-pad,x1=box.x+box.w+pad,y1=box.y+box.h+pad;
+ for(let i=0;i<=24;i++){const t=i/24,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;if(x>=x0&&x<=x1&&y>=y0&&y<=y1)return true;}
+ return false;
+}
 // Reuse stable uploaded space IDs, while dealing three full-length alternatives
 // in each realm. Crossovers are optional, forward-only choices, never forced joins.
 function buildMultiPathBoard(board){
@@ -71,7 +77,7 @@ function buildMultiPathBoard(board){
     const n=board.nodes[slot.id];
     const sides=pos===0?[1]:pos===2?[-1]:random()<.5?[1,-1]:[-1,1];
     let chosen=null;
-    for(const side of sides){const cx=n.x+side*(ROAD_AMPLITUDE+SCENE_W/2-10),box={x:cx-SCENE_W/2,y:n.y-SCENE_H+40,w:SCENE_W,h:SCENE_H};if(box.x<12||box.x+box.w>1788)continue;if(placed.some(b=>box.x<b.x+b.w+20&&box.x+box.w+20>b.x&&box.y<b.y+b.h+20&&box.y+box.h+20>b.y))continue;chosen={side,box};break;}
+    for(const side of sides){const cx=n.x+side*(ROAD_AMPLITUDE+SCENE_W/2-10),box={x:cx-SCENE_W/2,y:n.y-SCENE_H+40,w:SCENE_W,h:SCENE_H};if(box.x<12||box.x+box.w>1788)continue;if(placed.some(b=>box.x<b.x+b.w+20&&box.x+box.w+20>b.x&&box.y<b.y+b.h+20&&box.y+box.h+20>b.y))continue;if(board.bridges.some(br=>br.realm===realm&&segmentHitsBox(board.nodes[br.from],board.nodes[br.to],box,22)))continue;chosen={side,box};break;}
     if(!chosen)continue;
     let l=candidates.pop();if(realm==='mind'&&lane===0&&count===0)l=LOCATIONS.find(l=>l.id==='parents');else if(realm==='mind'&&lane===2&&count===0&&random()<.35)l=LOCATIONS.find(l=>l.id==='unlimited-savory-lab');if(!l)break;
     n.type='location';n.location=l.id;n.side=chosen.side;placed.push(chosen.box);if(++count>=target)break;

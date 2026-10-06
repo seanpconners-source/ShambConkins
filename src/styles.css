@@ -560,3 +560,7 @@ body.route-choosing .bottom-hud{display:none}
 .rp-actions{margin-top:7px}.rp-actions .primary{width:100%;min-height:44px}
 @media(max-width:700px){.rp-option b{font-size:12px}.rp-option small{font-size:10px;-webkit-line-clamp:4}}
 .hole-objectives .hole-combo{color:#ffd24a;font-weight:700}
+/* v7 landmark scenes carry their own name plate; the pin label would duplicate it up close. */
+.board-svg[data-v7]:not([data-map-detail="overview"]) .simple-landmark-pin text{display:none}
+.jr-landmark-name{font:800 20px Arial,sans-serif}
+.jr-landmark-source{font:600 13px Arial,sans-serif;fill:#6b7585}

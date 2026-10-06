@@ -45,4 +45,4 @@ const html = read('src/index.template.html')
 
 fs.mkdirSync(path.dirname(out), {recursive: true});
 fs.writeFileSync(out, html);
-console.log(`${path.relative(root, out)}  ${(html.length / 1048576).toFixed(1)} MB  ${order.length} modules  ${Object.keys(userPortraits).length} drop-in portraits`);
+console.log(`${path.relative(root, out)}  ${(html.length / 1048576).toFixed(1)} MB  ${order.length} modules  ${Object.keys(userPortraits).length} drop-in art files`);
