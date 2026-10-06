@@ -559,3 +559,4 @@ body.route-choosing .bottom-hud{display:none}
 .rp-option em{font:700 10.5px Arial,sans-serif;color:#8f55d6;font-style:normal}
 .rp-actions{margin-top:7px}.rp-actions .primary{width:100%;min-height:44px}
 @media(max-width:700px){.rp-option b{font-size:12px}.rp-option small{font-size:10px;-webkit-line-clamp:4}}
+.hole-objectives .hole-combo{color:#ffd24a;font-weight:700}
