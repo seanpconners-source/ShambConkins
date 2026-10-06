@@ -47,13 +47,13 @@ function applyEvent(run,profile,event,random=Math.random) {
   case 'shuffle':{const realm=run.board.nodes[p.node].realm;const nodes=run.board.realms[realm].ids.map(id=>run.board.nodes[id]).filter(n=>!['start','gate'].includes(n.type)&&!run.players.some(q=>q.node===n.id||q.visited.includes(n.id)));const payload=shuffle(nodes.map(n=>({type:n.type,location:n.location})),random);nodes.forEach((n,i)=>{n.type=payload[i].type;n.location=payload[i].location;});message='The encounters have shuffled. Reconsider your path.';break;}
   case 'characters':[p.character,other.character]=[other.character,p.character];message='Characters swapped for this run.';break;
   case 'extra':{p.extra=true;const found=gainItem(null,other);message='Extra turn gained; your opponent gets a consolation item. '+found.message;break;}
-  case 'dogs':for(const id of ['kc','mylo'])if(recruit(profile,id))unlocked.push(id);message='KC and Mylo join both rosters.';break;
+  case 'dogs':for(const id of ['kc','mylo'])if(recruit(profile,id,null,'dogs'))unlocked.push(id);message='KC and Mylo join both rosters.';break;
  }
  else { const [kind,a,b]=event.e||['points',3];switch(kind){
   case 'points':{const amount=Number(a)||0,r=pointChange(p,p.cloak&&amount<0?0:amount);message=p.cloak&&amount<0?'Your cloak avoided the penalty.':r.blocked?'Penalty shield used.':`${r.delta>=0?'+':''}${r.delta} points.`;break;}
   case 'item':message=gainItem(a).message;break;
   case 'unlockChar':{const actual=unlock(a);message=actual?`${character(actual).name} joins ${p.owner}'s roster.`:'An old friend brings +3 points.';if(!actual)p.points+=3;break;}
-  case 'unlockDogs':for(const id of ['kc','mylo'])if(recruit(profile,id))unlocked.push(id);message='KC and Mylo join both rosters.';break;
+  case 'unlockDogs':for(const id of ['kc','mylo'])if(recruit(profile,id,null,'dogs'))unlocked.push(id);message='KC and Mylo join both rosters.';break;
   case 'mg':case 'unlockGame':game=resolveEncounterGame(a,{source:event.source});if(game){profile.games||=[];if(!profile.games.includes(game.id))profile.games.push(game.id);}roulette=!game;message='A new challenge awaits.';break;
   case 'classic':case 'casino':roulette=true;message='The arcade is open.';break;
   case 'task':task=true;message='Your time starts when you are ready.';break;

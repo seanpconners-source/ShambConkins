@@ -35,6 +35,8 @@ ACTIVE_CATALOG.trivia.push(...PARTY_TRIVIA,...EXPANDED_TRIVIA_V42,...LEGENDS_TRI
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='bond'?MOVIE_BOND_CHARACTERS[0]:c.id==='chris-parent'?{...c,name:'Dad · Chris Conners',unlockHint:'Meet Dad at My Parents’ House or a Home encounter.'}:c.id==='angie-parent'?{...c,name:'Mom · Angie Conners',unlockHint:'Meet Mom at My Parents’ House or a Home encounter.'}:c);
 ACTIVE_CATALOG.characters.push(...MOVIE_BOND_CHARACTERS.slice(1),...FACE_PACK_CHARACTERS,...NEW_CHARACTERS);
 ACTIVE_CATALOG.characters.push(...NEW_CHARACTERS2);
+// KC and Mylo always arrive together (the early family event), never one at a time.
+ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='kc'||c.id==='mylo'?{...c,unlockBy:'dogs',unlockHint:'KC and Mylo arrive together early in your first run.'}:c);
 // Bosses: characters that only join by beating the boss (boss fights at each level gate and warp zone).
 ACTIVE_CATALOG.characters.push(...BOSS_CHARACTERS.filter(r=>!ACTIVE_CATALOG.characters.some(c=>c.id===r[0])).map(([id,name,source,icon,actor,perk,line])=>{const boss=BOSSES.find(b=>b.unlockId===id);return {id,name,source,icon,actor,assetKey:'char:'+id,unlockAt:999,perkType:perk,perk:PERKS[perk],unlockPhrase:line,unlockBy:'boss',unlockHint:`Beat ${boss?boss.name:name} in a boss fight at the end of a level or in a warp zone.`};}));
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='batman89'?{...c,name:'Batman · Michael Keaton',actor:'Michael Keaton'}:c);

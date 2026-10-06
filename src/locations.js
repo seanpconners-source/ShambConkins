@@ -2,7 +2,7 @@ const {REFERENCE_LANDMARKS}=require("src/references.js");
 const {LAB_LOCATION}=require("src/data/savoryLab.js");
 const LOCATIONS = [
  ['mighty-ducks-rink','Mighty Ducks Ice Rink','The Mighty Ducks','body','🏒',[],'Quack, quack! A five-shot hockey challenge. A first win recruits Emilio Estevez / Coach Bombay to the winner’s roster.'],
- ['parents','My Parents’ House','Home','mind','🏡',['kc','mylo','chris-parent','angie-parent'],'A familiar driveway. Say hello to Mom, Dad and two extremely good dogs.'],
+ ['parents','My Parents’ House','Home','mind','🏡',['chris-parent','angie-parent'],'A familiar driveway. Say hello to Mom, Dad and two extremely good dogs.'],
  ['dunder','Dunder Mifflin / Scranton','The Office','mind','🏢',['michael-scott','dwight-schrute','jim-halpert','pam-beesly'],'The paper business has become unnecessarily competitive.'],
  ['dunshire','The Cones of Dunshire','Parks and Recreation','mind','🔶',['ben-wyatt'],'You forgot the essence of the game. Again.'],
  ['paddys','Paddy’s Pub','Always Sunny','mind','🍻',['charlie','mac','dee','dennis','frank'],'The health inspection is not going well.'],
@@ -69,6 +69,7 @@ const LOCATIONS = [
  ['the-labyrinth','The Labyrinth','Labyrinth','spirit','🔮',['bowie-jareth','david-bowie'],'You have thirteen hours. Maybe less.'],
  ['pearly-gates','The Pearly Gates','Bruce Almighty','mind','☁️',['god'],'There is a queue, a desk and a very patient man.'],
  ['emoji-keyboard','The Emoji Keyboard','Emoji','mind','💩',['poop-emoji'],'Press and hold for skin tones. Do not press and hold this one.'],
+ ['planet-coaster-park','Planet Coaster Theme Park','Planet Coaster','body','🎢',['king-coaster'],'Queue times are long. The coasters are longer. The King is waiting at the gift shop.'],
  ['kfc-kitchen','Kentucky Fried Chicken','KFC','body','🍗',['colonel-sanders'],'The recipe is in a vault. The vault is a Tupperware.'],
 ].map(([id,name,source,realm,icon,characters,description])=>({id,name,source,realm,icon,characters,description}));
 // Retain every existing landmark and give the full crossover catalog a route

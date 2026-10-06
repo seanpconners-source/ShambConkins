@@ -68,7 +68,7 @@ function buildMultiPathBoard(board){
    if(!forward)return;from.next.push(forward.id);from.bridge=forward.id;board.bridges.push({realm,from:from.id,to:forward.id,lane,otherLane});
   });
   let taskKept=false;for(const n of all)if(n.type==='task'){if(taskKept)n.type='game';else taskKept=true;}
-  const candidates=shuffle(LOCATIONS.filter(l=>l.realm===realm&&!['parents','upside-down','unlimited-savory-lab'].includes(l.id)),random);
+  const candidates=shuffle(LOCATIONS.filter(l=>l.realm===realm&&!['parents','upside-down','unlimited-savory-lab','planet-coaster-park'].includes(l.id)),random);
   // Landmarks stand beside the road they belong to, on the side with room, and never on top of one another.
   const SCENE_W=300,SCENE_H=215;
   tracks.forEach((path,lane)=>{
@@ -79,7 +79,7 @@ function buildMultiPathBoard(board){
     let chosen=null;
     for(const side of sides){const cx=n.x+side*(ROAD_AMPLITUDE+SCENE_W/2-10),box={x:cx-SCENE_W/2,y:n.y-SCENE_H+40,w:SCENE_W,h:SCENE_H};if(box.x<12||box.x+box.w>1788)continue;if(placed.some(b=>box.x<b.x+b.w+20&&box.x+box.w+20>b.x&&box.y<b.y+b.h+20&&box.y+box.h+20>b.y))continue;if(board.bridges.some(br=>br.realm===realm&&segmentHitsBox(board.nodes[br.from],board.nodes[br.to],box,22)))continue;chosen={side,box};break;}
     if(!chosen)continue;
-    let l=candidates.pop();if(realm==='mind'&&lane===0&&count===0)l=LOCATIONS.find(l=>l.id==='parents');else if(realm==='mind'&&lane===2&&count===0&&random()<.35)l=LOCATIONS.find(l=>l.id==='unlimited-savory-lab');if(!l)break;
+    let l=candidates.pop();if(realm==='mind'&&lane===0&&count===0)l=LOCATIONS.find(l=>l.id==='parents');else if(realm==='mind'&&lane===2&&count===0&&random()<.35)l=LOCATIONS.find(l=>l.id==='unlimited-savory-lab');else if(realm==='body'&&lane===1&&count===0)l=LOCATIONS.find(l=>l.id==='planet-coaster-park')||l;if(!l)break;
     n.type='location';n.location=l.id;n.side=chosen.side;placed.push(chosen.box);if(++count>=target)break;
    }
    let gap=0;for(const id of path){const n=board.nodes[id];if(playable.has(n.type))gap=0;else if(++gap>=3&&['event','bonus','penalty'].includes(n.type)){n.type='game';gap=0;}}

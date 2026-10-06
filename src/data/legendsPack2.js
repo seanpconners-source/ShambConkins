@@ -137,6 +137,7 @@ const ROWS2=[
  ['god','God','Bruce Almighty','☁️','Morgan Freeman','survivor','Mysterious ways. Excellent shields.'],
  ['poop-emoji','The Poop Emoji','Emoji','💩','Pile of Poo emoji','competitor','The real winner is always the one smiling.'],
  ['mr-potato-head','Mr. Potato Head','Toy Story','🥔','Mr. Potato Head','scavenger','Swaps his parts for yours: a bonus supply at each gate.'],
+ ['king-coaster','King Coaster','Planet Coaster','👑','','explorer','Ruler of the queue lines. Every ride is his ride.'],
  ['colonel-sanders','Colonel Sanders','KFC','🍗','Colonel Sanders','scavenger','Eleven herbs and spices and a bonus supply.']
 ];
 const NEW_CHARACTERS2=ROWS2.map(([id,name,source,icon,actor,perk,line,extra={}])=>({
