@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.46.0 (release file `releases/ShambConkins_v0.46.0.html` predates the latest fixes; rebuild before handing a file to the owner).
+Version 0.46.0 (`releases/ShambConkins_v0.46.0.html` rebuilt with all fixes below).
 
 ## Implemented systems
 - **Board (generation 7):** per-realm journey map: stem → crossroads → 3 lanes (Calm/Adventurous/High Reward) → gate.
@@ -26,10 +26,9 @@ pinch zoom; warp pipes visible & pass-triggered; bridges; biomes; Parents' House
 King Coaster; Always Sunny portraits added by owner (optimized to WebP, originals in `assets/originals/`).
 
 ## In progress / unverified
-- A helper agent was converting: bigger player heads inside minigames (flappy, curling, angry heads…), a redesign of
-  the Taskmaster cones game (`conesort`), and Fruit Ninja (`fruitslice`) using the opponent's head. Check `git log`
-  / the engines before redoing it.
-- `npm test` green (113/113 games) after the board, boss and biome changes.
+- Nothing in flight. Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus
+  Flappy/Curling/Angry Heads), rebuilt the cones game as Cone Chaos (`engines/coneChaos.js`) and made Fruit Ninja
+  slice the opponent's head. `npm test` green.
 
 ## Known issues / next steps
 - Balance only bot-tested: boss fights, horde long runs, Disc Duel, Stunt Chase.

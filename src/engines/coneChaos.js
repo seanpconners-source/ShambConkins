@@ -105,7 +105,7 @@ async function coneChaos(s){
   if(phase==='play'){const k=clamp(clock/R.len,0,1);x.fillStyle='#ffffff22';x.fillRect(0,L.top-6,W,6);x.fillStyle=flipped?'#ff6b6b':'#ffd166';x.fillRect(0,L.top-6,W*(1-k),6);}
   x.fillStyle='#0b0f18cc';x.fillRect(0,H-L.bottom,W,L.bottom);x.font=`800 ${clamp(L.bottom*.36,13,22)}px system-ui`;x.textBaseline='middle';x.textAlign='left';x.fillStyle='#fff';x.fillText(`${scores[actor]} pts`,14,H-L.bottom/2);
   x.textAlign='right';x.fillStyle=combo>=5?'#ffd166':'#cfd6e6';x.fillText(combo?`combo ${combo} · x${mult()}`:'no combo',W-14,H-L.bottom/2);
-  if(flash&&flash.age<1.3&&phase==='play'){const a=flash.age<.15?flash.age/.15:Math.max(0,1-(flash.age-.9)/.4),y=L.top+(H-L.top-L.bottom)/2;x.globalAlpha=a;x.fillStyle=flash.red?'#c0203fdd':'#000c';x.fillRect(0,y-Math.min(90,H*.13),W,Math.min(180,H*.26));
+  if(flash&&flash.age<1.3&&phase==='play'){const a=flash.age<.15?flash.age/.15:Math.max(0,1-(flash.age-.9)/.4),y=L.top+(H-L.top-L.bottom)/2;x.globalAlpha=a;x.fillStyle=flash.red?'#c0203f99':'#000c';x.fillRect(0,y-Math.min(90,H*.13),W,Math.min(180,H*.26));
    drawWords(x,[word(flash.text,flash.red?'#fff':'#ffd166')],W/2,y-Math.min(30,H*.045),clamp(W*.07,22,46),W*.9);drawWords(x,activeText(),W/2,y+Math.min(34,H*.05),clamp(W*.05,15,30),W*.92);x.globalAlpha=1;}
   s.status(`${s.players[actor].name} · rule ${round+1}/${rules.length} · ${phase==='play'?Math.ceil(Math.max(0,R.len-clock))+'s':'get ready'} · ${scores[actor]} pts`);
   s.debug={actor,phase,round,clock,flipped,combo,scores,stats,schedule,items:items.filter(o=>!o.done).map(o=>({...slotPos(o.slot,L),color:colorOf(o,clock-o.t),shape:o.shape,r:L.r,good:activeTest()({color:colorOf(o,clock-o.t),shape:o.shape})})),tap};
