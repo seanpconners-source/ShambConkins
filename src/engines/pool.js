@@ -1,6 +1,7 @@
 const {clamp}=require("src/utils.js");
 const {circle, COLORS}=require("src/engines/session.js");
 const {sound}=require("src/audio.js");
+const {worldView}=require("src/engines/duelControls.js");
 const POOL_TABLE = { left: 40, right: 640, top: 40, bottom: 338, pocketRadius: 18,
  pockets: [{ x: 40, y: 40 }, { x: 340, y: 40 }, { x: 640, y: 40 }, { x: 40, y: 338 }, { x: 340, y: 338 }, { x: 640, y: 338 }] };
 
@@ -64,7 +65,7 @@ function poolCueSpot(balls, table = POOL_TABLE) {
 }
 
 async function pool(s) {
- const [c, x, W, H] = s.canvas(680, 390), table = POOL_TABLE, balls = poolRack(table), score = [0, 0], shots = [0, 0];
+ const [c, x] = s.canvas(680, 390, { fill: true }), W = 680, H = 390, view = worldView(s, 680, 390), table = POOL_TABLE, balls = poolRack(table), score = [0, 0], shots = [0, 0];
  const cue = balls[0]; let actor = 0, phase = 'handoff', angle = 0, power = 75, aimTime = 20, rolling = 0, scratch = false, drag = null;
  const colors = ['#f3ecce', '#ccad41', '#586ba2', '#af594b', '#715687', '#c68740', '#5a916b', '#a14b58', '#1c211e', '#ccad41'];
  const aimAllowed = () => s.alive && !s.paused && phase === 'aim';
@@ -88,37 +89,36 @@ async function pool(s) {
   if (shots[0] + shots[1] >= 10 || balls.slice(1).every(b => b.pocketed)) { s.finish(score, 'Paddy’s pub pool · pocket points'); return; }
   await turn(1 - actor, `${scratch ? 'Scratch: −10. The cue ball is back on the table. ' : ''}Your shot ${shots[1 - actor] + 1}/5. Every object ball +10; the eight ball +15. You have 20 seconds to aim.`);
  }
+ // Drag back from the cue ball, or from anywhere on the table (the pull is then measured from where you first touched), and release.
+ const wp = ev => view.toWorld(s.pointer(ev));
+ const aimFrom = (d, point) => { const dx = d.from.x - point.x, dy = d.from.y - point.y; angle = Math.atan2(dy, dx); power = clamp(Math.hypot(dx, dy), 18, 135); return Math.hypot(dx, dy); };
  s.on(c, 'pointerdown', ev => {
-  if (!aimAllowed()) return;
-  const point = s.pointer(ev);
-  if (Math.hypot(point.x - cue.x, point.y - cue.y) > 40) return;
-  ev.preventDefault(); s.capture(ev); drag = { pointer: ev.pointerId, x: point.x, y: point.y };
+  if (!aimAllowed() || drag) return;
+  const point = wp(ev);
+  ev.preventDefault(); s.capture(ev); drag = { pointer: ev.pointerId, x: point.x, y: point.y, from: Math.hypot(point.x - cue.x, point.y - cue.y) <= 48 ? cue : { x: point.x, y: point.y } };
  });
  s.on(c, 'pointermove', ev => {
   if (!drag || drag.pointer !== ev.pointerId || !aimAllowed()) return;
-  const point = s.pointer(ev); drag.x = point.x; drag.y = point.y;
-  const dx = cue.x - point.x, dy = cue.y - point.y;
-  angle = Math.atan2(dy, dx); power = clamp(Math.hypot(dx, dy), 18, 135);
+  const point = wp(ev); drag.x = point.x; drag.y = point.y; aimFrom(drag, point);
  });
  s.on(c, 'pointerup', ev => {
   if (drag?.pointer === ev.pointerId) {
-   const point = s.pointer(ev), distance = Math.hypot(cue.x - point.x, cue.y - point.y);
-   if (aimAllowed() && distance >= 10) fire(Math.atan2(cue.y - point.y, cue.x - point.x), distance);
-   drag = null;
+   const point = wp(ev), d = drag; drag = null;
+   const distance = Math.hypot(d.from.x - point.x, d.from.y - point.y);
+   if (aimAllowed() && distance >= 12) { aimFrom(d, point); fire(angle, power); }
   }
   s.release(ev);
  });
  s.on(c, 'pointercancel', ev => { drag = null; s.release(ev); });
- s.controls([
-  { text: '↺ Aim', click: () => { if (aimAllowed()) angle -= .09; } },
-  { text: 'Aim ↻', click: () => { if (aimAllowed()) angle += .09; } },
-  { text: '− Power', click: () => { if (aimAllowed()) power = clamp(power - 15, 18, 135); } },
-  { text: '+ Power', click: () => { if (aimAllowed()) power = clamp(power + 15, 18, 135); } },
-  { text: 'Shoot', click: () => fire() }
- ]);
- s.hint('Pull back from the white ball; the dotted line shows the shot. Aim/Power buttons work too. Each player gets five shots; a cleared table ends the match. Idle turns take a gentle automatic shot.');
+ s.on(document, 'keydown', ev => {
+  if (!aimAllowed()) return; const k = ev.key;
+  if (k === ' ' || k === 'Enter') { ev.preventDefault(); fire(); }
+  else if (k === 'ArrowLeft' || k === 'a') angle -= .05; else if (k === 'ArrowRight' || k === 'd') angle += .05;
+  else if (k === 'ArrowUp' || k === 'w') power = clamp(power + 8, 18, 135); else if (k === 'ArrowDown' || k === 's') power = clamp(power - 8, 18, 135);
+ });
+ s.hint('Drag back anywhere on the table like a slingshot (or from the white ball) and release: the dotted line shows the shot and a longer pull is more power; drag back to where you started to cancel. Keyboard: arrows aim and set power, Space shoots. Each player gets five shots; a cleared table ends the match. Idle turns take a gentle automatic shot.');
  function draw() {
-  x.fillStyle = '#171d17'; x.fillRect(0, 0, W, H);
+  view.begin(x, '#171d17');
   x.fillStyle = '#614631'; x.fillRect(table.left - 20, table.top - 20, table.right - table.left + 40, table.bottom - table.top + 40);
   x.fillStyle = '#264d38'; x.fillRect(table.left, table.top, table.right - table.left, table.bottom - table.top);
   x.fillStyle = '#b4b98220'; x.font = 'bold 26px Arial'; x.textAlign = 'center'; x.fillText('PADDY’S PUB', W / 2, (table.top + table.bottom) / 2 + 9);
@@ -126,8 +126,8 @@ async function pool(s) {
   for (const b of balls) {
    if (b.pocketed) continue;
    circle(x, b.x + 2, b.y + 3, b.r, '#00000044'); circle(x, b.x, b.y, b.r, colors[b.id]);
-   if (!b.id) { s.sprite(x, actor, b.x, b.y, 19, {exact:true}); s.marker?.(x, actor, b.x, b.y); }
-   if (b.id) { circle(x, b.x, b.y, 5.5, '#e6dfc5'); x.fillStyle = '#242a20'; x.font = 'bold 8px Arial'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(b.id), b.x, b.y + .4); x.textBaseline = 'alphabetic'; }
+   if (!b.id) view.upright(x, b.x, b.y, () => { s.sprite(x, actor, 0, 0, 19, {exact:true}); s.marker?.(x, actor, 0, 0); });
+   if (b.id) { circle(x, b.x, b.y, 5.5, '#e6dfc5'); view.upright(x, b.x, b.y, () => { x.fillStyle = '#242a20'; x.font = 'bold 8px Arial'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(b.id), 0, .4); x.textBaseline = 'alphabetic'; }); }
   }
   if (phase === 'aim') {
    x.strokeStyle = COLORS[actor]; x.lineWidth = 2; x.setLineDash([4, 6]); x.beginPath(); x.moveTo(cue.x, cue.y); x.lineTo(cue.x + Math.cos(angle) * (70 + power), cue.y + Math.sin(angle) * (70 + power)); x.stroke(); x.setLineDash([]);

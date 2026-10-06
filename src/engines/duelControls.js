@@ -76,3 +76,16 @@ function touchTrack(s,{down,move,up}={}){
 }
 
 Object.assign(exports,{duelInputs,duelAction,ownedPointers,keyHolds,touchTrack});
+// Fits a fixed-size landscape world (vw x vh logical units) into a fill canvas. On a portrait phone the world is turned 90 degrees
+// so it uses the full height; call view.begin(x,bg) at the start of each frame, view.toWorld(s.pointer(ev)) for input and
+// view.upright(x,wx,wy,draw) around heads or text that must stay readable.
+function worldView(s,vw,vh,{rotate=true}={}){
+ const v={rot:false,K:1,px:0,py:0,
+  update(){v.rot=!!rotate&&s.H>s.W*1.12&&vw>vh*1.15;const w=v.rot?vh:vw,h=v.rot?vw:vh;v.K=Math.max(.05,Math.min(s.W/w,s.H/h));v.px=(s.W-w*v.K)/2;v.py=(s.H-h*v.K)/2;return v;},
+  begin(x,bg){v.update();x.setTransform(1,0,0,1,0,0);if(bg){x.fillStyle=bg;x.fillRect(0,0,s.W,s.H);}if(v.rot)x.setTransform(0,v.K,-v.K,0,v.px+vh*v.K,v.py);else x.setTransform(v.K,0,0,v.K,v.px,v.py);return v;},
+  toWorld(p){v.update();return v.rot?{x:(p.y-v.py)/v.K,y:vh-(p.x-v.px)/v.K}:{x:(p.x-v.px)/v.K,y:(p.y-v.py)/v.K};},
+  upright(x,wx,wy,draw){x.save();x.translate(wx,wy);if(v.rot)x.rotate(-Math.PI/2);draw();x.restore();}
+ };
+ return v;
+}
+Object.assign(exports,{worldView});
