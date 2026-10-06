@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 200">
+  <defs>
+    <linearGradient id="side" x1="0" x2="1"><stop offset="0" stop-color="#dfe6ee"/><stop offset="1" stop-color="#b9c4d2"/></linearGradient>
+  </defs>
+  <ellipse cx="80" cy="190" rx="52" ry="7" fill="#0003"/>
+  <!-- gable top -->
+  <polygon points="36,58 80,20 124,58" fill="#f4f6f9" stroke="#5a6678" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="124,58 146,46 102,12 80,20" fill="#d9e0ea" stroke="#5a6678" stroke-width="3" stroke-linejoin="round"/>
+  <rect x="68" y="14" width="24" height="7" fill="#c9d2de" stroke="#5a6678" stroke-width="2"/>
+  <!-- front face -->
+  <rect x="36" y="58" width="88" height="124" fill="#fbfcfe" stroke="#5a6678" stroke-width="3"/>
+  <!-- side face -->
+  <polygon points="124,58 146,46 146,170 124,182" fill="url(#side)" stroke="#5a6678" stroke-width="3" stroke-linejoin="round"/>
+  <!-- blue wave band -->
+  <path d="M36 150 q11-12 22 0 t22 0 t22 0 t22 0 V182 H36Z" fill="#2b62b8"/>
+  <path d="M36 150 q11-12 22 0 t22 0 t22 0 t22 0" fill="none" stroke="#1a3f7d" stroke-width="2.5"/>
+  <!-- fist badge -->
+  <circle cx="80" cy="96" r="25" fill="#d6342c" stroke="#8d1d18" stroke-width="3"/>
+  <g fill="#fff" stroke="#8d1d18" stroke-width="1.8" stroke-linejoin="round">
+    <rect x="64" y="82" width="9" height="13" rx="4"/><rect x="73" y="80" width="9" height="14" rx="4"/>
+    <rect x="82" y="80" width="9" height="14" rx="4"/><rect x="91" y="82" width="9" height="13" rx="4"/>
+    <path d="M64 92h36v14q0 9-9 9H73q-9 0-9-9z"/>
+    <rect x="58" y="92" width="9" height="15" rx="4"/>
+  </g>
+  <!-- text -->
+  <text x="80" y="137" text-anchor="middle" font-family="Arial Black,Impact,Arial,sans-serif" font-weight="900" font-size="20" font-style="italic" fill="#d6342c" stroke="#fff" stroke-width="3" paint-order="stroke">FIGHT MILK</text>
+  <text x="80" y="170" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="9" fill="#fff" letter-spacing="1.5">WHOLE · FIGHT-GRADE</text>
+  <!-- spill -->
+  <path d="M146 150 q6 6 0 14" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+</svg>

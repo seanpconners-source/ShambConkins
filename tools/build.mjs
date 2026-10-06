@@ -29,6 +29,15 @@ if (fs.existsSync(portraitDir)) for (const f of fs.readdirSync(portraitDir)) {
   const ext = m[3].toLowerCase().replace('jpeg', 'jpg');
   userPortraits[m[2] ? `char:${m[1]}:${m[2].toLowerCase()}` : `photo:char:${m[1]}`] = `data:${MIME[ext]};base64,` + fs.readFileSync(path.join(portraitDir, f)).toString('base64');
 }
+// Drop-in item/location art: assets/items/<id>.(svg|webp|png|jpg) -> photo:item:<id>; assets/locations/<id>.* -> photo:location:<id>.
+for (const [dir, prefix] of [['items', 'photo:item:'], ['locations', 'photo:location:']]) {
+  const d = path.join(root, 'assets', dir);
+  if (!fs.existsSync(d)) continue;
+  for (const f of fs.readdirSync(d)) {
+    const m = f.match(/^([a-z0-9-]+)\.(svg|webp|png|jpe?g)$/i);
+    if (m) userPortraits[prefix + m[1]] = `data:${MIME[m[2].toLowerCase().replace('jpeg', 'jpg')]};base64,` + fs.readFileSync(path.join(d, f)).toString('base64');
+  }
+}
 const js2 = js.replace('/*@@USER_PORTRAITS@@*/{}', () => JSON.stringify(userPortraits));
 const html = read('src/index.template.html')
   .replace('<!--@@STYLE@@-->', () => '<style>' + inlineAssets(read('src/styles.css')) + '</style>')
