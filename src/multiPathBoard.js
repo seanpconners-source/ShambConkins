@@ -85,4 +85,4 @@ function buildMultiPathBoard(board){
  board.signs.push(...oldSigns.filter((_,i)=>i%9===0).map(s=>({...s,hidden:true})));return board;
 }
 
-Object.assign(exports,{BOARD_LAYOUTS,REALM_HEIGHT,CORRIDOR_X,DIFFICULTY,buildMultiPathBoard});
+Object.assign(exports,{BOARD_LAYOUTS,REALM_HEIGHT,CORRIDOR_X,DIFFICULTY,ROAD_AMPLITUDE,roadPoints,buildMultiPathBoard});

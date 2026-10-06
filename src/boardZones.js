@@ -7,7 +7,8 @@ const {logoURL}=require("src/assets.js");
 const LANE_STYLE=[
  {key:'calm',road:'#d9cba5',edge:'#7d6f4c',tag:'#2f9e61',label:'CALM'},
  {key:'adventurous',road:'#c99a63',edge:'#6e4a28',tag:'#e08a2c',label:'ADVENTUROUS'},
- {key:'rich',road:'#e5c25a',edge:'#7a5a12',tag:'#8f55d6',label:'HIGH REWARD'}
+ {key:'rich',road:'#e5c25a',edge:'#7a5a12',tag:'#8f55d6',label:'HIGH REWARD'},
+ {key:'horror',road:'#5a2630',edge:'#1d0a10',tag:'#c0392b',label:'HORROR'}
 ];
 const DECOR={arcade:'neon',diner:'blocks',bar:'blocks',drivein:'neon',cabin:'trees',graveyard:'dead',asylum:'dead',haunt:'dead',garage:'blocks',festival:'spots',clubhouse:'trees',playground:'trees',warehouse:'blocks',rooftop:'blocks',gas:'peaks',courthouse:'blocks',depot:'blocks',motel:'neon',theater:'neon',ramen:'neon',shrine:'peaks',laundromat:'blocks',pawn:'blocks',convention:'spots',mall:'blocks',jungle:'trees',park:'trees',home:'houses',town:'houses',pub:'houses',taskhouse:'houses',office:'blocks',city:'blocks',clock:'blocks',kitchen:'blocks',studio:'blocks',casino:'neon',bowling:'neon',stage:'spots',slime:'drips',harbor:'water',sewer:'water',space:'stars',alien:'stars',rainbow:'stars',matrix:'rain',horror:'dead',dojo:'peaks',cards:'peaks',hockey:'ice'};
 const f=n=>Math.round(n*10)/10;

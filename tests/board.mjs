@@ -19,7 +19,7 @@ for (let seed = 1; seed <= 300; seed++) {
   stats.bridges += board.bridges.length; stats.landmarks += nodes.filter(n => n.type === 'location').length;
   if (board.bridges.length < 6) fail(seed, 'few bridges ' + board.bridges.length);
   // landmark boxes must not overlap
-  const boxes = nodes.filter(n => n.type === 'location' && n.side).map(n => ({x: n.x + n.side * (88 + 140) - 150, y: n.y - 175, w: 300, h: 215, id: n.id}));
+  const boxes = nodes.filter(n => n.type === 'location' && n.side).map(n => ({x: n.x + n.side * 240 - 150, y: n.y - 175, w: 300, h: 215, id: n.id}));
   for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) { const a = boxes[i], b = boxes[j]; if (a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y) fail(seed, 'landmark overlap ' + a.id + ' ' + b.id); }
 }
 console.log(stats, bad ? bad + ' failures' : 'all boards ok');
