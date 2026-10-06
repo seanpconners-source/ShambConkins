@@ -517,3 +517,10 @@ h1,h2,h3{font-family:inherit;color:#172033}.property-logo,.player-source-logo,.u
 .trivia-mode-hud>span.active{border-color:#f6d67b;background:#453d22}
 .trivia-wagers{display:flex;gap:12px;justify-content:center;margin:25px auto}
 .trivia-wagers button{min-height:64px;min-width:90px;border:2px solid #edbf62}
+
+/* v0.44 fixes ------------------------------------------------------------ */
+/* Rare-encounter dialogs replaced the light card background with a see-through
+   gradient, leaving dark navy text on a dark panel. Keep the card light and lay
+   the rare glow on top of it. */
+.dialog-content.rare{background:radial-gradient(ellipse at top,#9e654c33,transparent 70%),linear-gradient(170deg,#fffdf6,#f4f2f7)}
+.dialog-content .rare-label{color:#8a5a22}

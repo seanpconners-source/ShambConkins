@@ -1,0 +1,20 @@
+// Headless smoke test: load the built game, record every JS error, drive the UI.
+import {createRequire} from 'node:module';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const require = createRequire('/node-tools/node_modules/');
+const {chromium} = require('playwright');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const file = 'file://' + path.join(root, process.argv[2] || 'dist/ShambConkins.html');
+const browser = await chromium.launch({executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+const page = await browser.newPage({viewport: {width: 1100, height: 700}});
+const errors = [];
+page.on('pageerror', e => errors.push('pageerror: ' + e.message));
+page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+await page.goto(file);
+await page.waitForTimeout(1500);
+console.log('title:', await page.title());
+console.log('buttons:', await page.$$eval('button', b => b.map(x => x.innerText.trim().slice(0, 30)).filter(Boolean).slice(0, 30)));
+await page.screenshot({path: process.env.SHOT || '/tmp/claude-0/home.png'});
+console.log('errors:', errors);
+await browser.close();

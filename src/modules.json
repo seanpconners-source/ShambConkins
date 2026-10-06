@@ -18,6 +18,7 @@
   "src/data/partyTrivia.js",
   "src/data/itemPackV43.js",
   "src/data/movieBonds.js",
+  "src/version.js",
   "src/utils.js",
   "src/profile.js",
   "src/photoPairs.js",
