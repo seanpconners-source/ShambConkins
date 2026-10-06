@@ -1,7 +1,7 @@
 // Content pack: tarantinoPack. A Quentin Tarantino minigame set. Each engine lives in src/engines/tarantino*.js.
 // Engines are required lazily: loading them while the registry initialises would create a require cycle.
 const lazy=(file,name)=>s=>require(file)[name](s);
-const engines={tarantinoStandoff:lazy("src/engines/tarantinoStandoff.js","standoff"),tarantinoTwist:lazy("src/engines/tarantinoTwist.js","twist"),tarantinoAdrenaline:lazy("src/engines/tarantinoAdrenaline.js","adrenaline"),tarantinoCrazy88:lazy("src/engines/tarantinoCrazy88.js","crazy88")};
+const engines={tarantinoStandoff:lazy("src/engines/tarantinoStandoff.js","standoff"),tarantinoTwist:lazy("src/engines/tarantinoTwist.js","twist"),tarantinoAdrenaline:lazy("src/engines/tarantinoAdrenaline.js","adrenaline"),tarantinoCrazy88:lazy("src/engines/tarantinoCrazy88.js","crazy88"),tarantinoBounty:lazy("src/engines/tarantinoBounty.js","bounty")};
 const games=[
  {id:'tarantino-standoff',engine:'tarantinoStandoff',title:'Reservoir Dogs · Mexican Standoff',source:'Reservoir Dogs',icon:'🔫',category:'duel',level:'body',duration:'best of 5',
   rules:'REAL TWO-PLAYER reflex duel. Tap your half the instant DRAW! flashes: tapping early is a flinch and loses the round. Watch for fake-outs (a falling ash, a ringing phone, a "wait…"). In the triangle rounds Mr. Blonde shoots whoever draws first, so draw and then tap again fast to drop him. First to three rounds. P1 Space, P2 Enter.'}
@@ -11,6 +11,8 @@ const games=[
   rules:'REAL TWO-PLAYER panic: each Vincent has a giant needle and his own patient. Drag the needle onto the red marker over the pounding heart (it fades as the rounds get shakier), then RELEASE to plunge when the dose meter is in the green. Closer, better-timed and faster scores more. P1 WASD + Space, P2 arrows + Enter.'}
  ,{id:'tarantino-crazy88',engine:'tarantinoCrazy88',title:'Kill Bill · Crazy 88',source:'Kill Bill',icon:'⚔️',category:'arcade',level:'body',duration:'about 65 seconds',
   rules:'REAL TWO-PLAYER: you are both the Bride in the House of Blue Leaves. Swipe to slash along your finger\'s path, cutting every masked fighter the line crosses (even on your rival\'s half). Shielded fighters need a swipe in the direction of their arrow, slashing drains stamina, and getting stabbed costs points. Multi-kills trigger bullet-time; O-Ren Ishii arrives at 80% of the clock. Most points wins. P1 WASD + Space, P2 arrows + Enter.'}
+ ,{id:'tarantino-bounty',engine:'tarantinoBounty',title:'Django Unchained · Bounty Hunter',source:'Django Unchained',icon:'🤠',category:'arcade',level:'mind',duration:'40 seconds',
+  rules:'REAL TWO-PLAYER shooting gallery on one saloon street: both halves get the identical pattern. Tap outlaws (red WANTED posters) for points, never the green townsfolk, and snipe the gold poster that wears your rival\'s face for 50. Six bullets: swipe sideways along your gun belt to reload. Chain hits for up to x4. P1 WASD + Space, P2 arrows + Enter.'}
 ];
 const events=[];
 Object.assign(exports,{engines,games,events});

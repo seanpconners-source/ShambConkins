@@ -6,7 +6,7 @@ const K=require("src/engines/tarantinoKit.js");
 const {label,rr,lerp,filmOverlay,flash,mono,titleCard,subtitle,makeFx,makeShake,makeSlowmo,sfx,voice,halfPointers,keyboard}=K;
 
 const DURATION=62,BOSS_AT=.8*DURATION,BOSS_HP=16,DIRS={l:[-1,0],r:[1,0],u:[0,-1],d:[0,1]},ARROW={l:'◀',r:'▶',u:'▲',d:'▼'};
-const TYPES={grunt:{hp:1,spd:72,r:20,pts:10,col:'#15151f'},runner:{hp:1,spd:150,r:15,pts:15,col:'#e8e8ee'},shield:{hp:1,spd:56,r:23,pts:30,col:'#1a2236'},heavy:{hp:3,spd:42,r:29,pts:40,col:'#3a2a4a'}};
+const TYPES={grunt:{hp:1,spd:64,r:20,pts:10,col:'#15151f'},runner:{hp:1,spd:150,r:15,pts:15,col:'#e8e8ee'},shield:{hp:1,spd:56,r:23,pts:30,col:'#1a2236'},heavy:{hp:3,spd:42,r:29,pts:40,col:'#3a2a4a'}};
 const BOSS_LINES=['O-Ren Ishii bows. Then she does not.','You can\'t kill what you can\'t catch, they say.','Snow falls. So does everyone else.'];
 const dist2seg=(px,py,ax,ay,bx,by)=>{const dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy;let t=l2?((px-ax)*dx+(py-ay)*dy)/l2:0;t=clamp(t,0,1);const cx=ax+dx*t-px,cy=ay+dy*t-py;return Math.sqrt(cx*cx+cy*cy);};
 
@@ -33,7 +33,7 @@ async function crazy88(s){
  function spawnBoss(){S.bossSpawned=true;S.banner=2.2;S.bossLine=BOSS_LINES[Math.floor(rnd()*BOSS_LINES.length)];slow.hit(1.2,.4);sfx.shing();
   boss={x:L.W/2,y:-40,hp:BOSS_HP,r:36*L.U,guard:'l',gT:0,wind:0,windT:0,stag:0,flash:0,tx:L.W/2,ty:L.H*.27,summon:3,atk:3.5,face:1,cd:0};
  }
- function hurtBride(i,amount,x0,y0){const p=P[i];p.stun=.9;p.hurt=.5;p.stam=0;p.streak=0;sc(i,-amount,x0,y0);sfx.hit();shake.kick(10);S.white=Math.max(S.white,.15);fx.splat(L.bx[i],L.by,{n:8,speed:160,size:3.5,decal:false});s.react?.(i,'sad');}
+ function hurtBride(i,amount,x0,y0){const p=P[i];p.stun=.9;p.hurt=.5;p.inv=1.6;p.stam=0;p.streak=0;sc(i,-amount,x0,y0);sfx.hit();shake.kick(10);S.white=Math.max(S.white,.15);fx.splat(L.bx[i],L.by,{n:8,speed:160,size:3.5,decal:false});s.react?.(i,'sad');}
  function kill(e,i,gesture){
   const T=TYPES[e.type];corpses.push({x:e.x,y:e.y,t:0,type:e.type,r:e.r,ang:rnd()*6.3});
   fx.splat(e.x,e.y,{n:20,speed:300,dir:Math.atan2(gesture.dy,gesture.dx),spread:1.6,size:4.5*L.U});fx.spark(e.x,e.y,6,'#bfe6ff');
@@ -88,13 +88,13 @@ async function crazy88(s){
   else if(S.phase==='play'){
    S.t+=dt;
    if(!S.bossSpawned&&S.t>=BOSS_AT)spawnBoss();
-   S.spawn-=dt;if(S.spawn<=0){const k=clamp(S.t/BOSS_AT,0,1);S.spawn=(lerp(1.5,.55,k))*(S.bossSpawned?1.7:1)*(.75+rnd()*.5);if(!S.bossDead)wave();if(S.t<4)S.spawn+=.6;}
-   for(let i=0;i<2;i++){const p=P[i];p.keyCd=Math.max(0,p.keyCd-rdt);p.stun=Math.max(0,p.stun-dt);p.hurt=Math.max(0,p.hurt-dt);p.swing=Math.max(0,p.swing-dt);p.lastSlash+=dt;
+   S.spawn-=dt;if(S.spawn<=0){const k=clamp(S.t/BOSS_AT,0,1);S.spawn=(lerp(.95,.38,k))*(S.bossSpawned?2:1)*(.75+rnd()*.5);if(!S.bossDead){wave();if(S.t>6&&rnd()<.4)wave();}}
+   for(let i=0;i<2;i++){const p=P[i];p.keyCd=Math.max(0,p.keyCd-rdt);p.stun=Math.max(0,p.stun-dt);p.hurt=Math.max(0,p.hurt-dt);p.inv=Math.max(0,(p.inv||0)-dt);p.swing=Math.max(0,p.swing-dt);p.lastSlash+=dt;
     if(p.winded>0){p.winded-=dt;if(p.winded<=0)p.stam=Math.max(p.stam,22);}else if(p.lastSlash>.18&&p.stun<=0)p.stam=Math.min(100,p.stam+(p.lastSlash>.5?30:14)*dt);
     for(const q of p.trail)q.t+=rdt;while(p.trail.length&&p.trail[0].t>.28)p.trail.shift();}
    for(const e of E){e.cd=Math.max(0,e.cd-dt);e.hitCd=Math.max(0,(e.hitCd||0)-dt);e.flash=Math.max(0,e.flash-dt);e.bob+=dt*6;const bi=nearest(e.x,e.y),tx=L.bx[bi],ty=L.by,dx=tx-e.x,dy=ty-e.y,d=Math.hypot(dx,dy)||1;e.face=Math.atan2(dy,dx);
     e.x+=dx/d*e.spd*dt;e.y+=dy/d*e.spd*dt;
-    if(d<e.r+30*L.U&&!e.dead){e.dead=true;corpses.push({x:e.x,y:e.y,t:.3,type:e.type,r:e.r,ang:0,puff:true});hurtBride(bi,15,tx,ty-50*L.U);fx.spark(tx,ty,10,'#fff');}}
+    if(d<e.r+30*L.U&&!e.dead&&!(P[bi].inv>0)){e.dead=true;corpses.push({x:e.x,y:e.y,t:.3,type:e.type,r:e.r,ang:0,puff:true});hurtBride(bi,10,tx,ty-50*L.U);fx.spark(tx,ty,10,'#fff');}}
    E=E.filter(e=>!e.dead);
    for(const k of corpses)k.t+=dt;corpses=corpses.filter(k=>k.t<.8);
    if(boss&&!S.bossDead){updateBoss(dt);}
@@ -174,7 +174,7 @@ async function crazy88(s){
   // HUD
   const fs=clamp(Math.min(W,H*1.4)*.032,12,22);
   for(let i=0;i<2;i++){const p=P[i],hw=W/2,bw=hw*.62,bx=i*hw+hw/2-bw/2,by=H-clamp(H*.045,18,28);
-   label(x,String(p.score),i*hw+hw/2,H*.06,fs*1.7,{fill:i?'#ff9fc6':'#8fc4ff',stroke:'#000'});label(x,`${p.kills} kills`,i*hw+hw/2,H*.06+fs*1.5,fs*.75,{fill:'#fff',stroke:'#000'});
+   label(x,String(p.score),i*hw+hw/2,H*.06,fs*1.7,{fill:i?'#ff9fc6':'#8fc4ff',stroke:'#000'});label(x,`${p.kills} ${p.kills===1?'kill':'kills'}`,i*hw+hw/2,H*.06+fs*1.5,fs*.75,{fill:'#fff',stroke:'#000'});
    x.fillStyle='#000a';rr(x,bx-2,by-2,bw+4,12,6);x.fill();x.fillStyle=p.winded>0?'#889':p.stam>30?'#6ad0ff':'#ffb347';rr(x,bx,by,Math.max(0,bw*p.stam/100),8,4);x.fill();
    label(x,p.winded>0?'WINDED':p.stun>0?'STUNNED':'STAMINA',i*hw+hw/2,by-10,fs*.6,{fill:'#fff',stroke:'#000',alpha:.8});
    if(p.hurt>0){x.fillStyle=`rgba(255,40,30,${p.hurt*.4})`;x.fillRect(i*hw,0,hw,H);}}

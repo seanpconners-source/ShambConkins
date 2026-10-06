@@ -120,7 +120,7 @@ const MODES=[
   minis:[55,100],elites:[38,80,115],bats:[45],ring:[75],wall:[110],hazard:[90],supply:[60]},
  {id:'full',name:'Full night',label:'8:00',time:480,blurb:'The real thing. Mini-bosses, a final boss, and the Hunger.',mt:8,hp:1,cap:1,rate:1,dmg:1,xp:1,boss:1,bossLead:70,hungerLead:30,
   minis:[90,180,270,360],elites:[40,92,144,196,248,300,352],bats:[62,150,238,330],ring:[125,215,305,385],wall:[165,255,340],hazard:[130,225,320,395],supply:[75,200,330]},
- {id:'dawn',name:'Dawn patrol',label:'12:00',time:720,blurb:'A marathon. The horde never stops growing.',mt:10.5,hp:1.12,cap:1.1,rate:1,dmg:1.08,xp:.8,boss:1.3,bossLead:80,hungerLead:34,
+ {id:'dawn',name:'Dawn patrol',label:'12:00',time:720,blurb:'A marathon. The horde never stops growing.',mt:10,hp:1,cap:1,rate:1,dmg:1,xp:1.1,boss:1.3,bossLead:80,hungerLead:34,
   minis:[100,200,300,400,500,600],elites:[45,100,155,210,265,320,375,430,485,540,595],bats:[70,170,270,370,470,570],ring:[135,235,335,435,535,615],wall:[180,280,380,480,560],hazard:[150,250,350,450,550],supply:[85,230,380,520]}
 ];
 
@@ -256,7 +256,7 @@ const THEMES={
  dead:{name:'dead',skin:'#8aa67a',skin2:'#a9b99a',eye:'#f1edc6',glow:'#6dff4e',glowEye:'#9bff6a',ground:'#1c2a24',ground2:'#233629',road:'#2a2e36',sign:'UNEEDA MEDICAL',dirt:'#2e3b30',leaf:'#2e5a3a'},
  cabin:{name:'cabin',skin:'#b4bfae',skin2:'#c4cdb8',eye:'#f4f6ee',glow:'#ff5a3a',glowEye:'#ff6a4a',ground:'#1d261b',ground2:'#27301f',road:'#3a2f22',sign:'KNOWBY CABIN',dirt:'#3a2d1f',leaf:'#4a3a1e'}
 };
-const ESS=1.5;
+const ESS=1;
 // bake: per type one canvas, 4 columns (right f0,f1, left f0,f1) x 2 rows (normal, flash)
 function bakeEnemies(theme){
  const th=THEMES[theme]||THEMES.dead,out={};

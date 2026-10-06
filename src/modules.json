@@ -184,7 +184,9 @@
   "src/data/partyDraw.js",
   "src/engines/partyDrawIt.js",
   "src/engines/arenaDisc.js",
-  "src/engines/partyBattleship.js"
+  "src/engines/partyBattleship.js",
+  "src/engines/arenaArrow.js",
+  "src/engines/arenaDriller.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
