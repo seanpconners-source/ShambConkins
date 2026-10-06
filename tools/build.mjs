@@ -1,0 +1,30 @@
+#!/usr/bin/env node
+// Bundles src/ + assets/ into one self-contained, offline-playable HTML file.
+// Usage: node tools/build.mjs [--out dist/ShambConkins.html]
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const argOut = process.argv.indexOf('--out');
+const out = path.resolve(root, argOut > 0 ? process.argv[argOut + 1] : 'dist/ShambConkins.html');
+const read = p => fs.readFileSync(path.join(root, p), 'utf8');
+
+const MIME = {svg: 'image/svg+xml', webp: 'image/webp', jpg: 'image/jpeg', png: 'image/png'};
+const inlineAssets = text => text.replace(/@@asset:(assets\/[A-Za-z0-9_.-]+)@@/g, (_, file) => {
+  const ext = file.split('.').pop();
+  if (!MIME[ext]) throw new Error('Unknown asset type: ' + file);
+  return `data:${MIME[ext]};base64,` + fs.readFileSync(path.join(root, file)).toString('base64');
+});
+
+const {order, tail} = JSON.parse(read('src/modules.json'));
+const modules = order.map(id => `"${id}":(exports,require)=>{\n${read(id)}`).join('\n},\n');
+const js = `(()=>{'use strict';const modules={${modules}${tail}`;
+
+const html = read('src/index.template.html')
+  .replace('<!--@@STYLE@@-->', () => '<style>' + inlineAssets(read('src/styles.css')) + '</style>')
+  .replace('<!--@@SCRIPT@@-->', () => '<script>' + inlineAssets(js) + '</script>');
+
+fs.mkdirSync(path.dirname(out), {recursive: true});
+fs.writeFileSync(out, html);
+console.log(`${path.relative(root, out)}  ${(html.length / 1048576).toFixed(1)} MB  ${order.length} modules`);

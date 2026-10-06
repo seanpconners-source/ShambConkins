@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
+<rect width="1200" height="675" fill="#17130f"/>
+<g opacity=".16" stroke="#d9c8a3" stroke-width="2">
+<path d="M0 115 H1200"/><path d="M0 225 H1200"/><path d="M0 335 H1200"/><path d="M0 445 H1200"/><path d="M0 555 H1200"/>
+</g>
+<g transform="translate(150 110) scale(.9)">
+<path d="M120 22 L57 184 H183 Z" fill="#ef6f1a" stroke="#8a3f13" stroke-width="6"/><path d="M94 88 H146 L158 118 H82 Z" fill="#f6ead5"/><path d="M76 138 H164 L176 169 H64 Z" fill="#f6ead5"/><rect x="43" y="180" width="154" height="30" rx="8" fill="#ef6f1a"/>
+</g>
+<g transform="translate(460 250) scale(1.15)">
+<path d="M120 22 L57 184 H183 Z" fill="#ef6f1a" stroke="#8a3f13" stroke-width="6"/><path d="M94 88 H146 L158 118 H82 Z" fill="#f6ead5"/><path d="M76 138 H164 L176 169 H64 Z" fill="#f6ead5"/><rect x="43" y="180" width="154" height="30" rx="8" fill="#ef6f1a"/>
+</g>
+<g transform="translate(810 100) scale(.82)">
+<path d="M120 22 L57 184 H183 Z" fill="#ef6f1a" stroke="#8a3f13" stroke-width="6"/><path d="M94 88 H146 L158 118 H82 Z" fill="#f6ead5"/><path d="M76 138 H164 L176 169 H64 Z" fill="#f6ead5"/><rect x="43" y="180" width="154" height="30" rx="8" fill="#ef6f1a"/>
+</g>
+<text x="600" y="610" text-anchor="middle" fill="#e7dcc5" font-family="Arial Black, sans-serif" font-size="46" letter-spacing="9">CONE CHAOS</text>
+</svg>

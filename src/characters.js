@@ -1,0 +1,14 @@
+const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
+const {hash}=require("src/utils.js");
+const CHARACTERS = [...CATALOG.characters, { id: 'gordon-ramsay', name: 'Gordon Ramsay', source: 'Kitchen Nightmares', icon: '👨‍🍳', assetKey: 'char:gordon-ramsay', unlockHint: 'Meet Gordon at a Kitchen Nightmares encounter or restaurant landmark.', perk: 'Kitchen rescue: +2 points on a win; -1 point on a loss.' }];
+const character = id => CHARACTERS.find(c => c.id === id) || CHARACTERS[0];
+const IDENTITY_ALIASES = {'michael-scott':'michael','dwight-schrute':'dwight','t-800':'terminator','t800':'terminator','doc-brown':'docbrown','marty-mcfly':'marty','austin-powers':'austin','forrest-review':'forrest','forrest-macneil':'forrest','ace-ventura':'ace','jay-mewes':'jay','silent-bob':'silentbob','m':'bond-m','q':'bond-q','jaws':'bond-jaws','marge':'marge-gunderson','anton':'chigurh','plainview':'daniel-plainview','dirk':'dirk-diggler','reynolds':'reynolds-woodcock','lancaster':'lancaster-dodd','steveo':'steve-o','weeman':'wee-man','ajax':'ajax-warriors','hector':'hector-troy','paris':'paris-troy','tess':'tess-barbarian','george-costanza-v13':'george-costanza','alan-grant':'grant','the-mother':'mother-barbarian','john-rambo':'rambo'};
+const identityText = text => text.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]/g,'');
+const identityKeys=new Map(),identities=new Map();
+for(const c of CHARACTERS){const key=identityText(c.name)+':'+identityText(c.source);if(!identityKeys.has(key))identityKeys.set(key,c.id);const first=identityKeys.get(key);identities.set(c.id,IDENTITY_ALIASES[c.id]||IDENTITY_ALIASES[first]||first);}
+function characterIdentity(id) { return identities.get(id)||id; }
+function differentCharacters(a,b) { return characterIdentity(a)!==characterIdentity(b); }
+function characterPerk(id) { const c = character(id); if (c.perk) return c.perk; return { sean: 'Home advantage: +1 point for visiting a location.', amber: 'Lucky break: one extra reroll each realm.', kc: 'Herding duty: +1 movement on rolls.', mylo: 'Zoomies: +2 movement, with a 1-in-5 chance of a detour.', loki: 'Guardian: gains a shield at each realm gate.' }[id] || ['Explorer: +1 point at locations.', 'Competitor: +1 point on a minigame win.', 'Scavenger: bonus item at realm gates.', 'Survivor: starts with a penalty shield.'][hash(id) % 4]; }
+function perkType(id) { if (['sean','amber','kc','mylo','loki','gordon-ramsay'].includes(id)) return id; return character(id).perkType || ['explorer','competitor','scavenger','survivor'][hash(id) % 4]; }
+
+Object.assign(exports,{CHARACTERS,character,characterIdentity,differentCharacters,characterPerk,perkType});

@@ -1,0 +1,188 @@
+const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
+const {shuffle, pick, seededRandom}=require("src/utils.js");
+const {TRIVIA_TOPIC_GAMES}=require("src/triviaCatalog.js");
+const {TRIVIA_MODE_GAMES}=require("src/data/triviaModes.js");
+const definitions = [
+ ['bucketheadland-pinball','pinball','arcade','3 alternating balls each','Bucketheadland: launch your head-ball, hold either or both flippers, hit the bucket bumpers and light BUCKET targets. All six letters or three bumpers plus both lanes earn a jackpot and a multiplier. Three alternating balls each on one seeded table; 22 seconds maximum per ball, with one early ball save.'],
+ ['major-league-fielding','baseballfield','sports','6 alternating pitches each','Major League: one human bats while the other fields. P1 stays left/P2 right. Drag vertically on your half and release to swing; the fielder drags toward the landing ring. Roles alternate every pitch. Catches +40, quick retrievals +10, singles +25, doubles +45, homers +100, runs +30. Matching pitches for both.'],
+ ['shamb-uno','uno','strategy','one private-hand duel','Two-human Uno: seven cards each, color/symbol matching, Skip, Reverse, +2, Wild and legal +4. Draw one, optionally play only that card, or pass. No stacking. Call UNO before playing down to one. In two-player play, action cards return your turn. First empty hand wins; 20 seconds per turn and an 80-turn cap.'],
+ ['taskmaster-micro-relay','microrelay','skill','five matched tasks each','Taskmaster × WarioWare: five tasks dealt from ten different mechanics. Drag, remember, stop, balance, dodge, keep the Speed bus above 50, trace Jurassic Park fences, tap Martians, time Sabbath beats or quarter the turtles’ pizza. Read before each clock starts. Both humans face the same seeded tasks and hazards. Original real-world tasks remain separate.'],
+ ['django-hangman','hangman','puzzle','1 shared word','Django’s bounty board: ONE word per encounter. Alternate letters; +2 per occurrence and +6 to solve. Six misses strand your own large-headed cowboy. Each turn has a 12-second deadline.'],
+ ['traitors-guess-who','guesswho','strategy','one deduction duel','The Traitors: a randomized board of 24 real game characters. Memorize a private secret; ask one factual name/property question or guess each turn. Eliminate suspects. Three wrong accusations loses.'],
+ ['matrix-ultimate','ultimate','strategy','nine-board duel','The Matrix: your chosen cell sends the opponent to that matching small board. Win three small boards in a line. Closed destinations allow free choice. Your heads mark both cells and captured boards.'],
+ ['greed-island-mancala','mancala','strategy','turn based','Hunter × Hunter: Kalah Mancala with six four-seed pits each. Sow past your own store, skip the enemy store, capture from empty own pits, and take extra turns for store landings.'],
+ ['deadite-checkers','checkers','strategy','turn based','Army of Darkness: twelve heads each, compulsory captures, chain jumps and king crowns. Kings move both ways. Sometimes a challenge pits a full army against four kings.'],
+ ['ten-forward-chess','chess','strategy','full eight-by-eight','Star Trek: full legal chess with your heads, piece-role badges, checkmate, castling, en passant and queen/rook/bishop/knight promotions. The older five-by-five mini-chess is also retained.'],
+ ['office-dots-boxes','dots','strategy','16 offices','Dunder Mifflin: tap between dots to draw office dividers. Complete a box to claim it with your head and take another turn. Most offices wins.'],
+ ['paddys-beer-pong','beerpong','sports','12 alternating tosses each','Paddy’s Pub: flick your head-ball up a perspective 3D table. Clear ten cups with real arcs, rim rebounds and table bounces. One re-rack each. Take turns after every toss.'],
+ ['flipadelphia-cup','flipcup','skill','8 alternating flips each','Flip, flip, Flipadelphia! Flick a rotating 3D cup and land it upside down, rim on the table. Your head rides the cup. Distance, speed and sideways drift change the landing.'],
+ ['taskmaster-fruit-ninja','fruitslice','arcade','30s each','Taskmaster’s melon buffet: swipe to slice varied high, middle and low fruit arcs. Identical randomized waves for each human. Multi-fruit swipe combos earn bonuses; bombs cost 25 and three bombs ends your turn.'],
+ ['megatouch-photohunt','photohunt','puzzle','3 shared scenes','Megatouch-style Photo Hunt. Compare both pictures and tap a difference on either. Players alternate guesses: +100 per find, −20 and −3 seconds for a miss. Import your own image pair and mark its differences.'],
+ ['angry-heads','headlaunch','arcade','3 forts each','Launch your avatar from a sling into real destructible wood, stone and glass towers. Three heads per fort. Targets +100, blocks +15. Both players get the same forts.'],
+ ['neon-ball-storm','ballvolley','arcade','7 volleys each','Aim a STREAM of balls at numbered bricks. Each impact removes 1 HP; a broken brick earns +30. Bank off walls, grow the volley, and keep descending bricks away from the bottom.'],
+ ['living-dead-horde','horde','coop','65 seconds','BOTH HUMANS SURVIVE TOGETHER. Move on the shared map, auto-shoot the horde, collect energy for spread/reload/chainsaw upgrades, and stand near a fallen partner to revive. Survive the boss and the clock.'],
+ ['paddys-hole','hole','arcade','45s each','Drag your growing hole around the neighborhood. Swallow small props first, then trees, cars and buildings. Clear the area before time runs out; identical map for both players.'],
+ ['radical-bike','bike','sports','35s each','Hold Pedal, lean to balance, and hop over gaps. Hills, airtime, checkpoints and three crashes. Both riders face the same course.'],
+ ['major-league-bats','baseball','sports','8 pitches each','Aim and swing as the pitch reaches home plate. Precise hits earn singles, doubles or home runs. Real base runners score runs; eight identical pitches each.'],
+ ['bond-baccarat','baccarat','casino','Chip tournament','10 chips each; minimum wager 2. Both bet on Player, Banker, or Tie on one animated deal. Standard third-card rules and banker commission. First bankroll below 2 loses; both can agree to cash out.'],
+ ['rink-rivals','airhockey','duel','60 seconds','REAL TWO-PLAYER: each human drags their own paddle at the same time. Strike the puck, bank off the rails and defend your goal. First to seven goals, or most in 60 seconds. The other player serves after a goal.'],
+ ['flappy-disaster','flappy','arcade','30s each','Tap through an identical pipe course. Three lives and safe respawns. Score each pipe you pass.'],
+ ['wopr-grid','tictactoe','strategy','best of three','Share a three-by-three board. Tap an empty square, alternate turns, and get three in a row. First to two wins; nine-round draw limit.'],
+ ['sewer-clash','sewer','duel','35 seconds','Both players run and jump between sewer platforms. Grab three coins first. Separate touch controls on one phone.'],
+ ['bond-facility','bondmission','arcade','22s each','Collect five pieces of intel and neutralize nearby guards. Hold arrows to move, tap FIRE in range, then pass the phone.'],
+ ["derezzed-cycles", "lightcycle", "duel", "35 seconds", "REAL TWO-PLAYER: swipe or keep dragging to turn your lightcycle. P1 starts a finger on the left half, P2 on the right. Leave permanent trails and make the opponent crash. Directions follow the screen. P1 WASD, P2 arrows."],
+ ["trek-mini-chess", "minichess", "strategy", "turn based", "Five-by-five capture-the-king chess with kings, rooks, knights, and pawns. Tap a piece, then its destination. No check rule."],
+ ["brawndo-fruit-merge", "fruitmerge", "puzzle", "40 seconds", "Each player chooses a column and drops fruit. Matching fruit merges upward. Avoid filling all four columns."],
+ ["home-alone-paint-can", "slingshot", "skill", "5 shots each", "Drag backward from the paint can and release. Knock out the burglars with gravity and bounces. Pass the phone after five shots."],
+ ["league-penalties", "penalty", "sports", "5 shots each", "The goalie secretly picks LEFT, CENTER, or RIGHT, then passes the phone to the striker. Outsmart the keeper across five kicks each."],
+ ["taskmaster-sumo", "sumo", "duel", "ring out", "Use separate movement controls to shove the opponent out of the ring. Put the phone down so both players can reach it."],
+ ["fast-quarter-mile", "dualrace", "duel", "25 seconds", "Both racers manage acceleration and steering with their own touch controls. Avoid obstacles and get furthest."],
+ ["snake-v-snake", "snakeduel", "duel", "40 seconds", "REAL TWO-PLAYER: swipe or drag to steer two snakes in one arena. P1 starts left, P2 starts right; each finger keeps its player. Eat food, grow and outlast the other snake. P1 WASD, P2 arrows."],
+ ["banana-money-grab", "moneygrab", "duel", "30 seconds", "Move through the shared arena to collect the money before your opponent. Each player has separate controls."],
+ ["kill-bill-duel", "sword2p", "duel", "35 seconds", "Move, attack, and block with separate controls. Manage your stamina and win the sword fight."],
+ ["baseketball-shootout", "basketball2p", "sports", "5 shots each", "Drag back from the basketball and release. Arc it through the hoop for two points, or three for a swish."],
+ ["raiders-ball-run", "ballrun2p", "duel", "30 seconds", "Both players dodge the obstacles and the rolling boulder. Use your own controls to survive the chase."],
+ ["tm-cones", "conesort", "puzzle", "sorting challenge", "Four cone tasks each: number order, orange cones, largest first, and odd numbers. Speed matters; incorrect taps cost a point."],
+ ["paper-route", "paperboy", "arcade", "15s each", "Deliver a newspaper while the passing house is inside the highlighted delivery window. More accurate deliveries wins."],
+ ["warriors-brawl", "brawler", "arcade", "20s each", "Face incoming enemies, time your punches, and survive the street brawl. Both players take a turn."],
+ ["battle-royale-island", "battleroyale", "duel", "45 seconds", "Both players move and shoot in a shrinking arena. Avoid hazards and be the last survivor."],
+ ["terminator-scan", "skynetid", "skill", "12 scans each", "Classify each incoming scan as HUMAN or MACHINE before its deadline. Hesitation and mistakes cost you."],
+ ["review-pancakes", "pancakes", "skill", "15s each", "Hold to eat pancakes, release to recover. Keep misery below the danger zone. Both players get 18 seconds."],
+ ["duck-hunt-turn", "duckturn", "arcade", "8s each", "Tap fast moving ducks. Pass the phone for the second turn; the clock waits for Ready."],
+ ['crossy-chaos','crossy','arcade','40s each','Swipe to hop or keep dragging a direction for repeated hops. Tap once to hop forward; lift to stop. Dodge cars and trains, ride logs and grab coins. Arrows / WASD also work. Three lives; identical hazards.'],
+ ['pong-duel','pong','duel','60 seconds','REAL TWO-PLAYER: each human controls a paddle. Drag on your half or use separate buttons; P1 W/S, P2 arrows. Edge hits angle the ball. First to 7 goals, or most after 60 seconds.'],
+ ['paddys-pool','pool','sports','5 shots each','Drag back from the cue ball to aim and set power. Pocket balls on a full six-pocket table. Ten alternating shots.'],
+ ['warehouse-shift','sokoban','puzzle','45s each','Push paper crates onto every loading square. Same solvable puzzle for both players. Undo is allowed.'],
+ ['moonraker-lander','lander','arcade','3 attempts each','Steer and thrust. Land on the brass pad with gentle vertical and horizontal speed. Both players face the same starts.'],
+ ['mars-missile-defense','missiledefense','arcade','25s each','Tap the sky to launch defense blasts. Protect four cities and trigger missile chain reactions.'],
+ ['task-tallest-thing','towerstack','skill','12 blocks each','Drop the moving block. Only the overlap survives. Stack twelve blocks; precision wins.'],
+ ['bug-artillery','artillery','duel','8 alternating shots each','Starship Troopers: choose angle and projectile velocity in m/s. Gravity 9.8, wind, randomized hills and destructible craters. Distance is shown. Three armor hits wins, or eight shots each.'],
+ ['matrix-hardline-hack','pipeconnect','puzzle','45s each','Rotate tiles to connect IN to OUT before the 45-second circuit clock ends. Electricity follows your wires at completion or timeout; dead ends explode. Same scramble for both players.'],
+ ['strategema-grid','reversi','strategy','turn based','Trap lines of enemy discs to flip them. Highlighted cells are legal moves. Most territory wins.'],
+ ['four-lights','connect4','strategy','turn based','Drop a disc into a column. Connect four horizontally, vertically, or diagonally.'],
+ ['paddys-darts','darts','skill','9 darts each','A moving sight drifts around your aim. Tap to place your aim, then throw. Timing matters.'],
+ ['taskmaster-curling','curling','skill','6 stones','Drag backward from your stone and release toward the house. Knock opposing stones away. Closest stones score.'],
+ ['alien-sonar-grid','sonargrid','puzzle','10 scans each','Scan the grid. Numbers show distance to the nearest hidden signal. Find all three.'],
+ ['office-hockey-shootout','airshootout','sports','5 alternating shots each','Two humans share the rink: one shoots, the other drags the goalie. Swap roles after every attempt, five each. Drag back from the puck or use A/D + Space and arrows + Enter. Bank shots work.'],
+ ['walkabout-golf','minigolf','sports','3 holes each','Drag back from the ball and release. Sink three procedural holes in as few strokes as possible.'],
+ ['lebowski-bowling','bowling','sports','3 frames each','Aim your ball and drag upward to bowl. Speed and angle determine the pins you knock over.'],
+ ['breakout-party','breakout','arcade','35s each','Drag the paddle. Break the brick wall and keep the ball alive. Three lives.'],
+ ['asteroid-drift','asteroids','arcade','30s each','Rotate, thrust, and fire. Wrap around the arena and split the drifting rocks.'],
+ ['space-swarm','galaga','arcade','30s each','Drag your ship, dodge enemy fire, and shoot the descending formation. Your character pilots the ship.'],
+ ['snake-run','snake','arcade','35s each','Swipe to turn, or keep your finger down and drag a new direction. Collect food, grow, and avoid walls and yourself. Releasing keeps the snake moving. Two turns can be buffered; no instant reversals. Arrows / WASD also work.'],
+ ['bomber-duel','bomber','duel','best of three','REAL TWO-PLAYER: each controls their own character. Plant bombs, escape chain reactions, break crates for upgrades. Bombs hurt both players. Best of three 28-second rounds.'],
+ ['pac-maze-duel','pacmaze','duel','60 seconds','REAL TWO-PLAYER: swipe or drag to race for pellets in one mirrored maze with a wraparound tunnel and four ghosts. P1 starts a finger left, P2 right. Three lives each, individual power pellets and ghost combos. P1 WASD, P2 arrows. Most points wins.'],
+ ['metal-gear-tank-duel','tank','duel','60 seconds','REAL TWO-PLAYER: move your avatar tank and fire at the other human. Turrets track the opponent; cover blocks shells. Three hits destroy a tank. First to 3 knockouts, or most after 60 seconds.'],
+ ['t800-scan-long','chase','arcade','25s each','Change lanes and blast roadblocks. Survive the freeway pursuit without wrecking.'],
+ ['blackjack','blackjack','casino','Chip tournament','10 chips each; minimum wager 2. Both players have their own Hit and Stand controls against ONE shared dealer. Natural blackjack pays 3:2; dealer stands on 17. First bankroll below 2 loses, or both agree to cash out.'],
+ ['five-card','poker','casino','Chip tournament','10 chips each; minimum wager 2. Both match the smaller wager. Five-card draw: private turns, up to three animated exchanges, then a shared showdown. First bankroll below 2 loses, or both agree to cash out.'],
+ ['roulette','roulette','casino','Chip tournament','10 chips each; minimum wager 2. Both lock a wager on the SAME animated European wheel. Outside bets pay 1:1; straight numbers pay 35:1. First bankroll below 2 loses, or both agree to cash out.'],
+ ['full-shambyahtzee','yahtzee','dice','13 categories','A full scorecard: roll up to three times, hold dice, and choose a category. Upper bonus at 63.'],
+ ['trivia-mixed','trivia','trivia','8 shared rounds','Alternate first shot. A miss gives the other player the SAME question for a steal. Easy 1, medium 2, hard 3.'],
+ ['trivia-nick90','trivia','trivia','8 shared rounds','Nickelodeon only. Alternate first shot; wrong answers stay hidden until the steal resolves.'],
+ ['trivia-dbz','trivia','trivia','8 shared rounds','Dragon Ball Z only. Alternate first shot; the other player can steal the same question.'],
+ ['trivia-hxh','trivia','trivia','8 shared rounds','Hunter × Hunter only. Eight shared questions with alternating lead and steals.'],
+ ['trivia-sitcom','trivia','trivia','8 shared rounds','Sitcom trivia. Alternate first shot, then steal for reduced points after a miss.'],
+ ['trivia-hardcore','trivia','trivia','8 shared rounds','A mixed-world trivia quiz with a random difficulty draw. Every question uses the drawn level; misses pass to the other player.']
+];
+const GAMES = definitions.map(([id,engine,category,duration,rules])=>({ ...(CATALOG.games.find(g=>g.id===id)||{}),id,engine,family:engine,category,duration,rules,quality:'substantial',randomEligible:true,eventOnly:false,reward:8 }));
+for(const[engine,title,source,icon]of [['hole','Paddy’s Neighborhood Hole','Always Sunny','🕳'],['bike','Radical Bike Trials','Trials','🚲'],['baseball','Major League Batting Cage','Major League (film)','⚾'],['crossy','Crossy Road Chaos','Crossy Road','🚦']])Object.assign(GAMES.find(g=>g.engine===engine),{title,source,icon});
+Object.assign(GAMES.find(g=>g.engine==='pinball'),{title:'Bucketheadland · Head Pinball',source:'Buckethead',icon:'🎸'});
+Object.assign(GAMES.find(g=>g.engine==='baseballfield'),{title:'Major League · Bat & Field',source:'Major League (film)',icon:'⚾',family:'baseball'});
+Object.assign(GAMES.find(g=>g.engine==='tictactoe'),{title:'The Matrix · Three in a Row',source:'The Matrix',icon:'💊'});
+for(const[engine,title,source,icon]of [['uno','ShambUNO · Private Card Duel','Uno','🃏'],['microrelay','Taskmaster × WarioWare · Microtask Relay','Taskmaster','⏱'],['guesswho','The Traitors · Find the Traitor','The Traitors','🕵'],['ultimate','The Matrix · Nine Realities','The Matrix','💊'],['mancala','Greed Island · Mancala','Hunter × Hunter','🪨'],['checkers','Army of Darkness · Deadite Checkers','Army of Darkness','♛'],['chess','Star Trek · Ten Forward Chess','Star Trek','♚'],['dots','Dunder Mifflin · Office Dividers','The Office','🗂'],['beerpong','Paddy’s Pub · Beer Pong','Always Sunny','🍺'],['flipcup','Flipadelphia · Flip Cup','Always Sunny','🥤'],['fruitslice','Taskmaster · Fruit Ninja Buffet','Taskmaster','🍉'],['artillery','Starship Troopers · Klendathu Tank Range','Starship Troopers','💥']])Object.assign(GAMES.find(g=>g.engine===engine),{title,source,icon});
+Object.assign(GAMES.find(g=>g.engine==='flappy'),{rules:'Wait for your own Ready button and three-second countdown. Tap to start flying; tap again to flap through matching pipes. Three lives. The start holds for up to ten seconds before a safe automatic launch.'});
+Object.assign(GAMES.find(g=>g.engine==='airhockey'),{title:'The Mighty Ducks · Air Hockey',source:'The Mighty Ducks',icon:'🏒',rules:'REAL TWO-PLAYER: drag your own paddle at the same time. Strike the puck, bank off the rails and defend your goal. First to seven goals, or most in 60 seconds. Your first win unlocks Emilio Estevez / Gordon Bombay.'});
+Object.assign(GAMES.find(g=>g.engine==='airshootout'),{title:'The Mighty Ducks · Hockey Shootout',source:'The Mighty Ducks',icon:'🏒',rules:'Drag only: each player owns one end of a full-screen rink. Pull back from your puck and release across the ice; the other human drags their goalie up and down. Roles swap after every attempt. Five shots each; your first real win unlocks Emilio Estevez / Gordon Bombay in your own roster.'});
+Object.assign(GAMES.find(g=>g.engine==='duckturn'),{title:'Duck Hunt',source:'Duck Hunt',icon:'🦆'});
+Object.assign(GAMES.find(g=>g.engine==='pool'),{title:'Paddy’s Pool',source:'Always Sunny',icon:'🎱'});
+for(const[engine,id,title,source,icon,duration,rules]of [
+ ['pool','color-of-money','The Color of Money · Nine-ball','The Color of Money','🎱','14-shot match','Real nine-ball: hit the lowest numbered ball first, then pocket a ball or touch a cushion. Clean pockets keep your turn; fouls cost 5 and give ball in hand. A legal nine wins. Fourteen-shot limit.'],
+ ['bowling','kingpin-bowling','Kingpin · Hook & Hustle','Kingpin','🎳','3 frames each','Three alternating frames with real strikes, spares and final-frame bonus balls. Set hook and start position, then flick up the lane. Your avatar rides the ball.'],
+ ['minigolf','happy-gilmore-golf','Happy Gilmore × Caddyshack','Happy Gilmore','⛳','3 holes each','Alternate after every stroke on the same seeded courses. Each ball stays at its last lie. Putt for control or use Happy’s run-up drive. Water costs a stroke, sand slows shots and a gopher interferes. Seven-stroke limit per hole.'],
+ ['hangman','django-hangman','Django · The Bounty Board','Django Unchained','🤠','1 shared word','Alternate letter guesses. Earn +2 per occurrence; SOLVE pauses the timer while you type the full answer, worth +5. Wrong letters or solves cost 1 point and one of six chances. One shared bounty.'],
+ ['photohunt','megatouch-photohunt','Megatouch · Photo Hunt','Megatouch','🔎','3 shared scenes',null],
+ ['headlaunch','angry-heads','Angry Heads','Angry Birds','💥','3 forts each',null],
+ ['ballvolley','neon-ball-storm','Daft Punk · Neon Ball Storm','Daft Punk','🟣','7 volleys each',null],
+ ['horde','living-dead-horde','Return of the Living Dead · Horde','Return of the Living Dead','🧟','65 seconds','Both humans drag one finger on their half of a full-screen arena. Auto-fire at zombies, collect chiming gems to level up, and stand near a fallen partner for 2.5 seconds to revive. Survive together for 65 seconds.']
+]){const game=GAMES.find(g=>g.engine===engine);Object.assign(game,{id,title,source,icon,duration,...(rules?{rules}:{}),...(engine==='horde'?{cooperative:true}:{})});}
+Object.assign(GAMES.find(g=>g.engine==='bondmission'),{title:'Facility Escape',source:'GoldenEye / James Bond',icon:'🕵️'});
+GAMES.push({id:'kitchen-service',title:'Dinner Service',source:'Kitchen Nightmares',icon:'🍳',engine:'kitchen',family:'kitchen',category:'skill',duration:'35s each',rules:'Read the tickets, build each order in sequence, and send it before patience runs out. Wrong ingredients waste time.',quality:'substantial',randomEligible:true,reward:8});
+GAMES.push({id:'rainbow-rivals',title:'Rainbow Rivals',source:'Super Mario Bros.',icon:'🏁',engine:'coopRivals',family:'dualrace',category:'coop',duration:'30s each',rules:'RELAY CO-OP: both humans are one team. Race Mario, then Luigi, on the same course. Steer, collect coins, dodge blocks and boost. Their hard CPU drivers use the same movement and collision rules. Beat their combined actual race scores.',quality:'substantial',randomEligible:false,secret:true,reward:8});
+const LEGACY_ENGINES={bugwar:'artillery',airhockey:'airhockey',yachtyfull:'yahtzee',yachty6:'yahtzee',bomberduel:'bomber',pacduel:'pacmaze',tankduel:'tank',termchase:'chase',poolduel:'pool',pingpong2p:'pong'};
+const EVENT_GAMES=CATALOG.games.filter(old=>!GAMES.some(g=>g.id===old.id)).flatMap(old=>{const base=GAMES.find(g=>g.engine===(old.id==='office-air-hockey'?'airhockey':LEGACY_ENGINES[old.engine]||old.engine));return base?[{...base,...old,...(old.engine==='yachty6'?{diceCount:6}:{}),engine:base.engine,family:base.family,category:base.category,rules:base.rules,duration:base.duration,quality:'themed-variant',randomEligible:false,reward:base.reward}]:[];});
+for(const game of EVENT_GAMES.filter(g=>g.id==='office-air-hockey'))Object.assign(game,{title:'The Mighty Ducks · Air Hockey',source:'The Mighty Ducks'});
+EVENT_GAMES.push({...GAMES.find(g=>g.engine==='checkers'),id:'deadite-four-kings',title:'Deadite Checkers · Four Kings vs. the Army',challenge:'four-kings',quality:'themed-variant',randomEligible:false,rules:'A full twelve-piece army faces just FOUR kings. The king side varies each game. Standard mandatory captures, chain jumps and crowning still apply.'});
+Object.assign(GAMES.find(g=>g.engine==='yahtzee'),{diceCount:5,rules:'Full thirteen-category Yahtzee. Roll five dice up to three times; tap or drag dice into the hold tray. Upper section ≥63 earns +35. Board encounters sometimes deal the six-dice Cheater’s variant.'});
+EVENT_GAMES.push({...GAMES.find(g=>g.engine==='yahtzee'),id:'cheaters-yahtzee',title:'Cheater’s Yahtzee · Six Dice',diceCount:6,source:'Yahtzee',icon:'🎲',quality:'themed-variant',randomEligible:false,rules:'Six dice, the same thirteen categories and upper bonus. Score your best five for the chosen category. Hold at most five, leaving one spare to reroll.'});
+for(const game of EVENT_GAMES.filter(g=>g.engine==='yahtzee'))game.diceCount=game.id==='yachty6'?6:game.diceCount||5;
+EVENT_GAMES.push({...GAMES.find(g=>g.engine==='horde'),id:'evil-dead-cabin',title:'Evil Dead · Cabin Defense',source:'Evil Dead',quality:'themed-variant',randomEligible:false});
+EVENT_GAMES.push({...GAMES.find(g=>g.engine==='minigolf'),id:'caddyshack-golf',title:'Caddyshack · Gopher Greens',source:'Caddyshack',quality:'themed-variant',randomEligible:false});
+for(const game of EVENT_GAMES.filter(g=>g.engine==='pool'))Object.assign(game,{duration:'5 shots each',rules:'Paddy’s pocket duel: alternate five shots each. Object balls +10, eight +15, scratches −10. Both players shoot on the same table.'});
+// Original personal reward routes stay available as clearly grouped encounter
+// variants of substantial mechanics, instead of reviving generic tap reskins.
+for(const [id,engine,rules]of [
+ ['pipe-panic','pipeconnect','Rotate pipes to connect IN to OUT in 45 seconds. Power runs through your circuit; broken connections short out. Both plumbers face the same solvable network puzzle.'],
+ ['audrey-feed','kitchen','Feed Audrey the requested ingredients in order. Complete the plant’s tickets before its patience runs out. Both players get the same order sequence.'],
+ ['cable-channel-surf','sonargrid','Tune the cable grid: scan for three hidden channels. Each scan gives the distance to the nearest signal. Ten scans each.'],
+ ['dragonheart-slay','artillery','Compete on the Dragonheart range. Adjust angle and power, account for wind, and land three hits on the opposing camp. Ten shots each.']
+]){const base=GAMES.find(g=>g.engine===engine),old=CATALOG.games.find(g=>g.id===id);if(base&&old&&!EVENT_GAMES.some(g=>g.id===id))EVENT_GAMES.push({...base,...old,engine,family:engine,category:base.category,duration:base.duration,rules,quality:'themed-variant',randomEligible:false,reward:base.reward});}
+for(const[tag,title,icon,description,source='ShambConkins']of TRIVIA_TOPIC_GAMES)EVENT_GAMES.push({...GAMES.find(g=>g.id==='trivia-mixed'),id:'trivia-'+tag,title,icon,source,triviaTag:tag,quality:'themed-variant',randomEligible:false,duration:tag==='lore'?'6 shared rounds':'8 shared rounds',rules:description+' Alternate the first answer. A miss gives the other player a steal. Explanations appear after the question is resolved.'});
+for(const game of [...GAMES,...EVENT_GAMES]){
+ if(game.engine==='brawler')Object.assign(game,{duration:'30s each',rules:'The Warriors: drag to move and select punch or kick to the left or right. Animated attacks have wind-up and recovery; punches deal one damage, kicks deal two. Five lives; both players face identical waves.'});
+ if(game.engine==='duckturn')Object.assign(game,{title:'Head Hunt',duration:'20s each',rules:'Duck Hunt becomes Head Hunt: tap the opponent’s flying heads for ten points. Both humans get identical flight patterns. Clear Ready and the countdown before each turn.'});
+}
+for(const mode of TRIVIA_MODE_GAMES)GAMES.push({...GAMES.find(g=>g.id==='trivia-mixed'),...mode,source:'ShambConkins',triviaTag:'mixed',quality:'substantial',randomEligible:true});
+const gameById = id => GAMES.find(g=>g.id===id)||EVENT_GAMES.find(g=>g.id===id);
+const STARTER_FAMILIES=new Set(['pinball','uno','microrelay','ultimate','mancala','dots','checkers','chess','guesswho','beerpong','flipcup','fruitslice','hangman','photohunt','headlaunch','ballvolley','horde','hole','bike','baseball','flappy','sokoban','lander','missiledefense','towerstack','artillery','pipeconnect','reversi','connect4','darts','curling','sonargrid','airshootout','minigolf','bowling','breakout','asteroids','galaga','snake','bomber','pacmaze','tank','chase','blackjack','poker','roulette','baccarat','yahtzee','trivia','kitchen','crossy','pong','pool','airhockey']);
+function gameUnlocked(game,profile){if(game.secret)return (profile.modes||[]).includes('coop');return STARTER_FAMILIES.has(game.family)||!game.gameUnlockAt||(profile.minigames||0)>=game.gameUnlockAt||(profile.games||[]).includes(game.id);}
+const RANDOM_GAMES = GAMES.filter(g=>g.randomEligible && g.quality==='substantial');
+const PHONE_TASK = {id:'phone-task',title:'Your time starts now',source:'Taskmaster',icon:'📏',engine:'task',family:'task',category:'task',duration:'20 seconds',rules:'Read the task, then take turns or perform together. Judge the winner honestly.',quality:'party-task',randomEligible:false,reward:5};
+// All trivia themes share one mechanic family, but each theme gets a turn.
+const TRIVIA_THEME_IDS=[...GAMES.filter(g=>g.engine==='trivia').map(g=>g.id),...TRIVIA_TOPIC_GAMES.map(([tag])=>'trivia-'+tag)];
+function selectTriviaGame(run,profile,random=Math.random){
+ let bag=[...new Set((Array.isArray(run.triviaThemeBag)?run.triviaThemeBag:[]).filter(id=>TRIVIA_THEME_IDS.includes(id)))];
+ if(!bag.length)bag=shuffle(TRIVIA_THEME_IDS,random);
+ const last=[...run.gameHistory].reverse().find(g=>g.family==='trivia')?.id||[...profile.recentGames].reverse().find(id=>gameById(id)?.engine==='trivia');
+ if(bag.length>1&&bag.at(-1)===last){const i=bag.findIndex(id=>id!==last);[bag[i],bag[bag.length-1]]=[bag.at(-1),bag[i]];}
+ const game=gameById(bag.pop());run.triviaThemeBag=bag;return game;
+}
+function triviaIsDue(run){const history=run.gameHistory||[],last=history.findLastIndex(g=>g.family==='trivia');return last<0?history.length>=2:history.length-last-1>=3;}
+function selectBoardGame(run,profile,filter='all',random=Math.random){return selectGame(run,profile,filter==='all'&&triviaIsDue(run)?'trivia':filter,random);}
+function selectGame(run, profile, filter = 'all', random = Math.random) {
+ const pool=RANDOM_GAMES.filter(g=>gameUnlocked(g,profile)&&(filter==='all'||g.category===filter||(filter==='taskmaster'&&g.source==='Taskmaster')));
+ if(!pool.length)throw new Error('No games in this category');
+ const families=[...new Set(pool.map(g=>g.family))]; const key=filter;
+ run.familyBags ||= {}; let bag=run.familyBags[key]||[];
+ bag=bag.filter(f=>families.includes(f));
+ if(!bag.length) { bag=shuffle(families,random); const recentFamilies=new Set(profile.recentGames.slice(-8).map(id=>gameById(id)?.family));bag=[...bag.filter(f=>recentFamilies.has(f)),...bag.filter(f=>!recentFamilies.has(f))];const last=run.gameHistory.at(-1)?.family||gameById(profile.recentGames.at(-1))?.family; if(bag.at(-1)===last&&bag.length>1)[bag[0],bag[bag.length-1]]=[bag.at(-1),bag[0]]; }
+ const lastFamily=run.gameHistory.at(-1)?.family||gameById(profile.recentGames.at(-1))?.family;if(bag.length>1&&bag.at(-1)===lastFamily){const other=bag.findIndex(f=>f!==lastFamily);[bag[other],bag[bag.length-1]]=[bag.at(-1),bag[other]];}
+ const family=bag.pop();run.familyBags[key]=bag;
+ let variants=pool.filter(g=>g.family===family);const recent=new Set(profile.recentGames.slice(-12));const fresh=variants.filter(g=>!recent.has(g.id));if(fresh.length)variants=fresh;
+ let game=family==='trivia'?selectTriviaGame(run,profile,random):pick(variants,random);if(game.engine==='checkers'&&random()<.22)game=gameById('deadite-four-kings');run.gameHistory.push({id:game.id,family});run.gameHistory=run.gameHistory.slice(-60);return game;
+}
+function resolveLegacyGame(id) { return gameById(id)||null; }
+
+for(const g of [...GAMES,...EVENT_GAMES]){if(g.engine==='galaga'){g.source='Mars Attacks!';g.title='Space Swarm · Mars Attacks!';g.rules='Drag your head-ship to move and fire at Martian heads. Dodge blasts and survive 30 seconds. Both players face the same invasion. First victory recruits the Martian to the winner’s roster.';}if(g.engine==='bomber')g.rules='Shared Bomberman arena. Swipe or drag your half to move; tap your half to plant a bomb. No bottom controls. Best of three 28-second rounds. P1 WASD + Space; P2 arrows + Enter.';if(g.engine==='dualrace')g.rules='Fast & Furious: both humans race with swipes. Left/right changes lanes; swipe up for nitro, hold up to keep boosting. Matched traffic, three-hit cars, 25-second limit.';if(g.engine==='sumo')g.rules='Taskmaster: steer your suit with three stacked buttons on your own edge. Hold left/right to aim and CHARGE to shove. First to two ring-outs or most wins in 45 seconds.';}
+
+for(const g of [...GAMES,...EVENT_GAMES]){
+ if(g.engine==='hole'){g.duration='60s each';g.rules='Swipe or hold-drag from anywhere: your first touch is the joystick origin. Swallow smaller props to grow and collect the three named goal sets. Red bombs are lethal if swallowed. Complete the goals for a bonus; the rest of the neighborhood can stay. Both players face the same large neighborhood for up to 60 seconds each.';}
+ if(g.engine==='slingshot'){g.duration='5 swings each';g.rules='Home Alone: defend the top of the stairs against the opposing player’s heads below. Move the hook along the top rail to cover any stair. Drag below the rail to choose rope length and lift the can; release to swing along the dotted aiming arc. Gravity and stair bounces swing the can on its rope; fast impacts score points. Five swings each, with a 15-second aiming clock. A/D moves the hook, W/S adjusts rope length, arrows lift and Space releases.';}
+ if(g.engine==='sword2p'){g.duration='40 seconds';g.rules='Both players touch their own side of the full arena. Hold-drag left/right from your first touch to walk. Flick up or tap for one slash; hold-drag down to guard. Three hits win, or the most health after 40 seconds. P1 A/D + W/Space + S; P2 arrows + Enter.';}
+ if(g.engine==='headlaunch')g.rules+=' Your larger head is the projectile; every target uses your opponent’s current character head.';
+ if(g.engine==='trivia')g.rules+=' Timed answers: Easy 18s/1pt, Medium 22s/2pt, Hard 26s/3pt, Impossible 30s/4pt. All four difficulties appear once per shuffled four-quiz set. The drawn level stays fixed for every question in that quiz. A miss or timeout offers a steal; clocks pause for handoffs and Pause.';
+}
+
+// Every themed/legacy variant inherits the same live gesture controls.
+for(const g of [...GAMES,...EVENT_GAMES]){
+ if(g.engine==='sewer'){g.duration='40 seconds';g.rules='TMNT: both humans drag left/right from their first touch on their own half to run. Flick up or tap to jump. All sewer platforms are reachable with one jump. First to six pizza tokens, or most after 40 seconds. P1 A/D + W/Space; P2 arrows + Enter.';}
+ if(g.engine==='moneygrab')g.rules='Bluth Banana Stand: both humans drag left/right from their first touch on their own half. Catch $2 bills and dodge seals that cost $5. No direction pads; lift or return to the origin to stop. Thirty seconds.';
+ if(g.engine==='bondmission')g.rules='GoldenEye: drag from your first touch anywhere to move, tap to neutralize nearby guards. Collect five intel files, avoid wall collisions and survive three hits. Each player gets the same facility and 22 seconds; the next clock waits for Ready.';
+ if(g.engine==='fruitmerge')g.rules='Both humans swipe on their own half to select a column, tap or swipe down to drop. Matching stacked fruits merge and score. Identical fruit sequences; forty seconds. No direction pads.';
+ if(g.engine==='battleroyale')g.rules='Both humans drag from their own first touch to move. Auto-aim and fire while holding; tap for a shot or close punch. Collect ammo and healing medkits, stay inside the shrinking zone. Forty-five seconds; no direction pads.';
+ if(g.engine==='tank')g.rules='REAL TWO-PLAYER: drag from your own first touch to drive; hold to auto-fire or tap for one shot. Turrets aim at the opponent and cover blocks shells. Three hits per tank; first to three knockouts or most after sixty seconds. WASD + Space / arrows + Enter.';
+ if(g.engine==='pong')g.rules='REAL TWO-PLAYER: each human drags vertically on their own half to control their paddle. Each finger keeps its owner across the middle. First to seven goals or most after sixty seconds. P1 W/S, P2 up/down. No direction pads.';
+ if(g.engine==='sokoban')g.rules='Swipe to push warehouse crates onto marked goals, or hold-drag to keep walking. Tap Undo inside the arena to rescue a mistake. Both humans get the same puzzle and forty-five seconds; no direction pad.';
+}
+
+Object.assign(exports,{GAMES,EVENT_GAMES,gameById,gameUnlocked,RANDOM_GAMES,PHONE_TASK,TRIVIA_THEME_IDS,selectTriviaGame,triviaIsDue,selectBoardGame,selectGame,resolveLegacyGame});

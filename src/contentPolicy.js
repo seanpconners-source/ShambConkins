@@ -1,0 +1,29 @@
+const {CATALOG}=require("src/data/content.js");
+const {TACTICAL_ITEMS, CASINO_TRIVIA}=require("src/data/tacticalItems.js");
+const {MIGHTY_DUCKS_CHARACTER, MIGHTY_DUCKS_TRIVIA}=require("src/data/mightyDucksPack.js");
+const {TRAVEL_ITEMS}=require("src/data/travelItems.js");
+const {LAB_CHARACTERS}=require("src/data/savoryLab.js");
+const {ADVANCED_TRIVIA}=require("src/data/advancedTrivia.js");
+const {EXPANDED_TRIVIA_V42}=require("src/data/expandedTriviaV42.js");
+const {PARTY_TRIVIA}=require("src/data/partyTrivia.js");
+const {ITEM_PACK_V43}=require("src/data/itemPackV43.js");
+const {MOVIE_BOND_CHARACTERS, FACE_PACK_CHARACTERS}=require("src/data/movieBonds.js");
+// Preserve the uploaded catalog byte-for-byte. Sean has explicitly disclaimed
+// Eugenia, so its inherited character, pass and four cards are inactive.
+function activeContent(record){return !/eugenia/i.test([record.id,record.name,record.title,record.source,record.body].filter(Boolean).join(' '));}
+function displayReference(record){if(record.source!=='WarGames')return record;return {...record,source:'The Matrix',...(record.name?{name:record.name.replace(/WOPR/g,'Matrix Construct')}:{}),...(record.title?{title:record.title.replace(/WOPR/g,'The Matrix')}:{}),...(record.desc?{desc:record.desc.replace(/WOPR/g,'Matrix')}:{}),...(record.body?{body:record.body.replace(/The WOPR would like to play something less apocalyptic this time\./,'The Matrix has opened a three-in-a-row grid in the Construct.')}: {})};}
+const ACTIVE_CATALOG=Object.fromEntries(Object.entries(CATALOG).map(([key,value])=>[key,Array.isArray(value)?value.filter(activeContent).map(row=>key==='characters'&&row.id==='happy-gilmore'?{...row,source:'Happy Gilmore',unlockHint:'Win Happy Gilmore golf to add him to the winner’s roster; his original event card can also find him.'}:['items','cards','games'].includes(key)?displayReference(row):row):value]));
+ACTIVE_CATALOG.items.push(...TACTICAL_ITEMS);
+ACTIVE_CATALOG.items.push(...TRAVEL_ITEMS);
+ACTIVE_CATALOG.items.push(...ITEM_PACK_V43);
+ACTIVE_CATALOG.trivia.push(...CASINO_TRIVIA);
+ACTIVE_CATALOG.characters.push(MIGHTY_DUCKS_CHARACTER);
+ACTIVE_CATALOG.characters.push(...LAB_CHARACTERS);
+ACTIVE_CATALOG.trivia.push(...MIGHTY_DUCKS_TRIVIA);
+ACTIVE_CATALOG.trivia.push(...ADVANCED_TRIVIA);
+ACTIVE_CATALOG.trivia.push(...PARTY_TRIVIA,...EXPANDED_TRIVIA_V42);
+// Overrides affect the active game only; the uploaded catalog stays intact.
+ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='bond'?MOVIE_BOND_CHARACTERS[0]:c.id==='chris-parent'?{...c,name:'Dad · Chris Conners',unlockHint:'Meet Dad at My Parents’ House or a Home encounter.'}:c.id==='angie-parent'?{...c,name:'Mom · Angie Conners',unlockHint:'Meet Mom at My Parents’ House or a Home encounter.'}:c);
+ACTIVE_CATALOG.characters.push(...MOVIE_BOND_CHARACTERS.slice(1),...FACE_PACK_CHARACTERS);
+
+Object.assign(exports,{activeContent,ACTIVE_CATALOG});

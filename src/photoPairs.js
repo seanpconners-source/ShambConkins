@@ -1,0 +1,16 @@
+const {hash}=require("src/utils.js");
+const PHOTO_PAIR_LIMIT=8;
+// localStorage implementations commonly charge two bytes per UTF-16 code unit.
+// Budget the whole profile, leaving room in a 5 MiB origin for the run and media.
+const PHOTO_PROFILE_BUDGET_BYTES=4000000;
+function validPhotoPair(pair){return !!pair&&['left','right'].every(k=>typeof pair[k]==='string'&&pair[k].length<1200000&&/^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(pair[k]))&&Array.isArray(pair.regions)&&pair.regions.length>0&&pair.regions.length<=8&&pair.regions.every(r=>[r.x,r.y,r.r].every(Number.isFinite)&&r.x>=0&&r.x<=1&&r.y>=0&&r.y<=1&&r.r>=.025&&r.r<=.15);}
+function normalizePhotoPair(pair){if(!validPhotoPair(pair))return null;return {left:pair.left,right:pair.right,regions:pair.regions.map(({x,y,r})=>({x,y,r})),...(typeof pair.id==='string'?{id:pair.id.slice(0,80)}:{}),...(typeof pair.title==='string'?{title:pair.title.slice(0,100)}:{}),...(typeof pair.source==='string'?{source:pair.source.slice(0,120)}:{})};}
+function photoPairId(pair){return pair.id||'pair-'+hash(pair.left+'|'+pair.right);}
+function photoPairLibrary(profile){const unique=new Map();for(const raw of [...(Array.isArray(profile?.photoHuntPairs)?profile.photoHuntPairs:[]),profile?.photoHuntPair]){const pair=normalizePhotoPair(raw);if(pair&&!unique.has(photoPairId(pair)))unique.set(photoPairId(pair),pair);}return [...unique.values()].slice(0,PHOTO_PAIR_LIMIT);}
+function currentPhotoPair(profile,pair){Object.defineProperty(profile,'photoHuntPair',{value:pair,writable:true,configurable:true,enumerable:false});}
+function photoProfilePayload(profile){const payload={...profile};if(Array.isArray(profile.photoHuntPairs)){payload.photoHuntPairs=photoPairLibrary(profile);delete payload.photoHuntPair;}else{const pair=normalizePhotoPair(profile.photoHuntPair);if(pair)payload.photoHuntPair=pair;else delete payload.photoHuntPair;}return payload;}
+function photoProfileBytes(profile){return JSON.stringify(photoProfilePayload(profile)).length*2;}
+function addPhotoPair(profile,pair){const clean=normalizePhotoPair(pair);if(!clean)return {ok:false,message:'This pair has invalid images or difference marks.'};const library=photoPairLibrary(profile),id=photoPairId(clean),at=library.findIndex(p=>photoPairId(p)===id);if(at<0&&library.length>=PHOTO_PAIR_LIMIT)return {ok:false,message:'Eight pairs are saved. Remove a pair from Photo library before adding another.'};if(at<0)library.push(clean);else library[at]=clean;if(photoProfileBytes({...profile,photoHuntPairs:library,photoHuntPair:clean})>PHOTO_PROFILE_BUDGET_BYTES)return {ok:false,message:'The photo library is full. Remove a pair or use smaller images, then try again.'};profile.photoHuntPairs=library;currentPhotoPair(profile,clean);return {ok:true,pair:clean};}
+function removePhotoPair(profile,id){profile.photoHuntPairs=photoPairLibrary(profile).filter(p=>photoPairId(p)!==id);if(profile.photoHuntPair&&photoPairId(profile.photoHuntPair)===id)delete profile.photoHuntPair;}
+
+Object.assign(exports,{PHOTO_PAIR_LIMIT,PHOTO_PROFILE_BUDGET_BYTES,validPhotoPair,normalizePhotoPair,photoPairId,photoPairLibrary,currentPhotoPair,photoProfilePayload,photoProfileBytes,addPhotoPair,removePhotoPair});

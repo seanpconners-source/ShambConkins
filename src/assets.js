@@ -1,0 +1,75 @@
+const {entityArtSpec, cachedEntityURL, queueEntityArt}=require("src/entityMedia.js");
+const {headDisplayURL}=require("src/headCutouts.js");
+const {ART}=require("src/data/art.js");
+const {ORIGINAL_REMOTE_PORTRAITS}=require("src/data/originalPortraits.js");
+const {ORIGINAL_LOGOS}=require("src/data/logos.js");
+const {store}=require("src/state.js");
+const {travelToolDrawing}=require("src/data/travelItems.js");
+const {slug, escapeHTML, hash}=require("src/utils.js");
+const {character}=require("src/characters.js");
+const {mediaSource, referenceArtHTML}=require("src/media.js");
+const {locationSceneSVG}=require("src/locationScenes.js");
+const {martianPortrait}=require("src/martianArt.js");
+const {correctedLogoURL, logoCorrection, pinnedFilmLogoURL}=require("src/propertyLogos.js");
+const {suppliedPortraitURL}=require("src/suppliedPortraits.js");
+const svgURL = svg => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+const logoCache = new Map();
+const portraitFallbackCache = new Map();
+function portraitFallbackURL(id) {
+ if(portraitFallbackCache.has(id))return portraitFallbackCache.get(id);
+ if(id==='mars-attacker')return martianPortrait();
+ if(id==='emilio-estevez'){const url=emilioPortrait();portraitFallbackCache.set(id,url);return url;}
+ const c=character(id),hue=hash(id)%360,initials=c.name.split(' ').slice(0,2).map(word=>word[0]).join('');
+ const url=svgURL(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="120 50 272 318"><path d="M151 175q-8-108 105-108t105 108v66q-14 99-105 111-91-12-105-111z" fill="#e8d8c2"/><path d="M151 175q-8-108 105-108t105 108l-45-33-60-13-61 16z" fill="hsl(${hue} 28% 24%)"/><text x="256" y="228" text-anchor="middle" font-family="Arial,sans-serif" font-size="76" fill="#25303a">${escapeHTML(initials)}</text></svg>`);
+ portraitFallbackCache.set(id,url);return url;
+}
+function logoURL(source = 'ShambConkins') {
+ if (source === 'ShambConkins') return ART.brand;
+ const ref=mediaSource(source),pinned=pinnedFilmLogoURL(ref.name);if(pinned)return pinned;const priority=ART['priority:logo:'+slug(source)]||ART['priority:logo:'+slug(ref.name)];if(priority)return priority;
+ const corrected=correctedLogoURL(ref.name);if(corrected)return corrected;
+ if (logoCache.has(source)) return logoCache.get(source);
+ let color = '#172033', font = 'Georgia,serif', lines = [source], decor = '';
+ const key=slug(source),canonical=slug(mediaSource(source).name);if(ART['logo:'+key]||ART['logo:'+canonical])return ART['logo:'+key]||ART['logo:'+canonical];
+ if(/kitchen-nightmares/.test(key)){lines=['KITCHEN','NIGHTMARES'];font='Arial,sans-serif';decor='<path d="M34 36v54m-9-54v21q9 20 18 0V36m-9 54v42" stroke="#b94531" stroke-width="5" fill="none"/><path d="M606 36v98m0-98q-21 44 0 50" stroke="#b94531" stroke-width="5" fill="none"/>';}
+ else if(/men-in-black/.test(key)){lines=['MIB','MEN IN BLACK'];font='Arial,sans-serif';color='#111827';decor='<path d="M125 23v127m390-127v127" stroke="#6b7280" stroke-width="3"/>';}
+ else if(/mighty-ducks/.test(key)){lines=['THE MIGHTY','DUCKS'];font='Arial,sans-serif';color='#17685e';decor='<path d="M55 40l32 78 38-12m460-66l-32 78-38-12" stroke="#82547d" stroke-width="10" fill="none"/><circle cx="320" cy="162" r="7" fill="#e6a852"/>';}
+ else if(/black-sabbath/.test(key)){lines=['BLACK SABBATH'];font='Georgia,serif';color='#392a48';decor='<path d="M34 100l12-42 12 42m-12-60v88M590 100l12-42 12 42m-12-60v88" stroke="#392a48" stroke-width="4" fill="none"/>';}
+ else if(/jackass/.test(key)){lines=['jackass'];font='Arial,sans-serif';color='#172033';decor='<circle cx="78" cy="79" r="26" fill="#172033"/><circle cx="70" cy="75" r="6" fill="white"/><circle cx="86" cy="75" r="6" fill="white"/><path d="M48 110l60 35m-60 0l60-35" stroke="#172033" stroke-width="9"/>';}
+ else if(/stranger-things/.test(key)){lines=['STRANGER','THINGS'];color='#c94941';decor='<path d="M50 14h540M90 166h460" stroke="#c94941" stroke-width="3"/>';}
+ else if(/starship-troopers/.test(key)){lines=['STARSHIP','TROOPERS'];font='Arial,sans-serif';decor='<path d="M34 90l18-42 18 42-18 42zm536 0l18-42 18 42-18 42z" fill="#a9a8a0"/>';}
+ else if(/taskmaster/.test(key)){lines=['TASKMASTER'];font='Arial,sans-serif';color='#a83d32';decor='<circle cx="320" cy="156" r="11" fill="#a83d32"/>';}
+ else if(/nickelodeon|rugrats|hey-arnold|rocko|ren-and-stimpy|kenan/.test(key)){color='#d46b1c';font='Arial,sans-serif';}
+ else if(/dragon-ball/.test(key)){lines=['DRAGON BALL','Z'];color='#b58608';font='Arial,sans-serif';}
+ else if(/hunter/.test(key)){lines=['HUNTER × HUNTER'];color='#32724c';font='Arial,sans-serif';}
+ else if(/the-matrix/.test(key)){lines=['THE MATRIX'];color='#32724c';font='monospace';}
+ else if(/star-wars/.test(key)){lines=['STAR','WARS'];font='Arial,sans-serif';color='#ae7f0a';}
+ else if(/star-trek/.test(key)){lines=['STAR TREK'];font='Arial,sans-serif';decor='<path d="M315 145l6-22 8 22-8-5z" fill="#b5a26c"/>';}
+ else if(/always-sunny/.test(key)){lines=["It's Always Sunny",'in Philadelphia'];}
+ else if(/back-to-the-future/.test(key)){lines=['BACK TO THE','FUTURE'];color='#d99d4a';font='Arial,sans-serif';}
+ if(lines[0].length>26 && lines.length===1){const words=lines[0].split(' ');const middle=Math.ceil(words.length/2);lines=[words.slice(0,middle).join(' '),words.slice(middle).join(' ')];}
+ const rows=lines.map((line,i)=>{const size=Math.min(lines.length===1?62:55,560/(line.length*.62));return `<text x="320" y="${lines.length===1?108:72+i*61}" text-anchor="middle" font-family="${font}" font-size="${size}" font-weight="800" letter-spacing="1" fill="${color}">${escapeHTML(line)}</text>`;}).join('');
+ const url=svgURL(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 180">${decor}${rows}</svg>`);logoCache.set(source,url);return url;
+}
+function brandHTML(source, cls='property-logo') {const fallback=logoURL(source),ref=mediaSource(source),original=ref.original,priority=ART['priority:logo:'+slug(source)]||ART['priority:logo:'+slug(ref.name)],offline=pinnedFilmLogoURL(ref.name)||priority||(!logoCorrection(ref.name)&&(ART['logo:'+slug(source)]||ART['logo:'+slug(ref.name)])),online=!offline&&store.profile?.settings.originalLogos&&original?.startsWith('https:');return `<img class="${cls}" src="${escapeHTML(online?original:fallback)}" data-reference-media="${escapeHTML(ref.name)}" data-media-kind="logo" ${offline?'data-media-queued="true"':''} data-fallback="${escapeHTML(fallback)}" data-original-logo="${escapeHTML(original||'')}" alt="${escapeHTML(ref.logoName||source)} logo" loading="lazy" ${online?`onerror="this.onerror=null;this.src=${escapeHTML(JSON.stringify(fallback))}"`:''}>`; }
+function portraitURL(id, mood='normal') {const face=suppliedPortraitURL(id,mood);if(face)return face;if(id==='mars-attacker')return martianPortrait();const supplied=ART['photo:char:'+id];if(supplied)return supplied;if(id==='sean')return ['think','thinking','sad','lose'].includes(mood)?ART['char:sean:lose']||ART['char:sean:normal']:ART['char:sean:win'];const cached=store.profile?.settings.originalLogos&&cachedEntityURL('character',id);if(cached)return cached;const aliases={idle:'normal',happy:'win',walking:'walk',thinking:'think',lose:'sad',mad:'angry'};const direct=ART[`char:${id}:${mood}`];if(direct)return direct;const mapped=aliases[mood]||mood;if(id==='amber'){const amber={walk:'silly',think:'angry',lose:'sad',happy:'win'};return ART[`char:amber:${amber[mapped]||mapped}`]||ART['char:amber:normal'];}const local=ART[`char:${id}:${mapped}`]||ART[`char:${id}:normal`]||ART[`char:${id}`];if(local)return local;const remote=ORIGINAL_REMOTE_PORTRAITS[`char:${id}:normal`];if(remote)return store.profile?.settings.originalLogos?remote:portraitFallbackURL(id);return id==='emilio-estevez'?emilioPortrait():null; }
+function entityAttributes(kind,entity){const spec=entityArtSpec(kind,entity);if(spec.local)return '';return `data-entity-kind="${kind}" data-entity-id="${escapeHTML(entity.id)}" data-entity-name="${escapeHTML(entity.name)}" data-entity-source="${escapeHTML(entity.source)}" data-entity-page="${escapeHTML(spec.page)}" data-entity-actor="${escapeHTML(spec.actor)}" data-entity-article="${escapeHTML(spec.article)}"`;}
+function portraitHTML(id,cls='portrait',mood='normal'){
+ const c=character(id),face=suppliedPortraitURL(id,mood),fallback=face||(id==='sean'?portraitURL(id,mood):null)||ART[`char:${id}:${mood}`]||ART[`char:${id}:normal`]||ART[`char:${id}`]||(id==='gordon-ramsay'?gordonPortrait():portraitFallbackURL(id)),raw=face||portraitURL(id,mood)||fallback,src=headDisplayURL(raw),remote=src.startsWith('https:');
+ return `<span class="${cls} portrait-${escapeHTML(id)} mood-${escapeHTML(mood)}" data-mood="${escapeHTML(mood)}"><img src="${escapeHTML(src)}" ${entityAttributes('character',c)} ${face?'':`data-fallback="${escapeHTML(fallback)}"`} ${['sean','amber'].includes(id)?'onload="window.ShambConkins?.floatingHead(this)"':''} alt="${escapeHTML(c.name)} · ${escapeHTML(mood)}" loading="lazy" referrerpolicy="no-referrer" ${remote?`data-original-portrait="true" onerror="this.onerror=null;this.src=${escapeHTML(JSON.stringify(fallback))}"`:''}></span>`;
+}
+// Original illustrated coach head; optional actor photographs remain separately sourced.
+function emilioPortrait(){return svgURL('<svg xmlns="http://www.w3.org/2000/svg" viewBox="48 10 210 288"><path d="M77 120q-6-78 77-78t77 78v78q-9 66-77 88-68-22-77-88z" fill="#e4b898"/><path d="M71 143l-7-50q3-54 39-65 53-20 93 9 35 25 40 86l-7 20-16-44-28-10-30-22-19 26-30 13-19 42z" fill="#644335"/><path d="M80 85q77-49 148 7" fill="none" stroke="#146759" stroke-width="20"/><path d="M66 77q71-81 153-13l14 29q-94-40-167-16z" fill="#20665c"/><path d="M94 104q48-20 101-3" stroke="#bd9152" stroke-width="8" fill="none"/><path d="M105 150l29-5m45 0l25 6" fill="none" stroke="#654331" stroke-width="5" stroke-linecap="round"/><ellipse cx="121" cy="160" rx="6" ry="5" fill="#476864"/><ellipse cx="191" cy="160" rx="6" ry="5" fill="#476864"/><path d="M154 163l-8 32 18 0" stroke="#ad7c62" stroke-width="4" fill="none"/><path d="M117 218q37 20 73-1" fill="none" stroke="#8e5b4c" stroke-width="6" stroke-linecap="round"/><path d="M121 215q36 10 67-1" stroke="#fff4dc" stroke-width="5" fill="none"/><path d="M93 219q7 39 62 51 55-14 64-51" stroke="#b68970" stroke-width="6" fill="none" opacity=".5"/></svg>');}
+function gordonPortrait() { return svgURL('<svg xmlns="http://www.w3.org/2000/svg" viewBox="100 30 200 260"><path d="M116 135q-8-76 84-76t84 76v65q-12 70-84 78-72-8-84-78z" fill="#d5ad85"/><path d="M111 140l10-55 30-35 17 16 31-31 12 25 42-17-2 24 30 13 8 60-35-31-39-12-43 14-32 23z" fill="#c2ac76"/><path d="M132 149l43-10m47 0l45 12m-126 37l28 1m63 0l28-1m-114-25l26-1m57 0l25 1m-56-14l-11 51 21 0m-33 35q27 8 53-3m-76-105l57-6m-50-10l42-4" stroke="#8b6550" fill="none" stroke-width="5" stroke-linecap="round"/><circle cx="160" cy="166" r="5" fill="#43758c"/><circle cx="242" cy="166" r="5" fill="#43758c"/></svg>'); }
+function itemArtHTML(item){const art=ART['photo:item:'+item.id]||(store.profile?.settings.originalLogos&&cachedEntityURL('item',item.id))||(item.id==='wopr-terminal'?null:ART[`item:${item.id}`])||itemFallbackURL(item);return `<img class="item-art" src="${escapeHTML(art)}" ${entityAttributes('item',item)} data-fallback="${escapeHTML(ART[`item:${item.id}`]||itemFallbackURL(item))}" alt="${escapeHTML(item.name)}" loading="lazy" referrerpolicy="no-referrer">`;}
+function itemFallbackURL(item){if(item.kind==='trailGear')return svgURL(travelToolDrawing(item.tool));const label=item.id.startsWith('pass-')?'BACKSTAGE · SPIRIT +1':item.kind==='game'?'PLAY A CHALLENGE':item.itemPack===43?({'bestDie':'DICE TRICK','badDie':'DICE JINX','capDie':'DICE CAP','reverseDie':'REVERSE DICE','fixedDie':'FIXED DIE','mirrorDie':'COPY A DIE','cache':'SUPPLY CACHE','chooseSupply':'CHOOSE SUPPLIES','itemRaid':'RAID A BAG','repairPath':'REPAIR A PATH','trailPass':'CROSSING PASS','recruitBeacon':'ROSTER BOOST','investment':'SAVINGS','strongTrap':'TRAP','clearTraps':'CLEAR TRAPS','bounty':'GAME BONUS','gateDividend':'GATE BONUS','collectionBonus':'BAG BONUS','gamble':'POINT GAMBLE','movement':'MOVE BONUS','defense':'PROTECTION','reward':'GAME BONUS','economy':'POINTS'}[item.role]||'ADVENTURE ITEM'):'ADVENTURE ITEM';return svgURL(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><rect x="20" y="8" width="140" height="164" rx="16" fill="#eee5cb" stroke="#8f7351" stroke-width="4"/><path d="M64 8V0h52v8" stroke="#8f7351" stroke-width="8"/><text x="90" y="95" font-size="62" text-anchor="middle">${escapeHTML(item.icon||'🎟')}</text><text x="90" y="129" font-family="Arial" font-size="${Math.min(15,130/(item.source.length*.6))}" font-weight="bold" text-anchor="middle" fill="#172033">${escapeHTML(item.source)}</text><text x="90" y="151" font-family="Arial" font-size="10" text-anchor="middle" fill="#67563e">${escapeHTML(label)}</text></svg>`);}
+const locationFallbackCache=new Map();
+function locationArt(l){return ART['photo:location:'+l.id]||ART['location:'+l.id]||(store.profile?.settings.originalLogos&&cachedEntityURL('location',l.id))||locationFallbackURL(l);}
+function locationArtHTML(l,cls='dialog-art'){const fallback=ART['location:'+l.id]||locationFallbackURL(l);return `<img class="${cls}" src="${escapeHTML(locationArt(l))}" ${entityAttributes('location',l)} data-fallback="${escapeHTML(fallback)}" alt="${escapeHTML(l.name)}" loading="lazy" referrerpolicy="no-referrer">`;}
+function locationBoardArt(l){return `<image href="${escapeHTML(locationArt(l))}" ${entityAttributes('location',l)} data-fallback="${escapeHTML(locationFallbackURL(l))}" x="-47" y="31" width="94" height="45" preserveAspectRatio="xMidYMid slice"/>`;}
+function locationFallbackURL(l) {
+ if(locationFallbackCache.has(l.id))return locationFallbackCache.get(l.id);
+ const url=svgURL(locationSceneSVG(l,logoURL(l.source)));locationFallbackCache.set(l.id,url);return url;
+}
+const gameArtHTML = g => g.id!=='wopr-grid'&&ART[`game:${g.id}`] ? `<img class="game-art" src="${ART[`game:${g.id}`]}" alt="${escapeHTML(g.title)}">` : `<div class="game-art-strip">${referenceArtHTML(g.source,'game-reference-art',g.title)}<div class="game-emblem">${escapeHTML(g.icon||'⚔')}</div></div>`;
+
+Object.assign(exports,{portraitFallbackURL,logoURL,brandHTML,portraitURL,portraitHTML,emilioPortrait,gordonPortrait,itemArtHTML,locationArt,locationArtHTML,locationBoardArt,gameArtHTML});

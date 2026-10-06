@@ -1,0 +1,7 @@
+const TRIVIA_MODE_GAMES=[
+ {id:'trivia-lightning',title:'Lightning Trivia · 60-Second Sprint',triviaMode:'lightning',icon:'⚡',duration:'60 answer-seconds each',rules:'Twelve questions maximum, sixty seconds of answer time per human, twelve seconds per question. Fast correct answers build a streak bonus. Feedback pauses the clock. A clear handoff and countdown starts the second player.'},
+ {id:'trivia-wager',title:'Trivia Casino · Risk & Reward',triviaMode:'wager',icon:'🎰',duration:'8 shared wagers',rules:'Ten quiz chips each. Before seeing each question, wager one to three chips. Both answer the same question privately; answers and chips stay hidden until both finish. Correct adds your wager; wrong or timeout loses it. Most chips after eight rounds wins; zero chips ends the match after both have answered.'},
+ {id:'trivia-survival',title:'Three-Strikes Trivia · Last Brain Standing',triviaMode:'survival',icon:'🧠',duration:'up to 8 shared questions',rules:'Three lives each. Both answer the same question privately. Every wrong answer or timeout costs a life; the answer is revealed only when both have answered. Three misses knocks you out. Remaining lives decide the result; correct answers break ties.'}
+];
+
+Object.assign(exports,{TRIVIA_MODE_GAMES});

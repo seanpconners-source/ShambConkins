@@ -1,0 +1,38 @@
+const {sokoban, pipeconnect, sonargrid}=require("src/engines/puzzles.js");
+const {connect4, reversi, blackjack, poker, roulette, yahtzee}=require("src/engines/tabletop.js");
+const {trivia}=require("src/engines/trivia.js");
+const {towerstack, darts, kitchen, task}=require("src/engines/skill.js");
+const {curling}=require("src/engines/physics.js");
+const {distanceTank:artillery}=require("src/engines/tankArtillery.js");
+const {ultimate,mancala,dots,checkers,chess}=require("src/engines/classicBoards.js");
+const {guesswho}=require("src/engines/guessWho.js");
+const {beerpong,flipcup}=require("src/engines/pubPhysics.js");
+const {fruitslice}=require("src/engines/fruitSlice.js");
+const {uno}=require("src/engines/uno.js");
+const {microrelay}=require("src/engines/microRelay.js");
+const {pinball}=require("src/engines/pinball.js");
+const {baseballfield}=require("src/engines/baseballField.js");
+const {minigolf, bowling}=require("src/engines/movieSports.js");
+const {lander, missiledefense, breakout, asteroids, galaga, snake, chase}=require("src/engines/arcade.js");
+const {pong}=require("src/engines/extraArcade.js");
+const {pool}=require("src/engines/pool.js");
+const {nineball}=require("src/engines/nineball.js");
+const {hangman}=require("src/engines/hangman.js");
+const {photohunt}=require("src/engines/photohunt.js");
+const {headlaunch}=require("src/engines/headlaunch.js");
+const {ballvolley}=require("src/engines/ballvolley.js");
+const {horde}=require("src/engines/horde.js");
+const {baccarat}=require("src/engines/baccarat.js");
+const {tictactoe,lightcycle,minichess,slingshot,penalty,sumo,dualrace,snakeduel,sword2p,basketball2p,ballrun2p,conesort,paperboy,skynetid,pancakes}=require("src/engines/restored.js");
+const {brawler}=require("src/engines/warriorsBrawl.js");
+const {duckturn}=require("src/engines/headHunt.js");
+const {sewer}=require("src/engines/sewerClash.js");
+const {moneygrab}=require("src/engines/bananaStand.js");
+const {fruitmerge,battleroyale,bondmission}=require("src/engines/gestureLegacy.js");
+const {hole,bike,baseball,flappy,crossy,airhockey,bomber}=require("src/engines/mobile.js");
+const {tank, pacmaze, airshootout}=require("src/engines/duels.js");
+const {coopRivals}=require("src/engines/coop.js");
+function themedPool(s){return s.game?.source==='The Color of Money'?nineball(s):pool(s);}
+const ENGINES=Object.freeze({sokoban,pipeconnect,sonargrid,connect4,reversi,blackjack,poker,roulette,baccarat,yahtzee,trivia,towerstack,darts,kitchen,task,hole,bike,baseball,baseballfield,pinball,coopRivals,artillery,airshootout,curling,minigolf,bowling,lander,missiledefense,breakout,asteroids,galaga,snake,bomber,pacmaze,tank,chase,crossy,pong,pool:themedPool,airhockey,flappy,tictactoe,sewer,bondmission,lightcycle,minichess,fruitmerge,slingshot,penalty,sumo,dualrace,snakeduel,moneygrab,sword2p,basketball2p,ballrun2p,conesort,paperboy,brawler,battleroyale,skynetid,pancakes,duckturn,hangman,photohunt,headlaunch,ballvolley,horde,ultimate,mancala,dots,checkers,chess,guesswho,beerpong,flipcup,fruitslice,uno,microrelay});
+
+Object.assign(exports,{ENGINES});
