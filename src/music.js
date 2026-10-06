@@ -53,13 +53,13 @@ const BASS={
 };
 let cfg={getContext:()=>null,paused:()=>false,pace:()=>1,onTrack:null};
 let ctx=null,out=null,pulseWave=null,noise=null,timer=0,zone='mind',track=null,step=0,nextTime=0,loops=0,holdUntil=0,muted=false;
-const rotation={};
+const rotation={},MIX=.3;
 function configureMusic(c){Object.assign(cfg,c);}
 function graph(){
  const a=cfg.getContext();if(!a)return null;
  if(ctx!==a){ctx=a;
   const comp=a.createDynamicsCompressor();comp.threshold.value=-18;comp.ratio.value=4;comp.connect(a.destination);
-  out=a.createGain();out.gain.value=.5;out.connect(comp);
+  out=a.createGain();out.gain.value=MIX;out.connect(comp);
   const real=new Float32Array(32),imag=new Float32Array(32);for(let n=1;n<32;n++)imag[n]=2*Math.sin(Math.PI*n*.25)/(Math.PI*n);pulseWave=a.createPeriodicWave(real,imag);
   noise=a.createBuffer(1,a.sampleRate,a.sampleRate);const d=noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
  }
@@ -106,7 +106,7 @@ function playStep(tr,s,t,sd){
  if(tr.comp==='power'&&inChord===0)voice('power',48+ch.root,t,cs*sd*.95,.035);
  // drums
  const d=DRUMS[tr.drums];if(d){const at=p=>p[s%p.length];
-  if(at(d.k)==='x')drum('k',t,.42);if(at(d.s)==='x')drum('s',t,.13);const h=at(d.h);if(h==='x')drum('h',t,s%4?.022:.035);if(h==='o')drum('o',t,.03);
+  if(at(d.k)==='x')drum('k',t,.32);if(at(d.s)==='x')drum('s',t,.13);const h=at(d.h);if(h==='x')drum('h',t,s%4?.022:.035);if(h==='o')drum('o',t,.03);
   if(s===0&&tr.drums!=='sparse'&&tr.drums!=='sixsoft')drum('c',t,.05);}
 }
 function pickTrack(){
@@ -116,7 +116,7 @@ function pickTrack(){
 function tick(){
  const a=graph();if(!a)return;
  if(cfg.paused()||a.currentTime<holdUntil){if(!muted){muted=true;out.gain.setTargetAtTime(0,a.currentTime,.05);}nextTime=Math.max(a.currentTime+.05,holdUntil);return;}
- if(muted){muted=false;out.gain.cancelScheduledValues(a.currentTime);out.gain.setTargetAtTime(.5,a.currentTime,.15);}
+ if(muted){muted=false;out.gain.cancelScheduledValues(a.currentTime);out.gain.setTargetAtTime(MIX,a.currentTime,.15);}
  if(!track)pickTrack();
  if(nextTime<a.currentTime)nextTime=a.currentTime+.05;
  while(nextTime<a.currentTime+.15){
@@ -145,7 +145,7 @@ function stopMetal(){if(!metalBus||!ctx)return;const b=metalBus;metalBus=null;b.
 function playMetalRiff(kind='mind'){
  const a=graph();if(!a)return 0;stopMetal();
  const r=METAL[String(kind).startsWith('warp')?'warp':kind]||METAL.mind,sd=60/r.bpm/4,t0=a.currentTime+.05;
- const bus=metalBus=a.createGain();bus.gain.value=.55;bus.connect(a.destination);
+ const bus=metalBus=a.createGain();bus.gain.value=.42;bus.connect(a.destination);
  const cab=filter('lowpass',3400,bus,1.2),pre=a.createGain();pre.gain.value=1;const sh=distortion(90);pre.connect(filter('highpass',90,sh));sh.connect(cab);
  const guitar=(semi,t,dur,mute)=>{const g=a.createGain();g.connect(mute?filter('lowpass',700,pre):pre);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.5,t+.004);g.gain.setTargetAtTime(0,t+dur,mute?.02:.06);
   const f=hz(40+semi);for(const [m,d] of [[1,-9],[1,9],[1.4983,0],[2,4]]){const o=a.createOscillator();o.type='sawtooth';o.frequency.value=f*m;o.detune.value=d;o.connect(g);o.start(t);o.stop(t+dur+.4);}
@@ -164,9 +164,11 @@ function playMetalRiff(kind='mind'){
 function playQuartet(kind='open'){
  const a=graph();if(!a)return;const t=a.currentTime+.03,bus=a.createGain();bus.gain.value=.5;bus.connect(a.destination);
  const chords=kind==='close'?[[[45,52,61,67],0,.9],[[38,50,57,66],.85,2.6]]:[[[38,45,54,62,66],0,3]];
- for(const [notes,start,dur] of chords)for(const m of notes){const g=a.createGain();g.connect(bus);const st=t+start;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(.03,st+.35);g.gain.setTargetAtTime(0,st+dur,.4);
+ for(const [notes,start,dur] of chords)for(const m of notes){const g=a.createGain();g.connect(bus);const st=t+start;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(.055,st+.35);g.gain.setTargetAtTime(0,st+dur,.4);
   const lfo=a.createOscillator(),lg=a.createGain();lfo.frequency.value=5+Math.random();lg.gain.value=hz(m)*.006;lfo.connect(lg);
   const lp=filter('lowpass',1500,g);for(const d of [-6,6]){const o=a.createOscillator();o.type='sawtooth';o.frequency.value=hz(m);o.detune.value=d;lg.connect(o.frequency);o.connect(lp);o.start(st);o.stop(st+dur+2);}lfo.start(st);lfo.stop(st+dur+2);}
  setTimeout(()=>{try{bus.disconnect();}catch{}},8000);
 }
-Object.assign(exports,{configureMusic,startSequencer,stopSequencer,setSequencerZone,holdMusicFor,releaseHold,nowPlaying,playMetalRiff,stopMetal,playQuartet,parseNotes,parseChord,compile,TRACKS,PLAYLISTS});
+// Test helper: schedule `seconds` of a track into an (Offline)AudioContext.
+function renderTrackInto(a,id,seconds){const keep=cfg.getContext;cfg.getContext=()=>a;try{graph();out.gain.value=MIX;const tr=compile(id),sd=60/tr.bpm/4;for(let s=0,t=0;t<seconds;s++,t+=sd)playStep(tr,s%tr.length,t+(s%2?(tr.swing||0)*sd:0),sd);}finally{cfg.getContext=keep;}}
+Object.assign(exports,{renderTrackInto,configureMusic,startSequencer,stopSequencer,setSequencerZone,holdMusicFor,releaseHold,nowPlaying,playMetalRiff,stopMetal,playQuartet,parseNotes,parseChord,compile,TRACKS,PLAYLISTS});

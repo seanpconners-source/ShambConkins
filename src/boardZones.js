@@ -3,6 +3,8 @@ const {sceneProfile,locationSceneSVG}=require("src/locationScenes.js");
 const {venueFor}=require("src/venues.js");
 const {logoURL}=require("src/assets.js");
 const {ensureLevelBosses,bossById,castleName}=require("src/bossGate.js");
+const {biomeFor,biomePatchSVG,BIOME_DEFS}=require("src/biomes.js");
+const {location}=require("src/locations.js");
 // Journey-map rendering (board generation 7): terrain per road, smooth roads with
 // direction arrows, bridges, a crossroads signpost and landmark scenes beside the road.
 const LANE_STYLE=[
@@ -53,6 +55,7 @@ function lanePanel(run,data,lane){
   <rect x="${x}" y="${y+h*.58}" width="${w}" height="${h*.42}" rx="70" fill="${p.ground}" opacity=".16"/>
   <rect x="${x+6}" y="${y+6}" width="${w-12}" height="${h-12}" rx="64" fill="none" stroke="${st.tag}" stroke-width="5" stroke-dasharray="2 14" stroke-linecap="round" opacity=".7"/>
   <g class="jr-decor">${decorSVG(p.kind,p,random,46,x+30,x+w-30,y+160,y+h-40,roadAt)}</g>
+  ${pts.filter(n=>n.type==='location'&&location(n.location)).map(n=>{const L=location(n.location),kind=biomeFor(L,sceneProfile(L).kind);if(!kind)return '';const top=Math.max(y+20,n.y-290),bot=Math.min(y+h-20,n.y+170);return biomePatchSVG(kind,{x:x+16,y:top,w:w-32,h:bot-top},board.seed+':'+n.id,roadAt);}).join('')}
  </g>`;
 }
 function laneBanner(board,lane){
@@ -72,7 +75,7 @@ function bossCastle(data,gate){
 function zoneLayerSVG(run){
  ensureLevelBosses(run);
  const board=run.board,realms=Object.entries(board.realms),W=board.width||1800;
- return realms.map(([realm,data],i)=>{
+ return BIOME_DEFS+realms.map(([realm,data],i)=>{
   const first=i===0,last=i===realms.length-1,lanes=(data.lanes||[]).map((l,li)=>({...l,key:realm+':'+l.lane}));
   const title=(data.title||realm).toUpperCase();
   const camp=data.stem?board.nodes[data.stem[0]]:null,gate=board.nodes[data.gate];

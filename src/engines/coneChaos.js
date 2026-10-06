@@ -24,7 +24,7 @@ function coneRules(){
   {title:'Chameleons',text:[word('Tap '),colorWord('green'),word(' · colours change!','#ffb4e0')],test:o=>o.color==='green',len:8,gap:[.46,.36],ttl:[1.9,1.6],morph:'green'},
   {title:'Rule flip',text:[word('Tap '),shapeWord('star')],test:o=>o.shape==='star',len:9,gap:[.44,.34],ttl:[1.6,1.3],
    flip:{at:.5,text:[word('FLIP! ','#ff6b6b'),word('Everything '),word('EXCEPT ','#ff6b6b'),shapeWord('star')],test:o=>o.shape!=='star'}},
-  {title:'Frenzy · double points',text:[word('FRENZY! Tap '),colorWord('orange'),word(' + '),colorWord('blue')],test:o=>o.color==='orange'||o.color==='blue',len:7,gap:[.32,.24],ttl:[1.3,1.05],double:true},
+  {title:'Frenzy · x2 points',text:[word('FRENZY! Tap '),colorWord('orange'),word(' + '),colorWord('blue')],test:o=>o.color==='orange'||o.color==='blue',len:7,gap:[.32,.24],ttl:[1.3,1.05],double:true},
  ];
 }
 function pick(random,list){return list[Math.floor(random()*list.length)];}
@@ -67,7 +67,7 @@ async function coneChaos(s){
  function tap(p){if(s.paused||phase!=='play')return;const L=layout();let hit=null,d0=Infinity;
   for(const o of items){if(o.done)continue;const q=slotPos(o.slot,L),d=Math.hypot(p.x-q.x,p.y-q.y);if(d<L.r*1.15&&d<d0){hit=o;d0=d;}}
   if(!hit)return;const age=clock-hit.t,obj={color:colorOf(hit,age),shape:hit.shape},q=slotPos(hit.slot,L);hit.done=true;hit.doneAt=clock;
-  if(activeTest(obj)){combo++;best=Math.max(best,combo);const gain=10*mult();scores[actor]+=gain;stats[actor].hits++;hit.good=true;beep(440+Math.min(combo,16)*45,.08,.05);if(combo%5===0){sound('pickup');s.react?.(actor,'happy');}
+  if(activeTest()(obj)){combo++;best=Math.max(best,combo);const gain=10*mult();scores[actor]+=gain;stats[actor].hits++;hit.good=true;beep(440+Math.min(combo,16)*45,.08,.05);if(combo%5===0){sound('pickup');s.react?.(actor,'happy');}
    fx.push({x:q.x,y:q.y,text:`+${gain}`,color:'#fff',age:0,big:combo>=5});for(let j=0;j<12;j++)fx.push({x:q.x,y:q.y,vx:Math.cos(j*.52)*(120+j*9),vy:Math.sin(j*.52)*(120+j*9)-60,color:CONE_COLORS[obj.color].fill,age:0,spark:true});}
   else{scores[actor]=Math.max(0,scores[actor]-15);stats[actor].wrong++;combo=0;hit.good=false;shake=.3;sound('lose');vibrate(40);s.react?.(actor,'sad');fx.push({x:q.x,y:q.y,text:'-15',color:'#ff5a5a',age:0,cross:true});}
   s.setScores(scores);}
@@ -78,7 +78,7 @@ async function coneChaos(s){
   if(phase==='play'){clock+=dt;const R=rule();
    if(R.flip&&!flipped&&clock>=ROUND_INTRO+(R.len-ROUND_INTRO)*R.flip.at){flipped=true;flash={text:'RULE FLIP!',age:0,red:true};sound('rare');vibrate(30);}
    while(next<schedule.length&&schedule[next].round===round&&schedule[next].t<=clock)items.push({...schedule[next++],done:false});
-   for(const o of items)if(!o.done&&clock-o.t>=o.ttl){o.done=true;o.doneAt=clock;o.expired=true;const age=o.ttl;if(activeTest({color:colorOf(o,age),shape:o.shape})){if(combo>=3)fx.push({...slotPos(o.slot,L),text:'combo lost',color:'#ffb3b3',age:0});combo=0;stats[actor].missed++;}}
+   for(const o of items)if(!o.done&&clock-o.t>=o.ttl){o.done=true;o.doneAt=clock;o.expired=true;const age=o.ttl;if(activeTest()({color:colorOf(o,age),shape:o.shape})){if(combo>=3)fx.push({...slotPos(o.slot,L),text:'combo lost',color:'#ffb3b3',age:0});combo=0;stats[actor].missed++;}}
    items=items.filter(o=>!o.done||clock-o.doneAt<.3);
    if(clock>=R.len){if(round+1<rules.length)startRound(round+1);else void endTurn();}}
   for(const f of fx){f.age+=dt;if(f.spark){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=500*dt;}}fx=fx.filter(f=>f.age<(f.spark?.6:.8));shake=Math.max(0,shake-dt);if(flash)flash.age+=dt;
@@ -108,7 +108,7 @@ async function coneChaos(s){
   if(flash&&flash.age<1.3&&phase==='play'){const a=flash.age<.15?flash.age/.15:Math.max(0,1-(flash.age-.9)/.4),y=L.top+(H-L.top-L.bottom)/2;x.globalAlpha=a;x.fillStyle=flash.red?'#c0203fdd':'#000c';x.fillRect(0,y-Math.min(90,H*.13),W,Math.min(180,H*.26));
    drawWords(x,[word(flash.text,flash.red?'#fff':'#ffd166')],W/2,y-Math.min(30,H*.045),clamp(W*.07,22,46),W*.9);drawWords(x,activeText(),W/2,y+Math.min(34,H*.05),clamp(W*.05,15,30),W*.92);x.globalAlpha=1;}
   s.status(`${s.players[actor].name} · rule ${round+1}/${rules.length} · ${phase==='play'?Math.ceil(Math.max(0,R.len-clock))+'s':'get ready'} · ${scores[actor]} pts`);
-  s.debug={actor,phase,round,clock,flipped,combo,scores,stats,schedule,items:items.filter(o=>!o.done).map(o=>({...slotPos(o.slot,L),color:colorOf(o,clock-o.t),shape:o.shape,r:L.r,good:activeTest({color:colorOf(o,clock-o.t),shape:o.shape})})),tap};
+  s.debug={actor,phase,round,clock,flipped,combo,scores,stats,schedule,items:items.filter(o=>!o.done).map(o=>({...slotPos(o.slot,L),color:colorOf(o,clock-o.t),shape:o.shape,r:L.r,good:activeTest()({color:colorOf(o,clock-o.t),shape:o.shape})})),tap};
  });
  if(await s.pass(0,`Cone Chaos! Seven quick rules flash up in the bar at the top: tap only the cones, balls, cubes and stars that the rule allows. Combos multiply your points; wrong taps cost 15. Watch for colour-changing decoys and a rule that flips mid-round. ${s.players[1].name} gets the identical rounds next.`,'Ready',{countdown:3}))startTurn();
 }

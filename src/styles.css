@@ -657,3 +657,27 @@ body.route-choosing .bottom-hud{display:none}
 @keyframes gc-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes gc-rule{from{opacity:0;transform:scaleX(.2)}to{opacity:1;transform:none}}
 @keyframes gc-candle{0%{opacity:.85}35%{opacity:1}60%{opacity:.9}100%{opacity:1}}
+.warp-pipe-label{font:900 19px system-ui,sans-serif;fill:#fff;letter-spacing:.08em}
+.warp-pipe:not(.used) .warp-swirl-top{animation:warp-glow 1.6s ease-in-out infinite}.warp-pipe:not(.used) .warp-spiral{transform-origin:0 -46px;animation:warp-spin 2.4s linear infinite}
+@keyframes warp-glow{50%{fill:#b18cff}}@keyframes warp-spin{to{transform:rotate(360deg)}}
+.reduced-motion .warp-pipe *{animation:none!important}
+
+/* ---- v0.47 living biomes around landmarks ---- */
+.bi-twinkle{animation:bi-twinkle 2.6s ease-in-out infinite}@keyframes bi-twinkle{50%{opacity:.15}}
+.bi-blink{animation:bi-blink 1.8s steps(1) infinite}@keyframes bi-blink{50%{opacity:.15}}
+.bi-sway{transform-box:fill-box;transform-origin:50% 100%;animation:bi-sway 3.4s ease-in-out infinite}@keyframes bi-sway{50%{transform:rotate(5deg)}}
+.bi-drift{animation:bi-drift 14s ease-in-out infinite alternate}@keyframes bi-drift{to{transform:translateX(var(--dx,200px))}}
+.bi-fly{animation:bi-fly 11s linear infinite}@keyframes bi-fly{0%{transform:translate(0,0)}50%{transform:translate(calc(var(--dx,200px)/2),-18px)}100%{transform:translate(var(--dx,200px),0)}}
+.bi-drive{animation:bi-drive 7s linear infinite}@keyframes bi-drive{to{transform:translateX(var(--dx,300px))}}
+.bi-roll{animation:bi-drive 9s linear infinite}
+.bi-wave{animation:bi-wave 3s ease-in-out infinite}@keyframes bi-wave{50%{transform:translate(14px,3px)}}
+.bi-snow{animation:bi-snow 6s linear infinite}@keyframes bi-snow{to{transform:translateY(var(--fall,200px))}}
+.bi-fall{animation:bi-snow 4s linear infinite}
+.bi-sweep{animation:bi-sweep 4s ease-in-out infinite alternate}@keyframes bi-sweep{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+.bi-spin{animation:bi-spin 16s linear infinite}@keyframes bi-spin{to{transform:rotate(360deg)}}
+.bi-float{animation:bi-float 4s ease-in-out infinite}@keyframes bi-float{50%{transform:translateY(-14px)}}
+.bi-glow{animation:bi-glow 2.2s ease-in-out infinite}@keyframes bi-glow{50%{opacity:.35}}
+.bi-wobble{transform-box:fill-box;transform-origin:center;animation:bi-wobble 2.4s ease-in-out infinite}@keyframes bi-wobble{50%{transform:scale(1.12,.9)}}
+.bi-graze{animation:bi-wave 5s ease-in-out infinite}
+.reduced-motion .jr-biome *{animation:none!important}@media(prefers-reduced-motion:reduce){.jr-biome *{animation:none!important}}
+.board-svg[data-map-detail="overview"] .jr-biome *{animation-play-state:paused}

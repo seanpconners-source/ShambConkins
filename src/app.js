@@ -14,7 +14,7 @@ const {selectItemDrop, selectItemStock}=require("src/itemDrops.js");
 const {drawEvent, applyEvent, RARE_EVENTS}=require("src/events.js");
 const {showLevelCard,dismissLevelCard}=require("src/levelCard.js");
 const {levelLabel,levelInfo}=require("src/levels.js");
-const {showBossCard,showDragBanner}=require("src/levelCard.js");
+const {showBossCard,showDragBanner,showGentlemenCard}=require("src/levelCard.js");
 const {warpTransition}=require("src/warpFx.js");
 const {buildWarpBoard,pickWarpId,WARP_DEFS}=require("src/warpBoards.js");
 const {ensureLevelBosses,bossById,castleName}=require("src/bossGate.js");
@@ -52,7 +52,7 @@ function home(){movementToken++;cancelGameLaunch();store.session?.dispose();stor
 function captureSetup(){setupNames=[0,1].map(i=>document.getElementById(`player-name-${i}`)?.value||setupNames[i]);}
 async function startRun(){captureSetup();if(!differentCharacters(...setupSelected))return toast('Choose two different characters.');if(setupSelected.some((id,i)=>!availableCharacters(store.profile,i?'Amber':'Sean').includes(id)))return toast('Choose a character you have unlocked.');const turns=+document.getElementById('run-length').value;const theme=document.getElementById('board-theme')?.value||'Mashup',mode=document.getElementById('game-mode')?.value||'versus';const mates=[0,1].map(i=>document.getElementById(`team-mate-${i}`)?.value);if(mode==='team'&&(mates.some(id=>!id)||new Set([...setupSelected,...mates].map(characterIdentity)).size!==4))return toast('Team Relay needs four different unlocked characters.');const seed=document.getElementById('run-seed').value.trim();if(store.run&&!store.run.finished){const choice=await showDialog({title:'Start a fresh expedition?',body:'Your current run will be replaced. Every character unlock and all lifetime XP carry forward.',choices:[{label:'Start fresh',value:'yes',primary:true},{label:'Keep this run',value:'no'}]});if(choice!=='yes')return;}
  movementToken++;cancelGameLaunch();cancelCameraAnimation();store.boardTour=null;store.mapAspect=null;store.run=newRun(generateBoard(seed||undefined,turns,theme),setupNames,setupSelected,turns);store.run.mode=mode;if(mode==='horror'&&store.profile.horrorSeen){addHorrorBoard(store.run.board);store.run.horror=true;store.run.players.forEach(p=>p.node='horror-0');}store.run.raceToFinish=turns===999999&&mode!=='coop';store.run.endless=turns===999999&&mode==='coop';if(mode==='coop')store.run.mutation={remaining:999999,won:0};if(mode==='team')store.run.players.forEach((p,i)=>p.bench=mates[i]);store.profile.runs++;for(const p of store.run.players)if(perkType(p.character)==='survivor')p.shields++;
- logRun('A new route. The board has made no promises.');const pair=activatePair(store.run,store.profile);store.busy=true;focusBoardAction(store.run,store.run.players.map(p=>p.node));saveRun();setMusicZone(store.run.board.nodes[store.run.players[0].node].realm);audioContext();startMusic();if(!await playBoardIntro())return;if(pair)await introducePair(pair);store.run.players.forEach(q=>q.levelsSeen=[]);await announceLevel(store.run.players[0]);
+ logRun('A new route. The board has made no promises.');const pair=activatePair(store.run,store.profile);store.busy=true;focusBoardAction(store.run,store.run.players.map(p=>p.node));saveRun();setMusicZone(store.run.board.nodes[store.run.players[0].node].realm);audioContext();startMusic();if(!await playBoardIntro())return;if(pair)await introducePair(pair);store.run.players.forEach(q=>q.levelsSeen=[]);await showGentlemenCard();await announceLevel(store.run.players[0]);
 }
 
 async function playBoardIntro(){
@@ -143,11 +143,12 @@ async function announceLevel(p){
 }
 
 // ------------------------------------------------------------ warp zones and bosses
-async function enterWarpZone(){
+async function enterWarpZone(pipe=null){
  const run=store.run,token=movementToken,id=pickWarpId(run,random),def=WARP_DEFS[id],boss=bossById(def.bossId);
  const choice=await showDialog({title:'A warp pipe!',source:def.source,rare:true,body:`${def.title}. ${def.intro} You will both be warped there.${boss?` ${boss.name} guards the castle at the end, and beating them unlocks a new character.`:''}`,choices:[{label:`Jump in · ${def.title}`,value:'go',primary:true},{label:'Walk on by',value:'no'}]});
  if(choice===null||store.run!==run||token!==movementToken)return;
- if(choice!=='go'){await finishEncounter();return;}
+ if(choice!=='go'){if(pipe){(pipe.warpDeclined||=[]).push(run.current);saveRun();}await finishEncounter();return;}
+ if(pipe)pipe.warpUsed=true;
  const board=buildWarpBoard(id,`${run.seed}:${run.turn}`);if(boss)board.warp.bossName=boss.name;
  run.warpsVisited=[...(run.warpsVisited||[]),id];run.warp={id,returns:run.players.map(q=>q.node),bossId:def.bossId};
  logRun(`The party warps to ${def.title}.`);saveRun();
@@ -243,7 +244,7 @@ async function moveSteps(token){
  const run=store.run,p=run.players[run.current];p.mood='walking';
  while(run.pending?.left>0&&token===movementToken){
   const target=await stepTarget(run,p,token);if(token!==movementToken||store.run!==run)return;if(!target){if(routeOptions(run,p.node).length){store.busy=false;saveRun();return;}run.pending.left=0;break;}
-  p.mood='walking';p.visited.push(p.node);reportJourney(journeyStep(run,p,p.node,target));const fromRealm=run.board.nodes[p.node]?.realm;p.node=target.id;run.pending.left--;delete run.pending.routeDecision;awardGate(p,target);setMusicZone(target.realm);focusBoardAction(run);saveRun();updateBoard();sound('tap');if(target.type==='gate'&&bossGateReady(run,target)){run.pending.left=0;await levelEndBoss(p,target);return;}if(target.realm!==fromRealm&&!p.finishedPlayer){await announceLevel(p);if(token!==movementToken||store.run!==run)return;}if(p.finishedPlayer){run.pending.left=0;break;}await wait(store.profile.settings.reducedMotion?35:270);
+  p.mood='walking';p.visited.push(p.node);reportJourney(journeyStep(run,p,p.node,target));const fromRealm=run.board.nodes[p.node]?.realm;p.node=target.id;run.pending.left--;delete run.pending.routeDecision;awardGate(p,target);setMusicZone(target.realm);focusBoardAction(run);saveRun();updateBoard();sound('tap');if(target.type==='gate'&&bossGateReady(run,target)){run.pending.left=0;await levelEndBoss(p,target);return;}if(target.type==='warp'&&!target.warpUsed&&!(target.warpDeclined||[]).includes(run.current)&&run.pending.left>0){run.pending.left=0;toast('A warp pipe! Stop and look inside?');break;}if(target.realm!==fromRealm&&!p.finishedPlayer){await announceLevel(p);if(token!==movementToken||store.run!==run)return;}if(p.finishedPlayer){run.pending.left=0;break;}await wait(store.profile.settings.reducedMotion?35:270);
  }
  if(token!==movementToken)return;await warpJump(p,token);if(token!==movementToken)return;p.mood='happy';run.phase='landing';run.pending={kind:'landing'};focusBoardAction(run);saveRun();store.busy=false;updateBoard();await resolveLanding();
 }
@@ -263,7 +264,7 @@ async function resolveLanding(){const run=store.run,token=movementToken;if(!run|
   case 'location':await visitLocation(n.location);break;
   case 'item':{const before=effectSnapshot(run);const cacheRandom=Number.isFinite(n.cacheSeed)?seededRandom(n.cacheSeed+':'+(n.cacheVisits||0)):random,tool=run.board.obstacles?.length&&(p.travelFinds||0)<2?nearbyTravelTool(run,p,cacheRandom):null,it=tool||randomItem(cacheRandom,{player:p,profile:store.profile}),found=acquireItem(run,store.profile,p,it);if(tool)p.travelFinds=(p.travelFinds||0)+1;n.cacheVisits=(n.cacheVisits||0)+1;logRun(`${p.name}: ${found.message}`);run.phase='event';run.pending={kind:'location-result',message:found.message,unlocked:found.unlocked,owner:found.owner};saveRun();if(found.unlocked.length){sound('unlock');if(!await unlockDialog(found.unlocked,found.owner)||store.run!==run||movementToken!==token)return;}await showDialog({title:'A useful find',source:it.source,body:found.message,html:`${effectHTML(before,{item:it})}<h3 style="text-align:center">${e(it.name)}</h3><div class="how-to">${e(itemDescription(it))}</div>`});if(store.run!==run||movementToken!==token)return;animateItemTransfers(before);await finishEncounter();break;}
   case 'bonus':case 'penalty':{const before=effectSnapshot(run);const fortune=themedFortune(n.type,random),delta=n.type==='bonus'?4:p.cloak?0:-3,r=pointChange(p,delta);logRun(`${p.name}: ${r.blocked?'penalty shield used':(r.delta>=0?'+':'')+r.delta+' points'}.`);run.phase='event';run.pending={kind:'location-result',message:r.blocked?'Your shield took the hit.':`${r.delta>=0?'+':''}${r.delta} points.`,unlocked:[]};saveRun();await showDialog({title:fortune.title,source:fortune.source,body:r.blocked?'Your shield took the hit.':fortune.body,html:`${effectHTML(before,{icon:r.delta<0?'⚡':'✦'})}<div class="reward-delta ${r.delta<0?'bad':''}">${r.delta>=0?'+':''}${r.delta}</div>`});if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}
-  case 'warp':await enterWarpZone();break;
+  case 'warp':if(n.warpUsed||(n.warpDeclined||[]).includes(run.current)){await finishEncounter();break;}await enterWarpZone(n);break;
   case 'gate':if(run.board.format==='warp'){await startBoss(run.board.warp.bossId);break;}await finishEncounter();break;
   case 'start':default:await finishEncounter();break;
  }
