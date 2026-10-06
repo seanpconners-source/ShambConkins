@@ -43,7 +43,7 @@ const definitions = [
  ["kill-bill-duel", "sword2p", "duel", "35 seconds", "Move, attack, and block with separate controls. Manage your stamina and win the sword fight."],
  ["baseketball-shootout", "basketball2p", "sports", "5 shots each", "Drag back from the basketball and release. Arc it through the hoop for two points, or three for a swish."],
  ["raiders-ball-run", "ballrun2p", "duel", "30 seconds", "Both players dodge the obstacles and the rolling boulder. Use your own controls to survive the chase."],
- ["tm-cones", "conesort", "puzzle", "sorting challenge", "Four cone tasks each: number order, orange cones, largest first, and odd numbers. Speed matters; incorrect taps cost a point."],
+ ["tm-cones", "conesort", "puzzle", "7 rules each", "Cone Chaos: things pop up all over the lawn. Tap only what the rule bar allows (orange, cones, everything except blue...). Rules escalate, decoys change colour and one rule flips mid-round. Combos multiply points; wrong taps cost 15. Same rounds for both players."],
  ["paper-route", "paperboy", "arcade", "15s each", "Deliver a newspaper while the passing house is inside the highlighted delivery window. More accurate deliveries wins."],
  ["warriors-brawl", "brawler", "arcade", "20s each", "Face incoming enemies, time your punches, and survive the street brawl. Both players take a turn."],
  ["battle-royale-island", "battleroyale", "duel", "45 seconds", "Both players move and shoot in a shrinking arena. Avoid hazards and be the last survivor."],

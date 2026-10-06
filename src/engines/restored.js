@@ -4,6 +4,7 @@ const {compactSumo, swipeRace}=require("src/engines/compactArena.js");
 const {swipeLightcycles, swipeSnakeDuel}=require("src/engines/directionalDuels.js");
 const {duelInputs, duelAction}=require("src/engines/duelControls.js");
 const {originalContext}=require("src/engines/originalContext.js");
+const {coneChaos}=require("src/engines/coneChaos.js");
 async function lightcycle(s){return swipeLightcycles(s);}
 async function minichess(s){
  const {canvasSetup,q,$,state,profile,clamp,mgDone,sp,hp,beepFx,buzz,playSfx,haptic,beep,toast,openMG,coneSVG,esc17,getTime,shuffle17,char,rgba,requestAnimationFrame,cancelAnimationFrame,setTimeout,clearTimeout,setInterval,clearInterval,performance,Math}=originalContext(s);
@@ -113,19 +114,8 @@ async function ballrun2p(s){
       if(!p[0].alive&&!p[1].alive)return finish();ctx.fillStyle='#caa36b';ctx.fillRect(0,0,W,H);ctx.fillStyle='#563e2f';ctx.fillRect(0,H*.44,W,6);ctx.fillRect(0,H*.84,W,6);for(let i=0;i<2;i++){const ground=i?H*.82:H*.42;obs[i]=obs[i].filter(o=>o.x>-30);obs[i].forEach(o=>{ctx.font='28px system-ui';ctx.fillText('🪤',o.x,ground+4)});ctx.font='45px system-ui';ctx.fillText('🪨',clamp(boulder[i],25,75),ground+5);if(p[i].alive){ctx.font='40px system-ui';ctx.fillText('🏃',110,p[i].y);s.sprite(ctx,i,110,p[i].y-38,37)}ctx.fillStyle='#fff';ctx.font='10px system-ui';ctx.fillText(`${state.players[i].name} ${Math.floor(p[i].dist)}m`,W-70,ground-15)}status.textContent=`BOULDER RUN • ${time}s`;raf=requestAnimationFrame(loop)}timer=setInterval(()=>{time--;if(time<=0)finish()},1000);gameCleanup=()=>{done=true;clearInterval(timer);cancelAnimationFrame(raf)};loop()
   };play(s.game);
 }
-async function conesort(s){
- const {canvasSetup,q,$,state,profile,clamp,mgDone,sp,hp,beepFx,buzz,playSfx,haptic,beep,toast,openMG,coneSVG,esc17,getTime,shuffle17,char,rgba,requestAnimationFrame,cancelAnimationFrame,setTimeout,clearTimeout,setInterval,clearInterval,performance,Math}=originalContext(s);
- let gameCleanup=()=>{};s.cleanup(()=>gameCleanup());
- if(!await s.pass(0,s.game.rules))return;
- const play=function(d){
-function finishOriginal(w,label,reward){mgDone(w,label,reward,score);}
-s.debug.originalScore=()=>[...score];
-    openMG(d,'<div id="coneRoot17"></div>');const root=q('coneRoot17');let player=0,task=0,score=[0,0],done=false,current=[];const total=4;
-    function pass(){root.innerHTML=`<div class="passCardV17"><div class="who">PASS TO ${esc17(state.players[player].name.toUpperCase())}</div><div class="why">Four ridiculous cone tasks. Speed matters, mistakes cost a point.</div><button id="coneReady17">START TASKS</button></div>`;q('coneReady17').onclick=nextTask}
-    function nextTask(){if(task>=total){if(player===0){player=1;task=0;return pass()}return finish()}const mode=task%4;current=Array.from({length:9},(_,i)=>({n:i+1,size:.72+(i%3)*.13,color:i%3===0?'#f36b24':i%3===1?'#f6a126':'#df4a2d',hit:false}));current=shuffle17(current);let instruction='';if(mode===0)instruction='Tap cones 1 → 9.';if(mode===1)instruction='Tap the ORANGE cones only.';if(mode===2)instruction='Tap largest cones first.';if(mode===3)instruction='Tap ODD numbered cones only.';root.innerHTML=`<div class="triviaRoundHead"><div class="score ${player===0?'active':''}">${esc17(state.players[0].name)}<br><b>${score[0]}</b></div><span class="gameModeBadge">TASK ${task+1}/4</span><div class="score ${player===1?'active':''}">${esc17(state.players[1].name)}<br><b>${score[1]}</b></div></div><div class="triviaQuestion">${instruction}</div><div class="coneGrid">${current.map((c,i)=>`<button class="coneBtn" data-i="${i}">${coneSVG(c.color,c.size,c.n)}</button>`).join('')}</div><div class="triviaExplain" id="coneExplain17">Your time starts now.</div>`;let expected=1,remaining=current.filter(c=>mode===1?c.color==='#f36b24':mode===3?c.n%2===1:true).length,start=performance.now();[...root.querySelectorAll('.coneBtn')].forEach(b=>b.onclick=()=>tap(b,mode,()=>performance.now()-start));function tap(b,mode,getTime){const c=current[+b.dataset.i];if(c.hit)return;let ok=false;if(mode===0)ok=c.n===expected;if(mode===1)ok=c.color==='#f36b24';if(mode===2){const sizes=current.filter(x=>!x.hit).map(x=>x.size);ok=c.size===Math.max(...sizes)}if(mode===3)ok=c.n%2===1;if(ok){c.hit=true;b.classList.add('hit');remaining--;if(mode===0)expected++;if(remaining<=0){const ms=getTime();const gain=Math.max(1,5-Math.floor(ms/2500));score[player]+=gain;q('coneExplain17').innerHTML=`<b>TASK COMPLETE +${gain}</b> • ${(ms/1000).toFixed(1)}s`;task++;setTimeout(nextTask,650)}}else{score[player]=Math.max(0,score[player]-1);q('coneExplain17').textContent='Wrong cone. -1 point.';try{haptic(16)}catch(e){}}}}
-    function finish(){done=true;const w=score[0]===score[1]?null:(score[0]>score[1]?0:1);finishOriginal(w,w===null?`Cone Chaos ties ${score[0]}–${score[1]}.`:`${state.players[w].name} wins Cone Chaos ${score[w]}–${score[w?0:1]}.`,9)}gameCleanup=()=>{done=true};pass()
-  };play(s.game);
-}
+// Taskmaster cones: redesigned as Cone Chaos (distinct colours and shapes, escalating rules, combos).
+async function conesort(s){return coneChaos(s);}
 async function paperboy(s){
  const {canvasSetup,q,$,state,profile,clamp,mgDone,sp,hp,beepFx,buzz,playSfx,haptic,beep,toast,openMG,coneSVG,esc17,getTime,shuffle17,char,rgba,requestAnimationFrame,cancelAnimationFrame,setTimeout,clearTimeout,setInterval,clearInterval,performance,Math}=originalContext(s);
  let gameCleanup=()=>{};s.cleanup(()=>gameCleanup());
