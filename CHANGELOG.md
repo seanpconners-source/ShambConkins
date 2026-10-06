@@ -1,5 +1,42 @@
 # Changelog
 
+## v0.46.0
+
+**Levels (after Chardee MacDennis).** Level I Mind (wine), II Body (beer), III Spirit (hard liquor), and Frank's
+secret Level IV Horror. The board now has a level plaque (big numeral, name, progress pips with a marker for
+each player, "Players are drinking: ..." status; toggle in settings). A full-screen title card announces the
+start of each level and every level you reach. Games lean toward the level (trivia/puzzles in Mind, physical
+games in Body, humiliation/couples games in Spirit); winners of on-theme games get +1, Spirit losers owe a
+small silly dare.
+
+**Boss fights.** New co-op Cuphead-style shoot-'em-up (both players fly, parry pink bullets, supers, revive
+your partner) with 34 bosses. Every level now ends in a boss castle at the gate; beating the boss unlocks it as
+a character (26 new boss-only characters).
+
+**Warp zones.** A warp pipe hides in each realm. Jumping in teleports both players (wavy screen, spinning heads,
+flash, landing) to one of eight small themed boards: Rainbow Road, Candy Land, Chutes & Ladders, a Monopoly-style
+board, SMB3 World 1, Clue mansion, Hyrule Field, Green Hill Zone. Each ends at a boss castle.
+
+**Return of the Living Dead horde** is now a full Vampire Survivors-style game: 3/8/12 minute runs, 12 weapons x
+8 levels with evolutions, 13 passives, 19 enemy types, chests, a scrolling world, final boss and "The Hunger".
+
+**New games (22).** Pass-and-play: The Newlywed Game, Roast Battle, Pictionary Draw It, Battleship, Liar's Dice,
+Simon Face-Off, Price Is Right Bid-Off. Real-time two-player: Hungry Hungry Heads, Snowball Fight, Disc Duel,
+Arrow Arena, Driller Duel, Bubble Battle. Tarantino: Mexican Standoff, Twist Contest, Adrenaline Shot, Crazy 88,
+Bounty Hunter, Stunt Chase. WarioWare-style Microgame Rush (33 microgames) plus marathon and Nintendo variants.
+(Also fixed: the six v0.45 games were missing from the random pool.)
+
+**Touch first.** ~35 games replaced on-screen button bars with swipes, drags, flicks and taps, and many now fill
+the screen. Gopher Hunt now pops up your rival's head.
+
+**Characters (+146).** Tarantino's whole filmography (51), every Batman and Superman actor, Will Ferrell and his
+characters, Chris Farley, Tim Allen, Clint Eastwood, Red Dead, more Death Stranding, friends (Shane, Carlos, Bert),
+Flarpy the horse, David Bowie, God, the poop emoji, Mr. Potato Head, Colonel Sanders and more, with ~35 new
+landmarks. Jesus is now a portrait of Jesus; Satan is the Lord of Darkness from Legend. Placeholder portraits use
+the character's emoji until a photo loads.
+
+**Trivia.** 920 new questions in 40 themes (Tarantino, Batman, Superman, action, horror, comedy, anime, games...).
+
 ## v0.45.0
 
 **Board.** Each realm is now a journey map: a short stem from camp, a crossroads, then three side-by-side

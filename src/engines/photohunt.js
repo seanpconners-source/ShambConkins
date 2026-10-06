@@ -42,20 +42,25 @@ async function imageFrom(s,url){return new Promise((resolve,reject)=>{const img=
 async function fileData(s,file){return new Promise((resolve,reject)=>{if(!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>850000)return reject(new Error('Use PNG, JPG or WebP images smaller than 850 KB each.'));const r=new FileReader();let done=false;const end=(err)=>{if(done)return;done=true;clearTimeout(t);r.onload=r.onerror=null;err?reject(err):resolve(r.result);};const t=setTimeout(()=>{r.abort();end(new Error('File reading timed out.'));},8000);s.cleanup(()=>{r.abort();end(new Error('Game closed.'));});r.onload=()=>end();r.onerror=()=>end(new Error('Could not read that file.'));r.readAsDataURL(file);});}
 
 async function photohunt(s){
- const[c,x,W,H]=s.canvas(680,355),panels=[{x:13,y:43,w:319,h:276},{x:348,y:43,w:319,h:276}],starter=shuffle(PHOTO_SCENES,s.random).map(scene=>photoRound(scene,s.random)),scores=[0,0];
+ const[c,x]=s.canvas(680,355,{fill:true}),panels=[{x:13,y:43,w:319,h:276},{x:348,y:43,w:319,h:276}],starter=shuffle(PHOTO_SCENES,s.random).map(scene=>photoRound(scene,s.random)),scores=[0,0];
  const bundled=PHOTO_HUNT_PAIRS.map(p=>({...p,left:ART[p.leftKey],right:ART[p.rightKey]})).filter(validPhotoPair);
- let deck=[],round=0,actor=0,found=[],clock=40,turnClock=10,phase='loading',flash=null,images=null,calibration=null,pendingLoad=false,message='',loadVersion=0,radius=.06;
+ let W=680,H=355,deck=[],round=0,actor=0,found=[],clock=40,turnClock=10,phase='loading',flash=null,images=null,calibration=null,pendingLoad=false,message='',loadVersion=0,radius=.06;
  s.shared=true;s.updateScores();
+ // Panels sit side by side on wide screens and stack on a portrait phone so the photos use the whole height.
+ const layout=()=>{W=s.W;H=s.H;const top=36,bottom=26,g=8;if(H>W*1.05){const h=(H-top-bottom-g)/2;Object.assign(panels[0],{x:8,y:top,w:W-16,h});Object.assign(panels[1],{x:8,y:top+h+g,w:W-16,h});}else{const w=(W-8*2-g)/2,h=H-top-bottom;Object.assign(panels[0],{x:8,y:top,w,h});Object.assign(panels[1],{x:8+w+g,y:top,w,h});}};
+ const pills=()=>[{id:'hint',x:6,y:6,w:92,h:25,text:'HINT −25'},{id:'photos',x:W-98,y:6,w:92,h:25,text:'PHOTOS ☰'}];
+ const hint=()=>{if(phase!=='hunt')return;const target=regions().findIndex((_,i)=>!found.includes(i));if(target<0)return;scores[actor]=Math.max(0,scores[actor]-25);flash={...regions()[target],until:2,hint:true};s.setScores(scores);};
  const allPairs=()=>[...bundled,...photoPairLibrary(store.profile)];
  const currentPair=()=>deck[round]||null;
  const regions=()=>currentPair()?.regions||starter[Math.min(round,2)].regions;
  const count=()=>deck.length||3;
  const refresh=()=>{s.debug={round,actor,phase,regions:regions(),found,panels,pair:currentPair(),clock,turnClock,roundCount:count(),library:allPairs().length,calibration};};
- function controls(){s.controls([{text:'Hint −25',click:()=>{if(phase!=='hunt')return;const target=regions().findIndex((_,i)=>!found.includes(i));if(target<0)return;scores[actor]=Math.max(0,scores[actor]-25);flash={...regions()[target],until:2,hint:true};s.setScores(scores);}},{text:'Load my image pair',click:()=>load()},{text:`Photo library · ${allPairs().length}`,click:()=>library()},{text:'Starter scenes',click:()=>{loadVersion++;deck=[];images=null;round=0;found=[];clock=40;turnClock=10;phase='hunt';message='Illustrated starter scenes. Add real photo pairs from Photo library.';controls();}}]);}
+ function controls(){const root=document.getElementById('game-controls');if(root){root.innerHTML='';root.className='game-controls';}}
+ function starterScenes(){loadVersion++;deck=[];images=null;round=0;found=[];clock=40;turnClock=10;phase='hunt';message='Illustrated starter scenes. Add real photo pairs from the Photos menu.';controls();}
  async function loadCurrent(){const version=++loadVersion,pair=currentPair();images=null;phase='loading';refresh();if(pair){try{const result=await Promise.all([imageFrom(s,pair.left),imageFrom(s,pair.right)]);if(version!==loadVersion||!s.alive)return;if(Math.abs(result[0].naturalWidth/result[0].naturalHeight-result[1].naturalWidth/result[1].naturalHeight)>.02)throw new Error('Photo pair proportions differ.');images=result;}catch(error){if(!s.alive)return;message=error.message+' Illustrated scenes are available.';deck=[];round=0;}}if(version===loadVersion){phase='hunt';clock=40;turnClock=10;refresh();}}
  async function startDeck(pairs){deck=pairs.filter(validPhotoPair).slice(0,3);round=0;found=[];actor=0;s.active=0;s.updateScores();await loadCurrent();controls();}
  function advance(){round++;found=[];actor=round%2;s.active=actor;s.updateScores();if(round>=count()){s.finish(scores,`Megatouch Photo Hunt · ${count()} ${deck.length?'real photo pairs':'illustrated scenes'}, two detectives.`);return;}void loadCurrent();}
- function library(){if(pendingLoad||phase==='calibrate')return;phase='library';message='Choose a saved photo pair, add another, or play a shuffled photo set.';const pairs=allPairs();s.controls([{text:'Add photo pair',click:()=>load()},{text:'Play photo set',click:()=>void startDeck(shuffle(pairs,s.random))},...pairs.flatMap((p,i)=>[{text:`Play ${p.title||'Photo pair '+(i+1)}`,click:()=>void startDeck([p])},...(bundled.some(b=>photoPairId(b)===photoPairId(p))?[]:[{text:`Remove ${p.title||'pair '+(i+1)}`,click:()=>{removePhotoPair(store.profile,photoPairId(p));saveProfile(store.profile);library();}}])]),{text:'Back to hunt',click:()=>{phase='hunt';controls();}}]);if(!pairs.length)message='Send Codex an original and changed photo, plus the differences, to bundle them offline. Or tap Add photo pair and mark the changes yourself.';refresh();}
+ function library(){if(pendingLoad||phase==='calibrate')return;phase='library';message='Choose a saved photo pair, add another, or play a shuffled photo set.';const pairs=allPairs();s.controls([{text:'Add photo pair',click:()=>load()},{text:'Play photo set',click:()=>void startDeck(shuffle(pairs,s.random))},...pairs.flatMap((p,i)=>[{text:`Play ${p.title||'Photo pair '+(i+1)}`,click:()=>void startDeck([p])},...(bundled.some(b=>photoPairId(b)===photoPairId(p))?[]:[{text:`Remove ${p.title||'pair '+(i+1)}`,click:()=>{removePhotoPair(store.profile,photoPairId(p));saveProfile(store.profile);library();}}])]),{text:'Starter scenes',click:starterScenes},{text:'Back to hunt',click:()=>{phase='hunt';controls();}}]);if(!pairs.length)message='Send Codex an original and changed photo, plus the differences, to bundle them offline. Or tap Add photo pair and mark the changes yourself.';refresh();}
  async function load(){
   if(pendingLoad||phase==='calibrate')return;const input=document.createElement('input');input.type='file';input.accept='image/png,image/jpeg,image/webp';input.multiple=true;input.hidden=true;s.body.appendChild(input);
   const before=phase;phase='choose-files';const cancel=()=>{phase=before;input.remove();refresh();};s.on(input,'cancel',cancel);
@@ -74,7 +79,7 @@ async function photohunt(s){
  }},{text:'Undo mark',click:()=>calibration?.regions.pop()},{text:'Swap photos',click:()=>{if(!calibration)return;[calibration.left,calibration.right]=[calibration.right,calibration.left];calibration.images.reverse();message='Photos swapped. Marks use the same positions on both sides.';}},{text:'Smaller target',click:()=>{radius=Math.max(.025,radius-.01);if(calibration?.regions.length)calibration.regions.at(-1).r=radius;}},{text:'Larger target',click:()=>{radius=Math.min(.15,radius+.01);if(calibration?.regions.length)calibration.regions.at(-1).r=radius;}},{text:'Cancel',click:()=>{calibration=null;phase='hunt';controls();}}]);}
  function imageRect(img,p){const scale=Math.min(p.w/img.naturalWidth,p.h/img.naturalHeight);return {x:p.x+(p.w-img.naturalWidth*scale)/2,y:p.y+(p.h-img.naturalHeight*scale)/2,w:img.naturalWidth*scale,h:img.naturalHeight*scale};}
  s.on(c,'pointerdown',ev=>{
-  if(s.paused||!s.alive||!['hunt','calibrate'].includes(phase))return;ev.preventDefault();const p=s.pointer(ev),panel=panels.findIndex(q=>p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+q.h);if(panel<0)return;
+  if(s.paused||!s.alive||!['hunt','calibrate'].includes(phase))return;ev.preventDefault();layout();const p=s.pointer(ev);if(phase==='hunt'){const pill=pills().find(q=>p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+q.h);if(pill){if(pill.id==='hint')hint();else library();return;}}const panel=panels.findIndex(q=>p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+q.h);if(panel<0)return;
   const img=phase==='calibrate'?calibration.images[panel]:currentPair()?images?.[panel]:null,rect=img?imageRect(img,panels[panel]):panels[panel],point={x:(p.x-rect.x)/rect.w,y:(p.y-rect.y)/rect.h};if(point.x<0||point.x>1||point.y<0||point.y>1)return;
   if(phase==='calibrate'){if(panel===1&&calibration.regions.length<8){if(calibration.regions.some(r=>Math.hypot(r.x-point.x,r.y-point.y)<.07)){message='That area is already marked.';return;}calibration.regions.push({...point,r:radius});message=`${calibration.regions.length} differences marked. Save & play when ready.`;}refresh();return;}
   if(!img)point.y-=8/rect.h;const hit=photoHit(regions(),point,found);
@@ -84,19 +89,20 @@ async function photohunt(s){
   actor=1-actor;s.active=actor;turnClock=10;s.setScores(scores);s.updateScores();refresh();
  });
  s.frame(dt=>{
+  layout();
   if(flash){flash.until-=dt;if(flash.until<=0)flash=null;}
   if(phase==='hunt'){clock-=dt;turnClock-=dt;if(turnClock<=0){actor=1-actor;s.active=actor;s.updateScores();turnClock=10;}if(clock<=0){phase='reveal';clock=2;message='Time! Here are the remaining differences.';}}
   else if(phase==='reveal'){clock-=dt;if(clock<=0)advance();}
   if(!s.alive)return;
   const custom=phase==='calibrate'?calibration:currentPair(),loaded=phase==='calibrate'?calibration.images:images;
-  x.fillStyle='#121e32';x.fillRect(0,0,W,H);x.font='bold 16px Arial';x.textAlign='center';x.fillStyle='#f4d79b';x.fillText(custom?custom.title||'YOUR PHOTO HUNT':starter[Math.min(round,2)].scene.name.toUpperCase(),W/2,26,W-40);
+  x.fillStyle='#121e32';x.fillRect(0,0,W,H);x.font='bold 16px Arial';x.textAlign='center';x.fillStyle='#f4d79b';x.fillText(custom?custom.title||'YOUR PHOTO HUNT':starter[Math.min(round,2)].scene.name.toUpperCase(),W/2,24,W-210);if(phase==='hunt'){for(const q of pills()){x.fillStyle='#2b3d5c';x.fillRect(q.x,q.y,q.w,q.h);x.strokeStyle='#f4d79b88';x.lineWidth=1.5;x.strokeRect(q.x,q.y,q.w,q.h);x.fillStyle='#f4d79b';x.font='bold 12px Arial';x.fillText(q.text,q.x+q.w/2,q.y+17);}x.font='bold 16px Arial';}
   for(let i=0;i<2;i++){
    const p=panels[i];if(custom&&loaded){x.fillStyle='#080f1b';x.fillRect(p.x,p.y,p.w,p.h);const r=imageRect(loaded[i],p);x.drawImage(loaded[i],r.x,r.y,r.w,r.h);}else sceneDraw(x,starter[Math.min(round,2)].scene,starter[Math.min(round,2)].changes,i===1,p);
    const marks=phase==='calibrate'?calibration.regions:regions(),rect=custom&&loaded?imageRect(loaded[i],p):p;
    for(let j=0;j<marks.length;j++)if(phase==='calibrate'||found.includes(j)||phase==='reveal'){const r=marks[j];x.strokeStyle=found.includes(j)?'#80efb4':'#ffe497';x.lineWidth=3;x.beginPath();x.arc(rect.x+r.x*rect.w,rect.y+r.y*rect.h+(custom?0:8),r.r*rect.w,0,Math.PI*2);x.stroke();}
    if(flash){x.strokeStyle=flash.miss?'#ff6c80':'#fff29b';x.lineWidth=3;x.beginPath();x.arc(rect.x+flash.x*rect.w,rect.y+flash.y*rect.h+(custom?0:8),22,0,Math.PI*2);x.stroke();}
   }
-  s.sprite(x,0,27,339,27,{exact:true,mood:actor===0?'thinking':'normal'});s.sprite(x,1,W-27,339,27,{exact:true,mood:actor===1?'thinking':'normal'});x.fillStyle='#f1d6a5';x.font='12px Arial';x.textAlign='center';x.fillText(message||`Find all ${regions().length} differences before time runs out.`,W/2,343,W-80);
+  s.sprite(x,0,27,H-14,27,{exact:true,mood:actor===0?'thinking':'normal'});s.sprite(x,1,W-27,H-14,27,{exact:true,mood:actor===1?'thinking':'normal'});x.fillStyle='#f1d6a5';x.font='12px Arial';x.textAlign='center';x.fillText(message||`Find all ${regions().length} differences before time runs out.`,W/2,H-8,W-80);
   s.status(phase==='hunt'?`Pair ${round+1}/${count()} · ${s.players[actor].name} guesses · ${Math.ceil(clock)}s · ${found.length}/${regions().length} found`:message||'Loading local photos…');refresh();
  });
  await startDeck(shuffle(allPairs(),s.random));

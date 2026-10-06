@@ -26,14 +26,17 @@ async function brawler(s){
  const random=seededRandom(s.seed),wave=Array.from({length:19},(_,i)=>({id:i,at:1+i*1.45,side:random()<.5?-1:1,speed:36+random()*15}));let api,drag=null;
  const attack=(kind,dir)=>{if(s.paused||s.active!==api?.get()?.player)return;const a=api.get();if(beginBrawlAttack(a,kind,dir))sound('shot');};
  const clear=()=>{drag=null;const a=api?.get();if(a)a.keys={};};s.resetOnPause?.(clear);s.on(window,'blur',clear);s.on(window,'resize',clear);
- return arcadeRounds(s,{duration:30,instructions:'The Warriors: defend Coney Island. Drag to move. PUNCH or KICK toward the LEFT or RIGHT. Punches are quick; kicks reach farther. Each attack has a wind-up, impact and recovery: tapping faster cannot skip it. Five lives; identical waves for both fighters.',
+ return arcadeRounds(s,{duration:30,instructions:'The Warriors: defend Coney Island. Drag to move, TAP to punch toward that side, FLICK sideways to kick. Punches are quick; kicks reach farther. Each attack has a wind-up, impact and recovery: tapping faster cannot skip it. Five lives; identical waves for both fighters.',
   reset:()=>({x:340,hp:5,facing:1,attack:null,recovery:0,invuln:0,enemies:[],spawn:0,keys:{}}),
-  bind:a=>{api=a;s.controls(['punch','kick'].flatMap(kind=>[-1,1].map(dir=>({text:(dir<0?'◀ ':'')+kind.toUpperCase()+(dir>0?' ▶':''),click:()=>attack(kind,dir)}))));
-   s.on(c,'pointerdown',ev=>{if(s.paused||drag||s.active!==api.get()?.player)return;drag={id:ev.pointerId,start:s.pointer(ev).x,x:api.get().x};s.capture(ev);});
-   s.on(c,'pointermove',ev=>{if(s.paused||drag?.id!==ev.pointerId)return;const a=api.get(),next=clamp(drag.x+(s.pointer(ev).x-drag.start)*680/s.W,32,648);if(!a.attack&&Math.abs(next-a.x)>1)a.facing=next>a.x?1:-1;a.x=next;});
-   for(const type of ['pointerup','pointercancel','lostpointercapture'])s.on(c,type,ev=>{if(drag?.id===ev.pointerId){drag=null;s.release(ev);}});
+  bind:a=>{api=a;
+   s.on(c,'pointerdown',ev=>{if(s.paused||drag||s.active!==api.get()?.player)return;ev.preventDefault();const p0=s.pointer(ev);drag={id:ev.pointerId,start:p0.x,sy:p0.y,x:api.get().x,t0:performance.now(),far:0};s.capture(ev);});
+   s.on(c,'pointermove',ev=>{if(s.paused||drag?.id!==ev.pointerId)return;const a=api.get(),pp=s.pointer(ev),next=clamp(drag.x+(pp.x-drag.start)*680/s.W,32,648);drag.far=Math.max(drag.far,Math.hypot(pp.x-drag.start,pp.y-drag.sy));if(!a.attack&&Math.abs(next-a.x)>1)a.facing=next>a.x?1:-1;a.x=next;});
+   s.on(c,'pointerup',ev=>{if(drag?.id!==ev.pointerId)return;const d=drag,a=api.get(),p=s.pointer(ev),dur=performance.now()-d.t0,dx=(p.x-d.start)*680/s.W,dy=(p.y-d.sy)*400/s.H;drag=null;s.release(ev);if(s.paused||!a||s.active!==a.player)return;
+    // Tap = punch toward the side you tapped; quick horizontal flick = kick that way.
+    if(dur<300&&Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.5)attack('kick',dx<0?-1:1);else if(dur<300&&d.far<14*Math.max(1,s.W/340)){const tx=p.x*680/s.W;attack('punch',Math.abs(tx-a.x)<14?a.facing:tx<a.x?-1:1);}});
+   for(const type of ['pointercancel','lostpointercapture'])s.on(c,type,ev=>{if(drag?.id===ev.pointerId){drag=null;s.release(ev);}});
    s.on(document,'keydown',ev=>{if(s.paused||ev.repeat)return;const a=api.get();if(!a)return;if(['a','d','ArrowLeft','ArrowRight'].includes(ev.key)){ev.preventDefault();a.keys[ev.key==='a'||ev.key==='ArrowLeft'?'left':'right']=true;}const move={j:['punch',-1],l:['punch',1],u:['kick',-1],o:['kick',1]}[ev.key.toLowerCase()];if(move)attack(...move);});
-   s.on(document,'keyup',ev=>{const a=api.get();if(a)a.keys[ev.key==='a'||ev.key==='ArrowLeft'?'left':'right']=false;});s.hint('Drag along the street. ◀/▶ chooses the attack side. Punch: one damage; kick: two. A/D move · J/L punch · U/O kick. Wait for the recovery meter.');},
+   s.on(document,'keyup',ev=>{const a=api.get();if(a)a.keys[ev.key==='a'||ev.key==='ArrowLeft'?'left':'right']=false;});s.hint('Drag along the street to move. TAP left or right of your fighter to punch that way; FLICK sideways for a longer kick (two damage). A/D move · J/L punch · U/O kick. Wait for the recovery meter.');},
   step:(a,dt)=>{a.invuln=Math.max(0,a.invuln-dt);const move=(a.keys.right?1:0)-(a.keys.left?1:0);a.x=clamp(a.x+move*190*dt*(a.attack ? .45 : 1),32,648);if(move&&!a.attack)a.facing=move;
    while(a.spawn<wave.length&&wave[a.spawn].at<=a.elapsed){const e=wave[a.spawn++];a.enemies.push({...e,x:e.side<0?15:665,hp:2,stun:0});}
    if(stepBrawlAttack(a,dt))sound('tap');
