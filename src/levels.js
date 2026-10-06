@@ -17,10 +17,12 @@ const LEVELS={
  horror:{n:4,roman:'IV',name:'HORROR',tag:'Frank’s secret level. It was never in the box.',drink:'whatever is in Frank’s flask',icon:'🧪',color:'#b3121f',
   intro:'Frank added a level. Nobody asked for it. Nobody can stop it.',
   categories:[],families:['horde','sewer','asteroids','pacmaze','battleroyale']},
+ warp:{n:0,roman:'W',badge:'WARP',name:'WARP ZONE',tag:'A side trip. A boss waits at the end.',drink:'a round for the whole table',icon:'🌀',color:'#7a4cff',
+  intro:'You fell down a pipe. Reach the castle at the end to fight the boss.',categories:[],families:[]},
  'upside-down':{n:0,roman:'?',name:'THE UPSIDE DOWN',tag:'A wrong turn',drink:'nothing, hold your breath',icon:'🫧',color:'#512633',
   intro:'You took a wrong turn.',categories:[],families:[]}
 };
-const levelInfo=realm=>LEVELS[realm]||LEVELS.mind;
+const levelInfo=realm=>LEVELS[realm]||(String(realm).startsWith('warp')?LEVELS.warp:LEVELS.mind);
 const levelLabel=realm=>{const l=levelInfo(realm);return l.n?`LEVEL ${l.roman} · ${l.name}`:l.name;};
 const drinkLine=realm=>{const l=levelInfo(realm);return `${l.icon} Players are drinking: ${l.drink}`;};
 const LEVEL_ORDER=['mind','body','spirit','horror'];

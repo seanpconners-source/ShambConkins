@@ -53,14 +53,14 @@ async function newlywed(s){
  const total=()=>TOTAL+1;
  const batt=(now=-1)=>`<div class="nw-batt"><b>💞 SYNC</b><div class="cells">${Array.from({length:total()},(_,i)=>`<span class="c ${cells[i]||''}${i===cells.length&&now>=0?' now':''}"></span>`).join('')}</div><div class="tip"></div></div>`;
  const optsOf=(r,S)=>r.order.map(k=>fill(r.q.o[k],{you:false,name:names[S],other:names[1-S]}));
- const qText=(r,S,you)=>fill(r.q.q,{you,name:names[S],other:names[1-S]});
+ const qText=(r,S,you)=>fill(r.q.q,{you,name:names[S],other:names[1-S],q:true});
  const header=(r,idx)=>`<div class="pk-over">Question ${idx+1} of ${TOTAL} · ${CAT_ICON[r.q.cat]} ${CATEGORY_LABEL[r.q.cat]}${r.finale?' · FINALE · DOUBLE POINTS':''}</div>`;
 
  // One private screen where somebody picks one of the four options. mode 'answer' (about themselves) or 'guess' (about S).
  function pickScreen(r,idx,S,who,mode,part=''){
   const you=mode==='answer',opts=optsOf(r,S);
   const html=`<div class="pk-screen">${batt(cells.length)}${header(r,idx)}
-   <div class="nw-who">${head(s,who,'think','')}<div class="pk-sub">${mode==='answer'?`<b>${esc(names[who])}</b> · answer about <b>YOURSELF</b>`:`<b>${esc(names[who])}</b> · what did <b>${esc(names[S])}</b> pick?`}${part?`<br>${part}`:''}</div></div>
+   <div class="nw-who">${head(s,who,'think','')}<div class="pk-sub">${mode==='answer'?`<b>${esc(names[who])}</b> · ${r.q.cat==='likely'?'your honest pick':'answer about <b>YOURSELF</b>'}`:`<b>${esc(names[who])}</b> · what did <b>${esc(names[S])}</b> pick?`}${part?`<br>${part}`:''}</div></div>
    <h2 class="pk-q">${esc(qText(r,S,you))}</h2>
    <div class="nw-opts">${opts.map((o,i)=>`<button class="pk-opt pk-in" style="animation-delay:${i*50}ms" data-act="opt" data-i="${i}"><span class="ltr">${LETTERS[i]}</span><span>${esc(o)}</span></button>`).join('')}</div>
    <button class="pk-btn off" data-act="lock">Lock it in 🔒</button></div>`;

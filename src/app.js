@@ -14,6 +14,9 @@ const {selectItemDrop, selectItemStock}=require("src/itemDrops.js");
 const {drawEvent, applyEvent, RARE_EVENTS}=require("src/events.js");
 const {showLevelCard,dismissLevelCard}=require("src/levelCard.js");
 const {levelLabel}=require("src/levels.js");
+const {warpTransition}=require("src/warpFx.js");
+const {buildWarpBoard,pickWarpId,WARP_DEFS}=require("src/warpBoards.js");
+const {ensureLevelBosses,bossById,castleName}=require("src/bossGate.js");
 const {GAMES, PHONE_TASK}=require("src/gameRegistry.js");
 const {showView, updateBoard, showDialog, resolveDialog, closeDialog, unlockDialog, toast, repaintCamera, cancelCameraAnimation, clearBoardDetailObserver, refreshPortraits}=require("src/ui.js");
 const {brandHTML, portraitHTML, locationArtHTML, itemArtHTML}=require("src/assets.js");
@@ -39,7 +42,7 @@ const e=escapeHTML;
 store.profile=loadProfile();const saved=readJSON(RUN_KEY);store.run=validRun(saved)?saved:null;if(store.run&&!store.profile.earnedUnlocks['gordon-ramsay'])for(const p of store.run.players)if(p.character==='gordon-ramsay')p.character=p.owner==='Sean'?'sean':'amber';if(store.run&&!differentCharacters(...store.run.players.map(p=>p.character))){store.run.players[1].character=availableCharacters(store.profile,'Amber').find(id=>differentCharacters(id,store.run.players[0].character))||'amber';if(!differentCharacters(...store.run.players.map(p=>p.character)))store.run.players[0].character='sean';}upgradeRunFormat(store.run);updateProgression(store.profile);
 if(store.run)for(const p of store.run.players){if(p.character==='eugenia')p.character=p.owner==='Amber'?'amber':'sean';p.items=p.items.filter(id=>id!=='eugenia-pass');}
 function saveRun(){rememberCollectibles(store.profile,store.run);let saved=true;if(store.run)saved=writeJSON(RUN_KEY,store.run);else removeSaved(RUN_KEY);const profileSaved=saveProfile(store.profile);if((!saved||!profileSaved)&&!store.storageNotice){store.storageNotice=true;toast('Browser storage is unavailable. Use Settings → Export backup before closing.');}}
-configureLauncher({journeyWin:i=>journeyNow('win',{},store.run.players[i]),save:saveRun,endTurn,beforeRoll:resumeItemTurn,arcade:()=>{store.busy=false;store.arcade=false;showCatalog('arcade');}});
+configureLauncher({bossDone:(game,coop)=>bossDone(game,coop),journeyWin:i=>journeyNow('win',{},store.run.players[i]),save:saveRun,endTurn,beforeRoll:resumeItemTurn,arcade:()=>{store.busy=false;store.arcade=false;showCatalog('arcade');}});
 const random=()=>store.run?runRandom(store.run):Math.random();
 function focusEffect(before){const run=store.run;if(!run)return;const after=effectSnapshot(run),ids=[run.players[run.current].node];for(let i=0;i<2;i++)if(before?.players[i]&&JSON.stringify(before.players[i])!==JSON.stringify(after.players[i])){ids.push(run.players[i].node);if(before.players[i].node!==run.players[i].node)ids.push(before.players[i].node);}focusBoardAction(run,ids);}
 function applyPreferences(){document.body.classList.toggle('reduced-motion',store.profile.settings.reducedMotion);}
@@ -91,7 +94,7 @@ function queueItemDiscovery(found){if(found?.item?.kind!=='transform')return;sto
 async function presentItemDiscoveries(){const run=store.run,token=movementToken;while(run.itemDiscoveries?.length){const found=run.itemDiscoveries[0];saveRun();if(!await unlockDialog(found.unlocked,found.owner)||store.run!==run||movementToken!==token)return;await showDialog({title:'A suspiciously familiar disguise',source:findItem(found.itemId)?.source,body:found.message,html:`<div class="dialog-icon">${itemArtHTML(findItem(found.itemId))}</div>`});if(store.run!==run||movementToken!==token)return;run.itemDiscoveries.shift();saveRun();}}
 function reportJourney(messages){for(const m of messages||[]){logRun(m);toast(m);}}
 function journeyNow(kind,detail,player=null){const run=store.run;if(!run)return;const p=player||run.players[run.current];reportJourney(journeyEvent(run,p,kind,detail));}
-function awardGate(p,n){if(n.type!=='gate'||p.cleared.includes(n.realm))return;const before=effectSnapshot();p.cleared.push(n.realm);const dividend=p.gateDividend||0;p.gateDividend=0;p.points+=4+dividend;pairGateBonus(store.run,p);store.profile.xp+=8;if(p.character==='amber')p.rerolls++;if(p.character==='loki')p.shields++;if(perkType(p.character)==='survivor'&&!p.shields)p.shields++;if(perkType(p.character)==='scavenger'&&p.cleared.length>1){const found=acquireItem(store.run,store.profile,p,randomItem(random,{player:p,profile:store.profile}));queueItemDiscovery(found);}logRun(`${p.name} cleared ${n.realm.toUpperCase()}. +${4+dividend} points, +8 XP${dividend?' (includes saved gate dividend)':''}.`);toast(`${p.name} cleared ${n.realm.toUpperCase()} · +${4+dividend} points · +8 XP`);if(!store.run.endless&&(n.realm==='spirit'&&!store.run.horror||n.realm==='horror')){p.finishedPlayer=true;p.points+=8;if(store.run.raceToFinish&&store.run.raceWinner===undefined)store.run.raceWinner=store.run.players.indexOf(p);}boardFeedback(before,{title:n.realm.toUpperCase()+' cleared',icon:'✦'});animateItemTransfers(before);}
+function awardGate(p,n){if(n.type!=='gate'||p.cleared.includes(n.realm)||String(n.realm).startsWith('warp'))return;const before=effectSnapshot();p.cleared.push(n.realm);const dividend=p.gateDividend||0;p.gateDividend=0;p.points+=4+dividend;pairGateBonus(store.run,p);store.profile.xp+=8;if(p.character==='amber')p.rerolls++;if(p.character==='loki')p.shields++;if(perkType(p.character)==='survivor'&&!p.shields)p.shields++;if(perkType(p.character)==='scavenger'&&p.cleared.length>1){const found=acquireItem(store.run,store.profile,p,randomItem(random,{player:p,profile:store.profile}));queueItemDiscovery(found);}logRun(`${p.name} cleared ${n.realm.toUpperCase()}. +${4+dividend} points, +8 XP${dividend?' (includes saved gate dividend)':''}.`);toast(`${p.name} cleared ${n.realm.toUpperCase()} · +${4+dividend} points · +8 XP`);if(!store.run.endless&&(n.realm==='spirit'&&!store.run.horror||n.realm==='horror')){p.finishedPlayer=true;p.points+=8;if(store.run.raceToFinish&&store.run.raceWinner===undefined)store.run.raceWinner=store.run.players.indexOf(p);}boardFeedback(before,{title:n.realm.toUpperCase()+' cleared',icon:'✦'});animateItemTransfers(before);}
 function reconcileGates(p){for(const id of [...p.visited,p.node]){const node=store.run.board.nodes[id];if(node)awardGate(p,node);}normalizePocketOwner();}
 function normalizePocketOwner(){const run=store.run;if(run.upsideDown){const index=run.players.findIndex(p=>run.board.nodes[p.node]?.realm==='upside-down');if(index>=0)run.upsideDown.owner=index;else run.upsideDown=null;}}
 function takeRoute(player,target){const route=target.route;if(!route||route.safe===true)return;const run=store.run,key=route.entry+':'+(player.laps||0);player.routeChoices ||= [];if(player.routeChoices.includes(key))return;player.routeChoices.push(key);if(route.cost)pointChange(player,-route.cost,false);if(route.points)player.points+=route.points;if(route.trap)pointChange(player,player.cloak?0:-route.trap);player.boost+=route.boost||0;player.slowAfterRoll=(player.slowAfterRoll||0)+(route.slow||0);player.shields+=route.shield||0;player.rerolls+=route.reroll||0;if(route.item&&findItem(route.item)){const found=acquireItem(run,store.profile,player,route.item);queueItemDiscovery(found);}logRun(player.name+' chose '+route.name+'. '+route.reward+' '+route.risk);}
@@ -128,7 +131,7 @@ async function stepTarget(run,p,token){
  const before=effectSnapshot();takeRoute(p,target);animateItemTransfers(before);return target;
 }
 async function announceLevel(p){
- const run=store.run;if(!run||!p)return;const realm=run.board.nodes[p.node]?.realm;if(!realm)return;
+ const run=store.run;if(!run||!p)return;const realm=run.board.nodes[p.node]?.realm;if(!realm||String(realm).startsWith('warp'))return;
  if(!p.levelsSeen){p.levelsSeen=[realm,...(p.cleared||[])];return;}
  if(p.levelsSeen.includes(realm))return;
  p.levelsSeen.push(realm);run.levelAnnounced||=[];const first=!run.levelAnnounced.includes(realm);if(first)run.levelAnnounced.push(realm);
@@ -137,13 +140,59 @@ async function announceLevel(p){
  logRun(`${p.name} enters ${levelLabel(realm)}.`);setMusicZone(realm);saveRun();
  await showLevelCard(realm,{who:p.name,first});
 }
+
+// ------------------------------------------------------------ warp zones and bosses
+async function enterWarpZone(){
+ const run=store.run,token=movementToken,id=pickWarpId(run,random),def=WARP_DEFS[id],boss=bossById(def.bossId);
+ const choice=await showDialog({title:'A warp pipe!',source:def.source,rare:true,body:`${def.title}. ${def.intro} You will both be warped there.${boss?` ${boss.name} guards the castle at the end, and beating them unlocks a new character.`:''}`,choices:[{label:`Jump in · ${def.title}`,value:'go',primary:true},{label:'Walk on by',value:'no'}]});
+ if(choice===null||store.run!==run||token!==movementToken)return;
+ if(choice!=='go'){await finishEncounter();return;}
+ const board=buildWarpBoard(id,`${run.seed}:${run.turn}`);if(boss)board.warp.bossName=boss.name;
+ run.warpsVisited=[...(run.warpsVisited||[]),id];run.warp={id,returns:run.players.map(q=>q.node),bossId:def.bossId};
+ logRun(`The party warps to ${def.title}.`);saveRun();
+ await warpTransition(()=>{run.mainBoard=run.board;run.savedTraps=run.traps;run.traps=[];run.board=board;for(const q of run.players){q.warpVisited=q.visited;q.visited=[];q.node=board.realms.warp.start;}run.camera='follow';run.pan=null;focusBoardAction(run,run.players.map(q=>q.node));updateBoard(true);},{title:def.title,subtitle:def.intro,icon:def.icon});
+ if(store.run!==run)return;setMusicZone('warp');saveRun();await finishEncounter();
+}
+async function exitWarpZone(){
+ const run=store.run,w=run.warp;if(!w)return;
+ await warpTransition(()=>{run.board=run.mainBoard;delete run.mainBoard;run.players.forEach((q,i)=>{q.node=w.returns[i]&&run.board.nodes[w.returns[i]]?w.returns[i]:run.board.realms.mind.start;q.visited=q.warpVisited||[];delete q.warpVisited;});run.traps=run.savedTraps||[];delete run.savedTraps;run.warp=null;run.camera='follow';run.pan=null;focusBoardAction(run,run.players.map(q=>q.node));updateBoard(true);},{title:'Back on the map',subtitle:'The party returns from the warp zone.',icon:'🌀'});
+ if(store.run!==run)return;setMusicZone(run.board.nodes[run.players[run.current].node].realm);saveRun();store.busy=false;endTurn();
+}
+async function warpJump(p,token){
+ const n=run_node(p);if(!n?.jump||store.run.board.format!=='warp')return;
+ const to=store.run.board.nodes[n.jump];if(!to)return;const up=to.col>n.col;
+ toast(up?'A ladder! Climb!':'A chute! Wheee!');sound(up?'win':'lose');await wait(550);if(token!==movementToken)return;
+ p.visited.push(p.node);p.node=to.id;focusBoardAction(store.run);saveRun();updateBoard();await wait(450);
+}
+const run_node=p=>store.run.board.nodes[p.node];
+async function startBoss(bossId,{level=null}={}){
+ const run=store.run,boss=bossById(bossId);if(!boss){await finishEncounter();return;}
+ const warp=!!run.warp,lair=castleName(boss);
+ const choice=await showDialog({title:`${boss.name} · ${boss.epithet||'Boss'}`,source:boss.source,rare:true,body:`${warp?'You reach the end of the warp zone.':'You reach the end of this level.'} ${lair} looms ahead. Fight together, win together: beat ${boss.name} to unlock a new character.`,html:`<div class="boss-intro"><span class="boss-icon">${e(boss.icon||'👹')}</span><b>${e(lair)}</b></div>`,choices:[{label:'Fight together!',value:'fight',primary:true},{label:warp?'Flee to the map':'Sneak past',value:'flee'}]});
+ if(choice===null||store.run!==run)return;
+ if(choice!=='fight'){if(warp){await exitWarpZone();}else await finishEncounter();return;}
+ await requestGame({id:'boss-'+boss.id,origin:'board'});
+}
+async function levelBoss(n){
+ const run=store.run;if(run.mutation||run.endless)return false;run.bossesSeen||={};if(run.bossesSeen[n.realm])return false;
+ ensureLevelBosses(run);const id=run.board.realms[n.realm]?.boss;if(!id)return false;
+ run.bossesSeen[n.realm]=true;saveRun();await startBoss(id,{level:n.realm});return true;
+}
+async function bossDone(game,coop){
+ const run=store.run;if(!run)return;store.busy=false;
+ if(coop?.won){(run.bossesBeaten||=[]).push(game.bossId);logRun(`${bossById(game.bossId)?.name||'The boss'} was defeated together.`);saveRun();if(run.warp)await exitWarpZone();else endTurn();return;}
+ const again=await showDialog({title:'The boss wins this round',source:game.source,body:'You are both flattened. Fight again, or retreat?',choices:[{label:'Fight again',value:'again',primary:true},{label:run.warp?'Retreat to the map':'Retreat',value:'no'}]});
+ if(store.run!==run)return;
+ if(again==='again'){store.busy=true;await requestGame({id:game.id,origin:'board'});return;}
+ if(run.warp)await exitWarpZone();else endTurn();
+}
 async function moveSteps(token){
  const run=store.run,p=run.players[run.current];p.mood='walking';
  while(run.pending?.left>0&&token===movementToken){
   const target=await stepTarget(run,p,token);if(token!==movementToken||store.run!==run)return;if(!target){if(routeOptions(run,p.node).length){store.busy=false;saveRun();return;}run.pending.left=0;break;}
   p.mood='walking';p.visited.push(p.node);reportJourney(journeyStep(run,p,p.node,target));const fromRealm=run.board.nodes[p.node]?.realm;p.node=target.id;run.pending.left--;delete run.pending.routeDecision;awardGate(p,target);setMusicZone(target.realm);focusBoardAction(run);saveRun();updateBoard();sound('tap');if(target.realm!==fromRealm&&!p.finishedPlayer){await announceLevel(p);if(token!==movementToken||store.run!==run)return;}if(p.finishedPlayer){run.pending.left=0;break;}await wait(store.profile.settings.reducedMotion?35:270);
  }
- if(token!==movementToken)return;p.mood='happy';run.phase='landing';run.pending={kind:'landing'};focusBoardAction(run);saveRun();store.busy=false;updateBoard();await resolveLanding();
+ if(token!==movementToken)return;await warpJump(p,token);if(token!==movementToken)return;p.mood='happy';run.phase='landing';run.pending={kind:'landing'};focusBoardAction(run);saveRun();store.busy=false;updateBoard();await resolveLanding();
 }
 
 async function resolveLanding(){const run=store.run,token=movementToken;if(!run||run.finished)return;store.busy=true;const p=run.players[run.current],n=run.board.nodes[p.node];focusBoardAction(run);updateBoard();reconcileGates(p);if(n.type==='trivia')journeyNow('trivia');else if(n.type==='item')journeyNow('item');if(run.itemDiscoveries?.length)await presentItemDiscoveries();if(store.run!==run||movementToken!==token)return;const trap=run.traps?.findIndex(t=>t.node===p.node&&t.owner!==run.current);if(trap>=0){const damage=run.traps[trap].damage||5;run.traps.splice(trap,1);const r=pointChange(p,p.cloak?0:-damage);toast(r.blocked?'A shield blocked the trap.':r.delta?`Trap · ${r.delta} points`:'Your cloak avoided a trap.');}
@@ -161,7 +210,9 @@ async function resolveLanding(){const run=store.run,token=movementToken;if(!run|
   case 'location':await visitLocation(n.location);break;
   case 'item':{const before=effectSnapshot(run);const cacheRandom=Number.isFinite(n.cacheSeed)?seededRandom(n.cacheSeed+':'+(n.cacheVisits||0)):random,tool=run.board.obstacles?.length&&(p.travelFinds||0)<2?nearbyTravelTool(run,p,cacheRandom):null,it=tool||randomItem(cacheRandom,{player:p,profile:store.profile}),found=acquireItem(run,store.profile,p,it);if(tool)p.travelFinds=(p.travelFinds||0)+1;n.cacheVisits=(n.cacheVisits||0)+1;logRun(`${p.name}: ${found.message}`);run.phase='event';run.pending={kind:'location-result',message:found.message,unlocked:found.unlocked,owner:found.owner};saveRun();if(found.unlocked.length){sound('unlock');if(!await unlockDialog(found.unlocked,found.owner)||store.run!==run||movementToken!==token)return;}await showDialog({title:'A useful find',source:it.source,body:found.message,html:`${effectHTML(before,{item:it})}<h3 style="text-align:center">${e(it.name)}</h3><div class="how-to">${e(itemDescription(it))}</div>`});if(store.run!==run||movementToken!==token)return;animateItemTransfers(before);await finishEncounter();break;}
   case 'bonus':case 'penalty':{const before=effectSnapshot(run);const fortune=themedFortune(n.type,random),delta=n.type==='bonus'?4:p.cloak?0:-3,r=pointChange(p,delta);logRun(`${p.name}: ${r.blocked?'penalty shield used':(r.delta>=0?'+':'')+r.delta+' points'}.`);run.phase='event';run.pending={kind:'location-result',message:r.blocked?'Your shield took the hit.':`${r.delta>=0?'+':''}${r.delta} points.`,unlocked:[]};saveRun();await showDialog({title:fortune.title,source:fortune.source,body:r.blocked?'Your shield took the hit.':fortune.body,html:`${effectHTML(before,{icon:r.delta<0?'⚡':'✦'})}<div class="reward-delta ${r.delta<0?'bad':''}">${r.delta>=0?'+':''}${r.delta}</div>`});if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}
-  case 'gate':case 'start':default:await finishEncounter();break;
+  case 'warp':await enterWarpZone();break;
+  case 'gate':if(run.board.format==='warp'){await startBoss(run.board.warp.bossId);break;}if(await levelBoss(n))break;await finishEncounter();break;
+  case 'start':default:await finishEncounter();break;
  }
 }
 async function resolveEvent(event,existingResult=null,returnToLanding=false){const run=store.run,token=movementToken;let pending;run.phase='event';pending=run.pending={kind:'event',event,applied:!!existingResult,result:existingResult,returnToLanding};const valid=()=>encounterActive(run,pending,token);saveRun();if(event.question&&!existingResult){const question=event.question;const answer=await showDialog({title:event.title+' · '+question.difficulty.toUpperCase(),source:event.source,body:question.q,seconds:triviaSeconds(question.difficulty),choices:shuffle(question.answers.map((label,i)=>({label,value:i,primary:false})),random)});if(answer===null||!valid())return;event={...event,question:null,answeredQuestion:question,e:['points',answer===question.correct?2:0],body:answer===question.correct?'Correct! +2 points.':(answer==='timeout'?'Time’s up! ':'')+'The answer was '+question.answers[question.correct]+'.'};if(question.id){run.triviaSeen=[...(run.triviaSeen||[]).filter(id=>id!==question.id),question.id].slice(-TRIVIA_QUESTIONS.length);store.profile.recentTrivia=[...store.profile.recentTrivia.filter(id=>id!==question.id),question.id].slice(-TRIVIA_QUESTIONS.length);saveProfile(store.profile);}run.pending.event=event;saveRun();}const continued=await showDialog({title:event.title,source:event.source,body:event.body,html:event.answeredQuestion?triviaExplanationHTML(event.answeredQuestion):event.rare?`<div class="event-reaction">${portraitHTML(run.players[run.current].character,'portrait big',event.effect==='large'?'silly':event.effect==='upside'?'sad':'angry')}</div>`:'',rare:event.rare,choices:[{label:existingResult?'Continue':'Resolve encounter',value:'ok',primary:true}]});if(continued===null||!valid())return;const before=effectSnapshot(run);const result=existingResult||applyEvent(run,store.profile,event,random);run.players[run.current].mood=/lost|lose|paid|stole|trap|slow|penalty/i.test(result.message)?'sad':'happy';reconcileGates(run.players[run.current]);if(event.e?.[0]==='horror')run.players[run.current].finishedPlayer=false;
@@ -266,7 +317,7 @@ document.addEventListener('input',event=>{if(event.target.id==='catalog-search')
 document.getElementById('dialog').addEventListener('cancel',event=>{event.preventDefault();const i=store.dialog?.choices.findIndex(c=>['cancel','no','stay'].includes(c.value));if(i>=0)resolveDialog(i);});
 window.addEventListener('pagehide',saveRun);window.addEventListener('orientationchange',()=>{if(store.view==='board'&&!store.session)setTimeout(()=>updateBoard(true),100);});
 installViewport(()=>{if(store.view==='board'&&!store.session&&!store.boardTour)repaintCamera();});installMedia();installBoardGestures();installPortraitCycle();applyPreferences();saveProfile(store.profile);showView('home');
-window.ShambConkins={version:VERSION,announceLevel,updateBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
+window.ShambConkins={version:VERSION,announceLevel,updateBoard,enterWarpZone,exitWarpZone,startBoss,bossDone,buildWarpBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
 
 function installBoardGestures(){let drag=null;document.addEventListener('pointerdown',ev=>{const map=ev.target.closest?.('#map-root');if(!map||store.busy||store.view!=='board')return;const svg=map.querySelector('svg'),rect=map.getBoundingClientRect(),view=svg?.getAttribute('viewBox')?.split(' ').map(Number);if(!view)return;drag={id:ev.pointerId,x:ev.clientX,y:ev.clientY,cx:view[0]+view[2]/2,cy:view[1]+view[3]/2,sx:view[2]/rect.width,sy:view[3]/rect.height};try{map.setPointerCapture(ev.pointerId);}catch{}});document.addEventListener('pointermove',ev=>{if(!drag||ev.pointerId!==drag.id||!store.run||store.busy||store.view!=='board'){drag=null;return;}if(Math.hypot(ev.clientX-drag.x,ev.clientY-drag.y)<6)return;store.suppressMapClickUntil=performance.now()+350;store.run.camera='follow';store.run.focusNodes=null;store.run.pan={x:drag.cx-(ev.clientX-drag.x)*drag.sx,y:drag.cy-(ev.clientY-drag.y)*drag.sy};repaintCamera();});document.addEventListener('pointerup',()=>{drag=null;});document.addEventListener('pointercancel',()=>{drag=null;});}
 

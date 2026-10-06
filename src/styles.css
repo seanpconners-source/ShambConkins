@@ -600,3 +600,21 @@ body.route-choosing .bottom-hud{display:none}
 @keyframes lvc-pop{from{opacity:0;transform:scale(.4) rotate(-3deg)}to{opacity:1;transform:none}}
 @keyframes lvc-flicker{0%,100%{filter:none}7%{filter:brightness(.4)}9%{filter:none}58%{filter:brightness(.55) saturate(1.5)}60%{filter:none}}
 @keyframes lvc-shake{0%,100%{transform:translate(0)}20%{transform:translate(-2px,1px)}40%{transform:translate(2px,-1px)}60%{transform:translate(-1px,-2px)}80%{transform:translate(1px,2px)}}
+
+/* ---- v0.46 Warp zones ---- */
+.warp-fx{position:fixed;inset:0;z-index:800;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle,#2a1160aa,#05030f 75%)}
+.warp-swirl{position:absolute;inset:-30%;border-radius:50%;background:repeating-conic-gradient(from 0deg,#7a4cff 0 12deg,#1a0f3a 12deg 24deg,#ff6bd5 24deg 36deg,#1a0f3a 36deg 48deg);-webkit-mask:radial-gradient(circle,transparent 6%,#000 55%);mask:radial-gradient(circle,transparent 6%,#000 55%);opacity:0}
+.warp-heads{position:relative;width:0;height:0}.warp-head{position:absolute;left:0;top:0;margin:-60px 0 0 -46px;filter:drop-shadow(0 6px 18px #000a)}.warp-head .portrait{width:92px;height:120px}
+.warp-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.warp-title{position:absolute;left:0;right:0;bottom:16%;text-align:center;color:#fff;opacity:0;text-shadow:0 4px 0 #0009,0 0 30px #7a4cff;padding:0 14px}.warp-title b{display:block;font-size:clamp(28px,8vw,66px);font-weight:900;letter-spacing:.05em}.warp-title small{display:block;margin-top:8px;font-size:clamp(12px,3vw,18px);font-weight:700;opacity:.92}
+.warp-castle-name{font:900 26px system-ui,sans-serif;fill:#2b2230;paint-order:stroke;stroke:#fff;stroke-width:6px}
+.warp-banner{font:900 54px system-ui,sans-serif;fill:#fff;paint-order:stroke;stroke:#00000066;stroke-width:8px}
+.warp-num{font:800 22px system-ui,sans-serif;fill:#5f7f55}
+.warp-tile-name{font:800 19px system-ui,sans-serif;fill:#25402c}
+.warp-card-text{font:900 38px system-ui,sans-serif;fill:#25402c}
+.warp-title-big{font:900 76px system-ui,sans-serif;fill:#25402c;opacity:.65}.warp-sub{font:700 28px system-ui,sans-serif;fill:#25402c;opacity:.6}
+.warp-level-num{font:900 34px system-ui,sans-serif;fill:#2b2230}
+.warp-room{font:800 30px Georgia,serif;fill:#fff3d0}
+.map-panel.realm-warp{border:3px solid #7a4cff}
+.board-svg .map-space.type-warp>*:first-child{filter:drop-shadow(0 0 6px #7a4cff)}
+.boss-castle-name{font:900 22px system-ui,sans-serif;fill:#2b2230;paint-order:stroke;stroke:#fff;stroke-width:6px;opacity:.95}

@@ -17,6 +17,7 @@ for (const c of C) {
 const horrorHolders = new Set(LOCATIONS.filter(l => l.realm === 'horror').flatMap(l => l.characters));
 const itemTargets = new Set(items.filter(i => i.kind === 'transform').map(i => i.value));
 const pairTargets = new Set([...(pairs.PAIR_RULES || pairs.PAIRS || []).flatMap(r => [...(r.unlock || []), r.winUnlock?.character].filter(Boolean))]);
+const bossUnlocks = new Set(req('src/data/bosses.js').BOSSES.map(b => b.unlockId));
 const labIds = new Set(cat.characters.filter(c => c.unlockBy === 'lab').map(c => c.id));
 const unreachable = [];
 for (const c of C) {
@@ -29,6 +30,7 @@ for (const c of C) {
   else if (rec.unlockBy === 'lab') ok = labIds.has(c.id);
   else if (rec.unlockBy === 'character-win') ok = C.some(x => x.id === rec.requires);
   else if (rec.unlockBy === 'game-win') ok = true;
+  else if (rec.unlockBy === 'boss') ok = bossUnlocks.has(c.id);
   if (!ok && !pairTargets.has(c.id)) unreachable.push(`${c.id} (${rec.unlockBy || 'random'}) ways=[${[...ways]}]`);
 }
 console.log(C.length, 'characters;', unreachable.length, 'without a working unlock path');

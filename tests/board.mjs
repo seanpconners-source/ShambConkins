@@ -16,6 +16,7 @@ for (let seed = 1; seed <= 300; seed++) {
     if (!r.lanes || r.lanes.length !== 3) fail(seed, realm + ' lanes'); else if (new Set(r.lanes.map(l => l.position)).size !== 3) fail(seed, realm + ' corridor clash');
     for (const lane of r.lanes || []) for (let i = 1; i < lane.ids.length; i++) if (board.nodes[lane.ids[i]].y < board.nodes[lane.ids[i - 1]].y - 1) fail(seed, 'road goes up ' + lane.ids[i]);
   }
+  { const warps = nodes.filter(n => n.type === 'warp'); if (warps.length !== 3) fail(seed, 'expected 3 warp pipes, got ' + warps.length); }
   stats.bridges += board.bridges.length; stats.landmarks += nodes.filter(n => n.type === 'location').length;
   if (board.bridges.length < 6) fail(seed, 'few bridges ' + board.bridges.length);
   // landmark boxes must not overlap

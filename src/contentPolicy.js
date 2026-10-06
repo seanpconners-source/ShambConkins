@@ -8,7 +8,8 @@ const {EXPANDED_TRIVIA_V42}=require("src/data/expandedTriviaV42.js");
 const {PARTY_TRIVIA}=require("src/data/partyTrivia.js");
 const {ITEM_PACK_V43}=require("src/data/itemPackV43.js");
 const {MOVIE_BOND_CHARACTERS, FACE_PACK_CHARACTERS}=require("src/data/movieBonds.js");
-const {NEW_CHARACTERS, HORROR_IDS}=require("src/data/legendsPack.js");
+const {NEW_CHARACTERS, HORROR_IDS, PERKS}=require("src/data/legendsPack.js");
+const {BOSSES, BOSS_CHARACTERS}=require("src/data/bosses.js");
 const {NEW_CHARACTERS2}=require("src/data/legendsPack2.js");
 const {LEGENDS_TRIVIA}=require("src/data/legendsTrivia.js");
 const {TRIVIA3}=require("src/data/trivia3.js");
@@ -34,6 +35,8 @@ ACTIVE_CATALOG.trivia.push(...PARTY_TRIVIA,...EXPANDED_TRIVIA_V42,...LEGENDS_TRI
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='bond'?MOVIE_BOND_CHARACTERS[0]:c.id==='chris-parent'?{...c,name:'Dad · Chris Conners',unlockHint:'Meet Dad at My Parents’ House or a Home encounter.'}:c.id==='angie-parent'?{...c,name:'Mom · Angie Conners',unlockHint:'Meet Mom at My Parents’ House or a Home encounter.'}:c);
 ACTIVE_CATALOG.characters.push(...MOVIE_BOND_CHARACTERS.slice(1),...FACE_PACK_CHARACTERS,...NEW_CHARACTERS);
 ACTIVE_CATALOG.characters.push(...NEW_CHARACTERS2);
+// Bosses: characters that only join by beating the boss (boss fights at each level gate and warp zone).
+ACTIVE_CATALOG.characters.push(...BOSS_CHARACTERS.filter(r=>!ACTIVE_CATALOG.characters.some(c=>c.id===r[0])).map(([id,name,source,icon,actor,perk,line])=>{const boss=BOSSES.find(b=>b.unlockId===id);return {id,name,source,icon,actor,assetKey:'char:'+id,unlockAt:999,perkType:perk,perk:PERKS[perk],unlockPhrase:line,unlockBy:'boss',unlockHint:`Beat ${boss?boss.name:name} in a boss fight at the end of a level or in a warp zone.`};}));
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='batman89'?{...c,name:'Batman · Michael Keaton',actor:'Michael Keaton'}:c);
 // The horror icons only appear in the Level IV horror route.
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>HORROR_IDS.includes(c.id)?{...c,unlockBy:'horror',unlockHint:c.id==='satan'?c.unlockHint:'Only found in the Level IV horror route. Look for their landmark deep in the dark.'}:c);

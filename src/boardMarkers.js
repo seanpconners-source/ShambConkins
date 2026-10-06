@@ -1,6 +1,7 @@
 // Visible shapes are 17–22 board units; transparent targets stay forgiving.
 const SPACE_SHAPES={
  start:'<path d="M0-18L16-10V9L0 19-16 9V-10Z"/>',
+ warp:'<circle r="19"/><circle class="chip-detail" r="12" fill="none" stroke-dasharray="4 3"/>',
  game:'<path d="M-17 0-9-16H9L17 0 9 16H-9Z"/>',
  event:'<path d="M0-19L16 0 0 19-16 0Z"/>',
  item:'<path d="M-16-12H7L17-2V15H-16Z"/>',

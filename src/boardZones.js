@@ -2,6 +2,7 @@ const {escapeHTML:e,hash,seededRandom}=require("src/utils.js");
 const {sceneProfile,locationSceneSVG}=require("src/locationScenes.js");
 const {venueFor}=require("src/venues.js");
 const {logoURL}=require("src/assets.js");
+const {ensureLevelBosses,bossById,castleName}=require("src/bossGate.js");
 // Journey-map rendering (board generation 7): terrain per road, smooth roads with
 // direction arrows, bridges, a crossroads signpost and landmark scenes beside the road.
 const LANE_STYLE=[
@@ -62,7 +63,14 @@ function realmBackdrop(board,realm,data,first,last){
  const W=board.width||1800,top=first?data.y-4000:data.y,height=data.height+(first?4000:0)+(last?4000:0);
  return `<rect x="${-W}" y="${top}" width="${W*3}" height="${height}" fill="${data.color||'#e4dcf0'}"/>`;
 }
+
+// A small stone castle behind the gate arch, flying a flag with the boss on it.
+function bossCastle(data,gate){
+ const boss=data.boss?bossById(data.boss):null;if(!boss)return '';
+ return `<g class="boss-castle" transform="translate(${gate.x},${gate.y-70})"><rect x="-86" y="-36" width="172" height="120" fill="#8c8478" stroke="#3b342c" stroke-width="5"/><rect x="-118" y="-84" width="46" height="168" fill="#9a9184" stroke="#3b342c" stroke-width="5"/><rect x="72" y="-84" width="46" height="168" fill="#9a9184" stroke="#3b342c" stroke-width="5"/>${[-118,-100,-82,72,90,108].map(x=>`<rect x="${x}" y="-102" width="12" height="18" fill="#9a9184" stroke="#3b342c" stroke-width="4"/>`).join('')}<path d="M0 -96V-170" stroke="#3b342c" stroke-width="5"/><path d="M0 -170l56 16-56 18z" fill="#c1272d" stroke="#3b342c" stroke-width="3"/><circle cx="0" cy="-30" r="30" fill="#fff7e0" stroke="#3b342c" stroke-width="5"/><text y="-17" text-anchor="middle" font-size="38">${e(boss.icon||'👹')}</text><text y="112" text-anchor="middle" class="boss-castle-name">${e(castleName(boss))}</text></g>`;
+}
 function zoneLayerSVG(run){
+ ensureLevelBosses(run);
  const board=run.board,realms=Object.entries(board.realms),W=board.width||1800;
  return realms.map(([realm,data],i)=>{
   const first=i===0,last=i===realms.length-1,lanes=(data.lanes||[]).map((l,li)=>({...l,key:realm+':'+l.lane}));
@@ -72,7 +80,7 @@ function zoneLayerSVG(run){
    <text x="900" y="${data.y+(camp?camp.y-70:60)}" text-anchor="middle" class="jr-realm-word">${e(title)}</text>
    ${lanes.map(l=>lanePanel(run,data,l)).join('')}
    ${camp?`<g transform="translate(${camp.x-92},${camp.y+8})"><path d="M0 40L32 -6L64 40Z" fill="#d9894b" stroke="#6b3a1c" stroke-width="3"/><path d="M32 -6L32 40" stroke="#6b3a1c" stroke-width="3"/><path d="M-8 44H72" stroke="#6b3a1c" stroke-width="4"/></g>`:''}
-   ${gate?`<g transform="translate(${gate.x},${gate.y-6})"><path d="M-110 50V-30Q0 -110 110 -30V50" fill="none" stroke="#9a7020" stroke-width="16" stroke-linecap="round"/><path d="M-110 50V-30Q0 -110 110 -30V50" fill="none" stroke="#f0cb57" stroke-width="8" stroke-linecap="round"/><text y="-52" text-anchor="middle" class="jr-gate-word">GATE</text></g>`:''}
+   ${gate?bossCastle(data,gate):''}${gate?`<g transform="translate(${gate.x},${gate.y-6})"><path d="M-110 50V-30Q0 -110 110 -30V50" fill="none" stroke="#9a7020" stroke-width="16" stroke-linecap="round"/><path d="M-110 50V-30Q0 -110 110 -30V50" fill="none" stroke="#f0cb57" stroke-width="8" stroke-linecap="round"/><text y="-52" text-anchor="middle" class="jr-gate-word">${data.boss&&bossById(data.boss)?e(bossById(data.boss).name.toUpperCase()):'GATE'}</text></g>`:''}
   </g>`;
  }).join('');
 }

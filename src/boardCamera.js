@@ -2,8 +2,8 @@ const {clamp}=require("src/utils.js");
 function worldNode(run,n){if(run.board.format==='original-trail'||n.worldSpace)return n;const offset=['mind','body','spirit','horror','upside-down'].indexOf(n.realm);return {...n,x:n.x*1.5,y:n.y*1.75+Math.max(0,offset)*1000};}
 // The camera and renderer share the same head coordinates, including large avatars.
 // Journey-map boards (generation 7) pack spaces closer together, so heads are drawn smaller and the camera sits further back.
-const pieceScale=run=>run.board.generation>=7?.72:1;
-const baseSpan=run=>run.board.generation>=7?1500:720;
+const pieceScale=run=>run.board.pieceScale||(run.board.generation>=7?.72:1);
+const baseSpan=run=>run.board.baseSpan||(run.board.generation>=7?1500:720);
 function boardPiecePoint(run,p,i){const n=worldNode(run,run.board.nodes[p.node]),size=p.large?2:1,k=pieceScale(run);return {x:clamp(n.x+(i?46:-46)*k,44*size*k,(run.board.width||1800)-44*size*k),y:Math.max(44*size*k,n.y-48*k)};}
 function focusBoardAction(run,ids=null){
  if(!run)return;run.camera='follow';run.pan=null;

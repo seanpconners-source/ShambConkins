@@ -11,8 +11,8 @@ const CSS=`
 .pk-stage{position:relative;flex:1;min-height:0;border-radius:16px;display:flex;flex-direction:column;color:#fff;background:var(--pk-bg,#1d2340);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;font-family:Arial,Helvetica,sans-serif;--pk-accent:#ff4f81}
 .pk-stage *{box-sizing:border-box}
 .pk-stage.noscroll{overflow:hidden}
-.pk-screen{margin:auto 0;padding:clamp(10px,2.4vh,22px) clamp(10px,3vw,24px);display:flex;flex-direction:column;gap:clamp(8px,1.6vh,14px);width:100%;max-width:880px;margin-left:auto;margin-right:auto}
-.pk-stage h1,.pk-stage h2,.pk-stage h3,.pk-stage p{margin:0}
+.pk-screen{flex-shrink:0;margin:auto 0;padding:clamp(10px,2.4vh,22px) clamp(10px,3vw,24px);display:flex;flex-direction:column;gap:clamp(8px,1.6vh,14px);width:100%;max-width:880px;margin-left:auto;margin-right:auto}
+.pk-stage h1,.pk-stage h2,.pk-stage h3,.pk-stage p{margin:0;color:inherit;font-family:inherit}
 .pk-over{font:800 11px/1 Arial;letter-spacing:.16em;text-transform:uppercase;opacity:.75;text-align:center}
 .pk-h1{font:900 clamp(22px,5.4vw,40px)/1.05 Arial;text-align:center;letter-spacing:-.01em;text-shadow:0 3px 0 rgba(0,0,0,.25)}
 .pk-q{font:800 clamp(19px,4.6vw,30px)/1.22 Arial;text-align:center;text-wrap:balance}

@@ -144,4 +144,8 @@ function gestureHint(x,px,py,kind,t,{color='#fff',size=26}={}){
  x.restore();
 }
 
-Object.assign(exports,{PCOL,PDARK,PLIGHT,FONT,rr,outlined,heart,snd,noise,jingle,Fx,arenaKeys,arenaTouch,Countdown,banner,mmss,gestureHint,reduced});
+// The canvas starts at a placeholder size and is fitted to its frame on the next animation frames; wait for that
+// before measuring s.W/s.H for layout decisions.
+async function settle(s){s.queueCanvasFit?.();for(let i=0;i<3;i++)await new Promise(r=>requestAnimationFrame(r));s.fitCanvas?.();return s.alive;}
+
+Object.assign(exports,{settle,PCOL,PDARK,PLIGHT,FONT,rr,outlined,heart,snd,noise,jingle,Fx,arenaKeys,arenaTouch,Countdown,banner,mmss,gestureHint,reduced});

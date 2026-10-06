@@ -7,9 +7,9 @@ const HIPPO=['#6f8dff','#ff86b6'],HIPPO_DARK=['#2f46b8','#b8386f'];
 const GAME_TIME=60,FRENZY=10;
 
 function geo(W,H){
- const u=clamp(Math.min(W/1000,H/560),.5,1.25),pit=clamp(H*.15,56,100),top=clamp(H*.09,34,54),m=10*u;
- const rH=Math.max(20,25*u),y0=top,y1=H-pit;
- return {u,pit,top,m,x0:m,x1:W-m,y0,y1,bx:[W*.25,W*.75],by:H-pit*.38,rM:Math.max(8,11*u),rH,rE:rH*1.18,R:Math.hypot(W*.27,y1-y0)*.95,cx:W/2,cy:(y0+y1)/2,restY:y1+rH*.15};
+ const u=clamp(Math.min(W/900,H/500),.55,1.3),pit=clamp(H*.17,62,112),top=clamp(H*.09,34,54),m=10*u;
+ const rH=Math.max(26,33*u),y0=top,y1=H-pit;
+ return {u,pit,top,m,x0:m,x1:W-m,y0,y1,bx:[W*.25,W*.75],by:H-pit*.38,rM:Math.max(10,13*u),rH,rE:rH*1.18,R:Math.hypot(W*.27,y1-y0)*.95,cx:W/2,cy:(y0+y1)/2,restY:y1+rH*.15};
 }
 const mkHead=i=>({i,x:0,y:0,state:'rest',tx:0,ty:0,mouth:0,squash:0,cd:0,holdT:0,tired:0,touch:null,score:0,chomps:0,eaten:0,best:0,flash:0,hx:0,hy:-1});
 
@@ -157,11 +157,11 @@ async function hippos(s){
   // body
   x.fillStyle=hd;x.beginPath();x.ellipse(bx,by+pit*.08,pit*1.05,pit*.62,0,0,6.283);x.fill();x.fillStyle=hp;x.beginPath();x.ellipse(bx,by,pit*1.0,pit*.58,0,0,6.283);x.fill();
   x.fillStyle='#ffffff30';x.beginPath();x.ellipse(bx-pit*.25,by-pit*.2,pit*.5,pit*.16,-.2,0,6.283);x.fill();
-  outlined(x,String(h.score),bx,by+pit*.08,{size:Math.max(20,pit*.62),fill:'#fff',stroke:hd,lw:Math.max(4,pit*.1)});
   // neck
   const nx=h.x,ny=h.y,len=Math.hypot(nx-bx,ny-by),nw=g.rH*1.35;
   x.lineCap='round';x.strokeStyle=hd;x.lineWidth=nw+6;x.beginPath();x.moveTo(bx,by);x.lineTo(nx,ny);x.stroke();x.strokeStyle=hp;x.lineWidth=nw;x.beginPath();x.moveTo(bx,by);x.lineTo(nx,ny);x.stroke();
   x.strokeStyle='#ffffff2a';x.lineWidth=nw*.35;x.setLineDash([g.rH*.7,g.rH*.9]);x.lineDashOffset=-len*.5;x.beginPath();x.moveTo(bx,by);x.lineTo(nx,ny);x.stroke();x.setLineDash([]);
+  outlined(x,String(h.score),bx,by+pit*.12,{size:Math.max(20,pit*.55),fill:'#fff',stroke:hd,lw:Math.max(4,pit*.09)});
   // head
   const sq=1+h.squash*.22,ang=Math.atan2(h.hy,h.hx),open=h.mouth*.95;
   x.save();x.translate(nx,ny);x.rotate(ang);x.scale(sq,1/sq*(1+h.squash*.05));
@@ -181,7 +181,7 @@ async function hippos(s){
   x.fillStyle=hd;x.beginPath();x.arc(R*.78,-R*.3,R*.07,0,6.283);x.arc(R*.78,R*.3,R*.07,0,6.283);x.fill();
   x.restore();
   // the player's face on the hippo's forehead
-  s.sprite(x,i,nx-h.hx*R*.32,ny-h.hy*R*.32-R*.05,R*1.95,{exact:true,mood:h.flash>0?'win':h.state==='rest'?'walking':'angry'});
+  s.sprite(x,i,nx-h.hx*R*.5,ny-h.hy*R*.5,R*1.55,{exact:true,mood:h.flash>0?'win':h.state==='rest'?'walking':'angry'});
   if(h.tired>0){x.fillStyle='#bfe9ff';for(let k=0;k<3;k++){x.beginPath();x.arc(nx+Math.sin(time*9+k*2)*R*.9,ny-R*1.1-((time*60+k*20)%30),3,0,6.283);x.fill();}}
  };
  const draw=()=>{

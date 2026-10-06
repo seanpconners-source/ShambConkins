@@ -84,6 +84,8 @@ function buildMultiPathBoard(board){
    }
    let gap=0;for(const id of path){const n=board.nodes[id];if(playable.has(n.type))gap=0;else if(++gap>=3&&['event','bonus','penalty'].includes(n.type)){n.type='game';gap=0;}}
   });
+  // One warp pipe per realm, hidden among the encounter spaces of an adventurous lane.
+  {const lane=1+Math.floor(random()*2),path=tracks[lane],pick=path.map((id,i)=>({id,i})).filter(q=>q.i>=4&&q.i<path.length-4&&['event','bonus','penalty','game'].includes(board.nodes[q.id].type)&&!board.nodes[q.id].location);if(pick.length)board.nodes[pick[Math.floor(random()*pick.length)].id].type='warp';}
   data.cols=gate.col;data.paths=tracks;data.lanes=laneInfo;data.fork=fork;data.stem=stem;board.pathNetworks.push({realm,fork,paths:tracks,lengths,difficulties:DIFFICULTY});
   for(const route of cards){const n=board.nodes[route.entry];board.signs.push({name:route.name,source:route.source,x:n.x,y:n.y-65,level:realm.toUpperCase(),branch:true,routeEntry:route.entry,routeId:route.id});}
  }

@@ -129,8 +129,11 @@ const ROWS=[
 ['spicy','If {S} found a wallet with $500 in it, they would…','👮 Turn it in immediately','🪪 Track down the owner, hero style','📞 Ask me what to do','😇 Give it back and keep the “reward” snacks']
 ];
 
-function fill(text,{you,name,other}){
+const CONJ={is:'are',has:'have',does:'do',was:'were',gets:'get',walks:'walk',says:'say',falls:'fall',sings:'sing',loses:'lose',tells:'tell',wins:'win',brings:'bring',spots:'spot',wants:'want',takes:'take',goes:'go',eats:'eat',orders:'order',picks:'pick',spends:'spend',steals:'steal'};
+function fill(text,{you,name,other,q}){
  let t=String(text);
+ if(q&&you)t=t.replace(/\bthey\b/g,'you').replace(/\btheir\b/g,'your');
+ if(you)t=t.replace(/\{S\}(\s+)([a-z]+)/g,(m,sp,w)=>'{S}'+sp+(CONJ[w]||w));
  t=t.replace(/\[([^|\]]+)\|([^\]]+)\]/g,(m,a,b)=>you?a:b);
  t=t.replace(/\{Ss\}/g,you?'your':name+'’s');
  t=t.replace(/\{S\}/g,you?'you':name);
