@@ -57,7 +57,7 @@ async function coneChaos(s){
  const beep=(f,d=.07,v=.04,type='triangle')=>{if(store.profile?.settings.sound)tone(f,d,v,type);};
  const rule=()=>rules[round],activeTest=()=>flipped?rule().flip.test:rule().test,activeText=()=>flipped?rule().flip.text:rule().text;
  const mult=()=>Math.min(4,1+Math.floor(combo/5))*(rule()?.double?2:1);
- function layout(){const W=s.W,H=s.H,top=Math.min(118,H*.2),bottom=Math.min(60,H*.1),portrait=H>W*1.1,cols=portrait?3:4,rows=portrait?4:3,cw=W/cols,ch=(H-top-bottom)/rows;return {W,H,top,bottom,cols,rows,cw,ch,r:Math.min(cw,ch)*.36};}
+ function layout(){const W=s.W,H=s.H,top=Math.min(118,H*.2),bottom=Math.min(60,H*.1),portrait=H>W*1.1,cols=portrait?3:4,rows=portrait?4:3,cw=W/cols,ch=(H-top-bottom)/rows;return {W,H,top,bottom,cols,rows,cw,ch,r:Math.min(cw,ch)*(portrait?.36:.4)};}
  function slotPos(slot,L=layout()){const col=slot%L.cols,row=Math.floor(slot/L.cols);return {x:(col+.5)*L.cw,y:L.top+(row+.5)*L.ch};}
  const colorOf=(o,age)=>o.morph&&age>=o.ttl*o.morph.at?o.morph.to:o.color;
  function startRound(i){round=i;clock=0;flipped=false;items=[];flash={text:rules[i].title.toUpperCase(),age:0};sound('handoff');}
