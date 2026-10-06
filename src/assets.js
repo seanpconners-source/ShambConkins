@@ -19,8 +19,9 @@ function portraitFallbackURL(id) {
  if(portraitFallbackCache.has(id))return portraitFallbackCache.get(id);
  if(id==='mars-attacker')return martianPortrait();
  if(id==='emilio-estevez'){const url=emilioPortrait();portraitFallbackCache.set(id,url);return url;}
- const c=character(id),hue=hash(id)%360,initials=c.name.split(' ').slice(0,2).map(word=>word[0]).join('');
- const url=svgURL(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="120 50 272 318"><path d="M151 175q-8-108 105-108t105 108v66q-14 99-105 111-91-12-105-111z" fill="#e8d8c2"/><path d="M151 175q-8-108 105-108t105 108l-45-33-60-13-61 16z" fill="hsl(${hue} 28% 24%)"/><text x="256" y="228" text-anchor="middle" font-family="Arial,sans-serif" font-size="76" fill="#25303a">${escapeHTML(initials)}</text></svg>`);
+ const c=character(id),hue=hash(id)%360,initials=c.name.replace(/[^A-Za-z0-9 .·]/g,'').split(/[ ·]+/).filter(Boolean).slice(0,2).map(word=>word[0]).join('').toUpperCase(),icon=c.icon&&c.icon.length<=4?c.icon:'';
+ // A characterful stand-in until a real photo loads: hue-coloured head silhouette, the character's emoji and initials.
+ const url=svgURL(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="120 50 272 318"><defs><radialGradient id="g" cx="50%" cy="38%" r="70%"><stop offset="0" stop-color="hsl(${hue} 62% 70%)"/><stop offset="1" stop-color="hsl(${hue} 48% 38%)"/></radialGradient></defs><path d="M151 175q-8-108 105-108t105 108v66q-14 99-105 111-91-12-105-111z" fill="url(#g)" stroke="hsl(${hue} 40% 24%)" stroke-width="6"/>${icon?`<text x="256" y="236" text-anchor="middle" font-size="124">${escapeHTML(icon)}</text>`:''}<text x="256" y="${icon?'328':'250'}" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="${icon?'40':'86'}" fill="#fff" stroke="hsl(${hue} 40% 20%)" stroke-width="3" paint-order="stroke">${escapeHTML(initials)}</text></svg>`);
  portraitFallbackCache.set(id,url);return url;
 }
 function logoURL(source = 'ShambConkins') {

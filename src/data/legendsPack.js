@@ -27,7 +27,7 @@ const ROWS=[
  ['mk-baraka','Baraka','Mortal Kombat','🔪','Baraka (Mortal Kombat)','survivor','Blades out. Nothing gets through.'],
  ['mk-ermac','Ermac','Mortal Kombat','🟥','Ermac','survivor','Many souls, one shield.'],
  ['mk-noob-saibot','Noob Saibot','Mortal Kombat','🌑','Noob Saibot','scavenger','Steps out of the shadows with something useful.'],
- ['jesus','Jesus','South Park','✝️','Jesus','survivor','Turns water into a penalty shield. Pays rent in miracles.'],
+ ['jesus','Jesus Christ','Christianity','✝️','Jesus','survivor','Turns water into a penalty shield. Pays rent in miracles.'],
  ['nsync-justin','Justin · *NSYNC','*NSYNC','🎤','Justin Timberlake','explorer','Bringing sexy back to every landmark.'],
  ['nsync-jc','JC · *NSYNC','*NSYNC','🎶','JC Chasez','explorer','Falsetto. Every landmark is a stage.'],
  ['nsync-chris','Chris · *NSYNC','*NSYNC','🕺','Chris Kirkpatrick','scavenger','Curly-haired and resourceful.'],
@@ -46,7 +46,7 @@ const ROWS=[
  ['beatles-george','George Harrison','The Beatles','🪕','George Harrison','scavenger','Something in the way he finds supplies.'],
  ['beatles-ringo','Ringo Starr','The Beatles','🥁','Ringo Starr','survivor','Gets by with a little help from a shield.'],
  // Special unlocks.
- ['satan','Satan','South Park','😈','Satan','scavenger','Collects a favor at every gate. Pays in sulphur.',{unlockBy:'horror',hint:'Only found in the Level IV horror route: his portal is hidden in Hell.'}],
+ ['satan','Satan · Lord of Darkness','Legend','😈','Tim Curry','scavenger','Collects a favor at every gate. Pays in sulphur. Bring a unicorn.',{unlockBy:'horror',hint:'Only found in the Level IV horror route: his portal is hidden in Hell.'}],
  ['bond-64','James Bond · GoldenEye 64','GoldenEye','🕹️','','competitor','Four-player split screen. Proximity mines. Slappers only.',{unlockBy:'character-win',requires:'bond-brosnan',hint:'Play as James Bond · Pierce Brosnan and win a minigame to unlock his N64 self.'}]
 ];
 const NEW_CHARACTERS=ROWS.map(([id,name,source,icon,actor,perk,line,extra={}])=>({
