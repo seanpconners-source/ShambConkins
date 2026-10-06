@@ -1,2 +1,2 @@
-const VERSION='0.45.0';
+const VERSION='0.46.0';
 Object.assign(exports,{VERSION});

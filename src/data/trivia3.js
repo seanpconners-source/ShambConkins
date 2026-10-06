@@ -814,11 +814,9 @@ h|On which Cartoon Network block did Metalocalypse air?|Adult Swim|Toonami|Carto
 @The Eric Andre Show|comedy|The_Eric_Andre_Show
 e|On which Cartoon Network late-night block does The Eric Andre Show air?|Adult Swim|Toonami|Comedy Central|MTV2|It premiered in 2012.
 e|What does Eric Andre destroy at the start of each episode?|His desk|The microphone|The guest's chair|The camera|The desk smash is the show's signature opening.
-m|Which comedian is Eric Andre's longtime co-host and sidekick?|Hannibal Buress|Kevin Hart|Chris Rock|Aziz Ansari|He is also a stand-up comic.
 m|Which hidden-camera comedy film stars Eric Andre and Lil Rel Howery?|Bad Trip|Borat|Jackass Presents: Bad Grandpa|Dumb and Dumber To|Kitao Sakurai directed it.
 @Joe Pera Talks With You|comedy|Joe_Pera_Talks_with_You
 e|In which U.S. state is Joe Pera Talks With You set?|Michigan|Wisconsin|Minnesota|Maine|It takes place in Marquette in the Upper Peninsula.
-m|What is Joe Pera's job in the show?|Middle school choir teacher|Local newscaster|Barista|Librarian|He talks softly to viewers about small joys.
 m|Which actress plays Joe's girlfriend Sarah?|Jo Firestone|Amy Poehler|Aubrey Plaza|Kate Berlant|She is also a stand-up comic and writer.
 @On Cinema at the Cinema|comedy|On_Cinema
 m|Which two comedians star in On Cinema at the Cinema?|Tim Heidecker and Gregg Turkington|Tim Robinson and Sam Richardson|Eric Wareheim and Tim Heidecker|Bob Odenkirk and David Cross|It began as a movie review show.
@@ -840,10 +838,8 @@ m|Where do Howard and Vince work in the first series?|Zooniverse|The Nabootique|
 h|Which Mighty Boosh star later co-hosted The Great British Bake Off from 2017?|Noel Fielding|Julian Barratt|Rich Fulcher|Richard Ayoade|He joined Matt Lucas as presenter.
 h|Which actor plays Bob Fossil, manager of the Zooniverse?|Rich Fulcher|Richard Ayoade|Dave Brown|Michael Fielding|He is American.
 @Toast of London|comedy|Toast_of_London
-m|Who plays washed-up actor Steven Toast?|Matt Berry|Richard Ayoade|Robert Bathurst|Harry Peacock|Berry also starred in The IT Crowd.
 h|On which British channel did Toast of London air?|Channel 4|BBC Two|ITV|Sky One|It ran from 2012 to 2015.
 @What We Do in the Shadows|comedy|What_We_Do_in_the_Shadows_(TV_series)
-e|In which New York borough is the TV series What We Do in the Shadows set?|Staten Island|Brooklyn|Queens|The Bronx|The vampires live in an old house.
 m|Which actor plays Laszlo Cravensworth?|Matt Berry|Kayvan Novak|Mark Proksch|Harvey Guillén|He previously starred in Toast of London.
 m|What kind of vampire is Colin Robinson?|An energy vampire|A psychic vampire|A blood drinker|A shapeshifter|He feeds on boring conversation.
 m|Which actor plays Guillermo de la Cruz?|Harvey Guillén|Kayvan Novak|Mark Proksch|Matt Berry|He is Nandor's loyal familiar.
@@ -869,32 +865,50 @@ m|Which bands' T-shirts do Beavis and Butt-Head wear?|AC/DC and Metallica|Nirvan
 m|Which animated series is a spin-off of Beavis and Butt-Head?|Daria|King of the Hill|Celebrity Deathmatch|Aeon Flux|Daria Morgendorffer was a classmate.
 h|Which actors voice Muddy and Dallas Grimes in Beavis and Butt-Head Do America?|Bruce Willis and Demi Moore|Tom Cruise and Nicole Kidman|Arnold Schwarzenegger and Linda Hamilton|John Travolta and Kirstie Alley|The film was released in 1996.
 @Tim & Eric|comedy|Tim_and_Eric_Awesome_Show,_Great_Job!
-m|Which two performers created Tim and Eric Awesome Show, Great Job!?|Tim Heidecker and Eric Wareheim|Tim Robinson and Eric Andre|Bob Odenkirk and David Cross|Tim Meadows and Eric Idle|It premiered on Adult Swim in 2007.
-m|Which actor plays Dr. Steve Brule?|John C. Reilly|Zach Galifianakis|Will Ferrell|Paul Rudd|He starred in the spin-off Check It Out! with Dr. Steve Brule.
 h|Which feature film did Tim and Eric release in 2012?|Tim and Eric's Billion Dollar Movie|Mister America|Bad Trip|Cinco: The Movie|The plot has them blow a billion-dollar budget.
 @Double Dare|nick|Double_Dare_(1986_game_show)
-e|Who hosted the original Double Dare on Nickelodeon?|Marc Summers|Mike O'Malley|Kirk Fogg|Phil Moore|He also later hosted Unwrapped on Food Network.
 e|What substance is Double Dare most famous for?|Green slime|Chocolate pudding|Purple goo|Whipped cream|Contestants were frequently covered in it.
 m|In which year did Double Dare premiere on Nickelodeon?|1986|1984|1988|1990|It ran for several years with Marc Summers as host.
 m|Which Canadian show popularized on-screen sliming before Nickelodeon adopted it?|You Can't Do That on Television|Kids Incorporated|Mr. Dressup|Degrassi|Nickelodeon aired it in the US.
 h|Which YouTube star hosted the 2018 revival of Double Dare?|Liza Koshy|Lilly Singh|Joey Graceffa|Colleen Ballinger|The revival premiered in 2018.
 @Legends of the Hidden Temple|nick|Legends_of_the_Hidden_Temple
-e|What is the name of the talking stone head that hosts Legends of the Hidden Temple?|Olmec|Moctezuma|Pacal|Kukulkan|He addresses teams in a booming voice.
-m|Who hosted Legends of the Hidden Temple?|Kirk Fogg|Marc Summers|Mike O'Malley|Phil Moore|The show ran from 1993 to 1995.
 m|Which famous voice actor performed Olmec?|Dee Bradley Baker|Mike Judge|Billy West|Rob Paulsen|He also voices Perry the Platypus.
 h|Which of these was a real team name on Legends of the Hidden Temple?|Silver Snakes|Gold Geckos|Pink Panthers|Yellow Yaks|Teams were named for colors and animals.
 h|Where was Legends of the Hidden Temple filmed?|Nickelodeon Studios at Universal Orlando|Hollywood|Montreal|Burbank|It was part of Universal Studios Florida.
 @GUTS|nick|GUTS_(TV_series)
-e|What was the name of the final climbing challenge in GUTS?|The Aggro Crag|The Temple Run|The Giant Slide|The Slime Pit|Winners got a trophy in the shape of the crag.
 m|Which host of GUTS later played Burt Hummel on Glee?|Mike O'Malley|Phil Moore|Marc Summers|Kirk Fogg|He is also known for the sitcom Yes, Dear.
 @Nick Arcade|nick|Nick_Arcade
 m|What technology did Nick Arcade's Video Zone use to put contestants inside a game world?|Chroma key|Motion capture|3D rendering|Stop motion|Contestants appeared in front of a blue screen.
 h|Who hosted the Nickelodeon game show Nick Arcade?|Phil Moore|Marc Summers|Mike O'Malley|Kirk Fogg|The show was set in a video-game arcade.
 @Are You Afraid of the Dark?|nick|Are_You_Afraid_of_the_Dark?
-e|What is the group that tells scary stories around a campfire in Are You Afraid of the Dark?|The Midnight Society|The Camp Crew|The Spook Club|The Fireside Club|They begin each meeting by tossing dust into the fire.
 m|In which country was the original show filmed?|Canada|United States|United Kingdom|Australia|It was produced in Montreal.
 m|Who created the series?|D.J. MacHale|R.L. Stine|Chris Carter|Rod Serling|He also wrote The Pendragon Adventure.
 h|What phrase begins each story told by a member?|Submitted for the approval of the Midnight Society|Once upon a midnight dreary|Gather round and listen|Welcome to the fire|It's a recurring ritual line.
+@Rugrats|nick|Rugrats
+e|Which three Nicktoons premiered together in August 1991?|Doug, Rugrats and The Ren & Stimpy Show|SpongeBob, Rugrats and Doug|Hey Arnold!, Rocko and CatDog|Rugrats, Hey Arnold! and Angry Beavers|They launched Nickelodeon's original animation lineup.
+e|Who is the fearless leader of the babies in Rugrats?|Tommy Pickles|Chuckie Finster|Phil DeVille|Dil Pickles|He carries a screwdriver in his diaper.
+m|Which actress originally voiced the timid Chuckie Finster?|Christine Cavanaugh|Cheryl Chase|E.G. Daily|Nancy Cartwright|She also voiced Dexter in Dexter's Laboratory.
+m|Which actress voices Tommy Pickles?|E.G. Daily|Cheryl Chase|Kath Soucie|Tara Strong|She also voices Buttercup in The Powerpuff Girls.
+m|Who voices the bossy Angelica Pickles?|Cheryl Chase|E.G. Daily|Cree Summer|Kath Soucie|She was with the show from its debut.
+m|Which character is introduced as a new baby in The Rugrats Movie?|Dil Pickles|Kimi Finster|Susie Carmichael|Lil DeVille|The 1998 film also introduced the new addition to the Pickles family.
+m|Which actress voices Susie Carmichael?|Cree Summer|Cheryl Chase|Kath Soucie|Tara Strong|She is also known for voicing Elmyra on Tiny Toon Adventures.
+h|Which actress voices both Phil and Lil DeVille?|Kath Soucie|E.G. Daily|Cheryl Chase|Melanie Chartoff|She also voiced Dee Dee in some Dexter's Laboratory episodes.
+@Hey Arnold!|nick|Hey_Arnold!
+e|What is the name of the fictional city where Hey Arnold! is set?|Hillwood|Springfield|Shermer|Townsville|It is a blend of several American cities.
+e|What is Arnold's famous nickname because of his head's shape?|Football Head|Hammerhead|Egghead|Squarehead|Helga uses it constantly.
+m|What is the name of the boarding house where Arnold lives with his grandparents?|The Sunset Arms|The Hillwood Inn|Pookie's Place|Gertie Arms|It is full of eccentric tenants.
+h|Who created Hey Arnold!?|Craig Bartlett|Joe Murray|Jim Jinkins|Arlene Klasky|He also created Dinosaur Train.
+h|What was the title of the 2017 TV film that continued the story of the missing parents?|The Jungle Movie|The Movie|Return to Hillwood|The Last Call|It aired on Nickelodeon years after the series ended.
+@Rocko's Modern Life|nick|Rocko's_Modern_Life
+e|What kind of animal is Rocko?|A wallaby|A kangaroo|A koala|A wombat|He is from Australia.
+m|Which of Rocko's friends is a steer?|Heffer Wolfe|Filburt|Mr. Bighead|Spunky|He loves eating food of all kinds.
+m|Who created Rocko's Modern Life?|Joe Murray|John Kricfalusi|Craig McCracken|Genndy Tartakovsky|He also created Camp Lazlo.
+h|Which actor voiced Rocko and later played Lt. Dangle on Reno 911!?|Carlos Alazraqui|Tom Kenny|Charlie Adler|Doug Lawrence|Dangle wears very short shorts.
+h|What was the title of the 2019 Netflix special that revived Rocko?|Static Cling|Return to O-Town|Wallaby Reborn|Modern Life Again|It reunited the original voice cast.
+@Ren & Stimpy|nick|The_Ren_%26_Stimpy_Show
+e|What kind of animals are Ren and Stimpy?|A chihuahua and a cat|A dog and a mouse|Two cats|A rabbit and a pig|Ren is a grumpy chihuahua.
+m|Who created The Ren & Stimpy Show?|John Kricfalusi|Joe Murray|Mike Judge|Genndy Tartakovsky|He was fired from the show in 1992.
+m|Which actor voiced Stimpy and later Fry on Futurama?|Billy West|Tom Kenny|Maurice LaMarche|John DiMaggio|He also voiced Doug Funnie.
 `;
 const levels={e:'easy',m:'medium',h:'hard',i:'impossible'};
 function parseFacts(text){let source,category,page;return text.trim().split('\n').filter(Boolean).flatMap(line=>{
@@ -936,6 +950,7 @@ const TRIVIA3_THEMES=[
  {tag:'weirdcomedy',title:'Weird Comedy · Metalocalypse, Eric Andre, Joe Pera & On Cinema',icon:'🎸',source:'Metalocalypse',description:'Dethklok, desk-smashing talk shows, choir teachers and the On Cinema universe.',sources:['Metalocalypse','The Eric Andre Show','Joe Pera Talks With You','On Cinema at the Cinema']},
  {tag:'ukcomedy',title:'Flats, Fangs & Zooniverse · Peep Show, Boosh & Shadows',icon:'🧛',source:'What We Do in the Shadows',description:'Peep Show, The Mighty Boosh, Toast of London and What We Do in the Shadows.',sources:['Peep Show','The Mighty Boosh','Toast of London','What We Do in the Shadows']},
  {tag:'adultswim',title:'Adult Swim Basement · Aqua Teen, Space Ghost, Beavis & Tim and Eric',icon:'🍔',source:'Aqua Teen Hunger Force',description:'Master Shake, Zorak, Beavis and Butt-Head, Dr. Steve Brule and late-night cartoon weirdness.',sources:['Aqua Teen Hunger Force','Space Ghost Coast to Coast','Beavis and Butt-Head','Tim & Eric']},
- {tag:'nickgames',title:'Slimed! · Nickelodeon Game Shows & Scares',icon:'🟢',source:'Double Dare',description:'Double Dare, GUTS, Legends of the Hidden Temple, Nick Arcade and Are You Afraid of the Dark?',sources:['Double Dare','Legends of the Hidden Temple','Nick Arcade','GUTS','Are You Afraid of the Dark?']}
+ {tag:'nickgames',title:'Slimed! · Nickelodeon Game Shows & Scares',icon:'🟢',source:'Double Dare',description:'Double Dare, GUTS, Legends of the Hidden Temple, Nick Arcade and Are You Afraid of the Dark?',sources:['Double Dare','Legends of the Hidden Temple','Nick Arcade','GUTS','Are You Afraid of the Dark?']},
+ {tag:'nicktoons',title:'Nicktoons Reunion · Rugrats, Hey Arnold!, Rocko & Ren and Stimpy',icon:'📺',source:'Nicktoons',description:'The first wave of Nicktoons and the voices behind them.',sources:['Rugrats','Hey Arnold!','Rocko\'s Modern Life','Ren & Stimpy']}
 ];
 Object.assign(exports,{TRIVIA3,TRIVIA3_THEMES});

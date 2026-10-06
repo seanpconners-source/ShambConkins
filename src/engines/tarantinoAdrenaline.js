@@ -25,7 +25,7 @@ async function adrenaline(s){
  const setTarget=(i,px,py)=>{const [lo,hi]=bounds(i),p=P[i];p.tx=clamp(px,lo,hi);p.ty=clamp(py-L.off,L.H*.12,L.H-8);p.have=true;};
  function startRound(){
   S.round++;S.phase='card';S.card=0;S.t=0;S.limit=LIMITS[S.round-1];S.left=S.limit;S.beat=0;S.pend=0;
-  for(let i=0;i<2;i++){const p=P[i];Object.assign(p,{state:'idle',finger:null,res:null,plunge:0,jolt:0,have:false,tipX:cxOf(i),tipY:L.H*.92,tx:cxOf(i),ty:L.H*.92,kbx:0,kby:0});}
+  for(let i=0;i<2;i++){const p=P[i];Object.assign(p,{state:'idle',finger:null,res:null,plunge:0,jolt:0,have:false,tipX:cxOf(i),tipY:L.H*.8,tx:cxOf(i),ty:L.H*.8,kbx:0,kby:0});}
   fx.clear();
  }
  function plungeNow(i,timeout){
@@ -52,7 +52,7 @@ async function adrenaline(s){
  function finish(i){if(P[0].state==='done'&&P[1].state==='done'&&S.phase==='live'){S.phase='wrap';S.t2=0;}}
  // input
  halfPointers(s,{
-  down:(i,r)=>{const p=P[i];if(S.phase!=='live'||p.state==='done'||p.finger!==null)return;p.finger=r.id;p.state='drag';setTarget(i,r.x,r.y);if(p.tipY>L.H*.9){p.tipX=r.x;}},
+  down:(i,r)=>{const p=P[i];if(S.phase!=='live'||p.state==='done'||p.finger!==null)return;p.finger=r.id;p.state='drag';setTarget(i,r.x,r.y);},
   move:(i,r)=>{const p=P[i];if(p.finger===r.id)setTarget(i,r.x,r.y);},
   up:(i,r,info)=>{const p=P[i];if(p.finger!==r.id)return;if(info?.cancelled){p.finger=null;p.state='idle';return;}if(S.phase==='live'&&p.state==='drag')plungeNow(i,false);}
  });
@@ -120,9 +120,9 @@ async function adrenaline(s){
  function meterBar(i){
   const mx=i?(i+1)*L.halfW-26:i*L.halfW+12,my=L.H*.26,mh=L.H*.5,m=meter(),p=P[i];
   x.fillStyle='#000a';rr(x,mx-3,my-3,20,mh+6,8);x.fill();
-  const zy=my+mh*(1-.99),zh=mh*.3;x.fillStyle='#46d96a';x.globalAlpha=.85;x.fillRect(mx,my+mh*(1-.99),14,zh*.0+mh*(.99-.66));x.globalAlpha=1;
-  x.fillStyle='#d2f5dc';x.fillRect(mx,my+mh*(1-.9),14,mh*.1);
-  x.fillStyle='#e9c84a';x.globalAlpha=.4;x.fillRect(mx,my+mh*(1-.66),14,mh*.2);x.globalAlpha=1;void zy;void zh;
+  const band=(lo,hi,col)=>{x.fillStyle=col;x.fillRect(mx,my+mh*(1-hi),14,mh*(hi-lo));};
+  band(0,.55,'#3a3f46');band(.55,.75,'#c9a93a');band(.75,.95,'#3ccf62');band(.95,1,'#d93a2c');
+  x.fillStyle='#fff';x.fillRect(mx-2,my+mh*(1-.85)-1,18,3);
   const yy=my+mh*(1-m),done=p.state==='done';x.fillStyle=done?'#888':'#fff';x.beginPath();x.moveTo(mx-6,yy);x.lineTo(mx+20,yy-6);x.lineTo(mx+20,yy+6);x.closePath();x.fill();
   label(x,'DOSE',mx+7,my-14,clamp(L.W*.016,9,13),{fill:'#fff',stroke:'#000'});
  }

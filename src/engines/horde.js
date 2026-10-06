@@ -654,7 +654,7 @@ async function horde(s){
   x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.globalCompositeOperation='source-over';x.fillStyle='#0d130f';x.fillRect(0,0,W,H);
   x.setTransform(zoom,0,0,zoom,W/2-camX*zoom,H/2-camY*zoom);
   const vx0=camX-hw-60,vx1=camX+hw+60,vy0=camY-hh-60,vy1=camY+hh+80;
-  x.fillStyle=groundPat;x.fillRect(vx0,vy0,vx1-vx0,vy1-vy0);
+  if(!skip.ground){x.fillStyle=groundPat;x.fillRect(vx0,vy0,vx1-vx0,vy1-vy0);}
   DL.length=0;nLights=0;
   const cx0=Math.floor((vx0-120)/CS),cx1=Math.floor((vx1+120)/CS),cy0=Math.floor((vy0-120)/CS),cy1=Math.floor((vy1+120)/CS);
   const th=HD.THEMES[theme];
@@ -716,7 +716,7 @@ async function horde(s){
   for(let i=0;i<TX.length;i++){const q=TX[i];x.globalAlpha=Math.min(1,q.life/q.max*2);txt(q.txt,q.x,q.y,q.sz,q.col,'center',true);}x.globalAlpha=1;
   // lighting
   x.setTransform(1,0,0,1,0,0);
-  {const p=clock/D;let amb=clamp(.12+.48*p,0,.64)+(hungerOn?.1:0);if(state==='ending'&&endKind!=='lose'&&endKind!=='')amb*=clamp(1-endT/2,0,1);
+  if(!skip.light){const p=clock/D;let amb=clamp(.12+.48*p,0,.64)+(hungerOn?.1:0);if(state==='ending'&&endKind!=='lose'&&endKind!=='')amb*=clamp(1-endT/2,0,1);
    lx.setTransform(1,0,0,1,0,0);lx.globalCompositeOperation='source-over';lx.globalAlpha=1;lx.clearRect(0,0,lc.width,lc.height);lx.fillStyle=`rgba(4,6,20,${amb})`;lx.fillRect(0,0,lc.width,lc.height);lx.globalCompositeOperation='destination-out';
    const k=lc.width/W,pr=(400-130*p)*zoom;
    for(const pl of P){if(pl.down)continue;const lx0=(pl.x-camX)*zoom+W/2,ly0=(pl.y-camY)*zoom+H/2;lx.drawImage(lightBig,(lx0-pr)*k,(ly0-pr)*k,pr*2*k,pr*2*k);}
@@ -832,9 +832,9 @@ async function horde(s){
 
  // ---------- bot / test hooks ----------
  function botModal(){if(!modal)return;if(modal.type==='chest'){chooseCard(0);return;}let best=0,bs=-1;modal.cards.forEach((c2,i)=>{const sc=(c2.k==='w'?3:c2.k==='p'?2:1)+rnd();if(sc>bs){bs=sc;best=i;}});chooseCard(best);}
- const perf={u:0,d:0,n:0};
+ const perf={u:0,d:0,n:0},skip={};
  function sim(sec,dt){dt=dt||1/30;for(let t=0;t<sec;t+=dt){if(state==='menu'){startRun(1);}if(modal){botModal();continue;}if(state==='ending'&&endT>3.5)break;const t0=performance.now();step(dt);perf.u+=performance.now()-t0;perf.n++;}}
- s.debug={engine:'horde',dragOnly:true,players:P,enemies:E,
+ s.debug={engine:'horde',skip,dragOnly:true,players:P,enemies:E,
   get state(){return state;},get clock(){return clock;},get modal(){return modal;},get kills(){return totalKills;},get counts(){return{E:E.length,PR:PR.length,G:G.length,K:K.length,PT:PT.length,Z:Z.length,ES:ES.length};},
   get perf(){return perf;},get won(){return won;},get endKind(){return endKind;},
   start:i=>startRun(i),sim,botOn:v=>{bot.on=v;},choose:i=>chooseCard(i),
