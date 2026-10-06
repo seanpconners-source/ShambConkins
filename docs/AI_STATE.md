@@ -29,7 +29,7 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
 - A helper agent was converting: bigger player heads inside minigames (flappy, curling, angry heads…), a redesign of
   the Taskmaster cones game (`conesort`), and Fruit Ninja (`fruitslice`) using the opponent's head. Check `git log`
   / the engines before redoing it.
-- `npm test` was last green before the latest board changes; rerun it.
+- `npm test` green (113/113 games) after the board, boss and biome changes.
 
 ## Known issues / next steps
 - Balance only bot-tested: boss fights, horde long runs, Disc Duel, Stunt Chase.
