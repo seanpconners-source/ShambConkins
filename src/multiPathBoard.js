@@ -61,11 +61,21 @@ function buildMultiPathBoard(board){
    laneInfo.push({lane,position:positions[lane],cx,name,source,difficulty,kind:LANE_KIND[lane],route:route?.id||null,ids:path,reward:board.nodes[path[0]].route.reward,risk:board.nodes[path[0]].route.risk,top:laneTop,bottom:laneBottom});
   });
   // Stay on your road, or explicitly choose a crossover bridge to the neighbouring corridor. Progress always rises.
+  // Bridges are staggered down the realm and never pair up with a bridge straight back,
+  // so crossing over is a real decision instead of a detour you immediately undo.
+  const made=[],STAGGER=[[.24,.36],[.44,.56],[.64,.74]];
   tracks.forEach((path,lane)=>{
-   const pos=positions[lane],neighbours=[pos-1,pos+1].filter(p=>p>=0&&p<=2),targetPos=pos===1?pick(neighbours,random):neighbours[0],otherLane=positions.indexOf(targetPos),other=tracks[otherLane];
-   const at=Math.floor(path.length*(.34+random()*.2)),from=board.nodes[path[at]];
-   const forward=other.map((id,i)=>({id,i,dy:board.nodes[id].y-from.y})).filter(c=>c.i>=1&&c.i<other.length-2&&c.dy>40&&c.dy<230).sort((a,b)=>a.dy-b.dy)[0];
-   if(!forward)return;from.next.push(forward.id);from.bridge=forward.id;board.bridges.push({realm,from:from.id,to:forward.id,lane,otherLane});
+   const pos=positions[lane],neighbours=shuffle([pos-1,pos+1].filter(p=>p>=0&&p<=2),random),[lo,hi]=STAGGER[pos],at=Math.floor(path.length*(lo+random()*(hi-lo))),from=board.nodes[path[at]];
+   for(const targetPos of neighbours){
+    const otherLane=positions.indexOf(targetPos),other=tracks[otherLane];
+    const forward=other.map((id,i)=>({id,i,dy:board.nodes[id].y-from.y})).filter(c=>c.i>=1&&c.i<other.length-2&&c.dy>40&&c.dy<230).sort((a,b)=>a.dy-b.dy)[0];
+    if(!forward)continue;
+    // No return bridge from the landing road within ten spaces (either direction), and no
+    // bridge from that road that lands right next to this one.
+    const clash=made.some(b=>b.lane===otherLane&&b.otherLane===lane&&Math.abs(b.at-forward.i)<=10||b.otherLane===lane&&b.lane===otherLane&&Math.abs(b.toIndex-at)<=6);
+    if(clash)continue;
+    from.next.push(forward.id);from.bridge=forward.id;board.bridges.push({realm,from:from.id,to:forward.id,lane,otherLane});made.push({lane,otherLane,at,toIndex:forward.i});break;
+   }
   });
   let taskKept=false;for(const n of all)if(n.type==='task'){if(taskKept)n.type='game';else taskKept=true;}
   const candidates=shuffle(LOCATIONS.filter(l=>l.realm===realm&&!['parents','upside-down','unlimited-savory-lab','planet-coaster-park'].includes(l.id)),random);
