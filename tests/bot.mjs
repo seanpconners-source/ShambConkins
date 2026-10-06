@@ -13,7 +13,7 @@ for (; steps < turns * 25; steps++) {
       dialogOpen,
       dialogTitle: dialogOpen ? dlg.querySelector('#dialog-title')?.innerText : null,
       dialogBtns: dialogOpen ? [...dlg.querySelectorAll('button')].map(b => b.innerText.trim()) : [],
-      view: document.body.dataset.view,
+      view: document.getElementById('game-layer') && !document.getElementById('game-layer').hidden ? 'game' : document.body.dataset.view,
       acts: [...document.querySelectorAll('[data-action]')].filter(b => b.offsetParent && !b.disabled).map(b => b.dataset.action),
       finished: /final|winner|play again/i.test(document.body.innerText.slice(0, 4000)) && !!document.querySelector('.finish-shell'),
     };
@@ -28,7 +28,7 @@ for (; steps < turns * 25; steps++) {
     await page.evaluate(i => document.getElementById('dialog').querySelectorAll('button')[i]?.click(), i);
   } else if (snap.view === 'game') {
     await page.mouse.click(550, 350); await page.mouse.move(400 + Math.random() * 300, 300 + Math.random() * 200);
-    if (snap.acts.includes('exit-game') && stuck > 10) await page.evaluate(() => document.querySelector('[data-action=exit-game]')?.click());
+    if (snap.acts.includes('exit-game') && (stuck > 6 || steps % 40 === 39)) await page.evaluate(() => document.querySelector('[data-action=exit-game]')?.click());
   } else {
     const pri = ['route-go', 'roll', 'space', 'reroll', 'end-turn'].find(a => snap.acts.includes(a));
     const a = pri || snap.acts.find(x => !['home', 'settings', 'roster', 'arcade', 'bag'].includes(x));
