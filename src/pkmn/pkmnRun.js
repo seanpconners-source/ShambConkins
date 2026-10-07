@@ -40,7 +40,8 @@ function ensureTeam(run,p,profile=store.profile){
 }
 function sanitizeBag(bag){const out={};if(bag&&typeof bag==='object')for(const [k,v] of Object.entries(bag))if(D.BAG_ITEMS[k]&&Number.isFinite(v)&&v>0)out[k]=Math.min(99,Math.floor(v));return out;}
 function healTeam(p){if(!p?.pkmn?.team)return;for(const m of p.pkmn.team)D.healMon(m);}
-function healAll(run){for(const p of run.players)healTeam(p);}
+// A new level: the team is healed and Professor Oak mails three more Poké Balls.
+function healAll(run){for(const p of run.players){healTeam(p);if(p.pkmn){p.pkbag=sanitizeBag(p.pkbag);p.pkbag['poke-ball']=Math.min(99,(p.pkbag['poke-ball']||0)+3);}}}
 function teamLevel(p){const t=p.pkmn?.team||[];if(!t.length)return 5;const lv=t.map(m=>m.lvl).sort((a,b)=>b-a);return Math.round(lv.slice(0,3).reduce((a,b)=>a+b,0)/Math.min(3,lv.length));}
 function addCaught(p,mon){
  const t=p.pkmn.team;if(t.length<6){t.push(mon);return 'team';}
@@ -71,6 +72,7 @@ function wildLevel(run,p,random){const floor=REALM_FLOOR[realmOf(run,p)]||3;retu
 function wildChance(run,p,node){
  if(store.profile?.settings?.wildEncounters===false||run.mutation||p.finishedPlayer||run.turn<2)return 0;
  if(p.wildTurn===run.turn)return 0;if(!node||['gate','warp','start'].includes(node.type))return 0;
+ if(Number.isFinite(store.forceWildChance))return store.forceWildChance; // tests
  if(run.board.warp){if(run.board.warp.id!=='pokemon')return 0;return node.type==='grass'?.2:0;}
  return nearestLandmark(run,p,450)?.07:.035;
 }

@@ -6,7 +6,7 @@ const N=+(process.argv[2]||6);
 const {browser,page,errors}=await open({viewport:{width:390,height:780}});
 const fails=[];const check=(ok,msg)=>{if(!ok){fails.push(msg);console.log('FAIL',msg);}};
 await page.click('text=NEW GAME').catch(()=>{});await page.click('[data-action=start-run]').catch(()=>{});
-const click=async()=>page.evaluate(()=>{const d=document.getElementById('dialog');if(d.open){d.querySelector('button.primary,button')?.click();return 1;}const c=document.querySelector('.level-card,.gentlemen-card');if(c){c.click();return 2;}return null;});
+const click=async()=>page.evaluate(()=>{const rp=document.getElementById('route-panel');if(rp&&!rp.hidden){rp.querySelector('.rp-option:not([disabled])')?.click();setTimeout(()=>document.querySelector('[data-action=route-go]')?.click(),150);return 3;}const d=document.getElementById('dialog');if(d.open){d.querySelector('button.primary,button')?.click();return 1;}const c=document.querySelector('.level-card,.gentlemen-card');if(c){c.click();return 2;}return null;});
 for(let i=0;i<30;i++){await page.waitForTimeout(300);await click();const ready=await page.evaluate(()=>!window.ShambConkins.store.busy&&!document.querySelector('.level-card,.gentlemen-card')&&!document.getElementById('dialog').open);if(ready&&i>8)break;}
 // Autopilot: FIGHT with a random usable move; throw balls when asked; pick the first able teammate.
 await page.evaluate(()=>{
@@ -40,6 +40,15 @@ for(let i=0;i<6;i++){await page.waitForTimeout(300);await click();}
 const tr=await runOne(()=>{const S=window.ShambConkins,run=S.store.run,p=run.players[run.current];window.__res=null;window.__pk.plan='fight';window.__pk.party=0;S.pkmn.run.trainerSpace(run,p).then(r=>window.__res={outcome:r.outcome,defeated:r.defeated.length,unlocked:r.unlocked}).catch(e=>window.__res={outcome:'ERROR '+e.message});},'trainer',180000);
 console.log('trainer',JSON.stringify(tr));check(['win','lose'].includes(tr.outcome),'trainer battle ended badly');
 for(let i=0;i<6;i++){await page.waitForTimeout(300);await click();}
+// a Poké Ball trainer space on the board, then a wild encounter in the middle of a walk
+await page.evaluate(()=>{const S=window.ShambConkins;S.pkmn.auto(menu=>{if(menu.kind==='main')return 0;if(menu.kind==='party')return menu.list.findIndex(m=>m.hp>0);if(menu.kind==='yesno')return 1;return 0;});});
+const landed=await page.evaluate(()=>{const S=window.ShambConkins,run=S.store.run,p=run.players[run.current],t=Object.values(run.board.nodes).find(n=>n.type==='trainer'&&n.realm==='mind');window.__turn=run.turn;p.node=t.id;run.phase='landing';run.pending={kind:'landing'};S.updateBoard(true);S.resolveLanding();return t.id;});
+let advanced=false;for(let i=0;i<400&&!advanced;i++){await page.waitForTimeout(300);if(!(await page.evaluate(()=>window.ShambConkins.pkmn.isOpen())))await click();advanced=await page.evaluate(()=>window.ShambConkins.store.run.turn>window.__turn&&!window.ShambConkins.store.busy);}
+check(advanced,'trainer space did not finish the turn');console.log('trainer space',landed,'done',advanced);
+const walk=await page.evaluate(()=>{const S=window.ShambConkins;S.store.forceWildChance=1;window.__turn=S.store.run.turn;document.querySelector('[data-action=roll]').click();return true;});
+let sawBattle=false,done=false;for(let i=0;i<500&&!done;i++){await page.waitForTimeout(300);const st=await page.evaluate(()=>({open:window.ShambConkins.pkmn.isOpen(),turn:window.ShambConkins.store.run.turn,busy:window.ShambConkins.store.busy}));if(st.open)sawBattle=true;else await click();done=st.turn>(await page.evaluate(()=>window.__turn))&&!st.busy;}
+await page.evaluate(()=>{delete window.ShambConkins.store.forceWildChance;});
+check(sawBattle&&done,'walking wild encounter did not run and resume');console.log('walk encounter',sawBattle,done,JSON.stringify(await page.evaluate(()=>{const r=window.ShambConkins.store.run;return {turn:r.turn,phase:r.phase,pending:r.pending,cur:r.current,wt:r.players.map(p=>p.wildTurn),busy:window.ShambConkins.store.busy,dlg:document.getElementById('dialog').open,title:document.querySelector('#dialog h2,#dialog h3')?.textContent};})));
 // field menu opens and closes
 await page.evaluate(()=>{const S=window.ShambConkins;S.pkmn.auto(null);document.querySelector('[data-action=pkmn]')?.click();});
 await page.waitForTimeout(900);await page.screenshot({path:'/tmp/claude-0/sc/field-menu.png'});

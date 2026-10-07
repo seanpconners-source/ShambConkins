@@ -15,7 +15,7 @@ function selectItemDrop(items,{random=Math.random,player=null,profile=null,recen
  // Normalize within each mechanic so dozens of vouchers or shields do not
  // bury a smaller effect family. Rarity weights still apply within a family.
  const totals=new Map();for(const i of pool){const f=itemDropFamily(i);totals.set(f,(totals.get(f)||0)+(i.findWeight||1));}
- const preference={challenge:.8,gear:.8,music:.4,transform:.75,pkmn:4};
+ const preference={challenge:.8,gear:.8,music:.4,transform:.75,pkmn:9};
  return weighted(pool,()=>{const v=Number(random());return Number.isFinite(v)?Math.min(1-Number.EPSILON,Math.max(0,v)):0;},i=>(i.findWeight||1)/totals.get(itemDropFamily(i))*(preference[itemDropFamily(i)]||1));
 }
 function selectItemStock(items,context={},count=3){

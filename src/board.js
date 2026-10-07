@@ -7,8 +7,11 @@ const {placeLandmarks}=require("src/landmarkPlacement.js");
 const {roadPoints}=require("src/multiPathBoard.js");
 const {buildGridBoard,layoutHorrorGrid}=require("src/gridBoard.js");
 const REALMS = ['mind','body','spirit'];
-const SPACE_TYPES = { trainer:'Trainer battle',grass:'Tall grass',center:'Pokémon Center',pkitem:'Item ball',path:'Route', start:'Camp',game:'Minigame',event:'Encounter card',item:'Supply cache',bonus:'Good fortune',penalty:'Bad luck',location:'Landmark',task:'Taskmaster minigame',trivia:'Trivia duel',casino:'Casino',dice:'Full Yahtzee',shop:'Quark’s shop',gate:'Realm gate',warp:'Warp pipe' };
-const SPACE_ICONS = { trainer:'',grass:'',center:'',pkitem:'',path:'', start:'⚑',game:'MG',event:'?',item:'◆',bonus:'+',penalty:'−',location:'⌂',task:'TASK',trivia:'Q&A',casino:'♠',dice:'⚄',shop:'SHOP',gate:'✦',warp:'🌀' };
+// Pokémon spaces (trainer tiles on the board, the Pokémon warp zone's route).
+const POKEMON_SPACES={trainer:'Trainer battle',grass:'Tall grass',center:'Pokémon Center',pkitem:'Item ball',path:'Route'};
+const SPACE_TYPES = { start:'Camp',game:'Minigame',event:'Encounter card',item:'Supply cache',bonus:'Good fortune',penalty:'Bad luck',location:'Landmark',task:'Taskmaster minigame',trivia:'Trivia duel',casino:'Casino',dice:'Full Yahtzee',shop:'Quark’s shop',gate:'Realm gate',warp:'Warp pipe' };
+const SPACE_ICONS = { start:'⚑',game:'MG',event:'?',item:'◆',bonus:'+',penalty:'−',location:'⌂',task:'TASK',trivia:'Q&A',casino:'♠',dice:'⚄',shop:'SHOP',gate:'✦',warp:'🌀' };
+Object.assign(SPACE_TYPES,POKEMON_SPACES);for(const k of Object.keys(POKEMON_SPACES))SPACE_ICONS[k]='';
 const ZONE_COLORS = {mind:'#f8e7a6',body:'#f4aa7f',spirit:'#c6a8ee',horror:'#9e1d28','upside-down':'#512633'};
 const aliases={n0:'mind-start',n1:'mind-1-0',n2:'mind-2-0',n3:'mind-3-0',n4:'mind-4-0',n42:'mind-gate',n44:'body-start',n90:'body-gate',n92:'spirit-start',n137:'spirit-gate'};
 const rename=id=>aliases[id]||id;

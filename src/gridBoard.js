@@ -164,6 +164,7 @@ function buildGridBoard(board){
   const blocked=new Set(),laneAt=new Map();tracks.forEach((path,lane)=>cells[lane].forEach(([c,r],i)=>laneAt.set(key(c,r),{lane,i})));
   const made=[];
   // Rows straight across first; a realm with no such crossing gets a steeper plank.
+  const tryBridges=(back,ahead)=>{
   for(const drs of [[0,1,-1],[2,-2]])for(const lane of made.length&&drs.length===2?[]:shuffle([0,1,2],random)){
    const pos=positions[lane],dirs=[];if(pos<2)dirs.push(1);if(pos>0)dirs.push(-1);
    const opts=[];
@@ -175,7 +176,7 @@ function buildGridBoard(board){
      const t=laneAt.get(key(c+dir*span,r+dr));if(!t||t.lane===lane)continue;
      const gaps=[];for(let k=1;k<span;k++)gaps.push(key(c+dir*k,r));if(dr){gaps.push(key(c+dir,r+Math.sign(dr)),key(c+dir,r+dr));}
      if([...new Set(gaps)].some(g=>occ.has(g)||blocked.has(g)))continue;
-     const len=tracks[t.lane].length,fi=i/tracks[lane].length,ti=t.i/len;if(t.i<2||t.i>len-3||ti<fi-.08||ti>fi+.3)continue;
+     const len=tracks[t.lane].length,fi=i/tracks[lane].length,ti=t.i/len;if(t.i<2||t.i>len-3||ti<fi-back||ti>fi+ahead)continue;
      if(made.some(b=>b.lane===t.lane&&b.otherLane===lane&&Math.abs(b.toIndex-i)<=6))continue;
      opts.push({i,to:tracks[t.lane][t.i],toIndex:t.i,otherLane:t.lane,gaps:[...new Set(gaps)],dr:Math.abs(dr)+span-2});break;
     }
@@ -184,6 +185,10 @@ function buildGridBoard(board){
    const b=opts.sort((a,b)=>Math.abs(a.dr)-Math.abs(b.dr))[Math.floor(random()*Math.min(opts.length,4))],from=board.nodes[tracks[lane][b.i]];
    from.next.push(b.to);from.bridge=b.to;board.bridges.push({realm,from:from.id,to:b.to,lane,otherLane:b.otherLane});made.push({lane,otherLane:b.otherLane,at:b.i,toIndex:b.toIndex});b.gaps.forEach(g=>blocked.add(g));
   }
+  };
+  tryBridges(.08,.3);
+  // A realm whose roads never line up gets one more look with a looser reach.
+  if(!made.length)tryBridges(.2,.5);
   // One guarded shortcut per road where the road doubles back on itself.
   tracks.forEach((path,lane)=>{const s=findShortcut(cells[lane],path,board,blocked,occ,random);if(!s)return;s.mids.forEach(k=>blocked.add(k));addShortcut(board,realm,lane,path[s.i],path[s.j],s.j-s.i,'shortcut-'+path[s.i],random);});
   let taskKept=false;for(const n of all)if(n.type==='task'){if(taskKept)n.type='game';else taskKept=true;}
@@ -200,8 +205,9 @@ function buildGridBoard(board){
   });
   // One warp pipe per realm, hidden among the encounter spaces of a road.
   {const lane=Math.floor(random()*3),path=tracks[lane],options=path.map((id,i)=>({id,i})).filter(q=>q.i>=4&&q.i<path.length-4&&['event','bonus','penalty','game'].includes(board.nodes[q.id].type)&&!board.nodes[q.id].location);if(options.length)board.nodes[options[Math.floor(random()*options.length)].id].type='warp';}
-  // Pokémon trainer battles: Poké Ball spaces on two of the three roads.
-  for(const lane of shuffle([0,1,2],random).slice(0,2)){const path=tracks[lane],options=path.map((id,i)=>({id,i})).filter(q=>q.i>=3&&q.i<path.length-3&&['event','bonus','penalty'].includes(board.nodes[q.id].type));if(options.length)board.nodes[options[Math.floor(random()*options.length)].id].type='trainer';}
+  // Pokémon trainer battles: Poké Ball spaces on two of the three roads (own random stream,
+  // so the rest of the layout matches older builds).
+  {const tr=seededRandom(board.seed+':trainers:'+realm);for(const lane of shuffle([0,1,2],tr).slice(0,2)){const path=tracks[lane],options=path.map((id,i)=>({id,i})).filter(q=>q.i>=3&&q.i<path.length-3&&['event','bonus','penalty'].includes(board.nodes[q.id].type));if(options.length)board.nodes[options[Math.floor(tr()*options.length)].id].type='trainer';}}
   const height=cellXY(0,R1+4,0).y;
   Object.assign(data,{color:GROUND_BASE[realm],height,cols:gate.col,paths:tracks,lanes:laneInfo,fork,stem,gridRows:{top:TOP,fork:R0,gate:R1,style}});
   board.pathNetworks.push({realm,fork,paths:tracks,lengths,difficulties:DIFFICULTY});

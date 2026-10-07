@@ -1,5 +1,36 @@
 # Changelog
 
+## v0.50.0
+
+**Pokémon battles, Game Boy style.** Wild characters now jump out at you while you walk the board: every step has a
+small chance of an encounter (at most one a turn), a little higher near a landmark, and the wild character comes
+from that landmark's show or film. Event cards that used to hand you a character now start a wild battle with them
+instead. Landmark visitors, KC + Mylo, Loki and every other special unlock work exactly as before.
+The battle is a first-generation Pokémon battle on a Game Boy Color screen: flash-and-blinds encounter transition,
+frantic battle music, slide-in intro, "Wild DWIGHT appeared!", FIGHT / PKMN / ITEM / RUN, typewriter text, draining
+HP bars (green, yellow, red) and the low-HP alarm, cheap little move animations, critical hits, super effective,
+status problems, stat stages, experience, level ups with the stat box and new moves. Character photos are turned
+into dithered 4-shade sprites (blocky 2x back sprites for your side) tinted by type; SELECT switches to the classic
+green screen. Get a wild character's HP into the red and throw a Poké Ball: the ball wobbles and either "Gotcha!" or
+"Darn! The POKéMON broke free!". Catching one unlocks them for your roster.
+Every character has a species: one or two of the 15 original types, base stats, four moves (classic moves plus a
+signature move from their show: RUM HAM, BEARS BEETS, KAMEHAMEHA, FORCE CHOKE, …) and an ability (INTIMIDATE,
+STURDY, PLOT ARMOR, …). Your team is your character plus up to five random unlocked characters; it keeps its HP,
+experience and levels through the run and is healed at each new level.
+**Trainer battles.** Poké Ball spaces on the board are trainer battles against six random characters. Win and one
+of the characters you beat joins your roster (plus points). Blacking out costs 3 points and heals your team.
+**Poké items.** Poké Balls ×5 / ×10, Great, Ultra and Master Balls, Potions, Super and Hyper Potions, Full Restore,
+Revives, Full Heals, X Attack/Defend/Speed/Special, Rare Candy, Elixers and the Poké Doll are new supplies. They go
+into a separate battle bag. Each player starts with 5 Poké Balls and 3 Potions, and gets 3 more balls each level.
+The **POKéMON** button opens a Gen 1 START menu: your party (STATS, reorder), the bag, a trainer card and the
+palette option.
+**Pokémon warp zone.** A new warp: Route 1 in Kanto, drawn in Game Boy Color tiles with tall grass, trees, a pond,
+a Pokémon Center and a Gym. No minigames. Tall grass starts wild encounters, item balls fill your bag, the Center
+heals your team, and trainers stand beside the path: walk into their line of sight and they spot you ("!"), walk
+up and battle. Rival Gary waits in the Gym at the end; beat him to leave. New cameo characters: Ash, Pikachu, Misty,
+Brock, Gary Oak, Professor Oak, Jessie, James and Meowth.
+All music is original chiptune written for the game (two pulse channels, wave bass and noise drums).
+
 ## v0.49.0
 
 **Grid boards.** Every level is now laid out like a printed party board game: square tiles on a grid. A short stem
