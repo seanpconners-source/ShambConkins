@@ -1,5 +1,38 @@
 # Changelog
 
+## v0.52.0
+
+**Themed warp zones.** Every warp board now deals only its own world's content. Minigame, task and roulette spaces
+pick from the zone's own games (the roulette only spins those), trivia spaces ask that zone's quiz, item spaces hand
+out that zone's supplies, Chance spaces draw from a zone deck (Toad Houses, Lakitu's fishing rod, Go Directly to
+Jail, the Molasses Swamp, Kaa's hypnosis, Wadsworth's tip, the Lost Woods, Super Ring monitors…) and bonus/penalty
+spaces use zone fortunes. A challenge item used inside a warp plays the zone's game instead, and pair events, the
+Home dog pack and board reshuffles wait until you are back on the main map. Those games and items still turn up on
+the main board as before. The Pokémon warp keeps its own battles, grass and trainers.
+
+**Fifteen new warp minigames** (all two-player, touch-first, also in the arcade):
+- Green Hill Zone: **Sonic Ring Rush** (most rings after 60 s) and **Sonic Goal Dash** (first to the signpost).
+  A split-screen Sonic 2 VS-style platformer with your head on Sonic: Mega Drive physics constants, slopes, loops,
+  springs, spin dash, rolling, ring scatter when hit, badniks (Motobug, Crabmeat, Buzz Bomber, Chopper), item
+  monitors (Super Ring, Shield, Speed Shoes, Invincibility), lampposts, the Green Hill title card and the spinning
+  signpost. Ring Rush ends each lap in a Giant Ring that restarts the act with fresh rings.
+- Rainbow Road: **Rainbow Road Grand Prix** (3 laps) and **Rainbow Balloon Battle**. Mode 7-style split-screen
+  karts with item boxes, Mushrooms, Bananas, Green Shells, Stars, Lightning, coins and Lakitu rescues.
+- World 1 · Grass Land: **N-Spade** card matching and the **Spade Panel** picture slots from Super Mario Bros. 3.
+- Candy Land: **Gumdrop Mountain Catch** and **Color Card Dash** (with Lord Licorice "hands off" cards).
+- Chutes & Ladders: **Ladder Rush** (climb, switch ladders, dodge chutes) and **Spinner Showdown** on the classic
+  board with its real ladders and chutes.
+- Boardwalk Empire: **Monopoly Speed Die** (24-space board, Chance, Community Chest, Mr. Monopoly and the Bus) and a
+  **Sealed-Bid Auction**.
+- Tudor Mansion: **Clue Whodunit** (real deduction with private notebooks and Wadsworth's spare cards) and **Lineup**.
+- Hyrule Field: **Rupee Rush** and **Sword Duel** on a 1986-style overworld screen with Octoroks and Tektites.
+
+**Warp trivia and items.** New quizzes for Super Mario Bros. 3, Candy Land, Chutes and Ladders (with Kaa and The
+Jungle Book), Monopoly and Clue, and more questions for Mario Kart, Zelda and Sonic. 48 new themed items
+(Triple Mushroom, Bullet Bill, P-Wing, Warp Whistle, Gumdrop Pass, Golden Ladder, Get Out of Jail Free, Secret
+Passage Key, Pegasus Boots, Master Sword, Speed Shoes, Chaos Emerald…) plus nine challenge items that start
+a zone minigame on the spot.
+
 ## v0.51.0
 
 **Road choices line up with the map.** The buttons under the map are now in the same left-to-right order as the

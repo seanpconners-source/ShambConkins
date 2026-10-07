@@ -4,6 +4,7 @@ const {EXPANDED_TRIVIA_THEMES_V42}=require("src/data/expandedTriviaV42.js");
 const {PARTY_TRIVIA_THEMES}=require("src/data/partyTrivia.js");
 const {LEGENDS_TRIVIA_THEMES}=require("src/data/legendsTrivia.js");
 const {TRIVIA3_THEMES}=require("src/data/trivia3.js");
+const {WARP_TRIVIA_THEMES}=require("src/data/warpTrivia.js");
 const {hash, escapeHTML}=require("src/utils.js");
 const key=s=>String(s).normalize('NFKD').toLowerCase().replace(/[^a-z0-9]/g,'');
 const authored=new Map(TRIVIA_PACK.map(q=>[key(q.source),q]));
@@ -30,7 +31,7 @@ const TRIVIA_TOPIC_GAMES=[
  ['tabletop','Cards, Dice & Pub Games','🎲','Real rules of casino, board and pub games.'],
  ['animation','Cartoon Club Quiz','📺','Nickelodeon, Cartoon Network and other animated favorites.'],
  ['lore','ShambConkins Home Quiz','🐾','Six questions about the personal expedition rules.'],
- ...[...PARTY_TRIVIA_THEMES,...EXPANDED_TRIVIA_THEMES_V42,...LEGENDS_TRIVIA_THEMES,...TRIVIA3_THEMES].map(t=>[t.tag,t.title,t.icon,t.description,t.source])
+ ...[...PARTY_TRIVIA_THEMES,...EXPANDED_TRIVIA_THEMES_V42,...LEGENDS_TRIVIA_THEMES,...TRIVIA3_THEMES,...WARP_TRIVIA_THEMES].map(t=>[t.tag,t.title,t.icon,t.description,t.source])
 ];
 const TRIVIA_TAGS=['mixed','nick','dbz','hxh','sitcom','hard',...TRIVIA_TOPIC_GAMES.map(([tag])=>tag)];
 

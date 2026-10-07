@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.51.0 (`releases/ShambConkins_v0.51.0.html`).
+Version 0.52.0 (`releases/ShambConkins_v0.52.0.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -42,6 +42,18 @@ Version 0.51.0 (`releases/ShambConkins_v0.51.0.html`).
   Board: 2 Poké Ball `trainer` tiles per level (own random stream in `gridBoard.js`). Poké items: `data/pkmnItems.js`
   (kind `pkmn`, `acquireItem` fills the bag). Cameo cast: `data/pokemonPack.js`. Tests: `tests/pokemon.mjs`,
   `tests/pokewarp.mjs` (autopilot via `ShambConkins.pkmn.auto`, `pkmn.speed`, `store.forceWildChance`).
+- **Themed warp zones (v0.52):** `src/warpThemes.js` (`WARP_THEMES`: games, trivia, items, Chance cards, bonus/penalty
+  fortunes per warp id; Pokémon excluded). On a warp board `requestGame` (gameLauncher) deals only the zone's games
+  (`warpGameId`, own roulette candidates; off-theme ids incl. challenge items/tasks are swapped, boss fights allowed),
+  `resolveLanding` uses `warpCard`/`warpItem`/`warpFortune`; pair turns/intros, the Home dog pack and `evolveBoard`
+  are skipped on warp boards. Warp games live in `src/packs/warpPack.js` (`warpOnly`, `randomEligible:false`, in the
+  arcade): `engines/sonic.js` (split-screen Green Hill, Mega Drive physics, modes rings/race), `kart.js` (Mode 7
+  Rainbow Road race + balloon battle), `smb3.js` (N-Spade, Spade Panel), `candyLand.js`, `chutes.js` (Ladder Rush,
+  Spinner Showdown on the real 1943 layout), `monopoly.js` (Speed Die, sealed-bid auction), `clue.js` (Whodunit with
+  pass-the-phone notebooks, Lineup), `hyrule.js` (Rupee Rush, Sword Duel). Items: `data/warpItems.js` (`wz-*`, built
+  with `packItems` from itemPackV43). Trivia: `data/warpTrivia.js` (topics smb3/candyland/chutes/monopoly/clue +
+  extra Mario Kart/Zelda/Sonic). Tests: `tests/warptheme.mjs` (every warp space type stays on theme),
+  `tests/warpgames.mjs [id-regex]` (play + screenshots), `tests/sonic.mjs`. Engines expose `s.debug` for tests.
 
 ## Recent changes (this round of owner feedback)
 Boss trigger fix + drag flow; 2x heads (board, collection, character select); collection pages fit the screen;
@@ -98,6 +110,8 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   Gentlemen card and Level I.
 
 ## In progress / unverified
+- Warp minigames only bot/fuzz-tested in headless Chromium; Sonic and kart (split-screen canvas, Mode 7 rows) need a
+  real-phone check for feel and frame rate.
 - Board smoothness only measured in headless Chromium (software compositing); check pinch/zoom on a real phone.
   Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus
   Flappy/Curling/Angry Heads), rebuilt the cones game as Cone Chaos (`engines/coneChaos.js`) and made Fruit Ninja

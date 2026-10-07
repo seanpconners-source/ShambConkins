@@ -14,6 +14,7 @@ const {sound}=require("src/audio.js");
 const {pointChange}=require("src/items.js");
 const {gameRecruitPool, gameHasGuaranteedRecruit, recruitmentChance, foodGame}=require("src/rewards.js");
 const {pairForRun}=require("src/pairs.js");
+const {warpTheme,warpGameId,warpAllowsGame}=require("src/warpThemes.js");
 const {updateProgression}=require("src/progression.js");
 const {drawTriviaDifficulty,chooseTriviaDifficulty,TRIVIA_LEVELS}=require("src/engines/trivia.js");
 const hooks={save(){},endTurn(){},beforeRoll(){},arcade(){},bossDone:null};
@@ -25,12 +26,18 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  const run=store.run,serial=++launchSerial,valid=()=>serial===launchSerial&&store.run===run;returnToRoll=returnToRoll||!!(resume&&run?.pending?.returnToRoll);const selectionRun=run||{gameHistory:[],familyBags:{}};if(run)run.levelRealm=origin==='board'?run.board.nodes[run.players[run.current].node]?.realm:undefined;
  // Practice and arcade play must not consume the saved board's random stream.
  const random=origin==='board'&&run?()=>runRandom(run):Math.random;
- if(origin==='board'&&run?.mutation)id='rainbow-rivals';
- if(!id&&origin==='board'&&run?.pairState?.queuedGames?.length&&filter==='all')id=run.pairState.queuedGames.shift();
+ // A themed warp zone only deals its own games: a roulette, a task space or a challenge item there plays the zone's game instead.
+ const warp=origin==='board'&&!resume&&warpTheme(run)?run:null;
+ if(warp&&id&&id!=='phone-task'&&!warpAllowsGame(run,gameById(id)))id=null;
+ if(origin==='board'&&run?.mutation&&!warp)id='rainbow-rivals';
+ if(!id&&!warp&&origin==='board'&&run?.pairState?.queuedGames?.length&&filter==='all')id=run.pairState.queuedGames.shift();
+ if(warp&&(id==='phone-task'||gameById(id)?.engine==='task'))id=null;
+ const warpPick=warp&&!id?warpGameId(run,filter==='trivia'?'trivia':'all',random,g=>!!gameById(g)):null;
  if(origin==='board'&&!resume&&(id==='phone-task'||gameById(id)?.engine==='task')){id=null;filter='taskmaster';}
- let game;try{game=id==='phone-task'?PHONE_TASK:id?gameById(id):(origin==='board'?selectBoardGame:selectGame)(selectionRun,store.profile,run?.mutation?'arcade':filter,random);}catch(error){launching=false;store.busy=false;toast('Challenge selection recovered. Try rolling again.');console.error(error);if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();return false;}
+ let game;try{game=id==='phone-task'?PHONE_TASK:id?gameById(id):warpPick?gameById(warpPick):(origin==='board'?selectBoardGame:selectGame)(selectionRun,store.profile,run?.mutation?'arcade':filter,random);}catch(error){launching=false;store.busy=false;toast('Challenge selection recovered. Try rolling again.');console.error(error);if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();return false;}
  if(!resume&&origin==='board'&&game?.engine==='yahtzee'&&game.diceCount!==6&&random()<.5)game=gameById('cheaters-yahtzee');
- if(!id&&!resume&&selectionRun.gameHistory.at(-1))selectionRun.gameHistory.at(-1).id=game?.id||selectionRun.gameHistory.at(-1).id;
+ if(warpPick&&game){run.gameHistory.push({id:game.id,family:game.family});run.gameHistory=run.gameHistory.slice(-60);}
+ else if(!id&&!resume&&selectionRun.gameHistory.at(-1))selectionRun.gameHistory.at(-1).id=game?.id||selectionRun.gameHistory.at(-1).id;
  if(!game||!ENGINES[game.engine]){launching=false;store.busy=false;toast('This challenge could not be found. The board is ready.');if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();return false;}
  if(game.engine==='trivia'){
   const savedDifficulty=resume&&run?.pending?.triviaDifficulty;
@@ -39,7 +46,7 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  }
  if(id&&!resume&&run&&origin==='board'){run.gameHistory.push({id:game.id,family:game.family});run.gameHistory=run.gameHistory.slice(-60);}
  if(origin==='board'){run.phase='game';run.pending={kind:'game',gameId:game.id,origin,returnToRoll,...(game.triviaDifficulty?{triviaDifficulty:game.triviaDifficulty}:{})};run.roundsWithoutGame=0;hooks.save();}
- if(!id&&!resume){const played=await animateRoulette(game,run?.mutation?'arcade':game.engine==='trivia'?'trivia':filter);if(!valid())return false;if(!played){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();return false;}}
+ if(!id&&!resume){const played=await animateRoulette(game,run?.mutation?'arcade':game.engine==='trivia'?'trivia':filter,warpPick?warpTheme(run)[game.engine==='trivia'?'trivia':'games'].map(gameById).filter(Boolean):null);if(!valid())return false;if(!played){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();return false;}}
  const choice=await showDialog({title:game.title,source:game.source,html:`${gameArtHTML(game)}<div class="how-to"><b>HOW TO PLAY · ${escapeHTML(game.duration.toUpperCase())}</b>${escapeHTML(game.rules)}</div>${run?.mutation&&origin==='board'?'<p style="font-size:12px">You are one team. Each person races a live CPU driver, then both relay scores are combined.</p>':''}`,choices:[{label:'Start game',value:'start',primary:true},{label:origin==='board'?'Return to board':'Back to arcade',value:'cancel'}]});
  if(!valid())return false;
  if(choice===null){launching=false;store.busy=false;return false;}
