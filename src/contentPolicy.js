@@ -18,6 +18,7 @@ const {LEGENDS_ITEMS}=require("src/data/legendsItems.js");
 const {POKEMON_CHARACTERS}=require("src/data/pokemonPack.js");
 const {PKMN_CATALOG_ITEMS}=require("src/data/pkmnItems.js");
 const {WARP_ITEMS}=require("src/data/warpItems.js");
+const {LAIR_VILLAIN_CHARACTERS}=require("src/data/bondLair.js");
 const {balanceItem}=require("src/data/balance.js");
 // Preserve the uploaded catalog byte-for-byte. Sean has explicitly disclaimed
 // Eugenia, so its inherited character, pass and four cards are inactive.
@@ -41,6 +42,7 @@ ACTIVE_CATALOG.trivia.push(...PARTY_TRIVIA,...EXPANDED_TRIVIA_V42,...LEGENDS_TRI
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='bond'?MOVIE_BOND_CHARACTERS[0]:c.id==='chris-parent'?{...c,name:'Dad · Chris Conners',unlockHint:'Meet Dad at My Parents’ House or a Home encounter.'}:c.id==='angie-parent'?{...c,name:'Mom · Angie Conners',unlockHint:'Meet Mom at My Parents’ House or a Home encounter.'}:c);
 ACTIVE_CATALOG.characters.push(...MOVIE_BOND_CHARACTERS.slice(1),...FACE_PACK_CHARACTERS,...NEW_CHARACTERS);
 ACTIVE_CATALOG.characters.push(...NEW_CHARACTERS2);
+ACTIVE_CATALOG.characters.push(...LAIR_VILLAIN_CHARACTERS);
 ACTIVE_CATALOG.characters.push(...POKEMON_CHARACTERS);
 // KC and Mylo always arrive together (the early family event), never one at a time.
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='kc'||c.id==='mylo'?{...c,unlockBy:'dogs',unlockHint:'KC and Mylo arrive together early in your first run.'}:c);

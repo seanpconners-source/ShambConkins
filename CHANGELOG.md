@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.53.0
+
+**James Bond warp zone: the Volcano Lair.** A new warp pipe destination styled as Blofeld's hollowed-out volcano
+(You Only Live Twice): steel gantry catwalk, Bird One on the launch pad, the piranha pool, a laser room, the world
+domination map, the monorail dock and SPECTRE HQ at the end. Spy-surf board music, dark gold/red interface theme.
+- **Just getting there** recruits a random movie Bond (Connery, Lazenby, Moore, Dalton, Brosnan, Craig) that each
+  player does not have yet, one for each player's roster.
+- **The boss** is Ernst Stavro Blofeld (white cat, Nehru jacket, scar) with a new PIRANHA TRAPDOORS signature move:
+  the floor splits into panels and all but one or two drop into the piranha pool. Beating him recruits one random
+  Bond villain that neither player has yet: Goldfinger, Oddjob, Jaws, Le Chiffre, Scaramanga, Dr. No, Silva,
+  Trevelyan, Xenia Onatopp, Blofeld himself, or one of twelve new lair-only villains (Max Zorin, Hugo Drax, Rosa
+  Klebb, Red Grant, Dr. Kananga, Emilio Largo, Elliot Carver, Franz Sanchez, Nick Nack, May Day, Renard, Safin).
+- **Three new Bond minigames** (split screen, both players at once, also in the arcade):
+  **Laser Vault Heist** (Diamonds Are Forever: drag through sweeping, sliding and blinking beams to steal diamonds),
+  **Funhouse Duel** (The Man with the Golden Gun: shoot Scaramanga and Nick Nack cut-outs, never the cardboard Bond
+  or a mirror reflection; one golden bullet at a time) and **Stop the Bomb at 007** (Goldfinger: stop your read-out
+  as close to 0:07.00 as you dare, seven rounds). The lair also deals Baccarat, Facility Escape, Moonraker Lander,
+  Laser Table, Oddjob's Hat and Ski Chase, the 007 and GoldenEye quizzes, Bond gadgets and a Bond Chance deck.
+
 ## v0.52.0
 
 **Themed warp zones.** Every warp board now deals only its own world's content. Minigame, task and roulette spaces

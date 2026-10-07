@@ -87,7 +87,18 @@ const WARP_THEMES={
    card('Ring Rush','Sixty seconds. Most rings wins.',['mg','sonic-ring-rush']),card('Goal Dash','First to the signpost.',['mg','sonic-goal-dash']),
    card('Spin dash','Rev, rev, release.',['move',2]),card('Rings scattered','Your rival’s rings bounce over to you.',['steal',3])],
   bonus:[['Chaos Emerald','One of seven.'],['Fifty-ring bonus','Enough for a Special Stage.'],['Signpost spin','It shows your face.']],
-  penalty:[['Ring loss','Hit by a Buzz Bomber.'],['Bottomless pit','The loop launched you straight into it.'],['Badnik ambush','A Crabmeat fired from the ledge.']]}
+  penalty:[['Ring loss','Hit by a Buzz Bomber.'],['Bottomless pit','The loop launched you straight into it.'],['Badnik ambush','A Crabmeat fired from the ledge.']]},
+ 'bond-lair':{source:'James Bond',
+  games:['bond-laser-vault','bond-golden-gun','bond-goldfinger-bomb','bond-baccarat','goldeneye-facility','moonraker-lander','laser-table','oddjob-hat-game','ski-chase'],trivia:['trivia-bondquiz','trivia-goldeneye'],
+  items:['wz-diamond-collar','wz-golden-bullet','wz-fort-knox-key','golden-gun','oddjob-hat','aston-key','exploding-pen','bond-watch','jetpack','vesper-martini','walther','spectre-ring','blofeld-cat','briefcase-gadget','bond-lockpick','v43-aston-eject-button','ge-proximity-mine'],
+  cards:[card('Q Branch delivery','“Do pay attention, 007.” Q hands over something that was definitely not cleared by accounting.',['item','random']),card('Shaken, not stirred','The bartender gets it exactly right. You feel licensed to win.',['points',3]),
+   card('Trapdoor to the piranha pool','Blofeld presses a button. The floor under your chair disappears.',['move',-3]),card('Aston Martin ejector seat','You press the red button under the gearstick. Your rival goes flying.',['swap']),
+   card('Laser vault alarm','You brushed a beam. Guards everywhere.',['points',-2]),card('The vault is open','Diamonds behind a grid of red beams. Go.',['mg','bond-laser-vault']),
+   card('Scaramanga’s funhouse','Mirrors, mannequins and a man with three nipples.',['mg','bond-golden-gun']),card('The bomb in Fort Knox','The clock is running. Stop it at 007.',['mg','bond-goldfinger-bomb']),
+   card('Monorail ride','The lair’s monorail whisks you deeper inside.',['move',3]),card('Card game with Le Chiffre','You read his tell. His chips come to you.',['steal',3]),
+   card('Oddjob’s hat','A bowler hat crosses the room at an alarming speed.',['points',-3]),card('Henchman’s uniform','Nobody looks twice at another man in a jumpsuit.',['chaos'])],
+  bonus:[['Licence to kill','MI6 signs off on the paperwork.'],['Moneypenny’s tip','She slips you the file before M sees it.'],['A gadget that works','Q is as surprised as you are.']],
+  penalty:[['Captured','“No, Mr. Bond, I expect you to die.”'],['Shot by a henchman','They finally hit something.'],['Tuxedo ruined','Volcano ash does not come out.']]}
 };
 const WARP_THEME_IDS=Object.keys(WARP_THEMES);
 function warpTheme(run){const b=run?.board;if(b?.format!=='warp')return null;return WARP_THEMES[b.warp?.id]||null;}

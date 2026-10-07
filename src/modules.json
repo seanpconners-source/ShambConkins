@@ -230,7 +230,9 @@
   "src/engines/chutes.js",
   "src/engines/monopoly.js",
   "src/engines/clue.js",
-  "src/engines/hyrule.js"
+  "src/engines/hyrule.js",
+  "src/data/bondLair.js",
+  "src/engines/bond.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

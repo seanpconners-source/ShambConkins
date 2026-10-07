@@ -260,7 +260,15 @@ const BOSSES=[
   quote:'Ho ho ho! Say goodbye to your little blue friend!',phaseLines:[null,'Time to unleash the Death Egg!','Curse you, hedgehog!'],koLine:'You haven’t seen the last of me! *flies away on a rocket*',
   attacks:[[['aimed',{n:2,rounds:4,pink:.25}],['fan',{count:5,arc:1.1,rounds:3}],['minions',{n:2,kind:'drone',hp:5}]],
    [['wrecking',{}],['fan',{count:7,arc:1.4,rounds:3}],['minions',{n:3,kind:'drone',hp:5}]],
-   [['wrecking',{n:2}],['gapwall',{rows:4}],['minions',{n:4,kind:'drone',hp:6}],['ring',{count:14,rings:3}]]]})
+   [['wrecking',{n:2}],['gapwall',{rows:4}],['minions',{n:4,kind:'drone',hp:6}],['ring',{count:14,rings:3}]]]}),
+ // unlockPool: instead of unlockId, a win recruits one random Bond villain neither player has (src/data/bondLair.js).
+ def({id:'blofeld',name:'Ernst Stavro Blofeld',epithet:'Number One of SPECTRE',source:'You Only Live Twice',icon:'🐈',unlockId:'blofeld',unlockPool:'bond-villains',level:'warp',warp:'bond-lair',tier:3,
+  body:'bust',look:{suit:'#8f949c',hat:'none',prop:'cat',tie:'#8f949c',nehru:true,scar:true,bald:true,mark:''},scene:'lair',pal:['#5d636e','#0d0c0f','#c8161d','#f0eee8'],sig:'trapdoor',
+  tone:{base:82,voice:'sawtooth',beat:330,notes:[0,3,7,11,7,3,0,-1],bass:true},
+  quote:'Allow me to introduce myself. I am Ernst Stavro Blofeld.',phaseLines:[null,'This organisation does not tolerate failure.','Kill Bond. Now!'],koLine:'*strokes the cat one last time* ...we shall meet again.',
+  attacks:[[['aimed',{n:2,rounds:4,pink:.25}],['fan',{count:6,arc:1.2,rounds:3}],['laser',{count:1,sweep:1.7}]],
+   [['trapdoor',{}],['minions',{n:3,kind:'drone',hp:5}],['aimed',{n:3,spread:.18,rounds:3,pink:.2}]],
+   [['trapdoor',{n:4}],['laser',{count:2,sweep:2}],['minions',{n:4,kind:'drone',hp:5}],['ring',{count:14,rings:3}]]]})
 ];
 
 // New playable characters unlocked by beating these bosses (id, name, source, icon, actor/subject page, perk, line).
