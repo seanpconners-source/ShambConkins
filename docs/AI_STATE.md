@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.46.3 (`releases/ShambConkins_v0.46.3.html`).
+Version 0.46.4 (`releases/ShambConkins_v0.46.4.html`).
 
 ## Implemented systems
 - **Board (generation 7):** per-realm journey map: stem → crossroads → 3 lanes (Calm/Adventurous/High Reward) → gate.
@@ -31,6 +31,11 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
 - v0.46.2–3: fullscreen (`src/fullscreen.js`): first tap enters it (browsers need a gesture); toggles via `fullscreenButton()`
   in home stack, every top bar and Settings; open modal dialogs are re-raised on change. Vault now uses `fitCatalogPage`
   like the roster and `refitCatalog()` re-measures on resize/fullscreen.
+
+- v0.46.4: Beer Pong + Flipadelphia visual overhaul. Drawing lives in `src/engines/pubVisuals.js` (cached pub room +
+  table layer, neon sign, solo cups, 3D flip cup with culling, fx: particles/pops/shake). Physics/flick functions in
+  `pubPhysics.js` untouched; projections now use a uniform unit (true proportions on wide screens). Screenshots:
+  `tests/pubshots.mjs`.
 
 ## In progress / unverified
 - Nothing in flight. Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus

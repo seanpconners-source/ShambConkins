@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.46.4
+
+**Paddy's Pub glow-up (Beer Pong + Flipadelphia).** Both games now play inside a real Paddy's: brick wall, lit back bar
+with bottles, pendant lamps, a flickering neon sign, and a varnished plank table with trim, legs and the Paddy's logo.
+The camera keeps true proportions on every screen (no more stretched, squat cups on wide screens; flip cup is closer on
+phones). Gameplay, physics and flick feel are unchanged.
+
+- Beer Pong: shaded solo cups with beer and foam, a ping-pong ball under your head with a motion trail and a shadow that
+  shrinks as it rises, depth-correct drawing (the ball passes behind and in front of cups). Sinking a cup splashes beer,
+  shakes the screen, wobbles the cup away, leaves a wet ring and your head pops up in the cup. Rim hits clink and spark,
+  table bounces plink. The opponent watches from behind the far end and reacts. Aiming shows a power/direction arrow;
+  shot clock and 12 toss pips on the wall.
+- Flipadelphia: a lit 3D cup with ridges and a white lip, ghost trail while spinning, smooth snap onto its rim on a
+  success (confetti, shock ring) or a topple onto its side on a miss. The verdict says why it missed (off the edge, slid,
+  so close, whiff). Each player's 8 attempts are tracked as cup pips (flipped / missed / pending).
+
 ## v0.46.3
 
 **Full screen everywhere.** A full screen toggle (⤢) now sits in every top bar (home, collection, vault, setup and the
