@@ -23,21 +23,31 @@ function flipCupMesh(cup,W=680,H=430){const rotation=cup.angle||0,points=[];for(
 const restHeight=angle=>.19*Math.abs(Math.cos(angle))+.115*Math.abs(Math.sin(angle));
 const ease=(from,to,k)=>from+(to-from)*k;
 function beerCamera(W,H){return {U:Math.min(W*.32,H*.42)};}
-async function beerpong(s){const[c,x]=s.canvas(680,430,{fill:true}),racks=[beerRack(),beerRack()],score=[0,0],shots=[0,0],reracks=[false,false];s.body.classList.add('pub-arena-body');let actor=0,phase='aim',ball=null,drag=null,clock=18,message='Flick upward from your head-ball.',settle=0;
+async function beerpong(s){const[c,x]=s.canvas(680,430,{fill:true}),racks=[beerRack(),beerRack()],score=[0,0],shots=[0,0],reracks=[false,false],turns=[1,0],MAX_TURNS=40;s.body.classList.add('pub-arena-body');let actor=0,turnShots=0,turnHits=0,bonus=false,phase='aim',ball=null,drag=null,clock=18,message='Flick upward from your head-ball.',settle=0;
  const fx=makeFx(),scene=pubScene(),spills=[[],[]],sinking=[],trail=[];let rerackHit=null,lastBounces=0,lastHit=null,time=0,sunk=null;
  const beerOpts=()=>({project:projectBeerTable,wallBottom:projectBeerTable({x:0,z:4,y:0},s.W,s.H).y,accent:'#5dff8c',logo:'PADDY’S',lineZ:1.6});
  const cupScreen=(cup,W,H)=>{const top=projectBeerTable({...cup,y:.21},W,H),bottom=projectBeerTable({...cup,y:0},W,H),edge=projectBeerTable({...cup,x:cup.x+.2,y:.21},W,H);return {top,bottom,r:edge.x-top.x};};
  function toss(shot){if(s.paused||phase!=='aim'||!shot)return;ball=shot;phase='flight';shots[actor]++;drag=null;sound('shot');trail.length=0;lastBounces=0;lastHit=null;}
  async function resolve(hit){if(phase!=='flight'&&phase!=='aim')return;phase='handoff';lastHit=hit;if(hit){score[actor]++;s.react?.(actor,'win');s.react?.(1-actor,'sad');sound('win');}else{sound('lose');s.react?.(actor,'sad');}s.setScores(score);message=hit?'IN THE CUP!':'Rim, bounce or wide — no cup.';
   if(!hit){const p=ball&&ball.z>=0&&ball.z<4.4&&Math.abs(ball.x)<1.6?projectBeerTable(ball,s.W,s.H):{x:s.W/2,y:s.H*.55};fx.pop(clock<=0?'TIME!':ball?.bounces?'BRICK!':'MISS',p.x,Math.min(p.y,s.H*.8),{color:'#d9d2c3',size:clamp(s.W*.08,24,40)});}
-  if(!await (s.wait?s.wait(hit?900:650):s.delay(650)))return;if(score[actor]===10||shots.every(n=>n>=12))return s.finish(score,'Paddy’s Pub · cups '+score[0]+'–'+score[1]);actor=1-actor;if(shots[actor]>=12)actor=1-actor;ball=null;sunk=null;clock=18;trail.length=0;if(await s.pass(actor,message+' Flick toward the remaining cups. Twelve attempts each; clearing ten cups wins early.'))phase='aim';}
+  turnShots++;if(hit)turnHits++;
+  // One full match: two shots a turn; sink both and you bring it back for a third (never a fourth).
+  const cleared=score[actor]===10,again=!cleared&&(turnShots<2||turnShots===2&&turnHits===2);bonus=again&&turnShots===2;
+  if(bonus){message='BRING IT BACK!';fx.pop('BRING IT BACK!',s.W/2,s.H*.42,{color:'#7dff8a',size:clamp(s.W*.1,28,58),life:1.6});fx.confetti(s.W,s.H,40);tone(880,.08,.05,'square');}
+  if(!await (s.wait?s.wait(bonus?1500:hit?900:650):s.delay(bonus?1500:650)))return;
+  if(cleared)return s.finish(score,'Paddy’s Pub · rack cleared · cups '+score[0]+'–'+score[1]);
+  ball=null;sunk=null;clock=18;trail.length=0;
+  if(again){message=bonus?'BRING IT BACK! One bonus shot.':'Second shot of the turn.';phase='aim';return;}
+  turnShots=0;turnHits=0;bonus=false;actor=1-actor;
+  if(actor===0&&turns[0]>=MAX_TURNS&&turns[1]>=MAX_TURNS)return s.finish(score,'Paddy’s Pub · last call · cups '+score[0]+'–'+score[1]);
+  turns[actor]++;if(await s.pass(actor,message+' Two shots this turn. Sink both and you bring it back for a third.'))phase='aim';}
  function cupHit(cup){const {top,r}=cupScreen(cup,s.W,s.H);sinking.push({cup:{...cup},player:1-actor,age:0});spills[actor].push({x:cup.x,z:cup.z});sunk=cup;
   fx.burst(top.x,top.y,{count:28,speed:clamp(r*7,90,260),up:clamp(r*6,80,240),size:clamp(r*.16,2,5)});fx.ring(top.x,top.y,r,'#fff3c0',.34);fx.shake(7,.32);vibrate(30);
   const last=racks[actor].every(c=>c.removed);fx.pop(last?'RACK CLEARED!':['SPLASH!','DRINK!','CUP!','WILDCARD!'][score[actor]%4],s.W/2,s.H*.6,{color:last?'#7dff8a':'#ffd36b',size:clamp(s.W*.1,28,58)});if(last)fx.confetti(s.W,s.H,80);}
  const rerack=()=>{if(phase!=='aim'||reracks[actor])return;reracks[actor]=true;const left=racks[actor].filter(p=>!p.removed),positions=beerRack();left.forEach((p,i)=>{p.x=positions[i].x;p.z=positions[i].z;});message='Re-racked. Aim for the new triangle.';sound('tap');fx.pop('RE-RACK!',s.W/2,s.H*.6,{color:'#7fd0ff',size:clamp(s.W*.08,24,44)});};
  const rerackBox=()=>rerackHit||{x:8,y:Math.min(72,s.H*.2)+8,w:92,h:28};
  s.on(c,'pointerdown',ev=>{if(s.paused||phase!=='aim'||drag)return;ev.preventDefault();const p=s.pointer(ev),rb=rerackBox();if(!reracks[actor]&&p.x>=rb.x&&p.x<=rb.x+rb.w&&p.y>=rb.y&&p.y<=rb.y+rb.h){rerack();return;}drag={id:ev.pointerId,start:p,end:p,time:performance.now()};s.capture(ev);});s.on(c,'pointermove',ev=>{if(drag?.id===ev.pointerId)drag.end=s.pointer(ev);});s.on(c,'pointerup',ev=>{if(drag?.id!==ev.pointerId)return;const p=s.pointer(ev),start=drag.start,duration=(performance.now()-drag.time)/1000;const moved=Math.hypot(p.x-start.x,p.y-start.y);toss(moved<14?beerFlick(0,70,.45,s.W,s.H):beerFlick(p.x-start.x,start.y-p.y,duration,s.W,s.H,s.flickSensitivity));drag=null;s.release(ev);});const clear=()=>drag=null;const cancel=ev=>{if(drag?.id===ev.pointerId)clear();};s.on(c,'pointercancel',cancel);s.on(c,'lostpointercapture',cancel);s.on(window,'blur',clear);s.on(window,'resize',clear);s.resetOnPause?.(clear);
- s.hint(`Flick sensitivity ${flickGain(s.flickSensitivity).toFixed(2)}× (Settings). Flick upward anywhere on the table (or tap for a gentle centre toss). Short flicks are gentle; longer drags reach the back cups. Angle steers left/right; speed has only a small capped effect. Real 3D arcs, rim rebounds and table bounces. Alternate every toss. Tap RE-RACK (or press R) once to tighten your cups.`);
+ s.hint(`Flick sensitivity ${flickGain(s.flickSensitivity).toFixed(2)}× (Settings). Flick upward anywhere on the table (or tap for a gentle centre toss). Short flicks are gentle; longer drags reach the back cups. Angle steers left/right; speed has only a small capped effect. Real 3D arcs, rim rebounds and table bounces. Two shots a turn; sink both to bring it back for a third. First to clear all ten cups wins. Tap RE-RACK (or press R) once to tighten your cups.`);
  s.on(document,'keydown',ev=>{if(ev.key.toLowerCase()==='r')rerack();});
  s.frame(dt=>{const W=s.W,H=s.H,{U}=beerCamera(W,H);time+=dt;
   if(phase==='aim'){clock-=dt;if(clock<=0){shots[actor]++;void resolve(false);}}
@@ -65,14 +75,15 @@ async function beerpong(s){const[c,x]=s.canvas(680,430,{fill:true}),racks=[beerR
    else{const preview=beerFlick(drag.end.x-drag.start.x,drag.start.y-drag.end.y,(performance.now()-drag.time)/1000,W,H,s.flickSensitivity);x.strokeStyle='#fff4be55';x.lineWidth=2;x.setLineDash([5,6]);x.beginPath();x.moveTo(drag.start.x,drag.start.y);x.lineTo(drag.end.x,drag.end.y);x.stroke();x.setLineDash([]);
     if(preview){const power=clamp((preview.vz/3.6-.68)/.8,0,1),reach=.45+power*1.5,tip=projectBeerTable({x:preview.vx/preview.vz*reach,z:.08+reach,y:0},W,H),base=projectBeerTable({x:0,z:.08,y:0},W,H);powerArrow(x,{x:base.x,y:base.y},tip,power);}}}
   const top=clamp(H*.07,22,48)+clamp(Math.min(W*.085,H*.07),14,34)*1.4;
+  if(bonus&&phase==='aim')plate(x,W/2,top+clamp(W*.13,48,70),'🍺 BRING IT BACK · BONUS SHOT',{size:clamp(W*.04,13,20),color:'#7dff8a',border:'#2e9e61'});
   if(phase==='aim'&&!reracks[actor])rerackHit=plate(x,clamp(W*.13,52,90),top,'↻ RE-RACK',{size:clamp(W*.032,11,15),color:'#bfe8ff',border:'#3f7fb0'});else rerackHit=null;
-  const left=Math.max(0,12-shots[actor]),urgent=phase==='aim'&&clock<=5;
-  const pipR=clamp(W*.007,2.3,4),pipW=pipR*2.7*12,clockX=W-Math.max(pipW/2,clamp(W*.11,44,80))-10,pipY=top+clamp(W*.032,11,15)*1.5;
+  const allowed=bonus||turnShots>=2&&turnHits>=2?3:2,left=Math.max(0,allowed-turnShots),urgent=phase==='aim'&&clock<=5;
+  const pipR=clamp(W*.012,4,7),pipW=pipR*2.7*allowed,clockX=W-Math.max(pipW/2,clamp(W*.11,44,80))-10,pipY=top+clamp(W*.032,11,15)*1.5;
   plate(x,clockX,top,phase==='aim'?`${Math.ceil(clock)}s`:`${left} left`,{size:clamp(W*.032,11,15),color:urgent?(Math.sin(time*12)>0?'#ff6b6b':'#fff'):'#f7d893',border:urgent?'#ff6b6b':'#7a5530'});
   x.fillStyle='#120b07b0';x.beginPath();x.roundRect?.(clockX-pipW/2-pipR,pipY-pipR*2,pipW+pipR*2,pipR*4,pipR*2);x.fill();
-  for(let i=0;i<12;i++){const used=i<shots[actor];x.fillStyle=used?'#ffffff30':PLAYER_CUPS[actor].light;x.beginPath();x.arc(clockX+(i-5.5)*pipR*2.7,pipY,pipR,0,Math.PI*2);x.fill();}
+  for(let i=0;i<allowed;i++){const used=i<turnShots;x.fillStyle=used?'#ffffff30':i===2?'#7dff8a':PLAYER_CUPS[actor].light;x.beginPath();x.arc(clockX+(i-(allowed-1)/2)*pipR*2.7,pipY,pipR,0,Math.PI*2);x.fill();}
   fx.draw(x);x.restore();
-  s.status(`${s.players[actor].name} · toss ${Math.min(12,shots[actor]+(phase==='aim'?1:0))}/12 · cups ${score[0]}–${score[1]} · ${phase==='aim'?Math.ceil(clock)+'s to flick':message}`);s.debug={actor,phase,ball,racks,shots,score,toss,resolve,project:projectBeerTable};});await s.pass(0,'Paddy’s Pub beer pong. Flick your head-ball UP the table into the other player’s ten cups. Alternate every throw. Twelve attempts each, one re-rack, and 3D rim/table physics.');
+  s.status(`${s.players[actor].name} · ${bonus?'BRING IT BACK · bonus shot':'shot '+Math.min(2,turnShots+(phase==='aim'?1:0))+'/2'} · cups ${score[0]}–${score[1]} · ${phase==='aim'?Math.ceil(clock)+'s to flick':message}`);s.debug={actor,phase,ball,racks,shots,score,turnShots,turnHits,bonus,message,toss,resolve,project:projectBeerTable};});await s.pass(0,'Paddy’s Pub beer pong. Flick your head-ball UP the table into the other player’s ten cups. Two shots per turn; sink both and you bring it back for a third. First to clear all ten cups wins. One re-rack each, and 3D rim/table physics.');
 }
 function flipVerdict(outcome,cup){if(outcome.success)return {pop:['FLIP!','FLIPADELPHIA!','NAILED IT!','FLIP FLIP!'][Math.floor(Math.random()*4)],message:'FLIP FLIP FLIPADELPHIA!'};if(!cup||Math.abs(cup.x)>=1.1)return {pop:'OFF THE EDGE!',message:'Off the edge. Flick straighter.'};if(outcome.error<.4&&Math.abs(cup.vx)>=.95)return {pop:'IT SLID!',message:'Landed but slid off its rim. Less sideways drift.'};if(outcome.error<.9)return {pop:'SO CLOSE!',message:'So close! Tweak the spin a touch.'};return {pop:['WHIFF!','NOPE!','BRICK!'][Math.floor(Math.random()*3)],message:'Not rim-down. Try a different flick.'};}
 async function flipcup(s){const[c,x]=s.canvas(680,430,{fill:true}),score=[0,0],attempts=[0,0];let actor=0,phase='aim',cup=null,drag=null,clock=15,message='Flick up to land RIM-DOWN.',landing=null;

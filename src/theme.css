@@ -242,3 +242,79 @@ body .dialog-content .rare-label{color:var(--t-acc)}
 body .badge-row span{color:var(--t-sub);background:var(--t-well);border-color:var(--t-hair)}
 body .lv-pip.on,body .lv-badge{text-shadow:0 1px 0 #000,0 0 4px #0008}
 body .finish-heading h1{font-weight:900}
+
+/* ---------- Character select (v0.49): spotlight hero + full-height roster grid ---------- */
+.setup-shell .section-heading{margin-bottom:10px}
+.setup-shell .cs-panels{flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+body .setup-shell .cs-panel{--pc:var(--t-p1);position:relative;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;border-radius:22px;border:2px solid var(--t-edge);background:radial-gradient(ellipse 80% 60% at 22% 30%,color-mix(in srgb,var(--pc) 22%,transparent),transparent 70%),linear-gradient(170deg,var(--t-s1) 0%,var(--t-s2) 100%);box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 2px 0 var(--t-shine),0 5px 0 var(--t-edge),0 14px 34px #0007}
+body .setup-shell .cs-panel.p2{--pc:var(--t-p2)}
+.cs-panel::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,transparent,var(--pc),transparent);opacity:.9}
+.cs-head{display:flex;align-items:center;gap:10px;padding:12px 14px 8px;flex-shrink:0}
+.cs-badge{flex:0 0 auto;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;font:900 15px/1 "Arial Black",Arial,sans-serif;color:#fff;background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--pc) 70%,#fff),var(--pc) 60%,color-mix(in srgb,var(--pc) 60%,#000));box-shadow:0 3px 0 var(--t-edge),0 0 16px color-mix(in srgb,var(--pc) 55%,transparent);text-shadow:0 1px 0 #0008}
+.cs-owner{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+body .setup-shell .cs-owner label{font:700 9px/1.2 ui-monospace,monospace;letter-spacing:.18em;color:var(--t-dim);margin:0}
+body .setup-shell .cs-owner input{width:100%;max-width:240px;min-height:34px;padding:5px 11px;font:800 15px/1.2 Arial,sans-serif}
+.cs-count{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;padding:5px 11px;border-radius:12px;background:var(--t-well);box-shadow:inset 0 0 0 1px var(--t-hair)}
+.cs-count b{font:900 18px/1 "Arial Black",Arial,sans-serif;color:var(--t-acc)}
+.cs-count small{font:700 8px/1.3 ui-monospace,monospace;letter-spacing:.16em;color:var(--t-dim)}
+.cs-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(150px,.75fr) minmax(0,1.45fr);gap:12px;padding:0 14px 14px}
+.cs-hero{display:flex;flex-direction:column;min-width:0;min-height:0;text-align:center}
+.cs-stage{position:relative;flex:1;min-height:120px}
+.cs-spot{position:absolute;inset:4% 2% 0;background:radial-gradient(ellipse 60% 55% at 50% 45%,color-mix(in srgb,var(--pc) 38%,transparent),transparent 72%);pointer-events:none}
+.cs-spot::after{content:"";position:absolute;left:18%;right:18%;bottom:2%;height:9%;border-radius:50%;background:radial-gradient(ellipse at center,#000a,transparent 70%)}
+.cs-face{position:absolute;inset:0 0 5%;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.9) translateY(8px) rotate(-2deg);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.9,.3,1.2);pointer-events:none}
+.cs-face.on{opacity:1;transform:none}
+body .setup-shell .cs-face .cs-portrait{width:100%;height:100%;max-width:300px;margin:0;border:0;background:none;border-radius:0}
+body .setup-shell .cs-face .cs-portrait img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 10px 14px #000b);animation:cs-float 4.5s ease-in-out infinite}
+@keyframes cs-float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1deg)}}
+.cs-info{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:4px;min-width:0}
+body .setup-shell .cs-info h3{margin:0;font:900 clamp(17px,2.2vw,26px)/1.1 "Arial Black",Arial,sans-serif;color:var(--t-head);text-shadow:0 2px 0 #000a;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-brand .property-logo{display:block;width:150px;max-width:100%;height:28px;object-fit:contain;margin:0 auto}
+.cs-perk{margin:0;font-size:12px;line-height:1.35;color:var(--t-sub);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cs-skills{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}
+.cs-skills span{font:800 10px/1 Arial,sans-serif;letter-spacing:.04em;padding:4px 8px;border-radius:99px;color:var(--t-acc-ink);background:linear-gradient(180deg,var(--t-acc),var(--t-acc2));box-shadow:0 2px 0 var(--t-edge)}
+.cs-gridwrap{min-width:0;min-height:0;display:flex;border-radius:16px;background:var(--t-well);box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 4px 14px #000b;padding:8px}
+.setup-shell .cs-grid{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));grid-auto-rows:max-content;align-content:start;gap:8px;padding:2px 2px 10px;scrollbar-width:thin;scrollbar-color:var(--t-s3) transparent}
+body .setup-shell .cs-panel .cs-grid button.cs-tile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;min-width:0;min-height:0;height:auto;aspect-ratio:1/1.12;padding:6px 4px 6px;margin:0;border-radius:14px;color:var(--t-text);background:radial-gradient(ellipse at 50% 30%,var(--t-s3),var(--t-s2) 75%);border:2px solid var(--t-edge);box-shadow:inset 0 0 0 1px var(--t-hair),0 3px 0 var(--t-edge);transition:transform .15s,box-shadow .2s;overflow:hidden;text-shadow:none}
+body .setup-shell .cs-panel .cs-grid button.cs-tile:hover:not(:disabled){transform:translateY(-2px)}
+body .setup-shell .cs-panel .cs-grid button.cs-tile.selected{background:radial-gradient(ellipse at 50% 30%,color-mix(in srgb,var(--pc) 45%,var(--t-s3)),var(--t-s2) 80%);box-shadow:inset 0 0 0 3px var(--pc),0 3px 0 var(--t-edge),0 0 18px color-mix(in srgb,var(--pc) 60%,transparent)}
+body .setup-shell .cs-panel .cs-grid button.cs-tile:disabled{opacity:.42;filter:grayscale(.7)}
+.cs-tile-face{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+body .setup-shell .cs-tile .cs-mini{width:100%;height:100%;max-width:84px;margin:0;border:0;background:none;border-radius:0}
+body .setup-shell .cs-tile .cs-mini img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 3px 4px #000a)}
+.cs-tile-name{flex-shrink:0;max-width:100%;font:800 11px/1.2 Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px}
+.cs-tile.selected .cs-tile-name{color:#fff}
+.cs-taken{position:absolute;top:4px;right:4px;font:900 9px/1 Arial,sans-serif;font-style:normal;padding:3px 5px;border-radius:6px;color:#fff;background:var(--t-p2)}
+.cs-panel.p2 .cs-taken{background:var(--t-p1)}
+body .setup-shell .setup-controls{margin-top:12px}
+@media(max-width:600px){
+ .setup-shell>.topbar{display:none}
+ .setup-shell .section-heading{margin-bottom:8px}
+ .setup-shell .section-heading p,.setup-shell>p,.cs-brand{display:none}
+ .setup-shell .setup-controls{gap:6px 8px!important;margin-top:9px!important}
+ .setup-shell .setup-controls label{font-size:8px;margin-bottom:2px}
+ .setup-shell .setup-controls input,.setup-shell .setup-controls select{min-height:36px!important;padding:5px 8px!important}
+ .setup-shell .setup-controls button.primary{min-height:44px!important}
+ .setup-shell .pair-banner{margin:8px 0 0;padding:7px 10px;font-size:10px;line-height:1.4}
+ .setup-shell .section-heading h2{font-size:24px!important;margin-top:2px!important}
+ .setup-shell .cs-panels{grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr));gap:9px}
+ .cs-head{padding:8px 10px 6px;gap:8px}.cs-badge{width:32px;height:32px;font-size:12px}
+ body .setup-shell .cs-owner input{min-height:30px;font-size:13px;padding:3px 9px}
+ .cs-count{padding:3px 8px}.cs-count b{font-size:15px}
+ .cs-body{grid-template-columns:minmax(108px,.7fr) minmax(0,1.3fr);gap:8px;padding:0 10px 10px}
+ .cs-stage{min-height:80px}
+ body .setup-shell .cs-info h3{font-size:15px}
+ .cs-brand .property-logo{height:20px;width:110px}
+ .cs-perk{font-size:10px;-webkit-line-clamp:2}
+ .cs-skills span{font-size:9px;padding:3px 6px}
+ .cs-gridwrap{padding:6px}
+ .setup-shell .cs-grid{grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:5px}
+ body .setup-shell .cs-panel .cs-grid button.cs-tile{border-radius:11px;padding:4px 2px}
+ .cs-tile-name{font-size:10px}
+}
+@media(max-height:560px) and (min-width:601px){
+ .setup-shell .section-heading p{display:none}
+ .cs-perk{-webkit-line-clamp:2;font-size:10px}.cs-head{padding:6px 12px 4px}.cs-badge{width:30px;height:30px}
+ .setup-shell .cs-grid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
+}
+body.reduced-motion .cs-face,body.reduced-motion .cs-face img{transition:opacity .4s;animation:none!important}
