@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.54.0
+
+**Super Mario Bros. on the Mario warp board.** A split-screen NES World 1-1 built like the Sonic games: both
+players run the same seeded course at once (P1 top, P2 bottom) with their head under Mario's cap (P2 in Luigi
+colours). NES SMB1 movement (walk/run speeds, skids, hold-to-jump-higher gravity), ? blocks and bricks, Goombas,
+Koopa shells, piranha plants, Super Mushroom, Fire Flower (fireballs), Starman, a camera that never scrolls back,
+a warp pipe down to an underground coin room, the flagpole and the castle.
+- **World 1-1 Coin Rush:** most coins after 60 seconds wins; the castle sends you round again with fresh coins.
+- **Castle Dash:** first to the flagpole wins; pits and hits while small send you back to the last checkpoint.
+- Touch: drag on the left to walk (further to run, down to duck or enter a pipe, tap for a fireball), tap the
+  right to jump (hold for higher). Keys: W/Up jump, Space/Enter run and fire.
+- Both games are dealt on the Mario warp board (games, Chance cards, and two new challenge items: ? Block and
+  Goal Flagpole) and playable in the arcade.
+
 ## v0.53.1
 
 **Wild encounters play out like Red/Blue.** The battle music starts, the board itself flashes three times and

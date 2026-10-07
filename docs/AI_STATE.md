@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.53.1 (`releases/ShambConkins_v0.53.1.html`).
+Version 0.54.0 (`releases/ShambConkins_v0.54.0.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -61,6 +61,11 @@ Version 0.53.1 (`releases/ShambConkins_v0.53.1.html`).
   bust `prop:'cat'`/`nehru`/`scar`): the launcher recruits `pickLairVillain` (`data/bondLair.js`: `BOND_VILLAIN_IDS`, 12
   lair-only villains with `unlockBy:'boss'`) instead of `unlockId`. Games in `engines/bond.js` (`bondLaser`,
   `bondFunhouse`, `bondBomb`; ids `bond-laser-vault`, `bond-golden-gun`, `bond-goldfinger-bomb`). Test: `tests/bondlair.mjs`.
+- **Super Mario Bros. (v0.54):** `engines/marioBros.js` (engine `marioBros`, ids `smb-coin-rush` / `smb-castle-dash`,
+  `marioMode` coins|race, warp `mario-world`) mirrors `sonic.js`: seeded tile level (`buildLevel`, 16px tiles, 15 rows,
+  stride `S`), per-player worlds (`makeWorld`: own tiles/coins/enemies), SMB1 physics constants `PH`, coin room `L.room`
+  reached via `L.warp.entry` (hold down) and left via the side pipe to `L.warp.exit`. `s.debug` has `teleport`/`toWarp`.
+  Challenge items `wz-question-block`, `wz-goal-flagpole`. Test: `tests/mario.mjs` (screenshots `/tmp/claude-0/sc/smb-*`).
 
 ## Recent changes (this round of owner feedback)
 Boss trigger fix + drag flow; 2x heads (board, collection, character select); collection pages fit the screen;
@@ -130,7 +135,7 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   `installAudioUnlock()` (audio.js) resumes the suspended AudioContext on the first tap/key.
 
 ## In progress / unverified
-- Warp minigames only bot/fuzz-tested in headless Chromium; Sonic and kart (split-screen canvas, Mode 7 rows) need a
+- Warp minigames only bot/fuzz-tested in headless Chromium; Sonic, Mario and kart (split-screen canvas, Mode 7 rows) need a
   real-phone check for feel and frame rate.
 - Board smoothness only measured in headless Chromium (software compositing); check pinch/zoom on a real phone.
   Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus
