@@ -277,7 +277,19 @@ function* wrecking(F,pp){const p=D(pp,{n:1});const tele=tl(F,1),b=F.boss;F.say('
  for(let i=0;i<Math.max(1,p.n);i++){F.pose('windup',tele);F.sfx('charge');F.hazard({shape:'circle',x:b.x,y:b.y,r:38,tele,dur:4.6,follow:true,pend:{len:300+i*70,amp:i%2?.95:1.05,period:2.6+i*.4,phase:i*1.6},col:F.pal[2],kind:'ball'});yield .6;}
  yield tele+4.8;}
 
+// Blofeld's piranha-pool trapdoors: the floor is split into panels, all but one or two drop open.
+function* trapdoor(F,pp){const p=D(pp,{n:3});const tele=tl(F,1.25);F.say('Allow me to show you the piranhas.');
+ const cols=3,rows=2,y0=250,y1=F.H-50,tw=F.W/cols,th=(y1-y0)/rows;
+ for(let r=0;r<p.n;r++){const t=F.target(),near=Math.min(cols*rows-1,Math.floor(clampN(t.x,0,F.W-1)/tw)+cols*Math.min(rows-1,Math.floor(clampN(t.y-y0,0,y1-y0-1)/th)));
+  let safe=Math.floor(F.rand()*cols*rows);if(safe===near)safe=(safe+1+Math.floor(F.rand()*(cols*rows-1)))%(cols*rows);const safes=[safe];if(r%2&&F.k.dens<1.3)safes.push((safe+3)%(cols*rows));
+  F.sfx('charge');F.pose('fire',.4);
+  for(let i=0;i<cols*rows;i++){const x=(i%cols+.5)*tw,y=y0+(Math.floor(i/cols)+.5)*th;
+   if(safes.includes(i))F.warn({shape:'rect',x,y,w:tw-8,h:th-8,dur:tele+.3,col:'#5dff9a',mark:'safe',alpha:.16});
+   else F.hazard({shape:'rect',x,y,w:tw-6,h:th-6,tele,dur:1.1,col:'#1b6f8a',kind:'trapdoor'});}
+  yield tele;F.shake(6);F.sfx('boom');yield 1.6;}
+ yield .4;}
+
 const PATTERNS={aimed,fan,spiral,rain,laser,dive,minions,homing,ring,edge,gapwall,strike,wave,lob,bounce,
- doors,rinka,wilybomb,riddle,bullettime,stab,shockwave,glove,puddles,piledriver,iceshards,slam,lockon,ladle,shock,plates,hounds,volley,sidedash,greatknife,rocket,balloons,batswarm,spiderheads,tentaclegrid,flamebreath,gumdrops,jailbars,hypno,flail,passage,energyball,wrecking};
-const SIGNATURES={doors:'POD BAY DOORS',rinka:'RINKA SWARM',wilybomb:'WILY BOMB',riddle:'RIDDLE ME THIS',bullettime:'BULLET TIME',stab:'LIQUID BLADE',shockwave:'SHOCKWAVE',glove:'IRON GLOVE',puddles:'VENOM PUDDLES',piledriver:'SPINNING PILEDRIVER',iceshards:'ICE ERUPTION',slam:'MOUNTAIN SLAM',lockon:'PLASMA LOCK-ON',ladle:'SOUP LADLE',shock:'SHOCK THERAPY',plates:'KITTEN PLATES',hounds:'RELEASE THE HOUNDS',volley:'ROYAL VOLLEY',sidedash:'HOVERBOARD RUSH',greatknife:'GREAT KNIFE',rocket:'ROCKET LAUNCHER',balloons:'FLOATING BALLOONS',batswarm:'BAT SWARM',spiderheads:'SPIDER HEADS',tentaclegrid:'TENTACLE GRID',flamebreath:'FLAME BREATH',gumdrops:'GUMDROP BOUNCE',jailbars:'GO TO JAIL',hypno:'HYPNO RINGS',flail:'SPIN FLAIL',passage:'SECRET PASSAGE',energyball:'REFLECT THE ORB',wrecking:'WRECKING BALL'};
+ doors,rinka,wilybomb,riddle,bullettime,stab,shockwave,glove,puddles,piledriver,iceshards,slam,lockon,ladle,shock,plates,hounds,volley,sidedash,greatknife,rocket,balloons,batswarm,spiderheads,tentaclegrid,flamebreath,gumdrops,jailbars,hypno,flail,passage,energyball,wrecking,trapdoor};
+const SIGNATURES={doors:'POD BAY DOORS',rinka:'RINKA SWARM',wilybomb:'WILY BOMB',riddle:'RIDDLE ME THIS',bullettime:'BULLET TIME',stab:'LIQUID BLADE',shockwave:'SHOCKWAVE',glove:'IRON GLOVE',puddles:'VENOM PUDDLES',piledriver:'SPINNING PILEDRIVER',iceshards:'ICE ERUPTION',slam:'MOUNTAIN SLAM',lockon:'PLASMA LOCK-ON',ladle:'SOUP LADLE',shock:'SHOCK THERAPY',plates:'KITTEN PLATES',hounds:'RELEASE THE HOUNDS',volley:'ROYAL VOLLEY',sidedash:'HOVERBOARD RUSH',greatknife:'GREAT KNIFE',rocket:'ROCKET LAUNCHER',balloons:'FLOATING BALLOONS',batswarm:'BAT SWARM',spiderheads:'SPIDER HEADS',tentaclegrid:'TENTACLE GRID',flamebreath:'FLAME BREATH',gumdrops:'GUMDROP BOUNCE',jailbars:'GO TO JAIL',hypno:'HYPNO RINGS',flail:'SPIN FLAIL',passage:'SECRET PASSAGE',energyball:'REFLECT THE ORB',wrecking:'WRECKING BALL',trapdoor:'PIRANHA TRAPDOORS'};
 Object.assign(exports,{PATTERNS,SIGNATURES,K,TAU});

@@ -892,3 +892,5 @@ body.gb-open{overflow:hidden}
 .landing-banner.still .lb-band{animation:none}
 @keyframes lb-in{0%{transform:skewY(-4deg) scaleY(0);opacity:0}100%{transform:skewY(-4deg) scaleY(1);opacity:1}}
 @keyframes lb-out{to{transform:skewY(-4deg) translateX(110%);opacity:0}}
+.warp-lair-room{font:900 26px system-ui,sans-serif;fill:#ffd23c;paint-order:stroke;stroke:#0b0b0d;stroke-width:7px;letter-spacing:.04em}
+.warp-lair-small{font:800 20px system-ui,sans-serif;fill:#e8e6e0;letter-spacing:.08em}

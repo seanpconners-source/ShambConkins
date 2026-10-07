@@ -63,6 +63,7 @@ const PRESETS={
  smb3:[['tiles',.7,{s:44,a:'#f0a04a',b:'#d9822b'}],['clouds',1.2,{n:7}]],
  clue:[['wallpaper',.4,{}],['tiles',.8,{s:56,a:'rgba(0,0,0,.25)',b:'rgba(0,0,0,0)'}],['pillars',1,{col:'#2a1a3a'}]],
  hyrule:[['stars',0,{n:60}],['mountains',.4,{}],['fog',1,{n:10,col:'rgba(180,140,255,.14)'}],['embers',1.5,{n:30,col:'#ffd23c'}]],
+ lair:[['mountains',.4,{col:'#2a1712'}],['glowlines',.6,{col:'#c8161d'}],['embers',1.4,{n:70,col:'#ff5a1f'}]],
  greenhill:[['clouds',.5,{n:6}],['tiles',.8,{s:52,a:'#c98a3a',b:'#a86a22'}],['hills',1,{}]]
 };
 const BASE={station:1,hillvalley:1,rlyeh:1,hyrule:1,rainbow:1,matrix:1,city:1,circuit:1,antarctic:0,candy:0,greenhill:0,smb3:0,board:0,pinkoffice:0};

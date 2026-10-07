@@ -4,6 +4,9 @@ const {packItems}=require("src/data/itemPackV43.js");
 const rare=it=>({...it,findWeight:.35});
 const challenge=(id,name,source,icon,game,desc)=>({id:'wz-'+id,name,source,icon,kind:'game',value:game,desc,findWeight:.35});
 const WARP_ITEMS=[
+ challenge('diamond-collar','Diamond Smuggler’s Collar','Diamonds Are Forever','💎','bond-laser-vault','Start the Laser Vault Heist right now.'),
+ challenge('golden-bullet','Scaramanga’s Golden Bullet','The Man with the Golden Gun','🔫','bond-golden-gun','Start the Funhouse Duel right now.'),
+ challenge('fort-knox-key','Fort Knox Vault Key','Goldfinger','🧨','bond-goldfinger-bomb','Start Stop the Bomb at 007 right now.'),
  ...packItems('Mario Kart',[
   ['triple-mushroom','Triple Mushroom','🍄','bundle',{boost:3,rollFloor:3}],
   ['banana-peel','Banana Peel','🍌','strongTrap',5],

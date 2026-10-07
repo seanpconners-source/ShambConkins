@@ -7,7 +7,8 @@ const {GameSession}=require("src/engines/session.js");
 const {animateRoulette}=require("src/roulette.js");
 const {showDialog, closeDialog, unlockDialog, updateBoard, toast}=require("src/ui.js");
 const {gameArtHTML, portraitHTML}=require("src/assets.js");
-const {recordGame, recruitReward, availableCharacters, saveProfile}=require("src/profile.js");
+const {recordGame, recruitReward, availableCharacters, canRecruit, saveProfile}=require("src/profile.js");
+const {pickLairVillain}=require("src/data/bondLair.js");
 const {CHARACTERS, perkType}=require("src/characters.js");
 const {escapeHTML, pick, runRandom}=require("src/utils.js");
 const {sound}=require("src/audio.js");
@@ -69,7 +70,7 @@ async function settleGame(game,scores,label,origin,players,coop=null,returnToRol
   const heir=CHARACTERS.find(c=>c.unlockBy==='character-win'&&c.requires===p.character);if(heir){const actual=recruitReward(store.profile,heir.id,p.owner,'character');if(actual){unlocked.push(actual);toast(`${heir.name} unlocked for ${p.owner}!`);}}
  }
  if(coop?.kind==='survival'&&coop.won&&origin!=='dev'){const pool=gameRecruitPool(game,store.profile,players[0]);if(pool.length&&Math.random()<.5){const c=pick(pool);const actual=recruitReward(store.profile,c.id,null,'game');if(actual)unlocked.push(actual);}}
- if(coop?.kind==='boss'&&coop.won&&origin!=='dev'&&game.bossId){const b=bossById(game.bossId);if(b?.unlockId){const actual=recruitReward(store.profile,b.unlockId,null,'boss');if(actual){unlocked.push(actual);toast(`${CHARACTERS.find(c=>c.id===actual)?.name||'A boss'} joins both rosters!`);}}}
+ if(coop?.kind==='boss'&&coop.won&&origin!=='dev'&&game.bossId){const b=bossById(game.bossId),poolId=b?.unlockPool==='bond-villains'?pickLairVillain(players.flatMap(p=>availableCharacters(store.profile,p.owner)),id=>canRecruit(store.profile,id,null,'boss')):null;if(b?.unlockId){const actual=b.unlockPool?(poolId&&recruitReward(store.profile,poolId,null,'boss')):recruitReward(store.profile,b.unlockId,null,'boss');if(actual){unlocked.push(actual);toast(`${CHARACTERS.find(c=>c.id===actual)?.name||'A boss'} joins both rosters!`);}}}
  const milestones=origin==='dev'?[]:updateProgression(store.profile);if(milestones.length)extra+=" New unlocks: "+milestones.join(', ')+'.';
  if(origin==='board'){if(unlocked.length)store.run.latestRecruit={owner:players[winner]?.owner,name:CHARACTERS.find(c=>c.id===unlocked[0])?.name||'A new character'};store.run.pending.unlocked=unlocked;store.run.pending.unlockOwner=winner===null?null:players[winner].owner;store.run.pending.extra=extra;hooks.save();}if(origin!=='dev')saveProfile(store.profile);sound('win');const continued=await presentResult({gameId:game.id,scores,label,winner,rewards,extra,origin,coop,unlocked,unlockOwner:winner===null?null:players[winner].owner},players);if(continued===null||!valid())return;if(!await unlockDialog(unlocked,winner===null?null:players[winner].owner)||!valid())return;store.busy=false;
  if(origin==='board'){if(game.bossId&&hooks.bossDone){await hooks.bossDone(game,coop);return;}returnToRoll?hooks.beforeRoll():hooks.endTurn();}else hooks.arcade();

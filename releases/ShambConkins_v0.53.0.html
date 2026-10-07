@@ -893,6 +893,8 @@ body.gb-open{overflow:hidden}
 .landing-banner.still .lb-band{animation:none}
 @keyframes lb-in{0%{transform:skewY(-4deg) scaleY(0);opacity:0}100%{transform:skewY(-4deg) scaleY(1);opacity:1}}
 @keyframes lb-out{to{transform:skewY(-4deg) translateX(110%);opacity:0}}
+.warp-lair-room{font:900 26px system-ui,sans-serif;fill:#ffd23c;paint-order:stroke;stroke:#0b0b0d;stroke-width:7px;letter-spacing:.04em}
+.warp-lair-small{font:800 20px system-ui,sans-serif;fill:#e8e6e0;letter-spacing:.08em}
 
 /* ==========================================================================
    v0.47 interface theme: the title screen's dark arcade look on every menu,
@@ -924,6 +926,7 @@ body[data-theme="warp-mario-world"]{--t-bg0:#040812;--t-bg1:#0b1a34;--t-glow:#1f
 body[data-theme="warp-clue"]{--t-bg0:#0a0604;--t-bg1:#1f110a;--t-glow:#5a2a14;--t-glow2:#4a1f4a;--t-s1:#34231a;--t-s2:#20150f;--t-s3:#422d21;--t-well:#110a06;--t-sub:#dfc6a6;--t-dim:#a48c70;--t-acc:#e8bd6a;--t-acc2:#7b3a6b;--t-acc-ink:#24140a;--t-hot:#d68ad0}
 body[data-theme="warp-hyrule"]{--t-bg0:#050a05;--t-bg1:#0e1e0e;--t-glow:#2a5a1a;--t-glow2:#6a5a10;--t-s1:#1f3121;--t-s2:#121f13;--t-s3:#29402b;--t-well:#070f07;--t-sub:#c8deb2;--t-dim:#8ea47a;--t-acc:#f2d35a;--t-acc2:#3f9a3a;--t-acc-ink:#1a1a04;--t-hot:#7fd8ff}
 body[data-theme="warp-green-hill"]{--t-bg0:#030816;--t-bg1:#0a1b3d;--t-glow:#1a52b0;--t-glow2:#2a8a3a;--t-s1:#182d53;--t-s2:#0f1c37;--t-s3:#213b69;--t-well:#060d1f;--t-sub:#b6d3ff;--t-dim:#7f9cc8;--t-acc:#ffd23a;--t-acc2:#2a7ae0;--t-acc-ink:#0a1430;--t-hot:#7cff9a}
+body[data-theme="warp-bond-lair"]{--t-bg0:#070505;--t-bg1:#1a0f0c;--t-glow:#6a1410;--t-glow2:#3a3d44;--t-s1:#2a2224;--t-s2:#181314;--t-s3:#352c2e;--t-well:#0c0909;--t-sub:#e4d6cc;--t-dim:#a8968c;--t-acc:#e8c45a;--t-acc2:#c8161d;--t-acc-ink:#1a1006;--t-hot:#ff6a4a}
 
 /* ---------- Page backdrop ---------- */
 html,body{background-color:var(--t-bg0)}
@@ -1393,7 +1396,7 @@ async function announceLevel(p){
 // ------------------------------------------------------------ warp zones and bosses
 async function enterWarpZone(pipe=null){
  const run=store.run,token=movementToken,id=pickWarpId(run,random),def=WARP_DEFS[id],boss=bossById(def.bossId);
- const choice=await showDialog({title:'A warp pipe!',source:def.source,rare:true,body:`${def.title}. ${def.intro} You will both be warped there.${boss?` ${boss.name} guards the castle at the end, and beating them unlocks a new character.`:''}`,choices:[{label:`Jump in · ${def.title}`,value:'go',primary:true},{label:'Walk on by',value:'no'}]});
+ const choice=await showDialog({title:'A warp pipe!',source:def.source,rare:true,body:`${def.title}. ${def.intro} You will both be warped there.${boss?id==='bond-lair'?` ${boss.name} waits in SPECTRE HQ at the end: beat him and he hands over a Bond villain neither of you has.`:` ${boss.name} guards the castle at the end, and beating them unlocks a new character.`:''}`,choices:[{label:`Jump in · ${def.title}`,value:'go',primary:true},{label:'Walk on by',value:'no'}]});
  if(choice===null||store.run!==run||token!==movementToken)return;
  if(choice!=='go'){if(pipe){(pipe.warpDeclined||=[]).push(run.current);saveRun();}await finishEncounter();return;}
  if(pipe)pipe.warpUsed=true;
@@ -1401,7 +1404,15 @@ async function enterWarpZone(pipe=null){
  run.warpsVisited=[...(run.warpsVisited||[]),id];run.warp={id,returns:run.players.map(q=>q.node),bossId:def.bossId};
  logRun(`The party warps to ${def.title}.`);saveRun();
  await warpTransition(()=>{run.mainBoard=run.board;run.savedTraps=run.traps;run.traps=[];run.board=board;for(const q of run.players){q.warpVisited=q.visited;q.visited=[];q.node=board.realms.warp.start;}run.camera='follow';run.pan=null;focusBoardAction(run,run.players.map(q=>q.node));updateBoard(true);},{title:def.title,subtitle:def.intro,icon:def.icon});
- if(store.run!==run)return;setMusicZone('warp-'+id);saveRun();await finishEncounter();
+ if(store.run!==run)return;setMusicZone('warp-'+id);saveRun();
+ if(id==='bond-lair')await lairWelcome(run);if(store.run!==run)return;
+ await finishEncounter();
+}
+// The Bond lair: each player is met by a movie Bond they have not collected yet (recruitReward picks a missing one).
+async function lairWelcome(run){
+ for(const q of run.players){const actual=recruitReward(store.profile,'bond',q.owner,'encounter',random);
+  if(actual){logRun(`${CHARACTERS.find(c=>c.id===actual)?.name||'A new 007'} joins ${q.owner}’s roster in the Volcano Lair.`);saveProfile(store.profile);await unlockDialog([actual],q.owner);if(store.run!==run)return;}
+  else toast(`${q.owner} already has every movie Bond. Licensed to win anyway.`);}
 }
 async function exitWarpZone(){
  const run=store.run,w=run.warp;if(!w)return;
@@ -1842,6 +1853,7 @@ const {LEGENDS_ITEMS}=require("src/data/legendsItems.js");
 const {POKEMON_CHARACTERS}=require("src/data/pokemonPack.js");
 const {PKMN_CATALOG_ITEMS}=require("src/data/pkmnItems.js");
 const {WARP_ITEMS}=require("src/data/warpItems.js");
+const {LAIR_VILLAIN_CHARACTERS}=require("src/data/bondLair.js");
 const {balanceItem}=require("src/data/balance.js");
 // Preserve the uploaded catalog byte-for-byte. Sean has explicitly disclaimed
 // Eugenia, so its inherited character, pass and four cards are inactive.
@@ -1865,6 +1877,7 @@ ACTIVE_CATALOG.trivia.push(...PARTY_TRIVIA,...EXPANDED_TRIVIA_V42,...LEGENDS_TRI
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='bond'?MOVIE_BOND_CHARACTERS[0]:c.id==='chris-parent'?{...c,name:'Dad · Chris Conners',unlockHint:'Meet Dad at My Parents’ House or a Home encounter.'}:c.id==='angie-parent'?{...c,name:'Mom · Angie Conners',unlockHint:'Meet Mom at My Parents’ House or a Home encounter.'}:c);
 ACTIVE_CATALOG.characters.push(...MOVIE_BOND_CHARACTERS.slice(1),...FACE_PACK_CHARACTERS,...NEW_CHARACTERS);
 ACTIVE_CATALOG.characters.push(...NEW_CHARACTERS2);
+ACTIVE_CATALOG.characters.push(...LAIR_VILLAIN_CHARACTERS);
 ACTIVE_CATALOG.characters.push(...POKEMON_CHARACTERS);
 // KC and Mylo always arrive together (the early family event), never one at a time.
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='kc'||c.id==='mylo'?{...c,unlockBy:'dogs',unlockHint:'KC and Mylo arrive together early in your first run.'}:c);
@@ -9180,7 +9193,7 @@ Object.assign(exports,{LEGENDS_ITEMS});
 
 },
 "src/version.js":(exports,require)=>{
-const VERSION='0.52.0';
+const VERSION='0.53.0';
 Object.assign(exports,{VERSION});
 
 },
@@ -12649,7 +12662,8 @@ const {GameSession}=require("src/engines/session.js");
 const {animateRoulette}=require("src/roulette.js");
 const {showDialog, closeDialog, unlockDialog, updateBoard, toast}=require("src/ui.js");
 const {gameArtHTML, portraitHTML}=require("src/assets.js");
-const {recordGame, recruitReward, availableCharacters, saveProfile}=require("src/profile.js");
+const {recordGame, recruitReward, availableCharacters, canRecruit, saveProfile}=require("src/profile.js");
+const {pickLairVillain}=require("src/data/bondLair.js");
 const {CHARACTERS, perkType}=require("src/characters.js");
 const {escapeHTML, pick, runRandom}=require("src/utils.js");
 const {sound}=require("src/audio.js");
@@ -12711,7 +12725,7 @@ async function settleGame(game,scores,label,origin,players,coop=null,returnToRol
   const heir=CHARACTERS.find(c=>c.unlockBy==='character-win'&&c.requires===p.character);if(heir){const actual=recruitReward(store.profile,heir.id,p.owner,'character');if(actual){unlocked.push(actual);toast(`${heir.name} unlocked for ${p.owner}!`);}}
  }
  if(coop?.kind==='survival'&&coop.won&&origin!=='dev'){const pool=gameRecruitPool(game,store.profile,players[0]);if(pool.length&&Math.random()<.5){const c=pick(pool);const actual=recruitReward(store.profile,c.id,null,'game');if(actual)unlocked.push(actual);}}
- if(coop?.kind==='boss'&&coop.won&&origin!=='dev'&&game.bossId){const b=bossById(game.bossId);if(b?.unlockId){const actual=recruitReward(store.profile,b.unlockId,null,'boss');if(actual){unlocked.push(actual);toast(`${CHARACTERS.find(c=>c.id===actual)?.name||'A boss'} joins both rosters!`);}}}
+ if(coop?.kind==='boss'&&coop.won&&origin!=='dev'&&game.bossId){const b=bossById(game.bossId),poolId=b?.unlockPool==='bond-villains'?pickLairVillain(players.flatMap(p=>availableCharacters(store.profile,p.owner)),id=>canRecruit(store.profile,id,null,'boss')):null;if(b?.unlockId){const actual=b.unlockPool?(poolId&&recruitReward(store.profile,poolId,null,'boss')):recruitReward(store.profile,b.unlockId,null,'boss');if(actual){unlocked.push(actual);toast(`${CHARACTERS.find(c=>c.id===actual)?.name||'A boss'} joins both rosters!`);}}}
  const milestones=origin==='dev'?[]:updateProgression(store.profile);if(milestones.length)extra+=" New unlocks: "+milestones.join(', ')+'.';
  if(origin==='board'){if(unlocked.length)store.run.latestRecruit={owner:players[winner]?.owner,name:CHARACTERS.find(c=>c.id===unlocked[0])?.name||'A new character'};store.run.pending.unlocked=unlocked;store.run.pending.unlockOwner=winner===null?null:players[winner].owner;store.run.pending.extra=extra;hooks.save();}if(origin!=='dev')saveProfile(store.profile);sound('win');const continued=await presentResult({gameId:game.id,scores,label,winner,rewards,extra,origin,coop,unlocked,unlockOwner:winner===null?null:players[winner].owner},players);if(continued===null||!valid())return;if(!await unlockDialog(unlocked,winner===null?null:players[winner].owner)||!valid())return;store.busy=false;
  if(origin==='board'){if(game.bossId&&hooks.bossDone){await hooks.bossDone(game,coop);return;}returnToRoll?hooks.beforeRoll():hooks.endTurn();}else hooks.arcade();
@@ -20247,6 +20261,7 @@ const WARP_DEFS={
  'clue':{id:'clue',title:'Tudor Mansion',source:'Clue',icon:'🔎',bossId:'professor-plum',count:10,color:'#3a2418',intro:'It was Professor Plum, in the secret passage, with the final boss.'},
  'hyrule':{id:'hyrule',title:'Hyrule Field',source:'The Legend of Zelda',icon:'🗡️',bossId:'ganon',count:17,color:'#8fd47a',intro:'It is dangerous to go alone. Take each other.'},
  'pokemon':POKE_DEF,
+ 'bond-lair':{id:'bond-lair',title:'Volcano Lair',source:'James Bond',icon:'🍸',bossId:'blofeld',count:20,color:'#140d0c',intro:'A hollowed-out volcano, a rocket on the pad and a man stroking a white cat. Just walking in here gets each of you a 007 you have not met yet.'},
  'green-hill':{id:'green-hill',title:'Green Hill Zone',source:'Sonic the Hedgehog',icon:'💍',bossId:'dr-robotnik',count:18,color:'#7cc8ff',intro:'Gotta go fast. Collect rings. Avoid the egg-shaped man.'}
 };
 const WARP_IDS=Object.keys(WARP_DEFS);
@@ -20263,6 +20278,7 @@ function layoutPoints(id,count){
  else if(id==='monopoly'){const x0=260,x1=1540,y0=170,y1=1030,per=2*((x1-x0)+(y1-y0)),step=per/count,corners=[[x1,y1],[x0,y1],[x0,y0],[x1,y0],[x1,y1]];const lens=[x1-x0,y1-y0,x1-x0,y1-y0];for(let i=0;i<count;i++){let d=i*step,k=0;while(k<3&&d>lens[k]){d-=lens[k];k++;}const a=corners[k],b=corners[k+1],f=d/lens[k];pts.push([a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f]);}}
  else if(id==='mario-world'){return pathAlong([[190,990],[430,960],[650,860],[560,640],[760,500],[1010,560],[1180,420],[1430,470],[1580,680],[1500,900],[1260,960],[1090,820],[1260,700],[1330,880]].slice(0,13).concat([[1480,1010]]),count);}
  else if(id==='clue'){for(let i=0;i<count-1;i++){const row=Math.floor(i/3),k=i%3,x=300+(row%2?2-k:k)*600;pts.push([x,260+row*340]);}pts.push([900,1100]);}
+ else if(id==='bond-lair'){return pathAlong([[170,1060],[470,1080],[700,990],[560,840],[300,760],[260,520],[430,330],[700,250],[1000,230],[1250,300],[1330,520],[1180,700],[1300,900],[1560,980],[1650,760],[1600,520]],count);}
  else if(id==='hyrule'){return pathAlong([[180,980],[500,930],[760,1010],[980,820],[760,640],[520,520],[760,340],[1080,270],[1350,430],[1600,300]],count);}
  else {for(let i=0;i<count;i++){const t=i/(count-1);pts.push([160+t*1480,760-Math.sin(t*Math.PI*2.2)*230-t*100]);}}
  return pts;
@@ -20280,6 +20296,7 @@ function assignTypes(count,random,id){
 const CHUTES_JUMPS=[[2,10],[7,14],[12,19],[16,5],[21,9],[23,15]];
 const MONOPOLY_NAMES=['GO','Paddy’s Alley','Chance','Kitten Mittens Ct','Income Tax','Dunder Mifflin Ave','Jail','Cones of Dunshire','Chest','Rum Ham Row','Free Parking','Fight Milk Blvd','Chance','Hill Valley Way','Go to Jail','Goon Docks','Chest','Raccoon City Rd','Luxury Tax','Quark’s Plaza','Silent Hill Sq','Boardwalk'];
 const MONOPOLY_COLORS=['#8b5a2b','#8b5a2b','#9ad0f0','#9ad0f0','#9ad0f0','#e0559a','#e0559a','#f08a1c','#f08a1c','#e03a3a','#e03a3a','#e03a3a','#f3d52b','#f3d52b','#f3d52b','#2fa75a','#2fa75a','#2fa75a','#2f4fd6','#2f4fd6'];
+const LAIR_ROOMS=['Monorail Dock','','Guard Post','','Piranha Pool','','Laser Room','','Rocket Gantry','','Mission Control','','Q’s Bench','','Cat Room','','','','Escape Pod','Blofeld’s Office'];
 const CLUE_ROOMS=['Hall','Lounge','Dining Room','Kitchen','Ballroom','Conservatory','Billiard Room','Library','Study','Secret Passage'];
 
 function buildWarpBoard(id,seed='warp'){
@@ -20293,6 +20310,7 @@ function buildWarpBoard(id,seed='warp'){
  if(id==='chutes')for(const [a,b] of CHUTES_JUMPS){if(a<count-2&&b<count-1){nodes[ids[a]].jump=ids[b];nodes[ids[a]].type=b>a?'bonus':'penalty';jumps.push([a,b]);}}
  if(id==='monopoly'){nodes[ids[0]].label='GO';ids.forEach((nid,i)=>{nodes[nid].label=MONOPOLY_NAMES[i]||'';});}
  if(id==='clue')ids.forEach((nid,i)=>{nodes[nid].label=CLUE_ROOMS[i]||'';});
+ if(id==='bond-lair')ids.forEach((nid,i)=>{nodes[nid].label=LAIR_ROOMS[i]||'';});
  const board={format:'warp',generation:0,width:W,height:H,nodes,realms:{warp:{ids,start:ids[0],gate:ids[count-1],cols:count-1,y:0,height:H,color:def.color,title:def.title}},obstacles:[],signs:[],baseSpan:id==='chutes'?1500:1500,pieceScale:.9,
   warp:{id,title:def.title,source:def.source,icon:def.icon,bossId:def.bossId,intro:def.intro,points,jumps}};
  return board;
@@ -20337,8 +20355,26 @@ function sceneHyrule(b,random){const d=smooth(b.warp.points);
 function sceneGreenHill(b,random){const pts=b.warp.points,d=smooth(pts);
  const palm=(x,y)=>`<g transform="translate(${x},${y})"><path d="M0 0Q8 -60 -4 -120" stroke="#8a5a2a" stroke-width="14" fill="none" stroke-linecap="round"/><path d="M-4 -120q-50 -10 -64 22M-4 -120q50 -16 62 18M-4 -120q-24 -40 -58 -34M-4 -120q22 -40 56 -30" stroke="#2fa75a" stroke-width="14" fill="none" stroke-linecap="round"/></g>`;
  return `<rect width="${W}" height="${H}" fill="url(#wg-sky)"/><ellipse cx="300" cy="150" rx="140" ry="44" fill="#fff"/><ellipse cx="1300" cy="110" rx="170" ry="50" fill="#fff"/><path d="M0 900Q450 760 900 880T1800 840V1200H0Z" fill="#46b34a"/><path d="M0 980Q450 880 900 960T1800 940V1200H0Z" fill="#a7742f"/>${Array.from({length:12},(_,i)=>`<rect x="${i*160}" y="${1010+(i%2)*40}" width="80" height="60" fill="#8a5a1f" opacity=".6"/>`).join('')}${[200,700,1250,1600].map((x,i)=>palm(x,820+(i%2)*60)).join('')}<path d="${d}" fill="none" stroke="#2b2230" stroke-width="40" stroke-linecap="round" opacity=".3"/><path d="${d}" fill="none" stroke="#f4cf5a" stroke-width="30" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="3 24" stroke-linecap="round"/>`+pts.filter((_,i)=>i%2===1).map(p=>`<circle cx="${p[0]+4}" cy="${p[1]-62}" r="14" fill="none" stroke="#ffd800" stroke-width="7"/>`).join('');}
-const SCENES={'rainbow-road':sceneRainbow,'candy-land':sceneCandy,chutes:sceneChutes,monopoly:sceneMonopoly,'mario-world':sceneMario,clue:sceneClue,hyrule:sceneHyrule,'green-hill':sceneGreenHill};
-const CASTLE_COLORS={'rainbow-road':['#a77bff','#e8543a'],'candy-land':['#ffb3d9','#ee4b5b'],chutes:['#8bcf6a','#2f8a3a'],monopoly:['#ffd45a','#e03a3a'],'mario-world':['#e0c58f','#e0453a'],clue:['#8b6a4a','#7b3a6b'],hyrule:['#8f9aa8','#3a8a3a'],'green-hill':['#7ec8ff','#e8543a']};
+// Bond: the hollow-volcano lair from You Only Live Twice, with a SPECTRE control room at the end.
+function spectreMark(x,y,s,col){return `<g transform="translate(${x},${y}) scale(${s})" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round"><circle r="46"/><circle cy="-8" r="20" fill="${col}" stroke="none"/>${[-60,-30,0,30,60].map((a,i)=>`<path d="M${-30+i*15} 8Q${-34+i*17+Math.sin(a)*6} 34 ${-38+i*19} 40"/>`).join('')}</g>`;}
+function sceneLair(b,random){const pts=b.warp.points,d=smooth(pts);
+ const rivets=pts.map((p,i)=>i%2?'':`<circle cx="${p[0]}" cy="${p[1]+52}" r="5" fill="#8a8f98"/>`).join('');
+ const rock=Array.from({length:26},()=>{const x=Math.round(random()*W),y=Math.round(random()*H),r=30+random()*70;return `<ellipse cx="${x}" cy="${y}" rx="${r.toFixed(0)}" ry="${(r*.55).toFixed(0)}" fill="#24160f" opacity=".55"/>`;}).join('');
+ const rocket=`<g transform="translate(860,610)"><ellipse cx="0" cy="190" rx="200" ry="40" fill="#2b2d33" stroke="#ffd23c" stroke-width="6" stroke-dasharray="26 18"/><rect x="-150" y="-180" width="24" height="370" fill="#3a3d44"/><path d="M-126 -150H-40M-126 -60H-40M-126 30H-40M-126 120H-40" stroke="#3a3d44" stroke-width="10"/>
+  <path d="M0 -230Q46 -170 46 -60V150H-46V-60Q-46 -170 0 -230Z" fill="#e8e6e0" stroke="#1a1a1a" stroke-width="6"/><rect x="-46" y="-40" width="92" height="22" fill="#c8161d"/><path d="M-46 80L-92 170H-46ZM46 80L92 170H46Z" fill="#c8161d" stroke="#1a1a1a" stroke-width="5"/><circle cy="-110" r="18" fill="#7fc8ff" stroke="#1a1a1a" stroke-width="5"/><text y="40" text-anchor="middle" class="warp-lair-small" transform="rotate(-90 0 40)">BIRD ONE</text>
+  <path d="M-30 150Q0 230 30 150Z" fill="#ff8a1a" opacity=".85"/></g>`;
+ const pool=`<g transform="translate(380,1010)"><rect x="-150" y="-70" width="300" height="140" rx="10" fill="#0f3a48" stroke="#8a8f98" stroke-width="10"/><path d="M-130 -20q30 -14 60 0t60 0t60 0t60 0M-130 30q30 -14 60 0t60 0t60 0t60 0" stroke="#5fb7c8" stroke-width="4" fill="none" opacity=".7"/>${[[-70,-30],[30,10],[90,-34],[-20,40]].map(([x,y],i)=>`<g transform="translate(${x},${y}) scale(${i%2?-1:1},1)"><ellipse rx="22" ry="11" fill="#c8d4d8"/><path d="M18 0l14 -10v20z" fill="#c8d4d8"/><path d="M-14 4h8" stroke="#c8161d" stroke-width="3"/></g>`).join('')}<text y="104" text-anchor="middle" class="warp-lair-small">PIRANHA POOL</text></g>`;
+ const lasers=`<g transform="translate(250,560)"><rect x="-110" y="-120" width="220" height="240" fill="#100808" stroke="#3a3d44" stroke-width="8"/>${[-80,-40,0,40,80].map((y,i)=>`<path d="M-104 ${y}L104 ${y+(i%2?24:-24)}" stroke="#ff2a2a" stroke-width="4" opacity=".85"/>`).join('')}<circle cx="0" cy="0" r="18" fill="#9be7ff" stroke="#fff" stroke-width="3"/></g>`;
+ const control=`<g transform="translate(1000,1030) scale(.85)"><rect x="-230" y="-110" width="460" height="230" rx="10" fill="#0a1a14" stroke="#3a3d44" stroke-width="10"/><path d="M-200 -60Q-120 -100 -40 -50T120 -60T200 -40M-200 20Q-100 -10 0 30T200 10" stroke="#2f8a5a" stroke-width="5" fill="none"/>${Array.from({length:9},()=>`<circle cx="${Math.round(-200+random()*400)}" cy="${Math.round(-90+random()*180)}" r="7" fill="#ff3b2f"/>`).join('')}<text y="100" text-anchor="middle" class="warp-lair-small">WORLD DOMINATION · PHASE 3</text></g>`;
+ const monorail=`<path d="M-40 1140H${W+40}" stroke="#3a3d44" stroke-width="22"/><path d="M-40 1140H${W+40}" stroke="#8a8f98" stroke-width="4" stroke-dasharray="40 30"/><g transform="translate(110,1110)"><rect x="-90" y="-40" width="180" height="56" rx="24" fill="#d9d4c8" stroke="#1a1a1a" stroke-width="5"/>${[-50,0,50].map(x=>`<rect x="${x-16}" y="-30" width="32" height="20" rx="4" fill="#7fc8ff"/>`).join('')}</g>`;
+ const crater=`<ellipse cx="900" cy="-20" rx="520" ry="150" fill="#06040a" stroke="#4a2a1c" stroke-width="18"/>${stars(random,40,1800,120).replace(/<circle /g,'<circle clip-path="url(#wg-crater)" ')}<path d="M380 -20Q900 160 1420 -20" fill="none" stroke="#5a3a28" stroke-width="10" stroke-dasharray="30 14"/>`;
+ return `<rect width="${W}" height="${H}" fill="url(#wg-lair)"/>${rock}${crater}<ellipse cx="900" cy="${H+60}" rx="980" ry="170" fill="#ff5a1f" opacity=".22"/>${monorail}${spectreMark(1060,560,1.4,'#c8161d33')}${rocket}${pool}${lasers}${control}
+  <path d="${d}" fill="none" stroke="#0b0b0d" stroke-width="120" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/><path d="${d}" fill="none" stroke="#5d636e" stroke-width="96" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#ffd23c" stroke-width="96" stroke-dasharray="22 22" stroke-linecap="butt" stroke-linejoin="round" opacity=".28"/><path d="${d}" fill="none" stroke="#7d838e" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>${rivets}`
+  +pts.map((p,i)=>LAIR_ROOMS[i]?`<text x="${p[0]}" y="${p[1]-78}" text-anchor="middle" class="warp-lair-room">${e(LAIR_ROOMS[i])}</text>`:'').join('');}
+// Blofeld's office: a steel bunker with the SPECTRE octopus over the door instead of a castle.
+function lairHQ(x,y,name){return `<g transform="translate(${x},${y})" class="warp-castle"><path d="M-130 70V-60L-90 -110H90L130 -60V70Z" fill="#3a3d44" stroke="#0b0b0d" stroke-width="6"/><path d="M-130 -60H130" stroke="#5d636e" stroke-width="8"/>${[-100,-60,60,100].map(dx=>`<rect x="${dx-12}" y="-40" width="24" height="16" fill="#ff3b2f" opacity=".85"/>`).join('')}<path d="M-40 70V-10H40V70Z" fill="#0b0b0d" stroke="#c8161d" stroke-width="4"/>${spectreMark(0,-62,.5,'#e8e6e0')}<text y="104" text-anchor="middle" class="warp-castle-name">${e(name)}</text></g>`;}
+const SCENES={'rainbow-road':sceneRainbow,'candy-land':sceneCandy,chutes:sceneChutes,monopoly:sceneMonopoly,'mario-world':sceneMario,clue:sceneClue,hyrule:sceneHyrule,'green-hill':sceneGreenHill,'bond-lair':sceneLair};
+const CASTLE_COLORS={'rainbow-road':['#a77bff','#e8543a'],'candy-land':['#ffb3d9','#ee4b5b'],chutes:['#8bcf6a','#2f8a3a'],monopoly:['#ffd45a','#e03a3a'],'mario-world':['#e0c58f','#e0453a'],clue:['#8b6a4a','#7b3a6b'],hyrule:['#8f9aa8','#3a8a3a'],'green-hill':['#7ec8ff','#e8543a'],'bond-lair':['#3a3d44','#c8161d']};
 // The castle goes wherever it clears the path and the board edge best, close to the gate.
 function castleSpot(b,gate){
  const pts=Object.values(b.nodes);let best=[gate.x,gate.y-190],bestScore=-1;
@@ -20348,10 +20384,10 @@ function castleSpot(b,gate){
 function warpSceneSVG(run){
  if(run.board.warp?.id==='pokemon')return pokemonSceneSVG(run);
  const b=run.board,id=b.warp.id,random=seededRandom(run.seed+':scene:'+id),gate=b.nodes[b.realms.warp.gate],scene=SCENES[id]||sceneHyrule;
- const defs=`<defs><linearGradient id="wg-space" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#120a2e"/><stop offset="1" stop-color="#3a1a6e"/></linearGradient><linearGradient id="wg-candy" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe3f1"/><stop offset="1" stop-color="#d9f4ff"/></linearGradient><linearGradient id="wg-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4aa8ff"/><stop offset="1" stop-color="#bfe9ff"/></linearGradient><pattern id="wg-wood" width="120" height="40" patternUnits="userSpaceOnUse"><path d="M0 20H120M0 0H120" stroke="#2a180d" stroke-width="3" opacity=".5"/></pattern></defs>`;
+ const defs=`<defs><linearGradient id="wg-space" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#120a2e"/><stop offset="1" stop-color="#3a1a6e"/></linearGradient><linearGradient id="wg-candy" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe3f1"/><stop offset="1" stop-color="#d9f4ff"/></linearGradient><linearGradient id="wg-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4aa8ff"/><stop offset="1" stop-color="#bfe9ff"/></linearGradient><linearGradient id="wg-lair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a100c"/><stop offset=".6" stop-color="#2c1a12"/><stop offset="1" stop-color="#4a1e0e"/></linearGradient><clipPath id="wg-crater"><ellipse cx="900" cy="-20" rx="500" ry="135"/></clipPath><pattern id="wg-wood" width="120" height="40" patternUnits="userSpaceOnUse"><path d="M0 20H120M0 0H120" stroke="#2a180d" stroke-width="3" opacity=".5"/></pattern></defs>`;
  const [cc,flag]=CASTLE_COLORS[id]||['#aaa','#e33'];
  const spot=castleSpot(b,gate),cx=spot[0],cy=spot[1];
- return `<g class="warp-scene" data-warp="${id}">${defs}<rect x="-2400" y="-1800" width="6600" height="4800" fill="${WARP_DEFS[id].color}"/>${scene(b,random)}${castle(cx,cy,cc,flag,(b.warp.bossName||'Boss')+'’s Castle')}<text x="40" y="66" class="warp-banner">${e(b.warp.icon)} ${e(b.warp.title.toUpperCase())}</text></g>`;
+ return `<g class="warp-scene" data-warp="${id}">${defs}<rect x="-2400" y="-1800" width="6600" height="4800" fill="${WARP_DEFS[id].color}"/>${scene(b,random)}${id==='bond-lair'?lairHQ(cx,cy,'SPECTRE HQ'):castle(cx,cy,cc,flag,(b.warp.bossName||'Boss')+'’s Castle')}<text x="40" y="66" class="warp-banner">${e(b.warp.icon)} ${e(b.warp.title.toUpperCase())}</text></g>`;
 }
 Object.assign(exports,{WARP_DEFS,WARP_IDS,buildWarpBoard,pickWarpId,warpSceneSVG});
 
@@ -21547,7 +21583,15 @@ const BOSSES=[
   quote:'Ho ho ho! Say goodbye to your little blue friend!',phaseLines:[null,'Time to unleash the Death Egg!','Curse you, hedgehog!'],koLine:'You haven’t seen the last of me! *flies away on a rocket*',
   attacks:[[['aimed',{n:2,rounds:4,pink:.25}],['fan',{count:5,arc:1.1,rounds:3}],['minions',{n:2,kind:'drone',hp:5}]],
    [['wrecking',{}],['fan',{count:7,arc:1.4,rounds:3}],['minions',{n:3,kind:'drone',hp:5}]],
-   [['wrecking',{n:2}],['gapwall',{rows:4}],['minions',{n:4,kind:'drone',hp:6}],['ring',{count:14,rings:3}]]]})
+   [['wrecking',{n:2}],['gapwall',{rows:4}],['minions',{n:4,kind:'drone',hp:6}],['ring',{count:14,rings:3}]]]}),
+ // unlockPool: instead of unlockId, a win recruits one random Bond villain neither player has (src/data/bondLair.js).
+ def({id:'blofeld',name:'Ernst Stavro Blofeld',epithet:'Number One of SPECTRE',source:'You Only Live Twice',icon:'🐈',unlockId:'blofeld',unlockPool:'bond-villains',level:'warp',warp:'bond-lair',tier:3,
+  body:'bust',look:{suit:'#8f949c',hat:'none',prop:'cat',tie:'#8f949c',nehru:true,scar:true,bald:true,mark:''},scene:'lair',pal:['#5d636e','#0d0c0f','#c8161d','#f0eee8'],sig:'trapdoor',
+  tone:{base:82,voice:'sawtooth',beat:330,notes:[0,3,7,11,7,3,0,-1],bass:true},
+  quote:'Allow me to introduce myself. I am Ernst Stavro Blofeld.',phaseLines:[null,'This organisation does not tolerate failure.','Kill Bond. Now!'],koLine:'*strokes the cat one last time* ...we shall meet again.',
+  attacks:[[['aimed',{n:2,rounds:4,pink:.25}],['fan',{count:6,arc:1.2,rounds:3}],['laser',{count:1,sweep:1.7}]],
+   [['trapdoor',{}],['minions',{n:3,kind:'drone',hp:5}],['aimed',{n:3,spread:.18,rounds:3,pink:.2}]],
+   [['trapdoor',{n:4}],['laser',{count:2,sweep:2}],['minions',{n:4,kind:'drone',hp:5}],['ring',{count:14,rings:3}]]]})
 ];
 
 // New playable characters unlocked by beating these bosses (id, name, source, icon, actor/subject page, perk, line).
@@ -22565,9 +22609,21 @@ function* wrecking(F,pp){const p=D(pp,{n:1});const tele=tl(F,1),b=F.boss;F.say('
  for(let i=0;i<Math.max(1,p.n);i++){F.pose('windup',tele);F.sfx('charge');F.hazard({shape:'circle',x:b.x,y:b.y,r:38,tele,dur:4.6,follow:true,pend:{len:300+i*70,amp:i%2?.95:1.05,period:2.6+i*.4,phase:i*1.6},col:F.pal[2],kind:'ball'});yield .6;}
  yield tele+4.8;}
 
+// Blofeld's piranha-pool trapdoors: the floor is split into panels, all but one or two drop open.
+function* trapdoor(F,pp){const p=D(pp,{n:3});const tele=tl(F,1.25);F.say('Allow me to show you the piranhas.');
+ const cols=3,rows=2,y0=250,y1=F.H-50,tw=F.W/cols,th=(y1-y0)/rows;
+ for(let r=0;r<p.n;r++){const t=F.target(),near=Math.min(cols*rows-1,Math.floor(clampN(t.x,0,F.W-1)/tw)+cols*Math.min(rows-1,Math.floor(clampN(t.y-y0,0,y1-y0-1)/th)));
+  let safe=Math.floor(F.rand()*cols*rows);if(safe===near)safe=(safe+1+Math.floor(F.rand()*(cols*rows-1)))%(cols*rows);const safes=[safe];if(r%2&&F.k.dens<1.3)safes.push((safe+3)%(cols*rows));
+  F.sfx('charge');F.pose('fire',.4);
+  for(let i=0;i<cols*rows;i++){const x=(i%cols+.5)*tw,y=y0+(Math.floor(i/cols)+.5)*th;
+   if(safes.includes(i))F.warn({shape:'rect',x,y,w:tw-8,h:th-8,dur:tele+.3,col:'#5dff9a',mark:'safe',alpha:.16});
+   else F.hazard({shape:'rect',x,y,w:tw-6,h:th-6,tele,dur:1.1,col:'#1b6f8a',kind:'trapdoor'});}
+  yield tele;F.shake(6);F.sfx('boom');yield 1.6;}
+ yield .4;}
+
 const PATTERNS={aimed,fan,spiral,rain,laser,dive,minions,homing,ring,edge,gapwall,strike,wave,lob,bounce,
- doors,rinka,wilybomb,riddle,bullettime,stab,shockwave,glove,puddles,piledriver,iceshards,slam,lockon,ladle,shock,plates,hounds,volley,sidedash,greatknife,rocket,balloons,batswarm,spiderheads,tentaclegrid,flamebreath,gumdrops,jailbars,hypno,flail,passage,energyball,wrecking};
-const SIGNATURES={doors:'POD BAY DOORS',rinka:'RINKA SWARM',wilybomb:'WILY BOMB',riddle:'RIDDLE ME THIS',bullettime:'BULLET TIME',stab:'LIQUID BLADE',shockwave:'SHOCKWAVE',glove:'IRON GLOVE',puddles:'VENOM PUDDLES',piledriver:'SPINNING PILEDRIVER',iceshards:'ICE ERUPTION',slam:'MOUNTAIN SLAM',lockon:'PLASMA LOCK-ON',ladle:'SOUP LADLE',shock:'SHOCK THERAPY',plates:'KITTEN PLATES',hounds:'RELEASE THE HOUNDS',volley:'ROYAL VOLLEY',sidedash:'HOVERBOARD RUSH',greatknife:'GREAT KNIFE',rocket:'ROCKET LAUNCHER',balloons:'FLOATING BALLOONS',batswarm:'BAT SWARM',spiderheads:'SPIDER HEADS',tentaclegrid:'TENTACLE GRID',flamebreath:'FLAME BREATH',gumdrops:'GUMDROP BOUNCE',jailbars:'GO TO JAIL',hypno:'HYPNO RINGS',flail:'SPIN FLAIL',passage:'SECRET PASSAGE',energyball:'REFLECT THE ORB',wrecking:'WRECKING BALL'};
+ doors,rinka,wilybomb,riddle,bullettime,stab,shockwave,glove,puddles,piledriver,iceshards,slam,lockon,ladle,shock,plates,hounds,volley,sidedash,greatknife,rocket,balloons,batswarm,spiderheads,tentaclegrid,flamebreath,gumdrops,jailbars,hypno,flail,passage,energyball,wrecking,trapdoor};
+const SIGNATURES={doors:'POD BAY DOORS',rinka:'RINKA SWARM',wilybomb:'WILY BOMB',riddle:'RIDDLE ME THIS',bullettime:'BULLET TIME',stab:'LIQUID BLADE',shockwave:'SHOCKWAVE',glove:'IRON GLOVE',puddles:'VENOM PUDDLES',piledriver:'SPINNING PILEDRIVER',iceshards:'ICE ERUPTION',slam:'MOUNTAIN SLAM',lockon:'PLASMA LOCK-ON',ladle:'SOUP LADLE',shock:'SHOCK THERAPY',plates:'KITTEN PLATES',hounds:'RELEASE THE HOUNDS',volley:'ROYAL VOLLEY',sidedash:'HOVERBOARD RUSH',greatknife:'GREAT KNIFE',rocket:'ROCKET LAUNCHER',balloons:'FLOATING BALLOONS',batswarm:'BAT SWARM',spiderheads:'SPIDER HEADS',tentaclegrid:'TENTACLE GRID',flamebreath:'FLAME BREATH',gumdrops:'GUMDROP BOUNCE',jailbars:'GO TO JAIL',hypno:'HYPNO RINGS',flail:'SPIN FLAIL',passage:'SECRET PASSAGE',energyball:'REFLECT THE ORB',wrecking:'WRECKING BALL',trapdoor:'PIRANHA TRAPDOORS'};
 Object.assign(exports,{PATTERNS,SIGNATURES,K,TAU});
 
 },
@@ -22632,7 +22688,8 @@ const bust={hit:[[0,-60,60],[0,20,92]],muz:{mouth:[0,-40],eye:[0,-60],center:[0,
   poly(g,[[-96,110],[-84,-24],[-40,-44],[40,-44],[84,-24],[96,110]],lg(g,0,-44,0,110,[suit,d]),5);
   poly(g,[[-26,-44],[0,40],[26,-44]],v.cross?'#fff':'#f1ede6',3);
   if(v.apron)poly(g,[[-56,20],[56,20],[66,110],[-66,110]],'#fff',4);
-  poly(g,[[-10,-38],[10,-38],[14,30],[0,48],[-14,30]],v.tie||a,3);
+  if(v.nehru){poly(g,[[-28,-46],[28,-46],[24,110],[-24,110]],suit,3);rrect(g,-30,-52,60,14,5,lg(g,0,-52,0,-38,[suit,d]),3);g.fillStyle=d;for(let y=-20;y<100;y+=26){g.beginPath();g.arc(0,y,3.5,0,TAU);g.fill();}}
+  else poly(g,[[-10,-38],[10,-38],[14,30],[0,48],[-14,30]],v.tie||a,3);
   if(v.cross){g.fillStyle='#d6283c';g.fillRect(-4,-4,8,24);g.fillRect(-12,4,24,8);}
   if(v.jacket){poly(g,[[-84,-24],[-40,-44],[-26,-44],[-40,110],[-96,110]],'#2a4678',3);poly(g,[[84,-24],[40,-44],[26,-44],[40,110],[96,110]],'#2a4678',3);}
   if(v.mark){g.fillStyle=l;g.font='bold 20px Arial Black,Arial';g.textAlign='center';for(const [x,y] of [[-60,10],[56,30],[-52,66],[52,80],[0,86]])g.fillText(v.mark,x,y);}
@@ -22650,6 +22707,9 @@ const bust={hit:[[0,-60,60],[0,20,92]],muz:{mouth:[0,-40],eye:[0,-60],center:[0,
    case 'candle':g.rotate(-.2);g.fillStyle='#d9b24a';g.fillRect(-7,-60,14,70);ell(g,0,-62,13,6,'#f6d56a',3);ell(g,0,-82+Math.sin(A.t*9)*2,7,14,'#ffb02e',0);break;
    case 'board':g.rotate(.6);rrect(g,-66,-8,132,16,8,'#d94a8c',4);break;
    case 'scepter':g.rotate(-.2);g.fillStyle='#fff';g.fillRect(-4,-120,8,150);ell(g,0,-126,17,17,a,3);ell(g,0,-126,8,8,'#fff',0);break;
+   case 'cat':{const purr=Math.sin(A.t*2.2)*2;g.rotate(.1);ell(g,-34,-6+purr,46,30,'#f4f2ee',4);ell(g,-4,-30+purr,7,20,'#f4f2ee',3);ell(g,-62,-30,26,24,'#f4f2ee',4);
+    poly(g,[[-80,-44],[-76,-66],[-64,-50]],'#f4f2ee',3);poly(g,[[-56,-50],[-46,-68],[-42,-46]],'#f4f2ee',3);ell(g,-70,-32,4,5,'#3a8fd8',0);ell(g,-56,-32,4,5,'#3a8fd8',0);
+    g.fillStyle='#e89aa8';g.beginPath();g.arc(-63,-24,3,0,TAU);g.fill();g.strokeStyle='#999';g.lineWidth=1.5;for(const s2 of [-1,1]){g.beginPath();g.moveTo(-63+s2*4,-22);g.lineTo(-63+s2*22,-26+s2*2);g.stroke();}break;}
    case 'moneybag':ell(g,0,-26,34,32,'#e8d8a0',4);g.fillStyle='#2e8b57';g.font='bold 30px Arial Black,Arial';g.textAlign='center';g.fillText('$',0,-14);break;}
   g.restore();
   // head
@@ -22669,6 +22729,7 @@ const bust={hit:[[0,-60,60],[0,20,92]],muz:{mouth:[0,-40],eye:[0,-60],center:[0,
   if(v.prop==='shades'){g.fillStyle='#050505';g.fillRect(-38,-96+ty,76,14);g.fillStyle='rgba(120,255,160,.35)';g.fillRect(-34,-94+ty,24,3);}
   if(v.stache){g.fillStyle='#222';poly(g,[[-30,-68],[0,-76],[30,-68],[24,-60],[0,-66],[-24,-60]],'#222',2);}
   if(v.monocle){g.strokeStyle='#d8b24a';g.lineWidth=3;g.beginPath();g.arc(16,-96+ty,13,0,TAU);g.stroke();}
+  if(v.scar){g.strokeStyle='#8a3a3a';g.lineWidth=4;g.lineCap='round';g.beginPath();g.moveTo(10,-112+ty);g.quadraticCurveTo(22,-96+ty,18,-70+ty);g.stroke();g.strokeStyle='#d58a8a';g.lineWidth=1.5;g.stroke();}
   if(v.glasses){g.strokeStyle='#222';g.lineWidth=3;for(const x of [-16,16]){g.beginPath();g.arc(x,-94+ty,11,0,TAU);g.stroke();}}
   if(v.earpiece){g.strokeStyle='#ddd';g.lineWidth=2;g.beginPath();g.moveTo(44,-88);g.quadraticCurveTo(60,-60,40,-40);g.stroke();}
   g.restore();}};
@@ -22906,6 +22967,7 @@ const PRESETS={
  smb3:[['tiles',.7,{s:44,a:'#f0a04a',b:'#d9822b'}],['clouds',1.2,{n:7}]],
  clue:[['wallpaper',.4,{}],['tiles',.8,{s:56,a:'rgba(0,0,0,.25)',b:'rgba(0,0,0,0)'}],['pillars',1,{col:'#2a1a3a'}]],
  hyrule:[['stars',0,{n:60}],['mountains',.4,{}],['fog',1,{n:10,col:'rgba(180,140,255,.14)'}],['embers',1.5,{n:30,col:'#ffd23c'}]],
+ lair:[['mountains',.4,{col:'#2a1712'}],['glowlines',.6,{col:'#c8161d'}],['embers',1.4,{n:70,col:'#ff5a1f'}]],
  greenhill:[['clouds',.5,{n:6}],['tiles',.8,{s:52,a:'#c98a3a',b:'#a86a22'}],['hills',1,{}]]
 };
 const BASE={station:1,hillvalley:1,rlyeh:1,hyrule:1,rainbow:1,matrix:1,city:1,circuit:1,antarctic:0,candy:0,greenhill:0,smb3:0,board:0,pinkoffice:0};
@@ -23204,7 +23266,10 @@ async function bossfight(s){
   const col=h.col||'#ff7a3a',pulse=.6+Math.sin(h.age*30)*.4;
   if(h.shape==='rect'){const px=h.x,py=h.y;if(!act2){g.globalAlpha=.16+.14*Math.sin(h.age*20);g.fillStyle=col;g.fillRect(px-h.w/2,py-h.h/2,h.w,h.h);g.globalAlpha=.7;g.strokeStyle=col;g.lineWidth=2;g.setLineDash([10,8]);g.strokeRect(px-h.w/2,py-h.h/2,h.w,h.h);}
    else{const gr=g.createLinearGradient(px-h.w/2,0,px+h.w/2,0);gr.addColorStop(0,col);gr.addColorStop(.5,'#fff');gr.addColorStop(1,col);const fade=Math.min(1,(h.age-h.tele)*10);g.globalAlpha=fade;
-    if(h.kind==='wall'||h.kind==='wave'||h.kind==='tentacle'||h.kind==='door'){g.fillStyle=lgv(g,px,py-h.h/2,py+h.h/2,col);g.fillRect(px-h.w/2,py-h.h/2,h.w,h.h);g.lineWidth=3;g.strokeStyle=ink;g.strokeRect(px-h.w/2,py-h.h/2,h.w,h.h);g.fillStyle='rgba(255,255,255,.35)';g.fillRect(px-h.w/2,py-h.h/2,h.w,4);}
+    if(h.kind==='trapdoor'){const x1=px-h.w/2,y1=py-h.h/2;g.fillStyle='#04141c';g.fillRect(x1,y1,h.w,h.h);g.fillStyle=lgv(g,px,y1,py+h.h/2,'#1b6f8a');g.globalAlpha=fade*.85;g.fillRect(x1+8,y1+10,h.w-16,h.h-18);g.globalAlpha=fade;
+     for(let k=0;k<4;k++){const fx=x1+18+((k*53+h.age*90*(k%2?1:-1))%(h.w-36)+(h.w-36))%(h.w-36),fy=y1+24+k*(h.h-40)/4;g.fillStyle='#c8d4d8';g.beginPath();g.ellipse(fx,fy,11,6,0,0,TAU);g.fill();g.beginPath();g.moveTo(fx+(k%2?-10:10),fy);g.lineTo(fx+(k%2?-18:18),fy-6);g.lineTo(fx+(k%2?-18:18),fy+6);g.fill();g.fillStyle='#c8161d';g.fillRect(fx+(k%2?3:-7),fy+1,4,2);}
+     g.strokeStyle=ink;g.lineWidth=4;g.strokeRect(x1,y1,h.w,h.h);g.fillStyle='#3a3d44';g.fillRect(x1,y1,h.w,7);g.fillRect(x1,py+h.h/2-7,h.w,7);}
+    else if(h.kind==='wall'||h.kind==='wave'||h.kind==='tentacle'||h.kind==='door'){g.fillStyle=lgv(g,px,py-h.h/2,py+h.h/2,col);g.fillRect(px-h.w/2,py-h.h/2,h.w,h.h);g.lineWidth=3;g.strokeStyle=ink;g.strokeRect(px-h.w/2,py-h.h/2,h.w,h.h);g.fillStyle='rgba(255,255,255,.35)';g.fillRect(px-h.w/2,py-h.h/2,h.w,4);}
     else{g.fillStyle=gr;g.fillRect(px-h.w/2,py-h.h/2,h.w,h.h);g.fillStyle='rgba(255,255,255,.55)';g.fillRect(px-3,py-h.h/2,6,h.h);g.strokeStyle='#fff';g.lineWidth=2;g.globalAlpha=fade*pulse;for(let yy=py-h.h/2;yy<py+h.h/2;yy+=36){g.beginPath();g.moveTo(px-h.w/2,yy);g.lineTo(px+h.w/2,yy+18);g.stroke();}}}}
   else if(h.shape==='circle'){const px=h.x,py=h.y;if(h.pend){g.strokeStyle=ink;g.lineWidth=4;g.beginPath();g.moveTo(x0,y0);g.lineTo(px,py);g.stroke();g.strokeStyle='#bbb';g.lineWidth=2;g.stroke();}
    if(!act2){g.globalAlpha=.3+.2*Math.sin(h.age*20);g.fillStyle=col;g.beginPath();g.arc(px,py,h.r,0,TAU);g.fill();if(h.pend){g.globalAlpha=.4;g.strokeStyle=col;g.setLineDash([6,6]);g.beginPath();g.arc(x0,y0,h.pend.len,Math.PI/2-h.pend.amp,Math.PI/2+h.pend.amp);g.stroke();}}
@@ -26716,7 +26781,7 @@ Object.assign(exports,{LEVEL_THEMES,themeFor,applyTheme,applyRunTheme});
 const {seededRandom}=require("src/utils.js");
 
 const QUAL={M:[0,4,7],m:[0,3,7],'5':[0,7,12],maj7:[0,4,7,11],maj9:[0,4,7,11,14],m7:[0,3,7,10],m9:[0,3,7,10,14],m11:[0,3,7,10,14,17],
- '7':[0,4,7,10],'9':[0,4,7,10,14],'13':[0,4,10,14,21],'7b9':[0,4,7,10,13],add9:[0,4,7,14],sus:[0,5,7,10],sus2:[0,2,7],m7b5:[0,3,6,10],'6':[0,4,7,9],m6:[0,3,7,9],dim:[0,3,6,9]};
+ '7':[0,4,7,10],'9':[0,4,7,10,14],'13':[0,4,10,14,21],'7b9':[0,4,7,10,13],add9:[0,4,7,14],sus:[0,5,7,10],sus2:[0,2,7],m7b5:[0,3,6,10],mmaj9:[0,3,7,11,14],'6':[0,4,7,9],m6:[0,3,7,9],dim:[0,3,6,9]};
 // "root.quality" with root in semitones above the key, e.g. "9.m9".
 const chord=s=>{const [r,q]=String(s).split('.');return {root:+r,q:q||'M',tones:QUAL[q||'M']||QUAL.M};};
 const prog=s=>s.split(/\s+/).filter(Boolean).map(chord);
@@ -26758,6 +26823,9 @@ const STYLES={
   bright:{scale:'harmonic',A:'0.m9 0.m9 5.m9 7.7b9',B:'8.maj7 7.7b9 0.m9 7.7b9'},chordInst:'epiano',comp:'noir',bass:'walk',bassInst:'upright',pad:null,kit:'brush',lead:'mutedTrumpet',center:70,density:'sparse',amb:'rain'},
  hyrule:{genre:'Field Folk',bpm:96,swing:0,key:2,cs:16,gain:1,
   bright:{scale:'dorian',A:'0.m 10.M 0.m 10.M',B:'3.M 10.M 5.M 0.m'},chordInst:'harp',comp:'arpUp',bass:'sustain',bassInst:'sub',pad:'strings',kit:'march',lead:'flute',center:76,density:'mid',amb:'birds'},
+ // Original spy-surf groove: minor-major chords, walking bass, twangy lead. No film melodies.
+ 'bond-lair':{genre:'Spy Surf Jazz',bpm:118,swing:0,swing8:.18,key:4,cs:16,gain:1.2,
+  bright:{scale:'harmonic',A:'0.mmaj9 0.m6 0.mmaj9 0.m6',B:'8.maj7 5.m9 0.mmaj9 11.7b9'},chordInst:'brass',comp:'stabs',bass:'walk',bassInst:'upright',pad:'strings',kit:'swing',lead:'guitar',center:70,density:'mid',amb:'rumble'},
  'green-hill':{genre:'Sunny Synth-Funk',bpm:136,swing:0,key:0,cs:16,gain:1.15,
   bright:{scale:'major',A:'5.maj7 7.M 4.m7 9.m',B:'2.m7 4.m7 5.maj7 7.sus'},chordInst:'clav',comp:'stabs',bass:'funk',bassInst:'slap',pad:'glass',kit:'breakbeat',lead:'square',center:76,density:'busy',amb:null}
 };
@@ -29891,9 +29959,15 @@ Object.assign(exports,{POKE_DEF,buildPokemonBoard,pokemonSceneSVG,trainerWatchin
 // random board pool: src/warpThemes.js deals them on the matching warp board, and they stay playable in the arcade.
 // Engines load lazily so this pack can be required early without circular module imports.
 const lazy=(file,name)=>s=>require(file)[name](s);
-const engines={sonic:lazy("src/engines/sonic.js","sonic"),kart:lazy("src/engines/kart.js","kart"),smb3:lazy("src/engines/smb3.js","smb3"),candyLand:lazy("src/engines/candyLand.js","candyLand"),chutes:lazy("src/engines/chutes.js","chutes"),monopoly:lazy("src/engines/monopoly.js","monopoly"),clue:lazy("src/engines/clue.js","clue"),hyrule:lazy("src/engines/hyrule.js","hyrule")};
+const engines={sonic:lazy("src/engines/sonic.js","sonic"),kart:lazy("src/engines/kart.js","kart"),smb3:lazy("src/engines/smb3.js","smb3"),candyLand:lazy("src/engines/candyLand.js","candyLand"),chutes:lazy("src/engines/chutes.js","chutes"),monopoly:lazy("src/engines/monopoly.js","monopoly"),clue:lazy("src/engines/clue.js","clue"),hyrule:lazy("src/engines/hyrule.js","hyrule"),bondLaser:lazy("src/engines/bond.js","bondLaser"),bondFunhouse:lazy("src/engines/bond.js","bondFunhouse"),bondBomb:lazy("src/engines/bond.js","bondBomb")};
 const W={randomEligible:false,warpOnly:true,reward:8};
 const games=[
+ {...W,id:'bond-laser-vault',engine:'bondLaser',title:'Diamonds Are Forever · Laser Vault Heist',source:'Diamonds Are Forever',icon:'💎',category:'skill',duration:'60 seconds',warp:'bond-lair',
+  rules:'Both agents raid the same vault at once, each on their own half (P1 top, P2 bottom). Drag to sneak your head through sweeping, sliding and blinking laser beams, grab the diamond and carry it back to the green EXIT. Touch a beam and the alarm sends you back to the door without the loot. Every heist adds a beam; a Fabergé egg is worth 3. Most loot after 60 seconds wins. P1 WASD, P2 arrows.'},
+ {...W,id:'bond-golden-gun',engine:'bondFunhouse',title:'The Man with the Golden Gun · Funhouse Duel',source:'The Man with the Golden Gun',icon:'🔫',category:'skill',duration:'45 seconds',warp:'bond-lair',
+  rules:'Scaramanga’s funhouse, one half each. Cut-outs pop up in six windows: tap Scaramanga (+2) and Nick Nack (+1), but never the cardboard Bond (−3) or a reflection in a mirror frame (−1). The golden gun holds one bullet, so every shot is followed by a short reassembly. Most points after 45 seconds wins.'},
+ {...W,id:'bond-goldfinger-bomb',engine:'bondBomb',title:'Goldfinger · Stop the Bomb at 007',source:'Goldfinger',icon:'🧨',category:'skill',duration:'7 rounds',warp:'bond-lair',
+  rules:'Goldfinger’s device in Fort Knox counts down. Tap your half to stop your own read-out as close to 0:07.00 as you dare: within a tenth scores 5, further away scores less, and zero means it goes off. From round 4 the display blacks out partway down; the last rounds speed up. Seven rounds. P1 Space, P2 Enter.'},
  {...W,id:'hyrule-rupee-rush',engine:'hyrule',hyruleMode:'rupees',title:'The Legend of Zelda · Hyrule Rupee Rush',source:'The Legend of Zelda',icon:'💎',category:'arcade',duration:'60 seconds',warp:'hyrule',
   rules:'Two Links (your head under the cap) share one 1986-style overworld screen. Cut bushes, beat Octoroks and Tektites and grab rupees: green 1, blue 5, red 20. Slash your rival to knock rupees out of their wallet; face incoming rocks to block them with your shield. Most rupees after 60 seconds wins. Drag on your half to walk, tap to swing. P1 WASD + Space, P2 arrows + Enter.'},
  {...W,id:'hyrule-sword-duel',engine:'hyrule',hyruleMode:'duel',title:'The Legend of Zelda · Hyrule Sword Duel',source:'The Legend of Zelda',icon:'⚔️',category:'duel',duration:'60 seconds',warp:'hyrule',
@@ -30543,6 +30617,9 @@ const {packItems}=require("src/data/itemPackV43.js");
 const rare=it=>({...it,findWeight:.35});
 const challenge=(id,name,source,icon,game,desc)=>({id:'wz-'+id,name,source,icon,kind:'game',value:game,desc,findWeight:.35});
 const WARP_ITEMS=[
+ challenge('diamond-collar','Diamond Smuggler’s Collar','Diamonds Are Forever','💎','bond-laser-vault','Start the Laser Vault Heist right now.'),
+ challenge('golden-bullet','Scaramanga’s Golden Bullet','The Man with the Golden Gun','🔫','bond-golden-gun','Start the Funhouse Duel right now.'),
+ challenge('fort-knox-key','Fort Knox Vault Key','Goldfinger','🧨','bond-goldfinger-bomb','Start Stop the Bomb at 007 right now.'),
  ...packItems('Mario Kart',[
   ['triple-mushroom','Triple Mushroom','🍄','bundle',{boost:3,rollFloor:3}],
   ['banana-peel','Banana Peel','🍌','strongTrap',5],
@@ -30710,7 +30787,18 @@ const WARP_THEMES={
    card('Ring Rush','Sixty seconds. Most rings wins.',['mg','sonic-ring-rush']),card('Goal Dash','First to the signpost.',['mg','sonic-goal-dash']),
    card('Spin dash','Rev, rev, release.',['move',2]),card('Rings scattered','Your rival’s rings bounce over to you.',['steal',3])],
   bonus:[['Chaos Emerald','One of seven.'],['Fifty-ring bonus','Enough for a Special Stage.'],['Signpost spin','It shows your face.']],
-  penalty:[['Ring loss','Hit by a Buzz Bomber.'],['Bottomless pit','The loop launched you straight into it.'],['Badnik ambush','A Crabmeat fired from the ledge.']]}
+  penalty:[['Ring loss','Hit by a Buzz Bomber.'],['Bottomless pit','The loop launched you straight into it.'],['Badnik ambush','A Crabmeat fired from the ledge.']]},
+ 'bond-lair':{source:'James Bond',
+  games:['bond-laser-vault','bond-golden-gun','bond-goldfinger-bomb','bond-baccarat','goldeneye-facility','moonraker-lander','laser-table','oddjob-hat-game','ski-chase'],trivia:['trivia-bondquiz','trivia-goldeneye'],
+  items:['wz-diamond-collar','wz-golden-bullet','wz-fort-knox-key','golden-gun','oddjob-hat','aston-key','exploding-pen','bond-watch','jetpack','vesper-martini','walther','spectre-ring','blofeld-cat','briefcase-gadget','bond-lockpick','v43-aston-eject-button','ge-proximity-mine'],
+  cards:[card('Q Branch delivery','“Do pay attention, 007.” Q hands over something that was definitely not cleared by accounting.',['item','random']),card('Shaken, not stirred','The bartender gets it exactly right. You feel licensed to win.',['points',3]),
+   card('Trapdoor to the piranha pool','Blofeld presses a button. The floor under your chair disappears.',['move',-3]),card('Aston Martin ejector seat','You press the red button under the gearstick. Your rival goes flying.',['swap']),
+   card('Laser vault alarm','You brushed a beam. Guards everywhere.',['points',-2]),card('The vault is open','Diamonds behind a grid of red beams. Go.',['mg','bond-laser-vault']),
+   card('Scaramanga’s funhouse','Mirrors, mannequins and a man with three nipples.',['mg','bond-golden-gun']),card('The bomb in Fort Knox','The clock is running. Stop it at 007.',['mg','bond-goldfinger-bomb']),
+   card('Monorail ride','The lair’s monorail whisks you deeper inside.',['move',3]),card('Card game with Le Chiffre','You read his tell. His chips come to you.',['steal',3]),
+   card('Oddjob’s hat','A bowler hat crosses the room at an alarming speed.',['points',-3]),card('Henchman’s uniform','Nobody looks twice at another man in a jumpsuit.',['chaos'])],
+  bonus:[['Licence to kill','MI6 signs off on the paperwork.'],['Moneypenny’s tip','She slips you the file before M sees it.'],['A gadget that works','Q is as surprised as you are.']],
+  penalty:[['Captured','“No, Mr. Bond, I expect you to die.”'],['Shot by a henchman','They finally hit something.'],['Tuxedo ruined','Volcano ash does not come out.']]}
 };
 const WARP_THEME_IDS=Object.keys(WARP_THEMES);
 function warpTheme(run){const b=run?.board;if(b?.format!=='warp')return null;return WARP_THEMES[b.warp?.id]||null;}
@@ -31715,5 +31803,264 @@ async function hyrule(s){
   x.restore();}
 }
 Object.assign(exports,{hyrule,buildMap});
+
+},
+"src/data/bondLair.js":(exports,require)=>{
+// The James Bond warp zone (Volcano Lair, src/warpBoards.js 'bond-lair'): its villain roster.
+// Arriving in the lair recruits a random movie Bond (src/data/movieBonds.js) for each player; beating Blofeld
+// there recruits one random Bond villain that neither player has yet (pickLairVillain).
+const {PERKS}=require("src/data/legendsPack.js");
+
+// Villains that only join by beating the lair boss. [id, name, source film, icon, actor (photo lookup), perk, line]
+const LAIR_VILLAIN_ROWS=[
+ ['zorin','Max Zorin','A View to a Kill','🐎','Christopher Walken','competitor','Nobody ever said this was going to be easy.'],
+ ['hugo-drax','Hugo Drax','Moonraker','🚀','Michael Lonsdale','explorer','Look after Mr. Bond. See that some harm comes to him.'],
+ ['rosa-klebb','Rosa Klebb','From Russia with Love','👞','Lotte Lenya','survivor','Training is useful, but there is no substitute for experience.'],
+ ['red-grant','Red Grant','From Russia with Love','🎻','Robert Shaw','competitor','You may know the right wines, but you’re the one on your knees.'],
+ ['kananga','Dr. Kananga','Live and Let Die','🐊','Yaphet Kotto','scavenger','Names is for tombstones, baby.'],
+ ['largo','Emilio Largo','Thunderball','🦈','Adolfo Celi','scavenger','Vargas does not drink, does not smoke, does not make love.'],
+ ['elliot-carver','Elliot Carver','Tomorrow Never Dies','📰','Jonathan Pryce','explorer','The distance between insanity and genius is measured only by success.'],
+ ['franz-sanchez','Franz Sanchez','Licence to Kill','🦎','Robert Davi','scavenger','Loyalty is more important to me than money.'],
+ ['nick-nack','Nick Nack','The Man with the Golden Gun','🍾','Hervé Villechaize','explorer','Welcome to the funhouse.'],
+ ['may-day','May Day','A View to a Kill','🪂','Grace Jones','competitor','Bond. James Bond? Oh, the tall one.'],
+ ['renard','Renard','The World Is Not Enough','🔥','Robert Carlyle','survivor','There is no point in living if you can’t feel alive.'],
+ ['safin','Lyutsifer Safin','No Time to Die','🎭','Rami Malek','survivor','We both eliminate people to make the world a better place.']
+];
+const LAIR_VILLAIN_CHARACTERS=LAIR_VILLAIN_ROWS.map(([id,name,source,icon,actor,perk,line])=>({id,name,source,icon,actor,assetKey:'char:'+id,unlockAt:999,
+ perkType:perk,perk:PERKS[perk],unlockPhrase:line,unlockBy:'boss',unlockHint:'Beat Blofeld in the Bond Volcano Lair warp zone: he hands over one Bond villain you do not have yet.'}));
+// Every Bond villain the lair boss can hand out: the classic ones already in the roster plus the lair-only ones.
+const BOND_VILLAIN_IDS=['blofeld','goldfinger','oddjob','bond-jaws','le-chiffre','scaramanga','dr-no','silva','trevelyan','xenia',...LAIR_VILLAIN_ROWS.map(r=>r[0])];
+// A villain nobody at the table owns yet (by identity, so Jaws counts once), or null when they have them all.
+// owned: the character ids each player can already pick; canRecruit: (id)=>bool from src/profile.js.
+function pickLairVillain(owned,canRecruit,random=Math.random){
+ const {characterIdentity}=require("src/characters.js");// lazy: characters.js loads the catalog, which loads this file
+ const have=new Set(owned.map(characterIdentity));
+ const pool=BOND_VILLAIN_IDS.filter(id=>!have.has(characterIdentity(id))&&canRecruit(id));
+ return pool.length?pool[Math.min(pool.length-1,Math.floor(random()*pool.length))]:null;
+}
+Object.assign(exports,{LAIR_VILLAIN_ROWS,LAIR_VILLAIN_CHARACTERS,BOND_VILLAIN_IDS,pickLairVillain});
+
+},
+"src/engines/bond.js":(exports,require)=>{
+// James Bond warp-zone games (Volcano Lair, src/warpThemes.js 'bond-lair'). Both players at once on a split screen
+// (P1 top / left, P2 bottom / right) with the same seeded patterns, like the other warp games.
+//  bondLaser    Diamonds Are Forever · Laser Vault Heist. Drag your agent through sweeping, sliding and blinking
+//               laser beams, grab the diamond and carry it back to the exit. A beam trips the alarm: back to the door.
+//  bondFunhouse The Man with the Golden Gun · Funhouse Duel. Cut-outs pop up in Scaramanga's funhouse. Shoot
+//               Scaramanga (+2) and Nick Nack (+1); never the cardboard Bond (−3) or a mirror reflection (−1).
+//               The golden gun holds one bullet, so every tap is followed by a short reassembly.
+//  bondBomb     Goldfinger · Stop the Bomb at 007. The Fort Knox device counts down; tap your half to stop your
+//               own read-out as close to 007 as you dare. Hit zero and it goes off. Seven rounds.
+const {clamp}=require("src/utils.js");
+const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,PCOL,settle,Countdown}=require("src/engines/arenaKit.js");
+
+const INK='#0b0b0d',GOLD='#e8c45a',RED='#ff2a2a';
+const split=s=>{const side=()=>s.W>s.H*1.05;return {side,vp:i=>side()?{x:i?s.W/2+2:0,y:0,w:s.W/2-2,h:s.H}:{x:0,y:i?s.H/2+2:0,w:s.W,h:s.H/2-2},owner:p=>side()?(p.x<s.W/2?0:1):(p.y<s.H/2?0:1)};};
+function divider(x,s,side){x.fillStyle=GOLD;if(side())x.fillRect(s.W/2-2,0,4,s.H);else x.fillRect(0,s.H/2-2,s.W,4);}
+function endBanner(x,s,text){const size=Math.min(s.W*.06,s.H*.06,44);x.fillStyle='rgba(10,8,8,.78)';x.fillRect(0,s.H/2-size,s.W,size*2);outlined(x,text,s.W/2,s.H/2,{size,fill:GOLD,stroke:INK});}
+function hud(x,s,i,v,text,sub){const size=Math.max(14,Math.min(v.w,v.h)*.055);outlined(x,text,v.x+10,v.y+size*.9,{size,fill:PCOL[i],stroke:'#fff',align:'left'});if(sub)outlined(x,sub,v.x+v.w-10,v.y+size*.9,{size:size*.85,fill:'#fff',stroke:INK,align:'right'});}
+function segDist(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy||1,t=clamp(((px-ax)*dx+(py-ay)*dy)/l,0,1);return Math.hypot(px-ax-dx*t,py-ay-dy*t);}
+
+// ------------------------------------------------------------------ Laser Vault Heist
+const HEIST_TIME=60,START=[10,90],R=3.6;
+// Beams for the k-th heist (both players get the same list for the same k). Vault coordinates 0..100.
+function heistPlan(random,k){
+ const beams=[],n=Math.min(6,2+k);
+ for(let j=0;j<n;j++){const r=random(),kind=j===0?'slide':r<.38?'slide':r<.7?'sweep':'blink',speed=(.45+random()*.35)*(1+k*.12);
+  if(kind==='slide'){const vert=random()<.35;beams.push(vert?{kind,vert,x0:28,x1:92,y0:4,y1:76,speed,ph:random()*6.28}:{kind,vert,x0:24,x1:96,y0:24,y1:78,speed,ph:random()*6.28});}
+  else if(kind==='sweep')beams.push({kind,px:34+random()*50,py:30+random()*40,len:10+random()*7+Math.min(6,k),speed:speed*(random()<.5?-1:1),ph:random()*6.28});
+  else{const y=26+random()*48,x=22+random()*30;beams.push({kind,ax:x,ay:y,bx:x+26+random()*40,by:y+(random()-.5)*30,period:1.6+random()*1.2,on:.55+random()*.15,ph:random()*3});}}
+ return {beams,gem:[22+random()*70,7+random()*12],egg:k>0&&k%3===2};
+}
+function beamAt(b,t){
+ if(b.kind==='slide'){const u=(Math.sin(t*b.speed+b.ph)+1)/2;return b.vert?{on:true,ax:b.x0+(b.x1-b.x0)*u,ay:b.y0,bx:b.x0+(b.x1-b.x0)*u,by:b.y1}:{on:true,ax:b.x0,ay:b.y0+(b.y1-b.y0)*u,bx:b.x1,by:b.y0+(b.y1-b.y0)*u};}
+ if(b.kind==='sweep'){const a=t*b.speed+b.ph;return {on:true,ax:b.px-Math.cos(a)*b.len,ay:b.py-Math.sin(a)*b.len,bx:b.px+Math.cos(a)*b.len,by:b.py+Math.sin(a)*b.len,pivot:true};}
+ const ph=((t+b.ph)%b.period)/b.period;return {on:ph<b.on,warn:ph>.88,ax:b.ax,ay:b.ay,bx:b.bx,by:b.by};
+}
+async function bondLaser(s){
+ const [c,x]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();
+ if(!await settle(s))return;
+ const {side,vp,owner}=split(s),fx=new Fx(),score=[0,0],kb=arenaKeys(s),cd=new Countdown(3);let phase='count',t=0,clock=0,endT=0,endText='';
+ s.hint('Laser Vault Heist: drag anywhere on your half (P1 top, P2 bottom; left/right on wide screens) to move your agent. Grab the diamond at the back of the vault and carry it to the green EXIT. Red beams sweep, slide and blink: touch one and the alarm sends you back to the door, diamond and all. Every heist adds a beam. A Fabergé egg is worth 3. Most loot after 60 seconds wins. P1 WASD, P2 arrows.');
+ const plans=[];const plan=k=>{while(plans.length<=k)plans.push(heistPlan(s.random,plans.length));return plans[k];};
+ const agents=[0,1].map(()=>({x:START[0],y:START[1],carry:false,heist:0,stun:0,inv:0,flash:0,mood:0}));
+ const box=v=>{const sz=Math.min(v.w-16,v.h-(side()?60:34)),ox=v.x+(v.w-sz)/2,oy=v.y+v.h-sz-8;return {ox,oy,k:sz/100};};
+ const fingers=[null,null];
+ arenaTouch(s,{owner,maxFingers:1,onDown:f=>{fingers[f.owner]={lx:f.x,ly:f.y};},onMove:f=>{const fi=fingers[f.owner],a=agents[f.owner];if(!fi||a.stun>0||phase!=='play'){if(fi){fi.lx=f.x;fi.ly=f.y;}return;}const b=box(vp(f.owner));move(a,(f.x-fi.lx)/b.k*1.15,(f.y-fi.ly)/b.k*1.15);fi.lx=f.x;fi.ly=f.y;},onUp:f=>{fingers[f.owner]=null;}});
+ // Move in small steps so a fast swipe cannot jump over a beam.
+ function move(a,dx,dy){const n=Math.max(1,Math.ceil(Math.hypot(dx,dy)/1.5));for(let k=0;k<n;k++){a.x=clamp(a.x+dx/n,R,100-R);a.y=clamp(a.y+dy/n,R,100-R);if(check(a))return;}}
+ function check(a){const i=agents.indexOf(a);if(a.inv>0||a.stun>0||phase!=='play')return false;
+  for(const b of plan(a.heist).beams){const L=beamAt(b,clock);if(L.on&&segDist(a.x,a.y,L.ax,L.ay,L.bx,L.by)<R*.9){trip(i);return true;}}
+  const p=plan(a.heist);if(!a.carry&&Math.hypot(a.x-p.gem[0],a.y-p.gem[1])<R+3){a.carry=true;snd(1320,.12,{type:'triangle',vol:.04});snd(1760,.16,{type:'triangle',vol:.03,delay:.07});const bx=box(vp(i));fx.pop(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k-20,p.egg?'FABERGÉ EGG!':'GOT IT!',{color:'#bff6ff',stroke:INK,size:18});}
+  if(a.carry&&a.x<20&&a.y>80){const pts=p.egg?3:1;score[i]+=pts;a.carry=false;a.heist++;a.flash=.5;s.react(i,'happy');jingle([784,988,1175,1568],{step:.06,type:'triangle',vol:.04});const bx=box(vp(i));fx.pop(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k-24,`+${pts}`,{color:GOLD,stroke:INK,size:28});fx.burst(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k,{n:18,color:'#bff6ff',speed:220,life:.55,size:4,shape:'star'});}
+  return false;}
+ function trip(i){const a=agents[i],bx=box(vp(i));a.stun=.9;a.inv=1.8;a.carry=false;s.react(i,'sad');noise(.35,{vol:.06,freq:900});snd(880,.5,{type:'square',vol:.035,to:440});snd(880,.5,{type:'square',vol:.03,to:440,delay:.5});
+  fx.pop(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k-20,'ALARM!',{color:'#ff6a6a',stroke:INK,size:22});fx.shake(8);fx.burst(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k,{n:14,color:RED,speed:200,life:.4,size:3});}
+ s.debug={get phase(){return phase;},agents,score,plan,beamAt,segDist,clockNow:()=>clock,setClock(v){clock=v;},teleport(i,px,py){agents[i].x=px;agents[i].y=py;check(agents[i]);}};
+ function drawVault(i){const v=vp(i),b=box(v),a=agents[i],p=plan(a.heist),X=u=>b.ox+u*b.k,Y=u=>b.oy+u*b.k;
+  x.fillStyle='#120c0b';x.fillRect(v.x,v.y,v.w,v.h);
+  x.fillStyle='#1d1a1c';x.fillRect(b.ox,b.oy,100*b.k,100*b.k);x.strokeStyle='#2c2729';x.lineWidth=1;for(let g=10;g<100;g+=10){x.beginPath();x.moveTo(X(g),Y(0));x.lineTo(X(g),Y(100));x.moveTo(X(0),Y(g));x.lineTo(X(100),Y(g));x.stroke();}
+  x.strokeStyle='#5d636e';x.lineWidth=Math.max(3,b.k*1.4);x.strokeRect(b.ox,b.oy,100*b.k,100*b.k);
+  // exit and vault door
+  x.fillStyle='rgba(60,220,120,.22)';x.fillRect(X(0),Y(80),20*b.k,20*b.k);outlined(x,'EXIT',X(10),Y(97),{size:Math.max(10,b.k*4),fill:'#7dffb0',stroke:INK});
+  x.fillStyle='#3a3d44';x.beginPath();x.arc(X(p.gem[0]),Y(p.gem[1])+b.k*3,b.k*5,0,7);x.fill();
+  if(!a.carry){const gx=X(p.gem[0]),gy=Y(p.gem[1]),r=b.k*(p.egg?3.4:3);if(p.egg){x.fillStyle=GOLD;x.beginPath();x.ellipse(gx,gy,r*.8,r,0,0,7);x.fill();x.strokeStyle='#c8161d';x.lineWidth=2;x.beginPath();x.moveTo(gx-r*.8,gy);x.lineTo(gx+r*.8,gy);x.stroke();}
+   else{x.fillStyle='#bff6ff';x.beginPath();x.moveTo(gx,gy+r);x.lineTo(gx-r,gy-r*.2);x.lineTo(gx-r*.5,gy-r*.8);x.lineTo(gx+r*.5,gy-r*.8);x.lineTo(gx+r,gy-r*.2);x.closePath();x.fill();x.strokeStyle='#5fb7c8';x.lineWidth=1.5;x.stroke();}
+   x.globalAlpha=.5+.5*Math.sin(t*6);x.fillStyle='#fff';x.fillRect(gx+r*.4,gy-r*1.2,2,6);x.fillRect(gx+r*.4-2,gy-r*1.2+2,6,2);x.globalAlpha=1;}
+  // beams
+  for(const bm of p.beams){const L=beamAt(bm,clock);
+   if(bm.kind==='blink'){x.fillStyle='#5d636e';for(const [ex,ey] of [[L.ax,L.ay],[L.bx,L.by]]){x.beginPath();x.arc(X(ex),Y(ey),b.k*1.4,0,7);x.fill();}}
+   if(L.pivot){x.fillStyle='#5d636e';x.beginPath();x.arc(X(bm.px),Y(bm.py),b.k*1.6,0,7);x.fill();}
+   if(!L.on){if(L.warn){x.strokeStyle='rgba(255,60,60,.35)';x.lineWidth=1;x.setLineDash([4,4]);x.beginPath();x.moveTo(X(L.ax),Y(L.ay));x.lineTo(X(L.bx),Y(L.by));x.stroke();x.setLineDash([]);}continue;}
+   x.lineCap='round';x.strokeStyle='rgba(255,40,40,.25)';x.lineWidth=b.k*2.6;x.beginPath();x.moveTo(X(L.ax),Y(L.ay));x.lineTo(X(L.bx),Y(L.by));x.stroke();
+   x.strokeStyle=RED;x.lineWidth=Math.max(2,b.k*.8);x.stroke();x.strokeStyle='#ffd0d0';x.lineWidth=1;x.stroke();}
+  // agent
+  const ax=X(a.x),ay=Y(a.y),hs=b.k*R*3.4;if(a.inv>0&&Math.floor(t*12)%2)x.globalAlpha=.45;
+  x.fillStyle='#111';x.beginPath();x.moveTo(ax-hs*.35,ay+hs*.55);x.lineTo(ax+hs*.35,ay+hs*.55);x.lineTo(ax,ay);x.fill();x.fillStyle='#fff';x.beginPath();x.moveTo(ax-hs*.08,ay+hs*.2);x.lineTo(ax+hs*.08,ay+hs*.2);x.lineTo(ax,ay+hs*.45);x.fill();
+  s.sprite(x,i,ax,ay-hs*.05,hs,{exact:true,mood:a.stun>0?'sad':a.flash>0?'happy':undefined});x.globalAlpha=1;
+  if(a.carry){x.fillStyle=p.egg?GOLD:'#bff6ff';x.beginPath();x.arc(ax+hs*.42,ay+hs*.22,b.k*1.8,0,7);x.fill();}
+  if(a.stun>0){x.fillStyle=`rgba(255,0,0,${a.stun*.35})`;x.fillRect(v.x,v.y,v.w,v.h);}
+  hud(x,s,i,v,`${s.players[i].name.toUpperCase()}  ${score[i]}`,`${Math.ceil(Math.max(0,HEIST_TIME-clock))}s`);}
+ s.frame(dt=>{t+=dt;fx.update(dt);
+  if(phase==='count'){if(!cd.update(dt))phase='play';}
+  else if(phase==='play'){clock+=dt;
+   for(let i=0;i<2;i++){const a=agents[i],k=kb.state[i];a.flash=Math.max(0,a.flash-dt);a.inv=Math.max(0,a.inv-dt);
+    // Caught: frozen in the beam for a moment, then marched back to the vault door.
+    if(a.stun>0){a.stun-=dt;if(a.stun<=0){a.stun=0;a.x=START[0];a.y=START[1];}continue;}
+    if(k.l||k.r||k.u||k.d){const sp=34*dt;move(a,(k.r-k.l)*sp,(k.d-k.u)*sp);}else check(a);}
+   if(clock>=HEIST_TIME){phase='end';endT=0;const [p0,p1]=score;endText=p0===p1?'DEAD HEAT':`${s.players[p0>p1?0:1].name.toUpperCase()} CRACKS THE VAULT`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});}}
+  else{endT+=dt;if(endT>2.6){s.finish(score,`Laser Vault Heist: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}
+  s.setScores(score);fx.begin(x);
+  for(let i=0;i<2;i++){const v=vp(i);x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();drawVault(i);x.restore();}
+  fx.draw(x);fx.end(x);divider(x,s,side);
+  if(phase==='count')cd.draw(x,s.W,s.H);if(phase==='end')endBanner(x,s,endText);
+ });
+}
+
+// ------------------------------------------------------------------ Golden Gun Funhouse Duel
+const FUN_TIME=45,RELOAD=.55;
+const TARGETS={scaramanga:{pts:2,label:'SCARAMANGA +2'},nicknack:{pts:1,label:'NICK NACK +1'},bond:{pts:-3,label:'CARDBOARD BOND'},mirror:{pts:-1,label:'ONLY A MIRROR'}};
+function drawCutout(x,kind,cx,cy,h,up){const w=h*.62;x.save();x.translate(cx,cy+h*(1-up));const mirror=kind==='mirror';if(mirror)x.scale(-1,1);
+ const small=kind==='nicknack',s=small?.72:1,body=kind==='bond'?'#111':kind==='nicknack'?'#f2efe6':'#f4f1ea';
+ x.fillStyle='#6a4a2a';x.fillRect(-w*.06,h*.2,w*.12,h*.3);
+ x.translate(0,h*(1-s)*.3);x.scale(s,s);
+ x.fillStyle=body;rr(x,-w*.4,-h*.12,w*.8,h*.42,w*.14);x.fill();x.strokeStyle=INK;x.lineWidth=2;x.stroke();
+ x.fillStyle='#fff';x.beginPath();x.moveTo(-w*.1,-h*.12);x.lineTo(w*.1,-h*.12);x.lineTo(0,h*.06);x.fill();
+ x.fillStyle=kind==='bond'?'#111':'#1a1a1a';x.beginPath();x.moveTo(-w*.09,-h*.1);x.lineTo(w*.09,-h*.06);x.lineTo(w*.09,-h*.1);x.lineTo(-w*.09,-h*.06);x.fill();
+ x.fillStyle='#e8c19f';x.beginPath();x.arc(0,-h*.28,w*.24,0,7);x.fill();x.stroke();
+ x.fillStyle=kind==='nicknack'?'#3a2a1a':'#2a1a10';x.beginPath();x.arc(0,-h*.33,w*.25,Math.PI*1.05,Math.PI*1.95);x.fill();
+ x.fillStyle=INK;x.fillRect(-w*.11,-h*.3,w*.05,w*.05);x.fillRect(w*.06,-h*.3,w*.05,w*.05);
+ x.strokeStyle=INK;x.lineWidth=2;x.beginPath();x.arc(0,-h*.22,w*.09,.2,Math.PI-.2);x.stroke();
+ if(kind==='scaramanga'||mirror){x.fillStyle=GOLD;x.save();x.translate(w*.42,-h*.02);x.rotate(-.3);x.fillRect(0,-w*.05,w*.36,w*.1);x.fillRect(0,0,w*.08,w*.2);x.restore();}
+ if(kind==='bond'){x.fillStyle='#fff';rr(x,-w*.32,h*.02,w*.64,h*.14,4);x.fill();outlined(x,'007',0,h*.09,{size:h*.1,fill:'#111',stroke:'#fff',lw:1});}
+ if(kind==='nicknack'){x.fillStyle='#2a1a10';x.fillRect(-w*.3,-h*.48,w*.6,h*.05);x.fillRect(-w*.18,-h*.6,w*.36,h*.13);}
+ x.restore();
+ // Name plate on the stake. A mirror is flipped, so its plate reads backwards: the tell.
+ x.save();x.translate(cx,cy+h*(1-up));if(mirror)x.scale(-1,1);x.fillStyle=kind==='bond'?'#e8e6e0':'#2a1a10';rr(x,-w*.48,h*.31,w*.96,h*.13,4);x.fill();x.strokeStyle=GOLD;x.lineWidth=1.5;x.stroke();
+ x.font=`900 ${Math.max(8,h*.085)}px "Arial Black",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillStyle=kind==='bond'?'#111':GOLD;x.fillText(kind==='bond'?'JAMES BOND':kind==='nicknack'?'NICK NACK':'SCARAMANGA',0,h*.375);x.restore();
+ if(mirror){const mx=cx-w*.56,my=cy-h*.64+h*(1-up),mw=w*1.12,mh=h*1.1;x.save();x.globalAlpha=.3;x.fillStyle='#bfe8ff';rr(x,mx,my,mw,mh,10);x.fill();x.globalAlpha=.55;x.strokeStyle='#fff';x.lineWidth=4;
+  for(const f of [.25,.55]){x.beginPath();x.moveTo(mx+mw*f,my+6);x.lineTo(mx+mw*(f-.2),my+mh*.5);x.stroke();}x.globalAlpha=1;x.strokeStyle='#d8e4ea';x.lineWidth=6;rr(x,mx,my,mw,mh,10);x.stroke();x.strokeStyle='#7a8a92';x.lineWidth=2;x.stroke();x.restore();}}
+async function bondFunhouse(s){
+ const [c,x]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();
+ if(!await settle(s))return;
+ const {side,vp,owner}=split(s),fx=new Fx(),score=[0,0],cd=new Countdown(3);let phase='count',t=0,clock=0,endT=0,endText='';
+ s.hint('Funhouse Duel: cut-outs pop up in the six funhouse windows on your half (P1 top, P2 bottom; left/right on wide screens). Tap Scaramanga (+2, holding the golden gun) and Nick Nack (+1). Do not shoot the cardboard Bond (−3) or a reflection in a mirror frame (−1). The golden gun holds one bullet: after every shot it takes a moment to reassemble. Most points after 45 seconds wins. Keyboard: P1 Q W E / A S D, P2 U I O / J K L.');
+ // One shared schedule: [time, window, kind, stay]
+ const sched=[];for(let tt=.4,n=0;tt<FUN_TIME-.6;n++){const r=s.random(),kind=r<.42?'scaramanga':r<.62?'nicknack':r<.82?'mirror':'bond';sched.push({at:tt,win:Math.floor(s.random()*6),kind,stay:Math.max(.75,1.35-tt/FUN_TIME*.55)});tt+=.38+s.random()*.5-Math.min(.12,tt/FUN_TIME*.12);}
+ const fields=[[],[]],gun=[0,0],shots=[0,0],nextIdx=[0,0];
+ const wins=i=>{const v=vp(i),top=v.y+v.h*.16,cw=v.w/3,ch=(v.h*.84)/2;return Array.from({length:6},(_,k)=>({k,x:v.x+(k%3)*cw+cw*.08,y:top+Math.floor(k/3)*ch+ch*.06,w:cw*.84,h:ch*.86}));};
+ function shoot(i,k){if(phase!=='play')return;if(gun[i]>0){snd(160,.05,{type:'square',vol:.02});return;}gun[i]=RELOAD;shots[i]++;snd(1200,.05,{type:'square',vol:.05,to:200});noise(.08,{vol:.05,freq:3000});
+  const w=wins(i)[k],tg=fields[i].find(o=>o.win===k&&!o.hit&&o.up>.35);fx.ring(w.x+w.w/2,w.y+w.h/2,{color:GOLD,r1:w.w*.4,life:.25});
+  if(!tg){fx.pop(w.x+w.w/2,w.y+w.h*.4,'MISS',{color:'#bbb',stroke:INK,size:16});return;}
+  tg.hit=true;const T=TARGETS[tg.kind];score[i]=Math.max(0,score[i]+T.pts);s.react(i,T.pts>0?'happy':'sad');
+  fx.pop(w.x+w.w/2,w.y+w.h*.35,T.label,{color:T.pts>0?GOLD:'#ff6a6a',stroke:INK,size:Math.max(13,w.w*.12)});
+  if(tg.kind==='mirror'){noise(.3,{vol:.06,freq:5000});fx.burst(w.x+w.w/2,w.y+w.h/2,{n:16,color:'#dff4ff',speed:240,life:.5,size:3,shape:'square'});}
+  else if(T.pts>0){fx.burst(w.x+w.w/2,w.y+w.h/2,{n:12,color:GOLD,speed:180,life:.45,size:3,shape:'star'});jingle([880,1175],{step:.05,type:'triangle',vol:.035});}
+  else{fx.shake(6);snd(140,.3,{type:'sawtooth',vol:.04});}}
+ arenaTouch(s,{owner,maxFingers:2,onDown:f=>{const w=wins(f.owner).find(w=>f.x>=w.x&&f.x<=w.x+w.w&&f.y>=w.y&&f.y<=w.y+w.h);if(w)shoot(f.owner,w.k);}});
+ s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat)return;const k=String(ev.key).toLowerCase(),a='qweasd'.indexOf(k),b='uiojkl'.indexOf(k);if(a>=0){ev.preventDefault();shoot(0,a);}else if(b>=0){ev.preventDefault();shoot(1,b);}});
+ s.debug={get phase(){return phase;},fields,score,shoot,sched};
+ s.frame(dt=>{t+=dt;fx.update(dt);
+  if(phase==='count'){if(!cd.update(dt))phase='play';}
+  else if(phase==='play'){clock+=dt;
+   for(let i=0;i<2;i++){gun[i]=Math.max(0,gun[i]-dt);while(nextIdx[i]<sched.length&&sched[nextIdx[i]].at<=clock){const e=sched[nextIdx[i]++];if(!fields[i].some(o=>o.win===e.win))fields[i].push({...e,age:0,up:0,hit:false});}
+    for(const o of fields[i]){o.age+=dt;o.up=o.hit?Math.max(0,o.up-dt*5):o.age<.15?o.age/.15:o.age>o.stay?Math.max(0,1-(o.age-o.stay)/.15):1;}
+    fields[i]=fields[i].filter(o=>!(o.up<=0&&o.age>.2));}
+   if(clock>=FUN_TIME){phase='end';endT=0;const [a,b]=score;endText=a===b?'A GENTLEMAN’S DRAW':`${s.players[a>b?0:1].name.toUpperCase()} HAS THE GOLDEN GUN`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});}}
+  else{endT+=dt;if(endT>2.6){s.finish(score,`Funhouse Duel: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}
+  s.setScores(score);fx.begin(x);
+  for(let i=0;i<2;i++){const v=vp(i);x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();
+   const g=x.createLinearGradient(0,v.y,0,v.y+v.h);g.addColorStop(0,'#2a0f2a');g.addColorStop(1,'#120812');x.fillStyle=g;x.fillRect(v.x,v.y,v.w,v.h);
+   for(let k=0;k<8;k++){x.fillStyle=k%2?'rgba(232,196,90,.06)':'rgba(200,22,29,.07)';x.beginPath();x.moveTo(v.x+v.w/2,v.y+v.h*.6);x.arc(v.x+v.w/2,v.y+v.h*.6,v.w,k*.785+t*.1,k*.785+.39+t*.1);x.fill();}
+   for(const w of wins(i)){x.fillStyle='#0a060a';rr(x,w.x,w.y,w.w,w.h,8);x.fill();x.strokeStyle=GOLD;x.lineWidth=3;x.stroke();
+    const o=fields[i].find(o=>o.win===w.k);if(o&&o.up>0){x.save();rr(x,w.x,w.y,w.w,w.h,8);x.clip();drawCutout(x,o.kind,w.x+w.w/2,w.y+w.h*.55,w.h*.88,o.up);x.restore();}
+    for(let b=0;b<5;b++){x.fillStyle=(Math.floor(t*4)+b+w.k)%2?'#ffe9a0':'#7a5a20';x.beginPath();x.arc(w.x+w.w*(.1+b*.2),w.y+4,2.6,0,7);x.fill();}}
+   const hs=Math.min(v.w,v.h)*.12,hx=v.x+v.w-hs*.7,hy=v.y+hs*.62;s.sprite(x,i,hx,hy,hs,{exact:true});
+   const ready=gun[i]<=0;x.fillStyle=ready?GOLD:'#6a5a30';x.save();x.translate(hx-hs*.95,hy+hs*.1);x.fillRect(-hs*.4,-hs*.06,hs*.5,hs*.12);x.fillRect(-hs*.05,0,hs*.1,hs*.22);x.restore();
+   if(!ready){const k=1-gun[i]/RELOAD;x.strokeStyle=GOLD;x.lineWidth=3;x.beginPath();x.arc(hx-hs*.95,hy+hs*.12,hs*.28,-1.57,-1.57+k*6.28);x.stroke();}
+   hud(x,s,i,v,`${s.players[i].name.toUpperCase()}  ${score[i]}`,'');outlined(x,`${Math.ceil(Math.max(0,FUN_TIME-clock))}s`,v.x+10,v.y+Math.max(14,Math.min(v.w,v.h)*.055)*2.1,{size:Math.max(12,Math.min(v.w,v.h)*.045),fill:'#fff',stroke:INK,align:'left'});
+   x.restore();}
+  fx.draw(x);fx.end(x);divider(x,s,side);
+  if(phase==='count')cd.draw(x,s.W,s.H);if(phase==='end')endBanner(x,s,endText);
+ });
+}
+
+// ------------------------------------------------------------------ Stop the Bomb at 007
+const BOMB_ROUNDS=7;
+// Points for stopping d seconds away from 7.00.
+const bombPoints=d=>d<=.1?5:d<=.3?4:d<=.6?3:d<=1.2?2:d<=2.2?1:0;
+async function bondBomb(s){
+ const [c,x]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();
+ if(!await settle(s))return;
+ const {side,vp,owner}=split(s),fx=new Fx(),score=[0,0],kb=arenaKeys(s),cd=new Countdown(3);let phase='count',t=0,endT=0,endText='';
+ s.hint('Stop the Bomb at 007: Goldfinger’s device in Fort Knox counts down. Tap anywhere on your half (P1 top, P2 bottom; left/right on wide screens) to stop YOUR read-out. 0:07.00 exactly scores 5; the further away, the less. Let it reach zero and it goes off. From round 4 the display blacks out partway down; later rounds speed up. Seven rounds. Keyboard: P1 Space, P2 Enter.');
+ const rounds=Array.from({length:BOMB_ROUNDS},(_,k)=>({start:12+s.random()*8,rate:k<5?1+s.random()*.5:1.3+s.random()*.6,accel:k>=5?.25+s.random()*.25:0,dark:k>=3?9+s.random()*3:-1}));
+ let r=-1,clockV=0,stopped=[null,null],state='wait',waitT=0,result=null,boom=0;
+ const nextRound=()=>{r++;if(r>=BOMB_ROUNDS){phase='end';endT=0;const [a,b]=score;endText=a===b?'BOTH LICENSED TO DEFUSE':`${s.players[a>b?0:1].name.toUpperCase()} SAVES FORT KNOX`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});return;}
+  clockV=rounds[r].start;stopped=[null,null];state='wait';waitT=1.1;result=null;};
+ const stop=i=>{if(phase!=='play'||state!=='run'||stopped[i]!==null)return;stopped[i]=clockV;snd(660,.08,{type:'square',vol:.04});fx.ring(vp(i).x+vp(i).w/2,vp(i).y+vp(i).h/2,{color:GOLD,r1:80,life:.3});if(stopped[0]!==null&&stopped[1]!==null)settleRound();};
+ function settleRound(){state='done';waitT=2.2;const pts=[0,1].map(i=>stopped[i]===null||stopped[i]<=0?0:bombPoints(Math.abs(stopped[i]-7)));score[0]+=pts[0];score[1]+=pts[1];result=pts;
+  for(let i=0;i<2;i++){const v=vp(i);fx.pop(v.x+v.w/2,v.y+v.h*.3,stopped[i]===null||stopped[i]<=0?'BOOM':pts[i]===5?'007! +5':pts[i]?`+${pts[i]}`:'TOO FAR',{color:pts[i]>=4?GOLD:pts[i]?'#fff':'#ff6a6a',stroke:INK,size:Math.min(v.w,v.h)*.1});if(pts[i]>=4)s.react(i,'happy');else if(!pts[i])s.react(i,'sad');}
+  if(pts[0]===5||pts[1]===5)jingle([784,988,1175,1568],{step:.06,type:'triangle',vol:.045});}
+ arenaTouch(s,{owner,maxFingers:1,onDown:f=>stop(f.owner)});kb.onDown((i,k)=>{if(k==='fire')stop(i);});
+ s.debug={get phase(){return phase;},get state(){return state;},get clock(){return clockV;},score,stop,rounds};
+ const fmt=v=>{const c2=Math.max(0,v),sec=Math.floor(c2),cs=Math.floor((c2-sec)*100);return `0:${String(sec).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;};
+ function digits(txt,cx,cy,size,col,dim=false){x.save();x.font=`900 ${size}px "Courier New",monospace`;x.textAlign='center';x.textBaseline='middle';const w=x.measureText(txt).width+size*.6;x.fillStyle='#060404';rr(x,cx-w/2,cy-size*.65,w,size*1.3,size*.15);x.fill();x.strokeStyle='#3a3d44';x.lineWidth=3;x.stroke();
+  x.fillStyle='rgba(255,40,40,.12)';x.fillText('8:88.88',cx,cy);x.fillStyle=dim?'#5a1010':col;x.shadowColor=col;x.shadowBlur=dim?0:size*.3;x.fillText(txt,cx,cy);x.restore();}
+ s.frame(dt=>{t+=dt;fx.update(dt);boom=Math.max(0,boom-dt);
+  if(phase==='count'){if(!cd.update(dt)){phase='play';nextRound();}}
+  else if(phase==='play'){const R0=rounds[r];
+   if(state==='wait'){waitT-=dt;if(waitT<=0){state='run';snd(330,.1,{type:'square',vol:.035});}}
+   else if(state==='run'){const before=clockV;clockV-=dt*(R0.rate+R0.accel*(R0.start-clockV));if(Math.floor(before)!==Math.floor(clockV)&&clockV>0)snd(clockV<8?1400:1000,.03,{type:'square',vol:.025});
+    if(clockV<=0){clockV=0;boom=1;fx.shake(16);noise(.8,{vol:.09,freq:200});snd(80,.8,{type:'sawtooth',vol:.06,to:30});settleRound();}}
+   else if(state==='done'){waitT-=dt;if(waitT<=0)nextRound();}}
+  else{endT+=dt;if(endT>2.6){s.finish(score,`Stop the Bomb at 007: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}
+  s.setScores(score);fx.begin(x);
+  const g=x.createLinearGradient(0,0,0,s.H);g.addColorStop(0,'#2a2410');g.addColorStop(1,'#0e0c06');x.fillStyle=g;x.fillRect(0,0,s.W,s.H);
+  // gold bars stacked in the vault
+  for(let k=0;k<24;k++){const bx=(k%8)*s.W/8+(Math.floor(k/8)%2)*s.W/16,by=s.H-14-Math.floor(k/8)*14;x.fillStyle=k%3?'#b8902a':'#e8c45a';x.fillRect(bx+4,by,s.W/8-8,12);}
+  const R0=rounds[Math.max(0,Math.min(BOMB_ROUNDS-1,r))],dark=phase==='play'&&state==='run'&&R0.dark>0&&clockV<R0.dark;
+  for(let i=0;i<2;i++){const v=vp(i),hs=Math.min(v.w,v.h)*.2,cx=v.x+v.w*(side()?.5:.24),cy=v.y+v.h*(side()?.72:.55);
+   if(stopped[i]===null&&state==='run'){x.fillStyle=`rgba(232,196,90,${.05+.04*Math.sin(t*5)})`;x.fillRect(v.x,v.y,v.w,v.h);}
+   s.sprite(x,i,cx,cy-hs*.15,hs,{exact:true,mood:result?(result[i]>=4?'happy':result[i]?undefined:'sad'):undefined});
+   const rx=v.x+v.w*(side()?.5:.7),ry=v.y+v.h*(side()?.88:.55),sz=Math.min(v.w*.09,v.h*.12,40);
+   const show=stopped[i]===null?(state==='done'?'BOOM':'--:--.--'):(state==='done'||!dark?fmt(stopped[i]):'??:??.??');
+   digits(stopped[i]===null&&state!=='done'?'TAP':show,rx,ry,sz,stopped[i]!==null?GOLD:'#ff4040',stopped[i]===null&&state!=='done'&&state!=='run');
+   hud(x,s,i,v,`${s.players[i].name.toUpperCase()}  ${score[i]}`,state==='run'&&stopped[i]===null?'TAP TO STOP':'');}
+  divider(x,s,side);
+  // the device, centred (over the divider)
+  const S=Math.min(s.W,s.H)*(side()?.34:.2),cx=side()?s.W/2:s.W*.5,cy=side()?s.H*.34:s.H/2;
+  x.fillStyle='#3a3d44';rr(x,cx-S*.8,cy-S*.55,S*1.6,S*1.1,S*.12);x.fill();x.strokeStyle=INK;x.lineWidth=4;x.stroke();
+  for(let k=0;k<6;k++){x.strokeStyle=['#c8161d','#3a8fd8','#e8c45a'][k%3];x.lineWidth=3;x.beginPath();x.moveTo(cx-S*.7+k*S*.28,cy+S*.55);x.quadraticCurveTo(cx-S*.6+k*S*.25,cy+S*.8,cx-S*.75+k*S*.3,cy+S*.95);x.stroke();}
+  x.fillStyle='#d9d4c8';x.beginPath();x.arc(cx-S*.55,cy-S*.3,S*.1,0,7);x.arc(cx+S*.55,cy-S*.3,S*.1,0,7);x.fill();
+  const txt=phase==='play'?(state==='wait'?fmt(R0.start):dark?(Math.floor(t*6)%2?'--:--.--':'  :  .  '):fmt(clockV)):phase==='end'?'0:07.00':'0:00.00';
+  digits(txt,cx,cy+S*.08,S*.32,'#ff3030');outlined(x,phase==='play'?`ROUND ${r+1}/${BOMB_ROUNDS}`:'FORT KNOX',cx,cy-S*.38,{size:S*.11,fill:GOLD,stroke:INK});
+  outlined(x,'TARGET 0:07.00',cx,cy+S*.42,{size:S*.09,fill:'#fff',stroke:INK});
+  fx.draw(x);fx.end(x);
+  if(boom>0){x.fillStyle=`rgba(255,${180*boom|0},60,${boom*.7})`;x.fillRect(0,0,s.W,s.H);}
+  if(phase==='count')cd.draw(x,s.W,s.H);if(phase==='end')endBanner(x,s,endText);
+ });
+}
+Object.assign(exports,{bondLaser,bondFunhouse,bondBomb,heistPlan,beamAt,bombPoints});
 
 }};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();</script></body></html>
