@@ -155,7 +155,9 @@ button.ghost{background:#fffaf0;color:#172033;border:1px solid #c9d2d6}button.pr
 button.small{min-height:34px}.panel,.player-setup,.roster-card,.arcade-card{background:#fffaf0;border-color:#c9d2d6;box-shadow:0 5px 20px #1720330a;color:#172033}.topbar{background:#fffbf1;border-color:#c9d2d6}.version,.overline,.char-name,.game-info{color:#6f7b8b}input,select{background:#fff;border:1px solid #c9d2d6;color:#172033}
 h1,h2,h3{font-family:inherit;color:#172033}.property-logo,.player-source-logo,.unlock-property-logo{object-fit:contain;background:#ffffffdc;border-radius:8px;padding:3px}
 .original-home{width:100%;max-width:none;height:var(--viewport-height);padding:14px!important;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.home-center{display:flex;flex-direction:column;align-items:center;text-align:center;width:min(620px,100%);gap:12px;max-height:100%}
+.home-center{display:flex;flex-direction:column;align-items:center;text-align:center;width:min(620px,100%);gap:12px;max-height:100%;overflow-y:auto;overscroll-behavior:contain}
+.home-center>*{flex-shrink:0}
+.top-actions .fullscreen-toggle{font-size:18px;line-height:1;min-width:40px}
 .original-home .hero-logo{display:block!important;width:min(460px,82vw)!important;max-height:min(160px,20vh)!important;object-fit:contain;margin:0!important}.home-meta{font-size:12px;margin:0}.badge-row{display:flex;justify-content:center;flex-wrap:wrap;gap:6px}.badge-row span{padding:6px 9px;border:1px solid #ccd3d8;border-radius:999px;background:#fffaf0;font-size:10px;color:#566375}
 .original-home .home-stack{width:min(440px,100%);display:grid;gap:8px;margin:5px 0}.home-stack button{padding:13px 16px;font-weight:900;letter-spacing:.06em;min-height:44px}.home-stack .small{min-height:34px;padding:8px}
 .home-reference-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}.home-reference-row .property-logo{width:78px;height:28px;margin:0}.original-home .footer{width:100%;margin:0;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;font-size:10px}.original-home .footer button{font-size:10px;padding:6px;min-height:25px}
@@ -628,7 +630,7 @@ body.route-choosing .bottom-hud{display:none}
 /* ---- v0.46b: heads twice as big in the collection and on character select; collection pages fit the screen ---- */
 .catalog-shell .roster-card .portrait{width:clamp(100px,22vw,150px)!important;height:clamp(100px,22vw,150px)!important;margin:0 auto 6px!important}
 .catalog-shell .roster-card h3{margin:2px 0}.catalog-shell .roster-card .property-logo{height:30px!important;margin:2px auto!important}.catalog-shell .roster-card p{-webkit-line-clamp:2!important}
-.catalog-shell .catalog-grid{overflow-y:hidden}
+.catalog-shell .catalog-grid{overflow-y:auto}
 .setup-shell .character-choice .portrait{width:64px!important;height:64px!important}
 .setup-shell .character-choice{min-width:96px;min-height:0}
 .setup-shell .character-choices{max-height:236px!important}
@@ -700,3 +702,4 @@ dialog.sheet .choice-badge{flex:none;font:900 13px/1 Arial,sans-serif;padding:8p
 dialog.sheet button:disabled{opacity:.55}
 dialog.sheet button:disabled .choice-badge{background:#8b8f99}
 @keyframes sheet-up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@media(max-width:430px){.topbar .top-logo{width:104px!important}.topbar .top-actions{gap:4px}.topbar .top-actions button{padding:7px 8px}.top-actions .fullscreen-toggle{font-size:15px;min-width:32px;padding:6px!important}}

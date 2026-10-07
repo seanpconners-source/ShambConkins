@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.46.3
+
+**Full screen everywhere.** A full screen toggle (⤢) now sits in every top bar (home, collection, vault, setup and the
+board) and as the first row of Music & Settings, in addition to the home screen button. Turning full screen on from
+Settings no longer hides the Settings window.
+
+**Vault fits the screen.** The Minigame Vault now measures how many game cards fit (like the character collection
+already did) instead of using a fixed count, and re-measures when the screen size changes (entering/leaving full screen,
+rotating). Nothing is cut off; if a card is unusually tall the list scrolls instead of clipping. The home menu also
+scrolls instead of clipping when a run's extra button makes it taller than the screen.
+
 ## v0.46.2
 
 **Full screen on phones.** Browsers (Samsung Internet included) only allow full screen after a tap, so the first tap

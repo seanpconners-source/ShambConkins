@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.46.2 (`releases/ShambConkins_v0.46.2.html`).
+Version 0.46.3 (`releases/ShambConkins_v0.46.3.html`).
 
 ## Implemented systems
 - **Board (generation 7):** per-realm journey map: stem → crossroads → 3 lanes (Calm/Adventurous/High Reward) → gate.
@@ -28,7 +28,9 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
 - v0.46.1: found challenge items (game/duel kind) offer "Play now / Keep in bag" (`foundChallengeChoices` in `app.js`);
   Quark's shop is a bottom sheet (`showDialog({sheet:true})`, choice `tag`/`badge`, `itemTag()` in `items.js`).
   Tests: `tests/itemgame.mjs`, `tests/shop.mjs` (screenshots to /tmp/claude-0/sc).
-- v0.46.2: fullscreen (`src/fullscreen.js`): first tap anywhere enters it (browsers need a gesture); home has a toggle.
+- v0.46.2–3: fullscreen (`src/fullscreen.js`): first tap enters it (browsers need a gesture); toggles via `fullscreenButton()`
+  in home stack, every top bar and Settings; open modal dialogs are re-raised on change. Vault now uses `fitCatalogPage`
+  like the roster and `refitCatalog()` re-measures on resize/fullscreen.
 
 ## In progress / unverified
 - Nothing in flight. Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus
