@@ -33,7 +33,7 @@ function drawEvent(run, profile, random=Math.random) {
 function rememberEvent(run,title){if(!run.cardsSeen.includes(title))run.cardsSeen.push(title);}
 function addPocketBoard(run) {
  if(run.board.realms['upside-down'])return;
- const base=run.board.height||3030;run.board.height=base+800;const ids=[];for(let i=0;i<12;i++){const id=`upside-${i}`;ids.push(id);run.board.nodes[id]={id,worldSpace:true,realm:'upside-down',col:i,lane:1,x:150+i*125,y:base+350+Math.cos(i*1.4)*130,type:i%3===0?'game':i%3===1?'event':'item',next:[`upside-${(i+1)%12}`]};}run.board.realms['upside-down']={ids,start:ids[0],gate:ids.at(-1),cols:11,y:base,height:800,color:'#512633',title:'The Upside Down'};
+ const base=run.board.height||3030;run.board.height=base+800;const ids=[];for(let i=0;i<12;i++){const id=`upside-${i}`;ids.push(id);run.board.nodes[id]={id,worldSpace:true,realm:'upside-down',col:i,lane:1,x:run.board.grid?700+[0,1,2,3,3,3,3,2,1,0,0,0][i]*100:150+i*125,y:run.board.grid?base+250+[0,0,0,0,1,2,3,3,3,3,2,1][i]*100:base+350+Math.cos(i*1.4)*130,type:i%3===0?'game':i%3===1?'event':'item',next:[`upside-${(i+1)%12}`]};}run.board.realms['upside-down']={ids,start:ids[0],gate:ids.at(-1),cols:11,y:base,height:800,color:'#512633',title:'The Upside Down'};
 }
 function applyEvent(run,profile,event,random=Math.random) {
  const p=run.players[run.current],other=run.players[1-run.current];let message='',unlocked=[],game=null,roulette=false,task=false;const acquisitions=[],unlockOwners={};

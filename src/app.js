@@ -125,10 +125,10 @@ async function stepTarget(run,p,token){
   p.mood='thinking';focusBoardAction(run,[p.node,...options.map(n=>n.id)]);updateBoard();
   const from=run.board.nodes[p.node],ahead=(n,k)=>{const ids=[];let cur=n;for(let i=0;i<k&&cur;i++){ids.push(cur.id);cur=run.board.nodes[cur.next[0]];}return ids;};
   focusBoardAction(run,[p.node,...options.flatMap(n=>ahead(n,7))]);updateBoard();
-  const views=options.map((n,i)=>{const o=edgeObstacle(run,p.node,n.id),solutions=o?obstacleChoices(run,p,o).filter(c=>!c.disabled):[],bridge=from.bridge===n.id,lane=run.board.realms[n.realm]?.lanes?.find(l=>l.ids.includes(n.id));
-   const label=bridge?`Bridge to ${lane?.name||'the next road'}`:(n.route?.name||n.pathName)||(o?obstacleType(o).name:'Main road · '+(run.board.realms[n.realm]?.title||SPACE_TYPES[n.type]));
-   const detail=bridge?'An optional crossing to the neighbouring road. You keep moving forward.':n.route?`${n.route.reward} ${n.route.risk}`:'Standard encounters ahead.';
-   return optionView(run,from,{id:n.id,value:n.id,label,sub:`${n.route?.spaces||n.pathRemaining?(n.route?.spaces||n.pathRemaining)+' spaces · ':''}${detail} ${o?obstacleRequirement(run,p,o):''}`.trim(),journey:journeyHint(run,p,n,from),disabled:!!o&&!solutions.length},i);});
+  const views=options.map((n,i)=>{const o=edgeObstacle(run,p.node,n.id),solutions=o?obstacleChoices(run,p,o).filter(c=>!c.disabled):[],bridge=from.bridge===n.id,shortcut=from.shortcut===n.id?run.board.shortcuts?.find(sc=>sc.from===from.id&&sc.to===n.id):null,lane=run.board.realms[n.realm]?.lanes?.find(l=>l.ids.includes(n.id));
+   const label=shortcut?`Shortcut · skip ${shortcut.skip} spaces`:bridge?`Bridge to ${lane?.name||'the next road'}`:(n.route?.name||n.pathName)||(o?obstacleType(o).name:'Main road · '+(run.board.realms[n.realm]?.title||SPACE_TYPES[n.type]));
+   const detail=shortcut?'Cut across the switchback and get to the gate sooner, if you can get past what guards it.':bridge?'An optional crossing to the neighbouring road. You keep moving forward.':n.route?`${n.route.reward} ${n.route.risk}`:'Standard encounters ahead.';
+   return optionView(run,from,{id:n.id,value:n.id,label,sub:`${shortcut?'':n.route?.spaces||n.pathRemaining?(n.route?.spaces||n.pathRemaining)+' spaces · ':''}${detail} ${o?obstacleRequirement(run,p,o):''}`.trim(),journey:journeyHint(run,p,n,from),disabled:!!o&&!solutions.length},i);});
   const choice=await showRoutePanel({title:'Choose your road',hint:'Tap a road to light it up on the map, then GO.',options:views});
   if(choice===null||token!==movementToken||store.run!==run)return null;
   target=options.find(n=>n.id===choice)||options[0];pending.routeDecision={from:p.node,targetId:target.id,applied:false};saveRun();
@@ -202,7 +202,7 @@ function bossGateReady(run,n){
 }
 function shortestPath(run,from,to){
  const prev=new Map([[from,null]]),queue=[from];
- while(queue.length){const id=queue.shift();if(id===to)break;for(const next of run.board.nodes[id]?.next||[])if(!prev.has(next)){prev.set(next,id);queue.push(next);}}
+ while(queue.length){const id=queue.shift();if(id===to)break;for(const next of run.board.nodes[id]?.next||[]){const o=edgeObstacle(run,id,next);if(o&&!obstacleIsOpen(run,o))continue;if(!prev.has(next)){prev.set(next,id);queue.push(next);}}}
  if(!prev.has(to))return null;const path=[];for(let id=to;id&&id!==from;id=prev.get(id))path.unshift(id);return path;
 }
 // The first player through a level gate wins the level. Everyone else is dragged to

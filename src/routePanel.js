@@ -11,9 +11,9 @@ function highlight(keys){
  }
 }
 function optionView(run,from,option,index){
- const target=run.board.nodes[option.id],lane=run.board.realms[target.realm]?.lanes?.find(l=>l.ids.includes(target.id)),isBridge=!!from.bridge&&from.bridge===target.id;
- const keys=isBridge?[target.realm+':bridge:'+target.id,laneKey(run.board,target)]:[laneKey(run.board,target)];
- return {...option,keys,bridge:isBridge,lane,color:isBridge?'#8a6b3f':laneStyle(lane?.lane??0).tag,tag:isBridge?'BRIDGE':(lane?laneStyle(lane.lane).label:'MAIN ROAD'),index};
+ const target=run.board.nodes[option.id],lane=run.board.realms[target.realm]?.lanes?.find(l=>l.ids.includes(target.id)),isBridge=!!from.bridge&&from.bridge===target.id,isShortcut=!!from.shortcut&&from.shortcut===target.id;
+ const keys=isShortcut?[target.realm+':shortcut:'+target.id,laneKey(run.board,target)]:isBridge?[target.realm+':bridge:'+target.id,laneKey(run.board,target)]:[laneKey(run.board,target)];
+ return {...option,keys,bridge:isBridge,shortcut:isShortcut,lane,color:isShortcut?'#ffd34d':isBridge?'#8a6b3f':laneStyle(lane?.lane??0).tag,tag:isShortcut?'SHORTCUT':isBridge?'BRIDGE':(lane?laneStyle(lane.lane).label:'MAIN ROAD'),index};
 }
 function render(){
  const panel=document.getElementById('route-panel');if(!panel||!current)return;

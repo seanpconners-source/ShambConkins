@@ -207,7 +207,9 @@
   "src/data/warehouseOrders.js",
   "src/engines/warehouseShift.js",
   "src/theme.js",
-  "src/musicGen.js"
+  "src/musicGen.js",
+  "src/gridBoard.js",
+  "src/gridRender.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

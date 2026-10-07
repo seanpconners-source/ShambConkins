@@ -777,3 +777,48 @@ body[data-view="home"]{background:#0c0814}
 .exit-card p{margin:0;font:600 14px/1.45 Arial,sans-serif;color:#cdbfe6}
 .exit-logo{width:min(70vw,300px);height:auto;filter:drop-shadow(0 6px 0 #000)}
 .exit-card button.ts-play{min-height:54px;padding:0 22px;font:900 15px/1 "Arial Black",Arial,sans-serif;letter-spacing:.05em;color:#ffd77e;background:linear-gradient(180deg,#2b2038 0%,#1a1224 100%);border:2px solid #000;border-radius:16px;box-shadow:inset 0 0 0 2px #d9a441,0 5px 0 #000}
+/* ---------- Grid boards (generation 8): dark tabletop, chunky tiles, readable white titles ---------- */
+.board-svg[data-grid] .gr-track{fill:none;stroke-width:42;stroke-linecap:round;stroke-linejoin:round}
+.board-svg[data-grid] .gr-stem{stroke:#9aa0c8}
+.board-svg[data-grid] .gr-track-glow{fill:none;stroke:#000;stroke-opacity:.5;stroke-width:62;stroke-linecap:round;stroke-linejoin:round}
+.board-svg[data-grid] .gr-plank-rail{fill:#2f1c0f;stroke:#0d0703;stroke-width:3}
+.board-svg[data-grid] .gr-plank{fill:#d39552}
+.board-svg[data-grid] .gr-plank-gap{fill:#6b3f1c}
+.board-svg[data-grid] .gr-shortcut-bed{fill:none;stroke:#000;stroke-opacity:.55;stroke-width:30;stroke-linecap:round}
+.board-svg[data-grid] .gr-shortcut-line{fill:none;stroke:#ffd34d;stroke-width:12;stroke-dasharray:3 15;stroke-linecap:round}
+.board-svg[data-grid] .gr-shortcut.closed .gr-shortcut-line{stroke:#ff5b5b}
+.board-svg[data-grid] .gr-shortcut-tag rect{fill:#120c1a;stroke:#ffd34d;stroke-width:3}
+.board-svg[data-grid] .gr-shortcut.closed .gr-shortcut-tag rect{stroke:#ff5b5b}
+.board-svg[data-grid] .gr-shortcut-tag text{font:900 17px Arial,sans-serif;fill:#fff;text-anchor:middle}
+.board-svg[data-grid] .gr-chip-bg{fill:#120c1a;fill-opacity:.92;stroke:#ffffff2e;stroke-width:3}
+.board-svg[data-grid] .gr-chip-kind{font:900 17px "Arial Black",Arial,sans-serif;fill:#120c1a;letter-spacing:2px}
+.board-svg[data-grid] .gr-chip-count{font:900 15px Arial,sans-serif;fill:#120c1a}
+.board-svg[data-grid] .gr-chip-name{font-weight:800;font-family:Arial,sans-serif;fill:#fff}
+.board-svg[data-grid] .gr-realm-title{font:900 60px "Arial Black",Arial,sans-serif;letter-spacing:8px;paint-order:stroke;stroke:#000;stroke-width:10px;stroke-linejoin:round}
+.board-svg[data-grid] .gr-arch-back{fill:none;stroke:#120d18;stroke-width:24;stroke-linecap:round}
+.board-svg[data-grid] .gr-arch{fill:none;stroke:#ffcf3f;stroke-width:12;stroke-linecap:round}
+.board-svg[data-grid] .gr-castle-road{stroke:#ffcf3f55;stroke-width:16;stroke-dasharray:4 14;stroke-linecap:round}
+.board-svg[data-grid] .gr-gate-word{font:900 38px "Arial Black",Arial,sans-serif;fill:#ffcf3f;paint-order:stroke;stroke:#120d18;stroke-width:9px;stroke-linejoin:round}
+.board-svg[data-grid] .gr-castle-name{font:900 28px Arial,sans-serif;fill:#fff;paint-order:stroke;stroke:#000;stroke-width:7px;stroke-linejoin:round}
+.board-svg[data-grid] .gr-card-bg{fill:#140e1f;stroke-width:4}
+.board-svg[data-grid] .gr-card-name{font-weight:900;font-family:Arial,sans-serif;fill:#fff}
+.board-svg[data-grid] .gr-card-source{font:700 12px Arial,sans-serif;fill:#b9add6}
+.board-svg[data-grid] .gr-card-link{fill:none;stroke-width:6;stroke-dasharray:2 10;stroke-linecap:round;opacity:.9}
+.board-svg[data-grid] .gr-biome .jr-biome>rect:last-child{stroke:#ffffff;opacity:.18}
+.board-svg[data-grid] .gr-biome{opacity:.5}
+.board-svg[data-grid] .map-space .space-symbol{font:900 27px "Arial Black",Arial,sans-serif;fill:#fff;paint-order:stroke;stroke:#00000080;stroke-width:5px;stroke-linejoin:round}
+.board-svg[data-grid] .map-space.type-task .space-symbol,.board-svg[data-grid] .map-space.type-shop .space-symbol,.board-svg[data-grid] .map-space.type-trivia .space-symbol,.board-svg[data-grid] .map-space.type-game .space-symbol{font-size:21px}
+.board-svg[data-grid] .map-space.type-start .space-symbol,.board-svg[data-grid] .map-space.type-gate .space-symbol{fill:#2a1a10;stroke:#ffffff80;font-size:34px}
+.board-svg[data-grid] .detour-label{fill:#fff;stroke:#0b0710;stroke-width:5px;font:900 15px Arial,sans-serif}
+.board-svg[data-grid] .simple-landmark-pin circle{fill:#19b9b4;stroke:#fff;stroke-width:2.4}
+.board-svg[data-grid] .simple-landmark-pin path{fill:#fff}
+.board-svg[data-grid] .simple-landmark-pin text{font:800 12px Arial,sans-serif;fill:#fff;paint-order:stroke;stroke:#0b0710;stroke-width:4px;stroke-linejoin:round}
+.board-svg[data-grid] .gr-band.glow{fill-opacity:.16;stroke-opacity:.7}
+.board-svg[data-grid] .gr-chip.glow .gr-chip-bg{stroke:#fff;stroke-opacity:.8}
+.board-svg[data-grid] .gr-chip.dim{opacity:.4}
+.board-svg[data-grid] .gr-shortcut.glow,.board-svg[data-grid] .gr-bridge.glow{filter:drop-shadow(0 0 12px #ffd34d)}
+.board-svg[data-grid] .gr-shortcut.dim,.board-svg[data-grid] .gr-bridge.dim{opacity:.4}
+.board-svg[data-grid] .board-banter rect{fill:#120c1a;stroke:#ffffff55}
+.board-svg[data-grid] .board-banter text{fill:#fff}
+.board-svg[data-grid] .route-obstacle rect{fill:#120c1a;stroke:#ff5b5b}
+.board-svg[data-grid] .route-obstacle.open rect{stroke:#2fd08f}

@@ -318,3 +318,6 @@ body .setup-shell .setup-controls{margin-top:12px}
  .setup-shell .cs-grid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
 }
 body.reduced-motion .cs-face,body.reduced-motion .cs-face img{transition:opacity .4s;animation:none!important}
+/* Rare encounters keep the dark dialog (styles.css gave them a light card under light text). */
+body .dialog-content.rare{background:radial-gradient(ellipse 120% 60% at 50% 0%,color-mix(in srgb,var(--t-acc) 22%,transparent),transparent 70%),linear-gradient(180deg,var(--t-s1) 0%,var(--t-s2) 100%)}
+body .dialog-content.rare p{color:var(--t-sub)}
