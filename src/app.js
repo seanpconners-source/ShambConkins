@@ -225,6 +225,8 @@ function shortestPath(run,from,to){
 // the castle along the most direct road, paying half a point per space, then the boss arrives.
 async function levelEndBoss(p,gate){
  const run=store.run,realm=gate.realm,boss=bossById(run.board.realms[realm].boss);
+ // Whoever is stuck in the Upside Down comes back first, so they are dragged along the real road.
+ if(run.upsideDown){const q=run.players[run.upsideDown.owner];if(q&&run.board.nodes[run.upsideDown.returnNode])q.node=run.upsideDown.returnNode;run.upsideDown=null;}
  run.bossesSeen||={};run.bossesSeen[realm]=true;run.bossGate={gate:gate.id,realm,winner:run.players.indexOf(p)};
  run.phase='event';run.pending={kind:'boss-gate',stage:'intro'};saveRun();
  logRun(`${p.name} wins ${levelLabel(realm)}.`);sound('win');p.mood='win';updateBoard();
@@ -258,7 +260,7 @@ async function bossGateDrag(){
 // After a level boss: everyone moves on to the next level together.
 async function advanceAfterBoss(){
  const run=store.run,bg=run.bossGate;if(!bg){endTurn();return;}run.bossGate=null;
- const gate=run.board.nodes[bg.gate],next=(gate.next||[]).find(id=>run.board.nodes[id]),final=bg.realm==='horror'||(bg.realm==='spirit'&&!run.horror)||!next;
+ const gate=run.board.nodes[bg.gate],next=bg.realm==='spirit'&&run.horror&&run.board.realms.horror?run.board.realms.horror.start:(gate.next||[]).find(id=>run.board.nodes[id]),final=bg.realm==='horror'||(bg.realm==='spirit'&&!run.horror)||!next;
  for(const q of run.players){q.mood='happy';if(!q.cleared.includes(bg.realm))q.cleared.push(bg.realm);}
  if(final){for(const q of run.players)if(!q.finishedPlayer){q.finishedPlayer=true;}saveRun();store.busy=false;endTurn();return;}
  for(const q of run.players){q.visited.push(q.node);q.node=next;}PK.healAll(run);
