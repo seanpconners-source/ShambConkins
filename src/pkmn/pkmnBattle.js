@@ -9,6 +9,7 @@ const {drawText,wrapText,gbText}=require("src/pkmn/gbFont.js");
 const D=require("src/pkmn/pkmnData.js");
 const SP=require("src/pkmn/pkmnSprites.js");
 const AU=require("src/pkmn/pkmnAudio.js");
+const {fullscreenSupported,fullscreenLabel,toggleFullscreen}=require("src/fullscreen.js");
 const {MOVES,move,speciesFor,statsAt,movesAt,effectiveness,BAG_ITEMS,BAG_ORDER,expFor,levelForExp,expGain,ppLeft,ABILITIES}=D;
 const W=160,H=144;
 
@@ -18,7 +19,7 @@ let speed=1,autoPilot=null;
 function setTestSpeed(s){speed=Math.max(1,s||1);}
 function setAutoPilot(fn){autoPilot=fn||null;}
 function deviceHTML(){
- return `<div class="gb-overlay" role="dialog" aria-label="Pokémon battle"><div class="gb-device"><div class="gb-bezel"><span class="gb-led"></span><span class="gb-bezel-label">SHAMBCONKINS · COLOR</span><canvas class="gb-screen" width="${W}" height="${H}"></canvas></div>
+ return `<div class="gb-overlay" role="dialog" aria-label="Pokémon battle"><div class="gb-device"><div class="gb-bezel"><span class="gb-led"></span><span class="gb-bezel-label">SHAMBCONKINS · COLOR</span>${fullscreenSupported()?`<button class="gb-fs" data-gb-fs aria-label="Toggle full screen" title="Full screen">${fullscreenLabel('icon')}</button>`:''}<canvas class="gb-screen" width="${W}" height="${H}"></canvas></div>
  <div class="gb-brand">ShambBoy <b>C</b><b>O</b><b>L</b><b>O</b><b>R</b></div>
  <div class="gb-controls"><div class="gb-dpad"><button data-btn="up" aria-label="Up"></button><button data-btn="left" aria-label="Left"></button><span></span><button data-btn="right" aria-label="Right"></button><button data-btn="down" aria-label="Down"></button></div>
  <div class="gb-ab"><button data-btn="b" class="gb-b" aria-label="B">B</button><button data-btn="a" class="gb-a" aria-label="A">A</button></div>
@@ -37,6 +38,9 @@ function openGB(){
  for(const el of root.querySelectorAll('[data-btn]')){const btn=el.dataset.btn;on(el,'pointerdown',e=>{e.preventDefault();el.classList.add('down');G.held[btn]=true;press(btn);});const up=()=>{el.classList.remove('down');G.held[btn]=false;};on(el,'pointerup',up);on(el,'pointerleave',up);on(el,'pointercancel',up);}
  on(canvas,'pointerdown',e=>{e.preventDefault();const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;const hit=G.hits.find(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h);G.held.a=true;if(hit)press('tap',hit.index);else press('a');});
  on(canvas,'pointerup',()=>{G.held.a=false;});
+ // small full-screen toggle in the bezel corner
+ const fs=root.querySelector('[data-gb-fs]');
+ if(fs){on(fs,'click',e=>{e.preventDefault();e.stopPropagation();toggleFullscreen();});const sync=()=>{fs.textContent=fullscreenLabel('icon');};on(document,'fullscreenchange',sync);on(document,'webkitfullscreenchange',sync);}
  on(window,'resize',fit);
  fit();loop();
  document.body.classList.add('gb-open');
@@ -49,7 +53,7 @@ function fit(){
  G.canvas.style.width=Math.round(W*s)+'px';G.canvas.style.height=Math.round(H*s)+'px';
 }
 function closeGB(){
- if(!G)return;G.closed=true;cancelAnimationFrame(G.raf);for(const off of G.listeners)off();G.root.remove();document.body.classList.remove('gb-open');
+ if(!G)return;G.closed=true;cancelAnimationFrame(G.raf);for(const off of G.listeners)off();G.root.remove();document.body.classList.remove('gb-open');document.querySelectorAll('.gb-encounter').forEach(el=>el.remove());
  for(const w of G.waiters)w.resolve(null);for(const w of G.frameWaiters)w.resolve();AU.stopAll();G=null;
 }
 function press(btn,index){
@@ -237,6 +241,25 @@ async function bagScreen(bag,{filter=null}={}){
  const i=await choose(menu);if(i<0)return null;return items[i].id;
 }
 
+// ---------------------------------------------------------------- catching (Gen 1, pokered ItemUseBall)
+// rate: 1 POKé BALL, 1.5 GREAT, 2 ULTRA, 255 MASTER. Returns {caught, shakes 0-3}. A catch always
+// shows three shakes; a miss shakes 0-3 times depending on how close it was. One house rule: with the
+// HP bar in the red the species counts as easy to catch (rate at least 160), so a weakened foe is
+// usually caught instead of bouncing out of ball after ball.
+function gen1Catch(R,{rate=1,catchRate=45,hp=1,max=1,status=null}={}){
+ if(rate>=255)return {caught:true,shakes:3};
+ const r256=n=>Math.floor(R()*(n+1));
+ const rand1Max=rate>=2?150:rate>=1.5?200:255,ballFactor=rate>=1.5&&rate<2?12:8,shakeDiv=rate>=2?150:rate>=1.5?200:255;
+ const S=['slp','frz'].includes(status)?25:status?12:0,S2=['slp','frz'].includes(status)?10:status?5:0;
+ const red=hp<=max*.2,cr=clamp(Math.round(red?Math.max(catchRate,160):catchRate),1,255);
+ const W=Math.min(255,Math.floor(Math.floor(max*255/ballFactor)/Math.max(1,Math.floor(hp/4))));
+ const rand1=r256(rand1Max);
+ if(rand1<S)return {caught:true,shakes:3};
+ if(rand1-S<=cr&&(W>=255||r256(255)<=W))return {caught:true,shakes:3};
+ const Z=Math.floor(Math.floor(cr*100/shakeDiv)*W/255)+S2;
+ return {caught:false,shakes:Z<10?0:Z<30?1:Z<70?2:3};
+}
+
 // ---------------------------------------------------------------- battlers + mechanics
 function battler(mon,side){
  const sp=speciesFor(mon.id),stats=statsAt(mon.id,mon.lvl);
@@ -250,26 +273,33 @@ const prefix=b=>b.side==='enemy'?'Enemy ':'';
 
 // ---------------------------------------------------------------- the battle
 async function battle(opts){
- const g=openGB(),S=g.S,R=opts.random||seededRandom('battle:'+Date.now()),wild=opts.mode==='wild',trainerName=opts.foe?.label||'';
+ const R=opts.random||seededRandom('battle:'+Date.now()),wild=opts.mode==='wild',trainerName=opts.foe?.label||'';
  const team=opts.player.team,bag=opts.player.bag,foeTeam=opts.foe.team,playerName=(opts.player.name||'RED').toUpperCase().slice(0,10);
  const result={outcome:null,defeated:[],caught:null,levelUps:[]};
- await SP.prepareSprites([...team.map(m=>[m.id,'back']),...team.map(m=>[m.id,'icon']),...team.map(m=>[m.id,'front']),...foeTeam.map(m=>[m.id,'front']),[opts.player.character,'back'],...(opts.foe.character?[[opts.foe.character,'front']]:[])]);
- if(!live())return result;
- const firstAlive=()=>team.findIndex(m=>m.hp>0);
- let pi=firstAlive(),ei=0,P=battler(team[pi],'player'),E=battler(foeTeam[0],'enemy'),runs=0;P.participated=true;
- const participants=new Set([pi]);
+ // Sprites (portraits may still be loading) are prepared while the music starts and the screen wipes.
+ const sprites=SP.prepareSprites([...team.map(m=>[m.id,'back']),...team.map(m=>[m.id,'icon']),...team.map(m=>[m.id,'front']),...foeTeam.map(m=>[m.id,'front']),[opts.player.character,'back'],...(opts.foe.character?[[opts.foe.character,'front']]:[])]);
+ const lead=team.find(m=>m.hp>0)||team[0],kind=wipeKind({trainer:!wild,stronger:(foeTeam[0]?.lvl||0)>=(lead?.lvl||0)+3,dungeon:!!opts.dungeon});
  const music=opts.mode==='gym'?'gym':wild?'wild':'trainer';
- // ---- transition
+ // ---- transition: music, three flashes, wipe (on the board unless the Game Boy is already showing text)
  AU.playSong(music);
- await transition(wild?'wild':'trainer');
- S.mode='battle';S.overlay=null;
- // ---- intro: trainers / wild mon slide in
+ let layer=null;
+ if(G)await transition(kind);
+ else{try{layer=await boardTransition(kind);}catch(err){console.error(err);}}
+ const g=openGB(),S=g.S;S.mode='black';S.overlay=null;
+ if(layer)setTimeout(()=>layer.remove(),320);
+ await sprites;
+ if(!live()){layer?.remove();return result;}
+ const firstAlive=()=>team.findIndex(m=>m.hp>0);
+ let pi=firstAlive(),ei=0,P=battler(team[pi],'player'),E=foeBattler(foeTeam[0]),runs=0;P.participated=true;
+ const participants=new Set([pi]);
+ await frames(8);S.mode='battle';
+ // ---- intro: trainers / wild mon slide in as black silhouettes, then the colours come back
  const pTrainer=await SP.characterSprite(opts.player.character,'back');
- S.player={...mon0(8,40,'back'),sp:pTrainer,pal:'trainer',show:true,trainer:true};
- if(wild){S.enemy={...mon0(96,0,'front'),sp:SP.spriteOf(E.mon.id,'front'),pal:E.types[0],show:true};}
- else{S.enemy={...mon0(96,0,'front'),sp:await SP.characterSprite(opts.foe.character,'front'),pal:'trainer',show:true,trainer:true};}
+ S.player={...mon0(8,40,'back'),sp:pTrainer,pal:'trainer',show:true,trainer:true,silhouette:true};
+ if(wild){S.enemy={...mon0(96,0,'front'),sp:SP.spriteOf(E.mon.id,'front'),pal:E.types[0],show:true,silhouette:true};}
+ else{S.enemy={...mon0(96,0,'front'),sp:await SP.characterSprite(opts.foe.character,'front'),pal:'trainer',show:true,trainer:true,silhouette:true};}
  for(let f=0;f<=40;f++){const k=1-f/40;S.enemy.dx=-Math.round(120*k);S.player.dx=Math.round(120*k);await frames(1);if(!live())return result;}
- S.enemy.dx=0;S.player.dx=0;
+ S.enemy.dx=0;S.player.dx=0;S.enemy.silhouette=false;S.player.silhouette=false;
  if(wild){AU.cry(E.mon.id);S.eHud=hudOf(E);await say(`Wild ${E.name} appeared!`);}
  else{
   S.balls={enemy:foeTeam.map(m=>m.hp>0?'ok':'faint'),player:team.map(m=>m.hp>0?'ok':'faint')};
@@ -310,6 +340,10 @@ async function battle(opts){
  return result;
 
  // ---------------- helpers bound to this battle
+ // Like Gen 1 trainer AI item counts: a foe can only patch itself up a few times (heal and rest
+ // moves such as RECOVER, WAFFLES or PIZZA TIME), so nothing out-heals your damage forever.
+ function foeBattler(mon){const b=battler(mon,'enemy');b.healsLeft=opts.mode==='gym'?2:1;return b;}
+ const isHeal=id=>{const m=move(id);return !!(m.heal||m.rest);};
  function alarm(){AU.lowHpAlarm(P.mon.hp>0&&P.mon.hp<=P.stats.hp*.2&&live());}
  async function playerAction(){
   while(live()){
@@ -373,11 +407,11 @@ async function battle(opts){
   for(let f=0;f<=24;f++){const t=f/24;ball.x=24+(120-24)*t;ball.y=72-Math.sin(t*Math.PI)*56-(48*t);await frames(1);}
   ball.open=true;AU.sfx('poof');await poof(S.enemy,true);S.enemy.show=false;ball.open=false;
   for(let f=0;f<10;f++){ball.y+=2;await frames(1);}
-  const hpF=E.mon.hp/E.stats.hp,hpFactor=hpF<=.2?1:hpF<=.5?.38:.14,status=['slp','frz'].includes(E.mon.status)?2:E.mon.status?1.5:1;
-  const chance=rate>=255?1:Math.min(.98,E.sp.catchRate/255*.95*hpFactor*rate*status+(hpF<=.2?.08:0)),b=Math.pow(chance,1/4);
-  let shakes=0;while(shakes<4&&R()<b)shakes++;
+  const {caught:got,shakes:rocks}=gen1Catch(R,{rate,catchRate:E.sp.catchRate,hp:E.mon.hp,max:E.stats.hp,status:E.mon.status});
+  const shakes=got?4:rocks;
   const wob=Math.min(3,shakes);
-  for(let i=0;i<wob;i++){await frames(18);AU.sfx('wobble');for(let f=0;f<12;f++){ball.x=120+Math.round(Math.sin(f/12*Math.PI*2)*2);await frames(1);}ball.x=120;}
+  // each shake rocks the ball left, right and back to rest
+  for(let i=0;i<wob;i++){await frames(20);AU.sfx('wobble');for(let f=0;f<16;f++){ball.x=120+Math.round(Math.sin(f/16*Math.PI*2)*3);await frames(1);}ball.x=120;}
   await frames(16);
   if(shakes>=4){AU.sfx('click');AU.stopSong();await frames(10);AU.playJingle('caught');await say(`All right! ${E.name} was caught!`);S.fx.splice(S.fx.indexOf(fx),1);result.caught={...E.mon,hp:E.mon.hp,status:E.mon.status};E.mon.caught=true;return true;}
   ball.open=true;AU.sfx('poof');await poof(S.enemy,false);ball.show=false;S.enemy.show=true;S.fx.splice(S.fx.indexOf(fx),1);
@@ -385,7 +419,9 @@ async function battle(opts){
   return false;
  }
  function chooseEnemyMove(){
-  const usable=E.moves.filter(m=>ppLeft(E.mon,m)>0);if(E.recharge||!usable.length)return {move:E.recharge?null:'STRUGGLE'};
+  const withPP=E.moves.filter(m=>ppLeft(E.mon,m)>0);if(E.recharge||!withPP.length)return {move:E.recharge?null:'STRUGGLE'};
+  // Healing only when hurt and while the foe still has heals left.
+  const canHeal=E.healsLeft>0&&E.mon.hp<=E.stats.hp*.5,attacks=withPP.filter(m=>!isHeal(m)),usable=canHeal||!attacks.length?withPP:attacks;
   if(wild)return {move:usable[Math.floor(R()*usable.length)]};
   const smart=opts.mode==='gym'?1:.6;
   const score=id=>{const m=move(id);if(!m.power&&!m.fixed&&!m.level){if(m.fx.some(f=>f.kind==='status')&&P.mon.status)return .1;if(m.heal||m.rest)return E.mon.hp<E.stats.hp*.4?1.4:.05;return .7;}const e=effectiveness(m.type,P.types);return (m.power||60)*(e||.05)*(E.types.includes(m.type)?1.5:1)/60;};
@@ -407,7 +443,7 @@ async function battle(opts){
    // Gen 1 shift prompt
    const nextMon=foeTeam[next];
    if(team.filter(m=>m.hp>0).length>1&&P.mon.hp>0){await say(`${trainerName} is about to use ${speciesFor(nextMon.id).name}! Will ${playerName} change POKéMON?`,{wait:false});const yn=await choose(yesNo());if(yn===0)await switchMenuForced(true);}
-   ei=next;E=battler(foeTeam[ei],'enemy');participants.clear();if(P.mon.hp>0)participants.add(pi);
+   ei=next;E=foeBattler(foeTeam[ei]);participants.clear();if(P.mon.hp>0)participants.add(pi);
    await say(`${trainerName} sent out ${E.name}!`,{auto:true,pause:10});await sendOut(S.enemy,E);await entryAbility(E,P);
   }
   if(P.mon.hp<=0&&!P.fainted){
@@ -513,8 +549,9 @@ async function battle(opts){
    else if(f.kind==='stat'){const chance=m.cat==='status'?100:f.chance*grace;if(R()*100<chance){await changeStat(f.who==='self'?a:t,f.stat,f.n,m.cat!=='status');did=true;}}
    else if(f.kind==='focus'){a.focus=true;await say(`${prefix(a)}${a.name}’s getting pumped!`);did=true;}
   }
-  if(m.heal){if(a.mon.hp>=a.stats.hp){await say('But, it failed!');}else{AU.sfx('heal');await heal(a,Math.floor(a.stats.hp/2));await say(`${prefix(a)}${a.name} regained health!`);}did=true;}
-  if(m.rest){if(a.mon.hp>=a.stats.hp&&!a.mon.status){await say('But, it failed!');}else{a.mon.status='slp';a.mon.slp=2;await say(`${prefix(a)}${a.name} started sleeping!`);AU.sfx('heal');await heal(a,a.stats.hp);Object.assign(a===P?S.pHud:S.eHud,{status:'slp'});}did=true;}
+  const healsGone=a.side==='enemy'&&!(a.healsLeft>0);
+  if(m.heal){if(a.mon.hp>=a.stats.hp||healsGone){await say('But, it failed!');}else{if(a.side==='enemy')a.healsLeft--;AU.sfx('heal');await heal(a,Math.floor(a.stats.hp/2));await say(`${prefix(a)}${a.name} regained health!`);}did=true;}
+  if(m.rest){if(a.mon.hp>=a.stats.hp&&!a.mon.status||healsGone){await say('But, it failed!');}else{if(a.side==='enemy')a.healsLeft--;a.mon.status='slp';a.mon.slp=2;await say(`${prefix(a)}${a.name} started sleeping!`);AU.sfx('heal');await heal(a,a.stats.hp);Object.assign(a===P?S.pHud:S.eHud,{status:'slp'});}did=true;}
   if(m.leech){if(t.types.includes('GRASS')||t.leech){await say('But, it failed!');}else{t.leech=true;await say(`${prefix(t)}${t.name} was seeded!`);}did=true;}
   if(m.haze){for(const b of [P,E]){b.stages={atk:0,def:0,spc:0,spd:0,acc:0,eva:0};b.conf=0;}await say('All STATUS changes are eliminated!');did=true;}
   if(m.nothing){await say('But nothing happened!');did=true;}
@@ -584,18 +621,53 @@ async function battle(opts){
  }
 }
 // ---------------------------------------------------------------- shared animations
-async function transition(kind){
- const S=G.S;S.mode='battle';
- for(let i=0;i<3;i++){S.invert=true;await frames(5);S.invert=false;await frames(5);}
- if(kind==='wild'){
-  // horizontal blinds closing from both sides
-  for(let f=0;f<=24;f++){S.overlay=(c)=>{c.fillStyle='#000';for(let y=0;y<H;y+=8){const w=Math.round(W*f/24);if((y/8)%2)c.fillRect(0,y,w,8);else c.fillRect(W-w,y,w,8);}};await frames(1);}
- }else{
-  // spiral of tiles closing in
-  const order=[];let x0=0,y0=0,x1=19,y1=17;while(x0<=x1&&y0<=y1){for(let x=x0;x<=x1;x++)order.push([x,y0]);y0++;for(let y=y0;y<=y1;y++)order.push([x1,y]);x1--;if(y0<=y1){for(let x=x1;x>=x0;x--)order.push([x,y1]);y1--;}if(x0<=x1){for(let y=y1;y>=y0;y--)order.push([x0,y]);x0++;}}
-  for(let n=0;n<=order.length;n+=12){const k=n;S.overlay=(c)=>{c.fillStyle='#000';for(let i=0;i<k&&i<order.length;i++)c.fillRect(order[i][0]*8,order[i][1]*8,8,8);};await frames(1);}
- }
- S.overlay=(c)=>{c.fillStyle='#000';c.fillRect(0,0,W,H);};await frames(10);
+// Gen 1 encounter transition (pokered battle_transitions.asm): the battle music starts, the screen
+// flashes three times (palette fades to black, back, to white, back) and then one of eight wipes closes
+// it, picked by bits: trainer battle | foe at least 3 levels above your lead | dungeon.
+const WIPES=['doubleCircle','spiralOut','circle','spiralIn','hStripes','shrink','vStripes','split'];
+function wipeKind({trainer=false,stronger=false,dungeon=false}={}){return WIPES[(trainer?1:0)|(stronger?2:0)|(dungeon?4:0)];}
+const FLASH=[[0,.33],[0,.66],[0,1],[0,.66],[0,.33],[0,0],[1,.33],[1,.66],[1,1],[1,.66],[1,.33],[0,0]]; // [white?,alpha], 2 frames each
+const WIPE_FRAMES={doubleCircle:34,circle:44,spiralOut:40,spiralIn:40,hStripes:28,vStripes:28,shrink:30,split:30};
+const spiralCache=new Map();
+function spiralOrder(cols,rows){
+ const key=cols+'x'+rows;if(spiralCache.has(key))return spiralCache.get(key);
+ const order=[];let x0=0,y0=0,x1=cols-1,y1=rows-1;
+ while(x0<=x1&&y0<=y1){for(let x=x0;x<=x1;x++)order.push([x,y0]);y0++;for(let y=y0;y<=y1;y++)order.push([x1,y]);x1--;if(y0<=y1){for(let x=x1;x>=x0;x--)order.push([x,y1]);y1--;}if(x0<=x1){for(let y=y1;y>=y0;y--)order.push([x0,y]);x0++;}}
+ spiralCache.set(key,order);return order;
+}
+// Fills the tiles of a wipe at progress t (0..1) on a cols x rows tile grid: fill(x,y,w,h) in tiles.
+function drawWipe(kind,t,cols,rows,fill){
+ t=clamp(t,0,1);
+ if(kind==='hStripes'){const w=cols*t;for(let y=0;y<rows;y++){if(y%2)fill(0,y,w,1);else fill(cols-w,y,w,1);}return;}
+ if(kind==='vStripes'){const h=rows*t;for(let x=0;x<cols;x++){if(x%2)fill(x,0,1,h);else fill(x,rows-h,1,h);}return;}
+ if(kind==='shrink'){const ix=cols/2*t,iy=rows/2*t;fill(0,0,cols,iy);fill(0,rows-iy,cols,iy);fill(0,0,ix,rows);fill(cols-ix,0,ix,rows);return;}
+ if(kind==='split'){const h=rows*t,w=cols*t;fill(0,(rows-h)/2,cols,h);fill((cols-w)/2,0,w,rows);return;}
+ if(kind==='spiralIn'||kind==='spiralOut'){const order=spiralOrder(cols,rows),n=Math.round(order.length*t);for(let i=0;i<n;i++){const [x,y]=kind==='spiralIn'?order[i]:order[order.length-1-i];fill(x,y,1,1);}return;}
+ // circle: one clock hand sweeps from 12 o'clock; doubleCircle: two hands from 12 and 6.
+ const cx=cols/2,cy=rows/2,span=kind==='doubleCircle'?Math.PI:Math.PI*2,lim=t*span+1e-9;
+ for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){let a=Math.atan2(x+.5-cx,cy-(y+.5));if(a<0)a+=Math.PI*2;if(a%span<lim||t>=1)fill(x,y,1,1);}
+}
+// Inside an already open Game Boy (e.g. after a trainer's speech).
+async function transition(kind='doubleCircle'){
+ const S=G.S;if(!WIPE_FRAMES[kind])kind=kind==='wild'?'doubleCircle':'spiralIn';
+ const shade=([white,a])=>c=>{if(!a)return;c.globalAlpha=a;c.fillStyle=white?'#fff':'#000';c.fillRect(0,0,W,H);c.globalAlpha=1;};
+ for(let i=0;i<3&&live();i++)for(const step of FLASH){S.overlay=shade(step);await frames(2);}
+ const n=WIPE_FRAMES[kind];
+ for(let f=0;f<=n&&live();f++){S.overlay=c=>{c.fillStyle='#000';drawWipe(kind,f/n,20,18,(x,y,w,h)=>c.fillRect(Math.floor(x*8),Math.floor(y*8),Math.ceil(w*8),Math.ceil(h*8)));};await frames(1);}
+ S.overlay=c=>{c.fillStyle='#000';c.fillRect(0,0,W,H);};await frames(10);
+}
+// On the board itself, before the Game Boy opens: a full-screen layer flashes and wipes whatever is
+// on screen (the board). Returns the black layer; it is removed once the Game Boy is up.
+async function boardTransition(kind){
+ const layer=document.createElement('canvas');layer.className='gb-encounter';
+ const vw=Math.max(1,window.innerWidth),vh=Math.max(1,window.innerHeight),tile=Math.max(16,Math.round(Math.min(vw,vh)/18)),cols=Math.ceil(vw/tile),rows=Math.ceil(vh/tile);
+ layer.width=cols*tile;layer.height=rows*tile;document.body.append(layer);const c=layer.getContext('2d');
+ const step=1000/60,wait=n=>new Promise(res=>{const end=performance.now()+n*step/speed;let done=false;const fin=()=>{if(!done){done=true;res();}};const tick=()=>{if(done)return;if(performance.now()>=end)fin();else requestAnimationFrame(tick);};requestAnimationFrame(tick);setTimeout(fin,n*step/speed+40);});
+ for(let i=0;i<3;i++)for(const [white,a] of FLASH){c.clearRect(0,0,layer.width,layer.height);if(a){c.globalAlpha=a;c.fillStyle=white?'#fff':'#000';c.fillRect(0,0,layer.width,layer.height);c.globalAlpha=1;}await wait(2);}
+ const n=WIPE_FRAMES[kind]||34,t0=performance.now(),dur=n*step/speed;
+ for(;;){const t=Math.min(1,(performance.now()-t0)/dur);c.clearRect(0,0,layer.width,layer.height);c.fillStyle='#000';drawWipe(kind,t,cols,rows,(x,y,w,h)=>c.fillRect(Math.floor(x*tile),Math.floor(y*tile),Math.ceil(w*tile),Math.ceil(h*tile)));if(t>=1)break;await wait(1);}
+ c.fillStyle='#000';c.fillRect(0,0,layer.width,layer.height);await wait(10);
+ return layer;
 }
 async function slideOut(m,dir){for(let f=0;f<=20;f++){m.dx=Math.round(dir*f*5);await frames(1);}m.show=false;m.dx=0;}
 async function sendOut(m,b){
@@ -652,4 +724,4 @@ async function gbMessages(lines,{song=null,jingle=null,keepOpen=false}={}){
  if(!keepOpen)closeGB();
 }
 
-Object.assign(exports,{battle,openGB,closeGB,say,gbMessages,fieldMenu,useBagItem,setTestSpeed,setAutoPilot,transition,isOpen:()=>!!G});
+Object.assign(exports,{gen1Catch,wipeKind,drawWipe,battle,openGB,closeGB,say,gbMessages,fieldMenu,useBagItem,setTestSpeed,setAutoPilot,transition,isOpen:()=>!!G});

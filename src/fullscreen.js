@@ -14,6 +14,6 @@ function raiseDialogs(){doc.querySelectorAll('dialog[open]').forEach(d=>{try{if(
 function syncLabels(){raiseDialogs();doc.querySelectorAll('[data-action="fullscreen"]').forEach(b=>{b.textContent=fullscreenLabel(b.dataset.fsStyle);});}
 function initFullscreen(){if(!fullscreenSupported())return;doc.addEventListener('fullscreenchange',syncLabels);doc.addEventListener('webkitfullscreenchange',syncLabels);
  // First tap anywhere (except the toggle itself, which handles its own click) goes fullscreen.
- const first=ev=>{doc.removeEventListener('pointerup',first,true);if(ev.target?.closest?.('[data-action="fullscreen"]'))return;if(!isFullscreen())enterFullscreen();};
+ const first=ev=>{doc.removeEventListener('pointerup',first,true);if(ev.target?.closest?.('[data-action="fullscreen"],[data-gb-fs]'))return;if(!isFullscreen())enterFullscreen();};
  doc.addEventListener('pointerup',first,true);}
 Object.assign(exports,{fullscreenSupported,isFullscreen,enterFullscreen,exitFullscreen,toggleFullscreen,fullscreenLabel,fullscreenButton,initFullscreen});

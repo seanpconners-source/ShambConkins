@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.53.1
+
+**Wild encounters play out like Red/Blue.** The battle music starts, the board itself flashes three times and
+one of the eight Gen 1 wipes closes over it (picked like pokered: wild or trainer, foe at least 3 levels above
+your lead, Horror/Upside Down count as dungeons); then the ShamBoy opens on a black screen and both sides slide
+in as black silhouettes before the colours come back. Portraits load during the wipe instead of before it.
+- **Opponents can only heal a few times:** heal and rest moves (RECOVER, WAFFLES, PIZZA TIME, BELLY RUB...) work
+  once per wild Pokémon or trainer Pokémon (twice in a gym), and only once it is down to half HP.
+- **Catching uses the real Gen 1 formula** (ball, HP, status, catch rate), including the shake count: 0 or 1
+  shakes when it was never close, 3 shakes and a lock-in when it is caught. With the HP bar in the red a foe is
+  usually caught (Poké Ball ~63%, Great Ball ~80%, Ultra Ball always); the lowest catch rate is now 45.
+- A small full-screen toggle sits in the top-right corner of the ShamBoy's screen bezel.
+- Also in this build: only the level boss moves players to the next level, and the title music starts on launch.
+
 ## v0.53.0
 
 **James Bond warp zone: the Volcano Lair.** A new warp pipe destination styled as Blofeld's hollowed-out volcano

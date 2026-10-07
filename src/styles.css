@@ -858,6 +858,9 @@ body.gb-open{overflow:hidden}
 .gb-overlay[data-layout=landscape] .gb-ss{gap:14px;margin:0;justify-self:end}
 .gb-overlay[data-layout=landscape] .gb-speaker{display:none}
 .gb-overlay[data-layout=landscape] .gb-brand{justify-self:center;margin:0}
+.gb-encounter{position:fixed;left:0;top:0;z-index:10049;pointer-events:auto;touch-action:none;image-rendering:pixelated}
+.gb-fs{position:absolute;top:2px;right:6px;width:22px;height:16px;padding:0;margin:0;border:0;background:none;color:#a7a7c4;opacity:.55;font:700 11px/16px Arial,sans-serif;cursor:pointer;touch-action:manipulation}
+.gb-fs:hover,.gb-fs:focus-visible{opacity:1}
 @media (max-height:620px){.gb-dpad{grid-template-columns:repeat(3,34px);grid-template-rows:repeat(3,34px)}.gb-ab button{width:48px;height:48px}}
 /* board trainer spaces */
 .map-space.type-trainer .space-symbol{display:none}

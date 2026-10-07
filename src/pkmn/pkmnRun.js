@@ -98,7 +98,7 @@ function buildTrainer(run,p,random,{size=6,levelBoost=1,trainerId=null,profile=s
 async function battleFlow(run,p,{mode,foe,random,prize=0,pre=[],intro=null,unlockFrom=null,extraUnlock=null}){
  const profile=store.profile,T=ensureTeam(run,p,profile),wasBusy=store.busy;hooks.stopMusic?.();store.busy=true;
  if(pre.length){await B.gbMessages(pre,{keepOpen:true,song:intro});}
- const r=await B.battle({mode,player:{name:p.name,character:p.character,team:T.team,bag:p.pkbag},foe,random,prizeText:prize?`${p.name.toUpperCase()} got ${prize} points for winning!`:null});
+ const r=await B.battle({mode,dungeon:['horror','upside-down'].includes(realmOf(run,p)),player:{name:p.name,character:p.character,team:T.team,bag:p.pkbag},foe,random,prizeText:prize?`${p.name.toUpperCase()} got ${prize} points for winning!`:null});
  const unlocked=[];const lines=[];
  if(r.outcome==='caught'&&r.caught){
   const mon=D.normalizeMon(r.caught)||D.makeMon(r.caught.id,r.caught.lvl);const name=D.speciesFor(mon.id).name;

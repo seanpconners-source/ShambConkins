@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.53.0 (`releases/ShambConkins_v0.53.0.html`).
+Version 0.53.1 (`releases/ShambConkins_v0.53.1.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -121,6 +121,11 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   moves (`advanceAlong`, `bossAhead` in board.js) stop at the door of an unbeaten level gate; FRANK only opens Horror and
   `advanceAfterBoss` takes both players from the Spirit castle down to `horror-0`; `levelEndBoss` pulls a player out of
   the Upside Down first. Tests: `tests/levelflow.mjs` (Node random walks, in `npm test`), `tests/levelflow-ui.mjs`.
+- v0.53.1 Pokémon: `battle()` starts the song, then `boardTransition` (full-screen `.gb-encounter` canvas over the
+  board: 3 palette flashes + Gen 1 wipe from `wipeKind`/`drawWipe`) before `openGB`; if the GB is already open
+  (trainer speech) `transition(kind)` runs inside it. Intro slides in silhouettes. Foes have `healsLeft` (1, gym 2)
+  for heal/rest moves. `gen1Catch` = pokered catch + shake formula (red HP → catch rate ≥160). `.gb-fs` toggle in the
+  bezel. Test: `tests/encounter.mjs` (screenshots `/tmp/claude-0/sc/enc-*`).
 - Launch music: boot now starts the home score (it used to call `showView('home')` without `home()`), and
   `installAudioUnlock()` (audio.js) resumes the suspended AudioContext on the first tap/key.
 

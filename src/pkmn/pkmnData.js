@@ -303,7 +303,7 @@ function speciesFor(id){
  const status=[...STATUS_MOVES[types[0]],...(types[1]?STATUS_MOVES[types[1]]:[])],statusMove=status[(h>>>17)%status.length];
  const dex=Math.max(0,CHARACTERS.findIndex(x=>x.id===key))+1;
  const sp={id:key,name:battleName(c),types,base:{hp,atk,def,spc,spd},bst,sig,ability,statusMove,dex,source:c.source,
-  catchRate:Math.max(25,Math.min(220,Math.round(255-bst*0.42))),expYield:Math.round(bst/4.6),icon:c.icon,h};
+  catchRate:Math.max(45,Math.min(220,Math.round(255-bst*0.42))),expYield:Math.round(bst/4.6),icon:c.icon,h};
  speciesCache.set(id,sp);return sp;
 }
 // Gen 1 names are capitals, at most 10 cells.
