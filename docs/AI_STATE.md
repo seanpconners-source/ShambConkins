@@ -116,6 +116,9 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   action on landing, Chance draws skip trivia questions. `showSmashCard` + `glassSmash()` (audio.js) between the
   Gentlemen card and Level I.
 
+- Launch music: boot now starts the home score (it used to call `showView('home')` without `home()`), and
+  `installAudioUnlock()` (audio.js) resumes the suspended AudioContext on the first tap/key.
+
 ## In progress / unverified
 - Warp minigames only bot/fuzz-tested in headless Chromium; Sonic and kart (split-screen canvas, Mode 7 rows) need a
   real-phone check for feel and frame rate.
