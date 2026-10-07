@@ -822,3 +822,48 @@ body[data-view="home"]{background:#0c0814}
 .board-svg[data-grid] .board-banter text{fill:#fff}
 .board-svg[data-grid] .route-obstacle rect{fill:#120c1a;stroke:#ff5b5b}
 .board-svg[data-grid] .route-obstacle.open rect{stroke:#2fd08f}
+
+/* ------------------------------------------------------------ Pokémon battles: Game Boy Color shell */
+body.gb-open{overflow:hidden}
+.gb-overlay{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 28%,#2b2140 0%,#0c0913 75%);touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;animation:gb-in .18s ease-out}
+@keyframes gb-in{from{opacity:0}to{opacity:1}}
+.gb-device{position:relative;display:grid;grid-template-columns:1fr;grid-template-areas:"screen" "brand" "controls";gap:10px;padding:16px 16px 22px;border-radius:20px 20px 64px 20px;background:linear-gradient(155deg,rgba(156,120,214,.93),rgba(92,60,158,.96) 60%,rgba(70,44,128,.97));box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -6px 14px rgba(0,0,0,.35),0 18px 50px rgba(0,0,0,.6);max-width:calc(100vw - 12px);max-height:calc(100dvh - 12px)}
+.gb-device::before{content:"";position:absolute;inset:6px;border-radius:16px 16px 58px 16px;background:repeating-linear-gradient(115deg,rgba(255,255,255,.035) 0 6px,transparent 6px 14px);pointer-events:none}
+.gb-bezel{grid-area:screen;position:relative;display:flex;flex-direction:column;align-items:center;background:linear-gradient(#45455c,#35354a);border-radius:10px 10px 34px 10px;padding:22px 26px 18px;box-shadow:inset 0 0 0 2px rgba(0,0,0,.35)}
+.gb-bezel-label{position:absolute;top:6px;left:0;right:0;text-align:center;font:700 8px/1 Arial,Helvetica,sans-serif;letter-spacing:.18em;color:#a7a7c4}
+.gb-led{position:absolute;left:8px;top:46%;width:7px;height:7px;border-radius:50%;background:#ff3b5c;box-shadow:0 0 8px #ff3b5c}
+.gb-screen{display:block;image-rendering:pixelated;image-rendering:crisp-edges;background:#f8f8f8;box-shadow:0 0 0 2px #1d1d29;border-radius:2px;touch-action:none;cursor:pointer}
+.gb-overlay[data-pal=dmg] .gb-screen{background:#e0f0c0}
+.gb-brand{grid-area:brand;justify-self:start;margin-left:8px;font:italic 900 19px/1 "Arial Black",Arial,sans-serif;color:#231b55;letter-spacing:.02em;text-shadow:0 1px 0 rgba(255,255,255,.25)}
+.gb-brand b{font-style:italic}.gb-brand b:nth-child(1){color:#e8304a}.gb-brand b:nth-child(2){color:#7a3ad6}.gb-brand b:nth-child(3){color:#2a9d4a}.gb-brand b:nth-child(4){color:#1f6fe0}.gb-brand b:nth-child(5){color:#e8a020}
+.gb-controls{grid-area:controls;display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"dpad ab" "ss ss";align-items:center;gap:8px 4px;padding:0 6px}
+.gb-dpad{grid-area:dpad;display:grid;grid-template-columns:repeat(3,40px);grid-template-rows:repeat(3,40px);justify-self:start;filter:drop-shadow(0 3px 0 rgba(0,0,0,.35))}
+.gb-dpad button,.gb-dpad span{border:0;margin:0;padding:0;background:#25232c;touch-action:none}
+.gb-dpad [data-btn=up]{grid-column:2;grid-row:1;border-radius:6px 6px 0 0}.gb-dpad [data-btn=left]{grid-column:1;grid-row:2;border-radius:6px 0 0 6px}
+.gb-dpad span{grid-column:2;grid-row:2;background:radial-gradient(circle,#1b1a20 30%,#25232c 32%)}.gb-dpad [data-btn=right]{grid-column:3;grid-row:2;border-radius:0 6px 6px 0}.gb-dpad [data-btn=down]{grid-column:2;grid-row:3;border-radius:0 0 6px 6px}
+.gb-dpad button.down{background:#111015}
+.gb-ab{grid-area:ab;justify-self:end;display:flex;gap:14px;transform:rotate(-24deg);padding:12px 8px;border-radius:40px;background:rgba(0,0,0,.12)}
+.gb-ab button{width:56px;height:56px;border-radius:50%;border:0;background:radial-gradient(circle at 35% 30%,#c23a6c,#8a1f4a 70%);color:transparent;box-shadow:0 4px 0 #5a1230,inset 0 1px 0 rgba(255,255,255,.3);touch-action:none;font:900 0/0 a}
+.gb-ab .gb-b{margin-top:22px}
+.gb-ab button::after{content:attr(aria-label);display:block;transform:translate(0,64px) rotate(24deg);font:900 13px/1 Arial,sans-serif;color:#231b55}
+.gb-ab button.down{transform:translateY(3px);box-shadow:0 1px 0 #5a1230}
+.gb-ss{grid-area:ss;display:flex;justify-content:center;gap:22px;margin-top:6px}
+.gb-ss button{width:52px;height:12px;border-radius:8px;border:0;background:#4c4a57;transform:rotate(-24deg);position:relative;touch-action:none;color:transparent;box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.gb-ss button::after{content:attr(data-btn);position:absolute;left:0;right:0;top:15px;font:700 9px/1 Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#231b55}
+.gb-ss button.down{background:#2d2b34}
+.gb-speaker{position:absolute;right:26px;bottom:22px;display:flex;gap:6px;transform:rotate(-30deg);pointer-events:none}
+.gb-speaker i{display:block;width:5px;height:40px;border-radius:3px;background:rgba(0,0,0,.28);box-shadow:inset 0 1px 1px rgba(0,0,0,.4)}
+.gb-overlay[data-layout=landscape] .gb-device{grid-template-columns:auto auto auto;grid-template-areas:"dpad screen ab" "dpad brand ss";border-radius:24px;padding:16px 26px;column-gap:28px;row-gap:6px;align-items:center}
+.gb-overlay[data-layout=landscape] .gb-controls{display:contents}
+.gb-overlay[data-layout=landscape] .gb-ss{gap:14px;margin:0;justify-self:end}
+.gb-overlay[data-layout=landscape] .gb-speaker{display:none}
+.gb-overlay[data-layout=landscape] .gb-brand{justify-self:center;margin:0}
+@media (max-height:620px){.gb-dpad{grid-template-columns:repeat(3,34px);grid-template-rows:repeat(3,34px)}.gb-ab button{width:48px;height:48px}}
+/* board trainer spaces */
+.map-space.type-trainer .space-symbol{display:none}
+/* Pokémon warp zone map */
+.pk-scene text{font-family:"Courier New",Courier,monospace;font-weight:900;fill:#282828;letter-spacing:.04em}
+.pk-scene .pk-sign{font-size:15px}
+.pk-scene .pk-sign-big{font-size:26px}
+.pk-scene .pk-trainer-name{font-size:12px;fill:#fff;paint-order:stroke;stroke:#282828;stroke-width:4px}
+.pk-scene .pk-trainer.beaten{opacity:.55}

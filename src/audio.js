@@ -2,6 +2,7 @@ const {store}=require("src/state.js");
 const {hash}=require("src/utils.js");
 const {pairPace}=require("src/pairs.js");
 const music=require("src/music.js");
+const pk=require("src/pkmn/pkmnAudio.js");
 let context=null,zone='home',playing=false;
 function audioContext(){if(!store.profile?.settings.sound&&!store.profile?.settings.music)return null;try{context ||= new (window.AudioContext||window.webkitAudioContext)();if(context.state==='suspended')context.resume();return context;}catch{return null;}}
 function tone(frequency=440,duration=.07,volume=.035,type='sine'){const a=audioContext();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=frequency;g.gain.setValueAtTime(volume,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+duration);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+duration);}
@@ -26,9 +27,13 @@ music.configureMusic({
 let sceneProvider=null;
 function setMusicScene(fn){sceneProvider=fn;}
 // realm: mind | body | spirit | horror | upside-down | warp (warp-<board id>) | home
-function setMusicZone(realm){if(realm==='warp'&&store.run?.warp?.id)realm='warp-'+store.run.warp.id;if(zone===realm)return;zone=realm;music.setSequencerZone(realm);}
-function startMusic(){stopMusic();if(!store.profile?.settings.music)return;if(!audioContext())return;playing=true;music.setSequencerZone(zone);music.startSequencer();}
-function stopMusic(){playing=false;music.stopSequencer();music.stopMetal();}
+// The Pokémon warp zone plays its own chiptune route theme instead of the generative score.
+function setMusicZone(realm){if(realm==='warp'&&store.run?.warp?.id)realm='warp-'+store.run.warp.id;if(zone===realm)return;const was=zone;zone=realm;
+ if(realm==='warp-pokemon'){if(playing){music.stopSequencer();pk.playSong('route');}return;}
+ if(was==='warp-pokemon'){pk.stopSong();music.setSequencerZone(realm);if(playing)music.startSequencer();return;}
+ music.setSequencerZone(realm);}
+function startMusic(){stopMusic();if(!store.profile?.settings.music)return;if(!audioContext())return;playing=true;if(zone==='warp-pokemon'){pk.playSong('route');return;}music.setSequencerZone(zone);music.startSequencer();}
+function stopMusic(){playing=false;music.stopSequencer();music.stopMetal();if(pk.songPlaying()==='route')pk.stopSong();}
 // Hardcore metal riff for a level/boss title card; background music pauses meanwhile.
 // kind: a realm id or 'boss'. Returns the riff length in seconds (0 when music is off).
 function playMetal(kind){if(!store.profile?.settings.music||!audioContext())return 0;try{return music.playMetalRiff(kind);}catch{return 0;}}

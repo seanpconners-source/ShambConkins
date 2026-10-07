@@ -200,6 +200,8 @@ function buildGridBoard(board){
   });
   // One warp pipe per realm, hidden among the encounter spaces of a road.
   {const lane=Math.floor(random()*3),path=tracks[lane],options=path.map((id,i)=>({id,i})).filter(q=>q.i>=4&&q.i<path.length-4&&['event','bonus','penalty','game'].includes(board.nodes[q.id].type)&&!board.nodes[q.id].location);if(options.length)board.nodes[options[Math.floor(random()*options.length)].id].type='warp';}
+  // Pokémon trainer battles: Poké Ball spaces on two of the three roads.
+  for(const lane of shuffle([0,1,2],random).slice(0,2)){const path=tracks[lane],options=path.map((id,i)=>({id,i})).filter(q=>q.i>=3&&q.i<path.length-3&&['event','bonus','penalty'].includes(board.nodes[q.id].type));if(options.length)board.nodes[options[Math.floor(random()*options.length)].id].type='trainer';}
   const height=cellXY(0,R1+4,0).y;
   Object.assign(data,{color:GROUND_BASE[realm],height,cols:gate.col,paths:tracks,lanes:laneInfo,fork,stem,gridRows:{top:TOP,fork:R0,gate:R1,style}});
   board.pathNetworks.push({realm,fork,paths:tracks,lengths,difficulties:DIFFICULTY});

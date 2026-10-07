@@ -2,6 +2,7 @@
 // space on the main map. Each is a stand-alone board (run.board is swapped, the
 // main one is parked in run.mainBoard) that ends in a boss.
 const {seededRandom, escapeHTML:e}=require("src/utils.js");
+const {POKE_DEF,buildPokemonBoard,pokemonSceneSVG}=require("src/pkmn/pkmnWarp.js");
 const W=1800,H=1200;
 const WARP_DEFS={
  'rainbow-road':{id:'rainbow-road',title:'Rainbow Road',source:'Mario Kart',icon:'🌈',bossId:'bowser',count:19,color:'#2a1556',intro:'No guardrails. Seventeen items. One very large turtle at the finish line.'},
@@ -11,6 +12,7 @@ const WARP_DEFS={
  'mario-world':{id:'mario-world',title:'World 1 · Grass Land',source:'Super Mario Bros. 3',icon:'🍄',bossId:'boom-boom',count:15,color:'#7fc8ee',intro:'Hammer Bros. wander the map. The fortress is just past the bridge.'},
  'clue':{id:'clue',title:'Tudor Mansion',source:'Clue',icon:'🔎',bossId:'professor-plum',count:10,color:'#3a2418',intro:'It was Professor Plum, in the secret passage, with the final boss.'},
  'hyrule':{id:'hyrule',title:'Hyrule Field',source:'The Legend of Zelda',icon:'🗡️',bossId:'ganon',count:17,color:'#8fd47a',intro:'It is dangerous to go alone. Take each other.'},
+ 'pokemon':POKE_DEF,
  'green-hill':{id:'green-hill',title:'Green Hill Zone',source:'Sonic the Hedgehog',icon:'💍',bossId:'dr-robotnik',count:18,color:'#7cc8ff',intro:'Gotta go fast. Collect rings. Avoid the egg-shaped man.'}
 };
 const WARP_IDS=Object.keys(WARP_DEFS);
@@ -48,6 +50,7 @@ const CLUE_ROOMS=['Hall','Lounge','Dining Room','Kitchen','Ballroom','Conservato
 
 function buildWarpBoard(id,seed='warp'){
  const def=WARP_DEFS[id];if(!def)return null;
+ if(id==='pokemon')return buildPokemonBoard(seed);
  const random=seededRandom(seed+':warp:'+id),count=def.count,points=layoutPoints(id,count).map(p=>[Math.round(p[0]),Math.round(p[1])]),types=assignTypes(count,random,id);
  const nodes={},ids=[];
  for(let i=0;i<count;i++){const nid=`warp-${id}-${i}`;ids.push(nid);nodes[nid]={id:nid,realm:'warp',col:i,lane:0,x:points[i][0],y:points[i][1],type:types[i],worldSpace:true,next:[]};}
@@ -109,6 +112,7 @@ function castleSpot(b,gate){
  return best;
 }
 function warpSceneSVG(run){
+ if(run.board.warp?.id==='pokemon')return pokemonSceneSVG(run);
  const b=run.board,id=b.warp.id,random=seededRandom(run.seed+':scene:'+id),gate=b.nodes[b.realms.warp.gate],scene=SCENES[id]||sceneHyrule;
  const defs=`<defs><linearGradient id="wg-space" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#120a2e"/><stop offset="1" stop-color="#3a1a6e"/></linearGradient><linearGradient id="wg-candy" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe3f1"/><stop offset="1" stop-color="#d9f4ff"/></linearGradient><linearGradient id="wg-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4aa8ff"/><stop offset="1" stop-color="#bfe9ff"/></linearGradient><pattern id="wg-wood" width="120" height="40" patternUnits="userSpaceOnUse"><path d="M0 20H120M0 0H120" stroke="#2a180d" stroke-width="3" opacity=".5"/></pattern></defs>`;
  const [cc,flag]=CASTLE_COLORS[id]||['#aaa','#e33'];

@@ -39,14 +39,14 @@ body ::selection{background:var(--t-acc2);color:#fff}
 body :focus-visible{outline:3px solid var(--t-acc);outline-offset:2px}
 
 /* ---------- Buttons (everything outside a game's own playfield) ---------- */
-body button:not(.game-body *):not(.title-screen *){color:var(--t-text);background:linear-gradient(180deg,var(--t-s1) 0%,var(--t-s2) 100%);border:2px solid var(--t-edge);border-radius:14px;box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 2px 0 var(--t-shine),0 4px 0 var(--t-edge);text-shadow:0 1px 0 #0009;letter-spacing:.03em}
-body button:not(.game-body *):not(.title-screen *):hover:not(:disabled){background:linear-gradient(180deg,var(--t-s3) 0%,var(--t-s2) 100%)}
-body button:not(.game-body *):not(.title-screen *):active:not(:disabled){transform:translateY(3px);box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 2px 0 var(--t-shine),0 1px 0 var(--t-edge)}
-body button.primary:not(.game-body *):not(.title-screen *){color:var(--t-acc);background:linear-gradient(180deg,var(--t-s3) 0%,var(--t-s2) 100%);box-shadow:inset 0 0 0 2px var(--t-acc2),inset 0 3px 0 var(--t-shine),0 5px 0 var(--t-edge),0 8px 18px color-mix(in srgb,var(--t-acc) 18%,transparent);text-shadow:0 2px 0 #000,0 0 12px color-mix(in srgb,var(--t-acc) 40%,transparent);font-weight:900}
-body button.primary:not(.game-body *):not(.title-screen *):hover:not(:disabled){background:linear-gradient(180deg,color-mix(in srgb,var(--t-s3) 80%,var(--t-acc2)) 0%,var(--t-s2) 100%)}
-body button.danger:not(.game-body *):not(.title-screen *){color:var(--t-bad);box-shadow:inset 0 0 0 1px #ff8a8a55,inset 0 2px 0 var(--t-shine),0 4px 0 var(--t-edge)}
-body button:disabled:not(.game-body *):not(.title-screen *){opacity:.48;box-shadow:inset 0 0 0 1px var(--t-hair),0 2px 0 var(--t-edge);filter:saturate(.6)}
-body button.small:not(.game-body *):not(.title-screen *){border-radius:12px}
+body button:not(.game-body *):not(.title-screen *):not(.gb-overlay *){color:var(--t-text);background:linear-gradient(180deg,var(--t-s1) 0%,var(--t-s2) 100%);border:2px solid var(--t-edge);border-radius:14px;box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 2px 0 var(--t-shine),0 4px 0 var(--t-edge);text-shadow:0 1px 0 #0009;letter-spacing:.03em}
+body button:not(.game-body *):not(.title-screen *):not(.gb-overlay *):hover:not(:disabled){background:linear-gradient(180deg,var(--t-s3) 0%,var(--t-s2) 100%)}
+body button:not(.game-body *):not(.title-screen *):not(.gb-overlay *):active:not(:disabled){transform:translateY(3px);box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 2px 0 var(--t-shine),0 1px 0 var(--t-edge)}
+body button.primary:not(.game-body *):not(.title-screen *):not(.gb-overlay *){color:var(--t-acc);background:linear-gradient(180deg,var(--t-s3) 0%,var(--t-s2) 100%);box-shadow:inset 0 0 0 2px var(--t-acc2),inset 0 3px 0 var(--t-shine),0 5px 0 var(--t-edge),0 8px 18px color-mix(in srgb,var(--t-acc) 18%,transparent);text-shadow:0 2px 0 #000,0 0 12px color-mix(in srgb,var(--t-acc) 40%,transparent);font-weight:900}
+body button.primary:not(.game-body *):not(.title-screen *):not(.gb-overlay *):hover:not(:disabled){background:linear-gradient(180deg,color-mix(in srgb,var(--t-s3) 80%,var(--t-acc2)) 0%,var(--t-s2) 100%)}
+body button.danger:not(.game-body *):not(.title-screen *):not(.gb-overlay *){color:var(--t-bad);box-shadow:inset 0 0 0 1px #ff8a8a55,inset 0 2px 0 var(--t-shine),0 4px 0 var(--t-edge)}
+body button:disabled:not(.game-body *):not(.title-screen *):not(.gb-overlay *){opacity:.48;box-shadow:inset 0 0 0 1px var(--t-hair),0 2px 0 var(--t-edge);filter:saturate(.6)}
+body button.small:not(.game-body *):not(.title-screen *):not(.gb-overlay *){border-radius:12px}
 
 /* Form fields */
 body input:not(.game-body *):not([type=range]):not([type=checkbox]):not([type=radio]),body select:not(.game-body *){color:var(--t-text);background:var(--t-well);border:2px solid var(--t-edge);border-radius:12px;box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 2px 6px #0008}

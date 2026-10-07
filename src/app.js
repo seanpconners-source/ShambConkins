@@ -55,6 +55,10 @@ const {upgradeRunFormat}=require("src/formatMigration.js");
 const {focusBoardAction}=require("src/boardCamera.js");
 const {edgeObstacle,obstacleType,obstacleIsOpen,obstacleChoices,obstacleRequirement,crossObstacle,shiftObstacles,nearbyTravelTool}=require("src/obstacles.js");
 const {obstacleArtHTML}=require("src/obstacleArt.js");
+const PK=require("src/pkmn/pkmnRun.js");
+const {trainerWatching}=require("src/pkmn/pkmnWarp.js");
+const {gbMessages,setTestSpeed:pkSpeed,setAutoPilot:pkAuto,battle:pkBattle,isOpen:gbIsOpen}=require("src/pkmn/pkmnBattle.js");
+const {PKMN_CATALOG_ITEMS}=require("src/data/pkmnItems.js");
 let movementToken=0;
 let setupSelected=['sean','amber'],setupNames=['Sean','Amber'],catalogQuery='',catalogFilter='all',catalogPage=0;
 const e=escapeHTML;
@@ -62,6 +66,7 @@ initFullscreen();{let refit=0;const later=()=>{clearTimeout(refit);refit=setTime
 store.profile=loadProfile();const saved=readJSON(RUN_KEY);store.run=validRun(saved)?saved:null;if(store.run&&!store.profile.earnedUnlocks['gordon-ramsay'])for(const p of store.run.players)if(p.character==='gordon-ramsay')p.character=p.owner==='Sean'?'sean':'amber';if(store.run&&!differentCharacters(...store.run.players.map(p=>p.character))){store.run.players[1].character=availableCharacters(store.profile,'Amber').find(id=>differentCharacters(id,store.run.players[0].character))||'amber';if(!differentCharacters(...store.run.players.map(p=>p.character)))store.run.players[0].character='sean';}upgradeRunFormat(store.run);updateProgression(store.profile);
 if(store.run)for(const p of store.run.players){if(p.character==='eugenia')p.character=p.owner==='Amber'?'amber':'sean';p.items=p.items.filter(id=>id!=='eugenia-pass');}
 function saveRun(){rememberCollectibles(store.profile,store.run);let saved=true;if(store.run)saved=writeJSON(RUN_KEY,store.run);else removeSaved(RUN_KEY);const profileSaved=saveProfile(store.profile);if((!saved||!profileSaved)&&!store.storageNotice){store.storageNotice=true;toast('Browser storage is unavailable. Use Settings → Export backup before closing.');}}
+PK.configurePkmn({unlockDialog:(ids,owner)=>unlockDialog(ids,owner),saveRun:()=>saveRun(),updateBoard:()=>updateBoard(),logRun:m=>logRun(m),startMusic:()=>startMusic(),stopMusic:()=>stopMusic()});
 configureLauncher({bossDone:(game,coop)=>bossDone(game,coop),journeyWin:i=>journeyNow('win',{},store.run.players[i]),save:saveRun,endTurn,beforeRoll:resumeItemTurn,arcade:()=>{store.busy=false;store.arcade=false;showCatalog('arcade');}});
 const random=()=>store.run?runRandom(store.run):Math.random();
 function focusEffect(before){const run=store.run;if(!run)return;const after=effectSnapshot(run),ids=[run.players[run.current].node];for(let i=0;i<2;i++)if(before?.players[i]&&JSON.stringify(before.players[i])!==JSON.stringify(after.players[i])){ids.push(run.players[i].node);if(before.players[i].node!==run.players[i].node)ids.push(before.players[i].node);}focusBoardAction(run,ids);}
@@ -245,7 +250,7 @@ async function advanceAfterBoss(){
  const gate=run.board.nodes[bg.gate],next=(gate.next||[]).find(id=>run.board.nodes[id]),final=bg.realm==='horror'||(bg.realm==='spirit'&&!run.horror)||!next;
  for(const q of run.players){q.mood='happy';if(!q.cleared.includes(bg.realm))q.cleared.push(bg.realm);}
  if(final){for(const q of run.players)if(!q.finishedPlayer){q.finishedPlayer=true;}saveRun();store.busy=false;endTurn();return;}
- for(const q of run.players){q.visited.push(q.node);q.node=next;}
+ for(const q of run.players){q.visited.push(q.node);q.node=next;}PK.healAll(run);
  run.phase='board';run.pending=null;focusBoardAction(run,run.players.map(q=>q.node));saveRun();updateBoard(true);setMusicZone(run.board.nodes[next].realm);
  const lead=run.players[bg.winner]||run.players[0];await announceLevel(lead);for(const q of run.players)await announceLevel(q);
  store.busy=false;endTurn();
@@ -261,13 +266,50 @@ async function bossDone(game,coop){
 }
 async function moveSteps(token){
  const run=store.run,p=run.players[run.current];p.mood='walking';
+ if(run.pending?.wild){if(await pokemonStep(run,p,run.board.nodes[p.node],token,true)===false)return;}
  while(run.pending?.left>0&&token===movementToken){
   const target=await stepTarget(run,p,token);if(token!==movementToken||store.run!==run)return;if(!target){if(routeOptions(run,p.node).length){store.busy=false;saveRun();return;}run.pending.left=0;break;}
-  p.mood='walking';p.visited.push(p.node);reportJourney(journeyStep(run,p,p.node,target));const fromRealm=run.board.nodes[p.node]?.realm;p.node=target.id;run.pending.left--;delete run.pending.routeDecision;awardGate(p,target);setMusicZone(target.realm);focusBoardAction(run);saveRun();updateBoard();sound('tap');if(target.type==='gate'&&bossGateReady(run,target)){run.pending.left=0;await levelEndBoss(p,target);return;}if(target.type==='warp'&&!target.warpUsed&&!(target.warpDeclined||[]).includes(run.current)&&run.pending.left>0){run.pending.left=0;toast('A warp pipe! Stop and look inside?');break;}if(target.realm!==fromRealm&&!p.finishedPlayer){await announceLevel(p);if(token!==movementToken||store.run!==run)return;}if(p.finishedPlayer){run.pending.left=0;break;}await wait(store.profile.settings.reducedMotion?35:270);
+  p.mood='walking';p.visited.push(p.node);reportJourney(journeyStep(run,p,p.node,target));const fromRealm=run.board.nodes[p.node]?.realm;p.node=target.id;run.pending.left--;delete run.pending.routeDecision;awardGate(p,target);setMusicZone(target.realm);focusBoardAction(run);saveRun();updateBoard();sound('tap');if(target.type==='gate'&&bossGateReady(run,target)){run.pending.left=0;await levelEndBoss(p,target);return;}if(target.type==='warp'&&!target.warpUsed&&!(target.warpDeclined||[]).includes(run.current)&&run.pending.left>0){run.pending.left=0;toast('A warp pipe! Stop and look inside?');break;}if(target.realm!==fromRealm&&!p.finishedPlayer){await announceLevel(p);if(token!==movementToken||store.run!==run)return;}if(await pokemonStep(run,p,target,token)===false)return;if(p.finishedPlayer){run.pending.left=0;break;}await wait(store.profile.settings.reducedMotion?35:270);
  }
  if(token!==movementToken)return;await warpJump(p,token);if(token!==movementToken)return;p.mood='happy';run.phase='landing';run.pending={kind:'landing'};focusBoardAction(run);saveRun();store.busy=false;updateBoard();await resolveLanding();
 }
 
+// Pokémon: a wild encounter while walking (at most one a turn) or a trainer who spots you.
+// Movement resumes with the steps left afterwards. Returns false when the turn was abandoned.
+async function pokemonStep(run,p,node,token,resume=false){
+ if(!node)return true;
+ const watcher=run.board.warp?.id==='pokemon'?trainerWatching(run.board,node.id,run.current):-1;
+ const wild=resume?run.pending.wild==='wild':watcher<0&&random()<PK.wildChance(run,p,node);
+ if(watcher<0&&!wild&&!(resume&&run.pending.wild==='trainer'))return true;
+ const trainerIdx=resume&&run.pending.wild==='trainer'?run.pending.trainerIdx:watcher;
+ run.pending.wild=trainerIdx>=0?'trainer':'wild';run.pending.trainerIdx=trainerIdx;saveRun();
+ if(trainerIdx>=0){const t=run.board.warp.trainers[trainerIdx];await trainerSpotted(trainerIdx,node);if(token!==movementToken||store.run!==run)return false;
+  const r=await PK.trainerSpace(run,p,{trainerId:t.id,size:1+Math.floor(random()*3)});if(token!==movementToken||store.run!==run)return false;if(r.outcome==='win'||r.outcome==='lose')t.beaten.push(run.current);}
+ else{await PK.wildEncounter(run,p);if(token!==movementToken||store.run!==run)return false;}
+ delete run.pending.wild;delete run.pending.trainerIdx;store.busy=true;saveRun();updateBoard();return true;
+}
+// The "!" over a trainer's head, then they walk up to you.
+async function trainerSpotted(i,node){
+ const g=document.querySelector(`[data-pk-trainer="${i}"]`);if(!g)return;const t=store.run.board.warp.trainers[i];
+ const ns='http://www.w3.org/2000/svg',bang=document.createElementNS(ns,'g');bang.setAttribute('class','pk-bang');bang.innerHTML='<rect x="12" y="-62" width="26" height="30" rx="4" fill="#fff" stroke="#282828" stroke-width="3"/><text x="25" y="-38" text-anchor="middle" font-size="24" font-weight="900" fill="#282828">!</text>';g.append(bang);
+ try{require("src/pkmn/pkmnAudio.js").playJingle('bang');}catch{}await wait(700);bang.remove();
+ const from=[t.tx*50,t.ty*50],to=[node.x-25-t.face[0]*50,node.y-25-t.face[1]*50],steps=Math.max(1,t.dist-1);
+ for(let k=1;k<=steps;k++){const x=from[0]+(to[0]-from[0])*k/steps,y=from[1]+(to[1]-from[1])*k/steps;g.setAttribute('transform',`translate(${x},${y})`);sound('tap');await wait(220);}
+ await wait(250);
+}
+async function pokemonCenter(p){
+ const run=store.run,T=PK.ensureTeam(run,p);stopMusic();
+ await gbMessages(['Welcome to our POKéMON CENTER!','We restore your tired POKéMON to full health. Shall we?'],{keepOpen:true});
+ PK.healTeam(p);saveRun();await gbMessages(['...','Thank you! Your POKéMON are fighting fit!','We hope to see you again!'],{jingle:'heal'});startMusic();
+}
+async function pokemonGym(p,token){
+ const run=store.run,rival=run.board.warp.rival;
+ const r=await PK.trainerSpace(run,p,{gym:true,trainerId:rival,size:6,label:rival?'RIVAL '+character(rival).name.split(' ')[0].toUpperCase():null,intro:'Smell ya later! ...Oh, you made it all the way here? Let’s see what your team can do!'});
+ if(store.run!==run||movementToken!==token)return;
+ if(r.outcome==='win'){logRun(`${p.name} beat the Gym. The party leaves Kanto.`);await exitWarpZone();return;}
+ const again=await showDialog({title:'The Gym wins this round',source:'Pokémon',body:'Your team was healed at the Pokémon Center. Challenge the Gym again on a later turn, or head back to the map.',choices:[{label:'Stay and train',value:'stay',primary:true},{label:'Back to the map',value:'leave'}]});
+ if(store.run!==run)return;if(again==='leave')await exitWarpZone();else await finishEncounter();
+}
 async function resolveLanding(){const run=store.run,token=movementToken;if(!run||run.finished)return;store.busy=true;const p=run.players[run.current],n=run.board.nodes[p.node];focusBoardAction(run);updateBoard();reconcileGates(p);if(n.type==='trivia')journeyNow('trivia');else if(n.type==='item')journeyNow('item');if(run.itemDiscoveries?.length)await presentItemDiscoveries();if(store.run!==run||movementToken!==token)return;const trap=run.traps?.findIndex(t=>t.node===p.node&&t.owner!==run.current);if(trap>=0){const damage=run.traps[trap].damage||5;run.traps.splice(trap,1);const r=pointChange(p,p.cloak?0:-damage);toast(r.blocked?'A shield blocked the trap.':r.delta?`Trap · ${r.delta} points`:'Your cloak avoided a trap.');}
  // The home pack is an early encounter, never an instant starter unlock.
  if(run.turn>=homePackTurn(run)&&(!store.profile.shared.includes('kc')||!store.profile.shared.includes('mylo'))){await resolveEvent({id:'early-dogs',title:'Something is barking offscreen',source:'Home',body:'KC and Mylo join the shared roster. Then you continue the space you landed on.',effect:'dogs'},null,true);return;}
@@ -279,12 +321,17 @@ async function resolveLanding(){const run=store.run,token=movementToken;if(!run|
   case 'task':await requestGame({filter:'taskmaster'});break;
   case 'dice':await requestGame({id:'full-shambyahtzee'});break;
   case 'shop':await visitShop();break;
-  case 'event':await resolveEvent(drawEvent(run,store.profile,random));break;
+  case 'event':{const ev=drawEvent(run,store.profile,random);if(ev.e?.[0]==='unlockChar'&&PK.isWildable(character(ev.e[1]))&&canRecruitReward(store.profile,ev.e[1],p.owner,'encounter')){logRun(`${p.name}: a wild ${character(ev.e[1]).name} appeared!`);await PK.wildEncounter(run,p,{id:ev.e[1],cause:'event'});if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}await resolveEvent(ev);break;}
+  case 'trainer':await PK.trainerSpace(run,p);if(store.run!==run||movementToken!==token)return;run.roundsWithoutGame=0;endTurn();break;
+  case 'grass':if(p.wildTurn!==run.turn&&random()<.55){await PK.wildEncounter(run,p);if(store.run!==run||movementToken!==token)return;}await finishEncounter();break;
+  case 'center':await pokemonCenter(p);if(store.run!==run||movementToken!==token)return;await finishEncounter();break;
+  case 'pkitem':{const it=pick(PKMN_CATALOG_ITEMS.filter(i=>i.findWeight>=1),random),found=acquireItem(run,store.profile,p,it);logRun(`${p.name}: ${found.message}`);saveRun();await gbMessages([`${p.name.toUpperCase()} found ${it.name.toUpperCase()}!`,`${p.name.toUpperCase()} put it in the POKéMON bag.`],{jingle:'item'});startMusic();if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}
+  case 'path':await finishEncounter();break;
   case 'location':await visitLocation(n.location);break;
   case 'item':{const before=effectSnapshot(run);const cacheRandom=Number.isFinite(n.cacheSeed)?seededRandom(n.cacheSeed+':'+(n.cacheVisits||0)):random,tool=run.board.obstacles?.length&&(p.travelFinds||0)<2?nearbyTravelTool(run,p,cacheRandom):null,it=tool||randomItem(cacheRandom,{player:p,profile:store.profile}),found=acquireItem(run,store.profile,p,it);if(tool)p.travelFinds=(p.travelFinds||0)+1;n.cacheVisits=(n.cacheVisits||0)+1;logRun(`${p.name}: ${found.message}`);run.phase='event';run.pending={kind:'location-result',message:found.message,unlocked:found.unlocked,owner:found.owner};saveRun();if(found.unlocked.length){sound('unlock');if(!await unlockDialog(found.unlocked,found.owner)||store.run!==run||movementToken!==token)return;}const answer=await showDialog({title:'A useful find',source:it.source,body:found.message,html:`${effectHTML(before,{item:it})}<h3 style="text-align:center">${e(it.name)}</h3><div class="how-to">${e(itemDescription(it))}</div>`,choices:foundChallengeChoices(it)});if(store.run!==run||movementToken!==token)return;animateItemTransfers(before);if(answer==='play')return playFoundChallenge(p,it);await finishEncounter();break;}
   case 'bonus':case 'penalty':{const before=effectSnapshot(run);const fortune=themedFortune(n.type,random),delta=n.type==='bonus'?4:p.cloak?0:-3,r=pointChange(p,delta);logRun(`${p.name}: ${r.blocked?'penalty shield used':(r.delta>=0?'+':'')+r.delta+' points'}.`);run.phase='event';run.pending={kind:'location-result',message:r.blocked?'Your shield took the hit.':`${r.delta>=0?'+':''}${r.delta} points.`,unlocked:[]};saveRun();await showDialog({title:fortune.title,source:fortune.source,body:r.blocked?'Your shield took the hit.':fortune.body,html:`${effectHTML(before,{icon:r.delta<0?'⚡':'✦'})}<div class="reward-delta ${r.delta<0?'bad':''}">${r.delta>=0?'+':''}${r.delta}</div>`});if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}
   case 'warp':if(n.warpUsed||(n.warpDeclined||[]).includes(run.current)){await finishEncounter();break;}await enterWarpZone(n);break;
-  case 'gate':if(run.board.format==='warp'){await startBoss(run.board.warp.bossId);break;}await finishEncounter();break;
+  case 'gate':if(run.board.warp?.id==='pokemon'){await pokemonGym(p,token);break;}if(run.board.format==='warp'){await startBoss(run.board.warp.bossId);break;}await finishEncounter();break;
   case 'start':default:await finishEncounter();break;
  }
 }
@@ -330,7 +377,7 @@ async function visitShop(existing=null){const run=store.run,token=movementToken,
 
 
 function encounterActive(run,pending,token){return store.run===run&&run.pending===pending&&movementToken===token;}
-async function finishEncounter(){const run=store.run;run.roundsWithoutGame++;saveRun();if(run.roundsWithoutGame>=3&&!run.players[run.current].finishedPlayer){logRun('Three turns without a challenge: a nearby minigame opens after this encounter.');await requestGame({filter:pairForRun(run)?.taskCadence?'taskmaster':'all'});}else endTurn();}
+async function finishEncounter(){const run=store.run;run.roundsWithoutGame++;saveRun();if(run.roundsWithoutGame>=3&&!run.players[run.current].finishedPlayer&&run.board.warp?.id!=='pokemon'){logRun('Three turns without a challenge: a nearby minigame opens after this encounter.');await requestGame({filter:pairForRun(run)?.taskCadence?'taskmaster':'all'});}else endTurn();}
 function endTurn(){const run=store.run;if(!run||run.finished)return;const p=run.players[run.current];if(!['win','sad'].includes(p.mood))p.mood='normal';if(p.large&&p.largeStart<run.turn)p.large--;if(p.cloak)p.cloak--;if(p.pairCrowCooldown){p.slow++;p.pairCrowCooldown=false;}if(run.mode==='team'&&p.bench)[p.character,p.bench]=[p.bench,p.character];if(run.upsideDown&&run.upsideDown.owner===run.current&&run.upsideDown.startTurn<run.turn){run.upsideDown.turns--;if(!run.upsideDown.turns){p.node=run.upsideDown.returnNode;run.upsideDown=null;toast(`${p.name} escapes the Upside Down.`);}}
  if(p.extra&&!p.finishedPlayer){p.extra=false;logRun(`${p.name} takes an extra turn.`);}else{run.current=1-run.current;if(run.players[run.current].finishedPlayer&&!run.players[1-run.current].finishedPlayer)run.current=1-run.current;}
  if(run.endless&&!routeOptions(run,p.node).length){p.node='mind-start';p.cleared=[];p.visited=[];p.laps=(p.laps||0)+1;toast('Another lap through the multiverse.');}run.turn++;for(const message of settleItemInvestments(run)){logRun(message);toast(message);}for(const message of shiftObstacles(run)){logRun(message);toast(message);}focusBoardAction(run);if(run.turn%4===0&&evolveBoard(run,random))logRun('The world shifts: unvisited encounters change ahead.');updateBoardBanter(run);run.phase='board';run.pending=null;run.lastRoll=null;store.busy=false;saveRun();if(run.raceToFinish&&run.raceWinner!==undefined||run.turn>run.maxTurns||run.players.every(q=>q.finishedPlayer)){finishRun();return;}updateBoard(true);turnFeedback(run.players[run.current]);setMusicZone(run.board.nodes[run.players[run.current].node].realm);const pair=activatePair(run,store.profile);if(pair){startMusic();void introducePair(pair);}vibrate(10);
@@ -395,6 +442,7 @@ async function action(name,target){
   case 'recenter':focusBoardAction(store.run);repaintCamera(document.querySelector('#map-root svg')?.getAttribute('viewBox'));saveRun();break;
   case 'camera':store.run.camera=store.run.camera==='overview'?'follow':'overview';store.run.pan=null;saveRun();updateBoard(true);break;
   case 'settings':await settings();break;
+  case 'pkmn':{if(store.busy||!store.run)return;const r=store.run;store.busy=true;try{await PK.openTeam(r,r.players[r.current]);}finally{store.busy=false;}if(store.run===r)updateBoard();break;}
   case 'log':await showDialog({title:'The story so far',html:(store.run?.history||[]).map(line=>`<div class="log-entry">${e(line)}</div>`).join('')||'<p>Your story starts with a new run.</p>'});break;
   case 'space':{if(store.busy)return;const n=store.run.board.nodes[target.dataset.id],p=store.run.players[store.run.current];const l=location(n.location);await showDialog({title:l?.name||SPACE_TYPES[n.type],source:l?.source||n.route?.source||n.source||'ShambConkins',html:l?locationArtHTML(l):'',body:l?.description||(n.route?`${n.route.reward} ${n.route.risk}`:null)||({'game':'Both players compete in a new minigame.','event':'Draw an encounter from the crossover deck.','item':'A supply cache. Find something useful.','casino':'Both players take part in a casino game.','task':'A coded Taskmaster minigame for both players.','trivia':'Both players answer a themed quiz in alternating turns, with steals after a miss. Themes rotate across your references.','bonus':'Gain 4 points.','penalty':'Lose 3 points, unless a shield or cloak blocks it.','gate':'Complete this realm. Gain 4 points and 8 XP.'}[n.type]||'The start of a new route.')});break;}
   case 'obstacle':{if(store.busy||!store.run)return;const run=store.run,o=run.board.obstacles?.find(o=>o.id===target.dataset.id);if(!o)return;const t=obstacleType(o),p=run.players[run.current];await showDialog({title:t.name,source:t.source,body:obstacleRequirement(run,p,o)+' Main-road travel stays available.',html:obstacleArtHTML(run,o),choices:[{label:'Back to the board',value:'ok',primary:true}]});break;}
@@ -408,7 +456,7 @@ document.addEventListener('input',event=>{if(event.target.id==='catalog-search')
 document.getElementById('dialog').addEventListener('cancel',event=>{event.preventDefault();const i=store.dialog?.choices.findIndex(c=>['cancel','no','stay'].includes(c.value));if(i>=0)resolveDialog(i);});
 window.addEventListener('pagehide',saveRun);window.addEventListener('orientationchange',()=>{if(store.view==='board'&&!store.session)setTimeout(()=>updateBoard(true),100);});
 installViewport(()=>{if(store.view==='board'&&!store.session&&!store.boardTour)repaintCamera();});installMedia();installBoardGestures();installPortraitCycle();installSetupFaceCycle();applyPreferences();saveProfile(store.profile);showView('home');
-window.ShambConkins={version:VERSION,announceLevel,updateBoard,enterWarpZone,exitWarpZone,startBoss,bossDone,buildWarpBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,nowPlaying,musicScene,unlockDialog,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
+window.ShambConkins={version:VERSION,pkmn:{run:PK,battle:pkBattle,speed:pkSpeed,auto:pkAuto,isOpen:gbIsOpen,messages:gbMessages},announceLevel,updateBoard,enterWarpZone,exitWarpZone,startBoss,bossDone,buildWarpBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,nowPlaying,musicScene,unlockDialog,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
 
 function installBoardGestures(){
  // One finger pans the map, two fingers pinch-zoom, the mouse wheel zooms. Rolling resets the view.

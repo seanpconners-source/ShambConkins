@@ -12,11 +12,12 @@ const GROUND={mind:['#25172f','#4a2753','#ffd36b'],body:['#2c1b0e','#5e3416','#f
 const groundOf=realm=>GROUND[realm]||['#0f2a2e','#1d5257','#7fe0d0'];
 const TRACK=['#2fd08f','#ff9a3c','#b47cff','#ff4b55'];
 const LANE_LABEL=['CALM ROAD','ADVENTUROUS ROAD','HIGH REWARD ROAD','THE ROUTE BELOW'];
-const TILE={start:'#e9e6f5',game:'#3f8cff',event:'#ff9a3d',item:'#9d63ff',bonus:'#27c776',penalty:'#ff4f64',location:'#19b9b4',trivia:'#24b0d8',task:'#ff3d6e',casino:'#13a27c',dice:'#5867ff',shop:'#ffaf2e',gate:'#ffcf3f',warp:'#7a4cff'};
+const TILE={start:'#e9e6f5',game:'#3f8cff',event:'#ff9a3d',item:'#9d63ff',bonus:'#27c776',penalty:'#ff4f64',location:'#19b9b4',trivia:'#24b0d8',task:'#ff3d6e',casino:'#13a27c',dice:'#5867ff',shop:'#ffaf2e',gate:'#ffcf3f',warp:'#7a4cff',trainer:'#e5352b'};
 const f=n=>Math.round(n*10)/10;
 const shade=(hex,k)=>{const n=parseInt(hex.slice(1),16),c=[n>>16,n>>8&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(k<0?v*(1+k):v+(255-v)*k))));return '#'+c.map(v=>v.toString(16).padStart(2,'0')).join('');};
 const pathD=pts=>pts.map((p,i)=>`${i?'L':'M'}${f(p.x)} ${f(p.y)}`).join('');
 function tileSVG(n,ring='#120c1a'){
+ if(n.type==='trainer')return `<g class="gr-tile t-trainer" transform="translate(${n.x},${n.y})"><circle cy="6" r="44" fill="#5a0f0f"/><circle cy="6" r="44" fill="none" stroke="${ring}" stroke-width="5"/><circle r="43" fill="#f4f4f4"/><path d="M-43 0A43 43 0 0 1 43 0Z" fill="#e5352b"/><path d="M-34 -22A36 36 0 0 1 -6 -38" stroke="#fff" stroke-opacity=".55" stroke-width="7" fill="none" stroke-linecap="round"/><rect x="-43" y="-5" width="86" height="10" fill="#161616"/><circle r="15" fill="#161616"/><circle r="9.5" fill="#f4f4f4"/><circle r="4" fill="#fff" stroke="#bbb" stroke-width="1.5"/><circle r="43" fill="none" stroke="${ring}" stroke-width="5"/></g>`;
  const c=TILE[n.type]||'#8a8fb0';
  return `<g class="gr-tile t-${n.type}" transform="translate(${n.x},${n.y})"><rect x="-43" y="-37" width="86" height="86" rx="19" fill="${shade(c,-.45)}"/><rect x="-43" y="-43" width="86" height="84" rx="19" fill="${c}"/><rect x="-37" y="-38" width="74" height="30" rx="13" fill="#fff" opacity=".2"/><rect x="-43" y="-43" width="86" height="84" rx="19" fill="none" stroke="${ring}" stroke-width="5"/></g>`;
 }
