@@ -8,7 +8,7 @@ for(let i=0;i<30;i++){await page.waitForTimeout(300);await click();const ready=a
 await page.evaluate(()=>{const S=window.ShambConkins,run=S.store.run;S.pkmn.speed(12);
  S.pkmn.auto(menu=>{if(menu.kind==='main')return 0;if(menu.kind==='party')return menu.list.findIndex(m=>m.hp>0);if(menu.kind==='yesno')return 1;if(menu.kind==='fight')return Math.floor(Math.random()*menu.moves.length);return 0;});
  // strong team so the run reaches the gym
- run.warpsVisited=['rainbow-road','candy-land','chutes','monopoly','mario-world','clue','hyrule','green-hill'];window.__log=[];S.enterWarpZone(null);});
+ run.warpsVisited=['rainbow-road','candy-land','chutes','monopoly','mario-world','clue','hyrule','green-hill','bond-lair'];window.__log=[];S.enterWarpZone(null);});
 for(let i=0;i<10;i++){await page.waitForTimeout(400);await click();}
 const stats={battles:0,turns:0,trainers:0};let left=false;
 for(let k=0;k<1600&&!left;k++){

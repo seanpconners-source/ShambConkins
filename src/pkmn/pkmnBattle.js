@@ -343,7 +343,7 @@ async function battle(opts){
  // Like Gen 1 trainer AI item counts: a foe can only patch itself up a few times (heal and rest
  // moves such as RECOVER, WAFFLES or PIZZA TIME), so nothing out-heals your damage forever.
  function foeBattler(mon){const b=battler(mon,'enemy');b.healsLeft=opts.mode==='gym'?2:1;return b;}
- const isHeal=id=>{const m=move(id);return !!(m.heal||m.rest);};
+ function isHeal(id){const m=move(id);return !!(m.heal||m.rest);}
  function alarm(){AU.lowHpAlarm(P.mon.hp>0&&P.mon.hp<=P.stats.hp*.2&&live());}
  async function playerAction(){
   while(live()){
