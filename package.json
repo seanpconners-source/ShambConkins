@@ -1,11 +1,11 @@
 {
   "name": "shambconkins",
-  "version": "0.46.6",
+  "version": "0.46.7",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node tools/build.mjs",
-    "release": "node tools/build.mjs --out releases/ShambConkins_v0.46.6.html",
+    "release": "node tools/build.mjs --out releases/ShambConkins_v0.46.7.html",
     "test": "node tools/check-modules.mjs && node tools/build.mjs && node tests/board.mjs && node tests/unlocks.mjs && node tests/smoke.mjs && node tests/route.mjs && node tests/games.mjs 3 6",
     "bot": "node tools/build.mjs && node tests/bot.mjs 40"
   }

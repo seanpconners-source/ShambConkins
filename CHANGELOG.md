@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.46.7
+
+**Title screen buttons share one dark palette.** Every button is now the same dark plum with a black outline and
+cream text; the play button stands out with a gold ring, gold label and a soft gold glow instead of a bright fill.
+Characters / Minigame Vault tiles lost their pink and teal; Mind / Body / Spirit chips are dark with coloured text.
+
 ## v0.46.6
 
 **New title screen.** The main menu is now a proper mobile-game title screen: dark animated backdrop (slow light rays,
