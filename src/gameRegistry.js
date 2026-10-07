@@ -53,7 +53,7 @@ const definitions = [
  ['crossy-chaos','crossy','arcade','40s each','Swipe to hop or keep dragging a direction for repeated hops. Tap once to hop forward; lift to stop. Dodge cars and trains, ride logs and grab coins. Arrows / WASD also work. Three lives; identical hazards.'],
  ['pong-duel','pong','duel','60 seconds','REAL TWO-PLAYER: each human controls a paddle. Drag on your half or use separate buttons; P1 W/S, P2 arrows. Edge hits angle the ball. First to 7 goals, or most after 60 seconds.'],
  ['paddys-pool','pool','sports','5 shots each','Drag back from the cue ball to aim and set power. Pocket balls on a full six-pocket table. Ten alternating shots.'],
- ['warehouse-shift','sokoban','puzzle','45s each','Push paper crates onto every loading square. Same solvable puzzle for both players. Undo is allowed.'],
+ ['warehouse-shift','sokoban','puzzle','75s shift each','Rush Hour in the Dunder Mifflin warehouse: drag pallets, beets, Sabre printers and Michael’s Sebring along their aisles and drive your forklift out the loading dock. Same orders for both; fire drill doubles the last 15 seconds.'],
  ['moonraker-lander','lander','arcade','3 attempts each','Steer and thrust. Land on the brass pad with gentle vertical and horizontal speed. Both players face the same starts.'],
  ['mars-missile-defense','missiledefense','arcade','25s each','Tap the sky to launch defense blasts. Protect four cities and trigger missile chain reactions.'],
  ['task-tallest-thing','towerstack','skill','12 blocks each','Drop the moving block. Only the overlap survives. Stack twelve blocks; precision wins.'],
@@ -99,6 +99,7 @@ Object.assign(GAMES.find(g=>g.engine==='flappy'),{rules:'Wait for your own Ready
 Object.assign(GAMES.find(g=>g.engine==='airhockey'),{title:'The Mighty Ducks · Air Hockey',source:'The Mighty Ducks',icon:'🏒',rules:'REAL TWO-PLAYER: drag your own paddle at the same time. Strike the puck, bank off the rails and defend your goal. First to seven goals, or most in 60 seconds. Your first win unlocks Emilio Estevez / Gordon Bombay.'});
 Object.assign(GAMES.find(g=>g.engine==='airshootout'),{title:'The Mighty Ducks · Hockey Shootout',source:'The Mighty Ducks',icon:'🏒',rules:'Drag only: each player owns one end of a full-screen rink. Pull back from your puck and release across the ice; the other human drags their goalie up and down. Roles swap after every attempt. Five shots each; your first real win unlocks Emilio Estevez / Gordon Bombay in your own roster.'});
 Object.assign(GAMES.find(g=>g.engine==='duckturn'),{title:'Duck Hunt',source:'Duck Hunt',icon:'🦆'});
+Object.assign(GAMES.find(g=>g.engine==='sokoban'),{title:'The Office · Warehouse Shift',source:'The Office',icon:'🚜'});
 Object.assign(GAMES.find(g=>g.engine==='pool'),{title:'Paddy’s Pool',source:'Always Sunny',icon:'🎱'});
 for(const[engine,id,title,source,icon,duration,rules]of [
  ['pool','color-of-money','The Color of Money · Nine-ball','The Color of Money','🎱','14-shot match','Real nine-ball: hit the lowest numbered ball first, then pocket a ball or touch a cushion. Clean pockets keep your turn; fouls cost 5 and give ball in hand. A legal nine wins. Fourteen-shot limit.'],
@@ -188,7 +189,7 @@ for(const g of [...GAMES,...EVENT_GAMES]){
  if(g.engine==='battleroyale')g.rules='Both humans drag from their own first touch to move. Auto-aim and fire while holding; tap for a shot or close punch. Collect ammo and healing medkits, stay inside the shrinking zone. Forty-five seconds; no direction pads.';
  if(g.engine==='tank')g.rules='REAL TWO-PLAYER: drag from your own first touch to drive; hold to auto-fire or tap for one shot. Turrets aim at the opponent and cover blocks shells. Three hits per tank; first to three knockouts or most after sixty seconds. WASD + Space / arrows + Enter.';
  if(g.engine==='pong')g.rules='REAL TWO-PLAYER: each human drags vertically on their own half to control their paddle. Each finger keeps its owner across the middle. First to seven goals or most after sixty seconds. P1 W/S, P2 up/down. No direction pads.';
- if(g.engine==='sokoban')g.rules='Swipe to push warehouse crates onto marked goals, or hold-drag to keep walking. Tap Undo inside the arena to rescue a mistake. Both humans get the same puzzle and forty-five seconds; no direction pad.';
+ if(g.engine==='sokoban')g.rules='Rush Hour in the Dunder Mifflin warehouse. Drag any pallet, car or truck along its own aisle to clear a path, then drive your forklift (your head) out the loading dock. Each order scores 100 plus a bonus for matching par. Start over resets an order; Blame Toby skips it for −30. Last 15 seconds: Dwight’s fire drill, double points. Same 75-second shift and orders for both.';
 }
 
 // v0.44 additions. Each cites a real film, show or game.

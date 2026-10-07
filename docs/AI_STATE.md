@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.46.4 (`releases/ShambConkins_v0.46.4.html`).
+Version 0.46.5 (`releases/ShambConkins_v0.46.5.html`).
 
 ## Implemented systems
 - **Board (generation 7):** per-realm journey map: stem → crossroads → 3 lanes (Calm/Adventurous/High Reward) → gate.
@@ -36,6 +36,10 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   table layer, neon sign, solo cups, 3D flip cup with culling, fx: particles/pops/shake). Physics/flick functions in
   `pubPhysics.js` untouched; projections now use a uniform unit (true proportions on wide screens). Screenshots:
   `tests/pubshots.mjs`.
+
+- v0.46.5: Warehouse Shift is now Rush Hour in the Dunder Mifflin warehouse (`engines/warehouseShift.js` drawing/flow,
+  `warehouseRules.js` slide rules + BFS solver, pool in `data/warehouseOrders.js` from `tools/gen-warehouse.mjs`; engine
+  name stays `sokoban`). 75s shift, fire drill x2 last 15s. Test: `tests/warehouse.mjs`.
 
 ## In progress / unverified
 - Nothing in flight. Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus

@@ -202,7 +202,10 @@
   "src/data/musicTracks.js",
   "src/biomes.js",
   "src/fullscreen.js",
-  "src/engines/pubVisuals.js"
+  "src/engines/pubVisuals.js",
+  "src/engines/warehouseRules.js",
+  "src/data/warehouseOrders.js",
+  "src/engines/warehouseShift.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

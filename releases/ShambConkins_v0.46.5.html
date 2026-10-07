@@ -1370,7 +1370,7 @@ add('Castlevania','Castlevania|Simon Belmont|Richter Belmont|Alucard|Dracula|Mar
 add('Final Fantasy','Cloud’s sword / Final Fantasy reference|Cloud’s sword','item','body','explicit','Cloud’s sword is much too large for the inventory slot. Use it to steal four points.',['item','buster-sword']);
 add('South Park','Okama GameSphere','item','mind','explicit','The Okama GameSphere powers up for an arcade challenge.',['classic']);
 const ARCADES={
- 'Area 51 arcade shooter':'space-swarm','Duck Hunt':'duck-hunt-turn','Frogger':'crossy-chaos','Crossy Road':'crossy-chaos','Fruit Ninja':'brawndo-fruit-merge','Flappy Bird':'flappy-disaster','Yahtzee':'full-shambyahtzee','Poker':'five-card','Blackjack':'blackjack','Roulette':'roulette','Uno':'wopr-grid','Snake':'snake-run','Galaga':'space-swarm','Paperboy':'paper-route','Pong':'pong-duel','Pac-Man':'pac-maze-duel','Bomberman':'bomber-duel','Air hockey':'rink-rivals','Photo Hunt':'megatouch-photohunt','Battleship-style games':'alien-sonar-grid','Othello / Reversi':'strategema-grid','Sokoban':'warehouse-shift','Missile Command-style defense':'mars-missile-defense','artillery / ballistic games':'bug-artillery','Connect Four':'four-lights','tic-tac-toe':'wopr-grid','pool / billiards':'color-of-money','darts':'paddys-darts'
+ 'Area 51 arcade shooter':'space-swarm','Duck Hunt':'duck-hunt-turn','Frogger':'crossy-chaos','Crossy Road':'crossy-chaos','Fruit Ninja':'brawndo-fruit-merge','Flappy Bird':'flappy-disaster','Yahtzee':'full-shambyahtzee','Poker':'five-card','Blackjack':'blackjack','Roulette':'roulette','Uno':'wopr-grid','Snake':'snake-run','Galaga':'space-swarm','Paperboy':'paper-route','Pong':'pong-duel','Pac-Man':'pac-maze-duel','Bomberman':'bomber-duel','Air hockey':'rink-rivals','Photo Hunt':'megatouch-photohunt','Battleship-style games':'alien-sonar-grid','Othello / Reversi':'strategema-grid','Sokoban':'warehouse-shift','Rush Hour (ThinkFun)':'warehouse-shift','Missile Command-style defense':'mars-missile-defense','artillery / ballistic games':'bug-artillery','Connect Four':'four-lights','tic-tac-toe':'wopr-grid','pool / billiards':'color-of-money','darts':'paddys-darts'
 };
 for(const[source,game]of Object.entries(ARCADES))add(source,source,'game','body','explicit',source==='Uno'?'UNO REVERSE! The card flips your positions on the expedition board.':`The arcade has booked a ${source} night. Both players get the same rules and real controls.`,source==='Uno'?['swap']:['mg',game]);
 add('90s Nickelodeon','90s Nickelodeon generally|90s Nickelodeon|Nickelodeon Studios|Gak|Aggro Crag','location','mind','explicit','Nickelodeon Studios has opened the slime course. Gak and the Aggro Crag are part of the obstacle tour.',['task']);
@@ -8574,7 +8574,7 @@ Object.assign(exports,{LEGENDS_ITEMS});
 
 },
 "src/version.js":(exports,require)=>{
-const VERSION='0.46.4';
+const VERSION='0.46.5';
 Object.assign(exports,{VERSION});
 
 },
@@ -9830,7 +9830,7 @@ const definitions = [
  ['crossy-chaos','crossy','arcade','40s each','Swipe to hop or keep dragging a direction for repeated hops. Tap once to hop forward; lift to stop. Dodge cars and trains, ride logs and grab coins. Arrows / WASD also work. Three lives; identical hazards.'],
  ['pong-duel','pong','duel','60 seconds','REAL TWO-PLAYER: each human controls a paddle. Drag on your half or use separate buttons; P1 W/S, P2 arrows. Edge hits angle the ball. First to 7 goals, or most after 60 seconds.'],
  ['paddys-pool','pool','sports','5 shots each','Drag back from the cue ball to aim and set power. Pocket balls on a full six-pocket table. Ten alternating shots.'],
- ['warehouse-shift','sokoban','puzzle','45s each','Push paper crates onto every loading square. Same solvable puzzle for both players. Undo is allowed.'],
+ ['warehouse-shift','sokoban','puzzle','75s shift each','Rush Hour in the Dunder Mifflin warehouse: drag pallets, beets, Sabre printers and Michael’s Sebring along their aisles and drive your forklift out the loading dock. Same orders for both; fire drill doubles the last 15 seconds.'],
  ['moonraker-lander','lander','arcade','3 attempts each','Steer and thrust. Land on the brass pad with gentle vertical and horizontal speed. Both players face the same starts.'],
  ['mars-missile-defense','missiledefense','arcade','25s each','Tap the sky to launch defense blasts. Protect four cities and trigger missile chain reactions.'],
  ['task-tallest-thing','towerstack','skill','12 blocks each','Drop the moving block. Only the overlap survives. Stack twelve blocks; precision wins.'],
@@ -9876,6 +9876,7 @@ Object.assign(GAMES.find(g=>g.engine==='flappy'),{rules:'Wait for your own Ready
 Object.assign(GAMES.find(g=>g.engine==='airhockey'),{title:'The Mighty Ducks · Air Hockey',source:'The Mighty Ducks',icon:'🏒',rules:'REAL TWO-PLAYER: drag your own paddle at the same time. Strike the puck, bank off the rails and defend your goal. First to seven goals, or most in 60 seconds. Your first win unlocks Emilio Estevez / Gordon Bombay.'});
 Object.assign(GAMES.find(g=>g.engine==='airshootout'),{title:'The Mighty Ducks · Hockey Shootout',source:'The Mighty Ducks',icon:'🏒',rules:'Drag only: each player owns one end of a full-screen rink. Pull back from your puck and release across the ice; the other human drags their goalie up and down. Roles swap after every attempt. Five shots each; your first real win unlocks Emilio Estevez / Gordon Bombay in your own roster.'});
 Object.assign(GAMES.find(g=>g.engine==='duckturn'),{title:'Duck Hunt',source:'Duck Hunt',icon:'🦆'});
+Object.assign(GAMES.find(g=>g.engine==='sokoban'),{title:'The Office · Warehouse Shift',source:'The Office',icon:'🚜'});
 Object.assign(GAMES.find(g=>g.engine==='pool'),{title:'Paddy’s Pool',source:'Always Sunny',icon:'🎱'});
 for(const[engine,id,title,source,icon,duration,rules]of [
  ['pool','color-of-money','The Color of Money · Nine-ball','The Color of Money','🎱','14-shot match','Real nine-ball: hit the lowest numbered ball first, then pocket a ball or touch a cushion. Clean pockets keep your turn; fouls cost 5 and give ball in hand. A legal nine wins. Fourteen-shot limit.'],
@@ -9965,7 +9966,7 @@ for(const g of [...GAMES,...EVENT_GAMES]){
  if(g.engine==='battleroyale')g.rules='Both humans drag from their own first touch to move. Auto-aim and fire while holding; tap for a shot or close punch. Collect ammo and healing medkits, stay inside the shrinking zone. Forty-five seconds; no direction pads.';
  if(g.engine==='tank')g.rules='REAL TWO-PLAYER: drag from your own first touch to drive; hold to auto-fire or tap for one shot. Turrets aim at the opponent and cover blocks shells. Three hits per tank; first to three knockouts or most after sixty seconds. WASD + Space / arrows + Enter.';
  if(g.engine==='pong')g.rules='REAL TWO-PLAYER: each human drags vertically on their own half to control their paddle. Each finger keeps its owner across the middle. First to seven goals or most after sixty seconds. P1 W/S, P2 up/down. No direction pads.';
- if(g.engine==='sokoban')g.rules='Swipe to push warehouse crates onto marked goals, or hold-drag to keep walking. Tap Undo inside the arena to rescue a mistake. Both humans get the same puzzle and forty-five seconds; no direction pad.';
+ if(g.engine==='sokoban')g.rules='Rush Hour in the Dunder Mifflin warehouse. Drag any pallet, car or truck along its own aisle to clear a path, then drive your forklift (your head) out the loading dock. Each order scores 100 plus a bonus for matching par. Start over resets an order; Blame Toby skips it for −30. Last 15 seconds: Dwight’s fire drill, double points. Same 75-second shift and orders for both.';
 }
 
 // v0.44 additions. Each cites a real film, show or game.
@@ -12017,6 +12018,7 @@ const {pipeconnect:hardlineHack}=require("src/engines/hardline.js");
 const {seededRandom, shuffle, pick, clamp}=require("src/utils.js");
 const {drawArena, circle, COLORS}=require("src/engines/session.js");
 const {sound}=require("src/audio.js");
+const {warehouseShift}=require("src/engines/warehouseShift.js");
 const {directionGestures,gestureGrid}=require("src/engines/directionGestures.js");
 const SOKOBAN_MAPS=[
  ['#######','#  .. #','#     #','#  $$ #','#     #','#  @  #','#######'],
@@ -12025,14 +12027,8 @@ const SOKOBAN_MAPS=[
 ];
 function parseSokoban(rows){const walls=[],goals=[],boxes=[];let hero;rows.forEach((row,y)=>[...row].forEach((c,x)=>{const key=y*7+x;if(c==='#')walls.push(key);if(c==='.')goals.push(key);if(c==='$')boxes.push(key);if(c==='@')hero=key;}));return {walls,goals,boxes,hero,moves:0};}
 function sokobanMove(board,dx,dy){const x=board.hero%7,y=Math.floor(board.hero/7),nx=x+dx,ny=y+dy,n=ny*7+nx;if(nx<0||nx>6||ny<0||ny>6||board.walls.includes(n))return false;if(board.boxes.includes(n)){const bx=nx+dx,by=ny+dy,b=by*7+bx;if(bx<0||bx>6||by<0||by>6||board.walls.includes(b)||board.boxes.includes(b))return false;board.boxes=board.boxes.map(v=>v===n?b:v);}board.hero=n;board.moves++;return true;}
-async function sokoban(s){const [c,x]=s.canvas(680,420,{fill:true});let player=0,board,history=[],left=45,stop,finishing=false;const original=pick(SOKOBAN_MAPS,s.random);const scores=[0,0];
- const draw=()=>{const W=s.W,H=s.H,{ox,oy,sx,sy}=gestureGrid(W,H,7,7),cell=Math.min(sx,sy);drawArena(x,W,H);for(let y=0;y<7;y++)for(let xx=0;xx<7;xx++){const k=y*7+xx,px=ox+xx*sx,py=oy+y*sy;x.fillStyle=board.walls.includes(k)?'#5d6249':'#263626';x.fillRect(px+1,py+1,sx-2,sy-2);if(board.goals.includes(k))circle(x,px+sx/2,py+sy/2,cell*.22,'#bfb676');if(board.boxes.includes(k)){x.fillStyle=board.goals.includes(k)?'#91a778':'#ad8150';x.fillRect(px+sx*.16,py+sy*.16,sx*.68,sy*.68);x.strokeStyle='#e1c895';x.strokeRect(px+sx*.24,py+sy*.24,sx*.52,sy*.52);}}s.sprite(x,player,ox+(board.hero%7+.5)*sx,oy+(Math.floor(board.hero/7)+.5)*sy,clamp(cell*.85,28,65),{exact:true});s.status(`${s.players[player].name} · ${Math.ceil(left)}s · ${board.moves} moves · ${board.boxes.filter(k=>board.goals.includes(k)).length}/${board.goals.length} crates`);s.debug.board=board;};
- const finish=async()=>{if(finishing||!s.alive)return;finishing=true;stop?.();const solved=board.boxes.every(k=>board.goals.includes(k));scores[player]=board.boxes.filter(k=>board.goals.includes(k)).length*150+(solved?500+Math.ceil(left)*5:0)-board.moves*2;s.setScores(scores);if(player===0){player=1;await start();}else s.finish(scores);};
- const move=(dx,dy)=>{if(finishing||s.paused)return;const before=structuredClone(board);if(sokobanMove(board,dx,dy)){history.push(before);sound('tap');draw();if(board.boxes.every(k=>board.goals.includes(k)))void finish();}};
- const controls=directionGestures(s,(i,dx,dy)=>move(dx,dy),{repeat:.19});const extra=document.createElement('button');extra.textContent='Undo';extra.className='arena-undo';c.parentElement.appendChild(extra);s.on(extra,'click',()=>{if(!s.paused&&history.length&&!finishing){board=history.pop();draw();}});s.hint('Swipe to move one square, or hold-drag to keep walking. Crates push; they never pull. Tap Undo inside the arena to rescue a bad decision. Arrows / WASD also work.');s.frame(()=>{if(board)draw();});
- async function start(){board=parseSokoban(original);history=[];left=45;draw();if(!await s.pass(player,'The same warehouse puzzle. Push both crates to their marked squares.'))return;finishing=false;stop=s.timer(45,t=>{left=t;draw();},()=>void finish());draw();}
- await start();
-}
+// Warehouse Shift is now a Rush Hour style car park (src/engines/warehouseShift.js); the engine name stays for old saves/levels.
+async function sokoban(s){return warehouseShift(s);}
 const pipeRotate=rotatePipe;
 const makePipePuzzle=createPipePuzzle;
 const pipeConnected=connectedPipe;
@@ -25607,5 +25603,229 @@ function flickHint(x,cx,cy,size,t){if(reducedMotion())t=0;x.save();x.lineWidth=M
 // Small label plate on the wall (turn banner, chalk text).
 function plate(x,cx,cy,text,{size=14,color='#f7d893',bg='#120b07d9',border='#7a5530'}={}){x.save();x.font=`800 ${size}px "Trebuchet MS",Arial`;x.textAlign='center';x.textBaseline='middle';const w=x.measureText(text).width+size*1.3,h=size*1.75;x.fillStyle=bg;x.strokeStyle=border;x.lineWidth=1.5;x.beginPath();x.roundRect?.(cx-w/2,cy-h/2,w,h,h*.35);x.fill();x.stroke();x.fillStyle=color;x.fillText(text,cx,cy+1);x.restore();return {x:cx-w/2,y:cy-h/2,w,h};}
 Object.assign(exports,{PLAYER_CUPS,pubScene,neonSign,drawSoloCup,drawBall,drawCup3D,makeFx,powerArrow,flickHint,plate,reducedMotion});
+
+},
+"src/engines/warehouseRules.js":(exports,require)=>{
+// Warehouse Shift rules: a Rush Hour style sliding-block car park on a 6x6 warehouse floor.
+// Piece = {h:true|false, len:2|3, line:row (h) or col (v), pos:col (h) or row (v), kind}. Piece 0 is the forklift
+// on the exit row; the puzzle is solved when it reaches the loading dock on the right (pos 4).
+// Puzzles are generated from a seed: random clutter, BFS over every reachable layout, then the layout that is exactly
+// N slides from any solved layout is chosen, so difficulty is exact and both players get identical orders.
+const N=6,EXIT_ROW=2,GOAL=N-2;
+
+function cellsOf(p,pos=p.pos){const out=[];for(let i=0;i<p.len;i++)out.push(p.h?p.line*N+pos+i:(pos+i)*N+p.line);return out;}
+function occupancy(pieces,pos,skip=-1){const g=new Int8Array(N*N).fill(-1);pieces.forEach((p,i)=>{if(i!==skip)for(const k of cellsOf(p,pos[i]))g[k]=i;});return g;}
+// Inclusive range a piece can slide to without passing through anything.
+function slideRange(pieces,pos,i,g=occupancy(pieces,pos)){const p=pieces[i];let lo=pos[i],hi=pos[i];
+ const free=v=>{const k=p.h?p.line*N+v:v*N+p.line;return g[k]===-1||g[k]===i;};
+ while(lo-1>=0&&free(lo-1))lo--;while(hi+p.len<N&&free(hi+p.len))hi++;return [lo,hi];}
+const keyOf=pos=>String.fromCharCode(...pos.map(v=>48+v));
+function neighbors(pieces,pos){const g=occupancy(pieces,pos),out=[];
+ for(let i=0;i<pieces.length;i++){const [lo,hi]=slideRange(pieces,pos,i,g);for(let v=lo;v<=hi;v++)if(v!==pos[i]){const n=pos.slice();n[i]=v;out.push(n);}}return out;}
+// Every layout reachable from pos, and each one's distance (in slides) to the nearest solved layout.
+function explore(pieces,pos,cap=30000){const states=[pos],index=new Map([[keyOf(pos),0]]),adj=[];
+ for(let q=0;q<states.length;q++){if(states.length>cap)return null;const list=[];for(const n of neighbors(pieces,states[q])){const k=keyOf(n);let j=index.get(k);if(j===undefined){j=states.length;index.set(k,j);states.push(n);}list.push(j);}adj.push(list);}
+ const dist=new Int32Array(states.length).fill(-1),queue=[];states.forEach((st,i)=>{if(st[0]===GOAL){dist[i]=0;queue.push(i);}});
+ for(let q=0;q<queue.length;q++){const i=queue[q];for(const j of adj[i])if(dist[j]<0){dist[j]=dist[i]+1;queue.push(j);}}
+ return {states,dist};}
+function solvePath(pieces,pos){const start=keyOf(pos),prev=new Map([[start,null]]),queue=[pos];
+ for(let q=0;q<queue.length;q++){const cur=queue[q];if(cur[0]===GOAL){const path=[];let k=keyOf(cur),st=cur;while(prev.get(k)){const [p,s0]=prev.get(k);path.unshift(st);st=s0;k=p;}return path;}
+  if(queue.length>60000)return null;for(const n of neighbors(pieces,cur)){const k=keyOf(n);if(!prev.has(k)){prev.set(k,[keyOf(cur),cur]);queue.push(n);}}}return null;}
+
+const KIND_CODES={forklift:'F',boxes:'b',beets:'e',sabre:'s',chili:'c',fridge:'f',hay:'y',sebring:'r',transam:'t',truck:'T',shelf:'S',boxes3:'B'};
+const KIND_NAMES=Object.fromEntries(Object.entries(KIND_CODES).map(([k,v])=>[v,k]));
+// Decodes a pool entry from src/data/warehouseOrders.js.
+function decodeOrder(code){const [par,body]=code.split(':'),pieces=[],start=[];for(let i=0;i<body.length;i+=5){pieces.push({h:body[i]==='h',len:+body[i+1],line:+body[i+2],kind:KIND_NAMES[body[i+4]]||'boxes'});start.push(+body[i+3]);}return {par:+par,pieces,start};}
+const KINDS2=['boxes','beets','sabre','chili','fridge','hay','sebring','transam','boxes','beets'];
+const KINDS3=['truck','shelf','boxes3','truck'];
+function randomClutter(random){const pieces=[{h:true,len:2,line:EXIT_ROW,kind:'forklift'}],pos=[Math.floor(random()*3)];
+ const g=occupancy(pieces,pos),want=8+Math.floor(random()*5);
+ for(let tries=0;tries<300&&pieces.length<want+1;tries++){const h=random()<.5,len=random()<.27?3:2,line=Math.floor(random()*N),at=Math.floor(random()*(N-len+1));
+  if(h&&line===EXIT_ROW)continue;const p={h,len,line},cells=cellsOf(p,at);if(cells.some(k=>g[k]!==-1))continue;
+  p.kind=len===3?KINDS3[Math.floor(random()*KINDS3.length)]:KINDS2[Math.floor(random()*KINDS2.length)];
+  if(!h&&(p.kind==='sebring'||p.kind==='transam'||p.kind==='truck'))p.kind=len===3?'shelf':'boxes';
+  for(const k of cells)g[k]=pieces.length;pieces.push(p);pos.push(at);}
+ return {pieces,pos};}
+// A puzzle needing exactly `target` slides (or the closest found within the attempt budget).
+function makeOrder(random,target,attempts=40){let best=null;
+ for(let a=0;a<attempts;a++){const {pieces,pos}=randomClutter(random),ex=explore(pieces,pos);if(!ex)continue;
+  let pickI=-1,pickD=-1;ex.dist.forEach((d,i)=>{if(d<=target&&d>pickD){pickD=d;pickI=i;}else if(d===pickD&&d>0&&random()<.08)pickI=i;});
+  if(pickI<0||pickD<2)continue;if(!best||pickD>best.par)best={pieces,start:ex.states[pickI].slice(),par:pickD};if(pickD===target)break;}
+ return best;}
+function makeOrders(seedRandom,targets=[3,5,7,9,11,13,15,17,19,22]){const out=[];let last=null;
+ for(const t of targets){const o=makeOrder(seedRandom,t)||last;if(o){out.push(o);last=o;}}return out;}
+
+Object.assign(exports,{WAREHOUSE_N:N,EXIT_ROW,GOAL,cellsOf,occupancy,slideRange,neighbors,explore,solvePath,makeOrder,makeOrders,randomClutter,KIND_CODES,decodeOrder});
+
+},
+"src/data/warehouseOrders.js":(exports,require)=>{
+// Generated by tools/gen-warehouse.mjs: "par:" + pieces as orientation,length,line,pos,kind. Exact minimum slides = par.
+const WAREHOUSE_ORDERS=["3:h222Fh204fh353Bv212sh210yv203bh332Bv352Bh312Th241e","3:h220Fh252eh210bv221eh243fh254rh234sh302Sh214bh232th240b","3:h222Fh233fh203yh230sv241bh352Th242bv310Sv254sh212sv300S","3:h221Fh233rv301Sv241cv223fv244bv210yv253bh212eh204eh252rv313S","3:h222Fh242bv342Sv202bv213bh204fv252yh251fv211fh213yh200fh232yv204e","3:h222Fv313Sv204sv234sv200yv352Sv230eh201yv242c","3:h222Fh251yv213bv233yv201fv303Sv242bh313Sh211ch254sh204ch202ev252b","3:h222Fv214bh254ev210ch203bh343Tv300Sv224bv204bh333Sv241b","4:h220Fv213ev323Sv232ch234eh302Th212ev250yv241b","4:h220Fv230ev352Sv222bh251cv240ch300Tv203bv232cv250f","4:h222Fh212eh201bv240ev211bv243fh231tv234sv202eh254ev350Bh240eh350T","4:h221Fv302Sv332Bv242ev213bh211yv250eh351Bv244s","4:h221Fh203ch252bv250fv241bv300Sv252ev243eh250eh232s","4:h222Fh332Tv212sh310Bh351Bh204ev241bh242bh244eh240ch201fv202f","4:h220Fv241eh330Tv251bv214yv243bh242bh212fh203eh353S","4:h220Fv203bh212ch252ev222fv252fv241cv200yv244b","5:h221Fh254bh251tv241bv232eh200sh303Sh342Tv252b","5:h220Fv204fv342Bv223bv233cv221bv240fv251sh252bh210rh201yv214ch230b","5:h221Fv300Bv232bh250ev341Bh254cv203bh212cv252yv250bv210eh231e","5:h221Fh212yh204ev202bh300Th353Th332Sv204bh210tv251bh243ev241sv214y","5:h220Fh300Sv223eh204bv204ev232fh254sh212rh234eh230ev241b","5:h221Fh352Tv301Sh231tv230cv341Bh341Bv232sv250ev353S","5:h220Fh201th210fh350Th312Bv232yh230fv251ev322B","5:h222Fh243rv202bh232cv250yh353Bv352Bv310Sv204eh203sv241y","6:h222Fh244fh330Th203ch201fv350Sv233bh311Tv200y","6:h222Fv210yh302Tv203bv251bv341Bh342Th352Sv213sh212e","6:h221Fv241eh211bh201rh331Tv252yv200bh350Th253ev330S","6:h221Fh244bv210cv300Sh202eh313Tv242cv252yv233fv204b","6:h222Fv233yh244yh230bv351Sh254bh240ev220bv323Sv210b","6:h221Fv220sv252cv313Sv202bv244yv333Bv224bh303Sh200sh313Tv254e","6:h220Fh234bh211ev231bh202eh250rh200rv224bv234bv241bh231s","6:h220Fv232bh244bv241bv213bv234eh251bv251sh212ev222b","7:h221Fv252sh330Th203fh244ev201bh214ev233eh252sv231b","7:h220Fh211bv352Sh301Sh254cv231bh242sh233fh214ev200bh240b","7:h220Fv231eh300Tv241yh241rh210ch251ch303Bv251cv321B","7:h220Fv254yv232bh313Bv222bv210bv303Sv214bv252bh352Sh204yv242y","7:h220Fv342Sh254sh251yh340Sh230eh212th301Sh210ev222b","7:h220Fh202th211eh213rh204fv351Sv204sh254sh343Th251fv232ch230y","7:h220Fh352Bh210bh244rv221ev241bh341Tv252yh201yh233eh231ev250b","7:h220Fh243fh240rh201eh211bv224bv251cv330Sv222bh230c","8:h221Fv233sv200bh350Bv353Bh231rh204tv242ch312Tv244cv210cv203bh241r","8:h220Fv342Bh231bh253ev251fh341Bh204sv353Sh213cv303Bv210eh251ev220b","8:h220Fh243bh203rh332Tv241fv213bv204bv210yh251yv231y","8:h220Fh231cv231yv243bh241bv320Sv251bv241yh252ch210yh200bv353S","8:h221Fh310Sv204yh253ev251yv231bv341Sh251rh243ev254fh231r","8:h221Fh242bv244yv252bh232tv200cv242eh214ev202sh302Tv231b","8:h221Fh232ev302Sh212sv241bh352Th244tv351Sh242eh204bv213bh300T","8:h220Fh231cv351Sh303Sv241bv221ch243yh250th233rh201sh252bh210sh240y","9:h222Fh232bh210bv351Sh230sv234ev220fv340Bh244e","9:h222Fv210yh212cv244bv214cv254ev233bv242bv201bv224bh214sh203eh231y","9:h222Fh301Sh231eh254fh233cv202eh251sh243ev351Bv340S","9:h222Fh201ev201fv353Sh243bh251tv341Sv223yh253b","9:h221Fh212ch252ev254eh234bh202sv202bv332Sh250eh204eh210bv244s","9:h220Fv254eh210rv340Sh231ev303Bh253rv233eh201bv250fh234y","9:h221Fv253bh210sv232sh351Sh204bv220bh231yv251bh240ev230b","9:h221Fv302Sv224yv243bv231bh203rv220sh253ev251fh232ev241fh210e","10:h220Fv224bv221eh250eh302Sh330Tv231sv352Sv250yh253e","10:h222Fh214sv230bv210sh233ev252ev212bv224ev201bh250cv254b","10:h220Fh242bv241bv210sv353Sv213bv320Sv203eh350T","10:h220Fv210bv250bh231fh302Sv252sh241bv204ev341Sv221e","10:h221Fh353Sh244rh312Th231rh210ev242ev224cv250fv202c","10:h221Fh231rv340Bh343Bv201fv224sv350Sv231sv203e","10:h220Fh232ev213bh350Bv200bv351Bh311Sh244yv234e","10:h221Fh352Bv213sh202fh204bv251sv242ev300Sh343Bh213yh250yv232bh211e","11:h220Fh340Sv233bh350Tv220cv222yh203cv253eh213b","11:h220Fv231bh244bv223yv252cv241yh254rv303Sv233bv250cv213bv200b","11:h221Fv220fh252bh313Tv254bv252bv332Sh241th203bv242bv244fh231bh200b","11:h221Fv330Sv202bv241ev252sv213ch332Bh204th310Sh252sv254s","11:h222Fh210bv233fv212ev340Sh251eh202yh253bh340Tv251eh234b","11:h220Fh234yh231rh353Th202bh244cv350Bv203bv241bh341Bv232y","11:h220Fv251bh253th332Sh201th311Sh251eh243bh303Tv213bv303Bv254ev241c","11:h221Fv342Bh251ch230yv220sv231ev251fv204bv254bh303Sv200bh241fh253f","12:h221Fv220ev332Bh330Th240ev253bv201ev241ev244sh203sh250e","12:h220Fv242ev231ev234bh232sv240bh244ev221fv252bh250sv213bv250y","12:h220Fh201bv223bv241ch303Sv303Bh311Th253bv232ev251bh343B","12:h221Fv302Sv253eh331Tv224sh201th254rv342Sv234e","12:h222Fv244fv210bv223eh202eh250cv242bv252bv200ev312Sh252fh204b","12:h220Fv251ev234yv214sv232bv221bv242bv224eh244yh213eh231ev200eh254f","12:h220Fh240eh342Tv352Sv200bh203eh252th212fv241ev222sv210bh254r","12:h220Fh254yv222bh202bh251ev342Sv303Sv234bh311Tv352Bv232b","13:h220Fv232fv253ch341Bh312Bv242bv222eh202ch230fh250sv251b","13:h222Fh233bv224ev230bv204ch253sh231bh211yv251ev241ch204fv254eh300S","13:h221Fv241yv252fh244yh253eh211fh330Tv224yv331Sv250b","13:h220Fv340Sh351Sv231bh210sv223eh233ev221yv251bv203eh200bv254eh202s","13:h220Fv232eh213th241ev303Sh251ev200ev234sv320Sv253e","13:h220Fv253bv231bh242ev200bh240fv242ch201bv321Bh252bh214bh203f","13:h220Fv221yh353Sh201cv242sv350Sh241th243bv204bh230bv231bh203f","13:h221Fv204bv231fv350Sv240fh202rh353Bh243tv223ev201eh251cv210b","14:h220Fh204rv341Sv251sh254bh244bh200ev230bv224ch210rh330Sv204cv214y","14:h220Fv220bh313Bv332Bh200tv242yv204ev252fv254ev244bh241y","14:h222Fh201yh230yv251ch254yh232sv230fh204tv224bv341S","14:h222Fv201bh244ev210bv234ev350Bh251ev341Sh230sh254bh203eh232t","14:h222Fv342Sv251ev212eh210sh341Tv203sv230bh204eh232fh253bv253b","14:h221Fh203bv341Sh310Tv253cv231ch201bv224eh232fh243yh230rv251s","14:h221Fh253rv251ev202ev340Bh300Bh240ch243sv223fh210eh251c","14:h221Fv350Sv223sh244ev231sh333Sh200fv234bh202bh211ev201s","15:h220Fv234cv340Bv252bh244bh241eh254sh212bv200eh250yh331Sv250bv203b","15:h222Fv204bh204bv301Sv342Sh254fv233yv251bv230yv253bh251fv310Bv223b","15:h221Fh243eh203fh201bh330Sv224ev341Sh254ev204sh211rv231e","15:h223Fv222yh253bv350Sv312Sh311Sh200bh251cv201eh234yv233cv240e","15:h222Fv230yh210ch232th353Bv242bv224bh244rv212bv220bh204ev351Sv302S","15:h220Fh214eh254ev253fv214sh211ev222sh302Tv243bh242rv200fh252tv331B","15:h220Fv223fh200sv214bh254ev204yh252tv233bv350Sv231bh234fh202r","15:h220Fv240ev200sv210ev223sv221bh343Th202bh251eh230e","16:h221Fh343Bh200yv224yv201bv331Sv250fv340Sh202ev252fh211sh231eh253e","16:h220Fv340Sh253bh201sv200fh342Sv303Sv251bv213ev222yh211t","16:h220Fv352Sv242ch214cv230ev213bh251ev204yh254bv320Sh342S","16:h220Fh300Tv234bv252bv250yv221bv242bh254yv203ch241bv232b","16:h220Fv221ev252bv332Sh252fv250yv240yh201sv230bv223eh254tv243bv200c","16:h222Fh231fv250bh244sv242bh312Sv224eh201ch210tv252bh254ev204b","16:h222Fh253th201tv250bv223yh251ev252bv312Sv340Sh211ch243sv204b","16:h220Fh253bv313Bv242sv232bv222bh211yv251yv200ev230cv224ev254e","17:h223Fv230ch242sh350Tv253bv221fv251yh240ch204ev244sv301Sh233f","17:h220Fh250yv240bv252ch233bh231ev203ch243rv221bh253ch300Tv230yh241t","17:h220Fh332Bv340Bv221sv213yh254eh201bh251rv200yh242ev251b","17:h220Fh242sv253bv213ev342Sv251ev222yv220cv232ev230b","17:h221Fv333Sh350Bv254yh203sv231bv251bv220sv241bv300Sh234b","17:h221Fv251bv302Sh234eh210ch312Bh250th243ch201ev224yv254ev232s","17:h222Fv230yh331Th252bv343Sh214fv202sv254eh240bh250rv200bv252b","17:h220Fh340Sh213bv243ev200cv222bh211ch201yh350Sh230rv351S","18:h221Fv201bv243eh313Th254rv220bv313Sh303Tv203sv352Bh252tv232sh242b","18:h221Fv313Sh204cv330Bh232tv242eh253rv220ev252ch214y","18:h221Fh211rh230bv251eh234bh300Th203tv331Bv223bv241sv254bh243yv201b","18:h220Fh212th343Sv241yh241rv210ch351Th230eh302Tv252bv222bh254bv204b","18:h220Fh251eh333Bv320Sv213sv203cv350Bh244eh254yv234b","18:h222Fh204yh244eh232sh301Th254ev242ev351Bv200yh350Th212yv234ev211e","18:h221Fh250th213bv350Bv244bv220sh230fv201fh200bv242eh252bh240e","18:h222Fv202bv233yh251bv210sh234sv204bh202bv350Sh212eh353Sh241e","19:h220Fv230ev351Sv214bv244ev233cv222yv241yh201rh211bv224sh230ev200f","19:h221Fh300Th211sh230bv253fv224eh233fv330Bv251eh353Tv204ev201y","19:h220Fv250bv222bh244ch210rv233bh213rv252bh253tv203bv224ch202bh200e","19:h220Fv244bv331Bh234yh251bv204sh241fv321Sv350B","19:h221Fv251sh230bh350Tv232bh240bv201ev242bh200rv244yv220bh213fv234b","19:h220Fv251yh251bv243bh241rh301Sh204yv204cv253eh253fv231bv222bh310T","19:h220Fh230tv231cv221bv251eh243yv242ch300Th232th253ev204ev240e","19:h220Fh210bh302Th243yv303Sv250bv213yh253yh232th234bv254bh200yv241b","20:h220Fv242cv231bv323Sv250bv210bv221ev234bv352Sv240bh202rh254b","20:h221Fv241bh243cv232bv224ev214yv220bh210yh230eh303Tv251b","20:h221Fh350Bv223fv201bh240tv241bh302Bv254cv251bh333Th253rh200b","20:h220Fv234bh202rh233sv222cv210bv200eh241th312Th204tv203bh250bv244b","20:h221Fv350Bh352Bv303Bh201cv214ev201sv340Bv223yh243ev331B","20:h220Fv222ch300Bv204fh252fh342Sv250sh230bh211eh254rv352Sv230sv240b","20:h220Fv200ev203sh214tv253bv331Bv221fh231sh252bh254ch202cv214ch204e","20:h221Fv213bh254fh250ev224bv251ev200eh232rv302Bh203bh243bv341S","22:h222Fv302Sh232rh251rv310Bh203cv341Bv200bv220fh244ev234yv250b","24:h220Fh301Th350Th233ev252ev203bv231sv221ev244eh204bv254fh241ch210b"];
+Object.assign(exports,{WAREHOUSE_ORDERS});
+
+},
+"src/engines/warehouseShift.js":(exports,require)=>{
+// The Office · Warehouse Shift: a Rush Hour style car park in the Dunder Mifflin warehouse. Your head drives Darryl's
+// forklift; slide the clutter (paper pallets, Schrute beets, Sabre printers, Kevin's chili, Michael's Sebring, Dwight's
+// Trans Am, the delivery truck...) along its aisle and get the forklift out of the loading dock. One 75-second shift per
+// player, orders get harder, the last 15 seconds are Dwight's fire drill (double points). Same orders for both players.
+// Rules/puzzle generation live in warehouseRules.js; the puzzle pool is precomputed in src/data/warehouseOrders.js.
+const {clamp, seededRandom}=require("src/utils.js");
+const {sound, tone, vibrate}=require("src/audio.js");
+const {store}=require("src/state.js");
+const {WAREHOUSE_N:N,EXIT_ROW,GOAL,slideRange,occupancy,solvePath,decodeOrder}=require("src/engines/warehouseRules.js");
+const {WAREHOUSE_ORDERS}=require("src/data/warehouseOrders.js");
+
+const SHIFT=75,DRILL=15,ORDER_PARS=[3,5,6,8,10,12,14,16,18,20,22,24];
+const CLIENTS=['Blue Cross of Pennsylvania','Lackawanna County','Alfredo’s Pizza Café','Pizza by Alfredo','Serenity by Jan','Schrute Farms B&B','Vance Refrigeration','Poor Richard’s Pub','the Stamford branch','the Utica branch','the Nashua branch','Sabre · Tallahassee','Michael Scott Paper Co.','Chili’s · Scranton','Scranton Business Park','Cugino’s'];
+const SOLVED=['Limitless paper in a paperless world!','Bears. Beets. Battlestar Galactica.','Shipped. Darryl nods once.','I am Beyoncé, always.','World’s Best Forklift Driver','Dunder Mifflin, this is Pam.','Nard Dog approves!','Somehow I manage.'];
+const PERFECT=['PERFECT ROUTE · Dundie!','FLAWLESS · Dundie awarded','DWIGHT IS JEALOUS'];
+const LOOK={
+ boxes:{fill:'#c99b62',dark:'#7c5a31',label:'DUNDER MIFFLIN',sub:'20 LB BOND'},boxes3:{fill:'#c99b62',dark:'#7c5a31',label:'DUNDER MIFFLIN',sub:'COPY PAPER · 10 REAMS'},
+ beets:{fill:'#8a5a34',dark:'#4c2f17',label:'SCHRUTE FARMS',sub:'BEETS'},sabre:{fill:'#e3e7ec',dark:'#8d97a3',label:'SABRE',sub:'PYRAMID',ink:'#c81e2b'},
+ chili:{fill:'#8a6a45',dark:'#4d3a22',label:'KEVIN’S CHILI',sub:'DO NOT SPILL'},fridge:{fill:'#eef3f7',dark:'#9fb0bf',label:'VANCE',sub:'REFRIGERATION',ink:'#1d5fb4'},
+ hay:{fill:'#e0be55',dark:'#9b7d22',label:'MOSE’S HAY',sub:''},sebring:{fill:'#c3122f',dark:'#6d0819',label:'SEBRING',sub:''},transam:{fill:'#202024',dark:'#000',label:'TRANS AM',sub:'',ink:'#e8c35a'},
+ truck:{fill:'#f4f5f7',dark:'#8e98a5',label:'DUNDER MIFFLIN',sub:'PAPER COMPANY, INC.',ink:'#174a8b'},shelf:{fill:'#e8742a',dark:'#8d3d0c',label:'AISLE 6',sub:''},
+ forklift:{fill:'#ffc21a',dark:'#8a6400',label:'',sub:''}};
+
+// Picks this match's orders from the pool: one per difficulty step, seeded so both players get identical orders.
+function warehouseOrders(seed){const random=seededRandom(seed+'-warehouse'),pool=WAREHOUSE_ORDERS.map(decodeOrder);
+ return ORDER_PARS.map((par,i)=>{let best=Infinity,list=[];for(const o of pool){const d=Math.abs(o.par-par);if(d<best){best=d;list=[o];}else if(d===best)list.push(o);}
+  const o=list[Math.floor(random()*list.length)];return {...o,start:o.start.slice(),client:CLIENTS[Math.floor(random()*CLIENTS.length)],n:i+1};});}
+
+function roundRect(x,X,Y,w,h,r){r=Math.min(r,w/2,h/2);x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();}
+function fitText(x,text,max,size,weight=900){x.font=`${weight} ${size}px system-ui`;const w=x.measureText(text).width;if(w>max){size*=max/w;x.font=`${weight} ${size}px system-ui`;}return size;}
+function label(x,text,cx,cy,max,size,color,stroke){if(!text)return;fitText(x,text,max,size);x.textAlign='center';x.textBaseline='middle';if(stroke){x.lineWidth=3;x.strokeStyle=stroke;x.strokeText(text,cx,cy);}x.fillStyle=color;x.fillText(text,cx,cy);}
+
+// Draws a piece in local coordinates: long axis horizontal, centred on 0,0, size w x h.
+function drawPieceBody(x,kind,w,h,t){const L=LOOK[kind]||LOOK.boxes,r=h*.14;
+ x.fillStyle='#0006';roundRect(x,-w/2+3,-h/2+5,w,h,r);x.fill();
+ if(kind==='sebring'||kind==='transam'){x.fillStyle=L.fill;roundRect(x,-w/2,-h/2+h*.06,w,h*.88,h*.32);x.fill();x.strokeStyle=L.dark;x.lineWidth=2;x.stroke();
+  x.fillStyle='#111';for(const sx of [-.3,.3])for(const sy of [-1,1])x.fillRect(sx*w-h*.13,sy*h*.45-h*.07,h*.26,h*.14);
+  x.fillStyle=L.fill;roundRect(x,-w/2,-h/2+h*.06,w,h*.88,h*.32);x.fill();
+  x.fillStyle='#9fd3ff';roundRect(x,w*.08,-h*.3,w*.12,h*.6,h*.08);x.fill();
+  if(kind==='sebring'){x.fillStyle='#3a1a12';roundRect(x,-w*.12,-h*.3,w*.16,h*.24,4);x.fill();roundRect(x,-w*.12,h*.06,w*.16,h*.24,4);x.fill();}
+  else{x.fillStyle='#0b0b0d';roundRect(x,-w*.2,-h*.32,w*.26,h*.64,6);x.fill();x.strokeStyle=L.ink;x.lineWidth=Math.max(2,h*.05);x.beginPath();x.moveTo(w*.24,-h*.22);x.lineTo(w*.34,0);x.lineTo(w*.24,h*.22);x.stroke();}
+  x.fillStyle='#fff6b0';x.fillRect(w/2-h*.08,-h*.36,h*.06,h*.16);x.fillRect(w/2-h*.08,h*.2,h*.06,h*.16);
+  label(x,L.label,-w*.33,0,w*.3,h*.2,L.ink||'#fff','#0008');return;}
+ if(kind==='truck'){x.fillStyle='#2b3440';roundRect(x,w*.28,-h*.4,w*.21,h*.8,h*.18);x.fill();x.fillStyle='#9fd3ff';roundRect(x,w*.4,-h*.3,w*.07,h*.6,4);x.fill();
+  x.fillStyle=L.fill;roundRect(x,-w/2,-h/2+h*.04,w*.76,h*.92,r);x.fill();x.strokeStyle=L.dark;x.lineWidth=2;x.stroke();
+  x.fillStyle=L.ink;x.fillRect(-w/2+h*.1,-h*.06,w*.76-h*.2,h*.04);label(x,L.label,-w*.12,-h*.2,w*.66,h*.26,L.ink);label(x,L.sub,-w*.12,h*.18,w*.66,h*.14,'#46566b');return;}
+ if(kind==='forklift'){const bob=Math.sin(t*9)*.6;x.fillStyle='#c8ccd2';x.fillRect(w*.18,-h*.32,w*.32,h*.1);x.fillRect(w*.18,h*.22,w*.32,h*.1);
+  x.fillStyle='#55595f';x.fillRect(w*.1,-h*.44,w*.09,h*.88);
+  x.fillStyle='#111';for(const sx of [-.32,.02])for(const sy of [-1,1])roundRect(x,sx*w,sy*h*.42-h*.1+bob*0,w*.14,h*.2,4),x.fill();
+  x.fillStyle=L.fill;roundRect(x,-w/2+2,-h*.38,w*.62,h*.76,h*.18);x.fill();x.strokeStyle=L.dark;x.lineWidth=2.5;x.stroke();
+  x.fillStyle='#2b2b2b';x.fillRect(-w/2+2,-h*.1,w*.1,h*.2);x.strokeStyle='#222';x.lineWidth=Math.max(2,h*.05);x.strokeRect(-w*.36,-h*.33,w*.42,h*.66);
+  x.fillStyle='#000';x.font=`900 ${h*.13}px system-ui`;x.textAlign='center';x.textBaseline='middle';x.fillText('◢◤◢◤',-w*.16,h*.3);return;}
+ // Pallet goods: wooden pallet, then the load.
+ x.fillStyle='#a37b4b';roundRect(x,-w/2,-h/2,w,h,r);x.fill();x.fillStyle='#7a5730';for(let i=1;i<4;i++)x.fillRect(-w/2,-h/2+h*i/4-1,w,2);
+ const ins=h*.08;x.fillStyle=L.fill;roundRect(x,-w/2+ins,-h/2+ins,w-ins*2,h-ins*2,r*.8);x.fill();x.strokeStyle=L.dark;x.lineWidth=2;x.stroke();
+ if(kind==='boxes'||kind==='boxes3'||kind==='sabre'||kind==='fridge'){const n=Math.round(w/h)*2;x.strokeStyle=L.dark+'aa';x.lineWidth=1.5;for(let i=1;i<n;i++){const X=-w/2+ins+(w-ins*2)*i/n;x.beginPath();x.moveTo(X,-h/2+ins);x.lineTo(X,h/2-ins);x.stroke();}
+  x.fillStyle='#d9c7a0';if(kind==='boxes'||kind==='boxes3')x.fillRect(-w/2+ins,-h*.03,w-ins*2,h*.06);}
+ if(kind==='beets'){x.strokeStyle=L.dark;x.lineWidth=2;for(let i=1;i<3;i++){x.beginPath();x.moveTo(-w/2+ins,-h/2+ins+(h-ins*2)*i/3);x.lineTo(w/2-ins,-h/2+ins+(h-ins*2)*i/3);x.stroke();}
+  for(let i=0;i<Math.round(w/h)*3;i++){const bx=-w/2+h*.25+i*h*.34,by=(i%2?-.18:.2)*h;if(bx>w/2-h*.2)break;x.fillStyle='#7b1238';x.beginPath();x.arc(bx,by,h*.11,0,Math.PI*2);x.fill();x.fillStyle='#3d8a2a';x.fillRect(bx-1,by-h*.2,3,h*.1);}}
+ if(kind==='hay'){x.strokeStyle='#b8952e';x.lineWidth=1.5;for(let i=0;i<14;i++){const X=-w/2+ins+((i*37)%100)/100*(w-ins*2);x.beginPath();x.moveTo(X,-h/2+ins);x.lineTo(X+h*.12,h/2-ins);x.stroke();}x.strokeStyle='#6b3a1a';x.lineWidth=3;for(const f of [-.25,.25]){x.beginPath();x.moveTo(f*w,-h/2+ins);x.lineTo(f*w,h/2-ins);x.stroke();}}
+ if(kind==='chili'){const R=h*.32;x.fillStyle='#9aa3ad';x.beginPath();x.arc(-w*.18,0,R,0,Math.PI*2);x.fill();x.fillStyle='#8c1d0c';x.beginPath();x.arc(-w*.18,0,R*.82,0,Math.PI*2);x.fill();x.fillStyle='#b8341a';for(let i=0;i<5;i++){x.beginPath();x.arc(-w*.18+Math.cos(i*1.3)*R*.45,Math.sin(i*1.3)*R*.45,R*.12,0,Math.PI*2);x.fill();}
+  x.fillStyle='#8c1d0c';x.beginPath();x.ellipse(-w*.18+R*1.15,R*.55,R*.35,R*.18,.3,0,Math.PI*2);x.fill();label(x,L.label,w*.2,-h*.08,w*.45,h*.2,'#fff','#0009');label(x,L.sub,w*.2,h*.17,w*.45,h*.13,'#ffd7b0');return;}
+ if(kind==='shelf'){x.fillStyle='#3b3f46';x.fillRect(-w/2+ins,-h/2+ins,w-ins*2,h-ins*2);x.fillStyle=L.fill;x.fillRect(-w/2+ins,-h/2+ins,w-ins*2,h*.14);x.fillRect(-w/2+ins,h/2-ins-h*.14,w-ins*2,h*.14);
+  for(let i=0;i<6;i++){const bw=(w-ins*4)/6;x.fillStyle=i%3===1?'#e3e7ec':'#c99b62';x.fillRect(-w/2+ins*2+i*bw+2,-h*.2,bw-4,h*.4);}label(x,L.label,0,-h*.36,w*.4,h*.13,'#1b1b1b');return;}
+ if(kind==='fridge')label(x,'❄',w/2-h*.3,-h*.22,h*.4,h*.24,L.ink);
+ if(kind==='sabre')label(x,'🔥',w/2-h*.28,-h*.22,h*.4,h*.24,'#fff');
+ label(x,L.label,0,L.sub?-h*.1:0,w-h*.5,h*.24,L.ink||'#fff',L.ink?null:'#0009');if(L.sub)label(x,L.sub,0,h*.17,w-h*.5,h*.14,L.ink||'#fff3d6',L.ink?null:'#0008');}
+
+async function warehouseShift(s){
+ const[c,x]=s.canvas(680,420,{fill:true});s.body.classList.add('drag-arena-body');
+ const orders=warehouseOrders(s.seed),scores=[0,0],stats=[null,null];
+ let actor=0,phase='wait',clock=0,idx=0,order=null,pos=[],vis=[],moves=0,drag=null,exitT=0,fx=[],banner=null,shake=0,drillOn=false,alarm=0,said=false,pressed=null;
+ const beep=(f,d=.07,v=.04,type='triangle')=>{if(store.profile?.settings.sound)tone(f,d,v,type);};
+ function layout(){const W=s.W,H=s.H,top=clamp(H*.13,56,86),bottom=clamp(H*.11,52,74),pad=8,availW=W-pad*2,availH=H-top-bottom-pad*2,
+   cell=Math.max(18,Math.min(availW/(N+1.1),availH/(N+.5))),bw=cell*N,ox=(W-bw-cell*.7)/2+cell*.15,oy=top+pad+(availH-bw)/2;return {W,H,top,bottom,cell,ox,oy,bw};}
+ function loadOrder(i){idx=i;order=orders[Math.min(i,orders.length-1)];pos=order.start.slice();vis=pos.slice();moves=0;said=false;drag=null;
+  banner={text:`ORDER #${i+1}`,sub:`→ ${order.client} · par ${order.par}`,age:0,color:'#ffd166'};sound('card');}
+ function startTurn(){clock=0;drillOn=false;stats[actor]={shipped:0,perfect:0,skipped:0};loadOrder(0);phase='play';}
+ async function endTurn(){phase='handoff';drag=null;sound('whistle');
+  if(actor===1){const a=stats[0],b=stats[1];return s.finish(scores,`Warehouse Shift · ${s.players[0].name} shipped ${a.shipped} (${a.perfect} perfect), ${s.players[1].name} shipped ${b.shipped} (${b.perfect} perfect). Same orders for both.`);}
+  actor=1;if(await s.pass(1,`${s.players[0].name} shipped ${stats[0].shipped} orders for ${scores[0]} points. Your shift: same orders in the same order. Drag the clutter along its aisle and drive your forklift out the loading dock. Last ${DRILL} seconds: fire drill, double points.`,'Clock in',{countdown:3}))startTurn();}
+ function shipped(){const L=layout(),m=drillOn?2:1,perfect=moves<=order.par,bonus=perfect?60:Math.max(0,50-8*(moves-order.par)),gain=(100+bonus)*m;
+  scores[actor]+=gain;stats[actor].shipped++;if(perfect)stats[actor].perfect++;s.setScores(scores);s.react?.(actor,'happy');sound(perfect?'rare':'win');vibrate(30);
+  const ex=L.ox+L.bw,ey=L.oy+(EXIT_ROW+.5)*L.cell;fx.push({x:ex-L.cell,y:ey-L.cell*.9,text:`+${gain}`,color:'#7dffb0',age:0,big:true});
+  for(let j=0;j<26;j++)fx.push({x:ex,y:ey,vx:-60-Math.random()*260,vy:-220+Math.random()*300,rot:Math.random()*6,vr:(Math.random()-.5)*12,age:0,paper:true});
+  banner={text:perfect?PERFECT[Math.floor(Math.random()*PERFECT.length)]:'SHIPPED!',sub:SOLVED[Math.floor(Math.random()*SOLVED.length)],age:0,color:perfect?'#ffd166':'#7dffb0'};
+  phase='exit';exitT=0;}
+ function skip(){if(phase!=='play')return;scores[actor]=Math.max(0,scores[actor]-30);stats[actor].skipped++;s.setScores(scores);s.react?.(actor,'sad');sound('lose');shake=.3;
+  loadOrder(idx+1);banner={text:'WHY ARE YOU THE WAY THAT YOU ARE?',sub:`Blamed Toby · −30 · Order #${idx+1}: par ${order.par}`,age:0,color:'#ff8a8a'};}
+ function restart(){if(phase!=='play'||!order)return;pos=order.start.slice();vis=pos.slice();drag=null;sound('handoff');banner={text:'FROM THE TOP',sub:'Moves keep counting. Somehow I manage.',age:0,color:'#cfe3ff'};}
+ const buttons=L=>{const bh=L.bottom*.66,y=L.H-L.bottom+(L.bottom-bh)/2,w=Math.min(L.W*.44,220);return [{id:'restart',x:10,y,w,h:bh,text:'↺ Start over'},{id:'skip',x:L.W-10-w,y,w,h:bh,text:'Blame Toby · skip −30'}];};
+ function pieceAt(p,L){const col=Math.floor((p.x-L.ox)/L.cell),row=Math.floor((p.y-L.oy)/L.cell);if(col<0||row<0||col>=N||row>=N)return -1;const g=occupancy(order.pieces,pos);return g[row*N+col];}
+ s.on(c,'pointerdown',ev=>{ev.preventDefault();if(s.paused||phase!=='play')return;const p=s.pointer(ev),L=layout();
+  for(const b of buttons(L))if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){pressed={id:b.id,age:0};return b.id==='skip'?skip():restart();}
+  const i=pieceAt(p,L);if(i<0)return;const [lo,hi]=slideRange(order.pieces,pos,i);drag={i,id:ev.pointerId,start:p,from:pos[i],lo,hi};try{c.setPointerCapture(ev.pointerId);}catch{}beep(330,.04,.03);});
+ s.on(c,'pointermove',ev=>{if(!drag||ev.pointerId!==drag.id||phase!=='play')return;const p=s.pointer(ev),L=layout(),P=order.pieces[drag.i],d=(P.h?p.x-drag.start.x:p.y-drag.start.y)/L.cell;
+  const v=clamp(drag.from+d,drag.lo,drag.hi);if((v===drag.lo||v===drag.hi)&&Math.abs(vis[drag.i]-v)>.08)beep(110,.05,.05,'square');vis[drag.i]=v;
+  if(drag.i===0&&drag.hi>=GOAL&&v>=GOAL-.15)drop();});
+ function drop(){if(!drag)return;const i=drag.i,v=Math.round(vis[i]);vis[i]=vis[i];pos[i]=v;const dist=Math.abs(v-drag.from);drag=null;
+  if(dist){moves++;sound('tap');const P=order.pieces[i];if(!said&&(P.len===3||dist>=3)&&Math.random()<.4){said=true;banner={text:'THAT’S WHAT SHE SAID!',sub:'',age:0,color:'#ff9fd8'};}}
+  if(pos[0]===GOAL)shipped();}
+ s.on(c,'pointerup',ev=>{if(drag&&ev.pointerId===drag.id)drop();});s.on(c,'pointercancel',ev=>{if(drag&&ev.pointerId===drag.id)drop();});
+ s.hint(`Rush Hour in the Dunder Mifflin warehouse. Drag any pallet, car or truck along its own aisle (long pieces only slide lengthwise). Clear a path and drive your forklift (your head) out the loading dock on the right. Each order: 100 + up to 60 for matching par moves. Start over resets the order; Blame Toby skips it for −30. The last ${DRILL} seconds are Dwight's fire drill: double points. Same ${SHIFT}-second shift and same orders for both players.`);
+ s.frame((dt,t)=>{const L=layout(),{W,H,cell,ox,oy,bw}=L;
+  if(phase==='play'||phase==='exit'){clock+=dt;const left=SHIFT-clock;
+   if(!drillOn&&left<=DRILL){drillOn=true;banner={text:'FIRE DRILL!',sub:'Dwight lit a trash can · points ×2',age:0,color:'#ff6b4a'};sound('rare');vibrate(60);}
+   if(drillOn){alarm-=dt;if(alarm<=0){alarm=.5;beep(alarm>0&&Math.floor(clock*2)%2?880:660,.14,.03,'square');}}
+   if(left<=0&&phase==='play'){void endTurn();}}
+  if(phase==='exit'){exitT+=dt;vis[0]=GOAL+exitT*exitT*14;if(exitT>.7){if(clock>=SHIFT)void endTurn();else{loadOrder(idx+1);phase='play';}}}
+  for(let i=0;i<vis.length;i++)if(!(drag&&drag.i===i)&&!(phase==='exit'&&i===0))vis[i]+=(pos[i]-vis[i])*Math.min(1,dt*18);
+  for(const f of fx){f.age+=dt;if(f.paper){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=380*dt;f.vx*=.99;f.rot+=f.vr*dt;}}fx=fx.filter(f=>f.age<(f.paper?1.4:.9));if(banner)banner.age+=dt;if(pressed)pressed.age+=dt;shake=Math.max(0,shake-dt);
+  if(!s.alive)return;x.save();if(shake>0)x.translate((Math.random()-.5)*shake*24,(Math.random()-.5)*shake*24);
+  // Warehouse: concrete, racks with paper boxes at the sides, hanging lamps.
+  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#2a2f37');g.addColorStop(1,'#16191e');x.fillStyle=g;x.fillRect(-20,-20,W+40,H+40);
+  for(let r=0;r*cell*1.2<H;r++)for(const side of [0,1]){const rx=side?ox+bw+cell*.75:0,rw=side?W-rx:ox-cell*.25;if(rw<10)continue;x.fillStyle='#e8742a';x.fillRect(rx,L.top+r*cell*1.2,rw,4);
+   for(let k=0;k*cell*.5<rw;k++){x.fillStyle=(k+r)%3?'#a37f52':'#c9cdd3';x.fillRect(rx+k*cell*.5+2,L.top+r*cell*1.2-cell*.36,cell*.44,cell*.36);}}
+  // Floor with hazard border and loading dock.
+  x.fillStyle='#000';x.fillRect(ox-cell*.12,oy-cell*.12,bw+cell*.24,bw+cell*.24);
+  x.save();x.beginPath();x.rect(ox-cell*.12,oy-cell*.12,bw+cell*.24,bw+cell*.24);x.clip();x.fillStyle='#ffc21a';for(let k=-bw;k<bw*2;k+=cell*.4){x.beginPath();x.moveTo(ox+k,oy-cell*.2);x.lineTo(ox+k+cell*.2,oy-cell*.2);x.lineTo(ox+k+cell*.2+bw+cell,oy+bw+cell);x.lineTo(ox+k+bw+cell,oy+bw+cell);x.fill();}x.restore();
+  x.fillStyle='#7d838b';x.fillRect(ox,oy,bw,bw);for(let r=0;r<N;r++)for(let q=0;q<N;q++){x.fillStyle=(r+q)%2?'#80868e':'#767c84';x.fillRect(ox+q*cell+1,oy+r*cell+1,cell-2,cell-2);}
+  x.fillStyle='#ffd34a55';for(let q=0;q<N;q++){x.beginPath();const ax=ox+(q+.5)*cell,ay=oy+(EXIT_ROW+.5)*cell;x.moveTo(ax-cell*.12,ay-cell*.14);x.lineTo(ax+cell*.1,ay);x.lineTo(ax-cell*.12,ay+cell*.14);x.fill();}
+  x.fillStyle='#0003';x.font=`900 ${cell*.32}px system-ui`;x.textAlign='center';x.textBaseline='middle';x.fillText('DUNDER',ox+bw/2,oy+cell*4.3);x.fillText('MIFFLIN',ox+bw/2,oy+cell*4.75);
+  const dy=oy+EXIT_ROW*cell,glow=x.createLinearGradient(ox+bw,0,ox+bw+cell*.8,0);glow.addColorStop(0,'#fff6c9');glow.addColorStop(1,'#ffd36a00');x.fillStyle=glow;x.fillRect(ox+bw,dy,cell*.9,cell);
+  x.fillStyle='#ffc21a';x.fillRect(ox+bw-2,dy-4,cell*.7,4);x.fillRect(ox+bw-2,dy+cell,cell*.7,4);
+  label(x,'DOCK',ox+bw+cell*.32,dy-cell*.22,cell*.62,cell*.2,'#ffc21a');
+  // Days-since-accident sign above the floor when there is room.
+  if(oy-L.top>cell*.55){const sw=Math.min(bw*.62,260),sh=Math.min(oy-L.top-10,cell*.55),sx=ox+(bw-sw)/2,sy=oy-cell*.14-sh-4;x.fillStyle='#f4f4ef';roundRect(x,sx,sy,sw,sh,6);x.fill();x.strokeStyle='#1d5d2a';x.lineWidth=3;x.stroke();
+   label(x,'DAYS SINCE LAST ACCIDENT',sx+sw*.42,sy+sh*.5,sw*.72,sh*.36,'#1d5d2a');x.fillStyle='#111';roundRect(x,sx+sw*.82,sy+sh*.14,sw*.14,sh*.72,4);x.fill();label(x,'0',sx+sw*.89,sy+sh*.52,sw*.12,sh*.6,'#ff5a4a');}
+  // Pieces (forklift last so it sits on top while leaving).
+  if(order){const draw=i=>{const P=order.pieces[i],v=vis[i],len=P.len*cell,w=len-cell*.1,h=cell*.86,cx=P.h?ox+v*cell+len/2:ox+(P.line+.5)*cell,cy=P.h?oy+(P.line+.5)*cell:oy+v*cell+len/2;
+    x.save();if(i===0&&phase==='exit')x.globalAlpha=clamp(1-(exitT-.4)/.3,0,1);x.translate(cx,cy);if(!P.h)x.rotate(Math.PI/2);if(drag&&drag.i===i)x.scale(1.04,1.04);drawPieceBody(x,P.kind,w,h,t);x.restore();
+    if(i===0){x.save();if(phase==='exit')x.globalAlpha=clamp(1-(exitT-.4)/.3,0,1);s.sprite(x,actor,cx-w*.08,cy,clamp(h*.95,22,80),{exact:true,mood:phase==='exit'?'win':drag?.i===0?'thinking':undefined});x.restore();}
+    if(drag&&drag.i===i){x.strokeStyle='#fff';x.lineWidth=3;x.setLineDash([6,5]);const r0=drag.lo*cell,r1=(drag.hi+P.len)*cell;if(P.h)x.strokeRect(ox+r0+2,oy+P.line*cell+2,r1-r0-4,cell-4);else x.strokeRect(ox+P.line*cell+2,oy+r0+2,cell-4,r1-r0-4);x.setLineDash([]);}};
+   for(let i=1;i<order.pieces.length;i++)draw(i);draw(0);}
+  // FX: flying paper and score pops.
+  for(const f of fx){const k=f.age/(f.paper?1.4:.9);x.globalAlpha=Math.max(0,1-k);if(f.paper){x.save();x.translate(f.x,f.y);x.rotate(f.rot);x.fillStyle='#fff';x.fillRect(-cell*.12,-cell*.16,cell*.24,cell*.32);x.fillStyle='#9bb';x.fillRect(-cell*.08,-cell*.08,cell*.16,2);x.fillRect(-cell*.08,0,cell*.16,2);x.restore();}
+   else label(x,f.text,f.x,f.y-k*40,cell*3,clamp(cell*(f.big?.6:.45),16,40),f.color,'#000b');x.globalAlpha=1;}
+  if(drillOn&&phase!=='handoff'){const a=.25+.2*Math.sin(t*12);x.strokeStyle=`rgba(255,40,30,${a})`;x.lineWidth=Math.min(W,H)*.05;x.strokeRect(0,0,W,H);}
+  x.restore();
+  // HUD: head, order, moves vs par, clock and score.
+  x.fillStyle='#14171d';x.fillRect(0,0,W,L.top);x.save();x.beginPath();x.rect(0,L.top-6,W,6);x.clip();x.fillStyle='#ffc21a';x.fillRect(0,L.top-6,W,6);x.fillStyle='#111';for(let k=-10;k<W;k+=20){x.beginPath();x.moveTo(k,L.top);x.lineTo(k+10,L.top-6);x.lineTo(k+20,L.top-6);x.lineTo(k+10,L.top);x.fill();}x.restore();
+  const head=clamp(L.top*.7,36,64);s.sprite(x,actor,head*.62,L.top*.45,head,{exact:true,mood:shake>0?'sad':undefined});
+  const left=Math.max(0,SHIFT-clock),tx=head*1.3;
+  x.textAlign='left';x.textBaseline='middle';fitText(x,order?`ORDER #${idx+1} · ${order.client}`:'WAREHOUSE SHIFT',W*.5,clamp(L.top*.2,12,18),800);x.fillStyle='#aab3c8';x.fillText(order?`ORDER #${idx+1} · ${order.client}`:'WAREHOUSE SHIFT',tx,L.top*.26);
+  if(order){x.font=`900 ${clamp(L.top*.3,16,26)}px system-ui`;x.fillStyle=moves>order.par?'#ffb46b':'#fff';x.fillText(`${moves} moves`,tx,L.top*.6);const mw=x.measureText(`${moves} moves`).width;x.font=`700 ${clamp(L.top*.2,12,17)}px system-ui`;x.fillStyle='#8f9bb2';x.fillText(` / par ${order.par}`,tx+mw,L.top*.62);}
+  x.textAlign='right';x.font=`900 ${clamp(L.top*.34,18,30)}px system-ui`;x.fillStyle=drillOn?'#ff6b4a':'#ffd166';{const l=Math.ceil(left);x.fillText(`${Math.floor(l/60)}:${String(l%60).padStart(2,'0')}`,W-12,L.top*.34);}
+  x.font=`800 ${clamp(L.top*.2,12,17)}px system-ui`;x.fillStyle='#cfd6e6';x.fillText(`${scores[actor]} pts${drillOn?' · ×2':''}`,W-12,L.top*.7);
+  // Bottom buttons (inside the canvas, thumb height).
+  x.fillStyle='#0b0e13';x.fillRect(0,H-L.bottom,W,L.bottom);
+  for(const b of buttons(L)){const down=pressed&&pressed.id===b.id&&pressed.age<.15;x.fillStyle=b.id==='skip'?'#3a1f24':'#1f2c3d';roundRect(x,b.x,b.y+(down?2:0),b.w,b.h,10);x.fill();x.strokeStyle=b.id==='skip'?'#ff8a8a66':'#8fb8ff66';x.lineWidth=2;x.stroke();label(x,b.text,b.x+b.w/2,b.y+b.h/2+(down?2:0),b.w-14,clamp(b.h*.36,12,18),b.id==='skip'?'#ffc4c4':'#d6e6ff');}
+  if(W-2*Math.min(W*.44,220)>70)label(x,stats[actor]?`📦 ${stats[actor].shipped} shipped`:'',W/2,H-L.bottom/2,Math.max(10,W-2*Math.min(W*.44,220)-30),clamp(L.bottom*.28,11,16),'#9aa6ba');
+  // Banner.
+  if(banner&&banner.age<1.6&&phase!=='handoff'){const a=banner.age<.12?banner.age/.12:Math.max(0,1-(banner.age-1.2)/.4),y=oy+bw*.5,hh=Math.min(120,cell*1.8);x.globalAlpha=a;x.fillStyle='#000c';x.fillRect(0,y-hh/2,W,hh);
+   label(x,banner.text,W/2,y-(banner.sub?hh*.14:0),W*.92,clamp(W*.075,20,44),banner.color,'#000');if(banner.sub)label(x,banner.sub,W/2,y+hh*.24,W*.9,clamp(W*.04,12,22),'#fff');x.globalAlpha=1;}
+  s.status(`${s.players[actor].name} · ${phase==='play'||phase==='exit'?Math.ceil(left)+'s':'get ready'} · order ${idx+1} · ${scores[actor]} pts`);
+  s.debug={actor,phase,idx,clock,scores,stats,moves,par:order?.par,pieces:order?.pieces,pos:pos.slice(),orders,layout:L,setClock(v){clock=v;},
+   solveStep(){if(phase!=='play')return false;const path=solvePath(order.pieces,pos);if(!path||!path.length)return false;const n=path[0];pos=n.slice();moves++;if(pos[0]===GOAL)shipped();return true;}};
+ });
+ if(await s.pass(0,`Warehouse Shift! Darryl's forklift is boxed in by paper pallets, Schrute beets, Sabre printers, Kevin's chili and Michael's Sebring. Drag the clutter along its aisle and drive your forklift (that's your head) out the loading dock. ${SHIFT}-second shift, harder orders as you go, fire drill at the end for double points. ${s.players[1].name} gets the same orders next.`,'Clock in',{countdown:3}))startTurn();
+}
+
+Object.assign(exports,{warehouseShift,warehouseOrders,LOOK});
 
 }};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();</script></body></html>

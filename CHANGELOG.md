@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.46.5
+
+**Warehouse Shift rebuilt as Rush Hour in the Dunder Mifflin warehouse.** The old Sokoban crate-pusher is gone. Your
+head now drives Darryl's forklift, boxed in by paper pallets, Schrute Farms beets, Sabre printers (one is on fire),
+Kevin's chili, Vance Refrigeration boxes, Mose's hay, Michael's Sebring, Dwight's Trans Am, aisle racks and the
+Dunder Mifflin delivery truck. Drag each piece along its aisle, clear the exit row and drive out the loading dock.
+
+- One 75-second shift per player; orders get harder (par 3 up to ~24 slides) and go to Office clients (Serenity by Jan,
+  Alfredo's Pizza Café, Blue Cross of Pennsylvania, the Nashua branch...). Same orders for both players.
+- 100 points per order plus up to 60 for matching par (a perfect route earns a Dundie). "Start over" resets an order;
+  "Blame Toby" skips it for −30 ("Why are you the way that you are?"). The last 15 seconds are Dwight's fire drill:
+  alarm, red flashing border, double points.
+- Days Since Last Accident: 0 sign, flying paper on every shipment, "That's what she said!" on long slides.
+- Puzzles have an exact minimum solution, precomputed by `tools/gen-warehouse.mjs` (`src/data/warehouseOrders.js`).
+
 ## v0.46.4
 
 **Paddy's Pub glow-up (Beer Pong + Flipadelphia).** Both games now play inside a real Paddy's: brick wall, lit back bar
