@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.50.0 (`releases/ShambConkins_v0.50.0.html`).
+Version 0.51.0 (`releases/ShambConkins_v0.51.0.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -86,8 +86,20 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   `theme.css`, expressions cycle via `installSetupFaceCycle` in `app.js`; `tests/setupshots.mjs`); collections show
   "← Back" (home) instead of "← Board"; rare-encounter dialogs are dark.
 
+- v0.51.0: route buttons sorted by map position (`stepTarget` in `app.js`, lane `cx` then x). Fork roads are free on grid
+  boards: `installObstacles` bars no Level 1 road and one adventurous road in Body/Spirit only ~30% of the time (old
+  saves keep their barriers). Board perf: gestures preview via CSS transform and commit the viewBox on settle
+  (`gestureCamera`/`endGesture` in `ui.js`); camera glides render once over the union view and slide it
+  (`repaintCamera`); `updateBoard` patches only changed SVG layers (`patchBoardSVG`, `<!--L-->` markers in `boardSVG`)
+  and skips unchanged panel HTML (`setHTML`); grid boards have no looping SVG animations. Measure with
+  `tests/zoomperf.mjs`. Deliberate spaces: leftover `event` tiles on new grid boards become trainer/trivia/Chance
+  (pattern in `buildGridBoard`), tiles show `SPACE_CAPTIONS` (board.js), `showLandingBanner` (levelCard.js) names the
+  action on landing, Chance draws skip trivia questions. `showSmashCard` + `glassSmash()` (audio.js) between the
+  Gentlemen card and Level I.
+
 ## In progress / unverified
-- Nothing in flight. Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus
+- Board smoothness only measured in headless Chromium (software compositing); check pinch/zoom on a real phone.
+  Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus
   Flappy/Curling/Angry Heads), rebuilt the cones game as Cone Chaos (`engines/coneChaos.js`) and made Fruit Ninja
   slice the opponent's head. `npm test` green.
 

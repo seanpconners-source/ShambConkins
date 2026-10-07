@@ -37,8 +37,13 @@ function characterTravelSkills(id){
 function obstacleType(obstacle){return OBSTACLE_TYPES.find(t=>t.id===obstacle?.type);}
 function installObstacles(board,random=seededRandom(board.seed+':obstacles')){
  const types=shuffle(OBSTACLE_TYPES,random);board.obstacles ||= [];
+ // Grid boards: roads at a fork are a free choice. Level 1 never bars a road; later levels
+ // occasionally bar one of the two adventurous roads. Shortcuts and bridges keep their guards.
+ const barred=new Set();
+ if(board.generation>=8){const pick=seededRandom(board.seed+':fork-barriers');for(const realm of ['body','spirit']){const rs=(board.routes||[]).filter(r=>r.realm===realm);if(rs.length&&pick()<.3)barred.add(rs[Math.floor(pick()*rs.length)].entry);}}
  for(const [i,route]of (board.routes||[]).entries()){
   if(!board.nodes[route.fork]?.next.includes(route.entry))continue;
+  if(board.generation>=8&&!barred.has(route.entry))continue;
   board.obstacles.push({id:`trail-${route.entry}`,from:route.fork,to:route.entry,type:types[i%types.length].id,open:false,openUntil:0,repairs:0});
  }
  return board.obstacles;

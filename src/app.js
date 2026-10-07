@@ -15,12 +15,12 @@ const {selectItemDrop, selectItemStock}=require("src/itemDrops.js");
 const {drawEvent, applyEvent, RARE_EVENTS}=require("src/events.js");
 const {showLevelCard,dismissLevelCard}=require("src/levelCard.js");
 const {levelLabel,levelInfo}=require("src/levels.js");
-const {showBossCard,showDragBanner,showGentlemenCard}=require("src/levelCard.js");
+const {showBossCard,showDragBanner,showGentlemenCard,showSmashCard,showLandingBanner}=require("src/levelCard.js");
 const {warpTransition}=require("src/warpFx.js");
 const {buildWarpBoard,pickWarpId,WARP_DEFS}=require("src/warpBoards.js");
 const {ensureLevelBosses,bossById,castleName}=require("src/bossGate.js");
 const {GAMES, PHONE_TASK, gameById}=require("src/gameRegistry.js");
-const {refitCatalog, showView, updateBoard, showDialog, resolveDialog, closeDialog, unlockDialog, toast, repaintCamera, cancelCameraAnimation, clearBoardDetailObserver, refreshPortraits}=require("src/ui.js");
+const {refitCatalog, showView, updateBoard, showDialog, resolveDialog, closeDialog, unlockDialog, toast, repaintCamera, gestureCamera, endGesture, cancelCameraAnimation, clearBoardDetailObserver, refreshPortraits}=require("src/ui.js");
 const {applyTheme}=require("src/theme.js");
 const {brandHTML, portraitHTML, locationArtHTML, itemArtHTML}=require("src/assets.js");
 const {configureLauncher, requestGame, cancelGameLaunch, exitGame, presentResult}=require("src/gameLauncher.js");
@@ -76,7 +76,7 @@ function home(){setMusicZone('home');if(store.profile?.settings.music)startMusic
 function captureSetup(){setupNames=[0,1].map(i=>document.getElementById(`player-name-${i}`)?.value||setupNames[i]);}
 async function startRun(){captureSetup();if(!differentCharacters(...setupSelected))return toast('Choose two different characters.');if(setupSelected.some((id,i)=>!availableCharacters(store.profile,i?'Amber':'Sean').includes(id)))return toast('Choose a character you have unlocked.');const turns=+document.getElementById('run-length').value;const theme=document.getElementById('board-theme')?.value||'Mashup',mode=document.getElementById('game-mode')?.value||'versus';const mates=[0,1].map(i=>document.getElementById(`team-mate-${i}`)?.value);if(mode==='team'&&(mates.some(id=>!id)||new Set([...setupSelected,...mates].map(characterIdentity)).size!==4))return toast('Team Relay needs four different unlocked characters.');const seed=document.getElementById('run-seed').value.trim();if(store.run&&!store.run.finished){const choice=await showDialog({title:'Start a fresh expedition?',body:'Your current run will be replaced. Every character unlock and all lifetime XP carry forward.',choices:[{label:'Start fresh',value:'yes',primary:true},{label:'Keep this run',value:'no'}]});if(choice!=='yes')return;}
  movementToken++;cancelGameLaunch();cancelCameraAnimation();store.boardTour=null;store.mapAspect=null;store.run=newRun(generateBoard(seed||undefined,turns,theme),setupNames,setupSelected,turns);store.run.mode=mode;if(mode==='horror'&&store.profile.horrorSeen){addHorrorBoard(store.run.board);store.run.horror=true;store.run.players.forEach(p=>p.node='horror-0');}store.run.raceToFinish=turns===999999&&mode!=='coop';store.run.endless=turns===999999&&mode==='coop';if(mode==='coop')store.run.mutation={remaining:999999,won:0};if(mode==='team')store.run.players.forEach((p,i)=>p.bench=mates[i]);store.profile.runs++;for(const p of store.run.players)if(perkType(p.character)==='survivor')p.shields++;
- logRun('A new route. The board has made no promises.');const pair=activatePair(store.run,store.profile);store.busy=true;focusBoardAction(store.run,store.run.players.map(p=>p.node));saveRun();setMusicZone(store.run.board.nodes[store.run.players[0].node].realm);audioContext();startMusic();if(!await playBoardIntro())return;if(pair)await introducePair(pair);store.run.players.forEach(q=>q.levelsSeen=[]);await showGentlemenCard();await announceLevel(store.run.players[0]);
+ logRun('A new route. The board has made no promises.');const pair=activatePair(store.run,store.profile);store.busy=true;focusBoardAction(store.run,store.run.players.map(p=>p.node));saveRun();setMusicZone(store.run.board.nodes[store.run.players[0].node].realm);audioContext();startMusic();if(!await playBoardIntro())return;if(pair)await introducePair(pair);store.run.players.forEach(q=>q.levelsSeen=[]);await showGentlemenCard();await showSmashCard();await announceLevel(store.run.players[0]);
 }
 
 async function playBoardIntro(){
@@ -134,6 +134,8 @@ async function stepTarget(run,p,token){
    const label=shortcut?`Shortcut · skip ${shortcut.skip} spaces`:bridge?`Bridge to ${lane?.name||'the next road'}`:(n.route?.name||n.pathName)||(o?obstacleType(o).name:'Main road · '+(run.board.realms[n.realm]?.title||SPACE_TYPES[n.type]));
    const detail=shortcut?'Cut across the switchback and get to the gate sooner, if you can get past what guards it.':bridge?'An optional crossing to the neighbouring road. You keep moving forward.':n.route?`${n.route.reward} ${n.route.risk}`:'Standard encounters ahead.';
    return optionView(run,from,{id:n.id,value:n.id,label,sub:`${shortcut?'':n.route?.spaces||n.pathRemaining?(n.route?.spaces||n.pathRemaining)+' spaces · ':''}${detail} ${o?obstacleRequirement(run,p,o):''}`.trim(),journey:journeyHint(run,p,n,from),disabled:!!o&&!solutions.length},i);});
+  // Buttons read left-to-right in the same order the roads sit on the map.
+  const across=v=>{const n=run.board.nodes[v.id];return [v.lane?v.lane.cx:n.x,n.x];};views.sort((a,b)=>{const A=across(a),B=across(b);return A[0]-B[0]||A[1]-B[1];});
   const choice=await showRoutePanel({title:'Choose your road',hint:'Tap a road to light it up on the map, then GO.',options:views});
   if(choice===null||token!==movementToken||store.run!==run)return null;
   target=options.find(n=>n.id===choice)||options[0];pending.routeDecision={from:p.node,targetId:target.id,applied:false};saveRun();
@@ -314,6 +316,8 @@ async function resolveLanding(){const run=store.run,token=movementToken;if(!run|
  // The home pack is an early encounter, never an instant starter unlock.
  if(run.turn>=homePackTurn(run)&&(!store.profile.shared.includes('kc')||!store.profile.shared.includes('mylo'))){await resolveEvent({id:'early-dogs',title:'Something is barking offscreen',source:'Home',body:'KC and Mylo join the shared roster. Then you continue the space you landed on.',effect:'dogs'},null,true);return;}
  if(p.finishedPlayer){await showDialog({title:'The end of your route',source:'ShambConkins',body:run.raceToFinish?`${p.name} is first to the final camp and wins the race! +8 finish bonus.`:`${p.name} reaches the final camp. +8 finish bonus. The other player can still complete their journey.`,choices:[{label:'Continue',value:'ok',primary:true}]});if(store.run!==run||movementToken!==token)return;endTurn();return;}
+ // Say what this space does before it happens.
+ if(run.board.warp?.id!=='pokemon'){const l=n.type==='location'&&location(n.location);await showLandingBanner(n.type,l?l.name:'');if(store.run!==run||movementToken!==token)return;}
  switch(n.type){
   case 'game':case 'minigame':case 'classic':await requestGame();break;
   case 'casino':await requestGame({filter:'casino'});break;
@@ -321,7 +325,8 @@ async function resolveLanding(){const run=store.run,token=movementToken;if(!run|
   case 'task':await requestGame({filter:'taskmaster'});break;
   case 'dice':await requestGame({id:'full-shambyahtzee'});break;
   case 'shop':await visitShop();break;
-  case 'event':{const ev=drawEvent(run,store.profile,random);if(ev.e?.[0]==='unlockChar'&&PK.isWildable(character(ev.e[1]))&&canRecruitReward(store.profile,ev.e[1],p.owner,'encounter')){logRun(`${p.name}: a wild ${character(ev.e[1]).name} appeared!`);await PK.wildEncounter(run,p,{id:ev.e[1],cause:'event'});if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}await resolveEvent(ev);break;}
+  case 'event':{let ev=drawEvent(run,store.profile,random);for(let i=0;i<6&&ev.question;i++)ev=drawEvent(run,store.profile,random);// Trivia lives on trivia spaces; a Chance card is a card.
+  if(ev.e?.[0]==='unlockChar'&&PK.isWildable(character(ev.e[1]))&&canRecruitReward(store.profile,ev.e[1],p.owner,'encounter')){logRun(`${p.name}: a wild ${character(ev.e[1]).name} appeared!`);await PK.wildEncounter(run,p,{id:ev.e[1],cause:'event'});if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}await resolveEvent(ev);break;}
   case 'trainer':await PK.trainerSpace(run,p);if(store.run!==run||movementToken!==token)return;run.roundsWithoutGame=0;endTurn();break;
   case 'grass':if(p.wildTurn!==run.turn&&random()<.55){await PK.wildEncounter(run,p);if(store.run!==run||movementToken!==token)return;}await finishEncounter();break;
   case 'center':await pokemonCenter(p);if(store.run!==run||movementToken!==token)return;await finishEncounter();break;
@@ -463,13 +468,13 @@ function installBoardGestures(){
  const points=new Map();let drag=null,pinch=null;
  const viewBox=map=>map.querySelector('svg')?.getAttribute('viewBox')?.split(' ').map(Number);
  const startPinch=map=>{const view=viewBox(map),[a,b]=[...points.values()];if(!view||!a||!b)return;pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,zoom:store.run.zoom||1.2};drag=null;store.run.camera='follow';store.run.focusNodes=null;store.run.pan={x:view[0]+view[2]/2,y:view[1]+view[3]/2};};
- document.addEventListener('pointerdown',ev=>{const map=ev.target.closest?.('#map-root');if(!map||store.busy||store.view!=='board')return;points.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(points.size>=2){startPinch(map);return;}const svg=map.querySelector('svg'),rect=map.getBoundingClientRect(),view=viewBox(map);if(!view)return;drag={id:ev.pointerId,x:ev.clientX,y:ev.clientY,cx:view[0]+view[2]/2,cy:view[1]+view[3]/2,sx:view[2]/rect.width,sy:view[3]/rect.height};try{map.setPointerCapture(ev.pointerId);}catch{}});
+ document.addEventListener('pointerdown',ev=>{const map=ev.target.closest?.('#map-root');if(!map||store.busy||store.view!=='board')return;endGesture(true);points.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(points.size>=2){startPinch(map);return;}const svg=map.querySelector('svg'),rect=map.getBoundingClientRect(),view=viewBox(map);if(!view)return;drag={id:ev.pointerId,x:ev.clientX,y:ev.clientY,cx:view[0]+view[2]/2,cy:view[1]+view[3]/2,sx:view[2]/rect.width,sy:view[3]/rect.height};try{map.setPointerCapture(ev.pointerId);}catch{}});
  document.addEventListener('pointermove',ev=>{if(points.has(ev.pointerId))points.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(!store.run||store.busy||store.view!=='board'){drag=null;pinch=null;return;}
-  if(pinch&&points.size>=2){const [a,b]=[...points.values()],d=Math.hypot(a.x-b.x,a.y-b.y);store.run.zoom=clamp(pinch.zoom*d/pinch.d,.35,3.2);store.suppressMapClickUntil=performance.now()+400;repaintCamera();return;}
-  if(!drag||ev.pointerId!==drag.id)return;if(Math.hypot(ev.clientX-drag.x,ev.clientY-drag.y)<6)return;store.suppressMapClickUntil=performance.now()+350;store.run.camera='follow';store.run.focusNodes=null;store.run.pan={x:drag.cx-(ev.clientX-drag.x)*drag.sx,y:drag.cy-(ev.clientY-drag.y)*drag.sy};repaintCamera();});
- const end=ev=>{points.delete(ev.pointerId);if(points.size<2)pinch=null;if(drag&&ev.pointerId===drag.id)drag=null;};
+  if(pinch&&points.size>=2){const [a,b]=[...points.values()],d=Math.hypot(a.x-b.x,a.y-b.y);store.run.zoom=clamp(pinch.zoom*d/pinch.d,.35,3.2);store.suppressMapClickUntil=performance.now()+400;gestureCamera();return;}
+  if(!drag||ev.pointerId!==drag.id)return;if(Math.hypot(ev.clientX-drag.x,ev.clientY-drag.y)<6)return;store.suppressMapClickUntil=performance.now()+350;store.run.camera='follow';store.run.focusNodes=null;store.run.pan={x:drag.cx-(ev.clientX-drag.x)*drag.sx,y:drag.cy-(ev.clientY-drag.y)*drag.sy};gestureCamera();});
+ const end=ev=>{const was=points.has(ev.pointerId);points.delete(ev.pointerId);if(was&&!points.size)endGesture(true);if(points.size<2)pinch=null;if(drag&&ev.pointerId===drag.id)drag=null;};
  document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end);
- document.addEventListener('wheel',ev=>{const map=ev.target.closest?.('#map-root');if(!map||!store.run||store.busy||store.view!=='board')return;ev.preventDefault();const view=viewBox(map);if(!view)return;store.run.camera='follow';store.run.focusNodes=null;store.run.pan={x:view[0]+view[2]/2,y:view[1]+view[3]/2};store.run.zoom=clamp((store.run.zoom||1.2)*(ev.deltaY<0?1.12:.89),.35,3.2);repaintCamera();},{passive:false});
+ document.addEventListener('wheel',ev=>{const map=ev.target.closest?.('#map-root');if(!map||!store.run||store.busy||store.view!=='board')return;ev.preventDefault();const view=viewBox(map);if(!view)return;store.run.camera='follow';store.run.focusNodes=null;store.run.pan={x:view[0]+view[2]/2,y:view[1]+view[3]/2};store.run.zoom=clamp((store.run.zoom||1.2)*(ev.deltaY<0?1.12:.89),.35,3.2);gestureCamera();},{passive:false});
 }
 
 // Character select: the selected heads slowly cycle through their expressions.

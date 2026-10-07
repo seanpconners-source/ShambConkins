@@ -12,7 +12,7 @@ if(mode==='bag'){
  await page.waitForTimeout(300);await page.evaluate(()=>document.querySelector('[data-action=item][data-index="0"]')?.click());
 }else{
  await page.evaluate(id=>{const S=window.ShambConkins,run=S.store.run,p=run.players[run.current];const all=S.items.splice(0);S.items.push(...all.filter(i=>i.id===id));window.__restoreItems=()=>{S.items.splice(0);S.items.push(...all);};run.board.obstacles=[];const n=Object.values(run.board.nodes).find(n=>n.type==='item');p.node=n.id;S.focusBoardAction(run);S.updateBoard(true);S.resolveLanding();},item);
- await page.waitForTimeout(900);await page.evaluate(()=>window.__restoreItems());
+ await page.waitForTimeout(2000);await page.evaluate(()=>window.__restoreItems());
  await page.screenshot({path:'/tmp/claude-0/sc/found-'+item+'.png'});
 }
 const seen=[];let started=false;

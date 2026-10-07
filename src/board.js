@@ -9,9 +9,11 @@ const {buildGridBoard,layoutHorrorGrid}=require("src/gridBoard.js");
 const REALMS = ['mind','body','spirit'];
 // Pokémon spaces (trainer tiles on the board, the Pokémon warp zone's route).
 const POKEMON_SPACES={trainer:'Trainer battle',grass:'Tall grass',center:'Pokémon Center',pkitem:'Item ball',path:'Route'};
-const SPACE_TYPES = { start:'Camp',game:'Minigame',event:'Encounter card',item:'Supply cache',bonus:'Good fortune',penalty:'Bad luck',location:'Landmark',task:'Taskmaster minigame',trivia:'Trivia duel',casino:'Casino',dice:'Full Yahtzee',shop:'Quark’s shop',gate:'Realm gate',warp:'Warp pipe' };
-const SPACE_ICONS = { start:'⚑',game:'MG',event:'?',item:'◆',bonus:'+',penalty:'−',location:'⌂',task:'TASK',trivia:'Q&A',casino:'♠',dice:'⚄',shop:'SHOP',gate:'✦',warp:'🌀' };
+const SPACE_TYPES = { start:'Camp',game:'Minigame',event:'Chance card',item:'Supply cache',bonus:'Good fortune',penalty:'Bad luck',location:'Landmark',task:'Taskmaster minigame',trivia:'Trivia duel',casino:'Casino',dice:'Full Yahtzee',shop:'Quark’s shop',gate:'Realm gate',warp:'Warp pipe' };
+const SPACE_ICONS = { start:'⚑',game:'🎮',event:'🃏',item:'◆',bonus:'+',penalty:'−',location:'⌂',task:'📋',trivia:'Q&A',casino:'♠',dice:'⚄',shop:'🛒',gate:'✦',warp:'🌀' };
 Object.assign(SPACE_TYPES,POKEMON_SPACES);for(const k of Object.keys(POKEMON_SPACES))SPACE_ICONS[k]='';
+// One word under every grid tile: what landing there does.
+const SPACE_CAPTIONS = { start:'CAMP',game:'MINIGAME',event:'CHANCE',item:'ITEM',bonus:'BONUS',penalty:'BAD LUCK',location:'LANDMARK',task:'TASK',trivia:'TRIVIA',casino:'CASINO',dice:'YAHTZEE',shop:'SHOP',gate:'GATE',warp:'WARP',trainer:'BATTLE',grass:'GRASS',center:'HEAL',pkitem:'ITEM' };
 const ZONE_COLORS = {mind:'#f8e7a6',body:'#f4aa7f',spirit:'#c6a8ee',horror:'#9e1d28','upside-down':'#512633'};
 const aliases={n0:'mind-start',n1:'mind-1-0',n2:'mind-2-0',n3:'mind-3-0',n4:'mind-4-0',n42:'mind-gate',n44:'body-start',n90:'body-gate',n92:'spirit-start',n137:'spirit-gate'};
 const rename=id=>aliases[id]||id;
@@ -72,4 +74,4 @@ function routeOptions(run,nodeId){return (run.board.nodes[nodeId]?.next||[]).map
 function advanceAlong(run,player,steps,lanePreference=0){for(let i=0;i<Math.abs(steps);i++){if(steps<0){const previous=player.visited.pop();if(previous)player.node=previous;else break;}else{const opts=routeOptions(run,player.node);if(!opts.length)break;player.visited.push(player.node);player.node=(opts.find(n=>n.lane===lanePreference)||opts[0]).id;}}return player.node;}
 function evolveBoard(run,random=Math.random){if(run.board.warp?.id==='pokemon')return false;const protectedIds=new Set(run.players.flatMap(p=>[p.node,...p.visited])),realm=run.board.nodes[run.players[run.current].node].realm;const list=shuffle(run.board.realms[realm].ids.map(id=>run.board.nodes[id]).filter(n=>!protectedIds.has(n.id)&&n.col>1&&!['start','gate','location','trivia','trainer'].includes(n.type)&&!n.route),random).slice(0,6);for(const n of list){const type=pick(['game','game','event','event','item','item','bonus','penalty','casino','dice','trivia','task'],random);n.type=type==='task'&&run.board.realms[realm].ids.some(id=>run.board.nodes[id].type==='task')?'game':type;}run.board.pulse=(run.board.pulse||0)+1;return list.length;}
 
-Object.assign(exports,{REALMS,SPACE_TYPES,SPACE_ICONS,ZONE_COLORS,ROUTES,proceduralTrail,generateLegacyBoard,generateBoard,balanceEncounters,sourceForSign,addHorrorBoard,routeOptions,advanceAlong,evolveBoard});
+Object.assign(exports,{REALMS,SPACE_TYPES,SPACE_ICONS,SPACE_CAPTIONS,ZONE_COLORS,ROUTES,proceduralTrail,generateLegacyBoard,generateBoard,balanceEncounters,sourceForSign,addHorrorBoard,routeOptions,advanceAlong,evolveBoard});

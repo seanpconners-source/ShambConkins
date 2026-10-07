@@ -48,4 +48,14 @@ const nowPlaying=()=>music.nowPlaying();
 const pickupClocks=new WeakMap();
 function pickupSound(session){const now=performance.now();if(now-(pickupClocks.get(session)??-Infinity)<85)return false;pickupClocks.set(session,now);sound('pickup');return true;}
 
-Object.assign(exports,{audioContext,tone,sound,vibrate,setMusicZone,setMusicScene,playFanfare,startMusic,stopMusic,pickupSound,playMetal,stopMetal,holdMusic,releaseMusic,playQuartet,nowPlaying});
+// Breaking glass: a bright noise crack, a low thud and a scatter of tinkling shards. Synthesised, no samples.
+let glassNoise=null;
+function glassSmash(volume=.5){
+ if(!store.profile?.settings.sound)return;const a=audioContext();if(!a)return;const t=a.currentTime;
+ if(!glassNoise){glassNoise=a.createBuffer(1,Math.floor(a.sampleRate*.6),a.sampleRate);const d=glassNoise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.2);}
+ const out=a.createGain();out.gain.value=volume;out.connect(a.destination);
+ const n=a.createBufferSource(),hp=a.createBiquadFilter(),ng=a.createGain();n.buffer=glassNoise;hp.type='highpass';hp.frequency.value=2600;ng.gain.setValueAtTime(.9,t);ng.gain.exponentialRampToValueAtTime(.001,t+.45);n.connect(hp);hp.connect(ng);ng.connect(out);n.start(t);n.stop(t+.5);
+ const o=a.createOscillator(),og=a.createGain();o.type='sine';o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);og.gain.setValueAtTime(.7,t);og.gain.exponentialRampToValueAtTime(.001,t+.16);o.connect(og);og.connect(out);o.start(t);o.stop(t+.18);
+ for(let i=0;i<9;i++){const at=t+.01+Math.random()*.32,s=a.createOscillator(),g=a.createGain();s.type=i%2?'triangle':'sine';s.frequency.value=2200+Math.random()*4800;g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(.16+Math.random()*.12,at+.004);g.gain.exponentialRampToValueAtTime(.0001,at+.07+Math.random()*.12);s.connect(g);g.connect(out);s.start(at);s.stop(at+.22);}
+}
+Object.assign(exports,{glassSmash,audioContext,tone,sound,vibrate,setMusicZone,setMusicScene,playFanfare,startMusic,stopMusic,pickupSound,playMetal,stopMetal,holdMusic,releaseMusic,playQuartet,nowPlaying});

@@ -867,3 +867,28 @@ body.gb-open{overflow:hidden}
 .pk-scene .pk-sign-big{font-size:26px}
 .pk-scene .pk-trainer-name{font-size:12px;fill:#fff;paint-order:stroke;stroke:#282828;stroke-width:4px}
 .pk-scene .pk-trainer.beaten{opacity:.55}
+/* Smooth board: the grid board's scenery holds still (looping decorations repainted the whole SVG every frame),
+   and while the camera moves the SVG is a GPU layer that skips hit-testing. */
+.board-svg[data-grid] .jr-biome *,.board-svg[data-grid] [class^="bi-"],.board-svg[data-grid] [class*=" bi-"],.board-svg[data-grid] .map-space circle,.board-svg[data-grid] .warp-pipe *{animation:none!important}
+.board-svg.cam-moving{pointer-events:none;will-change:transform}
+/* "SMASH 'EM UP!!" interstitial between the Gentlemen card and Level I. */
+.smash-card{position:fixed;inset:0;z-index:730;background:#0a0000;overflow:hidden;cursor:pointer;display:grid;place-items:center}
+.smash-card canvas{position:absolute;inset:0;width:100%;height:100%}
+.smash-card .sm-word{position:relative;display:grid;justify-items:center;line-height:.86;translate:var(--shake,0 0);rotate:-6deg;font:900 clamp(64px,21vw,190px)/.86 Impact,"Arial Black",Arial,sans-serif;letter-spacing:.02em;color:#ffe14a;-webkit-text-stroke:3px #000;text-shadow:0 0 0 #000,6px 6px 0 #d0101c,12px 12px 0 #000;animation:sm-slam .32s cubic-bezier(.2,1.6,.4,1) both}
+.smash-card .sm-word span:last-child{color:#fff;font-size:.62em;animation:sm-slam .3s .32s cubic-bezier(.2,1.6,.4,1) both}
+.smash-card.still .sm-word,.smash-card.still .sm-word span{animation:none}
+@keyframes sm-slam{0%{transform:scale(3.2) rotate(8deg);opacity:0}60%{opacity:1}100%{transform:scale(1) rotate(0)}}
+/* Grid tiles: icon on top, one word below that says what the space does. */
+.board-svg[data-grid] .map-space .space-symbol{transform:translateY(-9px)}
+.board-svg[data-grid] .map-space .space-caption{font:900 13.5px "Arial Black",Arial,sans-serif;letter-spacing:.04em;text-anchor:middle;dominant-baseline:central;fill:#fff;paint-order:stroke;stroke:#000000b0;stroke-width:4px;stroke-linejoin:round;pointer-events:none}
+.board-svg[data-grid] .map-space.type-trainer .space-caption{transform:translateY(-2px)}
+/* Landing banner: what the space you landed on does. */
+.landing-banner{position:fixed;inset:0;z-index:700;display:grid;place-items:center;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,#0008 0%,#0000 70%)}
+.landing-banner .lb-band{display:grid;justify-items:center;gap:2px;width:100%;padding:16px 12px 14px;background:linear-gradient(180deg,color-mix(in srgb,var(--lb) 88%,#fff 12%),color-mix(in srgb,var(--lb) 70%,#000 30%));border-block:4px solid #000;box-shadow:0 0 0 3px #fff3,0 12px 40px #000a;transform:skewY(-4deg);animation:lb-in .26s cubic-bezier(.2,1.5,.4,1) both}
+.landing-banner .lb-icon{font-size:40px;line-height:1;filter:drop-shadow(0 3px 0 #0006)}
+.landing-banner b{font:900 clamp(38px,12vw,84px)/1 "Arial Black",Impact,Arial,sans-serif;letter-spacing:.04em;color:#fff;-webkit-text-stroke:2px #000;text-shadow:0 5px 0 #000}
+.landing-banner small{font:800 14px Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#fff;text-shadow:0 2px 0 #000}
+.landing-banner.leaving .lb-band{animation:lb-out .18s ease-in both}
+.landing-banner.still .lb-band{animation:none}
+@keyframes lb-in{0%{transform:skewY(-4deg) scaleY(0);opacity:0}100%{transform:skewY(-4deg) scaleY(1);opacity:1}}
+@keyframes lb-out{to{transform:skewY(-4deg) translateX(110%);opacity:0}}

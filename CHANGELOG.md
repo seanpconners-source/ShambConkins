@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.51.0
+
+**Road choices line up with the map.** The buttons under the map are now in the same left-to-right order as the
+roads they lead to (also for bridges and shortcuts). Roads at a fork are a free choice again: Level 1 never bars a
+road, and later levels only occasionally (about 3 in 10) bar one adventurous road. Shortcuts and bridges keep their
+requirements.
+
+**Smoother board.** Pinch, wheel and drag now slide the already-drawn board on the GPU and redraw it once when the
+gesture settles; camera glides between spaces do the same (two redraws instead of one per frame). Each step only
+swaps the parts of the board that changed (usually the player heads) instead of rebuilding ~5,000 SVG elements, so
+a board update costs ~40 ms instead of ~170 ms. The looping scenery animations (blinking, drifting, spinning) on grid
+boards are off: they made the background jitter and repainted the whole board every frame.
+
+**Every space says what it does.** Each grid tile shows one word under its icon: MINIGAME, TRIVIA, BATTLE, CHANCE,
+ITEM, BONUS, BAD LUCK, SHOP, CASINO, YAHTZEE, TASK, WARP. Landing on a space flashes a big banner naming the action
+before it starts. Most of the old "?" encounter spaces became battles or trivia on new boards; the rest are Chance
+cards (🃏), which never turn into a trivia question. Minigame, task and shop icons are now 🎮 📋 🛒.
+
+**SMASH 'EM UP!!** Between the Gentlemen card and the Level I metal card: a hard cut to bottles and glasses
+shattering with breaking-glass sounds and a giant "SMASH 'EM UP!!".
+
 ## v0.50.0
 
 **Pokémon battles, Game Boy style.** Wild characters now jump out at you while you walk the board: every step has a

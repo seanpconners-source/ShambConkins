@@ -208,6 +208,9 @@ function buildGridBoard(board){
   // Pokémon trainer battles: Poké Ball spaces on two of the three roads (own random stream,
   // so the rest of the layout matches older builds).
   {const tr=seededRandom(board.seed+':trainers:'+realm);for(const lane of shuffle([0,1,2],tr).slice(0,2)){const path=tracks[lane],options=path.map((id,i)=>({id,i})).filter(q=>q.i>=3&&q.i<path.length-3&&['event','bonus','penalty'].includes(board.nodes[q.id].type));if(options.length)board.nodes[options[Math.floor(tr()*options.length)].id].type='trainer';}}
+  // Deliberate spaces: most leftover encounter cards become a named action (a battle or
+  // trivia); the rest stay Chance cards. Own random stream, so the layout above is unchanged.
+  {let k=0;const plan=['trainer','event','trivia','trainer','event'];for(const path of tracks)for(const id of path){const n=board.nodes[id];if(n.type==='event')n.type=plan[k++%plan.length];}}
   const height=cellXY(0,R1+4,0).y;
   Object.assign(data,{color:GROUND_BASE[realm],height,cols:gate.col,paths:tracks,lanes:laneInfo,fork,stem,gridRows:{top:TOP,fork:R0,gate:R1,style}});
   board.pathNetworks.push({realm,fork,paths:tracks,lengths,difficulties:DIFFICULTY});

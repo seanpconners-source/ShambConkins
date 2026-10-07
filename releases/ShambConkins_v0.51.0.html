@@ -868,6 +868,31 @@ body.gb-open{overflow:hidden}
 .pk-scene .pk-sign-big{font-size:26px}
 .pk-scene .pk-trainer-name{font-size:12px;fill:#fff;paint-order:stroke;stroke:#282828;stroke-width:4px}
 .pk-scene .pk-trainer.beaten{opacity:.55}
+/* Smooth board: the grid board's scenery holds still (looping decorations repainted the whole SVG every frame),
+   and while the camera moves the SVG is a GPU layer that skips hit-testing. */
+.board-svg[data-grid] .jr-biome *,.board-svg[data-grid] [class^="bi-"],.board-svg[data-grid] [class*=" bi-"],.board-svg[data-grid] .map-space circle,.board-svg[data-grid] .warp-pipe *{animation:none!important}
+.board-svg.cam-moving{pointer-events:none;will-change:transform}
+/* "SMASH 'EM UP!!" interstitial between the Gentlemen card and Level I. */
+.smash-card{position:fixed;inset:0;z-index:730;background:#0a0000;overflow:hidden;cursor:pointer;display:grid;place-items:center}
+.smash-card canvas{position:absolute;inset:0;width:100%;height:100%}
+.smash-card .sm-word{position:relative;display:grid;justify-items:center;line-height:.86;translate:var(--shake,0 0);rotate:-6deg;font:900 clamp(64px,21vw,190px)/.86 Impact,"Arial Black",Arial,sans-serif;letter-spacing:.02em;color:#ffe14a;-webkit-text-stroke:3px #000;text-shadow:0 0 0 #000,6px 6px 0 #d0101c,12px 12px 0 #000;animation:sm-slam .32s cubic-bezier(.2,1.6,.4,1) both}
+.smash-card .sm-word span:last-child{color:#fff;font-size:.62em;animation:sm-slam .3s .32s cubic-bezier(.2,1.6,.4,1) both}
+.smash-card.still .sm-word,.smash-card.still .sm-word span{animation:none}
+@keyframes sm-slam{0%{transform:scale(3.2) rotate(8deg);opacity:0}60%{opacity:1}100%{transform:scale(1) rotate(0)}}
+/* Grid tiles: icon on top, one word below that says what the space does. */
+.board-svg[data-grid] .map-space .space-symbol{transform:translateY(-9px)}
+.board-svg[data-grid] .map-space .space-caption{font:900 13.5px "Arial Black",Arial,sans-serif;letter-spacing:.04em;text-anchor:middle;dominant-baseline:central;fill:#fff;paint-order:stroke;stroke:#000000b0;stroke-width:4px;stroke-linejoin:round;pointer-events:none}
+.board-svg[data-grid] .map-space.type-trainer .space-caption{transform:translateY(-2px)}
+/* Landing banner: what the space you landed on does. */
+.landing-banner{position:fixed;inset:0;z-index:700;display:grid;place-items:center;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,#0008 0%,#0000 70%)}
+.landing-banner .lb-band{display:grid;justify-items:center;gap:2px;width:100%;padding:16px 12px 14px;background:linear-gradient(180deg,color-mix(in srgb,var(--lb) 88%,#fff 12%),color-mix(in srgb,var(--lb) 70%,#000 30%));border-block:4px solid #000;box-shadow:0 0 0 3px #fff3,0 12px 40px #000a;transform:skewY(-4deg);animation:lb-in .26s cubic-bezier(.2,1.5,.4,1) both}
+.landing-banner .lb-icon{font-size:40px;line-height:1;filter:drop-shadow(0 3px 0 #0006)}
+.landing-banner b{font:900 clamp(38px,12vw,84px)/1 "Arial Black",Impact,Arial,sans-serif;letter-spacing:.04em;color:#fff;-webkit-text-stroke:2px #000;text-shadow:0 5px 0 #000}
+.landing-banner small{font:800 14px Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#fff;text-shadow:0 2px 0 #000}
+.landing-banner.leaving .lb-band{animation:lb-out .18s ease-in both}
+.landing-banner.still .lb-band{animation:none}
+@keyframes lb-in{0%{transform:skewY(-4deg) scaleY(0);opacity:0}100%{transform:skewY(-4deg) scaleY(1);opacity:1}}
+@keyframes lb-out{to{transform:skewY(-4deg) translateX(110%);opacity:0}}
 
 /* ==========================================================================
    v0.47 interface theme: the title screen's dark arcade look on every menu,
@@ -1211,12 +1236,12 @@ const {selectItemDrop, selectItemStock}=require("src/itemDrops.js");
 const {drawEvent, applyEvent, RARE_EVENTS}=require("src/events.js");
 const {showLevelCard,dismissLevelCard}=require("src/levelCard.js");
 const {levelLabel,levelInfo}=require("src/levels.js");
-const {showBossCard,showDragBanner,showGentlemenCard}=require("src/levelCard.js");
+const {showBossCard,showDragBanner,showGentlemenCard,showSmashCard,showLandingBanner}=require("src/levelCard.js");
 const {warpTransition}=require("src/warpFx.js");
 const {buildWarpBoard,pickWarpId,WARP_DEFS}=require("src/warpBoards.js");
 const {ensureLevelBosses,bossById,castleName}=require("src/bossGate.js");
 const {GAMES, PHONE_TASK, gameById}=require("src/gameRegistry.js");
-const {refitCatalog, showView, updateBoard, showDialog, resolveDialog, closeDialog, unlockDialog, toast, repaintCamera, cancelCameraAnimation, clearBoardDetailObserver, refreshPortraits}=require("src/ui.js");
+const {refitCatalog, showView, updateBoard, showDialog, resolveDialog, closeDialog, unlockDialog, toast, repaintCamera, gestureCamera, endGesture, cancelCameraAnimation, clearBoardDetailObserver, refreshPortraits}=require("src/ui.js");
 const {applyTheme}=require("src/theme.js");
 const {brandHTML, portraitHTML, locationArtHTML, itemArtHTML}=require("src/assets.js");
 const {configureLauncher, requestGame, cancelGameLaunch, exitGame, presentResult}=require("src/gameLauncher.js");
@@ -1272,7 +1297,7 @@ function home(){setMusicZone('home');if(store.profile?.settings.music)startMusic
 function captureSetup(){setupNames=[0,1].map(i=>document.getElementById(`player-name-${i}`)?.value||setupNames[i]);}
 async function startRun(){captureSetup();if(!differentCharacters(...setupSelected))return toast('Choose two different characters.');if(setupSelected.some((id,i)=>!availableCharacters(store.profile,i?'Amber':'Sean').includes(id)))return toast('Choose a character you have unlocked.');const turns=+document.getElementById('run-length').value;const theme=document.getElementById('board-theme')?.value||'Mashup',mode=document.getElementById('game-mode')?.value||'versus';const mates=[0,1].map(i=>document.getElementById(`team-mate-${i}`)?.value);if(mode==='team'&&(mates.some(id=>!id)||new Set([...setupSelected,...mates].map(characterIdentity)).size!==4))return toast('Team Relay needs four different unlocked characters.');const seed=document.getElementById('run-seed').value.trim();if(store.run&&!store.run.finished){const choice=await showDialog({title:'Start a fresh expedition?',body:'Your current run will be replaced. Every character unlock and all lifetime XP carry forward.',choices:[{label:'Start fresh',value:'yes',primary:true},{label:'Keep this run',value:'no'}]});if(choice!=='yes')return;}
  movementToken++;cancelGameLaunch();cancelCameraAnimation();store.boardTour=null;store.mapAspect=null;store.run=newRun(generateBoard(seed||undefined,turns,theme),setupNames,setupSelected,turns);store.run.mode=mode;if(mode==='horror'&&store.profile.horrorSeen){addHorrorBoard(store.run.board);store.run.horror=true;store.run.players.forEach(p=>p.node='horror-0');}store.run.raceToFinish=turns===999999&&mode!=='coop';store.run.endless=turns===999999&&mode==='coop';if(mode==='coop')store.run.mutation={remaining:999999,won:0};if(mode==='team')store.run.players.forEach((p,i)=>p.bench=mates[i]);store.profile.runs++;for(const p of store.run.players)if(perkType(p.character)==='survivor')p.shields++;
- logRun('A new route. The board has made no promises.');const pair=activatePair(store.run,store.profile);store.busy=true;focusBoardAction(store.run,store.run.players.map(p=>p.node));saveRun();setMusicZone(store.run.board.nodes[store.run.players[0].node].realm);audioContext();startMusic();if(!await playBoardIntro())return;if(pair)await introducePair(pair);store.run.players.forEach(q=>q.levelsSeen=[]);await showGentlemenCard();await announceLevel(store.run.players[0]);
+ logRun('A new route. The board has made no promises.');const pair=activatePair(store.run,store.profile);store.busy=true;focusBoardAction(store.run,store.run.players.map(p=>p.node));saveRun();setMusicZone(store.run.board.nodes[store.run.players[0].node].realm);audioContext();startMusic();if(!await playBoardIntro())return;if(pair)await introducePair(pair);store.run.players.forEach(q=>q.levelsSeen=[]);await showGentlemenCard();await showSmashCard();await announceLevel(store.run.players[0]);
 }
 
 async function playBoardIntro(){
@@ -1330,6 +1355,8 @@ async function stepTarget(run,p,token){
    const label=shortcut?`Shortcut · skip ${shortcut.skip} spaces`:bridge?`Bridge to ${lane?.name||'the next road'}`:(n.route?.name||n.pathName)||(o?obstacleType(o).name:'Main road · '+(run.board.realms[n.realm]?.title||SPACE_TYPES[n.type]));
    const detail=shortcut?'Cut across the switchback and get to the gate sooner, if you can get past what guards it.':bridge?'An optional crossing to the neighbouring road. You keep moving forward.':n.route?`${n.route.reward} ${n.route.risk}`:'Standard encounters ahead.';
    return optionView(run,from,{id:n.id,value:n.id,label,sub:`${shortcut?'':n.route?.spaces||n.pathRemaining?(n.route?.spaces||n.pathRemaining)+' spaces · ':''}${detail} ${o?obstacleRequirement(run,p,o):''}`.trim(),journey:journeyHint(run,p,n,from),disabled:!!o&&!solutions.length},i);});
+  // Buttons read left-to-right in the same order the roads sit on the map.
+  const across=v=>{const n=run.board.nodes[v.id];return [v.lane?v.lane.cx:n.x,n.x];};views.sort((a,b)=>{const A=across(a),B=across(b);return A[0]-B[0]||A[1]-B[1];});
   const choice=await showRoutePanel({title:'Choose your road',hint:'Tap a road to light it up on the map, then GO.',options:views});
   if(choice===null||token!==movementToken||store.run!==run)return null;
   target=options.find(n=>n.id===choice)||options[0];pending.routeDecision={from:p.node,targetId:target.id,applied:false};saveRun();
@@ -1510,6 +1537,8 @@ async function resolveLanding(){const run=store.run,token=movementToken;if(!run|
  // The home pack is an early encounter, never an instant starter unlock.
  if(run.turn>=homePackTurn(run)&&(!store.profile.shared.includes('kc')||!store.profile.shared.includes('mylo'))){await resolveEvent({id:'early-dogs',title:'Something is barking offscreen',source:'Home',body:'KC and Mylo join the shared roster. Then you continue the space you landed on.',effect:'dogs'},null,true);return;}
  if(p.finishedPlayer){await showDialog({title:'The end of your route',source:'ShambConkins',body:run.raceToFinish?`${p.name} is first to the final camp and wins the race! +8 finish bonus.`:`${p.name} reaches the final camp. +8 finish bonus. The other player can still complete their journey.`,choices:[{label:'Continue',value:'ok',primary:true}]});if(store.run!==run||movementToken!==token)return;endTurn();return;}
+ // Say what this space does before it happens.
+ if(run.board.warp?.id!=='pokemon'){const l=n.type==='location'&&location(n.location);await showLandingBanner(n.type,l?l.name:'');if(store.run!==run||movementToken!==token)return;}
  switch(n.type){
   case 'game':case 'minigame':case 'classic':await requestGame();break;
   case 'casino':await requestGame({filter:'casino'});break;
@@ -1517,7 +1546,8 @@ async function resolveLanding(){const run=store.run,token=movementToken;if(!run|
   case 'task':await requestGame({filter:'taskmaster'});break;
   case 'dice':await requestGame({id:'full-shambyahtzee'});break;
   case 'shop':await visitShop();break;
-  case 'event':{const ev=drawEvent(run,store.profile,random);if(ev.e?.[0]==='unlockChar'&&PK.isWildable(character(ev.e[1]))&&canRecruitReward(store.profile,ev.e[1],p.owner,'encounter')){logRun(`${p.name}: a wild ${character(ev.e[1]).name} appeared!`);await PK.wildEncounter(run,p,{id:ev.e[1],cause:'event'});if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}await resolveEvent(ev);break;}
+  case 'event':{let ev=drawEvent(run,store.profile,random);for(let i=0;i<6&&ev.question;i++)ev=drawEvent(run,store.profile,random);// Trivia lives on trivia spaces; a Chance card is a card.
+  if(ev.e?.[0]==='unlockChar'&&PK.isWildable(character(ev.e[1]))&&canRecruitReward(store.profile,ev.e[1],p.owner,'encounter')){logRun(`${p.name}: a wild ${character(ev.e[1]).name} appeared!`);await PK.wildEncounter(run,p,{id:ev.e[1],cause:'event'});if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}await resolveEvent(ev);break;}
   case 'trainer':await PK.trainerSpace(run,p);if(store.run!==run||movementToken!==token)return;run.roundsWithoutGame=0;endTurn();break;
   case 'grass':if(p.wildTurn!==run.turn&&random()<.55){await PK.wildEncounter(run,p);if(store.run!==run||movementToken!==token)return;}await finishEncounter();break;
   case 'center':await pokemonCenter(p);if(store.run!==run||movementToken!==token)return;await finishEncounter();break;
@@ -1659,13 +1689,13 @@ function installBoardGestures(){
  const points=new Map();let drag=null,pinch=null;
  const viewBox=map=>map.querySelector('svg')?.getAttribute('viewBox')?.split(' ').map(Number);
  const startPinch=map=>{const view=viewBox(map),[a,b]=[...points.values()];if(!view||!a||!b)return;pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,zoom:store.run.zoom||1.2};drag=null;store.run.camera='follow';store.run.focusNodes=null;store.run.pan={x:view[0]+view[2]/2,y:view[1]+view[3]/2};};
- document.addEventListener('pointerdown',ev=>{const map=ev.target.closest?.('#map-root');if(!map||store.busy||store.view!=='board')return;points.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(points.size>=2){startPinch(map);return;}const svg=map.querySelector('svg'),rect=map.getBoundingClientRect(),view=viewBox(map);if(!view)return;drag={id:ev.pointerId,x:ev.clientX,y:ev.clientY,cx:view[0]+view[2]/2,cy:view[1]+view[3]/2,sx:view[2]/rect.width,sy:view[3]/rect.height};try{map.setPointerCapture(ev.pointerId);}catch{}});
+ document.addEventListener('pointerdown',ev=>{const map=ev.target.closest?.('#map-root');if(!map||store.busy||store.view!=='board')return;endGesture(true);points.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(points.size>=2){startPinch(map);return;}const svg=map.querySelector('svg'),rect=map.getBoundingClientRect(),view=viewBox(map);if(!view)return;drag={id:ev.pointerId,x:ev.clientX,y:ev.clientY,cx:view[0]+view[2]/2,cy:view[1]+view[3]/2,sx:view[2]/rect.width,sy:view[3]/rect.height};try{map.setPointerCapture(ev.pointerId);}catch{}});
  document.addEventListener('pointermove',ev=>{if(points.has(ev.pointerId))points.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});if(!store.run||store.busy||store.view!=='board'){drag=null;pinch=null;return;}
-  if(pinch&&points.size>=2){const [a,b]=[...points.values()],d=Math.hypot(a.x-b.x,a.y-b.y);store.run.zoom=clamp(pinch.zoom*d/pinch.d,.35,3.2);store.suppressMapClickUntil=performance.now()+400;repaintCamera();return;}
-  if(!drag||ev.pointerId!==drag.id)return;if(Math.hypot(ev.clientX-drag.x,ev.clientY-drag.y)<6)return;store.suppressMapClickUntil=performance.now()+350;store.run.camera='follow';store.run.focusNodes=null;store.run.pan={x:drag.cx-(ev.clientX-drag.x)*drag.sx,y:drag.cy-(ev.clientY-drag.y)*drag.sy};repaintCamera();});
- const end=ev=>{points.delete(ev.pointerId);if(points.size<2)pinch=null;if(drag&&ev.pointerId===drag.id)drag=null;};
+  if(pinch&&points.size>=2){const [a,b]=[...points.values()],d=Math.hypot(a.x-b.x,a.y-b.y);store.run.zoom=clamp(pinch.zoom*d/pinch.d,.35,3.2);store.suppressMapClickUntil=performance.now()+400;gestureCamera();return;}
+  if(!drag||ev.pointerId!==drag.id)return;if(Math.hypot(ev.clientX-drag.x,ev.clientY-drag.y)<6)return;store.suppressMapClickUntil=performance.now()+350;store.run.camera='follow';store.run.focusNodes=null;store.run.pan={x:drag.cx-(ev.clientX-drag.x)*drag.sx,y:drag.cy-(ev.clientY-drag.y)*drag.sy};gestureCamera();});
+ const end=ev=>{const was=points.has(ev.pointerId);points.delete(ev.pointerId);if(was&&!points.size)endGesture(true);if(points.size<2)pinch=null;if(drag&&ev.pointerId===drag.id)drag=null;};
  document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end);
- document.addEventListener('wheel',ev=>{const map=ev.target.closest?.('#map-root');if(!map||!store.run||store.busy||store.view!=='board')return;ev.preventDefault();const view=viewBox(map);if(!view)return;store.run.camera='follow';store.run.focusNodes=null;store.run.pan={x:view[0]+view[2]/2,y:view[1]+view[3]/2};store.run.zoom=clamp((store.run.zoom||1.2)*(ev.deltaY<0?1.12:.89),.35,3.2);repaintCamera();},{passive:false});
+ document.addEventListener('wheel',ev=>{const map=ev.target.closest?.('#map-root');if(!map||!store.run||store.busy||store.view!=='board')return;ev.preventDefault();const view=viewBox(map);if(!view)return;store.run.camera='follow';store.run.focusNodes=null;store.run.pan={x:view[0]+view[2]/2,y:view[1]+view[3]/2};store.run.zoom=clamp((store.run.zoom||1.2)*(ev.deltaY<0?1.12:.89),.35,3.2);gestureCamera();},{passive:false});
 }
 
 // Character select: the selected heads slowly cycle through their expressions.
@@ -9144,7 +9174,7 @@ Object.assign(exports,{LEGENDS_ITEMS});
 
 },
 "src/version.js":(exports,require)=>{
-const VERSION='0.50.0';
+const VERSION='0.51.0';
 Object.assign(exports,{VERSION});
 
 },
@@ -9208,7 +9238,7 @@ Object.assign(exports,{humiliation,HUMILIATIONS,LEVELS,LEVEL_ORDER,levelInfo,lev
 // Full-screen "title card" shown when a player begins a level, in the spirit of
 // Charlie and Frank announcing each level of Chardee MacDennis.
 const {store}=require("src/state.js");
-const {tone,playMetal,stopMetal,playQuartet,holdMusic,releaseMusic}=require("src/audio.js");
+const {glassSmash,tone,playMetal,stopMetal,playQuartet,holdMusic,releaseMusic}=require("src/audio.js");
 const {levelInfo}=require("src/levels.js");
 const {escapeHTML:e}=require("src/utils.js");
 
@@ -9287,6 +9317,62 @@ function showGentlemenCard(){
  });
 }
 Object.assign(exports,{showGentlemenCard});
+
+// Between the Gentlemen card and Level I: a hard cut to bottles and glasses smashing
+// and "SMASH 'EM UP!!", then the metal title card. Short and jarring on purpose.
+function showSmashCard(){
+ const reduced=store.profile?.settings.reducedMotion,total=reduced?700:1500;
+ return new Promise(resolve=>{
+  const node=document.createElement('div');node.className=`smash-card ${reduced?'still':''}`;node.setAttribute('role','dialog');node.setAttribute('aria-label',"Smash 'em up");
+  node.innerHTML=`<canvas></canvas><div class="sm-word"><span>SMASH</span><span>'EM UP!!</span></div>`;
+  document.body.append(node);
+  const canvas=node.querySelector('canvas'),ctx=canvas.getContext('2d'),dpr=Math.min(2,window.devicePixelRatio||1);
+  const W=canvas.width=Math.round(innerWidth*dpr),H=canvas.height=Math.round(innerHeight*dpr),u=Math.min(W,H)/100;
+  const GLASS=['#9fe8c8','#6fbf5a','#c98a3a','#e9f6ff','#b3e1ff','#7a3b18'];
+  // Bottles and glasses that each get smashed at their own moment.
+  const things=[[.22,.3,0,'bottle'],[.78,.26,.18,'glass'],[.5,.66,.34,'bottle'],[.16,.74,.5,'glass'],[.84,.7,.62,'bottle']].map(([x,y,at,kind],i)=>({x:x*W,y:y*H,at:at*total,kind,color:GLASS[i%GLASS.length],broken:false}));
+  const shards=[];let flash=0,shake=0,frame=0,timer=0,done=false;const begin=performance.now();
+  const drawThing=t=>{ctx.save();ctx.translate(t.x,t.y);ctx.fillStyle=t.color;ctx.globalAlpha=.85;ctx.strokeStyle='#fff';ctx.lineWidth=u*.5;
+   if(t.kind==='bottle'){ctx.beginPath();ctx.moveTo(-u*4,u*10);ctx.lineTo(-u*4,-u*2);ctx.quadraticCurveTo(-u*4,-u*5,-u*1.4,-u*6);ctx.lineTo(-u*1.4,-u*11);ctx.lineTo(u*1.4,-u*11);ctx.lineTo(u*1.4,-u*6);ctx.quadraticCurveTo(u*4,-u*5,u*4,-u*2);ctx.lineTo(u*4,u*10);ctx.closePath();}
+   else{ctx.beginPath();ctx.moveTo(-u*4.5,-u*7);ctx.lineTo(u*4.5,-u*7);ctx.lineTo(u*3.2,u*7);ctx.lineTo(-u*3.2,u*7);ctx.closePath();}
+   ctx.fill();ctx.stroke();ctx.globalAlpha=.5;ctx.fillStyle='#fff';ctx.fillRect(-u*2.6,-u*4,u*.9,u*10);ctx.restore();};
+  const smash=t=>{t.broken=true;flash=1;shake=u*2.2;glassSmash(.45);
+   for(let i=0;i<26;i++){const a=Math.random()*Math.PI*2,v=(1.5+Math.random()*5)*u;shards.push({x:t.x+(Math.random()-.5)*u*6,y:t.y+(Math.random()-.5)*u*10,vx:Math.cos(a)*v,vy:Math.sin(a)*v-u*2.5,r:Math.random()*6,vr:(Math.random()-.5)*.6,s:(1+Math.random()*2.6)*u,c:Math.random()<.3?'#ffffff':t.color,life:1});}};
+  const tick=now=>{if(done)return;const el=now-begin;
+   for(const t of things)if(!t.broken&&el>=t.at)smash(t);
+   ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#0a0000';ctx.fillRect(0,0,W,H);
+   const sx=(Math.random()-.5)*shake,sy=(Math.random()-.5)*shake;ctx.setTransform(1,0,0,1,sx,sy);shake*=.82;
+   for(const t of things)if(!t.broken)drawThing(t);
+   for(const s of shards){s.x+=s.vx;s.y+=s.vy;s.vy+=u*.35;s.r+=s.vr;s.life-=.012;if(s.life<=0)continue;ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.r);ctx.globalAlpha=Math.max(0,s.life);ctx.fillStyle=s.c;ctx.beginPath();ctx.moveTo(0,-s.s);ctx.lineTo(s.s*.6,s.s*.7);ctx.lineTo(-s.s*.5,s.s*.4);ctx.closePath();ctx.fill();ctx.restore();}
+   if(flash>0){ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=flash;ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;flash=Math.max(0,flash-.25);}
+   node.style.setProperty('--shake',`${(sx/dpr).toFixed(1)}px ${(sy/dpr).toFixed(1)}px`);
+   frame=requestAnimationFrame(tick);};
+  const finish=()=>{if(done)return;done=true;cancelAnimationFrame(frame);clearTimeout(timer);node.remove();resolve(true);};
+  node.addEventListener('click',finish);
+  frame=requestAnimationFrame(tick);timer=setTimeout(finish,total+(reduced?0:250));
+ });
+}
+Object.assign(exports,{showSmashCard});
+
+// Landing banner: one big word for what this space does (MINIGAME, TRIVIA, BATTLE...),
+// shown for a beat before it starts. Tap to skip.
+const LANDING={game:['MINIGAME','🎮','#3f8cff','Everybody plays'],minigame:['MINIGAME','🎮','#3f8cff','Everybody plays'],classic:['MINIGAME','🎮','#3f8cff','Everybody plays'],
+ trivia:['TRIVIA','❓','#24b0d8','Answer fast'],task:['TASKMASTER','📋','#ff3d6e','A timed task'],casino:['CASINO','♠️','#13a27c','Place your bets'],dice:['YAHTZEE','🎲','#5867ff','Full game of dice'],
+ shop:['SHOP','🛒','#ffaf2e','Quark is open'],event:['CHANCE CARD','🃏','#ff9a3d','Draw a card'],trainer:['BATTLE','⚔️','#e5352b','Trainer battle'],location:['LANDMARK','🏛️','#19b9b4','Visit'],
+ item:['ITEM','🎁','#9d63ff','Supply cache'],bonus:['BONUS','✨','#27c776','Good fortune'],penalty:['BAD LUCK','⚡','#ff4f64','Uh oh']};
+function showLandingBanner(type,sub=''){
+ const spec=LANDING[type];if(!spec||!store.profile)return Promise.resolve(false);
+ const [word,icon,color,hint]=spec,reduced=store.profile.settings.reducedMotion;
+ return new Promise(resolve=>{
+  const node=document.createElement('div');node.className=`landing-banner ${reduced?'still':''}`;node.style.setProperty('--lb',color);node.setAttribute('role','status');
+  node.innerHTML=`<div class="lb-band"><span class="lb-icon">${icon}</span><b>${e(word)}</b><small>${e(sub||hint)}</small></div>`;
+  let done=false;const finish=()=>{if(done)return;done=true;clearTimeout(timer);document.removeEventListener('pointerdown',finish,true);node.classList.add('leaving');setTimeout(()=>{node.remove();resolve(true);},reduced?0:180);};
+  document.addEventListener('pointerdown',finish,true);document.body.append(node);
+  if(store.profile.settings.sound){tone(660,.08,.05,'square');setTimeout(()=>tone(990,.12,.05,'square'),70);}
+  const timer=setTimeout(finish,reduced?500:950);
+ });
+}
+Object.assign(exports,{showLandingBanner});
 
 },
 "src/packs/index.js":(exports,require)=>{
@@ -9680,8 +9766,13 @@ function characterTravelSkills(id){
 function obstacleType(obstacle){return OBSTACLE_TYPES.find(t=>t.id===obstacle?.type);}
 function installObstacles(board,random=seededRandom(board.seed+':obstacles')){
  const types=shuffle(OBSTACLE_TYPES,random);board.obstacles ||= [];
+ // Grid boards: roads at a fork are a free choice. Level 1 never bars a road; later levels
+ // occasionally bar one of the two adventurous roads. Shortcuts and bridges keep their guards.
+ const barred=new Set();
+ if(board.generation>=8){const pick=seededRandom(board.seed+':fork-barriers');for(const realm of ['body','spirit']){const rs=(board.routes||[]).filter(r=>r.realm===realm);if(rs.length&&pick()<.3)barred.add(rs[Math.floor(pick()*rs.length)].entry);}}
  for(const [i,route]of (board.routes||[]).entries()){
   if(!board.nodes[route.fork]?.next.includes(route.entry))continue;
+  if(board.generation>=8&&!barred.has(route.entry))continue;
   board.obstacles.push({id:`trail-${route.entry}`,from:route.fork,to:route.entry,type:types[i%types.length].id,open:false,openUntil:0,repairs:0});
  }
  return board.obstacles;
@@ -11172,7 +11263,17 @@ const nowPlaying=()=>music.nowPlaying();
 const pickupClocks=new WeakMap();
 function pickupSound(session){const now=performance.now();if(now-(pickupClocks.get(session)??-Infinity)<85)return false;pickupClocks.set(session,now);sound('pickup');return true;}
 
-Object.assign(exports,{audioContext,tone,sound,vibrate,setMusicZone,setMusicScene,playFanfare,startMusic,stopMusic,pickupSound,playMetal,stopMetal,holdMusic,releaseMusic,playQuartet,nowPlaying});
+// Breaking glass: a bright noise crack, a low thud and a scatter of tinkling shards. Synthesised, no samples.
+let glassNoise=null;
+function glassSmash(volume=.5){
+ if(!store.profile?.settings.sound)return;const a=audioContext();if(!a)return;const t=a.currentTime;
+ if(!glassNoise){glassNoise=a.createBuffer(1,Math.floor(a.sampleRate*.6),a.sampleRate);const d=glassNoise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.2);}
+ const out=a.createGain();out.gain.value=volume;out.connect(a.destination);
+ const n=a.createBufferSource(),hp=a.createBiquadFilter(),ng=a.createGain();n.buffer=glassNoise;hp.type='highpass';hp.frequency.value=2600;ng.gain.setValueAtTime(.9,t);ng.gain.exponentialRampToValueAtTime(.001,t+.45);n.connect(hp);hp.connect(ng);ng.connect(out);n.start(t);n.stop(t+.5);
+ const o=a.createOscillator(),og=a.createGain();o.type='sine';o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);og.gain.setValueAtTime(.7,t);og.gain.exponentialRampToValueAtTime(.001,t+.16);o.connect(og);og.connect(out);o.start(t);o.stop(t+.18);
+ for(let i=0;i<9;i++){const at=t+.01+Math.random()*.32,s=a.createOscillator(),g=a.createGain();s.type=i%2?'triangle':'sine';s.frequency.value=2200+Math.random()*4800;g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(.16+Math.random()*.12,at+.004);g.gain.exponentialRampToValueAtTime(.0001,at+.07+Math.random()*.12);s.connect(g);g.connect(out);s.start(at);s.stop(at+.22);}
+}
+Object.assign(exports,{glassSmash,audioContext,tone,sound,vibrate,setMusicZone,setMusicScene,playFanfare,startMusic,stopMusic,pickupSound,playMetal,stopMetal,holdMusic,releaseMusic,playQuartet,nowPlaying});
 
 },
 "src/pairs.js":(exports,require)=>{
@@ -11513,9 +11614,11 @@ const {buildGridBoard,layoutHorrorGrid}=require("src/gridBoard.js");
 const REALMS = ['mind','body','spirit'];
 // Pokémon spaces (trainer tiles on the board, the Pokémon warp zone's route).
 const POKEMON_SPACES={trainer:'Trainer battle',grass:'Tall grass',center:'Pokémon Center',pkitem:'Item ball',path:'Route'};
-const SPACE_TYPES = { start:'Camp',game:'Minigame',event:'Encounter card',item:'Supply cache',bonus:'Good fortune',penalty:'Bad luck',location:'Landmark',task:'Taskmaster minigame',trivia:'Trivia duel',casino:'Casino',dice:'Full Yahtzee',shop:'Quark’s shop',gate:'Realm gate',warp:'Warp pipe' };
-const SPACE_ICONS = { start:'⚑',game:'MG',event:'?',item:'◆',bonus:'+',penalty:'−',location:'⌂',task:'TASK',trivia:'Q&A',casino:'♠',dice:'⚄',shop:'SHOP',gate:'✦',warp:'🌀' };
+const SPACE_TYPES = { start:'Camp',game:'Minigame',event:'Chance card',item:'Supply cache',bonus:'Good fortune',penalty:'Bad luck',location:'Landmark',task:'Taskmaster minigame',trivia:'Trivia duel',casino:'Casino',dice:'Full Yahtzee',shop:'Quark’s shop',gate:'Realm gate',warp:'Warp pipe' };
+const SPACE_ICONS = { start:'⚑',game:'🎮',event:'🃏',item:'◆',bonus:'+',penalty:'−',location:'⌂',task:'📋',trivia:'Q&A',casino:'♠',dice:'⚄',shop:'🛒',gate:'✦',warp:'🌀' };
 Object.assign(SPACE_TYPES,POKEMON_SPACES);for(const k of Object.keys(POKEMON_SPACES))SPACE_ICONS[k]='';
+// One word under every grid tile: what landing there does.
+const SPACE_CAPTIONS = { start:'CAMP',game:'MINIGAME',event:'CHANCE',item:'ITEM',bonus:'BONUS',penalty:'BAD LUCK',location:'LANDMARK',task:'TASK',trivia:'TRIVIA',casino:'CASINO',dice:'YAHTZEE',shop:'SHOP',gate:'GATE',warp:'WARP',trainer:'BATTLE',grass:'GRASS',center:'HEAL',pkitem:'ITEM' };
 const ZONE_COLORS = {mind:'#f8e7a6',body:'#f4aa7f',spirit:'#c6a8ee',horror:'#9e1d28','upside-down':'#512633'};
 const aliases={n0:'mind-start',n1:'mind-1-0',n2:'mind-2-0',n3:'mind-3-0',n4:'mind-4-0',n42:'mind-gate',n44:'body-start',n90:'body-gate',n92:'spirit-start',n137:'spirit-gate'};
 const rename=id=>aliases[id]||id;
@@ -11576,7 +11679,7 @@ function routeOptions(run,nodeId){return (run.board.nodes[nodeId]?.next||[]).map
 function advanceAlong(run,player,steps,lanePreference=0){for(let i=0;i<Math.abs(steps);i++){if(steps<0){const previous=player.visited.pop();if(previous)player.node=previous;else break;}else{const opts=routeOptions(run,player.node);if(!opts.length)break;player.visited.push(player.node);player.node=(opts.find(n=>n.lane===lanePreference)||opts[0]).id;}}return player.node;}
 function evolveBoard(run,random=Math.random){if(run.board.warp?.id==='pokemon')return false;const protectedIds=new Set(run.players.flatMap(p=>[p.node,...p.visited])),realm=run.board.nodes[run.players[run.current].node].realm;const list=shuffle(run.board.realms[realm].ids.map(id=>run.board.nodes[id]).filter(n=>!protectedIds.has(n.id)&&n.col>1&&!['start','gate','location','trivia','trainer'].includes(n.type)&&!n.route),random).slice(0,6);for(const n of list){const type=pick(['game','game','event','event','item','item','bonus','penalty','casino','dice','trivia','task'],random);n.type=type==='task'&&run.board.realms[realm].ids.some(id=>run.board.nodes[id].type==='task')?'game':type;}run.board.pulse=(run.board.pulse||0)+1;return list.length;}
 
-Object.assign(exports,{REALMS,SPACE_TYPES,SPACE_ICONS,ZONE_COLORS,ROUTES,proceduralTrail,generateLegacyBoard,generateBoard,balanceEncounters,sourceForSign,addHorrorBoard,routeOptions,advanceAlong,evolveBoard});
+Object.assign(exports,{REALMS,SPACE_TYPES,SPACE_ICONS,SPACE_CAPTIONS,ZONE_COLORS,ROUTES,proceduralTrail,generateLegacyBoard,generateBoard,balanceEncounters,sourceForSign,addHorrorBoard,routeOptions,advanceAlong,evolveBoard});
 },
 "src/locations.js":(exports,require)=>{
 const {REFERENCE_LANDMARKS}=require("src/references.js");
@@ -11983,7 +12086,7 @@ const {CHARACTERS, character, characterPerk, differentCharacters, characterIdent
 const {availableCharacters}=require("src/profile.js");
 const {GAMES, RANDOM_GAMES, EVENT_GAMES, gameUnlocked}=require("src/gameRegistry.js");
 const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
-const {SPACE_ICONS, SPACE_TYPES}=require("src/board.js");
+const {SPACE_ICONS, SPACE_TYPES, SPACE_CAPTIONS}=require("src/board.js");
 const {location}=require("src/locations.js");
 const {brandHTML, portraitHTML, portraitURL, portraitFallbackURL, gameArtHTML, locationArt, locationArtHTML, locationBoardArt, itemArtHTML, logoURL}=require("src/assets.js");
 const {findItem, itemDescription , canUseItem}=require("src/items.js");
@@ -12037,27 +12140,39 @@ function inventoryHTML(){const p=store.run.players[store.run.current];return p.i
 function warpPipeSVG(n){const used=n.warpUsed;return `<g class="warp-pipe ${used?'used':''}" transform="translate(0,-8)"><ellipse cx="0" cy="34" rx="62" ry="14" fill="#0006"/><rect x="-36" y="-18" width="72" height="56" rx="6" fill="#2fae3a" stroke="#0f4f16" stroke-width="5"/><rect x="-24" y="-18" width="10" height="56" fill="#7fe07a" opacity=".7"/><rect x="-48" y="-46" width="96" height="34" rx="8" fill="#38c444" stroke="#0f4f16" stroke-width="5"/><rect x="-36" y="-46" width="12" height="34" fill="#8ff08a" opacity=".7"/><ellipse class="warp-swirl-top" cx="0" cy="-46" rx="40" ry="11" fill="${used?'#333':'#7a4cff'}" stroke="#0f4f16" stroke-width="4"/>${used?'':'<path class="warp-spiral" d="M0 -46m-26 0a26 7 0 1 0 52 0a18 5 0 1 0 -36 0a10 3 0 1 0 20 0" fill="none" stroke="#e8d9ff" stroke-width="3"/>'}<g transform="translate(0,-86)"><rect x="-44" y="-17" width="88" height="30" rx="9" fill="${used?'#555':'#7a4cff'}" stroke="#fff" stroke-width="4"/><text y="5" text-anchor="middle" class="warp-pipe-label">${used?'USED':'WARP'}</text></g></g>`;}
 function boardSVG(){
  const run=store.run,v7=(run.board.generation||0)>=7,grid=!!run.board.grid&&run.board.format!=='warp',warp=run.board.format==='warp',width=run.board.width||1800,height=run.board.height||3030,visible=Object.values(run.board.nodes),view=cameraView(run),detail=boardDetail(view,boardViewport()),colors={start:'#fffaf0',game:'#4aafea',event:'#e09b4e',item:'#9974ee',bonus:'#53cd7f',penalty:'#df5459',location:'#57c1bb',trivia:'#59b7c1',task:'#d84450',casino:'#1fa074',dice:'#5475d9',shop:'#f09f57',gate:'#f0cb57',warp:'#7a4cff'};
- return `<svg class="board-svg" viewBox="${view}" data-map-detail="${detail.level}" ${v7?'data-v7="1"':''} ${grid?'data-grid="1"':''} style="--map-pin-scale:${detail.pinScale}" role="img" aria-label="Random winding trail: simple landmarks in the overview, themed neighborhoods up close"><defs><pattern id="map-grain" width="61" height="67" patternUnits="userSpaceOnUse"><circle cx="18" cy="25" r="2" fill="#ffffff66"/></pattern></defs>
- <g class="board-zone-layer">${warp?warpSceneSVG(run):grid?gridZoneSVG(run):v7?zoneLayerSVG(run):Object.entries(run.board.realms).map(([realm,data],i)=>{const y=data.y??i*1000;return `<g class="zone-scenery"><rect x="${-width}" y="${i===0?-height:y}" width="${width*3}" height="${(i===0?height:0)+(data.height||1000)+(i===Object.keys(run.board.realms).length-1?height:0)}" fill="${data.color||'#e4dcf0'}"/><text x="80" y="${y+95}" class="zone-word board-detail-rich">${e(data.title||realm.toUpperCase())}</text></g>`;}).join('')}</g>
- <g class="board-scenery-layer board-detail-rich"><rect x="${-width}" y="${-height}" width="${width*3}" height="${height*3}" fill="url(#map-grain)"/>${grid?'':visible.filter(n=>n.type==='location'&&location(n.location)).map(n=>v7?landmarkScene(location(n.location),n):landmarkNeighborhood(location(n.location),worldNode(run,n))).join('')}${(run.board.signs||[]).filter(sign=>!v7&&!sign.hidden).map((sign,i)=>`<g class="route-scenery" transform="translate(${sign.x},${sign.y})"><rect x="-82" y="-30" width="164" height="52" rx="14"/><image href="${logoURL(sign.source)}" x="-67" y="-27" width="134" height="29"/><text y="13">${e(sign.name)}</text>${i%7===0?'<path class="scenery-star" d="M-25 -55L0 -100L25 -55L0 -65Z"/>':''}</g>`).join('')}</g>
- <g class="board-overview-environments">${visible.filter(n=>n.type==='location'&&location(n.location)).map(n=>landmarkOverview(location(n.location),worldNode(run,n))).join('')}</g>
+ return `<svg class="board-svg" viewBox="${view}" data-map-detail="${detail.level}" ${v7?'data-v7="1"':''} ${grid?'data-grid="1"':''} style="--map-pin-scale:${detail.pinScale}" role="img" aria-label="Random winding trail: simple landmarks in the overview, themed neighborhoods up close"><defs><pattern id="map-grain" width="61" height="67" patternUnits="userSpaceOnUse"><circle cx="18" cy="25" r="2" fill="#ffffff66"/></pattern></defs><!--L-->
+ <g class="board-zone-layer">${warp?warpSceneSVG(run):grid?gridZoneSVG(run):v7?zoneLayerSVG(run):Object.entries(run.board.realms).map(([realm,data],i)=>{const y=data.y??i*1000;return `<g class="zone-scenery"><rect x="${-width}" y="${i===0?-height:y}" width="${width*3}" height="${(i===0?height:0)+(data.height||1000)+(i===Object.keys(run.board.realms).length-1?height:0)}" fill="${data.color||'#e4dcf0'}"/><text x="80" y="${y+95}" class="zone-word board-detail-rich">${e(data.title||realm.toUpperCase())}</text></g>`;}).join('')}</g><!--L-->
+ <g class="board-scenery-layer board-detail-rich"><rect x="${-width}" y="${-height}" width="${width*3}" height="${height*3}" fill="url(#map-grain)"/>${grid?'':visible.filter(n=>n.type==='location'&&location(n.location)).map(n=>v7?landmarkScene(location(n.location),n):landmarkNeighborhood(location(n.location),worldNode(run,n))).join('')}${(run.board.signs||[]).filter(sign=>!v7&&!sign.hidden).map((sign,i)=>`<g class="route-scenery" transform="translate(${sign.x},${sign.y})"><rect x="-82" y="-30" width="164" height="52" rx="14"/><image href="${logoURL(sign.source)}" x="-67" y="-27" width="134" height="29"/><text y="13">${e(sign.name)}</text>${i%7===0?'<path class="scenery-star" d="M-25 -55L0 -100L25 -55L0 -65Z"/>':''}</g>`).join('')}</g><!--L-->
+ <g class="board-overview-environments">${visible.filter(n=>n.type==='location'&&location(n.location)).map(n=>landmarkOverview(location(n.location),worldNode(run,n))).join('')}</g><!--L-->
  <g class="board-path-layer">${grid?gridRoadSVG(run):v7?roadLayerSVG(run):''}${v7||warp?'':visible.flatMap(n=>n.next.map(id=>{const a=worldNode(run,n),to=run.board.nodes[id];if(!to)return '';const b=worldNode(run,to);if(a.realm!==b.realm&&!['gate','start'].includes(a.type))return '';const barrier=edgeObstacle(run,n.id,id),routeColor=['#19b7df','#f18d27','#bd5be5','#29b77b','#ed5794','#527aed'][Math.abs(hash(n.route?.id||n.lane||n.realm||'main'))%6];return `<path style="--route-color:${routeColor}" class="route-line ${n.branch||to.branch?'branch':'main'} ${barrier&&!obstacleIsOpen(run,barrier)?'barrier-route':barrier?'cleared-route':''}" d="M${a.x} ${a.y} L${b.x} ${b.y}"/>`;})).join('')}</g>
- ${grid?`<g class="board-card-layer board-detail-near">${visible.filter(n=>n.type==='location'&&n.card&&location(n.location)).map(n=>gridLandmarkCard(location(n.location),n)).join('')}</g>`:''}<g class="board-obstacle-layer board-detail-near">${(run.board.obstacles||[]).map(o=>obstacleMarkerHTML(run,o)).join('')}</g>
- <g class="board-encounter-layer">${visible.map(raw=>{const n=worldNode(run,raw),l=location(n.location);return `<g class="map-space type-${n.type}" data-action="space" data-id="${n.id}" transform="translate(${n.x},${n.y})${warp?' scale(2)':''}"><title>${e(l?.name||SPACE_TYPES[n.type]||'Encounter')}</title>${n.type==='warp'?(grid?`<g transform="translate(0,-34) scale(.6)">${warpPipeSVG(n)}</g>`:warpPipeSVG(n)):''}<g class="space-details board-detail-near">${grid||run.board.warp?.id==='pokemon'?'<circle class="space-hit" r="'+(grid?48:22)+'" fill="transparent"/>':spaceShapeHTML(n.type,colors[n.type]||'#999')}<text class="space-symbol">${SPACE_ICONS[n.type]??'?'}</text>${l&&!v7?`<g class="landmark-sign board-detail-rich">${locationBoardArt(l)}<image href="${logoURL(l.source)}" x="-43" y="75" width="86" height="24"/><text class="space-label" y="111">${e(l.name)}</text></g>`:''}${n.route&&!n.route.safe?`<text class="detour-label board-detail-rich" y="${grid?-58:-36}">${e(n.route.name)}</text>`:''}</g></g>`;}).join('')}</g>
- <g class="board-landmark-layer">${visible.filter(n=>n.type==='location'&&location(n.location)).map(raw=>{const n=worldNode(run,raw),l=location(n.location);return `<g class="simple-landmark" data-action="space" data-id="${n.id}" data-x="${n.x}" data-y="${n.y}" data-name="${e(l.name)}" transform="translate(${n.x},${n.y})" aria-label="${e(l.name)}"><title>${e(l.name)}</title><g class="simple-landmark-pin"><circle r="6"/><path d="M-3 1V-2L0-4 3-2V1Z"/><text x="9" y="-9">${e(compactLandmarkName(l.name))}</text></g></g>`;}).join('')}</g>
- <g class="board-player-layer">${run.players.map((p,i)=>boardPiece(p,i,worldNode(run,run.board.nodes[p.node]))).join('')}${run.banter&&run.turn<=run.banter.untilTurn?run.players.map((p,i)=>{const n=boardPiecePoint(run,p,i);return `<g class="board-banter board-detail-rich" transform="translate(${n.x},${n.y-105-i*65})"><rect x="-145" y="-24" width="290" height="40" rx="15"/><text text-anchor="middle" font-size="11" y="-9">${e(p.name)} · ${e(run.banter.lines[i])}</text></g>`;}).join(''):''}</g></svg>`;
+ <!--L-->${grid?`<g class="board-card-layer board-detail-near">${visible.filter(n=>n.type==='location'&&n.card&&location(n.location)).map(n=>gridLandmarkCard(location(n.location),n)).join('')}</g>`:''}<!--L--><g class="board-obstacle-layer board-detail-near">${(run.board.obstacles||[]).map(o=>obstacleMarkerHTML(run,o)).join('')}</g><!--L-->
+ <g class="board-encounter-layer">${visible.map(raw=>{const n=worldNode(run,raw),l=location(n.location);return `<g class="map-space type-${n.type}" data-action="space" data-id="${n.id}" transform="translate(${n.x},${n.y})${warp?' scale(2)':''}"><title>${e(l?.name||SPACE_TYPES[n.type]||'Encounter')}</title>${n.type==='warp'?(grid?`<g transform="translate(0,-34) scale(.6)">${warpPipeSVG(n)}</g>`:warpPipeSVG(n)):''}<g class="space-details board-detail-near">${grid||run.board.warp?.id==='pokemon'?'<circle class="space-hit" r="'+(grid?48:22)+'" fill="transparent"/>':spaceShapeHTML(n.type,colors[n.type]||'#999')}<text class="space-symbol">${SPACE_ICONS[n.type]??'?'}</text>${grid&&SPACE_CAPTIONS[n.type]&&n.type!=='location'?`<text class="space-caption" y="31">${SPACE_CAPTIONS[n.type]}</text>`:''}${l&&!v7?`<g class="landmark-sign board-detail-rich">${locationBoardArt(l)}<image href="${logoURL(l.source)}" x="-43" y="75" width="86" height="24"/><text class="space-label" y="111">${e(l.name)}</text></g>`:''}${n.route&&!n.route.safe?`<text class="detour-label board-detail-rich" y="${grid?-58:-36}">${e(n.route.name)}</text>`:''}</g></g>`;}).join('')}</g><!--L-->
+ <g class="board-landmark-layer">${visible.filter(n=>n.type==='location'&&location(n.location)).map(raw=>{const n=worldNode(run,raw),l=location(n.location);return `<g class="simple-landmark" data-action="space" data-id="${n.id}" data-x="${n.x}" data-y="${n.y}" data-name="${e(l.name)}" transform="translate(${n.x},${n.y})" aria-label="${e(l.name)}"><title>${e(l.name)}</title><g class="simple-landmark-pin"><circle r="6"/><path d="M-3 1V-2L0-4 3-2V1Z"/><text x="9" y="-9">${e(compactLandmarkName(l.name))}</text></g></g>`;}).join('')}</g><!--L-->
+ <g class="board-player-layer">${run.players.map((p,i)=>boardPiece(p,i,worldNode(run,run.board.nodes[p.node]))).join('')}${run.banter&&run.turn<=run.banter.untilTurn?run.players.map((p,i)=>{const n=boardPiecePoint(run,p,i);return `<g class="board-banter board-detail-rich" transform="translate(${n.x},${n.y-105-i*65})"><rect x="-145" y="-24" width="290" height="40" rx="15"/><text text-anchor="middle" font-size="11" y="-9">${e(p.name)} · ${e(run.banter.lines[i])}</text></g>`;}).join(''):''}</g><!--L--></svg>`;
 }
 function boardViewport(){const rect=typeof document!=='undefined'?document.getElementById('map-root')?.getBoundingClientRect():null;return rect?.width>0&&rect.height>0?rect:{width:window.innerWidth||900,height:Math.max(220,(window.innerHeight||800)-180)};}
 function cameraView(run){const aspect=store.mapAspect||Math.max(.65,(window.innerWidth||900)/Math.max(220,(window.innerHeight||800)-180));const box=cameraBox(run,aspect);if(!box.every(Number.isFinite)||box[2]<=0||box[3]<=0)return [0,0,run.board.width||1800,run.board.height||3030].join(' ');return box.join(' ');}
 function overviewSVG(){const run=store.run,w=run.board.width||1800,h=run.board.height||3030;return `<svg class="world-overview" viewBox="0 0 ${w} ${h}" role="img" aria-label="Entire board and both player positions">${Object.entries(run.board.realms).map(([realm,data],i)=>`<rect y="${data.y??i*1000}" width="${w}" height="${data.height||1000}" fill="${data.color||'#c6a8ee'}"/>`).join('')}${Object.values(run.board.nodes).flatMap(n=>n.next.map(id=>{const a=worldNode(run,n),raw=run.board.nodes[id];if(!raw)return '';const b=worldNode(run,raw);return `<path d="M${a.x} ${a.y}L${b.x} ${b.y}" stroke="#26395a" stroke-width="9" opacity=".5"/>`;})).join('')}${run.players.map((p,i)=>{const n=worldNode(run,run.board.nodes[p.node]);return `<circle cx="${n.x}" cy="${n.y}" r="59" fill="${i?'#ff6393':'#2f73dc'}" stroke="white" stroke-width="14"/><text x="${n.x}" y="${n.y+22}" text-anchor="middle" fill="white" font-size="75">${i+1}</text>`;}).join('')}</svg>`;}
 function boardPiece(p,i,n){const mood=p.large?'silly':p.mood||'normal',raw=portraitURL(p.character,mood),url=raw&&headDisplayURL(raw),size=p.large?2:1,point=boardPiecePoint(store.run,p,i);return `<g class="board-piece p${i+1} mood-${e(mood)}" data-player="${i}" style="transform:translate(${point.x}px,${point.y}px)"><g class="piece-avatar" transform="scale(${size*pieceScale(store.run)})">${url?`<image href="${e(url)}" ${['sean','amber'].includes(p.character)?'onload="window.ShambConkins?.floatingHead(this)"':''} ${url.startsWith('https:')?`data-fallback="${e(portraitFallbackURL(p.character))}" onerror="this.setAttribute('href',this.dataset.fallback)"`:''} x="-44" y="-44" width="88" height="88" preserveAspectRatio="xMidYMid meet"/>`:`<text y="10">${e(character(p.character).icon)}</text>`}</g><text class="name" y="${-53*size*pieceScale(store.run)}" style="font-size:${Math.round(9*pieceScale(store.run))}px">${e(p.name)}</text><text class="piece-mood" x="47" y="-35">${mood==='walking'?'↗':mood==='thinking'?'?':mood==='sad'?'☹':'✦'}</text></g>`;}
+// Re-rendering the whole board (~5,000 SVG elements) on every step stalled the phone, so
+// updates swap only the layers whose markup changed (usually just the player pieces).
+const boardHead=h=>h.replace(/ (viewBox|data-map-detail|style)="[^"]*"/g,'');
+function patchBoardSVG(root,markup){
+ const parts=markup.split('<!--L-->'),layers=parts.slice(1,-1).filter(l=>l.trim()),svg=root.querySelector(':scope>svg.board-svg'),cache=svg?.__layers;
+ if(!svg||!cache||cache.length!==layers.length||svg.__head!==boardHead(parts[0])||svg.children.length!==layers.length+1){root.innerHTML=markup;const fresh=root.querySelector(':scope>svg.board-svg');if(fresh){fresh.__layers=layers;fresh.__head=boardHead(parts[0]);}return;}
+ const tmp=document.createElementNS('http://www.w3.org/2000/svg','svg');
+ layers.forEach((layer,i)=>{if(cache[i]===layer)return;tmp.innerHTML=layer;const el=tmp.firstElementChild,old=svg.children[i+1];if(el)svg.replaceChild(el,old);else old.replaceChildren();cache[i]=layer;});
+}
+// Panel markup is rebuilt each update; the DOM is only touched when it actually changed.
+function setHTML(id,html){const el=document.getElementById(id);if(el&&el.__html!==html){el.innerHTML=html;el.__html=html;}}
 function updateBoard(force=false){if(!store.run)return;const run=store.run,p=run.players[run.current],realm=run.board.nodes[p.node].realm,root=document.getElementById('app'),previousCamera=document.querySelector('#map-root svg')?.getAttribute('viewBox');document.body.dataset.view='board';applyRunTheme(run);if(force||store.view!=='board'||!document.getElementById('map-panel')?.classList.contains(`realm-${realm}`)){store.view='board';root.innerHTML=boardHTML();repaintCamera(previousCamera);queueViewportFit();return;}
- document.getElementById('player-panels').innerHTML=playerPanels();document.getElementById('active-face').innerHTML=portraitHTML(p.character,'portrait mini',p.mood||'normal');document.getElementById('turn-label').textContent=`TURN ${run.turn} / ${run.endless||run.raceToFinish?'∞':run.maxTurns}`;document.getElementById('turn-name').textContent=`${p.name} · ${levelLabel(realm)}`;document.getElementById('inventory-list').innerHTML=inventoryHTML();document.getElementById('bag-count').textContent=`${p.items.length} ITEMS`;document.getElementById('board-log').innerHTML=run.history.slice(0,4).map(x=>`<div class="log-entry">${e(x)}</div>`).join('');
- const roll=document.querySelector('[data-action="roll"]');roll.disabled=store.busy;roll.textContent=store.busy?'ON THE MOVE…':`ROLL FOR ${p.name.toUpperCase()}`;document.getElementById('die-value').innerHTML=diceFace(run.pending?.base||Math.min(6,run.lastRoll||5));const bag=document.querySelector('[data-action="bag"]');bag.disabled=store.busy;const pkb=document.querySelector('[data-action="pkmn"]');if(pkb)pkb.disabled=store.busy;bag.textContent=`ITEMS (${p.items.length}) · ${canUseItem(run)?'1 USE':'USED'}`;const reroll=document.querySelector('[data-action="reroll"]');reroll.disabled=store.busy||!p.rerolls;reroll.textContent=`Lucky (${p.rerolls})`;document.getElementById('map-progress').textContent=`${p.name} · ${nearestRoute(run)}`;
- const previous=new Map([...document.querySelectorAll('#map-root .board-piece')].map(n=>[n.dataset.player,n.style.transform]));document.getElementById('map-root').innerHTML=boardSVG();document.getElementById('overview-root').innerHTML=overviewSVG();if(!store.profile.settings.reducedMotion)for(const piece of document.querySelectorAll('#map-root .board-piece')){const from=previous.get(piece.dataset.player);if(from&&from!==piece.style.transform)piece.animate([{transform:from},{transform:from+' translateY(-12px)',offset:.35},{transform:piece.style.transform}],{duration:270,easing:'ease-out'});}document.querySelector('[data-action="camera"]').textContent=run.camera==='overview'?'PLAYERS':'BOARD';document.getElementById('level-hud').innerHTML=levelHudHTML(run);repaintCamera(previousCamera);}
+ setHTML('player-panels',playerPanels());setHTML('active-face',portraitHTML(p.character,'portrait mini',p.mood||'normal'));document.getElementById('turn-label').textContent=`TURN ${run.turn} / ${run.endless||run.raceToFinish?'∞':run.maxTurns}`;document.getElementById('turn-name').textContent=`${p.name} · ${levelLabel(realm)}`;setHTML('inventory-list',inventoryHTML());document.getElementById('bag-count').textContent=`${p.items.length} ITEMS`;setHTML('board-log',run.history.slice(0,4).map(x=>`<div class="log-entry">${e(x)}</div>`).join(''));
+ const roll=document.querySelector('[data-action="roll"]');roll.disabled=store.busy;roll.textContent=store.busy?'ON THE MOVE…':`ROLL FOR ${p.name.toUpperCase()}`;setHTML('die-value',diceFace(run.pending?.base||Math.min(6,run.lastRoll||5)));const bag=document.querySelector('[data-action="bag"]');bag.disabled=store.busy;const pkb=document.querySelector('[data-action="pkmn"]');if(pkb)pkb.disabled=store.busy;bag.textContent=`ITEMS (${p.items.length}) · ${canUseItem(run)?'1 USE':'USED'}`;const reroll=document.querySelector('[data-action="reroll"]');reroll.disabled=store.busy||!p.rerolls;reroll.textContent=`Lucky (${p.rerolls})`;document.getElementById('map-progress').textContent=`${p.name} · ${nearestRoute(run)}`;
+ const previous=new Map([...document.querySelectorAll('#map-root .board-piece')].map(n=>[n.dataset.player,n.style.transform]));patchBoardSVG(document.getElementById('map-root'),boardSVG());const ov=overviewSVG(),ovRoot=document.getElementById('overview-root');if(ovRoot.__svg!==ov){ovRoot.innerHTML=ov;ovRoot.__svg=ov;}if(!store.profile.settings.reducedMotion)for(const piece of document.querySelectorAll('#map-root .board-piece')){const from=previous.get(piece.dataset.player);if(from&&from!==piece.style.transform)piece.animate([{transform:from},{transform:from+' translateY(-12px)',offset:.35},{transform:piece.style.transform}],{duration:270,easing:'ease-out'});}document.querySelector('[data-action="camera"]').textContent=run.camera==='overview'?'PLAYERS':'BOARD';setHTML('level-hud',levelHudHTML(run));repaintCamera(previousCamera);}
 let cameraFrame=0;
 let cameraDone=null;
-function cancelCameraAnimation(){if(cameraFrame)cancelAnimationFrame(cameraFrame);cameraFrame=0;cameraDone?.(false);cameraDone=null;}
+let cameraAnim=null;
+function cancelCameraAnimation(){if(cameraFrame)cancelAnimationFrame(cameraFrame);cameraFrame=0;if(cameraAnim){const {svg,target}=cameraAnim;cameraAnim=null;svg.style.transform='';svg.classList.remove('cam-moving');if(svg.isConnected)cameraFrameView(svg,target);}cameraDone?.(false);cameraDone=null;}
 let detailObserver=null,detailSurface=null,detailResizeInstalled=false;
 function clearBoardDetailObserver(){detailObserver?.disconnect();detailObserver=null;detailSurface=null;}
 function watchBoardDetail(){
@@ -12077,16 +12192,37 @@ function applyBoardDetail(svg,view=svg?.getAttribute('viewBox')){
  return detail;
 }
 function cameraFrameView(svg,view){svg.setAttribute('viewBox',view);applyBoardDetail(svg,view);}
+// Gestures (pinch, wheel, drag) preview the new view as a GPU transform of the already-drawn
+// board and re-render the SVG once, when the gesture settles. Re-rendering ~5,000 SVG
+// elements on every pointer move is what made zooming stutter.
+let gesture=null;
+const fit=(svg,v)=>{const W=svg.clientWidth||1,H=svg.clientHeight||1,s=Math.min(W/v[2],H/v[3]);return {s,ox:(W-v[2]*s)/2,oy:(H-v[3]*s)/2};};
+function gestureCamera(){
+ const svg=document.querySelector('#map-root svg'),run=store.run;if(!svg||!run)return;
+ if(gesture&&gesture.svg!==svg)endGesture(false);
+ if(!gesture){cancelCameraAnimation();const base=svg.getAttribute('viewBox')?.split(' ').map(Number);if(!base||base.length!==4||!base.every(Number.isFinite))return repaintCamera();gesture={svg,base,raf:0,timer:0};svg.classList.add('cam-moving');}
+ gesture.target=cameraView(run);clearTimeout(gesture.timer);gesture.timer=setTimeout(()=>endGesture(true),220);
+ if(!gesture.raf)gesture.raf=requestAnimationFrame(()=>{if(!gesture)return;gesture.raf=0;const {svg,base}=gesture,to=gesture.target.split(' ').map(Number),a=fit(svg,base),b=fit(svg,to),k=b.s/a.s,tx=-k*a.ox+b.s*(base[0]-to[0])+b.ox,ty=-k*a.oy+b.s*(base[1]-to[1])+b.oy;svg.style.transformOrigin='0 0';svg.style.transform=`translate(${tx.toFixed(2)}px,${ty.toFixed(2)}px) scale(${k.toFixed(5)})`;});
+}
+function endGesture(commit=true){
+ if(!gesture)return false;const {svg,target,raf,timer}=gesture;gesture=null;cancelAnimationFrame(raf);clearTimeout(timer);
+ svg.style.transform='';svg.classList.remove('cam-moving');if(commit&&svg.isConnected&&target)cameraFrameView(svg,target);return true;
+}
 function repaintCamera(from=null,{duration=240}={}){
- cancelCameraAnimation();
+ endGesture(false);cancelCameraAnimation();
  const svg=document.querySelector('#map-root svg'),run=store.run;if(!svg||!run)return Promise.resolve(false);
  watchBoardDetail();
  const target=cameraView(run),to=target.split(' ').map(Number),start=from?.split(' ').map(Number);
  if(!start||start.length!==4||!start.every(Number.isFinite)||store.profile.settings.reducedMotion||target===from){cameraFrameView(svg,target);return Promise.resolve(true);}
- const begin=performance.now();cameraFrameView(svg,from);
- return new Promise(resolve=>{cameraDone=resolve;const frame=now=>{if(store.run!==run||document.querySelector('#map-root svg')!==svg){cameraFrame=0;cameraDone=null;resolve(false);return;}const t=Math.min(1,(now-begin)/duration),ease=t*t*(3-2*t);cameraFrameView(svg,to.map((value,i)=>start[i]+(value-start[i])*ease).join(' '));if(t<1)cameraFrame=requestAnimationFrame(frame);else{cameraFrame=0;cameraDone=null;resolve(true);}};cameraFrame=requestAnimationFrame(frame);});
+ // The glide renders the board once over the area both views cover, slides that picture
+ // with a GPU transform, then renders the final view: two SVG paints instead of one per frame.
+ const union=[Math.min(start[0],to[0]),Math.min(start[1],to[1])];union.push(Math.max(start[0]+start[2],to[0]+to[2])-union[0],Math.max(start[1]+start[3],to[1]+to[3])-union[1]);
+ const begin=performance.now();svg.setAttribute('viewBox',union.join(' '));applyBoardDetail(svg,target);svg.classList.add('cam-moving');svg.style.transformOrigin='0 0';cameraAnim={svg,target};
+ const place=v=>{const a=fit(svg,union),b=fit(svg,v),k=b.s/a.s;svg.style.transform=`translate(${(-k*a.ox+b.s*(union[0]-v[0])+b.ox).toFixed(2)}px,${(-k*a.oy+b.s*(union[1]-v[1])+b.oy).toFixed(2)}px) scale(${k.toFixed(5)})`;};place(start);
+ const finish=()=>{cameraFrame=0;cameraAnim=null;cameraDone=null;svg.style.transform='';svg.classList.remove('cam-moving');cameraFrameView(svg,target);};
+ return new Promise(resolve=>{cameraDone=resolve;const frame=now=>{if(store.run!==run||document.querySelector('#map-root svg')!==svg){cameraFrame=0;cameraAnim=null;cameraDone=null;resolve(false);return;}const t=Math.min(1,(now-begin)/duration),ease=t*t*(3-2*t);if(t<1){place(to.map((value,i)=>start[i]+(value-start[i])*ease));cameraFrame=requestAnimationFrame(frame);}else{finish();resolve(true);}};cameraFrame=requestAnimationFrame(frame);});
 }
-function refreshPortraits(){if(!store.run||store.view!=='board')return;document.getElementById('player-panels').innerHTML=playerPanels();const p=store.run.players[store.run.current];document.getElementById('active-face').innerHTML=portraitHTML(p.character,'portrait mini',p.mood||'normal');for(const node of document.querySelectorAll('#map-root .board-piece')){const player=store.run.players[+node.dataset.player],mood=player.large?'silly':player.mood||'normal';node.setAttribute('class',`board-piece p${+node.dataset.player+1} mood-${mood}`);const image=node.querySelector('image'),raw=portraitURL(player.character,mood),url=raw&&headDisplayURL(raw);if(image&&url)image.setAttribute('href',url);}}
+function refreshPortraits(){if(!store.run||store.view!=='board')return;const panels=document.getElementById('player-panels'),face=document.getElementById('active-face');panels.innerHTML=playerPanels();panels.__html=null;const p=store.run.players[store.run.current];face.innerHTML=portraitHTML(p.character,'portrait mini',p.mood||'normal');face.__html=null;for(const node of document.querySelectorAll('#map-root .board-piece')){const player=store.run.players[+node.dataset.player],mood=player.large?'silly':player.mood||'normal';node.setAttribute('class',`board-piece p${+node.dataset.player+1} mood-${mood}`);const image=node.querySelector('image'),raw=portraitURL(player.character,mood),url=raw&&headDisplayURL(raw);if(image&&url)image.setAttribute('href',url);}}
 function catalogHTML(type,query='',filter='all',page=0){const p=store.profile,isRoster=type==='roster',ownership=new Map(),ownedIds=new Map(),matches=c=>(c.name+' '+c.source).toLowerCase().includes(query.toLowerCase());
  for(const id of p.shared){const identity=characterIdentity(id);ownership.set(identity,'SHARED');ownedIds.set(identity,id);}
  for(const[owner,ids]of Object.entries(p.rosters))for(const id of ids){const identity=characterIdentity(id);if(ownership.get(identity)==='SHARED')continue;const names=(ownership.get(identity)||'').split(' + ').filter(Boolean),label=owner.toUpperCase();if(!names.includes(label))names.push(label);ownership.set(identity,names.join(' + '));if(!ownedIds.has(identity))ownedIds.set(identity,id);}
@@ -12132,7 +12268,7 @@ function resolveDialog(index){if(!store.dialog)return;const {choices,resolve}=st
 function closeDialog(){closeRoutePanel();if(store.dialog){const {resolve}=store.dialog;store.dialog=null;document.getElementById('dialog').close();resolve(null);} }
 async function unlockDialog(ids,owner){for(const id of ids){const c=character(id);playFanfare();const continued=await showDialog({title:'A new face joins the party',source:c.source,body:`${owner?`${owner}'s roster`:'Both rosters'} just got more interesting.`,html:`<div class="unlock-card">${brandHTML(c.source,'unlock-property-logo')}${portraitHTML(c.id,'portrait big','win')}<h3>${e(c.name)}</h3>${characterPhrase(c.id)?`<blockquote class="unlock-phrase">“${e(characterPhrase(c.id))}”</blockquote>`:''}<p style="margin-top:10px">${e(characterPerk(c.id))}</p></div>`,choices:[{label:'Welcome aboard',value:'ok',primary:true}]});if(continued===null)return false;}return true;}
 
-Object.assign(exports,{refitCatalog,header,homeHTML,previewMap,setupHTML,statusHTML,playerPanels,boardHTML,nearestRoute,inventoryHTML,boardSVG,cameraView,overviewSVG,updateBoard,cancelCameraAnimation,clearBoardDetailObserver,applyBoardDetail,repaintCamera,refreshPortraits,catalogHTML,showView,toast,showDialog,resolveDialog,closeDialog,unlockDialog});
+Object.assign(exports,{gestureCamera,endGesture,refitCatalog,header,homeHTML,previewMap,setupHTML,statusHTML,playerPanels,boardHTML,nearestRoute,inventoryHTML,boardSVG,cameraView,overviewSVG,updateBoard,cancelCameraAnimation,clearBoardDetailObserver,applyBoardDetail,repaintCamera,refreshPortraits,catalogHTML,showView,toast,showDialog,resolveDialog,closeDialog,unlockDialog});
 },
 "src/progression.js":(exports,require)=>{
 const {availableCharacters}=require("src/profile.js");
@@ -26927,6 +27063,9 @@ function buildGridBoard(board){
   // Pokémon trainer battles: Poké Ball spaces on two of the three roads (own random stream,
   // so the rest of the layout matches older builds).
   {const tr=seededRandom(board.seed+':trainers:'+realm);for(const lane of shuffle([0,1,2],tr).slice(0,2)){const path=tracks[lane],options=path.map((id,i)=>({id,i})).filter(q=>q.i>=3&&q.i<path.length-3&&['event','bonus','penalty'].includes(board.nodes[q.id].type));if(options.length)board.nodes[options[Math.floor(tr()*options.length)].id].type='trainer';}}
+  // Deliberate spaces: most leftover encounter cards become a named action (a battle or
+  // trivia); the rest stay Chance cards. Own random stream, so the layout above is unchanged.
+  {let k=0;const plan=['trainer','event','trivia','trainer','event'];for(const path of tracks)for(const id of path){const n=board.nodes[id];if(n.type==='event')n.type=plan[k++%plan.length];}}
   const height=cellXY(0,R1+4,0).y;
   Object.assign(data,{color:GROUND_BASE[realm],height,cols:gate.col,paths:tracks,lanes:laneInfo,fork,stem,gridRows:{top:TOP,fork:R0,gate:R1,style}});
   board.pathNetworks.push({realm,fork,paths:tracks,lengths,difficulties:DIFFICULTY});
