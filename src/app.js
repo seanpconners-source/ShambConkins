@@ -1,5 +1,5 @@
 const {triviaSeconds}=require("src/engines/trivia.js");
-const {initFullscreen, toggleFullscreen, fullscreenSupported, fullscreenButton}=require("src/fullscreen.js");
+const {initFullscreen, toggleFullscreen, fullscreenSupported, fullscreenButton, exitFullscreen}=require("src/fullscreen.js");
 const {touchDiagnostic}=require("src/touchDiagnostic.js");
 const {floatingHead}=require("src/headCutouts.js");
 const {triviaExplanationHTML, TRIVIA_QUESTIONS}=require("src/triviaCatalog.js");
@@ -24,7 +24,22 @@ const {refitCatalog, showView, updateBoard, showDialog, resolveDialog, closeDial
 const {applyTheme}=require("src/theme.js");
 const {brandHTML, portraitHTML, locationArtHTML, itemArtHTML}=require("src/assets.js");
 const {configureLauncher, requestGame, cancelGameLaunch, exitGame, presentResult}=require("src/gameLauncher.js");
-const {sound, vibrate, audioContext, startMusic, stopMusic, setMusicZone}=require("src/audio.js");
+const {sound, vibrate, audioContext, startMusic, stopMusic, setMusicZone, setMusicScene, nowPlaying}=require("src/audio.js");
+const {biomeFor}=require("src/biomes.js");
+const {ART}=require("src/data/art.js");
+const {sceneProfile}=require("src/locationScenes.js");
+// Board music follows the landmark nearest the current player (same level only).
+const musicSceneCache=new Map();
+function musicScene(){
+ const run=store.run;if(!run?.board||store.view!=='board'||run.warp)return null;
+ const n=run.board.nodes[run.players[run.current]?.node];if(!n)return null;
+ const key=run.board.seed+':'+n.id;if(musicSceneCache.has(key))return musicSceneCache.get(key);
+ let best=null,bestD=Infinity;
+ for(const m of Object.values(run.board.nodes)){if(m.type!=='location'||m.realm!==n.realm)continue;const L=location(m.location);if(!L)continue;const d=Math.hypot((m.x||0)-(n.x||0),(m.y||0)-(n.y||0));if(d<bestD){bestD=d;best=L;}}
+ const scene=best?{biome:biomeFor(best,sceneProfile(best).kind),place:best.name}:null;
+ if(musicSceneCache.size>400)musicSceneCache.clear();musicSceneCache.set(key,scene);return scene;
+}
+setMusicScene(musicScene);
 const {activatePair, drawPairTurn, applyPairTurn, pairChoiceOptions, pairMovementBonus, pairGateBonus, pairForRun}=require("src/pairs.js");
 const {updateProgression}=require("src/progression.js");
 const {optionView,showRoutePanel,routePanelAction}=require("src/routePanel.js");
@@ -157,7 +172,7 @@ async function enterWarpZone(pipe=null){
  run.warpsVisited=[...(run.warpsVisited||[]),id];run.warp={id,returns:run.players.map(q=>q.node),bossId:def.bossId};
  logRun(`The party warps to ${def.title}.`);saveRun();
  await warpTransition(()=>{run.mainBoard=run.board;run.savedTraps=run.traps;run.traps=[];run.board=board;for(const q of run.players){q.warpVisited=q.visited;q.visited=[];q.node=board.realms.warp.start;}run.camera='follow';run.pan=null;focusBoardAction(run,run.players.map(q=>q.node));updateBoard(true);},{title:def.title,subtitle:def.intro,icon:def.icon});
- if(store.run!==run)return;setMusicZone('warp');saveRun();await finishEncounter();
+ if(store.run!==run)return;setMusicZone('warp-'+id);saveRun();await finishEncounter();
 }
 async function exitWarpZone(){
  const run=store.run,w=run.warp;if(!w)return;
@@ -301,7 +316,7 @@ async function visitLocation(id){
   else{p.points+=3;message='You caught up with a familiar visitor. All available characters here are already recruited. +3 points.';}
  }else{item=selectItemDrop(themedItems(l.source),{random,player:p,profile:store.profile})||randomItem(random,{player:p,profile:store.profile});const found=acquireItem(run,store.profile,p,item);unlocked.push(...found.unlocked);message=found.message;}
  run.pending={kind:'location-result',locationId:id,message,unlocked,owner:visitors.owner,itemId:item?.id};saveRun();
- if(unlocked.length){sound('unlock');if(!await unlockDialog(unlocked,visitors.owner)||store.run!==run||movementToken!==token)return;}
+ if(unlocked.length){if(!await unlockDialog(unlocked,visitors.owner)||store.run!==run||movementToken!==token)return;}
  const answer=!unlocked.length||item?await showDialog({title:item?'Supplies collected · '+item.name:'Visitor met',source:l.source,body:message,html:effectHTML(before,item?{item}:{icon:'◆'})+(item?`<div class="how-to">${e(itemDescription(item))}</div>`:''),choices:foundChallengeChoices(item)}):null;
  if(store.run!==run||movementToken!==token)return;animateItemTransfers(before);if(answer==='play')return playFoundChallenge(p,item);await finishEncounter();
 }
@@ -334,6 +349,17 @@ async function useBagItem(index){
 async function openBag(){const p=store.run.players[store.run.current],size=(window.innerHeight||800)<500?2:6;let page=0;
  while(store.run&&store.view==='board'){const start=page*size,items=p.items.slice(start,start+size),choices=items.map((id,i)=>({label:findItem(id)?.name||'Item',sub:findItem(id)?itemDescription(findItem(id)):'',art:findItem(id)?itemArtHTML(findItem(id)):'',value:start+i}));if(page)choices.push({label:'← Previous items',value:'previous'});if(start+size<p.items.length)choices.push({label:'More items →',value:'next'});choices.push({label:'Back to board',value:'cancel',primary:true});const chosen=await showDialog({title:p.name+'’s bag',body:p.items.length?`${p.items.length} items · ${canUseItem(store.run)?'one item available before rolling':'item action used; roll next'}. Choose one to inspect.`:'Your bag is empty. Visit a supply cache or shop.',choices});if(chosen==='next'){page++;continue;}if(chosen==='previous'){page--;continue;}if(Number.isInteger(chosen))await useBagItem(chosen);return;}
 }
+// Main menu "Exit game": everything is already saved; close the tab when the browser allows it,
+// otherwise stop all sound, leave fullscreen and show a quiet closed screen.
+async function quitApp(){
+ const live=store.run&&!store.run.finished;
+ const choice=await showDialog({title:'Exit ShambConkins?',body:live?'Your run is saved. Continue it any time from the title screen.':'Your unlocks and progress are saved on this device.',choices:[{label:'Exit game',value:'exit',primary:true},{label:'Keep playing',value:'stay'}]});
+ if(choice!=='exit')return;
+ if(store.run)saveRun();stopMusic();exitFullscreen();
+ try{window.close();}catch{}
+ setTimeout(()=>{if(window.closed)return;store.view='closed';document.body.dataset.view='closed';
+  document.getElementById('app').innerHTML=`<main class="shell exit-screen"><div class="exit-card"><img class="exit-logo" src="${ART.brand}" alt="ShambConkins"><h2>Thanks for playing</h2><p>The game is closed and saved. You can close this tab or swipe the browser away.</p><button class="ts-play" data-action="home">Back to the title screen</button></div></main>`;},200);
+}
 async function settings(){const p=store.profile;const choice=await showDialog({title:'Make yourself comfortable',body:'Progress is saved automatically on this browser.',html:`<div class="settings-row"><span>Full screen</span>${fullscreenSupported()?fullscreenButton('onoff','small'):'<button class="small" disabled>Not available here</button>'}</div><div class="settings-row"><span>Sound effects</span><button class="small" data-action="toggle-setting" data-id="sound">${p.settings.sound?'On':'Off'}</button></div><div class="settings-row"><span>Original synth ambience</span><button class="small" data-action="toggle-setting" data-id="music">${p.settings.music?'On':'Off'}</button></div><div class="settings-row"><span>Original property logos (internet)</span><button class="small" data-action="toggle-setting" data-id="originalLogos">${p.settings.originalLogos?'On':'Off'}</button></div><div class="settings-row"><span>Level drink status (Chardee flavor text)</span><button class="small" data-action="toggle-setting" data-id="drinkStatus">${p.settings.drinkStatus!==false?'On':'Off'}</button></div><div class="settings-row"><span>Reduce motion</span><button class="small" data-action="toggle-setting" data-id="reducedMotion">${p.settings.reducedMotion?'On':'Off'}</button></div><div class="settings-row"><span>Touch controls</span><button class="small" data-action="touch-mode">${{auto:"Automatic",touch:"Compatibility",pointer:"Pointer"}[p.settings.touchMode]||"Automatic"}</button></div><div class="settings-row"><span>Pub flick sensitivity · next match, both players</span><button class="small" data-action="flick-mode">${p.settings.flickSensitivity===.65?"Gentle":p.settings.flickSensitivity===1.35?"Strong":"Standard"}</button></div><div class="settings-row"><span>Check both players’ fingers</span><button class="small" data-action="touch-test">Two-finger test</button></div><div class="settings-row"><span>Keep a portable save</span><button class="small" data-action="backup">Export backup</button></div><div class="settings-row"><span>Restore a backup</span><button class="small" data-action="import">Import backup</button><input id="backup-file" type="file" accept="application/json,.json" hidden></div>`,choices:[{label:'Back to it',value:'ok',primary:true}]});return choice;}
 function exportBackup(){const json=JSON.stringify({format:'shambconkins-backup',version:20,profile:store.profile,run:store.run},null,2),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));a.download='ShambConkins-save.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('Backup exported. Keep it with your game file.');}
 async function importBackup(file){try{const data=JSON.parse(await file.text());if(data.format!=='shambconkins-backup'||data.profile?.version!==20||(data.run&&!validRun(data.run)))throw new Error('Unsupported backup');const choice=await showDialog({title:'Restore this backup?',body:'This replaces the progress saved in this browser. Export a backup first if you want to keep both.',choices:[{label:'Restore backup',value:'yes',primary:true},{label:'Keep current progress',value:'no'}]});if(choice!=='yes')return;writeJSON(PROFILE_KEY,data.profile);store.profile=loadProfile();store.run=data.run;saveRun();applyPreferences();home();toast('Backup restored.');}catch{toast('This file is not a valid ShambConkins v0.20 backup.');}}
@@ -348,6 +374,7 @@ async function action(name,target){
  if(store.busy&&!['home','camera','zoom-in','zoom-out','recenter'].includes(name))return;
  switch(name){
   case 'home':home();break;
+  case 'quit-app':await quitApp();break;
   case 'setup':setupSelected=['sean','amber'];setupNames=['Sean','Amber'];showView('setup',{selected:setupSelected,names:setupNames});break;
   case 'choose-character':{const rosterScroll=[...document.querySelectorAll('.character-choices')].map(el=>el.scrollTop||0);captureSetup();const length=document.getElementById('run-length').value,seed=document.getElementById('run-seed').value;const preferences=['board-theme','game-mode','team-mate-0','team-mate-1'].map(id=>[id,document.getElementById(id)?.value]);if(!differentCharacters(target.dataset.id,setupSelected[1-(+target.dataset.player)]))return toast('That character is already travelling with the other player.');setupSelected[+target.dataset.player]=target.dataset.id;showView('setup',{selected:setupSelected,names:setupNames});document.querySelectorAll('.character-choices').forEach((el,i)=>el.scrollTop=rosterScroll[i]||0);document.getElementById('run-length').value=length;document.getElementById('run-seed').value=seed;for(const[id,value]of preferences)if(document.getElementById(id))document.getElementById(id).value=value;break;}
   case 'start-run':await startRun();break;
@@ -381,7 +408,7 @@ document.addEventListener('input',event=>{if(event.target.id==='catalog-search')
 document.getElementById('dialog').addEventListener('cancel',event=>{event.preventDefault();const i=store.dialog?.choices.findIndex(c=>['cancel','no','stay'].includes(c.value));if(i>=0)resolveDialog(i);});
 window.addEventListener('pagehide',saveRun);window.addEventListener('orientationchange',()=>{if(store.view==='board'&&!store.session)setTimeout(()=>updateBoard(true),100);});
 installViewport(()=>{if(store.view==='board'&&!store.session&&!store.boardTour)repaintCamera();});installMedia();installBoardGestures();installPortraitCycle();applyPreferences();saveProfile(store.profile);showView('home');
-window.ShambConkins={version:VERSION,announceLevel,updateBoard,enterWarpZone,exitWarpZone,startBoss,bossDone,buildWarpBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
+window.ShambConkins={version:VERSION,announceLevel,updateBoard,enterWarpZone,exitWarpZone,startBoss,bossDone,buildWarpBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,nowPlaying,musicScene,unlockDialog,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
 
 function installBoardGestures(){
  // One finger pans the map, two fingers pinch-zoom, the mouse wheel zooms. Rolling resets the view.

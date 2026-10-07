@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.48.0
+
+**New board music.** The circus-style chiptune playlists are gone. Board music is now generated live from original
+pieces with a softer band: FM electric piano, vibraphone, flute, pads, upright and synth bass and a quiet drum kit, all
+through a shared reverb and tempo echo. Each level has its own style: Mind is study jazz, Body is nu-disco, Spirit is
+dream pop, the Upside Down is darkwave, and Horror is distorted 180 BPM hardcore with gabber kicks, snare rolls and a
+siren. The landmark nearest the current player sets the lead instrument, harmony and ambience: steel drum and waves
+at the beach, flute and birdsong in the woods, cello and rain in Gotham, an exotic scale and wind in the desert,
+bells in space, and so on for all 18 biomes. The music changes on a bar line so the beat keeps going. Each of the
+eight warp boards has its own style: space synthpop, sugar pop, ukulele, lounge swing, island calypso, noir jazz,
+field folk and synth-funk. The title screen plays a lo-fi lounge piece. The metal riffs on the level title cards and
+the "Gentlemen…" string chord are unchanged.
+
+**Unlock fanfare.** A short brass "ta-da" with timpani, glockenspiel and a cymbal plays whenever a character joins.
+The background music pauses underneath it.
+
+**Exit game.** The title screen has an EXIT GAME button. After you confirm, it saves, stops the audio, leaves
+fullscreen and closes the tab when the browser allows it. Otherwise it shows a "Thanks for playing" screen with a way
+back. New test: `tests/music.mjs`.
+
 ## v0.47.0
 
 **The title screen's look now runs through the whole game.** Setup, Characters, Minigame Vault, the board's top bar,

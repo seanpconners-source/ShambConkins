@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.47.0 (`releases/ShambConkins_v0.47.0.html`).
+Version 0.48.0 (`releases/ShambConkins_v0.48.0.html`).
 
 ## Implemented systems
 - **Board (generation 7):** per-realm journey map: stem → crossroads → 3 lanes (Calm/Adventurous/High Reward) → gate.
@@ -18,7 +18,12 @@ Version 0.47.0 (`releases/ShambConkins_v0.47.0.html`).
   microgames), bosses. Living Dead horde is a full Vampire-Survivors-style game. Most games converted to touch gestures.
 - **Content:** 655 characters (unlock paths audited by `tests/unlocks.mjs`), ~2,770 trivia questions, 650+ landmarks.
   Special unlock kinds: horror, boss, dogs (KC+Mylo only together via the early family event), item, lab, character-win.
-- **Music:** `src/music.js` sequencer, public-domain tunes per level, home track.
+- **Music:** generative board score. `src/musicGen.js` composes original songs (intro/A/A2/B/A3/break, voice-led
+  chords, motif melodies) from a STYLE (home, mind, body, spirit, horror, upside-down, one per warp board) coloured by the
+  BIOME of the landmark nearest the current player (`musicScene()` in `app.js`, re-checked every bar). `src/music.js`
+  holds the band (`INST` presets, `perc`, role buses with bus-level reverb/echo sends, kick ducking, Horror dirt bus),
+  the unchanged metal title-card riffs (`data/musicTracks.js`), the intro string chord and `playFanfare()` (unlock ditty,
+  called from `unlockDialog`). Keep per-note node counts low: phones. `renderSceneInto()` renders a scene offline.
 
 ## Recent changes (this round of owner feedback)
 Boss trigger fix + drag flow; 2x heads (board, collection, character select); collection pages fit the screen;
@@ -53,6 +58,10 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   Buttons inside `.game-body` are only re-themed through zero-specificity `:where()` rules, so game-specific button
   styles win. Board SVG art and canvases are untouched. Tests: `tests/themeshots.mjs`, `tests/contrast.mjs`
   (all 113 games pass; `WALK=11,22 node tests/contrast.mjs` audits dialogs on a real run).
+
+- v0.48.0: new board music (above), unlock fanfare, title-screen EXIT GAME (`quitApp` in `app.js`; action `quit-app`, not
+  `exit-game`, which leaves a minigame). Test: `tests/music.mjs`. Mixes were balanced by offline render (≈ −24 dB RMS,
+  Horror ≈ −19) and CPU load measured at 3–12% of realtime on the test box; nobody has listened on a real phone yet.
 
 ## In progress / unverified
 - Nothing in flight. Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus

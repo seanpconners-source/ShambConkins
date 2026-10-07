@@ -20,7 +20,7 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   `packs/` (newer game packs, loaded lazily), `levels.js`/`levelCard.js` (levels & title cards),
   `warpBoards.js`/`warpFx.js` (warp zones), `bossGate.js` + `data/bosses.js` + `engines/boss*.js` (bosses),
   `contentPolicy.js` (builds the active catalog of characters/items/trivia), `profile.js` (unlock rules, saves),
-  `persistence.js` (`validRun` save validation), `audio.js`/`music.js` (WebAudio).
+  `persistence.js` (`validRun` save validation), `audio.js`/`music.js` (WebAudio) + `musicGen.js` (generative board score).
 - Writing a minigame: read `docs/ENGINE_GUIDE.md` first.
 
 ## Commands
@@ -29,7 +29,7 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   fuzz of every minigame). Must end `EXIT 0` / "N/N games ran clean".
 - Focused tests (Playwright, headless Chromium at /opt/pw-browsers/chromium-1194/chrome-linux/chrome,
   module at /node-tools/node_modules): `tests/bossgate.mjs`, `tests/warpflow.mjs`, `tests/warp.mjs`,
-  `tests/levels.mjs`, `tests/boss.mjs`, `tests/controls-audit.mjs`, `SHAMB_FILE=... node tests/games.mjs 5 3 <id-regex>`.
+  `tests/levels.mjs`, `tests/boss.mjs`, `tests/controls-audit.mjs`, `tests/music.mjs`, `SHAMB_FILE=... node tests/games.mjs 5 3 <id-regex>`.
 - Release: bump `src/version.js` + `package.json`, `npm run release` → `releases/ShambConkins_vX.html`
   (keep only the latest release file in git), add a CHANGELOG entry.
 

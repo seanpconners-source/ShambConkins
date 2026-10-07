@@ -768,3 +768,12 @@ body[data-view="home"]{background:#0c0814}
 /* Short landscape phones: logo on the left, menu on the right. */
 @media(orientation:landscape) and (max-height:520px){.title-screen{gap:4px}.title-screen .ts-main{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto;column-gap:22px;row-gap:6px;width:min(860px,100%);align-content:center;align-items:center}.title-screen .ts-main>.ts-logo,.title-screen .ts-main>.ts-tagline,.title-screen .ts-main>.ts-levels{grid-column:1}.title-screen .ts-main>.home-stack{grid-column:2;grid-row:1/4;margin:0;gap:9px}.title-screen .ts-logo .hero-logo{max-height:28vh!important}.ts-levels span{padding:4px 9px}.title-screen button.ts-icon{width:38px;height:38px;font-size:18px}.title-screen .ts-avatar{width:30px;height:30px}.title-screen .home-stack button.ts-play{min-height:54px;font-size:20px}.title-screen .home-stack button.ts-secondary{min-height:40px}.title-screen .home-stack button.ts-tile{min-height:58px}.title-screen .ts-foot{flex-direction:row;justify-content:space-between}.title-screen button.ts-link{min-height:26px;padding:2px 8px}}
 @media(prefers-reduced-motion:reduce){.ts-rays,.ts-embers i,.ts-logo,.ts-logo::before,.title-screen .home-stack button.ts-play,.title-screen .home-stack button.ts-play::after{animation:none}.ts-embers{display:none}}
+/* Title screen: exit button + the closed screen shown when the browser won't close the tab. */
+.title-screen .home-stack button.ts-exit{min-height:42px;display:flex;align-items:center;justify-content:center;gap:9px;font-size:13px;color:#cdbfe6}
+.ts-exit-icon{font:900 15px/1 Arial,sans-serif;color:#ff9a8a}
+.exit-screen{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:16px;box-sizing:border-box;background:radial-gradient(circle at 50% 35%,#2a1c3a 0%,#0b0710 70%)}
+.exit-card{width:100%;max-width:420px;display:grid;gap:14px;justify-items:center;text-align:center;color:#f3e9d2}
+.exit-card h2{margin:0;font:900 26px/1.1 "Arial Black",Arial,sans-serif;color:#ffd77e;text-shadow:0 3px 0 #000}
+.exit-card p{margin:0;font:600 14px/1.45 Arial,sans-serif;color:#cdbfe6}
+.exit-logo{width:min(70vw,300px);height:auto;filter:drop-shadow(0 6px 0 #000)}
+.exit-card button.ts-play{min-height:54px;padding:0 22px;font:900 15px/1 "Arial Black",Arial,sans-serif;letter-spacing:.05em;color:#ffd77e;background:linear-gradient(180deg,#2b2038 0%,#1a1224 100%);border:2px solid #000;border-radius:16px;box-shadow:inset 0 0 0 2px #d9a441,0 5px 0 #000}
