@@ -8,7 +8,7 @@ const {addHorrorBoard, advanceAlong}=require("src/board.js");
 const {selectReferenceSource, selectThemedEncounter}=require("src/references.js");
 const RARE_EVENTS = [
  {id:'upside-down',title:'Oops. The Upside Down.',source:'Stranger Things',body:'You have fallen between worlds. Four of your turns on a twisted pocket board, then you return.',effect:'upside'},
- {id:'body-skip',title:'Express elevator to Body',source:'Star Trek',body:'A transporter operator pressed the wrong button. Skip straight to the entrance of Level 2.',effect:'body'},
+ {id:'body-skip',title:'Express elevator to the castle',source:'Star Trek',body:'A transporter operator pressed the wrong button. You beam straight to the door of the Level 1 castle. The boss is home.',effect:'body'},
  {id:'big-avatar',title:'An unnecessarily large problem',source:'Super Mario',body:'Your avatar is double-sized for four of your turns. You also gain two penalty shields. Subtle.',effect:'large'},
  {id:'board-shuffle',title:'The board has had an idea',source:'Taskmaster',body:'All unvisited encounter spaces in this realm change places. The routes stay connected. Nobody requested this.',effect:'shuffle'},
  {id:'body-swap',title:'Face / Off. Board edition.',source:'Face/Off',body:'You swap characters with your opponent for the rest of this run. Your unlocks stay yours.',effect:'characters'},
@@ -42,7 +42,8 @@ function applyEvent(run,profile,event,random=Math.random) {
  const unlock=id=>{if(requestedUnlocks.has(id))return null;requestedUnlocks.add(id);const actual=recruitReward(profile,id,p.owner,'encounter',random);if(actual){unlocked.push(actual);unlockOwners[actual]=p.owner;}return actual;};
  if(event.effect) switch(event.effect){
   case 'upside':addPocketBoard(run);run.upsideDown={owner:run.current,returnNode:p.node,turns:4,startTurn:run.turn};p.node='upside-0';message='Four turns in the Upside Down. The exit will find you.';break;
-  case 'body':p.cleared=[...new Set([...p.cleared,'mind'])];p.node='body-start';message='Transported to Level 2: Body.';break;
+  // Beams to the space before the Level 1 gate: the next step onto the gate still triggers the level boss.
+  case 'body':{const r=run.board.realms.mind,lane=run.board.nodes[p.node]?.lane,doors=(r?.ids||[]).map(id=>run.board.nodes[id]).filter(n=>n&&n.type!=='gate'&&(n.next||[]).includes(r.gate));const door=doors.find(n=>n.lane===lane)||doors[0];if(door&&run.board.nodes[p.node]?.realm==='mind'){if(door.id!==p.node){p.visited.push(p.node);p.node=door.id;}message='Beamed to the door of the Level 1 castle.';}else{p.points+=3;message='The transporter fizzles. +3 points for your trouble.';}break;}
   case 'large':p.large=4;p.largeStart=run.turn;p.shields+=2;message='Avatar size ×2 for four turns. +2 shields.';break;
   case 'shuffle':{const realm=run.board.nodes[p.node].realm;const nodes=run.board.realms[realm].ids.map(id=>run.board.nodes[id]).filter(n=>!['start','gate'].includes(n.type)&&!run.players.some(q=>q.node===n.id||q.visited.includes(n.id)));const payload=shuffle(nodes.map(n=>({type:n.type,location:n.location})),random);nodes.forEach((n,i)=>{n.type=payload[i].type;n.location=payload[i].location;});message='The encounters have shuffled. Reconsider your path.';break;}
   case 'characters':[p.character,other.character]=[other.character,p.character];message='Characters swapped for this run.';break;
@@ -61,7 +62,7 @@ function applyEvent(run,profile,event,random=Math.random) {
   case 'swap':[p.node,other.node]=[other.node,p.node];[p.visited,other.visited]=[other.visited,p.visited];message='Positions swapped.';break;
   case 'steal':{if(other.antiSteal){other.antiSteal--;message='Kitten Mittens blocked the steal.';}else{const r=pointChange(other,other.cloak?0:-(Number(a)||3));if(!r.blocked)p.points-=r.delta;message=r.blocked||other.cloak?'The opponent blocked the steal.':`Stole ${-r.delta} points.`;}break;}
   case 'tradeItem':pointChange(p,Number(a)||-2,false);message=`${gainItem(null).message} Paid ${Math.abs(Number(a)||2)} points.`;break;
-  case 'horror':addHorrorBoard(run.board);run.horror=true;profile.horrorSeen=true;profile.modes||=['versus'];if(!profile.modes.includes('horror'))profile.modes.push('horror');p.node='horror-0';message='A new route has opened.';break;
+  case 'horror':addHorrorBoard(run.board);run.horror=true;profile.horrorSeen=true;profile.modes||=['versus'];if(!profile.modes.includes('horror'))profile.modes.push('horror');message='A new route has opened beneath the Spirit castle. Beat its boss and you both go down.';break;
   case 'team':run.mutation={remaining:3,won:0};message='Three cooperative rounds against the plumber brothers.';break;
   case 'horrorTrap':run.traps||=[];run.traps.push({node:pick(run.board.realms[run.board.nodes[p.node].realm].ids,random),owner:-1});message='Something has changed ahead.';break;
   case 'unlockFeature':profile.equipment=true;message=`Equipment locker opened. ${gainItem('heavy-champion-belt').message}`;break;

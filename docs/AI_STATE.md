@@ -116,6 +116,11 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   action on landing, Chance draws skip trivia questions. `showSmashCard` + `glassSmash()` (audio.js) between the
   Gentlemen card and Level I.
 
+- Level flow fix: only the level boss moves players into the next level. The rare "Express elevator" card (`effect:'body'`)
+  now beams to the space before the Mind gate (it used to drop the player in Body, skipping the boss); item/card forward
+  moves (`advanceAlong`, `bossAhead` in board.js) stop at the door of an unbeaten level gate; FRANK only opens Horror and
+  `advanceAfterBoss` takes both players from the Spirit castle down to `horror-0`; `levelEndBoss` pulls a player out of
+  the Upside Down first. Tests: `tests/levelflow.mjs` (Node random walks, in `npm test`), `tests/levelflow-ui.mjs`.
 - Launch music: boot now starts the home score (it used to call `showView('home')` without `home()`), and
   `installAudioUnlock()` (audio.js) resumes the suspended AudioContext on the first tap/key.
 
