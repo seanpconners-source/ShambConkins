@@ -119,7 +119,7 @@ function addShortcut(board,realm,lane,from,to,skip,id,random){
 }
 function buildGridBoard(board){
  const random=seededRandom(board.seed+':grid-v8');
- board.layout=pick(GRID_LAYOUTS,random);board.generation=8;board.grid={p:GRID_P,x0:GRID_X0,cols:GRID_COLS};
+ board.layout=pick(GRID_LAYOUTS,random);board.generation=8;board.baseSpan=1050;board.grid={p:GRID_P,x0:GRID_X0,cols:GRID_COLS};
  board.pathNetworks=[];board.bridges=[];board.shortcuts=[];
  const oldSigns=board.signs.filter(s=>!s.branch);board.signs=[];board.obstacles=[];board.width=1800;
  let yBase=0;
@@ -163,13 +163,14 @@ function buildGridBoard(board){
   // Bridges: a plank across the gap column to the neighbouring road, never far backwards.
   const blocked=new Set(),laneAt=new Map();tracks.forEach((path,lane)=>cells[lane].forEach(([c,r],i)=>laneAt.set(key(c,r),{lane,i})));
   const made=[];
-  for(const lane of shuffle([0,1,2],random)){
+  // Rows straight across first; a realm with no such crossing gets a steeper plank.
+  for(const drs of [[0,1,-1],[2,-2]])for(const lane of made.length&&drs.length===2?[]:shuffle([0,1,2],random)){
    const pos=positions[lane],dirs=[];if(pos<2)dirs.push(1);if(pos>0)dirs.push(-1);
    const opts=[];
    for(const dir of dirs)cells[lane].forEach(([c,r],i)=>{
     if(r<=R0+1||r>=R1-1||i<3||i>tracks[lane].length-4||board.nodes[tracks[lane][i]].next.length!==1)return;
     // Same row: a plank across up to three empty cells. One empty cell: may also step a row up or down.
-    for(const dr of [0,1,-1])for(let span=2;span<=4;span++){
+    for(const dr of drs)for(let span=2;span<=4;span++){
      if(dr&&span!==2)continue;
      const t=laneAt.get(key(c+dir*span,r+dr));if(!t||t.lane===lane)continue;
      const gaps=[];for(let k=1;k<span;k++)gaps.push(key(c+dir*k,r));if(dr){gaps.push(key(c+dir,r+Math.sign(dr)),key(c+dir,r+dr));}

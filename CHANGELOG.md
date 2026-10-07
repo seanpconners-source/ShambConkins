@@ -1,5 +1,36 @@
 # Changelog
 
+## v0.49.0
+
+**Grid boards.** Every level is now laid out like a printed party board game: square tiles on a grid. A short stem
+leaves camp, splits at the crossroads into the Calm, Adventurous and High Reward roads, and they wind down their own
+part of the grid in switchbacks, staircases and long corridors before meeting at the gate. Each level picks its own
+shape, so no two levels look alike. Roads never touch themselves or each other. Where two roads run close, a wooden
+plank bridge joins them. Where a road doubles back, a **shortcut** hops the gap and skips 5–14 spaces. Every shortcut
+is guarded by an obstacle: get past it with the right gear, a character skill, a crossing pass or 3 points, the same
+as the blocked roads. The route chooser shows shortcuts as "Shortcut · skip N spaces". Landmarks stand on cards in the
+empty blocks next to their space. Bosses, warp pipes, events, unlocks and games work as before. The Horror level is
+one long grid road with two guarded doors. The Upside Down is a square loop, and pair trails are a straight row.
+Saved runs keep the board they started with.
+
+**New board look.** The main board is now a dark tabletop for each level (plum for Mind, clay for Body, indigo for
+Spirit, blood red for Horror) with faint empty tile slots. Spaces are chunky 3D tiles with white icons. Each tile has a
+border in its road's colour, and the road colour also shows in the gaps between tiles. Landmark cards are dark glass
+with white titles, and the map labels are white with a dark outline, so they read on any background. The level title
+and three road signs sit at the top of each level, and the boss castle sits below the gate. Warp boards are unchanged.
+Rare-encounter dialogs had light text on a light card. They now use the dark dialog.
+
+**Beer Pong is a full match.** No more 12-toss limit: the first player to clear all ten cups wins. You get two shots a
+turn. Sink both and it's **BRING IT BACK!** for a third shot, but never a fourth.
+
+**Character select.** Each player gets a full panel with a big spotlit face that slowly cycles through that
+character's expressions. The roster grid now fills the rest of the panel. Tiles no longer clip faces or names, and a
+character the other player has picked is marked P1 or P2. On phones the two panels stack, and the controls are
+smaller.
+
+**Back, not Board.** The Characters and Minigame Vault screens have a "← Back" button to the main menu instead of
+"← Board".
+
 ## v0.48.0
 
 **New board music.** The circus-style chiptune playlists are gone. Board music is now generated live from original

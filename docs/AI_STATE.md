@@ -1,12 +1,17 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.48.0 (`releases/ShambConkins_v0.48.0.html`).
+Version 0.49.0 (`releases/ShambConkins_v0.49.0.html`).
 
 ## Implemented systems
-- **Board (generation 7):** per-realm journey map: stem → crossroads → 3 lanes (Calm/Adventurous/High Reward) → gate.
-  Staggered bridges (never paired with a bridge straight back). Landmark cards beside roads, each inside a living
-  **biome** patch (`src/biomes.js`, keyword → biome: space/forest/nyc/gotham/beach/desert/snow/graveyard/...).
-  Pinch/wheel zoom; view resets on roll. Player heads drawn 2x (`pieceScale` in `boardCamera.js`).
+- **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
+  camp → crossroads → 3 roads (Calm/Adventurous/High Reward) in west/centre/east bands → gate. `gridPath` is an
+  exact-length DFS (moves down/left/right only, no non-consecutive tiles touching); per-realm style (serpent/stairs/
+  corridor/mixed). Bridges = planks across the gap columns (`board.bridges`); shortcuts = hops across a switchback
+  (`board.shortcuts`, `node.shortcut`), each guarded by an obstacle `shortcut-<from>`. Landmarks get `node.card` boxes in
+  free grid blocks. Horror (`layoutHorrorGrid`), Upside Down (square loop) and pair trails also sit on the grid.
+  Rendering: `src/gridRender.js` (dark tabletop per realm, 3D tiles ringed in road colour, glass cards, lane chips,
+  castle below gate); CSS `.board-svg[data-grid]` block at the end of `styles.css`. Old saves keep generation 7 boards
+  (`multiPathBoard.js` + `boardZones.js` journey-map renderer). Tests: `tests/board.mjs`, `tests/shortcut.mjs` (UI flow), screenshots `tests/boardshots.mjs`.
 - **Levels:** Mind/Body/Spirit (+ chance Horror). Level plaque + drink status, title cards with metal riffs,
   "Gentlemen…" intro card at run start, level-biased game selection (`levelFit`), Spirit humiliation dares.
 - **Level bosses:** first player through a gate wins the level; others are dragged to the gate along the shortest path
@@ -62,6 +67,11 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
 - v0.48.0: new board music (above), unlock fanfare, title-screen EXIT GAME (`quitApp` in `app.js`; action `quit-app`, not
   `exit-game`, which leaves a minigame). Test: `tests/music.mjs`. Mixes were balanced by offline render (≈ −24 dB RMS,
   Horror ≈ −19) and CPU load measured at 3–12% of realtime on the test box; nobody has listened on a real phone yet.
+
+- v0.49.0: grid boards + new board look (above); Beer Pong is a full match, 2 shots a turn, both in → "BRING IT BACK" third
+  shot (`tests/beerpong.mjs`); character select rebuilt (`setupPanelHTML` in `ui.js`, `.cs-*` block at the end of
+  `theme.css`, expressions cycle via `installSetupFaceCycle` in `app.js`; `tests/setupshots.mjs`); collections show
+  "← Back" (home) instead of "← Board"; rare-encounter dialogs are dark.
 
 ## In progress / unverified
 - Nothing in flight. Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus

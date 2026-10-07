@@ -778,6 +778,51 @@ body[data-view="home"]{background:#0c0814}
 .exit-card p{margin:0;font:600 14px/1.45 Arial,sans-serif;color:#cdbfe6}
 .exit-logo{width:min(70vw,300px);height:auto;filter:drop-shadow(0 6px 0 #000)}
 .exit-card button.ts-play{min-height:54px;padding:0 22px;font:900 15px/1 "Arial Black",Arial,sans-serif;letter-spacing:.05em;color:#ffd77e;background:linear-gradient(180deg,#2b2038 0%,#1a1224 100%);border:2px solid #000;border-radius:16px;box-shadow:inset 0 0 0 2px #d9a441,0 5px 0 #000}
+/* ---------- Grid boards (generation 8): dark tabletop, chunky tiles, readable white titles ---------- */
+.board-svg[data-grid] .gr-track{fill:none;stroke-width:42;stroke-linecap:round;stroke-linejoin:round}
+.board-svg[data-grid] .gr-stem{stroke:#9aa0c8}
+.board-svg[data-grid] .gr-track-glow{fill:none;stroke:#000;stroke-opacity:.5;stroke-width:62;stroke-linecap:round;stroke-linejoin:round}
+.board-svg[data-grid] .gr-plank-rail{fill:#2f1c0f;stroke:#0d0703;stroke-width:3}
+.board-svg[data-grid] .gr-plank{fill:#d39552}
+.board-svg[data-grid] .gr-plank-gap{fill:#6b3f1c}
+.board-svg[data-grid] .gr-shortcut-bed{fill:none;stroke:#000;stroke-opacity:.55;stroke-width:30;stroke-linecap:round}
+.board-svg[data-grid] .gr-shortcut-line{fill:none;stroke:#ffd34d;stroke-width:12;stroke-dasharray:3 15;stroke-linecap:round}
+.board-svg[data-grid] .gr-shortcut.closed .gr-shortcut-line{stroke:#ff5b5b}
+.board-svg[data-grid] .gr-shortcut-tag rect{fill:#120c1a;stroke:#ffd34d;stroke-width:3}
+.board-svg[data-grid] .gr-shortcut.closed .gr-shortcut-tag rect{stroke:#ff5b5b}
+.board-svg[data-grid] .gr-shortcut-tag text{font:900 17px Arial,sans-serif;fill:#fff;text-anchor:middle}
+.board-svg[data-grid] .gr-chip-bg{fill:#120c1a;fill-opacity:.92;stroke:#ffffff2e;stroke-width:3}
+.board-svg[data-grid] .gr-chip-kind{font:900 17px "Arial Black",Arial,sans-serif;fill:#120c1a;letter-spacing:2px}
+.board-svg[data-grid] .gr-chip-count{font:900 15px Arial,sans-serif;fill:#120c1a}
+.board-svg[data-grid] .gr-chip-name{font-weight:800;font-family:Arial,sans-serif;fill:#fff}
+.board-svg[data-grid] .gr-realm-title{font:900 60px "Arial Black",Arial,sans-serif;letter-spacing:8px;paint-order:stroke;stroke:#000;stroke-width:10px;stroke-linejoin:round}
+.board-svg[data-grid] .gr-arch-back{fill:none;stroke:#120d18;stroke-width:16;stroke-linecap:round}
+.board-svg[data-grid] .gr-arch{fill:none;stroke:#ffcf3f;stroke-width:8;stroke-linecap:round}
+.board-svg[data-grid] .gr-castle-road{stroke:#ffcf3f55;stroke-width:16;stroke-dasharray:4 14;stroke-linecap:round}
+.board-svg[data-grid] .gr-gate-word{font:900 38px "Arial Black",Arial,sans-serif;fill:#ffcf3f;paint-order:stroke;stroke:#120d18;stroke-width:9px;stroke-linejoin:round}
+.board-svg[data-grid] .gr-castle-name{font:900 28px Arial,sans-serif;fill:#fff;paint-order:stroke;stroke:#000;stroke-width:7px;stroke-linejoin:round}
+.board-svg[data-grid] .gr-card-bg{fill:#140e1f;stroke-width:4}
+.board-svg[data-grid] .gr-card-name{font-weight:900;font-family:Arial,sans-serif;fill:#fff}
+.board-svg[data-grid] .gr-card-source{font:700 12px Arial,sans-serif;fill:#b9add6}
+.board-svg[data-grid] .gr-card-link{fill:none;stroke-width:6;stroke-dasharray:2 10;stroke-linecap:round;opacity:.9}
+.board-svg[data-grid] .gr-biome .jr-biome>rect:last-child{stroke:#ffffff;opacity:.18}
+.board-svg[data-grid] .gr-biome{opacity:.5}
+.board-svg[data-grid] .map-space .space-symbol{font:900 27px "Arial Black",Arial,sans-serif;fill:#fff;paint-order:stroke;stroke:#00000080;stroke-width:5px;stroke-linejoin:round}
+.board-svg[data-grid] .map-space.type-task .space-symbol,.board-svg[data-grid] .map-space.type-shop .space-symbol,.board-svg[data-grid] .map-space.type-trivia .space-symbol,.board-svg[data-grid] .map-space.type-game .space-symbol{font-size:21px}
+.board-svg[data-grid] .map-space.type-start .space-symbol,.board-svg[data-grid] .map-space.type-gate .space-symbol{fill:#2a1a10;stroke:#ffffff80;font-size:34px}
+.board-svg[data-grid] .detour-label{fill:#fff;stroke:#0b0710;stroke-width:5px;font:900 15px Arial,sans-serif}
+.board-svg[data-grid] .simple-landmark-pin circle{fill:#19b9b4;stroke:#fff;stroke-width:2.4}
+.board-svg[data-grid] .simple-landmark-pin path{fill:#fff}
+.board-svg[data-grid] .simple-landmark-pin text{font:800 12px Arial,sans-serif;fill:#fff;paint-order:stroke;stroke:#0b0710;stroke-width:4px;stroke-linejoin:round}
+.board-svg[data-grid] .gr-band.glow{fill-opacity:.16;stroke-opacity:.7}
+.board-svg[data-grid] .gr-chip.glow .gr-chip-bg{stroke:#fff;stroke-opacity:.8}
+.board-svg[data-grid] .gr-chip.dim{opacity:.4}
+.board-svg[data-grid] .gr-shortcut.glow,.board-svg[data-grid] .gr-bridge.glow{filter:drop-shadow(0 0 12px #ffd34d)}
+.board-svg[data-grid] .gr-shortcut.dim,.board-svg[data-grid] .gr-bridge.dim{opacity:.4}
+.board-svg[data-grid] .board-banter rect{fill:#120c1a;stroke:#ffffff55}
+.board-svg[data-grid] .board-banter text{fill:#fff}
+.board-svg[data-grid] .route-obstacle rect{fill:#120c1a;stroke:#ff5b5b}
+.board-svg[data-grid] .route-obstacle.open rect{stroke:#2fd08f}
 
 /* ==========================================================================
    v0.47 interface theme: the title screen's dark arcade look on every menu,
@@ -1023,6 +1068,85 @@ body .dialog-content .rare-label{color:var(--t-acc)}
 body .badge-row span{color:var(--t-sub);background:var(--t-well);border-color:var(--t-hair)}
 body .lv-pip.on,body .lv-badge{text-shadow:0 1px 0 #000,0 0 4px #0008}
 body .finish-heading h1{font-weight:900}
+
+/* ---------- Character select (v0.49): spotlight hero + full-height roster grid ---------- */
+.setup-shell .section-heading{margin-bottom:10px}
+.setup-shell .cs-panels{flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+body .setup-shell .cs-panel{--pc:var(--t-p1);position:relative;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;border-radius:22px;border:2px solid var(--t-edge);background:radial-gradient(ellipse 80% 60% at 22% 30%,color-mix(in srgb,var(--pc) 22%,transparent),transparent 70%),linear-gradient(170deg,var(--t-s1) 0%,var(--t-s2) 100%);box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 2px 0 var(--t-shine),0 5px 0 var(--t-edge),0 14px 34px #0007}
+body .setup-shell .cs-panel.p2{--pc:var(--t-p2)}
+.cs-panel::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,transparent,var(--pc),transparent);opacity:.9}
+.cs-head{display:flex;align-items:center;gap:10px;padding:12px 14px 8px;flex-shrink:0}
+.cs-badge{flex:0 0 auto;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;font:900 15px/1 "Arial Black",Arial,sans-serif;color:#fff;background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--pc) 70%,#fff),var(--pc) 60%,color-mix(in srgb,var(--pc) 60%,#000));box-shadow:0 3px 0 var(--t-edge),0 0 16px color-mix(in srgb,var(--pc) 55%,transparent);text-shadow:0 1px 0 #0008}
+.cs-owner{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+body .setup-shell .cs-owner label{font:700 9px/1.2 ui-monospace,monospace;letter-spacing:.18em;color:var(--t-dim);margin:0}
+body .setup-shell .cs-owner input{width:100%;max-width:240px;min-height:34px;padding:5px 11px;font:800 15px/1.2 Arial,sans-serif}
+.cs-count{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;padding:5px 11px;border-radius:12px;background:var(--t-well);box-shadow:inset 0 0 0 1px var(--t-hair)}
+.cs-count b{font:900 18px/1 "Arial Black",Arial,sans-serif;color:var(--t-acc)}
+.cs-count small{font:700 8px/1.3 ui-monospace,monospace;letter-spacing:.16em;color:var(--t-dim)}
+.cs-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(150px,.75fr) minmax(0,1.45fr);gap:12px;padding:0 14px 14px}
+.cs-hero{display:flex;flex-direction:column;min-width:0;min-height:0;text-align:center}
+.cs-stage{position:relative;flex:1;min-height:120px}
+.cs-spot{position:absolute;inset:4% 2% 0;background:radial-gradient(ellipse 60% 55% at 50% 45%,color-mix(in srgb,var(--pc) 38%,transparent),transparent 72%);pointer-events:none}
+.cs-spot::after{content:"";position:absolute;left:18%;right:18%;bottom:2%;height:9%;border-radius:50%;background:radial-gradient(ellipse at center,#000a,transparent 70%)}
+.cs-face{position:absolute;inset:0 0 5%;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.9) translateY(8px) rotate(-2deg);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.9,.3,1.2);pointer-events:none}
+.cs-face.on{opacity:1;transform:none}
+body .setup-shell .cs-face .cs-portrait{width:100%;height:100%;max-width:300px;margin:0;border:0;background:none;border-radius:0}
+body .setup-shell .cs-face .cs-portrait img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 10px 14px #000b);animation:cs-float 4.5s ease-in-out infinite}
+@keyframes cs-float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1deg)}}
+.cs-info{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:4px;min-width:0}
+body .setup-shell .cs-info h3{margin:0;font:900 clamp(17px,2.2vw,26px)/1.1 "Arial Black",Arial,sans-serif;color:var(--t-head);text-shadow:0 2px 0 #000a;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-brand .property-logo{display:block;width:150px;max-width:100%;height:28px;object-fit:contain;margin:0 auto}
+.cs-perk{margin:0;font-size:12px;line-height:1.35;color:var(--t-sub);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cs-skills{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}
+.cs-skills span{font:800 10px/1 Arial,sans-serif;letter-spacing:.04em;padding:4px 8px;border-radius:99px;color:var(--t-acc-ink);background:linear-gradient(180deg,var(--t-acc),var(--t-acc2));box-shadow:0 2px 0 var(--t-edge)}
+.cs-gridwrap{min-width:0;min-height:0;display:flex;border-radius:16px;background:var(--t-well);box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 4px 14px #000b;padding:8px}
+.setup-shell .cs-grid{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));grid-auto-rows:max-content;align-content:start;gap:8px;padding:2px 2px 10px;scrollbar-width:thin;scrollbar-color:var(--t-s3) transparent}
+body .setup-shell .cs-panel .cs-grid button.cs-tile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;min-width:0;min-height:0;height:auto;aspect-ratio:1/1.12;padding:6px 4px 6px;margin:0;border-radius:14px;color:var(--t-text);background:radial-gradient(ellipse at 50% 30%,var(--t-s3),var(--t-s2) 75%);border:2px solid var(--t-edge);box-shadow:inset 0 0 0 1px var(--t-hair),0 3px 0 var(--t-edge);transition:transform .15s,box-shadow .2s;overflow:hidden;text-shadow:none}
+body .setup-shell .cs-panel .cs-grid button.cs-tile:hover:not(:disabled){transform:translateY(-2px)}
+body .setup-shell .cs-panel .cs-grid button.cs-tile.selected{background:radial-gradient(ellipse at 50% 30%,color-mix(in srgb,var(--pc) 45%,var(--t-s3)),var(--t-s2) 80%);box-shadow:inset 0 0 0 3px var(--pc),0 3px 0 var(--t-edge),0 0 18px color-mix(in srgb,var(--pc) 60%,transparent)}
+body .setup-shell .cs-panel .cs-grid button.cs-tile:disabled{opacity:.42;filter:grayscale(.7)}
+.cs-tile-face{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+body .setup-shell .cs-tile .cs-mini{width:100%;height:100%;max-width:84px;margin:0;border:0;background:none;border-radius:0}
+body .setup-shell .cs-tile .cs-mini img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 3px 4px #000a)}
+.cs-tile-name{flex-shrink:0;max-width:100%;font:800 11px/1.2 Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px}
+.cs-tile.selected .cs-tile-name{color:#fff}
+.cs-taken{position:absolute;top:4px;right:4px;font:900 9px/1 Arial,sans-serif;font-style:normal;padding:3px 5px;border-radius:6px;color:#fff;background:var(--t-p2)}
+.cs-panel.p2 .cs-taken{background:var(--t-p1)}
+body .setup-shell .setup-controls{margin-top:12px}
+@media(max-width:600px){
+ .setup-shell>.topbar{display:none}
+ .setup-shell .section-heading{margin-bottom:8px}
+ .setup-shell .section-heading p,.setup-shell>p,.cs-brand{display:none}
+ .setup-shell .setup-controls{gap:6px 8px!important;margin-top:9px!important}
+ .setup-shell .setup-controls label{font-size:8px;margin-bottom:2px}
+ .setup-shell .setup-controls input,.setup-shell .setup-controls select{min-height:36px!important;padding:5px 8px!important}
+ .setup-shell .setup-controls button.primary{min-height:44px!important}
+ .setup-shell .pair-banner{margin:8px 0 0;padding:7px 10px;font-size:10px;line-height:1.4}
+ .setup-shell .section-heading h2{font-size:24px!important;margin-top:2px!important}
+ .setup-shell .cs-panels{grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr));gap:9px}
+ .cs-head{padding:8px 10px 6px;gap:8px}.cs-badge{width:32px;height:32px;font-size:12px}
+ body .setup-shell .cs-owner input{min-height:30px;font-size:13px;padding:3px 9px}
+ .cs-count{padding:3px 8px}.cs-count b{font-size:15px}
+ .cs-body{grid-template-columns:minmax(108px,.7fr) minmax(0,1.3fr);gap:8px;padding:0 10px 10px}
+ .cs-stage{min-height:80px}
+ body .setup-shell .cs-info h3{font-size:15px}
+ .cs-brand .property-logo{height:20px;width:110px}
+ .cs-perk{font-size:10px;-webkit-line-clamp:2}
+ .cs-skills span{font-size:9px;padding:3px 6px}
+ .cs-gridwrap{padding:6px}
+ .setup-shell .cs-grid{grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:5px}
+ body .setup-shell .cs-panel .cs-grid button.cs-tile{border-radius:11px;padding:4px 2px}
+ .cs-tile-name{font-size:10px}
+}
+@media(max-height:560px) and (min-width:601px){
+ .setup-shell .section-heading p{display:none}
+ .cs-perk{-webkit-line-clamp:2;font-size:10px}.cs-head{padding:6px 12px 4px}.cs-badge{width:30px;height:30px}
+ .setup-shell .cs-grid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
+}
+body.reduced-motion .cs-face,body.reduced-motion .cs-face img{transition:opacity .4s;animation:none!important}
+/* Rare encounters keep the dark dialog (styles.css gave them a light card under light text). */
+body .dialog-content.rare{background:radial-gradient(ellipse 120% 60% at 50% 0%,color-mix(in srgb,var(--t-acc) 22%,transparent),transparent 70%),linear-gradient(180deg,var(--t-s1) 0%,var(--t-s2) 100%)}
+body .dialog-content.rare p{color:var(--t-sub)}
 </style></head>
 <body><div id="app"></div><dialog id="dialog" aria-labelledby="dialog-title"></dialog><div id="game-layer" hidden></div><div id="fx-layer" class="fx-layer" aria-hidden="true"></div><div id="toast" role="status" aria-live="polite"></div><noscript>This game needs JavaScript enabled.</noscript><script>(()=>{'use strict';const modules={"src/app.js":(exports,require)=>{
 const {triviaSeconds}=require("src/engines/trivia.js");
@@ -1152,10 +1276,10 @@ async function stepTarget(run,p,token){
   p.mood='thinking';focusBoardAction(run,[p.node,...options.map(n=>n.id)]);updateBoard();
   const from=run.board.nodes[p.node],ahead=(n,k)=>{const ids=[];let cur=n;for(let i=0;i<k&&cur;i++){ids.push(cur.id);cur=run.board.nodes[cur.next[0]];}return ids;};
   focusBoardAction(run,[p.node,...options.flatMap(n=>ahead(n,7))]);updateBoard();
-  const views=options.map((n,i)=>{const o=edgeObstacle(run,p.node,n.id),solutions=o?obstacleChoices(run,p,o).filter(c=>!c.disabled):[],bridge=from.bridge===n.id,lane=run.board.realms[n.realm]?.lanes?.find(l=>l.ids.includes(n.id));
-   const label=bridge?`Bridge to ${lane?.name||'the next road'}`:(n.route?.name||n.pathName)||(o?obstacleType(o).name:'Main road · '+(run.board.realms[n.realm]?.title||SPACE_TYPES[n.type]));
-   const detail=bridge?'An optional crossing to the neighbouring road. You keep moving forward.':n.route?`${n.route.reward} ${n.route.risk}`:'Standard encounters ahead.';
-   return optionView(run,from,{id:n.id,value:n.id,label,sub:`${n.route?.spaces||n.pathRemaining?(n.route?.spaces||n.pathRemaining)+' spaces · ':''}${detail} ${o?obstacleRequirement(run,p,o):''}`.trim(),journey:journeyHint(run,p,n,from),disabled:!!o&&!solutions.length},i);});
+  const views=options.map((n,i)=>{const o=edgeObstacle(run,p.node,n.id),solutions=o?obstacleChoices(run,p,o).filter(c=>!c.disabled):[],bridge=from.bridge===n.id,shortcut=from.shortcut===n.id?run.board.shortcuts?.find(sc=>sc.from===from.id&&sc.to===n.id):null,lane=run.board.realms[n.realm]?.lanes?.find(l=>l.ids.includes(n.id));
+   const label=shortcut?`Shortcut · skip ${shortcut.skip} spaces`:bridge?`Bridge to ${lane?.name||'the next road'}`:(n.route?.name||n.pathName)||(o?obstacleType(o).name:'Main road · '+(run.board.realms[n.realm]?.title||SPACE_TYPES[n.type]));
+   const detail=shortcut?'Cut across the switchback and get to the gate sooner, if you can get past what guards it.':bridge?'An optional crossing to the neighbouring road. You keep moving forward.':n.route?`${n.route.reward} ${n.route.risk}`:'Standard encounters ahead.';
+   return optionView(run,from,{id:n.id,value:n.id,label,sub:`${shortcut?'':n.route?.spaces||n.pathRemaining?(n.route?.spaces||n.pathRemaining)+' spaces · ':''}${detail} ${o?obstacleRequirement(run,p,o):''}`.trim(),journey:journeyHint(run,p,n,from),disabled:!!o&&!solutions.length},i);});
   const choice=await showRoutePanel({title:'Choose your road',hint:'Tap a road to light it up on the map, then GO.',options:views});
   if(choice===null||token!==movementToken||store.run!==run)return null;
   target=options.find(n=>n.id===choice)||options[0];pending.routeDecision={from:p.node,targetId:target.id,applied:false};saveRun();
@@ -1229,7 +1353,7 @@ function bossGateReady(run,n){
 }
 function shortestPath(run,from,to){
  const prev=new Map([[from,null]]),queue=[from];
- while(queue.length){const id=queue.shift();if(id===to)break;for(const next of run.board.nodes[id]?.next||[])if(!prev.has(next)){prev.set(next,id);queue.push(next);}}
+ while(queue.length){const id=queue.shift();if(id===to)break;for(const next of run.board.nodes[id]?.next||[]){const o=edgeObstacle(run,id,next);if(o&&!obstacleIsOpen(run,o))continue;if(!prev.has(next)){prev.set(next,id);queue.push(next);}}}
  if(!prev.has(to))return null;const path=[];for(let id=to;id&&id!==from;id=prev.get(id))path.unshift(id);return path;
 }
 // The first player through a level gate wins the level. Everyone else is dragged to
@@ -1403,7 +1527,7 @@ async function action(name,target){
   case 'home':home();break;
   case 'quit-app':await quitApp();break;
   case 'setup':setupSelected=['sean','amber'];setupNames=['Sean','Amber'];showView('setup',{selected:setupSelected,names:setupNames});break;
-  case 'choose-character':{const rosterScroll=[...document.querySelectorAll('.character-choices')].map(el=>el.scrollTop||0);captureSetup();const length=document.getElementById('run-length').value,seed=document.getElementById('run-seed').value;const preferences=['board-theme','game-mode','team-mate-0','team-mate-1'].map(id=>[id,document.getElementById(id)?.value]);if(!differentCharacters(target.dataset.id,setupSelected[1-(+target.dataset.player)]))return toast('That character is already travelling with the other player.');setupSelected[+target.dataset.player]=target.dataset.id;showView('setup',{selected:setupSelected,names:setupNames});document.querySelectorAll('.character-choices').forEach((el,i)=>el.scrollTop=rosterScroll[i]||0);document.getElementById('run-length').value=length;document.getElementById('run-seed').value=seed;for(const[id,value]of preferences)if(document.getElementById(id))document.getElementById(id).value=value;break;}
+  case 'choose-character':{const rosterScroll=[...document.querySelectorAll('.cs-grid')].map(el=>el.scrollTop||0);captureSetup();const length=document.getElementById('run-length').value,seed=document.getElementById('run-seed').value;const preferences=['board-theme','game-mode','team-mate-0','team-mate-1'].map(id=>[id,document.getElementById(id)?.value]);if(!differentCharacters(target.dataset.id,setupSelected[1-(+target.dataset.player)]))return toast('That character is already travelling with the other player.');setupSelected[+target.dataset.player]=target.dataset.id;showView('setup',{selected:setupSelected,names:setupNames});document.querySelectorAll('.cs-grid').forEach((el,i)=>el.scrollTop=rosterScroll[i]||0);document.getElementById('run-length').value=length;document.getElementById('run-seed').value=seed;for(const[id,value]of preferences)if(document.getElementById(id))document.getElementById(id).value=value;break;}
   case 'start-run':await startRun();break;
   case 'continue':case 'board':await continueRun();break;
   case 'roll':await roll();break;
@@ -1434,7 +1558,7 @@ document.addEventListener('click',event=>{const choice=event.target.closest('[da
 document.addEventListener('input',event=>{if(event.target.id==='catalog-search'){const focus=event.target.selectionStart;catalogQuery=event.target.value;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});const input=document.getElementById('catalog-search');input.focus();input.setSelectionRange(focus,focus);}});
 document.getElementById('dialog').addEventListener('cancel',event=>{event.preventDefault();const i=store.dialog?.choices.findIndex(c=>['cancel','no','stay'].includes(c.value));if(i>=0)resolveDialog(i);});
 window.addEventListener('pagehide',saveRun);window.addEventListener('orientationchange',()=>{if(store.view==='board'&&!store.session)setTimeout(()=>updateBoard(true),100);});
-installViewport(()=>{if(store.view==='board'&&!store.session&&!store.boardTour)repaintCamera();});installMedia();installBoardGestures();installPortraitCycle();applyPreferences();saveProfile(store.profile);showView('home');
+installViewport(()=>{if(store.view==='board'&&!store.session&&!store.boardTour)repaintCamera();});installMedia();installBoardGestures();installPortraitCycle();installSetupFaceCycle();applyPreferences();saveProfile(store.profile);showView('home');
 window.ShambConkins={version:VERSION,announceLevel,updateBoard,enterWarpZone,exitWarpZone,startBoss,bossDone,buildWarpBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,nowPlaying,musicScene,unlockDialog,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
 
 function installBoardGestures(){
@@ -1451,6 +1575,8 @@ function installBoardGestures(){
  document.addEventListener('wheel',ev=>{const map=ev.target.closest?.('#map-root');if(!map||!store.run||store.busy||store.view!=='board')return;ev.preventDefault();const view=viewBox(map);if(!view)return;store.run.camera='follow';store.run.focusNodes=null;store.run.pan={x:view[0]+view[2]/2,y:view[1]+view[3]/2};store.run.zoom=clamp((store.run.zoom||1.2)*(ev.deltaY<0?1.12:.89),.35,3.2);repaintCamera();},{passive:false});
 }
 
+// Character select: the selected heads slowly cycle through their expressions.
+function installSetupFaceCycle(){setInterval(()=>{if(store.view!=='setup'||document.hidden)return;for(const stage of document.querySelectorAll('.cs-stage')){const faces=[...stage.querySelectorAll('.cs-face')];if(faces.length<2)continue;const at=faces.findIndex(f=>f.classList.contains('on'));faces[Math.max(0,at)].classList.remove('on');faces[(at+1)%faces.length].classList.add('on');}},2800);}
 function installPortraitCycle(){let tick=0;setInterval(()=>{if(store.view!=='board'||store.busy||store.session||document.hidden||!store.run||store.run.finished)return;tick++;for(const p of store.run.players)if(!['win','sad'].includes(p.mood)||tick%3===0)p.mood=['normal','happy','thinking','normal'][tick%4];refreshPortraits();},3500);}
 
 Object.assign(exports,{saveRun,continueRun,roll,takeRoute,resolveLanding,endTurn});
@@ -8921,7 +9047,7 @@ Object.assign(exports,{LEGENDS_ITEMS});
 
 },
 "src/version.js":(exports,require)=>{
-const VERSION='0.48.0';
+const VERSION='0.49.0';
 Object.assign(exports,{VERSION});
 
 },
@@ -10139,7 +10265,7 @@ const definitions = [
  ['deadite-checkers','checkers','strategy','turn based','Army of Darkness: twelve heads each, compulsory captures, chain jumps and king crowns. Kings move both ways. Sometimes a challenge pits a full army against four kings.'],
  ['ten-forward-chess','chess','strategy','full eight-by-eight','Star Trek: full legal chess with your heads, piece-role badges, checkmate, castling, en passant and queen/rook/bishop/knight promotions. The older five-by-five mini-chess is also retained.'],
  ['office-dots-boxes','dots','strategy','16 offices','Dunder Mifflin: tap between dots to draw office dividers. Complete a box to claim it with your head and take another turn. Most offices wins.'],
- ['paddys-beer-pong','beerpong','sports','12 alternating tosses each','Paddy’s Pub: flick your head-ball up a perspective 3D table. Clear ten cups with real arcs, rim rebounds and table bounces. One re-rack each. Take turns after every toss.'],
+ ['paddys-beer-pong','beerpong','sports','Full match','Paddy’s Pub: flick your head-ball up a perspective 3D table. A full match: first to clear all ten cups wins. Two shots per turn; sink both and you bring it back for a third. Real arcs, rim rebounds and table bounces. One re-rack each.'],
  ['flipadelphia-cup','flipcup','skill','8 alternating flips each','Flip, flip, Flipadelphia! Flick a rotating 3D cup and land it upside down, rim on the table. Your head rides the cup. Distance, speed and sideways drift change the landing.'],
  ['taskmaster-fruit-ninja','fruitslice','arcade','30s each','Taskmaster’s buffet, but the fruit is your opponent’s flying head: swipe to slice heads in half. Identical waves for each human. Three heads in one swipe earns a combo bonus; bombs cost 25 and three bombs ends your turn.'],
  ['megatouch-photohunt','photohunt','puzzle','3 shared scenes','Megatouch-style Photo Hunt. Compare both pictures and tap a difference on either. Players alternate guesses: +100 per find, −20 and −3 seconds for a miss. Import your own image pair and mark its differences.'],
@@ -10333,7 +10459,7 @@ for(const g of PACKS.events)EVENT_GAMES.push({family:g.engine,quality:'themed-va
 RANDOM_GAMES.length=0;RANDOM_GAMES.push(...GAMES.filter(g=>g.randomEligible&&g.quality==='substantial'));
 for(const g of GAMES)if(SOURCE_FIXES[g.id])g.source=SOURCE_FIXES[g.id];
 // v0.46 touch-first controls: updated how-to text for the converted games.
-const TOUCH_RULES={"moonraker-lander": "Touch and hold to fire the thruster; drag sideways to steer. Land softly on the pad: vertical speed under 48, horizontal under 40.", "asteroid-drift": "Touch anywhere: your ship turns toward your finger and fires while you hold. Keep your finger far from the ship to thrust.", "breakout-party": "Drag anywhere to slide the paddle. The edge changes the bounce angle. Clear the wall for a bonus.", "t800-scan-long": "Swipe left or right to change lanes. Your car fires while a finger is down.", "flappy-disaster": "Tap anywhere to flap through the pipes.", "radical-bike": "Hold to pedal, drag left or right to lean, tap or flick up to hop gaps.", "major-league-bats": "Tap anywhere as the ball reaches the glowing plate; where you tap sets your aim.", "rainbow-rivals": "Drag on your road to steer between lanes; tap the right side to boost.", "block-battle": "Drag on your half to shift the piece, tap to rotate, drag down to soft drop, flick down to hard drop. 2+ line clears send garbage; last survivor wins.", "underdog-dodgeball": "Drag to move on your half. Tap to throw the ball you hold, or flick toward the other side to aim. Tap with no ball to catch. First to two rounds.", "fight-night": "Tap to jab, hold still then release for a hook, swipe down to duck, swipe up and hold to guard, drag sideways to step. First to two rounds.", "taskmaster-sumo": "Touch and hold your half to charge, drag to steer your suit. Shove the other head out of the ring.", "paddys-darts": "Drag to aim, release to throw; time the swaying sight. Nine darts each.", "task-tallest-thing": "Tap anywhere to drop the sliding block. Only the overlap survives.", "flipadelphia-cup": "Flick up anywhere (or tap for a gentle flip) and land the cup rim-down.", "paddys-beer-pong": "Flick up anywhere (tap for a gentle toss). One RE-RACK pill per player.", "happy-gilmore-golf": "Drag back from the ball, or anywhere, and release. Pull past the ring for a drive.", "kingpin-bowling": "Touch the lane, pull back like a slingshot and release (longer pull rolls harder), or flick up.", "bug-artillery": "Drag back anywhere: direction sets the angle, length sets velocity. Release to fire.", "angry-heads": "Drag back from the sling (or anywhere) and release.", "neon-ball-storm": "Touch and drag to aim, release to fire.", "major-league-fielding": "Drag to move or aim; release to swing or tap.", "bucketheadland-pinball": "Hold the left or right half of the screen to flip. Pull down anywhere to launch.", "color-of-money": "Drag back anywhere to aim and set power. A foul gives ball in hand: touch to place the cue.", "warriors-brawl": "Drag to move, tap to punch that side, flick to kick.", "taskmaster-micro-relay": "Tap anywhere to stop or beat; tap the big ingredient pads.", "megatouch-photohunt": "Tap differences; HINT and PHOTOS pills at the top.", "django-hangman": "Tap the compact keyboard or type; SOLVE is the last key."};
+const TOUCH_RULES={"moonraker-lander": "Touch and hold to fire the thruster; drag sideways to steer. Land softly on the pad: vertical speed under 48, horizontal under 40.", "asteroid-drift": "Touch anywhere: your ship turns toward your finger and fires while you hold. Keep your finger far from the ship to thrust.", "breakout-party": "Drag anywhere to slide the paddle. The edge changes the bounce angle. Clear the wall for a bonus.", "t800-scan-long": "Swipe left or right to change lanes. Your car fires while a finger is down.", "flappy-disaster": "Tap anywhere to flap through the pipes.", "radical-bike": "Hold to pedal, drag left or right to lean, tap or flick up to hop gaps.", "major-league-bats": "Tap anywhere as the ball reaches the glowing plate; where you tap sets your aim.", "rainbow-rivals": "Drag on your road to steer between lanes; tap the right side to boost.", "block-battle": "Drag on your half to shift the piece, tap to rotate, drag down to soft drop, flick down to hard drop. 2+ line clears send garbage; last survivor wins.", "underdog-dodgeball": "Drag to move on your half. Tap to throw the ball you hold, or flick toward the other side to aim. Tap with no ball to catch. First to two rounds.", "fight-night": "Tap to jab, hold still then release for a hook, swipe down to duck, swipe up and hold to guard, drag sideways to step. First to two rounds.", "taskmaster-sumo": "Touch and hold your half to charge, drag to steer your suit. Shove the other head out of the ring.", "paddys-darts": "Drag to aim, release to throw; time the swaying sight. Nine darts each.", "task-tallest-thing": "Tap anywhere to drop the sliding block. Only the overlap survives.", "flipadelphia-cup": "Flick up anywhere (or tap for a gentle flip) and land the cup rim-down.", "paddys-beer-pong": "Flick up anywhere (tap for a gentle toss). Two shots a turn; sink both and BRING IT BACK for a third. First to clear ten cups wins. One RE-RACK pill per player.", "happy-gilmore-golf": "Drag back from the ball, or anywhere, and release. Pull past the ring for a drive.", "kingpin-bowling": "Touch the lane, pull back like a slingshot and release (longer pull rolls harder), or flick up.", "bug-artillery": "Drag back anywhere: direction sets the angle, length sets velocity. Release to fire.", "angry-heads": "Drag back from the sling (or anywhere) and release.", "neon-ball-storm": "Touch and drag to aim, release to fire.", "major-league-fielding": "Drag to move or aim; release to swing or tap.", "bucketheadland-pinball": "Hold the left or right half of the screen to flip. Pull down anywhere to launch.", "color-of-money": "Drag back anywhere to aim and set power. A foul gives ball in hand: touch to place the cue.", "warriors-brawl": "Drag to move, tap to punch that side, flick to kick.", "taskmaster-micro-relay": "Tap anywhere to stop or beat; tap the big ingredient pads.", "megatouch-photohunt": "Tap differences; HINT and PHOTOS pills at the top.", "django-hangman": "Tap the compact keyboard or type; SOLVE is the last key."};
 for(const g of [...GAMES,...EVENT_GAMES])if(TOUCH_RULES[g.id])g.rules=TOUCH_RULES[g.id];
 Object.assign(exports,{GAMES,EVENT_GAMES,gameById,gameUnlocked,RANDOM_GAMES,PHONE_TASK,TRIVIA_THEME_IDS,selectTriviaGame,triviaIsDue,selectBoardGame,selectGame,resolveLegacyGame});
 },
@@ -10799,9 +10925,9 @@ function highlight(keys){
  }
 }
 function optionView(run,from,option,index){
- const target=run.board.nodes[option.id],lane=run.board.realms[target.realm]?.lanes?.find(l=>l.ids.includes(target.id)),isBridge=!!from.bridge&&from.bridge===target.id;
- const keys=isBridge?[target.realm+':bridge:'+target.id,laneKey(run.board,target)]:[laneKey(run.board,target)];
- return {...option,keys,bridge:isBridge,lane,color:isBridge?'#8a6b3f':laneStyle(lane?.lane??0).tag,tag:isBridge?'BRIDGE':(lane?laneStyle(lane.lane).label:'MAIN ROAD'),index};
+ const target=run.board.nodes[option.id],lane=run.board.realms[target.realm]?.lanes?.find(l=>l.ids.includes(target.id)),isBridge=!!from.bridge&&from.bridge===target.id,isShortcut=!!from.shortcut&&from.shortcut===target.id;
+ const keys=isShortcut?[target.realm+':shortcut:'+target.id,laneKey(run.board,target)]:isBridge?[target.realm+':bridge:'+target.id,laneKey(run.board,target)]:[laneKey(run.board,target)];
+ return {...option,keys,bridge:isBridge,shortcut:isShortcut,lane,color:isShortcut?'#ffd34d':isBridge?'#8a6b3f':laneStyle(lane?.lane??0).tag,tag:isShortcut?'SHORTCUT':isBridge?'BRIDGE':(lane?laneStyle(lane.lane).label:'MAIN ROAD'),index};
 }
 function render(){
  const panel=document.getElementById('route-panel');if(!panel||!current)return;
@@ -11042,7 +11168,7 @@ function pairMovementBonus(run) { return pairForRun(run)?.moveBonus||0; }
 function pairPace(run) { return pairForRun(run)?.pace||1; }
 
 function addPairTrail(board,rule){if(!rule.trail)return null;const realm='pair-'+rule.id;if(board.realms[realm])return realm;const ids=[],base=board.height||3030,returnNode=board.nodes.n29?'n29':board.realms.mind.gate;board.height=base+650;
- for(let i=0;i<9;i++){const id=i===0?realm+'-start':i===8?realm+'-gate':`${realm}-${i}-0`;ids.push(id);board.nodes[id]={id,worldSpace:true,realm,col:i,lane:0,x:180+i*180,y:base+240+Math.sin(i*.8)*130,type:i===0?'start':i===8?'gate':['event','item','game','bonus','shop','event','game'][i-1],next:[],source:rule.source,pairId:rule.id};}for(let i=0;i<8;i++)board.nodes[ids[i]].next=[ids[i+1]];board.nodes[ids[8]].next=[returnNode];const start=ids[0],gate=ids[8];board.nodes[start].route={entry:start,name:rule.trail,source:rule.source,reward:'A Lucky roll and a world connected to your character pair.',risk:'Pay 2 points; the detour rejoins farther down the Mind trail.',reroll:1,cost:2};if(rule.landmark&&location(rule.landmark)){board.nodes[ids[2]].type='location';board.nodes[ids[2]].location=rule.landmark;}
+ for(let i=0;i<9;i++){const id=i===0?realm+'-start':i===8?realm+'-gate':`${realm}-${i}-0`;ids.push(id);board.nodes[id]={id,worldSpace:true,realm,col:i,lane:0,x:board.grid?500+i*100:180+i*180,y:board.grid?base+300:base+240+Math.sin(i*.8)*130,type:i===0?'start':i===8?'gate':['event','item','game','bonus','shop','event','game'][i-1],next:[],source:rule.source,pairId:rule.id};}for(let i=0;i<8;i++)board.nodes[ids[i]].next=[ids[i+1]];board.nodes[ids[8]].next=[returnNode];const start=ids[0],gate=ids[8];board.nodes[start].route={entry:start,name:rule.trail,source:rule.source,reward:'A Lucky roll and a world connected to your character pair.',risk:'Pay 2 points; the detour rejoins farther down the Mind trail.',reroll:1,cost:2};if(rule.landmark&&location(rule.landmark)){board.nodes[ids[2]].type='location';board.nodes[ids[2]].location=rule.landmark;}
  board.realms[realm]={ids,start,gate,cols:8,y:base,height:650,color:'#b5e4df',title:rule.trail,source:rule.source,pairId:rule.id};const entrance=board.nodes.n18||board.nodes['mind-1-0'];if(entrance&&!entrance.next.includes(start))entrance.next.push(start);return realm;}
 function activatePair(run,profile) {
  const rule=pairForRun(run);run.pairState ||= {activated:[],queuedGames:[],checkedTurn:0,skipCooldown:0,loops:[],usedScheme:false};
@@ -11278,7 +11404,8 @@ const {ORIGINAL_BOARD, ORIGINAL_SIGNS}=require("src/data/originalBoard.js");
 const {installObstacles}=require("src/obstacles.js");
 const {ROUTE_CHOICES}=require("src/data/routeChoices.js");
 const {placeLandmarks}=require("src/landmarkPlacement.js");
-const {buildMultiPathBoard,roadPoints}=require("src/multiPathBoard.js");
+const {roadPoints}=require("src/multiPathBoard.js");
+const {buildGridBoard,layoutHorrorGrid}=require("src/gridBoard.js");
 const REALMS = ['mind','body','spirit'];
 const SPACE_TYPES = { start:'Camp',game:'Minigame',event:'Encounter card',item:'Supply cache',bonus:'Good fortune',penalty:'Bad luck',location:'Landmark',task:'Taskmaster minigame',trivia:'Trivia duel',casino:'Casino',dice:'Full Yahtzee',shop:'Quark’s shop',gate:'Realm gate',warp:'Warp pipe' };
 const SPACE_ICONS = { start:'⚑',game:'MG',event:'?',item:'◆',bonus:'+',penalty:'−',location:'⌂',task:'TASK',trivia:'Q&A',casino:'♠',dice:'⚄',shop:'SHOP',gate:'✦',warp:'🌀' };
@@ -11316,7 +11443,7 @@ function generateLegacyBoard(seed=Math.random().toString(36).slice(2,9).toUpperC
  for(const route of routes){const entry=nodes[route.entry];signs.push({name:route.name,source:route.source,x:clamp(entry.x,100,1700),y:clamp(entry.y-72,80,2980),level:route.realm.toUpperCase(),branch:true,routeEntry:route.entry,routeId:route.id});}
  const board={seed,rng:hash(seed),theme,format:'original-trail',generation:5,width:1800,height:3030,nodes,realms,signs,routes};balanceEncounters(board);installObstacles(board);return board;
 }
-function generateBoard(seed,turns=24,theme='Mashup'){const board=buildMultiPathBoard(generateLegacyBoard(seed,turns,theme));installObstacles(board);return board;}
+function generateBoard(seed,turns=24,theme='Mashup'){const board=buildGridBoard(generateLegacyBoard(seed,turns,theme));installObstacles(board);return board;}
 function balanceEncounters(board,realms=REALMS){
  for(const realm of realms){const list=board.realms[realm].ids.map(id=>board.nodes[id]);let taskKept=false;
   for(const n of list)if(n.type==='task'){if(taskKept)n.type='game';else taskKept=true;}
@@ -11328,15 +11455,16 @@ function balanceEncounters(board,realms=REALMS){
  }
 }
 function sourceForSign(name=''){for(const[pattern,source]of [[/Paddy|Frank|Mac /,'Always Sunny'],[/Dunder|Schrute/,'The Office'],[/Pawnee|Dunshire/,'Parks and Recreation'],[/Taskmaster/,'Taskmaster'],[/Bluth/,'Arrested Development'],[/Quark|Federation|Starfleet/,'Star Trek'],[/South Park/,'South Park'],[/LV-426|Nostromo/,'Alien'],[/Predator/,'Predator'],[/Raccoon/,'Resident Evil'],[/Silent Hill/,'Silent Hill'],[/Arlen/,'King of the Hill'],[/Jurassic/,'Jurassic Park'],[/Brawndo/,'Idiocracy'],[/Fhloston/,'The Fifth Element'],[/Wayne/,'Wayne’s World'],[/Hill Valley/,'Back to the Future'],[/Traitors/,'The Traitors'],[/Ocean Ave/,'Bob’s Burgers'],[/Mortal/,'Mortal Kombat'],[/Planet Coaster/,'Planet Coaster'],[/Home Alone/,'Home Alone'],[/Shagadelic/,'Austin Powers'],[/KC |Mylo|Loki/,'Home'],[/Darkplace/,'Garth Marenghi’s Darkplace'],[/Cronenberg/,'David Cronenberg'],[/Troma/,'Troma'],[/Mars|Area 51/,'Mars Attacks!'],[/Beetlejuice/,'Beetlejuice'],[/Castlevania/,'Castlevania']])if(pattern.test(name))return source;return name;}
-function addHorrorBoard(board){if(board.realms.horror)return;const base=Math.max(2980,(board.height||3030)>3030?board.height:2980),offset=base-2980;const list=ORIGINAL_BOARD.filter(n=>n.hidden),ids=list.map((_,i)=>'horror-'+i),map=new Map(list.map((n,i)=>[n.id,ids[i]]));for(let i=0;i<list.length;i++){const n=list[i],id=ids[i];board.nodes[id]={...n,id,y:n.y+offset,worldSpace:true,realm:'horror',col:i,lane:0,type:i===list.length-1?'gate':n.type==='minigame'||n.type==='classic'?'game':n.type,next:n.next.map(id=>map.get(id)).filter(Boolean)};}if(board.generation>=2){const r=seededRandom(board.seed+':horror'),rows=4,perRow=Math.ceil(ids.length/rows),mirror=r()<.5,places=shuffle(LOCATIONS.filter(l=>l.realm==='horror'),r),spare=shuffle(LOCATIONS.filter(l=>l.realm!=='horror'&&/evil dead|silent hill|resident evil|halloween|elm street|saw|alien|nightmare|troma|hellraiser|the thing|stranger things/i.test(l.source+' '+l.name)),r);let placedHorror=0;for(let i=0;i<ids.length;i++){const node=board.nodes[ids[i]],row=Math.floor(i/perRow),part=i%perRow,count=Math.min(perRow,ids.length-row*perRow),t=part/Math.max(1,count-1);node.x=Math.round(130+1540*((row%2===0)!==mirror?t:1-t)+Math.sin(i)*r()*15);node.y=Math.round(base+115+row*210+r()*18);if(i>0&&i<ids.length-1){node.type=pick(['game','event','item','penalty','task','casino'],r);node.cacheSeed=Math.floor(r()*0x7fffffff);if(i>=3&&(i-3)%4===0&&placedHorror<places.length+2){node.type='location';node.location=(places[placedHorror]||spare[placedHorror-places.length]||places[0]).id;placedHorror++;}}}}if(board.generation>=3){const kinds=shuffle(['haunted','fog','laser','lock'],seededRandom(board.seed+':horror-obstacles'));for(const[i,at]of [5,18].entries()){if(!ids[at+4])continue;const from=ids[at],to=ids[at+4];if(!board.nodes[from].next.includes(to)){board.nodes[from].next.push(to);board.obstacles.push({id:'horror-door-'+i,from,to,type:kinds[i],open:false,openUntil:0,repairs:0});}}}board.realms.horror={ids,start:ids[0],gate:ids.at(-1),cols:ids.length-1,y:base,height:920,color:ZONE_COLORS.horror,title:'Horror'};
+function addHorrorBoard(board){if(board.realms.horror)return;const base=Math.max(2980,(board.height||3030)>3030?board.height:2980),offset=base-2980;const list=ORIGINAL_BOARD.filter(n=>n.hidden),ids=list.map((_,i)=>'horror-'+i),map=new Map(list.map((n,i)=>[n.id,ids[i]]));for(let i=0;i<list.length;i++){const n=list[i],id=ids[i];board.nodes[id]={...n,id,y:n.y+offset,worldSpace:true,realm:'horror',col:i,lane:0,type:i===list.length-1?'gate':n.type==='minigame'||n.type==='classic'?'game':n.type,next:n.next.map(id=>map.get(id)).filter(Boolean)};}if(board.generation>=2){const r=seededRandom(board.seed+':horror'),rows=4,perRow=Math.ceil(ids.length/rows),mirror=r()<.5,places=shuffle(LOCATIONS.filter(l=>l.realm==='horror'),r),spare=shuffle(LOCATIONS.filter(l=>l.realm!=='horror'&&/evil dead|silent hill|resident evil|halloween|elm street|saw|alien|nightmare|troma|hellraiser|the thing|stranger things/i.test(l.source+' '+l.name)),r);let placedHorror=0;for(let i=0;i<ids.length;i++){const node=board.nodes[ids[i]],row=Math.floor(i/perRow),part=i%perRow,count=Math.min(perRow,ids.length-row*perRow),t=part/Math.max(1,count-1);node.x=Math.round(130+1540*((row%2===0)!==mirror?t:1-t)+Math.sin(i)*r()*15);node.y=Math.round(base+115+row*210+r()*18);if(i>0&&i<ids.length-1){node.type=pick(['game','event','item','penalty','task','casino'],r);node.cacheSeed=Math.floor(r()*0x7fffffff);if(i>=3&&(i-3)%4===0&&placedHorror<places.length+2){node.type='location';node.location=(places[placedHorror]||spare[placedHorror-places.length]||places[0]).id;placedHorror++;}}}}let doorKinds=[];if(board.generation>=3){const kinds=shuffle(['haunted','fog','laser','lock'],seededRandom(board.seed+':horror-obstacles'));doorKinds=kinds;for(const[i,at]of [5,18].entries()){if(!ids[at+4])continue;const from=ids[at],to=ids[at+4];if(!board.nodes[from].next.includes(to)){board.nodes[from].next.push(to);board.obstacles.push({id:'horror-door-'+i,from,to,type:kinds[i],open:false,openUntil:0,repairs:0});}}}board.realms.horror={ids,start:ids[0],gate:ids.at(-1),cols:ids.length-1,y:base,height:920,color:ZONE_COLORS.horror,title:'Horror'};
  // Journey-map boards lay the route below out as one long winding road with its landmarks beside it.
- if(board.generation>=7){
+ if(board.grid&&layoutHorrorGrid(board,ids,base,doorKinds)){}
+ else if(board.generation>=7){
   const H=2600,body=ids.slice(1,-1),top=base+330,bottom=base+H-380,pts=roadPoints(900,top,bottom,body.length,.4,2.2,170),start=board.nodes[ids[0]],gate=board.nodes[ids.at(-1)];
   start.x=900;start.y=base+170;gate.x=900;gate.y=base+H-130;let k=0;
   body.forEach((id,i)=>{const n=board.nodes[id];n.x=pts[i].x;n.y=pts[i].y;delete n.side;if(n.type==='location'){n.side=k++%2?1:-1;}});
   board.bridges ||= [];for(const o of board.obstacles||[])if(String(o.id).startsWith('horror-door')){board.nodes[o.from].bridge=o.to;board.bridges.push({realm:'horror',from:o.from,to:o.to});}
   Object.assign(board.realms.horror,{height:H,fork:ids[0],stem:[ids[0]],lanes:[{lane:3,position:1,cx:900,name:'The Route Below',source:'Horror',difficulty:'HORROR',kind:'Descent',route:null,ids:body,reward:'Every landmark hides a visitor.',risk:'The dark has opinions.',top,bottom}]});
- }if(board.generation>=4)balanceEncounters(board,['horror']);board.width=1800;board.height=base+(board.generation>=7?2600:920);board.signs ||= [];board.signs.push(...ORIGINAL_SIGNS.filter(s=>s.hidden).map(s=>({...s,y:s.y+offset,source:sourceForSign(s.name)})));}
+ }if(board.generation>=4)balanceEncounters(board,['horror']);board.width=1800;board.height=base+(board.grid?board.realms.horror.height:board.generation>=7?2600:920);board.signs ||= [];board.signs.push(...ORIGINAL_SIGNS.filter(s=>s.hidden).map(s=>({...s,y:s.y+offset,source:sourceForSign(s.name)})));}
 function routeOptions(run,nodeId){return (run.board.nodes[nodeId]?.next||[]).map(id=>run.board.nodes[id]).filter(Boolean);}
 function advanceAlong(run,player,steps,lanePreference=0){for(let i=0;i<Math.abs(steps);i++){if(steps<0){const previous=player.visited.pop();if(previous)player.node=previous;else break;}else{const opts=routeOptions(run,player.node);if(!opts.length)break;player.visited.push(player.node);player.node=(opts.find(n=>n.lane===lanePreference)||opts[0]).id;}}return player.node;}
 function evolveBoard(run,random=Math.random){const protectedIds=new Set(run.players.flatMap(p=>[p.node,...p.visited])),realm=run.board.nodes[run.players[run.current].node].realm;const list=shuffle(run.board.realms[realm].ids.map(id=>run.board.nodes[id]).filter(n=>!protectedIds.has(n.id)&&n.col>1&&!['start','gate','location','trivia'].includes(n.type)&&!n.route),random).slice(0,6);for(const n of list){const type=pick(['game','game','event','event','item','item','bonus','penalty','casino','dice','trivia','task'],random);n.type=type==='task'&&run.board.realms[realm].ids.some(id=>run.board.nodes[id].type==='task')?'game':type;}run.board.pulse=(run.board.pulse||0)+1;return list.length;}
@@ -11736,6 +11864,7 @@ const {VERSION}=require("src/version.js");
 const {fullscreenButton}=require("src/fullscreen.js");
 const {levelInfo,levelLabel,drinkLine,LEVEL_ORDER}=require("src/levels.js");
 const {zoneLayerSVG,roadLayerSVG,landmarkScene}=require("src/boardZones.js");
+const {gridZoneSVG,gridRoadSVG,gridLandmarkCard}=require("src/gridRender.js");
 const {warpSceneSVG}=require("src/warpBoards.js");
 const {closeRoutePanel}=require("src/routePanel.js");
 const {applyTheme,applyRunTheme}=require("src/theme.js");
@@ -11774,7 +11903,15 @@ function homeHTML(){const p=store.profile,unlocked=new Set([...p.shared,...Objec
  const tile=(action,icon,title,sub)=>`<button class="ts-tile ts-${action}" data-action="${action}"><span class="ts-tile-icon">${icon}</span><span class="ts-tile-text"><b>${title}</b><small>${sub}</small></span></button>`;
  return `<main class="shell home-shell original-home title-screen"><div class="ts-bg" aria-hidden="true"><div class="ts-rays"></div><div class="ts-embers">${embers}</div></div><header class="ts-top"><div class="ts-profile"><span class="ts-avatars">${portraitHTML('sean','portrait ts-avatar')}${portraitHTML('amber','portrait ts-avatar')}</span><span class="ts-who"><b>Sean &amp; Amber</b><small>★ ${p.xp} XP · ${p.itemsSeen.length} collectibles</small></span></div><nav class="ts-icons">${fullscreenButton('icon','ts-icon')}${button('settings','⚙','ts-icon','aria-label="Music &amp; settings" title="Music &amp; settings"')}</nav></header><div class="home-center ts-main"><div class="ts-logo"><img class="hero-logo" src="${ART.brand}" alt="ShambConkins"></div><div class="ts-tagline">The home game that keeps getting worse</div><div class="ts-levels"><span class="mind">Mind</span><span class="body">Body</span><span class="spirit">Spirit</span></div><div class="home-stack hero-actions">${live?button('continue',play+'CONTINUE RUN','ts-play')+button('setup','NEW GAME','ts-secondary'):button('setup',play+'NEW GAME','ts-play')}<div class="ts-tiles">${tile('roster','🎭','Characters',`${unlocked} found`)}${tile('arcade','🕹️','Minigame Vault',`${new Set(RANDOM_GAMES.map(g=>g.family)).size} games`)}</div>${button('quit-app','<span class="ts-exit-icon" aria-hidden="true">⏻</span>EXIT GAME','ts-secondary ts-exit')}</div></div><footer class="footer ts-foot"><nav>${button('help','How to play','ts-link')}${button('media-sources','Art sources','ts-link')}${store.run?button('reset-run','Clear run','ts-link'):''}${button('erase','Erase progress','ts-link ts-danger')}</nav><span>PASS &amp; PLAY · v${VERSION}</span></footer></main>`;}
 function previewMap(){const path='M 30 150 C 95 70 140 240 205 160 S 335 70 390 150 S 490 220 530 100';return `<svg class="map-preview" viewBox="0 0 560 270" role="img" aria-label="A winding board with branching paths"><path d="${path}" fill="none" stroke="#a79457" stroke-width="3"/><path d="M130 166Q175 40 270 86T430 159M205 160Q250 265 340 235T490 167" fill="none" stroke="#6c7046" stroke-width="2" stroke-dasharray="4 6"/>${[[30,150,'⚑'],[93,138,'?'],[150,186,'◆'],[205,160,'⚔'],[270,86,'⌂'],[325,103,'?'],[390,150,'⚔'],[452,187,'!'],[530,100,'✦'],[265,227,'+'],[340,235,'?']].map(([x,y,icon],i)=>`<circle cx="${x}" cy="${y}" r="${i===8?21:17}" fill="${i===8?'#b39559':'#2b3221'}" stroke="#9f915d"/><text x="${x}" y="${y+5}" text-anchor="middle" font-family="Arial" font-size="17" fill="${i===8?'#1c2218':'#d8c795'}">${icon}</text>`).join('')}<text x="26" y="254" fill="#aea58a" font-family="monospace" font-size="9" letter-spacing="2">THE NEXT LANDMARK IS ANYONE’S GUESS</text></svg>`;}
-function setupHTML(names=['Sean','Amber'],selected=['sean','amber']){return `<main class="shell setup-shell">${header('PACK LIGHT. THE BOARD IS WEIRD.')}<div class="section-heading"><div><div class="overline">A NEW EXPEDITION</div><h2 style="margin-top:7px">Who’s coming?</h2><p>Choose your characters. Each roster remembers what its player has discovered.</p></div>${button('home','← Home','small ghost')}</div><div class="setup-grid roster-picks">${names.map((name,i)=>{const owner=i?'Amber':'Sean',c=character(selected[i]);return `<section class="panel player-setup" aria-label="Player ${i+1} character selection"><div class="setup-player-heading">PLAYER ${i+1} · ${owner.toUpperCase()}’S ROSTER</div><div class="player-preview"><label for="player-name-${i}">PLAYER NAME</label><input id="player-name-${i}" maxlength="28" value="${e(name)}" aria-label="Player ${i+1} name"><div class="selected-character">${portraitHTML(c.id,'portrait big')}<h3>${e(c.name)}</h3>${brandHTML(c.source)}<p>${e(characterPerk(c.id))}${characterTravelSkills(c.id).length?`<small class="travel-skills">Paths: ${characterTravelSkills(c.id).map(k=>e(TRAVEL_SKILLS[k])).join(' · ')}</small>`:''}</p></div></div><div class="roster-scroll"><div class="roster-caption">CHOOSE A HEAD · ${availableCharacters(store.profile,owner).length} FOUND</div><div class="character-choices" data-player="${i}" aria-label="${owner}'s scrollable roster">${availableCharacters(store.profile,owner).map(id=>`<button class="character-choice ${selected[i]===id?'selected':''}" data-action="choose-character" data-player="${i}" data-id="${e(id)}" aria-pressed="${selected[i]===id}" ${differentCharacters(id,selected[1-i])?'':'disabled title="Chosen by the other player"'}>${portraitHTML(id,'portrait mini')}<span>${e(character(id).name)}</span></button>`).join('')}</div><small class="roster-scroll-hint">Scroll to see your whole collection ↕</small></div></section>`;}).join('')}</div><div class="setup-controls"><div><label for="run-length">RUN LENGTH</label><select id="run-length"><option value="12">Quick trip · 12 turns</option><option value="24" selected>House party · 24 turns</option><option value="36">Long strange trip · 36 turns</option><option value="60">Full expedition · 60 turns</option><option value="999999">Race to the finish · no turn limit</option></select></div><div><label for="run-seed">OPTIONAL BOARD SEED</label><input id="run-seed" maxlength="20" placeholder="Leave blank for a surprise"></div><div><label for="board-theme">BOARD</label><select id="board-theme">${(store.profile.boards||['Mashup']).map(name=>`<option value="${e(name)}">${e(name)}</option>`).join('')}</select></div><div><label for="game-mode">MODE</label><select id="game-mode">${(store.profile.modes||['versus']).map(mode=>`<option value="${mode}">${mode==='horror'?'Horror expedition':mode==='team'?'Team Relay':mode==='coop'?'Co-op vs Mario + Luigi':'Versus'}</option>`).join('')}</select></div>${button('start-run','Let’s go &nbsp; ↗','primary')}</div>${store.profile.modes?.includes('team')?`<div class="setup-grid relay-picks">${['Sean','Amber'].map((owner,i)=>`<div><label for="team-mate-${i}">${owner}’s relay teammate (Team Relay only)</label><select id="team-mate-${i}"><option value="">Choose an unlocked teammate</option>${availableCharacters(store.profile,owner).filter(id=>!selected.some(c=>!differentCharacters(c,id))).map(id=>`<option value="${id}">${e(character(id).name)}</option>`).join('')}</select></div>`).join('')}</div>`:''}${pairForCharacters(selected)?`<div class="pair-banner">✦ ${e(pairForCharacters(selected).title)} · ${e(pairForCharacters(selected).description)}</div>`:''}<p style="font-size:12px;margin-top:16px">A fresh route every run. Unlocks and XP carry forward. Both players take part in every minigame.</p></main>`;}
+// Character select: a big spotlighted face that slowly cycles its expressions, beside a grid that fills the panel.
+const CS_MOODS=['normal','win','think','silly','angry','sad','walk'];
+function expressionMoods(id){const seen=new Set(),out=[];for(const mood of CS_MOODS){const url=portraitURL(id,mood)||'';const key=url||mood;if(seen.has(key))continue;seen.add(key);out.push(mood);}return out.slice(0,5);}
+function setupPanelHTML(name,i,selected){
+ const owner=i?'Amber':'Sean',c=character(selected[i]),list=availableCharacters(store.profile,owner),moods=expressionMoods(c.id),skills=characterTravelSkills(c.id);
+ const tiles=list.map(id=>{const other=!differentCharacters(id,selected[1-i]),on=selected[i]===id;return `<button class="cs-tile ${on?'selected':''} ${other?'taken':''}" data-action="choose-character" data-player="${i}" data-id="${e(id)}" aria-pressed="${on}" ${other?'disabled title="Chosen by the other player"':''}><span class="cs-tile-face">${portraitHTML(id,'portrait cs-mini')}</span><span class="cs-tile-name">${e(character(id).name)}</span>${other?`<i class="cs-taken">P${2-i}</i>`:''}</button>`;}).join('');
+ return `<section class="cs-panel p${i+1}" aria-label="Player ${i+1} character selection"><header class="cs-head"><span class="cs-badge">P${i+1}</span><div class="cs-owner"><label for="player-name-${i}">${owner.toUpperCase()}’S ROSTER · NAME</label><input id="player-name-${i}" maxlength="28" value="${e(name)}" aria-label="Player ${i+1} name"></div><span class="cs-count"><b>${list.length}</b><small>FOUND</small></span></header><div class="cs-body"><div class="cs-hero"><div class="cs-stage" data-cycle="${moods.length}"><div class="cs-spot"></div>${moods.map((mood,k)=>`<span class="cs-face ${k?'':'on'}" data-mood-name="${mood}">${portraitHTML(c.id,'portrait cs-portrait',mood)}</span>`).join('')}</div><div class="cs-info"><h3>${e(c.name)}</h3><div class="cs-brand">${brandHTML(c.source)}</div><p class="cs-perk">${e(characterPerk(c.id))}</p>${skills.length?`<div class="cs-skills">${skills.map(k=>`<span>${e(TRAVEL_SKILLS[k])}</span>`).join('')}</div>`:''}</div></div><div class="cs-gridwrap"><div class="cs-grid" data-player="${i}" aria-label="${owner}'s scrollable roster">${tiles}</div></div></div></section>`;
+}
+function setupHTML(names=['Sean','Amber'],selected=['sean','amber']){return `<main class="shell setup-shell">${header('PACK LIGHT. THE BOARD IS WEIRD.')}<div class="section-heading"><div><div class="overline">A NEW EXPEDITION</div><h2 style="margin-top:7px">Who’s coming?</h2><p>Pick a head. Every roster remembers what its player has discovered.</p></div>${button('home','← Back','small ghost')}</div><div class="cs-panels">${names.map((name,i)=>setupPanelHTML(name,i,selected)).join('')}</div><div class="setup-controls"><div><label for="run-length">RUN LENGTH</label><select id="run-length"><option value="12">Quick trip · 12 turns</option><option value="24" selected>House party · 24 turns</option><option value="36">Long strange trip · 36 turns</option><option value="60">Full expedition · 60 turns</option><option value="999999">Race to the finish · no turn limit</option></select></div><div><label for="run-seed">OPTIONAL BOARD SEED</label><input id="run-seed" maxlength="20" placeholder="Leave blank for a surprise"></div><div><label for="board-theme">BOARD</label><select id="board-theme">${(store.profile.boards||['Mashup']).map(name=>`<option value="${e(name)}">${e(name)}</option>`).join('')}</select></div><div><label for="game-mode">MODE</label><select id="game-mode">${(store.profile.modes||['versus']).map(mode=>`<option value="${mode}">${mode==='horror'?'Horror expedition':mode==='team'?'Team Relay':mode==='coop'?'Co-op vs Mario + Luigi':'Versus'}</option>`).join('')}</select></div>${button('start-run','Let’s go &nbsp; ↗','primary')}</div>${store.profile.modes?.includes('team')?`<div class="setup-grid relay-picks">${['Sean','Amber'].map((owner,i)=>`<div><label for="team-mate-${i}">${owner}’s relay teammate (Team Relay only)</label><select id="team-mate-${i}"><option value="">Choose an unlocked teammate</option>${availableCharacters(store.profile,owner).filter(id=>!selected.some(c=>!differentCharacters(c,id))).map(id=>`<option value="${id}">${e(character(id).name)}</option>`).join('')}</select></div>`).join('')}</div>`:''}${pairForCharacters(selected)?`<div class="pair-banner">✦ ${e(pairForCharacters(selected).title)} · ${e(pairForCharacters(selected).description)}</div>`:''}<p style="font-size:12px;margin-top:16px">A fresh route every run. Unlocks and XP carry forward. Both players take part in every minigame.</p></main>`;}
 function statusHTML(p){const chips=[];const jl=store.run?journeyLabel(store.run,p):null;if(jl)chips.push(`${jl.icon} ${jl.name} ${jl.done?'✓':jl.progress+'/'+jl.count}`);if(p.shields)chips.push(`Shield ×${p.shields}`);if(p.boost)chips.push(`Next roll +${p.boost}`);if(p.slow)chips.push(`Half roll · ${p.slow}`);if(p.triple)chips.push(`Triple roll · ${p.triple}`);if(p.rollDouble)chips.push('This roll ×2');if(p.rollFloor)chips.push(`Die ≥ ${p.rollFloor}`);if(p.ward)chips.push(`Attack ward ×${p.ward}`);if(p.large)chips.push(`Size ×2 · ${p.large}`);if(p.cloak)chips.push(`Cloak · ${p.cloak}`);if(p.double)chips.push('Next win ×2');if(p.rewardBonus)chips.push(`Game ${p.rewardBonus>0?'+':''}${p.rewardBonus}`);if(p.rollAdvantage)chips.push('Better of 2 dice');if(p.rollDisadvantage)chips.push('Lower of 2 dice');if(p.rollCeiling)chips.push('Die ≤ '+p.rollCeiling);if(p.rollFixed)chips.push('Fixed die: '+p.rollFixed);if(p.rollReverse)chips.push('Reverse die');if(p.travelPasses)chips.push('Crossing passes ×'+p.travelPasses);if(p.bounty)chips.push('Next game +'+p.bounty);if(p.gateDividend)chips.push('Next gate +'+p.gateDividend);if(p.recruitGuarantee)chips.push('Next board win: new recruit');if(p.itemInvestments?.length)chips.push('Banked payout '+p.itemInvestments.reduce((s,d)=>s+d.amount,0));return chips.map(s=>`<span class="status-chip">${e(s)}</span>`).join('');}
 function levelHudHTML(run){
  const p=run.players[run.current],realm=run.board.nodes[p.node].realm,l=levelInfo(realm),show=store.profile.settings.drinkStatus!==false,horrorKnown=run.horror||store.profile.horrorSeen;
@@ -11792,14 +11929,14 @@ function inventoryHTML(){const p=store.run.players[store.run.current];return p.i
 // A big green warp pipe with a swirling portal, visible from across the map.
 function warpPipeSVG(n){const used=n.warpUsed;return `<g class="warp-pipe ${used?'used':''}" transform="translate(0,-8)"><ellipse cx="0" cy="34" rx="62" ry="14" fill="#0006"/><rect x="-36" y="-18" width="72" height="56" rx="6" fill="#2fae3a" stroke="#0f4f16" stroke-width="5"/><rect x="-24" y="-18" width="10" height="56" fill="#7fe07a" opacity=".7"/><rect x="-48" y="-46" width="96" height="34" rx="8" fill="#38c444" stroke="#0f4f16" stroke-width="5"/><rect x="-36" y="-46" width="12" height="34" fill="#8ff08a" opacity=".7"/><ellipse class="warp-swirl-top" cx="0" cy="-46" rx="40" ry="11" fill="${used?'#333':'#7a4cff'}" stroke="#0f4f16" stroke-width="4"/>${used?'':'<path class="warp-spiral" d="M0 -46m-26 0a26 7 0 1 0 52 0a18 5 0 1 0 -36 0a10 3 0 1 0 20 0" fill="none" stroke="#e8d9ff" stroke-width="3"/>'}<g transform="translate(0,-86)"><rect x="-44" y="-17" width="88" height="30" rx="9" fill="${used?'#555':'#7a4cff'}" stroke="#fff" stroke-width="4"/><text y="5" text-anchor="middle" class="warp-pipe-label">${used?'USED':'WARP'}</text></g></g>`;}
 function boardSVG(){
- const run=store.run,v7=(run.board.generation||0)>=7,warp=run.board.format==='warp',width=run.board.width||1800,height=run.board.height||3030,visible=Object.values(run.board.nodes),view=cameraView(run),detail=boardDetail(view,boardViewport()),colors={start:'#fffaf0',game:'#4aafea',event:'#e09b4e',item:'#9974ee',bonus:'#53cd7f',penalty:'#df5459',location:'#57c1bb',trivia:'#59b7c1',task:'#d84450',casino:'#1fa074',dice:'#5475d9',shop:'#f09f57',gate:'#f0cb57',warp:'#7a4cff'};
- return `<svg class="board-svg" viewBox="${view}" data-map-detail="${detail.level}" ${v7?'data-v7="1"':''} style="--map-pin-scale:${detail.pinScale}" role="img" aria-label="Random winding trail: simple landmarks in the overview, themed neighborhoods up close"><defs><pattern id="map-grain" width="61" height="67" patternUnits="userSpaceOnUse"><circle cx="18" cy="25" r="2" fill="#ffffff66"/></pattern></defs>
- <g class="board-zone-layer">${warp?warpSceneSVG(run):v7?zoneLayerSVG(run):Object.entries(run.board.realms).map(([realm,data],i)=>{const y=data.y??i*1000;return `<g class="zone-scenery"><rect x="${-width}" y="${i===0?-height:y}" width="${width*3}" height="${(i===0?height:0)+(data.height||1000)+(i===Object.keys(run.board.realms).length-1?height:0)}" fill="${data.color||'#e4dcf0'}"/><text x="80" y="${y+95}" class="zone-word board-detail-rich">${e(data.title||realm.toUpperCase())}</text></g>`;}).join('')}</g>
- <g class="board-scenery-layer board-detail-rich"><rect x="${-width}" y="${-height}" width="${width*3}" height="${height*3}" fill="url(#map-grain)"/>${visible.filter(n=>n.type==='location'&&location(n.location)).map(n=>v7?landmarkScene(location(n.location),n):landmarkNeighborhood(location(n.location),worldNode(run,n))).join('')}${(run.board.signs||[]).filter(sign=>!v7&&!sign.hidden).map((sign,i)=>`<g class="route-scenery" transform="translate(${sign.x},${sign.y})"><rect x="-82" y="-30" width="164" height="52" rx="14"/><image href="${logoURL(sign.source)}" x="-67" y="-27" width="134" height="29"/><text y="13">${e(sign.name)}</text>${i%7===0?'<path class="scenery-star" d="M-25 -55L0 -100L25 -55L0 -65Z"/>':''}</g>`).join('')}</g>
+ const run=store.run,v7=(run.board.generation||0)>=7,grid=!!run.board.grid&&run.board.format!=='warp',warp=run.board.format==='warp',width=run.board.width||1800,height=run.board.height||3030,visible=Object.values(run.board.nodes),view=cameraView(run),detail=boardDetail(view,boardViewport()),colors={start:'#fffaf0',game:'#4aafea',event:'#e09b4e',item:'#9974ee',bonus:'#53cd7f',penalty:'#df5459',location:'#57c1bb',trivia:'#59b7c1',task:'#d84450',casino:'#1fa074',dice:'#5475d9',shop:'#f09f57',gate:'#f0cb57',warp:'#7a4cff'};
+ return `<svg class="board-svg" viewBox="${view}" data-map-detail="${detail.level}" ${v7?'data-v7="1"':''} ${grid?'data-grid="1"':''} style="--map-pin-scale:${detail.pinScale}" role="img" aria-label="Random winding trail: simple landmarks in the overview, themed neighborhoods up close"><defs><pattern id="map-grain" width="61" height="67" patternUnits="userSpaceOnUse"><circle cx="18" cy="25" r="2" fill="#ffffff66"/></pattern></defs>
+ <g class="board-zone-layer">${warp?warpSceneSVG(run):grid?gridZoneSVG(run):v7?zoneLayerSVG(run):Object.entries(run.board.realms).map(([realm,data],i)=>{const y=data.y??i*1000;return `<g class="zone-scenery"><rect x="${-width}" y="${i===0?-height:y}" width="${width*3}" height="${(i===0?height:0)+(data.height||1000)+(i===Object.keys(run.board.realms).length-1?height:0)}" fill="${data.color||'#e4dcf0'}"/><text x="80" y="${y+95}" class="zone-word board-detail-rich">${e(data.title||realm.toUpperCase())}</text></g>`;}).join('')}</g>
+ <g class="board-scenery-layer board-detail-rich"><rect x="${-width}" y="${-height}" width="${width*3}" height="${height*3}" fill="url(#map-grain)"/>${grid?'':visible.filter(n=>n.type==='location'&&location(n.location)).map(n=>v7?landmarkScene(location(n.location),n):landmarkNeighborhood(location(n.location),worldNode(run,n))).join('')}${(run.board.signs||[]).filter(sign=>!v7&&!sign.hidden).map((sign,i)=>`<g class="route-scenery" transform="translate(${sign.x},${sign.y})"><rect x="-82" y="-30" width="164" height="52" rx="14"/><image href="${logoURL(sign.source)}" x="-67" y="-27" width="134" height="29"/><text y="13">${e(sign.name)}</text>${i%7===0?'<path class="scenery-star" d="M-25 -55L0 -100L25 -55L0 -65Z"/>':''}</g>`).join('')}</g>
  <g class="board-overview-environments">${visible.filter(n=>n.type==='location'&&location(n.location)).map(n=>landmarkOverview(location(n.location),worldNode(run,n))).join('')}</g>
- <g class="board-path-layer">${v7?roadLayerSVG(run):''}${v7||warp?'':visible.flatMap(n=>n.next.map(id=>{const a=worldNode(run,n),to=run.board.nodes[id];if(!to)return '';const b=worldNode(run,to);if(a.realm!==b.realm&&!['gate','start'].includes(a.type))return '';const barrier=edgeObstacle(run,n.id,id),routeColor=['#19b7df','#f18d27','#bd5be5','#29b77b','#ed5794','#527aed'][Math.abs(hash(n.route?.id||n.lane||n.realm||'main'))%6];return `<path style="--route-color:${routeColor}" class="route-line ${n.branch||to.branch?'branch':'main'} ${barrier&&!obstacleIsOpen(run,barrier)?'barrier-route':barrier?'cleared-route':''}" d="M${a.x} ${a.y} L${b.x} ${b.y}"/>`;})).join('')}</g>
- <g class="board-obstacle-layer board-detail-near">${(run.board.obstacles||[]).map(o=>obstacleMarkerHTML(run,o)).join('')}</g>
- <g class="board-encounter-layer">${visible.map(raw=>{const n=worldNode(run,raw),l=location(n.location);return `<g class="map-space type-${n.type}" data-action="space" data-id="${n.id}" transform="translate(${n.x},${n.y})${warp?' scale(2)':''}"><title>${e(l?.name||SPACE_TYPES[n.type]||'Encounter')}</title>${n.type==='warp'?warpPipeSVG(n):''}<g class="space-details board-detail-near">${spaceShapeHTML(n.type,colors[n.type]||'#999')}<text class="space-symbol">${SPACE_ICONS[n.type]||'?'}</text>${l&&!v7?`<g class="landmark-sign board-detail-rich">${locationBoardArt(l)}<image href="${logoURL(l.source)}" x="-43" y="75" width="86" height="24"/><text class="space-label" y="111">${e(l.name)}</text></g>`:''}${n.route&&!n.route.safe?`<text class="detour-label board-detail-rich" y="-36">${e(n.route.name)}</text>`:''}</g></g>`;}).join('')}</g>
+ <g class="board-path-layer">${grid?gridRoadSVG(run):v7?roadLayerSVG(run):''}${v7||warp?'':visible.flatMap(n=>n.next.map(id=>{const a=worldNode(run,n),to=run.board.nodes[id];if(!to)return '';const b=worldNode(run,to);if(a.realm!==b.realm&&!['gate','start'].includes(a.type))return '';const barrier=edgeObstacle(run,n.id,id),routeColor=['#19b7df','#f18d27','#bd5be5','#29b77b','#ed5794','#527aed'][Math.abs(hash(n.route?.id||n.lane||n.realm||'main'))%6];return `<path style="--route-color:${routeColor}" class="route-line ${n.branch||to.branch?'branch':'main'} ${barrier&&!obstacleIsOpen(run,barrier)?'barrier-route':barrier?'cleared-route':''}" d="M${a.x} ${a.y} L${b.x} ${b.y}"/>`;})).join('')}</g>
+ ${grid?`<g class="board-card-layer board-detail-near">${visible.filter(n=>n.type==='location'&&n.card&&location(n.location)).map(n=>gridLandmarkCard(location(n.location),n)).join('')}</g>`:''}<g class="board-obstacle-layer board-detail-near">${(run.board.obstacles||[]).map(o=>obstacleMarkerHTML(run,o)).join('')}</g>
+ <g class="board-encounter-layer">${visible.map(raw=>{const n=worldNode(run,raw),l=location(n.location);return `<g class="map-space type-${n.type}" data-action="space" data-id="${n.id}" transform="translate(${n.x},${n.y})${warp?' scale(2)':''}"><title>${e(l?.name||SPACE_TYPES[n.type]||'Encounter')}</title>${n.type==='warp'?(grid?`<g transform="translate(0,-34) scale(.6)">${warpPipeSVG(n)}</g>`:warpPipeSVG(n)):''}<g class="space-details board-detail-near">${grid?'<circle class="space-hit" r="48" fill="transparent"/>':spaceShapeHTML(n.type,colors[n.type]||'#999')}<text class="space-symbol">${SPACE_ICONS[n.type]||'?'}</text>${l&&!v7?`<g class="landmark-sign board-detail-rich">${locationBoardArt(l)}<image href="${logoURL(l.source)}" x="-43" y="75" width="86" height="24"/><text class="space-label" y="111">${e(l.name)}</text></g>`:''}${n.route&&!n.route.safe?`<text class="detour-label board-detail-rich" y="${grid?-58:-36}">${e(n.route.name)}</text>`:''}</g></g>`;}).join('')}</g>
  <g class="board-landmark-layer">${visible.filter(n=>n.type==='location'&&location(n.location)).map(raw=>{const n=worldNode(run,raw),l=location(n.location);return `<g class="simple-landmark" data-action="space" data-id="${n.id}" data-x="${n.x}" data-y="${n.y}" data-name="${e(l.name)}" transform="translate(${n.x},${n.y})" aria-label="${e(l.name)}"><title>${e(l.name)}</title><g class="simple-landmark-pin"><circle r="6"/><path d="M-3 1V-2L0-4 3-2V1Z"/><text x="9" y="-9">${e(compactLandmarkName(l.name))}</text></g></g>`;}).join('')}</g>
  <g class="board-player-layer">${run.players.map((p,i)=>boardPiece(p,i,worldNode(run,run.board.nodes[p.node]))).join('')}${run.banter&&run.turn<=run.banter.untilTurn?run.players.map((p,i)=>{const n=boardPiecePoint(run,p,i);return `<g class="board-banter board-detail-rich" transform="translate(${n.x},${n.y-105-i*65})"><rect x="-145" y="-24" width="290" height="40" rx="15"/><text text-anchor="middle" font-size="11" y="-9">${e(p.name)} · ${e(run.banter.lines[i])}</text></g>`;}).join(''):''}</g></svg>`;
 }
@@ -11864,7 +12001,7 @@ function catalogHTML(type,query='',filter='all',page=0){const p=store.profile,is
  }
  const fitted=store.catalogPerPage?.[type+':'+(filter==='items'||filter==='locations'?filter:'chars')],perPage=fitted||((window.innerHeight||800)<500?2:(window.innerWidth||900)>1000?8:(window.innerWidth||900)>600?6:4),total=Math.max(1,Math.ceil(list.length/perPage)),current=Math.max(0,Math.min(total-1,page));const cards=list.slice(current*perPage,(current+1)*perPage).map(render).join('');
  const filters=isRoster?[['all','Characters'],['unlocked','Unlocked'],['items',`Items (${p.itemsSeen.length})`],['locations',`Landmarks (${p.locations.length})`]]:[['all','All'],['arcade','Arcade'],['puzzle','Puzzles'],['strategy','Strategy'],['skill','Skill'],['sports','Sports'],['trivia','Trivia'],['casino','Casino'],['dice','Dice'],['variants','Encounter variants']];
- return `<main class="shell catalog-shell">${header(isRoster?'YOUR EXPANDING UNIVERSE':'PERMANENT PROGRESSION · MINIGAME VAULT')}<div class="section-heading"><div><div class="overline">${isRoster?'COLLECTION':'THE ARCADE'}</div><h2 style="margin-top:7px">${isRoster?'Familiar faces, strange company.':'MINIGAME VAULT'}</h2><p>${isRoster?'Characters, collected items, and discovered landmarks carry across every run.':'Games unlock through play. Dev mode lets you test every game without changing progress.'}</p></div>${button(store.run&&!store.run.finished?'board':'home',store.run&&!store.run.finished?'← Board':'← Home','small ghost')}</div>${!isRoster?`<div class="vault-dev-strip"><span>DEV MODE · ${p.settings.devMode?'ALL GAMES TESTABLE':'OFF'}</span>${button('dev-mode',p.settings.devMode?'Turn off':'Enable game testing','small ghost')}</div>`:''}<div class="catalog-tools"><input id="catalog-search" value="${e(query)}" placeholder="Search games, characters, or properties…" aria-label="Search collection"><div class="filter-buttons">${filters.map(([id,label])=>button('filter',label,`small ${filter===id?'active':'ghost'}`,`data-id="${id}"`)).join('')}</div></div><div class="catalog-grid">${cards||'<p class="empty-message">Nothing discovered here yet. Explore another route.</p>'}</div><nav class="catalog-pages" aria-label="Collection pages">${button('catalog-page','← Previous','small ghost',`data-page="${current-1}" ${current===0?'disabled':''}`)}<span>Page ${current+1} / ${total} · ${list.length} entries</span>${button('catalog-page','Next →','small ghost',`data-page="${current+1}" ${current===total-1?'disabled':''}`)}</nav></main>`;
+ return `<main class="shell catalog-shell">${header(isRoster?'YOUR EXPANDING UNIVERSE':'PERMANENT PROGRESSION · MINIGAME VAULT')}<div class="section-heading"><div><div class="overline">${isRoster?'COLLECTION':'THE ARCADE'}</div><h2 style="margin-top:7px">${isRoster?'Familiar faces, strange company.':'MINIGAME VAULT'}</h2><p>${isRoster?'Characters, collected items, and discovered landmarks carry across every run.':'Games unlock through play. Dev mode lets you test every game without changing progress.'}</p></div>${button('home','← Back','small ghost catalog-back')}</div>${!isRoster?`<div class="vault-dev-strip"><span>DEV MODE · ${p.settings.devMode?'ALL GAMES TESTABLE':'OFF'}</span>${button('dev-mode',p.settings.devMode?'Turn off':'Enable game testing','small ghost')}</div>`:''}<div class="catalog-tools"><input id="catalog-search" value="${e(query)}" placeholder="Search games, characters, or properties…" aria-label="Search collection"><div class="filter-buttons">${filters.map(([id,label])=>button('filter',label,`small ${filter===id?'active':'ghost'}`,`data-id="${id}"`)).join('')}</div></div><div class="catalog-grid">${cards||'<p class="empty-message">Nothing discovered here yet. Explore another route.</p>'}</div><nav class="catalog-pages" aria-label="Collection pages">${button('catalog-page','← Previous','small ghost',`data-page="${current-1}" ${current===0?'disabled':''}`)}<span>Page ${current+1} / ${total} · ${list.length} entries</span>${button('catalog-page','Next →','small ghost',`data-page="${current+1}" ${current===total-1?'disabled':''}`)}</nav></main>`;
 }
 // Screen size changed (full screen, rotation): re-measure the open collection page. Skipped while typing a search.
 function refitCatalog(){if(!lastCatalog||store.view!==lastCatalog.view||document.activeElement?.id==='catalog-search'||!document.querySelector('.catalog-grid'))return;fitCatalogPage(lastCatalog.view,lastCatalog.options);}
@@ -12044,7 +12181,7 @@ const drawings={
 };
 function obstacleDrawing(o,open=false){const t=obstacleType(o);return open?'<path d="M-38 11H38" stroke="#d0b779" stroke-width="18"/><path d="M-15 3L-3 17 24-14" fill="none" stroke="#4eb895" stroke-width="9"/>':drawings[t?.kind]||drawings.lock;}
 function obstacleArtHTML(run,o){return `<svg class="obstacle-picture" viewBox="-65 -52 130 105" role="img" aria-label="${escapeHTML(obstacleType(o)?.name||'Obstacle')}"><rect x="-61" y="-48" width="122" height="96" rx="20" fill="#e7e1d1"/>${obstacleDrawing(o,obstacleIsOpen(run,o))}</svg>`;}
-function obstacleMarkerHTML(run,o){const t=obstacleType(o),a=worldNode(run,run.board.nodes[o.from]),b=worldNode(run,run.board.nodes[o.to]),open=obstacleIsOpen(run,o);return `<g class="route-obstacle ${open?'open':'blocked'} ${o.openedTurn===run.turn||o.openUntil===run.turn+1?'changing':''}" data-action="obstacle" data-id="${o.id}" transform="translate(${(a.x+b.x)/2},${(a.y+b.y)/2})" role="button" aria-label="${escapeHTML(t.name)} · ${open?'open':'blocked'}"><title>${escapeHTML(t.name)} · ${open?'open':'blocked'} — ${escapeHTML(t.hint)}</title><rect x="-49" y="-38" width="98" height="75" rx="13"/>${obstacleDrawing(o,open)}<text class="barrier-tag" y="-45">${open?'OPEN':'BARRIER'}</text><image href="${logoURL(t.source)}" x="-52" y="39" width="104" height="22"/></g>`;}
+function obstacleMarkerHTML(run,o){const t=obstacleType(o),a=worldNode(run,run.board.nodes[o.from]),b=worldNode(run,run.board.nodes[o.to]),open=obstacleIsOpen(run,o);return `<g class="route-obstacle ${open?'open':'blocked'} ${o.openedTurn===run.turn||o.openUntil===run.turn+1?'changing':''}" data-action="obstacle" data-id="${o.id}" transform="translate(${(a.x+b.x)/2},${(a.y+b.y)/2})${run.board.grid&&run.board.format!=='warp'?' scale(.7)':''}" role="button" aria-label="${escapeHTML(t.name)} · ${open?'open':'blocked'}"><title>${escapeHTML(t.name)} · ${open?'open':'blocked'} — ${escapeHTML(t.hint)}</title><rect x="-49" y="-38" width="98" height="75" rx="13"/>${obstacleDrawing(o,open)}<text class="barrier-tag" y="-45">${open?'OPEN':'BARRIER'}</text><image href="${logoURL(t.source)}" x="-52" y="39" width="104" height="22"/></g>`;}
 
 Object.assign(exports,{obstacleDrawing,obstacleArtHTML,obstacleMarkerHTML});
 },
@@ -12210,7 +12347,7 @@ function drawEvent(run, profile, random=Math.random) {
 function rememberEvent(run,title){if(!run.cardsSeen.includes(title))run.cardsSeen.push(title);}
 function addPocketBoard(run) {
  if(run.board.realms['upside-down'])return;
- const base=run.board.height||3030;run.board.height=base+800;const ids=[];for(let i=0;i<12;i++){const id=`upside-${i}`;ids.push(id);run.board.nodes[id]={id,worldSpace:true,realm:'upside-down',col:i,lane:1,x:150+i*125,y:base+350+Math.cos(i*1.4)*130,type:i%3===0?'game':i%3===1?'event':'item',next:[`upside-${(i+1)%12}`]};}run.board.realms['upside-down']={ids,start:ids[0],gate:ids.at(-1),cols:11,y:base,height:800,color:'#512633',title:'The Upside Down'};
+ const base=run.board.height||3030;run.board.height=base+800;const ids=[];for(let i=0;i<12;i++){const id=`upside-${i}`;ids.push(id);run.board.nodes[id]={id,worldSpace:true,realm:'upside-down',col:i,lane:1,x:run.board.grid?700+[0,1,2,3,3,3,3,2,1,0,0,0][i]*100:150+i*125,y:run.board.grid?base+250+[0,0,0,0,1,2,3,3,3,3,2,1][i]*100:base+350+Math.cos(i*1.4)*130,type:i%3===0?'game':i%3===1?'event':'item',next:[`upside-${(i+1)%12}`]};}run.board.realms['upside-down']={ids,start:ids[0],gate:ids.at(-1),cols:11,y:base,height:800,color:'#512633',title:'The Upside Down'};
 }
 function applyEvent(run,profile,event,random=Math.random) {
  const p=run.players[run.current],other=run.players[1-run.current];let message='',unlocked=[],game=null,roulette=false,task=false;const acquisitions=[],unlockOwners={};
@@ -13204,21 +13341,31 @@ function flipCupMesh(cup,W=680,H=430){const rotation=cup.angle||0,points=[];for(
 const restHeight=angle=>.19*Math.abs(Math.cos(angle))+.115*Math.abs(Math.sin(angle));
 const ease=(from,to,k)=>from+(to-from)*k;
 function beerCamera(W,H){return {U:Math.min(W*.32,H*.42)};}
-async function beerpong(s){const[c,x]=s.canvas(680,430,{fill:true}),racks=[beerRack(),beerRack()],score=[0,0],shots=[0,0],reracks=[false,false];s.body.classList.add('pub-arena-body');let actor=0,phase='aim',ball=null,drag=null,clock=18,message='Flick upward from your head-ball.',settle=0;
+async function beerpong(s){const[c,x]=s.canvas(680,430,{fill:true}),racks=[beerRack(),beerRack()],score=[0,0],shots=[0,0],reracks=[false,false],turns=[1,0],MAX_TURNS=25;s.body.classList.add('pub-arena-body');let actor=0,turnShots=0,turnHits=0,bonus=false,phase='aim',ball=null,drag=null,clock=18,message='Flick upward from your head-ball.',settle=0;
  const fx=makeFx(),scene=pubScene(),spills=[[],[]],sinking=[],trail=[];let rerackHit=null,lastBounces=0,lastHit=null,time=0,sunk=null;
  const beerOpts=()=>({project:projectBeerTable,wallBottom:projectBeerTable({x:0,z:4,y:0},s.W,s.H).y,accent:'#5dff8c',logo:'PADDY’S',lineZ:1.6});
  const cupScreen=(cup,W,H)=>{const top=projectBeerTable({...cup,y:.21},W,H),bottom=projectBeerTable({...cup,y:0},W,H),edge=projectBeerTable({...cup,x:cup.x+.2,y:.21},W,H);return {top,bottom,r:edge.x-top.x};};
  function toss(shot){if(s.paused||phase!=='aim'||!shot)return;ball=shot;phase='flight';shots[actor]++;drag=null;sound('shot');trail.length=0;lastBounces=0;lastHit=null;}
  async function resolve(hit){if(phase!=='flight'&&phase!=='aim')return;phase='handoff';lastHit=hit;if(hit){score[actor]++;s.react?.(actor,'win');s.react?.(1-actor,'sad');sound('win');}else{sound('lose');s.react?.(actor,'sad');}s.setScores(score);message=hit?'IN THE CUP!':'Rim, bounce or wide — no cup.';
   if(!hit){const p=ball&&ball.z>=0&&ball.z<4.4&&Math.abs(ball.x)<1.6?projectBeerTable(ball,s.W,s.H):{x:s.W/2,y:s.H*.55};fx.pop(clock<=0?'TIME!':ball?.bounces?'BRICK!':'MISS',p.x,Math.min(p.y,s.H*.8),{color:'#d9d2c3',size:clamp(s.W*.08,24,40)});}
-  if(!await (s.wait?s.wait(hit?900:650):s.delay(650)))return;if(score[actor]===10||shots.every(n=>n>=12))return s.finish(score,'Paddy’s Pub · cups '+score[0]+'–'+score[1]);actor=1-actor;if(shots[actor]>=12)actor=1-actor;ball=null;sunk=null;clock=18;trail.length=0;if(await s.pass(actor,message+' Flick toward the remaining cups. Twelve attempts each; clearing ten cups wins early.'))phase='aim';}
+  turnShots++;if(hit)turnHits++;
+  // One full match: two shots a turn; sink both and you bring it back for a third (never a fourth).
+  const cleared=score[actor]===10,again=!cleared&&(turnShots<2||turnShots===2&&turnHits===2);bonus=again&&turnShots===2;
+  if(bonus){message='BRING IT BACK!';fx.pop('BRING IT BACK!',s.W/2,s.H*.42,{color:'#7dff8a',size:clamp(s.W*.1,28,58),life:1.6});fx.confetti(s.W,s.H,40);tone(880,.08,.05,'square');}
+  if(!await (s.wait?s.wait(bonus?1500:hit?900:650):s.delay(bonus?1500:650)))return;
+  if(cleared)return s.finish(score,'Paddy’s Pub · rack cleared · cups '+score[0]+'–'+score[1]);
+  ball=null;sunk=null;clock=18;trail.length=0;
+  if(again){message=bonus?'BRING IT BACK! One bonus shot.':'Second shot of the turn.';phase='aim';return;}
+  turnShots=0;turnHits=0;bonus=false;actor=1-actor;
+  if(actor===0&&turns[0]>=MAX_TURNS&&turns[1]>=MAX_TURNS)return s.finish(score,'Paddy’s Pub · last call · cups '+score[0]+'–'+score[1]);
+  turns[actor]++;if(await s.pass(actor,message+' Two shots this turn. Sink both and you bring it back for a third.'))phase='aim';}
  function cupHit(cup){const {top,r}=cupScreen(cup,s.W,s.H);sinking.push({cup:{...cup},player:1-actor,age:0});spills[actor].push({x:cup.x,z:cup.z});sunk=cup;
   fx.burst(top.x,top.y,{count:28,speed:clamp(r*7,90,260),up:clamp(r*6,80,240),size:clamp(r*.16,2,5)});fx.ring(top.x,top.y,r,'#fff3c0',.34);fx.shake(7,.32);vibrate(30);
   const last=racks[actor].every(c=>c.removed);fx.pop(last?'RACK CLEARED!':['SPLASH!','DRINK!','CUP!','WILDCARD!'][score[actor]%4],s.W/2,s.H*.6,{color:last?'#7dff8a':'#ffd36b',size:clamp(s.W*.1,28,58)});if(last)fx.confetti(s.W,s.H,80);}
  const rerack=()=>{if(phase!=='aim'||reracks[actor])return;reracks[actor]=true;const left=racks[actor].filter(p=>!p.removed),positions=beerRack();left.forEach((p,i)=>{p.x=positions[i].x;p.z=positions[i].z;});message='Re-racked. Aim for the new triangle.';sound('tap');fx.pop('RE-RACK!',s.W/2,s.H*.6,{color:'#7fd0ff',size:clamp(s.W*.08,24,44)});};
  const rerackBox=()=>rerackHit||{x:8,y:Math.min(72,s.H*.2)+8,w:92,h:28};
  s.on(c,'pointerdown',ev=>{if(s.paused||phase!=='aim'||drag)return;ev.preventDefault();const p=s.pointer(ev),rb=rerackBox();if(!reracks[actor]&&p.x>=rb.x&&p.x<=rb.x+rb.w&&p.y>=rb.y&&p.y<=rb.y+rb.h){rerack();return;}drag={id:ev.pointerId,start:p,end:p,time:performance.now()};s.capture(ev);});s.on(c,'pointermove',ev=>{if(drag?.id===ev.pointerId)drag.end=s.pointer(ev);});s.on(c,'pointerup',ev=>{if(drag?.id!==ev.pointerId)return;const p=s.pointer(ev),start=drag.start,duration=(performance.now()-drag.time)/1000;const moved=Math.hypot(p.x-start.x,p.y-start.y);toss(moved<14?beerFlick(0,70,.45,s.W,s.H):beerFlick(p.x-start.x,start.y-p.y,duration,s.W,s.H,s.flickSensitivity));drag=null;s.release(ev);});const clear=()=>drag=null;const cancel=ev=>{if(drag?.id===ev.pointerId)clear();};s.on(c,'pointercancel',cancel);s.on(c,'lostpointercapture',cancel);s.on(window,'blur',clear);s.on(window,'resize',clear);s.resetOnPause?.(clear);
- s.hint(`Flick sensitivity ${flickGain(s.flickSensitivity).toFixed(2)}× (Settings). Flick upward anywhere on the table (or tap for a gentle centre toss). Short flicks are gentle; longer drags reach the back cups. Angle steers left/right; speed has only a small capped effect. Real 3D arcs, rim rebounds and table bounces. Alternate every toss. Tap RE-RACK (or press R) once to tighten your cups.`);
+ s.hint(`Flick sensitivity ${flickGain(s.flickSensitivity).toFixed(2)}× (Settings). Flick upward anywhere on the table (or tap for a gentle centre toss). Short flicks are gentle; longer drags reach the back cups. Angle steers left/right; speed has only a small capped effect. Real 3D arcs, rim rebounds and table bounces. Two shots a turn; sink both to bring it back for a third. First to clear all ten cups wins. Tap RE-RACK (or press R) once to tighten your cups.`);
  s.on(document,'keydown',ev=>{if(ev.key.toLowerCase()==='r')rerack();});
  s.frame(dt=>{const W=s.W,H=s.H,{U}=beerCamera(W,H);time+=dt;
   if(phase==='aim'){clock-=dt;if(clock<=0){shots[actor]++;void resolve(false);}}
@@ -13246,14 +13393,15 @@ async function beerpong(s){const[c,x]=s.canvas(680,430,{fill:true}),racks=[beerR
    else{const preview=beerFlick(drag.end.x-drag.start.x,drag.start.y-drag.end.y,(performance.now()-drag.time)/1000,W,H,s.flickSensitivity);x.strokeStyle='#fff4be55';x.lineWidth=2;x.setLineDash([5,6]);x.beginPath();x.moveTo(drag.start.x,drag.start.y);x.lineTo(drag.end.x,drag.end.y);x.stroke();x.setLineDash([]);
     if(preview){const power=clamp((preview.vz/3.6-.68)/.8,0,1),reach=.45+power*1.5,tip=projectBeerTable({x:preview.vx/preview.vz*reach,z:.08+reach,y:0},W,H),base=projectBeerTable({x:0,z:.08,y:0},W,H);powerArrow(x,{x:base.x,y:base.y},tip,power);}}}
   const top=clamp(H*.07,22,48)+clamp(Math.min(W*.085,H*.07),14,34)*1.4;
+  if(bonus&&phase==='aim')plate(x,W/2,top+clamp(W*.13,48,70),'🍺 BRING IT BACK · BONUS SHOT',{size:clamp(W*.04,13,20),color:'#7dff8a',border:'#2e9e61'});
   if(phase==='aim'&&!reracks[actor])rerackHit=plate(x,clamp(W*.13,52,90),top,'↻ RE-RACK',{size:clamp(W*.032,11,15),color:'#bfe8ff',border:'#3f7fb0'});else rerackHit=null;
-  const left=Math.max(0,12-shots[actor]),urgent=phase==='aim'&&clock<=5;
-  const pipR=clamp(W*.007,2.3,4),pipW=pipR*2.7*12,clockX=W-Math.max(pipW/2,clamp(W*.11,44,80))-10,pipY=top+clamp(W*.032,11,15)*1.5;
+  const allowed=bonus||turnShots>=2&&turnHits>=2?3:2,left=Math.max(0,allowed-turnShots),urgent=phase==='aim'&&clock<=5;
+  const pipR=clamp(W*.012,4,7),pipW=pipR*2.7*allowed,clockX=W-Math.max(pipW/2,clamp(W*.11,44,80))-10,pipY=top+clamp(W*.032,11,15)*1.5;
   plate(x,clockX,top,phase==='aim'?`${Math.ceil(clock)}s`:`${left} left`,{size:clamp(W*.032,11,15),color:urgent?(Math.sin(time*12)>0?'#ff6b6b':'#fff'):'#f7d893',border:urgent?'#ff6b6b':'#7a5530'});
   x.fillStyle='#120b07b0';x.beginPath();x.roundRect?.(clockX-pipW/2-pipR,pipY-pipR*2,pipW+pipR*2,pipR*4,pipR*2);x.fill();
-  for(let i=0;i<12;i++){const used=i<shots[actor];x.fillStyle=used?'#ffffff30':PLAYER_CUPS[actor].light;x.beginPath();x.arc(clockX+(i-5.5)*pipR*2.7,pipY,pipR,0,Math.PI*2);x.fill();}
+  for(let i=0;i<allowed;i++){const used=i<turnShots;x.fillStyle=used?'#ffffff30':i===2?'#7dff8a':PLAYER_CUPS[actor].light;x.beginPath();x.arc(clockX+(i-(allowed-1)/2)*pipR*2.7,pipY,pipR,0,Math.PI*2);x.fill();}
   fx.draw(x);x.restore();
-  s.status(`${s.players[actor].name} · toss ${Math.min(12,shots[actor]+(phase==='aim'?1:0))}/12 · cups ${score[0]}–${score[1]} · ${phase==='aim'?Math.ceil(clock)+'s to flick':message}`);s.debug={actor,phase,ball,racks,shots,score,toss,resolve,project:projectBeerTable};});await s.pass(0,'Paddy’s Pub beer pong. Flick your head-ball UP the table into the other player’s ten cups. Alternate every throw. Twelve attempts each, one re-rack, and 3D rim/table physics.');
+  s.status(`${s.players[actor].name} · ${bonus?'BRING IT BACK · bonus shot':'shot '+Math.min(2,turnShots+(phase==='aim'?1:0))+'/2'} · cups ${score[0]}–${score[1]} · ${phase==='aim'?Math.ceil(clock)+'s to flick':message}`);s.debug={actor,phase,ball,racks,shots,score,turnShots,turnHits,bonus,message,toss,resolve,project:projectBeerTable};});await s.pass(0,'Paddy’s Pub beer pong. Flick your head-ball UP the table into the other player’s ten cups. Two shots per turn; sink both and you bring it back for a third. First to clear all ten cups wins. One re-rack each, and 3D rim/table physics.');
 }
 function flipVerdict(outcome,cup){if(outcome.success)return {pop:['FLIP!','FLIPADELPHIA!','NAILED IT!','FLIP FLIP!'][Math.floor(Math.random()*4)],message:'FLIP FLIP FLIPADELPHIA!'};if(!cup||Math.abs(cup.x)>=1.1)return {pop:'OFF THE EDGE!',message:'Off the edge. Flick straighter.'};if(outcome.error<.4&&Math.abs(cup.vx)>=.95)return {pop:'IT SLID!',message:'Landed but slid off its rim. Less sideways drift.'};if(outcome.error<.9)return {pop:'SO CLOSE!',message:'So close! Tweak the spin a touch.'};return {pop:['WHIFF!','NOPE!','BRICK!'][Math.floor(Math.random()*3)],message:'Not rim-down. Try a different flick.'};}
 async function flipcup(s){const[c,x]=s.canvas(680,430,{fill:true}),score=[0,0],attempts=[0,0];let actor=0,phase='aim',cup=null,drag=null,clock=15,message='Flick up to land RIM-DOWN.',landing=null;
@@ -26455,5 +26603,353 @@ function composeSong(zone,biome,place,variation=0){
   name:fixed?st.name||st.genre:`${bio?.title||st.label||''} ${st.genre}`.trim(),by:place?`near ${place}`:''};
 }
 Object.assign(exports,{STYLES,BIOMES,SCALES,QUAL,chord,composeSong,styleFor,voice,melody});
+
+},
+"src/gridBoard.js":(exports,require)=>{
+const {seededRandom,shuffle,pick}=require("src/utils.js");
+const {LOCATIONS}=require("src/locations.js");
+// Board generation 8: every level is a square-tile grid board, like a printed party
+// board game. A stem leaves camp, splits at the crossroads into three roads that wind
+// down their own column of the grid (west / centre / east) and meet again at the gate.
+// Roads only ever step down, left or right, and never touch themselves or each other,
+// so the tiles read as clean tracks around empty blocks where the landmarks stand.
+// Planks across the gaps are bridges between roads; short hops across a switchback are
+// shortcuts, each guarded by an obstacle (gear, a character skill or 3 points).
+const GRID_P=100,GRID_X0=100,GRID_COLS=17,CENTER=8,TOP=3;
+const BANDS=[[0,4],[6,10],[12,16]];
+const GRID_LAYOUTS=['Serpent Streets','Staircase Gardens','Long Corridors','Switchback Blocks'];
+const STYLES=['serpent','stairs','corridor','mixed'];
+const DIFFICULTY=['CALM','ADVENTUROUS','HIGH REWARD'],LANE_KIND=['Parkway','Backroads','Gauntlet'];
+const OBSTACLE_IDS=['bridge','lock','tree','flood','checkpoint','toxic','laser','pipe','haunted','heavy','cliff','fog'];
+const GROUND_BASE={mind:'#2e1c3a',body:'#38220f',spirit:'#1e1a45',horror:'#1f0709'};
+const playable=new Set(['game','trivia','casino','dice','task']);
+const key=(c,r)=>c+','+r;
+const N4=[[1,0],[-1,0],[0,1],[0,-1]];
+// Weighted move order for the path search; the style gives each level its own shape.
+function moveOrder(style,dir,run,random){
+ const down=[0,1],horiz=[[1,0],[-1,0]],w=new Map();
+ const horizontal=dir&&dir[1]===0;
+ for(const m of [down,...horiz]){
+  const same=dir&&m[0]===dir[0]&&m[1]===dir[1],isDown=m===down;let weight=1;
+  if(style==='serpent')weight=horizontal?(same?7:isDown?1:1):(isDown?(run<1+random()*2?3:1):4);
+  else if(style==='stairs')weight=horizontal?(isDown?(run>=1+Math.floor(random()*2)?6:1):same?2:1):(isDown?(run<1?3:1):5);
+  else if(style==='corridor')weight=isDown?(dir&&!horizontal&&run>6?2:6):same?4:1.5;
+  else weight=same?3:2;
+  w.set(m,weight);
+ }
+ const order=[],pool=[...w.entries()];
+ while(pool.length){const total=pool.reduce((s,[,v])=>s+v,0);let t=random()*total,i=0;for(;i<pool.length-1;i++){t-=pool[i][1];if(t<=0)break;}order.push(pool[i][0]);pool.splice(i,1);}
+ return order;
+}
+// Exact-length path from start to end through allowed cells: steps down, left or right
+// only, and no cell touches another non-consecutive cell (of this path or `occ`).
+function gridPath({start,end,length,allowed,occ,random,style,okNeighbour=()=>false,width=5}){
+ const path=[start],inPath=new Set([key(...start)]);let budget=25000;
+ const touches=(c,r,prev,isFirst,isLast)=>{for(const[dc,dr]of N4){const nc=c+dc,nr=r+dr;if(prev&&nc===prev[0]&&nr===prev[1])continue;const k=key(nc,nr);if(inPath.has(k))return true;if(occ.has(k)&&!okNeighbour(k,isFirst,isLast))return true;}return false;};
+ if(touches(start[0],start[1],null,true,length===1))return null;
+ function dfs(cur,dir,run){
+  if(--budget<0)return false;
+  const left=length-path.length;
+  if(left===0)return cur[0]===end[0]&&cur[1]===end[1];
+  const dr=end[1]-cur[1],dc=Math.abs(end[0]-cur[0]);
+  if(dr<0||dr+dc>left||(left-dr-dc)%2)return false;
+  if(dr===0&&left!==dc)return false;
+  if(left-dr>(Math.floor(dr/2)+1)*(width+3))return false;
+  for(const m of moveOrder(style,dir,run,random)){
+   if(dir&&m[0]===-dir[0]&&m[1]===-dir[1])continue;
+   const nc=cur[0]+m[0],nr=cur[1]+m[1],k=key(nc,nr),isLast=left===1,isEnd=nc===end[0]&&nr===end[1];
+   if(isLast!==isEnd||!allowed(nc,nr)||inPath.has(k)||occ.has(k)||touches(nc,nr,cur,false,isLast))continue;
+   path.push([nc,nr]);inPath.add(k);
+   if(dfs([nc,nr],m,dir&&m[0]===dir[0]&&m[1]===dir[1]?run+1:1))return true;
+   path.pop();inPath.delete(k);if(budget<0)return false;
+  }
+  return false;
+ }
+ return dfs(start,null,0)?path:null;
+}
+// The three road shapes of one realm for rows R0 (crossroads) to R1 (gate).
+function laneSpecs(R0,R1,random,relaxed){
+ // Side roads run out toward the board edge at one end (top or bottom), so each road fills its own column of the board.
+ const reach=()=>relaxed?4:Math.floor(random()*3),wTop=random()<.5,eTop=random()<.5,w0=wTop?reach():4,w1=wTop?4:reach(),e0=GRID_COLS-1-(eTop?reach():4),e1=GRID_COLS-1-(eTop?4:reach());
+ return [
+  {start:[CENTER-1,R0],end:[CENTER-1,R1],allowed:(c,r)=>r===R0||r===R1?c>=0&&c<=CENTER-1:r===R0+1?c<=w0:r===R1-1?c<=w1:r>R0&&r<R1&&c>=BANDS[0][0]&&c<=BANDS[0][1],width:5},
+  {start:[CENTER,R0+1],end:[CENTER,R1-1],allowed:(c,r)=>r===R0+1||r===R1-1?c===CENTER:r>R0+1&&r<R1-1&&c>=BANDS[1][0]&&c<=BANDS[1][1],width:5},
+  {start:[CENTER+1,R0],end:[CENTER+1,R1],allowed:(c,r)=>r===R0||r===R1?c>=CENTER+1&&c<=GRID_COLS-1:r===R0+1?c>=e0:r===R1-1?c>=e1:r>R0&&r<R1&&c>=BANDS[2][0]&&c<=BANDS[2][1],width:5}
+ ];
+}
+// Lays out three roads of the given lengths. positions[lane] = 0 west, 1 centre, 2 east.
+function solveRealm(lengths,positions,stemLength,random,style){
+ const L0=Math.min(...lengths),ds=[L0-11,L0-9,L0-13,L0-7,L0-15].filter(d=>d>=6);
+ for(const D of ds)for(let attempt=0;attempt<6;attempt++){
+  const R0=TOP+stemLength-1,R1=R0+D,occ=new Map(),forkKey=key(CENTER,R0),gateKey=key(CENTER,R1);
+  for(let r=TOP;r<=R0;r++)occ.set(key(CENTER,r),'stem');occ.set(gateKey,'gate');
+  const specs=laneSpecs(R0,R1,random,attempt>=4),cells=[null,null,null];let ok=true;
+  // Side roads first: their crossroads and gate bars cross the centre column.
+  for(const lane of [0,1,2].sort((a,b)=>(positions[a]===1)-(positions[b]===1))){
+   const spec=specs[positions[lane]];
+   const path=gridPath({...spec,length:lengths[lane],occ,random,style:attempt>2?'mixed':style,okNeighbour:(k,isFirst,isLast)=>isFirst&&k===forkKey||isLast&&k===gateKey});
+   if(!path){ok=false;break;}
+   cells[lane]=path;for(const[c,r]of path)occ.set(key(c,r),'lane'+lane);
+  }
+  if(ok)return {R0,R1,cells,occ};
+ }
+ return null;
+}
+const cellXY=(c,r,yBase)=>({x:GRID_X0+c*GRID_P,y:yBase+70+r*GRID_P});
+// Free rectangle of cells beside a space for its landmark card.
+function cardSpot(cell,occ,reserved,rowMin,rowMax,random){
+ const [nc,nr]=cell,spots=[];
+ for(const[w,h] of [[3,2],[2,2]]){
+  for(let oc=nc-w;oc<=nc+1;oc++)for(let or=nr-h;or<=nr+1;or++){
+   if(oc<0||oc+w>GRID_COLS||or<rowMin||or+h-1>rowMax)continue;
+   let touch=false,free=true;
+   for(let c=oc;c<oc+w&&free;c++)for(let r=or;r<or+h;r++){const k=key(c,r);if(occ.has(k)||reserved.has(k)){free=false;break;}if(Math.abs(c-nc)<=1&&Math.abs(r-nr)<=1)touch=true;}
+   if(free&&touch)spots.push({c:oc,r:or,w,h});
+  }
+  if(spots.length)break;
+ }
+ return spots.length?spots[Math.floor(random()*spots.length)]:null;
+}
+function reserveCard(spot,reserved){for(let c=spot.c;c<spot.c+spot.w;c++)for(let r=spot.r;r<spot.r+spot.h;r++)reserved.add(key(c,r));}
+function cardBox(spot,yBase){const a=cellXY(spot.c,spot.r,yBase);return {x:a.x-GRID_P/2+6,y:a.y-GRID_P/2+6,w:spot.w*GRID_P-12,h:spot.h*GRID_P-12};}
+// Shortcuts hop across one empty cell between two rungs of the same road.
+function findShortcut(path,ids,board,reserved,occ,random,maxSkip=14){
+ const at=new Map(path.map(([c,r],i)=>[key(c,r),i])),opts=[];
+ for(let i=2;i<path.length-3;i++)for(const hop of [2,3]){const[c,r]=path[i],j=at.get(key(c,r+hop));if(j===undefined||j-i<5||j-i>maxSkip||j>path.length-2)continue;const mids=hop===2?[key(c,r+1)]:[key(c,r+1),key(c,r+2)];if(mids.some(mid=>occ.has(mid)||reserved.has(mid)))continue;if(board.nodes[ids[i]].next.length!==1)continue;opts.push({i,j,mid:mids[0],mids});}
+ if(!opts.length)return null;
+ opts.sort((a,b)=>Math.abs((a.i+a.j)/2-path.length/2)-Math.abs((b.i+b.j)/2-path.length/2));
+ return opts[Math.floor(random()*Math.min(3,opts.length))];
+}
+function addShortcut(board,realm,lane,from,to,skip,id,random){
+ board.nodes[from].next.push(to);board.nodes[from].shortcut=to;
+ board.shortcuts.push({realm,from,to,lane,skip});
+ board.obstacles.push({id,from,to,type:pick(OBSTACLE_IDS,random),open:false,openUntil:0,repairs:0});
+}
+function buildGridBoard(board){
+ const random=seededRandom(board.seed+':grid-v8');
+ board.layout=pick(GRID_LAYOUTS,random);board.generation=8;board.baseSpan=1050;board.grid={p:GRID_P,x0:GRID_X0,cols:GRID_COLS};
+ board.pathNetworks=[];board.bridges=[];board.shortcuts=[];
+ const oldSigns=board.signs.filter(s=>!s.branch);board.signs=[];board.obstacles=[];board.width=1800;
+ let yBase=0;
+ for(const realm of ['mind','body','spirit']){
+  const data=board.realms[realm],all=data.ids.map(id=>board.nodes[id]),cards=board.routes.filter(r=>r.realm===realm),start=board.nodes[data.start],gate=board.nodes[data.gate],nextRealm=gate.next.filter(id=>board.nodes[id].realm!==realm);
+  const main=[];let id=start.id;while(board.nodes[id]?.realm===realm&&!main.includes(id)){main.push(id);id=board.nodes[id].next[0];}
+  const style=pick(STYLES,random),positions=shuffle([0,1,2],random);
+  let stem,lengths,solved=null;
+  for(let tries=0;tries<12&&!solved;tries++){
+   stem=main.slice(0,4+Math.floor(random()*3));
+   const T=all.length-stem.length-1,p=T%2;let base=Math.floor((T-4)/3);if(base%2!==p)base--;
+   lengths=[base,base+2,T-2*base-2];if(lengths[2]-lengths[1]>=4){lengths[1]+=2;lengths[2]-=2;}
+   solved=solveRealm(lengths,positions,stem.length,random,tries>5?'mixed':style);
+  }
+  if(!solved)throw new Error('grid board: no layout for '+realm);
+  const {R0,R1,cells,occ}=solved,fork=stem.at(-1),entries=shuffle(cards.map(r=>r.entry),random),reserved=new Set([...stem,gate.id,...entries]);
+  const pool=shuffle(all.filter(n=>!reserved.has(n.id)).map(n=>n.id),random),tracks=[[],[entries[0]],[entries[1]]];
+  for(let lane=0;lane<3;lane++)while(tracks[lane].length<lengths[lane])tracks[lane].push(pool.shift());
+  data.y=yBase;
+  for(const n of all){delete n.route;delete n.branch;delete n.location;delete n.pathName;delete n.pathDifficulty;delete n.side;delete n.card;delete n.bridge;delete n.shortcut;if(n.type==='location')n.type='event';n.next=[];}
+  const place=(n,c,r)=>{const p=cellXY(c,r,yBase);n.x=p.x;n.y=p.y;n.gx=c;n.gy=r;};
+  stem.forEach((sid,i)=>{const n=board.nodes[sid];place(n,CENTER,TOP+i);n.col=i;n.lane=0;n.next=[stem[i+1]].filter(Boolean);n.stem=true;if(i>0&&i%2===1)n.type='game';});
+  start.type='start';board.nodes[fork].next=tracks.map(p=>p[0]);
+  place(gate,CENTER,R1);gate.col=stem.length+Math.max(...lengths);gate.lane=0;gate.next=nextRealm;gate.type='gate';
+  const laneInfo=[];
+  tracks.forEach((path,lane)=>{
+   const route=lane?cards.find(r=>r.entry===path[0]):null,name=route?.name||cards[0].safe,source=route?.source||cards[0].source,difficulty=DIFFICULTY[lane],band=BANDS[positions[lane]];
+   for(let i=0;i<path.length;i++){
+    const n=board.nodes[path[i]];place(n,...cells[lane][i]);n.col=stem.length+i;n.lane=lane;n.next=[path[i+1]||gate.id];n.pathName=name;n.pathDifficulty=difficulty;n.pathRemaining=path.length-i;n.pathPosition=positions[lane];
+    if(route){n.branch=name;n.source=route.source;}
+    if(i%3===1&&!['item','shop','dice','casino'].includes(n.type))n.type='game';
+    if(lane===0&&n.type==='penalty')n.type='bonus';
+    if(lane===2&&i%7===3)n.type='item';else if(lane===2&&i%7===5)n.type='penalty';
+   }
+   for(const at of [.25,.68])board.nodes[path[Math.floor((path.length-1)*at)]].type='trivia';
+   if(route){Object.assign(route,{fork,entry:path[0],rejoin:gate.id,forkIndex:stem.length-1,rejoinIndex:stem.length+lengths[0],spaces:path.length,difficulty});board.nodes[path[0]].route={...route,safe:false};}
+   else board.nodes[path[0]].route={name,source,reward:'A free, calmer route. Fewer hazards and fewer visitors.',risk:'Fewer supplies and recruits than the adventurous roads.',safe:true,spaces:path.length,difficulty};
+   const ys=path.map(id=>board.nodes[id].y);
+   laneInfo.push({lane,position:positions[lane],cx:GRID_X0+(band[0]+band[1])/2*GRID_P,x0:GRID_X0+band[0]*GRID_P,x1:GRID_X0+band[1]*GRID_P,name,source,difficulty,kind:LANE_KIND[lane],route:route?.id||null,ids:path,reward:board.nodes[path[0]].route.reward,risk:board.nodes[path[0]].route.risk,top:Math.min(...ys),bottom:Math.max(...ys)});
+  });
+  // Bridges: a plank across the gap column to the neighbouring road, never far backwards.
+  const blocked=new Set(),laneAt=new Map();tracks.forEach((path,lane)=>cells[lane].forEach(([c,r],i)=>laneAt.set(key(c,r),{lane,i})));
+  const made=[];
+  // Rows straight across first; a realm with no such crossing gets a steeper plank.
+  for(const drs of [[0,1,-1],[2,-2]])for(const lane of made.length&&drs.length===2?[]:shuffle([0,1,2],random)){
+   const pos=positions[lane],dirs=[];if(pos<2)dirs.push(1);if(pos>0)dirs.push(-1);
+   const opts=[];
+   for(const dir of dirs)cells[lane].forEach(([c,r],i)=>{
+    if(r<=R0+1||r>=R1-1||i<3||i>tracks[lane].length-4||board.nodes[tracks[lane][i]].next.length!==1)return;
+    // Same row: a plank across up to three empty cells. One empty cell: may also step a row up or down.
+    for(const dr of drs)for(let span=2;span<=4;span++){
+     if(dr&&span!==2)continue;
+     const t=laneAt.get(key(c+dir*span,r+dr));if(!t||t.lane===lane)continue;
+     const gaps=[];for(let k=1;k<span;k++)gaps.push(key(c+dir*k,r));if(dr){gaps.push(key(c+dir,r+Math.sign(dr)),key(c+dir,r+dr));}
+     if([...new Set(gaps)].some(g=>occ.has(g)||blocked.has(g)))continue;
+     const len=tracks[t.lane].length,fi=i/tracks[lane].length,ti=t.i/len;if(t.i<2||t.i>len-3||ti<fi-.08||ti>fi+.3)continue;
+     if(made.some(b=>b.lane===t.lane&&b.otherLane===lane&&Math.abs(b.toIndex-i)<=6))continue;
+     opts.push({i,to:tracks[t.lane][t.i],toIndex:t.i,otherLane:t.lane,gaps:[...new Set(gaps)],dr:Math.abs(dr)+span-2});break;
+    }
+   });
+   if(!opts.length)continue;
+   const b=opts.sort((a,b)=>Math.abs(a.dr)-Math.abs(b.dr))[Math.floor(random()*Math.min(opts.length,4))],from=board.nodes[tracks[lane][b.i]];
+   from.next.push(b.to);from.bridge=b.to;board.bridges.push({realm,from:from.id,to:b.to,lane,otherLane:b.otherLane});made.push({lane,otherLane:b.otherLane,at:b.i,toIndex:b.toIndex});b.gaps.forEach(g=>blocked.add(g));
+  }
+  // One guarded shortcut per road where the road doubles back on itself.
+  tracks.forEach((path,lane)=>{const s=findShortcut(cells[lane],path,board,blocked,occ,random);if(!s)return;s.mids.forEach(k=>blocked.add(k));addShortcut(board,realm,lane,path[s.i],path[s.j],s.j-s.i,'shortcut-'+path[s.i],random);});
+  let taskKept=false;for(const n of all)if(n.type==='task'){if(taskKept)n.type='game';else taskKept=true;}
+  const candidates=shuffle(LOCATIONS.filter(l=>l.realm===realm&&!['parents','upside-down','unlimited-savory-lab','planet-coaster-park'].includes(l.id)),random);
+  // Landmark cards fill empty blocks of the grid right beside their space.
+  tracks.forEach((path,lane)=>{
+   const target=[1,2,3][lane],slots=shuffle(path.map((id,index)=>({id,index})).filter(p=>p.index>=3&&p.index<path.length-3&&!['trivia','dice'].includes(board.nodes[p.id].type)),random);let count=0;
+   for(const slot of slots){
+    const n=board.nodes[slot.id],spot=cardSpot(cells[lane][slot.index],occ,blocked,R0-1,R1,random);if(!spot)continue;
+    let l=candidates.pop();if(realm==='mind'&&lane===0&&count===0)l=LOCATIONS.find(l=>l.id==='parents');else if(realm==='mind'&&lane===2&&count===0&&random()<.35)l=LOCATIONS.find(l=>l.id==='unlimited-savory-lab');else if(realm==='body'&&lane===1&&count===0)l=LOCATIONS.find(l=>l.id==='planet-coaster-park')||l;if(!l)break;
+    reserveCard(spot,blocked);n.type='location';n.location=l.id;n.card=cardBox(spot,yBase);n.side=n.card.x+n.card.w/2<n.x?-1:1;if(++count>=target)break;
+   }
+   let gap=0;for(const id of path){const n=board.nodes[id];if(playable.has(n.type))gap=0;else if(++gap>=3&&['event','bonus','penalty'].includes(n.type)){n.type='game';gap=0;}}
+  });
+  // One warp pipe per realm, hidden among the encounter spaces of a road.
+  {const lane=Math.floor(random()*3),path=tracks[lane],options=path.map((id,i)=>({id,i})).filter(q=>q.i>=4&&q.i<path.length-4&&['event','bonus','penalty','game'].includes(board.nodes[q.id].type)&&!board.nodes[q.id].location);if(options.length)board.nodes[options[Math.floor(random()*options.length)].id].type='warp';}
+  const height=cellXY(0,R1+4,0).y;
+  Object.assign(data,{color:GROUND_BASE[realm],height,cols:gate.col,paths:tracks,lanes:laneInfo,fork,stem,gridRows:{top:TOP,fork:R0,gate:R1,style}});
+  board.pathNetworks.push({realm,fork,paths:tracks,lengths,difficulties:DIFFICULTY});
+  for(const route of cards){const n=board.nodes[route.entry];board.signs.push({name:route.name,source:route.source,x:n.x,y:n.y-65,level:realm.toUpperCase(),branch:true,routeEntry:route.entry,routeId:route.id});}
+  yBase+=height;
+ }
+ board.height=yBase;
+ board.signs.push(...oldSigns.filter((_,i)=>i%9===0).map(s=>({...s,hidden:true})));return board;
+}
+// The Horror level as one long grid road with two guarded doors (shortcuts).
+function layoutHorrorGrid(board,ids,base,kinds){
+ const random=seededRandom(board.seed+':horror-grid'),body=ids.slice(1,-1),start=board.nodes[ids[0]],gate=board.nodes[ids.at(-1)];
+ board.obstacles=(board.obstacles||[]).filter(o=>!String(o.id).startsWith('horror-door'));
+ for(const id of ids){const n=board.nodes[id];n.next=n.next.filter(t=>!t.startsWith('horror-')||t===ids[ids.indexOf(id)+1]);delete n.card;delete n.side;}
+ let solved=null,R1=0;
+ const n=body.length;let D=Math.round(n*.42);if((n-D)%2)D++;
+ for(let tries=0;tries<10&&!solved;tries++){
+  const d=D+2*[0,1,-1,2,-2,3,0,1,-1,2][tries];R1=TOP+1+d;const occ=new Map([[key(CENTER,TOP),'start'],[key(CENTER,R1),'gate']]),rTop=TOP+1,rEnd=R1-1;
+  const path=gridPath({start:[CENTER,rTop],end:[CENTER,rEnd],length:n,occ,random,style:tries>4?'mixed':'serpent',width:17,
+   allowed:(c,r)=>r===rTop||r===rEnd?c===CENTER:r>rTop&&r<rEnd&&c>=0&&c<GRID_COLS,okNeighbour:(k,isFirst,isLast)=>isFirst&&k===key(CENTER,TOP)||isLast&&k===key(CENTER,R1)});
+  if(path){for(const[c,r]of path)occ.set(key(c,r),'lane');solved={path,occ};}
+ }
+ if(!solved)return false;
+ const {path,occ}=solved,place=(nd,c,r)=>{const p=cellXY(c,r,base);nd.x=p.x;nd.y=p.y;nd.gx=c;nd.gy=r;};
+ place(start,CENTER,TOP);place(gate,CENTER,R1);body.forEach((id,i)=>place(board.nodes[id],...path[i]));
+ board.shortcuts ||= [];const blocked=new Set();
+ for(let k=0;k<2;k++){
+  const half=k?path.slice(Math.floor(path.length/2)):path.slice(0,Math.floor(path.length/2)),offset=k?Math.floor(path.length/2):0,ids2=body.slice(offset,offset+half.length);
+  const s=findShortcut(half,ids2,board,blocked,occ,random,20);if(!s)continue;s.mids.forEach(k=>blocked.add(k));
+  const from=ids2[s.i],to=ids2[s.j];board.nodes[from].next.push(to);board.nodes[from].shortcut=to;board.shortcuts.push({realm:'horror',from,to,lane:3,skip:s.j-s.i});
+  board.obstacles.push({id:'horror-door-'+k,from,to,type:kinds[k]||'haunted',open:false,openUntil:0,repairs:0});
+ }
+ body.forEach((id,i)=>{const nd=board.nodes[id];if(nd.type!=='location')return;const spot=cardSpot(path[i],occ,blocked,TOP+1,R1,random);if(spot){reserveCard(spot,blocked);nd.card=cardBox(spot,base);nd.side=nd.card.x+nd.card.w/2<nd.x?-1:1;}else{nd.type='game';delete nd.location;}});
+ const height=cellXY(0,R1+4,0).y,ys=body.map(id=>board.nodes[id].y);
+ Object.assign(board.realms.horror,{color:GROUND_BASE.horror,height,fork:ids[0],stem:[ids[0]],gridRows:{top:TOP,fork:TOP,gate:R1,style:'serpent'},lanes:[{lane:3,position:1,cx:900,x0:GRID_X0,x1:GRID_X0+(GRID_COLS-1)*GRID_P,name:'The Route Below',source:'Horror',difficulty:'HORROR',kind:'Descent',route:null,ids:body,reward:'Every landmark hides a visitor.',risk:'The dark has opinions.',top:Math.min(...ys),bottom:Math.max(...ys)}]});
+ return true;
+}
+
+Object.assign(exports,{GRID_P,GRID_X0,GRID_COLS,BANDS,GRID_LAYOUTS,gridPath,buildGridBoard,layoutHorrorGrid});
+
+},
+"src/gridRender.js":(exports,require)=>{
+const {escapeHTML:e,seededRandom}=require("src/utils.js");
+const {sceneProfile,locationSceneSVG}=require("src/locationScenes.js");
+const {ensureLevelBosses,bossById,castleName}=require("src/bossGate.js");
+const {biomeFor,biomePatchSVG,BIOME_DEFS}=require("src/biomes.js");
+const {location}=require("src/locations.js");
+const {levelInfo,levelLabel}=require("src/levels.js");
+const {obstacleIsOpen}=require("src/obstacles.js");
+// Rendering for grid boards (generation 8): a dark tabletop per level with a faint
+// grid of empty tile slots, chunky 3D tiles on coloured tracks, plank bridges,
+// guarded shortcuts and glass landmark cards with white titles that read anywhere.
+const GROUND={mind:['#25172f','#4a2753','#ffd36b'],body:['#2c1b0e','#5e3416','#ffb54a'],spirit:['#17142f','#302a72','#c9a8ff'],horror:['#150608','#420d16','#ff6a5c'],'upside-down':['#180c16','#3d1a33','#ff6a80']};
+const groundOf=realm=>GROUND[realm]||['#0f2a2e','#1d5257','#7fe0d0'];
+const TRACK=['#2fd08f','#ff9a3c','#b47cff','#ff4b55'];
+const LANE_LABEL=['CALM ROAD','ADVENTUROUS ROAD','HIGH REWARD ROAD','THE ROUTE BELOW'];
+const TILE={start:'#e9e6f5',game:'#3f8cff',event:'#ff9a3d',item:'#9d63ff',bonus:'#27c776',penalty:'#ff4f64',location:'#19b9b4',trivia:'#24b0d8',task:'#ff3d6e',casino:'#13a27c',dice:'#5867ff',shop:'#ffaf2e',gate:'#ffcf3f',warp:'#7a4cff'};
+const f=n=>Math.round(n*10)/10;
+const shade=(hex,k)=>{const n=parseInt(hex.slice(1),16),c=[n>>16,n>>8&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(k<0?v*(1+k):v+(255-v)*k))));return '#'+c.map(v=>v.toString(16).padStart(2,'0')).join('');};
+const pathD=pts=>pts.map((p,i)=>`${i?'L':'M'}${f(p.x)} ${f(p.y)}`).join('');
+function tileSVG(n,ring='#120c1a'){
+ const c=TILE[n.type]||'#8a8fb0';
+ return `<g class="gr-tile t-${n.type}" transform="translate(${n.x},${n.y})"><rect x="-43" y="-37" width="86" height="86" rx="19" fill="${shade(c,-.45)}"/><rect x="-43" y="-43" width="86" height="84" rx="19" fill="${c}"/><rect x="-37" y="-38" width="74" height="30" rx="13" fill="#fff" opacity=".2"/><rect x="-43" y="-43" width="86" height="84" rx="19" fill="none" stroke="${ring}" stroke-width="5"/></g>`;
+}
+function realmNodes(board,realm){return board.realms[realm].ids.map(id=>board.nodes[id]).filter(Boolean);}
+function laneTracks(board,realm,data){
+ const out=[],fork=board.nodes[data.fork],gate=board.nodes[data.gate];
+ const stem=(data.stem||[]).map(id=>board.nodes[id]);
+ if(stem.length>1)out.push(`<path d="${pathD(stem)}" class="gr-track gr-stem"/>`);
+ for(const lane of data.lanes||[]){
+  const pts=[fork,...lane.ids.map(id=>board.nodes[id]),gate].filter(Boolean),color=TRACK[lane.lane]||TRACK[0];
+  out.push(`<g class="jr-road jr-lane gr-lane" data-lane-key="${realm}:${lane.lane}" style="--tag:${color}"><path d="${pathD(pts)}" class="gr-track-glow"/><path d="${pathD(pts)}" class="gr-track" style="stroke:${color}"/></g>`);
+ }
+ return out.join('');
+}
+// Realms without roads (pair trails, the Upside Down) still get a track along each step.
+function edgeTracks(board,realm){
+ return realmNodes(board,realm).flatMap(n=>n.next.map(id=>{const t=board.nodes[id];if(!t||t.realm!==realm||n.bridge===id||n.shortcut===id)return '';return `<path d="M${n.x} ${n.y}L${t.x} ${t.y}" class="gr-track gr-stem"/>`;})).join('');
+}
+function bridgeSVG(board,br){
+ const a=board.nodes[br.from],b=board.nodes[br.to],ang=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI,len=Math.hypot(b.x-a.x,b.y-a.y);
+ return `<g class="jr-bridge gr-bridge" data-lane-key="${br.realm}:bridge:${br.to}" transform="translate(${f(a.x)},${f(a.y)}) rotate(${f(ang)})"><rect x="20" y="-22" width="${f(len-40)}" height="44" rx="8" class="gr-plank-rail"/><rect x="26" y="-16" width="${f(len-52)}" height="32" rx="5" class="gr-plank"/>${Array.from({length:Math.max(1,Math.floor((len-52)/18))},(_,i)=>`<rect x="${f(30+i*18)}" y="-16" width="4" height="32" class="gr-plank-gap"/>`).join('')}</g>`;
+}
+function shortcutSVG(run,sc){
+ const board=run.board,a=board.nodes[sc.from],b=board.nodes[sc.to],o=(board.obstacles||[]).find(x=>x.from===sc.from&&x.to===sc.to),open=o?obstacleIsOpen(run,o):true;
+ return `<g class="jr-bridge gr-shortcut ${open?'open':'closed'}" data-lane-key="${sc.realm}:shortcut:${sc.to}"><path d="M${a.x} ${a.y}L${b.x} ${b.y}" class="gr-shortcut-bed"/><path d="M${a.x} ${a.y}L${b.x} ${b.y}" class="gr-shortcut-line"/><g transform="translate(${f((a.x+b.x)/2+(a.x===b.x?58:0))},${f((a.y+b.y)/2+(a.y===b.y?-58:0))})" class="gr-shortcut-tag"><rect x="-44" y="-15" width="88" height="30" rx="15"/><text y="6">⚡ −${sc.skip}</text></g></g>`;
+}
+function laneChips(board,realm,data){
+ const y=data.y+60,out=[];
+ for(const lane of data.lanes||[]){
+  const color=TRACK[lane.lane]||TRACK[0],cx=lane.lane===3?900:lane.cx,w=lane.lane===3?640:500;
+  const name=lane.name.length>30?lane.name.slice(0,29)+'…':lane.name;
+  out.push(`<g class="jr-banner gr-chip" data-lane-key="${realm}:${lane.lane}" transform="translate(${f(cx-w/2)},${f(y+70)})"><rect width="${w}" height="104" rx="22" class="gr-chip-bg"/><rect width="${w}" height="34" rx="17" fill="${color}"/><text x="20" y="24" class="gr-chip-kind">${LANE_LABEL[lane.lane]||'ROAD'}</text><text x="${w-18}" y="24" text-anchor="end" class="gr-chip-count">${lane.ids.length} SPACES</text><text x="20" y="78" class="gr-chip-name" style="font-size:${name.length>24?26:31}px">${e(name)}</text></g>`);
+ }
+ return out.join('');
+}
+function castleSVG(data,gate){
+ const boss=data.boss?bossById(data.boss):null;
+ const arch=`<g class="gr-gate-arch" transform="translate(${gate.x},${gate.y})"><path d="M-51 44V-30Q0 -100 51 -30V44" class="gr-arch-back"/><path d="M-51 44V-30Q0 -100 51 -30V44" class="gr-arch"/></g>`;
+ if(!boss)return arch;
+ return `<g class="boss-castle gr-castle" transform="translate(${gate.x},${gate.y+205}) scale(.82)"><path d="M0 -150V-215" class="gr-castle-road"/><rect x="-86" y="-36" width="172" height="120" rx="6" fill="#4a4258" stroke="#120d18" stroke-width="5"/><rect x="-118" y="-84" width="46" height="168" rx="5" fill="#5a5070" stroke="#120d18" stroke-width="5"/><rect x="72" y="-84" width="46" height="168" rx="5" fill="#5a5070" stroke="#120d18" stroke-width="5"/>${[-118,-100,-82,72,90,108].map(x=>`<rect x="${x}" y="-102" width="12" height="18" fill="#5a5070" stroke="#120d18" stroke-width="4"/>`).join('')}<path d="M0 -36V-110" stroke="#120d18" stroke-width="5"/><path d="M0 -110l56 16-56 18z" fill="#ff4b55" stroke="#120d18" stroke-width="3"/><circle cx="0" cy="22" r="34" fill="#1d1428" stroke="#ffcf3f" stroke-width="5"/><text y="36" text-anchor="middle" font-size="40">${e(boss.icon||'👹')}</text><text y="122" text-anchor="middle" class="gr-castle-name">${e(castleName(boss))}</text></g>${arch}`;
+}
+function gridZoneSVG(run){
+ ensureLevelBosses(run);
+ const board=run.board,realms=Object.entries(board.realms),W=board.width||1800,defs=[];
+ const body=realms.map(([realm,data],i)=>{
+  const [base,hi,acc]=groundOf(realm),first=i===0,last=i===realms.length-1,top=first?data.y-4000:data.y,height=(data.height||1000)+(first?4000:0)+(last?4000:0);
+  defs.push(`<radialGradient id="gz-${realm}" cx="50%" cy="40%" r="65%"><stop offset="0" stop-color="${hi}"/><stop offset="1" stop-color="${hi}" stop-opacity="0"/></radialGradient><pattern id="gp-${realm}" x="50" y="${f(data.y+20)}" width="100" height="100" patternUnits="userSpaceOnUse"><rect x="9" y="9" width="82" height="82" rx="18" fill="#ffffff" opacity=".045"/></pattern>`);
+  const nodes=realmNodes(board,realm),info=levelInfo(realm),title=info.n?levelLabel(realm):(data.title||realm).toUpperCase();
+  const panels=(data.lanes||[]).filter(l=>l.lane<3).map(l=>{const color=TRACK[l.lane],y0=l.top-70,y1=l.bottom+70;return `<rect class="jr-panel gr-band" data-lane-key="${realm}:${l.lane}" x="${l.x0-62}" y="${y0}" width="${l.x1-l.x0+124}" height="${y1-y0}" rx="40" fill="${color}" fill-opacity=".07" stroke="${color}" stroke-opacity=".28" stroke-width="4" stroke-dasharray="3 14" stroke-linecap="round"/>`;}).join('');
+  const biomes=nodes.filter(n=>n.type==='location'&&n.card&&location(n.location)).map(n=>{const L=location(n.location),kind=biomeFor(L,sceneProfile(L).kind);if(!kind)return '';const x0=Math.min(n.card.x,n.x-50)-34,y0=Math.min(n.card.y,n.y-50)-34,x1=Math.max(n.card.x+n.card.w,n.x+50)+34,y1=Math.max(n.card.y+n.card.h,n.y+50)+34;return `<g class="gr-biome">${biomePatchSVG(kind,{x:x0,y:y0,w:x1-x0,h:y1-y0},board.seed+':'+n.id,()=>-1e9)}</g>`;}).join('');
+  const camp=data.stem?board.nodes[data.stem[0]]:null,gate=board.nodes[data.gate];
+  return `<g class="zone-scenery gr-realm" data-realm="${realm}"><rect x="${-W}" y="${top}" width="${W*3}" height="${height}" fill="${base}"/><rect x="0" y="${data.y}" width="${W}" height="${data.height}" fill="url(#gz-${realm})"/><rect x="${-W}" y="${top}" width="${W*3}" height="${height}" fill="url(#gp-${realm})"/>${first?'':`<rect x="${-W}" y="${data.y-3}" width="${W*3}" height="6" fill="${acc}" opacity=".35"/>`}
+   ${panels}${biomes}
+   <text x="900" y="${data.y+(data.lanes?.length>1?92:110)}" text-anchor="middle" class="gr-realm-title" style="fill:${acc}">${e(title)}</text>
+   ${data.lanes?.length>1?laneChips(board,realm,data):''}
+   ${camp&&data.lanes?`<g class="gr-camp" transform="translate(${camp.x-118},${camp.y+6})"><path d="M0 34L30 -14L60 34Z" fill="#ff9a3c" stroke="#120d18" stroke-width="4" stroke-linejoin="round"/><path d="M30 -14L30 34" stroke="#120d18" stroke-width="3"/><path d="M-6 38H66" stroke="#120d18" stroke-width="5" stroke-linecap="round"/></g>`:''}
+   ${gate&&data.lanes?castleSVG(data,gate):''}
+  </g>`;
+ }).join('');
+ return BIOME_DEFS+`<defs>${defs.join('')}</defs>`+body;
+}
+function gridRoadSVG(run){
+ const board=run.board,out=[];
+ for(const realm of Object.keys(board.realms)){
+  const data=board.realms[realm];
+  out.push(data.lanes?laneTracks(board,realm,data):edgeTracks(board,realm));
+  for(const br of board.bridges||[])if(br.realm===realm)out.push(bridgeSVG(board,br));
+  for(const sc of board.shortcuts||[])if(sc.realm===realm)out.push(shortcutSVG(run,sc));
+  const ring=new Map();for(const lane of data.lanes||[])for(const id of lane.ids)ring.set(id,TRACK[lane.lane]||TRACK[0]);
+  out.push(realmNodes(board,realm).map(n=>tileSVG(n,ring.get(n.id))).join(''));
+ }
+ return out.join('');
+}
+// A glass card in the empty block beside its space: scene art on top, a white title below.
+function gridLandmarkCard(l,n){
+ const c=n.card,p=sceneProfile(l),art=locationSceneSVG(l).replace('<svg xmlns','<svg width="420" height="270" xmlns');
+ const artH=Math.round(c.h*.6),max=Math.max(8,Math.floor((c.w-24)/11)),name=l.name.length>max?l.name.slice(0,max-1)+'…':l.name,fs=Math.max(15,Math.min(21,(c.w-24)/(name.length*.56)));
+ const cx=Math.max(c.x+14,Math.min(c.x+c.w-14,n.x)),cy=Math.max(c.y+14,Math.min(c.y+c.h-14,n.y));
+ return `<g class="jr-landmark gr-card scenery-${p.kind}" data-location="${e(l.id)}"><path d="M${n.x} ${n.y}L${f(cx)} ${f(cy)}" class="gr-card-link" style="stroke:${p.accent}"/><rect x="${c.x}" y="${c.y+6}" width="${c.w}" height="${c.h}" rx="20" fill="#000" opacity=".45"/><rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="20" class="gr-card-bg" style="stroke:${p.accent}"/><svg x="${c.x+6}" y="${c.y+6}" width="${c.w-12}" height="${artH}" viewBox="0 0 420 228" preserveAspectRatio="xMidYMid slice" aria-label="${e(l.name)} scene">${art}</svg><text x="${c.x+c.w/2}" y="${c.y+artH+6+(c.h-artH-6)*.5}" text-anchor="middle" class="gr-card-name" style="font-size:${f(fs)}px">${e(name)}</text><text x="${c.x+c.w/2}" y="${c.y+c.h-12}" text-anchor="middle" class="gr-card-source">${e(l.source.length>34?l.source.slice(0,33)+'…':l.source)}</text></g>`;
+}
+
+Object.assign(exports,{GROUND,TRACK,TILE,groundOf,gridZoneSVG,gridRoadSVG,gridLandmarkCard,tileSVG});
 
 }};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();</script></body></html>

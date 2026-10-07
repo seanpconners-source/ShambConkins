@@ -23,7 +23,7 @@ function flipCupMesh(cup,W=680,H=430){const rotation=cup.angle||0,points=[];for(
 const restHeight=angle=>.19*Math.abs(Math.cos(angle))+.115*Math.abs(Math.sin(angle));
 const ease=(from,to,k)=>from+(to-from)*k;
 function beerCamera(W,H){return {U:Math.min(W*.32,H*.42)};}
-async function beerpong(s){const[c,x]=s.canvas(680,430,{fill:true}),racks=[beerRack(),beerRack()],score=[0,0],shots=[0,0],reracks=[false,false],turns=[1,0],MAX_TURNS=40;s.body.classList.add('pub-arena-body');let actor=0,turnShots=0,turnHits=0,bonus=false,phase='aim',ball=null,drag=null,clock=18,message='Flick upward from your head-ball.',settle=0;
+async function beerpong(s){const[c,x]=s.canvas(680,430,{fill:true}),racks=[beerRack(),beerRack()],score=[0,0],shots=[0,0],reracks=[false,false],turns=[1,0],MAX_TURNS=25;s.body.classList.add('pub-arena-body');let actor=0,turnShots=0,turnHits=0,bonus=false,phase='aim',ball=null,drag=null,clock=18,message='Flick upward from your head-ball.',settle=0;
  const fx=makeFx(),scene=pubScene(),spills=[[],[]],sinking=[],trail=[];let rerackHit=null,lastBounces=0,lastHit=null,time=0,sunk=null;
  const beerOpts=()=>({project:projectBeerTable,wallBottom:projectBeerTable({x:0,z:4,y:0},s.W,s.H).y,accent:'#5dff8c',logo:'PADDY’S',lineZ:1.6});
  const cupScreen=(cup,W,H)=>{const top=projectBeerTable({...cup,y:.21},W,H),bottom=projectBeerTable({...cup,y:0},W,H),edge=projectBeerTable({...cup,x:cup.x+.2,y:.21},W,H);return {top,bottom,r:edge.x-top.x};};

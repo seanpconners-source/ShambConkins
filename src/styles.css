@@ -795,8 +795,8 @@ body[data-view="home"]{background:#0c0814}
 .board-svg[data-grid] .gr-chip-count{font:900 15px Arial,sans-serif;fill:#120c1a}
 .board-svg[data-grid] .gr-chip-name{font-weight:800;font-family:Arial,sans-serif;fill:#fff}
 .board-svg[data-grid] .gr-realm-title{font:900 60px "Arial Black",Arial,sans-serif;letter-spacing:8px;paint-order:stroke;stroke:#000;stroke-width:10px;stroke-linejoin:round}
-.board-svg[data-grid] .gr-arch-back{fill:none;stroke:#120d18;stroke-width:24;stroke-linecap:round}
-.board-svg[data-grid] .gr-arch{fill:none;stroke:#ffcf3f;stroke-width:12;stroke-linecap:round}
+.board-svg[data-grid] .gr-arch-back{fill:none;stroke:#120d18;stroke-width:16;stroke-linecap:round}
+.board-svg[data-grid] .gr-arch{fill:none;stroke:#ffcf3f;stroke-width:8;stroke-linecap:round}
 .board-svg[data-grid] .gr-castle-road{stroke:#ffcf3f55;stroke-width:16;stroke-dasharray:4 14;stroke-linecap:round}
 .board-svg[data-grid] .gr-gate-word{font:900 38px "Arial Black",Arial,sans-serif;fill:#ffcf3f;paint-order:stroke;stroke:#120d18;stroke-width:9px;stroke-linejoin:round}
 .board-svg[data-grid] .gr-castle-name{font:900 28px Arial,sans-serif;fill:#fff;paint-order:stroke;stroke:#000;stroke-width:7px;stroke-linejoin:round}
