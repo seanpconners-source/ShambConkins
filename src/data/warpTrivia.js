@@ -114,6 +114,25 @@ m|Which actor plays Professor Plum in the 1985 Clue movie?|Christopher Lloyd|Mar
 m|Which actor plays Colonel Mustard in the 1985 Clue movie?|Martin Mull|Christopher Lloyd|Michael McKean|Tim Curry|The film had three alternate endings.
 h|Who directed the 1985 Clue movie?|Jonathan Lynn|John Landis|John Hughes|Rob Reiner|He later directed My Cousin Vinny.
 h|Which actress plays Miss Scarlet in the 1985 Clue movie?|Lesley Ann Warren|Eileen Brennan|Madeline Kahn|Colleen Camp|Eileen Brennan plays Mrs. Peacock.
+@Castlevania|arcade|Castlevania_(1986_video_game)
+e|Which company made the original Castlevania?|Konami|Capcom|Nintendo|Sega|It came out on the Famicom Disk System and NES in 1986–87.
+e|In the NES Castlevania, what do you whip to make hearts and items appear?|Candles and torches|Crates|Barrels|Treasure chests|They burn on the walls all through the castle.
+e|What do hearts power in the original Castlevania?|Sub-weapons|Extra lives|The whip|The timer|The axe, dagger, cross and holy water all cost hearts.
+e|Which sub-weapon flies out and comes back like a boomerang?|The cross|The axe|The dagger|Holy water|It can hit the same enemy twice.
+e|Which sub-weapon is thrown in a high arc?|The axe|The dagger|The cross|The stopwatch|It is the best weapon against enemies above you.
+e|Which floating enemies drift across the screen in a wave and knock players into pits?|Medusa Heads|Bats|Ghosts|Eagles|They are one of the most infamous enemies on the NES.
+e|What is the first boss of the original Castlevania?|A giant vampire bat|Medusa|Death|Dracula|It waits at the end of the first block.
+e|Which sub-weapon freezes enemies for a few seconds?|The stopwatch|The rosary|The cross|Holy water|It costs five hearts per use.
+e|What sometimes hides inside the castle's breakable walls to refill your health?|Pot roast|Bread|A potion|Garlic|Players call it wall meat.
+m|Which boss of the original Castlevania throws spinning sickles?|Death|Medusa|Dracula|The Mummy|He waits near the top of the clock tower.
+m|Which original Castlevania boss fights with a hopping hunchback called Igor at his side?|Frankenstein's monster|Medusa|Death|The Phantom Bat|Igor leaps around and spits fireballs while the monster lumbers forward.
+m|In Castlevania II: Simon's Quest, what is Simon collecting across Transylvania?|Dracula's body parts|Holy relics|Seven crystals|Keys to the castle|Rib, heart, eye, nail and ring.
+m|Which line appears when night falls in Castlevania II: Simon's Quest?|What a horrible night to have a curse.|The night is dark and full of terrors.|It is a good night to die.|Beware the full moon.|Its English translation became a meme.
+m|Which NES Castlevania added a branching world map and partners like Sypha, Grant and Alucard?|Castlevania III: Dracula's Curse|Castlevania II: Simon's Quest|Super Castlevania IV|Rondo of Blood|It is set about two centuries before Simon's adventure.
+m|Who is the hero of Castlevania III: Dracula's Curse?|Trevor Belmont|Simon Belmont|Richter Belmont|Juste Belmont|He is Simon's ancestor.
+h|What was the original Castlevania called in Japan?|Akumajō Dracula|Dracula Densetsu|Vampire Killer|Belmont no Densetsu|The title means roughly Demon Castle Dracula.
+h|Which Castlevania III partner can climb walls and ceilings?|Grant Danasty|Sypha Belnades|Alucard|Trevor Belmont|Sypha casts spells and Alucard turns into a bat.
+h|Which MSX2 game came out alongside the NES original in 1986–87?|Vampire Killer|Haunted Castle|Simon's Quest|Kid Dracula|It has the same castle but a non-linear, key-hunting structure.
 `;
 function parseFacts(text){let source,category,page;return text.trim().split('\n').filter(Boolean).flatMap(line=>{
  if(line.startsWith('@')){[source,category,page]=line.slice(1).split('|');return [];}
@@ -126,6 +145,7 @@ const WARP_TRIVIA_THEMES=[
  {tag:'candyland',title:'Gumdrop Pass · Candy Land',icon:'🍭',source:'Candy Land',description:'King Kandy, Princess Lolly, Lord Licorice and the colour cards that ruin friendships.',sources:['Candy Land']},
  {tag:'chutes',title:'Up the Ladder · Chutes and Ladders & Kaa',icon:'🪜',source:'Chutes and Ladders',description:'Good deeds, bad deeds, Snakes and Ladders history and the python waiting on the last square.',sources:['Chutes and Ladders','The Jungle Book']},
  {tag:'monopoly',title:'Do Not Pass Go · Monopoly',icon:'🎩',source:'Monopoly',description:'Houses, hotels, railroads, jail and Rich Uncle Pennybags.',sources:['Monopoly']},
- {tag:'clue',title:'In the Library · Clue',icon:'🔎',source:'Clue',description:'Six suspects, six weapons, nine rooms and the 1985 movie.',sources:['Clue']}
+ {tag:'clue',title:'In the Library · Clue',icon:'🔎',source:'Clue',description:'Six suspects, six weapons, nine rooms and the 1985 movie.',sources:['Clue']},
+ {tag:'castlevania',title:'Wall Meat & Whips · Castlevania',icon:'🦇',source:'Castlevania',description:'Belmonts, candles, Medusa Heads, sub-weapons and the NES trilogy.',sources:['Castlevania']}
 ];
 Object.assign(exports,{WARP_TRIVIA,WARP_TRIVIA_THEMES});

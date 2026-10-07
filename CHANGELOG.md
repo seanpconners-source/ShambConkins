@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.55.0
+
+**Castlevania warp zone: Dracula's Castle.** A new warp board drawn as an NES stage map (square pixels on black, a
+blocky moon, Warakiya Village, the forest, the river bridge and Dracula's castle with the orange route marched across
+it), from the village up to the Clock Tower, where **Death** waits as the boss (new reaper body and a DEATH'S SICKLES
+signature: spinning blades fan out, slow down, then home in). Beating him recruits Death. Own theme, an original
+"Gothic Chip-Baroque" board score (harmonic minor, harpsichord arpeggios; no Konami melodies), Chance cards (wall meat,
+Medusa Head, the ferryman, "What a horrible night to have a curse"), fortunes, a Castlevania trivia quiz and items
+(Morning Star, Throwing Axe, Boomerang Cross, Stopwatch, Pot Roast, Rosary, Magic Crystal… plus the Castle Stage Map and
+Wall Candle challenge items).
+
+**New NES-style Castlevania minigame**, played in turns like Mario/Sonic (P2 runs against P1's ghost). Your head on a
+vampire hunter (P2 in Richter blue): walk, committed jumps, the delayed whip (leather → chain → long chain), up + whip
+for the sub-weapon (dagger, axe, holy water, cross, stopwatch; they cost hearts), diagonal stairs, knockback, pits.
+Candles and braziers drop hearts, whip upgrades and sub-weapons; cracked blocks hide pot roast. Zombies, bats, Medusa
+Heads and bone-throwing skeletons. Seeded castle: courtyard and gate, halls, a balcony staircase, pits, a crypt and
+stepping stones.
+- **Vampire Killer Dash:** fastest to slay the Phantom Bat and grab its crystal.
+- **Night of the Candles:** most hearts after 60 seconds; the exit door sends you round again with fresh candles.
+- Touch: drag on the left to walk/climb/crouch, tap middle-right to whip, far right to jump, swipe up from the whip
+  spot for the sub-weapon. Keys: arrows/WASD, Space/X jump, Z/J/Enter whip.
+
+Prison Mike's unlock line is now his own: "And I never got caught, neither." (he used to borrow Michael's).
+
 ## v0.54.1
 
 **Sonic and Super Mario Bros. are now played in turns, full screen.** Instead of a split screen, each player gets

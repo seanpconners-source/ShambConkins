@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.54.1 (`releases/ShambConkins_v0.54.1.html`).
+Version 0.55.0 (`releases/ShambConkins_v0.55.0.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -68,6 +68,16 @@ Version 0.54.1 (`releases/ShambConkins_v0.54.1.html`).
   stride `S`), per-player worlds (`makeWorld`: own tiles/coins/enemies), SMB1 physics constants `PH`, coin room `L.room`
   reached via `L.warp.entry` (hold down) and left via the side pipe to `L.warp.exit`. `s.debug` has `teleport`/`toWarp`.
   Challenge items `wz-question-block`, `wz-goal-flagpole`. Test: `tests/mario.mjs` (screenshots `/tmp/claude-0/sc/smb-*`).
+
+- **Castlevania (v0.55):** warp `castlevania` (Dracula's Castle): NES stage-map scene `sceneCastlevania` + `clockTower`
+  in `warpBoards.js` (`CV_STAGES` labels, `.warp-cv-label` CSS), theme `warp-castlevania`, music style `castlevania`. Boss
+  `death-cv` (body `reaper` in `bossBodies.js`, attack `sickles` + minion kind `sickle`, scene `castle`, unlocks `death-cv`).
+  Games in `engines/castlevania.js` (engine `castlevania`, ids `cv-vampire-killer` / `cv-candle-hunt`, `cvMode` boss|hearts),
+  built like `marioBros.js`: turn-based with P1's ghost, seeded `buildCastle` (segments yard/hall/stairs/pit/crypt/ledges +
+  boss arena or exit door), stairs are `L.stairs` diagonals (`p.stair={s,t}`), whip/sub-weapons via `hitBox`. Layout shows
+  16 columns (12 on a portrait phone) with the controls in the space underneath. `s.debug` has `teleport`/`toBoss`/`hurtBoss`.
+  Trivia topic `castlevania` (warpTrivia.js), items `wz-*` Castlevania pack + challenge `wz-stage-map`/`wz-wall-candle`.
+  Test: `tests/castlevania.mjs` (screenshots `/tmp/claude-0/sc/cv-*`).
 
 ## Recent changes (this round of owner feedback)
 Boss trigger fix + drag flow; 2x heads (board, collection, character select); collection pages fit the screen;
@@ -137,9 +147,11 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   `installAudioUnlock()` (audio.js) resumes the suspended AudioContext on the first tap/key.
 
 ## In progress / unverified
-- Warp minigames only bot/fuzz-tested in headless Chromium; Sonic, Mario (turn-based) and kart (split-screen canvas, Mode 7 rows) need a
+- Warp minigames only bot/fuzz-tested in headless Chromium; Sonic, Mario, Castlevania (turn-based) and kart (split-screen canvas, Mode 7 rows) need a
   real-phone check for feel and frame rate.
 - Board smoothness only measured in headless Chromium (software compositing); check pinch/zoom on a real phone.
+  On a portrait phone the default warp-board camera is zoomed out to the `overview` detail level (`boardDetail`), which
+  hides the spaces until you pinch in; true for every warp board, not fixed yet.
   Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus
   Flappy/Curling/Angry Heads), rebuilt the cones game as Cone Chaos (`engines/coneChaos.js`) and made Fruit Ninja
   slice the opponent's head. `npm test` green.

@@ -1,7 +1,7 @@
 // BOSS FIGHT procedural bodies. Each builder draws around the origin (0,0), nominal 300 x 220 units.
 // BODIES[name]={hit:[[dx,dy,r]...], muz:{mouth,eye,center,l,r:[dx,dy]}, draw(g,A)}
 // A: {t, look{x,y}(-1..1), open(0..1 attacking), glow, phase, dmg(0..1), pal[4], v (boss.look), pose, face(g,cx,cy,size,opt)->bool}
-const TAU=Math.PI*2,INK='#140a0c';
+const TAU=Math.PI*2,PI2=TAU,INK='#140a0c';
 const lerp=(a,b,t)=>a+(b-a)*t;
 function ell(g,x,y,rx,ry,fill,line=4,rot=0){g.beginPath();g.ellipse(x,y,Math.abs(rx),Math.abs(ry),rot,0,TAU);if(fill){g.fillStyle=fill;g.fill();}if(line){g.lineWidth=line;g.strokeStyle=INK;g.stroke();}}
 function poly(g,pts,fill,line=4){g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();if(fill){g.fillStyle=fill;g.fill();}if(line){g.lineWidth=line;g.strokeStyle=INK;g.lineJoin='round';g.stroke();}}
@@ -194,6 +194,19 @@ const vampire={hit:[[0,-60,56],[0,30,100]],muz:{mouth:[0,-50],eye:[0,-60],center
   limb(g,-64,-16,-100,30-A.open*40,22,'#14101c');limb(g,64,-16,100,30-A.open*40,22,'#14101c');ell(g,-100,30-A.open*40,14,14,'#e9e2d6',3);ell(g,100,30-A.open*40,14,14,'#e9e2d6',3);
   ell(g,0,-84,44,50,'#e9e2d6',0);A.face(g,A.look.x*5,-84,98,{clipR:44,emoji:true});poly(g,[[-40,-112],[-20,-130],[0,-112],[20,-130],[40,-112],[40,-92],[-40,-92]],'#171320',0);
   if(A.open>.3){poly(g,[[-8,-60],[-4,-48],[0,-60]],'#fff',1);poly(g,[[8,-60],[4,-48],[0,-60]],'#fff',1);}}};
+// ---------------------------------------------------------------- reaper (Death, Castlevania)
+const reaper={hit:[[0,-70,50],[0,30,92]],muz:{mouth:[0,-62],eye:[0,-84],center:[0,0],l:[-110,0],r:[110,0]},
+ draw(g,A){const [m,d,a,l]=A.pal,t=A.t,arm=10-A.open*34;g.translate(0,Math.sin(t*1.6)*6);
+  g.save();g.rotate(-.3+A.open*.45);limb(g,104,150,104,-112,9,'#6a4a2a');g.beginPath();g.moveTo(106,-112);g.quadraticCurveTo(16,-158,-70,-80);g.quadraticCurveTo(16,-122,104,-86);g.closePath();g.fillStyle=a;g.fill();g.lineWidth=4;g.strokeStyle=INK;g.stroke();g.restore();
+  const hem=[];for(let i=0;i<=8;i++)hem.push([-96+i*24,118+(i%2?-18:6)+Math.sin(t*3+i)*6]);
+  poly(g,[[-40,-104],[40,-104],[82,-30],[100,118],...hem.reverse(),[-100,118],[-82,-30]],lg(g,0,-104,0,120,[m,d]),5);
+  limb(g,-60,-40,-112,arm,26,m);limb(g,60,-40,112,arm,26,m);
+  for(const sx of [-1,1]){ell(g,sx*112,arm+4,11,10,l,3);g.strokeStyle=INK;g.lineWidth=2;for(let k=-1;k<=1;k++){g.beginPath();g.moveTo(sx*112+k*5,arm+10);g.lineTo(sx*112+k*6,arm+20);g.stroke();}}
+  ell(g,0,-90,54,60,d,5);
+  ell(g,0,-82,32,36,l,4);
+  for(const sx of [-1,1]){ell(g,sx*12,-88,9,10,'#120a14',0);ell(g,sx*12+A.look.x*3,-88+A.look.y*2,3.5,3.5,A.glow>.3?'#ffd23c':'#ff3b3b',0);}
+  poly(g,[[-4,-72],[4,-72],[0,-64]],'#120a14',0);
+  g.fillStyle=INK;for(let k=0;k<5;k++)g.fillRect(-13+k*6,-58+A.open*4,2,9);g.lineWidth=3;g.strokeStyle=INK;g.beginPath();g.moveTo(-16,-58+A.open*4);g.lineTo(16,-58+A.open*4);g.stroke();}};
 // ---------------------------------------------------------------- flesh (The Thing)
 const flesh={hit:[[0,-20,90],[0,40,90]],muz:{mouth:[0,10],eye:[-50,-40],center:[0,0],l:[-110,30],r:[110,30]},
  draw(g,A){const [m,d,a,l]=A.pal,t=A.t,up=A.open;
@@ -247,7 +260,7 @@ const spinner={hit:[[0,0,96]],muz:{mouth:[0,-20],eye:[0,-30],center:[0,0],l:[-90
   for(const s of [-1,1]){eye(g,s*28,-24,15,A,'#222','#fff',.5);brow(g,s*28,-46,34,-s*.4);}
   poly(g,[[-14,-4],[14,-4],[0,12]],a,3);mouth(g,0,18,64,.4+up,A,'#4a0a10');}};
 
-const BODIES={lens,brainjar,saucer,bust,brute,ninja,stalker,liquid,pyramid,clown,vampire,flesh,elder,koopa,serpent,spinner};
+const BODIES={lens,brainjar,saucer,bust,brute,ninja,stalker,liquid,pyramid,clown,vampire,reaper,flesh,elder,koopa,serpent,spinner};
 for(const b of Object.values(BODIES)){b.muz=Object.assign({mouth:[0,40],eye:[0,0],center:[0,0],l:[-90,20],r:[90,20]},b.muz);}
 
 // ---------------------------------------------------------------- minions (small drawings, centred)
@@ -260,6 +273,7 @@ function drawMinion(g,m,t){const r=m.r,k=m.kind;g.save();
   case 'clip':rrect(g,-r*.8,-r,r*1.6,r*2,3,'#c9a063',3);g.fillStyle='#fff';g.fillRect(-r*.6,-r*.7,r*1.2,r*1.5);g.fillStyle='#d6283c';g.fillRect(-r*.2,-r*.4,r*.4,r*.8);break;
   case 'nurse':ell(g,0,-r*.3,r*.7,r*.8,'#f1e4d6',3);poly(g,[[-r*.8,0],[0,-r*1.5],[r*.8,0]],'#9a9aa0',3);g.fillStyle='#8a1a1a';g.fillRect(-r*.5,-r*.2,r,4);g.fillRect(-r*.7,r*.2,r*1.4,r*.6);break;
   case 'bat':{const f=Math.sin(t*14)*.5;poly(g,[[0,0],[-r*2,-r*(.8+f)],[-r*1.2,r*.2],[-r*.7,-r*.1]],'#2a1a3a',2);poly(g,[[0,0],[r*2,-r*(.8+f)],[r*1.2,r*.2],[r*.7,-r*.1]],'#2a1a3a',2);ell(g,0,0,r*.6,r*.7,'#3a2a4a',2);ell(g,-3,-2,2,2,'#f44',0);ell(g,3,-2,2,2,'#f44',0);break;}
+  case 'sickle':{g.rotate(t*12);g.beginPath();g.arc(0,0,r,0,PI2*.62);g.arc(r*.3,-r*.25,r*.72,PI2*.62,0,true);g.closePath();g.fillStyle='#d8dce4';g.fill();g.lineWidth=2.5;g.strokeStyle=INK;g.stroke();limb(g,-r*.2,r*.2,-r*.9,r*.9,4,'#6a4a2a');break;}
   case 'rinka':g.lineWidth=5;g.strokeStyle='#ff9ad0';g.beginPath();g.arc(0,0,r,0,TAU);g.stroke();g.strokeStyle='#ffe6f4';g.lineWidth=2;g.beginPath();g.arc(0,0,r,t*4,t*4+3);g.stroke();ell(g,0,0,r*.4,r*.4,'#ff3b8a',2);break;
   case 'glove':ell(g,0,0,r,r*1.05,'#c8161d',5);rrect(g,-r*.6,r*.6,r*1.2,r*.7,6,'#fff',4);ell(g,-r*.3,-r*.4,r*.3,r*.2,'rgba(255,255,255,.5)',0);break;
   case 'hound':ell(g,0,0,r*.8,r,'#6a4a2a',3);ell(g,0,-r*.9,r*.55,r*.5,'#7a5a3a',3);poly(g,[[-r*.5,-r*1.2],[-r*.3,-r*1.6],[-r*.1,-r*1.2]],'#3a2a1a',2);ell(g,-4,-r,2.5,2.5,'#f44',0);ell(g,4,-r,2.5,2.5,'#f44',0);teeth(g,0,-r*.7,10,3,4);break;

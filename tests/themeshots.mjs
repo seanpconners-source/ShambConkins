@@ -12,7 +12,7 @@ await page.click('[data-action=start-run]');await page.waitForTimeout(600);
 await shot('intro');for(let i=0;i<40&&!(await page.evaluate(()=>!!document.querySelector('[data-action=roll]:not(:disabled)')&&!document.querySelector('.level-card,.gentlemen-card')));i++)await dismiss(page);await page.waitForTimeout(400);await shot('board-mind');
 await page.evaluate(()=>document.querySelector('[data-action=bag]')?.click());await page.waitForTimeout(500);await shot('bag');await dismiss(page);
 // Preview every palette on the board (the real theme follows the current player's level / warp zone).
-for(const t of ['body','spirit','horror','warp-rainbow-road','warp-candy-land','warp-chutes','warp-monopoly','warp-mario-world','warp-clue','warp-hyrule','warp-green-hill']){await page.evaluate(t=>{document.body.dataset.theme=t;},t);await page.waitForTimeout(150);await shot('board-'+t);}
+for(const t of ['body','spirit','horror','warp-rainbow-road','warp-candy-land','warp-chutes','warp-monopoly','warp-mario-world','warp-clue','warp-hyrule','warp-green-hill','warp-bond-lair','warp-castlevania']){await page.evaluate(t=>{document.body.dataset.theme=t;},t);await page.waitForTimeout(150);await shot('board-'+t);}
 await page.evaluate(()=>window.ShambConkins.updateBoard(true));
 await page.evaluate(()=>document.querySelector('[data-action=settings]').click());await page.waitForTimeout(500);await shot('settings');await dismiss(page);
 // collection screens

@@ -14,7 +14,8 @@ const WARP_DEFS={
  'hyrule':{id:'hyrule',title:'Hyrule Field',source:'The Legend of Zelda',icon:'🗡️',bossId:'ganon',count:17,color:'#8fd47a',intro:'It is dangerous to go alone. Take each other.'},
  'pokemon':POKE_DEF,
  'bond-lair':{id:'bond-lair',title:'Volcano Lair',source:'James Bond',icon:'🍸',bossId:'blofeld',count:20,color:'#140d0c',intro:'A hollowed-out volcano, a rocket on the pad and a man stroking a white cat. Just walking in here gets each of you a 007 you have not met yet.'},
- 'green-hill':{id:'green-hill',title:'Green Hill Zone',source:'Sonic the Hedgehog',icon:'💍',bossId:'dr-robotnik',count:18,color:'#7cc8ff',intro:'Gotta go fast. Collect rings. Avoid the egg-shaped man.'}
+ 'green-hill':{id:'green-hill',title:'Green Hill Zone',source:'Sonic the Hedgehog',icon:'💍',bossId:'dr-robotnik',count:18,color:'#7cc8ff',intro:'Gotta go fast. Collect rings. Avoid the egg-shaped man.'},
+ 'castlevania':{id:'castlevania',title:'Dracula’s Castle',source:'Castlevania',icon:'🦇',bossId:'death-cv',count:18,color:'#05030a',intro:'What a horrible night to have a curse. Whip your way from Warakiya Village up to the Clock Tower, where Death is waiting with his sickles.'}
 };
 const WARP_IDS=Object.keys(WARP_DEFS);
 const RING_COLORS=['#ff3b3b','#ff9c2a','#ffe23b','#4cd964','#3aa7ff','#5b4bff','#b45bff'];
@@ -31,6 +32,7 @@ function layoutPoints(id,count){
  else if(id==='mario-world'){return pathAlong([[190,990],[430,960],[650,860],[560,640],[760,500],[1010,560],[1180,420],[1430,470],[1580,680],[1500,900],[1260,960],[1090,820],[1260,700],[1330,880]].slice(0,13).concat([[1480,1010]]),count);}
  else if(id==='clue'){for(let i=0;i<count-1;i++){const row=Math.floor(i/3),k=i%3,x=300+(row%2?2-k:k)*600;pts.push([x,260+row*340]);}pts.push([900,1100]);}
  else if(id==='bond-lair'){return pathAlong([[170,1060],[470,1080],[700,990],[560,840],[300,760],[260,520],[430,330],[700,250],[1000,230],[1250,300],[1330,520],[1180,700],[1300,900],[1560,980],[1650,760],[1600,520]],count);}
+ else if(id==='castlevania'){return pathAlong([[170,1070],[420,1085],[640,1010],[840,1060],[1040,1030],[1200,930],[1000,840],[760,820],[520,760],[340,640],[500,520],[760,560],[1000,500],[1180,400],[1000,300],[1240,220],[1480,250],[1600,400]],count);}
  else if(id==='hyrule'){return pathAlong([[180,980],[500,930],[760,1010],[980,820],[760,640],[520,520],[760,340],[1080,270],[1350,430],[1600,300]],count);}
  else {for(let i=0;i<count;i++){const t=i/(count-1);pts.push([160+t*1480,760-Math.sin(t*Math.PI*2.2)*230-t*100]);}}
  return pts;
@@ -49,6 +51,7 @@ const CHUTES_JUMPS=[[2,10],[7,14],[12,19],[16,5],[21,9],[23,15]];
 const MONOPOLY_NAMES=['GO','Paddy’s Alley','Chance','Kitten Mittens Ct','Income Tax','Dunder Mifflin Ave','Jail','Cones of Dunshire','Chest','Rum Ham Row','Free Parking','Fight Milk Blvd','Chance','Hill Valley Way','Go to Jail','Goon Docks','Chest','Raccoon City Rd','Luxury Tax','Quark’s Plaza','Silent Hill Sq','Boardwalk'];
 const MONOPOLY_COLORS=['#8b5a2b','#8b5a2b','#9ad0f0','#9ad0f0','#9ad0f0','#e0559a','#e0559a','#f08a1c','#f08a1c','#e03a3a','#e03a3a','#e03a3a','#f3d52b','#f3d52b','#f3d52b','#2fa75a','#2fa75a','#2fa75a','#2f4fd6','#2f4fd6'];
 const LAIR_ROOMS=['Monorail Dock','','Guard Post','','Piranha Pool','','Laser Room','','Rocket Gantry','','Mission Control','','Q’s Bench','','Cat Room','','','','Escape Pod','Blofeld’s Office'];
+const CV_STAGES=['Warakiya Village','','Dark Forest','','River Bridge','','Sunken City','','Castle Gate','','Entrance Hall','','Laboratory','','Catacombs','','Dracula’s Keep','Clock Tower'];
 const CLUE_ROOMS=['Hall','Lounge','Dining Room','Kitchen','Ballroom','Conservatory','Billiard Room','Library','Study','Secret Passage'];
 
 function buildWarpBoard(id,seed='warp'){
@@ -63,6 +66,7 @@ function buildWarpBoard(id,seed='warp'){
  if(id==='monopoly'){nodes[ids[0]].label='GO';ids.forEach((nid,i)=>{nodes[nid].label=MONOPOLY_NAMES[i]||'';});}
  if(id==='clue')ids.forEach((nid,i)=>{nodes[nid].label=CLUE_ROOMS[i]||'';});
  if(id==='bond-lair')ids.forEach((nid,i)=>{nodes[nid].label=LAIR_ROOMS[i]||'';});
+ if(id==='castlevania')ids.forEach((nid,i)=>{nodes[nid].label=CV_STAGES[i]||'';});
  const board={format:'warp',generation:0,width:W,height:H,nodes,realms:{warp:{ids,start:ids[0],gate:ids[count-1],cols:count-1,y:0,height:H,color:def.color,title:def.title}},obstacles:[],signs:[],baseSpan:id==='chutes'?1500:1500,pieceScale:.9,
   warp:{id,title:def.title,source:def.source,icon:def.icon,bossId:def.bossId,intro:def.intro,points,jumps}};
  return board;
@@ -123,10 +127,46 @@ function sceneLair(b,random){const pts=b.warp.points,d=smooth(pts);
  return `<rect width="${W}" height="${H}" fill="url(#wg-lair)"/>${rock}${crater}<ellipse cx="900" cy="${H+60}" rx="980" ry="170" fill="#ff5a1f" opacity=".22"/>${monorail}${spectreMark(1060,560,1.4,'#c8161d33')}${rocket}${pool}${lasers}${control}
   <path d="${d}" fill="none" stroke="#0b0b0d" stroke-width="120" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/><path d="${d}" fill="none" stroke="#5d636e" stroke-width="96" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#ffd23c" stroke-width="96" stroke-dasharray="22 22" stroke-linecap="butt" stroke-linejoin="round" opacity=".28"/><path d="${d}" fill="none" stroke="#7d838e" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>${rivets}`
   +pts.map((p,i)=>LAIR_ROOMS[i]?`<text x="${p[0]}" y="${p[1]-78}" text-anchor="middle" class="warp-lair-room">${e(LAIR_ROOMS[i])}</text>`:'').join('');}
+// Castlevania: an NES stage map in the spirit of the 1986 castle map and Dracula's Curse's world map. Everything is
+// square pixels on black: a blocky moon, the village, the forest, the river and Dracula's castle with the route
+// marched across it in orange.
+const px=(x,y,w,h,f)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}"/>`;
+function pixCircle(cx,cy,r,step,fill){let o='';for(let y=-r;y<r;y+=step){const yy=y+step/2,hw=Math.round(Math.sqrt(Math.max(0,r*r-yy*yy))/step)*step;if(hw>0)o+=px(cx-hw,cy+y,hw*2,step,fill);}return o;}
+function pixTree(x,y,s,a,b){let o=px(x-s/2,y,s,s*1.2,'#2c1800');for(let k=0;k<4;k++){const w=s*(4-k)+s;o+=px(x-w/2,y-(k+1)*s,w,s,k%2?b:a);}return o;}
+function pixBat(x,y,s){return px(x-s*2,y,s*1.5,s,'#3c3cbc')+px(x+s/2,y,s*1.5,s,'#3c3cbc')+px(x-s/2,y-s/2,s,s*1.5,'#000')+px(x-s*2.5,y+s,s,s/2,'#3c3cbc')+px(x+s*1.5,y+s,s,s/2,'#3c3cbc');}
+function cvTower(x,y,w,h,roof){const m=18;let o=px(x,y,w,h,'#503000')+px(x,y,6,h,'#ac7c00')+px(x+w-6,y,6,h,'#2c1800');
+ for(let yy=y+24;yy<y+h;yy+=24)o+=px(x+6,yy,w-12,3,'#2c1800');
+ if(roof){o+=`<polygon points="${x-10},${y} ${x+w/2},${y-w*1.1} ${x+w+10},${y}" fill="#881400" stroke="#000" stroke-width="6"/>`+px(x+w/2-3,y-w*1.1-30,6,30,'#7c7c7c');}
+ else for(let k=0;k*m*2<w;k++)o+=px(x+k*m*2,y-m,m,m,'#503000');
+ for(let k=0;k<Math.floor(h/90);k++)o+=px(x+w/2-7,y+30+k*90,14,24,(k+x)%3?'#f8b800':'#000');
+ return o;}
+function sceneCastlevania(b,random){const pts=b.warp.points,d=smooth(pts);
+ const stars=Array.from({length:90},()=>px(Math.round(random()*W/6)*6,Math.round(random()*700/6)*6,6,6,random()<.3?'#fcfcfc':'#7c7c7c')).join('');
+ const moon=pixCircle(330,230,120,12,'#fce0a8')+px(270,190,36,24,'#e0c088')+px(360,260,48,24,'#e0c088')+px(330,150,24,12,'#e0c088');
+ const hills=`<path d="M0 760H120V720H240V690H420V720H560V700H700V740H840V720H900V800H0Z" fill="#14143c"/>`;
+ const cliff=`<path d="M860 660H1740V720H1700V780H1600V820H1000V780H900V720H860Z" fill="#3c2c1c"/>`+px(860,652,880,10,'#5c4c3c');
+ const castle=`<rect x="880" y="470" width="840" height="190" fill="#503000"/>`+Array.from({length:7},(_,r)=>px(880,490+r*24,840,3,'#2c1800')).join('')+Array.from({length:23},(_,k)=>px(880+k*38,452,18,18,'#503000')).join('')
+  +cvTower(910,300,90,170,false)+cvTower(1070,230,72,240,true)+cvTower(1230,140,120,330,true)+cvTower(1420,250,84,220,true)+cvTower(1590,330,96,140,false)
+  +`<path d="M1250 660V590Q1300 540 1350 590V660Z" fill="#000"/>`+Array.from({length:6},(_,k)=>px(1262+k*16,560,4,100,'#3c3c3c')).join('');
+ const river=`<path d="M-20 900Q300 860 620 905T1240 930T1820 890" fill="none" stroke="#0058f8" stroke-width="64"/><path d="M-20 900Q300 860 620 905T1240 930T1820 890" fill="none" stroke="#3cbcfc" stroke-width="6" stroke-dasharray="24 40"/>`
+  +px(1080,880,150,24,'#ac7c00')+px(1080,904,150,8,'#503000')+Array.from({length:6},(_,k)=>px(1086+k*24,866,6,46,'#503000')).join('');
+ const village=[[120,960],[230,990],[330,950]].map(([x,y])=>px(x-40,y-40,80,56,'#bcbcbc')+`<polygon points="${x-52},${y-40} ${x},${y-86} ${x+52},${y-40}" fill="#881400"/>`+px(x-10,y-12,20,28,'#503000')+px(x+20,y-30,12,12,'#f8b800')).join('');
+ const forest=Array.from({length:16},()=>pixTree(Math.round(380+random()*720),Math.round(1080+random()*80),12+Math.round(random()*3)*2,'#005800','#003c00')).join('')
+  +Array.from({length:10},()=>pixTree(Math.round(60+random()*500),Math.round(780+random()*70),10+Math.round(random()*3)*2,'#005800','#003c00')).join('');
+ const bats=[[620,210],[760,150],[1500,90],[1760,190],[180,520]].map(([x,y])=>pixBat(x,y,12)).join('');
+ const frame=`<rect x="14" y="14" width="${W-28}" height="${H-28}" fill="none" stroke="#bcbcbc" stroke-width="8"/><rect x="30" y="30" width="${W-60}" height="${H-60}" fill="none" stroke="#7c7c7c" stroke-width="3"/>`;
+ const route=`<path d="${d}" fill="none" stroke="#000" stroke-width="58" stroke-linecap="square" stroke-linejoin="miter"/><path d="${d}" fill="none" stroke="#5c1c00" stroke-width="40" stroke-linecap="square"/><path d="${d}" fill="none" stroke="#fc7460" stroke-width="16" stroke-dasharray="16 14" stroke-linecap="butt"/>`;
+ return `<g shape-rendering="crispEdges"><rect width="${W}" height="${H}" fill="#000"/>${stars}${moon}${hills}${bats}${cliff}${castle}${river}${village}${forest}${frame}</g>${route}`
+  +pts.map((p,i)=>CV_STAGES[i]&&i<pts.length-1?`<text x="${p[0]}" y="${p[1]-62}" text-anchor="middle" class="warp-cv-label">${e(CV_STAGES[i].toUpperCase())}</text>`:'').join('')
+  +`<text x="${W-60}" y="${H-52}" text-anchor="end" class="warp-cv-label">STAGE MAP</text>`;}
+// Death waits at the top of the Clock Tower instead of a castle.
+function clockTower(x,y,name){return `<g transform="translate(${x},${y})" class="warp-castle" shape-rendering="crispEdges">${px(-60,-120,120,190,'#503000')}${px(-60,-120,10,190,'#ac7c00')}${px(50,-120,10,190,'#2c1800')}<polygon points="-76,-120 0,-210 76,-120" fill="#881400" stroke="#000" stroke-width="6"/>${px(-3,-246,6,40,'#7c7c7c')}
+ <circle cy="-60" r="38" fill="#fce0a8" stroke="#000" stroke-width="6"/>${px(-3,-88,6,30,'#000')}${px(-3,-63,22,6,'#000')}${[0,1,2,3,4,5,6,7,8,9,10,11].map(k=>px(Math.round(Math.sin(k*Math.PI/6)*30)-2,Math.round(-60-Math.cos(k*Math.PI/6)*30)-2,4,4,'#503000')).join('')}
+ <path d="M-26 70V20Q0 -6 26 20V70Z" fill="#000"/><text y="104" text-anchor="middle" class="warp-castle-name">${e(name)}</text></g>`;}
 // Blofeld's office: a steel bunker with the SPECTRE octopus over the door instead of a castle.
 function lairHQ(x,y,name){return `<g transform="translate(${x},${y})" class="warp-castle"><path d="M-130 70V-60L-90 -110H90L130 -60V70Z" fill="#3a3d44" stroke="#0b0b0d" stroke-width="6"/><path d="M-130 -60H130" stroke="#5d636e" stroke-width="8"/>${[-100,-60,60,100].map(dx=>`<rect x="${dx-12}" y="-40" width="24" height="16" fill="#ff3b2f" opacity=".85"/>`).join('')}<path d="M-40 70V-10H40V70Z" fill="#0b0b0d" stroke="#c8161d" stroke-width="4"/>${spectreMark(0,-62,.5,'#e8e6e0')}<text y="104" text-anchor="middle" class="warp-castle-name">${e(name)}</text></g>`;}
-const SCENES={'rainbow-road':sceneRainbow,'candy-land':sceneCandy,chutes:sceneChutes,monopoly:sceneMonopoly,'mario-world':sceneMario,clue:sceneClue,hyrule:sceneHyrule,'green-hill':sceneGreenHill,'bond-lair':sceneLair};
-const CASTLE_COLORS={'rainbow-road':['#a77bff','#e8543a'],'candy-land':['#ffb3d9','#ee4b5b'],chutes:['#8bcf6a','#2f8a3a'],monopoly:['#ffd45a','#e03a3a'],'mario-world':['#e0c58f','#e0453a'],clue:['#8b6a4a','#7b3a6b'],hyrule:['#8f9aa8','#3a8a3a'],'green-hill':['#7ec8ff','#e8543a'],'bond-lair':['#3a3d44','#c8161d']};
+const SCENES={'rainbow-road':sceneRainbow,'candy-land':sceneCandy,chutes:sceneChutes,monopoly:sceneMonopoly,'mario-world':sceneMario,clue:sceneClue,hyrule:sceneHyrule,'green-hill':sceneGreenHill,'bond-lair':sceneLair,castlevania:sceneCastlevania};
+const CASTLE_COLORS={'rainbow-road':['#a77bff','#e8543a'],'candy-land':['#ffb3d9','#ee4b5b'],chutes:['#8bcf6a','#2f8a3a'],monopoly:['#ffd45a','#e03a3a'],'mario-world':['#e0c58f','#e0453a'],clue:['#8b6a4a','#7b3a6b'],hyrule:['#8f9aa8','#3a8a3a'],'green-hill':['#7ec8ff','#e8543a'],'bond-lair':['#3a3d44','#c8161d'],castlevania:['#503000','#881400']};
 // The castle goes wherever it clears the path and the board edge best, close to the gate.
 function castleSpot(b,gate){
  const pts=Object.values(b.nodes);let best=[gate.x,gate.y-190],bestScore=-1;
@@ -139,6 +179,6 @@ function warpSceneSVG(run){
  const defs=`<defs><linearGradient id="wg-space" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#120a2e"/><stop offset="1" stop-color="#3a1a6e"/></linearGradient><linearGradient id="wg-candy" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe3f1"/><stop offset="1" stop-color="#d9f4ff"/></linearGradient><linearGradient id="wg-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4aa8ff"/><stop offset="1" stop-color="#bfe9ff"/></linearGradient><linearGradient id="wg-lair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a100c"/><stop offset=".6" stop-color="#2c1a12"/><stop offset="1" stop-color="#4a1e0e"/></linearGradient><clipPath id="wg-crater"><ellipse cx="900" cy="-20" rx="500" ry="135"/></clipPath><pattern id="wg-wood" width="120" height="40" patternUnits="userSpaceOnUse"><path d="M0 20H120M0 0H120" stroke="#2a180d" stroke-width="3" opacity=".5"/></pattern></defs>`;
  const [cc,flag]=CASTLE_COLORS[id]||['#aaa','#e33'];
  const spot=castleSpot(b,gate),cx=spot[0],cy=spot[1];
- return `<g class="warp-scene" data-warp="${id}">${defs}<rect x="-2400" y="-1800" width="6600" height="4800" fill="${WARP_DEFS[id].color}"/>${scene(b,random)}${id==='bond-lair'?lairHQ(cx,cy,'SPECTRE HQ'):castle(cx,cy,cc,flag,(b.warp.bossName||'Boss')+'’s Castle')}<text x="40" y="66" class="warp-banner">${e(b.warp.icon)} ${e(b.warp.title.toUpperCase())}</text></g>`;
+ return `<g class="warp-scene" data-warp="${id}">${defs}<rect x="-2400" y="-1800" width="6600" height="4800" fill="${WARP_DEFS[id].color}"/>${scene(b,random)}${id==='bond-lair'?lairHQ(cx,cy,'SPECTRE HQ'):id==='castlevania'?clockTower(cx,cy,'Clock Tower'):castle(cx,cy,cc,flag,(b.warp.bossName||'Boss')+'’s Castle')}<text x="40" y="66" class="warp-banner">${e(b.warp.icon)} ${e(b.warp.title.toUpperCase())}</text></g>`;
 }
 Object.assign(exports,{WARP_DEFS,WARP_IDS,buildWarpBoard,pickWarpId,warpSceneSVG});
