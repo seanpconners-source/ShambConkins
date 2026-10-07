@@ -7,13 +7,15 @@ const {GameSession}=require("src/engines/session.js");
 const {animateRoulette}=require("src/roulette.js");
 const {showDialog, closeDialog, unlockDialog, updateBoard, toast}=require("src/ui.js");
 const {gameArtHTML, portraitHTML}=require("src/assets.js");
-const {recordGame, recruitReward, availableCharacters, saveProfile}=require("src/profile.js");
+const {recordGame, recruitReward, availableCharacters, canRecruit, saveProfile}=require("src/profile.js");
+const {pickLairVillain}=require("src/data/bondLair.js");
 const {CHARACTERS, perkType}=require("src/characters.js");
 const {escapeHTML, pick, runRandom}=require("src/utils.js");
 const {sound}=require("src/audio.js");
 const {pointChange}=require("src/items.js");
 const {gameRecruitPool, gameHasGuaranteedRecruit, recruitmentChance, foodGame}=require("src/rewards.js");
 const {pairForRun}=require("src/pairs.js");
+const {warpTheme,warpGameId,warpAllowsGame}=require("src/warpThemes.js");
 const {updateProgression}=require("src/progression.js");
 const {drawTriviaDifficulty,chooseTriviaDifficulty,TRIVIA_LEVELS}=require("src/engines/trivia.js");
 const hooks={save(){},endTurn(){},beforeRoll(){},arcade(){},bossDone:null};
@@ -25,12 +27,18 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  const run=store.run,serial=++launchSerial,valid=()=>serial===launchSerial&&store.run===run;returnToRoll=returnToRoll||!!(resume&&run?.pending?.returnToRoll);const selectionRun=run||{gameHistory:[],familyBags:{}};if(run)run.levelRealm=origin==='board'?run.board.nodes[run.players[run.current].node]?.realm:undefined;
  // Practice and arcade play must not consume the saved board's random stream.
  const random=origin==='board'&&run?()=>runRandom(run):Math.random;
- if(origin==='board'&&run?.mutation)id='rainbow-rivals';
- if(!id&&origin==='board'&&run?.pairState?.queuedGames?.length&&filter==='all')id=run.pairState.queuedGames.shift();
+ // A themed warp zone only deals its own games: a roulette, a task space or a challenge item there plays the zone's game instead.
+ const warp=origin==='board'&&!resume&&warpTheme(run)?run:null;
+ if(warp&&id&&id!=='phone-task'&&!warpAllowsGame(run,gameById(id)))id=null;
+ if(origin==='board'&&run?.mutation&&!warp)id='rainbow-rivals';
+ if(!id&&!warp&&origin==='board'&&run?.pairState?.queuedGames?.length&&filter==='all')id=run.pairState.queuedGames.shift();
+ if(warp&&(id==='phone-task'||gameById(id)?.engine==='task'))id=null;
+ const warpPick=warp&&!id?warpGameId(run,filter==='trivia'?'trivia':'all',random,g=>!!gameById(g)):null;
  if(origin==='board'&&!resume&&(id==='phone-task'||gameById(id)?.engine==='task')){id=null;filter='taskmaster';}
- let game;try{game=id==='phone-task'?PHONE_TASK:id?gameById(id):(origin==='board'?selectBoardGame:selectGame)(selectionRun,store.profile,run?.mutation?'arcade':filter,random);}catch(error){launching=false;store.busy=false;toast('Challenge selection recovered. Try rolling again.');console.error(error);if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();return false;}
+ let game;try{game=id==='phone-task'?PHONE_TASK:id?gameById(id):warpPick?gameById(warpPick):(origin==='board'?selectBoardGame:selectGame)(selectionRun,store.profile,run?.mutation?'arcade':filter,random);}catch(error){launching=false;store.busy=false;toast('Challenge selection recovered. Try rolling again.');console.error(error);if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();return false;}
  if(!resume&&origin==='board'&&game?.engine==='yahtzee'&&game.diceCount!==6&&random()<.5)game=gameById('cheaters-yahtzee');
- if(!id&&!resume&&selectionRun.gameHistory.at(-1))selectionRun.gameHistory.at(-1).id=game?.id||selectionRun.gameHistory.at(-1).id;
+ if(warpPick&&game){run.gameHistory.push({id:game.id,family:game.family});run.gameHistory=run.gameHistory.slice(-60);}
+ else if(!id&&!resume&&selectionRun.gameHistory.at(-1))selectionRun.gameHistory.at(-1).id=game?.id||selectionRun.gameHistory.at(-1).id;
  if(!game||!ENGINES[game.engine]){launching=false;store.busy=false;toast('This challenge could not be found. The board is ready.');if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();return false;}
  if(game.engine==='trivia'){
   const savedDifficulty=resume&&run?.pending?.triviaDifficulty;
@@ -39,7 +47,7 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  }
  if(id&&!resume&&run&&origin==='board'){run.gameHistory.push({id:game.id,family:game.family});run.gameHistory=run.gameHistory.slice(-60);}
  if(origin==='board'){run.phase='game';run.pending={kind:'game',gameId:game.id,origin,returnToRoll,...(game.triviaDifficulty?{triviaDifficulty:game.triviaDifficulty}:{})};run.roundsWithoutGame=0;hooks.save();}
- if(!id&&!resume){const played=await animateRoulette(game,run?.mutation?'arcade':game.engine==='trivia'?'trivia':filter);if(!valid())return false;if(!played){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();return false;}}
+ if(!id&&!resume){const played=await animateRoulette(game,run?.mutation?'arcade':game.engine==='trivia'?'trivia':filter,warpPick?warpTheme(run)[game.engine==='trivia'?'trivia':'games'].map(gameById).filter(Boolean):null);if(!valid())return false;if(!played){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();return false;}}
  const choice=await showDialog({title:game.title,source:game.source,html:`${gameArtHTML(game)}<div class="how-to"><b>HOW TO PLAY · ${escapeHTML(game.duration.toUpperCase())}</b>${escapeHTML(game.rules)}</div>${run?.mutation&&origin==='board'?'<p style="font-size:12px">You are one team. Each person races a live CPU driver, then both relay scores are combined.</p>':''}`,choices:[{label:'Start game',value:'start',primary:true},{label:origin==='board'?'Return to board':'Back to arcade',value:'cancel'}]});
  if(!valid())return false;
  if(choice===null){launching=false;store.busy=false;return false;}
@@ -62,7 +70,7 @@ async function settleGame(game,scores,label,origin,players,coop=null,returnToRol
   const heir=CHARACTERS.find(c=>c.unlockBy==='character-win'&&c.requires===p.character);if(heir){const actual=recruitReward(store.profile,heir.id,p.owner,'character');if(actual){unlocked.push(actual);toast(`${heir.name} unlocked for ${p.owner}!`);}}
  }
  if(coop?.kind==='survival'&&coop.won&&origin!=='dev'){const pool=gameRecruitPool(game,store.profile,players[0]);if(pool.length&&Math.random()<.5){const c=pick(pool);const actual=recruitReward(store.profile,c.id,null,'game');if(actual)unlocked.push(actual);}}
- if(coop?.kind==='boss'&&coop.won&&origin!=='dev'&&game.bossId){const b=bossById(game.bossId);if(b?.unlockId){const actual=recruitReward(store.profile,b.unlockId,null,'boss');if(actual){unlocked.push(actual);toast(`${CHARACTERS.find(c=>c.id===actual)?.name||'A boss'} joins both rosters!`);}}}
+ if(coop?.kind==='boss'&&coop.won&&origin!=='dev'&&game.bossId){const b=bossById(game.bossId),poolId=b?.unlockPool==='bond-villains'?pickLairVillain(players.flatMap(p=>availableCharacters(store.profile,p.owner)),id=>canRecruit(store.profile,id,null,'boss')):null;if(b?.unlockId){const actual=b.unlockPool?(poolId&&recruitReward(store.profile,poolId,null,'boss')):recruitReward(store.profile,b.unlockId,null,'boss');if(actual){unlocked.push(actual);toast(`${CHARACTERS.find(c=>c.id===actual)?.name||'A boss'} joins both rosters!`);}}}
  const milestones=origin==='dev'?[]:updateProgression(store.profile);if(milestones.length)extra+=" New unlocks: "+milestones.join(', ')+'.';
  if(origin==='board'){if(unlocked.length)store.run.latestRecruit={owner:players[winner]?.owner,name:CHARACTERS.find(c=>c.id===unlocked[0])?.name||'A new character'};store.run.pending.unlocked=unlocked;store.run.pending.unlockOwner=winner===null?null:players[winner].owner;store.run.pending.extra=extra;hooks.save();}if(origin!=='dev')saveProfile(store.profile);sound('win');const continued=await presentResult({gameId:game.id,scores,label,winner,rewards,extra,origin,coop,unlocked,unlockOwner:winner===null?null:players[winner].owner},players);if(continued===null||!valid())return;if(!await unlockDialog(unlocked,winner===null?null:players[winner].owner)||!valid())return;store.busy=false;
  if(origin==='board'){if(game.bossId&&hooks.bossDone){await hooks.bossDone(game,coop);return;}returnToRoll?hooks.beforeRoll():hooks.endTurn();}else hooks.arcade();

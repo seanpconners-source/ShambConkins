@@ -17,7 +17,7 @@ for (const c of C) {
 const horrorHolders = new Set(LOCATIONS.filter(l => l.realm === 'horror').flatMap(l => l.characters));
 const itemTargets = new Set(items.filter(i => i.kind === 'transform').map(i => i.value));
 const pairTargets = new Set([...(pairs.PAIR_RULES || pairs.PAIRS || []).flatMap(r => [...(r.unlock || []), r.winUnlock?.character].filter(Boolean))]);
-const bossUnlocks = new Set(req('src/data/bosses.js').BOSSES.map(b => b.unlockId));
+const bossUnlocks = new Set(req('src/data/bosses.js').BOSSES.flatMap(b => [b.unlockId, ...(b.unlockPool === 'bond-villains' ? req('src/data/bondLair.js').BOND_VILLAIN_IDS : [])]));
 const labIds = new Set(cat.characters.filter(c => c.unlockBy === 'lab').map(c => c.id));
 const unreachable = [];
 for (const c of C) {

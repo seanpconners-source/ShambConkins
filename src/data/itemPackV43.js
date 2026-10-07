@@ -32,7 +32,8 @@ const descriptions={
  preview:()=> 'Reveal the current realm and gain one Lucky Roll.'
 };
 function bundleDescription(e){return [e.cleanse?'Clear half-roll effects, lower-die jinxes and die caps.':'',e.points?`${e.points>0?'Gain':'Pay'} ${Math.abs(e.points)} points.`:'',e.boost?`This roll +${e.boost}.`:'',e.shields?`${e.shields} penalty shield${e.shields>1?'s':''}.`:'',e.ward?`${e.ward} attack ward${e.ward>1?'s':''}.`:'',e.cloak?`Avoid penalties for ${e.cloak} personal turns.`:'',e.rerolls?`Gain ${e.rerolls} Lucky Roll${e.rerolls>1?'s':''}.`:'',e.rewardBonus?`Next minigame reward +${e.rewardBonus}.`:'',e.rollFloor?`This base die is at least ${e.rollFloor}.`:'',e.rollDouble?'Double this roll’s movement.':'',e.bestDie?'Keep the better of two dice this roll.':'',e.gateDividend?`Next realm clear +${e.gateDividend} points.`:'',e.recruitBonus?'Increased guest recruitment odds after your next win.':'',e.giftBoost?`Your opponent also gains +${e.giftBoost} on their next roll.`:'',e.slow?`Half movement for ${e.slow} roll${e.slow>1?'s':''}.`:'',e.slowAfterRoll?'Halve your following roll.':''].filter(Boolean).join(' ');}
-function add(source,rows){for(const[id,name,icon,kind,payload=1,role]of rows){const effects=kind==='bundle'?payload:null,value=effects?1:payload;items.push({id:'v43-'+id,name,source,icon,kind,value,role:role||(effects?(effects.boost||effects.rollFloor||effects.rollDouble||effects.bestDie?'movement':effects.rewardBonus||effects.gateDividend||effects.recruitBonus?'reward':effects.points?'economy':'defense'):kind),...(effects?{effects}:{}),itemPack:43,desc:effects?bundleDescription(effects):descriptions[kind](value)});}}
+function packItems(source,rows,prefix='v43-'){const out=[];for(const[id,name,icon,kind,payload=1,role]of rows){const effects=kind==='bundle'?payload:null,value=effects?1:payload;out.push({id:prefix+id,name,source,icon,kind,value,role:role||(effects?(effects.boost||effects.rollFloor||effects.rollDouble||effects.bestDie?'movement':effects.rewardBonus||effects.gateDividend||effects.recruitBonus?'reward':effects.points?'economy':'defense'):kind),...(effects?{effects}:{}),itemPack:43,desc:effects?bundleDescription(effects):descriptions[kind](value)});}return out;}
+function add(source,rows){items.push(...packItems(source,rows));}
 
 add('Always Sunny',[
  ['rat-stick','Charlie’s Rat Stick','🧹','clearTraps'],
@@ -277,4 +278,4 @@ add('Black Sabbath',[
 
 const ITEM_PACK_V43=items;
 
-Object.assign(exports,{ITEM_PACK_V43});
+Object.assign(exports,{ITEM_PACK_V43,packItems});

@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.51.0 (`releases/ShambConkins_v0.51.0.html`).
+Version 0.53.0 (`releases/ShambConkins_v0.53.0.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -42,6 +42,25 @@ Version 0.51.0 (`releases/ShambConkins_v0.51.0.html`).
   Board: 2 Poké Ball `trainer` tiles per level (own random stream in `gridBoard.js`). Poké items: `data/pkmnItems.js`
   (kind `pkmn`, `acquireItem` fills the bag). Cameo cast: `data/pokemonPack.js`. Tests: `tests/pokemon.mjs`,
   `tests/pokewarp.mjs` (autopilot via `ShambConkins.pkmn.auto`, `pkmn.speed`, `store.forceWildChance`).
+- **Themed warp zones (v0.52):** `src/warpThemes.js` (`WARP_THEMES`: games, trivia, items, Chance cards, bonus/penalty
+  fortunes per warp id; Pokémon excluded). On a warp board `requestGame` (gameLauncher) deals only the zone's games
+  (`warpGameId`, own roulette candidates; off-theme ids incl. challenge items/tasks are swapped, boss fights allowed),
+  `resolveLanding` uses `warpCard`/`warpItem`/`warpFortune`; pair turns/intros, the Home dog pack and `evolveBoard`
+  are skipped on warp boards. Warp games live in `src/packs/warpPack.js` (`warpOnly`, `randomEligible:false`, in the
+  arcade): `engines/sonic.js` (split-screen Green Hill, Mega Drive physics, modes rings/race), `kart.js` (Mode 7
+  Rainbow Road race + balloon battle), `smb3.js` (N-Spade, Spade Panel), `candyLand.js`, `chutes.js` (Ladder Rush,
+  Spinner Showdown on the real 1943 layout), `monopoly.js` (Speed Die, sealed-bid auction), `clue.js` (Whodunit with
+  pass-the-phone notebooks, Lineup), `hyrule.js` (Rupee Rush, Sword Duel). Items: `data/warpItems.js` (`wz-*`, built
+  with `packItems` from itemPackV43). Trivia: `data/warpTrivia.js` (topics smb3/candyland/chutes/monopoly/clue +
+  extra Mario Kart/Zelda/Sonic). Tests: `tests/warptheme.mjs` (every warp space type stays on theme),
+  `tests/warpgames.mjs [id-regex]` (play + screenshots), `tests/sonic.mjs`. Engines expose `s.debug` for tests.
+
+- **Bond warp zone (v0.53):** `bond-lair` in `WARP_DEFS` (Volcano Lair scene `sceneLair` + `lairHQ` in `warpBoards.js`,
+  theme `warp-bond-lair`, music style `bond-lair` with `mmaj9` chords). `lairWelcome` in `app.js` recruits a missing movie
+  Bond per player on arrival. Boss `blofeld` (`bosses.js`, `unlockPool:'bond-villains'`, scene `lair`, attack `trapdoor`,
+  bust `prop:'cat'`/`nehru`/`scar`): the launcher recruits `pickLairVillain` (`data/bondLair.js`: `BOND_VILLAIN_IDS`, 12
+  lair-only villains with `unlockBy:'boss'`) instead of `unlockId`. Games in `engines/bond.js` (`bondLaser`,
+  `bondFunhouse`, `bondBomb`; ids `bond-laser-vault`, `bond-golden-gun`, `bond-goldfinger-bomb`). Test: `tests/bondlair.mjs`.
 
 ## Recent changes (this round of owner feedback)
 Boss trigger fix + drag flow; 2x heads (board, collection, character select); collection pages fit the screen;
@@ -97,7 +116,17 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   action on landing, Chance draws skip trivia questions. `showSmashCard` + `glassSmash()` (audio.js) between the
   Gentlemen card and Level I.
 
+- Level flow fix: only the level boss moves players into the next level. The rare "Express elevator" card (`effect:'body'`)
+  now beams to the space before the Mind gate (it used to drop the player in Body, skipping the boss); item/card forward
+  moves (`advanceAlong`, `bossAhead` in board.js) stop at the door of an unbeaten level gate; FRANK only opens Horror and
+  `advanceAfterBoss` takes both players from the Spirit castle down to `horror-0`; `levelEndBoss` pulls a player out of
+  the Upside Down first. Tests: `tests/levelflow.mjs` (Node random walks, in `npm test`), `tests/levelflow-ui.mjs`.
+- Launch music: boot now starts the home score (it used to call `showView('home')` without `home()`), and
+  `installAudioUnlock()` (audio.js) resumes the suspended AudioContext on the first tap/key.
+
 ## In progress / unverified
+- Warp minigames only bot/fuzz-tested in headless Chromium; Sonic and kart (split-screen canvas, Mode 7 rows) need a
+  real-phone check for feel and frame rate.
 - Board smoothness only measured in headless Chromium (software compositing); check pinch/zoom on a real phone.
   Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus
   Flappy/Curling/Angry Heads), rebuilt the cones game as Cone Chaos (`engines/coneChaos.js`) and made Fruit Ninja

@@ -5,7 +5,7 @@
 const {seededRandom}=require("src/utils.js");
 
 const QUAL={M:[0,4,7],m:[0,3,7],'5':[0,7,12],maj7:[0,4,7,11],maj9:[0,4,7,11,14],m7:[0,3,7,10],m9:[0,3,7,10,14],m11:[0,3,7,10,14,17],
- '7':[0,4,7,10],'9':[0,4,7,10,14],'13':[0,4,10,14,21],'7b9':[0,4,7,10,13],add9:[0,4,7,14],sus:[0,5,7,10],sus2:[0,2,7],m7b5:[0,3,6,10],'6':[0,4,7,9],m6:[0,3,7,9],dim:[0,3,6,9]};
+ '7':[0,4,7,10],'9':[0,4,7,10,14],'13':[0,4,10,14,21],'7b9':[0,4,7,10,13],add9:[0,4,7,14],sus:[0,5,7,10],sus2:[0,2,7],m7b5:[0,3,6,10],mmaj9:[0,3,7,11,14],'6':[0,4,7,9],m6:[0,3,7,9],dim:[0,3,6,9]};
 // "root.quality" with root in semitones above the key, e.g. "9.m9".
 const chord=s=>{const [r,q]=String(s).split('.');return {root:+r,q:q||'M',tones:QUAL[q||'M']||QUAL.M};};
 const prog=s=>s.split(/\s+/).filter(Boolean).map(chord);
@@ -47,6 +47,9 @@ const STYLES={
   bright:{scale:'harmonic',A:'0.m9 0.m9 5.m9 7.7b9',B:'8.maj7 7.7b9 0.m9 7.7b9'},chordInst:'epiano',comp:'noir',bass:'walk',bassInst:'upright',pad:null,kit:'brush',lead:'mutedTrumpet',center:70,density:'sparse',amb:'rain'},
  hyrule:{genre:'Field Folk',bpm:96,swing:0,key:2,cs:16,gain:1,
   bright:{scale:'dorian',A:'0.m 10.M 0.m 10.M',B:'3.M 10.M 5.M 0.m'},chordInst:'harp',comp:'arpUp',bass:'sustain',bassInst:'sub',pad:'strings',kit:'march',lead:'flute',center:76,density:'mid',amb:'birds'},
+ // Original spy-surf groove: minor-major chords, walking bass, twangy lead. No film melodies.
+ 'bond-lair':{genre:'Spy Surf Jazz',bpm:118,swing:0,swing8:.18,key:4,cs:16,gain:1.2,
+  bright:{scale:'harmonic',A:'0.mmaj9 0.m6 0.mmaj9 0.m6',B:'8.maj7 5.m9 0.mmaj9 11.7b9'},chordInst:'brass',comp:'stabs',bass:'walk',bassInst:'upright',pad:'strings',kit:'swing',lead:'guitar',center:70,density:'mid',amb:'rumble'},
  'green-hill':{genre:'Sunny Synth-Funk',bpm:136,swing:0,key:0,cs:16,gain:1.15,
   bright:{scale:'major',A:'5.maj7 7.M 4.m7 9.m',B:'2.m7 4.m7 5.maj7 7.sus'},chordInst:'clav',comp:'stabs',bass:'funk',bassInst:'slap',pad:'glass',kit:'breakbeat',lead:'square',center:76,density:'busy',amb:null}
 };

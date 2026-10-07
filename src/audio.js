@@ -33,6 +33,15 @@ function setMusicZone(realm){if(realm==='warp'&&store.run?.warp?.id)realm='warp-
  if(was==='warp-pokemon'){pk.stopSong();music.setSequencerZone(realm);if(playing)music.startSequencer();return;}
  music.setSequencerZone(realm);}
 function startMusic(){stopMusic();if(!store.profile?.settings.music)return;if(!audioContext())return;playing=true;if(zone==='warp-pokemon'){pk.playSong('route');return;}music.setSequencerZone(zone);music.startSequencer();}
+// Browsers start an AudioContext suspended until a user gesture (iOS also wants resume() called inside it),
+// so music started at launch stays silent until then: resume the context on the first taps/keys.
+function installAudioUnlock(){
+ const evs=['pointerdown','touchend','keydown','click'],off=()=>evs.forEach(e=>document.removeEventListener(e,unlock,true));
+ function unlock(){const a=(playing||context)?audioContext():null;if(!a){if(!store.profile?.settings.music&&!store.profile?.settings.sound)off();return;}
+  try{const b=a.createBufferSource();b.buffer=a.createBuffer(1,1,22050);b.connect(a.destination);b.start(0);}catch{}
+  if(a.state==='running')off();else a.resume?.().then(()=>{if(a.state==='running')off();}).catch(()=>{});}
+ evs.forEach(e=>document.addEventListener(e,unlock,true));
+}
 function stopMusic(){playing=false;music.stopSequencer();music.stopMetal();if(pk.songPlaying()==='route')pk.stopSong();}
 // Hardcore metal riff for a level/boss title card; background music pauses meanwhile.
 // kind: a realm id or 'boss'. Returns the riff length in seconds (0 when music is off).
@@ -58,4 +67,4 @@ function glassSmash(volume=.5){
  const o=a.createOscillator(),og=a.createGain();o.type='sine';o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);og.gain.setValueAtTime(.7,t);og.gain.exponentialRampToValueAtTime(.001,t+.16);o.connect(og);og.connect(out);o.start(t);o.stop(t+.18);
  for(let i=0;i<9;i++){const at=t+.01+Math.random()*.32,s=a.createOscillator(),g=a.createGain();s.type=i%2?'triangle':'sine';s.frequency.value=2200+Math.random()*4800;g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(.16+Math.random()*.12,at+.004);g.gain.exponentialRampToValueAtTime(.0001,at+.07+Math.random()*.12);s.connect(g);g.connect(out);s.start(at);s.stop(at+.22);}
 }
-Object.assign(exports,{glassSmash,audioContext,tone,sound,vibrate,setMusicZone,setMusicScene,playFanfare,startMusic,stopMusic,pickupSound,playMetal,stopMetal,holdMusic,releaseMusic,playQuartet,nowPlaying});
+Object.assign(exports,{installAudioUnlock,glassSmash,audioContext,tone,sound,vibrate,setMusicZone,setMusicScene,playFanfare,startMusic,stopMusic,pickupSound,playMetal,stopMetal,holdMusic,releaseMusic,playQuartet,nowPlaying});

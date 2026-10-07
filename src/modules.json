@@ -218,7 +218,21 @@
   "src/pkmn/pkmnAudio.js",
   "src/pkmn/pkmnBattle.js",
   "src/pkmn/pkmnRun.js",
-  "src/pkmn/pkmnWarp.js"
+  "src/pkmn/pkmnWarp.js",
+  "src/packs/warpPack.js",
+  "src/engines/sonic.js",
+  "src/data/warpTrivia.js",
+  "src/data/warpItems.js",
+  "src/warpThemes.js",
+  "src/engines/kart.js",
+  "src/engines/smb3.js",
+  "src/engines/candyLand.js",
+  "src/engines/chutes.js",
+  "src/engines/monopoly.js",
+  "src/engines/clue.js",
+  "src/engines/hyrule.js",
+  "src/data/bondLair.js",
+  "src/engines/bond.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

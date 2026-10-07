@@ -1,5 +1,57 @@
 # Changelog
 
+## v0.53.0
+
+**James Bond warp zone: the Volcano Lair.** A new warp pipe destination styled as Blofeld's hollowed-out volcano
+(You Only Live Twice): steel gantry catwalk, Bird One on the launch pad, the piranha pool, a laser room, the world
+domination map, the monorail dock and SPECTRE HQ at the end. Spy-surf board music, dark gold/red interface theme.
+- **Just getting there** recruits a random movie Bond (Connery, Lazenby, Moore, Dalton, Brosnan, Craig) that each
+  player does not have yet, one for each player's roster.
+- **The boss** is Ernst Stavro Blofeld (white cat, Nehru jacket, scar) with a new PIRANHA TRAPDOORS signature move:
+  the floor splits into panels and all but one or two drop into the piranha pool. Beating him recruits one random
+  Bond villain that neither player has yet: Goldfinger, Oddjob, Jaws, Le Chiffre, Scaramanga, Dr. No, Silva,
+  Trevelyan, Xenia Onatopp, Blofeld himself, or one of twelve new lair-only villains (Max Zorin, Hugo Drax, Rosa
+  Klebb, Red Grant, Dr. Kananga, Emilio Largo, Elliot Carver, Franz Sanchez, Nick Nack, May Day, Renard, Safin).
+- **Three new Bond minigames** (split screen, both players at once, also in the arcade):
+  **Laser Vault Heist** (Diamonds Are Forever: drag through sweeping, sliding and blinking beams to steal diamonds),
+  **Funhouse Duel** (The Man with the Golden Gun: shoot Scaramanga and Nick Nack cut-outs, never the cardboard Bond
+  or a mirror reflection; one golden bullet at a time) and **Stop the Bomb at 007** (Goldfinger: stop your read-out
+  as close to 0:07.00 as you dare, seven rounds). The lair also deals Baccarat, Facility Escape, Moonraker Lander,
+  Laser Table, Oddjob's Hat and Ski Chase, the 007 and GoldenEye quizzes, Bond gadgets and a Bond Chance deck.
+
+## v0.52.0
+
+**Themed warp zones.** Every warp board now deals only its own world's content. Minigame, task and roulette spaces
+pick from the zone's own games (the roulette only spins those), trivia spaces ask that zone's quiz, item spaces hand
+out that zone's supplies, Chance spaces draw from a zone deck (Toad Houses, Lakitu's fishing rod, Go Directly to
+Jail, the Molasses Swamp, Kaa's hypnosis, Wadsworth's tip, the Lost Woods, Super Ring monitors…) and bonus/penalty
+spaces use zone fortunes. A challenge item used inside a warp plays the zone's game instead, and pair events, the
+Home dog pack and board reshuffles wait until you are back on the main map. Those games and items still turn up on
+the main board as before. The Pokémon warp keeps its own battles, grass and trainers.
+
+**Fifteen new warp minigames** (all two-player, touch-first, also in the arcade):
+- Green Hill Zone: **Sonic Ring Rush** (most rings after 60 s) and **Sonic Goal Dash** (first to the signpost).
+  A split-screen Sonic 2 VS-style platformer with your head on Sonic: Mega Drive physics constants, slopes, loops,
+  springs, spin dash, rolling, ring scatter when hit, badniks (Motobug, Crabmeat, Buzz Bomber, Chopper), item
+  monitors (Super Ring, Shield, Speed Shoes, Invincibility), lampposts, the Green Hill title card and the spinning
+  signpost. Ring Rush ends each lap in a Giant Ring that restarts the act with fresh rings.
+- Rainbow Road: **Rainbow Road Grand Prix** (3 laps) and **Rainbow Balloon Battle**. Mode 7-style split-screen
+  karts with item boxes, Mushrooms, Bananas, Green Shells, Stars, Lightning, coins and Lakitu rescues.
+- World 1 · Grass Land: **N-Spade** card matching and the **Spade Panel** picture slots from Super Mario Bros. 3.
+- Candy Land: **Gumdrop Mountain Catch** and **Color Card Dash** (with Lord Licorice "hands off" cards).
+- Chutes & Ladders: **Ladder Rush** (climb, switch ladders, dodge chutes) and **Spinner Showdown** on the classic
+  board with its real ladders and chutes.
+- Boardwalk Empire: **Monopoly Speed Die** (24-space board, Chance, Community Chest, Mr. Monopoly and the Bus) and a
+  **Sealed-Bid Auction**.
+- Tudor Mansion: **Clue Whodunit** (real deduction with private notebooks and Wadsworth's spare cards) and **Lineup**.
+- Hyrule Field: **Rupee Rush** and **Sword Duel** on a 1986-style overworld screen with Octoroks and Tektites.
+
+**Warp trivia and items.** New quizzes for Super Mario Bros. 3, Candy Land, Chutes and Ladders (with Kaa and The
+Jungle Book), Monopoly and Clue, and more questions for Mario Kart, Zelda and Sonic. 48 new themed items
+(Triple Mushroom, Bullet Bill, P-Wing, Warp Whistle, Gumdrop Pass, Golden Ladder, Get Out of Jail Free, Secret
+Passage Key, Pegasus Boots, Master Sword, Speed Shoes, Chaos Emerald…) plus nine challenge items that start
+a zone minigame on the spot.
+
 ## v0.51.0
 
 **Road choices line up with the map.** The buttons under the map are now in the same left-to-right order as the
