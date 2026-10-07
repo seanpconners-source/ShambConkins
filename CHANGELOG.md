@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.46.6
+
+**New title screen.** The main menu is now a proper mobile-game title screen: dark animated backdrop (slow light rays,
+drifting embers, vignette), a floating logo with a warm glow, and a single big gold play button.
+
+- The logo's black box is gone: lettering is keyed out to transparency with a thick black outline that follows the
+  letters, so it works on any background (title screen and the light top bars). Regenerate with
+  `python3 tools/brand-logo.py`; the black-box original lives in `assets/originals/brand/`.
+- Top bar: Sean & Amber profile badge (heads, XP, collectibles) plus full-screen and settings icon buttons.
+- One hero button: NEW GAME, or CONTINUE RUN (with NEW GAME underneath) when a run is in progress.
+- Characters and Minigame Vault are chunky tiles; How to play / Art sources / Clear run / Erase progress move to a
+  quiet footer. Mind / Body / Spirit chips under the tagline.
+- Short landscape phones get a two-column layout; nothing scrolls at 360x640, 390x780, 780x390 or desktop.
+  Animations respect reduced-motion. Screenshots: `tests/homeshots.mjs`.
+
 ## v0.46.5
 
 **Warehouse Shift rebuilt as Rush Hour in the Dunder Mifflin warehouse.** The old Sokoban crate-pusher is gone. Your
