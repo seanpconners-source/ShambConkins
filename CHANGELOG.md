@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.54.1
+
+**Sonic and Super Mario Bros. are now played in turns, full screen.** Instead of a split screen, each player gets
+the whole canvas for their run: P1 goes first, the phone is passed with the usual hand-off card, then P2 runs the same
+seeded level with P1's recorded run alongside as a translucent ghost (also shown on the progress strip). The HUD shows
+P2 the score to beat. Ring Rush / Coin Rush: 60 seconds each, most rings/coins wins. Goal Dash / Castle Dash become time
+trials: the fastest to the signpost/flagpole wins (furthest progress if nobody finishes); P2's run ends early once P1's
+time can no longer be beaten. Either keyboard set (WASD + Space, or arrows + Enter) controls whoever's turn it is.
+
 ## v0.54.0
 
 **Super Mario Bros. on the Mario warp board.** A split-screen NES World 1-1 built like the Sonic games: both
