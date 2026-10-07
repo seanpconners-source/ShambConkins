@@ -7,7 +7,7 @@ await page.click('text=NEW GAME').catch(()=>{});await page.click('[data-action=s
 let card=false;
 for(let i=0;i<40&&!card;i++){await page.waitForTimeout(500);await page.evaluate(()=>{const d=document.getElementById('dialog');if(d.open)d.querySelector('button')?.click();});card=await page.evaluate(()=>!!document.querySelector('.level-card,.gentlemen-card'));}
 console.log('level I card shown:',card);
-if(card){await page.waitForTimeout(1500);await page.screenshot({path:out+'-card1.png'});console.log(await page.evaluate(()=>document.querySelector('.level-card').innerText.replace(/\n+/g,' | ')));}
+if(card){await page.waitForTimeout(1500);await page.screenshot({path:out+'-card1.png'});console.log(await page.evaluate(()=>(document.querySelector('.level-card,.gentlemen-card')?.innerText||'').replace(/\n+/g,' | ')));}
 await page.waitForFunction(()=>!document.querySelector('.level-card,.gentlemen-card'),null,{timeout:8000}).catch(()=>{});
 await page.waitForTimeout(700);
 await page.screenshot({path:out+'-board1.png'});

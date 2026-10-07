@@ -1,0 +1,244 @@
+/* ==========================================================================
+   v0.47 interface theme: the title screen's dark arcade look on every menu,
+   dialog, HUD and game frame. Palettes are tokens on <body data-theme="…">
+   (set by src/theme.js): home (plum + gold) for menus, one per level, one per
+   warp zone. Playfields (board SVG, canvases, card tables) keep their own art.
+   ========================================================================== */
+
+/* ---------- Palettes ---------- */
+body{
+ --t-bg0:#08050d;--t-bg1:#140b22;--t-glow:#4a2370;--t-glow2:#7a2a1a;
+ --t-s1:#2b2038;--t-s2:#1a1224;--t-s3:#362848;--t-well:#0b0710;
+ --t-text:#f3e6c4;--t-head:#fff6de;--t-sub:#c9b9e3;--t-dim:#9c8bb8;
+ --t-acc:#ffd77e;--t-acc2:#d9a441;--t-acc-ink:#1c1326;--t-hot:#ff7bb0;
+ --t-good:#8fe39a;--t-bad:#ff8a8a;--t-p1:#5aa2ff;--t-p2:#ff7bb0;
+ --t-edge:#000;--t-hair:#ffffff14;--t-shine:#ffffff1c;
+ --t-stripe:linear-gradient(90deg,var(--t-acc2),var(--t-acc),var(--t-acc2));
+}
+body[data-theme="mind"]{--t-bg0:#0b0609;--t-bg1:#1e0c15;--t-glow:#6b1a38;--t-glow2:#6a4a12;--t-s1:#38202c;--t-s2:#21121a;--t-s3:#462838;--t-well:#10080c;--t-sub:#e0bfca;--t-dim:#a7838e;--t-acc:#ffd36b;--t-acc2:#c99a1b;--t-acc-ink:#2a1208;--t-hot:#ff8fa8}
+body[data-theme="body"]{--t-bg0:#0b0705;--t-bg1:#20120a;--t-glow:#7a3212;--t-glow2:#8a5a10;--t-s1:#3a2618;--t-s2:#22160e;--t-s3:#4a311f;--t-well:#110a06;--t-sub:#e8c8aa;--t-dim:#ab8b70;--t-acc:#ffb54a;--t-acc2:#d4622a;--t-acc-ink:#2a1206;--t-hot:#ffcf5a}
+body[data-theme="spirit"]{--t-bg0:#07060f;--t-bg1:#150f2b;--t-glow:#4a2a8c;--t-glow2:#1f4a8a;--t-s1:#2a2446;--t-s2:#18142d;--t-s3:#363058;--t-well:#0a0816;--t-sub:#cdbff2;--t-dim:#948ac0;--t-acc:#dcc2ff;--t-acc2:#8e5ce0;--t-acc-ink:#1a1030;--t-hot:#7fd8ff}
+body[data-theme="horror"]{--t-bg0:#050304;--t-bg1:#170607;--t-glow:#6e0a12;--t-glow2:#1f3a12;--t-s1:#2c1416;--t-s2:#180b0c;--t-s3:#3a1a1d;--t-well:#0a0405;--t-text:#efe2d6;--t-sub:#ddb0ae;--t-dim:#9c7473;--t-acc:#ff6a5c;--t-acc2:#b3121f;--t-acc-ink:#1a0405;--t-hot:#a8ff6a}
+body[data-theme="upside-down"]{--t-bg0:#050408;--t-bg1:#140a14;--t-glow:#5a2236;--t-glow2:#203a5a;--t-s1:#281a28;--t-s2:#170f18;--t-s3:#352336;--t-well:#0a060b;--t-sub:#dcb8c8;--t-dim:#9a7d8c;--t-acc:#ff6a80;--t-acc2:#a8203a;--t-acc-ink:#1a0408;--t-hot:#8fd0ff}
+body[data-theme="warp-rainbow-road"]{--t-bg0:#04030f;--t-bg1:#0c0a2c;--t-glow:#3a1f8c;--t-glow2:#0a5a8a;--t-s1:#231f4a;--t-s2:#13112d;--t-s3:#2e2962;--t-well:#07061a;--t-sub:#bcc6ff;--t-dim:#8890c8;--t-acc:#7cf3ff;--t-acc2:#b45bff;--t-acc-ink:#0b0830;--t-hot:#ff7ad9;--t-stripe:linear-gradient(90deg,#ff3b3b,#ff9c2a,#ffe23b,#4cd964,#3aa7ff,#5b4bff,#b45bff)}
+body[data-theme="warp-candy-land"]{--t-bg0:#12040c;--t-bg1:#2a0c22;--t-glow:#a02a6a;--t-glow2:#6a3aa8;--t-s1:#3d1835;--t-s2:#250e20;--t-s3:#4c2042;--t-well:#16060f;--t-sub:#f6c2dc;--t-dim:#b98aa4;--t-acc:#ffa3d4;--t-acc2:#ee4b5b;--t-acc-ink:#2a0618;--t-hot:#ffe26a;--t-stripe:linear-gradient(90deg,#ee4b5b,#a85bd6,#f6d93a,#3a8ff0,#f4902c,#4ccc6a)}
+body[data-theme="warp-chutes"]{--t-bg0:#050b04;--t-bg1:#0f200c;--t-glow:#2f6a1f;--t-glow2:#6a5a12;--t-s1:#1f3420;--t-s2:#122013;--t-s3:#29442b;--t-well:#081006;--t-sub:#c4e3ae;--t-dim:#8aa878;--t-acc:#c6ef6a;--t-acc2:#4caf50;--t-acc-ink:#0f2208;--t-hot:#ffd76a}
+body[data-theme="warp-monopoly"]{--t-bg0:#040b07;--t-bg1:#0b2416;--t-glow:#1f6a3a;--t-glow2:#8a1a1a;--t-s1:#1a3427;--t-s2:#0f2018;--t-s3:#234434;--t-well:#06110b;--t-sub:#bfe0cb;--t-dim:#86a892;--t-acc:#ffd45a;--t-acc2:#e03a3a;--t-acc-ink:#2a1a04;--t-hot:#9ad0f0}
+body[data-theme="warp-mario-world"]{--t-bg0:#040812;--t-bg1:#0b1a34;--t-glow:#1f4a9a;--t-glow2:#9a2a1a;--t-s1:#1c2b4a;--t-s2:#111b31;--t-s3:#25385c;--t-well:#070d1c;--t-sub:#b9cff0;--t-dim:#8197b8;--t-acc:#ffcf3a;--t-acc2:#e0453a;--t-acc-ink:#2a1004;--t-hot:#6ad07a}
+body[data-theme="warp-clue"]{--t-bg0:#0a0604;--t-bg1:#1f110a;--t-glow:#5a2a14;--t-glow2:#4a1f4a;--t-s1:#34231a;--t-s2:#20150f;--t-s3:#422d21;--t-well:#110a06;--t-sub:#dfc6a6;--t-dim:#a48c70;--t-acc:#e8bd6a;--t-acc2:#7b3a6b;--t-acc-ink:#24140a;--t-hot:#d68ad0}
+body[data-theme="warp-hyrule"]{--t-bg0:#050a05;--t-bg1:#0e1e0e;--t-glow:#2a5a1a;--t-glow2:#6a5a10;--t-s1:#1f3121;--t-s2:#121f13;--t-s3:#29402b;--t-well:#070f07;--t-sub:#c8deb2;--t-dim:#8ea47a;--t-acc:#f2d35a;--t-acc2:#3f9a3a;--t-acc-ink:#1a1a04;--t-hot:#7fd8ff}
+body[data-theme="warp-green-hill"]{--t-bg0:#030816;--t-bg1:#0a1b3d;--t-glow:#1a52b0;--t-glow2:#2a8a3a;--t-s1:#182d53;--t-s2:#0f1c37;--t-s3:#213b69;--t-well:#060d1f;--t-sub:#b6d3ff;--t-dim:#7f9cc8;--t-acc:#ffd23a;--t-acc2:#2a7ae0;--t-acc-ink:#0a1430;--t-hot:#7cff9a}
+
+/* ---------- Page backdrop ---------- */
+html,body{background-color:var(--t-bg0)}
+body{color:var(--t-text);background:radial-gradient(ellipse 90% 50% at 50% 0%,var(--t-glow) 0%,transparent 70%),radial-gradient(ellipse 70% 40% at 50% 108%,color-mix(in srgb,var(--t-glow2) 55%,transparent),transparent 70%),linear-gradient(180deg,var(--t-bg1) 0%,var(--t-bg0) 70%);background-attachment:fixed;transition:background-color .4s}
+body h1,body h2,body h3{color:var(--t-head)}
+body .overline,body .version,body .char-name,body .game-info,body .game-mode,body label{color:var(--t-dim)}
+body .overline{letter-spacing:.24em}
+body ::selection{background:var(--t-acc2);color:#fff}
+body :focus-visible{outline:3px solid var(--t-acc);outline-offset:2px}
+
+/* ---------- Buttons (everything outside a game's own playfield) ---------- */
+body button:not(.game-body *):not(.title-screen *){color:var(--t-text);background:linear-gradient(180deg,var(--t-s1) 0%,var(--t-s2) 100%);border:2px solid var(--t-edge);border-radius:14px;box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 2px 0 var(--t-shine),0 4px 0 var(--t-edge);text-shadow:0 1px 0 #0009;letter-spacing:.03em}
+body button:not(.game-body *):not(.title-screen *):hover:not(:disabled){background:linear-gradient(180deg,var(--t-s3) 0%,var(--t-s2) 100%)}
+body button:not(.game-body *):not(.title-screen *):active:not(:disabled){transform:translateY(3px);box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 2px 0 var(--t-shine),0 1px 0 var(--t-edge)}
+body button.primary:not(.game-body *):not(.title-screen *){color:var(--t-acc);background:linear-gradient(180deg,var(--t-s3) 0%,var(--t-s2) 100%);box-shadow:inset 0 0 0 2px var(--t-acc2),inset 0 3px 0 var(--t-shine),0 5px 0 var(--t-edge),0 8px 18px color-mix(in srgb,var(--t-acc) 18%,transparent);text-shadow:0 2px 0 #000,0 0 12px color-mix(in srgb,var(--t-acc) 40%,transparent);font-weight:900}
+body button.primary:not(.game-body *):not(.title-screen *):hover:not(:disabled){background:linear-gradient(180deg,color-mix(in srgb,var(--t-s3) 80%,var(--t-acc2)) 0%,var(--t-s2) 100%)}
+body button.danger:not(.game-body *):not(.title-screen *){color:var(--t-bad);box-shadow:inset 0 0 0 1px #ff8a8a55,inset 0 2px 0 var(--t-shine),0 4px 0 var(--t-edge)}
+body button:disabled:not(.game-body *):not(.title-screen *){opacity:.48;box-shadow:inset 0 0 0 1px var(--t-hair),0 2px 0 var(--t-edge);filter:saturate(.6)}
+body button.small:not(.game-body *):not(.title-screen *){border-radius:12px}
+
+/* Form fields */
+body input:not(.game-body *):not([type=range]):not([type=checkbox]):not([type=radio]),body select:not(.game-body *){color:var(--t-text);background:var(--t-well);border:2px solid var(--t-edge);border-radius:12px;box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 2px 6px #0008}
+body input:not(.game-body *)::placeholder{color:var(--t-dim)}
+body select option{background:var(--t-s2);color:var(--t-text)}
+
+/* Panels / cards */
+body .panel,body .player-setup,body .roster-card,body .arcade-card{color:var(--t-text);background:linear-gradient(180deg,var(--t-s1) 0%,var(--t-s2) 100%);border:2px solid var(--t-edge);border-radius:18px;box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 2px 0 var(--t-shine),0 5px 0 var(--t-edge)}
+body .panel p,body .roster-card p,body .arcade-card p{color:var(--t-sub)}
+/* Property logos sit on a small light chip so dark logos stay legible on the dark theme. */
+body .property-logo:not(.roster-card .property-logo),body .player-source-logo,body .unlock-property-logo{background:#f6efe0e6;border-radius:8px}
+
+/* Top bars on setup / catalog screens */
+body .topbar{background:color-mix(in srgb,var(--t-well) 70%,transparent);border:2px solid var(--t-edge);border-radius:16px;box-shadow:inset 0 0 0 1px var(--t-hair),0 4px 14px #0007;padding:6px 10px}
+body .topbar .tagline,body .topbar small{color:var(--t-dim)}
+body .top-logo{filter:drop-shadow(0 2px 0 #000a)}
+body .section-heading h2{color:var(--t-head);text-shadow:0 3px 0 #000a;letter-spacing:.01em}
+body .section-heading p{color:var(--t-sub)}
+
+/* ---------- New-game setup ---------- */
+body .setup-player-heading,body .roster-caption,body .roster-scroll-hint{color:var(--t-dim);letter-spacing:.14em}
+body .player-preview>label{color:var(--t-dim)}
+body .setup-shell .selected-character h3{color:var(--t-head)}
+body .setup-shell .selected-character p,body .setup-shell .selected-character small{color:var(--t-sub)}
+body .setup-shell .character-choices{background:var(--t-well);border-radius:14px;box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 3px 10px #000a}
+body .character-choice:not(.game-body *){color:var(--t-text);background:linear-gradient(180deg,var(--t-s1),var(--t-s2));border:2px solid var(--t-edge);box-shadow:inset 0 0 0 1px var(--t-hair),0 3px 0 var(--t-edge)}
+body .character-choice.selected:not(.game-body *){color:var(--t-acc);background:linear-gradient(180deg,var(--t-s3),var(--t-s2));box-shadow:inset 0 0 0 2px var(--t-acc2),0 3px 0 var(--t-edge),0 0 14px color-mix(in srgb,var(--t-acc) 30%,transparent)}
+body .setup-shell .player-setup:nth-child(2) .character-choice.selected{color:var(--t-p2);box-shadow:inset 0 0 0 2px var(--t-p2),0 3px 0 var(--t-edge),0 0 14px #ff7bb055}
+body .setup-shell .player-setup:nth-child(1) .character-choice.selected{color:#9cc6ff;box-shadow:inset 0 0 0 2px var(--t-p1),0 3px 0 var(--t-edge),0 0 14px #5aa2ff55}
+body .setup-shell .setup-controls label{color:var(--t-dim);letter-spacing:.12em}
+body .pair-banner{color:var(--t-sub);background:color-mix(in srgb,var(--t-acc2) 14%,var(--t-well));border:2px solid var(--t-edge);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--t-acc2) 45%,transparent);border-radius:14px}
+body .setup-shell>p,body .setup-shell>p:last-child{color:var(--t-dim)}
+body .travel-skills{color:var(--t-acc)!important}
+
+/* ---------- Collection / Vault ---------- */
+body .catalog-shell .roster-card,body .catalog-shell .arcade-card{border-radius:18px}
+body .roster-card h3,body .arcade-card h3{color:var(--t-head)}
+body .roster-card.locked,body .arcade-card.locked{opacity:.62;filter:saturate(.55)}
+body .catalog-pages{background:transparent;border-top:1px solid var(--t-hair);color:var(--t-sub)}
+body .catalog-pages span{color:var(--t-dim)}
+body .filter-buttons button.active,body .filter-buttons button[aria-pressed=true],body .filter-buttons button.selected{color:var(--t-acc);box-shadow:inset 0 0 0 2px var(--t-acc2),0 3px 0 var(--t-edge)}
+body .game-art-strip{background:var(--t-well);box-shadow:inset 0 0 0 1px var(--t-hair)}
+body .game-reference-art .reference-art-label,body .reference-art-label{color:var(--t-dim)}
+body .vault-dev-strip{background:var(--t-well);border-color:var(--t-acc2);color:var(--t-sub)}
+body .collection-counts{color:var(--t-acc)}
+
+/* ---------- Board screen ---------- */
+body .original-top.board-top{background:linear-gradient(180deg,color-mix(in srgb,var(--t-s2) 92%,transparent),color-mix(in srgb,var(--t-well) 92%,transparent));border-bottom:2px solid var(--t-edge);box-shadow:inset 0 -1px 0 var(--t-hair),0 4px 14px #0008}
+body .original-top #turn-label{color:var(--t-dim)}
+body .original-top .board-meta b{color:var(--t-head);font-weight:900;text-shadow:0 2px 0 #000}
+body .original-top .dice-value{background:linear-gradient(180deg,#fff6de,#d8c9a8);border:2px solid var(--t-edge);box-shadow:inset 0 0 0 1px #fff8,0 3px 0 var(--t-edge)}
+body .turn-identity .portrait{filter:drop-shadow(0 2px 0 #000a)}
+body .original-stage{background:transparent}
+body .original-game .map-panel{border:2px solid var(--t-edge);border-radius:20px;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--t-acc2) 70%,transparent),0 6px 0 var(--t-edge),0 12px 30px #000a}
+body .original-game .map-panel::after{content:"";position:absolute;inset:0;border-radius:18px;pointer-events:none;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--t-acc2) 70%,transparent),inset 0 0 40px #0006;z-index:4}
+/* Level plaque floating over the map */
+body .map-toolbar{color:var(--t-text);background:color-mix(in srgb,var(--t-s2) 90%,transparent);border:2px solid var(--t-edge);border-radius:16px;box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 2px 0 var(--t-shine),0 4px 0 var(--t-edge),0 8px 20px #0008}
+body .level-plaque .lv-name,body .map-toolbar b{color:var(--t-head)}
+body .level-plaque .lv-tag,body .lv-route,body .map-panel.realm-horror .lv-tag,body .map-panel.realm-horror .lv-route{color:var(--t-sub)}
+body .lv-badge{border:2px solid var(--t-edge);box-shadow:inset 0 2px 0 #fff4,0 2px 0 var(--t-edge);text-shadow:0 1px 0 #0008}
+body .lv-pip{background:var(--t-well);border:1.5px solid color-mix(in srgb,var(--t-sub) 35%,transparent);color:var(--t-dim)}
+body .lv-pip.on{color:#fff;box-shadow:0 0 0 2px var(--t-edge),0 0 12px var(--lv)}
+body .lv-pip.secret{border-style:dashed}
+body .lv-dot{border-color:var(--t-edge)}
+body .lv-drink{color:var(--t-text);background:color-mix(in srgb,var(--lv) 22%,var(--t-well))}
+body .mini-map-card{border:2px solid var(--t-edge);box-shadow:inset 0 0 0 2px var(--t-acc2),0 4px 0 var(--t-edge),0 6px 16px #0009;background:var(--t-well)}
+body .original-game .map-bottom{color:var(--t-sub);background:color-mix(in srgb,var(--t-well) 88%,transparent);border-top:1px solid var(--t-hair)}
+body .original-game .map-bottom .seed-label{color:var(--t-dim);letter-spacing:.14em}
+body .mutation-float{color:var(--t-text);background:color-mix(in srgb,var(--t-s2) 92%,transparent);border:2px solid var(--t-edge);box-shadow:inset 0 0 0 1px var(--t-acc2),0 3px 0 var(--t-edge)}
+/* Route chooser */
+body .route-panel{color:var(--t-text);background:linear-gradient(180deg,var(--t-s1),var(--t-s2));border-top:3px solid var(--t-acc2);box-shadow:0 -8px 24px #000a}
+body .route-panel p,body .route-panel small{color:var(--t-sub)}
+/* Bottom HUD */
+body .bottom-hud{background:linear-gradient(180deg,color-mix(in srgb,var(--t-s2) 94%,transparent),var(--t-well));border-top:2px solid var(--t-edge);box-shadow:inset 0 1px 0 var(--t-hair),0 -6px 18px #0007}
+body .original-game .player-panel{color:var(--t-text);background:linear-gradient(180deg,var(--t-s1),var(--t-s2));border:2px solid var(--t-edge);border-radius:14px;box-shadow:inset 0 0 0 1px var(--t-hair),0 3px 0 var(--t-edge)}
+body .original-game .player-panel.active{background:linear-gradient(180deg,var(--t-s3),var(--t-s2));border-color:var(--t-edge);box-shadow:inset 0 0 0 2px var(--t-p1),0 3px 0 var(--t-edge),0 0 16px #5aa2ff44}
+body .original-game .player-panel.p2.active{box-shadow:inset 0 0 0 2px var(--t-p2),0 3px 0 var(--t-edge),0 0 16px #ff7bb044}
+body .original-game .player-name{color:var(--t-head)}
+body .original-game .char-name{color:var(--t-dim)}
+body .original-game .points{color:#9cc6ff;text-shadow:0 2px 0 #000}
+body .original-game .player-panel.p2 .points{color:var(--t-p2)}
+body .original-game .points small{color:var(--t-dim)}
+body .status-chip{color:var(--t-sub);background:var(--t-well);border:1px solid color-mix(in srgb,var(--t-sub) 30%,transparent)}
+body .roll-area .roll:not(:disabled){animation:t-breathe 2.6s ease-in-out infinite}
+@keyframes t-breathe{0%,100%{box-shadow:inset 0 0 0 2px var(--t-acc2),inset 0 3px 0 var(--t-shine),0 5px 0 var(--t-edge),0 8px 14px color-mix(in srgb,var(--t-acc) 10%,transparent)}50%{box-shadow:inset 0 0 0 2px var(--t-acc),inset 0 3px 0 var(--t-shine),0 5px 0 var(--t-edge),0 10px 28px color-mix(in srgb,var(--t-acc) 32%,transparent)}}
+body .roll-area .roll{font:900 16px/1 "Arial Black",Arial,sans-serif;letter-spacing:.05em}
+body .hud-tools button{letter-spacing:.08em}
+
+/* Bag / inventory */
+body .inventory-button{color:var(--t-text)}
+body .inventory-button small{color:var(--t-sub)}
+body .item-rule{background:var(--t-well);border-color:color-mix(in srgb,var(--t-acc2) 45%,transparent);color:var(--t-sub)}
+body .item-symbol{background:var(--t-well)}
+
+/* ---------- Dialogs, sheets, cards ---------- */
+body dialog{background:transparent;border:0;box-shadow:none;color:var(--t-text)}
+body dialog::backdrop{background:color-mix(in srgb,var(--t-bg0) 78%,transparent);backdrop-filter:blur(4px)}
+body dialog.sheet::backdrop{background:#0004;backdrop-filter:none}
+body .dialog-content{position:relative;color:var(--t-text);background:radial-gradient(ellipse 120% 60% at 50% 0%,color-mix(in srgb,var(--t-glow) 55%,transparent),transparent 70%),linear-gradient(180deg,var(--t-s1) 0%,var(--t-s2) 100%);border:2px solid var(--t-edge);border-radius:20px;box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 0 0 2px color-mix(in srgb,var(--t-acc2) 55%,transparent),0 6px 0 var(--t-edge),0 24px 70px #000c}
+body .dialog-content::before{content:"";position:absolute;left:18%;right:18%;top:0;height:3px;border-radius:0 0 4px 4px;background:var(--t-stripe);opacity:.9}
+body .dialog-content h2{color:var(--t-head);text-shadow:0 3px 0 #000a}
+body .dialog-content p{color:var(--t-sub)}
+body .dialog-content a{color:var(--t-acc)}
+body .how-to{color:var(--t-sub);background:var(--t-well);border:1px solid var(--t-hair);border-radius:14px;box-shadow:inset 0 2px 8px #0008}
+body .how-to b,body .how-to strong{color:var(--t-text)}
+body .dialog-art{border:2px solid var(--t-edge);box-shadow:0 3px 0 var(--t-edge)}
+body .rare-label{color:var(--t-acc);letter-spacing:.28em;text-shadow:0 0 12px color-mix(in srgb,var(--t-acc) 50%,transparent)}
+body .dialog-content.rare{box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 0 0 2px var(--t-acc),0 6px 0 var(--t-edge),0 0 40px color-mix(in srgb,var(--t-acc) 35%,transparent),0 24px 70px #000c}
+body .sheet-source{color:var(--t-dim)}
+body .choice-tag{color:var(--t-acc)}
+body .choice-copy small{color:var(--t-sub)}
+body .choice-badge{color:var(--t-acc-ink);background:var(--t-acc);border-radius:999px}
+body .dialog-question-timer b{color:var(--t-acc)}
+body .dialog-question-timer span{color:var(--t-dim)}
+body .settings-row{border-bottom:1px solid var(--t-hair);color:var(--t-text)}
+body .unlock-card{background:radial-gradient(circle,color-mix(in srgb,var(--t-acc) 22%,transparent),transparent 65%)}
+body .effect-player{color:var(--t-text);background:var(--t-well);border:1px solid var(--t-hair)}
+body .effect-tag{color:var(--t-text);background:var(--t-s3)}
+body .effect-tag.good{color:#d6f8d2;background:#1f4a26}
+body .effect-tag.bad{color:#ffd6d3;background:#5a1f24}
+body .effect-tag.move{color:#e3dbff;background:#3a2e6a}
+body .reward-delta{color:#9cc6ff}
+body .reward-delta.bad{color:var(--t-bad)}
+body .media-source-list>div{border-bottom:1px solid var(--t-hair)}
+body .media-source-list a{color:var(--t-acc)}
+/* Roll card + floating banners */
+body .dice-stage{background:color-mix(in srgb,var(--t-bg0) 55%,transparent)}
+body .roll-card{color:var(--t-text);background:radial-gradient(ellipse at top,color-mix(in srgb,var(--t-glow) 70%,transparent),transparent 70%),linear-gradient(180deg,var(--t-s1),var(--t-s2));border:2px solid var(--t-edge);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--t-acc2) 60%,transparent),0 6px 0 var(--t-edge),0 24px 80px #000c}
+body .roll-outcome,body .roll-outcome small{color:var(--t-text)}
+body .roll-player{color:var(--t-head)}
+body .board-feedback,body .turn-banner{color:var(--t-text);background:color-mix(in srgb,var(--t-s2) 95%,transparent);border:2px solid var(--t-edge);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--t-acc2) 60%,transparent),0 4px 0 var(--t-edge),0 10px 30px #000a}
+body #toast{color:var(--t-text);background:color-mix(in srgb,var(--t-s2) 96%,transparent);border:2px solid var(--t-edge);box-shadow:inset 0 0 0 1px var(--t-acc2),0 4px 0 var(--t-edge)}
+body .flying-item{background:var(--t-s2);border-color:var(--t-acc)}
+
+/* ---------- Minigame frame (chrome only; each game paints its own playfield) ---------- */
+body #game-layer{background:radial-gradient(ellipse 90% 50% at 50% 0%,var(--t-glow) 0%,transparent 70%),linear-gradient(180deg,var(--t-bg1),var(--t-bg0))}
+body .game-shell{color:var(--t-text);background:linear-gradient(180deg,var(--t-s2),var(--t-well));border:2px solid var(--t-edge);border-radius:20px;box-shadow:inset 0 0 0 1px var(--t-hair),0 6px 0 var(--t-edge),0 16px 40px #000a}
+body .game-header,body .game-scorebar{color:var(--t-text);background:linear-gradient(180deg,var(--t-s1),var(--t-s2));border-color:var(--t-edge)}
+body .game-header h2{color:var(--t-head);text-shadow:0 2px 0 #000}
+body .game-scoreplayer{color:var(--t-text)}
+body .game-scoreplayer.active{background:color-mix(in srgb,var(--t-acc2) 20%,var(--t-s2));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--t-acc2) 60%,transparent)}
+body .game-status,body .game-hint{color:var(--t-sub);background:var(--t-well);border-color:var(--t-hair)}
+body .game-controls .ctrl{color:var(--t-text);background:linear-gradient(180deg,var(--t-s1),var(--t-s2));border:2px solid var(--t-edge);box-shadow:inset 0 0 0 1px var(--t-hair),0 3px 0 var(--t-edge)}
+body .pass-overlay{background:color-mix(in srgb,var(--t-bg0) 82%,transparent);backdrop-filter:blur(4px)}
+body .pass-card{color:var(--t-text);background:radial-gradient(ellipse 120% 60% at 50% 0%,color-mix(in srgb,var(--t-glow) 55%,transparent),transparent 70%),linear-gradient(180deg,var(--t-s1),var(--t-s2));border:2px solid var(--t-edge);border-radius:20px;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--t-acc2) 55%,transparent),0 6px 0 var(--t-edge),0 20px 60px #000c}
+body .pass-card h2,body .pass-card h3{color:var(--t-head)}
+body .pass-card p{color:var(--t-sub)}
+body .pass-card .overline{color:var(--t-dim)}
+body .pass-card button:not(.game-body *){font-weight:900}
+
+/* ---------- Finish screen ---------- */
+body .finish-heading h1{color:var(--t-head);text-shadow:0 4px 0 #000a}
+body .finish-heading p,body .finish-player p{color:var(--t-sub)}
+body .finish-player.p1{box-shadow:inset 0 0 0 2px var(--t-p1),0 5px 0 var(--t-edge)}
+body .finish-player.p2{box-shadow:inset 0 0 0 2px var(--t-p2),0 5px 0 var(--t-edge)}
+body .finish-player .big-result{color:var(--t-acc);text-shadow:0 3px 0 #000}
+body .finish-summary{color:var(--t-dim)}
+
+@media(prefers-reduced-motion:reduce){body .roll-area .roll{animation:none!important}}
+body .dialog-actions{background:linear-gradient(180deg,transparent 0%,var(--t-s2) 35%)}
+/* Big heads (v0.46) outgrew the fixed 90px choice tiles; let the name show underneath. */
+body .setup-shell .character-choice{height:auto;min-height:90px;padding:6px 5px}
+
+/* In-game buttons that only had the old default look (no game-specific styling) get the themed look too.
+   :where() keeps these at the same specificity as the old defaults, so any game's own button styles still win. */
+:where(.game-body) button{color:var(--t-text);background:linear-gradient(180deg,var(--t-s1) 0%,var(--t-s2) 100%);border:2px solid var(--t-edge);box-shadow:inset 0 0 0 1px var(--t-hair),inset 0 2px 0 var(--t-shine),0 3px 0 var(--t-edge)}
+:where(.game-body) button.ghost{color:var(--t-text);background:linear-gradient(180deg,var(--t-s1) 0%,var(--t-s2) 100%);border:2px solid var(--t-edge)}
+:where(.game-body) button.primary{color:var(--t-acc);background:linear-gradient(180deg,var(--t-s3) 0%,var(--t-s2) 100%);border:2px solid var(--t-edge);box-shadow:inset 0 0 0 2px var(--t-acc2),inset 0 3px 0 var(--t-shine),0 4px 0 var(--t-edge);text-shadow:0 2px 0 #000}
+:where(.game-body) button.danger{color:var(--t-bad);background:linear-gradient(180deg,var(--t-s1) 0%,var(--t-s2) 100%)}
+
+/* Headings share the title screen's heavy display face. */
+body .section-heading h2,body .catalog-shell .section-heading h2{font-weight:900}
+body .roster-card h3{font:900 15px/1.2 "Arial Black",Arial,sans-serif;letter-spacing:.01em}
+body .arcade-card h3{font-weight:900}
+
+/* Bottom sheets (Quark's shop and friends) */
+body dialog.sheet .dialog-actions button small{color:var(--t-sub)}
+body dialog.sheet .choice-tag{color:var(--t-acc)}
+body dialog.sheet .sheet-source{color:var(--t-dim)}
+body dialog.sheet .choice-badge{color:var(--t-acc-ink);background:linear-gradient(180deg,var(--t-acc),var(--t-acc2));box-shadow:0 2px 0 var(--t-edge)}
+body dialog.sheet button:disabled .choice-badge{color:#ddd;background:#4a4a55}
+
+/* Route chooser cards keep their coloured road tag down the left edge. */
+body .rp-head b{color:var(--t-head)}
+body .rp-head small{color:var(--t-dim)}
+body button.rp-option:not(.game-body *){border-left:8px solid var(--tag,#999);border-radius:14px}
+body button.rp-option.selected:not(.game-body *){background:linear-gradient(180deg,var(--t-s3),var(--t-s2));box-shadow:inset 0 0 0 2px var(--tag),0 4px 0 var(--t-edge),0 0 16px color-mix(in srgb,var(--tag) 40%,transparent)}
+body .rp-option b{color:var(--t-head)}
+body .rp-option small{color:var(--t-sub)}
+body .rp-option em{color:var(--t-acc)}
+body .dev-button{color:var(--t-acc)}
+body .dialog-content .rare-label{color:var(--t-acc)}
+body .badge-row span{color:var(--t-sub);background:var(--t-well);border-color:var(--t-hair)}
+body .lv-pip.on,body .lv-badge{text-shadow:0 1px 0 #000,0 0 4px #0008}
+body .finish-heading h1{font-weight:900}

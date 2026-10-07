@@ -40,7 +40,7 @@ for (const [dir, prefix] of [['items', 'photo:item:'], ['locations', 'photo:loca
 }
 const js2 = js.replace('/*@@USER_PORTRAITS@@*/{}', () => JSON.stringify(userPortraits));
 const html = read('src/index.template.html')
-  .replace('<!--@@STYLE@@-->', () => '<style>' + inlineAssets(read('src/styles.css')) + '</style>')
+  .replace('<!--@@STYLE@@-->', () => '<style>' + inlineAssets(read('src/styles.css')+'\n'+read('src/theme.css')) + '</style>')
   .replace('<!--@@SCRIPT@@-->', () => '<script>' + inlineAssets(js2) + '</script>');
 
 fs.mkdirSync(path.dirname(out), {recursive: true});

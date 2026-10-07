@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.47.0
+
+**The title screen's look now runs through the whole game.** Setup, Characters, Minigame Vault, the board's top bar,
+level plaque, mini-map and bottom HUD, route chooser, every dialog and bottom sheet (settings, shop, event and item
+cards), the dice roll card, toasts, the minigame frame and pass-the-phone cards, and the end screen all use the same
+dark raised panels, black outlines, cream text and a glowing accent ring on the main button. Each level has its own
+palette — Mind is wine and gold, Body is ember and amber, Spirit is midnight violet, Horror is blood red — and each of
+the eight warp zones gets one too (Rainbow Road, Candy Land, Chutes & Ladders, Monopoly, Mario World, Clue, Hyrule,
+Green Hill). Menus outside a run keep the title screen's plum and gold. The board art and each minigame's own
+playfield are unchanged; plain in-game buttons pick up the theme. New tests: `tests/themeshots.mjs` (screenshots of
+every screen and palette) and `tests/contrast.mjs` (text-contrast audit of every minigame, plus a board walk via
+`WALK=seed,seed`).
+
 ## v0.46.7
 
 **Title screen buttons share one dark palette.** Every button is now the same dark plum with a black outline and
