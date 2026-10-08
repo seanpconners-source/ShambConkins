@@ -186,7 +186,9 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   supplied faces). `pkmnSprites.js` dithers each into front/back sprites in the background (`characterSprite(id,kind,mood)`,
   `moodSprite(sp,mood)`); `drawMonSprite` shows `m.mood`: think while choosing, win on landing a hit, angry when hit or
   hurt by poison/burn, silly on a confusion self-hit, sad on a miss/faint and a beaten trainer. Sprites are made at
-  runtime from portraits, so new uploads need no step. Tests: `tests/pkmnmoods.mjs` (contact sheet), `tests/pkmnmoodbattle.mjs`.
+  runtime from portraits, so new uploads need no step. `portraitMoods` also counts built-in raster photos in `data/art.js`
+  (Sean, Amber) and moods sharing a picture; never SVG placeholders. `dither` crops full rectangular photos to an oval.
+  Tests: `tests/pkmnmoods.mjs` (contact sheet of every mood character), `tests/pkmnmoodbattle.mjs [mine foe]`.
 
 ## In progress / unverified
 - Warp minigames only bot/fuzz-tested in headless Chromium; Sonic, Mario (turn-based) and kart (split-screen canvas, Mode 7 rows) need a

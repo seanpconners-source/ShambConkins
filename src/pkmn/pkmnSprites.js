@@ -120,7 +120,12 @@ function dither(source,size,opts={}){
   const push=(px,py,ref)=>{if(px<0||py<0||px>=S||py>=S)return;const n=py*S+px;if(seen[n])return;const p=n*4,d=Math.abs(img[p]-ref[0])+Math.abs(img[p+1]-ref[1])+Math.abs(img[p+2]-ref[2]);if(d>78)return;seen[n]=1;stack.push([px,py,ref]);};
   for(let i=0;i<S;i+=3)for(const [px,py] of [[i,0],[i,S-1],[0,i],[S-1,i]]){const p=(py*S+px)*4;push(px,py,[img[p],img[p+1],img[p+2]]);}
   while(stack.length){const [px,py,ref]=stack.pop();img[(py*S+px)*4+3]=0;push(px+1,py,ref);push(px-1,py,ref);push(px,py+1,ref);push(px,py-1,ref);}
+
  }
+ // Busy backdrop nothing cleared (a full rectangular photo): crop to a head oval inside the photo instead of a box.
+ {const x0=Math.max(0,Math.round((S-w*scale)/2)),y0=Math.max(0,Math.round((S-h*scale)/2+(opts.drop||0)*S)),x1=Math.min(S-1,Math.round((S+w*scale)/2)-1),y1=Math.min(S-1,Math.round((S+h*scale)/2+(opts.drop||0)*S)-1);
+  let edge=0,solid=0;for(let px=x0;px<=x1;px+=2)for(const py of [y0,y1]){edge++;if(img[(py*S+px)*4+3]>200)solid++;}for(let py=y0;py<=y1;py+=2)for(const px of [x0,x1]){edge++;if(img[(py*S+px)*4+3]>200)solid++;}
+  if(edge&&solid>edge*.6){const cx=(x0+x1)/2,cy=(y0+y1)/2,rx=(x1-x0)/2*.94,ry=(y1-y0)/2*.97;for(let py=0;py<S;py++)for(let px=0;px<S;px++)if(((px-cx)/rx)**2+((py-cy)/ry)**2>1)img[(py*S+px)*4+3]=0;}}
  // 2x2 box down-sample, alpha-weighted luminance.
  const L=new Float32Array(size*size),A=new Float32Array(size*size);
  for(let y=0;y<size;y++)for(let xx=0;xx<size;xx++){let a=0,l=0;for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++){const p=((y*2+dy)*S+xx*2+dx)*4,al=img[p+3]/255;a+=al;l+=al*(img[p]*.3+img[p+1]*.59+img[p+2]*.11);}A[y*size+xx]=a/4;L[y*size+xx]=a?l/a/255:1;}
