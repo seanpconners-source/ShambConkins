@@ -25,7 +25,7 @@ function seeded(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=M
 async function bossfight(s){
  const boss=bossById(s.game.bossId)||BOSSES[0];
  const tier=clamp(Math.round(Number(s.game.tier)||boss.tier||2),1,4);
- const kTab=K[tier],hpScale=(.75+.125*tier)/(.75+.125*(boss.tier||2));
+ const kTab0=K[tier],hpScale=(.75+.125*tier)/(.75+.125*(boss.tier||2));
  const [c,x]=s.canvas(420,640,{fill:true});s.body.classList.add('drag-arena-body');document.querySelector('.game-shell')?.classList.add('boss-shell');s.queueCanvasFit?.();
  s.shared=true;s.cooperative=true;s.cooperativeLabel='BOSS FIGHT';s.updateScores();
  const reduce=!!store.profile?.settings.reducedMotion,sfxOn=()=>!!store.profile?.settings.sound,musicOn=()=>!!store.profile?.settings.music;
@@ -33,12 +33,14 @@ async function bossfight(s){
  let W=420,k=1,ox=0,oy=0,cw=0,ch=0,bs=1,wide=false,YMIN=260;
  // wide arena (landscape/desktop): the field stretches to the screen, the boss sits centre stage and each player starts on
  // their own side of it; guns and the MEGA BEAM aim at the boss. Portrait screens keep the original 420-560 wide field.
+ // the wider field spreads attacks out and leaves more room to dodge, so wide arenas hit harder (tuned by tests/bossdiff.mjs)
+ const WIDE_K={dens:1.3,spd:1.1,tele:1,restMul:.78,dmg:.96},kWide={dens:kTab0.dens*WIDE_K.dens,spd:kTab0.spd*WIDE_K.spd,rest:kTab0.rest*WIDE_K.restMul,tele:kTab0.tele*WIDE_K.tele};let kTab=kTab0;
  const WIDE_AT=720,W_MAX=1700,spawnX=i=>wide?W/2+(i?1:-1)*clamp(W*.3,250,380):W*(i?.7:.3),spawnY=()=>wide?B.hy+150:500;
  const B={x:210,y:-260,hx:210,hy:150,hp:Math.round(boss.hp*hpScale),max:Math.round(boss.hp*hpScale),phase:0,flash:0,tw:null,deadR:0,hidden:0,pose:'idle',poseT:0,open:0,glow:0,lookX:0,lookY:0,drawX:210,drawY:-260,shown:0,chip:1,sq:1};
  const P=[0,1].map(i=>({i,x:i?W*.7:W*.3,y:500,tx:i?W*.7:W*.3,ty:500,aim:-Math.PI/2,hp:3,inv:0,ghost:0,out:false,gx:0,gy:0,meter:0,fire:0,sup:0,supT:0,dmg:0,parries:0,kills:0,key:{u:0,d:0,l:0,r:0},parryT:0,vx:0,hitFlash:0,barrage:0}));
  const bullets=[],pshots=[],minions=[],hazards=[],warns=[],fx=[],runs=[],says={text:'',t:0};
  let T=0,modeT=0,mode='intro',timeScale=1,hitstop=0,shakeMag=0,flashWhite=0,lastSay=-99,bannerQ=[],sigShown=[false,false,false],finished=false,duration=0,musicT=0,musicStep=0,sfxT={},scene=null,sceneKey='',koDone=false,koBoom=0,directorRun=null,intro={skip:false};
- const log={dmg:0};
+ const log={dmg:0,hits:[0,0],src:{}};
  // ---- boss face (portrait when the unlock character exists in the roster; emoji plate otherwise)
  const hasChar=CHARACTERS.some(ch2=>ch2.id===boss.unlockId),faceImgs={};
  if(hasChar)try{queueEntityArt(entityArtSpec('character',CHARACTERS.find(ch2=>ch2.id===boss.unlockId)));}catch{}
@@ -56,7 +58,7 @@ async function bossfight(s){
  // ---- layout (portrait field 420-560 x 640, centred and scaled to the canvas)
  function layout(){const cw2=s.W,ch2=s.H;if(cw2===cw&&ch2===ch)return;cw=cw2;ch=ch2;const nw=clamp(Math.round(H*cw/ch),420,W_MAX),old=W;
   if(nw!==old&&old){const r=nw/old;for(const g of [bullets,pshots,minions,hazards,warns,fx])for(const e of g){if(e.x!==undefined)e.x*=r;if(e.tx!==undefined&&g===minions)e.tx*=r;}for(const p of P){p.x*=r;p.tx*=r;p.gx*=r;}B.x*=r;B.hx=nw/2;}
-  W=nw;k=Math.min(cw/W,ch/H);ox=(cw-W*k)/2;oy=(ch-H*k)/2;const wasWide=wide;wide=W>=WIDE_AT;YMIN=wide?90:260;B.hy=wide?185:150;bs=(wide?1.25:clamp(W/420,1,1.15))*(look.size||1)*.97;B.hx=W/2;if(mode==='intro'||!B.tw)B.x=B.x||B.hx;
+  W=nw;k=Math.min(cw/W,ch/H);ox=(cw-W*k)/2;oy=(ch-H*k)/2;const wasWide=wide;wide=W>=WIDE_AT;kTab=wide?kWide:kTab0;YMIN=wide?90:260;B.hy=wide?185:150;bs=(wide?1.25:clamp(W/420,1,1.15))*(look.size||1)*.97;B.hx=W/2;if(mode==='intro'||!B.tw)B.x=B.x||B.hx;
   if(!old||mode==='intro'||wasWide!==wide)for(const p of P)if(p.hp>0){p.x=p.tx=spawnX(p.i);p.y=p.ty=spawnY();}
   for(const p of P){p.ty=clamp(p.ty,YMIN,580);p.y=clamp(p.y,YMIN,580);}
   scene=makeScene(boss.scene,pal,cw,ch);sprites.clear();bossBuf=null;vignette=null;}
@@ -96,10 +98,10 @@ async function bossfight(s){
  const text=(px,py,str,col='#fff',size=15,life=.9)=>fx.push({k:'t',x:px,y:py,life,max:life,col,str,size});
  function banner(str,sub,life=2,col='#ffd23c'){bannerQ.push({str,sub,t:0,life,col});}
  // ---- F: API handed to attacks
- const F={get W(){return W;},H,k:kTab,pal,boss:B,rand:()=>s.random(),
+ const F={get W(){return W;},get wide(){return wide;},H,get k(){return kTab;},pal,boss:B,rand:()=>s.random(),
   alive,target(){const a=alive();return a.length?a[Math.floor(F.rand()*a.length)]:{x:W/2,y:480};},
   nearest(px,py){let best=null,bd=1e9;for(const p of P){if(p.hp<=0)continue;const d=(p.x-px)**2+(p.y-py)**2;if(d<bd){bd=d;best=p;}}return best||{x:W/2,y:480};},
-  aim:(a,b)=>Math.atan2(b.y-a.y,b.x-a.x),
+  aim:(a,b)=>Math.atan2(b.y-a.y,b.x-a.x),downs(m){if(!wide)return [Math.PI/2];const a=alive();return a.length?a.map(p=>F.aim(m,p)):[Math.PI/2];},targets(){if(!wide)return [F.target()];const a=alive();return a.length?a:[F.target()];},
   muzzle(name){const m=body.muz[name]||body.muz.center;return{x:B.drawX+m[0]*bs,y:B.drawY+m[1]*bs};},
   bullet(o){if(bullets.length>460)return o;const b=Object.assign({x:0,y:0,vx:0,vy:0,r:7,kind:'orb',age:0},o);if(o.pink)b.r=Math.max(b.r,o.reflect?o.r||20:8);bullets.push(b);return b;},
   shot(px,py,a,sp,o){return F.bullet(Object.assign({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp},o));},
@@ -130,9 +132,9 @@ async function bossfight(s){
   for(const p of P)if(p.hp<=0&&p.out){p.out=false;p.hp=1;p.inv=3;p.ghost=0;p.x=p.tx=spawnX(p.i);p.y=p.ty=spawnY();text(p.x,p.y-30,'SECOND WIND!','#7dffb0',16,1.4);}
   banner(`PHASE ${n+1}!`,boss.phaseLines[n]||'',2.3,'#ff4b3a');}
  function endPhase(){mode='fight';modeT=0;startRun(director(),true);}
- function hitBoss(dmg,px,py,owner,super_){if(mode!=='fight'||B.hidden>0||B.shown<1)return false;B.hp-=dmg;B.flash=.07;B.chip=Math.max(B.chip,(B.hp+dmg)/B.max);
+ function hitBoss(dmg,px,py,owner,super_){if(mode!=='fight'||B.hidden>0||B.shown<1)return false;if(wide&&owner>=0)dmg*=WIDE_K.dmg;B.hp-=dmg;B.flash=.07;B.chip=Math.max(B.chip,(B.hp+dmg)/B.max);
   if(owner>=0){const p=P[owner];p.dmg+=dmg;if(!super_)p.meter=Math.min(100,p.meter+.42*dmg);}log.dmg+=dmg;
-  if(B.hp<=0){B.hp=0;startKO();return true;}
+  if(s.debug.holdPhase)B.hp=Math.max(B.hp,B.phase<2?thresholds[B.phase]+1:1);if(B.hp<=0){B.hp=0;startKO();return true;}
   if(B.phase<2&&B.hp<=thresholds[B.phase]){B.hp=thresholds[B.phase];startPhase(B.phase+1);}return true;}
  function startKO(){mode='ko';modeT=0;timeScale=.35;runs.length=0;directorRun=null;B.deadR=0;bullets.length=0;hazards.length=0;warns.length=0;for(const m of minions)burst(m.x,m.y,'#ffd23c',8);minions.length=0;for(const p of P)p.inv=99;duration=Math.round(T-introEnd);shake(18);flashWhite=.6;sound('win');vibrate(120);for(const p of P)s.react(p.i,'win',3);}
  function startLose(){if(mode==='ko'||mode==='lose')return;mode='lose';modeT=0;timeScale=.5;runs.length=0;directorRun=null;duration=Math.round(T-introEnd);sound('lose');vibrate(200);for(const p of P)s.react(p.i,'sad',3);}
@@ -142,7 +144,7 @@ async function bossfight(s){
   s.cooperative=true;s.shared=true;s.teamResult={kind:'boss',won,tied:false,humanTotal:sc[0]+sc[1],cpuTotal:0,cpuScores:[0,0],duration:t,bossId:boss.id};
   s.setScores(sc);s.finish(sc,won?`${boss.name} is down in ${t}s! ${P[0].parries+P[1].parries} parries, ${sc[0]+sc[1]} team points.`:`${boss.name} wins this round. Team points: ${sc[0]+sc[1]}.`);}
  // ---- player actions
- function hurt(p){if(p.hp<=0||p.inv>0||p.sup>0||mode!=='fight')return false;p.hp--;p.inv=1.9;shake(7);sfx('hurt');vibrate(40);burst(p.x,p.y,'#fff',12,200,.5);ring(p.x,p.y,'#ff4b3a',44);s.react(p.i,'sad');
+ function hurt(p,src){if(p.hp<=0||p.inv>0||p.sup>0||mode!=='fight')return false;p.hp--;log.hits[p.i]++;log.src[src||'?']=(log.src[src||'?']||0)+1;if(s.debug.immortal&&p.hp<=0)p.hp=1;p.inv=1.9;shake(7);sfx('hurt');vibrate(40);burst(p.x,p.y,'#fff',12,200,.5);ring(p.x,p.y,'#ff4b3a',44);s.react(p.i,'sad');
   if(p.hp<=0){p.ghost=5;p.out=false;p.gx=p.x;p.gy=p.y;p.sup=0;text(p.x,p.y-30,'DOWN!','#ff5a5a',16,1.2);if(!alive().length)startLose();}return true;}
  function revive(p,by){p.hp=2;p.inv=2.4;p.ghost=0;p.out=false;p.x=p.tx=clamp(p.gx,22,W-22);p.y=p.ty=clamp(p.gy,YMIN,580);burst(p.x,p.y,'#7dffb0',22,220,.7,3.5);ring(p.x,p.y,'#7dffb0',70,.6);text(p.x,p.y-34,'REVIVED!','#7dffb0',17,1.3);sound('unlock');s.react(p.i,'happy');s.react(by.i,'happy');}
  function act(i,onlySuper){const p=P[i];if(p.hp<=0||finished)return;if(mode==='intro'){if(T>1.6&&!intro.skip&&modeT<3.3){intro.skip=true;modeT=3.3;}return;}if(mode!=='fight'&&mode!=='phase')return;
@@ -166,7 +168,7 @@ async function bossfight(s){
   if(b)P[b[0]].key[b[1]]=type==='keydown'?1:0;else if(type==='keydown'&&!ev.repeat)act(key==='enter'?1:0,false);});
  s.resetOnPause?.(()=>{for(const p of P)p.key={u:0,d:0,l:0,r:0};touch.fill(null);});
  s.hint('Drag on your half of the screen to fly (the plane follows your finger movement). You auto-fire; on wide screens you start on your side of the boss and your guns aim at it. TAP (or tap with a second finger) while touching a PINK bullet to PARRY it: brief invulnerability and super meter. Tap or flick up with a full meter for your SUPER. If your partner is a bubble, fly into it and tap to revive within 5 seconds. Keys: P1 WASD + Space, P2 arrows + Enter.');
- // ---- autopilot (debug / tests): s.debug.autopilot=[true,true]
+ // ---- autopilot (debug / tests): s.debug.autopilot=[true,true] (a number = reaction time in s), s.debug.steps (sim speed), s.debug.immortal, s.debug.hits
  const DIRS=[[0,0],[1,0],[-1,0],[0,1],[0,-1],[.7,.7],[-.7,.7],[.7,-.7],[-.7,-.7]];
  function danger(qx,qy,look){let d=0;for(const b of bullets){if(b.friendly)continue;const bx=b.x+b.vx*look,by=b.y+b.vy*look,r=PR+b.r+7,dd=(bx-qx)**2+(by-qy)**2;if(dd<r*r)d+=1000;else if(dd<5000)d+=200/(dd+1);}
   for(const m of minions){if(m.hidden)continue;const dd=(m.x-qx)**2+(m.y-qy)**2,r=m.r+PR+14;if(dd<r*r)d+=800;}
@@ -188,13 +190,14 @@ async function bossfight(s){
  function bossCircles(){const o=[];for(const [cx,cy,r] of body.hit)o.push([B.drawX+cx*bs,B.drawY+cy*bs,r*bs]);return o;}
  // ---- update
  function updatePlayers(dt){for(const p of P){const i=p.i;p.inv=Math.max(0,p.inv-dt);p.parryT=Math.max(0,p.parryT-dt);
-   if(s.debug.autopilot&&s.debug.autopilot[i]&&mode==='fight')autopilot(p);
+   const ap=s.debug.autopilot&&s.debug.autopilot[i];if(ap&&mode==='fight'){if(typeof ap!=='number')autopilot(p);else if((p.apT=(p.apT||0)-dt)<=0){p.apT=ap;autopilot(p);}}
    if(p.hp<=0){if(p.ghost>0){p.ghost-=dt;const o=P[1-i];if(o.hp>0){const d=Math.hypot(o.x-p.gx,o.y-p.gy)||1,sp=Math.min(d,46*dt);p.gx+=(o.x-p.gx)/d*sp;p.gy+=(o.y-p.gy)/d*sp;}p.gy-=8*dt;p.gx=clamp(p.gx,24,W-24);p.gy=clamp(p.gy,YMIN-20,590);
      if(p.ghost<=0){p.ghost=0;p.out=true;burst(p.gx,p.gy,'#bfe0ff',16,140,.6);text(p.gx,p.gy-20,'POP...','#bfe0ff',14,1);}}continue;}
    const kx=p.key.r-p.key.l,ky=p.key.d-p.key.u;if(kx||ky){const l=Math.hypot(kx,ky);p.tx=clamp(p.tx+kx/l*330*dt,22,W-22);p.ty=clamp(p.ty+ky/l*330*dt,YMIN,580);}
    const dx=p.tx-p.x,dy=p.ty-p.y,l=Math.hypot(dx,dy),mx=Math.min(l,Math.max(l*dt*16,40*dt),700*dt);if(l>.01){p.x+=dx/l*mx;p.y+=dy/l*mx;}p.vx+=((dx)-p.vx)*Math.min(1,dt*10);
    if(wide){if(B.hidden<=0&&B.deadR<=0&&B.shown>=1)for(const [cx,cy,r] of bossCircles()){const ex=p.x-cx,ey=p.y-cy,d=Math.hypot(ex,ey)||1,rr=r+26;if(d<rr){p.x=clamp(cx+ex/d*rr,22,W-22);p.y=clamp(cy+ey/d*rr,YMIN,580);p.tx=p.x;p.ty=p.y;}}
-    const want=Math.atan2(B.drawY+20-p.y,B.drawX-p.x);let da=want-p.aim;da=Math.atan2(Math.sin(da),Math.cos(da));p.aim+=da*Math.min(1,dt*12);}else p.aim=-Math.PI/2;
+    let ax=B.drawX,ay=B.drawY+20,ad=Math.hypot(ax-p.x,ay-p.y)*.8;for(const m of minions){if(m.hidden||m.dead)continue;const d=Math.hypot(m.x-p.x,m.y-p.y);if(d<ad&&d<420){ad=d;ax=m.x;ay=m.y;}}
+    const want=Math.atan2(ay-p.y,ax-p.x);let da=want-p.aim;da=Math.atan2(Math.sin(da),Math.cos(da));p.aim+=da*Math.min(1,dt*12);}else p.aim=-Math.PI/2;
    if(p.sup>0){p.sup-=dt;superTick(p,dt);}
    p.fire-=dt;if(p.fire<=0&&(mode==='fight'||mode==='phase')){p.fire=.15;sfx('shot');const ca=Math.cos(p.aim),sa=Math.sin(p.aim);for(const ox2 of [-7,7])pshots.push({x:p.x-sa*ox2+ca*18,y:p.y+ca*ox2+sa*18,vx:ca*900,vy:sa*900,o:i,dmg:1,r:4});}}}
  function superTick(p,dt){if(p.i===0){p.beamT=(p.beamT||0)-dt;if(p.beamT<=0){p.beamT=.1;const ca=Math.cos(p.aim),sa=Math.sin(p.aim),off=(qx,qy)=>Math.abs((qx-p.x)*sa-(qy-p.y)*ca),ahead=(qx,qy)=>(qx-p.x)*ca+(qy-p.y)*sa>0;
@@ -220,7 +223,7 @@ async function bossfight(s){
    const out=(b.keep&&b.age<3)?false:(b.x<-70||b.x>W+70||b.y<-90||b.y>H+70);
    if(out||b.age>(b.life||14)){bullets.splice(i,1);continue;}
    if(b.friendly)continue;
-   for(const p of P){if(p.hp<=0)continue;const r=PR+b.r*.82;if((b.x-p.x)**2+(b.y-p.y)**2<r*r){if(hurt(p)){burst(b.x,b.y,'#fff',4,100,.3,2);bullets.splice(i,1);}break;}}}}
+   for(const p of P){if(p.hp<=0)continue;const r=PR+b.r*.82;if((b.x-p.x)**2+(b.y-p.y)**2<r*r){if(hurt(p,'bullet:'+b.kind)){burst(b.x,b.y,'#fff',4,100,.3,2);bullets.splice(i,1);}break;}}}}
  function updateHazards(dt){for(let i=hazards.length-1;i>=0;i--){const h=hazards[i];h.age+=dt;const act2=h.age>=h.tele;
    if(h.follow){const mz=F.muzzle('center');h.cx=mz.x;h.cy=mz.y;}else{h.cx=h.x;h.cy=h.y;}
    if(act2){if(h.vx)h.x+=h.vx*dt;if(h.vy)h.y+=h.vy*dt;if(h.da)h.a+=h.da*dt;
@@ -229,13 +232,13 @@ async function bossfight(s){
     if(h.shape!=='rect'&&!h.pend&&h.follow){}}
    else if(h.tween){h.x=h.tween.x;h.y=h.tween.y;}
    if(h.age>h.tele+h.dur){hazards.splice(i,1);continue;}
-   if(act2&&mode==='fight'&&h.age-h.tele>.05)for(const p of P){if(p.hp>0&&hazHit(h,p.x,p.y,PR))hurt(p);}}}
+   if(act2&&mode==='fight'&&h.age-h.tele>.05)for(const p of P){if(p.hp>0&&hazHit(h,p.x,p.y,PR))hurt(p,'hazard:'+(h.kind||h.shape));}}}
  function updateMinions(dt){for(let i=minions.length-1;i>=0;i--){const m=minions[i];m.age+=dt;m.flash=Math.max(0,m.flash-dt);if(m.step)m.step(F,m,dt);
    if(m.dead||m.hp<=0){const was=m.dead||!m.expire;minions.splice(i,1);if(m.expire)continue;burst(m.x,m.y,'#ffd23c',12,170,.55,3);ring(m.x,m.y,'#ffd23c',m.r*2.6,.35);sfx('kill');
     if(m.killer!==undefined&&m.killer>=0){const p=P[m.killer];p.kills++;p.meter=Math.min(100,p.meter+6);}
     if(m.onDie)try{m.onDie(F,m);}catch(e){console.error(e);}continue;}
    if(m.y>H+70||m.x<-80||m.x>W+80||m.y<-100){minions.splice(i,1);continue;}
-   if(!m.hidden&&mode==='fight')for(const p of P)if(p.hp>0&&Math.hypot(p.x-m.x,p.y-m.y)<m.r+PR+2){hurt(p);}}}
+   if(!m.hidden&&mode==='fight')for(const p of P)if(p.hp>0&&Math.hypot(p.x-m.x,p.y-m.y)<m.r+PR+2){hurt(p,'minion:'+m.kind);}}}
  function updateBoss(dt){B.shown=Math.min(1,B.shown+dt*2);B.flash=Math.max(0,B.flash-dt);B.chip=Math.max(B.hp/B.max,B.chip-dt*.35);B.hidden=Math.max(0,B.hidden-dt);
   if(B.tw){B.tw.t+=dt;const u=Math.min(1,B.tw.t/B.tw.dur),e=B.tw.e(u);B.x=B.tw.x0+(B.tw.x1-B.tw.x0)*e;B.y=B.tw.y0+(B.tw.y1-B.tw.y0)*e;if(u>=1)B.tw=null;}
   B.poseT-=dt;if(B.poseT<=0)B.pose='idle';
@@ -243,7 +246,7 @@ async function bossfight(s){
   const t0=F.nearest(B.x,B.y),lx=clamp((t0.x-B.x)/200,-1,1),ly=clamp((t0.y-B.y)/320,-1,1);B.lookX+=(lx-B.lookX)*Math.min(1,dt*6);B.lookY+=(ly-B.lookY)*Math.min(1,dt*6);
   const bob=B.tw||B.pose==='dive'||B.deadR>0?0:1;B.drawX=B.x+Math.sin(T*.9)*10*bob+(mode==='phase'||mode==='ko'?(Math.random()-.5)*8:0);B.drawY=B.y+Math.sin(T*1.7)*5*bob+(mode==='phase'||mode==='ko'?(Math.random()-.5)*6:0);
   B.sq=B.pose==='windup'?1+Math.sin(T*18)*.012:B.pose==='roar'?1.05+Math.sin(T*30)*.02:1;
-  if(B.deadR>0&&mode==='fight')for(const p of P)if(p.hp>0&&Math.hypot(p.x-B.drawX,p.y-B.drawY)<B.deadR+PR)hurt(p);}
+  if(B.deadR>0&&mode==='fight')for(const p of P)if(p.hp>0&&Math.hypot(p.x-B.drawX,p.y-B.drawY)<B.deadR+PR)hurt(p,'body');}
  function updateFx(dt){for(let i=fx.length-1;i>=0;i--){const e=fx[i];e.life-=dt;if(e.life<=0){fx.splice(i,1);continue;}if(e.k==='p'){e.x+=e.vx*dt;e.y+=e.vy*dt;e.vx*=1-dt*2.2;e.vy*=1-dt*2.2;e.vy+=(e.g||0)*dt;}else if(e.k==='t')e.y-=22*dt;}
   for(const w of warns){w.t+=dt;if(w.follow&&w.t<(w.freeze??99)&&w.follow.hp>0){w.x=w.follow.x;w.y=w.follow.y;}}for(let i=warns.length-1;i>=0;i--)if(warns[i].t>=warns[i].dur)warns.splice(i,1);
   says.t=Math.max(0,says.t-dt);for(const b of bannerQ)b.t+=dt;while(bannerQ.length&&bannerQ[0].t>bannerQ[0].life)bannerQ.shift();}
@@ -384,10 +387,10 @@ async function bossfight(s){
   setBossHp(v){B.hp=Math.max(1,Math.min(B.max,v));if(B.phase<2&&B.hp<=thresholds[B.phase]&&mode==='fight')startPhase(B.phase+1);},
   skipIntro(){if(mode==='intro'){modeT=Math.max(modeT,introEnd);}},
   killBoss(){if(mode==='fight'){B.hp=1;hitBoss(5,B.x,B.y,0,true);}},killPlayers(){for(const p of P){p.inv=0;p.sup=0;p.hp=1;hurt(p);}},
-  F,act,hurt,get duration(){return duration;}};
+  F,act,hurt,get duration(){return duration;},get hits(){return log.hits;},get hitSrc(){return log.src;},get wide(){return wide;},steps:1,immortal:false,nodraw:false,holdPhase:false,get dmg(){return P[0].dmg+P[1].dmg;}};
  let msAvg=0;s.debug.ms=()=>msAvg;
- s.frame(dt0=>{layout();if(finished)return;const t0=performance.now();if(hitstop>0){hitstop-=dt0;draw();return;}const dt=dt0*timeScale;update(dt0,dt);s.setScores(P.map(p=>Math.round(p.dmg+p.parries*50+p.kills*10)));
+ s.frame(dt0=>{layout();if(finished)return;const t0=performance.now();if(hitstop>0){hitstop-=dt0;draw();return;}for(let j=0,n=Math.max(1,s.debug.steps|0);j<n&&!finished;j++)update(dt0,dt0*timeScale);s.setScores(P.map(p=>Math.round(p.dmg+p.parries*50+p.kills*10)));
   const pct=Math.round(B.hp/B.max*100);s.status(`BOSS FIGHT · ${boss.name} · phase ${B.phase+1}/3 · ${pct}% HP · `+P.map((p,i)=>s.players[i].name+' '+(p.hp>0?'♥'.repeat(p.hp):p.ghost>0?'👻 '+Math.ceil(p.ghost)+'s':'💤')).join(' / '));
-  if(finished)return;draw();msAvg+=(performance.now()-t0-msAvg)*.05;});
+  if(finished||s.debug.nodraw)return;draw();msAvg+=(performance.now()-t0-msAvg)*.05;});
 }
 Object.assign(exports,{bossfight});

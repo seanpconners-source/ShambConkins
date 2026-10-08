@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.56.2
+
+**Wide-screen boss fights are as hard as portrait ones.** The new wide arena turned out about 28% easier (a simulated
+pair took 6.9 hits a minute instead of 9.6), so bosses now fight the whole field: aimed volleys, fans, lasers,
+flame breath and waves go after both players on their own flanks, the piranha trapdoors and Riddler's lanes come in
+narrower panels with a safe spot near each of you, falling walls drop from the top with a gap for each player, the
+wrecking ball's chain is long enough to reach you, and drones hover where they can bother you. Wide arenas also
+attack a little faster and denser. Your guns lock onto a nearby minion before the boss, so drones get shot down.
+Measured across all 36 bosses, wide and landscape fights now land within about 7% of portrait in hits taken and
+damage dealt. Phones held upright are unchanged.
+
 ## v0.56.1
 
 **Boss fights fill the screen.** On desktops, tablets in landscape and phones held sideways the arena now stretches to

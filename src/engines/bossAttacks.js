@@ -1,7 +1,9 @@
 // BOSS FIGHT attack library. Every attack is a generator function(F,p): `yield seconds` waits (pause aware).
 // F is the fight API supplied by bossFight.js (see makeF there):
 //   F.W/F.H arena size, F.k tier table {dens,spd,rest,tele}, F.rand(), F.pal, F.boss {x,y,hx,hy,deadR}
-//   F.alive() F.target() F.muzzle(name) F.aim(from,to) F.bullet(o) F.shot(x,y,ang,speed,o) F.minion(o)
+//   F.alive() F.target() F.muzzle(name) F.aim(from,to) F.downs(from) (directions 'down' toward the players: [straight down] in
+//   portrait, one per living player in the wide arena, where they fly on either side of the boss) F.targets() (one random player in portrait, every
+//   living player in the wide arena, where the players are too far apart for one volley to threaten both) F.bullet(o) F.shot(x,y,ang,speed,o) F.minion(o)
 //   F.hazard(o) F.warn(o) F.pose(name,sec) F.move(x,y,sec) F.vanish(sec) F.shake(m) F.say(text) F.sfx(n) F.clear()
 // Hazard shapes: rect{x,y,w,h} circle{x,y,r} beam{x,y,a,w,len,da,wedge} with tele (warning s), dur (active s),
 // vx/vy, tween{x,y,t}, follow (origin tracks the boss), pend{len,amp,period}.
@@ -9,6 +11,11 @@
 const TAU=Math.PI*2,PI=Math.PI;
 const K={1:{dens:.8,spd:.92,rest:1.25,tele:1.15},2:{dens:1,spd:1,rest:1,tele:1},3:{dens:1.2,spd:1.08,rest:.85,tele:.95},4:{dens:1.4,spd:1.16,rest:.72,tele:.9}};
 const cnt=(F,n)=>Math.max(1,Math.round(n*F.k.dens));
+// wide arena: one safe lane/gap per living player, within `reach` lanes of them (portrait callers keep their own pick)
+const nearLane=(F,x,lanes,reach)=>clampN(Math.floor(clampN(x,0,F.W-1)/(F.W/lanes))+Math.round((F.rand()*2-1)*reach),0,lanes-1);
+// a full-width wall with holes at gxs (each gap wide), as rect hazards sharing the options o
+function gapWall(F,y,gxs,gap,o){let x0=0;for(const g of [...gxs].sort((a,b)=>a-b)){const x1=g-gap/2;if(x1-x0>4)F.hazard(Object.assign({shape:'rect',x:(x0+x1)/2,y,w:x1-x0},o));x0=Math.max(x0,g+gap/2);}
+ if(F.W-x0>4)F.hazard(Object.assign({shape:'rect',x:(x0+F.W)/2,y,w:F.W-x0},o));}
 const tl=(F,t)=>Math.max(.8,t*F.k.tele);
 const pk=(F,p,i)=>p.pink>=1?(i>0&&i%Math.round(p.pink)===0):F.rand()<(p.pink||0);
 const clampN=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -16,14 +23,15 @@ const D=(p,d)=>Object.assign({},d,p);
 const pinkOpts=(o,pink)=>pink?Object.assign({},o,{pink:true,kind:'orb'}):o;
 
 function* aimed(F,pp){const p=D(pp,{n:3,rounds:3,gap:.45,pause:.5,speed:250,spread:.2,src:'mouth',kind:'orb'});const n=cnt(F,p.n);
- for(let r=0;r<p.rounds;r++){const m=F.muzzle(p.src),t=F.target(),a=F.aim(m,t);F.pose('fire',.25);F.sfx('shot');const pinkIdx=F.rand()<(p.pink||0)?Math.floor(F.rand()*n):-1;
-  for(let j=0;j<n;j++)F.shot(m.x,m.y,a+(j-(n-1)/2)*p.spread,p.speed*F.k.spd,pinkOpts({kind:p.kind,col:p.col},j===pinkIdx));
+ for(let r=0;r<p.rounds;r++){const m=F.muzzle(p.src);F.pose('fire',.25);F.sfx('shot');
+  for(const t of F.targets()){const a=F.aim(m,t),pinkIdx=F.rand()<(p.pink||0)?Math.floor(F.rand()*n):-1;
+   for(let j=0;j<n;j++)F.shot(m.x,m.y,a+(j-(n-1)/2)*p.spread,p.speed*F.k.spd,pinkOpts({kind:p.kind,col:p.col},j===pinkIdx));}
   yield p.gap;}
  yield p.pause;}
 function* fan(F,pp){const p=D(pp,{count:7,arc:1.2,rounds:3,gap:.7,speed:230,sweep:0,src:'mouth',kind:'orb',aim:true});const n=cnt(F,p.count);
- for(let r=0;r<p.rounds;r++){const m=F.muzzle(p.src);const base=p.aim?F.aim(m,F.target()):PI/2;F.pose('fire',.3);F.sfx('shot');const off=(r%2?.5:0)*p.arc/(n-1||1)+p.sweep*r;
-  const pinkIdx=F.rand()<.3?Math.floor(F.rand()*n):-1;
-  for(let j=0;j<n;j++)F.shot(m.x,m.y,base+off+(j-(n-1)/2)*p.arc/(n-1||1),p.speed*F.k.spd,pinkOpts({kind:p.kind,col:p.col},j===pinkIdx));
+ for(let r=0;r<p.rounds;r++){const m=F.muzzle(p.src);F.pose('fire',.3);F.sfx('shot');const off=(r%2?.5:0)*p.arc/(n-1||1)+p.sweep*r;
+  for(const base of p.aim?F.targets().map(t=>F.aim(m,t)):F.downs(m)){const pinkIdx=F.rand()<.3?Math.floor(F.rand()*n):-1;
+   for(let j=0;j<n;j++)F.shot(m.x,m.y,base+off+(j-(n-1)/2)*p.arc/(n-1||1),p.speed*F.k.spd,pinkOpts({kind:p.kind,col:p.col},j===pinkIdx));}
   yield p.gap;}
  yield .4;}
 function* spiral(F,pp){const p=D(pp,{arms:2,dur:4,rate:14,speed:200,turn:2.3,dir:1,src:'mouth',kind:'orb',pink:0});const step=1/(p.rate*F.k.dens),m=F.muzzle(p.src);let a=F.rand()*TAU,i=0;F.pose('fire',p.dur);
@@ -35,9 +43,9 @@ function* rain(F,pp){const p=D(pp,{dur:4,rate:7,speed:230,kind:'orb',bias:.5});c
   F.bullet(Object.assign({x,y:-12,vx:0,vy:p.speed*F.k.spd*(.85+F.rand()*.3),kind:p.kind,col:p.col},i%11===10?{pink:true,kind:'orb'}:{}));i++;yield step;}
  yield .5;}
 function* laser(F,pp){const p=D(pp,{count:1,sweep:1.7,arc:1.15,w:26,tele:1.1,src:'eye'});const tele=tl(F,p.tele);let dir=F.rand()<.5?1:-1;
- for(let i=0;i<p.count;i++){const m=F.muzzle(p.src);const mid=PI/2+(dir>0?.2:-.2)*0;let a0=PI/2-dir*p.arc/2-(dir>0?.0:0),a1=PI/2+dir*p.arc/2;
+ for(let i=0;i<p.count;i++){const m=F.muzzle(p.src);
   F.pose('windup',tele);F.sfx('charge');
-  F.hazard({shape:'beam',x:m.x,y:m.y,a:a0,da:(a1-a0)/p.sweep,w:p.w,len:1400,tele,dur:p.sweep,wedge:[Math.min(a0,a1),Math.max(a0,a1)],col:F.pal[2]});
+  for(const dn of F.downs(m)){const a0=dn-dir*p.arc/2,a1=dn+dir*p.arc/2;F.hazard({shape:'beam',x:m.x,y:m.y,a:a0,da:(a1-a0)/p.sweep,w:p.w,len:1400,tele,dur:p.sweep,wedge:[Math.min(a0,a1),Math.max(a0,a1)],col:F.pal[2]});}
   yield tele+p.sweep+.3;dir=-dir;}
  yield .4;}
 function* dive(F,pp){const p=D(pp,{count:2,tele:.95,deadR:76,shock:true});const tele=tl(F,p.tele),b=F.boss;
@@ -49,7 +57,7 @@ function* dive(F,pp){const p=D(pp,{count:2,tele:.95,deadR:76,shock:true});const 
   yield .35;b.deadR=0;F.move(b.hx,b.hy,1.1,'inout');yield 1.2;}
  yield .3;}
 function* minions(F,pp){const p=D(pp,{n:3,kind:'drone',hp:5,shoot:2.4,gap:.35});if(F.minionCount()>6)return;const n=cnt(F,p.n);const m=F.muzzle('center');
- for(let i=0;i<n;i++){const slotX=F.W*(i+1)/(n+1),slotY=250+((i%2)?0:36);
+ for(let i=0;i<n;i++){const slotX=F.W*(i+1)/(n+1),slotY=(F.wide?150:250)+((i%2)?0:F.wide?28:36);
   F.minion({x:m.x,y:m.y,r:15,hp:p.hp,kind:p.kind,shootEvery:p.shoot*(.9+F.rand()*.3)+.3,timer:F.rand(),slot:{x:slotX,y:slotY},step:hoverStep});F.sfx('spawn');yield p.gap;}
  yield 2.5;}
 function hoverStep(F,m,dt){m.sx=m.sx===undefined?F.rand()*6:m.sx;const s=m.slot;m.x+=(s.x+Math.sin(m.age*1.4+m.sx)*26-m.x)*Math.min(1,dt*3);m.y+=(s.y+Math.sin(m.age*2+m.sx)*10-m.y)*Math.min(1,dt*3);
@@ -70,13 +78,12 @@ function* edge(F,pp){const p=D(pp,{sides:'alt',tele:1.15,dur:2.1,w:64});const te
  if(p.sides==='both'){mk(-1);mk(1);yield tele+p.dur+.4;}
  else if(p.sides==='alt'){const s=F.rand()<.5?-1:1;mk(s);yield tele+p.dur*.7;mk(-s);yield tele+p.dur+.3;}
  else{mk(p.sides==='left'?-1:1);yield tele+p.dur+.4;}}
-function* gapwall(F,pp){const p=D(pp,{rows:4,gap:132,speed:185,step:1.05,h:22});const gap=p.gap*(F.k.dens>1.3?.92:1),sp=p.speed*F.k.spd;let gx=F.W/2;const t0=F.target();gx=clampN(t0.x,gap/2+10,F.W-gap/2-10);
- for(let r=0;r<p.rows;r++){gx=clampN(gx+(F.rand()-.5)*260,gap/2+10,F.W-gap/2-10);const y=F.boss.hy+60,lead=.7;
-  F.warn({shape:'rect',x:gx,y:F.H/2+30,w:gap,h:F.H,dur:lead+(F.H-y)/sp,col:'#5dff9a',mark:'safe',alpha:.14});
+function* gapwall(F,pp){const p=D(pp,{rows:4,gap:132,speed:185,step:1.05,h:22});const gap=p.gap*(F.k.dens>1.3?.92:1),sp=p.speed*F.k.spd,cl=x=>clampN(x,gap/2+10,F.W-gap/2-10);let gxs=(F.wide?F.alive():[F.target()]).map(t=>cl(t.x));
+ for(let r=0;r<p.rows;r++){gxs=gxs.map(g=>cl(g+(F.rand()-.5)*260));const y=F.wide?60:F.boss.hy+60,lead=.7;
+  for(const gx of gxs)F.warn({shape:'rect',x:gx,y:F.H/2+30,w:gap,h:F.H,dur:lead+(F.H-y)/sp,col:'#5dff9a',mark:'safe',alpha:.14});
   yield lead;F.sfx('wall');
-  F.hazard({shape:'rect',x:(gx-gap/2)/2,y,w:gx-gap/2,h:p.h,vy:sp,tele:0,dur:(F.H-y)/sp+.5,col:F.pal[2],kind:'wall'});
-  F.hazard({shape:'rect',x:(gx+gap/2+F.W)/2,y,w:F.W-gx-gap/2,h:p.h,vy:sp,tele:0,dur:(F.H-y)/sp+.5,col:F.pal[2],kind:'wall'});
-  if(r%3===1)F.bullet({x:gx,y,vx:0,vy:sp,pink:true,kind:'orb',r:8});
+  gapWall(F,y,gxs,gap,{h:p.h,vy:sp,tele:0,dur:(F.H-y)/sp+.5,col:F.pal[2],kind:'wall'});
+  if(r%3===1)F.bullet({x:gxs[0],y,vx:0,vy:sp,pink:true,kind:'orb',r:8});
   yield p.step-lead;}
  yield 1.2;}
 function* strike(F,pp){const p=D(pp,{n:2,rounds:2,gap:.5,tele:1.0,r:44,puddle:0,col:null});const tele=tl(F,p.tele);const n=cnt(F,p.n);
@@ -88,7 +95,7 @@ function* strike(F,pp){const p=D(pp,{n:2,rounds:2,gap:.5,tele:1.0,r:44,puddle:0,
   yield p.gap+.5;}
  yield .4;}
 function* wave(F,pp){const p=D(pp,{dur:4,rate:11,speed:220,amp:.85,freq:1.9,kind:'orb',src:'mouth'});const step=1/(p.rate*F.k.dens);let i=0;F.pose('fire',p.dur);
- for(let t=0;t<p.dur;t+=step){const m=F.muzzle(p.src);F.shot(m.x,m.y,PI/2+Math.sin(t*p.freq)*p.amp,p.speed*F.k.spd,i%12===11?{pink:true,kind:'orb'}:{kind:p.kind,col:p.col});i++;yield step;}
+ const dns=F.downs(F.muzzle(p.src));for(let t=0;t<p.dur;t+=step){const m=F.muzzle(p.src);for(const dn of dns)F.shot(m.x,m.y,dn+Math.sin(t*p.freq)*p.amp,p.speed*F.k.spd,i%12===11?{pink:true,kind:'orb'}:{kind:p.kind,col:p.col});i++;yield step;}
  yield .6;}
 function* lob(F,pp){const p=D(pp,{n:4,rounds:3,gap:.7,ay:420,src:'mouth',kind:'big',spin:true});const n=cnt(F,p.n);
  for(let r=0;r<p.rounds;r++){F.pose('fire',.3);F.sfx('shot');const m=F.muzzle(p.src);
@@ -98,7 +105,7 @@ function* lob(F,pp){const p=D(pp,{n:4,rounds:3,gap:.7,ay:420,src:'mouth',kind:'b
   yield p.gap;}
  yield .6;}
 function* bounce(F,pp){const p=D(pp,{n:3,speed:230,bounces:3,kind:'big',gap:.45});const n=cnt(F,p.n);
- for(let i=0;i<n;i++){const m=F.muzzle('mouth');F.pose('fire',.25);F.sfx('shot');const a=PI/2+(i%2?1:-1)*(.35+F.rand()*.5);
+ for(let i=0;i<n;i++){const m=F.muzzle('mouth');F.pose('fire',.25);F.sfx('shot');const dns=F.downs(m),a=dns[i%dns.length]+(i%2?1:-1)*(.35+F.rand()*.5);
   F.bullet({x:m.x,y:m.y,vx:Math.cos(a)*p.speed*F.k.spd,vy:Math.sin(a)*p.speed*F.k.spd,bounce:p.bounces,kind:p.kind,col:p.col,r:11,spin:true,life:9,pink:i===n-1&&F.rand()<.4});yield p.gap;}
  yield 1.3;}
 
@@ -120,9 +127,9 @@ function* wilybomb(F,pp){const p=D(pp,{n:3,gap:.5});const n=cnt(F,p.n);F.say('Wi
  yield 1.8;}
 function bombStep(F,b,dt){if(b.age<.7){b.x+=(b.tx-b.x)*Math.min(1,dt*3.2);b.y+=(b.ty-b.y)*Math.min(1,dt*3.2);}
  if(b.age>1.7){b.dead=true;F.sfx('boom');const n=cnt(F,10);for(let j=0;j<n;j++)F.shot(b.x,b.y,j/n*TAU+.3,190*F.k.spd,{kind:'orb'});}}
-function* riddle(F,pp){const p=D(pp,{lanes:3,rounds:3});const tele=tl(F,1.2),w=F.W/p.lanes;F.say('Riddle me this!');
- for(let r=0;r<p.rounds;r++){const safe=Math.floor(F.rand()*p.lanes);F.sfx('charge');
-  for(let i=0;i<p.lanes;i++){if(i===safe)F.warn({shape:'rect',x:w*(i+.5),y:F.H/2+40,w:w-6,h:F.H,dur:tele+.2,col:'#5dff9a',mark:'safe',alpha:.14});
+function* riddle(F,pp){const p=D(pp,{lanes:3,rounds:3});const lanes=F.wide?Math.max(p.lanes,Math.round(F.W/140)):p.lanes,tele=tl(F,1.2),w=F.W/lanes;F.say('Riddle me this!');
+ for(let r=0;r<p.rounds;r++){const safes=F.wide?F.alive().map(t=>nearLane(F,t.x,lanes,1)):[Math.floor(F.rand()*lanes)];F.sfx('charge');
+  for(let i=0;i<lanes;i++){if(safes.includes(i))F.warn({shape:'rect',x:w*(i+.5),y:F.H/2+40,w:w-6,h:F.H,dur:tele+.2,col:'#5dff9a',mark:'safe',alpha:.14});
    else{F.warn({shape:'rect',x:w*(i+.5),y:F.H/2+40,w:w-6,h:F.H,dur:tele,col:'#ff3b2f',mark:'?'});
     F.hazard({shape:'rect',x:w*(i+.5),y:F.H/2+40,w:w-6,h:F.H,tele,dur:.9,col:F.pal[2],kind:'column'});}}
   yield tele+1.2;}
@@ -139,11 +146,10 @@ function* stab(F,pp){const p=D(pp,{n:3,gap:.55});const tele=tl(F,1),n=cnt(F,p.n)
   F.hazard({shape:'beam',x:m.x,y:m.y,a,w:18,len:1000,tele,dur:.3,col:'#e8f1ff',kind:'stab'});yield p.gap+.45;}
  yield tele+.3;}
 function* shockwave(F,pp){const p=D(pp,{rows:2,gap:145,speed:250});const sp=p.speed*F.k.spd,gap=p.gap;const tele=tl(F,.9);F.say('Shockwave!');
- for(let r=0;r<p.rows;r++){const gx=clampN(F.target().x+(F.rand()-.5)*160,gap/2+10,F.W-gap/2-10),y=F.boss.hy+70;F.pose('windup',tele);F.sfx('charge');
-  F.warn({shape:'rect',x:gx,y:F.H/2+40,w:gap,h:F.H,dur:tele+(F.H-y)/sp,col:'#5dff9a',mark:'safe',alpha:.14});
+ for(let r=0;r<p.rows;r++){const gxs=F.targets().map(t=>clampN(t.x+(F.rand()-.5)*160,gap/2+10,F.W-gap/2-10)),y=F.wide?60:F.boss.hy+70;F.pose('windup',tele);F.sfx('charge');
+  for(const gx of gxs)F.warn({shape:'rect',x:gx,y:F.H/2+40,w:gap,h:F.H,dur:tele+(F.H-y)/sp,col:'#5dff9a',mark:'safe',alpha:.14});
   yield tele;F.shake(8);F.sfx('boom');
-  F.hazard({shape:'rect',x:(gx-gap/2)/2,y,w:gx-gap/2,h:26,vy:sp,tele:0,dur:(F.H-y)/sp+.4,col:F.pal[2],kind:'wave'});
-  F.hazard({shape:'rect',x:(gx+gap/2+F.W)/2,y,w:F.W-gx-gap/2,h:26,vy:sp,tele:0,dur:(F.H-y)/sp+.4,col:F.pal[2],kind:'wave'});
+  gapWall(F,y,gxs,gap,{h:26,vy:sp,tele:0,dur:(F.H-y)/sp+.4,col:F.pal[2],kind:'wave'});
   yield 1.1;}
  yield 1;}
 function glideDown(F,m,dt){m.y+=m.vy*dt;m.x+=(m.vx||0)*dt;}
@@ -234,13 +240,13 @@ function* tentaclegrid(F,pp){const p=D(pp,{n:2});const tele=tl(F,1.3);F.say('Phâ
  yield .3;}
 function* flamebreath(F,pp){const p=D(pp,{n:2});const tele=tl(F,.95);F.say('GWAHAHA!');let dir=F.rand()<.5?1:-1;
  for(let s=0;s<p.n;s++){const m=F.muzzle('mouth');F.pose('windup',tele);F.sfx('charge');
-  F.warn({shape:'wedge',x:m.x,y:m.y,a0:PI/2-.95,a1:PI/2+.95,len:520,dur:tele,col:'#ff7a1a'});yield tele;
+  const dns=F.downs(m);for(const dn of dns)F.warn({shape:'wedge',x:m.x,y:m.y,a0:dn-.95,a1:dn+.95,len:520,dur:tele,col:'#ff7a1a'});yield tele;
   const dur=1.7,step=.075/F.k.dens;F.pose('fire',dur);let i=0;
-  for(let t=0;t<dur;t+=step){const mm=F.muzzle('mouth'),f=(t/dur)*2-1;F.shot(mm.x,mm.y,PI/2+dir*f*.95,300*F.k.spd,i%10===9?{pink:true,kind:'orb'}:{kind:'fire'});i++;yield step;}
+  for(let t=0;t<dur;t+=step){const mm=F.muzzle('mouth'),f=(t/dur)*2-1;for(const dn of dns)F.shot(mm.x,mm.y,dn+dir*f*.95,300*F.k.spd,i%10===9?{pink:true,kind:'orb'}:{kind:'fire'});i++;yield step;}
   dir=-dir;yield .6;}
  yield .4;}
 function* gumdrops(F,pp){const p=D(pp,{n:4});const n=cnt(F,p.n);F.say('Gumdrop Mountain!');
- for(let i=0;i<n;i++){const m=F.muzzle('mouth');F.pose('fire',.3);F.sfx('shot');const a=PI/2+(i%2?1:-1)*(.3+F.rand()*.6);
+ for(let i=0;i<n;i++){const m=F.muzzle('mouth');F.pose('fire',.3);F.sfx('shot');const dns=F.downs(m),a=dns[i%dns.length]+(i%2?1:-1)*(.3+F.rand()*.6);
   F.bullet({x:m.x,y:m.y,vx:Math.cos(a)*215*F.k.spd,vy:Math.sin(a)*215*F.k.spd,bounce:3,kind:'candy',col:['#ff4d8d','#4dd2ff','#ffd23c','#6cff6a'][i%4],r:13,spin:true,life:10,pink:i===n-1});yield .55;}
  yield 2;}
 function* jailbars(F,pp){const p=D(pp,{n:3});const tele=tl(F,1.1);F.say('Go directly to jail!');
@@ -274,16 +280,18 @@ function* energyball(F,pp){const p=D(pp,{n:1});F.say('Reflect it!');
   F.bullet({x:m.x,y:m.y,vx:Math.cos(F.aim(m,t))*185*F.k.spd,vy:Math.sin(F.aim(m,t))*185*F.k.spd,kind:'big',pink:true,reflect:true,r:20,life:6});yield 3;}
  yield .4;}
 function* wrecking(F,pp){const p=D(pp,{n:1});const tele=tl(F,1),b=F.boss;F.say('Ho ho ho!');
- for(let i=0;i<Math.max(1,p.n);i++){F.pose('windup',tele);F.sfx('charge');F.hazard({shape:'circle',x:b.x,y:b.y,r:38,tele,dur:4.6,follow:true,pend:{len:300+i*70,amp:i%2?.95:1.05,period:2.6+i*.4,phase:i*1.6},col:F.pal[2],kind:'ball'});yield .6;}
+ for(let i=0;i<Math.max(1,p.n);i++){F.pose('windup',tele);F.sfx('charge');F.hazard({shape:'circle',x:b.x,y:b.y,r:38,tele,dur:4.6,follow:true,pend:{len:(300+i*70)*(F.wide?1.3:1),amp:(i%2?.95:1.05)+(F.wide?.15:0),period:2.6+i*.4,phase:i*1.6},col:F.pal[2],kind:'ball'});yield .6;}
  yield tele+4.8;}
 
 // Blofeld's piranha-pool trapdoors: the floor is split into panels, all but one or two drop open.
 function* trapdoor(F,pp){const p=D(pp,{n:3});const tele=tl(F,1.25);F.say('Allow me to show you the piranhas.');
- const cols=3,rows=2,y0=250,y1=F.H-50,tw=F.W/cols,th=(y1-y0)/rows;
- for(let r=0;r<p.n;r++){const t=F.target(),near=Math.min(cols*rows-1,Math.floor(clampN(t.x,0,F.W-1)/tw)+cols*Math.min(rows-1,Math.floor(clampN(t.y-y0,0,y1-y0-1)/th)));
-  let safe=Math.floor(F.rand()*cols*rows);if(safe===near)safe=(safe+1+Math.floor(F.rand()*(cols*rows-1)))%(cols*rows);const safes=[safe];if(r%2&&F.k.dens<1.3)safes.push((safe+3)%(cols*rows));
+ const wd=F.wide,cols=wd?Math.round(F.W/140):3,rows=wd?3:2,y0=wd?90:250,y1=F.H-50,tw=F.W/cols,th=(y1-y0)/rows,cell=t=>Math.min(cols-1,Math.floor(clampN(t.x,0,F.W-1)/tw))+cols*Math.min(rows-1,Math.floor(clampN(t.y-y0,0,y1-y0-1)/th));
+ for(let r=0;r<p.n;r++){let safes;
+  if(wd){safes=F.alive().map(t=>{const c0=cell(t),r0=Math.floor(c0/cols);let c;do{c=nearLane(F,t.x,cols,1)+cols*clampN(r0+Math.round(F.rand()*2-1),0,rows-1);}while(c===c0);return c;});while(safes.length<Math.round(cols*rows/5))safes.push(Math.floor(F.rand()*cols*rows));}
+  else{const t=F.target(),near=cell(t);let safe=Math.floor(F.rand()*cols*rows);if(safe===near)safe=(safe+1+Math.floor(F.rand()*(cols*rows-1)))%(cols*rows);safes=[safe];if(r%2&&F.k.dens<1.3)safes.push((safe+3)%(cols*rows));}
   F.sfx('charge');F.pose('fire',.4);
   for(let i=0;i<cols*rows;i++){const x=(i%cols+.5)*tw,y=y0+(Math.floor(i/cols)+.5)*th;
+   if(wd&&Math.abs(x-F.boss.x)<tw/2+60&&y<F.boss.hy+150)continue;
    if(safes.includes(i))F.warn({shape:'rect',x,y,w:tw-8,h:th-8,dur:tele+.3,col:'#5dff9a',mark:'safe',alpha:.16});
    else F.hazard({shape:'rect',x,y,w:tw-6,h:th-6,tele,dur:1.1,col:'#1b6f8a',kind:'trapdoor'});}
   yield tele;F.shake(6);F.sfx('boom');yield 1.6;}

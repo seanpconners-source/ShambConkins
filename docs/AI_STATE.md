@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.56.1 (`releases/ShambConkins_v0.56.1.html`).
+Version 0.56.2 (`releases/ShambConkins_v0.56.2.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -156,8 +156,14 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
 - Boss fights fill any screen: `layout()` in `engines/bossFight.js` stretches the logical field to the canvas aspect
   (H stays 640, W 420…1700). From W≥720 (`wide`) the boss sits lower/bigger (`B.hy` 185, `bs` 1.25), players spawn
   on either side of it (`spawnX/spawnY`), fly y≥90 (`YMIN`), are pushed out of its hit circles, and their guns, MEGA
-  BEAM and stars aim at the boss (`p.aim`). Portrait keeps the old field. Short landscape screens hide the scorebar/
-  status/hint (`.boss-shell` CSS). Screenshots: `node tests/boss.mjs` (wide + phone).
+  BEAM and stars aim at the boss or a nearer minion (`p.aim`). Portrait keeps the old field. Short landscape screens
+  hide the scorebar/status/hint (`.boss-shell` CSS). Screenshots: `node tests/boss.mjs` (wide + phone).
+  Wide difficulty (v0.56.2): `WIDE_K` (dens 1.3, spd 1.1, rest .78, player dmg .96) plus wide-aware attacks via
+  `F.wide`, `F.targets()` (every living player) and `F.downs(m)` (one 'down' direction per player): aimed/fan/laser/
+  wave/flamebreath/bounce/gumdrops cover both flanks; trapdoor/riddle use ~140-wide panels with a safe one near each
+  player; gapwall/shockwave drop from the top with a gap per player; wrecking ball reaches the flanks; drone slots
+  hover at y≈150. Measured with `tests/bossdiff.mjs` (debug: `steps`, `nodraw`, `holdPhase`, `immortal`, `hits`,
+  `hitSrc`, autopilot reaction time): all 36 bosses, wide 9.1 / landscape 9.2 vs phone ~9.8 hits/min, same damage rate.
 - Launch music: boot now starts the home score (it used to call `showView('home')` without `home()`), and
   `installAudioUnlock()` (audio.js) resumes the suspended AudioContext on the first tap/key.
 
