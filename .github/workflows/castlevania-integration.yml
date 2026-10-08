@@ -1,0 +1,30 @@
+name: Castlevania integration validation
+
+on:
+  push:
+    branches:
+      - integrate/castlevania-v0.58.2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - run: node tests/castlevania.mjs
+      - run: npm run release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ShambConkins-v0.58.2-Castlevania
+          path: releases/ShambConkins_v0.58.2.html
+          if-no-files-found: error
