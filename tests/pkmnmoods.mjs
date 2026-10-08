@@ -1,9 +1,10 @@
-// Pokémon sprites for every drop-in portrait character, one per supplied mood (front + back), as a contact sheet.
+// Pokémon sprites for every character with mood art (drop-ins, supplied faces, built-in photos), one per supplied mood (front + back), as a contact sheet.
 import fs from 'fs';
 import {open} from './lib.mjs';
 const out = process.argv[2] || '/tmp/claude-0/sc';
-const ids = [...new Set(fs.readdirSync('assets/portraits').filter(f => /\.(webp|png|jpe?g)$/i.test(f)).map(f => f.split('.')[0]))];
+const dropIns = [...new Set(fs.readdirSync('assets/portraits').filter(f => /\.(webp|png|jpe?g)$/i.test(f)).map(f => f.split('.')[0]))];
 const {browser, page, errors} = await open({viewport: {width: 1200, height: 900}});
+const ids = [...new Set([...dropIns, ...await page.evaluate(() => window.ShambConkins.pkmn.moodCast())])];
 const rows = await page.evaluate(async ids => {
   const {sprites: SP, portraitMoods} = window.ShambConkins.pkmn, rows = [];
   const sheet = document.createElement('div'); sheet.id = 'sheet'; sheet.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#f8f8f0;overflow:auto;padding:8px;font:11px monospace;color:#000';
@@ -23,6 +24,7 @@ const rows = await page.evaluate(async ids => {
   document.body.append(sheet); return rows;
 }, ids);
 for (const r of rows) console.log(r.id.padEnd(12), r.moods.join(','), r.blank.length ? 'BLANK ' + r.blank : '');
+await page.setViewportSize({width: 1200, height: Math.min(8000, 40 + rows.length * 66)});
 await page.screenshot({path: `${out}/pkmn-moods.png`, fullPage: false});
 console.log('errors', errors);
 await browser.close();
