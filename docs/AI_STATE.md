@@ -1,8 +1,9 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.58.1 (`releases/ShambConkins_v0.58.1.html`).
+Version 0.58.2 (`releases/ShambConkins_v0.58.2.html`).
 
 ## Implemented systems
+- **Castlevania (v0.58.2):** Dracula's Castle NES stage map; Death boss (`death-cv`, reaper art and sickles), new themed music/cards/items/trivia. Games: `cv-vampire-killer` and `cv-candle-hunt` in `src/engines/castlevania.js`, test `tests/castlevania.mjs`. Real-phone playtest still needed.
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
   camp → crossroads → 3 roads (Calm/Adventurous/High Reward) in west/centre/east bands → gate. `gridPath` is an
   exact-length DFS (moves down/left/right only, no non-consecutive tiles touching); per-realm style (serpent/stairs/
