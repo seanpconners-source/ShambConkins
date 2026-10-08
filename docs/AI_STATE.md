@@ -167,6 +167,10 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
 - Launch music: boot now starts the home score (it used to call `showView('home')` without `home()`), and
   `installAudioUnlock()` (audio.js) resumes the suspended AudioContext on the first tap/key.
 
+- Drop-in mood portraits: `portraitURL` (assets.js) now prefers `char:<id>:<mood>` over the base `photo:char:<id>` (it
+  used to return the base photo for every mood). Board idle cycle shows normal/win/think/silly/angry; character select
+  cycles every distinct expression (no 5-face cap).
+
 ## In progress / unverified
 - Warp minigames only bot/fuzz-tested in headless Chromium; Sonic, Mario (turn-based) and kart (split-screen canvas, Mode 7 rows) need a
   real-phone check for feel and frame rate.

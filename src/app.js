@@ -523,6 +523,6 @@ function installBoardGestures(){
 
 // Character select: the selected heads slowly cycle through their expressions.
 function installSetupFaceCycle(){setInterval(()=>{if(store.view!=='setup'||document.hidden)return;for(const stage of document.querySelectorAll('.cs-stage')){const faces=[...stage.querySelectorAll('.cs-face')];if(faces.length<2)continue;const at=faces.findIndex(f=>f.classList.contains('on'));faces[Math.max(0,at)].classList.remove('on');faces[(at+1)%faces.length].classList.add('on');}},2800);}
-function installPortraitCycle(){let tick=0;setInterval(()=>{if(store.view!=='board'||store.busy||store.session||document.hidden||!store.run||store.run.finished)return;tick++;for(const p of store.run.players)if(!['win','sad'].includes(p.mood)||tick%3===0)p.mood=['normal','happy','thinking','normal'][tick%4];refreshPortraits();},3500);}
+function installPortraitCycle(){let tick=0;setInterval(()=>{if(store.view!=='board'||store.busy||store.session||document.hidden||!store.run||store.run.finished)return;tick++;for(const p of store.run.players)if(!['win','sad'].includes(p.mood)||tick%3===0)p.mood=['normal','happy','thinking','silly','normal','angry'][tick%6];refreshPortraits();},3500);}
 
 Object.assign(exports,{saveRun,continueRun,roll,takeRoute,resolveLanding,endTurn});
