@@ -31,6 +31,7 @@ body[data-theme="warp-green-hill"]{--t-bg0:#030816;--t-bg1:#0a1b3d;--t-glow:#1a5
 body[data-theme="warp-bond-lair"]{--t-bg0:#070505;--t-bg1:#1a0f0c;--t-glow:#6a1410;--t-glow2:#3a3d44;--t-s1:#2a2224;--t-s2:#181314;--t-s3:#352c2e;--t-well:#0c0909;--t-sub:#e4d6cc;--t-dim:#a8968c;--t-acc:#e8c45a;--t-acc2:#c8161d;--t-acc-ink:#1a1006;--t-hot:#ff6a4a}
 body[data-theme="warp-south-park"]{--t-bg0:#0b1424;--t-bg1:#16264a;--t-glow:#2f6bb0;--t-glow2:#2f6b4a;--t-s1:#1f3358;--t-s2:#142440;--t-s3:#2a4270;--t-well:#0a1222;--t-sub:#d8e8fb;--t-dim:#94aed0;--t-acc:#ffd23c;--t-acc2:#ff3b6b;--t-acc-ink:#1a1206;--t-hot:#ff7a3a}
 
+body[data-theme="warp-castlevania"]{--t-bg0:#050308;--t-bg1:#140a14;--t-glow:#5c1424;--t-glow2:#2c1c4c;--t-s1:#26182a;--t-s2:#170e1a;--t-s3:#322036;--t-well:#0a060c;--t-sub:#e8d6c8;--t-dim:#a89088;--t-acc:#f8b800;--t-acc2:#d82800;--t-acc-ink:#1a0c04;--t-hot:#fc7460}
 /* ---------- Page backdrop ---------- */
 html,body{background-color:var(--t-bg0)}
 body{color:var(--t-text);background:radial-gradient(ellipse 90% 50% at 50% 0%,var(--t-glow) 0%,transparent 70%),radial-gradient(ellipse 70% 40% at 50% 108%,color-mix(in srgb,var(--t-glow2) 55%,transparent),transparent 70%),linear-gradient(180deg,var(--t-bg1) 0%,var(--t-bg0) 70%);background-attachment:fixed;transition:background-color .4s}

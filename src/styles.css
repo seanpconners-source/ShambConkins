@@ -899,5 +899,6 @@ body.gb-open{overflow:hidden}
 @keyframes lb-out{to{transform:skewY(-4deg) translateX(110%);opacity:0}}
 .warp-lair-room{font:900 26px system-ui,sans-serif;fill:#ffd23c;paint-order:stroke;stroke:#0b0b0d;stroke-width:7px;letter-spacing:.04em}
 .warp-lair-small{font:800 20px system-ui,sans-serif;fill:#e8e6e0;letter-spacing:.08em}
+.warp-cv-label{font:900 24px "Courier New",ui-monospace,monospace;fill:#fcfcfc;paint-order:stroke;stroke:#000;stroke-width:7px;letter-spacing:.06em}
 .sp-sign{font:900 22px system-ui,sans-serif;fill:#1c1a24;paint-order:stroke;stroke:#fff;stroke-width:7px;letter-spacing:.02em}
 .sp-shop{font:900 17px system-ui,sans-serif;fill:#fff;letter-spacing:.04em}

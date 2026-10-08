@@ -4,6 +4,19 @@ const {packItems}=require("src/data/itemPackV43.js");
 const rare=it=>({...it,findWeight:.35});
 const challenge=(id,name,source,icon,game,desc)=>({id:'wz-'+id,name,source,icon,kind:'game',value:game,desc,findWeight:.35});
 const WARP_ITEMS=[
+ challenge('stage-map','Castle Stage Map','Castlevania','🗺️','cv-vampire-killer','Unroll the map: start Vampire Killer Dash right now.'),
+ challenge('wall-candle','Wall Candle','Castlevania','🕯️','cv-candle-hunt','Whip the candle: start Night of the Candles right now.'),
+ ...packItems('Castlevania',[
+  ['morning-star','Morning Star Whip','⛓️','bundle',{rewardBonus:4,ward:1}],
+  ['throwing-axe','Throwing Axe','🪓','strongTrap',6],
+  ['boomerang-cross','Boomerang Cross','✝️','pushOther',3],
+  ['stopwatch','Stopwatch','⏱️','badDie'],
+  ['pot-roast','Wall Pot Roast','🍖','bundle',{points:4,shields:1}],
+  ['rosary','Rosary','📿','clearTraps'],
+  ['invisibility-potion','Invisibility Potion','🧪','cloak',3],
+  ['money-bag','Money Bag','💰','bounty',4],
+  ['magic-crystal','Magic Crystal','🔮','gateDividend',6]
+ ],'wz-').map(rare),
  challenge('diamond-collar','Diamond Smuggler’s Collar','Diamonds Are Forever','💎','bond-laser-vault','Start the Laser Vault Heist right now.'),
  challenge('golden-bullet','Scaramanga’s Golden Bullet','The Man with the Golden Gun','🔫','bond-golden-gun','Start the Funhouse Duel right now.'),
  challenge('fort-knox-key','Fort Knox Vault Key','Goldfinger','🧨','bond-goldfinger-bomb','Start Stop the Bomb at 007 right now.'),

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.58.2
+
+**Castlevania warp zone — Dracula's Castle.** NES-style stage map, Clock Tower boss fight with Death, original gothic chip-baroque music, themed items, chance cards and trivia. Two pass-and-play minigames: Vampire Killer Dash and Night of the Candles. Prison Mike now has his own unlock line. Integrated on top of v0.58.1, preserving newer South Park, Pokémon, minigame and boss content.
+
 ## v0.58.1
 
 **Every character's mood art now shows in Pokémon battles.** Sean's and Amber's built-in mood photos (and moods that
