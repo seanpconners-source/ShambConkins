@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.56.2 (`releases/ShambConkins_v0.56.2.html`).
+Version 0.57.0 (`releases/ShambConkins_v0.57.0.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -78,6 +78,17 @@ Version 0.56.2 (`releases/ShambConkins_v0.56.2.html`).
   `mecha`, attack/sig `zinthar`, scene `southpark`, `unlockId:'barbra-streisand'`, `unlockName` shown in boss rules).
   Games in `engines/southPark.js`: `sp-dodgeball`, `sp-cheesy-poofs`, `sp-killed-kenny`. Items `wz-*` South Park pack,
   34 trivia lines in `warpTrivia.js` (feed the existing `southpark` topic). Test: `tests/southpark.mjs`.
+
+- **Minigame remakes (v0.57):** audit of the 112 pool games; the ten weakest originals were rebuilt as new engine files
+  (same ids/engine names; wired in `engines/index.js`, rules/durations in the `REMAKES` table at the end of
+  `gameRegistry.js`): `brawndoMerge.js` (Suika physics, shared), `pancakeReview.js` (eating contest, shared),
+  `skynetScan.js` (find the Terminator, shared, 7 tell rounds), `paperRoute.js` (Paperboy, pass&play),
+  `boulderRun.js` (two corridors, shared), `baseketball.js` (bases/outs/innings + psych-outs), `penaltyKicks.js`
+  (striker bottom half vs keeper top half, real time), `dinnerService.js` (burger line + grill, pass&play),
+  `motionTracker.js` (Alien tracker pings + flamethrower, pass&play), `vanishingTicTacToe.js` (3-mark limit; wopr-grid
+  is now WarGames). All use `tarantinoKit.js` helpers (label/fx/shake/sfx/halfPointers). The old versions in
+  `restored.js`/`skill.js`/`puzzles.js`/`gestureLegacy.js` are now unused. Next weakest by the audit: minichess
+  (button bar), towerstack, arcade.js turn-based classics (lander/missile/breakout), battle royale, money grab.
 
 ## Recent changes (this round of owner feedback)
 Boss trigger fix + drag flow; 2x heads (board, collection, character select); collection pages fit the screen;

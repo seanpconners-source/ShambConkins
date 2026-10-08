@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.57.0
+
+**Ten of the original simple minigames rebuilt from scratch.** An audit of all 112 pool games flagged the early
+button-and-emoji games as the weak spots; each one is now a full touch game with its own art, sound and a real hook.
+Ids and engine names are unchanged, so saves and board events keep working.
+
+- **Brawndo Fruit Merge** → Suika-style physics jars, both players at once. Merge fruit up to your rival's head;
+  two heads explode for +150. Overflow the line and you top out.
+- **Pancakes, Divorce, Pancakes** → simultaneous eating contest: bite on the chew beat, mashing makes you queasy,
+  throwing up costs two pancakes, golden stacks count double, and when Suzanne calls you put the fork down.
+- **Skynet Identification** → find the Terminator in a crowd seen through T-800 vision. Seven rounds teach a tell
+  each (eye glint, chrome skin, not flinching at the dog, a perfect march). Shoot a human and your scanner locks.
+- **Paper Route** → a real Paperboy street: steer the bike, tap where the paper lands. Mailboxes, doorsteps, smashing
+  non-subscribers' windows, dogs, cars, potholes and paper bundles.
+- **Boulder Run** → two temple corridors at once; jump pits and spikes, slide under darts, grab idols, and every
+  stumble lets the boulder roll closer.
+- **BASEketball** → baseball rules with a basketball: choose single/double/triple/home-run spots, runners advance,
+  three outs per inning, and the defender gets two PSYCH-OUTs per inning to wreck your aim.
+- **Penalty Kicks** → real-time on one phone: the striker swipes (aim, power, curl), the keeper swipes to dive.
+  Five each, then sudden death.
+- **Dinner Service** → a burger line: tickets, a three-slot grill (gold ring = perfect, red = "IT'S RAW!"), build
+  bottom-up and tap the plate to serve.
+- **Alien · Motion Tracker** → blips only show on each ping, pings speed up as they close in, flamethrower with
+  limited fuel. Don't torch Jonesy.
+- **WarGames · Vanishing Tic-Tac-Toe** → each player keeps only three heads; your fourth erases your oldest.
+
 ## v0.56.2
 
 **Wide-screen boss fights are as hard as portrait ones.** The new wide arena turned out about 28% easier (a simulated

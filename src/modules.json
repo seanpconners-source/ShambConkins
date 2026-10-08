@@ -236,7 +236,17 @@
   "src/engines/marioBros.js",
   "src/data/iconicPlaces.js",
   "src/data/southPark.js",
-  "src/engines/southPark.js"
+  "src/engines/southPark.js",
+  "src/engines/brawndoMerge.js",
+  "src/engines/pancakeReview.js",
+  "src/engines/skynetScan.js",
+  "src/engines/paperRoute.js",
+  "src/engines/boulderRun.js",
+  "src/engines/baseketball.js",
+  "src/engines/penaltyKicks.js",
+  "src/engines/vanishingTicTacToe.js",
+  "src/engines/dinnerService.js",
+  "src/engines/motionTracker.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
