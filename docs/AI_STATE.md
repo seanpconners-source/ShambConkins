@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.58.0 (`releases/ShambConkins_v0.58.0.html`).
+Version 0.58.1 (`releases/ShambConkins_v0.58.1.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from

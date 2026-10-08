@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.58.1
+
+**Every character's mood art now shows in Pokémon battles.** Sean's and Amber's built-in mood photos (and moods that
+share one picture, like Alex's angry/think face) were being skipped; they now switch faces in battle like Forrest and
+Taskmaster. Full rectangular photos are trimmed to a head oval instead of showing as a box. New drop-in portraits and
+moods (`assets/portraits/<id>.<mood>.webp`) still work automatically.
+
 ## v0.58.0
 
 **Ten of the original simple minigames rebuilt from scratch.** An audit of all 112 pool games flagged the early
