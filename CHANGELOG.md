@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.56.4
+
+**Only your uploaded heads, no grey silhouettes.** v0.56.3 let generated placeholder art beat your photos (Forrest,
+Taskmaster and others showed a grey "FM"/"TT" silhouette in the roster and in their expression cycle). Characters with
+an uploaded head now use only the images you supplied: a mood picture when you gave one, otherwise their main photo.
+
 ## v0.56.3
 
 **Every mood portrait you dropped in now shows up.** Characters with a base photo (Forrest, Taskmaster, Ace, the

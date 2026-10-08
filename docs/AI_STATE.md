@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.56.3 (`releases/ShambConkins_v0.56.3.html`).
+Version 0.56.4 (`releases/ShambConkins_v0.56.4.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -167,7 +167,8 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
 - Launch music: boot now starts the home score (it used to call `showView('home')` without `home()`), and
   `installAudioUnlock()` (audio.js) resumes the suspended AudioContext on the first tap/key.
 
-- Drop-in mood portraits: `portraitURL` (assets.js) now prefers `char:<id>:<mood>` over the base `photo:char:<id>` (it
+- Drop-in mood portraits: `portraitURL` (assets.js) now prefers the owner's `USER_PORTRAITS` `char:<id>:<mood>` (never generated `ART`
+  placeholders) over the base `photo:char:<id>` (it
   used to return the base photo for every mood). Board idle cycle shows normal/win/think/silly/angry; character select
   cycles every distinct expression (no 5-face cap).
 

@@ -9248,7 +9248,7 @@ Object.assign(exports,{LEGENDS_ITEMS});
 
 },
 "src/version.js":(exports,require)=>{
-const VERSION='0.56.3';
+const VERSION='0.56.4';
 Object.assign(exports,{VERSION});
 
 },
@@ -9891,6 +9891,7 @@ Object.assign(exports,{OBSTACLE_TYPES,TRAVEL_SKILLS,characterTravelSkills,obstac
 const {entityArtSpec, cachedEntityURL, queueEntityArt}=require("src/entityMedia.js");
 const {headDisplayURL}=require("src/headCutouts.js");
 const {ART}=require("src/data/art.js");
+const {USER_PORTRAITS}=require("src/data/userPortraits.js");
 const {ORIGINAL_REMOTE_PORTRAITS}=require("src/data/originalPortraits.js");
 const {ORIGINAL_LOGOS}=require("src/data/logos.js");
 const {store}=require("src/state.js");
@@ -9943,7 +9944,7 @@ function logoURL(source = 'ShambConkins') {
  const url=svgURL(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 180">${decor}${rows}</svg>`);logoCache.set(source,url);return url;
 }
 function brandHTML(source, cls='property-logo') {const fallback=logoURL(source),ref=mediaSource(source),original=ref.original,priority=ART['priority:logo:'+slug(source)]||ART['priority:logo:'+slug(ref.name)],offline=pinnedFilmLogoURL(ref.name)||priority||(!logoCorrection(ref.name)&&(ART['logo:'+slug(source)]||ART['logo:'+slug(ref.name)])),online=!offline&&store.profile?.settings.originalLogos&&original?.startsWith('https:');return `<img class="${cls}" src="${escapeHTML(online?original:fallback)}" data-reference-media="${escapeHTML(ref.name)}" data-media-kind="logo" ${offline?'data-media-queued="true"':''} data-fallback="${escapeHTML(fallback)}" data-original-logo="${escapeHTML(original||'')}" alt="${escapeHTML(ref.logoName||source)} logo" loading="lazy" ${online?`onerror="this.onerror=null;this.src=${escapeHTML(JSON.stringify(fallback))}"`:''}>`; }
-function portraitURL(id, mood='normal') {const face=suppliedPortraitURL(id,mood);if(face)return face;if(id==='mars-attacker')return martianPortrait();const supplied=ART['photo:char:'+id];if(supplied){const moodKey={idle:'normal',happy:'win',walking:'walk',thinking:'think',lose:'sad',losing:'sad',mad:'angry'}[mood]||mood;return ART[`char:${id}:${moodKey}`]||supplied;}if(id==='sean')return ['think','thinking','sad','lose'].includes(mood)?ART['char:sean:lose']||ART['char:sean:normal']:ART['char:sean:win'];const cached=store.profile?.settings.originalLogos&&cachedEntityURL('character',id);if(cached)return cached;const aliases={idle:'normal',happy:'win',walking:'walk',thinking:'think',lose:'sad',mad:'angry'};const direct=ART[`char:${id}:${mood}`];if(direct)return direct;const mapped=aliases[mood]||mood;if(id==='amber'){const amber={walk:'silly',think:'angry',lose:'sad',happy:'win'};return ART[`char:amber:${amber[mapped]||mapped}`]||ART['char:amber:normal'];}const local=ART[`char:${id}:${mapped}`]||ART[`char:${id}:normal`]||ART[`char:${id}`];if(local)return local;const remote=ORIGINAL_REMOTE_PORTRAITS[`char:${id}:normal`];if(remote)return store.profile?.settings.originalLogos?remote:portraitFallbackURL(id);return id==='emilio-estevez'?emilioPortrait():null; }
+function portraitURL(id, mood='normal') {const face=suppliedPortraitURL(id,mood);if(face)return face;if(id==='mars-attacker')return martianPortrait();const supplied=ART['photo:char:'+id];if(supplied){const moodKey={idle:'normal',happy:'win',walking:'walk',thinking:'think',lose:'sad',losing:'sad',mad:'angry'}[mood]||mood;return USER_PORTRAITS[`char:${id}:${moodKey}`]||supplied;}if(id==='sean')return ['think','thinking','sad','lose'].includes(mood)?ART['char:sean:lose']||ART['char:sean:normal']:ART['char:sean:win'];const cached=store.profile?.settings.originalLogos&&cachedEntityURL('character',id);if(cached)return cached;const aliases={idle:'normal',happy:'win',walking:'walk',thinking:'think',lose:'sad',mad:'angry'};const direct=ART[`char:${id}:${mood}`];if(direct)return direct;const mapped=aliases[mood]||mood;if(id==='amber'){const amber={walk:'silly',think:'angry',lose:'sad',happy:'win'};return ART[`char:amber:${amber[mapped]||mapped}`]||ART['char:amber:normal'];}const local=ART[`char:${id}:${mapped}`]||ART[`char:${id}:normal`]||ART[`char:${id}`];if(local)return local;const remote=ORIGINAL_REMOTE_PORTRAITS[`char:${id}:normal`];if(remote)return store.profile?.settings.originalLogos?remote:portraitFallbackURL(id);return id==='emilio-estevez'?emilioPortrait():null; }
 function entityAttributes(kind,entity){const spec=entityArtSpec(kind,entity);if(spec.local)return '';return `data-entity-kind="${kind}" data-entity-id="${escapeHTML(entity.id)}" data-entity-name="${escapeHTML(entity.name)}" data-entity-source="${escapeHTML(entity.source)}" data-entity-page="${escapeHTML(spec.page)}" data-entity-actor="${escapeHTML(spec.actor)}" data-entity-article="${escapeHTML(spec.article)}"`;}
 function portraitHTML(id,cls='portrait',mood='normal'){
  const c=character(id),face=suppliedPortraitURL(id,mood),fallback=face||(id==='sean'?portraitURL(id,mood):null)||ART[`char:${id}:${mood}`]||ART[`char:${id}:normal`]||ART[`char:${id}`]||(id==='gordon-ramsay'?gordonPortrait():portraitFallbackURL(id)),raw=face||portraitURL(id,mood)||fallback,src=headDisplayURL(raw),remote=src.startsWith('https:');
