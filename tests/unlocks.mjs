@@ -32,6 +32,7 @@ for (const c of C) {
   else if (rec.unlockBy === 'game-win') ok = true;
   else if (rec.unlockBy === 'boss') ok = bossUnlocks.has(c.id);
   else if (rec.unlockBy === 'dogs') ok = ['kc','mylo'].includes(c.id);
+  else if (rec.unlockBy === 'southpark') ok = req('src/data/southPark.js').SOUTH_PARK_IDS.includes(c.id);
   if (!ok && !pairTargets.has(c.id)) unreachable.push(`${c.id} (${rec.unlockBy || 'random'}) ways=[${[...ways]}]`);
 }
 console.log(C.length, 'characters;', unreachable.length, 'without a working unlock path');

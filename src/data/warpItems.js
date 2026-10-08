@@ -7,6 +7,20 @@ const WARP_ITEMS=[
  challenge('diamond-collar','Diamond Smuggler’s Collar','Diamonds Are Forever','💎','bond-laser-vault','Start the Laser Vault Heist right now.'),
  challenge('golden-bullet','Scaramanga’s Golden Bullet','The Man with the Golden Gun','🔫','bond-golden-gun','Start the Funhouse Duel right now.'),
  challenge('fort-knox-key','Fort Knox Vault Key','Goldfinger','🧨','bond-goldfinger-bomb','Start Stop the Bomb at 007 right now.'),
+ challenge('dodgeball','Red Rubber Dodgeball','South Park','🔴','sp-dodgeball','Start the Dodgeball World Championship right now.'),
+ challenge('poofs-bowl','Bowl of Cheesy Poofs','South Park','🧀','sp-cheesy-poofs','Start Cheesy Poofs Catch right now.'),
+ challenge('kenny-parka','Kenny’s Parka','South Park','🧡','sp-killed-kenny','Start They Killed Kenny! right now.'),
+ ...packItems('South Park',[
+  ['chinpokomon','Chinpokomon Card','🃏','bounty',4],
+  ['tweek-coffee','Tweek Bros. Coffee','☕','bundle',{boost:3,points:1}],
+  ['city-wok','City Wok Takeout','🥡','bundle',{points:3,shields:1}],
+  ['big-wheel','Timmy’s Wheelchair Boost','♿','forward',5],
+  ['salty-balls','Chef’s Salty Balls','🍫','bundle',{rewardBonus:3,points:1}],
+  ['mr-hat','Mr. Hat','🎩','pushOther',3],
+  ['triangle-zinthar','Triangle of Zinthar','🔺','gamble',8],
+  ['manbearpig-trap','ManBearPig Trap','🪤','strongTrap',5],
+  ['respect-badge','Respect My Authoritah Badge','👮','bundle',{ward:2,shields:1}]
+ ],'wz-').map(rare),
  ...packItems('Mario Kart',[
   ['triple-mushroom','Triple Mushroom','🍄','bundle',{boost:3,rollFloor:3}],
   ['banana-peel','Banana Peel','🍌','strongTrap',5],

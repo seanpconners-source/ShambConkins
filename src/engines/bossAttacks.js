@@ -289,7 +289,15 @@ function* trapdoor(F,pp){const p=D(pp,{n:3});const tele=tl(F,1.25);F.say('Allow 
   yield tele;F.shake(6);F.sfx('boom');yield 1.6;}
  yield .4;}
 
+// Mecha-Streisand's Triangle of Zinthar: three beams 120 degrees apart spin out of the chest, leaving wedges to hide in.
+function* zinthar(F,pp){const p=D(pp,{n:1});const tele=tl(F,1.3);F.say('Behold the Triangle of Zinthar!');
+ for(let r=0;r<p.n;r++){const m=F.muzzle('center'),dir=r%2?-1:1,a0=F.rand()*TAU,spin=dir*(.55+.1*F.k.spd),dur=2.6;
+  F.pose('windup',tele);F.sfx('charge');
+  for(let j=0;j<3;j++)F.hazard({shape:'beam',x:m.x,y:m.y,a:a0+j*TAU/3,da:spin,w:24,len:1400,tele,dur,col:F.pal[2]});
+  yield tele+dur+.35;}
+ yield .4;}
+
 const PATTERNS={aimed,fan,spiral,rain,laser,dive,minions,homing,ring,edge,gapwall,strike,wave,lob,bounce,
- doors,rinka,wilybomb,riddle,bullettime,stab,shockwave,glove,puddles,piledriver,iceshards,slam,lockon,ladle,shock,plates,hounds,volley,sidedash,greatknife,rocket,balloons,batswarm,spiderheads,tentaclegrid,flamebreath,gumdrops,jailbars,hypno,flail,passage,energyball,wrecking,trapdoor};
-const SIGNATURES={doors:'POD BAY DOORS',rinka:'RINKA SWARM',wilybomb:'WILY BOMB',riddle:'RIDDLE ME THIS',bullettime:'BULLET TIME',stab:'LIQUID BLADE',shockwave:'SHOCKWAVE',glove:'IRON GLOVE',puddles:'VENOM PUDDLES',piledriver:'SPINNING PILEDRIVER',iceshards:'ICE ERUPTION',slam:'MOUNTAIN SLAM',lockon:'PLASMA LOCK-ON',ladle:'SOUP LADLE',shock:'SHOCK THERAPY',plates:'KITTEN PLATES',hounds:'RELEASE THE HOUNDS',volley:'ROYAL VOLLEY',sidedash:'HOVERBOARD RUSH',greatknife:'GREAT KNIFE',rocket:'ROCKET LAUNCHER',balloons:'FLOATING BALLOONS',batswarm:'BAT SWARM',spiderheads:'SPIDER HEADS',tentaclegrid:'TENTACLE GRID',flamebreath:'FLAME BREATH',gumdrops:'GUMDROP BOUNCE',jailbars:'GO TO JAIL',hypno:'HYPNO RINGS',flail:'SPIN FLAIL',passage:'SECRET PASSAGE',energyball:'REFLECT THE ORB',wrecking:'WRECKING BALL',trapdoor:'PIRANHA TRAPDOORS'};
+ doors,rinka,wilybomb,riddle,bullettime,stab,shockwave,glove,puddles,piledriver,iceshards,slam,lockon,ladle,shock,plates,hounds,volley,sidedash,greatknife,rocket,balloons,batswarm,spiderheads,tentaclegrid,flamebreath,gumdrops,jailbars,hypno,flail,passage,energyball,wrecking,trapdoor,zinthar};
+const SIGNATURES={doors:'POD BAY DOORS',rinka:'RINKA SWARM',wilybomb:'WILY BOMB',riddle:'RIDDLE ME THIS',bullettime:'BULLET TIME',stab:'LIQUID BLADE',shockwave:'SHOCKWAVE',glove:'IRON GLOVE',puddles:'VENOM PUDDLES',piledriver:'SPINNING PILEDRIVER',iceshards:'ICE ERUPTION',slam:'MOUNTAIN SLAM',lockon:'PLASMA LOCK-ON',ladle:'SOUP LADLE',shock:'SHOCK THERAPY',plates:'KITTEN PLATES',hounds:'RELEASE THE HOUNDS',volley:'ROYAL VOLLEY',sidedash:'HOVERBOARD RUSH',greatknife:'GREAT KNIFE',rocket:'ROCKET LAUNCHER',balloons:'FLOATING BALLOONS',batswarm:'BAT SWARM',spiderheads:'SPIDER HEADS',tentaclegrid:'TENTACLE GRID',flamebreath:'FLAME BREATH',gumdrops:'GUMDROP BOUNCE',jailbars:'GO TO JAIL',hypno:'HYPNO RINGS',flail:'SPIN FLAIL',passage:'SECRET PASSAGE',energyball:'REFLECT THE ORB',wrecking:'WRECKING BALL',trapdoor:'PIRANHA TRAPDOORS',zinthar:'TRIANGLE OF ZINTHAR'};
 Object.assign(exports,{PATTERNS,SIGNATURES,K,TAU});

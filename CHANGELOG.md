@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.56.0
+
+**New warp zone: South Park, Colorado.** The board is the town map: snowy streets with snowbanks under the Rocky
+Mountains, the bus stop and the Welcome to South Park sign, Stan's, Kyle's, Cartman's and Kenny's houses, Main Street
+(Tweek Bros. Coffee, City Wok, Skeeter's), South Park Elementary, City Hall, Hell's Pass Hospital, Big Gay Al's
+sanctuary, and Stark's Pond at the end with Mecha-Streisand wading in it. Own interface colours and an original
+mountain-town folk-rock score.
+
+**South Park characters.** 26 new ones (Stan, Kyle, Kenny, Chef, Mr. Garrison, Mr. Mackey, Wendy, Tweek, Craig, Jimmy,
+Timmy, Token, Ike, Mr. Hankey, Terrance, Phillip, Officer Barbrady, Big Gay Al, Sheila, Uncle Jimbo, ManBearPig,
+Scott Tenorman, PC Principal, Pip, Robert Smith, Leonard Maltin) that only join in the warp zone. Arriving in town
+recruits one you don't have for each player, every game won there recruits another for the winner, and three Chance
+cards ("New kid in town", ...) do the same. Cartman, Butters, Randy and Towelie can also turn up there.
+
+**Boss: Mecha-Streisand.** A steel kaiju with Barbra Streisand behind the visor, signature attack TRIANGLE OF ZINTHAR
+(three spinning beams). Beat her and Barbra Streisand joins both rosters.
+
+**Three South Park minigames.** Dodgeball World Championship (flick to throw, don't hit Kenny), Cheesy Poofs Catch
+(catch snacks, dodge Mr. Hankey) and They Killed Kenny! (tap the pianos, rats, meteors and saucers before they reach
+him). The zone also deals the older South Park Snowball Fight and Waiting for the Wii, 34 new South Park trivia
+questions, twelve South Park items and South Park fortunes.
+
 ## v0.55.0
 
 **Flipadelphia needs a real flick.** A barely-there touch used to land the cup every time. Now a soft flick

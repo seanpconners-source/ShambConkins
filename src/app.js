@@ -4,7 +4,8 @@ const {touchDiagnostic}=require("src/touchDiagnostic.js");
 const {floatingHead}=require("src/headCutouts.js");
 const {triviaExplanationHTML, TRIVIA_QUESTIONS}=require("src/triviaCatalog.js");
 const {store, newRun, logRun, newPlayer}=require("src/state.js");
-const {freshProfile, loadProfile, saveProfile, recruitReward, canRecruitReward, availableCharacters, rememberCollectibles, homePackTurn}=require("src/profile.js");
+const {freshProfile, loadProfile, saveProfile, recruitReward, canRecruit, canRecruitReward, availableCharacters, rememberCollectibles, homePackTurn}=require("src/profile.js");
+const {pickSouthPark}=require("src/data/southPark.js");
 const {updateBoardBanter}=require("src/boardBanter.js");
 const {readJSON, writeJSON, removeSaved, RUN_KEY, PROFILE_KEY, validRun}=require("src/persistence.js");
 const {generateBoard, addHorrorBoard, routeOptions, evolveBoard, SPACE_TYPES, SPACE_ICONS}=require("src/board.js");
@@ -173,7 +174,7 @@ async function announceLevel(p){
 // ------------------------------------------------------------ warp zones and bosses
 async function enterWarpZone(pipe=null){
  const run=store.run,token=movementToken,id=pickWarpId(run,random),def=WARP_DEFS[id],boss=bossById(def.bossId);
- const choice=await showDialog({title:'A warp pipe!',source:def.source,rare:true,body:`${def.title}. ${def.intro} You will both be warped there.${boss?id==='bond-lair'?` ${boss.name} waits in SPECTRE HQ at the end: beat him and he hands over a Bond villain neither of you has.`:` ${boss.name} guards the castle at the end, and beating them unlocks a new character.`:''}${boss&&id!=='pokemon'?' First one to the end wins the zone; the other is dragged to the boss at half a point a space.':''}`,choices:[{label:`Jump in · ${def.title}`,value:'go',primary:true},{label:'Walk on by',value:'no'}]});
+ const choice=await showDialog({title:'A warp pipe!',source:def.source,rare:true,body:`${def.title}. ${def.intro} You will both be warped there.${boss?id==='bond-lair'?` ${boss.name} waits in SPECTRE HQ at the end: beat him and he hands over a Bond villain neither of you has.`:id==='south-park'?` ${boss.name} is stomping around Stark’s Pond at the end: beat her and Barbra Streisand joins you. Every game you win in town recruits another South Park character.`:` ${boss.name} guards the castle at the end, and beating them unlocks a new character.`:''}${boss&&id!=='pokemon'?' First one to the end wins the zone; the other is dragged to the boss at half a point a space.':''}`,choices:[{label:`Jump in · ${def.title}`,value:'go',primary:true},{label:'Walk on by',value:'no'}]});
  if(choice===null||store.run!==run||token!==movementToken)return;
  if(choice!=='go'){if(pipe){(pipe.warpDeclined||=[]).push(run.current);saveRun();}await finishEncounter();return;}
  if(pipe)pipe.warpUsed=true;
@@ -182,7 +183,7 @@ async function enterWarpZone(pipe=null){
  logRun(`The party warps to ${def.title}.`);saveRun();
  await warpTransition(()=>{run.mainBoard=run.board;run.savedTraps=run.traps;run.traps=[];run.board=board;for(const q of run.players){q.warpVisited=q.visited;q.visited=[];q.node=board.realms.warp.start;}run.camera='follow';run.pan=null;focusBoardAction(run,run.players.map(q=>q.node));updateBoard(true);},{title:def.title,subtitle:def.intro,icon:def.icon});
  if(store.run!==run)return;setMusicZone('warp-'+id);saveRun();
- if(id==='bond-lair')await lairWelcome(run);if(store.run!==run)return;
+ if(id==='bond-lair')await lairWelcome(run);else if(id==='south-park')await southParkWelcome(run);if(store.run!==run)return;
  await finishEncounter();
 }
 // The Bond lair: each player is met by a movie Bond they have not collected yet (recruitReward picks a missing one).
@@ -190,6 +191,12 @@ async function lairWelcome(run){
  for(const q of run.players){const actual=recruitReward(store.profile,'bond',q.owner,'encounter',random);
   if(actual){logRun(`${CHARACTERS.find(c=>c.id===actual)?.name||'A new 007'} joins ${q.owner}’s roster in the Volcano Lair.`);saveProfile(store.profile);await unlockDialog([actual],q.owner);if(store.run!==run)return;}
   else toast(`${q.owner} already has every movie Bond. Licensed to win anyway.`);}
+}
+// South Park: each player is greeted by a South Park character they do not have yet.
+async function southParkWelcome(run){
+ for(const q of run.players){const id=pickSouthPark(availableCharacters(store.profile,q.owner),cid=>canRecruit(store.profile,cid,q.owner,'southpark'),random),actual=id&&recruitReward(store.profile,id,q.owner,'southpark');
+  if(actual){logRun(`${CHARACTERS.find(c=>c.id===actual)?.name||'A South Park kid'} joins ${q.owner}’s roster in South Park.`);saveProfile(store.profile);await unlockDialog([actual],q.owner);if(store.run!==run)return;}
+  else toast(`${q.owner} already knows everybody in South Park.`);}
 }
 async function exitWarpZone(){
  const run=store.run,w=run.warp;if(!w)return;if(run.bossGate?.warp)run.bossGate=null;if(run.phase==='event'&&run.pending?.kind==='boss-gate'){run.phase='board';run.pending=null;}

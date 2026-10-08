@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.55.0 (`releases/ShambConkins_v0.55.0.html`).
+Version 0.56.0 (`releases/ShambConkins_v0.56.0.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -68,6 +68,16 @@ Version 0.55.0 (`releases/ShambConkins_v0.55.0.html`).
   stride `S`), per-player worlds (`makeWorld`: own tiles/coins/enemies), SMB1 physics constants `PH`, coin room `L.room`
   reached via `L.warp.entry` (hold down) and left via the side pipe to `L.warp.exit`. `s.debug` has `teleport`/`toWarp`.
   Challenge items `wz-question-block`, `wz-goal-flagpole`. Test: `tests/mario.mjs` (screenshots `/tmp/claude-0/sc/smb-*`).
+
+- **South Park warp zone (v0.56):** `south-park` in `WARP_DEFS` (town-map scene `sceneSouthPark` in `warpBoards.js`: route
+  `SP_STREETS` along square street corners, buildings via `spHouse`/`spShop`, `spMecha` at Stark's Pond replaces the castle;
+  CSS `.sp-sign/.sp-shop`; theme `warp-south-park`; music style `south-park`). Cast in `data/southPark.js`: 26 new
+  `sp-*` characters with `unlockBy:'southpark'` (new SPECIAL_UNLOCKS kind, gated in `canRecruit`), `SOUTH_PARK_IDS`
+  (also cartman/butters/randy/towlie), `pickSouthPark`. Recruits: `southParkWelcome` (app.js) on arrival, every board
+  game won on the SP board (`settleGame`), Chance effect `['southpark']` (events.js). Boss `mecha-streisand` (body
+  `mecha`, attack/sig `zinthar`, scene `southpark`, `unlockId:'barbra-streisand'`, `unlockName` shown in boss rules).
+  Games in `engines/southPark.js`: `sp-dodgeball`, `sp-cheesy-poofs`, `sp-killed-kenny`. Items `wz-*` South Park pack,
+  34 trivia lines in `warpTrivia.js` (feed the existing `southpark` topic). Test: `tests/southpark.mjs`.
 
 ## Recent changes (this round of owner feedback)
 Boss trigger fix + drag flow; 2x heads (board, collection, character select); collection pages fit the screen;

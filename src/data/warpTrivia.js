@@ -114,11 +114,46 @@ m|Which actor plays Professor Plum in the 1985 Clue movie?|Christopher Lloyd|Mar
 m|Which actor plays Colonel Mustard in the 1985 Clue movie?|Martin Mull|Christopher Lloyd|Michael McKean|Tim Curry|The film had three alternate endings.
 h|Who directed the 1985 Clue movie?|Jonathan Lynn|John Landis|John Hughes|Rob Reiner|He later directed My Cousin Vinny.
 h|Which actress plays Miss Scarlet in the 1985 Clue movie?|Lesley Ann Warren|Eileen Brennan|Madeline Kahn|Colleen Camp|Eileen Brennan plays Mrs. Peacock.
+@South Park|animation|South_Park
+e|In Mecha-Streisand, which object turns Barbra Streisand into a giant robot?|The Triangle of Zinthar|The Sword of a Thousand Truths|A Chinpokomon card|The Okama GameSphere|The boys dig the Triangle of Zinthar up on an archaeology field trip.
+e|Which pond do the South Park kids skate and fish on?|Stark's Pond|Lake Tardicaca|Walden Pond|Crystal Lake|Stark's Pond sits at the edge of town in front of the mountains.
+e|How does Mr. Hankey greet everybody?|Howdy ho!|Hidely-ho!|Mmkay!|Sweet!|He is the Christmas Poo.
+e|Which holiday is Mr. Hankey tied to?|Christmas|Halloween|Thanksgiving|Easter|He is Mr. Hankey, the Christmas Poo.
+e|Which cheesy snack does Cartman love?|Cheesy Poofs|Cheddar Chunks|Poofy Puffs|Snacky Bites|He even sings in a Cheesy Poofs commercial.
+e|What does Cartman demand that people respect?|My authoritah|My territory|My elders|My privacy|He says it while dressed as a police officer.
+e|Which sport do the boys play at the world championship in Conjoined Fetus Lady?|Dodgeball|Hockey|Baseball|Curling|The team ends up in the world final in China.
+e|What is Big Gay Al's answer when asked how he is?|I'm super! Thanks for asking!|Fair to middling|Never better, sugar!|Can't complain|He runs a sanctuary for gay animals.
+m|Which film critic turns into a giant monster to fight Mecha-Streisand?|Leonard Maltin|Roger Ebert|Gene Siskel|Rex Reed|Maltin is joined by Sidney Poitier as a giant turtle-like monster.
+m|What is the name of the bar run by Skeeter?|Skeeter's Wine Bar|Skeeter's Saloon|The Mile High Tavern|Paddy's Pub|Skeeter is known for threatening newcomers who say the wrong thing.
+m|What is the name of South Park's hospital?|Hell's Pass Hospital|Park County General|Mount Sinai West|Sacred Heart|The hospital is where Kenny often ends up.
+m|Which police officer could not read in the early seasons?|Officer Barbrady|Sergeant Yates|Officer Lefty|Chief Wiggum|He goes back to first grade to learn.
+m|What does Uncle Jimbo shout before shooting an animal?|It's coming right for us!|Fire in the hole!|Get some!|Look out below!|It makes the hunt legal, according to Jimbo.
+m|What is the name of Jimbo's Vietnam-veteran hunting buddy?|Ned|Ted|Ed|Fred|Ned speaks through a voice box.
+m|Who keeps warning the town about ManBearPig?|Al Gore|Bill Clinton|Mr. Garrison|Randy Marsh|He insists he is super cereal.
+m|What is the name of Stan's dog?|Sparky|Spot|Rusty|Scuzzlebutt|Sparky runs away to Big Gay Al's sanctuary.
+m|What is Cartman's cat called?|Mr. Kitty|Mr. Whiskers|Snowball|Fluffy|Cartman fights Mr. Kitty over a Kitty Treat.
+m|Who drives the South Park school bus?|Ms. Crabtree|Mrs. Cartman|Ms. Choksondik|Nurse Gollum|She is known for screaming at the kids to sit down.
+m|What is the name of the South Park mayor?|Mayor McDaniels|Mayor Quimby|Mayor West|Mayor Hargrove|She is usually flanked by two aides.
+m|What does Towelie always remind people?|Don't forget to bring a towel!|Always wipe front to back!|Stay dry, my friends!|Keep it clean!|He usually follows it with wanting to get high.
+m|Which line usually follows Stan's Oh my God, they killed Kenny?|You bastards!|Not again!|Somebody call 911!|Dude, sweet!|Kyle usually delivers it.
+m|What is the 1999 South Park movie called?|South Park: Bigger, Longer & Uncut|South Park: The Movie Strikes Back|South Park: Blame Canada|South Park: Mountain Town|It earned an Oscar nomination for Blame Canada.
+h|Who voices Eric Cartman?|Trey Parker|Matt Stone|Isaac Hayes|Mona Marshall|Parker also voices Stan and Mr. Garrison.
+h|Who voices Kyle Broflovski?|Matt Stone|Trey Parker|Eliza Schneider|April Stewart|Stone also voices Kenny.
+h|What does Robert Smith turn into to defeat Mecha-Streisand?|A giant moth|A giant turtle|A giant bat|A giant robot|The boys cheer as he flies off into the sunset.
+h|Which actor fights Mecha-Streisand alongside Leonard Maltin?|Sidney Poitier|Morgan Freeman|Denzel Washington|James Earl Jones|He turns into a giant monster too.
+h|What is the name of Mr. Garrison's second puppet after Mr. Hat?|Mr. Twig|Mr. Stick|Mr. Sock|Mr. Branch|Mr. Twig is literally a stick.
+h|What is Craig Tucker's guinea pig called?|Stripe|Spot|Sparky|Fluffy|Craig loves guinea pigs.
+h|What is the name of Timmy's band?|Timmy and the Lords of the Underworld|Timmy and the Wheels|Timmy and the Big Wheels|The Timmy Experience|Phil Collins gets jealous of the band.
+h|What is the title of the Terrance and Phillip film in Bigger, Longer & Uncut?|Asses of Fire|Not Without My Anus|Fart Wars|Canadian Bacon|Seeing it teaches the boys a lot of new words.
+i|Who is Satan's partner in Bigger, Longer & Uncut?|Saddam Hussein|Adolf Hitler|Kim Jong-il|Osama bin Laden|Satan eventually dumps him.
+i|In which country is the dodgeball world final in Conjoined Fetus Lady?|China|Japan|Canada|Russia|The South Park team beats the Chinese team.
+i|In which season does Mecha-Streisand air?|Season 1|Season 2|Season 3|Season 5|It is the twelfth episode of the first season (1998).
+i|What is the school nurse's name in Conjoined Fetus Lady?|Nurse Gollum|Nurse Ratched|Nurse Joy|Nurse Crabtree|She has a conjoined twin fetus attached to her head.
 `;
 function parseFacts(text){let source,category,page;return text.trim().split('\n').filter(Boolean).flatMap(line=>{
  if(line.startsWith('@')){[source,category,page]=line.slice(1).split('|');return [];}
  const[difficulty,q,answer,a,b,c,explanation]=line.split('|');
- return [{source,category,difficulty:levels[difficulty],q,answers:[answer,a,b,c],correct:0,explanation,provenance:'v0.52 warp-zone trivia; subject page linked for review',citations:[{label:source,url:'https://en.wikipedia.org/wiki/'+page}]}];
+ return [{source,category,difficulty:levels[difficulty],q,answers:[answer,a,b,c],correct:0,explanation,provenance:'warp-zone trivia (v0.52+); subject page linked for review',citations:[{label:source,url:'https://en.wikipedia.org/wiki/'+page}]}];
 });}
 const WARP_TRIVIA=parseFacts(FACTS);
 const WARP_TRIVIA_THEMES=[

@@ -50,6 +50,9 @@ const STYLES={
  // Original spy-surf groove: minor-major chords, walking bass, twangy lead. No film melodies.
  'bond-lair':{genre:'Spy Surf Jazz',bpm:118,swing:0,swing8:.18,key:4,cs:16,gain:1.2,
   bright:{scale:'harmonic',A:'0.mmaj9 0.m6 0.mmaj9 0.m6',B:'8.maj7 5.m9 0.mmaj9 11.7b9'},chordInst:'brass',comp:'stabs',bass:'walk',bassInst:'upright',pad:'strings',kit:'swing',lead:'guitar',center:70,density:'mid',amb:'rumble'},
+ // Original mountain-town folk-rock: strummed guitar, bouncing bass, toy piano. No theme-song melody.
+ 'south-park':{genre:'Mountain Town Folk-Rock',bpm:126,swing:.06,key:2,cs:16,gain:1.15,
+  bright:{scale:'mixo',A:'0.M 10.M 5.M 0.M',B:'5.M 0.M 7.sus 7.M'},chordInst:'pluck',comp:'strum',bass:'bounce',bassInst:'upright',pad:null,kit:'pop',lead:'toypiano',center:76,density:'mid',amb:'wind'},
  'green-hill':{genre:'Sunny Synth-Funk',bpm:136,swing:0,key:0,cs:16,gain:1.15,
   bright:{scale:'major',A:'5.maj7 7.M 4.m7 9.m',B:'2.m7 4.m7 5.maj7 7.sus'},chordInst:'clav',comp:'stabs',bass:'funk',bassInst:'slap',pad:'glass',kit:'breakbeat',lead:'square',center:76,density:'busy',amb:null}
 };

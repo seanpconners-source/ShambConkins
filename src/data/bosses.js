@@ -268,7 +268,15 @@ const BOSSES=[
   quote:'Allow me to introduce myself. I am Ernst Stavro Blofeld.',phaseLines:[null,'This organisation does not tolerate failure.','Kill Bond. Now!'],koLine:'*strokes the cat one last time* ...we shall meet again.',
   attacks:[[['aimed',{n:2,rounds:4,pink:.25}],['fan',{count:6,arc:1.2,rounds:3}],['laser',{count:1,sweep:1.7}]],
    [['trapdoor',{}],['minions',{n:3,kind:'drone',hp:5}],['aimed',{n:3,spread:.18,rounds:3,pink:.2}]],
-   [['trapdoor',{n:4}],['laser',{count:2,sweep:2}],['minions',{n:4,kind:'drone',hp:5}],['ring',{count:14,rings:3}]]]})
+   [['trapdoor',{n:4}],['laser',{count:2,sweep:2}],['minions',{n:4,kind:'drone',hp:5}],['ring',{count:14,rings:3}]]]}),
+ // South Park warp boss. Her face is Barbra Streisand's portrait (unlockId); unlockName shows who a win unlocks.
+ def({id:'mecha-streisand',name:'Mecha-Streisand',epithet:'Holder of the Triangle of Zinthar',source:'South Park',icon:'🦖',unlockId:'barbra-streisand',unlockName:'Barbra Streisand',level:'warp',warp:'south-park',tier:3,
+  body:'mecha',look:{size:.9},scene:'southpark',pal:['#9aa3ad','#1c2230','#ff3b6b','#eef3f8'],sig:'zinthar',
+  tone:{base:92,voice:'square',beat:300,notes:[0,7,5,7,10,7,5,3],bass:true},
+  quote:'The Triangle of Zinthar is mine! Now I become... MECHA-STREISAND!',phaseLines:[null,'Nobody upstages Barbra!','Stomp the little town flat!'],koLine:'*crashes into Stark’s Pond* My nose! My beautiful nose!',
+  attacks:[[['aimed',{n:2,rounds:4,pink:.25}],['fan',{count:6,arc:1.2,rounds:3}],['slam',{n:2}]],
+   [['zinthar',{}],['rain',{dur:3.5,rate:6,kind:'fire'}],['laser',{count:1,sweep:1.8}]],
+   [['zinthar',{n:2}],['shockwave',{rows:3}],['minions',{n:3,kind:'drone',hp:5}],['ring',{count:14,rings:3}]]]})
 ];
 
 // New playable characters unlocked by beating these bosses (id, name, source, icon, actor/subject page, perk, line).
@@ -300,7 +308,8 @@ const BOSS_CHARACTERS=[
  ['boom-boom','Boom Boom','Super Mario Bros. 3','💥','Boom Boom (Mario)','competitor','Flails at every opponent. Surprisingly effective.'],
  ['professor-plum','Professor Plum','Clue','🕯️','Professor Plum','explorer','In the Study, with the candlestick, finding landmarks.'],
  ['ganon','Ganon','The Legend of Zelda','🐗','Ganon','survivor','The Prince of Darkness. Shields reflect.'],
- ['dr-robotnik','Dr. Robotnik','Sonic the Hedgehog','🥚','Doctor Eggman','scavenger','Has a robot for every problem and a supply for every robot.']
+ ['dr-robotnik','Dr. Robotnik','Sonic the Hedgehog','🥚','Doctor Eggman','scavenger','Has a robot for every problem and a supply for every robot.'],
+ ['barbra-streisand','Barbra Streisand','South Park','🎤','Barbra Streisand','competitor','Back to her normal size. The Triangle of Zinthar is in a drawer somewhere.']
 ];
 
 const bossById=id=>BOSSES.find(b=>b.id===id);

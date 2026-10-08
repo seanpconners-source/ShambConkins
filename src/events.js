@@ -6,6 +6,7 @@ const {resolveEncounterGame}=require("src/encounterGames.js");
 const {weighted, pick, shuffle}=require("src/utils.js");
 const {addHorrorBoard, advanceAlong}=require("src/board.js");
 const {selectReferenceSource, selectThemedEncounter}=require("src/references.js");
+const {pickSouthPark}=require("src/data/southPark.js");
 const RARE_EVENTS = [
  {id:'upside-down',title:'Oops. The Upside Down.',source:'Stranger Things',body:'You have fallen between worlds. Four of your turns on a twisted pocket board, then you return.',effect:'upside'},
  {id:'body-skip',title:'Express elevator to the castle',source:'Star Trek',body:'A transporter operator pressed the wrong button. You beam straight to the door of the Level 1 castle. The boss is home.',effect:'body'},
@@ -54,6 +55,8 @@ function applyEvent(run,profile,event,random=Math.random) {
   case 'points':{const amount=Number(a)||0,r=pointChange(p,p.cloak&&amount<0?0:amount);message=p.cloak&&amount<0?'Your cloak avoided the penalty.':r.blocked?'Penalty shield used.':`${r.delta>=0?'+':''}${r.delta} points.`;break;}
   case 'item':message=gainItem(a).message;break;
   case 'unlockChar':{const actual=unlock(a);message=actual?`${character(actual).name} joins ${p.owner}'s roster.`:'An old friend brings +3 points.';if(!actual)p.points+=3;break;}
+  // South Park warp Chance card: a South Park character this player does not have yet moves to town.
+  case 'southpark':{const id=pickSouthPark(availableCharacters(profile,p.owner),id=>canRecruitReward(profile,id,p.owner,'southpark'),random),actual=id&&recruit(profile,id,p.owner,'southpark')?id:null;if(actual){unlocked.push(actual);unlockOwners[actual]=p.owner;message=`${character(actual).name} joins ${p.owner}'s roster.`;}else{p.points+=3;message='You already know everybody in town. +3 points instead.';}break;}
   case 'unlockDogs':for(const id of ['kc','mylo'])if(recruit(profile,id,null,'dogs'))unlocked.push(id);message='KC and Mylo join both rosters.';break;
   case 'mg':case 'unlockGame':game=resolveEncounterGame(a,{source:event.source});if(game){profile.games||=[];if(!profile.games.includes(game.id))profile.games.push(game.id);}roulette=!game;message='A new challenge awaits.';break;
   case 'classic':case 'casino':roulette=true;message='The arcade is open.';break;

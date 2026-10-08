@@ -29,6 +29,7 @@ body[data-theme="warp-clue"]{--t-bg0:#0a0604;--t-bg1:#1f110a;--t-glow:#5a2a14;--
 body[data-theme="warp-hyrule"]{--t-bg0:#050a05;--t-bg1:#0e1e0e;--t-glow:#2a5a1a;--t-glow2:#6a5a10;--t-s1:#1f3121;--t-s2:#121f13;--t-s3:#29402b;--t-well:#070f07;--t-sub:#c8deb2;--t-dim:#8ea47a;--t-acc:#f2d35a;--t-acc2:#3f9a3a;--t-acc-ink:#1a1a04;--t-hot:#7fd8ff}
 body[data-theme="warp-green-hill"]{--t-bg0:#030816;--t-bg1:#0a1b3d;--t-glow:#1a52b0;--t-glow2:#2a8a3a;--t-s1:#182d53;--t-s2:#0f1c37;--t-s3:#213b69;--t-well:#060d1f;--t-sub:#b6d3ff;--t-dim:#7f9cc8;--t-acc:#ffd23a;--t-acc2:#2a7ae0;--t-acc-ink:#0a1430;--t-hot:#7cff9a}
 body[data-theme="warp-bond-lair"]{--t-bg0:#070505;--t-bg1:#1a0f0c;--t-glow:#6a1410;--t-glow2:#3a3d44;--t-s1:#2a2224;--t-s2:#181314;--t-s3:#352c2e;--t-well:#0c0909;--t-sub:#e4d6cc;--t-dim:#a8968c;--t-acc:#e8c45a;--t-acc2:#c8161d;--t-acc-ink:#1a1006;--t-hot:#ff6a4a}
+body[data-theme="warp-south-park"]{--t-bg0:#0b1424;--t-bg1:#16264a;--t-glow:#2f6bb0;--t-glow2:#2f6b4a;--t-s1:#1f3358;--t-s2:#142440;--t-s3:#2a4270;--t-well:#0a1222;--t-sub:#d8e8fb;--t-dim:#94aed0;--t-acc:#ffd23c;--t-acc2:#ff3b6b;--t-acc-ink:#1a1206;--t-hot:#ff7a3a}
 
 /* ---------- Page backdrop ---------- */
 html,body{background-color:var(--t-bg0)}

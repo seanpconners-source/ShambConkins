@@ -898,6 +898,8 @@ body.gb-open{overflow:hidden}
 @keyframes lb-out{to{transform:skewY(-4deg) translateX(110%);opacity:0}}
 .warp-lair-room{font:900 26px system-ui,sans-serif;fill:#ffd23c;paint-order:stroke;stroke:#0b0b0d;stroke-width:7px;letter-spacing:.04em}
 .warp-lair-small{font:800 20px system-ui,sans-serif;fill:#e8e6e0;letter-spacing:.08em}
+.sp-sign{font:900 22px system-ui,sans-serif;fill:#1c1a24;paint-order:stroke;stroke:#fff;stroke-width:7px;letter-spacing:.02em}
+.sp-shop{font:900 17px system-ui,sans-serif;fill:#fff;letter-spacing:.04em}
 
 /* ==========================================================================
    v0.47 interface theme: the title screen's dark arcade look on every menu,
@@ -930,6 +932,7 @@ body[data-theme="warp-clue"]{--t-bg0:#0a0604;--t-bg1:#1f110a;--t-glow:#5a2a14;--
 body[data-theme="warp-hyrule"]{--t-bg0:#050a05;--t-bg1:#0e1e0e;--t-glow:#2a5a1a;--t-glow2:#6a5a10;--t-s1:#1f3121;--t-s2:#121f13;--t-s3:#29402b;--t-well:#070f07;--t-sub:#c8deb2;--t-dim:#8ea47a;--t-acc:#f2d35a;--t-acc2:#3f9a3a;--t-acc-ink:#1a1a04;--t-hot:#7fd8ff}
 body[data-theme="warp-green-hill"]{--t-bg0:#030816;--t-bg1:#0a1b3d;--t-glow:#1a52b0;--t-glow2:#2a8a3a;--t-s1:#182d53;--t-s2:#0f1c37;--t-s3:#213b69;--t-well:#060d1f;--t-sub:#b6d3ff;--t-dim:#7f9cc8;--t-acc:#ffd23a;--t-acc2:#2a7ae0;--t-acc-ink:#0a1430;--t-hot:#7cff9a}
 body[data-theme="warp-bond-lair"]{--t-bg0:#070505;--t-bg1:#1a0f0c;--t-glow:#6a1410;--t-glow2:#3a3d44;--t-s1:#2a2224;--t-s2:#181314;--t-s3:#352c2e;--t-well:#0c0909;--t-sub:#e4d6cc;--t-dim:#a8968c;--t-acc:#e8c45a;--t-acc2:#c8161d;--t-acc-ink:#1a1006;--t-hot:#ff6a4a}
+body[data-theme="warp-south-park"]{--t-bg0:#0b1424;--t-bg1:#16264a;--t-glow:#2f6bb0;--t-glow2:#2f6b4a;--t-s1:#1f3358;--t-s2:#142440;--t-s3:#2a4270;--t-well:#0a1222;--t-sub:#d8e8fb;--t-dim:#94aed0;--t-acc:#ffd23c;--t-acc2:#ff3b6b;--t-acc-ink:#1a1206;--t-hot:#ff7a3a}
 
 /* ---------- Page backdrop ---------- */
 html,body{background-color:var(--t-bg0)}
@@ -1241,7 +1244,8 @@ const {touchDiagnostic}=require("src/touchDiagnostic.js");
 const {floatingHead}=require("src/headCutouts.js");
 const {triviaExplanationHTML, TRIVIA_QUESTIONS}=require("src/triviaCatalog.js");
 const {store, newRun, logRun, newPlayer}=require("src/state.js");
-const {freshProfile, loadProfile, saveProfile, recruitReward, canRecruitReward, availableCharacters, rememberCollectibles, homePackTurn}=require("src/profile.js");
+const {freshProfile, loadProfile, saveProfile, recruitReward, canRecruit, canRecruitReward, availableCharacters, rememberCollectibles, homePackTurn}=require("src/profile.js");
+const {pickSouthPark}=require("src/data/southPark.js");
 const {updateBoardBanter}=require("src/boardBanter.js");
 const {readJSON, writeJSON, removeSaved, RUN_KEY, PROFILE_KEY, validRun}=require("src/persistence.js");
 const {generateBoard, addHorrorBoard, routeOptions, evolveBoard, SPACE_TYPES, SPACE_ICONS}=require("src/board.js");
@@ -1410,7 +1414,7 @@ async function announceLevel(p){
 // ------------------------------------------------------------ warp zones and bosses
 async function enterWarpZone(pipe=null){
  const run=store.run,token=movementToken,id=pickWarpId(run,random),def=WARP_DEFS[id],boss=bossById(def.bossId);
- const choice=await showDialog({title:'A warp pipe!',source:def.source,rare:true,body:`${def.title}. ${def.intro} You will both be warped there.${boss?id==='bond-lair'?` ${boss.name} waits in SPECTRE HQ at the end: beat him and he hands over a Bond villain neither of you has.`:` ${boss.name} guards the castle at the end, and beating them unlocks a new character.`:''}${boss&&id!=='pokemon'?' First one to the end wins the zone; the other is dragged to the boss at half a point a space.':''}`,choices:[{label:`Jump in · ${def.title}`,value:'go',primary:true},{label:'Walk on by',value:'no'}]});
+ const choice=await showDialog({title:'A warp pipe!',source:def.source,rare:true,body:`${def.title}. ${def.intro} You will both be warped there.${boss?id==='bond-lair'?` ${boss.name} waits in SPECTRE HQ at the end: beat him and he hands over a Bond villain neither of you has.`:id==='south-park'?` ${boss.name} is stomping around Stark’s Pond at the end: beat her and Barbra Streisand joins you. Every game you win in town recruits another South Park character.`:` ${boss.name} guards the castle at the end, and beating them unlocks a new character.`:''}${boss&&id!=='pokemon'?' First one to the end wins the zone; the other is dragged to the boss at half a point a space.':''}`,choices:[{label:`Jump in · ${def.title}`,value:'go',primary:true},{label:'Walk on by',value:'no'}]});
  if(choice===null||store.run!==run||token!==movementToken)return;
  if(choice!=='go'){if(pipe){(pipe.warpDeclined||=[]).push(run.current);saveRun();}await finishEncounter();return;}
  if(pipe)pipe.warpUsed=true;
@@ -1419,7 +1423,7 @@ async function enterWarpZone(pipe=null){
  logRun(`The party warps to ${def.title}.`);saveRun();
  await warpTransition(()=>{run.mainBoard=run.board;run.savedTraps=run.traps;run.traps=[];run.board=board;for(const q of run.players){q.warpVisited=q.visited;q.visited=[];q.node=board.realms.warp.start;}run.camera='follow';run.pan=null;focusBoardAction(run,run.players.map(q=>q.node));updateBoard(true);},{title:def.title,subtitle:def.intro,icon:def.icon});
  if(store.run!==run)return;setMusicZone('warp-'+id);saveRun();
- if(id==='bond-lair')await lairWelcome(run);if(store.run!==run)return;
+ if(id==='bond-lair')await lairWelcome(run);else if(id==='south-park')await southParkWelcome(run);if(store.run!==run)return;
  await finishEncounter();
 }
 // The Bond lair: each player is met by a movie Bond they have not collected yet (recruitReward picks a missing one).
@@ -1427,6 +1431,12 @@ async function lairWelcome(run){
  for(const q of run.players){const actual=recruitReward(store.profile,'bond',q.owner,'encounter',random);
   if(actual){logRun(`${CHARACTERS.find(c=>c.id===actual)?.name||'A new 007'} joins ${q.owner}’s roster in the Volcano Lair.`);saveProfile(store.profile);await unlockDialog([actual],q.owner);if(store.run!==run)return;}
   else toast(`${q.owner} already has every movie Bond. Licensed to win anyway.`);}
+}
+// South Park: each player is greeted by a South Park character they do not have yet.
+async function southParkWelcome(run){
+ for(const q of run.players){const id=pickSouthPark(availableCharacters(store.profile,q.owner),cid=>canRecruit(store.profile,cid,q.owner,'southpark'),random),actual=id&&recruitReward(store.profile,id,q.owner,'southpark');
+  if(actual){logRun(`${CHARACTERS.find(c=>c.id===actual)?.name||'A South Park kid'} joins ${q.owner}’s roster in South Park.`);saveProfile(store.profile);await unlockDialog([actual],q.owner);if(store.run!==run)return;}
+  else toast(`${q.owner} already knows everybody in South Park.`);}
 }
 async function exitWarpZone(){
  const run=store.run,w=run.warp;if(!w)return;if(run.bossGate?.warp)run.bossGate=null;if(run.phase==='event'&&run.pending?.kind==='boss-gate'){run.phase='board';run.pending=null;}
@@ -1870,7 +1880,7 @@ function differentCharacters(a,b) { return characterIdentity(a)!==characterIdent
 function characterPerk(id) { const c = character(id); if (c.perk) return c.perk; return { sean: 'Home advantage: +1 point for visiting a location.', amber: 'Lucky break: one extra reroll each realm.', kc: 'Herding duty: +1 movement on rolls.', mylo: 'Zoomies: +2 movement, with a 1-in-5 chance of a detour.', loki: 'Guardian: gains a shield at each realm gate.' }[id] || ['Explorer: +1 point at locations.', 'Competitor: +1 point on a minigame win.', 'Scavenger: bonus item at the second and third realm gates.', 'Survivor: starts with a penalty shield and earns another at each realm gate if you have none.'][hash(id) % 4]; }
 function perkType(id) { if (['sean','amber','kc','mylo','loki','gordon-ramsay'].includes(id)) return id; return character(id).perkType || ['explorer','competitor','scavenger','survivor'][hash(id) % 4]; }
 
-const SPECIAL_UNLOCKS=['item','game-win','lab','character-win','horror','boss','dogs'];
+const SPECIAL_UNLOCKS=['item','game-win','lab','character-win','horror','boss','dogs','southpark'];
 Object.assign(exports,{SPECIAL_UNLOCKS,CHARACTERS,character,characterIdentity,differentCharacters,characterPerk,perkType});
 },
 "src/contentPolicy.js":(exports,require)=>{
@@ -1895,6 +1905,7 @@ const {POKEMON_CHARACTERS}=require("src/data/pokemonPack.js");
 const {PKMN_CATALOG_ITEMS}=require("src/data/pkmnItems.js");
 const {WARP_ITEMS}=require("src/data/warpItems.js");
 const {LAIR_VILLAIN_CHARACTERS}=require("src/data/bondLair.js");
+const {SOUTH_PARK_CHARACTERS}=require("src/data/southPark.js");
 const {balanceItem}=require("src/data/balance.js");
 // Preserve the uploaded catalog byte-for-byte. Sean has explicitly disclaimed
 // Eugenia, so its inherited character, pass and four cards are inactive.
@@ -1919,6 +1930,7 @@ ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='bond'?MOVIE_B
 ACTIVE_CATALOG.characters.push(...MOVIE_BOND_CHARACTERS.slice(1),...FACE_PACK_CHARACTERS,...NEW_CHARACTERS);
 ACTIVE_CATALOG.characters.push(...NEW_CHARACTERS2);
 ACTIVE_CATALOG.characters.push(...LAIR_VILLAIN_CHARACTERS);
+ACTIVE_CATALOG.characters.push(...SOUTH_PARK_CHARACTERS);
 ACTIVE_CATALOG.characters.push(...POKEMON_CHARACTERS);
 // KC and Mylo always arrive together (the early family event), never one at a time.
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='kc'||c.id==='mylo'?{...c,unlockBy:'dogs',unlockHint:'KC and Mylo arrive together early in your first run.'}:c);
@@ -9234,7 +9246,7 @@ Object.assign(exports,{LEGENDS_ITEMS});
 
 },
 "src/version.js":(exports,require)=>{
-const VERSION='0.55.0';
+const VERSION='0.56.0';
 Object.assign(exports,{VERSION});
 
 },
@@ -9547,7 +9559,7 @@ const games=[];
 const LEVEL_LABEL={mind:'Mind',body:'Body',spirit:'Spirit',horror:'Horror',warp:'Warp'};
 const events=BOSSES.map(b=>({id:'boss-'+b.id,engine:'bossfight',bossId:b.id,title:'Boss · '+b.name,source:b.source,icon:b.icon,category:'coop',
  duration:'about 90 seconds',cooperative:true,reward:10,level:b.level,tier:b.tier,
- rules:`BOTH PLAYERS FIGHT ${b.name.toUpperCase()}, ${b.epithet.toUpperCase()}. Drag your half of the screen to fly; you auto-fire. Tap on a PINK bullet to parry it (safe moment + super meter). Tap again or flick up with a full meter to unleash your Super. Each of you has 3 hearts; a downed partner floats as a bubble: fly into it and tap within 5 seconds to revive. Both down means defeat. Win to unlock ${b.name}.`}));
+ rules:`BOTH PLAYERS FIGHT ${b.name.toUpperCase()}, ${b.epithet.toUpperCase()}. Drag your half of the screen to fly; you auto-fire. Tap on a PINK bullet to parry it (safe moment + super meter). Tap again or flick up with a full meter to unleash your Super. Each of you has 3 hearts; a downed partner floats as a bubble: fly into it and tap within 5 seconds to revive. Both down means defeat. Win to unlock ${b.unlockName||b.name}.`}));
 // Pick a random boss of a board level ('mind'|'body'|'spirit'|'horror'|'warp'). `random` is a () => [0,1) source.
 function bossFor(level,random=Math.random,excludeIds=[]){const ex=new Set(excludeIds||[]);let list=bossesForLevel(level).filter(b=>!ex.has(b.id)&&!ex.has('boss-'+b.id));if(!list.length)list=bossesForLevel(level);if(!list.length)return null;return list[Math.min(list.length-1,Math.floor(random()*list.length))];}
 Object.assign(exports,{engines,games,events,bossFor,LEVEL_LABEL});
@@ -9688,7 +9700,7 @@ function canRecruit(profile,id,owner=null,reason='encounter') {
  if(id==='loki'&&reason!=='pair')return false;
  const record=CATALOG.characters.find(c=>c.id===id);
  if(!record&&id!=='gordon-ramsay')return false;
- if(record?.unlockBy==='item'&&reason!=='item'||record?.unlockBy==='game-win'&&reason!=='game'||record?.unlockBy==='character-win'&&reason!=='character'||record?.unlockBy==='horror'&&reason!=='horror'||record?.unlockBy==='boss'&&reason!=='boss'||record?.unlockBy==='dogs'&&reason!=='dogs')return false;
+ if(record?.unlockBy==='item'&&reason!=='item'||record?.unlockBy==='game-win'&&reason!=='game'||record?.unlockBy==='character-win'&&reason!=='character'||record?.unlockBy==='horror'&&reason!=='horror'||record?.unlockBy==='boss'&&reason!=='boss'||record?.unlockBy==='dogs'&&reason!=='dogs'||record?.unlockBy==='southpark'&&reason!=='southpark')return false;
  if(record?.unlockBy==='lab'){
   if(reason!=='lab'||!owner)return false;
   if(id==='uss-carson'&&!LAB_TEAM.every(c=>availableCharacters(profile,owner).includes(c)))return false;
@@ -12656,6 +12668,7 @@ const {resolveEncounterGame}=require("src/encounterGames.js");
 const {weighted, pick, shuffle}=require("src/utils.js");
 const {addHorrorBoard, advanceAlong}=require("src/board.js");
 const {selectReferenceSource, selectThemedEncounter}=require("src/references.js");
+const {pickSouthPark}=require("src/data/southPark.js");
 const RARE_EVENTS = [
  {id:'upside-down',title:'Oops. The Upside Down.',source:'Stranger Things',body:'You have fallen between worlds. Four of your turns on a twisted pocket board, then you return.',effect:'upside'},
  {id:'body-skip',title:'Express elevator to the castle',source:'Star Trek',body:'A transporter operator pressed the wrong button. You beam straight to the door of the Level 1 castle. The boss is home.',effect:'body'},
@@ -12704,6 +12717,8 @@ function applyEvent(run,profile,event,random=Math.random) {
   case 'points':{const amount=Number(a)||0,r=pointChange(p,p.cloak&&amount<0?0:amount);message=p.cloak&&amount<0?'Your cloak avoided the penalty.':r.blocked?'Penalty shield used.':`${r.delta>=0?'+':''}${r.delta} points.`;break;}
   case 'item':message=gainItem(a).message;break;
   case 'unlockChar':{const actual=unlock(a);message=actual?`${character(actual).name} joins ${p.owner}'s roster.`:'An old friend brings +3 points.';if(!actual)p.points+=3;break;}
+  // South Park warp Chance card: a South Park character this player does not have yet moves to town.
+  case 'southpark':{const id=pickSouthPark(availableCharacters(profile,p.owner),id=>canRecruitReward(profile,id,p.owner,'southpark'),random),actual=id&&recruit(profile,id,p.owner,'southpark')?id:null;if(actual){unlocked.push(actual);unlockOwners[actual]=p.owner;message=`${character(actual).name} joins ${p.owner}'s roster.`;}else{p.points+=3;message='You already know everybody in town. +3 points instead.';}break;}
   case 'unlockDogs':for(const id of ['kc','mylo'])if(recruit(profile,id,null,'dogs'))unlocked.push(id);message='KC and Mylo join both rosters.';break;
   case 'mg':case 'unlockGame':game=resolveEncounterGame(a,{source:event.source});if(game){profile.games||=[];if(!profile.games.includes(game.id))profile.games.push(game.id);}roulette=!game;message='A new challenge awaits.';break;
   case 'classic':case 'casino':roulette=true;message='The arcade is open.';break;
@@ -12738,6 +12753,7 @@ const {showDialog, closeDialog, unlockDialog, updateBoard, toast}=require("src/u
 const {gameArtHTML, portraitHTML}=require("src/assets.js");
 const {recordGame, recruitReward, availableCharacters, canRecruit, saveProfile}=require("src/profile.js");
 const {pickLairVillain}=require("src/data/bondLair.js");
+const {pickSouthPark}=require("src/data/southPark.js");
 const {CHARACTERS, perkType}=require("src/characters.js");
 const {escapeHTML, pick, runRandom}=require("src/utils.js");
 const {sound}=require("src/audio.js");
@@ -12797,6 +12813,8 @@ async function settleGame(game,scores,label,origin,players,coop=null,returnToRol
  if(winner!==null&&origin!=='dev'){const p=players[winner],pool=gameRecruitPool(game,store.profile,p);if(origin==='board'&&!coop)hooks.journeyWin?.(winner);const chance=recruitmentChance(store.profile,{...p,recruitGuarantee:origin==='board'&&p.recruitGuarantee,triviaRecruitBonus:game.engine==='trivia'&&p.triviaRecruitBonus},gameHasGuaranteedRecruit(game,store.profile,p));if(pool.length&&Math.random()<chance){const c=pick(pool);const actual=recruitReward(store.profile,c.id,p.owner,'game');if(actual){unlocked.push(actual);if(origin==='board')p.recruitGuarantee=false;}}(store.profile.recruitDryStreak||={Sean:0,Amber:0})[p.owner]=unlocked.length?0:1;if(unlocked.length)toast(`${CHARACTERS.find(c=>c.id===unlocked[0])?.name||'New character'} added to ${p.owner}’s roster!`);if(p.recruitBonus)p.recruitBonus=false;if(p.triviaRecruitBonus&&game.engine==='trivia')p.triviaRecruitBonus=false;
   const secret=origin==='board'?pairForRun(store.run)?.winUnlock:null;if(secret?.game===game.id){const actual=recruitReward(store.profile,secret.character,null,'pair');if(actual)unlocked.push(actual);}
   const heir=CHARACTERS.find(c=>c.unlockBy==='character-win'&&c.requires===p.character);if(heir){const actual=recruitReward(store.profile,heir.id,p.owner,'character');if(actual){unlocked.push(actual);toast(`${heir.name} unlocked for ${p.owner}!`);}}
+  // South Park warp: every game won in town recruits a South Park character the winner does not have yet.
+  if(origin==='board'&&!coop&&store.run?.board?.warp?.id==='south-park'){const id=pickSouthPark(availableCharacters(store.profile,p.owner),cid=>canRecruit(store.profile,cid,p.owner,'southpark'));const actual=id&&recruitReward(store.profile,id,p.owner,'southpark');if(actual){unlocked.push(actual);toast(`${CHARACTERS.find(c=>c.id===actual)?.name||'A South Park kid'} moves in with ${p.owner}!`);}}
  }
  if(coop?.kind==='survival'&&coop.won&&origin!=='dev'){const pool=gameRecruitPool(game,store.profile,players[0]);if(pool.length&&Math.random()<.5){const c=pick(pool);const actual=recruitReward(store.profile,c.id,null,'game');if(actual)unlocked.push(actual);}}
  if(coop?.kind==='boss'&&coop.won&&origin!=='dev'&&game.bossId){const beaten=store.profile.bossesBeaten||=[];if(!beaten.includes(game.bossId))beaten.push(game.bossId);const b=bossById(game.bossId),poolId=b?.unlockPool==='bond-villains'?pickLairVillain(players.flatMap(p=>availableCharacters(store.profile,p.owner)),id=>canRecruit(store.profile,id,null,'boss')):null;if(b?.unlockId){const actual=b.unlockPool?(poolId&&recruitReward(store.profile,poolId,null,'boss')):recruitReward(store.profile,b.unlockId,null,'boss');if(actual){unlocked.push(actual);toast(`${CHARACTERS.find(c=>c.id===actual)?.name||'A boss'} joins both rosters!`);}}}
@@ -20338,6 +20356,7 @@ const WARP_DEFS={
  'hyrule':{id:'hyrule',title:'Hyrule Field',source:'The Legend of Zelda',icon:'🗡️',bossId:'ganon',count:17,color:'#8fd47a',intro:'It is dangerous to go alone. Take each other.'},
  'pokemon':POKE_DEF,
  'bond-lair':{id:'bond-lair',title:'Volcano Lair',source:'James Bond',icon:'🍸',bossId:'blofeld',count:20,color:'#140d0c',intro:'A hollowed-out volcano, a rocket on the pad and a man stroking a white cat. Just walking in here gets each of you a 007 you have not met yet.'},
+ 'south-park':{id:'south-park',title:'South Park, Colorado',source:'South Park',icon:'🏔️',bossId:'mecha-streisand',count:20,color:'#eef4fb',intro:'A quiet little mountain town in Colorado. Everybody you meet here wants to join your roster, and something enormous is stomping around Stark’s Pond.'},
  'green-hill':{id:'green-hill',title:'Green Hill Zone',source:'Sonic the Hedgehog',icon:'💍',bossId:'dr-robotnik',count:18,color:'#7cc8ff',intro:'Gotta go fast. Collect rings. Avoid the egg-shaped man.'}
 };
 const WARP_IDS=Object.keys(WARP_DEFS);
@@ -20355,6 +20374,7 @@ function layoutPoints(id,count){
  else if(id==='mario-world'){return pathAlong([[190,990],[430,960],[650,860],[560,640],[760,500],[1010,560],[1180,420],[1430,470],[1580,680],[1500,900],[1260,960],[1090,820],[1260,700],[1330,880]].slice(0,13).concat([[1480,1010]]),count);}
  else if(id==='clue'){for(let i=0;i<count-1;i++){const row=Math.floor(i/3),k=i%3,x=300+(row%2?2-k:k)*600;pts.push([x,260+row*340]);}pts.push([900,1100]);}
  else if(id==='bond-lair'){return pathAlong([[170,1060],[470,1080],[700,990],[560,840],[300,760],[260,520],[430,330],[700,250],[1000,230],[1250,300],[1330,520],[1180,700],[1300,900],[1560,980],[1650,760],[1600,520]],count);}
+ else if(id==='south-park'){return pathAlong(SP_STREETS,count);}
  else if(id==='hyrule'){return pathAlong([[180,980],[500,930],[760,1010],[980,820],[760,640],[520,520],[760,340],[1080,270],[1350,430],[1600,300]],count);}
  else {for(let i=0;i<count;i++){const t=i/(count-1);pts.push([160+t*1480,760-Math.sin(t*Math.PI*2.2)*230-t*100]);}}
  return pts;
@@ -20373,6 +20393,9 @@ const CHUTES_JUMPS=[[2,10],[7,14],[12,19],[16,5],[21,9],[23,15]];
 const MONOPOLY_NAMES=['GO','Paddy’s Alley','Chance','Kitten Mittens Ct','Income Tax','Dunder Mifflin Ave','Jail','Cones of Dunshire','Chest','Rum Ham Row','Free Parking','Fight Milk Blvd','Chance','Hill Valley Way','Go to Jail','Goon Docks','Chest','Raccoon City Rd','Luxury Tax','Quark’s Plaza','Silent Hill Sq','Boardwalk'];
 const MONOPOLY_COLORS=['#8b5a2b','#8b5a2b','#9ad0f0','#9ad0f0','#9ad0f0','#e0559a','#e0559a','#f08a1c','#f08a1c','#e03a3a','#e03a3a','#e03a3a','#f3d52b','#f3d52b','#f3d52b','#2fa75a','#2fa75a','#2fa75a','#2f4fd6','#2f4fd6'];
 const LAIR_ROOMS=['Monorail Dock','','Guard Post','','Piranha Pool','','Laser Room','','Rocket Gantry','','Mission Control','','Q’s Bench','','Cat Room','','','','Escape Pod','Blofeld’s Office'];
+// South Park: the route follows the town's streets (square corners), past the places the buildings below are named for.
+const SP_STREETS=[[170,1080],[700,1080],[700,820],[250,820],[250,560],[1050,560],[1050,820],[1350,820],[1350,1070],[1640,1070],[1640,620],[1460,420]];
+const SP_PLACES=['Bus Stop','','Stan’s House','','','Kyle’s House','Cartman’s House','','Tweek Bros. Coffee','South Park Elementary','Skeeter’s Wine Bar','City Hall','','Hell’s Pass Hospital','','Kenny’s House','','Big Gay Al’s Sanctuary','','Stark’s Pond'];
 const CLUE_ROOMS=['Hall','Lounge','Dining Room','Kitchen','Ballroom','Conservatory','Billiard Room','Library','Study','Secret Passage'];
 
 function buildWarpBoard(id,seed='warp'){
@@ -20387,6 +20410,7 @@ function buildWarpBoard(id,seed='warp'){
  if(id==='monopoly'){nodes[ids[0]].label='GO';ids.forEach((nid,i)=>{nodes[nid].label=MONOPOLY_NAMES[i]||'';});}
  if(id==='clue')ids.forEach((nid,i)=>{nodes[nid].label=CLUE_ROOMS[i]||'';});
  if(id==='bond-lair')ids.forEach((nid,i)=>{nodes[nid].label=LAIR_ROOMS[i]||'';});
+ if(id==='south-park')ids.forEach((nid,i)=>{nodes[nid].label=SP_PLACES[i]||'';});
  const board={format:'warp',generation:0,width:W,height:H,nodes,realms:{warp:{ids,start:ids[0],gate:ids[count-1],cols:count-1,y:0,height:H,color:def.color,title:def.title}},obstacles:[],signs:[],baseSpan:id==='chutes'?1500:1500,pieceScale:.9,
   warp:{id,title:def.title,source:def.source,icon:def.icon,bossId:def.bossId,intro:def.intro,points,jumps}};
  return board;
@@ -20449,8 +20473,45 @@ function sceneLair(b,random){const pts=b.warp.points,d=smooth(pts);
   +pts.map((p,i)=>LAIR_ROOMS[i]?`<text x="${p[0]}" y="${p[1]-78}" text-anchor="middle" class="warp-lair-room">${e(LAIR_ROOMS[i])}</text>`:'').join('');}
 // Blofeld's office: a steel bunker with the SPECTRE octopus over the door instead of a castle.
 function lairHQ(x,y,name){return `<g transform="translate(${x},${y})" class="warp-castle"><path d="M-130 70V-60L-90 -110H90L130 -60V70Z" fill="#3a3d44" stroke="#0b0b0d" stroke-width="6"/><path d="M-130 -60H130" stroke="#5d636e" stroke-width="8"/>${[-100,-60,60,100].map(dx=>`<rect x="${dx-12}" y="-40" width="24" height="16" fill="#ff3b2f" opacity=".85"/>`).join('')}<path d="M-40 70V-10H40V70Z" fill="#0b0b0d" stroke="#c8161d" stroke-width="4"/>${spectreMark(0,-62,.5,'#e8e6e0')}<text y="104" text-anchor="middle" class="warp-castle-name">${e(name)}</text></g>`;}
-const SCENES={'rainbow-road':sceneRainbow,'candy-land':sceneCandy,chutes:sceneChutes,monopoly:sceneMonopoly,'mario-world':sceneMario,clue:sceneClue,hyrule:sceneHyrule,'green-hill':sceneGreenHill,'bond-lair':sceneLair};
-const CASTLE_COLORS={'rainbow-road':['#a77bff','#e8543a'],'candy-land':['#ffb3d9','#ee4b5b'],chutes:['#8bcf6a','#2f8a3a'],monopoly:['#ffd45a','#e03a3a'],'mario-world':['#e0c58f','#e0453a'],clue:['#8b6a4a','#7b3a6b'],hyrule:['#8f9aa8','#3a8a3a'],'green-hill':['#7ec8ff','#e8543a'],'bond-lair':['#3a3d44','#c8161d']};
+// South Park: the town map. Construction-paper look (flat colours, dark outlines) on snow, mountains behind,
+// streets with snowbanks, the kids' houses, Main Street, the school, and Mecha-Streisand wading in Stark's Pond.
+const SP_INK='#1c1a24';
+function spLabel(x,y,text,size=22){return `<text x="${x}" y="${y}" text-anchor="middle" class="sp-sign" style="font-size:${size}px">${e(text)}</text>`;}
+function spHouse(x,y,w,h,wall,roof,name,o={}){const r=h*.55,win=o.win||'#ffe9a0';return `<g transform="translate(${x},${y})${o.tilt?` rotate(${o.tilt})`:''}"><rect x="${-w/2}" y="${-h}" width="${w}" height="${h}" fill="${wall}" stroke="${SP_INK}" stroke-width="5"/><path d="M${-w/2-14} ${-h}L0 ${-h-r}L${w/2+14} ${-h}Z" fill="${roof}" stroke="${SP_INK}" stroke-width="5" stroke-linejoin="round"/><path d="M${-w/2-6} ${-h-4}L0 ${-h-r+10}L${w/2+6} ${-h-4}L${w/2-14} ${-h+6}L0 ${-h-r+26}L${-w/2+14} ${-h+6}Z" fill="#fff" opacity=".9"/><rect x="-14" y="${-h*.55}" width="28" height="${h*.55}" fill="${o.door||'#7a4a2a'}" stroke="${SP_INK}" stroke-width="4"/>${[-1,1].map(sx=>`<rect x="${sx*w*.3-15}" y="${-h*.75}" width="30" height="26" fill="${win}" stroke="${SP_INK}" stroke-width="4"/>`).join('')}${o.extra||''}</g>${spLabel(x,y+(o.labelDy||30),name)}`;}
+function spShop(x,y,w,h,wall,sign,name,o={}){return `<g transform="translate(${x},${y})"><rect x="${-w/2}" y="${-h}" width="${w}" height="${h}" fill="${wall}" stroke="${SP_INK}" stroke-width="5"/><rect x="${-w/2-6}" y="${-h-8}" width="${w+12}" height="14" fill="${SP_INK}"/><rect x="${-w/2+10}" y="${-h+12}" width="${w-20}" height="34" rx="4" fill="${sign}" stroke="${SP_INK}" stroke-width="4"/><text y="${-h+36}" text-anchor="middle" class="sp-shop">${e(o.short||name)}</text><path d="M${-w/2+8} ${-h*.42}H${w/2-8}" stroke="${o.awning||'#c8161d'}" stroke-width="16" stroke-dasharray="18 10"/><rect x="${-w/2+16}" y="${-h*.36}" width="${w*.36}" height="${h*.36}" fill="#bfe3ff" stroke="${SP_INK}" stroke-width="4"/><rect x="${w*.08}" y="${-h*.42}" width="${w*.26}" height="${h*.42}" fill="#6a4a3a" stroke="${SP_INK}" stroke-width="4"/>${o.extra||''}</g>`;}
+function spPine(x,y,s=1){return `<g transform="translate(${x},${y}) scale(${s})"><rect x="-6" y="-8" width="12" height="20" fill="#6a4a2a"/><path d="M0 -110L34 -50H18L44 -6H-44L-18 -50H-34Z" fill="#2f6b4a" stroke="${SP_INK}" stroke-width="4" stroke-linejoin="round"/><path d="M0 -110L14 -84Q0 -78 -14 -84Z M-34 -50Q-18 -44 -2 -52 M8 -48Q22 -42 34 -50" fill="#fff" stroke="#fff" stroke-width="4"/></g>`;}
+// Mecha-Streisand herself, knee-deep in the pond (the boss's landmark instead of a castle).
+function spMecha(x,y){return `<g transform="translate(${x},${y})" class="warp-castle"><path d="M-40 -60Q-120 -30 -150 -110" stroke="${SP_INK}" stroke-width="34" fill="none" stroke-linecap="round"/><path d="M-40 -60Q-120 -30 -150 -110" stroke="#9aa3ad" stroke-width="24" fill="none" stroke-linecap="round"/>
+ <rect x="-52" y="-70" width="36" height="70" rx="8" fill="#7d8692" stroke="${SP_INK}" stroke-width="5"/><rect x="16" y="-70" width="36" height="70" rx="8" fill="#7d8692" stroke="${SP_INK}" stroke-width="5"/>
+ <ellipse cx="0" cy="-120" rx="78" ry="74" fill="#9aa3ad" stroke="${SP_INK}" stroke-width="6"/>${[-60,-30,0,30,60].map((dx,i)=>`<path d="M${dx-12} ${-180+Math.abs(dx)*.5}L${dx} ${-214+Math.abs(dx)*.5-(i%2)*10}L${dx+12} ${-180+Math.abs(dx)*.5}Z" fill="#b9c2cc" stroke="${SP_INK}" stroke-width="4"/>`).join('')}
+ <path d="M0 -146L26 -100H-26Z" fill="#ff3b6b" stroke="${SP_INK}" stroke-width="5"/><path d="M0 -136L15 -108H-15Z" fill="#fff4c8"/>
+ <path d="M-70 -140L-118 -176M70 -140L118 -176" stroke="${SP_INK}" stroke-width="22" stroke-linecap="round"/><path d="M-70 -140L-118 -176M70 -140L118 -176" stroke="#8a939e" stroke-width="14" stroke-linecap="round"/>
+ <rect x="-18" y="-232" width="36" height="50" fill="#7d8692" stroke="${SP_INK}" stroke-width="5"/><ellipse cx="0" cy="-262" rx="52" ry="44" fill="#c9d1d9" stroke="${SP_INK}" stroke-width="6"/><ellipse cx="0" cy="-266" rx="30" ry="27" fill="#f2c9a8" stroke="${SP_INK}" stroke-width="4"/><path d="M-30 -282Q0 -312 30 -282Q30 -300 0 -304Q-30 -300 -30 -282Z" fill="#c8823a" stroke="${SP_INK}" stroke-width="3"/><path d="M0 -270Q8 -256 2 -250" stroke="${SP_INK}" stroke-width="3" fill="none"/><path d="M-10 -246Q0 -240 10 -246" stroke="#c8161d" stroke-width="4" fill="none"/>
+ <path d="M-44 -232H44L36 -220H-36Z" fill="#3a0a14" stroke="${SP_INK}" stroke-width="4"/>${[-44,44].map(dx=>`<circle cx="${dx}" cy="-268" r="8" fill="#ff3b6b" stroke="${SP_INK}" stroke-width="3"/>`).join('')}
+ <text y="40" text-anchor="middle" class="warp-castle-name">MECHA-STREISAND</text></g>`;}
+function sceneSouthPark(b,random){const d='M'+SP_STREETS.map(p=>p.join(' ')).join('L');
+ const sky=`<rect x="-400" y="-400" width="${W+800}" height="${400+250}" fill="#7fc4ef"/><circle cx="1560" cy="70" r="46" fill="#fff7c8"/>${[[260,60,1],[820,40,1.3],[1250,90,.9]].map(([x,y,s])=>`<g transform="translate(${x},${y}) scale(${s})" fill="#fff" opacity=".9"><ellipse rx="70" ry="24"/><ellipse cx="-40" cy="8" rx="44" ry="20"/><ellipse cx="44" cy="6" rx="50" ry="22"/></g>`).join('')}`;
+ const peaks=[[-60,250,190],[160,250,330],[420,250,240],[640,250,360],[900,250,280],[1130,250,380],[1380,250,300],[1620,250,350],[1860,250,260]];
+ const mountains=peaks.map(([x,y,h],i)=>{const w=h*.95;return `<path d="M${x-w} ${y+20}L${x} ${y-h}L${x+w} ${y+20}Z" fill="${i%2?'#6a7c9a':'#7d8fae'}" stroke="${SP_INK}" stroke-width="5" stroke-linejoin="round"/><path d="M${x-w*.32} ${y-h*.66}L${x} ${y-h}L${x+w*.32} ${y-h*.66}L${x+w*.14} ${y-h*.58}L${x} ${y-h*.7}L${x-w*.16} ${y-h*.57}Z" fill="#fff"/>`;}).join('');
+ const ground=`<rect x="-400" y="230" width="${W+800}" height="${H+400}" fill="#f4f8fc"/>${Array.from({length:30},()=>`<ellipse cx="${Math.round(random()*W)}" cy="${Math.round(260+random()*(H-260))}" rx="${Math.round(30+random()*70)}" ry="${Math.round(8+random()*14)}" fill="#dfe9f4"/>`).join('')}`;
+ const roads=`<path d="${d}" fill="none" stroke="#c9d8e8" stroke-width="140" stroke-linejoin="round" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${SP_INK}" stroke-width="112" stroke-linejoin="round" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#5b616b" stroke-width="102" stroke-linejoin="round" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#f2f2e6" stroke-width="5" stroke-dasharray="30 26" opacity=".7"/>`;
+ const trees=[[60,330,1],[200,300,.8],[1720,330,1],[1760,520,.9],[1740,940,1],[1765,1150,.8],[30,1170,.8],[720,330,.8],[1000,320,.9],[1560,300,.8],[330,330,.7],[1080,1170,.7],[60,560,.8]].map(([x,y,s2])=>spPine(x,y,s2)).join('');
+ const busStop=`<g transform="translate(268,1000)"><rect x="-4" y="-120" width="8" height="120" fill="#555" stroke="${SP_INK}" stroke-width="3"/><rect x="-36" y="-150" width="72" height="40" rx="6" fill="#2a6ad8" stroke="${SP_INK}" stroke-width="4"/><text y="-124" text-anchor="middle" class="sp-shop" style="font-size:15px">BUS STOP</text><rect x="-50" y="-26" width="44" height="10" fill="#8a5a2a" stroke="${SP_INK}" stroke-width="3"/></g>`;
+ const welcome=`<g transform="translate(115,910)"><rect x="-6" y="0" width="12" height="70" fill="#6a4a2a"/><rect x="-100" y="-56" width="200" height="72" rx="8" fill="#2f6b4a" stroke="${SP_INK}" stroke-width="5"/><text y="-28" text-anchor="middle" class="sp-shop" style="font-size:16px">WELCOME TO</text><text y="2" text-anchor="middle" class="sp-shop" style="font-size:24px">SOUTH PARK</text></g>`;
+ const school=`<g transform="translate(650,765)"><rect x="-190" y="-130" width="380" height="130" fill="#b5523a" stroke="${SP_INK}" stroke-width="5"/>${Array.from({length:6},(_,i)=>`<rect x="${-170+i*58}" y="-110" width="40" height="34" fill="#bfe3ff" stroke="${SP_INK}" stroke-width="4"/>`).join('')}<rect x="-26" y="-60" width="52" height="60" fill="#5a3a2a" stroke="${SP_INK}" stroke-width="4"/><rect x="-150" y="-160" width="300" height="34" fill="#f3e3b0" stroke="${SP_INK}" stroke-width="4"/><text y="-136" text-anchor="middle" class="sp-shop" style="fill:${SP_INK};font-size:20px">SOUTH PARK ELEMENTARY</text><rect x="210" y="-190" width="6" height="190" fill="#888"/><path d="M216 -188h46v30h-46Z" fill="#c8161d" stroke="${SP_INK}" stroke-width="3"/></g>`;
+ const shops=spShop(400,505,180,140,'#8a5a3a','#3a2a1a','Tweek Bros. Coffee',{short:'TWEEK BROS.',awning:'#2f6b4a',extra:`<text x="-40" y="-14" text-anchor="middle" style="font-size:30px">☕</text>`})
+  +spShop(610,505,180,140,'#d8a23a','#c8161d','City Wok',{short:'CITY WOK',awning:'#ffd23c'})
+  +spShop(820,505,180,140,'#5a6a8a','#1c1a24','Skeeter’s Wine Bar',{short:'SKEETER’S',awning:'#7a2a5a'});
+ const cityHall=`<g transform="translate(1235,765)"><rect x="-110" y="-120" width="220" height="120" fill="#e8e0cc" stroke="${SP_INK}" stroke-width="5"/>${[-80,-40,0,40,80].map(dx=>`<rect x="${dx-8}" y="-110" width="16" height="110" fill="#fff" stroke="${SP_INK}" stroke-width="3"/>`).join('')}<path d="M-124 -120L0 -180L124 -120Z" fill="#cfc4a8" stroke="${SP_INK}" stroke-width="5"/><path d="M-30 -168A30 30 0 0 1 30 -168Z" fill="#8fb0c8" stroke="${SP_INK}" stroke-width="4"/></g>${spLabel(1235,795,'City Hall')}`;
+ const hospital=`<g transform="translate(1040,1050)"><rect x="-140" y="-140" width="280" height="140" fill="#fff" stroke="${SP_INK}" stroke-width="5"/>${Array.from({length:8},(_,i)=>`<rect x="${-124+(i%4)*64}" y="${-124+Math.floor(i/4)*50}" width="40" height="30" fill="#bfe3ff" stroke="${SP_INK}" stroke-width="3"/>`).join('')}<rect x="-20" y="-40" width="40" height="40" fill="#9ab" stroke="${SP_INK}" stroke-width="4"/><path d="M118 -170h24v24h24v24h-24v24h-24v-24h-24v-24h24Z" fill="#c8161d" stroke="${SP_INK}" stroke-width="3" transform="translate(-130 30) scale(.8)"/></g>${spLabel(1040,1085,'Hell’s Pass Hospital')}`;
+ const sanctuary=`<g transform="translate(1470,765)"><rect x="-90" y="-90" width="180" height="90" fill="#f7e9f4" stroke="${SP_INK}" stroke-width="5"/>${['#ff3b3b','#ff9c2a','#ffe23b','#4cd964','#3aa7ff','#b45bff'].map((c,i)=>`<path d="M-80 -86A80 ${70-i*8} 0 0 1 80 -86" fill="none" stroke="${c}" stroke-width="9" transform="translate(0 ${-6-i*1})"/>`).join('')}<text y="-30" text-anchor="middle" style="font-size:34px">🐶🐱</text></g>${spLabel(1470,795,'Big Gay Al’s',20)}`;
+ const pond=`<ellipse cx="1220" cy="420" rx="185" ry="72" fill="#a9d8f2" stroke="${SP_INK}" stroke-width="5"/><path d="M1080 410q40 -14 80 0t80 0t80 0M1110 446q40 -14 80 0t80 0" stroke="#fff" stroke-width="5" fill="none" opacity=".7"/>${spLabel(1220,520,'Stark’s Pond')}`;
+ return `${sky}${mountains}${ground}${trees}${pond}${roads}${welcome}${busStop}
+  ${spHouse(410,1000,110,78,'#9fb5d9','#5a6a8a','Stan’s House',{labelDy:20})}${spHouse(570,1000,110,78,'#cfe0a8','#3a7a3a','Kyle’s House',{labelDy:20})}
+  ${spHouse(120,720,130,100,'#e8c6a8','#a33a2a','Cartman’s House',{door:'#3a5aa8'})}${spHouse(1495,988,110,70,'#a08a6a','#6a5a4a','Kenny’s House',{tilt:-3,win:'#5a5a4a',door:'#4a3a2a',labelDy:22})}
+  ${school}${shops}${spLabel(610,540,'MAIN STREET',18)}${cityHall}${hospital}${sanctuary}`;}
+const SCENES={'rainbow-road':sceneRainbow,'candy-land':sceneCandy,chutes:sceneChutes,monopoly:sceneMonopoly,'mario-world':sceneMario,clue:sceneClue,hyrule:sceneHyrule,'green-hill':sceneGreenHill,'bond-lair':sceneLair,'south-park':sceneSouthPark};
+const CASTLE_COLORS={'rainbow-road':['#a77bff','#e8543a'],'candy-land':['#ffb3d9','#ee4b5b'],chutes:['#8bcf6a','#2f8a3a'],monopoly:['#ffd45a','#e03a3a'],'mario-world':['#e0c58f','#e0453a'],clue:['#8b6a4a','#7b3a6b'],hyrule:['#8f9aa8','#3a8a3a'],'green-hill':['#7ec8ff','#e8543a'],'bond-lair':['#3a3d44','#c8161d'],'south-park':['#9aa3ad','#ff3b6b']};
 // The castle goes wherever it clears the path and the board edge best, close to the gate.
 function castleSpot(b,gate){
  const pts=Object.values(b.nodes);let best=[gate.x,gate.y-190],bestScore=-1;
@@ -20463,7 +20524,7 @@ function warpSceneSVG(run){
  const defs=`<defs><linearGradient id="wg-space" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#120a2e"/><stop offset="1" stop-color="#3a1a6e"/></linearGradient><linearGradient id="wg-candy" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe3f1"/><stop offset="1" stop-color="#d9f4ff"/></linearGradient><linearGradient id="wg-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4aa8ff"/><stop offset="1" stop-color="#bfe9ff"/></linearGradient><linearGradient id="wg-lair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a100c"/><stop offset=".6" stop-color="#2c1a12"/><stop offset="1" stop-color="#4a1e0e"/></linearGradient><clipPath id="wg-crater"><ellipse cx="900" cy="-20" rx="500" ry="135"/></clipPath><pattern id="wg-wood" width="120" height="40" patternUnits="userSpaceOnUse"><path d="M0 20H120M0 0H120" stroke="#2a180d" stroke-width="3" opacity=".5"/></pattern></defs>`;
  const [cc,flag]=CASTLE_COLORS[id]||['#aaa','#e33'];
  const spot=castleSpot(b,gate),cx=spot[0],cy=spot[1];
- return `<g class="warp-scene" data-warp="${id}">${defs}<rect x="-2400" y="-1800" width="6600" height="4800" fill="${WARP_DEFS[id].color}"/>${scene(b,random)}${id==='bond-lair'?lairHQ(cx,cy,'SPECTRE HQ'):castle(cx,cy,cc,flag,(b.warp.bossName||'Boss')+'’s Castle')}<text x="40" y="66" class="warp-banner">${e(b.warp.icon)} ${e(b.warp.title.toUpperCase())}</text></g>`;
+ return `<g class="warp-scene" data-warp="${id}">${defs}<rect x="-2400" y="-1800" width="6600" height="4800" fill="${WARP_DEFS[id].color}"/>${scene(b,random)}${id==='bond-lair'?lairHQ(cx,cy,'SPECTRE HQ'):id==='south-park'?spMecha(1220,452):castle(cx,cy,cc,flag,(b.warp.bossName||'Boss')+'’s Castle')}<text x="40" y="66" class="warp-banner">${e(b.warp.icon)} ${e(b.warp.title.toUpperCase())}</text></g>`;
 }
 Object.assign(exports,{WARP_DEFS,WARP_IDS,buildWarpBoard,pickWarpId,warpSceneSVG});
 
@@ -21667,7 +21728,15 @@ const BOSSES=[
   quote:'Allow me to introduce myself. I am Ernst Stavro Blofeld.',phaseLines:[null,'This organisation does not tolerate failure.','Kill Bond. Now!'],koLine:'*strokes the cat one last time* ...we shall meet again.',
   attacks:[[['aimed',{n:2,rounds:4,pink:.25}],['fan',{count:6,arc:1.2,rounds:3}],['laser',{count:1,sweep:1.7}]],
    [['trapdoor',{}],['minions',{n:3,kind:'drone',hp:5}],['aimed',{n:3,spread:.18,rounds:3,pink:.2}]],
-   [['trapdoor',{n:4}],['laser',{count:2,sweep:2}],['minions',{n:4,kind:'drone',hp:5}],['ring',{count:14,rings:3}]]]})
+   [['trapdoor',{n:4}],['laser',{count:2,sweep:2}],['minions',{n:4,kind:'drone',hp:5}],['ring',{count:14,rings:3}]]]}),
+ // South Park warp boss. Her face is Barbra Streisand's portrait (unlockId); unlockName shows who a win unlocks.
+ def({id:'mecha-streisand',name:'Mecha-Streisand',epithet:'Holder of the Triangle of Zinthar',source:'South Park',icon:'🦖',unlockId:'barbra-streisand',unlockName:'Barbra Streisand',level:'warp',warp:'south-park',tier:3,
+  body:'mecha',look:{size:.9},scene:'southpark',pal:['#9aa3ad','#1c2230','#ff3b6b','#eef3f8'],sig:'zinthar',
+  tone:{base:92,voice:'square',beat:300,notes:[0,7,5,7,10,7,5,3],bass:true},
+  quote:'The Triangle of Zinthar is mine! Now I become... MECHA-STREISAND!',phaseLines:[null,'Nobody upstages Barbra!','Stomp the little town flat!'],koLine:'*crashes into Stark’s Pond* My nose! My beautiful nose!',
+  attacks:[[['aimed',{n:2,rounds:4,pink:.25}],['fan',{count:6,arc:1.2,rounds:3}],['slam',{n:2}]],
+   [['zinthar',{}],['rain',{dur:3.5,rate:6,kind:'fire'}],['laser',{count:1,sweep:1.8}]],
+   [['zinthar',{n:2}],['shockwave',{rows:3}],['minions',{n:3,kind:'drone',hp:5}],['ring',{count:14,rings:3}]]]})
 ];
 
 // New playable characters unlocked by beating these bosses (id, name, source, icon, actor/subject page, perk, line).
@@ -21699,7 +21768,8 @@ const BOSS_CHARACTERS=[
  ['boom-boom','Boom Boom','Super Mario Bros. 3','💥','Boom Boom (Mario)','competitor','Flails at every opponent. Surprisingly effective.'],
  ['professor-plum','Professor Plum','Clue','🕯️','Professor Plum','explorer','In the Study, with the candlestick, finding landmarks.'],
  ['ganon','Ganon','The Legend of Zelda','🐗','Ganon','survivor','The Prince of Darkness. Shields reflect.'],
- ['dr-robotnik','Dr. Robotnik','Sonic the Hedgehog','🥚','Doctor Eggman','scavenger','Has a robot for every problem and a supply for every robot.']
+ ['dr-robotnik','Dr. Robotnik','Sonic the Hedgehog','🥚','Doctor Eggman','scavenger','Has a robot for every problem and a supply for every robot.'],
+ ['barbra-streisand','Barbra Streisand','South Park','🎤','Barbra Streisand','competitor','Back to her normal size. The Triangle of Zinthar is in a drawer somewhere.']
 ];
 
 const bossById=id=>BOSSES.find(b=>b.id===id);
@@ -22697,9 +22767,17 @@ function* trapdoor(F,pp){const p=D(pp,{n:3});const tele=tl(F,1.25);F.say('Allow 
   yield tele;F.shake(6);F.sfx('boom');yield 1.6;}
  yield .4;}
 
+// Mecha-Streisand's Triangle of Zinthar: three beams 120 degrees apart spin out of the chest, leaving wedges to hide in.
+function* zinthar(F,pp){const p=D(pp,{n:1});const tele=tl(F,1.3);F.say('Behold the Triangle of Zinthar!');
+ for(let r=0;r<p.n;r++){const m=F.muzzle('center'),dir=r%2?-1:1,a0=F.rand()*TAU,spin=dir*(.55+.1*F.k.spd),dur=2.6;
+  F.pose('windup',tele);F.sfx('charge');
+  for(let j=0;j<3;j++)F.hazard({shape:'beam',x:m.x,y:m.y,a:a0+j*TAU/3,da:spin,w:24,len:1400,tele,dur,col:F.pal[2]});
+  yield tele+dur+.35;}
+ yield .4;}
+
 const PATTERNS={aimed,fan,spiral,rain,laser,dive,minions,homing,ring,edge,gapwall,strike,wave,lob,bounce,
- doors,rinka,wilybomb,riddle,bullettime,stab,shockwave,glove,puddles,piledriver,iceshards,slam,lockon,ladle,shock,plates,hounds,volley,sidedash,greatknife,rocket,balloons,batswarm,spiderheads,tentaclegrid,flamebreath,gumdrops,jailbars,hypno,flail,passage,energyball,wrecking,trapdoor};
-const SIGNATURES={doors:'POD BAY DOORS',rinka:'RINKA SWARM',wilybomb:'WILY BOMB',riddle:'RIDDLE ME THIS',bullettime:'BULLET TIME',stab:'LIQUID BLADE',shockwave:'SHOCKWAVE',glove:'IRON GLOVE',puddles:'VENOM PUDDLES',piledriver:'SPINNING PILEDRIVER',iceshards:'ICE ERUPTION',slam:'MOUNTAIN SLAM',lockon:'PLASMA LOCK-ON',ladle:'SOUP LADLE',shock:'SHOCK THERAPY',plates:'KITTEN PLATES',hounds:'RELEASE THE HOUNDS',volley:'ROYAL VOLLEY',sidedash:'HOVERBOARD RUSH',greatknife:'GREAT KNIFE',rocket:'ROCKET LAUNCHER',balloons:'FLOATING BALLOONS',batswarm:'BAT SWARM',spiderheads:'SPIDER HEADS',tentaclegrid:'TENTACLE GRID',flamebreath:'FLAME BREATH',gumdrops:'GUMDROP BOUNCE',jailbars:'GO TO JAIL',hypno:'HYPNO RINGS',flail:'SPIN FLAIL',passage:'SECRET PASSAGE',energyball:'REFLECT THE ORB',wrecking:'WRECKING BALL',trapdoor:'PIRANHA TRAPDOORS'};
+ doors,rinka,wilybomb,riddle,bullettime,stab,shockwave,glove,puddles,piledriver,iceshards,slam,lockon,ladle,shock,plates,hounds,volley,sidedash,greatknife,rocket,balloons,batswarm,spiderheads,tentaclegrid,flamebreath,gumdrops,jailbars,hypno,flail,passage,energyball,wrecking,trapdoor,zinthar};
+const SIGNATURES={doors:'POD BAY DOORS',rinka:'RINKA SWARM',wilybomb:'WILY BOMB',riddle:'RIDDLE ME THIS',bullettime:'BULLET TIME',stab:'LIQUID BLADE',shockwave:'SHOCKWAVE',glove:'IRON GLOVE',puddles:'VENOM PUDDLES',piledriver:'SPINNING PILEDRIVER',iceshards:'ICE ERUPTION',slam:'MOUNTAIN SLAM',lockon:'PLASMA LOCK-ON',ladle:'SOUP LADLE',shock:'SHOCK THERAPY',plates:'KITTEN PLATES',hounds:'RELEASE THE HOUNDS',volley:'ROYAL VOLLEY',sidedash:'HOVERBOARD RUSH',greatknife:'GREAT KNIFE',rocket:'ROCKET LAUNCHER',balloons:'FLOATING BALLOONS',batswarm:'BAT SWARM',spiderheads:'SPIDER HEADS',tentaclegrid:'TENTACLE GRID',flamebreath:'FLAME BREATH',gumdrops:'GUMDROP BOUNCE',jailbars:'GO TO JAIL',hypno:'HYPNO RINGS',flail:'SPIN FLAIL',passage:'SECRET PASSAGE',energyball:'REFLECT THE ORB',wrecking:'WRECKING BALL',trapdoor:'PIRANHA TRAPDOORS',zinthar:'TRIANGLE OF ZINTHAR'};
 Object.assign(exports,{PATTERNS,SIGNATURES,K,TAU});
 
 },
@@ -22953,7 +23031,33 @@ const spinner={hit:[[0,0,96]],muz:{mouth:[0,-20],eye:[0,-30],center:[0,0],l:[-90
   for(const s of [-1,1]){eye(g,s*28,-24,15,A,'#222','#fff',.5);brow(g,s*28,-46,34,-s*.4);}
   poly(g,[[-14,-4],[14,-4],[0,12]],a,3);mouth(g,0,18,64,.4+up,A,'#4a0a10');}};
 
-const BODIES={lens,brainjar,saucer,bust,brute,ninja,stalker,liquid,pyramid,clown,vampire,flesh,elder,koopa,serpent,spinner};
+// ---------------------------------------------------------------- mecha (Mecha-Streisand): steel kaiju, her face behind the visor
+const mecha={hit:[[0,-60,58],[0,30,96]],muz:{mouth:[0,-14],eye:[0,-66],center:[0,10],l:[-132,26],r:[132,26]},
+ draw(g,A){const [m,d,a,l]=A.pal,t=A.t,up=A.open,sw=sway(A,4),mx=A.look.x*8,steel=lg(g,0,-60,0,130,['#d6dde4',m,'#4a525e']);
+  g.lineCap='round';g.strokeStyle=INK;g.lineWidth=40;g.beginPath();g.moveTo(-60,80);g.quadraticCurveTo(-150,120+sw,-196,70+sw*2);g.stroke();g.strokeStyle=m;g.lineWidth=32;g.stroke();
+  for(let i=0;i<4;i++)ell(g,-90-i*28,104-i*9+sw*(i/3),5,5,'#5a636e',2);
+  for(const sx of [-1,1]){limb(g,sx*48,70,sx*58,124,40,'#7d8692');rrect(g,sx*58-30,116,60,22,8,'#5a636e',4);for(let k=-1;k<=1;k++)poly(g,[[sx*58+k*16-5,138],[sx*58+k*16,150],[sx*58+k*16+5,138]],'#eef3f8',2);}
+  spikes(g,0,24,92,9,26,'#b9c2cc',-Math.PI*.95);
+  ell(g,0,28,98,88,steel,5);
+  g.strokeStyle='rgba(20,10,12,.35)';g.lineWidth=3;for(const y of [-10,40,84]){g.beginPath();g.moveTo(-86,y);g.quadraticCurveTo(0,y+14,86,y);g.stroke();}
+  for(let i=0;i<10;i++)ell(g,-80+i*17.8,-10+Math.sin(i)*2,3,3,'#3a414c',0);
+  // chest: the Triangle of Zinthar
+  const gl=.55+A.glow*.45+Math.sin(t*4)*.12;g.save();g.translate(0,34);poly(g,[[0,-38],[36,26],[-36,26]],'#2a2f3a',5);g.globalAlpha=Math.min(1,gl);poly(g,[[0,-26],[25,18],[-25,18]],rg(g,0,2,2,36,['#fff4c8',a,'#6a0c26']),0);g.globalAlpha=1;g.restore();
+  // arms with claws
+  for(const sx of [-1,1]){const hx=sx*(130+Math.sin(t*2+sx)*5),hy=26-up*62;limb(g,sx*78,-6,hx,hy,30,'#8a939e');ell(g,hx,hy,20,18,'#5a636e',4);for(let k=-1;k<=1;k++)poly(g,[[hx+k*9-4,hy-12],[hx+k*11,hy-34],[hx+k*9+4,hy-12]],'#eef3f8',2);}
+  // neck and head
+  const hy=-66+A.look.y*3;limb(g,mx*.5,-40,mx,hy+30,44,'#7d8692');
+  for(let i=0;i<5;i++)poly(g,[[mx-44+i*22,hy-40],[mx-33+i*22,hy-64-(i%2)*10],[mx-22+i*22,hy-40]],'#b9c2cc',3);
+  ell(g,mx,hy,68,58,lg(g,mx,hy-58,mx,hy+58,['#e4e9ee',m,'#56606c']),5);
+  // jaw drops open when she attacks
+  const jaw=8+up*26;poly(g,[[mx-54,hy+30],[mx+54,hy+30],[mx+44,hy+40+jaw],[mx-44,hy+40+jaw]],'#3a0a14',4);teeth(g,mx,hy+31,96,7,10,'#eef3f8');
+  rrect(g,mx-50,hy+36+jaw,100,14,6,'#7d8692',4);
+  for(const sx of [-1,1]){ell(g,mx+sx*56,hy-6,9,9,'#2a2f3a',3);ell(g,mx+sx*56,hy-6,5,5,(Math.sin(t*6+sx)>-.3?a:'#5a1020'),0);}
+  // visor with Barbra inside
+  ell(g,mx,hy-6,44,40,'#1c2230',4);A.face(g,mx,hy-6,80,{clipR:38,emoji:true,tilt:A.look.x*.08});
+  g.save();g.globalAlpha=.22;ell(g,mx-14,hy-24,16,9,'#fff',0,-.5);g.restore();
+  if(A.dmg>.5){g.strokeStyle='#ffd23c';g.lineWidth=3;g.beginPath();g.moveTo(-30,10);g.lineTo(-10,24);g.lineTo(-24,40);g.moveTo(40,60);g.lineTo(54,74);g.stroke();}}};
+const BODIES={mecha,lens,brainjar,saucer,bust,brute,ninja,stalker,liquid,pyramid,clown,vampire,flesh,elder,koopa,serpent,spinner};
 for(const b of Object.values(BODIES)){b.muz=Object.assign({mouth:[0,40],eye:[0,0],center:[0,0],l:[-90,20],r:[90,20]},b.muz);}
 
 // ---------------------------------------------------------------- minions (small drawings, centred)
@@ -23043,6 +23147,7 @@ const PRESETS={
  smb3:[['tiles',.7,{s:44,a:'#f0a04a',b:'#d9822b'}],['clouds',1.2,{n:7}]],
  clue:[['wallpaper',.4,{}],['tiles',.8,{s:56,a:'rgba(0,0,0,.25)',b:'rgba(0,0,0,0)'}],['pillars',1,{col:'#2a1a3a'}]],
  hyrule:[['stars',0,{n:60}],['mountains',.4,{}],['fog',1,{n:10,col:'rgba(180,140,255,.14)'}],['embers',1.5,{n:30,col:'#ffd23c'}]],
+ southpark:[['mountains',.4,{col:'#5a6a8a'}],['snow',1.2,{n:120}],['clouds',.7,{n:5,col:'rgba(255,255,255,.25)'}]],
  lair:[['mountains',.4,{col:'#2a1712'}],['glowlines',.6,{col:'#c8161d'}],['embers',1.4,{n:70,col:'#ff5a1f'}]],
  greenhill:[['clouds',.5,{n:6}],['tiles',.8,{s:52,a:'#c98a3a',b:'#a86a22'}],['hills',1,{}]]
 };
@@ -26902,6 +27007,9 @@ const STYLES={
  // Original spy-surf groove: minor-major chords, walking bass, twangy lead. No film melodies.
  'bond-lair':{genre:'Spy Surf Jazz',bpm:118,swing:0,swing8:.18,key:4,cs:16,gain:1.2,
   bright:{scale:'harmonic',A:'0.mmaj9 0.m6 0.mmaj9 0.m6',B:'8.maj7 5.m9 0.mmaj9 11.7b9'},chordInst:'brass',comp:'stabs',bass:'walk',bassInst:'upright',pad:'strings',kit:'swing',lead:'guitar',center:70,density:'mid',amb:'rumble'},
+ // Original mountain-town folk-rock: strummed guitar, bouncing bass, toy piano. No theme-song melody.
+ 'south-park':{genre:'Mountain Town Folk-Rock',bpm:126,swing:.06,key:2,cs:16,gain:1.15,
+  bright:{scale:'mixo',A:'0.M 10.M 5.M 0.M',B:'5.M 0.M 7.sus 7.M'},chordInst:'pluck',comp:'strum',bass:'bounce',bassInst:'upright',pad:null,kit:'pop',lead:'toypiano',center:76,density:'mid',amb:'wind'},
  'green-hill':{genre:'Sunny Synth-Funk',bpm:136,swing:0,key:0,cs:16,gain:1.15,
   bright:{scale:'major',A:'5.maj7 7.M 4.m7 9.m',B:'2.m7 4.m7 5.maj7 7.sus'},chordInst:'clav',comp:'stabs',bass:'funk',bassInst:'slap',pad:'glass',kit:'breakbeat',lead:'square',center:76,density:'busy',amb:null}
 };
@@ -30107,9 +30215,15 @@ Object.assign(exports,{POKE_DEF,buildPokemonBoard,pokemonSceneSVG,trainerWatchin
 // random board pool: src/warpThemes.js deals them on the matching warp board, and they stay playable in the arcade.
 // Engines load lazily so this pack can be required early without circular module imports.
 const lazy=(file,name)=>s=>require(file)[name](s);
-const engines={sonic:lazy("src/engines/sonic.js","sonic"),marioBros:lazy("src/engines/marioBros.js","marioBros"),kart:lazy("src/engines/kart.js","kart"),smb3:lazy("src/engines/smb3.js","smb3"),candyLand:lazy("src/engines/candyLand.js","candyLand"),chutes:lazy("src/engines/chutes.js","chutes"),monopoly:lazy("src/engines/monopoly.js","monopoly"),clue:lazy("src/engines/clue.js","clue"),hyrule:lazy("src/engines/hyrule.js","hyrule"),bondLaser:lazy("src/engines/bond.js","bondLaser"),bondFunhouse:lazy("src/engines/bond.js","bondFunhouse"),bondBomb:lazy("src/engines/bond.js","bondBomb")};
+const engines={spDodgeball:lazy("src/engines/southPark.js","spDodgeball"),spPoofs:lazy("src/engines/southPark.js","spPoofs"),spKenny:lazy("src/engines/southPark.js","spKenny"),sonic:lazy("src/engines/sonic.js","sonic"),marioBros:lazy("src/engines/marioBros.js","marioBros"),kart:lazy("src/engines/kart.js","kart"),smb3:lazy("src/engines/smb3.js","smb3"),candyLand:lazy("src/engines/candyLand.js","candyLand"),chutes:lazy("src/engines/chutes.js","chutes"),monopoly:lazy("src/engines/monopoly.js","monopoly"),clue:lazy("src/engines/clue.js","clue"),hyrule:lazy("src/engines/hyrule.js","hyrule"),bondLaser:lazy("src/engines/bond.js","bondLaser"),bondFunhouse:lazy("src/engines/bond.js","bondFunhouse"),bondBomb:lazy("src/engines/bond.js","bondBomb")};
 const W={randomEligible:false,warpOnly:true,reward:8};
 const games=[
+ {...W,id:'sp-dodgeball',engine:'spDodgeball',title:'South Park · Dodgeball World Championship',source:'South Park',icon:'🔴',category:'duel',duration:'45 seconds',warp:'south-park',
+  rules:'The “Conjoined Fetus Lady” championship, one end of the gym each (P1 top, P2 bottom; left/right on wide screens). Drag to step sideways and dodge, flick toward your rival to throw (or tap to throw straight); balls bounce off the side walls. A head hit is +1. You hold three balls and the ball boy keeps refilling them. Kenny sometimes wanders across the court: hit him and you killed Kenny, −2. Most hits after 45 seconds wins.'},
+ {...W,id:'sp-cheesy-poofs',engine:'spPoofs',title:'South Park · Cheesy Poofs Catch',source:'South Park',icon:'🧀',category:'arcade',duration:'45 seconds',warp:'south-park',
+  rules:'Snacks rain down in Cartman’s living room, one half each (P1 left, P2 right). Drag to move your head under them: Cheesy Poofs +1, Snacky Cakes +2, a bucket of chicken +3. Dodge Mr. Hankey (−3). It speeds up. Most points after 45 seconds wins.'},
+ {...W,id:'sp-killed-kenny',engine:'spKenny',title:'South Park · They Killed Kenny!',source:'South Park',icon:'🧡',category:'skill',duration:'45 seconds',warp:'south-park',
+  rules:'Pianos, rats, meteors and flying saucers close in on Kenny in your half (P1 left, P2 right). Tap them before they reach him: +1 each, pianos take two taps and pay +2. If one gets through, they killed Kenny: −3, and he is back a moment later. Most points after 45 seconds wins.'},
  {...W,id:'bond-laser-vault',engine:'bondLaser',title:'Diamonds Are Forever · Laser Vault Heist',source:'Diamonds Are Forever',icon:'💎',category:'skill',duration:'60 seconds',warp:'bond-lair',
   rules:'Both agents raid the same vault at once, each on their own half (P1 top, P2 bottom). Drag to sneak your head through sweeping, sliding and blinking laser beams, grab the diamond and carry it back to the green EXIT. Touch a beam and the alarm sends you back to the door without the loot. Every heist adds a beam; a Fabergé egg is worth 3. Most loot after 60 seconds wins. P1 WASD, P2 arrows.'},
  {...W,id:'bond-golden-gun',engine:'bondFunhouse',title:'The Man with the Golden Gun · Funhouse Duel',source:'The Man with the Golden Gun',icon:'🔫',category:'skill',duration:'45 seconds',warp:'bond-lair',
@@ -30773,11 +30887,46 @@ m|Which actor plays Professor Plum in the 1985 Clue movie?|Christopher Lloyd|Mar
 m|Which actor plays Colonel Mustard in the 1985 Clue movie?|Martin Mull|Christopher Lloyd|Michael McKean|Tim Curry|The film had three alternate endings.
 h|Who directed the 1985 Clue movie?|Jonathan Lynn|John Landis|John Hughes|Rob Reiner|He later directed My Cousin Vinny.
 h|Which actress plays Miss Scarlet in the 1985 Clue movie?|Lesley Ann Warren|Eileen Brennan|Madeline Kahn|Colleen Camp|Eileen Brennan plays Mrs. Peacock.
+@South Park|animation|South_Park
+e|In Mecha-Streisand, which object turns Barbra Streisand into a giant robot?|The Triangle of Zinthar|The Sword of a Thousand Truths|A Chinpokomon card|The Okama GameSphere|The boys dig the Triangle of Zinthar up on an archaeology field trip.
+e|Which pond do the South Park kids skate and fish on?|Stark's Pond|Lake Tardicaca|Walden Pond|Crystal Lake|Stark's Pond sits at the edge of town in front of the mountains.
+e|How does Mr. Hankey greet everybody?|Howdy ho!|Hidely-ho!|Mmkay!|Sweet!|He is the Christmas Poo.
+e|Which holiday is Mr. Hankey tied to?|Christmas|Halloween|Thanksgiving|Easter|He is Mr. Hankey, the Christmas Poo.
+e|Which cheesy snack does Cartman love?|Cheesy Poofs|Cheddar Chunks|Poofy Puffs|Snacky Bites|He even sings in a Cheesy Poofs commercial.
+e|What does Cartman demand that people respect?|My authoritah|My territory|My elders|My privacy|He says it while dressed as a police officer.
+e|Which sport do the boys play at the world championship in Conjoined Fetus Lady?|Dodgeball|Hockey|Baseball|Curling|The team ends up in the world final in China.
+e|What is Big Gay Al's answer when asked how he is?|I'm super! Thanks for asking!|Fair to middling|Never better, sugar!|Can't complain|He runs a sanctuary for gay animals.
+m|Which film critic turns into a giant monster to fight Mecha-Streisand?|Leonard Maltin|Roger Ebert|Gene Siskel|Rex Reed|Maltin is joined by Sidney Poitier as a giant turtle-like monster.
+m|What is the name of the bar run by Skeeter?|Skeeter's Wine Bar|Skeeter's Saloon|The Mile High Tavern|Paddy's Pub|Skeeter is known for threatening newcomers who say the wrong thing.
+m|What is the name of South Park's hospital?|Hell's Pass Hospital|Park County General|Mount Sinai West|Sacred Heart|The hospital is where Kenny often ends up.
+m|Which police officer could not read in the early seasons?|Officer Barbrady|Sergeant Yates|Officer Lefty|Chief Wiggum|He goes back to first grade to learn.
+m|What does Uncle Jimbo shout before shooting an animal?|It's coming right for us!|Fire in the hole!|Get some!|Look out below!|It makes the hunt legal, according to Jimbo.
+m|What is the name of Jimbo's Vietnam-veteran hunting buddy?|Ned|Ted|Ed|Fred|Ned speaks through a voice box.
+m|Who keeps warning the town about ManBearPig?|Al Gore|Bill Clinton|Mr. Garrison|Randy Marsh|He insists he is super cereal.
+m|What is the name of Stan's dog?|Sparky|Spot|Rusty|Scuzzlebutt|Sparky runs away to Big Gay Al's sanctuary.
+m|What is Cartman's cat called?|Mr. Kitty|Mr. Whiskers|Snowball|Fluffy|Cartman fights Mr. Kitty over a Kitty Treat.
+m|Who drives the South Park school bus?|Ms. Crabtree|Mrs. Cartman|Ms. Choksondik|Nurse Gollum|She is known for screaming at the kids to sit down.
+m|What is the name of the South Park mayor?|Mayor McDaniels|Mayor Quimby|Mayor West|Mayor Hargrove|She is usually flanked by two aides.
+m|What does Towelie always remind people?|Don't forget to bring a towel!|Always wipe front to back!|Stay dry, my friends!|Keep it clean!|He usually follows it with wanting to get high.
+m|Which line usually follows Stan's Oh my God, they killed Kenny?|You bastards!|Not again!|Somebody call 911!|Dude, sweet!|Kyle usually delivers it.
+m|What is the 1999 South Park movie called?|South Park: Bigger, Longer & Uncut|South Park: The Movie Strikes Back|South Park: Blame Canada|South Park: Mountain Town|It earned an Oscar nomination for Blame Canada.
+h|Who voices Eric Cartman?|Trey Parker|Matt Stone|Isaac Hayes|Mona Marshall|Parker also voices Stan and Mr. Garrison.
+h|Who voices Kyle Broflovski?|Matt Stone|Trey Parker|Eliza Schneider|April Stewart|Stone also voices Kenny.
+h|What does Robert Smith turn into to defeat Mecha-Streisand?|A giant moth|A giant turtle|A giant bat|A giant robot|The boys cheer as he flies off into the sunset.
+h|Which actor fights Mecha-Streisand alongside Leonard Maltin?|Sidney Poitier|Morgan Freeman|Denzel Washington|James Earl Jones|He turns into a giant monster too.
+h|What is the name of Mr. Garrison's second puppet after Mr. Hat?|Mr. Twig|Mr. Stick|Mr. Sock|Mr. Branch|Mr. Twig is literally a stick.
+h|What is Craig Tucker's guinea pig called?|Stripe|Spot|Sparky|Fluffy|Craig loves guinea pigs.
+h|What is the name of Timmy's band?|Timmy and the Lords of the Underworld|Timmy and the Wheels|Timmy and the Big Wheels|The Timmy Experience|Phil Collins gets jealous of the band.
+h|What is the title of the Terrance and Phillip film in Bigger, Longer & Uncut?|Asses of Fire|Not Without My Anus|Fart Wars|Canadian Bacon|Seeing it teaches the boys a lot of new words.
+i|Who is Satan's partner in Bigger, Longer & Uncut?|Saddam Hussein|Adolf Hitler|Kim Jong-il|Osama bin Laden|Satan eventually dumps him.
+i|In which country is the dodgeball world final in Conjoined Fetus Lady?|China|Japan|Canada|Russia|The South Park team beats the Chinese team.
+i|In which season does Mecha-Streisand air?|Season 1|Season 2|Season 3|Season 5|It is the twelfth episode of the first season (1998).
+i|What is the school nurse's name in Conjoined Fetus Lady?|Nurse Gollum|Nurse Ratched|Nurse Joy|Nurse Crabtree|She has a conjoined twin fetus attached to her head.
 `;
 function parseFacts(text){let source,category,page;return text.trim().split('\n').filter(Boolean).flatMap(line=>{
  if(line.startsWith('@')){[source,category,page]=line.slice(1).split('|');return [];}
  const[difficulty,q,answer,a,b,c,explanation]=line.split('|');
- return [{source,category,difficulty:levels[difficulty],q,answers:[answer,a,b,c],correct:0,explanation,provenance:'v0.52 warp-zone trivia; subject page linked for review',citations:[{label:source,url:'https://en.wikipedia.org/wiki/'+page}]}];
+ return [{source,category,difficulty:levels[difficulty],q,answers:[answer,a,b,c],correct:0,explanation,provenance:'warp-zone trivia (v0.52+); subject page linked for review',citations:[{label:source,url:'https://en.wikipedia.org/wiki/'+page}]}];
 });}
 const WARP_TRIVIA=parseFacts(FACTS);
 const WARP_TRIVIA_THEMES=[
@@ -30800,6 +30949,20 @@ const WARP_ITEMS=[
  challenge('diamond-collar','Diamond Smuggler’s Collar','Diamonds Are Forever','💎','bond-laser-vault','Start the Laser Vault Heist right now.'),
  challenge('golden-bullet','Scaramanga’s Golden Bullet','The Man with the Golden Gun','🔫','bond-golden-gun','Start the Funhouse Duel right now.'),
  challenge('fort-knox-key','Fort Knox Vault Key','Goldfinger','🧨','bond-goldfinger-bomb','Start Stop the Bomb at 007 right now.'),
+ challenge('dodgeball','Red Rubber Dodgeball','South Park','🔴','sp-dodgeball','Start the Dodgeball World Championship right now.'),
+ challenge('poofs-bowl','Bowl of Cheesy Poofs','South Park','🧀','sp-cheesy-poofs','Start Cheesy Poofs Catch right now.'),
+ challenge('kenny-parka','Kenny’s Parka','South Park','🧡','sp-killed-kenny','Start They Killed Kenny! right now.'),
+ ...packItems('South Park',[
+  ['chinpokomon','Chinpokomon Card','🃏','bounty',4],
+  ['tweek-coffee','Tweek Bros. Coffee','☕','bundle',{boost:3,points:1}],
+  ['city-wok','City Wok Takeout','🥡','bundle',{points:3,shields:1}],
+  ['big-wheel','Timmy’s Wheelchair Boost','♿','forward',5],
+  ['salty-balls','Chef’s Salty Balls','🍫','bundle',{rewardBonus:3,points:1}],
+  ['mr-hat','Mr. Hat','🎩','pushOther',3],
+  ['triangle-zinthar','Triangle of Zinthar','🔺','gamble',8],
+  ['manbearpig-trap','ManBearPig Trap','🪤','strongTrap',5],
+  ['respect-badge','Respect My Authoritah Badge','👮','bundle',{ward:2,shields:1}]
+ ],'wz-').map(rare),
  ...packItems('Mario Kart',[
   ['triple-mushroom','Triple Mushroom','🍄','bundle',{boost:3,rollFloor:3}],
   ['banana-peel','Banana Peel','🍌','strongTrap',5],
@@ -30980,7 +31143,19 @@ const WARP_THEMES={
    card('Monorail ride','The lair’s monorail whisks you deeper inside.',['move',3]),card('Card game with Le Chiffre','You read his tell. His chips come to you.',['steal',3]),
    card('Oddjob’s hat','A bowler hat crosses the room at an alarming speed.',['points',-3]),card('Henchman’s uniform','Nobody looks twice at another man in a jumpsuit.',['chaos'])],
   bonus:[['Licence to kill','MI6 signs off on the paperwork.'],['Moneypenny’s tip','She slips you the file before M sees it.'],['A gadget that works','Q is as surprised as you are.']],
-  penalty:[['Captured','“No, Mr. Bond, I expect you to die.”'],['Shot by a henchman','They finally hit something.'],['Tuxedo ruined','Volcano ash does not come out.']]}
+  penalty:[['Captured','“No, Mr. Bond, I expect you to die.”'],['Shot by a henchman','They finally hit something.'],['Tuxedo ruined','Volcano ash does not come out.']]},
+ 'south-park':{source:'South Park',
+  games:['sp-dodgeball','sp-cheesy-poofs','sp-killed-kenny','snowball-fight','wii-wait'],trivia:['trivia-southpark'],
+  items:['wz-dodgeball','wz-poofs-bowl','wz-kenny-parka','wz-chinpokomon','wz-tweek-coffee','wz-city-wok','wz-big-wheel','wz-salty-balls','wz-mr-hat','wz-triangle-zinthar','wz-manbearpig-trap','wz-respect-badge','cheesy-poofs','gamesphere','v43-chefs-chocolate-balls','v43-towelie-towel','v43-cartman-chili'],
+  cards:[card('New kid in town','Somebody new just moved to South Park, and they want to hang out with you.',['southpark']),card('Bus stop small talk','The kid at the bus stop says you are pretty cool. They tag along.',['southpark']),
+   card('Mr. Mackey’s office','You get sent to the counsellor. A kid in the waiting room joins your roster, mmkay?',['southpark']),
+   card('Respect my authoritah!','Cartman confiscates your rival’s points with a stolen police hat.',['steal',3]),card('Kenny died again','You stop for the funeral. He shows up next week anyway.',['move',-2]),
+   card('City Wok delivery','Shitty Wok? No, City Wok. Fortune cookie says +3.',['points',3]),card('Towelie wants to get high','You lose a whole turn’s worth of focus listening to him.',['points',-2]),
+   card('Dodgeball tryouts','The World Championship is next week. Show them your arm.',['mg','sp-dodgeball']),card('Cheesy Poofs ad break','Cartman’s favourite snack is raining from the ceiling.',['mg','sp-cheesy-poofs']),
+   card('Oh my God!','Something enormous is falling on Kenny. Save him.',['mg','sp-killed-kenny']),card('Timmy!','Timmy offers you a ride. Timmy!',['move',3]),
+   card('ManBearPig sighting','Al Gore insists it is real. Everybody panics and swaps places.',['swap']),card('Chinpokomon craze','Gotta buy ’em all. Your rival’s pocket money becomes yours.',['steal',2])],
+  bonus:[['You know, I learned something today','Stan’s speech gets a slow clap.'],['Mr. Hankey visits','Howdy ho! He brings presents.'],['Snow day','School is cancelled. Victory lap.']],
+  penalty:[['Screw you guys','Cartman storms off with your stuff.'],['Detention','Mr. Garrison and Mr. Hat are not amused.'],['Chef’s salty balls','You should not have tried them.']]}
 };
 const WARP_THEME_IDS=Object.keys(WARP_THEMES);
 function warpTheme(run){const b=run?.board;if(b?.format!=='warp')return null;return WARP_THEMES[b.warp?.id]||null;}
@@ -33454,5 +33629,279 @@ tic-tac-toe|The Diner Placemat
 “2 Player Games: The Challenge”|The Arcade Couch`;
 const ICONIC_PLACES=new Map(LINES.split('\n').map(line=>line.split('|')));
 Object.assign(exports,{ICONIC_PLACES});
+
+},
+"src/data/southPark.js":(exports,require)=>{
+// The South Park warp zone (src/warpBoards.js 'south-park'): its cast.
+// Arriving in town recruits one South Park character per player; every game won on the South Park board recruits
+// another for the winner (pickSouthPark). The new kids below only join there (unlockBy:'southpark').
+// Beating Mecha-Streisand at Stark's Pond unlocks plain Barbra Streisand (src/data/bosses.js).
+const {PERKS}=require("src/data/legendsPack.js");
+
+// [id, name, icon, actor/Wikipedia page (photo lookup), perk, line]
+const SOUTH_PARK_ROWS=[
+ ['sp-stan','Stan Marsh','🧢','Stan Marsh','explorer','Dude, this is pretty messed up right here.'],
+ ['sp-kyle','Kyle Broflovski','🟢','Kyle Broflovski','competitor','You know, I learned something today.'],
+ ['sp-kenny','Kenny McCormick','🧡','Kenny McCormick','survivor','Mmph mmph mmph! (He’ll be back next week.)'],
+ ['sp-chef','Chef','🍳','Chef (South Park)','scavenger','Hello there, children!'],
+ ['sp-mr-garrison','Mr. Garrison','🍎','Mr. Garrison','competitor','Mr. Hat says there will be a pop quiz.'],
+ ['sp-mr-mackey','Mr. Mackey','🎈','Mr. Mackey','explorer','Board games are good, mmkay?'],
+ ['sp-wendy','Wendy Testaburger','💜','Wendy Testaburger','competitor','Somebody has to be the smart one.'],
+ ['sp-tweek','Tweek Tweak','☕','Tweek Tweak','survivor','Gah! Too much pressure!'],
+ ['sp-craig','Craig Tucker','🐹','Craig Tucker','scavenger','Brought Stripe. Not sharing Stripe.'],
+ ['sp-jimmy','Jimmy Valmer','🎤','Jimmy Valmer','explorer','Wow, what a terrific audience!'],
+ ['sp-timmy','Timmy Burch','♿','Timmy Burch','survivor','Timmy!'],
+ ['sp-token','Token Black','💰','Token Black','scavenger','Pays for the whole party. Again.'],
+ ['sp-ike','Ike Broflovski','👶','Ike Broflovski','explorer','Kick the baby! (Don’t kick the baby.)'],
+ ['sp-mr-hankey','Mr. Hankey','💩','Mr. Hankey, the Christmas Poo','scavenger','Howdy ho!'],
+ ['sp-terrance','Terrance','🇨🇦','Terrance and Phillip','competitor','Hey Phillip, pull my finger.'],
+ ['sp-phillip','Phillip','🍁','Terrance and Phillip','competitor','Why, Terrance? Why would I do that?'],
+ ['sp-barbrady','Officer Barbrady','👮','Officer Barbrady','explorer','Okay, move along. Nothing to see here.'],
+ ['sp-big-gay-al','Big Gay Al','🌈','Big Gay Al','scavenger','I’m super! Thanks for asking!'],
+ ['sp-sheila','Sheila Broflovski','🗣️','Sheila Broflovski','competitor','What what what?!'],
+ ['sp-jimbo','Uncle Jimbo','🎯','Jimbo Kern','scavenger','It’s coming right for us!'],
+ ['sp-manbearpig','ManBearPig','🐗','ManBearPig','survivor','Half man, half bear, half pig. I’m super cereal.'],
+ ['sp-scott-tenorman','Scott Tenorman','🌶️','Scott Tenorman Must Die','survivor','Still not over the chili.'],
+ ['sp-pc-principal','PC Principal','💪','PC Principal','competitor','Totally not cool, bro.'],
+ ['sp-pip','Pip','🎩','Pip (South Park)','explorer','Jolly good, a board game!'],
+ ['sp-robert-smith','Robert Smith','🦋','Robert Smith (musician)','survivor','Turned into a giant moth to stop Mecha-Streisand. Would do it again.'],
+ ['sp-leonard-maltin','Leonard Maltin','🎬','Leonard Maltin','explorer','Two thumbs up for this board. Wait, wrong critic.']
+];
+const SOUTH_PARK_CHARACTERS=SOUTH_PARK_ROWS.map(([id,name,icon,actor,perk,line])=>({id,name,source:'South Park',icon,actor,assetKey:'char:'+id,unlockAt:999,
+ perkType:perk,perk:PERKS[perk],unlockPhrase:line,unlockBy:'southpark',unlockHint:'Only found in the South Park warp zone: arriving in town and winning games there recruits South Park characters.'}));
+// Everyone the town can hand out: the South Park characters already in the roster plus the warp-only ones.
+const SOUTH_PARK_IDS=['cartman','butters','randy','towlie',...SOUTH_PARK_ROWS.map(r=>r[0])];
+// A South Park character this player does not own yet, or null when they have the whole town.
+// owned: character ids the player can already pick; canRecruit: (id)=>bool from src/profile.js.
+function pickSouthPark(owned,canRecruit,random=Math.random){
+ const {characterIdentity}=require("src/characters.js");// lazy: characters.js loads the catalog, which loads this file
+ const have=new Set(owned.map(characterIdentity));
+ const pool=SOUTH_PARK_IDS.filter(id=>!have.has(characterIdentity(id))&&canRecruit(id));
+ return pool.length?pool[Math.min(pool.length-1,Math.floor(random()*pool.length))]:null;
+}
+Object.assign(exports,{SOUTH_PARK_ROWS,SOUTH_PARK_CHARACTERS,SOUTH_PARK_IDS,pickSouthPark});
+
+},
+"src/engines/southPark.js":(exports,require)=>{
+// South Park warp-zone games (src/warpThemes.js 'south-park'). Both players at once on one screen with the same
+// seeded patterns, like the other warp games.
+//  spDodgeball Dodgeball World Championship ("Conjoined Fetus Lady"). Each kid holds their end of the gym (P1 top /
+//              left, P2 bottom / right). Drag to step sideways, flick toward your rival (or tap) to throw. Hit their head:
+//              +1. Kenny wanders across the court now and then: hit him and you killed Kenny (−2). Three balls, refilled.
+//  spPoofs     Cheesy Poofs Catch. Snacks rain down each half (P1 left, P2 right): Cheesy Poofs +1, Snacky Cakes +2,
+//              a bucket of chicken +3. Mr. Hankey is −3. Drag to move your head under the good stuff.
+//  spKenny     They Killed Kenny! Pianos, rats, meteors and saucers close in on Kenny in your half. Tap them before
+//              they reach him: +1 each (pianos take two taps, +2). If one gets through, they killed Kenny: −3.
+const {clamp}=require("src/utils.js");
+const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,PCOL,settle,Countdown}=require("src/engines/arenaKit.js");
+
+const INK='#1c1a24',SNOW='#f4f8fc',GOLD='#ffd23c',ORANGE='#f08a24';
+function endBanner(x,s,text){const size=Math.min(s.W*.06,s.H*.06,44);x.fillStyle='rgba(12,16,28,.78)';x.fillRect(0,s.H/2-size,s.W,size*2);outlined(x,text,s.W/2,s.H/2,{size,fill:GOLD,stroke:INK});}
+function hud(x,i,v,text,sub){const size=Math.max(14,Math.min(v.w*.08,v.h*.05,26));outlined(x,text,v.x+10,v.y+size*.9,{size,fill:PCOL[i],stroke:'#fff',align:'left'});if(sub)outlined(x,sub,v.x+v.w-10,v.y+size*.9,{size:size*.85,fill:'#fff',stroke:INK,align:'right'});}
+const halves=s=>i=>({x:i?s.W/2+2:0,y:0,w:s.W/2-2,h:s.H});
+function divider(x,s,vertical=true){x.fillStyle=GOLD;if(vertical)x.fillRect(s.W/2-2,0,4,s.H);else x.fillRect(0,s.H/2-2,s.W,4);}
+// A South Park kid: parka body with the player's head on top (heads come from s.sprite).
+function kid(x,s,i,cx,cy,hs,{mood,col=PCOL[i]}={}){
+ x.fillStyle=col;x.strokeStyle=INK;x.lineWidth=Math.max(2,hs*.05);
+ rr(x,cx-hs*.42,cy+hs*.22,hs*.84,hs*.62,hs*.22);x.fill();x.stroke();
+ x.fillStyle='#2a2a2a';x.fillRect(cx-hs*.36,cy+hs*.74,hs*.3,hs*.14);x.fillRect(cx+hs*.06,cy+hs*.74,hs*.3,hs*.14);
+ x.fillStyle='#f3e3b0';x.beginPath();x.arc(cx-hs*.5,cy+hs*.5,hs*.11,0,7);x.arc(cx+hs*.5,cy+hs*.5,hs*.11,0,7);x.fill();
+ s.sprite(x,i,cx,cy,hs,{exact:true,mood});
+}
+// Kenny: orange parka, drawstring hood, only his eyes showing.
+function kenny(x,cx,cy,r,{dead=0,t=0}={}){
+ x.save();x.translate(cx,cy);if(dead)x.rotate(Math.min(1.5,dead*3));
+ x.strokeStyle=INK;x.lineWidth=Math.max(2,r*.07);
+ x.fillStyle=ORANGE;rr(x,-r*.62,r*.2,r*1.24,r*.95,r*.3);x.fill();x.stroke();
+ x.fillStyle='#4a2a14';x.fillRect(-r*.5,r*1.08,r*.36,r*.18);x.fillRect(r*.14,r*1.08,r*.36,r*.18);
+ x.fillStyle=ORANGE;x.beginPath();x.ellipse(0,-r*.05,r*.78,r*.72,0,0,7);x.fill();x.stroke();
+ x.fillStyle='#6a3a14';x.beginPath();x.ellipse(0,-r*.02,r*.5,r*.44,0,0,7);x.fill();
+ x.fillStyle='#f6d2b4';x.beginPath();x.ellipse(0,-r*.06,r*.38,r*.24,0,0,7);x.fill();
+ x.fillStyle=INK;if(dead){for(const sx of [-1,1]){x.save();x.translate(sx*r*.14,-r*.08);x.lineWidth=2;x.beginPath();x.moveTo(-r*.06,-r*.06);x.lineTo(r*.06,r*.06);x.moveTo(r*.06,-r*.06);x.lineTo(-r*.06,r*.06);x.stroke();x.restore();}}
+ else{const bl=Math.sin(t*3)>.96?.2:1;for(const sx of [-1,1]){x.beginPath();x.ellipse(sx*r*.14,-r*.08,r*.06,r*.08*bl,0,0,7);x.fill();}}
+ x.strokeStyle='#3a1a08';x.lineWidth=2;x.beginPath();x.moveTo(-r*.08,r*.4);x.lineTo(-r*.12,r*.62);x.moveTo(r*.08,r*.4);x.lineTo(r*.12,r*.62);x.stroke();
+ x.restore();
+}
+function pine(x,px,py,s){x.fillStyle='#6a4a2a';x.fillRect(px-s*.06,py-s*.1,s*.12,s*.22);x.fillStyle='#2f6b4a';x.strokeStyle=INK;x.lineWidth=2;x.beginPath();x.moveTo(px,py-s);x.lineTo(px+s*.38,py-s*.45);x.lineTo(px+s*.2,py-s*.45);x.lineTo(px+s*.45,py);x.lineTo(px-s*.45,py);x.lineTo(px-s*.2,py-s*.45);x.lineTo(px-s*.38,py-s*.45);x.closePath();x.fill();x.stroke();x.fillStyle='#fff';x.beginPath();x.moveTo(px,py-s);x.lineTo(px+s*.12,py-s*.8);x.lineTo(px-s*.12,py-s*.8);x.fill();}
+
+// ------------------------------------------------------------------ Dodgeball World Championship
+const DODGE_TIME=45,AMMO=3,REPACK=.75,BALL_SPEED=.95;
+async function spDodgeball(s){
+ const [c,x]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();
+ if(!await settle(s))return;
+ const fx=new Fx(),score=[0,0],kb=arenaKeys(s),cd=new Countdown(3);let phase='count',t=0,clock=0,endT=0,endText='';
+ s.hint('Dodgeball World Championship: you each hold your end of the gym (P1 top, P2 bottom; left/right on wide screens). Drag on your side to step sideways and dodge. Flick toward your rival to throw (the flick aims, balls bounce off the side walls), or just tap to throw straight. A head hit is +1. You hold three balls; the ball boy keeps refilling them. Kenny sometimes wanders across the court: hit him and you killed Kenny, −2. Most hits after 45 seconds wins. P1 A/D + Space, P2 arrows + Enter.');
+ // Field coordinates: u runs across the court (0..1), v from P1's end (0) to P2's end (1).
+ const wide=()=>s.W>s.H*1.05,lat=()=>wide()?s.H:s.W,lon=()=>wide()?s.W:s.H;
+ const scr=(u,v)=>wide()?{x:v*s.W,y:u*s.H}:{x:u*s.W,y:v*s.H};
+ const field=(px,py)=>wide()?{u:py/s.H,v:px/s.W}:{u:px/s.W,v:py/s.H};
+ const hs=()=>clamp(Math.min(lat()*.15,lon()*.13),40,110);
+ const kids=[0,1].map(i=>({u:.5,tu:.5,v:i?.84:.16,ammo:AMMO,repack:0,flash:0,ouch:0}));
+ const balls=[];const ken={on:false,u:0,du:0,dead:0,next:5+s.random()*3};
+ function throwBall(i,fu=0,fv=1){const k=kids[i];if(phase!=='play')return;if(k.ammo<=0){snd(180,.05,{type:'square',vol:.02});return;}
+  k.ammo--;const dir=i?-1:1,fwd=Math.max(.35,Math.abs(fv)*(Math.sign(fv)===dir?1:.2)),r=clamp(fu/fwd,-1.1,1.1);
+  balls.push({u:k.u,v:k.v+dir*.05,du:r*BALL_SPEED*lon()/lat(),dv:dir*BALL_SPEED,owner:i,age:0});
+  snd(220,.08,{type:'sine',vol:.05,to:120});noise(.05,{vol:.03,freq:900});}
+ arenaTouch(s,{owner:p=>field(p.x,p.y).v<.5?0:1,maxFingers:2,
+  onMove:f=>{if(f.moved>8)kids[f.owner].tu=clamp(field(f.x,f.y).u,.06,.94);},
+  onUp:(f,cancelled)=>{if(cancelled)return;const v=f.vel;
+   if(v.speed>380){const fu=wide()?v.y:v.x,fv=wide()?v.x:v.y;throwBall(f.owner,fu,fv);}
+   else if(f.moved<14&&f.held<320)throwBall(f.owner);}});
+ kb.onDown((i,k)=>{if(k==='fire')throwBall(i);});
+ s.debug={get phase(){return phase;},kids,balls,score,ken,throwBall,scr};
+ function hitTest(b,cx,cy,r){const p=scr(b.u,b.v);return Math.hypot(p.x-cx,p.y-cy)<r;}
+ s.frame(dt=>{t+=dt;fx.update(dt);const H=hs();
+  if(phase==='count'){if(!cd.update(dt))phase='play';}
+  else if(phase==='play'){clock+=dt;
+   for(let i=0;i<2;i++){const k=kids[i],st=kb.state[i];if(st.l||st.r||st.u||st.d){const d=wide()?(st.d-st.u)||(st.r-st.l):(st.r-st.l);k.tu=clamp(k.tu+d*dt*.9,.06,.94);}
+    k.u+=clamp(k.tu-k.u,-1.6*dt,1.6*dt);k.flash=Math.max(0,k.flash-dt);k.ouch=Math.max(0,k.ouch-dt);
+    if(k.ammo<AMMO){k.repack+=dt;if(k.repack>=REPACK){k.repack=0;k.ammo++;}}else k.repack=0;}
+   // Kenny wanders across the middle of the street on a shared seeded schedule.
+   if(ken.dead>0){ken.dead-=dt;if(ken.dead<=0){ken.on=false;ken.next=clock+5+s.random()*4;}}
+   else if(ken.on){ken.u+=ken.du*dt;if(ken.u<-.08||ken.u>1.08){ken.on=false;ken.next=clock+4+s.random()*4;}}
+   else if(clock>=ken.next){ken.on=true;const left=s.random()<.5;ken.u=left?-.06:1.06;ken.du=(left?1:-1)*(.16+s.random()*.08);}
+   for(const b of balls){b.age+=dt;b.u+=b.du*dt;b.v+=b.dv*dt;if(b.u<0||b.u>1){b.du=-b.du;b.u=clamp(b.u,0,1);}
+    const o=1-b.owner,k=kids[o],kp=scr(k.u,k.v);
+    if(!b.done&&hitTest(b,kp.x,kp.y,H*.48)){b.done=true;score[b.owner]++;k.ouch=.6;kids[b.owner].flash=.5;s.react(b.owner,'happy');s.react(o,'sad');
+     fx.burst(kp.x,kp.y,{n:18,color:'#ff5a4a',speed:240,life:.5,size:4});fx.pop(kp.x,kp.y-H*.5,'BONK! +1',{color:PCOL[b.owner],stroke:'#fff',size:Math.max(16,H*.28)});fx.shake(5);snd(160,.18,{type:'sine',vol:.07,to:70});jingle([660,880],{step:.05,type:'triangle',vol:.03});}
+    if(!b.done&&ken.on&&ken.dead<=0){const kp2=scr(ken.u,.5);if(hitTest(b,kp2.x,kp2.y,H*.42)){b.done=true;ken.dead=1.4;score[b.owner]=Math.max(0,score[b.owner]-2);s.react(b.owner,'sad');
+     fx.pop(kp2.x,kp2.y-H*.5,'OH MY GOD, THEY KILLED KENNY!',{color:'#ff6a6a',stroke:INK,size:Math.max(14,Math.min(s.W*.04,30)),life:1.6});fx.pop(kp2.x,kp2.y+H*.4,'YOU BASTARD! −2',{color:GOLD,stroke:INK,size:Math.max(13,H*.22),life:1.4});
+     fx.burst(kp2.x,kp2.y,{n:20,color:ORANGE,speed:220,life:.6,size:4});noise(.3,{vol:.06,freq:400});snd(300,.5,{type:'sawtooth',vol:.04,to:80});}}}
+   for(let j=balls.length-1;j>=0;j--){const b=balls[j];if(b.done||b.v<-.05||b.v>1.05)balls.splice(j,1);}
+   if(clock>=DODGE_TIME){phase='end';endT=0;endText=score[0]===score[1]?'DOUBLE OUT: IT’S A TIE':`${s.players[score[0]>score[1]?0:1].name.toUpperCase()} IS WORLD CHAMPION`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});}}
+  else{endT+=dt;if(endT>2.6){s.finish(score,`Dodgeball World Championship: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}
+  s.setScores(score);fx.begin(x);
+  // the gym: maple floor, court lines, a red centre line, team banners at each end
+  x.fillStyle='#d9a866';x.fillRect(0,0,s.W,s.H);x.strokeStyle='rgba(120,70,20,.22)';x.lineWidth=2;
+  for(let k=0;k<=1;k+=.045){const a=scr(k,0),b2=scr(k,1);x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b2.x,b2.y);x.stroke();}
+  for(let i=0;i<2;i++){const a=scr(0,i?.66:0),b2=scr(1,i?1:.34);x.fillStyle=i?'rgba(255,111,168,.12)':'rgba(74,163,255,.12)';x.fillRect(Math.min(a.x,b2.x),Math.min(a.y,b2.y),Math.abs(b2.x-a.x),Math.abs(b2.y-a.y));}
+  x.strokeStyle='#fff';x.lineWidth=4;for(const v of [.04,.34,.66,.96]){const a=scr(.02,v),b2=scr(.98,v);x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b2.x,b2.y);x.stroke();}
+  {const a=scr(.02,.04),b2=scr(.98,.96);x.strokeRect(Math.min(a.x,b2.x),Math.min(a.y,b2.y),Math.abs(b2.x-a.x),Math.abs(b2.y-a.y));const m0=scr(0,.5),m1=scr(1,.5);x.strokeStyle='#c8161d';x.lineWidth=6;x.beginPath();x.moveTo(m0.x,m0.y);x.lineTo(m1.x,m1.y);x.stroke();
+   const c0=scr(.5,.5);x.strokeStyle='#fff';x.lineWidth=4;x.beginPath();x.arc(c0.x,c0.y,Math.min(s.W,s.H)*.09,0,7);x.stroke();outlined(x,'SOUTH PARK',c0.x,c0.y,{size:Math.max(10,H*.17),fill:'#c8161d',stroke:'#fff'});}
+  {const c0=scr(.5,.5),rad=Math.min(s.W,s.H)*.09,fs=Math.max(9,H*.13);outlined(x,'WORLD CHAMPIONSHIP',c0.x,c0.y+rad+fs*.9,{size:fs,fill:'#fff',stroke:INK});}
+  if(ken.on){const p=scr(ken.u,.5);kenny(x,p.x,p.y-H*.1,H*.42,{dead:ken.dead>0?1.4-ken.dead:0,t});}
+  for(const b of balls){const p=scr(b.u,b.v);x.fillStyle='rgba(0,0,0,.15)';x.beginPath();x.ellipse(p.x+4,p.y+6,H*.13,H*.08,0,0,7);x.fill();x.fillStyle='#d8322a';x.strokeStyle=INK;x.lineWidth=2;x.beginPath();x.arc(p.x,p.y,H*.13,0,7);x.fill();x.stroke();x.strokeStyle='rgba(255,255,255,.45)';x.beginPath();x.arc(p.x,p.y,H*.09,3.6,4.8);x.stroke();}
+  for(let i=0;i<2;i++){const k=kids[i],p=scr(k.u,k.v);if(k.ouch>0)x.globalAlpha=.6+.4*Math.sin(t*30);kid(x,s,i,p.x,p.y-H*.2,H,{mood:k.ouch>0?'sad':k.flash>0?'happy':undefined});x.globalAlpha=1;
+   for(let a=0;a<AMMO;a++){x.fillStyle=a<k.ammo?'#d8322a':'rgba(216,50,42,.25)';x.strokeStyle=INK;x.lineWidth=2;x.beginPath();x.arc(p.x-H*.5+a*H*.2,p.y+H*.78,H*.07,0,7);x.fill();x.stroke();}}
+  fx.draw(x);fx.end(x);
+  const sz=Math.max(14,Math.min(s.W,s.H)*.04);
+  for(let i=0;i<2;i++){const p=wide()?{x:i?s.W-12:12,y:sz}:{x:12,y:i?s.H-sz*.6:sz};outlined(x,`${s.players[i].name.toUpperCase()}  ${score[i]}`,p.x,p.y,{size:sz,fill:PCOL[i],stroke:'#fff',align:wide()&&i?'right':'left'});}
+  outlined(x,`${Math.ceil(Math.max(0,DODGE_TIME-clock))}s`,wide()?s.W/2:s.W-12,sz,{size:sz,fill:INK,stroke:'#fff',align:wide()?'center':'right'});
+  if(phase==='count')cd.draw(x,s.W,s.H);if(phase==='end')endBanner(x,s,endText);
+ });
+}
+
+// ------------------------------------------------------------------ Cheesy Poofs Catch
+const POOF_TIME=45;
+const SNACKS={poof:{pts:1,label:'+1'},cake:{pts:2,label:'SNACKY CAKE +2'},bucket:{pts:3,label:'CHICKEN! +3'},hankey:{pts:-3,label:'HOWDY HO! −3'}};
+function drawSnack(x,kind,cx,cy,r,t){
+ x.save();x.translate(cx,cy);x.strokeStyle=INK;x.lineWidth=2;
+ if(kind==='poof'){x.fillStyle='#ff9a1f';for(const [dx,dy] of [[-.35,0],[.35,.05],[0,-.3],[0,.3]]){x.beginPath();x.arc(dx*r,dy*r,r*.5,0,7);x.fill();x.stroke();}x.fillStyle='#ffd06a';x.beginPath();x.arc(-r*.1,-r*.15,r*.18,0,7);x.fill();}
+ else if(kind==='cake'){x.fillStyle='#ff7ab8';rr(x,-r,-r*.5,r*2,r,r*.4);x.fill();x.stroke();x.strokeStyle='#fff';x.lineWidth=2.5;x.beginPath();for(let k=-.8;k<=.8;k+=.32)x.lineTo(k*r,(Math.abs(k*10)%2?-.1:.1)*r);x.stroke();}
+ else if(kind==='bucket'){x.fillStyle='#fff';x.beginPath();x.moveTo(-r*.8,-r*.5);x.lineTo(r*.8,-r*.5);x.lineTo(r*.6,r*.8);x.lineTo(-r*.6,r*.8);x.closePath();x.fill();x.stroke();x.fillStyle='#d8261d';for(let k=-1;k<=1;k++){x.beginPath();x.moveTo(k*r*.5-r*.13,-r*.5);x.lineTo(k*r*.5+r*.13,-r*.5);x.lineTo(k*r*.4+r*.1,r*.8);x.lineTo(k*r*.4-r*.1,r*.8);x.closePath();x.fill();}
+  x.fillStyle='#c8823a';for(const dx of [-.4,0,.4]){x.beginPath();x.ellipse(dx*r,-r*.62,r*.28,r*.22,dx,0,7);x.fill();x.stroke();}}
+ else{x.rotate(Math.sin(t*5)*.15);x.fillStyle='#7a4a1e';rr(x,-r*.95,-r*.42,r*1.9,r*.84,r*.4);x.fill();x.stroke();
+  x.fillStyle='#fff';for(const sx of [-1,1]){x.beginPath();x.arc(sx*r*.3,-r*.08,r*.17,0,7);x.fill();x.stroke();}x.fillStyle=INK;for(const sx of [-1,1]){x.beginPath();x.arc(sx*r*.3,-r*.06,r*.07,0,7);x.fill();}
+  x.strokeStyle=INK;x.lineWidth=2;x.beginPath();x.arc(0,r*.08,r*.3,.3,Math.PI-.3);x.stroke();
+  x.fillStyle='#d8261d';x.beginPath();x.moveTo(-r*.5,-r*.38);x.lineTo(r*.4,-r*.38);x.lineTo(r*.9,-r*1.05);x.closePath();x.fill();x.stroke();x.fillStyle='#fff';x.fillRect(-r*.55,-r*.46,r*1,r*.14);x.beginPath();x.arc(r*.92,-r*1.07,r*.14,0,7);x.fill();}
+ x.restore();
+}
+async function spPoofs(s){
+ const [c,x]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();
+ if(!await settle(s))return;
+ const vp=halves(s),fx=new Fx(),score=[0,0],kb=arenaKeys(s),cd=new Countdown(3);let phase='count',t=0,clock=0,endT=0,endText='';
+ s.hint('Cheesy Poofs Catch: snacks rain down on your half (P1 left, P2 right). Drag on your half to move your head under them: Cheesy Poofs +1, Snacky Cakes +2, a bucket of chicken +3. Dodge Mr. Hankey (−3). It speeds up. Most points after 45 seconds wins. P1 A/D, P2 arrows.');
+ // One shared seeded schedule: both players get the same snacks at the same moments.
+ const sched=[];for(let tt=.3;tt<POOF_TIME-1.2;){const r=s.random(),kind=r<.6?'poof':r<.72?'cake':r<.8?'bucket':'hankey';sched.push({at:tt,u:.1+s.random()*.8,kind,speed:.32+tt/POOF_TIME*.3+s.random()*.08});tt+=.42-tt/POOF_TIME*.18+s.random()*.22;}
+ const heads=[0,1].map(()=>({u:.5,tu:.5,flash:0,ouch:0})),got=[new Set(),new Set()];
+ const hsz=i=>{const v=vp(i);return clamp(Math.min(v.w*.3,v.h*.13),38,110);};
+ arenaTouch(s,{owner:p=>p.x<s.W/2?0:1,maxFingers:1,onDown:f=>{const v=vp(f.owner);heads[f.owner].tu=clamp((f.x-v.x)/v.w,.08,.92);},onMove:f=>{const v=vp(f.owner);heads[f.owner].tu=clamp((f.x-v.x)/v.w,.08,.92);}});
+ const itemY=(it,v)=>(clock-it.at)*it.speed*v.h-20;
+ s.debug={get phase(){return phase;},heads,score,sched,got,clockNow:()=>clock};
+ s.frame(dt=>{t+=dt;fx.update(dt);
+  if(phase==='count'){if(!cd.update(dt))phase='play';}
+  else if(phase==='play'){clock+=dt;
+   for(let i=0;i<2;i++){const h=heads[i],st=kb.state[i],v=vp(i),hs=hsz(i);if(st.l||st.r)h.tu=clamp(h.tu+(st.r-st.l)*dt*1.1,.08,.92);h.u+=clamp(h.tu-h.u,-2.4*dt,2.4*dt);h.flash=Math.max(0,h.flash-dt);h.ouch=Math.max(0,h.ouch-dt);
+    const hx=v.x+h.u*v.w,hy=v.h-hs*1.1;
+    for(let j=0;j<sched.length;j++){const it=sched[j];if(it.at>clock)break;if(got[i].has(j))continue;const iy=itemY(it,v),ix=v.x+it.u*v.w,r=hs*.3;
+     if(iy>hy-hs*.55&&iy<hy+hs*.3&&Math.abs(ix-hx)<hs*.55+r*.4){got[i].add(j);const S=SNACKS[it.kind];score[i]=Math.max(0,score[i]+S.pts);
+      fx.pop(ix,iy-hs*.4,S.label,{color:S.pts>0?GOLD:'#c8823a',stroke:INK,size:Math.max(14,hs*.26)});
+      if(S.pts>0){h.flash=.3;fx.burst(ix,iy,{n:8+S.pts*4,color:it.kind==='poof'?'#ff9a1f':'#fff',speed:160,life:.4,size:3});snd(660+S.pts*120,.08,{type:'triangle',vol:.035});if(S.pts>1)jingle([880,1175],{step:.05,type:'triangle',vol:.03});}
+      else{h.ouch=.9;s.react(i,'sad');fx.shake(6);snd(140,.3,{type:'sawtooth',vol:.04});fx.burst(ix,iy,{n:14,color:'#7a4a1e',speed:200,life:.5,size:4});}}
+     else if(iy>v.h+40)got[i].add(j);}}
+   if(clock>=POOF_TIME){phase='end';endT=0;endText=score[0]===score[1]?'EQUALLY STUFFED':`${s.players[score[0]>score[1]?0:1].name.toUpperCase()} ATE THE MOST`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});}}
+  else{endT+=dt;if(endT>2.6){s.finish(score,`Cheesy Poofs Catch: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}
+  s.setScores(score);fx.begin(x);
+  for(let i=0;i<2;i++){const v=vp(i),h=heads[i],hs=hsz(i);x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();
+   // Cartman's living room: wallpaper, the TV glow, carpet
+   x.fillStyle='#e9d9a8';x.fillRect(v.x,v.y,v.w,v.h);x.fillStyle='rgba(160,120,60,.18)';for(let yy=0;yy<v.h;yy+=34)for(let xx=(yy/34)%2*17;xx<v.w;xx+=34){x.beginPath();x.arc(v.x+xx,yy,4,0,7);x.fill();}
+   x.fillStyle='#6a8a5a';x.fillRect(v.x,v.h-hs*.55,v.w,hs*.55);x.fillStyle='rgba(0,0,0,.12)';x.fillRect(v.x,v.h-hs*.55,v.w,5);
+   for(let j=0;j<sched.length;j++){const it=sched[j];if(it.at>clock)break;if(got[i].has(j))continue;const iy=itemY(it,v);if(iy<-40)continue;drawSnack(x,it.kind,v.x+it.u*v.w,iy,hs*.3,t+j);}
+   if(h.ouch>0)x.globalAlpha=.6+.4*Math.sin(t*30);kid(x,s,i,v.x+h.u*v.w,v.h-hs*1.1,hs,{mood:h.ouch>0?'sad':h.flash>0?'happy':undefined});x.globalAlpha=1;
+   if(h.ouch>0){x.fillStyle=`rgba(122,74,30,${h.ouch*.25})`;x.fillRect(v.x,v.y,v.w,v.h);}
+   hud(x,i,v,`${s.players[i].name.toUpperCase()}  ${score[i]}`,`${Math.ceil(Math.max(0,POOF_TIME-clock))}s`);x.restore();}
+  fx.draw(x);fx.end(x);divider(x,s);
+  if(phase==='count')cd.draw(x,s.W,s.H);if(phase==='end')endBanner(x,s,endText);
+ });
+}
+
+// ------------------------------------------------------------------ They Killed Kenny!
+const KENNY_TIME=45;
+const DOOMS={rat:{hp:1,pts:1,speed:.3,r:.11},meteor:{hp:1,pts:1,speed:.36,r:.1},saucer:{hp:1,pts:1,speed:.22,r:.13,wobble:true},piano:{hp:2,pts:2,speed:.17,r:.17}};
+function drawDoom(x,d,cx,cy,r,t){
+ x.save();x.translate(cx,cy);x.strokeStyle=INK;x.lineWidth=2;
+ if(d.kind==='rat'){x.rotate(d.ang+Math.PI/2);x.fillStyle='#7a7a82';x.beginPath();x.ellipse(0,0,r*.55,r*.9,0,0,7);x.fill();x.stroke();x.fillStyle='#ffb0c0';x.beginPath();x.arc(-r*.35,r*.6,r*.16,0,7);x.arc(r*.35,r*.6,r*.16,0,7);x.fill();x.strokeStyle='#e89aa8';x.lineWidth=3;x.beginPath();x.moveTo(0,-r*.9);x.quadraticCurveTo(r*.6*Math.sin(t*12),-r*1.5,0,-r*1.9);x.stroke();x.fillStyle='#ff3b3b';x.beginPath();x.arc(-r*.18,r*.55,r*.07,0,7);x.arc(r*.18,r*.55,r*.07,0,7);x.fill();}
+ else if(d.kind==='meteor'){x.rotate(d.ang+Math.PI);x.fillStyle='rgba(255,140,40,.6)';x.beginPath();x.moveTo(-r*2.6,-r*.5);x.lineTo(0,-r*.7);x.lineTo(0,r*.7);x.lineTo(-r*2.6,r*.5);x.fill();x.fillStyle='#6a5a4a';x.beginPath();x.arc(0,0,r*.8,0,7);x.fill();x.stroke();x.fillStyle='#4a3a2a';x.beginPath();x.arc(-r*.2,-r*.2,r*.2,0,7);x.arc(r*.3,r*.2,r*.15,0,7);x.fill();}
+ else if(d.kind==='saucer'){x.fillStyle='#9be7a0';x.beginPath();x.ellipse(0,-r*.25,r*.45,r*.4,0,Math.PI,0);x.fill();x.stroke();x.fillStyle='#b9c2cc';x.beginPath();x.ellipse(0,0,r*1.1,r*.35,0,0,7);x.fill();x.stroke();for(let k=-2;k<=2;k++){x.fillStyle=Math.sin(t*8+k)>0?'#ffe23b':'#ff3b6b';x.beginPath();x.arc(k*r*.4,r*.05,r*.08,0,7);x.fill();}}
+ else{x.rotate(Math.sin(t*3)*.1);x.fillStyle='#1a1a1a';rr(x,-r,-r*.7,r*2,r*1.2,r*.15);x.fill();x.stroke();x.fillStyle='#fff';x.fillRect(-r*.85,r*.15,r*1.7,r*.3);x.fillStyle=INK;for(let k=0;k<6;k++)x.fillRect(-r*.75+k*r*.3,r*.15,r*.12,r*.18);x.strokeStyle='#666';x.lineWidth=2;x.beginPath();x.moveTo(-r*.8,-r*.7);x.lineTo(-r*.6,-r*1.4);x.moveTo(r*.8,-r*.7);x.lineTo(r*.6,-r*1.4);x.stroke();if(d.hp<2){x.strokeStyle=GOLD;x.lineWidth=3;x.beginPath();x.moveTo(-r*.4,-r*.6);x.lineTo(0,-r*.1);x.lineTo(-r*.2,r*.2);x.stroke();}}
+ x.restore();
+}
+async function spKenny(s){
+ const [c,x]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();
+ if(!await settle(s))return;
+ const vp=halves(s),fx=new Fx(),score=[0,0],kb=arenaKeys(s),cd=new Countdown(3);let phase='count',t=0,clock=0,endT=0,endText='';
+ s.hint('They Killed Kenny! Pianos, rats, meteors and flying saucers close in on Kenny in your half (P1 left, P2 right). Tap them before they reach him: +1 each, pianos take two taps and pay +2. If one gets through, they killed Kenny: −3, and he is back a moment later. Most points after 45 seconds wins. P1 Space, P2 Enter zaps the closest threat.');
+ // Shared seeded schedule: [time, angle (0 = from the right, π = from the left, up is negative), kind].
+ const sched=[];for(let tt=.6;tt<KENNY_TIME-1;){const r=s.random(),kind=r<.34?'rat':r<.6?'meteor':r<.82?'saucer':'piano';sched.push({at:tt,ang:-Math.PI*(.08+s.random()*.84),kind,wob:s.random()*6});tt+=.85-tt/KENNY_TIME*.42+s.random()*.35;}
+ const sides=[0,1].map(()=>({next:0,live:[],dead:0,deaths:0,cool:0}));
+ const geo=i=>{const v=vp(i),kr=clamp(Math.min(v.w*.16,v.h*.09),26,64);return {v,kr,kx:v.x+v.w/2,ky:v.h-kr*1.6,R:Math.hypot(v.w,v.h)*.8,unit:Math.min(v.w,v.h*1.2)};};
+ function pos(d,g){const dist=Math.max(0,g.R*(1-(clock-d.at)*d.speed)),wob=d.wobble?Math.sin(clock*3+d.wob)*g.kr*.9:0;return {x:g.kx+Math.cos(d.ang)*dist-Math.sin(d.ang)*wob,y:g.ky+Math.sin(d.ang)*dist+Math.cos(d.ang)*wob,dist};}
+ function zap(i,d){const g=geo(i),p=pos(d,g);d.hp--;d.flash=.15;snd(900,.06,{type:'square',vol:.035,to:300});
+  if(d.hp<=0){const D=DOOMS[d.kind];score[i]+=D.pts;d.gone=true;fx.burst(p.x,p.y,{n:14,color:d.kind==='meteor'?'#ff8a1f':'#fff',speed:220,life:.45,size:3,shape:'star'});fx.pop(p.x,p.y-20,`+${D.pts}`,{color:GOLD,stroke:INK,size:Math.max(16,g.kr*.6)});noise(.12,{vol:.05,freq:2200});}
+  else fx.ring(p.x,p.y,{color:GOLD,r1:g.kr*1.2,life:.25});}
+ function tap(i,px,py){if(phase!=='play'||sides[i].dead>0)return;const g=geo(i);let best=null,bd=1e9;
+  for(const d of sides[i].live){if(d.gone)continue;const p=pos(d,g),r=DOOMS[d.kind].r*g.kr*7+18,dd=Math.hypot(px-p.x,py-p.y);if(dd<r&&dd<bd){bd=dd;best=d;}}
+  if(best)zap(i,best);else fx.ring(px,py,{color:'rgba(255,255,255,.6)',r1:20,life:.2});}
+ arenaTouch(s,{owner:p=>p.x<s.W/2?0:1,maxFingers:2,onDown:f=>tap(f.owner,f.x,f.y)});
+ kb.onDown((i,k)=>{if(k!=='fire'||phase!=='play'||sides[i].dead>0||sides[i].cool>0)return;const g=geo(i);const live=sides[i].live.filter(d=>!d.gone);if(!live.length)return;live.sort((a,b)=>pos(a,g).dist-pos(b,g).dist);sides[i].cool=.3;zap(i,live[0]);});
+ s.debug={get phase(){return phase;},score,sides,sched,tap,pos:(i,d)=>pos(d,geo(i)),clockNow:()=>clock};
+ function killKenny(i){const sd=sides[i],g=geo(i);sd.dead=1.6;sd.deaths++;score[i]=Math.max(0,score[i]-3);for(const d of sd.live)d.gone=true;s.react(i,'sad');fx.shake(8);
+  fx.pop(g.kx,g.ky-g.kr*2.2,'THEY KILLED KENNY!',{color:'#ff6a6a',stroke:INK,size:Math.max(14,Math.min(g.v.w*.08,30)),life:1.5});fx.pop(g.kx,g.ky-g.kr*1.2,'YOU BASTARDS! −3',{color:GOLD,stroke:INK,size:Math.max(12,Math.min(g.v.w*.06,22)),life:1.4});
+  fx.burst(g.kx,g.ky,{n:24,color:ORANGE,speed:260,life:.7,size:4});noise(.4,{vol:.07,freq:300});snd(260,.6,{type:'sawtooth',vol:.045,to:60});}
+ s.frame(dt=>{t+=dt;fx.update(dt);
+  if(phase==='count'){if(!cd.update(dt))phase='play';}
+  else if(phase==='play'){clock+=dt;
+   for(let i=0;i<2;i++){const sd=sides[i],g=geo(i);sd.cool=Math.max(0,sd.cool-dt);
+    if(sd.dead>0){sd.dead-=dt;if(sd.dead<=0)fx.pop(g.kx,g.ky-g.kr*1.6,'HE’S BACK!',{color:ORANGE,stroke:INK,size:Math.max(14,g.kr*.5)});}
+    while(sd.next<sched.length&&sched[sd.next].at<=clock){const it=sched[sd.next++];if(sd.dead>0)continue;const D=DOOMS[it.kind];sd.live.push({...it,hp:D.hp,speed:D.speed*(1+it.at/KENNY_TIME*.5),wobble:!!D.wobble,flash:0,gone:false});}
+    for(const d of sd.live){d.flash=Math.max(0,d.flash-dt);if(!d.gone&&sd.dead<=0&&pos(d,g).dist<g.kr*.9+DOOMS[d.kind].r*g.kr*3.5){killKenny(i);break;}}
+    sd.live=sd.live.filter(d=>!d.gone);}
+   if(clock>=KENNY_TIME){phase='end';endT=0;endText=score[0]===score[1]?'KENNY SURVIVES… FOR NOW':`${s.players[score[0]>score[1]?0:1].name.toUpperCase()} SAVED KENNY BEST`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});}}
+  else{endT+=dt;if(endT>2.6){s.finish(score,`They Killed Kenny!: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}
+  s.setScores(score);fx.begin(x);
+  for(let i=0;i<2;i++){const g=geo(i),v=g.v,sd=sides[i];x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();
+   const gr=x.createLinearGradient(0,0,0,v.h);gr.addColorStop(0,'#5aa8e0');gr.addColorStop(.7,'#bfe3f8');x.fillStyle=gr;x.fillRect(v.x,0,v.w,v.h);
+   x.fillStyle='#7d8fae';x.strokeStyle=INK;x.lineWidth=3;x.beginPath();x.moveTo(v.x-20,v.h*.62);for(let k=0;k<=5;k++){x.lineTo(v.x+v.w*(k+.5)/5,v.h*(.38+(k%2)*.1));x.lineTo(v.x+v.w*(k+1)/5,v.h*.62);}x.lineTo(v.x+v.w+20,v.h);x.lineTo(v.x-20,v.h);x.closePath();x.fill();x.stroke();
+   x.fillStyle=SNOW;x.fillRect(v.x,v.h*.7,v.w,v.h*.3);pine(x,v.x+v.w*.12,v.h*.78,g.kr*1.4);pine(x,v.x+v.w*.88,v.h*.8,g.kr*1.2);
+   for(const d of sd.live){const p=pos(d,g);if(d.flash>0)x.globalAlpha=.5;drawDoom(x,d,p.x,p.y,DOOMS[d.kind].r*g.kr*7,t);x.globalAlpha=1;}
+   kenny(x,g.kx,g.ky,g.kr,{dead:sd.dead>0?1.6-sd.dead:0,t});
+   if(sd.dead>0){x.fillStyle=`rgba(200,20,20,${Math.min(.3,sd.dead*.2)})`;x.fillRect(v.x,v.y,v.w,v.h);}
+   s.sprite(x,i,v.x+v.w-g.kr*.8,v.y+g.kr*2.1,g.kr*1.2,{exact:true,mood:sd.dead>0?'sad':undefined});
+   hud(x,i,v,`${s.players[i].name.toUpperCase()}  ${score[i]}`,`${Math.ceil(Math.max(0,KENNY_TIME-clock))}s`);x.restore();}
+  fx.draw(x);fx.end(x);divider(x,s);
+  if(phase==='count')cd.draw(x,s.W,s.H);if(phase==='end')endBanner(x,s,endText);
+ });
+}
+Object.assign(exports,{spDodgeball,spPoofs,spKenny});
 
 }};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();</script></body></html>
