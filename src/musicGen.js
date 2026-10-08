@@ -57,9 +57,7 @@ const STYLES={
   bright:{scale:'major',A:'5.maj7 7.M 4.m7 9.m',B:'2.m7 4.m7 5.maj7 7.sus'},chordInst:'clav',comp:'stabs',bass:'funk',bassInst:'slap',pad:'glass',kit:'breakbeat',lead:'square',center:76,density:'busy',amb:null},
  // Original gothic chip-baroque: harmonic minor, harpsichord arpeggios, pumping octave bass. No Konami melodies.
  castlevania:{genre:'Gothic Chip-Baroque',bpm:150,swing:0,key:2,cs:16,gain:1,
-  bright:{scale:'harmonic',A:'0.m 8.M 5.m 7.M',B:'3.M 10.M 8.maj7 7.7b9'},chordInst:'harpsichord',comp:'arp16',bass:'octave',bassInst:'synthBass',pad:'choir',kit:'breakbeat',lead:'square',center:76,density:'busy',amb:'wind'},
- 'green-hill':{genre:'Sunny Synth-Funk',bpm:136,swing:0,key:0,cs:16,gain:1.15,
-  bright:{scale:'major',A:'5.maj7 7.M 4.m7 9.m',B:'2.m7 4.m7 5.maj7 7.sus'},chordInst:'clav',comp:'stabs',bass:'funk',bassInst:'slap',pad:'glass',kit:'breakbeat',lead:'square',center:76,density:'busy',amb:null}
+  bright:{scale:'harmonic',A:'0.m 8.M 5.m 7.M',B:'3.M 10.M 8.maj7 7.7b9'},chordInst:'harpsichord',comp:'arp16',bass:'octave',bassInst:'synthBass',pad:'choir',kit:'breakbeat',lead:'square',center:76,density:'busy',amb:'wind'}
 };
 // Exotic harmony used by desert biomes on any level.
 const EXOTIC={scale:'phrygdom',A:'0.M 1.M 0.M 10.m',B:'5.m 1.maj7 0.M 0.sus'};
