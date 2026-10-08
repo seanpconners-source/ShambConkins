@@ -5,7 +5,7 @@ const PHRASES={
  'emilio-estevez':'Quack, quack!','happy-gilmore':'Just tap it in.',
  'gordon-ramsay':'It’s raw!',terminator:'I’ll be back.',
  'the-dude':'The Dude abides.',walter:'Mark it zero!',donny:'I am the walrus.',
- michael:'That’s what she said.',dwight:'Bears. Beets. Battlestar Galactica.',
+ michael:'That’s what she said.',prisonmike:'And I never got caught, neither.',dwight:'Bears. Beets. Battlestar Galactica.',
  'george-costanza':'The summer of George!',kramer:'Giddy up!',
  mario:'Let’s-a go!',luigi:'Luigi time!',ash:'Groovy.',
  'ash-williams':'Groovy.',neo:'I know kung fu.',docbrown:'Great Scott!',marty:'This is heavy.',
