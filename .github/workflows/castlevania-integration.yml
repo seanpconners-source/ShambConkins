@@ -26,10 +26,12 @@ jobs:
           sudo ln -sf "$EXEC" /opt/pw-browsers/chromium-1194/chrome-linux/chrome
       - name: Source/module validation
         run: node tools/check-modules.mjs
-      - name: Complete automated regression suite
-        run: npm test
+      - name: Build testable game for isolated Castlevania checks
+        run: npm run build
       - name: Castlevania phone and desktop gameplay tests
         run: node tests/castlevania.mjs
+      - name: Complete automated regression suite
+        run: npm test
       - name: Build distributable v0.58.2
         run: npm run release
       - name: Commit generated release to integration branch (not main)
