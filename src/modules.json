@@ -246,7 +246,8 @@
   "src/engines/penaltyKicks.js",
   "src/engines/vanishingTicTacToe.js",
   "src/engines/dinnerService.js",
-  "src/engines/motionTracker.js"
+  "src/engines/motionTracker.js",
+  "src/engines/castlevania.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
