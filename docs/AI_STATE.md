@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.57.0 (`releases/ShambConkins_v0.57.0.html`).
+Version 0.58.0 (`releases/ShambConkins_v0.58.0.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -79,7 +79,7 @@ Version 0.57.0 (`releases/ShambConkins_v0.57.0.html`).
   Games in `engines/southPark.js`: `sp-dodgeball`, `sp-cheesy-poofs`, `sp-killed-kenny`. Items `wz-*` South Park pack,
   34 trivia lines in `warpTrivia.js` (feed the existing `southpark` topic). Test: `tests/southpark.mjs`.
 
-- **Minigame remakes (v0.57):** audit of the 112 pool games; the ten weakest originals were rebuilt as new engine files
+- **Minigame remakes (v0.58):** audit of the 112 pool games; the ten weakest originals were rebuilt as new engine files
   (same ids/engine names; wired in `engines/index.js`, rules/durations in the `REMAKES` table at the end of
   `gameRegistry.js`): `brawndoMerge.js` (Suika physics, shared), `pancakeReview.js` (eating contest, shared),
   `skynetScan.js` (find the Terminator, shared, 7 tell rounds), `paperRoute.js` (Paperboy, pass&play),
@@ -177,6 +177,16 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   `hitSrc`, autopilot reaction time): all 36 bosses, wide 9.1 / landscape 9.2 vs phone ~9.8 hits/min, same damage rate.
 - Launch music: boot now starts the home score (it used to call `showView('home')` without `home()`), and
   `installAudioUnlock()` (audio.js) resumes the suspended AudioContext on the first tap/key.
+
+- Drop-in mood portraits: `portraitURL` (assets.js) now prefers the owner's `USER_PORTRAITS` `char:<id>:<mood>` (never generated `ART`
+  placeholders) over the base `photo:char:<id>` (it
+  used to return the base photo for every mood). Board idle cycle shows normal/win/think/silly/angry; character select
+  cycles every distinct expression (no 5-face cap).
+- Pokémon mood sprites (v0.57.0): `portraitMoods(id)` (assets.js) lists moods with the owner's own art (drop-ins or
+  supplied faces). `pkmnSprites.js` dithers each into front/back sprites in the background (`characterSprite(id,kind,mood)`,
+  `moodSprite(sp,mood)`); `drawMonSprite` shows `m.mood`: think while choosing, win on landing a hit, angry when hit or
+  hurt by poison/burn, silly on a confusion self-hit, sad on a miss/faint and a beaten trainer. Sprites are made at
+  runtime from portraits, so new uploads need no step. Tests: `tests/pkmnmoods.mjs` (contact sheet), `tests/pkmnmoodbattle.mjs`.
 
 ## In progress / unverified
 - Warp minigames only bot/fuzz-tested in headless Chromium; Sonic, Mario (turn-based) and kart (split-screen canvas, Mode 7 rows) need a

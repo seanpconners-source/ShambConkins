@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.57.0
+## v0.58.0
 
 **Ten of the original simple minigames rebuilt from scratch.** An audit of all 112 pool games flagged the early
 button-and-emoji games as the weak spots; each one is now a full touch game with its own art, sound and a real hook.
@@ -25,6 +25,27 @@ Ids and engine names are unchanged, so saves and board events keep working.
 - **Alien · Motion Tracker** → blips only show on each ping, pings speed up as they close in, flamethrower with
   limited fuel. Don't torch Jonesy.
 - **WarGames · Vanishing Tic-Tac-Toe** → each player keeps only three heads; your fourth erases your oldest.
+
+## v0.57.0
+
+**Pokémon battles show your characters' moods.** Every head you upload already becomes a Game Boy sprite (the same
+dithered Gen 1 look as the rest), and now every mood picture you uploaded gets its own sprite too. In battle your
+Pokémon looks thoughtful while you pick a move, grins when it lands a hit, gets angry when it's hit or hurt by
+poison or a burn, goes silly when it hurts itself in confusion, and looks sad when it misses or faints. A beaten
+trainer comes back looking sad. Characters with only one picture keep it, and no generated placeholders are used.
+
+## v0.56.4
+
+**Only your uploaded heads, no grey silhouettes.** v0.56.3 let generated placeholder art beat your photos (Forrest,
+Taskmaster and others showed a grey "FM"/"TT" silhouette in the roster and in their expression cycle). Characters with
+an uploaded head now use only the images you supplied: a mood picture when you gave one, otherwise their main photo.
+
+## v0.56.3
+
+**Every mood portrait you dropped in now shows up.** Characters with a base photo (Forrest, Taskmaster, Ace, the
+Always Sunny gang, Cartman, Prison Mike, Frank, Mac, Gizzard) were stuck on that one picture; now their think, win,
+silly, angry, sad and walk faces appear. On the board the idle faces also cycle through silly and angry, and character
+select shows every expression instead of only the first five.
 
 ## v0.56.2
 
