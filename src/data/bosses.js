@@ -269,6 +269,13 @@ const BOSSES=[
   attacks:[[['aimed',{n:2,rounds:4,pink:.25}],['fan',{count:6,arc:1.2,rounds:3}],['laser',{count:1,sweep:1.7}]],
    [['trapdoor',{}],['minions',{n:3,kind:'drone',hp:5}],['aimed',{n:3,spread:.18,rounds:3,pink:.2}]],
    [['trapdoor',{n:4}],['laser',{count:2,sweep:2}],['minions',{n:4,kind:'drone',hp:5}],['ring',{count:14,rings:3}]]]}),
+ def({id:'death-cv',name:'Death',epithet:'The Grim Reaper',source:'Castlevania',icon:'☠️',unlockId:'death-cv',level:'warp',warp:'castlevania',tier:3,
+  body:'reaper',look:{},scene:'castle',pal:['#3a2a4a','#0c0812','#d8dce4','#f4eee6'],sig:'sickles',
+  tone:{base:92,voice:'square',beat:280,notes:[0,1,5,3,1,0,7,6],bass:true},
+  quote:'The master sleeps in the keep. You will not reach him.',phaseLines:[null,'Your soul will join my collection!','Enough! Feel the edge of my scythe!'],koLine:'*the empty hood crumples* ...the master will avenge me.',
+  attacks:[[['aimed',{n:2,rounds:4,pink:.25}],['fan',{count:5,arc:1.1,rounds:3}],['minions',{n:3,kind:'bat',hp:3}]],
+   [['sickles',{}],['fan',{count:7,arc:1.4,rounds:3}],['aimed',{n:3,spread:.18,rounds:3,pink:.2}]],
+   [['sickles',{n:6}],['laser',{count:2,sweep:1.8}],['batswarm',{n:6}],['ring',{count:14,rings:3}]]]}),
  // South Park warp boss. Her face is Barbra Streisand's portrait (unlockId); unlockName shows who a win unlocks.
  def({id:'mecha-streisand',name:'Mecha-Streisand',epithet:'Holder of the Triangle of Zinthar',source:'South Park',icon:'🦖',unlockId:'barbra-streisand',unlockName:'Barbra Streisand',level:'warp',warp:'south-park',tier:3,
   body:'mecha',look:{size:.9},scene:'southpark',pal:['#9aa3ad','#1c2230','#ff3b6b','#eef3f8'],sig:'zinthar',
