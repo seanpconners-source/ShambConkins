@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.57.0
+
+**Pokémon battles show your characters' moods.** Every head you upload already becomes a Game Boy sprite (the same
+dithered Gen 1 look as the rest), and now every mood picture you uploaded gets its own sprite too. In battle your
+Pokémon looks thoughtful while you pick a move, grins when it lands a hit, gets angry when it's hit or hurt by
+poison or a burn, goes silly when it hurts itself in confusion, and looks sad when it misses or faints. A beaten
+trainer comes back looking sad. Characters with only one picture keep it, and no generated placeholders are used.
+
 ## v0.56.4
 
 **Only your uploaded heads, no grey silhouettes.** v0.56.3 let generated placeholder art beat your photos (Forrest,

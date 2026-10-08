@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.56.4 (`releases/ShambConkins_v0.56.4.html`).
+Version 0.57.0 (`releases/ShambConkins_v0.57.0.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -171,6 +171,11 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   placeholders) over the base `photo:char:<id>` (it
   used to return the base photo for every mood). Board idle cycle shows normal/win/think/silly/angry; character select
   cycles every distinct expression (no 5-face cap).
+- Pokémon mood sprites (v0.57.0): `portraitMoods(id)` (assets.js) lists moods with the owner's own art (drop-ins or
+  supplied faces). `pkmnSprites.js` dithers each into front/back sprites in the background (`characterSprite(id,kind,mood)`,
+  `moodSprite(sp,mood)`); `drawMonSprite` shows `m.mood`: think while choosing, win on landing a hit, angry when hit or
+  hurt by poison/burn, silly on a confusion self-hit, sad on a miss/faint and a beaten trainer. Sprites are made at
+  runtime from portraits, so new uploads need no step. Tests: `tests/pkmnmoods.mjs` (contact sheet), `tests/pkmnmoodbattle.mjs`.
 
 ## In progress / unverified
 - Warp minigames only bot/fuzz-tested in headless Chromium; Sonic, Mario (turn-based) and kart (split-screen canvas, Mode 7 rows) need a

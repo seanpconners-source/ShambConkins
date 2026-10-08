@@ -60,6 +60,8 @@ const {obstacleArtHTML}=require("src/obstacleArt.js");
 const PK=require("src/pkmn/pkmnRun.js");
 const {trainerWatching}=require("src/pkmn/pkmnWarp.js");
 const {gbMessages,setTestSpeed:pkSpeed,setAutoPilot:pkAuto,battle:pkBattle,isOpen:gbIsOpen}=require("src/pkmn/pkmnBattle.js");
+const PKSP=require("src/pkmn/pkmnSprites.js");
+const {portraitMoods}=require("src/assets.js");
 const {PKMN_CATALOG_ITEMS}=require("src/data/pkmnItems.js");
 let movementToken=0;
 let setupSelected=['sean','amber'],setupNames=['Sean','Amber'],catalogQuery='',catalogFilter='all',catalogPage=0;
@@ -505,7 +507,7 @@ document.addEventListener('input',event=>{if(event.target.id==='catalog-search')
 document.getElementById('dialog').addEventListener('cancel',event=>{event.preventDefault();const i=store.dialog?.choices.findIndex(c=>['cancel','no','stay'].includes(c.value));if(i>=0)resolveDialog(i);});
 window.addEventListener('pagehide',saveRun);window.addEventListener('orientationchange',()=>{if(store.view==='board'&&!store.session)setTimeout(()=>updateBoard(true),100);});
 installViewport(()=>{if(store.view==='board'&&!store.session&&!store.boardTour)repaintCamera();});installMedia();installBoardGestures();installPortraitCycle();installSetupFaceCycle();applyPreferences();saveProfile(store.profile);installAudioUnlock();setMusicZone('home');if(store.profile?.settings.music)startMusic();showView('home');
-window.ShambConkins={version:VERSION,warpThemes:WARP_THEMES,pkmn:{run:PK,battle:pkBattle,speed:pkSpeed,auto:pkAuto,isOpen:gbIsOpen,messages:gbMessages},announceLevel,updateBoard,enterWarpZone,exitWarpZone,startBoss,bossDone,buildWarpBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,nowPlaying,musicScene,unlockDialog,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
+window.ShambConkins={version:VERSION,warpThemes:WARP_THEMES,pkmn:{run:PK,battle:pkBattle,speed:pkSpeed,auto:pkAuto,isOpen:gbIsOpen,messages:gbMessages,sprites:PKSP,portraitMoods},announceLevel,updateBoard,enterWarpZone,exitWarpZone,startBoss,bossDone,buildWarpBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,nowPlaying,musicScene,unlockDialog,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
 
 function installBoardGestures(){
  // One finger pans the map, two fingers pinch-zoom, the mouse wheel zooms. Rolling resets the view.
