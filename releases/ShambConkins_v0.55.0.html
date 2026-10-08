@@ -1223,6 +1223,16 @@ body.reduced-motion .cs-face,body.reduced-motion .cs-face img{transition:opacity
 /* Rare encounters keep the dark dialog (styles.css gave them a light card under light text). */
 body .dialog-content.rare{background:radial-gradient(ellipse 120% 60% at 50% 0%,color-mix(in srgb,var(--t-acc) 22%,transparent),transparent 70%),linear-gradient(180deg,var(--t-s1) 0%,var(--t-s2) 100%)}
 body .dialog-content.rare p{color:var(--t-sub)}
+/* Collection tools (v0.55): a readable search box, filters in one dropdown, entry count; the grid scrolls endlessly. */
+body .catalog-shell .catalog-tools{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;margin-bottom:10px}
+body .catalog-shell .catalog-tools input{flex:1 1 auto;min-width:0;max-width:none;min-height:44px;padding:10px 14px;font-size:16px;flex-basis:auto}
+body .catalog-shell .catalog-tools select{flex:0 1 auto;min-width:0;max-width:min(48%,300px);min-height:44px;padding:8px 32px 8px 12px;font-size:14px;font-weight:800;appearance:none;-webkit-appearance:none;cursor:pointer;text-overflow:ellipsis;
+ background-image:linear-gradient(45deg,transparent 50%,var(--t-acc) 50%),linear-gradient(135deg,var(--t-acc) 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+body .catalog-shell .catalog-tools select option{color:#111;background:#fff}
+body .catalog-shell .catalog-count{flex:0 0 auto;min-width:30px;text-align:center;font-size:11px;font-weight:800;color:var(--t-dim)}
+body .catalog-shell .catalog-more{grid-column:1/-1;height:1px}
+body .catalog-shell .arcade-card.boss-match:not(.locked){box-shadow:inset 0 0 0 2px #d01c2c88}
+@media(max-width:600px){body .catalog-shell .catalog-tools input{font-size:16px;padding:9px 12px}body .catalog-shell .catalog-tools select{max-width:46%;font-size:13px}}
 </style></head>
 <body><div id="app"></div><dialog id="dialog" aria-labelledby="dialog-title"></dialog><div id="game-layer" hidden></div><div id="fx-layer" class="fx-layer" aria-hidden="true"></div><div id="toast" role="status" aria-live="polite"></div><noscript>This game needs JavaScript enabled.</noscript><script>(()=>{'use strict';const modules={"src/app.js":(exports,require)=>{
 const {triviaSeconds}=require("src/engines/trivia.js");
@@ -1230,7 +1240,7 @@ const {initFullscreen, toggleFullscreen, fullscreenSupported, fullscreenButton, 
 const {touchDiagnostic}=require("src/touchDiagnostic.js");
 const {floatingHead}=require("src/headCutouts.js");
 const {triviaExplanationHTML, TRIVIA_QUESTIONS}=require("src/triviaCatalog.js");
-const {store, newRun, logRun}=require("src/state.js");
+const {store, newRun, logRun, newPlayer}=require("src/state.js");
 const {freshProfile, loadProfile, saveProfile, recruitReward, canRecruitReward, availableCharacters, rememberCollectibles, homePackTurn}=require("src/profile.js");
 const {updateBoardBanter}=require("src/boardBanter.js");
 const {readJSON, writeJSON, removeSaved, RUN_KEY, PROFILE_KEY, validRun}=require("src/persistence.js");
@@ -1294,7 +1304,8 @@ initFullscreen();{let refit=0;const later=()=>{clearTimeout(refit);refit=setTime
 store.profile=loadProfile();const saved=readJSON(RUN_KEY);store.run=validRun(saved)?saved:null;if(store.run&&!store.profile.earnedUnlocks['gordon-ramsay'])for(const p of store.run.players)if(p.character==='gordon-ramsay')p.character=p.owner==='Sean'?'sean':'amber';if(store.run&&!differentCharacters(...store.run.players.map(p=>p.character))){store.run.players[1].character=availableCharacters(store.profile,'Amber').find(id=>differentCharacters(id,store.run.players[0].character))||'amber';if(!differentCharacters(...store.run.players.map(p=>p.character)))store.run.players[0].character='sean';}upgradeRunFormat(store.run);updateProgression(store.profile);
 if(store.run)for(const p of store.run.players){if(p.character==='eugenia')p.character=p.owner==='Amber'?'amber':'sean';p.items=p.items.filter(id=>id!=='eugenia-pass');}
 function saveRun(){rememberCollectibles(store.profile,store.run);let saved=true;if(store.run)saved=writeJSON(RUN_KEY,store.run);else removeSaved(RUN_KEY);const profileSaved=saveProfile(store.profile);if((!saved||!profileSaved)&&!store.storageNotice){store.storageNotice=true;toast('Browser storage is unavailable. Use Settings → Export backup before closing.');}}
-PK.configurePkmn({unlockDialog:(ids,owner)=>unlockDialog(ids,owner),saveRun:()=>saveRun(),updateBoard:()=>updateBoard(),logRun:m=>logRun(m),startMusic:()=>startMusic(),stopMusic:()=>stopMusic()});
+const onBoard=()=>store.view==='board'&&!!store.run;
+PK.configurePkmn({unlockDialog:(ids,owner)=>unlockDialog(ids,owner),saveRun:()=>onBoard()&&saveRun(),updateBoard:()=>onBoard()&&updateBoard(),logRun:m=>onBoard()&&logRun(m),startMusic:()=>startMusic(),stopMusic:()=>stopMusic()});
 configureLauncher({bossDone:(game,coop)=>bossDone(game,coop),journeyWin:i=>journeyNow('win',{},store.run.players[i]),save:saveRun,endTurn,beforeRoll:resumeItemTurn,arcade:()=>{store.busy=false;store.arcade=false;showCatalog('arcade');}});
 const random=()=>store.run?runRandom(store.run):Math.random();
 function focusEffect(before){const run=store.run;if(!run)return;const after=effectSnapshot(run),ids=[run.players[run.current].node];for(let i=0;i<2;i++)if(before?.players[i]&&JSON.stringify(before.players[i])!==JSON.stringify(after.players[i])){ids.push(run.players[i].node);if(before.players[i].node!==run.players[i].node)ids.push(before.players[i].node);}focusBoardAction(run,ids);}
@@ -1336,7 +1347,7 @@ async function continueRun(){if(!store.run)return home();movementToken++;store.b
  else if(run.phase==='landing'){await resolveLanding();}
  else if(run.phase==='game'){toast('Resuming your interrupted challenge.');await requestGame({id:run.pending.gameId,resume:true});}
  else if(run.phase==='result'){store.busy=true;const pending=run.pending;await presentResult(pending);if(!encounterActive(run,pending,token))return;if(!await unlockDialog(pending.unlocked||[],pending.unlockOwner)||!encounterActive(run,pending,token))return;if(pending.returnToRoll)resumeItemTurn();else endTurn();}
- else if(run.phase==='event'){store.busy=true;const pending=run.pending;if(pending.kind==='shop')await visitShop(pending);else if(pending.kind==='pair-intro')await introducePair(pending.pair);else if(pending.kind==='pair-turn')await presentPairTurn(pending);else if(pending.kind==='boss-gate'){if(pending.stage==='intro'||pending.stage==='drag')await bossGateDrag();else{await startBoss(run.board.realms[run.bossGate.realm].boss,{forced:true});}}else if(pending.kind==='location')await visitLocation(pending.locationId);else if(pending.kind==='location-result'){if(!await unlockDialog(pending.unlocked,pending.owner)||!encounterActive(run,pending,token))return;await showDialog({title:pending.itemId?'Supplies collected':'Landmark discovered',body:pending.message,html:effectHTML(null,pending.itemId?{item:findItem(pending.itemId)}:{icon:'◆'})});if(!encounterActive(run,pending,token))return;await finishEncounter();}else await resolveEvent(pending.event,pending.applied?pending.result:null,!!pending.returnToLanding);}
+ else if(run.phase==='event'){store.busy=true;const pending=run.pending;if(pending.kind==='shop')await visitShop(pending);else if(pending.kind==='pair-intro')await introducePair(pending.pair);else if(pending.kind==='pair-turn')await presentPairTurn(pending);else if(pending.kind==='boss-gate'){if(pending.stage==='intro'||pending.stage==='drag')await bossGateDrag();else{await startBoss(gateBoss(run,run.bossGate),{forced:true});}}else if(pending.kind==='location')await visitLocation(pending.locationId);else if(pending.kind==='location-result'){if(!await unlockDialog(pending.unlocked,pending.owner)||!encounterActive(run,pending,token))return;await showDialog({title:pending.itemId?'Supplies collected':'Landmark discovered',body:pending.message,html:effectHTML(null,pending.itemId?{item:findItem(pending.itemId)}:{icon:'◆'})});if(!encounterActive(run,pending,token))return;await finishEncounter();}else await resolveEvent(pending.event,pending.applied?pending.result:null,!!pending.returnToLanding);}
 }
 async function roll(lucky=false){const run=store.run;if(!run||store.busy||run.phase!=='board'||run.finished)return;const p=run.players[run.current];if(p.rollCommittedTurn===run.turn||lucky&&!p.rerolls)return;focusBoardAction(run);const pair=run.board.format==='warp'?null:drawPairTurn(run,random);if(pair){store.busy=true;const before=effectSnapshot(run);const result=pair.effect==='choice'?null:applyPairTurn(run,pair,store.profile);if(result?.acquisition)queueItemDiscovery(result.acquisition);reconcileGates(p);run.phase='event';run.pending={kind:'pair-turn',event:pair,result,applied:pair.effect!=='choice',lucky,before};saveRun();updateBoard(true);await presentPairTurn(run.pending);return;}store.busy=true;p.mood='thinking';run.zoom=undefined;run.pan=null;const token=++movementToken;
  const {faces,base,note}=rollDice(p,lucky,random);if(lucky)p.rerolls--;const bonus=pairMovementBonus(run)+(p.character==='kc'?1:p.character==='mylo'?(random()<.2?-1:2):0),steps=rollMovement(p,base,bonus);p.rollCommittedTurn=run.turn;
@@ -1399,7 +1410,7 @@ async function announceLevel(p){
 // ------------------------------------------------------------ warp zones and bosses
 async function enterWarpZone(pipe=null){
  const run=store.run,token=movementToken,id=pickWarpId(run,random),def=WARP_DEFS[id],boss=bossById(def.bossId);
- const choice=await showDialog({title:'A warp pipe!',source:def.source,rare:true,body:`${def.title}. ${def.intro} You will both be warped there.${boss?id==='bond-lair'?` ${boss.name} waits in SPECTRE HQ at the end: beat him and he hands over a Bond villain neither of you has.`:` ${boss.name} guards the castle at the end, and beating them unlocks a new character.`:''}`,choices:[{label:`Jump in · ${def.title}`,value:'go',primary:true},{label:'Walk on by',value:'no'}]});
+ const choice=await showDialog({title:'A warp pipe!',source:def.source,rare:true,body:`${def.title}. ${def.intro} You will both be warped there.${boss?id==='bond-lair'?` ${boss.name} waits in SPECTRE HQ at the end: beat him and he hands over a Bond villain neither of you has.`:` ${boss.name} guards the castle at the end, and beating them unlocks a new character.`:''}${boss&&id!=='pokemon'?' First one to the end wins the zone; the other is dragged to the boss at half a point a space.':''}`,choices:[{label:`Jump in · ${def.title}`,value:'go',primary:true},{label:'Walk on by',value:'no'}]});
  if(choice===null||store.run!==run||token!==movementToken)return;
  if(choice!=='go'){if(pipe){(pipe.warpDeclined||=[]).push(run.current);saveRun();}await finishEncounter();return;}
  if(pipe)pipe.warpUsed=true;
@@ -1418,10 +1429,22 @@ async function lairWelcome(run){
   else toast(`${q.owner} already has every movie Bond. Licensed to win anyway.`);}
 }
 async function exitWarpZone(){
- const run=store.run,w=run.warp;if(!w)return;
+ const run=store.run,w=run.warp;if(!w)return;if(run.bossGate?.warp)run.bossGate=null;if(run.phase==='event'&&run.pending?.kind==='boss-gate'){run.phase='board';run.pending=null;}
  await warpTransition(()=>{run.board=run.mainBoard;delete run.mainBoard;run.players.forEach((q,i)=>{q.node=w.returns[i]&&run.board.nodes[w.returns[i]]?w.returns[i]:run.board.realms.mind.start;q.visited=q.warpVisited||[];delete q.warpVisited;});run.traps=run.savedTraps||[];delete run.savedTraps;run.warp=null;run.camera='follow';run.pan=null;focusBoardAction(run,run.players.map(q=>q.node));updateBoard(true);},{title:'Back on the map',subtitle:'The party returns from the warp zone.',icon:'🌀'});
  if(store.run!==run)return;setMusicZone(run.board.nodes[run.players[run.current].node].realm);saveRun();store.busy=false;endTurn();
 }
+// Vault Pokémon battles: a throwaway one-space run lets the real battle engine run outside an expedition.
+async function arcadePokemon(kind){
+ if(store.busy||PK_OPEN())return;
+ const who=await showDialog({title:kind==='trainer'?'Random trainer battle':'Random Pokémon encounter',source:'Pokémon',body:'Who is battling? Your team is your character plus five unlocked friends.',choices:[0,1].map(i=>({label:setupNames[i]||(i?'Amber':'Sean'),value:String(i),primary:!i})).concat([{label:'Back',value:'back'}])});
+ if(who!=='0'&&who!=='1')return;const i=+who;
+ const p=newPlayer(setupNames[i]||(i?'Amber':'Sean'),setupSelected[i]||(i?'amber':'sean'),i),run={seed:'vault-'+Date.now(),turn:1,players:[p],board:{nodes:{'mind-start':{id:'mind-start',type:'path',realm:'mind',x:0,y:0,next:[]}},realms:{}}};
+ store.busy=true;
+ try{if(kind==='trainer')await PK.trainerSpace(run,p);else await PK.wildEncounter(run,p,{cause:'vault'});}
+ catch(error){console.error('Vault Pokémon battle failed',error);}
+ finally{store.busy=false;saveProfile(store.profile);if(store.view==='arcade')showCatalog('arcade');}
+}
+const PK_OPEN=()=>gbIsOpen();
 async function warpJump(p,token){
  const n=run_node(p);if(!n?.jump||store.run.board.format!=='warp')return;
  const to=store.run.board.nodes[n.jump];if(!to)return;const up=to.col>n.col;
@@ -1430,7 +1453,7 @@ async function warpJump(p,token){
 }
 const run_node=p=>store.run.board.nodes[p.node];
 async function startBoss(bossId,{level=null,forced=false}={}){
- const run=store.run,boss=bossById(bossId);if(!boss){if(run.bossGate)await advanceAfterBoss();else await finishEncounter();return;}
+ const run=store.run,boss=bossById(bossId);if(!boss){if(run.warp&&run.bossGate?.warp)await exitWarpZone();else if(run.bossGate)await advanceAfterBoss();else await finishEncounter();return;}
  const warp=!!run.warp,lair=castleName(boss);
  const choices=forced?[{label:'Fight together!',value:'fight',primary:true}]:[{label:'Fight together!',value:'fight',primary:true},{label:warp?'Flee to the map':'Sneak past',value:'flee'}];
  const choice=await showDialog({title:`${boss.name} · ${boss.epithet||'Boss'}`,source:boss.source,rare:true,body:`${warp?'You reach the end of the warp zone.':'The level is over, but '+lair+' blocks the way forward.'} Fight together, win together: beat ${boss.name} to unlock a new character.`,html:`<div class="boss-intro"><span class="boss-icon">${e(boss.icon||'👹')}</span><b>${e(lair)}</b></div>`,choices});
@@ -1438,6 +1461,9 @@ async function startBoss(bossId,{level=null,forced=false}={}){
  if(choice!=='fight'){if(warp){await exitWarpZone();}else await finishEncounter();return;}
  await requestGame({id:'boss-'+boss.id,origin:'board'});
 }
+// The end of a warp board (not Kanto: Gary's gym has its own flow) works like a level gate.
+function warpGateReady(run,n){return run.board.format==='warp'&&!!run.warp&&!!run.board.warp?.bossId&&run.board.warp.id!=='pokemon'&&n.id===run.board.realms.warp?.gate&&!run.bossGate;}
+const gateBoss=(run,bg)=>bg.bossId||run.board.realms[bg.realm]?.boss;
 // A level gate with a boss that has not been fought yet this run.
 function bossGateReady(run,n){
  if(run.mutation||run.endless||run.board.format==='warp'||!['mind','body','spirit','horror'].includes(n.realm))return false;
@@ -1451,7 +1477,15 @@ function shortestPath(run,from,to){
 // The first player through a level gate wins the level. Everyone else is dragged to
 // the castle along the most direct road, paying half a point per space, then the boss arrives.
 async function levelEndBoss(p,gate){
- const run=store.run,realm=gate.realm,boss=bossById(run.board.realms[realm].boss);
+ const run=store.run,realm=gate.realm;
+ if(run.board.format==='warp'){
+  const def=run.board.warp||{};run.bossGate={gate:gate.id,realm:'warp',winner:run.players.indexOf(p),warp:true,bossId:def.bossId};
+  run.phase='event';run.pending={kind:'boss-gate',stage:'intro'};saveRun();
+  logRun(`${p.name} reaches the end of ${def.title||'the warp zone'} first.`);sound('win');p.mood='win';updateBoard();
+  await showDialog({title:`${p.name} clears the warp zone!`,source:'ShambConkins',rare:true,body:`${p.name} reached the end of ${def.title||'the warp zone'} first. Everyone else gets dragged to the boss: half a point for every space.`,html:`<div class="result-portraits">${portraitHTML(p.character,'portrait mini','win')}</div>`});
+  if(store.run!==run)return;
+  await bossGateDrag();return;
+ }
  // Whoever is stuck in the Upside Down comes back first, so they are dragged along the real road.
  if(run.upsideDown){const q=run.players[run.upsideDown.owner];if(q&&run.board.nodes[run.upsideDown.returnNode])q.node=run.upsideDown.returnNode;run.upsideDown=null;}
  run.bossesSeen||={};run.bossesSeen[realm]=true;run.bossGate={gate:gate.id,realm,winner:run.players.indexOf(p)};
@@ -1475,14 +1509,14 @@ async function bossGateDrag(){
    await wait(store.profile.settings.reducedMotion?60:Math.max(140,420-path.length*12));
   }
   banner.close();logRun(`${q.name} was dragged ${path.length} spaces to the boss (−${Math.round(lost*10)/10}).`);
-  q.cleared.includes(gate.realm)||q.cleared.push(gate.realm);
+  if(!bg.warp)q.cleared.includes(gate.realm)||q.cleared.push(gate.realm);
   await wait(400);
  }
  focusBoardAction(run,run.players.map(q=>q.node));updateBoard();
  run.pending={kind:'boss-gate',stage:'fight'};saveRun();
- const boss=bossById(run.board.realms[bg.realm].boss);
+ const boss=bossById(gateBoss(run,bg));
  await showBossCard(boss);if(store.run!==run)return;
- await startBoss(boss.id,{level:bg.realm,forced:true});
+ await startBoss(boss?.id,{level:bg.warp?null:bg.realm,forced:true});
 }
 // After a level boss: everyone moves on to the next level together.
 async function advanceAfterBoss(){
@@ -1509,7 +1543,7 @@ async function moveSteps(token){
  if(run.pending?.wild){if(await pokemonStep(run,p,run.board.nodes[p.node],token,true)===false)return;}
  while(run.pending?.left>0&&token===movementToken){
   const target=await stepTarget(run,p,token);if(token!==movementToken||store.run!==run)return;if(!target){if(routeOptions(run,p.node).length){store.busy=false;saveRun();return;}run.pending.left=0;break;}
-  p.mood='walking';p.visited.push(p.node);reportJourney(journeyStep(run,p,p.node,target));const fromRealm=run.board.nodes[p.node]?.realm;p.node=target.id;run.pending.left--;delete run.pending.routeDecision;awardGate(p,target);setMusicZone(target.realm);focusBoardAction(run);saveRun();updateBoard();sound('tap');if(target.type==='gate'&&bossGateReady(run,target)){run.pending.left=0;await levelEndBoss(p,target);return;}if(target.type==='warp'&&!target.warpUsed&&!(target.warpDeclined||[]).includes(run.current)&&run.pending.left>0){run.pending.left=0;toast('A warp pipe! Stop and look inside?');break;}if(target.realm!==fromRealm&&!p.finishedPlayer){await announceLevel(p);if(token!==movementToken||store.run!==run)return;}if(await pokemonStep(run,p,target,token)===false)return;if(p.finishedPlayer){run.pending.left=0;break;}await wait(store.profile.settings.reducedMotion?35:270);
+  p.mood='walking';p.visited.push(p.node);reportJourney(journeyStep(run,p,p.node,target));const fromRealm=run.board.nodes[p.node]?.realm;p.node=target.id;run.pending.left--;delete run.pending.routeDecision;awardGate(p,target);setMusicZone(target.realm);focusBoardAction(run);saveRun();updateBoard();sound('tap');if(target.type==='gate'&&(bossGateReady(run,target)||warpGateReady(run,target))){run.pending.left=0;await levelEndBoss(p,target);return;}if(target.type==='warp'&&!target.warpUsed&&!(target.warpDeclined||[]).includes(run.current)&&run.pending.left>0){run.pending.left=0;toast('A warp pipe! Stop and look inside?');break;}if(target.realm!==fromRealm&&!p.finishedPlayer){await announceLevel(p);if(token!==movementToken||store.run!==run)return;}if(await pokemonStep(run,p,target,token)===false)return;if(p.finishedPlayer){run.pending.left=0;break;}await wait(store.profile.settings.reducedMotion?35:270);
  }
  if(token!==movementToken)return;await warpJump(p,token);if(token!==movementToken)return;p.mood='happy';run.phase='landing';run.pending={kind:'landing'};focusBoardAction(run);saveRun();store.busy=false;updateBoard();await resolveLanding();
 }
@@ -1574,7 +1608,7 @@ async function resolveLanding(){const run=store.run,token=movementToken;if(!run|
   case 'item':{const before=effectSnapshot(run);const cacheRandom=Number.isFinite(n.cacheSeed)?seededRandom(n.cacheSeed+':'+(n.cacheVisits||0)):random,tool=run.board.obstacles?.length&&(p.travelFinds||0)<2?nearbyTravelTool(run,p,cacheRandom):null,it=tool||warpItem(run,p,store.profile,cacheRandom,findItem)||randomItem(cacheRandom,{player:p,profile:store.profile}),found=acquireItem(run,store.profile,p,it);if(tool)p.travelFinds=(p.travelFinds||0)+1;n.cacheVisits=(n.cacheVisits||0)+1;logRun(`${p.name}: ${found.message}`);run.phase='event';run.pending={kind:'location-result',message:found.message,unlocked:found.unlocked,owner:found.owner};saveRun();if(found.unlocked.length){sound('unlock');if(!await unlockDialog(found.unlocked,found.owner)||store.run!==run||movementToken!==token)return;}const answer=await showDialog({title:'A useful find',source:it.source,body:found.message,html:`${effectHTML(before,{item:it})}<h3 style="text-align:center">${e(it.name)}</h3><div class="how-to">${e(itemDescription(it))}</div>`,choices:foundChallengeChoices(it)});if(store.run!==run||movementToken!==token)return;animateItemTransfers(before);if(answer==='play')return playFoundChallenge(p,it);await finishEncounter();break;}
   case 'bonus':case 'penalty':{const before=effectSnapshot(run);const fortune=warpFortune(run,n.type,random)||themedFortune(n.type,random),delta=n.type==='bonus'?4:p.cloak?0:-3,r=pointChange(p,delta);logRun(`${p.name}: ${r.blocked?'penalty shield used':(r.delta>=0?'+':'')+r.delta+' points'}.`);run.phase='event';run.pending={kind:'location-result',message:r.blocked?'Your shield took the hit.':`${r.delta>=0?'+':''}${r.delta} points.`,unlocked:[]};saveRun();await showDialog({title:fortune.title,source:fortune.source,body:r.blocked?'Your shield took the hit.':fortune.body,html:`${effectHTML(before,{icon:r.delta<0?'⚡':'✦'})}<div class="reward-delta ${r.delta<0?'bad':''}">${r.delta>=0?'+':''}${r.delta}</div>`});if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}
   case 'warp':if(n.warpUsed||(n.warpDeclined||[]).includes(run.current)){await finishEncounter();break;}await enterWarpZone(n);break;
-  case 'gate':if(run.board.warp?.id==='pokemon'){await pokemonGym(p,token);break;}if(run.board.format==='warp'){await startBoss(run.board.warp.bossId);break;}await finishEncounter();break;
+  case 'gate':if(run.board.warp?.id==='pokemon'){await pokemonGym(p,token);break;}if(run.board.format==='warp'){if(run.board.warp?.bossId)await levelEndBoss(p,run_node(p));else await finishEncounter();break;}await finishEncounter();break;
   case 'start':default:await finishEncounter();break;
  }
 }
@@ -1678,6 +1712,7 @@ async function action(name,target){
   case 'filter':catalogFilter=target.dataset.id;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;
   case 'catalog-page':catalogPage=Math.max(0,+target.dataset.page||0);showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;
   case 'arcade-game':await requestGame({id:target.dataset.id,origin:'arcade'});break;
+  case 'arcade-pokemon':await arcadePokemon(target.dataset.id);break;
   case 'dev-game':if(store.profile.settings.devMode)await requestGame({id:target.dataset.id,origin:'dev'});break;
   case 'dev-mode':store.profile.settings.devMode=!store.profile.settings.devMode;saveProfile(store.profile);showCatalog('arcade');break;
   case 'media-sources':{let page=0;while(true){const choice=await showDialog({title:'Reference artwork sources',body:'Property logos, posters and image collection links. '+MEDIA_SOURCES.length+' source entries.',html:sourcesHTML(page),choices:[...(page?[{label:'← Previous',value:'prev'}]:[]),...((page+1)*10<MEDIA_SOURCES.length?[{label:'Next sources →',value:'next'}]:[]),{label:'Done',value:'done',primary:true}]});if(choice==='next')page++;else if(choice==='prev')page--;else break;}break;}
@@ -1695,6 +1730,7 @@ async function action(name,target){
  }
 }
 document.addEventListener('click',event=>{const choice=event.target.closest('[data-dialog-choice]');if(choice){resolveDialog(+choice.dataset.dialogChoice);return;}const target=event.target.closest('[data-action]');if(target&&!(target.closest?.('#map-root')&&performance.now()<(store.suppressMapClickUntil||0)))void action(target.dataset.action,target).catch(error=>{console.error('Action failed',target.dataset.action,error);store.busy=false;saveRun();toast('That action was interrupted. Your progress is saved.');});});
+document.addEventListener('change',event=>{if(event.target.id==='catalog-filter'){catalogFilter=event.target.value;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter});}});
 document.addEventListener('input',event=>{if(event.target.id==='catalog-search'){const focus=event.target.selectionStart;catalogQuery=event.target.value;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});const input=document.getElementById('catalog-search');input.focus();input.setSelectionRange(focus,focus);}});
 document.getElementById('dialog').addEventListener('cancel',event=>{event.preventDefault();const i=store.dialog?.choices.findIndex(c=>['cancel','no','stay'].includes(c.value));if(i>=0)resolveDialog(i);});
 window.addEventListener('pagehide',saveRun);window.addEventListener('orientationchange',()=>{if(store.view==='board'&&!store.session)setTimeout(()=>updateBoard(true),100);});
@@ -9198,7 +9234,7 @@ Object.assign(exports,{LEGENDS_ITEMS});
 
 },
 "src/version.js":(exports,require)=>{
-const VERSION='0.54.2';
+const VERSION='0.55.0';
 Object.assign(exports,{VERSION});
 
 },
@@ -9606,7 +9642,7 @@ function loadProfile() {
  const ids = new Set([...CATALOG.characters.map(c=>c.id),'gordon-ramsay']);
  if (saved?.version === 20) {
   for(const key of ['xp','runs','completed','minigames'])p[key]=number(saved[key]);
-  for(const key of ['played','games','recentGames','recentTrivia','itemsSeen','locations','pairDiscoveries','boardUnlocks'])p[key]=strings(saved[key]);
+  for(const key of ['played','games','recentGames','recentTrivia','itemsSeen','locations','pairDiscoveries','boardUnlocks','bossesBeaten'])p[key]=strings(saved[key]);
   p.triviaDifficultyBag=[...new Set(strings(saved.triviaDifficultyBag).filter(d=>['easy','medium','hard','impossible'].includes(d)))];
   p.minigames=Math.max(p.minigames,p.played.length);for(const owner of ['Sean','Amber'])p.recruitDryStreak[owner]=Math.min(1,number(saved.recruitDryStreak?.[owner]));
   for(const key of ['boards','modes'])if(Array.isArray(saved[key]))p[key]=strings(saved[key]);
@@ -10125,6 +10161,7 @@ const {normalizeSource:normalizeReferenceSource, sourceMatches:referenceSourceMa
 const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
 const {CHARACTERS, characterIdentity, SPECIAL_UNLOCKS}=require("src/characters.js");
 const {GENERIC,registerSourceTypes,venueFor}=require("src/venues.js");
+const {ICONIC_PLACES}=require("src/data/iconicPlaces.js");
 const {GAMES, EVENT_GAMES}=require("src/gameRegistry.js");
 const {resolveEncounterGame}=require("src/encounterGames.js");
 const {selectItemDrop}=require("src/itemDrops.js");
@@ -10278,6 +10315,8 @@ const REFERENCE_LANDMARKS = SOURCE_UNIVERSE.filter(source=>!['ShambConkins Horro
 // Replace generic stops ("X studio door", "X crossover stop") with a fitting venue.
 registerSourceTypes(REFERENCE_GROUPS.map(g=>[g.source,g.type]));
 for(const l of REFERENCE_LANDMARKS){if(!GENERIC.test(l.name))continue;const v=venueFor(l.source);l.name=v.name;l.venue=v.kind;l.icon=v.icon;}
+// Board labels: the iconic place from each property (venue art/kind above stays).
+for(const l of REFERENCE_LANDMARKS){const iconic=ICONIC_PLACES.get(l.source);if(iconic)l.name=iconic;}
 
 
 function playableCard(card,source,owned) {
@@ -10460,6 +10499,7 @@ function referenceSourceNames(){return [...DISPLAY_NAMES.values()];}
 Object.assign(exports,{normalizeSource,sourceMatches,registerReferenceSources,referenceSourceNames});
 },
 "src/gameRegistry.js":(exports,require)=>{
+const {bossById}=require("src/data/bosses.js");
 const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
 const {shuffle, pick, seededRandom}=require("src/utils.js");
 const {TRIVIA_TOPIC_GAMES}=require("src/triviaCatalog.js");
@@ -10602,7 +10642,9 @@ for(const game of [...GAMES,...EVENT_GAMES]){
 for(const mode of TRIVIA_MODE_GAMES)GAMES.push({...GAMES.find(g=>g.id==='trivia-mixed'),...mode,source:'ShambConkins',triviaTag:'mixed',quality:'substantial',randomEligible:true});
 const gameById = id => GAMES.find(g=>g.id===id)||EVENT_GAMES.find(g=>g.id===id);
 const STARTER_FAMILIES=new Set(['pinball','uno','microrelay','ultimate','mancala','dots','checkers','chess','guesswho','beerpong','flipcup','fruitslice','hangman','photohunt','headlaunch','ballvolley','horde','hole','bike','baseball','flappy','sokoban','lander','missiledefense','towerstack','artillery','pipeconnect','reversi','connect4','darts','curling','sonargrid','airshootout','minigolf','bowling','breakout','asteroids','galaga','snake','bomber','pacmaze','tank','chase','blackjack','poker','roulette','baccarat','yahtzee','trivia','kitchen','crossy','pong','pool','airhockey']);
-function gameUnlocked(game,profile){if(game.secret)return (profile.modes||[]).includes('coop');return STARTER_FAMILIES.has(game.family)||!game.gameUnlockAt||(profile.minigames||0)>=game.gameUnlockAt||(profile.games||[]).includes(game.id);}
+// A boss fight joins the vault once that boss has been beaten (recorded since v0.55; older wins count through the boss's own unlock).
+function bossBeaten(profile,bossId){if((profile.bossesBeaten||[]).includes(bossId))return true;const b=bossById(bossId);return !!(b?.unlockId&&!b.unlockPool&&(profile.shared||[]).includes(b.unlockId));}
+function gameUnlocked(game,profile){if(game.bossId)return bossBeaten(profile,game.bossId);if(game.secret)return (profile.modes||[]).includes('coop');return STARTER_FAMILIES.has(game.family)||!game.gameUnlockAt||(profile.minigames||0)>=game.gameUnlockAt||(profile.games||[]).includes(game.id);}
 const RANDOM_GAMES = GAMES.filter(g=>g.randomEligible && g.quality==='substantial');
 const PHONE_TASK = {id:'phone-task',title:'Your time starts now',source:'Taskmaster',icon:'📏',engine:'task',family:'task',category:'task',duration:'20 seconds',rules:'Read the task, then take turns or perform together. Judge the winner honestly.',quality:'party-task',randomEligible:false,reward:5};
 // All trivia themes share one mechanic family, but each theme gets a turn.
@@ -10673,7 +10715,7 @@ for(const g of GAMES)if(SOURCE_FIXES[g.id])g.source=SOURCE_FIXES[g.id];
 // v0.46 touch-first controls: updated how-to text for the converted games.
 const TOUCH_RULES={"moonraker-lander": "Touch and hold to fire the thruster; drag sideways to steer. Land softly on the pad: vertical speed under 48, horizontal under 40.", "asteroid-drift": "Touch anywhere: your ship turns toward your finger and fires while you hold. Keep your finger far from the ship to thrust.", "breakout-party": "Drag anywhere to slide the paddle. The edge changes the bounce angle. Clear the wall for a bonus.", "t800-scan-long": "Swipe left or right to change lanes. Your car fires while a finger is down.", "flappy-disaster": "Tap anywhere to flap through the pipes.", "radical-bike": "Hold to pedal, drag left or right to lean, tap or flick up to hop gaps.", "major-league-bats": "Tap anywhere as the ball reaches the glowing plate; where you tap sets your aim.", "rainbow-rivals": "Drag on your road to steer between lanes; tap the right side to boost.", "block-battle": "Drag on your half to shift the piece, tap to rotate, drag down to soft drop, flick down to hard drop. 2+ line clears send garbage; last survivor wins.", "underdog-dodgeball": "Drag to move on your half. Tap to throw the ball you hold, or flick toward the other side to aim. Tap with no ball to catch. First to two rounds.", "fight-night": "Tap to jab, hold still then release for a hook, swipe down to duck, swipe up and hold to guard, drag sideways to step. First to two rounds.", "taskmaster-sumo": "Touch and hold your half to charge, drag to steer your suit. Shove the other head out of the ring.", "paddys-darts": "Drag to aim, release to throw; time the swaying sight. Nine darts each.", "task-tallest-thing": "Tap anywhere to drop the sliding block. Only the overlap survives.", "flipadelphia-cup": "Flick up anywhere (or tap for a gentle flip) and land the cup rim-down.", "paddys-beer-pong": "Flick up anywhere (tap for a gentle toss). Two shots a turn; sink both and BRING IT BACK for a third. First to clear ten cups wins. One RE-RACK pill per player.", "happy-gilmore-golf": "Drag back from the ball, or anywhere, and release. Pull past the ring for a drive.", "kingpin-bowling": "Touch the lane, pull back like a slingshot and release (longer pull rolls harder), or flick up.", "bug-artillery": "Drag back anywhere: direction sets the angle, length sets velocity. Release to fire.", "angry-heads": "Drag back from the sling (or anywhere) and release.", "neon-ball-storm": "Touch and drag to aim, release to fire.", "major-league-fielding": "Drag to move or aim; release to swing or tap.", "bucketheadland-pinball": "Hold the left or right half of the screen to flip. Pull down anywhere to launch.", "color-of-money": "Drag back anywhere to aim and set power. A foul gives ball in hand: touch to place the cue.", "warriors-brawl": "Drag to move, tap to punch that side, flick to kick.", "taskmaster-micro-relay": "Tap anywhere to stop or beat; tap the big ingredient pads.", "megatouch-photohunt": "Tap differences; HINT and PHOTOS pills at the top.", "django-hangman": "Tap the compact keyboard or type; SOLVE is the last key."};
 for(const g of [...GAMES,...EVENT_GAMES])if(TOUCH_RULES[g.id])g.rules=TOUCH_RULES[g.id];
-Object.assign(exports,{GAMES,EVENT_GAMES,gameById,gameUnlocked,RANDOM_GAMES,PHONE_TASK,TRIVIA_THEME_IDS,selectTriviaGame,triviaIsDue,selectBoardGame,selectGame,resolveLegacyGame});
+Object.assign(exports,{GAMES,EVENT_GAMES,gameById,gameUnlocked,bossBeaten,RANDOM_GAMES,PHONE_TASK,TRIVIA_THEME_IDS,selectTriviaGame,triviaIsDue,selectBoardGame,selectGame,resolveLegacyGame});
 },
 "src/triviaCatalog.js":(exports,require)=>{
 const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
@@ -11723,7 +11765,7 @@ const {LAB_LOCATION}=require("src/data/savoryLab.js");
 const LOCATIONS = [
  ['mighty-ducks-rink','Mighty Ducks Ice Rink','The Mighty Ducks','body','🏒',[],'Quack, quack! A five-shot hockey challenge. A first win recruits Emilio Estevez / Coach Bombay to the winner’s roster.'],
  ['parents','My Parents’ House','Home','mind','🏡',['chris-parent','angie-parent'],'A familiar driveway. Say hello to Mom, Dad and two extremely good dogs.'],
- ['dunder','Dunder Mifflin / Scranton','The Office','mind','🏢',['michael-scott','dwight-schrute','jim-halpert','pam-beesly'],'The paper business has become unnecessarily competitive.'],
+ ['dunder','Dunder Mifflin','The Office','mind','🏢',['michael-scott','dwight-schrute','jim-halpert','pam-beesly'],'The paper business has become unnecessarily competitive.'],
  ['dunshire','The Cones of Dunshire','Parks and Recreation','mind','🔶',['ben-wyatt'],'You forgot the essence of the game. Again.'],
  ['paddys','Paddy’s Pub','Always Sunny','mind','🍻',['charlie','mac','dee','dennis','frank'],'The health inspection is not going well.'],
  ['quarks','Quark’s','Star Trek','mind','🛸',['quark','worf','sisko','data','picard'],'The house takes a cut. The house also has ears.'],
@@ -12259,7 +12301,7 @@ function repaintCamera(from=null,{duration=240}={}){
  return new Promise(resolve=>{cameraDone=resolve;const frame=now=>{if(store.run!==run||document.querySelector('#map-root svg')!==svg){cameraFrame=0;cameraAnim=null;cameraDone=null;resolve(false);return;}const t=Math.min(1,(now-begin)/duration),ease=t*t*(3-2*t);if(t<1){place(to.map((value,i)=>start[i]+(value-start[i])*ease));cameraFrame=requestAnimationFrame(frame);}else{finish();resolve(true);}};cameraFrame=requestAnimationFrame(frame);});
 }
 function refreshPortraits(){if(!store.run||store.view!=='board')return;const panels=document.getElementById('player-panels'),face=document.getElementById('active-face');panels.innerHTML=playerPanels();panels.__html=null;const p=store.run.players[store.run.current];face.innerHTML=portraitHTML(p.character,'portrait mini',p.mood||'normal');face.__html=null;for(const node of document.querySelectorAll('#map-root .board-piece')){const player=store.run.players[+node.dataset.player],mood=player.large?'silly':player.mood||'normal';node.setAttribute('class',`board-piece p${+node.dataset.player+1} mood-${mood}`);const image=node.querySelector('image'),raw=portraitURL(player.character,mood),url=raw&&headDisplayURL(raw);if(image&&url)image.setAttribute('href',url);}}
-function catalogHTML(type,query='',filter='all',page=0){const p=store.profile,isRoster=type==='roster',ownership=new Map(),ownedIds=new Map(),matches=c=>(c.name+' '+c.source).toLowerCase().includes(query.toLowerCase());
+function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=type==='roster',ownership=new Map(),ownedIds=new Map(),matches=c=>(c.name+' '+c.source).toLowerCase().includes(query.toLowerCase());
  for(const id of p.shared){const identity=characterIdentity(id);ownership.set(identity,'SHARED');ownedIds.set(identity,id);}
  for(const[owner,ids]of Object.entries(p.rosters))for(const id of ids){const identity=characterIdentity(id);if(ownership.get(identity)==='SHARED')continue;const names=(ownership.get(identity)||'').split(' + ').filter(Boolean),label=owner.toUpperCase();if(!names.includes(label))names.push(label);ownership.set(identity,names.join(' + '));if(!ownedIds.has(identity))ownedIds.set(identity,id);}
  const owned=id=>ownership.get(characterIdentity(id))||'';let list,render;
@@ -12275,29 +12317,41 @@ function catalogHTML(type,query='',filter='all',page=0){const p=store.profile,is
   list=[...unique.values()].sort((a,b)=>Number(!!owned(b.id))-Number(!!owned(a.id)));
   render=c=>`<article class="roster-card ${owned(c.id)?'':'locked'}">${portraitHTML(c.id)}<h3>${e(c.name)}</h3>${brandHTML(c.source)}<div class="ownership">${owned(c.id)||'UNDISCOVERED'}</div><p>${e(owned(c.id)?characterPerk(c.id):c.unlockHint||'Visit related landmarks and encounters.')}</p></article>`;
  }else{
-  list=(filter==='variants'?EVENT_GAMES:GAMES).filter(g=>(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&(g.title+' '+g.source).toLowerCase().includes(query.toLowerCase())&&(filter==='all'||filter==='variants'||g.category===filter));
-  render=g=>`<article class="arcade-card ${gameUnlocked(g,p)?'':'locked'}">${brandHTML(g.source)}${gameArtHTML(g)}<h3>${e(g.title)}</h3><p>${e(g.rules)}</p><div class="game-info">${e(g.duration.toUpperCase())} · ${p.played.includes(g.id)?'PLAYED':'NEW'}</div>${gameUnlocked(g,p)?button('arcade-game','Play match ↗','ghost',`data-id="${g.id}"`):`<small>Unlock after ${g.gameUnlockAt||1} matches</small>`}${p.settings.devMode?button('dev-game','DEV · Test this game','small dev-button',`data-id="${g.id}"`):''}</article>`;
+  const q=query.toLowerCase(),hit=g=>(g.title+' '+g.source).toLowerCase().includes(q),bosses=EVENT_GAMES.filter(g=>g.bossId);
+  const beaten=bosses.filter(g=>gameUnlocked(g,p));
+  if(filter==='boss')list=[...beaten,...bosses.filter(g=>!gameUnlocked(g,p))].filter(hit);
+  else if(filter==='pokemon')list=POKEMON_MATCHES.filter(hit);
+  else if(filter==='variants')list=EVENT_GAMES.filter(g=>!g.bossId&&(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&hit(g));
+  else list=[...GAMES.filter(g=>(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&(filter==='all'||g.category===filter)),...(filter==='all'?[...POKEMON_MATCHES,...beaten]:[])].filter(hit);
+  render=g=>{const open=g.pokemon||gameUnlocked(g,p),play=g.pokemon?button('arcade-pokemon','Battle ↗','ghost',`data-id="${g.pokemon}"`):open?button('arcade-game',g.bossId?'Fight again ↗':'Play match ↗','ghost',`data-id="${g.id}"`):`<small>${g.bossId?'Beat this boss on the board to unlock the rematch':`Unlock after ${g.gameUnlockAt||1} matches`}</small>`;
+   return `<article class="arcade-card ${open?'':'locked'}${g.bossId?' boss-match':''}">${brandHTML(g.source)}${gameArtHTML(g)}<h3>${e(g.title)}</h3><p>${e(g.rules)}</p><div class="game-info">${e(g.duration.toUpperCase())} · ${g.bossId?(open?'BEATEN':'UNBEATEN'):p.played.includes(g.id)?'PLAYED':'NEW'}</div>${play}${p.settings.devMode&&!g.pokemon?button('dev-game','DEV · Test this game','small dev-button',`data-id="${g.id}"`):''}</article>`;};
  }
- const fitted=store.catalogPerPage?.[type+':'+(filter==='items'||filter==='locations'?filter:'chars')],perPage=fitted||((window.innerHeight||800)<500?2:(window.innerWidth||900)>1000?8:(window.innerWidth||900)>600?6:4),total=Math.max(1,Math.ceil(list.length/perPage)),current=Math.max(0,Math.min(total-1,page));const cards=list.slice(current*perPage,(current+1)*perPage).map(render).join('');
- const filters=isRoster?[['all','Characters'],['unlocked','Unlocked'],['items',`Items (${p.itemsSeen.length})`],['locations',`Landmarks (${p.locations.length})`]]:[['all','All'],['arcade','Arcade'],['puzzle','Puzzles'],['strategy','Strategy'],['skill','Skill'],['sports','Sports'],['trivia','Trivia'],['casino','Casino'],['dice','Dice'],['variants','Encounter variants']];
- return `<main class="shell catalog-shell">${header(isRoster?'YOUR EXPANDING UNIVERSE':'PERMANENT PROGRESSION · MINIGAME VAULT')}<div class="section-heading"><div><div class="overline">${isRoster?'COLLECTION':'THE ARCADE'}</div><h2 style="margin-top:7px">${isRoster?'Familiar faces, strange company.':'MINIGAME VAULT'}</h2><p>${isRoster?'Characters, collected items, and discovered landmarks carry across every run.':'Games unlock through play. Dev mode lets you test every game without changing progress.'}</p></div>${button('home','← Back','small ghost catalog-back')}</div>${!isRoster?`<div class="vault-dev-strip"><span>DEV MODE · ${p.settings.devMode?'ALL GAMES TESTABLE':'OFF'}</span>${button('dev-mode',p.settings.devMode?'Turn off':'Enable game testing','small ghost')}</div>`:''}<div class="catalog-tools"><input id="catalog-search" value="${e(query)}" placeholder="Search games, characters, or properties…" aria-label="Search collection"><div class="filter-buttons">${filters.map(([id,label])=>button('filter',label,`small ${filter===id?'active':'ghost'}`,`data-id="${id}"`)).join('')}</div></div><div class="catalog-grid">${cards||'<p class="empty-message">Nothing discovered here yet. Explore another route.</p>'}</div><nav class="catalog-pages" aria-label="Collection pages">${button('catalog-page','← Previous','small ghost',`data-page="${current-1}" ${current===0?'disabled':''}`)}<span>Page ${current+1} / ${total} · ${list.length} entries</span>${button('catalog-page','Next →','small ghost',`data-page="${current+1}" ${current===total-1?'disabled':''}`)}</nav></main>`;
+ catalogFeed={list,render,shown:Math.min(list.length,CATALOG_CHUNK)};
+ const cards=list.slice(0,catalogFeed.shown).map(render).join('');
+ const bossCount=EVENT_GAMES.filter(g=>g.bossId),filters=isRoster?[['all','Characters'],['unlocked','Unlocked'],['items',`Items (${p.itemsSeen.length})`],['locations',`Landmarks (${p.locations.length})`]]:[['all','All games'],['arcade','Arcade'],['puzzle','Puzzles'],['strategy','Strategy'],['skill','Skill'],['sports','Sports'],['trivia','Trivia'],['casino','Casino'],['dice','Dice'],['boss',`Bosses (${bossCount.filter(g=>gameUnlocked(g,p)).length}/${bossCount.length})`],['pokemon','Pokémon battles'],['variants','Encounter variants']];
+ return `<main class="shell catalog-shell">${header(isRoster?'YOUR EXPANDING UNIVERSE':'PERMANENT PROGRESSION · MINIGAME VAULT')}<div class="section-heading"><div><div class="overline">${isRoster?'COLLECTION':'THE ARCADE'}</div><h2 style="margin-top:7px">${isRoster?'Familiar faces, strange company.':'MINIGAME VAULT'}</h2><p>${isRoster?'Characters, collected items, and discovered landmarks carry across every run.':'Games unlock through play. Dev mode lets you test every game without changing progress.'}</p></div>${button('home','← Back','small ghost catalog-back')}</div>${!isRoster?`<div class="vault-dev-strip"><span>DEV MODE · ${p.settings.devMode?'ALL GAMES TESTABLE':'OFF'}</span>${button('dev-mode',p.settings.devMode?'Turn off':'Enable game testing','small ghost')}</div>`:''}<div class="catalog-tools"><input id="catalog-search" type="search" value="${e(query)}" placeholder="${isRoster?'Search names or shows…':'Search games or shows…'}" aria-label="Search collection" autocomplete="off"><select id="catalog-filter" aria-label="Show">${filters.map(([id,label])=>`<option value="${id}" ${filter===id?'selected':''}>${e(label)}</option>`).join('')}</select><span class="catalog-count">${list.length}</span></div><div class="catalog-grid">${cards||'<p class="empty-message">Nothing discovered here yet. Explore another route.</p>'}${catalogFeed.shown<list.length?'<div class="catalog-more" aria-hidden="true"></div>':''}</div></main>`;
 }
-// Screen size changed (full screen, rotation): re-measure the open collection page. Skipped while typing a search.
-function refitCatalog(){if(!lastCatalog||store.view!==lastCatalog.view||document.activeElement?.id==='catalog-search'||!document.querySelector('.catalog-grid'))return;fitCatalogPage(lastCatalog.view,lastCatalog.options);}
-// Collection pages hold exactly as many cards as fit on screen, so nothing needs scrolling.
-let lastCatalog=null;
-function fitCatalogPage(view,options){
- lastCatalog={view,options:{...options}};
- const grid=document.querySelector('.catalog-grid'),cards=[...(grid?.querySelectorAll('.roster-card,.arcade-card')||[])];if(!grid||!cards.length)return;
- const card={offsetHeight:Math.max(...cards.map(c=>c.offsetHeight))};
- const filter=options.filter||'all',key=view+':'+(filter==='items'||filter==='locations'?filter:'chars');
- const cols=Math.max(1,getComputedStyle(grid).gridTemplateColumns.split(' ').length),gap=parseFloat(getComputedStyle(grid).rowGap)||9;
- const rows=Math.max(1,Math.floor((grid.clientHeight+gap)/(card.offsetHeight+gap))),want=cols*rows;
- store.catalogPerPage||={};if(store.catalogPerPage[key]===want)return;
- const page=Math.floor(((options.page||0)*(store.catalogPerPage[key]||want))/want);store.catalogPerPage[key]=want;lastCatalog.options.page=page;
- document.getElementById('app').innerHTML=catalogHTML(view,options.query,options.filter,page);
+// Vault entries for the Pokémon battles (they run in the Game Boy overlay, not a minigame engine).
+const POKEMON_MATCHES=[
+ {id:'pkmn-wild',pokemon:'wild',title:'Pokémon · Random Wild Encounter',source:'Pokémon',icon:'🌿',category:'pokemon',duration:'one battle',rules:'A wild character jumps out of the tall grass. Battle it with your team (your character plus five unlocked friends) or throw a Poké Ball: a catch joins your roster.'},
+ {id:'pkmn-trainer',pokemon:'trainer',title:'Pokémon · Random Trainer Battle',source:'Pokémon',icon:'🔴',category:'pokemon',duration:'one battle',rules:'A random trainer spots you and sends out a full team, Gen 1 rules. Beat them all and one of their characters may join your roster.'},
+];
+// Endless scrolling: the grid starts with one chunk of cards and appends the next chunk as you near the bottom.
+const CATALOG_CHUNK=24;let catalogFeed=null,catalogObserver=null;
+function moreCatalog(){
+ const grid=document.querySelector('.catalog-grid'),more=grid?.querySelector('.catalog-more');if(!grid||!more||!catalogFeed)return;
+ const {list,render}=catalogFeed,next=Math.min(list.length,catalogFeed.shown+CATALOG_CHUNK);
+ more.insertAdjacentHTML('beforebegin',list.slice(catalogFeed.shown,next).map(render).join(''));catalogFeed.shown=next;
+ if(next>=list.length){catalogObserver?.disconnect();more.remove();}
 }
-function showView(view,options={}){closeRoutePanel();if(view!=='board'){cancelCameraAnimation();clearBoardDetailObserver();}store.view=view;document.body.dataset.view=view;if(view==='board')applyRunTheme(store.run);else applyTheme('home');const root=document.getElementById('app');root.innerHTML=view==='home'?homeHTML():view==='setup'?setupHTML(options.names,options.selected):view==='board'?boardHTML():catalogHTML(view,options.query,options.filter,options.page);if(view!=='home'&&view!=='setup'&&view!=='board')fitCatalogPage(view,options);if(view==='board'){watchBoardDetail();applyBoardDetail(document.querySelector('#map-root .board-svg'));}queueViewportFit();window.scrollTo({top:0,behavior:'instant'});}
+function installCatalogFeed(){
+ catalogObserver?.disconnect();catalogObserver=null;const grid=document.querySelector('.catalog-grid'),more=grid?.querySelector('.catalog-more');if(!more)return;
+ if(typeof IntersectionObserver!=='function'){while(document.querySelector('.catalog-more'))moreCatalog();return;}
+ catalogObserver=new IntersectionObserver(entries=>{if(entries.some(en=>en.isIntersecting))moreCatalog();},{root:grid,rootMargin:'0px 0px 900px 0px'});catalogObserver.observe(more);
+}
+// Kept for callers: the endless list needs no re-measuring on resize.
+function refitCatalog(){}
+function showView(view,options={}){closeRoutePanel();if(view!=='board'){cancelCameraAnimation();clearBoardDetailObserver();}store.view=view;document.body.dataset.view=view;if(view==='board')applyRunTheme(store.run);else applyTheme('home');const root=document.getElementById('app');root.innerHTML=view==='home'?homeHTML():view==='setup'?setupHTML(options.names,options.selected):view==='board'?boardHTML():catalogHTML(view,options.query,options.filter);if(view!=='home'&&view!=='setup'&&view!=='board')installCatalogFeed();if(view==='board'){watchBoardDetail();applyBoardDetail(document.querySelector('#map-root .board-svg'));}queueViewportFit();window.scrollTo({top:0,behavior:'instant'});}
 function toast(text){const node=document.getElementById('toast');node.textContent=text;node.classList.add('visible');clearTimeout(store.toastTimer);store.toastTimer=setTimeout(()=>node.classList.remove('visible'),3200);}
 function showDialog({title,source,body='',html='',choices=[{label:'Continue',value:'ok',primary:true}],rare=false,seconds=0,timeoutValue='timeout',sheet=false}){const dialog=document.getElementById('dialog');if(store.dialog)store.dialog.resolve(null);dialog.classList.toggle('sheet',!!sheet);dialog.innerHTML=`<div class="dialog-content ${rare?'rare':''}">${rare?'<div class="rare-label">✦ RARE ENCOUNTER ✦</div>':''}${source&&!sheet?`<div class="dialog-brand">${brandHTML(source)}${referenceArtHTML(source,'card-reference-art')}</div>`:''}${sheet&&source?`<div class="sheet-source">${e(source)}</div>`:''}<h2 id="dialog-title">${e(title)}</h2>${body?`<p>${e(body)}</p>`:''}${seconds>0?`<div class="dialog-question-timer" role="timer"><b id="dialog-answer-clock">${seconds}</b><span>SECONDS TO ANSWER</span></div>`:''}${html}<div class="dialog-actions">${choices.map((c,i)=>`<button data-dialog-choice="${i}" class="${c.primary?'primary':c.danger?'danger':'ghost'}" ${c.disabled?'disabled':''}>${c.art?`<span class="choice-art">${c.art}</span>`:''}<span class="choice-copy">${c.tag?`<em class="choice-tag">${e(c.tag)}</em>`:''}${e(c.label)}${c.sub?`<small>${e(c.sub)}</small>`:''}</span>${c.badge?`<b class="choice-badge">${e(c.badge)}</b>`:''}</button>`).join('')}</div></div>`;return new Promise(resolve=>{let timer=null;const pending=store.dialog={resolve:value=>{clearInterval(timer);resolve(value);},choices};if(seconds>0){let left=seconds,last=performance.now();timer=setInterval(()=>{const now=performance.now();if(store.dialog!==pending){clearInterval(timer);return;}if(!document.hidden)left-=Math.min(.3,(now-last)/1000);last=now;const clock=document.getElementById('dialog-answer-clock');if(clock)clock.textContent=String(Math.ceil(Math.max(0,left)));if(left<=0){store.dialog=null;dialog.close();pending.resolve(timeoutValue);}},100);}if(!dialog.open)dialog.showModal();[...dialog.querySelectorAll('button')].find(b=>!b.disabled)?.focus({preventScroll:true});queueViewportFit();});}
 function resolveDialog(index){if(!store.dialog)return;const {choices,resolve}=store.dialog;if(!choices[index]||choices[index].disabled)return;const value=choices[index].value;store.dialog=null;document.getElementById('dialog').close();resolve(value);}
@@ -12745,7 +12799,7 @@ async function settleGame(game,scores,label,origin,players,coop=null,returnToRol
   const heir=CHARACTERS.find(c=>c.unlockBy==='character-win'&&c.requires===p.character);if(heir){const actual=recruitReward(store.profile,heir.id,p.owner,'character');if(actual){unlocked.push(actual);toast(`${heir.name} unlocked for ${p.owner}!`);}}
  }
  if(coop?.kind==='survival'&&coop.won&&origin!=='dev'){const pool=gameRecruitPool(game,store.profile,players[0]);if(pool.length&&Math.random()<.5){const c=pick(pool);const actual=recruitReward(store.profile,c.id,null,'game');if(actual)unlocked.push(actual);}}
- if(coop?.kind==='boss'&&coop.won&&origin!=='dev'&&game.bossId){const b=bossById(game.bossId),poolId=b?.unlockPool==='bond-villains'?pickLairVillain(players.flatMap(p=>availableCharacters(store.profile,p.owner)),id=>canRecruit(store.profile,id,null,'boss')):null;if(b?.unlockId){const actual=b.unlockPool?(poolId&&recruitReward(store.profile,poolId,null,'boss')):recruitReward(store.profile,b.unlockId,null,'boss');if(actual){unlocked.push(actual);toast(`${CHARACTERS.find(c=>c.id===actual)?.name||'A boss'} joins both rosters!`);}}}
+ if(coop?.kind==='boss'&&coop.won&&origin!=='dev'&&game.bossId){const beaten=store.profile.bossesBeaten||=[];if(!beaten.includes(game.bossId))beaten.push(game.bossId);const b=bossById(game.bossId),poolId=b?.unlockPool==='bond-villains'?pickLairVillain(players.flatMap(p=>availableCharacters(store.profile,p.owner)),id=>canRecruit(store.profile,id,null,'boss')):null;if(b?.unlockId){const actual=b.unlockPool?(poolId&&recruitReward(store.profile,poolId,null,'boss')):recruitReward(store.profile,b.unlockId,null,'boss');if(actual){unlocked.push(actual);toast(`${CHARACTERS.find(c=>c.id===actual)?.name||'A boss'} joins both rosters!`);}}}
  const milestones=origin==='dev'?[]:updateProgression(store.profile);if(milestones.length)extra+=" New unlocks: "+milestones.join(', ')+'.';
  if(origin==='board'){if(unlocked.length)store.run.latestRecruit={owner:players[winner]?.owner,name:CHARACTERS.find(c=>c.id===unlocked[0])?.name||'A new character'};store.run.pending.unlocked=unlocked;store.run.pending.unlockOwner=winner===null?null:players[winner].owner;store.run.pending.extra=extra;hooks.save();}if(origin!=='dev')saveProfile(store.profile);sound('win');const continued=await presentResult({gameId:game.id,scores,label,winner,rewards,extra,origin,coop,unlocked,unlockOwner:winner===null?null:players[winner].owner},players);if(continued===null||!valid())return;if(!await unlockDialog(unlocked,winner===null?null:players[winner].owner)||!valid())return;store.busy=false;
  if(origin==='board'){if(game.bossId&&hooks.bossDone){await hooks.bossDone(game,coop);return;}returnToRoll?hooks.beforeRoll():hooks.endTurn();}else hooks.arcade();
@@ -13625,7 +13679,9 @@ function beerFlick(dx,dy,duration,W=680,H=430,gain=1){
  return {x:0,z:.08,y:.3,vx:direction*vz,vy:3.05+power*.12,vz,age:0,bounces:0};
 }
 function beerStep(ball,cups,dt){const old={...ball};ball.age+=dt;ball.x+=ball.vx*dt;ball.z+=ball.vz*dt;ball.y+=ball.vy*dt;ball.vy-=9.8*dt;if(old.y>.21&&ball.y<=.21&&ball.vy<0){const ratio=(old.y-.21)/(old.y-ball.y),px=old.x+(ball.x-old.x)*ratio,pz=old.z+(ball.z-old.z)*ratio;for(const cup of cups.filter(c=>!c.removed)){const d=Math.hypot(px-cup.x,pz-cup.z);if(d<.19){cup.removed=true;ball.x=cup.x;ball.z=cup.z;ball.y=.12;return {kind:'cup',cup};}if(d<.235){const nx=(px-cup.x)/(d||1),nz=(pz-cup.z)/(d||1);ball.vx+=nx*1.2;ball.vz+=nz*1.2;ball.vy=Math.abs(ball.vy)*.32;ball.y=.22;ball.bounces++;return {kind:'rim'};}}}if(ball.y<.035&&ball.vy<0){if(ball.z<0||ball.z>4||Math.abs(ball.x)>1.45)return {kind:'miss'};ball.y=.035;ball.vy*=-.46;ball.vx*=.83;ball.vz*=.83;ball.bounces++;}if(ball.age>3||ball.z>4.6||Math.abs(ball.x)>2||ball.bounces>3)return {kind:'miss'};return null;}
-function flipFlick(dx,dy,duration,W=680,H=430,gain=1){if(dy<14)return null;const power=clamp((dy/H*3.3+.075/clamp(duration,.1,1.5))*flickGain(gain),.45,1.6);return {x:0,y:.22,z:.2,vx:clamp(dx/W*4,-1.2,1.2),vy:2.2+power*.55,angle:0,omega:4.8+power*2.1,age:0};}
+// Power ~0.95-1.45 (a firm, deliberate flick) lands rim-down; gentle flicks under-rotate, wild ones over-rotate.
+// The speed bonus is small so a tiny fast twitch can't fake a firm flick. rng adds a slight wobble to each real flip.
+function flipFlick(dx,dy,duration,W=680,H=430,gain=1,rng=null){if(dy<14)return null;const power=clamp((dy/H*3.6+.045/clamp(duration,.1,1.5))*flickGain(gain),.15,1.8),j=k=>rng?1+(rng()*2-1)*k:1;return {x:0,y:.22,z:.2,vx:clamp(dx/W*4,-1.2,1.2)+(rng?(rng()*2-1)*.07:0),vy:(2.2+power*.45)*j(.02),angle:0,omega:(3.4+power*1.8)*j(.04),age:0,power};}
 function flipStep(cup,dt){cup.age+=dt;cup.x+=cup.vx*dt;cup.y+=cup.vy*dt;cup.vy-=9.8*dt;cup.angle+=cup.omega*dt;const bottom=.19*Math.abs(Math.cos(cup.angle))+.115*Math.abs(Math.sin(cup.angle));if(cup.vy<0&&cup.y<=bottom){cup.y=bottom;const normalized=((cup.angle%(Math.PI*2))+Math.PI*2)%(Math.PI*2),error=Math.abs(normalized-Math.PI);return {landed:true,success:error<.4&&Math.abs(cup.x)<1.1&&Math.abs(cup.vx)<.95,error};}if(cup.age>2.5||Math.abs(cup.x)>1.7)return {landed:true,success:false,error:Math.PI};return null;}
 function flipCupMesh(cup,W=680,H=430){const rotation=cup.angle||0,points=[];for(const level of [1,-1])for(let i=0;i<16;i++){const a=i/16*Math.PI*2,r=level===1?.115:.08,dy=level*.19,dz=Math.sin(a)*r;points.push(projectTable({x:cup.x+Math.cos(a)*r,y:cup.y+dy*Math.cos(rotation)-dz*Math.sin(rotation),z:cup.z+dy*Math.sin(rotation)+dz*Math.cos(rotation)},W,H));}return points;}
 // The cup's resting height for a given tilt (matches flipStep).
@@ -13707,7 +13763,7 @@ async function flipcup(s){const[c,x]=s.canvas(680,430,{fill:true}),score=[0,0],a
   else{fx.burst(at.x,at.y,{count:12,colors:['#c9a77a','#8a6a48'],speed:U*.6,up:U*.3,size:2,life:.5});fx.shake(3,.18);}
   fx.pop(verdict.pop,W/2,H*.38,{color:outcome.success?'#ffe066':'#d9d2c3',size:clamp(W*.1,26,56)});
   if(!await (s.wait?s.wait(850):s.delay(850)))return;if(attempts.every(n=>n>=8))return s.finish(score,'Flipadelphia · successful flips '+score[0]+'–'+score[1]);actor=1-actor;cup=null;landing=null;shown=null;clock=15;trail.length=0;if(await s.pass(actor,message+' Eight flicks each. A correct landing is upside down with the rim on the table.'))phase='aim';}
- s.on(c,'pointerdown',ev=>{if(s.paused||phase!=='aim')return;const p=s.pointer(ev);ev.preventDefault();drag={id:ev.pointerId,start:p,end:p,time:performance.now()};s.capture(ev);});s.on(c,'pointermove',ev=>{if(drag?.id===ev.pointerId)drag.end=s.pointer(ev);});s.on(c,'pointerup',ev=>{if(drag?.id!==ev.pointerId)return;const p=s.pointer(ev),d=drag;flip(Math.hypot(p.x-d.start.x,p.y-d.start.y)<14?flipFlick(0,50,.5,s.W,s.H):flipFlick(p.x-d.start.x,d.start.y-p.y,(performance.now()-d.time)/1000,s.W,s.H,s.flickSensitivity));drag=null;s.release(ev);});const clear=()=>drag=null;s.on(c,'pointercancel',clear);s.resetOnPause?.(clear);s.hint(`Flick sensitivity ${flickGain(s.flickSensitivity).toFixed(2)}× (Settings). Flick UP anywhere on the screen (or just tap for a gentle flip). Distance and speed set lift AND spin; sideways flicks can knock the cup off the table. Land upside down to score. Alternate after every attempt.`);
+ s.on(c,'pointerdown',ev=>{if(s.paused||phase!=='aim')return;const p=s.pointer(ev);ev.preventDefault();drag={id:ev.pointerId,start:p,end:p,time:performance.now()};s.capture(ev);});s.on(c,'pointermove',ev=>{if(drag?.id===ev.pointerId)drag.end=s.pointer(ev);});s.on(c,'pointerup',ev=>{if(drag?.id!==ev.pointerId)return;const p=s.pointer(ev),d=drag;flip(Math.hypot(p.x-d.start.x,p.y-d.start.y)<14?flipFlick(0,50,.5,s.W,s.H,1,()=>s.random()):flipFlick(p.x-d.start.x,d.start.y-p.y,(performance.now()-d.time)/1000,s.W,s.H,s.flickSensitivity,()=>s.random()));drag=null;s.release(ev);});const clear=()=>drag=null;s.on(c,'pointercancel',clear);s.resetOnPause?.(clear);s.hint(`Flick sensitivity ${flickGain(s.flickSensitivity).toFixed(2)}× (Settings). Flick UP anywhere on the screen with a firm, deliberate flick: a soft touch under-rotates, a wild one over-rotates. Distance and speed set lift AND spin, and every flip wobbles a little; sideways flicks can knock the cup off the table. Land upside down to score. Alternate after every attempt.`);
  s.frame(dt=>{const W=s.W,H=s.H,U=flipUnit(W,H);time+=dt;
   if(phase==='aim'){clock-=dt;if(clock<=0){attempts[actor]++;void finishFlip({success:false});}}
   if(phase==='flight'){const steps=Math.ceil(dt*180);for(let j=0;j<steps&&phase==='flight';j++){const hit=flipStep(cup,dt/steps);if(hit)void finishFlip(hit);}if(phase==='flight'){trail.push({...cup});if(trail.length>7)trail.shift();}}else if(trail.length)trail.shift();
@@ -13728,7 +13784,7 @@ async function flipcup(s){const[c,x]=s.canvas(680,430,{fill:true}),score=[0,0],a
   const p=projectTable(display,W,H),headSize=clamp(U*.24,30,70)*p.scale;x.save();x.translate(p.x,p.y);x.rotate(display.angle);s.sprite(x,actor,0,0,headSize,{exact:true,mood:landing?.success?'win':landing?'sad':'thinking'});x.restore();
   if(phase==='aim'){if(!drag)flickHint(x,p.x,p.y-U*.28,clamp(U*.1,12,22),time);
    else{x.strokeStyle='#fff4be55';x.lineWidth=2;x.setLineDash([5,6]);x.beginPath();x.moveTo(drag.start.x,drag.start.y);x.lineTo(drag.end.x,drag.end.y);x.stroke();x.setLineDash([]);
-    const preview=flipFlick(drag.end.x-drag.start.x,drag.start.y-drag.end.y,(performance.now()-drag.time)/1000,W,H,s.flickSensitivity);if(preview){const power=clamp((preview.vy-2.2)/.55/1.15-.39,0,1),tip=projectTable({x:preview.vx*.35,z:.2,y:.45+power*.55},W,H);powerArrow(x,{x:p.x,y:p.y-U*.12},tip,power);}}}
+    const preview=flipFlick(drag.end.x-drag.start.x,drag.start.y-drag.end.y,(performance.now()-drag.time)/1000,W,H,s.flickSensitivity);if(preview){const power=clamp((preview.power-.15)/1.65,0,1),tip=projectTable({x:preview.vx*.35,z:.2,y:.45+power*.55},W,H);powerArrow(x,{x:p.x,y:p.y-U*.12},tip,power);}}}
   if(phase==='aim'){const urgent=clock<=5;plate(x,W/2,H-clamp(H*.05,16,26),`${s.players[actor].name.toUpperCase()} · FLIP ${Math.min(8,attempts[actor]+1)}/8 · ${Math.ceil(clock)}s`,{size:clamp(W*.03,11,15),color:urgent?(Math.sin(time*12)>0?'#ff6b6b':'#fff'):'#f7d893',border:urgent?'#ff6b6b':'#7a5530'});}
   fx.draw(x);x.restore();
   s.status(`${s.players[actor].name} · flip ${Math.min(8,attempts[actor]+(phase==='aim'?1:0))}/8 · ${phase==='aim'?Math.ceil(clock)+'s · flick up':message}`);s.debug={actor,phase,cup,score,attempts,flip,finishFlip,landing};});await s.pass(0,'Flipadelphia at Paddy’s. Flip, flip, Flipadelphia! Flick the cup into the air and land it rim-down. Your head rides the rotating cup. Eight alternating attempts each.');
@@ -32770,5 +32826,633 @@ async function marioBros(s){
  });
 }
 Object.assign(exports,{marioBros,buildLevel});
+
+},
+"src/data/iconicPlaces.js":(exports,require)=>{
+// Board landmark names: the one iconic place everybody knows from each property ("Paddy's Pub", "Fhloston Paradise").
+// Keyed by reference source; ids never change, only the label on the board. Personal stops (Home, ShambConkins,
+// friends, Unlimited Savory Systems) keep their own names and are deliberately absent.
+const LINES=`*NSYNC|TRL Studio
+2001: A Space Odyssey|Discovery One
+21|The Las Vegas Strip
+30 Rock|30 Rockefeller Plaza
+90s Nickelodeon|The Slime Geyser
+A Nightmare on Elm Street|1428 Elm Street
+A Serious Man|The Gopnik House
+A View to a Kill|Golden Gate Bridge
+Aaahh!!! Real Monsters|Monster Academy
+Ace Ventura|Ace’s Apartment
+Action Icons|Planet Hollywood
+Adam Sandler|The Wedding Singer Hall
+Air Force One|Air Force One
+Air hockey|Boardwalk Arcade
+Airheads|KPPX Radio
+Akira|Neo-Tokyo
+Akira Kurosawa|Toho Studios
+Alien|The Nostromo
+Aliens|Hadley’s Hope
+Always Sunny|Dennis & Mac’s Apartment
+American Psycho|Dorsia
+Anchorman|San Diego Zoo
+Angry Beavers|The Beavers’ Dam
+Angry Birds|Piggy Island
+Anora|Brighton Beach
+Aqua Teen Hunger Force|The Aqua Teen House
+Arcade|Flynn’s Arcade
+Are You Afraid of the Dark?|The Midnight Society
+Area 51|Groom Lake
+Area 51 arcade shooter|The Area 51 Hangar
+Army of Darkness|S-Mart
+Arnold Schwarzenegger|Muscle Beach
+Arrested Development|The Banana Stand
+Asteroids|The Asteroid Field
+Austin Powers|Dr. Evil’s Lair
+BASEketball|Milwaukee Beers Stadium
+Baby Driver|Bo’s Diner
+Back to the Future|Twin Pines Mall
+Backstreet Boys|The Boy Band Tour Bus
+Bad Taste|Kaihoro
+Barbarian|476 Barbary Street
+Barton Fink|Hotel Earle
+Basket Case|Hotel Broslin
+Batman|Gotham City
+Batman (1989)|Axis Chemicals
+Batman Returns|The Penguin’s Lair
+Battle Royale|The Island
+Battleship|Pearl Harbor
+Battleship-style games|The War Room
+Beavis and Butt-Head|Burger World
+Beetlejuice|The Maitland House
+Berserk|Midland Castle
+Beverly Hills Cop|Beverly Hills
+Beverly Hills Ninja|The Ninja Dojo
+Big Trouble|Wing Kong Exchange
+Big Trouble in Little China|Lo Pan’s Lair
+Bishi Bashi|Konami Arcade
+Black Dynamite|Kung Fu Island
+Black Sabbath|Birmingham
+Blackjack|The Golden Nugget
+Blade|The Blood Rave
+Blades of Glory|World Winter Games
+Bloodsport|The Kumite
+Bloodsport / Kickboxer double down|The Ancient Stone City
+Bob Marley|Trenchtown
+Bob’s Burgers|Bob’s Burgers
+Bomberman|Bomber Base
+Boogie Nights|Hot Traxx Disco
+Boogie Nights / Licorice Pizza|San Fernando Valley
+Boomerang Fu|The Food Fight Dojo
+Boris|Shibuya
+Brain Damage|Aylmer’s Bathtub
+Braindead / Dead Alive|Wellington Zoo
+Brave|DunBroch Castle
+Brazil|Ministry of Information
+Breakout|The Brick Wall
+Bring Her Back|Laura’s House
+Bruce Almighty|Channel 7 Buffalo
+Buckaroo Banzai|Banzai Institute
+Buckethead|Bucketheadland
+Burnout 3|Crash Junction
+Cable Guy|Medieval Times
+Caddyshack|Bushwood Country Club
+Candy Land|Candy Castle
+Candyman|Cabrini-Green
+Cannibal! The Musical|Breckenridge
+Carpenter Brut|Leather Teeth High
+Casino|The Tangiers
+Casino Royale|Casino Royale
+Castlevania|Dracula’s Castle
+CatDog|Nearburg
+Celebrity Deathmatch|The Deathmatch Ring
+Chainsaw Man|Public Safety HQ
+Checkers|Cracker Barrel Porch
+Chess|Washington Square Park
+Chicago, Illinois|Wrigley Field
+Child's Play|Good Guys Toy Store
+Children’s Hospital|Children’s Hospital
+Chopping Mall|Park Plaza Mall
+Chris Farley|Van Down by the River
+Christianity|The Sistine Chapel
+ChuChu Rocket!|The Rocket Launchpad
+Chuck Norris|Texas Ranger HQ
+Chutes and Ladders|The Big Chute
+Cincinnati, Ohio|Skyline Chili
+Clarissa Explains It All|Clarissa’s Bedroom
+Class of Nuke ’Em High|Tromaville High
+Clerks|Quick Stop
+Clint Eastwood|San Miguel
+Clue|Boddy Manor
+Cobra|Cobretti’s Apartment
+Coen Brothers|The Gaslight Cafe
+Colonel Sanders|Sanders Court & Café
+Color Out of Space|The Gardner Farm
+Comedy Bang Bang|The CBB Studio
+Comedy Bang! Bang!|The CBB Studio
+Comedy TV|The Laugh Factory
+Commando|Val Verde
+Con Air|The Jailbird
+Connect Four|Game Night Table
+Courage the Cowardly Dog|Nowhere, Kansas
+Cowboy Bebop|The Bebop
+Crank 2|LA Power Station
+Crazy Taxi|San Francisco Hills
+Creepshow|The Crate
+Cronenberg|Spectacular Optical
+Crossy Road|Crossy Highway
+Curb Your Enthusiasm|Latte Larry’s
+Daft Punk|The Pyramid
+Dandadan|Turbo Granny’s Tunnel
+Daria|Lawndale High
+David Bowie|Hansa Studios
+David Cronenberg / Cronenberg|Dead Ringers Clinic
+Dead Alive|Mum’s House
+Death Grips|The Money Store
+Death Proof|Texas Chili Parlor
+Death Stranding|Bridges HQ
+Delocated|Jon’s Apartment
+Demolition Man|San Angeles
+Detroiters|Cramblin Duvet
+Dexter’s Laboratory|Dexter’s Lab
+Diamonds Are Forever|Whyte House
+Die Hard|Nakatomi Plaza
+Dirty Harry|Kezar Stadium
+Django Unchained|Dr. Schultz’s Wagon
+Documentary Now!|Sandy Passage
+Dodgeball|Average Joe’s Gym
+Doom Metal|The Doom Crypt
+Double Dare|The Double Dare Studio
+Doug|Bluffington
+Dr. Katz|Dr. Katz’s Office
+Dr. No|Crab Key
+Dragon Ball Z|Capsule Corporation
+Dragonheart|Draco’s Cave
+Duck Game|The Duck Pond
+Duck Hunt|Duck Hunt Marsh
+Eagleheart|The Marshals Office
+Earth|Olympia, Washington
+Eastbound & Down|Jefferson Middle School
+Edgar Wright|23 Meteor Street
+Edward Scissorhands|The Hilltop Mansion
+Electric Wizard|Funeralopolis
+Elf|Gimbels
+Elvis Presley|Graceland
+Emoji|Textopolis
+Escape from L.A.|The Island of L.A.
+Escape from New York|Manhattan Prison
+Evil Dead|The Knowby Cabin
+F-Zero|Mute City
+Face/Off|Erewhon Prison
+Faith No More|The Warfield
+Family Feud|The Family Feud Stage
+Fantômas|The Paris Catacombs
+Fargo|Brainerd
+Fast & Furious|Toretto’s Garage
+Fast Food History|The First McDonald’s
+Ferris Bueller’s Day Off|Art Institute of Chicago
+Figure It Out|The Figure It Out Panel
+Final Fantasy|Midgar
+Flappy Bird|Pipe Valley
+Flavor Lab|The Flavor Lab
+Flight of the Conchords|The NZ Consulate
+Frankenhooker|Jeffrey’s Garage Lab
+Frankie and the Witch Fingers|Echo Park
+Friday the 13th|Camp Crystal Lake
+Frogger|Frogger Crossing
+From Beyond|1313 Benevolent Street
+From Russia with Love|The Orient Express
+Fruit Ninja|Sensei’s Dojo
+Fu Manchu|The Skate Ramp
+GUTS|The Aggro Crag
+Galaga|The Galaga Fleet
+Game of Thrones|Winterfell
+Garth Marenghi’s Darkplace|Darkplace Hospital
+Gauntlet|The Dungeon
+Geometry Wars|The Grid
+Ghost in the Shell|Section 9
+Go|The Go Salon
+GoldenEye|Severnaya
+Goldfinger|Fort Knox
+Gremlins|Mr. Wing’s Shop
+Guitar Hero|The Rock Club
+Halloween|Haddonfield
+Happy Gilmore|Waterbury Golf Course
+Hard Target|The New Orleans Bayou
+Harry Potter and the Order of the Phoenix|12 Grimmauld Place
+Harvey Birdman|Sebben & Sebben
+Hausu|Auntie’s Mansion
+Hellraiser|55 Lodovico Street
+Hey Arnold!|Sunset Arms
+Hey Dude|Bar None Ranch
+Hideo Kojima|Kojima Productions
+High on Fire|Oakland Metro
+Home Alone|The McCallister House
+Home Alone 2|The Plaza Hotel
+Home Improvement|Tool Time
+Home Movies|Brendon’s Basement
+Hot Fuzz|Sandford
+Hot Rod|Rod’s Ramp
+House (1977)|The Haunted House
+House Favorite|The Game Closet
+House Rules|The Rec Room
+House of the Dead|Curien Mansion
+How To with John Wilson|Manhattan Sidewalks
+Hudson Hawk|Da Vinci’s Castle
+Human Giant|Shutterbugs Studio
+Hungry Hungry Hippos|The Hippo Pond
+Hunter × Hunter|Heavens Arena
+I Think You Should Leave|Dan Flashes
+Idiocracy|Brawndo HQ
+In the Mouth of Madness|Hobb’s End
+Indiana Jones|The Well of Souls
+Indianapolis, Indiana|Monument Circle
+Infinity Pool|Li Tolqa Resort
+Inglourious Basterds|Le Gamaar Cinema
+It|The Derry Sewers
+Jackass|The Skate Park
+Jackbox|The Quiplash Stage
+Jackie Brown|Del Amo Mall
+Jackie Chan|The Police Story Mall
+James Bond|Q Branch
+Jay and Silent Bob|Mooby’s
+Jean-Claude Van Damme|Hong Kong Harbor
+Jenga|The Jenga Tower
+Jeopardy!|The Jeopardy! Stage
+Jim Henson|The Muppet Theater
+JoJo’s Bizarre Adventure|Morioh
+Joe Pera Talks With You|Marquette, Michigan
+John Carpenter|Precinct 13
+John Hughes|Shermer High School
+Johnny Bravo|Aron City
+Jurassic Park|Isla Nublar
+Justice|Ed Banger HQ
+KFC|Corbin, Kentucky
+KaBlam!|Henry & June’s Comic
+Katamari|Star Road
+Katamari Damacy|The King of All Cosmos
+Kavinsky|The Nightcall Highway
+Kavinsky / Skrillex / Knife Party / Zomboy|The EDC Main Stage
+Keep Talking and Nobody Explodes|The Bomb Room
+Kenan & Kel|Rigby’s Grocery
+Kids in the Hall|The Headcrusher’s Corner
+Kill Bill|The Two Pines Chapel
+King Buffalo|Rochester, New York
+King Gizzard|Nonagon Infinity
+King Gizzard & the Lizard Wizard|The Gizzverse
+King of the Hill|Strickland Propane
+Kingpin|Ocelot, Iowa
+Kitchen Nightmares|Amy’s Baking Company
+Knife Party|Rage Valley
+Kung Pow! Enter the Fist|Master Pain’s Hideout
+Kurosawa|Ran Castle
+Kyuss|Palm Desert
+Labyrinth|Goblin City
+Last Action Hero|The Pandora Theater
+Legend|Darkness’s Lair
+Legends of the Hidden Temple|The Silver Monkey Shrine
+Lemmings|The Exit Door
+Lethal Weapon|Riggs’ Trailer
+Licence to Kill|Isthmus City
+Licorice Pizza|Fat Bernie’s Waterbeds
+Little Shop of Horrors|Mushnik’s Flowers
+Live and Let Die|San Monique
+MacGruber|MacGruber’s Garage
+Major League|Cleveland Stadium
+Malignant|Simion Hospital
+Mallrats|Eden Prairie Mall
+Man to Man with Dean Learner|Dean Learner’s Studio
+Mancala|The Spice Market
+Mandy|Shadow Lake
+Marble Madness|The Aerial Race Track
+Mario|The Mushroom Kingdom
+Mario Bros.|The Brooklyn Sewers
+Mario Kart / Super Mario Bros.|Mario Kart Stadium
+Mario Party’s duel/1-v-3/2-v-2 formats|Mario Party Plaza
+Mars Attacks!|The Galaxy Hotel
+Matt & Trey|Casa Bonita
+Mega Man|Dr. Wily’s Castle
+Megamind|Metro City
+Megatouch|The Corner Bar
+Mel Gibson|Thunderdome
+Melvins|Montesano
+Men in Black|MIB Headquarters
+Metal Gear|Shadow Moses
+Metalocalypse|Mordhaus
+Metroid|Planet Zebes
+Micro Machines|The Breakfast Table
+Missile Command-style defense|The Missile Silo
+Mob Psycho 100|Spirits and Such
+Monolord|Gothenburg
+Monopoly|Boardwalk
+Moonraker|Drax’s Space Station
+Mortal Kombat|Shang Tsung’s Island
+Mortal Kombat Deep Cuts|The Living Forest
+Motivational Poster|The Office Break Room
+Mr. Bungle|Eureka, California
+Mr. Driller|The Block Mine
+Mr. Potato Head|The Toy Chest
+Mr. Show|Ronnie Dobbs’ Trailer
+Mrs. Doubtfire|The Hillard House
+Music|The Record Store
+NBA Jam|The Jam Court
+Nathan Barley|Shoreditch
+Nathan for You|Dumb Starbucks
+Neon Genesis Evangelion|Tokyo-3
+Nick Arcade|The Video Zone
+Nickelodeon GUTS|The Extreme Arena
+Nidhogg|The Wurm’s Mouth
+Night of the Creeps|Corman University
+Ninja|Iga Village
+Nintendo|Nintendo Kyoto
+Nirvanna the Band the Show|Matt’s Apartment
+No Country for Old Men|The Eagle Hotel
+No Time to Die|Safin’s Island
+Nosferatu|Orlok’s Castle
+O Brother, Where Art Thou?|WEZY Radio
+OM|The Pilgrimage
+Ohio University|Court Street, Athens
+Old School|Frank’s Frat House
+On Cinema at the Cinema|The On Cinema Studio
+Once Upon a Time in Hollywood|Spahn Ranch
+One Flew Over the Cuckoo’s Nest|Oregon State Hospital
+One Punch Man|Hero Association
+Operation|The Operating Table
+Orgazmo|The Orgazmo Set
+Osees|The Bay Area Garage
+Othello / Reversi|The Othello Parlor
+Over the Top|The Arm-Wrestling Ring
+PCU|Port Chester University
+Pac-Man|The Maze
+Paperboy|Easy Street
+Parks and Recreation|Pawnee City Hall
+Party Down|The Catering Van
+Paul Thomas Anderson|The Reno Casino
+Pee-wee’s Big Adventure|The Alamo
+Peep Show|Apollo House
+Perturbator|Dangerous Days City
+Pete & Pete|Wellsville
+Phantasm|Morningside Mortuary
+Phantom Thread|The House of Woodcock
+Photo Hunt|The Bar Photo Booth
+Pictionary|Game Night Living Room
+Pirates of the Caribbean: Dead Man’s Chest|Isla Cruces
+Planes, Trains and Automobiles|The Braidwood Inn
+Planet Coaster|The Park Entrance
+Planet Coaster 2|The Water Park
+Point Blank|The Shooting Gallery
+Point Break|Bells Beach
+Poker|Binion’s Horseshoe
+Pokémon|Pallet Town
+Pong|Andy Capp’s Tavern
+Popstar: Never Stop Never Stopping|The Conner4Real Tour
+Portlandia|Women & Women First
+Possessor|The Possessor Lab
+Power Rangers|The Command Center
+Power Stone|The Power Stone Arena
+Powerpuff Girls|Townsville
+Predator|The Jungle
+Predator 2|The Predator Ship
+Pretty in Pink|Trax Records
+Primus|Fisherman’s Wharf
+Prince of Darkness|St. Godard’s Church
+Pulp Fiction|Monster Joe’s
+Puyo Puyo|Madou Tower
+Puzzle Bobble|The Bubble Cave
+Puzzle Bobble / Bust-a-Move|Bub & Bob’s Launcher
+Queens of the Stone Age|Rancho de la Luna
+Quentin Tarantino|New Beverly Cinema
+REZN|The Sound Chamber
+Raising Arizona|Unpainted Arizona
+Rambo|Hope, Washington
+Rampage|The City Block
+Rashomon|Rashomon Gate
+Re-Animator|Miskatonic University
+Recruiting|The Recruiting Office
+Red Dead Redemption|Armadillo
+Red Dead Redemption 2|Saint Denis
+Red Rocket|Texas City
+Ren & Stimpy|The Log Shop
+Reno 911!|Reno Sheriff’s Dept.
+Repo Man|Helping Hand Repo
+Reservoir Dogs|Uncle Bob’s Pancakes
+Resident Evil|Spencer Mansion
+Resident Evil 3: Nemesis|Raccoon City
+Return of the Living Dead|Uneeda Medical Supply
+Review|Forrest’s Review Desk
+Rhythm Heaven|The Remix Stage
+Road House|The Double Deuce
+Roast Battle|The Belly Room
+RoboCop|OCP Tower
+Robotron 2084|The Robotron Arena
+Rocket Power|Ocean Shores
+Rocko’s Modern Life|O-Town
+Rockstar Games|Vice City
+Rocky|The Art Museum Steps
+Rocky IV|The Siberian Barn
+Roulette|Monte Carlo Casino
+Rounders|Chez Teddy KGB
+Rugrats|Tommy’s Playpen
+Rush Hour (ThinkFun)|The Traffic Jam Lot
+SSX Tricky|Tokyo Megaplex
+Salute Your Shorts|Camp Anawanna
+Samurai Champloo|The Edo Tea House
+Samurai Jack|Aku’s Fortress
+Saturday Night Live|Studio 8H
+Saw|The Bathroom
+Scanners|Biocarbon Amalgamate
+Schwarzenegger|Kindergarten Cop School
+Scott Pilgrim|Lee’s Palace
+Scrabble|The Scrabble Tournament
+Scream|Stu’s House
+Sealab 2021|Sealab
+Sean Baker|Donut Time
+Seinfeld|Monk’s Café
+Semi-Pro|Flint Tropics Arena
+Seven Samurai|The Farming Village
+Shaun of the Dead|The Winchester
+Silent Hill|Silent Hill
+Simon|The Simon Disc
+Sixteen Candles|Jake Ryan’s House
+Skrillex|The Bangarang Rave
+Skyfall|Skyfall Lodge
+Sleep|Holy Mountain
+Slift|Toulouse
+Slither|Wheelsy
+Smash TV|The Smash TV Studio
+Snack Lore|The Snack Aisle
+Snake|Nokia 3310
+Society|The Whitney Mansion
+Sokoban|The Storehouse
+Sonic the Hedgehog|Green Hill Zone
+South Park|South Park Elementary
+Space Ghost|Ghost Planet
+Space Ghost Coast to Coast|Ghost Planet Studio
+Space Invaders|The Bunkers
+Speed|Bus 2525
+Spielberg|Amity Island
+Stallone|Cliffhanger Peak
+Star Trek|Deep Space Nine
+Star Wars|Mos Eisley Cantina
+Starship Troopers|Camp Currie
+Stella|Stella’s Apartment
+Step Brothers|The Catalina Wine Mixer
+Steven Seagal|Seagal’s Dojo
+Steven Spielberg|Devils Tower
+Stevie Wonder|Motown Studio A
+Strangers with Candy|Flatpoint High
+Street Fighter II|Suzaku Castle
+Sudden Death|The Civic Arena
+Sunn O)))|The Fog Room
+Super Mario|Peach’s Castle
+Super Mario Bros. 3|Grass Land
+Super Monkey Ball|Monkey Target
+Super Troopers|Spurbury Station
+Superbad|The Liquor Store
+Superman|Metropolis
+Sylvester Stallone|Mighty Mick’s Gym
+TMNT|The Sewer Lair
+TRON|The Game Grid
+Talladega Nights|Talladega Superspeedway
+Tarantino|Big Kahuna Burger
+Taskmaster|The Taskmaster Caravan
+Teenage Mutant Ninja Turtles|The Technodrome
+Terminator|Cyberdyne Systems
+Terminator 2: Judgment Day|The Steel Mill
+Terrifier|Miles County
+Tetris|St. Basil’s Cathedral
+Tetris Attack|Yoshi’s Island
+The Adventures of Baron Munchausen|The Moon
+The Adventures of Pete & Pete|The Wellsville Tower
+The Ballad of Buster Scruggs|Frenchman’s Gulch
+The Beatles|Abbey Road
+The Big Lebowski|The Dude’s Apartment
+The Birthday Boys|The Party Garage
+The Blob (1988)|Arborville
+The Breakfast Club|Shermer Library
+The Cabin in the Woods|The Facility
+The Cable Guy|The Satellite Dish
+The Call of Cthulhu|R’lyeh
+The Chair Company|The Chair Showroom
+The Chris Gethard Show|The Public-Access Studio
+The Color of Money|Atlantic City 9-Ball
+The Critic|Coming Attractions
+The Dark Knight Rises|Blackgate Prison
+The Eric Andre Show|Eric’s Desk
+The Fifth Element|Fhloston Paradise
+The Florida Project|The Magic Castle
+The Fly|Brundle’s Telepods
+The Godfather|Genco Olive Oil
+The Goonies|The Fratellis’ Hideout
+The Goonies / Goon Docks|One-Eyed Willy’s Ship
+The Hangover|Caesars Palace
+The Hateful Eight|Red Rock
+The Hudsucker Proxy|Hudsucker Industries
+The Jungle Book|Council Rock
+The League|The Shiva Bowl
+The Legend of Zelda|Hyrule Castle
+The Lonely Island|Magnolia Bakery
+The Man with the Golden Gun|Scaramanga’s Island
+The Mars Volta|The Comatorium
+The Master|The Alethia
+The Matrix|The Nebuchadnezzar
+The Mighty Boosh|The Nabootique
+The Mighty Ducks|District 5 Rink
+The Newlywed Game|The Newlywed Game Stage
+The Nightmare Before Christmas|Halloween Town
+The Office|Schrute Farms
+The Price Is Right|The Plinko Stage
+The Rehearsal|The Rehearsal Warehouse
+The Righteous Gemstones|Gemstone Salvation
+The Rock|Alcatraz
+The Santa Clause|The North Pole
+The Simpsons|Moe’s Tavern
+The Spy Who Loved Me|Atlantis
+The State|The State Sketch House
+The Substance|The Substance Lab
+The Texas Chain Saw Massacre|The Gas Station
+The Thing|Outpost 31
+The Toxic Avenger|Tromaville Health Club
+The Traitors|Ardross Castle
+The Wailing|Gokseong
+The Warriors|Coney Island
+The Weakest Link|The Weakest Link Stage
+The World Is Not Enough|Maiden’s Tower
+The World's End|The World’s End Pub
+Thee Oh Sees deep cuts|The Hemlock Tavern
+There Will Be Blood|Little Boston
+They Live|Justiceville
+Throne of Blood|Spider’s Web Castle
+Thunderball|Palmyra
+Tim & Eric|Cinco HQ
+Tim Allen|The NSEA Protector
+Tim Burton|Sleepy Hollow
+Tim and Eric|The Awesome Show Studio
+Tim and Eric / Check It Out!|The Check It Out! Studio
+Time Bandits|Ultimate Darkness
+TimeSplitters|The Siberian Dam
+Toast of London|The Voiceover Booth
+Tommy Boy|Callahan Auto Parts
+Tomorrow Never Dies|Carver’s Stealth Boat
+Tony Hawk’s Pro Skater|School II
+Total Recall|Rekall
+TowerFall|Sacred Ground
+Toy Fads|KB Toys
+Toy Story|Pizza Planet
+Tremors|Perfection, Nevada
+Trials|The Dirt Track
+Trick ’r Treat|Warren Valley
+Trigun|July City
+Trivial Pursuit|Trivia Night Pub
+Troma|Tromaville
+Troy|Troy
+True Lies|Omega Sector
+Tupac Shakur|Death Row Studios
+Twister|Wakita, Oklahoma
+Ty Segall|Laguna Beach
+Typing of the Dead|Curien Labs
+UHF|Channel 62
+Ultimate Chicken Horse|The Farm
+Uncle Acid & the Deadbeats|The Cult Compound
+Uncle Buck|The Russell House
+Under Siege|USS Missouri
+Uno|The Kitchen Table
+Vampire Survivors|The Mad Forest
+Vanderpump Rules|SUR
+Viagra Boys|Stockholm
+Vice Principals|North Jackson High
+Videodrome|Civic TV
+Vietnamese Food|The Pho Shop
+Walk Hard|Dewey Cox’s Studio
+Walkabout Mini Golf|The Walkabout Course
+WarioWare|Diamond City
+WarioWare (Nintendo)|WarioWare HQ
+WarioWare: Smooth Moves|The Smooth Moves Studio
+Wayne’s World|Stan Mikita’s
+Ween|New Hope
+Wes Anderson|The Grand Budapest Hotel
+Wet Hot American Summer|Camp Firewood
+What We Do in the Shadows|Staten Island Mansion
+Who Wants to Be a Millionaire?|The Hot Seat
+Wild & Crazy Kids|The Field Day Park
+Will Ferrell|The Cowbell Stage
+Windhand|Richmond, Virginia
+Windjammers|The Beach Court
+Wonder Showzen|The Classroom
+Worms|Worms Island
+Xavier: Renegade Angel|The Spirit Desert
+YOB|Eugene, Oregon
+Yachty|Family Game Night
+Yahtzee|The Yahtzee Table
+Yojimbo / Sanjuro|Manome
+Yu Yu Hakusho|Dark Tournament Arena
+Zach Cregger-ish|Maybrook
+Zomboy|The Rotten Graveyard
+Zoolander|Derelicte Runway
+artillery / ballistic games|The Tank Range
+darts|The Local Pub
+pool / billiards|The Pool Hall
+tic-tac-toe|The Diner Placemat
+“2 Player Games: The Challenge”|The Arcade Couch`;
+const ICONIC_PLACES=new Map(LINES.split('\n').map(line=>line.split('|')));
+Object.assign(exports,{ICONIC_PLACES});
 
 }};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();</script></body></html>

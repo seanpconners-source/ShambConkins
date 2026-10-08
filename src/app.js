@@ -3,7 +3,7 @@ const {initFullscreen, toggleFullscreen, fullscreenSupported, fullscreenButton, 
 const {touchDiagnostic}=require("src/touchDiagnostic.js");
 const {floatingHead}=require("src/headCutouts.js");
 const {triviaExplanationHTML, TRIVIA_QUESTIONS}=require("src/triviaCatalog.js");
-const {store, newRun, logRun}=require("src/state.js");
+const {store, newRun, logRun, newPlayer}=require("src/state.js");
 const {freshProfile, loadProfile, saveProfile, recruitReward, canRecruitReward, availableCharacters, rememberCollectibles, homePackTurn}=require("src/profile.js");
 const {updateBoardBanter}=require("src/boardBanter.js");
 const {readJSON, writeJSON, removeSaved, RUN_KEY, PROFILE_KEY, validRun}=require("src/persistence.js");
@@ -67,7 +67,8 @@ initFullscreen();{let refit=0;const later=()=>{clearTimeout(refit);refit=setTime
 store.profile=loadProfile();const saved=readJSON(RUN_KEY);store.run=validRun(saved)?saved:null;if(store.run&&!store.profile.earnedUnlocks['gordon-ramsay'])for(const p of store.run.players)if(p.character==='gordon-ramsay')p.character=p.owner==='Sean'?'sean':'amber';if(store.run&&!differentCharacters(...store.run.players.map(p=>p.character))){store.run.players[1].character=availableCharacters(store.profile,'Amber').find(id=>differentCharacters(id,store.run.players[0].character))||'amber';if(!differentCharacters(...store.run.players.map(p=>p.character)))store.run.players[0].character='sean';}upgradeRunFormat(store.run);updateProgression(store.profile);
 if(store.run)for(const p of store.run.players){if(p.character==='eugenia')p.character=p.owner==='Amber'?'amber':'sean';p.items=p.items.filter(id=>id!=='eugenia-pass');}
 function saveRun(){rememberCollectibles(store.profile,store.run);let saved=true;if(store.run)saved=writeJSON(RUN_KEY,store.run);else removeSaved(RUN_KEY);const profileSaved=saveProfile(store.profile);if((!saved||!profileSaved)&&!store.storageNotice){store.storageNotice=true;toast('Browser storage is unavailable. Use Settings → Export backup before closing.');}}
-PK.configurePkmn({unlockDialog:(ids,owner)=>unlockDialog(ids,owner),saveRun:()=>saveRun(),updateBoard:()=>updateBoard(),logRun:m=>logRun(m),startMusic:()=>startMusic(),stopMusic:()=>stopMusic()});
+const onBoard=()=>store.view==='board'&&!!store.run;
+PK.configurePkmn({unlockDialog:(ids,owner)=>unlockDialog(ids,owner),saveRun:()=>onBoard()&&saveRun(),updateBoard:()=>onBoard()&&updateBoard(),logRun:m=>onBoard()&&logRun(m),startMusic:()=>startMusic(),stopMusic:()=>stopMusic()});
 configureLauncher({bossDone:(game,coop)=>bossDone(game,coop),journeyWin:i=>journeyNow('win',{},store.run.players[i]),save:saveRun,endTurn,beforeRoll:resumeItemTurn,arcade:()=>{store.busy=false;store.arcade=false;showCatalog('arcade');}});
 const random=()=>store.run?runRandom(store.run):Math.random();
 function focusEffect(before){const run=store.run;if(!run)return;const after=effectSnapshot(run),ids=[run.players[run.current].node];for(let i=0;i<2;i++)if(before?.players[i]&&JSON.stringify(before.players[i])!==JSON.stringify(after.players[i])){ids.push(run.players[i].node);if(before.players[i].node!==run.players[i].node)ids.push(before.players[i].node);}focusBoardAction(run,ids);}
@@ -109,7 +110,7 @@ async function continueRun(){if(!store.run)return home();movementToken++;store.b
  else if(run.phase==='landing'){await resolveLanding();}
  else if(run.phase==='game'){toast('Resuming your interrupted challenge.');await requestGame({id:run.pending.gameId,resume:true});}
  else if(run.phase==='result'){store.busy=true;const pending=run.pending;await presentResult(pending);if(!encounterActive(run,pending,token))return;if(!await unlockDialog(pending.unlocked||[],pending.unlockOwner)||!encounterActive(run,pending,token))return;if(pending.returnToRoll)resumeItemTurn();else endTurn();}
- else if(run.phase==='event'){store.busy=true;const pending=run.pending;if(pending.kind==='shop')await visitShop(pending);else if(pending.kind==='pair-intro')await introducePair(pending.pair);else if(pending.kind==='pair-turn')await presentPairTurn(pending);else if(pending.kind==='boss-gate'){if(pending.stage==='intro'||pending.stage==='drag')await bossGateDrag();else{await startBoss(run.board.realms[run.bossGate.realm].boss,{forced:true});}}else if(pending.kind==='location')await visitLocation(pending.locationId);else if(pending.kind==='location-result'){if(!await unlockDialog(pending.unlocked,pending.owner)||!encounterActive(run,pending,token))return;await showDialog({title:pending.itemId?'Supplies collected':'Landmark discovered',body:pending.message,html:effectHTML(null,pending.itemId?{item:findItem(pending.itemId)}:{icon:'◆'})});if(!encounterActive(run,pending,token))return;await finishEncounter();}else await resolveEvent(pending.event,pending.applied?pending.result:null,!!pending.returnToLanding);}
+ else if(run.phase==='event'){store.busy=true;const pending=run.pending;if(pending.kind==='shop')await visitShop(pending);else if(pending.kind==='pair-intro')await introducePair(pending.pair);else if(pending.kind==='pair-turn')await presentPairTurn(pending);else if(pending.kind==='boss-gate'){if(pending.stage==='intro'||pending.stage==='drag')await bossGateDrag();else{await startBoss(gateBoss(run,run.bossGate),{forced:true});}}else if(pending.kind==='location')await visitLocation(pending.locationId);else if(pending.kind==='location-result'){if(!await unlockDialog(pending.unlocked,pending.owner)||!encounterActive(run,pending,token))return;await showDialog({title:pending.itemId?'Supplies collected':'Landmark discovered',body:pending.message,html:effectHTML(null,pending.itemId?{item:findItem(pending.itemId)}:{icon:'◆'})});if(!encounterActive(run,pending,token))return;await finishEncounter();}else await resolveEvent(pending.event,pending.applied?pending.result:null,!!pending.returnToLanding);}
 }
 async function roll(lucky=false){const run=store.run;if(!run||store.busy||run.phase!=='board'||run.finished)return;const p=run.players[run.current];if(p.rollCommittedTurn===run.turn||lucky&&!p.rerolls)return;focusBoardAction(run);const pair=run.board.format==='warp'?null:drawPairTurn(run,random);if(pair){store.busy=true;const before=effectSnapshot(run);const result=pair.effect==='choice'?null:applyPairTurn(run,pair,store.profile);if(result?.acquisition)queueItemDiscovery(result.acquisition);reconcileGates(p);run.phase='event';run.pending={kind:'pair-turn',event:pair,result,applied:pair.effect!=='choice',lucky,before};saveRun();updateBoard(true);await presentPairTurn(run.pending);return;}store.busy=true;p.mood='thinking';run.zoom=undefined;run.pan=null;const token=++movementToken;
  const {faces,base,note}=rollDice(p,lucky,random);if(lucky)p.rerolls--;const bonus=pairMovementBonus(run)+(p.character==='kc'?1:p.character==='mylo'?(random()<.2?-1:2):0),steps=rollMovement(p,base,bonus);p.rollCommittedTurn=run.turn;
@@ -172,7 +173,7 @@ async function announceLevel(p){
 // ------------------------------------------------------------ warp zones and bosses
 async function enterWarpZone(pipe=null){
  const run=store.run,token=movementToken,id=pickWarpId(run,random),def=WARP_DEFS[id],boss=bossById(def.bossId);
- const choice=await showDialog({title:'A warp pipe!',source:def.source,rare:true,body:`${def.title}. ${def.intro} You will both be warped there.${boss?id==='bond-lair'?` ${boss.name} waits in SPECTRE HQ at the end: beat him and he hands over a Bond villain neither of you has.`:` ${boss.name} guards the castle at the end, and beating them unlocks a new character.`:''}`,choices:[{label:`Jump in · ${def.title}`,value:'go',primary:true},{label:'Walk on by',value:'no'}]});
+ const choice=await showDialog({title:'A warp pipe!',source:def.source,rare:true,body:`${def.title}. ${def.intro} You will both be warped there.${boss?id==='bond-lair'?` ${boss.name} waits in SPECTRE HQ at the end: beat him and he hands over a Bond villain neither of you has.`:` ${boss.name} guards the castle at the end, and beating them unlocks a new character.`:''}${boss&&id!=='pokemon'?' First one to the end wins the zone; the other is dragged to the boss at half a point a space.':''}`,choices:[{label:`Jump in · ${def.title}`,value:'go',primary:true},{label:'Walk on by',value:'no'}]});
  if(choice===null||store.run!==run||token!==movementToken)return;
  if(choice!=='go'){if(pipe){(pipe.warpDeclined||=[]).push(run.current);saveRun();}await finishEncounter();return;}
  if(pipe)pipe.warpUsed=true;
@@ -191,10 +192,22 @@ async function lairWelcome(run){
   else toast(`${q.owner} already has every movie Bond. Licensed to win anyway.`);}
 }
 async function exitWarpZone(){
- const run=store.run,w=run.warp;if(!w)return;
+ const run=store.run,w=run.warp;if(!w)return;if(run.bossGate?.warp)run.bossGate=null;if(run.phase==='event'&&run.pending?.kind==='boss-gate'){run.phase='board';run.pending=null;}
  await warpTransition(()=>{run.board=run.mainBoard;delete run.mainBoard;run.players.forEach((q,i)=>{q.node=w.returns[i]&&run.board.nodes[w.returns[i]]?w.returns[i]:run.board.realms.mind.start;q.visited=q.warpVisited||[];delete q.warpVisited;});run.traps=run.savedTraps||[];delete run.savedTraps;run.warp=null;run.camera='follow';run.pan=null;focusBoardAction(run,run.players.map(q=>q.node));updateBoard(true);},{title:'Back on the map',subtitle:'The party returns from the warp zone.',icon:'🌀'});
  if(store.run!==run)return;setMusicZone(run.board.nodes[run.players[run.current].node].realm);saveRun();store.busy=false;endTurn();
 }
+// Vault Pokémon battles: a throwaway one-space run lets the real battle engine run outside an expedition.
+async function arcadePokemon(kind){
+ if(store.busy||PK_OPEN())return;
+ const who=await showDialog({title:kind==='trainer'?'Random trainer battle':'Random Pokémon encounter',source:'Pokémon',body:'Who is battling? Your team is your character plus five unlocked friends.',choices:[0,1].map(i=>({label:setupNames[i]||(i?'Amber':'Sean'),value:String(i),primary:!i})).concat([{label:'Back',value:'back'}])});
+ if(who!=='0'&&who!=='1')return;const i=+who;
+ const p=newPlayer(setupNames[i]||(i?'Amber':'Sean'),setupSelected[i]||(i?'amber':'sean'),i),run={seed:'vault-'+Date.now(),turn:1,players:[p],board:{nodes:{'mind-start':{id:'mind-start',type:'path',realm:'mind',x:0,y:0,next:[]}},realms:{}}};
+ store.busy=true;
+ try{if(kind==='trainer')await PK.trainerSpace(run,p);else await PK.wildEncounter(run,p,{cause:'vault'});}
+ catch(error){console.error('Vault Pokémon battle failed',error);}
+ finally{store.busy=false;saveProfile(store.profile);if(store.view==='arcade')showCatalog('arcade');}
+}
+const PK_OPEN=()=>gbIsOpen();
 async function warpJump(p,token){
  const n=run_node(p);if(!n?.jump||store.run.board.format!=='warp')return;
  const to=store.run.board.nodes[n.jump];if(!to)return;const up=to.col>n.col;
@@ -203,7 +216,7 @@ async function warpJump(p,token){
 }
 const run_node=p=>store.run.board.nodes[p.node];
 async function startBoss(bossId,{level=null,forced=false}={}){
- const run=store.run,boss=bossById(bossId);if(!boss){if(run.bossGate)await advanceAfterBoss();else await finishEncounter();return;}
+ const run=store.run,boss=bossById(bossId);if(!boss){if(run.warp&&run.bossGate?.warp)await exitWarpZone();else if(run.bossGate)await advanceAfterBoss();else await finishEncounter();return;}
  const warp=!!run.warp,lair=castleName(boss);
  const choices=forced?[{label:'Fight together!',value:'fight',primary:true}]:[{label:'Fight together!',value:'fight',primary:true},{label:warp?'Flee to the map':'Sneak past',value:'flee'}];
  const choice=await showDialog({title:`${boss.name} · ${boss.epithet||'Boss'}`,source:boss.source,rare:true,body:`${warp?'You reach the end of the warp zone.':'The level is over, but '+lair+' blocks the way forward.'} Fight together, win together: beat ${boss.name} to unlock a new character.`,html:`<div class="boss-intro"><span class="boss-icon">${e(boss.icon||'👹')}</span><b>${e(lair)}</b></div>`,choices});
@@ -211,6 +224,9 @@ async function startBoss(bossId,{level=null,forced=false}={}){
  if(choice!=='fight'){if(warp){await exitWarpZone();}else await finishEncounter();return;}
  await requestGame({id:'boss-'+boss.id,origin:'board'});
 }
+// The end of a warp board (not Kanto: Gary's gym has its own flow) works like a level gate.
+function warpGateReady(run,n){return run.board.format==='warp'&&!!run.warp&&!!run.board.warp?.bossId&&run.board.warp.id!=='pokemon'&&n.id===run.board.realms.warp?.gate&&!run.bossGate;}
+const gateBoss=(run,bg)=>bg.bossId||run.board.realms[bg.realm]?.boss;
 // A level gate with a boss that has not been fought yet this run.
 function bossGateReady(run,n){
  if(run.mutation||run.endless||run.board.format==='warp'||!['mind','body','spirit','horror'].includes(n.realm))return false;
@@ -224,7 +240,15 @@ function shortestPath(run,from,to){
 // The first player through a level gate wins the level. Everyone else is dragged to
 // the castle along the most direct road, paying half a point per space, then the boss arrives.
 async function levelEndBoss(p,gate){
- const run=store.run,realm=gate.realm,boss=bossById(run.board.realms[realm].boss);
+ const run=store.run,realm=gate.realm;
+ if(run.board.format==='warp'){
+  const def=run.board.warp||{};run.bossGate={gate:gate.id,realm:'warp',winner:run.players.indexOf(p),warp:true,bossId:def.bossId};
+  run.phase='event';run.pending={kind:'boss-gate',stage:'intro'};saveRun();
+  logRun(`${p.name} reaches the end of ${def.title||'the warp zone'} first.`);sound('win');p.mood='win';updateBoard();
+  await showDialog({title:`${p.name} clears the warp zone!`,source:'ShambConkins',rare:true,body:`${p.name} reached the end of ${def.title||'the warp zone'} first. Everyone else gets dragged to the boss: half a point for every space.`,html:`<div class="result-portraits">${portraitHTML(p.character,'portrait mini','win')}</div>`});
+  if(store.run!==run)return;
+  await bossGateDrag();return;
+ }
  // Whoever is stuck in the Upside Down comes back first, so they are dragged along the real road.
  if(run.upsideDown){const q=run.players[run.upsideDown.owner];if(q&&run.board.nodes[run.upsideDown.returnNode])q.node=run.upsideDown.returnNode;run.upsideDown=null;}
  run.bossesSeen||={};run.bossesSeen[realm]=true;run.bossGate={gate:gate.id,realm,winner:run.players.indexOf(p)};
@@ -248,14 +272,14 @@ async function bossGateDrag(){
    await wait(store.profile.settings.reducedMotion?60:Math.max(140,420-path.length*12));
   }
   banner.close();logRun(`${q.name} was dragged ${path.length} spaces to the boss (−${Math.round(lost*10)/10}).`);
-  q.cleared.includes(gate.realm)||q.cleared.push(gate.realm);
+  if(!bg.warp)q.cleared.includes(gate.realm)||q.cleared.push(gate.realm);
   await wait(400);
  }
  focusBoardAction(run,run.players.map(q=>q.node));updateBoard();
  run.pending={kind:'boss-gate',stage:'fight'};saveRun();
- const boss=bossById(run.board.realms[bg.realm].boss);
+ const boss=bossById(gateBoss(run,bg));
  await showBossCard(boss);if(store.run!==run)return;
- await startBoss(boss.id,{level:bg.realm,forced:true});
+ await startBoss(boss?.id,{level:bg.warp?null:bg.realm,forced:true});
 }
 // After a level boss: everyone moves on to the next level together.
 async function advanceAfterBoss(){
@@ -282,7 +306,7 @@ async function moveSteps(token){
  if(run.pending?.wild){if(await pokemonStep(run,p,run.board.nodes[p.node],token,true)===false)return;}
  while(run.pending?.left>0&&token===movementToken){
   const target=await stepTarget(run,p,token);if(token!==movementToken||store.run!==run)return;if(!target){if(routeOptions(run,p.node).length){store.busy=false;saveRun();return;}run.pending.left=0;break;}
-  p.mood='walking';p.visited.push(p.node);reportJourney(journeyStep(run,p,p.node,target));const fromRealm=run.board.nodes[p.node]?.realm;p.node=target.id;run.pending.left--;delete run.pending.routeDecision;awardGate(p,target);setMusicZone(target.realm);focusBoardAction(run);saveRun();updateBoard();sound('tap');if(target.type==='gate'&&bossGateReady(run,target)){run.pending.left=0;await levelEndBoss(p,target);return;}if(target.type==='warp'&&!target.warpUsed&&!(target.warpDeclined||[]).includes(run.current)&&run.pending.left>0){run.pending.left=0;toast('A warp pipe! Stop and look inside?');break;}if(target.realm!==fromRealm&&!p.finishedPlayer){await announceLevel(p);if(token!==movementToken||store.run!==run)return;}if(await pokemonStep(run,p,target,token)===false)return;if(p.finishedPlayer){run.pending.left=0;break;}await wait(store.profile.settings.reducedMotion?35:270);
+  p.mood='walking';p.visited.push(p.node);reportJourney(journeyStep(run,p,p.node,target));const fromRealm=run.board.nodes[p.node]?.realm;p.node=target.id;run.pending.left--;delete run.pending.routeDecision;awardGate(p,target);setMusicZone(target.realm);focusBoardAction(run);saveRun();updateBoard();sound('tap');if(target.type==='gate'&&(bossGateReady(run,target)||warpGateReady(run,target))){run.pending.left=0;await levelEndBoss(p,target);return;}if(target.type==='warp'&&!target.warpUsed&&!(target.warpDeclined||[]).includes(run.current)&&run.pending.left>0){run.pending.left=0;toast('A warp pipe! Stop and look inside?');break;}if(target.realm!==fromRealm&&!p.finishedPlayer){await announceLevel(p);if(token!==movementToken||store.run!==run)return;}if(await pokemonStep(run,p,target,token)===false)return;if(p.finishedPlayer){run.pending.left=0;break;}await wait(store.profile.settings.reducedMotion?35:270);
  }
  if(token!==movementToken)return;await warpJump(p,token);if(token!==movementToken)return;p.mood='happy';run.phase='landing';run.pending={kind:'landing'};focusBoardAction(run);saveRun();store.busy=false;updateBoard();await resolveLanding();
 }
@@ -347,7 +371,7 @@ async function resolveLanding(){const run=store.run,token=movementToken;if(!run|
   case 'item':{const before=effectSnapshot(run);const cacheRandom=Number.isFinite(n.cacheSeed)?seededRandom(n.cacheSeed+':'+(n.cacheVisits||0)):random,tool=run.board.obstacles?.length&&(p.travelFinds||0)<2?nearbyTravelTool(run,p,cacheRandom):null,it=tool||warpItem(run,p,store.profile,cacheRandom,findItem)||randomItem(cacheRandom,{player:p,profile:store.profile}),found=acquireItem(run,store.profile,p,it);if(tool)p.travelFinds=(p.travelFinds||0)+1;n.cacheVisits=(n.cacheVisits||0)+1;logRun(`${p.name}: ${found.message}`);run.phase='event';run.pending={kind:'location-result',message:found.message,unlocked:found.unlocked,owner:found.owner};saveRun();if(found.unlocked.length){sound('unlock');if(!await unlockDialog(found.unlocked,found.owner)||store.run!==run||movementToken!==token)return;}const answer=await showDialog({title:'A useful find',source:it.source,body:found.message,html:`${effectHTML(before,{item:it})}<h3 style="text-align:center">${e(it.name)}</h3><div class="how-to">${e(itemDescription(it))}</div>`,choices:foundChallengeChoices(it)});if(store.run!==run||movementToken!==token)return;animateItemTransfers(before);if(answer==='play')return playFoundChallenge(p,it);await finishEncounter();break;}
   case 'bonus':case 'penalty':{const before=effectSnapshot(run);const fortune=warpFortune(run,n.type,random)||themedFortune(n.type,random),delta=n.type==='bonus'?4:p.cloak?0:-3,r=pointChange(p,delta);logRun(`${p.name}: ${r.blocked?'penalty shield used':(r.delta>=0?'+':'')+r.delta+' points'}.`);run.phase='event';run.pending={kind:'location-result',message:r.blocked?'Your shield took the hit.':`${r.delta>=0?'+':''}${r.delta} points.`,unlocked:[]};saveRun();await showDialog({title:fortune.title,source:fortune.source,body:r.blocked?'Your shield took the hit.':fortune.body,html:`${effectHTML(before,{icon:r.delta<0?'⚡':'✦'})}<div class="reward-delta ${r.delta<0?'bad':''}">${r.delta>=0?'+':''}${r.delta}</div>`});if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}
   case 'warp':if(n.warpUsed||(n.warpDeclined||[]).includes(run.current)){await finishEncounter();break;}await enterWarpZone(n);break;
-  case 'gate':if(run.board.warp?.id==='pokemon'){await pokemonGym(p,token);break;}if(run.board.format==='warp'){await startBoss(run.board.warp.bossId);break;}await finishEncounter();break;
+  case 'gate':if(run.board.warp?.id==='pokemon'){await pokemonGym(p,token);break;}if(run.board.format==='warp'){if(run.board.warp?.bossId)await levelEndBoss(p,run_node(p));else await finishEncounter();break;}await finishEncounter();break;
   case 'start':default:await finishEncounter();break;
  }
 }
@@ -451,6 +475,7 @@ async function action(name,target){
   case 'filter':catalogFilter=target.dataset.id;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;
   case 'catalog-page':catalogPage=Math.max(0,+target.dataset.page||0);showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;
   case 'arcade-game':await requestGame({id:target.dataset.id,origin:'arcade'});break;
+  case 'arcade-pokemon':await arcadePokemon(target.dataset.id);break;
   case 'dev-game':if(store.profile.settings.devMode)await requestGame({id:target.dataset.id,origin:'dev'});break;
   case 'dev-mode':store.profile.settings.devMode=!store.profile.settings.devMode;saveProfile(store.profile);showCatalog('arcade');break;
   case 'media-sources':{let page=0;while(true){const choice=await showDialog({title:'Reference artwork sources',body:'Property logos, posters and image collection links. '+MEDIA_SOURCES.length+' source entries.',html:sourcesHTML(page),choices:[...(page?[{label:'← Previous',value:'prev'}]:[]),...((page+1)*10<MEDIA_SOURCES.length?[{label:'Next sources →',value:'next'}]:[]),{label:'Done',value:'done',primary:true}]});if(choice==='next')page++;else if(choice==='prev')page--;else break;}break;}
@@ -468,6 +493,7 @@ async function action(name,target){
  }
 }
 document.addEventListener('click',event=>{const choice=event.target.closest('[data-dialog-choice]');if(choice){resolveDialog(+choice.dataset.dialogChoice);return;}const target=event.target.closest('[data-action]');if(target&&!(target.closest?.('#map-root')&&performance.now()<(store.suppressMapClickUntil||0)))void action(target.dataset.action,target).catch(error=>{console.error('Action failed',target.dataset.action,error);store.busy=false;saveRun();toast('That action was interrupted. Your progress is saved.');});});
+document.addEventListener('change',event=>{if(event.target.id==='catalog-filter'){catalogFilter=event.target.value;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter});}});
 document.addEventListener('input',event=>{if(event.target.id==='catalog-search'){const focus=event.target.selectionStart;catalogQuery=event.target.value;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});const input=document.getElementById('catalog-search');input.focus();input.setSelectionRange(focus,focus);}});
 document.getElementById('dialog').addEventListener('cancel',event=>{event.preventDefault();const i=store.dialog?.choices.findIndex(c=>['cancel','no','stay'].includes(c.value));if(i>=0)resolveDialog(i);});
 window.addEventListener('pagehide',saveRun);window.addEventListener('orientationchange',()=>{if(store.view==='board'&&!store.session)setTimeout(()=>updateBoard(true),100);});

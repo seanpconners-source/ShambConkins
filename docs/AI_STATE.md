@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.54.2 (`releases/ShambConkins_v0.54.2.html`).
+Version 0.55.0 (`releases/ShambConkins_v0.55.0.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -78,8 +78,8 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   Quark's shop is a bottom sheet (`showDialog({sheet:true})`, choice `tag`/`badge`, `itemTag()` in `items.js`).
   Tests: `tests/itemgame.mjs`, `tests/shop.mjs` (screenshots to /tmp/claude-0/sc).
 - v0.46.2–3: fullscreen (`src/fullscreen.js`): first tap enters it (browsers need a gesture); toggles via `fullscreenButton()`
-  in home stack, every top bar and Settings; open modal dialogs are re-raised on change. Vault now uses `fitCatalogPage`
-  like the roster and `refitCatalog()` re-measures on resize/fullscreen.
+  in home stack, every top bar and Settings; open modal dialogs are re-raised on change. Collections scroll endlessly
+  since v0.55 (no pages).
 
 - v0.46.4: Beer Pong + Flipadelphia visual overhaul. Drawing lives in `src/engines/pubVisuals.js` (cached pub room +
   table layer, neon sign, solo cups, 3D flip cup with culling, fx: particles/pops/shake). Physics/flick functions in
@@ -135,6 +135,14 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   bezel. Test: `tests/encounter.mjs` (screenshots `/tmp/claude-0/sc/enc-*`).
 - v0.54.2: on portrait screens (`aspect<1`) `cameraBox` scales warp boards' (`format:'warp'`) follow span by `aspect*.75`,
   so spaces read without pinching. Screenshots: `node tests/warp.mjs 390x780` → `/tmp/claude-0/warp-*`.
+- v0.55.0: Flip cup needs a firm flick (`flipFlick` power ~0.95–1.45 lands; seeded wobble via `rng` arg = `s.random`).
+  Warp boards end like levels: `warpGateReady` + `levelEndBoss`/`bossGateDrag` with `run.bossGate={warp:true,bossId,realm:'warp'}`
+  (`gateBoss()`), `exitWarpZone` clears it; Kanto keeps the gym. Landmark labels come from `src/data/iconicPlaces.js`
+  (source → iconic place, applied in `references.js`; personal sources absent on purpose). Vault/roster (`catalogHTML` in
+  `ui.js`) render 24-card chunks and append on scroll (`installCatalogFeed`, IntersectionObserver on `.catalog-more`);
+  filters are a `<select id=catalog-filter>`. Boss games unlock in the vault once beaten (`bossBeaten` in gameRegistry,
+  `profile.bossesBeaten`, older wins count via the boss's shared unlock); `POKEMON_MATCHES` + `arcadePokemon()` in app.js
+  run wild/trainer battles on a throwaway one-space run. Tests: `tests/warpboss.mjs`, `tests/vault.mjs`, `tests/catalogshots.mjs`.
 - Launch music: boot now starts the home score (it used to call `showView('home')` without `home()`), and
   `installAudioUnlock()` (audio.js) resumes the suspended AudioContext on the first tap/key.
 

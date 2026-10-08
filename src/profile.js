@@ -12,7 +12,7 @@ function loadProfile() {
  const ids = new Set([...CATALOG.characters.map(c=>c.id),'gordon-ramsay']);
  if (saved?.version === 20) {
   for(const key of ['xp','runs','completed','minigames'])p[key]=number(saved[key]);
-  for(const key of ['played','games','recentGames','recentTrivia','itemsSeen','locations','pairDiscoveries','boardUnlocks'])p[key]=strings(saved[key]);
+  for(const key of ['played','games','recentGames','recentTrivia','itemsSeen','locations','pairDiscoveries','boardUnlocks','bossesBeaten'])p[key]=strings(saved[key]);
   p.triviaDifficultyBag=[...new Set(strings(saved.triviaDifficultyBag).filter(d=>['easy','medium','hard','impossible'].includes(d)))];
   p.minigames=Math.max(p.minigames,p.played.length);for(const owner of ['Sean','Amber'])p.recruitDryStreak[owner]=Math.min(1,number(saved.recruitDryStreak?.[owner]));
   for(const key of ['boards','modes'])if(Array.isArray(saved[key]))p[key]=strings(saved[key]);

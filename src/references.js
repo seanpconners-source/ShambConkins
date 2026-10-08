@@ -2,6 +2,7 @@ const {normalizeSource:normalizeReferenceSource, sourceMatches:referenceSourceMa
 const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
 const {CHARACTERS, characterIdentity, SPECIAL_UNLOCKS}=require("src/characters.js");
 const {GENERIC,registerSourceTypes,venueFor}=require("src/venues.js");
+const {ICONIC_PLACES}=require("src/data/iconicPlaces.js");
 const {GAMES, EVENT_GAMES}=require("src/gameRegistry.js");
 const {resolveEncounterGame}=require("src/encounterGames.js");
 const {selectItemDrop}=require("src/itemDrops.js");
@@ -155,6 +156,8 @@ const REFERENCE_LANDMARKS = SOURCE_UNIVERSE.filter(source=>!['ShambConkins Horro
 // Replace generic stops ("X studio door", "X crossover stop") with a fitting venue.
 registerSourceTypes(REFERENCE_GROUPS.map(g=>[g.source,g.type]));
 for(const l of REFERENCE_LANDMARKS){if(!GENERIC.test(l.name))continue;const v=venueFor(l.source);l.name=v.name;l.venue=v.kind;l.icon=v.icon;}
+// Board labels: the iconic place from each property (venue art/kind above stays).
+for(const l of REFERENCE_LANDMARKS){const iconic=ICONIC_PLACES.get(l.source);if(iconic)l.name=iconic;}
 
 
 function playableCard(card,source,owned) {

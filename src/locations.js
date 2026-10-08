@@ -3,7 +3,7 @@ const {LAB_LOCATION}=require("src/data/savoryLab.js");
 const LOCATIONS = [
  ['mighty-ducks-rink','Mighty Ducks Ice Rink','The Mighty Ducks','body','🏒',[],'Quack, quack! A five-shot hockey challenge. A first win recruits Emilio Estevez / Coach Bombay to the winner’s roster.'],
  ['parents','My Parents’ House','Home','mind','🏡',['chris-parent','angie-parent'],'A familiar driveway. Say hello to Mom, Dad and two extremely good dogs.'],
- ['dunder','Dunder Mifflin / Scranton','The Office','mind','🏢',['michael-scott','dwight-schrute','jim-halpert','pam-beesly'],'The paper business has become unnecessarily competitive.'],
+ ['dunder','Dunder Mifflin','The Office','mind','🏢',['michael-scott','dwight-schrute','jim-halpert','pam-beesly'],'The paper business has become unnecessarily competitive.'],
  ['dunshire','The Cones of Dunshire','Parks and Recreation','mind','🔶',['ben-wyatt'],'You forgot the essence of the game. Again.'],
  ['paddys','Paddy’s Pub','Always Sunny','mind','🍻',['charlie','mac','dee','dennis','frank'],'The health inspection is not going well.'],
  ['quarks','Quark’s','Star Trek','mind','🛸',['quark','worf','sisko','data','picard'],'The house takes a cut. The house also has ears.'],

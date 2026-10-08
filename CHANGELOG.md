@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.55.0
+
+**Flipadelphia needs a real flick.** A barely-there touch used to land the cup every time. Now a soft flick
+under-rotates and a wild one over-rotates; a firm, deliberate flick lands rim-down. Every flip also wobbles a little
+(seeded), so the same flick isn't a guaranteed hit.
+
+**Warp zones end like levels.** The first player to reach the end of a warp board wins the zone; the other player is
+dragged to the boss along the road, losing half a point per space (with the running tally banner), then INCOMING BOSS
+and a co-op fight. Win or retreat, both return to the main map. Kanto keeps Rival Gary's gym.
+
+**Board landmarks use the iconic place names.** The generated "Hill Valley Drive-In Screening"-style labels are gone:
+each property's landmark is now its well-known spot (Fhloston Paradise, Nakatomi Plaza, Moe's Tavern, Camp Crystal Lake,
+...). Ids are unchanged, so saves keep working. Bosses and personal places (Parents' House, Unlimited Savory Systems,
+Home, friends) are untouched.
+
+**Vault and roster scroll endlessly.** No more Next/Previous pages: cards keep loading as you scroll. The search box is
+full size and readable, and the filters moved into one dropdown.
+
+**Boss rematches and Pokémon in the vault.** A boss you have beaten can be fought again from the vault (new "Bosses"
+filter shows all of them, beaten or not; beaten ones also appear under All games). Two new vault entries start a random
+wild Pokémon encounter or a random trainer battle for Sean or Amber.
+
 ## v0.54.2
 
 **Warp boards open close enough to read on a portrait phone.** The warp-board camera used its landscape span on
