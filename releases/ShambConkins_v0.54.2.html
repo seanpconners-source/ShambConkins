@@ -9198,7 +9198,7 @@ Object.assign(exports,{LEGENDS_ITEMS});
 
 },
 "src/version.js":(exports,require)=>{
-const VERSION='0.54.1';
+const VERSION='0.54.2';
 Object.assign(exports,{VERSION});
 
 },
@@ -12355,7 +12355,10 @@ function cameraBox(run,aspect=1.2){
  const minX=Math.min(...points.map(n=>n.x)),maxX=Math.max(...points.map(n=>n.x)),minY=Math.min(...points.map(n=>n.y)),maxY=Math.max(...points.map(n=>n.y));
  const large=run.players.some(p=>p.large>0&&nodes.some(n=>n.id===p.node)),verticalPadding=(nodes.some(n=>n.type==='location')?330:large?320:230)+70*pieceScale(run);
  const spanX=maxX-minX+(large?330:230),spanY=maxY-minY+verticalPadding;
- let width=Math.min(w,Math.max(baseSpan(run)/(run.zoom||1.2),aspect*verticalPadding));
+ // Warp boards are wide scenes: on a portrait phone their landscape span shrank every space to a dot,
+ // so there the span follows the screen's narrow side and the camera starts close enough to read the spaces.
+ const span=baseSpan(run)/(run.zoom||1.2)*(run.board.format==='warp'&&aspect<1?aspect*.75:1);
+ let width=Math.min(w,Math.max(span,aspect*verticalPadding));
  if(!run.pan)width=Math.min(w,Math.max(width,spanX,spanY*aspect));
  let height=width/aspect;if(!run.pan&&nodes.length>1)height=Math.max(height,Math.min(h,spanY));height=Math.min(h,height);
  const cx=Number.isFinite(run.pan?.x)?run.pan.x:(minX+maxX)/2,cy=Number.isFinite(run.pan?.y)?run.pan.y:(minY+maxY)/2;

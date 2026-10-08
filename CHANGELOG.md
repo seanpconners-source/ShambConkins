@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.54.2
+
+**Warp boards open close enough to read on a portrait phone.** The warp-board camera used its landscape span on
+portrait screens, so every space was a dot until you pinched in. On a portrait screen the span now follows the narrow
+side of the map, on every warp board (Green Hill, Mario, Pokémon and the rest). Landscape and desktop views are unchanged.
+
 ## v0.54.1
 
 **Sonic and Super Mario Bros. are now played in turns, full screen.** Instead of a split screen, each player gets

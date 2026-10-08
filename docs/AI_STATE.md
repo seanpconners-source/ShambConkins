@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.54.1 (`releases/ShambConkins_v0.54.1.html`).
+Version 0.54.2 (`releases/ShambConkins_v0.54.2.html`).
 
 ## Implemented systems
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -133,6 +133,8 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   (trainer speech) `transition(kind)` runs inside it. Intro slides in silhouettes. Foes have `healsLeft` (1, gym 2)
   for heal/rest moves. `gen1Catch` = pokered catch + shake formula (red HP → catch rate ≥160). `.gb-fs` toggle in the
   bezel. Test: `tests/encounter.mjs` (screenshots `/tmp/claude-0/sc/enc-*`).
+- v0.54.2: on portrait screens (`aspect<1`) `cameraBox` scales warp boards' (`format:'warp'`) follow span by `aspect*.75`,
+  so spaces read without pinching. Screenshots: `node tests/warp.mjs 390x780` → `/tmp/claude-0/warp-*`.
 - Launch music: boot now starts the home score (it used to call `showView('home')` without `home()`), and
   `installAudioUnlock()` (audio.js) resumes the suspended AudioContext on the first tap/key.
 
