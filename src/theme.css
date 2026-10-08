@@ -29,7 +29,9 @@ body[data-theme="warp-clue"]{--t-bg0:#0a0604;--t-bg1:#1f110a;--t-glow:#5a2a14;--
 body[data-theme="warp-hyrule"]{--t-bg0:#050a05;--t-bg1:#0e1e0e;--t-glow:#2a5a1a;--t-glow2:#6a5a10;--t-s1:#1f3121;--t-s2:#121f13;--t-s3:#29402b;--t-well:#070f07;--t-sub:#c8deb2;--t-dim:#8ea47a;--t-acc:#f2d35a;--t-acc2:#3f9a3a;--t-acc-ink:#1a1a04;--t-hot:#7fd8ff}
 body[data-theme="warp-green-hill"]{--t-bg0:#030816;--t-bg1:#0a1b3d;--t-glow:#1a52b0;--t-glow2:#2a8a3a;--t-s1:#182d53;--t-s2:#0f1c37;--t-s3:#213b69;--t-well:#060d1f;--t-sub:#b6d3ff;--t-dim:#7f9cc8;--t-acc:#ffd23a;--t-acc2:#2a7ae0;--t-acc-ink:#0a1430;--t-hot:#7cff9a}
 body[data-theme="warp-bond-lair"]{--t-bg0:#070505;--t-bg1:#1a0f0c;--t-glow:#6a1410;--t-glow2:#3a3d44;--t-s1:#2a2224;--t-s2:#181314;--t-s3:#352c2e;--t-well:#0c0909;--t-sub:#e4d6cc;--t-dim:#a8968c;--t-acc:#e8c45a;--t-acc2:#c8161d;--t-acc-ink:#1a1006;--t-hot:#ff6a4a}
+body[data-theme="warp-south-park"]{--t-bg0:#0b1424;--t-bg1:#16264a;--t-glow:#2f6bb0;--t-glow2:#2f6b4a;--t-s1:#1f3358;--t-s2:#142440;--t-s3:#2a4270;--t-well:#0a1222;--t-sub:#d8e8fb;--t-dim:#94aed0;--t-acc:#ffd23c;--t-acc2:#ff3b6b;--t-acc-ink:#1a1206;--t-hot:#ff7a3a}
 
+body[data-theme="warp-castlevania"]{--t-bg0:#050308;--t-bg1:#140a14;--t-glow:#5c1424;--t-glow2:#2c1c4c;--t-s1:#26182a;--t-s2:#170e1a;--t-s3:#322036;--t-well:#0a060c;--t-sub:#e8d6c8;--t-dim:#a89088;--t-acc:#f8b800;--t-acc2:#d82800;--t-acc-ink:#1a0c04;--t-hot:#fc7460}
 /* ---------- Page backdrop ---------- */
 html,body{background-color:var(--t-bg0)}
 body{color:var(--t-text);background:radial-gradient(ellipse 90% 50% at 50% 0%,var(--t-glow) 0%,transparent 70%),radial-gradient(ellipse 70% 40% at 50% 108%,color-mix(in srgb,var(--t-glow2) 55%,transparent),transparent 70%),linear-gradient(180deg,var(--t-bg1) 0%,var(--t-bg0) 70%);background-attachment:fixed;transition:background-color .4s}
@@ -322,3 +324,13 @@ body.reduced-motion .cs-face,body.reduced-motion .cs-face img{transition:opacity
 /* Rare encounters keep the dark dialog (styles.css gave them a light card under light text). */
 body .dialog-content.rare{background:radial-gradient(ellipse 120% 60% at 50% 0%,color-mix(in srgb,var(--t-acc) 22%,transparent),transparent 70%),linear-gradient(180deg,var(--t-s1) 0%,var(--t-s2) 100%)}
 body .dialog-content.rare p{color:var(--t-sub)}
+/* Collection tools (v0.55): a readable search box, filters in one dropdown, entry count; the grid scrolls endlessly. */
+body .catalog-shell .catalog-tools{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;margin-bottom:10px}
+body .catalog-shell .catalog-tools input{flex:1 1 auto;min-width:0;max-width:none;min-height:44px;padding:10px 14px;font-size:16px;flex-basis:auto}
+body .catalog-shell .catalog-tools select{flex:0 1 auto;min-width:0;max-width:min(48%,300px);min-height:44px;padding:8px 32px 8px 12px;font-size:14px;font-weight:800;appearance:none;-webkit-appearance:none;cursor:pointer;text-overflow:ellipsis;
+ background-image:linear-gradient(45deg,transparent 50%,var(--t-acc) 50%),linear-gradient(135deg,var(--t-acc) 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+body .catalog-shell .catalog-tools select option{color:#111;background:#fff}
+body .catalog-shell .catalog-count{flex:0 0 auto;min-width:30px;text-align:center;font-size:11px;font-weight:800;color:var(--t-dim)}
+body .catalog-shell .catalog-more{grid-column:1/-1;height:1px}
+body .catalog-shell .arcade-card.boss-match:not(.locked){box-shadow:inset 0 0 0 2px #d01c2c88}
+@media(max-width:600px){body .catalog-shell .catalog-tools input{font-size:16px;padding:9px 12px}body .catalog-shell .catalog-tools select{max-width:46%;font-size:13px}}

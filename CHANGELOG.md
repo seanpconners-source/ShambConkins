@@ -1,5 +1,141 @@
 # Changelog
 
+## v0.58.2
+
+**Castlevania warp zone — Dracula's Castle.** NES-style stage map, Clock Tower boss fight with Death, original gothic chip-baroque music, themed items, chance cards and trivia. Two pass-and-play minigames: Vampire Killer Dash and Night of the Candles. Prison Mike now has his own unlock line. Integrated on top of v0.58.1, preserving newer South Park, Pokémon, minigame and boss content.
+
+## v0.58.1
+
+**Every character's mood art now shows in Pokémon battles.** Sean's and Amber's built-in mood photos (and moods that
+share one picture, like Alex's angry/think face) were being skipped; they now switch faces in battle like Forrest and
+Taskmaster. Full rectangular photos are trimmed to a head oval instead of showing as a box. New drop-in portraits and
+moods (`assets/portraits/<id>.<mood>.webp`) still work automatically.
+
+## v0.58.0
+
+**Ten of the original simple minigames rebuilt from scratch.** An audit of all 112 pool games flagged the early
+button-and-emoji games as the weak spots; each one is now a full touch game with its own art, sound and a real hook.
+Ids and engine names are unchanged, so saves and board events keep working.
+
+- **Brawndo Fruit Merge** → Suika-style physics jars, both players at once. Merge fruit up to your rival's head;
+  two heads explode for +150. Overflow the line and you top out.
+- **Pancakes, Divorce, Pancakes** → simultaneous eating contest: bite on the chew beat, mashing makes you queasy,
+  throwing up costs two pancakes, golden stacks count double, and when Suzanne calls you put the fork down.
+- **Skynet Identification** → find the Terminator in a crowd seen through T-800 vision. Seven rounds teach a tell
+  each (eye glint, chrome skin, not flinching at the dog, a perfect march). Shoot a human and your scanner locks.
+- **Paper Route** → a real Paperboy street: steer the bike, tap where the paper lands. Mailboxes, doorsteps, smashing
+  non-subscribers' windows, dogs, cars, potholes and paper bundles.
+- **Boulder Run** → two temple corridors at once; jump pits and spikes, slide under darts, grab idols, and every
+  stumble lets the boulder roll closer.
+- **BASEketball** → baseball rules with a basketball: choose single/double/triple/home-run spots, runners advance,
+  three outs per inning, and the defender gets two PSYCH-OUTs per inning to wreck your aim.
+- **Penalty Kicks** → real-time on one phone: the striker swipes (aim, power, curl), the keeper swipes to dive.
+  Five each, then sudden death.
+- **Dinner Service** → a burger line: tickets, a three-slot grill (gold ring = perfect, red = "IT'S RAW!"), build
+  bottom-up and tap the plate to serve.
+- **Alien · Motion Tracker** → blips only show on each ping, pings speed up as they close in, flamethrower with
+  limited fuel. Don't torch Jonesy.
+- **WarGames · Vanishing Tic-Tac-Toe** → each player keeps only three heads; your fourth erases your oldest.
+
+## v0.57.0
+
+**Pokémon battles show your characters' moods.** Every head you upload already becomes a Game Boy sprite (the same
+dithered Gen 1 look as the rest), and now every mood picture you uploaded gets its own sprite too. In battle your
+Pokémon looks thoughtful while you pick a move, grins when it lands a hit, gets angry when it's hit or hurt by
+poison or a burn, goes silly when it hurts itself in confusion, and looks sad when it misses or faints. A beaten
+trainer comes back looking sad. Characters with only one picture keep it, and no generated placeholders are used.
+
+## v0.56.4
+
+**Only your uploaded heads, no grey silhouettes.** v0.56.3 let generated placeholder art beat your photos (Forrest,
+Taskmaster and others showed a grey "FM"/"TT" silhouette in the roster and in their expression cycle). Characters with
+an uploaded head now use only the images you supplied: a mood picture when you gave one, otherwise their main photo.
+
+## v0.56.3
+
+**Every mood portrait you dropped in now shows up.** Characters with a base photo (Forrest, Taskmaster, Ace, the
+Always Sunny gang, Cartman, Prison Mike, Frank, Mac, Gizzard) were stuck on that one picture; now their think, win,
+silly, angry, sad and walk faces appear. On the board the idle faces also cycle through silly and angry, and character
+select shows every expression instead of only the first five.
+
+## v0.56.2
+
+**Wide-screen boss fights are as hard as portrait ones.** The new wide arena turned out about 28% easier (a simulated
+pair took 6.9 hits a minute instead of 9.6), so bosses now fight the whole field: aimed volleys, fans, lasers,
+flame breath and waves go after both players on their own flanks, the piranha trapdoors and Riddler's lanes come in
+narrower panels with a safe spot near each of you, falling walls drop from the top with a gap for each player, the
+wrecking ball's chain is long enough to reach you, and drones hover where they can bother you. Wide arenas also
+attack a little faster and denser. Your guns lock onto a nearby minion before the boss, so drones get shot down.
+Measured across all 36 bosses, wide and landscape fights now land within about 7% of portrait in hits taken and
+damage dealt. Phones held upright are unchanged.
+
+## v0.56.1
+
+**Boss fights fill the screen.** On desktops, tablets in landscape and phones held sideways the arena now stretches to
+the whole screen instead of a narrow strip in the middle. The boss takes centre stage, a little bigger, and each player
+starts on their own side of it; planes turn to face the boss and their guns, MEGA BEAM and star barrage aim at it, and
+planes can't fly through the boss. Short landscape screens hide the score bar, status line and help strip so the
+fight gets the height. Phones held upright play exactly as before.
+
+## v0.56.0
+
+**New warp zone: South Park, Colorado.** The board is the town map: snowy streets with snowbanks under the Rocky
+Mountains, the bus stop and the Welcome to South Park sign, Stan's, Kyle's, Cartman's and Kenny's houses, Main Street
+(Tweek Bros. Coffee, City Wok, Skeeter's), South Park Elementary, City Hall, Hell's Pass Hospital, Big Gay Al's
+sanctuary, and Stark's Pond at the end with Mecha-Streisand wading in it. Own interface colours and an original
+mountain-town folk-rock score.
+
+**South Park characters.** 26 new ones (Stan, Kyle, Kenny, Chef, Mr. Garrison, Mr. Mackey, Wendy, Tweek, Craig, Jimmy,
+Timmy, Token, Ike, Mr. Hankey, Terrance, Phillip, Officer Barbrady, Big Gay Al, Sheila, Uncle Jimbo, ManBearPig,
+Scott Tenorman, PC Principal, Pip, Robert Smith, Leonard Maltin) that only join in the warp zone. Arriving in town
+recruits one you don't have for each player, every game won there recruits another for the winner, and three Chance
+cards ("New kid in town", ...) do the same. Cartman, Butters, Randy and Towelie can also turn up there.
+
+**Boss: Mecha-Streisand.** A steel kaiju with Barbra Streisand behind the visor, signature attack TRIANGLE OF ZINTHAR
+(three spinning beams). Beat her and Barbra Streisand joins both rosters.
+
+**Three South Park minigames.** Dodgeball World Championship (flick to throw, don't hit Kenny), Cheesy Poofs Catch
+(catch snacks, dodge Mr. Hankey) and They Killed Kenny! (tap the pianos, rats, meteors and saucers before they reach
+him). The zone also deals the older South Park Snowball Fight and Waiting for the Wii, 34 new South Park trivia
+questions, twelve South Park items and South Park fortunes.
+
+## v0.55.0
+
+**Flipadelphia needs a real flick.** A barely-there touch used to land the cup every time. Now a soft flick
+under-rotates and a wild one over-rotates; a firm, deliberate flick lands rim-down. Every flip also wobbles a little
+(seeded), so the same flick isn't a guaranteed hit.
+
+**Warp zones end like levels.** The first player to reach the end of a warp board wins the zone; the other player is
+dragged to the boss along the road, losing half a point per space (with the running tally banner), then INCOMING BOSS
+and a co-op fight. Win or retreat, both return to the main map. Kanto keeps Rival Gary's gym.
+
+**Board landmarks use the iconic place names.** The generated "Hill Valley Drive-In Screening"-style labels are gone:
+each property's landmark is now its well-known spot (Fhloston Paradise, Nakatomi Plaza, Moe's Tavern, Camp Crystal Lake,
+...). Ids are unchanged, so saves keep working. Bosses and personal places (Parents' House, Unlimited Savory Systems,
+Home, friends) are untouched.
+
+**Vault and roster scroll endlessly.** No more Next/Previous pages: cards keep loading as you scroll. The search box is
+full size and readable, and the filters moved into one dropdown.
+
+**Boss rematches and Pokémon in the vault.** A boss you have beaten can be fought again from the vault (new "Bosses"
+filter shows all of them, beaten or not; beaten ones also appear under All games). Two new vault entries start a random
+wild Pokémon encounter or a random trainer battle for Sean or Amber.
+
+## v0.54.2
+
+**Warp boards open close enough to read on a portrait phone.** The warp-board camera used its landscape span on
+portrait screens, so every space was a dot until you pinched in. On a portrait screen the span now follows the narrow
+side of the map, on every warp board (Green Hill, Mario, Pokémon and the rest). Landscape and desktop views are unchanged.
+
+## v0.54.1
+
+**Sonic and Super Mario Bros. are now played in turns, full screen.** Instead of a split screen, each player gets
+the whole canvas for their run: P1 goes first, the phone is passed with the usual hand-off card, then P2 runs the same
+seeded level with P1's recorded run alongside as a translucent ghost (also shown on the progress strip). The HUD shows
+P2 the score to beat. Ring Rush / Coin Rush: 60 seconds each, most rings/coins wins. Goal Dash / Castle Dash become time
+trials: the fastest to the signpost/flagpole wins (furthest progress if nobody finishes); P2's run ends early once P1's
+time can no longer be beaten. Either keyboard set (WASD + Space, or arrows + Enter) controls whoever's turn it is.
+
 ## v0.54.0
 
 **Super Mario Bros. on the Mario warp board.** A split-screen NES World 1-1 built like the Sonic games: both

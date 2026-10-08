@@ -98,7 +98,30 @@ const WARP_THEMES={
    card('Monorail ride','The lair’s monorail whisks you deeper inside.',['move',3]),card('Card game with Le Chiffre','You read his tell. His chips come to you.',['steal',3]),
    card('Oddjob’s hat','A bowler hat crosses the room at an alarming speed.',['points',-3]),card('Henchman’s uniform','Nobody looks twice at another man in a jumpsuit.',['chaos'])],
   bonus:[['Licence to kill','MI6 signs off on the paperwork.'],['Moneypenny’s tip','She slips you the file before M sees it.'],['A gadget that works','Q is as surprised as you are.']],
-  penalty:[['Captured','“No, Mr. Bond, I expect you to die.”'],['Shot by a henchman','They finally hit something.'],['Tuxedo ruined','Volcano ash does not come out.']]}
+  penalty:[['Captured','“No, Mr. Bond, I expect you to die.”'],['Shot by a henchman','They finally hit something.'],['Tuxedo ruined','Volcano ash does not come out.']]},
+ 'south-park':{source:'South Park',
+  games:['sp-dodgeball','sp-cheesy-poofs','sp-killed-kenny','snowball-fight','wii-wait'],trivia:['trivia-southpark'],
+  items:['wz-dodgeball','wz-poofs-bowl','wz-kenny-parka','wz-chinpokomon','wz-tweek-coffee','wz-city-wok','wz-big-wheel','wz-salty-balls','wz-mr-hat','wz-triangle-zinthar','wz-manbearpig-trap','wz-respect-badge','cheesy-poofs','gamesphere','v43-chefs-chocolate-balls','v43-towelie-towel','v43-cartman-chili'],
+  cards:[card('New kid in town','Somebody new just moved to South Park, and they want to hang out with you.',['southpark']),card('Bus stop small talk','The kid at the bus stop says you are pretty cool. They tag along.',['southpark']),
+   card('Mr. Mackey’s office','You get sent to the counsellor. A kid in the waiting room joins your roster, mmkay?',['southpark']),
+   card('Respect my authoritah!','Cartman confiscates your rival’s points with a stolen police hat.',['steal',3]),card('Kenny died again','You stop for the funeral. He shows up next week anyway.',['move',-2]),
+   card('City Wok delivery','Shitty Wok? No, City Wok. Fortune cookie says +3.',['points',3]),card('Towelie wants to get high','You lose a whole turn’s worth of focus listening to him.',['points',-2]),
+   card('Dodgeball tryouts','The World Championship is next week. Show them your arm.',['mg','sp-dodgeball']),card('Cheesy Poofs ad break','Cartman’s favourite snack is raining from the ceiling.',['mg','sp-cheesy-poofs']),
+   card('Oh my God!','Something enormous is falling on Kenny. Save him.',['mg','sp-killed-kenny']),card('Timmy!','Timmy offers you a ride. Timmy!',['move',3]),
+   card('ManBearPig sighting','Al Gore insists it is real. Everybody panics and swaps places.',['swap']),card('Chinpokomon craze','Gotta buy ’em all. Your rival’s pocket money becomes yours.',['steal',2])],
+  bonus:[['You know, I learned something today','Stan’s speech gets a slow clap.'],['Mr. Hankey visits','Howdy ho! He brings presents.'],['Snow day','School is cancelled. Victory lap.']],
+  penalty:[['Screw you guys','Cartman storms off with your stuff.'],['Detention','Mr. Garrison and Mr. Hat are not amused.'],['Chef’s salty balls','You should not have tried them.']]},
+ castlevania:{source:'Castlevania',
+  games:['cv-vampire-killer','cv-candle-hunt','castlevania-courtyard','castlevania-bell-tower'],trivia:['trivia-castlevania'],
+  items:['wz-stage-map','wz-wall-candle','wz-morning-star','wz-throwing-axe','wz-boomerang-cross','wz-stopwatch','wz-pot-roast','wz-rosary','wz-invisibility-potion','wz-money-bag','wz-magic-crystal','vampire-killer','holy-water','alucard-shield'],
+  cards:[card('Wall meat','You whip a suspicious brick and a whole pot roast falls out. Nobody asks how long it was in there.',['points',4]),card('Medusa Head','It bobs in on a sine wave and knocks you backwards, as they do.',['move',-2]),
+   card('What a horrible night','To have a curse. The villagers lock their doors.',['points',-2]),card('The ferryman','“Take me to the next stage.” He rows you downriver.',['move',3]),
+   card('Candle on the wall','You crack the whip and something drops out of the flame.',['item','random']),card('Stopwatch','Time freezes for everyone but you.',['chaos']),
+   card('Holy water','A flask of burning blue fire, right at your rival’s feet. Their hearts spill out.',['steal',3]),card('Simon’s Quest clue','“Get a silk bag from the graveyard duck to live longer.” You swap places while you puzzle it out.',['swap']),
+   card('Vampire Killer Dash','The castle doors open. First to slay the Phantom Bat.',['mg','cv-vampire-killer']),card('Night of the Candles','Sixty seconds, one whip, a castle full of candles.',['mg','cv-candle-hunt']),
+   card('Crumbling stairs','The step gives way under your boots.',['move',-2]),card('Knocked into a pit','A bat touches you on the edge of the stairs. Down you go.',['points',-3])],
+  bonus:[['Magic crystal','The boss dropped it and your health bar refills.'],['Morning Star','Your whip is a chain now, and longer.'],['1,000-point money bag','Hidden behind a wall nobody else thought to whip.']],
+  penalty:[['Knockback','A bat brushed you and you flew backwards into a pit.'],['Medusa Head','It came out of nowhere on a sine wave.'],['A horrible night','To have a curse.']]}
 };
 const WARP_THEME_IDS=Object.keys(WARP_THEMES);
 function warpTheme(run){const b=run?.board;if(b?.format!=='warp')return null;return WARP_THEMES[b.warp?.id]||null;}

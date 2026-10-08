@@ -12,7 +12,7 @@ function loadProfile() {
  const ids = new Set([...CATALOG.characters.map(c=>c.id),'gordon-ramsay']);
  if (saved?.version === 20) {
   for(const key of ['xp','runs','completed','minigames'])p[key]=number(saved[key]);
-  for(const key of ['played','games','recentGames','recentTrivia','itemsSeen','locations','pairDiscoveries','boardUnlocks'])p[key]=strings(saved[key]);
+  for(const key of ['played','games','recentGames','recentTrivia','itemsSeen','locations','pairDiscoveries','boardUnlocks','bossesBeaten'])p[key]=strings(saved[key]);
   p.triviaDifficultyBag=[...new Set(strings(saved.triviaDifficultyBag).filter(d=>['easy','medium','hard','impossible'].includes(d)))];
   p.minigames=Math.max(p.minigames,p.played.length);for(const owner of ['Sean','Amber'])p.recruitDryStreak[owner]=Math.min(1,number(saved.recruitDryStreak?.[owner]));
   for(const key of ['boards','modes'])if(Array.isArray(saved[key]))p[key]=strings(saved[key]);
@@ -58,7 +58,7 @@ function canRecruit(profile,id,owner=null,reason='encounter') {
  if(id==='loki'&&reason!=='pair')return false;
  const record=CATALOG.characters.find(c=>c.id===id);
  if(!record&&id!=='gordon-ramsay')return false;
- if(record?.unlockBy==='item'&&reason!=='item'||record?.unlockBy==='game-win'&&reason!=='game'||record?.unlockBy==='character-win'&&reason!=='character'||record?.unlockBy==='horror'&&reason!=='horror'||record?.unlockBy==='boss'&&reason!=='boss'||record?.unlockBy==='dogs'&&reason!=='dogs')return false;
+ if(record?.unlockBy==='item'&&reason!=='item'||record?.unlockBy==='game-win'&&reason!=='game'||record?.unlockBy==='character-win'&&reason!=='character'||record?.unlockBy==='horror'&&reason!=='horror'||record?.unlockBy==='boss'&&reason!=='boss'||record?.unlockBy==='dogs'&&reason!=='dogs'||record?.unlockBy==='southpark'&&reason!=='southpark')return false;
  if(record?.unlockBy==='lab'){
   if(reason!=='lab'||!owner)return false;
   if(id==='uss-carson'&&!LAB_TEAM.every(c=>availableCharacters(profile,owner).includes(c)))return false;

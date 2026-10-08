@@ -101,9 +101,10 @@ function drawHuds(c,S){
 }
 function drawMonSprite(c,m){
  if(!m.show||!m.sp||m.blink)return;
- const pxScale=m.kind==='back'?2:1,size=m.sp.w*pxScale,baseY=m.y+(56-size);
- if(m.scale<1){const s=m.scale,w=Math.round(size*s),h=w,cx=m.x+28,cy=m.y+56-h;const cv=SP.paint(m.sp,m.pal,m.silhouette);if(cv)c.drawImage(cv,0,0,m.sp.w,m.sp.h,Math.round(cx-w/2),cy,w,h);return;}
- SP.drawSprite(c,m.sp,m.pal,m.x+m.dx,baseY+m.dy,{scale:pxScale,silhouette:m.silhouette,clipBottom:m.clip!==null?m.y+56:null});
+ // m.mood (think/win/angry/sad/silly) shows that face when the character has its own picture for it.
+ const sp=m.silhouette?m.sp:SP.moodSprite(m.sp,m.mood),pxScale=m.kind==='back'?2:1,size=sp.w*pxScale,baseY=m.y+(56-size);
+ if(m.scale<1){const s=m.scale,w=Math.round(size*s),h=w,cx=m.x+28,cy=m.y+56-h;const cv=SP.paint(sp,m.pal,m.silhouette);if(cv)c.drawImage(cv,0,0,sp.w,sp.h,Math.round(cx-w/2),cy,w,h);return;}
+ SP.drawSprite(c,sp,m.pal,m.x+m.dx,baseY+m.dy,{scale:pxScale,silhouette:m.silhouette,clipBottom:m.clip!==null?m.y+56:null});
 }
 function drawBallRow(c,list,x,y,dir){for(let i=0;i<6;i++){const st=list[i]||'empty',art=st==='ok'?SP.ART.partyBall:st==='faint'?SP.ART.partyFaint:SP.ART.partyEmpty;SP.drawSprite(c,art,'ball',x+i*8*dir,y);}}
 function drawTextBox(c,S){
@@ -312,7 +313,7 @@ async function battle(opts){
  // ---- turns
  while(live()&&!result.outcome){
   clearText();
-  const act=await playerAction();if(!live())break;if(!act)continue;
+  S.player.mood='think';const act=await playerAction();S.player.mood=null;if(!live())break;if(!act)continue;
   if(act.kind==='run'){
    if(!wild){await say('No! There’s no running from a trainer battle!');continue;}
    runs++;const ps=eff(P,'spd'),es=eff(E,'spd'),ok=ps>=es||R()<clamp(.45+(ps-es)/(2*es)+.12*runs,.15,.95);
@@ -437,7 +438,7 @@ async function battle(opts){
    const next=foeTeam.findIndex((m,i)=>i>ei&&m.hp>0);
    if(wild||next<0){
     AU.lowHpAlarm(false);AU.playSong('victory');
-    if(!wild){S.enemy={...mon0(96,0,'front'),sp:SP.spriteOf(opts.foe.character,'front')||await SP.characterSprite(opts.foe.character,'front'),pal:'trainer',show:true,trainer:true};for(let f=0;f<=30;f++){S.enemy.dx=Math.round(80*(1-f/30));await frames(1);}await say(`${playerName} defeated ${trainerName}!`);if(opts.foe.lose)await say(opts.foe.lose);if(opts.prizeText)await say(opts.prizeText);}
+    if(!wild){S.enemy={...mon0(96,0,'front'),sp:SP.spriteOf(opts.foe.character,'front')||await SP.characterSprite(opts.foe.character,'front'),pal:'trainer',show:true,trainer:true,mood:'sad'};for(let f=0;f<=30;f++){S.enemy.dx=Math.round(80*(1-f/30));await frames(1);}await say(`${playerName} defeated ${trainerName}!`);if(opts.foe.lose)await say(opts.foe.lose);if(opts.prizeText)await say(opts.prizeText);}
     result.outcome='win';return true;
    }
    // Gen 1 shift prompt
@@ -503,19 +504,19 @@ async function battle(opts){
  }
  async function heal(t,amount){const hud=t===P?S.pHud:S.eHud,from=t.mon.hp;t.mon.hp=Math.min(t.stats.hp,t.mon.hp+amount);if(hud){const steps=Math.max(1,Math.ceil(Math.abs(t.mon.hp-from)/t.stats.hp*48));for(let i=1;i<=steps;i++){hud.shownHp=from+(t.mon.hp-from)*i/steps;await frames(2);}hud.shownHp=t.mon.hp;}if(t===P)alarm();}
  async function useMove(a,t,id){
-  const aS=a===P?S.player:S.enemy,tS=a===P?S.enemy:S.player;
+  const aS=a===P?S.player:S.enemy,tS=a===P?S.enemy:S.player;aS.mood=null;
   if(a.recharge){a.recharge=false;await say(`${prefix(a)}${a.name} must recharge!`);return;}
   if(a.mon.status==='slp'){a.mon.slp=(a.mon.slp||1)-1;if(a.mon.slp<=0){a.mon.status=null;(a===P?S.pHud:S.eHud)&&Object.assign(a===P?S.pHud:S.eHud,{status:null});await say(`${prefix(a)}${a.name} woke up!`);return;}await say(`${prefix(a)}${a.name} is fast asleep!`);return;}
   if(a.mon.status==='frz'){if(R()<.15){a.mon.status=null;Object.assign(a===P?S.pHud:S.eHud,{status:null});await say(`${prefix(a)}${a.name} thawed out!`);}else{await say(`${prefix(a)}${a.name} is frozen solid!`);return;}}
   if(a.flinch){a.flinch=false;await say(`${prefix(a)}${a.name} flinched!`);return;}
-  if(a.conf>0){a.conf--;if(a.conf===0){await say(`${prefix(a)}${a.name}’s confused no more!`);}else{await say(`${prefix(a)}${a.name} is confused!`,{auto:true});if(R()<.5){await confusionAnim();const dmg=calc(a,a,{power:40,type:'NONE',cat:'phys'},false).dmg;await say('It hurt itself in its confusion!',{auto:true});AU.sfx('hit');await blink(aS);await damage(a,dmg);return;}}}
+  if(a.conf>0){a.conf--;if(a.conf===0){await say(`${prefix(a)}${a.name}’s confused no more!`);}else{await say(`${prefix(a)}${a.name} is confused!`,{auto:true});if(R()<.5){await confusionAnim();const dmg=calc(a,a,{power:40,type:'NONE',cat:'phys'},false).dmg;aS.mood='silly';await say('It hurt itself in its confusion!',{auto:true});AU.sfx('hit');await blink(aS);await damage(a,dmg);return;}}}
   if(a.mon.status==='par'&&R()<.25){await say(`${prefix(a)}${a.name}’s fully paralyzed!`);return;}
   if(!id){return;}
   const m=id==='STRUGGLE'?{id:'STRUGGLE',name:'STRUGGLE',type:'NORMAL',power:50,acc:100,pp:1,cat:'phys',fx:[],recoil:true,anim:'tackle'}:move(id);
   if(id!=='STRUGGLE'){const left=ppLeft(a.mon,id);a.mon.pp={...(a.mon.pp||{}),[id]:Math.max(0,left-(t.ability==='PRESSURE'?2:1))};}
   await say(`${prefix(a)}${a.name} used ${m.name}!`,{auto:true,pause:16});
   // accuracy
-  if(m.acc&&!(m.cat==='status'&&m.fx.every(f=>f.kind==='stat'&&f.who==='self'))){const p=m.acc/100*ACC(a.stages.acc)/ACC(t.stages.eva);if(R()>p){AU.sfx('miss');await say(`${prefix(a)}${a.name}’s attack missed!`);return;}}
+  if(m.acc&&!(m.cat==='status'&&m.fx.every(f=>f.kind==='stat'&&f.who==='self'))){const p=m.acc/100*ACC(a.stages.acc)/ACC(t.stages.eva);if(R()>p){AU.sfx('miss');aS.mood='sad';await say(`${prefix(a)}${a.name}’s attack missed!`);return;}}
   const selfOnly=m.cat==='status'&&(m.heal||m.rest||m.fx.every(f=>f.kind==='stat'&&f.who==='self'||f.kind==='focus')||m.haze||m.nothing);
   if(m.cat==='status'&&!selfOnly&&t.mon.hp<=0){await say('But, it failed!');return;}
   await animate(m,a,aS,tS);
@@ -527,7 +528,7 @@ async function battle(opts){
     const r=calc(a,t,m,true);crit=crit||r.crit;last=r;let dmg=r.dmg;
     if(t.mon.hp-dmg<=0&&t.mon.hp===t.stats.hp&&t.ability==='STURDY'){dmg=t.mon.hp-1;t.endured='STURDY';}
     else if(t.mon.hp-dmg<=0&&t.ability==='PLOT ARMOR'&&!t.armor&&R()<.5){dmg=t.mon.hp-1;t.armor=true;t.endured='PLOT ARMOR';}
-    AU.sfx(r.e>1?'hitSuper':r.e<1?'hitWeak':'hit');await blink(tS);if(r.e>1)await shake(4);
+    tS.mood='angry';aS.mood='win';AU.sfx(r.e>1?'hitSuper':r.e<1?'hitWeak':'hit');await blink(tS);if(r.e>1)await shake(4);
     await damage(t,dmg);total+=dmg;
     if(t.endured){await say(`${prefix(t)}${t.name} endured the hit with ${t.endured}!`);t.endured=null;}
    }
@@ -571,7 +572,7 @@ async function battle(opts){
  }
  async function endOfTurn(b,o){
   if(b.mon.hp<=0)return;const bS=b===P?S.player:S.enemy;
-  if(b.mon.status==='psn'||b.mon.status==='brn'){await say(`${prefix(b)}${b.name}’s hurt by ${b.mon.status==='psn'?'poison':'the burn'}!`,{auto:true,pause:16});AU.sfx('hitWeak');await blink(bS);await damage(b,Math.max(1,Math.floor(b.stats.hp/16)));if(b.mon.hp<=0)return;}
+  if(b.mon.status==='psn'||b.mon.status==='brn'){await say(`${prefix(b)}${b.name}’s hurt by ${b.mon.status==='psn'?'poison':'the burn'}!`,{auto:true,pause:16});bS.mood='angry';AU.sfx('hitWeak');await blink(bS);await damage(b,Math.max(1,Math.floor(b.stats.hp/16)));if(b.mon.hp<=0)return;}
   if(b.leech&&o.mon.hp>0){const d=Math.max(1,Math.floor(b.stats.hp/16));await say(`LEECH SEED saps ${prefix(b)}${b.name}!`,{auto:true,pause:16});await damage(b,d);await heal(o,d);if(b.mon.hp<=0)return;}
   if(b.ability==='SPEED BOOST'&&b.stages.spd<6){b.stages.spd++;await say(`${prefix(b)}${b.name}’s SPEED BOOST!`,{auto:true,pause:16});}
   if(b.ability==='SECOND WIND'&&b.mon.hp<b.stats.hp){await heal(b,Math.max(1,Math.floor(b.stats.hp/16)));}
@@ -671,12 +672,12 @@ async function boardTransition(kind){
 }
 async function slideOut(m,dir){for(let f=0;f<=20;f++){m.dx=Math.round(dir*f*5);await frames(1);}m.show=false;m.dx=0;}
 async function sendOut(m,b){
- const S=G.S;m.sp=SP.spriteOf(b.mon.id,m.kind);m.pal=b.types[0];m.trainer=false;m.show=true;m.dx=0;m.dy=0;m.clip=null;
+ const S=G.S;m.sp=SP.spriteOf(b.mon.id,m.kind);m.mood=null;m.pal=b.types[0];m.trainer=false;m.show=true;m.dx=0;m.dy=0;m.clip=null;
  AU.sfx('poof');for(const s of [.33,.66,1]){m.scale=s;await frames(5);}AU.cry(b.mon.id);
  if(m===S.enemy)S.eHud=hudOf(b);else S.pHud=hudOf(b);await frames(10);
 }
 async function recall(m){for(const s of [.66,.33]){m.scale=s;await frames(4);}m.show=false;m.scale=1;}
-async function faintAnim(m){AU.sfx('faint');m.clip=0;for(let d=0;d<=56;d+=4){m.dy=d;await frames(1);}m.show=false;m.dy=0;m.clip=null;}
+async function faintAnim(m){m.mood='sad';AU.sfx('faint');m.clip=0;for(let d=0;d<=56;d+=4){m.dy=d;await frames(1);}m.show=false;m.dy=0;m.clip=null;}
 
 // ---------------------------------------------------------------- items outside the battle loop
 // Applies a bag item to a party member. Returns true when it was used.

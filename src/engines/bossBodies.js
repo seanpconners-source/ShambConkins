@@ -1,7 +1,7 @@
 // BOSS FIGHT procedural bodies. Each builder draws around the origin (0,0), nominal 300 x 220 units.
 // BODIES[name]={hit:[[dx,dy,r]...], muz:{mouth,eye,center,l,r:[dx,dy]}, draw(g,A)}
 // A: {t, look{x,y}(-1..1), open(0..1 attacking), glow, phase, dmg(0..1), pal[4], v (boss.look), pose, face(g,cx,cy,size,opt)->bool}
-const TAU=Math.PI*2,INK='#140a0c';
+const TAU=Math.PI*2,PI2=TAU,INK='#140a0c';
 const lerp=(a,b,t)=>a+(b-a)*t;
 function ell(g,x,y,rx,ry,fill,line=4,rot=0){g.beginPath();g.ellipse(x,y,Math.abs(rx),Math.abs(ry),rot,0,TAU);if(fill){g.fillStyle=fill;g.fill();}if(line){g.lineWidth=line;g.strokeStyle=INK;g.stroke();}}
 function poly(g,pts,fill,line=4){g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();if(fill){g.fillStyle=fill;g.fill();}if(line){g.lineWidth=line;g.strokeStyle=INK;g.lineJoin='round';g.stroke();}}
@@ -194,6 +194,19 @@ const vampire={hit:[[0,-60,56],[0,30,100]],muz:{mouth:[0,-50],eye:[0,-60],center
   limb(g,-64,-16,-100,30-A.open*40,22,'#14101c');limb(g,64,-16,100,30-A.open*40,22,'#14101c');ell(g,-100,30-A.open*40,14,14,'#e9e2d6',3);ell(g,100,30-A.open*40,14,14,'#e9e2d6',3);
   ell(g,0,-84,44,50,'#e9e2d6',0);A.face(g,A.look.x*5,-84,98,{clipR:44,emoji:true});poly(g,[[-40,-112],[-20,-130],[0,-112],[20,-130],[40,-112],[40,-92],[-40,-92]],'#171320',0);
   if(A.open>.3){poly(g,[[-8,-60],[-4,-48],[0,-60]],'#fff',1);poly(g,[[8,-60],[4,-48],[0,-60]],'#fff',1);}}};
+// ---------------------------------------------------------------- reaper (Death, Castlevania)
+const reaper={hit:[[0,-70,50],[0,30,92]],muz:{mouth:[0,-62],eye:[0,-84],center:[0,0],l:[-110,0],r:[110,0]},
+ draw(g,A){const [m,d,a,l]=A.pal,t=A.t,arm=10-A.open*34;g.translate(0,Math.sin(t*1.6)*6);
+  g.save();g.rotate(-.3+A.open*.45);limb(g,104,150,104,-112,9,'#6a4a2a');g.beginPath();g.moveTo(106,-112);g.quadraticCurveTo(16,-158,-70,-80);g.quadraticCurveTo(16,-122,104,-86);g.closePath();g.fillStyle=a;g.fill();g.lineWidth=4;g.strokeStyle=INK;g.stroke();g.restore();
+  const hem=[];for(let i=0;i<=8;i++)hem.push([-96+i*24,118+(i%2?-18:6)+Math.sin(t*3+i)*6]);
+  poly(g,[[-40,-104],[40,-104],[82,-30],[100,118],...hem.reverse(),[-100,118],[-82,-30]],lg(g,0,-104,0,120,[m,d]),5);
+  limb(g,-60,-40,-112,arm,26,m);limb(g,60,-40,112,arm,26,m);
+  for(const sx of [-1,1]){ell(g,sx*112,arm+4,11,10,l,3);g.strokeStyle=INK;g.lineWidth=2;for(let k=-1;k<=1;k++){g.beginPath();g.moveTo(sx*112+k*5,arm+10);g.lineTo(sx*112+k*6,arm+20);g.stroke();}}
+  ell(g,0,-90,54,60,d,5);
+  ell(g,0,-82,32,36,l,4);
+  for(const sx of [-1,1]){ell(g,sx*12,-88,9,10,'#120a14',0);ell(g,sx*12+A.look.x*3,-88+A.look.y*2,3.5,3.5,A.glow>.3?'#ffd23c':'#ff3b3b',0);}
+  poly(g,[[-4,-72],[4,-72],[0,-64]],'#120a14',0);
+  g.fillStyle=INK;for(let k=0;k<5;k++)g.fillRect(-13+k*6,-58+A.open*4,2,9);g.lineWidth=3;g.strokeStyle=INK;g.beginPath();g.moveTo(-16,-58+A.open*4);g.lineTo(16,-58+A.open*4);g.stroke();}};
 // ---------------------------------------------------------------- flesh (The Thing)
 const flesh={hit:[[0,-20,90],[0,40,90]],muz:{mouth:[0,10],eye:[-50,-40],center:[0,0],l:[-110,30],r:[110,30]},
  draw(g,A){const [m,d,a,l]=A.pal,t=A.t,up=A.open;
@@ -247,7 +260,33 @@ const spinner={hit:[[0,0,96]],muz:{mouth:[0,-20],eye:[0,-30],center:[0,0],l:[-90
   for(const s of [-1,1]){eye(g,s*28,-24,15,A,'#222','#fff',.5);brow(g,s*28,-46,34,-s*.4);}
   poly(g,[[-14,-4],[14,-4],[0,12]],a,3);mouth(g,0,18,64,.4+up,A,'#4a0a10');}};
 
-const BODIES={lens,brainjar,saucer,bust,brute,ninja,stalker,liquid,pyramid,clown,vampire,flesh,elder,koopa,serpent,spinner};
+// ---------------------------------------------------------------- mecha (Mecha-Streisand): steel kaiju, her face behind the visor
+const mecha={hit:[[0,-60,58],[0,30,96]],muz:{mouth:[0,-14],eye:[0,-66],center:[0,10],l:[-132,26],r:[132,26]},
+ draw(g,A){const [m,d,a,l]=A.pal,t=A.t,up=A.open,sw=sway(A,4),mx=A.look.x*8,steel=lg(g,0,-60,0,130,['#d6dde4',m,'#4a525e']);
+  g.lineCap='round';g.strokeStyle=INK;g.lineWidth=40;g.beginPath();g.moveTo(-60,80);g.quadraticCurveTo(-150,120+sw,-196,70+sw*2);g.stroke();g.strokeStyle=m;g.lineWidth=32;g.stroke();
+  for(let i=0;i<4;i++)ell(g,-90-i*28,104-i*9+sw*(i/3),5,5,'#5a636e',2);
+  for(const sx of [-1,1]){limb(g,sx*48,70,sx*58,124,40,'#7d8692');rrect(g,sx*58-30,116,60,22,8,'#5a636e',4);for(let k=-1;k<=1;k++)poly(g,[[sx*58+k*16-5,138],[sx*58+k*16,150],[sx*58+k*16+5,138]],'#eef3f8',2);}
+  spikes(g,0,24,92,9,26,'#b9c2cc',-Math.PI*.95);
+  ell(g,0,28,98,88,steel,5);
+  g.strokeStyle='rgba(20,10,12,.35)';g.lineWidth=3;for(const y of [-10,40,84]){g.beginPath();g.moveTo(-86,y);g.quadraticCurveTo(0,y+14,86,y);g.stroke();}
+  for(let i=0;i<10;i++)ell(g,-80+i*17.8,-10+Math.sin(i)*2,3,3,'#3a414c',0);
+  // chest: the Triangle of Zinthar
+  const gl=.55+A.glow*.45+Math.sin(t*4)*.12;g.save();g.translate(0,34);poly(g,[[0,-38],[36,26],[-36,26]],'#2a2f3a',5);g.globalAlpha=Math.min(1,gl);poly(g,[[0,-26],[25,18],[-25,18]],rg(g,0,2,2,36,['#fff4c8',a,'#6a0c26']),0);g.globalAlpha=1;g.restore();
+  // arms with claws
+  for(const sx of [-1,1]){const hx=sx*(130+Math.sin(t*2+sx)*5),hy=26-up*62;limb(g,sx*78,-6,hx,hy,30,'#8a939e');ell(g,hx,hy,20,18,'#5a636e',4);for(let k=-1;k<=1;k++)poly(g,[[hx+k*9-4,hy-12],[hx+k*11,hy-34],[hx+k*9+4,hy-12]],'#eef3f8',2);}
+  // neck and head
+  const hy=-66+A.look.y*3;limb(g,mx*.5,-40,mx,hy+30,44,'#7d8692');
+  for(let i=0;i<5;i++)poly(g,[[mx-44+i*22,hy-40],[mx-33+i*22,hy-64-(i%2)*10],[mx-22+i*22,hy-40]],'#b9c2cc',3);
+  ell(g,mx,hy,68,58,lg(g,mx,hy-58,mx,hy+58,['#e4e9ee',m,'#56606c']),5);
+  // jaw drops open when she attacks
+  const jaw=8+up*26;poly(g,[[mx-54,hy+30],[mx+54,hy+30],[mx+44,hy+40+jaw],[mx-44,hy+40+jaw]],'#3a0a14',4);teeth(g,mx,hy+31,96,7,10,'#eef3f8');
+  rrect(g,mx-50,hy+36+jaw,100,14,6,'#7d8692',4);
+  for(const sx of [-1,1]){ell(g,mx+sx*56,hy-6,9,9,'#2a2f3a',3);ell(g,mx+sx*56,hy-6,5,5,(Math.sin(t*6+sx)>-.3?a:'#5a1020'),0);}
+  // visor with Barbra inside
+  ell(g,mx,hy-6,44,40,'#1c2230',4);A.face(g,mx,hy-6,80,{clipR:38,emoji:true,tilt:A.look.x*.08});
+  g.save();g.globalAlpha=.22;ell(g,mx-14,hy-24,16,9,'#fff',0,-.5);g.restore();
+  if(A.dmg>.5){g.strokeStyle='#ffd23c';g.lineWidth=3;g.beginPath();g.moveTo(-30,10);g.lineTo(-10,24);g.lineTo(-24,40);g.moveTo(40,60);g.lineTo(54,74);g.stroke();}}};
+const BODIES={mecha,lens,brainjar,saucer,bust,brute,ninja,stalker,liquid,pyramid,clown,vampire,reaper,flesh,elder,koopa,serpent,spinner};
 for(const b of Object.values(BODIES)){b.muz=Object.assign({mouth:[0,40],eye:[0,0],center:[0,0],l:[-90,20],r:[90,20]},b.muz);}
 
 // ---------------------------------------------------------------- minions (small drawings, centred)
@@ -266,6 +305,7 @@ function drawMinion(g,m,t){const r=m.r,k=m.kind;g.save();
   case 'rocket':poly(g,[[0,r*1.2],[-r*.6,-r*.6],[r*.6,-r*.6]],'#c8c8d0',3);poly(g,[[-r*.6,-r*.6],[-r*1.1,-r*1.1],[-r*.4,-r*.9]],'#c8161d',2);poly(g,[[r*.6,-r*.6],[r*1.1,-r*1.1],[r*.4,-r*.9]],'#c8161d',2);ell(g,0,-r*1.3,r*.4,r*(.6+Math.sin(t*30)*.2),'#ffb02e',0);break;
   case 'balloon':g.strokeStyle='#ddd';g.lineWidth=2;g.beginPath();g.moveTo(0,r);g.lineTo(0,r*2.2);g.stroke();ell(g,0,0,r*.9,r,'#d6283c',3);ell(g,-r*.3,-r*.35,r*.2,r*.3,'rgba(255,255,255,.6)',0);break;
   case 'head':ell(g,0,0,r,r*.9,'#e8907a',3);for(const s of [-1,1]){limb(g,s*r*.6,r*.5,s*r*1.3,r*1.1+Math.sin(t*10+s)*3,4,'#8a3a30');}for(const s of [-1,1])ell(g,s*r*.35,-r*.1,r*.25,r*.25,'#ffe9a0',2);mouth(g,0,r*.3,r*.9,.5,{},'#2a0508');break;
-  default:ell(g,0,0,r,r,'#ff6aa0',3);ell(g,-r*.3,-r*.3,r*.3,r*.3,'rgba(255,255,255,.6)',0);}
+  case 'sickle':{g.rotate(t*12);g.beginPath();g.arc(0,0,r,0,PI2*.62);g.arc(r*.3,-r*.25,r*.72,PI2*.62,0,true);g.closePath();g.fillStyle='#d8dce4';g.fill();g.lineWidth=2.5;g.strokeStyle=INK;g.stroke();limb(g,-r*.2,r*.2,-r*.9,r*.9,4,'#6a4a2a');break;}
+   default:ell(g,0,0,r,r,'#ff6aa0',3);ell(g,-r*.3,-r*.3,r*.3,r*.3,'rgba(255,255,255,.6)',0);}
  g.restore();}
 Object.assign(exports,{BODIES,drawMinion,ell,poly,limb,lg,rg,INK,TAU});

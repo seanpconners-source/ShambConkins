@@ -1,11 +1,11 @@
-// Super Mario Bros. · World 1-1 style. Split-screen two-player NES platformer built like the Sonic engine:
-// both players run the same seeded overworld at once (P1 top, P2 bottom), each with their own coins, blocks,
-// enemies and power-ups. Movement uses the NES SMB1 speeds (px/frame at 60 fps, fixed timestep): walk and run
+// Super Mario Bros. · World 1-1 style. Two-player NES platformer built like the Sonic engine, played in turns on
+// the full screen: P1 runs the seeded overworld first, then P2 runs it with P1's recorded ghost alongside (each with
+// their own coins, blocks, enemies and power-ups). Movement uses the NES SMB1 speeds (px/frame at 60 fps, fixed timestep): walk and run
 // acceleration, skids, speed-dependent jump gravity (hold to jump higher), stomps, ? blocks, bricks, Super Mushroom,
 // Fire Flower, Starman, Koopa shells, piranha plants, a warp pipe down to an underground coin room, the flagpole and
 // the castle. The camera never scrolls back, like the original. The runner is Mario's body (P2 in Luigi colours)
 // wearing the player's head under the cap. Modes: 'coins' (most coins after 60 s; the castle sends you round the
-// course again with fresh coins) and 'race' (first to the flagpole).
+// course again with fresh coins) and 'race' (fastest to the flagpole).
 const {clamp}=require("src/utils.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,PCOL,Countdown,settle}=require("src/engines/arenaKit.js");
 
@@ -96,27 +96,31 @@ function makePlayer(i,L){return {i,x:L.start,y:13*T,prevY:13*T,vx:0,vy:0,grounde
 // ------------------------------------------------------------------ the game
 async function marioBros(s){
  const mode=s.game.marioMode==='race'?'race':'coins';
- const [c,g]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();
+ const [c,g]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.updateScores();
  if(!await settle(s))return;
  const L=buildLevel(s.random,mode),worlds=[makeWorld(L),makeWorld(L)],pl=[makePlayer(0,L),makePlayer(1,L)];
  const cams=pl.map(()=>({x:0,y:0,w:260,h:240}));
  const touchUI=typeof matchMedia==='function'&&matchMedia('(pointer: coarse)').matches;
  const inputs=[0,1].map(()=>({l:0,r:0,d:0,jump:0,b:0,press:0,bPress:0}));
  const pads=[{stick:null,jump:null},{stick:null,jump:null}];
- let phase='title',titleT=0,cd=new Countdown(3),clock=0,acc=0,endT=0,winner=-1,simT=0,frames=0;
+ let phase='title',titleT=0,cd=new Countdown(3),clock=0,acc=0,endT=0,winner=-1,simT=0,frames=0,turn=0,gi=0,turnText='',endText='';
+ // P1's run is recorded every step and replayed as a ghost during P2's turn
+ const ghost=[],ghostAt=i=>i===1&&gi<ghost.length?ghost[gi]:null;
+ const snap=p=>({i:p.i,x:p.x,y:p.y,best:p.best,area:p.area,big:p.big,fire:p.fire,star:p.star,inv:0,facing:p.facing,crouch:p.crouch,dead:p.dead,vx:p.vx,grounded:p.grounded,skid:p.skid,anim:p.anim,
+  finished:p.finished,inCastle:p.inCastle,flag:!!p.flag,pipe:p.pipe&&{kind:p.pipe.kind},tf:p.tf&&{...p.tf}});
  const kb=arenaKeys(s);
- kb.onDown((i,k)=>{if(k==='u')inputs[i].press=1;if(k==='fire')inputs[i].bPress=1;});
- s.hint(mode==='coins'?'COIN RUSH: grab the most coins in 60 seconds. Hit ? blocks, stomp Goombas, find the warp pipe down to the coin room (stand on it and hold down). Reach the castle to run the course again with fresh coins. Touch: your half of the screen (P1 top, P2 bottom). Drag on the left side to walk, drag further to run, drag down to duck or enter a pipe, tap there for a fireball; tap the right side to jump (hold for higher). Keys: P1 A/D/S + W jump + Space run/fire, P2 arrows + Up jump + Enter run/fire.'
-  :'CASTLE DASH: first to the flagpole wins. Run, stomp, take the warp pipe shortcut if you can find it. Falling in a pit sends you back to the last checkpoint. Touch: your half of the screen (P1 top, P2 bottom). Drag on the left side to walk, drag further to run, drag down to duck or enter a pipe, tap there for a fireball; tap the right side to jump (hold for higher). Keys: P1 A/D/S + W jump + Space run/fire, P2 arrows + Up jump + Enter run/fire.');
+ kb.onDown((i,k)=>{if(k==='u')inputs[turn].press=1;if(k==='fire')inputs[turn].bPress=1;});
+ s.hint(mode==='coins'?'COIN RUSH: grab the most coins in 60 seconds. Hit ? blocks, stomp Goombas, find the warp pipe down to the coin room (stand on it and hold down). Reach the castle to run the course again with fresh coins. Players take turns; P2 races P1’s ghost. Touch: drag on the left side to walk, drag further to run, drag down to duck or enter a pipe, tap there for a fireball; tap the right side to jump (hold for higher). Keys: A/D/S or arrows, W/Up jump, Space or Enter run/fire.'
+  :'CASTLE DASH: fastest to the flagpole wins. Run, stomp, take the warp pipe shortcut if you can find it. Falling in a pit sends you back to the last checkpoint. Players take turns; P2 races P1’s ghost. Touch: drag on the left side to walk, drag further to run, drag down to duck or enter a pipe, tap there for a fireball; tap the right side to jump (hold for higher). Keys: A/D/S or arrows, W/Up jump, Space or Enter run/fire.');
 
- // ---------------- touch: P1 owns the top half, P2 the bottom half
- const vp=i=>({x:0,y:i?Math.floor(s.H/2)+2:0,w:s.W,h:Math.floor(s.H/2)-2});
- arenaTouch(s,{owner:p=>p.y<s.H/2?0:1,maxFingers:3,
+ // ---------------- touch: the whole screen belongs to whoever's turn it is
+ const vp=()=>({x:0,y:0,w:s.W,h:s.H});
+ arenaTouch(s,{owner:()=>turn,maxFingers:3,
   onDown:f=>{const pd=pads[f.owner];if(f.x>s.W*.56){f.data.role='jump';pd.jump=f;inputs[f.owner].press=1;}else{f.data.role='stick';pd.stick=f;}},
   onMove:f=>{if(f.data.role!=='stick')return;const dx=f.x-f.sx,dy=f.y-f.sy,lim=60;if(Math.hypot(dx,dy)>lim){const k=lim/Math.hypot(dx,dy);f.sx=f.x-dx*k;f.sy=f.y-dy*k;}
    const v=f.samples.length>1?(f.y-f.samples[0].y)/Math.max(.016,(performance.now()-f.samples[0].t)/1000):0;if(v<-700&&!f.data.flick&&dy<-18){f.data.flick=true;inputs[f.owner].press=1;}if(dy>-6)f.data.flick=false;},
   onUp:f=>{const pd=pads[f.owner];if(pd.jump===f)pd.jump=null;if(pd.stick===f){pd.stick=null;if(f.moved<10&&f.held<220)inputs[f.owner].bPress=1;}}});
- const readInput=i=>{const k=kb.state[i],st=pads[i].stick,inp=inputs[i];let l=k.l,r=k.r,d=k.d,jump=k.u,b=k.fire;
+ const readInput=i=>{const [k0,k1]=kb.state,st=pads[i].stick,inp=inputs[i];let l=k0.l||k1.l,r=k0.r||k1.r,d=k0.d||k1.d,jump=k0.u||k1.u,b=k0.fire||k1.fire;
   if(st){const dx=st.x-st.sx,dy=st.y-st.sy;if(dx>10)r=1;if(dx<-10)l=1;if(Math.abs(dx)>34)b=1;if(dy>20&&Math.abs(dx)<dy)d=1;if(st.data.flick)jump=1;}
   if(pads[i].jump)jump=1;inp.l=l;inp.r=r;inp.d=d;inp.jump=jump;inp.b=b;};
 
@@ -245,7 +249,7 @@ async function marioBros(s){
   if(p.area==="main"&&!p.flag&&!p.flagged&&p.x+hw>=L.flagX-9&&p.x<L.flagX+12){
    const grab=clamp(12*T-p.y,0,10*T),pts=grab>8.5*T?5000:grab>6*T?2000:grab>4*T?800:grab>2*T?400:100;
    p.flag={t:0,phase:'slide'};p.flagged=true;p.x=L.flagX-6;p.vx=0;p.vy=0;p.facing=1;p.crouch=false;addScore(p,w,pts,L.flagX+14,p.y-30);sfx.flag();note(p,'flag');
-   if(mode==='race'&&!p.finished){p.finished=true;p.finishT=clock;if(winner<0)winner=p.i;s.react(p.i,'win');}
+   if(mode==='race'&&!p.finished){p.finished=true;p.finishT=clock;s.react(p.i,'win');}
   }
   if(p.auto&&p.x>=L.doorX){p.inCastle=true;p.castleT=0;sfx.clear();}
  }
@@ -449,7 +453,7 @@ async function marioBros(s){
  }
  function drawFire(f){const a=Math.floor(f.t/3)%4;g.save();g.translate(f.x,f.y);g.rotate(a*Math.PI/2);g.fillStyle=C.red;g.fillRect(-3,-3,6,6);g.fillStyle='#f8b800';g.fillRect(-2,-2,3,3);g.fillStyle=C.white;g.fillRect(-1,-1,1,1);g.restore();}
  function drawView(i,t){
-  const v=vp(i),p=pl[i],w=worlds[i],cam=cams[i],sc=Math.max(.6,v.h/(ROWS*T),v.w/760),vw=v.w/sc,vh=v.h/sc;cam.w=vw;cam.h=vh;
+  const v=vp(i),p=pl[i],w=worlds[i],cam=cams[i],sc=Math.max(.6,Math.min(v.h/(ROWS*T),v.w/(16*T))),vw=v.w/sc,vh=v.h/sc;cam.w=vw;cam.h=vh;
   const area=p.area;
   g.save();g.beginPath();g.rect(v.x,v.y,v.w,v.h);g.clip();
   g.fillStyle=area==='room'?'#000':C.sky;g.fillRect(v.x,v.y,v.w,v.h);
@@ -459,8 +463,8 @@ async function marioBros(s){
   // things that sit behind the tiles: piranhas in pipes, power-ups rising out of blocks, a runner inside a pipe
   if(area==='main')for(const e of w.enemies)if(e.alive&&e.type==='piranha'&&e.state!=='dying'&&e.x>x0&&e.x<x1)drawPiranha(e);
   for(const it of w.items)if(it.emerge>0)drawItem(it);
-  const o=pl[1-i];
-  if(p.pipe)drawRunner(p);if(o.pipe&&o.area===area)drawRunner(o,.42);
+  const o=ghostAt(i);
+  if(p.pipe)drawRunner(p);if(o&&o.pipe&&o.area===area)drawRunner(o,.42);
   drawTiles(w,area,x0,x1,cam.y-T,cam.y+vh+T);
   const list=area==='room'?L.room.coins:L.coins,got=area==='room'?w.roomGot:w.got,ph=simT*6;
   for(let k=0;k<list.length;k++){const q=list[k];if(q.x<x0)continue;if(q.x>x1)break;if(!got[k])drawCoin(q.x,q.y,ph);}
@@ -469,7 +473,7 @@ async function marioBros(s){
   if(area==='main')for(const e of w.enemies){if(!e.alive||!e.active||e.type==='piranha'&&e.state!=='dying')continue;if(e.x<x0-16||e.x>x1+16)continue;if(e.type==='goomba')drawGoomba(e);else if(e.type==='koopa')drawKoopa(e);else drawPiranha(e);}
   for(const f of w.fire)drawFire(f);
   for(const d of w.debris){g.save();g.translate(d.x,d.y);g.rotate(d.t*.3);g.fillStyle=area==='room'?C.ug:C.brick;g.fillRect(-3,-3,6,6);g.fillStyle='#000';g.fillRect(-3,2,6,1);g.restore();}
-  if(!o.pipe&&!o.inCastle&&o.area===area&&o.x>x0-20&&o.x<x1+20)drawRunner(o,.42);
+  if(o&&!o.pipe&&!o.inCastle&&o.area===area&&o.x>x0-20&&o.x<x1+20)drawRunner(o,.42);
   if(!p.pipe&&!p.inCastle)drawRunner(p);
   w.fx.draw(g);
   w.fx.end(g);g.restore();
@@ -477,10 +481,11 @@ async function marioBros(s){
   drawHUD(i,v,t);
   g.restore();
  }
+ const prog=q=>q.finished?100:Math.min(99,Math.round(clamp((q.best-L.start)/(L.end-L.start),0,1)*100));
  const fmtRace=sec=>`${Math.floor(sec/60)}'${String(Math.floor(sec%60)).padStart(2,'0')}"${String(Math.floor(sec*100%100)).padStart(2,'0')}`;
  function txt(str,px,py,size,col='#fff',align='left'){g.font=`900 ${size}px "Courier New",ui-monospace,monospace`;g.textAlign=align;g.textBaseline='top';g.lineJoin='round';g.lineWidth=Math.max(2.5,size*.3);g.strokeStyle='#000';g.strokeText(str,px,py);g.fillStyle=col;g.fillText(str,px,py);}
  function drawHUD(i,v,t){
-  const p=pl[i],u=clamp(v.h/240,.6,2.4),size=Math.round(clamp(9*u,10,19)),pad=7*u,y1=v.y+pad,y2=y1+size*1.1;
+  const p=pl[i],u=clamp(Math.min(v.h/240,v.w/300),.6,2.4),size=Math.round(clamp(9*u,10,19)),pad=7*u,y1=v.y+pad,y2=y1+size*1.1;
   const name=s.players[i].name.toUpperCase().slice(0,9),cols=[.03,.33,.56,.8].map(k=>v.x+v.w*k);
   txt(name,cols[0],y1,size,PCOL[i]);txt(String(p.score).padStart(6,'0'),cols[0],y2,size);
   g.save();g.translate(cols[1]+size*.35,y2+size*.5);g.scale(size/16,size/16);drawCoin(0,0,simT*6);g.restore();txt(`×${String(p.coins).padStart(2,'0')}`,cols[1]+size*.8,y2,size,mode==='coins'?'#ffe23a':'#fff');
@@ -489,10 +494,11 @@ async function marioBros(s){
   const left=Math.max(0,COIN_TIME-clock);txt('TIME',cols[3],y1,size);txt(mode==='coins'?String(Math.ceil(left)).padStart(3,'0'):fmtRace(p.finished?p.finishT:clock),cols[3],y2,size,mode==='coins'&&left<10&&(frames>>4)%2?'#ff5a3a':'#fff');
   // progress strip (both players)
   const bw=Math.min(v.w*.4,240*u),bx=v.x+(v.w-bw)/2,by=y2+size*1.55;g.fillStyle='rgba(0,0,0,.4)';g.fillRect(bx-3,by-3,bw+6,6);
-  for(const j of [1-i,i]){const q=pl[j],k=clamp((q.best-L.start)/(L.end-L.start),0,1),hx=bx+k*bw;g.fillStyle=PCOL[j];g.beginPath();g.arc(hx,by,j===i?4.5*u:3.2*u,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=1.3;g.stroke();}
+  const gh=ghostAt(i);for(const q of gh?[gh,p]:[p]){const k=clamp((q.best-L.start)/(L.end-L.start),0,1),hx=bx+k*bw;g.save();g.globalAlpha=q===p?1:.6;g.fillStyle=PCOL[q.i];g.beginPath();g.arc(hx,by,q===p?4.5*u:3.2*u,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=1.3;g.stroke();g.restore();}
+  if(i===1){const q=pl[0];txt(`BEAT ${s.players[0].name.toUpperCase().slice(0,9)}: ${mode==='coins'?q.coins+' COINS':q.finished?fmtRace(q.finishT):prog(q)+'%'}`,v.x+v.w/2,by+7*u,Math.round(size*.75),PCOL[0],'center');}
   g.fillStyle='#fff';g.fillRect(bx+bw,by-7*u,1.5,10*u);g.fillStyle=C.white;g.beginPath();g.moveTo(bx+bw,by-7*u);g.lineTo(bx+bw-6*u,by-4.5*u);g.lineTo(bx+bw,by-2*u);g.fill();
   if(p.dead&&p.dead>25)outlined(g,p.pit?'DOWN THE PIT!':'OUCH!',v.x+v.w/2,v.y+v.h*.45,{size:size*1.4,fill:'#fff',stroke:'#000'});
-  if(mode==='race'&&p.finished)outlined(g,`${name} REACHED THE CASTLE`,v.x+v.w/2,v.y+v.h*.42,{size:size*1.4,fill:'#ffe23a',stroke:'#000'});
+  if(mode==='race'&&p.finished&&phase==='play')outlined(g,`${name} REACHED THE CASTLE`,v.x+v.w/2,v.y+v.h*.42,{size:size*1.4,fill:'#ffe23a',stroke:'#000'});
   if(mode==='coins'&&p.inCastle)outlined(g,'COURSE CLEAR! FRESH COINS…',v.x+v.w/2,v.y+v.h*.42,{size:size*1.3,fill:'#ffe23a',stroke:'#000'});
   if(p.area==='main'&&L.warp&&p.grounded&&!p.pipe&&Math.abs(p.y-L.warp.entry.top*T)<.5&&Math.abs(p.x-(L.warp.entry.c+1)*T)<=8&&(frames>>4)%2){const cam=cams[i],sc=v.w/cam.w;outlined(g,'▼',v.x+(L.warp.entry.c+1)*T*sc-cam.x*sc,v.y+(L.warp.entry.top*T-48-cam.y)*sc,{size:size*1.3,fill:'#fff',stroke:'#000'});}
   // touch pad guides
@@ -511,42 +517,63 @@ async function marioBros(s){
  }
  const teleport=(i,X)=>{const q=pl[i];let cc=Math.floor(X/T);while(cc<L.W-1&&!(worlds[i].tiles[13*S+cc]&&!worlds[i].tiles[12*S+cc]&&!worlds[i].tiles[11*S+cc]))cc++;
   Object.assign(q,{x:cc*T+8,y:13*T,prevY:13*T,vx:0,vy:0,grounded:true,area:'main',pipe:null,flag:null,dead:0,pit:false,tf:null});q.best=Math.max(q.best,q.x);cams[i].x=Math.max(0,q.x-120);};
- s.debug={log,get phase(){return phase;},get clock(){return clock;},pl,L,worlds,setClock(v){clock=v;},teleport,
+ s.debug={log,get phase(){return phase;},get clock(){return clock;},get turn(){return turn;},ghost,pl,L,worlds,setClock(v){clock=v;},teleport,
   toWarp(i){const q=pl[i],e=L.warp.entry;Object.assign(q,{x:(e.c+1)*T,y:e.top*T,prevY:e.top*T,vx:0,vy:0,grounded:true,area:'main',pipe:null,dead:0,pit:false,tf:null});cams[i].x=Math.max(0,q.x-120);}};
+ // ---------------- turns: title → P1 hand-off → countdown → run → P2 hand-off → countdown → run vs ghost → results
+ const score=q=>mode==='coins'?`${q.coins} coins`:q.finished?fmtRace(q.finishT):`${prog(q)}% of the way`;
+ async function beginTurn(i){
+  phase='handoff';turn=i;for(const pd of pads){pd.stick=null;pd.jump=null;}for(const inp of inputs)Object.assign(inp,{l:0,r:0,d:0,jump:0,b:0,press:0,bPress:0});
+  const n0=s.players[0].name,desc=i===0?(mode==='coins'?`You go first: grab as many coins as you can in 60 seconds. ${s.players[1].name} plays next against your ghost.`:`You go first: reach the flagpole as fast as you can. ${s.players[1].name} plays next against your ghost.`)
+   :(mode==='coins'?`Beat ${n0}'s ${pl[0].coins} coins in 60 seconds. ${n0}'s ghost runs beside you.`:`Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'}. Follow or overtake ${n0}'s ghost.`);
+  if(!await s.pass(i,desc,'Ready — start my countdown',{summary:i?`${n0}: ${score(pl[0])}. ${s.players[1].name}, take the controls.`:null}))return;
+  clock=0;acc=0;gi=0;cd=new Countdown(3);phase='count';cams[i].x=0;
+ }
+ const turnOver=p=>mode==='coins'?clock>=COIN_TIME:p.finished&&(p.inCastle&&p.castleT>40||clock-p.finishT>6)||clock>=RACE_CAP||turn===1&&pl[0].finished&&!p.finished&&clock>pl[0].finishT+4;
+ const still={l:0,r:0,d:0,jump:0,b:0,press:0,bPress:0};
  // ---------------- main loop
  s.frame((dt,t)=>{
   if(!s.alive)return;
-  if(phase==='title'){titleT+=dt;if(titleT>2.45)phase='count';}
-  else if(phase==='count'){if(!cd.update(dt)){phase='play';for(const inp of inputs){inp.press=0;inp.bPress=0;}}}
-  else if(phase==='play'||phase==='end'){
-   if(!cd.done)cd.update(dt);acc+=dt;let steps=0;
+  if(phase==='title'){titleT+=dt;if(titleT>2.45)beginTurn(0);}
+  else if(phase==='count'){updateCamera(pl[turn],turn);if(!cd.update(dt)){phase='play';for(const inp of inputs){inp.press=0;inp.bPress=0;}}}
+  else if(phase==='play'||phase==='turn-end'||phase==='end'){
+   if(!cd.done)cd.update(dt);acc+=dt;let steps=0;const i=turn,p=pl[i];
+   // coins freeze when time is up; a race lets the finished runner walk into the castle
+   const moving=phase==='play'||mode==='race';
    while(acc>=STEP&&steps<5){acc-=STEP;steps++;frames++;simT+=STEP;
     if(phase==='play')clock+=STEP;
-    for(let i=0;i<2;i++){const p=pl[i],w=worlds[i];readInput(i);stepPlayer(p,w,inputs[i]);interact(p,w,inputs[i]);stepWorld(worlds[i],p);updateCamera(p,i);
+    if(moving){const w=worlds[i],inp=phase==='play'?inputs[i]:still;readInput(i);stepPlayer(p,w,inp);interact(p,w,inp);stepWorld(w,p);updateCamera(p,i);
      if(mode==='coins'&&p.inCastle&&p.castleT>110&&phase==='play')nextLap(i);}
+    if(turn===0&&phase!=='end')ghost.push(snap(p));else if(turn===1)gi++;
    }
    if(steps===5)acc=0;
-   for(const w of worlds)w.fx.update(dt);for(let i=0;i<2;i++)flash[i]=Math.max(0,flash[i]-dt*1.8);
+   for(const w of worlds)w.fx.update(dt);for(let k=0;k<2;k++)flash[k]=Math.max(0,flash[k]-dt*1.8);
    if(phase==='play'){
-    if(mode==='coins'&&clock>=COIN_TIME){phase='end';endT=0;jingle([523,659,784,1047,1319],{type:'square',vol:.035,step:.1});}
-    if(mode==='race'&&(winner>=0||clock>=RACE_CAP)){phase='end';endT=0;if(winner<0){const a=pl[0].best,b=pl[1].best;winner=Math.abs(a-b)<4?-2:a>b?0:1;}}
-   }else{endT+=dt;if(endT>3.2){
+    if(turnOver(p)){endT=0;
+     if(turn===0){phase='turn-end';turnText=mode==='coins'?`${p.coins} COINS`:p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;jingle([523,659,784,1047],{type:'square',vol:.03,step:.09});}
+     else{phase='end';const a=pl[0],b=pl[1];
+      if(mode==='coins')winner=a.coins===b.coins?-2:a.coins>b.coins?0:1;
+      else if(a.finished&&b.finished)winner=Math.abs(a.finishT-b.finishT)<.01?-2:a.finishT<b.finishT?0:1;
+      else if(a.finished||b.finished)winner=a.finished?0:1;else winner=Math.abs(a.best-b.best)<4?-2:a.best>b.best?0:1;
+      endText=winner===-2?'DEAD HEAT!':mode==='coins'?`${s.players[winner].name.toUpperCase()} WINS!`:pl[winner].finished?`THANK YOU ${s.players[winner].name.toUpperCase()}!`:`${s.players[winner].name.toUpperCase()} GOT FURTHEST!`;
+      if(winner>=0)s.react(winner,'win');jingle([523,659,784,1047,1319],{type:'square',vol:.035,step:.1});}}
+   }else if(phase==='turn-end'){endT+=dt;if(endT>2.4)beginTurn(1);}
+   else{endT+=dt;if(endT>3.4){
     if(mode==='coins'){const a=pl[0].coins,b=pl[1].coins;s.finish([a,b],`World 1-1 Coin Rush: ${s.players[0].name} ${a} coins, ${s.players[1].name} ${b} coins.`);}
-    else{const prog=q=>q.finished?100:Math.min(99,Math.round(clamp((q.best-L.start)/(L.end-L.start),0,1)*100)),sc=[prog(pl[0]),prog(pl[1])];if(winner>=0){sc[winner]=100;sc[1-winner]=Math.min(sc[1-winner],99);}
-     const desc=q=>q.finished?fmtRace(q.finishT):`${prog(q)}% of the way`;s.finish(sc,`World 1-1 Castle Dash: ${s.players[0].name} ${desc(pl[0])}, ${s.players[1].name} ${desc(pl[1])}.`);}
+    else{const sc=[prog(pl[0]),prog(pl[1])];if(winner>=0){sc[winner]=100;sc[1-winner]=Math.min(sc[1-winner],99);}
+     s.finish(sc,`World 1-1 Castle Dash: ${s.players[0].name} ${score(pl[0])}, ${s.players[1].name} ${score(pl[1])}.`);}
     return;}}
-   if(mode==='coins')s.setScores([pl[0].coins,pl[1].coins]);else s.setScores(pl.map(q=>q.finished?100:Math.min(99,Math.round(clamp((q.best-L.start)/(L.end-L.start),0,1)*100))));
+   if(mode==='coins')s.setScores([pl[0].coins,pl[1].coins]);else s.setScores(pl.map(prog));
   }
   // draw
   g.fillStyle='#000';g.fillRect(0,0,s.W,s.H);
-  drawView(0,t);drawView(1,t);
-  g.fillStyle='#000';g.fillRect(0,Math.floor(s.H/2)-2,s.W,4);g.fillStyle=C.q;g.fillRect(0,Math.floor(s.H/2)-.5,s.W,1);
+  drawView(turn,t);
   if(phase==='title')drawTitle(titleT);
   if(phase==='count'||!cd.done&&phase==='play')cd.draw(g,s.W,s.H);
-  if(phase==='end'&&(mode==='coins'||winner<0||endT>1.4)){const a=Math.min(1,mode==='coins'?endT*3:(endT-1.4)*3);g.save();g.globalAlpha=a;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(0,s.H*.4,s.W,s.H*.2);const size=Math.min(s.W*.07,s.H*.07,46);
-   let head;if(mode==='coins'){const A=pl[0].coins,B=pl[1].coins;head=A===B?'DEAD HEAT!':`${s.players[A>B?0:1].name.toUpperCase()} WINS!`;}else head=winner===-2?'DEAD HEAT!':winner>=0&&pl[winner].finished?`THANK YOU ${s.players[winner].name.toUpperCase()}!`:`${s.players[winner].name.toUpperCase()} GOT FURTHEST!`;
-   outlined(g,head,s.W/2,s.H/2-size*.3,{size,fill:'#ffe23a',stroke:'#000'});
-   const sub=mode==='coins'?`${pl[0].coins} COINS  ·  ${pl[1].coins} COINS`:pl.map(q=>q.finished?fmtRace(q.finishT):'—').join('  ·  ');outlined(g,sub,s.W/2,s.H/2+size*.75,{size:size*.5,fill:'#fff',stroke:'#000'});g.restore();}
+  if(phase==='turn-end'||phase==='end'){const a=Math.min(1,endT*3),size=Math.min(s.W*.07,s.H*.07,46);g.save();g.globalAlpha=a;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(0,s.H*.4,s.W,s.H*.2);
+   if(phase==='turn-end'){outlined(g,mode==='race'&&pl[0].finished?'COURSE CLEAR!':'TIME UP',s.W/2,s.H/2-size*.3,{size,fill:'#ffe23a',stroke:'#000'});outlined(g,`${s.players[0].name.toUpperCase()}: ${turnText}`,s.W/2,s.H/2+size*.75,{size:size*.5,fill:'#fff',stroke:'#000'});}
+   else{outlined(g,mode==='coins'&&endT<1.2?'TIME UP':endText,s.W/2,s.H/2-size*.3,{size,fill:'#ffe23a',stroke:'#000'});
+    const sub=mode==='coins'?`${pl[0].coins} COINS  ·  ${pl[1].coins} COINS`:pl.map(q=>q.finished?fmtRace(q.finishT):`${prog(q)}%`).join('  ·  ');outlined(g,sub,s.W/2,s.H/2+size*.75,{size:size*.5,fill:'#fff',stroke:'#000'});}
+   g.restore();}
  });
 }
 Object.assign(exports,{marioBros,buildLevel});
