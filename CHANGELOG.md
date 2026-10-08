@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.56.3
+
+**Every mood portrait you dropped in now shows up.** Characters with a base photo (Forrest, Taskmaster, Ace, the
+Always Sunny gang, Cartman, Prison Mike, Frank, Mac, Gizzard) were stuck on that one picture; now their think, win,
+silly, angry, sad and walk faces appear. On the board the idle faces also cycle through silly and angry, and character
+select shows every expression instead of only the first five.
+
 ## v0.56.2
 
 **Wide-screen boss fights are as hard as portrait ones.** The new wide arena turned out about 28% easier (a simulated
