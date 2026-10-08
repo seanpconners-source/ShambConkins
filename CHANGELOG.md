@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.56.1
+
+**Boss fights fill the screen.** On desktops, tablets in landscape and phones held sideways the arena now stretches to
+the whole screen instead of a narrow strip in the middle. The boss takes centre stage, a little bigger, and each player
+starts on their own side of it; planes turn to face the boss and their guns, MEGA BEAM and star barrage aim at it, and
+planes can't fly through the boss. Short landscape screens hide the score bar, status line and help strip so the
+fight gets the height. Phones held upright play exactly as before.
+
 ## v0.56.0
 
 **New warp zone: South Park, Colorado.** The board is the town map: snowy streets with snowbanks under the Rocky
