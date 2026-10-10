@@ -2,6 +2,15 @@
 
 Version 0.58.2 (`releases/ShambConkins_v0.58.2.html`).
 
+## Codex development workflow
+- Read root `AGENTS.md` and [CODEX_WORKFLOW.md](CODEX_WORKFLOW.md) for management, native agent defaults,
+  validation, Android playtesting, and session handoffs. Existing Claude guidance and game conventions remain in `CLAUDE.md`.
+- `TESTver` is the permanent development integration branch; `main` requires explicit owner release approval.
+  Initial workflow setup is isolated on `codex/multi-agent-setup` and requires separate owner approval before integration.
+- Initial baseline (both branches): `3ad8cafaa446c1d988309eee6298fc0d4531b67b`. Setup changes configuration/docs/CI only;
+  version, gameplay, assets, saves, release HTML, and Android launchers are unchanged. Check GitHub for current branch heads
+  and validation results; this baseline is not a claim of phone approval or current test success.
+
 ## Implemented systems
 - **Castlevania (v0.58.2):** Dracula's Castle NES stage map; Death boss (`death-cv`, reaper art and sickles), new themed music/cards/items/trivia. Games: `cv-vampire-killer` and `cv-candle-hunt` in `src/engines/castlevania.js`, test `tests/castlevania.mjs`. Real-phone playtest still needed.
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
@@ -206,3 +215,4 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
 - Chess/Checkers keep buttons; Minigolf, Fielding, Bike, Baseball, Rainbow Rivals still use small landscape canvases on phones.
 - Trivia3 skews hard (~34% hard) and has some mid-confidence facts; worth a skim.
 - Repo root has a stray 1-byte file `Test` created by the owner; leave it unless asked.
+
