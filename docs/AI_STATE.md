@@ -5,6 +5,9 @@ Version 0.58.2 (`releases/ShambConkins_v0.58.2.html`).
 ## Codex development workflow
 - Read root `AGENTS.md` and [CODEX_WORKFLOW.md](CODEX_WORKFLOW.md) for management, native agent defaults,
   validation, Android playtesting, and session handoffs. Existing Claude guidance and game conventions remain in `CLAUDE.md`.
+- Economy-conscious task routing is the default: regular ChatGPT GPT-6 High assignments for suitable work;
+  CODEX MODE retains native Astra/Sol execution. External chat handoffs are manual, with standalone prompts in
+  `docs/CHATGPT_HIGH_ASSIGNMENT_TEMPLATE.md` and PM-owned tracking in `docs/DEVELOPMENT_TASKS.md`.
 - `TESTver` is the permanent development integration branch; `main` requires explicit owner release approval.
   Initial workflow setup is isolated on `codex/multi-agent-setup` and requires separate owner approval before integration.
 - Initial baseline (both branches): `3ad8cafaa446c1d988309eee6298fc0d4531b67b`. Setup changes configuration/docs/CI only;
