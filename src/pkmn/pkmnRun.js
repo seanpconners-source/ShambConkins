@@ -5,7 +5,7 @@
 // (player.pkmn, player.pkbag) so old saves simply start without them.
 const {store}=require("src/state.js");
 const {CHARACTERS,character,characterIdentity}=require("src/characters.js");
-const {availableCharacters,canRecruitReward,recruitReward}=require("src/profile.js");
+const {availableCharacters,canRecruit,recruit}=require("src/profile.js");
 const {location}=require("src/locations.js");
 const {seededRandom,shuffle,clamp,hash}=require("src/utils.js");
 const {pointChange}=require("src/items.js");
@@ -64,7 +64,7 @@ function wildPool(run,p,profile=store.profile){
 }
 function pickWild(run,p,profile=store.profile,random=rnd(run,'wild')){
  const {ids,place}=wildPool(run,p,profile);
- const weights=ids.map(id=>canRecruitReward(profile,id,p.owner,'encounter')?4:1),sum=weights.reduce((a,b)=>a+b,0);let r=random()*sum;
+ const weights=ids.map(id=>canRecruit(profile,id,p.owner,'encounter')?4:1),sum=weights.reduce((a,b)=>a+b,0);let r=random()*sum;
  for(let i=0;i<ids.length;i++){r-=weights[i];if(r<=0)return {id:ids[i],place};}return {id:ids[0],place};
 }
 function wildLevel(run,p,random){const floor=REALM_FLOOR[realmOf(run,p)]||3;return clamp(teamLevel(p)-3+Math.floor(random()*5),floor,100);}
@@ -88,7 +88,7 @@ function buildTrainer(run,p,random,{size=6,levelBoost=1,trainerId=null,profile=s
  const chosen=[],ids=new Set([characterIdentity(trainer)]);
  const add=c=>{const k=characterIdentity(c.id);if(ids.has(k)||chosen.length>=size)return;ids.add(k);chosen.push(c.id);};
  for(const c of shuffle(pool.filter(c=>c.source===tSrc),random).slice(0,2))add(c);
- const fresh=shuffle(pool.filter(c=>canRecruitReward(profile,c.id,p.owner,'encounter')),random);for(const c of fresh.slice(0,Math.ceil(size/2)))add(c);
+ const fresh=shuffle(pool.filter(c=>canRecruit(profile,c.id,p.owner,'encounter')),random);for(const c of fresh.slice(0,Math.ceil(size/2)))add(c);
  for(const c of shuffle(pool,random))add(c);
  // A short team faces the same six, a few levels lower.
  const short=Math.ceil(Math.max(0,6-(p.pkmn?.team?.length||6))*1.1),base=teamLevel(p)-short;
@@ -102,7 +102,8 @@ async function battleFlow(run,p,{mode,foe,random,prize=0,pre=[],intro=null,unloc
  const unlocked=[];const lines=[];
  if(r.outcome==='caught'&&r.caught){
   const mon=D.normalizeMon(r.caught)||D.makeMon(r.caught.id,r.caught.lvl);const name=D.speciesFor(mon.id).name;
-  const actual=canRecruitReward(profile,mon.id,p.owner,'encounter')?recruitReward(profile,mon.id,p.owner,'encounter',random):null;
+  // A caught wild character must grant the exact ID seen in battle, not a random unowned Bond.
+  const actual=canRecruit(profile,mon.id,p.owner,'encounter')&&recruit(profile,mon.id,p.owner,'encounter')?mon.id:null;
   if(actual)unlocked.push(actual);
   const where=addCaught(p,mon);
   lines.push(where==='team'?`${name} joined ${p.name.toUpperCase()}’s team!`:`${name} was transferred to BILL’s PC!`);
@@ -112,9 +113,9 @@ async function battleFlow(run,p,{mode,foe,random,prize=0,pre=[],intro=null,unloc
  }
  if(r.outcome==='win'){
   p.points+=prize;
-  const cands=[...new Set([...(extraUnlock?[extraUnlock]:[]),...(unlockFrom||[]).filter(id=>r.defeated.includes(id))])].filter(id=>canRecruitReward(profile,id,p.owner,'encounter'));
+  const cands=[...new Set([...(extraUnlock?[extraUnlock]:[]),...(unlockFrom||[]).filter(id=>r.defeated.includes(id))])].filter(id=>canRecruit(profile,id,p.owner,'encounter'));
   const pickId=extraUnlock&&cands.includes(extraUnlock)?extraUnlock:cands[Math.floor(random()*cands.length)];
-  const actual=pickId?recruitReward(profile,pickId,p.owner,'encounter',random):null;
+  const actual=pickId&&recruit(profile,pickId,p.owner,'encounter')?pickId:null;
   if(actual){unlocked.push(actual);lines.push(`${D.speciesFor(actual).name} was so impressed by your team, they joined ${p.name}’s roster!`);}
   else if(unlockFrom)lines.push('Everyone you beat is already on your roster. You keep the prize money.');
   if(mode!=='wild')hooks.logRun?.(`${p.name} won a Pokémon battle against ${foe.label}.`);else p.points+=1;
