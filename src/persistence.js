@@ -7,7 +7,26 @@ function writeJSON(key, value) { const raw=JSON.stringify(value);memory.set(key,
 function removeSaved(key) { memory.set(key,null);try { const storage=globalThis.localStorage;if(typeof storage?.removeItem!=='function')return;storage.removeItem(key);memory.delete(key); } catch {} }
 // Transactions must never mistake the legacy in-memory fallback for durable IO.
 function readDurableJSON(key) { try { const raw=globalThis.localStorage?.getItem(key);return raw?JSON.parse(raw):null; } catch { return null; } }
-function writeDurableJSON(key,value) { try { const storage=globalThis.localStorage;if(typeof storage?.setItem!=='function')return false;storage.setItem(key,JSON.stringify(value));memory.delete(key);return true; } catch { return false; } }
+function writeDurableJSON(key,value) {
+ try {
+  const storage=globalThis.localStorage;
+  if(typeof storage?.setItem!=='function'||typeof storage?.getItem!=='function')return false;
+  const raw=JSON.stringify(value);
+  if(typeof raw!=='string')return false;
+  storage.setItem(key,raw);
+  // A returned setItem is not confirmation if storage silently discarded the write.
+  if(storage.getItem(key)!==raw)return false;
+  memory.delete(key);return true;
+ } catch { return false; }
+}
+function inspectDurableJSON(key) {
+ let raw;
+ try { const storage=globalThis.localStorage;if(typeof storage?.getItem!=='function')return {status:'unavailable'};raw=storage.getItem(key); }
+ catch { return {status:'unavailable'}; }
+ if(raw==null)return {status:'missing'};
+ try { return {status:'valid',value:JSON.parse(raw)}; }
+ catch { return {status:'corrupt'}; }
+}
 const BROFORCE_IDS=Object.freeze(['broforce-jungle','broforce-factory','broforce-city','broforce-desert']);
 const bfRecord=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const bfFlags=v=>Array.isArray(v)&&v.length===2&&v.every(x=>typeof x==='boolean');
@@ -77,4 +96,4 @@ function validRun(run) {
  return true;
 }
 
-Object.assign(exports,{PROFILE_KEY,RUN_KEY,readJSON,writeJSON,removeSaved,validRun,readDurableJSON,writeDurableJSON,BROFORCE_IDS,validBroforceAttempt,validBroforceTerminal,validBroforceEvidence,validBroforceIntent});
+Object.assign(exports,{PROFILE_KEY,RUN_KEY,readJSON,writeJSON,removeSaved,validRun,readDurableJSON,writeDurableJSON,inspectDurableJSON,BROFORCE_IDS,validBroforceAttempt,validBroforceTerminal,validBroforceEvidence,validBroforceIntent});
