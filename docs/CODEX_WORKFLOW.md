@@ -45,7 +45,7 @@ At setup, available tools exposed native Codex subagents and GitHub operations, 
 
 ## Production release
 
-Before asking for release approval, compare `main` and `TESTver` with the owner's accepted scope. Exclude rejected changes through separate branches or reversions, preserving public history. Prepare the established release materials: `src/version.js`, `package.json` version and release output path, changelog, and release HTML. Run `npm run release` only for approved production preparation. Show the concrete candidate and validation for approval before advancing `main`. After an approved release, bring `TESTver` forward without losing ongoing work. These are workflow rules, not GitHub branch protection; `main` and `TESTver` were unprotected at setup time.
+Before asking for release approval, compare `main` and `TESTver` with the owner's accepted scope. Exclude rejected changes through separate branches or reversions, preserving public history. Prepare the established release materials: `src/version.js`, `package.json` version and release output path, changelog, and release HTML. Run `npm run release` only for approved production preparation. Generated offline HTML may exceed GitHub's 100 MB file limit: for v0.58.3 distribute it as a versioned GitHub Release asset after verifying the compiled HTML, rather than committing the oversized artifact or replacing original art. Show the concrete candidate and validation for approval before advancing `main`. After an approved release, bring `TESTver` forward without losing ongoing work. These are workflow rules, not GitHub branch protection; `main` and `TESTver` were unprotected at setup time.
 
 ## Report and session handoff
 
