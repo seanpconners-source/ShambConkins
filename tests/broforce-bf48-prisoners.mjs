@@ -196,4 +196,28 @@ check('no rescue occurs for unknown action types, zero interactions or remote na
   assert.deepEqual(run({interactions:interaction}).events,[]);
  }
 });
+
+check('one attributed blast may destroy two distinct cages but duplicates cannot swap twice',()=>{
+ const pair=createBroforcePrisoners([{id:'near',x:18,y:18},{id:'far',x:55,y:18}]);
+ const blast={x:40,y:24,radius:25};
+ const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
+ const impacts=pair.filter(c=>Math.hypot(blast.x-clamp(blast.x,c.x,c.x+c.w),
+  blast.y-clamp(blast.y,c.y,c.y+c.h))<=blast.radius)
+  .map(c=>({type:'cage-destroyed',playerIndex:1,prisonerId:c.id,
+   x:clamp(blast.x,c.x,c.x+c.w),y:clamp(blast.y,c.y,c.y+c.h)}));
+ assert.equal(impacts.length,2);
+ const result=run({prisoners:pair,interactions:[...impacts,...impacts],
+  fightersByOwner:{Sean:['sean-only'],Amber:['amber-only','beta']},
+  activeFighterByOwner:{Sean:'sean-only',Amber:'amber-only'}});
+ assert.equal(result.events.length,2);
+ assert.ok(result.events.every(e=>e.owner==='Amber'&&e.type==='fighter-swap'));
+ assert.deepEqual(result.events.map(e=>e.to),['beta','amber-only']);
+ assert.deepEqual(result.prisoners.map(c=>c.rescuedBy),['Amber','Amber']);
+});
+check('nested actor collision body uses body bounds, not a stale top-level position',()=>{
+ const actor={...P1(),x:999,y:999,body:{x:10,y:12,w:12,h:26}};
+ assert.equal(run({players:[actor,P2()]}).events.length,1);
+ const remote={...actor,body:{x:500,y:500,w:12,h:26}};
+ assert.deepEqual(run({players:[remote,P2()]}).events,[]);
+});
 console.log('BF-48 PRISONERS OK: '+count+'/'+count+' checks passed');
