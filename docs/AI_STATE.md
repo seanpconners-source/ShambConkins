@@ -9,7 +9,8 @@ Version 0.58.2 (`releases/ShambConkins_v0.58.2.html`).
   CODEX MODE retains native Astra/Sol execution. External chat handoffs are manual, with standalone prompts in
   `docs/CHATGPT_HIGH_ASSIGNMENT_TEMPLATE.md` and PM-owned tracking in `docs/DEVELOPMENT_TASKS.md`.
 - `TESTver` is the permanent development integration branch; `main` requires explicit owner release approval.
-  Initial workflow setup is isolated on `codex/multi-agent-setup` and requires separate owner approval before integration.
+  Workflow setup was explicitly approved and integrated into TESTver at `560a4751a46e74fc8bfd9201af6ab27d359dec6f`.
+  The Android feedback batch is prepared in docs/DEVELOPMENT_TASKS.md; prompts are not completed implementations.
 - Initial baseline (both branches): `3ad8cafaa446c1d988309eee6298fc0d4531b67b`. Setup changes configuration/docs/CI only;
   version, gameplay, assets, saves, release HTML, and Android launchers are unchanged. Check GitHub for current branch heads
   and validation results; this baseline is not a claim of phone approval or current test success.
