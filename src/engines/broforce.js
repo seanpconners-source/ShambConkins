@@ -124,6 +124,7 @@ async function broforce(s){
   const {generateBroforceVariant}=require('src/engines/broforce/stageVariants.js');
   const {createBroforceMission,advanceBroforceMission}=require('src/engines/broforce/mission.js');
   const {drawBroforceScene}=require('src/engines/broforce/sceneRenderer.js');
+   const {createBroforceFx,emitBroforceFx,advanceBroforceFx}=require('src/engines/broforce/fxArt.js');
   const {drawBroforceEnvironment}=require('src/engines/broforce/themeArt.js');
   const {drawBroforceCinematics}=require('src/engines/broforce/cinematicArt.js');
   const {createBroforceAmbience}=require('src/engines/broforce/ambience.js');
@@ -134,6 +135,7 @@ async function broforce(s){
   const stage=generateBroforceVariant({stageId,seed});
   state=createBroforceMission({stage,seed,devilId,players,attemptId});
   let camera=createBroforceCamera({zoom:2});
+   let fxSystem=createBroforceFx(seed,{quality:'high',reducedMotion:motion||!!media?.matches});
   // BF-16 consumes fightersByOwner. Supply snapshots on mission state and on
   // each detached player; the BF-30 integrator must retain this entitlement.
   state={...state,fightersByOwner:Object.fromEntries(players.map(p=>[p.owner,p.fighters.slice()]))};
@@ -178,7 +180,11 @@ async function broforce(s){
    try{
     const viewport={width:s.W,height:s.H};
     const nextSize=s.W+'x'+s.H,reduce=!!settings().reducedMotion||!!media?.matches;
-    if(nextSize!==size||reduce!==motion){clear();controls.resize();size=nextSize;motion=reduce;}
+    if(nextSize!==size||reduce!==motion){
+      const motionChanged=reduce!==motion;
+      clear();controls.resize();size=nextSize;motion=reduce;
+      if(motionChanged)fxSystem=createBroforceFx(seed,{quality:motion?'low':'high',reducedMotion:motion});
+     }
     const seconds=Math.max(0,Math.min(.04,Number.isFinite(dt)?dt:0));
     // Preserve BF-18 press/hold fields; explicit aliases match physics and the
     // mission's held boarding intent without transferring input between owners.
@@ -189,7 +195,11 @@ async function broforce(s){
     const map=state.terrain?.map||state.terrain||state.stage||resources.stage;
     camera=resources.advanceBroforceCamera(camera,{players:(state.players||[]).map(p=>({...p,...(p.body||{})})),
      viewport,world:{width:map.width*16,height:map.height*16},dt:seconds,controlsInset:Math.min(145,s.H*.28)});
-    const scene={...state,camera,fx:{...state.fx,reducedMotion:motion}};
+    // Mission provides finite, per-tick FX events; BF-23 owns active particles,
+     // shake and lifetimes. Never spread the raw mission event array into scene.fx.
+     for(const event of (Array.isArray(state.fx)?state.fx:[]).slice(0,128))emitBroforceFx(fxSystem,event);
+     advanceBroforceFx(fxSystem,seconds);
+     const scene={...state,camera,fx:fxSystem};
     resources.drawBroforceScene(ctx,{state:scene,viewport,time:motion?0:time,quality:motion?'low':'high',portraitFor,
      environmentDraw:resources.drawBroforceEnvironment,
      cinematicDraw:(g,opts)=>resources.drawBroforceCinematics(g,{...opts,camera:{...opts.camera,zoom:1},reducedMotion:motion})});
