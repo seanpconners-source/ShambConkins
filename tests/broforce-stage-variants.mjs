@@ -89,7 +89,9 @@ function reachable(s){
       }
     }
   }
-  return new Set([...visited].map(i=>poses[i].col));
+  const cols=new Set([...visited].map(i=>poses[i].col));
+  cols.reachablePoses=[...visited].map(i=>poses[i]);
+  return cols;
 }
 function signature(s){let h=2166136261;for(const v of s.tiles)h=Math.imul(h^v,16777619)>>>0;return h;}
 function validate(s){
@@ -114,6 +116,11 @@ function validate(s){
   for(const p of actors)assert.ok(grounded(s,p.x,p.y),
     'embedded actor '+s.stageId+' '+s.seed+' '+JSON.stringify(p));
   const route=reachable(s);
+  const detour=s.environment.structures.find(x=>x.id==='bf-'+s.theme+'-detour');
+  assert.ok(detour,'stage includes a dedicated reachable alternate route');
+  assert.ok(route.reachablePoses.some(p=>p.y+H===detour.y&&
+    p.x>=detour.x&&p.x<detour.x+detour.width),
+    'variant detour not accessible '+s.stageId+' '+s.seed);
   for(const p of [...s.prisoners,s.devilSpawn,s.extraction,...s.checkpoints])
     assert.ok(route.has(Math.floor(p.x/16)),
       'unreachable '+s.stageId+' seed='+s.seed+' at '+p.x+', furthest='+Math.max(...route));
