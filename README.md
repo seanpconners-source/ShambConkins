@@ -21,7 +21,7 @@ original HTML byte-for-byte (SHA-256 `3f712823…f076`).
 - `tests/bot.mjs` – plays a whole board game with a random bot; `tests/load.mjs` loads modules in plain Node for unit tests
 - Bump the version in `src/version.js` and `package.json`
 
-Current play-through: open `releases/ShambConkins_v0.45.0.html` in a browser.
+Current released build: open `releases/ShambConkins_v0.58.3.html` in a browser.
 
 ## Adding art without touching code
 Drop files in these folders and run `npm run release` (or `npm run build`):
