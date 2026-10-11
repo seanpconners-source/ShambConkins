@@ -34,9 +34,12 @@ function distanceToCage(x,y,cage){
  return Math.hypot(dx,dy);
 }
 function livePlayer(player,index){
+ // An attributed impact is not proof that an actor is still alive. The
+ // mission passes an explicit boolean; fail closed for missing/stale actors.
  return !!player&&player.owner===OWNERS[index]&&
-  player.alive!==false&&player.dead!==true&&player.downed!==true&&
-  player.cancelled!==true&&player.canceled!==true&&player.extracted!==true&&
+  player.alive===true&&player.dead!==true&&player.downed!==true&&
+  player.cancelled!==true&&player.canceled!==true&&
+  player.extracted!==true&&player.boarded!==true&&
   !(finite(player.health)&&player.health<=0);
 }
 function playerCenter(player){
