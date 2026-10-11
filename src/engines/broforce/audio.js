@@ -111,12 +111,14 @@ function createBroforceAudio(getContext,getSettings){
  function play(name,options={}){
   if(closed||!Object.hasOwn(COST,name))return false;
   const settings=setting();
-  if(!settings.sound){pending=null;if(active.size)clearGraph();return false;}
+  if(settings.sound===false){pending=null;if(active.size||master)clearGraph();return false;}
   const volume=clamp(Number(options&&options.volume===undefined?1:options?.volume),0,1);
   if(!Number.isFinite(volume)||volume<=0)return false;
   const a=safe(()=>getContext(),null);
-  if(!a||a.state==='closed')return false;
+  if(!a||a.state==='closed'){pending=null;if(active.size||master)clearGraph();return false;}
   if(a.state&&a.state!=='running'){
+   // Interrupted/suspended contexts must not revive old scheduled combat voices.
+   if(active.size||master)clearGraph();
    if(a.state==='suspended'&&typeof a.resume==='function'){
     pending={name,options};
     if(!resuming){resuming=true;
