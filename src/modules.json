@@ -268,6 +268,12 @@
   "src/engines/broforce/hudArt.js",
   "src/engines/broforce/audio.js",
   "src/engines/broforce/rewardPolicy.js",
+  "src/engines/broforce/stageVariants.js",
+  "src/engines/broforce/themeArt.js",
+  "src/engines/broforce/mission.js",
+  "src/engines/broforce/sceneRenderer.js",
+  "src/engines/broforce/cinematicArt.js",
+  "src/engines/broforce/ambience.js",
   "src/engines/broforce.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
