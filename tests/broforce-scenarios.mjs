@@ -30,6 +30,8 @@ function load(file,stubs={}){
  const req=id=>{
   if(Object.prototype.hasOwnProperty.call(stubs,id))return stubs[id];
   if(id.startsWith('src/engines/broforce/'))return load(id);
+  if(id==='src/characters.js')return chars;
+  if(id==='src/profile.js')return profile;
   throw new Error('Unexpected dependency '+id+' in '+file);
  };
  new Function('require','exports',sourceAt(file)+'\n//# sourceURL='+file)(req,out);
