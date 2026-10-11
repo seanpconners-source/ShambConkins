@@ -86,6 +86,13 @@ test('pure fire state does not mutate input; seeded shotgun spread independent o
     dt:0,random:(_shot,pellet)=>pellet/5});
   assert.notDeepEqual(plain(injected.projectiles),plain(repeated.projectiles));
 });
+test('switching weapons retains globally unique projectile sequence within a player',()=>{
+  const pistol=fireBroforceWeapon({owner:'P1',weapon:'pistol',fireHeld:true,dt:0});
+  const rifle=fireBroforceWeapon({owner:'P1',weapon:'rifle',state:pistol.state,fireHeld:true,dt:0});
+  const back=fireBroforceWeapon({owner:'P1',weapon:'pistol',state:rifle.state,fireHeld:true,dt:0});
+  assert.deepEqual([pistol.state.sequence,rifle.state.sequence,back.state.sequence],[1,2,3]);
+  assert.notEqual(pistol.projectiles[0].id,back.projectiles[0].id);
+});
 test('projectile constructor normalizes direction, including diagonal and facing',()=>{
   const p=createBroforceProjectile({id:'diagonal',owner:'P1',x:6,y:9,dir:{x:1,y:1}});
   assert.ok(Math.abs(p.vx-p.vy)<1e-8);
