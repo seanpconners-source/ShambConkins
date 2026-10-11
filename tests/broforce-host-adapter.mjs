@@ -26,6 +26,7 @@ const camera=load('src/engines/broforce/camera.js');
 const terrain=load('src/engines/broforce/terrain.js');
 const stageApi=load('src/engines/broforce/stage.js',{'src/engines/broforce/terrain.js':terrain});
 const audioApi=load('src/engines/broforce/audio.js');
+const fxApi=load('src/engines/broforce/fxArt.js');
 class Element{
  constructor(tag,doc){this.tagName=tag.toUpperCase();this.ownerDocument=doc;this.style={};this.children=[];this.attrs={};this.listeners=new Map();this.captured=new Set();this.className='';this.hidden=false;this.textContent='';
   this.classList={add:k=>{if(!this.classList.contains(k))this.className+=' '+k;},remove:k=>{this.className=this.className.split(' ').filter(v=>v!==k).join(' ');},contains:k=>this.className.split(' ').includes(k)};}
@@ -71,12 +72,14 @@ function setup(options={}){
   'src/state.js':{store},'src/utils.js':utils,'src/engines/broforce/roster.js':roster,
   'src/audio.js':{audioContext:()=>null},'src/engines/broforce/audio.js':{createBroforceAudio(...args){const api=audioApi.createBroforceAudio(...args);return{...api,stop(){calls.audioStop++;api.stop();}};}},
   'src/engines/broforce/controls.js':controls,'src/engines/broforce/camera.js':camera,
+  'src/engines/broforce/fxArt.js':fxApi,
   'src/assets.js':{portraitURL:id=>'https://forbidden/'+id,portraitFallbackURL:()=> 'data:image/svg+xml;base64,PHN2Zy8+'},
   'src/headCutouts.js':{headDisplayURL:s=>s},
   'src/engines/broforce/stageVariants.js':{generateBroforceVariant(arg){calls.generated.push(plain(arg));return{...stageApi.generateBroforceStage({seed:arg.seed}),stageId:arg.stageId};}},
   'src/engines/broforce/mission.js':{
    createBroforceMission(arg){calls.create.push(plain(arg));return{...arg,stageId:arg.stage.stageId,players:arg.players.map((p,i)=>({...p,body:{x:40+i*32,y:280,w:12,h:26},alive:true})),terrain:arg.stage};},
    advanceBroforceMission(state,args){calls.steps.push(plain(args));state.players[0].fighterId='alpha';state.players[1].fighterId='beta';
+    state.fx=[{type:'muzzle',x:45,y:275}];
     const terminal=options.terminal?.(state,args,calls.steps.length);
     if(terminal?.won&&options.reward){state.bossDefeated=true;state.extraction={active:true,phase:'completed',outcome:'extracted',reason:'departure',
       boarded:terminal.bf.boarded,receipts:terminal.bf.boarded.map((yes,i)=>yes?{playerIndex:i,owner:state.players[i].owner,boardedAt:3}:null)};}
@@ -166,6 +169,14 @@ await check('untrusted/mismatched terminal fails closed; never awards',async()=>
 await check('dead boarder earns no displayed success; timeout zero scores',async()=>{
  const a=setup({terminal:state=>terminal(state,[true,true],'extracted',[true,false])});await a.run();a.step();assert.deepEqual(a.calls.finish[0].scores,[1,0]);
  const b=setup({terminal:state=>terminal(state,[false,false],'timeout')});await b.run();b.step();assert.equal(b.calls.finish[0].result.bf.outcome,'timeout');assert.deepEqual(b.calls.finish[0].scores,[0,0]);
+});
+await check('BF-23 mission FX events are converted to active particles before rendering',async()=>{
+ const d=setup();await d.run();d.step();
+ assert.ok(d.calls.draw.length>0);
+ const fx=d.calls.draw.at(-1).state.fx;
+ assert.ok(Array.isArray(fx.particles)&&fx.particles.length>0,'render snapshot must contain particles, not raw event array');
+ assert.ok(Number.isFinite(fx.elapsed)&&fx.elapsed>0);
+ d.s.dispose();
 });
 await check('BF-37 protected board attempt is used and completed extraction proof submitted before finish',async()=>{
  const attempt={schema:1,attemptId:'bf37:proof',gameId:'broforce-jungle',stageId:'broforce-jungle',seed:17,
