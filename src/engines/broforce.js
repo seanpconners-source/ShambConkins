@@ -49,6 +49,14 @@ async function broforce(s){
  let disposed=false,settled=false,phase='intro',state=null,elapsed=0;
  let controls=null,ambience=null,sfx=null,resources=null;
  const portraits=new Map(),extraCleanups=[];
+ // CSS env() safe areas vary on Fold/phone and remain independent from game pixels.
+ // Reserve the real DOM menu strip above the Canvas HUD; no fake Pause target.
+ let safeProbe=null;
+ function insets(){
+  const css=safeProbe&&win.getComputedStyle?.(safeProbe);
+  const n=k=>Math.max(0,Math.min(100,parseFloat(css?.[k])||0));
+  return {top:n('paddingTop'),right:n('paddingRight'),bottom:n('paddingBottom'),left:n('paddingLeft')};
+ }
  function dispose(){
   if(disposed)return;disposed=true;phase='exited';
   // Independent guards ensure a failed disposer cannot strand other resources.
@@ -79,6 +87,9 @@ async function broforce(s){
     .bf36-shell .bf18-action{min-width:44px!important;min-height:44px!important}
    `;
    shell.appendChild(style);extraCleanups.push(()=>{style.remove();if(!hadShell)shell.classList.remove('bf36-shell');if(!hadLayer)layer?.classList.remove('bf36-layer');});
+   safeProbe=doc.createElement('div');safeProbe.setAttribute('aria-hidden','true');
+   safeProbe.style.cssText='position:absolute;visibility:hidden;pointer-events:none;width:0;height:0;overflow:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+   shell.appendChild(safeProbe);extraCleanups.push(()=>safeProbe?.remove());
   }
   const {audioContext}=require('src/audio.js');
   const {createBroforceAudio}=require('src/engines/broforce/audio.js');
@@ -178,7 +189,8 @@ async function broforce(s){
   s.frame((dt,time)=>{
    if(disposed||settled||!s.alive||s.paused||doc.hidden||phase!=='playing')return;
    try{
-    const viewport={width:s.W,height:s.H};
+    const safe=insets();
+    const viewport={width:s.W,height:s.H,safeInsets:{top:Math.max(56,safe.top+56),right:safe.right,bottom:safe.bottom,left:safe.left}};
     const nextSize=s.W+'x'+s.H,reduce=!!settings().reducedMotion||!!media?.matches;
     if(nextSize!==size||reduce!==motion){
       const motionChanged=reduce!==motion;
@@ -199,14 +211,19 @@ async function broforce(s){
      // shake and lifetimes. Never spread the raw mission event array into scene.fx.
      for(const event of (Array.isArray(state.fx)?state.fx:[]).slice(0,128))emitBroforceFx(fxSystem,event);
      advanceBroforceFx(fxSystem,seconds);
-     const scene={...state,camera,fx:fxSystem};
+     const scene={...state,camera,fx:fxSystem,hideHudPause:true,
+      mission:{stage:state.stage?.title||s.game.title,
+       objective:state.stage?.objective||'Rescue captives and defeat the devil',
+       rescues:(state.prisoners||[]).filter(p=>p.rescued).length,
+       rescueTarget:(state.prisoners||[]).length}};
     resources.drawBroforceScene(ctx,{state:scene,viewport,time:motion?0:time,quality:motion?'low':'high',portraitFor,
      environmentDraw:resources.drawBroforceEnvironment,
      cinematicDraw:(g,opts)=>resources.drawBroforceCinematics(g,{...opts,camera:{...opts.camera,zoom:1},reducedMotion:motion})});
     ambience.setIntensity(state.devil?.active ? .85 : .35);
-    for(const e of (next.events||[]).slice(0,32)){
-     const names={'fighter-swap':'swap','prisoner-rescued':'rescue','devil-defeated':'boss-death','player-boarded':'extraction','shot':'rifle'};
-     sfx?.play(names[e.type]||e.type);
+    // Mission events contain authoritative sound{name}; other gameplay events
+    // must not duplicate the cue or mask a weapon/boss/helicopter identity.
+    for(const e of (next.events||[]).filter(e=>e.type==='sound').slice(0,32)){
+     if(typeof e.name==='string')sfx?.play(e.name);
     }
    }catch(error){
     s.status('Broforce stopped: '+String(error.message||error));
