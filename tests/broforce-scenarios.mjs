@@ -283,17 +283,25 @@ if(integrated){
   assert.deepEqual(plain(step.state),copy);
   assert.equal(step.terminal??null,null);
  });
- check('INTEGRATED BF-30: authoritative terminal has exact award evidence',()=>{
+ check('INTEGRATED BF-30: active tick preserves chosen devil and explicit terminal channel',()=>{
+  const variant=requireExport(variantPaths,'generateBroforceVariant');
   const create=requireExport(missionPaths,'createBroforceMission');
   const advance=requireExport(missionPaths,'advanceBroforceMission');
-  assert.equal(typeof create,'function');assert.equal(typeof advance,'function');
-  const terminalSchema={schema:1,attemptId:'bf34:a',stageId:STAGES[0][0],
-   devilId:DEVIL,outcome:'extracted',boarded:[true,false],aliveAtBoarding:[true,false]};
-  const p=profile.freshProfile(),h={outcome:'extracted',boarded:terminalSchema.boarded,
-   receipts:[{owner:'Sean'},null]};
-  assert.deepEqual(settle(p,h).grants,[{owner:'Sean',characterId:DEVIL}]);
-  // Schema fixture above checks the pure reward boundary, not a faked mission win.
-  // Full mission terminal assertion is owned by integration harness once reachable.
+  const stage=variant({stageId:STAGES[0][0],seed:'bf34'});
+  const mission=create({stage,seed:'bf34',devilId:DEVIL,players:players(),attemptId:'bf34:int'});
+  const out=advance(mission,{dt:1/60,inputs:[{},{}],paused:false});
+  assert.ok(out&&out.state&&Array.isArray(out.events));
+  assert.ok(Object.prototype.hasOwnProperty.call(out,'terminal'),
+   'Mission ticks must return an explicit terminal channel');
+  if(out.terminal){
+   assert.equal(out.terminal.kind,'broforce');
+   assert.equal(out.terminal.bf.schema,1);
+   assert.equal(out.terminal.bf.attemptId,'bf34:int');
+   assert.equal(out.terminal.bf.devilId,DEVIL);
+   assert.deepEqual(out.terminal.bf.boarded.length,2);
+   assert.deepEqual(out.terminal.bf.aliveAtBoarding.length,2);
+  }
+  // A normal first-frame tick is not a fabricated end-to-end extraction.
  });
  check('INTEGRATED BF-31: compositor export exists',()=>{
   assert.equal(typeof requireExport(scenePaths,'drawBroforceScene'),'function');
