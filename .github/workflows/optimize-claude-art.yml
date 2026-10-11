@@ -1,0 +1,89 @@
+name: Apply original Claude WebP optimization to isolated art branch
+
+on:
+  push:
+    branches: [fix/claude-portrait-webp-20261011]
+    paths:
+      - .github/workflows/optimize-claude-art.yml
+
+permissions:
+  contents: write
+
+jobs:
+  optimize-and-compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install the original image optimizer dependency
+        run: python3 -m pip install Pillow
+      - name: Record unoptimized single-file HTML size
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build
+          stat -c %s dist/ShambConkins.html > "$RUNNER_TEMP/html-before-bytes.txt"
+          echo "HTML BEFORE: $(cat "$RUNNER_TEMP/html-before-bytes.txt") bytes"
+      - name: Optimize with unchanged Claude script, protecting existing WebP and archives
+        shell: bash
+        env:
+          OPTIMIZER_MIN_COUNT: '70'
+        run: |
+          set -euo pipefail
+          OPTIMIZER_REPORT="$RUNNER_TEMP/portrait-optimization-report.json" python3 tools/run-claude-optimizer-safe.py
+      - name: Compare optimized build and check module integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tools/check-modules.mjs
+          npm run build
+          before=$(cat "$RUNNER_TEMP/html-before-bytes.txt")
+          after=$(stat -c %s dist/ShambConkins.html)
+          echo "HTML_BEFORE_BYTES=$before"
+          echo "HTML_AFTER_BYTES=$after"
+          test "$after" -lt "$before"
+          python3 - <<'PY'
+          import json, os, pathlib
+          report=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"portrait-optimization-report.json").read_text())
+          assert report["optimized_count"]>=70
+          assert report["saved_bytes"]>0
+          print("CLAUDE_WEBP_OPTIMIZED",report["optimized_count"])
+          print("SOURCE_IMAGE_BYTES_SAVED",report["saved_bytes"])
+          print("SKIPPED_COLLISIONS",report["skipped_collisions"])
+          PY
+      - name: Commit and push the images and archived originals on this isolated branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A -- assets/portraits assets/originals/portraits assets/items assets/locations
+          git diff --cached --check
+          git diff --cached --name-only > "$RUNNER_TEMP/changed-art-paths.txt"
+          python3 - <<'PY'
+          import os, pathlib
+          changed=(pathlib.Path(os.environ["RUNNER_TEMP"])/"changed-art-paths.txt").read_text().splitlines()
+          assert len(changed)>=140, f"Unexpectedly few changed paths: {len(changed)}"
+          assert all(p.startswith(("assets/portraits/","assets/originals/portraits/","assets/items/","assets/locations/")) for p in changed)
+          print("CHANGED_ART_PATHS",len(changed))
+          PY
+          git commit -m 'art: apply existing Claude 480px WebP q88/m6 optimizer to 77 portraits'
+          git push origin HEAD:refs/heads/fix/claude-portrait-webp-20261011
+      - name: Retain image-by-image compression report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-art-optimization-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/portrait-optimization-report.json
+            ${{ runner.temp }}/changed-art-paths.txt
+          if-no-files-found: ignore
+          retention-days: 14
