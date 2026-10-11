@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.58.3
+
+**Six gameplay fixes from TESTver, promoted after owner playtesting.** Player names now follow setup input and survive the appropriate save/restore and turn handoffs without changing roster ownership. Trivia modes fix crashes and show distinct correct, incorrect, timeout, and mixed-answer feedback after both players commit. Pokémon Bond catches and trainer rewards respect the exact character ID, with accessible haptics behavior. Gopher Hunt randomizes available opponent portrait moods. Fruit Ninja enforces finite swipe combos and input resets. Taskmaster Frantic Relay replaces the old challenge set with seven matched object tasks plus practice and protects the final completion/cancellation lifecycle.
+
+All seven focused regressions, board/level/unlock tests, browser smoke/route tests, and 139/139 minigame fuzz checks passed together on TESTver. Release candidate also validates the actual offline HTML and its affected minigames. Saves, asset IDs and Android launcher paths are unchanged.
+
 ## v0.58.2
 
 **Castlevania warp zone — Dracula's Castle.** NES-style stage map, Clock Tower boss fight with Death, original gothic chip-baroque music, themed items, chance cards and trivia. Two pass-and-play minigames: Vampire Killer Dash and Night of the Candles. Prison Mike now has his own unlock line. Integrated on top of v0.58.1, preserving newer South Park, Pokémon, minigame and boss content.

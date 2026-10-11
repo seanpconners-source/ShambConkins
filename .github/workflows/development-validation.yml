@@ -1,0 +1,121 @@
+name: Development validation
+
+on:
+  push:
+    branches:
+      - TESTver
+      - 'codex/**'
+      - 'feature/**'
+      - 'fix/**'
+      - 'integrate/**'
+  pull_request:
+    branches:
+      - TESTver
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: development-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate native Codex configuration syntax
+        run: |
+          python3 - <<'PY'
+          import pathlib, tomllib
+          root = pathlib.Path('.')
+          config = tomllib.loads((root / '.codex/config.toml').read_text())
+          assert config['model'] == 'gpt-6-astra'
+          assert config['model_reasoning_effort'] in ('medium', 'high')
+          assert config['agents']['default_subagent_model'] == 'gpt-6-sol'
+          assert config['agents']['default_subagent_reasoning_effort'] in ('medium', 'high')
+          assert config['agents']['enabled'] is True
+          assert 1 <= config['agents']['max_concurrent_threads_per_session'] <= 3
+          for path in ('AGENTS.md', 'CLAUDE.md', 'docs/AI_STATE.md', 'docs/CODEX_WORKFLOW.md'):
+              assert (root / path).is_file(), path
+          print('TOML syntax and project instruction files verified; runtime discovery is a separate check.')
+          PY
+      - name: Install existing browser test prerequisites
+        working-directory: /tmp
+        run: |
+          sudo mkdir -p /node-tools /opt/pw-browsers/chromium-1194/chrome-linux /tmp/claude-0/sc
+          sudo chown -R "$USER" /node-tools /tmp/claude-0
+          cd /node-tools
+          npm install --no-audit --no-fund playwright@1.50.1
+          npx playwright install --with-deps chromium
+          browser_executable=$(node -e "console.log(require('/node-tools/node_modules/playwright').chromium.executablePath())")
+          sudo ln -s "$browser_executable" /opt/pw-browsers/chromium-1194/chrome-linux/chrome
+      - name: Build and run all core and feature regressions
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test:core 2>&1 | tee "$RUNNER_TEMP/shambconkins-core.log"
+      - name: Verify browser smoke/route logs include successful assertions
+        shell: bash
+        run: |
+          grep -Fx 'errors: []' "$RUNNER_TEMP/shambconkins-core.log"
+          grep -Fx 'errors []' "$RUNNER_TEMP/shambconkins-core.log"
+          grep -Fx 'fork reached: true' "$RUNNER_TEMP/shambconkins-core.log"
+          grep -Fx 'panel closed: true' "$RUNNER_TEMP/shambconkins-core.log"
+      - name: Preserve core validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: development-core-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/shambconkins-core.log
+            /tmp/claude-0/*.png
+          if-no-files-found: ignore
+          retention-days: 14
+
+  game-fuzz-shards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install existing browser test prerequisites
+        working-directory: /tmp
+        run: |
+          sudo mkdir -p /node-tools /opt/pw-browsers/chromium-1194/chrome-linux /tmp/claude-0/sc
+          sudo chown -R "$USER" /node-tools /tmp/claude-0
+          cd /node-tools
+          npm install --no-audit --no-fund playwright@1.50.1
+          npx playwright install --with-deps chromium
+          browser_executable=$(node -e "console.log(require('/node-tools/node_modules/playwright').chromium.executablePath())")
+          sudo ln -s "$browser_executable" /opt/pw-browsers/chromium-1194/chrome-linux/chrome
+      - name: Build game for browser fuzz
+        run: npm run build
+      - name: Fuzz every registered game in deterministic shard ${{ matrix.shard }}/4
+        shell: bash
+        run: |
+          set -o pipefail
+          node tests/games.mjs 3 6 '.*' ${{ matrix.shard }} 4 2>&1 | tee "$RUNNER_TEMP/shambconkins-games-${{ matrix.shard }}.log"
+      - name: Preserve shard evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: development-games-${{ github.sha }}-${{ matrix.shard }}
+          path: ${{ runner.temp }}/shambconkins-games-${{ matrix.shard }}.log
+          if-no-files-found: ignore
+          retention-days: 14

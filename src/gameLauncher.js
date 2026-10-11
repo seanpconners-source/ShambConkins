@@ -53,7 +53,7 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  if(!valid())return false;
  if(choice===null){launching=false;store.busy=false;return false;}
  if(choice!=='start'){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();return false;}
- const players=origin==='board'?run.players:run?structuredClone(run.players):[newPlayer('Sean','sean',0),newPlayer('Amber','amber',1)];
+ const players=origin==='board'?run.players:run?structuredClone(run.players):[newPlayer(store.setupNames?.[0]??'Sean','sean',0),newPlayer(store.setupNames?.[1]??'Amber','amber',1)];
  const session=new GameSession(game,players,(scores,label)=>void settleGame(game,scores,label,origin,players,session.teamResult,returnToRoll));session.practice=origin==='dev';session.returnToRoll=returnToRoll;store.session=session;session.active=origin==='board'?run.current:0;session.updateScores();launching=false;
  try{await ENGINES[game.engine](session);}catch(error){console.error('Game engine failure',game.id,error);if(valid()&&session.alive){session.dispose();store.session=null;store.busy=false;await showDialog({title:'Let’s get you back to the board',body:'This challenge was interrupted. No rewards were applied.',choices:[{label:'Continue',value:'ok',primary:true}]});if(!valid())return false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();}return false;}return valid();
 }

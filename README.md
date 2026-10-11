@@ -21,7 +21,7 @@ original HTML byte-for-byte (SHA-256 `3f712823…f076`).
 - `tests/bot.mjs` – plays a whole board game with a random bot; `tests/load.mjs` loads modules in plain Node for unit tests
 - Bump the version in `src/version.js` and `package.json`
 
-Current play-through: open `releases/ShambConkins_v0.45.0.html` in a browser.
+Current release: [v0.58.3 on GitHub Releases](https://github.com/seanpconners-source/ShambConkins/releases/tag/v0.58.3). Download the self-contained HTML from its release assets. The bundled HTML exceeds GitHub's 100 MB repository-file limit and is not committed to the git tree.
 
 ## Adding art without touching code
 Drop files in these folders and run `npm run release` (or `npm run build`):

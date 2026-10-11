@@ -9,6 +9,18 @@ const browser = await chromium.launch({executablePath: exe});
 const probe = await browser.newPage(); await probe.goto(file);
 let ids = await probe.evaluate(() => window.ShambConkins.gameRegistry.map(g => g.id)); await probe.close();
 if (filter) ids = ids.filter(i => new RegExp(filter).test(i));
+// Optional deterministic CI sharding. The original unsharded CLI remains unchanged:
+// node tests/games.mjs [seconds] [concurrency] [id-filter] [shard-index] [shard-count]
+const hasShard = process.argv[5] !== undefined || process.argv[6] !== undefined;
+if (hasShard) {
+  const shardIndex = Number(process.argv[5]), shardCount = Number(process.argv[6]);
+  if (!Number.isInteger(shardIndex) || !Number.isInteger(shardCount) || shardCount < 1 || shardIndex < 0 || shardIndex >= shardCount) {
+    throw new Error('Invalid game fuzz shard index/count');
+  }
+  ids = ids.filter((_, index) => index % shardCount === shardIndex);
+  if (!ids.length) throw new Error('Game fuzz shard contains no games');
+  console.log('Game fuzz shard', shardIndex + 1, 'of', shardCount);
+}
 console.log(ids.length, 'games');
 const results = {};
 async function fuzz(id) {
