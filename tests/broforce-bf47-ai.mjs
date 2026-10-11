@@ -117,8 +117,9 @@ test('no shot in the opposite direction to its warning when target crosses sides
   const crossed = run(before.enemies,land,[player('P1',24)],0.42);
   assert.equal(eventsOf(crossed,'enemy-shot').length,0,'cancel old committed tell');
   const resumed = run(crossed.enemies,land,[player('P1',24)],1.3);
-  const tell = eventsOf(resumed,'attack-tell')[0];
-  assert.equal(tell?.dir,-1,'a fresh warning faces the new direction');
+  const renewed = [...eventsOf(crossed,'attack-tell'),...eventsOf(resumed,'attack-tell')];
+  assert.equal(renewed[0]?.dir,-1,'a fresh warning faces the new direction');
+  assert.equal(eventsOf(resumed,'enemy-shot')[0]?.dir,-1);
 });
 
 test('ranged firing is delayed by warning and uses real projectile events', () => {
