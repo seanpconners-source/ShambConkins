@@ -68,23 +68,31 @@ function emit(next,type,details){
 }
 function cue(next,name){emit(next,'cue',{name});}
 function changePhase(next,phase){next.phase=phase;next.phaseTime=0;}
+// Seal owner-index evidence when boarding closes. No caller can rewrite an
+// extraction result while it is departing, completed or failed.
+function sealBoarding(next){
+ next.boarded=Object.freeze([...next.boarded]);
+ next.receipts=Object.freeze(next.receipts.map(receipt=>receipt?Object.freeze({...receipt}):null));
+}
 function terminal(next,outcome,reason){
  if(next.outcome!==null)return;
  next.outcome=outcome;next.reason=reason;
  changePhase(next,outcome==='extracted'?'completed':'failed');
+ sealBoarding(next);
  if(outcome==='extracted')cue(next,'win');
  else if(reason!=='cancelled')cue(next,'lose');
- emit(next,'terminal',{outcome,reason,boarded:[...next.boarded],
-  receipts:next.receipts.map(receipt=>receipt?{...receipt}:null)});
+ emit(next,'terminal',{outcome,reason,boarded:Object.freeze([...next.boarded]),
+  receipts:Object.freeze(next.receipts.map(receipt=>receipt?Object.freeze({...receipt}):null))});
 }
 function beginDeparture(next){
  changePhase(next,'departure');
+ sealBoarding(next);
  next.zone.open=false;
  next.zone.secondsRemaining=0;
  cue(next,'extraction');
 }
 function takeBoardRequests(next,players,boardRequests){
- if(next.phase!=='hover'||next.phaseTime>=EXTRACTION_TIMING.boarding-EPS)return;
+ if(next.phase!=='hover'||next.phaseTime>=EXTRACTION_TIMING.boarding)return;
  for(let index=0;index<2;index++){
   if(next.boarded[index])continue;
   const player=Array.isArray(players)?players[index]:null;
@@ -112,7 +120,7 @@ function refreshVisual(next){
  }
  next.helicopter={x:px,y:py,visible,rotorPhase,rotorAngle:rotorPhase*TAU,
   rotorHz:EXTRACTION_TIMING.rotorHz,progress};
- next.zone.open=phase==='hover'&&phaseTime<EXTRACTION_TIMING.boarding-EPS;
+ next.zone.open=phase==='hover'&&phaseTime<EXTRACTION_TIMING.boarding;
  next.zone.secondsRemaining=phase==='hover'?
   Math.max(0,EXTRACTION_TIMING.boarding-phaseTime):
   phase==='dormant'||phase==='incoming'?EXTRACTION_TIMING.boarding:0;
@@ -123,11 +131,11 @@ function advanceBroforceExtraction(state,{dt=0,devilDefeated=false,players=[],bo
   throw new TypeError('Expected a Broforce extraction state');
  const next={...state,zone:{...state.zone},helicopter:{...state.helicopter},
   boarded:[...state.boarded],receipts:state.receipts.map(receipt=>receipt?{...receipt}:null),events:[]};
- if(next.phase==='completed'||next.phase==='failed')return next;
+ if(next.phase==='completed'||next.phase==='failed'){sealBoarding(next);return next;}
  // Cancellation is allowed even while manually paused; no delayed callback may
  // finish an already-aborted session. Any boarded receipts are NOT a win.
  if(cancelled||aborted){terminal(next,'failed','cancelled');refreshVisual(next);return next;}
- if(paused)return next;
+ if(paused){if(next.phase==='departure')sealBoarding(next);return next;}
  if(next.phase==='dormant'){
   if(devilDefeated!==true)return next;
   next.active=true;
@@ -151,7 +159,7 @@ function advanceBroforceExtraction(state,{dt=0,devilDefeated=false,players=[],bo
    const step=Math.min(remaining,Math.max(0,EXTRACTION_TIMING.boarding-next.phaseTime));
    next.phaseTime+=step;next.elapsed+=step;remaining-=step;
    // Input is sampled at the end of this update; the exact deadline is closed.
-   if(next.phaseTime>=EXTRACTION_TIMING.boarding-EPS){
+   if(next.phaseTime>=EXTRACTION_TIMING.boarding){
     if(next.boarded.some(Boolean))beginDeparture(next);
     else terminal(next,'failed','timeout');
     continue;
@@ -171,6 +179,7 @@ function advanceBroforceExtraction(state,{dt=0,devilDefeated=false,players=[],bo
   break;
  }
  refreshVisual(next);
+ if(next.phase==='departure')sealBoarding(next);
  return next;
 }
 Object.assign(exports,{createBroforceExtraction,advanceBroforceExtraction});
