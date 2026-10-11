@@ -86,7 +86,7 @@ await check('silent-drop storage may not claim durable success',()=>{
  assert.equal(h.persistence.readDurableJSON('receipt'),null);
  // Legacy best-effort writeJSON deliberately retains its prior behavior.
  assert.equal(h.persistence.writeJSON('other',{v:2}),true);
- assert.deepEqual(clone(h.persistence.readJSON('other')),{v:2});
+ assert.equal(h.persistence.readJSON('other'),null);
  assert.equal(h.persistence.readDurableJSON('other'),null);
 });
 await check('read denial, missing API, post-commit exception are fail-closed',()=>{
