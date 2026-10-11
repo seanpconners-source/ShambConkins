@@ -7,6 +7,11 @@ on:
     types: [opened, synchronize]
     paths:
       - 'src/version.js'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/version.js'
 
 permissions:
   contents: write
@@ -17,7 +22,7 @@ concurrency:
 
 jobs:
   generate-and-verify:
-    if: github.repository == 'seanpconners-source/ShambConkins' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release/')
+    if: github.event_name == 'pull_request' && github.repository == 'seanpconners-source/ShambConkins' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release/')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -75,23 +80,13 @@ jobs:
           node tests/games.mjs 2 4 '^(taskmaster-micro-relay|taskmaster-fruit-ninja|gopher-hunt|trivia-(mixed|wager|survival|lightning))$' 2>&1 | tee "$RUNNER_TEMP/release-games.log"
           ! grep -q '^FAIL ' "$RUNNER_TEMP/release-games.log"
           grep -Eq '^[1-9][0-9]*/[1-9][0-9]* games ran clean$' "$RUNNER_TEMP/release-games.log"
-      - name: Commit the verified release file to the isolated release branch
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- releases/ShambConkins_v0.58.3.html
-          if git ls-files --error-unmatch releases/ShambConkins_v0.58.2.html >/dev/null 2>&1; then
-            git rm -- releases/ShambConkins_v0.58.2.html
-          fi
-          git diff --cached --check
-          if git diff --cached --quiet; then
-            echo "Existing release artifact already matches validated build."
-          else
-            git commit -m 'chore(release): generate and validate v0.58.3 offline HTML'
-            git push origin HEAD:"${{ github.head_ref }}"
-          fi
+      - name: Upload validated release HTML without adding a 130MB Git blob
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShambConkins_v0.58.3_candidate
+          path: releases/ShambConkins_v0.58.3.html
+          if-no-files-found: error
+          retention-days: 14
       - name: Preserve release validation logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -103,3 +98,31 @@ jobs:
             ${{ runner.temp }}/release-games.log
           if-no-files-found: ignore
           retention-days: 14
+
+  publish-v0-58-3:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'seanpconners-source/ShambConkins'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rebuild and verify exact approved v0.58.3 production file
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run release
+          test "$(node -p "require('./package.json').version")" = "0.58.3"
+          echo '4ca82a9511a2bf594ec83c4296f84f2f6cbb3a2d655ba813b62fb70504fa283e  releases/ShambConkins_v0.58.3.html' | sha256sum --check
+          test "$(stat -c %s releases/ShambConkins_v0.58.3.html)" = 130007412
+      - name: Publish v0.58.3 as a GitHub Release asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create v0.58.3 releases/ShambConkins_v0.58.3.html \
+            --target "$GITHUB_SHA" \
+            --title "ShambConkins v0.58.3" \
+            --notes "Six TESTver-validated gameplay fixes: player names, trivia, Pokémon Bond and haptics, Gopher Hunt moods, Fruit Ninja combos, and Taskmaster relay. All seven focused regressions, 139/139 minigame fuzz checks, and actual offline release HTML tests passed. Offline HTML provided as a release asset because it exceeds GitHub's 100 MB repository-file limit."
