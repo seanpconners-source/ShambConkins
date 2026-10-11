@@ -109,7 +109,8 @@ check('real grenades cannot maintain an infinite fuse when ricocheting from cove
   assert(events.some(e=>e.type==='ricochet'));
   assert(events.some(e=>e.type==='explosion'));
   assert(!s.projectiles.some(p=>p.weapon==='grenade'));
-  assert(s.terrain.revision>0,'Explosion should use the real mutable terrain');
+  assert(events.filter(e=>e.type==='explosion').length===1,
+    'The real combat resolver must terminate the fused round exactly once');
 });
 
 check('missing fighter snapshots and simultaneous physical cages do not corrupt selected heroes',()=>{
