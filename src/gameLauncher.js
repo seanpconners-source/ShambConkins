@@ -8,7 +8,7 @@ const {animateRoulette}=require("src/roulette.js");
 const {showDialog, closeDialog, unlockDialog, updateBoard, toast}=require("src/ui.js");
 const {gameArtHTML, portraitHTML}=require("src/assets.js");
 const {recordGame, recruitReward, availableCharacters, canRecruit, saveProfile, validatedBroforceClaims}=require("src/profile.js");
-const {RUN_KEY,readDurableJSON,writeDurableJSON,validRun,BROFORCE_IDS,validBroforceAttempt,validBroforceTerminal,validBroforceEvidence,validBroforceIntent}=require('src/persistence.js');
+const {PROFILE_KEY,RUN_KEY,readDurableJSON,writeDurableJSON,validRun,BROFORCE_IDS,validBroforceAttempt,validBroforceTerminal,validBroforceEvidence,validBroforceIntent}=require('src/persistence.js');
 const {pickLairVillain}=require("src/data/bondLair.js");
 const {pickSouthPark}=require("src/data/southPark.js");
 const {CHARACTERS, perkType}=require("src/characters.js");
@@ -97,8 +97,17 @@ function recoverBroforceResult(result){
   const applied=applyBroforceAwards(store.profile,plan);
   // Preserve the photo library's nonenumerable active selection across BF-27's JSON clone.
   if(store.profile.photoHuntPair&&!Object.hasOwn(applied.profile,'photoHuntPair'))Object.defineProperty(applied.profile,'photoHuntPair',{value:store.profile.photoHuntPair,writable:true,configurable:true});
-  if(!saveProfile(applied.profile,{durable:true}))return {ok:false};
-  Object.assign(store.profile,applied.profile);
+  if(applied.grants.length){
+   // Only fresh owner-specific recruits need a new durable profile transaction.
+   if(!saveProfile(applied.profile,{durable:true}))return {ok:false};
+   Object.assign(store.profile,applied.profile);
+  }else{
+   // A replay may already have committed receipts. Verify their durable copies
+   // before acknowledging, but never require a redundant profile write.
+   const persistedClaims=validatedBroforceClaims(readDurableJSON(PROFILE_KEY)?.broforceClaims||{});
+   if(!persistedClaims||Object.entries(claims).some(([key,receipt])=>
+      receipt.attemptId===a.attemptId&&!bfSame(persistedClaims[key],receipt)))return {ok:false};
+  }
   const grants=a.owners.flatMap((owner,i)=>{
    const receipt=store.profile.broforceClaims?.['bf27:'+JSON.stringify([a.attemptId,owner])];
    return intent.bf.outcome==='extracted'&&intent.bf.boarded[i]&&receipt?.devilId===a.devilId?[{owner,characterId:a.devilId}]:[];
