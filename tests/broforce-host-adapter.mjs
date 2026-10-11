@@ -42,7 +42,7 @@ class Element{
  getBoundingClientRect(){return this.rect||this.parentElement?.getBoundingClientRect()||{left:0,top:0,width:390,height:780};}
 }
 function setup(options={}){
- const calls={finish:[],create:[],steps:[],draw:[],generated:[],images:[],proofs:[],audioStop:0,ambienceStop:0,pause:0,resume:0};
+ const calls={finish:[],create:[],steps:[],draw:[],generated:[],images:[],proofs:[],sounds:[],audioStop:0,ambienceStop:0,pause:0,resume:0};
  const doc=new Element('document'),win=new Element('window');doc.defaultView=win;doc.createElement=t=>new Element(t,doc);
  win.Image=class{constructor(){calls.images.push(this);this.complete=true;this.naturalWidth=50;this.naturalHeight=70;}removeAttribute(){this.src='';}};
  const media=new Element('media');media.matches=false;win.matchMedia=()=>media;
@@ -70,7 +70,7 @@ function setup(options={}){
   confirmExtraction(evidence){calls.proofs.push(plain(evidence));return options.rejectProof!==true;}})});
  const deps={
   'src/state.js':{store},'src/utils.js':utils,'src/engines/broforce/roster.js':roster,
-  'src/audio.js':{audioContext:()=>null},'src/engines/broforce/audio.js':{createBroforceAudio(...args){const api=audioApi.createBroforceAudio(...args);return{...api,stop(){calls.audioStop++;api.stop();}};}},
+  'src/audio.js':{audioContext:()=>null},'src/engines/broforce/audio.js':{createBroforceAudio(...args){const api=audioApi.createBroforceAudio(...args);return{...api,play(name,opts){calls.sounds.push(name);return api.play(name,opts);},stop(){calls.audioStop++;api.stop();}};}},
   'src/engines/broforce/controls.js':controls,'src/engines/broforce/camera.js':camera,
   'src/engines/broforce/fxArt.js':fxApi,
   'src/assets.js':{portraitURL:id=>'https://forbidden/'+id,portraitFallbackURL:()=> 'data:image/svg+xml;base64,PHN2Zy8+'},
@@ -83,7 +83,7 @@ function setup(options={}){
     const terminal=options.terminal?.(state,args,calls.steps.length);
     if(terminal?.won&&options.reward){state.bossDefeated=true;state.extraction={active:true,phase:'completed',outcome:'extracted',reason:'departure',
       boarded:terminal.bf.boarded,receipts:terminal.bf.boarded.map((yes,i)=>yes?{playerIndex:i,owner:state.players[i].owner,boardedAt:3}:null)};}
-    return{state,events:[{type:'shot'}],terminal:terminal||null};}
+    return{state,events:[{type:'shot'},...(options.soundEvents||[])],terminal:terminal||null};}
   },
   'src/engines/broforce/sceneRenderer.js':{drawBroforceScene(ctx,args){calls.draw.push(args);args.environmentDraw(ctx,{stageId:args.state.stageId});args.cinematicDraw(ctx,{camera:{x:0,y:0},drawPortrait:()=>{}});args.portraitFor('alpha');}},
   'src/engines/broforce/themeArt.js':{drawBroforceEnvironment(ctx,arg){calls.environment=arg;}},
@@ -169,6 +169,14 @@ await check('untrusted/mismatched terminal fails closed; never awards',async()=>
 await check('dead boarder earns no displayed success; timeout zero scores',async()=>{
  const a=setup({terminal:state=>terminal(state,[true,true],'extracted',[true,false])});await a.run();a.step();assert.deepEqual(a.calls.finish[0].scores,[1,0]);
  const b=setup({terminal:state=>terminal(state,[false,false],'timeout')});await b.run();b.step();assert.equal(b.calls.finish[0].result.bf.outcome,'timeout');assert.deepEqual(b.calls.finish[0].scores,[0,0]);
+});
+await check('BF-40 authoritative SFX, mission HUD and real menu-safe insets reach renderer',async()=>{
+ const d=setup({soundEvents:[{type:'sound',name:'shotgun'},{type:'sound',name:'helicopter'}]});
+ await d.run();d.step();assert.deepEqual(d.calls.sounds,['shotgun','helicopter']);
+ const draw=d.calls.draw.at(-1);assert.equal(draw.state.hideHudPause,true);
+ assert.ok(draw.state.mission.objective);assert.equal(draw.state.mission.rescueTarget,0);
+ assert.ok(draw.viewport.safeInsets.top>=56);assert.equal(draw.viewport.safeInsets.bottom,0);
+ d.s.dispose();
 });
 await check('BF-23 mission FX events are converted to active particles before rendering',async()=>{
  const d=setup();await d.run();d.step();
