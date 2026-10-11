@@ -230,10 +230,11 @@ function drawBroforceHud(ctx,options={}){
     objectiveRect={x:left,y:r2.y+chipH+5,width:avail,height:23};
     if(extraVisible||bossVisible)detailRect={x:left+Math.max(12,avail*.13),y:objectiveRect.y+26,width:avail-Math.max(24,avail*.26),height:20};
   }else{
-    const usable=avail-44-gap*3;
+    const pauseSpace=showPause?44+gap:0;
+    const usable=avail-pauseSpace-gap*2;
     const side=Math.floor(Math.min(compact?214:255,Math.max(140,usable*.325)));
     r1={x:left,y:top,width:side,height:chipH};
-    r2={x:right-44-gap-side,y:top,width:side,height:chipH};
+    r2={x:right-pauseSpace-side,y:top,width:side,height:chipH};
     const centerX=r1.x+side+gap,centerW=r2.x-gap-centerX;
     if(centerW>=90){
       objectiveRect={x:centerX,y:top,width:centerW,height:compact?20:23};
