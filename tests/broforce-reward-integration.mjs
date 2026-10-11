@@ -201,7 +201,7 @@ await check('continueRun preserves pending Broforce result when recovery dialog 
  const reboot=harness(h.snapshots[1]); // durable result intent, before profile commit
  const run=reboot.store.run,pending=run.pending;
  assert.equal(run.phase,'result');
- const app=source('src/app.js'),body=app.slice(app.indexOf('async function continueRun()'),app.indexOf('\\nasync function roll('));
+ const app=source('src/app.js'),body=app.slice(app.indexOf('async function continueRun()'),app.indexOf('\nasync function roll('));
  let turn=0,unlocks=0;
  const deps={store:reboot.store,focusBoardAction:()=>{},updateBoard:()=>{},setMusicZone:()=>{},startMusic:()=>{},
   presentResult:async()=>null,encounterActive:(r,p)=>r===run&&r.pending===pending,
