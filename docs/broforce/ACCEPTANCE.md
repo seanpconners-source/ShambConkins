@@ -1,6 +1,6 @@
 # Broforce Mobile — Acceptance and QA Contract (BF-02)
 
-**Status:** DESIGN-ONLY proposed acceptance contract; not evidence of implemented behavior or passing tests.
+**Status:** BF-03 contract corrected to the **owner-approved** exact-devil / individual-live-boarding rule. This is not evidence of executed end-to-end acceptance or an integrated game.
 **Base:** 16770ee301e5a94bda02e375cf0341177b481e3a on feature/broforce-mobile (matched parent HEAD when BF-02 began).
 **Applies to:** the planned original, offline Broforce-inspired minigame, its integration with ShambConkins, and Android Fold play.
 **Owners:** BF implementation/integration workers implement the contract; PM accepts actual results. BF-02 owns only this spec and docs/broforce/task-logs/BF-02.md.
@@ -11,21 +11,21 @@
 - The selected board-game character is `run.players[i].character`, keyed by the permanent player `owner` (Sean for P1, Amber for P2). A *temporary Broforce fighter* is a separate within-stage state; do not overwrite the selected character, its owner, or saved roster.
 - `availableCharacters(profile, owner)` (src/profile.js) includes shared plus that owner's roster, canonicalized via `characterIdentity(id)` (src/characters.js). Ownership and identity must both be checked, not just a matching display name or array membership.
 - Existing `gameRecruitPool` (src/rewards.js) excludes `SPECIAL_UNLOCKS` from ordinary random recruits, while `settleGame` (src/gameLauncher.js) can separately award a winner a random recruit and can award shared co-op survival recruits. Broforce-specific devil results MUST NOT pass through these generic random-recruit paths.
-- `recruitReward(profile,id,owner,reason)` returns the actual awarded ID or null and saves the profile when successful. It handles certain Bond identities specially; exact devil awards must not invoke a generic/replacement candidate. `canRecruit` requires an appropriate unlock reason. The existing catalog ID `satan` is marked `unlockBy: 'horror'` in src/contentPolicy.js; a Broforce devil award therefore needs an **explicitly approved** eligibility/reason mapping rather than pretending ordinary `reason: 'game'` is valid or bypassing the gate. The intended exact devil ID is assumed to be `satan` for this contract; if BF design names a different catalog ID, resolve with PM and update test fixtures before implementation.
+- `recruitReward(profile,id,owner,reason)` saves immediately and may reroll special Bond recruits; it is **not** the exact-grant API. `canRecruit` must recognize a narrow approved Broforce reward reason. The **exact devil boss** is the character currently eligible and locked as selected by BF-17 `chooseDevil`; **not necessarily** existing catalog `satan` (Horror-only, excluded by BF-17 special-lock policy). Never bypass eligibility, substitute an unrelated recruit, or give a generic minigame unlock.
 - `validRun` (src/persistence.js) checks phases and pending kinds, including allowed event kinds and result payloads. Any new persisted pending state must remain valid or be added by its owning integration worker; BF-02 is not authorized to change saves.
 - `tests/games.mjs` starts registered games in **arcade** origin, fuzzes input, and checks runtime errors; it does not assert board-only rewards, survival ownership, terrain determinism, or visual fidelity. `tests/unlocks.mjs` audits character reachability but not Broforce-specific award gates. `tests/lib.mjs` provides headless Chromium + browser console/page-error capture.
-- Development validation (`.github/workflows/development-validation.yml`) runs on feature/** pushes. Core runs `npm run test:core`, checks smoke/route log assertions, and four deterministic game-fuzz shards. It does **not** automatically discover or run new standalone `tests/broforce-*.mjs` scripts.
+- Development validation (`.github/workflows/development-validation.yml`) runs core and game fuzz, but does **not** automatically execute new Broforce component suites. The BF-03 `broforce-foundation-validation.yml` independently runs all six dedicated Node tests, module check, build and npm test on Broforce feature pushes and PRs to `feature/broforce-mobile` (while source modules are unregistered, module check is expected to fail).
 - These are proposed acceptance requirements, not claims that the currently pinned baseline contains a Broforce implementation.
 
 ## Global verdict rule and fixtures
 
 **A test passes only when its observable assertions pass; a clean process exit, a screenshot existing, or an N/N fuzz line alone is insufficient.** Automated assertions must capture page errors, console errors (with documented known legacy exceptions only), unhandled promise rejections, state snapshots and the exact player-owner/profile delta. Any missing test, device check or CI evidence is **NOT RUN**, not PASS.
 
-**Deterministic fixtures:** fresh profile; seeded board run with two players and unchanged selected characters; P1-only and P2-only unlocked pools; identity-alias duplicates; exactly one eligible fighter; zero extra fighters beyond selected/starter; devil locked for both, locked for only P1, locked for only P2, and already owned/shared; explicit boss/extraction/survivor results. Compare deep-copied profile and board snapshots before/after, allowing only explicitly enumerated normal gameplay changes. Hold session/game ID, run seed, profile.played length and all setup inputs fixed when comparing procedural generation.
+**one** selected devil character initially locked and eligible for **both** owners (BF-17 requires `canRecruit` for all owners at selection), ownership/eligibility changing for one owner before settlement, already-owned/shared identity, actual P1-only/P2-only/both/zero boarding, living-but-unboarded P1/P2, and boss-defeated/no-boarding cases. Confirm main-game selected characters remain unchanged before and after in-mission swaps.
 
-**Reward predicate (required):** for each owner individually, the exact devil award may be attempted **once at most** if and only if: origin is normal `board` (not arcade/dev); devil encounter was eligible for that owner and still locked at award time; the devil boss was actually defeated; extraction successfully completed; that owner's player survived extraction; session finished normally rather than canceled; and the same encounter/reward event has not already been settled. *Boss defeat without live extraction is NOT a win.* Neither the other owner's death/survival nor a selected main-game character can substitute for ownership. If both survive and both independently qualify, each may receive at most one correct owner-specific unlock; if only one qualifies, only that one may receive it. If neither qualifies, no devil award (and no devil-only eligible encounter/reward is to be offered). An owner with `satan` as a shared identity is already unlocked. This per-survivor interpretation is a **PM-review assumption**, not established existing behavior.
+**Reward predicate (owner-approved):** the actual eligible currently locked devil boss must be defeated **before the helicopter arrives**. For each canonical owner independently, grant **only** the exact defeated devil ID, at most once per attempt, iff origin is normal `board` (not arcade/dev), the player **physically boarded/extracted alive before departure**, the character is still award-eligible/locked for that owner, and settlement was not canceled or already applied. **P1 only, P2 only, or both boarders** are valid successful outcomes; a dead, unboarded or late-boarded player earns nothing; **neither boards** means no extraction and no award. Boss defeat or a score win alone is insufficient. The other owner's boarding is not required. No generic random recruit, no unrelated minigame unlock, and temporary fighter swaps must never change the main-game selected player character.
 
-**Mutation boundary:** a successful Broforce-specific award changes only the qualifying owner's roster/earned-unlock record and existing recruitment bookkeeping required by the established API; it does not grant a random recruit or unlock a counterpart. Standard board points/turn/result bookkeeping may still occur through normal launcher logic. On arcade/dev/cancel/failed extraction, no **Broforce-specific** recruit, roster, devil-unlock, or game-save mutation may occur. Existing launcher behavior for general arcade stats/XP may need an explicitly scoped integration exception; do not silently promise that arcade never writes anything. Never replace/rename the player's selected board character, overwrite unrelated saves, duplicate an award, or mutate shared roster as a substitute for the correct owner.
+**Mutation boundary:** Broforce-specific permanent changes are limited to per-owner exact-devil recruitment plus durable idempotency receipts for each eligible actual boarder; never a shared or counterpart roster substitute. Preserve normal board turn/result closure, but bypass generic XP/points/wins/progression and all random recruiting for Broforce as specified by BF-00 architecture. Arcade/dev/cancel/failure or zero boarders cannot grant the devil. Do not replace/rename `run.players[i].character`, mutate a main-game selection during physical fighter swaps, duplicate grants or alter unrelated saves.
 
 ## Acceptance matrix
 
@@ -66,26 +66,26 @@ Columns: **ID | Preconditions | Action | Expected observable result | Proposed c
 
 | ID | Preconditions | Action | Expected observable result | Test |
 |---|---|---|---|---|
-| BF-R01 | Devil locked and eligible for both owners, board mode | Defeat devil boss; both survive extraction; settle | Award exact `satan` to each qualifying owner once, never shared as a shortcut; confirm two correct owner records | A: success-both fixture |
-| BF-R02 | Devil eligible only for Sean, both survive | Defeat boss and extract | Sean only earns exact devil; Amber unchanged | A: one-owner-eligible |
-| BF-R03 | Devil eligible only for Amber, both survive | Defeat boss and extract | Amber only earns exact devil; Sean unchanged | A: reverse-owner |
-| BF-R04 | Eligible, board mode, boss defeated, **P1 only survives** | Extract | Only living eligible P1 gets devil; dead P2 never gets reward | A: P1 survivor |
-| BF-R05 | Eligible, board mode, boss defeated, **P2 only survives** | Extract | Only living eligible P2 gets devil; dead P1 never gets reward | A: P2 survivor |
-| BF-R06 | Eligible, board mode, boss defeated, **zero survivors** | Attempt extraction/finish | No award for either owner even if boss flag is true | A: wipe |
-| BF-R07 | Eligible; boss never beaten | Reach extraction by skip/cheat or call settle | No devil reward; boss-defeated predicate required | A: boss-gate negative |
-| BF-R08 | Eligible; boss beaten, extraction not completed or interrupted | End match | No devil reward; winning an earlier fight alone is insufficient | A: incomplete-extraction |
+| BF-R01 | Candidate devil locked and eligible for both owners | Defeat exact devil; helicopter arrives; **both board alive** before departure | Both owners earn the **same exact defeated devil character ID** in their own rosters, once each; no shared or unrelated grant | A: success-both-boarded fixture |
+| BF-R02 | Both eligible at selection; only Sean still eligible at settlement | Defeat exact boss; both board alive | Sean earns exact devil; Amber is a no-op without substitute | A: owner-eligibility-after-selection |
+| BF-R03 | Both eligible at selection; only Amber still eligible at settlement | Defeat exact boss; both board alive | Amber earns exact devil; Sean is a no-op without substitute | A: reverse-eligibility-after-selection |
+| BF-R04 | Board mode, eligible devil defeated | **P1 boards alive**, P2 is dead **or alive but unboarded** when helicopter departs | Valid P1-only extraction; only eligible P1 earns exact devil; P2 gets nothing | A: P1-only-boarded |
+| BF-R05 | Board mode, eligible devil defeated | **P2 boards alive**, P1 is dead **or alive but unboarded** when helicopter departs | Valid P2-only extraction; only eligible P2 earns exact devil; P1 gets nothing | A: P2-only-boarded |
+| BF-R06 | Eligible boss defeated, helicopter arrives | **Neither player physically boards** before departure, even if still alive | No successful extraction and no devil award for either owner | A: zero-boarders |
+| BF-R07 | Devil boss not defeated | Try helicopter spawn/board or fake successful settle | No helicopter objective success or devil award without an actual boss-defeat event | A: boss-gate negative |
+| BF-R08 | Eligible devil defeated, helicopter arrives | Cancel/finish before any boarding or fake a **post-departure** boarding | No devil unlock; boss defeat alone and late boarding never qualify | A: no-board-or-late |
 | BF-R09 | Board match and eligible devil | Exit before/during boss, before extraction, or during handoff | No BF-specific unlock/award; no dangling session, pending reward or late callback | A: cancellation stages |
 | BF-R10 | Same eligible game seeded in `dev` and `arcade` | Win boss and extract | No Broforce-specific devil or random recruit, roster/profile unlock or board-state write in either mode | A: origin restriction + profile diff |
 | BF-R11 | Successful settlement already committed | Invoke `finish`/result callback again, resume same result, re-open/reload | No duplicate exact unlock, XP from the same BF reward, second toast or second transaction; existing result remains stable | A: double-finish/idempotency |
-| BF-R12 | Devil already in Sean/Amber/shared pool (incl. identity alias) | Win qualifying encounter | No duplicate grant for already-owning owner; award only still-eligible owner if any | A: owned/alias/shared fixtures |
+| BF-R12 | Selected devil identity becomes owned by one owner/shared/alias before settlement | Finish with valid live boarding | No duplicate identity for already-owning owner; still-eligible other actual boarder may earn it | A: owned/alias/shared-at-settlement |
 | BF-R13 | No owner has an eligible locked devil | Determine devil encounter/candidate and then finish | Devil-only candidate not offered or silently substituted; no recruit or roster changes | A: no-candidate |
 | BF-R14 | Eligible target ID is unavailable/mismatched, or unlock reason rejected | Attempt grant | Explicit no-award, no substitute/random character; log/trace explains rejected eligibility | A: canRecruit guard |
-| BF-R15 | Outcome wins stage but general `gameRecruitPool` contains eligible random recruits | Settle successful devil encounter | Exactly the intended devil grant(s), **zero unrelated random recruits**, no shared co-op recruit side effect | A: mocked recruitment spy |
+| BF-R15 | Broforce extraction has a generic random-recruit pool available | Settle P1 only, P2 only and both actual boarders | Exactly the intended devil claim(s) and **zero unrelated random recruits**, generic co-op survival recruits or mismatched owner awards | A: generic-recruit-spy |
 | BF-R16 | Boss losses/non-BF game win | Settle via same launcher | No devil unlock; unrelated games retain their pre-existing reward behavior | A: cross-game regression |
 | BF-R17 | Board pending phase: launch, pause, result, resume | Persist and reload at supported checkpoints | Existing save passes `validRun`; either safely reconstructs or safely rejects impossible partial state with no reward duplication | A: save serialization/reload |
 | BF-R18 | P1/P2 have same display name but distinct owner keys | Settle one survivor | Award uses `owner`, not display name, active index, selected fighter or scoreboard winner | A: owner key fixture |
 | BF-R19 | Award success followed by storage failure/retry | Inject write failure, reload/retry | No falsely reported permanent unlock; no double award after replay; safe documented recovery | A: storage fault injection |
-| BF-R20 | Ordinary board points, progress and random stream recorded | Play Broforce with and without eligibility | Allowed score/turn bookkeeping intact; no unrelated save, roulette, roster, inventory, selected character or RNG mutations | A: before/after invariants |
+| BF-R20 | Existing board points, turns, progress, selection and random streams | Play Broforce with and without eligibility; finish and return | Board turn/result closure is safe, but **no generic XP/points/wins/progression or random recruits**; no unwanted save, inventory, character-selection or seeded-RNG mutation | A: before/after invariants |
 | BF-R21 | Co-op result includes stage survival flags but equal scores | Settle | Survival and extraction flags, not `winner` or score tie, decide eligible individual devil owners | A: coop/tie fixture |
 
 ### User experience, accessibility, offline and performance
@@ -108,15 +108,21 @@ Columns: **ID | Preconditions | Action | Expected observable result | Proposed c
 
 ## Proposed automation and exact commands
 
-These are **commands to run after implementation**, not commands executed in BF-02. The new focused spec driver `tests/broforce-acceptance.mjs` is a **proposed future file name**, not present or registered at this base. An implementation worker must create deterministic fixtures covering the IDs above, use Playwright where relevant, and add it to the CI workflow or `package.json` scripts through an authorized integration assignment. A standalone test outside the registered core scripts is otherwise invisible to baseline `npm test`.
+These commands identify the **actual six existing dedicated Node tests** at pinned Wave-1 commit `6c7361fc`; they exercise components, **not** the complete boss/boarding/save-game award contract. The broader `tests/broforce-acceptance.mjs` remains **proposed and absent**, and must not be claimed as a passing test. Only the PM integration worker can register six new modules in `src/modules.json` (all six currently absent) and add end-to-end integration tests. At this pinned commit `node tools/check-modules.mjs` fails on those six unregistered files; `npm test` cannot pass until this PM-owned registration is done.
 
 From repository root, with Node and existing Playwright/browser fixture paths configured per `tests/lib.mjs`:
 
+    node tests/broforce-terrain.mjs
+    node tests/broforce-physics.mjs
+    node tests/broforce-roster.mjs
+    node tests/broforce-world-art.mjs
+    node tests/broforce-actor-art.mjs
+    node tests/broforce-audio.mjs
     node tools/check-modules.mjs
     npm run build
     npm run test:core
     npm test
-    node tests/broforce-acceptance.mjs
+    # Future driver only: node tests/broforce-acceptance.mjs (does not exist yet)
 
 For targeted browser fuzz **only once a registered game ID contains "broforce"**, run:
 
@@ -143,8 +149,8 @@ Replace branch with the actual implementation candidate under review; require `h
 
 ## PM review gates and outstanding decisions
 
-1. Confirm the boss unlock maps to existing catalog **satan** (Legend, Tim Curry) or specify another exact character ID. Today `satan` is Horror-only, so authorize the *narrow* new boss/extraction unlock route and corresponding `canRecruit` reason policy before any reward worker codes it; never make the character generically random-recruitable.
-2. Confirm per-survivor owner-specific awards for both survivors versus a single recipient policy. This contract assumes each independently eligible survivor can earn exactly one; any change requires fixtures R01–R06/R18/R21 updated together.
+1. **Settled identity policy:** the final devil is the **eligible, locked catalog character actually selected and defeated**, not automatically `satan`. The current BF-17 pool excludes special unlocks and requires both owners encounter-eligible at selection; the integration owner must implement narrowly authorized reward-reason gating for that exact ID and each actual boarder's still-locked eligibility, without opening generic recruitment.
+2. **Settled boarding policy:** defeating the devil summons the helicopter; each eligible **living physical boarder** receives the exact devil in their own roster. P1 alone, P2 alone and both are successes; no boarders earn nothing. R01–R08/R18/R21 must test boarding receipts, including an alive-but-unboarded negative case, and ensure temporary fighter swaps never modify selected main-game characters.
 3. Confirm that arcade/dev must suppress **all** BF-specific reward and save writes while legacy general arcade progression remains an existing launcher behavior unless explicitly changed by an integration owner. Confirm device FPS budget and intended fighter respawn/extraction specifics once implementation rules are finalized.
 4. Verify BF implementation actually exports enough stable stage events to assert seeds, boss flag, extraction, player survival, award deduplication and terminal lifecycle; no test may substitute arbitrary scores for those facts.
 5. Require focused BF suite, registered core CI hook, screenshots and real folded/unfolded device review before promoting to TESTver or main. BF-02 has no merge authority.
