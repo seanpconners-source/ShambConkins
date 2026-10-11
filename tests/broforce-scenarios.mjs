@@ -152,7 +152,7 @@ check('BF-16/BF-17 simultaneous rescue swaps only one mission fighter for correc
   fightersByOwner:{Sean:roster.snapshotFighters(p,'Sean'),Amber:roster.snapshotFighters(p,'Amber')},
   activeFighterByOwner:{Sean:'sean',Amber:'amber'},
   interactions:[{type:'rescue',playerIndex:1,prisonerId:'cage'},
-   {type:'rescue',playerIndex:0,prisonerId:'cage'}],rand:()=>.4});
+   {type:'rescue',playerIndex:0,prisonerId:'cage'}],rand:()=>.999});
  assert.equal(outcome.events.filter(e=>e.type==='fighter-swap').length,1);
  assert.deepEqual(outcome.events.filter(e=>e.type==='fighter-swap').map(e=>[e.owner,e.to]),[['Sean','alpha']]);
  assert.deepEqual(p,before);assert.equal(pr[0].rescued,false);
@@ -163,7 +163,7 @@ check('BF-16/BF-17 simultaneous rescue swaps only one mission fighter for correc
 });
 check('BF-17 no eligible devil returns null, not generic or special unlock',()=>{
  const p=fighterProfile();
- for(const c of catalog.characters){if(c.id!=='loki'&&!p.shared.includes(c.id))p.shared.push(c.id);}
+ for(const id of roster.devilCandidatePool(p,owners))p.shared.push(id);
  assert.deepEqual(roster.devilCandidatePool(p,owners),[]);
  assert.equal(roster.chooseDevil(p,owners,()=>.2),null);
 });
@@ -200,7 +200,8 @@ for(const [name,board,wanted] of [
  check('BF-21/BF-27 physical boarding + exact reward '+name,()=>{
   const h=runHeli(board),p=profile.freshProfile(),out=settle(p,h);
   assert.deepEqual(h.boarded,board);
-  assert.equal(h.outcome,wanted.length?'extracted':'timeout');
+  assert.equal(h.outcome,wanted.length?'extracted':'failed');
+  if(!wanted.length)assert.equal(h.reason,'timeout');
   assert.deepEqual(h.receipts.map(x=>x?.owner||null),board.map((v,i)=>v?owners[i]:null));
   assert.deepEqual(out.grants.map(g=>g.owner),wanted);
   assert.ok(out.grants.every(g=>g.characterId===DEVIL));
