@@ -113,7 +113,9 @@ function createBroforceAmbience({getContext=()=>null,getSettings=()=>({}),stageI
  }
  function pump(){
   timer=null;
-  if(closed||paused||!started||!ctx||ctx.state!=='running')return;
+  if(closed||paused||!started||!ctx)return;
+  // Some browsers interrupt without firing the host's pause/visibility event.
+  if(ctx.state!=='running'){clearGraph();return;}
   const p=enabled(options());
   if(!p.music&&!p.sound){clearGraph();return;}
   try{
@@ -131,6 +133,7 @@ function createBroforceAmbience({getContext=()=>null,getSettings=()=>({}),stageI
  }
  function activate(){
   if(closed||paused||!started||!ctx)return false;
+  if(ctx.state!=='running'&&master)clearGraph();
   if(ctx.state==='running'){
    if(timer!==null)return true;
    nextTime=Number.isFinite(ctx.currentTime)?ctx.currentTime+.035:.035;
@@ -148,7 +151,7 @@ function createBroforceAmbience({getContext=()=>null,getSettings=()=>({}),stageI
  }
  function start(){
   if(closed||paused)return false;
-  if(started)return true;
+  if(started)return activate(); // Explicit next gesture retries after an interrupted context.
   const p=enabled(options());
   if(!p.music&&!p.sound)return false;
   const a=safe(()=>getContext(),null);
@@ -157,6 +160,7 @@ function createBroforceAmbience({getContext=()=>null,getSettings=()=>({}),stageI
  }
  function setIntensity(level){
   if(Number.isFinite(level))intensity=clamp(level,0,1);
+  if(ctx&&ctx.state!=='running'&&master)clearGraph();
   if(master){
    const p=enabled(options());
    if(!p.music&&!p.sound)clearGraph();
