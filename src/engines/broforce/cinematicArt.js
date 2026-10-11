@@ -58,7 +58,7 @@ function cinHead(g,characterId,drawPortrait){
     cinRect(g,'#eaf4dd',-8,-48,5,3);cinRect(g,'#eaf4dd',3,-48,5,3);
     cinRect(g,'#1c2535',-6,-48,2,3);cinRect(g,'#1c2535',5,-48,2,3);
     cinRect(g,'#8e4d4b',-4,-40,9,2);
-    const initials=characterId.split(/[-_\s]+/).filter(Boolean).slice(0,2)
+    const initials=(typeof characterId==='string'?characterId:'').split(/[-_\s]+/).filter(Boolean).slice(0,2)
       .map(s=>s[0].toUpperCase()).join('').slice(0,2) || '?';
     g.font='bold 7px monospace';g.textAlign='center';g.textBaseline='middle';
     g.fillStyle='#fff2c9';g.fillText(initials,0,-34);
