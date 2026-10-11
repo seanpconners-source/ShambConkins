@@ -88,6 +88,23 @@ for(const [W,H] of [[390,780],[780,390],[840,690],[1100,700]]){
    portraitFor(){throw Error('unavailable image')}});
  assert.equal(a.depth(),0);assert.ok(a.events.some(e=>e[0]==='rect'));
 }
+// BF-32 must receive an explicit true ONLY after painting a portrait, otherwise
+// it paints a fallback face over the actual earned devil character.
+{
+ const a=canvas(390,780),s=state();let confirmed=null;
+ drawBroforceScene(a.g,{state:s,viewport:{width:390,height:780},
+  portraitFor:()=>({drawPortrait:(g,left,top,size)=>g.fillRect(left,top,size,size)}),
+  cinematicDraw(g,{drawPortrait}){confirmed=drawPortrait(g,'devil-test',-14,-63,28,28);}});
+ assert.equal(confirmed,true,'a painted devil portrait must suppress BF-32 fallback');
+ assert.equal(a.depth(),0);
+}
+{
+ const a=canvas(390,780),s=state();let confirmed=null;
+ drawBroforceScene(a.g,{state:s,viewport:{width:390,height:780},
+  portraitFor:()=>null,cinematicDraw(g,{drawPortrait}){confirmed=drawPortrait(g,'devil-test',-14,-63,28,28);}});
+ assert.equal(confirmed,false,'no available portrait must preserve BF-32 fallback');
+ assert.equal(a.depth(),0);
+}
 // Host painter exceptions must be contained within an authored helmet inset.
 {
  const a=canvas(390,780),s=state();
