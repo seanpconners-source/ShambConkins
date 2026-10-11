@@ -41,7 +41,7 @@ class Element{
  getBoundingClientRect(){return this.rect||this.parentElement?.getBoundingClientRect()||{left:0,top:0,width:390,height:780};}
 }
 function setup(options={}){
- const calls={finish:[],create:[],steps:[],draw:[],generated:[],images:[],audioStop:0,ambienceStop:0,pause:0,resume:0};
+ const calls={finish:[],create:[],steps:[],draw:[],generated:[],images:[],proofs:[],audioStop:0,ambienceStop:0,pause:0,resume:0};
  const doc=new Element('document'),win=new Element('window');doc.defaultView=win;doc.createElement=t=>new Element(t,doc);
  win.Image=class{constructor(){calls.images.push(this);this.complete=true;this.naturalWidth=50;this.naturalHeight=70;}removeAttribute(){this.src='';}};
  const media=new Element('media');media.matches=false;win.matchMedia=()=>media;
@@ -65,6 +65,8 @@ function setup(options={}){
   finish(scores,label){calls.finish.push({scores:plain(scores),label,result:plain(s.teamResult)});s.alive=false;s.dispose();},
   dispose(){s.alive=false;for(const fn of cleanups.splice(0))fn();for(const [el,k,fn]of listeners)el.listeners.get(k)?.delete(fn);}
  };
+ if(options.reward)Object.defineProperty(s,'broforceReward',{value:Object.freeze({attempt:options.reward,
+  confirmExtraction(evidence){calls.proofs.push(plain(evidence));return options.rejectProof!==true;}})});
  const deps={
   'src/state.js':{store},'src/utils.js':utils,'src/engines/broforce/roster.js':roster,
   'src/audio.js':{audioContext:()=>null},'src/engines/broforce/audio.js':{createBroforceAudio(...args){const api=audioApi.createBroforceAudio(...args);return{...api,stop(){calls.audioStop++;api.stop();}};}},
@@ -75,7 +77,10 @@ function setup(options={}){
   'src/engines/broforce/mission.js':{
    createBroforceMission(arg){calls.create.push(plain(arg));return{...arg,stageId:arg.stage.stageId,players:arg.players.map((p,i)=>({...p,body:{x:40+i*32,y:280,w:12,h:26},alive:true})),terrain:arg.stage};},
    advanceBroforceMission(state,args){calls.steps.push(plain(args));state.players[0].fighterId='alpha';state.players[1].fighterId='beta';
-    const terminal=options.terminal?.(state,args,calls.steps.length);return{state,events:[{type:'shot'}],terminal:terminal||null};}
+    const terminal=options.terminal?.(state,args,calls.steps.length);
+    if(terminal?.won&&options.reward){state.bossDefeated=true;state.extraction={active:true,phase:'completed',outcome:'extracted',reason:'departure',
+      boarded:terminal.bf.boarded,receipts:terminal.bf.boarded.map((yes,i)=>yes?{playerIndex:i,owner:state.players[i].owner,boardedAt:3}:null)};}
+    return{state,events:[{type:'shot'}],terminal:terminal||null};}
   },
   'src/engines/broforce/sceneRenderer.js':{drawBroforceScene(ctx,args){calls.draw.push(args);args.environmentDraw(ctx,{stageId:args.state.stageId});args.cinematicDraw(ctx,{camera:{x:0,y:0},drawPortrait:()=>{}});args.portraitFor('alpha');}},
   'src/engines/broforce/themeArt.js':{drawBroforceEnvironment(ctx,arg){calls.environment=arg;}},
@@ -161,5 +166,22 @@ await check('untrusted/mismatched terminal fails closed; never awards',async()=>
 await check('dead boarder earns no displayed success; timeout zero scores',async()=>{
  const a=setup({terminal:state=>terminal(state,[true,true],'extracted',[true,false])});await a.run();a.step();assert.deepEqual(a.calls.finish[0].scores,[1,0]);
  const b=setup({terminal:state=>terminal(state,[false,false],'timeout')});await b.run();b.step();assert.equal(b.calls.finish[0].result.bf.outcome,'timeout');assert.deepEqual(b.calls.finish[0].scores,[0,0]);
+});
+await check('BF-37 protected board attempt is used and completed extraction proof submitted before finish',async()=>{
+ const attempt={schema:1,attemptId:'bf37:proof',gameId:'broforce-jungle',stageId:'broforce-jungle',seed:17,
+  origin:'board',owners:['Sean','Amber'],fighterIds:['sean','amber'],devilId:'devil-b'};
+ const d=setup({reward:attempt,attemptId:'wrong-fallback',terminal:state=>terminal(state,[true,false])});
+ await d.run();assert.deepEqual(plain(d.s.debug.attempt),{attemptId:attempt.attemptId,stageId:attempt.stageId,seed:attempt.seed,devilId:attempt.devilId});
+ d.step();assert.equal(d.calls.proofs.length,1);assert.equal(d.calls.proofs[0].devilId,'devil-b');
+ assert.equal(d.calls.proofs[0].devilDefeated,true);assert.equal(d.calls.proofs[0].extraction.phase,'completed');
+ assert.deepEqual(d.calls.proofs[0].extraction.boarded,[true,false]);assert.equal(d.calls.finish[0].result.won,true);
+});
+await check('BF-37 rejected helicopter evidence fails closed instead of displaying an awarded victory',async()=>{
+ const attempt={schema:1,attemptId:'bf37:rejected',gameId:'broforce-jungle',stageId:'broforce-jungle',seed:18,
+  origin:'board',owners:['Sean','Amber'],fighterIds:['sean','amber'],devilId:'devil-b'};
+ const d=setup({reward:attempt,rejectProof:true,terminal:state=>terminal(state,[true,false])});
+ await d.run();d.step();assert.equal(d.calls.proofs.length,1);assert.equal(d.calls.finish.length,1);
+ assert.equal(d.calls.finish[0].result.won,false);assert.deepEqual(d.calls.finish[0].scores,[0,0]);
+ assert.match(d.calls.status,/extraction proof/i);
 });
 console.log(`BROFORCE BF-36: ${count} deterministic checks passed. Future BF-28/30/31/32/29/33 are fixtures; not integrated gameplay.`);
