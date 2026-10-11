@@ -128,3 +128,25 @@ test('far-off cinematics cull, near-edge cues remain and invalid viewport is saf
   const malformed=paint({viewport:{width:NaN,height:0},camera:cam});
   assert.ok(labels(malformed).includes('BOARD HERE'),'missing view dimensions disable culling');
 });
+
+test('BF-21 seeded simulation clock feeds true hover timing without renderer authority',()=>{
+  const sim=createContext({exports:{}});
+  const code=readFileSync(resolve(root,'src/engines/broforce/extraction.js'),'utf8');
+  runInContext(code,sim,{filename:'extraction.js'});
+  const {createBroforceExtraction,advanceBroforceExtraction:advance}=sim.exports;
+  let e=createBroforceExtraction({x:245,y:295,seed:149});
+  e=advance(e,{dt:0,devilDefeated:true});
+  assert.equal(e.phase,'incoming');
+  e=advance(e,{dt:2.4});
+  assert.equal(e.phase,'hover');
+  e=advance(e,{dt:2.2});
+  assert.equal(e.zone.secondsRemaining,6.8);
+  const before=JSON.stringify(e);
+  for(const [width,height] of sizes){
+    const ops=paint({d:null,e,viewport:{width,height},reducedMotion:true});
+    assert.ok(labels(ops).includes('7s'),'countdown reflects the seeded BF-21 state');
+    assert.ok(labels(ops).includes('BOARD HERE'));
+    assert.ok(opIndex(ops,'fillText','BOARD HERE')>opIndex(ops,'fillText','LIFTERN'));
+  }
+  assert.equal(JSON.stringify(e),before,'renderer cannot advance the extraction clock');
+});
