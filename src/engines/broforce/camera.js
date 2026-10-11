@@ -29,10 +29,16 @@ function bfBoundAxis(position, worldSize, viewSizeWorld) {
 
 function bfLiveBody(player) {
   if (!player || !Number.isFinite(player.x) || !Number.isFinite(player.y)) return null;
-  if (player.alive === false || player.dead === true || player.down === true ||
-      player.isDead === true || player.defeated === true ||
-      (Number.isFinite(player.hp) && player.hp <= 0) ||
-      (typeof player.state === 'string' && /^(dead|down|downed|defeated)$/i.test(player.state))) return null;
+  // Boarding is terminal for camera targeting even when the mission retains
+  // alive=true and the old world coordinates for its extraction receipt.
+  // Likewise a downed/dying body is not an active viewpoint anchor.
+  if (player.alive === false || player.dead === true || player.isDead === true ||
+      player.down === true || player.downed === true || player.dying === true ||
+      player.defeated === true || player.boarded === true || player.extracted === true ||
+      ('hp' in player && (!Number.isFinite(player.hp) || player.hp <= 0)) ||
+      ('health' in player && (!Number.isFinite(player.health) || player.health <= 0)) ||
+      (typeof player.status === 'string' && /^(dead|down|downed|dying|defeated|respawning|boarded|extracted)$/i.test(player.status)) ||
+      (typeof player.state === 'string' && /^(dead|down|downed|dying|defeated|respawning|boarded|extracted)$/i.test(player.state))) return null;
   const w = bfClamp(bfFinite(player.w, 0), 0, 1024);
   const h = bfClamp(bfFinite(player.h, 0), 0, 1024);
   const x = bfClamp(player.x, -BF_CAMERA_MAX_WORLD, BF_CAMERA_MAX_WORLD);
