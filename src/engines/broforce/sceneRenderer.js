@@ -33,14 +33,30 @@ function faceFor(fighterId,portraitFor,drawPortrait){
   return {headImage:image,makeHead:(facing=1)=>(g,left,top,size)=>{
     g.save();try{
       if(facing<0){g.translate(2*left+size,0);g.scale(-1,1);}
-      if(typeof drawPortrait==='function')drawPortrait(g,fighterId,left,top,size);
-      else if(paint){
-        if(paint.length>=5)paint(g,fighterId,left,top,size);
-        else paint(g,left,top,size);
-      }else if(image){
-        const w=image.naturalWidth||image.width,h=image.naturalHeight||image.height,s=Math.min(w,h);
-        g.drawImage(image,(w-s)/2,(h-s)/2,s,s,left,top,size,size);
+      // BF-25 deliberately delegates clipping to custom head painters. A
+      // bevelled inset retains the helmet rim and neck line around real photos.
+      g.beginPath();g.moveTo(left+2,top+1);g.lineTo(left+size-3,top+1);
+      g.lineTo(left+size-1,top+4);g.lineTo(left+size-1,top+size-4);
+      g.lineTo(left+size-4,top+size-1);g.lineTo(left+2,top+size-1);
+      g.lineTo(left+1,top+size-4);g.lineTo(left+1,top+3);g.closePath();g.clip();
+      try{
+        if(typeof drawPortrait==='function')drawPortrait(g,fighterId,left,top,size);
+        else if(paint){
+          if(paint.length>=5)paint(g,fighterId,left,top,size);
+          else paint(g,left,top,size);
+        }else if(image){
+          const w=image.naturalWidth||image.width,h=image.naturalHeight||image.height,s=Math.min(w,h);
+          g.drawImage(image,(w-s)/2,(h-s)/2,s,s,left,top,size,size);
+        }
+      }catch(_err){
+        // A failed host painter must not destroy the scene or leave a hole
+        // where the recognizable head belongs; use local pixel-art fallback.
+        rect(g,'#cda780',left,top,size,size);
+        rect(g,'#3b3540',left,top+2,size,5);
+        rect(g,'#263b43',left+size*.22,top+size*.49,3,2);
+        rect(g,'#263b43',left+size*.66,top+size*.49,3,2);
       }
+      rect(g,'rgba(10,23,29,.65)',left+2,top+size-3,size-4,2);
     }finally{g.restore();}
   }};
 }

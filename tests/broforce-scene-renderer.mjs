@@ -90,6 +90,13 @@ for(const [W,H] of [[390,780],[780,390],[840,690],[1100,700]]){
    portraitFor(){throw Error('unavailable image')}});
  assert.equal(a.depth(),0);assert.ok(a.events.some(e=>e[0]==='rect'));
 }
+// Host painter exceptions must be contained within an authored helmet inset.
+{
+ const a=canvas(390,780),s=state();
+ assert.doesNotThrow(()=>drawBroforceScene(a.g,{state:s,viewport:{width:390,height:780},
+   portraitFor:()=>({drawPortrait(){throw Error('asset no longer available')}})}));
+ assert.equal(a.depth(),0);
+}
 // Empty, degenerate, down/boarded players and low-motion snapshots cannot throw.
 for(const [ctx,options] of [[null,{}],[canvas(390,780).g,{}],
  [canvas(390,780).g,{state:{players:[{body:{x:0,y:0,w:12,h:26},down:true},{body:{x:0,y:0,w:12,h:26},boarded:true}]},viewport:{width:390,height:780},quality:'low'}]]){
