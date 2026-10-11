@@ -327,7 +327,7 @@ function drawBroforceScene(ctx,{state,viewport,time=0,quality='high',portraitFor
       active:!!(scene.extraction.active||scene.extraction.helicopter?.visible)}:null;
     const info=drawBroforceHud(ctx,{viewport:{width:W,height:H,safeInsets:viewport?.safeInsets},
       players:hudPlayers,mission:scene.mission,devil,extraction,time:t,
-      reducedMotion:!!scene.fx?.reducedMotion||low});
+      reducedMotion:!!scene.fx?.reducedMotion||low,showPause:!scene.hideHudPause});
     if(info&&info.insets&&info.controlZones)return info;
   }finally{ctx.restore();}
   return result;
