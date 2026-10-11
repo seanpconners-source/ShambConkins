@@ -261,7 +261,7 @@ function requireExport(paths,name){
 if(integrated){
  const variantPaths=[prefix+'variants.js',prefix+'stageVariants.js'];
  const missionPaths=[prefix+'mission.js',prefix+'missionFlow.js'];
- const scenePaths=[prefix+'scene.js',prefix+'sceneCompositor.js',prefix+'compositor.js'];
+ const scenePaths=[prefix+'sceneRenderer.js'];
  check('INTEGRATED BF-28: four stage IDs and independent stage metadata',()=>{
   const variant=requireExport(variantPaths,'generateBroforceVariant');
   for(const [stageId,title] of STAGES){
