@@ -1,7 +1,6 @@
 // BF-22: standalone, paint-only Broforce mission HUD. Canvas coordinates are device
 // canvas pixels (not CSS pixels); the adapter owns DPR, layout and pointer mapping.
 // No DOM, session, font files, state changes, fetches or module imports.
-const HUD_INK = '#0c1824';
 const HUD_EDGE = '#526b71';
 const HUD_GOLD = '#f1ca72';
 const HUD_TEXT = '#e8f0e7';
@@ -191,12 +190,14 @@ function hudInsets(viewport,W,H){
  * controlZones.pause is a suggested 44px target for adapter hit-testing only.
  * insets are HUD keep-clear margins, not modifications to safe-area CSS.
  */
-function drawBroforceHud(ctx,{viewport,players,mission,devil,extraction,time=0,layout='auto',reducedMotion=false}={}){
+function drawBroforceHud(ctx,options={}){
+  const {viewport,players,mission,devil,extraction,time=0,layout='auto',reducedMotion=false}=
+    options && typeof options==='object'?options:{};
   const W=hudClamp(viewport?.width||ctx?.canvas?.width,0,16384);
   const H=hudClamp(viewport?.height||ctx?.canvas?.height,0,16384);
   const safe=hudInsets(viewport,W,H);
   const empty={insets:{top:safe.top,right:safe.right,bottom:safe.bottom,left:safe.left},controlZones:{}};
-  if(!ctx||typeof ctx.save!=='function'||W<160||H<120)return empty;
+  if(!ctx||typeof ctx.save!=='function'||typeof ctx.restore!=='function'||W<160||H<120)return empty;
   const margin=W<480?9:12;
   const left=safe.left+margin, right=W-safe.right-margin;
   const top=safe.top+Math.max(4,Math.min(12,H*.012));
