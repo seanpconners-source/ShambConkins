@@ -57,6 +57,19 @@ jobs:
             echo "::endgroup::"
           done
           exit "$failed"
+      - name: Run all Broforce focused tests and scenario integration contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test in tests/broforce-*.mjs; do
+            echo "::group::$test"
+            node --check "$test"
+            node "$test"
+            echo "::endgroup::"
+          done
+          echo "::group::Broforce integrated scenario contracts"
+          node tests/broforce-scenarios.mjs --integrated
+          echo "::endgroup::"
       - name: Verify registered source modules
         run: node tools/check-modules.mjs
       - name: Build offline HTML
