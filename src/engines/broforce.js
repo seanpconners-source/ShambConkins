@@ -16,7 +16,9 @@ async function broforce(s){
  // Launcher contract: s.broforceAttempt or board run.pending.bf carries
  // {attemptId,stageId,seed?,devilId?}. The host never writes the run/profile.
  const pending=store.run?.pending;
- const saved=s.broforceAttempt||((pending?.gameId===stageId)?pending.bf:null);
+ // BF-37 owns the durable board-attempt identity and exact reward authority.
+ const saved=s.broforceReward?.attempt||s.broforceAttempt||
+  ((pending?.gameId===stageId)?(pending.bfAttempt||pending.bf):null);
  const suppliedId=saved?.attemptId??s.attemptId;
  if(suppliedId!==undefined&&(typeof suppliedId!=='string'||!suppliedId.length||suppliedId.length>128))
   throw new Error('Invalid Broforce attempt ID.');
@@ -214,7 +216,15 @@ async function broforce(s){
   const won=bf.outcome==='extracted'&&devilId!==null&&bf.boarded.some((b,i)=>b&&bf.aliveAtBoarding[i]);
   if(terminal.won!==won||(bf.outcome==='extracted'&&!won))
    throw new Error('Broforce terminal success disagrees with live boarding.');
-  settled=true;phase='resolving';
+  // BF-37 awards ONLY from completed BF-21 extraction receipts, not the display envelope.
+ // Submit the evidence before disposing the live GameSession.
+ if(won&&s.broforceReward){
+  const confirmed=s.broforceReward.confirmExtraction({
+   devilId,devilDefeated:state?.bossDefeated===true,extraction:state?.extraction
+  });
+  if(!confirmed)throw new Error('Broforce extraction proof could not be verified.');
+ }
+ settled=true;phase='resolving';
   const scores=bf.boarded.map((b,i)=>won&&b&&bf.aliveAtBoarding[i]?1:0);
   s.teamResult={kind:'broforce',won,tied:false,humanTotal:scores[0]+scores[1],cpuTotal:0,cpuScores:[0,0],duration:elapsed,
    bf:{schema:1,attemptId,stageId,devilId,outcome:bf.outcome,boarded:bf.boarded.slice(),aliveAtBoarding:bf.aliveAtBoarding.slice()}};
