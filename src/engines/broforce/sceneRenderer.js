@@ -25,32 +25,43 @@ function faceFor(fighterId,portraitFor,drawPortrait){
   const src=item&&typeof item==='object'?(item.image||item.headImage||item.portrait||item):item;
   const paint=typeof item==='function'?item:
     item&&typeof item.drawPortrait==='function'?item.drawPortrait:null;
-  const image=src&&typeof src==='object'&&(src.naturalWidth||src.width)&&
-    (src.naturalHeight||src.height)&&src.complete!==false?src:null;
+  const image=src&&typeof src==='object'&&
+    Number.isFinite(src.naturalWidth||src.width)&&(src.naturalWidth||src.width)>0&&
+    Number.isFinite(src.naturalHeight||src.height)&&(src.naturalHeight||src.height)>0&&
+    src.complete!==false?src:null;
   if(!image&&!paint&&typeof drawPortrait!=='function')return {};
+  // A provider's explicit false (or exception) means NO portrait was drawn.
+  // BF-32 needs that result, not a success flag for our pixel fallback.
+  // Existing host painters may draw successfully without returning a value.
+  const paintFace=(g,left,top,size)=>{
+    if(typeof fighterId!=='string'||!fighterId)return false;
+    if(typeof drawPortrait==='function')try{
+      const ok=drawPortrait(g,fighterId,left,top,size,size);
+      if(ok===true||ok===undefined)return true;
+    }catch(_err){/* try local provider */}
+    if(paint)try{
+      const ok=paint.length>=5?paint(g,fighterId,left,top,size,size):paint(g,left,top,size,size);
+      if(ok===true||ok===undefined)return true;
+    }catch(_err){/* try loaded image */}
+    if(image)try{
+      const w=image.naturalWidth||image.width,h=image.naturalHeight||image.height,s=Math.min(w,h);
+      g.drawImage(image,(w-s)/2,(h-s)/2,s,s,left,top,size,size);
+      return true;
+    }catch(_err){/* an unloaded/tainted image is not a portrait */}
+    return false;
+  };
   // BF-25 mirrors its BODY for left facing. Counter-mirror the face only, so
   // asymmetrical photographed faces are not reversed with the gun/uniform.
-  return {headImage:image,makeHead:(facing=1)=>(g,left,top,size)=>{
+  return {headImage:image,paintFace,makeHead:(facing=1)=>(g,left,top,size)=>{
     g.save();try{
       if(facing<0){g.translate(2*left+size,0);g.scale(-1,1);}
-      // BF-25 deliberately delegates clipping to custom head painters. A
-      // bevelled inset retains the helmet rim and neck line around real photos.
       g.beginPath();g.moveTo(left+2,top+1);g.lineTo(left+size-3,top+1);
       g.lineTo(left+size-1,top+4);g.lineTo(left+size-1,top+size-4);
       g.lineTo(left+size-4,top+size-1);g.lineTo(left+2,top+size-1);
       g.lineTo(left+1,top+size-4);g.lineTo(left+1,top+3);g.closePath();g.clip();
-      try{
-        if(typeof drawPortrait==='function')drawPortrait(g,fighterId,left,top,size);
-        else if(paint){
-          if(paint.length>=5)paint(g,fighterId,left,top,size);
-          else paint(g,left,top,size);
-        }else if(image){
-          const w=image.naturalWidth||image.width,h=image.naturalHeight||image.height,s=Math.min(w,h);
-          g.drawImage(image,(w-s)/2,(h-s)/2,s,s,left,top,size,size);
-        }
-      }catch(_err){
-        // A failed host painter must not destroy the scene or leave a hole
-        // where the recognizable head belongs; use local pixel-art fallback.
+      if(!paintFace(g,left,top,size)){
+        // Only the actor/HUD receives this fallback. A cinematic returns false
+        // to BF-32 so its own fallback is painted once, not on top of ours.
         rect(g,'#cda780',left,top,size,size);
         rect(g,'#3b3540',left,top+2,size,5);
         rect(g,'#263b43',left+size*.22,top+size*.49,3,2);
@@ -300,11 +311,10 @@ function drawBroforceScene(ctx,{state,viewport,time=0,quality='high',portraitFor
       let drawn=false;
       const cinematicPortrait=(g,id,left,top,size)=>{
         const face=faceFor(id,portraitFor,drawPortrait);
-        if(!face.makeHead)return false;
-        face.makeHead(1)(g,left,top,size);
-        // BF-32 chooses its own fallback unless the caller explicitly confirms
-        // that a recognizable character portrait was painted.
-        return true;
+        if(!face.paintFace)return false;
+        // Painting is clipped to the BF-32 mask by the cinematic provider.
+        // Never report a pixel fallback as a recognizable devil portrait.
+        return face.paintFace(g,left,top,size);
       };
       if(typeof cinematicDraw==='function')try{
         cinematicDraw(ctx,{devil:dev,extraction:ex,camera:cam,
