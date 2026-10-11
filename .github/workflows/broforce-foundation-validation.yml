@@ -1,12 +1,9 @@
 name: Broforce foundation validation
 
+# CI COST CONTROL 2026-10-11: require explicit dispatch before expensive
+# Broforce foundation + Chromium + Fold screenshot validation runs.
+# Preserves all original jobs and acceptance gates, but disables push/PR storm.
 on:
-  push:
-    branches:
-      - 'feature/broforce-*'
-  pull_request:
-    branches:
-      - 'feature/broforce-mobile'
   workflow_dispatch:
 
 permissions:
