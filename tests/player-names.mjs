@@ -35,6 +35,10 @@ try {
   assert.deepEqual(await page.locator('#player-name-0, #player-name-1').evaluateAll(
     nodes=>nodes.map(n=>n.value)),["O'Neil",'<b id=x>Riley</b>']);
   assert.equal(await page.locator('#x').count(),0,'setup name must be escaped');
+  await page.click('[data-action="home"]');
+  await page.click('[data-action="setup"]');
+  assert.deepEqual(await page.locator('#player-name-0, #player-name-1').evaluateAll(
+    nodes=>nodes.map(n=>n.value)),["O'Neil",'<b id=x>Riley</b>'],'draft survives return to setup');
   await page.screenshot({path:'/tmp/claude-0/names-setup-phone.png'});
   await page.setViewportSize({width:1100,height:700});
   await page.screenshot({path:'/tmp/claude-0/names-setup-desktop.png'});
@@ -86,7 +90,11 @@ try {
   assert.match(await page.locator('#game-scorebar').innerText(),/O'Neil/);
   assert.match(await page.locator('#game-scorebar').innerText(),/<b id=x>Riley<\/b>/);
   assert.equal(await page.locator('#x').count(),0,'minigame labels must be escaped');
-  // A direct pass/handoff also draws the current player's display name.
+  // Verify the engine's first pass screen, then separately exercise player 2.
+  await page.waitForSelector('.pass-card h2');
+  assert.match(await page.locator('.pass-card h2').innerText(),/O'Neil/);
+  await page.locator('.pass-card [data-ready]').click();
+  await page.waitForFunction(()=>!document.querySelector('.pass-card'));
   await page.evaluate(()=>{void window.ShambConkins.store.session.pass(1,'Ready to play?');});
   await page.waitForFunction(()=>document.querySelector('.pass-card h2')?.textContent?.includes('Riley'));
   assert.match(await page.locator('.pass-card h2').innerText(),/<b id=x>Riley<\/b>/);
