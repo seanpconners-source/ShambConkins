@@ -103,6 +103,7 @@ let portraits=0;
 const loaded=render(p,{players:[{name:'Sean',headImage:image}, {name:'Amber',drawHead(_g,x,y,w){portraits++;assert(w>18&&x>0&&y>0);}}],extraction:{active:false},devil:{active:false}});
 assert(loaded.ctx.calls.some(c=>c[0]==='image'),'offline portrait drawn');assert.equal(portraits,1);
 assert.doesNotThrow(()=>drawBroforceHud(null,{}),'null context harmless');
+assert.doesNotThrow(()=>drawBroforceHud(new FakeCanvas(390,780),null),'null options harmless');
 assert.doesNotThrow(()=>drawBroforceHud(new FakeCanvas(0,0),{viewport:{width:NaN,height:NaN}}));
 assert.doesNotThrow(()=>drawBroforceHud(new FakeCanvas(390,780),{players:[],mission:null,devil:null,extraction:null}));
 console.log(`PASS BF-22 HUD: ${viewports.length} viewport geometries, boss, extraction, photos, callback, state, safe margins, pure snapshots, reduced motion`);
