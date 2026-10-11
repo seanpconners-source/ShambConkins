@@ -86,3 +86,15 @@ jobs:
           sudo ln -s "$browser_executable" /opt/pw-browsers/chromium-1194/chrome-linux/chrome
       - name: Run complete npm test suite
         run: npm test
+      - name: BF-41 real browser mission start and reentry (all four stages)
+        run: node tests/bf41-broforce-browser-launch.mjs
+      - name: BF-59 real browser Fold and mobile viewport capture
+        run: node tests/bf59-broforce-viewport-capture.mjs --file dist/ShambConkins.html --out /tmp/bf59-broforce
+      - name: Upload BF-59 real Chromium screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bf59-wave4-chromium-captures
+          path: /tmp/bf59-broforce/
+          if-no-files-found: warn
+          retention-days: 7
