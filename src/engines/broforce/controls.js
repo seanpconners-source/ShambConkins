@@ -95,8 +95,8 @@ function attachBroforceControls(s,{onChange}={}){
  }
  function keyName(ev){return String(ev.key||'').toLowerCase();}
  const bindings={a:{owner:0,move:-1},d:{owner:0,move:1},w:{owner:0,action:'jump'},' ':{owner:0,action:'fire'},e:{owner:0,action:'special'},arrowleft:{owner:1,move:-1},arrowright:{owner:1,move:1},arrowup:{owner:1,action:'jump'},enter:{owner:1,action:'fire'},shift:{owner:1,action:'special'}};
- function typing(target){for(let el=target;el;el=el.parentElement){if(el.isContentEditable)return true;if(['INPUT','TEXTAREA','SELECT'].includes(String(el.tagName||'').toUpperCase()))return true;}return false;}
- function keydown(ev){const bind=bindings[keyName(ev)];if(!bind||disposed||s.paused||s.alive===false||typing(ev.target)||ev.ctrlKey||ev.altKey||ev.metaKey)return;
+ function usingUI(target){for(let el=target;el;el=el.parentElement){if(el.isContentEditable||el.getAttribute?.('contenteditable')==='true')return true;if(['INPUT','TEXTAREA','SELECT','BUTTON','A','SUMMARY'].includes(String(el.tagName||'').toUpperCase()))return true;}return false;}
+ function keydown(ev){const bind=bindings[keyName(ev)];if(!bind||disposed||s.paused||s.alive===false||(usingUI(ev.target)||usingUI(documentRoot.activeElement))||ev.ctrlKey||ev.altKey||ev.metaKey)return;
   const code='k:'+String(ev.code||ev.key);ev.preventDefault();if(keys.has(code))return;
   keys.set(code,bind);if(bind.action)input.press(bind.owner,bind.action,code);else input.setMove(bind.owner,code,bind.move);paint();notify();
  }
@@ -105,7 +105,7 @@ function attachBroforceControls(s,{onChange}={}){
  }
  function resize(){if(disposed)return;const r=frame.getBoundingClientRect(),w=Math.max(1,r.width),h=Math.max(1,r.height);
   if(dimensions&&(Math.abs(w-dimensions[0])>3||Math.abs(h-dimensions[1])>3))clear();dimensions=[w,h];
-  const half=w/2,stick=Math.max(55,Math.min(92,half*.42,h*.23)),button=Math.max(40,Math.min(56,half*.23,h*.19)),cluster=button*2+3;
+  const half=w/2,stick=Math.max(55,Math.min(92,half*.42,h*.23)),button=Math.max(44,Math.min(56,half*.23,h*.19)),cluster=button*2+3;
   for(let i=0;i<2;i++){
    css(zones[i],{height:Math.max(stick,cluster)+'px',width:'calc(50% - max(4px, env(safe-area-inset-'+(i===0?'left':'right')+', 0px)))'});
    css(pads[i],{width:stick+'px',height:stick+'px'});
