@@ -183,6 +183,15 @@ test('clamps dt, bogus bodies, input length, and duplicate entity IDs', () => {
   assert.ok(data.enemies[1].spawnGrace >= .44, 'one call never simulates huge dt');
 });
 
+test('external dead state emits exactly once even with zero dt', () => {
+  const fromCombat = {...create({id: 'marked-dead', x: 75, y: 136}), state: 'dead'};
+  const first = advance([fromCombat], opts({dt: 0}));
+  assert.equal(first.events.filter(v => v.type === 'enemy-down').length, 1);
+  const second = advance(first.enemies, opts({dt: 0}));
+  assert.equal(second.events.length, 0);
+  assert.equal(second.enemies[0].dead, true);
+});
+
 let failures = 0;
 for (const [name, fn] of tests) {
   try {fn(); console.log(`PASS ${name}`);} catch (e) {failures++; console.error(`FAIL ${name}`); console.error(e.stack);}
