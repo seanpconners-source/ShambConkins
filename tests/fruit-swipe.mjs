@@ -42,6 +42,9 @@ function fixture(){
 const fx=fixture(),{fruitSwipeStep,SWIPE_LIMITS}=fx.exports;
 assert.equal(SWIPE_LIMITS.maxStrokeMs,380);
 assert.equal(SWIPE_LIMITS.maxGapMs,160);
+assert.equal(SWIPE_LIMITS.minMove,10);
+assert.equal(SWIPE_LIMITS.minSpeed,120);
+assert.equal(SWIPE_LIMITS.maxTravelFactor,1.25);
 function tracker(){return {p:{x:0,y:100},at:0,stroke:null};}
 {
  const t=tracker();
@@ -60,6 +63,14 @@ function tracker(){return {p:{x:0,y:100},at:0,stroke:null};}
   if(i===1)assert.ok(out.a);
   if(i===6)assert.equal(out.reset,true,'continuous scribble cannot extend one combo forever');
  }
+}
+{
+ const t=tracker();
+ assert.ok(fruitSwipeStep(t,{x:50,y:100},30,390,780).a,'phone logical coordinates slice');
+ assert.equal(fruitSwipeStep(t,{x:65,y:100},165,390,780).a,null,'slow drift cannot extend a swipe');
+ assert.ok(fruitSwipeStep(tracker(),{x:45,y:100},30,1100,700).a,'desktop logical coordinates slice');
+ const sameA=fx.exports.fruitCourse('same-seed'),sameB=fx.exports.fruitCourse('same-seed');
+ assert.equal(JSON.stringify(sameA),JSON.stringify(sameB),'identical waves retained');
 }
 await fx.exports.fruitslice(fx.s);
 fx.tick(0);
@@ -93,4 +104,19 @@ kb.emit(kb.document,'keydown',{key:' ',repeat:true});
 assert.equal(kb.scores[0],30,'key repeat cannot farm extra slices');
 kb.emit(kb.document,'keydown',{key:' ',repeat:false});
 assert.equal(kb.scores[0],40);
+const touch=fixture();
+await touch.exports.fruitslice(touch.s);touch.tick(0);
+touch.fruit(100);
+touch.emit(touch.canvas,'pointerdown',{pointerId:-2,clientX:55,clientY:100});
+touch.time(35);
+touch.emit(touch.canvas,'pointermove',{pointerId:-2,clientX:145,clientY:100});
+touch.emit(touch.canvas,'pointerup',{pointerId:-2,clientX:145,clientY:100});
+assert.equal(touch.scores[0],10,'touch-adapted negative pointer IDs slice correctly');
+const bomb=fixture();
+await bomb.exports.fruitslice(bomb.s);bomb.tick(0);
+bomb.fruit(100,100,true);
+bomb.down(55,100);bomb.time(35);bomb.move(145,100);bomb.up(145,100);
+bomb.tick(0);
+assert.equal(bomb.scores[0],0,'bomb never gives head points');
+assert.equal(bomb.s.debug.bombs,1,'bomb penalty/hit counter retained');
 console.log('Fruit Ninja finite swipes: helper, pointer, hold, cancel, reset, handoff and keyboard checks passed');
