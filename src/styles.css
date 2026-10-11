@@ -902,3 +902,11 @@ body.gb-open{overflow:hidden}
 .warp-cv-label{font:900 24px "Courier New",ui-monospace,monospace;fill:#fcfcfc;paint-order:stroke;stroke:#000;stroke-width:7px;letter-spacing:.06em}
 .sp-sign{font:900 22px system-ui,sans-serif;fill:#1c1a24;paint-order:stroke;stroke:#fff;stroke-width:7px;letter-spacing:.02em}
 .sp-shop{font:900 17px system-ui,sans-serif;fill:#fff;letter-spacing:.04em}
+
+/* Short trivia feedback; the saved Reduced Motion setting disables the burst class. */
+.trivia-celebrate{color:#e4ffad!important;text-shadow:0 0 10px rgba(184,255,121,.35);font-weight:900}
+.trivia-incorrect{color:#ffaaa0!important;font-weight:800}
+.trivia-timeout{color:#ffdbad!important}
+.trivia-burst{animation:trivia-feedback-pop .34s ease-out both}
+@keyframes trivia-feedback-pop{0%{transform:scale(.94);opacity:.75}55%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){.trivia-burst{animation:none}}

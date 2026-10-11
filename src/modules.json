@@ -1,6 +1,7 @@
 {
  "order": [
   "src/app.js",
+  "src/triviaFeedback.js",
   "src/engines/trivia.js",
   "src/state.js",
   "src/characters.js",

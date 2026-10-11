@@ -10,6 +10,7 @@ const D=require("src/pkmn/pkmnData.js");
 const SP=require("src/pkmn/pkmnSprites.js");
 const AU=require("src/pkmn/pkmnAudio.js");
 const {fullscreenSupported,fullscreenLabel,toggleFullscreen}=require("src/fullscreen.js");
+const {vibrate}=require("src/audio.js");
 const {MOVES,move,speciesFor,statsAt,movesAt,effectiveness,BAG_ITEMS,BAG_ORDER,expFor,levelForExp,expGain,ppLeft,ABILITIES}=D;
 const W=160,H=144;
 
@@ -33,9 +34,9 @@ function openGB(){
  const buf=document.createElement('canvas');buf.width=W;buf.height=H;const b=buf.getContext('2d');b.imageSmoothingEnabled=false;
  G={root,canvas,ctx,buf,b,S:freshScene(),waiters:[],held:{},hits:[],raf:0,frame:0,frameWaiters:[],closed:false,listeners:[]};
  const on=(el,ev,fn,opt)=>{el.addEventListener(ev,fn,opt);G.listeners.push(()=>el.removeEventListener(ev,fn,opt));};
- on(window,'keydown',e=>{const btn=KEYS[e.key];if(!btn)return;e.preventDefault();e.stopPropagation();if(!e.repeat)press(btn);G.held[btn]=true;},true);
+ on(window,'keydown',e=>{const btn=KEYS[e.key];if(!btn)return;e.preventDefault();e.stopPropagation();if(!e.repeat&&!G.held[btn])press(btn);G.held[btn]=true;},true);
  on(window,'keyup',e=>{const btn=KEYS[e.key];if(btn){G.held[btn]=false;e.stopPropagation();}},true);
- for(const el of root.querySelectorAll('[data-btn]')){const btn=el.dataset.btn;on(el,'pointerdown',e=>{e.preventDefault();el.classList.add('down');G.held[btn]=true;press(btn);});const up=()=>{el.classList.remove('down');G.held[btn]=false;};on(el,'pointerup',up);on(el,'pointerleave',up);on(el,'pointercancel',up);}
+ for(const el of root.querySelectorAll('[data-btn]')){const btn=el.dataset.btn;on(el,'pointerdown',e=>{e.preventDefault();if(G.held[btn])return;el.classList.add('down');G.held[btn]=true;press(btn);});const up=()=>{el.classList.remove('down');G.held[btn]=false;};on(el,'pointerup',up);on(el,'pointerleave',up);on(el,'pointercancel',up);}
  on(canvas,'pointerdown',e=>{e.preventDefault();const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;const hit=G.hits.find(h=>x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h);G.held.a=true;if(hit)press('tap',hit.index);else press('a');});
  on(canvas,'pointerup',()=>{G.held.a=false;});
  // small full-screen toggle in the bezel corner
@@ -57,7 +58,7 @@ function closeGB(){
  for(const w of G.waiters)w.resolve(null);for(const w of G.frameWaiters)w.resolve();AU.stopAll();G=null;
 }
 function press(btn,index){
- if(!G)return;if(btn==='select'){SP.setPaletteMode(SP.paletteMode()==='dmg'?'color':'dmg');G.root.dataset.pal=SP.paletteMode();AU.sfx('press');return;}
+ if(!G)return;if(btn!=='tap')vibrate(10);if(btn==='select'){SP.setPaletteMode(SP.paletteMode()==='dmg'?'color':'dmg');G.root.dataset.pal=SP.paletteMode();AU.sfx('press');return;}
  const w=G.waiters.shift();if(w)w.resolve({btn,index});
 }
 function button(){
