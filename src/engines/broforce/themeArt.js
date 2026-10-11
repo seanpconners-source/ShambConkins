@@ -17,34 +17,42 @@ function motif(theme,type,variant){const key=theme+':'+type+':'+variant;if(fragm
  const bits=[];for(let i=0;i<7;i++){const n=hash(type*17+i,variant*13,theme==='broforce-factory'?11:theme==='broforce-city'?31:57);bits.push([1+n%12,2+((n>>>8)%11),1+((n>>>16)%3),1+((n>>>22)%2)]);}
  fragments.set(key,bits);return bits;
 }
-function sky(g,W,H,c){for(let i=0;i<3;i++)rect(g,c.sky[i],0,H*i/3,W,Math.ceil(H/3)+1);
- for(let i=0;i<12;i++){const y=Math.floor(i*H/12);rect(g,'rgba(255,240,207,.012)',0,y,W,Math.max(1,H/60));}
+function sky(g,W,H,c,low=false){for(let i=0;i<3;i++)rect(g,c.sky[i],0,H*i/3,W,Math.ceil(H/3)+1);
+ if(!low)for(let i=0;i<12;i++){const y=Math.floor(i*H/12);rect(g,'rgba(255,240,207,.012)',0,y,W,Math.max(1,H/60));}
 }
 function repeat(W,camera,pace,factor,draw){const scroll=camera*factor,first=Math.floor(scroll/pace)-2;const count=Math.min(400,Math.ceil(W/pace)+5);for(let k=0;k<count;k++){const i=first+k;draw(i,Math.floor(i*pace-scroll));}}
 function gear(g,x,y,r,c,accent){g.save();g.translate(x,y);g.fillStyle=c;
  g.beginPath();for(let i=0;i<24;i++){const a=i*TAU/24;const radius=(i%3===1)?r+5:r;const px=Math.cos(a)*radius,py=Math.sin(a)*radius;if(i===0)g.moveTo(px,py);else g.lineTo(px,py);}g.closePath();g.fill();
  g.fillStyle=accent;g.beginPath();g.arc(0,0,r*.58,0,TAU);g.fill();
  for(let i=0;i<6;i++){const a=i*TAU/6;rect(g,c,Math.floor(Math.cos(a)*r*.36)-2,Math.floor(Math.sin(a)*r*.36)-2,5,5);}rect(g,c,-3,-3,6,6);g.restore();}
-function factory(g,W,H,cx,cy,t,low,p){sky(g,W,H,p);
+function factory(g,W,H,cx,cy,t,low,p){sky(g,W,H,p,low);
  const horizon=H*.66-cy*.045;
  // Distinct industrial depth: red exhaust sky, foundry chimneys, overhead gantries.
  repeat(W,cx,164,.13,(i,x)=>{const y=horizon-115-frac(i,3,10)*88;
   rect(g,p.far,x,y,94,H-y);rect(g,'#39404c',x+14,y-13,21,14);rect(g,'#50535c',x+14,y-14,21,3);
   rect(g,p.far,x+52,y-47,23,49);rect(g,'#627076',x+51,y-49,25,3);
+  if(i%6===0){ // distant tilted vent and warning bar: silhouette, not a ledge
+   rect(g,'#41434d',x+80,y-67,5,68);rect(g,'#ba7448',x+79,y-68,9,3);
+   rect(g,'rgba(255,183,94,.28)',x+81,y-55,3,13);
+  }
   if(!low){for(let k=0;k<3;k++){const yy=y-50-((t*7+k*24+i*3)%95);rect(g,'rgba(194,161,144,.14)',x+48+k*6,yy,23+k*4,5+k*2);}}});
  repeat(W,cx,228,.31,(i,x)=>{const y=horizon-85+(frac(i,2,8)-.5)*33;
   rect(g,p.mid,x,y,175,H-y);rect(g,'#5d5557',x+2,y+2,169,4);
   for(let k=0;k<4;k++){rect(g,'#172936',x+8+k*42,y+20,29,21);rect(g,(hash(i,k,34)%5===0)?'#b8733c':'#47535a',x+12+k*42,y+24,18,13);}
   rect(g,'#202a34',x+132,y-33,14,34);rect(g,'#7a6b60',x+131,y-34,16,3);});
  repeat(W,cx,344,.51,(i,x)=>{const y=horizon+16;const furnaceX=x+28;
-  rect(g,p.near,x,y-62,296,156);rect(g,'#6f625f',x,y-64,296,5);
+  // Open slatted furnace frame, rather than an unbroken foreground fake wall.
+  rect(g,'rgba(39,47,52,.68)',x,y-62,296,156);
+  for(let j=0;j<4;j++){rect(g,'rgba(108,106,102,.45)',x+12+j*76,y-58,4,148);}
+  for(let j=0;j<3;j++)rect(g,'rgba(202,148,96,.33)',x+20+j*99,y-64,42,2);
   rect(g,p.dark,furnaceX,y-42,89,89);rect(g,'#6f6257',furnaceX+6,y-39,77,9);
   rect(g,'#ae6039',furnaceX+13,y-25,63,42);rect(g,'#ed9b4d',furnaceX+17,y-22,54,7);
   rect(g,'#ffd18a',furnaceX+23,y-13,34,4);rect(g,'#582e2b',furnaceX+11,y+17,69,12);
   for(let j=0;j<4;j++){rect(g,'#202e3a',x+136+j*31,y-29,24,22);rect(g,(j===2&&Math.sin(t*4+i)>0)?'#ec9d56':'#698981',x+143+j*31,y-22,6,5);}
   gear(g,x+176,y+48,21,'#192831','#52616a');gear(g,x+230,y+60,13,'#18252f','#53656a');
   // A conveyor is background machinery, not a fake playable ledge.
-  rect(g,'#202f36',x+110,y+76,170,17);for(let j=0;j<9;j++)rect(g,'#465763',x+117+j*18,y+79,10,5);
+  rect(g,'rgba(25,39,47,.50)',x+110,y+81,170,4);
+  for(let j=0;j<9;j++)rect(g,'rgba(100,116,119,.44)',x+117+j*18,y+79,3,8);
   for(let j=0;j<3;j++){const lx=x+42+j*112;rect(g,'#66757b',lx,y-73,3,14);rect(g,'#e5ab64',lx-5,y-59,14,3);}
  });
  if(!low)repeat(W,cx,154,.66,(i,x)=>{const y=horizon-55;const drift=((t*13+i*23)%100+100)%100;
@@ -56,7 +64,7 @@ function windows(g,x,y,w,h,i,low){const cols=Math.max(1,Math.floor((w-10)/20)),r
  for(let yy=0;yy<rows;yy++)for(let xx=0;xx<cols;xx++){const wx=x+8+xx*20,wy=y+11+yy*23,lit=hash(i+xx,yy,111)%6;
   rect(g,'#151d2b',wx,wy,10,13);if(lit===0||lit===1)rect(g,lit===0?'#c9a576':'#857b76',wx+2,wy+2,6,9);
   if(!low){rect(g,'#758093',wx+5,wy,1,12);rect(g,'#5e6679',wx,wy+8,10,1);}}}
-function city(g,W,H,cx,cy,t,low,p){sky(g,W,H,p);
+function city(g,W,H,cx,cy,t,low,p){sky(g,W,H,p,low);
  // Purple-black far borough, mid-story apartment facades and broken skyline.
  const base=H*.69-cy*.045;
  for(let layer=0;layer<3;layer++){const pace=[105,148,212][layer],depth=[.13,.30,.56][layer];const col=[p.far,p.mid,p.near][layer];
@@ -65,6 +73,11 @@ function city(g,W,H,cx,cy,t,low,p){sky(g,W,H,p);
    if((i&3)===0){rect(g,'#181d2b',x+19,y-16,42,16);rect(g,'#79808b',x+22,y-17,35,2);
     rect(g,'#1b2431',x+27,y-29,5,14);rect(g,'#1b2431',x+47,y-27,4,12);}
    if(layer!==0){windows(g,x,y,w,h,i,low);
+    if(layer===1&&i%4===0){ // glowing district signage painted into the distant facade
+     rect(g,'#2b3243',x+17,y+48,60,25);rect(g,'#ae6e72',x+21,y+51,52,3);
+     rect(g,'#caad9a',x+25,y+60,7,5);rect(g,'#c49a80',x+38,y+60,21,3);
+     if(!low)rect(g,'rgba(244,172,136,.16)',x+17,y+47,62,29);
+    }
     // Rooftop HVAC, drainpipes and crumbling edge cracks: all behind collision plane.
     rect(g,'#222c3b',x+w-18,y-9,15,9);rect(g,'#788193',x+w-16,y-10,11,2);
     rect(g,'#172132',x+3,y+19,3,h-20);
@@ -89,7 +102,7 @@ function mesa(g,W,H,cx,cy,layer,color){const factor=[.12,.29,.48][layer],pace=[2
 function cactus(g,x,y,i,low){const h=24+frac(i,8,73)*32;rect(g,'#475c54',x,y-h,6,h);
  rect(g,'#64745a',x+1,y-h,1,h-3);rect(g,'#455d52',x-11,y-h*.71,4,h*.35);rect(g,'#455d52',x-11,y-h*.71,11,4);
  if(!low){rect(g,'#718163',x+9,y-h*.51,4,h*.28);rect(g,'#496958',x+5,y-h*.51,8,3);} }
-function desert(g,W,H,cx,cy,t,low,p){sky(g,W,H,p);
+function desert(g,W,H,cx,cy,t,low,p){sky(g,W,H,p,low);
  const sunX=W*.73-(cx*.02%Math.max(1,W*.4)),sunY=H*.25-cy*.005;
  rect(g,'rgba(253,215,151,.25)',sunX-33,sunY-33,66,66);rect(g,'#ffdfaa',sunX-21,sunY-21,42,42);
  for(let layer=0;layer<3;layer++)mesa(g,W,H,cx,cy,layer,[p.far,p.mid,p.near][layer]);
@@ -105,8 +118,11 @@ function desert(g,W,H,cx,cy,t,low,p){sky(g,W,H,p);
  });
  // Concrete firing stations in back plane, dark enough not to read as collision.
  repeat(W,cx,395,.44,(i,x)=>{const y=floor+14+(frac(i,7,39)-.5)*26;
-  rect(g,'#72685f',x+34,y-65,153,87);rect(g,'#d2b390',x+34,y-65,153,4);
-  rect(g,'#474950',x+42,y-45,46,11);rect(g,'#373c45',x+111,y-45,62,11);
+  // Perforated ruin behind the dunes; exposed supports cannot masquerade as collision.
+  rect(g,'rgba(94,79,77,.24)',x+34,y-65,153,87);
+  rect(g,'#6c6663',x+37,y-63,7,84);rect(g,'#6c6663',x+172,y-63,7,84);
+  rect(g,'rgba(230,193,144,.48)',x+40,y-64,35,3);
+  rect(g,'rgba(55,61,69,.76)',x+42,y-45,46,7);rect(g,'rgba(55,61,69,.76)',x+111,y-45,62,7);
   for(let j=0;j<5;j++)rect(g,'rgba(45,53,58,.26)',x+44+j*28,y-20,16,3);
   rect(g,'#5d5756',x+168,y-98,8,33);rect(g,'#eee0b5',x+169,y-101,9,5);
  });
@@ -138,14 +154,19 @@ function tilePixels(g,theme,type,variation){const [dark,mid,light]=BF_THEMES[the
  }
 }
 // Static offscreen sprite sheets avoid re-rendering the same microtexture every frame.
-let spriteCache=null;
-function sprites(){if(spriteCache)return spriteCache;if(typeof OffscreenCanvas!=='function')return null;
- try{const cache={};for(const theme of Object.keys(BF_THEMES)){cache[theme]=[];
-  for(let type=1;type<=5;type++){cache[theme][type]=[];for(let v=0;v<4;v++){
-   const canvas=new OffscreenCanvas(16,16),context=canvas.getContext('2d');if(!context)return null;
-   tilePixels(context,theme,type,v);cache[theme][type][v]=canvas;
-  }} }spriteCache=cache;return cache;
- }catch{return null;}
+// Lazily allocate only the active stage's 20 tile variants (not all 60 on first paint).
+const spriteCache=Object.create(null);
+function sprites(theme){
+ if(Object.prototype.hasOwnProperty.call(spriteCache,theme))return spriteCache[theme];
+ if(typeof OffscreenCanvas!=='function')return null;
+ try{const cache=[];
+  for(let type=1;type<=5;type++){cache[type]=[];for(let v=0;v<4;v++){
+   const canvas=new OffscreenCanvas(16,16),context=canvas.getContext('2d');
+   if(!context){spriteCache[theme]=null;return null;}
+   tilePixels(context,theme,type,v);cache[type][v]=canvas;
+  }}
+  spriteCache[theme]=cache;return cache;
+ }catch{spriteCache[theme]=null;return null;}
 }
 function terrain(g,theme,map,cx,cy,W,H){if(!map||!map.tiles||!Number.isSafeInteger(map.width)||!Number.isSafeInteger(map.height)||map.width<=0||map.height<=0)return;
  const mw=map.width,mh=map.height,tiles=map.tiles;
@@ -154,11 +175,14 @@ function terrain(g,theme,map,cx,cy,W,H){if(!map||!map.tiles||!Number.isSafeInteg
  const left=Math.max(0,Math.floor(cx/T)),right=Math.min(mw-1,Math.ceil((cx+W)/T)-1);
  const top=Math.max(0,Math.floor(cy/T)),bottom=Math.min(mh-1,Math.ceil((cy+H)/T)-1);
  if(left>right||top>bottom)return;
- const atlas=sprites(),at=(x,y)=>x<0||y<0||x>=mw||y>=mh?0:tiles[y*mw+x]||0;
+ const atlas=sprites(theme),at=(x,y)=>{
+  if(x<0||y<0||x>=mw||y>=mh)return 0;
+  const id=tiles[y*mw+x];return Number.isInteger(id)&&id>=1&&id<=5?id:0;
+ };
  for(let r=top;r<=bottom;r++)for(let c=left;c<=right;c++){
   const id=at(c,r);if(!Number.isInteger(id)||id<1||id>5)continue;
   const x=Math.floor(c*T-cx),y=Math.floor(r*T-cy),v=hash(c,r,229)%4,u=T/16;
-  if(atlas)g.drawImage(atlas[theme][id][v],x,y,T,T);
+  if(atlas)g.drawImage(atlas[id][v],x,y,T,T);
   else{g.save();g.translate(x,y);g.scale(u,u);tilePixels(g,theme,id,v);g.restore();}
   // Edges live entirely within their actual collision tile; no unowned platforms.
   if(!at(c,r-1)){rect(g,BF_THEMES[theme].materials[id][2],x,y,T,Math.max(u,1));rect(g,'rgba(17,24,31,.40)',x,y+2*u,T,u);}
