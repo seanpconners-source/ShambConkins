@@ -92,10 +92,19 @@ function damageBoss(d,hits,events){
   if(target!=null&&target!=='devil'&&target!==d.characterId)continue;
   const damage=finite(h.damage,finite(h.amount,0));
   if(damage<=0)continue;
-  const id=h.id??h.eventId??h.projectileId;
-  const key=id==null?null:String(id).slice(0,120);
-  if(key!==null){if(d.hitIds.includes(key))continue;d.hitIds.push(key);}
-  valid.push({key:key??'',damage:clamp(damage,0,6),index:i});
+  // Only an identifiable combat impact can hurt the boss. The combat resolver
+  // uses projectileId/source; legacy already-boss-routed hits use id/eventId.
+  // Projectile identity wins over event labels to prevent double counting.
+  const owner=h.owner;
+  if(typeof owner==='string'&&(owner==='devil'||owner.startsWith('devil:')||
+      owner==='enemy'||owner.startsWith('enemy:')))continue;
+  const id=h.projectileId??h.source??h.id??h.eventId;
+  if(typeof id!=='string'&&!(typeof id==='number'&&Number.isSafeInteger(id)))continue;
+  const key=String(id).slice(0,120);
+  if(!key||key.startsWith('devil:')||key.startsWith('enemy:')||
+     d.hitIds.includes(key))continue;
+  d.hitIds.push(key);
+  valid.push({key,damage:clamp(damage,0,6),index:i});
  }
  if(d.hitIds.length>MAX_HIT_IDS)d.hitIds.splice(0,d.hitIds.length-MAX_HIT_IDS);
  if(d.invulnerability>0||!valid.length)return;
@@ -151,16 +160,29 @@ function moveShots(d,events,players,isSolid){
   shot.ttl-=STEP;
   const x=shot.x+shot.vx*STEP,y=shot.y+shot.vy*STEP;
   if(shot.ttl<=0||!Number.isFinite(x)||!Number.isFinite(y))continue;
-  const col=Math.floor(x/TILE_SIZE),row=Math.floor(y/TILE_SIZE);
-  if(solid(col,row)){
-   emit(d,events,'devil-cover-damage',{x:round(x),y:round(y),radius:12,
+  // Sweep at <=1px spacing: even a very narrow actor/cover edge must be
+  // struck before the projectile reaches its endpoint. Boss-fired shots move
+  // <5px per tick; discard malformed, implausibly fast injected shots.
+  const distance=Math.hypot(x-shot.x,y-shot.y);
+  if(!Number.isFinite(distance)||distance>64)continue;
+  const slices=Math.max(1,Math.ceil(distance));
+  let impact=null;
+  for(let i=1;i<=slices;i++){
+   const px=shot.x+(x-shot.x)*i/slices,py=shot.y+(y-shot.y)*i/slices;
+   if(solid(Math.floor(px/TILE_SIZE),Math.floor(py/TILE_SIZE))){
+    impact={kind:'cover',x:px,y:py};break;
+   }
+   const target=players.find(p=>hitRect(px,py,shot.r,p));
+   if(target){impact={kind:'player',target,x:px,y:py};break;}
+  }
+  if(impact?.kind==='cover'){
+   emit(d,events,'devil-cover-damage',{x:round(impact.x),y:round(impact.y),radius:12,
     damage:1,projectileId:shot.id});
    continue;
   }
-  const target=players.find(p=>hitRect(x,y,shot.r,p));
-  if(target){
-   emit(d,events,'devil-hit-player',{playerId:target.id,sourceId:shot.id,
-    projectileId:shot.id,damage:1,x:round(x),y:round(y)});
+  if(impact?.kind==='player'){
+   emit(d,events,'devil-hit-player',{playerId:impact.target.id,sourceId:shot.id,
+    projectileId:shot.id,damage:1,x:round(impact.x),y:round(impact.y)});
    continue;
   }
   shot.x=round(x);shot.y=round(y);
