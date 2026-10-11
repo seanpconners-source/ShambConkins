@@ -186,6 +186,58 @@ function resolveBroforceExplosion({x, y, radius = 40, damage = 2, terrain,
   pushEvent(events, {type: 'particles', kind: 'explosion', count: particles, x, y});
   return {events, hitIds, terrainResult};
 }
+// Grenades must consume the entire active tick, including time after a ricochet.
+// Resolving additional contacts within the same tick preserves the fixed-step
+// contract without asking the mission adapter to reconstruct bounce time.
+// A finite contact budget also handles projectiles embedded inside steel.
+function advanceGrenade(p, seconds, solid, targets, bounds, terrain, friendlyFire, events) {
+  if (seconds <= EPS) return true;
+  let remaining = Math.min(seconds, p.life);
+  const gravity = clamp(finite(p.gravity), -1000, 1000);
+  const explode = () => {
+    if (p.blastRadius > 0) {
+      const boom = resolveBroforceExplosion({x: p.x, y: p.y, radius: p.blastRadius,
+        damage: p.blastDamage, terrain, targets, owner: p.owner,
+        friendlyFire, explosionId: p.id});
+      for (const event of boom.events) pushEvent(events, event);
+    }
+  };
+  for (let contact = 0; contact < 12; contact++) {
+    const t = Math.min(remaining, p.life);
+    const x2 = p.x + p.vx * t, y2 = p.y + p.vy * t + gravity * t * t * .5;
+    const hit = collideSegment(p, x2, y2, solid, targets, bounds, friendlyFire);
+    const portion = hit ? hit.t : 1, moved = t * portion;
+    p.x += (x2 - p.x) * portion; p.y += (y2 - p.y) * portion;
+    p.vy += gravity * moved;
+    p.life = Math.max(0, p.life - moved);
+    remaining = Math.max(0, remaining - moved);
+    if (hit) pushEvent(events, {type: 'impact', projectileId: p.id, owner: p.owner,
+      weapon: p.weapon, x: p.x, y: p.y, with: hit.type,
+      ...(hit.type === 'terrain' ? {col: hit.col, row: hit.row} : {})});
+    if (hit && hit.type === 'terrain' && p.life > EPS) {
+      const cx = (hit.col + .5) * TILE_SIZE, cy = (hit.row + .5) * TILE_SIZE;
+      if (Math.abs(p.x - cx) > Math.abs(p.y - cy)) {
+        p.vx = (p.x < cx ? -1 : 1) * Math.max(24, Math.abs(p.vx) * .48);
+        p.x += Math.sign(p.vx) * .05;
+      } else {
+        p.vy = (p.y < cy ? -1 : 1) * Math.max(24, Math.abs(p.vy) * .42);
+        p.y += Math.sign(p.vy) * .05;
+      }
+      pushEvent(events, {type: 'ricochet', projectileId: p.id, x: p.x, y: p.y});
+      if (remaining <= EPS) return true;
+      continue;
+    }
+    if (!hit && p.life > EPS) return true;
+    if (!hit || hit.type !== 'boundary') explode();
+    return false;
+  }
+  // Repeated zero-time contacts cannot freeze a live grenade's fuse.
+  // Conserve position rather than tunneling through a blocked corner.
+  p.life = Math.max(0, p.life - remaining);
+  if (p.life > EPS) return true;
+  explode();
+  return false;
+}
 // Runs one bounded integration step. No caller arrays/objects are mutated.
 // p.life is fuse for grenade and lifetime for other rounds. worldBounds uses {x,y,width,height}.
 // Returns {projectiles,events}; repeated frames require passing returned projectiles.
@@ -198,6 +250,10 @@ function advanceBroforceCombat({projectiles = [], dt = 0, isSolid = () => false,
     seenProjectiles.add(old.id);
     const p = {...old, hitIds: Array.isArray(old.hitIds) ? old.hitIds.slice(0, 32) : []};
     if (!Number.isFinite(p.x + p.y + p.vx + p.vy) || !(p.life > 0)) continue;
+    if (p.weapon === 'grenade') {
+      if (advanceGrenade(p, seconds, solid, targets, worldBounds, terrain, friendlyFire, events)) active.push(p);
+      continue;
+    }
     const t = Math.min(seconds, p.life), gravity = clamp(finite(p.gravity), -1000, 1000);
     const x2 = p.x + p.vx * t, y2 = p.y + p.vy * t + gravity * t * t * .5;
     const hit = collideSegment(p, x2, y2, solid, targets, worldBounds, friendlyFire);
@@ -208,20 +264,6 @@ function advanceBroforceCombat({projectiles = [], dt = 0, isSolid = () => false,
     if (hit) pushEvent(events, {type: 'impact', projectileId: p.id, owner: p.owner,
       weapon: p.weapon, x: p.x, y: p.y, with: hit.type,
       ...(hit.type === 'terrain' ? {col: hit.col, row: hit.row} : {})});
-    // Grenades arc and ricochet on bunker walls; their fuse is still ticking.
-    // Push a fraction of a pixel away from the contact to prevent t=0 loops.
-    if (hit && hit.type === 'terrain' && p.weapon === 'grenade' && p.life > EPS) {
-      const cx = (hit.col + .5) * TILE_SIZE, cy = (hit.row + .5) * TILE_SIZE;
-      if (Math.abs(p.x - cx) > Math.abs(p.y - cy)) {
-        p.vx = (p.x < cx ? -1 : 1) * Math.max(24, Math.abs(p.vx) * .48);
-        p.x += Math.sign(p.vx) * .05;
-      } else {
-        p.vy = (p.y < cy ? -1 : 1) * Math.max(24, Math.abs(p.vy) * .42);
-        p.y += Math.sign(p.vy) * .05;
-      }
-      pushEvent(events, {type: 'ricochet', projectileId: p.id, x: p.x, y: p.y});
-      active.push(p); continue;
-    }
     if (hit && hit.type === 'target' && p.damage > 0 && !p.blastRadius) {
       p.hitIds.push(hit.id);
       pushEvent(events, {type: 'hit', source: p.id, projectileId: p.id, owner: p.owner,
