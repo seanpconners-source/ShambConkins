@@ -54,7 +54,7 @@ function state(){return {stage:{stageId:'broforce-factory'},terrain:{width:12,he
   prisoners:[{id:'c',x:155,y:85,w:16,h:22}],enemies:[{type:'carrier',x:165,y:85,w:12,h:24,tellLeft:1}],
   projectiles:[{x:145,y:91,vx:400,vy:0}],devil:{x:190,y:50,w:58,h:72,hp:20,maxHp:36,mode:'windup',telegraph:{targetX:150,targetY:80}},
   extraction:{active:true,helicopter:{visible:true,x:188,y:54},zone:{open:true,x:200,y:100,radius:44}},
-  fx:{particles:[],shakeOffset:{x:2,y:-1}},mission:{objective:'EXTRACT',message:'RESCUE NOW'}};}
+  fx:{particles:[],rings:[],flashes:[],shakeOffset:{x:2,y:-1},reducedMotion:false},mission:{objective:'EXTRACT',message:'RESCUE NOW'}};}
 // Portraits must use each fighterId, not selected board identities; flipping is
 // corrected in face-local space without flipping the weapon/body a second time.
 for(const [W,H] of [[390,780],[780,390],[840,690],[1100,700]]){
