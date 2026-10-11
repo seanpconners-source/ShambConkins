@@ -159,3 +159,21 @@ test('missing or malformed character ID shows character-neutral fallback safely'
     assert.ok(ops.some(o=>o[0]==='set'&&o[1]==='fillStyle'&&o[2]==='#dbab85'));
   }
 });
+
+test('dying explosion and hit highlights cannot overpaint actual face',()=>{
+  for(const [width,height] of sizes){
+    for(const mode of ['intro','windup','attack','dying']){
+      const ops=paint({e:null,d:devil({mode,phase:3,flash:.2,deathTimer:.5}),
+        viewport:{width,height},drawPortrait:(g,id,x,y,w,h)=>{
+          g.fillStyle='#ee00bb';g.fillRect(x,y,w,h);return true;
+        }});
+      const head=ops.findIndex(o=>o[0]==='set'&&o[1]==='fillStyle'&&o[2]==='#ee00bb');
+      assert.ok(head>=0,'selected boss portrait called in '+mode);
+      if(mode==='dying'){
+        const blast=ops.findIndex(o=>o[0]==='set'&&o[1]==='fillStyle'&&o[2]==='#fff1b6');
+        assert.ok(blast>=0&&blast<head,'opaque death explosion must be behind portrait');
+      }
+      assert.ok(!ops.some(o=>o[0]==='set'&&o[1]==='fillStyle'&&o[2]==='#dbab85'));
+    }
+  }
+});
