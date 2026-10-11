@@ -234,6 +234,17 @@ function cinFan(g,x,y,phase,reduced){
   cinRect(g,'#192a32',-3,-3,6,6);cinRect(g,CIN_GOLD,-1,-1,2,2);
   g.restore();
 }
+// Conservatively cull only distant world-space artwork. An extended margin
+// preserves rotor/ladder/telegraph silhouettes and camera edge transitions;
+// invalid or omitted viewport sizes disable culling rather than hiding cues.
+function cinVisible(x,y,w,h,camera,viewport,zoom){
+  if(!viewport||!Number.isFinite(viewport.width)||!Number.isFinite(viewport.height)||
+     viewport.width<=0||viewport.height<=0)return true;
+  const spanX=viewport.width/zoom,spanY=viewport.height/zoom;
+  const margin=Math.max(256,Math.min(600,spanX));
+  return x+w>=camera.x-margin&&x<=camera.x+spanX+margin&&
+    y+h>=camera.y-margin&&y<=camera.y+spanY+margin;
+}
 function cinZone(g,e,time,reduced){
   const z=e.zone;
   if(!z||!Number.isFinite(z.x)||!Number.isFinite(z.y))return;
@@ -241,6 +252,8 @@ function cinZone(g,e,time,reduced){
   if(phase==='dormant'||phase==='failed')return;
   const radius=cinClamp(cinF(z.radius,44),2,140);
   const open=phase==='hover'&&z.open===true;
+  const seconds=open&&Number.isFinite(z.secondsRemaining)
+    ?Math.ceil(cinClamp(z.secondsRemaining,0,99)):null;
   const pulse=reduced?1:(.8+.2*Math.sin(time*5));
   g.save();
   cinOval(g,'rgba(9,24,26,.4)',z.x,z.y+3,radius*.96,8);
@@ -253,11 +266,25 @@ function cinZone(g,e,time,reduced){
     cinLine(g,open?'#fff0ae':'#84bdb1',2,z.x+dir*(radius-10),z.y-4,
       z.x+dir*(radius-5),z.y-9,z.x+dir*radius,z.y-4);
   }
+  // World-space visual labels, composed LAST so moving hulls and terrain
+  // cannot obscure the actual boarding anchor. No board intent is emitted.
   if(open){
-    cinRect(g,'#223d3f',z.x-22,z.y-15,44,9);
-    cinRect(g,CIN_GOLD,z.x-20,z.y-13,40,2);
-    g.font='bold 7px monospace';g.textAlign='center';g.textBaseline='middle';
-    g.fillStyle='#fff7df';g.fillText('BOARD HERE',z.x,z.y-9,43);
+    cinRect(g,'#102936',z.x-29,z.y-28,58,24);
+    cinRect(g,CIN_GOLD,z.x-29,z.y-28,58,3);
+    g.font='bold 8px monospace';g.textAlign='center';g.textBaseline='middle';
+    g.fillStyle='#fff7df';g.fillText('BOARD HERE',z.x,z.y-20,55);
+    if(seconds!==null){
+      g.font='bold 11px monospace';g.fillStyle='#ffe39c';
+      g.fillText(String(seconds)+'s',z.x,z.y-10,30);
+    }
+    // Keep an unmistakable downward locator even with reduced motion.
+    cinPoly(g,CIN_GOLD,[z.x-5,z.y-2,z.x+5,z.y-2,z.x,z.y+3]);
+  }else if(phase==='incoming'||phase==='departure'){
+    cinRect(g,'#102936',z.x-33,z.y-24,66,14);
+    cinRect(g,phase==='incoming'?CIN_TEAL:CIN_GOLD,z.x-33,z.y-24,66,2);
+    g.font='bold 8px monospace';g.textAlign='center';g.textBaseline='middle';
+    g.fillStyle='#fff7df';
+    g.fillText(phase==='incoming'?'HELI INBOUND':'DEPARTING',z.x,z.y-16,63);
   }
   g.restore();
 }
@@ -306,6 +333,10 @@ function cinHelicopter(g,e,time,quality,reduced){
     }
     cinRect(g,'#27343a',-62,-6,6,5);cinRect(g,'#c3bc81',-61,-5,4,3);
     cinRect(g,'#f8e1a3',-48,13,7,3);cinRect(g,'#f8e1a3',36,11,7,3);
+    // Hull ID provides a high-contrast orientation cue at phone zoom.
+    cinRect(g,'#102936',-18,-26,30,8);
+    g.font='bold 6px monospace';g.textAlign='center';g.textBaseline='middle';
+    g.fillStyle='#ffe5aa';g.fillText('LIFTERN',-3,-22,28);
     cinRect(g,'#162633',-5,-30,14,3);cinRect(g,CIN_TEAL,0,-29,3,2);
     cinRect(g,'#5d3537',5,-30,7,4);
     cinRect(g,e.phase==='departure'||e.phase==='completed'?'#ffc16a':'#fd7669',7,-31,3,2);
@@ -347,10 +378,21 @@ function drawBroforceCinematics(ctx,{devil=null,extraction=null,camera={},viewpo
   ctx.save();
   try{
     ctx.translate(-cx*zoom,-cy*zoom);ctx.scale(zoom,zoom);
-    // Explicit common-world-space painter order (independent of input order).
-    if(extraction)cinZone(ctx,extraction,t,reduced);
-    if(devil)cinDevil(ctx,devil,t,drawPortrait,quality,reduced);
-    if(extraction)cinHelicopter(ctx,extraction,t,quality,reduced);
+    // Culling is advisory and never affects the authoritative extraction state.
+    const view={x:cx,y:cy};
+    const devilVisible=!!devil&&Number.isFinite(devil.x)&&Number.isFinite(devil.y)&&
+      cinVisible(devil.x-100,devil.y-110,cinF(devil.w,58)+200,
+        cinF(devil.h,72)+220,view,viewport,zoom);
+    const zone=extraction&&extraction.zone;
+    const zoneVisible=!!zone&&Number.isFinite(zone.x)&&Number.isFinite(zone.y)&&
+      cinVisible(zone.x-160,zone.y-110,320,220,view,viewport,zoom);
+    const heli=extraction&&extraction.helicopter;
+    const heliVisible=!!heli&&Number.isFinite(heli.x)&&Number.isFinite(heli.y)&&
+      cinVisible(heli.x-120,heli.y-100,240,200,view,viewport,zoom);
+    // Paint the actual boarding zone on top of the hull, never underneath it.
+    if(devilVisible)cinDevil(ctx,devil,t,drawPortrait,quality,reduced);
+    if(heliVisible)cinHelicopter(ctx,extraction,t,quality,reduced);
+    if(zoneVisible)cinZone(ctx,extraction,t,reduced);
   }finally{ctx.restore();}
 }
 Object.assign(exports,{drawBroforceCinematics});
