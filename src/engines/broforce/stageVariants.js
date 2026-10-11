@@ -181,6 +181,37 @@ function generateBroforceVariant({stageId,seed}={}) {
     const left=chooseLeft(Math.round(width*part.at)+offset,part.length);
     if(left!==null)roof(left,part.length,part.rise,part.kind,i+1);
   }
+  // BF-10's ascent at zone 5 is verified reachable on all sampled seeds.
+  // Theme-specific tilework turns that existing raised shortcut into a reliable
+  // playable alternate path even when optional remote catwalks are omitted.
+  const detourStart=Math.round(width*.52)+7;
+  const detourRow=ground[detourStart]-3;
+  const detourEnd=detourStart+15;
+  const detourKind={jungle:'timber-canopy',factory:'conveyor-bridge',
+    city:'tenement-skywalk',desert:'rocky-watch-route'}[spec.theme];
+  function detourCell(col,type){
+    if(col<detourStart||col>=detourEnd)return;
+    const existing=at(col,detourRow);
+    // BF-10 optional decks already hold WOOD, while short gaps are EMPTY.
+    if(existing!==TILE.EMPTY&&existing!==TILE.WOOD)return;
+    if(existing===TILE.EMPTY&&!safePut(col,detourRow,type))return;
+    if(existing===TILE.WOOD)tiles[index(col,detourRow)]=type;
+  }
+  if(spec.theme==='jungle'){
+    for(let col of [detourStart+6,detourStart+11,detourStart+12])detourCell(col,TILE.WOOD);
+  }else if(spec.theme==='factory'){
+    for(let col of [detourStart+1,detourStart+4,detourStart+6,detourStart+9,detourStart+11])
+      detourCell(col,TILE.STEEL);
+  }else if(spec.theme==='city'){
+    for(let col of [detourStart+6,detourStart+11,detourStart+12])detourCell(col,TILE.WOOD);
+    for(let col of [detourStart+2,detourStart+8])detourCell(col,TILE.STONE);
+  }else{
+    for(let col of [detourStart+6,detourStart+11,detourStart+12,detourStart+13])
+      detourCell(col,col%3===0?TILE.STONE:TILE.WOOD);
+  }
+  structures.push({id:'bf-'+spec.theme+'-detour',kind:detourKind,
+    x:detourStart*tileSize,y:detourRow*tileSize,
+    width:(detourEnd-detourStart)*tileSize,openings:[]});
   // Ground-level scenery changes material and combat/destruction patterns,
   // not terrain height. Existing BF-10 collision surfaces and markers survive.
   for(let col=16;col<width-18;col++){
