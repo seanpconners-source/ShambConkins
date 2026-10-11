@@ -1,16 +1,9 @@
 name: Development validation
 
+# CI COST CONTROL 2026-10-11: opt-in only; prevents repeated paid browser builds
+# on dozens of small feature-branch commits. Use Actions > Run workflow when needed.
+# Keep all original regression jobs and tests below unchanged.
 on:
-  push:
-    branches:
-      - TESTver
-      - 'codex/**'
-      - 'feature/**'
-      - 'fix/**'
-      - 'integrate/**'
-  pull_request:
-    branches:
-      - TESTver
   workflow_dispatch:
 
 permissions:
