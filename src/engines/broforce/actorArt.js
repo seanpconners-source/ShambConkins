@@ -129,10 +129,11 @@ function gun(g,type,time,active){
     tile(g,'#1a2429',x+3,y+2,6,8);
     tile(g,'#6f5646',x+4,y+4,4,4);
   }
-  if(active&&Math.floor(time*22)%3!==2){
+  if(active){
+    const flashFrame=((Math.floor(time*22)%3)+3)%3;
     g.save();g.translate(pistol?x+13:launcher?x+20:shotgun?x+28:x+30,y);
-    shape(g,'#f1aa42',MUZZLE);
-    shape(g,'#fff3b7',[0,-1,5,-3,8,0,5,2,0,1]);
+    if(flashFrame===2)shape(g,'#ffc767',[-1,-2,4,-3,7,0,4,3,-1,2]);
+    else{shape(g,'#f1aa42',MUZZLE);shape(g,'#fff3b7',[0,-1,5,-3,8,0,5,2,0,1]);}
     g.restore();
     tile(g,'#e8bb65',x+3,y-12,2,3);
   }
