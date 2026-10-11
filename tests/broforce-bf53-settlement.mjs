@@ -174,7 +174,7 @@ await check('board turn policy and cancellation',async()=>{
   assert.equal(h.calls.end,Number(!returnToRoll));
  }
  const h=harness(),s=await h.start(),a=clone(s.broforceReward.attempt);
- h.launcher.cancelGameLaunch();s.dispose();s.finished=true;s.onFinish([1,1],'late');
+ h.launcher.cancelGameLaunch();s.dispose();h.store.session=null;s.finished=true;s.onFinish([1,1],'late');
  await tick();assert.equal(h.store.profile.xp,0);
  const resumed=await h.start({resume:true});
  assert.equal(JSON.stringify(resumed.broforceReward.attempt),JSON.stringify(a));
