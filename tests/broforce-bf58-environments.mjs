@@ -81,7 +81,7 @@ function harness(withAtlas){
  },{filename:'themeArt.js',timeout:10000});
  const draw=exports.drawBroforceEnvironment;
  assert.equal(typeof draw,'function');
- function shot(stageId,{map=fixture(),camera={x:37,y:61},viewport=dimensions[0],time=9.25,quality='high'}={}){
+ function shot(stageId,{map=fixture(),camera={x:0,y:0},viewport=dimensions[0],time=9.25,quality='high'}={}){
   const g=new SpyContext();
   draw(g,{stageId,map,camera,viewport,time,quality});
   return g.finish();
