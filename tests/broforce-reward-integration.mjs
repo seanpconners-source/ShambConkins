@@ -196,6 +196,21 @@ await check('actual continueRun result caller recovers without shared recruitmen
  const continueRun=new Function(...Object.keys(deps),'let movementToken=0;'+body+';return continueRun;')(...Object.values(deps));
  await continueRun();assert.equal(reboot.store.profile.xp,6);assert.equal(turn,1);assert.equal(unlock,1);assert.ok(reboot.dialogs.at(-1).html.includes('Amber’s roster'));
 });
+await check('continueRun preserves pending Broforce result when recovery dialog is dismissed',async()=>{
+ const h=harness(),s=await h.start();await h.finish(s,[false,true]);
+ const reboot=harness(h.snapshots[1]); // durable result intent, before profile commit
+ const run=reboot.store.run,pending=run.pending;
+ assert.equal(run.phase,'result');
+ const app=source('src/app.js'),body=app.slice(app.indexOf('async function continueRun()'),app.indexOf('\\nasync function roll('));
+ let turn=0,unlocks=0;
+ const deps={store:reboot.store,focusBoardAction:()=>{},updateBoard:()=>{},setMusicZone:()=>{},startMusic:()=>{},
+  presentResult:async()=>null,encounterActive:(r,p)=>r===run&&r.pending===pending,
+  unlockDialog:async()=>{unlocks++;return true;},endTurn:()=>{turn++;},resumeItemTurn:()=>{turn++;}};
+ const continueRun=new Function(...Object.keys(deps),'let movementToken=0;'+body+';return continueRun;')(...Object.values(deps));
+ await continueRun();
+ assert.equal(turn,0);assert.equal(unlocks,0);assert.equal(run.phase,'result');
+ assert.equal(run.pending,pending);assert.equal(reboot.store.profile.xp,0);
+});
 await check('photo selection, unrelated profile data and disabled progression survive atomic save',async()=>{
  const h=harness(),pair={id:'chosen',left:'data:image/png;base64,AA==',right:'data:image/png;base64,AA==',regions:[{x:.5,y:.5,r:.1}]};
  h.store.profile.photoHuntPairs=[pair];h.photos.currentPhotoPair(h.store.profile,pair);h.store.profile.wins={legacy:7};h.store.profile.recruitDryStreak={Sean:1,Amber:1};
