@@ -6,12 +6,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import {fileURLToPath} from 'node:url';
-import {createRequire} from 'node:module';
 const here=path.dirname(fileURLToPath(import.meta.url));
 const root=path.resolve(here,'..');
 const filename=path.join(root,'src/engines/broforce/sceneRenderer.js');
 const source=fs.readFileSync(filename,'utf8');
-const require=createRequire(import.meta.url);
 
 function canvas(width,height){
   const events=[],stack=[];let tx=[1,0,0,1,0,0];
@@ -105,7 +103,16 @@ for(const [ctx,options] of [[null,{}],[canvas(390,780).g,{}],
 // If real foundation files are present, actually execute their functions with
 // an API-complete recording Canvas rather than only exercising mocked imports.
 if(['worldArt','actorArt','hudArt','fxArt'].every(p=>fs.existsSync(path.join(root,'src/engines/broforce',p+'.js')))){
- const real={};vm.runInNewContext(source,{exports:real,require(id){return require(path.join(root,id));},Math,Number,String,Object,Array,Set}, {filename});
+ const cache=new Map();
+ function loadReal(id){
+  if(cache.has(id))return cache.get(id);
+  const full=path.join(root,id);
+  assert.ok(full.startsWith(path.join(root,'src/engines/broforce/')),'Only real Broforce art modules may be loaded');
+  const mod={};cache.set(id,mod);
+  vm.runInNewContext(fs.readFileSync(full,'utf8'),{exports:mod,require:loadReal},{filename:full});
+  return mod;
+ }
+ const real=loadReal('src/engines/broforce/sceneRenderer.js');
  for(const [w,h] of [[390,780],[780,390],[840,690],[1100,700]]){
   const a=canvas(w,h),s=state();
   assert.doesNotThrow(()=>real.drawBroforceScene(a.g,{state:s,viewport:{width:w,height:h},time:1.3}));
