@@ -1,9 +1,10 @@
 name: Prepare versioned release HTML
 
 on:
-  push:
+  pull_request:
     branches:
-      - 'release/**'
+      - main
+    types: [opened, synchronize]
     paths:
       - 'src/version.js'
 
@@ -16,11 +17,13 @@ concurrency:
 
 jobs:
   generate-and-verify:
-    if: github.repository == 'seanpconners-source/ShambConkins'
+    if: github.repository == 'seanpconners-source/ShambConkins' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release/')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -83,8 +86,12 @@ jobs:
             git rm -- releases/ShambConkins_v0.58.2.html
           fi
           git diff --cached --check
-          git commit -m 'chore(release): generate and validate v0.58.3 offline HTML'
-          git push origin HEAD:"$GITHUB_REF_NAME"
+          if git diff --cached --quiet; then
+            echo "Existing release artifact already matches validated build."
+          else
+            git commit -m 'chore(release): generate and validate v0.58.3 offline HTML'
+            git push origin HEAD:"${{ github.head_ref }}"
+          fi
       - name: Preserve release validation logs
         if: always()
         uses: actions/upload-artifact@v4
