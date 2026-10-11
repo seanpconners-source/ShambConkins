@@ -114,7 +114,7 @@ test('no shot in the opposite direction to its warning when target crosses sides
   const before = run([create({id:'flank',type:'turret',x:100,y:138})],
     land,[player('P1',158)],0.6);
   assert.ok(eventsOf(before,'attack-tell').length>0,'windup started');
-  const crossed = run(before.enemies,land,[player('P1',24)],0.42);
+  const crossed = run(before.enemies,land,[player('P1',24)],0.6);
   assert.equal(eventsOf(crossed,'enemy-shot').length,0,'cancel old committed tell');
   const resumed = run(crossed.enemies,land,[player('P1',24)],1.3);
   const renewed = [...eventsOf(crossed,'attack-tell'),...eventsOf(resumed,'attack-tell')];
