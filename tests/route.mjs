@@ -15,6 +15,21 @@ for (let i = 0; i < 400 && !found; i++) {
   await page.waitForTimeout(150);
 }
 console.log('fork reached:', found);
+if (!found) {
+  const debug=await page.evaluate(() => {
+    const d=document.getElementById('dialog'),r=document.querySelector('[data-action=roll]');
+    let state=null;try{state=window.ShambConkins?.diagnostics?.();}catch(e){state={error:String(e)};}
+    return {
+      currentView:document.body.className,
+      dialogs:d?{open:d.open,text:d.innerText.slice(0,400),buttons:[...d.querySelectorAll('button')].map(x=>({text:x.innerText,disabled:x.disabled,action:x.dataset.action}))}:null,
+      roll:r?{text:r.innerText,disabled:r.disabled,outer:r.outerHTML.slice(0,400)}:null,
+      state,buttons:[...document.querySelectorAll('button')].filter(x=>x.offsetParent).slice(0,20).map(x=>({text:x.innerText.slice(0,50),disabled:x.disabled,action:x.dataset.action})),
+      screen:document.body.innerText.slice(0,1200)
+    };
+  });
+  console.log('ROUTE_DIAGNOSTIC',JSON.stringify(debug));
+  await page.screenshot({path:'/tmp/claude-0/route-timeout.png'});
+}
 if (found) {
   await page.waitForTimeout(800);
   await page.screenshot({path: '/tmp/claude-0/route1.png'});
