@@ -111,9 +111,10 @@ await check('persisted committed receipt can reopen when profile writes are deni
  await h.finish(s,[true,false]);
  const xp=h.store.profile.xp,profileWrites=h.writes.filter(w=>w.k===h.persistence.PROFILE_KEY).length;
  assert.equal(xp,6);assert.equal(h.store.run.pending.bfCommitted,true);
- h.setFail(k=>k===h.persistence.PROFILE_KEY);h.setDialog(()=>null);
+ h.setFail(k=>k===h.persistence.PROFILE_KEY);
+ h.setDialog(opts=>opts.title==='Reward save pending'?null:'ok');
  const reopened=await h.launcher.presentResult(h.store.run.pending);
- assert.notEqual(reopened,null,'already durable receipt should not require another profile write');
+ assert.equal(reopened,'ok','already durable receipt should not require another profile write');
  assert.equal(h.dialogs.at(-1).title,'Helicopter extraction complete');
  assert.equal(h.writes.filter(w=>w.k===h.persistence.PROFILE_KEY).length,profileWrites);
  assert.equal(h.store.profile.xp,xp);assert.equal(h.calls.end,1);
