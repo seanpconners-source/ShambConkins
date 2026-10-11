@@ -23,10 +23,17 @@ const profile=load('src/profile.js',{
 });
 const store={profile:profile.freshProfile(),busy:false};
 const makeMon=(id,lvl=6)=>({id,lvl,exp:0,hp:50,status:null,pp:{}});
-const D={makeMon,normalizeMon:mon=>mon,healMon:mon=>{mon.hp=50;},speciesFor:id=>({name:charMap.get(id)?.name||id}),BAG_ITEMS:{'master-ball':{}}};
-let outcome='caught',encounterId=null;
+// Use the real species and trainer-class calculation: trainerSpace() needs both.
+const pkmnData=load('src/pkmn/pkmnData.js',{
+ 'src/characters.js':chars,'src/utils.js':{hash:()=>42},
+ 'src/data/pkmnItems.js':{PKMN_CATALOG_ITEMS:[]}
+});
+const D={makeMon,normalizeMon:mon=>mon,healMon:mon=>{mon.hp=50;},
+ speciesFor:pkmnData.speciesFor,trainerClassFor:pkmnData.trainerClassFor,
+ BAG_ITEMS:pkmnData.BAG_ITEMS};
+let outcome='caught',encounterId=null,trainerSeen=null;
 const B={
- battle:async ({foe})=>{encounterId=foe.team[0].id;return outcome==='caught'
+ battle:async ({foe})=>{encounterId=foe.team[0].id;trainerSeen=foe.character||null;return outcome==='caught'
   ?{outcome,caught:{...foe.team[0]},defeated:[]}
   :{outcome,defeated:foe.team.map(m=>m.id),caught:null};},
  isOpen:()=>false,closeGB:()=>{},say:async()=>{},gbMessages:async()=>{}
@@ -62,6 +69,7 @@ assert.equal(dialogs.length,2);
 store.profile=profile.freshProfile();p=player();outcome='win';
 const trainer=await PK.trainerSpace(run,p,{gym:true,trainerId:'bond-dalton',size:1});
 assert.deepEqual(trainer.unlocked,['bond-dalton'],'Gym trainer reward changed variant');
+assert.equal(trainerSeen,'bond-dalton','Wrong actor introduced as trainer');
 assert(store.profile.rosters.Sean.includes('bond-dalton'));
 assert(!store.profile.rosters.Sean.includes('bond'));
 store.profile=profile.freshProfile();
