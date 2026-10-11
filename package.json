@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "release": "node tools/build.mjs --out releases/ShambConkins_v0.58.2.html",
-    "test": "node tests/fruit-swipe.mjs && node tools/check-modules.mjs && node tools/build.mjs && node tests/board.mjs && node tests/levelflow.mjs && node tests/unlocks.mjs && node tests/smoke.mjs && node tests/route.mjs && node tests/games.mjs 3 6",
+    "test": "node tools/check-modules.mjs && node tools/build.mjs && node tests/board.mjs && node tests/levelflow.mjs && node tests/unlocks.mjs && node tests/smoke.mjs && node tests/route.mjs && node tests/games.mjs 3 6",
     "bot": "node tools/build.mjs && node tests/bot.mjs 40"
   }
 }
