@@ -324,18 +324,30 @@ async function boxing(s){
 // ===================================================================== Gopher Hunt (one player at a time)
 const MOUNDS=[[.22,.3],[.5,.3],[.78,.3],[.18,.55],[.5,.55],[.82,.55],[.14,.82],[.5,.82],[.86,.82]];
 async function gophers(s){
+ const {portraitMoods,portraitURL}=require("src/assets.js");
+ // Select distinct owned portraits; characters without variants retain their normal fallback.
+ const moodsFor=id=>{
+  const seen=new Set(),moods=['normal',...portraitMoods(id)].filter(mood=>{
+   const url=portraitURL(id,mood);if(!url||seen.has(url))return false;seen.add(url);return true;
+  });
+  return moods.length?moods:['normal'];
+ };
+ const nextMood=a=>{
+  const choices=a.moods.length>1?a.moods.filter(mood=>mood!==a.lastMood):a.moods;
+  const mood=choices[Math.floor(a.artRandom()*choices.length)];a.lastMood=mood;return mood;
+ };
  const[c,x]=s.canvas(680,420,{fill:true});s.body.classList.add('drag-arena-body','hole-arena-body');let api;
  const hud=document.createElement('div');hud.className='hole-objectives';s.body.insertBefore(hud,s.body.firstChild);
  return arcadeRounds(s,{
   duration:40,instructions:'Caddyshack gopher hunt. Your rival\u2019s head is the gopher: tap it the moment it pops out of a hole. A crowned head is worth three. Do NOT whack the golf bag or the groundskeeper. Faster pops as time runs out. Alternate rounds, same pop sequence.',
-  reset:()=>({mounds:MOUNDS.map(()=>({kind:null,t:0,life:0,hit:0})),spawn:.6,combo:0,hits:0,misses:0,swing:0,fx:[],random:seededRandom(s.seed+':gophers')}),
+  reset:player=>({mounds:MOUNDS.map(()=>({kind:null,t:0,life:0,hit:0})),spawn:.6,combo:0,hits:0,misses:0,swing:0,fx:[],random:seededRandom(s.seed+':gophers'),moods:moodsFor(s.players[1-player].character),lastMood:null,artRandom:seededRandom(s.seed+':gophers:portraits:'+player)}),
   bind:a=>{api=a;s.on(c,'pointerdown',ev=>{const g=a.get();if(s.paused||!g)return;ev.preventDefault();const p=s.pointer(ev);g.swing=.18;let best=null,bd=1e9;MOUNDS.forEach(([mx,my],i)=>{const m=g.mounds[i];if(!m.kind||m.hit)return;const d=Math.hypot(p.x-mx*s.W,p.y-(my*s.H-26*(s.H/420)));if(d<bd){bd=d;best=i;}});const reach=Math.max(44,s.W*.075);
    if(best!==null&&bd<reach){const m=g.mounds[best];m.hit=.35;if(m.kind==='gopher'||m.kind==='gold'){const pts=(m.kind==='gold'?3:1)+Math.min(3,Math.floor(g.combo/4));g.score+=pts;g.combo++;g.hits++;g.fx.push({x:MOUNDS[best][0],y:MOUNDS[best][1],text:'+'+pts,t:.7});sound('pickup');}else{g.score=Math.max(0,g.score-3);g.combo=0;g.misses++;g.fx.push({x:MOUNDS[best][0],y:MOUNDS[best][1],text:'-3',t:.7});sound('shot');vibrate(25);}}
    else{g.combo=0;}});
    s.hint('Tap your rival\u2019s head before it ducks back down. Crowned heads are +3. Avoid the golf bag and the groundskeeper (-3). A streak of 4 adds bonus points. Missing taps break your streak.');},
   step:(a,dt)=>{
    const pace=Math.max(.32,.82-(1-a.time/40)*.5);a.spawn-=dt;a.swing=Math.max(0,a.swing-dt);
-   if(a.spawn<=0){a.spawn=pace*(.7+a.random()*.6);const free=a.mounds.map((m,i)=>m.kind?-1:i).filter(i=>i>=0);if(free.length){const i=free[Math.floor(a.random()*free.length)],r=a.random();a.mounds[i]={kind:r<.1?'gold':r<.24?(a.random()<.5?'bag':'keeper'):'gopher',t:0,life:Math.max(.55,1.25-(1-a.time/40)*.6),hit:0};}}
+   if(a.spawn<=0){a.spawn=pace*(.7+a.random()*.6);const free=a.mounds.map((m,i)=>m.kind?-1:i).filter(i=>i>=0);if(free.length){const i=free[Math.floor(a.random()*free.length)],r=a.random(),kind=r<.1?'gold':r<.24?(a.random()<.5?'bag':'keeper'):'gopher';a.mounds[i]={kind,mood:kind==='gopher'||kind==='gold'?nextMood(a):null,t:0,life:Math.max(.55,1.25-(1-a.time/40)*.6),hit:0};}}
    for(const m of a.mounds){if(!m.kind)continue;m.t+=dt;m.hit=Math.max(0,m.hit-dt);if(m.t>=m.life+(m.hit>0?.0:0)||(m.hit<=0&&m.hit!==0&&false)){if(m.hit<=0&&m.t>=m.life){m.kind=null;m.t=0;}}if(m.hit>0&&m.hit<dt+.001){m.kind=null;m.t=0;m.hit=0;}}
    for(const f of a.fx)f.t-=dt;a.fx=a.fx.filter(f=>f.t>0);return a.time>0;
   },
@@ -346,7 +358,7 @@ async function gophers(s){
     x.fillStyle='#4a2f1c';x.beginPath();x.ellipse(px,py,rw,rh,0,0,Math.PI*2);x.fill();
     if(m.kind){const up=m.hit>0?0:Math.min(1,m.t/.12)*Math.min(1,(m.life-m.t)/.15+.0001),h=up*46*scale*sc,icon=m.kind==='gold'?'🐿':m.kind==='gopher'?'🐹':m.kind==='bag'?'🏌':'👷';
      x.save();x.beginPath();x.rect(px-rw*1.2,py-150*sc*scale,rw*2.4,150*sc*scale);x.clip();
-     if(m.kind==='gopher'||m.kind==='gold'){const size=98*scale*sc,cy=py-size*.46*up+size*.56*(1-up);s.sprite(x,1-a.player,px,cy,size,{exact:true,mood:m.hit>0?'sad':m.kind==='gold'?'happy':'normal'});if(m.hit>0){x.font=`${26*scale*sc}px system-ui`;x.textAlign='center';x.textBaseline='middle';x.fillText('💫',px,cy-size*.5);}else if(m.kind==='gold'){x.font=`${30*scale*sc}px system-ui`;x.textAlign='center';x.textBaseline='middle';x.fillText('👑',px,cy-size*.56);}}
+     if(m.kind==='gopher'||m.kind==='gold'){const size=98*scale*sc,cy=py-size*.46*up+size*.56*(1-up);s.sprite(x,1-a.player,px,cy,size,{exact:true,mood:m.hit>0?'sad':m.mood||'normal'});if(m.hit>0){x.font=`${26*scale*sc}px system-ui`;x.textAlign='center';x.textBaseline='middle';x.fillText('💫',px,cy-size*.5);}else if(m.kind==='gold'){x.font=`${30*scale*sc}px system-ui`;x.textAlign='center';x.textBaseline='middle';x.fillText('👑',px,cy-size*.56);}}
      else{x.font=`${58*scale*sc}px system-ui`;x.textAlign='center';x.textBaseline='bottom';x.fillStyle='#000';x.fillText(icon,px,py+14*sc-(1-up)*58*scale*sc+rh*.2);}
      x.restore();void h;
      if(m.kind==='gold'){x.strokeStyle='#ffd24a';x.lineWidth=3;x.beginPath();x.ellipse(px,py-34*scale*sc,36*scale*sc,36*scale*sc,0,0,Math.PI*2);x.stroke();}}
