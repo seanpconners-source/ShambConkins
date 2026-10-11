@@ -2,6 +2,33 @@ const {seededRandom,clamp}=require("src/utils.js");
 const {circle}=require("src/engines/session.js");
 const {sound}=require("src/audio.js");
 function sliceDistance(point,a,b){const dx=b.x-a.x,dy=b.y-a.y,t=clamp(((point.x-a.x)*dx+(point.y-a.y)*dy)/(dx*dx+dy*dy||1),0,1);return Math.hypot(point.x-a.x-dx*t,point.y-a.y-dy*t);}
+// All coordinates/distances are canvas logical pixels, independent of phone CSS scaling.
+// A stroke needs >=10px movement at >=120px/s; idle gaps >160ms do not sweep
+// across unseen space. Cap each combo at 380ms or 1.25 canvas diagonals.
+// A sharp reversal (dot < -0.25) starts a fresh stroke even while held.
+const SWIPE_LIMITS=Object.freeze({minMove:10,minSpeed:120,maxGapMs:160,maxStrokeMs:380,maxTravelFactor:1.25,reverseDot:-.25});
+function fruitSwipeStep(drag,p,now,W,H){
+ const a=drag.p,dx=p.x-a.x,dy=p.y-a.y,d=Math.hypot(dx,dy),limit=Math.hypot(W,H)*SWIPE_LIMITS.maxTravelFactor;
+ const old=drag.stroke,expired=!!old&&(now-old.start>SWIPE_LIMITS.maxStrokeMs||now-old.last>SWIPE_LIMITS.maxGapMs);
+ if(expired)drag.stroke=null;
+ // Do not bridge a pause, lag spike, or long stationary hold with a teleporting cut.
+ if(now-drag.at>SWIPE_LIMITS.maxGapMs||!Number.isFinite(d)||d>limit){
+  drag.p=p;drag.at=now;drag.stroke=null;return {a:null,b:null,reset:!!old};
+ }
+ if(d<SWIPE_LIMITS.minMove)return {a:null,b:null,reset:expired};
+ const speed=d*1000/Math.max(1,now-drag.at);
+ if(speed<SWIPE_LIMITS.minSpeed){
+  drag.p=p;drag.at=now;drag.stroke=null;return {a:null,b:null,reset:!!old};
+ }
+ let stroke=drag.stroke;
+ const reversed=stroke?.direction&&((stroke.direction.x*dx+stroke.direction.y*dy)/(stroke.direction.length*d)<SWIPE_LIMITS.reverseDot);
+ const restart=!!stroke&&(stroke.travel+d>limit||reversed);
+ if(restart)stroke=null;
+ if(!stroke)stroke={start:now,last:now,travel:0,direction:null};
+ stroke.travel+=d;stroke.last=now;stroke.direction={x:dx,y:dy,length:d};
+ drag.stroke=stroke;drag.p=p;drag.at=now;
+ return {a,b:p,reset:expired||restart};
+}
 // Normalized launch positions and ballistic heights keep both turns fair on any screen.
 function fruitCourse(seed,count=45){const random=seededRandom(seed),gravity=1.9;return Array.from({length:count},(_,i)=>{const peak=[.14,.36,.58][i%3]+random()*.14;return {time:i*.65,x:.14+random()*.72,vx:(random()-.5)*.2,vy:-Math.sqrt(2*gravity*(1.07-peak)),peak,gravity,kind:Math.floor(random()*6),bomb:random()<.14};});}
 // The "fruit" is the opponent's head: whole heads fly up looking smug, sliced heads split into two sad, squished halves.
@@ -25,14 +52,24 @@ async function fruitslice(s){
   }
  }
  async function end(){if(phase!=='slice')return;phase='handoff';clear();if(actor===1)return s.finish(scores,'Taskmaster Fruit Ninja · identical waves of opponent heads, alternating human turns.');actor=1;clock=0;fruits=[];pieces=[];trail=[];popups=[];next=0;bombs=0;if(await s.pass(1,`${s.players[0].name} scored ${scores[0]}. Now it is your turn to slice ${s.players[0].name}'s flying heads: same waves, thirty seconds. Avoid the bombs.`))phase='slice';}
- s.on(c,'pointerdown',ev=>{if(s.paused||phase!=='slice'||drag)return;drag={id:ev.pointerId,p:s.pointer(ev)};combo=0;s.capture(ev);});
- s.on(c,'pointermove',ev=>{if(drag?.id!==ev.pointerId)return;const p=s.pointer(ev);swipe(drag.p,p);drag.p=p;});
- s.on(c,'pointerup',ev=>{if(drag?.id!==ev.pointerId)return;swipe(drag.p,s.pointer(ev));clear();});
+ function inputMove(p){
+  const segment=fruitSwipeStep(drag,p,performance.now(),s.W,s.H);
+  if(segment.reset)combo=0;
+  if(segment.a)swipe(segment.a,segment.b);
+ }
+ s.on(c,'pointerdown',ev=>{if(s.paused||phase!=='slice'||drag)return;drag={id:ev.pointerId,p:s.pointer(ev),at:performance.now(),stroke:null};combo=0;s.capture(ev);});
+ s.on(c,'pointermove',ev=>{if(drag?.id!==ev.pointerId)return;inputMove(s.pointer(ev));});
+ s.on(c,'pointerup',ev=>{if(drag?.id!==ev.pointerId)return;inputMove(s.pointer(ev));clear();});
  for(const type of ['pointercancel','lostpointercapture'])s.on(c,type,ev=>{if(drag?.id===ev.pointerId)clear();});
  s.resetOnPause?.(clear);s.cleanup(clear);s.on(window,'blur',clear);s.on(window,'resize',clear);
- s.on(document,'keydown',ev=>{if(ev.key===' '&&!s.paused&&phase==='slice'){ev.preventDefault();const f=fruits.find(f=>!f.cut&&!f.bomb);if(f)swipe({x:f.x*s.W-35,y:f.y*s.H},{x:f.x*s.W+35,y:f.y*s.H});}});
+ // Space is one discrete slice per key press, never an open-ended keyboard combo.
+ s.on(document,'keydown',ev=>{if(ev.key===' '&&!ev.repeat&&!s.paused&&phase==='slice'){ev.preventDefault();clear();const f=fruits.find(f=>!f.cut&&!f.bomb);if(f)swipe({x:f.x*s.W-35,y:f.y*s.H},{x:f.x*s.W+35,y:f.y*s.H});combo=0;}});
  s.hint('Thirty seconds each on identical waves of your opponent’s flying heads. Swipe to slice them in half (+10); three heads in one swipe is a combo (+15 each). Bombs cost 25 and three bombs end your turn. Space slices one head.');
  s.frame(dt=>{
+  if(drag?.stroke){
+   const now=performance.now();
+   if(now-drag.stroke.start>SWIPE_LIMITS.maxStrokeMs||now-drag.stroke.last>SWIPE_LIMITS.maxGapMs){drag.stroke=null;combo=0;}
+  }
   if(phase==='slice'){clock+=dt;while(next<course.length&&course[next].time<=clock)fruits.push({...course[next++],y:1.07,cut:false});
    for(const f of fruits){f.x+=f.vx*dt;f.y+=f.vy*dt+.5*f.gravity*dt*dt;f.vy+=f.gravity*dt;if(f.x<.06||f.x>.94){f.x=clamp(f.x,.06,.94);f.vx*=-.7;}}
    fruits=fruits.filter(f=>!f.cut&&f.y<1.15);if(clock>=30||bombs>=3)void end();
@@ -56,4 +93,4 @@ async function fruitslice(s){
  await s.pass(0,`Fruit Ninja at Taskmaster’s buffet, except the fruit is ${s.players[1].name}’s head. Swipe to slice. Thirty seconds each, identical waves, combos, and dangerous bombs.`);
 }
 
-Object.assign(exports,{sliceDistance,fruitCourse,fruitslice});
+Object.assign(exports,{sliceDistance,fruitCourse,fruitSwipeStep,SWIPE_LIMITS,fruitslice});
