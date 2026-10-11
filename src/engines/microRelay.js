@@ -122,9 +122,12 @@ async function microrelay(s){
   }
  });
  function next(){
+  if(phase==='finished'||s.alive===false)return;
   if(index<0){index=0;beginCard();return;}
   if(++index<STEPS){beginCard();return;}
   if(player===0){player=1;void beginPlayer();return;}
+  // Mark the session terminal before finish() disposes its canvas and listeners.
+  phase='finished';clearPointer();
   const count=i=>history[i].filter(h=>h.won).length;
   s.finish(scores,'Taskmaster: '+count(0)+' / 7 tasks versus '+count(1)+' / 7 tasks');
  }
@@ -230,7 +233,13 @@ async function microrelay(s){
   s.status((index<0?'Practice (unscored). ':'')+t.help);
   s.debug={engine:'microrelay',course,practice,actor,phase,index,player,clock,scores,history,pointer};
  }
- s.frame(dt=>{if(phase==='handoff')return;advance(dt);if(phase!=='handoff')draw();});
+ s.frame(dt=>{
+  if(s.paused||s.alive===false||phase==='handoff'||phase==='finished')return;
+  advance(dt);
+  // advance() may hand off, cancel, or finish and remove the canvas synchronously.
+  if(s.paused||s.alive===false||phase==='handoff'||phase==='finished')return;
+  draw();
+ });
  await beginPlayer();
 }
 Object.assign(exports,{RELAY_TASKS,relayCourse,relayBoxHit,relayStackHit,relaySortHit,relayStopHit,relayDodgeHit,microrelay});

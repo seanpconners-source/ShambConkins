@@ -50,15 +50,15 @@ assert(!relayDodgeHit(drop,580,284,hitTime));
 assert(!relayDodgeHit(drop,340,284,.6));
 console.log('Taskmaster course, fairness and generous-target geometry: OK');
 
-function harness(seed='same-test'){
+function harness(seed='same-test',cancelOn=null){
  const canvas={id:'canvas'},ctx=new Proxy({},{get:(target,key)=>target[key]||(()=>{}),set:(target,key,value)=>(target[key]=value,true)});
  const listeners=new Map(),onPause=[],cleanups=[],passes=[];
- const game={seed,players:[{name:'First'},{name:'Second'}],paused:false,active:0,
+ const game={seed,players:[{name:'First'},{name:'Second'}],paused:false,active:0,alive:true,finishCalls:0,statusCalls:0,
   canvas:()=>[canvas,ctx,680,400],on:(el,event,fn)=>listeners.set((el===canvas?'canvas':el===world.window?'window':'document')+':'+event,fn),
   pointer:ev=>ev.p,capture(){},release(){},resetOnPause:f=>onPause.push(f),cleanup:f=>cleanups.push(f),
-  frame:f=>game.step=f,pass:async(i)=>{passes.push(i);return true;},hint(){},status(){},
+  frame:f=>game.step=f,pass:async(i)=>{passes.push(i);if(i===cancelOn){game.alive=false;return false;}return true;},hint(){},status(){game.statusCalls++;},
   updateScores(){},setScores:a=>{game.lastScores=[...a];},sprite(){},react(){},
-  finish:(scores,label)=>{game.finished={scores:[...scores],label};}};
+  finish:(scores,label)=>{game.finishCalls++;game.alive=false;game.finished={scores:[...scores],label};}};
  const emit=(event,p={x:340,y:235},pointerId=1)=>listeners.get('canvas:'+event)?.({p,pointerId,preventDefault(){}});
  const tick=(frames=1)=>{for(let j=0;j<frames;j++)game.step(.05);};
  const until=async(check,limit=6000)=>{for(let n=0;n<limit;n++){if(check(game.debug))return;tick();await Promise.resolve();}throw Error('phase never reached: '+JSON.stringify(game.debug));};
@@ -79,7 +79,13 @@ async function testTimeouts(){
  assert.equal(h.game.debug.history[1].length,7);
  assert.deepEqual(h.game.debug.history[0].map(x=>x.id),h.game.debug.history[1].map(x=>x.id));
  assert(h.game.finished.label.includes('0 / 7'));
- console.log('Practice, timeout recovery, full two-player completion: OK');
+ assert.equal(h.game.finishCalls,1,'finish() must be called exactly once');
+ const rendered=h.game.statusCalls;
+ h.tick(30); // A queued/stale frame after finish must be inert.
+ h.emit('pointerdown',{x:340,y:235});h.emit('pointerup',{x:340,y:235});h.tick();
+ assert.equal(h.game.finishCalls,1,'no duplicate finish after more frames/input');
+ assert.equal(h.game.statusCalls,rendered,'no draw/status update after the last task');
+ console.log('Practice, timeout recovery, full two-player completion and terminal guard: OK');
 }
 async function testInputs(){
  const h=harness('input-demo');await h.launch();
@@ -104,6 +110,13 @@ async function testInputs(){
  // A fresh gesture can be used after a cancelled one.
  h.emit('pointercancel',{x:400,y:235});h.tick();
  assert.equal(h.game.debug.pointer,null);
+ // A paused frame must not burn the countdown. The session normally enforces this,
+ // but this mock deliberately invokes the frame callback during pause/rotation.
+ h.game.paused=true;
+ const remaining=h.game.debug.clock;
+ h.tick(10);
+ assert.equal(h.game.debug.clock,remaining,'paused frames cannot consume time');
+ h.game.paused=false;
  h.cleanups.forEach(fn=>fn());
  console.log('Practice gesture, pointer cancel/pause cleanup: OK');
 }
@@ -146,7 +159,22 @@ async function testPerfectMatch(){
  assert(h.game.finished.scores[0]>0,'positive scores for successful gestures');
  console.log('Matched-player gesture completion and scored fairness: OK');
 }
+async function testCancelledHandoff(){
+ const h=harness('cancel-second-player',1);
+ await h.launch();
+ await h.until(()=>h.passes.length===2,4000);
+ await Promise.resolve();
+ assert.deepEqual(h.passes,[0,1]);
+ assert.equal(h.game.alive,false,'cancelled pass aborts the session');
+ assert.equal(h.game.finishCalls,0,'cancel cannot submit a result');
+ const drawn=h.game.statusCalls;
+ h.tick(30);h.emit('pointerdown');h.emit('pointerup');h.tick();
+ assert.equal(h.game.finishCalls,0);
+ assert.equal(h.game.statusCalls,drawn,'cancelled session cannot render');
+ console.log('Cancelled handoff and post-cancel frame guards: OK');
+}
 await testTimeouts();
 await testInputs();
 await testPerfectMatch();
+await testCancelledHandoff();
 console.log('Taskmaster relay tests: PASS');
