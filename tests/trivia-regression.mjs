@@ -10,7 +10,7 @@ class El {
 }
 const document={getElementById:id=>active?.nodes.get(id),createElement:()=>new El()};
 const store={profile:{recentTrivia:[],triviaDifficultyBag:[],settings:{sound:false,reducedMotion:true}},run:{triviaSeen:[]}};
-const tones=[],vibrations=[];
+const tones=[],vibrations=[],cueDelays=[];
 const modules={
  'src/state.js':{store},'src/profile.js':{saveProfile:()=>{}},
  'src/utils.js':{shuffle:a=>a.slice(),escapeHTML:String,pick:a=>a[0]},
@@ -23,7 +23,7 @@ const modules={
 };
 function load(path){
  const output={};
- const fn=vm.runInNewContext('(function(require,exports){'+readFileSync(path,'utf8')+'\n})',{document,setTimeout:fn=>fn()},{filename:path});
+ const fn=vm.runInNewContext('(function(require,exports){'+readFileSync(path,'utf8')+'\n})',{document,setTimeout:(fn,ms=0)=>{cueDelays.push(ms);fn();}},{filename:path});
  fn(k=>{assert.ok(k in modules,'Unknown dependency '+k);return modules[k];},output);return output;
 }
 const authored=load('src/data/trivia3.js');modules['src/data/trivia3.js']=authored;
@@ -95,6 +95,57 @@ for(const mode of ['wager','survival']){
  assert.match(t.html,/this does not represent me/);assert.match(t.html,/CORRECT!/);
  assert.deepEqual(t.s.score,mode==='wager'?[9,11]:[0,engine.triviaPoints(q.difficulty)]);
 }
+// Verify actual wager/survival scoring and both audible outcomes, after both answers lock.
+function expectSound(frequencies,onsets){
+ assert.deepEqual(tones.map(n=>n[0]),frequencies);
+ assert.deepEqual(cueDelays,onsets);
+ for(let i=1;i<tones.length;i++)assert.ok(cueDelays[i]>=cueDelays[i-1]+tones[i-1][1]*1000-0.01,'No overlapping notes in mixed cue');
+}
+store.profile.settings.sound=true;
+for(const mode of ['wager','survival'])for(const wrongFirst of [true,false]){
+ tones.length=0;cueDelays.length=0;vibrations.length=0;
+ const t=make({triviaTag:'farley',triviaMode:mode});await t.start();
+ if(mode==='wager')t.wager(0);
+ const q=t.s.debug.question;
+ t.answer(t.s.debug.answers.findIndex(a=>wrongFirst?a.index!==q.correct:a.index===q.correct));
+ assert.equal(t.s.debug.phase,'locked');
+ assert.deepEqual(tones,[],'No sound while the second player has not committed');
+ assert.doesNotMatch(t.html,/this does not represent me|<p>fact<\/p>|CORRECT!/,'No early answer reveal');
+ t.next();await settle();if(mode==='wager')t.wager(0);
+ assert.equal(t.s.debug.question.id,q.id);
+ t.answer(t.s.debug.answers.findIndex(a=>wrongFirst?a.index===q.correct:a.index!==q.correct));
+ assert.match(t.html,/this does not represent me/);assert.match(t.html,/CORRECT!/);
+ expectSound([180,125,659,831,1047],[0,115,245,330,415]);
+ assert.equal(vibrations.length,0,'Reduced motion suppresses mixed feedback haptics');
+ const winner=wrongFirst?1:0;
+ assert.deepEqual(t.s.score,mode==='wager'?(winner?[9,11]:[11,9]):(winner?[0,engine.triviaPoints(q.difficulty)]:[engine.triviaPoints(q.difficulty),0]));
+}
+// Submitted wrong answers get the buzzer. Timeouts do not.
+for(const [first,second,expected]of [
+ ['correct','timeout',[659,831,1047]],
+ ['wrong','wrong',[180,125]],
+ ['timeout','timeout',[330,245]]
+]){
+ tones.length=0;cueDelays.length=0;
+ const t=make({triviaTag:'farley',triviaMode:'survival'});await t.start();
+ for(const [index,outcome]of [first,second].entries()){
+  if(outcome==='timeout')t.s.timeout();
+  else t.answer(t.s.debug.answers.findIndex(a=>outcome==='correct'?a.index===t.s.debug.question.correct:a.index!==t.s.debug.question.correct));
+  if(!index){assert.equal(tones.length,0,'First locked answer remains secret');t.next();await settle();}
+ }
+ assert.deepEqual(tones.map(n=>n[0]),expected);
+ assert.equal(t.html.includes('this does not represent me'),first==='wrong'||second==='wrong');
+}
+store.profile.settings.reducedMotion=false;
+tones.length=0;cueDelays.length=0;vibrations.length=0;
+modules['src/triviaFeedback.js'].triviaCue('mixed');
+expectSound([180,125,659,831,1047],[0,115,245,330,415]);
+assert.deepEqual(vibrations,[65],'Only one mixed-result haptic');
+store.profile.settings.reducedMotion=true;store.profile.settings.sound=false;
+tones.length=0;cueDelays.length=0;vibrations.length=0;
+modules['src/triviaFeedback.js'].triviaCue('mixed');
+assert.equal(tones.length,0,'Muted mixed cue');
+assert.equal(vibrations.length,0,'Muted mixed haptic');
 store.profile.settings.sound=false;modules['src/triviaFeedback.js'].triviaCue('wrong');assert.equal(tones.length,0);
 store.profile.settings.sound=true;modules['src/triviaFeedback.js'].triviaCue('wrong');
 assert.deepEqual(tones.map(a=>a[0]),[180,125]);assert.equal(vibrations.length,0);
