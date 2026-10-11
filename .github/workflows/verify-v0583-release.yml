@@ -1,0 +1,42 @@
+name: Verify published v0.58.3 asset
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/verify-v0583-release.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  verify-release:
+    if: github.head_ref == 'verify/v0.58.3-release-20261011'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check GitHub Release exists and download the production HTML
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 15); do
+            if gh release view v0.58.3 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "Release v0.58.3 found on attempt $attempt"
+              break
+            fi
+            if [ "$attempt" -eq 15 ]; then
+              echo "Release v0.58.3 never appeared" >&2
+              exit 1
+            fi
+            sleep 10
+          done
+          gh release view v0.58.3 --repo "$GITHUB_REPOSITORY"
+          mkdir -p "$RUNNER_TEMP/shambconkins-verified"
+          gh release download v0.58.3 --repo "$GITHUB_REPOSITORY" \
+            --pattern 'ShambConkins_v0.58.3.html' \
+            --dir "$RUNNER_TEMP/shambconkins-verified"
+          cd "$RUNNER_TEMP/shambconkins-verified"
+          echo '4ca82a9511a2bf594ec83c4296f84f2f6cbb3a2d655ba813b62fb70504fa283e  ShambConkins_v0.58.3.html' | sha256sum --check
+          test "$(stat -c %s ShambConkins_v0.58.3.html)" = 130007412
+          echo 'RELEASE_VERIFIED: exact tested production HTML present in GitHub Release v0.58.3'
