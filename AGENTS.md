@@ -1,5 +1,14 @@
 # ShambConkins — development management instructions
 
+## GitHub Actions budget protection — October 11, 2026
+
+- This private repository generated 577 Actions runs in one day. GitHub-hosted jobs then failed before runner assignment. Treat cloud CI as limited; do not re-enable broad `push`/`pull_request` triggers in `.github/workflows/development-validation.yml` or `.github/workflows/broforce-foundation-validation.yml` without explicit owner approval.
+- Full GitHub Actions validation is **manual/opt-in**. The default branch exposes **Broforce foundation validation** for manual dispatch: select `feature/broforce-wave4-candidate` as the branch; never mistake a runner-provisioning failure for a code-test failure. Avoid repeated reruns while runner access is blocked.
+- Prefer local `npm run build` and focused tests for worker commits, then run the full suite and browser/Fold screenshot gates once on the integrated candidate before merging or releasing.
+- Start new Claude/GPT worker branches from an updated main/TESTver or explicitly cost-guarded candidate. Older worker branches may still contain the legacy auto-run workflows; do not continue making commits on them by default.
+- Keep `main`, `TESTver`, release refs, and unmerged work safe. Deleting merged feature branches is housekeeping, not a fix for exhausted Actions minutes. No automatic production promotion; owner approval required.
+
+
 Read `CLAUDE.md` and `docs/AI_STATE.md` at the start of each task. Their game architecture, content, testing, and save-compatibility rules apply here. This file and `docs/CODEX_WORKFLOW.md` govern Codex branch integration and session recommendations where the older Claude guide describes a different single-branch practice. Keep `docs/AI_STATE.md` concise and current after meaningful work; do not turn it into a transcript.
 
 ## Owner and task intake
