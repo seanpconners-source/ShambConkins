@@ -72,7 +72,7 @@ function fighterProfile(){
  const p=profile.freshProfile();p.rosters.Sean.push('alpha');p.rosters.Amber.push('beta');return p;
 }
 function players(overrides=[{},{}]){
- return owners.map((owner,i)=>({id:'hero-'+i,owner,x:100,y:200,w:12,h:26,alive:true,...(overrides[i]||{})}));
+ return owners.map((owner,i)=>({id:'hero-'+i,owner,character:i?'amber':'sean',x:100,y:200,w:12,h:26,alive:true,...(overrides[i]||{})}));
 }
 function runHeli(board,overrides=[{},{}]){
  let state=extraction.createBroforceExtraction({x:100,y:200,seed:41});
