@@ -66,10 +66,11 @@ function event(out, e, type, details = {}) {
   out.push({type, eventId: `${e.id}:${e.sequence}`, enemyId: e.id, ...details});
 }
 
-function chooseTarget(e, players) {
+function chooseTarget(e, players, solid) {
   let best = null, dist = Infinity;
   for (const p of players) {
-    if (!p || p.alive !== true || !Number.isFinite(p.x) || !Number.isFinite(p.y)) continue;
+    if (!p || p.alive !== true || !Number.isFinite(p.x) || !Number.isFinite(p.y) ||
+        !see(e, p, solid)) continue;
     const dx = p.x - (e.x + e.w / 2), dy = p.y - (e.y + e.h / 2);
     const d = dx * dx + dy * dy;
     // Stable input-order tie break; never confuse two owners with identical coordinates.
@@ -140,8 +141,8 @@ function stepEnemy(e, players, solid, b, rand, events) {
     }
     e.state = e.phase = 'alert';
   }
-  const target = chooseTarget(e, players);
-  const spotted = see(e, target, solid);
+  const target = chooseTarget(e, players, solid);
+  const spotted = !!target;
   e.targetId = spotted ? String(target.id) : null;
   if (spotted) {
     if (e.alertTime <= 0 && e.state !== 'tell') {
@@ -153,7 +154,8 @@ function stepEnemy(e, players, solid, b, rand, events) {
   if (e.state === 'tell') {
     // Losing the target or losing line of sight cancels the committed attack.
     const original = players.find(p => p && String(p.id) === e.attackTargetId && p.alive === true);
-    if (!see(e, original, solid)) {
+    if (!see(e, original, solid) ||
+        sign(original.x - (e.x + e.w / 2)) !== e.facing) {
       e.state = e.phase = 'alert'; e.tellLeft = 0; e.attackTargetId = null;
       e.cooldown = Math.max(e.cooldown, .2);
     } else {
@@ -242,7 +244,19 @@ function move(e, direction, solid, b) {
   e.x = x; e.y = y;
 }
 
-function advanceBroforceEnemies(enemies, {dt = 0, players = [], isSolid, worldBounds, rand, paused = false} = {}) {
+// Opt-in simulation rectangle: enemies outside this area sleep without using
+// their spawn grace, cooldown, physics ticks, or seeded RNG. Missing/invalid
+// bounds preserve legacy full-world simulation until the mission opts in.
+function inActiveWorld(e, area) {
+  if (!area || !Number.isFinite(area.x) || !Number.isFinite(area.y) ||
+      !Number.isFinite(area.width) || !Number.isFinite(area.height) ||
+      area.width <= 0 || area.height <= 0) return true;
+  return e.x + e.w >= area.x && e.x <= area.x + area.width &&
+    e.y + e.h >= area.y && e.y <= area.y + area.height;
+}
+
+function advanceBroforceEnemies(enemies, {dt = 0, players = [], isSolid, worldBounds,
+  activeBounds, rand, paused = false} = {}) {
   if (!Array.isArray(enemies)) return {enemies: [], events: []};
   // No mutation of inputs; skip duplicate IDs and enforce a hard phone budget.
   const updated = [], events = [], seen = new Set();
@@ -277,8 +291,9 @@ function advanceBroforceEnemies(enemies, {dt = 0, players = [], isSolid, worldBo
     e._stepRemainder = clamp(finite(e._stepRemainder), 0, 1 / 120);
     e.downEmitted = e.downEmitted === true;
     if (!paused) {
-      const accumulated = e._aiRemainder + seconds;
-      const ticks = Math.floor((accumulated + 1e-10) / STEP);
+      const active = inActiveWorld(e, activeBounds);
+      const accumulated = e._aiRemainder + (active ? seconds : 0);
+      const ticks = active ? Math.floor((accumulated + 1e-10) / STEP) : 0;
       e._aiRemainder = clamp(accumulated - ticks * STEP, 0, STEP);
       // Zero-dt still publishes a pending externally inflicted death once.
       if (!ticks && (e.hp <= 0 || e.dead === true || e.state === 'dead') && !e.downEmitted) {
