@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.58.3 release candidate (`releases/ShambConkins_v0.58.3.html`).
+Version 0.58.3 release candidate (generated offline file `releases/ShambConkins_v0.58.3.html`; distribute as a GitHub Release asset, NOT a 130 MB git blob).
 
 ## October 11, 2026 validated six-fix integration
 - TESTver merged six branches at `469ff177`; owner reported playtest looked good and authorized v0.58.3 production release.
