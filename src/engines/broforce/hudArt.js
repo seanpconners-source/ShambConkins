@@ -191,7 +191,7 @@ function hudInsets(viewport,W,H){
  * insets are HUD keep-clear margins, not modifications to safe-area CSS.
  */
 function drawBroforceHud(ctx,options={}){
-  const {viewport,players,mission,devil,extraction,time=0,layout='auto',reducedMotion=false}=
+  const {viewport,players,mission,devil,extraction,time=0,layout='auto',reducedMotion=false,showPause=true}=
     options && typeof options==='object'?options:{};
   const W=hudClamp(viewport?.width||ctx?.canvas?.width,0,16384);
   const H=hudClamp(viewport?.height||ctx?.canvas?.height,0,16384);
@@ -241,13 +241,13 @@ function drawBroforceHud(ctx,options={}){
     left:{x:left,y:islandY,width:Math.min(W*.34,Math.max(40,avail*.43)),height:Math.max(0,H-safe.bottom-islandY-8)},
     right:{x:right-Math.min(W*.34,Math.max(40,avail*.43)),y:islandY,width:Math.min(W*.34,Math.max(40,avail*.43)),height:Math.max(0,H-safe.bottom-islandY-8)}
   };
-  const metadata={insets:{top:reservedTop,right:safe.right+margin,bottom:safe.bottom,left:safe.left+margin},controlZones:{pause,player1:islands.left,player2:islands.right,gameplay:{x:left,y:reservedTop,width:avail,height:Math.max(0,islandY-reservedTop)}}};
+  const metadata={insets:{top:reservedTop,right:safe.right+margin,bottom:safe.bottom,left:safe.left+margin},controlZones:{...(showPause?{pause}:{}),player1:islands.left,player2:islands.right,gameplay:{x:left,y:reservedTop,width:avail,height:Math.max(0,islandY-reservedTop)}}};
   ctx.save();
   try{
     ctx.imageSmoothingEnabled=false;
     hudPlayer(ctx,Array.isArray(players)?players[0]:null,0,r1,compact);
     hudPlayer(ctx,Array.isArray(players)?players[1]:null,1,r2,compact);
-    hudPause(ctx,pause);
+    if(showPause)hudPause(ctx,pause);
     if(objectiveRect)hudObjective(ctx,mission,objectiveRect,compact);
     if(detailRect){
       if(extraVisible){
