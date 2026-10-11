@@ -43,7 +43,7 @@ class SpyContext {
   this.tileDraws++;
   assert(sprite&&sprite.colors,'atlas sprite missing');
   for(const c of sprite.colors)this.colors.add(c);
-  this.mark('drawImage',...a,sprite.colors.join(','));
+  this.mark('drawImage',...a,Array.from(sprite.colors).join(','));
  }
  finish(){
   assert.equal(this.frames.length,0,'Canvas state stack leaked');
