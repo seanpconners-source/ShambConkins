@@ -180,6 +180,22 @@ function cinDevil(g,d,time,portrait,quality,reduced){
         cinPoly(g,'#ffd48a',[42,-38,49,-43,47,-35,54,-31,45,-29]);
       }
     }
+    // Death flash and floating embers sit BEHIND the chosen character's face.
+    // Isolate opacity so an actual portrait is never dimmed by the explosion.
+    if(dying){
+      g.save();
+      try{
+        const remain=cinClamp(cinF(d.deathTimer,cinF(d.modeTimer,.6)),0,1.3);
+        const spread=7+(1-remain/1.3)*27;
+        g.globalAlpha=.88;
+        cinOval(g,'rgba(255,164,83,.33)',0,-42,spread,spread*.72);
+        for(let i=0;i<(quality==='low'?7:17);i++)cinSpark(g,0,-42,i,now,!reduced,2+(i%2));
+        cinPoly(g,'#fff1b6',[-4,-52,4,-59,12,-45,6,-30,-8,-26,-13,-41]);
+      }finally{g.restore();}
+    }
+    if(quality!=='low' && phase>=2 && !reduced){
+      for(let i=0;i<4;i++)cinSpark(g,0,-36,i+6,now,true);
+    }
     // Head is a protected FRONT portrait layer; no horn crosses the face.
     cinHead(g,d.characterId,portrait);
     // Helmet brow and horns frame the character instead of replacing it.
@@ -188,7 +204,7 @@ function cinDevil(g,d,time,portrait,quality,reduced){
     cinRect(g,glow,-19,-67,5,2);cinRect(g,glow,14,-67,5,2);
     if(hit){
       cinRect(g,'#fff4cd',-18,-32,37,3);
-      cinRect(g,'#ffffff',-14,-58,3,13);
+      cinRect(g,'#ffffff',-20,-58,3,13);
     }
     // The only label is ID-sourced, never a stand-in character identity.
     if(intro){
@@ -196,17 +212,6 @@ function cinDevil(g,d,time,portrait,quality,reduced){
       cinRect(g,CIN_GOLD,-27,-97,54,2);
       g.font='bold 7px monospace';g.textAlign='center';g.textBaseline='middle';
       g.fillStyle='#fff3d8';g.fillText('BOSS INBOUND',0,-90,52);
-    }
-    if(dying){
-      const remain=cinClamp(cinF(d.deathTimer,cinF(d.modeTimer,.6)),0,1.3);
-      const spread=7+(1-remain/1.3)*27;
-      g.globalAlpha=.88;
-      cinOval(g,'rgba(255,164,83,.33)',0,-42,spread,spread*.72);
-      for(let i=0;i<(quality==='low'?7:17);i++)cinSpark(g,0,-42,i,now,!reduced,2+(i%2));
-      cinPoly(g,'#fff1b6',[-4,-52,4,-59,12,-45,6,-30,-8,-26,-13,-41]);
-    }
-    if(quality!=='low' && phase>=2 && !reduced){
-      for(let i=0;i<4;i++)cinSpark(g,0,-36,i+6,now,true);
     }
   }finally{g.restore();}
   // Telegraph is world-space (target can be outside boss local coordinates).
