@@ -300,7 +300,11 @@ function drawBroforceScene(ctx,{state,viewport,time=0,quality='high',portraitFor
       let drawn=false;
       const cinematicPortrait=(g,id,left,top,size)=>{
         const face=faceFor(id,portraitFor,drawPortrait);
-        if(face.makeHead)face.makeHead(1)(g,left,top,size);
+        if(!face.makeHead)return false;
+        face.makeHead(1)(g,left,top,size);
+        // BF-32 chooses its own fallback unless the caller explicitly confirms
+        // that a recognizable character portrait was painted.
+        return true;
       };
       if(typeof cinematicDraw==='function')try{
         cinematicDraw(ctx,{devil:dev,extraction:ex,camera:cam,
