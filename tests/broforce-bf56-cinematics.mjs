@@ -150,3 +150,12 @@ test('BF-21 seeded simulation clock feeds true hover timing without renderer aut
   }
   assert.equal(JSON.stringify(e),before,'renderer cannot advance the extraction clock');
 });
+
+test('missing or malformed character ID shows character-neutral fallback safely',()=>{
+  for(const id of [null,undefined,42]){
+    const ops=paint({d:devil({characterId:id,mode:'attack'}),e:null,
+      drawPortrait:()=>false});
+    assert.ok(labels(ops).includes('?'),'no fake boss identity may be fabricated');
+    assert.ok(ops.some(o=>o[0]==='set'&&o[1]==='fillStyle'&&o[2]==='#dbab85'));
+  }
+});
