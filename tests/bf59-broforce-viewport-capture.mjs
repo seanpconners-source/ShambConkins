@@ -53,9 +53,24 @@ async function status(page){return page.evaluate(()=>{
  const zones=[...document.querySelectorAll('.bf18-side')].map(el=>({label:el.getAttribute('aria-label'),rect:getRect(el),stick:el.querySelector('.bf18-stick')&&getRect(el.querySelector('.bf18-stick')),buttons:[...el.querySelectorAll('.bf18-action')].map(b=>({kind:b.title,rect:getRect(b),pressed:b.getAttribute('aria-pressed')}))}));
  const probe=document.createElement('div');probe.style.cssText='position:fixed;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);visibility:hidden';document.body.appendChild(probe);const css=getComputedStyle(probe);const safe=[css.paddingTop,css.paddingRight,css.paddingBottom,css.paddingLeft].map(v=>parseFloat(v)||0);probe.remove();
  let paint=null;if(c){try{const g=c.getContext('2d',{willReadFrequently:true});const pts=[[.2,.25],[.5,.5],[.8,.7],[.35,.8]].map(([x,y])=>Array.from(g.getImageData(Math.floor(c.width*x),Math.floor(c.height*y),1,1).data));paint={samples:pts,distinct:new Set(pts.map(p=>p.join(','))).size};}catch(e){paint={error:String(e)};}}
- return {game:game?.game?.id||null,debugEngine:game?.debug?.engine||null,phase:game?.debug?.phase||null,paused:!!game?.paused,canvas:c?{attrW:c.width,attrH:c.height,rect:getRect(c)}:null,paint,actions,zones,viewport:{w:innerWidth,h:innerHeight,visualW:visualViewport?.width??innerWidth,visualH:visualViewport?.height??innerHeight,safe},focus:document.activeElement?.tagName,dialogOpen:!!document.querySelector('#dialog[open]'),bossVisible:!!s?.devil?.active,bossDefeated:s?.bossDefeated===true,heliPresent:!!s?.extraction&&JSON.stringify(s.extraction).length>5};
+ return {game:game?.game?.id||null,debugEngine:game?.debug?.engine||null,phase:game?.debug?.phase||null,paused:!!game?.paused,canvas:c?{attrW:c.width,attrH:c.height,rect:getRect(c)}:null,paint,actions,zones,viewport:{w:innerWidth,h:innerHeight,visualW:visualViewport?.width??innerWidth,visualH:visualViewport?.height??innerHeight,safe},focus:document.activeElement?.tagName,dialogOpen:!!document.querySelector('#dialog[open]'),bossVisible:s?.bossActive===true&&s?.bossDefeated!==true&&s?.devil?.mode!=='dead',bossDefeated:s?.bossDefeated===true,heliPresent:s?.extraction?.helicopter?.visible===true&&['incoming','hover','departure'].includes(s?.extraction?.phase)};
  });}
 async function clickNamed(page,name){const b=page.locator('.game-shell .game-actions button').filter({hasText:name});await b.first().click({timeout:3000});}
+async function twoTouch(page){
+ const coords=await page.evaluate(()=>[1,2].map(i=>{
+  const b=document.querySelector('.bf18-player-'+i+' .bf18-fire');if(!b)throw Error('missing owner '+i+' fire button');
+  const r=b.getBoundingClientRect();return {id:i,x:r.left+r.width/2,y:r.top+r.height/2};
+ }));
+ const cdp=await page.context().newCDPSession(page);
+ try{
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:coords});
+  await page.waitForTimeout(80);
+  const held=await status(page);
+  requireTrue(held.zones.every(z=>z.buttons.filter(b=>/ fire$/.test(b.kind)).every(b=>b.pressed==='true')),'simultaneous P1+P2 touch not owned/pressed');
+ }finally{await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]}).catch(()=>{});await cdp.detach();}
+ await page.waitForTimeout(50);
+ requireTrue((await status(page)).zones.every(z=>z.buttons.every(b=>b.pressed!=='true')),'touch release left a button stuck');
+}
 async function startGame(page,id){
  await page.evaluate(id=>{void window.ShambConkins.requestGame({id,origin:'arcade'});},id);
  await page.getByRole('button',{name:'Start game',exact:true}).click({timeout:7000});
@@ -113,6 +128,7 @@ try{
     requireTrue(s.actions.length>=3&&['Pause','Exit','Help'].every(n=>s.actions.some(a=>a.label===n&&a.visible&&a.hit&&a.w>=44&&a.h>=44)),'Pause/Exit/Help unreachable or below 44 CSS px: '+JSON.stringify(s.actions));
     const bb=s.zones.flatMap(z=>z.buttons.map(b=>b.rect));
     requireTrue(bb.every(b=>b.w>=44&&b.h>=44&&b.x>=0&&b.y>=0&&b.x+b.w<=w+1&&b.y+b.h<=h+1),'touch action too small/clipped: '+JSON.stringify(bb));
+    if(size!=='desktop')await twoTouch(page);
     await capture(page,id,size,'playing');
     const perf=await measure(page);
     await clickNamed(page,'Pause');await page.locator('.pass-overlay [data-ready]').waitFor({timeout:4000});
