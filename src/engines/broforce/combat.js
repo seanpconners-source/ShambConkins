@@ -43,7 +43,7 @@ function fireBroforceWeapon({state, owner, x = 0, y = 0, dir = 1, weapon, fireHe
   const out = {weapon: kind, ammo: same ? clamp(Math.floor(finite(previous.ammo, s.magazine)), 0, s.magazine) : s.magazine,
     cooldown: same ? Math.max(0, finite(previous.cooldown)) : 0,
     burstLeft: same ? clamp(Math.floor(finite(previous.burstLeft)), 0, s.burst) : 0,
-    sequence: same ? Math.max(0, Math.floor(finite(previous.sequence))) : 0};
+    sequence: Math.max(0, Math.floor(finite(previous.sequence)))};
   let remaining = clamp(finite(dt), 0, .2), elapsed = 0;
   const shots = [], events = [];
   // At most 16 volleys per call. Even malformed state/cooldown cannot run forever.
