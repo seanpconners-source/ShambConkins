@@ -52,11 +52,12 @@ async function fuzz(id) {
   await ctx.close();
 }
 const queue = [...ids];
-await Promise.all(Array.from({length: conc}, async () => { while (queue.length) await fuzz(queue.shift()).catch(e => { results['?'] = e.message; }); }));
+await Promise.all(Array.from({length: conc}, async () => { while (queue.length) { const id=queue.shift(); await fuzz(id).catch(e => { results[id] = {errs:['fuzz rejected: '+String(e?.message||e)],state:{crash:String(e?.stack||e)},clicks:0}; }); } }));
 let bad = 0;
 for (const [id, r] of Object.entries(results)) {
   if (r.errs?.length || r.state?.crash) { bad++; console.log('FAIL', id, JSON.stringify(r)); }
 }
+if(Object.keys(results).length!==ids.length){bad+=ids.length-Object.keys(results).length;console.error('FAIL: missing game results');}
 console.log(`${ids.length - bad}/${ids.length} games ran clean`);
 await browser.close();
 process.exit(bad ? 1 : 0);
