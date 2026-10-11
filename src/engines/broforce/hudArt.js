@@ -154,12 +154,22 @@ function hudObjective(g,mission,r,small){
   const stage=hudStr(mission?.stage||mission?.stageName,'');
   const rescued=mission?.rescues ?? mission?.rescued;
   const target=mission?.rescueTarget ?? mission?.rescuesRequired;
-  const suffix=Number.isFinite(rescued)?`  ·  ${hudCount(rescued)}${Number.isFinite(target)?'/'+hudCount(target):''} SAVED`:'';
-  if(w<175){hudText(g,objective+suffix,x+7,y+h/2,w-14,10,HUD_TEXT,800);return;}
-  const stageWidth=stage?Math.min(100,Math.max(44,w*.21)):0;
-  if(stageWidth)hudText(g,stage.toUpperCase(),x+7,y+h/2,stageWidth-7,small?9:10,HUD_GOLD,800);
-  const midX=x+8+stageWidth;
-  hudText(g,objective+suffix,midX,y+h/2,w-stageWidth-16,small?10:11,HUD_TEXT,800);
+  // A long objective must not erase the separately reserved rescue total.
+  const rescueText=Number.isFinite(rescued)?
+    hudCount(rescued)+(Number.isFinite(target)?'/'+hudCount(target):'')+' SAVED':'';
+  const rescueW=rescueText?Math.min(85,Math.max(46,Math.floor(w*.34))):0;
+  const badgeX=x+w-6-rescueW;
+  const textRight=rescueText?badgeX-5:x+w-7;
+  const textLeft=x+7;
+  const contentW=Math.max(0,textRight-textLeft);
+  const stageW=stage&&w>=185&&contentW>82?Math.min(100,Math.max(45,Math.floor(w*.2))):0;
+  if(stageW)hudText(g,stage.toUpperCase(),textLeft,y+h/2,stageW-5,small?9:10,HUD_GOLD,800);
+  const objectiveX=textLeft+(stageW?stageW+2:0);
+  hudText(g,objective,objectiveX,y+h/2,Math.max(0,textRight-objectiveX),small?10:11,HUD_TEXT,800);
+  if(rescueText){
+    hudRect(g,'rgba(241,202,114,0.16)',badgeX,y+3,rescueW,h-6);
+    hudText(g,rescueText,badgeX+4,y+h/2,rescueW-8,small?9:10,HUD_GOLD,800);
+  }
 }
 function hudProgress(g,r,phase,value,max,label,alert=false){
   const {x,y,width:w,height:h}=r;
@@ -212,11 +222,12 @@ function drawBroforceHud(ctx,options={}){
   const extraVisible=!!extraction?.active;
   const bossVisible=!extraVisible&&!!devil?.active&&!devil?.defeated;
   if(portrait){
-    const usable=avail-44-gap*2;
-    const playerW=Math.floor(usable/2);
-    r1={x:left,y:top,width:playerW,height:chipH};
-    r2={x:left+playerW+gap,y:top,width:playerW,height:chipH};
-    objectiveRect={x:left,y:top+chipH+5,width:avail,height:23};
+    // Stack readable full-width player cards rather than squeeze six HUD fields into 158px.
+    // The first row reserves a 44px Pause target only when that control is enabled.
+    const firstWidth=avail-(showPause?44+gap:0);
+    r1={x:left,y:top,width:firstWidth,height:chipH};
+    r2={x:left,y:top+chipH+5,width:avail,height:chipH};
+    objectiveRect={x:left,y:r2.y+chipH+5,width:avail,height:23};
     if(extraVisible||bossVisible)detailRect={x:left+Math.max(12,avail*.13),y:objectiveRect.y+26,width:avail-Math.max(24,avail*.26),height:20};
   }else{
     const usable=avail-44-gap*3;
@@ -232,7 +243,7 @@ function drawBroforceHud(ctx,options={}){
       if(extraVisible||bossVisible)detailRect={x:left,y:objectiveRect.y+21,width:objectiveRect.width,height:16};
     }
   }
-  const hudBottom=Math.max(r1.y+r1.height,r2.y+r2.height,objectiveRect?.y+objectiveRect?.height||0,detailRect?.y+detailRect?.height||0,pause.y+pause.height);
+  const hudBottom=Math.max(r1.y+r1.height,r2.y+r2.height,objectiveRect?.y+objectiveRect?.height||0,detailRect?.y+detailRect?.height||0,showPause?pause.y+pause.height:0);
   const reservedTop=Math.min(H-safe.bottom,Math.ceil(hudBottom+6));
   // Bottom control islands are placement guidance; controls worker decides drawing and input.
   const islandH=Math.max(60,Math.min(166,H*.215));
@@ -265,7 +276,8 @@ function drawBroforceHud(ctx,options={}){
     // Motion stays decorative; no flash, UI shake, runtime random or simulation write.
     if(!reducedMotion&&Number.isFinite(time)&&objectiveRect&&objectiveRect.width>80){
       const stride=8+(Math.floor(Math.max(0,time)*2)%3)*4;
-      hudRect(ctx,'rgba(241,202,114,0.65)',objectiveRect.x+objectiveRect.width-28,objectiveRect.y+4,stride,2);
+      // Paint animation on the upper rail, away from the dedicated rescue text.
+      hudRect(ctx,'rgba(241,202,114,0.65)',objectiveRect.x+objectiveRect.width-28,objectiveRect.y+1,stride,2);
     }
     if(mission?.paused){
       const cx=left+avail/2,cy=Math.min(H-safe.bottom-22,reservedTop+21);
