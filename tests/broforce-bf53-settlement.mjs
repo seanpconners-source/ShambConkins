@@ -17,6 +17,7 @@ assert.ok(begin>=0&&end>begin,'BF-37 fixture boundary changed: review this test,
 const fixture=[
  'const assert=__assert,fs=__fs,path=__path;',
  'const root='+JSON.stringify(root)+';',
+ 'const source=p=>fs.readFileSync(path.join(root,p),\'utf8\');',
  'const clone=x=>JSON.parse(JSON.stringify(x));',
  'const tick=()=>new Promise(resolve=>setImmediate(resolve));',
  base.slice(begin,end),
