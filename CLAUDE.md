@@ -1,5 +1,8 @@
 # ShambConkins — Claude guide
 
+> **GitHub Actions cost guard (2026-10-11):** Full development and Broforce validation workflows are manual-only on current integration branches after an excessive CI run storm. Do not re-enable push/PR-wide jobs or work from obsolete worker branches with old triggers. Use local tests first; manual Broforce workflow is available from GitHub Actions on `feature/broforce-wave4-candidate` once runners work. See `AGENTS.md` for details.
+
+
 Offline, single-file HTML party board game for two people sharing one phone (Sean & Amber).
 Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret Horror), ~120 minigames,
 650+ unlockable characters, pop-culture references everywhere (see docs/REFERENCE_LIST.md).
