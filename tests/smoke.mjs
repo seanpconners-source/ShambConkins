@@ -15,4 +15,5 @@ try {
  console.log('buttons:', await page.$$eval('button', b => b.map(x => x.innerText.trim().slice(0, 30)).filter(Boolean).slice(0, 30)));
  await page.screenshot({path: process.env.SHOT || screenshotPath('home.png')});
  console.log('errors:', errors);
+ if (errors.length) process.exitCode = 1;
 } finally { await browser.close(); }
