@@ -27,7 +27,7 @@ Write-Host '==== ShambConkins LOCAL test runner ====' -ForegroundColor Cyan
 Write-Host ("Mode: {0}" -f $Mode)
 Write-Host ("Project: {0}" -f $Root)
 Write-Host ("Reports: {0}" -f $ReportDir)
-Write-Host 'Nothing is sent to GitHub Actions. The first run may install Chromium locally.'
+Write-Host 'Nothing is sent to GitHub Actions. First run may set up portable Node and Chromium locally.'
 Write-Host ''
 
 function Run-Step {
@@ -89,18 +89,21 @@ function Finish {
     exit 0
 }
 
-$node = Get-Command node.exe -ErrorAction SilentlyContinue
-if (-not $node) { $node = Get-Command node -ErrorAction SilentlyContinue }
-if (-not $node) {
-    [void]$script:Failures.Add('Node.js is not installed / not on PATH. Install Node.js LTS from https://nodejs.org/, then rerun.')
-    Finish
-}
-$nodeExe = $node.Source
-$ver = (& $nodeExe -p 'process.versions.node').Trim()
-$major = [int]($ver.Split('.')[0])
-Write-Host ("Node.js {0}" -f $ver)
-if ($major -lt 20) {
-    [void]$script:Failures.Add('Node.js 20+ required; install a current LTS Node.js.')
+# Resolve an existing Node + npm pair; if absent, bootstrap a private copy.
+# This is per-process and never edits the machine-wide PATH or registry.
+try {
+    $resolver = Join-Path $PSScriptRoot 'resolve-node-for-local-tests.ps1'
+    $tools = & $resolver -ProjectRoot $Root -NoSetup:$NoSetup
+    if (-not $tools -or -not $tools.Node -or -not $tools.Npm) {
+        throw 'Node resolver did not produce node.exe and npm.cmd.'
+    }
+    $nodeExe = $tools.Node
+    $npmExe = $tools.Npm
+    $env:PATH = $tools.Folder + [IO.Path]::PathSeparator + $env:PATH
+    Write-Host ("Node.js {0}" -f $tools.Version)
+    Write-Host ("Node location: {0}" -f $nodeExe)
+} catch {
+    [void]$script:Failures.Add(("Node.js setup: {0}" -f $_.Exception.Message))
     Finish
 }
 # Check for locally installed Playwright; never depend on GitHub-hosted /node-tools.
@@ -110,12 +113,7 @@ if (-not (Test-Path -LiteralPath $localPlaywright)) {
         [void]$script:Failures.Add('Playwright not installed. Rerun without -NoSetup to install it once.')
         Finish
     }
-    $npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
-    if (-not $npm) {
-        [void]$script:Failures.Add('npm.cmd unavailable. Install Node.js LTS including npm; standalone node.exe alone is not enough for initial Playwright setup.')
-        Finish
-    }
-    if (-not (Run-Step 'Install-Playwright-once' $npm.Source @('install','--no-save','--no-package-lock','--ignore-scripts','--no-audit','--no-fund','playwright@1.50.1'))) { Finish }
+    if (-not (Run-Step 'Install-Playwright-once' $npmExe @('install','--no-save','--no-package-lock','--ignore-scripts','--no-audit','--no-fund','playwright@1.50.1'))) { Finish }
 }
 $chromium = ''
 try { $chromium = (& $nodeExe -e "process.stdout.write(require('playwright').chromium.executablePath())").Trim() }
