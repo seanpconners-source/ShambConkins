@@ -52,7 +52,7 @@ async function fuzz(id) {
   await ctx.close();
 }
 const queue = [...ids];
-await Promise.all(Array.from({length: conc}, async () => { while (queue.length) await fuzz(queue.shift()).catch(e => { results['?'] = e.message; }); }));
+await Promise.all(Array.from({length: conc}, async () => { while (queue.length) { const id=queue.shift();await fuzz(id).catch(e => { results[id]={errs:['harness: '+e.message],state:{crash:e.message},clicks:0}; }); } }));
 let bad = 0;
 for (const [id, r] of Object.entries(results)) {
   if (r.errs?.length || r.state?.crash) { bad++; console.log('FAIL', id, JSON.stringify(r)); }
