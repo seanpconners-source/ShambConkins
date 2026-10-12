@@ -3,7 +3,13 @@
 import {chromium, root, launchBrowser} from './lib.mjs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {freemem} from 'node:os';
 const secs = +process.argv[2] || 4, conc = +process.argv[3] || 4, filter = process.argv[4];
+// Optional safety controls for the low-priority, unattended Windows launcher.
+// Default CLI behavior (including GitHub CI) is unchanged.
+const minFreeGb = Number(process.env.SHAMB_MIN_FREE_MEMORY_GB || 0);
+const cooldownMs = Math.max(0, Math.min(10000, Number(process.env.SHAMB_GAME_COOLDOWN_MS || 0) || 0));
+if (!Number.isFinite(minFreeGb) || minFreeGb < 0) throw new Error('Invalid SHAMB_MIN_FREE_MEMORY_GB');
 const file = pathToFileURL(path.resolve(root, process.env.SHAMB_FILE || 'dist/ShambConkins.html')).href;
 const browser = await launchBrowser();
 const probe = await browser.newPage(); await probe.goto(file);
@@ -56,10 +62,17 @@ async function fuzz(id) {
   }
 }
 const queue = [...ids];
-let done = 0;
+let done = 0, memoryStopped = false;
 await Promise.all(Array.from({length: conc}, async () => {
   while (queue.length) {
     const id = queue.shift(), started = Date.now();
+    if (minFreeGb > 0 && freemem() < minFreeGb * 1073741824) {
+      console.error('MEMORY_GUARD_STOP', 'freeGB=' + (freemem() / 1073741824).toFixed(2), 'minimumGB=' + minFreeGb);
+      results[id] = {errs: ['Memory safety cutoff; test not run'],state:{crash:'Insufficient memory'},clicks:0};
+      memoryStopped = true;
+      queue.length = 0;
+      break;
+    }
     try {
       await fuzz(id);
     } catch (e) {
@@ -69,12 +82,14 @@ await Promise.all(Array.from({length: conc}, async () => {
     const failed = !!(results[id]?.errs?.length || results[id]?.state?.crash);
     // Report every minigame immediately: no more silent "139 games" for 10+ minutes.
     console.log('GAME_PROGRESS', done + '/' + ids.length, id, failed ? 'FAIL' : 'OK', (Date.now() - started) + 'ms');
+    if (cooldownMs) await new Promise(resolve => setTimeout(resolve, cooldownMs));
   }
 }));
 let bad = 0;
 for (const [id, r] of Object.entries(results)) {
   if (r.errs?.length || r.state?.crash) { bad++; console.log('FAIL', id, JSON.stringify(r)); }
 }
-console.log(`${ids.length - bad}/${ids.length} games ran clean`);
+const tested = Object.keys(results).length - (memoryStopped ? 1 : 0);
+console.log(`${tested - (bad - (memoryStopped ? 1 : 0))}/${ids.length} games ran clean; tested=${tested} incomplete=${memoryStopped}`);
 await browser.close();
-process.exit(bad ? 1 : 0);
+process.exit(bad || memoryStopped || tested !== ids.length ? 1 : 0);
