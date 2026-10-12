@@ -6,9 +6,9 @@ import {fileURLToPath, pathToFileURL} from 'node:url';
 // CI historically installs Playwright at /node-tools; Windows installs it
 // in this checkout's ignored node_modules. Prefer the known CI copy there.
 const localRequire = createRequire(import.meta.url);
-const legacyRequire = createRequire('/node-tools/node_modules/');
-export const {chromium} = existsSync('/node-tools/node_modules/playwright')
- ? legacyRequire('playwright') : localRequire('playwright');
+const legacyRequire = existsSync('/node-tools/node_modules/playwright')
+ ? createRequire('/node-tools/node_modules/') : null;
+export const {chromium} = legacyRequire ? legacyRequire('playwright') : localRequire('playwright');
 export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export function browserLaunchOptions() {
  if (process.env.SHAMB_CHROMIUM) return {executablePath: process.env.SHAMB_CHROMIUM};
