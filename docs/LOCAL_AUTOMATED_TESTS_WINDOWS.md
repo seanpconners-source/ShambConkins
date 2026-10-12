@@ -33,3 +33,13 @@ No `.github/workflows` triggers were added or enabled. This doesn't repair GitHu
 - **PowerShell script policy:** launch through either included `.cmd` shortcut. It uses PowerShell's `-ExecutionPolicy Bypass` for that one process only, not a system-wide policy change.
 
 Avoid running two launchers in the *same checkout* simultaneously because both build `dist/ShambConkins.html`. No user data is read or written by these test scripts beyond the synthetic browser test profiles.
+
+## Laptop-safe full-game fuzz (updated October 12, 2026)
+
+The old full test launched three copies of the large inlined game at once and printed only `139 games` until the entire test completed. On some laptops that can exhaust memory, slow Windows to a crawl, and leave no final summary if the terminal is closed.
+
+**The default Full test now checks the whole minigame catalog in 12 successive batches with only ONE browser game context at a time**, fuzzing each for one second. Each batch exits its Chromium browser completely before the next starts to release memory. Progress is printed after every game (e.g., `GAME_PROGRESS 3/12 game-id OK`) and in `local-test-reports/<dated-run>-full/*.log`. If Windows reports less than 3 GB of available RAM before a batch, Full exits early with an explicit **incomplete / low-memory** result instead of trying to overwhelm the computer. Each batch is separately recorded in the summary, so a failure can be traced to a specific group.
+
+The runner also writes `local-test-reports/LATEST-PROGRESS.txt` *before each step*; this file and the per-step logs may remain readable even if a run is interrupted. The final `LATEST-SUMMARY.txt` is only updated when a run reaches the normal finish; do not confuse a previous report with the interrupted run. On the first attempt where Windows slowed down, inspect the **newest date-stamped `-full` folder** for completed numbered `.log` files to find how far it got. You can zip/upload the folder for diagnosis without re-running the test.
+
+The single-browser setting is intentional even on faster machines: reliability and laptop responsiveness matter more than saving a few minutes. **Quick** remains the best default for everyday development and never performs the entire 139-game fuzz test. No GitHub Actions usage is involved.
