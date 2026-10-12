@@ -1,6 +1,6 @@
 // Regression: typed names are display-only; persistent roster owners remain Sean and Amber.
 import assert from 'node:assert/strict';
-import {open} from './lib.mjs';
+import {open, screenshotPath} from './lib.mjs';
 import {m} from './sim.mjs';
 import {req} from './load.mjs';
 
@@ -39,9 +39,9 @@ try {
   await page.click('[data-action="setup"]');
   assert.deepEqual(await page.locator('#player-name-0, #player-name-1').evaluateAll(
     nodes=>nodes.map(n=>n.value)),["O'Neil",'<b id=x>Riley</b>'],'draft survives return to setup');
-  await page.screenshot({path:'/tmp/claude-0/names-setup-phone.png'});
+  await page.screenshot({path:screenshotPath('names-setup-phone.png')});
   await page.setViewportSize({width:1100,height:700});
-  await page.screenshot({path:'/tmp/claude-0/names-setup-desktop.png'});
+  await page.screenshot({path:screenshotPath('names-setup-desktop.png')});
   await page.setViewportSize({width:390,height:780});
 
   await page.click('[data-action="start-run"]');
