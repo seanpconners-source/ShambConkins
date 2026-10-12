@@ -1,0 +1,88 @@
+name: Sync and optimize main portraits into TESTver
+
+# Narrow, portrait-only automation. Do NOT add generic feature-branch CI triggers.
+# Existing user upload workflow remains: put <character>[.<mood>].png on main.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'assets/portraits/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shambconkins-portrait-main-test-sync
+  cancel-in-progress: true
+
+jobs:
+  portrait-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out only the TESTver destination
+        uses: actions/checkout@v4
+        with:
+          ref: TESTver
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python for original Pillow optimizer
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Set up Node for offline HTML verification
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Obtain the current main portrait catalog
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main
+          python3 -m pip install --disable-pip-version-check Pillow
+
+      - name: Copy only new or changed drop-in portraits from main
+        shell: bash
+        env:
+          PORTRAIT_SOURCE_REF: refs/remotes/origin/main
+          PORTRAIT_SYNC_DEST: TESTver
+        run: |
+          set -euo pipefail
+          python3 tools/sync-main-portraits-to-test.py
+
+      - name: Optimize exactly as before; archive original PNGs
+        shell: bash
+        env:
+          OPTIMIZER_MIN_COUNT: '0'
+          OPTIMIZER_REPORT: ${{ runner.temp }}/portrait-sync-report.json
+        run: |
+          set -euo pipefail
+          python3 tools/run-claude-optimizer-safe.py
+
+      - name: Verify modules and build the actual offline TESTver HTML
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tools/check-modules.mjs
+          npm run build
+          test -s dist/ShambConkins.html
+
+      - name: Commit only portrait files to TESTver (never main)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -A -- assets/portraits assets/originals/portraits
+          if git diff --cached --quiet; then
+            echo 'PORTRAITS_ALREADY_SYNCED'
+            exit 0
+          fi
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'art: sync and optimize main portraits into TESTver (original 480px WebP q88)'
+          # No force push. Reject a concurrent TESTver head update for safe review.
+          git push origin HEAD:refs/heads/TESTver
