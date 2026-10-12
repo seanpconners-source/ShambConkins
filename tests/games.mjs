@@ -25,6 +25,7 @@ console.log(ids.length, 'games');
 const results = {};
 async function fuzz(id) {
   const ctx = await browser.newContext({viewport: {width: 900, height: 700}, hasTouch: false});
+  try {
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push(e.message.split('\n')[0]));
@@ -49,10 +50,27 @@ async function fuzz(id) {
   }
   const state = await page.evaluate(() => ({game: window.ShambConkins.diagnostics().game, layer: !document.getElementById('game-layer').hidden})).catch(e => ({crash: e.message}));
   results[id] = {errs: [...new Set(errs)], state, clicks};
-  await ctx.close();
+  } finally {
+    // Isolate each game and release its large inlined HTML, even after a crash.
+    await ctx.close().catch(() => {});
+  }
 }
 const queue = [...ids];
-await Promise.all(Array.from({length: conc}, async () => { while (queue.length) { const id=queue.shift();await fuzz(id).catch(e => { results[id]={errs:['harness: '+e.message],state:{crash:e.message},clicks:0}; }); } }));
+let done = 0;
+await Promise.all(Array.from({length: conc}, async () => {
+  while (queue.length) {
+    const id = queue.shift(), started = Date.now();
+    try {
+      await fuzz(id);
+    } catch (e) {
+      results[id] = {errs: ['harness: ' + e.message], state: {crash: e.message}, clicks: 0};
+    }
+    done++;
+    const failed = !!(results[id]?.errs?.length || results[id]?.state?.crash);
+    // Report every minigame immediately: no more silent "139 games" for 10+ minutes.
+    console.log('GAME_PROGRESS', done + '/' + ids.length, id, failed ? 'FAIL' : 'OK', (Date.now() - started) + 'ms');
+  }
+}));
 let bad = 0;
 for (const [id, r] of Object.entries(results)) {
   if (r.errs?.length || r.state?.crash) { bad++; console.log('FAIL', id, JSON.stringify(r)); }

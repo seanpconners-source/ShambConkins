@@ -36,6 +36,14 @@ function Run-Step {
     $safe = ($Label -replace '[^a-zA-Z0-9_-]','-')
     $log = Join-Path $ReportDir ("{0:D2}-{1}.log" -f $script:StepNumber, $safe)
     Write-Host ("[{0}] {1}" -f $script:StepNumber, $Label) -ForegroundColor Cyan
+    @(
+        'RUNNING - previous full report may be incomplete until this step finishes'
+        ("Current step: {0}" -f $Label)
+        ("Run folder: {0}" -f $ReportDir)
+        ("Completed passes: {0}" -f $script:Passes.Count)
+        ("Completed failures: {0}" -f $script:Failures.Count)
+        ("Live log: {0}" -f $log)
+    ) | Set-Content -LiteralPath (Join-Path $Root 'local-test-reports\LATEST-PROGRESS.txt') -Encoding UTF8
     $exitCode = 1
     try {
         $oldPref = $ErrorActionPreference
@@ -52,6 +60,10 @@ function Run-Step {
     }
     if ($exitCode -eq 0) {
         [void]$script:Passes.Add($Label)
+        @('Step finished: PASS', ("Step: {0}" -f $Label), ("Log: {0}" -f $log),
+          ("Passed steps: {0}" -f $script:Passes.Count),
+          ("Failed steps: {0}" -f $script:Failures.Count)) |
+          Set-Content -LiteralPath (Join-Path $Root 'local-test-reports\LATEST-PROGRESS.txt') -Encoding UTF8
         Write-Host ("PASS: {0}" -f $Label) -ForegroundColor Green
         return $true
     }
@@ -60,6 +72,10 @@ function Run-Step {
         $tail = @(Get-Content -LiteralPath $log -Tail 18 -ErrorAction SilentlyContinue)
         [void]$script:FailureDetails.Add(("[{0}]" -f $Label) + [Environment]::NewLine + ($tail -join [Environment]::NewLine))
     }
+    @('Step finished: FAIL', ("Step: {0}" -f $Label), ("Log: {0}" -f $log),
+      ("Passed steps: {0}" -f $script:Passes.Count),
+      ("Failed steps: {0}" -f $script:Failures.Count)) |
+      Set-Content -LiteralPath (Join-Path $Root 'local-test-reports\LATEST-PROGRESS.txt') -Encoding UTF8
     Write-Host ("FAIL: {0} (exit {1})" -f $Label, $exitCode) -ForegroundColor Red
     return $false
 }
@@ -164,7 +180,28 @@ foreach ($test in @('tests/player-names.mjs', 'tests/pkmn-haptics.mjs', 'tests/s
 }
 if ($Mode -eq 'Full') {
     [void](Run-Step 'Board-route-browser-flow' $nodeExe @('tests/route.mjs'))
-    [void](Run-Step 'All-registered-minigame-browser-fuzz' $nodeExe @('tests/games.mjs','3','3'))
+    # The old single 139-game run opened 3 huge Chromium contexts in parallel
+    # and held one browser process for the entire catalog. On smaller Windows
+    # laptops this can cause swap thrashing and prevent even Task Manager opening.
+    # Test every game, but sequentially, in 12 independent browser batches.
+    # Each batch exits to release all Chromium memory before the next starts.
+    $fuzzShards = 12
+    for ($shard = 0; $shard -lt $fuzzShards; $shard++) {
+        $freeGB = $null
+        try {
+            $os = Get-CimInstance -ClassName Win32_OperatingSystem -ErrorAction Stop
+            $freeGB = [math]::Round(([double]$os.FreePhysicalMemory / 1048576), 1)
+        } catch {
+            Write-Host "Free RAM check unavailable; using one game at a time." -ForegroundColor Yellow
+        }
+        if ($null -ne $freeGB -and $freeGB -lt 3.0) {
+            [void]$script:Failures.Add(("Low memory: only {0} GB free; stopped before browser fuzz shard {1}/12 to protect the laptop." -f $freeGB, ($shard+1)))
+            Write-Host ("Stopped safely: {0} GB free. Close memory-heavy apps before a future full run." -f $freeGB) -ForegroundColor Yellow
+            Finish
+        }
+        Write-Host ("Browser game batch {0}/{1}, concurrency=1, 1 second/game, free RAM={2} GB" -f ($shard+1), $fuzzShards, $freeGB)
+        [void](Run-Step ("Minigames-{0:D2}-of-{1:D2}" -f ($shard+1),$fuzzShards) $nodeExe @('tests/games.mjs','1','1','.*',("$shard"),("$fuzzShards")))
+    }
     $focused = @(Get-ChildItem -LiteralPath (Join-Path $Root 'tests') -Filter 'broforce-*.mjs' -File -ErrorAction SilentlyContinue | Sort-Object Name)
     if ($focused.Count -gt 0) {
         Write-Host ("Detected {0} Broforce focused test files." -f $focused.Count)
