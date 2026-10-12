@@ -10,7 +10,10 @@ echo.
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\run-local-tests.ps1" -Mode Quick
 set "result=%errorlevel%"
 echo.
-if not "%result%"=="0" (echo QUICK CHECKS NEED ATTENTION. See local-test-reports.) else (echo QUICK CHECKS PASSED.)
+if not "%result%"=="0" (
+  echo QUICK CHECKS NEED ATTENTION. See local-test-reports.
+  if exist "%~dp0local-test-reports\LATEST-SUMMARY.txt" start "" notepad.exe "%~dp0local-test-reports\LATEST-SUMMARY.txt"
+) else (echo QUICK CHECKS PASSED.)
 echo.
 pause
 exit /b %result%
