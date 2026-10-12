@@ -18,6 +18,7 @@ $env:SHOT = Join-Path $env:SHAMB_SHOTS_DIR 'home.png'
 $env:SHAMB_FILE = Join-Path $Root 'dist\ShambConkins.html'
 $script:Failures = New-Object System.Collections.Generic.List[string]
 $script:Passes = New-Object System.Collections.Generic.List[string]
+$script:FailureDetails = New-Object System.Collections.Generic.List[string]
 $script:StepNumber = 0
 $BrowserReady = $false
 
@@ -55,6 +56,10 @@ function Run-Step {
         return $true
     }
     [void]$script:Failures.Add(("{0} (exit {1})" -f $Label, $exitCode))
+    if (Test-Path -LiteralPath $log) {
+        $tail = @(Get-Content -LiteralPath $log -Tail 18 -ErrorAction SilentlyContinue)
+        [void]$script:FailureDetails.Add(("[{0}]" -f $Label) + [Environment]::NewLine + ($tail -join [Environment]::NewLine))
+    }
     Write-Host ("FAIL: {0} (exit {1})" -f $Label, $exitCode) -ForegroundColor Red
     return $false
 }
@@ -70,7 +75,12 @@ function Finish {
         'PASSED'
     ) + @($script:Passes) + @('','FAILED') + @($script:Failures)
     if ($script:Failures.Count -eq 0) { $summary += '(none)' }
+    if ($script:Failures.Count -gt 0 -and $script:FailureDetails.Count -gt 0) {
+        $summary += @('', 'ERROR DETAILS (last 18 lines from each failed step)')
+        $summary += @($script:FailureDetails)
+    }
     $summary | Set-Content -Path (Join-Path $ReportDir 'SUMMARY.txt') -Encoding UTF8
+    $summary | Set-Content -Path (Join-Path $Root 'local-test-reports\LATEST-SUMMARY.txt') -Encoding UTF8
     Write-Host ''
     Write-Host ("Finished: {0} passed, {1} failed." -f $script:Passes.Count, $script:Failures.Count)
     Write-Host ("Report: {0}" -f (Join-Path $ReportDir 'SUMMARY.txt'))
