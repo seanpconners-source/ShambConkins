@@ -1,5 +1,5 @@
 // Plays to the first fork and exercises the docked route chooser.
-import {open} from './lib.mjs';
+import {open, screenshotPath} from './lib.mjs';
 const size = process.argv[2] || '1100x700'; const [w, h] = size.split('x').map(Number);
 const {browser, page, errors} = await open({viewport: {width: w, height: h}});
 await page.click('text=NEW GAME'); await page.click('[data-action=start-run]');
@@ -28,15 +28,15 @@ if (!found) {
     };
   });
   console.log('ROUTE_DIAGNOSTIC',JSON.stringify(debug));
-  await page.screenshot({path:'/tmp/claude-0/route-timeout.png'});
+  await page.screenshot({path:screenshotPath('route-timeout.png')});
 }
 if (found) {
   await page.waitForTimeout(800);
-  await page.screenshot({path: '/tmp/claude-0/route1.png'});
+  await page.screenshot({path: screenshotPath('route1.png')});
   const info = await page.evaluate(() => ({options: [...document.querySelectorAll('.rp-option')].map(b => b.innerText.replace(/\n/g, ' | ').slice(0, 140)), glow: document.querySelectorAll('#map-root .glow').length, dim: document.querySelectorAll('#map-root .dim').length}));
   console.log(info);
   await page.click('.rp-option:not([disabled])'); await page.waitForTimeout(500);
-  await page.screenshot({path: '/tmp/claude-0/route2.png'});
+  await page.screenshot({path: screenshotPath('route2.png')});
   console.log('glow after preview:', await page.evaluate(() => document.querySelectorAll('#map-root .glow').length));
   await page.click('[data-action=route-go]'); await page.waitForTimeout(2500);
   console.log('panel closed:', await page.evaluate(() => !document.body.classList.contains('route-choosing')));
