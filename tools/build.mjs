@@ -24,10 +24,15 @@ const js = `(()=>{'use strict';const modules={${modules}${tail}`;
 // Optional drop-in portraits: assets/portraits/<id>.webp -> ART['photo:char:<id>'], <id>.<mood>.webp -> ART['char:<id>:<mood>'].
 const portraitDir = path.join(root, 'assets/portraits'), userPortraits = {};
 if (fs.existsSync(portraitDir)) for (const f of fs.readdirSync(portraitDir)) {
-  const m = f.match(/^([a-z0-9-]+)(?:\.(normal|win|silly|angry|sad|think|walk))?\.(webp|png|jpe?g)$/i);
+  const m = f.match(/^([a-z0-9-]+)(?:\.(normal|win|silly|angry|mad|sad|think|walk))?\.(webp|png|jpe?g)$/i);
   if (!m) continue;
   const ext = m[3].toLowerCase().replace('jpeg', 'jpg');
-  userPortraits[m[2] ? `char:${m[1]}:${m[2].toLowerCase()}` : `photo:char:${m[1]}`] = `data:${MIME[ext]};base64,` + fs.readFileSync(path.join(portraitDir, f)).toString('base64');
+  // Accept the long-standing .mad filename without requiring an upload rename.
+  // Explicit .angry art wins if both .angry and .mad exist.
+  const mood=m[2]?.toLowerCase(), normalized=mood==='mad'?'angry':mood;
+  const key=normalized?`char:${m[1]}:${normalized}`:`photo:char:${m[1]}`;
+  if(mood==='mad'&&Object.prototype.hasOwnProperty.call(userPortraits,key))continue;
+  userPortraits[key] = `data:${MIME[ext]};base64,` + fs.readFileSync(path.join(portraitDir, f)).toString('base64');
 }
 // Drop-in item/location art: assets/items/<id>.(svg|webp|png|jpg) -> photo:item:<id>; assets/locations/<id>.* -> photo:location:<id>.
 for (const [dir, prefix] of [['items', 'photo:item:'], ['locations', 'photo:location:']]) {
