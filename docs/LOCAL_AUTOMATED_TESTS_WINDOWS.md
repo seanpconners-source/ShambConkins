@@ -43,3 +43,13 @@ The old full test launched three copies of the large inlined game at once and pr
 The runner also writes `local-test-reports/LATEST-PROGRESS.txt` *before each step*; this file and the per-step logs may remain readable even if a run is interrupted. The final `LATEST-SUMMARY.txt` is only updated when a run reaches the normal finish; do not confuse a previous report with the interrupted run. On the first attempt where Windows slowed down, inspect the **newest date-stamped `-full` folder** for completed numbered `.log` files to find how far it got. You can zip/upload the folder for diagnosis without re-running the test.
 
 The single-browser setting is intentional even on faster machines: reliability and laptop responsiveness matter more than saving a few minutes. **Quick** remains the best default for everyday development and never performs the entire 139-game fuzz test. No GitHub Actions usage is involved.
+
+## Low-impact unattended testing (October 12, 2026)
+
+Double-click **`RUN-BACKGROUND-TESTS.cmd`** in the repository folder before leaving. It starts the **Full** QA checks in a separate **minimized, low-CPU-priority Windows process** and returns control immediately. You may close the original launcher window, but do **not** close the minimized PowerShell test process if you want it to finish.
+
+The `Background` mode runs module/build/core tests first, aborts early on a genuine failure, and then checks the registered minigames **one at a time** in 12 successive Chromium processes. It waits **two seconds between games and ten seconds between browser batches**, checking **at least 4 GB of free RAM** before a batch and before starting each game. If memory gets low, it reports an **incomplete** run and stops rather than overwhelming the computer. It refuses to start another background run when one is already active. Temporary Windows keep-awake is requested while the PowerShell process is working; Windows power plans are **not** modified.
+
+**Unattended laptop precautions:** keep the laptop **plugged in**, with its **lid open** and vents clear. Closing the lid, Windows updates, shutdown, or hibernation can still interrupt testing. A low CPU priority and 4 GB memory guard reduce risk; they cannot guarantee zero slowdown during a browser load. It is entirely okay if a resource-constrained laptop stops early. No GitHub Actions or paid minutes are used.
+
+Check `local-test-reports/LATEST-PROGRESS.txt` while the tests run and `local-test-reports/LATEST-SUMMARY.txt` when finished. Use the date-stamped `*-background` folder for per-test logs and screenshots. An interrupted run may only have progress/logs; `LATEST-SUMMARY.txt` may still reflect an earlier run. You do **not** need to watch the test windows or manually play minigames.
