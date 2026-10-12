@@ -1,11 +1,11 @@
 // Launches every registered mini-game, fuzzes input for a few seconds, reports JS errors per game.
 // Usage: node tests/games.mjs [seconds-per-game] [concurrency] [id-filter]
-import {chromium, root} from './lib.mjs';
+import {chromium, root, launchBrowser} from './lib.mjs';
 import path from 'node:path';
+import {pathToFileURL} from 'node:url';
 const secs = +process.argv[2] || 4, conc = +process.argv[3] || 4, filter = process.argv[4];
-const file = 'file://' + path.resolve(root, process.env.SHAMB_FILE || 'dist/ShambConkins.html');
-const exe = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
-const browser = await chromium.launch({executablePath: exe});
+const file = pathToFileURL(path.resolve(root, process.env.SHAMB_FILE || 'dist/ShambConkins.html')).href;
+const browser = await launchBrowser();
 const probe = await browser.newPage(); await probe.goto(file);
 let ids = await probe.evaluate(() => window.ShambConkins.gameRegistry.map(g => g.id)); await probe.close();
 if (filter) ids = ids.filter(i => new RegExp(filter).test(i));
