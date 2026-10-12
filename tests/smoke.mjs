@@ -13,7 +13,7 @@ try {
  page.on('console', m => {
   if (m.type() !== 'error') return;
   const msg=m.text();
-  const offlineWiki=/Access to fetch at 'https:\\/\\/(?:en\\.wikipedia\\.org|commons\\.wikimedia\\.org)\\/w\\/api\\.php[^']*' from origin 'null' has been blocked by CORS policy/.test(msg);
+  page.on('console', m => { const msg=m.text();const offlineWiki=/Access to fetch at 'https:\/\/(?:en\.wikipedia\.org|commons\.wikimedia\.org)\/w\/api\.php[^']*' from origin 'null' has been blocked by CORS policy/.test(msg);
   if (!offlineWiki && !/ERR_TUNNEL|ERR_INTERNET|ERR_NAME|Failed to load resource|attribute viewBox: A negative/.test(msg)) errors.push('console: ' + msg);
  });
  await page.goto(file);
