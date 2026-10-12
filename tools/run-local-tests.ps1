@@ -3,7 +3,7 @@
 # Creates only ignored node_modules/, dist/, local-test-reports/.
 [CmdletBinding()]
 param(
-    [ValidateSet('Full', 'Quick')][string]$Mode = 'Full',
+    [ValidateSet('Full', 'Quick', 'Background')][string]$Mode = 'Full',
     [switch]$NoSetup
 )
 $ErrorActionPreference = 'Stop'
@@ -28,6 +28,23 @@ Write-Host ("Mode: {0}" -f $Mode)
 Write-Host ("Project: {0}" -f $Root)
 Write-Host ("Reports: {0}" -f $ReportDir)
 Write-Host 'Nothing is sent to GitHub Actions. First run may set up portable Node and Chromium locally.'
+if ($Mode -eq 'Background') {
+    Write-Host 'LOW-IMPACT: tests run sequentially, with pauses and memory safeguards.' -ForegroundColor Yellow
+    $env:SHAMB_MIN_FREE_MEMORY_GB = '4'
+    $env:SHAMB_GAME_COOLDOWN_MS = '2000'
+    try {
+        # Ask Windows not to sleep during this process, without editing power plans.
+        # Closing the lid or shutting down can still interrupt the run.
+        Add-Type -Namespace ShambConkins -Name PowerRequest -MemberDefinition @'
+[System.Runtime.InteropServices.DllImport("kernel32.dll")]
+public static extern uint SetThreadExecutionState(uint esFlags);
+'@ -ErrorAction Stop
+        [void][ShambConkins.PowerRequest]::SetThreadExecutionState([uint32]0x80000001)
+        Write-Host 'Temporary keep-awake request active (screen may turn off normally).'
+    } catch {
+        Write-Host 'Could not request temporary keep-awake. Leave laptop plugged in and awake.' -ForegroundColor Yellow
+    }
+}
 Write-Host ''
 
 function Run-Step {
@@ -100,6 +117,9 @@ function Finish {
     Write-Host ''
     Write-Host ("Finished: {0} passed, {1} failed." -f $script:Passes.Count, $script:Failures.Count)
     Write-Host ("Report: {0}" -f (Join-Path $ReportDir 'SUMMARY.txt'))
+    if ($Mode -eq 'Background') {
+        try { [void][ShambConkins.PowerRequest]::SetThreadExecutionState([uint32]0x80000000) } catch {}
+    }
     if ($script:Failures.Count -gt 0) { Write-Host 'Open SUMMARY.txt or individual .log files to find the failing test.' -ForegroundColor Yellow; exit 1 }
     Write-Host 'All selected checks passed.' -ForegroundColor Green
     exit 0
@@ -178,7 +198,7 @@ foreach ($test in $unitTests) {
 foreach ($test in @('tests/player-names.mjs', 'tests/pkmn-haptics.mjs', 'tests/smoke.mjs')) {
     [void](Run-Step ([IO.Path]::GetFileNameWithoutExtension($test)) $nodeExe @($test))
 }
-if ($Mode -eq 'Full') {
+if ($Mode -eq 'Full' -or $Mode -eq 'Background') {
     [void](Run-Step 'Board-route-browser-flow' $nodeExe @('tests/route.mjs'))
     # The old single 139-game run opened 3 huge Chromium contexts in parallel
     # and held one browser process for the entire catalog. On smaller Windows
@@ -194,13 +214,24 @@ if ($Mode -eq 'Full') {
         } catch {
             Write-Host "Free RAM check unavailable; using one game at a time." -ForegroundColor Yellow
         }
-        if ($null -ne $freeGB -and $freeGB -lt 3.0) {
-            [void]$script:Failures.Add(("Low memory: only {0} GB free; stopped before browser fuzz shard {1}/12 to protect the laptop." -f $freeGB, ($shard+1)))
+        $minimumGB = if ($Mode -eq 'Background') { 4.0 } else { 3.0 }
+        if ($null -ne $freeGB -and $freeGB -lt $minimumGB) {
+            [void]$script:Failures.Add(("Low memory: only {0} GB free; stopped before browser fuzz shard {1}/12 (minimum {2} GB)." -f $freeGB, ($shard+1), $minimumGB))
             Write-Host ("Stopped safely: {0} GB free. Close memory-heavy apps before a future full run." -f $freeGB) -ForegroundColor Yellow
             Finish
         }
         Write-Host ("Browser game batch {0}/{1}, concurrency=1, 1 second/game, free RAM={2} GB" -f ($shard+1), $fuzzShards, $freeGB)
-        [void](Run-Step ("Minigames-{0:D2}-of-{1:D2}" -f ($shard+1),$fuzzShards) $nodeExe @('tests/games.mjs','1','1','.*',("$shard"),("$fuzzShards")))
+        $ok = Run-Step ("Minigames-{0:D2}-of-{1:D2}" -f ($shard+1),$fuzzShards) $nodeExe @('tests/games.mjs','1','1','.*',("$shard"),("$fuzzShards"))
+        if ($Mode -eq 'Background') {
+            if (-not $ok) {
+                Write-Host 'Unattended run stopped after a failing browser batch to protect the laptop.' -ForegroundColor Yellow
+                Finish
+            }
+            if ($shard -lt ($fuzzShards - 1)) {
+                Write-Host 'Cooling down for 10 seconds before next browser batch.'
+                Start-Sleep -Seconds 10
+            }
+        }
     }
     $focused = @(Get-ChildItem -LiteralPath (Join-Path $Root 'tests') -Filter 'broforce-*.mjs' -File -ErrorAction SilentlyContinue | Sort-Object Name)
     if ($focused.Count -gt 0) {
