@@ -21,6 +21,14 @@ $script:Passes = New-Object System.Collections.Generic.List[string]
 $script:FailureDetails = New-Object System.Collections.Generic.List[string]
 $script:StepNumber = 0
 $BrowserReady = $false
+$script:BackgroundMutex = $null
+if ($Mode -eq 'Background') {
+    $script:BackgroundMutex = New-Object System.Threading.Mutex($false, 'Local\ShambConkinsLocalBackgroundTests')
+    if (-not $script:BackgroundMutex.WaitOne(0)) {
+        Write-Host 'Background testing is already running. Not starting another copy.' -ForegroundColor Yellow
+        exit 2
+    }
+}
 
 Write-Host ''
 Write-Host '==== ShambConkins LOCAL test runner ====' -ForegroundColor Cyan
@@ -39,7 +47,7 @@ if ($Mode -eq 'Background') {
 [System.Runtime.InteropServices.DllImport("kernel32.dll")]
 public static extern uint SetThreadExecutionState(uint esFlags);
 '@ -ErrorAction Stop
-        [void][ShambConkins.PowerRequest]::SetThreadExecutionState([uint32]0x80000001)
+        [void][ShambConkins.PowerRequest]::SetThreadExecutionState([uint32]2147483649)
         Write-Host 'Temporary keep-awake request active (screen may turn off normally).'
     } catch {
         Write-Host 'Could not request temporary keep-awake. Leave laptop plugged in and awake.' -ForegroundColor Yellow
@@ -118,7 +126,11 @@ function Finish {
     Write-Host ("Finished: {0} passed, {1} failed." -f $script:Passes.Count, $script:Failures.Count)
     Write-Host ("Report: {0}" -f (Join-Path $ReportDir 'SUMMARY.txt'))
     if ($Mode -eq 'Background') {
-        try { [void][ShambConkins.PowerRequest]::SetThreadExecutionState([uint32]0x80000000) } catch {}
+        try { [void][ShambConkins.PowerRequest]::SetThreadExecutionState([uint32]2147483648) } catch {}
+        if ($null -ne $script:BackgroundMutex) {
+            try { $script:BackgroundMutex.ReleaseMutex() } catch {}
+            $script:BackgroundMutex.Dispose()
+        }
     }
     if ($script:Failures.Count -gt 0) { Write-Host 'Open SUMMARY.txt or individual .log files to find the failing test.' -ForegroundColor Yellow; exit 1 }
     Write-Host 'All selected checks passed.' -ForegroundColor Green
@@ -198,8 +210,16 @@ foreach ($test in $unitTests) {
 foreach ($test in @('tests/player-names.mjs', 'tests/pkmn-haptics.mjs', 'tests/smoke.mjs')) {
     [void](Run-Step ([IO.Path]::GetFileNameWithoutExtension($test)) $nodeExe @($test))
 }
+if ($Mode -eq 'Background' -and $script:Failures.Count -gt 0) {
+    Write-Host 'Early test failures: skipping expensive browser fuzz; see report.' -ForegroundColor Yellow
+    Finish
+}
 if ($Mode -eq 'Full' -or $Mode -eq 'Background') {
     [void](Run-Step 'Board-route-browser-flow' $nodeExe @('tests/route.mjs'))
+    if ($Mode -eq 'Background' -and $script:Failures.Count -gt 0) {
+        Write-Host 'Route test failed; skipping all-game fuzz.' -ForegroundColor Yellow
+        Finish
+    }
     # The old single 139-game run opened 3 huge Chromium contexts in parallel
     # and held one browser process for the entire catalog. On smaller Windows
     # laptops this can cause swap thrashing and prevent even Task Manager opening.
