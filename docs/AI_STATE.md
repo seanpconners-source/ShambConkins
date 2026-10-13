@@ -51,8 +51,33 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   drag steers (floating origin, `RAD`), full push latches a drift, release = mini-turbo, tap = item, swipe up/down = throw
   ahead/behind. Race has 6 CPU racers (`pickCPUs`: random characters from the players' rosters (shared + both unlocks), topped up from
   the whole character list; web photos load with CORS, emoji fallback; rubber-banded `topMul`, simple item use); players start on the back row; ranks 1st-8th; the better-placed player wins.
-  Battle stays 1v1. No WebGL → `kartClassic.js` (old Mode 7). Tests: `tests/kart-track.mjs` (Node, in test:core),
-  `tests/kart-controls.mjs` (pointer events), `tests/kart.mjs` (autopilot race/battle + screenshots). Real-phone feel untested.
+  Battle stays 1v1. `kart-time-trial` (kartMode 'time') and no-WebGL browsers run `kartMode7.js` (below). Tests: `tests/kart-track.mjs`
+  (Node, in test:core), `tests/kart-controls.mjs` (pointer events), `tests/kart.mjs` (autopilot race/battle + screenshots). Real-phone feel untested.
+- **Photo Hunt (Megatouch Aurora 2007 cabinet replica, Oct 13 2026):** `src/engines/photohunt.js` (same id `megatouch-photohunt`).
+  800x600 cabinet screen full-bleed (`ph-shell`); `layout(W,H)` stretches it to the screen: 4:3 = exact cabinet, wider = 'cab' widened,
+  ≥1200 logical wide ('wide', landscape phones) = one header row + ROUND/hint glasses in side columns, portrait ('tall') stacks the photos.
+  Corner full-screen toggle `.ph-fs` (like the GB `.gb-fs`).
+  Rules in `RULES` (reverse-engineered from owner's cabinet photos, bonus rounds unknown/not built): 48-pill bar, 48 s round
+  −1.5 s/round (min 30), find = clock (1000 −25/s, resets per find), miss −3 s, cleared round pays 320/pill left, 3 hints per game,
+  game ends when the bar empties. P1 plays a full game, then P2 on the other half of the photo library; higher score wins.
+  Hi-score bar: `profile.photoHuntHigh` (house record WILLYZ CREW 369,127). Pairs: `assets/photohunt/<id>.a|b.webp + <id>.json`
+  (embedded by build.mjs as `photohunt:<id>:a|b`; `src/data/photoHuntPairs.js` generated). `tools/photohunt.py` makes
+  pairs (make: one photo + hand-picked spots remove/color/flip/grow/rotate/add; import: finished A/B pair, diff-detected;
+  inbox; preview). Pairs: `sean-road-trip` + owner's 5 (dog-lab-crew, dog-lab-solo, amber-alien, space-desk, evil-lab; Gemini sparkle watermarks painted out,
+  raw uploads in `assets/originals/photohunt/`). Photos repeat (mirror flipped) instead of the drawn scenes, which only fill in with no photos. Owner is supplying
+  photos (pin-up/erotic theme); hand-pick spots and check every preview. Test: `tests/photohunt.mjs`. Real-phone feel untested.
+- **Mario Kart Mode 7 (Oct 13 2026, now `engines/kartMode7.js`, fn `kartMode7`):** runs `kart-time-trial`, and race/battle only without WebGL
+  (`kart.js` routes; tests force it with `globalThis.SHAMB_KART_MODE7=true`). Originally ids `rainbow-road-kart` (race), `kart-time-trial`, `rainbow-balloon-battle`.
+  `COURSES` (rainbow/bowser/beach/jungle/meadow: hand-laid Catmull-Rom loops ×`SCALE`, edge type in `EDGES` = fall/wall/offroad
+  distances, hazards thwomp/crab/barrel/cow, scenery). `courseTexture` draws the course once (TS px/unit) and Mode 7 rows sample a
+  rotated buffer (`ZK` zoom; never name anything `K` = the kart list). Karts: `kartModel` boxes/cylinders pre-rendered at 24 yaws
+  (`kartFrames`, head anchor per frame). Race = side-by-side split, humans start last of 6 (4 CPUs via `cpuRoster`, Mario faces first,
+  rubber-banding). Drift: hold |steer|>.55 for .26 s → hop; `charge` tiers .85/1.8/2.9 s → mini-turbo on release. Time trials: turns,
+  3 mushrooms, P2 vs P1 ghost. Course select screen (auto-picks after 30 s). Test: `tests/kart-mode7.mjs` (debug `pick`, `auto[i]`, `finishLap`).
+- **Sonic (Oct 13 2026):** P2 is Tails (`drawRunner` palette + `tail()`); badniks redrawn. `sonic-ring-rush` id now runs `sonicMode:'boss'`
+  (Green Hill Act 3): `buildLevel` ends in `L.arena`; per-world `w.boss` (Egg Mobile + wrecking ball, 8 hits, `stepBoss`/`bossTouch`,
+  camera lock, capsule). Pilot = locked character from `gameRecruitPool` (prefers real art, head via broforce `headCanvas`); beating it
+  pushes to `s.broforceRecruits` → `settleGame` recruits it (`cageGame()` in gameLauncher skips the random winner recruit). Test: `tests/sonic.mjs`.
 - **Portraits:** owner uploads PNG/WebP to `assets/portraits/` on main; TESTver keeps 480px q88 WebP with originals in
   `assets/originals/portraits/` (`tools/run-claude-optimizer-safe.py` for PNG; oversized WebP uploads are shrunk the same way by hand).
   `artemis.think` has two different pictures (.png and .webp); the .webp is what the game shows.
@@ -101,8 +126,8 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   (`warpGameId`, own roulette candidates; off-theme ids incl. challenge items/tasks are swapped, boss fights allowed),
   `resolveLanding` uses `warpCard`/`warpItem`/`warpFortune`; pair turns/intros, the Home dog pack and `evolveBoard`
   are skipped on warp boards. Warp games live in `src/packs/warpPack.js` (`warpOnly`, `randomEligible:false`, in the
-  arcade): `engines/sonic.js` (Green Hill, Mega Drive physics, modes rings/race), `kart.js` (Mode 7
-  Rainbow Road race + balloon battle), `smb3.js` (N-Spade, Spade Panel), `candyLand.js`, `chutes.js` (Ladder Rush,
+  arcade): `engines/sonic.js` (Green Hill, Mega Drive physics, modes boss/race), `kart.js` (3D Rainbow
+  Road Grand Prix + balloon battle; Mode 7 time trials in `kartMode7.js`), `smb3.js` (N-Spade, Spade Panel), `candyLand.js`, `chutes.js` (Ladder Rush,
   Spinner Showdown on the real 1943 layout), `monopoly.js` (Speed Die, sealed-bid auction), `clue.js` (Whodunit with
   pass-the-phone notebooks, Lineup), `hyrule.js` (Rupee Rush, Sword Duel). Items: `data/warpItems.js` (`wz-*`, built
   with `packItems` from itemPackV43). Trivia: `data/warpTrivia.js` (topics smb3/candyland/chutes/monopoly/clue +

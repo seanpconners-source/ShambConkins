@@ -43,6 +43,12 @@ for (const [dir, prefix] of [['items', 'photo:item:'], ['locations', 'photo:loca
     if (m) userPortraits[prefix + m[1]] = `data:${MIME[m[2].toLowerCase().replace('jpeg', 'jpg')]};base64,` + fs.readFileSync(path.join(d, f)).toString('base64');
   }
 }
+// Photo Hunt pairs: assets/photohunt/<id>.a.webp + <id>.b.webp -> photohunt:<id>:a|b (regions: src/data/photoHuntPairs.js, tools/photohunt.py).
+const huntDir = path.join(root, 'assets/photohunt');
+if (fs.existsSync(huntDir)) for (const f of fs.readdirSync(huntDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(a|b)\.(webp|png|jpe?g)$/i);
+  if (m) userPortraits[`photohunt:${m[1]}:${m[2].toLowerCase()}`] = `data:${MIME[m[3].toLowerCase().replace('jpeg', 'jpg')]};base64,` + fs.readFileSync(path.join(huntDir, f)).toString('base64');
+}
 const js2 = js.replace('/*@@USER_PORTRAITS@@*/{}', () => JSON.stringify(userPortraits));
 const html = read('src/index.template.html')
   .replace('<!--@@STYLE@@-->', () => '<style>' + inlineAssets(read('src/styles.css')+'\n'+read('src/theme.css')) + '</style>')

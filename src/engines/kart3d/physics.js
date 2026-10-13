@@ -10,9 +10,9 @@ const wrapA=a=>{while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;retur
 
 function makeKart(c,i){
  const sp=c.spawn[i];
- const k={i,s:sp.s,d:sp.d,psi:sp.psi||0,v:0,h:0,air:false,P:[0,0,0],V:[0,0,0],F:[1,0,0],N:[0,1,0],R:[0,0,1],visYaw:0,
+ const k={i,s:T.wrapS(c,sp.s),d:sp.d,psi:sp.psi||0,v:0,h:0,air:false,P:[0,0,0],V:[0,0,0],F:[1,0,0],N:[0,1,0],R:[0,0,1],visYaw:0,
   drift:0,driftT:0,spark:0,hop:0,boostT:0,boostMax:0,coins:0,spin:0,spinA:0,tumble:0,shrink:0,star:0,bullet:0,inv:0,squash:0,
-  glide:false,trick:0,trickOn:false,airT:0,falling:0,lakitu:0,safeS:sp.s,glue:0,lap:0,half:false,prog:0,steer:0,wall:0,ink:0,prevS:sp.s};
+  glide:false,trick:0,trickOn:false,airT:0,falling:0,lakitu:0,safeS:T.wrapS(c,sp.s),glue:0,lap:0,half:false,prog:0,steer:0,wall:0,ink:0,prevS:T.wrapS(c,sp.s)};
  pose(c,k);return k;
 }
 const F1={P:[0,0,0],T:[0,0,0],R:[0,0,0],U:[0,0,0]},F2={P:[0,0,0],T:[0,0,0],R:[0,0,0],U:[0,0,0]};

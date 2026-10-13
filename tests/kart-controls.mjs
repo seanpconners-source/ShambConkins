@@ -28,12 +28,13 @@ await page.mouse.up();
 const bo=await wait(async()=>{const k=(await K())[1];return k.drift===0&&k.boostT>0&&k;},3000);assert.ok(bo,'releasing fires a mini-turbo');
 console.log('drift ok: sparks',sp.spark,'boost',bo.boostT.toFixed(2));
 // 4) tap uses the item (P2), swipe down drops a banana behind
+await page.evaluate(()=>window.ShambConkins.store.session.debug.teleport(1,150,0));await page.waitForTimeout(300);
 await page.evaluate(()=>window.ShambConkins.store.session.debug.give(1,'mushroom'));
 await page.mouse.click(x0,y2);
 const used=await wait(async()=>{const k=(await K())[1];return !k.items&&k;},2000);assert.ok(used,'tap used the mushroom');
 await page.evaluate(()=>window.ShambConkins.store.session.debug.give(1,'banana'));
 await page.mouse.move(x0,y2);await page.mouse.down();await page.mouse.move(x0,y2+70,{steps:2});await page.mouse.up();
-const peel=await wait(()=>page.evaluate(()=>window.ShambConkins.store.session.debug.bananas.length>0),2000);assert.ok(peel,'swipe down dropped the banana');
+const peel=await wait(()=>page.evaluate(()=>{const u=window.ShambConkins.store.session.debug.lastUse[1];return u&&u.id==='banana'&&u.dir===-1;}),2000);assert.ok(peel,'swipe down dropped the banana behind');
 // 5) P1's half (top) does not steer P2
 const before=(await K())[1].steer;await page.mouse.move(x0,bb.y+bb.height*.25);await page.mouse.down();await page.mouse.move(x0-120,bb.y+bb.height*.25,{steps:4});
 const p1=await wait(async()=>{const k=await K();return k[0].steer<-.3&&k;},3000);assert.ok(p1,'top half steers P1');assert.ok(Math.abs(p1[1].steer)<.3,'P2 unaffected');await page.mouse.up();

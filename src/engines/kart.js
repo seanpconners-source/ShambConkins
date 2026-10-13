@@ -4,8 +4,8 @@
 // Real 3D course (kart3d/track.js): hills you catch air on, a jump and a glider over the void, an anti-gravity wall
 // ride, a loop-the-loop and an upside-down corkscrew. Items: banana (x3), green shell (x3), red/blue shell, mushroom
 // (x3), golden mushroom, star, lightning, bob-omb, blooper, coin, Bullet Bill, plus Tour's frenzy.
-// Modes: 'race' (3 laps) and 'battle' (Balloon Battle on a floating ring). Falls back to the Mode 7 engine
-// (kartClassic.js) when WebGL is unavailable.
+// Modes: 'race' (3 laps) and 'battle' (Balloon Battle on a floating ring). 'time' (Time Trials) and browsers without
+// WebGL use the five-course Mode 7 engine (kartMode7.js).
 const {clamp,seededRandom}=require("src/utils.js");
 const {arenaKeys,arenaTouch,snd,noise,jingle,PCOL,settle}=require("src/engines/arenaKit.js");
 const {audioContext}=require("src/audio.js");
@@ -40,8 +40,10 @@ function pickCPUs(n,exclude,rand,profile){
 
 async function kart(s){
  const mode=s.game.kartMode==='battle'?'battle':'race';
+ const classic=()=>require("src/engines/kartMode7.js").kartMode7(s);
+ // Time Trials (and tests that set SHAMB_KART_MODE7) run the five-course Mode 7 engine
+ if(s.game.kartMode==='time'||globalThis.SHAMB_KART_MODE7)return classic();
  const glc=document.createElement('canvas');let gl0=null;try{gl0=glc.getContext('webgl',GL_OPTS)||glc.getContext('experimental-webgl',GL_OPTS);}catch{}
- const classic=()=>require("src/engines/kartClassic.js").kartClassic(s);
  if(!gl0)return classic();
  const [cv,x]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();
  if(!await settle(s))return;
@@ -118,10 +120,11 @@ async function kart(s){
   else if(id==='coin'){k.coins=Math.min(10,k.coins+2);sfx.coin();}
   else if(id==='bullet'){k.bullet=4.5;k.inv=Math.max(k.inv,4.5);sfx.boost();msg(k,'BULLET BILL!','#fff',22,1.2);}
  }
+ const lastUse=[];
  function useItem(k,dir){
   if(phase!=='play'||k.out||k.lakitu>0||k.falling>0||k.finished)return;
   if(k.frenzy>0){if(k.frenzyCD<=0){fire(k,k.frenzyItem,dir);k.frenzyCD=.3;}return;}
-  const it=k.items[0];if(!it)return;
+  const it=k.items[0];if(!it)return;lastUse[k.i]={id:it.id,dir};
   if(it.id==='golden'){fire(k,'golden',dir);return;}
   fire(k,it.id,dir);it.n--;if(it.n<=0)k.items.shift();
  }
@@ -138,7 +141,7 @@ async function kart(s){
     if(q&&!f.data.flicked){const dy=f.y-q.y,dx=f.x-q.x,dtm=Math.max(.016,(now-q.t)/1000);if(Math.abs(dy)>34&&Math.abs(dy)>Math.abs(dx)*1.4&&Math.abs(dy)/dtm>650){f.data.flicked=true;useItem(K[f.owner],dy<0?1:-1);}}
     if(f.data.flicked&&f.samples.length&&now-f.samples[f.samples.length-1].t>200)f.data.flicked=false;}},
   onUp:(f,cancelled)=>{const pd=pads[f.owner];
-   if(f.data.role==='steer'){if(pd.f===f){pd.f=null;pd.latch=0;}if(!cancelled&&!f.data.flicked&&f.held<260&&f.moved<14)useItem(K[f.owner],0);}
+   if(f.data.role==='steer'){if(pd.f===f){pd.f=null;pd.latch=0;}if(!cancelled&&!f.data.flicked){const dy=f.y-f.sy,dx=f.x-f.sx;if(f.held<260&&f.moved<14)useItem(K[f.owner],0);else if(Math.abs(dy)>40&&Math.abs(dy)>Math.abs(dx)*1.4)useItem(K[f.owner],dy<0?1:-1);}}
    else if(!cancelled){const dy=f.y-f.sy;useItem(K[f.owner],f.moved<18?0:dy<-24?1:dy>24?-1:0);}
    if(!pd.f&&!kb.state[f.owner].u&&!kb.state[f.owner].d)pd.holdSince=-1;}});
  function readInput(i){
@@ -274,7 +277,7 @@ const shake=(k,a)=>{if(cams[k.i]&&!store.profile?.settings?.reducedMotion)cams[k
   give(i,id){K[i].items=[{id,n:COUNT[id]||1}];},use(i,dir=0){useItem(K[i],dir);},skip(){if(phase==='intro'){phase='count';}if(phase==='count'){lights=4;phase='play';}},
   teleport(i,s0,d=0){const k=K[i];k.s=T.wrapS(course,s0);k.d=d;k.air=false;k.falling=0;k.lakitu=0;k.rel=T.wrapS(course,k.s-course.startS);cams[i].snap=true;},
   finishLap(i){const k=K[i];k.lap=LAPS-1;k.half=true;this.teleport(i,course.startS-30);k.rel=T.wrapS(course,k.s-course.startS);},
-  get headOK(){return R.headOK.slice();},get particles(){return parts.length;}};
+  get headOK(){return R.headOK.slice();},get lastUse(){return lastUse;},get particles(){return parts.length;}};
  s.hint(mode==='race'?'RAINBOW ROAD: three laps in real 3D: hills, a jump and a glider over the void, an anti-gravity wall ride, a loop-the-loop and an upside-down corkscrew. Mario Kart Tour controls on your half of the screen (P1 top, P2 bottom): the kart drives itself; drag left/right to steer; push all the way to drift and hold it for blue, orange, then purple sparks; let go (or swing back) for a mini-turbo. Tap to use your item, swipe up to throw it ahead, swipe down to drop it behind. Keys: P1 A/D steer, S drift, W/Space item; P2 arrows, Down drift, Up/Enter item.':'BALLOON BATTLE: three balloons each on a floating rainbow ring. Hit your rival with shells, bananas and bob-ombs; a boosting bump steals a balloon; falling off costs one. Last kart with balloons, or the most when time runs out, wins. Mario Kart Tour controls on your half: drag to steer, push all the way to drift, tap for items, swipe up/down to throw ahead/behind.');
  refreshHeads(true);
  for(let i=2;i<K.length;i++){const id=K[i].cpu,img=new Image(),cv2=document.createElement('canvas');cv2.width=cv2.height=128;const g=cv2.getContext('2d');

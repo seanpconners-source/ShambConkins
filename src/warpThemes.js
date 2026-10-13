@@ -9,12 +9,12 @@ const {selectItemDrop}=require("src/itemDrops.js");
 const card=(title,body,e)=>({title,body,e});
 const WARP_THEMES={
  'rainbow-road':{source:'Mario Kart',
-  games:['rainbow-road-kart','rainbow-balloon-battle'],trivia:['trivia-mariokart'],
+  games:['rainbow-road-kart','kart-time-trial','rainbow-balloon-battle'],trivia:['trivia-mariokart'],
   items:['wz-triple-mushroom','wz-banana-peel','wz-red-shell','wz-lightning-bolt','wz-bullet-bill','wz-golden-mushroom','wz-item-box','rainbow-pass','nintendo-blue-shell','nintendo-super-star'],
   cards:[card('Item Box: Triple Mushroom','Boost, boost, boost. The guardrail-free road blurs past.',['move',3]),card('Blue Shell incoming','First place is a lonely place. The shell finds you anyway.',['points',-3]),
    card('Lakitu’s fishing rod','You drove off the edge. Lakitu fishes you back a few spaces behind.',['move',-2]),card('Perfect drift','Blue sparks, then orange. Mini-turbo!',['chaos']),
    card('Coin line','Ten coins on the racing line. Top speed up.',['points',3]),card('Thwomp on the track','A Thwomp flattens your kart and your lead.',['points',-2]),
-   card('Grand Prix qualifying','The starting lights drop. Race for pole position.',['mg','rainbow-road-kart']),card('Balloon Battle','Three balloons each. Pop or be popped.',['mg','rainbow-balloon-battle']),
+   card('Grand Prix qualifying','The starting lights drop. Race for pole position.',['mg','rainbow-road-kart']),card('Balloon Battle','Three balloons each. Pop or be popped.',['mg','rainbow-balloon-battle']),card('Time Trials','Three mushrooms, one ghost. Beat the clock.',['mg','kart-time-trial']),
    card('Item Box: Banana Peel','Leave a present on the racing line.',['item','wz-banana-peel']),card('Slipstream','You draft behind your rival and steal their momentum.',['steal',2])],
   bonus:[['Mushroom boost','A perfect rocket start.'],['Star power','Invincible and faster for a few glorious seconds.'],['Shortcut found','You jumped the gap nobody else saw.']],
   penalty:[['Spun out on a banana','Someone left a peel on the racing line.'],['Off the edge','No guardrails, as promised. Lakitu charges for the rescue.'],['Hit by a Red Shell','It homed in from three karts back.']]},
@@ -84,7 +84,7 @@ const WARP_THEMES={
   cards:[card('Speed Shoes','The music speeds up and so do you.',['chaos']),card('Spring!','A yellow spring launches you along the hill.',['move',3]),
    card('Motobug hit','Rings everywhere. You grab some back.',['points',-2]),card('Super Ring monitor','Ten rings at once.',['points',3]),
    card('Spikes','Right where the loop comes out. Classic.',['points',-3]),card('Lamppost','Checkpoint saved, star spins.',['points',2]),
-   card('Ring Rush','Sixty seconds. Most rings wins.',['mg','sonic-ring-rush']),card('Goal Dash','First to the signpost.',['mg','sonic-goal-dash']),
+   card('Boss Act','Egg Mobile ahead. Eight hits frees the pilot.',['mg','sonic-ring-rush']),card('Goal Dash','First to the signpost.',['mg','sonic-goal-dash']),
    card('Spin dash','Rev, rev, release.',['move',2]),card('Rings scattered','Your rival’s rings bounce over to you.',['steal',3])],
   bonus:[['Chaos Emerald','One of seven.'],['Fifty-ring bonus','Enough for a Special Stage.'],['Signpost spin','It shows your face.']],
   penalty:[['Ring loss','Hit by a Buzz Bomber.'],['Bottomless pit','The loop launched you straight into it.'],['Badnik ambush','A Crabmeat fired from the ledge.']]},

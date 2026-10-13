@@ -275,7 +275,7 @@
   "src/engines/broforce/cinematicArt.js",
   "src/engines/broforce/ambience.js",
   "src/engines/broforce.js",
-  "src/engines/kartClassic.js",
+  "src/engines/kartMode7.js",
   "src/engines/kart3d/track.js",
   "src/engines/kart3d/physics.js",
   "src/engines/kart3d/gl.js",
