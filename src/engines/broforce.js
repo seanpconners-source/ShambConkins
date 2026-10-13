@@ -157,9 +157,12 @@ async function broforce(s){
   const devilShort=devilName.split(' · ')[0];
   function objectiveFor(st){
    if(st.phase==='extraction')return 'Get to the chopper!';
-   if(st.bossActive&&!st.bossDefeated)return 'Defeat '+devilShort+'!';
+   // The mission clock is otherwise invisible: warn for the last 30 seconds.
+   const left=Math.ceil((st.timeLimit||0)-(st.elapsed||0));
+   const clock=st.timeLimit&&left<=30?Math.max(0,left)+'s left · ':'';
+   if(st.bossActive&&!st.bossDefeated)return clock+'Defeat '+devilShort+'!';
    const caged=(st.prisoners||[]).filter(p=>!p.rescued).length;
-   return caged?'Free prisoners · push right':'Push right · find the devil';
+   return clock+(caged?'Free prisoners · push right':'Push right · find the devil');
   }
   function portraitFor(id){
    if(typeof id!=='string'||portraits.size>=128&&!portraits.has(id))return null;

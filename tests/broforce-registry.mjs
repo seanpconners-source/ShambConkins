@@ -36,7 +36,7 @@ for(const g of pack.games){
  assert.equal(g.cooperative,true);
  assert.equal(g.randomEligible,undefined,'must inherit registry’s random-eligible default');
  assert.equal(g.warpOnly,undefined);
- assert.match(g.duration,/90.*180/);
+ assert.match(g.duration,/2 minutes/); // matches the mission's 120 s clock
  assert.ok(g.rules.length>40);
  assert.equal(g.reward,0);
 }

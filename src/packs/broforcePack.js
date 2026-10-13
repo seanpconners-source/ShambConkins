@@ -3,7 +3,7 @@
 const lazy=(file,name)=>s=>require(file)[name](s);
 const engines={broforce:lazy('src/engines/broforce.js','broforce')};
 const COMMON={engine:'broforce',family:'broforce',source:'Broforce',category:'coop',level:'body',
- cooperative:true,duration:'90–180 seconds (target; untested)',reward:0};
+ cooperative:true,duration:'up to 2 minutes',reward:0};
 const games=[
  {id:'broforce-jungle',title:'Broforce: Jungle',icon:'🌴',
   rules:'Two players fight together through the jungle. Move, jump and fire with your own controls; rescue prisoners to switch fighters, defeat the devil and board the extraction helicopter alive.'},
