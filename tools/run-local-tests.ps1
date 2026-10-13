@@ -40,6 +40,9 @@ if ($Mode -eq 'Background') {
     Write-Host 'LOW-IMPACT: tests run sequentially, with pauses and memory safeguards.' -ForegroundColor Yellow
     $env:SHAMB_MIN_FREE_MEMORY_GB = '4'
     $env:SHAMB_GAME_COOLDOWN_MS = '2000'
+    # Heavy, photo-inlined offline HTML may need >30s for DOMContentLoaded
+    # on a laptop with intentionally low CPU priority.
+    $env:SHAMB_NAV_TIMEOUT_MS = '90000'
     try {
         # Ask Windows not to sleep during this process, without editing power plans.
         # Closing the lid or shutting down can still interrupt the run.
