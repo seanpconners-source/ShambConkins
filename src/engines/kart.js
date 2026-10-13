@@ -363,13 +363,16 @@ async function kart(s){
    if(k.falling>0){return {eye:cm.E,target:k.P2,up:cm.N,fov:base};}
    const a1=cm.snap?1:1-Math.exp(-dt*(k.air?3:7)),a2=cm.snap?1:1-Math.exp(-dt*5);
    cm.F=T.norm(lerp3(cm.F,k.F,a1));cm.N=T.norm(lerp3(cm.N,k.N,a2));
-   // higher eye + a target raised to nearly eye height: the view looks almost level while the kart (seen steeply from above) sits low on screen
-   const tall=aspect<.95,mid=aspect<1.25,back=(tall?78:82)+(k.boostT>0?6:0),up=tall?58:mid?40:37;// smooth the offset from the kart, not the world position, so speed never drags the camera back (kart stays put on screen)
-   const want=[-cm.F[0]*back+cm.N[0]*up,-cm.F[1]*back+cm.N[1]*up,-cm.F[2]*back+cm.N[2]*up];
+   // higher eye + a target raised to nearly eye height: the view looks almost level while the kart (seen steeply from above) sits low on screen.
+   // Speed zoom: the whole rig (eye and aim point) dollies back as the kart speeds up and in again as it slows, so the speed is felt
+   // while the kart keeps its place low on the screen. cm.zoom eases toward the speed, so boosts pull the camera back smoothly.
+   const tall=aspect<.95,mid=aspect<1.25,back=tall?64:66,up=tall?48:mid?32:30,fw=tall?120:90,uw=tall?28:mid?21:18;
+   const zoomTo=Math.min(1.6,1+Math.max(0,k.v)/Ph.TOP*.32+(k.boostT>0?.1:0));cm.zoom=cm.snap||!cm.zoom?zoomTo:cm.zoom+(zoomTo-cm.zoom)*(1-Math.exp(-dt*(zoomTo>cm.zoom?5:2.5)));const z=cm.zoom;
+   const want=[(-cm.F[0]*back+cm.N[0]*up)*z,(-cm.F[1]*back+cm.N[1]*up)*z,(-cm.F[2]*back+cm.N[2]*up)*z];
    cm.O=cm.snap||!cm.O?want:lerp3(cm.O,want,1-Math.exp(-dt*14));cm.snap=false;cm.E=[k.P2[0]+cm.O[0],k.P2[1]+cm.O[1],k.P2[2]+cm.O[2]];
    let eye=cm.E;if(cm.shake>.05){const a=cm.shake;eye=[cm.E[0]+(rand()-.5)*a,cm.E[1]+(rand()-.5)*a,cm.E[2]+(rand()-.5)*a];cm.shake*=Math.pow(.02,dt);}
-   const fw=tall?120:90,uw=tall?34:mid?26:23;
-   return {eye,target:[k.P2[0]+cm.F[0]*fw+cm.N[0]*uw,k.P2[1]+cm.F[1]*fw+cm.N[1]*uw,k.P2[2]+cm.F[2]*fw+cm.N[2]*uw],up:cm.N,fov:base+cm.fov};
+   const fz=fw*z,uz=uw*z;
+   return {eye,target:[k.P2[0]+cm.F[0]*fz+cm.N[0]*uz,k.P2[1]+cm.F[1]*fz+cm.N[1]*uz,k.P2[2]+cm.F[2]*fz+cm.N[2]*uz],up:cm.N,fov:base+cm.fov};
   }
   // ---------------------------------------------------------------- heads (portrait textures)
   const headCv=H.map(()=>{const c2=document.createElement('canvas');c2.width=c2.height=128;return c2;}),headKey=H.map(()=>'');let headTimer=0;

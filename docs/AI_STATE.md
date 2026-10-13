@@ -59,8 +59,8 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   nose angle (grows with the arc and the thumb).
   `render.js` themes (`THEMES`: baked sky per theme, procedural road/kerbs/sand/stone, fences/walls, grass/water/lava ground
   plane, trees/cows/palms/pillars), karts with portrait billboards, ghost. `hud.js` (Tour HUD, two item slots, time mode),
-  `music.js` (original loop). Camera (`cameraFor`) smooths the eye's OFFSET from the kart (`cm.O`), not its world position, so speed no longer
-  drags it back; per-aspect eye height/target keep the kart in the lower third. Arcade play uses the New Game picks
+  `music.js` (original loop). Camera (`cameraFor`) smooths the eye OFFSET from the kart (`cm.O`) and dollies the whole rig back with speed (`cm.zoom`, up to 1.6x on boosts), so speed is felt but
+  the kart keeps its low spot on screen (per-aspect eye height/target). Arcade play uses the New Game picks
   (`store.setupNames` + `store.setupSelected`, gameLauncher). Controls = Mario Kart Tour per screen: drag steers (floating origin), full push latches a drift,
   release = mini-turbo, tap = item, swipe/drag up/down = throw. CPUs = random roster characters (`pickCPUs`). Needs WebGL (else a
   message and a tie); the Mode 7 engine is gone. Tests: `tests/kart-track.mjs` (Node, test:core), `tests/kart-controls.mjs`,
