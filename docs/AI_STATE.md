@@ -50,13 +50,18 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   (own renderer/GL context, music, engines; resolves results). Courses in `kart3d/track.js` `COURSES`: Rainbow Road, Moo Moo
   Meadows, Cheep Cheep Beach, Bowser's Castle (`theme`, `offroad` band → `roadHalf`; off-road = 55% top speed); 3D ribbon built
   from turtle pieces (turns, hills, ramps + gaps, glider, anti-gravity `glue`, loop, corkscrew; flex straights auto-close).
+  Non-rainbow courses are Rainbow-Road style too (loop/corkscrew + wall ride on glue, ramp gaps, a glider) with animated track
+  characters from `kart3d/hazards.js` (pure functions of race time: cows + Monty Moles, crabs + leaping Cheep Cheeps, Thwomps +
+  fire bars; course pieces carry `haz:[[f,kind,{d,ph}]]`, contacts in `hazardContacts`, meshes in `render.js`).
   `physics.js` track-space karts (Frenet), air/ramps/crests, rails, Lakitu, drift sparks (`DRIFT_LV`) → mini-turbo (`MT` .7/1.15/1.6 s),
   auto tricks. Drift: latch at 85% push, ends past 55% the other way or on release; only hard wall hits (>.75) cancel it.
-  MK8-style arc: `driftAge` ramps the turn rate from 28% to full over 0.5 s while the kart slides a little wide; `k.slip` = drawn
+  MK8-style arc: `driftAge` ramps the turn rate from 24% to full over 0.75 s while the kart slides a little wide; `k.slip` = drawn
   nose angle (grows with the arc and the thumb).
   `render.js` themes (`THEMES`: baked sky per theme, procedural road/kerbs/sand/stone, fences/walls, grass/water/lava ground
   plane, trees/cows/palms/pillars), karts with portrait billboards, ghost. `hud.js` (Tour HUD, two item slots, time mode),
-  `music.js` (original loop). Controls = Mario Kart Tour per screen: drag steers (floating origin), full push latches a drift,
+  `music.js` (original loop). Camera (`cameraFor`) smooths the eye's OFFSET from the kart (`cm.O`), not its world position, so speed no longer
+  drags it back; per-aspect eye height/target keep the kart in the lower third. Arcade play uses the New Game picks
+  (`store.setupNames` + `store.setupSelected`, gameLauncher). Controls = Mario Kart Tour per screen: drag steers (floating origin), full push latches a drift,
   release = mini-turbo, tap = item, swipe/drag up/down = throw. CPUs = random roster characters (`pickCPUs`). Needs WebGL (else a
   message and a tie); the Mode 7 engine is gone. Tests: `tests/kart-track.mjs` (Node, test:core), `tests/kart-controls.mjs`,
   `tests/kart.mjs` (all four games to the result screen). Real-phone feel untested.

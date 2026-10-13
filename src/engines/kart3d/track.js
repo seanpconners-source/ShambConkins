@@ -48,7 +48,7 @@ function buildCourse(def){
  const c={id:def.id,N,DS,L:N*DS,lens,closeErr:Math.hypot(...err),
   px:new Float32Array(N),py:new Float32Array(N),pz:new Float32Array(N),T:new Float32Array(N*3),R:new Float32Array(N*3),U:new Float32Array(N*3),
   half:new Float32Array(N),roadHalf:new Float32Array(N),kg:new Float32Array(N),kn:new Float32Array(N),glue:new Uint8Array(N),rail:new Uint8Array(N),gap:new Uint8Array(N),surf:new Uint8Array(N),
-  ramps:[],boxes:[],coins:[],pads:[],rings:[],decor:def.decor||{},startS:def.startS??60,arena:!!def.arena,theme:def.theme||'rainbow',name:def.name||def.id};
+  ramps:[],boxes:[],coins:[],pads:[],rings:[],hazards:[],decor:def.decor||{},startS:def.startS??60,arena:!!def.arena,theme:def.theme||'rainbow',name:def.name||def.id};
  for(let i=0;i<N;i++){const f=i/N,P=S[i].P;c.px[i]=P[0]-err[0]*f;c.py[i]=P[1]-err[1]*f;c.pz[i]=P[2]-err[2]*f;c.roadHalf[i]=S[i].half;}
  // flags: a sample belongs to the piece that produced it (sample 0 to the last piece)
  for(let i=0;i<N;i++){const pc=pieces[S[i].piece<0?pieces.length-1:S[i].piece];c.glue[i]=pc.glue?1:0;c.rail[i]=pc.rail??def.rail??3;c.gap[i]=pc.gap?1:0;c.surf[i]=pc.surf==='ramp'?1:pc.surf==='glide'?2:0;if(pc.gap)c.rail[i]=0;
@@ -67,7 +67,8 @@ function buildCourse(def){
   if(pc.boxes)for(const [f,offs] of pc.boxes)for(const o of offs)c.boxes.push({s:at(f),d:o,t:0});
   if(pc.coins)for(const [f0,f1,o] of pc.coins){const n=Math.max(2,Math.round((f1-f0)*(s1-s0)/34));for(let k=0;k<n;k++)c.coins.push({s:at(f0+(f1-f0)*k/(n-1)),d:o,t:0});}
   if(pc.pads)for(const [f,o] of pc.pads)c.pads.push({s:at(f),d:o,len:44,w:30});
-  if(pc.ring!=null)c.rings.push(at(pc.ring));}
+  if(pc.ring!=null)c.rings.push(at(pc.ring));
+  if(pc.haz)for(const [f,kind,o] of pc.haz)c.hazards.push({kind,s:at(f),d:0,ph:0,...o});}
  let minY=Infinity,maxY=-Infinity;for(let i=0;i<N;i++){minY=Math.min(minY,c.py[i]);maxY=Math.max(maxY,c.py[i]);}c.minY=minY;c.maxY=maxY;
  // starting grid, two by two behind the line: CPU racers in front, the two players on the back row (like Mario Kart)
  const slot=(r,side)=>({s:c.startS-26-r*44-(side>0?16:0),d:side*c.roadHalf[0]*.42,psi:0});
@@ -146,63 +147,81 @@ function rainbowRoad(){
   {len:100,roll:0}
  ]});
 }
-// Moo Moo Meadows: rolling farmland, wide asphalt with red-white kerbs, grass you can cut across (slow), fences.
+// Moo Moo Meadows: rolling farmland, wide asphalt with red-white kerbs and grass you can cut across (slow). Moo Moos
+// wander over the road, Monty Moles pop out of the field, a barn wall ride, a glider jump over the river canyon and a
+// hay-bale loop-the-loop.
 function mooMooMeadows(){
  const B=[-40,-14,14,40];
  return buildCourse({id:'moo-moo-meadows',name:'Moo Moo Meadows',theme:'meadow',half:66,offroad:52,rail:3,startS:60,pieces:[
   {len:200,flex:'A',coins:[[.35,.6,0]],boxes:[[.85,B]]},
-  {len:160,pitch:5},{len:180,pitch:-5,coins:[[.1,.9,12]]},{len:160,pitch:0},
+  {len:160,pitch:7},{len:180,pitch:-7,coins:[[.1,.9,12]]},{len:160,pitch:0,haz:[[.55,'cow',{ph:0}]]},
+  // cow pasture
+  {len:320,pitch:5,haz:[[.3,'cow',{ph:1.5}],[.75,'cow',{ph:4}]]},{len:120,pitch:0,pads:[[.5,-24],[.5,24]]},
   {turn:90,r:380,roll:6,coins:[[.2,.8,-20]]},{len:60,roll:0},
-  {len:200,flex:'B',pads:[[.7,0]]},
+  {len:240,flex:'B',pads:[[.8,0]],haz:[[.25,'mole',{d:-28,ph:0}],[.5,'mole',{d:24,ph:1.3}],[.72,'mole',{d:-6,ph:2.4}]]},
+  // hill jump
   {len:90,pitch:10,surf:'ramp',lip:{kick:45}},{len:150,pitch:0,boxes:[[.7,B]]},
-  {turn:90,r:320,roll:8,coins:[[.3,.7,0]]},{len:60,roll:0},
-  {len:300,pitch:4},{len:200,pitch:0,pads:[[.4,-24],[.4,24]]},
+  // anti-gravity ride round the barn wall
+  {len:60,glue:true,pads:[[.4,0]]},{turn:30,r:260,roll:70,glue:true,coins:[[.3,1,0]]},{turn:30,r:260,glue:true,coins:[[0,1,0]]},{turn:30,r:260,roll:0,glue:true},{len:60,glue:true},
+  // glider ramp over the river canyon
+  {len:120,pitch:15,surf:'glide',rail:0,lip:{kick:40,glide:true}},{len:520,pitch:-9,gap:true},{len:180,pitch:0,boxes:[[.6,B]]},
   {turn:-60,r:280,roll:-8},{turn:60,r:280,roll:8},{len:40,roll:0},
-  {len:150,boxes:[[.5,B]]},
-  {turn:90,r:340,roll:6},{len:60,roll:0},
-  {turn:-45,r:260,roll:-8},{turn:45,r:260,roll:8,coins:[[.3,.7,-14]]},{len:40,roll:0},{len:200,coins:[[.2,.8,0]]},
+  // hay-bale loop-the-loop
+  {len:110,glue:true,pads:[[.5,0]]},{loop:true,r:140,shift:150,glue:true,coins:[[.15,.85,0]]},{len:100,glue:true},
+  {turn:90,r:340,roll:6},{len:60,roll:0,haz:[[.5,'mole',{d:20,ph:.6}]]},
+  {turn:-45,r:260,roll:-8},{turn:45,r:260,roll:8,coins:[[.3,.7,-14]]},{len:40,roll:0},{len:220,pitch:4,coins:[[.2,.8,0]],haz:[[.5,'cow',{ph:3}]]},{len:120,pitch:0},
   {turn:'rest',r:340,roll:6},{len:100,roll:0}
  ]});
 }
-// Cheep Cheep Beach: sandy road over the sea, soft sand either side, a boardwalk and a jump across the water.
+// Cheep Cheep Beach: sandy road over the sea with soft sand either side. Sidestepper crabs scuttle across, Cheep Cheeps
+// leap over the shore road, a jump across the water, a cliff glider, a wall ride round the lighthouse rock and an
+// anti-gravity corkscrew through the reef.
 function cheepCheepBeach(){
  const B=[-38,-13,13,38];
  return buildCourse({id:'cheep-cheep-beach',name:'Cheep Cheep Beach',theme:'beach',half:62,offroad:44,rail:0,startS:60,pieces:[
   {len:240,flex:'A',boxes:[[.85,B]]},
-  {len:120,pitch:6},{len:140,pitch:-6,coins:[[.1,.9,0]]},{len:120,pitch:0},
+  {len:120,pitch:6},{len:140,pitch:-6,coins:[[.1,.9,0]]},{len:160,pitch:0,haz:[[.35,'crab',{ph:0}],[.75,'crab',{ph:2.2}]]},
+  {len:90,pitch:10,surf:'ramp',lip:{kick:42}},{len:170,pitch:0,pads:[[.6,0]],coins:[[.2,.8,-16]]},
   {turn:90,r:340,roll:6,coins:[[.2,.8,20]],rail:3},{len:40,roll:0},
-  {len:180,flex:'B',rail:3,off:0,pads:[[.8,0]]},
-  {len:100,pitch:12,surf:'ramp',lip:{kick:40}},
-  {len:220,pitch:-4,gap:true},
-  {len:100,pitch:0},
-  {len:220,boxes:[[.5,B]]},
-  {turn:90,r:300,roll:6,rail:3},{len:40,roll:0},
-  {turn:-60,r:260,roll:-8,rail:3},{turn:60,r:260,roll:8,coins:[[.3,.7,-18]],rail:3},{len:40,roll:0},
-  {len:260,pitch:5},{len:240,pitch:0,boxes:[[.6,B]]},
+  {len:240,flex:'B',rail:3,off:0,pads:[[.85,0]],haz:[[.3,'cheep',{ph:0}],[.6,'cheep',{ph:1.7}]]},
+  {len:100,pitch:12,surf:'ramp',lip:{kick:40}},{len:220,pitch:-4,gap:true},{len:100,pitch:0},
+  {len:180,boxes:[[.5,B]],haz:[[.85,'cheep',{ph:.8}]]},
   {turn:90,r:300,roll:6,rail:3},{len:60,roll:0},
-  {turn:-45,r:260,roll:-8,rail:3},{turn:45,r:260,roll:8,rail:3},{len:40,roll:0},
-  {len:760,coins:[[.3,.7,0]],boxes:[[.85,[-38,-13,13,38]]]},
+  // up the cliff and glide down to the bay
+  {len:140,pitch:8},{len:120,pitch:16,surf:'glide',rail:0,lip:{kick:40,glide:true}},{len:420,pitch:-11,gap:true},{len:170,pitch:0,boxes:[[.6,B]]},
+  {turn:-60,r:260,roll:-8,rail:3},{turn:60,r:260,roll:8,coins:[[.3,.7,-18]],rail:3},{len:40,roll:0},
+  // wall ride round the lighthouse rock
+  {len:60,glue:true},{turn:30,r:240,roll:70,glue:true,coins:[[.3,1,0]]},{turn:30,r:240,glue:true,coins:[[0,1,0]]},{turn:30,r:240,roll:0,glue:true},{len:60,glue:true,pads:[[.5,0]]},
+  // anti-gravity corkscrew through the reef
+  {len:70,glue:true,pads:[[.5,0]]},{len:760,roll:360,glue:true,coins:[[.15,.85,-24]],ring:.5},{len:70,glue:true},
+  {len:300,coins:[[.3,.7,0]],haz:[[.4,'crab',{ph:1}],[.8,'crab',{ph:3.1}]]},
   {turn:'rest',r:320,roll:6,rail:3},{len:120,roll:0}
  ]});
 }
-// Bowser's Castle: stone road and walls, hairpins, an open bridge and a jump over the lava, an anti-gravity wall ride.
+// Bowser's Castle: stone road and walls. Thwomps slam down in the halls, fire bars spin across the road, an open
+// bridge jump and a glider over the lava, an anti-gravity wall ride, a loop over the lava and a corkscrew.
 function bowsersCastle(){
  const B=[-36,-12,12,36];
  return buildCourse({id:'bowsers-castle',name:"Bowser's Castle",theme:'castle',half:60,rail:3,startS:60,pieces:[
   {len:300,flex:'A',boxes:[[.85,B]]},
-  {len:200,pads:[[.5,0]]},
+  {len:240,pads:[[.15,0]],haz:[[.45,'thwomp',{d:-24,ph:0}],[.75,'thwomp',{d:24,ph:1.9}]]},
   {turn:90,r:200,roll:10},{len:40,roll:0},
-  {len:160,flex:'B',boxes:[[.5,B]]},
+  {len:200,flex:'B',boxes:[[.3,B]],haz:[[.75,'firebar',{d:0,ph:0}]]},
   {len:160,rail:0,coins:[[.1,.9,0]]},
   {len:100,pitch:12,surf:'ramp',rail:0,lip:{kick:45}},{len:200,pitch:-5,gap:true},{len:100,pitch:0,rail:0},
+  // corkscrew
+  {len:70,glue:true,pads:[[.5,0]]},{len:700,roll:-360,glue:true,coins:[[.15,.85,24]]},{len:70,glue:true},
   {len:60,glue:true},{turn:30,r:240,roll:70,glue:true},{turn:30,r:240,glue:true,coins:[[0,1,0]]},{turn:30,r:240,roll:0,glue:true},{len:60,glue:true,pads:[[.5,0]]},
-  {len:260,pitch:-8},{len:60,pitch:0},
+  // loop-the-loop over the lava
+  {len:100,glue:true},{loop:true,r:140,shift:-150,glue:true,coins:[[.15,.85,0]]},{len:100,glue:true},
+  {len:200,pitch:-6},{len:60,pitch:0},
   {turn:-60,r:200,roll:-10},{turn:60,r:200,roll:10},{len:40,roll:0},
-  {len:120,boxes:[[.5,B]]},
+  {len:260,boxes:[[.15,B]],haz:[[.4,'thwomp',{d:-22,ph:.4}],[.62,'thwomp',{d:22,ph:1.6}],[.85,'thwomp',{d:0,ph:2.8}]]},
   {turn:90,r:220,roll:10},{len:40,roll:0},
-  {len:300,pitch:6},{len:100,pitch:0},
+  // climb, then glide over the lava hall
+  {len:400,pitch:7},{len:100,pitch:0},{len:120,pitch:15,surf:'glide',rail:0,lip:{kick:40,glide:true}},{len:480,pitch:-10,gap:true},{len:150,pitch:0,boxes:[[.6,B]]},
   {turn:-45,r:200,roll:-10},{turn:45,r:200,roll:10,coins:[[.3,.7,0]]},{len:40,roll:0},
-  {len:200},
+  {len:400,haz:[[.35,'firebar',{d:0,ph:1.5,len:46}],[.75,'thwomp',{d:0,ph:.9}]]},
   {turn:'rest',r:220,roll:10},{len:100,roll:0}
  ]});
 }

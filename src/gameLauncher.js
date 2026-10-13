@@ -198,7 +198,8 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  if(!valid())return false;
  if(choice===null){launching=false;store.busy=false;return false;}
  if(choice!=='start'){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();return false;}
- const players=origin==='board'?run.players:run?structuredClone(run.players):[newPlayer(store.setupNames?.[0]??'Sean','sean',0),newPlayer(store.setupNames?.[1]??'Amber','amber',1)];
+ // Arcade play uses the latest new-game screen picks (names + characters); the draft starts from the saved run.
+ const players=origin==='board'?run.players:run?structuredClone(run.players).map((p,i)=>({...p,name:store.setupNames?.[i]||p.name,character:store.setupSelected?.[i]||p.character})):[newPlayer(store.setupNames?.[0]??'Sean',store.setupSelected?.[0]||'sean',0),newPlayer(store.setupNames?.[1]??'Amber',store.setupSelected?.[1]||'amber',1)];
  let delivered=false,getEvidence=()=>null;
  const session=new GameSession(game,players,(scores,label)=>{
   if(bfGame(game)){

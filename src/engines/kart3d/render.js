@@ -252,6 +252,21 @@ function createRenderer(canvas,c,{colors=['#4aa3ff','#ff6fa8'],battle=false}={})
  {const g=new Geo(),br=[.5,.35,.2],lf=[.2,.6,.22],sand=[.94,.85,.62];g.sphere(0,0,0,.6,12,sand,{sy:.12});for(let k=0;k<7;k++)g.box(k*.04,k*.13+.065,0,.07,.14,.07,shade(br,k%2?1:.85));
   for(const [x,z,w,d] of [[.25,0,.5,.12],[-.25,0,.5,.12],[0,.25,.12,.5],[0,-.25,.12,.5]])g.box(.28+x,.9,z,w,.03,d,lf,{tx:1,tz:1});g.sphere(.3,.86,.04,.04,6,[.45,.3,.15]);g.sphere(.26,.86,-.04,.04,6,[.45,.3,.15]);M.palm=g.upload(gl);}
  {const g=new Geo();g.box(0,.5,0,1,1,1,[.3,.27,.28]);M.pillar=g.upload(gl);const h=new Geo();h.box(0,0,0,1.35,.14,1.35,[.18,.15,.15]);h.box(0,.11,0,.8,.1,.8,[1,.45,.1]);M.pillarCap=h.upload(gl);}
+ // track characters (unit size, facing +X, up +Y)
+ {const g=new Geo(),fur=[.5,.34,.2],lt=[.86,.7,.5];g.sphere(0,.45,0,.42,12,fur,{sy:1.15});g.sphere(.3,.5,0,.2,10,lt);g.sphere(.48,.56,0,.07,6,[1,.55,.6]);
+  for(const z of [-.12,.12]){g.box(.36,.7,z,.05,.1,.06,black);g.box(.3,.2,z*2.6,.18,.1,.14,white);}g.box(-.05,.82,0,.1,.06,.36,[.25,.15,.08]);M.mole=g.upload(gl);}
+ {const g=new Geo();g.sphere(0,0,0,.75,14,[.32,.22,.12],{sy:.12});g.sphere(0,.03,0,.5,12,[.06,.04,.03],{sy:.06});M.hole=g.upload(gl);}
+ {const g=new Geo(),red=[.95,.25,.2],y=[1,.82,.25];g.sphere(0,0,0,.45,12,red,{sy:.9});g.sphere(.06,-.13,0,.33,10,[1,.9,.8],{sy:.7});g.box(-.52,0,0,.22,.42,.06,y);g.box(0,.43,0,.3,.16,.05,y);
+  for(const z of [-1,1]){g.box(.05,-.02,z*.43,.22,.05,.18,white);g.sphere(.27,.15,z*.25,.13,8,white);g.sphere(.35,.15,z*.3,.06,6,black);}g.box(.45,-.06,0,.08,.1,.2,y);M.cheep=g.upload(gl);}
+ {const g=new Geo(),red=[.92,.28,.18],dk=[.7,.18,.12];g.sphere(0,.3,0,.45,12,red,{sy:.55});
+  for(const z of [-1,1]){g.box(.22,.56,z*.12,.05,.22,.05,white);g.sphere(.22,.7,z*.12,.075,6,black);g.sphere(.42,.34,z*.4,.19,8,[1,.45,.25]);g.box(.3,.33,z*.3,.2,.08,.08,dk);
+   for(let q=0;q<3;q++)g.box(-.18+q*.17,.12,z*.42,.06,.06,.28,dk);}M.crab=g.upload(gl);}
+ {const g=new Geo(),st=[.56,.6,.7],dk=[.3,.32,.4];g.box(0,.55,0,1,1.1,1,st);
+  for(const [y,z] of [[.15,-.5],[.15,.5],[.95,-.5],[.95,.5],[.55,-.5],[.55,.5]])for(const x of [-.3,.3])g.box(x,y,z*1.08,.16,.16,.16,dk);
+  for(const x of [-.3,0,.3])for(const z of [-.3,0,.3])g.box(x,1.14,z,.14,.12,.14,dk);
+  for(const z of [-1,1]){g.box(.505,.72,z*.2,.02,.2,.17,white);g.box(.515,.68,z*.16,.02,.1,.07,black);g.box(.515,.86,z*.2,.02,.05,.26,dk);}
+  g.box(.505,.3,0,.02,.16,.62,[.08,.08,.1]);for(let q=0;q<6;q++)g.box(.515,.33,-.26+q*.104,.02,.07,.06,white);M.thwomp=g.upload(gl);}
+ {const g=new Geo();g.box(0,.5,0,.6,1,.6,[.35,.3,.3]);g.box(0,1.04,0,.7,.1,.7,[.55,.2,.1]);M.post=g.upload(gl);}
  const decor=[];{let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
   if(TH_.decor){const far=(x,z,r)=>{for(let i=0;i<c.N;i+=3){const dx=x-c.px[i],dz=z-c.pz[i],q=c.half[i]+r;if(dx*dx+dz*dz<q*q)return false;}return true;};
    const n=TH_.decor==='castle'?30:70;
@@ -365,6 +380,17 @@ function createRenderer(canvas,c,{colors=['#4aa3ff','#ff6fa8'],battle=false}={})
    const top=d.kind==='pillar'?[d.P[0],d.P[1]+d.h,d.P[2]]:d.P;if(!visible(top,d.size*2+d.h,3600))continue;const F=[Math.cos(d.spin),0,Math.sin(d.spin)],R=[-Math.sin(d.spin),0,Math.cos(d.spin)];
    if(d.kind==='pillar'){draw(M.pillar,M4.frame(d.P,F,[0,1,0],R,d.size,Mt,d.h/d.size),[1,1,1],[.05,.03,.03]);draw(M.pillarCap,M4.frame(top,F,[0,1,0],R,d.size,Mt),[1,1,1],[.25,.1,.05]);}
    else draw(M[d.kind],M4.frame(d.P,F,[0,1,0],R,d.size,Mt),[1,1,1],[0,0,0]);}
+  if(scene.hazards)for(const hz of scene.hazards){const p0=hz.parts[0];if(!p0||!visible(p0.P,80,2600))continue;const st=hz.st;
+   const neg=v=>[-v[0],-v[1],-v[2]],at=(p,F,N,sz,sy=1)=>M4.frame(p,F,N,T.cross(F,N),sz,Mt,sy);
+   if(hz.kind==='cow'||hz.kind==='crab'){const side=st.dir>0?p0.R:neg(p0.R),F=hz.kind==='cow'?(st.moving?side:neg(p0.T)):neg(p0.T),bob=st.moving?Math.abs(Math.sin(st.step))*(hz.kind==='cow'?1.6:1):0;
+    const P=[p0.P[0]+p0.U[0]*bob,p0.P[1]+p0.U[1]*bob,p0.P[2]+p0.U[2]*bob];draw(M[hz.kind],at(P,F,p0.U,hz.kind==='cow'?26:15),[1,1,1],[.05,.05,.05]);}
+   else if(hz.kind==='mole'){draw(M.hole,at([p0.G[0]+p0.U[0]*.6,p0.G[1]+p0.U[1]*.6,p0.G[2]+p0.U[2]*.6],p0.T,p0.U,13),[1,1,1],[0,0,0]);if(p0.h>-12)draw(M.mole,at(p0.P,neg(p0.T),p0.U,14),[1,1,1],[.05,.04,.03]);}
+   else if(hz.kind==='cheep'){if(st.leap){const side=st.dir>0?p0.R:neg(p0.R),cp=Math.cos(st.pitch),sp=Math.sin(st.pitch),F=[side[0]*cp+p0.U[0]*sp,side[1]*cp+p0.U[1]*sp,side[2]*cp+p0.U[2]*sp];
+     const N=T.cross(T.cross(F,p0.U),F);draw(M.cheep,at(p0.P,F,T.norm(N),20),[1,1,1],[.08,.03,.02]);}}
+   else if(hz.kind==='thwomp'){const sh=st.shake?Math.sin(time*70)*1.2:0,P=[p0.P[0]+p0.R[0]*sh,p0.P[1]+p0.R[1]*sh,p0.P[2]+p0.R[2]*sh];draw(M.thwomp,at(P,neg(p0.T),p0.U,30),[1,1,1],[.06,.06,.08]);
+    if(st.warn){const a=Math.min(.6,(1-p0.h/74)*.5+.25);shadB.quad([p0.G[0]+p0.U[0]*.8,p0.G[1]+p0.U[1]*.8,p0.G[2]+p0.U[2]*.8],[p0.T[0]*22,p0.T[1]*22,p0.T[2]*22],[p0.R[0]*22,p0.R[1]*22,p0.R[2]*22],uvOf(TILE.shadow),[1,1,1,a]);}}
+   else if(hz.kind==='firebar'){draw(M.post,at(p0.G,p0.T,p0.U,12),[1,1,1],[.05,.03,.03]);
+    hz.parts.forEach((p,q)=>{addB.bill(p.P,14,14,TILE.glow,[1,.55,.15,.85],cam);alphaB.bill(p.P,9,9,TILE.flame,[1,1,1,1],cam,time*6+q);});}}
   for(const b of scene.boxes)if(b.t<=0&&visible(b.P)){const a=time*1.6+b.s*.01,sc=b.pop>0?1+b.pop*.6:1;const F=[b.T[0]*Math.cos(a)+b.R[0]*Math.sin(a),b.T[1]*Math.cos(a)+b.R[1]*Math.sin(a),b.T[2]*Math.cos(a)+b.R[2]*Math.sin(a)];
    const N=b.U,R=T.cross(F,N),P0=[b.P[0]+N[0]*Math.sin(time*2+b.s)*2,b.P[1]+N[1]*Math.sin(time*2+b.s)*2,b.P[2]+N[2]*Math.sin(time*2+b.s)*2];b._M=M4.frame(P0,F,N,R,sc,new Float32Array(16));draw(M.boxEdge,b._M,[1,1,1],[.6,.6,.6]);alphaB.bill(P0,6.5,6.5,TILE.q,[1,1,1,1],cam,Math.sin(time*2+b.s)*.2);}
   for(const cn of scene.coins)if(cn.t<=0&&visible(cn.P,20,1800)){const a=time*4+cn.s*.05,F=[cn.T[0]*Math.cos(a)+cn.R[0]*Math.sin(a),cn.T[1]*Math.cos(a)+cn.R[1]*Math.sin(a),cn.T[2]*Math.cos(a)+cn.R[2]*Math.sin(a)];draw(M.coin,M4.frame(cn.P,F,cn.U,T.cross(F,cn.U),1,Mt),[1,1,1],[.45,.35,.05]);}

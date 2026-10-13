@@ -57,7 +57,7 @@ function stepKart(c,k,inp,dt,ctx={}){
  else if(k.drift){const into=clamp(steer*k.drift,-1,1);
   // like Mario Kart 8: after the hop the kart swings its nose in but keeps carrying forward (sliding a little wide),
   // then the arc builds over ~half a second; the thumb sets how tight the arc is (in = tight, out = wide)
-  k.driftAge=(k.driftAge||0)+dt;const a=clamp(k.driftAge/.5,0,1),ramp=.28+.72*a*a*(3-2*a);
+  k.driftAge=(k.driftAge||0)+dt;const a=clamp(k.driftAge/.75,0,1),ramp=.24+.76*a*a*(3-2*a);
   yaw=k.drift*(1.1+(into>0?.75:.6)*into)*clamp(k.v/200,.5,1)*ramp;
   k.d-=k.drift*k.v*.075*(1-ramp)*dt;
   k.slip=k.drift*(.16+.3*ramp+.13*into);const before=sparkLevel(k);k.driftT+=dt*(.95+.55*Math.max(0,into));const lv=sparkLevel(k);if(lv!==before)ctx.ev?.(k,'spark',lv);k.spark=lv;}

@@ -18,6 +18,7 @@ const {portraitURL}=require("src/assets.js");
 const {fullscreenSupported,toggleFullscreen,fullscreenLabel}=require("src/fullscreen.js");
 const T=require("src/engines/kart3d/track.js");
 const Ph=require("src/engines/kart3d/physics.js");
+const HZ=require("src/engines/kart3d/hazards.js");
 const {createRenderer,TILE}=require("src/engines/kart3d/render.js");
 const {drawHUD}=require("src/engines/kart3d/hud.js");
 const {createKartMusic}=require("src/engines/kart3d/music.js");
@@ -294,7 +295,16 @@ async function kart(s){
    for(const k of K)if(kartHittable(k)){const ds=T.sdiff(course,s0,k.s),dd=k.d-d0;if(ds*ds+dd*dd<r*r)hitKart(k,'tumble','boom');}}
   // ---------------------------------------------------------------- kart vs kart, pickups
   const hsvc=h=>{const f=n=>{const k=(n+h*6)%6;return 1-Math.max(0,Math.min(k,4-k,1))*.75;};return [f(5),f(3),f(1)];};
+  // animated track characters (cows, moles, Cheep Cheeps, crabs, Thwomps, fire bars): same clock for everyone
+  const hazards=course.hazards||[];let hzs=[];
+  const stepHazards=()=>{const prev=hzs;hzs=hazards.map(h=>HZ.state(course,h,simT));
+   hzs.forEach((st,j)=>{if(st.landed&&!prev[j]?.landed)for(const k of H){const ds=Math.abs(T.sdiff(course,hazards[j].s,k.s));if(ds<260){shake(k,ds<120?5:2);if(ds<200)sfx.land();}}});};
+  const hazardContacts=()=>{for(const k of K){if(k.out||!kartHittable(k)||k.inv>0||k.star>0)continue;
+   for(let j=0;j<hazards.length;j++){const hz=hazards[j];if(Math.abs(T.sdiff(course,hz.s,k.s))>90||!HZ.touches(course,hzs[j],k))continue;const info=HZ.KIND[hz.kind];
+    if(info.hit==='squash'){k.squash=1.6;if(hitKart(k,'hard',hz.kind)&&k.human)noise(.2,{vol:.14,freq:180});}else hitKart(k,'spin',hz.kind);
+    if(k.human)msg(k,info.msg,info.col,20,1);break;}}};
   function contacts(dt){
+   hazardContacts();
    for(let ia=0;ia<K.length;ia++)for(let ib=ia+1;ib<K.length;ib++){const a=K[ia],b=K[ib];if(a.out||b.out||!kartHittable(a)||!kartHittable(b)||Math.abs(a.h-b.h)>=16)continue;const ds=T.sdiff(course,a.s,b.s),dd=b.d-a.d,d=Math.hypot(ds,dd);
     if(d<19){const nx=ds/(d||1),ny=dd/(d||1),push=(19-d)/2+.5;if(!a.air&&!b.air){a.s=T.wrapS(course,a.s-nx*push);a.d-=ny*push;b.s=T.wrapS(course,b.s+nx*push);b.d+=ny*push;}
      if((a.bump||0)<=0&&(b.bump||0)<=0){a.bump=b.bump=.45;if(a.human||b.human)noise(.08,{vol:.06,freq:600});
@@ -349,14 +359,16 @@ async function kart(s){
    cm.fov+=((k.boostT>0||k.bullet>0?.12:0)-cm.fov)*Math.min(1,dt*4);
    if(phase==='intro'){const e=Math.min(1,introT/2.4),a=Math.PI*(1-(e*e*(3-2*e))),r=70-20*e;const F=k.F,N=k.N,Rv=k.R;
     const E=[k.P2[0]+(F[0]*Math.cos(a)+Rv[0]*Math.sin(a)*.6)*r+N[0]*(18+20*(1-e)),k.P2[1]+(F[1]*Math.cos(a)+Rv[1]*Math.sin(a)*.6)*r+N[1]*(18+20*(1-e)),k.P2[2]+(F[2]*Math.cos(a)+Rv[2]*Math.sin(a)*.6)*r+N[2]*(18+20*(1-e))];
-    cm.E=E;cm.F=k.F.slice();cm.N=k.N.slice();return {eye:E,target:[k.P2[0]+N[0]*10,k.P2[1]+N[1]*10,k.P2[2]+N[2]*10],up:N,fov:base};}
+    cm.E=E;cm.O=[E[0]-k.P2[0],E[1]-k.P2[1],E[2]-k.P2[2]];cm.F=k.F.slice();cm.N=k.N.slice();return {eye:E,target:[k.P2[0]+N[0]*10,k.P2[1]+N[1]*10,k.P2[2]+N[2]*10],up:N,fov:base};}
    if(k.falling>0){return {eye:cm.E,target:k.P2,up:cm.N,fov:base};}
    const a1=cm.snap?1:1-Math.exp(-dt*(k.air?3:7)),a2=cm.snap?1:1-Math.exp(-dt*5);
    cm.F=T.norm(lerp3(cm.F,k.F,a1));cm.N=T.norm(lerp3(cm.N,k.N,a2));
-   const back=63+(k.boostT>0?6:0),up=27;const want=[k.P2[0]-cm.F[0]*back+cm.N[0]*up,k.P2[1]-cm.F[1]*back+cm.N[1]*up,k.P2[2]-cm.F[2]*back+cm.N[2]*up];
-   cm.E=cm.snap?want:lerp3(cm.E,want,1-Math.exp(-dt*14));cm.snap=false;
+   // higher eye + a target raised to nearly eye height: the view looks almost level while the kart (seen steeply from above) sits low on screen
+   const tall=aspect<.95,mid=aspect<1.25,back=(tall?78:82)+(k.boostT>0?6:0),up=tall?58:mid?40:37;// smooth the offset from the kart, not the world position, so speed never drags the camera back (kart stays put on screen)
+   const want=[-cm.F[0]*back+cm.N[0]*up,-cm.F[1]*back+cm.N[1]*up,-cm.F[2]*back+cm.N[2]*up];
+   cm.O=cm.snap||!cm.O?want:lerp3(cm.O,want,1-Math.exp(-dt*14));cm.snap=false;cm.E=[k.P2[0]+cm.O[0],k.P2[1]+cm.O[1],k.P2[2]+cm.O[2]];
    let eye=cm.E;if(cm.shake>.05){const a=cm.shake;eye=[cm.E[0]+(rand()-.5)*a,cm.E[1]+(rand()-.5)*a,cm.E[2]+(rand()-.5)*a];cm.shake*=Math.pow(.02,dt);}
-   const fw=aspect<.95?120:90,uw=aspect<.95?11:13;// look well ahead so the player's kart sits low on screen (more track visible)
+   const fw=tall?120:90,uw=tall?34:mid?26:23;
    return {eye,target:[k.P2[0]+cm.F[0]*fw+cm.N[0]*uw,k.P2[1]+cm.F[1]*fw+cm.N[1]*uw,k.P2[2]+cm.F[2]*fw+cm.N[2]*uw],up:cm.N,fov:base+cm.fov};
   }
   // ---------------------------------------------------------------- heads (portrait textures)
@@ -385,7 +397,7 @@ async function kart(s){
    get headOK(){return R.headOK.slice();},get lastUse(){return lastUse;},get particles(){return parts.length;},get ghost(){return ghost?ghost.frames.length:0;}}));
   // ---------------------------------------------------------------- main loop
   onFrame=dt=>{
-   lastFrame=performance.now();simT+=dt;R.tick(dt);
+   lastFrame=performance.now();simT+=dt;R.tick(dt);stepHazards();
    headTimer-=dt;if(headTimer<=0){headTimer=simT<6?.5:1;refreshHeads(true);}else refreshHeads(false);
    if(phase==='intro'){introT+=dt;if(introT>2.4)phase='count';}
    else if(phase==='count'){const before=Math.floor(lights);lights+=dt*1.2;const now=Math.floor(lights);if(now!==before&&now>=1&&now<=4)sfx.light(now>=4);
@@ -414,6 +426,8 @@ async function kart(s){
    const views=layout();
    const gp=ghostPose();
    const scene={course,karts:K,view:-1,boxes,coins,particles:parts,blink:false,ghost:gp&&!gp.done?gp:null,
+    hazards:hzs.map((st,j)=>({kind:hazards[j].kind,st,parts:st.parts.map(p=>{const f=T.frame(course,p.s,{P:[0,0,0],T:[0,0,0],R:[0,0,0],U:[0,0,0]});
+     return {P:[f.P[0]+f.R[0]*p.d+f.U[0]*p.h,f.P[1]+f.R[1]*p.d+f.U[1]*p.h,f.P[2]+f.R[2]*p.d+f.U[2]*p.h],G:[f.P[0]+f.R[0]*p.d,f.P[1]+f.R[1]*p.d,f.P[2]+f.R[2]*p.d],T:f.T.slice(),R:f.R.slice(),U:f.U.slice(),h:p.h};})})),
     shells:shells.map(sh=>{const f=T.frame(course,sh.s,{P:[0,0,0],T:[0,0,0],R:[0,0,0],U:[0,0,0]}),cp=Math.cos(sh.psi),sp=Math.sin(sh.psi);const F=[f.T[0]*cp+f.R[0]*sp,f.T[1]*cp+f.R[1]*sp,f.T[2]*cp+f.R[2]*sp];
      return {kind:sh.kind,P:[f.P[0]+f.R[0]*sh.d+f.U[0]*(sh.h+1),f.P[1]+f.R[1]*sh.d+f.U[1]*(sh.h+1),f.P[2]+f.R[2]*sh.d+f.U[2]*(sh.h+1)],F,N:f.U.slice(),R:T.cross(F,f.U)};}),
     bananas:bananas.map(b=>{const f=T.frame(course,b.s,{P:[0,0,0],T:[0,0,0],R:[0,0,0],U:[0,0,0]});return {P:[f.P[0]+f.R[0]*b.d+f.U[0]*b.h,f.P[1]+f.R[1]*b.d+f.U[1]*b.h,f.P[2]+f.R[2]*b.d+f.U[2]*b.h],N:f.U.slice()};}),

@@ -32,6 +32,15 @@ assert.equal(ev.fall||0,0,'autopilot never falls off');assert.equal(ev.ramp,3);a
 for(const C of T.COURSES){const c=C.build();assert.ok(c.closeErr<120,`${C.id} closes`);assert.ok(c.boxes.length>=8&&c.spawn.length>=8,`${C.id} boxes and grid`);
  const q=Ph.makeKart(c,0),e={};let tt=0,dd=0,ls=q.s;while(tt<150&&dd<c.L*3){Ph.stepKart(c,q,Ph.autoInput(c,q),dt,{ev:(k,n)=>{e[n]=(e[n]||0)+1;}});tt+=dt;dd+=T.sdiff(c,ls,q.s);ls=q.s;}
  assert.ok(dd>=c.L*3,`${C.id}: three laps`);assert.equal(e.fall||0,0,`${C.id}: autopilot never falls off`);console.log(C.id,'3 laps in',tt.toFixed(1),'s');}
+// the other courses are Rainbow-Road style too: anti-gravity, upside-down track, jumps over gaps, a glider and animated track characters
+const HZ=load('src/engines/kart3d/hazards.js');
+for(const C of T.COURSES.slice(1)){const c=C.build();let inv=0,glue=0,gap=0;for(let i=0;i<c.N;i++){if(c.U[i*3+1]<-.9)inv++;if(c.glue[i])glue++;if(c.gap[i])gap++;}
+ assert.ok(inv>8&&glue*T.DS>1200,`${C.id}: inverted anti-gravity section`);assert.ok(gap*T.DS>500&&c.ramps.some(r=>r.glide),`${C.id}: jumps and a glider`);
+ assert.ok(c.hazards.length>=6,`${C.id}: track characters`);
+ for(const hz of c.hazards){let live=0;for(let t=0;t<12;t+=.05){const st=HZ.state(c,hz,t);for(const p of st.parts)assert.ok(Number.isFinite(p.s+p.d+p.h),'finite hazard');if(st.live)live++;}assert.ok(live>0,`${C.id} ${hz.kind} can hit`);}}
+// a Thwomp squashes a kart parked under it once it slams down, and misses while it hovers
+{const c=T.bowsersCastle(),hz=c.hazards.find(h=>h.kind==='thwomp'),k={s:hz.s,d:hz.d,h:0};const per=HZ.PER.thwomp,t0=per-hz.ph;
+ assert.equal(HZ.touches(c,HZ.state(c,hz,t0+per*.2),k),false,'hovering thwomp misses');assert.ok(HZ.touches(c,HZ.state(c,hz,t0+per*.7),k),'landed thwomp hits');}
 // off-road (grass, sand) slows the kart
 {const c=T.mooMooMeadows(),q=Ph.makeKart(c,0);q.d=c.roadHalf[T.idx(c,q.s)]+20;for(let i=0;i<120*4;i++){q.d=Math.max(q.d,c.roadHalf[T.idx(c,q.s)]+20);Ph.stepKart(c,q,{steer:0,drift:0},dt,{});}assert.ok(q.offroad&&q.v<Ph.TOP*.6,'off-road speed');}
 console.log('kart track OK');
