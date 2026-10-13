@@ -42,15 +42,54 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   `persistence.js` `validBroforce*`); arcade never rewards. Camera (`broforce/camera.js`) looks below the floor by the
   controls inset and keeps heads under the HUD band. 45 Node suites `tests/broforce-*.mjs`, browser `tests/bf41-*`, `tests/bf59-*`.
   Bots can't beat the boss (it perches on ledges); real two-thumb play on a phone still unverified.
+- **Mario Kart 3D (Oct 13 2026):** engine `kart` (`src/engines/kart.js`), four games by `kartMode`: `rainbow-road-kart` 'race'
+  (Grand Prix VS, side-by-side split P1 left/P2 right, 6 CPUs), new `kart-grand-prix-pass` 'gp' (P1 then P2 vs the same 7 CPUs,
+  GP points 15/12/10/9..., same place → faster time +1), `kart-time-trial` 'time' (P1 alone with 3 mushrooms, P2 vs P1's ghost:
+  `rec` frames → `ghostPose`, drawn translucent; fastest wins 100/99), `rainbow-balloon-battle` 'battle' (side-by-side, 1v1).
+  Flow: one `s.frame` dispatching to `onFrame`; `chooseCourse()` card screen (debug `pick(id)`, auto 30 s) → `runRace(opts)`
+  (own renderer/GL context, music, engines; resolves results). Courses in `kart3d/track.js` `COURSES`: Rainbow Road, Moo Moo
+  Meadows, Cheep Cheep Beach, Bowser's Castle (`theme`, `offroad` band → `roadHalf`; off-road = 55% top speed); 3D ribbon built
+  from turtle pieces (turns, hills, ramps + gaps, glider, anti-gravity `glue`, loop, corkscrew; flex straights auto-close).
+  Non-rainbow courses are Rainbow-Road style too (loop/corkscrew + wall ride on glue, ramp gaps, a glider) with animated track
+  characters from `kart3d/hazards.js` (pure functions of race time: cows + Monty Moles, crabs + leaping Cheep Cheeps, Thwomps +
+  fire bars; course pieces carry `haz:[[f,kind,{d,ph}]]`, contacts in `hazardContacts`, meshes in `render.js`).
+  `physics.js` track-space karts (Frenet), air/ramps/crests, rails, Lakitu, drift sparks (`DRIFT_LV`) → mini-turbo (`MT` .7/1.15/1.6 s),
+  auto tricks. Drift: latch at 85% push, ends past 55% the other way or on release; only hard wall hits (>.75) cancel it.
+  MK8-style arc: `driftAge` ramps the turn rate from 24% to full over 0.75 s while the kart slides a little wide; `k.slip` = drawn
+  nose angle (grows with the arc and the thumb).
+  `render.js` themes (`THEMES`: baked sky per theme, procedural road/kerbs/sand/stone, fences/walls, grass/water/lava ground
+  plane, trees/cows/palms/pillars), karts with portrait billboards, ghost. `hud.js` (Tour HUD, two item slots, time mode),
+  `music.js` (original loop). Camera (`cameraFor`) smooths the eye OFFSET from the kart (`cm.O`) and dollies the whole rig back with speed (`cm.zoom`, up to 1.6x on boosts), so speed is felt but
+  the kart keeps its low spot on screen (per-aspect eye height/target). Arcade play uses the New Game picks
+  (`store.setupNames` + `store.setupSelected`, gameLauncher). Controls = Mario Kart Tour per screen: drag steers (floating origin), full push latches a drift,
+  release = mini-turbo, tap = item, swipe/drag up/down = throw. CPUs = random roster characters (`pickCPUs`). Needs WebGL (else a
+  message and a tie); the Mode 7 engine is gone. Tests: `tests/kart-track.mjs` (Node, test:core), `tests/kart-controls.mjs`,
+  `tests/kart.mjs` (all four games to the result screen). Real-phone feel untested.
+- **Photo Hunt (Megatouch Aurora 2007 cabinet replica, Oct 13 2026):** `src/engines/photohunt.js` (same id `megatouch-photohunt`).
+  800x600 cabinet screen full-bleed (`ph-shell`); `layout(W,H)` stretches it to the screen: 4:3 = exact cabinet, wider = 'cab' widened,
+  ≥1200 logical wide ('wide', landscape phones) = one header row + ROUND/hint glasses in side columns, portrait ('tall') stacks the photos.
+  Corner full-screen toggle `.ph-fs` (like the GB `.gb-fs`).
+  Rules in `RULES` (reverse-engineered from owner's cabinet photos, bonus rounds unknown/not built): 48-pill bar, 48 s round
+  −1.5 s/round (min 30), find = clock (1000 −25/s, resets per find), miss −3 s, cleared round pays 320/pill left, 3 hints per game,
+  game ends when the bar empties. P1 plays a full game, then P2 on the other half of the photo library; higher score wins.
+  Hi-score bar: `profile.photoHuntHigh` (house record WILLYZ CREW 369,127). Pairs: `assets/photohunt/<id>.a|b.webp + <id>.json`
+  (embedded by build.mjs as `photohunt:<id>:a|b`; `src/data/photoHuntPairs.js` generated). `tools/photohunt.py` makes
+  pairs (make: one photo + hand-picked spots remove/color/flip/grow/rotate/add; import: finished A/B pair, diff-detected;
+  inbox; preview). Pairs: `sean-road-trip` + owner's 5 (dog-lab-crew, dog-lab-solo, amber-alien, space-desk, evil-lab; Gemini sparkle watermarks painted out,
+  raw uploads in `assets/originals/photohunt/`). Photos repeat (mirror flipped) instead of the drawn scenes, which only fill in with no photos. Owner is supplying
+  photos (pin-up/erotic theme); hand-pick spots and check every preview. Test: `tests/photohunt.mjs`. Real-phone feel untested.
+- **Sonic (Oct 13 2026):** P2 is Tails (`drawRunner` palette + `tail()`); badniks redrawn. `sonic-ring-rush` id now runs `sonicMode:'boss'`
+  (Green Hill Act 3): `buildLevel` ends in `L.arena`; per-world `w.boss` (Egg Mobile + wrecking ball, 8 hits, `stepBoss`/`bossTouch`,
+  camera lock, capsule). Pilot = locked character from `gameRecruitPool` (prefers real art, head via broforce `headCanvas`); beating it
+  pushes to `s.broforceRecruits` → `settleGame` recruits it (`cageGame()` in gameLauncher skips the random winner recruit). Test: `tests/sonic.mjs`.
 - **Portraits:** owner uploads PNG/WebP to `assets/portraits/` on main; TESTver keeps 480px q88 WebP with originals in
   `assets/originals/portraits/` (`tools/run-claude-optimizer-safe.py` for PNG; oversized WebP uploads are shrunk the same way by hand).
   `artemis.think` has two different pictures (.png and .webp); the .webp is what the game shows.
-- **Photo Hunt bundled pairs (Oct 13 2026):** 14 owner photos (`assets/originals/photohunt/NN-<id>.jpg`, phone screenshots) are
-  cleaned (crop UI chrome, Gemini/Lens watermarks painted out, denoise/sharpen, 1200px) and given 5 hand-placed differences each by
-  `tools/photohunt/make.py` (edits in `pairs.py`, ops in `phlib.py`; needs `pip install opencv-python-headless`). Output:
-  `assets/photohunt/<id>.left|right.webp` (build.mjs → `USER_PORTRAITS['photohunt:<id>:left|right']`) and the generated
-  `src/data/photoHuntPairs.js`. Each game deals 3 random pairs. Hit circles are aspect-corrected (`photoHit(...,aspect)`, r in
-  image-width units). Test: `tests/photohunt.mjs` (`s.debug.target(i)`), screenshots `/tmp/claude-0/sc/photohunt-*`.
+- **Photo Hunt hand-edited set (Oct 13 2026):** 14 more pairs from owner phone screenshots (originals in
+  `assets/originals/photohunt/<id>.jpg`): `tools/photohunt_handmade/make.py` crops screenshot chrome, paints out Gemini/Lens
+  watermarks, denoises/sharpens, applies 5 hand-placed edits per photo (`pairs.py`; ops in `phlib.py`: recolor/remove/mirror/
+  swap/inpaint; needs `pip install opencv-python-headless`), cuts the 37:32 window (`(x0,y0)` per pair) and writes the usual
+  `<id>.a|b.webp + <id>.json`; then `python3 tools/photohunt.py index`. 20 pairs total.
 - **Castlevania (v0.58.2):** Dracula's Castle NES stage map; Death boss (`death-cv`, reaper art and sickles), new themed music/cards/items/trivia. Games: `cv-vampire-killer` and `cv-candle-hunt` in `src/engines/castlevania.js`, test `tests/castlevania.mjs`. Real-phone playtest still needed.
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
   camp → crossroads → 3 roads (Calm/Adventurous/High Reward) in west/centre/east bands → gate. `gridPath` is an
@@ -96,8 +135,8 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   (`warpGameId`, own roulette candidates; off-theme ids incl. challenge items/tasks are swapped, boss fights allowed),
   `resolveLanding` uses `warpCard`/`warpItem`/`warpFortune`; pair turns/intros, the Home dog pack and `evolveBoard`
   are skipped on warp boards. Warp games live in `src/packs/warpPack.js` (`warpOnly`, `randomEligible:false`, in the
-  arcade): `engines/sonic.js` (Green Hill, Mega Drive physics, modes rings/race), `kart.js` (Mode 7
-  Rainbow Road race + balloon battle), `smb3.js` (N-Spade, Spade Panel), `candyLand.js`, `chutes.js` (Ladder Rush,
+  arcade): `engines/sonic.js` (Green Hill, Mega Drive physics, modes boss/race), `kart.js` (3D Grand Prix
+  VS/pass & play, Time Trials, Balloon Battle), `smb3.js` (N-Spade, Spade Panel), `candyLand.js`, `chutes.js` (Ladder Rush,
   Spinner Showdown on the real 1943 layout), `monopoly.js` (Speed Die, sealed-bid auction), `clue.js` (Whodunit with
   pass-the-phone notebooks, Lineup), `hyrule.js` (Rupee Rush, Sword Duel). Items: `data/warpItems.js` (`wz-*`, built
   with `packItems` from itemPackV43). Trivia: `data/warpTrivia.js` (topics smb3/candyland/chutes/monopoly/clue +
@@ -110,13 +149,16 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   bust `prop:'cat'`/`nehru`/`scar`): the launcher recruits `pickLairVillain` (`data/bondLair.js`: `BOND_VILLAIN_IDS`, 12
   lair-only villains with `unlockBy:'boss'`) instead of `unlockId`. Games in `engines/bond.js` (`bondLaser`,
   `bondFunhouse`, `bondBomb`; ids `bond-laser-vault`, `bond-golden-gun`, `bond-goldfinger-bomb`). Test: `tests/bondlair.mjs`.
-- **Super Mario Bros. (v0.54):** `engines/marioBros.js` (engine `marioBros`, ids `smb-coin-rush` / `smb-castle-dash`,
-  `marioMode` coins|race, warp `mario-world`) mirrors `sonic.js`. Both are turn-based on the full canvas (v0.54.1):
-  P1 runs, `s.pass` hand-off, P2 runs vs P1's ghost (`ghost[]` of per-step `snap(p)`, replayed by `ghostAt`); phases
-  title/handoff/count/play/turn-end/end, race = fastest time. Mario: seeded tile level (`buildLevel`, 16px tiles, 15 rows,
-  stride `S`), per-player worlds (`makeWorld`: own tiles/coins/enemies), SMB1 physics constants `PH`, coin room `L.room`
-  reached via `L.warp.entry` (hold down) and left via the side pipe to `L.warp.exit`. `s.debug` has `teleport`/`toWarp`.
-  Challenge items `wz-question-block`, `wz-goal-flagpole`. Test: `tests/mario.mjs` (screenshots `/tmp/claude-0/sc/smb-*`).
+- **Super Mario Bros. World 1 (Oct 13 2026):** `engines/marioBros.js` (engine `marioBros`) + `engines/smb/smbLevels.js` (NES maps
+  1-1 with coin room, 1-2 intro/underground/exit + Warp Zone above the ceiling, 1-3 treetops with lifts, 1-4 castle with firebars,
+  lava, Bowser's bridge/axe/Toad; tiles on the 16 px NES grid, areas joined by `doors`) + `engines/smb/smbArt.js` (8x8 NES font on
+  gbFont capitals, tile sets per look, title logo, sprites). Physics = NES SMB1 sub-pixel constants (`PH`, `JUMP`). Ids:
+  `smb-world-1` (new; title menu 1 PLAYER GAME = whole game each with P2 vs ghost, 2 PLAYER GAME = NES swap on a lost life; 3 lives,
+  NES timers, highest score wins), `smb-coin-rush` (60 s each, flagpole → next stage), `smb-castle-dash` (1-1 race). Warp pipes recruit
+  one locked character per player from `gameRecruitPool` → `s.gameRecruits` → `settleGame` (same path as Broforce cages), then 1-3.
+  Full-bleed layout (`fullBleed`: floating Pause/Exit/⤢ fullscreen and a Controls chip); view fits 240 px tall, wider screens see
+  more level, tall phones get sky above/ground below. Luigi = green cap/shirt, white overalls; Fire = NES fireballs (4 px/f, max 2, bounce −3), 1-4's Bowser dies to 5 fireballs as a fake Goomba. Heads: `s.sprite(...,{still,noBadge,box})` reports the drawn size so the cap fits.
+  Test: `tests/mario.mjs [world|alt|coins|race]` (physics numbers, every flow, screenshots `/tmp/claude-0/sc/smb-*`). Real-phone feel untested.
 
 - **South Park warp zone (v0.56):** `south-park` in `WARP_DEFS` (town-map scene `sceneSouthPark` in `warpBoards.js`: route
   `SP_STREETS` along square street corners, buildings via `spHouse`/`spShop`, `spMecha` at Stark's Pond replaces the castle;
@@ -240,7 +282,7 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   Tests: `tests/pkmnmoods.mjs` (contact sheet of every mood character), `tests/pkmnmoodbattle.mjs [mine foe]`.
 
 ## In progress / unverified
-- Warp minigames only bot/fuzz-tested in headless Chromium; Sonic, Mario (turn-based) and kart (split-screen canvas, Mode 7 rows) need a
+- Warp minigames only bot/fuzz-tested in headless Chromium; Sonic, Mario (turn-based) and the 3D kart (WebGL, two viewports) need a
   real-phone check for feel and frame rate.
 - Board smoothness only measured in headless Chromium (software compositing); check pinch/zoom on a real phone.
   Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus

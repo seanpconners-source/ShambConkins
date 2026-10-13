@@ -31,6 +31,7 @@ function loadProfile() {
   for(const key of ['migrated','horrorSeen','equipment'])if(saved[key]===true)p[key]=true;
   const photo=normalizePhotoPair(saved.photoHuntPair);
   if(Array.isArray(saved.photoHuntPairs)){p.photoHuntPairs=photoPairLibrary(saved);const selected=photo||p.photoHuntPairs.at(-1);if(selected)currentPhotoPair(p,selected);}else if(photo)p.photoHuntPair=photo;
+  if(saved.photoHuntHigh&&typeof saved.photoHuntHigh.name==='string'&&Number.isFinite(saved.photoHuntHigh.score)&&saved.photoHuntHigh.score>=0)p.photoHuntHigh={name:saved.photoHuntHigh.name.slice(0,16),score:Math.floor(saved.photoHuntHigh.score),round:Number.isFinite(saved.photoHuntHigh.round)?Math.max(1,Math.floor(saved.photoHuntHigh.round)):1};
   if(saved.earnedUnlocks&&typeof saved.earnedUnlocks==='object'&&!Array.isArray(saved.earnedUnlocks))p.earnedUnlocks=Object.fromEntries(Object.entries(saved.earnedUnlocks).filter(([id,value])=>ids.has(id)&&typeof value==='string'));
   if(saved.broforceClaims!==undefined){
    const claims=validatedBroforceClaims(saved.broforceClaims);

@@ -56,14 +56,14 @@ class GameSession {
  sprite(x,player,cx,cy,size=30,options={}){
   const now=performance.now()/1000,id=this.players[player].character,mood=options.mood||this.spriteMood(player,now),src=portraitURL(id,mood)||(id==='gordon-ramsay'?gordonPortrait():null),key=id+':'+mood;queueEntityArt(entityArtSpec('character',character(id)));
   size=options.exact?size:spriteSize(size);if(options.maxSize)size=Math.min(size,options.maxSize);size*=this.players[player].large?2:1;
-  const motion=!store.profile.settings.reducedMotion,celebrate=['happy','win','silly'].includes(mood),sad=['sad','lose','angry'].includes(mood);
+  const motion=!store.profile.settings.reducedMotion&&!options.still,celebrate=['happy','win','silly'].includes(mood),sad=['sad','lose','angry'].includes(mood);
   const bob=motion?(celebrate?-Math.abs(Math.sin(now*9))*2.8:sad?0:Math.sin(now*7+player)*1.2):0;
   const lean=motion?(sad?Math.sin(now*19)*.065:celebrate?Math.sin(now*7)*.075:Math.sin(now*4+player)*.035):0;
   x.save();x.translate(cx,cy+bob);x.rotate(lean);
   let cached=spriteCache.get(key),image=cached?.src===src?cached.image:null;if(!image&&src){image=new Image();if(src.startsWith('https:'))image.onerror=()=>{image.onerror=null;image.src=portraitFallbackURL(id);};if(['sean','amber'].includes(id)&&!/^data:image\/png|\.png$/i.test(src))image.onload=()=>{const rendered=createHeadCutout(image,src);if(rendered!==src){image.onload=null;image.src=rendered;}};image.src=headDisplayURL(src);spriteCache.set(key,{src,image});}
-  if(image?.complete&&image.naturalWidth){const scale=Math.min((size-3)/image.naturalWidth,(size-3)/image.naturalHeight);x.drawImage(image,-image.naturalWidth*scale/2,-image.naturalHeight*scale/2,image.naturalWidth*scale,image.naturalHeight*scale);}
+  if(image?.complete&&image.naturalWidth){const scale=Math.min((size-3)/image.naturalWidth,(size-3)/image.naturalHeight);x.drawImage(image,-image.naturalWidth*scale/2,-image.naturalHeight*scale/2,image.naturalWidth*scale,image.naturalHeight*scale);if(options.box){options.box.w=image.naturalWidth*scale;options.box.h=image.naturalHeight*scale;}}
   else{x.font=`${size*.72}px Arial`;x.textAlign='center';x.textBaseline='middle';x.fillText(character(id).icon,0,0);}
-  if(celebrate||sad){x.font=`${Math.max(11,size*.28)}px Arial`;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.fillText(sad?'!':mood==='silly'?'✦':'♥',size*.36,-size*.35);}
+  if((celebrate||sad)&&!options.noBadge){x.font=`${Math.max(11,size*.28)}px Arial`;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.fillText(sad?'!':mood==='silly'?'✦':'♥',size*.36,-size*.35);}
   x.restore();
  }
  finish(scores,label=''){if(!this.alive)return;this.finished=true;this.dispose();this.onFinish(scores,label);}
