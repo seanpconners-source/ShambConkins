@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+**Broforce overhaul.** Players now take turns on the same three-stage mission and the higher score wins. Levels are deep and fully destructible (tunnels, bunkers, two-storey barracks, watchtowers, cliffs with hidden caves, pits under rope bridges), with about 100 enemies per mission (soldiers, suicide bombers, minigun bruisers, attack dogs, grenadiers), Broforce wall-climbing, grenades, exploding barrels, checkpoint flags, the Devil boss and the extraction chopper. Bro heads are proper round faces. Characters unlock only by freeing the GOLD cage on each stage.
+
 ## v0.58.3
 
 **Six gameplay fixes from TESTver, promoted after owner playtesting.** Player names now follow setup input and survive the appropriate save/restore and turn handoffs without changing roster ownership. Trivia modes fix crashes and show distinct correct, incorrect, timeout, and mixed-answer feedback after both players commit. Pokémon Bond catches and trainer rewards respect the exact character ID, with accessible haptics behavior. Gopher Hunt randomizes available opponent portrait moods. Fruit Ninja enforces finite swipe combos and input resets. Taskmaster Frantic Relay replaces the old challenge set with seven matched object tasks plus practice and protects the final completion/cancellation lifecycle.

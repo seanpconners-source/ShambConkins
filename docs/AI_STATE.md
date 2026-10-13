@@ -22,6 +22,17 @@ Version 0.58.3 release candidate (generated offline file `releases/ShambConkins_
   and validation results; this baseline is not a claim of phone approval or current test success.
 
 ## Implemented systems
+- **Broforce (turn-based rebuild, Oct 13 2026):** one engine file `src/engines/broforce.js` (same 4 game ids in
+  `packs/broforcePack.js`). P1 runs a 3-stage seeded mission, then P2 runs the same one; higher score wins (normal
+  head-to-head settle). `buildStage(seed,si)` makes deep destructible tile maps (tunnels, bunkers, barracks, towers,
+  cliffs with hidden caves, pits under bridges; stage 3 = Devil arena + chopper), ~100 enemies per mission (mook,
+  bomber, bruiser, dog, grenadier) with sight limited to the screen. Movement: big jump, step-up, climb any wall you push
+  into, ladders, drop-through platforms. Heads: real photos cropped to ovals, cut-outs outlined, generated SVG cards
+  replaced by the head-shaped stand-in (`headCanvas`). Cages swap your bro (+1 life); the GOLD cage per stage holds a
+  locked character from `gameRecruitPool` → `session.broforceRecruits` → `settleGame` recruits it to that player's
+  roster (no random winner recruit for Broforce). The old co-op modules in `src/engines/broforce/` are unused except
+  the legacy result path in `gameLauncher.js` (old saves); their unit tests still pass. Tests: `tests/broforce-turns.mjs`
+  (screens at 390x780/780x390/1100x700 → `/tmp/claude-0/sc/bf-*`), `tests/broforce-board.mjs`. Real-phone feel untested.
 - **Broforce (integrated Oct 13, branch from `feature/broforce-wave4-candidate` + TESTver):** 4 co-op missions
   `broforce-jungle|factory|city|desert` (`src/packs/broforcePack.js`, engine `src/engines/broforce.js` + `src/engines/broforce/*`,
   docs `docs/broforce/`). Run-right side-scroller: rescue caged prisoners (swap fighter), devil boss = a random locked
