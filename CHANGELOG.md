@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.59.1
+
+**Broforce faces and a stray line.** Bros now pull a face for what they are doing: angry while firing or hit, sad when they die, win after a rescue or stage clear, thinking in mid-air, walking when they run, silly after standing around and normal otherwise (using each character's own mood portraits where they exist). Removed the faint vertical line that ran down the middle of the screen (the touch-zone divider).
+
 ## v0.59.0
 
 **Broforce overhaul.** Players now take turns on the same three-stage mission and the higher score wins. Levels are deep and fully destructible (tunnels, bunkers, two-storey barracks, watchtowers, cliffs with hidden caves, pits under rope bridges), with about 100 enemies per mission (soldiers, suicide bombers, minigun bruisers, attack dogs, grenadiers), Broforce wall-climbing, grenades, exploding barrels, checkpoint flags, the Devil boss and the extraction chopper. Bro heads are proper round faces. Characters unlock only by freeing the GOLD cage on each stage.

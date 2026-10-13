@@ -9293,7 +9293,7 @@ Object.assign(exports,{LEGENDS_ITEMS});
 
 },
 "src/version.js":(exports,require)=>{
-const VERSION='0.59.0';
+const VERSION='0.59.1';
 Object.assign(exports,{VERSION});
 
 },
@@ -41884,7 +41884,7 @@ function buildStage(seed,si){
 // ------------------------------------------------------------------ portrait heads (oval photos or outlined cut-outs)
 const HEADS=new Map();
 function headCanvas(id,mood='normal'){
- const key=id+':'+mood;let h=HEADS.get(key);if(h)return h.c||placeholderHead(id);
+ const key=id+':'+mood,ready=()=>mood!=='normal'&&HEADS.get(id+':normal')?.c||placeholderHead(id);let h=HEADS.get(key);if(h)return h.c||ready();
  h={c:null};HEADS.set(key,h);
  try{
   const {portraitURL,portraitFallbackURL}=require('src/assets.js'),{headDisplayURL}=require('src/headCutouts.js');
@@ -41899,7 +41899,7 @@ function headCanvas(id,mood='normal'){
    img.src=url;};
   load();
  }catch{h.c=placeholderHead(id);}
- return placeholderHead(id);
+ return h.c||ready();
 }
 const PLACE=new Map();
 function placeholderHead(id){
@@ -42104,7 +42104,19 @@ async function broforce(s){
  function newPlayer(i){return {i,x:0,y:0,vx:0,vy:0,w:5,h:20,grounded:false,facing:1,climb:false,ladder:false,anim:0,hp:2,inv:0,dead:0,lives:3,grenades:3,
   bro:s.players[i].character,weapon:weaponFor(s.players[i].character),fireCD:0,jumpBuf:0,coyote:0,score:0,kills:0,rescues:0,gold:0,stageTimes:[],combo:0,comboT:0,
   muzzle:0,recoil:0,board:0,boarded:false,stagesCleared:0,deaths:0,mood:'normal',moodT:0,lastHurt:0,walled:0};}
- function setBro(id){P.bro=id;P.weapon=weaponFor(id);headCanvas(id);headCanvas(id,'win');headCanvas(id,'sad');}
+ function setBro(id){P.bro=id;P.weapon=weaponFor(id);for(const m of MOODS)headCanvas(id,m);}
+ // the bro's face follows what they are doing: angry firing (or hit), sad when dead, win after a rescue or stage clear,
+ // think in the air, walk when running, silly after standing still a while, normal otherwise
+ const MOODS=['normal','angry','sad','win','think','walk','silly'];
+ function broMood(p){
+  if(p.dead||p.hp<=0)return 'sad';
+  if(p.moodT>0&&(p.mood==='win'||p.mood==='angry'))return p.mood;
+  if(p.fireT<.35)return 'angry';
+  if(!p.grounded&&!p.ladder)return 'think';
+  if(p.ladder||Math.abs(p.vx)>20)return 'walk';
+  if(p.idleT>2.2)return 'silly';
+  return 'normal';
+ }
  function addScore(n,x,y,col='#ffe23a'){P.score+=n;if(x!==undefined)fx.pop(x,y,`+${n}`,{color:col,stroke:'#000',size:9,rise:22,life:.8});}
  function hurtPlayer(dmg,fromX){
   if(P.dead||P.inv>0||P.boarded)return;P.hp-=dmg;P.inv=1.1;P.lastHurt=.3;sfx.hit();fx.shake(5);
@@ -42156,6 +42168,7 @@ async function broforce(s){
   if(p.dead){p.dead-=dt;if(p.dead<=0){if(p.lives>0)respawn();else endTurn('lives');}return;}
   p.inv=Math.max(0,p.inv-dt);p.fireCD-=dt;p.muzzle=Math.max(0,p.muzzle-dt);p.recoil=Math.max(0,p.recoil-dt*8);p.lastHurt=Math.max(0,p.lastHurt-dt);
   if(p.moodT>0){p.moodT-=dt;if(p.moodT<=0)p.mood='normal';}
+  p.fireT=(p.fireT??9)+dt;p.idleT=p.grounded&&!p.ladder&&Math.abs(p.vx)<20&&!inp.fire?(p.idleT||0)+dt:0;
   if(inp.jumpPress){p.jumpBuf=.14;inp.jumpPress=0;}else p.jumpBuf=Math.max(0,p.jumpBuf-dt);
   const want=(inp.r?1:0)-(inp.l?1:0);if(want)p.facing=want;
   // ladders
@@ -42195,7 +42208,7 @@ async function broforce(s){
   if(p.y>ROWS*T+40)killPlayer();
  }
  function fireWeapon(p,w){
-  p.shotsFired=(p.shotsFired||0)+1;const mx=p.x+p.facing*12,my=p.y-11+(p.ladder?0:0);p.muzzle=.06;p.recoil=1;
+  p.shotsFired=(p.shotsFired||0)+1;p.fireT=0;const mx=p.x+p.facing*12,my=p.y-11+(p.ladder?0:0);p.muzzle=.06;p.recoil=1;
   if(w.rocket){W.shots.push({x:mx,y:my,vx:p.facing*w.speed,vy:0,life:w.life,owner:'p',kind:'rocket',trail:0});sfx.rocket();p.vx-=p.facing*40;return;}
   if(w.flame){for(let k=0;k<2;k++)W.flames.push({x:mx,y:my+(Math.random()-.5)*3,vx:p.facing*w.speed*(0.8+Math.random()*.4)+p.vx*.5,vy:(Math.random()-.5)*50-20,life:w.life*(0.8+Math.random()*.4),max:w.life,dmg:w.dmg});if(frames%6===0)sfx.flame();return;}
   const n=w.pellets||1;
@@ -42539,7 +42552,7 @@ async function broforce(s){
   g.restore();
   // head: the character's own face, big-head style
   const bob=run?Math.abs(Math.sin(ph*1.6))*-1:0;
-  drawHead(p.bro,p.mood==='angry'?'angry':p.mood==='win'?'win':p.mood==='sad'?'sad':'normal',p.x+f*.5,p.y-25+bob,17,1);
+  drawHead(p.bro,broMood(p),p.x+f*.5,p.y-25+bob,17,1);
   g.globalAlpha=1;
   if(p.climb&&!p.grounded){g.fillStyle='rgba(255,255,255,.6)';for(let k=0;k<2;k++)g.fillRect(p.x+f*(p.w+1),p.y-8-k*7-(time*40%7),1,3);}
  }
@@ -42648,7 +42661,7 @@ async function broforce(s){
   const u=clamp(Math.min(s.W/700,s.H/390),.62,1.5),size=Math.round(14*u),m=8*u;
   // top-left: player head, name, score, lives, grenades
   g.save();g.fillStyle='rgba(10,12,8,.55)';g.beginPath();g.roundRect?.(m,m,214*u,52*u,10*u);g.fill();
-  drawHeadScreen(P.bro,P.dead?'sad':P.mood,m+24*u,m+26*u,40*u);
+  drawHeadScreen(P.bro,P.boarded?'win':broMood(P),m+24*u,m+26*u,40*u);
   outlined(g,s.players[P.i].name.toUpperCase().slice(0,10),m+50*u,m+14*u,{size:Math.round(11*u),fill:PCOL[P.i],stroke:'#000',align:'left'});
   outlined(g,P.score.toLocaleString(),m+50*u,m+31*u,{size:Math.round(17*u),fill:'#fff',stroke:'#000',align:'left'});
   outlined(g,`BROS ×${P.lives+(P.dead?0:1)}  💣${P.grenades}  ${'♥'.repeat(Math.max(0,P.hp))}`,m+50*u,m+46*u,{size:Math.round(9.5*u),fill:'#ffd0a0',stroke:'#000',align:'left'});
@@ -42675,7 +42688,6 @@ async function broforce(s){
    else{const sx=s.W*.15,sy=s.H*.8,r=Math.min(s.H*.12,44);g.strokeStyle='rgba(255,255,255,.25)';g.lineWidth=2;g.beginPath();g.arc(sx,sy,r,0,7);g.stroke();outlined(g,'◀ RUN ▶',sx,sy,{size:Math.round(10*u),fill:'rgba(255,255,255,.75)',stroke:'#000'});outlined(g,'↑ JUMP',sx,sy-r-8*u,{size:Math.round(8*u),fill:'rgba(255,255,255,.6)',stroke:'#000'});}
    const fx2=s.W*.82,fy=s.H*.78,fr=Math.min(s.H*.13,50);g.fillStyle=pad.fire.size?'rgba(255,90,40,.35)':'rgba(255,255,255,.12)';g.beginPath();g.arc(fx2,fy,fr,0,7);g.fill();
    outlined(g,'HOLD · FIRE',fx2,fy,{size:Math.round(10*u),fill:'rgba(255,255,255,.85)',stroke:'#000'});outlined(g,'↑ jump',fx2,fy-fr-7*u,{size:Math.round(8*u),fill:'rgba(255,255,255,.6)',stroke:'#000'});outlined(g,'↓ grenade',fx2,fy+fr+7*u,{size:Math.round(8*u),fill:'rgba(255,255,255,.6)',stroke:'#000'});
-   g.strokeStyle='rgba(255,255,255,.05)';g.beginPath();g.moveTo(split(),s.H*.2);g.lineTo(split(),s.H);g.stroke();
    g.globalAlpha=1;}
   g.restore();
  }
@@ -42699,7 +42711,7 @@ async function broforce(s){
   setClock(v){clock=v;},teleport(x,y){if(!P)return;P.x=x;P.y=y??W.S.surfAt(Math.floor(x/T))*T;P.vx=P.vy=0;updateCamera(0,true);},
   killAll(){for(const e of W.foes)if(e.alive)killFoe(e,P.x,false);},killBoss(){if(W.boss){W.boss.state='walk';hitBoss(999,P.x);}},
   freeCage(k){const cg=W.cages[k];if(cg)openCage(cg);},board(){W.heli.state='hover';W.heli.y=W.exit.y-6.5*T;Object.assign(P,{x:W.heli.x-8,y:W.exit.y,dead:0,hp:2,inv:2});},
-  hurt(){hurtPlayer(2,P.x+1);},head(id){return headCanvas(id);},renderFrom(url){return new Promise(r=>{const i=new Image();i.onload=()=>r(renderHead(i));i.onerror=()=>r(null);i.src=url;});},ids(){return require('src/characters.js').CHARACTERS.map(ch=>ch.id);},portrait(id){const u=require('src/assets.js').portraitURL(id,'normal');return String(u).slice(0,300);},get recruits(){return s.broforceRecruits;}};
+  hurt(){hurtPlayer(2,P.x+1);},mood(){return broMood(P);},head(id){return headCanvas(id);},renderFrom(url){return new Promise(r=>{const i=new Image();i.onload=()=>r(renderHead(i));i.onerror=()=>r(null);i.src=url;});},ids(){return require('src/characters.js').CHARACTERS.map(ch=>ch.id);},portrait(id){const u=require('src/assets.js').portraitURL(id,'normal');return String(u).slice(0,300);},get recruits(){return s.broforceRecruits;}};
 
  // ---------------------------------------------------------------- main loop
  computeZoom();
