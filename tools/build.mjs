@@ -27,8 +27,8 @@ if (fs.existsSync(portraitDir)) for (const f of fs.readdirSync(portraitDir)) {
   const m = f.match(/^([a-z0-9-]+)(?:\.(normal|win|silly|angry|mad|sad|think|walk))?\.(webp|png|jpe?g)$/i);
   if (!m) continue;
   const ext = m[3].toLowerCase().replace('jpeg', 'jpg');
-  // Existing .mad portrait filenames are a supported angry-mood alias.
-  // An explicit .angry portrait wins where both filenames are present.
+  // Accept the long-standing .mad filename without requiring an upload rename.
+  // Explicit .angry art wins if both .angry and .mad exist.
   const mood=m[2]?.toLowerCase(), normalized=mood==='mad'?'angry':mood;
   const key=normalized?`char:${m[1]}:${normalized}`:`photo:char:${m[1]}`;
   if(mood==='mad'&&Object.prototype.hasOwnProperty.call(userPortraits,key))continue;
