@@ -52,6 +52,8 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   from turtle pieces (turns, hills, ramps + gaps, glider, anti-gravity `glue`, loop, corkscrew; flex straights auto-close).
   `physics.js` track-space karts (Frenet), air/ramps/crests, rails, Lakitu, drift sparks (`DRIFT_LV`) → mini-turbo (`MT` .7/1.15/1.6 s),
   auto tricks. Drift: latch at 85% push, ends past 55% the other way or on release; only hard wall hits (>.75) cancel it.
+  MK8-style arc: `driftAge` ramps the turn rate from 28% to full over 0.5 s while the kart slides a little wide; `k.slip` = drawn
+  nose angle (grows with the arc and the thumb).
   `render.js` themes (`THEMES`: baked sky per theme, procedural road/kerbs/sand/stone, fences/walls, grass/water/lava ground
   plane, trees/cows/palms/pillars), karts with portrait billboards, ghost. `hud.js` (Tour HUD, two item slots, time mode),
   `music.js` (original loop). Controls = Mario Kart Tour per screen: drag steers (floating origin), full push latches a drift,

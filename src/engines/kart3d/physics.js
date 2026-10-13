@@ -49,12 +49,18 @@ function stepKart(c,k,inp,dt,ctx={}){
  const f=T.frame(c,k.s,F1),i=f.i,glue=c.glue[i];k.glue+=((glue?1:0)-k.glue)*Math.min(1,dt*6);
  // drifting
  const canDrift=k.v>90&&k.spin<=0&&k.tumble<=0&&k.bullet<=0;
- if(!k.drift&&inp.drift&&canDrift){k.drift=inp.drift;k.driftT=0;k.hop=.24;ctx.ev?.(k,'hop');}
+ if(!k.drift&&inp.drift&&canDrift){k.drift=inp.drift;k.driftT=0;k.driftAge=0;k.hop=.24;ctx.ev?.(k,'hop');}
  else if(k.drift&&(inp.drift!==k.drift||!canDrift))endDrift(k,ctx,canDrift);
  let yaw=0;const steer=k.steer;
  if(k.bullet>0){k.psi*=Math.pow(.02,dt);k.d*=Math.pow(.3,dt);}
  else if(k.spin>0||k.tumble>0)yaw=0;
- else if(k.drift){const into=clamp(steer*k.drift,-1,1);yaw=k.drift*(1.1+(into>0?.75:.6)*into)*clamp(k.v/200,.5,1);const before=sparkLevel(k);k.driftT+=dt*(.95+.55*Math.max(0,into));const lv=sparkLevel(k);if(lv!==before)ctx.ev?.(k,'spark',lv);k.spark=lv;}
+ else if(k.drift){const into=clamp(steer*k.drift,-1,1);
+  // like Mario Kart 8: after the hop the kart swings its nose in but keeps carrying forward (sliding a little wide),
+  // then the arc builds over ~half a second; the thumb sets how tight the arc is (in = tight, out = wide)
+  k.driftAge=(k.driftAge||0)+dt;const a=clamp(k.driftAge/.5,0,1),ramp=.28+.72*a*a*(3-2*a);
+  yaw=k.drift*(1.1+(into>0?.75:.6)*into)*clamp(k.v/200,.5,1)*ramp;
+  k.d-=k.drift*k.v*.075*(1-ramp)*dt;
+  k.slip=k.drift*(.16+.3*ramp+.13*into);const before=sparkLevel(k);k.driftT+=dt*(.95+.55*Math.max(0,into));const lv=sparkLevel(k);if(lv!==before)ctx.ev?.(k,'spark',lv);k.spark=lv;}
  else yaw=steer*TURN*clamp(k.v/90,0,1)*(1-.18*clamp(k.v/TOP,0,1.4));
  k.psi=wrapA(k.psi+yaw*dt);
  // speed
@@ -120,7 +126,7 @@ function pose(c,k){
  }
  k.F=F;k.N=N;k.R=T.cross(F,N);
  // drawn facing: drift slide, spin-outs
- const vy=(k.drift?k.drift*.42:0)+(k.spin>0?k.spinA:0);k.visYaw+=(vy-k.visYaw)*(k.spin>0?1:.25);if(k.spin<=0&&Math.abs(k.visYaw)>Math.PI)k.visYaw=wrapA(k.visYaw);
+ const vy=(k.drift?(k.slip??k.drift*.42):0)+(k.spin>0?k.spinA:0);k.visYaw+=(vy-k.visYaw)*(k.spin>0?1:.25);if(k.spin<=0&&Math.abs(k.visYaw)>Math.PI)k.visYaw=wrapA(k.visYaw);
 }
 
 // Autopilot (tests, demo): follows the racing line, drifts long corners, aims at item boxes.
