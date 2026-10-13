@@ -500,7 +500,7 @@ async function marioBros(s){
    const cw=Math.min(bw*1.04,size*.84),ch=clamp(bh*.24,3.6,size*.25),cx=hx+fc*(cw*.05-.7);
    g.fillStyle=pal.cap;g.beginPath();g.ellipse(cx,topY+ch*.92,cw/2,ch*1.08,0,Math.PI,0);g.fill();
    g.fillRect(cx-cw/2,topY+ch*.9,cw,ch*.46);
-   const b0=cx+fc*cw*.08,b1=cx+fc*(cw*.5+clamp(bw*.18,2.8,6));g.fillRect(Math.min(b0,b1),topY+ch*1.16,Math.abs(b1-b0),Math.max(1.8,ch*.38));
+   const b0=cx+fc*cw*.08,b1=cx+fc*(cw*.5+clamp(bw*.18,2.8,6));const bh2=Math.max(1.8,ch*.38);g.fillRect(Math.min(b0,b1),topY+ch*1.36-bh2,Math.abs(b1-b0),bh2);
    // the M / L emblem on the crown (red or green letter on a white patch; ringed when the cap itself is white)
    const ex=cx+fc*cw*.1,ey=topY+ch*.5,er=Math.max(2.2,ch*.5),light=pal.cap===C.white,ink=light?pal.shirt:pal.cap;
    g.fillStyle=C.white;g.beginPath();g.arc(ex,ey,er,0,7);g.fill();if(light){g.strokeStyle=ink;g.lineWidth=Math.max(.6,er*.22);g.stroke();}
