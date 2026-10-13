@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.59.0 (Broforce overhaul; release file `releases/ShambConkins_v0.59.0.html`, ~53 MB, committed like 0.58.1/0.58.2; v0.58.3 was a GitHub Release asset).
+Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambConkins_v0.59.1.html`, ~53 MB, committed like 0.58.1/0.58.2; v0.58.3 was a GitHub Release asset).
 
 ## October 11, 2026 validated six-fix integration
 - TESTver merged six branches at `469ff177`; owner reported playtest looked good and authorized v0.58.3 production release.
@@ -29,7 +29,7 @@ Version 0.59.0 (Broforce overhaul; release file `releases/ShambConkins_v0.59.0.h
   bomber, bruiser, dog, grenadier) with sight limited to the screen. Movement: big jump, step-up, climb any wall you push
   into, ladders, drop-through platforms. Heads (`headCanvas`/`renderHead`): transparent art (>5% clear pixels)
   is trimmed and outlined (owner-approved look); a photo's plain backdrop is flood-filled away (`removeBackdrop`), busy photos
-  get an outlined egg crop; generated SVG cards use the head-shaped stand-in. Contact sheet: `tests/broforce-heads.mjs`. Cages swap your bro (+1 life); the GOLD cage per stage holds a
+  get an outlined egg crop; generated SVG cards use the head-shaped stand-in. Contact sheet: `tests/broforce-heads.mjs`. Face per action: `broMood(p)`. Cages swap your bro (+1 life); the GOLD cage per stage holds a
   locked character from `gameRecruitPool` → `session.broforceRecruits` → `settleGame` recruits it to that player's
   roster (no random winner recruit for Broforce). The old co-op modules in `src/engines/broforce/` are unused except
   the legacy result path in `gameLauncher.js` (old saves); their unit tests still pass. Tests: `tests/broforce-turns.mjs`
