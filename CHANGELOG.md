@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+**Super Mario Bros. World 1.** The Mario warp games now play the NES World 1 maps: 1-1 (with the coin room), 1-2 underground with the Warp Zone above the ceiling, the 1-3 treetops and Bowser's castle 1-4 (firebars, lava, the bridge and axe, Toad). Movement uses the original NES physics numbers. New game **Super Mario Bros. · World 1** with the NES title screen and menu: 1 PLAYER GAME (each player plays a whole game, P2 races P1's ghost) or 2 PLAYER GAME (Mario and Luigi swap on every lost life), three lives, the NES clock, highest score wins. Coin Rush now carries on to 1-2, 1-3 and 1-4 at the flagpole. Taking any Warp Zone pipe in 1-2 finds a character you have not unlocked hiding in the tunnel, who joins your team. The cap now fits the player's head (with the M / L badge). The games fill the whole screen with Pause, Exit and a full-screen toggle floating in the corner. Saves and existing game ids are unchanged.
+
 ## v0.59.1
 
 **Broforce faces and a stray line.** Bros now pull a face for what they are doing: angry while firing or hit, sad when they die, win after a rescue or stage clear, thinking in mid-air, walking when they run, silly after standing around and normal otherwise (using each character's own mood portraits where they exist). Removed the faint vertical line that ran down the middle of the screen (the touch-zone divider).
