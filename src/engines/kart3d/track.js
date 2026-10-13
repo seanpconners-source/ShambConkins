@@ -67,7 +67,9 @@ function buildCourse(def){
   if(pc.pads)for(const [f,o] of pc.pads)c.pads.push({s:at(f),d:o,len:44,w:30});
   if(pc.ring!=null)c.rings.push(at(pc.ring));}
  let minY=Infinity,maxY=-Infinity;for(let i=0;i<N;i++){minY=Math.min(minY,c.py[i]);maxY=Math.max(maxY,c.py[i]);}c.minY=minY;c.maxY=maxY;
- c.spawn=def.spawn||[{s:c.startS-40,d:-c.half[0]*.42,psi:0},{s:c.startS-40,d:c.half[0]*.42,psi:0}];
+ // starting grid, two by two behind the line: CPU racers in front, the two players on the back row (like Mario Kart)
+ const slot=(r,side)=>({s:c.startS-26-r*44-(side>0?16:0),d:side*c.half[0]*.42,psi:0});
+ c.spawn=def.spawn||[slot(3,-1),slot(3,1),slot(0,-1),slot(0,1),slot(1,-1),slot(1,1),slot(2,-1),slot(2,1)];
  return c;
 }
 function yawAt(pieces,k){let y=0;for(let i=0;i<k;i++)y+=(typeof pieces[i].turn==='number'?pieces[i].turn:0)*D2R;return y;}

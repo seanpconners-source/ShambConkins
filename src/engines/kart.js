@@ -10,6 +10,8 @@ const {clamp,seededRandom}=require("src/utils.js");
 const {arenaKeys,arenaTouch,snd,noise,jingle,PCOL,settle}=require("src/engines/arenaKit.js");
 const {audioContext}=require("src/audio.js");
 const {store}=require("src/state.js");
+const {CHARACTERS,character}=require("src/characters.js");
+const {portraitURL}=require("src/assets.js");
 const T=require("src/engines/kart3d/track.js");
 const Ph=require("src/engines/kart3d/physics.js");
 const {createRenderer,TILE}=require("src/engines/kart3d/render.js");
@@ -24,6 +26,16 @@ const POOLS={
  far:[['mush3',2],['star',2],['golden',1.4],['bullet',1.2],['bolt',1],['red',1],['blue',.7]],
  battle:[['green',3],['shell3',1.3],['banana',2],['red',2],['bomb',2],['mushroom',1],['star',.9],['blooper',.8],['banana3',.6]]};
 const COUNT={banana3:3,shell3:3,mush3:3,golden:99};
+const CPU_COLORS={mario:'#e8322b',luigi:'#2fbf3a',bowser:'#f0a020'},CPU_PALETTE=['#ffd21c','#9a5cff','#ff8a2a','#26d7c4','#f04a8a','#8bd13a','#5a7cff'];
+const ord=n=>n+(n===1?'st':n===2?'nd':n===3?'rd':'th');
+// CPU racers: the Mario Bros. (and Bowser when the roster has him), then random characters whose face art ships offline.
+function pickCPUs(n,exclude,rand){
+ const hasArt=id=>{try{return /^data:image\/(webp|png|jpe?g|gif)/i.test(portraitURL(id,'normal')||'');}catch{return false;}};
+ const out=[];for(const id of ['mario','luigi','bowser'])if(out.length<n&&!exclude.includes(id)&&character(id)?.id===id)out.push(id);
+ const pool=CHARACTERS.map(c=>c.id).filter(id=>!exclude.includes(id)&&!out.includes(id)&&hasArt(id));
+ while(out.length<n&&pool.length)out.push(pool.splice(Math.floor(rand()*pool.length),1)[0]);
+ while(out.length<n)out.push(CHARACTERS[Math.floor(rand()*CHARACTERS.length)].id);return out;
+}
 
 async function kart(s){
  const mode=s.game.kartMode==='battle'?'battle':'race';
@@ -33,7 +45,9 @@ async function kart(s){
  const [cv,x]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();
  if(!await settle(s))return;
  const course=mode==='race'?T.rainbowRoad():T.battleRing();
- let R;try{R=createRenderer(glc,course,{colors:PCOL,battle:mode==='battle'});}catch(e){console.warn('kart: 3D renderer unavailable, using Mode 7',e);return classic();}
+ const rand0=seededRandom(Math.floor(s.random()*1e9)),NCPU=mode==='race'?6:0,cpuIds=pickCPUs(NCPU,s.players.map(p=>p.character),rand0);
+ const colors=[...PCOL,...cpuIds.map((id,j)=>CPU_COLORS[id]||CPU_PALETTE[j%CPU_PALETTE.length])];
+ let R;try{R=createRenderer(glc,course,{colors,battle:mode==='battle'});}catch(e){console.warn('kart: 3D renderer unavailable, using Mode 7',e);return classic();}
  s.cleanup(()=>{try{R.gl.getExtension('WEBGL_lose_context')?.loseContext();}catch{}});
  const rand=seededRandom(Math.floor(s.random()*1e9)),itemRand=seededRandom(Math.floor(s.random()*1e9));
  // world placement of boxes and coins
@@ -43,18 +57,19 @@ async function kart(s){
  {let a=Infinity,b=-Infinity,c0=Infinity,d0=-Infinity;for(let i=0;i<course.N;i++){a=Math.min(a,course.px[i]);b=Math.max(b,course.px[i]);c0=Math.min(c0,course.pz[i]);d0=Math.max(d0,course.pz[i]);}
   const sc=1/Math.max(b-a,d0-c0),ox=(1-(b-a)*sc)/2,oz=(1-(d0-c0)*sc)/2;course.mini=[];for(let i=0;i<course.N;i+=6)course.mini.push([ox+(course.px[i]-a)*sc,oz+(course.pz[i]-c0)*sc]);
   course.miniAt=k=>[ox+(k.P2[0]-a)*sc,oz+(k.P2[2]-c0)*sc];}
- const K=[0,1].map(i=>Object.assign(Ph.makeKart(course,i),{items:[],rolling:false,rollT:0,frenzy:0,frenzyItem:null,frenzyCD:0,goldenT:0,balloons:3,out:false,finished:false,finishT:0,place:0,best:0,msgs:[],wrongT:0,rel:0}));
+ const K=colors.map((_,i)=>Object.assign(Ph.makeKart(course,i),{human:i<2,cpu:i>=2?cpuIds[i-2]:null,lane:i>=2?(rand0()-.5)*50:0,topMul:1,baseMul:i>=2?.955+rand0()*.04:1,items:[],rolling:false,rollT:0,frenzy:0,frenzyItem:null,frenzyCD:0,goldenT:0,balloons:3,out:false,finished:false,finishT:0,place:0,best:0,msgs:[],wrongT:0,rel:0}));
  const shells=[],bananas=[],bombs=[],parts=[];
  let phase='intro',introT=0,lights=0,clock=0,endT=0,winner=-1,endText='',simT=0,hintT=7;
  const auto=[false,false];
  // ---------------------------------------------------------------- sound
- const sfx={box:()=>jingle([880,1175,1568],{step:.04,type:'square',vol:.03}),item:()=>jingle([1319,1568],{step:.05,type:'square',vol:.03}),coin:()=>{snd(988,.05,{type:'square',vol:.03});snd(1319,.12,{type:'square',vol:.03,delay:.05});},
+ let sfx={box:()=>jingle([880,1175,1568],{step:.04,type:'square',vol:.03}),item:()=>jingle([1319,1568],{step:.05,type:'square',vol:.03}),coin:()=>{snd(988,.05,{type:'square',vol:.03});snd(1319,.12,{type:'square',vol:.03,delay:.05});},
   boost:()=>{noise(.35,{vol:.06,freq:900});snd(180,.4,{type:'sawtooth',vol:.035,to:720});},spin:()=>{snd(620,.45,{type:'square',vol:.035,to:110});noise(.25,{vol:.06,freq:2200});},
   shell:()=>snd(320,.16,{type:'square',vol:.03,to:640}),fall:()=>snd(820,.8,{type:'triangle',vol:.04,to:110}),pop:()=>{noise(.12,{vol:.08,freq:3000});snd(1200,.08,{type:'square',vol:.03,to:300});},
   lap:()=>jingle([659,784,1047],{step:.08,type:'square',vol:.035}),final:()=>jingle([784,988,1175,1568],{step:.09,type:'square',vol:.04}),star:()=>jingle([1047,1319,1568,2093,1568,2093],{step:.06,type:'square',vol:.03}),
   light:hi=>snd(hi?1047:523,hi?.55:.28,{type:'square',vol:.045}),hop:()=>snd(300,.08,{type:'square',vol:.025,to:520}),spark:lv=>snd([0,880,1175,1568][lv],.1,{type:'triangle',vol:.03}),
   boom:()=>{noise(.6,{vol:.11,freq:400,q:.5});snd(90,.5,{type:'sawtooth',vol:.05,to:40});},wall:()=>noise(.08,{vol:.05,freq:700}),trick:()=>jingle([1175,1568],{step:.05,type:'square',vol:.03}),
   land:()=>noise(.1,{vol:.05,freq:300}),glide:()=>noise(.5,{vol:.04,freq:1500,q:.4}),zap:()=>{noise(.5,{vol:.08,freq:500});snd(1600,.4,{type:'sawtooth',vol:.03,to:200});},ink:()=>noise(.4,{vol:.06,freq:250,q:.4})};
+ const SILENT=new Proxy({},{get:()=>()=>{}});
  // engine hum per kart (two thumbs, two engines)
  const engines=[];{const ac=store.profile?.settings?.sound?audioContext():null;if(ac)try{for(let i=0;i<2;i++){const o=ac.createOscillator(),o2=ac.createOscillator(),f=ac.createBiquadFilter(),g=ac.createGain();o.type='sawtooth';o2.type='square';f.type='lowpass';f.frequency.value=600;g.gain.value=0;
    o.connect(f);o2.connect(f);f.connect(g);g.connect(ac.destination);o.start();o2.start();engines.push({o,o2,f,g,ac});}}catch{}}
@@ -69,29 +84,34 @@ async function kart(s){
  const burst=(P,n,o)=>{for(let j=0;j<n;j++){const a=rand()*Math.PI*2,b=rand()*Math.PI-Math.PI/2,sp=(o.speed||80)*(.4+rand()*.8);spawn(P,{...o,V:[Math.cos(a)*Math.cos(b)*sp,Math.sin(b)*sp+(o.up||0),Math.sin(a)*Math.cos(b)*sp],life:(o.life||.5)*(.6+rand()*.7)});}};
  const local=(k,p)=>{const M=k._M;if(!M)return k.P2.slice();return [M[0]*p[0]+M[4]*p[1]+M[8]*p[2]+M[12],M[1]*p[0]+M[5]*p[1]+M[9]*p[2]+M[13],M[2]*p[0]+M[6]*p[1]+M[10]*p[2]+M[14]];};
  // ---------------------------------------------------------------- items
- const rankOf=k=>mode!=='race'?1:k.finished&&!K[1-k.i].finished?1:K[1-k.i].finished&&!k.finished?2:k.best>=K[1-k.i].best?1:2;
+ let order=K.slice(),finishCount=0;
+ const sortOrder=()=>{order=K.slice().sort((a,b)=>a.finished&&b.finished?a.place-b.place:a.finished?-1:b.finished?1:b.prog-a.prog);};
+ const rankOf=k=>mode!=='race'?1:order.indexOf(k)+1;
+ if(mode==='race'){for(const k of K){k.rel=T.wrapS(course,k.s-course.startS);k.prog=k.rel/course.L-1;}sortOrder();}
+ const aheadOf=k=>{if(mode!=='race')return K[1-k.i];let best=null,bd=Infinity;for(const o of K){if(o===k||o.finished)continue;const d=(o.prog-k.prog)*course.L;if(d>0&&d<bd){bd=d;best=o;}}return bd<1700?best:null;};
  const pick=list=>{let tot=0;for(const [,w] of list)tot+=w;let r=itemRand()*tot;for(const [id,w] of list){r-=w;if(r<=0)return id;}return list[0][0];};
  function rollItem(k){
-  let pool=POOLS.battle;if(mode==='race'){const gap=K[1-k.i].best-k.best;pool=rankOf(k)===1?POOLS.first:gap>.22?POOLS.far:POOLS.second;}
+  let pool=POOLS.battle;if(mode==='race'){const r=rankOf(k),gap=order[0].prog-k.prog;pool=r===1?POOLS.first:r<=3&&gap<.22?POOLS.second:POOLS.far;}
   const id=pick(pool);
-  if(itemRand()<(mode==='race'&&rankOf(k)===2?.045:.02)){k.frenzy=7;k.frenzyItem=['banana','green','mushroom','red','bomb'][Math.floor(itemRand()*5)];k.inv=Math.max(k.inv,7);k.items=[];msg(k,'FRENZY!','#ff7af2',28,1.6);sfx.star();return;}
+  if(itemRand()<(mode==='race'&&rankOf(k)>1?.045:.02)){k.frenzy=7;k.frenzyItem=['banana','green','mushroom','red','bomb'][Math.floor(itemRand()*5)];k.inv=Math.max(k.inv,7);k.items=[];msg(k,'FRENZY!','#ff7af2',28,1.6);if(k.human)sfx.star();return;}
   if(id==='blue'&&rankOf(k)===1)return rollItem(k);
-  k.items.push({id,n:COUNT[id]||1});sfx.item();
+  k.items.push({id,n:COUNT[id]||1});if(k.human)sfx.item();
  }
  const rival=k=>K[1-k.i];
- const hitKart=(k,type,why)=>{const ok=Ph.hit(k,type,ctx);if(ok){if(mode==='battle')loseBalloon(k);s.react?.(k.i,'sad');}return ok;};
+ const hitKart=(k,type,why)=>{const ok=Ph.hit(k,type,ctx);if(ok){if(mode==='battle')loseBalloon(k);if(k.human)s.react?.(k.i,'sad');}return ok;};
  function loseBalloon(k){if(k.balloons<=0)return;k.balloons--;sfx.pop();burst(local(k,[-11,22,0]),14,{tile:TILE.glow,col:[1,.4,.5,1],speed:120,size:4,life:.5});if(k.balloons<=0){k.out=true;msg(k,'OUT!','#ff8aa8',30,2);}}
  function fire(k,id,dir){
-  const fwd=dir!==-1;
+  const fwd=dir!==-1;const quiet=!k.human;const sfx0=sfx;if(quiet)sfx=SILENT;try{fireItem(k,id,dir,fwd);}finally{sfx=sfx0;}}
+ function fireItem(k,id,dir,fwd){
   if(id==='mushroom'||id==='mush3'||id==='golden'){Ph.setBoost(k,1.15);k.v+=60;sfx.boost();msg(k,'BOOST!','#ffb02e',18,.6);if(id==='golden'&&!k.goldenT)k.goldenT=6;}
   else if(id==='star'){k.star=7.5;sfx.star();msg(k,'STAR POWER!','#ffe23a',22,1.2);}
   else if(id==='banana'||id==='banana3'){if(dir===1)bananas.push({s:k.s+12,d:k.d,h:8,vs:k.v+240,vh:150,air:true,owner:k.i,t:0});else bananas.push({s:T.wrapS(course,k.s-20),d:k.d,h:0,air:false,owner:k.i,t:0});snd(420,.1,{type:'square',vol:.03});}
   else if(id==='green'||id==='shell3'){shells.push({kind:'green',s:T.wrapS(course,k.s+(fwd?16:-18)),d:k.d,psi:fwd?k.psi:Ph.wrapA(k.psi+Math.PI),v:600,h:4,owner:k.i,t:0,bounce:0});sfx.shell();}
-  else if(id==='red'){shells.push({kind:fwd?'red':'green',s:T.wrapS(course,k.s+(fwd?16:-18)),d:k.d,psi:fwd?k.psi*.3:Ph.wrapA(k.psi+Math.PI),v:fwd?560:600,h:4,owner:k.i,t:0,bounce:0,target:1-k.i});sfx.shell();}
-  else if(id==='blue'){shells.push({kind:'blue',s:T.wrapS(course,k.s+10),d:k.d,psi:0,v:820,h:46,owner:k.i,t:0,target:1-k.i});sfx.shell();msg(rival(k),'BLUE SHELL!','#6aa0ff',22,1.6);}
+  else if(id==='red'){shells.push({kind:fwd?'red':'green',s:T.wrapS(course,k.s+(fwd?16:-18)),d:k.d,psi:fwd?k.psi*.3:Ph.wrapA(k.psi+Math.PI),v:fwd?560:600,h:4,owner:k.i,t:0,bounce:0,target:aheadOf(k)?.i??-1});sfx.shell();}
+  else if(id==='blue'){const tg=mode==='race'?order[0]:rival(k);if(tg===k){Ph.setBoost(k,1);return;}shells.push({kind:'blue',s:T.wrapS(course,k.s+10),d:k.d,psi:0,v:820,h:46,owner:k.i,t:0,target:tg.i});sfx.shell();msg(tg,'BLUE SHELL!','#6aa0ff',22,1.6);}
   else if(id==='bomb'){bombs.push(fwd?{s:k.s+14,d:k.d,h:10,vs:k.v+200,vh:170,air:true,owner:k.i,t:0,fuse:2.4}:{s:T.wrapS(course,k.s-22),d:k.d,h:0,air:false,owner:k.i,t:0,fuse:2.4});snd(240,.12,{type:'square',vol:.03});}
-  else if(id==='bolt'){const o=rival(k);sfx.zap();if(o.star<=0&&o.bullet<=0){o.shrink=4.5;o.items=[];o.rolling=false;hitKart(o,'spin','bolt');msg(o,'ZAPPED!','#ffe23a',22,1.2);}}
-  else if(id==='blooper'){const o=rival(k);sfx.ink();if(o.bullet<=0){o.ink=4.6;msg(o,'BLOOPER!','#c9a0ff',20,1);}}
+  else if(id==='bolt'){sfx.zap();for(const o of K)if(o!==k&&o.star<=0&&o.bullet<=0&&!o.out){o.shrink=4.5;o.items=[];o.rolling=false;hitKart(o,'spin','bolt');msg(o,'ZAPPED!','#ffe23a',22,1.2);}}
+  else if(id==='blooper'){sfx.ink();for(const o of K)if(o!==k&&o.bullet<=0&&(mode!=='race'||o.prog>=k.prog-.02)){o.ink=4.6;msg(o,'BLOOPER!','#c9a0ff',20,1);}}
   else if(id==='coin'){k.coins=Math.min(10,k.coins+2);sfx.coin();}
   else if(id==='bullet'){k.bullet=4.5;k.inv=Math.max(k.inv,4.5);sfx.boost();msg(k,'BULLET BILL!','#fff',22,1.2);}
  }
@@ -133,7 +153,7 @@ async function kart(s){
  const autoTarget=k=>{for(const b of boxes){const ds=T.sdiff(course,k.s,b.s);if(b.t<=0&&ds>40&&ds<260&&k.items.length<2)return b.d;}return 0;};
  // ---------------------------------------------------------------- physics events → sound / particles / banners
  const ctx={ev:(k,name,data)=>{
-  const P=k.P2;
+  const P=k.P2;if(!k.human){if(name==='lakitu'&&mode==='battle')loseBalloon(k);if(name==='hit')burst(P,6,{tile:TILE.star,add:false,col:[1,1,1,1],speed:90,up:40,size:5,life:.6,g:-80});return;}
   if(name==='miniturbo'){sfx.boost();msg(k,data===3?'ULTRA MINI-TURBO!':data===2?'SUPER MINI-TURBO!':'MINI-TURBO!',['','#5ab8ff','#ffa02e','#e46aff'][data],16,.8);}
   else if(name==='spark')sfx.spark(data);
   else if(name==='hop')sfx.hop();
@@ -146,7 +166,7 @@ async function kart(s){
   else if(name==='fall'){sfx.fall();}
   else if(name==='lakitu'){if(mode==='battle')loseBalloon(k);cams[k.i].snap=true;}
  }};
- const shake=(k,a)=>{if(!store.profile?.settings?.reducedMotion)cams[k.i].shake=Math.max(cams[k.i].shake||0,a);};
+const shake=(k,a)=>{if(cams[k.i]&&!store.profile?.settings?.reducedMotion)cams[k.i].shake=Math.max(cams[k.i].shake||0,a);};
  // ---------------------------------------------------------------- projectiles
  const dist2=(a,b)=>{const ds=T.sdiff(course,a.s,b.s),dd=b.d-a.d;return ds*ds+dd*dd;};
  const kartHittable=k=>!k.out&&k.lakitu<=0&&k.falling<=0;
@@ -154,10 +174,10 @@ async function kart(s){
   const ds=T.sdiff(course,k.s,src.s);const behind=ds*Math.cos(k.psi)<0;if(!behind&&it.id!=='shell3')return false;it.n--;if(it.n<=0)k.items.shift();sfx.pop();return true;}
  function stepProjectiles(dt){
   for(const sh of shells){if(sh.dead)continue;sh.t+=dt;let gone=false;
-   if(sh.kind==='blue'){const tg=K[sh.target];const ds=T.sdiff(course,sh.s,tg.s);sh.s=T.wrapS(course,sh.s+Math.min(Math.abs(ds),sh.v*dt)*Math.sign(ds||1));sh.d+=(tg.d-sh.d)*Math.min(1,dt*3);sh.h=Math.abs(ds)<120?Math.max(4,sh.h-dt*160):46;
+   if(sh.kind==='blue'){const tg=K[sh.target]||order[0];const ds=T.sdiff(course,sh.s,tg.s);sh.s=T.wrapS(course,sh.s+Math.min(Math.abs(ds),sh.v*dt)*Math.sign(ds||1));sh.d+=(tg.d-sh.d)*Math.min(1,dt*3);sh.h=Math.abs(ds)<120?Math.max(4,sh.h-dt*160):46;
     if(Math.abs(ds)<16&&kartHittable(tg)){gone=true;explode(tg.s,tg.d,110,sh.owner,true);}}
    else{
-    if(sh.kind==='red'){const tg=K[sh.target],ds=T.sdiff(course,sh.s,tg.s);if(ds>0&&ds<1600&&kartHittable(tg)){const want=Math.atan2(tg.d-sh.d,Math.max(30,ds*.6));sh.psi+=clamp(Ph.wrapA(want-sh.psi),-3*dt,3*dt);}else sh.psi*=Math.pow(.2,dt);}
+    if(sh.kind==='red'&&K[sh.target]){const tg=K[sh.target],ds=T.sdiff(course,sh.s,tg.s);if(ds>0&&ds<1600&&kartHittable(tg)){const want=Math.atan2(tg.d-sh.d,Math.max(30,ds*.6));sh.psi+=clamp(Ph.wrapA(want-sh.psi),-3*dt,3*dt);}else sh.psi*=Math.pow(.2,dt);}
     const f=T.frame(course,sh.s,FR),den=Math.max(.35,1-f.kg*sh.d),ds=sh.v*Math.cos(sh.psi)/den*dt;sh.s=T.wrapS(course,sh.s+ds);sh.d+=sh.v*Math.sin(sh.psi)*dt;sh.psi=Ph.wrapA(sh.psi-f.kg*ds);
     const i=T.idx(course,sh.s),half=course.half[i],rail=course.rail[i];
     if(Math.abs(sh.d)>half-6){const side=Math.sign(sh.d);if(rail&(side>0?2:1)){sh.d=side*(half-6);sh.psi=Math.atan2(-Math.sin(sh.psi),Math.cos(sh.psi));sh.bounce++;snd(900,.04,{type:'square',vol:.02});if(sh.bounce>6)gone=true;}else if(Math.abs(sh.d)>half+4)gone=true;}
@@ -184,39 +204,41 @@ async function kart(s){
   for(const k of K)if(kartHittable(k)){const ds=T.sdiff(course,s0,k.s),dd=k.d-d0;if(ds*ds+dd*dd<r*r)hitKart(k,'tumble','boom');}}
  // ---------------------------------------------------------------- kart vs kart, pickups
  function contacts(dt){
-  const [a,b]=K;if(!a.out&&!b.out&&kartHittable(a)&&kartHittable(b)&&Math.abs(a.h-b.h)<16){const ds=T.sdiff(course,a.s,b.s),dd=b.d-a.d,d=Math.hypot(ds,dd);
+  for(let ia=0;ia<K.length;ia++)for(let ib=ia+1;ib<K.length;ib++){const a=K[ia],b=K[ib];if(a.out||b.out||!kartHittable(a)||!kartHittable(b)||Math.abs(a.h-b.h)>=16)continue;{const ds=T.sdiff(course,a.s,b.s),dd=b.d-a.d,d=Math.hypot(ds,dd);
    if(d<19){const nx=ds/(d||1),ny=dd/(d||1),push=(19-d)/2+.5;if(!a.air&&!b.air){a.s=T.wrapS(course,a.s-nx*push);a.d-=ny*push;b.s=T.wrapS(course,b.s+nx*push);b.d+=ny*push;}
-    if((a.bump||0)<=0&&(b.bump||0)<=0){a.bump=b.bump=.45;noise(.08,{vol:.06,freq:600});
+    if((a.bump||0)<=0&&(b.bump||0)<=0){a.bump=b.bump=.45;if(a.human||b.human)noise(.08,{vol:.06,freq:600});
      for(const [p,q] of [[a,b],[b,a]]){if((p.star>0||p.bullet>0)&&q.star<=0&&q.bullet<=0)hitKart(q,p.bullet>0?'tumble':'hard','ram');else if(q.shrink>0&&p.shrink<=0&&q.inv<=0){q.squash=1.4;hitKart(q,'spin','squash');}}
      if(course.glue[T.idx(course,a.s)]&&course.glue[T.idx(course,b.s)]){Ph.setBoost(a,.45);Ph.setBoost(b,.45);msg(a,'SPIN BOOST','#5af0ff',14,.6);msg(b,'SPIN BOOST','#5af0ff',14,.6);}
      else{const va=a.v,vb=b.v;a.v=vb*.6+va*.4;b.v=va*.6+vb*.4;}
-     if(mode==='battle')for(const [p,q] of [[a,b],[b,a]])if(p.boostT>0&&q.star<=0&&q.inv<=0&&p.balloons<3&&q.balloons>0){hitKart(q,'spin','steal');p.balloons++;msg(p,'BALLOON STOLEN!','#ff8aa8',18,1);}}}}
+     if(mode==='battle')for(const [p,q] of [[a,b],[b,a]])if(p.boostT>0&&q.star<=0&&q.inv<=0&&p.balloons<3&&q.balloons>0){hitKart(q,'spin','steal');p.balloons++;msg(p,'BALLOON STOLEN!','#ff8aa8',18,1);}}}}}
   for(const k of K){k.bump=Math.max(0,(k.bump||0)-dt);if(!kartHittable(k)||k.h>34)continue;
-   for(const b of boxes)if(b.t<=0&&dist2(k,b)<17*17){b.t=1.8;b.pop=.25;sfx.box();burst(b.P,14,{tile:TILE.glow,col:[...hsvc(rand()),1],speed:120,size:3.5,life:.45});
+   for(const b of boxes)if(b.t<=0&&dist2(k,b)<17*17){b.t=1.8;b.pop=.25;if(k.human)sfx.box();burst(b.P,14,{tile:TILE.glow,col:[...hsvc(rand()),1],speed:120,size:3.5,life:.45});
     if(k.frenzy<=0&&k.items.length+(k.rolling?1:0)<2){k.rolling=true;k.rollT=1.05;}}
-   for(const cn of coins)if(cn.t<=0&&dist2(k,cn)<15*15){cn.t=9;if(k.coins<10){k.coins++;sfx.coin();}burst(cn.P,6,{tile:TILE.spark,col:[1,.85,.2,1],speed:70,size:3,life:.3});}}
+   for(const cn of coins)if(cn.t<=0&&dist2(k,cn)<15*15){cn.t=9;if(k.coins<10){k.coins++;if(k.human)sfx.coin();}burst(cn.P,6,{tile:TILE.spark,col:[1,.85,.2,1],speed:70,size:3,life:.3});}}
   for(const b of boxes){if(b.t>0)b.t-=dt;b.pop=Math.max(0,b.pop-dt);}for(const cn of coins)if(cn.t>0)cn.t-=dt;
  }
  const hsvc=h=>{const f=n=>{const k=(n+h*6)%6;return 1-Math.max(0,Math.min(k,4-k,1))*.75;};return [f(5),f(3),f(1)];};
  // ---------------------------------------------------------------- per kart update
  function updateKart(k,dt){
-  const inp=phase==='play'&&!k.out&&!k.finished?readInput(k.i):(phase==='end'||k.finished)&&!k.out?{steer:Ph.autoInput(course,k).steer,drift:0}:{steer:0,drift:0};
+  const inp=!k.human&&(phase==='play'||phase==='end')?Ph.autoInput(course,k,{target:k.lane+(k.items.length<2?autoTarget(k)*.6:0)}):phase==='play'&&!k.out&&!k.finished?readInput(k.i):(phase==='end'||k.finished)&&!k.out?{steer:Ph.autoInput(course,k).steer,drift:0}:{steer:0,drift:0};
   if(k.out){k.v*=Math.pow(.3,dt);inp.steer=0;}
   if(k.rolling){k.rollT-=dt;if(k.rollT<=0){k.rolling=false;rollItem(k);}}
   if(k.frenzy>0){k.frenzy-=dt;k.frenzyCD-=dt;if(k.frenzy<=0){k.frenzyItem=null;}}
   if(k.goldenT>0){k.goldenT-=dt;if(k.goldenT<=0&&k.items[0]?.id==='golden')k.items.shift();}
   if(auto[k.i]&&phase==='play'&&(k.items[0]||k.frenzy>0)&&rand()<dt*.6)useItem(k,rand()<.75?1:-1);
+  if(!k.human&&phase==='play'&&!k.finished){const lead=Math.max(K[0].prog,K[1].prog),gap=lead-k.prog;k.topMul=k.baseMul*(gap>.08?1.05:gap<-.12?.93:1);
+   const it=k.frenzy>0?k.frenzyItem:k.items[0]?.id;if(it&&rand()<dt*.9){const back=['banana','banana3','bomb'].includes(it),tgt=aheadOf(k);if(back||['mushroom','mush3','golden','star','bolt','blooper','coin','bullet','blue'].includes(it)||tgt&&(tgt.prog-k.prog)*course.L<500)useItem(k,back?-1:1);}}
   const n=Math.max(1,Math.ceil(dt/(1/120))),h=dt/n;for(let q=0;q<n;q++)Ph.stepKart(course,k,phase==='play'||phase==='end'?inp:{steer:0,drift:0},h,ctx);
   // laps
   if(mode==='race'){const rel=T.wrapS(course,k.s-course.startS),L=course.L;
-   if(!k.finished&&k.lakitu<=0&&k.falling<=0){if(k.rel>L*.8&&rel<L*.2&&k.half){k.lap++;k.half=false;if(k.lap>=LAPS){k.finished=true;k.finishT=clock;k.place=winner<0?1:2;if(winner<0){winner=k.i;s.react?.(k.i,'win');}jingle([523,659,784,1047,1319],{step:.09,type:'square',vol:.04});msg(k,'FINISH!','#ffe23a',34,3);}
-     else if(k.lap===LAPS-1){sfx.final();msg(k,'FINAL LAP!','#ff5a5a',28,1.8);}else{sfx.lap();msg(k,`LAP ${k.lap+1}`,'#fff',24,1.2);}}
+   if(!k.finished&&k.lakitu<=0&&k.falling<=0){if(k.rel>L*.8&&rel<L*.2&&k.half){k.lap++;k.half=false;if(k.lap>=LAPS){k.finished=true;k.finishT=clock;k.place=++finishCount;if(k.human){if(winner<0){winner=k.i;s.react?.(k.i,'win');}jingle([523,659,784,1047,1319],{step:.09,type:'square',vol:.04});msg(k,`FINISH! ${ord(k.place)}`,'#ffe23a',30,3);}}
+     else if(!k.human){}else if(k.lap===LAPS-1){sfx.final();msg(k,'FINAL LAP!','#ff5a5a',28,1.8);}else{sfx.lap();msg(k,`LAP ${k.lap+1}`,'#fff',24,1.2);}}
     if(rel>L*.4&&rel<L*.62)k.half=true;}
-   k.rel=rel;k.prog=k.finished?LAPS:k.lap+(rel>L*.9&&!k.half?0:rel/L);k.best=Math.max(k.best,k.prog);
+   k.rel=rel;k.prog=k.finished?LAPS:k.lap+(rel>L*.9&&!k.half?rel/L-1:rel/L);k.best=Math.max(k.best,k.prog);
    const back=!k.air&&k.lakitu<=0&&Math.abs(k.psi)>2.1&&k.v>40;k.wrongT=back?k.wrongT+dt:0;}
   for(const m of k.msgs)m.t+=dt;k.msgs=k.msgs.filter(m=>m.t<m.life);
   // particles from the kart
-  if(k._M&&k.falling<=0&&k.lakitu<=0){
+  if(k._M&&k.falling<=0&&k.lakitu<=0&&(k.human||rand()<.5)){
    if(k.drift&&!k.air){const lv=k.spark,col=[[1,.95,.7,.9],[.35,.7,1,1],[1,.6,.15,1],[.9,.35,1,1]][lv];for(const z of [-9,9])if(rand()<(lv?.9:.5)){const P=local(k,[-8,1,z]);spawn(P,{tile:TILE.spark,col,size:lv?3.4+lv:2.2,life:.22,V:[(rand()-.5)*60-k.F[0]*40,30+rand()*50,(rand()-.5)*60-k.F[2]*40],g:-140});}}
    if(k.boostT>0||k.bullet>0)for(const z of [-2.6,2.6])spawn(local(k,[-15,6.6,z]),{tile:TILE.flame,col:k.bullet>0?[1,.9,.7,1]:[1,.75,.4,1],size:5+rand()*3,grow:-3,life:.16,V:[-k.F[0]*90,-k.F[1]*90,-k.F[2]*90]});
    if(k.star>0&&rand()<.7)spawn(local(k,[(rand()-.5)*24,rand()*20,(rand()-.5)*20]),{tile:TILE.spark,col:[...hsvc(rand()),1],size:3,life:.35});
@@ -252,43 +274,47 @@ async function kart(s){
   get headOK(){return R.headOK.slice();},get particles(){return parts.length;}};
  s.hint(mode==='race'?'RAINBOW ROAD: three laps in real 3D: hills, a jump and a glider over the void, an anti-gravity wall ride, a loop-the-loop and an upside-down corkscrew. Mario Kart Tour controls on your half of the screen (P1 top, P2 bottom): the kart drives itself; drag left/right to steer; push all the way to drift and hold it for blue, orange, then purple sparks; let go (or swing back) for a mini-turbo. Tap to use your item, swipe up to throw it ahead, swipe down to drop it behind. Keys: P1 A/D steer, S drift, W/Space item; P2 arrows, Down drift, Up/Enter item.':'BALLOON BATTLE: three balloons each on a floating rainbow ring. Hit your rival with shells, bananas and bob-ombs; a boosting bump steals a balloon; falling off costs one. Last kart with balloons, or the most when time runs out, wins. Mario Kart Tour controls on your half: drag to steer, push all the way to drift, tap for items, swipe up/down to throw ahead/behind.');
  refreshHeads(true);
+ for(let i=2;i<K.length;i++){const id=K[i].cpu,img=new Image(),cv2=document.createElement('canvas');cv2.width=cv2.height=128;
+  img.onload=()=>{if(!s.alive)return;const g=cv2.getContext('2d'),sc=Math.min(124/img.naturalWidth,124/img.naturalHeight);g.drawImage(img,64-img.naturalWidth*sc/2,64-img.naturalHeight*sc/2,img.naturalWidth*sc,img.naturalHeight*sc);R.setHead(i,cv2);};
+  try{const src=portraitURL(id,'normal');if(src&&!/^https?:/.test(src))img.src=src;}catch{}}
  // ---------------------------------------------------------------- main loop
  s.frame((dt0)=>{
   if(!s.alive)return;const dt=Math.min(dt0,.05);simT+=dt;R.tick(dt);
   headTimer-=dt;if(headTimer<=0){headTimer=simT<6?.5:1.5;refreshHeads(simT<6);}else refreshHeads(false);
   if(phase==='intro'){introT+=dt;if(introT>2.4)phase='count';}
   else if(phase==='count'){const before=Math.floor(lights);lights+=dt*1.2;const now=Math.floor(lights);if(now!==before&&now>=1&&now<=4)sfx.light(now>=4);
-   if(lights>=4){phase='play';for(let i=0;i<2;i++){const pd=pads[i],held=pd.f||kb.state[i].u||kb.state[i].d||kb.state[i].fire||auto[i];if(held&&pd.holdSince>=2&&pd.holdSince<4||auto[i]){Ph.setBoost(K[i],1);K[i].v=200;msg(K[i],'ROCKET START!','#ffb02e',20,1.1);sfx.boost();}}}}
+   if(lights>=4){phase='play';for(let i=0;i<2;i++){const pd=pads[i],held=pd.f||kb.state[i].u||kb.state[i].d||kb.state[i].fire||auto[i];if(held&&pd.holdSince>=2&&pd.holdSince<4||auto[i]){Ph.setBoost(K[i],1);K[i].v=200;msg(K[i],'ROCKET START!','#ffb02e',20,1.1);sfx.boost();}}
+    for(const k of K)if(!k.human&&rand()<.5){Ph.setBoost(k,.8);k.v=180;}}}
   else{
    if(phase==='play'){clock+=dt;hintT-=dt;}
-   for(const k of K)updateKart(k,dt);stepProjectiles(dt);contacts(dt);
+   for(const k of K)updateKart(k,dt);stepProjectiles(dt);contacts(dt);if(mode==='race')sortOrder();
    if(phase==='play'){
     if(mode==='race'&&(winner>=0||clock>=RACE_CAP)){phase='end';endT=0;if(winner<0){const a=K[0].best,b=K[1].best;winner=Math.abs(a-b)<.002?-2:a>b?0:1;}song?.victory();endText=winner===-2?'PHOTO FINISH!':`${s.players[winner].name.toUpperCase()} WINS THE CUP!`;}
     if(mode==='battle'&&(K.some(k=>k.out)||clock>=BATTLE_TIME)){phase='end';endT=0;const a=K[0].balloons,b=K[1].balloons;song?.victory();endText=a===b?'DRAW!':`${s.players[a>b?0:1].name.toUpperCase()} WINS THE BATTLE!`;jingle([523,659,784,1047],{step:.1,type:'square',vol:.04});}
    }else{endT+=dt;if(endT>3.2){
     if(mode==='race'){const prog=k=>k.finished?100:Math.min(99,Math.round(clamp(k.best/LAPS,0,1)*100)),sc=[prog(K[0]),prog(K[1])];if(winner>=0){sc[winner]=100;sc[1-winner]=Math.min(sc[1-winner],99);}
-     const desc=k=>k.finished?`${Math.floor(k.finishT/60)}:${(k.finishT%60).toFixed(1).padStart(4,'0')}`:`lap ${Math.min(LAPS,k.lap+1)}`;s.finish(sc,`Rainbow Road: ${s.players[0].name} ${desc(K[0])}, ${s.players[1].name} ${desc(K[1])}.`);}
+     const desc=k=>(k.finished?`${ord(k.place)} in ${Math.floor(k.finishT/60)}:${(k.finishT%60).toFixed(1).padStart(4,'0')}`:`lap ${Math.min(LAPS,k.lap+1)}`);s.finish(sc,`Rainbow Road: ${s.players[0].name} ${desc(K[0])}, ${s.players[1].name} ${desc(K[1])}.`);}
     else s.finish([K[0].balloons,K[1].balloons],`Balloon Battle: ${s.players[0].name} ${K[0].balloons} balloons left, ${s.players[1].name} ${K[1].balloons}.`);return;}}
   }
   for(let j=parts.length-1;j>=0;j--){const p=parts[j];p.life-=dt;if(p.life<=0){parts.splice(j,1);continue;}const dr=Math.exp(-p.drag*dt);p.V[0]*=dr;p.V[1]=p.V[1]*dr+(p.g||0)*dt;p.V[2]*=dr;p.P[0]+=p.V[0]*dt;p.P[1]+=p.V[1]*dt;p.P[2]+=p.V[2]*dt;}
   updateEngines();if(phase!=='intro'&&phase!=='end'&&!s.paused)song?.tick();if(mode==='race')song?.setRate(K.some(k=>k.lap===LAPS-1&&!k.finished)?1.08:1);
-  if(mode==='race')s.setScores(K.map(k=>k.finished?100:Math.min(99,Math.round(clamp(k.best/LAPS,0,1)*100))));else s.setScores([K[0].balloons,K[1].balloons]);
+  if(mode==='race')s.setScores(K.slice(0,2).map(k=>k.finished?100:Math.min(99,Math.round(clamp(k.best/LAPS,0,1)*100))));else s.setScores([K[0].balloons,K[1].balloons]);
   // render both halves into the GL canvas, then composite + HUD
   const W=s.W,H=s.H,half=Math.floor(H/2);R.resize(W,H);
   if(R.lost()){x.fillStyle='#120a2e';x.fillRect(0,0,W,H);return;}
   const views=[{x:0,y:0,w:W,h:half-1},{x:0,y:half+1,w:W,h:H-half-1}];
-  const scene={course,karts:K,boxes,coins,particles:parts,blink:false,
+  const scene={course,karts:K,view:-1,boxes,coins,particles:parts,blink:false,
    shells:shells.map(sh=>{const f=T.frame(course,sh.s,{P:[0,0,0],T:[0,0,0],R:[0,0,0],U:[0,0,0]}),cp=Math.cos(sh.psi),sp=Math.sin(sh.psi);const F=[f.T[0]*cp+f.R[0]*sp,f.T[1]*cp+f.R[1]*sp,f.T[2]*cp+f.R[2]*sp];
     return {kind:sh.kind,P:[f.P[0]+f.R[0]*sh.d+f.U[0]*(sh.h+1),f.P[1]+f.R[1]*sh.d+f.U[1]*(sh.h+1),f.P[2]+f.R[2]*sh.d+f.U[2]*(sh.h+1)],F,N:f.U.slice(),R:T.cross(F,f.U)};}),
    bananas:bananas.map(b=>{const f=T.frame(course,b.s,{P:[0,0,0],T:[0,0,0],R:[0,0,0],U:[0,0,0]});return {P:[f.P[0]+f.R[0]*b.d+f.U[0]*b.h,f.P[1]+f.R[1]*b.d+f.U[1]*b.h,f.P[2]+f.R[2]*b.d+f.U[2]*b.h],N:f.U.slice()};}),
    bombs:bombs.map(b=>{const f=T.frame(course,b.s,{P:[0,0,0],T:[0,0,0],R:[0,0,0],U:[0,0,0]});return {P:[f.P[0]+f.R[0]*b.d+f.U[0]*b.h,f.P[1]+f.R[1]*b.d+f.U[1]*b.h,f.P[2]+f.R[2]*b.d+f.U[2]*b.h],N:f.U.slice(),fuse:b.fuse};})};
   const camsNow=views.map((v,i)=>cameraFor(i,dt,v));const proj=[];
-  for(let i=0;i<2;i++){R.renderView(views[i],camsNow[i],scene,W,H);proj[i]=K.map(k=>k._head?R.project(k._head.P):null);}
+  for(let i=0;i<2;i++){scene.view=i;R.renderView(views[i],camsNow[i],scene,W,H);proj[i]=K.map(k=>k._head?R.project(k._head.P):null);}
   x.drawImage(glc,0,0,W,H);
   for(let i=0;i<2;i++){const v=views[i];x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();
    // heads drawn in 2D only when the portrait could not become a texture (cross-origin photo)
-   for(const k of K)if(!R.headOK[k.i]&&proj[i][k.i]&&k._head){const p=proj[i][k.i],sz=k._head.size*2*v.h/(2*Math.tan(camsNow[i].fov/2)*p.w);if(sz>4&&sz<v.h)s.sprite(x,k.i,p.x,p.y,sz,{exact:true});}
-   const k=K[i];drawHUD(x,v,{k,i,mode,laps:LAPS,rank:rankOf(k),t:simT,phase,lights,clock,course,other:K[1-i],pad:{f:pads[i].f,ox:pads[i].ox,latch:pads[i].latch},msgs:k.msgs,rad:RAD(),battleTime:BATTLE_TIME,
+   for(const k of K)if(k.human&&!R.headOK[k.i]&&proj[i][k.i]&&k._head){const p=proj[i][k.i],sz=k._head.size*2*v.h/(2*Math.tan(camsNow[i].fov/2)*p.w);if(sz>4&&sz<v.h)s.sprite(x,k.i,p.x,p.y,sz,{exact:true});}
+   const k=K[i];drawHUD(x,v,{k,i,mode,laps:LAPS,rank:rankOf(k),t:simT,phase,lights,clock,course,other:K[1-i],karts:K,pad:{f:pads[i].f,ox:pads[i].ox,latch:pads[i].latch},msgs:k.msgs,rad:RAD(),battleTime:BATTLE_TIME,
     names:s.players.map(p=>p.name),hint:phase==='play'||phase==='count'?Math.min(1,hintT):0,wrongWay:k.wrongT>1});
    x.restore();}
   x.fillStyle='#120a2e';x.fillRect(0,half-1,W,2);x.fillStyle='#ffe23a';x.fillRect(0,half-.5,W,1);

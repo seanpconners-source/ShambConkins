@@ -58,7 +58,7 @@ function stepKart(c,k,inp,dt,ctx={}){
  else yaw=steer*TURN*clamp(k.v/90,0,1)*(1-.18*clamp(k.v/TOP,0,1.4));
  k.psi=wrapA(k.psi+yaw*dt);
  // speed
- let top=TOP*(1+.008*k.coins)*(k.shrink>0?.72:1)*(k.star>0?1.12:1)*(k.drift?.985:1),acc=280*(1-.55*clamp(k.v/top,0,1));
+ let top=TOP*(k.topMul||1)*(1+.008*k.coins)*(k.shrink>0?.72:1)*(k.star>0?1.12:1)*(k.drift?.985:1),acc=280*(1-.55*clamp(k.v/top,0,1));
  if(k.boostT>0){top=Math.max(top,BOOST*(k.shrink>0?.8:1));acc=1200;}
  if(k.bullet>0){top=620;acc=1500;}
  if(k.spin>0||k.tumble>0)k.v*=Math.pow(.12,dt);

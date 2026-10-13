@@ -204,10 +204,10 @@ function createRenderer(canvas,c,{colors=['#4aa3ff','#ff6fa8'],battle=false}={})
  const tex=(src)=>{const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,src);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);return t;};
  const atlas=tex(makeAtlas());
- const heads=[null,null],headOK=[false,false];
+ const heads=colors.map(()=>null),headOK=colors.map(()=>false);
  function setHead(i,cv){try{if(!heads[i])heads[i]=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,heads[i]);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,cv);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);headOK[i]=true;}catch{headOK[i]=false;}return headOK[i];}
- const alphaB=new Batch(gl,700),addB=new Batch(gl,1600),shadB=new Batch(gl,40),headB=[new Batch(gl,2),new Batch(gl,2)];
+ const alphaB=new Batch(gl,700),addB=new Batch(gl,1600),shadB=new Batch(gl,40),headB=colors.map(()=>new Batch(gl,2));
  // ---- state
  const fog=battle?[.07,.035,.16]:[.06,.03,.15],LIGHT=T.norm([.35,.85,.3]);
  let VP=new Float32Array(16),view=new Float32Array(16),proj=new Float32Array(16),cam={E:[0,0,0],R:[1,0,0],U:[0,1,0],F:[0,0,-1]},vpRect={x:0,y:0,w:1,h:1},time=0,fogD=.00042;
@@ -295,14 +295,14 @@ function createRenderer(canvas,c,{colors=['#4aa3ff','#ff6fa8'],battle=false}={})
   for(const sh of scene.shells)if(visible(sh.P)){const F=sh.F||[1,0,0],N=sh.N||[0,1,0];const a=time*12;const Fx=[F[0]*Math.cos(a)+(sh.R||[0,0,1])[0]*Math.sin(a),F[1]*Math.cos(a)+(sh.R||[0,0,1])[1]*Math.sin(a),F[2]*Math.cos(a)+(sh.R||[0,0,1])[2]*Math.sin(a)];
    draw(M.shell[sh.kind],M4.frame(sh.P,Fx,N,T.cross(Fx,N),sh.kind==='blue'?1.3:1,Mt),[1,1,1],[.15,.15,.15]);if(sh.kind==='blue'){alphaB.bill([sh.P[0]+N[0]*8,sh.P[1]+N[1]*8,sh.P[2]+N[2]*8],9,6,TILE.wing,[1,1,1,1],cam,Math.sin(time*20)*.3);}
    addB.bill(sh.P,10,10,TILE.glow,sh.kind==='red'?[1,.3,.2,.5]:sh.kind==='blue'?[.3,.5,1,.6]:[.3,1,.4,.4],cam);}
-  for(const k of scene.karts){if(k.falling>1.05)continue;drawKart(k,scene);}
+  for(const k of scene.karts){if(k.falling>1.05)continue;if(k.i!==scene.view){const dx=k.P2[0]-cam.E[0],dy=k.P2[1]-cam.E[1],dz=k.P2[2]-cam.E[2];if(dx*dx+dy*dy+dz*dz<46*46){k._head=null;continue;}}drawKart(k,scene);}
   endMesh();
   for(const bn of scene.bananas)if(visible(bn.P))alphaB.bill([bn.P[0]+bn.N[0]*6,bn.P[1]+bn.N[1]*6,bn.P[2]+bn.N[2]*6],7,7,TILE.banana,[1,1,1,1],cam);
   for(const bm of scene.bombs)if(visible(bm.P)){const flash=bm.fuse<1&&(time*10|0)%2;alphaB.bill([bm.P[0]+bm.N[0]*7,bm.P[1]+bm.N[1]*7,bm.P[2]+bm.N[2]*7],8,8,TILE.bomb,flash?[1,.5,.5,1]:[1,1,1,1],cam);}
   // particles
   for(const p of scene.particles){if(!visible(p.P,30,2400))continue;const k=p.life/p.max,a=p.fade?Math.min(1,k*1.6):1,sz=p.size+p.grow*(1-k);(p.add?addB:alphaB).bill(p.P,sz,sz,p.tile,[p.col[0],p.col[1],p.col[2],p.col[3]*a],cam,p.rot||0);}
   // heads + alpha-tested sprites
-  for(let i=0;i<2;i++)if(headOK[i]&&headB[i].n){drawBatch(headB[i],heads[i],true);headB[i].reset();}
+  for(let i=0;i<headB.length;i++)if(headOK[i]&&headB[i].n){drawBatch(headB[i],heads[i],true);headB[i].reset();}
   drawBatch(alphaB,atlas,true);alphaB.reset();
   // blended
   gl.enable(gl.BLEND);gl.depthMask(false);
