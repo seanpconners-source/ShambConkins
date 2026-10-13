@@ -66,7 +66,8 @@ function harness(initialDisk=new Map()){
   let e=extraction.createBroforceExtraction({x:0,y:0});
   const players=store.run.players.map((p,i)=>({owner:p.owner,id:'P'+(i+1),x:0,y:0,alive:true}));
   e=extraction.advanceBroforceExtraction(e,{dt:2.4,devilDefeated:true,players,boardRequests:boarded});
-  e=extraction.advanceBroforceExtraction(e,{dt:12,devilDefeated:true,players});return e;
+  // Receipts are frozen; hand tamper checks an editable deep copy.
+  e=extraction.advanceBroforceExtraction(e,{dt:12,devilDefeated:true,players});return structuredClone(e);
  }
  async function finish(session,boarded=[true,true],opts={}){
   const a=session.broforceReward?.attempt||{attemptId:'practice',stageId:session.game.id,devilId:'rambo'};

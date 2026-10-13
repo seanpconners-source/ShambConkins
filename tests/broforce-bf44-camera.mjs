@@ -38,7 +38,10 @@ const bounded=(c,w=world,layout)=>{
   assert.ok(c.x>=Math.min(0,(w.width-layout.width/c.zoom)/2)-1e-5);
   assert.ok(c.y>=Math.min(0,(w.height-layout.height/c.zoom)/2)-1e-5);
   assert.ok(c.x<=Math.max(0,w.width-layout.width/c.zoom)+1e-5);
-  assert.ok(c.y<=Math.max(0,w.height-layout.height/c.zoom)+1e-5);
+  // The camera may look below the floor by the control inset (+ its <=30px
+  // margin) so bottom-row fighters stay above the thumbs; never further.
+  const below=layout.inset>0?(layout.inset+30)/c.zoom:0;
+  assert.ok(c.y<=Math.max(0,w.height+below-layout.height/c.zoom)+1e-5);
 };
 
 // One shared pose regardless of player array order; no owner-specific camera.

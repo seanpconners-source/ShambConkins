@@ -58,7 +58,7 @@ function bfFitPosition(wanted, minBody, maxBody, minScreen, maxScreen, scale) {
     (minBody + maxBody) * 0.5 - (minScreen + maxScreen) * 0.5 / scale;
 }
 
-function advanceBroforceCamera(camera, {players = [], viewport = {}, world = {}, dt = 0, controlsInset = 0} = {}) {
+function advanceBroforceCamera(camera, {players = [], viewport = {}, world = {}, dt = 0, controlsInset = 0, hudInset = 0} = {}) {
   const prev = createBroforceCamera(camera || {});
   const width = bfSize(viewport && viewport.width, 390, BF_CAMERA_MAX_VIEW);
   const height = bfSize(viewport && viewport.height, 780, BF_CAMERA_MAX_VIEW);
@@ -71,7 +71,9 @@ function advanceBroforceCamera(camera, {players = [], viewport = {}, world = {},
   // Degenerate small-viewport inputs still yield a valid invertible camera.
   const safeX0 = Math.min(marginX, width * 0.25);
   const safeX1 = Math.max(safeX0 + 1, width - safeX0);
-  const safeY0 = Math.min(marginTop, height * 0.3);
+  // hudInset is the canvas HUD's reserved top band (last frame); keep heads below it.
+  const hud = bfClamp(bfFinite(hudInset), 0, height * 0.35);
+  const safeY0 = Math.max(Math.min(marginTop, height * 0.3), hud ? hud + 6 : 0);
   const safeY1 = Math.max(safeY0 + 1, height - inset - marginBottom);
   const safeW = safeX1 - safeX0;
   const safeH = safeY1 - safeY0;
@@ -95,7 +97,10 @@ function advanceBroforceCamera(camera, {players = [], viewport = {}, world = {},
   const spanX = right - left, spanY = bottom - top;
   // Do not chase frame-to-frame noise at the limit. Extra world-space framing
   // room gives traversal and jumps time before a hard camera correction.
-  const nominalZoom = width < 520 ? 2.0 : width < 900 ? 2.2 : 2.35;
+  // Short landscape phones: aim for ~150 world px of height between HUD and
+  // thumbs, never below the head-readability floor.
+  const nominalZoom = Math.min(width < 520 ? 2.0 : width < 900 ? 2.2 : 2.35,
+    Math.max(BF_CAMERA_MIN_ZOOM, safeH / 150));
   const requestedZoom = bfClamp(Math.min(nominalZoom,
     safeW / Math.max(1, spanX + 32),
     safeH / Math.max(1, spanY + 24)), BF_CAMERA_MIN_ZOOM, BF_CAMERA_MAX_ZOOM);
@@ -132,7 +137,15 @@ function advanceBroforceCamera(camera, {players = [], viewport = {}, world = {},
   x = bfFitPosition(x, left, right, safeX0, safeX1, zoom);
   y = bfFitPosition(y, top, bottom, safeY0, safeY1, zoom);
   x = bfBoundAxis(x, worldW, width / zoom);
-  y = bfBoundAxis(y, worldH, height / zoom);
+  // The touch controls cover the bottom of the canvas. Let the camera look
+  // below the world floor by that much (the renderer fills it with bedrock)
+  // so fighters on the lowest row stay above the thumbs instead of under them.
+  // A world that fits the view stays centred unless that would put its floor
+  // under the controls; then it is raised just enough to clear them.
+  const below = inset > 0 ? (inset + marginBottom) / zoom : 0;
+  const viewH = height / zoom;
+  y = worldH + below <= viewH ? Math.max((worldH - viewH) * 0.5, worldH + below - viewH) :
+    bfClamp(y, Math.min(0, (worldH - viewH) * 0.5), worldH + below - viewH);
   return {x, y, zoom, tetherExceeded};
 }
 

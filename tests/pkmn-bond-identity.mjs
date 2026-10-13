@@ -18,7 +18,10 @@ let saved=null;
 const profile=load('src/profile.js',{
  'src/photoPairs.js':{normalizePhotoPair:()=>null,photoPairLibrary:()=>[],currentPhotoPair:()=>{},photoProfilePayload:p=>p},
  'src/contentPolicy.js':{ACTIVE_CATALOG:{characters:catalog,items:[]}},
- 'src/persistence.js':{PROFILE_KEY:'test-profile',readJSON:()=>saved,writeJSON:(_key,p)=>{saved=JSON.parse(JSON.stringify(p));}},
+ 'src/persistence.js':{PROFILE_KEY:'test-profile',readJSON:()=>saved,writeJSON:(_key,p)=>{saved=JSON.parse(JSON.stringify(p));},
+  // profile.js (Broforce durable saves) inspects the stored copy before writing.
+  inspectDurableJSON:()=>saved?{status:'valid',value:JSON.parse(JSON.stringify(saved))}:{status:'missing'},
+  writeDurableJSON:(_key,p)=>{saved=JSON.parse(JSON.stringify(p));return true;}},
  'src/characters.js':chars,'src/data/savoryLab.js':{LAB_TEAM:[]},'src/data/movieBonds.js':bonds
 });
 const store={profile:profile.freshProfile(),busy:false};

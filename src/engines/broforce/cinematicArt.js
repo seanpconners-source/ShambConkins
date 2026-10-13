@@ -382,7 +382,7 @@ function drawBroforceCinematics(ctx,{devil=null,extraction=null,camera={},viewpo
   const reduced=!!reducedMotion;
   ctx.save();
   try{
-    ctx.translate(-cx*zoom,-cy*zoom);ctx.scale(zoom,zoom);
+    ctx.translate(0-cx*zoom,0-cy*zoom);ctx.scale(zoom,zoom);
     // Culling is advisory and never affects the authoritative extraction state.
     const view={x:cx,y:cy};
     const devilVisible=!!devil&&Number.isFinite(devil.x)&&Number.isFinite(devil.y)&&

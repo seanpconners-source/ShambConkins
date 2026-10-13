@@ -44,9 +44,9 @@ function prepareBroforceAttempt(game,run,resume){
  }
  const bytes=new Uint32Array(5);globalThis.crypto.getRandomValues(bytes);
  const attemptId='bf37:'+Array.from(bytes,n=>n.toString(16).padStart(8,'0')).join('');
- const seed=bytes[0],{chooseDevil}=require('src/engines/broforce/roster.js');
+ const seed=bytes[0],{chooseDevil,devilHasArt}=require('src/engines/broforce/roster.js');
  return {schema:1,attemptId,gameId:game.id,stageId:game.id,seed,origin:'board',owners:['Sean','Amber'],
-  fighterIds:run.players.map(p=>p.character),devilId:chooseDevil(store.profile,['Sean','Amber'],seededRandom(seed))};
+  fighterIds:run.players.map(p=>p.character),devilId:chooseDevil(store.profile,['Sean','Amber'],seededRandom(seed),devilHasArt)};
 }
 // BF-34 adapter bridge: use this saved attempt to create the mission, then call
 // confirmExtraction with BF-21's completed state BEFORE s.finish. teamResult is

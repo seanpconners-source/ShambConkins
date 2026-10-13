@@ -6,7 +6,7 @@ async function broforce(s){
  if(!s.alive)return;
  const {store}=require('src/state.js');
  const {hash,seededRandom}=require('src/utils.js');
- const {snapshotFighters,chooseDevil,devilCandidatePool}=require('src/engines/broforce/roster.js');
+ const {snapshotFighters,chooseDevil,devilCandidatePool,devilHasArt}=require('src/engines/broforce/roster.js');
  const stageId=s.game.stageId||s.game.id;
  if(!STAGES.includes(stageId)||s.game.id!==stageId)throw new Error('Broforce requires one of the four matching mission IDs.');
  const players=s.players.map(p=>({owner:p.owner,name:p.name,character:p.character,
@@ -40,7 +40,7 @@ async function broforce(s){
   // never silently reroll a resumed attempt into a different award target.
   if(devilId!==null&&!devilCandidatePool(store.profile,owners).includes(devilId))
    throw new Error('Saved Broforce devil is no longer an eligible locked character. Start a new attempt.');
- }else devilId=chooseDevil(store.profile,owners,seededRandom(attemptId+':devil'));
+ }else devilId=chooseDevil(store.profile,owners,seededRandom(attemptId+':devil'),devilHasArt);
  const attempt=Object.freeze({attemptId,stageId,seed,devilId});
  s.shared=true;s.cooperative=true;s.cooperativeLabel='BROFORCE CO-OP';s.updateScores();
  const [canvas,ctx]=s.canvas(700,390,{fill:true});
@@ -151,6 +151,16 @@ async function broforce(s){
   // each detached player; the BF-30 integrator must retain this entitlement.
   state={...state,fightersByOwner:Object.fromEntries(players.map(p=>[p.owner,p.fighters.slice()]))};
   resources={advanceBroforceMission,drawBroforceScene,drawBroforceEnvironment,drawBroforceCinematics,advanceBroforceCamera,stage};
+  // Short, phase-aware HUD objective: the full rules live on the help card.
+  let devilName='THE DEVIL';
+  try{devilName=String(require('src/characters.js').character(devilId)?.name||devilName).toUpperCase();}catch{}
+  const devilShort=devilName.split(' · ')[0];
+  function objectiveFor(st){
+   if(st.phase==='extraction')return 'Get to the chopper!';
+   if(st.bossActive&&!st.bossDefeated)return 'Defeat '+devilShort+'!';
+   const caged=(st.prisoners||[]).filter(p=>!p.rescued).length;
+   return caged?'Free prisoners · push right':'Push right · find the devil';
+  }
   function portraitFor(id){
    if(typeof id!=='string'||portraits.size>=128&&!portraits.has(id))return null;
    if(portraits.has(id))return portraits.get(id);
@@ -185,7 +195,7 @@ async function broforce(s){
   controls=attachBroforceControls(inputSession);
   // Allocation is lazy inside play(); ambience begins on a playing gesture.
   sfx=createBroforceAudio(audioContext,settings);
-  let size=s.W+'x'+s.H;
+  let size=s.W+'x'+s.H,hudInset=0;
   s.frame((dt,time)=>{
    if(disposed||settled||!s.alive||s.paused||doc.hidden||phase!=='playing')return;
    try{
@@ -206,19 +216,22 @@ async function broforce(s){
     if(next.terminal){finish(next.terminal);return;}
     const map=state.terrain?.map||state.terrain||state.stage||resources.stage;
     camera=resources.advanceBroforceCamera(camera,{players:(state.players||[]).map(p=>({...p,...(p.body||{})})),
-     viewport,world:{width:map.width*16,height:map.height*16},dt:seconds,controlsInset:Math.min(145,s.H*.28)});
+     viewport,world:{width:map.width*16,height:map.height*16},dt:seconds,controlsInset:Math.min(145,s.H*.28),hudInset});
     // Mission provides finite, per-tick FX events; BF-23 owns active particles,
      // shake and lifetimes. Never spread the raw mission event array into scene.fx.
      for(const event of (Array.isArray(state.fx)?state.fx:[]).slice(0,128))emitBroforceFx(fxSystem,event);
      advanceBroforceFx(fxSystem,seconds);
      const scene={...state,camera,fx:fxSystem,hideHudPause:true,
-      mission:{stage:state.stage?.title||s.game.title,
-       objective:state.stage?.objective||'Rescue captives and defeat the devil',
+      devil:state.devil&&{...state.devil,name:devilName},
+      mission:{stage:String(state.stage?.title||s.game.title).replace(/^Broforce:\s*/i,''),
+       objective:objectiveFor(state),
        rescues:(state.prisoners||[]).filter(p=>p.rescued).length,
        rescueTarget:(state.prisoners||[]).length}};
-    resources.drawBroforceScene(ctx,{state:scene,viewport,time:motion?0:time,quality:motion?'low':'high',portraitFor,
+    const hud=resources.drawBroforceScene(ctx,{state:scene,viewport,time:motion?0:time,quality:motion?'low':'high',portraitFor,
      environmentDraw:resources.drawBroforceEnvironment,
      cinematicDraw:(g,opts)=>resources.drawBroforceCinematics(g,{...opts,camera:{...opts.camera,zoom:1},reducedMotion:motion})});
+    // Next frame's camera keeps fighters out from under the HUD band.
+    hudInset=Number.isFinite(hud?.insets?.top)?hud.insets.top:0;
     ambience.setIntensity(state.devil?.active ? .85 : .35);
     // Mission events contain authoritative sound{name}; other gameplay events
     // must not duplicate the cue or mask a weapon/boss/helicopter identity.

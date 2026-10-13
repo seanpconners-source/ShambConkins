@@ -61,8 +61,18 @@ function devilCandidatePool(profile,owners=DEFAULT_OWNERS){
  return pool;
 }
 
-function chooseDevil(profile,owners=DEFAULT_OWNERS,random=Math.random){
- return drawFrom(devilCandidatePool(profile,owners),random);
+// Optional prefer(id) narrows the draw (e.g. to characters with offline face art)
+// but never empties it: with no preferred candidate the whole pool is used.
+function chooseDevil(profile,owners=DEFAULT_OWNERS,random=Math.random,prefer=null){
+ const pool=devilCandidatePool(profile,owners);
+ const liked=typeof prefer==='function'?pool.filter(id=>{try{return !!prefer(id);}catch{return false;}}):[];
+ return drawFrom(liked.length?liked:pool,random);
+}
+// Broforce draws offline only, so a devil without bundled raster art shows a
+// placeholder face. Prefer locked characters whose portrait ships in the file.
+function devilHasArt(id){
+ try{return /^data:image\/(webp|png|jpe?g|gif)/i.test(require('src/assets.js').portraitURL(id,'normal')||'');}
+ catch{return false;}
 }
 
-Object.assign(exports,{snapshotFighters,drawNextFighter,devilCandidatePool,chooseDevil});
+Object.assign(exports,{snapshotFighters,drawNextFighter,devilCandidatePool,chooseDevil,devilHasArt});

@@ -271,6 +271,17 @@ function drawBroforceScene(ctx,{state,viewport,time=0,quality='high',portraitFor
       }catch(_err){/* A missing future dependency must not blank the preview. */}
       if(!drawn)drawBroforceWorld(ctx,{map,camera:cam,viewport:worldView,time:t,quality});
       if(!map.width||!map.height)drawGround(ctx,worldView,t);
+      // The camera may look below the map (under the touch controls): fill it
+      // with dark bedrock instead of showing the sky backdrop through the floor.
+      const floorY=finite(map.height)*finite(map.tileSize,16)-cam.y;
+      if(map.height&&floorY<worldView.height){
+        const top=Math.max(0,floorY),h=worldView.height-top+2;
+        ctx.fillStyle='#14100d';ctx.fillRect(-2,top,worldView.width+4,h);
+        ctx.fillStyle='#211a14';
+        for(let x=-((cam.x*.9)%24)-24;x<worldView.width+24;x+=24)
+          ctx.fillRect(x,top+6+((x/24|0)&1)*5,14,3);
+        ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(-2,top,worldView.width+4,2);
+      }
     }finally{ctx.restore();}
     // FX uses camera-relative screen-local coordinates, unlike actors/cages.
     if(scene.fx){ctx.save();try{
@@ -328,7 +339,10 @@ function drawBroforceScene(ctx,{state,viewport,time=0,quality='high',portraitFor
       drawBroforceFx(ctx,{fx:scene.fx,camera:cam,viewport:worldView,time:t,layer:'front'});
     }finally{ctx.restore();}}
     overlay(ctx,players,cam,{width:W,height:H},zoom,scene.mission);
-    const devil=scene.devil?{...scene.devil,active:scene.devil.active!==false&&
+    // The devil object exists from the first tick; only show its bar once the
+    // mission has actually started the boss fight (explicit bossActive wins).
+    const bossOn=scene.bossActive!==undefined?scene.bossActive===true:scene.devil?.active===true;
+    const devil=scene.devil?{...scene.devil,active:bossOn&&!scene.bossDefeated&&
       scene.devil.mode!=='dead'&&!scene.devil.defeated,
       health:scene.devil.health??scene.devil.hp,maxHealth:scene.devil.maxHealth??scene.devil.maxHp,
       name:scene.devil.name||'DEVIL'}:null;
