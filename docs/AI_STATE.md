@@ -22,6 +22,17 @@ Version 0.58.3 release candidate (generated offline file `releases/ShambConkins_
   and validation results; this baseline is not a claim of phone approval or current test success.
 
 ## Implemented systems
+- **Broforce (integrated Oct 13, branch from `feature/broforce-wave4-candidate` + TESTver):** 4 co-op missions
+  `broforce-jungle|factory|city|desert` (`src/packs/broforcePack.js`, engine `src/engines/broforce.js` + `src/engines/broforce/*`,
+  docs `docs/broforce/`). Run-right side-scroller: rescue caged prisoners (swap fighter), devil boss = a random locked
+  character (prefers ones with bundled art, `devilHasArt`), then board the helicopter alive. 120 s clock ("Ns left" in the last
+  30 s). Board reward is only the exact devil, per boarding owner, via durable receipts (`profile.broforceClaims`,
+  `persistence.js` `validBroforce*`); arcade never rewards. Camera (`broforce/camera.js`) looks below the floor by the
+  controls inset and keeps heads under the HUD band. 45 Node suites `tests/broforce-*.mjs`, browser `tests/bf41-*`, `tests/bf59-*`.
+  Bots can't beat the boss (it perches on ledges); real two-thumb play on a phone still unverified.
+- **Portraits:** owner uploads PNG/WebP to `assets/portraits/` on main; TESTver keeps 480px q88 WebP with originals in
+  `assets/originals/portraits/` (`tools/run-claude-optimizer-safe.py` for PNG; oversized WebP uploads are shrunk the same way by hand).
+  `artemis.think` has two different pictures (.png and .webp); the .webp is what the game shows.
 - **Castlevania (v0.58.2):** Dracula's Castle NES stage map; Death boss (`death-cv`, reaper art and sickles), new themed music/cards/items/trivia. Games: `cv-vampire-killer` and `cv-candle-hunt` in `src/engines/castlevania.js`, test `tests/castlevania.mjs`. Real-phone playtest still needed.
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
   camp → crossroads → 3 roads (Calm/Adventurous/High Reward) in west/centre/east bands → gate. `gridPath` is an
