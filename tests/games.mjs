@@ -9,10 +9,16 @@ const secs = +process.argv[2] || 4, conc = +process.argv[3] || 4, filter = proce
 // Default CLI behavior (including GitHub CI) is unchanged.
 const minFreeGb = Number(process.env.SHAMB_MIN_FREE_MEMORY_GB || 0);
 const cooldownMs = Math.max(0, Math.min(10000, Number(process.env.SHAMB_GAME_COOLDOWN_MS || 0) || 0));
+// The offline HTML embeds hundreds of portraits; on low-priority laptop runs,
+// DOM parsing can legitimately take >30 s. CI retains Playwright's 30 s default.
+const navTimeoutMs = Number(process.env.SHAMB_NAV_TIMEOUT_MS || 30000);
+if (!Number.isFinite(navTimeoutMs) || navTimeoutMs < 10000 || navTimeoutMs > 120000)
+  throw new Error('SHAMB_NAV_TIMEOUT_MS must be between 10000 and 120000');
 if (!Number.isFinite(minFreeGb) || minFreeGb < 0) throw new Error('Invalid SHAMB_MIN_FREE_MEMORY_GB');
 const file = pathToFileURL(path.resolve(root, process.env.SHAMB_FILE || 'dist/ShambConkins.html')).href;
 const browser = await launchBrowser();
-const probe = await browser.newPage(); await probe.goto(file);
+const probe = await browser.newPage();
+await probe.goto(file, {waitUntil: 'domcontentloaded', timeout: navTimeoutMs});
 let ids = await probe.evaluate(() => window.ShambConkins.gameRegistry.map(g => g.id)); await probe.close();
 if (filter) ids = ids.filter(i => new RegExp(filter).test(i));
 // Optional deterministic CI sharding. The original unsharded CLI remains unchanged:
@@ -38,7 +44,8 @@ async function fuzz(id) {
   // file:// smoke tests cannot use Wikipedia's live page-image API; ignore only its expected CORS denial.
   // Other console and JavaScript errors must continue to fail the game fuzz test.
   page.on('console', m => { const msg=m.text();const offlineWiki=/Access to fetch at 'https:\/\/(?:en\.wikipedia\.org|commons\.wikimedia\.org)\/w\/api\.php[^']*' from origin 'null' has been blocked by CORS policy/.test(msg);if(m.type()==='error'&&!offlineWiki&&!/ERR_|Failed to load resource/.test(msg))errs.push('console: '+msg.slice(0,200)); });
-  await page.goto(file); await page.waitForTimeout(300);
+  await page.goto(file, {waitUntil: 'domcontentloaded', timeout: navTimeoutMs});
+  await page.waitForTimeout(300);
   await page.evaluate(id => { window.ShambConkins.requestGame({id, origin: 'arcade'}); }, id);
   const end = Date.now() + secs * 1000; let clicks = 0;
   while (Date.now() < end) {
@@ -77,6 +84,9 @@ await Promise.all(Array.from({length: conc}, async () => {
       await fuzz(id);
     } catch (e) {
       results[id] = {errs: ['harness: ' + e.message], state: {crash: e.message}, clicks: 0};
+      // A navigation timeout is a load/performance error, not game combat failure.
+      // Preserve the exact message and keep it separate from in-game JS exceptions.
+      if (/page\.goto: Timeout/.test(e.message)) console.error('BROWSER_NAVIGATION_TIMEOUT', id, navTimeoutMs + 'ms');
     }
     done++;
     const failed = !!(results[id]?.errs?.length || results[id]?.state?.crash);
