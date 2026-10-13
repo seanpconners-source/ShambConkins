@@ -96,7 +96,7 @@ const WARP_ITEMS=[
   ['master-sword','Master Sword','🗡️','bundle',{rewardBonus:4,ward:1}],
   ['blue-candle','Blue Candle','🕯️','preview']
  ],'wz-').map(rare),
- challenge('question-block','? Block','Super Mario Bros.','❓','smb-coin-rush','Punch the ? block: start World 1-1 Coin Rush right now.'),
+ challenge('question-block','? Block','Super Mario Bros.','❓','smb-coin-rush','Punch the ? block: start World 1 Coin Rush right now.'),
  challenge('goal-flagpole','Goal Flagpole','Super Mario Bros.','🏰','smb-castle-dash','Race for the flagpole: start Castle Dash right now.'),
  challenge('wooden-sword','Old Man’s Wooden Sword','The Legend of Zelda','🗡️','hyrule-rupee-rush','It’s dangerous to go alone: start Hyrule Rupee Rush right now.'),
  ...packItems('Sonic the Hedgehog',[

@@ -144,13 +144,16 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   bust `prop:'cat'`/`nehru`/`scar`): the launcher recruits `pickLairVillain` (`data/bondLair.js`: `BOND_VILLAIN_IDS`, 12
   lair-only villains with `unlockBy:'boss'`) instead of `unlockId`. Games in `engines/bond.js` (`bondLaser`,
   `bondFunhouse`, `bondBomb`; ids `bond-laser-vault`, `bond-golden-gun`, `bond-goldfinger-bomb`). Test: `tests/bondlair.mjs`.
-- **Super Mario Bros. (v0.54):** `engines/marioBros.js` (engine `marioBros`, ids `smb-coin-rush` / `smb-castle-dash`,
-  `marioMode` coins|race, warp `mario-world`) mirrors `sonic.js`. Both are turn-based on the full canvas (v0.54.1):
-  P1 runs, `s.pass` hand-off, P2 runs vs P1's ghost (`ghost[]` of per-step `snap(p)`, replayed by `ghostAt`); phases
-  title/handoff/count/play/turn-end/end, race = fastest time. Mario: seeded tile level (`buildLevel`, 16px tiles, 15 rows,
-  stride `S`), per-player worlds (`makeWorld`: own tiles/coins/enemies), SMB1 physics constants `PH`, coin room `L.room`
-  reached via `L.warp.entry` (hold down) and left via the side pipe to `L.warp.exit`. `s.debug` has `teleport`/`toWarp`.
-  Challenge items `wz-question-block`, `wz-goal-flagpole`. Test: `tests/mario.mjs` (screenshots `/tmp/claude-0/sc/smb-*`).
+- **Super Mario Bros. World 1 (Oct 13 2026):** `engines/marioBros.js` (engine `marioBros`) + `engines/smb/smbLevels.js` (NES maps
+  1-1 with coin room, 1-2 intro/underground/exit + Warp Zone above the ceiling, 1-3 treetops with lifts, 1-4 castle with firebars,
+  lava, Bowser's bridge/axe/Toad; tiles on the 16 px NES grid, areas joined by `doors`) + `engines/smb/smbArt.js` (8x8 NES font on
+  gbFont capitals, tile sets per look, title logo, sprites). Physics = NES SMB1 sub-pixel constants (`PH`, `JUMP`). Ids:
+  `smb-world-1` (new; title menu 1 PLAYER GAME = whole game each with P2 vs ghost, 2 PLAYER GAME = NES swap on a lost life; 3 lives,
+  NES timers, highest score wins), `smb-coin-rush` (60 s each, flagpole → next stage), `smb-castle-dash` (1-1 race). Warp pipes recruit
+  one locked character per player from `gameRecruitPool` → `s.gameRecruits` → `settleGame` (same path as Broforce cages), then 1-3.
+  Full-bleed layout (`fullBleed`: floating Pause/Exit/⤢ fullscreen and a Controls chip); view fits 240 px tall, wider screens see
+  more level, tall phones get sky above/ground below. Luigi = green cap/shirt, white overalls; Fire = NES fireballs (4 px/f, max 2, bounce −3), 1-4's Bowser dies to 5 fireballs as a fake Goomba. Heads: `s.sprite(...,{still,noBadge,box})` reports the drawn size so the cap fits.
+  Test: `tests/mario.mjs [world|alt|coins|race]` (physics numbers, every flow, screenshots `/tmp/claude-0/sc/smb-*`). Real-phone feel untested.
 
 - **South Park warp zone (v0.56):** `south-park` in `WARP_DEFS` (town-map scene `sceneSouthPark` in `warpBoards.js`: route
   `SP_STREETS` along square street corners, buildings via `spHouse`/`spShop`, `spMecha` at Stark's Pond replaces the castle;
