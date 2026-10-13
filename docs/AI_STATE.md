@@ -42,6 +42,15 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   `persistence.js` `validBroforce*`); arcade never rewards. Camera (`broforce/camera.js`) looks below the floor by the
   controls inset and keeps heads under the HUD band. 45 Node suites `tests/broforce-*.mjs`, browser `tests/bf41-*`, `tests/bf59-*`.
   Bots can't beat the boss (it perches on ledges); real two-thumb play on a phone still unverified.
+- **Mario Kart 3D (Oct 13 2026):** `rainbow-road-kart` / `rainbow-balloon-battle` (engine `kart`, `src/engines/kart.js`) are now
+  real 3D in WebGL: `kart3d/track.js` builds closed 3D ribbon courses from turtle pieces (turns, hills, ramps + gaps, glider,
+  anti-gravity `glue` wall ride, loop, 360° corkscrew; flex straights auto-close the loop), `physics.js` drives karts in track
+  space (s,d,psi) with Frenet kinematics, air/ramps/crests in world space, rails, Lakitu respawn, drift sparks 1-3 → mini-turbo,
+  auto tricks; `render.js` (baked cube-map sky, procedural rainbow road shader, low-poly karts with portrait billboards, items,
+  particles), `hud.js` (Tour HUD, two item slots), `music.js` (original loop). Controls = Mario Kart Tour per screen half:
+  drag steers (floating origin, `RAD`), full push latches a drift, release = mini-turbo, tap = item, swipe up/down = throw
+  ahead/behind. No WebGL → `kartClassic.js` (old Mode 7). Tests: `tests/kart-track.mjs` (Node, in test:core),
+  `tests/kart-controls.mjs` (pointer events), `tests/kart.mjs` (autopilot race/battle + screenshots). Real-phone feel untested.
 - **Portraits:** owner uploads PNG/WebP to `assets/portraits/` on main; TESTver keeps 480px q88 WebP with originals in
   `assets/originals/portraits/` (`tools/run-claude-optimizer-safe.py` for PNG; oversized WebP uploads are shrunk the same way by hand).
   `artemis.think` has two different pictures (.png and .webp); the .webp is what the game shows.
@@ -234,7 +243,7 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   Tests: `tests/pkmnmoods.mjs` (contact sheet of every mood character), `tests/pkmnmoodbattle.mjs [mine foe]`.
 
 ## In progress / unverified
-- Warp minigames only bot/fuzz-tested in headless Chromium; Sonic, Mario (turn-based) and kart (split-screen canvas, Mode 7 rows) need a
+- Warp minigames only bot/fuzz-tested in headless Chromium; Sonic, Mario (turn-based) and the 3D kart (WebGL, two viewports) need a
   real-phone check for feel and frame rate.
 - Board smoothness only measured in headless Chromium (software compositing); check pinch/zoom on a real phone.
   Last round also enlarged in-game heads (global `spriteSize()` in `engines/session.js`, plus

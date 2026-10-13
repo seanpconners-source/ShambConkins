@@ -274,7 +274,14 @@
   "src/engines/broforce/sceneRenderer.js",
   "src/engines/broforce/cinematicArt.js",
   "src/engines/broforce/ambience.js",
-  "src/engines/broforce.js"
+  "src/engines/broforce.js",
+  "src/engines/kartClassic.js",
+  "src/engines/kart3d/track.js",
+  "src/engines/kart3d/physics.js",
+  "src/engines/kart3d/gl.js",
+  "src/engines/kart3d/render.js",
+  "src/engines/kart3d/hud.js",
+  "src/engines/kart3d/music.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
