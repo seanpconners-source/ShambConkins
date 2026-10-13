@@ -22,7 +22,7 @@ const STEP=1/60,LIVES=3,COIN_TIME=60,RACE_CAP=150;
 const PH={minWalk:.07421875,walkAcc:.037109375,runAcc:.0556640625,rel:.05078125,skid:.1015625,walk:1.5625,run:2.5625,skidTurn:.5625,backFast:1.8125,maxFall:4.5,fallReset:4};
 const JUMP=[[1,-4,.125,.4375],[2.3125,-4,.1171875,.375],[Infinity,-5,.15625,.5625]];
 const COMBO=[100,200,400,500,800,1000,2000,4000,5000,8000];
-const PALS=[{cap:C.red,shirt:C.brown,over:C.red,shoe:C.brown},{cap:C.white,shirt:C.green,over:C.white,shoe:C.green}];
+const PALS=[{cap:C.red,shirt:C.brown,over:C.red,shoe:C.brown},{cap:C.green,shirt:C.green,over:C.white,shoe:C.green}];
 const FIRE_PAL={cap:C.white,shirt:C.red,over:C.white,shoe:C.red};
 const STAR_PALS=[FIRE_PAL,{cap:'#000',shirt:C.brick,over:'#000',shoe:C.brick},{cap:C.green,shirt:C.white,over:C.green,shoe:C.brown},{cap:C.red,shirt:C.brown,over:C.red,shoe:C.brown}];
 const solid=t=>SOLID[t]===1;
@@ -194,7 +194,7 @@ async function marioBros(s){
   if(p.pipe){stepPipe(p,w);return;}
   if(p.flag){stepFlag(p,w);return;}
   if(p.axe){stepAxe(p,w);return;}
-  if(p.inv>0)p.inv--;if(p.star>0)p.star--;
+  if(p.inv>0)p.inv--;if(p.star>0)p.star--;if(p.throwT>0)p.throwT--;
   const a=AR(w,p.area),def=a.def;
   // NES timer: one unit every 24 frames
   if(mode==='world'&&!p.auto){p.timeAcc++;if(p.timeAcc>=24){p.timeAcc=0;p.time=Math.max(0,p.time-1);if(p.time===100)sfx.hurry();if(p.time===0){kill(p,'time');return;}}}
@@ -223,7 +223,7 @@ async function marioBros(s){
     p.vx+=dir*accel;const cap=p.jumpSpd<PH.walk?PH.walk:PH.run;if(Math.abs(p.vx)>cap)p.vx=Math.sign(p.vx)*cap;}
    p.vy+=p.jumping&&p.vy<0?p.gHold:p.gFall;if(p.vy>=PH.maxFall)p.vy=PH.fallReset;
   }
-  if(bPress&&p.fire&&!p.crouch&&w.fire.filter(f=>f.area===p.area).length<2){w.fire.push({x:p.x+p.facing*8,y:p.y-pH(p)*.55,vx:p.facing*4,vy:2,t:0,area:p.area});sfx.fire();}
+  if(bPress&&p.fire&&!p.crouch&&w.fire.filter(f=>f.area===p.area).length<2){w.fire.push({x:p.x+p.facing*8,y:p.y-pH(p)*.55,vx:p.facing*4,vy:3,t:0,area:p.area});p.throwT=8;sfx.fire();}
   // ---- move and collide
   const h=pH(p),cam=cams[p.i];
   p.x+=p.vx;
@@ -378,12 +378,12 @@ async function marioBros(s){
    const res=moveBody(it,w,an,6,14,it.type==='star'?.2:.25);if(res.wall)it.vx=-it.vx;if(it.type==='star'&&res.landed)it.vy=-4.5;
    if(it.y>ROWS*T+32||it.x<cam.x-64)w.items.splice(k,1);}
   // fireballs
-  for(let k=w.fire.length-1;k>=0;k--){const f=w.fire[k];if(f.area!==an){w.fire.splice(k,1);continue;}f.t++;f.x+=f.vx;f.vy=Math.min(f.vy+.38,4.5);f.y+=f.vy;let gone=false;
+  for(let k=w.fire.length-1;k>=0;k--){const f=w.fire[k];if(f.area!==an){w.fire.splice(k,1);continue;}f.t++;f.x+=f.vx;f.vy=Math.min(f.vy+.3125,3);f.y+=f.vy;let gone=false;
    if(solidAt(w,an,f.x,f.y+4)&&f.vy>0){f.y=Math.floor((f.y+4)/T)*T-4;f.vy=-3;}
    if(solidAt(w,an,f.x+Math.sign(f.vx)*4,f.y))gone=true;
    for(const e of a.enemies){if(gone||!e.alive||!e.active||e.state==='dying'||e.state==='squash')continue;const eTop=e.type==='piranha'?e.home-e.off:e.y-(e.state==='walk'&&e.type!=='goomba'?22:14),eBot=e.type==='piranha'?e.home:e.y;
     if(e.type==='piranha'&&e.off<4)continue;if(Math.abs(f.x-e.x)<10&&f.y>eTop-4&&f.y<eBot+4){killFoe(w,e,Math.sign(f.vx),p,200);gone=true;}}
-   const b=a.bowser;if(!gone&&b&&(b.state==='idle')&&Math.abs(f.x-b.x)<14&&f.y>b.y-32&&f.y<b.y){gone=true;b.hp--;sfx.bump();if(b.hp<=0){b.state='dead';b.vy=-3;addScore(p,w,5000,b.x,b.y-40);sfx.bowserFall();}}
+   const b=a.bowser;if(!gone&&b&&(b.state==='idle')&&Math.abs(f.x-b.x)<14&&f.y>b.y-32&&f.y<b.y){gone=true;b.hp--;sfx.bump();if(b.hp<=0){b.state='dead';b.fake=true;b.vy=-3;addScore(p,w,5000,b.x,b.y-40);sfx.bowserFall();}}
    if(gone){w.fx.burst(f.x,f.y,{n:6,colors:['#fff','#fc9838','#d82800'],speed:60,life:.25,size:1.6});}
    if(gone||f.x<cam.x-16||f.x>cam.x+view.w+16||f.y>ROWS*T+16||f.t>300)w.fire.splice(k,1);}
   stepBowser(w,p,a);
@@ -470,7 +470,7 @@ async function marioBros(s){
   if(p.flag)pose='pole';else if(p.pipe&&p.pipe.kind==='side')pose='walk';
   else if(crouch)pose='crouch';else if(!p.grounded&&!p.pipe)pose='jump';else if(p.skidding&&p.vx!==0&&Math.sign(p.vx)!==f)pose='skid';else if(run>.05||p.auto)pose='walk';
   const frame=Math.floor(p.anim)%3;
-  g.save();g.scale(f,1);body(big,pose,frame);g.restore();
+  g.save();g.scale(f,1);body(big,pose,frame);if(p.throwT>0&&pose!=='crouch'){if(big){R(pal.shirt,4,-21,6,3);R(C.skin,10,-21,2,3);}else{R(pal.shirt,3,-10,5,2);R(C.skin,8,-10,2,2);}}g.restore();
   head(big,p.finished||p.inCastle||p.axe?'win':p.star>0||run>2.3?'happy':'normal',crouch?1:0,f);
   g.restore();
   function R(col,X,Y,W,H){g.fillStyle=col;g.fillRect(X,Y,W,H);}
@@ -533,7 +533,7 @@ async function marioBros(s){
   for(const q of w.pops)if(q.area===an)A_.drawCoin(g,q.x,q.y,simT*14);
   for(const it of w.items)if(it.area===an&&!it.emerge)A_.drawItem(g,it,simT);
   for(const e of a.enemies){if(!e.alive||!e.active||e.type==='piranha'&&e.state!=='dying')continue;if(e.x<x0-16||e.x>x1+16)continue;if(e.type==='goomba')A_.drawGoomba(g,e,kind==='under');else if(e.type==='piranha')A_.drawPiranha(g,e);else A_.drawKoopa(g,e);}
-  if(a.bowser&&a.bowser.x<x1+40)A_.drawBowser(g,a.bowser,simT);
+  if(a.bowser&&a.bowser.x<x1+40){const b=a.bowser;if(b.fake)A_.drawGoomba(g,{x:b.x,y:b.y,state:'dying',frame:0},false);else A_.drawBowser(g,b,simT);}
   for(const f of w.flames)if(f.area===an)A_.drawFlame(g,f,simT);
   for(const f of w.fire)if(f.area===an)A_.drawFireball(g,f.x,f.y,f.t);
   for(const d of w.debris){if(d.area!==an)continue;g.save();g.translate(d.x,d.y);g.rotate(d.t*.3);g.fillStyle=kind==='under'?C.teal:C.brick;g.fillRect(-3,-3,6,6);g.fillStyle='#000';g.fillRect(-3,2,6,1);g.restore();}

@@ -46,6 +46,11 @@ if(!only.length||only.includes('world')){const t=await launch('smb-world-1',[110
  await reset();await page.waitForTimeout(250);await page.evaluate(()=>{window.__s=[];});await page.keyboard.down('w');await page.waitForTimeout(1300);await page.keyboard.up('w');let s=await S();check('standing jump height (px)',apex(s),64,67);check('fall speed cap (px/frame)',Math.max(...s.map(q=>q.vy)),4,4.5);
  await reset();await page.waitForTimeout(250);await page.evaluate(()=>{window.__s=[];});await page.keyboard.down('w');await page.waitForTimeout(40);await page.keyboard.up('w');await page.waitForTimeout(900);check('tapped hop height (px)',apex(await S()),12,34);
  await shot('jump');
+ // fire power: B throws, at most two fireballs, 4 px/frame, bouncing along the ground
+ await reset();await dbg('d.power(0,"fire")');await page.waitForTimeout(200);
+ await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug;window.__f={max:0,vx:0,bounce:false};const f=()=>{const fs=d.worlds[0].fire;window.__f.max=Math.max(window.__f.max,fs.length);for(const q of fs){window.__f.vx=Math.max(window.__f.vx,Math.abs(q.vx));if(q.vy<0)window.__f.bounce=true;}requestAnimationFrame(f);};f();});
+ for(let k=0;k<5;k++){await page.keyboard.press(' ');await page.waitForTimeout(60);}await page.waitForTimeout(500);await shot('fire');
+ const fz=await page.evaluate(()=>window.__f);check('fireballs on screen at once',fz.max,1,2);check('fireball speed (px/frame)',fz.vx,4,4);if(!fz.bounce)fail('fireballs never bounced');
  // the coin room under the fourth pipe, and out of the side pipe onto pipe 163
  await dbg('d.toWarp(0)');await page.keyboard.down('s');d=await until(d=>d.pl[0].a==='room',4000);await page.keyboard.up('s');if(d.pl[0].a!=='room')fail(`pipe did not reach the coin room (${d.pl[0].a})`);
  await page.waitForTimeout(400);await shot('room');await page.keyboard.down('d');for(let k=0;k<16&&(await D()).pl[0].a==='room'&&(await D()).pl[0].x<60;k++){await page.keyboard.down('w');await page.waitForTimeout(450);await page.keyboard.up('w');await page.waitForTimeout(150);}
@@ -65,6 +70,11 @@ if(!only.length||only.includes('world')){const t=await launch('smb-world-1',[110
  d=await until(d=>d.phase==='play'&&d.pl[0].st===2,9000);if(d.pl[0].st!==2)fail(`warp did not continue in 1-3 (${d.pl[0].st})`);await page.waitForTimeout(300);await shot('1-3');
  // 1-4: Bowser's bridge, the axe, Toad; the 1 PLAYER GAME then hands over to P2
  await dbg('d.teleport(0,108*16,3)');await page.waitForTimeout(500);await shot('1-4');
+ // Bowser takes five fireballs, then flips over as the Goomba he really is (1-4)
+ await dbg('d.teleport(0,111*16,3)');await page.waitForTimeout(300);
+ for(let k=0;k<6;k++){await dbg("const w=d.worlds[0],b=w.areas.main.bowser;if(b.state==='idle')w.fire.push({x:b.x-14,y:b.y-14,vx:4,vy:0,t:0,area:'main'});");await page.waitForTimeout(250);}
+ const bz=await dbg("const b=d.worlds[0].areas.main.bowser;return {state:b.state,hp:b.hp,fake:!!b.fake};");if(bz.state!=='dead'||!bz.fake)fail(`five fireballs did not finish Bowser (${JSON.stringify(bz)})`);else console.log('  ok   Bowser beaten by fireballs');
+ await dbg('d.pl[0].inv=0;d.pl[0].dead=0;d.pl[0].big=false;');
  await dbg('d.teleport(0,126*16+2,3)');d=await until(d=>d.log.join().includes('axe'),3000);if(!d.log.join().includes('axe'))fail('axe not reached');
  await page.waitForTimeout(5200);await shot('toad');
  d=await until(d=>d.pl[0].done,12000);if(!d.pl[0].done)fail(`rescuing Toad did not finish P1's World 1 (${JSON.stringify(d.pl[0])})`);

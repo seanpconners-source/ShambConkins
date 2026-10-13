@@ -112,7 +112,7 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   NES timers, highest score wins), `smb-coin-rush` (60 s each, flagpole → next stage), `smb-castle-dash` (1-1 race). Warp pipes recruit
   one locked character per player from `gameRecruitPool` → `s.gameRecruits` → `settleGame` (same path as Broforce cages), then 1-3.
   Full-bleed layout (`fullBleed`: floating Pause/Exit/⤢ fullscreen and a Controls chip); view fits 240 px tall, wider screens see
-  more level, tall phones get sky above/ground below. Heads: `s.sprite(...,{still,noBadge,box})` reports the drawn size so the cap fits.
+  more level, tall phones get sky above/ground below. Luigi = green cap/shirt, white overalls; Fire = NES fireballs (4 px/f, max 2, bounce −3), 1-4's Bowser dies to 5 fireballs as a fake Goomba. Heads: `s.sprite(...,{still,noBadge,box})` reports the drawn size so the cap fits.
   Test: `tests/mario.mjs [world|alt|coins|race]` (physics numbers, every flow, screenshots `/tmp/claude-0/sc/smb-*`). Real-phone feel untested.
 
 - **South Park warp zone (v0.56):** `south-park` in `WARP_DEFS` (town-map scene `sceneSouthPark` in `warpBoards.js`: route
