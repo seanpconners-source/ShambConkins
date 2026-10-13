@@ -42,6 +42,16 @@ Version 0.59.0 (Broforce overhaul; release file `releases/ShambConkins_v0.59.0.h
   `persistence.js` `validBroforce*`); arcade never rewards. Camera (`broforce/camera.js`) looks below the floor by the
   controls inset and keeps heads under the HUD band. 45 Node suites `tests/broforce-*.mjs`, browser `tests/bf41-*`, `tests/bf59-*`.
   Bots can't beat the boss (it perches on ledges); real two-thumb play on a phone still unverified.
+- **Photo Hunt (Megatouch Aurora 2007 cabinet replica, Oct 13 2026):** `src/engines/photohunt.js` (same id `megatouch-photohunt`).
+  800x600 cabinet screen letterboxed full-bleed (`ph-shell`), portrait phones get a "turn sideways" screen (timer frozen).
+  Rules in `RULES` (reverse-engineered from owner's cabinet photos, bonus rounds unknown/not built): 48-pill bar, 48 s round
+  −1.5 s/round (min 30), find = clock (1000 −25/s, resets per find), miss −3 s, cleared round pays 320/pill left, 3 hints per game,
+  game ends when the bar empties. P1 plays a full game, then P2 on the other half of the photo library; higher score wins.
+  Hi-score bar: `profile.photoHuntHigh` (house record WILLYZ CREW 369,127). Pairs: `assets/photohunt/<id>.a|b.webp + <id>.json`
+  (embedded by build.mjs as `photohunt:<id>:a|b`; `src/data/photoHuntPairs.js` generated). `tools/photohunt.py` makes
+  pairs (make: one photo + hand-picked spots remove/color/flip/grow/rotate/add; import: finished A/B pair, diff-detected;
+  inbox; preview). Only starter photo: `sean-road-trip`; when photos run out the old drawn scenes fill in. Owner is supplying
+  photos (pin-up/erotic theme); hand-pick spots and check every preview. Test: `tests/photohunt.mjs`. Real-phone feel untested.
 - **Portraits:** owner uploads PNG/WebP to `assets/portraits/` on main; TESTver keeps 480px q88 WebP with originals in
   `assets/originals/portraits/` (`tools/run-claude-optimizer-safe.py` for PNG; oversized WebP uploads are shrunk the same way by hand).
   `artemis.think` has two different pictures (.png and .webp); the .webp is what the game shows.
