@@ -1,14 +1,14 @@
 // Megatouch Photo Hunt replica: plays P1 (finds, a miss, a hint, round bonus, then time runs out) and P2 (time out),
-// checks scoring/hints/turn order/separate photo sets, the portrait "turn your phone" screen, and screenshots each
+// checks scoring/hints/turn order/separate photo sets, the layout per screen shape (cab/wide/tall), the full-screen toggle, and screenshots each
 // phase (OUT=/tmp/claude-0/sc by default). Usage: SHAMB_FILE=/tmp/x.html node tests/photohunt.mjs
 import {open} from './lib.mjs';
 import fs from 'node:fs';
 const out=process.env.OUT||'/tmp/claude-0/sc';fs.mkdirSync(out,{recursive:true});let ok=true;const fail=m=>{ok=false;console.log('FAIL',m);};
-for(const [w,h] of [[1100,700],[844,390],[390,780]]){
+for(const [w,h] of [[1100,700],[844,390],[390,780],[800,600]]){
  const tag=`ph-${w}x${h}`,{browser,page,errors}=await open({viewport:{width:w,height:h}});
  await page.evaluate(()=>{window.ShambConkins.requestGame({id:'megatouch-photohunt',origin:'arcade'});});
  await page.waitForTimeout(400);await page.evaluate(()=>{const b=[...document.querySelectorAll('#dialog button')].find(b=>/start/i.test(b.textContent));b?.click();});
- const D=()=>page.evaluate(()=>{const d=window.ShambConkins.store.session?.debug;return d?.players?{phase:d.phase,actor:d.actor,round:d.round,found:d.found.length,regions:d.regions.length,left:d.left,total:d.total,clock:d.clock,portrait:d.portrait,help:d.help,
+ const D=()=>page.evaluate(()=>{const d=window.ShambConkins.store.session?.debug;return d?.players?{mode:d.mode,phase:d.phase,actor:d.actor,round:d.round,found:d.found.length,regions:d.regions.length,left:d.left,total:d.total,clock:d.clock,help:d.help,
   scores:d.players.map(p=>p.score),hints:d.players.map(p=>p.hints),decks:d.decks,pair:d.pair}:null;});
  const canvasBox=async()=>page.evaluate(()=>{const r=document.getElementById('game-canvas').getBoundingClientRect();return {x:r.left,y:r.top};});
  const tap=async p=>{const b=await canvasBox();await page.mouse.click(b.x+p.x,b.y+p.y);await page.waitForTimeout(120);};
@@ -16,8 +16,8 @@ for(const [w,h] of [[1100,700],[844,390],[390,780]]){
  const until=async(test,ms=9000)=>{let d;for(let t=0;t<ms;t+=150){d=await D();if(d&&test(d))return d;await page.waitForTimeout(150);}return d;};
  const ready=async()=>{await page.waitForSelector('.pass-overlay [data-ready]',{timeout:15000});await page.screenshot({path:`${out}/${tag}-pass.png`});await page.click('.pass-overlay [data-ready]');};
  await ready();
- if(h>w){let d=await until(d=>d.portrait,5000);await page.waitForTimeout(400);await page.screenshot({path:`${out}/${tag}-rotate.png`});if(!d?.portrait)fail(`${tag} no rotate prompt`);
-  const t0=(await D()).left;await page.waitForTimeout(800);if((await D()).left!==t0)fail(`${tag} timer ran while portrait`);await page.setViewportSize({width:h,height:w});}
+ {const d0=await until(d=>d.mode,5000);const want=h>w?'tall':w/h>=2?'wide':'cab';if(d0?.mode!==want)fail(`${tag} layout ${d0?.mode} (want ${want})`);
+  const fs=await page.evaluate(()=>!!document.querySelector('.ph-fs'));if(!fs)fail(`${tag} no fullscreen toggle`);}
  let d=await until(d=>d.phase==='hunt');if(d?.phase!=='hunt'){fail(`${tag} hunt never started (${JSON.stringify(d)})`);await browser.close();continue;}
  await page.waitForTimeout(300);await page.screenshot({path:`${out}/${tag}-hunt.png`});
  {const t0=(await D()).left;await tap(await dbg('ui','help'));await page.waitForTimeout(700);await page.screenshot({path:`${out}/${tag}-help.png`});d=await D();if(!d.help&&!(await page.evaluate(()=>window.ShambConkins.store.session.debug.help)))fail(`${tag} help did not open`);if(Math.abs(d.left-t0)>.05)fail(`${tag} timer ran under help`);await tap({x:20,y:20});if(await page.evaluate(()=>window.ShambConkins.store.session.debug.help))fail(`${tag} help did not close`);}

@@ -6,6 +6,7 @@ const {circle}=require("src/engines/session.js");
 const {store}=require("src/state.js");
 const {saveProfile}=require("src/profile.js");
 const {audioContext}=require("src/audio.js");
+const {fullscreenSupported,toggleFullscreen,fullscreenLabel}=require("src/fullscreen.js");
 // Illustrated fallback scenes: used when the photo library runs out (endless rounds still need pictures).
 const PHOTO_SCENES = [
  {name:'Paddy’s after hours',source:'Always Sunny',wall:'#335442',sign:'PADDY’S PUB',props:['ham','cat','beer','pool','milk','stool','jukebox','clock','poster','plant','burger','hat']},
@@ -45,9 +46,38 @@ function sceneDraw(x,scene,changes,right,rect){
 // Find = the clock value (counts down from 1000, resets after each find); a cleared round converts the pills left into a time bonus.
 // Scoring numbers were read off cabinet photos (≈14k a round, ≈320 per pill); tweak them here.
 const RULES=Object.freeze({diffs:5,pills:48,roundTime:48,timeStep:1.5,minTime:30,missPenalty:3,clockStart:1000,clockDecay:25,clockFloor:250,pillBonus:320,hints:3,houseName:'WILLYZ CREW',houseScore:369127});
-const DW=800,DH=600;
-const LAY=Object.freeze({logo:{x:22,y:6},clock:{x:486,y:12,w:150,h:52},help:{x:698,y:38,r:25},quit:{x:762,y:38,r:25},badge:{x:22,y:104,r:13},score:{x:40,y:89,w:154,h:30},hi:{x:484,y:85,w:306,h:38},
- frame:{x:10,y:130,w:780,h:404},bar:{x:40,y:139,w:720,h:36},photos:[{x:18,y:196,w:372,h:322},{x:410,y:196,w:372,h:322}],round:{x:40,y:568},glasses:[{x:322,y:565},{x:400,y:565},{x:478,y:565}]});
+// The cabinet screen is 800x600; on other screens the layout stretches to the screen's shape (same parts, same look):
+// wide phones get one header row and side columns, portrait phones stack the photos.
+let DW=800,DH=600,LAY=layout(800,600);
+function layout(W,H){
+ const a=W/H,L={};let dw,dh;
+ if(a>=1){dw=Math.round(Math.min(1600,Math.max(800,600*a)));dh=Math.max(600,Math.round(dw/a));}
+ else{dw=600;dh=Math.round(Math.min(1500,Math.max(600,600/a)));}
+ L.W=dw;L.H=dh;L.mode=a<1?'tall':dw>=1200?'wide':'cab';
+ const pair=(area,dir,gap)=>{// biggest two 37:32 windows that fit the area side by side (dir 'row') or stacked ('col')
+  let w=dir==='row'?(area.w-gap)/2:area.w,h=w*32/37;const hMax=dir==='row'?area.h:(area.h-gap)/2;if(h>hMax){h=hMax;w=h*37/32;}
+  w=Math.floor(w);h=Math.floor(h);
+  if(dir==='row'){const x0=area.x+(area.w-(w*2+gap))/2,y0=area.y+(area.h-h)/2;return [{x:x0,y:y0,w,h},{x:x0+w+gap,y:y0,w,h}];}
+  const x0=area.x+(area.w-w)/2,y0=area.y+(area.h-(h*2+gap))/2;return [{x:x0,y:y0,w,h},{x:x0,y:y0+h+gap,w,h}];
+ };
+ if(L.mode==='cab'){const dx=dw-800;
+  Object.assign(L,{logo:{x:22,y:6,w:430,h:74},clock:{x:486+dx,y:12,w:150,h:52},help:{x:698+dx,y:38,r:25},quit:{x:762+dx,y:38,r:25},badge:{x:22,y:104,r:13},score:{x:40,y:89,w:154,h:30},hi:{x:484+dx,y:85,w:306,h:38},
+   frame:{x:10,y:130,w:dw-20,h:dh-196}});
+  L.bar={x:40,y:139,w:dw-80,h:36};L.photos=dw===800&&dh===600?[{x:18,y:196,w:372,h:322},{x:410,y:196,w:372,h:322}]:pair({x:18,y:192,w:dw-36,h:dh-66-12-192},'row',20);
+  L.round={x:40,y:dh-32};L.glasses=[-78,0,78].map(o=>({x:dw/2+o,y:dh-35}));
+ }else if(L.mode==='wide'){
+  Object.assign(L,{logo:{x:16,y:8,w:370,h:64},badge:{x:404,y:40,r:13},score:{x:422,y:25,w:154,h:30},quit:{x:dw-38,y:40,r:25},help:{x:dw-102,y:40,r:25},hi:{x:dw-410,y:21,w:270,h:38},frame:{x:10,y:82,w:dw-20,h:dh-90}});
+  L.clock={x:L.hi.x-14-150,y:14,w:150,h:52};L.bar={x:40,y:91,w:dw-80,h:36};
+  const side=112;L.photos=pair({x:10+side,y:141,w:dw-20-side*2,h:dh-8-141-12},'row',16);
+  const midY=L.photos[0].y+L.photos[0].h/2;L.round={x:10+side/2,y:midY,side:true};L.glasses=[-80,0,80].map(o=>({x:dw-10-side/2,y:midY+o}));
+ }else{
+  Object.assign(L,{logo:{x:14,y:8,w:430,h:74},help:{x:dw-96,y:44,r:25},quit:{x:dw-34,y:44,r:25},badge:{x:24,y:112,r:13},score:{x:42,y:97,w:154,h:30},clock:{x:dw-172,y:86,w:150,h:52},hi:{x:22,y:146,w:dw-44,h:38},frame:{x:10,y:194,w:dw-20,h:dh-194-66}});
+  L.bar={x:40,y:203,w:dw-80,h:36};L.photos=pair({x:24,y:253,w:dw-48,h:dh-66-253-14},'col',14);
+  L.round={x:40,y:dh-32};L.glasses=[-78,0,78].map(o=>({x:dw/2+o,y:dh-35}));
+ }
+ const ps=L.photos;L.mid={x:(ps[0].x+ps[1].x+ps[1].w)/2,y:(ps[0].y+ps[1].y+ps[1].h)/2};
+ return L;
+}
 const FONT='"Arial Rounded MT Bold","Nunito","Varela Round","Trebuchet MS",Arial,sans-serif';
 const LOGO_FONT='"Arial Rounded MT Bold","Nunito","Varela Round","Arial Black",sans-serif';
 const fmt=n=>Math.round(n).toLocaleString('en-US');
@@ -155,8 +185,14 @@ function fullBleed(s){
   .ph-shell .canvas-frame{border:0;border-radius:0;flex:1;min-height:0;width:100%;height:100%;background:#050507}
   .ph-shell .game-canvas{display:block;border:0;border-radius:0;max-width:none;max-height:none;touch-action:none}
   .ph-shell #game-status,.ph-shell #game-hint,.ph-shell #game-controls{display:none}
-  .ph-shell .pass-overlay{z-index:30}`;
- shell.appendChild(css);s.cleanup(()=>{css.remove();shell.classList.remove('ph-shell');layer?.classList.remove('ph-layer');});
+  .ph-shell .pass-overlay{z-index:30}
+  .ph-fs{position:absolute;right:max(6px,env(safe-area-inset-right));bottom:max(6px,env(safe-area-inset-bottom));z-index:5;width:30px;height:30px;padding:0;margin:0;border:0;border-radius:8px;background:rgba(255,255,255,.18);color:#3d4a66;opacity:.5;font:700 17px/30px Arial,sans-serif;cursor:pointer;touch-action:manipulation}
+  .ph-fs:hover,.ph-fs:focus-visible{opacity:1}`;
+ shell.appendChild(css);
+ // small full-screen toggle in the corner (same idea as the Game Boy bezel button)
+ let fs=null;if(fullscreenSupported()){fs=document.createElement('button');fs.type='button';fs.className='ph-fs';fs.setAttribute('aria-label','Toggle full screen');fs.title='Full screen';fs.textContent=fullscreenLabel('icon');shell.appendChild(fs);
+  s.on(fs,'click',e=>{e.preventDefault();e.stopPropagation();toggleFullscreen();});const sync=()=>{fs.textContent=fullscreenLabel('icon');};s.on(document,'fullscreenchange',sync);s.on(document,'webkitfullscreenchange',sync);}
+ s.cleanup(()=>{css.remove();fs?.remove();shell.classList.remove('ph-shell');layer?.classList.remove('ph-layer');});
 }
 
 async function photohunt(s){
@@ -166,13 +202,14 @@ async function photohunt(s){
  const photos=shuffle([...bundledPairs(),...profilePairs()],s.random),decks=[photos.filter((_,i)=>i%2===0),photos.filter((_,i)=>i%2===1)];
  if(photos.length===1)decks[1]=[...decks[0]];
  const cache=new Map();let sceneIndex=Math.floor(s.random()*PHOTO_SCENES.length);
- let actor=0,phase='wait',T=0,st=null,help=false,portrait=false,view={k:1,ox:0,oy:0},resolveGame=null,lastTick=0,clockGlow=0,quitGlow=0,lockTried=false;
+ let actor=0,phase='wait',T=0,st=null,help=false,view={k:1,ox:0,oy:0},resolveGame=null,lastTick=0,clockGlow=0,quitGlow=0;
  const P=()=>players[actor];
  const name=i=>(s.players[i]?.name||`Player ${i+1}`);
  const pushScores=()=>s.setScores(players.map(p=>p.score));
- // Each player first plays their own half of the library, then the other half mirrored, then illustrated scenes forever.
+ // Each player first plays their own half of the library, then the other half mirrored, then the whole set again (flipped
+ // the other way). The drawn scenes only appear when there are no photos at all.
  const seqs=[0,1].map(p=>{const own=decks[p],ids=new Set(own.map(q=>q.id));return [...own.map(pair=>({pair,mirror:false})),...decks[1-p].filter(q=>!ids.has(q.id)).map(pair=>({pair,mirror:true}))];});
- function roundSpec(p,n){const seq=seqs[p];if(n<seq.length)return {...seq[n]};return {pair:illustratedPair(sceneIndex++,s.random),mirror:false};}
+ function roundSpec(p,n){const seq=seqs[p];if(seq.length){const q=seq[n%seq.length];return {pair:q.pair,mirror:q.mirror!==(Math.floor(n/seq.length)%2===1)};}return {pair:illustratedPair(sceneIndex++,s.random),mirror:false};}
  function imagesFor(pair){if(pair.images)return Promise.resolve(pair.images);if(!cache.has(pair.id))cache.set(pair.id,Promise.all(pair.urls.map(u=>loadImage(s,u))));return cache.get(pair.id);}
  function startGame(p){actor=p;s.active=p;Object.assign(players[p],{score:0,round:0,hints:RULES.hints,done:false,high:false});pushScores();startRound();}
  async function startRound(){
@@ -196,7 +233,7 @@ async function photohunt(s){
  function useHint(){if(phase!=='hunt'||P().hints<=0)return;const open=st.regions.map((_,i)=>i).filter(i=>!st.found.includes(i));if(!open.length)return;P().hints--;find(open[Math.floor(s.random()*open.length)],true);}
  function update(dt){
   clockGlow=Math.max(0,clockGlow-dt*2.2);quitGlow=Math.max(0,quitGlow-dt*3);
-  if(portrait||help||!st)return;
+  if(help||!st)return;
   T+=dt;for(const m of st.marks)m.t+=dt;for(const m of st.misses)m.t+=dt;st.misses=st.misses.filter(m=>m.t<.9);
   if(phase==='intro'&&T>1.7){phase='hunt';T=0;sfx('go');}
   else if(phase==='hunt'){
@@ -217,8 +254,8 @@ async function photohunt(s){
  // ---- drawing ----
  function drawScreen(){
   const bg=x.createLinearGradient(0,0,DW,DH);bg.addColorStop(0,'#f7f9fc');bg.addColorStop(.5,'#e6edf5');bg.addColorStop(1,'#d5e0eb');x.fillStyle=bg;x.fillRect(0,0,DW,DH);
-  x.save();x.globalAlpha=.35;x.fillStyle='#ffffff';for(let i=-2;i<6;i++){x.beginPath();x.moveTo(i*190,0);x.lineTo(i*190+120,0);x.lineTo(i*190-60,130);x.lineTo(i*190-180,130);x.fill();}x.restore();
-  x.drawImage(logoImage(),LAY.logo.x,LAY.logo.y,430,74);
+  x.save();x.globalAlpha=.35;x.fillStyle='#ffffff';for(let i=-2;i<DW/190+3;i++){x.beginPath();x.moveTo(i*190,0);x.lineTo(i*190+120,0);x.lineTo(i*190-60,130);x.lineTo(i*190-180,130);x.fill();}x.restore();
+  x.drawImage(logoImage(),LAY.logo.x,LAY.logo.y,LAY.logo.w,LAY.logo.h);
   // clock
   const cb=LAY.clock,gold=phase==='bonus'||clockGlow>.15;darkPill(x,cb,gold);clockIcon(x,cb.x+29,cb.y+cb.h/2,15);
   x.fillStyle=gold?'#2b2108':'#ffffff';x.font=`bold 25px ${FONT}`;x.textAlign='center';x.textBaseline='middle';x.fillText(String(Math.round(st&&phase!=='wait'?st.clock:RULES.clockStart)),cb.x+92,cb.y+cb.h/2+1);
@@ -237,7 +274,9 @@ async function photohunt(s){
   rr(x,f.x+4,f.y+4,f.w-8,f.h-8,19);x.lineWidth=1.5;x.strokeStyle='rgba(255,255,255,.7)';x.stroke();
   drawBar();drawPhotos();
   // bottom strip
-  x.textAlign='left';x.textBaseline='middle';x.fillStyle='#2b2d33';x.font=`bold 22px ${FONT}`;x.fillText(`ROUND ${P().round+1}`,LAY.round.x,LAY.round.y);
+  const R=LAY.round;x.textBaseline='middle';x.fillStyle='#2b2d33';
+  if(R.side){x.textAlign='center';x.font=`bold 18px ${FONT}`;x.fillText('ROUND',R.x,R.y-24);x.font=`900 44px ${FONT}`;x.fillText(String(P().round+1),R.x,R.y+14);}
+  else{x.textAlign='left';x.font=`bold 22px ${FONT}`;x.fillText(`ROUND ${P().round+1}`,R.x,R.y);}
   LAY.glasses.forEach((g,i)=>magnifier(x,g.x,g.y,i>=P().hints));
  }
  function drawBar(){
@@ -275,31 +314,24 @@ async function photohunt(s){
   else if(phase==='over')banner(P().high?'NEW HIGH SCORE!':'GAME OVER',`${name(actor)} · ${fmt(P().score)} · round ${P().round+1}`);
  }
  function banner(title,sub){
-  const w=470,h=sub?112:80,bx=DW/2-w/2,by=LAY.photos[0].y+LAY.photos[0].h/2-h/2;
+  const w=470,h=sub?112:80,bx=LAY.mid.x-w/2,by=LAY.mid.y-h/2;
   x.save();x.shadowColor='rgba(0,0,0,.45)';x.shadowBlur=18;rr(x,bx,by,w,h,22);x.fillStyle='#0d1a36';x.fill();x.restore();
   rr(x,bx+3,by+3,w-6,h-6,19);x.fillStyle=vgrad(x,by,by+h,['#3e64b0','#20387a','#142554']);x.fill();x.lineWidth=3;x.strokeStyle='#f6d36a';x.stroke();
-  x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';x.font=`900 38px ${FONT}`;x.strokeStyle='#0b1430';x.lineWidth=7;x.strokeText(title,DW/2,by+(sub?40:h/2));x.fillStyle=vgrad(x,by+20,by+60,['#ffffff','#ffe27a','#f3a90f']);x.fillText(title,DW/2,by+(sub?40:h/2));
-  if(sub){const big=/^[\d,]+$/.test(sub);x.font=`bold ${big?30:20}px ${FONT}`;x.fillStyle=big?'#ffffff':'#e9f1ff';x.fillText(sub,DW/2,by+82);}
+  x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';x.font=`900 38px ${FONT}`;x.strokeStyle='#0b1430';x.lineWidth=7;x.strokeText(title,LAY.mid.x,by+(sub?40:h/2));x.fillStyle=vgrad(x,by+20,by+60,['#ffffff','#ffe27a','#f3a90f']);x.fillText(title,LAY.mid.x,by+(sub?40:h/2));
+  if(sub){const big=/^[\d,]+$/.test(sub);x.font=`bold ${big?30:20}px ${FONT}`;x.fillStyle=big?'#ffffff':'#e9f1ff';x.fillText(sub,LAY.mid.x,by+82);}
  }
  function drawHelp(){
-  x.fillStyle='rgba(6,12,28,.72)';x.fillRect(0,0,DW,DH);const bx=110,by=120,w=580,h=380;
+  x.fillStyle='rgba(6,12,28,.72)';x.fillRect(0,0,DW,DH);const w=580,h=380,bx=(DW-w)/2,by=(DH-h)/2;
   rr(x,bx,by,w,h,24);x.fillStyle=vgrad(x,by,by+h,['#f8fbff','#dbe7f4']);x.fill();x.lineWidth=4;x.strokeStyle='#5f8fc2';x.stroke();
   roundButton(x,{x:bx+40,y:by+40,r:22},'help');x.textAlign='left';x.textBaseline='middle';x.fillStyle='#1d2b4a';x.font=`900 28px ${FONT}`;x.fillText('HOW TO PLAY',bx+78,by+42);
   const lines=['Find the differences between the two photos.','Touch a difference on either photo to circle it.','Each find scores the clock: it counts down from 1,000.','Wrong touches cost time off the bar.',`Clear the round: every pill left pays ${RULES.pillBonus}.`,'Magnifying glasses show a difference (3 per game).','The game ends when the bar runs out.','Then pass the phone: the next player gets new photos.'];
   x.font=`bold 18px ${FONT}`;lines.forEach((l,i)=>{circle(x,bx+44,by+96+i*34,4,'#4fc43f');x.fillStyle='#24324f';x.fillText(l,bx+60,by+97+i*34);});
   x.textAlign='center';x.fillStyle='#5f6d86';x.font=`bold 15px ${FONT}`;x.fillText('Touch anywhere to continue',DW/2,by+h-18);
  }
- function drawRotate(){
-  const W=s.W,H=s.H,t=performance.now()/1000;x.fillStyle='#07090f';x.fillRect(0,0,W,H);
-  x.drawImage(logoImage(),W/2-Math.min(W*.9,430)/2,H*.16,Math.min(W*.9,430),Math.min(W*.9,430)*74/430);
-  x.save();x.translate(W/2,H*.47);x.rotate(-Math.PI/2*Math.min(1,Math.max(0,Math.sin(t*1.6)*1.4+.3)));rr(x,-34,-58,68,116,11);x.fillStyle='#1a2236';x.fill();x.lineWidth=4;x.strokeStyle='#cfd8e6';x.stroke();x.fillStyle='#4fa6ff';x.fillRect(-26,-46,52,88);x.restore();
-  x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.font=`bold 22px ${FONT}`;x.fillText('Turn your phone sideways',W/2,H*.68);x.font=`16px ${FONT}`;x.fillStyle='#aeb9cc';x.fillText('Photo Hunt plays in landscape,',W/2,H*.68+30);x.fillText('just like the bar cabinet.',W/2,H*.68+52);
-  roundButton(x,{x:W-34,y:34,r:20},'quit');
- }
  function draw(){
   const dpr=Math.min(2,window.devicePixelRatio||1),cw=Math.round(s.W*dpr),ch=Math.round(s.H*dpr);if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}
-  x.setTransform(dpr,0,0,dpr,0,0);portrait=s.H>s.W*1.02;
-  if(portrait){drawRotate();return;}
+  x.setTransform(dpr,0,0,dpr,0,0);
+  if(LAY.sw!==s.W||LAY.sh!==s.H){LAY=layout(s.W,s.H);LAY.sw=s.W;LAY.sh=s.H;DW=LAY.W;DH=LAY.H;}
   const k=Math.min(s.W/DW,s.H/DH);view={k,ox:(s.W-DW*k)/2,oy:(s.H-DH*k)/2};
   x.fillStyle='#050507';x.fillRect(0,0,s.W,s.H);
   if(view.ox>8){const g=x.createRadialGradient(s.W/2,s.H/2,DW*k*.4,s.W/2,s.H/2,s.W*.7);g.addColorStop(0,'rgba(60,40,120,.35)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,s.W,s.H);}
@@ -307,7 +339,7 @@ async function photohunt(s){
   rr(x,-4,-4,DW+8,DH+8,14);x.fillStyle='#1b1c22';x.fill();x.save();rr(x,0,0,DW,DH,10);x.clip();drawScreen();if(help)drawHelp();x.restore();
  }
  s.frame(dt=>{update(dt);draw();refresh();});
- function refresh(){s.debug={phase,actor,round:P().round,players,regions:st?.regions||[],found:st?.found||[],left:st?.left??0,total:st?.total??0,clock:st?.clock??0,help,portrait,decks:decks.map(d=>d.map(p=>p.id)),pair:st?.spec?.pair?.id,mirror:!!st?.spec?.mirror,
+ function refresh(){s.debug={phase,actor,round:P().round,players,regions:st?.regions||[],found:st?.found||[],left:st?.left??0,total:st?.total??0,clock:st?.clock??0,help,mode:LAY.mode,decks:decks.map(d=>d.map(p=>p.id)),pair:st?.spec?.pair?.id,mirror:!!st?.spec?.mirror,
   // canvas-relative CSS px of difference i on photo `side` (tests tap here)
   point:(i,side=0)=>{const v=views()?.[side],r=st?.regions[i];if(!v||!r)return null;const p=toSlot(v,r.x,r.y);return {x:view.ox+p.x*view.k,y:view.oy+p.y*view.k};},
   at:(side,u,v)=>{const w=views()?.[side];if(!w)return null;const p=toSlot(w,u,v);return {x:view.ox+p.x*view.k,y:view.oy+p.y*view.k};},
@@ -317,8 +349,6 @@ async function photohunt(s){
  const inCircle=(p,b,pad=6)=>Math.hypot(p.x-b.x,p.y-b.y)<=b.r+pad;
  s.on(c,'pointerdown',ev=>{
   if(s.paused||!s.alive)return;ev.preventDefault();const sp=s.pointer(ev);
-  if(!lockTried){lockTried=true;try{const r=screen.orientation?.lock?.('landscape');r?.catch?.(()=>{});}catch{}}
-  if(portrait){if(Math.hypot(sp.x-(s.W-34),sp.y-34)<30)s.manualPause();return;}
   const p={x:(sp.x-view.ox)/view.k,y:(sp.y-view.oy)/view.k};
   if(help){help=false;sfx('button');return;}
   if(inCircle(p,LAY.help)){help=true;sfx('button');return;}

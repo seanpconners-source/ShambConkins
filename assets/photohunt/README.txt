@@ -20,5 +20,7 @@ Tool (python3, needs Pillow + numpy):
 Spots are x,y,radius in 0..1 of the cropped photo. Photos are cropped to the cabinet's 37:32 window
 (--focus x,y picks the crop centre, default .5,.45) and saved at up to 740x640.
 
-Each player gets their own half of the pairs, so more pairs = more rounds without repeats
-(a long game runs 10-15 rounds per player). When photos run out the game uses drawn scenes.
+Each player gets their own half of the pairs first, then the other half mirrored, then the set repeats
+(flipped the other way), so more pairs = fewer repeats (a long game runs 10-15 rounds per player).
+The old drawn scenes only appear if there are no photos at all.
+Raw uploads are kept in assets/originals/photohunt/ (AI-tool watermarks were painted out before cropping).
