@@ -75,6 +75,8 @@ async function kart(s){
    o.connect(f);o2.connect(f);f.connect(g);g.connect(ac.destination);o.start();o2.start();engines.push({o,o2,f,g,ac});}}catch{}}
  let song=null;try{song=store.profile?.settings?.music?createKartMusic(audioContext(),{transpose:mode==='battle'?3:0}):null;}catch{}
  s.cleanup(()=>song?.stop());
+ let lastFrame=0;const mute=()=>{for(const e of engines)try{e.g.gain.setTargetAtTime(0,e.ac.currentTime,.03);}catch{}};
+ const watchdog=setInterval(()=>{if(s.paused||document.hidden||performance.now()-lastFrame>250)mute();},200);s.cleanup(()=>clearInterval(watchdog));s.resetOnPause?.(mute);
  s.cleanup(()=>{for(const e of engines)try{e.g.gain.cancelScheduledValues(0);e.g.gain.value=0;e.o.stop();e.o2.stop();e.g.disconnect();}catch{}});
  const updateEngines=()=>{for(let i=0;i<engines.length;i++){const e=engines[i],k=K[i],t=e.ac.currentTime,on=!s.paused&&s.alive&&phase!=='intro'&&!k.out&&k.lakitu<=0;
   const f=55+k.v*.24+(k.boostT>0?40:0)+(k.drift?8:0);e.o.frequency.setTargetAtTime(f,t,.05);e.o2.frequency.setTargetAtTime(f*.502,t,.05);e.f.frequency.setTargetAtTime(400+k.v*2.2,t,.08);e.g.gain.setTargetAtTime(on?.012+k.v/Ph.BOOST*.014:0,t,.08);}};
@@ -279,7 +281,7 @@ const shake=(k,a)=>{if(cams[k.i]&&!store.profile?.settings?.reducedMotion)cams[k
   try{const src=portraitURL(id,'normal');if(src&&!/^https?:/.test(src))img.src=src;}catch{}}
  // ---------------------------------------------------------------- main loop
  s.frame((dt0)=>{
-  if(!s.alive)return;const dt=Math.min(dt0,.05);simT+=dt;R.tick(dt);
+  if(!s.alive)return;lastFrame=performance.now();const dt=Math.min(dt0,.05);simT+=dt;R.tick(dt);
   headTimer-=dt;if(headTimer<=0){headTimer=simT<6?.5:1.5;refreshHeads(simT<6);}else refreshHeads(false);
   if(phase==='intro'){introT+=dt;if(introT>2.4)phase='count';}
   else if(phase==='count'){const before=Math.floor(lights);lights+=dt*1.2;const now=Math.floor(lights);if(now!==before&&now>=1&&now<=4)sfx.light(now>=4);
