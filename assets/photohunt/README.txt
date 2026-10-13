@@ -24,3 +24,4 @@ Each player gets their own half of the pairs first, then the other half mirrored
 (flipped the other way), so more pairs = fewer repeats (a long game runs 10-15 rounds per player).
 The old drawn scenes only appear if there are no photos at all.
 Raw uploads are kept in assets/originals/photohunt/ (AI-tool watermarks were painted out before cropping).
+Hand-edited pairs (precise edits, screenshot cleanup) come from tools/photohunt_handmade/make.py instead; same output format.

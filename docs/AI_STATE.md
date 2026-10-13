@@ -85,6 +85,11 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
 - **Portraits:** owner uploads PNG/WebP to `assets/portraits/` on main; TESTver keeps 480px q88 WebP with originals in
   `assets/originals/portraits/` (`tools/run-claude-optimizer-safe.py` for PNG; oversized WebP uploads are shrunk the same way by hand).
   `artemis.think` has two different pictures (.png and .webp); the .webp is what the game shows.
+- **Photo Hunt hand-edited set (Oct 13 2026):** 14 more pairs from owner phone screenshots (originals in
+  `assets/originals/photohunt/<id>.jpg`): `tools/photohunt_handmade/make.py` crops screenshot chrome, paints out Gemini/Lens
+  watermarks, denoises/sharpens, applies 5 hand-placed edits per photo (`pairs.py`; ops in `phlib.py`: recolor/remove/mirror/
+  swap/inpaint; needs `pip install opencv-python-headless`), cuts the 37:32 window (`(x0,y0)` per pair) and writes the usual
+  `<id>.a|b.webp + <id>.json`; then `python3 tools/photohunt.py index`. 20 pairs total.
 - **Castlevania (v0.58.2):** Dracula's Castle NES stage map; Death boss (`death-cv`, reaper art and sickles), new themed music/cards/items/trivia. Games: `cv-vampire-killer` and `cv-candle-hunt` in `src/engines/castlevania.js`, test `tests/castlevania.mjs`. Real-phone playtest still needed.
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
   camp → crossroads → 3 roads (Calm/Adventurous/High Reward) in west/centre/east bands → gate. `gridPath` is an

@@ -16,7 +16,7 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   `node tools/check-modules.mjs` verifies). Entry point is `src/app.js` (game flow, turns, landing, events).
 - `tools/build.mjs` inlines `src/` + `src/styles.css` + `src/index.template.html` + `assets/` into
   `dist/ShambConkins.html` (~30 MB). Drop-in art: `assets/portraits/<characterId>[.<mood>].webp|png`,
-  `assets/items/<id>.*`, `assets/locations/<id>.*`; shrink big images with `python3 tools/optimize-art.py`.
+  `assets/items/<id>.*`, `assets/locations/<id>.*`, Photo Hunt pairs `assets/photohunt/` (`tools/photohunt.py`, see its README); shrink big images with `python3 tools/optimize-art.py`.
 - Key systems: `ui.js` (screens, board SVG, HUD), `multiPathBoard.js` + `boardZones.js` + `biomes.js`
   (generation-7 journey map), `boardCamera.js` (camera/zoom), `gameRegistry.js` + `gameLauncher.js`
   (minigame pool, selection, results/rewards/unlocks), `engines/` (minigame engines, `session.js` = the `s` API),
@@ -32,7 +32,7 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   fuzz of every minigame). Must end `EXIT 0` / "N/N games ran clean".
 - Focused tests (Playwright, headless Chromium at /opt/pw-browsers/chromium-1194/chrome-linux/chrome,
   module at /node-tools/node_modules): `tests/bossgate.mjs`, `tests/warpflow.mjs`, `tests/warp.mjs`,
-  `tests/levels.mjs`, `tests/boss.mjs`, `tests/controls-audit.mjs`, `tests/music.mjs`, `SHAMB_FILE=... node tests/games.mjs 5 3 <id-regex>`.
+  `tests/levels.mjs`, `tests/boss.mjs`, `tests/photohunt.mjs`, `tests/controls-audit.mjs`, `tests/music.mjs`, `SHAMB_FILE=... node tests/games.mjs 5 3 <id-regex>`.
 - Release: bump `src/version.js` + `package.json`, `npm run release` → `releases/ShambConkins_vX.html`, add a CHANGELOG entry. Large generated HTML (v0.58.3 is 130 MB) is a GitHub Release asset, NOT a git blob; maintain tested production build and keep source/artwork unchanged.
 
 ## Rules (don't break these)
