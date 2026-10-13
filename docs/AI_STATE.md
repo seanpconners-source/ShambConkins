@@ -45,6 +45,12 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
 - **Portraits:** owner uploads PNG/WebP to `assets/portraits/` on main; TESTver keeps 480px q88 WebP with originals in
   `assets/originals/portraits/` (`tools/run-claude-optimizer-safe.py` for PNG; oversized WebP uploads are shrunk the same way by hand).
   `artemis.think` has two different pictures (.png and .webp); the .webp is what the game shows.
+- **Photo Hunt bundled pairs (Oct 13 2026):** 14 owner photos (`assets/originals/photohunt/NN-<id>.jpg`, phone screenshots) are
+  cleaned (crop UI chrome, Gemini/Lens watermarks painted out, denoise/sharpen, 1200px) and given 5 hand-placed differences each by
+  `tools/photohunt/make.py` (edits in `pairs.py`, ops in `phlib.py`; needs `pip install opencv-python-headless`). Output:
+  `assets/photohunt/<id>.left|right.webp` (build.mjs → `USER_PORTRAITS['photohunt:<id>:left|right']`) and the generated
+  `src/data/photoHuntPairs.js`. Each game deals 3 random pairs. Hit circles are aspect-corrected (`photoHit(...,aspect)`, r in
+  image-width units). Test: `tests/photohunt.mjs` (`s.debug.target(i)`), screenshots `/tmp/claude-0/sc/photohunt-*`.
 - **Castlevania (v0.58.2):** Dracula's Castle NES stage map; Death boss (`death-cv`, reaper art and sickles), new themed music/cards/items/trivia. Games: `cv-vampire-killer` and `cv-candle-hunt` in `src/engines/castlevania.js`, test `tests/castlevania.mjs`. Real-phone playtest still needed.
 - **Board (generation 8, grid):** `src/gridBoard.js` lays each realm on a 17-column tile grid (100 units/cell): stem from
   camp → crossroads → 3 roads (Calm/Adventurous/High Reward) in west/centre/east bands → gate. `gridPath` is an

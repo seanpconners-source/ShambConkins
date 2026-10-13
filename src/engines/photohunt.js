@@ -12,7 +12,8 @@ const PHOTO_SCENES = [
  {name:'The movie arcade',source:'Megatouch',wall:'#213e59',sign:'MEGATOUCH · PHOTO HUNT',props:['cabinet','frog','gak','pool','soda','stool','jukebox','clock','poster','plant','burger','hat']}
 ];
 function photoRound(scene,random=Math.random){const changes=shuffle(Array.from({length:12},(_,i)=>i),random).slice(0,5);return {scene,changes,regions:changes.map(index=>({x:(index%4+.5)/4,y:(Math.floor(index/4)+.5)/3,r:.075,index}))};}
-function photoHit(regions,p,found=[]){return regions.findIndex((r,i)=>!found.includes(i)&&Math.hypot(p.x-r.x,p.y-r.y)<r.r);}
+// r is in image-width units, so a tap's vertical offset is scaled by the image's height/width (aspect).
+function photoHit(regions,p,found=[],aspect=1){return regions.findIndex((r,i)=>!found.includes(i)&&Math.hypot(p.x-r.x,(p.y-r.y)*aspect)<r.r);}
 const validPhotoPair=isValidPhotoPair;
 function prop(x,type,cx,cy,size,changed){
  x.save();x.translate(cx,cy);x.lineWidth=3;x.strokeStyle='#ead4aa';
@@ -54,7 +55,9 @@ async function photohunt(s){
  const currentPair=()=>deck[round]||null;
  const regions=()=>currentPair()?.regions||starter[Math.min(round,2)].regions;
  const count=()=>deck.length||3;
- const refresh=()=>{s.debug={round,actor,phase,regions:regions(),found,panels,pair:currentPair(),clock,turnClock,roundCount:count(),library:allPairs().length,calibration};};
+ // target(i): canvas point of difference i on the changed photo (tests tap it).
+ const target=i=>{layout();const img=images?.[1],r=img?imageRect(img,panels[1]):panels[1],g=regions()[i];return g&&{x:r.x+g.x*r.w,y:r.y+g.y*r.h+(img?0:8)};};
+ const refresh=()=>{s.debug={round,actor,phase,regions:regions(),found,panels,pair:currentPair(),clock,turnClock,roundCount:count(),library:allPairs().length,calibration,target};};
  function controls(){const root=document.getElementById('game-controls');if(root){root.innerHTML='';root.className='game-controls';}}
  function starterScenes(){loadVersion++;deck=[];images=null;round=0;found=[];clock=40;turnClock=10;phase='hunt';message='Illustrated starter scenes. Add real photo pairs from the Photos menu.';controls();}
  async function loadCurrent(){const version=++loadVersion,pair=currentPair();images=null;phase='loading';refresh();if(pair){try{const result=await Promise.all([imageFrom(s,pair.left),imageFrom(s,pair.right)]);if(version!==loadVersion||!s.alive)return;if(Math.abs(result[0].naturalWidth/result[0].naturalHeight-result[1].naturalWidth/result[1].naturalHeight)>.02)throw new Error('Photo pair proportions differ.');images=result;}catch(error){if(!s.alive)return;message=error.message+' Illustrated scenes are available.';deck=[];round=0;}}if(version===loadVersion){phase='hunt';clock=40;turnClock=10;refresh();}}
@@ -82,9 +85,9 @@ async function photohunt(s){
   if(s.paused||!s.alive||!['hunt','calibrate'].includes(phase))return;ev.preventDefault();layout();const p=s.pointer(ev);if(phase==='hunt'){const pill=pills().find(q=>p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+q.h);if(pill){if(pill.id==='hint')hint();else library();return;}}const panel=panels.findIndex(q=>p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+q.h);if(panel<0)return;
   const img=phase==='calibrate'?calibration.images[panel]:currentPair()?images?.[panel]:null,rect=img?imageRect(img,panels[panel]):panels[panel],point={x:(p.x-rect.x)/rect.w,y:(p.y-rect.y)/rect.h};if(point.x<0||point.x>1||point.y<0||point.y>1)return;
   if(phase==='calibrate'){if(panel===1&&calibration.regions.length<8){if(calibration.regions.some(r=>Math.hypot(r.x-point.x,r.y-point.y)<.07)){message='That area is already marked.';return;}calibration.regions.push({...point,r:radius});message=`${calibration.regions.length} differences marked. Save & play when ready.`;}refresh();return;}
-  if(!img)point.y-=8/rect.h;const hit=photoHit(regions(),point,found);
+  if(!img)point.y-=8/rect.h;const aspect=rect.h/rect.w,hit=photoHit(regions(),point,found,img?aspect:1);
   if(hit>=0){found.push(hit);scores[actor]+=100;s.react?.(actor,'happy');sound('win');message=`${s.players[actor].name} found one!`;if(found.length===regions().length){scores[actor]+=Math.ceil(clock)*2;phase='reveal';clock=2;message='All differences found! Time bonus awarded.';}}
-  else if(regions().some((r,i)=>found.includes(i)&&Math.hypot(point.x-r.x,point.y-r.y)<r.r)){message='Already found. Try another detail.';return;}
+  else if(regions().some((r,i)=>found.includes(i)&&Math.hypot(point.x-r.x,(point.y-r.y)*(img?aspect:1))<r.r)){message='Already found. Try another detail.';return;}
   else{scores[actor]=Math.max(0,scores[actor]-20);clock-=3;s.react?.(actor,'sad');sound('lose');message='Miss: −20 and −3 seconds.';flash={...point,until:.45,miss:true};}
   actor=1-actor;s.active=actor;turnClock=10;s.setScores(scores);s.updateScores();refresh();
  });
@@ -107,7 +110,7 @@ async function photohunt(s){
  });
  await startDeck(shuffle(allPairs(),s.random));
  s.hint('Both players compare the SAME photos and alternate guesses. Add pairs to Photo library, then mark the differences on the right. Send paired images to Codex to include them in the offline game.');
- await s.pass(0,`Megatouch Photo Hunt. ${deck.length?'Your saved photo pairs are ready.':'Illustrated practice scenes are ready; Photo library accepts real pairs.'} Both players compare the same pictures and take turns finding the differences. +100 per find; a miss costs 20 points and three seconds.`);
+ await s.pass(0,`Megatouch Photo Hunt. ${deck.length?'Photo pairs are ready.':'Illustrated practice scenes are ready; Photo library accepts real pairs.'} Both players compare the same pictures and take turns finding the differences. +100 per find; a miss costs 20 points and three seconds.`);
 }
 
 Object.assign(exports,{PHOTO_SCENES,photoRound,photoHit,validPhotoPair,photohunt});
