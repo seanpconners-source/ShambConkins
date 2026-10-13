@@ -10,7 +10,7 @@ const {clamp,seededRandom}=require("src/utils.js");
 const {arenaKeys,arenaTouch,snd,noise,jingle,PCOL,settle}=require("src/engines/arenaKit.js");
 const {audioContext}=require("src/audio.js");
 const {store}=require("src/state.js");
-const {CHARACTERS,character}=require("src/characters.js");
+const {CHARACTERS,character,characterIdentity}=require("src/characters.js");
 const {portraitURL}=require("src/assets.js");
 const T=require("src/engines/kart3d/track.js");
 const Ph=require("src/engines/kart3d/physics.js");
@@ -26,15 +26,16 @@ const POOLS={
  far:[['mush3',2],['star',2],['golden',1.4],['bullet',1.2],['bolt',1],['red',1],['blue',.7]],
  battle:[['green',3],['shell3',1.3],['banana',2],['red',2],['bomb',2],['mushroom',1],['star',.9],['blooper',.8],['banana3',.6]]};
 const COUNT={banana3:3,shell3:3,mush3:3,golden:99};
-const CPU_COLORS={mario:'#e8322b',luigi:'#2fbf3a',bowser:'#f0a020'},CPU_PALETTE=['#ffd21c','#9a5cff','#ff8a2a','#26d7c4','#f04a8a','#8bd13a','#5a7cff'];
+const CPU_COLORS={mario:'#e8322b',luigi:'#2fbf3a',bowser:'#f0a020'},CPU_PALETTE=['#e8322b','#2fbf3a','#ffd21c','#9a5cff','#ff8a2a','#26d7c4','#f04a8a','#5a7cff'];
 const ord=n=>n+(n===1?'st':n===2?'nd':n===3?'rd':'th');
-// CPU racers: the Mario Bros. (and Bowser when the roster has him), then random characters whose face art ships offline.
-function pickCPUs(n,exclude,rand){
- const hasArt=id=>{try{return /^data:image\/(webp|png|jpe?g|gif)/i.test(portraitURL(id,'normal')||'');}catch{return false;}};
- const out=[];for(const id of ['mario','luigi','bowser'])if(out.length<n&&!exclude.includes(id)&&character(id)?.id===id)out.push(id);
- const pool=CHARACTERS.map(c=>c.id).filter(id=>!exclude.includes(id)&&!out.includes(id)&&hasArt(id));
- while(out.length<n&&pool.length)out.push(pool.splice(Math.floor(rand()*pool.length),1)[0]);
- while(out.length<n)out.push(CHARACTERS[Math.floor(rand()*CHARACTERS.length)].id);return out;
+// CPU racers: any characters from the players' rosters (shared + Sean's + Amber's unlocks), shuffled; if the rosters
+// are too small the rest come from the whole character list.
+function pickCPUs(n,exclude,rand,profile){
+ const ident=id=>{try{return characterIdentity(id);}catch{return id;}},taken=new Set(exclude.map(ident)),out=[];
+ const take=list=>{const pool=[...new Set(list)].filter(id=>character(id)?.id===id&&!taken.has(ident(id)));
+  while(out.length<n&&pool.length){const id=pool.splice(Math.floor(rand()*pool.length),1)[0];out.push(id);taken.add(ident(id));}};
+ take([...(profile?.shared||[]),...Object.values(profile?.rosters||{}).flat()]);
+ if(out.length<n)take(CHARACTERS.map(c=>c.id));return out;
 }
 
 async function kart(s){
@@ -45,7 +46,7 @@ async function kart(s){
  const [cv,x]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();
  if(!await settle(s))return;
  const course=mode==='race'?T.rainbowRoad():T.battleRing();
- const rand0=seededRandom(Math.floor(s.random()*1e9)),NCPU=mode==='race'?6:0,cpuIds=pickCPUs(NCPU,s.players.map(p=>p.character),rand0);
+ const rand0=seededRandom(Math.floor(s.random()*1e9)),NCPU=mode==='race'?6:0,cpuIds=pickCPUs(NCPU,s.players.map(p=>p.character),rand0,store.profile);
  const colors=[...PCOL,...cpuIds.map((id,j)=>CPU_COLORS[id]||CPU_PALETTE[j%CPU_PALETTE.length])];
  let R;try{R=createRenderer(glc,course,{colors,battle:mode==='battle'});}catch(e){console.warn('kart: 3D renderer unavailable, using Mode 7',e);return classic();}
  s.cleanup(()=>{try{R.gl.getExtension('WEBGL_lose_context')?.loseContext();}catch{}});
@@ -276,9 +277,11 @@ const shake=(k,a)=>{if(cams[k.i]&&!store.profile?.settings?.reducedMotion)cams[k
   get headOK(){return R.headOK.slice();},get particles(){return parts.length;}};
  s.hint(mode==='race'?'RAINBOW ROAD: three laps in real 3D: hills, a jump and a glider over the void, an anti-gravity wall ride, a loop-the-loop and an upside-down corkscrew. Mario Kart Tour controls on your half of the screen (P1 top, P2 bottom): the kart drives itself; drag left/right to steer; push all the way to drift and hold it for blue, orange, then purple sparks; let go (or swing back) for a mini-turbo. Tap to use your item, swipe up to throw it ahead, swipe down to drop it behind. Keys: P1 A/D steer, S drift, W/Space item; P2 arrows, Down drift, Up/Enter item.':'BALLOON BATTLE: three balloons each on a floating rainbow ring. Hit your rival with shells, bananas and bob-ombs; a boosting bump steals a balloon; falling off costs one. Last kart with balloons, or the most when time runs out, wins. Mario Kart Tour controls on your half: drag to steer, push all the way to drift, tap for items, swipe up/down to throw ahead/behind.');
  refreshHeads(true);
- for(let i=2;i<K.length;i++){const id=K[i].cpu,img=new Image(),cv2=document.createElement('canvas');cv2.width=cv2.height=128;
-  img.onload=()=>{if(!s.alive)return;const g=cv2.getContext('2d'),sc=Math.min(124/img.naturalWidth,124/img.naturalHeight);g.drawImage(img,64-img.naturalWidth*sc/2,64-img.naturalHeight*sc/2,img.naturalWidth*sc,img.naturalHeight*sc);R.setHead(i,cv2);};
-  try{const src=portraitURL(id,'normal');if(src&&!/^https?:/.test(src))img.src=src;}catch{}}
+ for(let i=2;i<K.length;i++){const id=K[i].cpu,img=new Image(),cv2=document.createElement('canvas');cv2.width=cv2.height=128;const g=cv2.getContext('2d');
+  const emoji=()=>{if(!s.alive)return;const e=document.createElement('canvas');e.width=e.height=128;const g=e.getContext('2d');g.font='96px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(character(id)?.icon||'🙂',64,70);R.setHead(i,e);};
+  img.onload=()=>{if(!s.alive)return;g.clearRect(0,0,128,128);const sc=Math.min(124/img.naturalWidth,124/img.naturalHeight);g.drawImage(img,64-img.naturalWidth*sc/2,64-img.naturalHeight*sc/2,img.naturalWidth*sc,img.naturalHeight*sc);if(!R.setHead(i,cv2))emoji();};
+  img.onerror=emoji;emoji();
+  try{const src=portraitURL(id,'normal');if(src){if(/^https?:/.test(src))img.crossOrigin='anonymous';img.src=src;}}catch{}}
  // ---------------------------------------------------------------- main loop
  s.frame((dt0)=>{
   if(!s.alive)return;lastFrame=performance.now();const dt=Math.min(dt0,.05);simT+=dt;R.tick(dt);

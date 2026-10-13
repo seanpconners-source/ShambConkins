@@ -49,8 +49,8 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   auto tricks; `render.js` (baked cube-map sky, procedural rainbow road shader, low-poly karts with portrait billboards, items,
   particles), `hud.js` (Tour HUD, two item slots), `music.js` (original loop). Controls = Mario Kart Tour per screen half:
   drag steers (floating origin, `RAD`), full push latches a drift, release = mini-turbo, tap = item, swipe up/down = throw
-  ahead/behind. Race has 6 CPU racers (`pickCPUs`: Mario, Luigi, Bowser if present, then random roster faces with offline art;
-  rubber-banded `topMul`, simple item use); players start on the back row; ranks 1st-8th; the better-placed player wins.
+  ahead/behind. Race has 6 CPU racers (`pickCPUs`: random characters from the players' rosters (shared + both unlocks), topped up from
+  the whole character list; web photos load with CORS, emoji fallback; rubber-banded `topMul`, simple item use); players start on the back row; ranks 1st-8th; the better-placed player wins.
   Battle stays 1v1. No WebGL → `kartClassic.js` (old Mode 7). Tests: `tests/kart-track.mjs` (Node, in test:core),
   `tests/kart-controls.mjs` (pointer events), `tests/kart.mjs` (autopilot race/battle + screenshots). Real-phone feel untested.
 - **Portraits:** owner uploads PNG/WebP to `assets/portraits/` on main; TESTver keeps 480px q88 WebP with originals in
