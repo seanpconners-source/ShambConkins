@@ -1,8 +1,10 @@
 # Changelog
 
-## Unreleased
+## v0.59.0
 
 **Broforce overhaul.** Players now take turns on the same three-stage mission and the higher score wins. Levels are deep and fully destructible (tunnels, bunkers, two-storey barracks, watchtowers, cliffs with hidden caves, pits under rope bridges), with about 100 enemies per mission (soldiers, suicide bombers, minigun bruisers, attack dogs, grenadiers), Broforce wall-climbing, grenades, exploding barrels, checkpoint flags, the Devil boss and the extraction chopper. Bro heads are proper round faces. Characters unlock only by freeing the GOLD cage on each stage.
+
+Every Broforce head is now the character's own outlined silhouette (cut-outs used to be cropped into circles). Also includes the Windows one-click release builder (`BUILD-RELEASE.cmd`). Saves, character/location/game ids and Android launcher paths are unchanged.
 
 ## v0.58.3
 

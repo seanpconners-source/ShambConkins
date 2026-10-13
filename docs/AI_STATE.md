@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.58.3 release candidate (generated offline file `releases/ShambConkins_v0.58.3.html`; distribute as a GitHub Release asset, NOT a 130 MB git blob).
+Version 0.59.0 (Broforce overhaul; release file `releases/ShambConkins_v0.59.0.html`, ~53 MB, committed like 0.58.1/0.58.2; v0.58.3 was a GitHub Release asset).
 
 ## October 11, 2026 validated six-fix integration
 - TESTver merged six branches at `469ff177`; owner reported playtest looked good and authorized v0.58.3 production release.
