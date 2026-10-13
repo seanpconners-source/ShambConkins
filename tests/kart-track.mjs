@@ -28,4 +28,10 @@ assert.equal(ev.fall||0,0,'autopilot never falls off');assert.equal(ev.ramp,3);a
  assert.ok(lv.includes(1)&&lv.includes(2)&&lv.at(-1)===3,'spark levels 1→2→3');Ph.stepKart(c,q,{steer:0,drift:0},dt,{});assert.ok(q.boostT>1.3,'ultra mini-turbo');}
 // spin-out from a hit, star immunity
 {const q=Ph.makeKart(ring,1);q.v=300;assert.ok(Ph.hit(q,'spin'));assert.ok(q.spin>0&&q.v<200);const z=Ph.makeKart(ring,0);z.star=3;assert.equal(Ph.hit(z,'spin'),false);}
+// every course in the course select closes and an autopilot finishes three laps without falling off
+for(const C of T.COURSES){const c=C.build();assert.ok(c.closeErr<120,`${C.id} closes`);assert.ok(c.boxes.length>=8&&c.spawn.length>=8,`${C.id} boxes and grid`);
+ const q=Ph.makeKart(c,0),e={};let tt=0,dd=0,ls=q.s;while(tt<150&&dd<c.L*3){Ph.stepKart(c,q,Ph.autoInput(c,q),dt,{ev:(k,n)=>{e[n]=(e[n]||0)+1;}});tt+=dt;dd+=T.sdiff(c,ls,q.s);ls=q.s;}
+ assert.ok(dd>=c.L*3,`${C.id}: three laps`);assert.equal(e.fall||0,0,`${C.id}: autopilot never falls off`);console.log(C.id,'3 laps in',tt.toFixed(1),'s');}
+// off-road (grass, sand) slows the kart
+{const c=T.mooMooMeadows(),q=Ph.makeKart(c,0);q.d=c.roadHalf[T.idx(c,q.s)]+20;for(let i=0;i<120*4;i++){q.d=Math.max(q.d,c.roadHalf[T.idx(c,q.s)]+20);Ph.stepKart(c,q,{steer:0,drift:0},dt,{});}assert.ok(q.offroad&&q.v<Ph.TOP*.6,'off-road speed');}
 console.log('kart track OK');

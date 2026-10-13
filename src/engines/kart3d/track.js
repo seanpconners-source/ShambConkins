@@ -47,11 +47,13 @@ function buildCourse(def){
  const N=S.length-1,err=S[N].P;
  const c={id:def.id,N,DS,L:N*DS,lens,closeErr:Math.hypot(...err),
   px:new Float32Array(N),py:new Float32Array(N),pz:new Float32Array(N),T:new Float32Array(N*3),R:new Float32Array(N*3),U:new Float32Array(N*3),
-  half:new Float32Array(N),kg:new Float32Array(N),kn:new Float32Array(N),glue:new Uint8Array(N),rail:new Uint8Array(N),gap:new Uint8Array(N),surf:new Uint8Array(N),
-  ramps:[],boxes:[],coins:[],pads:[],rings:[],decor:def.decor||{},startS:def.startS??60,arena:!!def.arena};
- for(let i=0;i<N;i++){const f=i/N,P=S[i].P;c.px[i]=P[0]-err[0]*f;c.py[i]=P[1]-err[1]*f;c.pz[i]=P[2]-err[2]*f;c.half[i]=S[i].half;}
+  half:new Float32Array(N),roadHalf:new Float32Array(N),kg:new Float32Array(N),kn:new Float32Array(N),glue:new Uint8Array(N),rail:new Uint8Array(N),gap:new Uint8Array(N),surf:new Uint8Array(N),
+  ramps:[],boxes:[],coins:[],pads:[],rings:[],decor:def.decor||{},startS:def.startS??60,arena:!!def.arena,theme:def.theme||'rainbow',name:def.name||def.id};
+ for(let i=0;i<N;i++){const f=i/N,P=S[i].P;c.px[i]=P[0]-err[0]*f;c.py[i]=P[1]-err[1]*f;c.pz[i]=P[2]-err[2]*f;c.roadHalf[i]=S[i].half;}
  // flags: a sample belongs to the piece that produced it (sample 0 to the last piece)
- for(let i=0;i<N;i++){const pc=pieces[S[i].piece<0?pieces.length-1:S[i].piece];c.glue[i]=pc.glue?1:0;c.rail[i]=pc.rail??def.rail??3;c.gap[i]=pc.gap?1:0;c.surf[i]=pc.surf==='ramp'?1:pc.surf==='glide'?2:0;if(pc.gap)c.rail[i]=0;}
+ for(let i=0;i<N;i++){const pc=pieces[S[i].piece<0?pieces.length-1:S[i].piece];c.glue[i]=pc.glue?1:0;c.rail[i]=pc.rail??def.rail??3;c.gap[i]=pc.gap?1:0;c.surf[i]=pc.surf==='ramp'?1:pc.surf==='glide'?2:0;if(pc.gap)c.rail[i]=0;
+  // an off-road band (grass, sand) beside the road widens the drivable ribbon
+  c.half[i]=c.roadHalf[i]+(pc.gap||pc.surf||pc.glue?0:(pc.off??def.offroad??0));}
  // frames from the closed centre line
  for(let i=0;i<N;i++){const a=(i-1+N)%N,b=(i+1)%N;const T=norm([c.px[b]-c.px[a],c.py[b]-c.py[a],c.pz[b]-c.pz[a]]);
   let R=rFrom(S[i].yaw),U=norm(cross(R,T));R=norm(cross(T,U));const ro=S[i].roll,cr=Math.cos(ro),sr=Math.sin(ro);
@@ -68,7 +70,7 @@ function buildCourse(def){
   if(pc.ring!=null)c.rings.push(at(pc.ring));}
  let minY=Infinity,maxY=-Infinity;for(let i=0;i<N;i++){minY=Math.min(minY,c.py[i]);maxY=Math.max(maxY,c.py[i]);}c.minY=minY;c.maxY=maxY;
  // starting grid, two by two behind the line: CPU racers in front, the two players on the back row (like Mario Kart)
- const slot=(r,side)=>({s:c.startS-26-r*44-(side>0?16:0),d:side*c.half[0]*.42,psi:0});
+ const slot=(r,side)=>({s:c.startS-26-r*44-(side>0?16:0),d:side*c.roadHalf[0]*.42,psi:0});
  c.spawn=def.spawn||[slot(3,-1),slot(3,1),slot(0,-1),slot(0,1),slot(1,-1),slot(1,1),slot(2,-1),slot(2,1)];
  return c;
 }
@@ -82,7 +84,7 @@ function frame(c,s,o={P:[0,0,0],T:[0,0,0],R:[0,0,0],U:[0,0,0]}){
  const u=wrapS(c,s)/DS,i=Math.floor(u)%c.N,j=(i+1)%c.N,t=u-Math.floor(u);
  o.P[0]=c.px[i]+(c.px[j]-c.px[i])*t;o.P[1]=c.py[i]+(c.py[j]-c.py[i])*t;o.P[2]=c.pz[i]+(c.pz[j]-c.pz[i])*t;
  for(const k of ['T','R','U']){const A=c[k],v=o[k];let l=0;for(let q=0;q<3;q++){v[q]=A[i*3+q]+(A[j*3+q]-A[i*3+q])*t;l+=v[q]*v[q];}l=Math.sqrt(l)||1;v[0]/=l;v[1]/=l;v[2]/=l;}
- o.half=c.half[i]+(c.half[j]-c.half[i])*t;o.kg=c.kg[i]+(c.kg[j]-c.kg[i])*t;o.kn=c.kn[i]+(c.kn[j]-c.kn[i])*t;o.i=t<.5?i:j;
+ o.half=c.half[i]+(c.half[j]-c.half[i])*t;o.roadHalf=c.roadHalf[i]+(c.roadHalf[j]-c.roadHalf[i])*t;o.kg=c.kg[i]+(c.kg[j]-c.kg[i])*t;o.kn=c.kn[i]+(c.kn[j]-c.kn[i])*t;o.i=t<.5?i:j;
  return o;
 }
 function point(c,s,d,h=0,out=[0,0,0]){const f=frame(c,s,scratch);for(let q=0;q<3;q++)out[q]=f.P[q]+f.R[q]*d+f.U[q]*h;return out;}
@@ -104,7 +106,7 @@ const surfaceAt=(c,s,d)=>{const i=idx(c,s);return !c.gap[i]&&Math.abs(d)<=c.half
 // Rainbow Road: rolling hills with no rails, a jump over the void, an anti-gravity wall ride, a loop-the-loop,
 // a barrel-roll corkscrew you drive upside down, dash panels and a glider ramp.
 function rainbowRoad(){
- return buildCourse({id:'rainbow-road',half:64,rail:3,startS:60,pieces:[
+ return buildCourse({id:'rainbow-road',name:'Rainbow Road',theme:'rainbow',half:64,rail:3,startS:60,pieces:[
   // side 1: start straight and rolling hills with no rails
   {len:200,flex:'A',boxes:[[.9,[-36,-12,12,36]]]},
   {len:140,pitch:11,rail:0},{len:150,pitch:-11,rail:0,coins:[[.1,.9,0]]},{len:150,pitch:11,rail:0},{len:140,pitch:0,rail:0},
@@ -144,13 +146,75 @@ function rainbowRoad(){
   {len:100,roll:0}
  ]});
 }
+// Moo Moo Meadows: rolling farmland, wide asphalt with red-white kerbs, grass you can cut across (slow), fences.
+function mooMooMeadows(){
+ const B=[-40,-14,14,40];
+ return buildCourse({id:'moo-moo-meadows',name:'Moo Moo Meadows',theme:'meadow',half:66,offroad:52,rail:3,startS:60,pieces:[
+  {len:200,flex:'A',coins:[[.35,.6,0]],boxes:[[.85,B]]},
+  {len:160,pitch:5},{len:180,pitch:-5,coins:[[.1,.9,12]]},{len:160,pitch:0},
+  {turn:90,r:380,roll:6,coins:[[.2,.8,-20]]},{len:60,roll:0},
+  {len:200,flex:'B',pads:[[.7,0]]},
+  {len:90,pitch:10,surf:'ramp',lip:{kick:45}},{len:150,pitch:0,boxes:[[.7,B]]},
+  {turn:90,r:320,roll:8,coins:[[.3,.7,0]]},{len:60,roll:0},
+  {len:300,pitch:4},{len:200,pitch:0,pads:[[.4,-24],[.4,24]]},
+  {turn:-60,r:280,roll:-8},{turn:60,r:280,roll:8},{len:40,roll:0},
+  {len:150,boxes:[[.5,B]]},
+  {turn:90,r:340,roll:6},{len:60,roll:0},
+  {turn:-45,r:260,roll:-8},{turn:45,r:260,roll:8,coins:[[.3,.7,-14]]},{len:40,roll:0},{len:200,coins:[[.2,.8,0]]},
+  {turn:'rest',r:340,roll:6},{len:100,roll:0}
+ ]});
+}
+// Cheep Cheep Beach: sandy road over the sea, soft sand either side, a boardwalk and a jump across the water.
+function cheepCheepBeach(){
+ const B=[-38,-13,13,38];
+ return buildCourse({id:'cheep-cheep-beach',name:'Cheep Cheep Beach',theme:'beach',half:62,offroad:44,rail:0,startS:60,pieces:[
+  {len:240,flex:'A',boxes:[[.85,B]]},
+  {len:120,pitch:6},{len:140,pitch:-6,coins:[[.1,.9,0]]},{len:120,pitch:0},
+  {turn:90,r:340,roll:6,coins:[[.2,.8,20]],rail:3},{len:40,roll:0},
+  {len:180,flex:'B',rail:3,off:0,pads:[[.8,0]]},
+  {len:100,pitch:12,surf:'ramp',lip:{kick:40}},
+  {len:220,pitch:-4,gap:true},
+  {len:100,pitch:0},
+  {len:220,boxes:[[.5,B]]},
+  {turn:90,r:300,roll:6,rail:3},{len:40,roll:0},
+  {turn:-60,r:260,roll:-8,rail:3},{turn:60,r:260,roll:8,coins:[[.3,.7,-18]],rail:3},{len:40,roll:0},
+  {len:260,pitch:5},{len:240,pitch:0,boxes:[[.6,B]]},
+  {turn:90,r:300,roll:6,rail:3},{len:60,roll:0},
+  {turn:-45,r:260,roll:-8,rail:3},{turn:45,r:260,roll:8,rail:3},{len:40,roll:0},
+  {len:760,coins:[[.3,.7,0]],boxes:[[.85,[-38,-13,13,38]]]},
+  {turn:'rest',r:320,roll:6,rail:3},{len:120,roll:0}
+ ]});
+}
+// Bowser's Castle: stone road and walls, hairpins, an open bridge and a jump over the lava, an anti-gravity wall ride.
+function bowsersCastle(){
+ const B=[-36,-12,12,36];
+ return buildCourse({id:'bowsers-castle',name:"Bowser's Castle",theme:'castle',half:60,rail:3,startS:60,pieces:[
+  {len:300,flex:'A',boxes:[[.85,B]]},
+  {len:200,pads:[[.5,0]]},
+  {turn:90,r:200,roll:10},{len:40,roll:0},
+  {len:160,flex:'B',boxes:[[.5,B]]},
+  {len:160,rail:0,coins:[[.1,.9,0]]},
+  {len:100,pitch:12,surf:'ramp',rail:0,lip:{kick:45}},{len:200,pitch:-5,gap:true},{len:100,pitch:0,rail:0},
+  {len:60,glue:true},{turn:30,r:240,roll:70,glue:true},{turn:30,r:240,glue:true,coins:[[0,1,0]]},{turn:30,r:240,roll:0,glue:true},{len:60,glue:true,pads:[[.5,0]]},
+  {len:260,pitch:-8},{len:60,pitch:0},
+  {turn:-60,r:200,roll:-10},{turn:60,r:200,roll:10},{len:40,roll:0},
+  {len:120,boxes:[[.5,B]]},
+  {turn:90,r:220,roll:10},{len:40,roll:0},
+  {len:300,pitch:6},{len:100,pitch:0},
+  {turn:-45,r:200,roll:-10},{turn:45,r:200,roll:10,coins:[[.3,.7,0]]},{len:40,roll:0},
+  {len:200},
+  {turn:'rest',r:220,roll:10},{len:100,roll:0}
+ ]});
+}
+const COURSES=[{id:'rainbow-road',name:'Rainbow Road',build:rainbowRoad},{id:'moo-moo-meadows',name:'Moo Moo Meadows',build:mooMooMeadows},{id:'cheep-cheep-beach',name:'Cheep Cheep Beach',build:cheepCheepBeach},{id:'bowsers-castle',name:"Bowser's Castle",build:bowsersCastle}];
+const courseById=id=>(COURSES.find(c=>c.id===id)||COURSES[0]).build();
 // Balloon Battle arena: a wide floating rainbow ring with rolling hills, a rail round the outside and the void in the middle.
 function battleRing(){
  const R=500,q=[];for(let k=0;k<8;k++)q.push({turn:45,r:R,pitch:[6,0,-6,0][k%4],rail:1});
- const c=buildCourse({id:'battle-ring',half:210,rail:1,arena:true,startS:0,pieces:q});
+ const c=buildCourse({id:'battle-ring',name:'Rainbow Battle Ring',theme:'rainbow',half:210,rail:1,arena:true,startS:0,pieces:q});
  c.spawn=[{s:0,d:0,psi:0},{s:c.L/2,d:0,psi:Math.PI}];
  c.boxes=[];for(let k=0;k<12;k++)c.boxes.push({s:(k+.25)*c.L/12,d:k%2?-110:90,t:0});for(let k=0;k<6;k++)c.boxes.push({s:(k+.75)*c.L/6,d:0,t:0});
  return c;
 }
 
-Object.assign(exports,{DS,buildCourse,rainbowRoad,battleRing,frame,point,project,surfaceAt,wrapS,sdiff,idx,cross,dot,norm});
+Object.assign(exports,{DS,buildCourse,rainbowRoad,mooMooMeadows,cheepCheepBeach,bowsersCastle,COURSES,courseById,battleRing,frame,point,project,surfaceAt,wrapS,sdiff,idx,cross,dot,norm});

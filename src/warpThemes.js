@@ -9,7 +9,7 @@ const {selectItemDrop}=require("src/itemDrops.js");
 const card=(title,body,e)=>({title,body,e});
 const WARP_THEMES={
  'rainbow-road':{source:'Mario Kart',
-  games:['rainbow-road-kart','kart-time-trial','rainbow-balloon-battle'],trivia:['trivia-mariokart'],
+  games:['rainbow-road-kart','kart-grand-prix-pass','kart-time-trial','rainbow-balloon-battle'],trivia:['trivia-mariokart'],
   items:['wz-triple-mushroom','wz-banana-peel','wz-red-shell','wz-lightning-bolt','wz-bullet-bill','wz-golden-mushroom','wz-item-box','rainbow-pass','nintendo-blue-shell','nintendo-super-star'],
   cards:[card('Item Box: Triple Mushroom','Boost, boost, boost. The guardrail-free road blurs past.',['move',3]),card('Blue Shell incoming','First place is a lonely place. The shell finds you anyway.',['points',-3]),
    card('Lakitu’s fishing rod','You drove off the edge. Lakitu fishes you back a few spaces behind.',['move',-2]),card('Perfect drift','Blue sparks, then orange. Mini-turbo!',['chaos']),

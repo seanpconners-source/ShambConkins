@@ -54,8 +54,13 @@ function drawHUD(x,v,st){
  const map=()=>{if(v.h>230&&course.mini){const mw=Math.min(v.w*.24,92*u),mh=mw,mx=v.x+v.w-pad0-mw,my=v.y+pad0+40*u;x.save();x.globalAlpha=.85;x.strokeStyle='rgba(255,255,255,.9)';x.lineWidth=3*u;x.lineJoin='round';x.beginPath();
    course.mini.forEach(([a,b],j)=>{const X=mx+a*mw,Y=my+b*mh;j?x.lineTo(X,Y):x.moveTo(X,Y);});x.closePath();x.stroke();
    for(const q of st.karts||[])if(!q.human){const [a,b]=course.miniAt(q);x.fillStyle='rgba(255,255,255,.7)';x.beginPath();x.arc(mx+a*mw,my+b*mh,2.2*u,0,7);x.fill();}
-   for(const q of [other,k]){const [a,b]=course.miniAt(q);x.fillStyle=PCOL[q.i];x.beginPath();x.arc(mx+a*mw,my+b*mh,(q===k?4.5:3.5)*u,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=1.5*u;x.stroke();}x.restore();}};map();
- if(mode==='race'){
+   for(const q of [other,k]){if(!q)continue;const [a,b]=course.miniAt(q);x.fillStyle=PCOL[q.player??q.i];x.beginPath();x.arc(mx+a*mw,my+b*mh,(q===k?4.5:3.5)*u,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=1.5*u;x.stroke();}x.restore();}};map();
+ if(mode==='time'){
+  const big=34*u,px=v.x+v.w-pad0,py=v.y+v.h-pad0,tm=k.finished?k.finishT:clock;
+  outlined(x,`${Math.floor(tm/60)}'${(tm%60).toFixed(2).padStart(5,'0')}"`,px,py,{size:big,fill:k.finished?'#ffe23a':'#fff',stroke:'#120a2e',align:'right',base:'bottom'});
+  if(st.ghostBest!=null&&isFinite(st.ghostBest))outlined(x,`GHOST ${Math.floor(st.ghostBest/60)}'${(st.ghostBest%60).toFixed(2).padStart(5,'0')}"`,px,py-big*1.05,{size:13*u,fill:'#c9d4ff',stroke:'#120a2e',align:'right',base:'bottom'});
+  const lap=Math.min(laps,k.lap+1);outlined(x,`LAP ${lap}/${laps}`,v.x+v.w-pad0,v.y+pad0+10*u,{size:15*u,fill:lap===laps?'#ffe23a':'#fff',stroke:'#120a2e',align:'right'});
+ }else if(mode==='race'){
   // position
   const big=46*u,px=v.x+v.w-pad0,py=v.y+v.h-pad0;const label=k.finished?ord(k.place||rank):ord(rank);
   x.save();x.font=`italic 900 ${big}px ${FONT}`;x.textAlign='right';x.textBaseline='bottom';x.lineJoin='round';x.lineWidth=big*.22;x.strokeStyle='#120a2e';x.strokeText(label,px,py);
@@ -78,8 +83,9 @@ function drawHUD(x,v,st){
  if(pad.f){const R=rad,oy=pad.f.y;x.save();x.globalAlpha=.28;x.strokeStyle='#fff';x.lineWidth=2;x.beginPath();x.moveTo(pad.ox-R,oy);x.lineTo(pad.ox+R,oy);x.stroke();
   x.fillStyle='#fff';x.beginPath();x.arc(pad.ox-R,oy,4,0,7);x.fill();x.beginPath();x.arc(pad.ox+R,oy,4,0,7);x.fill();x.globalAlpha=pad.latch?.75:.4;x.fillStyle=pad.latch?['#ffd21c','#4ab8ff','#ff9a1c','#e04aff'][k.spark]||'#ffd21c':'#fff';x.beginPath();x.arc(clamp(pad.f.x,pad.ox-R,pad.ox+R),oy,14,0,7);x.fill();x.restore();}
  // first-time hints
- if(st.hint>0){const a=clamp(st.hint,0,1);x.save();x.globalAlpha=a;const sz=Math.max(9,10*u),hy=v.y+v.h-sz*4.4;x.fillStyle='rgba(18,10,46,.6)';rr(x,v.x+v.w*.08,hy-sz*1.6,v.w*.84,sz*4.4,10);x.fill();
-  outlined(x,'DRAG ◀ ▶ TO STEER · PUSH ALL THE WAY TO DRIFT',v.x+v.w/2,hy,{size:sz,fill:'#fff',stroke:'#120a2e'});outlined(x,'LET GO FOR A MINI-TURBO · TAP = ITEM · SWIPE ↑ AHEAD ↓ BEHIND',v.x+v.w/2,hy+sz*1.5,{size:sz,fill:'#ffe23a',stroke:'#120a2e'});x.restore();}
+ if(st.hint>0){const a=clamp(st.hint,0,1);x.save();x.globalAlpha=a;const sz=Math.max(9,10*u),hy=v.y+v.h-sz*4.4;x.fillStyle='rgba(18,10,46,.6)';const nL=v.w<v.h?4:2;rr(x,v.x+v.w*.06,hy-sz*1.6-(nL-2)*sz*1.5,v.w*.88,sz*4.4+(nL-2)*sz*1.5,10);x.fill();
+  const L=v.w<v.h?['DRAG ◀ ▶ TO STEER','PUSH ALL THE WAY TO DRIFT','LET GO FOR A MINI-TURBO','TAP = ITEM · SWIPE ↑ / ↓ THROW']:['DRAG ◀ ▶ TO STEER · PUSH ALL THE WAY TO DRIFT','LET GO FOR A MINI-TURBO · TAP = ITEM · SWIPE ↑ AHEAD ↓ BEHIND'];
+  x.font=`900 ${sz}px ${FONT}`;const fit=Math.min(1,v.w*.8/Math.max(...L.map(l=>x.measureText(l).width))),fs=sz*fit;L.forEach((l,j)=>outlined(x,l,v.x+v.w/2,hy-(L.length-2)*fs*1.5+j*fs*1.5,{size:fs,fill:j%2?'#ffe23a':'#fff',stroke:'#120a2e'}));x.restore();}
  if(st.wrongWay)outlined(x,'WRONG WAY!',v.x+v.w/2,v.y+v.h*.45,{size:24*u,fill:'#ff5a5a',stroke:'#120a2e',alpha:.6+.4*Math.sin(t*10)});
 }
 Object.assign(exports,{drawHUD,drawIcon,ICON});

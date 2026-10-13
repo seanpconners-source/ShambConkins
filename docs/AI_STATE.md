@@ -42,17 +42,21 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   `persistence.js` `validBroforce*`); arcade never rewards. Camera (`broforce/camera.js`) looks below the floor by the
   controls inset and keeps heads under the HUD band. 45 Node suites `tests/broforce-*.mjs`, browser `tests/bf41-*`, `tests/bf59-*`.
   Bots can't beat the boss (it perches on ledges); real two-thumb play on a phone still unverified.
-- **Mario Kart 3D (Oct 13 2026):** `rainbow-road-kart` / `rainbow-balloon-battle` (engine `kart`, `src/engines/kart.js`) are now
-  real 3D in WebGL: `kart3d/track.js` builds closed 3D ribbon courses from turtle pieces (turns, hills, ramps + gaps, glider,
-  anti-gravity `glue` wall ride, loop, 360° corkscrew; flex straights auto-close the loop), `physics.js` drives karts in track
-  space (s,d,psi) with Frenet kinematics, air/ramps/crests in world space, rails, Lakitu respawn, drift sparks 1-3 → mini-turbo,
-  auto tricks; `render.js` (baked cube-map sky, procedural rainbow road shader, low-poly karts with portrait billboards, items,
-  particles), `hud.js` (Tour HUD, two item slots), `music.js` (original loop). Controls = Mario Kart Tour per screen half:
-  drag steers (floating origin, `RAD`), full push latches a drift, release = mini-turbo, tap = item, swipe up/down = throw
-  ahead/behind. Race has 6 CPU racers (`pickCPUs`: random characters from the players' rosters (shared + both unlocks), topped up from
-  the whole character list; web photos load with CORS, emoji fallback; rubber-banded `topMul`, simple item use); players start on the back row; ranks 1st-8th; the better-placed player wins.
-  Battle stays 1v1. `kart-time-trial` (kartMode 'time') and no-WebGL browsers run `kartMode7.js` (below). Tests: `tests/kart-track.mjs`
-  (Node, in test:core), `tests/kart-controls.mjs` (pointer events), `tests/kart.mjs` (autopilot race/battle + screenshots). Real-phone feel untested.
+- **Mario Kart 3D (Oct 13 2026):** engine `kart` (`src/engines/kart.js`), four games by `kartMode`: `rainbow-road-kart` 'race'
+  (Grand Prix VS, side-by-side split P1 left/P2 right, 6 CPUs), new `kart-grand-prix-pass` 'gp' (P1 then P2 vs the same 7 CPUs,
+  GP points 15/12/10/9..., same place → faster time +1), `kart-time-trial` 'time' (P1 alone with 3 mushrooms, P2 vs P1's ghost:
+  `rec` frames → `ghostPose`, drawn translucent; fastest wins 100/99), `rainbow-balloon-battle` 'battle' (side-by-side, 1v1).
+  Flow: one `s.frame` dispatching to `onFrame`; `chooseCourse()` card screen (debug `pick(id)`, auto 30 s) → `runRace(opts)`
+  (own renderer/GL context, music, engines; resolves results). Courses in `kart3d/track.js` `COURSES`: Rainbow Road, Moo Moo
+  Meadows, Cheep Cheep Beach, Bowser's Castle (`theme`, `offroad` band → `roadHalf`; off-road = 55% top speed); 3D ribbon built
+  from turtle pieces (turns, hills, ramps + gaps, glider, anti-gravity `glue`, loop, corkscrew; flex straights auto-close).
+  `physics.js` track-space karts (Frenet), air/ramps/crests, rails, Lakitu, drift sparks (`DRIFT_LV`) → mini-turbo, auto tricks.
+  `render.js` themes (`THEMES`: baked sky per theme, procedural road/kerbs/sand/stone, fences/walls, grass/water/lava ground
+  plane, trees/cows/palms/pillars), karts with portrait billboards, ghost. `hud.js` (Tour HUD, two item slots, time mode),
+  `music.js` (original loop). Controls = Mario Kart Tour per screen: drag steers (floating origin), full push latches a drift,
+  release = mini-turbo, tap = item, swipe/drag up/down = throw. CPUs = random roster characters (`pickCPUs`). Needs WebGL (else a
+  message and a tie); the Mode 7 engine is gone. Tests: `tests/kart-track.mjs` (Node, test:core), `tests/kart-controls.mjs`,
+  `tests/kart.mjs` (all four games to the result screen). Real-phone feel untested.
 - **Photo Hunt (Megatouch Aurora 2007 cabinet replica, Oct 13 2026):** `src/engines/photohunt.js` (same id `megatouch-photohunt`).
   800x600 cabinet screen full-bleed (`ph-shell`); `layout(W,H)` stretches it to the screen: 4:3 = exact cabinet, wider = 'cab' widened,
   ≥1200 logical wide ('wide', landscape phones) = one header row + ROUND/hint glasses in side columns, portrait ('tall') stacks the photos.
@@ -66,14 +70,6 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   inbox; preview). Pairs: `sean-road-trip` + owner's 5 (dog-lab-crew, dog-lab-solo, amber-alien, space-desk, evil-lab; Gemini sparkle watermarks painted out,
   raw uploads in `assets/originals/photohunt/`). Photos repeat (mirror flipped) instead of the drawn scenes, which only fill in with no photos. Owner is supplying
   photos (pin-up/erotic theme); hand-pick spots and check every preview. Test: `tests/photohunt.mjs`. Real-phone feel untested.
-- **Mario Kart Mode 7 (Oct 13 2026, now `engines/kartMode7.js`, fn `kartMode7`):** runs `kart-time-trial`, and race/battle only without WebGL
-  (`kart.js` routes; tests force it with `globalThis.SHAMB_KART_MODE7=true`). Originally ids `rainbow-road-kart` (race), `kart-time-trial`, `rainbow-balloon-battle`.
-  `COURSES` (rainbow/bowser/beach/jungle/meadow: hand-laid Catmull-Rom loops ×`SCALE`, edge type in `EDGES` = fall/wall/offroad
-  distances, hazards thwomp/crab/barrel/cow, scenery). `courseTexture` draws the course once (TS px/unit) and Mode 7 rows sample a
-  rotated buffer (`ZK` zoom; never name anything `K` = the kart list). Karts: `kartModel` boxes/cylinders pre-rendered at 24 yaws
-  (`kartFrames`, head anchor per frame). Race = side-by-side split, humans start last of 6 (4 CPUs via `cpuRoster`, Mario faces first,
-  rubber-banding). Drift: hold |steer|>.55 for .26 s → hop; `charge` tiers .85/1.8/2.9 s → mini-turbo on release. Time trials: turns,
-  3 mushrooms, P2 vs P1 ghost. Course select screen (auto-picks after 30 s). Test: `tests/kart-mode7.mjs` (debug `pick`, `auto[i]`, `finishLap`).
 - **Sonic (Oct 13 2026):** P2 is Tails (`drawRunner` palette + `tail()`); badniks redrawn. `sonic-ring-rush` id now runs `sonicMode:'boss'`
   (Green Hill Act 3): `buildLevel` ends in `L.arena`; per-world `w.boss` (Egg Mobile + wrecking ball, 8 hits, `stepBoss`/`bossTouch`,
   camera lock, capsule). Pilot = locked character from `gameRecruitPool` (prefers real art, head via broforce `headCanvas`); beating it
@@ -126,8 +122,8 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   (`warpGameId`, own roulette candidates; off-theme ids incl. challenge items/tasks are swapped, boss fights allowed),
   `resolveLanding` uses `warpCard`/`warpItem`/`warpFortune`; pair turns/intros, the Home dog pack and `evolveBoard`
   are skipped on warp boards. Warp games live in `src/packs/warpPack.js` (`warpOnly`, `randomEligible:false`, in the
-  arcade): `engines/sonic.js` (Green Hill, Mega Drive physics, modes boss/race), `kart.js` (3D Rainbow
-  Road Grand Prix + balloon battle; Mode 7 time trials in `kartMode7.js`), `smb3.js` (N-Spade, Spade Panel), `candyLand.js`, `chutes.js` (Ladder Rush,
+  arcade): `engines/sonic.js` (Green Hill, Mega Drive physics, modes boss/race), `kart.js` (3D Grand Prix
+  VS/pass & play, Time Trials, Balloon Battle), `smb3.js` (N-Spade, Spade Panel), `candyLand.js`, `chutes.js` (Ladder Rush,
   Spinner Showdown on the real 1943 layout), `monopoly.js` (Speed Die, sealed-bid auction), `clue.js` (Whodunit with
   pass-the-phone notebooks, Lineup), `hyrule.js` (Rupee Rush, Sword Duel). Items: `data/warpItems.js` (`wz-*`, built
   with `packItems` from itemPackV43). Trivia: `data/warpTrivia.js` (topics smb3/candyland/chutes/monopoly/clue +

@@ -45,6 +45,8 @@ class Geo{
   this.quad(p(a0,-w/2),p(a1,-w/2),p(a1,w/2),p(a0,w/2),col);this.tri([cx,cy,cz+w/2],p(a0,w/2),p(a1,w/2),cap);this.tri([cx,cy,cz-w/2],p(a1,-w/2),p(a0,-w/2),cap);}}
  cylX(cx,cy,cz,r,len,seg,col,cap=col){for(let k=0;k<seg;k++){const a0=k/seg*Math.PI*2,a1=(k+1)/seg*Math.PI*2,p=(a,x)=>[cx+x,cy+Math.cos(a)*r,cz+Math.sin(a)*r];
   this.quad(p(a0,-len/2),p(a1,-len/2),p(a1,len/2),p(a0,len/2),col);this.tri([cx+len/2,cy,cz],p(a0,len/2),p(a1,len/2),cap);this.tri([cx-len/2,cy,cz],p(a1,-len/2),p(a0,-len/2),cap);}}
+ cylY(cx,cy,cz,r,h,seg,col,cap=col){for(let k=0;k<seg;k++){const a0=k/seg*Math.PI*2,a1=(k+1)/seg*Math.PI*2,p=(a,y)=>[cx+Math.cos(a)*r,cy+y,cz+Math.sin(a)*r];
+  this.quad(p(a1,-h/2),p(a0,-h/2),p(a0,h/2),p(a1,h/2),col);this.tri([cx,cy+h/2,cz],p(a1,h/2),p(a0,h/2),cap);this.tri([cx,cy-h/2,cz],p(a0,-h/2),p(a1,-h/2),cap);}}
  sphere(cx,cy,cz,r,seg,col,{sy=1,top=1}={}){const st=Math.ceil(seg/2);for(let i=0;i<st;i++){const t0=i/st*Math.PI,t1=(i+1)/st*Math.PI;if(t0>=Math.PI*top-1e-6)break;
   for(let k=0;k<seg;k++){const a0=k/seg*Math.PI*2,a1=(k+1)/seg*Math.PI*2,p=(t,a)=>[cx+Math.sin(t)*Math.cos(a)*r,cy+Math.cos(t)*r*sy,cz+Math.sin(t)*Math.sin(a)*r];
    this.quad(p(t0,a0),p(t0,a1),p(t1,a1),p(t1,a0),col);}}}

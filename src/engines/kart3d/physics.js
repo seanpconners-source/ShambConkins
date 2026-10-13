@@ -4,7 +4,7 @@
 // mini-turbo sparks, auto tricks off ramps (jump boost), gliders, dash panels, Lakitu rescue.
 const T=require("src/engines/kart3d/track.js");
 
-const G=270,TOP=330,BOOST=465,TURN=1.55,DRIFT_LV=[.7,1.5,2.5],MT=[0,.55,1,1.45];
+const G=270,TOP=330,BOOST=465,TURN=1.55,DRIFT_LV=[.65,1.35,2.3],MT=[0,.55,1,1.45];
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const wrapA=a=>{while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;return a;};
 
@@ -54,11 +54,12 @@ function stepKart(c,k,inp,dt,ctx={}){
  let yaw=0;const steer=k.steer;
  if(k.bullet>0){k.psi*=Math.pow(.02,dt);k.d*=Math.pow(.3,dt);}
  else if(k.spin>0||k.tumble>0)yaw=0;
- else if(k.drift){const into=clamp(steer*k.drift,-1,1);yaw=k.drift*(1.2+.75*into)*clamp(k.v/200,.5,1);const before=sparkLevel(k);k.driftT+=dt*(.85+.6*Math.max(0,into));const lv=sparkLevel(k);if(lv!==before)ctx.ev?.(k,'spark',lv);k.spark=lv;}
+ else if(k.drift){const into=clamp(steer*k.drift,-1,1);yaw=k.drift*(1.2+.75*into)*clamp(k.v/200,.5,1);const before=sparkLevel(k);k.driftT+=dt*(.95+.55*Math.max(0,into));const lv=sparkLevel(k);if(lv!==before)ctx.ev?.(k,'spark',lv);k.spark=lv;}
  else yaw=steer*TURN*clamp(k.v/90,0,1)*(1-.18*clamp(k.v/TOP,0,1.4));
  k.psi=wrapA(k.psi+yaw*dt);
  // speed
- let top=TOP*(k.topMul||1)*(1+.008*k.coins)*(k.shrink>0?.72:1)*(k.star>0?1.12:1)*(k.drift?.985:1),acc=280*(1-.55*clamp(k.v/top,0,1));
+ k.offroad=!glue&&Math.abs(k.d)>(f.roadHalf??f.half)+2;
+ let top=TOP*(k.topMul||1)*(k.offroad&&k.star<=0&&k.boostT<=0?.55:1)*(1+.008*k.coins)*(k.shrink>0?.72:1)*(k.star>0?1.12:1)*(k.drift?.985:1),acc=280*(1-.55*clamp(k.v/top,0,1));
  if(k.boostT>0){top=Math.max(top,BOOST*(k.shrink>0?.8:1));acc=1200;}
  if(k.bullet>0){top=620;acc=1500;}
  if(k.spin>0||k.tumble>0)k.v*=Math.pow(.12,dt);
@@ -125,6 +126,7 @@ function pose(c,k){
 // Autopilot (tests, demo): follows the racing line, drifts long corners, aims at item boxes.
 function autoInput(c,k,{target=0}={}){
  const look=70+k.v*.45;let turn=0;for(let a=0;a<look;a+=12){const f=T.frame(c,k.s+a,F1);turn+=f.kg*12;}
+ {const rh=T.frame(c,k.s+look*.5,F1).roadHalf;if(rh)target=clamp(target,-rh*.65,rh*.65);}
  const want=turn*.75+Math.atan2(target-k.d,look),err=wrapA(want-k.psi);
  let steer=clamp(err*3.2,-1,1),drift=0;
  if(k.drift&&Math.abs(turn)>.18&&Math.sign(turn)===k.drift)drift=k.drift;else if(!k.drift&&Math.abs(turn)>.55&&k.v>220)drift=Math.sign(turn);
