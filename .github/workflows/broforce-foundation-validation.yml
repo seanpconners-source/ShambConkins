@@ -1,0 +1,97 @@
+name: Broforce foundation validation
+
+# CI COST CONTROL 2026-10-11: require explicit dispatch before expensive
+# Broforce foundation + Chromium + Fold screenshot validation runs.
+# Preserves all original jobs and acceptance gates, but disables push/PR storm.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: broforce-foundation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  foundation-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check six modules and six tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          for source in src/engines/broforce/{terrain,physics,roster,worldArt,actorArt,audio}.js; do
+            node --check "$source"
+          done
+          for test in tests/broforce-{terrain,physics,roster,world-art,actor-art,audio}.mjs; do
+            node --check "$test"
+          done
+      - name: Run all six dedicated foundation tests
+        shell: bash
+        run: |
+          set -uo pipefail
+          failed=0
+          for test in \
+            tests/broforce-terrain.mjs \
+            tests/broforce-physics.mjs \
+            tests/broforce-roster.mjs \
+            tests/broforce-world-art.mjs \
+            tests/broforce-actor-art.mjs \
+            tests/broforce-audio.mjs; do
+            echo "::group::$test"
+            if ! node "$test"; then
+              echo "::error file=$test::Dedicated test failed"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$failed"
+      - name: Run all Broforce focused tests and scenario integration contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test in tests/broforce-*.mjs; do
+            echo "::group::$test"
+            node --check "$test"
+            node "$test"
+            echo "::endgroup::"
+          done
+          echo "::group::Broforce integrated scenario contracts"
+          node tests/broforce-scenarios.mjs --integrated
+          echo "::endgroup::"
+      - name: Verify registered source modules
+        run: node tools/check-modules.mjs
+      - name: Build offline HTML
+        run: npm run build
+      - name: Install existing browser-test prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /node-tools /opt/pw-browsers/chromium-1194/chrome-linux /tmp/claude-0/sc
+          sudo chown -R "$USER" /node-tools /tmp/claude-0
+          npm install --prefix /node-tools --no-audit --no-fund playwright@1.50.1
+          /node-tools/node_modules/.bin/playwright install --with-deps chromium
+          browser_executable=$(node -e "console.log(require('/node-tools/node_modules/playwright').chromium.executablePath())")
+          sudo ln -s "$browser_executable" /opt/pw-browsers/chromium-1194/chrome-linux/chrome
+      - name: Run complete npm test suite
+        run: npm test
+      - name: BF-41 real browser mission start and reentry (all four stages)
+        run: node tests/bf41-broforce-browser-launch.mjs
+      - name: BF-59 real browser Fold and mobile viewport capture
+        run: node tests/bf59-broforce-viewport-capture.mjs --file dist/ShambConkins.html --out /tmp/bf59-broforce
+      - name: Upload BF-59 real Chromium screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bf59-wave4-chromium-captures
+          path: /tmp/bf59-broforce/
+          if-no-files-found: warn
+          retention-days: 7

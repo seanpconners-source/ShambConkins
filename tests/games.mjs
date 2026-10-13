@@ -1,12 +1,24 @@
 // Launches every registered mini-game, fuzzes input for a few seconds, reports JS errors per game.
 // Usage: node tests/games.mjs [seconds-per-game] [concurrency] [id-filter]
-import {chromium, root} from './lib.mjs';
+import {chromium, root, launchBrowser} from './lib.mjs';
 import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {freemem} from 'node:os';
 const secs = +process.argv[2] || 4, conc = +process.argv[3] || 4, filter = process.argv[4];
-const file = 'file://' + path.resolve(root, process.env.SHAMB_FILE || 'dist/ShambConkins.html');
-const exe = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
-const browser = await chromium.launch({executablePath: exe});
-const probe = await browser.newPage(); await probe.goto(file);
+// Optional safety controls for the low-priority, unattended Windows launcher.
+// Default CLI behavior (including GitHub CI) is unchanged.
+const minFreeGb = Number(process.env.SHAMB_MIN_FREE_MEMORY_GB || 0);
+const cooldownMs = Math.max(0, Math.min(10000, Number(process.env.SHAMB_GAME_COOLDOWN_MS || 0) || 0));
+// The offline HTML embeds hundreds of portraits; on low-priority laptop runs,
+// DOM parsing can legitimately take >30 s. CI retains Playwright's 30 s default.
+const navTimeoutMs = Number(process.env.SHAMB_NAV_TIMEOUT_MS || 30000);
+if (!Number.isFinite(navTimeoutMs) || navTimeoutMs < 10000 || navTimeoutMs > 120000)
+  throw new Error('SHAMB_NAV_TIMEOUT_MS must be between 10000 and 120000');
+if (!Number.isFinite(minFreeGb) || minFreeGb < 0) throw new Error('Invalid SHAMB_MIN_FREE_MEMORY_GB');
+const file = pathToFileURL(path.resolve(root, process.env.SHAMB_FILE || 'dist/ShambConkins.html')).href;
+const browser = await launchBrowser();
+const probe = await browser.newPage();
+await probe.goto(file, {waitUntil: 'domcontentloaded', timeout: navTimeoutMs});
 let ids = await probe.evaluate(() => window.ShambConkins.gameRegistry.map(g => g.id)); await probe.close();
 if (filter) ids = ids.filter(i => new RegExp(filter).test(i));
 // Optional deterministic CI sharding. The original unsharded CLI remains unchanged:
@@ -25,13 +37,15 @@ console.log(ids.length, 'games');
 const results = {};
 async function fuzz(id) {
   const ctx = await browser.newContext({viewport: {width: 900, height: 700}, hasTouch: false});
+  try {
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push(e.message.split('\n')[0]));
   // file:// smoke tests cannot use Wikipedia's live page-image API; ignore only its expected CORS denial.
   // Other console and JavaScript errors must continue to fail the game fuzz test.
   page.on('console', m => { const msg=m.text();const offlineWiki=/Access to fetch at 'https:\/\/(?:en\.wikipedia\.org|commons\.wikimedia\.org)\/w\/api\.php[^']*' from origin 'null' has been blocked by CORS policy/.test(msg);if(m.type()==='error'&&!offlineWiki&&!/ERR_|Failed to load resource/.test(msg))errs.push('console: '+msg.slice(0,200)); });
-  await page.goto(file); await page.waitForTimeout(300);
+  await page.goto(file, {waitUntil: 'domcontentloaded', timeout: navTimeoutMs});
+  await page.waitForTimeout(300);
   await page.evaluate(id => { window.ShambConkins.requestGame({id, origin: 'arcade'}); }, id);
   const end = Date.now() + secs * 1000; let clicks = 0;
   while (Date.now() < end) {
@@ -49,14 +63,43 @@ async function fuzz(id) {
   }
   const state = await page.evaluate(() => ({game: window.ShambConkins.diagnostics().game, layer: !document.getElementById('game-layer').hidden})).catch(e => ({crash: e.message}));
   results[id] = {errs: [...new Set(errs)], state, clicks};
-  await ctx.close();
+  } finally {
+    // Isolate each game and release its large inlined HTML, even after a crash.
+    await ctx.close().catch(() => {});
+  }
 }
 const queue = [...ids];
-await Promise.all(Array.from({length: conc}, async () => { while (queue.length) await fuzz(queue.shift()).catch(e => { results['?'] = e.message; }); }));
+let done = 0, memoryStopped = false;
+await Promise.all(Array.from({length: conc}, async () => {
+  while (queue.length) {
+    const id = queue.shift(), started = Date.now();
+    if (minFreeGb > 0 && freemem() < minFreeGb * 1073741824) {
+      console.error('MEMORY_GUARD_STOP', 'freeGB=' + (freemem() / 1073741824).toFixed(2), 'minimumGB=' + minFreeGb);
+      results[id] = {errs: ['Memory safety cutoff; test not run'],state:{crash:'Insufficient memory'},clicks:0};
+      memoryStopped = true;
+      queue.length = 0;
+      break;
+    }
+    try {
+      await fuzz(id);
+    } catch (e) {
+      results[id] = {errs: ['harness: ' + e.message], state: {crash: e.message}, clicks: 0};
+      // A navigation timeout is a load/performance error, not game combat failure.
+      // Preserve the exact message and keep it separate from in-game JS exceptions.
+      if (/page\.goto: Timeout/.test(e.message)) console.error('BROWSER_NAVIGATION_TIMEOUT', id, navTimeoutMs + 'ms');
+    }
+    done++;
+    const failed = !!(results[id]?.errs?.length || results[id]?.state?.crash);
+    // Report every minigame immediately: no more silent "139 games" for 10+ minutes.
+    console.log('GAME_PROGRESS', done + '/' + ids.length, id, failed ? 'FAIL' : 'OK', (Date.now() - started) + 'ms');
+    if (cooldownMs) await new Promise(resolve => setTimeout(resolve, cooldownMs));
+  }
+}));
 let bad = 0;
 for (const [id, r] of Object.entries(results)) {
   if (r.errs?.length || r.state?.crash) { bad++; console.log('FAIL', id, JSON.stringify(r)); }
 }
-console.log(`${ids.length - bad}/${ids.length} games ran clean`);
+const tested = Object.keys(results).length - (memoryStopped ? 1 : 0);
+console.log(`${tested - (bad - (memoryStopped ? 1 : 0))}/${ids.length} games ran clean; tested=${tested} incomplete=${memoryStopped}`);
 await browser.close();
-process.exit(bad ? 1 : 0);
+process.exit(bad || memoryStopped || tested !== ids.length ? 1 : 0);

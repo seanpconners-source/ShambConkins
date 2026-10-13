@@ -1,12 +1,18 @@
 const {normalizePhotoPair, photoPairLibrary, currentPhotoPair, photoProfilePayload}=require("src/photoPairs.js");
 const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
-const {PROFILE_KEY, readJSON, writeJSON}=require("src/persistence.js");
+const {PROFILE_KEY, readJSON, writeJSON, writeDurableJSON, inspectDurableJSON}=require("src/persistence.js");
 const {characterIdentity}=require("src/characters.js");
 const {LAB_TEAM}=require("src/data/savoryLab.js");
 const {isMovieBond, missingMovieBonds}=require("src/data/movieBonds.js");
 function freshProfile() { return { version: 20, starterPolicy:22, earnedUnlocks:{}, xp: 0, runs: 0, completed: 0, minigames:0, modes:['versus'], boards:['Mashup'], played: [], recentGames: [], recentTrivia: [], triviaDifficultyBag: [], recruitDryStreak:{Sean:0,Amber:0}, pairDiscoveries: [], boardUnlocks: [], shared: ['sean','amber'], rosters: { Sean: ['sean'], Amber: ['amber'] }, itemsSeen: [], itemFinds:{Sean:[],Amber:[]},recentItemFinds:{Sean:[],Amber:[]}, locations: [], settings: { sound: true, music: true, reducedMotion: false, originalLogos:true,drinkStatus:true,devMode:false,touchMode:'auto',flickSensitivity:1 }, wins: {}, best: {}, migrated: false }; }
 function loadProfile() {
- const saved = readJSON(PROFILE_KEY); const p = freshProfile();
+ const disk=inspectDurableJSON(PROFILE_KEY),shadow=readJSON(PROFILE_KEY);
+ // With a durable BF receipt or a shadowed BF save, the readable disk copy is
+ // authoritative; the legacy writeJSON memory fallback must not erase claims.
+ const bfState=value=>value?.version===20&&(value.broforceClaims!==undefined||value.broforceClaimsBlocked===true);
+ const saved=disk.status==='valid'&&disk.value?.version===20&&(bfState(disk.value)||bfState(shadow))?disk.value:shadow;
+ const p = freshProfile();
+ if(disk.status==='corrupt')p.broforceClaimsBlocked=true;
  const strings = value => Array.isArray(value) ? [...new Set(value.filter(v=>typeof v==='string'))] : [];
  const number = value => Number.isFinite(value) && value >= 0 ? value : 0;
  const ids = new Set([...CATALOG.characters.map(c=>c.id),'gordon-ramsay']);
@@ -26,6 +32,12 @@ function loadProfile() {
   const photo=normalizePhotoPair(saved.photoHuntPair);
   if(Array.isArray(saved.photoHuntPairs)){p.photoHuntPairs=photoPairLibrary(saved);const selected=photo||p.photoHuntPairs.at(-1);if(selected)currentPhotoPair(p,selected);}else if(photo)p.photoHuntPair=photo;
   if(saved.earnedUnlocks&&typeof saved.earnedUnlocks==='object'&&!Array.isArray(saved.earnedUnlocks))p.earnedUnlocks=Object.fromEntries(Object.entries(saved.earnedUnlocks).filter(([id,value])=>ids.has(id)&&typeof value==='string'));
+  if(saved.broforceClaims!==undefined){
+   const claims=validatedBroforceClaims(saved.broforceClaims);
+   if(claims)p.broforceClaims=claims;
+   else p.broforceClaimsBlocked=true; // Never silently reopen damaged claim keys.
+  }
+  if(saved.broforceClaimsBlocked===true)p.broforceClaimsBlocked=true;
  } else {
   const old = readJSON('shambconkins-profile-v6');
   if(old&&typeof old==='object'){
@@ -52,7 +64,45 @@ function loadProfile() {
  }
  return p;
 }
-const saveProfile = profile => writeJSON(PROFILE_KEY, photoProfilePayload(profile));
+function validatedBroforceClaims(value){
+ if(!value||typeof value!=='object'||Array.isArray(value))return null;
+ const entries=Object.entries(value),ids=new Set([...CATALOG.characters.map(c=>c.id),'gordon-ramsay']),attempts=new Map(),out={};
+ if(entries.length>4096)return null;
+ for(const [key,r] of entries){
+  if(!r||typeof r!=='object'||Array.isArray(r)||typeof r.attemptId!=='string'||!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,95}$/.test(r.attemptId)||
+     !['Sean','Amber'].includes(r.owner)||!ids.has(r.devilId)||key!=='bf27:'+JSON.stringify([r.attemptId,r.owner])||
+     attempts.has(r.attemptId)&&attempts.get(r.attemptId)!==r.devilId)return null;
+  attempts.set(r.attemptId,r.devilId);out[key]={attemptId:r.attemptId,owner:r.owner,devilId:r.devilId};
+ }
+ return out;
+}
+function saveProfile(profile,{durable=false}={}){
+ const payload=photoProfilePayload(profile);
+ if(profile.broforceClaims!==undefined){const claims=validatedBroforceClaims(profile.broforceClaims);if(!claims)return false;payload.broforceClaims=claims;}
+ const disk=inspectDurableJSON(PROFILE_KEY);
+ // Do not overwrite an unreadable or damaged profile: it might contain claims
+ // that a stale in-memory writer cannot see. A backup is required for recovery.
+ if(disk.status==='unavailable'||disk.status==='corrupt')return false;
+ if(disk.status==='valid'&&disk.value?.version===20){
+  const previous=disk.value;
+  if(previous.broforceClaimsBlocked===true&&payload.broforceClaimsBlocked!==true)return false;
+  if(previous.broforceClaims!==undefined){
+   const oldClaims=validatedBroforceClaims(previous.broforceClaims);
+   if(!oldClaims){if(payload.broforceClaimsBlocked!==true)return false;}
+   else {
+    const nextClaims=validatedBroforceClaims(payload.broforceClaims??{});
+    if(!nextClaims)return false;
+    for(const [key,receipt] of Object.entries(oldClaims)){
+     const next=nextClaims[key];
+     if(!next||next.attemptId!==receipt.attemptId||next.owner!==receipt.owner||next.devilId!==receipt.devilId||
+        !Array.isArray(payload.rosters?.[receipt.owner])||
+        !payload.rosters[receipt.owner].includes(receipt.devilId))return false;
+    }
+   }
+  }
+ }
+ return durable?writeDurableJSON(PROFILE_KEY,payload):writeJSON(PROFILE_KEY,payload);
+}
 function availableCharacters(profile, owner) { const unique=new Map();for(const id of [...profile.shared,...(profile.rosters[owner]||[])])if(!unique.has(characterIdentity(id)))unique.set(characterIdentity(id),id);return [...unique.values()]; }
 function canRecruit(profile,id,owner=null,reason='encounter') {
  if(id==='loki'&&reason!=='pair')return false;
@@ -92,4 +142,4 @@ function rememberCollectibles(profile,run){const known=new Set(CATALOG.items.map
 function homePackTurn(run){return Math.max(3,Math.round((run.endless||run.maxTurns===999999?24:run.maxTurns)/3));}
 function recordGame(profile, game, winner, scores) { if (!profile.played.includes(game.id)) profile.played.push(game.id); profile.minigames=(profile.minigames||0)+1; profile.recentGames = [...profile.recentGames, game.id].slice(-40); profile.xp += winner === null ? 3 : 5; if (winner !== null) profile.wins[game.id] = (profile.wins[game.id] || 0) + 1; profile.best[game.id] = Math.max(profile.best[game.id] || 0, ...scores.filter(Number.isFinite)); saveProfile(profile); }
 
-Object.assign(exports,{freshProfile,loadProfile,saveProfile,availableCharacters,canRecruit,recruit,canRecruitReward,recruitReward,rememberCollectibles,homePackTurn,recordGame});
+Object.assign(exports,{freshProfile,loadProfile,saveProfile,availableCharacters,canRecruit,recruit,canRecruitReward,recruitReward,rememberCollectibles,homePackTurn,recordGame,validatedBroforceClaims});
