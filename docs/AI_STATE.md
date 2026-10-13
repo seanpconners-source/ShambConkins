@@ -27,8 +27,9 @@ Version 0.58.3 release candidate (generated offline file `releases/ShambConkins_
   head-to-head settle). `buildStage(seed,si)` makes deep destructible tile maps (tunnels, bunkers, barracks, towers,
   cliffs with hidden caves, pits under bridges; stage 3 = Devil arena + chopper), ~100 enemies per mission (mook,
   bomber, bruiser, dog, grenadier) with sight limited to the screen. Movement: big jump, step-up, climb any wall you push
-  into, ladders, drop-through platforms. Heads: real photos cropped to ovals, cut-outs outlined, generated SVG cards
-  replaced by the head-shaped stand-in (`headCanvas`). Cages swap your bro (+1 life); the GOLD cage per stage holds a
+  into, ladders, drop-through platforms. Heads (`headCanvas`/`renderHead`): transparent art (>5% clear pixels)
+  is trimmed and outlined (owner-approved look); a photo's plain backdrop is flood-filled away (`removeBackdrop`), busy photos
+  get an outlined egg crop; generated SVG cards use the head-shaped stand-in. Contact sheet: `tests/broforce-heads.mjs`. Cages swap your bro (+1 life); the GOLD cage per stage holds a
   locked character from `gameRecruitPool` → `session.broforceRecruits` → `settleGame` recruits it to that player's
   roster (no random winner recruit for Broforce). The old co-op modules in `src/engines/broforce/` are unused except
   the legacy result path in `gameLauncher.js` (old saves); their unit tests still pass. Tests: `tests/broforce-turns.mjs`

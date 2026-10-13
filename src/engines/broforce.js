@@ -136,10 +136,14 @@ function headCanvas(id,mood='normal'){
   const {portraitURL,portraitFallbackURL}=require('src/assets.js'),{headDisplayURL}=require('src/headCutouts.js');
   // generated SVG cards (initials on a square) look like a box: use the head-shaped stand-in for those
   let src=portraitURL(id,mood);if(!src||/^data:image\/svg/.test(src)&&id!=='mars-attacker')src=portraitFallbackURL(id);
-  const img=new Image();let tries=0;
-  img.onload=()=>{h.c=renderHead(img)||placeholderHead(id);};
-  img.onerror=()=>{if(tries++<1){img.src=portraitFallbackURL(id);}else h.c=placeholderHead(id);};
-  img.src=headDisplayURL(src);
+  // online photos (Wikimedia) are requested with CORS so their pixels can be read and the backdrop cut away;
+  // if that request is refused, load them plainly (oval), then fall back to the stand-in head
+  const url=headDisplayURL(src),remote=/^https:/.test(url);let step=0;
+  const load=()=>{const img=new Image();if(remote&&step===0)img.crossOrigin='anonymous';
+   img.onload=()=>{h.c=renderHead(img)||placeholderHead(id);};
+   img.onerror=()=>{step++;if(remote&&step===1)load();else if(step<=2&&img.src!==portraitFallbackURL(id)){const fb=new Image();fb.onload=()=>{h.c=renderHead(fb)||placeholderHead(id);};fb.onerror=()=>{h.c=placeholderHead(id);};fb.src=portraitFallbackURL(id);}else h.c=placeholderHead(id);};
+   img.src=url;};
+  load();
  }catch{h.c=placeholderHead(id);}
  return placeholderHead(id);
 }
@@ -150,25 +154,55 @@ function placeholderHead(id){
  const hue=hash(id)%360;x.fillStyle=`hsl(${hue} 45% 62%)`;x.strokeStyle='#1a120c';x.lineWidth=4;x.beginPath();x.ellipse(32,32,26,29,0,0,7);x.fill();x.stroke();
  x.font='34px Arial';x.textAlign='center';x.textBaseline='middle';x.fillText(icon,32,34);PLACE.set(id,c);return c;
 }
+// Every head ends up as the face's own silhouette with a dark cartoon outline (like the owner's drop-in cut-outs):
+// transparent cut-outs keep their shape; a photo with a plain backdrop gets the backdrop flood-filled away from the
+// edges; only a busy photo we cannot separate (or a cross-origin one we cannot read) falls back to an outlined oval.
 function renderHead(img){
  const w=img.naturalWidth,h=img.naturalHeight;if(!w||!h)return null;
- const c=document.createElement('canvas');c.width=c.height=72;const x=c.getContext('2d');
- let cutout=false;
- try{const t=document.createElement('canvas');t.width=t.height=24;const tx=t.getContext('2d');tx.drawImage(img,0,0,24,24);const d=tx.getImageData(0,0,24,24).data;
-  const a=(px,py)=>d[(py*24+px)*4+3];cutout=a(0,12)<40&&a(23,12)<40&&[a(0,0),a(23,0),a(0,23),a(23,23)].filter(v=>v<40).length>=2;}catch{}
- if(cutout){
-  // a transparent head: keep its own shape and give it a dark cartoon outline
-  const k=Math.min(64/w,64/h),dw=w*k,dh=h*k,ox=(72-dw)/2,oy=(72-dh)/2;
-  const o=document.createElement('canvas');o.width=o.height=72;const ox2=o.getContext('2d');ox2.drawImage(img,ox,oy,dw,dh);ox2.globalCompositeOperation='source-in';ox2.fillStyle='#140c08';ox2.fillRect(0,0,72,72);
-  for(const [dx,dy] of [[-2,0],[2,0],[0,-2],[0,2],[-1.5,-1.5],[1.5,1.5],[-1.5,1.5],[1.5,-1.5]])x.drawImage(o,dx,dy);
-  x.drawImage(img,ox,oy,dw,dh);
- }else{
-  // a rectangular photo: crop the face (upper middle) into an oval with an outline, never a square
-  const side=Math.min(w,h*.92),sx=(w-side)/2,sy=h>w?Math.min(h-side,(h-side)*.18):0;
-  x.save();x.beginPath();x.ellipse(36,36,30,34,0,0,7);x.clip();x.drawImage(img,sx,sy,side,side*68/60,6,2,60,68);x.restore();
-  x.strokeStyle='#140c08';x.lineWidth=3.5;x.beginPath();x.ellipse(36,36,30,34,0,0,7);x.stroke();
+ const k=Math.min(1,160/Math.max(w,h)),cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k));
+ const work=document.createElement('canvas');work.width=cw;work.height=ch;const wx=work.getContext('2d',{willReadFrequently:true});wx.drawImage(img,0,0,cw,ch);
+ let data=null;try{data=wx.getImageData(0,0,cw,ch);}catch{}
+ let kind='oval';
+ if(data){
+  const px=data.data,n=cw*ch;let clear=0;for(let i=0;i<n;i++)if(px[i*4+3]<40)clear++;
+  if(clear/n>.05)kind='cutout';
+  else if(removeBackdrop(px,cw,ch,30,95)||removeBackdrop(px,cw,ch,46,150)){kind='removed';wx.putImageData(data,0,0);}
  }
+ const c=document.createElement('canvas');c.width=c.height=72;const x=c.getContext('2d');c.headKind=kind;
+ if(kind==='oval'){
+  // the face sits in the upper middle of a portrait photo: crop there into a head (egg) shape, outlined
+  const side=Math.min(w*.72,h*.62),sx=(w-side)/2,sy=Math.max(0,h*.06);
+  const egg=()=>{x.beginPath();x.moveTo(36,4);x.bezierCurveTo(56,4,63,20,62,36);x.bezierCurveTo(61,55,50,69,36,69);x.bezierCurveTo(22,69,11,55,10,36);x.bezierCurveTo(9,20,16,4,36,4);x.closePath();};
+  x.save();egg();x.clip();x.drawImage(img,sx,sy,side,side*65/52,10,4,52,65);x.restore();
+  x.strokeStyle='#140c08';x.lineWidth=3.5;x.lineJoin='round';egg();x.stroke();return c;
+ }
+ // trim to the visible pixels so every head fills its box the same way, keeping at most a little neck
+ const px=wx.getImageData(0,0,cw,ch).data;let x0=cw,y0=ch,x1=-1,y1=-1;
+ for(let yy=0;yy<ch;yy++)for(let xx=0;xx<cw;xx++)if(px[(yy*cw+xx)*4+3]>60){if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(yy<y0)y0=yy;if(yy>y1)y1=yy;}
+ if(x1<0)return null;
+ const bw=x1-x0+1,bh=Math.min(y1-y0+1,Math.round(bw*1.35)),fit=Math.min(64/bw,64/bh),dw=bw*fit,dh=bh*fit,ox=(72-dw)/2,oy=(72-dh)/2;
+ const sil=document.createElement('canvas');sil.width=sil.height=72;const sx2=sil.getContext('2d');sx2.drawImage(work,x0,y0,bw,bh,ox,oy,dw,dh);
+ sx2.globalCompositeOperation='source-in';sx2.fillStyle='#140c08';sx2.fillRect(0,0,72,72);
+ for(let a=0;a<16;a++){const r=2.6;x.drawImage(sil,Math.cos(a*Math.PI/8)*r,Math.sin(a*Math.PI/8)*r);}
+ x.drawImage(work,x0,y0,bw,bh,ox,oy,dw,dh);
  return c;
+}
+// Flood-fill the backdrop in from the image border: a neighbour joins when it is close to the pixel it came from
+// (smooth gradients) and to the border colour it started at. Accept only a sensible split: some backdrop gone, the
+// middle of the face kept. Writes alpha into px and returns true on success.
+function removeBackdrop(px,w,h,step=30,span=95){
+ const n=w*h,seen=new Uint8Array(n),seed=new Int32Array(n),queue=new Int32Array(n);let head=0,tail=0;
+ const dist=(a,b)=>{const i=a*4,j=b*4;return Math.abs(px[i]-px[j])+Math.abs(px[i+1]-px[j+1])+Math.abs(px[i+2]-px[j+2]);};
+ const push=(q,from,origin)=>{if(seen[q])return;if(from>=0&&(dist(q,from)>step||dist(q,origin)>span))return;seen[q]=1;seed[q]=origin;queue[tail++]=q;};
+ // seed from the top and the sides; the bottom edge is usually shoulders/clothes, not backdrop
+ for(let x=0;x<w;x++)push(x,-1,x);for(let y=0;y<h*.8;y++){push(y*w,-1,y*w);push(y*w+w-1,-1,y*w+w-1);}
+ while(head<tail){const q=queue[head++],x=q%w,o=seed[q];if(x)push(q-1,q,o);if(x<w-1)push(q+1,q,o);if(q>=w)push(q-w,q,o);if(q<n-w)push(q+w,q,o);}
+ const removed=tail/n,mid=Math.floor(h*.42)*w+Math.floor(w/2);
+ if(removed<.12||removed>.8||seen[mid])return false;
+ for(let q=0;q<n;q++)if(seen[q])px[q*4+3]=0;
+ // feather one pixel so the outline hugs the face, not a jagged halo
+ for(let q=0;q<n;q++){if(seen[q])continue;const x=q%w;if(x&&seen[q-1]||x<w-1&&seen[q+1]||q>=w&&seen[q-w]||q<n-w&&seen[q+w])px[q*4+3]=150;}
+ return true;
 }
 const weaponFor=id=>WEAPON_IDS[hash('bro:'+id)%WEAPON_IDS.length];
 
@@ -911,7 +945,7 @@ async function broforce(s){
   setClock(v){clock=v;},teleport(x,y){if(!P)return;P.x=x;P.y=y??W.S.surfAt(Math.floor(x/T))*T;P.vx=P.vy=0;updateCamera(0,true);},
   killAll(){for(const e of W.foes)if(e.alive)killFoe(e,P.x,false);},killBoss(){if(W.boss){W.boss.state='walk';hitBoss(999,P.x);}},
   freeCage(k){const cg=W.cages[k];if(cg)openCage(cg);},board(){W.heli.state='hover';W.heli.y=W.exit.y-6.5*T;Object.assign(P,{x:W.heli.x-8,y:W.exit.y,dead:0,hp:2,inv:2});},
-  hurt(){hurtPlayer(2,P.x+1);},portrait(id){const u=require('src/assets.js').portraitURL(id,'normal');return String(u).slice(0,300);},get recruits(){return s.broforceRecruits;}};
+  hurt(){hurtPlayer(2,P.x+1);},head(id){return headCanvas(id);},renderFrom(url){return new Promise(r=>{const i=new Image();i.onload=()=>r(renderHead(i));i.onerror=()=>r(null);i.src=url;});},ids(){return require('src/characters.js').CHARACTERS.map(ch=>ch.id);},portrait(id){const u=require('src/assets.js').portraitURL(id,'normal');return String(u).slice(0,300);},get recruits(){return s.broforceRecruits;}};
 
  // ---------------------------------------------------------------- main loop
  computeZoom();
