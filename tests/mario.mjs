@@ -37,7 +37,7 @@ if(!only.length||only.includes('world')){const t=await launch('smb-world-1',[110
  // NES physics: top speeds and jump heights (ground is y=208)
  await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug;window.__s=[];const f=()=>{const p=d.pl[0];window.__s.push({y:p.y,vx:p.vx,vy:p.vy});requestAnimationFrame(f);};f();});
  // a clear runway: no enemies, nothing overhead for the first 68 columns (this player's copy of 1-1 only)
- const reset=()=>dbg("const a=d.worlds[0].areas.main;a.enemies.forEach(e=>e.alive=false);for(let c=0;c<68;c++)for(let r=0;r<13;r++)a.tiles[r*a.def.W+c]=0;d.teleport(0,100);window.__s=[];");
+ const reset=()=>dbg("d.worlds[0].fire.length=0;const a=d.worlds[0].areas.main;a.enemies.forEach(e=>e.alive=false);for(let c=0;c<68;c++)for(let r=0;r<13;r++)a.tiles[r*a.def.W+c]=0;d.teleport(0,100);window.__s=[];");
  const S=()=>page.evaluate(()=>window.__s),apex=s=>208-Math.min(...s.map(q=>q.y));
  await reset();await page.keyboard.down('d');await page.waitForTimeout(1500);check('walk top speed (px/frame)',Math.max(...(await S()).map(q=>q.vx)),1.56,1.5626);await page.keyboard.up('d');
  await page.waitForTimeout(500);await reset();await page.keyboard.down('d');await page.keyboard.down(' ');await page.waitForTimeout(1600);check('run top speed (px/frame)',Math.max(...(await S()).map(q=>q.vx)),2.56,2.5626);
@@ -51,6 +51,23 @@ if(!only.length||only.includes('world')){const t=await launch('smb-world-1',[110
  await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug;window.__f={max:0,vx:0,bounce:false};const f=()=>{const fs=d.worlds[0].fire;window.__f.max=Math.max(window.__f.max,fs.length);for(const q of fs){window.__f.vx=Math.max(window.__f.vx,Math.abs(q.vx));if(q.vy<0)window.__f.bounce=true;}requestAnimationFrame(f);};f();});
  for(let k=0;k<5;k++){await page.keyboard.press(' ');await page.waitForTimeout(60);}await page.waitForTimeout(500);await shot('fire');
  const fz=await page.evaluate(()=>window.__f);check('fireballs on screen at once',fz.max,1,2);check('fireball speed (px/frame)',fz.vx,4,4);if(!fz.bounce)fail('fireballs never bounced');
+ // Koopa shells: stomp → shell, touch → kicked at 3 px/frame, the shell knocks out Goombas (500, 800, 1000),
+ // bounces off a wall and comes back to hit the runner
+ await reset();await dbg('d.power(0,"big")');
+ const sh=await dbg(`const p=d.pl[0],a=d.worlds[0].areas.main,k=d.spawn(0,'koopa',300);a.enemies[k].vx=0;
+  Object.assign(p,{x:300,y:13*16-40,prevY:13*16-42,vy:2,grounded:false,jumping:false});window.__k=a.enemies[k];return k;`);
+ let ks=null;for(let k=0;k<40;k++){ks=await page.evaluate(()=>({state:window.__k.state,vx:window.__k.vx}));if(ks.state!=='walk')break;await page.waitForTimeout(25);}
+ if(ks.state!=='shell')fail(`stomping a Koopa did not leave a shell (${JSON.stringify(ks)})`);
+ // (landing on it again would kick it, as on the NES: park the runner and settle the shell for the kick test)
+ await dbg('const p=d.pl[0];Object.assign(p,{x:window.__k.x-60,y:13*16,prevY:13*16,vx:0,vy:0,grounded:true});Object.assign(window.__k,{vx:0,t:0,x:300});');
+ await dbg(`const a=d.worlds[0].areas.main;for(let r=11;r<13;r++)a.tiles[r*a.def.W+27]=5;window.__g=[0,1,2].map(n=>a.enemies[d.spawn(0,'goomba',340+n*25)]);a.enemies.forEach(e=>{if(e.type==='goomba')e.vx=0;});const p=d.pl[0];Object.assign(p,{x:window.__k.x-14,y:13*16,prevY:13*16,vx:0,vy:0,grounded:true,inv:0});window.__k.vx=0;window.__sc=p.score;`);
+ await page.keyboard.down('d');for(let k=0;k<40&&!(await page.evaluate(()=>window.__k.vx));k++)await page.waitForTimeout(25);await page.keyboard.up('d');await dbg('const p=d.pl[0];p.vx=0;p.x=Math.min(p.x,240);');
+ ks=await page.evaluate(()=>({vx:window.__k.vx}));check('kicked shell speed (px/frame)',Math.abs(ks.vx),3,3);
+ await until(()=>false,1600);
+ const gz=await page.evaluate(()=>({dead:window.__g.filter(g=>g.state==='dying'||!g.alive).length,gain:window.ShambConkins.store.session.debug.pl[0].score-window.__sc}));
+ check('Goombas knocked out by the shell',gz.dead,3,3);check('shell chain points (400 kick + 500/800/1000)',gz.gain,2700,2700);
+ d=await until(d=>!d.pl[0].big,6000);if(d.pl[0].big)fail('the shell bounced off the wall but never hit the runner');else console.log('  ok   rebounding shell hit the runner');
+ await shot('shell');
  // the coin room under the fourth pipe, and out of the side pipe onto pipe 163
  await dbg('d.toWarp(0)');await page.keyboard.down('s');d=await until(d=>d.pl[0].a==='room',4000);await page.keyboard.up('s');if(d.pl[0].a!=='room')fail(`pipe did not reach the coin room (${d.pl[0].a})`);
  await page.waitForTimeout(400);await shot('room');await page.keyboard.down('d');for(let k=0;k<16&&(await D()).pl[0].a==='room'&&(await D()).pl[0].x<60;k++){await page.keyboard.down('w');await page.waitForTimeout(450);await page.keyboard.up('w');await page.waitForTimeout(150);}

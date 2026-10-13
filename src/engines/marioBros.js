@@ -21,7 +21,7 @@ const STEP=1/60,LIVES=3,COIN_TIME=60,RACE_CAP=150;
 // NES SMB1 movement in px/frame (sub-pixel values from the original game)
 const PH={minWalk:.07421875,walkAcc:.037109375,runAcc:.0556640625,rel:.05078125,skid:.1015625,walk:1.5625,run:2.5625,skidTurn:.5625,backFast:1.8125,maxFall:4.5,fallReset:4};
 const JUMP=[[1,-4,.125,.4375],[2.3125,-4,.1171875,.375],[Infinity,-5,.15625,.5625]];
-const COMBO=[100,200,400,500,800,1000,2000,4000,5000,8000];
+const COMBO=[100,200,400,500,800,1000,2000,4000,5000,8000],SHELL_CHAIN=[500,800,1000,2000,4000,5000,8000];
 const PALS=[{cap:C.red,shirt:C.brown,over:C.red,shoe:C.brown},{cap:C.green,shirt:C.green,over:C.white,shoe:C.green}];
 const FIRE_PAL={cap:C.white,shirt:C.red,over:C.white,shoe:C.red};
 const STAR_PALS=[FIRE_PAL,{cap:'#000',shirt:C.brick,over:'#000',shoe:C.brick},{cap:C.green,shirt:C.white,over:C.green,shoe:C.brown},{cap:C.red,shirt:C.brown,over:C.red,shoe:C.brown}];
@@ -315,10 +315,10 @@ async function marioBros(s){
     else if(e.type==='paraRed'){e.type='koopaRed';e.vx=p.x<e.x?.5:-.5;e.vy=0;}
     else if(e.state==='walk'){e.state='shell';e.vx=0;e.t=0;}
     else if(e.vx!==0){e.vx=0;e.t=0;}
-    else{e.vx=p.x<e.x?3:-3;e.grace=10;sfx.kick();}
+    else{e.vx=p.x<e.x?3:-3;e.grace=10;e.chain=0;sfx.kick();}
     p.y=Math.min(p.y,eTop);p.vy=-4;p.jumping=!!inp.jump;p.grounded=false;p.ride=null;continue;
    }
-   if(e.state==='shell'&&e.vx===0){e.vx=p.x<e.x?3:-3;e.grace=12;e.t=0;sfx.kick();addScore(p,w,400,e.x,eTop-6);continue;}
+   if(e.state==='shell'&&e.vx===0){e.vx=p.x<e.x?3:-3;e.grace=12;e.t=0;e.chain=0;sfx.kick();addScore(p,w,400,e.x,eTop-6);continue;}
    if(e.state==='shell'&&e.grace>0)continue;
    hurt(p,w);
   }
@@ -366,7 +366,8 @@ async function marioBros(s){
    if(isLava(tileAt(w,an,Math.floor(e.x/T),Math.floor((e.y-4)/T))))e.alive=false;
    if(e.state==='shell'){if(e.grace>0)e.grace--;
     if(e.vx===0){e.t++;if(e.t>480){e.state='walk';e.vx=p.x<e.x?-.5:.5;}}
-    else for(const o of a.enemies)if(o!==e&&o.alive&&o.active&&o.state!=='dying'&&o.state!=='squash'&&Math.abs(o.x-e.x)<14&&(o.type==='piranha'?o.off>4&&e.y>o.home-o.off&&e.y-14<o.home:Math.abs(o.y-e.y)<16)){p.combo++;killFoe(w,o,Math.sign(e.vx),p,COMBO[Math.min(p.combo+3,9)]);}}
+    else{if(e.x>cam.x+view.w+48){e.alive=false;continue;}
+     for(const o of a.enemies)if(o!==e&&o.alive&&o.active&&o.state!=='dying'&&o.state!=='squash'&&Math.abs(o.x-e.x)<14&&(o.type==='piranha'?o.off>4&&e.y>o.home-o.off&&e.y-14<o.home:Math.abs(o.y-e.y)<16)){e.chain=(e.chain||0)+1;if(e.chain>7){killFoe(w,o,Math.sign(e.vx),null);oneUp(p,w,o.x,o.y-16);}else killFoe(w,o,Math.sign(e.vx),p,SHELL_CHAIN[e.chain-1]);}}}
   }
   // walkers turn round when they meet
   const ws=a.enemies.filter(e=>e.alive&&e.active&&e.state==='walk'&&e.type!=='piranha'&&e.type!=='paraRed');
@@ -663,6 +664,7 @@ async function marioBros(s){
   start(sel){menuSel=sel;titleT=1;startFromTitle();},
   toWarp(i){const q=pl[i],st=STAGES[0];const e=st.areas.main.pipes.find(p=>p.to);Object.assign(q,{area:'main',x:(e.c+1)*T,y:e.top*T,prevY:e.top*T,vx:0,vy:0,grounded:true,pipe:null,dead:0,tf:null,ride:null});cams[i].x=0;updateCamera(q,i,true);},
   toWarpZone(i,n=4){const q=pl[i];if(q.stage!==1){q.stage=1;worlds[i]=makeWorld(STAGES[1]);}const pp=STAGES[1].areas.main.pipes.find(p=>p.warp===n);Object.assign(q,{area:'main',x:(pp.c+1)*T,y:pp.top*T,prevY:pp.top*T,vx:0,vy:0,grounded:true,pipe:null,dead:0,tf:null,ride:null,auto:false});cams[i].x=0;updateCamera(q,i,true);},
+  spawn(i,type,x,y=13*T){const a=AR(worlds[i],pl[i].area),e=spawnFoe({type,x,y});e.active=true;a.enemies.push(e);return a.enemies.length-1;},
   power(i,kind){const q=pl[i];q.big=kind!=='small';q.fire=kind==='fire';},
   kill(i){kill(pl[i],'hit');},
   skipCard(){if(phase==='card')cardT=99;}};
