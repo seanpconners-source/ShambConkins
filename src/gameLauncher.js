@@ -7,11 +7,12 @@ const {GameSession}=require("src/engines/session.js");
 const {animateRoulette}=require("src/roulette.js");
 const {showDialog, closeDialog, unlockDialog, updateBoard, toast}=require("src/ui.js");
 const {gameArtHTML, portraitHTML}=require("src/assets.js");
-const {recordGame, recruitReward, availableCharacters, canRecruit, saveProfile}=require("src/profile.js");
+const {recordGame, recruitReward, availableCharacters, canRecruit, saveProfile, validatedBroforceClaims}=require("src/profile.js");
+const {PROFILE_KEY,RUN_KEY,readDurableJSON,writeDurableJSON,validRun,BROFORCE_IDS,validBroforceAttempt,validBroforceTerminal,validBroforceEvidence,validBroforceIntent}=require('src/persistence.js');
 const {pickLairVillain}=require("src/data/bondLair.js");
 const {pickSouthPark}=require("src/data/southPark.js");
 const {CHARACTERS, perkType}=require("src/characters.js");
-const {escapeHTML, pick, runRandom}=require("src/utils.js");
+const {escapeHTML, pick, runRandom, seededRandom}=require("src/utils.js");
 const {sound}=require("src/audio.js");
 const {pointChange}=require("src/items.js");
 const {gameRecruitPool, gameHasGuaranteedRecruit, recruitmentChance, foodGame}=require("src/rewards.js");
@@ -23,15 +24,148 @@ const hooks={save(){},endTurn(){},beforeRoll(){},arcade(){},bossDone:null};
 let launching=false,launchSerial=0;
 function cancelGameLaunch(){launchSerial++;launching=false;}
 function configureLauncher(options){Object.assign(hooks,options);}
+const bfClone=value=>JSON.parse(JSON.stringify(value));
+const bfSame=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+const bfGame=game=>BROFORCE_IDS.includes(game?.id)||game?.engine==='broforce';
+const bfResultDialogs=new WeakMap();
+function showBroforceResultOnce(result,players){
+ if(bfResultDialogs.has(result))return bfResultDialogs.get(result);
+ const pending=presentBroforceResult(result,players).finally(()=>bfResultDialogs.delete(result));
+ bfResultDialogs.set(result,pending);return pending;
+}
+function registeredBroforce(game){const registered=gameById(game?.id);return BROFORCE_IDS.includes(game?.id)&&game.engine==='broforce'&&game.stageId===game.id&&registered?.engine==='broforce'&&registered.stageId===game.id;}
+function saveBroforceRun(run){return validRun(run)&&writeDurableJSON(RUN_KEY,run);}
+function prepareBroforceAttempt(game,run,resume){
+ if(!registeredBroforce(game))throw new Error('Unregistered Broforce stage');
+ if(resume&&run.pending?.bfAttempt){
+  const a=run.pending.bfAttempt;
+  if(!validBroforceAttempt(a)||a.gameId!==game.id||!run.players.every((p,i)=>p.owner===a.owners[i]&&p.character===a.fighterIds[i]))throw new Error('Invalid saved Broforce attempt');
+  return bfClone(a);
+ }
+ const bytes=new Uint32Array(5);globalThis.crypto.getRandomValues(bytes);
+ const attemptId='bf37:'+Array.from(bytes,n=>n.toString(16).padStart(8,'0')).join('');
+ const seed=bytes[0],{chooseDevil,devilHasArt}=require('src/engines/broforce/roster.js');
+ return {schema:1,attemptId,gameId:game.id,stageId:game.id,seed,origin:'board',owners:['Sean','Amber'],
+  fighterIds:run.players.map(p=>p.character),devilId:chooseDevil(store.profile,['Sean','Amber'],seededRandom(seed),devilHasArt)};
+}
+// BF-34 adapter bridge: use this saved attempt to create the mission, then call
+// confirmExtraction with BF-21's completed state BEFORE s.finish. teamResult is
+// only a display envelope. This closure is an accident/spoof guard, not a secret
+// or a security boundary against someone editing JavaScript/localStorage.
+function bindBroforceSession(session,attempt,valid){
+ let evidence=null;
+ const frozen=bfClone(attempt);Object.freeze(frozen.owners);Object.freeze(frozen.fighterIds);Object.freeze(frozen);
+ Object.defineProperty(session,'broforceReward',{value:Object.freeze({attempt:frozen,
+  confirmExtraction({devilId,devilDefeated,extraction}={}){
+   if(evidence||!valid()||!session.alive||session.paused||devilId!==attempt.devilId||devilDefeated!==true||
+      extraction?.active!==true||extraction.phase!=='completed'||extraction.outcome!=='extracted'||extraction.reason!=='departure')return false;
+   const bf={schema:1,attemptId:attempt.attemptId,stageId:attempt.stageId,devilId,outcome:'extracted',boarded:extraction.boarded,
+    aliveAtBoarding:extraction.receipts?.map(Boolean)};
+   const proof={devilId,devilDefeated,receipts:extraction.receipts};
+   if(!validBroforceEvidence(proof,bf,attempt))return false;
+   evidence=bfClone(proof);return true;
+  }
+ }),writable:false});
+ return ()=>evidence&&bfClone(evidence);
+}
+function broforceIntent(game,coop,attempt,evidence){
+ if(!registeredBroforce(game)||!validBroforceTerminal(coop?.bf,attempt)||coop.kind!=='broforce'||
+    coop.won!==(coop.bf.outcome==='extracted')||attempt.devilId!==null&&!CHARACTERS.some(c=>c.id===attempt.devilId))return null;
+ const {schema,attemptId,stageId,devilId,outcome,boarded,aliveAtBoarding}=coop.bf;
+ const bf=bfClone({schema,attemptId,stageId,devilId,outcome,boarded,aliveAtBoarding});
+ if(bf.outcome==='extracted'&&(!validBroforceEvidence(evidence,bf,attempt)||
+    !bf.aliveAtBoarding.every((alive,i)=>alive===!!evidence.receipts[i])))return null;
+ return {bf,evidence:bf.outcome==='extracted'?bfClone(evidence):null};
+}
+function recoverBroforceResult(result){
+ const run=store.run,a=result.bfAttempt,intent=result.bfIntent;
+ if(!a||!intent)return {ok:true,grants:[]}; // Old results never gain new authority.
+ if(run?.pending!==result||result.origin!=='board'||!registeredBroforce(gameById(result.gameId))||!validRun(run)||!validBroforceIntent(intent,a))return {ok:false,invalid:true};
+ const previous=readDurableJSON(RUN_KEY)?.pending;
+ if(!bfSame(previous?.bfAttempt,a)||!['game','result'].includes(previous?.kind)||
+    previous.kind==='result'&&!bfSame(previous.bfIntent,intent))return {ok:false,invalid:true};
+ // First write is the recoverable intent. A failed write never reaches profile IO.
+ if(!saveBroforceRun(run))return {ok:false};
+ const durable=readDurableJSON(RUN_KEY)?.pending;
+ if(!bfSame(durable?.bfAttempt,a)||!bfSame(durable?.bfIntent,intent))return {ok:false};
+ const claims=validatedBroforceClaims(store.profile.broforceClaims||{});
+ if(store.profile.broforceClaimsBlocked||!claims||Object.values(claims).some(r=>r.attemptId===a.attemptId&&r.devilId!==a.devilId))return {ok:false,invalid:true};
+ try{
+  const {planBroforceAwards,applyBroforceAwards}=require('src/engines/broforce/rewardPolicy.js');
+  const plan=planBroforceAwards({profile:store.profile,origin:'board',owners:a.owners,attemptId:a.attemptId,devilId:a.devilId,
+   boarded:intent.bf.boarded,aliveAtBoarding:intent.bf.aliveAtBoarding,won:intent.bf.outcome==='extracted'});
+  const applied=applyBroforceAwards(store.profile,plan);
+  // Preserve the photo library's nonenumerable active selection across BF-27's JSON clone.
+  if(store.profile.photoHuntPair&&!Object.hasOwn(applied.profile,'photoHuntPair'))Object.defineProperty(applied.profile,'photoHuntPair',{value:store.profile.photoHuntPair,writable:true,configurable:true});
+  if(applied.grants.length){
+   // Only fresh owner-specific recruits need a new durable profile transaction.
+   if(!saveProfile(applied.profile,{durable:true}))return {ok:false};
+   Object.assign(store.profile,applied.profile);
+  }else{
+   // A replay may already have committed receipts. Verify their durable copies
+   // before acknowledging, but never require a redundant profile write.
+   const persistedClaims=validatedBroforceClaims(readDurableJSON(PROFILE_KEY)?.broforceClaims||{});
+   if(!persistedClaims||Object.entries(claims).some(([key,receipt])=>
+      receipt.attemptId===a.attemptId&&!bfSame(persistedClaims[key],receipt)))return {ok:false};
+  }
+  const grants=a.owners.flatMap((owner,i)=>{
+   const receipt=store.profile.broforceClaims?.['bf27:'+JSON.stringify([a.attemptId,owner])];
+   return intent.bf.outcome==='extracted'&&intent.bf.boarded[i]&&receipt?.devilId===a.devilId?[{owner,characterId:a.devilId}]:[];
+  });
+  result.bfGrants=grants;result.bfCommitted=true;result.unlocked=[];
+  // Ack failure is recoverable: profile receipts are already durable. Never undo them.
+  saveBroforceRun(run);
+  return {ok:true,grants};
+ }catch(error){console.error('Broforce reward recovery rejected',error);return {ok:false,invalid:true};}
+}
+async function presentBroforceResult(result,players){
+ const run=store.run,serial=launchSerial,valid=()=>store.run===run&&serial===launchSerial;
+ let recovered={ok:true,grants:[]};
+ if(result.origin==='board'){
+  recovered=recoverBroforceResult(result);
+  while(!recovered.ok&&!recovered.invalid){
+   const retry=await showDialog({title:'Reward save pending',body:'Browser storage is unavailable. This reward save is not confirmed. Keep this result open and retry. If you leave, use Settings → Export backup before closing the browser.',choices:[{label:'Retry saving',value:'retry',primary:true}]});
+   if(retry===null||!valid())return null;
+   recovered=recoverBroforceResult(result);
+  }
+ }
+ const game=gameById(result.gameId),bf=result.bfIntent?.bf||result.coop?.bf;
+ const won=bf?.outcome==='extracted',practice=result.origin!=='board';
+ const grants=recovered.grants||[];
+ // Never fill generic unlocked/unlockOwner: continueRun would show an incorrect
+ // shared-roster dialog. The owner-specific cards below are the sole BF reveal.
+ result.unlocked=[];
+ return showDialog({title:won?'Helicopter extraction complete':'Mission ended',source:game?.source,
+  html:`<div class="result-portraits">${players.map((p,i)=>`<div>${portraitHTML(p.character,'portrait mini',bf?.boarded?.[i]?'win':'sad')}<b>${escapeHTML(p.name)}</b></div>`).join('')}</div><div class="big-result">${escapeHTML(result.scores?.[0]??0)} + ${escapeHTML(result.scores?.[1]??0)}</div><p>${escapeHTML(result.label||game?.title||'Broforce')}</p>${grants.map(g=>{const c=CHARACTERS.find(c=>c.id===g.characterId);return `<div class="recruit-result"><strong>NEW CHARACTER ADDED</strong>${portraitHTML(g.characterId,'portrait mini','win')}<b>${escapeHTML(c?.name||g.characterId)}</b><p>Added to ${escapeHTML(g.owner)}’s roster · saved for future games.</p></div>`;}).join('')}<p>${practice?'Practice · No XP, unlocks, or board rewards applied.':recovered.invalid?'Reward evidence could not be verified. No new reward applied.':grants.length?'Only living helicopter boarders receive the exact devil.':'No new character awarded.'}</p>${result.extra?`<p>${escapeHTML(result.extra)}</p>`:''}`,
+  choices:[{label:practice?'Back to the arcade':'Back to the board',value:'ok',primary:true}]});
+}
+async function settleBroforceGame(game,scores,label,origin,players,coop,returnToRoll,authority){
+ const run=store.run,serial=launchSerial,valid=()=>serial===launchSerial&&store.run===run;
+ store.session=null;
+ const result={kind:'result',gameId:game.id,scores:Array.isArray(scores)&&scores.length===2&&scores.every(Number.isFinite)?scores:[0,0],label:typeof label==='string'?label:'',winner:null,rewards:[0,0],extra:'',origin,coop,returnToRoll,unlocked:[]};
+ if(origin==='board'){
+  const a=authority?.attempt,saved=readDurableJSON(RUN_KEY)?.pending;
+  const intent=a&&bfSame(run.pending?.bfAttempt,a)&&bfSame(saved?.bfAttempt,a)&&saved.kind==='game'?
+   broforceIntent(game,coop,a,authority.evidence):null;
+  if(intent){result.bfAttempt=bfClone(a);result.bfIntent=intent;}
+  else result.extra='No reward: this mission’s saved attempt and extraction evidence did not match.';
+  run.phase='result';run.pending=result;
+  // presentResult persists the intent before any award, including on crash replay.
+  if(!intent)saveBroforceRun(run);
+ }
+ const continued=await presentResult(result,players);
+ if(continued===null||!valid())return;
+ store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();
+}
 async function requestGame({id=null,filter='all',origin='board',resume=false,returnToRoll=false}={}){
  if(launching||store.session)return false;launching=true;store.busy=true;store.arcade=origin!=='board';
- const run=store.run,serial=++launchSerial,valid=()=>serial===launchSerial&&store.run===run;returnToRoll=returnToRoll||!!(resume&&run?.pending?.returnToRoll);const selectionRun=run||{gameHistory:[],familyBags:{}};if(run)run.levelRealm=origin==='board'?run.board.nodes[run.players[run.current].node]?.realm:undefined;
+ const run=store.run,serial=++launchSerial,valid=()=>serial===launchSerial&&store.run===run;returnToRoll=returnToRoll||!!(resume&&run?.pending?.returnToRoll);const selectionRun=run||{gameHistory:[],familyBags:{}};if(run&&!(origin!=='board'&&BROFORCE_IDS.includes(id)))run.levelRealm=origin==='board'?run.board.nodes[run.players[run.current].node]?.realm:undefined;
  // Practice and arcade play must not consume the saved board's random stream.
  const random=origin==='board'&&run?()=>runRandom(run):Math.random;
  // A themed warp zone only deals its own games: a roulette, a task space or a challenge item there plays the zone's game instead.
  const warp=origin==='board'&&!resume&&warpTheme(run)?run:null;
  if(warp&&id&&id!=='phone-task'&&!warpAllowsGame(run,gameById(id)))id=null;
- if(origin==='board'&&run?.mutation&&!warp)id='rainbow-rivals';
+ if(origin==='board'&&run?.mutation&&!warp&&!BROFORCE_IDS.includes(id))id='rainbow-rivals';
  if(!id&&!warp&&origin==='board'&&run?.pairState?.queuedGames?.length&&filter==='all')id=run.pairState.queuedGames.shift();
  if(warp&&(id==='phone-task'||gameById(id)?.engine==='task'))id=null;
  const warpPick=warp&&!id?warpGameId(run,filter==='trivia'?'trivia':'all',random,g=>!!gameById(g)):null;
@@ -41,23 +175,41 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  if(warpPick&&game){run.gameHistory.push({id:game.id,family:game.family});run.gameHistory=run.gameHistory.slice(-60);}
  else if(!id&&!resume&&selectionRun.gameHistory.at(-1))selectionRun.gameHistory.at(-1).id=game?.id||selectionRun.gameHistory.at(-1).id;
  if(!game||!ENGINES[game.engine]){launching=false;store.busy=false;toast('This challenge could not be found. The board is ready.');if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();return false;}
+ if(bfGame(game)&&!registeredBroforce(game)){launching=false;store.busy=false;toast('Broforce stage registration is incomplete.');return false;}
+ if(origin==='board'&&resume&&bfGame(game)&&run.pending?.bfIntent){launching=false;const result=run.pending;const continued=await presentResult(result);if(continued!==null&&valid()){store.busy=false;returnToRoll?hooks.beforeRoll():hooks.endTurn();}return false;}
+ let bfAttempt=null;
+ if(origin==='board'&&bfGame(game)){
+  try{bfAttempt=prepareBroforceAttempt(game,run,resume);}catch(error){console.error(error);launching=false;store.busy=false;toast('Broforce attempt could not be prepared. No reward applied.');return false;}
+ }
  if(game.engine==='trivia'){
   const savedDifficulty=resume&&run?.pending?.triviaDifficulty;
   const triviaDifficulty=TRIVIA_LEVELS.includes(savedDifficulty)?savedDifficulty:origin==='dev'?chooseTriviaDifficulty(game.triviaTag||'mixed',random):drawTriviaDifficulty(store.profile,game.triviaTag||'mixed',random);
   game={...game,triviaDifficulty};if(origin==='arcade')saveProfile(store.profile);
  }
  if(id&&!resume&&run&&origin==='board'){run.gameHistory.push({id:game.id,family:game.family});run.gameHistory=run.gameHistory.slice(-60);}
- if(origin==='board'){run.phase='game';run.pending={kind:'game',gameId:game.id,origin,returnToRoll,...(game.triviaDifficulty?{triviaDifficulty:game.triviaDifficulty}:{})};run.roundsWithoutGame=0;hooks.save();}
+ if(origin==='board'){run.phase='game';run.pending={kind:'game',gameId:game.id,origin,returnToRoll,...(game.triviaDifficulty?{triviaDifficulty:game.triviaDifficulty}:{}),...(bfAttempt?{bfAttempt}:{})};run.roundsWithoutGame=0;
+  if(bfAttempt){if(!saveBroforceRun(run)){launching=false;store.busy=false;toast('Browser storage is unavailable. Broforce has not started; retry after storage is available.');return false;}}
+  else hooks.save();
+ }
  if(!id&&!resume){const played=await animateRoulette(game,run?.mutation?'arcade':game.engine==='trivia'?'trivia':filter,warpPick?warpTheme(run)[game.engine==='trivia'?'trivia':'games'].map(gameById).filter(Boolean):null);if(!valid())return false;if(!played){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();return false;}}
- const choice=await showDialog({title:game.title,source:game.source,html:`${gameArtHTML(game)}<div class="how-to"><b>HOW TO PLAY · ${escapeHTML(game.duration.toUpperCase())}</b>${escapeHTML(game.rules)}</div>${run?.mutation&&origin==='board'?'<p style="font-size:12px">You are one team. Each person races a live CPU driver, then both relay scores are combined.</p>':''}`,choices:[{label:'Start game',value:'start',primary:true},{label:origin==='board'?'Return to board':'Back to arcade',value:'cancel'}]});
+ const choice=await showDialog({title:game.title,source:game.source,html:`${gameArtHTML(game)}<div class="how-to"><b>HOW TO PLAY · ${escapeHTML(game.duration.toUpperCase())}</b>${escapeHTML(game.rules)}</div>${run?.mutation&&origin==='board'&&!bfGame(game)?'<p style="font-size:12px">You are one team. Each person races a live CPU driver, then both relay scores are combined.</p>':''}`,choices:[{label:'Start game',value:'start',primary:true},{label:origin==='board'?'Return to board':'Back to arcade',value:'cancel'}]});
  if(!valid())return false;
  if(choice===null){launching=false;store.busy=false;return false;}
  if(choice!=='start'){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();return false;}
  const players=origin==='board'?run.players:run?structuredClone(run.players):[newPlayer(store.setupNames?.[0]??'Sean','sean',0),newPlayer(store.setupNames?.[1]??'Amber','amber',1)];
- const session=new GameSession(game,players,(scores,label)=>void settleGame(game,scores,label,origin,players,session.teamResult,returnToRoll));session.practice=origin==='dev';session.returnToRoll=returnToRoll;store.session=session;session.active=origin==='board'?run.current:0;session.updateScores();launching=false;
+ let delivered=false,getEvidence=()=>null;
+ const session=new GameSession(game,players,(scores,label)=>{
+  if(bfGame(game)){
+   if(delivered||!valid()||store.session!==session||!session.finished)return;
+   delivered=true;
+  }
+  void settleGame(game,scores,label,origin,players,session.teamResult,returnToRoll,bfAttempt?{attempt:bfAttempt,evidence:getEvidence()}:null);
+ });
+ if(bfAttempt)getEvidence=bindBroforceSession(session,bfAttempt,()=>valid()&&store.session===session&&!delivered);
+ session.practice=origin==='dev';session.returnToRoll=returnToRoll;store.session=session;session.active=origin==='board'?run.current:0;session.updateScores();launching=false;
  try{await ENGINES[game.engine](session);}catch(error){console.error('Game engine failure',game.id,error);if(valid()&&session.alive){session.dispose();store.session=null;store.busy=false;await showDialog({title:'Let’s get you back to the board',body:'This challenge was interrupted. No rewards were applied.',choices:[{label:'Continue',value:'ok',primary:true}]});if(!valid())return false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();}return false;}return valid();
 }
-async function settleGame(game,scores,label,origin,players,coop=null,returnToRoll=false){const run=store.run,serial=launchSerial,valid=()=>serial===launchSerial&&store.run===run;store.session=null;const winner=coop?null:scores[0]===scores[1]?null:scores[0]>scores[1]?0:1;if(origin!=='dev')recordGame(store.profile,game,winner,scores);const unlocked=[];let rewards=[0,0],extra=coop?.kind==='boss'?`${coop.won?'KNOCKOUT! ':'Defeated. '}Team damage ${coop.humanTotal}${coop.duration?' in '+coop.duration+'s':''}.`:coop?.kind==='survival'?`You survived ${coop.duration}s together. Team score ${coop.humanTotal}. ${coop.won?'Both players win!':'Try moving together and reviving your partner.'}`:coop?`Your team ${coop.humanTotal} · Mario ${coop.cpuScores[0]} + Luigi ${coop.cpuScores[1]} = ${coop.cpuTotal}. ${coop.tied?'Photo-finish tie.':coop.won?'YOU BEAT THEM.':'They take this race.'}`:'';
+async function settleGame(game,scores,label,origin,players,coop=null,returnToRoll=false,bfAuthority=null){if(bfGame(game)||coop?.kind==='broforce')return settleBroforceGame(game,scores,label,origin,players,coop,returnToRoll,bfAuthority);const run=store.run,serial=launchSerial,valid=()=>serial===launchSerial&&store.run===run;store.session=null;const winner=coop?null:scores[0]===scores[1]?null:scores[0]>scores[1]?0:1;if(origin!=='dev')recordGame(store.profile,game,winner,scores);const unlocked=[];let rewards=[0,0],extra=coop?.kind==='boss'?`${coop.won?'KNOCKOUT! ':'Defeated. '}Team damage ${coop.humanTotal}${coop.duration?' in '+coop.duration+'s':''}.`:coop?.kind==='survival'?`You survived ${coop.duration}s together. Team score ${coop.humanTotal}. ${coop.won?'Both players win!':'Try moving together and reviving your partner.'}`:coop?`Your team ${coop.humanTotal} · Mario ${coop.cpuScores[0]} + Luigi ${coop.cpuScores[1]} = ${coop.cpuTotal}. ${coop.tied?'Photo-finish tie.':coop.won?'YOU BEAT THEM.':'They take this race.'}`:'';
  if(origin==='board'){
   const run=store.run;rewards=players.map((p,i)=>{const didWin=coop?coop.won:i===winner,tied=coop?coop.tied:winner===null;p.mood=tied?'happy':didWin?'win':'sad';let points=tied?4:didWin?game.reward:2;if(p.double&&didWin){points*=2;p.double--;}const itemBonus=(p.bounty||0)+(foodGame(game)?p.rewardFoodBonus||0:0);points=Math.max(0,points+p.rewardBonus+itemBonus);p.rewardBonus=0;p.bounty=0;p.rewardFoodBonus=0;if(didWin&&perkType(p.character)==='competitor')points++;if(p.character==='gordon-ramsay'){if(didWin)points+=2;else if(!tied)points=Math.max(0,points-1);}p.points+=points;if(didWin)p.wins++;if(p.crash){pointChange(p,-2,false);p.crash=false;p.slow++;}return points;});
   if(coop){const record=run.coopRecord||={rounds:0,won:0,lost:0,tied:0,humanScore:0,cpuScore:0};record.rounds++;record.humanScore+=coop.humanTotal;record.cpuScore+=coop.cpuTotal;record[coop.tied?'tied':coop.won?'won':'lost']++;if(run.mutation){if(coop.won){players.forEach(p=>p.points+=4);rewards=rewards.map(n=>n+4);run.mutation.won=(run.mutation.won||0)+1;}run.mutation.remaining--;if(!run.mutation.remaining)run.mutation=null;}}
@@ -78,7 +230,7 @@ async function settleGame(game,scores,label,origin,players,coop=null,returnToRol
  if(origin==='board'){if(unlocked.length)store.run.latestRecruit={owner:players[winner]?.owner,name:CHARACTERS.find(c=>c.id===unlocked[0])?.name||'A new character'};store.run.pending.unlocked=unlocked;store.run.pending.unlockOwner=winner===null?null:players[winner].owner;store.run.pending.extra=extra;hooks.save();}if(origin!=='dev')saveProfile(store.profile);sound('win');const continued=await presentResult({gameId:game.id,scores,label,winner,rewards,extra,origin,coop,unlocked,unlockOwner:winner===null?null:players[winner].owner},players);if(continued===null||!valid())return;if(!await unlockDialog(unlocked,winner===null?null:players[winner].owner)||!valid())return;store.busy=false;
  if(origin==='board'){if(game.bossId&&hooks.bossDone){await hooks.bossDone(game,coop);return;}returnToRoll?hooks.beforeRoll():hooks.endTurn();}else hooks.arcade();
 }
-async function presentResult(result,players=store.run?.players){const game=result.gameId==='phone-task'?PHONE_TASK:gameById(result.gameId),coop=result.coop,title=coop?.kind==='boss'?(coop.won?'KNOCKOUT!':'The boss wins'):coop?.kind==='survival'?coop.won?'You survived together!':'The horde takes this night':coop?coop.tied?'A photo-finish tie':coop.won?'Your team beats the brothers!':'The brothers take this race':result.winner===null?'Honors shared':`${players[result.winner].name} takes it`;return showDialog({title,source:game.source,html:`<div class="result-portraits">${players.map((p,i)=>`<div>${portraitHTML(p.character,'portrait mini',coop?coop.tied?'silly':coop.won?'win':'sad':result.winner===null?'silly':i===result.winner?'win':'sad')}<b>${escapeHTML(p.name)}</b></div>`).join('')}</div><div class="big-result">${result.scores[0]} <span style="font-size:22px;color:#a59e8b">${coop?'+':'—'}</span> ${result.scores[1]}</div><p>${escapeHTML(result.label||game.title)}</p>${(result.unlocked||[]).map(id=>{const c=CHARACTERS.find(c=>c.id===id);return c?`<div class="recruit-result"><strong>NEW CHARACTER ADDED</strong>${portraitHTML(id,'portrait mini','win')}<b>${escapeHTML(c.name)}</b><p>Added to ${escapeHTML(result.unlockOwner||'both players')}’s roster · saved for future games.</p></div>`:'';}).join('')}${result.origin==='board'?`<div class="reward-delta" style="font-size:24px">${players.map((p,i)=>`${escapeHTML(p.name)} +${result.rewards[i]}`).join(' · ')}</div>`:result.origin==='dev'?'<p>DEV TEST · No XP, unlocks, or board rewards applied.</p>':'<p style="margin-top:15px">XP and collection progress saved.</p>'}${result.extra?`<div class="how-to">${escapeHTML(result.extra)}</div>`:''}`,choices:[{label:result.origin==='board'?'Back to the board':'Back to the arcade',value:'ok',primary:true}]});}
+async function presentResult(result,players=store.run?.players){if(BROFORCE_IDS.includes(result.gameId)||result.coop?.kind==='broforce'||result.bfAttempt)return showBroforceResultOnce(result,players);const game=result.gameId==='phone-task'?PHONE_TASK:gameById(result.gameId),coop=result.coop,title=coop?.kind==='boss'?(coop.won?'KNOCKOUT!':'The boss wins'):coop?.kind==='survival'?coop.won?'You survived together!':'The horde takes this night':coop?coop.tied?'A photo-finish tie':coop.won?'Your team beats the brothers!':'The brothers take this race':result.winner===null?'Honors shared':`${players[result.winner].name} takes it`;return showDialog({title,source:game.source,html:`<div class="result-portraits">${players.map((p,i)=>`<div>${portraitHTML(p.character,'portrait mini',coop?coop.tied?'silly':coop.won?'win':'sad':result.winner===null?'silly':i===result.winner?'win':'sad')}<b>${escapeHTML(p.name)}</b></div>`).join('')}</div><div class="big-result">${result.scores[0]} <span style="font-size:22px;color:#a59e8b">${coop?'+':'—'}</span> ${result.scores[1]}</div><p>${escapeHTML(result.label||game.title)}</p>${(result.unlocked||[]).map(id=>{const c=CHARACTERS.find(c=>c.id===id);return c?`<div class="recruit-result"><strong>NEW CHARACTER ADDED</strong>${portraitHTML(id,'portrait mini','win')}<b>${escapeHTML(c.name)}</b><p>Added to ${escapeHTML(result.unlockOwner||'both players')}’s roster · saved for future games.</p></div>`:'';}).join('')}${result.origin==='board'?`<div class="reward-delta" style="font-size:24px">${players.map((p,i)=>`${escapeHTML(p.name)} +${result.rewards[i]}`).join(' · ')}</div>`:result.origin==='dev'?'<p>DEV TEST · No XP, unlocks, or board rewards applied.</p>':'<p style="margin-top:15px">XP and collection progress saved.</p>'}${result.extra?`<div class="how-to">${escapeHTML(result.extra)}</div>`:''}`,choices:[{label:result.origin==='board'?'Back to the board':'Back to the arcade',value:'ok',primary:true}]});}
 async function exitGame(){if(!store.session)return;const s=store.session;s.paused=true;const choice=await showDialog({title:'End this challenge?',body:store.arcade?'Return to the arcade without a reward.':s.returnToRoll?'Return to the board without a reward. Your item action stays used; you can still roll.':'Return to the board without a reward. The turn passes to the other player.',choices:[{label:'Keep playing',value:'stay',primary:true},{label:'End challenge',value:'exit'}]});if(store.session!==s||!s.alive)return;if(choice!=='exit'){if(!s.waiting)s.paused=false;return;}s.dispose();store.session=null;store.busy=false;launching=false;if(store.arcade)hooks.arcade();else s.returnToRoll?hooks.beforeRoll():hooks.endTurn();}
 
 Object.assign(exports,{cancelGameLaunch,configureLauncher,requestGame,presentResult,exitGame});
