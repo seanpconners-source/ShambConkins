@@ -236,7 +236,7 @@ async function kart(s){
     return Ph.autoInput(course,k,{target:autoTarget(k)});}
    let steer=(ks.r?1:0)-(ks.l?1:0);
    if(pd.f){const r=ctl.rad();let v=clamp((pd.f.x-pd.ox)/r,-1,1);v=Math.abs(v)<.08?0:Math.sign(v)*(Math.abs(v)-.08)/.92;steer=v;
-    if(!pd.latch&&Math.abs(v)>=.97)pd.latch=Math.sign(v);else if(pd.latch&&v*pd.latch<-.3)pd.latch=0;}
+    if(!pd.latch&&Math.abs(v)>=.85)pd.latch=Math.sign(v);else if(pd.latch&&v*pd.latch<-.55)pd.latch=0;}
    else pd.latch=0;
    if(ks.d){if(!pd.keyLatch&&steer)pd.keyLatch=Math.sign(steer);}else pd.keyLatch=0;
    return {steer,drift:pd.latch||pd.keyLatch||0};
@@ -245,7 +245,7 @@ async function kart(s){
   // ---------------------------------------------------------------- physics events → sound / particles / banners
   const ctx={ev:(k,name,data)=>{
    const P=k.P2;if(!k.human){if(name==='lakitu'&&battle)loseBalloon(k);if(name==='hit')burst(P,6,{tile:TILE.star,add:false,col:[1,1,1,1],speed:90,up:40,size:5,life:.6,g:-80});return;}
-   if(name==='miniturbo'){sfx.boost();msg(k,data===3?'ULTRA MINI-TURBO!':data===2?'SUPER MINI-TURBO!':'MINI-TURBO!',['','#5ab8ff','#ffa02e','#e46aff'][data],16,.8);}
+   if(name==='miniturbo'){sfx.boost();snd([0,660,880,1175][data],.25,{type:'triangle',vol:.035,to:[0,1320,1760,2350][data]});shake(k,data*1.4);burst(local(k,[-14,5,0]),6+data*6,{tile:TILE.spark,col:[[1,1,1,1],[.4,.75,1,1],[1,.62,.15,1],[.92,.4,1,1]][data],speed:90+data*40,size:3+data,life:.35});msg(k,data===3?'ULTRA MINI-TURBO!':data===2?'SUPER MINI-TURBO!':'MINI-TURBO!',['','#5ab8ff','#ffa02e','#e46aff'][data],16,.8);}
    else if(name==='spark')sfx.spark(data);
    else if(name==='hop')sfx.hop();
    else if(name==='pad'){sfx.boost();}
@@ -345,7 +345,7 @@ async function kart(s){
   function cameraFor(k,dt,view){
    const cm=cams[k.i],aspect=view.w/view.h;
    // keep about 75° across in tall split views, a little narrower on wide screens
-   const base=aspect<.95?Math.min(105*Math.PI/180,2*Math.atan(Math.tan(37.5*Math.PI/180)/aspect)):(aspect<1.25?74:aspect<1.7?66:58)*Math.PI/180;
+   const base=aspect<.95?Math.min(107*Math.PI/180,2*Math.atan(Math.tan(39*Math.PI/180)/aspect)):(aspect<1.25?77:aspect<1.7?69:61)*Math.PI/180;
    cm.fov+=((k.boostT>0||k.bullet>0?.12:0)-cm.fov)*Math.min(1,dt*4);
    if(phase==='intro'){const e=Math.min(1,introT/2.4),a=Math.PI*(1-(e*e*(3-2*e))),r=70-20*e;const F=k.F,N=k.N,Rv=k.R;
     const E=[k.P2[0]+(F[0]*Math.cos(a)+Rv[0]*Math.sin(a)*.6)*r+N[0]*(18+20*(1-e)),k.P2[1]+(F[1]*Math.cos(a)+Rv[1]*Math.sin(a)*.6)*r+N[1]*(18+20*(1-e)),k.P2[2]+(F[2]*Math.cos(a)+Rv[2]*Math.sin(a)*.6)*r+N[2]*(18+20*(1-e))];
@@ -353,10 +353,10 @@ async function kart(s){
    if(k.falling>0){return {eye:cm.E,target:k.P2,up:cm.N,fov:base};}
    const a1=cm.snap?1:1-Math.exp(-dt*(k.air?3:7)),a2=cm.snap?1:1-Math.exp(-dt*5);
    cm.F=T.norm(lerp3(cm.F,k.F,a1));cm.N=T.norm(lerp3(cm.N,k.N,a2));
-   const back=50+(k.boostT>0?6:0),up=19;const want=[k.P2[0]-cm.F[0]*back+cm.N[0]*up,k.P2[1]-cm.F[1]*back+cm.N[1]*up,k.P2[2]-cm.F[2]*back+cm.N[2]*up];
+   const back=56+(k.boostT>0?6:0),up=24;const want=[k.P2[0]-cm.F[0]*back+cm.N[0]*up,k.P2[1]-cm.F[1]*back+cm.N[1]*up,k.P2[2]-cm.F[2]*back+cm.N[2]*up];
    cm.E=cm.snap?want:lerp3(cm.E,want,1-Math.exp(-dt*14));cm.snap=false;
    let eye=cm.E;if(cm.shake>.05){const a=cm.shake;eye=[cm.E[0]+(rand()-.5)*a,cm.E[1]+(rand()-.5)*a,cm.E[2]+(rand()-.5)*a];cm.shake*=Math.pow(.02,dt);}
-   const fw=aspect<.95?110:80,uw=aspect<.95?10:12;// look well ahead so the player's kart sits low on screen (more track visible)
+   const fw=aspect<.95?100:70,uw=aspect<.95?6:8;// look well ahead so the player's kart sits low on screen (more track visible)
    return {eye,target:[k.P2[0]+cm.F[0]*fw+cm.N[0]*uw,k.P2[1]+cm.F[1]*fw+cm.N[1]*uw,k.P2[2]+cm.F[2]*fw+cm.N[2]*uw],up:cm.N,fov:base+cm.fov};
   }
   // ---------------------------------------------------------------- heads (portrait textures)

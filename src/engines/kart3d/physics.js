@@ -4,7 +4,7 @@
 // mini-turbo sparks, auto tricks off ramps (jump boost), gliders, dash panels, Lakitu rescue.
 const T=require("src/engines/kart3d/track.js");
 
-const G=270,TOP=330,BOOST=465,TURN=1.55,DRIFT_LV=[.65,1.35,2.3],MT=[0,.55,1,1.45];
+const G=270,TOP=330,BOOST=465,TURN=1.55,DRIFT_LV=[.65,1.35,2.3],MT=[0,.7,1.15,1.6];
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const wrapA=a=>{while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;return a;};
 
@@ -48,18 +48,18 @@ function stepKart(c,k,inp,dt,ctx={}){
  if(k.air){stepAir(c,k,inp,dt,ctx);pose(c,k);return;}
  const f=T.frame(c,k.s,F1),i=f.i,glue=c.glue[i];k.glue+=((glue?1:0)-k.glue)*Math.min(1,dt*6);
  // drifting
- const canDrift=k.v>110&&k.spin<=0&&k.tumble<=0&&k.bullet<=0;
+ const canDrift=k.v>90&&k.spin<=0&&k.tumble<=0&&k.bullet<=0;
  if(!k.drift&&inp.drift&&canDrift){k.drift=inp.drift;k.driftT=0;k.hop=.24;ctx.ev?.(k,'hop');}
  else if(k.drift&&(inp.drift!==k.drift||!canDrift))endDrift(k,ctx,canDrift);
  let yaw=0;const steer=k.steer;
  if(k.bullet>0){k.psi*=Math.pow(.02,dt);k.d*=Math.pow(.3,dt);}
  else if(k.spin>0||k.tumble>0)yaw=0;
- else if(k.drift){const into=clamp(steer*k.drift,-1,1);yaw=k.drift*(1.2+.75*into)*clamp(k.v/200,.5,1);const before=sparkLevel(k);k.driftT+=dt*(.95+.55*Math.max(0,into));const lv=sparkLevel(k);if(lv!==before)ctx.ev?.(k,'spark',lv);k.spark=lv;}
+ else if(k.drift){const into=clamp(steer*k.drift,-1,1);yaw=k.drift*(1.1+(into>0?.75:.6)*into)*clamp(k.v/200,.5,1);const before=sparkLevel(k);k.driftT+=dt*(.95+.55*Math.max(0,into));const lv=sparkLevel(k);if(lv!==before)ctx.ev?.(k,'spark',lv);k.spark=lv;}
  else yaw=steer*TURN*clamp(k.v/90,0,1)*(1-.18*clamp(k.v/TOP,0,1.4));
  k.psi=wrapA(k.psi+yaw*dt);
  // speed
  k.offroad=!glue&&Math.abs(k.d)>(f.roadHalf??f.half)+2;
- let top=TOP*(k.topMul||1)*(k.offroad&&k.star<=0&&k.boostT<=0?.55:1)*(1+.008*k.coins)*(k.shrink>0?.72:1)*(k.star>0?1.12:1)*(k.drift?.985:1),acc=280*(1-.55*clamp(k.v/top,0,1));
+ let top=TOP*(k.topMul||1)*(k.offroad&&k.star<=0&&k.boostT<=0?.55:1)*(1+.008*k.coins)*(k.shrink>0?.72:1)*(k.star>0?1.12:1)*1,acc=280*(1-.55*clamp(k.v/top,0,1));
  if(k.boostT>0){top=Math.max(top,BOOST*(k.shrink>0?.8:1));acc=1200;}
  if(k.bullet>0){top=620;acc=1500;}
  if(k.spin>0||k.tumble>0)k.v*=Math.pow(.12,dt);
@@ -72,7 +72,7 @@ function stepKart(c,k,inp,dt,ctx={}){
  if(k.bullet>0){k.d=clamp(k.d,-lim,lim);pose(c,k);return;}
  // rails
  const side=k.d>lim?1:k.d<-lim?-1:0;
- if(side&&(rail&(side>0?2:1))){k.d=side*lim;const into=Math.sin(k.psi)*side;if(into>0){k.psi=Math.atan2(-Math.sin(k.psi)*.25,Math.cos(k.psi));if(k.wall<=0){k.v*=1-.45*into;if(into>.4)endDrift(k,ctx,false);if(into>.12)ctx.ev?.(k,'wall',into);}else k.v=Math.max(0,k.v-50*dt);k.wall=.2;}}
+ if(side&&(rail&(side>0?2:1))){k.d=side*lim;const into=Math.sin(k.psi)*side;if(into>0){k.psi=Math.atan2(-Math.sin(k.psi)*.25,Math.cos(k.psi));if(k.wall<=0){k.v*=1-(k.drift?.3:.45)*into;if(into>.75)endDrift(k,ctx,false);if(into>.12)ctx.ev?.(k,'wall',into);}else k.v=Math.max(0,k.v-50*dt);k.wall=.2;}}
  // ramps, gaps, edges, crests
  for(const r of c.ramps){if(T.sdiff(c,prevS,r.s)>0&&T.sdiff(c,k.s,r.s)<=0&&Math.abs(k.d)<=half){k.v=Math.max(k.v,r.glide?340:320);launch(c,k,r.kick,r.glide,ctx);pose(c,k);return;}}
  if(c.gap[j]||Math.abs(k.d)>half+3){launch(c,k,0,false,ctx);pose(c,k);return;}

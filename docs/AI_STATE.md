@@ -50,7 +50,8 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   (own renderer/GL context, music, engines; resolves results). Courses in `kart3d/track.js` `COURSES`: Rainbow Road, Moo Moo
   Meadows, Cheep Cheep Beach, Bowser's Castle (`theme`, `offroad` band → `roadHalf`; off-road = 55% top speed); 3D ribbon built
   from turtle pieces (turns, hills, ramps + gaps, glider, anti-gravity `glue`, loop, corkscrew; flex straights auto-close).
-  `physics.js` track-space karts (Frenet), air/ramps/crests, rails, Lakitu, drift sparks (`DRIFT_LV`) → mini-turbo, auto tricks.
+  `physics.js` track-space karts (Frenet), air/ramps/crests, rails, Lakitu, drift sparks (`DRIFT_LV`) → mini-turbo (`MT` .7/1.15/1.6 s),
+  auto tricks. Drift: latch at 85% push, ends past 55% the other way or on release; only hard wall hits (>.75) cancel it.
   `render.js` themes (`THEMES`: baked sky per theme, procedural road/kerbs/sand/stone, fences/walls, grass/water/lava ground
   plane, trees/cows/palms/pillars), karts with portrait billboards, ghost. `hud.js` (Tour HUD, two item slots, time mode),
   `music.js` (original loop). Controls = Mario Kart Tour per screen: drag steers (floating origin), full push latches a drift,
