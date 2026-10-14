@@ -49,7 +49,8 @@ const {moneygrab}=require("src/engines/bananaStand.js");
 const {battleroyale,bondmission}=require("src/engines/gestureLegacy.js");
 const {fruitmerge}=require("src/engines/brawndoMerge.js");
 const {hole,bike,baseball,flappy,crossy,airhockey,bomber}=require("src/engines/mobile.js");
-const {tank, pacmaze, airshootout}=require("src/engines/duels.js");
+const {pacmaze, airshootout}=require("src/engines/duels.js");
+const {tank}=require("src/engines/atariCombat.js");
 const {coopRivals}=require("src/engines/coop.js");
 const {blocks,shred,dodgeball,boxing,gophers,archery}=require("src/engines/newGames.js");
 function themedPool(s){return s.game?.source==='The Color of Money'?nineball(s):pool(s);}
