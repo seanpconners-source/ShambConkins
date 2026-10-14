@@ -299,7 +299,8 @@
   "src/engines/triDChess.js",
   "src/engines/puttPutt.js",
   "src/engines/olympicCurling.js",
-  "src/engines/homeRunDerby.js"
+  "src/engines/homeRunDerby.js",
+  "src/engines/nesDuckHunt.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
