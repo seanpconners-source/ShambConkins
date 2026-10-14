@@ -1,7 +1,8 @@
 const {sokoban, pipeconnect}=require("src/engines/puzzles.js");
 const {connect4, reversi, blackjack, poker, roulette, yahtzee}=require("src/engines/tabletop.js");
 const {trivia}=require("src/engines/trivia.js");
-const {darts, task}=require("src/engines/skill.js");
+const {task}=require("src/engines/skill.js");
+const {darts}=require("src/engines/pubDarts.js");
 const {towerstack}=require("src/engines/stacker.js");
 const {curling}=require("src/engines/olympicCurling.js");
 const {artillery}=require("src/engines/scorchedEarth.js");
