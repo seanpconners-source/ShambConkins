@@ -317,7 +317,11 @@
   "src/engines/sotn.js",
   "src/engines/fullBleed.js",
   "src/data/hangmanPhrases.js",
-  "src/engines/westernSfx.js"
+  "src/engines/westernSfx.js",
+  "src/engines/bricksQuestSim.js",
+  "src/data/bricksQuestLevels.js",
+  "src/engines/bricksQuest.js",
+  "src/packs/bricksPack.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

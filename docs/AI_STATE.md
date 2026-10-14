@@ -162,6 +162,17 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   Deck: `src/data/hangmanPhrases.js` (~600 phrases, 12 categories). SFX all synthesized in `src/engines/westernSfx.js` (gunshot + canyon
   echo, ricochet, cock/dry fire/cylinder, spurs, gallop, snort, whinny, whip, trapdoor, formant "Yeehaw"). Test: `tests/hangman.mjs`
   (screens `/tmp/claude-0/sc/hm-*`). Real-phone feel and the sounds by ear untested.
+- **Bricks Breaker Quest (Oct 14 2026, `bricks-breaker-quest`, `packs/bricksPack.js`):** replica of the neon mobile game from the
+  owner's screenshots, separate from Daft Punk Neon Ball Storm (`ballvolley`). `engines/bricksQuest.js` (drawing/flow, own full-bleed
+  shell, all drawn in 576-wide units scaled to fit: stage map with BRICKS logo, gems/stars, snake of stage tiles, SHOP/BALL/CLASSIC/
+  MULTI/100BALLS bar; HUD ring buttons, star bar, 9x11 neon field, lightning ×3 / aim slider / ball plus ×3, recall + 200-gem rewind
+  in flight, CLEAR!/FAILED panels with NEXT/CONTINUE), `engines/bricksQuestSim.js` (pure rules + physics in cell units: squares,
+  4 triangle shapes, row/column lasers, bombs, +1 rings, wall drops a line per turn, 10×n combo score, `botPlay`/`botAngle`),
+  `data/bricksQuestLevels.js` (stages 1-36 hand built, 75/120/1043/1050 rebuilt from screenshots, `stage(n)` generates every other
+  number). P1 picks a stage (any up to the next uncleared), both play it, higher score wins. Saves `profile.bricksQuest`
+  {cleared,stars,gems,reward,gift} (validated in `profile.js`); board play gives each turn its own 300 gems. CLASSIC/100BALLS tabs =
+  endless Ballz-style modes. Ball counts tuned so the Node bot clears every hand stage. Test: `tests/bricksquest.mjs` (screens
+  `/tmp/claude-0/sc/bbq-*`, `STAGE=n`). Real-phone feel untested.
 - **Super Mario Bros. World 1 (Oct 13 2026):** `engines/marioBros.js` (engine `marioBros`) + `engines/smb/smbLevels.js` (NES maps
   1-1 with coin room, 1-2 intro/underground/exit + Warp Zone above the ceiling, 1-3 treetops with lifts, 1-4 castle with firebars,
   lava, Bowser's bridge/axe/Toad; tiles on the 16 px NES grid, areas joined by `doors`) + `engines/smb/smbArt.js` (8x8 NES font on

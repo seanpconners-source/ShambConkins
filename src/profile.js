@@ -32,6 +32,9 @@ function loadProfile() {
   const photo=normalizePhotoPair(saved.photoHuntPair);
   if(Array.isArray(saved.photoHuntPairs)){p.photoHuntPairs=photoPairLibrary(saved);const selected=photo||p.photoHuntPairs.at(-1);if(selected)currentPhotoPair(p,selected);}else if(photo)p.photoHuntPair=photo;
   if(saved.photoHuntHigh&&typeof saved.photoHuntHigh.name==='string'&&Number.isFinite(saved.photoHuntHigh.score)&&saved.photoHuntHigh.score>=0)p.photoHuntHigh={name:saved.photoHuntHigh.name.slice(0,16),score:Math.floor(saved.photoHuntHigh.score),round:Number.isFinite(saved.photoHuntHigh.round)?Math.max(1,Math.floor(saved.photoHuntHigh.round)):1};
+  if(saved.bricksQuest&&typeof saved.bricksQuest==='object'&&!Array.isArray(saved.bricksQuest)){const q=saved.bricksQuest,int=(v,d)=>Number.isFinite(v)&&v>=0?Math.floor(v):d;
+   p.bricksQuest={cleared:int(q.cleared,0),gems:int(q.gems,120),reward:int(q.reward,0)%10,gift:typeof q.gift==='string'?q.gift.slice(0,12):'',
+    stars:Object.fromEntries(Object.entries(q.stars&&typeof q.stars==='object'?q.stars:{}).filter(([n,v])=>/^\d{1,6}$/.test(n)&&[1,2,3].includes(v)))};}
   if(saved.earnedUnlocks&&typeof saved.earnedUnlocks==='object'&&!Array.isArray(saved.earnedUnlocks))p.earnedUnlocks=Object.fromEntries(Object.entries(saved.earnedUnlocks).filter(([id,value])=>ids.has(id)&&typeof value==='string'));
   if(saved.broforceClaims!==undefined){
    const claims=validatedBroforceClaims(saved.broforceClaims);
