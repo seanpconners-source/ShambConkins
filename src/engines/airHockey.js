@@ -77,14 +77,16 @@ async function playAirHockey(s){
   for(let i=sparks.length-1;i>=0;i--)if((sparks[i].age-=dt)<=0)sparks.splice(i,1);
   if(!state.puck.scored){trail.push({x:state.puck.x,y:state.puck.y});if(trail.length>10)trail.shift();}
   ctx.save();if(portrait){ctx.translate(H,0);ctx.rotate(Math.PI/2);}
-  const surface=ctx.createLinearGradient(0,0,W,H);surface.addColorStop(0,'#e5f4ff');surface.addColorStop(.5,'#fafafa');surface.addColorStop(1,'#d1e2f3');ctx.fillStyle=surface;ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='#738b9c22';for(let y=32;y<H;y+=34)for(let x=32;x<W;x+=34)ctx.fillRect(x,y,1.5,1.5);
-  ctx.strokeStyle='#566d84';ctx.lineWidth=12;ctx.strokeRect(6,6,W-12,H-12);
-  ctx.lineWidth=2;ctx.strokeStyle='#6b88a566';ctx.setLineDash([6,8]);ctx.beginPath();ctx.moveTo(W/2,12);ctx.lineTo(W/2,H-12);ctx.stroke();ctx.setLineDash([]);
-  ctx.beginPath();ctx.arc(W/2,H/2,56,0,Math.PI*2);ctx.stroke();
-  ctx.save();ctx.translate(W/2,H/2);if(portrait)ctx.rotate(-Math.PI/2);ctx.fillStyle='#3a597c22';ctx.textAlign='center';ctx.font='bold 23px Arial';ctx.fillText('MIGHTY DUCKS',0,-12);ctx.font='13px Arial';ctx.fillText('QUACK · QUACK · QUACK',0,12);ctx.restore();
-  for(let i=0;i<2;i++){const x=i?W-10:0;ctx.fillStyle=colors[i];ctx.fillRect(x,H/2-Math.min(HOCKEY.goalHalf,H*.23),10,Math.min(HOCKEY.goalHalf,H*.23)*2);ctx.strokeStyle='#ffffffa0';ctx.lineWidth=2;ctx.strokeRect(x,H/2-Math.min(HOCKEY.goalHalf,H*.23),10,Math.min(HOCKEY.goalHalf,H*.23)*2);}
-  for(let i=0;i<trail.length;i++)circle(ctx,trail[i].x,trail[i].y,3+i/4,`rgba(47,71,106,${i/trail.length*.2})`);
+  // arcade air-hockey table: dark surface, air-hole grid, neon rails, glowing goal slots, faint scores
+  const surface=ctx.createLinearGradient(0,0,W,H);surface.addColorStop(0,'#0b1d3a');surface.addColorStop(.5,'#10284f');surface.addColorStop(1,'#0b1d3a');ctx.fillStyle=surface;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#5fa8ff26';for(let y=22;y<H-14;y+=18)for(let x=22+(y/18%2)*9;x<W-14;x+=18)ctx.fillRect(x,y,2,2);
+  ctx.save();ctx.globalAlpha=.08;ctx.font=`900 ${H*.5}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';for(let i=0;i<2;i++){ctx.save();ctx.translate(i?W*.75:W*.25,H/2);if(portrait)ctx.rotate(-Math.PI/2);ctx.fillStyle=colors[i];ctx.fillText(String(scores[i]),0,0);ctx.restore();}ctx.restore();
+  ctx.save();ctx.shadowBlur=16;for(let i=0;i<2;i++){ctx.shadowColor=colors[i];ctx.strokeStyle=colors[i];ctx.lineWidth=6;ctx.beginPath();const x0=i?W/2:8,x1=i?W-8:W/2;ctx.moveTo(x0,8);ctx.lineTo(x1,8);ctx.moveTo(x0,H-8);ctx.lineTo(x1,H-8);const gx=i?W-8:8,gh=Math.min(HOCKEY.goalHalf,H*.23);ctx.moveTo(gx,8);ctx.lineTo(gx,H/2-gh);ctx.moveTo(gx,H/2+gh);ctx.lineTo(gx,H-8);ctx.stroke();}ctx.restore();
+  ctx.strokeStyle='#ffffff55';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(W/2,10);ctx.lineTo(W/2,H-10);ctx.stroke();ctx.beginPath();ctx.arc(W/2,H/2,56,0,Math.PI*2);ctx.stroke();
+  for(let i=0;i<2;i++){ctx.strokeStyle=colors[i]+'66';ctx.beginPath();ctx.arc(i?W:0,H/2,Math.min(HOCKEY.goalHalf,H*.23)+30,i?Math.PI/2:-Math.PI/2,i?Math.PI*1.5:Math.PI/2);ctx.stroke();}
+  ctx.save();ctx.translate(W/2,H/2);if(portrait)ctx.rotate(-Math.PI/2);ctx.fillStyle='#ffffff1c';ctx.textAlign='center';ctx.font='900 23px Arial';ctx.fillText('MIGHTY DUCKS',0,-8);ctx.font='700 12px Arial';ctx.fillText('QUACK · QUACK · QUACK',0,12);ctx.restore();
+  for(let i=0;i<2;i++){const x=i?W-10:0,gh=Math.min(HOCKEY.goalHalf,H*.23);ctx.save();ctx.shadowColor=colors[i];ctx.shadowBlur=20;ctx.fillStyle='#000';ctx.fillRect(x,H/2-gh,10,gh*2);ctx.strokeStyle=colors[i];ctx.lineWidth=2;ctx.strokeRect(x,H/2-gh,10,gh*2);ctx.restore();}
+  for(let i=0;i<trail.length;i++)circle(ctx,trail[i].x,trail[i].y,3+i/1.6,`rgba(255,230,120,${i/trail.length*.35})`);
   for(const spark of sparks){ctx.strokeStyle=colors[spark.owner??0]+'a0';ctx.lineWidth=2;ctx.beginPath();ctx.arc(spark.x,spark.y,5+(1-spark.age/.24)*19,0,Math.PI*2);ctx.stroke();}
   for(let i=0;i<2;i++){
    const a=state.paddles[i],held=[...fingers.values()].includes(i);circle(ctx,a.x+2,a.y+4,29,'#2b466344');
@@ -92,9 +94,9 @@ async function playAirHockey(s){
    if(held){ctx.strokeStyle=colors[i];ctx.lineWidth=2;ctx.beginPath();ctx.arc(a.x,a.y,33,0,Math.PI*2);ctx.stroke();}
    ctx.save();ctx.translate(a.x,a.y);if(portrait)ctx.rotate(-Math.PI/2);s.sprite(ctx,i,0,-6,56,{mood:Math.hypot(a.vx,a.vy)>40?'walking':undefined});ctx.restore();
   }
-  if(!state.puck.scored){const p=state.puck;circle(ctx,p.x+1,p.y+3,11,'#263c5744');circle(ctx,p.x,p.y,10,'#17263a');circle(ctx,p.x-3,p.y-3,3,'#778797');}
+  if(!state.puck.scored){const p=state.puck;ctx.save();ctx.shadowColor='#ffe678';ctx.shadowBlur=18;circle(ctx,p.x,p.y,11,'#ffe678');ctx.restore();circle(ctx,p.x,p.y,7,'#fff8d0');}
   ctx.restore();
-  if(ready>0){ctx.save();ctx.textAlign='center';ctx.fillStyle='#173858';ctx.font='bold 21px Arial';ctx.fillText(lastScorer===null?'Get ready!':`${s.players[lastScorer].name} scores!`,s.W/2,s.H/2-52);ctx.font='15px Arial';ctx.fillText(`${s.players[serving].name} serves next`,s.W/2,s.H/2-26);ctx.restore();}
+  if(ready>0){ctx.save();ctx.textAlign='center';ctx.fillStyle='#ffffff';ctx.font='bold 21px Arial';ctx.fillText(lastScorer===null?'Get ready!':`${s.players[lastScorer].name} scores!`,s.W/2,s.H/2-52);ctx.font='15px Arial';ctx.fillText(`${s.players[serving].name} serves next`,s.W/2,s.H/2-26);ctx.restore();}
   const held=[...fingers.values()];s.status(`${Math.ceil(Math.max(0,left))}s · ${scores[0]} – ${scores[1]} · ${s.players[0].name} ${held.includes(0)?'✓':'○'} · ${s.players[1].name} ${held.includes(1)?'✓':'○'}`);
   s.debug={engine:'airhockey',state,scores,keys,fingers,left,ready,serving,portrait,hockeyStep:stepAirHockey};
   if(scores.some(score=>score>=7)||left<=0)s.finish(scores,'Mighty Ducks · two-human air hockey');
