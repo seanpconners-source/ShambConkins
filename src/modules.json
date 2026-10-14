@@ -294,7 +294,8 @@
   "src/engines/sumoSuit.js",
   "src/engines/blueLeavesDuel.js",
   "src/engines/bananaTapper.js",
-  "src/engines/battleIsland.js"
+  "src/engines/battleIsland.js",
+  "src/engines/goldeneyeFacility.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

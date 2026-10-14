@@ -89,6 +89,7 @@ function glowStroke(x,color,fn,{blur=10,width=1.6}={}){x.save();x.strokeStyle=co
 // ---------------------------------------------------------------- turn-based arcade runner
 // Each player plays the same seeded world in turn; config: {seconds,intro(i,scores),make(i),step(w,dt),draw(w),done(w),score(w),readyText}
 async function turnRunner(s,cfg){
+ try{s.fitCanvas?.();}catch{}// size the canvas now so make() sees the real screen shape
  const scores=[0,0];let w=null,running=false,res=null;
  s.frame(dt=>{if(!w)return;if(running){w.time+=dt;cfg.step(w,dt);if(!w.ending&&(cfg.done(w)||w.time>=cfg.seconds)){w.ending=cfg.endDelay??1.6;w.endReason=w.time>=cfg.seconds&&!cfg.done(w)?'time':'over';}
    if(w.ending){w.ending-=dt;if(w.ending<=0){running=false;res?.();}}}
