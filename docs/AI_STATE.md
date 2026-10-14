@@ -55,6 +55,18 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   (Green Hill Act 3): `buildLevel` ends in `L.arena`; per-world `w.boss` (Egg Mobile + wrecking ball, 8 hits, `stepBoss`/`bossTouch`,
   camera lock, capsule). Pilot = locked character from `gameRecruitPool` (prefers real art, head via broforce `headCanvas`); beating it
   pushes to `s.broforceRecruits` → `settleGame` recruits it (`cageGame()` in gameLauncher skips the random winner recruit). Test: `tests/sonic.mjs`.
+- **Hole.it (Oct 14 2026):** game id `paddys-hole` (engine name still `hole`, so saves/families are unchanged) now remakes
+  the mobile game Hole.it (Rocket) from owner screenshots + a gameplay video. Real WebGL: `src/engines/holeIt/gl.js`
+  (instanced vertex-colour meshes, tiled tray floor with the hole discarded in the shader, rim/throat lathes, floor decals for
+  contact shadows, the yellow size arc and the gold level-up ring, textured head tokens), `meshes.js` (~60 procedural props
+  in toys/fruit/kitchen/sushi themes + Rum Ham/Fight Milk/head-token cameos), `levels.js` (deterministic `buildLevel(N)`:
+  rows/rings/spirals/snakes/piles/towers/pillars, goal cards, `holeRadius`/`sizeNeed`), `sim.js` (movement, tip-in physics,
+  stacks, growth, boosters, `botInput`). Flow in `engines/holeIt.js`: pass → "Level N" intro (duck/apple/croissant over a
+  hole, Play) → 2:00 play (floating joystick, clock waits for the first drag, level 1 infinity tutorial) → Bravo!/Time's up →
+  P2 plays the same level. Score = goal items + (clear ? 1000 + 10×seconds left). `profile.holeItLevel` (load whitelisted
+  in `profile.js`) advances when either player clears. Test: `tests/holeit.mjs` (`--node` part is in `npm test`;
+  `node tests/holeit.mjs <level> 390x780` plays both turns, screenshots `/tmp/claude-0/sc/holeit-*`). The old
+  `neighborhoodHole.js` is unused (helpers kept). Real-phone feel/GPU load untested.
 - **Portraits:** owner uploads PNG/WebP to `assets/portraits/` on main; TESTver keeps 480px q88 WebP with originals in
   `assets/originals/portraits/` (`tools/run-claude-optimizer-safe.py` for PNG; oversized WebP uploads are shrunk the same way by hand).
   `artemis.think` has two different pictures (.png and .webp); the .webp is what the game shows.

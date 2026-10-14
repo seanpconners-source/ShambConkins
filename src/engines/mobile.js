@@ -14,7 +14,8 @@ function heldDirections(s,get,extra=[]){s.controls([{text:'◀',key:'ArrowLeft',
 const holeLayout=expandedHoleLayout;
 const holeRadius=expandedHoleRadius;
 const swallowStep=expandedSwallowStep;
-const hole=neighborhoodHole;
+const {holeIt}=require("src/engines/holeIt.js");
+const hole=holeIt; // Hole.it remake; neighborhoodHole.js keeps the old helpers for tests.
 
 function makeBikeCourse(seed){const random=seededRandom(seed);return {length:5200,bumps:Array.from({length:24},(_,i)=>({x:180+i*205,h:18+random()*32,w:35+random()*50})),gaps:Array.from({length:6},(_,i)=>({x:620+i*730,w:65+random()*35}))};}
 function bikeGround(course,xx){if(course.gaps.some(g=>xx>g.x&&xx<g.x+g.w))return 650;let y=310+Math.sin(xx*.008)*36+Math.sin(xx*.021)*17;for(const b of course.bumps)y-=b.h*Math.exp(-(((xx-b.x)/b.w)**2));return y;}

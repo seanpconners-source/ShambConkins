@@ -4,7 +4,7 @@ const {PROFILE_KEY, readJSON, writeJSON, writeDurableJSON, inspectDurableJSON}=r
 const {characterIdentity}=require("src/characters.js");
 const {LAB_TEAM}=require("src/data/savoryLab.js");
 const {isMovieBond, missingMovieBonds}=require("src/data/movieBonds.js");
-function freshProfile() { return { version: 20, starterPolicy:22, earnedUnlocks:{}, xp: 0, runs: 0, completed: 0, minigames:0, modes:['versus'], boards:['Mashup'], played: [], recentGames: [], recentTrivia: [], triviaDifficultyBag: [], recruitDryStreak:{Sean:0,Amber:0}, pairDiscoveries: [], boardUnlocks: [], shared: ['sean','amber'], rosters: { Sean: ['sean'], Amber: ['amber'] }, itemsSeen: [], itemFinds:{Sean:[],Amber:[]},recentItemFinds:{Sean:[],Amber:[]}, locations: [], settings: { sound: true, music: true, reducedMotion: false, originalLogos:true,drinkStatus:true,devMode:false,touchMode:'auto',flickSensitivity:1 }, wins: {}, best: {}, migrated: false }; }
+function freshProfile() { return { version: 20, starterPolicy:22, holeItLevel:1, earnedUnlocks:{}, xp: 0, runs: 0, completed: 0, minigames:0, modes:['versus'], boards:['Mashup'], played: [], recentGames: [], recentTrivia: [], triviaDifficultyBag: [], recruitDryStreak:{Sean:0,Amber:0}, pairDiscoveries: [], boardUnlocks: [], shared: ['sean','amber'], rosters: { Sean: ['sean'], Amber: ['amber'] }, itemsSeen: [], itemFinds:{Sean:[],Amber:[]},recentItemFinds:{Sean:[],Amber:[]}, locations: [], settings: { sound: true, music: true, reducedMotion: false, originalLogos:true,drinkStatus:true,devMode:false,touchMode:'auto',flickSensitivity:1 }, wins: {}, best: {}, migrated: false }; }
 function loadProfile() {
  const disk=inspectDurableJSON(PROFILE_KEY),shadow=readJSON(PROFILE_KEY);
  // With a durable BF receipt or a shadowed BF save, the readable disk copy is
@@ -29,6 +29,7 @@ function loadProfile() {
   if(['auto','touch','pointer'].includes(saved.settings?.touchMode))p.settings.touchMode=saved.settings.touchMode;
   for(const key of ['wins','best'])if(saved[key]&&typeof saved[key]==='object'&&!Array.isArray(saved[key]))p[key]=Object.fromEntries(Object.entries(saved[key]).filter(([,v])=>Number.isFinite(v)&&v>=0));
   for(const key of ['migrated','horrorSeen','equipment'])if(saved[key]===true)p[key]=true;
+  if(Number.isFinite(saved.holeItLevel)&&saved.holeItLevel>=1)p.holeItLevel=Math.min(9999,Math.floor(saved.holeItLevel));
   const photo=normalizePhotoPair(saved.photoHuntPair);
   if(Array.isArray(saved.photoHuntPairs)){p.photoHuntPairs=photoPairLibrary(saved);const selected=photo||p.photoHuntPairs.at(-1);if(selected)currentPhotoPair(p,selected);}else if(photo)p.photoHuntPair=photo;
   if(saved.photoHuntHigh&&typeof saved.photoHuntHigh.name==='string'&&Number.isFinite(saved.photoHuntHigh.score)&&saved.photoHuntHigh.score>=0)p.photoHuntHigh={name:saved.photoHuntHigh.name.slice(0,16),score:Math.floor(saved.photoHuntHigh.score),round:Number.isFinite(saved.photoHuntHigh.round)?Math.max(1,Math.floor(saved.photoHuntHigh.round)):1};
