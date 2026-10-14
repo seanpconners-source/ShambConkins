@@ -146,7 +146,7 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   number). Queue (owner, Oct 14): every turn the next queued line drops in at row 1 (`queueLines(n)` adds 3-12 sparse lines to hand
   stages, +25% balls, `qb` overrides); with an empty queue the wall still moves 1 row; clearing the turn's top brick line drops
   3 lines at once (`st.lastDrop`), capped so the lowest brick stays above row FAIL_ROW-3 (my reading of the owner's stage 20
-  screenshots; the video couldn't be fetched). Wall slides down (`slideY`); every button buzzes (`press()` → `vibrate(9)`) and
+  screenshots; the video couldn't be fetched). Wall glides down (`slideY`: ~0.5 s eased, small settle; firing mid-slide finishes it); every button buzzes (`press()` → `vibrate(9)`) and
   flashes a ring. The Node bot clears all hand stages 1-36 (75/1043/1050 were already too hard for it). P1 picks a stage (any up to the next uncleared), both play it, higher score wins. Saves `profile.bricksQuest`
   {cleared,stars,gems,reward,gift} (validated in `profile.js`); board play gives each turn its own 300 gems. CLASSIC/100BALLS tabs =
   endless Ballz-style modes. Ball counts tuned so the Node bot clears every hand stage. Test: `tests/bricksquest.mjs` (screens

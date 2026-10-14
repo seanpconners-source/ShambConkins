@@ -191,13 +191,16 @@ async function bricksQuest(s){
   return {pick,st,phase:'aim',angle:-Math.PI/2+.25,aiming:false,slider:false,bolt:ITEMS,plus:ITEMS,plusArmed:false,gems:arcade?Q.gems:300,snap:null,panel:null,t:0,doneT:0,resolve:null,shownBalls:st.balls};
  }
  // after a turn the wall slides down the rows it dropped (1, or 3 when the top line was cleared)
- const SLIDE=.26;
- const sliding=()=>play?.drop&&play.drop.t<SLIDE*Math.sqrt(play.drop.n);
- function slideY(){const d=play?.drop;if(!d)return 0;const u=Math.min(1,d.t/(SLIDE*Math.sqrt(d.n)));return -d.n*CELL*(1-u)*(1-u);}
+ // eased in and out over ~half a second (a bit longer for a 3-line drop), then a small dip and settle as it lands
+ const slideDur=n=>.5+.16*(n-1);
+ const sliding=()=>play?.drop&&play.drop.t<slideDur(play.drop.n);
+ function slideY(){const d=play?.drop;if(!d)return 0;const u=Math.min(1,d.t/slideDur(d.n)),m=Math.min(1,u/.78);
+  const glide=m<.5?4*m*m*m:1-Math.pow(-2*m+2,3)/2,settle=u>.78?Math.sin(Math.PI*(u-.78)/.22)*.08:0;
+  return -(d.n*(1-glide)-settle)*CELL;}
  const originV=()=>({x:FX+play.st.origin*CELL,y:FT+FH-S.BALL_R*CELL});
  function setAngleFromPoint(p){const o=originV();if(p.y>o.y-6)return false;play.angle=S.launchAngleOK(Math.atan2(p.y-o.y,p.x-o.x));return true;}
  const sliderT=a=>(a-(-Math.PI+.14))/(Math.PI-.28);
- function fire(){if(!play||play.phase!=='aim'||sliding())return;const st=play.st;play.snap=S.snapshot(st);vibrate(12);
+ function fire(){if(!play||play.phase!=='aim')return;play.drop=null;const st=play.st;play.snap=S.snapshot(st);vibrate(12);
   const count=play.plusArmed?st.balls*2:st.balls;if(play.plusArmed){play.plusArmed=false;play.plus--;}
   S.startVolley(st,play.angle,{count});play.phase='flight';play.aiming=play.slider=false;sfx('launch');}
  function useBolt(){if(!play||play.phase!=='aim'||play.bolt<=0||!play.st.grid.size)return;play.bolt--;const ev=S.lightning(play.st,[]);consume(ev);sfx('bolt');
@@ -259,7 +262,7 @@ async function bricksQuest(s){
   // field contents, clipped to the frame
   x.save();x.beginPath();x.rect(FX,FT,FW,FH);x.clip();
   // aim guide
-  if(play.phase==='aim'&&(play.aiming||play.slider||s.debug.showAim)){const path=S.aimPath(st,play.angle);drawGuide(path);}
+  if(play.phase==='aim'&&!sliding()&&(play.aiming||play.slider||s.debug.showAim)){const path=S.aimPath(st,play.angle);drawGuide(path);}
   // pickup rings
   const sy=slideY();
   for(const p of st.picks.values())drawRing(FX+(p.c+.5)*CELL,FT+(p.r+.5)*CELL+sy);
