@@ -353,7 +353,7 @@ body .bleed-shell>#game-scorebar .game-scoreplayer{display:flex;align-items:cent
 body .bleed-shell>#game-scorebar .game-scoreplayer:last-child{padding:2px 2px 2px 9px}
 body .bleed-shell>#game-scorebar .game-scoreplayer .portrait{display:inline-block!important;width:28px;height:28px;flex:0 0 28px}
 body .bleed-shell>#game-scorebar .game-scoreplayer>span{font-size:11px;font-weight:700;opacity:.85;max-width:70px}
-body .bleed-shell>#game-scorebar .game-scoreplayer>b{color:#fff!important;font-family:inherit;font-size:17px;font-weight:900;font-variant-numeric:tabular-nums}
+body .bleed-shell>#game-scorebar .game-scoreplayer>b{animation:none;color:#fff!important;font-family:inherit;font-size:17px;font-weight:900;font-variant-numeric:tabular-nums}
 body .bleed-shell>#game-scorebar .game-scoreplayer.active{background:#000c;box-shadow:0 0 0 2px var(--t-acc2,#ffcf4a),0 2px 8px #0007}
 body .bleed-shell.bleed-own-hud>#game-scorebar{display:none}
 body .bleed-shell.bleed-pad>.game-body{padding-top:calc(max(6px,env(safe-area-inset-top)) + 40px);background:linear-gradient(180deg,var(--t-bg1,#1a1424),var(--t-bg0,#0c0a12))}
