@@ -291,7 +291,8 @@
   "src/engines/atariCombat.js",
   "src/engines/scorchedEarth.js",
   "src/engines/dragRace.js",
-  "src/engines/sumoSuit.js"
+  "src/engines/sumoSuit.js",
+  "src/engines/blueLeavesDuel.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
