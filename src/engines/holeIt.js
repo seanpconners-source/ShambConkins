@@ -76,11 +76,15 @@ async function holeIt(s){
  // ---- camera ----
  const cam={x:def.start.x,z:def.start.z,dist:0};
  function cameraFor(h,W,H){const fov=.72,aspect=W/H,span=4.5*Math.pow(h.r/.5,.72),axis=aspect<1?2*Math.atan(Math.tan(fov/2)*aspect):fov*.8;return {fov,dist:(span/2)/Math.tan(axis/2)*1.05};}
- function renderPlay(sim,t){const h=sim.hole,W=s.W,H=s.H,cf=cameraFor(h,W,H);if(!cam.dist)cam.dist=cf.dist;cam.dist+=(cf.dist-cam.dist)*.06;cam.x+=(h.x-cam.x)*.18;cam.z+=(h.z-cam.z)*.18;
+ function renderPlay(sim,t,dt=1/60){const h=sim.hole,W=s.W,H=s.H,cf=cameraFor(h,W,H);if(!cam.dist)cam.dist=cf.dist;
+  // frame-rate independent smoothing (same feel at 30, 60 or 120 fps)
+  const kf=1-Math.exp(-dt*11),kz=1-Math.exp(-dt*3.2);cam.dist+=(cf.dist-cam.dist)*kz;cam.x+=(h.x-cam.x)*kf;cam.z+=(h.z-cam.z)*kf;
+  // size arc: ease the shown value toward size+progress so it fills smoothly and rolls over on a size-up
+  const want=(h.size-1)+sizeProgress(sim),gap=want-turn.arcV;turn.arcV+=Math.sign(gap)*Math.min(Math.abs(gap),Math.abs(gap)*(1-Math.exp(-dt*5))+dt*.35);
   const pitch=1.0,tz=cam.z-cam.dist*.1,eye=[cam.x,cam.dist*Math.sin(pitch),tz+cam.dist*Math.cos(pitch)];R.setCamera(W,H,dpr(),eye,[cam.x,0,tz],cf.fov);
   for(const k in inst)inst[k].count=0;let ns=0;const vis=cam.dist*1.25+3;const heads=[];
   for(const it of sim.items){if(it.state===2)continue;if(Math.abs(it.x-cam.x)>vis||Math.abs(it.z-tz)>vis*1.3)continue;
-   if(it.moved||!it.m){it.m=it.m||new Float32Array(12);let q=it.q;if(it.wob>0&&it.state===0){const dx=h.x-it.x,dz=h.z-it.z,l=Math.hypot(dx,dz)||1;q=qmul(qaxis(dz/l,0,-dx/l,-it.wob*.22*Math.sin(t*9+it.i)),q);}
+   if(it.moved||!it.m){it.m=it.m||new Float32Array(12);let q=it.q;if(it.wob>0&&it.state===0){const dx=h.x-it.x,dz=h.z-it.z,l=Math.hypot(dx,dz)||1;q=qmul(qaxis(dz/l,0,-dx/l,it.wob*(.15+.04*Math.sin(t*5+it.i))),q);}
     affine(it.m,0,[it.x,it.cy,it.z],q,1,it.h/2);it.moved=it.wob>0;}
    const b=inst[it.k];b.data.set(it.m,b.count*16);b.data[b.count*16+12]=1;b.data[b.count*16+13]=1;b.data[b.count*16+14]=1;b.data[b.count*16+15]=1;b.count++;
    if(it.k==='head')heads.push(it);
@@ -88,7 +92,7 @@ async function holeIt(s){
   const rings=turn.rings.map(g=>({x:h.x,z:h.z,r:h.r*(1.3+g.t*2.4),a:Math.max(0,1-g.t/.75)*.95,color:[1,.8,.22],thick:.05}));
   if(sim.active.magnet>0)rings.push({x:h.x,z:h.z,r:h.r*(1.6+(t*2%1)*2.2),a:.35*(1-(t*2%1)),color:[.45,1,.55],thick:.04});
   R.render({clear:[.2,.55,.18,1],hole:{x:h.x,z:h.z,r:h.r},tray:[-def.W/2,-def.D/2,def.W/2,def.D/2],floorColor:hexRGB(def.floor),groups:Object.entries(inst).map(([kind,b])=>({kind,data:b.data,count:b.count})),
-   shadows:{data:shadowData,count:ns},rings,arc:{x:h.x,z:h.z,r:h.r*1.4,progress:sizeProgress(sim),start:.6,color:[1,.78,.16]},heads:heads.map(it=>({m:headMatrix(it),rect:it.i%2?[.5,0,.5,1]:[0,0,.5,1]}))});}
+   shadows:{data:shadowData,count:ns},rings,arc:{x:h.x,z:h.z,r:h.r*1.4,progress:turn.arcV-Math.floor(turn.arcV),start:.6,color:[1,.78,.16]},heads:heads.map(it=>({m:headMatrix(it),rect:it.i%2?[.5,0,.5,1]:[0,0,.5,1]}))});}
  function headMatrix(it){const m=it.m,f=HEAD_FACE,ct=Math.cos(f.tilt),st=Math.sin(f.tilt),sz=f.size;
   // local face transform: translate(c) * rotX(tilt) * scale(sz), shifted by the item's pivot (h/2)
   const loc=[sz,0,0,0, 0,ct*sz,st*sz,0, 0,-st*sz,ct*sz,0, f.c[0],f.c[1],f.c[2],1];
@@ -189,14 +193,14 @@ async function holeIt(s){
    s.setScores(scoresWith(turn.player,sim));
   }else{turn.endT+=dt;stepSim(sim,dt,{x:0,z:0});sim.events.length=0;for(const f of turn.confetti){f.y+=f.vy*dt;f.x+=f.vx*dt;f.a+=f.va*dt;}}
   for(const p of turn.popups)p.t+=dt;turn.popups=turn.popups.filter(p=>p.t<.9);for(const g of turn.rings)g.t+=dt;turn.rings=turn.rings.filter(g=>g.t<.8);for(let i=0;i<turn.cardPulse.length;i++)turn.cardPulse[i]=Math.max(0,turn.cardPulse[i]-dt*4);
-  renderPlay(sim,turn.t);drawHUD(sim,turn.t);
+  renderPlay(sim,turn.t,dt);drawHUD(sim,turn.t);
   s.status(`${s.players[turn.player].name} · Level ${level} · ${goalTotal(sim)}/${goalNeed(sim)} items · Size ${sim.hole.size}`);
   frameMs+=(performance.now()-t0-frameMs)*.05;
   s.debug={sim,turn,def,level,R,contact,startPlay,endTurn,frameMs,thumb,useBoost:id=>useBoost(sim,id)};});
 
  function points(r){return r?r.goals+(r.won?1000+Math.round(r.left*10):0):0;}
  function scoresWith(p,sim){const sc=[points(results[0]),points(results[1])];sc[p]=points({goals:goalTotal(sim),won:sim.won,left:sim.time});return sc;}
- async function playTurn(p){turn={player:p,phase:'intro',t:0,sim:createSim(def),popups:[],rings:[],cardPulse:def.goals.map(()=>0),combo:0,comboT:0,confetti:[],moved:false,endT:0};contact=null;keys={};cam.dist=0;
+ async function playTurn(p){turn={player:p,phase:'intro',t:0,sim:createSim(def),popups:[],rings:[],cardPulse:def.goals.map(()=>0),arcV:0,combo:0,comboT:0,confetti:[],moved:false,endT:0};contact=null;keys={};cam.dist=0;
   await new Promise(res=>{finishResolve=res;});finishResolve=null;const sim=turn.sim;return {won:sim.won,time:sim.clearTime,left:sim.time,goals:goalTotal(sim),need:goalNeed(sim),size:sim.hole.size};}
  const introText=`Hole.it · Level ${level} (${def.themeName}). Drag to steer the hole and swallow the props on the cards before the 2:00 clock runs out. You both play this exact level: the faster clear wins; if nobody clears it, most items wins.`;
  for(const p of [0,1]){if(!await s.pass(p,p===0?introText:`${s.players[1].name}: same Level ${level}. ${results[0].won?`Beat ${results[0].time.toFixed(1)} s.`:`Collect more than ${results[0].goals} items, or clear it.`}`,'Ready'))return;

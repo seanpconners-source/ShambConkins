@@ -2,7 +2,7 @@
 // tip over the rim and tumble in, stacks collapse when their support is eaten,
 // every swallowed prop feeds the Size meter. No DOM; tests drive it directly.
 const {holeRadius,sizeNeed,propXp,kindR,kindH}=require("src/engines/holeIt/levels.js");
-const G=24,CELL=2;
+const G=20,CELL=2;
 const qmul=(a,b)=>[a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3],a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]];
 const qaxis=(x,y,z,ang)=>{const s=Math.sin(ang/2);return [x*s,y*s,z*s,Math.cos(ang/2)];};
 const qnorm=q=>{const l=Math.hypot(...q)||1;return q.map(v=>v/l);};
@@ -25,8 +25,11 @@ function useBoost(sim,id){if(sim.done||!sim.charges[id])return false;sim.charges
 function grow(sim){const h=sim.hole;h.size++;h.rT=holeRadius(h.size);sim.events.push({type:'size',size:h.size});}
 function forEachNear(sim,x,z,rad,fn){const c0=Math.floor((x-rad)/CELL),c1=Math.floor((x+rad)/CELL),r0=Math.floor((z-rad)/CELL),r1=Math.floor((z+rad)/CELL);
  for(let cx=c0;cx<=c1;cx++)for(let cz=r0;cz<=r1;cz++){const list=sim.grid.get(cx*100003+cz);if(list)for(const i of list)fn(sim.items[i]);}}
-function startFall(sim,it){const h=sim.hole;it.state=1;it.ox=it.x-h.x;it.oz=it.z-h.z;const l=Math.hypot(it.ox,it.oz)||1;it.ax=it.oz/l;it.az=-it.ox/l;if(l<.02){it.ax=1;it.az=0;}
- it.w=0;it.spin=(((it.i*7919)%13)/13-.5)*5;it.wob=0;sim.falling.push(it.i);}
+// A prop that fits tips over the rim: it keeps its offset from the hole centre (so it rides along with the hole),
+// slides inward off the rim while its top tilts toward the centre, then falls and tumbles at a steady rate.
+function startFall(sim,it,vy=0){const h=sim.hole;it.state=1;it.ox=it.x-h.x;it.oz=it.z-h.z;const l=Math.hypot(it.ox,it.oz);
+ const ux=l>.02?it.ox/l:1,uz=l>.02?it.oz/l:0;it.ax=-uz;it.az=ux; // rotation axis that tips the top toward the centre
+ it.vox=-h.vx*.35;it.voz=-h.vz*.35;it.vy=vy;it.w=0;it.tip=true;it.age=0;it.spin=(((it.i*7919)%13)/13-.5)*2.4;it.wob=0;sim.falling.push(it.i);}
 function award(sim,it){sim.eaten++;const g=sim.goals.find(g=>g.k===it.k);if(g&&g.got<g.need)g.got++;
  const h=sim.hole;h.xp+=it.xp;let grew=false;while(h.xp>=sizeNeed(h.size)){h.xp-=sizeNeed(h.size);h.size++;h.rT=holeRadius(h.size);grew=true;}
  sim.events.push({type:'eat',k:it.k,goal:!!g,x:it.x,z:it.z});if(grew)sim.events.push({type:'size',size:h.size});
@@ -37,7 +40,8 @@ function stepSim(sim,dt,input={x:0,z:0}){
  if(!sim.done){sim.elapsed+=dt;if(sim.active.freeze>0)sim.active.freeze=Math.max(0,sim.active.freeze-dt);else sim.time=Math.max(0,sim.time-dt);
   for(const k of ['speed','magnet'])sim.active[k]=Math.max(0,sim.active[k]-dt);
   if(sim.time<=0){sim.done=true;sim.won=false;sim.events.push({type:'lose'});}}
- h.r+=(h.rT-h.r)*Math.min(1,dt*5);
+ // springy growth: a quick swell with a small overshoot
+ h.rv=(h.rv||0)+((h.rT-h.r)*90-(h.rv||0)*13)*dt;h.r+=h.rv*dt;
  const mag=Math.min(1,Math.hypot(input.x,input.z)),speed=(2.4+h.r*2.2)*(sim.active.speed>0?1.6:1)*(sim.done?0:1);
  const tvx=mag?input.x/Math.max(1e-6,Math.hypot(input.x,input.z))*mag*speed:0,tvz=mag?input.z/Math.max(1e-6,Math.hypot(input.x,input.z))*mag*speed:0;
  h.vx+=(tvx-h.vx)*Math.min(1,dt*14);h.vz+=(tvz-h.vz)*Math.min(1,dt*14);
@@ -55,16 +59,22 @@ function stepSim(sim,dt,input={x:0,z:0}){
  // falling / dropping props
  if(sim.falling.length){const keep=[];for(const i of sim.falling){const it=sim.items[i];
   if(it.state===3){it.vy-=G*dt;it.cy+=it.vy*dt;it.moved=true;if(it.cy-it.h/2<=0){const d=Math.hypot(it.x-h.x,it.z-h.z);
-    if(it.r<=h.r*.96&&d<h.r-it.r*.15&&!sim.done){it.state=1;const v=it.vy;startFall(sim,it);it.vy=v;sim.falling.pop();keep.push(i);continue;}
+    if(it.r<=h.r*.96&&d<h.r-it.r*.15&&!sim.done){startFall(sim,it,it.vy);sim.falling.pop();keep.push(i);continue;}
     it.cy=it.h/2;it.vy=0;it.state=0;it.moved=true;continue;}keep.push(i);continue;}
   if(it.state!==1)continue;
-  const lim=Math.max(0,h.r-it.r*.75),l=Math.hypot(it.ox,it.oz);
-  if(l>lim){const k=Math.max(lim/l,1-dt*6);it.ox*=k;it.oz*=k;}else{it.ox*=1-dt*.8;it.oz*=1-dt*.8;}
-  it.vy-=G*dt;it.cy+=it.vy*dt;it.w=Math.min(9,it.w+dt*30);
+  it.age+=dt;const lim=Math.max(0,h.r*.97-it.r*.55),l=Math.hypot(it.ox,it.oz)||1e-6,ux=it.ox/l,uz=it.oz/l,lever=it.h*.5+it.r*.5;
+  if(it.tip){ // still resting partly on the rim: slide inward, bottom drops slowly, the tilt builds up
+   const over=Math.max(0,Math.min(1,(l-lim)/(it.r*.9+.01))),ain=3.5+9*over;
+   it.vox-=ux*ain*dt;it.voz-=uz*ain*dt;it.vy-=G*(1-over*.75)*dt;it.w=Math.min(7,it.w+G*.8/lever*(.35+over)*dt);
+   if(l<=lim||it.cy-it.h/2<-it.h*.35||it.age>.6)it.tip=false;}
+  else{ // free fall inside the throat: bounce softly off the wall, tumble at a steady rate
+   it.vy-=G*dt;if(l>lim){it.ox=ux*lim;it.oz=uz*lim;const vr=it.vox*ux+it.voz*uz;if(vr>0){it.vox-=ux*vr*1.4;it.voz-=uz*vr*1.4;it.w*=.92;}}
+   const damp=Math.max(0,1-dt*1.2);it.vox*=damp;it.voz*=damp;it.w+=(3.2-it.w)*Math.min(1,dt*1.5);}
+  it.ox+=it.vox*dt;it.oz+=it.voz*dt;it.cy+=it.vy*dt;
   it.q=qnorm(qmul(qaxis(it.ax,0,it.az,it.w*dt),it.q));if(it.spin)it.q=qnorm(qmul(qaxis(0,1,0,it.spin*dt),it.q));
   it.x=h.x+it.ox;it.z=h.z+it.oz;it.moved=true;
-  if(!it.counted&&it.cy+it.h*.25<0){it.counted=true;award(sim,it);}
-  if(it.cy<-(h.r*2.6+it.h)){it.state=2;continue;}
+  if(!it.counted&&it.cy+it.h*.4<0){it.counted=true;award(sim,it);}
+  if(it.cy<-(h.r*3.2+it.h*1.5)||it.age>3.5){it.state=2;continue;}
   keep.push(i);}sim.falling=keep;}
 }
 // Simple autopilot used by tests: head for the nearest prop that fits (goal props first).
