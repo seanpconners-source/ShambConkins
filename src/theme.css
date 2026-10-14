@@ -356,6 +356,7 @@ body .bleed-shell>#game-scorebar .game-scoreplayer>span{font-size:11px;font-weig
 body .bleed-shell>#game-scorebar .game-scoreplayer>b{color:#fff!important;font-family:inherit;font-size:17px;font-weight:900;font-variant-numeric:tabular-nums}
 body .bleed-shell>#game-scorebar .game-scoreplayer.active{background:#000c;box-shadow:0 0 0 2px var(--t-acc2,#ffcf4a),0 2px 8px #0007}
 body .bleed-shell.bleed-own-hud>#game-scorebar{display:none}
+body .bleed-shell.bleed-pad>.game-body{padding-top:calc(max(6px,env(safe-area-inset-top)) + 40px);background:linear-gradient(180deg,var(--t-bg1,#1a1424),var(--t-bg0,#0c0a12))}
 body .bleed-shell>.game-body{position:relative;padding:0;display:block;overflow:hidden;min-height:0;height:100%;background:#000;border:0}
 body .bleed-shell .canvas-frame{border:0;border-radius:0;width:100%;height:100%;min-height:0;padding:0;margin:0;background:#000;box-shadow:none}
 body .bleed-shell .game-canvas{display:block;border:0;border-radius:0;max-width:none;max-height:none;width:100%;height:100%;touch-action:none}
