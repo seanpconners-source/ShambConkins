@@ -71,4 +71,34 @@ function makeBits(){const parts=[];return {
  draw(x){for(const p of parts){x.globalAlpha=clamp(p.life/p.max*1.4,0,1);x.fillStyle=p.color;x.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);}x.globalAlpha=1;},
  clear(){parts.length=0;},get count(){return parts.length;}
 };}
-Object.assign(exports,{FONT,pixText,textWidth,spriteCanvas,drawSprite,makeStarfield,scanlines,vignette,fitField,makeBits});
+
+// ---------------------------------------------------------------- vector stroke font (Asteroids / Lunar Lander), 4x6 grid
+const VF={0:[[[0,0],[4,0],[4,6],[0,6],[0,0]]],1:[[[2,0],[2,6]]],2:[[[0,0],[4,0],[4,3],[0,3],[0,6],[4,6]]],3:[[[0,0],[4,0],[4,6],[0,6]],[[0,3],[4,3]]],4:[[[0,0],[0,3],[4,3]],[[4,0],[4,6]]],5:[[[4,0],[0,0],[0,3],[4,3],[4,6],[0,6]]],6:[[[0,0],[0,6],[4,6],[4,3],[0,3]]],7:[[[0,0],[4,0],[4,6]]],8:[[[0,0],[4,0],[4,6],[0,6],[0,0]],[[0,3],[4,3]]],9:[[[4,3],[0,3],[0,0],[4,0],[4,6]]],
+ A:[[[0,6],[0,2],[2,0],[4,2],[4,6]],[[0,4],[4,4]]],B:[[[0,0],[3,0],[4,1],[4,2],[3,3],[0,3]],[[3,3],[4,4],[4,5],[3,6],[0,6],[0,0]]],C:[[[4,0],[0,0],[0,6],[4,6]]],D:[[[0,0],[3,0],[4,2],[4,4],[3,6],[0,6],[0,0]]],E:[[[4,0],[0,0],[0,6],[4,6]],[[0,3],[3,3]]],F:[[[4,0],[0,0],[0,6]],[[0,3],[3,3]]],G:[[[4,1],[4,0],[0,0],[0,6],[4,6],[4,3],[2,3]]],H:[[[0,0],[0,6]],[[4,0],[4,6]],[[0,3],[4,3]]],I:[[[0,0],[4,0]],[[2,0],[2,6]],[[0,6],[4,6]]],J:[[[4,0],[4,6],[0,6],[0,4]]],K:[[[0,0],[0,6]],[[4,0],[0,3],[4,6]]],L:[[[0,0],[0,6],[4,6]]],M:[[[0,6],[0,0],[2,2],[4,0],[4,6]]],N:[[[0,6],[0,0],[4,6],[4,0]]],O:[[[0,0],[4,0],[4,6],[0,6],[0,0]]],P:[[[0,6],[0,0],[4,0],[4,3],[0,3]]],Q:[[[0,0],[4,0],[4,6],[0,6],[0,0]],[[2,4],[4,6]]],R:[[[0,6],[0,0],[4,0],[4,3],[0,3],[4,6]]],S:[[[4,0],[0,0],[0,3],[4,3],[4,6],[0,6]]],T:[[[0,0],[4,0]],[[2,0],[2,6]]],U:[[[0,0],[0,6],[4,6],[4,0]]],V:[[[0,0],[2,6],[4,0]]],W:[[[0,0],[0,6],[2,4],[4,6],[4,0]]],X:[[[0,0],[4,6]],[[4,0],[0,6]]],Y:[[[0,0],[2,2],[4,0]],[[2,2],[2,6]]],Z:[[[0,0],[4,0],[0,6],[4,6]]],
+ '-':[[[1,3],[3,3]]],'+':[[[0,3],[4,3]],[[2,1],[2,5]]],'.':[[[2,5.6],[2,6]]],':':[[[2,1.6],[2,2]],[[2,4.6],[2,5]]],'!':[[[2,0],[2,4]],[[2,5.6],[2,6]]],'×':[[[0,1],[4,5]],[[4,1],[0,5]]],'/':[[[4,0],[0,6]]],"'":[[[2,0],[2,1.5]]],' ':[]};
+// size = glyph height; stroke with the current strokeStyle. Returns width.
+function vectorText(x,text,px,py,size,{align='left',width=1.4}={}){
+ text=String(text).toUpperCase();const k=size/6,adv=6*k,w=text.length*adv-2*k;const left=align==='center'?px-w/2:align==='right'?px-w:px;
+ x.lineWidth=width;x.lineCap='round';x.lineJoin='round';x.beginPath();
+ [...text].forEach((ch,i)=>{for(const line of (VF[ch]||[])){line.forEach(([gx,gy],j)=>{const X=left+i*adv+gx*k,Y=py+gy*k;j?x.lineTo(X,Y):x.moveTo(X,Y);});}});
+ x.stroke();return w;
+}
+// Glow stroke helper: call fn() twice, first blurred and wide.
+function glowStroke(x,color,fn,{blur=10,width=1.6}={}){x.save();x.strokeStyle=color;x.shadowColor=color;x.shadowBlur=blur;x.lineWidth=width;fn(width);x.restore();}
+
+// ---------------------------------------------------------------- turn-based arcade runner
+// Each player plays the same seeded world in turn; config: {seconds,intro(i,scores),make(i),step(w,dt),draw(w),done(w),score(w),readyText}
+async function turnRunner(s,cfg){
+ const scores=[0,0];let w=null,running=false,res=null;
+ s.frame(dt=>{if(!w)return;if(running){w.time+=dt;cfg.step(w,dt);if(!w.ending&&(cfg.done(w)||w.time>=cfg.seconds)){w.ending=cfg.endDelay??1.6;w.endReason=w.time>=cfg.seconds&&!cfg.done(w)?'time':'over';}
+   if(w.ending){w.ending-=dt;if(w.ending<=0){running=false;res?.();}}}
+  cfg.draw(w,dt);const live=scores.slice();live[w.player]=Math.max(0,Math.round(cfg.score(w)));s.setScores(live);});
+ for(let i=0;i<2;i++){
+  w=cfg.make(i);w.player=i;w.time=0;w.ending=0;w.cap=cfg.seconds;w.scores=scores;
+  if(!await s.pass(i,cfg.intro(i,scores),cfg.readyText||'Ready — start my countdown',{countdown:3,summary:i?`${s.players[0].name} scored ${scores[0]}. ${s.players[1].name}, your turn.`:null}))return null;
+  running=true;await new Promise(r=>res=r);if(!s.alive)return null;scores[i]=Math.max(0,Math.round(cfg.score(w)));s.setScores(scores);
+ }
+ return scores;
+}
+
+Object.assign(exports,{vectorText,glowStroke,turnRunner,FONT,pixText,textWidth,spriteCanvas,drawSprite,makeStarfield,scanlines,vignette,fitField,makeBits});

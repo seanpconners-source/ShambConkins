@@ -278,7 +278,9 @@
   "src/engines/atariPong.js",
   "src/engines/retroKit.js",
   "src/engines/spaceInvaders.js",
-  "src/packs/remakePack.js"
+  "src/packs/remakePack.js",
+  "src/engines/atariBreakout.js",
+  "src/engines/atariAsteroids.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
