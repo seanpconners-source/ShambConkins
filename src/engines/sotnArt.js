@@ -26,16 +26,34 @@ const HERO_PAL=[{coat:'#1d1528',coat2:'#2c2140',trim:'#c9a24a',cape:'#0a0609',li
  {coat:'#16182c',coat2:'#232846',trim:'#b8c4d8',cape:'#07080d',lining:'#1f45a8',hair:'#eef0f6',hair2:'#a7afc3',pants:'#11121a',boot:'#251c19',boot2:'#3d302a'}];
 const BLADES={alucard:{len:30,w:1.7,col:'#d6ecff',edge:'#7fa6d6',guard:'#d8b04a',glow:GLOW.blue},short:{len:18,w:1.4,col:'#dfe3ea',edge:'#8a93a3',guard:'#a8884a'},
  claymore:{len:32,w:2.4,col:'#d2d6de',edge:'#7a8090',guard:'#8a6a3a'}};
-// q: {x,y,facing,pose,anim,vx,vy,t,atkK (0..1 swing), weapon, i, crouch}
+// q: {x,y,facing,pose,anim,vx,vy,t,atkK (0..1 swing), atkN (combo hit 0..2), flip (0..1 somersault), land, weapon, i}
 function heroPose(q){return q.pose||'stand';}
+const ease=u=>u*u*(3-2*u),seg=(k,a,b)=>clamp((k-a)/(b-a),0,1);
+// the sword hand and blade angle (hero space, facing right) through each hit of the combo; k = 0..1 of the whole hit
+function bladePose(n,k){let hx,hy,ang,lean;
+ if(n===1){// stab: draw the hand back, then drive straight through
+  const u=ease(seg(k,.12,.34)),r=seg(k,.55,1);hx=lerp(-4,16,u)-r*5;hy=lerp(-27,-29.5,u)+r*2;lean=.05+u*.2-r*.12;ang=r*.3-lean;}
+ else if(n===2){// cleave: over the shoulder, then a full arc down in front
+  const w=seg(k,0,.18),u=ease(seg(k,.18,.48)),r=seg(k,.6,1);
+  hx=lerp(lerp(2,-3,w),11,u)-r*2;hy=lerp(lerp(-30,-38,w),-21,u)+r*1.5;ang=lerp(lerp(-1.2,-2.6,w),1.05,u)+r*.15;lean=-.06*w+u*.18-r*.08;}
+ else{// quick cut: a short flick across the chest
+  const u=ease(seg(k,.1,.38)),r=seg(k,.5,1);hx=lerp(1,11,u)-r*3;hy=lerp(-33,-27,u)+r*2;ang=lerp(-1.25,.3,u)+r*.15;lean=.03+u*.06;}
+ return {hx,hy,ang,lean};}
+// world-space [hilt x, hilt y, tip x, tip y] of the swinging blade (for the sword trail)
+function bladeWorld(q){const n=q.atkN||0,k=q.atkK||0,f=q.facing||1,bp=bladePose(n,k),bl=BLADES[q.weapon]||{len:7},dy=q.pose==='crouchAtk'?8:0;
+ const c=Math.cos(bp.lean),sn=Math.sin(bp.lean),P=(lx,ly)=>[q.x+f*(lx*c-ly*sn),q.y+dy+lx*sn+ly*c];
+ const L=bl.len*(n===1?1.08:1),h=P(bp.hx+Math.cos(bp.ang)*L*.3,bp.hy+Math.sin(bp.ang)*L*.3),t=P(bp.hx+Math.cos(bp.ang)*L,bp.hy+Math.sin(bp.ang)*L);return [h[0],h[1],t[0],t[1]];}
 function drawHero(g,q,o={}){
  const sil=o.sil||null,pal=sil?null:(o.pal||HERO_PAL[q.i||0]),f=q.facing||1,pose=heroPose(q),t=q.t||0;
  const C=k=>sil||pal[k];
  g.save();g.translate(q.x,q.y);
  if(pose==='dead'){g.translate(-f*10,-3);g.rotate(-f*1.45);}
+ const flip=(pose==='jump'||pose==='fall')&&q.flip>0?q.flip:0;if(flip){g.translate(0,-21);g.rotate(f*ease(flip)*TAU);g.translate(0,21);}
+ if(pose==='kick'){g.translate(0,-14);g.rotate(f*.5);g.translate(0,14);}
  g.save();g.scale(f,1);
- const crouch=pose==='crouch'||pose==='crouchAtk',dy=crouch?8:0,run=Math.abs(q.vx||0),ph=q.anim||0;
- const lean=pose==='dash'?-.18:pose==='hurt'?-.25:pose==='attack'||pose==='crouchAtk'?.06:pose==='walk'?.05:0;
+ const atkPose=pose==='attack'||pose==='crouchAtk',bp=atkPose?bladePose(q.atkN||0,q.atkK||0):null;
+ const crouch=pose==='crouch'||pose==='crouchAtk',dy=crouch?8:pose==='land'?Math.min(6,(q.land||0)*1.1):0,run=Math.abs(q.vx||0),ph=q.anim||0;
+ const lean=pose==='dash'?-.18:pose==='hurt'?-.25:atkPose?bp.lean:pose==='walk'?.05+Math.min(.06,run*.03):pose==='land'?.08:0;
  // ---- cape (behind everything)
  const flare=pose==='cast'?26:pose==='dash'?20:9+Math.min(15,run*6),lift=clamp((q.vy||0)*2.6,-8,16)+(pose==='cast'?10:0),wav=Math.sin(t*9)*1.6;
  const hbx=-flare-4,hby=-1-lift+dy,cape=[-5,-31+dy, -10-flare*.4,-21+dy-lift*.35, hbx,hby, hbx*.78,hby+2+wav, hbx*.55,hby-1.5-wav*.6+lift*.15, hbx*.3,hby+1.5+wav*.5+lift*.2, -1,-1+dy+wav*.4, 3,-3+dy, 4.5,-31+dy];
@@ -48,10 +66,14 @@ function drawHero(g,q,o={}){
  // ---- legs
  const hip=[-1.5,-15],hip2=[1.5,-15];let fa,fb,ka,kb;
  if(crouch){fa=[-5,-dy];fb=[5,-dy];ka=[3,-9];kb=[8,-8];}
+ else if(flip){fa=[-2,-10];fb=[3,-9];ka=[3,-15];kb=[8,-13];}
  else if(pose==='jump'){fa=[-4,-5];fb=[3,-3];ka=[-1,-10];kb=[6,-9];}
  else if(pose==='fall'){fa=[-3,0];fb=[4,-1];ka=[-2,-7];kb=[5,-8];}
  else if(pose==='dash'){fa=[-7,0];fb=[5,0];ka=[-4,-7];kb=[4,-8];}
- else if(pose==='attack'){fa=[-6,0];fb=[7,0];ka=[-3,-8];kb=[6,-8];}
+ else if(pose==='attack'){const n=q.atkN||0,u=n===1?ease(seg(q.atkK||0,.1,.34)):n===2?ease(seg(q.atkK||0,.15,.45)):.5;
+  if(n===1){fa=[-6-u*4,0];fb=[7+u*5,0];ka=[-3-u*3,-8];kb=[7+u*4,-9+u*1.5];}else if(n===2){fa=[-7,0];fb=[6+u*3,0];ka=[-4,-8];kb=[6+u*2,-8+u];}else{fa=[-5,0];fb=[6,0];ka=[-2.5,-8];kb=[5.5,-8];}}
+ else if(pose==='kick'){fa=[-5,-8];fb=[11,4];ka=[-1,-11];kb=[5,-5];}
+ else if(pose==='land'){fa=[-5,0];fb=[5,0];ka=[2,-8];kb=[7,-7];}
  else if(pose==='walk'){const a=Math.sin(ph),b=Math.sin(ph+Math.PI);fa=[a*7,-Math.max(0,Math.cos(ph))*3];fb=[b*7,-Math.max(0,Math.cos(ph+Math.PI))*3];ka=[a*4+2,-8];kb=[b*4+2,-8];}
  else if(pose==='hurt'){fa=[-5,-2];fb=[4,0];ka=[-2,-8];kb=[5,-7];}
  else{fa=[-3,0];fb=[3,0];ka=[-2,-8];kb=[2.5,-8];}
@@ -59,7 +81,7 @@ function drawHero(g,q,o={}){
  const leg=(h,k,ft,back)=>{limb(g,h[0],h[1],k[0],k[1],ft[0],ft[1]-2,3.4,back&&!sil?'#0d0a10':C('pants'));line(g,k[0]+(ft[0]-k[0])*.35,k[1]+(ft[1]-k[1])*.35,ft[0],ft[1]-1.5,3.8,C(back?'boot':'boot2'));if(!sil){g.fillStyle=pal.boot;g.fillRect(ft[0]-1.5,ft[1]-2.2,5,2.2);}};
  leg(hip,ka,fa,true);
  // back arm
- const atk=pose==='attack'||pose==='crouchAtk',k=q.atkK||0;
+ const atk=atkPose;
  if(!atk&&pose!=='cast')limb(g,-2,-28,-4,-22,-3+(pose==='walk'?-Math.sin(ph)*3:0),-17,2.6,sil||'#120d18');
  leg(hip2,kb,fb,false);
  // ---- coat
@@ -72,10 +94,11 @@ function drawHero(g,q,o={}){
  const w=q.weapon||'short',bl=BLADES[w];
  if(pose==='cast'){limb(g,2,-28,9,-30,15,-34,2.6,C('coat'));if(!sil)circ(g,15,-34,1.6,'#e6d6c8');}
  else if(atk){
-  // windup (behind the head) -> slash (straight out) -> follow-through (low)
-  let ang,hx,hy;if(k<.25){const u=k/.25;ang=lerp(-2.2,-1.6,u);hx=lerp(-3,-1,u);hy=lerp(-33,-34,u);}else if(k<.6){const u=(k-.25)/.35;ang=lerp(-1.4,.25,u*u*(3-2*u));hx=lerp(2,10,u);hy=lerp(-33,-25,u);}else{const u=(k-.6)/.4;ang=lerp(.25,.5,u);hx=lerp(10,8,u);hy=lerp(-25,-23,u);}
+  // the combo: quick cut, lunging stab, overhead cleave (bladePose); the off hand swings back for balance
+  const {hx,hy,ang}=bp;
+  limb(g,-1,-28,-5,-24+(q.atkN===1?-2:0),-8-(q.atkN===1?3:0),-22+(q.atkN===2?-4:0),2.4,sil||'#120d18');
   limb(g,2,-28,(2+hx)/2+1,(-28+hy)/2+1,hx,hy,2.6,C('coat'));
-  if(bl)drawBlade(g,hx,hy,ang,bl,sil);else if(!sil)circ(g,hx+1,hy,2,'#e6d6c8');}
+  if(bl)drawBlade(g,hx,hy,ang,q.atkN===1?{...bl,len:bl.len*1.08}:bl,sil);else if(!sil){circ(g,hx+1,hy,2.2,'#e6d6c8');}}
  else{const sw=pose==='walk'?Math.sin(ph)*3:0;limb(g,2,-28,3+sw*.3,-22,4+sw,-17,2.6,C('coat'));
   if(bl&&pose!=='hurt'&&pose!=='dead'){g.save();g.globalAlpha*=.95;drawBlade(g,-2,-16,2.55,{...bl,len:bl.len*.55},sil,true);g.restore();}}
  // ---- long silver hair down the back (the portrait covers the head itself)
@@ -97,8 +120,8 @@ function drawBlade(g,hx,hy,ang,bl,sil,sheathed){g.save();g.translate(hx,hy);g.ro
  if(!sil){line(g,1,0,L-3,0,.6,bl.edge);g.fillStyle=bl.guard;g.fillRect(-.6,-3.4,1.8,6.8);}
  g.restore();}
 
-// SOTN's after-images: a fading violet copy of the hero
-function drawAfterimage(g,q,a){g.save();g.globalAlpha*=a;const prev=g.globalCompositeOperation;g.globalCompositeOperation='lighter';drawHero(g,q,{sil:'rgba(120,70,220,.55)'});g.globalCompositeOperation=prev;g.restore();}
+// SOTN's after-images: a fading copy of the hero (blue for the trail, violet for the other player's ghost)
+function drawAfterimage(g,q,a,col='rgba(60,130,255,.6)'){g.save();g.globalAlpha*=a;const prev=g.globalCompositeOperation;g.globalCompositeOperation='lighter';drawHero(g,q,{sil:col});g.globalCompositeOperation=prev;g.restore();}
 
 // ------------------------------------------------------------------ monsters (feet at 0,0, facing right before mirroring)
 function drawFoe(g,e,t){const f=e.facing||1;g.save();g.translate(e.x,e.y);
@@ -355,4 +378,4 @@ function candelabra(g,x,y,lit,t,kind){
 function throne(g,x,y){poly(g,[x-18,y,x-18,y-40,x-14,y-62,x-6,y-52,x,y-70,x+6,y-52,x+14,y-62,x+18,y-40,x+18,y],'#1a0a10');poly(g,[x-12,y-6,x-12,y-36,x,y-46,x+12,y-36,x+12,y-6],'#6a0a1a');
  g.fillStyle='#8a6a2a';g.fillRect(x-20,y-24,40,3);g.fillRect(x-20,y-4,40,4);circ(g,x,y-58,2.4,'#c9a24a');}
 
-Object.assign(exports,{glow,GLOW,drawHero,drawAfterimage,drawFoe,drawCorpse,drawDeath,drawDracula,drawDemon,drawPickup,drawShot,drawHolyFlame,Scenery,archWindow,lightShaft,pillar,banner,statue,candelabra,throne,heartPath,poly,circ,ell,line,HERO_PAL,BLADES});
+Object.assign(exports,{glow,GLOW,drawHero,drawAfterimage,bladePose,bladeWorld,drawFoe,drawCorpse,drawDeath,drawDracula,drawDemon,drawPickup,drawShot,drawHolyFlame,Scenery,archWindow,lightShaft,pillar,banner,statue,candelabra,throne,heartPath,poly,circ,ell,line,HERO_PAL,BLADES});

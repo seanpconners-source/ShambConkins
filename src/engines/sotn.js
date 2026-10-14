@@ -5,9 +5,11 @@
 // a pot-roast wall, the Leap Stone relic (double jump), the Underground Caverns (Mermen over the water, a Claymore),
 // the Marble Gallery, and the Castle Keep: Dracula ("What is a man?") teleporting with Hellfire and Dark Inferno,
 // then his demon form (leaps with shockwaves, fire breath, bats; its head takes full damage). Grab the blood orb:
-// fastest time wins, otherwise furthest progress. Hero moves: walk, variable jump, double jump (Leap Stone), backdash,
-// crouch, sword slash (air and crouching), up + attack or swipe up for the sub-weapon (hearts), hold attack and
-// release for Hellfire (MP). Monsters split in half and burn; blood stains the floor. Art: sotnArt.js; sound: sotnAudio.js.
+// fastest time wins, otherwise furthest progress. Hero moves: walk (quick acceleration, short skid), variable jump with
+// coyote time and a jump buffer, Leap Stone double jump (a somersault), dive kick (down + jump in mid-air, bounces off
+// what it hits), chainable backdash that a swing cancels, crouch, a three-hit combo (quick cut, lunging stab, overhead
+// cleave; presses are buffered), up + attack or swipe up for the sub-weapon (hearts), hold attack and release for
+// Hellfire (MP). Blue after-images trail the hero and the blade. The simulation is a fixed 60 Hz; drawing interpolates. Monsters split in half and burn; blood stains the floor. Art: sotnArt.js; sound: sotnAudio.js.
 const {clamp,seededRandom}=require("src/utils.js");
 const {arenaTouch,outlined,PCOL,Countdown,settle}=require("src/engines/arenaKit.js");
 const {fullBleed}=require("src/engines/fullBleed.js");
@@ -15,9 +17,19 @@ const A=require("src/engines/sotnArt.js");
 const SA=require("src/engines/sotnAudio.js"),{sfx,ambience,music,tick,stopAll}=SA;
 
 const STEP=1/60,VH=240,NONE=1e4,RACE_CAP=240,LEN=3400;
-const WALK=1.7,JUMPV=5.6,DJUMPV=5.1,GRAV=.28,MAXFALL=6.2,HP_MAX=100,MP_MAX=50,STEP_UP=9,PH=42;
-const WEAPONS={alucard:{name:'Alucard Sword',dmg:42,reach:46,act:[3,9],len:16},fist:{name:'Fists',dmg:5,reach:14,act:[2,6],len:12},
- short:{name:'Short Sword',dmg:10,reach:28,act:[3,8],len:15},claymore:{name:'Claymore',dmg:20,reach:40,act:[5,12],len:22}};
+const WALK=1.9,JUMPV=5.7,DJUMPV=5.3,GRAV=.28,MAXFALL=6.6,HP_MAX=100,MP_MAX=50,STEP_UP=9,PH=42;
+// ground/air handling: quick acceleration and a short skid (SOTN's Alucard reaches full speed in a few frames), coyote
+// time and a jump buffer so jumps never get eaten, a lighter apex and a heavier fall for the floaty-but-snappy arc
+const ACC=.42,FRIC=.36,TURN=.7,AIR_ACC=.3,AIR_FRIC=.12,COYOTE=6,JBUF=7,APEX=.62,FALL_G=1.18,CUT_G=2.3;
+// spd scales every frame count of the combo: the Alucard Sword is quick, the Claymore heavy
+const WEAPONS={alucard:{name:'Alucard Sword',dmg:42,reach:46,spd:1},fist:{name:'Fists',dmg:5,reach:16,spd:.8},
+ short:{name:'Short Sword',dmg:10,reach:28,spd:.9},claymore:{name:'Claymore',dmg:20,reach:40,spd:1.3}};
+// the three-hit combo: a quick cut, a lunging stab, a big overhead slash. act = live frames, cancel = when the next
+// hit (or a jump / backdash / walk) may interrupt, len = full recovery. dmg/reach are multipliers of the weapon's.
+const COMBO=[{n:'Slash',act:[2,5],cancel:7,len:13,dmg:.75,reach:.8,lunge:1.4,box:[-11,6],stop:2},
+ {n:'Stab',act:[3,7],cancel:9,len:16,dmg:1,reach:1.32,lunge:3.1,box:[-5,5],stop:3},
+ {n:'Cleave',act:[4,10],cancel:16,len:23,dmg:1.6,reach:1.08,lunge:1.6,box:[-30,13],stop:6,back:8}];
+const COMBO_GAP=16; // frames after a hit ends in which another press continues the combo
 const SUBS={dagger:{cost:1,name:'Dagger'},axe:{cost:3,name:'Axe'},holy:{cost:2,name:'Holy Water'},cross:{cost:3,name:'Cross'}};
 const FOE={zombie:{hp:12,dmg:8,hw:7,h:37},bloody:{hp:40,dmg:12,hw:8,h:44},warg:{hp:60,dmg:14,hw:20,h:28},skeleton:{hp:18,dmg:8,hw:6,h:34},
  bat:{hp:6,dmg:6,hw:9,h:10},merman:{hp:20,dmg:10,hw:6,h:32},armor:{hp:60,dmg:14,hw:8,h:46}};
@@ -93,7 +105,8 @@ function makeWorld(L,seed){return {blocks:L.blocks.map(b=>({...b})),candles:L.ca
  shots:[],eshots:[],flames:[],corpses:[],parts:[],decals:[],nums:[],ai:[],zoneT:L.zones.map(()=>70),gateShut:false,deathDone:false,scene:null,locked:false,boss:null,introDone:false,orb:false,
  rng:seededRandom(seed),shake:0,flash:0,flashCol:'255,255,255',msg:null,banner:null,area:'',bolt:null,lightT:240,thunderT:0};}
 function makePlayer(i,L){return {i,x:L.start,y:L.gy[L.start],vx:0,vy:0,grounded:true,facing:1,crouch:false,usedDouble:false,dropT:0,dash:0,dashCD:0,atk:null,charge:0,cast:0,hurt:0,inv:0,
- hp:HP_MAX,maxHp:HP_MAX,lv:1,exp:0,mp:MP_MAX,hearts:10,weapon:'alucard',sub:null,leap:false,dead:0,pit:false,best:L.start,finished:false,finishT:0,anim:0,t:0,throwT:0,deaths:0,score:0,aiT:0};}
+ hp:HP_MAX,maxHp:HP_MAX,lv:1,exp:0,mp:MP_MAX,hearts:10,weapon:'alucard',sub:null,leap:false,dead:0,pit:false,best:L.start,finished:false,finishT:0,anim:0,t:0,throwT:0,deaths:0,score:0,aiT:0,
+ coy:0,jbuf:0,comboN:-1,comboT:99,flip:0,kick:0,land:0,sw:[]};}
 
 // ------------------------------------------------------------------ the game
 async function sotn(s){
@@ -119,7 +132,7 @@ async function sotn(s){
   keys[k]=down?1:0;if(down&&k==='jump')inp.press=1;};
  const clearKeys=()=>{for(const k in keys)keys[k]=0;};
  s.on(document,'keydown',onKey(true));s.on(document,'keyup',onKey(false));s.on(window,'blur',clearKeys);s.resetOnPause?.(clearKeys);
- s.hint('SYMPHONY OF THE NIGHT: run Dracula\'s castle, slay Dracula (both forms) and grab his blood orb. Fastest wins. Touch: drag on the left to walk, down to crouch; tap the middle-right to SLASH (hold and let go for Hellfire, swipe up for your sub-weapon, swipe sideways to BACKDASH), far right to JUMP (again in mid-air once you find the Leap Stone). Keys: arrows/WASD, Space/X jump, Z/J attack, C/Shift backdash, V or up + attack sub-weapon.');
+ s.hint('SYMPHONY OF THE NIGHT: run Dracula\'s castle, slay Dracula (both forms) and grab his blood orb. Fastest wins. Touch: drag on the left to walk, down to crouch; tap the middle-right to attack: keep tapping for the three-hit combo (cut, stab, cleave); hold and let go for Hellfire, swipe up for your sub-weapon, swipe sideways to BACKDASH), far right to JUMP (again in mid-air once you find the Leap Stone; hold down and jump in mid-air to dive kick). Keys: arrows/WASD, Space/X jump, Z/J attack, C/Shift backdash, V or up + attack sub-weapon.');
  const pads={stick:null,jump:null,atk:null};
  arenaTouch(s,{owner:()=>turn,maxFingers:3,
   onDown:f=>{const inp=inputs[turn];if(f.x>s.W*.56){if(f.x>s.W*.79){f.data.role='jump';pads.jump=f;inp.press=1;}else{f.data.role='atk';pads.atk=f;inp.atk=1;}}else{f.data.role='stick';pads.stick=f;}},
@@ -165,62 +178,98 @@ async function sotn(s){
  function embers(w,x,y,n,col='fire'){for(let k=0;k<n&&w.parts.length<520;k++)w.parts.push({kind:col==='bone'?'bone':'ember',x:x+(Math.random()-.5)*12,y:y+(Math.random()-.5)*10,vx:(Math.random()-.5)*(col==='bone'?3:.8),vy:col==='bone'?-1-Math.random()*2.5:-.4-Math.random()*1.1,life:30+Math.random()*30,max:60,size:.6+Math.random()*1.2,rot:Math.random()*6});}
  function dust(w,x,y,n){for(let k=0;k<n&&w.parts.length<520;k++)w.parts.push({kind:'dust',x:x+(Math.random()-.5)*10,y,vx:(Math.random()-.5)*1.4,vy:-.2-Math.random()*.6,life:24+Math.random()*16,max:40,size:1.5+Math.random()*2});}
  function splash(w,x,y){sfx.splash();for(let k=0;k<18&&w.parts.length<520;k++)w.parts.push({kind:'water',x:x+(Math.random()-.5)*8,y,vx:(Math.random()-.5)*2.4,vy:-1.5-Math.random()*3,life:40,max:40,size:.7+Math.random()*1.2});}
+ function sparks(w,x,y,n,dir){for(let k=0;k<n&&w.parts.length<520;k++){const a=(dir<0?Math.PI:0)+(Math.random()-.5)*(dir?2:6.3),v=1.6+Math.random()*2.8;
+  w.parts.push({kind:'spark',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:10+Math.random()*8,max:18,size:2+Math.random()*3});}
+  w.parts.push({kind:'flash',x,y,life:7,max:7,size:9});}
  const num=(w,x,y,v,col='#ffffff')=>w.nums.push({x:x+(Math.random()-.5)*6,y,v:String(v),t:0,col});
  const msg=(w,text,sub='',kind='item')=>{w.msg={text,sub,t:0,kind};};
  const shake=(w,a)=>{w.shake=Math.max(w.shake,a);};
 
  // ---------------- the player
- const heroPose=p=>p.dead?'dead':p.hurt>0?'hurt':p.cast>0?'cast':p.atk?(p.atk.crouch?'crouchAtk':'attack'):p.dash>0?'dash':!p.grounded?(p.vy<0?'jump':'fall'):p.crouch?'crouch':Math.abs(p.vx)>.1?'walk':'stand';
- const snap=p=>({i:p.i,x:p.x,y:p.y,facing:p.facing,pose:heroPose(p),anim:p.anim,vx:p.vx,vy:p.vy,t:p.t,atkK:p.atk?p.atk.t/WEAPONS[p.atk.w].len:0,weapon:p.atk?p.atk.w:p.weapon,dead:p.dead,best:p.best,finished:p.finished});
- function afterimage(p,w){w.ai.push({q:snap(p),life:20});if(w.ai.length>10)w.ai.shift();}
- function kill(p,w,pit){if(p.dead||p.finished)return;p.dead=1;p.pit=pit;p.deaths++;p.atk=null;p.hurt=0;p.vx=0;p.vy=0;p.dash=0;p.cast=0;
+ const heroPose=p=>p.dead?'dead':p.hurt>0?'hurt':p.cast>0?'cast':p.atk?(p.atk.crouch?'crouchAtk':'attack'):p.kick?'kick':p.dash>0?'dash':!p.grounded?(p.vy<0?'jump':'fall'):p.crouch?'crouch':p.land>0?'land':Math.abs(p.vx)>.15?'walk':'stand';
+ const snap=p=>({i:p.i,x:p.x,y:p.y,facing:p.facing,pose:heroPose(p),anim:p.anim,vx:p.vx,vy:p.vy,t:p.t,atkK:p.atk?p.atk.t/p.atk.len:0,atkN:p.atk?p.atk.n:0,flip:p.flip,land:p.land,weapon:p.atk?p.atk.w:p.weapon,dead:p.dead,best:p.best,finished:p.finished});
+ function afterimage(p,w,life=18,k=.6){w.ai.push({q:snap(p),life,max:life,k});if(w.ai.length>14)w.ai.shift();}
+ function kill(p,w,pit){if(p.dead||p.finished)return;p.dead=1;p.pit=pit;p.deaths++;p.atk=null;p.kick=0;p.hurt=0;p.vx=0;p.vy=0;p.dash=0;p.cast=0;
   if(!pit){blood(w,p.x,p.y-24,40,0,1.4);sfx.die();}s.react(p.i,'sad');w.flash=.5;w.flashCol='160,0,0';}
  function respawn(p){const w=worlds[p.i];let check=L.checks[0];for(const k of L.checks)if(k<=p.best+4)check=Math.max(check,k);
   if(w.locked&&!w.orb){w.locked=false;w.blocks=w.blocks.filter(b=>b.kind!=='bars');check=AR.x0-30;const B=w.boss;if(B){if(B.phase===1&&B.state!=='dying'){B.state='hidden';B.t=0;B.vis=0;B.open=0;}else if(B.phase===2&&B.state!=='die'){B.state='idle';B.t=0;B.x=AR.x1-90;B.y=AR.floor;B.vy=0;B.air=false;B.crouch=0;B.low=0;B.mouth=0;}}}
-  Object.assign(p,{x:check,y:support(w,check,5,-50,true),vx:0,vy:0,grounded:true,dead:0,pit:false,atk:null,hurt:0,crouch:false,dash:0,hp:p.maxHp,inv:100,cast:0,charge:0});
+  Object.assign(p,{x:check,y:support(w,check,5,-50,true),vx:0,vy:0,grounded:true,dead:0,pit:false,atk:null,kick:0,flip:0,comboN:-1,hurt:0,crouch:false,dash:0,hp:p.maxHp,inv:100,cast:0,charge:0});
   w.foes=w.foes.filter(e=>e.boss).concat(L.foes.filter(e=>e.x>check+140).map(spawnFoe));w.eshots=[];w.shots=[];w.flames=[];w.corpses=[];w.zoneT=L.zones.map(()=>90);
   cams[p.i].x=clamp(check-cams[p.i].w*.4,0,LEN-cams[p.i].w);}
  function hurt(p,w,dmg,fromX){if(p.inv>0||p.dead||p.finished||w.scene)return;p.hp=Math.max(0,p.hp-dmg);num(w,p.x,p.y-PH-4,dmg,'#ff6a6a');blood(w,p.x,p.y-26,10+dmg,p.x<fromX?-1:1,.9);
   sfx.hit(false);sfx.grunt();s.react(p.i,'sad');shake(w,4);stop=Math.max(stop,4);
   if(p.hp<=0){kill(p,w,false);return;}
-  const d=p.x<fromX?-1:1;Object.assign(p,{atk:null,dash:0,cast:0,crouch:false,hurt:20,inv:80,grounded:false,vx:d*1.9,vy:-3.2,facing:-d});}
- function startAttack(p){p.atk={t:0,w:p.weapon,crouch:p.grounded&&p.crouch,air:!p.grounded,hits:new Set()};sfx.swing(p.weapon);}
- const atkBox=p=>{const W=WEAPONS[p.atk.w],hy=p.y-(p.atk.crouch?18:30),x0=p.x+p.facing*3,x1=x0+p.facing*W.reach;return {x0:Math.min(x0,x1),x1:Math.max(x0,x1),y0:hy-17,y1:hy+11};};
- function stepAttack(p,w){const a=p.atk,W=WEAPONS[a.w];a.t++;if(a.t>=W.act[0]&&a.t<=W.act[1])hitBox(p,w,atkBox(p),W.dmg,a.hits,{sword:a.w!=='fist',dir:p.facing});if(a.t>=W.len)p.atk=null;}
+  const d=p.x<fromX?-1:1;Object.assign(p,{atk:null,kick:0,flip:0,comboN:-1,dash:0,cast:0,crouch:false,hurt:20,inv:80,grounded:false,vx:d*1.9,vy:-3.2,facing:-d});}
+ // the combo: each press starts the next hit if it comes during the previous one (buffered) or soon after it
+ function startAttack(p,w,dir){const n=p.comboN>=0&&p.comboN<2&&p.comboT<=COMBO_GAP?p.comboN+1:0,C=COMBO[n],W=WEAPONS[p.weapon],sp=W.spd,f=k=>Math.max(1,Math.round(k*sp));
+  const slide=p.dash>0;if(dir)p.facing=dir;p.dash=0;p.kick=0;
+  p.atk={t:0,n,w:p.weapon,crouch:p.grounded&&p.crouch,air:!p.grounded,hits:new Set(),act:[f(C.act[0]),f(C.act[1])],cancel:f(C.cancel),len:f(C.len),queued:false};
+  p.comboN=n;p.comboT=0;p.sw=[];
+  if(slide)p.vx*=.9;else if(p.grounded&&!p.atk.crouch)p.vx=p.facing*C.lunge*(p.weapon==='claymore'?.75:1);else if(!p.grounded&&n===1)p.vx+=p.facing*1.2;
+  sfx.swing(p.weapon);if(n===2)setTimeout(()=>s.alive&&sfx.swing(p.weapon),40);
+  if(n===1&&p.grounded&&!p.atk.crouch)dust(w,p.x-p.facing*4,p.y,3);}
+ const atkBox=p=>{const a=p.atk,C=COMBO[a.n],W=WEAPONS[a.w],hy=p.y-(a.crouch?18:30),f=p.facing,x0=p.x-f*(C.back||0)+f*3,x1=p.x+f*(3+W.reach*C.reach);
+  return {x0:Math.min(x0,x1),x1:Math.max(x0,x1),y0:hy+C.box[0]*(a.crouch?.6:1),y1:hy+C.box[1]};};
+ function stepAttack(p,w){const a=p.atk,C=COMBO[a.n],W=WEAPONS[a.w];a.t++;
+  if(a.t>=a.act[0]&&a.t<=a.act[1])hitBox(p,w,atkBox(p),Math.max(1,Math.round(W.dmg*C.dmg)),a.hits,{sword:a.w!=='fist',dir:p.facing,fin:a.n===2,stop:C.stop});
+  const bl=A.bladeWorld({...snap(p),pose:a.crouch?'crouchAtk':'attack'});if(bl&&a.t<=a.act[1]+3){p.sw.push(bl);if(p.sw.length>7)p.sw.shift();}
+  if(a.t>=a.len){p.atk=null;p.comboT=0;}}
  function throwSub(p,w){const k=p.sub;if(!k)return;const S=SUBS[k];if(p.hearts<S.cost||w.shots.filter(sh=>sh.own).length>=2){sfx.deny();return;}
   p.hearts-=S.cost;p.throwT=12;const f=p.facing,sh={kind:k,own:true,x:p.x+f*6,y:p.y-(p.crouch?16:30),vx:0,vy:0,g:0,t:0,f,hits:new Set()};
   if(k==='dagger'){sh.vx=f*5;sfx.dagger();}else if(k==='axe'){sh.vx=f*1.9;sh.vy=-5.4;sh.g=.2;sfx.axe();}else if(k==='holy'){sh.vx=f*2.1;sh.vy=-2.2;sh.g=.26;sfx.dagger();}else{sh.vx=f*4.4;sfx.cross();}
   w.shots.push(sh);}
  function castHellfire(p,w){p.mp-=HELL_MP;p.cast=26;p.vx=0;sfx.hellfire();shake(w,2);w.flash=Math.max(w.flash,.25);w.flashCol='255,120,40';
   for(const [k,vy] of [[0,-.7],[1,0],[2,.7]])w.shots.push({kind:'pfire',own:true,x:p.x+p.facing*8,y:p.y-30,vx:p.facing*(3.1-k*.15),vy,g:0,t:-k*4,f:p.facing,hits:new Set(),dmg:18});}
+ function jump(p,w){p.vy=-JUMPV;p.grounded=false;p.coy=0;p.jbuf=0;p.usedDouble=false;p.crouch=false;p.atk=null;p.dash=0;sfx.jump();dust(w,p.x,p.y,3);}
  function stepPlayer(p,w,inp){
   const press=inp.press,atk=inp.atk,sub=inp.sub,dash=inp.dash;inp.press=0;inp.atk=0;inp.sub=0;inp.dash=0;
-  p.t+=STEP;if(p.throwT>0)p.throwT--;
+  p.t+=STEP;if(p.throwT>0)p.throwT--;if(p.land>0)p.land--;if(p.comboT<99&&!p.atk)p.comboT++;
+  if(!p.atk&&p.sw.length)p.sw.shift();
   if(p.dead){p.dead++;if(p.dead>(p.pit?80:140))respawn(p);return;}
-  if(p.finished||w.scene){p.vx=0;p.atk=null;p.charge=0;p.dash=0;const r=moveBody(w,p,5,PH);p.grounded=r.landed;return;}
+  if(p.finished||w.scene){p.vx=0;p.atk=null;p.kick=0;p.flip=0;p.charge=0;p.dash=0;const r=moveBody(w,p,5,PH);p.grounded=r.landed;return;}
   if(p.inv>0)p.inv--;if(p.dashCD>0)p.dashCD--;p.mp=Math.min(MP_MAX,p.mp+.07);
-  if(p.hurt>0){p.hurt--;const r=moveBody(w,p,5,PH);p.grounded=r.landed;if(r.landed)p.vx*=.6;afterMove(p,w);return;}
+  if(p.hurt>0){p.hurt--;p.flip=0;const r=moveBody(w,p,5,PH);p.grounded=r.landed;if(r.landed)p.vx*=.6;afterMove(p,w);return;}
   if(p.cast>0){p.cast--;p.vx=0;const r=moveBody(w,p,5,PH);p.grounded=r.landed;afterMove(p,w);return;}
   const dir=(inp.r?1:0)-(inp.l?1:0);
-  if(sub||atk&&inp.u&&p.sub){if(p.atk&&p.atk.t<16)p.atk=null;if(!p.atk)throwSub(p,w);}
-  else if(atk&&!p.atk)startAttack(p);
+  if(press)p.jbuf=JBUF;else if(p.jbuf>0)p.jbuf--;
+  if(p.grounded)p.coy=COYOTE;else if(p.coy>0)p.coy--;
+  // attack / sub-weapon (presses during a swing are buffered into the next hit of the combo)
+  if(sub||atk&&inp.u&&p.sub){if(p.atk&&p.atk.t<p.atk.cancel+4)p.atk=null;if(!p.atk)throwSub(p,w);}
+  else if(atk){if(p.atk)p.atk.queued=true;else startAttack(p,w,dir);}
+  if(p.atk&&p.atk.queued&&p.atk.t>=(p.atk.n<2?p.atk.cancel:p.atk.len-1))startAttack(p,w,dir); // after the cleave a buffered press starts a new combo
   if(inp.atkHeld&&!p.atk){p.charge++;if(p.charge===CHARGE&&p.mp>=HELL_MP)sfx.charge();}
   else if(!inp.atkHeld){if(p.charge>=CHARGE&&p.mp>=HELL_MP&&!p.atk)castHellfire(p,w);p.charge=0;}
-  if(dash&&p.grounded&&p.dashCD<=0){p.atk=null;p.dash=15;p.dashCD=22;p.vx=-p.facing*4.6;p.crouch=false;sfx.dash();dust(w,p.x,p.y,4);}
-  if(p.atk)stepAttack(p,w);
-  if(p.dash>0){p.dash--;p.vx*=.9;if(p.dash%3===0)afterimage(p,w);}
+  // backdash: cancels the end of a swing, chains into another backdash, and a swing cancels it (SOTN's backdash-cancel)
+  const free=!p.atk||p.atk.t>=p.atk.cancel;
+  if(dash&&p.grounded&&free&&(p.dash<=5)&&p.dashCD<=0){p.atk=null;p.dash=17;p.dashCD=4;p.vx=-p.facing*4.4;p.crouch=false;sfx.dash();dust(w,p.x,p.y,4);afterimage(p,w,22);}
+  if(p.atk){stepAttack(p,w);if(p.atk&&p.atk.t>=p.atk.cancel&&!p.atk.queued&&p.grounded&&dir&&!inp.d)p.atk=null;}
+  if(p.atk&&p.dash)p.dash=0;
+  if(p.dash>0){p.dash--;p.vx*=.9;if(p.dash%2===0)afterimage(p,w,16,.7);
+   if(p.jbuf&&p.dash<12){p.dash=0;jump(p,w);p.vx=-p.facing*1.6;}}
+  else if(p.kick){p.kick++;if(p.grounded||p.kick>60)p.kick=0;else{p.vx=p.facing*3.3;p.vy=Math.max(p.vy,4.6);if(p.kick%2===0)afterimage(p,w,14,.6);
+   if(hitBox(p,w,{x0:p.x+(p.facing>0?0:-16),x1:p.x+(p.facing>0?16:0),y0:p.y-14,y1:p.y+4},Math.max(6,Math.round(WEAPONS[p.weapon].dmg*.6)),p.kickHits,{dir:p.facing,stop:4})){
+    p.kick=0;p.vy=-4.2;p.vx=-p.facing*1.2;p.usedDouble=false;p.flip=.01;sfx.land();}}}
   else if(p.grounded){
    p.crouch=!!inp.d&&!(p.atk&&!p.atk.crouch);
-   p.vx=p.atk&&!p.atk.air||p.crouch?0:dir*WALK;if(dir&&!p.atk)p.facing=dir;
-   if(press){if(p.crouch&&onPlatform(p,w)){p.dropT=12;p.grounded=false;p.crouch=false;}else if(!p.atk||p.atk.air){p.vy=-JUMPV;p.grounded=false;p.usedDouble=false;p.crouch=false;sfx.jump();}}
-  }else{p.vx=dir*WALK;if(dir&&!p.atk)p.facing=dir;
-   if(press&&p.leap&&!p.usedDouble){p.usedDouble=true;p.vy=-DJUMPV;sfx.leap();for(let k=0;k<3;k++)afterimage(p,w);w.parts.push({kind:'ring',x:p.x,y:p.y,life:16,max:16,size:4});}
-   if(!inp.jump&&p.vy<-2.4)p.vy=-2.4;}
+   if(p.atk){p.vx*=.8;if(Math.abs(p.vx)<.05)p.vx=0;}
+   else if(p.crouch)p.vx*=.6;
+   else{const tv=dir*WALK;if(dir&&Math.sign(p.vx)===-dir)p.vx+=dir*TURN;
+    if(dir)p.vx+=clamp(tv-p.vx,-ACC,ACC);else p.vx+=clamp(-p.vx,-FRIC,FRIC);if(dir)p.facing=dir;}
+   if(p.jbuf&&p.coy>0&&free){if(p.crouch&&onPlatform(p,w)){p.jbuf=0;p.dropT=12;p.grounded=false;p.crouch=false;p.coy=0;}else jump(p,w);}
+  }else{
+   if(!p.atk||p.atk.air){const tv=dir*WALK;if(dir)p.vx+=clamp(tv-p.vx,-AIR_ACC*(Math.sign(p.vx)===-dir?2:1),AIR_ACC*(Math.sign(p.vx)===-dir?2:1));else p.vx+=clamp(-p.vx,-AIR_FRIC,AIR_FRIC);}
+   if(dir&&!p.atk)p.facing=dir;
+   if(p.jbuf&&p.coy>0&&free)jump(p,w);
+   else if(press&&inp.d&&!p.atk&&p.vy>-3){p.jbuf=0;p.kick=1;p.kickHits=new Set();p.flip=0;sfx.dash();}
+   else if(press&&p.leap&&!p.usedDouble&&free){p.jbuf=0;p.atk=null;p.usedDouble=true;p.vy=-DJUMPV;p.flip=.01;sfx.leap();for(let k=0;k<3;k++)afterimage(p,w);w.parts.push({kind:'ring',x:p.x,y:p.y,life:16,max:16,size:4});}}
+  if(p.flip>0){p.flip+=1/26;if(p.flip>=1||p.atk||p.kick)p.flip=0;}
   if(p.dropT>0)p.dropT--;
-  const wasG=p.grounded,vy0=p.vy,r=moveBody(w,p,5,p.crouch?28:PH,{drop:p.dropT>0});p.grounded=r.landed;
-  if(p.grounded&&!wasG){p.usedDouble=false;if(p.atk?.air)p.atk=null;if(vy0>3){sfx.land();dust(w,p.x,p.y,5);}}
-  if(p.grounded&&Math.abs(p.vx)>.1)p.anim+=.2;
-  if((Math.abs(p.vx)>1||!p.grounded)&&++p.aiT%6===0)afterimage(p,w);
+  // gravity: lighter near the apex, heavier on the way down, and much heavier when jump is let go on the way up
+  let gr=GRAV;if(!p.grounded&&!p.kick){if(p.vy<0&&!inp.jump&&!p.flip)gr*=CUT_G;else if(Math.abs(p.vy)<1.1)gr*=APEX;else if(p.vy>0)gr*=FALL_G;}
+  const wasG=p.grounded,vy0=p.vy,r=moveBody(w,p,5,p.crouch?28:PH,{drop:p.dropT>0,grav:gr,edges:!!(p.atk&&p.grounded)});p.grounded=r.landed;
+  if(p.grounded&&!wasG){p.usedDouble=false;p.flip=0;p.kick=0;if(p.atk?.air)p.atk=null;if(vy0>2.5){sfx.land();dust(w,p.x,p.y,vy0>5?8:4);p.land=vy0>5?7:4;}}
+  if(p.grounded&&Math.abs(p.vx)>.1)p.anim+=Math.abs(p.vx)*.115;
+  if((Math.abs(p.vx)>1.2||!p.grounded)&&++p.aiT%3===0)afterimage(p,w,p.grounded?12:15,p.atk?.45:p.grounded?.38:.42);
   afterMove(p,w);
  }
  function afterMove(p,w){
@@ -257,11 +306,11 @@ async function sotn(s){
   embers(w,e.x,cutY,10);dropFrom(w,e.x,e.type==='bat'?e.y:e.y-12,e.type==='warg'||e.type==='armor'||e.type==='bloody'?.7:.35);
   p.score+=F.hp*10;p.exp+=EXP[e.type]||5;
   while(p.lv<=LEVELS.length&&p.exp>=LEVELS[p.lv-1]){p.lv++;p.maxHp+=10;p.hp=Math.min(p.maxHp,p.hp+10);p.mp=MP_MAX;sfx.level();w.levelT=1;}}
- function damageFoe(p,w,e,dmg,o){e.hp-=dmg;num(w,e.x,e.y-e.h-6,dmg);const hy=e.type==='bat'?e.y:e.y-e.h*.55;blood(w,e.x,hy,6+Math.min(16,dmg/2),o.dir||0,1);sfx.hit(dmg>=20);if(o.sword)sfx.slashHit();
-  stop=Math.max(stop,3);
+ function damageFoe(p,w,e,dmg,o){e.hp-=dmg;num(w,e.x,e.y-e.h-6,dmg);const hy=e.type==='bat'?e.y:e.y-e.h*.55;blood(w,e.x,hy,6+Math.min(16,dmg/2),o.dir||0,1);sfx.hit(dmg>=20||o.fin);if(o.sword)sfx.slashHit();sparks(w,e.x-(o.dir||0)*e.hw*.5,hy,o.fin?9:5,o.dir||0);
+  stop=Math.max(stop,o.stop??3);if(o.fin)shake(w,3);
   if(e.hp<=0){killFoe(p,w,e,o);return;}
   e.flash=8;if(e.type==='bloody')blood(w,e.x,hy,12,0,.8);
-  if(e.type!=='armor'&&e.type!=='warg'&&e.type!=='bat'){e.x+=(o.dir||Math.sign(e.x-p.x)||1)*4;}
+  if(e.type!=='armor'&&e.type!=='warg'&&e.type!=='bat'){e.x+=(o.dir||Math.sign(e.x-p.x)||1)*(o.fin?11:4);}
   if(e.type==='warg'&&e.state==='idle')wake(w,e,p);}
  function hitBox(p,w,box,dmg,hits,o={}){let any=false;
   for(const cd of w.candles)if(cd.alive&&!hits.has(cd)&&overlap(box,{x0:cd.fx-6,x1:cd.fx+6,y0:cd.fy-10,y1:cd.fy+8})){hits.add(cd);cd.alive=false;sfx.candle();embers(w,cd.fx,cd.fy,8);dropItem(w,cd.item,cd.fx,cd.fy);any=true;}
@@ -335,7 +384,7 @@ async function sotn(s){
  const demonHead=B=>({x:B.x+B.facing*(26+(B.low||0)*10+14),y:B.y-112+(B.crouch||0)*14+(B.low||0)*32-4});
  const demonBody=B=>({x0:B.x-30,x1:B.x+32,y0:B.y-100+(B.crouch||0)*14,y1:B.y});
  function damageBoss(p,w,B,dmg,o){B.hp=Math.max(0,B.hp-dmg);B.flash=8;sfx.hit(true);if(o.sword)sfx.slashHit();stop=Math.max(stop,4);shake(w,2);
-  const hp=B.phase===1?{x:B.x,y:B.y-40}:demonHead(B);num(w,hp.x,hp.y-16,dmg);blood(w,hp.x,hp.y,10+dmg/3,o.dir||0,1.1);
+  const hp=B.phase===1?{x:B.x,y:B.y-40}:demonHead(B);num(w,hp.x,hp.y-16,dmg);blood(w,hp.x,hp.y,10+dmg/3,o.dir||0,1.1);sparks(w,hp.x,hp.y,o.fin?9:5,o.dir||0);if(o.fin)stop=Math.max(stop,6);
   if(B.hp>0)return;
   if(B.phase===1){B.state='dying';B.t=0;B.open=0;sfx.laugh(true);w.eshots=[];}
   else{B.state='die';B.t=0;w.eshots=[];for(const e of w.foes)if(e.type==='bat')e.dead=true;sfx.roar();}}
@@ -420,6 +469,7 @@ async function sotn(s){
     if(q.vy>0){const sup=support(w,q.x,1,q.y-q.vy-1,false);if(q.y>=sup){if(q.kind==='blood'&&sup<NONE&&!L.water.some(wa=>q.x>wa.x0&&q.x<wa.x1)){w.decals.push({x:q.x,y:sup,r:q.size*(1.4+Math.random()*1.8),k:Math.random()});if(w.decals.length>320)w.decals.shift();}
      if(q.kind==='rubble'||q.kind==='bone'){q.y=sup;q.vy*=-.3;q.vx*=.6;if(Math.abs(q.vy)<.4)q.vy=0;}else{w.parts.splice(k,1);continue;}}}}
    else if(q.kind==='ember'||q.kind==='dust'){q.x+=q.vx;q.y+=q.vy;q.vx*=.98;}
+   else if(q.kind==='spark'){q.x+=q.vx;q.y+=q.vy;q.vx*=.86;q.vy*=.86;}
    if(q.life<=0)w.parts.splice(k,1);}
   for(let k=w.nums.length-1;k>=0;k--){const n=w.nums[k];n.t++;if(n.t>50)w.nums.splice(k,1);}
   for(let k=w.ai.length-1;k>=0;k--)if(--w.ai[k].life<=0)w.ai.splice(k,1);
@@ -450,6 +500,15 @@ async function sotn(s){
   if(w.locked){const lo=AR.x0-10,hi=AR.x1+10-cam.w;tx=hi<lo?(AR.x0+AR.x1)/2-cam.w/2:clamp(tx,lo,hi);}
   tx=clamp(tx,0,LEN-cam.w);cam.x+=(tx-cam.x)*(Math.abs(tx-cam.x)>120?.25:.14);};
 
+ // ---------------- render interpolation: the simulation runs at a fixed 60 Hz; drawing blends the last two steps so
+ // motion stays smooth on 90/120 Hz phones and when a frame runs one step short or long
+ const lerpBodies=i=>{const w=worlds[i],out=[pl[i],cams[i]];if(w.boss)out.push(w.boss);for(const a of [w.foes,w.shots,w.eshots])for(const o of a)out.push(o);return out;};
+ function savePrev(i){for(const o of lerpBodies(i)){o._px=o.x;o._py=o.y;}}
+ let lerped=[];
+ function interp(i,al){lerped=[];if(al>=1)return;for(const o of lerpBodies(i)){if(o._px===undefined||Math.abs(o.x-o._px)>40)continue;lerped.push([o,o.x,o.y]);o.x=o._px+(o.x-o._px)*al;if(o.y!==undefined)o.y=o._py+(o.y-o._py)*al;}
+  ghostAl=al;}
+ function uninterp(){for(const [o,x,y] of lerped){o.x=x;o.y=y;}lerped=[];ghostAl=1;}
+ let ghostAl=1;
  // ---------------- drawing
  const lay={sc:2,vw:300,ox:0,oy:0,vh:480};
  function layout(){const portrait=s.W<s.H;let sc,vw,ox=0,oy=0;
@@ -535,11 +594,24 @@ async function sotn(s){
   else if(q.kind==='water'){g.globalAlpha=a;g.fillStyle='#9ad0f0';g.fillRect(q.x,q.y,q.size,q.size);g.globalAlpha=1;}
   else if(q.kind==='rubble'){g.globalAlpha=a;g.fillStyle='#3a3444';g.fillRect(q.x,q.y-q.size,q.size,q.size);g.globalAlpha=1;}
   else if(q.kind==='bone'){g.globalAlpha=a;g.save();g.translate(q.x,q.y);g.rotate(q.rot+=q.vx*.1);g.fillStyle='#e8e1cc';g.fillRect(-3,-.7,6,1.4);g.restore();g.globalAlpha=1;}
+  else if(q.kind==='spark'){const k=q.life/q.max;g.strokeStyle=`rgba(200,230,255,${k})`;g.lineWidth=.9;g.beginPath();g.moveTo(q.x,q.y);g.lineTo(q.x-q.vx*q.size,q.y-q.vy*q.size);g.stroke();}
+  else if(q.kind==='flash'){const k=q.life/q.max;A.glow(g,q.x,q.y,q.size*(1.6-k*.6),A.GLOW.blue,k);A.glow(g,q.x,q.y,q.size*.5,A.GLOW.white,k);}
   else if(q.kind==='ring'){const k=1-q.life/q.max;g.strokeStyle=`rgba(140,255,200,${1-k})`;g.lineWidth=1.4;g.beginPath();g.ellipse(q.x,q.y,6+k*16,2+k*4,0,0,6.3);g.stroke();}}}
- function drawSlash(p){const a=p.atk;if(!a||a.w==='fist')return;const W=WEAPONS[a.w];if(a.t<W.act[0]||a.t>W.act[1]+2)return;const k=(a.t-W.act[0])/(W.act[1]-W.act[0]+2),f=p.facing,cx=p.x+f*2,cy=p.y-(a.crouch?18:30),R=W.reach*.95;
-  const prev=g.globalCompositeOperation;g.globalCompositeOperation='lighter';g.save();g.translate(cx,cy);g.scale(f,1);const a0=-1.35,a1=-1.35+2.2*Math.min(1,k*1.4);
-  g.beginPath();g.arc(0,0,R,a0,a1);g.arc(0,0,R*.62,a1,a0,true);g.closePath();const col=a.w==='alucard'?'150,200,255':a.w==='claymore'?'255,220,200':'230,235,255';g.fillStyle=`rgba(${col},${.55*(1-k*.6)})`;g.fill();
-  g.beginPath();g.arc(0,0,R,a0,a1);g.strokeStyle=`rgba(255,255,255,${.9*(1-k*.5)})`;g.lineWidth=1.4;g.stroke();g.restore();g.globalCompositeOperation=prev;}
+ // the blue sword trail (a ribbon through the last few hilt/tip positions) plus each combo hit's own flourish
+ function drawSlash(p){const a=p.atk,sw=p.sw,prev=g.globalCompositeOperation;g.globalCompositeOperation='lighter';
+  if(sw.length>1){const n=sw.length,big=a&&a.n===2;
+   for(let k=1;k<n;k++){const P=sw[k-1],Q=sw[k],al=k/n;g.fillStyle=`rgba(${big?'90,160,255':'70,140,255'},${(big?.55:.42)*al})`;
+    g.beginPath();g.moveTo(P[0],P[1]);g.lineTo(P[2],P[3]);g.lineTo(Q[2],Q[3]);g.lineTo(Q[0],Q[1]);g.closePath();g.fill();}
+   g.strokeStyle='rgba(220,240,255,.85)';g.lineWidth=1.1;g.beginPath();g.moveTo(sw[0][2],sw[0][3]);for(let k=1;k<n;k++)g.lineTo(sw[k][2],sw[k][3]);g.stroke();}
+  if(a){const C=COMBO[a.n],W=WEAPONS[a.w],f=p.facing,hy=p.y-(a.crouch?18:30)+(a.n===1?1:0),live=a.t>=a.act[0]&&a.t<=a.act[1]+2,k=clamp((a.t-a.act[0])/(a.act[1]-a.act[0]+2),0,1);
+   if(live&&a.n===1){// the stab: a spear of blue light out past the blade
+    const tip=sw[sw.length-1];let x0=p.x+f*12,y=hy;if(tip){x0=tip[2]-f*6;y=tip[3];}const x1=p.x+f*(3+W.reach*C.reach)*(.7+.3*Math.min(1,k*2)),gr=g.createLinearGradient(x0,0,x1,0);gr.addColorStop(0,'rgba(60,120,255,0)');gr.addColorStop(.7,`rgba(90,170,255,${.75*(1-k*.6)})`);gr.addColorStop(1,`rgba(230,245,255,${.95*(1-k*.5)})`);
+    g.fillStyle=gr;g.beginPath();g.moveTo(x0,y-1.2);g.lineTo(x1-f*4,y-2.6);g.lineTo(x1,y);g.lineTo(x1-f*4,y+2.6);g.lineTo(x0,y+1.2);g.closePath();g.fill();A.glow(g,x1,y,8,A.GLOW.blue,.7*(1-k*.5));}
+   else if(live&&a.w!=='fist'){// the cuts: a crescent, small for the first hit and a full arc for the cleave
+    const big=a.n===2,R=W.reach*C.reach*(big?.95:.85),cx=p.x+f*(big?1:3),cy=hy+(big?-4:0),a0=big?-2.5:-1.1,a1=a0+(big?3.5:1.5)*Math.min(1,k*1.35);
+    g.save();g.translate(cx,cy);g.scale(f,1);g.beginPath();g.arc(0,0,R,a0,a1);g.arc(0,0,R*(big?.55:.68),a1,a0,true);g.closePath();
+    g.fillStyle=`rgba(${a.w==='claymore'?'200,215,255':'110,175,255'},${(big?.6:.45)*(1-k*.55)})`;g.fill();g.beginPath();g.arc(0,0,R,a0,a1);g.strokeStyle=`rgba(235,245,255,${.95*(1-k*.5)})`;g.lineWidth=big?1.8:1.2;g.stroke();g.restore();}}
+  g.globalCompositeOperation=prev;}
  function drawNums(w){for(const n of w.nums){const k=n.t/50,y=n.y-Math.min(10,n.t*.9)+(n.t>12?Math.sin((n.t-12)*.3)*.6:0);outlined(g,n.v,n.x,y,{size:8,fill:n.col,stroke:'#000',alpha:k<.7?1:1-(k-.7)/.3,lw:2.2,font:GOTH});}}
  function drawDecals(w,x0,x1){for(const d of w.decals){if(d.x<x0-10||d.x>x1+10)continue;g.fillStyle=d.k<.5?'rgba(110,0,10,.85)':'rgba(70,0,6,.9)';g.beginPath();g.ellipse(d.x,d.y-.2,d.r,d.r*.28,0,0,6.3);g.fill();}}
  function drawScene(w,p,lay){const sc=w.scene;if(!sc)return;const u=lay.sc,W=lay.vw*u,X=lay.ox,Y=lay.oy,H=lay.vh;
@@ -574,8 +646,8 @@ async function sotn(s){
    if(a>0)A.drawDeath(g,dx,p.y-26,simT,a,sc.t>200&&sc.t<240?Math.sin((sc.t-200)/40*Math.PI):0);
    if(sc.gear)for(const gr of sc.gear){const k=clamp((sc.t-226-gr.k*6)/40,0,1);if(k<=0||k>=1)continue;const gx=p.x+(dx-p.x)*k,gyy=p.y-30-Math.sin(k*Math.PI)*40-gr.k*6;A.glow(g,gx,gyy,10,A.GLOW.purple,1-k*.5);A.drawPickup(g,['alucard','cross','potion','holy'][gr.k],gx,gyy+6,simT);}}
   // ghost, after-images, hero
-  const o=ghostAt(i);if(o&&o.x>x0-30&&o.x<x1+30&&!o.dead){A.drawAfterimage(g,o,.9);g.save();g.globalAlpha=.45;s.sprite(g,0,o.x+(o.facing||1)*.5,o.y-39+(o.pose==='crouch'||o.pose==='crouchAtk'?8:0),19,{exact:true});g.restore();}
-  for(const a of w.ai)A.drawAfterimage(g,a.q,a.life/20*.55);
+  let o=ghostAt(i);const o0=o&&gi>0?ghost[gi-1]:null;if(o0&&Math.abs(o.x-o0.x)<40)o={...o,x:o0.x+(o.x-o0.x)*ghostAl,y:o0.y+(o.y-o0.y)*ghostAl};if(o&&o.x>x0-30&&o.x<x1+30&&!o.dead){A.drawAfterimage(g,o,.9,'rgba(150,70,230,.55)');g.save();g.globalAlpha=.45;s.sprite(g,0,o.x+(o.facing||1)*.5,o.y-39+(o.pose==='crouch'||o.pose==='crouchAtk'?8:0),19,{exact:true});g.restore();}
+  for(const a of w.ai){const u=a.life/(a.max||20);A.drawAfterimage(g,a.q,u*u*(a.k??.6));}
   if(!(p.inv>0&&!p.dead&&(frames>>2)%2)){const mood=p.finished?'win':p.hurt>0||p.dead?'sad':p.cast>0?'angry':undefined;
    if(p.charge>=CHARGE&&p.mp>=HELL_MP)A.glow(g,p.x,p.y-24,22+Math.sin(simT*20)*3,A.GLOW.fire,.6);
    A.glow(g,p.x,p.y-26,30,A.GLOW.moon,.12);A.drawHero(g,{...snap(p)},{head:headFn(i,mood),headSize:23});}
@@ -674,10 +746,10 @@ async function sotn(s){
  s.frame((dt,t)=>{
   if(!s.alive)return;tick();
   if(phase==='title'){if(!titleT){sfx.bell();setTimeout(()=>s.alive&&sfx.thunder(true),900);}titleT+=dt;if(titleT>3.2)beginTurn(0);}
-  else if(phase==='count'){layout();cams[turn].w=lay.vw;updateCamera(pl[turn],turn);if(!cd.update(dt)){phase='play';for(const inp of inputs){inp.press=0;inp.atk=0;inp.sub=0;inp.dash=0;}}}
+  else if(phase==='count'){layout();cams[turn].w=lay.vw;updateCamera(pl[turn],turn);savePrev(turn);if(!cd.update(dt)){phase='play';for(const inp of inputs){inp.press=0;inp.atk=0;inp.sub=0;inp.dash=0;}}}
   else if(phase==='play'||phase==='turn-end'||phase==='end'){
    if(!cd.done)cd.update(dt);acc+=dt;let steps=0;const i=turn,p=pl[i],w=worlds[i];
-   while(acc>=STEP&&steps<5){acc-=STEP;steps++;
+   while(acc>=STEP&&steps<5){acc-=STEP;steps++;savePrev(i);
     if(stop>0){stop--;continue;}
     frames++;simT+=STEP;
     if(phase==='play'){if(!w.scene)clock+=STEP;readInput(i);stepPlayer(p,w,inputs[i]);stepWorld(w,p);}
@@ -700,7 +772,7 @@ async function sotn(s){
    s.setScores(pl.map(prog));}
   // draw
   g.fillStyle='#000';g.fillRect(0,0,s.W,s.H);
-  if(phase!=='title')drawWorld(turn);else{layout();scen.ensure(g,lay.sc);}
+  if(phase!=='title'){const lerp=phase==='play'||phase==='turn-end'||phase==='end';if(lerp)interp(turn,clamp(acc/STEP,0,1));drawWorld(turn);if(lerp)uninterp();}else{layout();scen.ensure(g,lay.sc);}
   if(phase==='title')drawTitle(titleT);
   if(phase==='count'||!cd.done&&phase==='play')cd.draw(g,s.W,s.H);
   if(phase==='turn-end'||phase==='end'){const a=Math.min(1,endT*2.5),size=Math.min(s.W*.07,s.H*.07,46);g.save();g.globalAlpha=a;g.fillStyle='rgba(0,0,0,.65)';g.fillRect(0,s.H*.38,s.W,s.H*.24);
