@@ -42,6 +42,18 @@ Object.assign(exports,{engines,games,events:[]});
 * `s.react(player,'happy'|'sad')` triggers the head animation in the score bar.
 * Sound: `sound('tap'|'pickup'|'win'|'lose'|'shot'|'card'|'rare'|...)`, `tone(freq,sec,vol,'sine'|'square'...)`, `vibrate(ms)` from `src/audio.js`.
 
+## Screen: full-bleed (required for every new game)
+Every new game takes the whole screen, like Broforce, Super Mario Bros., Mario Kart, Photo Hunt and Symphony of the Night:
+```js
+const {fullBleed}=require("src/engines/fullBleed.js");
+const [c,x]=s.canvas(900,600,{fill:true});const fb=fullBleed(s,{bg:'#000'});
+```
+This hides the title bar, score bar, status line and controls bar; Pause/Exit float as small pills in the top-right corner
+and a discreet ⤢ / ⤡ full-screen toggle floats at the bottom centre. Draw your own HUD and score on the canvas, keep the
+top-right `fb.top` px clear of HUD text, and keep the bottom centre free of important touch targets. Draw touch buttons as
+translucent circles floating on the canvas (see `sotn.js` / `castlevania.js`), never as a DOM button bar.
+Pass `{hint:true}` to keep the "Controls" help as a small chip in the top-left corner.
+
 ## Controls: touch first
 Phones are the main device; two people share one screen. **Prefer direct touch over on-screen button bars**, because buttons
 steal the game area:

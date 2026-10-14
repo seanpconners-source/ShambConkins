@@ -16,7 +16,7 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   `node tools/check-modules.mjs` verifies). Entry point is `src/app.js` (game flow, turns, landing, events).
 - `tools/build.mjs` inlines `src/` + `src/styles.css` + `src/index.template.html` + `assets/` into
   `dist/ShambConkins.html` (~30 MB). Drop-in art: `assets/portraits/<characterId>[.<mood>].webp|png`,
-  `assets/items/<id>.*`, `assets/locations/<id>.*`; shrink big images with `python3 tools/optimize-art.py`.
+  `assets/items/<id>.*`, `assets/locations/<id>.*`, Photo Hunt pairs `assets/photohunt/` (`tools/photohunt.py`, see its README); shrink big images with `python3 tools/optimize-art.py`.
 - Key systems: `ui.js` (screens, board SVG, HUD), `multiPathBoard.js` + `boardZones.js` + `biomes.js`
   (generation-7 journey map), `boardCamera.js` (camera/zoom), `gameRegistry.js` + `gameLauncher.js`
   (minigame pool, selection, results/rewards/unlocks), `engines/` (minigame engines, `session.js` = the `s` API),
@@ -32,7 +32,7 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   fuzz of every minigame). Must end `EXIT 0` / "N/N games ran clean".
 - Focused tests (Playwright, headless Chromium at /opt/pw-browsers/chromium-1194/chrome-linux/chrome,
   module at /node-tools/node_modules): `tests/bossgate.mjs`, `tests/warpflow.mjs`, `tests/warp.mjs`,
-  `tests/levels.mjs`, `tests/boss.mjs`, `tests/controls-audit.mjs`, `tests/music.mjs`, `SHAMB_FILE=... node tests/games.mjs 5 3 <id-regex>`.
+  `tests/levels.mjs`, `tests/boss.mjs`, `tests/photohunt.mjs`, `tests/controls-audit.mjs`, `tests/music.mjs`, `SHAMB_FILE=... node tests/games.mjs 5 3 <id-regex>`.
 - Release: bump `src/version.js` + `package.json`, `npm run release` → `releases/ShambConkins_vX.html`, add a CHANGELOG entry. Large generated HTML (v0.58.3 is 130 MB) is a GitHub Release asset, NOT a git blob; maintain tested production build and keep source/artwork unchanged.
 
 ## Rules (don't break these)
@@ -42,6 +42,9 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   otherwise a circular import (gameRegistry → packs → engines → … → references → gameRegistry) blanks the page.
 - Every game/character/location must reference a real movie / show / game / band (or the personal universe).
 - Touch first: two people on one phone. Prefer swipe/drag/tap on the canvas over on-screen button bars.
+- Every new game is full screen: call `fullBleed(s)` (`src/engines/fullBleed.js`) right after `s.canvas(...,{fill:true})`.
+  Canvas fills the screen, Pause/Exit float top-right, a small ⤢ full-screen toggle sits bottom-centre, touch buttons are
+  drawn floating on the canvas, and the game's HUD keeps clear of the top-right pills (`fullBleed` returns `{top}`).
 - Use seeded randomness (`s.random()`, `runRandom(run)`) for anything that must be fair or reproducible.
 - Character photos are looked up online at runtime (Wikipedia page in the character's `actor` field);
   offline they fall back to an emoji placeholder. Don't add copyrighted melodies (music uses public-domain tunes).

@@ -1025,4 +1025,4 @@ function makeTileArt(th){
  return {t,top,back,crack};
 }
 
-Object.assign(exports,{broforce,buildStage,weaponFor});
+Object.assign(exports,{broforce,buildStage,weaponFor,headCanvas});

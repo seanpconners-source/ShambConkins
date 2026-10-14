@@ -96,7 +96,7 @@ const WARP_ITEMS=[
   ['master-sword','Master Sword','🗡️','bundle',{rewardBonus:4,ward:1}],
   ['blue-candle','Blue Candle','🕯️','preview']
  ],'wz-').map(rare),
- challenge('question-block','? Block','Super Mario Bros.','❓','smb-coin-rush','Punch the ? block: start World 1-1 Coin Rush right now.'),
+ challenge('question-block','? Block','Super Mario Bros.','❓','smb-coin-rush','Punch the ? block: start World 1 Coin Rush right now.'),
  challenge('goal-flagpole','Goal Flagpole','Super Mario Bros.','🏰','smb-castle-dash','Race for the flagpole: start Castle Dash right now.'),
  challenge('wooden-sword','Old Man’s Wooden Sword','The Legend of Zelda','🗡️','hyrule-rupee-rush','It’s dangerous to go alone: start Hyrule Rupee Rush right now.'),
  ...packItems('Sonic the Hedgehog',[
@@ -107,7 +107,7 @@ const WARP_ITEMS=[
   ['chaos-emerald','Chaos Emerald','💎','gateDividend',6],
   ['yellow-spring','Yellow Spring','🌀','forward',5]
  ],'wz-').map(rare),
- challenge('giant-ring','Giant Ring','Sonic the Hedgehog','💍','sonic-ring-rush','Jump into the Giant Ring: start Green Hill Ring Rush right now.'),
+ challenge('giant-ring','Giant Ring','Sonic the Hedgehog','💍','sonic-ring-rush','Jump into the Giant Ring: start the Green Hill Boss Act right now.'),
  challenge('end-signpost','End-of-Act Signpost','Sonic the Hedgehog','🪧','sonic-goal-dash','Spin the signpost: start Green Hill Goal Dash right now.')
 ];
 Object.assign(exports,{WARP_ITEMS});

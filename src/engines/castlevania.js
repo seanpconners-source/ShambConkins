@@ -18,6 +18,7 @@ const N={white:'#fcfcfc',lgray:'#bcbcbc',gray:'#7c7c7c',dgray:'#3c3c3c',red:'#d8
 const PALS=[{armor:'#c84c0c',light:'#fc9838',dark:'#503000',boots:'#881400',belt:N.gold,band:N.red},{armor:'#3c7cfc',light:'#a4c8fc',dark:'#0000bc',boots:'#503000',belt:N.white,band:N.white}];
 const FLASH_PAL={armor:N.white,light:N.gold,dark:N.tan,boots:N.gold,belt:N.white,band:N.gold};
 const SUBS={dagger:1,axe:1,holy:1,cross:1,watch:5}; // heart cost
+const BAT_HP=12; // the Phantom Bat: hovers low enough for a jumping whip, swoops with a warning shiver
 const WHIP_LEN=[0,30,30,46],WHIP_DMG=[0,1,2,2],PTS={zombie:100,bat:200,medusa:300,skeleton:300};
 
 // ------------------------------------------------------------------ level generation (seeded, shared by both players)
@@ -51,7 +52,7 @@ function buildCastle(rand,mode){
   // stepping stones over a bottomless gap, with a bat waiting above
   ledges(){theme='gallery';const c0=c;floor(4);gap(12);blocks(c0+6,FL-1,2);blocks(c0+10,FL-1,2);blocks(c0+13,FL-1,2);floor(4);foe('bat',c0+12,4*T);candle(c0+10,(FL-1)*T-24);candle(c0+18,CY);
    deco('painting',c0+1);deco('painting',c0+17);},
-  boss(){theme='boss';floor(2);const a0=c;floor(16);L.arena={x0:a0*T,x1:c*T,cx:(a0+8)*T};deco('bigwindow',a0+6);},
+  boss(){theme='boss';floor(2);const a0=c;floor(16);L.arena={x0:a0*T,x1:c*T,cx:(a0+8)*T};deco('bigwindow',a0+6);candle(a0+2,CY,'arena');candle(a0+14,CY,'arena');},
   exit(){theme='hall';const c0=c;floor(9);L.exitX=(c0+5)*T+8;deco('door',c0+5);deco('window',c0+1);}
  };
  seg.yard();L.checks.push(L.start);L.lapX=c*T+24;
@@ -62,7 +63,7 @@ function buildCastle(rand,mode){
  L.W=c;
  // what each candle holds: two whip upgrades early, a sub-weapon soon after, hearts otherwise
  const subs=['dagger','axe','holy','cross','watch'];let whips=0;
- L.candles.forEach((cd,k)=>{let it;if(k===0||k===4&&whips<2)it='whip';else{const r=rand();it=r<.15?pick(subs):r<(mode==='hearts'?.42:.26)?'bigheart':r<.32?'bag':'heart';}if(it==='whip')whips++;cd.item=it;});
+ L.candles.forEach((cd,k)=>{let it;if(cd.kind==='arena'){cd.kind='candle';cd.item=k%2?'axe':'bigheart';return;}if(k===0||k===4&&whips<2)it='whip';else{const r=rand();it=r<.15?pick(subs):r<(mode==='hearts'?.42:.26)?'bigheart':r<.32?'bag':'heart';}if(it==='whip')whips++;cd.item=it;});
  if(!L.candles.slice(1,6).some(cd=>subs.includes(cd.item)))L.candles[2].item=pick(['dagger','axe','cross']);
  return L;
 }
@@ -156,7 +157,7 @@ async function castlevania(s){
  function kill(p,pit){if(p.dead||p.finished)return;note(p,pit?'pit':'die');p.dead=1;p.pit=pit;p.deaths++;p.whip=null;p.stair=null;p.hurt=false;p.vx=0;p.vy=0;sfx.die();s.react(p.i,'sad');
   if(mode==='hearts')p.hearts-=Math.min(p.hearts,3);}
  function respawn(p){const w=worlds[p.i];let check=L.checks[0];for(const k of L.checks)if(k<=p.best+4)check=Math.max(check,k);
-  if(w.locked&&w.boss&&!w.boss.dead){w.locked=false;w.boss=null;check=Math.min(check,L.arena.x0-24);}
+  if(w.locked&&w.boss&&!w.boss.dead){w.bossHp=w.boss.hp;w.locked=false;w.boss=null;check=Math.min(check,L.arena.x0-24);}
   Object.assign(p,{x:check,y:FL*T,vx:0,vy:0,grounded:true,jumped:false,dead:0,pit:false,stair:null,whip:null,hurt:false,crouch:false,hp:HP,inv:90});
   w.foes=L.foes.filter(e=>e.x>check+120).map(spawnFoe);w.eshots=[];w.flames=[];w.shots=[];w.zoneT=L.zones.map(()=>60);cams[p.i].x=check-cams[p.i].w*.4;}
  function hurt(p,w,dmg,fromX){if(p.inv>0||p.dead||p.finished)return;p.hp=Math.max(0,p.hp-dmg);sfx.hurt();s.react(p.i,'sad');w.fx.shake(3);note(p,'hurt');
@@ -235,7 +236,7 @@ async function castlevania(s){
   if(p.y-30>ROWS*T+8){kill(p,true);return;}
   p.best=Math.max(p.best,p.x);
   const A=L.arena;
-  if(A&&!w.locked&&!w.crystal&&p.x>A.x0+40&&!p.dead){w.locked=true;w.boss={x:A.cx,y:3*T,hp:16,max:16,state:'sleep',t:0,inv:0,tx:A.cx,ty:56,vx:0,vy:0,flap:0,dead:false};sfx.boss();note(p,'boss room');}
+  if(A&&!w.locked&&!w.crystal&&p.x>A.x0+40&&!p.dead){w.locked=true;w.boss={x:A.cx,y:3*T,hp:w.bossHp||BAT_HP,max:BAT_HP,state:'sleep',t:0,inv:0,tx:A.cx,ty:56,vx:0,vy:0,flap:0,dead:false};sfx.boss();note(p,'boss room');}
   if(A&&w.locked&&!w.crystal)p.x=Math.max(p.x,A.x0+6);
   if(L.exitX&&p.x>=L.exitX&&p.grounded&&!p.dead)nextLap(p);
  }
@@ -305,15 +306,16 @@ async function castlevania(s){
    if(B.state==='die'){B.t++;if(B.t%6===0)w.fx.burst(B.x+(w.rng()-.5)*34,B.y+(w.rng()-.5)*16,{n:6,colors:[N.white,N.orange,N.gold],speed:60,life:.35,size:2});
     if(B.t>70){B.state='gone';w.crystal=true;dropItem(w,'crystal',A.cx,2*T);}}
    else if(B.state!=='gone'&&(!fr||B.state==='sleep')){B.t++;
-    const roam=()=>{B.state='hover';B.t=0;B.tx=A.x0+40+w.rng()*(A.x1-A.x0-80);B.ty=36+w.rng()*44;};
+    const roam=()=>{B.state='hover';B.t=0;B.tx=A.x0+40+w.rng()*(A.x1-A.x0-80);B.ty=88+w.rng()*26;};
     if(B.state==='sleep'){if(B.t>50)roam();}
     else if(B.state==='hover'){B.x+=(B.tx-B.x)*.03;B.y+=(B.ty-B.y)*.03+Math.sin(B.t*.1)*.4;
-     if(B.t>(B.hp<8?60:85)){B.t=0;if(w.rng()<.55&&!p.dead){B.state='swoop';const dx=p.x-B.x,dy=p.y-14-B.y,d=Math.max(1,Math.hypot(dx,dy));B.vx=dx/d*2.3;B.vy=dy/d*2.3;}else B.state='shoot';}}
+     if(B.t>(B.hp<6?70:95)){B.t=0;B.state=w.rng()<.6&&!p.dead?'tell':'shoot';}}
+    else if(B.state==='tell'){B.x+=Math.sin(B.t*1.7)*1.2;if(B.t>26){B.t=0;B.state='swoop';const dx=p.x-B.x,dy=p.y-14-B.y,d=Math.max(1,Math.hypot(dx,dy));B.vx=dx/d*1.8;B.vy=dy/d*1.8;}}
     else if(B.state==='swoop'){B.x+=B.vx;B.y+=B.vy;if(B.y>FL*T-14||B.t>60||B.x<A.x0+22||B.x>A.x1-22)roam();}
-    else if(B.state==='shoot'){if((B.t===20||B.t===42&&B.hp<10)&&!p.dead){const dx=p.x-B.x,dy=p.y-16-B.y,d=Math.max(1,Math.hypot(dx,dy));w.eshots.push({kind:'fire',x:B.x,y:B.y+6,vx:dx/d*1.7,vy:dy/d*1.7,g:0,t:0});sfx.sub();}
+    else if(B.state==='shoot'){if((B.t===24||B.t===46&&B.hp<5)&&!p.dead){const dx=p.x-B.x,dy=p.y-16-B.y,d=Math.max(1,Math.hypot(dx,dy));w.eshots.push({kind:'fire',x:B.x,y:B.y+6,vx:dx/d*1.4,vy:dy/d*1.4,g:0,t:0});sfx.sub();}
      if(B.t>58)roam();}
     B.x=clamp(B.x,A.x0+24,A.x1-24);B.y=clamp(B.y,24,FL*T-12);}
-   if(!['sleep','die','gone'].includes(B.state)&&!p.dead&&!p.finished&&overlap(playerBox(p),bossBox(B)))hurt(p,w,3,B.x);}
+   if(!['sleep','die','gone'].includes(B.state)&&!p.dead&&!p.finished&&overlap(playerBox(p),bossBox(B)))hurt(p,w,2,B.x);}
  }
  const updateCamera=(p,i)=>{const cam=cams[i],A=L.arena,w=worlds[i];let tx=p.x-cam.w*.5;
   if(A&&w.locked)tx=(A.x0+A.x1)/2-cam.w/2;
@@ -414,7 +416,7 @@ async function castlevania(s){
  function drawFlames(f){const k=Math.floor((simT*12+f.x))%3;for(const dx of [-6,0,6]){R(N.dblue,f.x+dx-2,f.y-5,5,5);R([N.sky,N.white,N.dblue][(k+Math.abs(dx))%3],f.x+dx-1,f.y-10-(k===dx/6+1?2:0),3,6);}}
  function drawBoss(B){if(B.state==='gone')return;const x=Math.round(B.x),y=Math.round(B.y);if(B.inv>0&&(frames>>1)%2)return;g.save();g.translate(x,y);
   if(B.state==='sleep'){R('#181018',-8,-6,16,18);R('#6a1c4c',-10,-4,4,14);R('#6a1c4c',6,-4,4,14);R('#fc3c3c',-4,6,2,2);R('#fc3c3c',2,6,2,2);R('#181018',-2,-10,4,4);g.restore();return;}
-  const up=Math.sin(B.flap)>0,wy=up?-10:6,die=B.state==='die';
+  const up=Math.sin(B.flap)>0,wy=up?-10:6,die=B.state==='die'||B.state==='tell'&&(frames>>2)%2;
   for(const sd of [-1,1]){g.fillStyle=die&&(frames>>2)%2?N.white:'#6a1c4c';g.beginPath();g.moveTo(sd*6,-3);g.lineTo(sd*20,wy-4);g.lineTo(sd*32,wy);g.lineTo(sd*26,wy+5);g.lineTo(sd*20,wy+2);g.lineTo(sd*14,wy+7);g.lineTo(sd*8,4);g.closePath();g.fill();
    g.strokeStyle='#c8a8c8';g.lineWidth=1;g.beginPath();g.moveTo(sd*6,-2);g.lineTo(sd*20,wy-4);g.lineTo(sd*32,wy);g.stroke();}
   R('#181018',-8,-7,16,14);R('#2c1c2c',-6,-5,12,10);R('#181018',-7,-11,4,5);R('#181018',3,-11,4,5);R('#fc3c3c',-5,-4,3,2);R('#fc3c3c',2,-4,3,2);R(N.white,-3,2,1,3);R(N.white,2,2,1,3);
@@ -500,7 +502,7 @@ async function castlevania(s){
   const left=Math.max(0,HUNT_TIME-clock);txt(`TIME ${mode==='hearts'?String(Math.ceil(left)).padStart(4,'0'):fmtRace(p.finished?p.finishT:clock)}`,s.W*.43,r1,size,mode==='hearts'&&left<10&&(frames>>4)%2?N.orange:N.white);
   txt(`STAGE ${String(p.lap+1).padStart(2,'0')}`,s.W-pad,r1,size,N.white,'right');
   const lw=g.measureText('PLAYER ').width;txt('PLAYER',pad,r2,size);bar(pad+lw,r2+size*.12,cellW,size*.72,p.hp,N.orange);
-  txt('ENEMY',pad,r3,size);bar(pad+lw,r3+size*.12,cellW,size*.72,B&&!B.dead?B.hp:w.crystal?0:16,N.peach);
+  txt('ENEMY',pad,r3,size);bar(pad+lw,r3+size*.12,cellW,size*.72,B&&!B.dead?Math.ceil(B.hp/B.max*16):w.crystal?0:w.bossHp?Math.ceil(w.bossHp/BAT_HP*16):16,N.peach);
   // sub-weapon box, hearts, name
   const bx=pad+lw+cellW+size*.8,bw=size*2.6,bh=size*2.05;g.strokeStyle=N.red;g.lineWidth=Math.max(1.5,size*.14);g.strokeRect(bx,r2,bw,bh);
   if(p.sub){g.save();g.translate(bx+bw/2,r2+bh*.86);const k=size/9;g.scale(k,k);g.imageSmoothingEnabled=false;drawPickup(p.sub,0,0);g.restore();}

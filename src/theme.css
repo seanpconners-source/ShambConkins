@@ -367,3 +367,5 @@ body .bleed-shell.bleed-quiet #game-status{display:none}
 body .bleed-shell .game-body:not(.drag-arena-body)>#game-controls:not(:empty){position:absolute;left:50%;bottom:calc(max(6px,env(safe-area-inset-bottom)) + 24px);transform:translateX(-50%);z-index:10;margin:0;display:flex;gap:6px;width:max-content;max-width:calc(100% - 16px)}
 body .bleed-shell .pass-overlay{z-index:30}
 @media(max-width:420px){body .bleed-shell>#game-scorebar .game-scoreplayer>span{display:none}}
+/* Games with their own full-screen shells bring their own fullscreen toggle. */
+body .ph-shell .game-actions .fs-mini,body .kt-shell .game-actions .fs-mini,body .smb-shell .game-actions .fs-mini,body .fb-shell .game-actions .fs-mini{display:none}
