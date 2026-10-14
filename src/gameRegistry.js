@@ -228,7 +228,8 @@ const REMAKES={
  tictactoe:['first to 2','Tic-tac-toe on the WOPR where each player keeps only three heads: your fourth move erases your oldest. No draws. First to two games wins.']
 };
 // Remade games: new titles (ids stay the same for old saves).
-const REMAKE_META={'pong-duel':{title:'Pong · Arcade 1972',source:'Pong',icon:'🏓'}};
+const REMAKE_META={'pong-duel':{title:'Pong · Arcade 1972',source:'Pong',icon:'🏓'},
+ 'space-swarm':{title:'Space Invaders · Mars Attacks!',source:'Space Invaders',icon:'👾',duration:'75s each',rules:'Take turns on the same invasion: P1 first, then P2. Drag anywhere to slide your cannon (your head rides in the dome); it fires while your finger is down, one shot in the air at a time. The formation speeds up as it thins out. Squid 30, crab 20, octopus 10, the Martian saucer up to 300. Three cannons, 75 seconds each.'}};
 for(const g of [...GAMES,...EVENT_GAMES])if(REMAKE_META[g.id])Object.assign(g,REMAKE_META[g.id]);
 for(const g of [...GAMES,...EVENT_GAMES]){const r=REMAKES[g.engine];if(r){g.duration=r[0];g.rules=r[1];}if(g.id==='alien-sonar-grid')g.title='Alien · Motion Tracker';if(g.id==='wopr-grid')Object.assign(g,{title:'WarGames · Vanishing Tic-Tac-Toe',source:'WarGames',icon:'❌'});}
 
