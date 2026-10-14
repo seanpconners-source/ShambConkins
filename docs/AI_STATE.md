@@ -130,8 +130,19 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   (striker bottom half vs keeper top half, real time), `dinnerService.js` (burger line + grill, pass&play),
   `motionTracker.js` (Alien tracker pings + flamethrower, pass&play), `vanishingTicTacToe.js` (3-mark limit; wopr-grid
   is now WarGames). All use `tarantinoKit.js` helpers (label/fx/shake/sfx/halfPointers). The old versions in
-  `restored.js`/`skill.js`/`puzzles.js`/`gestureLegacy.js` are now unused. Next weakest by the audit: minichess
-  (button bar), towerstack, arcade.js turn-based classics (lander/missile/breakout), battle royale, money grab.
+  `restored.js`/`skill.js`/`puzzles.js`/`gestureLegacy.js` are now unused. Those later candidates were all rebuilt in the October 2026 audit (below).
+
+- **Minigame audit, Oct 2026 (branch `claude/minigames-audit-polish-s7xpe8`):** see `docs/MINIGAME_AUDIT_2026-10.md`.
+  26 weak games rebuilt as new engine files with authentic looks (Atari Pong, Space Invaders ×3 incl. new ids
+  `space-swarm-versus`/`space-swarm-coop` in `packs/remakePack.js`, Breakout, Asteroids, Missile Command, Lunar Lander,
+  Nokia Snake II, Stacker, Spy Hunter chase, TRON cycles, slither duel, Atari Combat, Scorched Earth, drag race, sumo,
+  Nidhogg duel, Tapper, Battle Royale, GoldenEye Facility, Tri-D minichess, putt-putt, Olympic curling, Home Run Derby,
+  NES Duck Hunt, Warriors beat 'em up, real dartboard); 5 re-skinned. Shared helpers in `engines/retroKit.js`
+  (`turnRunner` = P1 then P2 on one seed; `fitField`; pixel/vector fonts; glowing pixel sprites).
+  Full-bleed for every canvas game: `session.bleed()` (on by default in `s.canvas`; `game.noBleed` opts out), floating
+  ⤢/❚❚/✕ icons + score chips; per-game `BLEED_HUD` own/strip/pad in `gameRegistry.js`; `s.ownHud(hide,quiet)`.
+  Titles/rules for remakes: `REMAKES` (by engine) and `REMAKE_META` (by id) at the end of `gameRegistry.js`.
+  All only bot/fuzz-tested in headless Chromium; real-phone feel untested.
 
 ## Recent changes (this round of owner feedback)
 Boss trigger fix + drag flow; 2x heads (board, collection, character select); collection pages fit the screen;
