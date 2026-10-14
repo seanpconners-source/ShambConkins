@@ -1,8 +1,5 @@
 # ShambConkins — Claude guide
 
-> **GitHub Actions cost guard (2026-10-11):** Full development and Broforce validation workflows are manual-only on current integration branches after an excessive CI run storm. Do not re-enable push/PR-wide jobs or work from obsolete worker branches with old triggers. Use local tests first; manual Broforce workflow is available from GitHub Actions on `feature/broforce-wave4-candidate` once runners work. See `AGENTS.md` for details.
-
-
 Offline, single-file HTML party board game for two people sharing one phone (Sean & Amber).
 Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret Horror), ~120 minigames,
 650+ unlockable characters, pop-culture references everywhere (see docs/REFERENCE_LIST.md).
@@ -50,12 +47,20 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   offline they fall back to an emoji placeholder. Don't add copyrighted melodies (music uses public-domain tunes).
 - Git: develop on the session's designated branch, commit with clear messages, push; never force-push,
   reset, or discard the owner's work without explicit permission. The owner sometimes pushes art directly:
-  `git pull --rebase` before pushing if rejected.
+  `git pull --rebase` before pushing if rejected. `TESTver` is the integration branch the owner playtests: when asked to
+  merge there, merge/fast-forward and push normally (no force). `main` = releases, only with the owner's approval.
+- GitHub Actions: test workflows are manual-only (`workflow_dispatch`) after a costly CI storm; don't add push/PR
+  triggers. The only automatic one copies portraits uploaded to `main` into TESTver (`portrait-main-to-testver.yml`).
 
 ## How to work here
 - Start a task from this file, `docs/AI_STATE.md`, `git status`/`git log`, and only the source files the task touches.
   Don't reread the whole repo; long files have very long lines, so grep/cut instead of dumping them.
-- Verify UI/game changes with a build plus a Playwright screenshot (phone 390x780 and desktop 1100x700).
+- Test only what the change touches: a build, the focused test for that game/system (or
+  `node tests/games.mjs 5 3 <id-regex>`), and Playwright screenshots for UI (phone 390x780, desktop 1100x700).
+  Run the full `npm test` (~45 min) only when a change hits shared code (`session.js`, `gameRegistry.js`, `gameLauncher.js`,
+  `app.js`, `ui.js`, `profile.js`/`persistence.js`, build tools) or before a release; not for every push or TESTver merge.
+- `AGENTS.md` and the `docs/CODEX_*`/`CHATGPT_*`/`DEVELOPMENT_TASKS.md` files are for GPT/Codex workers only; Claude ignores
+  their validation rituals and report formats. Keep reports to the owner short and plain.
 - After a meaningful task, update `docs/AI_STATE.md` (replace stale lines, keep it short; no transcripts).
 - When a coherent chunk of work is done, tell the owner it's a good point for a fresh session;
   stay in the session while actively debugging.
