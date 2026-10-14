@@ -30,7 +30,9 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
 - Focused tests (Playwright, headless Chromium at /opt/pw-browsers/chromium-1194/chrome-linux/chrome,
   module at /node-tools/node_modules): `tests/bossgate.mjs`, `tests/warpflow.mjs`, `tests/warp.mjs`,
   `tests/levels.mjs`, `tests/boss.mjs`, `tests/photohunt.mjs`, `tests/controls-audit.mjs`, `tests/music.mjs`, `SHAMB_FILE=... node tests/games.mjs 5 3 <id-regex>`.
-- Release: bump `src/version.js` + `package.json`, `npm run release` → `releases/ShambConkins_vX.html`, add a CHANGELOG entry. Large generated HTML (v0.58.3 is 130 MB) is a GitHub Release asset, NOT a git blob; maintain tested production build and keep source/artwork unchanged.
+- Release: bump `src/version.js` + `package.json`, `npm run release` → `releases/ShambConkins_vX.html`, add a CHANGELOG entry.
+  Owner's Windows one-click `BUILD-RELEASE.cmd` builds the checked-out branch: main → `ShambConkins_vX.html`, TESTver →
+  `ShambConkins_vX_TestVer.html`, other branches → `_<branch>`; never overwrites (adds `_built-<timestamp>`); non-main builds are gitignored. Large generated HTML (v0.58.3 is 130 MB) is a GitHub Release asset, NOT a git blob; maintain tested production build and keep source/artwork unchanged.
 
 ## Rules (don't break these)
 - Old saves must keep loading: never rename character/location/game ids; add fields defensively;

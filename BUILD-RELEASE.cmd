@@ -2,7 +2,7 @@
 setlocal
 cd /d "%~dp0"
 echo.
-echo ShambConkins - compile standalone release HTML from MAIN
+echo ShambConkins - compile standalone release HTML from the checked-out branch
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0BUILD-RELEASE.ps1"
 set "code=%errorlevel%"
 echo.

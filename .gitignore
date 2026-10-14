@@ -2,3 +2,5 @@ dist/
 node_modules/
 *.log
 local-test-reports/
+# Local branch/timestamped builds from BUILD-RELEASE.cmd (e.g. ShambConkins_v0.60.0_TestVer.html); plain main releases stay visible.
+releases/ShambConkins_v*_*.html
