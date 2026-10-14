@@ -17,6 +17,12 @@ for (let lv = 1; lv <= 40; lv++) {
   if (!sim.won) fail(`autopilot could not clear level ${lv}: ${sim.goals.map(g => g.k + ' ' + g.got + '/' + g.need).join(', ')}`);
   else if (lv <= 3 || lv % 10 === 0) console.log(`level ${lv} ${a.theme}: ${a.items.length} props, goals ${a.goals.map(g => g.k + '×' + g.need).join(' ')}, bot clear ${sim.clearTime.toFixed(1)}s, size ${sim.hole.size}`);
 }
+// Levels rebuilt from the owner's videos keep the exact goal cards
+for (const [lv, H] of Object.entries(L.HAND)) {
+  const d = L.buildLevel(Number(lv));
+  if (H.goals) for (const [k, n] of H.goals) { const g = d.goals.find(g => g.k === k); if (!g || g.need !== n) fail(`level ${lv} goal ${k} is ${g?.need} not ${n}`); }
+  if (H.score && d.goals[0]?.need !== H.score) fail(`level ${lv} score goal ${d.goals[0]?.need} not ${H.score}`);
+}
 // Boosters
 { const sim = S.createSim(L.buildLevel(3)); const s0 = sim.hole.size; S.useBoost(sim, 'grow'); if (sim.hole.size !== s0 + 1) fail('potion did not grow');
   if (S.useBoost(sim, 'grow')) fail('second potion allowed'); S.useBoost(sim, 'freeze'); const t0 = sim.time; S.stepSim(sim, 1, {x: 0, z: 0}); if (sim.time !== t0) fail('freeze did not stop the clock'); }

@@ -165,6 +165,79 @@ kind('onigiri','Onigiri',.34,.48,['sushi'],g=>{add(g,extrude([[-.3,0],[.3,0],[.2
 kind('chopsticks','Chopsticks',.48,.06,['sushi'],g=>{for(const sx of [-1,1])add(g,rbox(.035,.035,.9,.012),{at:[sx*.04,0,0],r:[0,sx*.04,0]},(p)=>p[2]>.25?C('#c8202a'):C('#e8c890'));});
 kind('soy-dish','Soy Dish',.36,.1,['sushi'],g=>{add(g,lathe([[0,0],[.22,0,1],[.34,.09],[.3,.1],[0,.05]],16),{},(p)=>p[1]>.04&&Math.hypot(p[0],p[2])<.29?C('#3a1a0e'):WHITE);});
 
+// ---- Props from the owner's third video (Hard Level 30, Levels 31-34) ----
+const PI=Math.PI;
+// Level 30 (bakery & veg)
+kind('blueberry','Blueberry',.12,.2,['treats','fruit'],g=>{add(g,sphere(10,7),{at:[0,.1,0],s:[.12,.1,.12]},C('#2f5fe0'));add(g,extrude(starPoly(5,.05,.025),.02),{at:[0,.19,0]},C('#1d3a9a'));});
+kind('choc-muffin','Chocolate Muffin',.3,.5,['treats'],g=>{add(g,lathe([[0,0],[.19,0,1],[.25,.22,1],[0,.22]],14),{},(p)=>Math.floor((Math.atan2(p[2],p[0])+4)*2.2)%2?C('#c98a4a'):C('#b07438'));
+ add(g,lathe([[0,.2],[.3,.22],[.29,.3],[.2,.37],[0,.4]],14),{},C('#5a2e18'));add(g,lathe([[0,.36],[.12,.37],[.08,.42],[0,.43]],10),{},C('#fff2e0'));add(g,sphere(8,6),{at:[0,.47,0],s:.06},C('#e8102c'));});
+for(const [id,name,foam,art] of [['latte','Latte','#c9874a','#fff3e0'],['matcha','Matcha Latte','#9cc25a','#f6f7e6']])
+ kind(id,name,.26,.22,['treats','kitchen'],g=>{add(g,lathe([[0,0],[.25,0,1],[.27,.02],[.25,.04],[0,.04]],16),{},WHITE);
+  add(g,lathe([[0,.04],[.12,.04,1],[.19,.2,1],[.17,.2],[0,.18]],16),{},(p)=>p[1]>.17&&Math.hypot(p[0],p[2])<.17?(Math.abs(Math.hypot(p[0]*1.2,p[2]+.03)-.07)<.025||Math.hypot(p[0],p[2]+.03)<.03?C(art):C(foam)):WHITE);
+  add(g,torus(.05,.015,8,5,PI),{at:[.2,.12,0],r:[PI/2,0,PI/2]},WHITE);});
+kind('cabbage','Cabbage',.9,1.6,['fruit','kitchen'],g=>{add(g,sphere(18,12),{at:[0,.8,0],s:[.9,.8,.9]},(p,n)=>{const v=Math.sin(Math.atan2(p[2],p[0])*7+p[1]*4);return v>.75?C('#d8ef9a'):mix(C('#8cc63a'),C('#a8d84e'),p[1]*.5+.5);});
+ for(let i=0;i<5;i++){const a=i/5*TAU;add(g,sphere(10,6),{at:[Math.cos(a)*.55,.62,Math.sin(a)*.55],s:[.45,.6,.18],r:[0,-a,0]},C('#9cd048'));}});
+for(const [id,name,body,top] of [['carrot','Carrot','#ff7a1a','#3fa02c'],['radish','White Radish','#f4f0e6','#5aa83a']])
+ kind(id,name,.3,.13,['fruit','kitchen'],g=>{add(g,lathe([[0,0],[.07,.06],[.06,.3],[.02,.45],[0,.48]],10),{at:[0,.07,.16],r:[-PI/2,0,0]},(p)=>Math.floor(p[1]*28)%3===0?mix(C(body),EYE,.12):C(body));
+  for(const a of [-.4,0,.4])add(g,sphere(6,4),{at:[Math.sin(a)*.05,.08,.2+Math.cos(a)*.06],s:[.025,.025,.08],r:[0,a,0]},C(top));});
+kind('tray-strawberry','Strawberry Tray',.55,.2,['fruit','kitchen'],g=>{add(g,rbox(.9,.12,.6,.04),{},C('#3dbb4a'));for(let i=0;i<4;i++)for(let j=0;j<2;j++)add(g,sphere(8,6),{at:[-.3+i*.2,.15,-.12+j*.24],s:[.09,.08,.09]},C('#e8263a'));});
+kind('tray-cookies','Cookie Tray',.6,.12,['treats'],g=>{add(g,rbox(1.0,.06,.66,.03),{},C('#c2c8d2'));for(let i=0;i<4;i++)for(let j=0;j<3;j++)add(g,extrude(starPoly(5,.08,.04),.03),{at:[-.33+i*.22,.06,-.2+j*.2]},C('#ffc93a'));});
+kind('cookie-box','Chocolate Cookies Box',.7,.95,['treats'],g=>{add(g,rbox(1.0,.95,.5,.04),{},(p,n)=>n[2]>.5&&p[1]>.35&&p[1]<.62?C('#5a2e18'):C('#ff8a2a'));add(g,rbox(.7,.04,.05,.01),{at:[0,.5,.26]},C('#fff2e0'));
+ for(const [x,y] of [[-.3,.2],[0,.25],[.3,.18],[-.15,.78],[.2,.8]])add(g,cyl(.08,.02,10),{at:[x,y,.25],r:[PI/2,0,0]},C('#a5652e'));});
+for(const [id,col] of [['snack-purple','#8a3cf0'],['snack-orange','#ff9a1e']])
+ kind(id,'Snack Bag',.26,.1,['treats'],g=>{add(g,rbox(.36,.08,.46,.04),{},(p)=>Math.abs(p[2])>.2?mix(C(col),WHITE,.25):C(col));add(g,cyl(.08,.01,12),{at:[0,.08,0]},C('#fff2e0'));});
+kind('candy','Wrapped Candy',.14,.08,['treats'],g=>{add(g,sphere(8,6),{at:[0,.06,0],s:[.07,.055,.07]},C('#ff3b4e'));for(const sx of [-1,1])add(g,lathe([[0,0],[.05,.06],[0,.07]],6),{at:[sx*.06,.06,0],r:[0,0,-sx*PI/2]},C('#ffd23a'));});
+kind('cakepop','Cake Pop',.15,.12,['treats'],g=>{add(g,sphere(8,6),{at:[0,.08,-.08],s:.08},C('#9ad83a'));add(g,cyl(.012,.22,6),{at:[0,.06,-.02],r:[-PI/2,0,0]},WHITE);});
+kind('bread','Swirl Loaf',.55,.42,['kitchen','treats'],g=>{add(g,rbox(.5,.4,.95,.18),{},(p)=>Math.sin(p[0]*12+p[1]*14)>.55?C('#7a3a12'):C('#d27a2a'));});
+kind('hotdog','Hot Dog',.42,.2,['kitchen'],g=>{add(g,sphere(12,8),{at:[0,.08,0],s:[.15,.08,.4]},C('#f2b25a'));add(g,sphere(12,8),{at:[0,.13,0],s:[.08,.07,.45]},C('#b8442a'));for(let i=0;i<4;i++)add(g,rbox(.12,.015,.03,.008),{at:[0,.2,-.24+i*.16],r:[0,.6,0]},C('#ffd21a'));});
+kind('eggplant','Eggplant',.5,.3,['fruit','kitchen'],g=>{add(g,lathe([[0,0],[.12,.05],[.16,.3],[.13,.55],[.08,.7],[0,.75]],12),{at:[0,.15,.38],r:[-PI/2,0,0],s:[1.2,1,1.2]},C('#7a2bb8'));add(g,extrude(starPoly(5,.1,.05),.04),{at:[0,.12,-.38],r:[PI/2,0,0]},C('#3fa02c'));});
+for(const [id,a,b] of [['block-red','#ff6a5a','#ffb0a0'],['block-blue','#3ab8f0','#a8e4ff'],['block-green','#9ad83a','#d8f49a'],['block-yellow','#ffc93a','#ffe9a0']])
+ kind(id,'Toy Block',.7,1.0,['toys'],g=>{add(g,rbox(1.0,1.0,1.0,.06),{},(p)=>(Math.floor(p[0]*8+8)+Math.floor(p[1]*8)+Math.floor(p[2]*8+8))%2?C(a):C(b));});
+kind('cannoli','Cannoli',.28,.12,['treats'],g=>{add(g,cyl(.07,.4,10),{at:[0,.07,-.2],r:[PI/2,0,0]},C('#e8a050'));for(const z of [-.22,.22])add(g,sphere(8,5),{at:[0,.07,z],s:[.06,.06,.04]},C('#fff2e0'));});
+kind('jelly','Blue Jelly',.25,.25,['treats'],g=>{add(g,lathe([[0,0],[.22,0,1],[.18,.2],[.1,.24],[0,.25]],8),{},C('#3ab8f0'));add(g,sphere(8,5),{at:[0,.26,0],s:.06},C('#fff2e0'));});
+// Level 31 (sea & toys)
+kind('shark','Toy Shark',.6,.35,['toys'],g=>{const B=C('#3a7be8');add(g,sphere(14,9),{at:[0,.17,0],s:[.18,.15,.55]},(p)=>p[1]<-.4?C('#dfe8f6'):B);add(g,extrude([[0,0],[.2,0],[0,.25]],.04),{at:[-.02,.27,-.05],r:[0,PI/2,0]},B);
+ add(g,extrude([[0,0],[.25,.12],[.25,-.12]],.04),{at:[0,.17,-.5],r:[PI/2,0,0]},B);for(const sx of [-1,1])add(g,sphere(6,4),{at:[sx*.1,.22,.35],s:.03},EYE);});
+kind('pineapple-toy','Pineapple Buddy',.3,.48,['toys'],g=>{add(g,sphere(12,8),{at:[0,.2,0],s:[.24,.2,.24]},(p)=>(Math.floor(p[1]*6+6)+Math.floor(Math.atan2(p[2],p[0])*2))%2?C('#ffc21e'):C('#ffad14'));
+ for(let i=0;i<5;i++){const a=i/5*TAU;add(g,sphere(6,4),{at:[Math.cos(a)*.05,.42,Math.sin(a)*.05],s:[.03,.09,.03],r:[Math.sin(a)*.5,0,Math.cos(a)*.5]},C('#4ab030'));}
+ for(const sx of [-1,1])add(g,torus(.05,.015,10,5),{at:[sx*.07,.25,.21],r:[PI/2,0,0]},C('#2ab0e0'));eyes(g,.25,.22,.07,.03);});
+for(const [id,body] of [['penguin','#3a8af0'],['penguin-green','#6ad048']])
+ kind(id,'Toy Penguin',.24,.42,['toys'],g=>{add(g,sphere(12,8),{at:[0,.2,0],s:[.2,.21,.19]},(p)=>p[2]>.35?WHITE:C(body));add(g,sphere(8,5),{at:[0,.25,.2],s:[.05,.03,.05]},C('#ff9a1e'));eyes(g,.3,.17,.06,.03);});
+kind('frog-ball','Green Fish',.3,.3,['toys'],g=>{add(g,sphere(12,8),{at:[0,.15,0],s:[.26,.15,.22]},C('#8ad83a'));add(g,extrude([[0,0],[.12,.08],[.12,-.08]],.03),{at:[0,.15,-.22],r:[PI/2,0,0]},C('#6ab828'));eyes(g,.22,.16,.08,.04);});
+kind('pig','Toy Pig',.55,.6,['toys'],g=>{const P=C('#ff9ab8');add(g,sphere(14,10),{at:[0,.32,0],s:[.42,.3,.5]},P);add(g,cyl(.12,.08,10),{at:[0,.34,.48],r:[PI/2,0,0]},mix(P,C('#ff6a9a'),.4));
+ for(const sx of [-1,1]){add(g,extrude([[0,0],[.1,.06],[.04,.14]],.03),{at:[sx*.18,.58,.25]},P);for(const sz of [-1,1])add(g,cyl(.07,.12,8),{at:[sx*.22,0,sz*.25]},P);}eyes(g,.44,.42,.12,.04);});
+kind('dolphin','Toy Dolphin',.55,.5,['toys'],g=>{const B=C('#48b8f0');add(g,sphere(14,9),{at:[0,.22,0],s:[.18,.2,.5]},B);add(g,lathe([[0,0],[.06,.05],[0,.15]],8),{at:[0,.22,.55],r:[PI/2,0,0]},B);add(g,extrude([[0,0],[.18,0],[0,.22]],.04),{at:[0,.38,0],r:[0,PI/2,0]},B);eyes(g,.3,.32,.08,.03);});
+kind('boat','Toy Boat',.55,.45,['toys'],g=>{add(g,extrude([[-.25,-.5],[.25,-.5],[.25,.25],[0,.55],[-.25,.25]],.2,true),{},(p)=>p[1]<.08?C('#ffffff'):C('#3a7be8'));add(g,rbox(.3,.2,.4,.05),{at:[0,.2,-.1]},C('#f2f6ff'));add(g,rbox(.32,.03,.42,.02),{at:[0,.4,-.1]},C('#3a7be8'));});
+kind('fox','Toy Fox',.3,.4,['toys'],g=>{const O=C('#ff8a2a');add(g,sphere(12,8),{at:[0,.17,0],s:[.2,.16,.24]},O);add(g,sphere(10,7),{at:[0,.3,.16],s:.13},O);for(const sx of [-1,1])add(g,extrude([[0,0],[.07,.03],[.02,.11]],.03),{at:[sx*.08,.38,.14]},O);add(g,sphere(8,5),{at:[0,.27,.3],s:[.05,.04,.04]},WHITE);eyes(g,.33,.27,.05,.025);});
+kind('pearl','Pearl',.1,.18,['toys'],g=>{add(g,sphere(10,7),{at:[0,.09,0],s:.09},C('#f6f2f2'));});
+kind('pin-stack','Stacking Toy',.17,.42,['toys'],g=>{add(g,lathe([[0,0],[.15,0,1],[.16,.18],[.12,.22,1],[0,.22]],12),{},C('#ff9a2a'));add(g,lathe([[0,.22],[.13,.22,1],[.12,.36],[.06,.42],[0,.42]],12),{},C('#2ec8f0'));});
+kind('lego-long','Long Lego Brick',.5,.2,['toys'],g=>{const c=C('#8a3cf0');add(g,rbox(.25,.18,.95,.02),{},c);for(let i=0;i<6;i++)add(g,cyl(.045,.05,8),{at:[0,.18,-.39+i*.156]},mix(c,WHITE,.08));});
+// Level 32 (toy shop)
+kind('alien-bot','Alien Bot',.3,.48,['toys'],g=>{const G=C('#8ad83a');add(g,sphere(12,8),{at:[0,.22,0],s:[.24,.22,.22]},G);add(g,rbox(.28,.12,.06,.05),{at:[0,.22,.18]},C('#1b2a4a'));for(const sx of [-1,1])add(g,sphere(6,4),{at:[sx*.07,.28,.22],s:.03},C('#3ad0ff'));
+ for(const sx of [-1,1]){add(g,cyl(.012,.12,6),{at:[sx*.09,.4,0],r:[0,0,-sx*.4]},G);add(g,sphere(6,4),{at:[sx*.14,.52,0],s:.03},C('#ffd23a'));}});
+kind('toy-car','Toy Car',.38,.26,['toys'],g=>{const O=C('#ff8a2a');add(g,rbox(.3,.14,.66,.05),{at:[0,.06,0]},O);add(g,rbox(.26,.1,.3,.04),{at:[0,.2,-.05]},mix(O,C('#ffb060'),.4));
+ for(const sx of [-1,1])for(const sz of [-1,1])add(g,cyl(.07,.06,10),{at:[sx*.17,.07,sz*.22],r:[0,0,PI/2]},EYE);});
+kind('mixer','Stand Mixer',.5,.75,['kitchen'],g=>{const R=C('#e8302a');add(g,rbox(.5,.08,.6,.03),{},R);add(g,rbox(.16,.6,.16,.05),{at:[0,0,-.2]},R);add(g,rbox(.24,.18,.5,.08),{at:[0,.58,-.02]},R);add(g,lathe([[0,0],[.14,.02],[.2,.18],[.19,.22,1],[0,.22]],14),{at:[0,.08,.08]},C('#d0d4dc'));});
+kind('pawn','White Pawn',.12,.32,['toys'],g=>{add(g,lathe([[0,0],[.11,0,1],[.11,.04],[.06,.08],[.04,.2],[.07,.22],[.04,.24],[.07,.28],[.05,.32],[0,.33]],10),{},C('#eef0f4'));});
+for(const [id,name,col] of [['smoothie-green','Lime Smoothie','#8ad83a'],['milkshake','Milkshake','#ff9ab8'],['milkshake-blue','Blue Shake','#3a8af0']])
+ kind(id,name,.2,.48,['treats','kitchen'],g=>{add(g,lathe([[0,0],[.13,0,1],[.18,.32,1],[0,.32]],12),{},C(col));add(g,lathe([[0,.31],[.18,.31],[.15,.38],[.06,.43],[0,.44]],12),{},WHITE);add(g,cyl(.015,.22,6),{at:[.05,.3,0],r:[0,0,-.3]},C('#e8302a'));});
+// Level 33 (market)
+kind('corn','Corn Cob',.32,.15,['fruit','kitchen'],g=>{add(g,sphere(12,8),{at:[0,.08,0],s:[.09,.08,.3]},(p)=>(Math.floor(p[2]*14+14)+Math.floor(Math.atan2(p[1],p[0])*3))%2?C('#ffd23a'):C('#ffb800'));for(const sx of [-1,1])add(g,sphere(6,4),{at:[sx*.05,.08,.12],s:[.04,.04,.2],r:[0,sx*.3,0]},C('#5aa83a'));});
+kind('cake-pink','Pink Layer Cake',.45,.85,['treats'],g=>{for(const [r,y,hh,c] of [[.42,0,.28,'#ffd0e0'],[.32,.28,.25,'#ff9ab8'],[.22,.53,.2,'#fff0f6']])add(g,cyl(r,hh,16),{at:[0,y,0]},C(c));for(let i=0;i<3;i++){const a=i/3*TAU;add(g,cyl(.02,.12,6),{at:[Math.cos(a)*.1,.73,Math.sin(a)*.1]},C(['#3a8af0','#ffd23a','#e8302a'][i]));}});
+kind('lollipop','Swirl Lollipop',.24,.45,['treats'],g=>{add(g,cyl(.015,.25,6),{},WHITE);add(g,cyl(.18,.06,16),{at:[0,.25,.03],r:[PI/2-.4,0,0]},(p)=>Math.sin(Math.atan2(p[2],p[0])*2+Math.hypot(p[0],p[2])*40)>0?C('#a83cf0'):C('#ff7ab8'));});
+kind('macaron','Green Macaron',.24,.25,['treats'],g=>{const G=C('#8ad83a');add(g,cyl(.22,.09,14),{},G);add(g,cyl(.19,.06,14),{at:[0,.09,0]},C('#f6f2e0'));add(g,lathe([[0,.15],[.22,.15],[.2,.22],[0,.25]],14),{},G);});
+kind('shrimp','Tempura Shrimp',.25,.14,['sushi','kitchen'],g=>{add(g,torus(.12,.06,10,6,PI*1.1),{at:[0,.07,0]},C('#ff7a2a'));add(g,extrude([[0,0],[.08,.05],[.08,-.05]],.02),{at:[.12,.06,-.04]},C('#ff4a2a'));});
+kind('pepper','Bell Pepper',.3,.36,['fruit','kitchen'],g=>{for(let i=0;i<4;i++){const a=i/4*TAU;add(g,sphere(10,7),{at:[Math.cos(a)*.1,.16,Math.sin(a)*.1],s:[.17,.17,.17]},C('#e8201a'));}add(g,cyl(.03,.1,6),{at:[0,.3,0]},C('#3fa02c'));});
+kind('teapot','Teapot',.45,.5,['kitchen'],g=>{const T=C('#e8783a');add(g,sphere(14,9),{at:[0,.22,0],s:[.3,.22,.3]},T);add(g,sphere(8,5),{at:[0,.45,0],s:[.1,.04,.1]},WHITE);add(g,cyl(.04,.25,6),{at:[.28,.15,0],r:[0,0,-.9]},T);add(g,torus(.1,.025,8,5,PI),{at:[-.3,.25,0],r:[PI/2,0,PI/2]},T);});
+kind('pot-pink','Pink Pot',.45,.5,['kitchen'],g=>{const B=C('#ff8ac0');add(g,lathe([[0,0],[.36,0,1],[.38,.05],[.38,.32,1],[0,.32]],16),{},B);add(g,lathe([[0,.31],[.4,.32],[.33,.4],[0,.42]],16),{},mix(B,WHITE,.2));add(g,sphere(8,5),{at:[0,.44,0],s:[.06,.03,.06]},WHITE);});
+// Level 34 (diner)
+kind('waffle','Waffle',.36,.08,['treats','kitchen'],g=>{add(g,cyl(.36,.07,18),{},(p,n)=>n[1]>.5&&(Math.abs(((p[0]*9)%1+1)%1-.5)<.12||Math.abs(((p[2]*9)%1+1)%1-.5)<.12)?C('#c87a2a'):C('#f0b25a'));});
+for(const [id,col] of [['candy-pink','#ff6ad0'],['candy-purple','#a83cf0'],['candy-orange','#ffb02a']])
+ kind(id,'Candy Square',.13,.07,['treats'],g=>{add(g,rbox(.18,.06,.18,.02),{},C(col));add(g,rbox(.06,.02,.06,.01),{at:[0,.06,0]},WHITE);});
+kind('cake-strawberry','Strawberry Cake',.5,.5,['treats'],g=>{add(g,cyl(.45,.36,18),{},(p)=>Math.sin(p[0]*30)*Math.sin(p[2]*30)>.6?C('#e8263a'):C('#fff0f4'));add(g,cyl(.47,.05,18),{at:[0,.34,0]},C('#ffd0e0'));add(g,sphere(10,7),{at:[0,.45,0],s:.1},C('#e8263a'));});
+kind('jar-orange','Orange Jam Jar',.6,1.0,['kitchen'],g=>{add(g,lathe([[0,0],[.5,0,1],[.56,.12],[.56,.7],[.5,.8,1],[0,.8]],18),{},(p)=>p[1]>.3&&p[1]<.56?C('#fff4dc'):C('#ff8a1a'));add(g,cyl(.46,.2,18),{at:[0,.8,0]},C('#f2f2f2'));});
+kind('jar-apple','Apple Juice Jar',.6,1.0,['kitchen'],g=>{add(g,lathe([[0,0],[.5,0,1],[.56,.12],[.56,.7],[.5,.8,1],[0,.8]],18),{},(p)=>p[1]>.3&&p[1]<.56?C('#fff4dc'):C('#9ad83a'));add(g,cyl(.46,.2,18),{at:[0,.8,0]},C('#d8dce4'));});
+kind('cake-birthday','Birthday Cake',.9,1.1,['treats'],g=>{for(const [r,y,hh] of [[.85,0,.4],[.62,.4,.35],[.4,.75,.25]])add(g,cyl(r,hh,20),{at:[0,y,0]},(p)=>Math.sin(p[0]*40+p[1]*20)*Math.sin(p[2]*40)>.7?C(['#3a8af0','#ffd23a','#5ee06a'][Math.floor(Math.abs(p[0]*10))%3]):C('#ff9ac8'));for(let i=0;i<3;i++)add(g,cyl(.03,.18,6),{at:[(i-1)*.15,1.0,0]},C(['#3a8af0','#ffd23a','#e8302a'][i]));});
 // ShambConkins cameos (owner asked for occasional ones)
 kind('rum-ham','Rum Ham',.4,.42,['cameo'],g=>{add(g,sphere(14,10),{at:[0,.16,0],s:[.34,.24,.3]},(p)=>p[1]>.55?C('#f08a7a'):C('#c9583e'));add(g,cyl(.05,.4),{at:[.2,.22,0],r:[0,0,-1.2]},C('#fff6e6'));for(const dy of [-.05,.05])add(g,sphere(8,6),{at:[.58,.36+dy,0],s:.06},C('#fff6e6'));});
 kind('fight-milk','Fight Milk',.2,.56,['cameo'],g=>{add(g,lathe([[0,0],[.16,0,1],[.17,.32],[.1,.44],[.07,.48,1],[0,.48]],14),{},(p)=>p[1]>.12&&p[1]<.26?C('#d8232a'):WHITE);add(g,cyl(.08,.08),{at:[0,.48,0]},C('#d8232a'));});

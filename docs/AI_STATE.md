@@ -69,7 +69,18 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   goal `{k:'score'}` = sum of `propXp`, wide star card `drawScoreCard`); popups show each prop's value; goal props/stars fly from
   the hole into their card (`turn.flyers`, card counts wait for arrivals); too-big props sag into the mouth on the rim, lean in
   and get nudged by the moving rim (`it.wob/lean`, `relocate` keeps the grid right). New props: popsicles ×6, kiwi, tomato;
-  Sweet Shop theme (`treats`); Lego brick towers (`fLegoTowers`) in toy/treat levels. Full bleed via `fullBleed(s)` (engine `hole` in the `noBleed` list; floating Pause/Exit replace its own pause
+  Sweet Shop theme (`treats`); Lego brick towers (`fLegoTowers`) in toy/treat levels.
+  Third owner video (Hard Level 30 + Levels 31-34, Oct 14): camera measured from it (hole rim 27% of the short side at Size 1 →
+  ~61% at Size 10: `cameraFor`), hole radius ×1.15/size, prop value (r/.3)^1.6 (+1/+2/+4/+10/+15), per-level growth curve
+  (`growBase`: at every size you can reach the next by eating ~65% of what already fits, so the biggest prop becomes edible near
+  the end). Props have a per-instance scale `sc` (giant duck = duck sc 4.6, goal key `gk` 'duck+' → BIG card badge). Walled grass
+  islands (`def.islands`, hole slides along them; drawn as walls + raised grass). `layout.js` = placement toolkit (row/grid/rings/
+  spiral/snake/diag/scatter/pile/tower/triangle, `topUp`, `removeItems`); `handLevels.js` = levels 30-34 remade from the video with
+  the exact goal cards (30: star 234 / choc-muffin 45 / latte 121 / cabbage 19; 31: shark 4 / duck 402 / pineapple-toy 28; 32: ★1150;
+  33: matcha 201 / melon-slice 37 / corn 8 / cake-pink 4 / tray-strawberry 4; 34: waffle 26 / watermelon 11 / milkshake-blue 26 /
+  jar-orange 19). ~45 new props for them. Generator: wide tray, size classes mixed everywhere (small/medium/large/giant, giants
+  capped by level), islands kept a big hole's width from walls and each other, `fillGaps` packs empty floor. Test bot routes
+  around islands (Dijkstra over island corners). Map tool idea: dump `buildLevel(n).items` and draw circles (used to lay out 30-34). Full bleed via `fullBleed(s)` (engine `hole` in the `noBleed` list; floating Pause/Exit replace its own pause
   button, boosters sit above the ⤢ toggle, player name/target to beat under the pills). Flow in `engines/holeIt.js`: pass → "Level N" intro (duck/apple/croissant over a
   hole, Play) → 2:00 play (floating joystick, clock waits for the first drag, level 1 infinity tutorial) → Bravo!/Time's up →
   P2 plays the same level. Score = goal items + (clear ? 1000 + 10×seconds left). `profile.holeItLevel` (load whitelisted

@@ -10,14 +10,14 @@ const key=(x,z)=>Math.floor(x/CELL)*100003+Math.floor(z/CELL);
 const BOOSTS={grow:{name:'Grow',time:0},speed:{name:'Lightning',time:10},magnet:{name:'Magnet',time:8},freeze:{name:'Freeze',time:10}};
 function createSim(def,{charges=1}={}){
  const goalKinds=new Set(def.goals.map(g=>g.k));
- const items=def.items.map((it,i)=>{const r=kindR(it.k),h=kindH(it.k);return {i,k:it.k,r,h,x:it.x,z:it.z,cy:it.y+h/2,yaw:it.yaw,on:it.on,state:0,q:qaxis(0,1,0,it.yaw),vy:0,ox:0,oz:0,w:0,ax:0,az:0,spin:0,wob:0,goal:goalKinds.has(it.k),xp:propXp(r),counted:false,moved:true};});
+ const items=def.items.map((it,i)=>{const sc=it.sc||1,r=kindR(it.k)*sc,h=kindH(it.k)*sc,gk=it.gk||it.k;return {i,k:it.k,gk,sc,h0:kindH(it.k),r,h,x:it.x,z:it.z,cy:it.y+h/2,yaw:it.yaw,on:it.on,state:0,q:qaxis(0,1,0,it.yaw),vy:0,ox:0,oz:0,w:0,ax:0,az:0,spin:0,wob:0,goal:goalKinds.has(gk),xp:propXp(r),counted:false,moved:true};});
  const grid=new Map();for(const it of items){const k=key(it.x,it.z);it.cell=k;if(!grid.has(k))grid.set(k,[]);grid.get(k).push(it.i);}
  const maxR=Math.max(.3,...items.map(it=>it.r));
  return {def,items,grid,maxR,hole:{x:def.start.x,z:def.start.z,size:1,r:holeRadius(1),rT:holeRadius(1),xp:0,vx:0,vz:0},
   goals:def.goals.map(g=>({k:g.k,need:g.need,got:0})),time:def.time,elapsed:0,falling:[],stacked:items.filter(it=>it.on>=0).map(it=>it.i),
   events:[],done:false,won:false,clearTime:0,eaten:0,charges:{grow:charges,speed:charges,magnet:charges,freeze:charges},active:{speed:0,magnet:0,freeze:0}};
 }
-function sizeProgress(sim){return Math.min(1,sim.hole.xp/sizeNeed(sim.hole.size));}
+function sizeProgress(sim){return Math.min(1,sim.hole.xp/sizeNeed(sim.hole.size,sim.def.growBase));}
 function goalTotal(sim){return sim.goals.reduce((s,g)=>s+Math.min(g.got,g.need),0);}
 function goalNeed(sim){return sim.goals.reduce((s,g)=>s+g.need,0);}
 function useBoost(sim,id){if(sim.done||!sim.charges[id])return false;sim.charges[id]--;
@@ -32,9 +32,9 @@ function forEachNear(sim,x,z,rad,fn){const c0=Math.floor((x-rad)/CELL),c1=Math.f
 function startFall(sim,it,vy=0){const h=sim.hole;it.state=1;it.ox=it.x-h.x;it.oz=it.z-h.z;const l=Math.hypot(it.ox,it.oz);
  const ux=l>.02?it.ox/l:1,uz=l>.02?it.oz/l:0;it.ax=-uz;it.az=ux; // rotation axis that tips the top toward the centre
  it.vox=-h.vx*.35;it.voz=-h.vz*.35;it.vy=vy;it.w=0;it.tip=true;it.age=0;it.spin=(((it.i*7919)%13)/13-.5)*2.4;it.wob=0;sim.falling.push(it.i);}
-function award(sim,it){sim.eaten++;const score=sim.def.mode==='score';const g=score?sim.goals[0]:sim.goals.find(g=>g.k===it.k);if(g&&g.got<g.need)g.got=score?Math.min(g.need,g.got+it.xp):g.got+1;
- const h=sim.hole;h.xp+=it.xp;let grew=false;while(h.xp>=sizeNeed(h.size)){h.xp-=sizeNeed(h.size);h.size++;h.rT=holeRadius(h.size);grew=true;}
- sim.events.push({type:'eat',k:it.k,goal:!!g,xp:it.xp,x:it.x,z:it.z});if(grew)sim.events.push({type:'size',size:h.size});
+function award(sim,it){sim.eaten++;const score=sim.def.mode==='score';const g=score?sim.goals[0]:sim.goals.find(g=>g.k===it.gk);if(g&&g.got<g.need)g.got=score?Math.min(g.need,g.got+it.xp):g.got+1;
+ const h=sim.hole;h.xp+=it.xp;let grew=false;while(h.xp>=sizeNeed(h.size,sim.def.growBase)){h.xp-=sizeNeed(h.size,sim.def.growBase);h.size++;h.rT=holeRadius(h.size);grew=true;}
+ sim.events.push({type:'eat',k:it.gk,goal:!!g,xp:it.xp,x:it.x,z:it.z});if(grew)sim.events.push({type:'size',size:h.size});
  if(!sim.done&&sim.goals.every(g=>g.got>=g.need)){sim.done=true;sim.won=true;sim.clearTime=sim.elapsed;sim.events.push({type:'win'});}}
 // input: {x,z} direction with length 0..1 (screen up = -z).
 function stepSim(sim,dt,input={x:0,z:0}){
@@ -48,6 +48,8 @@ function stepSim(sim,dt,input={x:0,z:0}){
  const tvx=mag?input.x/Math.max(1e-6,Math.hypot(input.x,input.z))*mag*speed:0,tvz=mag?input.z/Math.max(1e-6,Math.hypot(input.x,input.z))*mag*speed:0;
  h.vx+=(tvx-h.vx)*Math.min(1,dt*14);h.vz+=(tvz-h.vz)*Math.min(1,dt*14);
  const mx=Math.max(0,def.W/2-h.r*.8),mz=Math.max(0,def.D/2-h.r*.8);h.x=Math.max(-mx,Math.min(mx,h.x+h.vx*dt));h.z=Math.max(-mz,Math.min(mz,h.z+h.vz*dt));
+ // walled grass islands: the rim slides along their walls
+ for(const o of def.islands||[]){const m=h.r*.85,x0=o[0]-m,x1=o[2]+m,z0=o[1]-m,z1=o[3]+m;if(h.x>x0&&h.x<x1&&h.z>z0&&h.z<z1){const dl=h.x-x0,dr=x1-h.x,dt2=h.z-z0,db=z1-h.z,mn=Math.min(dl,dr,dt2,db);if(mn===dl){h.x=x0;h.vx=Math.min(0,h.vx);}else if(mn===dr){h.x=x1;h.vx=Math.max(0,h.vx);}else if(mn===dt2){h.z=z0;h.vz=Math.min(0,h.vz);}else{h.z=z1;h.vz=Math.max(0,h.vz);}}}
  // resting props near the rim
  const reach=h.r+sim.maxR+(sim.active.magnet>0?h.r*3:0);
  forEachNear(sim,h.x,h.z,reach,it=>{if(it.state!==0)return;const d=Math.hypot(it.x-h.x,it.z-h.z),fits=it.r<=h.r*.96;
@@ -84,7 +86,26 @@ function stepSim(sim,dt,input={x:0,z:0}){
   keep.push(i);}sim.falling=keep;}
 }
 // Simple autopilot used by tests: head for the nearest prop that fits (goal props first).
-function botInput(sim){const h=sim.hole;let best=null,bd=1e9;
- for(const it of sim.items){if(it.state!==0||it.on>=0||it.r>h.r*.96)continue;const d=Math.hypot(it.x-h.x,it.z-h.z)-(it.goal?2:0);if(d<bd){bd=d;best=it;}}
- if(!best)return {x:0,z:0};const dx=best.x-h.x,dz=best.z-h.z,l=Math.hypot(dx,dz)||1;return {x:dx/l,z:dz/l};}
+// It remembers its target and gives up on one it cannot reach (an island in the way) for a few seconds.
+function botInput(sim,dt=1/30){const h=sim.hole,b=sim.bot||(sim.bot={t:null,best:1e9,stuck:0,skip:new Map(),clock:0,aim:''});b.clock+=dt;
+ if(b.t&&(b.t.state!==0||b.t.r>h.r*.96))b.t=null;
+ if(!b.t){let bd=1e9;for(const it of sim.items){if(it.state!==0||it.on>=0||it.r>h.r*.96||(b.skip.get(it.i)||0)>b.clock)continue;const d=Math.hypot(it.x-h.x,it.z-h.z)-(it.goal?2:0);if(d<bd){bd=d;b.t=it;}}}
+ if(!b.t)return {x:Math.cos(b.clock*.7),z:Math.sin(b.clock*.9)};
+ let tx=b.t.x,tz=b.t.z,aim='t'+b.t.i;
+ // aim at the closest spot the hole can actually reach (props hugging a wall or an island)
+ {const mx=Math.max(0,sim.def.W/2-h.r*.8),mz=Math.max(0,sim.def.D/2-h.r*.8);tx=Math.max(-mx,Math.min(mx,tx));tz=Math.max(-mz,Math.min(mz,tz));
+  for(const o of sim.def.islands||[]){const m=h.r*.85+.05,x0=o[0]-m,x1=o[2]+m,z0=o[1]-m,z1=o[3]+m;if(tx>x0&&tx<x1&&tz>z0&&tz<z1){const c=[[x0-tx,0],[x1-tx,0],[0,z0-tz],[0,z1-tz]].sort((a,b)=>Math.abs(a[0]+a[1])-Math.abs(b[0]+b[1]))[0];tx+=c[0];tz+=c[1];}}}
+ // an island in the way: shortest path over its (tray-clamped) corners, then head for the first corner on it
+ for(const o of sim.def.islands||[]){const m=h.r*.85,c=m+.5,R=[o[0]-m,o[1]-m,o[2]+m,o[3]+m],hit=(ax,az,bx,bz)=>segHitsRect(ax,az,bx,bz,...R);if(!hit(h.x,h.z,tx,tz))continue;
+  const mx=sim.def.W/2-h.r*.8,mz=sim.def.D/2-h.r*.8,cl=(v,M)=>Math.max(-M,Math.min(M,v));
+  const P=[[h.x,h.z],...[[o[0]-c,o[1]-c],[o[2]+c,o[1]-c],[o[2]+c,o[3]+c],[o[0]-c,o[3]+c]].map(([x,z])=>[cl(x,mx),cl(z,mz)]),[tx,tz]],n=P.length,dist=Array(n).fill(1e9),prev=Array(n).fill(-1),done=Array(n).fill(false);dist[0]=0;
+  for(let k=0;k<n;k++){let u=-1;for(let v=0;v<n;v++)if(!done[v]&&(u<0||dist[v]<dist[u]))u=v;if(dist[u]>=1e9)break;done[u]=true;
+   for(let v=0;v<n;v++)if(!done[v]&&!hit(P[u][0],P[u][1],P[v][0],P[v][1])){const d=dist[u]+Math.hypot(P[v][0]-P[u][0],P[v][1]-P[u][1]);if(d<dist[v]){dist[v]=d;prev[v]=u;}}}
+  if(dist[n-1]<1e9){let v=n-1;while(prev[v]>0)v=prev[v];if(v!==n-1&&Math.hypot(P[v][0]-h.x,P[v][1]-h.z)>.2){tx=P[v][0];tz=P[v][1];aim='c'+v+o[0];}}
+  break;}
+ if(aim!==b.aim){b.aim=aim;b.best=1e9;b.stuck=0;}
+ const d=Math.hypot(tx-h.x,tz-h.z);if(d<b.best-.05){b.best=d;b.stuck=0;}else if((b.stuck+=dt)>.8){b.skip.set(b.t.i,b.clock+5);b.t=null;b.aim='';}
+ const dx=tx-h.x,dz=tz-h.z,l=Math.hypot(dx,dz)||1;return {x:dx/l,z:dz/l};}
+// does segment (ax,az)-(bx,bz) pass through the rectangle's interior?
+function segHitsRect(ax,az,bx,bz,x0,z0,x1,z1){let t0=0,t1=1;const dx=bx-ax,dz=bz-az;for(const [p,q] of [[-dx,ax-x0],[dx,x1-ax],[-dz,az-z0],[dz,z1-az]]){if(Math.abs(p)<1e-9){if(q<0)return false;continue;}const r=q/p;if(p<0){if(r>t1)return false;if(r>t0)t0=r;}else{if(r<t0)return false;if(r<t1)t1=r;}}return t0<t1;}
 Object.assign(exports,{createSim,stepSim,useBoost,sizeProgress,goalTotal,goalNeed,botInput,BOOSTS,qaxis,qmul});

@@ -19,7 +19,11 @@ function hexRGB(h){return C(h);}
 const fmt=t=>{t=Math.max(0,Math.ceil(t));return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');};
 function trayWalls(def){const g=geo(),W=def.W,D=def.D,t=.45,h=.42,wall=C('#8e95a3');
  add(g,rbox(W+t*2,h,t,.08),{at:[0,0,-D/2-t/2]},wall);add(g,rbox(W+t*2,h,t,.08),{at:[0,0,D/2+t/2]},wall);
- add(g,rbox(t,h,D,.08),{at:[-W/2-t/2,0,0]},wall);add(g,rbox(t,h,D,.08),{at:[W/2+t/2,0,0]},wall);return g;}
+ add(g,rbox(t,h,D,.08),{at:[-W/2-t/2,0,0]},wall);add(g,rbox(t,h,D,.08),{at:[W/2+t/2,0,0]},wall);
+ // grass islands: a low wall all round (their grass top is drawn by the renderer)
+ for(const [x0,z0,x1,z1] of def.islands||[]){const w=x1-x0,d=z1-z0,cx=(x0+x1)/2,cz=(z0+z1)/2;add(g,rbox(w,h,t,.08),{at:[cx,0,z0+t/2]},wall);add(g,rbox(w,h,t,.08),{at:[cx,0,z1-t/2]},wall);add(g,rbox(t,h,d-t*2,.08),{at:[x0+t/2,0,cz]},wall);add(g,rbox(t,h,d-t*2,.08),{at:[x1-t/2,0,cz]},wall);}
+ return g;}
+const baseKind=k=>String(k).replace(/\+$/,'');
 function rr(x,X,Y,W,H,R){x.beginPath();x.moveTo(X+R,Y);x.arcTo(X+W,Y,X+W,Y+H,R);x.arcTo(X+W,Y+H,X,Y+H,R);x.arcTo(X,Y+H,X,Y,R);x.arcTo(X,Y,X+W,Y,R);x.closePath();}
 function outlined(x,text,X,Y,size,fill='#fff',stroke='#1a1d3a',align='center',weight=900){x.font=`${weight} ${size}px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif`;x.textAlign=align;x.textBaseline='middle';x.lineJoin='round';x.lineWidth=Math.max(2,size*.2);x.strokeStyle=stroke;x.strokeText(text,X,Y);x.fillStyle=fill;x.fillText(text,X,Y);}
 function drawStar(x,cx,cy,r,rot=0){x.save();x.translate(cx,cy);x.rotate(rot*.2);x.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr2=i%2?r*.48:r;x.lineTo(Math.cos(a)*rr2,Math.sin(a)*rr2);}x.closePath();
@@ -60,7 +64,7 @@ async function holeIt(s){
  // Head-token faces: both players' portraits on one atlas.
  const atlas=document.createElement('canvas');atlas.width=256;atlas.height=128;
  const paintAtlas=()=>{const ax=atlas.getContext('2d');ax.clearRect(0,0,256,128);for(let i=0;i<2;i++){try{s.sprite(ax,i,64+i*128,64,118,{exact:true});}catch{}}R.setHeadTexture(atlas);};
- for(const g of def.goals)if(KINDS[g.k])thumb(g.k);
+ for(const g of def.goals)if(KINDS[baseKind(g.k)])thumb(baseKind(g.k));
  if(def.items.some(it=>it.k==='head')){paintAtlas();for(const ms of [400,1500,4000])setTimeout(()=>{if(s.alive)paintAtlas();},ms);}
 
  const results=[null,null];let turn=null,finishResolve=null,contact=null,keys={};
@@ -83,23 +87,25 @@ async function holeIt(s){
  const intro=[{k:'duck',x:-1.05,y:1.25,z:.1},{k:'apple-red',x:.3,y:1.95,z:-.6},{k:'croissant',x:1.05,y:1.1,z:.3}];
  // ---- camera ----
  const cam={x:def.start.x,z:def.start.z,dist:0};
- function cameraFor(h,W,H){const fov=.72,aspect=W/H,span=4.5*Math.pow(h.r/.5,.72),axis=aspect<1?2*Math.atan(Math.tan(fov/2)*aspect):fov*.8;return {fov,dist:(span/2)/Math.tan(axis/2)*1.05};}
+ // Measured from the owner's video: the hole (rim included, 2.6r) spans 27% of the screen's short side at Size 1 and
+ // ~61% at Size 10, so the camera pulls back as the hole grows, but more slowly than the hole does.
+ function cameraFor(h,W,H){const fov=.72,aspect=W/H,rimFrac=Math.min(.7,.27*Math.pow(h.r/.5,.65)),vis=2.6*h.r/rimFrac,axis=aspect<1?2*Math.atan(Math.tan(fov/2)*aspect):fov;return {fov,dist:(vis/2)/Math.tan(axis/2)};}
  function renderPlay(sim,t,dt=1/60){const h=sim.hole,W=s.W,H=s.H,cf=cameraFor(h,W,H);if(!cam.dist)cam.dist=cf.dist;
   // frame-rate independent smoothing (same feel at 30, 60 or 120 fps)
   const kf=1-Math.exp(-dt*11),kz=1-Math.exp(-dt*3.2);cam.dist+=(cf.dist-cam.dist)*kz;cam.x+=(h.x-cam.x)*kf;cam.z+=(h.z-cam.z)*kf;
   // size arc: ease the shown value toward size+progress so it fills smoothly and rolls over on a size-up
   const want=(h.size-1)+sizeProgress(sim),gap=want-turn.arcV;turn.arcV+=Math.sign(gap)*Math.min(Math.abs(gap),Math.abs(gap)*(1-Math.exp(-dt*5))+dt*.35);
-  const pitch=1.0,tz=cam.z-cam.dist*.1,eye=[cam.x,cam.dist*Math.sin(pitch),tz+cam.dist*Math.cos(pitch)];R.setCamera(W,H,dpr(),eye,[cam.x,0,tz],cf.fov);
+  const pitch=1.08,tz=cam.z-cam.dist*.08,eye=[cam.x,cam.dist*Math.sin(pitch),tz+cam.dist*Math.cos(pitch)];R.setCamera(W,H,dpr(),eye,[cam.x,0,tz],cf.fov);
   for(const k in inst)inst[k].count=0;let ns=0;const vis=cam.dist*1.25+3;const heads=[];
   for(const it of sim.items){if(it.state===2)continue;if(Math.abs(it.x-cam.x)>vis||Math.abs(it.z-tz)>vis*1.3)continue;
    if(it.moved||!it.m){it.m=it.m||new Float32Array(12);let q=it.q;if(it.wob>0&&it.state===0){const dx=h.x-it.x,dz=h.z-it.z,l=Math.hypot(dx,dz)||1;q=qmul(qaxis(dz/l,0,-dx/l,(it.lean||0)+it.wob*.03*Math.sin(t*4+it.i)),q);}
-    affine(it.m,0,[it.x,it.cy,it.z],q,1,it.h/2);it.moved=it.wob>0;}
+    affine(it.m,0,[it.x,it.cy,it.z],q,it.sc||1,it.h0/2);it.moved=it.wob>0;}
    const b=inst[it.k];b.data.set(it.m,b.count*16);b.data[b.count*16+12]=1;b.data[b.count*16+13]=1;b.data[b.count*16+14]=1;b.data[b.count*16+15]=1;b.count++;
    if(it.k==='head')heads.push(it);
    if(it.state!==1&&it.cy-it.h/2<.6){shadowData[ns*4]=it.x+it.r*.14;shadowData[ns*4+1]=it.z-it.r*.1;shadowData[ns*4+2]=it.r*1.18;shadowData[ns*4+3]=.36;ns++;}}
   const rings=turn.rings.map(g=>({x:h.x,z:h.z,r:h.r*(1.3+g.t*2.4),a:Math.max(0,1-g.t/.75)*.95,color:[1,.8,.22],thick:.05}));
   if(sim.active.magnet>0)rings.push({x:h.x,z:h.z,r:h.r*(1.6+(t*2%1)*2.2),a:.35*(1-(t*2%1)),color:[.45,1,.55],thick:.04});
-  R.render({clear:[.2,.55,.18,1],hole:{x:h.x,z:h.z,r:h.r},tray:[-def.W/2,-def.D/2,def.W/2,def.D/2],floorColor:hexRGB(def.floor),groups:Object.entries(inst).map(([kind,b])=>({kind,data:b.data,count:b.count})),
+  R.render({clear:[.2,.55,.18,1],hole:{x:h.x,z:h.z,r:h.r},tray:[-def.W/2,-def.D/2,def.W/2,def.D/2],islands:def.islands,floorColor:hexRGB(def.floor),groups:Object.entries(inst).map(([kind,b])=>({kind,data:b.data,count:b.count})),
    shadows:{data:shadowData,count:ns},rings,arc:{x:h.x,z:h.z,r:h.r*1.4,progress:turn.arcV-Math.floor(turn.arcV),start:.6,color:[1,.78,.16]},heads:heads.map(it=>({m:headMatrix(it),rect:it.i%2?[.5,0,.5,1]:[0,0,.5,1]}))});}
  function headMatrix(it){const m=it.m,f=HEAD_FACE,ct=Math.cos(f.tilt),st=Math.sin(f.tilt),sz=f.size;
   // local face transform: translate(c) * rotX(tilt) * scale(sz), shifted by the item's pivot (h/2)
@@ -135,7 +141,7 @@ async function holeIt(s){
   sim.goals.forEach((g,i)=>{const cd=L.cards[i];if(!cd)return;
    if(g.k==='score'){drawScoreCard(x,cd,g,turn.cardPulse[i]||0,turn.inflightPts);return;}
    const grd=x.createLinearGradient(0,cd.y,0,cd.y+cd.h);grd.addColorStop(0,'#6476f0');grd.addColorStop(1,'#3a44b4');rr(x,cd.x,cd.y,cd.w,cd.h,8);x.fillStyle=grd;x.fill();x.strokeStyle='#a9b3ff';x.lineWidth=1.5;x.stroke();
-   const pulse=turn.cardPulse[i]>0?1+turn.cardPulse[i]*.25:1,ts=cd.w*.78*pulse;x.drawImage(thumb(g.k),cd.x+cd.w/2-ts/2,cd.y+cd.w*.42-ts/2,ts,ts);
+   const pulse=turn.cardPulse[i]>0?1+turn.cardPulse[i]*.25:1,ts=cd.w*.78*pulse;x.drawImage(thumb(baseKind(g.k)),cd.x+cd.w/2-ts/2,cd.y+cd.w*.42-ts/2,ts,ts);if(g.k.endsWith('+'))outlined(x,'BIG',cd.x+cd.w-12,cd.y+9,9,'#ffe27a','#141a33',undefined,900);
    rr(x,cd.x+3,cd.y+cd.h-17,cd.w-6,14,4);x.fillStyle='#1d235acc';x.fill();const left=Math.max(0,g.need-g.got)+(turn.inflight[g.k]||0);
    if(left===0){x.fillStyle='#39d353';x.beginPath();x.arc(cd.x+cd.w/2,cd.y+cd.h-10,8,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=2.4;x.beginPath();x.moveTo(cd.x+cd.w/2-4,cd.y+cd.h-10);x.lineTo(cd.x+cd.w/2-1,cd.y+cd.h-7);x.lineTo(cd.x+cd.w/2+4,cd.y+cd.h-13);x.stroke();}
    else outlined(x,String(left),cd.x+cd.w/2,cd.y+cd.h-10,11,'#fff','#141a33',undefined,800);});
@@ -153,7 +159,7 @@ async function holeIt(s){
   // flying goal icons / stars
   for(const f of turn.flyers){const cd=L.cards[f.gi];if(!cd)continue;const u=Math.min(1,f.t/f.dur),e=u*u*(3-2*u),tx=cd.x+(sim.def.mode==='score'?22:cd.w/2),ty=cd.y+cd.w*.42,cx=(f.x0+tx)/2+f.wob,cy=Math.min(f.y0,ty)-60;
    const px=(1-e)*(1-e)*f.x0+2*(1-e)*e*cx+e*e*tx,py=(1-e)*(1-e)*f.y0+2*(1-e)*e*cy+e*e*ty,sz=30-12*e;
-   if(f.k==='score'||!KINDS[f.k]||sim.def.mode==='score')drawStar(x,px,py,sz*.45,u*6);else x.drawImage(thumb(f.k),px-sz/2,py-sz/2,sz,sz);}
+   if(f.k==='score'||!KINDS[baseKind(f.k)]||sim.def.mode==='score')drawStar(x,px,py,sz*.45,u*6);else x.drawImage(thumb(baseKind(f.k)),px-sz/2,py-sz/2,sz,sz);}
   // joystick
   if(contact&&turn.phase==='play'){const o=contact.origin,p=contact.point,dx=p.x-o.x,dy=p.y-o.y,l=Math.hypot(dx,dy),m=Math.min(l,46),kx=l?o.x+dx/l*m:o.x,ky=l?o.y+dy/l*m:o.y;
    x.fillStyle='#ffffff26';x.strokeStyle='#ffffff66';x.lineWidth=2;x.beginPath();x.arc(o.x,o.y,52,0,7);x.fill();x.stroke();const kg=x.createRadialGradient(kx-8,ky-10,3,kx,ky,26);kg.addColorStop(0,'#ffffff');kg.addColorStop(1,'#c9cedd');x.fillStyle=kg;x.beginPath();x.arc(kx,ky,24,0,7);x.fill();}

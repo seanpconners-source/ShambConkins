@@ -79,7 +79,7 @@ function createRenderer(canvas){
  function render(sc){
   gl.clearColor(...(sc.clear||[.1,.12,.18,1]));gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE);gl.disable(gl.BLEND);gl.depthMask(true);
   const hole=sc.hole.hidden?{x:1e5,z:1e5,r:.001}:sc.hole;
-  if(sc.tray){const [x0,z0,x1,z1]=sc.tray;if(sc.grass!==false)drawFloor(hole,[x0-60,z0-60,x1+60,z1+60,-.03],[0,0,0],1);drawFloor(hole,[x0,z0,x1,z1,0],sc.floorColor,0);}
+  if(sc.tray){const [x0,z0,x1,z1]=sc.tray;if(sc.grass!==false)drawFloor(hole,[x0-60,z0-60,x1+60,z1+60,-.03],[0,0,0],1);drawFloor(hole,[x0,z0,x1,z1,0],sc.floorColor,0);for(const o of sc.islands||[])drawFloor(hole,[o[0]+.4,o[1]+.4,o[2]-.4,o[3]-.4,.4],[0,0,0],1);}
   else if(sc.floorColor)drawFloor(hole,[hole.x-40,hole.z-40,hole.x+40,hole.z+40,0],sc.floorColor,0);
   useMesh(hole);
   if(walls&&sc.tray)drawStatic(walls,new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0]));

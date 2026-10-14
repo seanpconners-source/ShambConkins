@@ -326,7 +326,9 @@
   "src/engines/holeIt/gl.js",
   "src/engines/holeIt/levels.js",
   "src/engines/holeIt/sim.js",
-  "src/engines/holeIt.js"
+  "src/engines/holeIt.js",
+  "src/engines/holeIt/layout.js",
+  "src/engines/holeIt/handLevels.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
