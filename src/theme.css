@@ -334,3 +334,34 @@ body .catalog-shell .catalog-count{flex:0 0 auto;min-width:30px;text-align:cente
 body .catalog-shell .catalog-more{grid-column:1/-1;height:1px}
 body .catalog-shell .arcade-card.boss-match:not(.locked){box-shadow:inset 0 0 0 2px #d01c2c88}
 @media(max-width:600px){body .catalog-shell .catalog-tools input{font-size:16px;padding:9px 12px}body .catalog-shell .catalog-tools select{max-width:46%;font-size:13px}}
+
+/* ---- Game header icons (all games) + full-bleed game mode (session.bleed()) ---- */
+body .game-actions .ga-ico{display:none;font-style:normal}
+body .game-actions .fs-mini{min-width:38px;padding:4px 8px;font-size:15px;line-height:1}
+body #game-layer.bleed-layer{padding:0;height:var(--viewport-height,100dvh);max-height:none;background:#000}
+body .game-shell.bleed-shell{position:relative;max-width:none;width:100%;height:100%;max-height:100%;border:0;border-radius:0;box-shadow:none;display:grid;grid-template-rows:minmax(0,1fr);overflow:hidden;background:#000;padding:0}
+body .bleed-shell>.game-header{position:absolute;right:max(6px,env(safe-area-inset-right));top:max(6px,env(safe-area-inset-top));z-index:12;border:0;background:transparent;padding:0;min-height:0;box-shadow:none}
+body .bleed-shell>.game-header>:not(.game-actions){display:none}
+body .bleed-shell .game-actions{gap:5px;display:flex}
+body .bleed-shell .game-actions button{min-height:34px;min-width:34px;width:34px;height:34px;padding:0;font-size:13px;line-height:1;border-radius:50%;background:#000a;color:#fff;border:1px solid #ffffff38;box-shadow:0 2px 8px #0006;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:grid;place-items:center;opacity:.82}
+body .bleed-shell .game-actions button:hover,body .bleed-shell .game-actions button:focus-visible{opacity:1}
+body .bleed-shell .game-actions .ga-txt{display:none}
+body .bleed-shell .game-actions .ga-ico{display:inline}
+body .bleed-shell>#game-scorebar{position:absolute;left:max(6px,env(safe-area-inset-left));right:calc(max(6px,env(safe-area-inset-right)) + 124px);top:max(6px,env(safe-area-inset-top));z-index:11;display:flex;justify-content:space-between;align-items:flex-start;gap:6px;padding:0;margin:0;border:0;background:transparent;box-shadow:none;pointer-events:none;min-height:0}
+body .bleed-shell>#game-scorebar .game-mode{display:none}
+body .bleed-shell>#game-scorebar .game-scoreplayer{display:flex;align-items:center;gap:5px;padding:2px 9px 2px 2px;border-radius:999px;background:#000b;border:1px solid #ffffff2a;box-shadow:0 2px 8px #0007;color:#fff;min-width:0;max-width:48%;flex:0 1 auto}
+body .bleed-shell>#game-scorebar .game-scoreplayer:last-child{padding:2px 2px 2px 9px}
+body .bleed-shell>#game-scorebar .game-scoreplayer .portrait{display:inline-block!important;width:28px;height:28px;flex:0 0 28px}
+body .bleed-shell>#game-scorebar .game-scoreplayer>span{font-size:11px;font-weight:700;opacity:.85;max-width:70px}
+body .bleed-shell>#game-scorebar .game-scoreplayer>b{color:#fff!important;font-family:inherit;font-size:17px;font-weight:900;font-variant-numeric:tabular-nums}
+body .bleed-shell>#game-scorebar .game-scoreplayer.active{background:#000c;box-shadow:0 0 0 2px var(--t-acc2,#ffcf4a),0 2px 8px #0007}
+body .bleed-shell.bleed-own-hud>#game-scorebar{display:none}
+body .bleed-shell>.game-body{position:relative;padding:0;display:block;overflow:hidden;min-height:0;height:100%;background:#000;border:0}
+body .bleed-shell .canvas-frame{border:0;border-radius:0;width:100%;height:100%;min-height:0;padding:0;margin:0;background:#000;box-shadow:none}
+body .bleed-shell .game-canvas{display:block;border:0;border-radius:0;max-width:none;max-height:none;width:100%;height:100%;touch-action:none}
+body .bleed-shell #game-hint{display:none}
+body .bleed-shell #game-status{position:absolute;left:50%;bottom:max(6px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:10;margin:0;max-width:calc(100% - 24px);padding:3px 10px;min-height:0;border:0;border-radius:999px;background:#000a;color:#fffd;font-size:11px;line-height:1.3;text-align:center;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body .bleed-shell.bleed-quiet #game-status{display:none}
+body .bleed-shell #game-controls:not(:empty){position:absolute;left:50%;bottom:calc(max(6px,env(safe-area-inset-bottom)) + 24px);transform:translateX(-50%);z-index:10;margin:0;display:flex;gap:6px;width:max-content;max-width:calc(100% - 16px)}
+body .bleed-shell .pass-overlay{z-index:30}
+@media(max-width:420px){body .bleed-shell>#game-scorebar .game-scoreplayer>span{display:none}}

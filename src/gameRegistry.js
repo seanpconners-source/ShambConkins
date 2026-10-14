@@ -224,8 +224,12 @@ const REMAKES={
  penalty:['5 kicks each','Real-time on one phone. Striker swipes the ball from the bottom half (direction aims, speed is power, a curved swipe bends it). Keeper swipes on the top half to dive. Five each, then sudden death.'],
  kitchen:['55s each','Burger line, same tickets for both chefs. Tap bins to build each ticket bottom-up; grill patties and pull them when the ring is gold (perfect) or green, never red (RAW!) or black. Tap the plate to serve. Fast service tips more.'],
  sonargrid:['45s each','Motion tracker: blips only show on each ping, and pings speed up as they close in. Tap toward a blip to torch it with the flamethrower. Xenomorph +10, facehugger +15, Jonesy the cat −10. Three lives; each left is +10.'],
+ pong:['first to 7','Atari 1972, two humans at once. Drag on your own side to move your paddle (left/right on a wide screen, bottom/top on a phone held upright). Where the ball meets the paddle sets the angle, and the ball speeds up after 4 and 12 hits. First to 7.'],
  tictactoe:['first to 2','Tic-tac-toe on the WOPR where each player keeps only three heads: your fourth move erases your oldest. No draws. First to two games wins.']
 };
+// Remade games: new titles (ids stay the same for old saves).
+const REMAKE_META={'pong-duel':{title:'Pong · Arcade 1972',source:'Pong',icon:'🏓'}};
+for(const g of [...GAMES,...EVENT_GAMES])if(REMAKE_META[g.id])Object.assign(g,REMAKE_META[g.id]);
 for(const g of [...GAMES,...EVENT_GAMES]){const r=REMAKES[g.engine];if(r){g.duration=r[0];g.rules=r[1];}if(g.id==='alien-sonar-grid')g.title='Alien · Motion Tracker';if(g.id==='wopr-grid')Object.assign(g,{title:'WarGames · Vanishing Tic-Tac-Toe',source:'WarGames',icon:'❌'});}
 
 Object.assign(exports,{GAMES,EVENT_GAMES,gameById,gameUnlocked,bossBeaten,RANDOM_GAMES,PHONE_TASK,TRIVIA_THEME_IDS,selectTriviaGame,triviaIsDue,selectBoardGame,selectGame,resolveLegacyGame});
