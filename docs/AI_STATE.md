@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambConkins_v0.59.1.html`, ~53 MB, committed like 0.58.1/0.58.2; v0.58.3 was a GitHub Release asset).
+Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB World 1, Photo Hunt cabinet, October minigame remakes; release file `releases/ShambConkins_v0.60.0.html`, ~58 MB, committed like 0.59.1; v0.58.3 was a GitHub Release asset).
 
 ## October 11, 2026 validated six-fix integration
 - TESTver merged six branches at `469ff177`; owner reported playtest looked good and authorized v0.58.3 production release.

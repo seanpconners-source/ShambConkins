@@ -1,8 +1,16 @@
 # Changelog
 
-## Unreleased
+## v0.60.0
 
 **Hangman Unchained.** Hangman is rebuilt as a full-screen Django Unchained western: a HANGMAN / UNCHAINED logo in the film's red style ("The H is silent."), a sunset desert, wooden gallows and detailed cowboys wearing your faces under Stetsons, and big touch keys instead of the tiny letter bar. Three games: **Quick Draw** (both players guess the same phrase at once on their own keyboards; first to shoot a letter owns it), **Showdown** (one keyboard, players take turns one letter at a time with a 15-second shot clock; the keyboard, a NAME'S SHOT banner and the player's card glow in the shooter's colour) and the new **Wanted** (one player writes a secret phrase or deals one from the deck, the other guesses, then swap). The deck has about 600 movie titles, quotes, sayings, loaded phrases, bands, games and Shambconkins in-jokes. Every sound is a synthesized gunshot, ricochet, revolver click, spur jingle, gallop, whinny or "Yeehaw!".
+
+**Symphony of the Night.** A new dark PS1-style Castlevania game (`cv-symphony`): your head on a caped hero with combos, backdashes, dive kicks and a double jump, Death stripping your gear, caverns, the Marble Gallery and a two-phase Dracula. P1 runs it, then P2 races P1's after-image.
+
+**Mario Kart 3D.** The kart warp games are now real 3D: Grand Prix VS split screen, Grand Prix pass-and-play, Time Trials against a ghost and Balloon Battle, on Rainbow Road, Moo Moo Meadows, Cheep Cheep Beach and Bowser's Castle, with Mario Kart Tour drag-to-steer, drifting and mini-turbos.
+
+**Photo Hunt cabinet.** Photo Hunt is a replica of the 2007 Megatouch Aurora cabinet screen with its real rules, hints and a house high score, and 20 photo pairs.
+
+**Minigame remakes.** Twenty-six weak minigames were rebuilt with authentic looks (Atari Pong, Breakout, Asteroids, Missile Command, Lunar Lander, Space Invaders including two new versus/co-op games, Nokia Snake II, Stacker, Spy Hunter, TRON, Combat, Scorched Earth, Tapper, GoldenEye Facility, NES Duck Hunt, a real dartboard and more), and canvas games now fill the screen.
 
 **Super Mario Bros. World 1.** The Mario warp games now play the NES World 1 maps: 1-1 (with the coin room), 1-2 underground with the Warp Zone above the ceiling, the 1-3 treetops and Bowser's castle 1-4 (firebars, lava, the bridge and axe, Toad). Movement uses the original NES physics numbers. New game **Super Mario Bros. · World 1** with the NES title screen and menu: 1 PLAYER GAME (each player plays a whole game, P2 races P1's ghost) or 2 PLAYER GAME (Mario and Luigi swap on every lost life), three lives, the NES clock, highest score wins. Coin Rush now carries on to 1-2, 1-3 and 1-4 at the flagpole. Taking any Warp Zone pipe in 1-2 finds a character you have not unlocked hiding in the tunnel, who joins your team. The cap now fits the player's head (with the M / L badge); Luigi wears a green cap with white overalls. Fire Mario throws NES fireballs (two at a time, bouncing along the ground), and five of them knock out the fake Bowser in 1-4. Koopa shells score their own NES knockout chain (500, 800, 1000 … 8000, then 1-UPs) and vanish once they slide off screen. The games fill the whole screen with Pause, Exit and a full-screen toggle floating in the corner. Saves and existing game ids are unchanged.
 
