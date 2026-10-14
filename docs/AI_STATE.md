@@ -150,6 +150,16 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   bust `prop:'cat'`/`nehru`/`scar`): the launcher recruits `pickLairVillain` (`data/bondLair.js`: `BOND_VILLAIN_IDS`, 12
   lair-only villains with `unlockBy:'boss'`) instead of `unlockId`. Games in `engines/bond.js` (`bondLaser`,
   `bondFunhouse`, `bondBomb`; ids `bond-laser-vault`, `bond-golden-gun`, `bond-goldfinger-bomb`). Test: `tests/bondlair.mjs`.
+- **Hangman Unchained (Oct 14 2026):** `src/engines/hangman.js` rebuilt full-bleed (`fullBleed`, engine `hangman` in the noBleed list). Django Unchained
+  look: sunset desert, wooden gallows, detailed cowboys (P1 Django green jacket, P2 Schultz grey coat) with the player's head (broforce
+  `headCanvas`) under a Stetson; parts per miss torso/arms/legs, 6th miss drops the trapdoor; revolver-cylinder lives; logo `makeLogo`
+  (HANGMAN in red Django-style slab with drips, UNCHAINED, "The H is silent."). Big canvas keys (`keyGrid`). Modes by `hangMode`:
+  `django-hangman` 'shared' (both at once on one phrase, own keyboards P1 bottom/left, P2 top/right; first to shoot a letter owns it,
+  +10/occurrence, miss jams the gun .85 s, hanged −20, last letter +40; 3 phrases × 75 s) and new `django-hangman-wanted` 'pass'
+  (`packs/remakePack.js`: writer types or 🎲 deals a phrase + clue, guesser +10/letter, solve +60 +15/bullet, hanged → writer +50; swap).
+  Deck: `src/data/hangmanPhrases.js` (~600 phrases, 12 categories). SFX all synthesized in `src/engines/westernSfx.js` (gunshot + canyon
+  echo, ricochet, cock/dry fire/cylinder, spurs, gallop, snort, whinny, whip, trapdoor, formant "Yeehaw"). Test: `tests/hangman.mjs`
+  (screens `/tmp/claude-0/sc/hm-*`). Real-phone feel and the sounds by ear untested.
 - **Super Mario Bros. World 1 (Oct 13 2026):** `engines/marioBros.js` (engine `marioBros`) + `engines/smb/smbLevels.js` (NES maps
   1-1 with coin room, 1-2 intro/underground/exit + Warp Zone above the ceiling, 1-3 treetops with lifts, 1-4 castle with firebars,
   lava, Bowser's bridge/axe/Toad; tiles on the 16 px NES grid, areas joined by `doors`) + `engines/smb/smbArt.js` (8x8 NES font on

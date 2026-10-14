@@ -420,8 +420,6 @@ h1,h2,h3{font-family:inherit;color:#172033}.property-logo,.player-source-logo,.u
 /* boss fights on short landscape screens: the canvas HUD already shows hearts, faces and boss HP, so give it the height */
 @media(orientation:landscape) and (max-height:560px){.boss-shell .game-scorebar,.boss-shell .drag-arena-body>#game-status,.boss-shell .drag-arena-body>#game-hint{display:none}.boss-shell .game-header{padding:3px 10px;min-height:0}.boss-shell .game-header .property-logo{height:24px}.boss-shell .game-body{padding:3px}.game-shell.boss-shell{grid-template-rows:auto minmax(0,1fr)}}
 
-.hangman-solve-panel{grid-column:1/-1;display:grid;grid-template-columns:minmax(130px,1fr) auto auto;gap:7px;align-items:center;width:100%}.hangman-solve-panel>label{grid-column:1/-1;font-weight:700;color:#ffdc91}.hangman-solve-panel>input{width:100%;min-width:0}.hangman-solve-panel>button{font-size:12px;padding:9px;min-height:42px}
-@media(max-width:500px){.hangman-solve-panel{grid-template-columns:1fr 1fr}.hangman-solve-panel>input{grid-column:1/-1}}
 
 .letter-controls #hang-solve{grid-column:1/-1;min-height:42px}
 
