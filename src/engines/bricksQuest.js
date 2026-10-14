@@ -68,8 +68,8 @@ function ballSprite(C,k){if(C.ball)return C.ball;const R=18,cv=offscreen(R*2*k,R
 async function bricksQuest(s){
  const [c,x]=s.canvas(576,1024,{fill:true});const fb=fullBleed(s,{bg:'#05080b'});s.body.classList.add('drag-arena-body');
  const Q=questSave(),arcade=!!store.arcade,names=[0,1].map(i=>s.players[i]?.name||`P${i+1}`);
- const C=makeCache(),fx={parts:[],pops:[],rings:[],beams:[],bolts:[],flies:[],toast:null};
- let view='map',turn=0,T=0,play=null,mapScroll=null,mapDrag=null,mapPick=null,tilePulse=0,lastHit=0,lastKill=0;
+ const C=makeCache(),fx={parts:[],pops:[],rings:[],beams:[],bolts:[],flies:[],presses:[],toast:null},beamOn=new Map();
+ let view='map',turn=0,T=0,play=null,mapScroll=null,mapDrag=null,mapPick=null,tilePulse=0,lastHit=0,lastKill=0,lastBeam=0;
  const scores=[0,0],results=[null,null];
  s.debug={get view(){return view;},get play(){return play;},get turn(){return turn;},bot:false,pick:null,quest:Q};
 
@@ -87,8 +87,11 @@ async function bricksQuest(s){
   else if(kind==='kill'){if(now-lastKill<45)return;lastKill=now;tone(660+Math.min(900,(play?.st.combo||0)*28),.07,.03,'triangle');}
   else if(kind==='launch')tone(520,.04,.015,'sine');
   else if(kind==='laser'){tone(1800,.12,.02,'sawtooth');}
+  else if(kind==='beam'){if(now-lastBeam<90)return;lastBeam=now;tone(2200+Math.random()*300,.06,.012,'sawtooth');}
   else if(kind==='bolt'){sound('shot');vibrate(30);}
   else sound(kind);}
+ // every button answers a tap: a short buzz (phones that support it) and a white flash ring where it was pressed
+ function press(px,py,r=40){vibrate(9);fx.presses.push({x:px,y:py,r,t:0});}
 
  // ================================ STAGE MAP ================================
  function tileXY(n){const j=Math.floor((n-1)/5),i=(n-1)%5,col=j%2?4-i:i;return {x:68+col*110,y:-j*125};}
@@ -140,6 +143,7 @@ async function bricksQuest(s){
    text(x,t.label,cx,cy+43,{size:12,weight:700,color:'#ffd8f6'});});
   // who is choosing
   text(x,mapPick?'':`${names[0]}, pick a stage`,288,282,{size:15,weight:700,color:'#ffe9a8',glowC:'#ff9a2a',blur:6});
+  drawPresses();
   if(fx.toast&&fx.toast.t>0){x.globalAlpha=Math.min(1,fx.toast.t*2);x.fillStyle='#000c';rr(x,60,560,456,64,14);x.fill();x.strokeStyle=NEON.pink;x.lineWidth=2;rr(x,60,560,456,64,14);x.stroke();
    text(x,fx.toast.msg,288,592,{size:17,weight:700,color:'#fff'});x.globalAlpha=1;}
   x.restore();
@@ -169,12 +173,12 @@ async function bricksQuest(s){
  function toast(msg){fx.toast={msg,t:2.2};}
  function today(){const d=new Date();return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;}
  function mapTap(p){
-  if(p.y>MAP_BOT+8){const i=Math.max(0,Math.min(4,Math.floor(p.x/115.2))),t=NAV[i];if(t.mode)return choose({mode:t.mode});
+  if(p.y>MAP_BOT+8){const i=Math.max(0,Math.min(4,Math.floor(p.x/115.2))),t=NAV[i];press(57.6+i*115.2,p.y,44);if(t.mode)return choose({mode:t.mode});
    sfx('tap');return toast(t.label==='MULTI'?'MULTI: you two are already taking turns!':`${t.label} isn’t in ShambConkins — play the stages!`);}
-  if(p.y>143&&p.y<187&&p.x>110&&p.x<292){if(Q.gift!==today()){Q.gift=today();Q.gems+=30;saveProfile(store.profile);sound('pickup');toast('Free gift: 💎 × 30');}else toast('Come back tomorrow for another gift');return;}
+  if(p.y>143&&p.y<187&&p.x>110&&p.x<292){press(p.x,p.y,30);if(Q.gift!==today()){Q.gift=today();Q.gems+=30;saveProfile(store.profile);sound('pickup');toast('Free gift: 💎 × 30');}else toast('Come back tomorrow for another gift');return;}
   if(p.y<MAP_TOP||p.y>MAP_BOT)return;
   const [first,last]=visibleRange();
-  for(let n=first;n<=last;n++){const q=tileXY(n),ty=tileY(n);if(Math.abs(p.x-q.x)<46&&Math.abs(p.y-ty)<48){
+  for(let n=first;n<=last;n++){const q=tileXY(n),ty=tileY(n);if(Math.abs(p.x-q.x)<46&&Math.abs(p.y-ty)<48){press(q.x,ty,48);
    if(n>current()){sound('lose');return toast(`Stage ${n} is locked — clear stage ${current()} first`);}return choose({mode:'stage',n});}}
  }
  let chooseResolve=null;
@@ -186,10 +190,14 @@ async function bricksQuest(s){
   const st=S.newStage(def);
   return {pick,st,phase:'aim',angle:-Math.PI/2+.25,aiming:false,slider:false,bolt:ITEMS,plus:ITEMS,plusArmed:false,gems:arcade?Q.gems:300,snap:null,panel:null,t:0,doneT:0,resolve:null,shownBalls:st.balls};
  }
+ // after a turn the wall slides down the rows it dropped (1, or 3 when the top line was cleared)
+ const SLIDE=.26;
+ const sliding=()=>play?.drop&&play.drop.t<SLIDE*Math.sqrt(play.drop.n);
+ function slideY(){const d=play?.drop;if(!d)return 0;const u=Math.min(1,d.t/(SLIDE*Math.sqrt(d.n)));return -d.n*CELL*(1-u)*(1-u);}
  const originV=()=>({x:FX+play.st.origin*CELL,y:FT+FH-S.BALL_R*CELL});
  function setAngleFromPoint(p){const o=originV();if(p.y>o.y-6)return false;play.angle=S.launchAngleOK(Math.atan2(p.y-o.y,p.x-o.x));return true;}
  const sliderT=a=>(a-(-Math.PI+.14))/(Math.PI-.28);
- function fire(){if(!play||play.phase!=='aim')return;const st=play.st;play.snap=S.snapshot(st);
+ function fire(){if(!play||play.phase!=='aim'||sliding())return;const st=play.st;play.snap=S.snapshot(st);vibrate(12);
   const count=play.plusArmed?st.balls*2:st.balls;if(play.plusArmed){play.plusArmed=false;play.plus--;}
   S.startVolley(st,play.angle,{count});play.phase='flight';play.aiming=play.slider=false;sfx('launch');}
  function useBolt(){if(!play||play.phase!=='aim'||play.bolt<=0||!play.st.grid.size)return;play.bolt--;const ev=S.lightning(play.st,[]);consume(ev);sfx('bolt');
@@ -204,6 +212,7 @@ async function bricksQuest(s){
    for(let i=0;i<12;i++){const a=Math.random()*TAU,v=60+Math.random()*190;fx.parts.push({x:cx+(Math.random()-.5)*30,y:cy+(Math.random()-.5)*30,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,s:3+Math.random()*6,color:b.color,t:0,life:.45+Math.random()*.4});}
    fx.pops.push({x:cx,y:cy,str:String(e.pts),t:0});fx.rings.push({c:b.c,r:b.r,shape:b.shape,t:0,kill:true});}
   else if(e.type==='laser'){sfx('laser');fx.beams.push({...e,t:0});}
+  else if(e.type==='beam'){sfx('beam');beamOn.set(e.r*S.COLS+e.c,{dir:e.dir,c:e.c,r:e.r,t:T});}
   else if(e.type==='blast'){sfx('laser');fx.rings.push({c:e.c-1,r:e.r-1,shape:'s',t:0,big:true});}
   else if(e.type==='bolt'){fx.bolts.push({...e,t:0,seed:Math.random()});}
   else if(e.type==='pick'){sound('pickup');fx.flies.push({x:FX+e.x*CELL,y:FT+e.y*CELL,t:0});}
@@ -215,8 +224,10 @@ async function bricksQuest(s){
  function stepPlay(dt){const st=play.st;play.t+=dt;
   if(play.phase==='flight'){const ev=[];st.events=ev;const done=S.stepFlight(st,dt,ev);consume(ev);
    if(st.mode==='stage'&&!st.grid.size&&!st.hidden.length&&!st.fl.recall)S.recall(st); // last brick gone: call the balls home
-   if(done){const r=S.endTurn(st);play.snap=null;if(r==='clear')finishStage('clear');else if(r==='fail')finishStage('fail');else play.phase='aim';}}
-  if(play.phase==='aim'&&s.debug.bot&&play.t>.15){play.t=0;play.angle=S.botAngle(st,9);fire();}
+   if(done){beamOn.clear();const r=S.endTurn(st);play.snap=null;if(st.lastDrop)play.drop={n:st.lastDrop,t:0};if(st.lastDrop>1)sfx('card');
+    if(r==='clear')finishStage('clear');else if(r==='fail')finishStage('fail');else play.phase='aim';}}
+  if(play.drop){play.drop.t+=dt;if(!sliding())play.drop=null;}
+  if(play.phase==='aim'&&s.debug.bot&&play.t>.15&&!sliding()){play.t=0;play.angle=S.botAngle(st,9);fire();}
   if((play.phase==='clear'||play.phase==='fail')&&s.debug.bot){play.panelT=(play.panelT||0)+dt;if(play.panelT>1.2)panelAction(play.phase==='fail'&&play.gems>=CONTINUE&&!play.continued?'continue':'next');}
   else if(play.phase==='clear'||play.phase==='fail')play.panelT=(play.panelT||0)+dt;
  }
@@ -250,9 +261,12 @@ async function bricksQuest(s){
   // aim guide
   if(play.phase==='aim'&&(play.aiming||play.slider||s.debug.showAim)){const path=S.aimPath(st,play.angle);drawGuide(path);}
   // pickup rings
-  for(const p of st.picks.values())drawRing(FX+(p.c+.5)*CELL,FT+(p.r+.5)*CELL);
+  const sy=slideY();
+  for(const p of st.picks.values())drawRing(FX+(p.c+.5)*CELL,FT+(p.r+.5)*CELL+sy);
+  // green beam rings: '-' fires along the row, '+' along the row and column; the beam glows while balls pass through
+  for(const q of st.beams.values())drawBeamRing(FX+(q.c+.5)*CELL,FT+(q.r+.5)*CELL+sy,q);
   // bricks
-  for(const b of st.grid.values()){const sp=brickSprite(C,k,b.color,b.shape,b.kind),bx=FX+b.c*CELL,by=FT+b.r*CELL;
+  for(const b of st.grid.values()){const sp=brickSprite(C,k,b.color,b.shape,b.kind),bx=FX+b.c*CELL,by=FT+b.r*CELL+sy;
    x.drawImage(sp.cv,bx-sp.pad,by-sp.pad,CELL+sp.pad*2,CELL+sp.pad*2);
    if(b.flash>0){x.save();x.translate(bx,by);x.globalAlpha=b.flash*.55;x.strokeStyle='#fff';x.lineWidth=2.5;x.lineJoin='round';brickPath(x,b.shape,1);x.stroke();x.restore();b.flash=Math.max(0,b.flash-1/12);}
    const [tx,ty]=textSpot(b.shape);text(x,String(b.hp),bx+tx,by+ty,{size:b.hp>=1000?14:17,weight:500,color:'#eef8ff'});}
@@ -268,6 +282,7 @@ async function bricksQuest(s){
   else if(play.phase==='aim'){x.drawImage(bs.cv,o.x-bs.R,o.y-bs.R,bs.R*2,bs.R*2);const n=play.plusArmed?st.balls*2:st.balls,lx=o.x>FX+FW-70;text(x,'x'+n,o.x+(lx?-15:15),o.y-15,{size:15,weight:500,color:play.plusArmed?'#ffe27a':'#fff',align:lx?'right':'left'});}
   drawBottom(st);
   if(play.phase==='clear'||play.phase==='fail'||play.phase==='done')drawPanel(st);
+  drawPresses();
   if(fx.toast&&fx.toast.t>0){x.globalAlpha=Math.min(1,fx.toast.t*2);x.fillStyle='#000c';rr(x,90,FT+300,396,56,14);x.fill();text(x,fx.toast.msg,288,FT+328,{size:17,weight:700});x.globalAlpha=1;}
   x.restore();
  }
@@ -294,10 +309,22 @@ async function bricksQuest(s){
    carry=(carry-len)%.3;if(carry<0)carry+=.3;run+=len;}
   x.globalAlpha=1;const [ex,ey]=path.end;x.strokeStyle='rgba(255,255,255,.75)';x.lineWidth=1.6;x.beginPath();x.arc(FX+ex*CELL,FT+ey*CELL,S.BALL_R*CELL,0,TAU);x.stroke();
   x.fillStyle='rgba(255,255,255,.35)';x.fill();}
+ function drawBeam(q,a){const cy=FT+(q.r+.5)*CELL,cx=FX+(q.c+.5)*CELL,w=10+a*14;x.globalAlpha=Math.min(1,a*1.4);
+  for(const [lw,col,bl] of [[w,'#58ff3a',22],[w*.45,'#f4ffe8',8]]){glow(x,'#3dff2a',bl);x.fillStyle=col;
+   x.fillRect(FX,cy-lw/2,FW,lw);if(q.dir==='x')x.fillRect(cx-lw/2,FT,lw,FH);}
+  noGlow(x);x.globalAlpha=1;}
+ function drawBeamRing(cx,cy,q){const pulse=.5+.5*Math.sin(T*5+q.c);
+  x.beginPath();x.arc(cx,cy,19,0,TAU);x.fillStyle='rgba(30,120,20,.55)';x.fill();
+  glow(x,'#46ff2e',10+pulse*8);x.strokeStyle='#4cf03a';x.lineWidth=4;x.stroke();noGlow(x);
+  x.beginPath();x.arc(cx,cy,14.5,0,TAU);x.strokeStyle='#eaffe0';x.lineWidth=2.2;x.stroke();
+  x.fillStyle='#fbfff6';glow(x,'#9dff8a',6);rr(x,cx-10,cy-2.6,20,5.2,2.6);x.fill();if(q.dir==='x'){rr(x,cx-2.6,cy-10,5.2,20,2.6);x.fill();}noGlow(x);}
  function drawRing(cx,cy){const a=T*2.2;x.lineWidth=6;x.strokeStyle='rgba(214,80,255,.35)';x.beginPath();x.arc(cx,cy,14,0,TAU);x.stroke();
   x.lineWidth=2.4;x.strokeStyle='#fff';for(let i=0;i<3;i++){x.beginPath();x.arc(cx,cy,14,a+i*TAU/3,a+i*TAU/3+1.55);x.stroke();}
   x.beginPath();x.arc(cx,cy,6,0,TAU);x.fillStyle='#fff';glow(x,'#d24dff',8);x.fill();noGlow(x);}
+ function drawPresses(){for(const f of fx.presses){const u=f.t/.25;x.globalAlpha=(1-u)*.55;x.strokeStyle='#fff';x.lineWidth=3*(1-u)+1;glow(x,'#ffffff',10);
+  x.beginPath();x.arc(f.x,f.y,f.r*(.8+u*.35),0,TAU);x.stroke();x.fillStyle='rgba(255,255,255,.12)';x.fill();noGlow(x);}x.globalAlpha=1;}
  function drawFx(){
+  for(const [k2,q] of beamOn){const age=T-q.t;if(age>.22){beamOn.delete(k2);continue;}drawBeam(q,1-age/.22);}
   for(const r of fx.rings){const u=r.t/(r.kill?.4:.32),bx=FX+r.c*CELL,by=FT+r.r*CELL,size=r.big?CELL*3:CELL,g=1+u*.25;x.save();x.translate(bx+size/2,by+size/2);x.scale(g,g);x.globalAlpha=(1-u)*.6;
    x.strokeStyle=r.kill?'#d6dde2':'#8d969c';x.lineWidth=3;if(r.big||r.shape==='s'){rr(x,-size/2,-size/2,size,size,8);}else{x.translate(-CELL/2,-CELL/2);brickPath(x,r.shape);}x.stroke();x.restore();}
   for(const b of fx.beams){const u=b.t/.32,w=(1-u)*12;x.globalAlpha=1-u;glow(x,b.color,18);x.fillStyle='#fff7e0';
@@ -367,16 +394,16 @@ async function bricksQuest(s){
  s.on(c,'pointerdown',ev=>{if(s.paused)return;ev.preventDefault();layout();const p=toV(ev);
   if(view==='map'){mapDrag={y:p.y,start:mapScroll,moved:0,x:p.x};try{c.setPointerCapture(ev.pointerId);}catch{}return;}
   if(!play)return;
-  if(play.phase==='clear'||play.phase==='fail'){if((play.panelT||0)<.5)return;const a=panelHit(p);if(a)panelAction(a);return;}
+  if(play.phase==='clear'||play.phase==='fail'){if((play.panelT||0)<.5)return;const a=panelHit(p);if(a){press(p.x,p.y,50);panelAction(a);}return;}
   // HUD rings
-  if(Math.hypot(p.x-58,p.y-75)<38){play.st.fast=!play.st.fast;sound('tap');return;}
-  if(Math.hypot(p.x-518,p.y-75)<38){s.manualPause();return;}
-  if(play.phase==='flight'){if(p.y>BY-50&&p.x>186&&p.x<390)recall();else if(play.snap&&Math.hypot(p.x-518,p.y-BY)<46)rewind();return;}
+  if(Math.hypot(p.x-58,p.y-75)<38){press(58,75,30);play.st.fast=!play.st.fast;sound('tap');return;}
+  if(Math.hypot(p.x-518,p.y-75)<38){press(518,75,30);s.manualPause();return;}
+  if(play.phase==='flight'){if(p.y>BY-50&&p.x>186&&p.x<390){press(288,BY,60);recall();}else if(play.snap&&Math.hypot(p.x-518,p.y-BY)<46){press(518,BY+4);rewind();}return;}
   if(play.phase!=='aim')return;
   if(p.y>FB+10){
-   if(Math.hypot(p.x-58,p.y-BY)<46)return useBolt();
-   if(Math.hypot(p.x-518,p.y-BY)<46)return usePlus();
-   if(p.x>140&&p.x<436&&Math.abs(p.y-BY)<40){play.slider=true;sliderTo(p);try{c.setPointerCapture(ev.pointerId);}catch{}}
+   if(Math.hypot(p.x-58,p.y-BY)<46){press(58,BY);return useBolt();}
+   if(Math.hypot(p.x-518,p.y-BY)<46){press(518,BY);return usePlus();}
+   if(p.x>140&&p.x<436&&Math.abs(p.y-BY)<40){vibrate(6);play.slider=true;sliderTo(p);try{c.setPointerCapture(ev.pointerId);}catch{}}
    return;}
   if(setAngleFromPoint(p)){play.aiming=true;try{c.setPointerCapture(ev.pointerId);}catch{}}
  });
@@ -400,7 +427,7 @@ async function bricksQuest(s){
  // ================================ LOOP + FLOW ================================
  s.frame(dt=>{T+=dt;layout();
   if(fx.toast)fx.toast.t-=dt;
-  for(const list of [fx.parts,fx.pops,fx.rings,fx.beams,fx.bolts,fx.flies])for(const e of list)e.t+=dt;
+  for(const list of [fx.parts,fx.pops,fx.rings,fx.beams,fx.bolts,fx.flies,fx.presses])for(const e of list)e.t+=dt;fx.presses=fx.presses.filter(f=>f.t<.25);
   for(const p of fx.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=420*dt;}
   fx.parts=fx.parts.filter(p=>p.t<p.life);fx.pops=fx.pops.filter(p=>p.t<.8);fx.rings=fx.rings.filter(r=>r.t<(r.kill?.4:.32));fx.beams=fx.beams.filter(b=>b.t<.32);fx.bolts=fx.bolts.filter(b=>b.t<.45);fx.flies=fx.flies.filter(f=>f.t<.5);
   if(fx.parts.length>500)fx.parts.splice(0,fx.parts.length-500);

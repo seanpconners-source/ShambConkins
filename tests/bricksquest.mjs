@@ -14,6 +14,25 @@ for(const n of [...Lv.HAND_STAGES,37,99,250,1001,5000]){const d=Lv.stage(n);try{
 for(const n of [1,5,12]){const r=Sim.botPlay(Lv.stage(n),{tries:15});if(r.result!=='clear')fail(`bot cannot clear stage ${n} (${JSON.stringify(r)})`);}
 {const st=Sim.newStage({balls:10,rows:['5 5 5 5 5 5 5 5 5']});Sim.startVolley(st,-Math.PI/2);let g=0;while(!Sim.stepFlight(st,1/60,[])&&g++<5000);
  if(!(st.score>0||[...st.grid.values()].some(b=>b.hp<5)))fail('straight-up shot did not hit the wall');if(Sim.endTurn(st)!=='next')fail('turn should continue');}
+// queued lines: one drops in per turn; with none left the wall still moves down one row
+{const st=Sim.newStage({balls:1,show:1,colors:{},rows:['7 . . . . . . . .','5 . . . . . . . .']});Sim.startVolley(st,-.2);let g=0;while(!Sim.stepFlight(st,1/60,[])&&g++<5000);
+ Sim.endTurn(st);const rows=[...st.grid.values()].map(b=>b.r).sort();if(rows.join()!=='1,2'||st.hidden.length)fail('queued line did not drop in: '+rows);
+ Sim.startVolley(st,-.2);g=0;while(!Sim.stepFlight(st,1/60,[])&&g++<5000);Sim.endTurn(st);if([...st.grid.values()].map(b=>b.r).sort().join()!=='2,3')fail('empty queue should still move the wall down one row');}
+// clearing the whole top line drops the wall three rows (three queued lines come in); not past row FAIL_ROW-3
+{const mk=low=>{const st=Sim.newStage({balls:5,show:2,colors:{},rows:['. . . . 9 . . . .','. . . . . . . . .','. . . . . . . . .','1 1 1 1 1 1 1 1 1',low]});
+  Sim.startVolley(st,-1);for(const [k,b] of [...st.grid])if(b.r===1)st.grid.delete(k);st.fl.toLaunch=0;Sim.endTurn(st);return st;};
+ const a=mk('. . . . . . . . 50');if(a.lastDrop!==3||!a.grid.has(5*Sim.COLS+8)||!a.grid.has(1*Sim.COLS+4))fail(`top line cleared but drop was ${a.lastDrop}`);
+ const st=Sim.newStage({balls:5,show:6,colors:{},rows:['. . . . 9 . . . .','5 5 5 5 5 5 5 5 5','. . . . . . . . .','. . . . . . . . .','. . . . . . . . .','. . . . . . . . .','. . . . . . . . 50']});
+ Sim.startVolley(st,-1);for(const [k,b] of [...st.grid])if(b.r===1)st.grid.delete(k);Sim.endTurn(st);if(st.lastDrop!==1)fail(`a low wall should only drop one row (dropped ${st.lastDrop})`);}
+// green beam rings: '-' hits the whole row, '*' the row and the column, and they are gone after the turn that fired them
+{const st=Sim.newStage({balls:1,colors:{},rows:['9 9 . . . . . 9 9','. . . . . . . . .','9 . . . * . . . 9','. . . . . . . . .','9 . . . - . . . 9','. . . . . . . . .']});
+ Sim.startVolley(st,-Math.PI/2);let g=0;const ev=[];while(!Sim.stepFlight(st,1/60,ev)&&g++<5000);
+ const fired=ev.filter(e=>e.type==='beam').map(e=>e.dir).join(),hp=(c,r)=>st.grid.get(r*Sim.COLS+c)?.hp;
+ if(fired!=='h,x,x,h')fail('beams did not fire on the way up and down: '+fired);
+ if(hp(0,5)!==7||hp(8,3)!==7)fail('beams should hit their rows');if(hp(0,1)!==9)fail('a beam hit another row');
+ Sim.endTurn(st);if(st.beams.size)fail('used beam rings should vanish');}
+// stage 20 is copied from the owner's screenshots: 57 balls, beams in rows 2 and 4, the 42 line queued next
+{const st=Sim.newStage(Lv.stage(20));if(st.balls!==57||st.beams.size!==2||st.hidden[0].filter(Boolean).length!==6)fail('stage 20 layout changed');}
 // --- browser ---
 const sizes=process.argv.slice(2).length?process.argv.slice(2).map(s=>s.split('x').map(Number)):[[390,780],[1100,700]];
 for(const [w,h] of sizes){
@@ -49,7 +68,8 @@ for(const [w,h] of sizes){
  // bot plays the rest of both turns
  await page.evaluate(()=>{window.ShambConkins.store.session.debug.bot=true;});
  let shotPanel=false;
- for(let i=0;i<900;i++){d=await D();
+ // stages queue extra lines now, so let the bot play at 2x and give it longer
+ for(let i=0;i<2400;i++){d=await D();await page.evaluate(()=>{const p=window.ShambConkins.store.session?.debug?.play;if(p)p.st.fast=true;});
   if(!shotPanel&&(d?.phase==='clear'||d?.phase==='fail')){await page.waitForTimeout(500);await shot(`panel-${d.phase}`);shotPanel=true;}
   if(await page.$('.pass-overlay [data-ready]')){await shot('handoff2');await page.evaluate(()=>document.querySelector('.pass-overlay [data-ready]')?.click());}
   if(!d||d.view===undefined)break;await page.waitForTimeout(200);}

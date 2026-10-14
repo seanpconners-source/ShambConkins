@@ -140,9 +140,14 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   shell, all drawn in 576-wide units scaled to fit: stage map with BRICKS logo, gems/stars, snake of stage tiles, SHOP/BALL/CLASSIC/
   MULTI/100BALLS bar; HUD ring buttons, star bar, 9x11 neon field, lightning ×3 / aim slider / ball plus ×3, recall + 200-gem rewind
   in flight, CLEAR!/FAILED panels with NEXT/CONTINUE), `engines/bricksQuestSim.js` (pure rules + physics in cell units: squares,
-  4 triangle shapes, row/column lasers, bombs, +1 rings, wall drops a line per turn, 10×n combo score, `botPlay`/`botAngle`),
-  `data/bricksQuestLevels.js` (stages 1-36 hand built, 75/120/1043/1050 rebuilt from screenshots, `stage(n)` generates every other
-  number). P1 picks a stage (any up to the next uncleared), both play it, higher score wins. Saves `profile.bricksQuest`
+  4 triangle shapes, row/column lasers, bombs, +1 rings, 10×n combo score, `botPlay`/`botAngle`; green beam rings `-` row / `*`
+  cross (drawn as ⊖/⊕): every ball passing fires it, 1 hit per brick on the line, gone after a turn that fired it),
+  `data/bricksQuestLevels.js` (stages 1-36 hand built, 20/75/120/1043/1050 rebuilt from screenshots, `stage(n)` generates every other
+  number). Queue (owner, Oct 14): every turn the next queued line drops in at row 1 (`queueLines(n)` adds 3-12 sparse lines to hand
+  stages, +25% balls, `qb` overrides); with an empty queue the wall still moves 1 row; clearing the turn's top brick line drops
+  3 lines at once (`st.lastDrop`), capped so the lowest brick stays above row FAIL_ROW-3 (my reading of the owner's stage 20
+  screenshots; the video couldn't be fetched). Wall slides down (`slideY`); every button buzzes (`press()` → `vibrate(9)`) and
+  flashes a ring. The Node bot clears all hand stages 1-36 (75/1043/1050 were already too hard for it). P1 picks a stage (any up to the next uncleared), both play it, higher score wins. Saves `profile.bricksQuest`
   {cleared,stars,gems,reward,gift} (validated in `profile.js`); board play gives each turn its own 300 gems. CLASSIC/100BALLS tabs =
   endless Ballz-style modes. Ball counts tuned so the Node bot clears every hand stage. Test: `tests/bricksquest.mjs` (screens
   `/tmp/claude-0/sc/bbq-*`, `STAGE=n`). Real-phone feel untested.
