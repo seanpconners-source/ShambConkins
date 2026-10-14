@@ -7,6 +7,7 @@ const {store}=require("src/state.js");
 const {saveProfile}=require("src/profile.js");
 const {sound,tone,vibrate}=require("src/audio.js");
 const {createRenderer,affine}=require("src/engines/holeIt/gl.js");
+const {fullBleed}=require("src/engines/fullBleed.js");
 const {KINDS,HEAD_FACE,C,geo,add,rbox}=require("src/engines/holeIt/meshes.js");
 const {buildLevel,holeRadius,TIME}=require("src/engines/holeIt/levels.js");
 const {createSim,stepSim,useBoost,sizeProgress,goalTotal,goalNeed,qaxis,qmul}=require("src/engines/holeIt/sim.js");
@@ -32,7 +33,7 @@ function boosterIcon(x,id,cx,cy,s){x.save();x.translate(cx,cy);x.lineJoin='round
  x.restore();}
 
 async function holeIt(s){
- const [c]=s.canvas(390,720,{fill:true});s.body.classList.add('drag-arena-body','holeit-body');
+ const [c]=s.canvas(390,720,{fill:true});s.body.classList.add('drag-arena-body','holeit-body');const FB=fullBleed(s,{bg:'#1b2033'});
  const frame=c.parentElement;frame.style.position='relative';c.style.touchAction='none';
  const mk=()=>{const e=document.createElement('canvas');e.style.cssText='position:absolute;pointer-events:none;left:0;top:0';frame.appendChild(e);return e;};
  const glc=mk(),hud=mk(),hx=hud.getContext('2d');
@@ -57,9 +58,11 @@ async function holeIt(s){
  const results=[null,null];let turn=null,finishResolve=null,contact=null,keys={};
  // ---- layout helpers (CSS px) ----
  const L={};
- function layout(){const W=s.W,H=s.H;L.W=W;L.H=H;const top=10;L.level={x:10,y:top,w:84,h:28};L.timer={x:W/2-58,y:top,w:116,h:32};L.pause={x:W-46,y:top,w:36,h:36};
-  const n=def.goals.length,cw=Math.min(58,(W-24)/Math.max(4,n)-6);L.cards=def.goals.map((g,i)=>({x:10+i*(cw+6),y:top+40,w:cw,h:cw*1.16}));
-  const bs=Math.min(58,W/6.2),gap=bs*.28,tw=bs*4+gap*3,by=H-bs-14;L.boost=BOOST_ORDER.map((id,i)=>({id,x:W/2-tw/2+i*(bs+gap),y:by,w:bs,h:bs}));
+ function layout(){const W=s.W,H=s.H;L.W=W;L.H=H;const top=10;L.level={x:10,y:top,w:84,h:28};L.timer={x:W/2-58,y:top,w:116,h:32};
+  // keep clear of the floating Pause/Exit pills (top-right, ~124 px wide, FB.top tall)
+  const pills=W-128;if(L.timer.x+L.timer.w>pills){L.timer.x=Math.max(100,pills-L.timer.w);if(L.timer.x+L.timer.w>pills){L.timer.x=W/2-58;L.timer.y=FB.top+4;}}const drop=L.timer.y>top?L.timer.y-top:0;
+  const n=def.goals.length,cw=Math.min(58,(W-24)/Math.max(4,n)-6);L.cards=def.goals.map((g,i)=>({x:10+i*(cw+6),y:top+40+drop+(drop?24:0),w:cw,h:cw*1.16}));
+  const bs=Math.min(58,W/6.2),gap=bs*.28,tw=bs*4+gap*3,by=H-bs-46;L.boost=BOOST_ORDER.map((id,i)=>({id,x:W/2-tw/2+i*(bs+gap),y:by,w:bs,h:bs}));
   L.play={x:W/2-80,y:Math.min(H*.78,H-130),w:160,h:58};L.cont={x:W/2-90,y:H*.72,w:180,h:60};}
  const inside=(p,r)=>r&&p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h;
  function syncCanvases(){const w=c.clientWidth,h=c.clientHeight,l=c.offsetLeft,t=c.offsetTop,k=dpr();for(const e of [glc,hud]){e.style.left=l+'px';e.style.top=t+'px';e.style.width=w+'px';e.style.height=h+'px';}
@@ -112,9 +115,9 @@ async function holeIt(s){
   outlined(x,fmt(sim.time),tm.x+tm.w/2+10,tm.y+tm.h/2+1,17,sim.time<15&&!frozen&&Math.floor(t*4)%2?'#ff7a7a':'#fff','#141a33');
   rr(x,tm.x+8,tm.y+tm.h+3,tm.w-16,6,3);x.fillStyle='#0f1430cc';x.fill();rr(x,tm.x+8,tm.y+tm.h+3,(tm.w-16)*Math.max(0,sim.time/TIME),6,3);x.fillStyle=frozen?'#6fd8ff':'#39d353';x.fill();
   // player chip
-  const who=s.players[turn.player];outlined(x,who.name,tm.x+tm.w/2,tm.y+tm.h+20,11,turn.player?'#ff9ccc':'#8fc2ff','#141a33',undefined,800);
-  // pause
-  const pz=L.pause;rr(x,pz.x,pz.y,pz.w,pz.h,9);x.fillStyle='#4a55d8';x.fill();x.strokeStyle='#9aa6ff';x.stroke();x.fillStyle='#fff';x.fillRect(pz.x+12,pz.y+10,4,16);x.fillRect(pz.x+20,pz.y+10,4,16);
+  const who=s.players[turn.player],nx=W-12,ny=Math.max(FB.top,tm.y+tm.h)+14;outlined(x,who.name,nx,ny,12,turn.player?'#ff9ccc':'#8fc2ff','#141a33','right',800);
+  // the score bar is hidden in full bleed: show the target to beat on the second turn
+  if(turn.player===1&&results[0]){const r0=results[0];outlined(x,r0.won?`Beat ${r0.time.toFixed(1)} s`:`Beat ${r0.goals} items`,nx,ny+16,11,'#ffe27a','#141a33','right',800);}
   // goal cards
   sim.goals.forEach((g,i)=>{const cd=L.cards[i];if(!cd)return;const grd=x.createLinearGradient(0,cd.y,0,cd.y+cd.h);grd.addColorStop(0,'#6476f0');grd.addColorStop(1,'#3a44b4');rr(x,cd.x,cd.y,cd.w,cd.h,8);x.fillStyle=grd;x.fill();x.strokeStyle='#a9b3ff';x.lineWidth=1.5;x.stroke();
    const pulse=turn.cardPulse[i]>0?1+turn.cardPulse[i]*.25:1,ts=cd.w*.78*pulse;x.drawImage(thumb(g.k),cd.x+cd.w/2-ts/2,cd.y+cd.w*.42-ts/2,ts,ts);
@@ -154,7 +157,6 @@ async function holeIt(s){
  s.on(c,'pointerdown',ev=>{if(s.paused||!turn)return;const p=s.pointer(ev);ev.preventDefault();layout();
   if(turn.phase==='intro'){if(inside(p,L.play)||p.y>H50()){sound('tap');startPlay();}return;}
   if(turn.phase==='end'){if(turn.endT>.7&&(inside(p,L.cont)||p.y>H50()))endTurn();return;}
-  if(inside(p,L.pause)){s.manualPause?.();return;}
   for(const b of L.boost)if(Math.hypot(p.x-b.x-b.w/2,p.y-b.y-b.h/2)<b.w/2+4){if(useBoost(turn.sim,b.id)){sound('pickup');vibrate(15);}else sound('tap');return;}
   if(contact)return;contact={id:ev.pointerId,origin:p,point:p};turn.moved=true;s.capture?.(ev);});
  const H50=()=>s.H*.5;

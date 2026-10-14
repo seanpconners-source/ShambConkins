@@ -61,7 +61,8 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   contact shadows, the yellow size arc and the gold level-up ring, textured head tokens), `meshes.js` (~60 procedural props
   in toys/fruit/kitchen/sushi themes + Rum Ham/Fight Milk/head-token cameos), `levels.js` (deterministic `buildLevel(N)`:
   rows/rings/spirals/snakes/piles/towers/pillars, goal cards, `holeRadius`/`sizeNeed`), `sim.js` (movement, tip-in physics,
-  stacks, growth, boosters, `botInput`). Flow in `engines/holeIt.js`: pass → "Level N" intro (duck/apple/croissant over a
+  stacks, growth, boosters, `botInput`). Full bleed via `fullBleed(s)` (engine `hole` in the `noBleed` list; floating Pause/Exit replace its own pause
+  button, boosters sit above the ⤢ toggle, player name/target to beat under the pills). Flow in `engines/holeIt.js`: pass → "Level N" intro (duck/apple/croissant over a
   hole, Play) → 2:00 play (floating joystick, clock waits for the first drag, level 1 infinity tutorial) → Bravo!/Time's up →
   P2 plays the same level. Score = goal items + (clear ? 1000 + 10×seconds left). `profile.holeItLevel` (load whitelisted
   in `profile.js`) advances when either player clears. Test: `tests/holeit.mjs` (`--node` part is in `npm test`;
