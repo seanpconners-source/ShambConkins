@@ -1,5 +1,7 @@
 # ShambConkins one-click local release compiler.
-# Builds the checked-out main branch into releases/ without uploading or modifying game source.
+# Builds whatever branch is checked out (main, TESTver, ...) into releases/ without uploading or
+# modifying game source. Names: main -> ShambConkins_v<ver>.html, TESTver -> ShambConkins_v<ver>_TestVer.html,
+# other branches -> ShambConkins_v<ver>_<branch>.html. Existing files in releases/ are never replaced.
 [CmdletBinding()]
 param()
 $ErrorActionPreference = 'Stop'
@@ -10,28 +12,48 @@ try {
     Write-Host '========== SHAMBCONKINS RELEASE BUILDER ==========' -ForegroundColor Cyan
     Write-Host ('Repository: ' + $root)
 
-    # GitHub Desktop's normal clone uses a .git directory. Refuse to release
-    # from a non-main checkout rather than accidentally packaging Broforce WIP.
+    # Read the checked-out branch from .git/HEAD (GitHub Desktop clone: .git folder; worktree: .git file).
     $gitDir = Join-Path $root '.git'
-    if (-not (Test-Path -LiteralPath $gitDir -PathType Container)) {
-        throw 'Cannot verify the repository branch (.git directory missing). Open the main checkout in GitHub Desktop.'
+    if (Test-Path -LiteralPath $gitDir -PathType Leaf) {
+        $pointer = (Get-Content -LiteralPath $gitDir -Raw).Trim()
+        if ($pointer -match '^gitdir:\s*(.+)$') { $gitDir = $Matches[1].Trim() }
+        if (-not [System.IO.Path]::IsPathRooted($gitDir)) { $gitDir = Join-Path $root $gitDir }
     }
     $headFile = Join-Path $gitDir 'HEAD'
-    $head = (Get-Content -LiteralPath $headFile -Raw).Trim()
-    if ($head -ne 'ref: refs/heads/main') {
-        throw ("This checkout is not on main (HEAD: {0}). Switch to main in GitHub Desktop and retry." -f $head)
+    if (-not (Test-Path -LiteralPath $headFile -PathType Leaf)) {
+        throw 'Cannot read the checked-out branch (.git is missing). Open the repository in GitHub Desktop first.'
     }
+    $head = (Get-Content -LiteralPath $headFile -Raw).Trim()
+    if ($head -match '^ref:\s*refs/heads/(.+)$') {
+        $branch = $Matches[1]
+    } elseif ($head -match '^[0-9a-f]{7,}') {
+        $branch = 'detached-' + $head.Substring(0, 7)
+    } else {
+        throw ('Cannot tell which branch is checked out (HEAD: {0}).' -f $head)
+    }
+    if ($branch -eq 'main') {
+        $label = ''
+    } elseif ($branch -eq 'TESTver') {
+        $label = '_TestVer'
+    } else {
+        $label = '_' + (($branch -replace '[^A-Za-z0-9.-]+', '-').Trim('-'))
+    }
+    Write-Host ('Branch: ' + $branch)
 
-    # Catch uncommitted source/art changes when the Git binary is available.
+    # Catch uncommitted source/art changes when the Git binary is available. A main release must be
+    # clean; other branches build exactly what is on disk and just list the uncommitted files.
     $git = Get-Command git.exe -ErrorAction SilentlyContinue
     if ($git) {
         $dirty = @(& $git.Source -C $root status --porcelain -- src assets package.json tools/build.mjs)
-        if ($LASTEXITCODE -ne 0) { throw 'Git could not check whether the main source is clean.' }
+        if ($LASTEXITCODE -ne 0) { throw 'Git could not check whether the source is clean.' }
         if ($dirty.Count -gt 0) {
-            throw ('Uncommitted game/source/art changes detected. Commit or resolve them in GitHub Desktop before releasing: ' + ($dirty -join '; '))
+            if ($branch -eq 'main') {
+                throw ('Uncommitted game/source/art changes detected. Commit or resolve them in GitHub Desktop before releasing: ' + ($dirty -join '; '))
+            }
+            Write-Host ('Note: building with uncommitted changes: ' + ($dirty -join '; ')) -ForegroundColor Yellow
         }
     } else {
-        Write-Host 'Git is not on PATH; confirm GitHub Desktop has pulled the latest main.' -ForegroundColor Yellow
+        Write-Host ('Git is not on PATH; confirm GitHub Desktop has pulled the latest ' + $branch + '.') -ForegroundColor Yellow
     }
 
     $manifest = Join-Path $root 'package.json'
@@ -41,7 +63,7 @@ try {
     }
     $resolver = Join-Path $root 'tools\resolve-node-for-local-tests.ps1'
     if (-not (Test-Path -LiteralPath $resolver)) {
-        throw 'Missing the existing Node resolver. Pull main in GitHub Desktop first.'
+        throw ('Missing the existing Node resolver. Pull ' + $branch + ' in GitHub Desktop first.')
     }
     # Do not perform surprise software downloads during a release build.
     $nodeInfo = & $resolver -ProjectRoot $root -NoSetup
@@ -56,12 +78,13 @@ try {
     if (-not (Test-Path -LiteralPath $releaseDir)) {
         New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null
     }
-    $name = 'ShambConkins_v' + $version + '.html'
+    $base = 'ShambConkins_v' + $version + $label
+    $name = $base + '.html'
     $target = Join-Path $releaseDir $name
     if (Test-Path -LiteralPath $target) {
-        $name = 'ShambConkins_v' + $version + '_built-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.html'
+        $name = $base + '_built-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.html'
         $target = Join-Path $releaseDir $name
-        Write-Host 'Existing version found. Using a timestamped name to preserve it.' -ForegroundColor Yellow
+        Write-Host ('{0}.html already exists; keeping it and using a timestamped name.' -f $base) -ForegroundColor Yellow
     }
 
     Write-Host 'Checking game module registry...'
