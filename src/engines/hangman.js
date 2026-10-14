@@ -1,6 +1,7 @@
 // Hangman Unchained (Django Unchained): full-bleed western hangman with big touch keys.
 //  'shared' (django-hangman): both players race on ONE phrase at the same time, each on their own keyboard.
 //     A letter belongs to whoever shoots it first; a miss adds a piece to your own cowboy and jams your gun briefly.
+//  'turns'  (django-hangman-showdown): one keyboard, players take turns guessing the same phrase (15 s shot clock).
 //  'pass'   (django-hangman-wanted): one player writes a phrase (or deals one from the deck), the other guesses; then swap.
 // Six bullets = six misses: torso, arms, legs, then the trapdoor drops. Sounds are all synthesized western SFX.
 const {fullBleed}=require("src/engines/fullBleed.js");
@@ -9,7 +10,7 @@ const {shuffle}=require("src/utils.js");
 const {SFX}=require("src/engines/westernSfx.js");
 const {PHRASES,CATEGORIES}=require("src/data/hangmanPhrases.js");
 
-const LIVES=6,ROUNDS=3,CLOCK=75,MAXLEN=34;
+const LIVES=6,ROUNDS=3,CLOCK=75,TURN=15,MAXLEN=34;
 const ABC=[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
 const isLetter=ch=>ch>='A'&&ch<='Z';
 const SLAB='"Rockwell Extra Bold","Rockwell","Roboto Slab","Clarendon","Noto Serif","Georgia",serif';
@@ -86,15 +87,16 @@ function makeLogo(w,k=1,tag=true){
 }
 
 async function hangman(s){
- const mode=s.game?.hangMode==='pass'?'pass':'shared';
+ const mode=['pass','turns'].includes(s.game?.hangMode)?s.game.hangMode:'shared',duel=mode!=='pass';
  const [c]=s.canvas(900,600,{fill:true});const x=c.getContext('2d');const fb=fullBleed(s,{bg:'#160a06'});
  s.shared=mode==='shared';s.active=0;s.updateScores();
- s.hint(mode==='shared'?'Both at once on one phrase: P1 taps the bottom/left keyboard, P2 the top/right one. A hit is yours (+10 a letter), a miss builds your cowboy and jams your gun for a moment. Six misses and the trapdoor drops. The last letter collects the bounty (+40). Three bounties.'
+ s.hint(mode==='turns'?'Take turns on one keyboard: the glowing keyboard, card and banner show whose shot it is. One letter per turn, 15 seconds a shot (running out counts as a miss). +10 for every time your letter appears; a miss builds your cowboy, six and the trapdoor drops (−20). The last letter collects the bounty (+40). Three bounties.'
+  :mode==='shared'?'Both at once on one phrase: P1 taps the bottom/left keyboard, P2 the top/right one. A hit is yours (+10 a letter), a miss builds your cowboy and jams your gun for a moment. Six misses and the trapdoor drops. The last letter collects the bounty (+40). Three bounties.'
   :'One writes, one guesses, then swap. The writer types a phrase (or deals one from the deck) while the guesser looks away. Guesser: +10 per letter found, +60 and +15 per bullet left for solving. If the guesser hangs, the writer gets +50.');
  let headOf=null;try{headOf=require("src/engines/broforce.js").headCanvas;}catch{}
  let T=0,DT=1/60,W=s.W,H=s.H,dpr=1,lay={},shake=0;
  const st={phase:'intro',skip:false,round:0,text:'',cat:'',guessed:new Map(),reveal:{},misses:[0,0],partT:[[],[]],hanged:[0,0],cut:[0,0],lock:[0,0],clock:CLOCK,
-  score:[0,0],mood:[null,null],press:{},result:null,guesser:1,writer:0,draft:'',draftCat:0,written:null,bannerT:0,tick:-1,hat:[null,null],winner:-1};
+  score:[0,0],turn:0,tclock:TURN,turnT:-9,mood:[null,null],press:{},result:null,guesser:1,writer:0,draft:'',draftCat:0,written:null,bannerT:0,tick:-1,hat:[null,null],winner:-1};
  const fx=[],floats=[];
  const waits=[];const until=f=>new Promise(r=>waits.push({f,r}));const sleep=sec=>{const e=T+sec;return until(()=>T>=e||st.skip);};
  const name=p=>s.players[p].name;
@@ -104,14 +106,17 @@ async function hangman(s){
   Object.assign(st,{text:text.toUpperCase(),cat,guessed:new Map(),reveal:{},misses:[0,0],partT:[[],[]],hanged:[0,0],cut:[0,0],lock:[0,0],clock:CLOCK,result:null,tick:-1,hat:[null,null]});
  }
  const solvedNow=()=>[...st.text].every(ch=>!isLetter(ch)||st.guessed.get(ch)?.hit);
- const players=()=>mode==='shared'?[0,1]:[st.guesser];
+ const players=()=>mode==='shared'?[0,1]:mode==='turns'?[st.turn]:[st.guesser];
+ function passTurn(){const o=1-st.turn;if(!st.hanged[o]&&o!==st.turn){st.turn=o;st.turnT=T;SFX.spurs({steps:2,vol:.3,pan:o?.4:-.4});}st.tclock=TURN;st.tick=-1;s.active=st.turn;s.updateScores();}
+ function timeout(p){if(st.phase!=='play')return;st.misses[p]++;st.partT[p][st.misses[p]]=T;SFX.dryFire({});mood(p,'angry');vibrate(45);shake=.3;floatText(p,'TOO SLOW','#ff6b5e');dust(p);
+  if(st.misses[p]>=LIVES)return hang(p);if(st.misses[p]===LIVES-1)floatText(p,'LAST BULLET','#ff8a5c',1.6);passTurn();}
  function mood(p,m,sec=1.2){st.mood[p]={m,until:T+sec};}
  function guess(p,L){
   if(st.phase!=='play'||!s.alive||s.paused||!players().includes(p))return;
   if(st.hanged[p]||st.lock[p]>T||!isLetter(L)||st.guessed.has(L))return;
   const idx=[];[...st.text].forEach((ch,i)=>{if(ch===L)idx.push(i);});
   st.guessed.set(L,{by:p,hit:idx.length>0,t:T});st.press[p+L]=T;
-  const pan=mode==='shared'?(p?.5:-.5):0;
+  const pan=duel?(p?.5:-.5):0;
   if(idx.length){
    st.score[p]+=10*idx.length;idx.forEach((i,k)=>{st.reveal[i]={t:T+k*.11,by:p};});
    idx.slice(0,4).forEach((_,k)=>SFX.gunshot({pan,delay:k*.11,vol:k?.6:.9}));if(idx.length===1||Math.random()<.4)SFX.ricochet({pan,delay:.12+idx.length*.1});
@@ -123,17 +128,18 @@ async function hangman(s){
    if(st.misses[p]>=LIVES)return hang(p);
    if(st.misses[p]===LIVES-1)floatText(p,'LAST BULLET','#ff8a5c',1.6);
   }
+  if(mode==='turns')passTurn();
   s.setScores(st.score);
  }
  function collect(p){
-  if(mode==='shared')st.score[p]+=40;else st.score[p]+=60+15*(LIVES-st.misses[p]);
+  if(duel)st.score[p]+=40;else st.score[p]+=60+15*(LIVES-st.misses[p]);
   st.cut[p]=T;st.result={kind:'solved',p};mood(p,'win',3);
   SFX.gunshot({delay:.05});SFX.yeehaw({delay:.35,pitch:p?1.12:1});SFX.gunshot({delay:1.45,vol:.6});SFX.gunshot({delay:1.62,vol:.6});SFX.gallop({delay:1.7,beats:5,vol:.4});
-  floatText(p,mode==='shared'?'+40 BOUNTY':`+${60+15*(LIVES-st.misses[p])} BOUNTY`,'#ffe28a',2);vibrate(30);endRound();
+  floatText(p,duel?'+40 BOUNTY':`+${60+15*(LIVES-st.misses[p])} BOUNTY`,'#ffe28a',2);vibrate(30);endRound();
  }
  function hang(p){
   st.hanged[p]=T;mood(p,'sad',99);SFX.trapdoor({});SFX.whinny({delay:.45});vibrate(120);shake=.6;
-  if(mode==='shared'){st.score[p]=Math.max(0,st.score[p]-20);floatText(p,'−20 HANGED','#ff6b5e',2);if(st.hanged[1-p]){st.result={kind:'hanged'};endRound();}}
+  if(duel){st.score[p]=Math.max(0,st.score[p]-20);floatText(p,'−20 HANGED','#ff6b5e',2);if(st.hanged[1-p]){st.result={kind:'hanged'};endRound();}else if(mode==='turns')passTurn();}
   else{st.score[st.writer]+=50;st.result={kind:'hanged',p};endRound();}
   s.setScores(st.score);
  }
@@ -148,7 +154,7 @@ async function hangman(s){
   st.written={text,cat:CATEGORIES[st.draftCat]==='ANYTHING'?'ANYTHING GOES':CATEGORIES[st.draftCat]};SFX.whip({});SFX.cock({delay:.3});}
 
  // ---------------------------------------------------------------- effects
- function panelCenter(p){const pn=lay.panels?.[mode==='shared'?p:0];return pn?{x:pn.gx,y:pn.neckY}:{x:W/2,y:H/2};}
+ function panelCenter(p){const pn=lay.panels?.[duel?p:0];return pn?{x:pn.gx,y:pn.neckY}:{x:W/2,y:H/2};}
  function floatText(p,text,color,life=1.1){const c0=panelCenter(p);floats.push({x:c0.x,y:c0.y-20,text,color,t:T,life});}
  function dust(p){const c0=panelCenter(p);for(let i=0;i<10;i++)fx.push({k:'dust',x:c0.x+(Math.random()-.5)*30,y:c0.y+(Math.random()-.2)*40,vx:(Math.random()-.5)*60,vy:-Math.random()*40,life:.7,t:T,r:3+Math.random()*5});}
  function smoke(x0,y0){for(let i=0;i<6;i++)fx.push({k:'smoke',x:x0,y:y0,vx:(Math.random()-.5)*40,vy:-20-Math.random()*40,life:.8+Math.random()*.4,t:T,r:4+Math.random()*6});for(let i=0;i<8;i++){const a=Math.random()*7;fx.push({k:'spark',x:x0,y:y0,vx:Math.cos(a)*160,vy:Math.sin(a)*160,life:.25,t:T,r:1.5});}}
@@ -159,7 +165,11 @@ async function hangman(s){
  function layout(){
   const M=8,TOP=Math.max(48,fb.top+4),BOT=36,port=W<H*.95,L={port,TOP,BOT,M};
   if(st.phase==='intro'||st.phase==='final')return L;
-  if(mode==='shared'){
+  if(mode==='turns'){
+   if(port){L.scene={x:M,y:TOP,w:W-2*M,h:(H-TOP-BOT)*.33};L.phrase={x:M,y:L.scene.y+L.scene.h+6,w:W-2*M,h:(H-TOP-BOT)*.2};L.kb=[{x:M,y:L.phrase.y+L.phrase.h+8,w:W-2*M,h:H-BOT-(L.phrase.y+L.phrase.h+8)}];}
+   else{const lw=W*.47;L.scene={x:M,y:TOP,w:lw-M,h:(H-TOP-BOT)*.58};L.phrase={x:M,y:TOP+L.scene.h+6,w:lw-M,h:H-BOT-(TOP+L.scene.h+6)};const rx=lw+8;L.kb=[{x:rx,y:TOP,w:W-rx-M,h:H-TOP-M}];}
+   const sc=L.scene;L.panels=[0,1].map(p=>panel({x:sc.x+(p?sc.w/2+3:0),y:sc.y,w:sc.w/2-3,h:sc.h},p?1:-1));
+  }else if(mode==='shared'){
    if(port){const kbH=clamp((H-TOP-BOT)*.3,150,260);L.kb=[{x:M,y:H-BOT-kbH,w:W-2*M,h:kbH},{x:M,y:TOP,w:W-2*M,h:kbH}];
     const my=TOP+kbH+8,mh=H-BOT-kbH-8-my;L.scene={x:M,y:my,w:W-2*M,h:mh*.61};L.phrase={x:M,y:my+mh*.61+4,w:W-2*M,h:mh*.39-4};}
    else{const side=clamp(W*.28,170,360);L.kb=[{x:M,y:TOP,w:side,h:H-TOP-M},{x:W-M-side,y:TOP,w:side,h:H-TOP-M}];
@@ -174,7 +184,7 @@ async function hangman(s){
    else{const lw=W*.42;L.scene={x:M,y:TOP,w:lw-M,h:H-TOP-BOT};const rx=lw+8,rw=W-rx-M;L.phrase={x:rx,y:TOP,w:rw,h:(H-TOP-BOT)*.36};L.kb=[{x:rx,y:L.phrase.y+L.phrase.h+8,w:rw,h:H-BOT-(L.phrase.y+L.phrase.h+8)}];}
    L.panels=[panel(L.scene,-1)];
   }
-  L.keys=L.kb.map(r=>{const inner={x:r.x+6,y:r.y+(mode==='shared'?20:8),w:r.w-12,h:r.h-(mode==='shared'?26:14)};return keyGrid(inner,26,clamp(Math.min(r.w,r.h)*.02,4,7)).map((k,i)=>({...k,L:ABC[i]}));});
+  L.keys=L.kb.map(r=>{const hd=mode==='shared'?20:mode==='turns'?clamp(r.h*.13,32,46):8,inner={x:r.x+6,y:r.y+hd,w:r.w-12,h:r.h-hd-6};return keyGrid(inner,26,clamp(Math.min(r.w,r.h)*.02,4,7)).map((k,i)=>({...k,L:ABC[i]}));});
   return L;
  }
  // a player's corner of the scene: status card on the outer side, gallows beside it
@@ -304,7 +314,8 @@ async function hangman(s){
   x.fillStyle='#202024';x.beginPath();x.arc(0,0,r*.13,0,7);x.fill();x.restore();
  }
  function card(pn,p,{label=null}={}){
-  const r=pn.card,col=PC[p];x.save();x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=10;rr(x,r.x,r.y,r.w,r.h,12);x.fillStyle='rgba(22,11,6,.82)';x.fill();x.restore();
+  const r=pn.card,col=PC[p],on=mode==='turns'&&st.phase==='play'&&st.turn===p,off=mode==='turns'&&st.phase==='play'&&st.turn!==p;
+  if(on){x.save();x.shadowColor=col;x.shadowBlur=16+8*Math.sin(T*5);rr(x,r.x,r.y,r.w,r.h,12);x.strokeStyle=col;x.lineWidth=4;x.stroke();x.restore();}x.save();x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=10;rr(x,r.x,r.y,r.w,r.h,12);x.fillStyle='rgba(22,11,6,.82)';x.fill();x.restore();
   rr(x,r.x,r.y,r.w,r.h,12);x.strokeStyle=col;x.lineWidth=1.5;x.stroke();
   x.textAlign='center';x.textBaseline='middle';const cx=r.x+r.w/2;let fsz=clamp(r.w*.15,10,15);x.font=`700 ${fsz}px ${SANS}`;let nm=name(p).toUpperCase();while(x.measureText(nm).width>r.w-10&&nm.length>3)nm=nm.slice(0,-2)+'…';
   x.fillStyle=col;x.fillText(nm,cx,r.y+r.h*.14);
@@ -347,13 +358,31 @@ async function hangman(s){
   const col=p==null?'#e0b060':PC[p];
   x.save();x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=12;rr(x,r.x,r.y,r.w,r.h,14);x.fillStyle='rgba(18,9,5,.84)';x.fill();x.restore();
   rr(x,r.x,r.y,r.w,r.h,14);x.strokeStyle=col;x.globalAlpha=.75;x.lineWidth=1.6;x.stroke();x.globalAlpha=1;
+  if(mode==='turns'&&p!=null)turnHeader(r,p);
   if(mode==='shared'&&p!=null){x.font=`800 11px ${SANS}`;const label=`P${p+1} · ${name(p).toUpperCase()}`;const lw=Math.min(r.w-24,x.measureText(label).width+16);rr(x,r.x+10,r.y+3,lw,15,7.5);x.fillStyle=col;x.fill();
    x.fillStyle='#160a05';x.textAlign='left';x.textBaseline='middle';x.fillText(label,r.x+18,r.y+10.8,lw-14);}
   for(const k of keys)key(k,p);
+  if(mode==='turns'&&p!=null)turnSweep(r,p);
   const locked=p!=null&&st.lock[p]>T,hanged=p!=null&&st.hanged[p];
   if((locked||hanged||!active)&&st.phase==='play'||hanged){x.save();rr(x,r.x,r.y,r.w,r.h,14);x.fillStyle=hanged?'rgba(30,4,4,.72)':'rgba(10,5,3,.55)';x.fill();
    const cx=r.x+r.w/2,cy=r.y+r.h/2;if(hanged)stamp('HANGED',cx,cy,Math.min(r.w*.6,260),'#e0332b',-.12);
    else if(locked){cylinder(cx,cy-8,Math.min(r.h*.16,26),Math.max(0,LIVES-st.misses[p]),T*14);x.font=`800 ${clamp(r.h*.07,11,16)}px ${SANS}`;x.fillStyle='#ffd7a0';x.textAlign='center';x.fillText('JAMMED!',cx,cy+Math.min(r.h*.16,26)+8);}x.restore();}
+ }
+ // turns mode: the keyboard glows in the shooter's colour under a "NAME'S SHOT" banner with their face and a shot clock
+ function turnHeader(r,p){
+  const col=PC[p],live=st.phase==='play',pulse=.55+.45*Math.sin(T*5);
+  x.save();x.shadowColor=col;x.shadowBlur=live?14+8*pulse:6;rr(x,r.x,r.y,r.w,r.h,14);x.strokeStyle=col;x.lineWidth=3.2;x.stroke();x.restore();
+  const hh=clamp(r.h*.13,32,46)-6,bx=r.x+6,by=r.y+5,bw=r.w-12;rr(x,bx,by,bw,hh,hh/2);const g=x.createLinearGradient(bx,0,bx+bw,0);g.addColorStop(0,col);g.addColorStop(1,p?'#b8325a':'#2a6fb0');x.fillStyle=g;x.fill();
+  const hc=headOf?.(s.players[p].character,st.mood[p]&&st.mood[p].until>T?st.mood[p].m:'normal');if(hc)x.drawImage(hc,bx+4,by+hh/2-hh*.62,hh*1.24,hh*1.24);
+  x.fillStyle='#160a05';x.font=`900 ${hh*.5}px ${SLAB}`;x.textAlign='left';x.textBaseline='middle';x.fillText(`${name(p).toUpperCase()}’S SHOT`,bx+hh*1.4,by+hh/2+1,bw-hh*1.4-hh*1.3);
+  if(live){const fr=clamp(st.tclock/TURN,0,1),cx=bx+bw-hh/2-2,cy=by+hh/2,rad=hh*.38;x.fillStyle='rgba(0,0,0,.35)';x.beginPath();x.arc(cx,cy,rad+2,0,7);x.fill();
+   x.strokeStyle=fr<.34?'#ffe14a':'#fff3dc';x.lineWidth=3;x.beginPath();x.arc(cx,cy,rad,-Math.PI/2,-Math.PI/2+fr*Math.PI*2);x.stroke();x.fillStyle='#fff3dc';x.font=`800 ${hh*.36}px ${SANS}`;x.textAlign='center';x.fillText(String(Math.ceil(st.tclock)),cx,cy+1);}
+ }
+ function turnSweep(r,p){
+  // fresh turn: the name sweeps across the keys
+  const col=PC[p],live=st.phase==='play',hh=clamp(r.h*.13,32,46)-6,a=T-st.turnT;if(live&&a<.9){const k=a<.15?a/.15:a>.65?(.9-a)/.25:1;x.save();rr(x,r.x,r.y,r.w,r.h,14);x.clip();x.globalAlpha=k*.92;x.fillStyle='rgba(12,6,3,.35)';x.fillRect(r.x,r.y+hh+8,r.w,r.h-hh-8);
+   const f=clamp(r.w*.11,20,56);x.font=`900 ${f}px ${SLAB}`;x.textAlign='center';x.lineWidth=f*.12;x.strokeStyle='#120503';const ty=r.y+hh+8+(r.h-hh-8)/2,tx=r.x+r.w/2+(1-k)*(p?40:-40);
+   x.strokeText(`${name(p).toUpperCase()}’S TURN`,tx,ty,r.w-20);x.fillStyle=col;x.fillText(`${name(p).toUpperCase()}’S TURN`,tx,ty,r.w-20);x.restore();}
  }
  function key(k,p){
   const g=p==null?null:st.guessed.get(k.L),pressed=T-(st.press[(p??'w')+k.L]??-9)<.12,y=k.y+(pressed?2:0),rad=Math.min(k.w,k.h)*.2;
@@ -369,7 +398,9 @@ async function hangman(s){
  function hud(){
   const lw=clamp(W*.24,96,190),logo=makeLogo(lw,dpr,false),lh=Math.min(40,logo.h);const sc=lh/logo.h;x.drawImage(logo.c,8,4,logo.w*sc,logo.h*sc);
   const hx=8+logo.w*sc+12,maxW=W-hx-140;if(maxW<60)return;x.textAlign='left';x.textBaseline='alphabetic';
-  if(mode==='shared'){x.font=`900 ${clamp(H*.022,13,17)}px ${SLAB}`;x.fillStyle='#ffd88a';x.fillText(`BOUNTY ${st.round+1}/${ROUNDS}`,hx,20,maxW);
+  if(mode==='turns'){x.font=`900 ${clamp(H*.022,13,17)}px ${SLAB}`;x.fillStyle='#ffd88a';x.fillText(`BOUNTY ${st.round+1}/${ROUNDS}`,hx,20,maxW);
+   if(st.phase==='play'){x.font=`800 12px ${SANS}`;x.fillStyle=PC[st.turn];x.fillText(`▶ ${name(st.turn).toUpperCase()}’S TURN`,hx,37,maxW);}}
+  else if(mode==='shared'){x.font=`900 ${clamp(H*.022,13,17)}px ${SLAB}`;x.fillStyle='#ffd88a';x.fillText(`BOUNTY ${st.round+1}/${ROUNDS}`,hx,20,maxW);
    const bw=Math.min(maxW,170),fr=clamp(st.clock/CLOCK,0,1);rr(x,hx,28,bw,8,4);x.fillStyle='rgba(0,0,0,.45)';x.fill();rr(x,hx,28,Math.max(8,bw*fr),8,4);x.fillStyle=fr<.2?'#ff5a3c':'#f2b04e';x.fill();
    x.font=`700 11px ${SANS}`;x.fillStyle='#f7dfb8';if(maxW>bw+40)x.fillText(`${Math.ceil(st.clock)}s`,hx+bw+8,36);}
   else{x.font=`900 ${clamp(H*.022,13,17)}px ${SLAB}`;x.fillStyle='#ffd88a';const g=st.guesser,wr=st.writer;x.fillText(st.phase==='write'?`${name(wr).toUpperCase()} POSTS A BOUNTY`:`BOUNTY ${st.round+1}/2`,hx,20,maxW);
@@ -400,16 +431,18 @@ async function hangman(s){
   for(let i=waits.length-1;i>=0;i--)if(waits[i].f()){waits[i].r();waits.splice(i,1);}
   if(st.phase==='play'&&mode==='shared'){st.clock-=dt;const sec=Math.ceil(st.clock);if(sec<=5&&sec>0&&sec!==st.tick){st.tick=sec;SFX.spurs({steps:1,vol:.25});}
    if(st.clock<=0){st.clock=0;st.result={kind:'time'};SFX.whinny({});endRound();}}
+  if(st.phase==='play'&&mode==='turns'){st.tclock-=dt;const sec=Math.ceil(st.tclock);if(sec<=3&&sec>0&&sec!==st.tick){st.tick=sec;SFX.spurs({steps:1,vol:.25});}if(st.tclock<=0)timeout(st.turn);}
   lay=layout();shake=Math.max(0,shake-dt*1.6);
   x.save();if(shake>0)x.translate((Math.random()-.5)*shake*14,(Math.random()-.5)*shake*14);
   backdrop();
   if(st.phase==='intro'||st.phase==='final')drawCard();
   else if(st.phase==='write'){poster(lay.poster);for(const b of lay.act)actionButton(b);keyboard(lay.kb[0],lay.keys[0].map(k=>({...k})),null);hud();}
   else{
-   for(const [i,pn] of (lay.panels||[]).entries()){const p=mode==='shared'?i:st.guesser,open=st.hanged[p]?Math.min(1,(T-st.hanged[p])/.14):0;gallows(pn,open);
-    if(st.phase!=='handoff')cowboy(pn,p,Math.min(LIVES-1,st.misses[p]),{hangT:st.hanged[p],cutT:st.cut[p]});card(pn,p,{label:mode==='pass'?'GUESSING':null});}
+   for(const [i,pn] of (lay.panels||[]).entries()){const p=duel?i:st.guesser,open=st.hanged[p]?Math.min(1,(T-st.hanged[p])/.14):0;gallows(pn,open);
+    if(st.phase!=='handoff')cowboy(pn,p,Math.min(LIVES-1,st.misses[p]),{hangT:st.hanged[p],cutT:st.cut[p]});card(pn,p,{label:mode==='pass'?'GUESSING':mode==='turns'&&st.phase==='play'?(st.turn===p?'▼ YOUR SHOT':st.hanged[p]?null:'WAITING'):null});
+    if(mode==='turns'&&st.phase==='play'&&st.turn!==p&&!st.hanged[p]){x.save();rr(x,pn.r.x,pn.r.y,pn.r.w,pn.r.h,10);x.fillStyle='rgba(12,5,3,.38)';x.fill();x.restore();}}
    if(st.phase!=='handoff'){board(lay.phrase,{all:st.phase==='reveal'});
-    lay.kb.forEach((r,i)=>keyboard(r,lay.keys[i],mode==='shared'?i:st.guesser,{active:st.phase==='play'}));}
+    lay.kb.forEach((r,i)=>keyboard(r,lay.keys[i],mode==='shared'?i:mode==='turns'?st.turn:st.guesser,{active:st.phase==='play'}));}
    hud();
    if(st.phase==='banner')banner();
    if(st.phase==='reveal')resultBanner();
@@ -429,13 +462,14 @@ async function hangman(s){
    x.textAlign='center';x.textBaseline='middle';x.font=`800 ${clamp(hs*.15,12,18)}px ${SANS}`;x.fillStyle=PC[p];x.fillText(name(p).toUpperCase(),cx,y0+hs*1.22,hs*1.5);
    if(st.phase==='final'){x.font=`900 ${clamp(hs*.3,20,40)}px ${SLAB}`;x.fillStyle='#ffe2a8';x.fillText(String(st.score[p]),cx,y0+hs*1.5);}}
   x.textAlign='center';x.textBaseline='middle';
-  if(st.phase==='intro'){x.font=`700 ${clamp(H*.026,13,19)}px ${SANS}`;x.fillStyle='#f6d9a8';x.fillText(mode==='shared'?'QUICK DRAW · both guess at once':'WANTED · write one, guess one',W/2,y0+hs*1.6,W-30);
+  if(st.phase==='intro'){x.font=`700 ${clamp(H*.026,13,19)}px ${SANS}`;x.fillStyle='#f6d9a8';x.fillText(mode==='turns'?'SHOWDOWN · take turns, one letter each':mode==='shared'?'QUICK DRAW · both guess at once':'WANTED · write one, guess one',W/2,y0+hs*1.6,W-30);
    x.font=`600 ${clamp(H*.02,11,14)}px ${SANS}`;x.fillStyle=`rgba(255,230,190,${.5+.4*Math.sin(T*4)})`;x.fillText('tap to ride',W/2,Math.min(H-50,y0+hs*1.6+34));}
   else{const w=st.winner,txt=w<0?'A DEAD HEAT':`${name(w).toUpperCase()} COLLECTS THE BOUNTY`;x.font=`900 ${clamp(Math.min(W,H)*.06,18,40)}px ${SLAB}`;x.lineWidth=5;x.strokeStyle='#1a0704';x.strokeText(txt,W/2,y0+hs*1.95,W-24);x.fillStyle='#ffcf5a';x.fillText(txt,W/2,y0+hs*1.95,W-24);}
  }
  function banner(){const a=T-st.bannerT,k=Math.min(1,a/.25);x.save();x.fillStyle=`rgba(10,4,2,${.55*k})`;x.fillRect(0,0,W,H);x.translate(W/2,H*.45);x.scale(1.4-.4*k,1.4-.4*k);x.globalAlpha=k;
   const w=Math.min(W*.8,420),h=w*.42;rr(x,-w/2,-h/2,w,h,14);x.fillStyle='#ead2a0';x.fill();x.strokeStyle='#5a3218';x.lineWidth=3;x.stroke();
-  x.textAlign='center';x.textBaseline='middle';x.fillStyle='#2a140a';x.font=`900 ${h*.28}px ${SLAB}`;x.fillText(mode==='shared'?`BOUNTY ${st.round+1}`:'WANTED',0,-h*.12);
+  x.textAlign='center';x.textBaseline='middle';x.fillStyle='#2a140a';x.font=`900 ${h*.28}px ${SLAB}`;x.fillText(duel?`BOUNTY ${st.round+1}`:'WANTED',0,-h*.12);
+  if(mode==='turns'){x.font=`800 ${h*.11}px ${SANS}`;x.fillStyle=PC[st.turn];x.fillText(`${name(st.turn).toUpperCase()} SHOOTS FIRST`,0,h*.38,w-20);}
   x.font=`800 ${h*.13}px ${SANS}`;x.fillStyle='#9a1219';x.fillText(st.cat,0,h*.22,w-20);x.restore();}
  function resultBanner(){const a=T-st.bannerT;if(a<.6)return;const k=Math.min(1,(a-.6)/.25),r=st.result||{};let txt,col;
   if(r.kind==='solved'){txt=`${name(r.p).toUpperCase()} COLLECTS`;col='#ffcf5a';}else if(r.kind==='time'){txt='SUNDOWN · NO BOUNTY';col='#ff9a5a';}else if(r.kind==='hanged'&&r.p!=null){txt=`${name(r.p).toUpperCase()} SWINGS · +50 ${name(st.writer).toUpperCase()}`;col='#ff6b5e';}else{txt='BOTH HANGED';col='#ff6b5e';}
@@ -448,21 +482,21 @@ async function hangman(s){
   if(st.phase==='reveal'||st.phase==='banner'){if(T-st.bannerT>1.2)st.skip=true;return;}
   if(st.phase==='write'){for(const b of lay.act||[])if(inRect(pt,b)){st.press['w'+b.id]=T;({deal,clue:cycleClue,space:()=>typeChar(' '),back:backspace,done:doneWriting})[b.id]();return;}
    for(const k of lay.keys?.[0]||[])if(inRect(pt,k)){st.press['w'+k.L]=T;typeChar(k.L);return;}return;}
-  if(st.phase==='play')(lay.keys||[]).forEach((ks,i)=>{const p=mode==='shared'?i:st.guesser;for(const k of ks)if(inRect(pt,{x:k.x-2,y:k.y-2,w:k.w+4,h:k.h+4})){guess(p,k.L);st.press[p+k.L]=T;return;}});
+  if(st.phase==='play')(lay.keys||[]).forEach((ks,i)=>{const p=mode==='shared'?i:mode==='turns'?st.turn:st.guesser;for(const k of ks)if(inRect(pt,{x:k.x-2,y:k.y-2,w:k.w+4,h:k.h+4})){guess(p,k.L);st.press[p+k.L]=T;return;}});
  });
  s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat||ev.target?.matches?.('input,textarea,[contenteditable]'))return;const k=ev.key;
   if(st.phase==='write'){if(/^[a-z]$/i.test(k))typeChar(k.toUpperCase());else if(k===' '||k==="'"||k==='-')typeChar(k);else if(k==='Backspace')backspace();else if(k==='Enter')doneWriting();else return;ev.preventDefault();return;}
-  if(st.phase==='play'&&/^[a-z]$/i.test(k)){ev.preventDefault();guess(mode==='shared'?0:st.guesser,k.toUpperCase());}
+  if(st.phase==='play'&&/^[a-z]$/i.test(k)){ev.preventDefault();guess(mode==='shared'?0:mode==='turns'?st.turn:st.guesser,k.toUpperCase());}
   else if(['intro','final','reveal'].includes(st.phase)&&(k==='Enter'||k===' ')){ev.preventDefault();st.skip=true;}});
  s.debug={st,guess,type:t=>{st.draft=String(t).toUpperCase().slice(0,MAXLEN);},deal,done:doneWriting,skip:()=>{st.skip=true;},layout:()=>lay};
 
  // ---------------------------------------------------------------- flow
  SFX.gallop({beats:7,vol:.45});SFX.whip({delay:1.3});SFX.gunshot({delay:1.6});SFX.yeehaw({delay:1.85});
  st.skip=false;await sleep(3.2);if(!s.alive)return;st.skip=false;
- if(mode==='shared'){
+ if(duel){
   const picks=[];for(const q of shuffle(PHRASES,s.random)){if(picks.length>=ROUNDS)break;if(q.text.length>26||picks.some(o=>o.cat===q.cat))continue;picks.push(q);}
-  for(let r=0;r<ROUNDS;r++){st.round=r;startRound(picks[r].text,picks[r].cat);st.phase='banner';st.bannerT=T;SFX.cylinder({});SFX.cock({delay:.55});
-   await sleep(1.5);if(!s.alive)return;st.skip=false;st.phase='play';await until(()=>st.phase==='reveal');await sleep(3.2);if(!s.alive)return;st.skip=false;}
+  for(let r=0;r<ROUNDS;r++){st.round=r;startRound(picks[r].text,picks[r].cat);st.turn=r%2;st.tclock=TURN;s.active=st.turn;s.updateScores();st.phase='banner';st.bannerT=T;SFX.cylinder({});SFX.cock({delay:.55});
+   await sleep(1.5);if(!s.alive)return;st.skip=false;st.phase='play';st.turnT=T;st.tclock=TURN;await until(()=>st.phase==='reveal');await sleep(3.2);if(!s.alive)return;st.skip=false;}
  }else{
   for(let r=0;r<2;r++){st.round=r;st.writer=r;st.guesser=1-r;st.draft='';st.draftCat=0;st.written=null;st.phase='handoff';
    if(!await s.pass(st.writer,`${name(st.writer)}: write a phrase for ${name(st.guesser)} to guess, or deal one from the deck. ${name(st.guesser)}, look away!`,'Write the bounty'))return;

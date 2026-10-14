@@ -153,9 +153,11 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
 - **Hangman Unchained (Oct 14 2026):** `src/engines/hangman.js` rebuilt full-bleed (`fullBleed`, engine `hangman` in the noBleed list). Django Unchained
   look: sunset desert, wooden gallows, detailed cowboys (P1 Django green jacket, P2 Schultz grey coat) with the player's head (broforce
   `headCanvas`) under a Stetson; parts per miss torso/arms/legs, 6th miss drops the trapdoor; revolver-cylinder lives; logo `makeLogo`
-  (HANGMAN in red Django-style slab with drips, UNCHAINED, "The H is silent."). Big canvas keys (`keyGrid`). Modes by `hangMode`:
+  (HANGMAN in red Django-style slab with drips, UNCHAINED, "The H is silent."). Big canvas keys (`keyGrid`). Modes by `hangMode` (all in `packs/remakePack.js` except the original id):
   `django-hangman` 'shared' (both at once on one phrase, own keyboards P1 bottom/left, P2 top/right; first to shoot a letter owns it,
-  +10/occurrence, miss jams the gun .85 s, hanged −20, last letter +40; 3 phrases × 75 s) and new `django-hangman-wanted` 'pass'
+  +10/occurrence, miss jams the gun .85 s, hanged −20, last letter +40; 3 phrases × 75 s), `django-hangman-showdown` 'turns' (one keyboard,
+  strict alternation, 15 s shot clock → timeout = miss; `turnHeader`/`turnSweep` + glowing card show whose shot; round r starts with P(r%2+1))
+  and `django-hangman-wanted` 'pass'
   (`packs/remakePack.js`: writer types or 🎲 deals a phrase + clue, guesser +10/letter, solve +60 +15/bullet, hanged → writer +50; swap).
   Deck: `src/data/hangmanPhrases.js` (~600 phrases, 12 categories). SFX all synthesized in `src/engines/westernSfx.js` (gunshot + canyon
   echo, ricochet, cock/dry fire/cylinder, spurs, gallop, snort, whinny, whip, trapdoor, formant "Yeehaw"). Test: `tests/hangman.mjs`

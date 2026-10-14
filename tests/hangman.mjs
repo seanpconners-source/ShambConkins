@@ -8,12 +8,12 @@ const out=process.env.OUT||'/tmp/claude-0/sc';mkdirSync(out,{recursive:true});
 let ok=true;const fail=m=>{ok=false;console.log('FAIL',m);};
 const sizes=process.argv.slice(2).length?process.argv.slice(2).map(s=>s.split('x').map(Number)):[[390,780],[780,390],[1100,700]];
 const ABC='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-for(const [w,h] of sizes)for(const id of ['django-hangman','django-hangman-wanted']){
- const {browser,page,errors}=await open({viewport:{width:w,height:h}});const tag=`hm-${id==='django-hangman'?'shared':'pass'}-${w}x${h}`;
+for(const [w,h] of sizes)for(const id of ['django-hangman','django-hangman-showdown','django-hangman-wanted']){
+ const {browser,page,errors}=await open({viewport:{width:w,height:h}});const tag=`hm-${{'django-hangman':'shared','django-hangman-showdown':'turns'}[id]||'pass'}-${w}x${h}`;
  const shot=name=>page.screenshot({path:`${out}/${tag}-${name}.png`});
  await page.evaluate(id=>{window.ShambConkins.requestGame({id,origin:'arcade'});},id);
  await page.waitForTimeout(400);await page.evaluate(()=>{[...document.querySelectorAll('#dialog button')].find(b=>/start/i.test(b.textContent))?.click();});
- const S=()=>page.evaluate(()=>{const d=window.ShambConkins.store.session?.debug;if(!d)return null;const s=d.st;return {phase:s.phase,text:s.text,round:s.round,score:[...s.score],misses:[...s.misses],hanged:[...s.hanged],guesser:s.guesser,draft:s.draft,guessed:[...s.guessed.keys()]};});
+ const S=()=>page.evaluate(()=>{const d=window.ShambConkins.store.session?.debug;if(!d)return null;const s=d.st;return {phase:s.phase,text:s.text,round:s.round,score:[...s.score],misses:[...s.misses],hanged:[...s.hanged],guesser:s.guesser,turn:s.turn,tclock:s.tclock,draft:s.draft,guessed:[...s.guessed.keys()]};});
  const tapKey=async(kb,L)=>{const r=await page.evaluate(([kb,L])=>{const d=window.ShambConkins.store.session.debug,k=d.layout().keys?.[kb]?.find(k=>k.L===L),b=document.querySelector('#game-canvas').getBoundingClientRect();return k&&{x:b.left+k.x+k.w/2,y:b.top+k.y+k.h/2,w:k.w,h:k.h};},[kb,L]);if(!r)return null;await page.mouse.click(r.x,r.y);return r;};
  const tapAct=async id=>{const r=await page.evaluate(id=>{const d=window.ShambConkins.store.session.debug,k=d.layout().act.find(a=>a.id===id),b=document.querySelector('#game-canvas').getBoundingClientRect();return {x:b.left+k.x+k.w/2,y:b.top+k.y+k.h/2};},id);await page.mouse.click(r.x,r.y);};
  const waitPhase=async(ph,ms=8000)=>{for(let t=0;t<ms;t+=100){const s=await S();if(s&&ph.includes(s.phase))return s;await page.evaluate(()=>document.querySelector('.pass-overlay [data-ready]')?.click());await page.waitForTimeout(100);}return S();};
@@ -35,6 +35,21 @@ for(const [w,h] of sizes)for(const id of ['django-hangman','django-hangman-wante
   for(const L of new Set([...s.text].filter(c=>/[A-Z]/.test(c)&&!s.guessed.includes(c)))){await tapKey(1,L);await page.waitForTimeout(60);}
   s=await waitPhase(['reveal'],3000);if(s.phase!=='reveal')fail(`${tag} round 1 did not end ${JSON.stringify(s)}`);await page.waitForTimeout(1200);await shot('reveal');
   for(let r=1;r<3;r++){s=await waitPhase(['play'],9000);for(const L of new Set([...s.text].filter(c=>/[A-Z]/.test(c))))await page.evaluate(L=>window.ShambConkins.store.session.debug.guess(0,L),L);await page.evaluate(()=>window.ShambConkins.store.session.debug.skip());}
+ }else if(id==='django-hangman-showdown'){
+  let s=await waitPhase(['play'],9000);if(s?.phase!=='play'||s.turn!==0){fail(`${tag} never started with P1 ${JSON.stringify(s)}`);await browser.close();continue;}
+  const kb=await page.evaluate(()=>window.ShambConkins.store.session.debug.layout().kb.length);if(kb!==1)fail(`${tag} ${kb} keyboards on screen`);
+  await page.waitForTimeout(900);await shot('play-p1');
+  const box=await tapKey(0,misses(s.text)[0]);console.log(tag,'key',box.w|0,'x',box.h|0);if(box.w<40||box.h<38)fail(`${tag} keys too small`);
+  await page.waitForTimeout(150);s=await S();if(s.misses[0]!==1||s.turn!==1)fail(`${tag} miss did not pass the turn ${JSON.stringify(s)}`);
+  await page.waitForTimeout(300);await shot('turn-p2');
+  const hit=[...s.text].find(c=>/[A-Z]/.test(c));await tapKey(0,hit);await page.waitForTimeout(150);s=await S();
+  if(s.score[1]<10||s.turn!==0)fail(`${tag} P2 hit not scored / turn not passed ${JSON.stringify(s)}`);
+  await page.waitForTimeout(900);await shot('play');
+  // the shot clock: P1 waits it out, which counts as a miss and hands the turn to P2
+  await page.waitForTimeout(15600);s=await S();if(s.misses[0]!==2||s.turn!==1)fail(`${tag} shot clock did not expire into a miss ${JSON.stringify(s)}`);
+  for(let r=0;r<3;r++){s=await waitPhase(['play'],9000);if(r&&s.turn!==r%2)fail(`${tag} round ${r} started with P${s.turn+1}`);
+   for(const L of new Set([...s.text].filter(c=>/[A-Z]/.test(c)&&!s.guessed.includes(c)))){const t=(await S()).turn;await page.evaluate(([t,L])=>window.ShambConkins.store.session.debug.guess(t,L),[t,L]);}
+   if(r===0){await page.waitForTimeout(1500);await shot('reveal');}await page.evaluate(()=>window.ShambConkins.store.session.debug.skip());}
  }else{
   let s=await waitPhase(['write']);if(s?.phase!=='write'){fail(`${tag} no write phase ${JSON.stringify(s)}`);await browser.close();continue;}
   for(const L of 'COW')await tapKey(0,L);await tapAct('space');for(const L of 'BOY')await tapKey(0,L);s=await S();if(s.draft!=='COW BOY')fail(`${tag} typing gave "${s.draft}"`);
