@@ -22,6 +22,8 @@ for(const [w,h] of sizes){
  const tp=(t,x)=>page.evaluate(([t,x])=>{const d=window.ShambConkins.store.session.debug;d.teleport(t,x);d.pl[t].inv=60;},[t,x]);
  const hold=async(key,ms)=>{await page.keyboard.down(key);await page.waitForTimeout(ms);await page.keyboard.up(key);};
  await page.waitForTimeout(1500);await shot('title');
+ const lay=await page.evaluate(()=>{const r=e=>document.querySelector(e)?.getBoundingClientRect();const c=r('#game-canvas'),f=r('.fb-fs');return {cw:c.width,ch:c.height,fs:!!f&&f.width<=30,score:getComputedStyle(document.querySelector('#game-scorebar')).display};});
+ if(lay.cw<w-2||lay.ch<h-2||!lay.fs||lay.score!=='none')fail(`${tag} not full-bleed ${JSON.stringify(lay)}`);
  for(const t of [0,1]){
   let d=await ready(t);if(d?.phase!=='play'||d.turn!==t){fail(`${tag} turn ${t} never started (${JSON.stringify(d)})`);break;}
   // the approach: walk right slashing

@@ -10,6 +10,7 @@
 // release for Hellfire (MP). Monsters split in half and burn; blood stains the floor. Art: sotnArt.js; sound: sotnAudio.js.
 const {clamp,seededRandom}=require("src/utils.js");
 const {arenaTouch,outlined,PCOL,Countdown,settle}=require("src/engines/arenaKit.js");
+const {fullBleed}=require("src/engines/fullBleed.js");
 const A=require("src/engines/sotnArt.js");
 const SA=require("src/engines/sotnAudio.js"),{sfx,ambience,music,tick,stopAll}=SA;
 
@@ -96,7 +97,7 @@ function makePlayer(i,L){return {i,x:L.start,y:L.gy[L.start],vx:0,vy:0,grounded:
 
 // ------------------------------------------------------------------ the game
 async function sotn(s){
- const [c,g]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.updateScores();
+ const [c,g]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');const FB=fullBleed(s,{bg:'#000'});s.updateScores();
  if(!await settle(s))return;
  s.cleanup(()=>stopAll());
  const L=buildCastle(s.random),seedBase=Math.floor(s.random()*1e9),AR=L.arena;
@@ -610,11 +611,12 @@ async function sotn(s){
   g.fillStyle='#00061a';g.fillRect(bx,oy+R*.82,bw*.8,bh*.7);g.fillStyle=p.charge>=CHARGE&&p.mp>=HELL_MP?'#ffb040':'#2a6aff';g.fillRect(bx,oy+R*.82,bw*.8*p.mp/MP_MAX,bh*.7);
   gtext(WEAPONS[p.weapon].name+(p.leap?' · Leap Stone':''),hx,oy+R*1.55,Math.round(5*u),'#bfb3d0','left',{italic:true});
   // time and area
-  gtext(fmtRace(p.finished?p.finishT:clock),X+W-6*u,Y+5*u,Math.round(9*u),'#f2eee6','right');
-  gtext(w.area||'',X+W-6*u,Y+16*u,Math.round(5.5*u),'#c9a24a','right',{italic:true});
-  if(i===1){const q=pl[0];gtext(`Beat ${s.players[0].name}: ${q.finished?fmtRace(q.finishT):prog(q)+'%'}`,X+W-6*u,Y+24*u,Math.round(5.5*u),PCOL[0],'right');}
+  const ry=Y+Math.max(0,FB.top-Y);
+  gtext(fmtRace(p.finished?p.finishT:clock),X+W-6*u,ry+5*u,Math.round(9*u),'#f2eee6','right');
+  gtext(w.area||'',X+W-6*u,ry+16*u,Math.round(5.5*u),'#c9a24a','right',{italic:true});
+  if(i===1){const q=pl[0];gtext(`Beat ${s.players[0].name}: ${q.finished?fmtRace(q.finishT):prog(q)+'%'}`,X+W-6*u,ry+24*u,Math.round(5.5*u),PCOL[0],'right');}
   // progress strip
-  const sw=Math.min(W*.42,220),sx=X+(W-sw)/2,sy=Y+H-4*u;g.fillStyle='rgba(255,255,255,.15)';g.fillRect(sx,sy-1,sw,2);const gh=ghostAt(i),track=q=>clamp((q.best-L.start)/(L.end-L.start),0,1);
+  const roomBelow=s.H-(Y+H)>90,sw=Math.min(W*(roomBelow?.6:.3),200),sx=X+(W-sw)/2,sy=roomBelow?Y+H+8*u:Y+6*u;g.fillStyle='rgba(255,255,255,.15)';g.fillRect(sx,sy-1,sw,2);const gh=ghostAt(i),track=q=>clamp((q.best-L.start)/(L.end-L.start),0,1);
   for(const q of gh?[gh,p]:[p]){g.globalAlpha=q===p?1:.6;g.fillStyle=PCOL[q.i];g.beginPath();g.arc(sx+track(q)*sw,sy,q===p?3*u:2.2*u,0,6.3);g.fill();}g.globalAlpha=1;
   // boss bar
   if(B&&w.locked&&!w.scene&&B.state!=='gone'){const bw2=Math.min(W*.7,360),bx2=X+(W-bw2)/2,by2=Y+H-16*u;gtext(B.phase===1?'DRACULA':'DRACULA · TRUE FORM',bx2,by2-8*u,Math.round(6*u),'#ff6a6a','left',{italic:true});
