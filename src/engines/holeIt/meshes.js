@@ -151,6 +151,12 @@ kind('egg-carton','Egg Carton',.7,.32,['kitchen'],g=>{add(g,rbox(.9,.14,.6,.04),
 kind('crate','Wooden Crate',.52,.75,['kitchen','fruit','toys','sushi'],g=>{add(g,rbox(.74,.72,.74,.03),{},(p,n)=>{const t=Math.abs(n[1])>.5?p[0]:(Math.abs(n[0])>.5?p[1]:p[1]);return Math.floor((t+1)*7)%2?C('#b8783e'):C('#cf8e4e');});for(const sx of [-1,1])for(const sz of [-1,1])add(g,rbox(.07,.74,.07,.01),{at:[sx*.35,0,sz*.35]},C('#8a5428'));});
 kind('pillar','Cake Pillar',.4,.9,['kitchen','party'],g=>{for(let i=0;i<6;i++)add(g,cyl(.32,.15,14,.3),{at:[0,i*.15,0]},i%2?C('#7a4422'):C('#9a5a2e'));});
 
+// Sweet shop (from the owner's second video: popsicle spirals around Lego towers)
+for(const [id,cols] of [['popsicle-yellow',['#ffd21a']],['popsicle-lime',['#b8f02a']],['popsicle-orange',['#ff9a1e']],['popsicle-blue',['#2ec8f0']],['popsicle-pink',['#ff6fb4']],['popsicle-rainbow',['#ff3b4e','#ffd21a','#5ee06a']]])
+ kind(id,'Popsicle',.3,.13,['treats'],g=>{const band=p=>{const t=Math.max(0,Math.min(.999,(p[2]+.25)/.36));return C(cols[Math.floor(t*cols.length)]);};
+  add(g,rbox(.27,.11,.38,.1),{at:[0,0,-.06]},band);add(g,rbox(.07,.04,.22,.02),{at:[0,.03,.22]},C('#e8c890'));});
+kind('kiwi','Kiwi Slice',.24,.09,['fruit','treats'],g=>{add(g,cyl(.24,.08,16),{},(p,n)=>{const r=Math.hypot(p[0],p[2]);if(n[1]<.5&&r>.2)return C('#7a5a2a');if(r<.05)return C('#f4f0c8');if(r<.1&&Math.floor(Math.atan2(p[2],p[0])*4+8)%2)return C('#2a2010');return r>.21?C('#8ac43a'):C('#9ed64a');});});
+kind('tomato','Tomato',.26,.42,['fruit','kitchen'],g=>{add(g,sphere(14,9),{at:[0,.2,0],s:[.26,.2,.26]},C('#e8302a'));add(g,extrude([[.1,0],[.03,.03],[0,.1],[-.03,.03],[-.1,0],[-.03,-.03],[0,-.1],[.03,-.03]],.02),{at:[0,.39,0]},C('#3fa02c'));});
 // Sushi
 kind('nigiri','Salmon Nigiri',.3,.24,['sushi'],g=>{add(g,rbox(.48,.13,.22,.07),{},C('#fbfbf6'));add(g,rbox(.54,.08,.26,.05),{at:[0,.12,0]},(p)=>Math.sin(p[0]*36+p[2]*10)>.6?C('#ffd2b4'):C('#ff7a3a'));});
 kind('tamago','Tamago Nigiri',.3,.26,['sushi'],g=>{add(g,rbox(.48,.13,.22,.07),{},C('#fbfbf6'));add(g,rbox(.5,.1,.24,.03),{at:[0,.12,0]},C('#ffd84a'));add(g,rbox(.1,.25,.27,.01),{at:[0,0,0]},C('#1d2a22'));});
@@ -167,8 +173,9 @@ kind('head','Head Token',.3,.45,['cameo'],g=>{add(g,cyl(.27,.07,20),{at:[0,.22,0
 const HEAD_FACE={c:[0,.22+.075*.64,.075*.766],tilt:-(Math.PI/2-.87),size:.5};
 const THEMES={
  toys:{name:'Toy Box',floor:'#3a4152',small:['duck','octopus','robot','lego-blue','lego-purple','lego-yellow','lego-pink','lego-teal','ball-orange','ball-pink','star','maraca','dice','crayon','headphones','gift'],mid:['plane','keyboard','crate'],big:['soccer']},
- fruit:{name:'Fruit Stand',floor:'#3b4254',small:['cherry','strawberry','apple-red','apple-green','orange','melon-slice','pear','banana','grapes'],mid:['crate','pumpkin'],big:['watermelon']},
+ fruit:{name:'Fruit Stand',floor:'#3b4254',small:['cherry','strawberry','apple-red','apple-green','orange','melon-slice','pear','banana','grapes','kiwi','tomato'],mid:['crate','pumpkin'],big:['watermelon']},
  kitchen:{name:'Kitchen',floor:'#394050',small:['egg','egg-brown','fried-egg','croissant','burger','donut','cupcake','toast','sausage','cup-red','cup-green'],mid:['pie','cheese','pot','pan','egg-carton','pillar'],big:['jam-jar','juice-jar']},
+ treats:{name:'Sweet Shop',floor:'#3a4052',small:['popsicle-yellow','popsicle-lime','popsicle-orange','popsicle-blue','popsicle-pink','popsicle-rainbow','donut','cupcake'],mid:['gift','keyboard','crate'],big:['soccer']},
  sushi:{name:'Sushi Bar',floor:'#373e4f',small:['nigiri','tamago','maki','onigiri','soy-dish','chopsticks'],mid:['crate','pot'],big:['jam-jar']}
 };
 // Built geometry is cached per kind.

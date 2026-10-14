@@ -22,6 +22,14 @@ function trayWalls(def){const g=geo(),W=def.W,D=def.D,t=.45,h=.42,wall=C('#8e95a
  add(g,rbox(t,h,D,.08),{at:[-W/2-t/2,0,0]},wall);add(g,rbox(t,h,D,.08),{at:[W/2+t/2,0,0]},wall);return g;}
 function rr(x,X,Y,W,H,R){x.beginPath();x.moveTo(X+R,Y);x.arcTo(X+W,Y,X+W,Y+H,R);x.arcTo(X+W,Y+H,X,Y+H,R);x.arcTo(X,Y+H,X,Y,R);x.arcTo(X,Y,X+W,Y,R);x.closePath();}
 function outlined(x,text,X,Y,size,fill='#fff',stroke='#1a1d3a',align='center',weight=900){x.font=`${weight} ${size}px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif`;x.textAlign=align;x.textBaseline='middle';x.lineJoin='round';x.lineWidth=Math.max(2,size*.2);x.strokeStyle=stroke;x.strokeText(text,X,Y);x.fillStyle=fill;x.fillText(text,X,Y);}
+function drawStar(x,cx,cy,r,rot=0){x.save();x.translate(cx,cy);x.rotate(rot*.2);x.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr2=i%2?r*.48:r;x.lineTo(Math.cos(a)*rr2,Math.sin(a)*rr2);}x.closePath();
+ const g=x.createLinearGradient(0,-r,0,r);g.addColorStop(0,'#fff27a');g.addColorStop(1,'#ff9a1e');x.fillStyle=g;x.fill();x.lineWidth=Math.max(1.5,r*.14);x.strokeStyle='#a2520e';x.stroke();x.restore();}
+// Points-level goal card: star + "got/target" + green bar, in the same card style as the item cards.
+function drawScoreCard(x,cd,g,pulse,inflight){const grd=x.createLinearGradient(0,cd.y,0,cd.y+cd.h);grd.addColorStop(0,'#6476f0');grd.addColorStop(1,'#3a44b4');rr(x,cd.x,cd.y,cd.w,cd.h,8);x.fillStyle=grd;x.fill();x.strokeStyle='#a9b3ff';x.lineWidth=1.5;x.stroke();
+ drawStar(x,cd.x+22,cd.y+cd.h*.42,15*(1+pulse*.25));const shown=Math.max(0,g.got-inflight),done=g.got>=g.need;
+ outlined(x,`${shown}/${g.need}`,cd.x+40+(cd.w-46)/2,cd.y+cd.h*.36,12,'#fff','#141a33',undefined,800);
+ const bx=cd.x+40,bw=cd.w-48,by=cd.y+cd.h*.6;rr(x,bx,by,bw,8,4);x.fillStyle='#1d235acc';x.fill();rr(x,bx,by,Math.max(4,bw*Math.min(1,shown/g.need)),8,4);x.fillStyle=done?'#39d353':'#5ee06a';x.fill();
+ if(done){x.fillStyle='#39d353';x.beginPath();x.arc(cd.x+cd.w-10,cd.y+10,8,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=2.4;x.beginPath();x.moveTo(cd.x+cd.w-14,cd.y+10);x.lineTo(cd.x+cd.w-11,cd.y+13);x.lineTo(cd.x+cd.w-6,cd.y+7);x.stroke();}}
 function greenButton(x,X,Y,W,H,label,t=0){const p=1+Math.sin(t*4)*.03;x.save();x.translate(X+W/2,Y+H/2);x.scale(p,p);x.translate(-W/2,-H/2);
  rr(x,0,0,W,H,H*.3);x.fillStyle='#f6c531';x.fill();rr(x,3,3,W-6,H-6,H*.26);const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#74e85a');g.addColorStop(1,'#25a52e');x.fillStyle=g;x.fill();
  rr(x,7,6,W-14,H*.3,H*.15);x.fillStyle='#ffffff40';x.fill();outlined(x,label,W/2,H/2+1,H*.42,'#fff','#1d6b21');x.restore();}
@@ -52,7 +60,7 @@ async function holeIt(s){
  // Head-token faces: both players' portraits on one atlas.
  const atlas=document.createElement('canvas');atlas.width=256;atlas.height=128;
  const paintAtlas=()=>{const ax=atlas.getContext('2d');ax.clearRect(0,0,256,128);for(let i=0;i<2;i++){try{s.sprite(ax,i,64+i*128,64,118,{exact:true});}catch{}}R.setHeadTexture(atlas);};
- for(const g of def.goals)thumb(g.k);
+ for(const g of def.goals)if(KINDS[g.k])thumb(g.k);
  if(def.items.some(it=>it.k==='head')){paintAtlas();for(const ms of [400,1500,4000])setTimeout(()=>{if(s.alive)paintAtlas();},ms);}
 
  const results=[null,null];let turn=null,finishResolve=null,contact=null,keys={};
@@ -61,7 +69,7 @@ async function holeIt(s){
  function layout(){const W=s.W,H=s.H;L.W=W;L.H=H;const top=10;L.level={x:10,y:top,w:84,h:28};L.timer={x:W/2-58,y:top,w:116,h:32};
   // keep clear of the floating Pause/Exit pills (top-right, ~124 px wide, FB.top tall)
   const pills=W-128;if(L.timer.x+L.timer.w>pills){L.timer.x=Math.max(100,pills-L.timer.w);if(L.timer.x+L.timer.w>pills){L.timer.x=W/2-58;L.timer.y=FB.top+4;}}const drop=L.timer.y>top?L.timer.y-top:0;
-  const n=def.goals.length,cw=Math.min(58,(W-24)/Math.max(4,n)-6);L.cards=def.goals.map((g,i)=>({x:10+i*(cw+6),y:top+40+drop+(drop?24:0),w:cw,h:cw*1.16}));
+  const n=def.goals.length,cw=Math.min(58,(W-24)/Math.max(4,n)-6);L.cards=def.goals.map((g,i)=>({x:10+i*(cw+6),y:top+40+drop+(drop?24:0),w:g.k==='score'?cw*2.5:cw,h:cw*1.16}));
   const bs=Math.min(58,W/6.2),gap=bs*.28,tw=bs*4+gap*3,by=H-bs-46;L.boost=BOOST_ORDER.map((id,i)=>({id,x:W/2-tw/2+i*(bs+gap),y:by,w:bs,h:bs}));
   L.play={x:W/2-80,y:Math.min(H*.78,H-130),w:160,h:58};L.cont={x:W/2-90,y:H*.72,w:180,h:60};}
  const inside=(p,r)=>r&&p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h;
@@ -84,7 +92,7 @@ async function holeIt(s){
   const pitch=1.0,tz=cam.z-cam.dist*.1,eye=[cam.x,cam.dist*Math.sin(pitch),tz+cam.dist*Math.cos(pitch)];R.setCamera(W,H,dpr(),eye,[cam.x,0,tz],cf.fov);
   for(const k in inst)inst[k].count=0;let ns=0;const vis=cam.dist*1.25+3;const heads=[];
   for(const it of sim.items){if(it.state===2)continue;if(Math.abs(it.x-cam.x)>vis||Math.abs(it.z-tz)>vis*1.3)continue;
-   if(it.moved||!it.m){it.m=it.m||new Float32Array(12);let q=it.q;if(it.wob>0&&it.state===0){const dx=h.x-it.x,dz=h.z-it.z,l=Math.hypot(dx,dz)||1;q=qmul(qaxis(dz/l,0,-dx/l,it.wob*(.15+.04*Math.sin(t*5+it.i))),q);}
+   if(it.moved||!it.m){it.m=it.m||new Float32Array(12);let q=it.q;if(it.wob>0&&it.state===0){const dx=h.x-it.x,dz=h.z-it.z,l=Math.hypot(dx,dz)||1;q=qmul(qaxis(dz/l,0,-dx/l,(it.lean||0)+it.wob*.03*Math.sin(t*4+it.i)),q);}
     affine(it.m,0,[it.x,it.cy,it.z],q,1,it.h/2);it.moved=it.wob>0;}
    const b=inst[it.k];b.data.set(it.m,b.count*16);b.data[b.count*16+12]=1;b.data[b.count*16+13]=1;b.data[b.count*16+14]=1;b.data[b.count*16+15]=1;b.count++;
    if(it.k==='head')heads.push(it);
@@ -107,6 +115,7 @@ async function holeIt(s){
   if(turn.phase==='intro'){const g=x.createLinearGradient(0,0,0,H*.3);g.addColorStop(0,'#141a33');g.addColorStop(1,'#141a3300');x.fillStyle=g;x.fillRect(0,0,W,H*.3);
    outlined(x,'Level',W/2,H*.11,Math.min(40,W*.1),'#e8ecff','#1a1d3a');outlined(x,String(level),W/2,H*.11+Math.min(46,W*.115),Math.min(52,W*.13),'#ffffff','#1a1d3a');
    const who=s.players[turn.player];outlined(x,`${who.name}’s turn · ${def.themeName}`,W/2,H*.11+Math.min(88,W*.22),14,'#c9d0ff','#141a33',undefined,800);
+   if(def.mode==='score')outlined(x,`★ Points level: reach ${def.goals[0].need}`,W/2,H*.11+Math.min(88,W*.22)+22,14,'#ffe27a','#141a33',undefined,800);
    greenButton(x,L.play.x,L.play.y,L.play.w,L.play.h,'Play',t);
    if(results[0]&&turn.player===1){const r0=results[0];outlined(x,r0.won?`${s.players[0].name}: cleared in ${r0.time.toFixed(1)} s`:`${s.players[0].name}: ${r0.goals}/${r0.need} items`,W/2,L.play.y+L.play.h+28,14,'#ffe27a','#141a33',undefined,800);}
    return;}
@@ -123,9 +132,11 @@ async function holeIt(s){
   // the score bar is hidden in full bleed: show the target to beat on the second turn
   if(turn.player===1&&results[0]){const r0=results[0];outlined(x,r0.won?`Beat ${r0.time.toFixed(1)} s`:`Beat ${r0.goals} items`,nx,ny+16,11,'#ffe27a','#141a33','right',800);}
   // goal cards
-  sim.goals.forEach((g,i)=>{const cd=L.cards[i];if(!cd)return;const grd=x.createLinearGradient(0,cd.y,0,cd.y+cd.h);grd.addColorStop(0,'#6476f0');grd.addColorStop(1,'#3a44b4');rr(x,cd.x,cd.y,cd.w,cd.h,8);x.fillStyle=grd;x.fill();x.strokeStyle='#a9b3ff';x.lineWidth=1.5;x.stroke();
+  sim.goals.forEach((g,i)=>{const cd=L.cards[i];if(!cd)return;
+   if(g.k==='score'){drawScoreCard(x,cd,g,turn.cardPulse[i]||0,turn.inflightPts);return;}
+   const grd=x.createLinearGradient(0,cd.y,0,cd.y+cd.h);grd.addColorStop(0,'#6476f0');grd.addColorStop(1,'#3a44b4');rr(x,cd.x,cd.y,cd.w,cd.h,8);x.fillStyle=grd;x.fill();x.strokeStyle='#a9b3ff';x.lineWidth=1.5;x.stroke();
    const pulse=turn.cardPulse[i]>0?1+turn.cardPulse[i]*.25:1,ts=cd.w*.78*pulse;x.drawImage(thumb(g.k),cd.x+cd.w/2-ts/2,cd.y+cd.w*.42-ts/2,ts,ts);
-   rr(x,cd.x+3,cd.y+cd.h-17,cd.w-6,14,4);x.fillStyle='#1d235acc';x.fill();const left=Math.max(0,g.need-g.got);
+   rr(x,cd.x+3,cd.y+cd.h-17,cd.w-6,14,4);x.fillStyle='#1d235acc';x.fill();const left=Math.max(0,g.need-g.got)+(turn.inflight[g.k]||0);
    if(left===0){x.fillStyle='#39d353';x.beginPath();x.arc(cd.x+cd.w/2,cd.y+cd.h-10,8,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=2.4;x.beginPath();x.moveTo(cd.x+cd.w/2-4,cd.y+cd.h-10);x.lineTo(cd.x+cd.w/2-1,cd.y+cd.h-7);x.lineTo(cd.x+cd.w/2+4,cd.y+cd.h-13);x.stroke();}
    else outlined(x,String(left),cd.x+cd.w/2,cd.y+cd.h-10,11,'#fff','#141a33',undefined,800);});
   if(level===1&&sim.elapsed<4&&!turn.moved){const cd=L.cards.at(-1),bx=10,by=cd.y+cd.h+8;rr(x,bx,by,150,34,8);x.fillStyle='#ffffffee';x.fill();x.font='800 11px system-ui,sans-serif';x.fillStyle='#2a2f6a';x.textAlign='left';x.fillText('Collect these items',bx+10,by+12);x.fillText('to complete level!',bx+10,by+25);}
@@ -139,6 +150,10 @@ async function holeIt(s){
    x.globalAlpha=n||act?1:.45;boosterIcon(x,b.id,cx,cy,r*1.25);x.globalAlpha=1;
    if(act){const tot=b.id==='speed'?10:b.id==='magnet'?8:10;x.strokeStyle='#fff';x.lineWidth=3;x.beginPath();x.arc(cx,cy,r-2,-Math.PI/2,-Math.PI/2+Math.PI*2*sim.active[b.id]/tot);x.stroke();}
    x.fillStyle=n?'#ff3b5c':'#555a70';x.beginPath();x.arc(b.x+b.w-6,b.y+8,9,0,7);x.fill();outlined(x,String(n),b.x+b.w-6,b.y+8.5,10,'#fff','#00000000',undefined,900);}
+  // flying goal icons / stars
+  for(const f of turn.flyers){const cd=L.cards[f.gi];if(!cd)continue;const u=Math.min(1,f.t/f.dur),e=u*u*(3-2*u),tx=cd.x+(sim.def.mode==='score'?22:cd.w/2),ty=cd.y+cd.w*.42,cx=(f.x0+tx)/2+f.wob,cy=Math.min(f.y0,ty)-60;
+   const px=(1-e)*(1-e)*f.x0+2*(1-e)*e*cx+e*e*tx,py=(1-e)*(1-e)*f.y0+2*(1-e)*e*cy+e*e*ty,sz=30-12*e;
+   if(f.k==='score'||!KINDS[f.k]||sim.def.mode==='score')drawStar(x,px,py,sz*.45,u*6);else x.drawImage(thumb(f.k),px-sz/2,py-sz/2,sz,sz);}
   // joystick
   if(contact&&turn.phase==='play'){const o=contact.origin,p=contact.point,dx=p.x-o.x,dy=p.y-o.y,l=Math.hypot(dx,dy),m=Math.min(l,46),kx=l?o.x+dx/l*m:o.x,ky=l?o.y+dy/l*m:o.y;
    x.fillStyle='#ffffff26';x.strokeStyle='#ffffff66';x.lineWidth=2;x.beginPath();x.arc(o.x,o.y,52,0,7);x.fill();x.stroke();const kg=x.createRadialGradient(kx-8,ky-10,3,kx,ky,26);kg.addColorStop(0,'#ffffff');kg.addColorStop(1,'#c9cedd');x.fillStyle=kg;x.beginPath();x.arc(kx,ky,24,0,7);x.fill();}
@@ -183,8 +198,10 @@ async function holeIt(s){
    stepSim(sim,dt,turn.moved?input:{x:0,z:0});if(!turn.moved){sim.time=TIME;sim.elapsed=0;}
    for(const e of sim.events.splice(0)){
     if(e.type==='eat'){const now=performance.now();if(now-lastPop>45&&store.profile?.settings.sound){lastPop=now;tone(520+Math.min(700,turn.combo*18),.05,.03,'sine');}turn.combo++;turn.comboT=.6;
-     if(turn.popups.length<28)turn.popups.push({x:sim.hole.x,z:sim.hole.z,t:0,dx:(Math.random()-.5)*sim.hole.r*60,text:'+1',big:false});
-     if(e.goal){const gi=sim.goals.findIndex(g=>g.k===e.k);if(gi>=0)turn.cardPulse[gi]=1;}}
+     if(turn.popups.length<28)turn.popups.push({x:sim.hole.x,z:sim.hole.z,t:0,dx:(Math.random()-.5)*sim.hole.r*60,text:'+'+(e.xp||1),big:false});
+     // goal props (or stars, on points levels) fly from the hole up into their card
+     if(e.goal&&turn.flyers.length<40){const hp=R.project(sim.hole.x,0,sim.hole.z),gi=sim.def.mode==='score'?0:sim.goals.findIndex(g=>g.k===e.k);if(gi>=0){turn.flyers.push({k:e.k,gi,x0:hp.x+(Math.random()-.5)*20,y0:hp.y-10,t:0,dur:.55+Math.random()*.2,pts:e.xp||1,wob:(Math.random()-.5)*120});if(sim.def.mode==='score')turn.inflightPts+=e.xp||1;else turn.inflight[e.k]=(turn.inflight[e.k]||0)+1;}}
+}
     else if(e.type==='size'){turn.rings.push({t:0});sound('unlock');vibrate(25);turn.popups.push({x:sim.hole.x,z:sim.hole.z,t:0,dx:0,text:`Size ${e.size}!`,big:true});}
     else if(e.type==='boost'&&e.id==='grow')turn.rings.push({t:0});
     else if(e.type==='win'){turn.phase='end';turn.endT=0;sound('win');vibrate(40);s.react?.(turn.player,'win',2);turn.confetti=Array.from({length:70},()=>({x:Math.random()*s.W,y:-Math.random()*s.H*.6,vy:120+Math.random()*160,vx:(Math.random()-.5)*60,a:Math.random()*6,va:(Math.random()-.5)*8,c:['#ffd23a','#ff5fb4','#5ee06a','#3ad0ff','#ff7a3a'][Math.floor(Math.random()*5)]}));}
@@ -192,6 +209,7 @@ async function holeIt(s){
    if(turn.comboT>0){turn.comboT-=dt;if(turn.comboT<=0)turn.combo=0;}
    s.setScores(scoresWith(turn.player,sim));
   }else{turn.endT+=dt;stepSim(sim,dt,{x:0,z:0});sim.events.length=0;for(const f of turn.confetti){f.y+=f.vy*dt;f.x+=f.vx*dt;f.a+=f.va*dt;}}
+  for(const f of turn.flyers){f.t+=dt;if(f.t>=f.dur&&!f.done){f.done=true;turn.cardPulse[f.gi]=1;if(turn.sim.def.mode==='score')turn.inflightPts-=f.pts;else turn.inflight[f.k]=Math.max(0,(turn.inflight[f.k]||0)-1);if(store.profile?.settings.sound)tone(980+f.gi*60,.04,.02,'triangle');}}turn.flyers=turn.flyers.filter(f=>!f.done);
   for(const p of turn.popups)p.t+=dt;turn.popups=turn.popups.filter(p=>p.t<.9);for(const g of turn.rings)g.t+=dt;turn.rings=turn.rings.filter(g=>g.t<.8);for(let i=0;i<turn.cardPulse.length;i++)turn.cardPulse[i]=Math.max(0,turn.cardPulse[i]-dt*4);
   renderPlay(sim,turn.t,dt);drawHUD(sim,turn.t);
   s.status(`${s.players[turn.player].name} · Level ${level} · ${goalTotal(sim)}/${goalNeed(sim)} items · Size ${sim.hole.size}`);
@@ -200,9 +218,9 @@ async function holeIt(s){
 
  function points(r){return r?r.goals+(r.won?1000+Math.round(r.left*10):0):0;}
  function scoresWith(p,sim){const sc=[points(results[0]),points(results[1])];sc[p]=points({goals:goalTotal(sim),won:sim.won,left:sim.time});return sc;}
- async function playTurn(p){turn={player:p,phase:'intro',t:0,sim:createSim(def),popups:[],rings:[],cardPulse:def.goals.map(()=>0),arcV:0,combo:0,comboT:0,confetti:[],moved:false,endT:0};contact=null;keys={};cam.dist=0;
+ async function playTurn(p){turn={player:p,phase:'intro',t:0,sim:createSim(def),popups:[],rings:[],flyers:[],inflight:{},inflightPts:0,cardPulse:def.goals.map(()=>0),arcV:0,combo:0,comboT:0,confetti:[],moved:false,endT:0};contact=null;keys={};cam.dist=0;
   await new Promise(res=>{finishResolve=res;});finishResolve=null;const sim=turn.sim;return {won:sim.won,time:sim.clearTime,left:sim.time,goals:goalTotal(sim),need:goalNeed(sim),size:sim.hole.size};}
- const introText=`Hole.it · Level ${level} (${def.themeName}). Drag to steer the hole and swallow the props on the cards before the 2:00 clock runs out. You both play this exact level: the faster clear wins; if nobody clears it, most items wins.`;
+ const introText=`Hole.it · Level ${level} (${def.themeName}). Drag to steer the hole and ${def.mode==='score'?`eat anything: every prop is worth points (bigger = more). Reach ${def.goals[0].need} ★`:'swallow every one of the props on the cards'} before the 2:00 clock runs out. You both play this exact level: the faster clear wins; if nobody clears it, most items wins.`;
  for(const p of [0,1]){if(!await s.pass(p,p===0?introText:`${s.players[1].name}: same Level ${level}. ${results[0].won?`Beat ${results[0].time.toFixed(1)} s.`:`Collect more than ${results[0].goals} items, or clear it.`}`,'Ready'))return;
   if(!s.alive)return;results[p]=await playTurn(p);if(!s.alive)return;s.setScores([points(results[0]),points(results[1])]);}
  const [a,b]=results,names=s.players.map(pl=>pl.name),line=(r,i)=>r.won?`${names[i]} cleared it in ${r.time.toFixed(1)} s`:`${names[i]} got ${r.goals}/${r.need}`;

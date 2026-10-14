@@ -11,7 +11,7 @@ const BOOSTS={grow:{name:'Grow',time:0},speed:{name:'Lightning',time:10},magnet:
 function createSim(def,{charges=1}={}){
  const goalKinds=new Set(def.goals.map(g=>g.k));
  const items=def.items.map((it,i)=>{const r=kindR(it.k),h=kindH(it.k);return {i,k:it.k,r,h,x:it.x,z:it.z,cy:it.y+h/2,yaw:it.yaw,on:it.on,state:0,q:qaxis(0,1,0,it.yaw),vy:0,ox:0,oz:0,w:0,ax:0,az:0,spin:0,wob:0,goal:goalKinds.has(it.k),xp:propXp(r),counted:false,moved:true};});
- const grid=new Map();for(const it of items){const k=key(it.x,it.z);if(!grid.has(k))grid.set(k,[]);grid.get(k).push(it.i);}
+ const grid=new Map();for(const it of items){const k=key(it.x,it.z);it.cell=k;if(!grid.has(k))grid.set(k,[]);grid.get(k).push(it.i);}
  const maxR=Math.max(.3,...items.map(it=>it.r));
  return {def,items,grid,maxR,hole:{x:def.start.x,z:def.start.z,size:1,r:holeRadius(1),rT:holeRadius(1),xp:0,vx:0,vz:0},
   goals:def.goals.map(g=>({k:g.k,need:g.need,got:0})),time:def.time,elapsed:0,falling:[],stacked:items.filter(it=>it.on>=0).map(it=>it.i),
@@ -23,6 +23,8 @@ function goalNeed(sim){return sim.goals.reduce((s,g)=>s+g.need,0);}
 function useBoost(sim,id){if(sim.done||!sim.charges[id])return false;sim.charges[id]--;
  if(id==='grow'){grow(sim);}else sim.active[id]=BOOSTS[id].time;sim.events.push({type:'boost',id});return true;}
 function grow(sim){const h=sim.hole;h.size++;h.rT=holeRadius(h.size);sim.events.push({type:'size',size:h.size});}
+// keep the spatial grid right for props that slide on the floor (magnet, dragged by the rim)
+function relocate(sim,it){const k=key(it.x,it.z);if(k===it.cell)return;const old=sim.grid.get(it.cell);if(old){const j=old.indexOf(it.i);if(j>=0)old.splice(j,1);}if(!sim.grid.has(k))sim.grid.set(k,[]);sim.grid.get(k).push(it.i);it.cell=k;}
 function forEachNear(sim,x,z,rad,fn){const c0=Math.floor((x-rad)/CELL),c1=Math.floor((x+rad)/CELL),r0=Math.floor((z-rad)/CELL),r1=Math.floor((z+rad)/CELL);
  for(let cx=c0;cx<=c1;cx++)for(let cz=r0;cz<=r1;cz++){const list=sim.grid.get(cx*100003+cz);if(list)for(const i of list)fn(sim.items[i]);}}
 // A prop that fits tips over the rim: it keeps its offset from the hole centre (so it rides along with the hole),
@@ -30,9 +32,9 @@ function forEachNear(sim,x,z,rad,fn){const c0=Math.floor((x-rad)/CELL),c1=Math.f
 function startFall(sim,it,vy=0){const h=sim.hole;it.state=1;it.ox=it.x-h.x;it.oz=it.z-h.z;const l=Math.hypot(it.ox,it.oz);
  const ux=l>.02?it.ox/l:1,uz=l>.02?it.oz/l:0;it.ax=-uz;it.az=ux; // rotation axis that tips the top toward the centre
  it.vox=-h.vx*.35;it.voz=-h.vz*.35;it.vy=vy;it.w=0;it.tip=true;it.age=0;it.spin=(((it.i*7919)%13)/13-.5)*2.4;it.wob=0;sim.falling.push(it.i);}
-function award(sim,it){sim.eaten++;const g=sim.goals.find(g=>g.k===it.k);if(g&&g.got<g.need)g.got++;
+function award(sim,it){sim.eaten++;const score=sim.def.mode==='score';const g=score?sim.goals[0]:sim.goals.find(g=>g.k===it.k);if(g&&g.got<g.need)g.got=score?Math.min(g.need,g.got+it.xp):g.got+1;
  const h=sim.hole;h.xp+=it.xp;let grew=false;while(h.xp>=sizeNeed(h.size)){h.xp-=sizeNeed(h.size);h.size++;h.rT=holeRadius(h.size);grew=true;}
- sim.events.push({type:'eat',k:it.k,goal:!!g,x:it.x,z:it.z});if(grew)sim.events.push({type:'size',size:h.size});
+ sim.events.push({type:'eat',k:it.k,goal:!!g,xp:it.xp,x:it.x,z:it.z});if(grew)sim.events.push({type:'size',size:h.size});
  if(!sim.done&&sim.goals.every(g=>g.got>=g.need)){sim.done=true;sim.won=true;sim.clearTime=sim.elapsed;sim.events.push({type:'win'});}}
 // input: {x,z} direction with length 0..1 (screen up = -z).
 function stepSim(sim,dt,input={x:0,z:0}){
@@ -50,10 +52,14 @@ function stepSim(sim,dt,input={x:0,z:0}){
  const reach=h.r+sim.maxR+(sim.active.magnet>0?h.r*3:0);
  forEachNear(sim,h.x,h.z,reach,it=>{if(it.state!==0)return;const d=Math.hypot(it.x-h.x,it.z-h.z),fits=it.r<=h.r*.96;
   if(it.on>=0){it.wob=0;return;} // still standing on something
-  if(sim.active.magnet>0&&fits&&d<h.r*4&&d>h.r*.5){const pull=Math.min(d,(2.5+h.r)*dt);it.x+=(h.x-it.x)/d*pull;it.z+=(h.z-it.z)/d*pull;it.moved=true;}
-  if(fits&&d<h.r-it.r*.15&&!sim.done)startFall(sim,it);
-  else if(!fits&&d<h.r+it.r*.4){it.wob=Math.min(1,it.wob+dt*5);it.moved=true;}
-  else if(it.wob>0){it.wob=Math.max(0,it.wob-dt*4);it.moved=true;}});
+  if(sim.active.magnet>0&&fits&&d<h.r*4&&d>h.r*.5){const pull=Math.min(d,(2.5+h.r)*dt);it.x+=(h.x-it.x)/d*pull;it.z+=(h.z-it.z)/d*pull;it.moved=true;relocate(sim,it);}
+  if(fits&&d<h.r-it.r*.15&&!sim.done){it.cy=it.h/2;startFall(sim,it);}
+  else if(!fits&&d<h.r+it.r*.35){
+   // Too big: it sags into the mouth resting on the rim, leans toward the centre, and the moving rim drags it along a little.
+   it.wob=Math.min(1,it.wob+dt*4);const over=Math.max(0,Math.min(1,(h.r+it.r*.35-d)/h.r));
+   if(d>1e-4&&d<h.r){const pull=Math.min(d,(1.1+h.r*.6)*dt*it.wob);it.x+=(h.x-it.x)/d*pull;it.z+=(h.z-it.z)/d*pull;relocate(sim,it);}
+   const sink=Math.min(it.h*.42,Math.pow(h.r/it.r,2)*it.h*.5)*over*it.wob;it.cy=it.h/2-sink;it.lean=it.wob*(.06+.3*Math.min(1,d/h.r));it.moved=true;}
+  else if(it.wob>0){it.wob=Math.max(0,it.wob-dt*4);it.cy+=(it.h/2-it.cy)*Math.min(1,dt*8);it.lean=(it.lean||0)*it.wob;it.moved=true;}});
  // stacks lose their support
  if(sim.stacked.length){const keep=[];for(const i of sim.stacked){const it=sim.items[i];if(it.state!==0||it.on<0)continue;const s=sim.items[it.on];if(s.state!==0){it.state=3;it.vy=0;it.on=-1;sim.falling.push(i);}else keep.push(i);}sim.stacked=keep;}
  // falling / dropping props

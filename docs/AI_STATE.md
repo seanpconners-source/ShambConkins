@@ -63,7 +63,13 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   rows/rings/spirals/snakes/piles/towers/pillars, goal cards, `holeRadius`/`sizeNeed`), `sim.js` (movement, tip-in physics,
   stacks, growth, boosters, `botInput`). Feel pass (owner): props tip over the rim (slide inward, top tilts to the centre,
   `it.tip` phase), then fall with wall bounces and a steady tumble; springy hole growth (`h.rv`); the size arc shows an eased
-  `turn.arcV` (size−1+progress) so it fills smoothly and rolls over on a size-up; camera smoothing is frame-rate independent. Full bleed via `fullBleed(s)` (engine `hole` in the `noBleed` list; floating Pause/Exit replace its own pause
+  `turn.arcV` (size−1+progress) so it fills smoothly and rolls over on a size-up; camera smoothing is frame-rate independent.
+  Second owner video (Oct 14): item goals ask for EVERY copy on the board (`need` = tally; kinds over `cap` are trimmed with
+  `removeItems`, which keeps stacks standing); every 5th level from 4 (`isScoreLevel`) is a ★ points level (`def.mode='score'`,
+  goal `{k:'score'}` = sum of `propXp`, wide star card `drawScoreCard`); popups show each prop's value; goal props/stars fly from
+  the hole into their card (`turn.flyers`, card counts wait for arrivals); too-big props sag into the mouth on the rim, lean in
+  and get nudged by the moving rim (`it.wob/lean`, `relocate` keeps the grid right). New props: popsicles ×6, kiwi, tomato;
+  Sweet Shop theme (`treats`); Lego brick towers (`fLegoTowers`) in toy/treat levels. Full bleed via `fullBleed(s)` (engine `hole` in the `noBleed` list; floating Pause/Exit replace its own pause
   button, boosters sit above the ⤢ toggle, player name/target to beat under the pills). Flow in `engines/holeIt.js`: pass → "Level N" intro (duck/apple/croissant over a
   hole, Play) → 2:00 play (floating joystick, clock waits for the first drag, level 1 infinity tutorial) → Bravo!/Time's up →
   P2 plays the same level. Score = goal items + (clear ? 1000 + 10×seconds left). `profile.holeItLevel` (load whitelisted

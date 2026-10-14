@@ -12,7 +12,9 @@ const sizeNeed=size=>Math.round(9*Math.pow(1.45,size-1));
 const propXp=r=>Math.max(1,Math.round(Math.pow(r/.3,2)*1.2));
 // Smallest size whose hole swallows a prop of footprint r.
 const sizeFor=r=>{let s=1;while(holeRadius(s)*.96<r&&s<40)s++;return s;};
-const THEME_ORDER=['toys','fruit','kitchen','sushi','toys','kitchen','fruit','sushi'];
+const THEME_ORDER=['toys','fruit','kitchen','treats','sushi','fruit','toys','kitchen','treats','sushi'];
+// Every 5th level from 4 (4, 9, 14, 19...) is a points level: one star card, reach the target by eating anything.
+const isScoreLevel=level=>level>=4&&level%5===4;
 const CAMEO_KINDS=['rum-ham','fight-milk','head'];
 function levelTheme(level){return level===1?'toys':THEME_ORDER[(level-1)%THEME_ORDER.length];}
 
@@ -37,10 +39,16 @@ function fTowers(k,w,d,rnd){const kd=KINDS[k],r=kd.r,sp=r*2.5,out=[];const cols=
  for(let i=0;i<cols;i++)for(let j=0;j<rows;j++){const n=2+Math.floor(rnd()*5);let prev=-1;for(let s=0;s<n;s++){out.push({x:(i-(cols-1)/2)*sp,z:(j-(rows-1)/2)*sp,y:s*kd.h*.3,yaw:0,on:prev});prev=out.length-1;}}return out;}
 function fPillars(k,w,d,rnd){const p=KINDS.pillar,sp=p.r*2.8,out=[],cols=Math.max(1,Math.floor(w/sp)),rows=Math.max(1,Math.floor(d/sp));
  for(let i=0;i<cols;i++)for(let j=0;j<rows;j++){const x=(i-(cols-1)/2)*sp,z=(j-(rows-1)/2)*sp;out.push({x,z,yaw:0,k:'pillar'});out.push({x,z,y:p.h,yaw:rnd()*TAU,on:out.length-1});}return out;}
+// Columns of separate Lego bricks (mixed colours), sometimes with a toy on top: they feed into the hole brick by brick.
+function fLegoTowers(k,w,d,rnd){const colors=['lego-blue','lego-purple','lego-yellow','lego-pink','lego-teal'],b=KINDS['lego-blue'],sp=.62,out=[];const cols=Math.max(1,Math.floor(w/sp)),rows=Math.max(1,Math.floor(d/.36));
+ for(let i=0;i<cols;i++)for(let j=0;j<rows;j++){const n=3+Math.floor(rnd()*5);let prev=-1;const x=(i-(cols-1)/2)*sp,z=(j-(rows-1)/2)*.36;
+  for(let s=0;s<n;s++){out.push({x,z,y:s*.2,yaw:0,k:colors[(i+j+s)%colors.length],on:prev});prev=out.length-1;}
+  if(k&&KINDS[k]&&KINDS[k].r<.32&&rnd()<.35)out.push({x,z,y:n*.2+.06,yaw:rnd()*TAU,k,on:prev});}
+ return out;}
 function fCluster(k,w,d,rnd){const r=KINDS[k].r,out=[],R=Math.min(w,d)/2-r;for(let t=0;t<400&&out.length<60;t++){const a=rnd()*TAU,rr=Math.sqrt(rnd())*R,x=Math.cos(a)*rr,z=Math.sin(a)*rr;if(out.every(o=>Math.hypot(o.x-x,o.z-z)>r*2.05))out.push({x,z,yaw:rnd()*TAU});}return out;}
 const TAU=Math.PI*2;
-const FORMS={grid:fGrid,rings:fRings,spiral:fSpiral,snake:fSnake,flower:fFlower,pile:fPile,towers:fTowers,pillars:fPillars,cluster:fCluster};
-const SHAPED={'melon-slice':['flower','rings','spiral'],'cup-red':['towers','grid'],'cup-green':['towers','grid'],strawberry:['pile','rings','spiral'],'apple-red':['spiral','rings','pile'],'apple-green':['spiral','rings','pile'],cherry:['snake','rings','pile'],egg:['pile','cluster','grid'],'egg-brown':['pile','cluster'],orange:['pile','grid','rings'],cupcake:['pillars','grid'],pan:['flower','cluster'],crate:['grid','cluster'],pumpkin:['cluster','grid']};
+const FORMS={legoTowers:fLegoTowers,grid:fGrid,rings:fRings,spiral:fSpiral,snake:fSnake,flower:fFlower,pile:fPile,towers:fTowers,pillars:fPillars,cluster:fCluster};
+const SHAPED={'popsicle-yellow':['spiral','rings'],'popsicle-lime':['spiral','rings'],'popsicle-orange':['spiral','snake','rings'],'popsicle-blue':['rings','spiral'],'popsicle-pink':['spiral','rings'],'popsicle-rainbow':['rings','spiral'],kiwi:['grid','snake','rings'],tomato:['pile','snake','rings'],'melon-slice':['flower','rings','spiral'],'cup-red':['towers','grid'],'cup-green':['towers','grid'],strawberry:['pile','rings','spiral'],'apple-red':['spiral','rings','pile'],'apple-green':['spiral','rings','pile'],cherry:['snake','rings','pile'],egg:['pile','cluster','grid'],'egg-brown':['pile','cluster'],orange:['pile','grid','rings'],cupcake:['pillars','grid'],pan:['flower','cluster'],crate:['grid','cluster'],pumpkin:['cluster','grid']};
 function pickForm(k,rnd,big){const opts=SHAPED[k]||(big?['cluster','grid']:['grid','rings','spiral','snake','grid','cluster']);return opts[Math.floor(rnd()*opts.length)];}
 
 // ---- level builder ----
@@ -77,26 +85,38 @@ function buildLevel(level){
     const centerKind=form==='rings'&&tier===0&&T.mid.length&&rnd()<.4?pick(T.mid.filter(m=>KINDS[m].r<cell/3)):null;
     const n=place(form,k,cx,z,cw,cell,{center:centerKind||undefined});counts[k]=(counts[k]||0)+n;if(centerKind)counts[k]--,counts[centerKind]=(counts[centerKind]||0)+1;}
    z-=cell+.5;}
-  for(const it of items)counts[it.k]=(counts[it.k]||0);
-  const tally={};for(const it of items)tally[it.k]=(tally[it.k]||0)+1;
-  const goalCount=Math.min(4,2+Math.floor(L/6)),cands=Object.keys(tally).filter(k=>k!=='head'&&k!=='pillar'&&tally[k]>=3);
-  const ordered=cands.sort((a,b)=>KINDS[a].r-KINDS[b].r||tally[b]-tally[a]);
-  // Mostly smalls, the last goal may be a bigger prop on later levels.
-  const chosen=[];const smallC=ordered.filter(k=>KINDS[k].r<.45),bigC=ordered.filter(k=>KINDS[k].r>=.45);
-  while(chosen.length<goalCount-(bigC.length&&L>=4?1:0)&&smallC.length)chosen.push(smallC.splice(Math.floor(rnd()*smallC.length),1)[0]);
-  if(bigC.length&&L>=4)chosen.push(bigC[Math.floor(rnd()*bigC.length)]);
-  while(chosen.length<goalCount&&smallC.length)chosen.push(smallC.shift());
-  const frac=Math.min(.95,.7+L*.01),cap=Math.min(150,14+L*5);goals=chosen.map(k=>({k,need:Math.max(1,Math.min(cap,Math.round(tally[k]*frac)))}));
+  if(L>=3&&(theme==='toys'||theme==='treats')){const tz=-D/2+cell*1.2;place('legoTowers',pick(T.small.filter(k=>KINDS[k].r<.32)),0,tz,Math.min(W-1,5),cell*.9);}
  }
- // keep items inside the tray
- const out=items.filter(it=>Math.abs(it.x)<=W/2-kindR(it.k)*.6&&it.z>-D/2+.3&&it.z<D/2-.3);
- // fix supports after filtering
- const keep=new Map();items.forEach((it,i)=>{const j=out.indexOf(it);if(j>=0)keep.set(i,j);});
- for(const it of out)it.on=keep.has(it.on)?keep.get(it.on):-1;
+ // keep items inside the tray (dropping one never leaves a prop floating: its load moves down)
+ removeItems(items,it=>!(Math.abs(it.x)<=W/2-kindR(it.k)*.6&&it.z>-D/2+.3&&it.z<D/2-.3));
+ const tally=()=>{const t={};for(const it of items)t[it.k]=(t[it.k]||0)+1;return t;};
+ let mode='items';
+ if(level>1){
+  const t=tally();
+  if(isScoreLevel(level)){mode='score';const total=items.reduce((a,it)=>a+propXp(kindR(it.k)),0);goals=[{k:'score',need:Math.max(40,Math.round(total*Math.min(.7,.45+L*.008)/10)*10)}];}
+  else{
+   // Like the real game: a goal card asks for EVERY copy of that prop on the board.
+   const goalCount=Math.min(4,2+Math.floor(L/6)),cap=Math.min(160,24+L*6);
+   const cands=Object.keys(t).filter(k=>!['head','pillar','crate'].includes(k)&&!k.startsWith('lego')&&t[k]>=3);
+   const smallC=cands.filter(k=>KINDS[k].r<.45),bigC=cands.filter(k=>KINDS[k].r>=.45);
+   const chosen=[];const wantBig=bigC.length&&L>=4?1:0;
+   while(chosen.length<goalCount-wantBig&&smallC.length)chosen.push(smallC.splice(Math.floor(rnd()*smallC.length),1)[0]);
+   if(wantBig)chosen.push(bigC[Math.floor(rnd()*bigC.length)]);
+   // too many copies for a 2:00 turn: trim that prop down (from the far end of its last cells)
+   for(const k of chosen){let extra=(tally()[k]||0)-cap;if(extra>0){const idx=items.map((it,i)=>it.k===k?i:-1).filter(i=>i>=0).slice(-extra);const kill=new Set(idx);removeItems(items,(it,i)=>kill.has(i));}}
+   const t2=tally();goals=chosen.map(k=>({k,need:t2[k]||0})).filter(g=>g.need>0);
+  }
+ }
  const goalSet=new Set(goals.map(g=>g.k));
- for(const g of goals)g.need=Math.min(g.need,out.filter(it=>it.k===g.k).length);
- return {level,theme,themeName:T.name,floor:T.floor,W,D,start,items:out,goals:goals.filter(g=>g.need>0),time:TIME,goalKinds:goalSet};
+ return {level,theme,themeName:T.name,floor:T.floor,W,D,start,items,goals,mode,time:TIME,goalKinds:goalSet};
 }
+// Remove items matching pred(it,index) and repair the stacks: whatever stood on a removed prop takes its place
+// (height and support), so nothing is left floating.
+function removeItems(items,pred){const dead=new Set();items.forEach((it,i)=>{if(pred(it,i))dead.add(i);});if(!dead.size)return;
+ const base=i=>{while(i>=0&&dead.has(i))i=items[i].on;return i;};
+ for(let i=0;i<items.length;i++){const it=items[i];if(dead.has(i))continue;if(it.on>=0&&dead.has(it.on)){let j=it.on,drop=0;while(j>=0&&dead.has(j)){drop+=Math.max(0,(items[j].y||0)-(items[j].on>=0?items[items[j].on].y||0:0))||KINDS[items[j].k].h*.3;j=items[j].on;}it.y=Math.max(0,it.y-drop);it.on=base(it.on);if(it.on<0)it.y=0;}}
+ const map=new Map();let n=0;const keep=[];items.forEach((it,i)=>{if(!dead.has(i)){map.set(i,n++);keep.push(it);}});
+ for(const it of keep)it.on=it.on>=0?map.get(it.on):-1;items.length=0;items.push(...keep);}
 function kindR(k){return KINDS[k].r;}
 function kindH(k){return KINDS[k].h;}
-Object.assign(exports,{buildLevel,holeRadius,sizeNeed,propXp,sizeFor,kindR,kindH,levelTheme,TIME,FORMS});
+Object.assign(exports,{isScoreLevel,removeItems,buildLevel,holeRadius,sizeNeed,propXp,sizeFor,kindR,kindH,levelTheme,TIME,FORMS});
