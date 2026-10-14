@@ -137,7 +137,7 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   `space-swarm-versus`/`space-swarm-coop` in `packs/remakePack.js`, Breakout, Asteroids, Missile Command, Lunar Lander,
   Nokia Snake II, Stacker, Spy Hunter chase, TRON cycles, slither duel, Atari Combat, Scorched Earth, drag race, sumo,
   Nidhogg duel, Tapper, Battle Royale, GoldenEye Facility, Tri-D minichess, putt-putt, Olympic curling, Home Run Derby,
-  NES Duck Hunt, Warriors beat 'em up, real dartboard); 5 re-skinned. Shared helpers in `engines/retroKit.js`
+  NES Duck Hunt, Warriors beat 'em up, real dartboard); 8 re-skinned (incl. hockey shootout, Sewer Clash TMNT, Bat & Field ballpark that rotates upright in portrait). Shared helpers in `engines/retroKit.js`
   (`turnRunner` = P1 then P2 on one seed; `fitField`; pixel/vector fonts; glowing pixel sprites).
   Full-bleed for every canvas game: `session.bleed()` (on by default in `s.canvas`; `game.noBleed` opts out), floating
   ⤢/❚❚/✕ icons + score chips; per-game `BLEED_HUD` own/strip/pad in `gameRegistry.js`; `s.ownHud(hide,quiet)`.

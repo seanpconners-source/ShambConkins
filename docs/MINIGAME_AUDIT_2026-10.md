@@ -54,7 +54,8 @@ field fitting, turn-based runner).
 ## Re-skinned (same rules)
 radical-bike (full-screen Trials look), flappy-disaster (real Flappy Bird look), neon-ball-storm (synthwave),
 bomber-duel (Super Bomberman look + portrait grid), rink-rivals (neon air-hockey table), office-hockey-shootout
-(NHL-style rink), sewer-clash (TMNT sewer: brick arches, ooze drips, steel grates, pizza slices, turtle shells + masks).
+(NHL-style rink), sewer-clash (TMNT sewer: brick arches, ooze drips, steel grates, pizza slices, turtle shells + masks), major-league-fielding (full-screen ballpark: crowd, wall, mowed
+outfield, scoreboard; turns upright on portrait phones with P1 bottom / P2 top).
 
 ## Kept as is (already good or recently rebuilt)
 Beer pong, flip cup, pinball, fruit ninja, horde, hole, crossy, angry heads, Tarantino set, Microgame Rush, arena
@@ -62,4 +63,4 @@ pack, party pack, casino, trivia, Uno, Yahtzee, chess/checkers/mancala/ultimate/
 route, boulder run, baseketball, penalties, dinner service, motion tracker, WOPR, cone chaos, Pac-Maze, warp games.
 
 ## Still worth doing
-Major League Bat & Field (landscape-only field, small on phones), real-phone feel checks for every rebuilt game (only bot/fuzz-tested in headless Chromium).
+Real-phone feel checks for every rebuilt game (only bot/fuzz-tested in headless Chromium).
