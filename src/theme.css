@@ -357,8 +357,9 @@ body .bleed-shell>#game-scorebar .game-scoreplayer>b{animation:none;color:#fff!i
 body .bleed-shell>#game-scorebar .game-scoreplayer.active{background:#000c;box-shadow:0 0 0 2px var(--t-acc2,#ffcf4a),0 2px 8px #0007}
 body .bleed-shell.bleed-own-hud>#game-scorebar{display:none}
 body .bleed-shell.bleed-pad>.game-body{padding-top:calc(max(6px,env(safe-area-inset-top)) + 40px);background:linear-gradient(180deg,var(--t-bg1,#1a1424),var(--t-bg0,#0c0a12))}
-body .bleed-shell>.game-body{position:relative;padding:0;display:block;overflow:hidden;min-height:0;height:100%;background:#000;border:0}
-body .bleed-shell .canvas-frame{border:0;border-radius:0;width:100%;height:100%;min-height:0;padding:0;margin:0;background:#000;box-shadow:none}
+body .bleed-shell>.game-body{position:relative;padding:0;display:block;overflow:hidden;min-height:0;height:100%;background:radial-gradient(ellipse 90% 60% at 50% 40%,var(--t-s1,#2a1f3a),var(--t-bg0,#0c0a12));border:0}
+body .bleed-shell .canvas-frame{border:0;border-radius:0;width:100%;height:100%;min-height:0;padding:0;margin:0;background:transparent;box-shadow:none;display:flex;align-items:center;justify-content:center}
+body .bleed-shell .game-body:not(.drag-arena-body) .game-canvas{width:auto;height:auto;box-shadow:0 10px 40px #000a;border-radius:6px}
 body .bleed-shell .game-canvas{display:block;border:0;border-radius:0;max-width:none;max-height:none;width:100%;height:100%;touch-action:none}
 body .bleed-shell #game-hint{display:none}
 body .bleed-shell #game-status{position:absolute;left:50%;bottom:max(6px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:10;margin:0;max-width:calc(100% - 24px);padding:3px 10px;min-height:0;border:0;border-radius:999px;background:#000a;color:#fffd;font-size:11px;line-height:1.3;text-align:center;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
