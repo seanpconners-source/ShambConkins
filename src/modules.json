@@ -283,7 +283,11 @@
   "src/engines/kart3d/music.js",
   "src/engines/kart3d/hazards.js",
   "src/engines/smb/smbLevels.js",
-  "src/engines/smb/smbArt.js"
+  "src/engines/smb/smbArt.js",
+  "src/engines/sotnAudio.js",
+  "src/engines/sotnArt.js",
+  "src/engines/sotn.js",
+  "src/engines/fullBleed.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

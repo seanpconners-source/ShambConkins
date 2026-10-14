@@ -42,6 +42,9 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   otherwise a circular import (gameRegistry → packs → engines → … → references → gameRegistry) blanks the page.
 - Every game/character/location must reference a real movie / show / game / band (or the personal universe).
 - Touch first: two people on one phone. Prefer swipe/drag/tap on the canvas over on-screen button bars.
+- Every new game is full screen: call `fullBleed(s)` (`src/engines/fullBleed.js`) right after `s.canvas(...,{fill:true})`.
+  Canvas fills the screen, Pause/Exit float top-right, a small ⤢ full-screen toggle sits bottom-centre, touch buttons are
+  drawn floating on the canvas, and the game's HUD keeps clear of the top-right pills (`fullBleed` returns `{top}`).
 - Use seeded randomness (`s.random()`, `runRandom(run)`) for anything that must be fair or reproducible.
 - Character photos are looked up online at runtime (Wikipedia page in the character's `actor` field);
   offline they fall back to an emoji placeholder. Don't add copyrighted melodies (music uses public-domain tunes).

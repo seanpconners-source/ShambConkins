@@ -49,6 +49,13 @@ if (fs.existsSync(huntDir)) for (const f of fs.readdirSync(huntDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(a|b)\.(webp|png|jpe?g)$/i);
   if (m) userPortraits[`photohunt:${m[1]}:${m[2].toLowerCase()}`] = `data:${MIME[m[3].toLowerCase().replace('jpeg', 'jpg')]};base64,` + fs.readFileSync(path.join(huntDir, f)).toString('base64');
 }
+// Drop-in music: assets/music/<name>.(mp3|ogg|m4a|wav) -> USER_PORTRAITS['music:<name>'] (e.g. cv-symphony, cv-symphony-boss).
+const AUDIO = {mp3: 'audio/mpeg', ogg: 'audio/ogg', m4a: 'audio/mp4', wav: 'audio/wav'};
+const musicDir = path.join(root, 'assets/music');
+if (fs.existsSync(musicDir)) for (const f of fs.readdirSync(musicDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(mp3|ogg|m4a|wav)$/i);
+  if (m) userPortraits['music:' + m[1].toLowerCase()] = `data:${AUDIO[m[2].toLowerCase()]};base64,` + fs.readFileSync(path.join(musicDir, f)).toString('base64');
+}
 const js2 = js.replace('/*@@USER_PORTRAITS@@*/{}', () => JSON.stringify(userPortraits));
 const html = read('src/index.template.html')
   .replace('<!--@@STYLE@@-->', () => '<style>' + inlineAssets(read('src/styles.css')+'\n'+read('src/theme.css')) + '</style>')
