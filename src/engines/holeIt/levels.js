@@ -101,7 +101,7 @@ function buildLevel(level){
   const t=tally(),goalCount=Math.min(4,2+Math.floor(L/6)),cap=Math.min(160,24+L*6);
   // a key whose base prop also appears in another size would make an ambiguous card: skip those
   const base=k=>k.replace(/\+$/,''),bases={};for(const k of Object.keys(t))bases[base(k)]=(bases[base(k)]||0)+1;
-  const cands=Object.keys(t).filter(k=>!['head','pillar','crate'].includes(base(k))&&!base(k).startsWith('lego')&&t[k]>=3);
+  const cands=Object.keys(t).filter(k=>!['head','pillar','crate','bomb'].includes(base(k))&&!base(k).startsWith('lego')&&t[k]>=3);
   const sz=k=>KINDS[base(k)].r*(k.endsWith('+')?2.5:1);
   const smallC=cands.filter(k=>sz(k)<.45),bigC=cands.filter(k=>sz(k)>=.45);
   const chosen=[];const wantBig=bigC.length&&L>=4?1:0;
@@ -110,16 +110,18 @@ function buildLevel(level){
   if(wantBig){const k=take(bigC);if(k)chosen.push(k);}
   for(const k of chosen){const extra=(tally()[k]||0)-cap;if(extra>0){const idx=items.map((it,i)=>key(it)===k?i:-1).filter(i=>i>=0).slice(-extra);const kill=new Set(idx);removeItems(items,(it,i)=>kill.has(i));}}
   const t2=tally();goals=chosen.map(k=>({k,need:t2[k]||0})).filter(g=>g.need>0);}
- const value=it=>propXp(KINDS[it.k].r*(it.sc||1)),total=items.reduce((a,it)=>a+value(it),0);
+ // bombs (swallow one and the turn is over): in the video's Level 34, and from Level 8 on in generated levels
+ {const n=spec.bombs??(hand?0:L>=8?1+(L>=15)+(L>=25):0);if(n)topUp(B,'bomb',n,{sc:1,W,D,islands,start:{x:start.x,z:start.z-1.2},pad:1.4,yaw:0});} // open floor around them, so every prop can be reached from a safe side
+ const value=it=>it.k==='bomb'?0:propXp(KINDS[it.k].r*(it.sc||1)),total=items.reduce((a,it)=>a+value(it),0);
  if(mode==='score'&&spec.score){ // video target: make sure the board holds ~45% more points than that
   // fill empty patches of floor with small formations of the level's own props (grids and rings, like the rest)
-  const kinds=[...new Set(items.filter(it=>!it.gk&&(it.sc||1)<2&&KINDS[it.k].r*(it.sc||1)<.5).map(it=>it.k))];
+  const kinds=[...new Set(items.filter(it=>it.k!=='bomb'&&!it.gk&&(it.sc||1)<2&&KINDS[it.k].r*(it.sc||1)<.5).map(it=>it.k))];
   fillGaps(B,kinds,{W,D,islands,start,rnd,enough:()=>items.reduce((a,it)=>a+value(it),0)>=spec.score*1.45});}
  const total2=items.reduce((a,it)=>a+value(it),0);
  if(mode==='score')goals=[{k:'score',need:spec.score||Math.max(40,Math.round(total2*Math.min(.7,.45+L*.008)/10)*10)}];
  // growth curve: at every size the player must be able to reach the next one by eating ~65% of what already fits,
  // so the biggest prop on the board (Size 10 toy blocks in Level 30) becomes edible near the end, as in the video
- const props=items.map(it=>({r:KINDS[it.k].r*(it.sc||1),xp:value(it)})),maxR=props.reduce((m,p)=>Math.max(m,p.r),0),Sx=Math.max(3,sizeFor(maxR));
+ const props=items.filter(it=>it.k!=='bomb').map(it=>({r:KINDS[it.k].r*(it.sc||1),xp:value(it)})),maxR=props.reduce((m,p)=>Math.max(m,p.r),0),Sx=Math.max(3,sizeFor(maxR));
  let growBase=Infinity;for(let sz=1;sz<Sx;sz++){const edible=props.reduce((a,p)=>a+(p.r<=holeRadius(sz)*.96?p.xp:0),0),cum=(Math.pow(1.45,sz)-1)/.45;growBase=Math.min(growBase,.65*edible/cum);}
  growBase=Math.max(1,Math.min(60,growBase));
  return {level,theme,themeName:T.name,floor:spec.floor||T.floor,W,D,start,islands,items,goals,mode,time:spec.time||TIME,growBase,hand:!!hand,goalKinds:new Set(goals.map(g=>g.k))};

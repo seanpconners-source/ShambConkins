@@ -12,7 +12,9 @@ for (let lv = 1; lv <= 40; lv++) {
   if (JSON.stringify(a.items) !== JSON.stringify(b.items)) fail('level ' + lv + ' not deterministic');
   for (const it of a.items) { if (!M.KINDS[it.k]) fail('unknown kind ' + it.k); if (Math.abs(it.x) > a.W / 2 || Math.abs(it.z) > a.D / 2) fail('item out of tray L' + lv); if (it.on >= a.items.length) fail('bad support'); }
   if (!a.goals.length) fail('level ' + lv + ' has no goals');
-  const sim = S.createSim(a); let t = 0;
+  // clearability: the autopilot plays the layout with the bombs taken out (dodging them is the player's job)
+  const sim = S.createSim({...a, items: a.items.filter(it => it.k !== 'bomb')}); let t = 0;
+  for (const bomb of a.items.filter(it => it.k === 'bomb')) if (a.items.some(it => it !== bomb && Math.hypot(it.x - bomb.x, it.z - bomb.z) < M.KINDS[it.k].r * (it.sc || 1) + .45 + 1.3)) fail(`level ${lv} bomb too close to a prop`);
   while (!sim.done && t < 130) { S.stepSim(sim, 1 / 30, S.botInput(sim)); t += 1 / 30; }
   if (!sim.won) fail(`autopilot could not clear level ${lv}: ${sim.goals.map(g => g.k + ' ' + g.got + '/' + g.need).join(', ')}`);
   else if (lv <= 3 || lv % 10 === 0) console.log(`level ${lv} ${a.theme}: ${a.items.length} props, goals ${a.goals.map(g => g.k + '×' + g.need).join(' ')}, bot clear ${sim.clearTime.toFixed(1)}s, size ${sim.hole.size}`);
@@ -23,6 +25,10 @@ for (const [lv, H] of Object.entries(L.HAND)) {
   if (H.goals) for (const [k, n] of H.goals) { const g = d.goals.find(g => g.k === k); if (!g || g.need !== n) fail(`level ${lv} goal ${k} is ${g?.need} not ${n}`); }
   if (H.score && d.goals[0]?.need !== H.score) fail(`level ${lv} score goal ${d.goals[0]?.need} not ${H.score}`);
 }
+// Bombs: swallowing one ends the turn on the spot (lost); level 34 has three like the video
+{ const d = L.buildLevel(34); const bombs = d.items.filter(it => it.k === 'bomb'); if (bombs.length !== 3) fail('level 34 should have 3 bombs, has ' + bombs.length);
+  const sim = S.createSim(d), b = sim.items.find(it => it.k === 'bomb'); sim.hole.size = 6; sim.hole.r = sim.hole.rT = L.holeRadius(6); sim.hole.x = b.x; sim.hole.z = b.z;
+  S.stepSim(sim, 1 / 30, {x: 0, z: 0}); if (!sim.done || sim.won || !sim.bombed) fail('swallowing a bomb did not end the turn'); }
 // Boosters
 { const sim = S.createSim(L.buildLevel(3)); const s0 = sim.hole.size; S.useBoost(sim, 'grow'); if (sim.hole.size !== s0 + 1) fail('potion did not grow');
   if (S.useBoost(sim, 'grow')) fail('second potion allowed'); S.useBoost(sim, 'freeze'); const t0 = sim.time; S.stepSim(sim, 1, {x: 0, z: 0}); if (sim.time !== t0) fail('freeze did not stop the clock'); }

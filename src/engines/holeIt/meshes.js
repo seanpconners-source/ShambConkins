@@ -238,6 +238,11 @@ kind('cake-strawberry','Strawberry Cake',.5,.5,['treats'],g=>{add(g,cyl(.45,.36,
 kind('jar-orange','Orange Jam Jar',.6,1.0,['kitchen'],g=>{add(g,lathe([[0,0],[.5,0,1],[.56,.12],[.56,.7],[.5,.8,1],[0,.8]],18),{},(p)=>p[1]>.3&&p[1]<.56?C('#fff4dc'):C('#ff8a1a'));add(g,cyl(.46,.2,18),{at:[0,.8,0]},C('#f2f2f2'));});
 kind('jar-apple','Apple Juice Jar',.6,1.0,['kitchen'],g=>{add(g,lathe([[0,0],[.5,0,1],[.56,.12],[.56,.7],[.5,.8,1],[0,.8]],18),{},(p)=>p[1]>.3&&p[1]<.56?C('#fff4dc'):C('#9ad83a'));add(g,cyl(.46,.2,18),{at:[0,.8,0]},C('#d8dce4'));});
 kind('cake-birthday','Birthday Cake',.9,1.1,['treats'],g=>{for(const [r,y,hh] of [[.85,0,.4],[.62,.4,.35],[.4,.75,.25]])add(g,cyl(r,hh,20),{at:[0,y,0]},(p)=>Math.sin(p[0]*40+p[1]*20)*Math.sin(p[2]*40)>.7?C(['#3a8af0','#ffd23a','#5ee06a'][Math.floor(Math.abs(p[0]*10))%3]):C('#ff9ac8'));for(let i=0;i<3;i++)add(g,cyl(.03,.18,6),{at:[(i-1)*.15,1.0,0]},C(['#3a8af0','#ffd23a','#e8302a'][i]));});
+// Hazard from the owner's video: a glowing red bomb with a radiation sign. Swallow it and it explodes (turn over).
+kind('bomb','Bomb',.45,.9,['hazard'],g=>{const R=C('#e0202a');add(g,sphere(18,12),{at:[0,.45,0],s:.45},R);add(g,cyl(.06,.1,10),{at:[0,.85,0]},C('#3a3a40'));
+ const face=[-.64,0,0],at=[0,.45+.45*.62*1.0,.45*.78];add(g,cyl(.22,.02,18),{at,r:[PI/2-.66,0,0]},C('#ffd21a'));
+ for(let i=0;i<3;i++)add(g,extrude(sectorPoly(.19,-PI/6+i*TAU/3,PI/6+i*TAU/3,5).map(([x,z])=>[x,z]),.015),{at:[at[0],at[1]+.012*.78,at[2]+.012*.62],r:[PI/2-.66,0,0]},C('#141418'));
+ add(g,cyl(.045,.03,10),{at:[at[0],at[1]+.012,at[2]+.012],r:[PI/2-.66,0,0]},C('#141418'));});
 // ShambConkins cameos (owner asked for occasional ones)
 kind('rum-ham','Rum Ham',.4,.42,['cameo'],g=>{add(g,sphere(14,10),{at:[0,.16,0],s:[.34,.24,.3]},(p)=>p[1]>.55?C('#f08a7a'):C('#c9583e'));add(g,cyl(.05,.4),{at:[.2,.22,0],r:[0,0,-1.2]},C('#fff6e6'));for(const dy of [-.05,.05])add(g,sphere(8,6),{at:[.58,.36+dy,0],s:.06},C('#fff6e6'));});
 kind('fight-milk','Fight Milk',.2,.56,['cameo'],g=>{add(g,lathe([[0,0],[.16,0,1],[.17,.32],[.1,.44],[.07,.48,1],[0,.48]],14),{},(p)=>p[1]>.12&&p[1]<.26?C('#d8232a'):WHITE);add(g,cyl(.08,.08),{at:[0,.48,0]},C('#d8232a'));});

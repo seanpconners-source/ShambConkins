@@ -107,7 +107,7 @@ const HAND={
    B.grid('matcha',0,11.4,13,2,{sc:1.2,sp:.72});                                                // overflow: trimmed to exactly 201
   }},
  // Level 34: waffles (26), watermelons (11), blue milkshakes (26), orange jam jars (19).
- 34:{theme:'kitchen',floor:'#3a4152',W:16,D:40,start:{x:0,z:12.6},islands:[[4.8,2.4,7.6,5.2],[-7.6,-8.6,-4.8,-5.8],[4.6,-16.8,7.6,-14]],
+ 34:{theme:'kitchen',floor:'#3a4152',W:16,D:40,start:{x:0,z:12.6},bombs:3,islands:[[4.8,2.4,7.6,5.2],[-7.6,-8.6,-4.8,-5.8],[4.6,-16.8,7.6,-14]],
   goals:[['waffle',26],['watermelon',11],['milkshake-blue',26],['jar-orange',19]],
   build(B){
    B.ring('blueberry',0,12.6,1.25,14,{sc:1.4});B.rectRing('tomato',0,12.6,3.6,3.6,{sc:1.2,sp:.7});

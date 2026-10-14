@@ -51,12 +51,12 @@ function removeItems(items,pred){const dead=new Set();items.forEach((it,i)=>{if(
  const map=new Map();let n=0;const keep=[];items.forEach((it,i)=>{if(!dead.has(i)){map.set(i,n++);keep.push(it);}});
  for(const it of keep)it.on=it.on>=0?map.get(it.on):-1;items.length=0;items.push(...keep);}
 // Add n more copies of kind k (scale sc) in free spots of the tray: clear of other props, islands and the start.
-function topUp(B,k,n,{sc=1,gk,W,D,islands=[],start}){const r=KINDS[k].r*sc,cell=1.2,grid=new Map(),keyOf=(x,z)=>Math.floor(x/cell)*7919+Math.floor(z/cell);
+function topUp(B,k,n,{sc=1,gk,W,D,islands=[],start,pad=0,yaw}){const r=KINDS[k].r*sc,cell=1.2,grid=new Map(),keyOf=(x,z)=>Math.floor(x/cell)*7919+Math.floor(z/cell);
  const reach=it=>KINDS[it.k].r*(it.sc||1);for(const it of B.items){const kk=keyOf(it.x,it.z);if(!grid.has(kk))grid.set(kk,[]);grid.get(kk).push(it);}
- const free=(x,z)=>{for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++){const l=grid.get(keyOf(x+i*cell,z+j*cell));if(l)for(const it of l)if(Math.hypot(it.x-x,it.z-z)<reach(it)+r*1.02)return false;}return true;};
+ const free=(x,z)=>{const reachCells=2+Math.ceil(pad/cell);for(let i=-reachCells;i<=reachCells;i++)for(let j=-reachCells;j<=reachCells;j++){const l=grid.get(keyOf(x+i*cell,z+j*cell));if(l)for(const it of l)if(Math.hypot(it.x-x,it.z-z)<reach(it)+r*1.02+pad)return false;}return true;};
  let placed=0;for(let t=0;t<n*400&&placed<n;t++){const x=(B.rnd()-.5)*(W-r*2.4),z=(B.rnd()-.5)*(D-r*2.4);
   if(islands.some(o=>insideRect(x,z,o,r+.2))||(start&&Math.hypot(x-start.x,z-start.z)<2+r)||!free(x,z))continue;
-  B.add(k,x,z,{sc,gk,yaw:B.rnd()*TAU});const it=B.items[B.items.length-1],kk=keyOf(x,z);if(!grid.has(kk))grid.set(kk,[]);grid.get(kk).push(it);placed++;}
+  B.add(k,x,z,{sc,gk,yaw:yaw??B.rnd()*TAU});const it=B.items[B.items.length-1],kk=keyOf(x,z);if(!grid.has(kk))grid.set(kk,[]);grid.get(kk).push(it);placed++;}
  return placed;}
 const insideRect=(x,z,r,m=0)=>x>r[0]-m&&x<r[2]+m&&z>r[1]-m&&z<r[3]+m;
 Object.assign(exports,{topUp,makeBuilder,removeItems,insideRect,TAU});

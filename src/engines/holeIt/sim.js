@@ -29,7 +29,10 @@ function forEachNear(sim,x,z,rad,fn){const c0=Math.floor((x-rad)/CELL),c1=Math.f
  for(let cx=c0;cx<=c1;cx++)for(let cz=r0;cz<=r1;cz++){const list=sim.grid.get(cx*100003+cz);if(list)for(const i of list)fn(sim.items[i]);}}
 // A prop that fits tips over the rim: it keeps its offset from the hole centre (so it rides along with the hole),
 // slides inward off the rim while its top tilts toward the centre, then falls and tumbles at a steady rate.
-function startFall(sim,it,vy=0){const h=sim.hole;it.state=1;it.ox=it.x-h.x;it.oz=it.z-h.z;const l=Math.hypot(it.ox,it.oz);
+function startFall(sim,it,vy=0){const h=sim.hole;
+ if(it.k==='bomb'){ // swallowing a bomb blows the hole up: the turn ends there and then
+  it.state=2;if(!sim.done){sim.done=true;sim.won=false;sim.bombed=true;sim.events.push({type:'bomb',x:it.x,z:it.z});}return;}
+ it.state=1;it.ox=it.x-h.x;it.oz=it.z-h.z;const l=Math.hypot(it.ox,it.oz);
  const ux=l>.02?it.ox/l:1,uz=l>.02?it.oz/l:0;it.ax=-uz;it.az=ux; // rotation axis that tips the top toward the centre
  it.vox=-h.vx*.35;it.voz=-h.vz*.35;it.vy=vy;it.w=0;it.tip=true;it.age=0;it.spin=(((it.i*7919)%13)/13-.5)*2.4;it.wob=0;sim.falling.push(it.i);}
 function award(sim,it){sim.eaten++;const score=sim.def.mode==='score';const g=score?sim.goals[0]:sim.goals.find(g=>g.k===it.gk);if(g&&g.got<g.need)g.got=score?Math.min(g.need,g.got+it.xp):g.got+1;
@@ -89,23 +92,33 @@ function stepSim(sim,dt,input={x:0,z:0}){
 // It remembers its target and gives up on one it cannot reach (an island in the way) for a few seconds.
 function botInput(sim,dt=1/30){const h=sim.hole,b=sim.bot||(sim.bot={t:null,best:1e9,stuck:0,skip:new Map(),clock:0,aim:''});b.clock+=dt;
  if(b.t&&(b.t.state!==0||b.t.r>h.r*.96))b.t=null;
- if(!b.t){let bd=1e9;for(const it of sim.items){if(it.state!==0||it.on>=0||it.r>h.r*.96||(b.skip.get(it.i)||0)>b.clock)continue;const d=Math.hypot(it.x-h.x,it.z-h.z)-(it.goal?2:0);if(d<bd){bd=d;b.t=it;}}}
+ if(!b.t){let bd=1e9;for(const it of sim.items){if(it.k==='bomb'||it.state!==0||it.on>=0||it.r>h.r*.96||(b.skip.get(it.i)||0)>b.clock)continue;const d=Math.hypot(it.x-h.x,it.z-h.z)-(it.goal?2:0);if(d<bd){bd=d;b.t=it;}}}
  if(!b.t)return {x:Math.cos(b.clock*.7),z:Math.sin(b.clock*.9)};
+ // no-go boxes for the hole's centre: islands (it slides along them) and every bomb that would fit (never get that close)
+ const obs=[];for(const o of sim.def.islands||[]){const m=h.r*.85;obs.push([o[0]-m,o[1]-m,o[2]+m,o[3]+m,.5]);}
+ // bombs that fit now (or right after the next size-up) get a no-go circle as wide as the hole's reach
+ const bombs=[];for(const it of sim.items)if(it.k==='bomb'&&it.state===0&&it.r<=h.r*1.1)bombs.push({x:it.x,z:it.z,R:(it.r<=h.r*.96?h.r*1.08:h.r*1.2)+.15+Math.hypot(h.vx,h.vz)*.06});
  let tx=b.t.x,tz=b.t.z,aim='t'+b.t.i;
- // aim at the closest spot the hole can actually reach (props hugging a wall or an island)
- {const mx=Math.max(0,sim.def.W/2-h.r*.8),mz=Math.max(0,sim.def.D/2-h.r*.8);tx=Math.max(-mx,Math.min(mx,tx));tz=Math.max(-mz,Math.min(mz,tz));
-  for(const o of sim.def.islands||[]){const m=h.r*.85+.05,x0=o[0]-m,x1=o[2]+m,z0=o[1]-m,z1=o[3]+m;if(tx>x0&&tx<x1&&tz>z0&&tz<z1){const c=[[x0-tx,0],[x1-tx,0],[0,z0-tz],[0,z1-tz]].sort((a,b)=>Math.abs(a[0]+a[1])-Math.abs(b[0]+b[1]))[0];tx+=c[0];tz+=c[1];}}}
- // an island in the way: shortest path over its (tray-clamped) corners, then head for the first corner on it
- for(const o of sim.def.islands||[]){const m=h.r*.85,c=m+.5,R=[o[0]-m,o[1]-m,o[2]+m,o[3]+m],hit=(ax,az,bx,bz)=>segHitsRect(ax,az,bx,bz,...R);if(!hit(h.x,h.z,tx,tz))continue;
-  const mx=sim.def.W/2-h.r*.8,mz=sim.def.D/2-h.r*.8,cl=(v,M)=>Math.max(-M,Math.min(M,v));
-  const P=[[h.x,h.z],...[[o[0]-c,o[1]-c],[o[2]+c,o[1]-c],[o[2]+c,o[3]+c],[o[0]-c,o[3]+c]].map(([x,z])=>[cl(x,mx),cl(z,mz)]),[tx,tz]],n=P.length,dist=Array(n).fill(1e9),prev=Array(n).fill(-1),done=Array(n).fill(false);dist[0]=0;
+ // aim at the closest spot the hole can actually reach (props hugging a wall, an island or a bomb)
+ const mx0=Math.max(0,sim.def.W/2-h.r*.8),mz0=Math.max(0,sim.def.D/2-h.r*.8);{const mx=mx0,mz=mz0;tx=Math.max(-mx,Math.min(mx,tx));tz=Math.max(-mz,Math.min(mz,tz));
+  for(const R of obs){if(tx>R[0]&&tx<R[2]&&tz>R[1]&&tz<R[3]){const c=[[R[0]-.05-tx,0],[R[2]+.05-tx,0],[0,R[1]-.05-tz],[0,R[3]+.05-tz]].sort((a,b)=>Math.abs(a[0]+a[1])-Math.abs(b[0]+b[1]))[0];tx+=c[0];tz+=c[1];}}
+  for(const o of bombs){const ex=tx-o.x,ez=tz-o.z,d=Math.hypot(ex,ez);if(d<o.R+.08){ // approach from the far side (or round the circle if a wall is there)
+   const a0=Math.atan2(d?ez:0,d?ex:1);for(let k=0;k<24;k++){const a=a0+(k%2?1:-1)*Math.ceil(k/2)*Math.PI/12,px=o.x+Math.cos(a)*(o.R+.1),pz=o.z+Math.sin(a)*(o.R+.1);if(Math.abs(px)<=mx0&&Math.abs(pz)<=mz0){tx=px;tz=pz;break;}}}}}
+ // something in the way: shortest path over its (tray-clamped) corners, then head for the first corner on it
+ const mx=sim.def.W/2-h.r*.8,mz=sim.def.D/2-h.r*.8,cl=(v,M)=>Math.max(-M,Math.min(M,v));
+ for(const R of obs){const hit=(ax,az,bx,bz)=>segHitsRect(ax,az,bx,bz,R[0],R[1],R[2],R[3]);if(!hit(h.x,h.z,tx,tz))continue;const c=R[4];
+  const P=[[h.x,h.z],...[[R[0]-c,R[1]-c],[R[2]+c,R[1]-c],[R[2]+c,R[3]+c],[R[0]-c,R[3]+c]].map(([x,z])=>[cl(x,mx),cl(z,mz)]),[tx,tz]],n=P.length,dist=Array(n).fill(1e9),prev=Array(n).fill(-1),done=Array(n).fill(false);dist[0]=0;
   for(let k=0;k<n;k++){let u=-1;for(let v=0;v<n;v++)if(!done[v]&&(u<0||dist[v]<dist[u]))u=v;if(dist[u]>=1e9)break;done[u]=true;
    for(let v=0;v<n;v++)if(!done[v]&&!hit(P[u][0],P[u][1],P[v][0],P[v][1])){const d=dist[u]+Math.hypot(P[v][0]-P[u][0],P[v][1]-P[u][1]);if(d<dist[v]){dist[v]=d;prev[v]=u;}}}
-  if(dist[n-1]<1e9){let v=n-1;while(prev[v]>0)v=prev[v];if(v!==n-1&&Math.hypot(P[v][0]-h.x,P[v][1]-h.z)>.2){tx=P[v][0];tz=P[v][1];aim='c'+v+o[0];}}
+  if(dist[n-1]<1e9){let v=n-1;while(prev[v]>0)v=prev[v];if(v!==n-1&&Math.hypot(P[v][0]-h.x,P[v][1]-h.z)>.2){tx=P[v][0];tz=P[v][1];aim='c'+v+R[0].toFixed(1);}}
   break;}
  if(aim!==b.aim){b.aim=aim;b.best=1e9;b.stuck=0;}
  const d=Math.hypot(tx-h.x,tz-h.z);if(d<b.best-.05){b.best=d;b.stuck=0;}else if((b.stuck+=dt)>.8){b.skip.set(b.t.i,b.clock+5);b.t=null;b.aim='';}
- const dx=tx-h.x,dz=tz-h.z,l=Math.hypot(dx,dz)||1;return {x:dx/l,z:dz/l};}
+ let dx=tx-h.x,dz=tz-h.z,l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;
+ // slide around bomb circles instead of driving into them
+ for(const o of bombs){const ux=o.x-h.x,uz=o.z-h.z,dd=Math.hypot(ux,uz)||1e-6,nx=ux/dd,nz=uz/dd;if(dd>o.R+.7)continue;const toward=dx*nx+dz*nz;
+  if(toward>0){dx-=toward*nx;dz-=toward*nz;const ll=Math.hypot(dx,dz);if(ll<.2){dx=-nz;dz=nx;}else{dx/=ll;dz/=ll;}}if(dd<o.R+.12){dx-=nx*.8;dz-=nz*.8;}}
+ l=Math.hypot(dx,dz)||1;const slow=Math.min(1,d/(h.r*.6)+.25);return {x:dx/l*slow,z:dz/l*slow};}
 // does segment (ax,az)-(bx,bz) pass through the rectangle's interior?
 function segHitsRect(ax,az,bx,bz,x0,z0,x1,z1){let t0=0,t1=1;const dx=bx-ax,dz=bz-az;for(const [p,q] of [[-dx,ax-x0],[dx,x1-ax],[-dz,az-z0],[dz,z1-az]]){if(Math.abs(p)<1e-9){if(q<0)return false;continue;}const r=q/p;if(p<0){if(r>t1)return false;if(r>t0)t0=r;}else{if(r<t0)return false;if(r<t1)t1=r;}}return t0<t1;}
 Object.assign(exports,{createSim,stepSim,useBoost,sizeProgress,goalTotal,goalNeed,botInput,BOOSTS,qaxis,qmul});
