@@ -191,6 +191,8 @@ Version 0.59.1 (Broforce faces follow the action; release file `releases/ShambCo
   Full-bleed for every canvas game: `session.bleed()` (on by default in `s.canvas`; `game.noBleed` opts out), floating
   ⤢/❚❚/✕ icons + score chips; per-game `BLEED_HUD` own/strip/pad in `gameRegistry.js`; `s.ownHud(hide,quiet)`.
   Titles/rules for remakes: `REMAKES` (by engine) and `REMAKE_META` (by id) at the end of `gameRegistry.js`.
+  TESTver `c96afdd` merged in: engines with their own full-screen shells (photohunt, kart, marioBros, sotn via
+  `engines/fullBleed.js`) set `noBleed` and keep their own fullscreen toggle.
   All only bot/fuzz-tested in headless Chromium; real-phone feel untested.
 
 ## Recent changes (this round of owner feedback)
