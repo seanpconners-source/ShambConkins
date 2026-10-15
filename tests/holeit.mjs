@@ -15,7 +15,7 @@ for (let lv = 1; lv <= 40; lv++) {
   // clearability: the autopilot plays the layout with the bombs taken out (dodging them is the player's job)
   const sim = S.createSim({...a, items: a.items.filter(it => it.k !== 'bomb')}); let t = 0;
   for (const bomb of a.items.filter(it => it.k === 'bomb')) if (a.items.some(it => it !== bomb && Math.hypot(it.x - bomb.x, it.z - bomb.z) < M.KINDS[it.k].r * (it.sc || 1) + .45 + 1.3)) fail(`level ${lv} bomb too close to a prop`);
-  while (!sim.done && t < 130) { S.stepSim(sim, 1 / 30, S.botInput(sim)); t += 1 / 30; }
+  while (!sim.done && t < a.time) { S.stepSim(sim, 1 / 30, S.botInput(sim)); t += 1 / 30; }
   if (!sim.won) fail(`autopilot could not clear level ${lv}: ${sim.goals.map(g => g.k + ' ' + g.got + '/' + g.need).join(', ')}`);
   else if (lv <= 3 || lv % 10 === 0) console.log(`level ${lv} ${a.theme}: ${a.items.length} props, goals ${a.goals.map(g => g.k + '×' + g.need).join(' ')}, bot clear ${sim.clearTime.toFixed(1)}s, size ${sim.hole.size}`);
 }

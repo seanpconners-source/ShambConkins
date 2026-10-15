@@ -2,7 +2,50 @@
 // Goal cards and their counts are copied from the video; props, size classes, formations and grass islands follow
 // what the video shows, zone by zone. Coordinates: x across (±W/2), z down the tray (+z = bottom, where you start).
 const PI=Math.PI;
+// One arm of a spiral galaxy: r grows by `pitch` per turn, props `sp` apart along the arm.
+function arm(B,k,cx,cz,r0,r1,pitch,a0,sp,o={}){let a=a0,r=r0;while(r<=r1){B.add(k,cx+Math.cos(a)*r,cz+Math.sin(a)*r,{...o,yaw:o.yaw??a*2.7});a+=sp/r;r=r0+pitch*(a-a0)/(2*PI);}}
+// Popsicles standing radially round a centre, sticks pointing in (a slight pinwheel), as in the owner's Level 3 video.
+function popRing(B,k,cx,cz,rad,n,o={}){for(let i=0;i<n;i++){const a=(o.a0||0)+i/n*2*PI;B.add(k,cx+Math.cos(a)*rad,cz+Math.sin(a)*rad,{...o,yaw:Math.atan2(-Math.cos(a),-Math.sin(a))+.35});}}
+// Level 4 block: a border of tangerines (7 x 6), a ring of strawberry halves inside and four red onions in the middle.
+function orangeBlock(B,cx,cz){const sp=.6;for(let i=0;i<7;i++)for(let j=0;j<6;j++){const x=cx+(i-3)*sp,z=cz+(j-2.5)*sp,edge=i===0||i===6||j===0||j===5,ring=i===1||i===5||j===1||j===4;
+  if(edge)B.add('tangerine',x,z,{rand:true});else if(ring)B.add('strawberry-half',x,z,{rand:true});}
+ for(const [dx,dz] of [[-.32,-.3],[.32,-.3],[-.32,.3],[.32,.3]])B.add('onion-red',cx+dx,cz+dz,{sc:1.12,rand:true});}
 const HAND={
+ // ---- Owner's Oct 14 phone video (Galaxy Fold, 1080x1200): Levels 2, 3 and the start of 4. Positions come from a map
+ // stitched from the video (hole track × camera scale), in tray coordinates; x across, z down the tray (+z = bottom).
+ // Level 2: two orange-slice / strawberry spiral galaxies; 18 big green apples ring the lower one, a watermelon sits
+ // in the middle of the upper one. Apples +3, watermelon +10 (video popups). 4:00 clock.
+ 2:{theme:'fruit',floor:'#46566a',W:15,D:22.2,start:{x:0,z:8.82},time:240,growBase:16,goals:[['watermelon-lying',1],['apple-green',18]],
+  build(B){const g1=3.22,g2=-6.28;
+   for(const [x,z] of [[0,0],...Array.from({length:6},(_,i)=>[Math.cos(i*PI/3)*.42,Math.sin(i*PI/3)*.42])])B.add('strawberry',x,g1+z,{sc:1.15,rand:true});
+   arm(B,'orange-slice',0,g1,.85,3.0,1.0,PI*.5,.56);arm(B,'strawberry',0,g1,.85,3.05,1.0,PI*1.5,.48,{sc:1.15});
+   for(let i=0;i<18;i++){const a=i/18*2*PI+.09;B.add('apple-green',Math.cos(a)*3.6,g1+Math.sin(a)*3.6,{sc:1.55,xp:3,yaw:i*1.7});}
+   B.add('watermelon-lying',0,g2,{yaw:.5});
+   for(let i=0;i<9;i++){const a=i/9*2*PI;B.add('strawberry',Math.cos(a)*1.05,g2+Math.sin(a)*1.05,{sc:1.15,rand:true});}
+   arm(B,'orange-slice',0,g2,1.45,3.9,1.0,PI*.2,.56);arm(B,'strawberry',0,g2,1.45,3.95,1.0,PI*1.2,.48,{sc:1.15});
+  }},
+ // Level 3: a closed box of white dice holds a thick ring of rubber ducks round the green jelly, with spotted-egg piles
+ // in its corners; popsicle rings (blue inside, watermelon red outside) sit left and right of the box round the two
+ // orange jellies and below it round two towers of 21 wooden discs, each topped by a red jelly. 4:00 clock.
+ 3:{theme:'treats',floor:'#46566a',W:23,D:20.4,start:{x:0,z:4.1},time:240,growBase:16,goals:[['jelly-green',1],['jelly-red',2],['jelly-orange',2]],
+  build(B){const bz=-1.6,sp=.6;
+   for(let i=0;i<14;i++){B.add('dice-white',-3.9+i*sp,bz+3.9,{yaw:0});B.add('dice-white',-3.9+i*sp,bz-3.9,{yaw:0});}
+   for(let j=1;j<13;j++){B.add('dice-white',-3.9,bz-3.9+j*sp,{yaw:0});B.add('dice-white',3.9,bz-3.9+j*sp,{yaw:0});}
+   for(let i=0;i<8;i++)for(let j=0;j<8;j++)if(i<2||i>5||j<2||j>5)B.add('duck',(i-3.5)*.45,bz+(j-3.5)*.45,{sc:.68,yaw:PI});
+   B.add('jelly-green',0,bz,{sc:1.1,yaw:.3});
+   for(const [x,z,k] of [[-2.68,bz-2.68,'egg-pink'],[-2.68,bz+2.68,'egg-pink'],[2.68,bz-2.68,'egg-orange'],[2.68,bz+2.68,'egg-orange']])B.pile(k,x,z,.78,{sc:1.08,layers:2});
+   for(const sx of [-1,1]){const cx=sx*7.8;B.add('jelly-orange',cx,bz,{yaw:.4});popRing(B,'popsicle-ice',cx,bz,1.5,12,{sc:.88});popRing(B,'popsicle-melon',cx,bz,2.65,22,{sc:.88,a0:.1});}
+   for(const sx of [-1,1]){const cx=sx*3.9,cz=6.4;const top=B.tower('wood-disc',cx,cz,21,{dy:.2,yaw:0});B.add('jelly-red',cx,cz,{y:21*.2,on:top,yaw:.2});
+    popRing(B,'popsicle-ice',cx,cz,1.4,12,{sc:.88});popRing(B,'popsicle-melon',cx,cz,2.45,22,{sc:.88,a0:.1});}
+  }},
+ // Level 4 (only its first second is in the video): tangerine-bordered blocks of strawberry halves with four red onions,
+ // two blocks a row; the top of the tray alternates rows of halves and onions. Goals as on the cards, 3:30 clock.
+ 4:{theme:'fruit',floor:'#46566a',W:14,D:30.05,start:{x:0,z:12.38},time:210,growBase:16,goals:[['strawberry-half',200],['onion-red',88],['tangerine',228]],
+  build(B){const z0=12.38;
+   for(let r=0;r<5;r++)for(const cx of [-2.5,2.5])orangeBlock(B,cx,z0-3.1-r*3.9);
+   for(let i=0;i<8;i++)B.add('tangerine',-2.8+i*.8,z0-20.9,{rand:true});
+   for(let r=0;r<9;r++)for(let i=0;i<12;i++)B.add(r%2?'onion-red':'strawberry-half',-4.4+i*.8,z0-21.6-r*.6,{sc:r%2?1.12:1,rand:true});
+  }},
  // Hard Level 30: stars & blueberries, bakery, latte cups, cabbages. Ends at Size 10 eating toy blocks (+15).
  // Sizes measured against the hole in the video: star r.30, latte r.33, cream cupcake r.58, choc muffin r.54, cabbage r1.04.
  30:{theme:'treats',floor:'#3b4254',W:16,D:38,start:{x:0,z:17.2},islands:[[5.0,-8.8,7.6,-6.2],[-7.6,-1.4,-5.2,1.2]],

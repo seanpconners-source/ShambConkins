@@ -13,11 +13,12 @@ float below=clamp(-vW.y/(uHole.z*1.5+.2),0.,1.);col*=1.-below*.96;gl_FragColor=v
 const FLOOR_VS=`attribute vec3 aPos;uniform mat4 uVP;varying vec3 vW;void main(){vW=aPos;gl_Position=uVP*vec4(aPos,1.);}`;
 const FLOOR_FS=`precision mediump float;varying vec3 vW;uniform vec4 uHole;uniform vec3 uFloor;uniform float uMode;
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float vnoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
 void main(){float dh=length(vW.xz-uHole.xy);if(dh<uHole.z)discard;vec3 col;
-if(uMode<.5){vec2 t=vW.xz/vec2(2.4,1.2);t.x+=floor(t.y)*.5;vec2 f=fract(t);float e=min(min(f.x,1.-f.x)*2.4,min(f.y,1.-f.y)*1.2);
-float line=smoothstep(.0,.035,e);col=uFloor*(1.+(hash(floor(t))-.5)*.06)*(.86+.14*line);}
-else{vec2 t=vW.xz*1.7;float n=hash(floor(t))*.5+hash(floor(t*2.3))*.5;col=mix(vec3(.24,.62,.2),vec3(.33,.74,.26),n);}
-col*=mix(.7,1.,smoothstep(uHole.z*1.15,uHole.z*1.8,dh));gl_FragColor=vec4(col,1.);}`;
+if(uMode<.5){vec2 t=vW.xz/vec2(2.4,.36);t.x+=hash(vec2(floor(t.y),7.))*.9;vec2 f=fract(t);float e=min(min(f.x,1.-f.x)*2.4,min(f.y,1.-f.y)*.36);
+float line=smoothstep(.0,.018,e);col=uFloor*(1.+(hash(floor(t))-.5)*.05)*(.93+.07*line);}
+else{float n=vnoise(vW.xz*1.3)*.6+vnoise(vW.xz*4.1)*.4;col=mix(vec3(.22,.47,.18),vec3(.33,.62,.26),n);}
+col*=1.+(uMode<.5?.3:.12)*(1.-smoothstep(uHole.z*1.3,uHole.z*3.4,dh));gl_FragColor=vec4(col,1.);}`;
 const DECAL_VS=`attribute vec2 aCorner;attribute vec4 iD;uniform mat4 uVP;uniform float uY;varying vec2 vUV;varying float vA;varying vec2 vW;
 void main(){vec3 w=vec3(iD.x+aCorner.x*iD.z,uY,iD.y+aCorner.y*iD.z);vUV=aCorner;vA=iD.w;vW=w.xz;gl_Position=uVP*vec4(w,1.);}`;
 const DECAL_FS=`precision mediump float;varying vec2 vUV;varying float vA;varying vec2 vW;uniform vec4 uHole;uniform float uMode;uniform vec3 uColor;uniform vec2 uArc;uniform float uThick;

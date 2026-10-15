@@ -1,7 +1,7 @@
 // Hole.it simulation: the hole glides over the tray, props whose footprint fits
 // tip over the rim and tumble in, stacks collapse when their support is eaten,
 // every swallowed prop feeds the Size meter. No DOM; tests drive it directly.
-const {holeRadius,sizeNeed,propXp,kindR,kindH}=require("src/engines/holeIt/levels.js");
+const {holeRadius,sizeNeed,itemXp,kindR,kindH}=require("src/engines/holeIt/levels.js");
 const G=20,CELL=2;
 const qmul=(a,b)=>[a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3],a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]];
 const qaxis=(x,y,z,ang)=>{const s=Math.sin(ang/2);return [x*s,y*s,z*s,Math.cos(ang/2)];};
@@ -10,12 +10,12 @@ const key=(x,z)=>Math.floor(x/CELL)*100003+Math.floor(z/CELL);
 const BOOSTS={grow:{name:'Grow',time:0},speed:{name:'Lightning',time:10},magnet:{name:'Magnet',time:8},freeze:{name:'Freeze',time:10}};
 function createSim(def,{charges=1}={}){
  const goalKinds=new Set(def.goals.map(g=>g.k));
- const items=def.items.map((it,i)=>{const sc=it.sc||1,r=kindR(it.k)*sc,h=kindH(it.k)*sc,gk=it.gk||it.k;return {i,k:it.k,gk,sc,h0:kindH(it.k),r,h,x:it.x,z:it.z,cy:it.y+h/2,yaw:it.yaw,on:it.on,state:0,q:qaxis(0,1,0,it.yaw),vy:0,ox:0,oz:0,w:0,ax:0,az:0,spin:0,wob:0,goal:goalKinds.has(gk),xp:propXp(r),counted:false,moved:true};});
+ const items=def.items.map((it,i)=>{const sc=it.sc||1,r=kindR(it.k)*sc,h=kindH(it.k)*sc,gk=it.gk||it.k;return {i,k:it.k,gk,sc,h0:kindH(it.k),r,h,x:it.x,z:it.z,cy:it.y+h/2,yaw:it.yaw,on:it.on,state:0,q:qaxis(0,1,0,it.yaw),vy:0,ox:0,oz:0,w:0,ax:0,az:0,spin:0,wob:0,goal:goalKinds.has(gk),xp:itemXp(it),counted:false,moved:true};});
  const grid=new Map();for(const it of items){const k=key(it.x,it.z);it.cell=k;if(!grid.has(k))grid.set(k,[]);grid.get(k).push(it.i);}
  const maxR=Math.max(.3,...items.map(it=>it.r));
  return {def,items,grid,maxR,hole:{x:def.start.x,z:def.start.z,size:1,r:holeRadius(1),rT:holeRadius(1),xp:0,vx:0,vz:0},
-  goals:def.goals.map(g=>({k:g.k,need:g.need,got:0})),time:def.time,elapsed:0,falling:[],stacked:items.filter(it=>it.on>=0).map(it=>it.i),
-  events:[],done:false,won:false,clearTime:0,eaten:0,charges:{grow:charges,speed:charges,magnet:charges,freeze:charges},active:{speed:0,magnet:0,freeze:0}};
+  goals:def.goals.map(g=>({k:g.k,need:g.need,got:0})),time:def.time,elapsed:0,falling:[],drops:[],topples:[],stacked:items.filter(it=>it.on>=0).map(it=>it.i),
+  events:[],done:false,won:false,clearTime:0,eaten:0,charges:typeof charges==='object'?{...charges}:{grow:charges,speed:charges,magnet:charges,freeze:charges},active:{speed:0,magnet:0,freeze:0}};
 }
 function sizeProgress(sim){return Math.min(1,sim.hole.xp/sizeNeed(sim.hole.size,sim.def.growBase));}
 function goalTotal(sim){return sim.goals.reduce((s,g)=>s+Math.min(g.got,g.need),0);}
@@ -39,6 +39,22 @@ function award(sim,it){sim.eaten++;const score=sim.def.mode==='score';const g=sc
  const h=sim.hole;h.xp+=it.xp;let grew=false;while(h.xp>=sizeNeed(h.size,sim.def.growBase)){h.xp-=sizeNeed(h.size,sim.def.growBase);h.size++;h.rT=holeRadius(h.size);grew=true;}
  sim.events.push({type:'eat',k:it.gk,goal:!!g,xp:it.xp,x:it.x,z:it.z});if(grew)sim.events.push({type:'size',size:h.size});
  if(!sim.done&&sim.goals.every(g=>g.got>=g.need)){sim.done=true;sim.won=true;sim.clearTime=sim.elapsed;sim.events.push({type:'win'});}}
+const topSpeed=r=>2.42*Math.pow(r/.5,.42);
+// Current support of a stacked prop; null = the floor. A prop still tipping into the hole keeps carrying the column
+// until its top passes the floor, so a tower over the hole sinks one piece at a time (as in the video) instead of free-falling.
+function supportOf(sim,it){while(it.on>=0){const s=sim.items[it.on];if(s.state===0||s.state===3||(s.state===1&&s.cy+s.h/2>.02))return s;it.on=s.on;}return null;}
+// Everything standing on `base` (transitively), base first.
+function columnOf(sim,base){const col=[base.i],set=new Set(col);let grew=true;while(grew){grew=false;for(const i of sim.stacked){const it=sim.items[i];if(!set.has(i)&&set.has(it.on)&&(it.state===0||it.state===3)){set.add(i);col.push(i);grew=true;}}}return col;}
+// Centre height of a prop lying on its side after a topple (a wooden disc rests on its edge).
+const lieHeight=it=>Math.max(it.h/2,it.r*.9);
+// A dropped prop reached the floor: into the hole if it is over it, and a tower whose new base lands on the rim tips over across the hole.
+function landed(sim,it){const h=sim.hole,d=Math.hypot(it.x-h.x,it.z-h.z);relocate(sim,it);if(sim.done)return;
+ if(it.r<=h.r*.96&&d<h.r-it.r*.15){startFall(sim,it,0);return;}
+ if(d<h.r+it.r*2.2&&columnOf(sim,it).length>=3)topple(sim,it,d>1e-3?(h.x-it.x)/d:1,d>1e-3?(h.z-it.z)/d:0);}
+function topple(sim,base,ux,uz){const col=columnOf(sim,base);let H=.3;
+ const items=col.map(i=>{const it=sim.items[i];H=Math.max(H,it.cy+it.h/2);return {i,c:it.cy,q0:it.q,j:(((i*7919)%11)/11-.5)*.3};});
+ for(const p of items){const it=sim.items[p.i];it.state=4;it.on=-1;it.vy=0;it.wob=0;}
+ sim.topples.push({items,px:base.x,pz:base.z,ux,uz,th:.03,w:.5,H});sim.events.push({type:'topple',x:base.x,z:base.z});}
 // input: {x,z} direction with length 0..1 (screen up = -z).
 function stepSim(sim,dt,input={x:0,z:0}){
  const h=sim.hole,def=sim.def;if(dt<=0)return;
@@ -47,9 +63,11 @@ function stepSim(sim,dt,input={x:0,z:0}){
   if(sim.time<=0){sim.done=true;sim.won=false;sim.events.push({type:'lose'});}}
  // springy growth: a quick swell with a small overshoot
  h.rv=(h.rv||0)+((h.rT-h.r)*90-(h.rv||0)*13)*dt;h.r+=h.rv*dt;
- const mag=Math.min(1,Math.hypot(input.x,input.z)),speed=(2.4+h.r*2.2)*(sim.active.speed>0?1.6:1)*(sim.done?0:1);
+ // Top speed measured from the owner's Oct 14 phone video (floor scroll at full stick vs the hole's size):
+ // 2.42 u/s at Size 1 (~2.4 hole widths a second), rising about as fast as the camera pulls back. Full speed in ~0.1 s, stops as fast.
+ const mag=Math.min(1,Math.hypot(input.x,input.z)),speed=topSpeed(h.r)*(sim.active.speed>0?1.6:1)*(sim.done?0:1);
  const tvx=mag?input.x/Math.max(1e-6,Math.hypot(input.x,input.z))*mag*speed:0,tvz=mag?input.z/Math.max(1e-6,Math.hypot(input.x,input.z))*mag*speed:0;
- h.vx+=(tvx-h.vx)*Math.min(1,dt*14);h.vz+=(tvz-h.vz)*Math.min(1,dt*14);
+ const acc=1-Math.exp(-dt*20);h.vx+=(tvx-h.vx)*acc;h.vz+=(tvz-h.vz)*acc;
  const mx=Math.max(0,def.W/2-h.r*.8),mz=Math.max(0,def.D/2-h.r*.8);h.x=Math.max(-mx,Math.min(mx,h.x+h.vx*dt));h.z=Math.max(-mz,Math.min(mz,h.z+h.vz*dt));
  // walled grass islands: the rim slides along their walls
  for(const o of def.islands||[]){const m=h.r*.85,x0=o[0]-m,x1=o[2]+m,z0=o[1]-m,z1=o[3]+m;if(h.x>x0&&h.x<x1&&h.z>z0&&h.z<z1){const dl=h.x-x0,dr=x1-h.x,dt2=h.z-z0,db=z1-h.z,mn=Math.min(dl,dr,dt2,db);if(mn===dl){h.x=x0;h.vx=Math.min(0,h.vx);}else if(mn===dr){h.x=x1;h.vx=Math.max(0,h.vx);}else if(mn===dt2){h.z=z0;h.vz=Math.min(0,h.vz);}else{h.z=z1;h.vz=Math.max(0,h.vz);}}}
@@ -65,13 +83,23 @@ function stepSim(sim,dt,input={x:0,z:0}){
    if(d>1e-4&&d<h.r){const pull=Math.min(d,(1.1+h.r*.6)*dt*it.wob);it.x+=(h.x-it.x)/d*pull;it.z+=(h.z-it.z)/d*pull;relocate(sim,it);}
    const sink=Math.min(it.h*.42,Math.pow(h.r/it.r,2)*it.h*.5)*over*it.wob;it.cy=it.h/2-sink;it.lean=it.wob*(.06+.3*Math.min(1,d/h.r));it.moved=true;}
   else if(it.wob>0){it.wob=Math.max(0,it.wob-dt*4);it.cy+=(it.h/2-it.cy)*Math.min(1,dt*8);it.lean=(it.lean||0)*it.wob;it.moved=true;}});
- // stacks lose their support
- if(sim.stacked.length){const keep=[];for(const i of sim.stacked){const it=sim.items[i];if(it.state!==0||it.on<0)continue;const s=sim.items[it.on];if(s.state!==0){it.state=3;it.vy=0;it.on=-1;sim.falling.push(i);}else keep.push(i);}sim.stacked=keep;}
- // falling / dropping props
+ // stacks: a prop whose support is swallowed drops onto whatever is under it (the column above rides down with it)
+ if(sim.stacked.length){const keep=[];for(const i of sim.stacked){const it=sim.items[i];if(it.on<0||it.state===1||it.state===2||it.state===4)continue;
+   const s=supportOf(sim,it);if(it.state===0&&(!s||s.state!==0)){it.state=3;it.vy=0;sim.drops.push(i);}if(it.on>=0)keep.push(i);}sim.stacked=keep;}
+ if(sim.drops.length){const keep=[];sim.drops.sort((a,b)=>a-b);for(const i of sim.drops){const it=sim.items[i];if(it.state!==3)continue;
+   const s=supportOf(sim,it);it.vy-=G*dt;it.cy+=it.vy*dt;it.moved=true;const floorY=s?s.cy+s.h/2:0;
+   if(it.cy-it.h/2<=floorY){it.cy=floorY+it.h/2;if(s&&s.state!==0){it.vy=Math.max(it.vy,Math.min(0,s.vy));keep.push(i);continue;}
+    it.vy=0;it.state=0;if(!s)landed(sim,it);continue;}
+   keep.push(i);}sim.drops=keep;}
+ // toppling towers: the column pivots on its base like a falling rod; pieces that pass over the hole drop in
+ if(sim.topples.length){const keep=[];for(const t of sim.topples){t.w+=1.5*G/t.H*Math.sin(t.th+.12)*dt;t.th=Math.min(Math.PI/2,t.th+t.w*dt);const end=t.th>=Math.PI/2-1e-3;
+   for(const p of t.items){const it=sim.items[p.i];if(it.state!==4)continue;const along=p.c*Math.sin(t.th)*1.08+p.j,lie=lieHeight(it);
+    it.x=t.px+t.ux*along-t.uz*p.j*.6;it.z=t.pz+t.uz*along+t.ux*p.j*.6;it.cy=Math.max(lie,p.c*Math.cos(t.th));it.q=qnorm(qmul(qaxis(t.uz,0,-t.ux,t.th),p.q0));it.moved=true;
+    const d=Math.hypot(it.x-h.x,it.z-h.z);if(!sim.done&&it.r<=h.r*.96&&d<h.r-it.r*.15&&it.cy-lie<.35){it.cy=lie;startFall(sim,it,-t.w*p.c*.5);continue;}
+    if(end){it.state=0;it.cy=lie;it.vy=0;relocate(sim,it);}}
+   if(!end)keep.push(t);}sim.topples=keep;}
+ // falling props
  if(sim.falling.length){const keep=[];for(const i of sim.falling){const it=sim.items[i];
-  if(it.state===3){it.vy-=G*dt;it.cy+=it.vy*dt;it.moved=true;if(it.cy-it.h/2<=0){const d=Math.hypot(it.x-h.x,it.z-h.z);
-    if(it.r<=h.r*.96&&d<h.r-it.r*.15&&!sim.done){startFall(sim,it,it.vy);sim.falling.pop();keep.push(i);continue;}
-    it.cy=it.h/2;it.vy=0;it.state=0;it.moved=true;continue;}keep.push(i);continue;}
   if(it.state!==1)continue;
   it.age+=dt;const lim=Math.max(0,h.r*.97-it.r*.55),l=Math.hypot(it.ox,it.oz)||1e-6,ux=it.ox/l,uz=it.oz/l,lever=it.h*.5+it.r*.5;
   if(it.tip){ // still resting partly on the rim: slide inward, bottom drops slowly, the tilt builds up
@@ -121,4 +149,4 @@ function botInput(sim,dt=1/30){const h=sim.hole,b=sim.bot||(sim.bot={t:null,best
  l=Math.hypot(dx,dz)||1;const slow=Math.min(1,d/(h.r*.6)+.25);return {x:dx/l*slow,z:dz/l*slow};}
 // does segment (ax,az)-(bx,bz) pass through the rectangle's interior?
 function segHitsRect(ax,az,bx,bz,x0,z0,x1,z1){let t0=0,t1=1;const dx=bx-ax,dz=bz-az;for(const [p,q] of [[-dx,ax-x0],[dx,x1-ax],[-dz,az-z0],[dz,z1-az]]){if(Math.abs(p)<1e-9){if(q<0)return false;continue;}const r=q/p;if(p<0){if(r>t1)return false;if(r>t0)t0=r;}else{if(r<t0)return false;if(r<t1)t1=r;}}return t0<t1;}
-Object.assign(exports,{createSim,stepSim,useBoost,sizeProgress,goalTotal,goalNeed,botInput,BOOSTS,qaxis,qmul});
+Object.assign(exports,{createSim,stepSim,useBoost,sizeProgress,goalTotal,goalNeed,botInput,BOOSTS,qaxis,qmul,topSpeed});

@@ -6,7 +6,7 @@ const TAU=Math.PI*2;
 function makeBuilder(rnd){
  const items=[];
  const R=(k,o)=>KINDS[k].r*(o.sc||1),H=(k,o)=>KINDS[k].h*(o.sc||1);
- const add=(k,x,z,o={})=>{items.push({k,x,z,y:o.y||0,yaw:o.yaw??(o.rand?rnd()*TAU:0),on:o.on??-1,sc:o.sc||1,gk:o.gk});return items.length-1;};
+ const add=(k,x,z,o={})=>{const it={k,x,z,y:o.y||0,yaw:o.yaw??(o.rand?rnd()*TAU:0),on:o.on??-1,sc:o.sc||1,gk:o.gk};if(o.xp)it.xp=o.xp;items.push(it);return items.length-1;};
  const B={items,add,rnd,
   // n props evenly along a straight line
   row(k,x0,z0,x1,z1,n,o={}){const yaw=o.yaw??Math.atan2(x1-x0,z1-z0);for(let i=0;i<n;i++){const t=n<2?.5:i/(n-1);add(k,x0+(x1-x0)*t,z0+(z1-z0)*t,{...o,yaw});}},

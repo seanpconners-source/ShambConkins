@@ -247,6 +247,33 @@ kind('bomb','Bomb',.45,.9,['hazard'],g=>{const R=C('#e0202a');add(g,sphere(18,12
 kind('rum-ham','Rum Ham',.4,.42,['cameo'],g=>{add(g,sphere(14,10),{at:[0,.16,0],s:[.34,.24,.3]},(p)=>p[1]>.55?C('#f08a7a'):C('#c9583e'));add(g,cyl(.05,.4),{at:[.2,.22,0],r:[0,0,-1.2]},C('#fff6e6'));for(const dy of [-.05,.05])add(g,sphere(8,6),{at:[.58,.36+dy,0],s:.06},C('#fff6e6'));});
 kind('fight-milk','Fight Milk',.2,.56,['cameo'],g=>{add(g,lathe([[0,0],[.16,0,1],[.17,.32],[.1,.44],[.07,.48,1],[0,.48]],14),{},(p)=>p[1]>.12&&p[1]<.26?C('#d8232a'):WHITE);add(g,cyl(.08,.08),{at:[0,.48,0]},C('#d8232a'));});
 kind('head','Head Token',.3,.45,['cameo'],g=>{add(g,cyl(.27,.07,20),{at:[0,.22,0],r:[.87,0,0]},C('#ffc93a'));add(g,torus(.27,.03,20,6),{at:[0,.22,0],r:[.87,0,0]},C('#ffe27a'));add(g,rbox(.3,.06,.18,.02),{at:[0,0,-.05]},C('#d99a1e'));});
+// Levels 2-4 from the owner's Oct 14 phone video (sizes measured against the Size 1 hole: black opening = 1.0 across).
+kind('orange-slice','Orange Slice',.27,.08,['fruit'],g=>{add(g,cyl(.27,.07,22),{},(p,n)=>{const r=Math.hypot(p[0],p[2]);if(n[1]<.5)return C('#f39a1c');if(r>.25)return C('#f7a828');if(r>.225)return C('#fff6dc');const a=Math.atan2(p[2],p[0]);return Math.abs(((a/TAU*9)%1+1)%1-.5)>.44||r<.03?C('#fff6dc'):C('#ffd660');});});
+kind('dice-white','Dice',.33,.46,['toys'],g=>{add(g,rbox(.46,.46,.46,.08),{},C('#f4f4f6'));const P=C('#1c1d22');
+ for(const [x,z] of [[-.12,-.12],[-.12,0],[-.12,.12],[.12,-.12],[.12,0],[.12,.12]])add(g,sphere(6,4),{at:[x,.46,z],s:[.045,.012,.045]},P);
+ for(const [x,y] of [[-.12,.11],[.12,.11],[0,.23],[-.12,.35],[.12,.35]])add(g,sphere(6,4),{at:[x,y,.23],s:[.045,.045,.012]},P);
+ for(const [z,y] of [[-.12,.11],[.12,.11],[-.12,.35],[.12,.35]])add(g,sphere(6,4),{at:[.23,y,z],s:[.012,.045,.045]},P);});
+for(const [id,name,col] of [['jelly-green','Green Jelly','#86dc22'],['jelly-red','Red Jelly','#ec1a22'],['jelly-orange','Orange Jelly','#ff9c12']])
+ kind(id,name,.5,.5,['treats'],g=>{const c=C(col),hi=mix(c,WHITE,.25),lo=mix(c,C('#000000'),.25);
+  for(let i=0;i<8;i++){const a=i/8*TAU;add(g,sphere(12,9),{at:[Math.cos(a)*.3,.21,Math.sin(a)*.3],s:[.2,.22,.2]},(p)=>p[1]>.3?hi:c);}
+  add(g,lathe([[0,0],[.36,0,1],[.38,.2],[.3,.4],[.22,.46],[.13,.47],[.1,.4],[0,.38]],16),{},(p)=>Math.hypot(p[0],p[2])<.12&&p[1]>.36?lo:c);});
+kind('wood-disc','Wooden Disc',.43,.2,['toys'],g=>{add(g,cyl(.43,.19,22),{},(p,n)=>{if(n[1]<.5)return Math.sin(p[1]*90)>.6?C('#c97f4c'):C('#d9915a');const r=Math.hypot(p[0],p[2]);return Math.sin(r*55)>.75?C('#e3a774'):C('#f2bf8c');});});
+for(const [id,name,base,spot] of [['egg-pink','Pink Dino Egg','#ff92d2','#e8459f'],['egg-orange','Spotted Egg','#ffc2a4','#e8784e']])
+ kind(id,name,.26,.56,['toys'],g=>{const sp=[[0,1,0],[.8,.5,.3],[-.7,.4,-.5],[.2,.2,.95],[-.5,0,.8],[.6,-.1,-.75],[-.95,-.1,.1],[.3,.7,-.6]].map(v=>{const l=Math.hypot(...v);return v.map(x=>x/l);});
+  add(g,lathe([[0,0],[.15,.03],[.25,.16],[.26,.3],[.2,.46],[.11,.54],[0,.56]],14),{},(p)=>{const l=Math.hypot(p[0],p[1]-.28,p[2])||1,u=[p[0]/l,(p[1]-.28)/l,p[2]/l];for(const v of sp)if(u[0]*v[0]+u[1]*v[1]+u[2]*v[2]>.9)return C(spot);return C(base);});});
+for(const [id,body,band] of [['popsicle-melon','#f0404c','#58c04a'],['popsicle-ice','#3d8ff2',null]])
+ kind(id,'Popsicle',.46,.14,['treats'],g=>{const B=C(body);
+  if(band){add(g,rbox(.44,.13,.56,.12),{at:[0,0,-.21]},B);add(g,rbox(.43,.125,.05,.01),{at:[0,0,.09]},C('#f4f6ea'));add(g,rbox(.44,.13,.16,.05),{at:[0,0,.18]},C(band));}
+  else{add(g,rbox(.44,.13,.74,.12),{at:[0,0,-.12]},B);add(g,rbox(.32,.02,.5,.08),{at:[0,.125,-.16]},mix(B,WHITE,.22));}
+  add(g,rbox(.1,.05,.24,.03),{at:[0,.04,.36]},C('#e8c890'));});
+kind('strawberry-half','Strawberry Half',.26,.12,['fruit'],g=>{const poly=[[0,-.27],[.14,-.22],[.22,-.08],[.2,.08],[.12,.2],[0,.25],[-.12,.2],[-.2,.08],[-.22,-.08],[-.14,-.22]];
+ add(g,extrude(poly,.1,true),{},(p,n)=>{if(n[1]<.5)return C('#b00c18');const r=Math.hypot(p[0]/.75,p[2]-.02);if(r<.06)return C('#ffe2dc');if(r<.12)return C('#f25058');return Math.sin(p[0]*70)*Math.sin(p[2]*70)>.85?C('#ffd27a'):C('#cc1222');});
+ add(g,extrude(starPoly(5,.1,.04),.03),{at:[0,.06,-.24]},C('#3dbb3a'));});
+kind('tangerine','Tangerine',.26,.44,['fruit'],g=>{add(g,sphere(16,10),{at:[0,.21,0],s:[.26,.21,.26]},(p)=>p[1]>.6?C('#f77a26'):C('#ee6418'));add(g,sphere(6,4),{at:[0,.42,0],s:[.03,.015,.03]},C('#3a6a1e'));add(g,sphere(8,5),{at:[.05,.42,.02],s:[.07,.015,.035],r:[0,.5,0]},C('#3fa02c'));});
+kind('onion-red','Red Onion',.24,.5,['fruit','kitchen'],g=>{add(g,lathe([[0,0],[.12,.02],[.22,.12],[.24,.24],[.18,.36],[.08,.44],[0,.46]],14),{},(p)=>{const a=Math.atan2(p[2],p[0]);return Math.sin(a*7)>.7?C('#c86ad8'):C('#9a3ab4');});
+ for(const s of [-1,1])add(g,cyl(.02,.2,6),{at:[s*.02,.42,0],r:[0,0,s*.25]},C('#8ad05a'));});
+kind('watermelon-lying','Watermelon',.86,1.36,['fruit'],g=>{add(g,sphere(22,14),{at:[0,.68,0],s:[.86,.68,.7]},(p)=>{const a=Math.atan2(p[1],p[2]);return Math.sin(a*11+p[0]*1.5)>.15?C('#1f8a2c'):C('#4bc04a');});});
+for(const [id,xp] of [['wood-disc',1],['popsicle-melon',1],['popsicle-ice',1],['watermelon-lying',10],['jelly-green',2],['jelly-red',2],['jelly-orange',2]])KINDS[id].xp=xp;
 // Face quad placement on the head token (local space): centre and normal of the coin's front face.
 const HEAD_FACE={c:[0,.22+.075*.64,.075*.766],tilt:-(Math.PI/2-.87),size:.5};
 const THEMES={

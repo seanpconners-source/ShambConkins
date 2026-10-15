@@ -7,13 +7,17 @@ const {seededRandom}=require("src/utils.js");
 const {KINDS,THEMES}=require("src/engines/holeIt/meshes.js");
 const {makeBuilder,removeItems,insideRect,topUp,TAU}=require("src/engines/holeIt/layout.js");
 const {HAND}=require("src/engines/holeIt/handLevels.js");
-const TIME=120;
-// Measured from the gameplay video: the hole's radius grows ~15% per Size.
-const holeRadius=size=>.5*Math.pow(1.15,size-1);
+// The real game's clock (Levels 2-3: 4:00, Level 4: 3:30 in the owner's Oct 14 phone video); hand levels set their own.
+const TIME=240;
+// Measured against dice/fruit in the owner's videos: Size 3 hole = 1.66x Size 1, Size 4 = 1.97x, Size 10 ≈ 3.6x
+// (fast early growth that slows down); radius 0.5 at Size 1.
+const holeRadius=size=>{const k=Math.min(size-1,25);return .5*(1+.34*k-.006*k*k+(size-1-k)*.04);};
 // xp to go from size N to N+1 = base·1.45^(N-1); base is tuned per level (def.growBase).
 const sizeNeed=(size,base=16)=>Math.max(1,Math.round(base*Math.pow(1.45,size-1)));
-// Points for one prop (the +1/+2/+4/+10/+15 popups in the video): ~footprint^1.6.
+// Points for one prop (the +1/+2/+4/+10/+15 popups in the videos): ~footprint^1.6, unless the kind or the item
+// carries the video's own value (apples +3, watermelon +10, popsicles and wooden discs +1).
 const propXp=r=>Math.max(1,Math.round(Math.pow(r/.3,1.6)));
+const itemXp=it=>it.k==='bomb'?0:it.xp??KINDS[it.k].xp??propXp(KINDS[it.k].r*(it.sc||1));
 // Smallest size whose hole swallows a prop of footprint r.
 const sizeFor=r=>{let s=1;while(holeRadius(s)*.96<r&&s<40)s++;return s;};
 const kindR=k=>KINDS[k].r,kindH=k=>KINDS[k].h;
@@ -112,7 +116,7 @@ function buildLevel(level){
   const t2=tally();goals=chosen.map(k=>({k,need:t2[k]||0})).filter(g=>g.need>0);}
  // bombs (swallow one and the turn is over): in the video's Level 34, and from Level 8 on in generated levels
  {const n=spec.bombs??(hand?0:L>=8?1+(L>=15)+(L>=25):0);if(n)topUp(B,'bomb',n,{sc:1,W,D,islands,start:{x:start.x,z:start.z-1.2},pad:1.4,yaw:0});} // open floor around them, so every prop can be reached from a safe side
- const value=it=>it.k==='bomb'?0:propXp(KINDS[it.k].r*(it.sc||1)),total=items.reduce((a,it)=>a+value(it),0);
+ const value=itemXp;
  if(mode==='score'&&spec.score){ // video target: make sure the board holds ~45% more points than that
   // fill empty patches of floor with small formations of the level's own props (grids and rings, like the rest)
   const kinds=[...new Set(items.filter(it=>it.k!=='bomb'&&!it.gk&&(it.sc||1)<2&&KINDS[it.k].r*(it.sc||1)<.5).map(it=>it.k))];
@@ -123,7 +127,7 @@ function buildLevel(level){
  // so the biggest prop on the board (Size 10 toy blocks in Level 30) becomes edible near the end, as in the video
  const props=items.filter(it=>it.k!=='bomb').map(it=>({r:KINDS[it.k].r*(it.sc||1),xp:value(it)})),maxR=props.reduce((m,p)=>Math.max(m,p.r),0),Sx=Math.max(3,sizeFor(maxR));
  let growBase=Infinity;for(let sz=1;sz<Sx;sz++){const edible=props.reduce((a,p)=>a+(p.r<=holeRadius(sz)*.96?p.xp:0),0),cum=(Math.pow(1.45,sz)-1)/.45;growBase=Math.min(growBase,.65*edible/cum);}
- growBase=Math.max(1,Math.min(60,growBase));
+ growBase=spec.growBase||Math.max(1,Math.min(60,growBase));
  return {level,theme,themeName:T.name,floor:spec.floor||T.floor,W,D,start,islands,items,goals,mode,time:spec.time||TIME,growBase,hand:!!hand,goalKinds:new Set(goals.map(g=>g.k))};
 }
-Object.assign(exports,{isScoreLevel,removeItems,buildLevel,holeRadius,sizeNeed,propXp,sizeFor,kindR,kindH,levelTheme,TIME,HAND});
+Object.assign(exports,{isScoreLevel,removeItems,buildLevel,holeRadius,sizeNeed,propXp,itemXp,sizeFor,kindR,kindH,levelTheme,TIME,HAND});

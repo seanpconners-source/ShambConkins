@@ -70,8 +70,23 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   the hole into their card (`turn.flyers`, card counts wait for arrivals); too-big props sag into the mouth on the rim, lean in
   and get nudged by the moving rim (`it.wob/lean`, `relocate` keeps the grid right). New props: popsicles ×6, kiwi, tomato;
   Sweet Shop theme (`treats`); Lego brick towers (`fLegoTowers`) in toy/treat levels.
-  Third owner video (Hard Level 30 + Levels 31-34, Oct 14): camera measured from it (hole rim 27% of the short side at Size 1 →
-  ~61% at Size 10: `cameraFor`), hole radius ×1.15/size, prop value (r/.3)^1.6 (+1/+2/+4/+10/+15), per-level growth curve
+  Fourth owner video (Oct 14, his Galaxy Fold inner screen 1080x1200, `Claude Share/`): Levels 2-3 whole + first second of 4.
+  Measured by stitching a map from the video (floor-shift tracking × camera scale): camera = Unity-style fixed 60° vertical FOV,
+  pitch 64°, centred on the hole, dist 9.53·(r/.5)^.37 (`cameraFor` in holeIt.js; rim = 11.8% of screen HEIGHT at Size 1, so tall
+  phones see less width, as in the real game); `holeRadius` .5·(1+.34k−.006k²) (Size 3 = 1.66x, Size 4 = 1.97x, Size 10 ≈ 3.6x);
+  top speed 2.42·(r/.5)^.42 u/s (`topSpeed`, was ~45% faster), full speed in ~0.1 s (`acc` rate 20/s), camera follow 18/s;
+  joystick full at 37 px of 1080 knob travel. HUD sizes are the video's px × u (u = width/1080): level pill, timer (alarm clock,
+  green bar), cards pop in one by one, booster bar 76 px right of centre, padlocks; boosters unlock grow L3 (video), speed/magnet/
+  freeze L6/9/12 (guess). No intro screen any more (real game has none): the level shows at once, clock waits for the first drag;
+  end button says Next; heading arrow outside the rim; "Size N" scales with the hole; lighter floor halo, plank floor, softer grass.
+  Clocks: default 4:00 (`TIME` 240; owner chose real clocks everywhere), hand levels set `time` (L4 3:30). Hand levels 2-4 in
+  `handLevels.js` (`arm` spiral arms, `popRing`, `orangeBlock`), `growBase:16`; per-kind/per-item `xp` (`itemXp`: apples +3,
+  watermelon +10, popsicles/discs +1). New props: orange-slice, dice-white, jelly-green/red/orange, wood-disc, egg-pink/orange,
+  popsicle-melon/ice, strawberry-half, onion-red, tangerine, watermelon-lying. Towers (sim.js): a column rides down on the piece
+  tipping into the hole (`supportOf`, ~7 pieces/s like the video), `drops` list for unsupported pieces, and a base that lands near
+  the hole tips the column over toward it (`topple`, rod pivot, pieces over the hole fall in, the rest lie on their side).
+  Level 4's upper half is a guess (only its bottom is on video; counts 200/88/228 exact). Comparisons: real frame vs ours matched.
+  Third owner video (Hard Level 30 + Levels 31-34, Oct 14): prop value (r/.3)^1.6 (+1/+2/+4/+10/+15), per-level growth curve
   (`growBase`: at every size you can reach the next by eating ~65% of what already fits, so the biggest prop becomes edible near
   the end). Props have a per-instance scale `sc` (giant duck = duck sc 4.6, goal key `gk` 'duck+' → BIG card badge). Walled grass
   islands (`def.islands`, hole slides along them; drawn as walls + raised grass). `layout.js` = placement toolkit (row/grid/rings/
@@ -84,8 +99,8 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   `startFall` on a bomb ends the turn (`sim.bombed`, BOOM! card, rings + flash); 3 on Level 34 (`spec.bombs`), 1-3 from Level 8 in
   generated levels, placed in open floor (`topUp` `pad:1.4`). The bot treats fitting bombs as no-go circles; the clearability
   test plays each layout without bombs. Map tool idea: dump `buildLevel(n).items` and draw circles (used to lay out 30-34). Full bleed via `fullBleed(s)` (engine `hole` in the `noBleed` list; floating Pause/Exit replace its own pause
-  button, boosters sit above the ⤢ toggle, player name/target to beat under the pills). Flow in `engines/holeIt.js`: pass → "Level N" intro (duck/apple/croissant over a
-  hole, Play) → 2:00 play (floating joystick, clock waits for the first drag, level 1 infinity tutorial) → Bravo!/Time's up →
+  button, boosters sit above the ⤢ toggle, player name/target to beat under the pills). Flow in `engines/holeIt.js`: pass (Ready) →
+  play at once (floating joystick, clock waits for the first drag, level 1 infinity tutorial) → Bravo!/Time's up (Next) →
   P2 plays the same level. Score = goal items + (clear ? 1000 + 10×seconds left). `profile.holeItLevel` (load whitelisted
   in `profile.js`) advances when either player clears. Test: `tests/holeit.mjs` (`--node` part is in `npm test`;
   `node tests/holeit.mjs <level> 390x780` plays both turns, screenshots `/tmp/claude-0/sc/holeit-*`). The old
