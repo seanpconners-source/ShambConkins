@@ -40,6 +40,12 @@ const shot = async (page, n) => { await page.screenshot({path: `${dir}/holeit-${
 const {browser, page, errors} = await open({viewport: {width: vw, height: vh}});
 await page.evaluate(lv => { window.ShambConkins.store.profile.holeItLevel = lv; window.ShambConkins.requestGame({id: 'paddys-hole', origin: 'arcade'}); }, level);
 await page.waitForTimeout(900);
+// game card (Start game), then the level map (player 1 picks): screenshot it, then pick the level
+await page.evaluate(() => { const d = document.getElementById('dialog'); if (d?.open) d.querySelector('button.primary')?.click(); });
+await page.waitForFunction(() => window.ShambConkins.store.session?.debug?.view === 'map', null, {timeout: 15000});
+await page.waitForTimeout(700); await page.screenshot({path: `${dir}/holeit-${level}-${vw}-map.png`});
+await page.evaluate(lv => { window.ShambConkins.store.session.debug.pick = lv; }, level);
+await page.waitForTimeout(800);
 const clickReady = () => page.evaluate(() => { const d = document.getElementById('dialog'); const b = d?.open ? d.querySelector('button.primary') : document.querySelector('.pass-overlay [data-ready]'); b?.click(); return !!b; });
 for (let i = 0; i < 3; i++) { await clickReady(); await page.waitForTimeout(500); }
 const dbg = () => page.evaluate(() => { const d = window.ShambConkins.store.session?.debug; if (!d?.sim) return null; const s = d.sim; return {phase: d.turn?.phase, player: d.turn?.player, time: s.time, size: s.hole.size, goals: s.goals.map(g => g.got + '/' + g.need).join(' '), done: s.done, won: s.won}; });
@@ -60,14 +66,17 @@ for (const p of [0, 1]) {
     if (Date.now() - t0 > 3000 * (shots + 1) && shots < 4) { shots++; await shot(page, `p${p}-play${shots}`); console.log('p' + p, JSON.stringify(await dbg())); }
   }
   await page.mouse.up(); await page.waitForTimeout(p ? 0 : 0);
-  await page.evaluate(() => { const s = window.ShambConkins.store.session?.debug?.sim; if (s && !s.done) s.time = 0.01; });
+  // P1 is handed the clear (checks the map progress below), P2 runs out of time
+  await page.evaluate(p => { const s = window.ShambConkins.store.session?.debug?.sim; if (!s || s.done) return; if (p === 0) { s.done = true; s.won = true; s.clearTime = s.elapsed; s.events.push({type: 'win'}); } else s.time = 0.01; }, p);
   await page.waitForFunction(() => (window.ShambConkins.store.session?.debug?.turn?.endT || 0) > 1, null, {timeout: 20000}); await shot(page, `p${p}-end`); console.log('end p' + p, JSON.stringify(await dbg()));
   await page.mouse.click(box.x + box.w / 2, box.y + box.h * .76); await page.waitForTimeout(700);
   if (p === 0) { await page.waitForTimeout(300); await clickReady(); await page.waitForTimeout(600); }
 }
 await page.waitForTimeout(800);
-const result = await page.evaluate(() => ({level: window.ShambConkins.store.profile.holeItLevel, dialog: document.getElementById('dialog')?.innerText?.slice(0, 300)}));
+const result = await page.evaluate(() => ({level: window.ShambConkins.store.profile.holeItLevel, stars: window.ShambConkins.store.profile.holeItStars, dialog: document.getElementById('dialog')?.innerText?.slice(0, 300)}));
 console.log('after game', JSON.stringify(result));
+if (result.level !== level + 1) fail(`a clear should open Level ${level + 1} on the map, saved level is ${result.level}`);
+if (!(result.stars?.[level] >= 1)) fail('stars for the cleared level were not saved');
 await shot(page, 'result');
 console.log('errors', errors.slice(0, 6));
 await browser.close();

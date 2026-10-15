@@ -13,6 +13,7 @@ const {createRenderer,affine}=require("src/engines/holeIt/gl.js");
 const {fullBleed}=require("src/engines/fullBleed.js");
 const {KINDS,HEAD_FACE,C,geo,add,rbox}=require("src/engines/holeIt/meshes.js");
 const {buildLevel}=require("src/engines/holeIt/levels.js");
+const {createLevelMap,starsFor}=require("src/engines/holeIt/levelMap.js");
 const {createSim,stepSim,useBoost,sizeProgress,goalTotal,goalNeed,qaxis,qmul}=require("src/engines/holeIt/sim.js");
 
 const BOOST_ORDER=['grow','speed','magnet','freeze'];
@@ -64,8 +65,8 @@ async function holeIt(s){
  if(!R){s.status('Hole.it needs WebGL, which this browser has turned off.');await s.pass(0,'Hole.it needs WebGL (3D graphics), which this browser has turned off. The round is skipped as a tie.','OK');s.finish([0,0],'Hole.it could not start: WebGL is unavailable.');return;}
  s.cleanup(()=>R.dispose());
  const dpr=()=>Math.min(2,window.devicePixelRatio||1);
- const level=currentHoleLevel(),def=buildLevel(level);
- R.setWalls(trayWalls(def));
+ // the level is chosen on the level map first (player 1 picks), then built by setupLevel()
+ let level=0,def=null,map=null;
  // Goal-card thumbnails rendered by the same 3D renderer.
  const thumbs={};
  function thumb(k){if(thumbs[k])return thumbs[k];const kd=KINDS[k],size=96,cv=document.createElement('canvas');cv.width=cv.height=size;
@@ -75,11 +76,8 @@ async function holeIt(s){
  // Head-token faces: both players' portraits on one atlas.
  const atlas=document.createElement('canvas');atlas.width=256;atlas.height=128;
  const paintAtlas=()=>{const ax=atlas.getContext('2d');ax.clearRect(0,0,256,128);for(let i=0;i<2;i++){try{s.sprite(ax,i,64+i*128,64,118,{exact:true});}catch{}}R.setHeadTexture(atlas);};
- for(const g of def.goals)if(KINDS[baseKind(g.k)])thumb(baseKind(g.k));
- if(def.items.some(it=>it.k==='head')){paintAtlas();for(const ms of [400,1500,4000])setTimeout(()=>{if(s.alive)paintAtlas();},ms);}
-
  const results=[null,null];let turn=null,finishResolve=null,contact=null,keys={};
- const boostOn=id=>level>=BOOST_UNLOCK[id],showBoosts=level>=BOOST_UNLOCK.grow;
+ const boostOn=id=>level>=BOOST_UNLOCK[id];let showBoosts=false;
  // ---- layout helpers (CSS px) ----
  // Every HUD size below is the video's pixel size on its 1080-wide screen times u (the real UI scales with the width).
  const L={};
@@ -95,12 +93,17 @@ async function holeIt(s){
  function syncCanvases(){const w=c.clientWidth,h=c.clientHeight,l=c.offsetLeft,t=c.offsetTop,k=dpr();for(const e of [glc,hud]){e.style.left=l+'px';e.style.top=t+'px';e.style.width=w+'px';e.style.height=h+'px';}
   const hw=Math.round(s.W*k),hh=Math.round(s.H*k);if(hud.width!==hw)hud.width=hw;if(hud.height!==hh)hud.height=hh;}
 
- // ---- per-kind instance buffers ----
- const byKind={};for(const it of def.items)byKind[it.k]=(byKind[it.k]||0)+1;
- const inst={};for(const k of Object.keys(byKind))inst[k]={data:new Float32Array(byKind[k]*16+16),count:0};
- let shadowData=new Float32Array(def.items.length*4+4);
+ // ---- per-kind instance buffers (filled in by setupLevel) ----
+ let inst={},shadowData=new Float32Array(4);
+ const cam={x:0,z:0,dist:0};
+ function setupLevel(n){level=n;def=buildLevel(level);showBoosts=level>=BOOST_UNLOCK.grow;R.setWalls(trayWalls(def));
+  const byKind={};for(const it of def.items)byKind[it.k]=(byKind[it.k]||0)+1;
+  inst={};for(const k of Object.keys(byKind))inst[k]={data:new Float32Array(byKind[k]*16+16),count:0};
+  shadowData=new Float32Array(def.items.length*4+4);cam.x=def.start.x;cam.z=def.start.z;cam.dist=0;
+  for(const g of def.goals)if(KINDS[baseKind(g.k)])thumb(baseKind(g.k));
+  if(def.items.some(it=>it.k==='head')){paintAtlas();for(const ms of [400,1500,4000])setTimeout(()=>{if(s.alive)paintAtlas();},ms);}
+  s.hint(`Drag anywhere: your first touch is the joystick (the clock starts with your first drag). Swallow every prop shown on the cards before the ${fmt(def.time)} clock runs out. Smaller things fit first; every prop you eat fills the yellow arc and grows the hole (Size N). Towers fall over when you eat their base. Boosters (from Level 3, one each per turn): Potion +1 size, Lightning speed, Magnet pull, Snowflake stops the clock. Keyboard: arrows/WASD, 1–4 boosters.`);}
  // ---- camera ----
- const cam={x:def.start.x,z:def.start.z,dist:0};
  function renderPlay(sim,t,dt=1/60){const h=sim.hole,W=s.W,H=s.H,cf=cameraFor(h);if(!cam.dist)cam.dist=cf.dist;
   // frame-rate independent smoothing (same feel at 30, 60 or 120 fps); the video keeps the hole within a few px of the centre
   const kf=1-Math.exp(-dt*18),kz=1-Math.exp(-dt*3.2);cam.dist+=(cf.dist-cam.dist)*kz;cam.x+=(h.x-cam.x)*kf;cam.z+=(h.z-cam.z)*kf;
@@ -183,6 +186,7 @@ async function holeIt(s){
    if(sim.won){const sc=Math.min(1,tt*3.5),bounce=1+Math.sin(Math.min(1,tt*3)*Math.PI)*.18;x.save();x.translate(W/2,H*.24);x.scale(sc*bounce,sc*bounce);x.rotate(-.06);
      const g=x.createLinearGradient(0,-30,0,30);g.addColorStop(0,'#fff27a');g.addColorStop(1,'#ff9a1e');outlined(x,'Bravo!',0,0,Math.min(64,W*.16),g,'#7a2a10');x.restore();
      for(const f of turn.confetti){x.fillStyle=f.c;x.save();x.translate(f.x,f.y);x.rotate(f.a);x.fillRect(-4,-2,8,4);x.restore();}
+     {const n=starsFor(sim.time,sim.def.time),r=Math.min(26,W*.06);for(let i=0;i<3;i++){const ap=Math.max(0,Math.min(1,(tt-.35-i*.18)/.25));if(i<n&&ap>0)drawStar(x,W/2+(i-1)*r*2.5,H*.33-(i===1?r*.3:0),r*(1+.3*Math.sin(ap*Math.PI)));else{x.globalAlpha=.22;drawStar(x,W/2+(i-1)*r*2.5,H*.33-(i===1?r*.3:0),r*.8);x.globalAlpha=1;}}}
      outlined(x,`Cleared in ${sim.clearTime.toFixed(1)} s`,W/2,H*.4,22,'#fff','#141a33');outlined(x,`${fmt(sim.time)} left on the clock`,W/2,H*.4+30,15,'#c9d0ff','#141a33',undefined,800);}
    else if(sim.bombed){outlined(x,'BOOM!',W/2,H*.24,Math.min(64,W*.16),'#ffb02a','#5a1008');outlined(x,'You swallowed a bomb!',W/2,H*.33,18,'#fff','#141a33');outlined(x,`${goalTotal(sim)} / ${goalNeed(sim)} items collected`,W/2,H*.4,18,'#c9d0ff','#141a33',undefined,800);}
    else{outlined(x,'Time’s up!',W/2,H*.24,Math.min(54,W*.14),'#ff8a7a','#4a1010');outlined(x,`${goalTotal(sim)} / ${goalNeed(sim)} items collected`,W/2,H*.4,20,'#fff','#141a33');}
@@ -195,23 +199,28 @@ async function holeIt(s){
  const stickTravel=()=>Math.max(12,37*(L.u||.4));
  const toStick=()=>{if(!contact)return {x:0,z:0};const dx=contact.point.x-contact.origin.x,dy=contact.point.y-contact.origin.y,l=Math.hypot(dx,dy);if(l<3)return {x:0,z:0};const m=Math.min(1,l/stickTravel());return {x:dx/l*m,z:dy/l*m};};
  const release=ev=>{if(contact?.id!==ev.pointerId)return;contact=null;s.release?.(ev);};
- s.on(c,'pointerdown',ev=>{if(s.paused||!turn)return;const p=s.pointer(ev);ev.preventDefault();layout();
+ s.on(c,'pointerdown',ev=>{if(s.paused)return;const p=s.pointer(ev);ev.preventDefault();
+  if(map){map.down(p);s.capture?.(ev);return;}if(!turn)return;layout();
   if(turn.phase==='end'){if(turn.endT>.7&&(inside(p,L.cont)||p.y>H50()))endTurn();return;}
   if(showBoosts)for(const b of L.boost)if(Math.hypot(p.x-b.x-b.w/2,p.y-b.y-b.h/2)<b.w/2+4){if(useBoost(turn.sim,b.id)){sound('pickup');vibrate(15);}else sound('tap');return;}
   if(contact)return;contact={id:ev.pointerId,origin:p,point:p};turn.moved=true;s.capture?.(ev);});
  const H50=()=>s.H*.5;
- s.on(c,'pointermove',ev=>{if(contact?.id!==ev.pointerId)return;contact.point=s.pointer(ev);});
- s.on(c,'pointerup',release);s.on(c,'pointercancel',release);s.on(c,'lostpointercapture',release);
+ s.on(c,'pointermove',ev=>{if(map){map.move(s.pointer(ev));return;}if(contact?.id!==ev.pointerId)return;contact.point=s.pointer(ev);});
+ s.on(c,'pointerup',ev=>{if(map){s.release?.(ev);const r=map.up(s.pointer(ev));if(r==='pick'){sound('card');vibrate(12);}else if(r==='locked')sound('lose');else if(r==='')sound('tap');return;}release(ev);});
+ s.on(c,'pointercancel',release);s.on(c,'lostpointercapture',release);
+ s.on(c,'wheel',ev=>{if(map){ev.preventDefault();map.wheel(ev.deltaY);}},{passive:false});
  const KEYS={ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',ArrowUp:'u',w:'u',ArrowDown:'d',s:'d'};
  s.on(document,'keydown',ev=>{const k=KEYS[ev.key];if(k){keys[k]=true;if(turn)turn.moved=true;ev.preventDefault();}else if((ev.key==='Enter'||ev.key===' ')&&turn){if(turn.phase==='end'&&turn.endT>.7)endTurn();}else if(turn?.phase==='play'&&'1234'.includes(ev.key)&&ev.key.length===1)useBoost(turn.sim,BOOST_ORDER[Number(ev.key)-1]);});
  s.on(document,'keyup',ev=>{const k=KEYS[ev.key];if(k)keys[k]=false;});
  s.resetOnPause?.(()=>{contact=null;keys={};});s.on(window,'blur',()=>{contact=null;keys={};});
- s.hint(`Drag anywhere: your first touch is the joystick (the clock starts with your first drag). Swallow every prop shown on the cards before the ${fmt(def.time)} clock runs out. Smaller things fit first; every prop you eat fills the yellow arc and grows the hole (Size N). Towers fall over when you eat their base. Boosters (from Level 3, one each per turn): Potion +1 size, Lightning speed, Magnet pull, Snowflake stops the clock. Keyboard: arrows/WASD, 1–4 boosters.`);
+ s.hint('Level map: drag to scroll, tap a level (cleared ones can be replayed) or Play for the next one. Then drag anywhere to steer the hole and swallow every prop shown on the cards.');
 
  function endTurn(){if(turn.phase!=='end'||turn.closing)return;turn.closing=true;sound('tap');finishResolve?.();}
  let lastPop=0;
  let frameMs=0;
- s.frame((dt,t)=>{if(!turn)return;const t0=performance.now();syncCanvases();turn.t+=dt;
+ s.frame((dt,t)=>{
+  if(map){syncCanvases();const k=dpr();hx.setTransform(k,0,0,k,0,0);map.draw(hx,dt);if(s.debug?.pick&&!map.picked){const n=s.debug.pick;s.debug.pick=null;map.pick(n);}return;}
+  if(!turn)return;const t0=performance.now();syncCanvases();turn.t+=dt;
   const sim=turn.sim;
   if(turn.phase==='play'){const st=toStick();const kx=(keys.r?1:0)-(keys.l?1:0),kz=(keys.d?1:0)-(keys.u?1:0);const input=contact?st:{x:kx,z:kz};
    stepSim(sim,dt,turn.moved?input:{x:0,z:0});if(!turn.moved){sim.time=sim.def.time;sim.elapsed=0;}
@@ -243,11 +252,20 @@ async function holeIt(s){
  async function playTurn(p){const charges={};for(const id of BOOST_ORDER)charges[id]=boostOn(id)?1:0;
   turn={player:p,phase:'play',t:0,sim:createSim(def,{charges}),popups:[],rings:[],flyers:[],inflight:{},inflightPts:0,cardPulse:def.goals.map(()=>0),arcV:0,combo:0,comboT:0,confetti:[],moved:false,endT:0};contact=null;keys={};cam.x=def.start.x;cam.z=def.start.z;cam.dist=0;sound('start');
   await new Promise(res=>{finishResolve=res;});finishResolve=null;const sim=turn.sim;return {won:sim.won,time:sim.clearTime,left:sim.time,goals:goalTotal(sim),need:goalNeed(sim),size:sim.hole.size};}
+ // ---- level map: player 1 picks (any cleared level or the next one), like Bricks Breaker Quest's stage map ----
+ const P=store.profile||{},cur=currentHoleLevel(),bestStars=P.holeItStars&&typeof P.holeItStars==='object'?P.holeItStars:{};
+ const picked=await new Promise(res=>{map=createLevelMap({W:()=>s.W,H:()=>s.H,top:FB.top,cur,stars:bestStars,who:s.players[0]?.name||'Player 1',h:{rr,outlined,drawStar,greenButton,lockIcon},onPick:res,
+  info:n=>{const d=buildLevel(n),g=d.goals[0];return {score:d.mode==='score',thumb:g&&g.k!=='score'&&KINDS[baseKind(g.k)]?thumb(baseKind(g.k)):null};}});
+  s.debug={view:'map',map,pick:null};});
+ if(!s.alive)return;map=null;setupLevel(picked);hx.clearRect(0,0,hud.width,hud.height);
  const introText=`Hole.it · Level ${level} (${def.themeName}). Drag to steer the hole and ${def.mode==='score'?`eat anything: every prop is worth points (bigger = more). Reach ${def.goals[0].need} ★`:'swallow every one of the props on the cards'} before the ${fmt(def.time)} clock runs out. You both play this exact level: the faster clear wins; if nobody clears it, most items wins.`;
  for(const p of [0,1]){if(!await s.pass(p,p===0?introText:`${s.players[1].name}: same Level ${level}. ${results[0].won?`Beat ${results[0].time.toFixed(1)} s.`:`Collect more than ${results[0].goals} items, or clear it.`}`,'Ready'))return;
   if(!s.alive)return;results[p]=await playTurn(p);if(!s.alive)return;s.setScores([points(results[0]),points(results[1])]);}
  const [a,b]=results,names=s.players.map(pl=>pl.name),line=(r,i)=>r.won?`${names[i]} cleared it in ${r.time.toFixed(1)} s`:`${names[i]} got ${r.goals}/${r.need}`;
- if(a.won||b.won){if(store.profile){store.profile.holeItLevel=level+1;saveProfile(store.profile);}}
- turn=null;s.finish([points(a),points(b)],`Hole.it Level ${level}: ${line(a,0)} · ${line(b,1)}.${a.won||b.won?` Next time: Level ${level+1}.`:' Nobody cleared it, so Level '+level+' comes back next time.'}`);
+ // shared progress: a clear by either player opens the next level; each level keeps its best stars
+ const best=Math.max(...[a,b].map(r=>r.won?starsFor(r.left,def.time):0));
+ if(best&&store.profile){const p=store.profile;p.holeItLevel=Math.max(currentHoleLevel(),level+1);p.holeItStars={...(p.holeItStars||{}),[level]:Math.max(+p.holeItStars?.[level]||0,best)};saveProfile(p);}
+ const next=currentHoleLevel(),st=r=>r.won?` ${'★'.repeat(starsFor(r.left,def.time))}`:'';
+ turn=null;s.finish([points(a),points(b)],`Hole.it Level ${level}: ${line(a,0)}${st(a)} · ${line(b,1)}${st(b)}.${best?` Next on the map: Level ${next}.`:` Nobody cleared it; Level ${next} is still next on the map.`}`);
 }
 Object.assign(exports,{holeIt,currentHoleLevel});

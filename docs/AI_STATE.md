@@ -99,8 +99,14 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   `startFall` on a bomb ends the turn (`sim.bombed`, BOOM! card, rings + flash); 3 on Level 34 (`spec.bombs`), 1-3 from Level 8 in
   generated levels, placed in open floor (`topUp` `pad:1.4`). The bot treats fitting bombs as no-go circles; the clearability
   test plays each layout without bombs. Map tool idea: dump `buildLevel(n).items` and draw circles (used to lay out 30-34). Full bleed via `fullBleed(s)` (engine `hole` in the `noBleed` list; floating Pause/Exit replace its own pause
-  button, boosters sit above the ⤢ toggle, player name/target to beat under the pills). Flow in `engines/holeIt.js`: pass (Ready) →
-  play at once (floating joystick, clock waits for the first drag, level 1 infinity tutorial) → Bravo!/Time's up (Next) →
+  button, boosters sit above the ⤢ toggle, player name/target to beat under the pills). Level map (Oct 14, `holeIt/levelMap.js`,
+  works like Bricks Breaker Quest's stage map, Hole.it look): HOLE IT logo, star total + next-level pills, snake of goal-card tiles
+  (5 a row, Level 1 at the bottom, drag/wheel scroll, first goal prop as the picture via the GL `thumb`, ★ for points levels, gold
+  pulsing current tile with a bobbing arrow, padlocks + "locked" toast), green "Play Level N"; player 1 picks any cleared level or
+  the next one (debug: `session.debug.pick=n` while `debug.view==='map'`). `setupLevel(n)` builds the level after the pick.
+  Stars (`starsFor`): 3★ ≥ 2/3 of the clock left, 2★ ≥ 1/3, 1★ any clear; shown on Bravo!, best per level in `profile.holeItStars`
+  (validated in profile.js); a clear sets `holeItLevel` to max(current, level+1), so replays never move it back.
+  Flow in `engines/holeIt.js`: map → pass (Ready) → play at once (floating joystick, clock waits for the first drag, level 1 infinity tutorial) → Bravo!/Time's up (Next) →
   P2 plays the same level. Score = goal items + (clear ? 1000 + 10×seconds left). `profile.holeItLevel` (load whitelisted
   in `profile.js`) advances when either player clears. Test: `tests/holeit.mjs` (`--node` part is in `npm test`;
   `node tests/holeit.mjs <level> 390x780` plays both turns, screenshots `/tmp/claude-0/sc/holeit-*`). The old
