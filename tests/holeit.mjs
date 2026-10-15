@@ -69,7 +69,8 @@ for (const p of [0, 1]) {
   // P1 is handed the clear (checks the map progress below), P2 runs out of time
   await page.evaluate(p => { const s = window.ShambConkins.store.session?.debug?.sim; if (!s || s.done) return; if (p === 0) { s.done = true; s.won = true; s.clearTime = s.elapsed; s.events.push({type: 'win'}); } else s.time = 0.01; }, p);
   await page.waitForFunction(() => (window.ShambConkins.store.session?.debug?.turn?.endT || 0) > 1, null, {timeout: 20000}); await shot(page, `p${p}-end`); console.log('end p' + p, JSON.stringify(await dbg()));
-  await page.mouse.click(box.x + box.w / 2, box.y + box.h * .76); await page.waitForTimeout(700);
+  await page.keyboard.press('Enter'); await page.waitForTimeout(1700); // Collect on the Bravo! bonus card (or Next after a loss)
+  await page.keyboard.press('Enter'); await page.waitForTimeout(500);
   if (p === 0) { await page.waitForTimeout(300); await clickReady(); await page.waitForTimeout(600); }
 }
 await page.waitForTimeout(800);

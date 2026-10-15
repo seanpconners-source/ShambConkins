@@ -79,14 +79,28 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   green bar), cards pop in one by one, booster bar 76 px right of centre, padlocks; boosters unlock grow L3 (video), speed/magnet/
   freeze L6/9/12 (guess). No intro screen any more (real game has none): the level shows at once, clock waits for the first drag;
   end button says Next; heading arrow outside the rim; "Size N" scales with the hole; lighter floor halo, plank floor, softer grass.
-  Clocks: default 4:00 (`TIME` 240; owner chose real clocks everywhere), hand levels set `time` (L4 3:30). Hand levels 2-4 in
-  `handLevels.js` (`arm` spiral arms, `popRing`, `orangeBlock`), `growBase:16`; per-kind/per-item `xp` (`itemXp`: apples +3,
-  watermelon +10, popsicles/discs +1). New props: orange-slice, dice-white, jelly-green/red/orange, wood-disc, egg-pink/orange,
-  popsicle-melon/ice, strawberry-half, onion-red, tangerine, watermelon-lying. Towers (sim.js): a column rides down on the piece
-  tipping into the hole (`supportOf`, ~7 pieces/s like the video), `drops` list for unsupported pieces, and a base that lands near
-  the hole tips the column over toward it (`topple`, rod pivot, pieces over the hole fall in, the rest lie on their side).
-  Level 4's upper half is a guess (only its bottom is on video; counts 200/88/228 exact). Comparisons: real frame vs ours matched.
-  Third owner video (Hard Level 30 + Levels 31-34, Oct 14): prop value (r/.3)^1.6 (+1/+2/+4/+10/+15), per-level growth curve
+  Clocks: default 4:00 (`TIME` 240; owner chose real clocks everywhere), hand levels set `time`. Hand levels 2-6 in
+  `handLevels.js` (`arm`, `popRing`, `fruitBlock`, `popSpiral`/`popRing2`, `legoStack`); per-kind/per-item `xp` (`itemXp`).
+  Fifth owner video (Oct 14, Levels 4-6 whole, `Claude Share/`): Level 4 rebuilt (200/88/228 + 3 peaches), Level 5 (popsicle
+  spirals/rings round Lego stacks with the 4 goal trains), Level 6 (gadget room: 2 green fridges, 2 toy helicopters, 7 TVs) from
+  maps stitched from the video; ~30 new props. Size bar rate measured: `sizeNeed` = 15·1.67^(N−1) (`GROW`); the arc decal has a
+  dark outline and rounded ends and spans 300° from ~7 o'clock clockwise (gap at the bottom for the label; gl.js mode 2, `uBand`).
+  PHYSICS (Oct 15): every prop is a cannon-es rigid body (`src/vendor/cannon.js`, MIT, 0.20.0 CJS build; only change: perf_hooks
+  → globalThis.performance). `holeIt/physics.js`: shapes from mesh bounds (box/cyl/sphere, sets SPHERE/BOXY, `KINDS[k].hull`
+  override, e.g. helicopter), floor = plane with contacts inside the hole circle dropped (narrowphase hook), static walls/islands,
+  kinematic rim beads (tops flush with the floor, outside the circle) + two rings of throat spheres, slippery prop↔hole material,
+  collision groups (hole/static parts only test props), a gentle pull toward the centre for props over the hole, speed cap +
+  put-back for props flung past walls. Size-class rule (sim.js): a prop with r ≤ 0.96·hole r hanging into the hole is `ghost`ed
+  (stops touching floor/rim/throat) so it always drops; bigger ones stay physical and wedge, get carried and tip out (fridge
+  wedges at Size 5, drops at Size 6, as in the video). Handoff to the throat animation (`startFall`) once a prop's top is near
+  the floor inside the circle; anything below y −1.5 counts. Perf: only props near the hole or a moving prop are in the world
+  (`activate`/`prune`), far props resting on the floor that are only jostled are put back to sleep, settled poses cached on
+  `def._settled`. ~0.3-1.7 ms per 60 Hz step on the dev laptop (Level 5, 1,000 popsicles, is the heaviest). Test:
+  `tests/holeit-physics.mjs [levels] [secs]` (autopilot clears 2-6); `tests/holeit.mjs --node` checks layouts with
+  `{physics:false}`. Bravo! card = real bonus screen (`holeIt/bonus.js`): coin pile "20", x2/x3/x5/x3/x2 bar, sliding arrow,
+  Collect banks 20×tile in `profile.holeItCoins` (no advert). Level screen (`holeIt/levelMap.js`) = the real pre-level screen
+  (meadow, lake, tree, blue truck with player 1's face, hole, coins pill, green "Level N" button) + a row of level bubbles
+  (stars, padlocks); Play drops the goal props into the hole; coins won pop out of the hole next time (`store.holeItCoinPop`).  Third owner video (Hard Level 30 + Levels 31-34, Oct 14): prop value (r/.3)^1.6 (+1/+2/+4/+10/+15), per-level growth curve
   (`growBase`: at every size you can reach the next by eating ~65% of what already fits, so the biggest prop becomes edible near
   the end). Props have a per-instance scale `sc` (giant duck = duck sc 4.6, goal key `gk` 'duck+' → BIG card badge). Walled grass
   islands (`def.islands`, hole slides along them; drawn as walls + raised grass). `layout.js` = placement toolkit (row/grid/rings/
@@ -99,18 +113,14 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   `startFall` on a bomb ends the turn (`sim.bombed`, BOOM! card, rings + flash); 3 on Level 34 (`spec.bombs`), 1-3 from Level 8 in
   generated levels, placed in open floor (`topUp` `pad:1.4`). The bot treats fitting bombs as no-go circles; the clearability
   test plays each layout without bombs. Map tool idea: dump `buildLevel(n).items` and draw circles (used to lay out 30-34). Full bleed via `fullBleed(s)` (engine `hole` in the `noBleed` list; floating Pause/Exit replace its own pause
-  button, boosters sit above the ⤢ toggle, player name/target to beat under the pills). Level map (Oct 14, `holeIt/levelMap.js`,
-  works like Bricks Breaker Quest's stage map, Hole.it look): HOLE IT logo, star total + next-level pills, snake of goal-card tiles
-  (5 a row, Level 1 at the bottom, drag/wheel scroll, first goal prop as the picture via the GL `thumb`, ★ for points levels, gold
-  pulsing current tile with a bobbing arrow, padlocks + "locked" toast), green "Play Level N"; player 1 picks any cleared level or
-  the next one (debug: `session.debug.pick=n` while `debug.view==='map'`). `setupLevel(n)` builds the level after the pick.
-  Stars (`starsFor`): 3★ ≥ 2/3 of the clock left, 2★ ≥ 1/3, 1★ any clear; shown on Bravo!, best per level in `profile.holeItStars`
+  button, boosters sit above the ⤢ toggle, player name/target to beat under the pills).
+  Stars (`starsFor`): 3★ ≥ 2/3 of the clock left, 2★ ≥ 1/3, 1★ any clear; shown on the level bubbles, best per level in `profile.holeItStars`
   (validated in profile.js); a clear sets `holeItLevel` to max(current, level+1), so replays never move it back.
-  Flow in `engines/holeIt.js`: map → pass (Ready) → play at once (floating joystick, clock waits for the first drag, level 1 infinity tutorial) → Bravo!/Time's up (Next) →
+  Flow in `engines/holeIt.js`: level screen (player 1 picks) → pass (Ready) → play at once (floating joystick, clock waits for the first drag) → Bravo! bonus (Collect) / Time's up (Next) →
   P2 plays the same level. Score = goal items + (clear ? 1000 + 10×seconds left). `profile.holeItLevel` (load whitelisted
   in `profile.js`) advances when either player clears. Test: `tests/holeit.mjs` (`--node` part is in `npm test`;
   `node tests/holeit.mjs <level> 390x780` plays both turns, screenshots `/tmp/claude-0/sc/holeit-*`). The old
-  `neighborhoodHole.js` is unused (helpers kept). Real-phone feel/GPU load untested.
+  `neighborhoodHole.js` is unused (helpers kept). Real-phone feel, physics speed and GPU load untested.
 - **Portraits:** owner uploads PNG/WebP to `assets/portraits/` on main; TESTver keeps 480px q88 WebP with originals in
   `assets/originals/portraits/` (`tools/run-claude-optimizer-safe.py` for PNG; oversized WebP uploads are shrunk the same way by hand).
   `artemis.think` has two different pictures (.png and .webp); the .webp is what the game shows.

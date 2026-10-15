@@ -74,8 +74,13 @@ function stepSim(sim,dt,input={x:0,z:0}){
   for(const it of moved){if(it.state!==0)continue;relocate(sim,it);forEachNear(sim,it.x,it.z,it.br+.7,nb=>{if(nb.state===0)sim.phys.activate(nb);});
    // swallowed: all of it below the floor, inside the hole's circle (a prop wedged across the hole stays in the physics)
    const d=Math.hypot(it.x-h.x,it.z-h.z);
+   // the hole's size class decides what goes in (Size 6 eats fridges, Size 5 can't): a prop that fits and hangs into
+   // the hole is let through even if it tilted and wedged on the way down; one that is too big stays caught
+   if(!sim.done&&it.r<=h.r*.96&&d<h.r-it.r*.3&&it.cy<it.h*.5)sim.phys.ghost(it);
    if(it.cy<0&&d<h.r&&!sim.done&&sim.phys.topY(it)<Math.min(it.h,it.r*2)*.25)startFall(sim,it);
-   else if(it.cy<-4){sim.phys.remove(it);it.state=2;}}}
+   else if(it.cy<-1.5&&!sim.done)startFall(sim,it); // under the floor anywhere: it went down a hole, so it counts
+   else if(it.cy<-4){sim.phys.remove(it);it.state=2;}
+   else if(d>h.r+it.br*.3&&it.cy>-.05)sim.phys.solid(it);}}
  else simpleFalls(sim);
  // falling props: down the throat, bouncing softly off its wall and tumbling, counted once they are out of sight
  if(sim.falling.length){const keep=[];for(const i of sim.falling){const it=sim.items[i];

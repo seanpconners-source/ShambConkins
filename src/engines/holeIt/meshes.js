@@ -287,8 +287,8 @@ kind('train-pink','Toy Train',.55,.78,['toys'],g=>{const P=C('#ff3fa0'),D=C('#c8
  for(const sz of [-.3,-.02,.28])for(const sx of [-1,1])add(g,cyl(.13,.06,12),{at:[sx*.27,.14,sz],r:[0,0,Math.PI/2]},Y);});
 // Level 6 (toys and gadgets): sizes measured against the hole in the video (a fridge wedges in a Size 5 hole)
 for(const [id,body,trim] of [['fridge-green','#7ed321','#e05ac8'],['fridge-yellow','#ffc61e','#ff6ab0']])
- kind(id,'Fridge',1.15,2.6,['kitchen'],g=>{const B=C(body),T=C(trim);add(g,rbox(1.8,2.6,1.45,.14),{},B);add(g,rbox(1.82,.05,1.47,.02),{at:[0,1.62,0]},T);add(g,rbox(1.84,.04,1.49,.02),{at:[0,.06,0]},T);
-  for(const [y,h] of [[1.75,.55],[.5,.8]])add(g,rbox(.08,h,.1,.03),{at:[-.62,y,.76]},C('#2ac8b0'));add(g,rbox(.5,.4,.02,.02),{at:[.3,2.0,.73]},C('#fff6e0'));add(g,rbox(.4,.14,.02,.01),{at:[.55,.9,.73]},C('#ffffff'));});
+ kind(id,'Fridge',1.15,2.4,['kitchen'],g=>{const B=C(body),T=C(trim);add(g,rbox(1.8,2.4,1.45,.14),{},B);add(g,rbox(1.82,.05,1.47,.02),{at:[0,1.5,0]},T);add(g,rbox(1.84,.04,1.49,.02),{at:[0,.06,0]},T);
+  for(const [y,h] of [[1.62,.5],[.45,.75]])add(g,rbox(.08,h,.1,.03),{at:[-.62,y,.76]},C('#2ac8b0'));add(g,rbox(.5,.4,.02,.02),{at:[.3,1.82,.73]},C('#fff6e0'));add(g,rbox(.4,.14,.02,.01),{at:[.55,.9,.73]},C('#ffffff'));});
 kind('tv-orange','Retro TV',.95,1.4,['toys'],g=>{add(g,rbox(1.8,1.3,1.3,.28),{},C('#ff7a1e'));add(g,rbox(1.42,.92,.06,.12),{at:[-.08,.2,.64]},C('#3a6ae8'));add(g,rbox(1.3,.82,.04,.1),{at:[-.08,.25,.66]},C('#7fb4ff'));
  for(const y of [.4,.8])add(g,cyl(.07,.06,10),{at:[.72,y,.62],r:[Math.PI/2,0,0]},C('#ffd23a'));add(g,rbox(1.6,.12,1.1,.04),{at:[0,-.02,0]},C('#d85a10'));});
 kind('helicopter','Toy Helicopter',.9,1.1,['toys'],g=>{const B=C('#2a8af0'),Y=C('#ffd21a');add(g,sphere(16,10),{at:[0,.5,.1],s:[.48,.42,.55]},B);add(g,lathe([[0,0],[.16,0],[.08,.9],[0,.95]],10),{at:[0,.55,-.2],r:[-Math.PI/2+.1,0,0]},B);
