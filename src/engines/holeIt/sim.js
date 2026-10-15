@@ -1,21 +1,26 @@
-// Hole.it simulation: the hole glides over the tray, props whose footprint fits
-// tip over the rim and tumble in, stacks collapse when their support is eaten,
-// every swallowed prop feeds the Size meter. No DOM; tests drive it directly.
+// Hole.it simulation: the hole glides over the tray and every prop is a rigid body (holeIt/physics.js, cannon-es):
+// props over the hole lose the floor and tip in, stacks collapse brick by brick, props too big for the hole rest on
+// the moving rim, get carried, tilt and slip in or off, as in the owner's videos of the real (Unity) game. Once a prop
+// is mostly below the floor inside the hole it is handed to the throat animation below (it tumbles down out of sight)
+// and every swallowed prop feeds the Size meter. No DOM; tests drive it directly.
 const {holeRadius,sizeNeed,itemXp,kindR,kindH}=require("src/engines/holeIt/levels.js");
-const G=20,CELL=2;
+const {createPhysics}=require("src/engines/holeIt/physics.js");
+const G=22,CELL=2;
 const qmul=(a,b)=>[a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3],a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]];
 const qaxis=(x,y,z,ang)=>{const s=Math.sin(ang/2);return [x*s,y*s,z*s,Math.cos(ang/2)];};
 const qnorm=q=>{const l=Math.hypot(...q)||1;return q.map(v=>v/l);};
 const key=(x,z)=>Math.floor(x/CELL)*100003+Math.floor(z/CELL);
 const BOOSTS={grow:{name:'Grow',time:0},speed:{name:'Lightning',time:10},magnet:{name:'Magnet',time:8},freeze:{name:'Freeze',time:10}};
-function createSim(def,{charges=1}={}){
+function createSim(def,{charges=1,physics=true}={}){
  const goalKinds=new Set(def.goals.map(g=>g.k));
- const items=def.items.map((it,i)=>{const sc=it.sc||1,r=kindR(it.k)*sc,h=kindH(it.k)*sc,gk=it.gk||it.k;return {i,k:it.k,gk,sc,h0:kindH(it.k),r,h,x:it.x,z:it.z,cy:it.y+h/2,yaw:it.yaw,on:it.on,state:0,q:qaxis(0,1,0,it.yaw),vy:0,ox:0,oz:0,w:0,ax:0,az:0,spin:0,wob:0,goal:goalKinds.has(gk),xp:itemXp(it),counted:false,moved:true};});
+ const items=def.items.map((it,i)=>{const sc=it.sc||1,r=kindR(it.k)*sc,h=kindH(it.k)*sc,gk=it.gk||it.k;return {i,k:it.k,gk,sc,h0:kindH(it.k),r,h,x:it.x,z:it.z,cy:(it.y||0)+h/2,yaw:it.yaw,base:it.y||0,state:0,q:qaxis(0,1,0,it.yaw),vy:0,ox:0,oz:0,w:0,ax:0,az:0,spin:0,goal:goalKinds.has(gk),xp:itemXp(it),counted:false,moved:true};});
  const grid=new Map();for(const it of items){const k=key(it.x,it.z);it.cell=k;if(!grid.has(k))grid.set(k,[]);grid.get(k).push(it.i);}
  const maxR=Math.max(.3,...items.map(it=>it.r));
- return {def,items,grid,maxR,hole:{x:def.start.x,z:def.start.z,size:1,r:holeRadius(1),rT:holeRadius(1),xp:0,vx:0,vz:0},
-  goals:def.goals.map(g=>({k:g.k,need:g.need,got:0})),time:def.time,elapsed:0,falling:[],drops:[],topples:[],stacked:items.filter(it=>it.on>=0).map(it=>it.i),
+ const sim={def,items,grid,maxR,hole:{x:def.start.x,z:def.start.z,size:1,r:holeRadius(1),rT:holeRadius(1),xp:0,vx:0,vz:0},
+  goals:def.goals.map(g=>({k:g.k,need:g.need,got:0})),time:def.time,elapsed:0,falling:[],
   events:[],done:false,won:false,clearTime:0,eaten:0,charges:typeof charges==='object'?{...charges}:{grow:charges,speed:charges,magnet:charges,freeze:charges},active:{speed:0,magnet:0,freeze:0}};
+ if(physics){sim.phys=createPhysics(def,items);sim.phys.settle();for(const it of items){const b=it.body,p=b.position,q=b.quaternion;it.x=p.x;it.cy=p.y;it.z=p.z;it.q=[q.x,q.y,q.z,q.w];relocate(sim,it);}}
+ return sim;
 }
 function sizeProgress(sim){return Math.min(1,sim.hole.xp/sizeNeed(sim.hole.size,sim.def.growBase));}
 function goalTotal(sim){return sim.goals.reduce((s,g)=>s+Math.min(g.got,g.need),0);}
@@ -23,38 +28,26 @@ function goalNeed(sim){return sim.goals.reduce((s,g)=>s+g.need,0);}
 function useBoost(sim,id){if(sim.done||!sim.charges[id])return false;sim.charges[id]--;
  if(id==='grow'){grow(sim);}else sim.active[id]=BOOSTS[id].time;sim.events.push({type:'boost',id});return true;}
 function grow(sim){const h=sim.hole;h.size++;h.rT=holeRadius(h.size);sim.events.push({type:'size',size:h.size});}
-// keep the spatial grid right for props that slide on the floor (magnet, dragged by the rim)
+// keep the spatial grid right for props that move (the bot and the magnet look props up by cell)
 function relocate(sim,it){const k=key(it.x,it.z);if(k===it.cell)return;const old=sim.grid.get(it.cell);if(old){const j=old.indexOf(it.i);if(j>=0)old.splice(j,1);}if(!sim.grid.has(k))sim.grid.set(k,[]);sim.grid.get(k).push(it.i);it.cell=k;}
 function forEachNear(sim,x,z,rad,fn){const c0=Math.floor((x-rad)/CELL),c1=Math.floor((x+rad)/CELL),r0=Math.floor((z-rad)/CELL),r1=Math.floor((z+rad)/CELL);
  for(let cx=c0;cx<=c1;cx++)for(let cz=r0;cz<=r1;cz++){const list=sim.grid.get(cx*100003+cz);if(list)for(const i of list)fn(sim.items[i]);}}
-// A prop that fits tips over the rim: it keeps its offset from the hole centre (so it rides along with the hole),
-// slides inward off the rim while its top tilts toward the centre, then falls and tumbles at a steady rate.
-function startFall(sim,it,vy=0){const h=sim.hole;
+// A prop that has gone over the edge: it leaves the physics world and keeps its offset from the hole centre (so it
+// rides along with the hole while it drops down the throat), carrying its fall speed and spin from the physics.
+function startFall(sim,it,v=null){const h=sim.hole;
  if(it.k==='bomb'){ // swallowing a bomb blows the hole up: the turn ends there and then
-  it.state=2;if(!sim.done){sim.done=true;sim.won=false;sim.bombed=true;sim.events.push({type:'bomb',x:it.x,z:it.z});}return;}
- it.state=1;it.ox=it.x-h.x;it.oz=it.z-h.z;const l=Math.hypot(it.ox,it.oz);
- const ux=l>.02?it.ox/l:1,uz=l>.02?it.oz/l:0;it.ax=-uz;it.az=ux; // rotation axis that tips the top toward the centre
- it.vox=-h.vx*.35;it.voz=-h.vz*.35;it.vy=vy;it.w=0;it.tip=true;it.age=0;it.spin=(((it.i*7919)%13)/13-.5)*2.4;it.wob=0;sim.falling.push(it.i);}
+  sim.phys?.remove(it);it.state=2;if(!sim.done){sim.done=true;sim.won=false;sim.bombed=true;sim.events.push({type:'bomb',x:it.x,z:it.z});}return;}
+ v=v||sim.phys?.velocity(it)||{x:0,y:0,z:0,wx:0,wy:0,wz:0};sim.phys?.remove(it);
+ it.state=1;it.ox=it.x-h.x;it.oz=it.z-h.z;it.vox=v.x-h.vx;it.voz=v.z-h.vz;it.vy=Math.min(0,v.y);
+ const wh=Math.hypot(v.wx,v.wz);if(wh>.3){it.ax=v.wx/wh;it.az=v.wz/wh;it.w=Math.min(8,wh);}else{const l=Math.hypot(it.ox,it.oz)||1;it.ax=-it.oz/l;it.az=it.ox/l;it.w=2.5;}
+ it.spin=Math.max(-3,Math.min(3,v.wy));it.age=0;sim.falling.push(it.i);}
 function award(sim,it){sim.eaten++;const score=sim.def.mode==='score';const g=score?sim.goals[0]:sim.goals.find(g=>g.k===it.gk);if(g&&g.got<g.need)g.got=score?Math.min(g.need,g.got+it.xp):g.got+1;
  const h=sim.hole;h.xp+=it.xp;let grew=false;while(h.xp>=sizeNeed(h.size,sim.def.growBase)){h.xp-=sizeNeed(h.size,sim.def.growBase);h.size++;h.rT=holeRadius(h.size);grew=true;}
  sim.events.push({type:'eat',k:it.gk,goal:!!g,xp:it.xp,x:it.x,z:it.z});if(grew)sim.events.push({type:'size',size:h.size});
  if(!sim.done&&sim.goals.every(g=>g.got>=g.need)){sim.done=true;sim.won=true;sim.clearTime=sim.elapsed;sim.events.push({type:'win'});}}
 const topSpeed=r=>2.42*Math.pow(r/.5,.42);
-// Current support of a stacked prop; null = the floor. A prop still tipping into the hole keeps carrying the column
-// until its top passes the floor, so a tower over the hole sinks one piece at a time (as in the video) instead of free-falling.
-function supportOf(sim,it){while(it.on>=0){const s=sim.items[it.on];if(s.state===0||s.state===3||(s.state===1&&s.cy+s.h/2>.02))return s;it.on=s.on;}return null;}
-// Everything standing on `base` (transitively), base first.
-function columnOf(sim,base){const col=[base.i],set=new Set(col);let grew=true;while(grew){grew=false;for(const i of sim.stacked){const it=sim.items[i];if(!set.has(i)&&set.has(it.on)&&(it.state===0||it.state===3)){set.add(i);col.push(i);grew=true;}}}return col;}
-// Centre height of a prop lying on its side after a topple (a wooden disc rests on its edge).
-const lieHeight=it=>Math.max(it.h/2,it.r*.9);
-// A dropped prop reached the floor: into the hole if it is over it, and a tower whose new base lands on the rim tips over across the hole.
-function landed(sim,it){const h=sim.hole,d=Math.hypot(it.x-h.x,it.z-h.z);relocate(sim,it);if(sim.done)return;
- if(it.r<=h.r*.96&&d<h.r-it.r*.15){startFall(sim,it,0);return;}
- if(d<h.r+it.r*2.2&&columnOf(sim,it).length>=3)topple(sim,it,d>1e-3?(h.x-it.x)/d:1,d>1e-3?(h.z-it.z)/d:0);}
-function topple(sim,base,ux,uz){const col=columnOf(sim,base);let H=.3;
- const items=col.map(i=>{const it=sim.items[i];H=Math.max(H,it.cy+it.h/2);return {i,c:it.cy,q0:it.q,j:(((i*7919)%11)/11-.5)*.3};});
- for(const p of items){const it=sim.items[p.i];it.state=4;it.on=-1;it.vy=0;it.wob=0;}
- sim.topples.push({items,px:base.x,pz:base.z,ux,uz,th:.03,w:.5,H});sim.events.push({type:'topple',x:base.x,z:base.z});}
+// Without physics (tests that only check layouts): props that fit drop straight in.
+function simpleFalls(sim){const h=sim.hole;forEachNear(sim,h.x,h.z,h.r+sim.maxR,it=>{if(it.state!==0)return;if(it.r<=h.r*.96&&Math.hypot(it.x-h.x,it.z-h.z)<h.r-it.r*.15&&!sim.done)startFall(sim,it,{x:0,y:0,z:0,wx:0,wy:0,wz:0});});}
 // input: {x,z} direction with length 0..1 (screen up = -z).
 function stepSim(sim,dt,input={x:0,z:0}){
  const h=sim.hole,def=sim.def;if(dt<=0)return;
@@ -71,44 +64,25 @@ function stepSim(sim,dt,input={x:0,z:0}){
  const mx=Math.max(0,def.W/2-h.r*.8),mz=Math.max(0,def.D/2-h.r*.8);h.x=Math.max(-mx,Math.min(mx,h.x+h.vx*dt));h.z=Math.max(-mz,Math.min(mz,h.z+h.vz*dt));
  // walled grass islands: the rim slides along their walls
  for(const o of def.islands||[]){const m=h.r*.85,x0=o[0]-m,x1=o[2]+m,z0=o[1]-m,z1=o[3]+m;if(h.x>x0&&h.x<x1&&h.z>z0&&h.z<z1){const dl=h.x-x0,dr=x1-h.x,dt2=h.z-z0,db=z1-h.z,mn=Math.min(dl,dr,dt2,db);if(mn===dl){h.x=x0;h.vx=Math.min(0,h.vx);}else if(mn===dr){h.x=x1;h.vx=Math.max(0,h.vx);}else if(mn===dt2){h.z=z0;h.vz=Math.min(0,h.vz);}else{h.z=z1;h.vz=Math.max(0,h.vz);}}}
- // resting props near the rim
- const reach=h.r+sim.maxR+(sim.active.magnet>0?h.r*3:0);
- forEachNear(sim,h.x,h.z,reach,it=>{if(it.state!==0)return;const d=Math.hypot(it.x-h.x,it.z-h.z),fits=it.r<=h.r*.96;
-  if(it.on>=0){it.wob=0;return;} // still standing on something
-  if(sim.active.magnet>0&&fits&&d<h.r*4&&d>h.r*.5){const pull=Math.min(d,(2.5+h.r)*dt);it.x+=(h.x-it.x)/d*pull;it.z+=(h.z-it.z)/d*pull;it.moved=true;relocate(sim,it);}
-  if(fits&&d<h.r-it.r*.15&&!sim.done){it.cy=it.h/2;startFall(sim,it);}
-  else if(!fits&&d<h.r+it.r*.35){
-   // Too big: it sags into the mouth resting on the rim, leans toward the centre, and the moving rim drags it along a little.
-   it.wob=Math.min(1,it.wob+dt*4);const over=Math.max(0,Math.min(1,(h.r+it.r*.35-d)/h.r));
-   if(d>1e-4&&d<h.r){const pull=Math.min(d,(1.1+h.r*.6)*dt*it.wob);it.x+=(h.x-it.x)/d*pull;it.z+=(h.z-it.z)/d*pull;relocate(sim,it);}
-   const sink=Math.min(it.h*.42,Math.pow(h.r/it.r,2)*it.h*.5)*over*it.wob;it.cy=it.h/2-sink;it.lean=it.wob*(.06+.3*Math.min(1,d/h.r));it.moved=true;}
-  else if(it.wob>0){it.wob=Math.max(0,it.wob-dt*4);it.cy+=(it.h/2-it.cy)*Math.min(1,dt*8);it.lean=(it.lean||0)*it.wob;it.moved=true;}});
- // stacks: a prop whose support is swallowed drops onto whatever is under it (the column above rides down with it)
- if(sim.stacked.length){const keep=[];for(const i of sim.stacked){const it=sim.items[i];if(it.on<0||it.state===1||it.state===2||it.state===4)continue;
-   const s=supportOf(sim,it);if(it.state===0&&(!s||s.state!==0)){it.state=3;it.vy=0;sim.drops.push(i);}if(it.on>=0)keep.push(i);}sim.stacked=keep;}
- if(sim.drops.length){const keep=[];sim.drops.sort((a,b)=>a-b);for(const i of sim.drops){const it=sim.items[i];if(it.state!==3)continue;
-   const s=supportOf(sim,it);it.vy-=G*dt;it.cy+=it.vy*dt;it.moved=true;const floorY=s?s.cy+s.h/2:0;
-   if(it.cy-it.h/2<=floorY){it.cy=floorY+it.h/2;if(s&&s.state!==0){it.vy=Math.max(it.vy,Math.min(0,s.vy));keep.push(i);continue;}
-    it.vy=0;it.state=0;if(!s)landed(sim,it);continue;}
-   keep.push(i);}sim.drops=keep;}
- // toppling towers: the column pivots on its base like a falling rod; pieces that pass over the hole drop in
- if(sim.topples.length){const keep=[];for(const t of sim.topples){t.w+=1.5*G/t.H*Math.sin(t.th+.12)*dt;t.th=Math.min(Math.PI/2,t.th+t.w*dt);const end=t.th>=Math.PI/2-1e-3;
-   for(const p of t.items){const it=sim.items[p.i];if(it.state!==4)continue;const along=p.c*Math.sin(t.th)*1.08+p.j,lie=lieHeight(it);
-    it.x=t.px+t.ux*along-t.uz*p.j*.6;it.z=t.pz+t.uz*along+t.ux*p.j*.6;it.cy=Math.max(lie,p.c*Math.cos(t.th));it.q=qnorm(qmul(qaxis(t.uz,0,-t.ux,t.th),p.q0));it.moved=true;
-    const d=Math.hypot(it.x-h.x,it.z-h.z);if(!sim.done&&it.r<=h.r*.96&&d<h.r-it.r*.15&&it.cy-lie<.35){it.cy=lie;startFall(sim,it,-t.w*p.c*.5);continue;}
-    if(end){it.state=0;it.cy=lie;it.vy=0;relocate(sim,it);}}
-   if(!end)keep.push(t);}sim.topples=keep;}
- // falling props
+ if(sim.phys){
+  // magnet booster: props that fit are pulled toward the hole
+  if(sim.active.magnet>0)forEachNear(sim,h.x,h.z,h.r*4,it=>{if(it.state!==0||it.r>h.r*.96)return;const dx=h.x-it.x,dz=h.z-it.z,d=Math.hypot(dx,dz);if(d>h.r*.4&&d<h.r*4)sim.phys.push(it,dx/d*14,dz/d*14);});
+  // bring the props around the hole into the physics world (and, below, whatever a moving prop could reach)
+  forEachNear(sim,h.x,h.z,h.r+2.4,it=>{if(it.state===0)sim.phys.activate(it);});
+  if((sim.pruneT=(sim.pruneT||0)+dt)>.5){sim.pruneT=0;sim.phys.prune(h,h.r+3.6);}
+  const moved=sim.phys.step(dt,h);
+  for(const it of moved){if(it.state!==0)continue;relocate(sim,it);forEachNear(sim,it.x,it.z,it.br+.7,nb=>{if(nb.state===0)sim.phys.activate(nb);});
+   // swallowed: all of it below the floor, inside the hole's circle (a prop wedged across the hole stays in the physics)
+   const d=Math.hypot(it.x-h.x,it.z-h.z);
+   if(it.cy<0&&d<h.r&&!sim.done&&sim.phys.topY(it)<Math.min(it.h,it.r*2)*.25)startFall(sim,it);
+   else if(it.cy<-4){sim.phys.remove(it);it.state=2;}}}
+ else simpleFalls(sim);
+ // falling props: down the throat, bouncing softly off its wall and tumbling, counted once they are out of sight
  if(sim.falling.length){const keep=[];for(const i of sim.falling){const it=sim.items[i];
   if(it.state!==1)continue;
-  it.age+=dt;const lim=Math.max(0,h.r*.97-it.r*.55),l=Math.hypot(it.ox,it.oz)||1e-6,ux=it.ox/l,uz=it.oz/l,lever=it.h*.5+it.r*.5;
-  if(it.tip){ // still resting partly on the rim: slide inward, bottom drops slowly, the tilt builds up
-   const over=Math.max(0,Math.min(1,(l-lim)/(it.r*.9+.01))),ain=3.5+9*over;
-   it.vox-=ux*ain*dt;it.voz-=uz*ain*dt;it.vy-=G*(1-over*.75)*dt;it.w=Math.min(7,it.w+G*.8/lever*(.35+over)*dt);
-   if(l<=lim||it.cy-it.h/2<-it.h*.35||it.age>.6)it.tip=false;}
-  else{ // free fall inside the throat: bounce softly off the wall, tumble at a steady rate
-   it.vy-=G*dt;if(l>lim){it.ox=ux*lim;it.oz=uz*lim;const vr=it.vox*ux+it.voz*uz;if(vr>0){it.vox-=ux*vr*1.4;it.voz-=uz*vr*1.4;it.w*=.92;}}
-   const damp=Math.max(0,1-dt*1.2);it.vox*=damp;it.voz*=damp;it.w+=(3.2-it.w)*Math.min(1,dt*1.5);}
+  it.age+=dt;const lim=Math.max(0,h.r*.97-it.r*.55),l=Math.hypot(it.ox,it.oz)||1e-6,ux=it.ox/l,uz=it.oz/l;
+  it.vy-=G*dt;if(l>lim){it.ox=ux*lim;it.oz=uz*lim;const vr=it.vox*ux+it.voz*uz;if(vr>0){it.vox-=ux*vr*1.4;it.voz-=uz*vr*1.4;it.w*=.92;}}
+  const damp=Math.max(0,1-dt*1.2);it.vox*=damp;it.voz*=damp;
   it.ox+=it.vox*dt;it.oz+=it.voz*dt;it.cy+=it.vy*dt;
   it.q=qnorm(qmul(qaxis(it.ax,0,it.az,it.w*dt),it.q));if(it.spin)it.q=qnorm(qmul(qaxis(0,1,0,it.spin*dt),it.q));
   it.x=h.x+it.ox;it.z=h.z+it.oz;it.moved=true;
@@ -120,7 +94,7 @@ function stepSim(sim,dt,input={x:0,z:0}){
 // It remembers its target and gives up on one it cannot reach (an island in the way) for a few seconds.
 function botInput(sim,dt=1/30){const h=sim.hole,b=sim.bot||(sim.bot={t:null,best:1e9,stuck:0,skip:new Map(),clock:0,aim:''});b.clock+=dt;
  if(b.t&&(b.t.state!==0||b.t.r>h.r*.96))b.t=null;
- if(!b.t){let bd=1e9;for(const it of sim.items){if(it.k==='bomb'||it.state!==0||it.on>=0||it.r>h.r*.96||(b.skip.get(it.i)||0)>b.clock)continue;const d=Math.hypot(it.x-h.x,it.z-h.z)-(it.goal?2:0);if(d<bd){bd=d;b.t=it;}}}
+ if(!b.t){let bd=1e9;for(const it of sim.items){if(it.k==='bomb'||it.state!==0||it.cy-it.h/2>.12||it.r>h.r*.96||(b.skip.get(it.i)||0)>b.clock)continue;const d=Math.hypot(it.x-h.x,it.z-h.z)-(it.goal?2:0);if(d<bd){bd=d;b.t=it;}}}
  if(!b.t)return {x:Math.cos(b.clock*.7),z:Math.sin(b.clock*.9)};
  // no-go boxes for the hole's centre: islands (it slides along them) and every bomb that would fit (never get that close)
  const obs=[];for(const o of sim.def.islands||[]){const m=h.r*.85;obs.push([o[0]-m,o[1]-m,o[2]+m,o[3]+m,.5]);}

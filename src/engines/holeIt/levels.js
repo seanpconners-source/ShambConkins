@@ -12,8 +12,11 @@ const TIME=240;
 // Measured against dice/fruit in the owner's videos: Size 3 hole = 1.66x Size 1, Size 4 = 1.97x, Size 10 ≈ 3.6x
 // (fast early growth that slows down); radius 0.5 at Size 1.
 const holeRadius=size=>{const k=Math.min(size-1,25);return .5*(1+.34*k-.006*k*k+(size-1-k)*.04);};
-// xp to go from size N to N+1 = base·1.45^(N-1); base is tuned per level (def.growBase).
-const sizeNeed=(size,base=16)=>Math.max(1,Math.round(base*Math.pow(1.45,size-1)));
+// xp to go from size N to N+1 = base·1.67^(N-1). Measured on the owner's second Fold video (Level 4, every prop +1):
+// Size 2 after ~15 props, then ~25, ~42, ~70, ~117, ~195 more (it was 1.45 per size, which filled the bar too fast).
+// base is tuned per level for generated levels (def.growBase); hand-built levels use the measured 15.
+const GROW=1.67;
+const sizeNeed=(size,base=15)=>Math.max(1,Math.round(base*Math.pow(GROW,size-1)));
 // Points for one prop (the +1/+2/+4/+10/+15 popups in the videos): ~footprint^1.6, unless the kind or the item
 // carries the video's own value (apples +3, watermelon +10, popsicles and wooden discs +1).
 const propXp=r=>Math.max(1,Math.round(Math.pow(r/.3,1.6)));
@@ -126,7 +129,7 @@ function buildLevel(level){
  // growth curve: at every size the player must be able to reach the next one by eating ~65% of what already fits,
  // so the biggest prop on the board (Size 10 toy blocks in Level 30) becomes edible near the end, as in the video
  const props=items.filter(it=>it.k!=='bomb').map(it=>({r:KINDS[it.k].r*(it.sc||1),xp:value(it)})),maxR=props.reduce((m,p)=>Math.max(m,p.r),0),Sx=Math.max(3,sizeFor(maxR));
- let growBase=Infinity;for(let sz=1;sz<Sx;sz++){const edible=props.reduce((a,p)=>a+(p.r<=holeRadius(sz)*.96?p.xp:0),0),cum=(Math.pow(1.45,sz)-1)/.45;growBase=Math.min(growBase,.65*edible/cum);}
+ let growBase=Infinity;for(let sz=1;sz<Sx;sz++){const edible=props.reduce((a,p)=>a+(p.r<=holeRadius(sz)*.96?p.xp:0),0),cum=(Math.pow(GROW,sz)-1)/(GROW-1);growBase=Math.min(growBase,.65*edible/cum);}
  growBase=spec.growBase||Math.max(1,Math.min(60,growBase));
  return {level,theme,themeName:T.name,floor:spec.floor||T.floor,W,D,start,islands,items,goals,mode,time:spec.time||TIME,growBase,hand:!!hand,goalKinds:new Set(goals.map(g=>g.k))};
 }

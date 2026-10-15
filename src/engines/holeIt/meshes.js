@@ -81,7 +81,7 @@ kind('robot','Robot',.27,.62,['toys'],g=>{const B=C('#2fd2e6'),D=C('#178fa8');
  add(g,cyl(.012,.08),{at:[0,.57,0]},D);add(g,sphere(8,5),{at:[0,.66,0],s:.035},C('#ff4a5a'));
  for(const sx of [-1,1]){add(g,cyl(.045,.12),{at:[sx*.08,0,0]},D);add(g,sphere(8,5),{at:[sx*.06,.48,.11],s:.035},C('#ffe14a'));add(g,rbox(.06,.16,.06,.02),{at:[sx*.19,.16,0]},D);}
  add(g,rbox(.14,.07,.02,.01),{at:[0,.2,.12]},C('#ffe14a'));});
-for(const [id,col] of [['lego-blue','#2e7bff'],['lego-purple','#8a3cf0'],['lego-yellow','#ffd21a'],['lego-pink','#ff5fb4'],['lego-teal','#25c7b2']])
+for(const [id,col] of [['lego-blue','#2e7bff'],['lego-purple','#8a3cf0'],['lego-yellow','#ffd21a'],['lego-pink','#ff5fb4'],['lego-teal','#25c7b2'],['lego-red','#e8283a'],['lego-green','#46c83a'],['lego-orange','#ff8a1e']])
  kind(id,'Lego Brick',.3,.28,['toys'],g=>{const c=C(col);add(g,rbox(.5,.2,.25,.025),{at:[0,0,0]},c);for(let i=0;i<4;i++)for(let j=0;j<2;j++)add(g,cyl(.045,.06,10),{at:[-.18+i*.12,.2,-.06+j*.12]},mix(c,WHITE,.08));});
 for(const [id,base,spot] of [['ball-orange','#ffa25c','#ff6e1a'],['ball-pink','#ff7ad0','#e8299e']])
  kind(id,'Bouncy Ball',.28,.56,['toys'],g=>{const b=C(base),s=C(spot),sp=[[0,1,0],[.8,.4,.4],[-.7,.5,-.3],[.2,.3,.95],[-.4,-.1,.9],[.6,-.2,-.7],[-.9,-.1,.2]].map(v=>{const l=Math.hypot(...v);return v.map(x=>x/l);});
@@ -273,7 +273,52 @@ kind('tangerine','Tangerine',.26,.44,['fruit'],g=>{add(g,sphere(16,10),{at:[0,.2
 kind('onion-red','Red Onion',.24,.5,['fruit','kitchen'],g=>{add(g,lathe([[0,0],[.12,.02],[.22,.12],[.24,.24],[.18,.36],[.08,.44],[0,.46]],14),{},(p)=>{const a=Math.atan2(p[2],p[0]);return Math.sin(a*7)>.7?C('#c86ad8'):C('#9a3ab4');});
  for(const s of [-1,1])add(g,cyl(.02,.2,6),{at:[s*.02,.42,0],r:[0,0,s*.25]},C('#8ad05a'));});
 kind('watermelon-lying','Watermelon',.86,1.36,['fruit'],g=>{add(g,sphere(22,14),{at:[0,.68,0],s:[.86,.68,.7]},(p)=>{const a=Math.atan2(p[1],p[2]);return Math.sin(a*11+p[0]*1.5)>.15?C('#1f8a2c'):C('#4bc04a');});});
-for(const [id,xp] of [['wood-disc',1],['popsicle-melon',1],['popsicle-ice',1],['watermelon-lying',10],['jelly-green',2],['jelly-red',2],['jelly-orange',2]])KINDS[id].xp=xp;
+// Levels 4-6 from the owner's second Fold video
+kind('peach','Peach',.62,1.1,['fruit'],g=>{const P=C('#ff9a4a'),R=C('#ff6a3a');add(g,sphere(18,12),{at:[0,.55,0],s:[.6,.55,.58]},(p,n)=>{const blush=Math.max(0,n[0]*.6+n[2]*.5);return mix(mix(C('#ffc070'),P,.6),R,Math.min(1,blush));});
+ add(g,torus(.25,.03,10,5,Math.PI),{at:[0,.62,.02],r:[0,Math.PI/2,Math.PI/2],s:[1,1,1.6]},C('#e8703a'));add(g,cyl(.04,.14,6),{at:[0,1.04,0],r:[0,0,.3]},C('#6b3e1e'));
+ add(g,sphere(10,5),{at:[.17,1.08,0],s:[.22,.04,.1],r:[0,.4,.25]},C('#3fa02c'));});
+for(const [id,cols] of [['pop-lime',['#a8e82a']],['pop-orange',['#ff7a2a','#ffb21e','#ffd84a','#ff7aa0']],['pop-blue',['#4aa8f8']],['pop-pink',['#ff8a9a','#ffd0d8']],['pop-red',['#f0384a']]])
+ kind(id,'Popsicle',.27,.09,['treats'],g=>{const band=p=>{const t=Math.max(0,Math.min(.999,(p[2]+.31)/.42));return C(cols[Math.floor(t*cols.length)]);};
+  add(g,rbox(.26,.08,.42,.07),{at:[0,0,-.07]},band);add(g,rbox(.06,.03,.16,.015),{at:[0,.025,.2]},C('#e8c890'));});
+kind('train-pink','Toy Train',.55,.78,['toys'],g=>{const P=C('#ff3fa0'),D=C('#c8207a'),Y=C('#ffd23a');
+ add(g,rbox(.5,.1,.92,.04),{at:[0,.1,0]},D);add(g,lathe([[0,0],[.2,0,1],[.2,.5,1],[0,.5]],14),{at:[0,.36,-.12],r:[Math.PI/2,0,0]},P);
+ add(g,rbox(.48,.42,.36,.06),{at:[0,.2,.26]},P);add(g,rbox(.54,.07,.42,.03),{at:[0,.62,.26]},D);add(g,rbox(.3,.16,.02,.02),{at:[0,.38,.45]},C('#9fd4ff'));
+ add(g,cyl(.07,.24,10,.1),{at:[0,.56,-.3]},D);add(g,cyl(.11,.05,10),{at:[0,.78,-.3]},Y);add(g,sphere(8,6),{at:[0,.36,-.63],s:[.08,.08,.04]},Y);
+ for(const sz of [-.3,-.02,.28])for(const sx of [-1,1])add(g,cyl(.13,.06,12),{at:[sx*.27,.14,sz],r:[0,0,Math.PI/2]},Y);});
+// Level 6 (toys and gadgets): sizes measured against the hole in the video (a fridge wedges in a Size 5 hole)
+for(const [id,body,trim] of [['fridge-green','#7ed321','#e05ac8'],['fridge-yellow','#ffc61e','#ff6ab0']])
+ kind(id,'Fridge',1.15,2.6,['kitchen'],g=>{const B=C(body),T=C(trim);add(g,rbox(1.8,2.6,1.45,.14),{},B);add(g,rbox(1.82,.05,1.47,.02),{at:[0,1.62,0]},T);add(g,rbox(1.84,.04,1.49,.02),{at:[0,.06,0]},T);
+  for(const [y,h] of [[1.75,.55],[.5,.8]])add(g,rbox(.08,h,.1,.03),{at:[-.62,y,.76]},C('#2ac8b0'));add(g,rbox(.5,.4,.02,.02),{at:[.3,2.0,.73]},C('#fff6e0'));add(g,rbox(.4,.14,.02,.01),{at:[.55,.9,.73]},C('#ffffff'));});
+kind('tv-orange','Retro TV',.95,1.4,['toys'],g=>{add(g,rbox(1.8,1.3,1.3,.28),{},C('#ff7a1e'));add(g,rbox(1.42,.92,.06,.12),{at:[-.08,.2,.64]},C('#3a6ae8'));add(g,rbox(1.3,.82,.04,.1),{at:[-.08,.25,.66]},C('#7fb4ff'));
+ for(const y of [.4,.8])add(g,cyl(.07,.06,10),{at:[.72,y,.62],r:[Math.PI/2,0,0]},C('#ffd23a'));add(g,rbox(1.6,.12,1.1,.04),{at:[0,-.02,0]},C('#d85a10'));});
+kind('helicopter','Toy Helicopter',.9,1.1,['toys'],g=>{const B=C('#2a8af0'),Y=C('#ffd21a');add(g,sphere(16,10),{at:[0,.5,.1],s:[.48,.42,.55]},B);add(g,lathe([[0,0],[.16,0],[.08,.9],[0,.95]],10),{at:[0,.55,-.2],r:[-Math.PI/2+.1,0,0]},B);
+ add(g,sphere(10,8),{at:[0,.58,.55],s:[.3,.24,.12]},C('#ffffff'));for(const sx of [-1,1])add(g,sphere(8,6),{at:[sx*.11,.6,.64],s:.06},EYE);add(g,cyl(.05,.2,8),{at:[0,.9,.1]},Y);
+ for(const a of [0,Math.PI/2])add(g,rbox(1.7,.04,.2,.03),{at:[0,1.08,.1],r:[0,a+.4,0]},Y);for(const sx of [-1,1])add(g,rbox(.06,.06,.9,.02),{at:[sx*.32,.06,.12]},Y);add(g,rbox(.5,.06,.12,.03),{at:[0,.62,-1.05]},Y);});
+for(const [id,col,star] of [['ball-star-blue','#2a7ae0','#7fc8ff'],['ball-spiky','#6cc02a','#b8ec5a']])
+ kind(id,'Star Ball',.8,1.6,['toys'],g=>{const dirs=[];for(let i=0;i<14;i++){const y=1-2*(i+.5)/14,r=Math.sqrt(1-y*y),a=i*2.4;dirs.push([Math.cos(a)*r,y,Math.sin(a)*r]);}
+  add(g,sphere(20,14),{at:[0,.8,0],s:.8},(p)=>{for(const v of dirs)if(p[0]*v[0]+p[1]*v[1]+p[2]*v[2]>.93)return C(star);return C(col);});
+  if(id==='ball-spiky')for(const v of dirs)add(g,sphere(6,4),{at:[v[0]*.8,.8+v[1]*.8,v[2]*.8],s:.1},C('#4a9a1a'));});
+kind('monster-truck','Monster Truck',.95,1.0,['toys'],g=>{const G2=C('#7ed321');add(g,rbox(1.1,.55,1.7,.1),{at:[0,.42,0]},G2);add(g,rbox(.9,.35,.8,.08),{at:[0,.95,-.1]},G2);add(g,rbox(.8,.26,.04,.03),{at:[0,1.0,.31]},C('#9fd4ff'));
+ for(const sz of [-.55,.55])for(const sx of [-1,1])add(g,cyl(.32,.3,12),{at:[sx*.62,.32,sz],r:[0,0,Math.PI/2]},(p,n)=>Math.abs(n[0])>.6?C('#c9ced8'):C('#1e2026'));
+ add(g,rbox(1.12,.12,1.2,.03),{at:[0,.62,.1]},(p)=>Math.sin(p[2]*14)>0?C('#2a8af0'):G2);});
+kind('microwave','Microwave',1.05,1.1,['kitchen'],g=>{add(g,rbox(1.9,1.05,1.2,.12),{},C('#f39ad8'));add(g,rbox(1.1,.72,.04,.06),{at:[-.3,.16,.6]},C('#5a2a6a'));add(g,rbox(.9,.55,.03,.04),{at:[-.3,.24,.62]},C('#a066c8'));
+ for(let i=0;i<3;i++)add(g,cyl(.06,.04,8),{at:[.6,.3+i*.2,.6],r:[Math.PI/2,0,0]},C(['#ff4a5a','#ffd23a','#3ad0ff'][i]));for(let i=0;i<4;i++)add(g,rbox(.5,.04,.08,.02),{at:[-.2,1.04,-.3+i*.18]},C('#c870b0'));});
+kind('hairdryer','Hair Dryer',.6,.5,['toys'],g=>{const B=C('#2ab4f0');add(g,lathe([[0,0],[.22,0],[.24,.55],[.2,.62],[0,.62]],12),{at:[0,.25,-.3],r:[Math.PI/2,0,0]},B);add(g,cyl(.13,.42,10),{at:[0,.05,.1],r:[.35,0,0]},B);
+ add(g,cyl(.25,.06,12),{at:[0,.25,.32],r:[Math.PI/2,0,0]},C('#ff4a8a'));add(g,cyl(.09,.08,8),{at:[0,.25,-.36],r:[Math.PI/2,0,0]},C('#0a3a6a'));});
+kind('kettle','Thermos',.42,.95,['kitchen'],g=>{add(g,lathe([[0,0],[.36,0,1],[.4,.2],[.4,.62,1],[.3,.75],[0,.75]],14),{},C('#2ac8b0'));add(g,cyl(.28,.12,12),{at:[0,.74,0]},C('#ff5a7a'));add(g,cyl(.12,.08,10),{at:[0,.86,0]},C('#2ac8b0'));
+ add(g,rbox(.12,.36,.1,.04),{at:[.42,.22,0]},C('#1a9a88'));add(g,torus(.4,.03,14,4),{at:[0,.35,0]},C('#ffffff'));});
+kind('boombox','Boombox',.95,.95,['toys'],g=>{add(g,rbox(1.8,.85,.95,.14),{},C('#ff9a3a'));for(const sx of [-1,1]){add(g,cyl(.3,.06,14),{at:[sx*.52,.4,.47],r:[Math.PI/2,0,0]},C('#2ac8b0'));add(g,cyl(.16,.07,12),{at:[sx*.52,.4,.5],r:[Math.PI/2,0,0]},C('#0a6a5a'));}
+ add(g,rbox(1.3,.08,.12,.04),{at:[0,.95,0]},C('#2ac8b0'));add(g,rbox(.42,.2,.02,.02),{at:[0,.58,.48]},C('#ffe066'));});
+kind('console-yellow','Handheld Console',.6,.16,['toys'],g=>{add(g,rbox(1.15,.14,.7,.1),{},C('#ffc61e'));add(g,rbox(.55,.02,.42,.03),{at:[0,.14,0]},C('#b8a8ff'));
+ add(g,rbox(.16,.03,.05,.01),{at:[-.42,.14,.05]},C('#5a3aa0'));add(g,rbox(.05,.03,.16,.01),{at:[-.42,.14,.05]},C('#5a3aa0'));for(const [x,z,c] of [[.38,-.04,'#ff4a5a'],[.46,.08,'#3ad0ff']])add(g,cyl(.045,.03,8),{at:[x,.14,z]},C(c));});
+kind('calculator','Calculator',.4,.12,['toys'],g=>{add(g,rbox(.55,.1,.75,.06),{},C('#3a9af0'));add(g,rbox(.4,.02,.15,.02),{at:[0,.1,-.24]},C('#d8f0ff'));for(let i=0;i<3;i++)for(let j=0;j<4;j++)add(g,rbox(.09,.03,.08,.015),{at:[-.13+i*.13,.1,-.06+j*.11]},C('#ffffff'));});
+kind('toy-piano','Toy Keyboard',.45,.2,['toys'],g=>{add(g,rbox(.85,.16,.38,.07),{},C('#a03ae8'));for(let i=0;i<7;i++)add(g,rbox(.08,.04,.16,.01),{at:[-.27+i*.09,.15,.05]},C('#ffffff'));add(g,rbox(.5,.03,.08,.01),{at:[0,.15,-.12]},C('#ff7ae0'));});
+kind('phone-purple','Toy Phone',.2,.1,['toys'],g=>{add(g,rbox(.22,.08,.36,.05),{},C('#b04de8'));add(g,rbox(.15,.02,.14,.01),{at:[0,.08,-.08]},C('#f0d0ff'));add(g,rbox(.15,.02,.1,.01),{at:[0,.08,.1]},C('#ffd23a'));});
+kind('pin','Bowling Pin',.1,.36,['toys'],g=>{add(g,lathe([[0,0],[.08,.02],[.1,.12],[.05,.24],[.07,.32],[0,.36]],8),{},(p)=>p[1]>.22&&p[1]<.26?C('#2a8af0'):C('#e8ecf2'));});
+kind('bracelet','Bead Bracelet',.5,.16,['toys'],g=>{for(let i=0;i<10;i++){const a=i/10*Math.PI*2;add(g,rbox(.2,.16,.16,.05),{at:[Math.cos(a)*.38,0,Math.sin(a)*.38],r:[0,-a,0]},C(i%2?'#ff9ac8':'#ffc0dc'));}});
+KINDS.helicopter.hull=[1.0,.95,1.3,0,.05];KINDS.helicopter.shape='box';
+for(const [id,xp] of [['fridge-green',15],['fridge-yellow',15],['tv-orange',15],['helicopter',15],['ball-star-blue',4],['ball-spiky',4],['monster-truck',6],['microwave',10],['hairdryer',4],['kettle',4],['boombox',6],['console-yellow',2],['calculator',2],['toy-piano',2],['phone-purple',1],['pin',1],['bracelet',2]])KINDS[id].xp=xp;
+for(const [id,xp] of [['peach',4],['train-pink',6],['pop-lime',1],['pop-orange',1],['pop-blue',1],['pop-pink',1],['pop-red',1],['wood-disc',1],['popsicle-melon',1],['popsicle-ice',1],['watermelon-lying',10],['jelly-green',2],['jelly-red',2],['jelly-orange',2]])KINDS[id].xp=xp;
 // Face quad placement on the head token (local space): centre and normal of the coin's front face.
 const HEAD_FACE={c:[0,.22+.075*.64,.075*.766],tilt:-(Math.PI/2-.87),size:.5};
 const THEMES={

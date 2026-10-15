@@ -329,7 +329,10 @@
   "src/engines/holeIt.js",
   "src/engines/holeIt/layout.js",
   "src/engines/holeIt/handLevels.js",
-  "src/engines/holeIt/levelMap.js"
+  "src/engines/holeIt/levelMap.js",
+  "src/vendor/cannon.js",
+  "src/engines/holeIt/physics.js",
+  "src/engines/holeIt/bonus.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

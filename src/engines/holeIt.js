@@ -14,6 +14,7 @@ const {fullBleed}=require("src/engines/fullBleed.js");
 const {KINDS,HEAD_FACE,C,geo,add,rbox}=require("src/engines/holeIt/meshes.js");
 const {buildLevel}=require("src/engines/holeIt/levels.js");
 const {createLevelMap,starsFor}=require("src/engines/holeIt/levelMap.js");
+const {createBonus}=require("src/engines/holeIt/bonus.js");
 const {createSim,stepSim,useBoost,sizeProgress,goalTotal,goalNeed,qaxis,qmul}=require("src/engines/holeIt/sim.js");
 
 const BOOST_ORDER=['grow','speed','magnet','freeze'];
@@ -121,7 +122,7 @@ async function holeIt(s){
   if(turn.boom){const u=turn.boom.t;for(const [k,c] of [[1,[1,.55,.1]],[.7,[1,.85,.3]]])rings.push({x:turn.boom.x,z:turn.boom.z,r:h.r*(1.2+u*7*k),a:Math.max(0,1-u/1.1),color:c,thick:.12});}
   if(sim.active.magnet>0)rings.push({x:h.x,z:h.z,r:h.r*(1.6+(t*2%1)*2.2),a:.35*(1-(t*2%1)),color:[.45,1,.55],thick:.04});
   R.render({clear:[.2,.55,.18,1],hole:{x:h.x,z:h.z,r:h.r},tray:[-def.W/2,-def.D/2,def.W/2,def.D/2],islands:def.islands,floorColor:hexRGB(def.floor),groups:Object.entries(inst).map(([kind,b])=>({kind,data:b.data,count:b.count})),
-   shadows:{data:shadowData,count:ns},rings,arc:{x:h.x,z:h.z,r:h.r*1.4,progress:turn.arcV-Math.floor(turn.arcV),start:.6,color:[1,.78,.16]},heads:heads.map(it=>({m:headMatrix(it),rect:it.i%2?[.5,0,.5,1]:[0,0,.5,1]}))});}
+   shadows:{data:shadowData,count:ns},rings,arc:{x:h.x,z:h.z,progress:turn.arcV-Math.floor(turn.arcV)},heads:heads.map(it=>({m:headMatrix(it),rect:it.i%2?[.5,0,.5,1]:[0,0,.5,1]}))});}
  function headMatrix(it){const m=it.m,f=HEAD_FACE,ct=Math.cos(f.tilt),st=Math.sin(f.tilt),sz=f.size;
   // local face transform: translate(c) * rotX(tilt) * scale(sz), shifted by the item's pivot (h/2)
   const loc=[sz,0,0,0, 0,ct*sz,st*sz,0, 0,-st*sz,ct*sz,0, f.c[0],f.c[1],f.c[2],1];
@@ -183,14 +184,16 @@ async function holeIt(s){
   // end card
   if(turn.phase==='end'){const tt=turn.endT;x.fillStyle=`rgba(8,10,24,${Math.min(.72,tt*1.6)})`;x.fillRect(0,0,W,H);
    if(turn.boom&&tt<.6){x.fillStyle=`rgba(255,${Math.round(180-tt*200)},60,${(.6-tt)*1.4})`;x.fillRect(0,0,W,H);}
-   if(sim.won){const sc=Math.min(1,tt*3.5),bounce=1+Math.sin(Math.min(1,tt*3)*Math.PI)*.18;x.save();x.translate(W/2,H*.24);x.scale(sc*bounce,sc*bounce);x.rotate(-.06);
-     const g=x.createLinearGradient(0,-30,0,30);g.addColorStop(0,'#fff27a');g.addColorStop(1,'#ff9a1e');outlined(x,'Bravo!',0,0,Math.min(64,W*.16),g,'#7a2a10');x.restore();
+   if(sim.won){
+     // "Bravo!" as in the real game: white letters, thick orange edge, a dark drop shadow, popping in with a slight tilt
+     const u=L.u,sc=Math.min(1,tt*3.5),bounce=1+Math.sin(Math.min(1,tt*3)*Math.PI)*.18,ty=H*.36-250*u;x.save();x.translate(W/2,ty);x.scale(sc*bounce,sc*bounce);x.rotate(-.05);
+     const fs=Math.min(150*u,W*.2);x.font=`900 ${fs}px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif`;x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';
+     x.lineWidth=fs*.34;x.strokeStyle='#7a3206';x.strokeText('Bravo!',fs*.03,fs*.07);x.lineWidth=fs*.26;x.strokeStyle='#ff9a1e';x.strokeText('Bravo!',0,0);x.lineWidth=fs*.12;x.strokeStyle='#ffd23a';x.strokeText('Bravo!',0,0);x.fillStyle='#fff';x.fillText('Bravo!',0,0);x.restore();
      for(const f of turn.confetti){x.fillStyle=f.c;x.save();x.translate(f.x,f.y);x.rotate(f.a);x.fillRect(-4,-2,8,4);x.restore();}
-     {const n=starsFor(sim.time,sim.def.time),r=Math.min(26,W*.06);for(let i=0;i<3;i++){const ap=Math.max(0,Math.min(1,(tt-.35-i*.18)/.25));if(i<n&&ap>0)drawStar(x,W/2+(i-1)*r*2.5,H*.33-(i===1?r*.3:0),r*(1+.3*Math.sin(ap*Math.PI)));else{x.globalAlpha=.22;drawStar(x,W/2+(i-1)*r*2.5,H*.33-(i===1?r*.3:0),r*.8);x.globalAlpha=1;}}}
-     outlined(x,`Cleared in ${sim.clearTime.toFixed(1)} s`,W/2,H*.4,22,'#fff','#141a33');outlined(x,`${fmt(sim.time)} left on the clock`,W/2,H*.4+30,15,'#c9d0ff','#141a33',undefined,800);}
+     if(turn.bonus&&tt>.45)turn.bonus.draw(x,W,H,turn.bonusDt||0,`Cleared in ${sim.clearTime.toFixed(1)} s · ${fmt(sim.time)} left`);}
    else if(sim.bombed){outlined(x,'BOOM!',W/2,H*.24,Math.min(64,W*.16),'#ffb02a','#5a1008');outlined(x,'You swallowed a bomb!',W/2,H*.33,18,'#fff','#141a33');outlined(x,`${goalTotal(sim)} / ${goalNeed(sim)} items collected`,W/2,H*.4,18,'#c9d0ff','#141a33',undefined,800);}
    else{outlined(x,'Time’s up!',W/2,H*.24,Math.min(54,W*.14),'#ff8a7a','#4a1010');outlined(x,`${goalTotal(sim)} / ${goalNeed(sim)} items collected`,W/2,H*.4,20,'#fff','#141a33');}
-   if(tt>.7)greenButton(x,L.cont.x,L.cont.y,L.cont.w,L.cont.h,'Next',t);}}
+   if(tt>.7&&!sim.won)greenButton(x,L.cont.x,L.cont.y,L.cont.w,L.cont.h,'Next',t);}}
  function lockIcon(x,cx,cy,s){x.save();x.translate(cx,cy);x.lineJoin='round';x.strokeStyle='#e8a812';x.lineWidth=s*.13;x.beginPath();x.arc(0,-s*.12,s*.22,Math.PI,0);x.lineTo(s*.22,s*.02);x.moveTo(-s*.22,s*.02);x.lineTo(-s*.22,-s*.12);x.stroke();
   const g=x.createLinearGradient(0,-s*.05,0,s*.42);g.addColorStop(0,'#ffe066');g.addColorStop(1,'#f0a812');rr(x,-s*.36,-s*.04,s*.72,s*.5,s*.1);x.fillStyle=g;x.fill();x.strokeStyle='#b87808';x.lineWidth=s*.05;x.stroke();
   x.fillStyle='#8a5a06';x.beginPath();x.arc(0,s*.17,s*.07,0,7);x.fill();x.fillRect(-s*.03,s*.17,s*.06,s*.13);x.restore();}
@@ -201,7 +204,7 @@ async function holeIt(s){
  const release=ev=>{if(contact?.id!==ev.pointerId)return;contact=null;s.release?.(ev);};
  s.on(c,'pointerdown',ev=>{if(s.paused)return;const p=s.pointer(ev);ev.preventDefault();
   if(map){map.down(p);s.capture?.(ev);return;}if(!turn)return;layout();
-  if(turn.phase==='end'){if(turn.endT>.7&&(inside(p,L.cont)||p.y>H50()))endTurn();return;}
+  if(turn.phase==='end'){if(turn.bonus){if(turn.endT>.6&&turn.bonus.tap(p.x,p.y,s.W,s.H))collectBonus();return;}if(turn.endT>.7&&(inside(p,L.cont)||p.y>H50()))endTurn();return;}
   if(showBoosts)for(const b of L.boost)if(Math.hypot(p.x-b.x-b.w/2,p.y-b.y-b.h/2)<b.w/2+4){if(useBoost(turn.sim,b.id)){sound('pickup');vibrate(15);}else sound('tap');return;}
   if(contact)return;contact={id:ev.pointerId,origin:p,point:p};turn.moved=true;s.capture?.(ev);});
  const H50=()=>s.H*.5;
@@ -210,12 +213,15 @@ async function holeIt(s){
  s.on(c,'pointercancel',release);s.on(c,'lostpointercapture',release);
  s.on(c,'wheel',ev=>{if(map){ev.preventDefault();map.wheel(ev.deltaY);}},{passive:false});
  const KEYS={ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',ArrowUp:'u',w:'u',ArrowDown:'d',s:'d'};
- s.on(document,'keydown',ev=>{const k=KEYS[ev.key];if(k){keys[k]=true;if(turn)turn.moved=true;ev.preventDefault();}else if((ev.key==='Enter'||ev.key===' ')&&turn){if(turn.phase==='end'&&turn.endT>.7)endTurn();}else if(turn?.phase==='play'&&'1234'.includes(ev.key)&&ev.key.length===1)useBoost(turn.sim,BOOST_ORDER[Number(ev.key)-1]);});
+ s.on(document,'keydown',ev=>{const k=KEYS[ev.key];if(k){keys[k]=true;if(turn)turn.moved=true;ev.preventDefault();}else if((ev.key==='Enter'||ev.key===' ')&&turn){if(turn.phase==='end'&&turn.bonus){if(turn.endT>.6&&!turn.bonus.collected){turn.bonus.collect();collectBonus();}}else if(turn.phase==='end'&&turn.endT>.7)endTurn();}else if(turn?.phase==='play'&&'1234'.includes(ev.key)&&ev.key.length===1)useBoost(turn.sim,BOOST_ORDER[Number(ev.key)-1]);});
  s.on(document,'keyup',ev=>{const k=KEYS[ev.key];if(k)keys[k]=false;});
  s.resetOnPause?.(()=>{contact=null;keys={};});s.on(window,'blur',()=>{contact=null;keys={};});
  s.hint('Level map: drag to scroll, tap a level (cleared ones can be replayed) or Play for the next one. Then drag anywhere to steer the hole and swallow every prop shown on the cards.');
 
  function endTurn(){if(turn.phase!=='end'||turn.closing)return;turn.closing=true;sound('tap');finishResolve?.();}
+ // the bonus arrow stops: bank 20 coins x the tile (shared coin counter, shown on the level screen), then move on
+ function collectBonus(){const b=turn.bonus;turn.coins=b.value;if(store.profile){store.profile.holeItCoins=(Math.floor(+store.profile.holeItCoins)||0)+b.value;saveProfile(store.profile);}
+  sound('pickup');vibrate(25);if(store.profile?.settings.sound)for(let i=0;i<5;i++)setTimeout(()=>tone(1200+i*90,.05,.03,'triangle'),i*70);setTimeout(()=>{if(s.alive&&turn?.bonus===b)endTurn();},1300);}
  let lastPop=0;
  let frameMs=0;
  s.frame((dt,t)=>{
@@ -233,12 +239,12 @@ async function holeIt(s){
     else if(e.type==='size'){turn.rings.push({t:0});sound('unlock');vibrate(25);}
     else if(e.type==='topple'){if(store.profile?.settings.sound){tone(130,.22,.05,'triangle');tone(90,.3,.04,'sine');}vibrate(20);}
     else if(e.type==='boost'&&e.id==='grow')turn.rings.push({t:0});
-    else if(e.type==='win'){turn.phase='end';turn.endT=0;sound('win');vibrate(40);s.react?.(turn.player,'win',2);turn.confetti=Array.from({length:70},()=>({x:Math.random()*s.W,y:-Math.random()*s.H*.6,vy:120+Math.random()*160,vx:(Math.random()-.5)*60,a:Math.random()*6,va:(Math.random()-.5)*8,c:['#ffd23a','#ff5fb4','#5ee06a','#3ad0ff','#ff7a3a'][Math.floor(Math.random()*5)]}));}
+    else if(e.type==='win'){turn.phase='end';turn.endT=0;turn.bonus=createBonus();sound('win');vibrate(40);s.react?.(turn.player,'win',2);turn.confetti=Array.from({length:70},()=>({x:Math.random()*s.W,y:-Math.random()*s.H*.6,vy:120+Math.random()*160,vx:(Math.random()-.5)*60,a:Math.random()*6,va:(Math.random()-.5)*8,c:['#ffd23a','#ff5fb4','#5ee06a','#3ad0ff','#ff7a3a'][Math.floor(Math.random()*5)]}));}
     else if(e.type==='bomb'){turn.phase='end';turn.endT=0;turn.boom={x:e.x,z:e.z,t:0};sound('lose');if(store.profile?.settings.sound){tone(70,.6,.12,'sawtooth');tone(45,.9,.1,'square');}vibrate(400);s.react?.(turn.player,'sad',2);turn.confetti=[];}
     else if(e.type==='lose'){turn.phase='end';turn.endT=0;sound('lose');s.react?.(turn.player,'sad',2);turn.confetti=[];}}
    if(turn.comboT>0){turn.comboT-=dt;if(turn.comboT<=0)turn.combo=0;}
    s.setScores(scoresWith(turn.player,sim));
-  }else{turn.endT+=dt;stepSim(sim,dt,{x:0,z:0});sim.events.length=0;for(const f of turn.confetti){f.y+=f.vy*dt;f.x+=f.vx*dt;f.a+=f.va*dt;}}
+  }else{turn.endT+=dt;turn.bonusDt=turn.endT>.45?dt:0;stepSim(sim,dt,{x:0,z:0});sim.events.length=0;for(const f of turn.confetti){f.y+=f.vy*dt;f.x+=f.vx*dt;f.a+=f.va*dt;}}
   for(const f of turn.flyers){f.t+=dt;if(f.t>=f.dur&&!f.done){f.done=true;turn.cardPulse[f.gi]=1;if(turn.sim.def.mode==='score')turn.inflightPts-=f.pts;else turn.inflight[f.k]=Math.max(0,(turn.inflight[f.k]||0)-1);if(store.profile?.settings.sound)tone(980+f.gi*60,.04,.02,'triangle');}}turn.flyers=turn.flyers.filter(f=>!f.done);
   if(turn.boom)turn.boom.t+=dt;
   for(const p of turn.popups)p.t+=dt;turn.popups=turn.popups.filter(p=>p.t<.9);for(const g of turn.rings)g.t+=dt;turn.rings=turn.rings.filter(g=>g.t<.8);for(let i=0;i<turn.cardPulse.length;i++)turn.cardPulse[i]=Math.max(0,turn.cardPulse[i]-dt*4);
@@ -251,16 +257,19 @@ async function holeIt(s){
  function scoresWith(p,sim){const sc=[points(results[0]),points(results[1])];sc[p]=points({goals:goalTotal(sim),won:sim.won,left:sim.time});return sc;}
  async function playTurn(p){const charges={};for(const id of BOOST_ORDER)charges[id]=boostOn(id)?1:0;
   turn={player:p,phase:'play',t:0,sim:createSim(def,{charges}),popups:[],rings:[],flyers:[],inflight:{},inflightPts:0,cardPulse:def.goals.map(()=>0),arcV:0,combo:0,comboT:0,confetti:[],moved:false,endT:0};contact=null;keys={};cam.x=def.start.x;cam.z=def.start.z;cam.dist=0;sound('start');
-  await new Promise(res=>{finishResolve=res;});finishResolve=null;const sim=turn.sim;return {won:sim.won,time:sim.clearTime,left:sim.time,goals:goalTotal(sim),need:goalNeed(sim),size:sim.hole.size};}
+  await new Promise(res=>{finishResolve=res;});finishResolve=null;const sim=turn.sim;return {won:sim.won,time:sim.clearTime,left:sim.time,goals:goalTotal(sim),need:goalNeed(sim),size:sim.hole.size,coins:turn.coins||0};}
  // ---- level map: player 1 picks (any cleared level or the next one), like Bricks Breaker Quest's stage map ----
  const P=store.profile||{},cur=currentHoleLevel(),bestStars=P.holeItStars&&typeof P.holeItStars==='object'?P.holeItStars:{};
- const picked=await new Promise(res=>{map=createLevelMap({W:()=>s.W,H:()=>s.H,top:FB.top,cur,stars:bestStars,who:s.players[0]?.name||'Player 1',h:{rr,outlined,drawStar,greenButton,lockIcon},onPick:res,
-  info:n=>{const d=buildLevel(n),g=d.goals[0];return {score:d.mode==='score',thumb:g&&g.k!=='score'&&KINDS[baseKind(g.k)]?thumb(baseKind(g.k)):null};}});
+ const coinPop=Math.max(0,Math.floor(+store.holeItCoinPop||0));store.holeItCoinPop=0;
+ const picked=await new Promise(res=>{map=createLevelMap({W:()=>s.W,H:()=>s.H,top:FB.top,cur,stars:bestStars,coins:Math.floor(+P.holeItCoins||0),coinPop,who:s.players[0]?.name||'Player 1',h:{rr,outlined,drawStar,greenButton,lockIcon},onPick:res,
+  head:(x,cx,cy,size)=>{try{s.sprite(x,0,cx,cy,size,{exact:true});}catch{}},
+  info:n=>{const d=buildLevel(n);return {score:d.mode==='score',thumbs:d.goals.filter(g=>g.k!=='score'&&KINDS[baseKind(g.k)]).map(g=>thumb(baseKind(g.k)))};}});
   s.debug={view:'map',map,pick:null};});
  if(!s.alive)return;map=null;setupLevel(picked);hx.clearRect(0,0,hud.width,hud.height);
  const introText=`Hole.it · Level ${level} (${def.themeName}). Drag to steer the hole and ${def.mode==='score'?`eat anything: every prop is worth points (bigger = more). Reach ${def.goals[0].need} ★`:'swallow every one of the props on the cards'} before the ${fmt(def.time)} clock runs out. You both play this exact level: the faster clear wins; if nobody clears it, most items wins.`;
  for(const p of [0,1]){if(!await s.pass(p,p===0?introText:`${s.players[1].name}: same Level ${level}. ${results[0].won?`Beat ${results[0].time.toFixed(1)} s.`:`Collect more than ${results[0].goals} items, or clear it.`}`,'Ready'))return;
   if(!s.alive)return;results[p]=await playTurn(p);if(!s.alive)return;s.setScores([points(results[0]),points(results[1])]);}
+ store.holeItCoinPop=(results[0]?.coins||0)+(results[1]?.coins||0); // they pop out of the hole next time the level screen opens
  const [a,b]=results,names=s.players.map(pl=>pl.name),line=(r,i)=>r.won?`${names[i]} cleared it in ${r.time.toFixed(1)} s`:`${names[i]} got ${r.goals}/${r.need}`;
  // shared progress: a clear by either player opens the next level; each level keeps its best stars
  const best=Math.max(...[a,b].map(r=>r.won?starsFor(r.left,def.time):0));

@@ -21,11 +21,16 @@ else{float n=vnoise(vW.xz*1.3)*.6+vnoise(vW.xz*4.1)*.4;col=mix(vec3(.22,.47,.18)
 col*=1.+(uMode<.5?.3:.12)*(1.-smoothstep(uHole.z*1.3,uHole.z*3.4,dh));gl_FragColor=vec4(col,1.);}`;
 const DECAL_VS=`attribute vec2 aCorner;attribute vec4 iD;uniform mat4 uVP;uniform float uY;varying vec2 vUV;varying float vA;varying vec2 vW;
 void main(){vec3 w=vec3(iD.x+aCorner.x*iD.z,uY,iD.y+aCorner.y*iD.z);vUV=aCorner;vA=iD.w;vW=w.xz;gl_Position=uVP*vec4(w,1.);}`;
-const DECAL_FS=`precision mediump float;varying vec2 vUV;varying float vA;varying vec2 vW;uniform vec4 uHole;uniform float uMode;uniform vec3 uColor;uniform vec2 uArc;uniform float uThick;
-void main(){float d=length(vUV);float a;
+const DECAL_FS=`precision mediump float;varying vec2 vUV;varying float vA;varying vec2 vW;uniform vec4 uHole;uniform float uMode;uniform vec3 uColor;uniform vec2 uArc;uniform float uThick;uniform vec2 uBand;
+void main(){float d=length(vUV);float a;vec3 col=uColor;
 if(uMode<.5){if(length(vW-uHole.xy)<uHole.z*1.02)discard;a=(1.-smoothstep(.15,1.,d))*vA;}
-else{a=vA*(1.-smoothstep(uThick*.55,uThick,abs(d-(1.-uThick))));if(uMode>1.5){float ang=atan(-vUV.x,vUV.y)/6.2831853+.5;float t=fract(ang-uArc.x);if(t>uArc.y)a*=.0;}}
-if(a<.004)discard;gl_FragColor=vec4(uColor*a,a);}`;
+else if(uMode<1.5){a=vA*(1.-smoothstep(uThick*.55,uThick,abs(d-(1.-uThick))));}
+else{ // size arc: a yellow band at radius uBand.x (half width uThick) with rounded ends and a dark outline uBand.y wide
+ float ang=atan(-vUV.x,vUV.y)/6.2831853+.5;float t=fract(ang-uArc.x);float dist;
+ if(t<=uArc.y)dist=abs(d-uBand.x);else{float a0=(uArc.x-.5)*6.2831853,a1=(uArc.x+uArc.y-.5)*6.2831853;dist=min(length(vUV-vec2(-sin(a0),cos(a0))*uBand.x),length(vUV-vec2(-sin(a1),cos(a1))*uBand.x));}
+ float aa=.012,o=uThick+uBand.y;a=vA*(1.-smoothstep(o-aa,o,dist));
+ col=mix(mix(uColor,uColor*1.12+.06,smoothstep(uThick,0.,dist)*.5),vec3(.16,.11,.02),smoothstep(uThick-aa,uThick,dist));}
+if(a<.004)discard;gl_FragColor=vec4(col*a,a);}`;
 const TEX_VS=`attribute vec3 aPos;attribute vec2 aUV;uniform mat4 uVP;uniform mat4 uM;varying vec2 vUV;varying float vY;void main(){vec4 w=uM*vec4(aPos,1.);vUV=aUV;vY=w.y;gl_Position=uVP*w;}`;
 const TEX_FS=`precision mediump float;varying vec2 vUV;varying float vY;uniform sampler2D uTex;uniform vec4 uRect;uniform vec4 uHole;
 void main(){vec2 c=vUV-.5;if(length(c)>.5)discard;vec4 t=texture2D(uTex,uRect.xy+vUV*uRect.zw);vec3 col=mix(vec3(1.,.86,.4),t.rgb,t.a);float below=clamp(-vY/(uHole.z*1.5+.2),0.,1.);gl_FragColor=vec4(col*(1.-below*.96),1.);}`;
@@ -68,7 +73,7 @@ function createRenderer(canvas){
   gl.bindBuffer(gl.ARRAY_BUFFER,instBuf);const bytes=count*64;if(bytes>instCap){instCap=Math.max(bytes,instCap*2,4096);gl.bufferData(gl.ARRAY_BUFFER,instCap,gl.DYNAMIC_DRAW);}gl.bufferSubData(gl.ARRAY_BUFFER,0,data.subarray(0,count*16));
   for(const [k,o] of [['iA',0],['iB',16],['iC',32],['iT',48]]){const l=mesh.a[k];gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,4,gl.FLOAT,false,64,o);ext.vertexAttribDivisorANGLE(l,1);}
   ext.drawArraysInstancedANGLE(gl.TRIANGLES,0,m.count,count);for(const k of ['iA','iB','iC','iT'])ext.vertexAttribDivisorANGLE(mesh.a[k],0),gl.disableVertexAttribArray(mesh.a[k]);}
- function drawDecals(hole,data,count,mode,color,{y=.006,arc=[0,1],thick=.2}={}){if(!count)return;gl.useProgram(decal.p);gl.uniformMatrix4fv(decal.u.uVP,false,vp);gl.uniform4f(decal.u.uHole,hole.x,hole.z,hole.r,0);gl.uniform1f(decal.u.uMode,mode);gl.uniform3fv(decal.u.uColor,color);gl.uniform2fv(decal.u.uArc,arc);gl.uniform1f(decal.u.uThick,thick);gl.uniform1f(decal.u.uY,y);
+ function drawDecals(hole,data,count,mode,color,{y=.006,arc=[0,1],thick=.2,band=[.85,.02]}={}){if(!count)return;gl.useProgram(decal.p);gl.uniformMatrix4fv(decal.u.uVP,false,vp);gl.uniform4f(decal.u.uHole,hole.x,hole.z,hole.r,0);gl.uniform1f(decal.u.uMode,mode);gl.uniform3fv(decal.u.uColor,color);gl.uniform2fv(decal.u.uArc,arc);gl.uniform1f(decal.u.uThick,thick);gl.uniform1f(decal.u.uY,y);if(decal.u.uBand)gl.uniform2fv(decal.u.uBand,band);
   attr(decal.a.aCorner,quad,2);gl.bindBuffer(gl.ARRAY_BUFFER,decalBuf);const bytes=count*16;if(bytes>decalCap){decalCap=Math.max(bytes,decalCap*2,4096);gl.bufferData(gl.ARRAY_BUFFER,decalCap,gl.DYNAMIC_DRAW);}gl.bufferSubData(gl.ARRAY_BUFFER,0,data.subarray(0,count*4));
   const l=decal.a.iD;gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,4,gl.FLOAT,false,16,0);ext.vertexAttribDivisorANGLE(l,1);ext.drawArraysInstancedANGLE(gl.TRIANGLES,0,6,count);ext.vertexAttribDivisorANGLE(l,0);gl.disableVertexAttribArray(l);}
  function setCamera(W,H,dpr,e,t,fov=.72){const w=Math.max(1,Math.round(W*dpr)),h=Math.max(1,Math.round(H*dpr));if(canvas.width!==w)canvas.width=w;if(canvas.height!==h)canvas.height=h;gl.viewport(0,0,w,h);
@@ -92,7 +97,9 @@ function createRenderer(canvas){
   if(sc.heads?.length&&headTex){gl.useProgram(tex.p);gl.uniformMatrix4fv(tex.u.uVP,false,vp);gl.uniform4f(tex.u.uHole,hole.x,hole.z,hole.r,0);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,headTex);gl.uniform1i(tex.u.uTex,0);
    attr(tex.a.aPos,texQuad,3);attr(tex.a.aUV,texUV,2);for(const h of sc.heads){gl.uniformMatrix4fv(tex.u.uM,false,h.m);gl.uniform4fv(tex.u.uRect,h.rect);gl.drawArrays(gl.TRIANGLES,0,6);}}
   gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);gl.disable(gl.DEPTH_TEST);
-  if(sc.arc&&!sc.hole.hidden){const a=sc.arc;drawDecals(hole,new Float32Array([a.x,a.z,a.r,1]),1,2,a.color||[1,.78,.15],{y:.01,arc:[a.start??.62,Math.max(.001,a.progress)],thick:.09});}
+  // size arc as in the real game: centre line 1.45 r out, 0.165 r thick plus a thin dark outline, starting at ~7 o'clock
+  // and running clockwise; a full bar covers 300 degrees, leaving the gap at the bottom for the "Size N" label
+  if(sc.arc&&!sc.hole.hidden&&sc.arc.progress>.002){const a=sc.arc,Rq=hole.r*1.7;drawDecals(hole,new Float32Array([a.x,a.z,Rq,1]),1,2,a.color||[1,.8,.08],{y:.01,arc:[a.start??.583,Math.max(.001,a.progress)*(a.span??.833)],thick:.0825/1.7,band:[1.45/1.7,.024/1.7]});}
   for(const g of sc.rings||[])drawDecals(hole,new Float32Array([g.x,g.z,g.r,g.a]),1,1,g.color||[1,.8,.2],{y:.012,thick:g.thick||.08});
   gl.depthMask(true);gl.enable(gl.DEPTH_TEST);gl.disable(gl.BLEND);
  }
