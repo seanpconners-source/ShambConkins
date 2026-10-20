@@ -4,6 +4,7 @@ const {PROFILE_KEY, readJSON, writeJSON, writeDurableJSON, inspectDurableJSON}=r
 const {characterIdentity}=require("src/characters.js");
 const {LAB_TEAM}=require("src/data/savoryLab.js");
 const {isMovieBond, missingMovieBonds}=require("src/data/movieBonds.js");
+const {normalizeSoloSettings, normalizeSoloBest}=require("src/solo.js");
 function freshProfile() { return { version: 20, starterPolicy:22, holeItLevel:1, earnedUnlocks:{}, xp: 0, runs: 0, completed: 0, minigames:0, modes:['versus'], boards:['Mashup'], played: [], recentGames: [], recentTrivia: [], triviaDifficultyBag: [], recruitDryStreak:{Sean:0,Amber:0}, pairDiscoveries: [], boardUnlocks: [], shared: ['sean','amber'], rosters: { Sean: ['sean'], Amber: ['amber'] }, itemsSeen: [], itemFinds:{Sean:[],Amber:[]},recentItemFinds:{Sean:[],Amber:[]}, locations: [], settings: { sound: true, music: true, reducedMotion: false, originalLogos:true,drinkStatus:true,devMode:false,touchMode:'auto',flickSensitivity:1 }, wins: {}, best: {}, migrated: false }; }
 function loadProfile() {
  const disk=inspectDurableJSON(PROFILE_KEY),shadow=readJSON(PROFILE_KEY);
@@ -27,6 +28,8 @@ function loadProfile() {
   for(const key of ['sound','music','reducedMotion','originalLogos','drinkStatus','devMode'])if(typeof saved.settings?.[key]==='boolean')p.settings[key]=saved.settings[key];
   if(Number.isFinite(saved.settings?.flickSensitivity)&&saved.settings.flickSensitivity>0)p.settings.flickSensitivity=Math.min(1.35,Math.max(.65,saved.settings.flickSensitivity));
   if(['auto','touch','pointer'].includes(saved.settings?.touchMode))p.settings.touchMode=saved.settings.touchMode;
+  const solo=normalizeSoloSettings(saved.settings?.solo);if(solo)p.settings.solo=solo;
+  if(saved.soloBest)p.soloBest=normalizeSoloBest(saved.soloBest);
   for(const key of ['wins','best'])if(saved[key]&&typeof saved[key]==='object'&&!Array.isArray(saved[key]))p[key]=Object.fromEntries(Object.entries(saved[key]).filter(([,v])=>Number.isFinite(v)&&v>=0));
   for(const key of ['migrated','horrorSeen','equipment'])if(saved[key]===true)p[key]=true;
   if(Number.isFinite(saved.holeItLevel)&&saved.holeItLevel>=1)p.holeItLevel=Math.min(9999,Math.floor(saved.holeItLevel));

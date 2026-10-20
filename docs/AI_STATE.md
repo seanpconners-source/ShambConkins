@@ -3,6 +3,16 @@
 Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB World 1, Photo Hunt cabinet, October minigame remakes; release file `releases/ShambConkins_v0.60.0.html`, ~58 MB, committed like 0.59.1; v0.58.3 was a GitHub Release asset).
 
 ## Implemented systems
+- **Solo / 1P arcade (Oct 19 2026, batch 1 of 4, branch `claude/solo-mode-batch1`):** Arcade 1P / 2P switch + solo player
+  (Sean/Amber → unlocks to that roster) + CPU Easy/Normal/Hard (`profile.settings.solo`, `soloStripHTML` in ui.js). `src/solo.js`
+  (`SOLO_IDS` kinds levels/rounds/cpu, `soloFinish`/`soloProgress`/`cpuSkill`, `profile.soloBest`), launcher `soloPlayers`/
+  `settleSolo` (one result card, Play again), Exit = "Bank & quit". Batch 1 (levels): Broforce ×4 (mission after mission),
+  SMB World 1 (loops after 1-4 until game over), Coin Rush (coin goal 15+5n), Castle Dash and CV Vampire Killer / SotN (shrinking
+  clock), Candle Hunt (heart goal 12+6n), Sonic ×2 (fresh act + new boss pilot each clear), Bricks Quest (stage after stage),
+  Hole.it (level after level, map progress saved), Photo Hunt (whole library), Kart GP (podium → next course), Time Trial (beat
+  your ghost), Kart VS = vs CPU rival kart (the other New Game pick). Goals/tuning are guesses. Test: `tests/solo.mjs`.
+  Owner's agreed plan for later batches: 2 timed turn games as harder rounds, 3 CPU head-to-heads, 4 trivia/cards (social games hidden).
+  Windows box: Node 24 at `C:\Program Files\nodejs` (not on PATH in the agent shell), git = GitHub Desktop's bundled git (no push creds).
 - **Broforce (turn-based rebuild, Oct 13 2026):** one engine file `src/engines/broforce.js` (same 4 game ids in
   `packs/broforcePack.js`). P1 runs a 3-stage seeded mission, then P2 runs the same one; higher score wins (normal
   head-to-head settle). `buildStage(seed,si)` makes deep destructible tile maps (tunnels, bunkers, barracks, towers,

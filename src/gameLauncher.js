@@ -20,6 +20,7 @@ const {pairForRun}=require("src/pairs.js");
 const {warpTheme,warpGameId,warpAllowsGame}=require("src/warpThemes.js");
 const {updateProgression}=require("src/progression.js");
 const {drawTriviaDifficulty,chooseTriviaDifficulty,TRIVIA_LEVELS}=require("src/engines/trivia.js");
+const {soloKind, soloSettings, recordSolo, soloBest, soloBestText, SOLO_SKILL, SOLO_LEVEL_NAMES}=require("src/solo.js");
 const hooks={save(){},endTurn(){},beforeRoll(){},arcade(){},bossDone:null};
 let launching=false,launchSerial=0;
 function cancelGameLaunch(){launchSerial++;launching=false;}
@@ -159,7 +160,13 @@ async function settleBroforceGame(game,scores,label,origin,players,coop,returnTo
  if(continued===null||!valid())return;
  store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();
 }
-async function requestGame({id=null,filter='all',origin='board',resume=false,returnToRoll=false}={}){
+// Solo players: the chosen person (their New Game pick) and a CPU wearing the other pick (or a random face if both match).
+function soloPlayers(run,who){const pickOf=i=>({name:store.setupNames?.[i]??run?.players?.[i]?.name??(i?'Amber':'Sean'),character:store.setupSelected?.[i]||run?.players?.[i]?.character||(i?'amber':'sean')});
+ const me=pickOf(who),other=pickOf(1-who),pool=availableCharacters(store.profile,who?'Sean':'Amber').filter(id=>id!==me.character);
+ const cpuChar=other.character!==me.character?other.character:(pool.length?pick(pool):'gordon-ramsay');
+ const cpuName=`${(CHARACTERS.find(c=>c.id===cpuChar)?.name||'').split(' ')[0]||'Rival'} (CPU)`;
+ return [newPlayer(me.name,me.character,who),{...newPlayer('CPU',cpuChar,1-who),name:cpuName}];}
+async function requestGame({id=null,filter='all',origin='board',resume=false,returnToRoll=false,solo=false}={}){
  if(launching||store.session)return false;launching=true;store.busy=true;store.arcade=origin!=='board';
  const run=store.run,serial=++launchSerial,valid=()=>serial===launchSerial&&store.run===run;returnToRoll=returnToRoll||!!(resume&&run?.pending?.returnToRoll);const selectionRun=run||{gameHistory:[],familyBags:{}};if(run&&!(origin!=='board'&&BROFORCE_IDS.includes(id)))run.levelRealm=origin==='board'?run.board.nodes[run.players[run.current].node]?.realm:undefined;
  // Practice and arcade play must not consume the saved board's random stream.
@@ -194,20 +201,24 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
   else hooks.save();
  }
  if(!id&&!resume){const played=await animateRoulette(game,run?.mutation?'arcade':game.engine==='trivia'?'trivia':filter,warpPick?warpTheme(run)[game.engine==='trivia'?'trivia':'games'].map(gameById).filter(Boolean):null);if(!valid())return false;if(!played){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();return false;}}
- const choice=await showDialog({title:game.title,source:game.source,html:`${gameArtHTML(game)}<div class="how-to"><b>HOW TO PLAY · ${escapeHTML(game.duration.toUpperCase())}</b>${escapeHTML(game.rules)}</div>${run?.mutation&&origin==='board'&&!bfGame(game)?'<p style="font-size:12px">You are one team. Each person races a live CPU driver, then both relay scores are combined.</p>':''}`,choices:[{label:'Start game',value:'start',primary:true},{label:origin==='board'?'Return to board':'Back to arcade',value:'cancel'}]});
+ const soloKindNow=solo&&origin==='arcade'?soloKind(game):null,soloSet=soloKindNow?soloSettings(store.profile):null;
+ const soloNote=soloKindNow?`<p class="solo-note"><b>${soloKindNow==='cpu'?`SOLO · VS CPU (${SOLO_LEVEL_NAMES[soloSet.level].toUpperCase()})`:'SOLO RUN'}</b> ${soloKindNow==='cpu'?'You play against a CPU opponent.':'Play level after level until the run ends. Tap Exit any time to bank your score.'}${soloBestText(store.profile,game.id)?` ${escapeHTML(soloBestText(store.profile,game.id))}.`:''}</p>`:'';
+ const choice=await showDialog({title:game.title,source:game.source,html:`${gameArtHTML(game)}${soloNote}<div class="how-to"><b>HOW TO PLAY · ${escapeHTML(game.duration.toUpperCase())}</b>${escapeHTML(game.rules)}</div>${run?.mutation&&origin==='board'&&!bfGame(game)?'<p style="font-size:12px">You are one team. Each person races a live CPU driver, then both relay scores are combined.</p>':''}`,choices:[{label:'Start game',value:'start',primary:true},{label:origin==='board'?'Return to board':'Back to arcade',value:'cancel'}]});
  if(!valid())return false;
  if(choice===null){launching=false;store.busy=false;return false;}
  if(choice!=='start'){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();return false;}
  // Arcade play uses the latest new-game screen picks (names + characters); the draft starts from the saved run.
- const players=origin==='board'?run.players:run?structuredClone(run.players).map((p,i)=>({...p,name:store.setupNames?.[i]||p.name,character:store.setupSelected?.[i]||p.character})):[newPlayer(store.setupNames?.[0]??'Sean',store.setupSelected?.[0]||'sean',0),newPlayer(store.setupNames?.[1]??'Amber',store.setupSelected?.[1]||'amber',1)];
+ const players=soloKindNow?soloPlayers(run,soloSet.who):origin==='board'?run.players:run?structuredClone(run.players).map((p,i)=>({...p,name:store.setupNames?.[i]||p.name,character:store.setupSelected?.[i]||p.character})):[newPlayer(store.setupNames?.[0]??'Sean',store.setupSelected?.[0]||'sean',0),newPlayer(store.setupNames?.[1]??'Amber',store.setupSelected?.[1]||'amber',1)];
  let delivered=false,getEvidence=()=>null;
  const session=new GameSession(game,players,(scores,label)=>{
   if(bfGame(game)){
    if(delivered||!valid()||store.session!==session||!session.finished)return;
    delivered=true;
   }
+  if(session.solo){void settleSolo(game,scores,label,players,{...session.solo,progress:session.soloProgress},session.broforceRecruits||session.gameRecruits);return;}
   void settleGame(game,scores,label,origin,players,session.teamResult,returnToRoll,bfAttempt?{attempt:bfAttempt,evidence:getEvidence()}:null,session.broforceRecruits||session.gameRecruits);
  });
+ if(soloKindNow){const best=soloBest(store.profile,game.id);session.solo={kind:soloKindNow,who:soloSet.who,level:soloSet.level,skill:SOLO_SKILL[soloSet.level],best:best?.score||0,bestLevel:best?.level||0};}
  if(bfAttempt)getEvidence=bindBroforceSession(session,bfAttempt,()=>valid()&&store.session===session&&!delivered);
  session.practice=origin==='dev';session.returnToRoll=returnToRoll;store.session=session;session.active=origin==='board'?run.current:0;session.updateScores();launching=false;
  try{await ENGINES[game.engine](session);}catch(error){console.error('Game engine failure',game.id,error);if(valid()&&session.alive){session.dispose();store.session=null;store.busy=false;await showDialog({title:'Let’s get you back to the board',body:'This challenge was interrupted. No rewards were applied.',choices:[{label:'Continue',value:'ok',primary:true}]});if(!valid())return false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();}return false;}return valid();
@@ -236,7 +247,28 @@ async function settleGame(game,scores,label,origin,players,coop=null,returnToRol
  if(origin==='board'){if(unlocked.length)store.run.latestRecruit={owner:players[winner]?.owner,name:CHARACTERS.find(c=>c.id===unlocked[0])?.name||'A new character'};store.run.pending.unlocked=unlocked;store.run.pending.unlockOwner=winner===null?null:players[winner].owner;store.run.pending.unlockOwners=unlockOwners;store.run.pending.extra=extra;hooks.save();}if(origin!=='dev')saveProfile(store.profile);sound('win');const continued=await presentResult({gameId:game.id,scores,label,winner,rewards,extra,origin,coop,unlocked,unlockOwner:winner===null?null:players[winner].owner,unlockOwners},players);if(continued===null||!valid())return;for(const owner of [...new Set(unlocked.map(id=>unlockOwners[id]||(winner===null?null:players[winner].owner)))])if(!await unlockDialog(unlocked.filter(id=>(unlockOwners[id]||(winner===null?null:players[winner].owner))===owner),owner)||!valid())return;store.busy=false;
  if(origin==='board'){if(game.bossId&&hooks.bossDone){await hooks.bossDone(game,coop);return;}returnToRoll?hooks.beforeRoll():hooks.endTurn();}else hooks.arcade();
 }
+// Solo run result: record the best, recruit like an arcade win (only for the human, players[0]), show one card.
+async function settleSolo(game,scores,label,players,solo,cageRecruits){
+ const serial=launchSerial;store.session=null;const p=players[0],score=Math.max(0,scores[0]|0),level=solo.progress?.level||0;
+ const won=typeof solo.won==='boolean'?solo.won:solo.kind==='cpu'?scores[0]>scores[1]:level>0;
+ recordGame(store.profile,game,won?0:null,scores);const rec=recordSolo(store.profile,game.id,{score,level});const unlocked=[];
+ if(won){const pool=gameRecruitPool(game,store.profile,p),chance=recruitmentChance(store.profile,p,gameHasGuaranteedRecruit(game,store.profile,p));
+  if(!cageGame(game)&&pool.length&&Math.random()<chance){const actual=recruitReward(store.profile,pick(pool).id,p.owner,'game');if(actual)unlocked.push(actual);}
+  if(!cageGame(game))(store.profile.recruitDryStreak||={Sean:0,Amber:0})[p.owner]=unlocked.length?0:1;
+  const heir=CHARACTERS.find(c=>c.unlockBy==='character-win'&&c.requires===p.character);if(heir){const actual=recruitReward(store.profile,heir.id,p.owner,'character');if(actual)unlocked.push(actual);}}
+ if(Array.isArray(cageRecruits))for(const id of (cageRecruits[0]||[]).slice(0,10)){const actual=recruitReward(store.profile,id,p.owner,'game');if(actual&&!unlocked.includes(actual))unlocked.push(actual);}
+ const milestones=updateProgression(store.profile);saveProfile(store.profile);sound(won||rec.newBest?'win':'lose');
+ const cpu=solo.kind==='cpu',title=cpu?(scores[0]>scores[1]?`${p.name} beats the CPU!`:scores[0]===scores[1]?'Dead heat with the CPU':'The CPU takes it'):rec.newBest?'New personal best!':won?'Run banked':'Run over';
+ const best=rec.best,bestLine=`Best: ${best.score.toLocaleString()}${best.level?` · ${best.level} cleared`:''}`;
+ const html=`<div class="result-portraits"><div>${portraitHTML(p.character,'portrait mini',won||rec.newBest?'win':'sad')}<b>${escapeHTML(p.name)}</b></div>${cpu?`<div>${portraitHTML(players[1].character,'portrait mini',scores[1]>scores[0]?'win':'sad')}<b>${escapeHTML(players[1].name)}</b></div>`:''}</div><p class="solo-result"><b>${cpu?`${scores[0].toLocaleString()} – ${scores[1].toLocaleString()}`:`${score.toLocaleString()} points${level?` · ${level} cleared`:''}`}</b><br>${escapeHTML(label||'')}</p><p class="solo-best">${escapeHTML(bestLine)}${rec.newBest&&(rec.old.score||rec.old.level)?` (was ${rec.old.score.toLocaleString()})`:''}${milestones.length?`<br>New unlocks: ${escapeHTML(milestones.join(', '))}.`:''}</p>`;
+ const again=await showDialog({title,source:game.source,html,choices:[{label:'Play again',value:'again',primary:true},{label:'Back to the arcade',value:'ok'}]});
+ if(serial!==launchSerial)return;
+ if(unlocked.length&&!await unlockDialog(unlocked,p.owner))return;
+ store.busy=false;if(again==='again'){store.arcade=true;void requestGame({id:game.id,origin:'arcade',solo:true});}else hooks.arcade();
+}
 async function presentResult(result,players=store.run?.players){if(result.coop?.kind==='broforce'||result.bfAttempt||result.bfIntent)return showBroforceResultOnce(result,players);const game=result.gameId==='phone-task'?PHONE_TASK:gameById(result.gameId),coop=result.coop,title=coop?.kind==='boss'?(coop.won?'KNOCKOUT!':'The boss wins'):coop?.kind==='survival'?coop.won?'You survived together!':'The horde takes this night':coop?coop.tied?'A photo-finish tie':coop.won?'Your team beats the brothers!':'The brothers take this race':result.winner===null?'Honors shared':`${players[result.winner].name} takes it`;return showDialog({title,source:game.source,html:`<div class="result-portraits">${players.map((p,i)=>`<div>${portraitHTML(p.character,'portrait mini',coop?coop.tied?'silly':coop.won?'win':'sad':result.winner===null?'silly':i===result.winner?'win':'sad')}<b>${escapeHTML(p.name)}</b></div>`).join('')}</div><div class="big-result">${result.scores[0]} <span style="font-size:22px;color:#a59e8b">${coop?'+':'—'}</span> ${result.scores[1]}</div><p>${escapeHTML(result.label||game.title)}</p>${(result.unlocked||[]).map(id=>{const c=CHARACTERS.find(c=>c.id===id);return c?`<div class="recruit-result"><strong>NEW CHARACTER ADDED</strong>${portraitHTML(id,'portrait mini','win')}<b>${escapeHTML(c.name)}</b><p>Added to ${escapeHTML(result.unlockOwners?.[id]||result.unlockOwner||'both players')}’s roster · saved for future games.</p></div>`:'';}).join('')}${result.origin==='board'?`<div class="reward-delta" style="font-size:24px">${players.map((p,i)=>`${escapeHTML(p.name)} +${result.rewards[i]}`).join(' · ')}</div>`:result.origin==='dev'?'<p>DEV TEST · No XP, unlocks, or board rewards applied.</p>':'<p style="margin-top:15px">XP and collection progress saved.</p>'}${result.extra?`<div class="how-to">${escapeHTML(result.extra)}</div>`:''}`,choices:[{label:result.origin==='board'?'Back to the board':'Back to the arcade',value:'ok',primary:true}]});}
-async function exitGame(){if(!store.session)return;const s=store.session;s.paused=true;const choice=await showDialog({title:'End this challenge?',body:store.arcade?'Return to the arcade without a reward.':s.returnToRoll?'Return to the board without a reward. Your item action stays used; you can still roll.':'Return to the board without a reward. The turn passes to the other player.',choices:[{label:'Keep playing',value:'stay',primary:true},{label:'End challenge',value:'exit'}]});if(store.session!==s||!s.alive)return;if(choice!=='exit'){if(!s.waiting)s.paused=false;return;}s.dispose();store.session=null;store.busy=false;launching=false;if(store.arcade)hooks.arcade();else s.returnToRoll?hooks.beforeRoll():hooks.endTurn();}
+async function exitGame(){if(!store.session)return;const s=store.session;s.paused=true;
+ const prog=s.solo&&s.soloProgress;if(prog&&(prog.score>0||prog.level>0)){const choice=await showDialog({title:'End your solo run?',body:`Bank ${prog.score.toLocaleString()} points${prog.level?` (${prog.level} cleared)`:''} and see how it stacks up against your best.`,choices:[{label:'Keep playing',value:'stay',primary:true},{label:'Bank & quit',value:'bank'}]});if(store.session!==s||!s.alive)return;if(choice!=='bank'){if(!s.waiting)s.paused=false;return;}s.solo.won=prog.level>0;s.finish([prog.score,0],prog.label||`${s.game.title}: solo run banked.`);return;}
+ const choice=await showDialog({title:'End this challenge?',body:store.arcade?'Return to the arcade without a reward.':s.returnToRoll?'Return to the board without a reward. Your item action stays used; you can still roll.':'Return to the board without a reward. The turn passes to the other player.',choices:[{label:'Keep playing',value:'stay',primary:true},{label:'End challenge',value:'exit'}]});if(store.session!==s||!s.alive)return;if(choice!=='exit'){if(!s.waiting)s.paused=false;return;}s.dispose();store.session=null;store.busy=false;launching=false;if(store.arcade)hooks.arcade();else s.returnToRoll?hooks.beforeRoll():hooks.endTurn();}
 
 Object.assign(exports,{cancelGameLaunch,configureLauncher,requestGame,presentResult,exitGame});

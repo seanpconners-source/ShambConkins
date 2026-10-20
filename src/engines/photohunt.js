@@ -5,6 +5,7 @@ const {shuffle}=require("src/utils.js");
 const {circle}=require("src/engines/session.js");
 const {store}=require("src/state.js");
 const {saveProfile}=require("src/profile.js");
+const {soloFinish,soloProgress}=require("src/solo.js");
 const {audioContext}=require("src/audio.js");
 const {fullscreenSupported,toggleFullscreen,fullscreenLabel}=require("src/fullscreen.js");
 // Illustrated fallback scenes: used when the photo library runs out (endless rounds still need pictures).
@@ -201,6 +202,7 @@ async function photohunt(s){
  const players=[0,1].map(()=>({score:0,round:0,hints:RULES.hints,done:false,high:false}));
  const photos=shuffle([...bundledPairs(),...profilePairs()],s.random),decks=[photos.filter((_,i)=>i%2===0),photos.filter((_,i)=>i%2===1)];
  if(photos.length===1)decks[1]=[...decks[0]];
+ if(s.solo)decks[0]=photos; // solo: the whole photo library
  const cache=new Map();let sceneIndex=Math.floor(s.random()*PHOTO_SCENES.length);
  let actor=0,phase='wait',T=0,st=null,help=false,view={k:1,ox:0,oy:0},resolveGame=null,lastTick=0,clockGlow=0,quitGlow=0;
  const P=()=>players[actor];
@@ -339,7 +341,7 @@ async function photohunt(s){
   rr(x,-4,-4,DW+8,DH+8,14);x.fillStyle='#1b1c22';x.fill();x.save();rr(x,0,0,DW,DH,10);x.clip();drawScreen();if(help)drawHelp();x.restore();
  }
  s.frame(dt=>{update(dt);draw();refresh();});
- function refresh(){s.debug={phase,actor,round:P().round,players,regions:st?.regions||[],found:st?.found||[],left:st?.left??0,total:st?.total??0,clock:st?.clock??0,help,mode:LAY.mode,decks:decks.map(d=>d.map(p=>p.id)),pair:st?.spec?.pair?.id,mirror:!!st?.spec?.mirror,
+ function refresh(){if(s.solo)soloProgress(s,players[0].score,players[0].round,`Photo Hunt solo: ${fmt(players[0].score)}, reached round ${players[0].round+1}.`);s.debug={phase,actor,round:P().round,players,regions:st?.regions||[],found:st?.found||[],left:st?.left??0,total:st?.total??0,clock:st?.clock??0,help,mode:LAY.mode,decks:decks.map(d=>d.map(p=>p.id)),pair:st?.spec?.pair?.id,mirror:!!st?.spec?.mirror,
   // canvas-relative CSS px of difference i on photo `side` (tests tap here)
   point:(i,side=0)=>{const v=views()?.[side],r=st?.regions[i];if(!v||!r)return null;const p=toSlot(v,r.x,r.y);return {x:view.ox+p.x*view.k,y:view.oy+p.y*view.k};},
   at:(side,u,v)=>{const w=views()?.[side];if(!w)return null;const p=toSlot(w,u,v);return {x:view.ox+p.x*view.k,y:view.oy+p.y*view.k};},
@@ -363,14 +365,15 @@ async function photohunt(s){
  });
  s.on(document,'keydown',ev=>{if(s.paused||!s.alive)return;if(ev.key==='h'||ev.key==='H')useHint();else if(ev.key==='?')help=!help;});
 
- for(let p=0;p<2;p++){
+ for(let p=0;p<(s.solo?1:2);p++){
   actor=p;s.active=p;phase='wait';st=null;help=false;s.updateScores();
-  const intro=p===0?`${name(0)} plays first. Find the differences between the two photos before the timer bar runs out. The game goes round after round until time runs out.`
+  const intro=s.solo?`Find the differences between the two photos before the timer bar runs out. Round after round, each one a little faster, until the bar empties.`:p===0?`${name(0)} plays first. Find the differences between the two photos before the timer bar runs out. The game goes round after round until time runs out.`
    :`${name(1)}'s turn, with a different photo set. ${name(0)} scored ${fmt(players[0].score)} (round ${players[0].round+1}). Beat it!`;
   if(!await s.pass(p,intro,'Start Photo Hunt',{countdown:3}))return;
   await new Promise(r=>{resolveGame=r;s.cleanup(r);startGame(p);});
   if(!s.alive)return;
  }
+ if(s.solo)return soloFinish(s,players[0].score,players[0].round,`Photo Hunt solo: ${fmt(players[0].score)}, reached round ${players[0].round+1}.`);
  const scores=players.map(p=>p.score);
  s.finish(scores,`Photo Hunt · ${name(0)} ${fmt(scores[0])} (round ${players[0].round+1}) vs ${name(1)} ${fmt(scores[1])} (round ${players[1].round+1}).`);
 }

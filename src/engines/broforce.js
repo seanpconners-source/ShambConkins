@@ -9,6 +9,7 @@
 // character you have not unlocked; free it and they join your roster after the game (session.broforceRecruits).
 // Each owner keeps their own roster; nothing unlocks unless a gold cage was opened. Ids/game ids are unchanged.
 const {clamp,hash}=require('src/utils.js');
+const {soloFinish,soloProgress}=require('src/solo.js');
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,PCOL,Countdown,settle}=require('src/engines/arenaKit.js');
 
 const STEP=1/60,T=16,ROWS=34,MAXW=260,G=19; // tile px, map rows, map stride, surface row
@@ -233,7 +234,9 @@ async function broforce(s){
  const {character}=require('src/characters.js');
  const nameOf=id=>{try{return character(id)?.name||id;}catch{return id;}};
  const seed=Math.floor(s.random()*4294967296);
- const STAGES=[0,1,2].map(si=>buildStage(seed+si*7919,si));
+ let STAGES=[0,1,2].map(si=>buildStage(seed+si*7919,si));
+ // Solo: mission after mission (a fresh 3-stage map each time) until a mission fails or the player banks the run.
+ let soloTotal=0,soloCleared=0;
  // per player: their own roster for respawns, and the locked characters that can wait in the GOLD cages
  const rosters=s.players.map(p=>{try{return availableCharacters(store.profile,p.owner).filter(Boolean);}catch{return [];}});
  const vipPools=s.players.map(p=>{try{return gameRecruitPool(s.game,store.profile,p).map(ch=>ch.id);}catch{return [];}});
@@ -662,7 +665,7 @@ async function broforce(s){
  }
  function nextStage(){if(stageIdx<2){loadStage(stageIdx+1,true);P.boarded=false;P.mood='normal';}else endTurn('done');}
  function endTurn(why){
-  if(phase!=='play')return;phase=turn===0?'turn-end':'end';endT=0;P.why=why;
+  if(phase!=='play')return;phase=turn===0||s.solo?'turn-end':'end';endT=0;P.why=why;
   results[turn]={score:P.score,kills:P.kills,rescues:P.rescues,gold:P.gold,stages:P.stagesCleared,why,recruits:s.broforceRecruits[turn].slice()};
   if(phase==='end'){const a=results[0].score,b=results[1].score;winner=a===b?-2:a>b?0:1;if(winner>=0)s.react(winner,'win');jingle([523,659,784,1047,1319],{type:'square',vol:.035,step:.1});}
   else jingle([392,523,659,784],{type:'square',vol:.03,step:.09});
@@ -682,12 +685,16 @@ async function broforce(s){
  async function beginTurn(i){
   phase='handoff';turn=i;clearInput();
   const n0=s.players[0].name;
-  const desc=i===0?`You go first: blast through all three stages of ${theme.op}. Kills, freed prisoners, checkpoints and fast stage clears score points. Open the GOLD cage on each stage to unlock a new character. ${s.players[1].name} plays the same mission next.`
+  const desc=s.solo?`Mission ${soloCleared+1}: blast through all three stages of ${theme.op}. Kills, freed prisoners, checkpoints and fast clears score points; GOLD cages unlock new characters. Complete the mission to get a brand-new one.`:i===0?`You go first: blast through all three stages of ${theme.op}. Kills, freed prisoners, checkpoints and fast stage clears score points. Open the GOLD cage on each stage to unlock a new character. ${s.players[1].name} plays the same mission next.`
    :`Beat ${n0}’s ${results[0].score.toLocaleString()} points on the same mission. GOLD cages unlock new characters for you too.`;
-  if(!await s.pass(i,desc,'Ready — lock and load',{summary:i?`${n0}: ${results[0].score.toLocaleString()} points, ${results[0].kills} kills, ${results[0].rescues} ${results[0].rescues===1?'prisoner':'prisoners'} freed. ${s.players[1].name}, take the phone.`:null}))return;
+  if(!await s.pass(i,desc,'Ready — lock and load',s.solo?{soloTitle:`Mission ${soloCleared+1}`,summary:soloCleared?`${soloTotal.toLocaleString()} points so far.`:null}:{summary:i?`${n0}: ${results[0].score.toLocaleString()} points, ${results[0].kills} kills, ${results[0].rescues} ${results[0].rescues===1?'prisoner':'prisoners'} freed. ${s.players[1].name}, take the phone.`:null}))return;
   clock=0;acc=0;P=newPlayer(i);setBro(P.bro);loadStage(0,false);P.x=W.S.spawn.x;P.y=W.S.spawn.y;P.inv=1.5;computeZoom();updateCamera(0,true);
   cd=new Countdown(3);phase='count';
  }
+ function soloAfter(){const r=results[0];soloTotal+=r.score;
+  if(r.why!=='done')return soloFinish(s,soloTotal,soloCleared,`Broforce ${theme.name} solo: ${soloCleared} mission${soloCleared===1?'':'s'} accomplished; the last ended at ${r.stages}/3 stages (${r.why==='time'?'time up':'out of bros'}).`);
+  soloCleared++;soloProgress(s,soloTotal,soloCleared,`Broforce ${theme.name} solo: ${soloCleared} mission${soloCleared===1?'':'s'} accomplished.`);
+  const next=Math.floor(s.random()*4294967296);STAGES=[0,1,2].map(si=>buildStage(next+si*7919,si));beginTurn(0);}
  s.hint(`BROFORCE · turns: each player runs the same 3-stage mission and the higher score wins. Touch: drag on the left to run (push up to jump or climb a ladder, down to drop or climb down); hold anywhere on the right to fire, swipe up there to jump, swipe down to throw a grenade. Push into any wall in mid-air to climb it. Free caged prisoners to switch bros (+1 life); the GOLD cage unlocks a new character. Keys: A/D or arrows run, W/Up jump, S/Down ladders, Space/Enter fire, G/E/Shift grenade.`);
 
  // ---------------------------------------------------------------- drawing: tiles (pre-rendered per theme)
@@ -978,8 +985,8 @@ async function broforce(s){
     updateCamera(STEP);
    }
    if(steps===4)acc=0;
-   s.setScores([turn===0?P.score:results[0]?.score||0,turn===1?P.score:0]);
-   if(phase==='turn-end'){endT+=dt;if(endT>3)beginTurn(1);}
+   s.setScores(s.solo?[soloTotal+(phase==='turn-end'||phase==='play'?P.score:0),0]:[turn===0?P.score:results[0]?.score||0,turn===1?P.score:0]);
+   if(phase==='turn-end'){endT+=dt;if(endT>3){if(s.solo){phase='handoff';soloAfter();return;}beginTurn(1);}}
    else if(phase==='end'){endT+=dt;if(endT>3.6){
     const a=results[0],b=results[1],n=s.players.map(p=>p.name);
     const recruited=[a,b].map((r,i)=>r.recruits.length?` ${n[i]} freed ${r.recruits.map(nameOf).join(', ')}.`:'').join('');

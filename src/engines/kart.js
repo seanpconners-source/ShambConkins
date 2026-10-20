@@ -10,6 +10,7 @@
 // ahead or down to drop it behind. Items: banana (x3), green shell (x3), red/blue shell, mushroom (x3), golden mushroom,
 // star, lightning, bob-omb, blooper, coin, Bullet Bill, plus Tour's frenzy. Needs WebGL.
 const {clamp,seededRandom}=require("src/utils.js");
+const {soloFinish,soloProgress,cpuSkill}=require("src/solo.js");
 const {arenaKeys,arenaTouch,snd,noise,jingle,PCOL,FONT,outlined,rr,settle}=require("src/engines/arenaKit.js");
 const {audioContext}=require("src/audio.js");
 const {store}=require("src/state.js");
@@ -137,10 +138,13 @@ async function kart(s){
 
  // ---------------------------------------------------------------- one race / battle
  // opts: course, humans (player indices), cpus, seed, ghost (recording to race), record (record a ghost)
- function runRace({course,humans,cpus,seed,ghost=null,record=false}){
+ // rival: solo vs CPU — the CPU player's character drives the first CPU kart and its result is returned.
+ function runRace({course,humans,cpus,seed,ghost=null,record=false,rivalCpu=false}){
   return new Promise(resolve=>{
   const battle=mode==='battle',timeTrial=mode==='time',vs=humans.length===2;
-  const rand0=seededRandom(seed),cpuIds=pickCPUs(cpus,s.players.map(p=>p.character),rand0,store.profile);
+  const rand0=seededRandom(seed),cpuIds=rivalCpu?[s.players[1].character,...pickCPUs(cpus-1,s.players.map(p=>p.character),rand0,store.profile)]:pickCPUs(cpus,s.players.map(p=>p.character),rand0,store.profile);
+  // solo: the Easy / Normal / Hard pick sets the CPU karts' top speed (the 2-player game keeps .955-.995)
+  const cpuBase=s.solo?.925+.07*cpuSkill(s):.955;
   const colors=[...humans.map(p=>PCOL[p]),...cpuIds.map((id,j)=>CPU_COLORS[id]||CPU_PALETTE[j%CPU_PALETTE.length])];
   const ghostIdx=ghost?colors.length:-1;if(ghost)colors.push(PCOL[ghost.player]);
   const glc=document.createElement('canvas');let R;
@@ -156,7 +160,7 @@ async function kart(s){
   {let a=Infinity,b=-Infinity,c0=Infinity,d0=-Infinity;for(let i=0;i<course.N;i++){a=Math.min(a,course.px[i]);b=Math.max(b,course.px[i]);c0=Math.min(c0,course.pz[i]);d0=Math.max(d0,course.pz[i]);}
    const sc=1/Math.max(b-a,d0-c0),ox=(1-(b-a)*sc)/2,oz=(1-(d0-c0)*sc)/2;course.mini=[];for(let i=0;i<course.N;i+=6)course.mini.push([ox+(course.px[i]-a)*sc,oz+(course.pz[i]-c0)*sc]);
    course.miniAt=k=>[ox+(k.P2[0]-a)*sc,oz+(k.P2[2]-c0)*sc];}
-  const K=colors.slice(0,ghost?-1:colors.length).map((_,i)=>Object.assign(Ph.makeKart(course,i),{human:i<humans.length,player:i<humans.length?humans[i]:-1,cpu:i>=humans.length?cpuIds[i-humans.length]:null,lane:i>=humans.length?(rand0()-.5)*50:0,topMul:1,baseMul:i>=humans.length?.955+rand0()*.04:1,items:[],rolling:false,rollT:0,frenzy:0,frenzyItem:null,frenzyCD:0,goldenT:0,balloons:3,out:false,finished:false,finishT:0,place:0,best:0,msgs:[],wrongT:0,rel:0,lapT:[]}));
+  const K=colors.slice(0,ghost?-1:colors.length).map((_,i)=>Object.assign(Ph.makeKart(course,i),{human:i<humans.length,player:i<humans.length?humans[i]:-1,cpu:i>=humans.length?cpuIds[i-humans.length]:null,lane:i>=humans.length?(rand0()-.5)*50:0,topMul:1,baseMul:i>=humans.length?cpuBase+rand0()*.04:1,items:[],rolling:false,rollT:0,frenzy:0,frenzyItem:null,frenzyCD:0,goldenT:0,balloons:3,out:false,finished:false,finishT:0,place:0,best:0,msgs:[],wrongT:0,rel:0,lapT:[]}));
   const H=K.filter(k=>k.human),kartOf=p=>H.find(k=>k.player===p);
   if(timeTrial){const k=K[0];k.s=T.wrapS(course,course.startS-34);k.d=0;k.prevS=k.s;k.safeS=k.s;Ph.pose(course,k);k.items=[{id:'mush3',n:3}];}
   const shells=[],bananas=[],bombs=[],parts=[];
@@ -418,6 +422,7 @@ async function kart(s){
       else{const k=H[0];endText=k.finished?(timeTrial?`${fmtTime(k.finishT)}`:`${ord(k.place)} PLACE!`):'TIME UP!';}}}
     else{endT+=dt;if(endT>3.2){
      const res={course,ghost:rec?{player:humans[0],frames:rec}:null,humans:H.map(k=>({player:k.player,finished:k.finished,place:k.finished?k.place:rankOf(k),finishT:k.finished?k.finishT:Infinity,prog:k.best,balloons:k.balloons,lapT:k.lapT.slice()}))};
+     if(rivalCpu){const k=K[humans.length];if(k)res.rival={finished:k.finished,place:k.finished?k.place:rankOf(k),finishT:k.finished?k.finishT:Infinity};}
      endRace(res);return;}}
    }
    for(let j=parts.length-1;j>=0;j--){const p=parts[j];p.life-=dt;if(p.life<=0){parts.splice(j,1);continue;}const dr=Math.exp(-p.drag*dt);p.V[0]*=dr;p.V[1]=p.V[1]*dr+(p.g||0)*dt;p.V[2]*=dr;p.P[0]+=p.V[0]*dt;p.P[1]+=p.V[1]*dt;p.P[2]+=p.V[2]*dt;}
@@ -456,6 +461,7 @@ async function kart(s){
  const course=mode==='battle'?T.battleRing():await chooseCourse();
  if(!s.alive)return;
  const P=s.players.map(p=>p.name);
+ if(s.solo)return soloKart(course,seed);
  if(MD.vs){
   const r=await runRace({course,humans:[0,1],cpus:MD.cpus,seed});if(!r||!s.alive)return;
   const [a,b]=r.humans;
@@ -481,5 +487,32 @@ async function kart(s){
  if(sa===sb&&a.finishT!==b.finishT){if(a.finishT<b.finishT)sa++;else sb++;}
  const d=h=>h.finished?`${ord(h.place)} (${fmtTime(h.finishT)})`:`${ord(h.place)}, did not finish`;
  s.finish([sa,sb],`${course.name} Grand Prix: ${P[0]} ${d(a)}, ${P[1]} ${d(b)}.`);
+
+ // ---------------------------------------------------------------- solo (1P arcade)
+ // race: one Grand Prix vs 7 CPUs; the CPU player's character is your rival — finish ahead of it to win.
+ // gp: course after course; a podium (top 3) moves you on, anything lower ends the cup run.
+ // time: lap the course again and again against your own ghost; every new record moves you on.
+ async function soloKart(first,seed0){
+  const name=s.players[0].name,pts=h=>GP_POINTS[Math.min(7,Math.max(0,h.place-1))]||0,rv=s.players[1];
+  if(mode==='race'){
+   if(!await s.pass(0,`Grand Prix · ${first.name}. Seven CPU racers; ${rv.name} is your rival: finish ahead of them to win.`,`${name} — start your engine`,{soloTitle:first.name}))return;
+   const r=await runRace({course:first,humans:[0],cpus:MD.cpus+1,seed:seed0,rivalCpu:true});if(!r||!s.alive)return;
+   const me=r.humans[0],them=r.rival||{place:8,finished:false},d=h=>h.finished?`${ord(h.place)} (${fmtTime(h.finishT)})`:`${ord(h.place)}, did not finish`;
+   const sc=[pts(me),pts(them)];if(sc[0]===sc[1])sc[me.place<them.place?0:1]++;
+   return s.finish(sc,`${first.name} Grand Prix: ${name} ${d(me)}, ${rv.name} ${d(them)}.`);}
+  let course=first,idx=Math.max(0,T.COURSES.findIndex(C=>C.name===first.name)),total=0,cleared=0,ghost=null,best=Infinity,seed=seed0;
+  for(;;){
+   const text=mode==='time'?(ghost?`Time Trials · ${course.name}. Beat your record of ${fmtTime(best)}; your ghost races with you.`:`Time Trials · ${course.name}. Three laps alone with three mushrooms. Then race your own ghost: every new record keeps the run going.`)
+    :`Grand Prix race ${cleared+1} · ${course.name}. Seven CPU racers. Finish in the top 3 to move on to the next course.`;
+   if(!await s.pass(0,text,`${name} — start your engine`,{soloTitle:mode==='time'?`Lap attack ${cleared+1}`:`Race ${cleared+1}`,summary:cleared?`${total.toLocaleString()} points so far.`:null}))return;
+   const r=await runRace({course,humans:[0],cpus:MD.cpus,seed,ghost,record:mode==='time'});if(!r||!s.alive)return;const me=r.humans[0];
+   if(mode==='time'){const ok=me.finished&&me.finishT<best;if(me.finished)total+=Math.round(100000/me.finishT);
+    if(!ok){s.setScores([total,0]);return soloFinish(s,total,cleared,`${course.name} time trial solo: ${cleared} record${cleared===1?'':'s'}; best ${best<Infinity?fmtTime(best):'no finish'}${me.finished&&best<Infinity?`, last ${fmtTime(me.finishT)}`:''}.`,cleared>0);}
+    best=me.finishT;if(r.ghost){ghost=r.ghost;ghost.total=best;}cleared++;s.setScores([total,0]);soloProgress(s,total,cleared,`${course.name} time trial solo: best ${fmtTime(best)} after ${cleared} record${cleared===1?'':'s'}.`);continue;}
+   total+=pts(me);s.setScores([total,0]);
+   if(!me.finished||me.place>3)return soloFinish(s,total,cleared,`Grand Prix solo: ${cleared} podium${cleared===1?'':'s'}; ${course.name} ended ${me.finished?ord(me.place):'without a finish'}.`);
+   cleared++;soloProgress(s,total,cleared,`Grand Prix solo: ${cleared} podium${cleared===1?'':'s'}, ${total} points.`);
+   idx=(idx+1)%T.COURSES.length;course=T.COURSES[idx].build();seed=Math.floor(s.random()*1e9);}
+ }
 }
 Object.assign(exports,{kart});

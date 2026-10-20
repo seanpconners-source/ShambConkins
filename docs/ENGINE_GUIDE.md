@@ -65,6 +65,17 @@ steal the game area:
   and keep them to one slim row.
 * Turn-based games: tap/drag directly on the canvas. Never require typing.
 
+## Solo (1P arcade) support
+The Arcade has a 1P / 2P switch (`src/solo.js`). A game shows up in 1P when its id is in `SOLO_IDS` (or the game sets
+`soloKind`): `'levels'` (one player, level after level), `'rounds'` (timed game in harder rounds) or `'cpu'` (player 2 is a CPU).
+On a solo launch `s.solo={kind,who,level,skill,best}`; `s.players[0]` is the human, `s.players[1]` the CPU's face/name.
+* Levels/rounds: play only player 0; after each cleared level call `soloProgress(s,total,cleared,label)` and start the next;
+  when the run ends call `soloFinish(s,total,cleared,label)`. Exit offers "Bank & quit" from `s.soloProgress` (the score side
+  is also kept current by `s.setScores`). Pass `{soloTitle:'Level 3'}` to `s.pass` for the between-levels card.
+* CPU: scale the opponent with `cpuSkill(s)` (0.35 easy / 0.65 normal / 0.9 hard) and `s.finish([me,cpu],label)` as usual.
+* Recruits go to `s.gameRecruits[0]` / `s.broforceRecruits[0]` as in 2P; `settleSolo` (gameLauncher) records the best run in
+  `profile.soloBest[id]` and recruits like an arcade win. Test with `node tests/solo.mjs <id-regex>`.
+
 ## Look and feel
 Games should feel finished: title/countdown, readable HUD, juicy feedback (screen shake, particles, sounds), clear win/lose state,
 and a 45-90 second playtime unless the design needs more. Draw everything procedurally on the canvas (no external images; heads come

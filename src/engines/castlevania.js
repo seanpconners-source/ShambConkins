@@ -8,6 +8,7 @@
 // hearts after 60 s; the exit door sends you round the castle again with fresh candles). Everything is drawn
 // procedurally in an NES-like palette; no ROM art and no Konami music.
 const {clamp,seededRandom}=require("src/utils.js");
+const {soloFinish,soloProgress}=require("src/solo.js");
 const {Fx,arenaTouch,snd,noise,jingle,outlined,PCOL,Countdown,settle}=require("src/engines/arenaKit.js");
 
 const STEP=1/60,T=16,ROWS=12,FL=10,HUDH=44,MAXC=420; // tile size, rows, floor row, HUD height (logical px), column stride
@@ -80,7 +81,10 @@ async function castlevania(s){
  const mode=s.game.cvMode==='hearts'?'hearts':'boss';
  const [c,g]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.updateScores();
  if(!await settle(s))return;
- const L=buildCastle(s.random,mode),seedBase=Math.floor(s.random()*1e9);
+ let L=buildCastle(s.random,mode);const seedBase=Math.floor(s.random()*1e9);
+ // Solo: the castle again and again; each clear tightens the clock (boss) or raises the heart goal (hearts).
+ let soloTotal=0,soloCleared=0,soloOk=false;
+ const raceCap=()=>s.solo?Math.max(75,RACE_CAP-20*soloCleared):RACE_CAP,heartGoal=()=>12+6*soloCleared;
  const worlds=[makeWorld(L,seedBase),makeWorld(L,seedBase)],pl=[makePlayer(0,L,mode),makePlayer(1,L,mode)];
  const cams=[{x:0,w:256},{x:0,w:256}];
  const touchUI=typeof matchMedia==='function'&&matchMedia('(pointer: coarse)').matches;
@@ -544,12 +548,17 @@ async function castlevania(s){
  const score=q=>mode==='hearts'?`${q.hearts} hearts`:q.finished?fmtRace(q.finishT):`${prog(q)}% of the way`;
  async function beginTurn(i){
   phase='handoff';turn=i;pads.stick=null;pads.jump=null;clearKeys();for(const inp of inputs)Object.assign(inp,{l:0,r:0,u:0,d:0,jump:0,press:0,atk:0,sub:0});
-  const n0=s.players[0].name,desc=i===0?(mode==='hearts'?`You go first: whip candles and monsters for as many hearts as you can in 60 seconds. ${s.players[1].name} plays next against your ghost.`:`You go first: get through the castle and slay the Phantom Bat as fast as you can. ${s.players[1].name} plays next against your ghost.`)
+  const n0=s.players[0].name,desc=s.solo?(mode==='hearts'?`Night ${soloCleared+1}: whip candles and monsters for at least ${heartGoal()} hearts in 60 seconds to reach the next night.`:`Castle run ${soloCleared+1}: slay the Phantom Bat within ${fmtRace(raceCap())} to go again with less time.`):i===0?(mode==='hearts'?`You go first: whip candles and monsters for as many hearts as you can in 60 seconds. ${s.players[1].name} plays next against your ghost.`:`You go first: get through the castle and slay the Phantom Bat as fast as you can. ${s.players[1].name} plays next against your ghost.`)
    :(mode==='hearts'?`Beat ${n0}'s ${pl[0].hearts} hearts in 60 seconds. ${n0}'s ghost runs beside you.`:`Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'}. Follow or overtake ${n0}'s ghost.`);
-  if(!await s.pass(i,desc,'Ready — start my countdown',{summary:i?`${n0}: ${score(pl[0])}. ${s.players[1].name}, take the controls.`:null}))return;
+  if(!await s.pass(i,desc,'Ready — start my countdown',s.solo?{soloTitle:mode==='hearts'?`Night ${soloCleared+1}`:`Castle run ${soloCleared+1}`,summary:soloCleared?`${soloTotal.toLocaleString()} points so far.`:null}:{summary:i?`${n0}: ${score(pl[0])}. ${s.players[1].name}, take the controls.`:null}))return;
   clock=0;acc=0;gi=0;cd=new Countdown(3);phase='count';cams[i].x=0;
  }
- const turnOver=p=>mode==='hearts'?clock>=HUNT_TIME:p.finished&&clock-p.finishT>2.5||clock>=RACE_CAP||turn===1&&pl[0].finished&&!p.finished&&clock>pl[0].finishT+4;
+ const soloPoints=p=>mode==='hearts'?p.hearts*10:p.finished?1000+Math.max(0,Math.round((raceCap()-p.finishT)*10)):prog(p)*5;
+ function soloAfter(){const p=pl[0],pts=soloPoints(p);soloTotal+=pts;
+  if(!soloOk)return soloFinish(s,soloTotal,soloCleared,mode==='hearts'?`Night of the Candles solo: ${soloCleared} night${soloCleared===1?'':'s'} survived; ${p.hearts}/${heartGoal()} hearts on the last.`:`Vampire Killer solo: the bat fell ${soloCleared} time${soloCleared===1?'':'s'}; last run ${score(p)}.`);
+  soloCleared++;soloProgress(s,soloTotal,soloCleared,mode==='hearts'?`Night of the Candles solo: ${soloCleared} night${soloCleared===1?'':'s'} survived.`:`Vampire Killer solo: the bat fell ${soloCleared} time${soloCleared===1?'':'s'}.`);
+  L=buildCastle(s.random,mode);worlds[0]=makeWorld(L,Math.floor(s.random()*1e9));pl[0]=makePlayer(0,L,mode);beginTurn(0);}
+ const turnOver=p=>mode==='hearts'?clock>=HUNT_TIME:p.finished&&clock-p.finishT>2.5||clock>=raceCap()||turn===1&&pl[0].finished&&!p.finished&&clock>pl[0].finishT+4;
  const still={l:0,r:0,u:0,d:0,jump:0,press:0,atk:0,sub:0};
  // ---------------- main loop
  s.frame((dt,t)=>{
@@ -562,26 +571,27 @@ async function castlevania(s){
     if(phase==='play'){clock+=STEP;const inp=inputs[i];readInput(i);stepPlayer(p,worlds[i],inp);stepWorld(worlds[i],p);}
     else{stepPlayer(p,worlds[i],still);}
     updateCamera(p,i);
-    if(turn===0&&phase!=='end')ghost.push(snap(p));else if(turn===1)gi++;
+    if(turn===0&&phase!=='end'&&!s.solo)ghost.push(snap(p));else if(turn===1)gi++;
    }
    if(steps===5)acc=0;
    for(const w of worlds)w.fx.update(dt);for(let k=0;k<2;k++)flash[k]=Math.max(0,flash[k]-dt*1.8);
    if(phase==='play'){
     if(turnOver(p)){endT=0;
-     if(turn===0){phase='turn-end';turnText=mode==='hearts'?`${p.hearts} HEARTS`:p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;jingle([523,659,784,1047],{type:'square',vol:.03,step:.09});}
+     if(s.solo){soloOk=mode==='hearts'?p.hearts>=heartGoal():p.finished;phase='turn-end';turnText=mode==='hearts'?`${p.hearts}/${heartGoal()} HEARTS`:p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;jingle(soloOk?[523,659,784,1047]:[392,330,262],{type:'square',vol:.03,step:.09});}
+     else if(turn===0){phase='turn-end';turnText=mode==='hearts'?`${p.hearts} HEARTS`:p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;jingle([523,659,784,1047],{type:'square',vol:.03,step:.09});}
      else{phase='end';const a=pl[0],b=pl[1];
       if(mode==='hearts')winner=a.hearts===b.hearts?-2:a.hearts>b.hearts?0:1;
       else if(a.finished&&b.finished)winner=Math.abs(a.finishT-b.finishT)<.01?-2:a.finishT<b.finishT?0:1;
       else if(a.finished||b.finished)winner=a.finished?0:1;else{const pa=prog(a),pb=prog(b);winner=pa===pb?-2:pa>pb?0:1;}
       endText=winner===-2?'A DRAW IN THE DARK!':mode==='hearts'?`${s.players[winner].name.toUpperCase()} WINS!`:pl[winner].finished?`${s.players[winner].name.toUpperCase()} SLEW THE BAT!`:`${s.players[winner].name.toUpperCase()} GOT FURTHEST!`;
       if(winner>=0)s.react(winner,'win');jingle([523,659,784,1047,1319],{type:'square',vol:.035,step:.1});}}
-   }else if(phase==='turn-end'){endT+=dt;if(endT>2.4)beginTurn(1);}
+   }else if(phase==='turn-end'){endT+=dt;if(endT>2.4){if(s.solo){phase='handoff';soloAfter();return;}beginTurn(1);}}
    else{endT+=dt;if(endT>3.4){
     if(mode==='hearts'){const a=pl[0].hearts,b=pl[1].hearts;s.finish([a,b],`Night of the Candles: ${s.players[0].name} ${a} hearts, ${s.players[1].name} ${b} hearts.`);}
     else{const sc=[prog(pl[0]),prog(pl[1])];if(winner>=0){sc[winner]=100;sc[1-winner]=Math.min(sc[1-winner],99);}
      s.finish(sc,`Vampire Killer Dash: ${s.players[0].name} ${score(pl[0])}, ${s.players[1].name} ${score(pl[1])}.`);}
     return;}}
-   if(mode==='hearts')s.setScores([pl[0].hearts,pl[1].hearts]);else s.setScores(pl.map(prog));
+   if(s.solo)s.setScores([soloTotal+(phase==='play'||phase==='turn-end'?soloPoints(pl[0]):0),0]);else if(mode==='hearts')s.setScores([pl[0].hearts,pl[1].hearts]);else s.setScores(pl.map(prog));
   }
   // draw
   g.fillStyle='#000';g.fillRect(0,0,s.W,s.H);
@@ -589,7 +599,7 @@ async function castlevania(s){
   if(phase==='title')drawTitle(titleT);
   if(phase==='count'||!cd.done&&phase==='play')cd.draw(g,s.W,s.H);
   if(phase==='turn-end'||phase==='end'){const a=Math.min(1,endT*3),size=Math.min(s.W*.07,s.H*.07,46);g.save();g.globalAlpha=a;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(0,s.H*.4,s.W,s.H*.2);
-   if(phase==='turn-end'){outlined(g,mode==='boss'&&pl[0].finished?'STAGE CLEAR!':'TIME UP',s.W/2,s.H/2-size*.3,{size,fill:N.gold,stroke:'#000'});outlined(g,`${s.players[0].name.toUpperCase()}: ${turnText}`,s.W/2,s.H/2+size*.75,{size:size*.5,fill:N.white,stroke:'#000'});}
+   if(phase==='turn-end'){outlined(g,s.solo&&!soloOk&&mode==='hearts'?'NOT ENOUGH HEARTS':mode==='boss'&&pl[0].finished?'STAGE CLEAR!':'TIME UP',s.W/2,s.H/2-size*.3,{size,fill:N.gold,stroke:'#000'});outlined(g,`${s.players[0].name.toUpperCase()}: ${turnText}`,s.W/2,s.H/2+size*.75,{size:size*.5,fill:N.white,stroke:'#000'});}
    else{outlined(g,mode==='hearts'&&endT<1.2?'TIME UP':endText,s.W/2,s.H/2-size*.3,{size,fill:N.gold,stroke:'#000'});
     const sub=mode==='hearts'?`${pl[0].hearts} HEARTS  ·  ${pl[1].hearts} HEARTS`:pl.map(q=>q.finished?fmtRace(q.finishT):`${prog(q)}%`).join('  ·  ');outlined(g,sub,s.W/2,s.H/2+size*.75,{size:size*.5,fill:N.white,stroke:'#000'});}
    g.restore();}

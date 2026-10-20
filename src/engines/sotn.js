@@ -11,6 +11,7 @@
 // cleave; presses are buffered), up + attack or swipe up for the sub-weapon (hearts), hold attack and release for
 // Hellfire (MP). Blue after-images trail the hero and the blade. The simulation is a fixed 60 Hz; drawing interpolates. Monsters split in half and burn; blood stains the floor. Art: sotnArt.js; sound: sotnAudio.js.
 const {clamp,seededRandom}=require("src/utils.js");
+const {soloFinish,soloProgress}=require("src/solo.js");
 const {arenaTouch,outlined,PCOL,Countdown,settle}=require("src/engines/arenaKit.js");
 const {fullBleed}=require("src/engines/fullBleed.js");
 const A=require("src/engines/sotnArt.js");
@@ -115,6 +116,8 @@ async function sotn(s){
  s.cleanup(()=>stopAll());
  const L=buildCastle(s.random),seedBase=Math.floor(s.random()*1e9),AR=L.arena;
  const worlds=[makeWorld(L,seedBase),makeWorld(L,seedBase)],pl=[makePlayer(0,L),makePlayer(1,L)];
+ // Solo: storm the castle again and again; each time Dracula falls the next run has less time.
+ let soloTotal=0,soloCleared=0;const raceCap=()=>s.solo?Math.max(120,RACE_CAP-25*soloCleared):RACE_CAP;
  const cams=[{x:0,w:300,look:0},{x:0,w:300,look:0}];
  const scen=new A.Scenery();
  const touchUI=typeof matchMedia==='function'&&matchMedia('(pointer: coarse)').matches;
@@ -736,11 +739,16 @@ async function sotn(s){
  // ---------------- turns
  const score=q=>q.finished?fmtRace(q.finishT):`${prog(q)}% of the way`;
  async function beginTurn(i){phase='handoff';turn=i;pads.stick=null;pads.jump=null;pads.atk=null;clearKeys();for(const inp of inputs)Object.assign(inp,{l:0,r:0,u:0,d:0,jump:0,press:0,atk:0,atkHeld:0,sub:0,dash:0});
-  const n0=s.players[0].name,desc=i===0?`You go first: storm Dracula's castle and destroy him as fast as you can. ${s.players[1].name} plays next against your ghost.`
+  const n0=s.players[0].name,desc=s.solo?`Castle run ${soloCleared+1}: destroy Dracula within ${fmtRace(raceCap())} to go again with less time. Getting further scores too.`:i===0?`You go first: storm Dracula's castle and destroy him as fast as you can. ${s.players[1].name} plays next against your ghost.`
    :`Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'}. ${n0}'s violet after-image runs beside you.`;
-  if(!await s.pass(i,desc,'Ready — start my countdown',{summary:i?`${n0}: ${score(pl[0])}. ${s.players[1].name}, take the controls.`:null}))return;
+  if(!await s.pass(i,desc,'Ready — start my countdown',s.solo?{soloTitle:`Castle run ${soloCleared+1}`,summary:soloCleared?`${soloTotal.toLocaleString()} points so far.`:null}:{summary:i?`${n0}: ${score(pl[0])}. ${s.players[1].name}, take the controls.`:null}))return;
   clock=0;acc=0;gi=0;cd=new Countdown(3);phase='count';cams[i].x=0;worlds[i].area='';ambience('wind');music('stage');}
- const turnOver=p=>p.finished&&clock-p.finishT>3||clock>=RACE_CAP||turn===1&&pl[0].finished&&!p.finished&&clock>pl[0].finishT+5;
+ const soloPoints=p=>p.finished?2000+Math.max(0,Math.round((raceCap()-p.finishT)*10)):prog(p)*10;
+ function soloAfter(){const p=pl[0];soloTotal+=soloPoints(p);
+  if(!p.finished)return soloFinish(s,soloTotal,soloCleared,`Symphony of the Night solo: Dracula fell ${soloCleared} time${soloCleared===1?'':'s'}; last run ${score(p)}.`);
+  soloCleared++;soloProgress(s,soloTotal,soloCleared,`Symphony of the Night solo: Dracula fell ${soloCleared} time${soloCleared===1?'':'s'}.`);
+  worlds[0]=makeWorld(L,Math.floor(s.random()*1e9));pl[0]=makePlayer(0,L);beginTurn(0);}
+ const turnOver=p=>p.finished&&clock-p.finishT>3||clock>=raceCap()||turn===1&&pl[0].finished&&!p.finished&&clock>pl[0].finishT+5;
  const still={l:0,r:0,u:0,d:0,jump:0,press:0,atk:0,atkHeld:0,sub:0,dash:0};
  const AMB={forest:'wind',gate:'wind',hall:'hall',gallery:'hall',cave:'cave',throne:'throne'};
  s.frame((dt,t)=>{
@@ -756,20 +764,20 @@ async function sotn(s){
     else{stepPlayer(p,w,still);stepWorld(w,p);}
     updateCamera(p,i);
     if(w.msg&&++w.msg.t>150)w.msg=null;if(w.banner&&++w.banner.t>140)w.banner=null;w.flash=Math.max(0,w.flash-.04);w.shake=Math.max(0,w.shake-.35);
-    if(turn===0&&phase!=='end')ghost.push(snap(p));else if(turn===1)gi++;}
+    if(turn===0&&phase!=='end'&&!s.solo)ghost.push(snap(p));else if(turn===1)gi++;}
    if(steps===5)acc=0;
    if(phase==='play'){ambience(AMB[regionAt(p.x).kind]||'hall');
     if(turnOver(p)){endT=0;
-     if(turn===0){phase='turn-end';turnText=p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;}
+     if(turn===0||s.solo){phase='turn-end';turnText=p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;}
      else{phase='end';const a=pl[0],b=pl[1];
       if(a.finished&&b.finished)winner=Math.abs(a.finishT-b.finishT)<.01?-2:a.finishT<b.finishT?0:1;
       else if(a.finished||b.finished)winner=a.finished?0:1;else{const pa=prog(a),pb=prog(b);winner=pa===pb?-2:pa>pb?0:1;}
       endText=winner===-2?'A draw in the dark':pl[winner].finished?`${s.players[winner].name} destroyed Dracula`:`${s.players[winner].name} got further`;
       if(winner>=0)s.react(winner,'win');sfx.bell();}}}
-   else if(phase==='turn-end'){endT+=dt;if(endT>2.6)beginTurn(1);}
+   else if(phase==='turn-end'){endT+=dt;if(endT>2.6){if(s.solo){phase='handoff';soloAfter();return;}beginTurn(1);}}
    else{endT+=dt;if(endT>3.6){const sc=[prog(pl[0]),prog(pl[1])];if(winner>=0){sc[winner]=100;sc[1-winner]=Math.min(sc[1-winner],99);}
     s.finish(sc,`Symphony of the Night: ${s.players[0].name} ${score(pl[0])}, ${s.players[1].name} ${score(pl[1])}.`);return;}}
-   s.setScores(pl.map(prog));}
+   s.setScores(s.solo?[soloTotal+(phase==='end'?0:soloPoints(pl[0])),0]:pl.map(prog));}
   // draw
   g.fillStyle='#000';g.fillRect(0,0,s.W,s.H);
   if(phase!=='title'){const lerp=phase==='play'||phase==='turn-end'||phase==='end';if(lerp)interp(turn,clamp(acc/STEP,0,1));drawWorld(turn);if(lerp)uninterp();}else{layout();scen.ensure(g,lay.sc);}

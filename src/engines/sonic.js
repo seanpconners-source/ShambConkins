@@ -7,6 +7,7 @@
 // 8 hits beat it, then open the capsule. Beating it recruits that character; the faster capsule wins). Game id
 // 'sonic-ring-rush' (kept for old saves) now plays the boss act.
 const {clamp}=require("src/utils.js");
+const {soloFinish,soloProgress}=require("src/solo.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,FONT,PCOL,Countdown,settle,reduced}=require("src/engines/arenaKit.js");
 
 const STEP=1/60;
@@ -88,15 +89,18 @@ async function sonic(s){
  const mode=s.game.sonicMode==='race'?'race':'boss';
  const [c,x]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.updateScores();
  if(!await settle(s))return;
- const L=buildLevel(s.random,mode),worlds=[makeWorld(L),makeWorld(L)],pl=[makePlayer(0,L),makePlayer(1,L)];
+ let L=buildLevel(s.random,mode);const worlds=[makeWorld(L),makeWorld(L)],pl=[makePlayer(0,L),makePlayer(1,L)];
+ let soloTotal=0,soloCleared=0; // solo: a fresh act after every clear
  // the boss pilot: a character neither player has unlocked yet (prefers one with real art); beat the boss to recruit them
  let bossChar=null,bossName='DR. ROBOTNIK',headOf=null;s.broforceRecruits=[[],[]];
  if(mode==='boss'){try{const {store}=require('src/state.js'),{gameRecruitPool}=require('src/rewards.js'),{portraitURL}=require('src/assets.js'),{character}=require('src/characters.js');
-   const pools=s.players.map(q=>{try{return gameRecruitPool(s.game,store.profile,q).map(c=>c.id);}catch{return [];}});
+   const pools=s.players.map(q=>{try{return gameRecruitPool(s.game,store.profile,q).map(c=>c.id);}catch{return [];}});if(s.solo)pools[1]=pools[0];
    const art=id=>{try{const u=portraitURL(id);return !!u&&!/^data:image\/svg/.test(u);}catch{return false;}};
    const both=pools[0].filter(id=>pools[1].includes(id)),cands=[both.filter(art),pools[0].filter(art),pools[1].filter(art),both,pools[0],pools[1]].find(a=>a.length);
    if(cands){bossChar=cands[Math.floor(s.random()*cands.length)];bossName=(character(bossChar)?.name||bossChar).toUpperCase();}
-   headOf=require('src/engines/broforce.js').headCanvas;if(bossChar)headOf(bossChar);}catch{}}
+   headOf=require('src/engines/broforce.js').headCanvas;if(bossChar)headOf(bossChar);
+   // solo: every new act gets a new pilot the player hasn't freed yet
+   s.nextPilot=()=>{const left=pools[0].filter(id=>!s.broforceRecruits[0].includes(id)),pickFrom=left.filter(art).length?left.filter(art):left;bossChar=pickFrom.length?pickFrom[Math.floor(s.random()*pickFrom.length)]:null;bossName=bossChar?(character(bossChar)?.name||bossChar).toUpperCase():'DR. ROBOTNIK';if(bossChar)headOf(bossChar);};}catch{}}
  const cams=pl.map(p=>({x:p.x-120,y:p.y-150}));
  const touchUI=typeof matchMedia==='function'&&matchMedia('(pointer: coarse)').matches;
  const inputs=[0,1].map(()=>({l:0,r:0,d:0,jump:0,press:0}));
@@ -580,11 +584,16 @@ async function sonic(s){
  const score=q=>q.finished?fmtRace(q.finishT):mode==='boss'&&worlds[q.i].boss.hits?`${worlds[q.i].boss.hits} of ${BOSS_HP} boss hits`:`${prog(q)}% of the way`;
  async function beginTurn(i){
   phase='handoff';turn=i;for(const pd of pads){pd.stick=null;pd.jump=null;}for(const inp of inputs)Object.assign(inp,{l:0,r:0,d:0,jump:0,press:0});
-  const n0=s.players[0].name,desc=i===0?(mode==='boss'?`You run first as Sonic: clear the act and beat the boss${bossChar?` (piloted by ${bossName}; beat it and they join your roster)`:''}. ${s.players[1].name} runs next as Tails against your ghost.`:`You run first as Sonic: reach the signpost as fast as you can. ${s.players[1].name} runs next as Tails against your ghost.`)
+  const n0=s.players[0].name,desc=s.solo?(mode==='boss'?`Act ${soloCleared+1}: clear the act and beat the boss${bossChar?` (piloted by ${bossName}; beat it and they join your roster)`:''}. Every clear brings a brand-new act.`:`Act ${soloCleared+1}: reach the signpost before time runs out. Every clear brings a brand-new act.`):i===0?(mode==='boss'?`You run first as Sonic: clear the act and beat the boss${bossChar?` (piloted by ${bossName}; beat it and they join your roster)`:''}. ${s.players[1].name} runs next as Tails against your ghost.`:`You run first as Sonic: reach the signpost as fast as you can. ${s.players[1].name} runs next as Tails against your ghost.`)
    :(mode==='boss'?`You're Tails. Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'} through the act and the boss${bossChar?`, and free ${bossName} for your own roster`:''}. ${n0}'s ghost runs beside you.`:`You're Tails. Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'}. Follow or overtake ${n0}'s ghost.`);
-  if(!await s.pass(i,desc,'Ready — start my countdown',{summary:i?`${n0}: ${score(pl[0])}. ${s.players[1].name}, take the controls.`:null}))return;
+  if(!await s.pass(i,desc,'Ready — start my countdown',s.solo?{soloTitle:`Act ${soloCleared+1}`,summary:soloCleared?`${soloTotal.toLocaleString()} points so far.`:null}:{summary:i?`${n0}: ${score(pl[0])}. ${s.players[1].name}, take the controls.`:null}))return;
   clock=0;acc=0;gi=0;cd=new Countdown(3);phase='count';const p=pl[i];cams[i].x=p.x-120;cams[i].y=p.y-150;
  }
+ const soloPoints=p=>p.score+(p.finished?1000+Math.max(0,Math.round(((mode==='boss'?BOSS_CAP:RACE_CAP)-p.finishT)*10)):prog(p)*5);
+ function soloAfter(){const p=pl[0];soloTotal+=soloPoints(p);
+  if(!p.finished)return soloFinish(s,soloTotal,soloCleared,`Green Hill solo: ${soloCleared} act${soloCleared===1?'':'s'} cleared; the last ended ${score(p)}.`);
+  soloCleared++;soloProgress(s,soloTotal,soloCleared,`Green Hill solo: ${soloCleared} act${soloCleared===1?'':'s'} cleared.`);
+  L=buildLevel(s.random,mode);worlds[0]=makeWorld(L);pl[0]=makePlayer(0,L);if(mode==='boss')s.nextPilot?.();beginTurn(0);}
  const turnOver=p=>p.finished&&clock-p.finishT>(mode==='boss'?2.6:1.6)||clock>=(mode==='boss'?BOSS_CAP:RACE_CAP)||turn===1&&pl[0].finished&&!p.finished&&clock>pl[0].finishT+4;
  const still={l:0,r:0,d:0,jump:0,press:0};
  // ---------------- main loop
@@ -599,13 +608,13 @@ async function sonic(s){
    while(acc>=STEP&&steps<5){acc-=STEP;steps++;frames++;simT+=STEP;
     if(phase==='play')clock+=STEP;
     if(moving){readInput(turn);stepPlayer(p,w,phase==='play'?inputs[turn]:still);if(phase==='play')interact(p,w);stepWorld(w,p);p.best=Math.max(p.best,p.x);}
-    if(turn===0&&phase!=='end')ghost.push(snap(p));else if(turn===1)gi++;
+    if(turn===0&&phase!=='end'&&!s.solo)ghost.push(snap(p));else if(turn===1)gi++;
    }
    if(steps===5)acc=0;
    for(const w0 of worlds)w0.fx.update(dt);for(let i=0;i<2;i++)flash[i]=Math.max(0,flash[i]-dt*1.8);
    if(phase==='play'){
     if(turnOver(p)){endT=0;
-     if(turn===0){phase='turn-end';turnText=score(p).toUpperCase();}
+     if(turn===0||s.solo){phase='turn-end';turnText=score(p).toUpperCase();}
      else{phase='end';const a=pl[0],b=pl[1];
       const ha=worlds[0].boss?.hits||0,hb=worlds[1].boss?.hits||0;
       if(a.finished&&b.finished)winner=Math.abs(a.finishT-b.finishT)<.01?-2:a.finishT<b.finishT?0:1;
@@ -613,13 +622,13 @@ async function sonic(s){
       endText=winner===-2?'DEAD HEAT!':`${s.players[winner].name.toUpperCase()} WINS${mode==='boss'?'!':' THE DASH!'}`;
       if(winner>=0)s.react(winner,'win');jingle([784,988,1175,1568,1319,1568],{type:'square',vol:.035,step:.1});}
      if(phase==='turn-end')jingle([523,659,784,1047],{type:'square',vol:.03,step:.09});}
-   }else if(phase==='turn-end'){endT+=dt;if(endT>2.4)beginTurn(1);}
+   }else if(phase==='turn-end'){endT+=dt;if(endT>2.4){if(s.solo){phase='handoff';soloAfter();return;}beginTurn(1);}}
    else{endT+=dt;if(endT>3.4){
     {const sc=[prog(pl[0]),prog(pl[1])];if(winner>=0){sc[winner]=100;sc[1-winner]=Math.min(sc[1-winner],99);}else sc[1]=sc[0];
      const freed=mode==='boss'&&bossChar?[0,1].filter(k=>s.broforceRecruits[k].length).map(k=>s.players[k].name):[];
      s.finish(sc,`Green Hill ${mode==='boss'?'Boss Act':'Goal Dash'}: ${s.players[0].name} ${score(pl[0])}, ${s.players[1].name} ${score(pl[1])}.${freed.length?` ${bossName} joins ${freed.join(' and ')}.`:''}`);}
     return;}}
-   s.setScores(pl.map(prog));
+   s.setScores(s.solo?[soloTotal+soloPoints(pl[0]),0]:pl.map(prog));
   }
   // draw
   x.fillStyle='#000';x.fillRect(0,0,s.W,s.H);

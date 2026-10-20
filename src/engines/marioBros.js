@@ -12,6 +12,7 @@
 // Taking a Warp Zone pipe in 1-2 recruits a character the player has not unlocked yet (session.gameRecruits), then
 // the run continues in 1-3. The game takes the whole screen; Pause/Exit/full screen float in the corner.
 const {clamp}=require("src/utils.js");
+const {soloFinish,soloProgress}=require("src/solo.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,PCOL,settle}=require("src/engines/arenaKit.js");
 const {T,ROWS,TILE,SOLID,BACK,buildStage,STAGE_COUNT}=require("src/engines/smb/smbLevels.js");
 const A_=require("src/engines/smb/smbArt.js");
@@ -425,7 +426,7 @@ async function marioBros(s){
   p.stagesCleared++;note(p,'clear '+(p.stage+1));
   if(mode==='race'){p.inCastle=true;return;}
   if(p.stage>=lastStage){
-   if(mode==='world'){p.done=true;p.stage=lastStage;advanceTurn();return;}
+   if(mode==='world'&&!s.solo){p.done=true;p.stage=lastStage;advanceTurn();return;}
    p.lap++;p.stage=0;
   }else p.stage++;
   p.checkOn=false;worlds[p.i]=null;startCard(p.i);
@@ -565,10 +566,10 @@ async function marioBros(s){
  function drawTitle(){
   const fx=view.fx;cams[0].x=-fx;Object.assign(pl[0],{x:40,y:13*T,area:'main'});
   g.save();g.translate(fx,0);
-  drawWorld(0);drawRunner({...pl[1],x:64,y:13*T});
+  drawWorld(0);if(!s.solo)drawRunner({...pl[1],x:64,y:13*T});
   A_.drawLogo(g,40,32);
-  nesText(g,'1 PLAYER GAME',88,144);nesText(g,'2 PLAYER GAME',88,160);
-  const my=mode==='world'?(menuSel?160:144):160;g.save();g.translate(80,my+8);A_.drawItem(g,{type:'mushroom',x:0,y:0},0);g.restore();
+  nesText(g,'1 PLAYER GAME',88,144);if(!s.solo)nesText(g,'2 PLAYER GAME',88,160);
+  const my=s.solo?144:mode==='world'?(menuSel?160:144):160;g.save();g.translate(80,my+8);A_.drawItem(g,{type:'mushroom',x:0,y:0},0);g.restore();
   nesText(g,'TOP- '+String(top).padStart(6,'0'),96,184);
   g.restore();
  }
@@ -608,11 +609,21 @@ async function marioBros(s){
  function layoutView(){const sc=Math.min(s.W/256,s.H/240);view.sc=sc;view.w=s.W/sc;view.h=s.H/sc;view.band=view.h>240?Math.round((view.h-240)*.55):0;view.fx=Math.floor((view.w-256)/2);}
 
  // ---------------- flow: title → hand-off → WORLD card → play → (death / clear / warp) … → results
- function startFromTitle(){if(phase!=='title'||titleT<.4)return;twoPlayer=mode==='world'&&menuSel===1;sfx.coin();note(pl[0],twoPlayer?'2 player game':'1 player game');beginTurn(0);}
+ // Solo: World 1 loops (rescue Toad → back to 1-1 with your lives and score) until game over;
+ // Coin Rush needs a growing coin goal each round and Castle Dash a shrinking clock.
+ let soloTotal=0,soloCleared=0,soloOk=false;const coinGoal=()=>15+5*soloCleared,dashCap=()=>s.solo?Math.max(45,RACE_CAP-15*soloCleared):RACE_CAP;
+ const soloPoints=p=>mode==='coins'?p.coins*10:p.finished?1000+Math.max(0,Math.round((dashCap()-p.finishT)*10)):prog(p)*5;
+ function soloAfter(){const p=pl[0];soloTotal+=soloPoints(p);
+  if(!soloOk)return soloFinish(s,soloTotal,soloCleared,mode==='coins'?`World 1 Coin Rush solo: ${soloCleared} round${soloCleared===1?'':'s'} beaten; ${p.coins}/${coinGoal()} coins on the last.`:`World 1-1 Castle Dash solo: ${soloCleared} dash${soloCleared===1?'':'es'} in time; last run ${score(p)}.`);
+  soloCleared++;soloProgress(s,soloTotal,soloCleared,mode==='coins'?`World 1 Coin Rush solo: ${soloCleared} round${soloCleared===1?'':'s'} beaten.`:`World 1-1 Castle Dash solo: ${soloCleared} dash${soloCleared===1?'':'es'} in time.`);
+  pl[0]=makePlayer(0);worlds[0]=makeWorld(STAGES[0]);cams[0].x=0;beginTurn(0);}
+ function startFromTitle(){if(phase!=='title'||titleT<.4)return;twoPlayer=mode==='world'&&menuSel===1&&!s.solo;sfx.coin();note(pl[0],twoPlayer?'2 player game':'1 player game');beginTurn(0);}
  async function beginTurn(i){
   phase='handoff';turn=i;for(const pd of pads){pd.stick=null;pd.jump=null;}for(const inp of inputs)Object.assign(inp,{l:0,r:0,d:0,jump:0,b:0,press:0,bPress:0});
   const n0=s.players[0].name,n1=s.players[1].name,me=s.players[i].name,other=s.players[1-i].name;let desc,summary=null;
-  if(mode==='world'){
+  if(s.solo){desc=mode==='world'?`Play World 1 with ${LIVES} lives. Rescue Toad and the world starts over with your score and lives; keep going until game over.`:mode==='coins'?`Round ${soloCleared+1}: grab at least ${coinGoal()} coins in 60 seconds to reach the next round.`:`Dash ${soloCleared+1}: reach the flagpole within ${dashCap()} seconds to go again with less time.`;
+   if(soloCleared)summary=`${soloTotal.toLocaleString()} points so far.`;}
+  else if(mode==='world'){
    if(twoPlayer)desc=pl[i].deaths===0&&pl[i].stagesCleared===0?`${me}, you are ${i?'Luigi':'Mario'}. Play until you lose a life, then hand the phone to ${other}. Three lives each; the highest score wins.`:`${me}'s turn: World ${stageName(pl[i])}, ${pl[i].lives} ${pl[i].lives===1?'life':'lives'} left.`;
    else desc=i===0?`You go first: play World 1 until you rescue Toad or run out of lives. ${n1} plays next against your ghost. Highest score wins.`:`Beat ${n0}'s score of ${pl[0].score}. ${n0}'s ghost runs beside you.`;
    if(twoPlayer&&(pl[1-i].deaths||pl[i].deaths))summary=`${n0}: ${pl[0].score} · ${n1}: ${pl[1].score}`;else if(!twoPlayer&&i)summary=`${n0}: ${pl[0].score} points, reached World ${stageName(pl[0])}.`;
@@ -621,7 +632,7 @@ async function marioBros(s){
     :(mode==='coins'?`Beat ${n0}'s ${pl[0].coins} coins in 60 seconds. ${n0}'s ghost runs beside you.`:`Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'}. Follow or overtake ${n0}'s ghost.`);
    if(i)summary=`${n0}: ${score(pl[0])}. ${n1}, take the controls.`;
   }
-  if(!await s.pass(i,desc,'Ready',{summary}))return;
+  if(!await s.pass(i,desc,'Ready',s.solo?{summary,soloTitle:mode==='world'?'World 1':mode==='coins'?`Round ${soloCleared+1}`:`Dash ${soloCleared+1}`}:{summary}))return;
   if(!twoPlayer){clock=0;gi=0;}acc=0;
   startCard(i);
  }
@@ -638,6 +649,7 @@ async function marioBros(s){
  }
  function advanceTurn(){
   const i=turn;
+  if(s.solo){const p=pl[0];return soloFinish(s,p.score,p.stagesCleared,`World 1 solo: ${p.score.toLocaleString()} points, ${p.stagesCleared} stage${p.stagesCleared===1?'':'s'} cleared${p.lap?` (loop ${p.lap+1})`:''}, game over in ${stageName(p)}.`,p.stagesCleared>0);}
   if(twoPlayer){const o=1-i;if(!pl[o].over&&!pl[o].done)beginTurn(o);else if(!pl[i].over&&!pl[i].done)startCard(i);else endGame();}
   else if(i===0)beginTurn(1);else endGame();
  }
@@ -652,7 +664,7 @@ async function marioBros(s){
   endText=winner===-2?'DEAD HEAT!':mode==='race'&&pl[winner].finished?`THANK YOU ${s.players[winner].name.toUpperCase()}!`:`${s.players[winner].name.toUpperCase()} WINS!`;
   if(winner>=0)s.react(winner,'win');jingle([523,659,784,1047,1319],{type:'square',vol:.035,step:.1});
  }
- const turnOver=p=>mode==='coins'?clock>=COIN_TIME:mode==='race'?(p.finished&&(p.inCastle&&p.castleT>40||clock-p.finishT>6)||clock>=RACE_CAP||turn===1&&pl[0].finished&&!p.finished&&clock>pl[0].finishT+4):false;
+ const turnOver=p=>mode==='coins'?clock>=COIN_TIME:mode==='race'?(p.finished&&(p.inCastle&&p.castleT>40||clock-p.finishT>6)||clock>=dashCap()||turn===1&&pl[0].finished&&!p.finished&&clock>pl[0].finishT+4):false;
  const still={l:0,r:0,d:0,jump:0,b:0,press:0,bPress:0};
 
  // debug hooks for tests
@@ -684,21 +696,22 @@ async function marioBros(s){
    while(acc>=STEP&&steps<5&&(phase==='play'||phase==='turn-end'||phase==='end')){acc-=STEP;steps++;frames++;simT+=STEP;
     if(phase==='play'&&!p.inCastle&&!p.axe)clock+=STEP;
     if(moving&&worlds[i]){const w=worlds[i],inp=phase==='play'?inputs[i]:still;readInput(i);stepPlayer(p,w,inp);if(worlds[i]===w&&(phase==='play'||phase==='turn-end'||phase==='end')){interact(p,w,inp);stepWorld(w,p);updateCamera(p,i);}}
-    if(phase==='play'){if(turn===0&&!twoPlayer)ghost.push(snap(p));else if(turn===1)gi++;}
+    if(phase==='play'){if(turn===0&&!twoPlayer&&!s.solo)ghost.push(snap(p));else if(turn===1)gi++;}
    }
    if(steps===5)acc=0;
    for(const w of worlds)w&&w.fx.update(dt);for(let k=0;k<2;k++)flash[k]=Math.max(0,flash[k]-dt*1.8);
    if(phase==='play'&&mode!=='world'&&turnOver(p)){endT=0;
-    if(turn===0){phase='turn-end';turnText=mode==='coins'?`${p.coins} COINS`:p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;jingle([523,659,784,1047],{type:'square',vol:.03,step:.09});}
+    if(turn===0||s.solo){if(s.solo)soloOk=mode==='coins'?p.coins>=coinGoal():p.finished;phase='turn-end';turnText=mode==='coins'?(s.solo?`${p.coins}/${coinGoal()} COINS`:`${p.coins} COINS`):p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;jingle(s.solo&&!soloOk?[392,330,262]:[523,659,784,1047],{type:'square',vol:.03,step:.09});}
     else endGame();}
-   else if(phase==='turn-end'){endT+=dt;if(endT>2.4)beginTurn(1);}
+   else if(phase==='turn-end'){endT+=dt;if(endT>2.4){if(s.solo){phase='handoff';soloAfter();return;}beginTurn(1);}}
    else if(phase==='end'){endT+=dt;if(endT>3.4){
     top=Math.max(pl[0].score,pl[1].score);
     if(mode==='coins'){const a=pl[0].coins,b=pl[1].coins;s.finish([a,b],`World 1 Coin Rush: ${s.players[0].name} ${a} coins, ${s.players[1].name} ${b} coins.`);}
     else if(mode==='world'){s.finish([pl[0].score,pl[1].score],`World 1: ${s.players[0].name} ${pl[0].score} (${pl[0].done?'rescued Toad':'reached '+stageName(pl[0])}), ${s.players[1].name} ${pl[1].score} (${pl[1].done?'rescued Toad':'reached '+stageName(pl[1])}).`);}
     else{const sc=[prog(pl[0]),prog(pl[1])];if(winner>=0){sc[winner]=100;sc[1-winner]=Math.min(sc[1-winner],99);}s.finish(sc,`World 1-1 Castle Dash: ${s.players[0].name} ${score(pl[0])}, ${s.players[1].name} ${score(pl[1])}.`);}
     return;}}
-   if(mode==='coins')s.setScores([pl[0].coins,pl[1].coins]);else if(mode==='race')s.setScores(pl.map(prog));else s.setScores([pl[0].score,pl[1].score]);
+   if(s.solo){if(mode==='world'){const p=pl[0];s.setScores([p.score,0]);soloProgress(s,p.score,p.stagesCleared,`World 1 solo: ${p.score.toLocaleString()} points, ${p.stagesCleared} stage${p.stagesCleared===1?'':'s'} cleared.`);}else s.setScores([soloTotal+(phase==='end'?0:soloPoints(pl[0])),0]);}
+   else if(mode==='coins')s.setScores([pl[0].coins,pl[1].coins]);else if(mode==='race')s.setScores(pl.map(prog));else s.setScores([pl[0].score,pl[1].score]);
   }
   // draw
   g.setTransform(1,0,0,1,0,0);g.fillStyle='#000';g.fillRect(0,0,s.W,s.H);

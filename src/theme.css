@@ -369,3 +369,15 @@ body .bleed-shell .pass-overlay{z-index:30}
 @media(max-width:420px){body .bleed-shell>#game-scorebar .game-scoreplayer>span{display:none}}
 /* Games with their own full-screen shells bring their own fullscreen toggle. */
 body .ph-shell .game-actions .fs-mini,body .kt-shell .game-actions .fs-mini,body .smb-shell .game-actions .fs-mini,body .fb-shell .game-actions .fs-mini{display:none}
+
+/* Arcade 1P / 2P switch (solo.js). */
+body .solo-strip{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;flex-shrink:0}
+body .solo-group{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:var(--t-well);border:1px solid var(--t-s3)}
+body .solo-label{font-size:10px;letter-spacing:.12em;color:var(--t-dim);padding:0 6px 0 8px}
+body .solo-strip button.solo-seg:not(.game-body *):not(.title-screen *):not(.gb-overlay *){min-height:34px;padding:6px 14px;border-radius:999px;border:0;background:transparent;color:var(--t-dim);font-weight:700;font-size:13px;box-shadow:none;transform:none}
+body .solo-strip button.solo-seg.on:not(.game-body *):not(.title-screen *):not(.gb-overlay *){background:var(--t-acc);color:var(--t-acc-ink)}
+body .arcade-card.solo-off{opacity:.45;filter:saturate(.3)}
+body .solo-note{font-size:12px;margin:8px 0;padding:8px 10px;border-radius:10px;background:var(--t-well);color:var(--t-sub);text-align:left}
+body .solo-note b{color:var(--t-acc)}
+body .solo-result{font-size:14px;margin:8px 0}
+body .solo-best{font-size:12px;color:var(--t-dim)}

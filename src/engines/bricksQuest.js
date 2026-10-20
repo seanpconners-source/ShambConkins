@@ -11,6 +11,7 @@ const {stage:stageDef}=require("src/data/bricksQuestLevels.js");
 const {fullBleed}=require("src/engines/fullBleed.js");
 const {store}=require("src/state.js");
 const {saveProfile}=require("src/profile.js");
+const {soloFinish,soloProgress}=require("src/solo.js");
 const {sound,tone,vibrate}=require("src/audio.js");
 const {seededRandom}=require("src/utils.js");
 
@@ -443,6 +444,15 @@ async function bricksQuest(s){
  if(!s.alive)return;
  const label=pick.mode==='stage'?`Stage ${pick.n}`:pick.mode==='hundred'?'100 Balls':'Classic';
  const how=pick.mode==='stage'?'Clear every brick before the wall reaches the bottom.':'Survive as long as you can — a new line drops in every turn.';
+ // Solo: stage after stage from the picked one until a stage is failed; Classic / 100 Balls is one endless game.
+ if(s.solo){let total=0,cleared=0;const cur={...pick},stageReward=stars=>{Q.stars[cur.n]=Math.max(+Q.stars[cur.n]||0,stars);Q.cleared=Math.max(Q.cleared,cur.n);Q.reward=(Q.reward||0)+stars;if(Q.reward>=5&&Q.reward-stars<5)Q.gems+=5;if(Q.reward>=10){Q.gems+=10;Q.reward-=10;}};
+  for(;;){turn=0;view='play';play=null;const name=cur.mode==='stage'?`Stage ${cur.n}`:label;
+   if(!await s.pass(0,`Bricks Breaker Quest · ${name}. ${how}${cur.mode==='stage'?' Clear it to unlock the next stage.':''} Drag to aim (or use the slider), let go to shoot.`,'Ready',{soloTitle:name,summary:cleared?`Stage ${cur.n-1} cleared. ${total} points so far.`:null}))return;
+   play=newPlay({...cur});fx.parts.length=fx.pops.length=fx.rings.length=fx.beams.length=fx.bolts.length=fx.flies.length=0;
+   const r=await new Promise(res=>{play.resolve=res;});if(!s.alive)return;total+=r.score;s.setScores([total,0]);if(arcade)Q.gems=play.gems;
+   if(cur.mode!=='stage'){saveProfile(store.profile);return soloFinish(s,total,0,`Bricks Breaker Quest · ${label} solo: ${total} points.`,total>0);}
+   if(r.result!=='clear'){saveProfile(store.profile);return soloFinish(s,total,cleared,`Bricks Breaker Quest solo: ${cleared} stage${cleared===1?'':'s'} cleared, failed Stage ${cur.n}.`);}
+   cleared++;stageReward(r.stars||1);saveProfile(store.profile);soloProgress(s,total,cleared,`Bricks Breaker Quest solo: ${cleared} stage${cleared===1?'':'s'} cleared, up to Stage ${cur.n}.`);cur.n++;}}
  for(const i of [0,1]){turn=i;view='play';play=null;
   const summary=i?`${names[0]}: ${scores[0]} points${results[0]?.result==='clear'?` (${results[0].stars}★)`:''}. ${names[1]}, your go on the same ${label}.`:null;
   if(!await s.pass(i,`Bricks Breaker Quest · ${label}. ${how} Drag to aim (or use the slider), let go to shoot. Lightning wipes the lowest line, Ball Plus doubles your next shot.`,'Ready',{summary}))return;

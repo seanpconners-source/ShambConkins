@@ -27,6 +27,7 @@ const {refitCatalog, showView, updateBoard, showDialog, resolveDialog, closeDial
 const {applyTheme}=require("src/theme.js");
 const {brandHTML, portraitHTML, locationArtHTML, itemArtHTML}=require("src/assets.js");
 const {configureLauncher, requestGame, cancelGameLaunch, exitGame, presentResult}=require("src/gameLauncher.js");
+const {setSolo}=require("src/solo.js");
 const {sound, vibrate, audioContext, installAudioUnlock, startMusic, stopMusic, setMusicZone, setMusicScene, nowPlaying}=require("src/audio.js");
 const {biomeFor}=require("src/biomes.js");
 const {ART}=require("src/data/art.js");
@@ -488,6 +489,8 @@ async function action(name,target){
   case 'filter':catalogFilter=target.dataset.id;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;
   case 'catalog-page':catalogPage=Math.max(0,+target.dataset.page||0);showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;
   case 'arcade-game':await requestGame({id:target.dataset.id,origin:'arcade'});break;
+  case 'arcade-solo':await requestGame({id:target.dataset.id,origin:'arcade',solo:true});break;
+  case 'solo-set':{const {key,value}=target.dataset;setSolo(store.profile,key==='on'?{on:value==='1'}:key==='who'?{who:+value===1?1:0}:{level:value});saveProfile(store.profile);showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;}
   case 'arcade-pokemon':await arcadePokemon(target.dataset.id);break;
   case 'dev-game':if(store.profile.settings.devMode)await requestGame({id:target.dataset.id,origin:'dev'});break;
   case 'dev-mode':store.profile.settings.devMode=!store.profile.settings.devMode;saveProfile(store.profile);showCatalog('arcade');break;

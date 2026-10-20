@@ -8,6 +8,7 @@
 // (Galaxy Fold inner screen, 1080x1200): the HUD scales with the screen width like the real UI.
 const {store}=require("src/state.js");
 const {saveProfile}=require("src/profile.js");
+const {soloFinish,soloProgress}=require("src/solo.js");
 const {sound,tone,vibrate}=require("src/audio.js");
 const {createRenderer,affine}=require("src/engines/holeIt/gl.js");
 const {fullBleed}=require("src/engines/fullBleed.js");
@@ -255,7 +256,8 @@ async function holeIt(s){
   s.debug={sim,turn,def,level,R,contact,cam,endTurn,frameMs,thumb,useBoost:id=>useBoost(sim,id)};});
 
  function points(r){return r?r.goals+(r.won?1000+Math.round(r.left*10):0):0;}
- function scoresWith(p,sim){const sc=[points(results[0]),points(results[1])];sc[p]=points({goals:goalTotal(sim),won:sim.won,left:sim.time});return sc;}
+ let soloBase=0;
+ function scoresWith(p,sim){if(s.solo)return [soloBase+points({goals:goalTotal(sim),won:sim.won,left:sim.time}),0];const sc=[points(results[0]),points(results[1])];sc[p]=points({goals:goalTotal(sim),won:sim.won,left:sim.time});return sc;}
  async function playTurn(p){const charges={};for(const id of BOOST_ORDER)charges[id]=boostOn(id)?1:0;
   turn={player:p,phase:'play',t:0,sim:createSim(def,{charges}),popups:[],rings:[],flyers:[],inflight:{},inflightPts:0,cardPulse:def.goals.map(()=>0),arcV:0,combo:0,comboT:0,confetti:[],moved:false,endT:0};contact=null;keys={};cam.x=def.start.x;cam.z=def.start.z;cam.dist=0;sound('start');
   await new Promise(res=>{finishResolve=res;});finishResolve=null;const sim=turn.sim;return {won:sim.won,time:sim.clearTime,left:sim.time,goals:goalTotal(sim),need:goalNeed(sim),size:sim.hole.size,coins:turn.coins||0};}
@@ -268,6 +270,14 @@ async function holeIt(s){
   s.debug={view:'map',map,pick:null};});
  if(!s.alive)return;map=null;setupLevel(picked);hx.clearRect(0,0,hud.width,hud.height);
  const introText=`Hole.it · Level ${level} (${def.themeName}). Drag to steer the hole and ${def.mode==='score'?`eat anything: every prop is worth points (bigger = more). Reach ${def.goals[0].need} ★`:'swallow every one of the props on the cards'} before the ${fmt(def.time)} clock runs out. You both play this exact level: the faster clear wins; if nobody clears it, most items wins.`;
+ // Solo: level after level from the one picked until a level isn't cleared (or the player banks the run).
+ if(s.solo){let cleared=0;const saveClear=r=>{if(!store.profile)return;const p=store.profile;p.holeItLevel=Math.max(currentHoleLevel(),level+1);p.holeItStars={...(p.holeItStars||{}),[level]:Math.max(+p.holeItStars?.[level]||0,starsFor(r.left,def.time))};saveProfile(p);};
+  for(;;){const how=def.mode==='score'?`Eat anything: reach ${def.goals[0].need} ★`:'Swallow every prop on the cards';
+   if(!await s.pass(0,`Hole.it · Level ${level} (${def.themeName}). ${how} before the ${fmt(def.time)} clock runs out. Clear it to move on to the next level.`,'Ready',cleared?{summary:`Level ${level-1} cleared. ${soloBase.toLocaleString()} points so far.`,soloTitle:`Level ${level}`}:{soloTitle:`Level ${level}`}))return;
+   if(!s.alive)return;const r=await playTurn(0);if(!s.alive)return;soloBase+=points(r);s.setScores([soloBase,0]);store.holeItCoinPop=(store.holeItCoinPop||0)+(r.coins||0);
+   if(!r.won){turn=null;soloFinish(s,soloBase,cleared,`Hole.it solo: ${cleared} level${cleared===1?'':'s'} cleared; Level ${level} ended at ${r.goals}/${r.need}.`);return;}
+   cleared++;saveClear(r);soloProgress(s,soloBase,cleared,`Hole.it solo: ${cleared} level${cleared===1?'':'s'} cleared, up to Level ${level}.`);
+   setupLevel(level+1);hx.clearRect(0,0,hud.width,hud.height);}}
  for(const p of [0,1]){if(!await s.pass(p,p===0?introText:`${s.players[1].name}: same Level ${level}. ${results[0].won?`Beat ${results[0].time.toFixed(1)} s.`:`Collect more than ${results[0].goals} items, or clear it.`}`,'Ready'))return;
   if(!s.alive)return;results[p]=await playTurn(p);if(!s.alive)return;s.setScores([points(results[0]),points(results[1])]);}
  store.holeItCoinPop=(results[0]?.coins||0)+(results[1]?.coins||0); // they pop out of the hole next time the level screen opens
