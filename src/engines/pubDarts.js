@@ -68,7 +68,7 @@ async function darts(s){
  }
  const scores=await turnRunner(s,{seconds:240,endDelay:1.4,
   intro:(i,sc)=>i===0?`Darts at Paddy's. ${s.players[0].name} throws first: hold a finger on the board to aim and let go to throw. Mind the wobble. Three rounds of three darts; trebles, doubles and the bull score big.`:`${s.players[1].name}, your throw. Beat ${sc[0]}.`,
-  make:()=>{cur=make();aim.x=0;aim.y=0;return cur;},step,draw,done:w=>w.round>=3,score:w=>w.score});
+  make:()=>{cur=make();aim.x=0;aim.y=0;return cur;},step,draw,done:w=>w.round>=3,soloTarget:r=>90+15*r,score:w=>w.score});
  if(!scores)return;
  s.finish(scores,`Paddy's Darts · ${scores[0]} vs ${scores[1]}`);
 }

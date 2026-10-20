@@ -91,6 +91,7 @@ function glowStroke(x,color,fn,{blur=10,width=1.6}={}){x.save();x.strokeStyle=co
 async function turnRunner(s,cfg){
  try{s.fitCanvas?.();}catch{}// size the canvas now so make() sees the real screen shape
  const scores=[0,0];let w=null,running=false,res=null;
+ if(s.solo)return soloTurnRuns(s,cfg);
  s.frame(dt=>{if(!w)return;if(running){w.time+=dt;cfg.step(w,dt);if(!w.ending&&(cfg.done(w)||w.time>=cfg.seconds)){w.ending=cfg.endDelay??1.6;w.endReason=w.time>=cfg.seconds&&!cfg.done(w)?'time':'over';}
    if(w.ending){w.ending-=dt;if(w.ending<=0){running=false;res?.();}}}
   cfg.draw(w,dt);const live=scores.slice();live[w.player]=Math.max(0,Math.round(cfg.score(w)));s.setScores(live);});
@@ -101,5 +102,28 @@ async function turnRunner(s,cfg){
  }
  return scores;
 }
+// Solo (1P arcade): the same game in rounds that run faster each time (the world's clock, not the round's).
+// A round is beaten when cfg.soloPass(w,score,round) says so; by default that means lasting until the clock
+// ran out (survival games) or reaching cfg.soloTarget(round) points. Returns null: the run settles itself.
+const soloSpeed=round=>Math.min(1.75,1+.11*round);
+async function soloTurnRuns(s,cfg){
+ const {soloFinish,soloProgress}=require("src/solo.js");
+ let w=null,running=false,res=null,total=0,round=0;
+ s.soloWorld=()=>w; // tests: end a round early with s.soloWorld().time=1e9
+ s.frame(dt=>{if(!w)return;if(running){w.time+=dt;cfg.step(w,dt*w.speed);if(!w.ending&&(cfg.done(w)||w.time>=cfg.seconds)){w.ending=cfg.endDelay??1.6;w.endReason=w.time>=cfg.seconds&&!cfg.done(w)?'time':'over';}
+   if(w.ending){w.ending-=dt;if(w.ending<=0){running=false;res?.();}}}
+  cfg.draw(w,dt);s.setScores([total+Math.max(0,Math.round(cfg.score(w))),0]);});
+ const goal=r=>cfg.soloTarget?`Score at least ${cfg.soloTarget(r)} to reach round ${r+2}.`:cfg.soloGoal?cfg.soloGoal(r):'Last until the clock runs out to reach the next round.';
+ for(;;){
+  w=cfg.make(0);w.player=0;w.time=0;w.ending=0;w.cap=cfg.seconds;w.scores=[total,0];w.round=round;w.speed=soloSpeed(round);
+  const body=round?`${goal(round)} Everything moves ${Math.round(w.speed*100-100)}% faster than round 1.`:`${cfg.intro(0,[0,0])} ${goal(0)} Each round after that runs faster.`;
+  if(!await s.pass(0,body,cfg.readyText||'Ready — start my countdown',{countdown:3,soloTitle:`Round ${round+1}`,summary:round?`Round ${round} beaten. ${total} points so far.`:null}))return null;
+  running=true;await new Promise(r=>res=r);if(!s.alive)return null;
+  const sc=Math.max(0,Math.round(cfg.score(w)));total+=sc;s.setScores([total,0]);
+  const ok=cfg.soloPass?cfg.soloPass(w,sc,round):cfg.soloTarget?sc>=cfg.soloTarget(round):w.endReason==='time';
+  if(!ok){soloFinish(s,total,round,`${s.game.title} solo: ${round} round${round===1?'':'s'} beaten, ${total} points.`);return null;}
+  round++;soloProgress(s,total,round,`${s.game.title} solo: ${round} round${round===1?'':'s'} beaten, ${total} points.`);
+ }
+}
 
-Object.assign(exports,{vectorText,glowStroke,turnRunner,FONT,pixText,textWidth,spriteCanvas,drawSprite,makeStarfield,scanlines,vignette,fitField,makeBits});
+Object.assign(exports,{vectorText,glowStroke,turnRunner,soloSpeed,FONT,pixText,textWidth,spriteCanvas,drawSprite,makeStarfield,scanlines,vignette,fitField,makeBits});

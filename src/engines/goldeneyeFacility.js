@@ -101,7 +101,7 @@ async function bondmission(s){
  }
  const scores=await turnRunner(s,{seconds:80,
   intro:(i,sc)=>i===0?`GoldenEye: Facility. ${s.players[0].name} goes in first, out of the bathroom vent. Drag to sneak, tap guards to take them down (chop up close, silenced PP7 from range). Stay out of the vision cones, grab the intel disks and reach the red EXIT. 80 seconds.`:`${s.players[1].name}, same facility, same guards. Beat ${sc[0]}.`,
-  make:i=>{cur=make();return cur;},step,draw,done:w=>w.exited||w.hp<=0,score:w=>w.score});
+  make:i=>{cur=make();return cur;},step,draw,done:w=>w.exited||w.hp<=0,soloPass:w=>!!w.exited,soloGoal:()=>"Reach the red EXIT before the clock runs out to reach the next round.",score:w=>w.score});
  if(!scores)return;
  s.finish(scores,`GoldenEye Facility · ${scores[0]} vs ${scores[1]}`);
 }

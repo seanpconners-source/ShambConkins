@@ -339,7 +339,7 @@ async function gophers(s){
  const[c,x]=s.canvas(680,420,{fill:true});s.body.classList.add('drag-arena-body','hole-arena-body');let api;
  const hud=document.createElement('div');hud.className='hole-objectives';s.body.insertBefore(hud,s.body.firstChild);
  return arcadeRounds(s,{
-  duration:40,instructions:'Caddyshack gopher hunt. Your rival\u2019s head is the gopher: tap it the moment it pops out of a hole. A crowned head is worth three. Do NOT whack the golf bag or the groundskeeper. Faster pops as time runs out. Alternate rounds, same pop sequence.',
+  duration:40,soloPass:(a,r)=>a.score>=15+5*r,soloGoal:r=>`Score at least ${15+5*r} to reach the next round.`,instructions:'Caddyshack gopher hunt. Your rival\u2019s head is the gopher: tap it the moment it pops out of a hole. A crowned head is worth three. Do NOT whack the golf bag or the groundskeeper. Faster pops as time runs out. Alternate rounds, same pop sequence.',
   reset:player=>({mounds:MOUNDS.map(()=>({kind:null,t:0,life:0,hit:0})),spawn:.6,combo:0,hits:0,misses:0,swing:0,fx:[],random:seededRandom(s.seed+':gophers'),moods:moodsFor(s.players[1-player].character),lastMood:null,artRandom:seededRandom(s.seed+':gophers:portraits:'+player)}),
   bind:a=>{api=a;s.on(c,'pointerdown',ev=>{const g=a.get();if(s.paused||!g)return;ev.preventDefault();const p=s.pointer(ev);g.swing=.18;let best=null,bd=1e9;MOUNDS.forEach(([mx,my],i)=>{const m=g.mounds[i];if(!m.kind||m.hit)return;const d=Math.hypot(p.x-mx*s.W,p.y-(my*s.H-26*(s.H/420)));if(d<bd){bd=d;best=i;}});const reach=Math.max(44,s.W*.075);
    if(best!==null&&bd<reach){const m=g.mounds[best];m.hit=.35;if(m.kind==='gopher'||m.kind==='gold'){const pts=(m.kind==='gold'?3:1)+Math.min(3,Math.floor(g.combo/4));g.score+=pts;g.combo++;g.hits++;g.fx.push({x:MOUNDS[best][0],y:MOUNDS[best][1],text:'+'+pts,t:.7});sound('pickup');}else{g.score=Math.max(0,g.score-3);g.combo=0;g.misses++;g.fx.push({x:MOUNDS[best][0],y:MOUNDS[best][1],text:'-3',t:.7});sound('shot');vibrate(25);}}
@@ -378,7 +378,7 @@ async function archery(s){
  const ARROWS=6;
  const windFor=(random)=>({x:(random()-.5)*2*60});
  return arcadeRounds(s,{
-  duration:90,instructions:'Archery with wind. Drag backwards from the bow to draw, aim along the dotted line, then release. Watch the wind flag: it pushes the arrow sideways. Six arrows each. Bullseye is ten points. Same targets and wind for both players.',
+  duration:90,soloPass:(a,r)=>a.score>=Math.min(50,24+4*r),soloGoal:r=>`Score at least ${Math.min(50,24+4*r)} with your six arrows to reach the next round.`,instructions:'Archery with wind. Drag backwards from the bow to draw, aim along the dotted line, then release. Watch the wind flag: it pushes the arrow sideways. Six arrows each. Bullseye is ten points. Same targets and wind for both players.',
   reset:()=>{const random=seededRandom(s.seed+':archery');return {shots:[],arrow:null,wind:windFor(random),winds:Array.from({length:ARROWS},()=>windFor(random)),idx:0,tx:.8,ty:.5,target:{x:.82,y:.5,speed:0},fx:[],done:false,random};},
   bind:a=>{api=a;
    s.on(c,'pointerdown',ev=>{const g=a.get();if(s.paused||!g||g.arrow||g.done)return;ev.preventDefault();drag={id:ev.pointerId,start:s.pointer(ev),now:s.pointer(ev)};s.capture(ev);});

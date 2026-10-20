@@ -72,6 +72,9 @@ On a solo launch `s.solo={kind,who,level,skill,best}`; `s.players[0]` is the hum
 * Levels/rounds: play only player 0; after each cleared level call `soloProgress(s,total,cleared,label)` and start the next;
   when the run ends call `soloFinish(s,total,cleared,label)`. Exit offers "Bank & quit" from `s.soloProgress` (the score side
   is also kept current by `s.setScores`). Pass `{soloTitle:'Level 3'}` to `s.pass` for the between-levels card.
+* Turn games get rounds for free: `turnRunner` / `arcadeRounds` replay player 1's turn faster each round (add `soloPass`,
+  `soloTarget` or `soloGoal` to the config when "lasting the clock" isn't the right test), and any other P1-then-P2 engine
+  can be listed as `'turns'`: the launcher reruns it per round and `s.pass(1,…)` ends the round, so keep `s.setScores` current.
 * CPU: scale the opponent with `cpuSkill(s)` (0.35 easy / 0.65 normal / 0.9 hard) and `s.finish([me,cpu],label)` as usual.
 * Recruits go to `s.gameRecruits[0]` / `s.broforceRecruits[0]` as in 2P; `settleSolo` (gameLauncher) records the best run in
   `profile.soloBest[id]` and recruits like an arcade win. Test with `node tests/solo.mjs <id-regex>`.

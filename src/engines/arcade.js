@@ -5,10 +5,28 @@ const {sound, vibrate,pickupSound}=require("src/audio.js");
 const {keyHolds, touchTrack}=require("src/engines/duelControls.js");
 const {directionGestures, gestureGrid, drawDirectionFeedback}=require("src/engines/directionGestures.js");
 const {queueSnakeTurn, takeSnakeTurn, resetSnakeTurns}=require("src/engines/snakeRules.js");
-async function arcadeRounds(s,config){let actor=null,player=0,finishing=false;const scores=[0,0];const api={get:()=>actor,end:()=>void endRound()};config.bind?.(api);
+async function arcadeRounds(s,config){if(s.solo)return soloArcadeRounds(s,config);let actor=null,player=0,finishing=false;const scores=[0,0];const api={get:()=>actor,end:()=>void endRound()};config.bind?.(api);
  async function start(){finishing=true;actor={player,score:0,time:config.duration,elapsed:0,random:seededRandom(s.seed),...config.reset(player)};config.draw(actor);if(!await s.pass(player,config.instructions,'Ready — start my countdown',{countdown:3,summary:player?`${s.players[0].name} finished with ${scores[0]} points. ${s.players[1].name}, take the controls.`:null}))return;finishing=false;}
  async function endRound(){if(finishing||!s.alive)return;finishing=true;config.end?.(actor);scores[player]=Math.max(0,Math.round(actor.score));s.setScores(scores);if(player===0){player=1;await start();}else s.finish(scores);}
  s.frame(dt=>{if(!actor||finishing)return;if(config.isStarted&&!config.isStarted(actor)){actor.launchWait=(actor.launchWait||0)+dt;if(actor.launchWait>=10)config.autoStart?.(actor);config.draw(actor);return;}actor.time-=dt;actor.elapsed+=dt;const hp=actor.hp,lives=actor.lives,crash=actor.crash;const alive=config.step(actor,dt);if(actor.hp<hp||actor.lives<lives||actor.crash>crash)s.react?.(player,'sad');s.setScores(scores.map((v,i)=>i===player?Math.max(0,Math.round(actor.score)):v));config.draw(actor);if(alive===false||actor.time<=0)void endRound();});await start();
+}
+// Solo (1P arcade): round after round, the world running faster each time. A round is beaten by lasting the whole
+// clock (or config.soloPass(actor,round)); a new seed each round so it isn't the same course again.
+async function soloArcadeRounds(s,config){
+ const {soloFinish,soloProgress}=require("src/solo.js"),speed=r=>Math.min(1.75,1+.11*r);
+ let actor=null,finishing=true,total=0,round=0,survived=false,done=null;const api={get:()=>actor,end:()=>void endRound(false)};config.bind?.(api);s.soloWorld=()=>actor;
+ function endRound(lasted){if(finishing||!s.alive)return;finishing=true;survived=lasted;config.end?.(actor);done?.();}
+ s.frame(dt=>{if(!actor||finishing)return;if(config.isStarted&&!config.isStarted(actor)){actor.launchWait=(actor.launchWait||0)+dt;if(actor.launchWait>=10)config.autoStart?.(actor);config.draw(actor);return;}actor.time-=dt;actor.elapsed+=dt;const hp=actor.hp,lives=actor.lives,crash=actor.crash;const alive=config.step(actor,dt*actor.speed);if(actor.hp<hp||actor.lives<lives||actor.crash>crash)s.react?.(0,'sad');s.setScores([total+Math.max(0,Math.round(actor.score)),0]);config.draw(actor);if(actor.time<=0)endRound(true);else if(alive===false)endRound(false);});
+ for(;;){
+  actor={player:0,score:0,time:config.duration,elapsed:0,random:seededRandom(`${s.seed}-solo-${round}`),...config.reset(0)};actor.round=round;actor.speed=speed(round);config.draw(actor);
+  const goal=config.soloGoal?config.soloGoal(round):'Last the whole clock to reach the next round.';
+  if(!await s.pass(0,round?`${goal} Everything moves ${Math.round(actor.speed*100-100)}% faster than round 1.`:`${config.instructions} ${goal} Each round after that runs faster.`,'Ready — start my countdown',{countdown:3,soloTitle:`Round ${round+1}`,summary:round?`Round ${round} beaten. ${total} points so far.`:null}))return;
+  finishing=false;survived=false;await new Promise(r=>{done=r;s.cleanup(r);});if(!s.alive)return;
+  total+=Math.max(0,Math.round(actor.score));s.setScores([total,0]);
+  const ok=config.soloPass?config.soloPass(actor,round,survived):survived;
+  if(!ok)return soloFinish(s,total,round,`${s.game.title} solo: ${round} round${round===1?'':'s'} beaten, ${total} points.`);
+  round++;soloProgress(s,total,round,`${s.game.title} solo: ${round} round${round===1?'':'s'} beaten, ${total} points.`);
+ }
 }
 async function lander(s){const[c,x]=s.canvas(680,360,{fill:true});s.body.classList.add('drag-arena-body');let W=s.W,H=s.H;const pad={x:W/2-54,y:H-43,w:108};const sync=()=>{W=s.W;H=s.H;pad.x=W/2-54;pad.y=H-43;};const starts=Array.from({length:3},()=>({fx:.2+s.random()*.6,vx:(s.random()-.5)*40}));let api;
  function shipFor(attempt){sync();return {x:W*starts[attempt].fx,vx:starts[attempt].vx,y:42,vy:0,fuel:100};}

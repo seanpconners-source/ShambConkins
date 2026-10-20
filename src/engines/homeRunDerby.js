@@ -88,7 +88,7 @@ async function baseball(s){
  }
  const scores=await turnRunner(s,{seconds:999,endDelay:1.4,
   intro:(i,sc)=>i===0?`Home Run Derby. ${s.players[0].name} bats first against Wild Thing Vaughn (who looks a lot like ${s.players[1].name}). Tap when the ball reaches the plate: timing sets direction and power, tapping under the ball lifts it. Ten pitches.`:`${s.players[1].name}, same ten pitches (and now the pitcher looks like ${s.players[0].name}). Beat ${sc[0]}.`,
-  make:()=>{cur=make();layout();return cur;},step,draw,done:w=>!!w.done,score:w=>w.score});
+  make:()=>{cur=make();layout();return cur;},step,draw,done:w=>!!w.done,soloPass:(w,sc,r)=>w.results.filter(q=>q.kind==='hr').length>=Math.min(8,3+r),soloGoal:r=>`Hit at least ${Math.min(8,3+r)} home runs to reach the next round.`,score:w=>w.score});
  if(!scores)return;
  s.finish(scores,`Home Run Derby · ${scores[0]} vs ${scores[1]}`);
 }

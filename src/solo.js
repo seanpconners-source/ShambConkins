@@ -1,6 +1,7 @@
 // Single-player (1P) Arcade mode: settings, which games support it, CPU skill and best-run records.
 // Kinds: 'levels' = one player plays level after level until the run ends or they bank it;
-//        'rounds' = timed turn game replayed in harder rounds; 'cpu' = the second player is a CPU.
+//        'rounds' = timed turn game replayed in harder rounds (turnRunner / arcadeRounds handle it);
+//        'turns' = pass-and-play engine the launcher runs once per round (soloTurnRounds); 'cpu' = player 2 is a CPU.
 const SOLO_LEVELS=['easy','normal','hard'];
 const SOLO_LEVEL_NAMES={easy:'Easy',normal:'Normal',hard:'Hard'};
 // CPU skill 0..1 per difficulty; engines scale reaction time, aim error and speed from it.
@@ -12,6 +13,18 @@ const SOLO_IDS={
  'cv-vampire-killer':'levels','cv-candle-hunt':'levels','cv-symphony':'levels',
  'bricks-breaker-quest':'levels','paddys-hole':'levels','megatouch-photohunt':'levels',
  'kart-grand-prix-pass':'levels','kart-time-trial':'levels','rainbow-road-kart':'cpu',
+ // batch 2: timed turn games replayed in faster rounds (retroKit turnRunner → soloTurnRuns)
+ 'warriors-brawl':'rounds','paddys-darts':'rounds','duck-hunt-turn':'rounds','snake-run':'rounds','mars-missile-defense':'rounds',
+ 'moonraker-lander':'rounds','t800-scan-long':'rounds','bond-facility':'rounds','major-league-bats':'rounds','asteroid-drift':'rounds',
+ 'breakout-party':'rounds','banana-money-grab':'rounds',
+ // arcadeRounds (arcade.js → soloArcadeRounds)
+ 'radical-bike':'rounds','flappy-disaster':'rounds','crossy-chaos':'rounds','gopher-hunt':'rounds','wind-archery':'rounds',
+ // pass-and-play engines run once per round by the launcher (soloTurnRounds); the hand-off to P2 ends the round
+ 'taskmaster-fruit-ninja':'turns','angry-heads':'turns','neon-ball-storm':'turns','home-alone-paint-can':'turns','tm-cones':'turns',
+ 'paper-route':'turns','warehouse-shift':'turns','matrix-hardline-hack':'turns','alien-sonar-grid':'turns','kitchen-service':'turns',
+ 'space-swarm':'turns','taskmaster-micro-relay':'turns','kingpin-bowling':'turns','bucketheadland-pinball':'turns',
+ 'major-league-fielding':'turns','flipadelphia-cup':'turns','office-hockey-shootout':'turns','chutes-spinner-showdown':'turns',
+ 'smb3-spade-slots':'turns',
 };
 const soloKind=game=>game?SOLO_IDS[game.id]||game.soloKind||null:null;
 function soloSettings(profile){const s=profile?.settings?.solo||{};return {on:s.on===true,who:s.who===1?1:0,level:SOLO_LEVELS.includes(s.level)?s.level:'normal'};}

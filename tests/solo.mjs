@@ -17,7 +17,7 @@ const set=await S(()=>window.ShambConkins.store.profile.settings.solo);console.l
 await page.screenshot({path:screenshotPath(`solo-arcade-${vw}x${vh}.png`)});
 await page.click('[data-action=solo-set][data-key=who][data-value="0"]');await page.click('[data-action=solo-set][data-key=level][data-value=normal]');
 // Solo runs: start each matching game from its card, let its debug bot / timeouts play, then bank via Exit.
-const ids=await S(()=>[...document.querySelectorAll('[data-action=arcade-solo]')].map(b=>b.dataset.id));
+const ids=await S(()=>Array.from(window.ShambConkins.gameRegistry).map(g=>g.id));
 for(const id of ids.filter(id=>only.test(id))){
  await S(()=>{document.getElementById('catalog-search').value='';});
  await page.evaluate(id=>{const b=document.createElement('button');b.dataset.action='arcade-solo';b.dataset.id=id;document.body.append(b);b.click();b.remove();},id);

@@ -11,7 +11,13 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   clock), Candle Hunt (heart goal 12+6n), Sonic ×2 (fresh act + new boss pilot each clear), Bricks Quest (stage after stage),
   Hole.it (level after level, map progress saved), Photo Hunt (whole library), Kart GP (podium → next course), Time Trial (beat
   your ghost), Kart VS = vs CPU rival kart (the other New Game pick). Goals/tuning are guesses. Test: `tests/solo.mjs`.
-  Owner's agreed plan for later batches: 2 timed turn games as harder rounds, 3 CPU head-to-heads, 4 trivia/cards (social games hidden).
+  Batch 2 (rounds, Oct 19): 41 solo games now. `turnRunner` (retroKit → `soloTurnRuns`) and `arcadeRounds` (arcade.js →
+  `soloArcadeRounds`) replay the game in rounds with the world clock sped up 11%/round (max 1.75x); beaten = last the clock,
+  or `soloPass`/`soloTarget` (darts, Duck Hunt, lander, GoldenEye, Home Run Derby, Warriors, bike, gophers, archery).
+  Other pass-and-play engines are kind `'turns'`: launcher `soloTurnRounds` runs the engine once per round, `session.pass(1)`
+  ends the round with P1's score, `s.frame`/`s.timer` run at `solo.speed`; target = last round's score (×.6 for one-ball/
+  flip/pitch/shot games, `SOLO_FACTOR`). `s.soloWorld()` exposes the round state for tests.
+  Owner's agreed plan for later batches: 3 CPU head-to-heads, 4 trivia/cards (social games hidden).
   Windows box: Node 24 at `C:\Program Files\nodejs` (not on PATH in the agent shell), git = GitHub Desktop's bundled git (no push creds).
 - **Broforce (turn-based rebuild, Oct 13 2026):** one engine file `src/engines/broforce.js` (same 4 game ids in
   `packs/broforcePack.js`). P1 runs a 3-stage seeded mission, then P2 runs the same one; higher score wins (normal

@@ -80,7 +80,7 @@ async function duckturn(s){
  }
  const scores=await turnRunner(s,{seconds:120,endDelay:1.4,
   intro:(i,sc)=>i===0?`Duck Hunt, except every duck is wearing ${s.players[1].name}'s head. ${s.players[0].name} shoots first: tap the ducks, three shots per pair, ten ducks in all.`:`${s.players[1].name}, same flight patterns (and now they look like ${s.players[0].name}). Beat ${sc[0]}.`,
-  make:()=>{cur=make();cur.dog={mode:'hide',t:0,y:0,n:0,x:FW/2};return cur;},step,draw,done:w=>w.state==='done',score:w=>w.score});
+  make:()=>{cur=make();cur.dog={mode:'hide',t:0,y:0,n:0,x:FW/2};return cur;},step,draw,done:w=>w.state==='done',soloPass:(w,sc,r)=>w.hits.filter(Boolean).length>=Math.min(9,6+r),soloGoal:r=>`Hit at least ${Math.min(9,6+r)} of the 10 ducks to reach the next round.`,score:w=>w.score});
  if(!scores)return;
  s.finish(scores,`Head Hunt · ${scores[0]} vs ${scores[1]}`);
 }

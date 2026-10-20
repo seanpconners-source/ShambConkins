@@ -92,7 +92,7 @@ async function lander(s){
  }
  const scores=await turnRunner(s,{seconds:75,endDelay:1.8,
   intro:(i,sc)=>i===0?`Lunar Lander, Moonraker edition. ${s.players[0].name} first: hold anywhere to fire the engine and drag sideways to tilt. Land softly and upright on the flat pads (5X pads are tiny). Land as often as your fuel lasts in 75 seconds.`:`${s.players[1].name}, same moon. Beat ${sc[0]}.`,
-  make:()=>{cur=make();cur.cx=cur.ship.x-TWD/2;cur.cy=0;x.setTransform(1,0,0,1,0,0);x.fillStyle='#000';x.fillRect(0,0,s.W,s.H);return cur;},step,draw,done:w=>!!w.out,score:w=>w.score});
+  make:()=>{cur=make();cur.cx=cur.ship.x-TWD/2;cur.cy=0;x.setTransform(1,0,0,1,0,0);x.fillStyle='#000';x.fillRect(0,0,s.W,s.H);return cur;},step,draw,done:w=>!!w.out,soloPass:(w,sc,r)=>w.landings>=Math.min(6,2+Math.floor(r/2)),soloGoal:r=>`Land at least ${Math.min(6,2+Math.floor(r/2))} times to reach the next round.`,score:w=>w.score});
  if(!scores)return;
  s.finish(scores,`Lunar Lander · ${scores[0]} vs ${scores[1]}`);
 }

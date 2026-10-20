@@ -87,7 +87,7 @@ async function brawler(s){
  }
  const scores=await turnRunner(s,{seconds:75,endDelay:1.6,
   intro:(i,sc)=>i===0?`The Warriors, all the way home to Coney Island. ${s.players[0].name} goes first; every gang member is wearing ${s.players[1].name}'s head. Drag to walk, tap to punch (three-hit combos), flick for a flying kick. 75 seconds.`:`${s.players[1].name}, same streets, same gangs (now with ${s.players[0].name}'s face). Beat ${sc[0]}.`,
-  make:()=>{cur=make();view={k:3,vw:180,sx:X=>X,sy:y=>y};return cur;},step,draw,done:w=>w.dead||w.won,score:w=>w.score});
+  make:()=>{cur=make();view={k:3,vw:180,sx:X=>X,sy:y=>y};return cur;},step,draw,done:w=>w.dead||w.won,soloPass:w=>!w.dead,soloGoal:()=>"Stay on your feet until the clock runs out (or reach Coney Island) to reach the next round.",score:w=>w.score});
  if(!scores)return;
  s.finish(scores,`The Warriors · ${scores[0]} vs ${scores[1]}`);
 }
