@@ -277,14 +277,26 @@ kind('watermelon-lying','Watermelon',.86,1.36,['fruit'],g=>{add(g,sphere(22,14),
 kind('peach','Peach',.62,1.1,['fruit'],g=>{const P=C('#ff9a4a'),R=C('#ff6a3a');add(g,sphere(18,12),{at:[0,.55,0],s:[.6,.55,.58]},(p,n)=>{const blush=Math.max(0,n[0]*.6+n[2]*.5);return mix(mix(C('#ffc070'),P,.6),R,Math.min(1,blush));});
  add(g,torus(.25,.03,10,5,Math.PI),{at:[0,.62,.02],r:[0,Math.PI/2,Math.PI/2],s:[1,1,1.6]},C('#e8703a'));add(g,cyl(.04,.14,6),{at:[0,1.04,0],r:[0,0,.3]},C('#6b3e1e'));
  add(g,sphere(10,5),{at:[.17,1.08,0],s:[.22,.04,.1],r:[0,.4,.25]},C('#3fa02c'));});
-for(const [id,cols] of [['pop-lime',['#a8e82a']],['pop-orange',['#ff7a2a','#ffb21e','#ffd84a','#ff7aa0']],['pop-blue',['#4aa8f8']],['pop-pink',['#ff8a9a','#ffd0d8']],['pop-red',['#f0384a']]])
- kind(id,'Popsicle',.27,.09,['treats'],g=>{const band=p=>{const t=Math.max(0,Math.min(.999,(p[2]+.31)/.42));return C(cols[Math.floor(t*cols.length)]);};
-  add(g,rbox(.26,.08,.42,.07),{at:[0,0,-.07]},band);add(g,rbox(.06,.03,.16,.015),{at:[0,.025,.2]},C('#e8c890'));});
-kind('train-pink','Toy Train',.55,.78,['toys'],g=>{const P=C('#ff3fa0'),D=C('#c8207a'),Y=C('#ffd23a');
- add(g,rbox(.5,.1,.92,.04),{at:[0,.1,0]},D);add(g,lathe([[0,0],[.2,0,1],[.2,.5,1],[0,.5]],14),{at:[0,.36,-.12],r:[Math.PI/2,0,0]},P);
- add(g,rbox(.48,.42,.36,.06),{at:[0,.2,.26]},P);add(g,rbox(.54,.07,.42,.03),{at:[0,.62,.26]},D);add(g,rbox(.3,.16,.02,.02),{at:[0,.38,.45]},C('#9fd4ff'));
- add(g,cyl(.07,.24,10,.1),{at:[0,.56,-.3]},D);add(g,cyl(.11,.05,10),{at:[0,.78,-.3]},Y);add(g,sphere(8,6),{at:[0,.36,-.63],s:[.08,.08,.04]},Y);
- for(const sz of [-.3,-.02,.28])for(const sx of [-1,1])add(g,cyl(.13,.06,12),{at:[sx*.27,.14,sz],r:[0,0,Math.PI/2]},Y);});
+// Level 5 popsicles, measured in the owner's video: 0.61 long including the short stick, 0.35 wide, 0.14 thick.
+// Plain ones are ribbed; the pink ones are strawberry with white sprinkles, the red ones watermelon, the rainbow striped.
+const popBody=(g,colAt)=>{add(g,rbox(.35,.14,.47,.11),{at:[0,0,-.06]},colAt);add(g,rbox(.08,.05,.15,.02),{at:[0,.045,.24]},C('#f2a35a'));};
+for(const [id,col,rib] of [['pop-lime','#a8e82a','#86c41e'],['pop-amber','#ffad22','#e8901a'],['pop-blue','#45a8f5','#2f8ad8']])
+ kind(id,'Popsicle',.32,.14,['treats'],g=>popBody(g,(p,n)=>n[1]>.6&&Math.abs(p[2]+.06)<.17&&Math.abs((p[0]*40)%1)<.18&&Math.abs(p[0])<.11?C(rib):C(col)));
+kind('pop-pink','Popsicle',.32,.14,['treats'],g=>popBody(g,(p,n)=>{if(p[2]<-.25)return C('#fff1e0');return n[1]>.6&&Math.sin(p[0]*60)*Math.sin(p[2]*55)>.82?C('#ffffff'):C('#ff9ab4');}));
+kind('pop-red','Popsicle',.32,.14,['treats'],g=>popBody(g,(p)=>p[2]>.13?C('#4ab83a'):p[2]>.09?C('#f4f6ea'):C('#f0384a')));
+kind('pop-orange','Popsicle',.32,.14,['treats'],g=>popBody(g,(p)=>{const t=Math.max(0,Math.min(.999,(p[2]+.31)/.5));return C(['#ffd84a','#ff7a3a','#ff6aa8','#8ad84a'][Math.floor(t*4)]);}));// Level 5 Lego stacks: big 2x4 bricks (0.6 x 1.2, 0.4 tall, measured against the hole in the video)
+for(const [id,col] of [['brick-red','#e8283a'],['brick-blue','#38a8f0'],['brick-pink','#e040c8'],['brick-green','#7ad02a'],['brick-purple','#7a40e0'],['brick-yellow','#ffc61e']])
+ kind(id,'Toy Brick',.61,.37,['toys'],g=>{const c=C(col);add(g,rbox(.55,.37,1.1,.05),{},c);for(const sx of [-.1375,.1375])for(const sz of [-.4125,-.1375,.1375,.4125])add(g,cyl(.09,.07,12),{at:[sx,.37,sz]},mix(c,WHITE,.1));});
+// r .72: at the video's size (sc 1.6, 1.8 long) only a Size 6 hole swallows it, as in the owner's Level 5 video
+kind('train-pink','Toy Train',.72,.79,['toys'],g=>{const P=C('#ff3fa0'),D=C('#c8207a'),Y=C('#ffc61e'),V=C('#7a3ad8');
+ add(g,rbox(.46,.1,.94,.04),{at:[0,.1,0]},D); // chassis
+ add(g,lathe([[0,0],[.19,0,1],[.19,.5,1],[0,.5]],16),{at:[0,.38,-.08],r:[Math.PI/2,0,0]},P); // boiler, front at -z
+ add(g,cyl(.2,.04,16),{at:[0,.38,-.6],r:[Math.PI/2,0,0]},Y);add(g,extrude(starPoly(5,.13,.06),.03),{at:[0,.38,-.63],r:[-Math.PI/2,0,0]},Y); // star face
+ add(g,lathe([[0,0],[.06,0],[.1,.14],[.12,.2],[0,.2]],10),{at:[0,.55,-.42]},D);add(g,cyl(.08,.04,10),{at:[0,.75,-.42]},Y); // chimney
+ add(g,sphere(10,6),{at:[0,.58,-.18],s:[.09,.06,.09]},Y); // dome
+ add(g,rbox(.48,.44,.34,.06),{at:[0,.18,.26]},P);add(g,rbox(.54,.06,.42,.03),{at:[0,.62,.26]},D);for(const sx of [-1,1])add(g,rbox(.02,.16,.18,.02),{at:[sx*.24,.38,.26]},C('#9fd4ff'));
+ for(const [sz,rw] of [[-.34,.12],[-.08,.12],[.28,.18]])for(const sx of [-1,1]){add(g,cyl(rw,.06,14),{at:[sx*.27,rw,sz],r:[0,0,Math.PI/2]},V);add(g,cyl(rw*.45,.07,10),{at:[sx*.28,rw,sz],r:[0,0,Math.PI/2]},Y);}
+ add(g,rbox(.62,.03,.05,.01),{at:[0,.14,-.21]},Y);});
 // Level 6 (toys and gadgets): sizes measured against the hole in the video (a fridge wedges in a Size 5 hole)
 for(const [id,body,trim] of [['fridge-green','#7ed321','#e05ac8'],['fridge-yellow','#ffc61e','#ff6ab0']])
  kind(id,'Fridge',1.15,2.4,['kitchen'],g=>{const B=C(body),T=C(trim);add(g,rbox(1.8,2.4,1.45,.14),{},B);add(g,rbox(1.82,.05,1.47,.02),{at:[0,1.5,0]},T);add(g,rbox(1.84,.04,1.49,.02),{at:[0,.06,0]},T);
@@ -317,8 +329,13 @@ kind('phone-purple','Toy Phone',.2,.1,['toys'],g=>{add(g,rbox(.22,.08,.36,.05),{
 kind('pin','Bowling Pin',.1,.36,['toys'],g=>{add(g,lathe([[0,0],[.08,.02],[.1,.12],[.05,.24],[.07,.32],[0,.36]],8),{},(p)=>p[1]>.22&&p[1]<.26?C('#2a8af0'):C('#e8ecf2'));});
 kind('bracelet','Bead Bracelet',.5,.16,['toys'],g=>{for(let i=0;i<10;i++){const a=i/10*Math.PI*2;add(g,rbox(.2,.16,.16,.05),{at:[Math.cos(a)*.38,0,Math.sin(a)*.38],r:[0,-a,0]},C(i%2?'#ff9ac8':'#ffc0dc'));}});
 KINDS.helicopter.hull=[1.0,.95,1.3,0,.05];KINDS.helicopter.shape='box';
+// Lego bricks collide as the brick without its studs (the studs sit inside the brick above, so stacks don't overlap)
+for(const id of Object.keys(KINDS))if(id.startsWith('lego-')&&id!=='lego-long')KINDS[id].hull=[.5,.2,.25];
+for(const id of Object.keys(KINDS))if(id.startsWith('brick-'))KINDS[id].hull=[.55,.37,1.1];
 for(const [id,xp] of [['fridge-green',15],['fridge-yellow',15],['tv-orange',15],['helicopter',15],['ball-star-blue',4],['ball-spiky',4],['monster-truck',6],['microwave',10],['hairdryer',4],['kettle',4],['boombox',6],['console-yellow',2],['calculator',2],['toy-piano',2],['phone-purple',1],['pin',1],['bracelet',2]])KINDS[id].xp=xp;
-for(const [id,xp] of [['peach',4],['train-pink',6],['pop-lime',1],['pop-orange',1],['pop-blue',1],['pop-pink',1],['pop-red',1],['wood-disc',1],['popsicle-melon',1],['popsicle-ice',1],['watermelon-lying',10],['jelly-green',2],['jelly-red',2],['jelly-orange',2]])KINDS[id].xp=xp;
+// popups in the owner's Level 5 video: bricks +1 each, trains +10
+for(const [id,xp] of [['brick-red',1],['brick-blue',1],['brick-pink',1],['brick-green',1],['brick-purple',1],['brick-yellow',1]])KINDS[id].xp=xp;
+for(const [id,xp] of [['peach',4],['train-pink',10],['pop-lime',1],['pop-orange',1],['pop-blue',1],['pop-pink',1],['pop-red',1],['pop-amber',1],['wood-disc',1],['popsicle-melon',1],['popsicle-ice',1],['watermelon-lying',10],['jelly-green',2],['jelly-red',2],['jelly-orange',2]])KINDS[id].xp=xp;
 // Face quad placement on the head token (local space): centre and normal of the coin's front face.
 const HEAD_FACE={c:[0,.22+.075*.64,.075*.766],tilt:-(Math.PI/2-.87),size:.5};
 const THEMES={

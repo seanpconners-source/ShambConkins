@@ -15,16 +15,28 @@ function orangeBlock(B,cx,cz){const sp=.6;for(let i=0;i<7;i++)for(let j=0;j<6;j+
 function fruitBlock(B,x0,x1,z0,z1){const sp=.54,nx=Math.max(3,Math.round((x1-x0)/sp)+1),nz=Math.max(3,Math.round((z1-z0)/sp)+1),dx=(x1-x0)/(nx-1),dz=(z1-z0)/(nz-1);
  for(let i=0;i<nx;i++)for(let j=0;j<nz;j++){const x=x0+i*dx,z=z0+j*dz,e=Math.min(i,j,nx-1-i,nz-1-j);
   if(e===0)B.add('tangerine',x,z,{sc:.95,rand:true});else if(e===1||(e%2===1&&Math.min(nx,nz)>6))B.add('strawberry-half',x,z,{sc:.95,rand:true});else B.add('onion-red',x,z,{rand:true});}}
-// Level 5 popsicles stand radially with their sticks pointing out (the model's stick is along +z)
-const outward=a=>PI/2-a;
-function popSpiral(B,k,cx,cz,r0,r1,pitch,a0){let a=a0,r=r0;while(r<=r1){B.add(k,cx+Math.cos(a)*r,cz+Math.sin(a)*r,{yaw:outward(a)});a+=.31/Math.max(.3,r-.22);r=r0+pitch*(a-a0)/(2*PI);}}
-function popRing2(B,k,cx,cz,r){const n=Math.floor(2*PI*(r-.22)/.29);for(let i=0;i<n;i++){const a=i/n*2*PI;B.add(k,cx+Math.cos(a)*r,cz+Math.sin(a)*r,{yaw:outward(a)});}}
-// Level 5 Lego stack: six layers of 2x4 bricks (2 x 4 per layer, turned 90 degrees every layer so they interlock),
-// one colour per layer, and a pink toy train on top
-function legoStack(B,cx,cz){const cols=['lego-blue','lego-red','lego-green','lego-purple','lego-orange','lego-yellow'],sc=1.3,bw=.5*sc,bd=.25*sc,lh=.2*sc;
- for(let L=0;L<cols.length;L++){const turn=L%2,y=L*lh;for(let i=0;i<2;i++)for(let j=0;j<4;j++){const a=(i-.5)*bw,b=(j-1.5)*bd;B.add(cols[L],cx+(turn?b:a),cz+(turn?a:b),{sc,y,yaw:turn?PI/2:0});}}
- B.add('train-pink',cx,cz,{y:cols.length*lh,yaw:.3});}
-const HAND={
+// Level 5 popsicles stand radially with their sticks pointing out (the model's stick is along +z), 0.47 apart along a
+// row, as measured in the owner's video. The two spirals follow the real arm, measured popsicle by popsicle from the
+// video (polar knots [angle, radius] round its centre, clockwise, ~2.75 turns from r 0.92 to 4.4).
+const outward=a=>PI/2-a,POP_SP=.47;
+const ARM=[[-.375,.922],[-.899,1.289],[-1.422,1.36],[-1.946,1.449],[-2.47,1.501],[-2.993,1.625],[-3.517,1.757],[-4.04,1.893],[-4.564,2.094],[-5.088,2.266],[-5.611,2.483],[-6.135,2.694],[-6.658,2.815],[-7.182,2.86],[-7.706,2.869],[-8.229,2.875],[-8.753,2.903],[-9.276,3.005],[-9.8,3.073],[-10.324,3.154],[-10.847,3.283],[-11.371,3.512],[-11.894,3.699],[-12.418,3.952],[-12.942,4.066],[-13.465,4.105],[-13.989,4.06],[-14.512,4.1],[-15.036,4.15],[-15.56,4.21],[-16.083,4.28],[-16.607,4.34],[-17.13,4.4]];
+const D2R=Math.PI/180,RED_ARM=[[137,.49],[107,.83],[82,.99],[61,1.15],[43,1.37],[28,1.53],[13,1.67],[0,1.79],[-13,1.88],[-63,1.99],[-100,1.99],[-137,2.02],[-172,2.05],[-206,2.07],[-339,2.78],[-354,2.94],[-370,3.04],[-384,3.1],[-430,3.09],[-500,3.11],[-560,3.08],[-704,3.83],[-720,4.0],[-735,4.05]].map(([d,r])=>[d*D2R,r]);
+function armSpiral(B,k,cx,cz,knots=ARM,rMax=4.4){const rAt=a=>{for(let i=0;i<knots.length-1;i++){const [a0,r0]=knots[i],[a1,r1]=knots[i+1];if(a<=a0&&a>=a1)return r0+(r1-r0)*(a0-a)/(a0-a1);}return knots[knots.length-1][1];};
+ let a=knots[0][0];const end=knots[knots.length-1][0];while(a>=end){const r=Math.min(rMax,rAt(a));B.add(k,cx+Math.cos(a)*r,cz+Math.sin(a)*r,{yaw:outward(a)});a-=POP_SP/r;}}
+function popRing2(B,k,cx,cz,r){const n=Math.floor(2*PI*r/POP_SP);for(let i=0;i<n;i++){const a=i/n*2*PI;B.add(k,cx+Math.cos(a)*r,cz+Math.sin(a)*r,{yaw:outward(a)});}}
+// Level 5 Lego stack (video): 2.2 x 2.2 footprint, 7 layers of big 2x4 bricks (4 across, 2 deep), red / blue / pink /
+// green / purple / yellow / yellow from the bottom, with a pink toy train on top that needs a Size 6 hole.
+function legoStack(B,cx,cz){const cols=['brick-red','brick-blue','brick-pink','brick-green','brick-purple','brick-yellow','brick-yellow'],lh=.37;
+ for(let L=0;L<cols.length;L++)for(let i=0;i<4;i++)for(let j=0;j<2;j++)B.add(cols[L],cx+(i-1.5)*.55,cz+(j-.5)*1.1,{y:L*lh,yaw:0});
+ B.add('train-pink',cx,cz,{y:cols.length*lh,yaw:.3,sc:1.6});}// Level 4 block between corner tangerines (x0,z0)-(x1,z1) with about `sp` spacing: tangerine border, halves ring, then
+// rings alternating onions / halves; small (7x7) blocks put a 2x2 of onions in the middle instead. Cells under a
+// peach stay empty.
+function fruitBlock2(B,x0,x1,z0,z1,sp,small,avoid=[]){const nx=Math.round((x1-x0)/sp)+1,nz=Math.round((z1-z0)/sp)+1,dx=(x1-x0)/(nx-1),dz=(z1-z0)/(nz-1);
+ const free=(x,z)=>avoid.every(([px,pz])=>Math.hypot(px-x,pz-z)>.75);
+ for(let i=0;i<nx;i++)for(let j=0;j<nz;j++){const x=x0+i*dx,z=z0+j*dz,e=Math.min(i,j,nx-1-i,nz-1-j);if(!free(x,z))continue;
+  if(e===0)B.add('tangerine',x,z,{sc:.95,rand:true});else if(e===1)B.add('strawberry-half',x,z,{sc:.95,rand:true});
+  else if(!small)B.add(e%2?'strawberry-half':'onion-red',x,z,{sc:e%2?.95:1,rand:true});}
+ if(small){const cx=(x0+x1)/2,cz=(z0+z1)/2;for(const [a,b] of [[-.5,-.5],[.5,-.5],[-.5,.5],[.5,.5]])B.add('onion-red',cx+a*dx,cz+b*dz,{rand:true});}}const HAND={
  // ---- Owner's Oct 14 phone video (Galaxy Fold, 1080x1200): Levels 2, 3 and the start of 4. Positions come from a map
  // stitched from the video (hole track × camera scale), in tray coordinates; x across, z down the tray (+z = bottom).
  // Level 2: two orange-slice / strawberry spiral galaxies; 18 big green apples ring the lower one, a watermelon sits
@@ -54,24 +66,29 @@ const HAND={
   }},
  // ---- Owner's second Fold video (Oct 14): Levels 4, 5 and 6 played start to finish. Positions from maps stitched
  // from the video, shifted into tray coordinates (the tray centre is 0,0).
- // Level 4: blocks of tangerines round a ring of strawberry halves with red onions inside, spread over a wide tray,
- // three big peaches. Goals 200 halves / 88 onions / 228 tangerines / 3 peaches, 3:30 clock; cleared at Size 7.
- 4:{theme:'fruit',floor:'#46566a',W:22,D:24,start:{x:-.5,z:8},time:210,growBase:15,islands:[[8.6,-12,11,-8.8],[-11,-12,-8.8,-10]],
+ // Level 4: blocks read off a top-down map stitched from the owner's video (every frame warped onto the floor with the
+ // measured camera). Each block: a border of tangerines, a ring of strawberry halves, then alternating rings of red onions
+ // and halves; the four 7x7 blocks have a 2x2 of onions in the middle. The tray is a cross: grass fills three corners.
+ // Goals 200 halves / 88 onions / 228 tangerines / 3 peaches, 3:30 clock; cleared at Size 7 in the video.
+ 4:{theme:'fruit',floor:'#46566a',W:21.7,D:21.3,start:{x:-1.25,z:7.65},time:210,growBase:15,
+  islands:[[7.55,-10.65,10.85,-6.55],[3.65,4.85,10.85,10.65],[-10.85,.25,-6.35,10.65]],
   goals:[['strawberry-half',200],['onion-red',88],['tangerine',228],['peach',3]],
-  build(B){
-   for(const [x0,x1,z0,z1] of [[.1,3.3,3.9,6.8],[-3.9,-.9,4.6,7.1],[-.5,2.5,-2,3],[-3.6,-1,-2.8,2.6],[3.1,5.3,-2.8,1.4],[6.3,10.3,.2,4],[-3.9,-1.1,-6.6,-3.6],[1.7,3.7,-6.4,-3.2],
-     [-9.3,-6.5,-3.2,-.6],[4.7,8.5,-8.2,-4.6],[-8.6,-5,-9.6,-6.2],[-2.6,1.6,-11.4,-8.2],[-9.6,-6.8,1.6,5.2]])fruitBlock(B,x0,x1,z0,z1);
-   for(const [x,z] of [[8.3,2.1],[6.6,-6.4],[-.5,-9.8]])B.add('peach',x,z,{yaw:x*z});
+  build(B){const ox=-.75,oz=-.35,P=[[-.92,.06],[7.3,.6],[-6.0,-7.44]]; // map coordinates -> tray (the tray is centred)
+   const blk=(x0,x1,z0,z1,sp,small)=>fruitBlock2(B,x0+ox,x1+ox,z0+oz,z1+oz,sp,small,P.map(([x,z])=>[x+ox,z+oz]));
+   blk(.28,3.67,3.25,6.67,.57,1);blk(-5.0,-1.56,3.67,6.67,.57,1);        // the two blocks above the start
+   blk(-4.53,-1.47,-6.39,-3.42,.5,1);blk(.06,3.17,-6.53,-3.53,.5,1);     // the two top blocks
+   blk(-8.97,-4.53,-2.36,.39,.5);blk(-3.56,2.42,-2.36,2.92,.5);blk(3.61,6.5,-2.78,2.42,.5);blk(7.0,10.19,-2.36,2.42,.5); // middle band
+   for(const [x,z] of P)B.add('peach',x+ox,z+oz,{yaw:x*z});
   }},
  // Level 5: popsicle galaxies. The start sits in a green spiral; a red spiral to its left; blue/pink and orange
  // rainbow rings round Lego brick stacks, each stack topped by a pink toy train (the 4 goal trains), and two more
  // stacks with trains between them. 2:30 clock; cleared at Size 7.
- 5:{theme:'treats',floor:'#46566a',W:21,D:21.1,start:{x:6,z:6.25},time:150,growBase:15,goals:[['train-pink',4]],
+ 5:{theme:'treats',floor:'#46566a',W:22.2,D:21.4,start:{x:6,z:6.25},time:150,growBase:15,goals:[['train-pink',4]],
   build(B){
-   popSpiral(B,'pop-lime',6,6.25,1.0,3.6,.66,0);popSpiral(B,'pop-red',-3.8,6.25,.8,3.4,.66,2);
-   for(let i=0;i<5;i++)popRing2(B,i%2?'pop-pink':'pop-blue',-4.4,-1.35,1.6+i*.64);
-   for(let i=0;i<5;i++)popRing2(B,'pop-orange',4.8,-3.15,1.4+i*.64);
-   for(const [x,z] of [[-4.6,-2.55],[4.8,-3.35],[.2,-7.35],[.4,1.25]])legoStack(B,x,z);
+   armSpiral(B,'pop-lime',6-.45,6.25-.7);armSpiral(B,'pop-red',-4.2,5.4,RED_ARM,4.1);
+   popRing2(B,'pop-blue',-4.45,-2.0,2.05);popRing2(B,'pop-pink',-4.45,-2.0,2.86);popRing2(B,'pop-blue',-4.45,-2.0,3.68);
+   popRing2(B,'pop-amber',4.6,-3.0,2.05);popRing2(B,'pop-orange',4.6,-3.0,2.86);popRing2(B,'pop-amber',4.6,-3.0,3.68);
+   for(const [x,z] of [[-4.45,-2.0],[4.6,-3.0],[0,-6.6],[.1,1.4]])legoStack(B,x,z); // stack centres: where the hole sits under each one in the video
   }},
  // Level 6: a toy-and-gadget room. Goals: 2 green fridges, 2 toy helicopters, 7 orange TVs; 3:30 clock; Size 6 at the
  // end. A field of toy phones above the start, fridges (which wedge across a Size 5 hole), microwaves, star balls,

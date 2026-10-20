@@ -100,7 +100,23 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   `{physics:false}`. Bravo! card = real bonus screen (`holeIt/bonus.js`): coin pile "20", x2/x3/x5/x3/x2 bar, sliding arrow,
   Collect banks 20×tile in `profile.holeItCoins` (no advert). Level screen (`holeIt/levelMap.js`) = the real pre-level screen
   (meadow, lake, tree, blue truck with player 1's face, hole, coins pill, green "Level N" button) + a row of level bubbles
-  (stars, padlocks); Play drops the goal props into the hole; coins won pop out of the hole next time (`store.holeItCoinPop`).  Third owner video (Hard Level 30 + Levels 31-34, Oct 14): prop value (r/.3)^1.6 (+1/+2/+4/+10/+15), per-level growth curve
+  (stars, padlocks); Play drops the goal props into the hole; coins won pop out of the hole next time (`store.holeItCoinPop`).
+  STACKS (Oct 15-19, owner: "ours are shaky before the player comes near"): cannon can't hold separate bodies stacked 20 high,
+  so every column (props built up off the floor + what they stand on, `groups` in physics.js) starts FROZEN as static bodies
+  exactly where the level put it; when the hole reaches under it (or a hard hit, `LOOSEN`) it becomes ONE rigid compound body
+  (`buildCompound`, straight and stable). Pieces over the hole split off and drop (`stepCompounds`), and everything resting on a
+  piece that leaves goes with it, so a tower sinks straight down; a multi-column stack (Level 5 Lego) loosens the columns within
+  1 unit of the bite into a calm heap (`split(...,calm)`); a hard landing (`SHATTER`) breaks a compound up. Props the hole can
+  swallow don't collide with the rim/throat at all (stay put until over the hole); round props roll little (damping).
+  Never add/remove bodies inside a world step (collide events queue `pendingRelease`). prune keeps bodies something rests on.
+  MEASURING TOOLS (scratchpad, not in repo): vserver.mjs serves the video + `/save`, `/data`, `/shots`; helpers.js (`track2`
+  perspective-correct hole path from floor motion, `toWorld` camera inverse, `mosaicTD` top-down level map from the warped frames,
+  `side` real-vs-ours sheets); replay.mjs drives our hole along a traced path (`sim.path`, `sim.fixedDt`) and screenshots at
+  video times. Measured: Level 5 popsicles 0.61 x 0.35 (+stick), 0.47 apart, spirals from detected popsicles (`ARM`, `RED_ARM`),
+  ring radii 2.05/2.86/3.68, stacks 2.2 x 2.2 of 7 brick layers (`brick-*`, 0.55x1.1x0.37), train needs Size 6 (r 1.15),
+  bricks +1, train +10; Level 4 blocks + cross-shaped tray (3 grass corners) from the top-down map; top speed 2.5·(r/.5)^.53.
+  Replays: Level 5 sizes match the video to Size 4 (85 s), then run ~1 size behind (Size 6 at 101 s vs 92 s); Level 4 eats
+  ~280 of the video's ~430 by 63 s (Size 6 vs 7). Level 3 and 6 sizes not re-measured with the new tools yet.  Third owner video (Hard Level 30 + Levels 31-34, Oct 14): prop value (r/.3)^1.6 (+1/+2/+4/+10/+15), per-level growth curve
   (`growBase`: at every size you can reach the next by eating ~65% of what already fits, so the biggest prop becomes edible near
   the end). Props have a per-instance scale `sc` (giant duck = duck sc 4.6, goal key `gk` 'duck+' → BIG card badge). Walled grass
   islands (`def.islands`, hole slides along them; drawn as walls + raised grass). `layout.js` = placement toolkit (row/grid/rings/

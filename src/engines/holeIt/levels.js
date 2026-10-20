@@ -94,7 +94,7 @@ function buildLevel(level){
  removeItems(items,it=>{const r=KINDS[it.k].r*(it.sc||1);return !(Math.abs(it.x)<=W/2-r*.6&&Math.abs(it.z)<=D/2-r*.6)||islands.some(o=>insideRect(it.x,it.z,o,r*.7))||(level>1&&Math.hypot(it.x-start.x,it.z-start.z)<.9+r);});
  // a small prop under a much bigger one would be hidden inside it: drop the small one
  {const big=items.map((it,i)=>({i,r:KINDS[it.k].r*(it.sc||1),it})).filter(o=>o.r>=.7&&o.it.on<0);
-  if(big.length)removeItems(items,(it,i)=>{if(it.on>=0)return false;const r=KINDS[it.k].r*(it.sc||1);return big.some(o=>o.i!==i&&o.r>r*1.6&&Math.hypot(o.it.x-it.x,o.it.z-it.z)<(o.r+r)*.85);});}
+  if(big.length)removeItems(items,(it,i)=>{if(it.on>=0)return false;const r=KINDS[it.k].r*(it.sc||1);return big.some(o=>o.i!==i&&Math.abs((o.it.y||0)-(it.y||0))<.3&&o.r>r*1.6&&Math.hypot(o.it.x-it.x,o.it.z-it.z)<(o.r+r)*.85);});}
  const key=it=>it.gk||it.k;
  const tally=()=>{const t={};for(const it of items)t[key(it)]=(t[key(it)]||0)+1;return t;};
  let mode='items',goals=[];

@@ -45,7 +45,9 @@ function award(sim,it){sim.eaten++;const score=sim.def.mode==='score';const g=sc
  const h=sim.hole;h.xp+=it.xp;let grew=false;while(h.xp>=sizeNeed(h.size,sim.def.growBase)){h.xp-=sizeNeed(h.size,sim.def.growBase);h.size++;h.rT=holeRadius(h.size);grew=true;}
  sim.events.push({type:'eat',k:it.gk,goal:!!g,xp:it.xp,x:it.x,z:it.z});if(grew)sim.events.push({type:'size',size:h.size});
  if(!sim.done&&sim.goals.every(g=>g.got>=g.need)){sim.done=true;sim.won=true;sim.clearTime=sim.elapsed;sim.events.push({type:'win'});}}
-const topSpeed=r=>2.42*Math.pow(r/.5,.42);
+// Top speed per size, re-measured with the perspective-correct trace of the owner's second Fold video (Level 4):
+// 2.5 u/s at Size 1, 2.96 at Size 2, 3.17 at 3, 3.61 at 4, 4.12 at 6
+const topSpeed=r=>2.5*Math.pow(r/.5,.53);
 // Without physics (tests that only check layouts): props that fit drop straight in.
 function simpleFalls(sim){const h=sim.hole;forEachNear(sim,h.x,h.z,h.r+sim.maxR,it=>{if(it.state!==0)return;if(it.r<=h.r*.96&&Math.hypot(it.x-h.x,it.z-h.z)<h.r-it.r*.15&&!sim.done)startFall(sim,it,{x:0,y:0,z:0,wx:0,wy:0,wz:0});});}
 // input: {x,z} direction with length 0..1 (screen up = -z).
@@ -61,6 +63,9 @@ function stepSim(sim,dt,input={x:0,z:0}){
  const mag=Math.min(1,Math.hypot(input.x,input.z)),speed=topSpeed(h.r)*(sim.active.speed>0?1.6:1)*(sim.done?0:1);
  const tvx=mag?input.x/Math.max(1e-6,Math.hypot(input.x,input.z))*mag*speed:0,tvz=mag?input.z/Math.max(1e-6,Math.hypot(input.x,input.z))*mag*speed:0;
  const acc=1-Math.exp(-dt*20);h.vx+=(tvx-h.vx)*acc;h.vz+=(tvz-h.vz)*acc;
+ // replay (comparison tool): sim.path = [[t,x,z],...] in tray coordinates drives the hole exactly along a recorded path
+ if(sim.path&&!sim.done){const P=sim.path,T=sim.elapsed;let i=sim.pathI||0;while(i<P.length-2&&P[i+1][0]<T)i++;sim.pathI=i;const a=P[i],b=P[Math.min(i+1,P.length-1)],f=b[0]>a[0]?Math.max(0,Math.min(1,(T-a[0])/(b[0]-a[0]))):0;
+  h.vx=(a[1]+(b[1]-a[1])*f-h.x)/dt;h.vz=(a[2]+(b[2]-a[2])*f-h.z)/dt;}
  const mx=Math.max(0,def.W/2-h.r*.8),mz=Math.max(0,def.D/2-h.r*.8);h.x=Math.max(-mx,Math.min(mx,h.x+h.vx*dt));h.z=Math.max(-mz,Math.min(mz,h.z+h.vz*dt));
  // walled grass islands: the rim slides along their walls
  for(const o of def.islands||[]){const m=h.r*.85,x0=o[0]-m,x1=o[2]+m,z0=o[1]-m,z1=o[3]+m;if(h.x>x0&&h.x<x1&&h.z>z0&&h.z<z1){const dl=h.x-x0,dr=x1-h.x,dt2=h.z-z0,db=z1-h.z,mn=Math.min(dl,dr,dt2,db);if(mn===dl){h.x=x0;h.vx=Math.min(0,h.vx);}else if(mn===dr){h.x=x1;h.vx=Math.max(0,h.vx);}else if(mn===dt2){h.z=z0;h.vz=Math.min(0,h.vz);}else{h.z=z1;h.vz=Math.max(0,h.vz);}}}

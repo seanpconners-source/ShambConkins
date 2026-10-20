@@ -226,7 +226,8 @@ async function holeIt(s){
  let frameMs=0;
  s.frame((dt,t)=>{
   if(map){syncCanvases();const k=dpr();hx.setTransform(k,0,0,k,0,0);map.draw(hx,dt);if(s.debug?.pick&&!map.picked){const n=s.debug.pick;s.debug.pick=null;map.pick(n);}return;}
-  if(!turn)return;const t0=performance.now();syncCanvases();turn.t+=dt;
+  if(!turn)return;if(turn.sim?.fixedDt)dt=turn.sim.fixedDt; // comparison tool: a fixed step per frame
+  const t0=performance.now();syncCanvases();turn.t+=dt;
   const sim=turn.sim;
   if(turn.phase==='play'){const st=toStick();const kx=(keys.r?1:0)-(keys.l?1:0),kz=(keys.d?1:0)-(keys.u?1:0);const input=contact?st:{x:kx,z:kz};
    stepSim(sim,dt,turn.moved?input:{x:0,z:0});if(!turn.moved){sim.time=sim.def.time;sim.elapsed=0;}
