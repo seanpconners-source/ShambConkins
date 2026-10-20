@@ -7,6 +7,7 @@
 //            Race to tap the missing card on your own answer pad. Ten rounds.
 const {clamp,shuffle}=require("src/utils.js");
 const {Fx,arenaTouch,snd,noise,jingle,outlined,rr,FONT,PCOL,settle,Countdown}=require("src/engines/arenaKit.js");
+const {isCpu,cpuHotseat,cpuSkill,cpuBlunder,pickRandom}=require("src/engines/cpuKit.js");
 
 const SUSPECTS=[['Miss Scarlet','#d8262c'],['Colonel Mustard','#e8b020'],['Mrs. White','#f4f4f4'],['Mr. Green','#2fa75a'],['Mrs. Peacock','#2f4fd6'],['Professor Plum','#8a3ab8']];
 const WEAPONS=[['Candlestick','🕯️'],['Knife','🔪'],['Lead Pipe','🔩'],['Revolver','🔫'],['Rope','🪢'],['Wrench','🔧']];
@@ -29,7 +30,7 @@ async function clue(s){
  const mode=s.game.clueMode==='lineup'?'lineup':'deduce';
  const [c,x]=s.canvas(900,640,{fill:true});s.body.classList.add('drag-arena-body');s.shared=mode==='lineup';s.updateScores();
  if(!await settle(s))return;
- const fx=new Fx();let t=0,buttons=[];
+ const fx=new Fx(),cpu=isCpu(s),bot=i=>cpu&&i===1;let t=0,buttons=[];
  const button=(label,bx,by,bw,bh,onTap,{fill='#7b3a45',enabled=true}={})=>{buttons.push({bx,by,bw,bh,onTap,enabled});x.save();x.globalAlpha=enabled?1:.4;x.fillStyle=fill;rr(x,bx,by,bw,bh,bh*.25);x.fill();x.strokeStyle=GOLD;x.lineWidth=2.5;x.stroke();outlined(x,label,bx+bw/2,by+bh/2+1,{size:Math.min(bh*.42,bw*.13),fill:'#fff',stroke:INK});x.restore();};
 
  if(mode==='deduce'){
@@ -51,13 +52,22 @@ async function clue(s){
   const endTurn=()=>{if(state!=='reveal')return;turns[turn]++;if(turns[0]>=ROUNDS&&turns[1]>=ROUNDS){state='end';endT=0;const a=known(0),b=known(1);winner=a===b?-2:a>b?0:1;endText=winner===-2?'THE CASE GOES COLD':`${s.players[winner].name.toUpperCase()} WAS CLOSER`;return;}turn=1-turn;begin();};
   s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev);for(const b of buttons)if(b.enabled&&p.x>=b.bx&&p.x<=b.bx+b.bw&&p.y>=b.by&&p.y<=b.by+b.bh){b.onTap();snd(560,.04,{type:'square',vol:.025});break;}});
   s.debug={answer,hands,house,seen,get state(){return state;},get turn(){return turn;},sel,pick:(cat,name)=>{sel[cat]=CARDS.find(c=>c.cat===cat&&c.name===name);},suggest,accuse,endTurn};
+  // vs CPU: player 2 keeps an honest notebook (its hand + cards shown to it), suggests unknown cards, accuses once each
+  // category is down to one, and gambles on its last turn when behind. Its notebook stays hidden from the human.
+  if(cpu)cpuHotseat(s,{isTurn:()=>turn===1&&(state==='pick'||state==='reveal'),delay:1500,think:()=>{if(state==='reveal')return endTurn();
+   const cand=[0,1,2].map(cat=>CARDS.filter(cd=>cd.cat===cat&&!seen[1].has(cd.id)));
+   if(cand.every(l=>l.length===1)||turns[1]>=ROUNDS-1&&known(1)<known(0)){cand.forEach((l,k)=>sel[k]=pickRandom(l));return accuse();}
+   cand.forEach((l,k)=>sel[k]=pickRandom(cpuBlunder(s)?CARDS.filter(cd=>cd.cat===k):l));suggest();}});
   begin();
   s.frame(dt=>{t+=dt;fx.update(dt);buttons=[];const W=s.W,H=s.H;wood(x,W,H);
    if(state==='end'){endT+=dt;if(endT>4.2){const sc=winner>=0&&endText.includes('SOLVED')?(winner===0?[18,known(1)]:[known(0),18]):winner>=0&&endText.startsWith('WRONG')?(winner===0?[known(0)+1,0]:[0,known(1)+1]):[known(0),known(1)];
      s.finish(sc,`Clue: it was ${answer[0].name} with the ${answer[1].name} in the ${answer[2].name}. ${endText.toLowerCase().replace(/^./,m=>m.toUpperCase())}.`);return;}}
    s.setScores([known(0),known(1)]);
    const u=Math.min(W,H)/640,wide=W>H*1.05;
-   if(state==='pick'||state==='reveal'){const i=turn;
+   if((state==='pick'||state==='reveal')&&bot(turn)){outlined(x,`${s.players[1].name.toUpperCase()} IS INVESTIGATING · ROUND ${turns[1]+1}/${ROUNDS}`,W/2,H*.28,{size:20*u,fill:GOLD,stroke:INK});
+    if(state==='reveal'){outlined(x,`${sel[0].name} · ${sel[1].name} · ${sel[2].name}`,W/2,H*.42,{size:16*u,fill:'#fff',stroke:INK});outlined(x,reveal.by===0?`YOU SHOWED ${reveal.card.name.toUpperCase()}`:reveal.by===2?'WADSWORTH SHOWED A CARD':'NOBODY COULD DISPROVE IT',W/2,H*.52,{size:16*u,fill:'#fff',stroke:INK});}
+    s.sprite(x,1,W/2,H*.72,90*u,{exact:true,mood:'think'});}
+   else if(state==='pick'||state==='reveal'){const i=turn;
     outlined(x,`${s.players[i].name.toUpperCase()}’S NOTEBOOK · ROUND ${turns[i]+1}/${ROUNDS}`,W/2,22*u+8,{size:18*u,fill:GOLD,stroke:INK});
     if(publicLog&&state==='pick'){x.fillStyle='rgba(255,255,255,.75)';x.font=`600 ${Math.max(10,12*u)}px ${FONT}`;x.textAlign='center';x.textBaseline='middle';x.fillText(publicLog,W/2,46*u+8,W*.95);}
     const cols=wide?[[0,0,.33],[1,.335,.33],[2,.67,.33]]:[[0,0,1],[1,0,1],[2,0,1]],top=62*u+10,bottomReserve=70*u;
@@ -92,7 +102,11 @@ async function clue(s){
   else{score[i]=Math.max(0,score[i]-1);locked[i]=true;noise(.15,{vol:.05,freq:500});s.react(i,'sad');if(locked[0]&&locked[1]){stage='reveal';stageT=0;}}};
  arenaTouch(s,{owner:p=>{const z=zones().pads;for(let i=0;i<2;i++){const q=z[i];if(p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+q.h)return i;}return -1;},maxFingers:2,onDown:f=>{const b=padButtons(f.owner).find(b=>f.x>=b.x&&f.x<=b.x+b.w&&f.y>=b.y&&f.y<=b.y+b.h);if(b)answer(f.owner,b.cd);}});
  s.debug={rounds,score,get phase(){return phase;},get stage(){return stage;},get r(){return r;},answer};
+ let cpuPlan=null;
  s.frame(dt=>{t+=dt;fx.update(dt);const W=s.W,H=s.H;wood(x,W,H);const Z=zones(),R=rounds[Math.min(r,rounds.length-1)];
+  // vs CPU: player 2 answers after a reaction delay; it remembers the missing card less often on Easy and among the rooms.
+  if(cpu&&phase==='play'&&stage==='ask'){const sk=cpuSkill(s);if(cpuPlan?.r!==r)cpuPlan={r,at:(3-1.8*sk)*(.7+Math.random()*.6),done:false};
+   if(!cpuPlan.done&&stageT>=cpuPlan.at){cpuPlan.done=true;answer(1,Math.random()<.4+.5*sk-(R.cat===2?.1:0)?R.missing:pickRandom(R.pad.filter(cd=>cd!==R.missing)));}}
   if(phase==='count'){if(!cd.update(dt))phase='play';}
   else if(phase==='play'){stageT+=dt;
    if(stage==='show'&&stageT>(R.cat===2?3:2.4)){stage='dark';stageT=0;noise(.3,{vol:.04,freq:300});}

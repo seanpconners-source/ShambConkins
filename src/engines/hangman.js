@@ -477,8 +477,9 @@ async function hangman(s){
   const cy=lay.phrase?lay.phrase.y-14:H*.5;x.save();x.globalAlpha=k;x.font=`900 ${clamp(Math.min(W,H)*.055,16,34)}px ${SLAB}`;x.textAlign='center';x.textBaseline='middle';const tw=Math.min(W-20,x.measureText(txt).width+30);
   rr(x,W/2-tw/2,cy-22,tw,40,20);x.fillStyle='rgba(16,7,3,.9)';x.fill();x.strokeStyle=col;x.lineWidth=2;x.stroke();x.fillStyle=col;x.fillText(txt,W/2,cy-1,tw-20);x.restore();}
 
- // vs CPU (Quick Draw and Showdown): the outlaw guesses by English letter frequency, and now and then (more on Hard) a letter it knows is there
- const cpu=isCpu(s)&&mode!=='pass',FREQ='ETAOINSRHLDCUMFPGWYBVKXJQZ';let cpuT=1.5;
+ // vs CPU: the outlaw guesses by English letter frequency, and now and then (more on Hard) a letter it knows is there.
+ // In Wanted it guesses the human's bounty, then deals its own phrase from the deck.
+ const cpu=isCpu(s);if(cpu&&mode==='pass')s.hotseat=true;const FREQ='ETAOINSRHLDCUMFPGWYBVKXJQZ';let cpuT=1.5;
  function cpuHang(dt){if(st.phase!=='play'||st.hanged[1]||st.lock[1]>T||!players().includes(1))return;const sk=cpuSkill(s);cpuT-=dt;if(cpuT>0)return;cpuT=mode==='shared'?1.6-sk*.8+Math.random()*.7:.9+Math.random()*.8;
   const left=[...FREQ].filter(L=>!st.guessed.has(L)),inText=left.filter(L=>st.text.includes(L));if(!left.length)return;const L=inText.length&&Math.random()<.12+sk*.3?inText[0]:left[Math.min(left.length-1,Math.floor(Math.random()*(4-sk*3)))];guess(1,L);}
  // ---------------------------------------------------------------- input
@@ -504,8 +505,9 @@ async function hangman(s){
    await sleep(1.5);if(!s.alive)return;st.skip=false;st.phase='play';st.turnT=T;st.tclock=TURN;await until(()=>st.phase==='reveal');await sleep(3.2);if(!s.alive)return;st.skip=false;}
  }else{
   for(let r=0;r<2;r++){st.round=r;st.writer=r;st.guesser=1-r;st.draft='';st.draftCat=0;st.written=null;st.phase='handoff';
-   if(!await s.pass(st.writer,`${name(st.writer)}: write a phrase for ${name(st.guesser)} to guess, or deal one from the deck. ${name(st.guesser)}, look away!`,'Write the bounty'))return;
-   st.phase='write';SFX.spurs({steps:2});await until(()=>st.written);if(!s.alive)return;st.phase='handoff';
+   if(cpu&&st.writer===1){st.phase='write';deal();doneWriting();}
+   else{if(!await s.pass(st.writer,`${name(st.writer)}: write a phrase for ${name(st.guesser)} to guess, or deal one from the deck. ${name(st.guesser)}, look away!`,'Write the bounty'))return;
+    st.phase='write';SFX.spurs({steps:2});await until(()=>st.written);if(!s.alive)return;}st.phase='handoff';
    if(!await s.pass(st.guesser,`${name(st.guesser)}: ${name(st.writer)} posted a bounty. Six bullets in the chamber. Guess it before the trapdoor drops.`,'Saddle up',{countdown:3}))return;
    startRound(st.written.text,st.written.cat);st.phase='banner';st.bannerT=T;SFX.cylinder({});await sleep(1.3);if(!s.alive)return;st.skip=false;
    st.phase='play';await until(()=>st.phase==='reveal');await sleep(3.4);if(!s.alive)return;st.skip=false;}

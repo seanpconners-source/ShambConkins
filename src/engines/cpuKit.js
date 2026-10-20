@@ -24,4 +24,10 @@ function negamax(g,st,depth,{deadline=Infinity,rand=Math.random}={}){
  return best??ms[0];
 }
 const pickRandom=(list,rand=Math.random)=>list[Math.floor(rand()*list.length)];
-Object.assign(exports,{isCpu,cpuHotseat,cpuDepth,cpuBlunder,negamax,pickRandom,cpuSkill});
+// Trivia: the CPU "knows" an answer with a chance set by the question's difficulty and the CPU level; otherwise it guesses.
+// choices = [{index}] as shown; returns the position in choices to click.
+function cpuTriviaPick(s,q,choices,rand=Math.random){const base={easy:.86,medium:.72,hard:.55,impossible:.36}[q?.difficulty]??.66,p=Math.min(.97,Math.max(.05,base*(.5+.65*cpuSkill(s))));
+ const right=choices.findIndex(c=>c.index===q.correct);if(right>=0&&rand()<p)return right;const wrong=choices.map((c,i)=>i).filter(i=>i!==right);return wrong.length?pickRandom(wrong,rand):right;}
+// A human-like pause before the CPU answers (seconds): quicker on Hard and on easy questions.
+const cpuThinkTime=(s,q)=>(1.4+(1-cpuSkill(s))*2.2+({hard:1,impossible:1.6}[q?.difficulty]||0))*(.75+Math.random()*.5);
+Object.assign(exports,{isCpu,cpuHotseat,cpuDepth,cpuBlunder,negamax,pickRandom,cpuSkill,cpuTriviaPick,cpuThinkTime});

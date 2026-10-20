@@ -1,5 +1,6 @@
 // Battleship: hidden fleets on an 8x8 grid, drag-to-place with tap-to-rotate, alternate shots, a hit earns another shot.
 const {PartyUI,sfx,head,pname,esc,burst,banner,titleCard,shuffle,extraCSS,tone}=require("src/engines/partyKit.js");
+const {isCpu,cpuSkill,cpuBlunder,pickRandom}=require("src/engines/cpuKit.js");
 
 const N=8;
 const SHIPS=[['Battleship',4],['Cruiser',3],['Submarine',3],['Destroyer',2],['Patrol Boat',2]];
@@ -82,7 +83,14 @@ async function battleship(s){
  const ui=new PartyUI(s,{theme:'bs',scroll:false});
  const rand=s.random,names=[pname(s,0),pname(s,1)];
  const fleets=[null,null],shots=[Array.from({length:N},()=>Array(N).fill(0)),Array.from({length:N},()=>Array(N).fill(0))];// shots[p][y][x]: p's shots at the enemy: 1 miss, 2 hit
- const sunk=[0,0],log=[[],[]];
+ const sunk=[0,0],log=[[],[]],cpu=isCpu(s),bot=P=>cpu&&P===1;if(cpu)s.hotseat=true;
+ // vs CPU: player 2 hunts on a checkerboard (Easy: anywhere), then works along its hits until the ship sinks.
+ function cpuTarget(){const my=shots[1],en=fleets[0],open=(x,y)=>x>=0&&y>=0&&x<N&&y<N&&!my[y][x],live=[];
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(my[y][x]===2){const sh=shipAt(en,x,y);if(sh&&sh.hits<sh.len)live.push([x,y]);}
+  const cand=[];for(const [x,y] of live)for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]])if(open(x+dx,y+dy))cand.push({x:x+dx,y:y+dy,w:live.some(([a,b])=>a===x-dx&&b===y-dy)?3:1});
+  if(cand.length&&!cpuBlunder(s)){const top=Math.max(...cand.map(c=>c.w)),c=pickRandom(cand.filter(c=>c.w===top));return [c.x,c.y];}
+  const all=[];for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(!my[y][x])all.push([x,y]);const par=all.filter(([x,y])=>(x+y)%2===0);
+  return pickRandom(cpuSkill(s)>.5&&par.length?par:all);}
  s.debug={shots,fleets,sunk};
  let view=null;// {cv,x,W,H,mode,P,lay,sel,drag,ships,t,parts,rings,shake}
  let t=0;
@@ -122,11 +130,11 @@ async function battleship(s){
    const e=lay.enemy,me=fleets[P],en=fleets[1-P],my=shots[P],their=shots[1-P];
    drawGrid(x,e,v.t,true);
    // sunk enemy ships are revealed
-   for(const sh of en)if(sh.hits>=sh.len)drawShip(x,e.x+sh.x*e.c,e.y+sh.y*e.c,e.c,sh,'sunk');
+   for(const sh of en)if(sh.hits>=sh.len||bot(P))drawShip(x,e.x+sh.x*e.c,e.y+sh.y*e.c,e.c,sh,sh.hits>=sh.len?'sunk':'own');
    for(let yy=0;yy<N;yy++)for(let xx=0;xx<N;xx++){const m=my[yy][xx];if(m===1)drawMiss(x,e.x+xx*e.c,e.y+yy*e.c,e.c);else if(m===2)drawFire(x,e.x+xx*e.c,e.y+yy*e.c,e.c,v.t,xx+yy);}
    if(v.sel){const [cx,cy]=v.sel,px=e.x+cx*e.c,py=e.y+cy*e.c,pulse=1+Math.sin(v.t*8)*.08;x.save();x.translate(px+e.c/2,py+e.c/2);x.scale(pulse,pulse);x.strokeStyle='#ffe14d';x.lineWidth=Math.max(2,e.c*.07);x.beginPath();x.arc(0,0,e.c*.36,0,Math.PI*2);x.stroke();x.beginPath();x.moveTo(-e.c*.48,0);x.lineTo(-e.c*.18,0);x.moveTo(e.c*.18,0);x.lineTo(e.c*.48,0);x.moveTo(0,-e.c*.48);x.lineTo(0,-e.c*.18);x.moveTo(0,e.c*.18);x.lineTo(0,e.c*.48);x.stroke();x.restore();}
    x.fillStyle='rgba(255,255,255,.9)';x.font='bold 11px Arial';x.textAlign='left';x.textBaseline='alphabetic';
-   if(lay.own){
+   if(lay.own&&!bot(P)){
     const o=lay.own;drawGrid(x,o,v.t,false);
     for(const sh of me)drawShip(x,o.x+sh.x*o.c,o.y+sh.y*o.c,o.c,sh,'own');
     for(let yy=0;yy<N;yy++)for(let xx=0;xx<N;xx++){const m=their[yy][xx];if(m===1)drawMiss(x,o.x+xx*o.c,o.y+yy*o.c,o.c);else if(m===2)drawFire(x,o.x+xx*o.c,o.y+yy*o.c,o.c,v.t,xx*3+yy);}
@@ -187,17 +195,19 @@ async function battleship(s){
     log[P].push(res.sunk?`${lbl} (sunk your ${res.sunk.name}!)`:res.hit?`${lbl} (hit)`:`${lbl} (miss)`);
     resolve(res);
    };
-   const tap=ev=>{ev.preventDefault?.();const [px,py]=pt(v,ev),c=cellIn(v.lay.enemy,px,py);if(!c||!view||view!==v||!ui.handler)return;if(shots[P][c[1]][c[0]]){sfx.bad();return;}
+   const tap=ev=>{ev.preventDefault?.();const [px,py]=pt(v,ev),c=cellIn(v.lay.enemy,px,py);if(!c||!view||view!==v||!ui.handler||bot(P))return;if(shots[P][c[1]][c[0]]){sfx.bad();return;}
     if(v.sel&&v.sel[0]===c[0]&&v.sel[1]===c[1]){fire();return;}
     v.sel=c;sfx.tap();setStatus(`Aiming at <b>${COLS[c[0]]}${c[1]+1}</b>. Tap FIRE!`);ui.root.querySelector('[data-act=fire]').classList.remove('off');};
    s.on(v.cv,'pointerdown',tap);
-   ui.handler=a=>{if(a==='fire')fire();};
+   ui.handler=a=>{if(a==='fire'&&!bot(P))fire();};
+   if(bot(P))void (async()=>{if(!await s.wait(700+Math.random()*500))return;const c=cpuTarget();v.sel=c;sfx.tap();setStatus(`${esc(names[1])} aims at <b>${COLS[c[0]]}${c[1]+1}</b>…`);if(await s.wait(650))fire();})();
    s.debug.fireView=v;s.debug.fire=(cx,cy)=>{v.sel=[cx,cy];fire();};s.debug.P=P;
   });
  }
 
  if(!await titleCard(s,'🚢','Secretly place your fleet, then take turns firing at the enemy waters. A hit earns another shot, a miss passes the phone. Sink every enemy ship to win.','Man the decks'))return;
  for(const P of [0,1]){
+  if(bot(P)){fleets[P]=randomFleet(rand);continue;}
   blank();
   if(!await s.pass(P,`Place your fleet in secret. ${names[1-P]}, look away!`,'Show my ocean'))return;
   fleets[P]=await place(P);if(!s.alive)return;
@@ -207,9 +217,8 @@ async function battleship(s){
  while(winner<0){
   const incoming=log[1-P].length?`Since your last turn, ${names[1-P]} fired: ${log[1-P].join(', ')}.`:'No shots at you yet.';
   log[1-P]=[];
-  blank();
-  if(!await s.pass(P,`The seas are fogged. Eyes only for ${names[P]}!`,'Open fire',{summary:incoming}))return;
-  let note=`<b>${esc(names[P])}</b>: tap a square in the enemy waters.`;
+  if(!bot(P)){blank();if(!await s.pass(P,`The seas are fogged. Eyes only for ${names[P]}!`,'Open fire',{summary:incoming}))return;}
+  let note=bot(P)?`<b>${esc(names[1])}</b> is firing at your fleet.`:`<b>${esc(names[P])}</b>: tap a square in the enemy waters.`;
   for(;;){
    const res=await shoot(P,note);if(!s.alive)return;shotsFired[P]++;
    if(!await s.wait(res.sunk?1700:1100))return;

@@ -1,5 +1,5 @@
 const {casinoDeck, comparePoker, pokerRank, POKER_NAMES}=require("src/engines/casinoCards.js");
-const {casinoTable, syncCards, casinoWait, casinoTap, paintBanks, announce, setCasinoStatus, showProfits, wireWagers, wireCashout, busted, casinoResultLabel}=require("src/engines/casinoTable.js");
+const {casinoCpu, casinoTable, syncCards, casinoWait, casinoTap, paintBanks, announce, setCasinoStatus, showProfits, wireWagers, wireCashout, busted, casinoResultLabel}=require("src/engines/casinoTable.js");
 const {sound}=require("src/audio.js");
 async function playPoker(s){
  const state={chips:[10,10],bets:[2,2],locked:[false,false],hands:[[],[]],discard:new Set(),active:0,phase:'betting',round:1,revealCount:[0,0],matched:2};let deck=[],before=[10,10];
@@ -28,6 +28,11 @@ async function playPoker(s){
   const comparison=comparePoker(...state.hands);state.comparison=comparison;if(comparison===0)state.chips=state.chips.map(n=>n+state.matched);else state.chips[comparison>0?0:1]+=2*state.matched;state.phase='result';for(let j=0;j<2;j++)setCasinoStatus(j,comparison===0?'SPLIT POT':j===(comparison>0?0:1)?'WINNER · POT PAID':'HAND LOST');announce(comparison===0?'Split pot · matched wagers returned':s.players[comparison>0?0:1].name+' takes the '+2*state.matched+' chip pot');showProfits(s,state,before);render();
  }
  casinoTap(s,next,()=>{if(state.phase!=='result')return;if(busted(state.chips))return s.finish(state.chips,casinoResultLabel(state.chips,s.players));state.round++;state.phase='betting';state.hands=[[],[]];state.bets=[2,2];state.locked=[false,false];state.discard=new Set();state.cashout=[false,false];state.revealCount=[0,0];for(let i=0;i<2;i++){setCasinoStatus(i,'PLACE YOUR BET');document.getElementById('casino-profit-'+i).textContent='';document.getElementById('casino-cashout-'+i).classList.remove('selected');}document.getElementById('poker-pot').textContent='CHOOSE YOUR WAGER';announce('Hand '+state.round+' · choose the stakes');render();});
+ // vs CPU: keep pairs and better (and four to a flush on Hard), otherwise keep the two highest cards and draw three
+ casinoCpu(s,{act:(st,sk)=>{if(st.phase!=='drawing'||st.active!==1)return;const h=st.hands[1],val=c=>c.rank===1?14:c.rank,counts=new Map();h.forEach(c=>counts.set(c.rank,(counts.get(c.rank)||0)+1));
+  const suits=new Map();h.forEach(c=>suits.set(c.suit,(suits.get(c.suit)||0)+1));const flushSuit=[...suits].find(([,n])=>n===4)?.[0];let keep;
+  if([...counts.values()].some(n=>n>=2))keep=h.map((c,i)=>counts.get(c.rank)>=2?i:-1).filter(i=>i>=0);else if(flushSuit&&sk>.5)keep=h.map((c,i)=>c.suit===flushSuit?i:-1).filter(i=>i>=0);else keep=h.map((c,i)=>i).sort((a,b)=>val(h[b])-val(h[a])).slice(0,2);
+  st.discard=new Set(h.map((c,i)=>i).filter(i=>!keep.includes(i)).slice(0,3));document.getElementById('poker-draw-1')?.click();}});
  wireWagers(s,state,deal,render);render();await s.pass(0,'10 chips each, minimum wager 2. Both match the SMALLER chosen wager. Cards are dealt one at a time; private draws alternate, then a shared showdown pays the pot. First player unable to cover 2 chips loses, or both can agree to cash out.','Both ready — Five Card Panic');
 }
 

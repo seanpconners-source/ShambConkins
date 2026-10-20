@@ -6,6 +6,7 @@
 //             (pass the phone), highest bid buys it. Worth = cash + list prices + $300 per completed pair.
 const {clamp,shuffle}=require("src/utils.js");
 const {Fx,snd,noise,jingle,outlined,rr,FONT,PCOL,settle}=require("src/engines/arenaKit.js");
+const {isCpu,cpuHotseat,cpuSkill,cpuBlunder}=require("src/engines/cpuKit.js");
 
 const G={brown:'#8b5a2b',lightblue:'#9ad0f0',pink:'#e0559a',orange:'#f08a1c',red:'#e03a3a',yellow:'#f3d52b',green:'#2fa75a',blue:'#2f4fd6'};
 const BOARD=[['GO','go'],['Mediterranean Ave','prop','brown',60,2],['Community Chest','chest'],['Baltic Ave','prop','brown',60,4],['Oriental Ave','prop','lightblue',100,6],['Connecticut Ave','prop','lightblue',120,8],
@@ -24,11 +25,11 @@ async function monopoly(s){
  const mode=s.game.monopolyMode==='auction'?'auction':'speed';
  const [c,x]=s.canvas(900,640,{fill:true});s.body.classList.add('drag-arena-body');s.shared=mode==='speed';s.updateScores();
  if(!await settle(s))return;
- const fx=new Fx();let t=0,msg='',msgT=0,buttons=[];
+ const fx=new Fx(),cpu=isCpu(s);if(cpu)s.hotseat=true;let t=0,msg='',msgT=0,buttons=[],cpuTurn=()=>false;
  const say=(m,d=2)=>{msg=m;msgT=d;};
  const button=(label,bx,by,bw,bh,onTap,{color='#fff',fill=MONO_RED,enabled=true}={})=>{buttons.push({bx,by,bw,bh,onTap,enabled});x.save();x.globalAlpha=enabled?1:.4;x.fillStyle=fill;rr(x,bx,by,bw,bh,bh*.25);x.fill();x.strokeStyle='#fff';x.lineWidth=3;x.stroke();outlined(x,label,bx+bw/2,by+bh/2+1,{size:Math.min(bh*.42,bw*.16),fill:color,stroke:INK});x.restore();};
- s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev);for(const b of buttons)if(b.enabled&&p.x>=b.bx&&p.x<=b.bx+b.bw&&p.y>=b.by&&p.y<=b.by+b.bh){b.onTap();snd(700,.05,{type:'square',vol:.03});break;}});
- const keyAct={};s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat)return;const k=ev.key.toLowerCase();const f=keyAct[k];if(f){ev.preventDefault();f();}});
+ s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||cpuTurn())return;ev.preventDefault();const p=s.pointer(ev);for(const b of buttons)if(b.enabled&&p.x>=b.bx&&p.x<=b.bx+b.bw&&p.y>=b.by&&p.y<=b.by+b.bh){b.onTap();snd(700,.05,{type:'square',vol:.03});break;}});
+ const keyAct={};s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat||cpuTurn())return;const k=ev.key.toLowerCase();const f=keyAct[k];if(f){ev.preventDefault();f();}});
  const money=n=>`$${Math.round(n).toLocaleString('en-US')}`;
  const deedCard=(sp,cx,cy,w,owner=-1)=>{const h=w*1.25;x.save();x.translate(cx,cy);x.fillStyle='#fff';rr(x,-w/2,-h/2,w,h,w*.05);x.fill();x.strokeStyle=INK;x.lineWidth=2;x.stroke();x.fillStyle=G[sp.group];x.fillRect(-w/2+w*.06,-h/2+w*.06,w*.88,h*.24);x.strokeRect(-w/2+w*.06,-h/2+w*.06,w*.88,h*.24);
   outlined(x,'TITLE DEED',0,-h/2+w*.13,{size:w*.06,fill:'#fff',stroke:INK,lw:1.5});outlined(x,sp.name.toUpperCase(),0,-h/2+w*.22,{size:Math.min(w*.085,w*1.25/sp.name.length),fill:'#fff',stroke:INK,lw:2});
@@ -67,6 +68,14 @@ async function monopoly(s){
    else if(kind==='back'){p.pos=(p.pos-v+24)%24;p.shown=p.pos;state='landed';land();}
    else if(kind==='goto'){const k=(v-p.pos+24)%24;if(v===0){startMove(k||24);}else startMove(k);}};
   s.debug={P,owner,get state(){return state;},roll,buy,passBuy,resolveCard,bus,get turn(){return turn;},get round(){return round;}};
+  // vs CPU: player 2 rolls, buys while it keeps a cash cushion (always when it completes or blocks a set),
+  // rides the Bus to the best unowned deed in reach, and reads its own cards.
+  if(cpu){cpuTurn=()=>turn===1&&state!=='end';
+   cpuHotseat(s,{isTurn:()=>turn===1&&['roll','buy','bus','card'].includes(state),delay:900,think:()=>{
+    if(state==='roll')return roll();if(state==='card')return resolveCard();
+    if(state==='bus'){const opts=[dice[0],dice[1],dice[0]+dice[1]],score=n=>{const sp=BOARD[(P[1].pos+n)%24];return sp.kind==='prop'&&owner[sp.i]<0?sp.price:sp.kind==='prop'&&owner[sp.i]===0?-sp.rent*8:0;};return bus(opts.reduce((a,b)=>score(b)>score(a)?b:a));}
+    const sp=BOARD[P[1].pos],key=BOARD.some(o=>o.group===sp.group&&o!==sp&&owner[o.i]>=0),cushion=key?0:350-250*cpuSkill(s);
+    return P[1].cash-sp.price>=cushion&&!cpuBlunder(s)?buy():passBuy();}});}
   say(`${s.players[0].name.toUpperCase()} ROLLS FIRST`,1.8);
   s.frame(dt=>{t+=dt;fx.update(dt);if(msgT>0)msgT-=dt;buttons=[];
    if(state==='rolling'){diceT-=dt;dice=[1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)];speed=SPEED[Math.floor(Math.random()*6)];if(diceT<=0){dice=[1+Math.floor(s.random()*6),1+Math.floor(s.random()*6)];speed=SPEED[Math.floor(s.random()*6)];
@@ -120,10 +129,14 @@ async function monopoly(s){
  const worth=i=>P[i].cash+P[i].deeds.reduce((a,sp)=>a+sp.price,0)+groups.filter(g=>P[i].deeds.filter(sp=>sp.group===g).length===2).length*300;
  const adj=d=>{if(state!=='bid')return;cur=clamp(cur+d,0,P[bidder].cash);};
  const seal=async()=>{if(state!=='bid')return;bids[bidder]=cur;snd(440,.08,{type:'square',vol:.03});
+  // vs CPU: the human always bids; the CPU then seals its own bid without seeing it: list price ± noise,
+  // plus most of the $300 pair bonus when it holds the other deed of the colour, and some to block the human's pair.
+  if(cpu){const sp=lots[lot],sk=cpuSkill(s),mine=P[1].deeds.some(d=>d.group===sp.group),theirs=P[0].deeds.some(d=>d.group===sp.group);
+   const value=sp.price*(.75+.35*sk)+(mine?300*(.5+.4*sk):0)+(theirs?150*sk:0);bids[1]=Math.max(0,Math.min(P[1].cash,Math.round(value*(.8+Math.random()*.35)/10)*10));bidder=1;}
   if(bidder===0){state='wait';if(!await s.pass(1,`${s.players[0].name} has sealed a bid for ${lots[lot].name}. ${s.players[1].name}: your secret bid.`,'Ready to bid'))return;bidder=1;cur=0;state='bid';}
-  else{state='wait';if(!await s.pass(0,'Both bids are sealed. Reveal them together.','Reveal the bids'))return;state='reveal';revealT=0;const sp=lots[lot];const [a,b]=bids;lastWin=a===b?-1:a>b?0:1;if(lastWin>=0){P[lastWin].cash-=bids[lastWin];P[lastWin].deeds.push(sp);s.react(lastWin,'happy');jingle([659,880,1175],{step:.07,type:'square',vol:.035});}else noise(.2,{vol:.04,freq:800});}};
+  else{state='wait';if(!cpu&&!await s.pass(0,'Both bids are sealed. Reveal them together.','Reveal the bids'))return;state='reveal';revealT=0;const sp=lots[lot];const [a,b]=bids;lastWin=a===b?-1:a>b?0:1;if(lastWin>=0){P[lastWin].cash-=bids[lastWin];P[lastWin].deeds.push(sp);s.react(lastWin,'happy');jingle([659,880,1175],{step:.07,type:'square',vol:.035});}else noise(.2,{vol:.04,freq:800});}};
  const nextLot=async()=>{if(state!=='reveal')return;lot++;if(lot>=lots.length){state='end';endT=0;jingle([523,659,784,1047,1319],{step:.1,type:'square',vol:.04});return;}
-  state='wait';const first=lot%2;if(!await s.pass(first,`Next deed: ${lots[lot].name} (list price ${money(lots[lot].price)}). ${s.players[first].name} bids first, in secret.`,'Ready to bid'))return;bidder=first;bids=[0,0];cur=0;state='bid';};
+  state='wait';const first=cpu?0:lot%2;if(!await s.pass(first,`Next deed: ${lots[lot].name} (list price ${money(lots[lot].price)}). ${s.players[first].name} bids first, in secret.`,'Ready to bid'))return;bidder=first;bids=[0,0];cur=0;state='bid';};
  keyAct.arrowup=()=>adj(50);keyAct.arrowright=()=>adj(10);keyAct.arrowleft=()=>adj(-10);keyAct.arrowdown=()=>adj(-50);keyAct.enter=keyAct[' ']=()=>{if(state==='bid')seal();else if(state==='reveal'&&revealT>1.2)nextLot();};
  s.debug={P,get state(){return state;},get lot(){return lot;},adj,seal,nextLot,lots,get revealT(){return revealT;}};
  (async()=>{if(!await s.pass(0,`Deed 1: ${lots[0].name} (list price ${money(lots[0].price)}). ${s.players[0].name} bids first, in secret.`,'Ready to bid'))return;bidder=0;state='bid';})();

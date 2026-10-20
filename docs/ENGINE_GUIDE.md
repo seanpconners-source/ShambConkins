@@ -79,7 +79,9 @@ On a solo launch `s.solo={kind,who,level,skill,best}`; `s.players[0]` is the hum
   `src/engines/cpuKit.js` has the tools: `cpuHotseat(s,{isTurn,think})` for turn-based games (hand-off cards are skipped and
   `think()` plays the CPU's move through your own move function), `negamax` for board games. In real-time games add a small
   per-frame brain that drives player 2 through the same input kit the human uses (`kb.cpu`, `keyboard().hold/tap`, `fingers.cpu`,
-  `keys.cpu`, `controls.cpu`); vs CPU the kits already route every human touch to player 1. Block human input on the CPU's turn.
+  `keys.cpu`, `controls.cpu`); vs CPU the kits already route every human touch to player 1. Block human input on the CPU's turn,
+  and never draw the CPU's private hand/notebook (show "… is thinking" instead). Trivia: `cpuTriviaPick`/`cpuThinkTime`;
+  casino tables: `casinoCpu(s,{choose,act})`. Purely social games go in `SOLO_HIDDEN` (hidden from the 1P list).
 * Recruits go to `s.gameRecruits[0]` / `s.broforceRecruits[0]` as in 2P; `settleSolo` (gameLauncher) records the best run in
   `profile.soloBest[id]` and recruits like an arcade win. Test with `node tests/solo.mjs <id-regex>`.
 

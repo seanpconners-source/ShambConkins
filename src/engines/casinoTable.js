@@ -35,4 +35,13 @@ function wireWagers(s,state,locked,render){for(let i=0;i<2;i++){
 }}
 function wireCashout(s,state){const root=document.getElementById('casino-cashout');state.cashout=[false,false];for(let i=0;i<2;i++)casinoTap(s,document.getElementById('casino-cashout-'+i),()=>{if(state.phase!=='result'||busted(state.chips))return;state.cashout[i]=!state.cashout[i];document.getElementById('casino-cashout-'+i).classList.toggle('selected',state.cashout[i]);announce(`${s.players[i].name} ${state.cashout[i]?'is ready to cash out':'keeps playing'}. Both players must agree.`);if(state.cashout.every(Boolean))s.finish(state.chips,casinoResultLabel(state.chips,s.players));});return ()=>{root.hidden=state.phase!=='result'||busted(state.chips);};}
 
-Object.assign(exports,{chipsText,casinoWait,casinoTap,syncCards,casinoTable,paintBanks,setCasinoStatus,announce,busted,casinoResultLabel,showProfits,wireWagers,wireCashout});
+// vs CPU: seat 2 is played for the human's opponent. It sizes and locks its wager (bolder on Hard), takes a side via choose(state),
+// plays its hand via act(state,skill), and agrees to cash out whenever the human asks. Its controls ignore the human's taps.
+function casinoCpu(s,{choose,act}={}){
+ if(s.solo?.kind!=='cpu')return;const {cpuSkill}=require("src/engines/cpuKit.js");s.hotseat=true;document.getElementById('casino-seat-1')?.classList.add('cpu-seat');let t=0,lastRound=-1;
+ s.frame(dt=>{t+=dt;if(t<.75)return;t=0;const st=s.debug;if(!st||!Array.isArray(st.chips)||s.paused)return;const sk=cpuSkill(s);
+  if(st.phase==='betting'&&!st.locked[1]){if(lastRound!==st.round){lastRound=st.round;choose?.(st,sk);st.bets[1]=Math.max(2,Math.min(st.chips[1],Math.round(2+Math.random()*st.chips[1]*(.12+.3*sk))));}document.getElementById('casino-lock-1')?.click();return;}
+  if(st.phase==='result'&&st.cashout?.[0]&&!st.cashout[1]){document.getElementById('casino-cashout-1')?.click();return;}
+  act?.(st,sk);});
+}
+Object.assign(exports,{casinoCpu,chipsText,casinoWait,casinoTap,syncCards,casinoTable,paintBanks,setCasinoStatus,announce,busted,casinoResultLabel,showProfits,wireWagers,wireCashout});

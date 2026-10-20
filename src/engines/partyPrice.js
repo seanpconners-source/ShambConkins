@@ -1,6 +1,7 @@
 // The Price Is Right Bid-Off: privately bid on absurd items with a slider. Closest without going over wins the round.
 const {ITEMS}=require("src/data/partyPrice.js");
 const {PartyUI,sfx,head,pname,esc,burst,banner,titleCard,shuffle,extraCSS,tone}=require("src/engines/partyKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const ROUNDS=5;
 const CSS=`
@@ -29,6 +30,7 @@ function rangeFor(item,rand){if(item._r)return item._r;const step=niceStep(item.
 async function priceRight(s){
  extraCSS('pr-css',CSS);
  const ui=new PartyUI(s,{theme:'price'});
+ const cpu=isCpu(s);if(cpu)s.hotseat=true;
  const rand=s.random,names=[pname(s,0),pname(s,1)],score=[0,0],items=shuffle(ITEMS,rand).slice(0,ROUNDS).map(i=>({...i}));items.forEach(i=>rangeFor(i,rand));
  s.hint('Each round an item is shown. Secretly slide to your bid. Closest to the real retail price WITHOUT going over wins 2 points, and a bid within 5 percent earns a bonus point. If you both go over, nobody scores.');
  const blank=()=>ui.set(`<div class="pk-screen"><div class="pk-q" style="font-size:54px">🎡</div><div class="pk-sub">Pass the phone…</div></div>`);
@@ -53,6 +55,8 @@ async function priceRight(s){
  for(let r=0;r<ROUNDS;r++){
   const it=items[r],bids=[0,0],order=r%2?[1,0]:[0,1];
   for(const P of order){
+   // vs CPU: player 2 guesses within about ±45% / ±29% / ±21% of the real price (Easy / Normal / Hard) and shades its bid down.
+   if(cpu&&P===1){const {lo,hi,step}=rangeFor(it,rand),sig=.5-.32*cpuSkill(s),g=(Math.random()+Math.random()+Math.random()-1.5)*2*sig;bids[1]=Math.max(lo,Math.min(hi,Math.round(it.price*Math.exp(g)*(1-sig*.45)/step)*step));continue;}
    blank();
    if(!await s.pass(P,`Showcase ${r+1}: guess the retail price of a mystery item. ${names[1-P]}, look away!`,'Show me the prize'))return;
    bids[P]=await bidScreen(P,it,r);if(!s.alive)return;

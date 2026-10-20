@@ -13,11 +13,11 @@ const SOLO_IDS={
  'cv-vampire-killer':'levels','cv-candle-hunt':'levels','cv-symphony':'levels',
  'bricks-breaker-quest':'levels','paddys-hole':'levels','megatouch-photohunt':'levels',
  'kart-grand-prix-pass':'levels','kart-time-trial':'levels','rainbow-road-kart':'cpu',
- // batch 2: timed turn games replayed in faster rounds (retroKit turnRunner â†’ soloTurnRuns)
+ // batch 2: timed turn games replayed in faster rounds (retroKit turnRunner → soloTurnRuns)
  'warriors-brawl':'rounds','paddys-darts':'rounds','duck-hunt-turn':'rounds','snake-run':'rounds','mars-missile-defense':'rounds',
  'moonraker-lander':'rounds','t800-scan-long':'rounds','bond-facility':'rounds','major-league-bats':'rounds','asteroid-drift':'rounds',
  'breakout-party':'rounds','banana-money-grab':'rounds',
- // arcadeRounds (arcade.js â†’ soloArcadeRounds)
+ // arcadeRounds (arcade.js → soloArcadeRounds)
  'radical-bike':'rounds','flappy-disaster':'rounds','crossy-chaos':'rounds','gopher-hunt':'rounds','wind-archery':'rounds',
  // pass-and-play engines run once per round by the launcher (soloTurnRounds); the hand-off to P2 ends the round
  'taskmaster-fruit-ninja':'turns','angry-heads':'turns','neon-ball-storm':'turns','home-alone-paint-can':'turns','tm-cones':'turns',
@@ -38,7 +38,17 @@ const SOLO_IDS={
  'derezzed-cycles':'cpu','bomber-duel':'cpu','pac-maze-duel':'cpu','block-battle':'cpu','shred-hero':'cpu','underdog-dodgeball':'cpu','fight-night':'cpu',
  'color-of-money':'cpu','task-tallest-thing':'cpu','bug-artillery':'cpu','taskmaster-curling':'cpu','happy-gilmore-golf':'cpu','space-swarm-versus':'cpu',
  'sewer-clash':'cpu','paddys-beer-pong':'cpu','baseketball-shootout':'cpu','django-hangman':'cpu','django-hangman-showdown':'cpu',
+ // batch 4: trivia, cards, dice and table games vs CPU
+ 'trivia-mixed':'cpu','trivia-nick90':'cpu','trivia-dbz':'cpu','trivia-hxh':'cpu','trivia-sitcom':'cpu','trivia-hardcore':'cpu',
+ 'trivia-lightning':'cpu','trivia-wager':'cpu','trivia-survival':'cpu',
+ 'blackjack':'cpu','five-card':'cpu','roulette':'cpu','bond-baccarat':'cpu','full-shambyahtzee':'cpu','cheaters-yahtzee':'cpu',
+ 'shamb-uno':'cpu','traitors-guess-who':'cpu','liars-dice':'cpu','battleship-fog':'cpu','simon-faceoff':'cpu','price-bid-off':'cpu',
+ 'clue-whodunit':'cpu','clue-lineup':'cpu','monopoly-speed-die':'cpu','monopoly-auction':'cpu','smb3-nspade':'cpu',
+ 'django-hangman-wanted':'cpu','microgame-rush':'cpu','rush-marathon':'cpu',
 };
+// Purely social games (they need two real people) are hidden from the 1P Arcade list.
+const SOLO_HIDDEN=new Set(['newlywed-spirit','roast-battle','draw-it']);
+const soloHidden=game=>!!game&&SOLO_HIDDEN.has(game.id);
 const soloKind=game=>game?SOLO_IDS[game.id]||game.soloKind||null:null;
 function soloSettings(profile){const s=profile?.settings?.solo||{};return {on:s.on===true,who:s.who===1?1:0,level:SOLO_LEVELS.includes(s.level)?s.level:'normal'};}
 function setSolo(profile,patch){profile.settings.solo={...soloSettings(profile),...patch};return profile.settings.solo;}
@@ -47,7 +57,7 @@ function normalizeSoloSettings(saved){if(!saved||typeof saved!=='object')return 
 function normalizeSoloBest(saved){if(!saved||typeof saved!=='object'||Array.isArray(saved))return {};const out={};for(const [id,v] of Object.entries(saved)){if(typeof id!=='string'||id.length>64||!v||typeof v!=='object')continue;const score=Number.isFinite(v.score)&&v.score>=0?Math.floor(v.score):0,level=Number.isFinite(v.level)&&v.level>=0?Math.min(9999,Math.floor(v.level)):0;out[id]={score,level};}return out;}
 function soloBest(profile,id){return profile?.soloBest?.[id]||null;}
 function recordSolo(profile,id,{score=0,level=0}={}){const book=profile.soloBest||={},old=book[id]||{score:0,level:0};const best={score:Math.max(old.score,Math.floor(score)||0),level:Math.max(old.level,Math.floor(level)||0)};const newBest=(score>old.score)||(level>old.level);book[id]=best;return {best,old,newBest};}
-function soloBestText(profile,id){const b=soloBest(profile,id);if(!b||!(b.score||b.level))return '';return `BEST ${b.score.toLocaleString()}${b.level?` Â· ${b.level} CLEARED`:''}`;}
+function soloBestText(profile,id){const b=soloBest(profile,id);if(!b||!(b.score||b.level))return '';return `BEST ${b.score.toLocaleString()}${b.level?` · ${b.level} CLEARED`:''}`;}
 // Session helpers for engines. s.solo is set by the launcher on a solo run: {kind, who, level, skill}.
 const isSolo=s=>!!s?.solo;
 const cpuSkill=s=>s?.solo?.skill??SOLO_SKILL.normal;
@@ -56,7 +66,7 @@ function soloProgress(s,score,level,label=''){if(s?.solo)s.soloProgress={score:M
 // End a solo run: scores [player, 0]; won = cleared at least one level (or beat the CPU).
 function soloFinish(s,score,level,label,won=level>0){if(!s?.solo||!s.alive)return;soloProgress(s,score,level,label);s.solo.won=!!won;s.finish([Math.max(0,Math.floor(score)||0),0],label);}
 // Between levels: a card with the run so far. Resolves true to keep going (Exit on the card banks the run).
-async function soloNext(s,{title='Level cleared!',body='',level=1,score=0,label='Next level'}={}){if(!s?.alive)return false;return s.pass(0,body,label,{summary:`${title} Level ${level} Â· ${Number(score).toLocaleString()} points so far.`,soloTitle:title});}
+async function soloNext(s,{title='Level cleared!',body='',level=1,score=0,label='Next level'}={}){if(!s?.alive)return false;return s.pass(0,body,label,{summary:`${title} Level ${level} · ${Number(score).toLocaleString()} points so far.`,soloTitle:title});}
 
-Object.assign(exports,{SOLO_LEVELS,SOLO_LEVEL_NAMES,SOLO_SKILL,soloKind,soloSettings,setSolo,normalizeSoloSettings,normalizeSoloBest,soloBest,recordSolo,soloBestText,isSolo,cpuSkill,soloProgress,soloFinish,soloNext});
+Object.assign(exports,{SOLO_LEVELS,SOLO_LEVEL_NAMES,SOLO_SKILL,soloKind,soloHidden,soloSettings,setSolo,normalizeSoloSettings,normalizeSoloBest,soloBest,recordSolo,soloBestText,isSolo,cpuSkill,soloProgress,soloFinish,soloNext});
 

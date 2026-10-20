@@ -10,6 +10,7 @@ const {LEGENDS_TRIVIA_THEMES}=require("src/data/legendsTrivia.js");
 const {TRIVIA3_THEMES}=require("src/data/trivia3.js");
 const {WARP_TRIVIA_THEMES}=require("src/data/warpTrivia.js");
 const {playTriviaMode}=require("src/engines/triviaModes.js");
+const {isCpu,cpuSkill,cpuTriviaPick,cpuThinkTime}=require("src/engines/cpuKit.js");
 const TRIVIA=TRIVIA_QUESTIONS;
 const TRIVIA_LEVELS=['easy','medium','hard','impossible'];
 const triviaPoints=d=>d==='impossible'?4:d==='hard'?3:d==='medium'?2:1;
@@ -60,6 +61,8 @@ async function trivia(s) {
  const count=mode==='lightning'?Math.min(24,Math.floor(pool.length/2)*2):Math.min(tag==='lore'?6:8,pool.length);
  if(count<(mode==='lightning'?2:1))throw new Error('No playable trivia questions for topic '+tag);
  const rounds=selectTrivia(tag,store.profile.recentTrivia||[],store.run?.triviaSeen||[],s.random,count,difficulty==='varied'?null:difficulty);
+ // vs CPU: one human, so hand-off cards are skipped; the CPU answers its own turns and steals (cpuKit.cpuTriviaPick)
+ const cpu=isCpu(s);if(cpu)s.hotseat=true;
  if(mode)return playTriviaMode(s,{difficulty,rounds,seconds:triviaSeconds,points:triviaPoints,introHTML:difficultyDrawHTML(difficulty)});
  const score=[0,0];let round=0,lead=0,q,wrong=-1,locked=false,answers=[],stopClock=null,clockToken=0;
  const clearClock=()=>{clockToken++;stopClock?.();stopClock=null;};s.cleanup(clearClock);
@@ -71,8 +74,9 @@ async function trivia(s) {
   locked=false;s.debug={question:q,round,lead,difficulty,phase:steal?'steal':'lead',answers,left:seconds};
   s.body.querySelectorAll('[data-answer]').forEach(b=>s.on(b,'click',()=>void answer(+b.dataset.answer,player,steal,b)));
   const token=clockToken;stopClock=s.timer(seconds,left=>{if(token!==clockToken)return;s.debug.left=left;const number=document.getElementById('trivia-clock-number'),bar=document.getElementById('trivia-clock-bar');if(number)number.textContent=String(Math.ceil(left));if(bar)bar.style.width=(left/seconds*100)+'%';if(left<5)number?.parentElement?.classList.add('urgent');},()=>{if(token===clockToken&&!locked)void answer(null,player,steal,null);});
+  if(cpu&&player===1){const btns=[...s.body.querySelectorAll('[data-answer]')];btns.forEach(b=>b.disabled=true);s.wait(cpuThinkTime(s,q)*1000).then(ok=>{if(!ok||locked||token!==clockToken)return;const pos=cpuTriviaPick(s,q,answers);void answer(pos,1,steal,btns[pos]);});}
  }
- function nextButton(label,fn){const b=document.createElement('button');b.textContent=label;b.className='primary';document.getElementById('trivia-next').appendChild(b);let used=false;s.on(b,'click',()=>{if(used||s.paused||!s.alive)return;used=true;void fn();});}
+ function nextButton(label,fn){const b=document.createElement('button');b.textContent=label;b.className='primary';document.getElementById('trivia-next').appendChild(b);let used=false;const go=()=>{if(used||s.paused||!s.alive)return;used=true;void fn();};s.on(b,'click',go);if(cpu&&/^Pass to/.test(label))s.wait(800).then(ok=>ok&&go());}
  function resolved() {document.getElementById('trivia-fact').innerHTML=triviaExplanationHTML(q);s.debug.phase='resolved';nextButton(round===rounds.length-1?'See the result':'Next round',()=>{if(s.paused)return;round++;void startRound();});}
  async function answer(i,player,steal,button) {
   if(locked||s.paused||!s.alive)return;locked=true;clearClock();

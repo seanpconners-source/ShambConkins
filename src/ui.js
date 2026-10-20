@@ -19,7 +19,7 @@ const {location}=require("src/locations.js");
 const {brandHTML, portraitHTML, portraitURL, portraitFallbackURL, gameArtHTML, locationArt, locationArtHTML, locationBoardArt, itemArtHTML, logoURL}=require("src/assets.js");
 const {findItem, itemDescription , canUseItem}=require("src/items.js");
 const {pairForCharacters, pairForRun}=require("src/pairs.js");
-const {soloKind, soloSettings, soloBestText, SOLO_LEVELS, SOLO_LEVEL_NAMES}=require("src/solo.js");
+const {soloKind, soloHidden, soloSettings, soloBestText, SOLO_LEVELS, SOLO_LEVEL_NAMES}=require("src/solo.js");
 const {BOARD_THEMES}=require("src/progression.js");
 const {worldNode,cameraBox,boardPiecePoint,pieceScale}=require("src/boardCamera.js");
 const {boardDetail,compactLandmarkName,landmarkLabels}=require("src/boardDetail.js");
@@ -178,9 +178,9 @@ function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=
   else if(filter==='pokemon')list=POKEMON_MATCHES.filter(hit);
   else if(filter==='variants')list=EVENT_GAMES.filter(g=>!g.bossId&&(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&hit(g));
   else list=[...GAMES.filter(g=>(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&(filter==='all'||g.category===filter)),...(filter==='all'?[...POKEMON_MATCHES,...beaten]:[])].filter(hit);
-  // 1P mode: games with a solo version first; the rest stay listed but greyed out.
+  // 1P mode: games with a solo version first; the rest stay listed but greyed out. Purely social games are hidden.
   const solo=soloSettings(p).on,soloOK=g=>!!(g.pokemon||soloKind(g));
-  if(solo)list=[...list.filter(soloOK),...list.filter(g=>!soloOK(g))];
+  if(solo){list=list.filter(g=>!soloHidden(g));list=[...list.filter(soloOK),...list.filter(g=>!soloOK(g))];}
   render=g=>{const open=g.pokemon||gameUnlocked(g,p),off=solo&&!soloOK(g),best=solo&&!g.pokemon?soloBestText(p,g.id):'',play=off?'<small>2 players only for now</small>':g.pokemon?button('arcade-pokemon','Battle ↗','ghost',`data-id="${g.pokemon}"`):open?button(solo?'arcade-solo':'arcade-game',solo?(soloKind(g)==='cpu'?'Play vs CPU ↗':'Play solo ↗'):g.bossId?'Fight again ↗':'Play match ↗','ghost',`data-id="${g.id}"`):`<small>${g.bossId?'Beat this boss on the board to unlock the rematch':`Unlock after ${g.gameUnlockAt||1} matches`}</small>`;
    return `<article class="arcade-card ${open?'':'locked'}${off?' solo-off':''}${g.bossId?' boss-match':''}">${brandHTML(g.source)}${gameArtHTML(g)}<h3>${e(g.title)}</h3><p>${e(g.rules)}</p><div class="game-info">${e(g.duration.toUpperCase())} · ${g.bossId?(open?'BEATEN':'UNBEATEN'):p.played.includes(g.id)?'PLAYED':'NEW'}${best?` · ${e(best)}`:''}</div>${play}${p.settings.devMode&&!g.pokemon&&!off?button('dev-game','DEV · Test this game','small dev-button',`data-id="${g.id}"`):''}</article>`;};
  }

@@ -1,5 +1,6 @@
 // Liar's Dice (Perudo): 5 dice each under a cup, alternate bids, call LIAR. Ones are wild. Lose all dice, lose the game.
 const {PartyUI,sfx,head,pname,esc,burst,banner,titleCard,extraCSS,shake,tone}=require("src/engines/partyKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const START=5;
 const PIPS={1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]};
@@ -42,12 +43,15 @@ const CSS=`
 .ld-tally{font:900 clamp(28px,8vw,48px)/1 Arial;text-align:center;text-shadow:0 4px 0 rgba(0,0,0,.4)}
 `;
 const dieHTML=(v,cls='')=>`<span class="ld-die ${v===1?'ldw':''} ${cls}" data-v="${v}">${PIPS[v].map(p=>`<i style="grid-area:${Math.ceil(p/3)}/${((p-1)%3)+1}"></i>`).join('')}</span>`;
-const roll=rand=>Array.from({length:START},()=>1+Math.floor(rand()*6));
+const roll=(rand,n=START)=>Array.from({length:n},()=>1+Math.floor(rand()*6));
+const choose=(n,k)=>{let c=1;for(let i=0;i<k;i++)c=c*(n-i)/(i+1);return c;};
+// Chance that n unseen dice hold at least k of a face (a face or a wild one: 1/3 each).
+const atLeast=(n,k)=>{if(k<=0)return 1;let p=0;for(let i=k;i<=n;i++)p+=choose(n,i)*(1/3)**i*(2/3)**(n-i);return p;};
 
 async function liarsDice(s){
  extraCSS('ld-css',CSS);
  const ui=new PartyUI(s,{theme:'liars'});
- const rand=s.random,names=[pname(s,0),pname(s,1)],dice=[START,START];
+ const rand=s.random,names=[pname(s,0),pname(s,1)],dice=[START,START],cpu=isCpu(s);if(cpu)s.hotseat=true;
  let starter=0,roundNo=0;
  s.hint('Each player has hidden dice. Take turns bidding how many dice of one face are on the table in total (both players). Ones are wild. Raise the bid or call LIAR! If the bid was true the caller loses a die; if not, the bidder does.');
  const faceName=f=>`${f}s`;
@@ -81,6 +85,20 @@ async function liarsDice(s){
     else if(a==='liar'){sfx.drum();ui.handler=null;res({type:'liar'});}
    };
   });
+ }
+
+ // vs CPU: player 2 counts its own dice, rates each bid by the odds the human's hidden dice cover the rest,
+ // calls LIAR on unlikely bids and otherwise makes the safest raise. Easy misjudges the odds more.
+ async function cpuTurn(hand,bid){
+  ui.set(`<div class="pk-screen">${stripHTML()}${bidHTML(bid)}<div class="ld-cupwrap" style="min-height:90px"><div class="ld-cup shake" style="position:relative;inset:auto;height:84px;width:min(260px,70%)">🏴‍☠️ ${esc(names[1])} is thinking…</div></div></div>`);sfx.rattle(4);
+  if(!await s.wait(1100+Math.random()*900))return {type:'none'};
+  const sk=cpuSkill(s),opp=dice[0],own=f=>hand.filter(v=>v===f||v===1).length,odds=(q,f)=>atLeast(opp,q-own(f)),noise=()=>(Math.random()-.5)*(1-sk)*.6;
+  if(bid&&odds(bid.q,bid.f)<.42+noise())return {type:'liar'};
+  const opts=[2,3,4,5,6].map(f=>({f,q:bid?(f>bid.f?bid.q:bid.q+1):Math.max(1,own(f)+Math.floor(opp/3))})).filter(o=>o.q<=total()&&valid(o.q,o.f,bid));
+  if(!opts.length)return {type:'liar'};
+  opts.forEach(o=>o.p=odds(o.q,o.f)+noise());opts.sort((a,b)=>b.p-a.p);
+  if(bid&&opts[0].p<.35&&odds(bid.q,bid.f)<.65)return {type:'liar'};
+  sfx.ok();return {type:'bid',q:opts[0].q,f:opts[0].f};
  }
 
  async function reveal(hands,bid,challenger){
@@ -126,7 +144,7 @@ async function liarsDice(s){
  s.setScores([...dice]);
  while(dice[0]>0&&dice[1]>0){
   roundNo++;
-  const hands=[roll(rand),roll(rand)];
+  const hands=[roll(rand,dice[0]),roll(rand,dice[1])];
   s.shared=true;s.updateScores();
   ui.set(`<div class="pk-screen"><div class="pk-over">Round ${roundNo}</div>${stripHTML()}<div class="ld-cupwrap" style="min-height:90px"><div class="ld-cup shake" style="position:relative;inset:auto;height:84px;width:min(260px,70%)">🏴‍☠️ SHAKING…</div></div><div class="pk-sub">Cups are shaken. Whoever lost last goes first.</div></div>`);
   sfx.rattle(14);await s.wait(1200);if(!s.alive)return;
@@ -135,8 +153,9 @@ async function liarsDice(s){
   for(;;){
    blank();
    const sum=bid?`${names[bid.by]} bid ${bid.q} × ${bid.f}s. Raise it, or call LIAR!`:`You open the bidding.`;
-   if(!await s.pass(turnP,`${sum} Peek at your dice privately.`,'Ready, matey'))return;
-   const act=await turn(turnP,hands[turnP],bid);if(!s.alive)return;
+   const bot=cpu&&turnP===1;
+   if(!bot&&!await s.pass(turnP,`${sum} Peek at your dice privately.`,'Ready, matey'))return;
+   const act=bot?await cpuTurn(hands[1],bid):await turn(turnP,hands[turnP],bid);if(!s.alive)return;
    if(act.type==='bid'){bid={q:act.q,f:act.f,by:turnP};turnP=1-turnP;}
    else{res=await reveal(hands,bid,turnP);break;}
   }

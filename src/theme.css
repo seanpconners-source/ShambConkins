@@ -381,3 +381,6 @@ body .solo-note{font-size:12px;margin:8px 0;padding:8px 10px;border-radius:10px;
 body .solo-note b{color:var(--t-acc)}
 body .solo-result{font-size:14px;margin:8px 0}
 body .solo-best{font-size:12px;color:var(--t-dim)}
+
+/* vs CPU: the CPU's casino seat can't be tapped by the human */
+body .casino-seat.cpu-seat button,body .casino-seat.cpu-seat select{pointer-events:none}

@@ -6,14 +6,16 @@ const R=require("src/engines/rushCore.js");
 const {GAMES_A}=require("src/engines/rushGamesA.js");
 const {GAMES_B}=require("src/engines/rushGamesB.js");
 const {GAMES_C}=require("src/engines/rushGamesC.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const {COL, txt, circ, rrect, poly, star, rays, easeOutBack, easeOut, TAU}=R;
 const MICROGAMES=[...GAMES_A,...GAMES_B,...GAMES_C];
 const BOSS_NAMES=['BOSS!'];
 const VERB_FLASH=[COL.red,COL.blue,COL.green,COL.purple,COL.orange,COL.pink];
 
-function layout(W,H){
+function layout(W,H,solo=false){
  const portrait=W<H*.92,gap=Math.max(5,Math.round(Math.min(W,H)*.012));let rects;
- if(portrait){const h=Math.floor((H-gap)/2);rects=[{x:0,y:0,w:W,h,rot:true},{x:0,y:H-h,w:W,h,rot:false}];}
+ // Solo (vs CPU): the human gets the upright bottom half, the CPU the top.
+ if(portrait){const h=Math.floor((H-gap)/2);rects=[{x:0,y:0,w:W,h,rot:true},{x:0,y:H-h,w:W,h,rot:false}];if(solo)rects=[{...rects[1]},{...rects[0]}];}
  else{const w=Math.floor((W-gap)/2);rects=[{x:0,y:0,w,h:H,rot:false},{x:W-w,y:0,w,h:H,rot:false}];}
  for(const r of rects)r.hd=clamp(Math.round(r.h*.1),24,38);
  return {portrait,rects};
@@ -31,7 +33,8 @@ async function rush(s){
  R.hooks.sfx=n=>sound(SFX[n]||'tap');s.cleanup(()=>{R.hooks.head=()=>{};R.hooks.sfx=()=>{};});
  s.hint('Two players, one screen, same microgame at the same time. Landscape: P1 plays the left half, P2 the right. Portrait: P1 top (upside down for the player across the table), P2 bottom. Read the one-word order, then tap, drag, swipe or scrub before the fuse burns out. First to finish scores 2, second scores 1. Every 3rd round the tempo jumps; every 6th round is a longer BOSS worth double. Desktop: P1 WASD + Space, P2 arrows + Enter move a cursor and click.');
  const scores=[0,0],seen=new Set(),used=new Set(),H=[0,1].map(i=>({i,st:null,res:null,at:0,pts:0,ripples:[],cursor:{x:0,y:0,on:false,down:false,was:false},lastSz:''}));
- let phase='intro',pt=0,round=-1,cur=null,curBoss=false,curSpeed=1,dur=5,endAt=Infinity,lastKind='',lastTick=-1,forced=null,bannerKind='',sudden=0,lay=layout(s.W,s.H),finalText='';
+ const cpu=isCpu(s);let cpuPlan=null;
+ let phase='intro',pt=0,round=-1,cur=null,curBoss=false,curSpeed=1,dur=5,endAt=Infinity,lastKind='',lastTick=-1,forced=null,bannerKind='',sudden=0,lay=layout(s.W,s.H,cpu),finalText='';
  const total=()=>rounds+sudden;
  const hl=i=>lay.rects[i];
  const playRect=i=>({w:hl(i).w,h:hl(i).h-hl(i).hd});
@@ -44,6 +47,9 @@ async function rush(s){
   phase='play';pt=0;const g=cur;const first=!seen.has(g.verb);seen.add(g.verb);const seed=Math.floor(s.random()*1e9);
   dur=(curBoss?(g.bossDuration||8):g.duration)/(1+(curSpeed-1)*.5);endAt=Infinity;lastTick=-1;
   for(const h of H){const rg=seededRandom(seed),r=playRect(h.i);h.rect=r;h.st=g.init(r,rg,curSpeed,h.i,curBoss);Object.assign(h.st,{g,player:h.i,r,rng:rg,speed:curSpeed,boss:curBoss,t:0,result:undefined});h.res=null;h.pts=0;h.at=0;h.ripples=[];h.first=first;h.cursor={x:r.w/2,y:r.h/2,on:h.cursor.on,down:false,was:false};h.sig=r.w+'x'+r.h;}
+  // vs CPU: the CPU's half plays itself; it clears the microgame with a chance set by its level (lower when sped up or
+  // on a boss) at a human-ish moment, or at the buzzer for survive-until-time-runs-out games.
+  if(cpu){const sk=cpuSkill(s),p=Math.max(.15,.42+.48*sk-(curSpeed-1)*.25-(curBoss?.1:0));cpuPlan={win:Math.random()<p,at:g.timeout==='win'?dur:dur*Math.min(.95,(.3+.45*Math.random())*(1.25-.5*sk))};}
   const base=curBoss?392:523;tone(base,.07,.05,'square');setTimeout(()=>{if(s.alive)tone(base*1.25,.07,.05,'square');},85);setTimeout(()=>{if(s.alive)tone(base*1.5,.1,.05,'square');},170);
  }
  function beginRound(){
@@ -59,16 +65,16 @@ async function rush(s){
   else{sound('lose');s.react(i,'sad');}
  }
  function toLocal(p,i){const r=hl(i);return r.rot?{x:r.x+r.w-p.x,y:r.y+r.h-p.y-r.hd}:{x:p.x-r.x,y:p.y-r.y-r.hd};}
- const ownerOf=p=>lay.portrait?(p.y<s.H/2?0:1):(p.x<s.W/2?0:1);
+ const ownerOf=p=>{const k=lay.rects.findIndex(r=>p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h);return k>=0?k:lay.portrait?(p.y<s.H/2?0:1):(p.x<s.W/2?0:1);};
  const fingers=new Map();
  function deliver(i,type,lp,id){const h=H[i];if(phase!=='play'||h.res||!h.st)return;const g=h.st.g;if(type==='down'){h.ripples.push({x:lp.x,y:lp.y,t:0});}g[type]?.(h.st,lp,id);}
- s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev),i=ownerOf(p);let n=0;for(const v of fingers.values())if(v===i)n++;if(n>=3)return;fingers.set(ev.pointerId,i);s.capture(ev);H[i].cursor.on=false;deliver(i,'down',toLocal(p,i),ev.pointerId);});
+ s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev),i=ownerOf(p);if(cpu&&i===1)return;let n=0;for(const v of fingers.values())if(v===i)n++;if(n>=3)return;fingers.set(ev.pointerId,i);s.capture(ev);H[i].cursor.on=false;deliver(i,'down',toLocal(p,i),ev.pointerId);});
  s.on(c,'pointermove',ev=>{const i=fingers.get(ev.pointerId);if(i===undefined||s.paused||!s.alive)return;ev.preventDefault();deliver(i,'move',toLocal(s.pointer(ev),i),ev.pointerId);});
  const up=ev=>{const i=fingers.get(ev.pointerId);if(i===undefined)return;fingers.delete(ev.pointerId);s.release(ev);deliver(i,'up',toLocal(s.pointer(ev),i),ev.pointerId);};
  s.on(c,'pointerup',up);s.on(c,'pointercancel',up);s.resetOnPause(()=>fingers.clear());
  // Keyboard: virtual cursor per half. P1 WASD+Space, P2 arrows+Enter.
  const KEYMAP={w:[0,'u'],s:[0,'d'],a:[0,'l'],d:[0,'r'],' ':[0,'f'],arrowup:[1,'u'],arrowdown:[1,'d'],arrowleft:[1,'l'],arrowright:[1,'r'],enter:[1,'f']},keys=[{},{}];
- for(const type of ['keydown','keyup'])s.on(document,type,ev=>{const b=KEYMAP[ev.key.toLowerCase()];if(!b)return;ev.preventDefault();if(s.paused||!s.alive)return;keys[b[0]][b[1]]=type==='keydown';if(type==='keydown')H[b[0]].cursor.on=true;});
+ for(const type of ['keydown','keyup'])s.on(document,type,ev=>{let b=KEYMAP[ev.key.toLowerCase()];if(!b)return;ev.preventDefault();if(s.paused||!s.alive)return;if(cpu)b=[0,b[1]];keys[b[0]][b[1]]=type==='keydown';if(type==='keydown')H[b[0]].cursor.on=true;});
  function pumpKeys(dt){for(const h of H){const k=keys[h.i],cu=h.cursor,r=h.rect;if(!r||!cu.on)continue;const sp=Math.min(r.w,r.h)*1.1*dt;
   const dx=(k.r?1:0)-(k.l?1:0),dy=(k.d?1:0)-(k.u?1:0);if(dx||dy){cu.x=clamp(cu.x+dx*sp,0,r.w);cu.y=clamp(cu.y+dy*sp,0,r.h);if(cu.was&&phase==='play'&&!h.res)h.st.g.move?.(h.st,{x:cu.x,y:cu.y},'k'+h.i);}
   const f=!!k.f;if(f&&!cu.was){cu.was=true;deliver(h.i,'down',{x:cu.x,y:cu.y},'k'+h.i);}else if(!f&&cu.was){cu.was=false;deliver(h.i,'up',{x:cu.x,y:cu.y},'k'+h.i);}}}
@@ -145,7 +151,8 @@ async function rush(s){
   const sig=lay.rects.map(r=>r.w+'x'+r.h).join();
   if(sig!==lastSig){if(lastSig&&phase==='play'&&!H.some(h=>h.res)&&pt<dur-.5){const p0=pt;startPlay();pt=Math.min(p0,.6);}lastSig=sig;}
   pumpKeys(dt);
-  for(const h of H){if(!h.st)continue;for(const rp of h.ripples)rp.t+=dt;h.ripples=h.ripples.filter(rp=>rp.t<.3);h.st.t+=dt;h.st.g.update(h.st,dt);if(phase==='play'&&!h.res&&h.st.result)settle(h.i,h.st.result,pt);}
+  for(const h of H){if(!h.st)continue;for(const rp of h.ripples)rp.t+=dt;h.ripples=h.ripples.filter(rp=>rp.t<.3);h.st.t+=dt;h.st.g.update(h.st,dt);if(phase==='play'&&!h.res&&h.st.result&&!(cpu&&h.i===1))settle(h.i,h.st.result,pt);}
+   if(cpu&&cpuPlan&&phase==='play'&&!H[1].res&&pt>=cpuPlan.at)settle(1,H[1].st.result=cpuPlan.win?'win':'lose',pt);
   if(phase==='play'){
    const left=dur-pt;if(left<1.3&&left>0){const n=Math.floor(left*3);if(n!==lastTick){lastTick=n;if(!H.every(h=>h.res))sound('tick');}}
    if(pt>=dur){for(const h of H)if(!h.res){const res=h.st.g.timeout==='win'?'win':'lose';h.st.result=h.st.result||res;settle(h.i,h.st.result,dur);}}
@@ -159,6 +166,6 @@ async function rush(s){
  }
  if(!await s.pass(0,'Microgame Rush: one-word orders, 4 second microgames, both of you at once. Landscape: left half is Player 1, right half is Player 2. Portrait: Player 1 is the upside-down top half. First to finish scores 2, second scores 1.','Both ready',{countdown:3}))return;
  sound('start');for(let i=0;i<6;i++)setTimeout(()=>{if(s.alive)tone([523,659,784,1047,784,1047][i],.09,.05,'square');},i*110);
- s.frame(dt=>{lay=layout(s.W,s.H);step(dt);if(!s.alive)return;render();s.status(`${s.players[0].name} ${scores[0]} · ${s.players[1].name} ${scores[1]}`+(phase==='play'||phase==='result'?` · ${cur.verb.replace('!','')}`:''));});
+ s.frame(dt=>{lay=layout(s.W,s.H,cpu);step(dt);if(!s.alive)return;render();s.status(`${s.players[0].name} ${scores[0]} · ${s.players[1].name} ${scores[1]}`+(phase==='play'||phase==='result'?` · ${cur.verb.replace('!','')}`:''));});
 }
 Object.assign(exports,{rush,MICROGAMES,layout,speedFor});

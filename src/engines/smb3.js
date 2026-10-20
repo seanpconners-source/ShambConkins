@@ -5,6 +5,7 @@
 //             a Mushroom, Fire Flower or Star. Players alternate four spins each.
 const {clamp,shuffle}=require("src/utils.js");
 const {Fx,snd,noise,jingle,outlined,rr,FONT,PCOL,settle}=require("src/engines/arenaKit.js");
+const {isCpu,cpuHotseat,cpuSkill,pickRandom}=require("src/engines/cpuKit.js");
 
 const CARD_FACES=[['mushroom',2],['mushroom',2],['flower',3],['flower',3],['star',5],['oneup',4],['coin10',1],['coin10',1],['coin20',2]];
 const PANEL=['mushroom','flower','star'],PANEL_PTS={mushroom:2,flower:3,star:5};
@@ -47,9 +48,19 @@ async function smb3(s){
      if(cards.every(cd=>cd.gone))finish();},650);}
     else{lock=1.3;setTimeout(()=>{if(!s.alive)return;a.up=b.up=false;open=[];lock=0;misses[turn]++;turn=1-turn;snd(220,.18,{type:'square',vol:.03});say(`${s.players[turn].name.toUpperCase()}’S TURN`);},1200);}}};
   const finish=()=>{done=true;endT=0;s.setScores(score);const [a,b]=score;say(a===b?'TIE!':`${s.players[a>b?0:1].name.toUpperCase()} WINS!`,4);jingle([523,659,784,1047,1319,1568],{step:.1,type:'square',vol:.04});};
-  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev);layout().forEach((L,k)=>{if(Math.abs(p.x-L.x)<L.w/2&&Math.abs(p.y-L.y)<L.h/2)flip(k);});});
+  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||isCpu(s)&&turn===1)return;ev.preventDefault();const p=s.pointer(ev);layout().forEach((L,k)=>{if(Math.abs(p.x-L.x)<L.w/2&&Math.abs(p.y-L.y)<L.h/2)flip(k);});});
   s.on(document,'keydown',ev=>{if(s.paused||!s.alive)return;const k=ev.key.toLowerCase(),cols=s.W>s.H*1.15?6:3;const mv={arrowleft:-1,a:-1,arrowright:1,d:1,arrowup:-cols,w:-cols,arrowdown:cols,s:cols}[k];if(mv!==undefined){keyUsed=true;cursor=(cursor+mv+18)%18;ev.preventDefault();}else if(k===' '||k==='enter'){keyUsed=true;flip(cursor);ev.preventDefault();}});
   s.debug={cards,get score(){return score;},get turn(){return turn;},flip,get done(){return done;}};
+  // vs CPU: player 2 remembers each card it sees flipped (about 62% / 77% / 90% of them, by level), takes a known pair,
+  // matches its first card from memory, and otherwise turns over a card nobody has seen.
+  if(isCpu(s)){const memory=new Map(),recall=.45+.5*cpuSkill(s),seen=new Set();
+   s.frame(()=>{cards.forEach(cd=>{if(cd.up&&!seen.has(cd.k)){seen.add(cd.k);if(Math.random()<recall)memory.set(cd.k,cd.kind);}if(!cd.up)seen.delete(cd.k);});});
+   const live=k=>!cards[k].gone&&!cards[k].up,unknown=()=>cards.filter(cd=>live(cd.k)&&!memory.has(cd.k)).map(cd=>cd.k),any=()=>cards.filter(cd=>live(cd.k)).map(cd=>cd.k);
+   const mate=(kind,not)=>[...memory].find(([k,v])=>v===kind&&k!==not&&live(k))?.[0];
+   cpuHotseat(s,{isTurn:()=>turn===1&&!done&&lock<=0&&open.length<2,delay:800,think:()=>{
+    if(open.length===1){const k=mate(cards[open[0]].kind,open[0]);return flip(k??pickRandom(unknown().length?unknown():any()));}
+    const pair=[...memory].find(([k,v])=>live(k)&&mate(v,k)!==undefined);if(pair)return flip(pair[0]);
+    const u=unknown();return flip(pickRandom(u.length?u:any()));}});}
   say(`${s.players[0].name.toUpperCase()} FLIPS FIRST`,2);
   s.frame(dt=>{t+=dt;fx.update(dt);if(msgT>0)msgT-=dt;
    const W=s.W,H=s.H;bg(x,W,H,t);headBar(H*.08);const L=layout();

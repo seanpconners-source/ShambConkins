@@ -25,7 +25,14 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   virtual finger (halfPointers/arenaTouch), `keys.cpu` (duelInputs), `controls.cpu` (arenaGestures). Each engine has a small
   `cpuThink`-style brain (search for `vs CPU:` comments). ~80 games now play solo. Not done: kart balloon battle and the co-op
   games (horde, space-swarm-coop, rainbow-rivals). Balance is bot-tested only (an idle human vs the CPU).
-  Owner's agreed plan for the last batch: 4 trivia/cards (social games hidden).
+  Batch 4 (trivia/cards/dice/table, Oct 20): ~110 solo games. Trivia ×9 (`cpuTriviaPick`: right-answer chance from question
+  difficulty × level; `cpuThinkTime`), casino ×4 (`casinoCpu` in casinoTable.js polls `s.debug`: locks a bet, plays via
+  `act`, agrees to cash out when the human does), Yahtzee ×2, Uno, Guess Who, Liar's Dice (odds-based bids/LIAR; also fixed:
+  hands now roll only the dice a player has left), Battleship (hunt/target), Simon (memory span), Price Is Right, Clue ×2,
+  Monopoly ×2, N-Spade (imperfect memory), Hangman Wanted (CPU deals its bounty), Microgame Rush ×2 (CPU half resolves
+  by a skill roll, human gets the upright bottom half). CPU hands/notebooks are hidden on its turn. `SOLO_HIDDEN` (solo.js)
+  hides Newlywed, Roast Battle and Draw It from the 1P list. Tests: scratch scripted-human runs to the result screen for
+  every batch-4 game + `tests/solo.mjs` + 2P fuzz; casino tables only end on cash-out/bust.
   Windows box: Node 24 at `C:\Program Files\nodejs` (not on PATH in the agent shell), git = GitHub Desktop's bundled git (no push creds).
 - **Broforce (turn-based rebuild, Oct 13 2026):** one engine file `src/engines/broforce.js` (same 4 game ids in
   `packs/broforcePack.js`). P1 runs a 3-stage seeded mission, then P2 runs the same one; higher score wins (normal

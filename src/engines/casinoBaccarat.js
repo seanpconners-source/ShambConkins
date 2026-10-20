@@ -1,6 +1,6 @@
 const {shuffle}=require("src/utils.js");
 const {casinoDeck, baccaratDeal, baccaratPayout}=require("src/engines/casinoCards.js");
-const {casinoTable, syncCards, casinoWait, casinoTap, paintBanks, announce, setCasinoStatus, showProfits, wireWagers, wireCashout, busted, casinoResultLabel}=require("src/engines/casinoTable.js");
+const {casinoCpu, casinoTable, syncCards, casinoWait, casinoTap, paintBanks, announce, setCasinoStatus, showProfits, wireWagers, wireCashout, busted, casinoResultLabel}=require("src/engines/casinoTable.js");
 const {sound}=require("src/audio.js");
 async function playBaccarat(s){
  const state={chips:[10,10],bets:[2,2],locked:[false,false],choices:['player','banker'],phase:'betting',round:1,deal:null,cards:[[],[]]};let before=[10,10],shoe=[];
@@ -16,6 +16,8 @@ async function playBaccarat(s){
   if(!await casinoWait(s,400))return;state.chips=state.chips.map((n,i)=>Math.round((n+baccaratPayout(state.choices[i],state.deal.winner,state.bets[i]))*100)/100);state.phase='result';state.choices.forEach((b,i)=>setCasinoStatus(i,baccaratPayout(b,state.deal.winner,state.bets[i])>state.bets[i]?'WIN · STACK PAID':baccaratPayout(b,state.deal.winner,state.bets[i])?'PUSH · WAGER RETURNED':'LOSS · WAGER TO HOUSE'));announce(state.deal.winner.toUpperCase()+' '+(state.deal.winner==='tie'?'ties':'wins')+' · '+state.deal.pv+' to '+state.deal.bv);showProfits(s,state,before);render();
  }
  casinoTap(s,next,()=>{if(state.phase!=='result')return;if(busted(state.chips))return s.finish(state.chips.every(n=>n<2)?[0,0]:state.chips,casinoResultLabel(state.chips,s.players));state.round++;state.phase='betting';state.bets=[2,2];state.locked=[false,false];state.cards=[[],[]];state.deal=null;state.cashout=[false,false];for(let i=0;i<2;i++){setCasinoStatus(i,'PLACE YOUR BET');document.getElementById('casino-profit-'+i).textContent='';document.getElementById('casino-cashout-'+i).classList.remove('selected');}announce('Hand '+state.round+' · choose your side');render();});
+ // vs CPU: leans on Banker (the best odds) on Hard, a coin-flip between Player and Banker on Easy, the odd Tie for luck
+ casinoCpu(s,{choose:(st,sk)=>{const r=Math.random();st.choices[1]=r<(1-sk)*.08?'tie':r<.5+sk*.35?'banker':'player';}});
  wireWagers(s,state,deal,render);render();await s.pass(0,'Both players start with 10 chips and bet on the SAME Player/Banker deal. Minimum bet 2. Standard third-card rules and Banker commission apply. Below the minimum is out, or both can agree to cash out.','Both ready — baccarat');
 }
 

@@ -1,5 +1,5 @@
 const {casinoDeck, blackjackValue, blackjackOutcome}=require("src/engines/casinoCards.js");
-const {casinoTable, syncCards, casinoWait, casinoTap, paintBanks, announce, setCasinoStatus, showProfits, wireWagers, wireCashout, busted, casinoResultLabel}=require("src/engines/casinoTable.js");
+const {casinoCpu, casinoTable, syncCards, casinoWait, casinoTap, paintBanks, announce, setCasinoStatus, showProfits, wireWagers, wireCashout, busted, casinoResultLabel}=require("src/engines/casinoTable.js");
 const {sound}=require("src/audio.js");
 async function playBlackjack(s){
  const state={chips:[10,10],bets:[2,2],locked:[false,false],hands:[[],[]],dealer:[],status:['betting','betting'],busy:[false,false],round:1,phase:'betting',revealed:false,outcomes:[]};let deck=[],before=[10,10];
@@ -39,6 +39,9 @@ async function playBlackjack(s){
   if(!state.status.every(v=>v==='bust'))while(blackjackValue(state.dealer)<17){state.dealer.push(deck.pop());announce('Dealer draws · '+blackjackValue(state.dealer));sound('card');render();if(!await casinoWait(s,450))return;}
   state.outcomes=state.hands.map(h=>blackjackOutcome(h,state.dealer));state.chips=state.chips.map((n,i)=>Math.round((n+state.bets[i]*state.outcomes[i].gross)*100)/100);state.phase='result';state.outcomes.forEach((out,i)=>setCasinoStatus(i,out.label.toUpperCase()));announce(busted(state.chips)?casinoResultLabel(state.chips,s.players):'Hand settled · study the cards, then deal again');showProfits(s,state,before);render();
  }
+ // vs CPU: basic strategy: hit to 11, stand on 17, and on 12–16 hit against a dealer 7+ (looser on Easy)
+ casinoCpu(s,{act:(st,sk)=>{if(st.phase!=='playing'||st.status[1]!=='playing'||st.busy[1])return;const total=blackjackValue(st.hands[1]),up=st.dealer[0]?(st.dealer[0].rank===1?11:Math.min(10,st.dealer[0].rank)):10,limit=sk>.5?17:15+Math.floor(Math.random()*3);
+  const hitIt=total<=11||total<limit&&(up>=7||Math.random()<(1-sk)*.4)&&total<17;document.getElementById(hitIt?'bj-hit-1':'bj-stand-1')?.click();}});
  wireWagers(s,state,deal,render);render();await s.pass(0,'Both players start with 10 chips. Place separate wagers, then play your hands at the same time against ONE dealer. Minimum bet 2. Below the minimum is out. You may cash out only when both agree.','Both ready — take your seats');
 }
 
