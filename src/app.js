@@ -23,11 +23,11 @@ const {buildWarpBoard,pickWarpId,WARP_DEFS}=require("src/warpBoards.js");
 const {WARP_THEMES,warpTheme,warpItem,warpCard,warpFortune}=require("src/warpThemes.js");
 const {ensureLevelBosses,bossById,castleName}=require("src/bossGate.js");
 const {GAMES, PHONE_TASK, gameById}=require("src/gameRegistry.js");
-const {refitCatalog, showView, updateBoard, showDialog, resolveDialog, closeDialog, unlockDialog, toast, repaintCamera, gestureCamera, endGesture, cancelCameraAnimation, clearBoardDetailObserver, refreshPortraits}=require("src/ui.js");
+const {refitCatalog, randomArcadePick, showView, updateBoard, showDialog, resolveDialog, closeDialog, unlockDialog, toast, repaintCamera, gestureCamera, endGesture, cancelCameraAnimation, clearBoardDetailObserver, refreshPortraits}=require("src/ui.js");
 const {applyTheme}=require("src/theme.js");
 const {brandHTML, portraitHTML, locationArtHTML, itemArtHTML}=require("src/assets.js");
 const {configureLauncher, requestGame, cancelGameLaunch, exitGame, presentResult}=require("src/gameLauncher.js");
-const {setSolo}=require("src/solo.js");
+const {setSolo,soloSettings}=require("src/solo.js");
 const {sound, vibrate, audioContext, installAudioUnlock, startMusic, stopMusic, setMusicZone, setMusicScene, nowPlaying}=require("src/audio.js");
 const {biomeFor}=require("src/biomes.js");
 const {ART}=require("src/data/art.js");
@@ -490,6 +490,8 @@ async function action(name,target){
   case 'catalog-page':catalogPage=Math.max(0,+target.dataset.page||0);showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;
   case 'arcade-game':await requestGame({id:target.dataset.id,origin:'arcade'});break;
   case 'arcade-solo':await requestGame({id:target.dataset.id,origin:'arcade',solo:true});break;
+  case 'arcade-random':{const g=randomArcadePick();if(!g){toast('No playable games in this list');break;}
+   if(g.pokemon)await arcadePokemon(g.pokemon);else await requestGame({id:g.id,origin:'arcade',solo:soloSettings(store.profile).on||undefined});break;}
   case 'solo-set':{const {key,value}=target.dataset;setSolo(store.profile,key==='on'?{on:value==='1'}:key==='who'?{who:+value===1?1:0}:{level:value});saveProfile(store.profile);showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;}
   case 'arcade-pokemon':await arcadePokemon(target.dataset.id);break;
   case 'dev-game':if(store.profile.settings.devMode)await requestGame({id:target.dataset.id,origin:'dev'});break;

@@ -309,6 +309,9 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   `engines/fullBleed.js`) set `noBleed` and keep their own fullscreen toggle.
   All only bot/fuzz-tested in headless Chromium; real-phone feel untested.
 
+- Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
+  in the current list (filter, search and 1P mode apply).
+
 ## Recent changes (this round of owner feedback)
 Boss trigger fix + drag flow; 2x heads (board, collection, character select); collection pages fit the screen;
 pinch zoom; warp pipes visible & pass-triggered; bridges; biomes; Parents' House → Mom/Dad only; Planet Coaster park +
