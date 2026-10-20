@@ -4,6 +4,7 @@
 // drags on. First to three bouts.
 const {clamp}=require("src/utils.js");
 const {voice,noise,makeShake,halfPointers,keyboard,label,SANS}=require("src/engines/tarantinoKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const {makeBits}=require("src/engines/retroKit.js");
 const {vibrate}=require("src/audio.js");
 
@@ -20,7 +21,14 @@ async function sumo(s){
  const fingers=halfPointers(s,{up:(i,r,{cancelled})=>{if(!cancelled&&r.dist<16&&performance.now()-r.t0<260)charge(P[i]);}});
  keyboard(s,(i,name,down)=>{keys[i][name]=down;if(name==='act'&&down)charge(P[i]);});
  s.hint('P1 left half, P2 right half. Hold and drag like a joystick to shuffle; a quick tap is a slap-charge (short cooldown). Push the other suit out of the straw ring. First to three bouts. Keys: P1 WASD + Space, P2 arrows + Enter.');
+ // vs CPU: P2 shuffles toward the human while keeping clear of the straw, and slap-charges at close range
+ const cpu=isCpu(s);let cpuTick=0;
+ function cpuThink(dt){const me=P[1],o=P[0],k=keys[1];k.l=k.r=k.u=k.d=false;if(state!=='fight'||me.out)return;const sk=cpuSkill(s);
+  let ax=o.x-me.x,ay=o.y-me.y;const r=Math.hypot(me.x,me.y);if(r>ring*.55){ax-=me.x/r*(r/ring)*2.2;ay-=me.y/r*(r/ring)*2.2;}
+  const m=Math.hypot(ax,ay)||1;k.r=ax/m>.35;k.l=ax/m<-.35;k.d=ay/m>.35;k.u=ay/m<-.35;
+  cpuTick-=dt;if(cpuTick<=0){cpuTick=.25;if(me.cd<=0&&Math.hypot(ax,ay)<.75&&s.random()<.25+sk*.6)charge(me);}}
  function step(dt){
+  if(cpu)cpuThink(dt);
   if(state==='fight'){t+=dt;if(t>12)ring=Math.max(.72,ring-dt*.02);}
   for(const p of P){p.cd=Math.max(0,p.cd-dt);p.dash=Math.max(0,p.dash-dt);p.squash=Math.max(0,p.squash-dt*2);
    if(state==='fight'&&!p.out){let ax=0,ay=0;const k=keys[p.i];ax=(k.r?1:0)-(k.l?1:0);ay=(k.d?1:0)-(k.u?1:0);const f=[...fingers.values()].find(q=>q.i===p.i);

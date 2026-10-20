@@ -4,6 +4,7 @@
 const {clamp}=require("src/utils.js");
 const {voice,keyboard}=require("src/engines/tarantinoKit.js");
 const {vibrate}=require("src/audio.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 // 3x5 Pong score digits.
 const DIGITS=['111101101101111','001001001001001','111001111100111','111001111001111','101101111001001','111100111001111','111100111101111','111001001001001','111101111101111','111101111001111'];
@@ -43,7 +44,8 @@ async function pong(s){
  const dims=()=>{const k=Math.min(L,Wd),b=clamp(k*.026,8,18),hs=clamp(k*.13,40,80),len=Math.max(Wd*.165,58),inset=hs+b*1.6+8;return {k,b,hs,len,inset};};
  // pointer ownership: P1 left (landscape) or bottom (portrait)
  const fingers=new Map();
- const owner=p=>portrait?(p.y>s.H/2?0:1):(p.x<s.W/2?0:1);
+ const cpu=isCpu(s);let cpuHits=-1,cpuErr=0;
+ const owner=p=>cpu?0:portrait?(p.y>s.H/2?0:1):(p.x<s.W/2?0:1);
  const aim=(i,p)=>{const v=portrait?(p.x-fx)/Wd:(p.y-fy)/Wd;st.pv[i]=v;};
  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev),i=owner(p);fingers.set(ev.pointerId,i);s.capture(ev);aim(i,p);});
  s.on(c,'pointermove',ev=>{const i=fingers.get(ev.pointerId);if(i===undefined||s.paused)return;ev.preventDefault();aim(i,s.pointer(ev));});
@@ -63,6 +65,8 @@ async function pong(s){
   if(headAge>.6&&st.time<8){headAge=0;const n=Math.round(D.hs/2);heads[0]=ditherHead(s,0,n);heads[1]=ditherHead(s,1,n);}
   const hl=D.len/2/Wd,bu=D.b/L,bv=D.b/Wd,pu=[D.inset/L,1-D.inset/L];
   for(let i=0;i<2;i++){const k=keys[i];const flip=portrait&&i===1?1:1;st.pv[i]+=((k.d?1:0)-(k.u?1:0))*flip*1.5*dt;st.pv[i]=clamp(st.pv[i],hl*.6,1-hl*.6);st.flash[i]=Math.max(0,st.flash[i]-dt);}
+  // vs CPU: P2 slides toward the ball while it's coming, with an aim error that's re-rolled on every return
+  if(cpu){const b=st.ball,sk=cpuSkill(s);if(cpuHits!==st.hits){cpuHits=st.hits;cpuErr=(s.random()-.5)*(1.15-sk)*hl*2.6;}const coming=st.serve<=0&&b.du>0,tgt=coming?b.v+cpuErr:.5+(b.v-.5)*.3,spd=(.55+sk*1.05)*(coming?1:.5);st.pv[1]=clamp(st.pv[1]+clamp(tgt-st.pv[1],-spd*dt,spd*dt),hl*.6,1-hl*.6);}
   if(!st.over){
    if(st.serve>0){st.serve-=dt;if(st.serve<=0)serve();}
    else{

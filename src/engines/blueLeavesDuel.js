@@ -6,6 +6,7 @@
 const {clamp}=require("src/utils.js");
 const {voice,noise,sfx,makeShake,makeFx,makeSlowmo,halfPointers,keyboard,label,SANS,mono}=require("src/engines/tarantinoKit.js");
 const {vibrate}=require("src/audio.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const AL=360,COL=[{suit:'#f2c81e',stripe:'#151515'},{suit:'#f4f1ea',stripe:'#b8202a'}],STANCE_Y=[15.5,11,6.5],WIN=2,CAP=120;
 
@@ -26,8 +27,16 @@ async function sword2p(s){
  function kill(att,vic){vic.alive=false;vic.respawn=1.6;att.kills++;way=att.i;const P=toScreen(vic.x,STANCE_Y[att.stance]);fx.splat(P.x,P.y,{n:40,speed:380,dir:att.dir>0?-.3:Math.PI+.3,spread:1.4,size:5});sfx.splat();sfx.shing();slow.hit(.55,.2);shake.kick(9);silhouette=.45;vibrate(40);
   s.react?.(att.i,'win',1.4);s.react?.(vic.i,'sad',1.6);banner={text:'GO!',t:1.2,i:att.i};}
  let toScreen=(X,Y)=>({x:X,y:Y});
+ // vs CPU: fighter 2 shadows your sword height to parry, switches height and thrusts in range, then runs for its exit
+ const cpu=isCpu(s);let cpuT=0;
+ function cpuThink(dt){const me=F[1],o=F[0],k=keys[1];k.l=k.r=false;if(state!=='fight'||!me.alive)return;const sk=cpuSkill(s),d=Math.abs(o.x-me.x);
+  if(!o.alive||way===1){k.l=true;return;}
+  if(way===0||d>18)k[o.x<me.x?'l':'r']=true;else if(d<11)k[o.x<me.x?'r':'l']=true;
+  cpuT-=dt;if(cpuT>0)return;cpuT=.42-sk*.3+s.random()*.12;
+  if(d<21&&me.cd<=0&&s.random()<.35+sk*.4){if(me.stance===o.stance)setStance(me,o.stance===0?1:o.stance===2?-1:s.random()<.5?1:-1);thrust(me);}
+  else if(me.stance!==o.stance&&s.random()<.3+sk*.6)setStance(me,o.stance>me.stance?1:-1);}
  function step(dt){
-  clock+=dt;
+  clock+=dt;if(cpu)cpuThink(dt);
   for(const f of F){f.cd=Math.max(0,f.cd-dt);f.parried=Math.max(0,f.parried-dt);
    if(!f.alive){f.respawn-=dt;if(f.respawn<=0){const k=F[1-f.i];let nx=clamp(k.x+k.dir*0+(way===k.i?(k.i===0?1:-1)*58:0),12,AL-12);if(Math.abs(nx-k.x)<20)nx=clamp(k.x+(k.i===0?1:-1)*28,12,AL-12);f.x=nx;f.alive=true;f.stance=1;f.cd=.3;way=-1;}continue;}
    const o=F[1-f.i];f.dir=o.alive?Math.sign(o.x-f.x)||f.dir:(f.i===0?1:-1);

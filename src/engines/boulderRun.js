@@ -4,6 +4,7 @@
 const {clamp,seededRandom}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const {label,rr,makeFx,makeShake,sfx,halfPointers,keyboard,voice,noise}=require("src/engines/tarantinoKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const DUR=60,G=44,JV=15.5,STAND=2,SLIDE=.9;
 
 function course(seed){const r=seededRandom(seed+':boulder'),items=[];let x=14;
@@ -32,7 +33,14 @@ async function ballrun2p(s){
 
  function hit(p,o){if(p.inv>0)return;p.stum=.45;p.inv=1;p.hits++;shake.kick(7);vibrate(30);voice(140,.2,.08,'square',{slide:.5});s.react(p.i,'sad');
   const L0=laneTop(p.i);fx.pop(L.rx,L0+L.lh*.35,o.kind==='dart'?'DART!':o.kind==='pit'?'STUMBLE!':'OUCH!',{color:'#ff6b6b',size:18});}
- function step(p,dt){if(!p.alive)return;
+ // vs CPU: runner 2 reads the next obstacle: jump pits/spikes, slide under darts, sometimes leap for idols
+ const cpu=isCpu(s),cpuDone=new Set();
+ function cpuThink(p){const sk=cpuSkill(s),lead=.75+(1-sk)*(s.random()-.3)*.9;
+  for(const o of items){if(o.x+o.w<p.x)continue;if(o.x-p.x>2.2)break;if(cpuDone.has(o))continue;const dx=o.x-p.x;
+   if((o.kind==='pit'||o.kind==='spikes')&&dx<lead){cpuDone.add(o);if(s.random()<.55+sk*.45)jump(p);}
+   else if(o.kind==='dart'&&dx<lead*.9){cpuDone.add(o);if(s.random()<.5+sk*.5)slide(p);}
+   else if(o.kind==='idol'&&dx<lead){cpuDone.add(o);if(s.random()<sk)jump(p);}}}
+ function step(p,dt){if(!p.alive)return;if(cpu&&p.i===1&&phase==='play')cpuThink(p);
   const sp=p.stum>0?pace*.55:pace*1.08;p.stum=Math.max(0,p.stum-dt);p.inv=Math.max(0,p.inv-dt);p.slide=Math.max(0,p.slide-dt);p.jumpQ=Math.max(0,p.jumpQ-dt);
   p.x+=sp*dt;p.run+=dt*sp;p.gap=Math.min(8,p.gap+(sp-pace)*dt);
   p.vy-=G*dt;p.y+=p.vy*dt;

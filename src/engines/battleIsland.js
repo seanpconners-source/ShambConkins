@@ -6,6 +6,7 @@
 const {clamp,seededRandom}=require("src/utils.js");
 const {voice,noise,sfx,makeShake,makeFx,halfPointers,keyboard,label,SANS,rr}=require("src/engines/tarantinoKit.js");
 const {vibrate}=require("src/audio.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const COL=['#3aa8ff','#ff5a7a'],WIN=2,GRID=4;
 const WEAPONS={lid:{name:'POT LID',range:9,melee:true,cd:.5,dmg:1},sickle:{name:'SICKLE',range:11,melee:true,cd:.35,dmg:1},crossbow:{name:'CROSSBOW',speed:120,cd:1.1,dmg:2,ammo:6},uzi:{name:'UZI',speed:150,cd:.11,dmg:.34,ammo:45,auto:true,spread:.12},shotgun:{name:'SHOTGUN',speed:130,cd:.9,dmg:.5,ammo:6,pellets:5,spread:.28,range:55}};
@@ -36,8 +37,19 @@ async function battleroyale(s){
  keyboard(s,(i,name,down)=>{keys[i][name]=down;if(name==='act'&&down&&P[i])attack(P[i]);});
  s.hint('P1 left half, P2 right half. Drag like a joystick to move; tap to attack (aim locks onto your rival; you need a clear line past trees). Hold your finger still to keep firing an Uzi. Walk over supply bags for weapons. When zones are announced, get out before they close or your collar explodes. Keys: WASD + Space, arrows + Enter.');
  let sx=X=>X,sy=Y=>Y;
+ // vs CPU: student 2 flees closing zones, grabs supply bags while it only has a lid, then closes in and attacks with a clear line
+ const cpu=isCpu(s);let cpuT=0,cpuStuck=0,cpuLast=null;
+ function cpuThink(dt){const me=P[1],o=P[0],k=keys[1];k.l=k.r=k.u=k.d=false;if(state!=='fight'||!me?.alive)return;const sk=cpuSkill(s);
+  const bad=(px,py)=>{const z=zoneOf(px,py);return zones.has(z)||pending.has(z);};let tx=o.x,ty=o.y,want=WEAPONS[me.wpn].melee?2.5:Math.min(WEAPONS[me.wpn].range||40,40)*.7;
+  if(bad(me.x,me.y)){let best=null,bd=1e9;for(let a=0;a<GRID;a++)for(let b=0;b<GRID;b++){const cx=(a+.5)*WW/GRID,cy=(b+.5)*WH/GRID;if(bad(cx,cy)||!insideIsland(cx,cy))continue;const d=Math.hypot(cx-me.x,cy-me.y);if(d<bd){bd=d;best={x:cx,y:cy};}}if(best){tx=best.x;ty=best.y;want=0;}}
+  else if(me.wpn==='lid'){const bag=bags.filter(b=>!b.got&&!bad(b.x,b.y)).sort((a,b)=>Math.hypot(a.x-me.x,a.y-me.y)-Math.hypot(b.x-me.x,b.y-me.y))[0];if(bag&&Math.hypot(bag.x-me.x,bag.y-me.y)<Math.hypot(o.x-me.x,o.y-me.y)+15){tx=bag.x;ty=bag.y;want=0;}}
+  let dx=tx-me.x,dy=ty-me.y;const d=Math.hypot(dx,dy);if(d<want){dx=-dx;dy=-dy;}
+  if(cpuLast&&Math.hypot(me.x-cpuLast.x,me.y-cpuLast.y)<.05&&d>want+1)cpuStuck=.6;cpuLast={x:me.x,y:me.y};if(cpuStuck>0){cpuStuck-=dt;[dx,dy]=[-dy,dx];}
+  if(Math.abs(d-want)>1.2||cpuStuck>0){const m=Math.hypot(dx,dy)||1;k.r=dx/m>.38;k.l=dx/m<-.38;k.d=dy/m>.38;k.u=dy/m<-.38;}
+  cpuT-=dt;const od=Math.hypot(o.x-me.x,o.y-me.y),W=WEAPONS[me.wpn];
+  if(cpuT<=0&&me.cd<=0&&o.alive&&(W.melee?od<W.range:od<(W.range||90)*.9&&los(me,o))){cpuT=.5-sk*.35+s.random()*.25;if(s.random()<.45+sk*.5)attack(me);}}
  function step(dt){
-  t+=dt;annT-=dt;
+  t+=dt;annT-=dt;if(cpu)cpuThink(dt);
   if(annT<=0&&state==='fight'){annT=11;const free=[];for(let a=0;a<GRID;a++)for(let b=0;b<GRID;b++){const z=`${'ABCD'[a]}${b+1}`;if(!zones.has(z)&&!pending.has(z))free.push(z);}
    const pick=[];const nz=Math.min(free.length-3,round>0?3:2);for(let k=0;k<nz;k++){const z=free.splice(Math.floor(rand()*free.length),1)[0];if(z)pick.push(z);}
    if(pick.length){for(const z of pick)pending.add(z);banner={text:`DANGER ZONES: ${pick.join(', ')}`,sub:'Closing in 5 seconds.',t:2.6};voice(880,.2,.05,'square');voice(660,.3,.05,'square',{delay:.22});closing.push({at:t+5,pick});}}

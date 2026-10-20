@@ -6,6 +6,7 @@ const {clamp,seededRandom}=require("src/utils.js");
 const {voice,noise,makeShake,halfPointers,keyboard,label,SANS}=require("src/engines/tarantinoKit.js");
 const {makeBits,vignette}=require("src/engines/retroKit.js");
 const {vibrate}=require("src/audio.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const SKIN=[['#29d8ff','#0b6cff'],['#ff9a2e','#ff3f8e']],ORB=['#ff5ad9','#4fe6ff','#8dff6a','#ffd23f','#ff7a3a','#b78bff'];
 const SECONDS=75;
@@ -26,8 +27,18 @@ async function snakeduel(s){
   if(by!==undefined){kills[by]++;score[by]+=50;pops.push({x:h.x,y:h.y,text:'+50 KILL',t:1.2,c:SKIN[by][0]});s.react?.(by,'win',1.4);voice(660,.12,.05,'triangle');voice(880,.18,.05,'triangle',{delay:.1});}}
  function respawn(sn){const i=sn.i;let best=null,bd=-1;for(let k=0;k<8;k++){const px=60+rand()*(W-120),py=80+rand()*(H-140),o=snakes[1-i],d=o.alive?Math.min(...o.body.filter((_,q)=>q%4===0).map(b=>Math.hypot(b.x-px,b.y-py))):999;if(d>bd){bd=d;best={px,py};}}
   const a=Math.atan2(H/2-best.py,W/2-best.px);sn.body=[];for(let k=0;k<30;k++)sn.body.push({x:best.px-Math.cos(a)*k*4,y:best.py-Math.sin(a)*k*4});Object.assign(sn,{a,len:60,alive:true,inv:1.6});}
+ // vs CPU: snake 2 chases orbs, looks ahead for walls and bodies, and swerves to the first safe heading
+ const cpu=isCpu(s);
+ function cpuThink(){const sn=snakes[1],f=fingers.cpu;if(!sn||!sn.alive||state!=='play'){f.up();return;}
+  const u=unit(),sk=cpuSkill(s),h=sn.body[0],look=(5+sk*6)*12*u;
+  const blocked=a=>{for(let k=1;k<=4;k++){const px=h.x+Math.cos(a)*look*k/4,py=h.y+Math.sin(a)*look*k/4;if(px<14||py<60||px>W-14||py>H-14)return true;for(const o of snakes){if(!o.alive)continue;for(let q=o===sn?12:0;q<o.body.length;q+=2){const b=o.body[q];if(Math.hypot(b.x-px,b.y-py)<10*u)return true;}}}return false;};
+  let best=null,bs=-1;for(const o of orbs){const d=Math.hypot(o.x-h.x,o.y-h.y),v=o.v/(d+30);if(v>bs){bs=v;best=o;}}
+  let want=best?Math.atan2(best.y-h.y,best.x-h.x):Math.atan2(H/2-h.y,W/2-h.x);
+  if(blocked(want)||blocked(sn.a)){for(const d of [.5,-.5,1,-1,1.6,-1.6,2.3,-2.3,Math.PI]){if(!blocked(sn.a+d)){want=sn.a+d;break;}}}
+  const boost=sk>.5&&best&&sn.len>70&&Math.hypot(best.x-h.x,best.y-h.y)<160*u&&s.random()<.3,cx=W*.75,cy=H*.5,r=boost?120*u:40;
+  if(!f.active)f.down(cx,cy);f.move(cx+Math.cos(want)*r,cy+Math.sin(want)*r);}
  function step(dt){
-  const u=unit();
+  const u=unit();if(cpu)cpuThink();
   for(const sn of snakes){
    if(!sn.alive){sn.respawn-=dt;if(sn.respawn<=0&&state==='play')respawn(sn);continue;}
    sn.inv=Math.max(0,sn.inv-dt);

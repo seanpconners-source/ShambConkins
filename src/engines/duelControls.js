@@ -28,6 +28,9 @@ function duelInputs(s,{vertical=false,horizontal=false,fire=false,fireLabel='',s
   group.appendChild(pad);root.appendChild(group);
  }
  const layout=()=>{const next=!stacked&&(window.innerWidth||900)<600;if(next!==portrait)clear();portrait=next;s.body.classList.toggle('edge-portrait',portrait);groups.forEach((g,i)=>g.classList.toggle('opposed-player',portrait?i===0:i===1));};layout();merge();s.on(window,'resize',layout);s.on(window,'blur',clear);s.resetOnPause?.(clear);s.cleanup(clear);
+ // vs CPU: player 2's pad is hidden and keys.cpu(key,down) presses it
+ if(s.solo?.kind==='cpu')groups[1].hidden=true;
+ keys.cpu=(k,down)=>{if(!!keyboard[1][k]===!!down)return;keyboard[1][k]=!!down;merge();};
  return keys;
 }
 
@@ -41,6 +44,7 @@ function duelAction(s,owner,{text,id,hold,click}){
 
 function ownedPointers(s, move, release = () => {}, chooseOwner = p => p.x<s.W/2?0:1) {
  const owners=new Map();
+ if(s.solo?.kind==='cpu'){const base=chooseOwner;chooseOwner=p=>base(p)<0?-1:0;} // vs CPU the human owns every touch
  const clear=()=>{const pending=[...owners];owners.clear();for(const [id,i] of pending){s.release({pointerId:id});release(i,id,{cancelled:true});}};
  s.on(s.c,'pointerdown',ev=>{
   if(s.paused || !s.alive)return; ev.preventDefault();

@@ -106,8 +106,15 @@ const sfx={
 };
 // ---------------------------------------------------------------- input
 // Multi-touch router: every pointer is owned by the half (or zone) it first touched; no one-finger-per-player limit.
-function halfPointers(s,{down,move,up,chooseOwner}={}){
- const own=chooseOwner||(p=>p.x<s.W/2?0:1),map=new Map();
+function halfPointers(s,{down,move,up,chooseOwner,cpuOwner=true}={}){
+ let own=chooseOwner||(p=>p.x<s.W/2?0:1);const map=new Map();
+ // vs CPU the human owns every touch; map.cpu is a virtual finger for player 2 (down/move/up/tap)
+ if(s.solo?.kind==='cpu'&&cpuOwner){const base=own;own=p=>base(p)<0?-1:0;}
+ let cr=null;map.cpu={get active(){return cr;},
+  down(x,y){if(cr)map.cpu.up();cr={id:'cpu',i:1,x,y,sx:x,sy:y,px:x,py:y,t0:performance.now(),dist:0,cpu:true};map.set('cpu',cr);down?.(1,cr);},
+  move(x,y){if(!cr)return;cr.px=cr.x;cr.py=cr.y;cr.x=x;cr.y=y;cr.dist+=Math.hypot(cr.x-cr.px,cr.y-cr.py);move?.(1,cr);},
+  up(){if(!cr)return;const r=cr;cr=null;map.delete('cpu');up?.(1,r,{cancelled:false});},
+  tap(x,y){map.cpu.down(x,y);map.cpu.up();}};
  const clear=()=>{const all=[...map.values()];map.clear();for(const r of all){s.release({pointerId:r.id});up?.(r.i,r,{cancelled:true});}};
  s.on(s.c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev),r={id:ev.pointerId,i:own(p),x:p.x,y:p.y,sx:p.x,sy:p.y,px:p.x,py:p.y,t0:performance.now(),dist:0};map.set(r.id,r);s.capture(ev);down?.(r.i,r);});
  s.on(s.c,'pointermove',ev=>{const r=map.get(ev.pointerId);if(!r||s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev);r.px=r.x;r.py=r.y;r.x=p.x;r.y=p.y;r.dist+=Math.hypot(r.x-r.px,r.y-r.py);move?.(r.i,r);});
@@ -119,6 +126,9 @@ function halfPointers(s,{down,move,up,chooseOwner}={}){
 const KEYMAP={w:[0,'u'],a:[0,'l'],s:[0,'d'],d:[0,'r'],' ':[0,'act'],f:[0,'act'],arrowup:[1,'u'],arrowleft:[1,'l'],arrowdown:[1,'d'],arrowright:[1,'r'],enter:[1,'act']};
 function keyboard(s,fn,{repeat=false}={}){
  for(const type of ['keydown','keyup'])s.on(document,type,ev=>{const b=KEYMAP[ev.key.toLowerCase()];if(!b)return;ev.preventDefault();if(type==='keydown'&&(ev.repeat&&!repeat||s.paused||!s.alive))return;fn(b[0],b[1],type==='keydown');});
+ // CPU opponent: hold(name,down) holds/releases one of player 2's keys (u d l r act), tap(name) presses it once.
+ const held={};const hold=(name,down)=>{down=!!down;if(!!held[name]===down||down&&(s.paused||!s.alive))return;held[name]=down;fn(1,name,down);};
+ return {hold,tap:name=>{hold(name,false);hold(name,true);hold(name,false);},release:()=>{for(const k of Object.keys(held))hold(k,false);}};
 }
 // Rolling dt scale for slow-motion beats. Call .hit(duration,scale); .scale(dt) returns real dt * scale.
 function makeSlowmo(){let t=0,sc=1,total=0;return {hit(d=.5,k=.25){if(reduced())d*=.5;t=Math.max(t,d);total=Math.max(total,d);sc=k;},step(dt){if(t>0)t-=dt;if(t<=0)total=0;},get on(){return t>0;},get k(){return t>0?sc+(1-sc)*Math.pow(1-clamp(t/Math.max(.01,total),0,1),3):1;}};}

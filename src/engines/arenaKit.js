@@ -76,13 +76,17 @@ function arenaKeys(s){
   const [i,k]=m;if(type==='keydown'){if(ev.repeat)return;state[i][k]=1;for(const cb of downCbs)cb(i,k,ev);}else{state[i][k]=0;for(const cb of upCbs)cb(i,k,ev);}
  };
  s.on(document,'keydown',handler('keydown'));s.on(document,'keyup',handler('keyup'));s.on(window,'blur',clear);s.resetOnPause?.(clear);s.cleanup(clear);
- return {state,onDown:cb=>downCbs.push(cb),onUp:cb=>upCbs.push(cb),clear};
+ // CPU opponent (solo vs CPU): press/release player 2's keys as if typed.
+ const cpu=(k,down)=>{if(!!state[1][k]===!!down)return;state[1][k]=down?1:0;for(const cb of down?downCbs:upCbs)cb(1,k,{cpu:true,preventDefault(){}});};
+ return {state,onDown:cb=>downCbs.push(cb),onUp:cb=>upCbs.push(cb),clear,cpu};
 }
 
 // ------------------------------------------------------------------ touch: every finger belongs to the half it first touched
 // Handlers get a finger object {id,owner,x,y,sx,sy,t0,moved,...}. Up to maxFingers per player.
-function arenaTouch(s,{owner=p=>p.x<s.W/2?0:1,maxFingers=2,onDown,onMove,onUp,flickWindow=110}={}){
+function arenaTouch(s,{owner=p=>p.x<s.W/2?0:1,maxFingers=2,onDown,onMove,onUp,flickWindow=110,cpuOwner=true}={}){
  const fingers=new Map();
+ // vs CPU the human owns every touch (player 2 is driven by the CPU finger below)
+ if(s.solo?.kind==='cpu'&&cpuOwner){const base=owner;owner=p=>base(p)<0?-1:0;}
  const sample=(f,p)=>{const t=performance.now();f.samples.push({x:p.x,y:p.y,t});while(f.samples.length>2&&t-f.samples[0].t>260)f.samples.shift();};
  const velocity=(f,at=performance.now())=>{
   let first=null;for(const q of f.samples)if(at-q.t<=flickWindow){first=q;break;}
@@ -106,7 +110,13 @@ function arenaTouch(s,{owner=p=>p.x<s.W/2?0:1,maxFingers=2,onDown,onMove,onUp,fl
  s.on(s.c,'pointerup',ev=>up(ev,false));s.on(s.c,'pointercancel',ev=>up(ev,true));s.on(s.c,'lostpointercapture',ev=>up(ev,true));
  const clear=()=>{for(const f of [...fingers.values()]){fingers.delete(f.id);s.release({pointerId:f.id});f.vel={x:0,y:0,speed:0};f.held=performance.now()-f.t0;onUp?.(f,true);}};
  s.on(window,'blur',clear);s.resetOnPause?.(clear);s.cleanup(clear);
- return {fingers,clear,velocity,count};
+ // Virtual finger for the CPU (player 2): same handlers, same flick velocity.
+ let cf=null;const cpu={get active(){return cf;},
+  down(x,y){if(cf)cpu.up();cf={id:'cpu',owner:1,x,y,sx:x,sy:y,px:x,py:y,t0:performance.now(),moved:0,samples:[],slot:count(1),data:{},cpu:true};sample(cf,{x,y});fingers.set('cpu',cf);onDown?.(cf);},
+  move(x,y){if(!cf)return;cf.px=cf.x;cf.py=cf.y;cf.x=x;cf.y=y;cf.moved=Math.max(cf.moved,Math.hypot(x-cf.sx,y-cf.sy));sample(cf,{x,y});onMove?.(cf);},
+  up(){if(!cf)return;const f=cf;cf=null;fingers.delete('cpu');f.vel=velocity(f);f.held=performance.now()-f.t0;onUp?.(f,false);},
+  tap(x,y){cpu.down(x,y);cpu.up();}};
+ return {fingers,clear,velocity,count,cpu};
 }
 
 // ------------------------------------------------------------------ countdown 3-2-1-GO (canvas side)

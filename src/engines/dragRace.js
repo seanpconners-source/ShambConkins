@@ -6,6 +6,7 @@ const {clamp,seededRandom}=require("src/utils.js");
 const {voice,noise,makeShake,halfPointers,keyboard,label,SANS,rr}=require("src/engines/tarantinoKit.js");
 const {makeBits,pixText}=require("src/engines/retroKit.js");
 const {vibrate}=require("src/audio.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const QUARTER=402,REDLINE=8000,IDLE=900,RATIO=[615,330,226,170,136],ACC=[13.5,10.2,7.8,5.9,4.4],COL=['#1a1a22','#ff8a1f'],ACCENT=['#38c8ff','#ff8a1f'],CAR=['DODGE CHARGER','TOYOTA SUPRA'];
 const torque=r=>.5+.5*Math.sin(Math.PI*clamp((r-1200)/7400,0,1));
@@ -66,8 +67,16 @@ async function dualrace(s){
   label(x,`${Math.round(cr.v*2.237)} MPH`,0,R*.62,R*.12,{fill:'#fff',stroke:null,font:`800 ${R*.12}px ${SANS}`});
   for(let k=0;k<1;k++){x.fillStyle=cr.nos>0?'#38c8ff':cr.nosT>0?'#7fe8ff':'#333';rr(x,R*.62,R*.45,R*.18,R*.4,4);x.fill();pixText(x,'NOS',R*.71,R*.92,R*.022,'#fff',{align:'center'});}
   x.restore();}
+ // vs CPU: lane 2 revs into the green band, launches after a human-ish reaction, shifts near the sweet spot, one NOS
+ const cpu=isCpu(s);let cpuPlan=null;
+ function cpuThink(){const cr=cars[1];if(!cr)return;const sk=cpuSkill(s);
+  if(state==='stage'){cpuPlan={react:.11+(1-sk)*.32+s.random()*.12,shift:()=>7050+(s.random()-.5)*(1.1-sk)*2600,foul:s.random()<(1-sk)*.12,nosAt:1.2+s.random()*2.5};cpuPlan.next=cpuPlan.shift();}
+  if(!cpuPlan)return;
+  if((state==='stage'||state==='tree')&&!cr.launched){cr.rev=cr.rpm<6300;if(state==='tree'&&cpuPlan.foul&&t-tree.t0>tree.amber+1.0)launch(cr,true);}
+  if(state==='race'){if(!cr.launched&&t-tree.green>=cpuPlan.react){cr.rev=false;launch(cr,false);}
+   else if(cr.launched&&cr.et===null){if(cr.rpm>=cpuPlan.next){shift(cr);cpuPlan.next=cpuPlan.shift();}if(cr.nos>0&&t-tree.green>cpuPlan.nosAt)nos(cr);}}}
  s.frame(dt=>{
-  const W=s.W,H=s.H;anim+=dt;shake.step(dt);bits.step(dt);for(const m of msg)if(m)m.t-=dt;
+  const W=s.W,H=s.H;anim+=dt;shake.step(dt);bits.step(dt);for(const m of msg)if(m)m.t-=dt;if(cpu)cpuThink();
   if(state==='stage'||state==='tree'||state==='race'){t+=dt;for(const cr of cars)stepCar(cr,dt);}
   if(state==='stage'){if(t>1.2){state='tree';tree.t0=t;}}
   if(state==='tree'){const k=t-tree.t0;if(k>=tree.amber+1.2){state='race';tree.green=t;voice(1046,.3,.06,'square');}else{const n=Math.floor((k-tree.amber)/.4);if(k>tree.amber&&n!==tree.n&&n<3){tree.n=n;voice(523,.12,.05,'square');}}}

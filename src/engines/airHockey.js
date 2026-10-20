@@ -2,6 +2,7 @@ const {clamp}=require("src/utils.js");
 const {sound, vibrate}=require("src/audio.js");
 const {ownedPointers}=require("src/engines/duelControls.js");
 const {circle}=require("src/engines/session.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const HOCKEY={width:680,height:420,puckRadius:10,paddleRadius:27,goalHalf:70,rail:10,maxPuckSpeed:1000,maxPaddleSpeed:760};
 const colors=['#4d9aff','#ff78b4'];
 function createHockeyState(W=680,H=420){return {paddles:[100,W-100].map(x=>({x,y:H/2,oldX:x,oldY:H/2,vx:0,vy:0,target:{x,y:H/2}})),puck:{x:W*.35,y:H/2,vx:0,vy:0},events:[],rally:0};}
@@ -58,7 +59,7 @@ async function playAirHockey(s){
  const clear=()=>{for(const k of keys)for(const key of Object.keys(k))k[key]=false;for(const a of state.paddles)a.target={x:a.x,y:a.y};};s.resetOnPause?.(clear);s.on(window,'blur',clear);
  s.hint(`Both humans drag a paddle on their half. Bank off the rails; strike the puck to serve. First to 7 or most in 60s. ${s.inputMode==='touch'?'Touch compatibility controls active.':''}`);
  if(!await s.pass(0,`${s.players[0].name} plays ${portrait?'TOP':'LEFT'}; ${s.players[1].name} plays ${portrait?'BOTTOM':'RIGHT'}. Hold one finger each and move your own paddle. After a goal, the other player gets the puck. No automated opponent.`,'Both ready — air hockey!'))return;
- const trail=[],sparks=[];
+ const trail=[],sparks=[],cpu=isCpu(s),cpuAim={x:0,y:0};
  s.frame(dt=>{
   const nextPortrait=s.H>s.W,nextW=nextPortrait?s.H:s.W,nextH=nextPortrait?s.W:s.H;if(nextW!==W||nextH!==H||nextPortrait!==portrait){const sx=nextW/W,sy=nextH/H;for(const a of state.paddles){a.x*=sx;a.y*=sy;a.oldX=a.x;a.oldY=a.y;a.target={x:a.x,y:a.y};}state.puck.x*=sx;state.puck.y*=sy;W=nextW;H=nextH;portrait=nextPortrait;trail.length=0;sparks.length=0;s.resetInputs?.();}
   elapsed+=dt;left-=dt;soundDelay=Math.max(0,soundDelay-dt);
@@ -67,6 +68,15 @@ async function playAirHockey(s){
    // Keyboard controls follow the displayed table after its portrait rotation.
    if(dx||dy)hockeyTarget(state,i,{x:a.x+(portrait?dy:dx),y:a.y+(portrait?-dx:dy)},W,H);
   }
+  // vs CPU: the right paddle guards its goal, gets behind a puck on its half and drives it at the left goal
+  if(cpu){const a=state.paddles[1],pk=state.puck,sk=cpuSkill(s),R=HOCKEY.paddleRadius;let tx,ty;
+   if(ready>0||pk.x<W/2-30&&pk.vx<=40){tx=W-85;ty=H/2+(pk.y-H/2)*.45;}
+   else if(pk.vx>140&&a.x<pk.x+R){tx=W-62;ty=clamp(pk.y+pk.vy*(W-62-pk.x)/pk.vx,H/2-HOCKEY.goalHalf-10,H/2+HOCKEY.goalHalf+10);} // back to the goal mouth
+   else{const dx=pk.x,dy=pk.y-H/2,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;
+    if(a.x>pk.x+6){tx=pk.x-ux*R*.7;ty=pk.y-uy*R*.7;}else{tx=pk.x+ux*(R+16);ty=pk.y+uy*(R+16)+(a.y<pk.y?-R:R);}}
+   cpuAim.x+=(s.random()-.5)*(1-sk)*90*dt;cpuAim.y+=(s.random()-.5)*(1-sk)*90*dt;cpuAim.x*=.97;cpuAim.y*=.97;
+   const cur=a.target,step=(240+sk*560)*dt,gx=tx+cpuAim.x-cur.x,gy=ty+cpuAim.y-cur.y,gd=Math.hypot(gx,gy);
+   hockeyTarget(state,1,gd>step?{x:cur.x+gx/gd*step,y:cur.y+gy/gd*step}:{x:tx+cpuAim.x,y:ty+cpuAim.y},W,H);}
   if(ready>0){ready=Math.max(0,ready-dt);stepAirHockey({...state,puck:{...state.puck,scored:true}},dt,W,H);if(!ready&&state.puck.scored)hockeyServe(state,serving,W,H);}
   else{
    const goal=stepAirHockey(state,dt,W,H);

@@ -7,6 +7,7 @@ const {voice,noise,makeShake,halfPointers,keyboard}=require("src/engines/taranti
 const {drawDigits}=require("src/engines/atariPong.js");
 const {scanlines,vignette}=require("src/engines/retroKit.js");
 const {vibrate}=require("src/audio.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const MAZES=[['....................','....................','..##............##..','..#..............#..','.......##..##.......','...#....#..#....#...','...#....#..#....#...','.......##..##.......','..#..............#..','..##............##..','....................','....................'],
  ['....................','.........##.........','...#............#...','...#....####....#...','...#............#...','......#......#......','......#......#......','...#............#...','...#....####....#...','...#............#...','.........##.........','....................']];
@@ -30,8 +31,19 @@ async function tank(s){
   up:(i,r,{cancelled})=>{if(!cancelled&&r.dist<14&&performance.now()-r.t0<300)fire(tanks[i]);}});
  keyboard(s,(i,name,down)=>{keys[i][name]=down;if(name==='act'&&down)fire(tanks[i]);});
  s.hint('Hold and drag on your own side like a joystick: the tank turns toward your drag and rolls forward. Tap to fire (or tap a second finger while driving). Shells ricochet twice. First to 7 hits. Keys: P1 WASD + Space, P2 arrows + Enter.');
+ // vs CPU: tank 2 follows a breadth-first path through the maze, turns to face you when the line is clear and fires
+ const cpu=isCpu(s);let cpuT=0,cpuNext=null,cpuAim=0;
+ const clearLine=(a,b)=>{const n=Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/3);for(let q=1;q<n;q++)if(wallAt(a.x+(b.x-a.x)*q/n,a.y+(b.y-a.y)*q/n))return false;return true;};
+ function cpuPath(me,o){const cell=p=>[Math.floor(p.y/CELL),Math.floor(p.x/CELL)],[sr,sc]=cell(me),[gr,gc]=cell(o),key=(r,c)=>r*cols+c,prev=new Map([[key(sr,sc),-1]]),q=[[sr,sc]];
+  while(q.length){const [r,c]=q.shift();if(r===gr&&c===gc)break;for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1]]){const nr=r+dr,nc=c+dc;if(nr<0||nc<0||nr>=rows||nc>=cols||grid[nr][nc]||prev.has(key(nr,nc)))continue;prev.set(key(nr,nc),key(r,c));q.push([nr,nc]);}}
+  let k=key(gr,gc);if(!prev.has(k))return null;const path=[];while(k!==-1&&k!==key(sr,sc)){path.unshift(k);k=prev.get(k);}const n=path[Math.min(1,path.length-1)];return n===undefined?null:{x:(n%cols+.5)*CELL,y:(Math.floor(n/cols)+.5)*CELL};}
+ function cpuThink(dt){const me=tanks[1],o=tanks[0],k=keys[1];k.l=k.r=k.u=k.d=false;if(state!=='play'||me.spin>0)return;const sk=cpuSkill(s);
+  cpuT-=dt;if(cpuT<=0){cpuT=.3;cpuNext=cpuPath(me,o);cpuAim=(s.random()-.5)*(1-sk)*.22;}
+  const see=clearLine(me,o),tgt=see?o:cpuNext||o,want=Math.atan2(tgt.y-me.y,tgt.x-me.x)+(see?cpuAim:0);let da=want-me.a;da=Math.atan2(Math.sin(da),Math.cos(da));
+  k.r=da>.12;k.l=da<-.12;k.u=!see&&Math.abs(da)<.9||see&&Math.hypot(o.x-me.x,o.y-me.y)>34&&Math.abs(da)<.5;
+  if(see&&Math.abs(da)<.08+(1-sk)*.08&&!me.shell&&s.random()<dt*(2+sk*6)){fire(me);cpuAim=(s.random()-.5)*(1-sk)*.22;}}
  function step(dt){
-  const H=rows*CELL;
+  const H=rows*CELL;if(cpu)cpuThink(dt);
   for(const tk of tanks){tk.fireCD=Math.max(0,tk.fireCD-dt);
    if(tk.spin>0){tk.spin-=dt;tk.a+=dt*14;const nx=tk.x-Math.cos(tk.hitA)*16*dt,ny=tk.y-Math.sin(tk.hitA)*16*dt;if(!blocked(nx,tk.y))tk.x=nx;if(!blocked(tk.x,ny))tk.y=ny;continue;}
    let turn=0,drive=0;const k=keys[tk.i];turn=(k.r?1:0)-(k.l?1:0);drive=(k.u?1:0)-(k.d?1:0)*.6;
