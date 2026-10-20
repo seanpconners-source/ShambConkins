@@ -4,6 +4,7 @@
 const {clamp,seededRandom}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const {label,rr,makeFx,makeShake,sfx,halfPointers,keyboard,voice,noise}=require("src/engines/tarantinoKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const ROUNDS=[
  {n:7,tells:['eye'],title:'ROUND 1 · THE EYE',tip:'Infiltrators’ eyes glint red.'},
  {n:8,tells:['chrome'],title:'ROUND 2 · THE SKIN',tip:'Damaged skin flickers chrome.'},
@@ -32,7 +33,7 @@ async function skynetid(s){
  const L={};function layout(){const W=s.W,H=s.H,top=H*.16,bot=H*.92;Object.assign(L,{W,H,top,bot,rowH:(bot-top)/5,u:clamp(Math.min(W/12,(bot-top)/7),22,64)});}
  const wpos=w=>{const y=L.top+(w.row+.75)*L.rowH,hop=w.flinch>0?-Math.sin(w.flinch/.5*Math.PI)*L.u*.35:0,bob=Math.abs(Math.sin(w.phase*2))*L.u*.12*w.bob;return {x:w.x*L.W,y:y-bob+hop};};
 
- function tap(i,p){if(phase!=='play'||s.paused)return;if(lock[i]>0){sfx.buzz();return;}if(i===0?p.x>L.W/2:p.x<L.W/2)return;
+ function tap(i,p){if(phase!=='play'||s.paused)return;if(lock[i]>0){sfx.buzz();return;}if(!cpu&&(i===0?p.x>L.W/2:p.x<L.W/2))return;
   let best=null,bd=1e9;for(const w of walkers){if(w.dead)continue;const q=wpos(w),d=Math.hypot(p.x-q.x,p.y-(q.y-L.u*.9));if(d<bd){bd=d;best=w;}}
   fx.ring(p.x,p.y,{r:6,grow:160,life:.3,color:i?'#ff9fc6':'#78b6ff',w:2});
   if(!best||bd>L.u*1.3){sfx.click();return;}
@@ -42,6 +43,10 @@ async function skynetid(s){
   else{best.dead=1;best.found=i;score[i]=Math.max(0,score[i]-1);s.setScores(score);lock[i]=1.5;sfx.groan();shake.kick(6);fx.splat(q.x,q.y-L.u,{n:14,speed:200,color:'#c4161c',size:4});fx.pop(q.x,q.y-L.u*2.1,'HUMAN! -1',{color:'#ff6b6b',size:20});s.react(i,'sad');vibrate([20,30,20]);}
  }
  halfPointers(s,{down:(i,r)=>tap(i,r)});
+ // vs CPU: the T-800 needs a few seconds to spot the tell (less on Hard) and sometimes shoots a human
+ const cpu=isCpu(s);let cpuSpot=null,cpuRound=-1;
+ function cpuThink(dt){if(phase!=='play'){return;}const sk=cpuSkill(s);if(cpuRound!==ri){cpuRound=ri;cpuSpot=2.2+(1-sk)*5.5+Math.random()*2.5;}cpuSpot-=dt;if(cpuSpot>0||lock[1]>0)return;
+  const live=walkers.filter(w=>!w.dead),pool=Math.random()<(1-sk)*.25?live.filter(w=>!w.machine):live.filter(w=>w.machine),w=pool[Math.floor(Math.random()*pool.length)];cpuSpot=1.2+(1-sk)*2+Math.random();if(w){const q=wpos(w);tap(1,{x:q.x,y:q.y-L.u*.9});}}
 
  function drawWalker(w,now){const {x:px,y:py}=wpos(w),u=L.u,dir=w.dir,dogNear=w.flinch>0;
   if(w.dead&&!w.machine){x.globalAlpha=.35;}
@@ -70,7 +75,7 @@ async function skynetid(s){
  s.hint('Both hunt at once. Tap a walker on YOUR half (left = player 1, right = player 2). A Terminator is +2; a human is −1 and locks your scanner for 1.5 seconds. Each round teaches a tell: red eye glint, chrome skin flicker, not flinching when the dog barks, a perfectly even march. Seven rounds.');
  if(!await s.pass(0,'Skynet has sent infiltrators into the crowd. Each round shows a new tell. Tap the Terminator when it walks through YOUR half of the screen. Shoot a human and your scanner locks.','Both ready — scan',{countdown:3}))return;
  startRound();
- s.frame(dt=>{layout();t+=dt;pt+=dt;for(let i=0;i<2;i++)lock[i]=Math.max(0,lock[i]-dt);
+ s.frame(dt=>{layout();t+=dt;pt+=dt;if(cpu)cpuThink(dt);for(let i=0;i<2;i++)lock[i]=Math.max(0,lock[i]-dt);
   if(phase==='card'){if(pt>2.1){phase='play';pt=0;t=0;sfx.ding(660);}}
   else if(phase==='play'||phase==='reveal'){
    if(phase==='play'){if(barks.length&&barks[0]<=t){barks.shift();if(R.tells.includes('dog')){barkT=t;voice(420,.08,.06,'square');voice(360,.1,.06,'square',{delay:.12});for(const w of walkers)if(!w.machine&&!w.dead)w.flinch=.5;}}

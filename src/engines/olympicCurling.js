@@ -6,6 +6,7 @@
 const {clamp}=require("src/utils.js");
 const {voice,noise,makeShake,label,SANS,rr}=require("src/engines/tarantinoKit.js");
 const {vibrate}=require("src/audio.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const SW=34,SL=96,HOUSE={x:17,y:18},RINGS=[13,9,4.6,1.8],SR=2.5,speedFor=w=>9+w*9.5,ENDS=2,PER=4,COL=['#e8c41e','#d8323a'];
 
@@ -17,7 +18,13 @@ async function curling(s){
  function newStone(){cur={x:SW/2,y:SL-8,vx:0,vy:0,o:turn,spin:spin[turn],moving:false,rot:0};}
  function startEnd(){stones=[];thrown=0;turn=end%2;newStone();state='aim';banner={text:`END ${end+1} OF ${ENDS}`,t:1.6};}
  function chipRect(){const W=s.W,H=s.H;return {x:W-74,y:H-64,w:62,h:50};}
- s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||!view)return;ev.preventDefault();const p=s.pointer(ev);
+ // vs CPU: skip 2 simulates its own stone's curl and slow-down to pick the spin, line and weight that stop on the button (error on Easy)
+ const cpu=isCpu(s);let cpuWait=0;
+ function cpuThrow(dt){if(state!=='aim'||turn!==1){cpuWait=0;return;}cpuWait+=dt;if(cpuWait<1.3)return;cpuWait=-99;const sk=cpuSkill(s);let best=null,bd=1e9;
+  const land=(sp,dx,w)=>{const dy=-Math.sqrt(1-dx*dx),v0=speedFor(w);let x0=SW/2,y0=SL-8,vx=dx*v0,vy=dy*v0;for(let k=0;k<1500;k++){const h=1/60,v=Math.hypot(vx,vy);if(v<.25)break;const nv=Math.max(0,v-1.55*h);vx*=nv/v;vy*=nv/v;const curl=sp*clamp(3.2/(v+2),0,1.1);vx+=-vy/v*curl*h*.9;x0+=vx*h;y0+=vy*h;if(x0<SR||x0>SW-SR||y0<-2)return null;}return {x:x0,y:y0};};
+  for(const sp of [1,-1])for(let dx=-.3;dx<=.3;dx+=.025)for(let w=.25;w<=1;w+=.025){const L=land(sp,dx,w);if(!L)continue;const d=Math.hypot(L.x-HOUSE.x,L.y-HOUSE.y);if(d<bd){bd=d;best={sp,dx,w};}}
+  if(!best)best={sp:1,dx:0,w:.7};const e=1-sk,dx=clamp(best.dx+(Math.random()-.5)*e*.06,-.6,.6),w=clamp(best.w+(Math.random()-.5)*e*.08,0,1),v0=speedFor(w);spin[1]=best.sp;cur.spin=best.sp;cur.vx=dx*v0;cur.vy=-Math.sqrt(1-dx*dx)*v0;cur.moving=true;state='slide';voice(160,.3,.04,'sine',{slide:.7});}
+ s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||!view)return;ev.preventDefault();const p=s.pointer(ev);if(cpu&&turn===1)return;
   if(state==='aim'){const r=chipRect();if(p.x>=r.x&&p.y>=r.y&&p.x<=r.x+r.w&&p.y<=r.y+r.h){spin[turn]*=-1;cur.spin=spin[turn];voice(900,.04,.03,'sine');return;}drag={id:ev.pointerId,sx:p.x,sy:p.y,x:p.x,y:p.y};s.capture(ev);}
   else if(state==='slide'){rub={id:ev.pointerId,x:p.x,y:p.y,dist:0};s.capture(ev);}});
  s.on(c,'pointermove',ev=>{const p=s.pointer(ev);if(drag&&ev.pointerId===drag.id){drag.x=p.x;drag.y=p.y;}if(rub&&ev.pointerId===rub.id){const d=Math.hypot(p.x-rub.x,p.y-rub.y);rub.dist+=d;rub.x=p.x;rub.y=p.y;sweep=Math.min(1,sweep+d/90);}});
@@ -37,7 +44,7 @@ async function curling(s){
  }
  function scoreEnd(){const d=st=>Math.hypot(st.x-HOUSE.x,st.y-HOUSE.y);const inHouse=stones.filter(st=>d(st)<=RINGS[0]+SR).sort((a,b)=>d(a)-d(b));if(!inHouse.length)return {w:-1,n:0};const w=inHouse[0].o,best=Math.min(...inHouse.filter(st=>st.o!==w).map(d),99);const n=inHouse.filter(st=>st.o===w&&d(st)<best).length;return {w,n};}
  s.frame(dt=>{
-  t+=dt;shake.step(dt);if(banner){banner.t-=dt;if(banner.t<=0&&state!=='over')banner=null;}sweep=Math.max(0,sweep-dt*1.4);
+  t+=dt;shake.step(dt);if(banner){banner.t-=dt;if(banner.t<=0&&state!=='over')banner=null;}sweep=Math.max(0,sweep-dt*1.4);if(cpu)cpuThrow(dt);
   if(state==='slide'){physics(dt);if(sweep>.2&&Math.random()<dt*20)noise(.05,.02,{type:'highpass',f0:3000});
    if(![...stones,cur].some(st=>st&&st.moving)){if(!cur.out&&cur.y<SL-26)stones.push(cur);else if(!cur.out&&cur.y>=SL-26){cur.out=true;banner={text:'HOGGED!',t:1.2};}thrown++;cur=null;
     if(thrown>=PER*2){const r=scoreEnd();endPts=r;if(r.w>=0){score[r.w]+=r.n;s.setScores(score);s.react?.(r.w,'win',2);}state='endscore';banner={text:r.w<0?'BLANK END':`${s.players[r.w].name.toUpperCase()} SCORES ${r.n}`,t:2.6};}

@@ -6,6 +6,7 @@
 //           Double cards are worth 2. A Lord Licorice card means hands off: whoever taps loses 2. Twenty cards.
 const {clamp}=require("src/utils.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,FONT,PCOL,settle,Countdown}=require("src/engines/arenaKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const COLORS=[['red','#ee4b5b'],['purple','#a85bd6'],['yellow','#f6d93a'],['blue','#3a8ff0'],['orange','#f4902c'],['green','#4ccc6a']];
 const INK='#5a1f4a',CATCH_TIME=45,DASH_CARDS=20;
@@ -46,9 +47,13 @@ async function candyLand(s){
   const fingers=[null,null];
   arenaTouch(s,{owner,maxFingers:1,onDown:f=>{fingers[f.owner]={f,start:baskets[f.owner].x};},onMove:f=>{const fi=fingers[f.owner];if(!fi)return;const v=vp(f.owner);baskets[f.owner].x=clamp(fi.start+(f.x-f.sx)/v.w*1.25,.06,.94);},onUp:f=>{fingers[f.owner]=null;}});
   s.debug={get phase(){return phase;},baskets,fields,score,setClock(v){clock=v;}};
+  // vs CPU: basket 2 slides under the best candy about to land (card colour or gold) and away from licorice and wrong colours
+  const cpu=isCpu(s);let cpuErr=0;
+  const cpuCatch=dt=>{const b=baskets[1],sk=cpuSkill(s),spd=(b.stick>0?.35:1.1)*(.7+sk*.5)*dt;let best=null,bv=-1e9;for(const cn of fields[1]){if(cn.y>.9||cn.y<.15)continue;const val=cn.kind==='gold'?5:cn.kind==='licorice'?-3:cn.color===card.color?1:-1.2,dist=Math.abs(cn.x-b.x),v=val*2-dist*3+cn.y*2;if(val>0&&v>bv){bv=v;best=cn;}}
+   if(Math.random()<dt*2)cpuErr=(Math.random()-.5)*(1-sk)*.18;let tx=best?best.x+cpuErr:b.x;for(const cn of fields[1]){const bad=cn.kind==='licorice'||cn.kind!=='gold'&&cn.color!==card.color;if(bad&&cn.y>.68&&cn.y<.9&&Math.abs(cn.x-b.x)<.13&&Math.random()<.5+sk*.5){tx=b.x+(cn.x>b.x?-.25:.25);break;}}for(const cn of fields[1]){if(cn.y<.55||cn.y>.9)continue;const val=cn.kind==='licorice'?-3:cn.kind==='gold'||cn.color===card.color?1:-1;if(val<0&&Math.abs(cn.x-tx)<.09&&Math.random()<.4+sk*.6)tx+=cn.x<tx?.12:-.12;}b.x=clamp(b.x+clamp(tx-b.x,-spd,spd),.06,.94);};
   s.frame((dt)=>{t+=dt;fx.update(dt);
    if(phase==='count'){if(!cd.update(dt))phase='play';}
-   else if(phase==='play'){clock+=dt;cardT+=dt;
+   else if(phase==='play'){clock+=dt;cardT+=dt;if(cpu)cpuCatch(dt);
     if(cardT>4.5){cardT=0;cardIdx=(cardIdx+1)%cards.length;card=cards[cardIdx];jingle([659,880],{step:.06,type:'triangle',vol:.03});}
     spawnT-=dt;const rate=.55-Math.min(.25,clock/CATCH_TIME*.25);if(spawnT<=0){spawnT=rate;const sp=seq[spawnIdx++%seq.length];for(let i=0;i<2;i++)fields[i].push({...sp,y:-.08,taken:false});}
     for(let i=0;i<2;i++){const b=baskets[i],k=kb.state[i];if(b.stick>0)b.stick-=dt;const spd=b.stick>0?.35:1.1;if(k.l)b.x=clamp(b.x-spd*dt,.06,.94);if(k.r)b.x=clamp(b.x+spd*dt,.06,.94);b.flash=Math.max(0,b.flash-dt);
@@ -94,9 +99,12 @@ async function candyLand(s){
  arenaTouch(s,{owner,maxFingers:2,onDown:f=>{const b=buttons(f.owner).find(b=>f.x>=b.x&&f.x<=b.x+b.w&&f.y>=b.y&&f.y<=b.y+b.h);if(b)press(f.owner,b.k);}});
  s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat)return;const k=ev.key;const p1='123456'.indexOf(k),p2='7890-='.indexOf(k);if(p1>=0){ev.preventDefault();press(0,p1);}else if(p2>=0){ev.preventDefault();press(1,p2);}});
  s.debug={get phase(){return phase;},get card(){return card;},get state(){return state;},score,press};
+ // vs CPU: player 2 taps the matching colour after a reaction delay; hands off the licorice (mostly)
+ const cpuD=isCpu(s);let cpuReact=null,cpuIdx=-1;
+ const cpuDash=dt=>{if(state!=='show'||lock[1]>0)return;const sk=cpuSkill(s);if(cpuIdx!==idx){cpuIdx=idx;cpuReact=.38+(1-sk)*.55+Math.random()*.2;}cpuReact-=dt;if(cpuReact>0)return;cpuReact=9;if(card.lic){if(Math.random()<(1-sk)*.15)press(1,0);return;}press(1,Math.random()<(1-sk)*.12?(card.color+1)%6:card.color);};
  s.frame(dt=>{t+=dt;fx.update(dt);lock[0]=Math.max(0,lock[0]-dt);lock[1]=Math.max(0,lock[1]-dt);flashT=Math.max(0,flashT-dt);
   if(phase==='count'){if(!cd.update(dt)){phase='play';next();}}
-  else if(phase==='play'){if(state==='wait'){waitT-=dt;if(waitT<=0){state='show';shown=0;snd(520,.06,{type:'square',vol:.03});}}else if(state==='show'){shown+=dt;if(card.lic&&shown>1.6){state='done';fx.pop(s.W/2,s.H/2-40,'NOBODY TOUCHED IT',{color:'#fff',stroke:INK,size:20});setTimeout(next,600);}}}
+  else if(phase==='play'){if(cpuD)cpuDash(dt);if(state==='wait'){waitT-=dt;if(waitT<=0){state='show';shown=0;snd(520,.06,{type:'square',vol:.03});}}else if(state==='show'){shown+=dt;if(card.lic&&shown>1.6){state='done';fx.pop(s.W/2,s.H/2-40,'NOBODY TOUCHED IT',{color:'#fff',stroke:INK,size:20});setTimeout(next,600);}}}
   else{endT+=dt;if(endT>2.8){s.finish(score,`Color Card Dash: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}
   s.setScores(score);x.fillStyle='#fff';x.fillRect(0,0,s.W,s.H);
   for(let i=0;i<2;i++){const v=vp(i);x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();candyBackdrop(x,v,t);

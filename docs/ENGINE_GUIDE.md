@@ -76,6 +76,10 @@ On a solo launch `s.solo={kind,who,level,skill,best}`; `s.players[0]` is the hum
   `soloTarget` or `soloGoal` to the config when "lasting the clock" isn't the right test), and any other P1-then-P2 engine
   can be listed as `'turns'`: the launcher reruns it per round and `s.pass(1,…)` ends the round, so keep `s.setScores` current.
 * CPU: scale the opponent with `cpuSkill(s)` (0.35 easy / 0.65 normal / 0.9 hard) and `s.finish([me,cpu],label)` as usual.
+  `src/engines/cpuKit.js` has the tools: `cpuHotseat(s,{isTurn,think})` for turn-based games (hand-off cards are skipped and
+  `think()` plays the CPU's move through your own move function), `negamax` for board games. In real-time games add a small
+  per-frame brain that drives player 2 through the same input kit the human uses (`kb.cpu`, `keyboard().hold/tap`, `fingers.cpu`,
+  `keys.cpu`, `controls.cpu`); vs CPU the kits already route every human touch to player 1. Block human input on the CPU's turn.
 * Recruits go to `s.gameRecruits[0]` / `s.broforceRecruits[0]` as in 2P; `settleSolo` (gameLauncher) records the best run in
   `profile.soloBest[id]` and recruits like an arcade win. Test with `node tests/solo.mjs <id-regex>`.
 

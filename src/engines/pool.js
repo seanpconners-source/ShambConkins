@@ -2,6 +2,7 @@ const {clamp}=require("src/utils.js");
 const {circle, COLORS}=require("src/engines/session.js");
 const {sound}=require("src/audio.js");
 const {worldView}=require("src/engines/duelControls.js");
+const {isCpu,cpuSkill,cpuHotseat}=require("src/engines/cpuKit.js");
 const POOL_TABLE = { left: 40, right: 640, top: 40, bottom: 338, pocketRadius: 18,
  pockets: [{ x: 40, y: 40 }, { x: 340, y: 40 }, { x: 640, y: 40 }, { x: 40, y: 338 }, { x: 340, y: 338 }, { x: 640, y: 338 }] };
 
@@ -80,6 +81,14 @@ async function pool(s) {
   if (!await s.pass(player, message || 'Five shots each, alternating. Drag backward from the cue ball and release. Every object ball +10; the eight ball +15. A scratch costs 10.')) return;
   phase = 'aim';
  }
+ // vs CPU: the shark takes the easiest ghost-ball shot (cue → object ball → pocket, cut under ~70°) with aim error on Easy
+ const cpu = isCpu(s);
+ if (cpu) cpuHotseat(s, { isTurn: () => actor === 1 && phase === 'aim', delay: 900, think: () => {
+  const sk = cpuSkill(s), R = 2 * cue.r; let best = null, bv = -1e9;
+  for (const b of balls.slice(1)) { if (b.pocketed) continue; for (const P of table.pockets) { const dx = P.x - b.x, dy = P.y - b.y, d = Math.hypot(dx, dy), gx = b.x - dx / d * R, gy = b.y - dy / d * R, ax = gx - cue.x, ay = gy - cue.y, ad = Math.hypot(ax, ay), cut = Math.acos(clamp((ax * dx + ay * dy) / (ad * d), -1, 1));
+   if (cut > 1.2) continue; const v = -d - ad * .6 - cut * 120 + (b.id === 8 ? 25 : 0); if (v > bv) { bv = v; best = { a: Math.atan2(ay, ax), f: clamp((ad + d) * .17 + 30, 40, 125) }; } } }
+  if (!best) best = { a: Math.random() * 6.283, f: 90 };
+  fire(best.a + (Math.random() - .5) * (1 - sk) * .16, best.f); } });
  async function settled() {
   if (phase !== 'rolling' || !s.alive) return;
   phase = 'handoff';
@@ -93,7 +102,7 @@ async function pool(s) {
  const wp = ev => view.toWorld(s.pointer(ev));
  const aimFrom = (d, point) => { const dx = d.from.x - point.x, dy = d.from.y - point.y; angle = Math.atan2(dy, dx); power = clamp(Math.hypot(dx, dy), 18, 135); return Math.hypot(dx, dy); };
  s.on(c, 'pointerdown', ev => {
-  if (!aimAllowed() || drag) return;
+  if (!aimAllowed() || drag || cpu && actor === 1) return;
   const point = wp(ev);
   ev.preventDefault(); s.capture(ev); drag = { pointer: ev.pointerId, x: point.x, y: point.y, from: Math.hypot(point.x - cue.x, point.y - cue.y) <= 48 ? cue : { x: point.x, y: point.y } };
  });

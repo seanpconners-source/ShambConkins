@@ -6,6 +6,7 @@ const {directionGestures, gestureGrid, drawDirectionFeedback}=require("src/engin
 const {arenaGestures,gestureHint}=require("src/engines/arenaGestures.js");
 const {makePacArena, pacNeighbor, pacNext}=require("src/engines/mobile.js");
 const {airshootout:playShootout, shootoutStep:stepShootout}=require("src/engines/hockeyShootout.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const airshootout=playShootout;
 const shootoutStep=stepShootout;
 
@@ -120,7 +121,13 @@ async function pacmaze(s) {
  s.hint('Shared maze, separate lives and power-ups. P1 starts a finger on the left; P2 on the right. Swipe or keep dragging to turn; directions follow the screen. P1 WASD; P2 arrows. Most points in 60s wins.');
  if(!await s.pass(0,'Race through one maze together. Collect pellets before your opponent does. Power pellets protect only the player who ate them. You each have three lives.','Both ready — chomp!'))return;
  let left=60;
- s.frame(dt=>{left-=dt;
+ // vs CPU: chomper 2 paths to the nearest pellet (a power pellet first if ghosts are close), around ghosts, and hunts them while powered
+ const cpu=isCpu(s);let cpuT=0;
+ function cpuPac(dt){const p=a.actors[1],sk=cpuSkill(s);if(!p.lives)return;cpuT-=dt;if(cpuT>0)return;cpuT=.06+(1-sk)*.14;const N=arena.N,M=arena.M,live=a.ghosts.filter(g=>!(g.returning>0)),near=k=>live.some(g=>{const d=Math.abs(g.pos%N-k%N)+Math.abs(Math.floor(g.pos/N)-Math.floor(k/N));return d<=(sk>.5?2:1);});
+  const scary=p.powered<=0&&Math.random()<.5+sk*.5,goal=p.powered>1?k=>live.some(g=>g.pos===k):scary&&live.some(g=>near(p.pos))&&a.power.size?k=>a.power.has(k):k=>a.pellets.has(k);
+  const prev=new Map([[p.pos,-1]]),q=[p.pos];let hit=null;while(q.length){const k=q.shift();if(k!==p.pos&&goal(k)){hit=k;break;}const r=Math.floor(k/N),cc=k%N;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){let nc=cc+dx;const nr=r+dy;if(nc<0)nc=N-1;if(nc>=N)nc=0;if(nr<0||nr>=M)continue;const n=nr*N+nc;if(arena.walls.has(n)||prev.has(n)||scary&&near(n))continue;prev.set(n,k);q.push(n);}}
+  if(hit===null)return;let st=hit;while(prev.get(st)!==p.pos)st=prev.get(st);const r0=Math.floor(p.pos/N),c0=p.pos%N,r1=Math.floor(st/N),c1=st%N;let dx=c1-c0;if(Math.abs(dx)>1)dx=-Math.sign(dx);p.next=[dx,r1-r0];}
+ s.frame(dt=>{left-=dt;if(cpu)cpuPac(dt);
   for(const e of pacDuelStep(a,dt)){if(e.type==='pickup'){pickupSound(s);}else if(e.type==='hurt'){sound('lose');s.react?.(e.owner,'sad');vibrate(15);}else{sound('win');if(e.owner!==undefined)s.react?.(e.owner,'win');}}
   const W=s.W,H=s.H,{ox,oy,sx,sy}=gestureGrid(W,H,arena.N,arena.M),cell=Math.min(sx,sy),headSize=Math.max(32,Math.min(54,cell*1.45));x.fillStyle='#101731';x.fillRect(0,0,W,H);
   for(let row=0;row<arena.M;row++)for(let col=0;col<arena.N;col++){const k=row*arena.N+col,px=ox+col*sx,py=oy+row*sy;

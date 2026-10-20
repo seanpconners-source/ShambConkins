@@ -1,5 +1,6 @@
 const {clamp,seededRandom}=require("src/utils.js");
 const {PCOL,PDARK,PLIGHT,Fx,arenaKeys,arenaTouch,Countdown,banner,outlined,rr,snd,noise,jingle,gestureHint,settle,mmss}=require("src/engines/arenaKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 // Bubble Battle (after Puzzle Bobble): two mirrored bubble fields with identical bubbles. Drag to aim, release to fire.
 // Match three or more to pop, orphans drop and send garbage to the other side. Overflow loses; 90 s decided by score.
 const COL=['#ff5a5a','#4fd06a','#4a90ff','#ffd84d','#b47bff','#ff9a3d'],COL_D=['#a82a2a','#1f8a3a','#1c4fb0','#b08a14','#7141c4','#b45a14'];
@@ -123,7 +124,13 @@ async function bubble(s){
   for(const p of ps){if(p.dead)continue;const g=geo(p);pushRow(p,g,row,0);checkLose(p,g);}
   fx.pop(W/2,Math.min(46,H*.08)+30,'NEW ROW!',{size:Math.max(14,W*.03),color:'#ffb347'});snd(150,.25,{type:'square',to:80,vol:.05});
  };
- const update=dt=>{
+ // vs CPU: shooter 2 picks the lowest exposed bubble of its colour in the biggest group, swaps if the next bubble is better, and fires
+ const cpu=isCpu(s);let cpuT=1.2;
+ function cpuThink(dt){const p=ps[1],sk=cpuSkill(s);if(phase!=='play'||p.dead||p.flying)return;cpuT-=dt;if(cpuT>0)return;cpuT=.55+(1-sk)*.9+Math.random()*.3;const g=geo(p);
+  const pickFor=col=>{let best=null,bv=-1;for(let r=0;r<p.grid.length;r++)for(let cc=0;cc<maxC(p,g,r);cc++){const o=getC(p,r,cc);if(!o||o.c!==col)continue;const open=nbrs(p,g,r,cc).some(([a,b])=>!getC(p,a,b)&&a>r)||r===p.grid.findLastIndex(row=>row.some(Boolean));if(!open)continue;let n=0;for(const [a,b] of nbrs(p,g,r,cc))if(getC(p,a,b)?.c===col)n++;const q=cellXY(p,g,r,cc);let clear=true;for(let t=.05;t<.92&&clear;t+=.05){const sx=g.cx+(q.x-g.cx)*t,sy=g.yL+(q.y-g.yL)*t;for(let r2=0;r2<p.grid.length&&clear;r2++)for(let c2=0;c2<maxC(p,g,r2);c2++){if(r2===r&&c2===cc||!getC(p,r2,c2))continue;const q2=cellXY(p,g,r2,c2);if(Math.hypot(q2.x-sx,q2.y-sy)<g.r*1.7){clear=false;break;}}}if(!clear&&Math.random()<.5+sk*.5)continue;const v=n*3+r+Math.random()*(1-sk)*4;if(v>bv){bv=v;best={r,cc};}}return best?{...best,v:bv}:null;};
+  let t=pickFor(p.cur);const alt=pickFor(p.nxt);if(alt&&(!t||alt.v>t.v+2)&&Math.random()<sk){swap(p);t=alt;}
+  const q=t?cellXY(p,g,t.r,t.cc):{x:g.cx+(Math.random()-.5)*g.w*.6,y:g.top};const err=(1-sk)*g.r*1.6;aimAt(p,q.x+(Math.random()-.5)*err,q.y+g.r*.8);fire(p);}
+ const update=dt=>{if(cpu)cpuThink(dt);
   time+=dt;fx.update(dt);
   if(phase==='intro'){if(!intro.update(dt)){phase='play';}}
   else if(phase==='play'){

@@ -1,5 +1,6 @@
 const {clamp}=require("src/utils.js");
 const {PCOL,PDARK,PLIGHT,Fx,arenaKeys,arenaTouch,Countdown,banner,outlined,rr,heart,snd,noise,jingle,gestureHint,settle,mmss}=require("src/engines/arenaKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 // Driller Duel (after Mr. Driller): two identical shafts side by side. Drag to walk, tap beside you to drill sideways, hold
 // on your own column to drill down. Four same-colour blocks that touch pop; blocks fall (and crush); air drains.
 let COLS=7;const GOAL=120,TIME=75,LIVES=3,COLORS=['#ff5a5a','#4fd06a','#4a90ff','#ffd84d','#b47bff'],COLORS_D=['#b32d2d','#238a3b','#1f55b8','#b8921a','#7a45c4'];
@@ -122,7 +123,13 @@ async function driller(s){
   onUp:(f,cancelled)=>{const p=ps[f.owner];p.hold=null;if(cancelled||phase!=='play')return;const l=L(p),col=clamp(Math.floor((f.x-l.x0)/l.cell),0,COLS-1);
    if(f.moved<16&&f.held<260){const d=col<p.pc?'l':col>p.pc?'r':'d';drill(p,d);}}
  });
+ // vs CPU: driller 2 drills down, steps out from under wobbling blocks, and skirts hard blocks when air runs low
+ const cpu=isCpu(s);let cpuT=0,cpuSide=0;
+ function cpuThink(p,dt){const sk=cpuSkill(s),k=['l','r','d'];cpuT-=dt;if(cpuT>0)return;cpuT=.12+(1-sk)*.3;for(const q of k)kb.cpu(q,false);if(p.dead||phase!=='play')return;if(Math.random()<(1-sk)*.15){cpuT=.5;return;}
+  const danger=[1,2,3].some(d=>{const o=at(p,p.pr-d,p.pc);return o&&o.k!=='bed'&&(o.warned||o.fall);}),below=at(p,p.pr+1,p.pc);
+  if(danger||below?.k==='hard'&&p.air<45){if(!cpuSide)cpuSide=p.pc<COLS/2?1:-1;if(p.pc+cpuSide<0||p.pc+cpuSide>=COLS)cpuSide=-cpuSide;kb.cpu(cpuSide>0?'r':'l',true);return;}cpuSide=0;kb.cpu('d',true);}
  const control=(p,dt)=>{
+  if(cpu&&p.i===1)cpuThink(p,dt);
   const k=kb.state[p.i];let want=null;
   if(k.l||k.r){want={d:k.r-k.l,push:true};}
   if(k.d||k.fire){drill(p,'d');}

@@ -19,7 +19,7 @@ function directionGestures(s,move,{players=1,repeat=0,tap=null,threshold=12,onTa
  }
  s.on(s.c,'pointerdown',ev=>{
   if(!usable()||!Number.isFinite(ev.clientX)||!Number.isFinite(ev.clientY)||ev.button>0)return;
-  const point=s.pointer(ev),owner=players===1?0:point.x<s.W/2?0:1;
+  const point=s.pointer(ev),owner=players===1||s.solo?.kind==='cpu'?0:point.x<s.W/2?0:1;
   if([...fingers.values()].some(f=>f.owner===owner))return;
   ev.preventDefault();fingers.set(ev.pointerId,{owner,x:ev.clientX,y:ev.clientY,point,direction:null,clock:0,moved:false});s.capture(ev);
  });

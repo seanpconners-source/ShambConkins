@@ -3,6 +3,7 @@
 // limited, and O-Ren Ishii arrives at 80% of the clock. Cinematic slow-motion and black-and-white flashes on multi-kills.
 const {clamp,seededRandom}=require("src/utils.js");
 const K=require("src/engines/tarantinoKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const {label,rr,lerp,filmOverlay,flash,mono,titleCard,subtitle,makeFx,makeShake,makeSlowmo,sfx,voice,halfPointers,keyboard}=K;
 
 const DURATION=62,BOSS_AT=.8*DURATION,BOSS_HP=16,DIRS={l:[-1,0],r:[1,0],u:[0,-1],d:[0,1]},ARROW={l:'◀',r:'▶',u:'▲',d:'▼'};
@@ -70,7 +71,7 @@ async function crazy88(s){
   if(p.stam<=0){p.stam=0;p.winded=.9;fx.pop(L.bx[i],L.by-50*L.U,'WINDED!',{color:'#ffe48a',size:clamp(20*L.U,13,28)});sfx.groan();}
  };
  let lastWh=0;const sfx_whoosh=len=>{const n=performance.now();if(n-lastWh>70&&len>10){lastWh=n;sfx.whoosh(600,2200,.04,.1);}};
- halfPointers(s,{down:(i,r)=>{gest.set(r.id,{kills:0,shown:0,t:0,hist:[[r.x,r.y]],dx:1,dy:0});P[i].trail.push({x:r.x,y:r.y,t:0,brk:true});},move:(i,r)=>sample(i,r),up:(i,r)=>{gest.delete(r.id);P[i].trail.push({x:r.x,y:r.y,t:0,brk:true});}});
+ const hp=halfPointers(s,{down:(i,r)=>{gest.set(r.id,{kills:0,shown:0,t:0,hist:[[r.x,r.y]],dx:1,dy:0});P[i].trail.push({x:r.x,y:r.y,t:0,brk:true});},move:(i,r)=>sample(i,r),up:(i,r)=>{gest.delete(r.id);P[i].trail.push({x:r.x,y:r.y,t:0,brk:true});}});
  keyboard(s,(i,name,down)=>{const p=P[i];if(!down)return;if(S.phase!=='play'||p.stun>0||p.winded>0||p.keyCd>0)return;
   if(name==='act'){p.keyCd=.6;p.stam-=26;p.swing=.3;const g={kills:0,shown:0,t:0};for(let k=0;k<8;k++){const a=k/8*6.283,b=(k+1)/8*6.283,R=82*L.U,cx=L.bx[i],cy=L.by;slashSeg(i,cx+Math.cos(a)*R,cy+Math.sin(a)*R,cx+Math.cos(b)*R,cy+Math.sin(b)*R,g,-Math.sin(a),Math.cos(a));}fx.ring(L.bx[i],L.by,{r:20*L.U,grow:300,life:.3,color:'#bfe6ff'});sfx.whoosh(500,2500,.08,.2);}
   else{const d=DIRS[name];if(!d)return;p.keyCd=.22;p.stam-=12;p.swing=.2;const cx=L.bx[i],cy=L.by,g={kills:0,shown:0,t:0},R=190*L.U,px=-d[1],py=d[0];
@@ -80,6 +81,14 @@ async function crazy88(s){
  });
  s.hint('Swipe across the arena to slash along your finger\'s path: it cuts every fighter the line crosses, even on your rival\'s half. Fighters with a shield need a swipe in the direction of their arrow. Slashing drains stamina (rest to refill). Get hit and you lose points. Multi-kills trigger bullet-time; O-Ren arrives with 20% of the clock left. Keys: P1 WASD slash + Space spin, P2 arrows + Enter.');
  if(!await s.pass(0,'Crazy 88: swipe to slash through the masked fighters of the House of Blue Leaves. Cut several in one swipe for a combo, match the arrows on shielded fighters, and watch your stamina.','Both ready — draw your sword',{countdown:3}))return;
+ // vs CPU: bride 2 swipes through the fighter nearest her (along a shield's arrow, or O-Ren's open side) and rests when winded
+ const cpu=isCpu(s);let cpuSw=null,cpuWait=.6;
+ function cpuThink(dt){const p=P[1],f=hp.cpu;if(cpuSw){const q=cpuSw.pts[cpuSw.k++];if(q){if(cpuSw.k===1)f.down(q[0],q[1]);else f.move(q[0],q[1]);}else{f.up();cpuSw=null;}return;}
+  const sk=cpuSkill(s);cpuWait-=dt;if(cpuWait>0||p.stun>0||p.winded>0)return;if(p.stam<25+(1-sk)*25){cpuWait=.4;return;}
+  const bx=L.bx[1],by=L.by;let tgt=null,bd=1e9,dir=null;for(const e of E){if(e.dead)continue;const d=Math.hypot(e.x-bx,e.y-by)-(e.x>L.W/2?60:0);if(d<bd){bd=d;tgt=e;}}
+  if(boss&&!S.bossDead&&(!tgt||Math.hypot(boss.x-bx,boss.y-by)<bd+40)){tgt=boss;dir=DIRS[boss.guard];}else if(tgt?.type==='shield')dir=DIRS[tgt.dir];
+  if(!tgt){cpuWait=.25;return;}if(!dir){const a=Math.random()*6.283;dir=[Math.cos(a),Math.sin(a)];}
+  const miss=(1-sk)*35*L.U,ox=tgt.x+(Math.random()-.5)*miss,oy=tgt.y+(Math.random()-.5)*miss,R=70*L.U,n=6;cpuSw={k:0,pts:Array.from({length:n+1},(_,k)=>[ox-dir[0]*R+dir[0]*2*R*k/n,oy-dir[1]*R+dir[1]*2*R*k/n])};cpuWait=.35+(1-sk)*.6+Math.random()*.25;}
  layout();
 
  s.frame((rdt,tt)=>{
@@ -98,6 +107,7 @@ async function crazy88(s){
    E=E.filter(e=>!e.dead);
    for(const k of corpses)k.t+=dt;corpses=corpses.filter(k=>k.t<.8);
    if(boss&&!S.bossDead){updateBoss(dt);}
+   if(cpu)cpuThink(rdt);
    if(S.bossDead){S.endT+=rdt;if(S.endT>3.2&&!S.over){S.over=true;done('O-Ren falls');}}
    else if(S.t>=DURATION+(boss?0:0)&&!S.over){S.over=true;done(boss?'O-Ren escapes into the snow':'Crazy 88');}
   }

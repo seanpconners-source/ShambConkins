@@ -9,6 +9,7 @@
 //               own read-out as close to 007 as you dare. Hit zero and it goes off. Seven rounds.
 const {clamp}=require("src/utils.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,PCOL,settle,Countdown}=require("src/engines/arenaKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const INK='#0b0b0d',GOLD='#e8c45a',RED='#ff2a2a';
 const split=s=>{const side=()=>s.W>s.H*1.05;return {side,vp:i=>side()?{x:i?s.W/2+2:0,y:0,w:s.W/2-2,h:s.H}:{x:0,y:i?s.H/2+2:0,w:s.W,h:s.H/2-2},owner:p=>side()?(p.x<s.W/2?0:1):(p.y<s.H/2?0:1)};};
@@ -53,6 +54,12 @@ async function bondLaser(s){
  function trip(i){const a=agents[i],bx=box(vp(i));a.stun=.9;a.inv=1.8;a.carry=false;s.react(i,'sad');noise(.35,{vol:.06,freq:900});snd(880,.5,{type:'square',vol:.035,to:440});snd(880,.5,{type:'square',vol:.03,to:440,delay:.5});
   fx.pop(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k-20,'ALARM!',{color:'#ff6a6a',stroke:INK,size:22});fx.shake(8);fx.burst(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k,{n:14,color:RED,speed:200,life:.4,size:3});}
  s.debug={get phase(){return phase;},agents,score,plan,beamAt,segDist,clockNow:()=>clock,setClock(v){clock=v;},teleport(i,px,py){agents[i].x=px;agents[i].y=py;check(agents[i]);}};
+ // vs CPU: agent 2 heads for the diamond, then the exit, taking the step that stays clear of beams now and a beat ahead
+ const cpu=isCpu(s);
+ function cpuHeist(dt){const a=agents[1],sk=cpuSkill(s);if(a.stun>0)return;const p=plan(a.heist),tx=a.carry?9:p.gem[0],ty=a.carry?91:p.gem[1],sp=(22+sk*16)*dt,look=.12+sk*.18;
+  const safe=(px,py)=>p.beams.every(b=>{for(const tt of [0,look]){const L=beamAt(b,clock+tt);if((L.on||L.warn&&tt>0)&&segDist(px,py,L.ax,L.ay,L.bx,L.by)<R*(1.2+sk*.6))return false;}return true;});
+  let best=null,bd=Math.hypot(tx-a.x,ty-a.y)+(safe(a.x,a.y)?0:1e3);for(let k=0;k<8;k++){const an=k*Math.PI/4,nx=clamp(a.x+Math.cos(an)*sp,R,100-R),ny=clamp(a.y+Math.sin(an)*sp,R,100-R);if(!safe(nx,ny)&&Math.random()<sk)continue;const d=Math.hypot(tx-nx,ty-ny);if(d<bd){bd=d;best=[nx-a.x,ny-a.y];}}
+  if(best)move(a,best[0],best[1]);}
  function drawVault(i){const v=vp(i),b=box(v),a=agents[i],p=plan(a.heist),X=u=>b.ox+u*b.k,Y=u=>b.oy+u*b.k;
   x.fillStyle='#120c0b';x.fillRect(v.x,v.y,v.w,v.h);
   x.fillStyle='#1d1a1c';x.fillRect(b.ox,b.oy,100*b.k,100*b.k);x.strokeStyle='#2c2729';x.lineWidth=1;for(let g=10;g<100;g+=10){x.beginPath();x.moveTo(X(g),Y(0));x.lineTo(X(g),Y(100));x.moveTo(X(0),Y(g));x.lineTo(X(100),Y(g));x.stroke();}
@@ -79,7 +86,7 @@ async function bondLaser(s){
   hud(x,s,i,v,`${s.players[i].name.toUpperCase()}  ${score[i]}`,`${Math.ceil(Math.max(0,HEIST_TIME-clock))}s`);}
  s.frame(dt=>{t+=dt;fx.update(dt);
   if(phase==='count'){if(!cd.update(dt))phase='play';}
-  else if(phase==='play'){clock+=dt;
+  else if(phase==='play'){clock+=dt;if(cpu)cpuHeist(dt);
    for(let i=0;i<2;i++){const a=agents[i],k=kb.state[i];a.flash=Math.max(0,a.flash-dt);a.inv=Math.max(0,a.inv-dt);
     // Caught: frozen in the beam for a moment, then marched back to the vault door.
     if(a.stun>0){a.stun-=dt;if(a.stun<=0){a.stun=0;a.x=START[0];a.y=START[1];}continue;}
@@ -136,9 +143,12 @@ async function bondFunhouse(s){
  arenaTouch(s,{owner,maxFingers:2,onDown:f=>{const w=wins(f.owner).find(w=>f.x>=w.x&&f.x<=w.x+w.w&&f.y>=w.y&&f.y<=w.y+w.h);if(w)shoot(f.owner,w.k);}});
  s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat)return;const k=String(ev.key).toLowerCase(),a='qweasd'.indexOf(k),b='uiojkl'.indexOf(k);if(a>=0){ev.preventDefault();shoot(0,a);}else if(b>=0){ev.preventDefault();shoot(1,b);}});
  s.debug={get phase(){return phase;},fields,score,shoot,sched};
+ // vs CPU: gunman 2 shoots Scaramanga and Nick Nack after a reaction delay, and on Easy sometimes a decoy
+ const cpu=isCpu(s);
+ function cpuFun(){if(gun[1]>0)return;const sk=cpuSkill(s);for(const o of fields[1]){if(o.hit||o.up<.4||o.cpuSeen)continue;if(o.cpuAt===undefined)o.cpuAt=.2+(1-sk)*.45+Math.random()*.15;if(o.age<o.cpuAt)continue;o.cpuSeen=true;const good=TARGETS[o.kind].pts>0;if(good?Math.random()<.65+sk*.33:Math.random()<(1-sk)*.18){shoot(1,o.win);break;}}}
  s.frame(dt=>{t+=dt;fx.update(dt);
   if(phase==='count'){if(!cd.update(dt))phase='play';}
-  else if(phase==='play'){clock+=dt;
+  else if(phase==='play'){clock+=dt;if(cpu)cpuFun();
    for(let i=0;i<2;i++){gun[i]=Math.max(0,gun[i]-dt);while(nextIdx[i]<sched.length&&sched[nextIdx[i]].at<=clock){const e=sched[nextIdx[i]++];if(!fields[i].some(o=>o.win===e.win))fields[i].push({...e,age:0,up:0,hit:false});}
     for(const o of fields[i]){o.age+=dt;o.up=o.hit?Math.max(0,o.up-dt*5):o.age<.15?o.age/.15:o.age>o.stay?Math.max(0,1-(o.age-o.stay)/.15):1;}
     fields[i]=fields[i].filter(o=>!(o.up<=0&&o.age>.2));}
@@ -180,6 +190,9 @@ async function bondBomb(s){
   if(pts[0]===5||pts[1]===5)jingle([784,988,1175,1568],{step:.06,type:'triangle',vol:.045});}
  arenaTouch(s,{owner,maxFingers:1,onDown:f=>stop(f.owner)});kb.onDown((i,k)=>{if(k==='fire')stop(i);});
  s.debug={get phase(){return phase;},get state(){return state;},get clock(){return clockV;},score,stop,rounds};
+ // vs CPU: agent 2 stops its read-out near 0:07, with a wider error on Easy and once the display goes dark
+ const cpu=isCpu(s);let cpuAim=null,cpuR=-1;
+ function cpuBomb(){if(state!=='run'||stopped[1]!==null)return;const sk=cpuSkill(s),R0=rounds[r];if(cpuR!==r){cpuR=r;const spread=(1.1-sk)*(R0.dark>0?1.1:.55)+R0.accel*.6;cpuAim=7+(Math.random()-.45)*spread*2;}if(clockV<=cpuAim)stop(1);}
  const fmt=v=>{const c2=Math.max(0,v),sec=Math.floor(c2),cs=Math.floor((c2-sec)*100);return `0:${String(sec).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;};
  function digits(txt,cx,cy,size,col,dim=false){x.save();x.font=`900 ${size}px "Courier New",monospace`;x.textAlign='center';x.textBaseline='middle';const w=x.measureText(txt).width+size*.6;x.fillStyle='#060404';rr(x,cx-w/2,cy-size*.65,w,size*1.3,size*.15);x.fill();x.strokeStyle='#3a3d44';x.lineWidth=3;x.stroke();
   x.fillStyle='rgba(255,40,40,.12)';x.fillText('8:88.88',cx,cy);x.fillStyle=dim?'#5a1010':col;x.shadowColor=col;x.shadowBlur=dim?0:size*.3;x.fillText(txt,cx,cy);x.restore();}
@@ -187,7 +200,7 @@ async function bondBomb(s){
   if(phase==='count'){if(!cd.update(dt)){phase='play';nextRound();}}
   else if(phase==='play'){const R0=rounds[r];
    if(state==='wait'){waitT-=dt;if(waitT<=0){state='run';snd(330,.1,{type:'square',vol:.035});}}
-   else if(state==='run'){const before=clockV;clockV-=dt*(R0.rate+R0.accel*(R0.start-clockV));if(Math.floor(before)!==Math.floor(clockV)&&clockV>0)snd(clockV<8?1400:1000,.03,{type:'square',vol:.025});
+   else if(state==='run'){if(cpu)cpuBomb();const before=clockV;clockV-=dt*(R0.rate+R0.accel*(R0.start-clockV));if(Math.floor(before)!==Math.floor(clockV)&&clockV>0)snd(clockV<8?1400:1000,.03,{type:'square',vol:.025});
     if(clockV<=0){clockV=0;boom=1;fx.shake(16);noise(.8,{vol:.09,freq:200});snd(80,.8,{type:'sawtooth',vol:.06,to:30});settleRound();}}
    else if(state==='done'){waitT-=dt;if(waitT<=0)nextRound();}}
   else{endT+=dt;if(endT>2.6){s.finish(score,`Stop the Bomb at 007: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}

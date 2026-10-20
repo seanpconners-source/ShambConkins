@@ -7,6 +7,7 @@ const {clamp,seededRandom}=require("src/utils.js");
 const {voice,noise,makeShake,label,SANS,rr}=require("src/engines/tarantinoKit.js");
 const {pixText,makeBits}=require("src/engines/retroKit.js");
 const {vibrate}=require("src/audio.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 let FW=320;const SHOTS=8,TCOL=['#46d17a','#ff8a3a'],G=150;
 const BLAST=['#ffffff','#fff3a0','#ffd23f','#ff9a2e','#ff4a1c','#9c1c08'];
@@ -35,7 +36,12 @@ async function artillery(s){
   s.setScores(score);}
  // ---- input: drag back anywhere, weapon chips at the bottom
  const chipRects=()=>{const W=s.W,H=s.H,cw=Math.min(130,W*.3),ch=34;return [{x:W/2-cw-6,y:H-ch-10,w:cw,h:ch,i:0},{x:W/2+6,y:H-ch-10,w:cw,h:ch,i:1}];};
- s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||state!=='aim')return;ev.preventDefault();const p=s.pointer(ev);
+ // vs CPU: tank 2 simulates angles and powers with the real wind and gravity, fires the one landing closest to you (error on Easy), and saves its nuke for a near-certain hit
+ const cpu=isCpu(s);let cpuWait=0;
+ function cpuShot(dt){if(state!=='aim'||turn!==1){cpuWait=0;return;}cpuWait+=dt;if(cpuWait<1.2)return;cpuWait=-99;const tk=tanks[1],o=tanks[0],sk=cpuSkill(s);let best=null,bd=1e9;
+  for(let a=-Math.PI+.15;a<-.15;a+=.05)for(let pw=.15;pw<=1;pw+=.04){const sp=60+pw*220;let x0=tk.x+Math.cos(a)*9,y0=tk.y-6+Math.sin(a)*9,vx=Math.cos(a)*sp,vy=Math.sin(a)*sp;for(let k=0;k<600;k++){const h=1/120;vx+=wind*1.6*h;vy+=G*h;x0+=vx*h;y0+=vy*h;if(x0<-20||x0>FW+20||y0>FH+20)break;if(Math.hypot(o.x-x0,o.y-5-y0)<6||x0>=0&&x0<=FW&&y0>=groundAt(x0)){const d=Math.hypot(o.x-x0,o.y-y0);if(d<bd){bd=d;best={a,pw};}break;}}}
+  if(!best)best={a:-Math.PI*3/4,pw:.6};const err=(1-sk);tk.angle=clamp(best.a+(Math.random()-.5)*err*.22,-Math.PI+.05,-.05);tk.power=clamp(best.pw+(Math.random()-.5)*err*.16,.08,1);if(nukes[1]>0&&bd<6&&Math.random()<.5)weapon[1]=1;fire();}
+ s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||state!=='aim'||cpu&&turn===1)return;ev.preventDefault();const p=s.pointer(ev);
   for(const r of chipRects())if(p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h){if(r.i===1&&nukes[turn]<=0)return;weapon[turn]=r.i;voice(r.i?220:660,.06,.04,'square');return;}
   aim={id:ev.pointerId,sx:p.x,sy:p.y,x:p.x,y:p.y};s.capture(ev);});
  s.on(c,'pointermove',ev=>{if(!aim||ev.pointerId!==aim.id||s.paused)return;ev.preventDefault();const p=s.pointer(ev);aim.x=p.x;aim.y=p.y;const dx=aim.sx-aim.x,dy=aim.sy-aim.y,d=Math.hypot(dx,dy);if(d>8){const tk=tanks[turn];tk.angle=clamp(Math.atan2(dy,dx),-Math.PI+.05,-.05);tk.power=clamp(d/(Math.min(s.W,s.H)*.42),.08,1);}});
@@ -43,6 +49,7 @@ async function artillery(s){
  s.on(document,'keydown',ev=>{if(state!=='aim'||s.paused)return;const tk=tanks[turn];const k=ev.key;if(k==='ArrowLeft'||k==='a'){tk.angle=clamp(tk.angle-.05,-Math.PI+.05,-.05);}else if(k==='ArrowRight'||k==='d'){tk.angle=clamp(tk.angle+.05,-Math.PI+.05,-.05);}else if(k==='ArrowUp'||k==='w'){tk.power=clamp(tk.power+.03,.08,1);}else if(k==='ArrowDown'||k==='s'){tk.power=clamp(tk.power-.03,.08,1);}else if(k===' '||k==='Enter')fire();else return;ev.preventDefault();});
  s.hint('On your turn drag back anywhere and let go: the opposite direction is your angle, the drag length your power. Watch the wind arrow. Tap BABY NUKE (once per game) before aiming for a huge blast. Hit the other tank (25 a bar, +60 to destroy it) or bugs (+15). Keys: arrows aim/power, Space fires.');
  function step(dt){
+  if(cpu)cpuShot(dt);
   for(const b of blasts)b.t+=dt;blasts=blasts.filter(b=>b.t<.9);for(const p of pops)p.t-=dt;pops=pops.filter(p=>p.t>0);
   for(const b of bugs){if(!b.alive)continue;b.x+=b.dir*b.sp*dt;if(b.x<50||b.x>FW-50)b.dir*=-1;}
   for(const tk of tanks){const gy=groundAt(tk.x);if(tk.y<gy-.5){tk.vy+=G*dt;tk.y=Math.min(gy,tk.y+tk.vy*dt);}else{if(tk.vy>70&&tk.hp>0){tk.hp=Math.max(0,tk.hp-1);pops.push({x:tk.x,y:tk.y-22,text:'FALL DAMAGE',t:1.2,c:'#ff5a5a'});}tk.vy=0;tk.y=gy;}}

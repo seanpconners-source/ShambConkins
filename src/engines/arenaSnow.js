@@ -1,5 +1,6 @@
 const {clamp}=require("src/utils.js");
 const {PCOL,PDARK,PLIGHT,Fx,arenaKeys,arenaTouch,Countdown,banner,outlined,rr,heart,snd,noise,jingle,gestureHint}=require("src/engines/arenaKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 // Snowball Fight (after South Park): a top-down snowy yard. Drag to run, flick to throw, hold still to pack a big
 // snowball, tap to build a snow wall. Three hearts each, best of three rounds.
 const HEARTS=3,ROUND_CAP=30,WIN_ROUNDS=2,MAX_ROUNDS=4;
@@ -89,8 +90,17 @@ async function snow(s){
   phase='roundover';phaseT=2.1;if(winner>=0){wins[winner]++;note=`${s.players[winner].name} takes round ${round}`;s.react?.(winner,'win');jingle([523,659,784],{vol:.05});}else note=`Round ${round}: a draw`;
   s.setScores(wins.slice());void why;
  };
+ // vs CPU: kid 2 keeps a throwing distance, sidesteps snowballs coming its way and throws with lead when the line is clear
+ const cpu=isCpu(s);let cpuT=.8,cpuStrafe=1,cpuStrafeT=0;
+ const clearShot=(a,b)=>{const n=Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/(g.pr*.8));for(let q=1;q<n;q++)if(blocked(a.x+(b.x-a.x)*q/n,a.y+(b.y-a.y)*q/n,4))return false;return true;};
+ function cpuThink(dt){const p=ps[1],o=ps[0],sk=cpuSkill(s);if(phase!=='play'){for(const k of ['l','r','u','d'])kb.cpu(k,false);return;}
+  let dx=o.x-p.x,dy=o.y-p.y;const d=Math.hypot(dx,dy)||1,want=W*.36;let mx=(d-want)/d*dx*.02,my=dy/d*.6;
+  cpuStrafeT-=dt;if(cpuStrafeT<=0){cpuStrafeT=.8+Math.random()*1.2;cpuStrafe=Math.random()<.5?-1:1;}my+=cpuStrafe*.7;
+  for(const b of balls){if(b.owner!==0)continue;const rx=p.x-b.x,ry=p.y-b.y,dist=Math.hypot(rx,ry),app=(rx*b.vx+ry*b.vy)/(dist*Math.hypot(b.vx,b.vy)||1);if(dist<220*g.u&&app>.85&&Math.random()<.3+sk*.7){const side=(-b.vy*rx+b.vx*ry)>0?1:-1;mx+=-b.vy/Math.hypot(b.vx,b.vy)*side*2;my+=b.vx/Math.hypot(b.vx,b.vy)*side*2;}}
+  kb.cpu('r',mx>.3);kb.cpu('l',mx<-.3);kb.cpu('d',my>.3);kb.cpu('u',my<-.3);
+  cpuT-=dt;if(cpuT<=0&&p.cool<=0&&p.stun<=0){cpuT=.7+(1-sk)*.9+Math.random()*.5;const lead=d/(600*g.u),tx=o.x+o.vx*lead*sk,ty=o.y+o.vy*lead*sk,err=(1-sk)*.35;if(clearShot(p,{x:tx,y:ty})||Math.random()<.2){const a=Math.atan2(ty-p.y,tx-p.x)+(Math.random()-.5)*err;throwBall(p,Math.cos(a),Math.sin(a));}}}
  const update=dt=>{
-  time+=dt;
+  time+=dt;if(cpu)cpuThink(dt);
   if(phase==='intro'){if(!intro.update(dt))startRound();}
   else if(phase==='ready'){phaseT-=dt;if(phaseT<=0){phase='play';snd(660,.2,{type:'square',vol:.05});}}
   else if(phase==='play'){

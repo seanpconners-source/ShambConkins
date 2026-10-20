@@ -17,7 +17,15 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   Other pass-and-play engines are kind `'turns'`: launcher `soloTurnRounds` runs the engine once per round, `session.pass(1)`
   ends the round with P1's score, `s.frame`/`s.timer` run at `solo.speed`; target = last round's score (×.6 for one-ball/
   flip/pitch/shot games, `SOLO_FACTOR`). `s.soloWorld()` exposes the round state for tests.
-  Owner's agreed plan for later batches: 3 CPU head-to-heads, 4 trivia/cards (social games hidden).
+  Batch 3 (CPU opponents, Oct 20): kind `'cpu'`; P2 is a CPU wearing the other New Game pick ("Amber (CPU)"). `engines/cpuKit.js`
+  (`isCpu`, `cpuSkill`, `cpuHotseat` = skip hand-off cards after the first and play the CPU's turn through the engine's own move
+  function, `negamax`, `cpuDepth`/`cpuBlunder`), `engines/cpuBoards.js` (board pickers). Shared input kits take a CPU: vs CPU the
+  human owns every touch (`arenaTouch`/`halfPointers`/`ownedPointers`/`directionGestures`/`arenaGestures`, opt out with
+  `cpuOwner:false`), and P2 is driven by `kb.cpu(key,down)` (arenaKeys), `keyboard(...).hold/tap` (tarantinoKit), `fingers.cpu`
+  virtual finger (halfPointers/arenaTouch), `keys.cpu` (duelInputs), `controls.cpu` (arenaGestures). Each engine has a small
+  `cpuThink`-style brain (search for `vs CPU:` comments). ~80 games now play solo. Not done: kart balloon battle and the co-op
+  games (horde, space-swarm-coop, rainbow-rivals). Balance is bot-tested only (an idle human vs the CPU).
+  Owner's agreed plan for the last batch: 4 trivia/cards (social games hidden).
   Windows box: Node 24 at `C:\Program Files\nodejs` (not on PATH in the agent shell), git = GitHub Desktop's bundled git (no push creds).
 - **Broforce (turn-based rebuild, Oct 13 2026):** one engine file `src/engines/broforce.js` (same 4 game ids in
   `packs/broforcePack.js`). P1 runs a 3-stage seeded mission, then P2 runs the same one; higher score wins (normal

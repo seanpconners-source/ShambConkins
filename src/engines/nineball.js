@@ -3,6 +3,7 @@ const {clamp}=require("src/utils.js");
 const {circle, COLORS}=require("src/engines/session.js");
 const {sound}=require("src/audio.js");
 const {worldView}=require("src/engines/duelControls.js");
+const {isCpu,cpuSkill,cpuHotseat}=require("src/engines/cpuKit.js");
 function nineballOutcome({lowest,firstHit,pocketed,railAfterContact}){
  const foul=pocketed.includes(0)?'Scratch':firstHit===null?'No object ball hit':firstHit!==lowest?'Wrong first ball':!pocketed.some(n=>n>0)&&!railAfterContact?'No cushion after contact':null;
  return {foul,win:!foul&&pocketed.includes(9),keepTurn:!foul&&pocketed.some(n=>n>0),respotNine:!!foul&&pocketed.includes(9),points:foul?-5:pocketed.filter(n=>n>0).length*10};
@@ -23,7 +24,7 @@ async function nineball(s){
  const wp=ev=>view.toWorld(s.pointer(ev));
  const aimFrom=(d,p)=>{const dx=d.from.x-p.x,dy=d.from.y-p.y;angle=Math.atan2(dy,dx);power=clamp(Math.hypot(dx,dy),18,135);return Math.hypot(dx,dy);};
  const placeAt=p=>{if(p.x>table.left+13&&p.x<table.right-13&&p.y>table.top+13&&p.y<table.bottom-13&&balls.every(b=>b.id===0||b.pocketed||Math.hypot(b.x-p.x,b.y-p.y)>23)){cue.x=p.x;cue.y=p.y;placing=false;message='Cue placed. Aim and shoot.';return true;}return false;};
- s.on(c,'pointerdown',ev=>{if(!legal()||drag)return;const p=wp(ev);ev.preventDefault();if(hand&&Math.hypot(p.x-cue.x,p.y-cue.y)>55)placeAt(p);drag={id:ev.pointerId,from:Math.hypot(p.x-cue.x,p.y-cue.y)<=55?cue:{x:p.x,y:p.y}};s.capture(ev);});
+ s.on(c,'pointerdown',ev=>{if(!legal()||drag||cpu&&actor===1)return;const p=wp(ev);ev.preventDefault();if(hand&&Math.hypot(p.x-cue.x,p.y-cue.y)>55)placeAt(p);drag={id:ev.pointerId,from:Math.hypot(p.x-cue.x,p.y-cue.y)<=55?cue:{x:p.x,y:p.y}};s.capture(ev);});
  s.on(c,'pointermove',ev=>{if(!drag||drag.id!==ev.pointerId||!legal())return;aimFrom(drag,wp(ev));});
  s.on(c,'pointerup',ev=>{if(drag?.id===ev.pointerId){const d=drag;drag=null;if(legal()){const p=wp(ev);if(Math.hypot(d.from.x-p.x,d.from.y-p.y)>12){aimFrom(d,p);fire();}}}s.release(ev);});const clear=()=>drag=null;s.on(c,'pointercancel',clear);s.resetOnPause?.(clear);
  s.on(document,'keydown',ev=>{if(!legal())return;const k=ev.key;if(k===' '||k==='Enter'){ev.preventDefault();fire();}else if(k==='ArrowLeft'||k==='a')angle-=.04;else if(k==='ArrowRight'||k==='d')angle+=.04;else if(k==='ArrowUp'||k==='w')power=clamp(power+8,18,135);else if(k==='ArrowDown'||k==='s')power=clamp(power-8,18,135);});
@@ -33,7 +34,15 @@ async function nineball(s){
   for(const b of balls){if(b.pocketed)continue;circle(x,b.x+2,b.y+3,10,'#0006');circle(x,b.x,b.y,10,['#eee7d1','#ecc345','#567ccb','#d06054','#9772b1','#e38948','#54a67c','#b35875','#252a2b','#ecc345'][b.id]);if(b.id){if(b.id===lowest()){x.strokeStyle='#ffe19b';x.lineWidth=2;x.beginPath();x.arc(b.x,b.y,14,0,Math.PI*2);x.stroke();}circle(x,b.x,b.y,5.5,'#fff0dc');view.upright(x,b.x,b.y,()=>{x.fillStyle='#25272a';x.font='bold 8px Arial';x.textAlign='center';x.fillText(String(b.id),0,3);});}else view.upright(x,b.x,b.y,()=>{s.sprite(x,actor,0,0,20,{exact:true});s.marker?.(x,actor,0,0);});}
   if(phase==='aim'){let t=240;const dx=Math.cos(angle),dy=Math.sin(angle);for(const b of balls)if(b.id&&!b.pocketed){const along=(b.x-cue.x)*dx+(b.y-cue.y)*dy,perp=Math.abs((b.x-cue.x)*dy-(b.y-cue.y)*dx);if(along>0&&perp<20)t=Math.min(t,along-Math.sqrt(400-perp*perp));}x.strokeStyle=COLORS[actor];x.lineWidth=2;x.setLineDash([3,5]);x.beginPath();x.moveTo(cue.x,cue.y);x.lineTo(cue.x+dx*t,cue.y+dy*t);x.stroke();x.setLineDash([]);x.strokeStyle='#e4c28e';x.lineWidth=4;x.beginPath();x.moveTo(cue.x-dx*22,cue.y-dy*22);x.lineTo(cue.x-dx*(50+power),cue.y-dy*(50+power));x.stroke();circle(x,cue.x+dx*t,cue.y+dy*t,4,'#f5e4b6');}
   s.status(`${s.players[actor].name} · lowest ${lowest()} · shot ${shots+1}/14 · ${phase==='aim'?Math.ceil(clock)+'s · '+Math.round(power/135*100)+'%'+(hand?' · BALL IN HAND':''):'Rolling…'}${placing?' · TAP TO PLACE':''}`);s.debug={actor,phase,balls,record,scores,hand,placing,fire,shots};
- });await s.pass(0,'The Color of Money: a real nine-ball duel. Your face is on the cue; object balls stay readable. Hit the one first on the break.');
+ });
+ // vs CPU: the hustler plays the lowest ball into its best pocket (ghost-ball aim), places ball-in-hand behind that shot, aim error on Easy
+ const cpu=isCpu(s);
+ if(cpu)cpuHotseat(s,{isTurn:()=>actor===1&&phase==='aim'&&legal(),delay:1000,think:()=>{const sk=cpuSkill(s),b=balls.find(q=>q.id===lowest()),R=2*cue.r;if(!b)return;let best=null,bv=-1e9;
+  for(const P of table.pockets){const dx=P.x-b.x,dy=P.y-b.y,d=Math.hypot(dx,dy),gx=b.x-dx/d*R,gy=b.y-dy/d*R;if(hand){const px=gx-dx/d*90,py=gy-dy/d*90;if(px>table.left+15&&px<table.right-15&&py>table.top+15&&py<table.bottom-15&&balls.every(q=>q===cue||q.pocketed||Math.hypot(q.x-px,q.y-py)>2.5*cue.r)){best={hand:{x:px,y:py},a:Math.atan2(dy,dx),f:clamp(d*.17+40,45,120)};break;}}
+   const ax=gx-cue.x,ay=gy-cue.y,ad=Math.hypot(ax,ay),cut=Math.acos(clamp((ax*dx+ay*dy)/(ad*d),-1,1)),seg=(x1,y1,x2,y2,q)=>{const ex=x2-x1,ey=y2-y1,u=clamp(((q.x-x1)*ex+(q.y-y1)*ey)/(ex*ex+ey*ey||1),0,1);return Math.hypot(q.x-x1-ex*u,q.y-y1-ey*u);},blocked=balls.some(q=>q!==cue&&q!==b&&!q.pocketed&&(seg(cue.x,cue.y,gx,gy,q)<R||seg(b.x,b.y,P.x,P.y,q)<R));
+   const v=-d-ad*.5-cut*140-(blocked?400:0);if(cut<1.25&&v>bv){bv=v;best={a:Math.atan2(ay,ax),f:clamp((ad+d)*.12+45,45,110)};}}
+  if(!best)best={a:Math.atan2(b.y-cue.y,b.x-cue.x),f:70};if(best.hand)placeAt(best.hand);angle=best.a+(Math.random()-.5)*(1-sk)*.14;power=best.f;fire();}});
+ await s.pass(0,'The Color of Money: a real nine-ball duel. Your face is on the cue; object balls stay readable. Hit the one first on the break.');
 }
 
 Object.assign(exports,{nineballOutcome,nineballSpot,nineball});

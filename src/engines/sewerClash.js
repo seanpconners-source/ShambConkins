@@ -2,6 +2,7 @@ const {clamp}=require("src/utils.js");
 const {sound, vibrate}=require("src/audio.js");
 const {arenaGestures,gestureHint}=require("src/engines/arenaGestures.js");
 const {circle}=require("src/engines/session.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const SEWER={W:1000,H:640,gravity:1700,jump:900,speed:300,goal:6};
 const SEWER_PLATFORMS=[
  {x:0,y:610,w:1000,h:30},{x:55,y:450,w:330,h:18},{x:615,y:450,w:330,h:18},
@@ -24,8 +25,12 @@ async function sewer(s){
  s.hint('P1 starts a finger on the LEFT half, P2 on the RIGHT. Drag left/right from that first touch to run. Flick up to jump while running, or tap your half to jump. Return the finger to its starting point to stop. First to six pizza tokens, or most after 40 seconds. P1 A/D + W/Space; P2 arrows + Enter.');
  s.debug={engine:'sewer',state:a,players:a.players,platforms:SEWER_PLATFORMS,controls};
  if(!await s.pass(0,'Cowabunga! Both humans run and jump together. Every platform is reachable with one jump. Collect six pizza tokens first.','Both ready — sewer clash!'))return;
+ // vs CPU: turtle 2 runs for the nearest pizza token and jumps when it sits on a higher platform it is under
+ const cpu=isCpu(s);let cpuJumpT=0;
+ function cpuSewer(dt){const p=a.players[1],sk=cpuSkill(s);let best=null,bd=1e9;for(const cn of a.coins){const d=Math.abs(cn.x-p.x)+Math.max(0,p.y-28-cn.y)*1.2+(cn.y>p.y-8?120:0);if(d<bd){bd=d;best=cn;}}if(!best){controls.cpu({});return;}
+  let dx=best.x-p.x;const above=best.y<p.y-60,below=best.y>p.y-8,plat=SEWER_PLATFORMS.find(q=>Math.abs(q.y-p.y)<2&&p.x>q.x-8&&p.x<q.x+q.w+8);if(below&&plat&&plat.y<600){const left=plat.x-30,right=plat.x+plat.w+30;dx=(Math.abs(best.x-left)<Math.abs(best.x-right)?left:right)-p.x;}controls.cpu({l:dx<-14,r:dx>14});cpuJumpT-=dt;if(p.grounded&&cpuJumpT<=0&&(above&&Math.abs(dx)<170||Math.abs(dx)<40&&best.y<p.y-20)){cpuJumpT=.25+(1-sk)*.5;if(Math.random()<.5+sk*.5)jump(1);}}
  s.frame(dt=>{
-  a.left-=dt;a.elapsed+=dt;
+  a.left-=dt;a.elapsed+=dt;if(cpu)cpuSewer(dt);
   // Small fixed substeps keep landings reliable even when a frame is late.
   const steps=Math.ceil(dt*120),h=dt/steps;for(let k=0;k<steps;k++)for(let i=0;i<2;i++)sewerPlayerStep(a.players[i],h,controls.input[i]);
   for(const i of (a.nextOwner++%2?[1,0]:[0,1]))for(let k=a.coins.length-1;k>=0;k--){const p=a.players[i],c=a.coins[k];if(Math.hypot(p.x-c.x,p.y-28-c.y)<34){a.coins.splice(k,1);p.score++;sound('coin');s.react?.(i,'happy');vibrate(8);}}

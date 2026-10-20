@@ -2,6 +2,7 @@
 // onto the faint marker over the pounding heart, then RELEASE to plunge at the right moment on the dose meter.
 const {clamp,seededRandom}=require("src/utils.js");
 const K=require("src/engines/tarantinoKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const {label,rr,lerp,filmOverlay,flash,titleCard,subtitle,makeFx,makeShake,sfx,voice,noise,halfPointers,keyboard}=K;
 
 const ROUNDS=5,LIMITS=[9.5,8.5,7.5,6.8,6.2],MARKER_BASE=[1,.4,.22,.1,0],MARKER_FLASH=[1,.9,.75,.6,.5];
@@ -59,6 +60,12 @@ async function adrenaline(s){
  keyboard(s,(i,name,down)=>{const p=P[i];if(name==='act'){if(down&&S.phase==='live'&&p.state==='drag')plungeNow(i,false);return;}p.kbMove[name]=down;if(down&&S.phase==='live'&&p.state==='idle'){p.state='drag';p.finger='kb';p.tx=p.tipX;p.ty=p.tipY;p.have=true;}},{repeat:false});
  s.hint('Drag your needle (anywhere on your half) onto the red marker over the pulsing heart. The marker fades as rounds get harder, so follow the heartbeat. RELEASE to plunge: land it in the chest AND time the release so the dose meter is in the green. Quicker and closer scores more. Keys: P1 WASD to move + Space to plunge, P2 arrows + Enter.');
  if(!await s.pass(0,'Adrenaline Shot: Mia has overdosed. Drag the giant needle onto the marker, then release to plunge when the dose meter hits green. Five rounds, getting shakier.','Both ready — hurry!',{countdown:3}))return;
+ // vs CPU: needle 2 tracks the heart marker with a wobble (smaller on Hard) and plunges near the green dose window
+ const cpu=isCpu(s);let cpuErr={x:0,y:0},cpuR=0;
+ function cpuThink(dt){const p=P[1],sk=cpuSkill(s);if(p.state==='done')return;if(S.t<.45+(1-sk)*.6)return;
+  if(p.state==='idle'){p.state='drag';p.finger='cpu';cpuR=S.round;const e=R_CHEST()*(1.1-sk)*.9;cpuErr={x:(Math.random()-.5)*e,y:(Math.random()-.5)*e};}
+  const tg=target(1);p.tx=tg.x+cpuErr.x;p.ty=tg.y+cpuErr.y;p.have=true;cpuErr.x*=Math.pow(.6,dt*(.4+sk));cpuErr.y*=Math.pow(.6,dt*(.4+sk));
+  const m=meter(),close=Math.hypot(p.tipX-tg.x,p.tipY-tg.y)<R_CHEST()*(.25+(1-sk)*.4);if(close&&Math.abs(m-.85)<.06+(1-sk)*.12||S.left<.6)plungeNow(1,false);}
  layout();startRound();
 
  s.frame((dt,tt)=>{
@@ -68,6 +75,7 @@ async function adrenaline(s){
   else if(S.phase==='live'||S.phase==='wrap'){
    S.t+=dt;if(S.phase==='live')S.left-=dt;
    S.beat-=dt;if(S.beat<=0){S.beat=60/(p0.bpm+Math.max(0,1-S.left/S.limit)*30);S.pulse=1;S.flashM=1;sfx.thump(.09);voice(S.left<S.limit*.25?1200:880,.05,.018,'square');}
+   if(cpu&&S.phase==='live')cpuThink(dt);
    for(let i=0;i<2;i++){const p=P[i];
     if(p.state==='drag'&&p.finger==='kb'){const k=p.kbMove,v=300*dt;p.tx=clamp(p.tx+((k.r?1:0)-(k.l?1:0))*v,...bounds(i));p.ty=clamp(p.ty+((k.d?1:0)-(k.u?1:0))*v,L.H*.12,L.H-8);}
     const e=1-Math.exp(-dt*(p.state==='drag'?20:6));if(p.have){p.tipX=lerp(p.tipX,p.tx,e);p.tipY=lerp(p.tipY,p.ty,e);}

@@ -3,6 +3,7 @@
 const {clamp}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const K=require("src/engines/tarantinoKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const {label,rr,lerp,filmOverlay,flash,titleCard,subtitle,makeFx,makeShake,makeSlowmo,sfx,halfPointers,keyboard,fmtMs}=K;
 
 const TITLES=['THE STARE-DOWN','THE FAKE-OUT','THE TRIANGLE','NERVES OF STEEL','THE BLOODBATH'];
@@ -82,13 +83,18 @@ async function standoff(s){
   if(st.phase==='tri2'&&st.tri2&&i===st.tri2.w){st.tri2.hit=true;st.phase='shot';st.t=0;bullet(i,2,()=>{kill(2,-Math.PI/2);},2.6);st.reason='blonde';}
  }
  const input=halfPointers(s,{down:i=>tap(i)});void input;
+ // vs CPU: gunman 2 draws after a reaction time (faster on Hard), may flinch at a fake-out on Easy, and fires again at Mr. Blonde
+ const cpu=isCpu(s);let cpuReact=null,cpuFakes=0;
+ function cpuThink(dt){if(st.over)return;const sk=cpuSkill(s);
+  if(st.phase==='stare'){cpuReact=null;const fired=st.fakes?.filter(f=>f.done).length||0;if(fired>cpuFakes){cpuFakes=fired;if(Math.random()<(1-sk)*.22)tap(1);}return;}
+  cpuFakes=0;if(st.phase==='draw'&&st.taps[1]===null||st.phase==='tri2'&&st.tri2?.w===1&&!st.tri2.hit){if(cpuReact===null)cpuReact=(.2+(1-sk)*.38+Math.random()*.1)*(st.phase==='tri2'?.8:1);cpuReact-=dt;if(cpuReact<=0){cpuReact=null;tap(1);}}else cpuReact=null;}
  keyboard(s,(i,name,down)=>{if(down&&name==='act')tap(i);});
  s.hint('Tap your half of the screen (or P1 Space, P2 Enter) the instant you see DRAW! Tapping before it is a flinch and loses the round. Beware the fake-outs. In triangle rounds Mr. Blonde shoots whoever draws first: draw, then TAP AGAIN fast to drop him. First to three rounds.');
  if(!await s.pass(0,'Mexican Standoff: first to three rounds. Wait for DRAW! — flinch and you lose. Chapter three adds a third gunman, Mr. Blonde.','Both ready — nobody move',{countdown:3}))return;
  startRound();
 
  const keepBeat=(dt)=>{st.beat-=dt;if(st.beat<=0){const tension=clamp(st.elapsed/MAX_T,0,1);st.beat=lerp(.95,.4,tension);sfx.thump(.12+tension*.1);setTimeout(()=>sfx.thump(.07),110);st.pulse=1;}};
- s.frame((rdt,tt)=>{
+ s.frame((rdt,tt)=>{if(cpu)cpuThink(rdt);
   const dt=rdt,sdt=rdt*slow.k;st.frameWall=performance.now();layout();slow.step(rdt);shake.step(rdt);fx.step(sdt);
   st.pulse=Math.max(0,st.pulse-rdt*4);st.white=Math.max(0,st.white-rdt*2.4);st.captionT=Math.max(0,st.captionT-rdt);
   for(const k of [0,1,2]){st.twitch[k]=Math.max(0,st.twitch[k]-rdt);st.flashT[k]=Math.max(0,st.flashT[k]-rdt);if(st.dead[k])st.deadT[k]+=sdt;}

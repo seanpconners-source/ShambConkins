@@ -4,6 +4,7 @@
 const {clamp,seededRandom}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const {label,rr,makeFx,makeShake,sfx,halfPointers,keyboard,voice}=require("src/engines/tarantinoKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const R=[4.6,6.2,7.8,9.6,11.6,13.8,16.2,18.6,21.4,24.4,28];
 const FRUIT=[['🍒','#d6243a'],['🍓','#ff4f6d'],['🍇','#8f4fd8'],['🍊','#ff9a1f'],['🍎','#e8382c'],['🍐','#c9d64a'],['🍑','#ffb38a'],['🍍','#f2c230'],['🥥','#a7744a'],['🍉','#3fae4c'],[null,'#ffe36b']];
@@ -92,7 +93,13 @@ async function fruitmerge(s){
 
  s.hint('Both play at once. Drag on your half to move the dropper, lift to drop. Two matching fruits merge into the next size up and score; quick chains multiply. Two of the biggest (your rival’s head) explode for +150. Keep fruit below the dashed line or you top out. Keys: A/D + Space, ←/→ + Enter.');
  if(!await s.pass(0,'BRAWNDO: it’s got electrolytes. Both of you drop fruit into your own jar at the same time. Matching fruits merge into bigger ones. The biggest fruit is your rival’s head; merge two for a jackpot. Don’t let the jar overflow the line.','Both ready — merge!',{countdown:3}))return;
- s.frame(dt=>{layout();
+ // vs CPU: jar 2 drops onto a matching fruit near the surface when it can, otherwise into the lowest spot
+ const cpu=isCpu(s);let cpuT=1.5;
+ function cpuThink(dt){const p=P[1];if(p.out||phase!=='play')return;cpuT-=dt;if(cpuT>0||p.cool>0)return;const sk=cpuSkill(s);cpuT=1.25-sk*.75+Math.random()*.4;
+  const lv=queue[p.next%queue.length],r=R[lv],top=x=>p.fruits.filter(f=>Math.abs(f.x-x)<R[f.lv]+r).reduce((m,f)=>Math.min(m,f.y-R[f.lv]),JH);
+  let best=null,bv=-1e9;for(let ax=r;ax<=JW-r;ax+=4){const surf=top(ax),match=p.fruits.some(f=>f.lv===lv&&Math.abs(f.x-ax)<R[f.lv]+r*.6&&f.y-R[f.lv]<=surf+2);const v=surf*.2+(match?40:0)+(Math.random()-.5)*(1-sk)*40;if(v>bv){bv=v;best=ax;}}
+  p.aim=clamp(best??JW/2,r,JW-r);drop(1);}
+ s.frame(dt=>{layout();if(cpu)cpuThink(dt);
   if(phase==='play'){left-=dt;
    for(const p of P){p.cool=Math.max(0,p.cool-dt);p.comboT=Math.max(0,p.comboT-dt);const k=keysHeld[p.i];if(k.l||k.r)p.aim=clamp(p.aim+(k.r-k.l)*70*dt,4,JW-4);if(!p.out)physics(p,dt);else for(const f of p.fruits)f.pop=0;}
    if(left<=0||P.every(p=>p.out)){phase='end';endT=1.6;sfx.ding(880);}

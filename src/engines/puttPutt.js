@@ -5,6 +5,7 @@
 const {clamp,seededRandom}=require("src/utils.js");
 const {voice,noise,sfx,makeShake,makeFx,label,SANS,rr}=require("src/engines/tarantinoKit.js");
 const {vibrate}=require("src/audio.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 // Holes in a 60 x 100 portrait frame (tee at the bottom). walls: closed outline; blocks: [x,y,w,h]; slope: [x,y,w,h,ax,ay].
 const HOLES=[
@@ -26,13 +27,22 @@ async function minigolf(s){
  function shoot(vx,vy,happy){const b=balls[turn];b.safe={x:b.x,y:b.y};b.vx=vx;b.vy=vy;b.strokes++;b.moving=true;state='roll';trail=[];if(happy){sfx.whoosh(500,2500,.1,.3);noise(.08,.1,{f0:3000,f1:600,delay:.25});s.react?.(turn,'silly',1.2);banner={text:'HAPPY GILMORE!',t:1};}else{voice(520,.05,.05,'triangle');noise(.05,.05,{type:'highpass',f0:2800});}}
  // input: drag back anywhere
  const toCourse=(px,py)=>{const v=view;const lx=(px-v.ox)/v.k,ly=(py-v.oy)/v.k;return v.rot?{x:60-ly,y:lx}:{x:lx,y:ly};};
- s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||state!=='aim'||!view)return;ev.preventDefault();const p=s.pointer(ev);drag={id:ev.pointerId,sx:p.x,sy:p.y,x:p.x,y:p.y};s.capture(ev);});
+ // vs CPU: golfer 2 simulates putts (walls, sand, slopes, water) over a grid of angles and powers, plays the one that sinks or ends nearest the cup, with error on Easy
+ const cpu=isCpu(s);let cpuWait=0;
+ function simPutt(b0,vx,vy){const S=segs(H0);let x0=b0.x,y0=b0.y;for(let k=0;k<600;k++){const h=1/60,sp=Math.hypot(vx,vy);if(sp<1)break;const fr=H0.sand.some(r=>inRect(x0,y0,r))?4.5:1.05;for(const sl of H0.slopes)if(inRect(x0,y0,sl)){vx+=sl[4]*h;vy+=sl[5]*h;}const dec=Math.max(0,sp-(sp*fr+7)*h);vx*=dec/sp;vy*=dec/sp;x0+=vx*h;y0+=vy*h;
+   for(const [x1,y1,x2,y2] of S){const ex=x2-x1,ey=y2-y1,L2=ex*ex+ey*ey||1;let u=clamp(((x0-x1)*ex+(y0-y1)*ey)/L2,0,1);const px=x1+ex*u,py=y1+ey*u,dx=x0-px,dy=y0-py,d=Math.hypot(dx,dy);if(d<1.2&&d>0){const nx=dx/d,ny=dy/d;x0=px+nx*1.2;y0=py+ny*1.2;const vn=vx*nx+vy*ny;if(vn<0){vx-=1.75*vn*nx;vy-=1.75*vn*ny;}}}
+   const cd=Math.hypot(H0.cup[0]-x0,H0.cup[1]-y0);if(cd<2.1&&Math.hypot(vx,vy)<58)return 0;if(H0.water.some(r=>inRect(x0,y0,r)))return 99;}return Math.hypot(H0.cup[0]-x0,H0.cup[1]-y0);}
+ function cpuPutt(dt){if(state!=='aim'||turn!==1){cpuWait=0;return;}cpuWait+=dt;if(cpuWait<1.1)return;cpuWait=-99;const b=balls[1],sk=cpuSkill(s);let best=null,bd=1e9;
+  for(let a=0;a<Math.PI*2;a+=Math.PI/45)for(let pw=.12;pw<=1;pw+=.06){const d=simPutt(b,Math.cos(a)*pw*100,Math.sin(a)*pw*100);if(d<bd){bd=d;best={a,pw};}if(d===0)break;}
+  if(!best)best={a:Math.atan2(H0.cup[1]-b.y,H0.cup[0]-b.x),pw:.5};const e=1-sk,a=best.a+(Math.random()-.5)*e*.18,pw=clamp(best.pw*(1+(Math.random()-.5)*e*.3),.05,1);shoot(Math.cos(a)*pw*100,Math.sin(a)*pw*100,false);}
+ s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||state!=='aim'||!view||cpu&&turn===1)return;ev.preventDefault();const p=s.pointer(ev);drag={id:ev.pointerId,sx:p.x,sy:p.y,x:p.x,y:p.y};s.capture(ev);});
  s.on(c,'pointermove',ev=>{if(!drag||ev.pointerId!==drag.id)return;ev.preventDefault();const p=s.pointer(ev);drag.x=p.x;drag.y=p.y;});
  const shotVec=()=>{if(!drag)return null;const a=toCourse(drag.sx,drag.sy),b=toCourse(drag.x,drag.y);let dx=a.x-b.x,dy=a.y-b.y;const d=Math.hypot(dx,dy);if(d<1.5)return null;const pw=clamp(d/32,0,1.25);return {dx:dx/d,dy:dy/d,pw};};
  for(const ty of ['pointerup','pointercancel'])s.on(c,ty,ev=>{if(!drag||ev.pointerId!==drag.id)return;s.release(ev);const v=shotVec();drag=null;if(ty!=='pointerup'||!v||state!=='aim')return;const happy=v.pw>1;const sp=(happy?118:v.pw*100);const wob=happy?(rand()-.5)*.25:0;const ca=Math.cos(wob),sa=Math.sin(wob);shoot((v.dx*ca-v.dy*sa)*sp,(v.dx*sa+v.dy*ca)*sp,happy);});
  s.on(document,'keydown',ev=>{if((ev.key===' '||ev.key==='Enter')&&state==='aim'){ev.preventDefault();const b=balls[turn],dx=H0.cup[0]-b.x,dy=H0.cup[1]-b.y,d=Math.hypot(dx,dy)||1;shoot(dx/d*Math.min(95,d*1.9),dy/d*Math.min(95,d*1.9),false);}});
  s.hint('Take turns stroke by stroke. Drag back from anywhere and let go: the dotted line shows the direction, the meter the power. Drag into the red for a Happy Gilmore run-up (more power, a bit wild). Water returns your ball to its last lie with a penalty; the gopher bumps balls that roll past him. Space shoots straight at the cup.');
  function step(dt){
+  if(cpu)cpuPutt(dt);
   t+=dt;gopherT-=dt;if(H0.gophers.length&&gopherT<=0){gopherT=1.4+rand()*1.6;const g=H0.gophers[Math.floor(rand()*H0.gophers.length)];gopher={x:g[0],y:g[1],t:1.6};}if(gopher){gopher.t-=dt;if(gopher.t<=0)gopher=null;}
   if(state!=='roll')return;const b=balls[turn];const n=Math.max(1,Math.ceil(Math.hypot(b.vx,b.vy)*dt/.6));const S=[...segs(H0),...windSegs(H0)];
   for(let k=0;k<n;k++){const h=dt/n;let fr=inRect(b.x,b.y,H0.sand[0]||[0,0,0,0])||H0.sand.some(r=>inRect(b.x,b.y,r))?4.5:1.05;const sp=Math.hypot(b.vx,b.vy);

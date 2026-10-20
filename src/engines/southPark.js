@@ -9,6 +9,7 @@
 //              they reach him: +1 each (pianos take two taps, +2). If one gets through, they killed Kenny: −3.
 const {clamp}=require("src/utils.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,PCOL,settle,Countdown}=require("src/engines/arenaKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const INK='#1c1a24',SNOW='#f4f8fc',GOLD='#ffd23c',ORANGE='#f08a24';
 function endBanner(x,s,text){const size=Math.min(s.W*.06,s.H*.06,44);x.fillStyle='rgba(12,16,28,.78)';x.fillRect(0,s.H/2-size,s.W,size*2);outlined(x,text,s.W/2,s.H/2,{size,fill:GOLD,stroke:INK});}
@@ -64,10 +65,15 @@ async function spDodgeball(s){
    else if(f.moved<14&&f.held<320)throwBall(f.owner);}});
  kb.onDown((i,k)=>{if(k==='fire')throwBall(i);});
  s.debug={get phase(){return phase;},kids,balls,score,ken,throwBall,scr};
+ // vs CPU: kid 2 sidesteps balls heading its way, lines up throws on you and holds fire when Kenny is in the way
+ const cpu=isCpu(s);let cpuT=1.2;
+ function cpuDodge(dt){const k=kids[1],o=kids[0],sk=cpuSkill(s);let threat=null;for(const b of balls){if(b.owner!==0||b.done||b.dv<=0)continue;const tt=(k.v-b.v)/b.dv;if(tt<0||tt>1.1)continue;let u=b.u+b.du*tt;u=Math.abs(u)%2;u=u>1?2-u:u;if(Math.abs(u-k.u)<.13)threat=u;}
+  if(threat!==null&&Math.random()<.35+sk*.65)k.tu=clamp(threat<k.u?k.u+.25:k.u-.25,.06,.94);else if(Math.random()<dt*.8)k.tu=clamp(o.u+(Math.random()-.5)*.3,.06,.94);
+  cpuT-=dt;if(cpuT<=0&&k.ammo>0){cpuT=.6+(1-sk)*1+Math.random()*.4;const du=(o.u+(Math.random()-.5)*(1-sk)*.35)-k.u,r=du*lat()/(lon()*.68);if(!(ken.on&&ken.dead<=0&&Math.abs(ken.u-(k.u+du/2))<.12))throwBall(1,clamp(r,-1.1,1.1),-1);}}
  function hitTest(b,cx,cy,r){const p=scr(b.u,b.v);return Math.hypot(p.x-cx,p.y-cy)<r;}
  s.frame(dt=>{t+=dt;fx.update(dt);const H=hs();
   if(phase==='count'){if(!cd.update(dt))phase='play';}
-  else if(phase==='play'){clock+=dt;
+  else if(phase==='play'){clock+=dt;if(cpu)cpuDodge(dt);
    for(let i=0;i<2;i++){const k=kids[i],st=kb.state[i];if(st.l||st.r||st.u||st.d){const d=wide()?(st.d-st.u)||(st.r-st.l):(st.r-st.l);k.tu=clamp(k.tu+d*dt*.9,.06,.94);}
     k.u+=clamp(k.tu-k.u,-1.6*dt,1.6*dt);k.flash=Math.max(0,k.flash-dt);k.ouch=Math.max(0,k.ouch-dt);
     if(k.ammo<AMMO){k.repack+=dt;if(k.repack>=REPACK){k.repack=0;k.ammo++;}}else k.repack=0;}
@@ -133,9 +139,14 @@ async function spPoofs(s){
  arenaTouch(s,{owner:p=>p.x<s.W/2?0:1,maxFingers:1,onDown:f=>{const v=vp(f.owner);heads[f.owner].tu=clamp((f.x-v.x)/v.w,.08,.92);},onMove:f=>{const v=vp(f.owner);heads[f.owner].tu=clamp((f.x-v.x)/v.w,.08,.92);}});
  const itemY=(it,v)=>(clock-it.at)*it.speed*v.h-20;
  s.debug={get phase(){return phase;},heads,score,sched,got,clockNow:()=>clock};
+ // vs CPU: head 2 slides under the best snack about to land and steers clear of Mr. Hankey
+ const cpu=isCpu(s);let cpuErr=0;
+ function cpuPoofs(dt){const h=heads[1],v=vp(1),sk=cpuSkill(s),hy=v.h-hsz(1)*1.1;let best=null,bt=1e9;for(let j=0;j<sched.length;j++){const it=sched[j];if(it.at>clock)break;if(got[1].has(j))continue;const iy=itemY(it,v);if(iy>hy)continue;const tt=(hy-iy)/(it.speed*v.h);
+   if(it.kind==='hankey'){if(tt<.8&&Math.abs(it.u-h.u)<.18)h.tu=clamp(h.u+(h.u<it.u?-.3:.3),.08,.92);continue;}if(tt<bt&&tt>Math.abs(it.u-h.u)/2.4*(1.6-sk)){bt=tt;best=it;}}
+  if(Math.random()<dt*2)cpuErr=(Math.random()-.5)*(1-sk)*.25;if(best)h.tu=clamp(best.u+cpuErr,.08,.92);}
  s.frame(dt=>{t+=dt;fx.update(dt);
   if(phase==='count'){if(!cd.update(dt))phase='play';}
-  else if(phase==='play'){clock+=dt;
+  else if(phase==='play'){clock+=dt;if(cpu)cpuPoofs(dt);
    for(let i=0;i<2;i++){const h=heads[i],st=kb.state[i],v=vp(i),hs=hsz(i);if(st.l||st.r)h.tu=clamp(h.tu+(st.r-st.l)*dt*1.1,.08,.92);h.u+=clamp(h.tu-h.u,-2.4*dt,2.4*dt);h.flash=Math.max(0,h.flash-dt);h.ouch=Math.max(0,h.ouch-dt);
     const hx=v.x+h.u*v.w,hy=v.h-hs*1.1;
     for(let j=0;j<sched.length;j++){const it=sched[j];if(it.at>clock)break;if(got[i].has(j))continue;const iy=itemY(it,v),ix=v.x+it.u*v.w,r=hs*.3;
@@ -190,12 +201,15 @@ async function spKenny(s){
  arenaTouch(s,{owner:p=>p.x<s.W/2?0:1,maxFingers:2,onDown:f=>tap(f.owner,f.x,f.y)});
  kb.onDown((i,k)=>{if(k!=='fire'||phase!=='play'||sides[i].dead>0||sides[i].cool>0)return;const g=geo(i);const live=sides[i].live.filter(d=>!d.gone);if(!live.length)return;live.sort((a,b)=>pos(a,g).dist-pos(b,g).dist);sides[i].cool=.3;zap(i,live[0]);});
  s.debug={get phase(){return phase;},score,sides,sched,tap,pos:(i,d)=>pos(d,geo(i)),clockNow:()=>clock};
+ // vs CPU: Kenny's guardian zaps the closest threat (the keyboard 'fire' action) at a pace set by the difficulty
+ const cpu=isCpu(s);let cpuT=1;
+ function cpuKenny(dt){cpuT-=dt;if(cpuT>0)return;const sk=cpuSkill(s);cpuT=.32+(1-sk)*.55+Math.random()*.25;if(sides[1].live.some(d=>!d.gone)&&Math.random()<.6+sk*.4){kb.cpu('fire',true);kb.cpu('fire',false);}}
  function killKenny(i){const sd=sides[i],g=geo(i);sd.dead=1.6;sd.deaths++;score[i]=Math.max(0,score[i]-3);for(const d of sd.live)d.gone=true;s.react(i,'sad');fx.shake(8);
   fx.pop(g.kx,g.ky-g.kr*2.2,'THEY KILLED KENNY!',{color:'#ff6a6a',stroke:INK,size:Math.max(14,Math.min(g.v.w*.08,30)),life:1.5});fx.pop(g.kx,g.ky-g.kr*1.2,'YOU BASTARDS! −3',{color:GOLD,stroke:INK,size:Math.max(12,Math.min(g.v.w*.06,22)),life:1.4});
   fx.burst(g.kx,g.ky,{n:24,color:ORANGE,speed:260,life:.7,size:4});noise(.4,{vol:.07,freq:300});snd(260,.6,{type:'sawtooth',vol:.045,to:60});}
  s.frame(dt=>{t+=dt;fx.update(dt);
   if(phase==='count'){if(!cd.update(dt))phase='play';}
-  else if(phase==='play'){clock+=dt;
+  else if(phase==='play'){clock+=dt;if(cpu)cpuKenny(dt);
    for(let i=0;i<2;i++){const sd=sides[i],g=geo(i);sd.cool=Math.max(0,sd.cool-dt);
     if(sd.dead>0){sd.dead-=dt;if(sd.dead<=0)fx.pop(g.kx,g.ky-g.kr*1.6,'HE’S BACK!',{color:ORANGE,stroke:INK,size:Math.max(14,g.kr*.5)});}
     while(sd.next<sched.length&&sched[sd.next].at<=clock){const it=sched[sd.next++];if(sd.dead>0)continue;const D=DOOMS[it.kind];sd.live.push({...it,hp:D.hp,speed:D.speed*(1+it.at/KENNY_TIME*.5),wobble:!!D.wobble,flash:0,gone:false});}

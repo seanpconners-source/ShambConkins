@@ -7,6 +7,7 @@ const {voice,noise,makeShake,label,SANS}=require("src/engines/tarantinoKit.js");
 const {makeBits,scanlines,vignette}=require("src/engines/retroKit.js");
 const {directionGestures}=require("src/engines/directionGestures.js");
 const {vibrate}=require("src/audio.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const COL=['#2fe6ff','#ff8a1f'],GLOW=['#2fe6ffcc','#ff8a1fcc'],WIN=3;
 
@@ -24,7 +25,14 @@ async function lightcycle(s){
   for(const p of G.p)G.grid[p.y*cols+p.x]=p.i+1;
  }
  function crash(p){if(!p.alive)return;p.alive=false;const X=G.ox+(p.x+.5)*G.cell,Y=G.oy+(p.y+.5)*G.cell;bits.burst(X,Y,{n:60,speed:260,color:COL[p.i],life:1.1,size:4});bits.burst(X,Y,{n:30,speed:120,color:'#ffffff',life:.6,size:3});noise(.9,.14,{f0:2400,f1:60});voice(90,.6,.08,'sawtooth',{slide:.3,lp:900});shake.kick(14);vibrate(60);s.react?.(p.i,'sad',1.5);}
+ // vs CPU: cycle 2 scores straight/left/right by the open space it can still reach (flood fill) and, on Hard, by cutting you off
+ const cpu=isCpu(s);
+ function cpuThink(){const p=G.p[1],o=G.p[0];if(!p.alive||p.queue.length)return;const sk=cpuSkill(s),{cols,rows,grid}=G,free=(x0,y0)=>x0>=0&&y0>=0&&x0<cols&&y0<rows&&!grid[y0*cols+x0];
+  const room=(x0,y0)=>{if(!free(x0,y0))return -1;const seen=new Set([y0*cols+x0]),q=[[x0,y0]];let n=0;const cap=60+sk*340;while(q.length&&n<cap){const [a,b]=q.shift();n++;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const k=(b+dy)*cols+a+dx;if(free(a+dx,b+dy)&&!seen.has(k)){seen.add(k);q.push([a+dx,b+dy]);}}}return n;};
+  const d=p.dir,opts=[d,[-d[1],d[0]],[d[1],-d[0]]];let best=d,bv=-1e9;for(const dd of opts){const nx=p.x+dd[0],ny=p.y+dd[1];let v=Math.random()<(1-sk)*.25?(free(nx,ny)?1:-1):room(nx,ny);if(v<0)v=-1e6;else{v+=(dd===d?3:0)-Math.hypot(nx-o.x,ny-o.y)*sk*.6+Math.random()*(1-sk)*8;}if(v>bv){bv=v;best=dd;}}
+  if(best!==d)p.queue.push(best);}
  function tick(){
+  if(cpu)cpuThink();
   const next=G.p.map(p=>{if(!p.alive)return null;if(p.queue.length){p.dir=p.queue.shift();p.trail.push([p.x,p.y]);}return [p.x+p.dir[0],p.y+p.dir[1]];});
   const bad=next.map(n=>!n||n[0]<0||n[1]<0||n[0]>=G.cols||n[1]>=G.rows||G.grid[n[1]*G.cols+n[0]]>0);
   if(next[0]&&next[1]&&next[0][0]===next[1][0]&&next[0][1]===next[1][1]){bad[0]=bad[1]=true;}

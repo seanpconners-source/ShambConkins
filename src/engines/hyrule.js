@@ -6,6 +6,7 @@
 //            Last Link standing, or the most hearts after 60 seconds.
 const {clamp}=require("src/utils.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,FONT,PCOL,settle,Countdown,heart}=require("src/engines/arenaKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const FLOOR='#fcd8a8',TREE='#00a844',TREE_D='#005a24',ROCK='#c84c0c',ROCK_D='#7a2a00',BUSH='#58d854',WATER='#2a6af0';
 const TIME=60,DIRS={u:[0,-1],d:[0,1],l:[-1,0],r:[1,0]};
@@ -58,10 +59,27 @@ async function hyrule(s){
   const ny=o.y+dy;if(!solid(Math.floor(o.x-r),Math.floor(ny-r))&&!solid(Math.floor(o.x+r),Math.floor(ny-r))&&!solid(Math.floor(o.x-r),Math.floor(ny+r))&&!solid(Math.floor(o.x+r),Math.floor(ny+r)))o.y=ny;};
  const swordBox=l=>{const [dx,dy]=DIRS[l.dir];return {x:l.x+dx*.85,y:l.y+dy*.85,r:.5};};
  s.debug={L,enemies,drops,g,get phase(){return phase;},slash,setClock(v){clock=v;}};
+ // vs CPU: Link 2 picks a goal (rupees/hearts, a bush, a monster, or you in a duel), walks a breadth-first path to it and swings when it's next to it
+ const cpu=isCpu(s);let cpuT=0,cpuStep=null,cpuGoal=null;
+ function cpuPath(sx,sy,goals){const key=(x,y)=>y*cols+x,prev=new Map([[key(sx,sy),-1]]),q=[[sx,sy]];while(q.length){const [x0,y0]=q.shift();if(goals.has(key(x0,y0))){const path=[];let k=key(x0,y0);while(k!==-1){path.unshift({x:k%cols,y:Math.floor(k/cols)});k=prev.get(k);}return path;}
+   for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x0+dx,ny=y0+dy;if(nx<0||ny<0||nx>=cols||ny>=rows||prev.has(key(nx,ny))||solid(nx,ny)&&g[ny][nx]!=='bush')continue;prev.set(key(nx,ny),key(x0,y0));q.push([nx,ny]);}}return null;}
+ function cpuLink(dt){const l=L[1],o=L[0],sk=cpuSkill(s);for(const k of ['l','r','u','d'])kb.cpu(k,false);if(l.down>0)return;const tx=Math.floor(l.x),ty=Math.floor(l.y);
+  cpuT-=dt;if(cpuT<=0){cpuT=.25+(1-sk)*.3;const goals=new Set(),add=(x,y,near)=>{x=Math.floor(x);y=Math.floor(y);for(const [dx,dy] of near?[[0,0],[1,0],[-1,0],[0,1],[0,-1]]:[[0,0]])if(!solid(x+dx,y+dy))goals.add((y+dy)*cols+x+dx);};
+   cpuGoal=null;if(mode==='duel'&&o.down<=0&&!(l.hearts<=2&&drops.some(d=>d.kind==='heart'))){cpuGoal={x:o.x,y:o.y,hit:true};}else{let best=null,bv=0;for(const d of drops){const v=(d.kind==='heart'?(l.hearts<4?30:2):d.kind==='red'?20:d.kind==='blue'?5:1)/(1+Math.hypot(d.x-l.x,d.y-l.y));if(v>bv){bv=v;best={x:d.x,y:d.y};}}
+    if(!best){for(const e of enemies)if(!e.dead){const v=2/(1+Math.hypot(e.x-l.x,e.y-l.y));if(v>bv){bv=v;best={x:e.x,y:e.y,hit:true};}}for(let y=0;y<rows;y++)for(let x=0;x<cols;x++)if(g[y][x]==='bush'){const v=1.5/(1+Math.hypot(x+.5-l.x,y+.5-l.y));if(v>bv){bv=v;best={x:x+.5,y:y+.5,hit:true,bush:true};}}}
+    if(mode==='rupees'&&o.down<=0&&o.rupees>5&&Math.hypot(o.x-l.x,o.y-l.y)<3)best={x:o.x,y:o.y,hit:true};cpuGoal=best;}
+   if(cpuGoal){add(cpuGoal.x,cpuGoal.y,cpuGoal.hit);cpuStep=cpuPath(tx,ty,goals);}else cpuStep=null;}
+  if(!cpuGoal)return;const gx=cpuGoal.x,gy=cpuGoal.y,near=Math.hypot(gx-l.x,gy-l.y)<(cpuGoal.bush?1.3:1.05);
+  if(near&&cpuGoal.hit){const dx=gx-l.x,dy=gy-l.y,dir=Math.abs(dx)>Math.abs(dy)?(dx<0?'l':'r'):(dy<0?'u':'d');if(l.dir!==dir)kb.cpu(dir,true);else if(l.cd<=0&&Math.random()<.4+sk*.6)slash(1);return;}
+  const path=cpuStep;let here=path?path.findIndex(q=>q.x===tx&&q.y===ty):-1;const step=path&&here>=0&&here<path.length-1?path[here+1]:null;
+  if(step&&g[step.y]?.[step.x]==='bush'){const cx0=tx+.5-l.x,cy0=ty+.5-l.y;if(Math.abs(cx0)>.12){kb.cpu(cx0<0?'l':'r',true);return;}if(Math.abs(cy0)>.12){kb.cpu(cy0<0?'u':'d',true);return;}const ddx=step.x-tx,ddy=step.y-ty,dir=ddx<0?'l':ddx>0?'r':ddy<0?'u':'d';if(l.dir!==dir)kb.cpu(dir,true);else if(l.cd<=0)slash(1);return;}
+  if(path&&here<0)cpuT=0;const nx=step?step.x+.5:gx,ny=step?step.y+.5:gy,dx=nx-l.x,dy=ny-l.y;
+  if(step){const cx=tx+.5-l.x,cy=ty+.5-l.y;if(step.y===ty&&Math.abs(cy)>.1){kb.cpu(cy<0?'u':'d',true);return;}if(step.x===tx&&Math.abs(cx)>.1){kb.cpu(cx<0?'l':'r',true);return;}}
+  if(Math.abs(dx)>.1)kb.cpu(dx<0?'l':'r',true);else if(Math.abs(dy)>.1)kb.cpu(dy<0?'u':'d',true);}
  let curT=tile().T;
  s.frame(dt=>{t+=dt;fx.update(dt);dt=Math.min(dt,.04);curT=tile().T;
   if(phase==='count'){if(!cd.update(dt))phase='play';}
-  else if(phase==='play'){clock+=dt;
+  else if(phase==='play'){clock+=dt;if(cpu)cpuLink(dt);
    for(const l of L){l.cd=Math.max(0,l.cd-dt);l.inv=Math.max(0,l.inv-dt);if(l.down>0){l.down-=dt;if(l.down<=0){l.hearts=6;l.x=sp[l.i][0]+.5;l.y=sp[l.i][1]+.5;l.inv=1.5;}continue;}
     if(Math.abs(l.kx)+Math.abs(l.ky)>.1){move(l,l.kx*dt,l.ky*dt);l.kx*=Math.pow(.002,dt);l.ky*=Math.pow(.002,dt);}
     let mx=0,my=0;const k=kb.state[l.i],st=sticks[l.i];if(k.l)mx--;if(k.r)mx++;if(k.u)my--;if(k.d)my++;

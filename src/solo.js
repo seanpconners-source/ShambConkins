@@ -30,6 +30,14 @@ const SOLO_IDS={
  'four-lights':'cpu','strategema-grid':'cpu','wopr-grid':'cpu','trek-mini-chess':'cpu',
  'pong-duel':'cpu','rink-rivals':'cpu','taskmaster-sumo':'cpu','fast-quarter-mile':'cpu','snake-v-snake':'cpu','kill-bill-duel':'cpu',
  'raiders-ball-run':'cpu','battle-royale-island':'cpu','metal-gear-tank-duel':'cpu',
+ 'league-penalties':'cpu','brawndo-fruit-merge':'cpu','terminator-scan':'cpu','review-pancakes':'cpu','tarantino-standoff':'cpu',
+ 'tarantino-twist':'cpu','tarantino-adrenaline':'cpu','tarantino-crazy88':'cpu','tarantino-bounty':'cpu','tarantino-chase':'cpu',
+ 'hungry-hungry-heads':'cpu','snowball-fight':'cpu','disc-duel':'cpu','arrow-arena':'cpu','driller-duel':'cpu','bubble-battle':'cpu',
+ 'sp-dodgeball':'cpu','sp-cheesy-poofs':'cpu','sp-killed-kenny':'cpu','bond-laser-vault':'cpu','bond-golden-gun':'cpu','bond-goldfinger-bomb':'cpu',
+ 'hyrule-rupee-rush':'cpu','hyrule-sword-duel':'cpu','chutes-ladder-rush':'cpu','candy-gumdrop-catch':'cpu','candy-color-dash':'cpu',
+ 'derezzed-cycles':'cpu','bomber-duel':'cpu','pac-maze-duel':'cpu','block-battle':'cpu','shred-hero':'cpu','underdog-dodgeball':'cpu','fight-night':'cpu',
+ 'color-of-money':'cpu','task-tallest-thing':'cpu','bug-artillery':'cpu','taskmaster-curling':'cpu','happy-gilmore-golf':'cpu','space-swarm-versus':'cpu',
+ 'sewer-clash':'cpu','paddys-beer-pong':'cpu','baseketball-shootout':'cpu','django-hangman':'cpu','django-hangman-showdown':'cpu',
 };
 const soloKind=game=>game?SOLO_IDS[game.id]||game.soloKind||null:null;
 function soloSettings(profile){const s=profile?.settings?.solo||{};return {on:s.on===true,who:s.who===1?1:0,level:SOLO_LEVELS.includes(s.level)?s.level:'normal'};}

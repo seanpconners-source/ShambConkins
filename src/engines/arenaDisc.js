@@ -1,5 +1,6 @@
 const {clamp}=require("src/utils.js");
 const {PCOL,PDARK,PLIGHT,Fx,arenaKeys,arenaTouch,Countdown,banner,outlined,rr,snd,noise,jingle,mmss,gestureHint,settle}=require("src/engines/arenaKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 // Disc Duel (after Windjammers): one court, a goal on each end (3 / 5 / 3 points). Drag to run your catcher, touch near
 // the disc to dive for it. When you hold the disc, swipe to throw: faster = harder, curve the swipe to curve the disc,
 // tap for a lob. First to 12 or most points at 75 s.
@@ -90,8 +91,15 @@ async function disc(s){
  };
 
  // ------------------------------------------------------------ update
+ // vs CPU: catcher 2 reads the disc's line to its half and dives when close; when holding it throws at a corner or the middle
+ const cpu=isCpu(s);let cpuHold=null,cpuErr=0;
+ function cpuThink(dt){const p=pl[1],sk=cpuSkill(s);p.joy='cpu';if(phase!=='play')return;
+  if(d.state==='held'&&d.holder===1){if(cpuHold===null)cpuHold=.35+Math.random()*(.5+(1-sk)*.6);cpuHold-=dt;if(cpuHold<=0){cpuHold=null;if(Math.random()<.12)throwDisc(p,0,0,0,0,true);else{const ty=[PR+40,CH/2,CH-PR-40][Math.floor(Math.random()*3)]+(Math.random()-.5)*(1-sk)*120;throwDisc(p,-(d.x-0),ty-d.y,700+sk*650+Math.random()*150,(Math.random()-.5)*1.2);}}return;}
+  cpuHold=null;if(d.state==='fly'&&d.vx>0&&!d.lob){let t=(p.x-d.x)/Math.max(1,d.vx),y=d.y+d.vy*t;const top=PR,bot=CH-PR,span=bot-top;y=((y-top)%(2*span)+2*span)%(2*span);y=top+(y>span?2*span-y:y);if(Math.random()<dt*3)cpuErr=(Math.random()-.5)*(1-sk)*140;p.tx=CW*.82;p.ty=y+cpuErr;
+   if(p.dcool<=0&&d.x>CW/2&&Math.hypot(d.x-p.x,d.y-p.y)<120&&Math.random()<.4+sk*.5)startDash(p,d.x,d.y);}
+  else if(d.state==='fly'&&d.lob&&d.lob.tx>CW/2){p.tx=d.lob.tx;p.ty=d.lob.ty;}else{p.tx=CW*.8;p.ty=CH/2;}}
  const update=dt=>{
-  time+=dt;fx.update(dt);
+  time+=dt;fx.update(dt);if(cpu)cpuThink(dt);
   if(phase==='intro'){if(!intro.update(dt)){phase='play';serve(0);}}
   else if(phase==='goal'||phase==='gameover'){phaseT-=dt;for(const z of zoneFlash)z.t-=dt;if(phaseT<=0){if(phase==='gameover'){s.finish(sco.slice(),`Disc Duel: ${sco[0]} to ${sco[1]}`);return;}
     if(clock<=0&&sco[0]===sco[1]&&!overtime){overtime=true;otT=15;}

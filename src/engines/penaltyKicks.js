@@ -5,6 +5,7 @@
 const {clamp}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const {label,rr,makeFx,makeShake,sfx,halfPointers,keyboard,voice,noise}=require("src/engines/tarantinoKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const TRASH=['Taco would have scored that.','Ruxin is furious.','Shiva Bowl energy!','Pete called it.','Andre bought new cleats for this.','Kevin’s fantasy team is crying.'];
 
 async function penalty(s){
@@ -20,7 +21,9 @@ async function penalty(s){
  function kick(tx,power,curve){if(phase!=='aim')return;ball.flying=true;ball.tx=tx;ball.ty=clamp(power*1.15-.25+Math.abs(curve)*.1,0,1.5);ball.curve=curve;ball.power=power;ball.dur=clamp(1.05-power*.55,.42,.95);ball.t=0;phase='fly';sfx.thump(.18);noise(.08,.1,{f0:1200,f1:300});vibrate(15);if(keeper.dive)early=true;}
  function dive(d){if(phase!=='aim'&&phase!=='fly')return;if(keeper.dive)return;keeper.dive=1;keeper.dir=d;keeper.t=0;sfx.whoosh(400,1200,.06,.14);if(phase==='aim')early=true;}
 
- halfPointers(s,{chooseOwner:p=>p.y<s.H*.5?'k':'s',
+ // vs CPU the human plays whichever role is theirs this kick, anywhere on the screen
+ const cpu=isCpu(s);let cpuT=0,cpuKick=null;
+ halfPointers(s,{cpuOwner:false,chooseOwner:p=>cpu?(kicker===0?'s':'k'):p.y<s.H*.5?'k':'s',
   down:(o,r)=>{if(o==='s'&&phase==='aim'&&Math.hypot(r.x-ball.x,r.y-ball.y)<Math.max(70,L.W*.15))swipe={pts:[{x:r.x,y:r.y,t:performance.now()}]};},
   move:(o,r)=>{if(o==='s'&&swipe){swipe.pts.push({x:r.x,y:r.y,t:performance.now()});if(swipe.pts.length>40)swipe.pts.shift();}},
   up:(o,r,{cancelled})=>{
@@ -79,8 +82,15 @@ async function penalty(s){
 
  s.hint('Striker (bottom half): put a finger on the ball and swipe toward the goal. Direction aims, swipe speed is power (too hard sails over the bar), a curved swipe bends the shot. Keeper (top half): swipe left/right to dive that way, swipe up to stay and jump; dive before the kick and you give it away. Keys: keeper ←/→/↑, striker A/D/W.');
  if(!await s.pass(0,'Both of you hold the phone. The striker swipes the ball from the bottom half; the keeper swipes on the top half to dive. Five kicks each, alternating, then sudden death.','Both ready',{countdown:3}))return;
+ // CPU striker: picks a corner and a power after a pause; CPU keeper: reads the shot after a reaction delay
+ function cpuThink(dt){const sk=cpuSkill(s);
+  if(phase==='aim'&&kicker===1){if(cpuKick===null)cpuKick=.9+s.random()*1.1;cpuKick-=dt;if(cpuKick<=0){cpuKick=null;const side=s.random()<.5?-1:1;kick(side*(.45+s.random()*(.5+sk*.55)),.55+s.random()*(.35+(1-sk)*.35),(s.random()-.5)*.6);}}
+  else if(phase!=='aim')cpuKick=null;
+  if(keeperP()===1&&!keeper?.dive){if(phase==='aim'&&s.random()<dt*(1-sk)*.15)dive(s.random()<.5?-.8:.8);
+   if(phase==='fly'){cpuT+=dt;if(cpuT>=.12+(1-sk)*.22){cpuT=0;const guess=clamp(ball.tx+ball.curve*.4+(s.random()-.5)*(1.1-sk)*1.6,-1,1);dive(Math.abs(guess)<.25?0:guess);}}else cpuT=0;}}
  layout();resetKick();
  s.frame(dt=>{layout();t+=dt;msgT=Math.max(0,msgT-dt);
+  if(cpu)cpuThink(dt);
   if(phase==='fly'){ball.t+=dt;if(ball.t>=ball.dur&&!ball.done)resolve();}
   if(keeper&&keeper.dive){keeper.t+=dt;keeper.reach=Math.min(1,keeper.t/.32)*.95;}
   if(phase==='result'&&msgT<=0){if(decided()){phase='over';if(s.alive)s.finish([...goals],goals[0]===goals[1]?`Penalties tie ${goals[0]}–${goals[1]}.`:`${s.players[goals[0]>goals[1]?0:1].name} wins the shootout ${Math.max(...goals)}–${Math.min(...goals)}.`);return;}

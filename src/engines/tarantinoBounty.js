@@ -3,6 +3,7 @@
 // swipe along your gun belt to reload.
 const {clamp,seededRandom}=require("src/utils.js");
 const K=require("src/engines/tarantinoKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const {label,rr,lerp,ease,filmOverlay,flash,titleCard,makeFx,makeShake,sfx,voice,halfPointers,keyboard}=K;
 
 const DURATION=40,AMMO=6,RELOAD=.55;
@@ -63,6 +64,11 @@ async function bounty(s){
  const down=(i,r)=>{if(r.y>=L.beltY){P[i].belt={id:r.id,x0:r.x,done:false};return;}fire(i,r.x,r.y);};
  const moveBelt=(i,r)=>{const b=P[i].belt;if(!b||b.id!==r.id||b.done)return;if(Math.abs(r.x-b.x0)>L.hw*.18)startReload(i,b);};
  function startReload(i,b){const p=P[i];if(b)b.done=true;if(p.reload>0||p.ammo>=AMMO||S.phase!=='play')return;p.reload=RELOAD;p.note='';sfx.click();for(let k=0;k<AMMO;k++)setTimeout(()=>{if(s.alive)voice(1500+k*70,.03,.02,'square');},k*(RELOAD*1000/AMMO));}
+ // vs CPU: gunslinger 2 shoots outlaws after a reaction delay, sometimes plugs a townsperson on Easy, reloads when empty
+ const cpu=isCpu(s);let cpuCd=0;
+ function cpuThink(){const p=P[1],sk=cpuSkill(s);if(p.reload>0)return;if(p.ammo<=0){startReload(1);return;}if(S.t<cpuCd)return;
+  for(const it of items[1]){if(it.hit!==null||!active(it)||it.cpuSeen)continue;if(it.cpuAt===undefined)it.cpuAt=it.at+.28+(1-sk)*.55+Math.random()*.2;if(S.t<it.cpuAt)continue;it.cpuSeen=true;
+   if(it.kind==='innocent'&&Math.random()>(1-sk)*.3)continue;if(Math.random()>.7+sk*.28)continue;const q=slotXY(1,it.slot);fire(1,q.cx,q.y-L.th*.45);cpuCd=S.t+.12+(1-sk)*.2;break;}}
  halfPointers(s,{down,move:moveBelt,up:(i,r)=>{if(P[i].belt?.id===r.id)P[i].belt=null;}});
  keyboard(s,(i,name,d)=>{if(!d||S.phase!=='play')return;const p=P[i],n=COLS*ROWS;
   if(name==='act'){const q=slotXY(i,p.cursor);if(p.ammo<=0&&p.reload<=0)startReload(i);else fire(i,q.cx,q.cy-L.th*.45);return;}
@@ -78,6 +84,7 @@ async function bounty(s){
   else if(S.phase==='play'){S.t+=dt;
    for(let i=0;i<2;i++){const p=P[i];p.hurt=Math.max(0,p.hurt-dt);if(p.reload>0){p.reload-=dt;if(p.reload<=0){p.ammo=AMMO;p.reload=0;}}
     for(const it of items[i])if(!it.done&&it.hit===null&&S.t>it.at+it.life){it.done=true;}}
+   if(cpu)cpuThink();
    if(S.t>=DURATION){S.phase='end';S.end=0;sfx.fanfare();}}
   else if(S.phase==='end'){S.end+=dt;if(S.end>2.8&&!S.over){S.over=true;s.finish(P.map(a=>a.score),'Bounty Hunter');}}
   draw(tt);

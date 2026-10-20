@@ -3,6 +3,7 @@
 // half to steer, tap for nitro. Ramps, oil, traffic and barriers hit both cars.
 const {clamp,seededRandom}=require("src/utils.js");
 const K=require("src/engines/tarantinoKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const {label,rr,lerp,filmOverlay,flash,titleCard,subtitle,makeFx,makeShake,makeSlowmo,sfx,voice,noise,halfPointers,keyboard}=K;
 
 const ROUND_TIME=26,ROUNDS=2,BASE=330,CHASER_BONUS=1.025,GAP0=320;
@@ -40,6 +41,12 @@ async function chase(s){
  halfPointers(s,{down:(i,r)=>{const c=car[i];if(!c)return;c.tapT=performance.now();c.drag=0;},move:(i,r)=>{const c=car[i];if(!c)return;c.drag+=Math.abs(r.x-r.px);steer(i,r.x-r.px);},
   up:(i,r)=>{const c=car[i];if(!c)return;if(c.drag<16&&performance.now()-r.t0<320)nitro(i);}});
  keyboard(s,(i,name,down)=>{const c=car[i];if(!c)return;if(name==='act'){if(down)nitro(i);return;}if(name==='l')c.kb=down?-1:(c.kb<0?0:c.kb);if(name==='r')c.kb=down?1:(c.kb>0?0:c.kb);});
+ // vs CPU: car 2 picks the lane that dodges crashes ahead; as chaser it lines up on the runner and boosts in, as runner it keeps away and boosts when caught up
+ const cpu=isCpu(s);let cpuT=0,cpuLane=1;
+ function cpuThink(dt){const c=car[1],o=car[0],sk=cpuSkill(s),chasing=chaserP()===1,look=(260+sk*260)*L.U;cpuT-=dt;
+  if(cpuT<=0){cpuT=.18+(1-sk)*.35;const cost=[0,1,2].map(l=>{let v=0;for(const ob of S.obs){if(ob.gone||ob.lane!==l)continue;const ahead=ob.y-c.y;if(ahead<0||ahead>look)continue;v+=ob.kind==='nitro'?-2:ob.kind==='ramp'?-1:6;}const lx=(l-1)*L.lane;v+=chasing?Math.abs(lx-o.x)/L.lane*2.5:-Math.abs(lx-o.x)/L.lane*1.5;v+=Math.abs(l-cpuLane)*.4;return v+(Math.random()-.5)*(1-sk)*3;});cpuLane=cost.indexOf(Math.min(...cost));}
+  const want=chasing&&Math.abs(o.y-c.y)<L.cl*2.5?o.x:(cpuLane-1)*L.lane;c.tx=clamp(want,-L.RW/2+L.cw*.6,L.RW/2-L.cw*.6);
+  const gap=chasing?o.y-c.y:c.y-o.y;if(c.nitro>0&&c.boostT<=0&&s.random()<dt*(.4+sk)&&(chasing?gap<L.cl*5&&Math.abs(o.x-c.x)<L.cw:gap<L.cl*3))nitro(1);}
  function nitro(p){const c=car[p];if(S.phase!=='play'||c.nitro<1||c.boostT>0||c.spin>0)return;c.nitro--;c.boostT=.9;c.flame=.9;sfx.whoosh(300,1400,.1,.35);voice(110,.5,.05,'sawtooth',{slide:2.2,lp:900});shake.kick(3);}
  s.hint('Drag sideways anywhere on your half to steer your car; tap to fire a nitro boost (3 charges, grab blue cans for more). Round 1: P1 drives the black Charger and must ram the white Challenger before 26 seconds run out; P2 flees. Then swap. Ramps jump, oil spins you out, traffic slows you. Keys: P1 A/D + Space, P2 arrows + Enter.');
  if(!await s.pass(0,'Stunt Chase: one driver is Stuntman Mike in the black Charger and must ram the other driver\'s white Challenger within 26 seconds. Then you swap roles. Drag to steer, tap for nitro.','Both ready — start your engines',{countdown:3}))return;
@@ -81,6 +88,7 @@ async function chase(s){
    if(S.phase==='play'){S.t+=dt;S.hint=Math.max(0,S.hint-dt);}
    const ch=chaserP(),ru=runnerP(),C=car[ch],R=car[ru];
    if(S.phase==='play'){
+    if(cpu)cpuThink(dt);
     stepCar(ch,dt,'chase');stepCar(ru,dt,'run');
     const gap=R.y-C.y;C.draft=gap>0&&gap<L.cl*3.5&&Math.abs(C.x-R.x)<L.cw*1.1;
     const maxGap=L.H*.74;if(gap>maxGap)R.y=C.y+maxGap;

@@ -1,5 +1,6 @@
 const {clamp}=require("src/utils.js");
 const {PCOL,PDARK,PLIGHT,Fx,arenaKeys,arenaTouch,Countdown,banner,outlined,rr,snd,noise,jingle,gestureHint,settle}=require("src/engines/arenaKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 // Arrow Arena (after TowerFall): side-view arena, wrap-around edges, one hit kills. Drag to run, flick up to jump,
 // tap to shoot toward the tap, stomp heads. Three arrows each; stuck arrows can be picked up again. First to 3 rounds.
 const T=16,GRAV=900,RUN=112,JUMP=335,ARROW_V=360,ARROW_G=70,QUIVER=3,WIN_ROUNDS=3,MAX_ROUNDS=7,ROUND_CAP=22;
@@ -83,8 +84,15 @@ async function arrow(s){
   // pick up arrows
   for(const a of arrows)if(a.state==='stuck'&&p.arrows<QUIVER&&Math.abs(dxw(a.x,p.x))<HW+4&&Math.abs(a.y-p.y)<HH+4){a.state='gone';p.arrows++;snd(700,.08,{type:'triangle',to:1000,vol:.04});fx.burst(a.x,a.y,{n:4,color:'#ffe566',speed:60,life:.3,size:1.4});fx.pop(p.x,p.y-14,'+1',{size:10,color:'#ffe566',life:.6,rise:14});}
  };
+ // vs CPU: archer 2 closes in (or backs off to keep range), jumps toward higher ground or over walls, refills its quiver and shoots along the 8 directions
+ const cpu=isCpu(s);
+ function cpuThink(dt){const p=ps[1],o=ps[0],sk=cpuSkill(s);const set=(r)=>{kb.cpu('r',r>0);kb.cpu('l',r<0);};if(phase!=='play'||p.dead){set(0);return;}
+  let tx=o.x,ty=o.y;if(p.arrows<=0){let bd=1e9;for(const a of arrows)if(a.state==='stuck'){const d=Math.abs(dxw(a.x,p.x))+Math.abs(a.y-p.y);if(d<bd){bd=d;tx=a.x;ty=a.y;}}}
+  const dx=dxw(o.x,p.x),dy=o.y-p.y,tdx=dxw(tx,p.x),away=p.arrows>0&&!o.dead&&Math.abs(dx)<T*2.5&&Math.abs(dy)<T*.8;let run=away?-Math.sign(dx):Math.abs(tdx)>T*.5?Math.sign(tdx):0;set(run);
+  if(p.ground&&(ty<p.y-T*1.1&&Math.random()<dt*(2+sk*3)||run&&overlapTile(p,p.x+run*T*.7,p.y)))jump(p);
+  if(p.arrows>0&&p.cd<=0&&!o.dead){const ang=Math.atan2(dy,dx),snap=Math.round(ang/(Math.PI/4))*(Math.PI/4);if(Math.abs(ang-snap)<.16+(1-sk)*.14&&Math.hypot(dx,dy)<WW*.6&&Math.random()<dt*(1.5+sk*5))fire(p,Math.cos(snap),Math.sin(snap));}}
  const update=dt=>{
-  time+=dt;fx.update(dt);for(const m of tapMarks)m.t-=dt;tapMarks=tapMarks.filter(m=>m.t>0);
+  time+=dt;fx.update(dt);if(cpu)cpuThink(dt);for(const m of tapMarks)m.t-=dt;tapMarks=tapMarks.filter(m=>m.t>0);
   if(phase==='intro'){if(!intro.update(dt)){resetRound();phase='ready';phaseT=1;note='ROUND 1';}}
   else if(phase==='ready'){phaseT-=dt;if(phaseT<=0){phase='play';snd(700,.2,{type:'square',vol:.05});}}
   else if(phase==='play'){roundT-=dt;if(roundT<=0)endRound(-1,'time');}

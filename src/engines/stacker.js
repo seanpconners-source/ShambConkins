@@ -6,6 +6,7 @@ const {clamp,seededRandom}=require("src/utils.js");
 const {voice,noise,keyboard,makeShake}=require("src/engines/tarantinoKit.js");
 const {pixText,makeBits,scanlines}=require("src/engines/retroKit.js");
 const {vibrate}=require("src/audio.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const COLS=7,ROWS=15,MINOR=10,COLOR=['#38c8ff','#ff4fa8'];
 const maxBlocks=r=>r>=10?1:r>=4?2:3;
@@ -27,7 +28,12 @@ async function towerstack(s){
   if(p.row>=ROWS){p.done=true;p.won='MAJOR';p.score+=60;[523,659,784,1046,1319].forEach((f,k)=>voice(f,.14,.06,'triangle',{delay:k*.08}));s.react?.(p.i,'win',2);return;}
   p.len=Math.min(keep.length,maxBlocks(p.row));p.pos=p.dir>0?0:COLS-p.len;p.clock=0;
  }
- s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const pt=s.pointer(ev);stop(P[pt.x<s.W/2?0:1]);});
+ s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const pt=s.pointer(ev);stop(P[cpu||pt.x<s.W/2?0:1]);});
+ // vs CPU: cabinet 2 stops when its row lines up with the stack below, less reliably as rows speed up (and a block early on Easy)
+ const cpu=isCpu(s);let cpuSeenPos=null;
+ function cpuStack(){const p=P[1];if(!p||p.done||state!=='play')return;if(p.pos===cpuSeenPos)return;cpuSeenPos=p.pos;const sk=cpuSkill(s);
+  const cells=[];for(let k=0;k<p.len;k++)cells.push(p.pos+k);const below=p.row?new Set(p.stack[p.row-1]):null,fit=below?cells.filter(cc=>below.has(cc)).length:p.len;
+  const speed=.17/tickFor(p.row),chance=fit===p.len?clamp(.35+sk*.6-(speed-1)*.12*(1-sk),.12,.95):fit===p.len-1&&p.row>0?(1-sk)*.25:0;if(Math.random()<chance)stop(p);}
  keyboard(s,(i,name,down)=>{if(down&&(name==='act'||name==='u'||name==='d'))stop(P[i]);});
  s.hint('Tap your half of the screen (P1 left, P2 right) to stop your sliding row. Only blocks that land on the row below stay. Rows speed up; the cabinet drops you to two blocks at row 5 and one at row 11. 10 a row, +5 perfect, +20 at the minor prize line, +60 at the top. Keys: Space / Enter.');
  function layout(){const W=s.W,H=s.H,gap=8,pw=(W-gap*3)/2,top=48,bottom=36,cell=Math.floor(Math.min(pw/(COLS+1.3),(H-top-bottom)/(ROWS+3.2)));const used=cell*(ROWS+3.2);return {cell,top,panels:[0,1].map(i=>{const px=gap+i*(pw+gap);return {x:px+(pw-cell*COLS)/2,y:top+((H-top-bottom)-used)/2+cell*1.7,pw,px};})};}
@@ -54,7 +60,7 @@ async function towerstack(s){
   pixText(x,String(total[p.i]+p.score).padStart(3,'0'),L.x+cs*COLS/2,fy+fh+cs*.35,cs*.13,col,{align:'center',glow:8});
   if(p.done)pixText(x,p.won==='MAJOR'?'MAJOR PRIZE!':p.won==='MINOR'?'MINOR PRIZE':'GAME OVER',L.x+cs*COLS/2,L.y+cs*ROWS*.45,cs*.12,p.won?'#ffd23f':'#ff6060',{align:'center',glow:8});
  }
- function frame(dt){
+ function frame(dt){if(cpu)cpuStack();
   const W=s.W,H=s.H;t+=dt;shake.step(dt);bits.step(dt);
   if(state==='play'){for(const p of P){p.flash=Math.max(0,p.flash-dt);for(const f of p.fall){f.v+=900*dt;f.y+=f.v*dt;}p.fall=p.fall.filter(f=>f.y<H);
     if(p.done)continue;p.clock+=dt;const tk=tickFor(p.row);while(p.clock>=tk){p.clock-=tk;p.pos+=p.dir;if(p.pos+p.len>COLS){p.pos=COLS-p.len-1;p.dir=-1;}if(p.pos<0){p.pos=1;p.dir=1;}if(p.i===0)voice(1500,.012,.012,'square');}}

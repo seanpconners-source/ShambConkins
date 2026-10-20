@@ -4,6 +4,7 @@ const {ownedPointers}=require("src/engines/duelControls.js");
 const {touchKeys}=require("src/engines/touchDuel.js");
 const {arcadeRounds}=require("src/engines/arcade.js");
 const {circle}=require("src/engines/session.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 // v0.44 additions: Block Battle, Shred Hero, Dodgeball, Fight Night, Gopher Hunt, Archery.
 function relabel(i,key,text,label){const node=document.getElementById(`duel-${i}-${key}`);if(!node)return;node.textContent=text;node.setAttribute('aria-label',label);}
 const rr=(x,px,py,w,h,r)=>{x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath();};
@@ -58,9 +59,16 @@ async function blocks(s){
  spawn(st[0]);spawn(st[1]);
  s.hint('Two boards, one shared piece sequence. On your half of the screen: drag left/right to shift the piece, tap to rotate, drag down to soft drop, flick down fast to hard drop. Clearing 2+ lines sends garbage to your rival. Keyboard: P1 A/D move, W rotate, S soft drop, Space hard drop; P2 arrows + Enter. Last survivor wins; after 2:30 the higher score wins.');
  s.debug={engine:'blocks',state:st,keys};
+ // vs CPU: board 2 scores every rotation and column (lines, height, holes, bumpiness), then rotates, shifts and drops at a skill pace
+ const cpu=isCpu(s);let cpuPlan=null,cpuIdx=-1,cpuT=0;
+ function cpuBlocks(dt){const me=st[1];if(me.dead||!me.piece)return;const sk=cpuSkill(s);
+  if(cpuIdx!==me.index){cpuIdx=me.index;let best=null,bv=-1e9;for(let r=0;r<4;r++){const sim={grid:me.grid,piece:{...me.piece}};let ok=true;for(let k=0;k<r;k++)ok=ok&&tryRotate(sim);if(!ok)continue;for(let dx=-BW;dx<=BW;dx++){const p={...sim.piece,x:sim.piece.x+dx};if(collides(me.grid,p))continue;const t2={grid:me.grid,piece:p};p.y=ghostY(t2);const g=me.grid.map(row=>row.slice());lockPiece(g,p);const lines=clearRows(g);
+    let agg=0,holes=0,bump=0,prevH=null;for(let x0=0;x0<BW;x0++){let h=0;for(let y=0;y<BH;y++)if(g[y][x0]){h=BH-y;break;}agg+=h;for(let y=BH-h;y<BH;y++)if(!g[y][x0])holes++;if(prevH!==null)bump+=Math.abs(h-prevH);prevH=h;}
+    const v=-.51*agg+.76*lines-.36*holes*(.5+sk)-.18*bump+Math.random()*(1-sk)*3;if(v>bv){bv=v;best={r,x:p.x};}}}cpuPlan=best?{...best,rot:0}:null;}
+  cpuT-=dt;if(cpuT>0||!cpuPlan)return;cpuT=.07+(1-sk)*.22;if(cpuPlan.rot<cpuPlan.r){cpuPlan.rot++;tryRotate(me);return;}if(me.piece.x!==cpuPlan.x){tryMove(me,Math.sign(cpuPlan.x-me.piece.x),0);return;}if(sk>.5||Math.random()<.3){hardDrop(1);cpuPlan=null;}}
  if(!await s.pass(0,'Block Battle: both players get the identical piece order. Clear lines to send garbage rows to the other board. Top out and you lose.','Both ready — drop!'))return;
  s.frame(dt=>{
-  left-=dt;
+  left-=dt;if(cpu)cpuBlocks(dt);
   for(let i=0;i<2;i++){
    const me=st[i],k=keys[i];if(me.dead)continue;
    for(const dir of ['l','r']){if(k[dir]){me.das[dir]+=dt;}else me.das[dir]=0;}
@@ -128,12 +136,15 @@ async function shred(s){
  };
  const KEYS=[{a:0,s:1,d:2,f:3},{h:0,j:1,k:2,l:3}];
  s.on(document,'keydown',ev=>{if(ev.repeat)return;const k=ev.key.toLowerCase();for(let i=0;i<2;i++)if(KEYS[i][k]!==undefined){ev.preventDefault();hit(i,KEYS[i][k]);}});
- s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev),half=s.W/2,i=p.x<half?0:1,lx=(p.x-(i?half:0))/half,lane=clamp(Math.floor(lx*4),0,3);hit(i,lane);});
+ s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev),half=s.W/2,side=p.x<half?0:1,i=cpuS?0:side,lx=(p.x-(side?half:0))/half,lane=clamp(Math.floor(lx*4),0,3);hit(i,lane);});
+ // vs CPU: guitarist 2 hits each note with a timing error that shrinks on Hard and skips a few on Easy
+ const cpuS=isCpu(s);
+ function cpuShred(){const sk=cpuSkill(s);for(const n of chart[1]){if(n.hit!==null||n.cpu)continue;if(n.t-clock>.3)break;if(n.cpuOff===undefined)n.cpuOff=(Math.random()-.5)*2*SHRED.good*(1.15-sk)*.8;if(clock>=n.t+n.cpuOff){n.cpu=true;if(Math.random()<.6+sk*.38)hit(1,n.lane);}}}
  s.hint('Hit notes as they reach the glowing line. Tap a lane at the bottom of your half (P1 left, P2 right), or use keys: P1 A S D F, P2 H J K L. Chain hits to build a multiplier up to ×4. Same song, same chart for both. Highest score wins.');
  s.debug={engine:'shred',chart,state:st,clock:()=>clock};
  if(!await s.pass(0,'Shred Hero: the same riff plays for both of you. Hit every note on the beat. Perfect hits score double the multiplier.','Both ready — rock!'))return;
  s.frame(dt=>{
-  clock+=dt;
+  clock+=dt;if(cpuS)cpuShred();
   // Backing track: kick, hat and a bass riff on the beat grid.
   const sb=Math.floor(clock/(beat/2));if(clock>=0&&sb!==lastBeat.n){lastBeat.n=sb;const q=sb%8;if(q%2===0)tone(q%4===0?62:82,.09,.06,'sine');if(q===2||q===6)tone(180,.05,.03,'square');tone(q%2?7000:5200,.012,.006,'square');const riff=[0,0,7,0,10,7,3,5][q];if(clock>=beat*8)tone(55*2**(riff/12),.18,.045,'sawtooth');}
   for(let i=0;i<2;i++){const me=st[i];for(const n of chart[i])if(n.hit===null&&clock-n.t>SHRED.good){n.hit='miss';me.miss++;me.combo=0;me.text='MISS';me.textT=.35;}me.textT=Math.max(0,me.textT-dt);for(let l=0;l<4;l++)me.flash[l]=Math.max(0,me.flash[l]-dt);}
@@ -186,8 +197,15 @@ async function dodgeball(s){
  s.debug={engine:'dodgeball',state:a,keys,wins};
  if(!await s.pass(0,'Dodgeball: a True Underdog Story. Dodge, catch and throw. Three hearts each.','Both ready — dodge!'))return;
  const boundsX=i=>i?[DODGE.W/2+DODGE.r+6,DODGE.W-DODGE.r-8]:[DODGE.r+8,DODGE.W/2-DODGE.r-6];
+ // vs CPU: player 2 fetches loose balls on its side, dodges or snatches incoming throws, and throws when lined up with you
+ const cpu=isCpu(s);let cpuT=0,cpuHoldT=0;
+ function cpuDodge(dt){const p=a.players[1],o=a.players[0],sk=cpuSkill(s);if(pause>0)return;let tx=p.x,ty=p.y;
+  for(const b of a.balls){if(!b.live||b.owner!==0||b.vx<=0)continue;const tt=(p.x-b.x)/b.vx;if(tt<0||tt>.9)continue;const yy=b.y+b.vy*tt;if(Math.abs(yy-p.y)<DODGE.r*2.2){if(!p.ball&&p.cool<=0&&tt<.18&&Math.random()<sk*.55){doCatch(1);}else if(Math.random()<.3+sk*.6){ty=p.y+(yy<p.y?1:-1)*DODGE.r*3;}}}
+  if(!p.ball){let best=null,bd=1e9;for(const b of a.balls){if(b.held>=0||b.live||b.x<DODGE.W/2)continue;const d=Math.hypot(b.x-p.x,b.y-p.y);if(d<bd){bd=d;best=b;}}if(best&&ty===p.y){tx=best.x;ty=best.y;}}
+  else{cpuHoldT+=dt;if(ty===p.y)ty=o.y+Math.sin(cpuHoldT*2)*20;tx=DODGE.W/2+DODGE.r+60;if(cpuHoldT>.5+(1-sk)*.8&&Math.abs(o.y-p.y)<120){cpuHoldT=0;const dxx=p.x-o.x;doThrow(1,clamp((o.y-p.y)/dxx+(Math.random()-.5)*(1-sk)*.5,-1,1)*.9);}}
+  tgt[1]={x:tx,y:clamp(ty,DODGE.r+8,DODGE.H-DODGE.r-8)};}
  s.frame(dt=>{
-  left-=dt;
+  left-=dt;if(cpu)cpuDodge(dt);
   if(pause>0){pause-=dt;if(pause<=0){if(wins.some(n=>n>=DODGE.rounds)||left<=0){const scores=[wins[0]*10+a.players[0].hp,wins[1]*10+a.players[1].hp];s.finish(scores,'Dodgeball');return;}a=dodgeInit(a.round+1);s.debug.state=a;}}
   else{
    for(let i=0;i<2;i++){
@@ -261,6 +279,11 @@ async function boxing(s){
  s.debug={engine:'boxing',state:f,keys,wins};
  if(!await s.pass(0,'Fight Night: three rounds of thirty-five seconds. Jab to build pressure, hook to finish, block and duck to survive.','Both ready — ding ding!'))return;
  const dist=()=>Math.abs(f[1].x-f[0].x);
+ // vs CPU: boxer 2 keeps punching range, reads your wind-up (ducks jabs, blocks hooks) and mixes jabs with power hooks
+ const cpu=isCpu(s);let cpuT=.6,cpuSeen=null;
+ function cpuBox(dt){const me=f[1],o=f[0],v=virt[1],sk=cpuSkill(s),d=dist();if(pause>0){v.l=v.r=v.u=false;return;}
+  v.l=d>135;v.r=d<85;if(o.state!=='idle'&&o.t<.12&&cpuSeen!==o){cpuSeen=o;if(Math.random()<.25+sk*.6){if(o.state==='jab')pulse(1,'d',320);else{v.u=true;cpuT=.5;}}}else if(o.state==='idle')cpuSeen=null;
+  cpuT-=dt;if(cpuT>0)return;v.u=false;cpuT=.35+(1-sk)*.5+Math.random()*.3;if(d<150&&me.state==='idle'&&me.hurt<=0)startPunch(1,me.stamina>45&&Math.random()<.25+sk*.2);}
  const land=(i,power)=>{
   const me=f[i],foe=f[1-i];let dmg=power?18:6;
   if(foe.ducking>0&&!power){fx.push({x:foe.x,y:230,text:'SLIPPED',t:.7});return;}
@@ -272,7 +295,7 @@ async function boxing(s){
   shake=Math.max(0,shake-dt);
   if(pause>0){pause-=dt;if(pause<=0){if(wins.some(n=>n>=2)||round>=BOX.rounds+1){s.finish([wins[0]*100+f[0].hp,wins[1]*100+f[1].hp],'Fight Night');return;}round++;left=BOX.roundTime;f=[boxer(0),boxer(1)];s.debug.state=f;}}
   else{
-   left-=dt;
+   left-=dt;if(cpu)cpuBox(dt);
    for(let i=0;i<2;i++){
     const me=f[i],k=keys[i],dir=i?-1:1;me.hurt=Math.max(0,me.hurt-dt);me.ducking=Math.max(0,me.ducking-dt);me.stamina=Math.min(100,me.stamina+(me.blocking?7:16)*dt);
     me.blocking=!!k.u&&me.state==='idle';

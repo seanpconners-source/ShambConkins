@@ -4,6 +4,7 @@
 const {clamp,seededRandom}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const {label,rr,makeFx,makeShake,sfx,halfPointers,keyboard,voice,noise}=require("src/engines/tarantinoKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const DUR=45,BEAT=.5;
 const CALL_LINES=['“Forrest… are you eating pancakes right now?”','“We need to talk about the house.”','“Is that syrup I hear?”','“My lawyer says hi.”'];
 const PUKE_LINES=['Zero stars.','The diner goes quiet.','Not on the menu.','A bold review.'];
@@ -36,6 +37,10 @@ async function pancakes(s){
   fx.pop(cx(p.i),L.H*.24,lost?`-${lost} 🥞 ${PUKE_LINES[p.pukes%PUKE_LINES.length]}`:PUKE_LINES[p.pukes%PUKE_LINES.length],{color:'#c8f05a',size:18,life:1.6});}
 
  halfPointers(s,{down:i=>bite(i)});
+ // vs CPU: eater 2 chews on the beat, stops for the phone after a reaction delay and eases off when queasy
+ const cpu=isCpu(s);let cpuNext=1,cpuCall=0;
+ function cpuThink(dt){const p=P[1];if(phase!=='play'||p.stun>0)return;const sk=cpuSkill(s);cpuNext-=dt;if(callNow){cpuCall+=dt;if(cpuCall>.15+(1-sk)*.6)return;}else cpuCall=0;
+  if(cpuNext>0)return;cpuNext=BEAT*(1+(Math.random()-.5)*(1.15-sk)*.9);if(p.q>78-sk*10&&Math.random()<.4+sk*.5){cpuNext=BEAT*1.8;return;}bite(1);}
  keyboard(s,(i,k,down)=>{if(down&&(k==='act'||k==='u'||k==='d'))bite(i);});
 
  const L={};const cx=i=>L.W*(i?.75:.25);
@@ -73,7 +78,7 @@ async function pancakes(s){
 
  s.hint('Both eat at once. Tap your half to bite; four bites finish a pancake (golden stacks take six and count double). Bite on the beat (when the ring glows) to stay calm; mashing fills the QUEASY meter fast and the fuller you get, the worse each bite. Max it out and you throw up two pancakes. When Suzanne calls, stop eating! Keys: Space and Enter.');
  if(!await s.pass(0,'Forrest MacNeil was asked: what is it like to eat 15 pancakes? Find out. Tap your half to bite, ideally on the beat. Don’t get too queasy, and when the phone rings, put the fork down. Most pancakes in 45 seconds wins.','Both ready — dig in',{countdown:3}))return;
- s.frame(dt=>{layout();
+ s.frame(dt=>{layout();if(cpu)cpuThink(dt);
   if(phase==='play'){t+=dt;
    const call=calls.find(cl=>t>=cl.t&&t<cl.t+cl.len);if(call&&!callNow){ring=0;sfx.phone();}callNow=call||null;if(callNow){ring+=dt;if(ring>.6){ring=0;sfx.phone();}}
    for(const p of P){p.chew=Math.max(0,p.chew-dt);if(p.stun>0)p.stun-=dt;const calm=t-p.last>.9?14:5;p.q=Math.max(0,p.q-calm*dt);}

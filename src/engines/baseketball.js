@@ -5,6 +5,7 @@
 const {clamp}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const {label,rr,makeFx,makeShake,sfx,voice,noise}=require("src/engines/tarantinoKit.js");
+const {isCpu,cpuSkill,cpuHotseat}=require("src/engines/cpuKit.js");
 const BASES=[['SINGLE',4.2],['DOUBLE',7],['TRIPLE',9.8],['HOME RUN',12.6]];
 const PSYCH=['YOUR MOM!','I SLEPT WITH YOUR SISTER!','AIRHORN!','LOOK, A HOT DOG!','*KAZOO SOLO*','YOU’RE ADOPTED!','BOO-YAH!','NICE SHIRT. NOT.'];
 const INNINGS=2,MAXSHOTS=12;
@@ -21,7 +22,11 @@ async function basketball2p(s){
  function resetBall(){ball={...ballHome(),vx:0,vy:0,fly:false,made:false,done:false,t:0,swish:true};drag=null;psyched=0;}
  function launch(vx,vy){if(!ball||ball.fly||phase!=='aim')return;ball.vx=vx;ball.vy=vy;ball.fly=true;phase='fly';shots++;sfx.whoosh(300,1200,.06,.18);}
 
- s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev);
+ // vs CPU: batting, the CPU picks a base spot (riskier on Hard) and launches on a computed arc with error (more if you psych it out); defending, it psychs you out mid-aim
+ const cpu=isCpu(s);let cpuPsychT=0;
+ const psychOut=()=>{if(psych>0&&!psyched&&phase==='aim'){psych--;psyched=1;psychText=PSYCH[Math.floor(Math.random()*PSYCH.length)];psychT=1.6;shake.kick(9);noise(.4,.12,{type:'bandpass',f0:500,f1:900,q:3});voice(220,.5,.07,'sawtooth');vibrate(40);s.react(1-bat,'happy');}};
+ if(cpu)cpuHotseat(s,{isTurn:()=>bat===1&&phase==='aim'&&ball&&!ball.fly,delay:1100,think:()=>{const sk=cpuSkill(s),r=Math.random();spot=r<.45-sk*.2?0:r<.75?1:r<.92?2:3;resetBall();const b=ball,g=L.u*30,T=.95+Math.random()*.3,vx=(L.hx-b.x)/T,vy=(L.hy-b.y-.5*g*T*T)/T,e=(1-sk)*.09+(psyched?.12:0),a=Math.atan2(vy,vx)+(Math.random()-.5)*e,m=Math.hypot(vx,vy)*(1+(Math.random()-.5)*e*.6);launch(Math.cos(a)*m,Math.sin(a)*m);}});
+ s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev);if(cpu&&(bat===1||p.y<L.strip))return;
   if(p.y<L.strip){if(phase==='aim'||phase==='fly'){if(psych>0&&!psyched&&phase==='aim'){psych--;psyched=1;psychText=PSYCH[Math.floor(Math.random()*PSYCH.length)];psychT=1.6;shake.kick(9);noise(.4,.12,{type:'bandpass',f0:500,f1:900,q:3});voice(220,.5,.07,'sawtooth');vibrate(40);s.react(1-bat,'happy');}}return;}
   if(phase!=='aim')return;
   for(let k=0;k<4;k++){if(Math.abs(p.x-spotX(k))<L.u*1.1&&p.y>L.floor-L.u*.6){if(!drag){spot=k;resetBall();sfx.click();}return;}}
@@ -90,7 +95,7 @@ async function basketball2p(s){
   if(!await s.pass(bat,`Inning ${Math.floor(half/2)+1}, ${s.players[bat].name} at bat. Tap a base spot (further = more bases), drag back from anywhere and release. Miss = out, three outs and you switch. ${s.players[1-bat].name}: tap the top strip to psych them out while they aim (twice per inning).`,'Play ball',{summary:half?`${s.players[0].name} ${runs[0]} – ${runs[1]} ${s.players[1].name}`:null}))return false;phase='aim';return true;}
 
  s.hint('Tap one of the four base spots on the floor to pick your shot (single = 1 base, home run = clears the bases). Drag back from anywhere and release to shoot; the dotted arc shows your aim. A make advances every runner, a miss is an out. The defender taps the top strip while you aim to psych you out: the guide disappears and your hands shake.');
- s.frame(dt=>{layout();t+=dt;psychT=Math.max(0,psychT-dt);msgT=Math.max(0,msgT-dt);
+ s.frame(dt=>{layout();t+=dt;psychT=Math.max(0,psychT-dt);msgT=Math.max(0,msgT-dt);if(cpu&&bat===0&&drag&&phase==='aim'){cpuPsychT+=dt;if(cpuPsychT>.5&&Math.random()<dt*(.4+cpuSkill(s)*.8)){cpuPsychT=0;psychOut();}}
   if(phase==='aim'&&ball&&!ball.fly&&!drag){Object.assign(ball,ballHome());}
   if(phase==='fly'&&ball)physics(dt);
   if(phase==='result'&&msgT<=0){if(outs>=3||shots>=MAXSHOTS){phase='switch';half++;if(half>=INNINGS*2){if(s.alive)s.finish([...runs],runs[0]===runs[1]?`BASEketball ties ${runs[0]}–${runs[1]}.`:`${s.players[runs[0]>runs[1]?0:1].name} wins BASEketball ${Math.max(...runs)}–${Math.min(...runs)}.`);return;}void startHalf();}else{resetBall();phase='aim';}}

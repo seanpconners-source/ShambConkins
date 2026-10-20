@@ -2,6 +2,7 @@
 // twelve-bar surf-rock twist (bass, drums, chops; your hits play the lead guitar). Highest score wins the trophy.
 const {clamp,seededRandom}=require("src/utils.js");
 const K=require("src/engines/tarantinoKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const {label,rr,lerp,filmOverlay,flash,titleCard,makeFx,makeShake,voice,noise,sfx,halfPointers,keyboard,ac}=K;
 
 const BPM=150,BEAT=60/BPM,EIGHTH=BEAT/2,BAR=BEAT*4,TRAVEL=1.75,PERFECT=.08,GOOD=.16,INTRO_BARS=2,CHORUSES=3;
@@ -65,6 +66,9 @@ async function twist(s){
   if(me.combo>0&&me.combo%10===0){s.react?.(i,'happy');fx.pop(L.halfW*(i+.5),L.sh+30,`${me.combo} COMBO!`,{color:'#ffd23f',size:clamp(L.W*.03,14,26)});sfx.coin();}
  }
  halfPointers(s,{down:(i,r)=>{const lx=(r.x-i*L.halfW-L.m)/(L.halfW-L.m*2);press(i,clamp(Math.floor(lx*4),0,3));}});
+ // vs CPU: dancer 2 hits each glyph with a timing error that shrinks on Hard, and skips a few on Easy
+ const cpu=isCpu(s);
+ function cpuThink(){const sk=cpuSkill(s);for(const n of notes[1]){if(n.hit!==null||n.cpu)continue;if(n.cpuOff===undefined)n.cpuOff=(Math.random()-.5)*2*GOOD*(1.15-sk)*.75;if(S.clock>=n.t+n.cpuOff){n.cpu=true;if(Math.random()<.62+sk*.36)press(1,n.lane);}}}
  const KL={l:0,d:1,u:2,r:3};keyboard(s,(i,name,down)=>{if(down&&KL[name]!==undefined)press(i,KL[name]);});
  s.hint('Tap the lane when its glyph reaches the glowing ring (P1 left half, P2 right half). Keys: P1 A S W D = left down up right, P2 arrow keys. Perfect and Good hits build a combo multiplier up to x4; taps with no glyph cost points. Your hits play the lead guitar. Highest score wins the trophy.');
  if(!await s.pass(0,'The Twist Contest at Jack Rabbit Slim\'s. Hit the glyphs on the beat, build your combo, and take home the trophy.','Both ready — hit it!',{countdown:3}))return;
@@ -92,7 +96,7 @@ async function twist(s){
   layout();fx.step(dt);shake.step(dt);S.flash=Math.max(0,S.flash-dt*2.5);
   if(S.phase==='card'){S.card+=dt;if(S.card>=2.1){S.phase='play';S.sched=Math.floor(S.clock/EIGHTH)-1;}}
   else if(S.phase==='play'||S.phase==='finale'){
-   S.clock+=dt;keepBand();
+   S.clock+=dt;keepBand();if(cpu)cpuThink();
    const beatIdx=Math.floor(S.clock/BEAT);if(S.clock>=0&&beatIdx!==S.lastBeat){S.lastBeat=beatIdx;S.beatPulse=1;}S.beatPulse=Math.max(0,S.beatPulse-dt*4);
    for(let i=0;i<2;i++){const me=st[i];me.textT=Math.max(0,me.textT-dt);me.wave+=dt;for(let l=0;l<4;l++)me.press[l]=Math.max(0,me.press[l]-dt);me.groove=Math.max(0,me.groove-dt*.8);
     for(const n of notes[i])if(n.hit===null&&S.clock-n.t>GOOD){n.hit='miss';me.miss++;if(me.combo>=8)sfx.groan();me.combo=0;me.groove=Math.max(0,me.groove-8);say(i,'MISS','#ff7a6a');}}

@@ -9,6 +9,7 @@ const {vibrate}=require("src/audio.js");
 const {shuffle}=require("src/utils.js");
 const {SFX}=require("src/engines/westernSfx.js");
 const {PHRASES,CATEGORIES}=require("src/data/hangmanPhrases.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const LIVES=6,ROUNDS=3,CLOCK=75,TURN=15,MAXLEN=34;
 const ABC=[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
@@ -425,7 +426,7 @@ async function hangman(s){
 
  // ---------------------------------------------------------------- frame
  s.frame(dt=>{
-  T+=dt;DT=dt;W=s.W;H=s.H;
+  T+=dt;DT=dt;W=s.W;H=s.H;if(cpu)cpuHang(dt);
   dpr=Math.min(2,window.devicePixelRatio||1);const cw=Math.round(W*dpr),ch=Math.round(H*dpr);if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}
   x.setTransform(dpr,0,0,dpr,0,0);
   for(let i=waits.length-1;i>=0;i--)if(waits[i].f()){waits[i].r();waits.splice(i,1);}
@@ -476,17 +477,21 @@ async function hangman(s){
   const cy=lay.phrase?lay.phrase.y-14:H*.5;x.save();x.globalAlpha=k;x.font=`900 ${clamp(Math.min(W,H)*.055,16,34)}px ${SLAB}`;x.textAlign='center';x.textBaseline='middle';const tw=Math.min(W-20,x.measureText(txt).width+30);
   rr(x,W/2-tw/2,cy-22,tw,40,20);x.fillStyle='rgba(16,7,3,.9)';x.fill();x.strokeStyle=col;x.lineWidth=2;x.stroke();x.fillStyle=col;x.fillText(txt,W/2,cy-1,tw-20);x.restore();}
 
+ // vs CPU (Quick Draw and Showdown): the outlaw guesses by English letter frequency, and now and then (more on Hard) a letter it knows is there
+ const cpu=isCpu(s)&&mode!=='pass',FREQ='ETAOINSRHLDCUMFPGWYBVKXJQZ';let cpuT=1.5;
+ function cpuHang(dt){if(st.phase!=='play'||st.hanged[1]||st.lock[1]>T||!players().includes(1))return;const sk=cpuSkill(s);cpuT-=dt;if(cpuT>0)return;cpuT=mode==='shared'?1.6-sk*.8+Math.random()*.7:.9+Math.random()*.8;
+  const left=[...FREQ].filter(L=>!st.guessed.has(L)),inText=left.filter(L=>st.text.includes(L));if(!left.length)return;const L=inText.length&&Math.random()<.12+sk*.3?inText[0]:left[Math.min(left.length-1,Math.floor(Math.random()*(4-sk*3)))];guess(1,L);}
  // ---------------------------------------------------------------- input
  s.on(c,'pointerdown',ev=>{ev.preventDefault();if(s.paused||!s.alive)return;const pt=s.pointer(ev);
   if(st.phase==='intro'||st.phase==='final'){if(T>.5)st.skip=true;return;}
   if(st.phase==='reveal'||st.phase==='banner'){if(T-st.bannerT>1.2)st.skip=true;return;}
   if(st.phase==='write'){for(const b of lay.act||[])if(inRect(pt,b)){st.press['w'+b.id]=T;({deal,clue:cycleClue,space:()=>typeChar(' '),back:backspace,done:doneWriting})[b.id]();return;}
    for(const k of lay.keys?.[0]||[])if(inRect(pt,k)){st.press['w'+k.L]=T;typeChar(k.L);return;}return;}
-  if(st.phase==='play')(lay.keys||[]).forEach((ks,i)=>{const p=mode==='shared'?i:mode==='turns'?st.turn:st.guesser;for(const k of ks)if(inRect(pt,{x:k.x-2,y:k.y-2,w:k.w+4,h:k.h+4})){guess(p,k.L);st.press[p+k.L]=T;return;}});
+  if(st.phase==='play')(lay.keys||[]).forEach((ks,i)=>{const p=mode==='shared'?i:mode==='turns'?st.turn:st.guesser;if(cpu&&p===1)return;for(const k of ks)if(inRect(pt,{x:k.x-2,y:k.y-2,w:k.w+4,h:k.h+4})){guess(p,k.L);st.press[p+k.L]=T;return;}});
  });
  s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat||ev.target?.matches?.('input,textarea,[contenteditable]'))return;const k=ev.key;
   if(st.phase==='write'){if(/^[a-z]$/i.test(k))typeChar(k.toUpperCase());else if(k===' '||k==="'"||k==='-')typeChar(k);else if(k==='Backspace')backspace();else if(k==='Enter')doneWriting();else return;ev.preventDefault();return;}
-  if(st.phase==='play'&&/^[a-z]$/i.test(k)){ev.preventDefault();guess(mode==='shared'?0:mode==='turns'?st.turn:st.guesser,k.toUpperCase());}
+  if(st.phase==='play'&&/^[a-z]$/i.test(k)){ev.preventDefault();const who=mode==='shared'?0:mode==='turns'?st.turn:st.guesser;if(!(cpu&&who===1))guess(who,k.toUpperCase());}
   else if(['intro','final','reveal'].includes(st.phase)&&(k==='Enter'||k===' ')){ev.preventDefault();st.skip=true;}});
  s.debug={st,guess,type:t=>{st.draft=String(t).toUpperCase().slice(0,MAXLEN);},deal,done:doneWriting,skip:()=>{st.skip=true;},layout:()=>lay};
 

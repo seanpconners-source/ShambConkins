@@ -6,6 +6,7 @@
 //             the spinner: timing is the skill. First to square 100, or the furthest after 12 spins each.
 const {clamp}=require("src/utils.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,FONT,PCOL,settle,Countdown}=require("src/engines/arenaKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const INK='#24402a',RACE_TIME=45,TOP=100,SPINS=12;
 const LADDERS={1:38,4:14,9:31,21:42,28:84,36:44,51:67,71:91,80:100};
@@ -36,9 +37,15 @@ async function chutes(s){
   arenaTouch(s,{owner,maxFingers:2,onUp:f=>{if(f.moved>26&&Math.abs(f.x-f.sx)>Math.abs(f.y-f.sy))lane(f.owner,f.x>f.sx?1:-1);else if(f.moved<26)climb(f.owner);}});
   const kb=arenaKeys(s);kb.onDown((i,k)=>{if(k==='u'||k==='fire')climb(i);else if(k==='l')lane(i,-1);else if(k==='r')lane(i,1);});
   s.debug={P,hazard,get phase(){return phase;},climb,lane,setClock(v){clock=v;}};
+  // vs CPU: climber 2 taps up at a steady pace and hops ladders when a chute is a rung or two ahead (it spots them less often on Easy)
+  const cpu=isCpu(s);let cpuT=.5;
+  const cpuClimb=dt=>{const p=P[1],sk=cpuSkill(s);if(p.finished||p.slide>0||p.anim>0||p.queue>0)return;cpuT-=dt;if(cpuT>0)return;cpuT=1/(3.5+sk*4.5)*(.8+Math.random()*.4);
+   const at=(l,k=1)=>hazard[p.rung+k]?.[l]?.kind,spot=Math.random()<.45+sk*.55;
+   if(spot&&at(p.lane)==='chute'){const safe=[0,1,2].filter(l=>at(l)!=='chute').sort((a,b)=>Math.abs(a-p.lane)-Math.abs(b-p.lane));if(safe.length){lane(1,Math.sign(safe[0]-p.lane));return;}}
+   if(spot&&sk>.5){const deed=[p.lane-1,p.lane+1].find(l=>at(l)==='deed');if(deed!==undefined){lane(1,deed-p.lane);return;}}climb(1);};
   s.frame(dt=>{t+=dt;fx.update(dt);
    if(phase==='count'){if(!cd.update(dt))phase='play';}
-   else if(phase==='play'){clock+=dt;for(let i=0;i<2;i++){const p=P[i];if(p.anim>0){p.anim-=dt;if(p.anim<=0&&p.queue>0){p.queue--;step(i);}}if(p.slide>0)p.slide-=dt;}
+   else if(phase==='play'){clock+=dt;if(cpu)cpuClimb(dt);for(let i=0;i<2;i++){const p=P[i];if(p.anim>0){p.anim-=dt;if(p.anim<=0&&p.queue>0){p.queue--;step(i);}}if(p.slide>0)p.slide-=dt;}
     if(winner>=0||clock>=RACE_TIME){phase='end';endT=0;if(winner<0){const a=P[0].best,b=P[1].best;winner=a===b?-2:a>b?0:1;}endText=winner===-2?'NECK AND NECK!':`${s.players[winner].name.toUpperCase()} REACHES 100!`;if(winner>=0&&!P[winner].finished)endText=`${s.players[winner].name.toUpperCase()} CLIMBED HIGHEST!`;}}
    else{endT+=dt;if(endT>2.8){const sc=[P[0].best,P[1].best];s.finish(sc,`Ladder Rush: ${s.players[0].name} rung ${sc[0]}, ${s.players[1].name} rung ${sc[1]}.`);return;}}
    s.setScores([P[0].best,P[1].best]);

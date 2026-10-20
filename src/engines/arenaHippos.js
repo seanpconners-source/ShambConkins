@@ -1,5 +1,6 @@
 const {clamp}=require("src/utils.js");
 const {PCOL,PDARK,PLIGHT,Fx,arenaKeys,arenaTouch,Countdown,banner,outlined,rr,snd,noise,jingle,mmss,gestureHint}=require("src/engines/arenaKit.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 // Hungry Hungry Heads (after Hungry Hungry Hippos): two hippo mouths at the bottom of each half, a hub spitting marbles
 // into the middle. Tap to lunge the neck to that spot, hold to keep the mouth open and steer it, release to recover.
 const MARBLE_COLORS=['#ff5a5a','#4fa8ff','#4fd06a','#b47bff','#ff9a3d','#38d6d0','#ff7ac0'];
@@ -206,7 +207,12 @@ async function hippos(s){
  s.debug={engine:'hippos',heads,marbles,fx,kb,cursors,get phase(){return phase;},get clock(){return clock;},geo:()=>g};
  draw();
  if(!await s.pass(0,'Hungry Hungry Heads: your head is the hippo. Tap your half to lunge for marbles, hold to keep your mouth open. Golden marbles are worth five. Most marbles in sixty seconds wins.','Both ready — chomp!'))return;
- s.frame(dt=>{
+ // vs CPU: hippo 2 snaps at the richest clump of marbles in reach (gold counts five), holds briefly, then lets go
+ const cpu=isCpu(s);let cpuT=1,cpuHold=0;
+ function cpuThink(dt){const h=heads[1];if(phase!=='play')return;const sk=cpuSkill(s);if(cpuHold>0){cpuHold-=dt;if(cpuHold<=0)h.touch=null;return;}cpuT-=dt;if(cpuT>0)return;cpuT=.35+(1-sk)*.6+Math.random()*.25;
+  let best=null,bv=0;for(const m of marbles){const t=clampTarget(h,m.x,m.y);if(Math.hypot(t.x-m.x,t.y-m.y)>g.rH)continue;let v=0;for(const q of marbles)if(Math.hypot(q.x-m.x,q.y-m.y)<g.rH*1.3)v+=q.value;v+=Math.random()*(1-sk)*2;if(v>bv){bv=v;best=m;}}
+  if(!best)return;const err=(1-sk)*g.rH*.9,px=best.x+(Math.random()-.5)*err+best.vx*.12,py=best.y+(Math.random()-.5)*err+best.vy*.12;h.touch={x:px,y:py};lunge(h,px,py);cpuHold=.18+Math.random()*.2;}
+ s.frame(dt=>{if(cpu)cpuThink(dt);
   if(s.W!==W||s.H!==H){const sx=s.W/W,sy=s.H/H;for(const m of marbles){m.x*=sx;m.y*=sy;}for(const h of heads){h.x*=sx;h.y*=sy;h.tx*=sx;h.ty*=sy;if(h.touch)h.touch=null;h.state=h.state==='rest'?'rest':'back';}W=s.W;H=s.H;g=geo(W,H);for(const c of cursors){c.x*=sx;c.y*=sy;}for(const m of marbles)m.r=m.gold?g.rM*1.25:g.rM;}
   update(Math.min(dt,.033));draw();
   s.status(`${s.players[0].name} ${heads[0].score} · ${s.players[1].name} ${heads[1].score} · ${Math.ceil(clock)}s${frenzy?' · DOUBLE POINTS':''}`);

@@ -7,6 +7,7 @@ const {clamp,seededRandom}=require("src/utils.js");
 const {voice,noise,keyboard,makeShake}=require("src/engines/tarantinoKit.js");
 const {pixText,drawSprite,makeStarfield,scanlines,vignette,fitField,makeBits}=require("src/engines/retroKit.js");
 const {vibrate}=require("src/audio.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 
 const SQUID=[['...##...','..####..','.######.','##.##.##','########','..#..#..','.#.##.#.','#.#..#.#'],['...##...','..####..','.######.','##.##.##','########','.#.##.#.','#......#','.#....#.']];
 const CRAB=[['..#.....#..','...#...#...','..#######..','.##.###.##.','###########','#.#######.#','#.#.....#.#','...##.##...'],['..#.....#..','#..#...#..#','#.#######.#','###.###.###','###########','.#########.','..#.....#..','.#.......#.']];
@@ -64,7 +65,13 @@ async function galaga(s){
  };
  // ---------------------------------------------------------------- input
  const fingers=new Map();let L=null;
- const cannonFor=p=>{if(!w)return null;if(w.cannons.length===1)return w.cannons[0];return w.cannons[p.x<s.W/2?0:1];};
+ const cannonFor=p=>{if(!w)return null;if(w.cannons.length===1)return w.cannons[0];return w.cannons[cpu||p.x<s.W/2?0:1];};
+ // vs CPU: cannon 2 slides under the lowest invader in reach (or the UFO), dodges bombs above it and fires when lined up
+ const cpu=isCpu(s);
+ function cpuInvaders(){const cn=w?.cannons?.[1];if(!cn||!cn.alive||w.mode!=='versus')return;const sk=cpuSkill(s);let tx=cn.x,best=-1e9;
+  for(const v of w.inv){if(!v.alive)continue;const vx=v.x+8,sc=v.y-Math.abs(vx-cn.x)*(.6+(1-sk));if(sc>best){best=sc;tx=vx;}}if(w.ufo&&sk>.5)tx=w.ufo.x+8;
+  for(const b of w.bombs){if(b.y<w.cannonY-90||b.y>w.cannonY)continue;if(Math.abs(b.x-cn.x)<9&&Math.random()<.3+sk*.7)tx=cn.x+(b.x<cn.x?24:-24);}
+  cn.tx=clamp(tx+(Math.random()-.5)*(1-sk)*6,8,w.FW-8);cn.firing=Math.abs(tx-cn.x)<5+(1-sk)*6;}
  const recount=()=>{if(!w)return;for(const cn of w.cannons)cn.firing=[...fingers.values()].some(f=>f===cn);};
  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||!w||!L)return;ev.preventDefault();const p=s.pointer(ev),cn=cannonFor(p);if(!cn)return;fingers.set(ev.pointerId,cn);s.capture(ev);cn.tx=L.toField(p.x,p.y).x;recount();});
  s.on(c,'pointermove',ev=>{const cn=fingers.get(ev.pointerId);if(!cn||s.paused||!L)return;ev.preventDefault();const p=s.pointer(ev);cn.tx=L.toField(p.x,p.y).x;});
@@ -216,7 +223,7 @@ async function galaga(s){
  }
 
  // ---------------------------------------------------------------- flow
- s.frame(dt=>{if(!w)return;if(running)step(dt);draw();s.setScores(mode==='turns'?scores.map((v,i)=>w.cannons[0].p===i?w.score[i]:v):[w.score[0],w.score[1]]);
+ s.frame(dt=>{if(!w)return;if(running){if(cpu)cpuInvaders();step(dt);}draw();s.setScores(mode==='turns'?scores.map((v,i)=>w.cannons[0].p===i?w.score[i]:v):[w.score[0],w.score[1]]);
   s.debug={engine:'galaga',mode,world:w,turn,scores,fingers};
   if(running&&w.over&&!ended){ended=w.overReason==='saved'?'EARTH SAVED!':w.overReason==='invaded'?'INVADED!':w.overReason==='time'?'TIME UP':'GAME OVER';if(w.overReason==='saved')sfx.wave();setTimeout(()=>{running=false;roundDone?.();},1600);}
  });
