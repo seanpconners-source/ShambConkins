@@ -5,6 +5,7 @@
 const {clamp}=require("src/utils.js");
 const {voice,label,SANS,rr}=require("src/engines/tarantinoKit.js");
 const {vibrate}=require("src/audio.js");
+const {isCpu,cpuHotseat,negamax,cpuDepth,cpuBlunder,pickRandom}=require("src/engines/cpuKit.js");
 
 const N=5,GLYPH={K:'♚',Q:'♛',R:'♜',B:'♝',N:'♞',P:'♟'},VAL={P:1,N:3,B:3,R:5,Q:9,K:0},COL=['#ffb347','#b38bff'],LC={o:'#ff9c3a',p:'#cc99ff',b:'#9999ff',t:'#ffcc66',r:'#cc6666'};
 const MOVE_SECS=45,MAX_PLY=120;
@@ -36,7 +37,7 @@ async function minichess(s){
   if(!moves.length){finish(check?1-turn:null,check?`CHECKMATE · ${s.players[1-turn].name.toUpperCase()} WINS`:'STALEMATE · DRAW');return;}
   if(check){banner={text:'CHECK',t:1.4};voice(880,.2,.05,'square');}
   if(ply>=MAX_PLY){const a=material(b,0),d=material(b,1);finish(a>d?0:d>a?1:null,a===d?'MOVE LIMIT · DRAW':`MOVE LIMIT · ${s.players[a>d?0:1].name.toUpperCase()} AHEAD ON MATERIAL`);}}
- s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||state!=='play')return;ev.preventDefault();const p=s.pointer(ev),g=geo(),cc=Math.floor((p.x-g.ox)/g.cell),r=Math.floor((p.y-g.oy)/g.cell);if(!inside(r,cc)){sel=null;targets=[];return;}
+ s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||state!=='play'||isCpu(s)&&turn===1)return;ev.preventDefault();const p=s.pointer(ev),g=geo(),cc=Math.floor((p.x-g.ox)/g.cell),r=Math.floor((p.y-g.oy)/g.cell);if(!inside(r,cc)){sel=null;targets=[];return;}
   if(sel&&targets.some(([a,d])=>a===r&&d===cc)){doMove([sel[0],sel[1],r,cc]);return;}
   if(b[r][cc]?.o===turn){sel=[r,cc];targets=legalFrom(b,r,cc);voice(1200,.03,.03,'sine');}else{sel=null;targets=[];}});
  s.hint('Gardner minichess on a 5×5 board: each side has a king, queen, rook, bishop, knight and five pawns. Pawns move one square and promote to a queen. Tap a piece to see its legal moves, then tap a highlighted square. Checkmate wins; 45 seconds a move (a random legal move is played if time runs out).');
@@ -73,6 +74,10 @@ async function minichess(s){
   if(banner)label(x,banner.text,W/2,oy+size/2,clamp(W*.06,20,42),{fill:'#ffd23f',stroke:'#000',alpha:state==='over'?1:clamp(banner.t*2,0,1)});
   s.debug={engine:'minichess',b,turn,ply,state,legal:()=>allLegal(b,turn),move:m=>doMove(m)};
  });
+ // vs CPU: material search over the 5x5 board
+ if(isCpu(s)){const V={P:1,N:3,B:3,R:5,Q:9,K:0},value=x=>{let v=0;for(const row of x.b)for(const p of row)if(p)v+=(p.o===1?1:-1)*V[p.t];return v;};
+  const g={moves:x=>allLegal(x.b,x.t),play:(x,m)=>({b:apply(x.b,m),t:1-x.t}),turn:x=>x.t,over:x=>allLegal(x.b,x.t).length?-1:inCheck(x.b,x.t)?1-x.t:2,value};
+  cpuHotseat(s,{isTurn:()=>turn===1&&state==='play'&&!anim,think:()=>{const ms=allLegal(b,1);if(!ms.length)return;doMove(cpuBlunder(s)?pickRandom(ms):negamax(g,{b,t:1},cpuDepth(s,1,3),{deadline:Date.now()+1200}));}});}
  if(!await s.pass(0,`Gardner minichess, Star Trek style. ${s.players[0].name} plays gold (bottom) and moves first; ${s.players[1].name} plays violet. Tap a piece, then a highlighted square. Checkmate wins. 45 seconds a move.`,'Engage',{countdown:0}))return;
  state='play';
 }

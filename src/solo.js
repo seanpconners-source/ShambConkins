@@ -25,6 +25,9 @@ const SOLO_IDS={
  'space-swarm':'turns','taskmaster-micro-relay':'turns','kingpin-bowling':'turns','bucketheadland-pinball':'turns',
  'major-league-fielding':'turns','flipadelphia-cup':'turns','office-hockey-shootout':'turns','chutes-spinner-showdown':'turns',
  'smb3-spade-slots':'turns',
+ // batch 3: CPU opponents (cpuKit / cpuBoards)
+ 'matrix-ultimate':'cpu','greed-island-mancala':'cpu','deadite-checkers':'cpu','ten-forward-chess':'cpu','office-dots-boxes':'cpu',
+ 'four-lights':'cpu','strategema-grid':'cpu','wopr-grid':'cpu','trek-mini-chess':'cpu',
 };
 const soloKind=game=>game?SOLO_IDS[game.id]||game.soloKind||null:null;
 function soloSettings(profile){const s=profile?.settings?.solo||{};return {on:s.on===true,who:s.who===1?1:0,level:SOLO_LEVELS.includes(s.level)?s.level:'normal'};}
