@@ -1,6 +1,9 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB World 1, Photo Hunt cabinet, October minigame remakes; release file `releases/ShambConkins_v0.60.0.html`, ~58 MB, committed like 0.59.1; v0.58.3 was a GitHub Release asset).
+Version 0.61.0 (1P Arcade for every game, DOOM / DOOM II, Hole.it, Bricks Breaker Quest, Random game button; release file
+`releases/ShambConkins_v0.61.0.html`, 78.4 MB, built Oct 21 on TESTver and NOT committed: upload it as a GitHub Release asset).
+Smoke/route/solo/doom/broforce-turns passed on the release file; last full local run (Oct 21) green apart from 6 Broforce tests, since fixed.
+Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
 
 ## Implemented systems
 - **Solo / 1P arcade (Oct 19 2026, batch 1 of 4, branch `claude/solo-mode-batch1`):** Arcade 1P / 2P switch + solo player

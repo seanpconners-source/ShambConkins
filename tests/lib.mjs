@@ -28,7 +28,7 @@ export async function open(opts = {}) {
  const page = await browser.newPage({viewport: opts.viewport || {width: 1100, height: 700}});
  const errors = [];
  page.on('pageerror', e => errors.push(e.message));
- page.on('console', m => { if (m.type() === 'error' && !/ERR_TUNNEL|ERR_INTERNET|ERR_NAME|Failed to load resource|attribute viewBox: A negative/.test(m.text())) errors.push('console: ' + m.text()); });
+ page.on('console', m => { if (m.type() === 'error' && !/ERR_TUNNEL|ERR_INTERNET|ERR_NAME|Failed to load resource|blocked by CORS policy|attribute viewBox: A negative/.test(m.text())) errors.push('console: ' + m.text()); });
  await page.addInitScript(() => {
    const o = Element.prototype.setAttribute;
    Element.prototype.setAttribute = function (n, v) {

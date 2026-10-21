@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.61.0
+
+**1-player Arcade.** The Arcade has a 1P / 2P switch. In 1P you pick who's playing (Sean or Amber; unlocks go to that player's roster) and a CPU difficulty (Easy, Normal or Hard), and every Arcade game can be played alone. Level games carry on stage after stage until you lose (Broforce missions, Super Mario Bros. World 1 on a loop, Sonic acts with a new boss pilot each time, Bricks Breaker Quest, Hole.it, Mario Kart Grand Prix, Photo Hunt across the whole library, Time Trials against your own ghost). Timed games become rounds that speed up each time, with a target to beat. Head-to-head games put a CPU in the other seat wearing your other New Game pick: board games (chess, checkers and the rest), Pong, air hockey, sumo, Kart VS, Balloon Battle, Rainbow Rivals and more, plus trivia, Uno, Yahtzee, Liar's Dice, Battleship, Clue, Monopoly, the casino tables and Microgame Rush. Co-op Space Invaders keeps a CPU teammate; Living Dead and the boss rematches are played alone, with a thinner horde, weaker bosses and five hearts. Best results are saved per game. Newlywed, Roast Battle and Draw It stay 2-player only.
+
+**DOOM and DOOM II.** Two new Arcade games running on a JavaScript rebuild of the original 1993 engine, with the free Freedoom maps built in (or pick your own WAD files on the phone). Touch controls work like the Android port. The status-bar face is your character with all of Doom's expressions, and one WANTED monster per map wears a character you haven't unlocked yet: kill it to recruit them. 1P plays the whole game with six save slots; 2P picks a level and skill, one life each, and scores kills, items, secrets and the par time.
+
+**Hole.it.** Paddy's Hole is now a remake of the mobile game Hole.it: a 3D tray of toys, fruit, kitchenware and sushi, real physics (props tip over the rim and stacks stay solid until the hole gets under them), a size bar, boosters, bombs that end your turn, goal cards, points levels, three stars per level, the pre-level screen with a level map, and the Bravo! coin bonus. Levels 2-6 and 30-34 are rebuilt from gameplay videos.
+
+**Bricks Breaker Quest.** A new neon brick-breaker with a stage map, triangle bricks, lasers, bombs, +1 rings and beam rings; a new line drops in every turn. Stages 1-36 are hand-built and the rest are generated, plus endless CLASSIC and 100 BALLS modes.
+
+**Random game.** A 🎲 button at the top of the Arcade picks any game in the current list.
+
+Also fixes six Broforce tests and the trivia/player-name test setup. Saves, character/location/game ids and Android launcher paths are unchanged.
+
 ## v0.60.0
 
 **Hangman Unchained.** Hangman is rebuilt as a full-screen Django Unchained western: a HANGMAN / UNCHAINED logo in the film's red style ("The H is silent."), a sunset desert, wooden gallows and detailed cowboys wearing your faces under Stetsons, and big touch keys instead of the tiny letter bar. Three games: **Quick Draw** (both players guess the same phrase at once on their own keyboards; first to shoot a letter owns it), **Showdown** (one keyboard, players take turns one letter at a time with a 15-second shot clock; the keyboard, a NAME'S SHOT banner and the player's card glow in the shooter's colour) and the new **Wanted** (one player writes a secret phrase or deals one from the deck, the other guesses, then swap). The deck has about 600 movie titles, quotes, sayings, loaded phrases, bands, games and Shambconkins in-jokes. Every sound is a synthesized gunshot, ricochet, revolver click, spur jingle, gallop, whinny or "Yeehaw!".
