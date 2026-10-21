@@ -51,7 +51,8 @@ function harness(initial=new Map()){
   'src/persistence.js':persistence,
   'src/characters.js':{characterIdentity:id=>id==='john-rambo'?'rambo':id},
   'src/data/savoryLab.js':{LAB_TEAM:[]},
-  'src/data/movieBonds.js':{isMovieBond:id=>id==='bond-a',missingMovieBonds:()=>[]}
+  'src/data/movieBonds.js':{isMovieBond:id=>id==='bond-a',missingMovieBonds:()=>[]},
+  'src/solo.js':load('src/solo.js',{})
  });
  return {disk,events,state,persistence,photos,profile};
 }

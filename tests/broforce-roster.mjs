@@ -35,7 +35,8 @@ const profiles=load('src/profile.js',{
  'src/persistence.js':{PROFILE_KEY:'test-profile',readJSON:()=>null,writeJSON:()=>{}},
  'src/characters.js':characters,
  'src/data/savoryLab.js':{LAB_TEAM:[]},
- 'src/data/movieBonds.js':{isMovieBond:()=>false,missingMovieBonds:()=>[]}
+ 'src/data/movieBonds.js':{isMovieBond:()=>false,missingMovieBonds:()=>[]},
+ 'src/solo.js':load('src/solo.js')
 });
 const roster=load('src/engines/broforce/roster.js',{
  'src/characters.js':characters,'src/profile.js':profiles

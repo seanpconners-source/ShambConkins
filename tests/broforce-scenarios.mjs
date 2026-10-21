@@ -54,7 +54,8 @@ const profile=load('src/profile.js',{
  'src/photoPairs.js':{normalizePhotoPair:()=>null,photoPairLibrary:()=>[],currentPhotoPair:()=>{},photoProfilePayload:p=>p},
  'src/persistence.js':{PROFILE_KEY:'test',readJSON:()=>null,writeJSON:()=>{throw Error('Pure contract invoked persistent write');}},
  'src/data/savoryLab.js':{LAB_TEAM:[]},
- 'src/data/movieBonds.js':{isMovieBond:()=>false,missingMovieBonds:()=>[]}
+ 'src/data/movieBonds.js':{isMovieBond:()=>false,missingMovieBonds:()=>[]},
+ 'src/solo.js':load('src/solo.js')
 });
 const roster=load(prefix+'roster.js',{'src/characters.js':chars,'src/profile.js':profile});
 const prisoners=load(prefix+'prisoners.js',{'src/engines/broforce/roster.js':roster});
@@ -310,7 +311,9 @@ if(integrated){
  });
  check('INTEGRATED BF-35/BF-36: registered adapter and four normal game descriptors',()=>{
   const pack=load('src/packs/broforcePack.js');
-  const adapter=load('src/engines/broforce.js');
+  // The turn-based engine's load-time imports; the rest are required inside functions.
+  const adapter=load('src/engines/broforce.js',{'src/utils.js':{clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),hash:()=>0},
+   'src/solo.js':load('src/solo.js'),'src/engines/arenaKit.js':{}});
   assert.equal(typeof adapter.broforce,'function');
   assert.equal(typeof pack.engines?.broforce,'function');
   for(const [id,title] of STAGES){

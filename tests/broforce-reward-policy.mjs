@@ -35,7 +35,8 @@ const profile=moduleAt('src/profile.js',{
  'src/persistence.js':{PROFILE_KEY:'local-test',readJSON:()=>null,writeJSON:()=>{throw new Error('STORAGE MUST NOT BE CALLED');}},
  'src/characters.js':chars,
  'src/data/savoryLab.js':{LAB_TEAM:[]},
- 'src/data/movieBonds.js':{isMovieBond:()=>false,missingMovieBonds:()=>[]}
+ 'src/data/movieBonds.js':{isMovieBond:()=>false,missingMovieBonds:()=>[]},
+ 'src/solo.js':moduleAt('src/solo.js',{})
 });
 const {planBroforceAwards:plan,applyBroforceAwards:apply}=moduleAt('src/engines/broforce/rewardPolicy.js',{'src/characters.js':chars,'src/profile.js':profile});
 const fresh=()=>profile.freshProfile();

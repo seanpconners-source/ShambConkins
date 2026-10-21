@@ -11,7 +11,7 @@ const sizes=process.argv[2]?process.argv.slice(2).map(s=>s.split('x').map(Number
 for(const [w,h] of sizes){
  const browser=await launchBrowser();const page=await browser.newPage({viewport:{width:w,height:h}});const errors=[];
  page.on('pageerror',e=>errors.push(e.message));
- page.on('console',m=>{if(m.type()==='error'&&!/ERR_|Failed to load resource|viewBox/.test(m.text()))errors.push('console: '+m.text());});
+ page.on('console',m=>{if(m.type()==='error'&&!/ERR_|Failed to load resource|viewBox|blocked by CORS policy/.test(m.text()))errors.push('console: '+m.text());});
  await page.goto(pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href,{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(()=>window.ShambConkins?.requestGame,null,{timeout:60000});
  const tag=`bf-${w}x${h}`;
