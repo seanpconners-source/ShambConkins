@@ -40,6 +40,8 @@ try {
   assert.deepEqual(await page.locator('#player-name-0, #player-name-1').evaluateAll(
     nodes=>nodes.map(n=>n.value)),["O'Neil",'<b id=x>Riley</b>'],'draft survives return to setup');
   await page.screenshot({path:screenshotPath('names-setup-phone.png')});
+  // The first tap enters fullscreen; Chromium refuses to resize a fullscreen window.
+  await page.evaluate(()=>document.fullscreenElement&&document.exitFullscreen());
   await page.setViewportSize({width:1100,height:700});
   await page.screenshot({path:screenshotPath('names-setup-desktop.png')});
   await page.setViewportSize({width:390,height:780});

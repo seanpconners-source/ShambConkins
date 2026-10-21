@@ -29,6 +29,9 @@ function load(path){
 const authored=load('src/data/trivia3.js');modules['src/data/trivia3.js']=authored;
 modules['src/triviaCatalog.js']={TRIVIA_QUESTIONS:authored.TRIVIA3.map((q,i)=>({...q,id:'t'+i})),triviaExplanationHTML:()=>'<p>fact</p>'};
 modules['src/triviaFeedback.js']=load('src/triviaFeedback.js');
+// Solo/vs-CPU hooks: these sessions have no s.solo, so isCpu() is false and the CPU paths stay idle.
+modules['src/solo.js']={cpuSkill:()=>.5};
+modules['src/engines/cpuKit.js']=load('src/engines/cpuKit.js');
 modules['src/engines/triviaModes.js']=load('src/engines/triviaModes.js');
 const engine=load('src/engines/trivia.js');
 async function settle(){await Promise.resolve();await Promise.resolve();}
