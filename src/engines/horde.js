@@ -1,5 +1,6 @@
 const {clamp}=require("src/utils.js");
 const {ownedPointers}=require("src/engines/duelControls.js");
+const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const {sound,tone,vibrate,pickupSound}=require("src/audio.js");
 const {store}=require("src/state.js");
 const HD=require("src/engines/hordeData.js");
@@ -17,6 +18,8 @@ async function horde(s){
  const [c,x]=s.canvas(700,390,{fill:true});let W=s.W,H=s.H;
  s.body.classList.add('drag-arena-body');s.queueCanvasFit?.();s.shared=true;s.cooperative=true;s.cooperativeLabel='SURVIVE TOGETHER';s.updateScores();
  const cabin=/evil dead/i.test(s.game.source),theme=cabin?'cabin':'dead';
+ // solo: player 2 is a CPU teammate driven by the steering bot below (reacts slower on Easy) and picks its own level-up cards
+ const cpu=isCpu(s),cpuGap=Math.round(3+(1-cpuSkill(s))*10);
  const title=cabin?'EVIL DEAD · CABIN DEFENSE':'RETURN OF THE LIVING DEAD · HORDE';
  const reduced=!!store.profile?.settings?.reducedMotion;
  const wseed=Math.floor(s.random()*4294967296)>>>0;
@@ -513,7 +516,7 @@ async function horde(s){
  const dirOut={x:0,y:0,m:0};
  const botCache=[{x:0,y:0,m:0,t:0},{x:0,y:0,m:0,t:0}];
  function botDir(i){
-  const c2=botCache[i];if(frameNo-c2.t<3&&frameNo>=c2.t){dirOut.x=c2.x;dirOut.y=c2.y;dirOut.m=c2.m;return;}c2.t=frameNo;
+  const c2=botCache[i];if(frameNo-c2.t<(cpu&&i===1&&!bot.on?cpuGap:3)&&frameNo>=c2.t){dirOut.x=c2.x;dirOut.y=c2.y;dirOut.m=c2.m;return;}c2.t=frameNo;
   const p=P[i],o=P[1-i];let tg=null,bd=1e18;
   for(const g of G){const d=(g.x-p.x)**2+(g.y-p.y)**2+(i?(g.x-o.x)**2*.3:0);if(d<bd){bd=d;tg=g;}}
   for(const k of K)if(k.k!=='bomb'){const d=(k.x-p.x)**2+(k.y-p.y)**2;if(d<bd*1.5){bd=d;tg=k;}}
@@ -528,10 +531,10 @@ async function horde(s){
  }
  function readDir(i){
   dirOut.x=0;dirOut.y=0;dirOut.m=0;
-  if(bot.on){botDir(i);return;}
+  if(bot.on||cpu&&i===1){botDir(i);return;}
   const st=stick[i];
   if(st.on){const vx=st.fx-st.ax,vy=st.fy-st.ay,d=Math.sqrt(vx*vx+vy*vy);if(d>6){if(d>60){const k=(d-60)/d;st.ax+=vx*k;st.ay+=vy*k;}dirOut.x=vx/d;dirOut.y=vy/d;dirOut.m=clamp((Math.min(d,60)-6)/36,.25,1);}return;}
-  let dx=0,dy=0;if(i===0){dx=(keys.d?1:0)-(keys.a?1:0);dy=(keys.s?1:0)-(keys.w?1:0);}else{dx=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);dy=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0);}
+  let dx=0,dy=0;if(i===0){dx=(keys.d||cpu&&keys.ArrowRight?1:0)-(keys.a||cpu&&keys.ArrowLeft?1:0);dy=(keys.s||cpu&&keys.ArrowDown?1:0)-(keys.w||cpu&&keys.ArrowUp?1:0);}else{dx=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);dy=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0);}
   const l=Math.sqrt(dx*dx+dy*dy);if(l>0){dirOut.x=dx/l;dirOut.y=dy/l;dirOut.m=1;}
  }
  function updatePlayers(dt){
@@ -595,6 +598,7 @@ async function horde(s){
   if(!s.alive)return;
   const secs=Math.floor(clock),bonus=won?100+(bossBonus?300+Math.round((D-clock)*2):0):0,sc=[playerScore(0)+bonus,playerScore(1)+bonus],total=sc[0]+sc[1];
   s.teamResult={kind:'survival',won,tied:false,humanTotal:total,cpuTotal:0,cpuScores:[0,0],duration:secs};
+  if(s.solo){s.solo.coop=true;s.solo.won=won;}
   const mmss=`${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
   s.finish(sc,`${won?(endKind==='boss'?'The final boss is dead!':'Dawn broke and you both survived!'):'The horde won this night.'} ${cabin?'Evil Dead':'Return of the Living Dead'}: survived ${mmss} · ${totalKills} kills · ${total} team points.`);
  }
@@ -809,11 +813,11 @@ async function horde(s){
    if(!chest&&!m.start)txt(String(i+1),cx2+10,cy2+10,Math.round(10*ui),'#7f8db0','left',false);
   }
   if(m.age<.45){x.fillStyle='rgba(5,7,16,.5)';x.fillRect(0,areaTop,W,H-areaTop);}
-  txt(chest?'Tap to continue':'Tap a card',W/2,H-Math.round(14*ui),Math.round(13*ui),'#9fb0d0','center',true);
+  txt(cpu&&m.pi===1?`${s.players[1].name} is choosing…`:chest?'Tap to continue':'Tap a card',W/2,H-Math.round(14*ui),Math.round(13*ui),'#9fb0d0','center',true);
  }
  function uiTap(p){
   if(state==='menu'){for(let i=0;i<menuRects.length;i++){const r=menuRects[i];if(p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h){menuSel=i;startRun(i);return;}}return;}
-  if(!modal||modal.age<.45)return;
+  if(!modal||modal.age<.45||cpu&&modal.pi===1)return;
   if(modal.type==='chest'){if(modal.age>1)chooseCard(0);return;}
   for(let i=0;i<cardRects.length;i++){const r=cardRects[i];if(p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h){chooseCard(i);return;}}
  }
@@ -830,7 +834,7 @@ async function horde(s){
   const handled=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' ','Enter','1','2','3','4'].includes(k);if(!handled)return;ev.preventDefault();
   if(down&&(state==='menu'||modal)){
    if(state==='menu'){if(k in navKeys)menuSel=clamp(menuSel+navKeys[k],0,MODES.length-1);else if(k===' '||k==='Enter')startRun(menuSel);else if(k>='1'&&k<='3')startRun(Number(k)-1);}
-   else if(modal.age>.45){if(modal.type==='chest')chooseCard(0);else if(k in navKeys)modal.sel=clamp(modal.sel+navKeys[k],0,modal.cards.length-1);else if(k===' '||k==='Enter')chooseCard(modal.sel);else{const n=Number(k)-1;if(n>=0&&n<modal.cards.length)chooseCard(n);}}
+   else if(modal.age>.45&&!(cpu&&modal.pi===1)){if(modal.type==='chest')chooseCard(0);else if(k in navKeys)modal.sel=clamp(modal.sel+navKeys[k],0,modal.cards.length-1);else if(k===' '||k==='Enter')chooseCard(modal.sel);else{const n=Number(k)-1;if(n>=0&&n<modal.cards.length)chooseCard(n);}}
    return;}
   keys[k]=down;
  });
@@ -859,7 +863,7 @@ async function horde(s){
  s.frame((dt,t)=>{
   const t0=performance.now();layout();uiT+=dt;
   if(state==='menu'){render(t);drawMenu(t);return;}
-  if(modal&&bot.on&&modal.age>.3)botModal();
+  if(modal&&(bot.on&&modal.age>.3||cpu&&modal.pi===1&&modal.age>1.1))botModal();
   if(modal){modal.age+=dt;render(t);drawHUD(t);drawModal(t);return;}
   if(state==='ending'){const sl=endKind==='lose'?.35:1;step(dt*sl);if(endT>3.4){render(t);drawHUD(t);finishRun();return;}}
   else step(dt);

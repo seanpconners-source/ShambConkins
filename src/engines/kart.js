@@ -246,6 +246,34 @@ async function kart(s){
    if(ks.d){if(!pd.keyLatch&&steer)pd.keyLatch=Math.sign(steer);}else pd.keyLatch=0;
    return {steer,drift:pd.latch||pd.keyLatch||0};
   }
+  // vs CPU balloon battle: the ring is a loop, so the CPU drives whichever way round reaches the human sooner (switching
+  // only past the halfway mark, U-turning toward the rail, never the void) and holds the human's lane, or a box's lane when
+  // it is empty-handed. Shells go out when the human is ahead and lined up, bananas/bombs drop when they follow close
+  // behind, a mushroom rams in close to steal a balloon, and while the human has a star it keeps to the far side.
+  // Easy aims loosely and uses items late.
+  function battleBrain(k,dt){
+   k.topMul=k.baseMul;const o=rival(k),sk=cpuSkill(s),L=course.L,i=T.idx(course,k.s),half=course.half[i],dd=o.d-k.d;
+   const lim=side=>half*(course.rail[i]&(side>0?2:1)?.9:.6),railSide=course.rail[i]&1?-1:course.rail[i]&2?1:0;
+   k.aimT=(k.aimT||0)-dt;if(k.aimT<=0){k.aimT=.3+(1-sk)*.6;k.aimErr=(Math.random()-.5)*(1-sk)*90;}
+   const flee=(o.star>0||o.bullet>0)&&k.star<=0,fwd0=((o.s-k.s)%L+L)%L;
+   k.huntDir=fwd0<L*.42?1:fwd0>L*.58?-1:k.huntDir||1;const dir=flee?-k.huntDir:k.huntDir;
+   const fw=dir>0?fwd0:L-fwd0,back=L-fw;   // human's distance ahead / behind in the travel direction
+   let target=flee?-Math.sign(o.d||1)*half:o.d+(k.aimErr||0);
+   if(!flee&&!k.items.length&&k.frenzy<=0&&fw>350)for(const b of boxes){const bs=dir*T.sdiff(course,k.s,b.s);if(b.t<=0&&bs>40&&bs<260){target=b.d;break;}}
+   const it=k.frenzy>0?k.frenzyItem:k.items[0]?.id;
+   if(it&&phase==='play'&&Math.random()<dt*(.8+sk*2.2)){const lined=Math.abs(dd)<26+30*(1-sk),behind=back<380&&Math.abs(dd)<70,drop=['banana','banana3','bomb'].includes(it);
+    const fire=['green','shell3'].includes(it)?fw>40&&fw<520&&lined:['red','blue'].includes(it)?fw>40&&fw<1000:it==='bomb'?fw>60&&fw<300&&lined
+     :['mushroom','mush3','golden'].includes(it)?flee||fw>20&&fw<240&&Math.abs(dd)<40:['star','bullet'].includes(it)?fw<600:!drop;
+    if(fire)useItem(k,1);else if(drop&&(behind||(k.holdT||0)>9))useItem(k,-1);else if(['green','shell3'].includes(it)&&behind&&sk>.5)useItem(k,-1);}
+   k.holdT=it?(k.holdT||0)+dt:0;
+   // facing the wrong way (it starts that way, or the hunt flipped): U-turn toward the railed side
+   if(Math.cos(k.psi)*dir<-.2)return {steer:clamp(Ph.wrapA((railSide||-1)*Math.PI/2-k.psi)*2.5,-1,1),drift:0};
+   // lane keeper (autoInput stops at 65% of the road and sits ~45 off its lane on the ring): a quarter of the curve as
+   // feed-forward holds the target lane to within ~20 either way round, so it can line up with a human on the rail
+   const tg=clamp(target,-lim(-1),lim(1)),look=70+k.v*.45;let turn=0;for(let a=0;a<look;a+=12)turn+=T.frame(course,k.s+a*dir,FR).kg*12;
+   const want=dir>0?turn*.25+Math.atan2(tg-k.d,look):Math.PI-turn*.25-Math.atan2(tg-k.d,look);
+   return {steer:clamp(Ph.wrapA(want-k.psi)*3.2,-1,1),drift:0};
+  }
   const autoTarget=k=>{for(const b of boxes){const ds=T.sdiff(course,k.s,b.s);if(b.t<=0&&ds>40&&ds<260&&k.items.length<2)return b.d;}return 0;};
   // ---------------------------------------------------------------- physics events → sound / particles / banners
   const ctx={ev:(k,name,data)=>{
@@ -326,13 +354,13 @@ async function kart(s){
   const leadHuman=()=>Math.max(...H.map(k=>k.prog));
   function updateKart(k,dt){
    const racing=phase==='play'||phase==='end';
-   const inp=!k.human&&racing?Ph.autoInput(course,k,{target:k.lane+(k.items.length<2?autoTarget(k)*.6:0)}):phase==='play'&&!k.out&&!k.finished?readInput(k):(phase==='end'||k.finished)&&!k.out?{steer:Ph.autoInput(course,k).steer,drift:0}:{steer:0,drift:0};
+   const inp=!k.human&&racing&&battle&&!k.out?battleBrain(k,dt):!k.human&&racing?Ph.autoInput(course,k,{target:k.lane+(k.items.length<2?autoTarget(k)*.6:0)}):phase==='play'&&!k.out&&!k.finished?readInput(k):(phase==='end'||k.finished)&&!k.out?{steer:Ph.autoInput(course,k).steer,drift:0}:{steer:0,drift:0};
    if(k.out){k.v*=Math.pow(.3,dt);inp.steer=0;}
    if(k.rolling){k.rollT-=dt;if(k.rollT<=0){k.rolling=false;rollItem(k);}}
    if(k.frenzy>0){k.frenzy-=dt;k.frenzyCD-=dt;if(k.frenzy<=0){k.frenzyItem=null;}}
    if(k.goldenT>0){k.goldenT-=dt;if(k.goldenT<=0&&k.items[0]?.id==='golden')k.items.shift();}
    if(k.human&&auto[k.player]&&phase==='play'&&(k.items[0]||k.frenzy>0)&&rand()<dt*.6)useItem(k,rand()<.75?1:-1);
-   if(!k.human&&phase==='play'&&!k.finished){const gap=leadHuman()-k.prog;k.topMul=k.baseMul*(gap>.08?1.05:gap<-.12?.93:1);
+   if(!k.human&&!battle&&phase==='play'&&!k.finished){const gap=leadHuman()-k.prog;k.topMul=k.baseMul*(gap>.08?1.05:gap<-.12?.93:1);
     const it=k.frenzy>0?k.frenzyItem:k.items[0]?.id;if(it&&rand()<dt*.9){const back=['banana','banana3','bomb'].includes(it),tgt=aheadOf(k);if(back||['mushroom','mush3','golden','star','bolt','blooper','coin','bullet','blue'].includes(it)||tgt&&(tgt.prog-k.prog)*course.L<500)useItem(k,back?-1:1);}}
    const n=Math.max(1,Math.ceil(dt/(1/120))),h=dt/n;for(let q=0;q<n;q++)Ph.stepKart(course,k,racing?inp:{steer:0,drift:0},h,ctx);
    // laps
@@ -422,12 +450,12 @@ async function kart(s){
       else{const k=H[0];endText=k.finished?(timeTrial?`${fmtTime(k.finishT)}`:`${ord(k.place)} PLACE!`):'TIME UP!';}}}
     else{endT+=dt;if(endT>3.2){
      const res={course,ghost:rec?{player:humans[0],frames:rec}:null,humans:H.map(k=>({player:k.player,finished:k.finished,place:k.finished?k.place:rankOf(k),finishT:k.finished?k.finishT:Infinity,prog:k.best,balloons:k.balloons,lapT:k.lapT.slice()}))};
-     if(rivalCpu){const k=K[humans.length];if(k)res.rival={finished:k.finished,place:k.finished?k.place:rankOf(k),finishT:k.finished?k.finishT:Infinity};}
+     if(rivalCpu){const k=K[humans.length];if(k)res.rival={finished:k.finished,place:k.finished?k.place:rankOf(k),finishT:k.finished?k.finishT:Infinity,balloons:k.balloons};}
      endRace(res);return;}}
    }
    for(let j=parts.length-1;j>=0;j--){const p=parts[j];p.life-=dt;if(p.life<=0){parts.splice(j,1);continue;}const dr=Math.exp(-p.drag*dt);p.V[0]*=dr;p.V[1]=p.V[1]*dr+(p.g||0)*dt;p.V[2]*=dr;p.P[0]+=p.V[0]*dt;p.P[1]+=p.V[1]*dt;p.P[2]+=p.V[2]*dt;}
    updateEngines();if(phase!=='intro'&&phase!=='end'&&!s.paused)song?.tick();if(!battle)song?.setRate(H.some(k=>k.lap===LAPS-1&&!k.finished)?1.08:1);
-   if(vs){if(battle)s.setScores([K[0].balloons,K[1].balloons]);else s.setScores(K.slice(0,2).map(k=>k.finished?100:Math.min(99,Math.round(clamp(k.best/LAPS,0,1)*100))));}
+   if(battle)s.setScores([K[0].balloons,K[1].balloons]);else if(vs){ s.setScores(K.slice(0,2).map(k=>k.finished?100:Math.min(99,Math.round(clamp(k.best/LAPS,0,1)*100))));}
    // render each player's view into the GL canvas, then composite + HUD
    const W=s.W,Hh=s.H;R.resize(W,Hh);
    if(R.lost()){x.fillStyle='#120a2e';x.fillRect(0,0,W,Hh);return;}
@@ -446,7 +474,7 @@ async function kart(s){
    for(let j=0;j<views.length;j++){const v=views[j],k=H[j];x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();
     // heads drawn in 2D only when the portrait could not become a texture (cross-origin photo)
     for(const q of H)if(!R.headOK[q.i]&&proj[j][q.i]&&q._head){const p=proj[j][q.i],sz=q._head.size*2*v.h/(2*Math.tan(camsNow[j].fov/2)*p.w);if(sz>4&&sz<v.h)s.sprite(x,q.player,p.x,p.y,sz,{exact:true});}
-    drawHUD(x,{x:v.x,y:v.y+HUD_TOP,w:v.w,h:v.h-HUD_TOP},{k,i:k.player,mode:battle?'battle':timeTrial?'time':'race',laps:LAPS,rank:rankOf(k),total:K.length,t:simT,phase,lights,clock,course,other:vs?H[1-j]:null,karts:K,pad:{f:pads[k.player].f,ox:pads[k.player].ox,latch:pads[k.player].latch},msgs:k.msgs,rad:ctl.rad(),battleTime:BATTLE_TIME,
+    drawHUD(x,{x:v.x,y:v.y+HUD_TOP,w:v.w,h:v.h-HUD_TOP},{k,i:k.player,mode:battle?'battle':timeTrial?'time':'race',laps:LAPS,rank:rankOf(k),total:K.length,t:simT,phase,lights,clock,course,other:vs?H[1-j]:null,karts:K,pad:{f:pads[k.player].f,ox:pads[k.player].ox,latch:pads[k.player].latch},msgs:k.msgs,rad:ctl.rad(),battleTime:BATTLE_TIME,foe:battle&&!vs?K[1]:null,
      names:s.players.map(p=>p.name),hint:phase==='play'||phase==='count'?Math.min(1,hintT):0,wrongWay:k.wrongT>1,ghostBest:ghost?ghost.total:null});
     x.restore();}
    if(vs){const hx=Math.floor(W/2);x.fillStyle='#120a2e';x.fillRect(hx-1,0,2,Hh);x.fillStyle='#ffe23a';x.fillRect(hx-.5,0,1,Hh);}
@@ -500,6 +528,12 @@ async function kart(s){
    const me=r.humans[0],them=r.rival||{place:8,finished:false},d=h=>h.finished?`${ord(h.place)} (${fmtTime(h.finishT)})`:`${ord(h.place)}, did not finish`;
    const sc=[pts(me),pts(them)];if(sc[0]===sc[1])sc[me.place<them.place?0:1]++;
    return s.finish(sc,`${first.name} Grand Prix: ${name} ${d(me)}, ${rv.name} ${d(them)}.`);}
+  // battle: one Balloon Battle against a CPU kart driven by the rival's character; more balloons left wins.
+  if(mode==='battle'){
+   if(!await s.pass(0,`Balloon Battle on the rainbow ring. ${rv.name} is a CPU kart out to pop your three balloons: pop theirs first. Shells, bananas and bob-ombs pop balloons; a boosting bump steals one.`,`${name} — start your engine`,{soloTitle:'Balloon Battle'}))return;
+   const r=await runRace({course:first,humans:[0],cpus:1,seed:seed0,rivalCpu:true});if(!r||!s.alive)return;
+   const me=r.humans[0].balloons,them=r.rival?.balloons??0,b=n=>`${n} balloon${n===1?'':'s'}`;
+   return s.finish([me,them],`Balloon Battle: ${name} ${b(me)} left, ${rv.name} ${b(them)}.`);}
   let course=first,idx=Math.max(0,T.COURSES.findIndex(C=>C.name===first.name)),total=0,cleared=0,ghost=null,best=Infinity,seed=seed0;
   for(;;){
    const text=mode==='time'?(ghost?`Time Trials · ${course.name}. Beat your record of ${fmtTime(best)}; your ghost races with you.`:`Time Trials · ${course.name}. Three laps alone with three mushrooms. Then race your own ghost: every new record keeps the run going.`)

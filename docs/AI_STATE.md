@@ -23,8 +23,16 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   human owns every touch (`arenaTouch`/`halfPointers`/`ownedPointers`/`directionGestures`/`arenaGestures`, opt out with
   `cpuOwner:false`), and P2 is driven by `kb.cpu(key,down)` (arenaKeys), `keyboard(...).hold/tap` (tarantinoKit), `fingers.cpu`
   virtual finger (halfPointers/arenaTouch), `keys.cpu` (duelInputs), `controls.cpu` (arenaGestures). Each engine has a small
-  `cpuThink`-style brain (search for `vs CPU:` comments). ~80 games now play solo. Not done: kart balloon battle and the co-op
-  games (horde, space-swarm-coop, rainbow-rivals). Balance is bot-tested only (an idle human vs the CPU).
+  `cpuThink`-style brain (search for `vs CPU:` comments). ~80 games now play solo. Balance is bot-tested only (an idle human vs the CPU).
+  Batch 5 (Oct 20, the last four): every Arcade game now plays in 1P. Co-op with a CPU teammate (`SOLO_COOP`/`soloCoop` in solo.js;
+  engine sets `s.solo.coop=true` + `s.solo.won`, `settleSolo` scores the team total and titles it "X & Y win!", labels say WITH CPU):
+  Living Dead horde (P2 = the engine's steering bot `botDir`, slower refresh on Easy, auto-picks its level-up cards) and Space
+  Invaders co-op (versus brain, leaves the human's columns alone). Rainbow Rivals = kind 'levels': leg after leg vs Mario/Luigi
+  on a fresh course, outscore the rival to move on; `rivalThink(...,goof)` makes it fumble rows (.3−.2·skill, ×.82 per leg).
+  Balloon Battle = 'cpu': `soloKart` battle branch, CPU kart via `battleBrain` in kart.js (takes the shorter way round the ring,
+  U-turns toward the rail, own lane keeper with ¼ curve feed-forward because `autoInput` sits ~45 off its lane on the ring,
+  items by distance ahead/behind); HUD shows the rival's balloons. Scratch-tested to the result card (an idle human loses 2
+  balloons in 100 s on Normal); real-phone feel untested.
   Batch 4 (trivia/cards/dice/table, Oct 20): ~110 solo games. Trivia ×9 (`cpuTriviaPick`: right-answer chance from question
   difficulty × level; `cpuThinkTime`), casino ×4 (`casinoCpu` in casinoTable.js polls `s.debug`: locks a bet, plays via
   `act`, agrees to cash out when the human does), Yahtzee ×2, Uno, Guess Who, Liar's Dice (odds-based bids/LIAR; also fixed:

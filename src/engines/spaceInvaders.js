@@ -66,10 +66,11 @@ async function galaga(s){
  // ---------------------------------------------------------------- input
  const fingers=new Map();let L=null;
  const cannonFor=p=>{if(!w)return null;if(w.cannons.length===1)return w.cannons[0];return w.cannons[cpu||p.x<s.W/2?0:1];};
- // vs CPU: cannon 2 slides under the lowest invader in reach (or the UFO), dodges bombs above it and fires when lined up
+ // vs CPU: cannon 2 slides under the lowest invader in reach (or the UFO), dodges bombs above it and fires when lined up.
+ // Co-op: the same brain is your teammate and leaves the columns over your cannon to you.
  const cpu=isCpu(s);
- function cpuInvaders(){const cn=w?.cannons?.[1];if(!cn||!cn.alive||w.mode!=='versus')return;const sk=cpuSkill(s);let tx=cn.x,best=-1e9;
-  for(const v of w.inv){if(!v.alive)continue;const vx=v.x+8,sc=v.y-Math.abs(vx-cn.x)*(.6+(1-sk));if(sc>best){best=sc;tx=vx;}}if(w.ufo&&sk>.5)tx=w.ufo.x+8;
+ function cpuInvaders(){const cn=w?.cannons?.[1];if(!cn||!cn.alive||w.mode==='turns')return;const sk=cpuSkill(s),me=w.mode==='coop'?w.cannons[0]:null;let tx=cn.x,best=-1e9;
+  for(const v of w.inv){if(!v.alive)continue;const vx=v.x+8,sc=v.y-Math.abs(vx-cn.x)*(.6+(1-sk))-(me?.alive?Math.max(0,28-Math.abs(vx-me.x))*2:0);if(sc>best){best=sc;tx=vx;}}if(w.ufo&&sk>.5)tx=w.ufo.x+8;
   for(const b of w.bombs){if(b.y<w.cannonY-90||b.y>w.cannonY)continue;if(Math.abs(b.x-cn.x)<9&&Math.random()<.3+sk*.7)tx=cn.x+(b.x<cn.x?24:-24);}
   cn.tx=clamp(tx+(Math.random()-.5)*(1-sk)*6,8,w.FW-8);cn.firing=Math.abs(tx-cn.x)<5+(1-sk)*6;}
  const recount=()=>{if(!w)return;for(const cn of w.cannons)cn.firing=[...fingers.values()].some(f=>f===cn);};
@@ -239,11 +240,11 @@ async function galaga(s){
   s.finish(scores,`Space Invaders · ${scores[0]} vs ${scores[1]}`);
  }else{
   const world=makeWorld(s.seed+':invaders-'+mode,mode,[0,1]);world.cap=caps[mode];w=world;layoutWorld(w);newWave(w);
-  const intro=mode==='versus'?`Both cannons at once. ${s.players[0].name} touches the left half, ${s.players[1].name} the right; drag to move, hold to fire. Every kill is yours. Three cannons each, ${caps.versus} seconds. Most points wins.`:`Defend Earth together: ${s.players[0].name} left, ${s.players[1].name} right. Six cannons shared between you. Clear four waves before the Martians land.`;
+  const intro=mode==='versus'?`Both cannons at once. ${s.players[0].name} touches the left half, ${s.players[1].name} the right; drag to move, hold to fire. Every kill is yours. Three cannons each, ${caps.versus} seconds. Most points wins.`:cpu?`Defend Earth with ${s.players[1].name}: drag anywhere to move your cannon, hold to fire; your teammate takes the other columns. Six cannons shared. Clear four waves before the Martians land.`:`Defend Earth together: ${s.players[0].name} left, ${s.players[1].name} right. Six cannons shared between you. Clear four waves before the Martians land.`;
   if(!await s.pass(0,intro,mode==='versus'?'Both ready — fight!':'Both ready — defend!',{countdown:3}))return;
   await play(world);if(!s.alive)return;
   const sc=[w.score[0],w.score[1]];
-  if(mode==='coop'){const won=w.overReason==='saved',total=sc[0]+sc[1];s.teamResult={kind:'survival',won,tied:false,humanTotal:total,cpuTotal:0,cpuScores:[0,0],duration:Math.floor(w.time)};s.finish(sc,`${won?'Earth is saved!':'The Martians landed.'} Space Invaders co-op · wave ${Math.min(4,w.wave+1)} · ${total} team points.`);}
+  if(mode==='coop'){const won=w.overReason==='saved',total=sc[0]+sc[1];if(s.solo){s.solo.coop=true;s.solo.won=won;}s.teamResult={kind:'survival',won,tied:false,humanTotal:total,cpuTotal:0,cpuScores:[0,0],duration:Math.floor(w.time)};s.finish(sc,`${won?'Earth is saved!':'The Martians landed.'} Space Invaders co-op · wave ${Math.min(4,w.wave+1)} · ${total} team points.`);}
   else s.finish(sc,`Space Invaders versus · ${sc[0]} vs ${sc[1]}`);
  }
 }
