@@ -1,7 +1,8 @@
 // Single-player (1P) Arcade mode: settings, which games support it, CPU skill and best-run records.
 // Kinds: 'levels' = one player plays level after level until the run ends or they bank it;
 //        'rounds' = timed turn game replayed in harder rounds (turnRunner / arcadeRounds handle it);
-//        'turns' = pass-and-play engine the launcher runs once per round (soloTurnRounds); 'cpu' = player 2 is a CPU.
+//        'turns' = pass-and-play engine the launcher runs once per round (soloTurnRounds); 'cpu' = player 2 is a CPU;
+//        'alone' = a co-op game played by one player, no CPU teammate (the engine thins out the enemies).
 const SOLO_LEVELS=['easy','normal','hard'];
 const SOLO_LEVEL_NAMES={easy:'Easy',normal:'Normal',hard:'Hard'};
 // CPU skill 0..1 per difficulty; engines scale reaction time, aim error and speed from it.
@@ -45,16 +46,12 @@ const SOLO_IDS={
  'shamb-uno':'cpu','traitors-guess-who':'cpu','liars-dice':'cpu','battleship-fog':'cpu','simon-faceoff':'cpu','price-bid-off':'cpu',
  'clue-whodunit':'cpu','clue-lineup':'cpu','monopoly-speed-die':'cpu','monopoly-auction':'cpu','smb3-nspade':'cpu',
  'django-hangman-wanted':'cpu','microgame-rush':'cpu','rush-marathon':'cpu',
- // batch 5: the co-op games get a CPU teammate (engines set s.solo.coop + s.solo.won), Rainbow Rivals runs leg after leg,
- // Balloon Battle is vs a CPU kart
- 'living-dead-horde':'cpu','space-swarm-coop':'cpu','rainbow-rivals':'levels','rainbow-balloon-battle':'cpu',
+ // batch 5: the co-op games are played alone, Rainbow Rivals runs leg after leg, Balloon Battle is vs a CPU kart
+ 'living-dead-horde':'alone','space-swarm-coop':'alone','rainbow-rivals':'levels','rainbow-balloon-battle':'cpu',
 };
 // Purely social games (they need two real people) are hidden from the 1P Arcade list.
 const SOLO_HIDDEN=new Set(['newlywed-spirit','roast-battle','draw-it']);
 const soloHidden=game=>!!game&&SOLO_HIDDEN.has(game.id);
-// Co-op games where the 'cpu' is a teammate, not an opponent.
-const SOLO_COOP=new Set(['living-dead-horde','space-swarm-coop']);
-const soloCoop=game=>!!game&&SOLO_COOP.has(game.id);
 const soloKind=game=>game?SOLO_IDS[game.id]||game.soloKind||null:null;
 function soloSettings(profile){const s=profile?.settings?.solo||{};return {on:s.on===true,who:s.who===1?1:0,level:SOLO_LEVELS.includes(s.level)?s.level:'normal'};}
 function setSolo(profile,patch){profile.settings.solo={...soloSettings(profile),...patch};return profile.settings.solo;}
@@ -74,5 +71,5 @@ function soloFinish(s,score,level,label,won=level>0){if(!s?.solo||!s.alive)retur
 // Between levels: a card with the run so far. Resolves true to keep going (Exit on the card banks the run).
 async function soloNext(s,{title='Level cleared!',body='',level=1,score=0,label='Next level'}={}){if(!s?.alive)return false;return s.pass(0,body,label,{summary:`${title} Level ${level} · ${Number(score).toLocaleString()} points so far.`,soloTitle:title});}
 
-Object.assign(exports,{SOLO_LEVELS,SOLO_LEVEL_NAMES,SOLO_SKILL,soloKind,soloHidden,soloCoop,soloSettings,setSolo,normalizeSoloSettings,normalizeSoloBest,soloBest,recordSolo,soloBestText,isSolo,cpuSkill,soloProgress,soloFinish,soloNext});
+Object.assign(exports,{SOLO_LEVELS,SOLO_LEVEL_NAMES,SOLO_SKILL,soloKind,soloHidden,soloSettings,setSolo,normalizeSoloSettings,normalizeSoloBest,soloBest,recordSolo,soloBestText,isSolo,cpuSkill,soloProgress,soloFinish,soloNext});
 

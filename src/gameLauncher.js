@@ -20,7 +20,7 @@ const {pairForRun}=require("src/pairs.js");
 const {warpTheme,warpGameId,warpAllowsGame}=require("src/warpThemes.js");
 const {updateProgression}=require("src/progression.js");
 const {drawTriviaDifficulty,chooseTriviaDifficulty,TRIVIA_LEVELS}=require("src/engines/trivia.js");
-const {soloKind, soloCoop, soloSettings, recordSolo, soloBest, soloBestText, SOLO_SKILL, SOLO_LEVEL_NAMES}=require("src/solo.js");
+const {soloKind, soloSettings, recordSolo, soloBest, soloBestText, SOLO_SKILL, SOLO_LEVEL_NAMES}=require("src/solo.js");
 const hooks={save(){},endTurn(){},beforeRoll(){},arcade(){},bossDone:null};
 let launching=false,launchSerial=0;
 function cancelGameLaunch(){launchSerial++;launching=false;}
@@ -202,7 +202,7 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  }
  if(!id&&!resume){const played=await animateRoulette(game,run?.mutation?'arcade':game.engine==='trivia'?'trivia':filter,warpPick?warpTheme(run)[game.engine==='trivia'?'trivia':'games'].map(gameById).filter(Boolean):null);if(!valid())return false;if(!played){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();return false;}}
  const soloKindNow=solo&&origin==='arcade'?soloKind(game):null,soloSet=soloKindNow?soloSettings(store.profile):null;
- const soloNote=soloKindNow?`<p class="solo-note"><b>${soloKindNow==='cpu'?`SOLO · ${soloCoop(game)?'WITH':'VS'} CPU (${SOLO_LEVEL_NAMES[soloSet.level].toUpperCase()})`:'SOLO RUN'}</b> ${soloKindNow==='cpu'?soloCoop(game)?'A CPU teammate plays alongside you.':'You play against a CPU opponent.':soloKindNow==='rounds'||soloKindNow==='turns'?'Play round after round, each one faster, until you miss a round’s goal. Tap Exit any time to bank your score.':'Play level after level until the run ends. Tap Exit any time to bank your score.'}${soloBestText(store.profile,game.id)?` ${escapeHTML(soloBestText(store.profile,game.id))}.`:''}</p>`:'';
+ const soloNote=soloKindNow?`<p class="solo-note"><b>${soloKindNow==='cpu'?`SOLO · VS CPU (${SOLO_LEVEL_NAMES[soloSet.level].toUpperCase()})`:'SOLO RUN'}</b> ${soloKindNow==='cpu'?'You play against a CPU opponent.':soloKindNow==='alone'?'Just you: the co-op game without a teammate, with fewer enemies to fit one player. Tap Exit any time to bank your score.':soloKindNow==='rounds'||soloKindNow==='turns'?'Play round after round, each one faster, until you miss a round’s goal. Tap Exit any time to bank your score.':'Play level after level until the run ends. Tap Exit any time to bank your score.'}${soloBestText(store.profile,game.id)?` ${escapeHTML(soloBestText(store.profile,game.id))}.`:''}</p>`:'';
  const choice=await showDialog({title:game.title,source:game.source,html:`${gameArtHTML(game)}${soloNote}<div class="how-to"><b>HOW TO PLAY · ${escapeHTML(game.duration.toUpperCase())}</b>${escapeHTML(game.rules)}</div>${run?.mutation&&origin==='board'&&!bfGame(game)?'<p style="font-size:12px">You are one team. Each person races a live CPU driver, then both relay scores are combined.</p>':''}`,choices:[{label:'Start game',value:'start',primary:true},{label:origin==='board'?'Return to board':'Back to arcade',value:'cancel'}]});
  if(!valid())return false;
  if(choice===null){launching=false;store.busy=false;return false;}
@@ -279,8 +279,7 @@ async function soloTurnRounds(game,players,set,valid){
 const SOLO_FACTOR={'bucketheadland-pinball':.6,'major-league-fielding':.6,'flipadelphia-cup':.6,'office-hockey-shootout':.6,'chutes-spinner-showdown':.6,'smb3-spade-slots':.6};
 // Solo run result: record the best, recruit like an arcade win (only for the human, players[0]), show one card.
 async function settleSolo(game,scores,label,players,solo,cageRecruits){
- // co-op with a CPU teammate (solo.coop): the team total is the run's score
- const serial=launchSerial;store.session=null;const p=players[0],coop=!!solo.coop,score=Math.max(0,coop?(scores[0]|0)+(scores[1]|0):scores[0]|0),level=solo.progress?.level||0;
+ const serial=launchSerial;store.session=null;const p=players[0],score=Math.max(0,scores[0]|0),level=solo.progress?.level||0;
  const won=typeof solo.won==='boolean'?solo.won:solo.kind==='cpu'?scores[0]>scores[1]:level>0;
  recordGame(store.profile,game,won?0:null,scores);const rec=recordSolo(store.profile,game.id,{score,level});const unlocked=[];
  if(won){const pool=gameRecruitPool(game,store.profile,p),chance=recruitmentChance(store.profile,p,gameHasGuaranteedRecruit(game,store.profile,p));
@@ -289,9 +288,9 @@ async function settleSolo(game,scores,label,players,solo,cageRecruits){
   const heir=CHARACTERS.find(c=>c.unlockBy==='character-win'&&c.requires===p.character);if(heir){const actual=recruitReward(store.profile,heir.id,p.owner,'character');if(actual)unlocked.push(actual);}}
  if(Array.isArray(cageRecruits))for(const id of (cageRecruits[0]||[]).slice(0,10)){const actual=recruitReward(store.profile,id,p.owner,'game');if(actual&&!unlocked.includes(actual))unlocked.push(actual);}
  const milestones=updateProgression(store.profile);saveProfile(store.profile);sound(won||rec.newBest?'win':'lose');
- const cpu=solo.kind==='cpu'&&!coop,title=coop?(won?`${p.name} & ${players[1].name} win!`:'The team goes down'):cpu?(scores[0]>scores[1]?`${p.name} beats the CPU!`:scores[0]===scores[1]?'Dead heat with the CPU':'The CPU takes it'):rec.newBest?'New personal best!':won?'Run banked':'Run over';
+ const cpu=solo.kind==='cpu',title=cpu?(scores[0]>scores[1]?`${p.name} beats the CPU!`:scores[0]===scores[1]?'Dead heat with the CPU':'The CPU takes it'):rec.newBest?'New personal best!':won?'Run banked':'Run over';
  const best=rec.best,bestLine=`Best: ${best.score.toLocaleString()}${best.level?` · ${best.level} cleared`:''}`;
- const html=`<div class="result-portraits"><div>${portraitHTML(p.character,'portrait mini',won||rec.newBest?'win':'sad')}<b>${escapeHTML(p.name)}</b></div>${cpu||coop?`<div>${portraitHTML(players[1].character,'portrait mini',coop?won?'win':'sad':scores[1]>scores[0]?'win':'sad')}<b>${escapeHTML(players[1].name)}</b></div>`:''}</div><p class="solo-result"><b>${cpu?`${scores[0].toLocaleString()} – ${scores[1].toLocaleString()}`:`${score.toLocaleString()} ${coop?'team ':''}points${level?` · ${level} cleared`:''}`}</b><br>${escapeHTML(label||'')}</p><p class="solo-best">${escapeHTML(bestLine)}${rec.newBest&&(rec.old.score||rec.old.level)?` (was ${rec.old.score.toLocaleString()})`:''}${milestones.length?`<br>New unlocks: ${escapeHTML(milestones.join(', '))}.`:''}</p>`;
+ const html=`<div class="result-portraits"><div>${portraitHTML(p.character,'portrait mini',won||rec.newBest?'win':'sad')}<b>${escapeHTML(p.name)}</b></div>${cpu?`<div>${portraitHTML(players[1].character,'portrait mini',scores[1]>scores[0]?'win':'sad')}<b>${escapeHTML(players[1].name)}</b></div>`:''}</div><p class="solo-result"><b>${cpu?`${scores[0].toLocaleString()} – ${scores[1].toLocaleString()}`:`${score.toLocaleString()} points${level?` · ${level} cleared`:''}`}</b><br>${escapeHTML(label||'')}</p><p class="solo-best">${escapeHTML(bestLine)}${rec.newBest&&(rec.old.score||rec.old.level)?` (was ${rec.old.score.toLocaleString()})`:''}${milestones.length?`<br>New unlocks: ${escapeHTML(milestones.join(', '))}.`:''}</p>`;
  const again=await showDialog({title,source:game.source,html,choices:[{label:'Play again',value:'again',primary:true},{label:'Back to the arcade',value:'ok'}]});
  if(serial!==launchSerial)return;
  if(unlocked.length&&!await unlockDialog(unlocked,p.owner))return;

@@ -1,8 +1,8 @@
 const {clamp}=require("src/utils.js");
 const {ownedPointers}=require("src/engines/duelControls.js");
-const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const {sound,tone,vibrate,pickupSound}=require("src/audio.js");
 const {store}=require("src/state.js");
+const {soloProgress}=require("src/solo.js");
 const HD=require("src/engines/hordeData.js");
 const {WEAPONS,PASSIVES,ENEMIES,MODES,WEAPON_IDS,PASSIVE_IDS,MAX_LEVEL,weaponStats,calcStats,xpNeed}=HD;
 
@@ -12,20 +12,22 @@ const PCOL=['#78b6ff','#ff9fc6'];
 const FONT='Arial, Helvetica, sans-serif';
 const rnd=Math.random;
 function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+// 1P: one survivor carries half the guns, so the horde is thinner and the bosses softer
+const soloMode=m=>({...m,hp:m.hp*.8,cap:m.cap*.6,rate:m.rate*.6,boss:m.boss*.55,dmg:m.dmg*.9});
 const fmtTime=t=>{t=Math.max(0,Math.ceil(t));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');};
 
 async function horde(s){
  const [c,x]=s.canvas(700,390,{fill:true});let W=s.W,H=s.H;
- s.body.classList.add('drag-arena-body');s.queueCanvasFit?.();s.shared=true;s.cooperative=true;s.cooperativeLabel='SURVIVE TOGETHER';s.updateScores();
+ s.body.classList.add('drag-arena-body');s.queueCanvasFit?.();s.shared=true;
+ // solo (1P arcade): the player survives alone; the horde is thinned to fit one survivor (soloMode)
+ const alone=!!s.solo;if(!alone){s.cooperative=true;s.cooperativeLabel='SURVIVE TOGETHER';}s.updateScores();
  const cabin=/evil dead/i.test(s.game.source),theme=cabin?'cabin':'dead';
- // solo: player 2 is a CPU teammate driven by the steering bot below (reacts slower on Easy) and picks its own level-up cards
- const cpu=isCpu(s),cpuGap=Math.round(3+(1-cpuSkill(s))*10);
  const title=cabin?'EVIL DEAD · CABIN DEFENSE':'RETURN OF THE LIVING DEAD · HORDE';
  const reduced=!!store.profile?.settings?.reducedMotion;
  const wseed=Math.floor(s.random()*4294967296)>>>0;
  const wname=(id,evo)=>{const d=WEAPONS[id];return evo?(cabin&&d.evo.cabName?d.evo.cabName:d.evo.name):(cabin?d.cab:d.name);};
  const foe=id=>cabin?ENEMIES[id].cn:ENEMIES[id].n;
- s.hint('SURVIVE THE NIGHT TOGETHER. Each player touches their own half and drags: the head walks the way you drag (or P1 WASD / P2 arrow keys). Weapons fire by themselves. Pick up gems to level up and choose upgrades. Smash lamps and barrels for pickups. Open chests (from elites and bosses) to evolve a maxed weapon that has its matching passive. Stand next to a fallen partner for 2.5 s to revive. Survive until dawn, or kill the final boss.');
+ s.hint(alone?'SURVIVE THE NIGHT. Drag anywhere: your head walks the way you drag (or WASD / arrow keys). Weapons fire by themselves. Pick up gems to level up and choose upgrades. Smash lamps and barrels for pickups. Open chests (from elites and bosses) to evolve a maxed weapon that has its matching passive. Survive until dawn, or kill the final boss.':'SURVIVE THE NIGHT TOGETHER. Each player touches their own half and drags: the head walks the way you drag (or P1 WASD / P2 arrow keys). Weapons fire by themselves. Pick up gems to level up and choose upgrades. Smash lamps and barrels for pickups. Open chests (from elites and bosses) to evolve a maxed weapon that has its matching passive. Stand next to a fallen partner for 2.5 s to revive. Survive until dawn, or kill the final boss.');
 
  // ---------- art ----------
  const enemyArt=HD.bakeEnemies(theme),propArt=HD.bakeProps(theme),building=HD.bakeBuilding(theme);
@@ -50,7 +52,8 @@ async function horde(s){
  const keys={};
  const stick=[{on:false,ax:0,ay:0,fx:0,fy:0,id:-1},{on:false,ax:0,ay:0,fx:0,fy:0,id:-1}];
  const mkPlayer=i=>({i,dk:2,sy:0,x:i?64:-64,y:70,vx:0,vy:0,face:1,hp:100,maxHp:100,down:false,revT:0,inv:0,hurt:0,lvl:1,xp:0,need:xpNeed(1),weapons:[],passives:{},st:calcStats({}),wind:true,revLeft:0,slow:0,walk:0,moving:false,coins:0,pend:0,dmgDone:0,regen:0,dirx:1,diry:0,bob:0});
- const P=[mkPlayer(0),mkPlayer(1)];
+ const P=alone?[mkPlayer(0)]:[mkPlayer(0),mkPlayer(1)];
+ const mate=p=>P[1-p.i]||p; // alone: no partner (tether, revive and XP catch-up see the player themself)
  let modal=null;const modalQ=[];
  const bot={on:false};
 
@@ -171,7 +174,7 @@ async function horde(s){
   scoreDirty=1;return got;
  }
  function queueLevel(i){modalQ.push({type:'level',pi:i});if(!modal)nextModal();}
- function gainXp(p,v){const o=P[1-p.i],rb=1+clamp((o.lvl-p.lvl)*.04,0,.3);p.xp+=v*p.st.growth*mode.xp*rb;while(p.xp>=p.need){p.xp-=p.need;p.lvl++;p.need=xpNeed(p.lvl);queueLevel(p.i);text(p.x,p.y-48,'LEVEL UP!','#ffe27a',15,1.1);s.react?.(p.i,'win');sfx('lvl',200,()=>chime([523,659,784,1047]));scoreDirty=1;}}
+ function gainXp(p,v){const o=mate(p),rb=1+clamp((o.lvl-p.lvl)*.04,0,.3);p.xp+=v*p.st.growth*mode.xp*rb;while(p.xp>=p.need){p.xp-=p.need;p.lvl++;p.need=xpNeed(p.lvl);queueLevel(p.i);text(p.x,p.y-48,'LEVEL UP!','#ffe27a',15,1.1);s.react?.(p.i,'win');sfx('lvl',200,()=>chime([523,659,784,1047]));scoreDirty=1;}}
  function nextModal(){
   if(modal||state==='ending')return;
   const q=modalQ.shift();if(!q)return;
@@ -202,7 +205,7 @@ async function horde(s){
   p.hp=0;
   if(p.revLeft>0){p.revLeft--;reviveFx(p,.6,'REVIVED!');}
   else if(p.wind){p.wind=false;reviveFx(p,.4,'SECOND WIND!');}
-  else{p.down=true;p.revT=0;text(p.x,p.y-52,'DOWN!','#ff6a6a',16,1.4);sound('lose');addShake(8);if(P[0].down&&P[1].down)beginEnd('lose');}
+  else{p.down=true;p.revT=0;text(p.x,p.y-52,'DOWN!','#ff6a6a',16,1.4);sound('lose');addShake(8);if(P.every(q=>q.down))beginEnd('lose');}
  }
  let kcbDmg=0,kcbO=0,kcbX=0,kcbY=0,kcbKb=0;
  function areaCb(e){const dx=e.x-kcbX,dy=e.y-kcbY,d=Math.sqrt(dx*dx+dy*dy)||1;hitEnemy(e,kcbDmg,kcbO,dx/d*kcbKb,dy/d*kcbKb,false,true);}
@@ -288,7 +291,7 @@ async function horde(s){
  }
  function announce(text,sub,col){showBanner(text,sub,col,2.6);sfx('boss',400,()=>{tone(70,.7,.08,'sawtooth');tone(52,.9,.06,'square');setTimeout(()=>tone(98,.4,.05,'sawtooth'),250);});addShake(8);}
  function fireEvent(ev){
-  const mid={x:(P[0].x+P[1].x)/2,y:(P[0].y+P[1].y)/2};
+  const mid={x:P.reduce((a,p)=>a+p.x,0)/P.length,y:P.reduce((a,p)=>a+p.y,0)/P.length};
   switch(ev.type){
    case 'elite':{edgePos(60);const t=ev.k%2?'nurse':'sergeant',e=spawnEnemy(t,SP.x,SP.y);if(e){e.chest=1;toast(foe(t)+' approaches. Kill it for a chest!','#ffb0a0');}break;}
    case 'mini':{const t=HD.MINIS[ev.k%4];edgePos(80);const e=spawnEnemy(t,SP.x,SP.y);if(e){e.chest=1;e.mhp=e.hp=e.hp*(1+Math.floor(ev.k/4)*.5);announce(foe(t),ENEMIES[t].line,'#ff5a4a');}break;}
@@ -405,7 +408,7 @@ async function horde(s){
  function enemyShot(e,ang,spd,k,r,dm){if(ES.length>=120)return;const q=take(ESpool,newES);q.x=e.x;q.y=e.y;q.vx=Math.cos(ang)*spd;q.vy=Math.sin(ang)*spd;q.r=r;q.dmg=e.dmg*dm;q.life=3.2;q.k=k;ES.push(q);}
  function updateEnemyShots(dt){
   for(let i=ES.length-1;i>=0;i--){const q=ES[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;let dead=q.life<=0;
-   if(!dead)for(let k=0;k<2;k++){const p=P[k];if(p.down)continue;const dx=p.x-q.x,dy=p.y-q.y,rr=q.r+PRAD-3;if(dx*dx+dy*dy<rr*rr){if(hurtPlayer(p,q.dmg)||p.inv>0)dead=true;break;}}
+   if(!dead)for(let k=0;k<P.length;k++){const p=P[k];if(p.down)continue;const dx=p.x-q.x,dy=p.y-q.y,rr=q.r+PRAD-3;if(dx*dx+dy*dy<rr*rr){if(hurtPlayer(p,q.dmg)||p.inv>0)dead=true;break;}}
    if(dead){burst(q.x,q.y,3,q.k===0?'#8cff4a':q.k===1?'#ffb04a':'#c07aff',60,.3,2);release(ES,ESpool,i);}}
  }
  function updateZones(dt){
@@ -426,7 +429,7 @@ async function horde(s){
  let auE=null;
  function auraCb2(o){if(o===auE||o.boss)return;if(auE.def.aura==='haste')o.haste=.8;else o.hp=Math.min(o.mhp,o.hp+3+curM);}
  function updateEnemies(dt){
-  const p0=P[0],p1=P[1],fwx=W/zoom/2+420,fwy=H/zoom/2+420,Dm=mode.dmg;
+  const p0=P[0],p1=mate(p0),fwx=W/zoom/2+420,fwy=H/zoom/2+420,Dm=mode.dmg;
   for(let i=0;i<E.length;i++){
    const e=E[i];if(e.dead)continue;
    if(e.fl>0)e.fl-=dt;if(e.slow>0)e.slow-=dt;if(e.haste>0)e.haste-=dt;if(e.hc>0)e.hc-=dt;if(e.cd0>0)e.cd0-=dt;if(e.cd1>0)e.cd1-=dt;
@@ -475,7 +478,7 @@ async function horde(s){
    if(e.aura){e.at-=dt;if(e.at<=0){e.at=.5;auE=e;forNear(e.x,e.y,150,auraCb2);}}
    // contact
    if(e.hc<=0&&e.fuse<=0&&!(e.ai===AI.charger&&e.st===1)){
-    for(let k=0;k<2;k++){const p=P[k];if(p.down)continue;const ex=p.x-e.x,ey=p.y-e.y,rr=e.r+PRAD-2;if(ex*ex+ey*ey<rr*rr){const hit=e.ai===AI.hunger?hurtPlayer(p,0,.34):hurtPlayer(p,e.dmg);if(hit){e.hc=.8;if(e.ai===AI.hunger||e.boss){p.vx+=ex/(Math.sqrt(ex*ex+ey*ey)||1)*300;p.vy+=ey/(Math.sqrt(ex*ex+ey*ey)||1)*300;}}}}
+    for(let k=0;k<P.length;k++){const p=P[k];if(p.down)continue;const ex=p.x-e.x,ey=p.y-e.y,rr=e.r+PRAD-2;if(ex*ex+ey*ey<rr*rr){const hit=e.ai===AI.hunger?hurtPlayer(p,0,.34):hurtPlayer(p,e.dmg);if(hit){e.hc=.8;if(e.ai===AI.hunger||e.boss){p.vx+=ex/(Math.sqrt(ex*ex+ey*ey)||1)*300;p.vy+=ey/(Math.sqrt(ex*ex+ey*ey)||1)*300;}}}}
    }
    // recycle stragglers
    if(!e.boss&&!e.elite&&e.mode===0&&(Math.abs(e.x-cam.x)>fwx||Math.abs(e.y-cam.y)>fwy)){edgePos(30+rnd()*60);e.x=SP.x;e.y=SP.y;e.kx=e.ky=0;}
@@ -490,14 +493,14 @@ async function horde(s){
  }
  function updatePickups(dt){
   for(let i=G.length-1;i>=0;i--){
-   const g=G[i];g.age+=dt;let best=null,bd=1e18;for(let k=0;k<2;k++){const p=P[k];if(p.down)continue;const dx=p.x-g.x,dy=p.y-g.y,d2=dx*dx+dy*dy;if(d2<bd){bd=d2;best=p;}}
+   const g=G[i];g.age+=dt;let best=null,bd=1e18;for(let k=0;k<P.length;k++){const p=P[k];if(p.down)continue;const dx=p.x-g.x,dy=p.y-g.y,d2=dx*dx+dy*dy;if(d2<bd){bd=d2;best=p;}}
    if(!best)continue;const R=92*best.st.magnet;if(!g.pull&&bd<R*R)g.pull=true;
    if(g.pull){g.sp=Math.min(620,g.sp+1100*dt);const d=Math.sqrt(bd)||1;g.x+=(best.x-g.x)/d*g.sp*dt;g.y+=(best.y-g.y)/d*g.sp*dt;}
    if(bd<17*17){gainXp(best,g.v);pickupSound(s);release(G,Gpool,i);}
   }
   for(let i=K.length-1;i>=0;i--){
    const q=K[i];q.age+=dt;if(q.age>q.life){release(K,Kpool,i);continue;}
-   let best=null,bd=1e18;for(let k=0;k<2;k++){const p=P[k];if(p.down)continue;const dx=p.x-q.x,dy=p.y-q.y,d2=dx*dx+dy*dy;if(d2<bd){bd=d2;best=p;}}
+   let best=null,bd=1e18;for(let k=0;k<P.length;k++){const p=P[k];if(p.down)continue;const dx=p.x-q.x,dy=p.y-q.y,d2=dx*dx+dy*dy;if(d2<bd){bd=d2;best=p;}}
    if(!best)continue;
    if(q.k==='coin'){const R=92*best.st.magnet;if(!q.pull&&bd<R*R)q.pull=true;if(q.pull){q.sp=Math.min(560,q.sp+1000*dt);const d=Math.sqrt(bd)||1;q.x+=(best.x-q.x)/d*q.sp*dt;q.y+=(best.y-q.y)/d*q.sp*dt;}}
    const tr=q.k==='chest'?34:26;if(bd<tr*tr){
@@ -516,8 +519,8 @@ async function horde(s){
  const dirOut={x:0,y:0,m:0};
  const botCache=[{x:0,y:0,m:0,t:0},{x:0,y:0,m:0,t:0}];
  function botDir(i){
-  const c2=botCache[i];if(frameNo-c2.t<(cpu&&i===1&&!bot.on?cpuGap:3)&&frameNo>=c2.t){dirOut.x=c2.x;dirOut.y=c2.y;dirOut.m=c2.m;return;}c2.t=frameNo;
-  const p=P[i],o=P[1-i];let tg=null,bd=1e18;
+  const c2=botCache[i];if(frameNo-c2.t<3&&frameNo>=c2.t){dirOut.x=c2.x;dirOut.y=c2.y;dirOut.m=c2.m;return;}c2.t=frameNo;
+  const p=P[i],o=mate(p);let tg=null,bd=1e18;
   for(const g of G){const d=(g.x-p.x)**2+(g.y-p.y)**2+(i?(g.x-o.x)**2*.3:0);if(d<bd){bd=d;tg=g;}}
   for(const k of K)if(k.k!=='bomb'){const d=(k.x-p.x)**2+(k.y-p.y)**2;if(d<bd*1.5){bd=d;tg=k;}}
   let best=-1e18,bx=0,by=0;
@@ -531,16 +534,16 @@ async function horde(s){
  }
  function readDir(i){
   dirOut.x=0;dirOut.y=0;dirOut.m=0;
-  if(bot.on||cpu&&i===1){botDir(i);return;}
+  if(bot.on){botDir(i);return;}
   const st=stick[i];
   if(st.on){const vx=st.fx-st.ax,vy=st.fy-st.ay,d=Math.sqrt(vx*vx+vy*vy);if(d>6){if(d>60){const k=(d-60)/d;st.ax+=vx*k;st.ay+=vy*k;}dirOut.x=vx/d;dirOut.y=vy/d;dirOut.m=clamp((Math.min(d,60)-6)/36,.25,1);}return;}
-  let dx=0,dy=0;if(i===0){dx=(keys.d||cpu&&keys.ArrowRight?1:0)-(keys.a||cpu&&keys.ArrowLeft?1:0);dy=(keys.s||cpu&&keys.ArrowDown?1:0)-(keys.w||cpu&&keys.ArrowUp?1:0);}else{dx=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);dy=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0);}
+  let dx=0,dy=0;if(i===0){dx=(keys.d||alone&&keys.ArrowRight?1:0)-(keys.a||alone&&keys.ArrowLeft?1:0);dy=(keys.s||alone&&keys.ArrowDown?1:0)-(keys.w||alone&&keys.ArrowUp?1:0);}else{dx=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);dy=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0);}
   const l=Math.sqrt(dx*dx+dy*dy);if(l>0){dirOut.x=dx/l;dirOut.y=dy/l;dirOut.m=1;}
  }
  function updatePlayers(dt){
   const lx=W/zoom*.8,ly=(H-hudH)/zoom*.8;
-  for(let i=0;i<2;i++){
-   const p=P[i],o=P[1-i];
+  for(let i=0;i<P.length;i++){
+   const p=P[i],o=mate(p);
    if(p.inv>0)p.inv-=dt;if(p.hurt>0)p.hurt-=dt;if(p.slow>0)p.slow-=dt;
    if(p.down){if(!o.down&&Math.hypot(p.x-o.x,p.y-o.y)<58){p.revT+=dt;if(p.revT>=2.5)reviveFx(p,.45,'REVIVED!');}else p.revT=Math.max(0,p.revT-dt*.6);continue;}
    if(p.st.regen>0&&p.hp<p.maxHp)p.hp=Math.min(p.maxHp,p.hp+p.st.regen*dt);
@@ -556,7 +559,7 @@ async function horde(s){
   }
  }
  function updateCamera(dt,snap){
-  let tx,ty;const a=P[0],b=P[1];
+  let tx,ty;const a=P[0],b=mate(a);
   if(a.down&&!b.down){tx=b.x*.7+a.x*.3;ty=b.y*.7+a.y*.3;}else if(b.down&&!a.down){tx=a.x*.7+b.x*.3;ty=a.y*.7+b.y*.3;}else{tx=(a.x+b.x)/2;ty=(a.y+b.y)/2;}
   const k=snap?1:Math.min(1,dt*6);cam.x+=(tx-cam.x)*k;cam.y+=(ty-cam.y)*k;
   // hard clamp: keep both heads on screen below the HUD
@@ -572,7 +575,7 @@ async function horde(s){
   buildHash();
   updatePlayers(dt);updateCamera(dt,false);ensureWorld();
   updateEnemies(dt);
-  for(let i=0;i<2;i++)if(!P[i].down)updateWeapons(P[i],dt);
+  for(const p of P)if(!p.down)updateWeapons(p,dt);
   updateProjectiles(dt);updateEnemyShots(dt);updateZones(dt);updatePickups(dt);sweepDead();
   updateFx(dt);
  }
@@ -582,11 +585,11 @@ async function horde(s){
   for(let i=FX.length-1;i>=0;i--){const f=FX[i];f.t+=dt;if(f.t>=f.dur)release(FX,FXpool,i);}
   shake*=Math.max(0,1-dt*7);if(shake<.15)shake=0;hurtFlash=Math.max(0,hurtFlash-dt*1.4);whiteFlash=Math.max(0,whiteFlash-dt*1.6);
   if(banner.t>0)banner.t-=dt;for(let i=toasts.length-1;i>=0;i--){toasts[i].t-=dt;if(toasts[i].t<=0)toasts.splice(i,1);}
-  scoreTick-=dt;if(scoreTick<=0){scoreTick=.3;if(scoreDirty){scoreDirty=0;s.setScores(currentScores());}const left=Math.max(0,D-clock);s.status(`${title} · ${fmtTime(left)} left · ${totalKills} kills`);}
+  scoreTick-=dt;if(scoreTick<=0){scoreTick=.3;if(scoreDirty){scoreDirty=0;s.setScores(currentScores());if(alone)soloProgress(s,playerScore(0),0,`${cabin?'Evil Dead':'Return of the Living Dead'} solo: ${fmtTime(clock)} survived, ${totalKills} kills.`);}const left=Math.max(0,D-clock);s.status(`${title} · ${fmtTime(left)} left · ${totalKills} kills`);}
  }
  const evoBonusScore=()=>0;
  function playerScore(i){return kills[i]+P[i].lvl*8+P[i].coins+bossKills[i]*50;}
- function currentScores(){return[playerScore(0),playerScore(1)];}
+ function currentScores(){return[playerScore(0),alone?0:playerScore(1)];}
  function beginEnd(kind){
   if(state==='ending')return;state='ending';endKind=kind;endT=0;modal=null;modalQ.length=0;
   if(kind==='lose'){sound('lose');showBanner('THE HORDE WINS','You were overrun.','#ff5a4a',3.4);}
@@ -596,16 +599,16 @@ async function horde(s){
  }
  function finishRun(){
   if(!s.alive)return;
-  const secs=Math.floor(clock),bonus=won?100+(bossBonus?300+Math.round((D-clock)*2):0):0,sc=[playerScore(0)+bonus,playerScore(1)+bonus],total=sc[0]+sc[1];
+  const secs=Math.floor(clock),bonus=won?100+(bossBonus?300+Math.round((D-clock)*2):0):0,sc=[playerScore(0)+bonus,alone?0:playerScore(1)+bonus],total=sc[0]+sc[1];
   s.teamResult={kind:'survival',won,tied:false,humanTotal:total,cpuTotal:0,cpuScores:[0,0],duration:secs};
-  if(s.solo){s.solo.coop=true;s.solo.won=won;}
+  if(alone){soloProgress(s,sc[0],0,'');s.solo.won=won;}
   const mmss=`${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
-  s.finish(sc,`${won?(endKind==='boss'?'The final boss is dead!':'Dawn broke and you both survived!'):'The horde won this night.'} ${cabin?'Evil Dead':'Return of the Living Dead'}: survived ${mmss} · ${totalKills} kills · ${total} team points.`);
+  s.finish(sc,`${won?(endKind==='boss'?'The final boss is dead!':alone?'Dawn broke and you survived!':'Dawn broke and you both survived!'):'The horde won this night.'} ${cabin?'Evil Dead':'Return of the Living Dead'}: survived ${mmss} · ${totalKills} kills · ${total} ${alone?'':'team '}points.`);
  }
  function startRun(idx){
-  if(state!=='menu')return;mode=MODES[idx];D=mode.time;sched=HD.buildSchedule(mode);evI=0;clock=0;curM=0;state='play';
-  P[0].x=-64;P[1].x=64;P[0].y=P[1].y=70;cam.x=0;cam.y=70;updateCamera(0,true);
-  modalQ.push({type:'start',pi:0},{type:'start',pi:1});nextModal();sound('start');
+  if(state!=='menu')return;mode=alone?soloMode(MODES[idx]):MODES[idx];D=mode.time;sched=HD.buildSchedule(mode);evI=0;clock=0;curM=0;state='play';
+  if(alone){P[0].x=0;P[0].y=70;}else{P[0].x=-64;P[1].x=64;P[0].y=P[1].y=70;}cam.x=0;cam.y=70;updateCamera(0,true);
+  modalQ.push(...P.map(p=>({type:'start',pi:p.i})));nextModal();sound('start');
   showBanner(cabin?'DEFEND THE CABIN':'SURVIVE THE NIGHT',`${mode.label} · until dawn`,'#ffd23a',2.6);
  }
 
@@ -749,7 +752,7 @@ async function horde(s){
   x.fillStyle='#ff4a4a';x.fillRect(bx+bw*(1-mode.bossLead/D)-1,by-3,3,10*ui);x.fillStyle='#b06aff';x.fillRect(bx+bw*(1-mode.hungerLead/D)-1,by-3,3,10*ui);
   const ks=Math.round(13*ui);x.drawImage(iconG.skull,cx-bw/2-0,Math.round(5*ui),ks,ks);txt(String(totalKills),cx-bw/2+ks+3,Math.round(11*ui),Math.round(12*ui),'#ffe9c8','left',true);
   x.drawImage(iconG.coin,cx+bw/2-ks-38*ui,Math.round(5*ui),ks,ks);txt(String(coinsTeam),cx+bw/2-ks-38*ui+ks+3,Math.round(11*ui),Math.round(12*ui),'#ffe27a','left',true);
-  for(let i=0;i<2;i++){
+  for(let i=0;i<P.length;i++){
    const p=P[i],pw=Math.min(W/2-10,300*ui),x0=i?W-pw-6:6,y0=tb,hs=Math.round(30*ui);
    panel(x0,y0,pw,Math.round(52*ui),8,'rgba(10,14,24,.62)',p.down?'#ff5a5a':PCOL[i],1.5);
    s.sprite(x,i,x0+hs/2+3,y0+hs/2+3,hs,{exact:true,mood:p.down?'sad':undefined});
@@ -813,11 +816,11 @@ async function horde(s){
    if(!chest&&!m.start)txt(String(i+1),cx2+10,cy2+10,Math.round(10*ui),'#7f8db0','left',false);
   }
   if(m.age<.45){x.fillStyle='rgba(5,7,16,.5)';x.fillRect(0,areaTop,W,H-areaTop);}
-  txt(cpu&&m.pi===1?`${s.players[1].name} is choosing…`:chest?'Tap to continue':'Tap a card',W/2,H-Math.round(14*ui),Math.round(13*ui),'#9fb0d0','center',true);
+  txt(chest?'Tap to continue':'Tap a card',W/2,H-Math.round(14*ui),Math.round(13*ui),'#9fb0d0','center',true);
  }
  function uiTap(p){
   if(state==='menu'){for(let i=0;i<menuRects.length;i++){const r=menuRects[i];if(p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h){menuSel=i;startRun(i);return;}}return;}
-  if(!modal||modal.age<.45||cpu&&modal.pi===1)return;
+  if(!modal||modal.age<.45)return;
   if(modal.type==='chest'){if(modal.age>1)chooseCard(0);return;}
   for(let i=0;i<cardRects.length;i++){const r=cardRects[i];if(p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h){chooseCard(i);return;}}
  }
@@ -827,14 +830,14 @@ async function horde(s){
   const first=!seen.has(id),st=stick[i];
   if(first){seen.add(id);if(state==='menu'||modal)uiTap(p);st.on=true;st.id=id;st.ax=st.fx=p.x;st.ay=st.fy=p.y;}
   else{st.fx=p.x;st.fy=p.y;}
- },(i,id)=>{seen.delete(id);const st=stick[i];if(st.id===id){st.on=false;st.id=-1;}});
+ },(i,id)=>{seen.delete(id);const st=stick[i];if(st.id===id){st.on=false;st.id=-1;}},alone?()=>0:undefined);
  const navKeys={ArrowUp:-1,ArrowDown:1,ArrowLeft:-1,ArrowRight:1,w:-1,s:1,a:-1,d:1};
  for(const type of['keydown','keyup'])s.on(document,type,ev=>{
   if(!s.alive||s.paused)return;const k=ev.key.length===1?ev.key.toLowerCase():ev.key,down=type==='keydown';
   const handled=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' ','Enter','1','2','3','4'].includes(k);if(!handled)return;ev.preventDefault();
   if(down&&(state==='menu'||modal)){
    if(state==='menu'){if(k in navKeys)menuSel=clamp(menuSel+navKeys[k],0,MODES.length-1);else if(k===' '||k==='Enter')startRun(menuSel);else if(k>='1'&&k<='3')startRun(Number(k)-1);}
-   else if(modal.age>.45&&!(cpu&&modal.pi===1)){if(modal.type==='chest')chooseCard(0);else if(k in navKeys)modal.sel=clamp(modal.sel+navKeys[k],0,modal.cards.length-1);else if(k===' '||k==='Enter')chooseCard(modal.sel);else{const n=Number(k)-1;if(n>=0&&n<modal.cards.length)chooseCard(n);}}
+   else if(modal.age>.45){if(modal.type==='chest')chooseCard(0);else if(k in navKeys)modal.sel=clamp(modal.sel+navKeys[k],0,modal.cards.length-1);else if(k===' '||k==='Enter')chooseCard(modal.sel);else{const n=Number(k)-1;if(n>=0&&n<modal.cards.length)chooseCard(n);}}
    return;}
   keys[k]=down;
  });
@@ -863,7 +866,7 @@ async function horde(s){
  s.frame((dt,t)=>{
   const t0=performance.now();layout();uiT+=dt;
   if(state==='menu'){render(t);drawMenu(t);return;}
-  if(modal&&(bot.on&&modal.age>.3||cpu&&modal.pi===1&&modal.age>1.1))botModal();
+  if(modal&&bot.on&&modal.age>.3)botModal();
   if(modal){modal.age+=dt;render(t);drawHUD(t);drawModal(t);return;}
   if(state==='ending'){const sl=endKind==='lose'?.35:1;step(dt*sl);if(endT>3.4){render(t);drawHUD(t);finishRun();return;}}
   else step(dt);
