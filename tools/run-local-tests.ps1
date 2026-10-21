@@ -210,6 +210,10 @@ $unitTests = @(
 foreach ($test in $unitTests) {
     [void](Run-Step ([IO.Path]::GetFileNameWithoutExtension($test)) $nodeExe @($test))
 }
+# Node-only checks added to npm run test:core later (kart track, Hole.it layouts, DOOM sim).
+[void](Run-Step 'kart-track' $nodeExe @('tests/kart-track.mjs'))
+[void](Run-Step 'holeit-layouts' $nodeExe @('tests/holeit.mjs','--node'))
+[void](Run-Step 'doom-sim' $nodeExe @('tests/doom-sim.mjs','300'))
 foreach ($test in @('tests/player-names.mjs', 'tests/pkmn-haptics.mjs', 'tests/smoke.mjs')) {
     [void](Run-Step ([IO.Path]::GetFileNameWithoutExtension($test)) $nodeExe @($test))
 }
