@@ -189,6 +189,8 @@ function buildGridBoard(board){
   tryBridges(.08,.3);
   // A realm whose roads never line up gets one more look with a looser reach.
   if(!made.length)tryBridges(.2,.5);
+  // still none: reach further back and ahead rather than leave the realm without a crossing
+  if(!made.length)tryBridges(.45,.9);
   // One guarded shortcut per road where the road doubles back on itself.
   tracks.forEach((path,lane)=>{const s=findShortcut(cells[lane],path,board,blocked,occ,random);if(!s)return;s.mids.forEach(k=>blocked.add(k));addShortcut(board,realm,lane,path[s.i],path[s.j],s.j-s.i,'shortcut-'+path[s.i],random);});
   let taskKept=false;for(const n of all)if(n.type==='task'){if(taskKept)n.type='game';else taskKept=true;}

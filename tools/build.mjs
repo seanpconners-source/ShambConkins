@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import zlib from 'node:zlib';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argOut = process.argv.indexOf('--out');
@@ -55,6 +56,18 @@ const musicDir = path.join(root, 'assets/music');
 if (fs.existsSync(musicDir)) for (const f of fs.readdirSync(musicDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(mp3|ogg|m4a|wav)$/i);
   if (m) userPortraits['music:' + m[1].toLowerCase()] = `data:${AUDIO[m[2].toLowerCase()]};base64,` + fs.readFileSync(path.join(musicDir, f)).toString('base64');
+}
+// Doom: assets/doom/<name>.pack.gz (Freedoom, made by tools/doom-pack.mjs) -> USER_PORTRAITS['doom:pack:<name>'];
+// the owner's own IWADs in assets/doom/user/*.wad (git-ignored: never commit them) -> 'doom:wad:<name>', gzipped here.
+const doomDir = path.join(root, 'assets/doom');
+if (fs.existsSync(doomDir)) for (const f of fs.readdirSync(doomDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.pack\.gz$/i);
+  if (m) userPortraits['doom:pack:' + m[1].toLowerCase()] = 'data:application/gzip;base64,' + fs.readFileSync(path.join(doomDir, f)).toString('base64');
+}
+const doomUser = path.join(doomDir, 'user');
+if (fs.existsSync(doomUser)) for (const f of fs.readdirSync(doomUser)) {
+  const m = f.match(/^([a-z0-9_-]+)\.wad$/i);
+  if (m) userPortraits['doom:wad:' + m[1].toLowerCase()] = 'data:application/gzip;base64,' + zlib.gzipSync(fs.readFileSync(path.join(doomUser, f)), {level: 9}).toString('base64');
 }
 const js2 = js.replace('/*@@USER_PORTRAITS@@*/{}', () => JSON.stringify(userPortraits));
 const html = read('src/index.template.html')

@@ -11,7 +11,7 @@ const SOLO_IDS={
  'smb-world-1':'levels','smb-coin-rush':'levels','smb-castle-dash':'levels',
  'sonic-ring-rush':'levels','sonic-goal-dash':'levels',
  'cv-vampire-killer':'levels','cv-candle-hunt':'levels','cv-symphony':'levels',
- 'bricks-breaker-quest':'levels','paddys-hole':'levels','megatouch-photohunt':'levels',
+ 'bricks-breaker-quest':'levels','doom':'levels','doom-2':'levels','paddys-hole':'levels','megatouch-photohunt':'levels',
  'kart-grand-prix-pass':'levels','kart-time-trial':'levels','rainbow-road-kart':'cpu',
  // batch 2: timed turn games replayed in faster rounds (retroKit turnRunner → soloTurnRuns)
  'warriors-brawl':'rounds','paddys-darts':'rounds','duck-hunt-turn':'rounds','snake-run':'rounds','mars-missile-defense':'rounds',

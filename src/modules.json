@@ -335,7 +335,27 @@
   "src/engines/holeIt/bonus.js",
   "src/solo.js",
   "src/engines/cpuKit.js",
-  "src/engines/cpuBoards.js"
+  "src/engines/cpuBoards.js",
+  "src/packs/doomPack.js",
+  "src/engines/doom.js",
+  "src/engines/doom/wad.js",
+  "src/engines/doom/info.js",
+  "src/engines/doom/gfx.js",
+  "src/engines/doom/level.js",
+  "src/engines/doom/render.js",
+  "src/engines/doom/play.js",
+  "src/engines/doom/actions.js",
+  "src/engines/doom/spec.js",
+  "src/engines/doom/strings.js",
+  "src/engines/doom/game.js",
+  "src/engines/doom/video.js",
+  "src/engines/doom/hud.js",
+  "src/engines/doom/automap.js",
+  "src/engines/doom/screens.js",
+  "src/engines/doom/sound.js",
+  "src/engines/doom/music.js",
+  "src/engines/doom/heads.js",
+  "src/engines/doom/savegame.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

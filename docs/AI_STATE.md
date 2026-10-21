@@ -309,6 +309,21 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   `engines/fullBleed.js`) set `noBleed` and keep their own fullscreen toggle.
   All only bot/fuzz-tested in headless Chromium; real-phone feel untested.
 
+- **DOOM / DOOM II (Oct 21 2026, ids `doom`, `doom-2`, `packs/doomPack.js`, arcade only):** `src/engines/doom.js` + a JS rebuild of
+  the 1993 engine in `src/engines/doom/` (README there): `wad.js` (WAD/pack loading; data order = phone-picked IWAD in IndexedDB
+  → `assets/doom/user/*.wad` baked at build (git-ignored, never commit such a build) → Freedoom `assets/doom/freedoom.pack.gz`,
+  made by `tools/doom-pack.mjs`), `info.js` (vanilla-numbered states/things so DEHACKED applies; Freedoom's DEH strings/pars used),
+  `render.js` (BSP, visplanes, sprites, masked mids, fuzz, COLORMAP light; 200 lines, width follows aspect), `play.js`/`actions.js`/
+  `spec.js`/`game.js` (vanilla movement, AI, weapons, specials, line triggers), `hud.js` (status bar + face state machine; ouch-face
+  test fixed the intended way), `screens.js` (menus, tally, finales, cast call), `sound.js` (DMX sfx, 8 channels), `music.js` (OPL2
+  FM synth on GENMIDI; MUS + MIDI), `heads.js` (roster heads drawn into the 8-bit frame on each sprite's own head, by rotation/mood;
+  status-bar face = player's character with Doom's 42 expressions), `savegame.js` (6 slots, IndexedDB). 1P = whole game (death
+  restarts the level, each cleared level banks its tally score); 2P = P1 picks level + skill, one life each, score = kills%+items%+
+  secrets% +100 exit + up to 100 par bonus. One WANTED monster per map wears a locked character → `s.gameRecruits` (cageGame).
+  Touch like the Android port (left stick, right drag turn, FIRE/USE/WPN/MAP/☰ circles, tap arms numbers). Tests: `tests/doom-sim.mjs`
+  (Node, all 68 Freedoom maps, in test:core), `tests/doom.mjs` (2P flow + touch, 3 sizes), `tests/doom-solo.mjs`, `tests/doom-finale.mjs`,
+  `tests/doom-heads.mjs` (head/face contact sheets). Build is ~78 MB now (+20 MB Freedoom). Real-phone feel, audio by ear and
+  the owner's own WADs untested (only Freedoom tested).
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 

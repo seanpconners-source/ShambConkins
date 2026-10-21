@@ -3,7 +3,7 @@
 //   games:   [{id,engine,title,source,icon,category,duration,rules,reward?,...}]
 //            appended to the random pool (family defaults to the engine name)
 //   events:  same shape, but encounter-only (never rolled at random)
-const packs=[require("src/packs/partyPack.js"),require("src/packs/arenaPack.js"),require("src/packs/tarantinoPack.js"),require("src/packs/rushPack.js"),require("src/packs/bossPack.js"),require("src/packs/warpPack.js"),require("src/packs/broforcePack.js"),require("src/packs/remakePack.js"),require("src/packs/bricksPack.js")];
+const packs=[require("src/packs/partyPack.js"),require("src/packs/arenaPack.js"),require("src/packs/tarantinoPack.js"),require("src/packs/rushPack.js"),require("src/packs/bossPack.js"),require("src/packs/warpPack.js"),require("src/packs/broforcePack.js"),require("src/packs/remakePack.js"),require("src/packs/bricksPack.js"),require("src/packs/doomPack.js")];
 const engines={},games=[],events=[],ids=new Set();
 for(const p of packs){
  for(const [name,engine] of Object.entries(p.engines||{})){

@@ -4,3 +4,5 @@ node_modules/
 local-test-reports/
 # Local branch/timestamped builds from BUILD-RELEASE.cmd (e.g. ShambConkins_v0.60.0_TestVer.html); plain main releases stay visible.
 releases/ShambConkins_v*_*.html
+# The owner's own Doom IWADs (DOOM.WAD / DOOM2.WAD): copyrighted, never commit them. See src/engines/doom/README.md.
+assets/doom/user/
