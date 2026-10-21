@@ -24,10 +24,12 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   `cpuOwner:false`), and P2 is driven by `kb.cpu(key,down)` (arenaKeys), `keyboard(...).hold/tap` (tarantinoKit), `fingers.cpu`
   virtual finger (halfPointers/arenaTouch), `keys.cpu` (duelInputs), `controls.cpu` (arenaGestures). Each engine has a small
   `cpuThink`-style brain (search for `vs CPU:` comments). ~80 games now play solo. Balance is bot-tested only (an idle human vs the CPU).
-  Batch 5 (Oct 20, the last four): every Arcade game now plays in 1P. Co-op games are played ALONE in 1P (owner, Oct 21: no CPU
-  teammate), solo kind `'alone'`: Living Dead horde (`alone` in horde.js: `P` has one player, `mate(p)` = partner or self, `soloMode`
-  thins the horde: cap/rate ×.6, hp ×.8, final boss ×.55, dmg ×.9; touch anywhere steers) and Space Invaders co-op (one cannon,
-  4 lives, normal invader speed, WAVE in the HUD). Engines set `s.solo.won` + `soloProgress`. Rainbow Rivals = kind 'levels': leg after leg vs Mario/Luigi
+  Batch 5 (Oct 20, the last four): every Arcade game now plays in 1P. Owner rule (Oct 21): a co-op game with a take-turns version
+  keeps its CPU teammate in 1P; one without is played ALONE. Space Invaders co-op = CPU teammate (`SOLO_COOP`/`soloCoop` in
+  solo.js; engine sets `s.solo.coop=true` + `s.solo.won`, `settleSolo` scores the team total, labels say WITH CPU; versus brain
+  leaves the human's columns alone); Space Swarm is its solo version. Living Dead horde = solo kind `'alone'` (`alone` in horde.js:
+  `P` has one player, `mate(p)` = partner or self, `soloMode` thins the horde: cap/rate ×.6, hp ×.8, final boss ×.55, dmg ×.9;
+  touch anywhere steers; sets `s.solo.won` + `soloProgress`). Rainbow Rivals = kind 'levels': leg after leg vs Mario/Luigi
   on a fresh course, outscore the rival to move on; `rivalThink(...,goof)` makes it fumble rows (.3−.2·skill, ×.82 per leg).
   Balloon Battle = 'cpu': `soloKart` battle branch, CPU kart via `battleBrain` in kart.js (takes the shorter way round the ring,
   U-turns toward the rail, own lane keeper with ¼ curve feed-forward because `autoInput` sits ~45 off its lane on the ring,

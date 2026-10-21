@@ -2,13 +2,12 @@
 // that ripples one invader at a time (so it speeds up as it thins out), the four-note heartbeat, erodible bunkers,
 // three bomb types and the mystery saucer, flown here by a Martian. Your head rides in your cannon's glass dome.
 // Modes (s.game.invaderMode): 'turns' (P1 then P2 on the same seed), 'versus' (both cannons at once, most points),
-// 'coop' (both cannons, shared lives, clear four waves; 1P arcade: one cannon alone with four lives).
+// 'coop' (both cannons, shared lives, clear four waves).
 const {clamp,seededRandom}=require("src/utils.js");
 const {voice,noise,keyboard,makeShake}=require("src/engines/tarantinoKit.js");
 const {pixText,drawSprite,makeStarfield,scanlines,vignette,fitField,makeBits}=require("src/engines/retroKit.js");
 const {vibrate}=require("src/audio.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
-const {soloProgress}=require("src/solo.js");
 
 const SQUID=[['...##...','..####..','.######.','##.##.##','########','..#..#..','.#.##.#.','#.#..#.#'],['...##...','..####..','.######.','##.##.##','########','.#.##.#.','#......#','.#....#.']];
 const CRAB=[['..#.....#..','...#...#...','..#######..','.##.###.##.','###########','#.#######.#','#.#.....#.#','...##.##...'],['..#.....#..','#..#...#..#','#.#######.#','###.###.###','###########','.#########.','..#.....#..','.#.......#.']];
@@ -53,9 +52,7 @@ function shieldAt(w,px,py){for(const sh of w.shields){const lx=Math.floor(px-sh.
 async function galaga(s){
  const mode=s.game.invaderMode||'turns';
  const [c,x]=s.canvas(680,420,{fill:true});s.body.classList.add('drag-arena-body');s.controls([]);s.ownHud(true,true);
- // 1P co-op: the player defends Earth alone (no CPU teammate)
- const alone=mode==='coop'&&!!s.solo;
- if(mode!=='turns'){s.shared=true;}if(mode==='coop'&&!alone){s.cooperative=true;s.cooperativeLabel='DEFEND EARTH';}s.updateScores();
+ if(mode!=='turns'){s.shared=true;}if(mode==='coop'){s.cooperative=true;s.cooperativeLabel='DEFEND EARTH';}s.updateScores();
  const stars=makeStarfield(seededRandom(s.seed+':stars'),{count:160,nebula:['#3a1670','#0d3f6e','#6a1238']});const shake=makeShake();
  let w=null,turn=0,running=false,ended=null,shieldCanvas=null;const scores=[0,0];
  const sfx={
@@ -70,9 +67,10 @@ async function galaga(s){
  const fingers=new Map();let L=null;
  const cannonFor=p=>{if(!w)return null;if(w.cannons.length===1)return w.cannons[0];return w.cannons[cpu||p.x<s.W/2?0:1];};
  // vs CPU: cannon 2 slides under the lowest invader in reach (or the UFO), dodges bombs above it and fires when lined up.
+ // Co-op: the same brain is your teammate and leaves the columns over your cannon to you.
  const cpu=isCpu(s);
- function cpuInvaders(){const cn=w?.cannons?.[1];if(!cn||!cn.alive||w.mode==='turns')return;const sk=cpuSkill(s);let tx=cn.x,best=-1e9;
-  for(const v of w.inv){if(!v.alive)continue;const vx=v.x+8,sc=v.y-Math.abs(vx-cn.x)*(.6+(1-sk));if(sc>best){best=sc;tx=vx;}}if(w.ufo&&sk>.5)tx=w.ufo.x+8;
+ function cpuInvaders(){const cn=w?.cannons?.[1];if(!cn||!cn.alive||w.mode==='turns')return;const sk=cpuSkill(s),me=w.mode==='coop'?w.cannons[0]:null;let tx=cn.x,best=-1e9;
+  for(const v of w.inv){if(!v.alive)continue;const vx=v.x+8,sc=v.y-Math.abs(vx-cn.x)*(.6+(1-sk))-(me?.alive?Math.max(0,28-Math.abs(vx-me.x))*2:0);if(sc>best){best=sc;tx=vx;}}if(w.ufo&&sk>.5)tx=w.ufo.x+8;
   for(const b of w.bombs){if(b.y<w.cannonY-90||b.y>w.cannonY)continue;if(Math.abs(b.x-cn.x)<9&&Math.random()<.3+sk*.7)tx=cn.x+(b.x<cn.x?24:-24);}
   cn.tx=clamp(tx+(Math.random()-.5)*(1-sk)*6,8,w.FW-8);cn.firing=Math.abs(tx-cn.x)<5+(1-sk)*6;}
  const recount=()=>{if(!w)return;for(const cn of w.cannons)cn.firing=[...fingers.values()].some(f=>f===cn);};
@@ -92,7 +90,7 @@ async function galaga(s){
  function award(cn,pts,px,py,color){w.score[cn.p]+=pts;w.kills[cn.p]++;if(w.mode!=='turns')scores[cn.p]=w.score[cn.p];}
  function stepInvaders(dt){
   const n=alive(w);if(!n)return;
-  const rate=60*(w.mode==='coop'&&w.cannons.length>1?1.12:w.mode==='versus'?1.06:1)*(1+w.wave*.1);
+  const rate=60*(w.mode==='coop'?1.12:w.mode==='versus'?1.06:1)*(1+w.wave*.1);
   w.acc+=dt*rate;let guard=0;
   while(w.acc>=1&&guard++<200){w.acc-=1;
    // find the next living invader in bottom-left -> top-right order
@@ -116,7 +114,7 @@ async function galaga(s){
    if(w.shots++%3===0&&liveCannons.length){const cn=liveCannons[Math.floor(w.rand()*liveCannons.length)];col=cols.reduce((b,cc)=>{const iv=w.inv.find(i=>i.alive&&i.c===cc);return Math.abs(iv.x+8-cn.x)<Math.abs(w.inv.find(i=>i.alive&&i.c===b).x+8-cn.x)?cc:b;},cols[0]);}
    else col=cols[Math.floor(w.rand()*cols.length)];
    const shooter=w.inv.filter(i=>i.alive&&i.c===col).sort((a,b)=>b.y-a.y)[0];
-   if(shooter)w.bombs.push({x:shooter.x+8,y:shooter.y+9,kind:w.bombKind++%3,t:0,v:72+w.wave*7+(w.mode==='coop'&&w.cannons.length>1?8:0)});
+   if(shooter)w.bombs.push({x:shooter.x+8,y:shooter.y+9,kind:w.bombKind++%3,t:0,v:72+w.wave*7+(w.mode==='coop'?8:0)});
   }
   for(const b of w.bombs){b.t+=dt;b.y+=b.v*dt;
    const sh=shieldAt(w,b.x,b.y+3);if(sh){erode(w,sh,b.x,b.y+3,2.8);b.dead=true;w.bits.burst(b.x,b.y+3,{n:6,speed:30,color:'#7dff9a',life:.35,size:1});continue;}
@@ -189,9 +187,9 @@ async function galaga(s){
   const two=w.cannons.length>1,hs=1.15;
   const label=i=>two?`SCORE<${i+1}>`:`SCORE<${w.cannons[0].p+1}>`;
   pixText(x,two?label(0):`SCORE<${turn+1}>`,6,3,hs*.9,'#ffffffcc');pixText(x,String(two?w.score[0]:w.score[w.cannons[0].p]).padStart(4,'0'),6,12,hs,two?PCOLOR[0]:'#fff',{glow:6});
-  pixText(x,w.mode==='coop'&&two?'TEAM':'WAVE',w.FW/2,3,hs*.9,'#ffffffcc',{align:'center'});pixText(x,w.mode==='coop'&&two?String(w.score[0]+w.score[1]).padStart(5,'0'):String(w.wave+1),w.FW/2,12,hs,'#ffd23f',{align:'center',glow:6});
+  pixText(x,w.mode==='coop'?'TEAM':'WAVE',w.FW/2,3,hs*.9,'#ffffffcc',{align:'center'});pixText(x,w.mode==='coop'?String(w.score[0]+w.score[1]).padStart(5,'0'):String(w.wave+1),w.FW/2,12,hs,'#ffd23f',{align:'center',glow:6});
   if(two){pixText(x,label(1),w.FW-6,3,hs*.9,'#ffffffcc',{align:'right'});pixText(x,String(w.score[1]).padStart(4,'0'),w.FW-6,12,hs,PCOLOR[1],{align:'right',glow:6});}
-  else if(w.mode!=='coop'){const other=1-w.cannons[0].p;pixText(x,`SCORE<${other+1}>`,w.FW-6,3,hs*.9,'#ffffff77',{align:'right'});pixText(x,turn===0?'----':String(scores[other]).padStart(4,'0'),w.FW-6,12,hs,'#ffffff88',{align:'right'});}
+  else{const other=1-w.cannons[0].p;pixText(x,`SCORE<${other+1}>`,w.FW-6,3,hs*.9,'#ffffff77',{align:'right'});pixText(x,turn===0?'----':String(scores[other]).padStart(4,'0'),w.FW-6,12,hs,'#ffffff88',{align:'right'});}
   // saucer + Martian pilot
   if(w.ufo&&!w.ufo.dead){const u=w.ufo;drawSprite(x,MARTIAN_BRAIN,u.x-4.5,u.y-7,1,'#ff9ad5',{glow:res*3});drawSprite(x,MARTIAN_FACE,u.x-4.5,u.y-4,1,'#9dff7a',{glow:res*2});x.fillStyle='#bfe8ff33';x.beginPath();x.ellipse(u.x,u.y-2,7,5.5,0,Math.PI,0);x.fill();drawSprite(x,SAUCER,u.x-8,u.y,1,'#ff3b5c',{glow:res*4});}
   if(w.ufoPts){pixText(x,String(w.ufoPts.pts),w.ufoPts.x,w.ufoPts.y,1,'#ff3b5c',{align:'center',glow:6,alpha:clamp(w.ufoPts.t*2,0,1)});}
@@ -226,7 +224,7 @@ async function galaga(s){
  }
 
  // ---------------------------------------------------------------- flow
- s.frame(dt=>{if(!w)return;if(running){if(cpu)cpuInvaders();step(dt);if(alone)soloProgress(s,w.score[0],w.wave,`Space Invaders solo · wave ${Math.min(4,w.wave+1)} · ${w.score[0]} points.`);}draw();s.setScores(mode==='turns'?scores.map((v,i)=>w.cannons[0].p===i?w.score[i]:v):[w.score[0],w.score[1]]);
+ s.frame(dt=>{if(!w)return;if(running){if(cpu)cpuInvaders();step(dt);}draw();s.setScores(mode==='turns'?scores.map((v,i)=>w.cannons[0].p===i?w.score[i]:v):[w.score[0],w.score[1]]);
   s.debug={engine:'galaga',mode,world:w,turn,scores,fingers};
   if(running&&w.over&&!ended){ended=w.overReason==='saved'?'EARTH SAVED!':w.overReason==='invaded'?'INVADED!':w.overReason==='time'?'TIME UP':'GAME OVER';if(w.overReason==='saved')sfx.wave();setTimeout(()=>{running=false;roundDone?.();},1600);}
  });
@@ -241,13 +239,12 @@ async function galaga(s){
   }
   s.finish(scores,`Space Invaders · ${scores[0]} vs ${scores[1]}`);
  }else{
-  const world=makeWorld(s.seed+':invaders-'+mode,mode,alone?[0]:[0,1]);world.cap=caps[mode];if(alone)world.teamLives=4;w=world;layoutWorld(w);newWave(w);
-  const intro=mode==='versus'?`Both cannons at once. ${s.players[0].name} touches the left half, ${s.players[1].name} the right; drag to move, hold to fire. Every kill is yours. Three cannons each, ${caps.versus} seconds. Most points wins.`:alone?`Defend Earth alone: drag anywhere to move your cannon, hold to fire. Four cannons. Clear four waves before the Martians land.`:`Defend Earth together: ${s.players[0].name} left, ${s.players[1].name} right. Six cannons shared between you. Clear four waves before the Martians land.`;
-  if(!await s.pass(0,intro,mode==='versus'?'Both ready — fight!':alone?'Ready — defend!':'Both ready — defend!',{countdown:3}))return;
+  const world=makeWorld(s.seed+':invaders-'+mode,mode,[0,1]);world.cap=caps[mode];w=world;layoutWorld(w);newWave(w);
+  const intro=mode==='versus'?`Both cannons at once. ${s.players[0].name} touches the left half, ${s.players[1].name} the right; drag to move, hold to fire. Every kill is yours. Three cannons each, ${caps.versus} seconds. Most points wins.`:cpu?`Defend Earth with ${s.players[1].name}: drag anywhere to move your cannon, hold to fire; your teammate takes the other columns. Six cannons shared. Clear four waves before the Martians land.`:`Defend Earth together: ${s.players[0].name} left, ${s.players[1].name} right. Six cannons shared between you. Clear four waves before the Martians land.`;
+  if(!await s.pass(0,intro,mode==='versus'?'Both ready — fight!':'Both ready — defend!',{countdown:3}))return;
   await play(world);if(!s.alive)return;
   const sc=[w.score[0],w.score[1]];
-  if(alone){const won=w.overReason==='saved';soloProgress(s,sc[0],w.wave,'');s.solo.won=won;s.finish([sc[0],0],`${won?'Earth is saved!':'The Martians landed.'} Space Invaders solo · wave ${Math.min(4,w.wave+1)} · ${sc[0]} points.`);}
-  else if(mode==='coop'){const won=w.overReason==='saved',total=sc[0]+sc[1];s.teamResult={kind:'survival',won,tied:false,humanTotal:total,cpuTotal:0,cpuScores:[0,0],duration:Math.floor(w.time)};s.finish(sc,`${won?'Earth is saved!':'The Martians landed.'} Space Invaders co-op · wave ${Math.min(4,w.wave+1)} · ${total} team points.`);}
+  if(mode==='coop'){const won=w.overReason==='saved',total=sc[0]+sc[1];if(s.solo){s.solo.coop=true;s.solo.won=won;}s.teamResult={kind:'survival',won,tied:false,humanTotal:total,cpuTotal:0,cpuScores:[0,0],duration:Math.floor(w.time)};s.finish(sc,`${won?'Earth is saved!':'The Martians landed.'} Space Invaders co-op · wave ${Math.min(4,w.wave+1)} · ${total} team points.`);}
   else s.finish(sc,`Space Invaders versus · ${sc[0]} vs ${sc[1]}`);
  }
 }
