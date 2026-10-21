@@ -29,7 +29,9 @@ Version 0.60.0 (Hangman Unchained ×3, Symphony of the Night, Mario Kart 3D, SMB
   solo.js; engine sets `s.solo.coop=true` + `s.solo.won`, `settleSolo` scores the team total, labels say WITH CPU; versus brain
   leaves the human's columns alone); Space Swarm is its solo version. Living Dead horde = solo kind `'alone'` (`alone` in horde.js:
   `P` has one player, `mate(p)` = partner or self, `soloMode` thins the horde: cap/rate ×.6, hp ×.8, final boss ×.55, dmg ×.9;
-  touch anywhere steers; sets `s.solo.won` + `soloProgress`). Rainbow Rivals = kind 'levels': leg after leg vs Mario/Luigi
+  touch anywhere steers; sets `s.solo.won` + `soloProgress`). Boss fights (arcade rematches) are `'alone'` too (`soloKind` in bossPack; `alone` in
+  bossFight.js: one plane centred, `SOLO_K` boss HP ×.5 and attack density ×.7, `SOLO_HP` 5 hearts, no revives). Bot sim (8 bosses,
+  autopilot .25 s): 1P wins 4/8 vs 2P 3/8. Rainbow Rivals = kind 'levels': leg after leg vs Mario/Luigi
   on a fresh course, outscore the rival to move on; `rivalThink(...,goof)` makes it fumble rows (.3−.2·skill, ×.82 per leg).
   Balloon Battle = 'cpu': `soloKart` battle branch, CPU kart via `battleBrain` in kart.js (takes the shorter way round the ring,
   U-turns toward the rail, own lane keeper with ¼ curve feed-forward because `autoInput` sits ~45 off its lane on the ring,
