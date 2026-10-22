@@ -31,6 +31,22 @@ function createDMD(){
  // Shrink a line until it fits the width.
  d.fit=(s,x,y,o={})=>{let scale=o.scale||1;while(scale>1&&d.measure(s,scale,o.sp??1)>(o.max||W-2))scale--;return d.text(s,x,y,{...o,scale});};
  d.invert=()=>{for(let i=0;i<buf.length;i++)buf[i]=15-buf[i];};
+ // ---- drawing primitives (all clip to the panel)
+ d.line=(x0,y0,x1,y1,v=15)=>{const n=Math.max(1,Math.ceil(Math.max(Math.abs(x1-x0),Math.abs(y1-y0))));for(let i=0;i<=n;i++)d.dot(x0+(x1-x0)*i/n,y0+(y1-y0)*i/n,v);};
+ d.circle=(cx,cy,r,v=15,fill=false)=>{if(fill){for(let y=-r;y<=r;y++){const w=Math.sqrt(Math.max(0,r*r-y*y));for(let x=-w;x<=w;x++)d.dot(cx+x,cy+y,v);}return;}const n=Math.max(8,Math.ceil(r*6));for(let i=0;i<n;i++){const a=i/n*Math.PI*2;d.dot(cx+Math.cos(a)*r,cy+Math.sin(a)*r,v);}};
+ d.ellipse=(cx,cy,rx,ry,v=15,fill=true)=>{for(let y=-ry;y<=ry;y++){const w=rx*Math.sqrt(Math.max(0,1-(y*y)/(ry*ry)));if(fill)for(let x=-w;x<=w;x++)d.dot(cx+x,cy+y,v);else{d.dot(cx-w,cy+y,v);d.dot(cx+w,cy+y,v);}}};
+ // Dot sprite: rows of '.' (off), '#' (full) or hex digits 1-f (shades).
+ d.sprite=(rows,x,y,o={})=>{const v0=o.v??15,flip=!!o.flip,w=rows[0].length;rows.forEach((r,j)=>{for(let i=0;i<w;i++){const ch=r[i];if(ch==='.'||ch===' ')continue;const v=ch==='#'?v0:Math.round(parseInt(ch,16)*v0/15);d.dot(x+(flip?w-1-i:i),y+j,v);}});};
+ // A picture (canvas) as dots: luminance → 16 shades with the contrast stretched; transparent pixels stay off.
+ d.portrait=(src,x,y,w,h)=>{try{const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.drawImage(src,0,0,w,h);const px=g.getImageData(0,0,w,h).data,lum=[];let lo=255,hi=0;
+   for(let i=0;i<w*h;i++){const a=px[i*4+3];if(a<100){lum.push(-1);continue;}const L=.3*px[i*4]+.59*px[i*4+1]+.11*px[i*4+2];lum.push(L);lo=Math.min(lo,L);hi=Math.max(hi,L);}
+   const k=15/Math.max(1,hi-lo);for(let j=0;j<h;j++)for(let i=0;i<w;i++){const L=lum[j*w+i];if(L>=0)d.set(x+i,y+j,Math.max(1,Math.round((L-lo)*k)));}return true;}catch{return false;}};
+ // ---- generic effects
+ d.zoomText=(s,cx,cy,age,{dur=.35,max=2}={})=>{const sc=Math.max(1,Math.min(max,Math.round(1+(max-1)*Math.min(1,age/dur))));d.fit(s,cx,cy-3.5*sc,{scale:sc,align:'center'});};
+ d.sparkle=(age,n=24,v=12)=>{let s=Math.floor(age*18)*9301+49297;for(let i=0;i<n;i++){s=(s*9301+49297)%233280;const x=s%W;s=(s*9301+49297)%233280;d.dot(x,s%H,v*((i%3)+1)/3);}};
+ d.burst=(cx,cy,age,v=15)=>{const r=age*70;d.circle(cx,cy,r,v);d.circle(cx,cy,r*.6,v*.6);for(let i=0;i<14;i++){const a=i/14*Math.PI*2+age;d.dot(cx+Math.cos(a)*r*1.2,cy+Math.sin(a)*r*.5,v);}};
+ d.scroll=(s,y,age,o={})=>{const w=d.measure(s,o.scale||1);const x=W-((age*(o.speed||60))%(w+W));d.text(s,x,y,o);};
+ d.dim=(k=.4)=>{for(let i=0;i<buf.length;i++)buf[i]=Math.round(buf[i]*k);};
  // Paint into ctx at (x,y,w,h): dots on a dark glass, with a soft orange bloom.
  let img=null,cv=null,mask=null,maskKey='';
  d.paint=(ctx,x,y,w,h,color=[255,104,16])=>{

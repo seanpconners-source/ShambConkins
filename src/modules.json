@@ -363,7 +363,11 @@
   "src/engines/pinball/dmd.js",
   "src/engines/pinball/sound.js",
   "src/engines/pinball/tables/bucketheadArt.js",
-  "src/engines/pinball/tables/buckethead.js"
+  "src/engines/pinball/tables/buckethead.js",
+  "src/engines/pinball/music.js",
+  "src/engines/pinball/tables/bucketheadRules.js",
+  "src/engines/pinball/tables/bucketheadDmd.js",
+  "src/engines/pinball/tables/bucketheadMusic.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

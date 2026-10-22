@@ -351,8 +351,14 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   VUK (`hole toRail` → wireform, `rail noEntry`), rules `tick`/`dmdMode`. Table: upper right flipper `flipU` under the Giant Robot
   toy (5 hits → ROBOT BATTLE: 30 s, robot walks, `beam` magnet grabs + throws, 4 hits wins), Coop = VUK onto the upper flipper,
   Golden Egg captive ball (hits grow the jackpot, every 3rd lights lock). Scoring guesses: replay 3M/6M/12M; jackpot capped 2M,
-  super = 3x (bot scores 1.4–21M; `pinball-sim` prints points by source). Next: phase 3 = modes/DMD animations/music, phase 4 =
-  art, light shows, drop-in art slots `assets/pinball/<table>/`. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
+  super = 3x (bot scores 1.4–21M; `pinball-sim` prints points by source). Phase 3 (Oct 21): rules moved to
+  `tables/bucketheadRules.js`: 5 timed ATTRACTIONS started at the Haunted Ride (lit by B-O-T or every 4 ramps): Roller Coaster
+  Rush, Nunchuck Frenzy, Big Sur Moon (moving lit shot), Soothsayer (all BUCKET targets), Chicken Coop Panic; all 5 played →
+  wizard WELCOME TO BUCKETHEADLAND (4-ball, 5 shots lit, 1M each, relights). DMD animations `tables/bucketheadDmd.js` (player's
+  face as dots at ball start, 20 scenes), attract loop with high scores, game-over high-score celebration. Soundtrack:
+  `pinball/music.js` + 11 original songs in `tables/bucketheadMusic.js` (attract, plunge, main, one per attraction, battle,
+  jordan, wizard); board music stops while it plays. Music never heard by ears. Next: phase 4 = art, light shows, drop-in art
+  slots `assets/pinball/<table>/`. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).

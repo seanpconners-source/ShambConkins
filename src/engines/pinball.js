@@ -11,6 +11,8 @@ const {createMachine}=require("src/engines/pinball/machine.js");
 const {createRenderer}=require("src/engines/pinball/render.js");
 const {createDMD,scoreScene,splashScene}=require("src/engines/pinball/dmd.js");
 const {pinballSound,rollLevel,stopRoll}=require("src/engines/pinball/sound.js");
+const {createMusic}=require("src/engines/pinball/music.js");
+const audio=require("src/audio.js");
 const TABLES={buckethead:require("src/engines/pinball/tables/buckethead.js")};
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,fmt=n=>Math.round(n).toLocaleString('en-US');
 const LEFT=new Set(['KeyZ','KeyA','ShiftLeft','ArrowLeft','ControlLeft']),RIGHT=new Set(['Slash','KeyL','ShiftRight','ArrowRight','ControlRight']),PLUNGE=new Set(['Enter','ArrowDown','Space','NumpadEnter']);
@@ -24,7 +26,14 @@ async function pinball(s){
  const m=createMachine({table,players:nP,seed:s.seed||1,level:s.solo?.level||'normal',onSound:pinballSound});
  const R=createRenderer({def:m.def,art:table.art}),dmd=createDMD(),rules=table.rules,names=s.players.slice(0,nP).map(p=>p.name);
  const replay=rules.replay?.[s.solo?.level||'normal']||rules.replay?.normal||0;
- let phase='intro',phaseT=0,t=0,bonus=null,hintT=6,over=false,auto=false,lastFlash=null;
+ let phase='intro',phaseT=0,t=0,bonus=null,hintT=6,over=false,auto=false,highRanks=null;
+ // The table's own soundtrack replaces the board score while the game runs.
+ const music=createMusic(table.songs||{},{paused:()=>s.paused||!s.alive});let song=null;
+ audio.stopMusic();s.cleanup(()=>{music.stop();if(store.profile?.settings.music)try{audio.startMusic();}catch{}});
+ const setSong=name=>{if(name===song)return;song=name;if(name)music.play(name);else music.stop();};
+ // Player faces for the DMD (redrawn now and then: portraits can arrive late).
+ const faces=[],faceT=[];
+ const face=i=>{if(i==null)return null;if(!faces[i]||t-(faceT[i]||0)>2){const cv=faces[i]||document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.clearRect(0,0,64,64);try{s.sprite(g,i,32,32,60,{exact:true,noBadge:true});}catch{}faces[i]=cv;faceT[i]=t;}return faces[i];};
  const fingers=new Map(),keys={flip:[false,false],pull:false,pullT:0};let pull=0;
  const scores=()=>m.players.map(p=>p.score);
  const clear=()=>{for(const id of fingers.keys())s.release({pointerId:id});fingers.clear();keys.flip=[false,false];keys.pull=false;pull=0;};
@@ -58,22 +67,24 @@ async function pinball(s){
   if(solo&&(pl.ball>1||again))return true;
   return s.pass(i,text,'Ready');
  }
- function startBall(){m.startBall();phase='ball';phaseT=0;R.follow(m.w,1,W(),H(),true);pinballSound('start');}
+ function startBall(){m.startBall();phase='ball';phaseT=0;R.follow(m.w,1,W(),H(),true);pinballSound('start');
+  // the player's face on the DMD first, then the table's own ball-start message (skill shot)
+  const pl=m.players[m.cur],first=m.msg;m.msg={lines:[nP>1?`PLAYER ${m.cur+1}`:'',(names[m.cur]||'').toUpperCase().slice(0,12),`BALL ${pl.ball}${pl.extra&&m.shootAgainLamp?' · AGAIN':''}`],dur:1.8,anim:'face',flash:false,age:0};if(first)m.msgs.unshift(first);}
  async function next(){
   const nx=m.advance();
-  if(!nx){phase='gameover';phaseT=0;pinballSound('gameOver');return;}
+  if(!nx){phase='gameover';phaseT=0;pinballSound('gameOver');
+   // high scores go in now so the DMD can celebrate them (one line per player)
+   highRanks=scores().map((v,i)=>v>0?recordHigh(table.id||'buckethead',names[i]||`P${i+1}`,v):-1);if(highRanks.some(r=>r>=0))pinballSound('knocker');return;}
   if(!await handoff(nx.player,nx.again))return;if(!s.alive)return;
   if(R.cam.z<1){phase='zoom';phaseT=0;return;}startBall();
  }
  async function finishGame(){
-  if(over)return;over=true;const sc=scores();
-  // high scores (one line per player)
-  const ranks=sc.map((v,i)=>v>0?recordHigh(table.id||'buckethead',names[i]||`P${i+1}`,v):-1);
+  if(over)return;over=true;const sc=scores(),ranks=highRanks||sc.map(()=>-1);setSong(null);
   if(solo){const won=replay>0&&sc[0]>=replay;soloFinish(s,sc[0],won?1:0,`${table.title} · ${fmt(sc[0])}${won?' · REPLAY!':''}${ranks[0]>=0?` · high score #${ranks[0]+1}`:''}`,won);}
   else s.finish(sc,`${table.title} pinball · 3 balls each${ranks.some(r=>r>=0)?' · new high score':''}`);
  }
 
- s.debug={engine:'pinball',m,phase,R,dmd,auto:false,scores:scores(),plunge:p=>P.plunge(m.w,p)};
+ s.debug={engine:'pinball',m,phase,R,dmd,auto:false,scores:scores(),plunge:p=>P.plunge(m.w,p),scenes:Object.keys(table.dmdScenes||{}),song:()=>music.current};
  s.frame((dtRaw)=>{
   const dt=Math.min(dtRaw,1/30);t+=dt;phaseT+=dt;
   const dpr=Math.min(2,window.devicePixelRatio||1),cw=Math.round(W()*dpr),ch=Math.round(H()*dpr);if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}
@@ -93,22 +104,40 @@ async function pinball(s){
   }
   else if(phase==='bonus'){const steps=bonus.lines.length+1;if(Math.floor(phaseT/.9)!==bonus.step){bonus.step=Math.floor(phaseT/.9);if(bonus.step<=steps)pinballSound('bonus');}
    if(phaseT>.9*steps+.6){phase='wait';s.setScores(solo?[m.players[0].score,0]:scores());void next();}}
-  else if(phase==='gameover'){if(phaseT>2.6)void finishGame();}
+  else if(phase==='gameover'){if(phaseT>(highRanks?.some(r=>r>=0)?5:2.6))void finishGame();}
+  // ---- music: attract under the intro and hand-offs, a build-up on the plunger, then whatever the rules ask for
+  setSong(phase==='intro'||phase==='zoom'||phase==='gameover'?'attract':phase==='wait'?null:phase==='bonus'?null:m.phase==='plunge'?'plunge':m.tilted?null:rules.music?.(m)||'main');
   // ---- draw
   const lamps=phase==='ball'?rules.lamps(m,t):attractLamps(m.def,t,phase==='bonus'?m.p:null);
   if(phase==='bonus')bonusScene();else if(phase==='gameover')gameOverScene();else if(phase==='intro'||phase==='zoom'||phase==='wait')attractScene();
-  else if(m.msg)splashScene(dmd,{lines:m.msg.lines,flash:m.msg.flash,age:m.msg.age});
+  else if(m.msg)msgScene(m.msg);
   else scoreScene(dmd,{scores:scores(),cur:m.cur,ball:m.players[m.cur].ball,balls:rules.balls,names,t,credits:rules.dmdMode?.(m)||(solo&&replay?`REPLAY ${fmt(replay)}`:'')});
   const v=R.draw(x,{W:W(),H:H(),dpr,w:m.w,lamps,t,dmd,strip:null});
   overlay(v);
   s.status(`${names[m.cur]||''} · ball ${m.players[m.cur].ball}/${rules.balls} · ${fmt(m.players[m.cur].score)}`);
   Object.assign(s.debug,{phase,auto,scores:scores()});
  });
- function attractScene(){const L=rules.attract||[table.title];const i=Math.floor(t/1.6)%L.length;splashScene(dmd,{lines:phase==='wait'&&!over?[names[m.cur]||'PLAYER '+(m.cur+1),`BALL ${m.players[m.cur].ball}`]:[L[i]],age:t%1.6});}
+ // A message: the table's animation for msg.anim (flash inverts on the beat), else the plain splash.
+ const sceneCtx=()=>({t,face,cur:m.cur,names});
+ function msgScene(msg){const sc=table.dmdScenes?.[msg.anim];if(!sc)return splashScene(dmd,{lines:msg.lines,flash:msg.flash,age:msg.age});
+  sc(dmd,msg.age,msg.lines,sceneCtx());if(msg.flash&&msg.age<1.2&&Math.floor(msg.age*8)%2)dmd.invert();}
+ // Attract loop (intro / hand-offs): park logo, grand champion, high-score table, game rules lines.
+ function attractScene(){
+  if(phase==='wait'&&!over){const sc=table.dmdScenes?.face;const pl=m.players[m.cur],L=[nP>1?`PLAYER ${m.cur+1}`:'',(names[m.cur]||'').toUpperCase().slice(0,12),`BALL ${pl.ball}`];return sc?sc(dmd,phaseT,L,sceneCtx()):splashScene(dmd,{lines:L,age:phaseT});}
+  const hs=highTable(table.id||'buckethead'),slot=Math.floor(t/3)%4,age=t%3,sc=table.dmdScenes||{};
+  if(slot===0&&sc.ferris)return sc.ferris(dmd,age,[table.title.toUpperCase(),'WELCOME TO THE PARK'],sceneCtx());
+  if(slot===1&&hs[0]){dmd.clear();dmd.text('GRAND CHAMPION',64,2,{align:'center',v:10});dmd.fit(hs[0].name,64,11,{align:'center'});dmd.fit(fmt(hs[0].score),64,21,{align:'center'});dmd.sparkle(age,10,6);return;}
+  if(slot===2&&hs.length>1){dmd.clear();hs.slice(1,4).forEach((e,i)=>{dmd.text(`${i+2} ${e.name.slice(0,8)}`,2,1+i*11,{v:10});dmd.text(fmt(e.score),126,1+i*11,{align:'right'});});return;}
+  const L=rules.attract||[table.title];splashScene(dmd,{lines:[L[Math.floor(t/3)%L.length]],age});}
  function bonusScene(){const i=Math.min(bonus.lines.length,Math.floor(phaseT/.9));dmd.clear();
   if(i<bonus.lines.length){const [k,v]=bonus.lines[i];dmd.fit(k,64,3,{align:'center'});dmd.fit(typeof v==='number'&&k.includes('X')?`${v}X`:fmt(v),64,14,{scale:2,align:'center'});}
   else{dmd.fit('TOTAL BONUS',64,3,{align:'center'});dmd.fit(fmt(bonus.total),64,14,{scale:2,align:'center'});}}
- function gameOverScene(){dmd.clear();dmd.text('GAME OVER',64,1,{align:'center'});const sc=scores();if(nP===1)dmd.fit(fmt(sc[0]),64,12,{scale:2,align:'center'});else sc.forEach((v,i)=>dmd.fit(`${(names[i]||'P'+(i+1)).slice(0,8)} ${fmt(v)}`,64,11+i*10,{align:'center'}));}
+ function gameOverScene(){
+  // new high score: the knocker fires and the panel celebrates each player that made the table
+  const best=(highRanks||[]).map((r,i)=>[r,i]).filter(([r])=>r>=0);
+  if(best.length&&phaseT>2){const [r,i]=best[Math.floor((phaseT-2)/1.5)%best.length],sc=table.dmdScenes?.jackpot;const L=[r===0?'GRAND CHAMPION':`HIGH SCORE #${r+1}`,`${(names[i]||'').toUpperCase().slice(0,10)} ${fmt(scores()[i])}`];
+   if(sc)sc(dmd,(phaseT-2)%1.5,L,sceneCtx());else splashScene(dmd,{lines:L,age:phaseT});return;}
+  dmd.clear();dmd.text('GAME OVER',64,1,{align:'center'});const sc=scores();if(nP===1)dmd.fit(fmt(sc[0]),64,12,{scale:2,align:'center'});else sc.forEach((v,i)=>dmd.fit(`${(names[i]||'P'+(i+1)).slice(0,8)} ${fmt(v)}`,64,11+i*10,{align:'center'}));}
  function attractLamps(def,t,p){const L={},k=Math.floor(t*10);def.lamps.forEach((l,i)=>{L[l.id]=(k+i)%6<2?1:0;});if(p)for(const n of [2,3,4,5,6])L['bx'+n]=p.bonusX>=n?1:0;return L;}
  // Touch hints + plunger meter, drawn in screen space.
  function overlay(v){

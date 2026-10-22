@@ -16,14 +16,15 @@ function createMachine({table,players=2,seed=1,onSound=()=>{},level='normal'}){
  m.bonus=n=>{if(!m.tilted)m.ball.bonus+=n;};
  m.sfx=name=>onSound(name);
  // DMD splash queue: newest important message first; short queue so it never lags far behind play.
- m.say=(lines,dur=1.5,o={})=>{const msg={lines,dur,flash:!!o.flash,age:0};if(!m.msg||o.flash||m.msg.age>.4){if(m.msg&&!o.flash)m.msgs.unshift(m.msg);m.msg=msg;}else m.msgs.push(msg);if(m.msgs.length>2)m.msgs.length=2;};
+ // o.anim names a table DMD animation (table.dmdScenes); o.flash inverts the panel on the beat for big awards.
+ m.say=(lines,dur=1.5,o={})=>{const msg={lines,dur,flash:!!o.flash,anim:o.anim||null,age:0};if(!m.msg||o.flash||m.msg.age>.4){if(m.msg&&!o.flash)m.msgs.unshift(m.msg);m.msg=msg;}else m.msgs.push(msg);if(m.msgs.length>2)m.msgs.length=2;};
  m.later=(sec,fn)=>m.timers.push({at:m.t+sec,fn});
  m.ballSave=sec=>{if(m.phase==='plunge')m.savePending=Math.max(m.savePending,sec);else m.saveUntil=Math.max(m.saveUntil,m.t+sec);};
  m.saving=()=>m.t<m.saveUntil&&!m.tilted;
  m.resetBank=bank=>P.resetBank(m.w,bank);
  m.jackpot=(...a)=>R.jackpot?.(m,...a);
  m.startJordan=()=>R.startJordan?.(m);
- m.extraBall=()=>{m.players[m.cur].extra++;m.shootAgainLamp=true;m.say(['EXTRA BALL'],2.4,{flash:true});m.sfx('knocker');};
+ m.extraBall=()=>{m.players[m.cur].extra++;m.shootAgainLamp=true;m.say(['EXTRA BALL'],2.4,{flash:true,anim:'extra'});m.sfx('knocker');};
  // Extra balls for multiball / ball save come up the shooter lane and fire on their own.
  m.addBalls=n=>{for(let i=0;i<n;i++){m.pendingBalls++;m.later(.35+i*1.1,()=>{m.pendingBalls--;P.serveBall(m.w);m.later(.45,()=>{P.plunge(m.w,(m.def.plunger.auto-m.def.plunger.vmin)/(m.def.plunger.vmax-m.def.plunger.vmin));m.sfx('autoPlunge');});});}};
  m.live=()=>m.w.balls.length+m.pendingBalls;
@@ -44,7 +45,7 @@ function createMachine({table,players=2,seed=1,onSound=()=>{},level='normal'}){
    if(e.type==='flip'){if(!m.flipT||m.flipT[e.input]!==m.w.t){(m.flipT||=[])[e.input]=m.w.t;R.flip?.(m,e.input);}continue;}
    if(e.type==='plunge'&&m.phase==='plunge'){m.phase='play';m.inPlay=0;if(m.savePending){m.saveUntil=m.t+m.savePending;m.savePending=0;}}
    if(e.type==='drain'){
-    if(m.saving()&&m.phase==='play'){m.say(['BALL SAVED'],1.6,{flash:true});m.sfx('save');m.addBalls(1);continue;}
+    if(m.saving()&&m.phase==='play'){m.say(['BALL SAVED'],1.6,{anim:'save'});m.sfx('save');m.addBalls(1);continue;}
     const left=m.live();if(left===1&&m.mb>1)R.multiballEnd?.(m);
     if(left===0){m.phase='drained';m.sfx(m.tilted?'tiltDrain':'drain');}
     continue;}

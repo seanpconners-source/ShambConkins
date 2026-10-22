@@ -25,5 +25,15 @@ await page.evaluate(()=>{const m=window.ShambConkins.store.session.debug.m;m.bal
 await page.waitForTimeout(1500);await page.screenshot({path:`${out}/pbc-vuk.png`});
 const v=await page.evaluate(()=>{const m=window.ShambConkins.store.session.debug.m;return m.w.balls.map(b=>`${b.state} ${b.x|0},${b.y|0} z${b.z|0}`);});
 console.log('vuk',v.join(' | '));
+// DMD contact sheet: every table animation, each grabbed from the top strip twice (early + late in the scene).
+const scenes=await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug,b=d.m.w.balls[0];d.m.ball.attr=null;if(b){b.state='held';b.hold={hole:{id:'freeze',x:236,y:620,eject:[0,0]},t:Infinity};b.x=236;b.y=620;}return d.scenes;});
+await page.evaluate(n=>{const c=document.createElement('canvas');c.id='sheet';c.width=780;c.height=40*n;c.style.cssText='position:fixed;left:0;top:0;z-index:99;background:#000';document.body.appendChild(c);},scenes.length);
+let row=0;for(const name of scenes){for(const [k,wait] of [[0,450],[1,900]]){
+ await page.evaluate(n=>{const d=window.ShambConkins.store.session.debug;d.m.msg={lines:['GIANT ROBOT','1,000,000'],dur:9,anim:n,flash:false,age:0};d.m.msgs.length=0;},name);
+ await page.waitForTimeout(wait);
+ await page.evaluate(([r,k])=>{const g=document.getElementById('game-canvas'),s=document.getElementById('sheet').getContext('2d'),sc=g.width/g.clientWidth;s.drawImage(g,0,0,260*sc,70*sc,k*390,r*40,260*1.5*.98,40);},[row,k]);}
+ row++;}
+await page.waitForTimeout(100);await page.locator('#sheet').screenshot({path:`${out}/pbc-dmd-sheet.png`});
+console.log('song now',await page.evaluate(()=>window.ShambConkins.store.session?.debug?.song?.()),'music setting',await page.evaluate(()=>window.ShambConkins.store.profile?.settings?.music));
 if(errors.length)console.log('ERRORS',errors.join(' | '));
 await browser.close();

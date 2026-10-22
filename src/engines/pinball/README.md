@@ -10,7 +10,14 @@
 | `render.js` | Cached playfield layers + per-frame lamps/parts/flippers/balls; width-locked follow camera; DMD strip. |
 | `dmd.js` | 128×32 orange dot-matrix display (5×7 font, score/splash scenes). |
 | `sound.js` | Synthesized solenoid/switch sounds, ball roll, short original jingles. |
-| `tables/<id>.js` | One table: `buildTable()`, `rules`, `art`. |
+| `music.js` | Soundtrack engine: synth band (drums, bass, distorted guitar bus, lead with echo, arps) + 16th sequencer; songs are data. |
+| `tables/<id>.js` | One table: `buildTable()`, plus `rules`, `art`, `dmdScenes`, `songs` (Bucketheadland keeps them in `tables/buckethead*.js`). |
+
+DMD scenes: `dmdScenes[name](d, age, lines, ctx)` draws a whole 128×32 frame (`ctx.face(i)` = the player's portrait canvas,
+`d.portrait` turns it into dots). Rules pick one with `m.say(lines, dur, {anim:name, flash})`. Built-in primitives:
+`text fit line circle ellipse rect sprite portrait zoomText sparkle burst scroll dim invert`.
+Songs: `rules.music(m)` returns a song name each frame; the engine plays `attract` (intro/game over) and `plunge`
+(ball on the plunger) itself. See `tables/bucketheadMusic.js` for the pattern format. Original melodies only.
 
 Real playfield ≈ 514 × 1067 mm (20.25" × 42"), ball Ø 27 mm, slope 6.5°. Keep lanes ≥ 32 mm wide between wall
 surfaces (`tests/pinball-sim.mjs` finds jams).
