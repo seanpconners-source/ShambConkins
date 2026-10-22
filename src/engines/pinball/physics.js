@@ -89,7 +89,7 @@ function stepBall(w,b,h){
  if(b.state==='rail'){
   const r=b.rail.r,p=railAt(r,b.rail.s);
   // Along the path: table slope pulls toward +y, height change pulls against climbing, plus rolling friction.
-  const a=w.g*p.ty-w.G*p.dz-Math.sign(b.rail.v)*90;b.rail.v+=a*h;b.rail.s+=b.rail.v*h;
+  if(r.carry)b.rail.v=r.carry;else{const a=w.g*p.ty-w.G*p.dz-Math.sign(b.rail.v)*90;b.rail.v+=a*h;}b.rail.s+=b.rail.v*h;
   const q=railAt(r,b.rail.s);b.px=b.x;b.py=b.y;b.x=q.x;b.y=q.y;b.z=q.z;
   if(b.rail.s<=0&&b.rail.v<=0){const v=b.rail.v;b.state='free';b.rail=null;b.z=0;b.vx=q.tx*v;b.vy=q.ty*v;emit(w,'railFail',{id:r.id,ball:b});}
   // Junction: the path continues on another rail (exit.next = 'id', or {switch:diverterId, on:'idA', off:'idB'}).

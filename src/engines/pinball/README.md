@@ -26,7 +26,9 @@ surfaces (`tests/pinball-sim.mjs` finds jams).
 `wall` (looks: wood, rail, plastic, rubber, none) · `post` · `bumper` (pop) · `sling` · `drops` (drop-target bank) ·
 `standup` · `rollover` · `kickback` · `spinner` · `trigger` (orbit/loop switch) · `gate` (one-way) · `diverter` ·
 `hole` (scoop/saucer/lock; `eject`, `maxSpeed`; `toRail` makes it a VUK that fires the ball up a wireform) ·
-`rail` (plastic ramp or wireform; `exit:{hole}` feeds a hole; `noEntry` = only a VUK can load it) ·
+`rail` (plastic ramp or wireform; `exit:{hole}` feeds a hole; `noEntry` = only a VUK can load it; `carry:mm/s` = a conveyor
+that moves the ball at a set speed whatever the slope, `hidden` = the ball isn't drawn and the renderer skips the rail, so
+the table art draws it, e.g. King Gizzard's Rattlesnake in `art.overlay`) · `spinner` takes `{label}` ·
 `disc` (spinning floor disc, `parts[id].spin` rad/s; fires `disc`) · `flag` (geometry-free switch, e.g. a ramp diverter) ·
 rail `exit.next` (`'railId'` or `{switch:flagId,on,off}`: a junction onto another rail; fires `junction`) ·
 `diverter` with a === b = a pop-up post (fires `post`) ·
@@ -71,11 +73,13 @@ Put pictures in `assets/pinball/<table id>/<slot>.webp|png|jpg|svg` and rebuild;
 Shrink big pictures with `python3 tools/optimize-art.py` first (the build embeds them in the HTML).
 Templates (the current painted art per slot, same size/framing, a parts overlay, IMAGE-SPECS.txt with sizes, safe areas
 and image prompts): `docs/pinball-art/<table>/`, remade by `node tools/pinball-art-templates.mjs --table <table>`
-(buckethead, black-sabbath). Write IMAGE-SPECS.txt by hand for a new table (coordinates = mm × 2).
+(buckethead, black-sabbath, king-gizzard; a table without a toy sets `toy: null` in the tool). Write IMAGE-SPECS.txt by
+hand for a new table (coordinates = mm × 2).
 
 ## Adding a table
-Tables so far: `buckethead` (Bucketheadland, game `bucketheadland-pinball`) and `black-sabbath` (game
-`black-sabbath-pinball` in `src/packs/pinballPack.js`). Each is a different machine: layout, toys, rules, DMD, music.
+Tables so far: `buckethead` (Bucketheadland, game `bucketheadland-pinball`), `black-sabbath` (game
+`black-sabbath-pinball`) and `king-gizzard` (game `king-gizzard-pinball`: an enclosed upper playfield with its own mini
+flippers, a loop round it, the Rattlesnake carry rail), both in `src/packs/pinballPack.js`. Each is a different machine: layout, toys, rules, DMD, music.
 New file in `tables/` (plus its rules/art/DMD/music files), add it to `TABLES` in `src/engines/pinball.js`, add a game
 with `pinballTable:'<id>'` to `src/packs/pinballPack.js` (source = the band, so the roster's band members are the
 unlocks), list the new modules in `src/modules.json`, export `simChecks` (event keys the test bot must hit), and run

@@ -4,7 +4,7 @@
 // assets/pinball/<table>/. Also writes playfield-guide.png (the whole table with every part) and
 // playfield-parts.png (only what the game draws on top of a playfield picture, transparent elsewhere).
 // The written guide (IMAGE-SPECS.txt, README.md) is hand-written per table next to the pictures.
-// Usage: node tools/pinball-art-templates.mjs [--table buckethead|black-sabbath] [--out docs/pinball-art/<table>]
+// Usage: node tools/pinball-art-templates.mjs [--table buckethead|black-sabbath|king-gizzard] [--out docs/pinball-art/<table>]
 // Needs Playwright (headless Chromium). Never write the output into assets/pinball/: the build would embed it.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -17,6 +17,9 @@ const TABLES = {
     bumper: 'pop1', toy: 'giantRobot', toyPx: [400, 350], logo: {x: 236, y: 700, size: 21, mult: 13}, character: {x: 236, y: 820, frac: .4}},
   'black-sabbath': {table: 'src/engines/pinball/tables/sabbath.js', art: 'src/engines/pinball/tables/sabbathArt.js',
     bumper: 'pig1', toy: 'ironMan', toyPx: [336, 464], logo: {x: 236, y: 692, size: 24, mult: 12}, character: {x: 236, y: 830, frac: .45}},
+  // no toy: the Rattlesnake is drawn by code every frame (it carries the ball), like the ramps
+  'king-gizzard': {table: 'src/engines/pinball/tables/gizzard.js', art: 'src/engines/pinball/tables/gizzardArt.js',
+    bumper: 'pop1', toy: null, logo: {x: 236, y: 712, size: 22, mult: 12}, character: {x: 236, y: 830, frac: .45}},
 };
 const arg = name => {const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : null;};
 const tableId = arg('--table') || 'buckethead', cfg = TABLES[tableId];
@@ -96,7 +99,7 @@ const shots = await page.evaluate(cfg => {
 
   // toy: the picture is stretched to the toy's box; the painted toy is scaled to fit inside it
   // (its first fillRect, the painted drop shadow, is skipped: the game draws its own shadow under a toy picture)
-  {const p = def.parts[cfg.toy], k = 8, [c2, x2] = canvas(200 * k, 200 * k); x2.scale(k, k); const fr = x2.fillRect; let first = true;
+  if (cfg.toy) {const p = def.parts[cfg.toy], k = 8, [c2, x2] = canvas(200 * k, 200 * k); x2.scale(k, k); const fr = x2.fillRect; let first = true;
     x2.fillRect = function (...a) {if (first) {first = false; return;} return fr.apply(this, a);};
     art.toy(x2, {x: 100, y: 100, w: p.w, h: p.h, ox: 0, oy: 0, flash: 0, armed: 0}, 0, {});
     const b = bbox(c2), bw = b.x1 - b.x0, bh = b.y1 - b.y0, [W, H] = cfg.toyPx, s = Math.min(W / bw, H / bh) * .98, [o, ox] = canvas(W, H);

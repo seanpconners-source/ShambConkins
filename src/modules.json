@@ -375,7 +375,12 @@
   "src/engines/pinball/tables/sabbathDmd.js",
   "src/engines/pinball/tables/sabbathMusic.js",
   "src/engines/pinball/tables/sabbath.js",
-  "src/packs/pinballPack.js"
+  "src/packs/pinballPack.js",
+  "src/engines/pinball/tables/gizzard.js",
+  "src/engines/pinball/tables/gizzardRules.js",
+  "src/engines/pinball/tables/gizzardArt.js",
+  "src/engines/pinball/tables/gizzardDmd.js",
+  "src/engines/pinball/tables/gizzardMusic.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

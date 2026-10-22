@@ -26,7 +26,7 @@ function tableBuilder({id,name,W=514,H=1067,gravity=1300,slope=6.5,drainY=1040,t
   standup(id,a,b,o={}){part(id,'standup',{a,b,label:o.label||'',color:o.color});seg(a,b,{kind:'standup',id,r:3,e:.3});return T;},
   rollover(id,x,y,o={}){part(id,'rollover',{x,y,r:o.r||11,label:o.label||''});def.sensors.push({id,kind:'rollover',x,y,r:o.r||11});return T;},
   kickback(id,x,y,v,o={}){part(id,'kickback',{x,y,v});def.sensors.push({id,kind:'kickback',x,y,r:o.r||12,v});return T;},
-  spinner(id,a,b,o={}){part(id,'spinner',{a,b});def.lines.push({id,kind:'spinner',a,b});return T;},
+  spinner(id,a,b,o={}){part(id,'spinner',{a,b,label:o.label||''});def.lines.push({id,kind:'spinner',a,b});return T;},
   // Line switch (orbit/loop/ramp-made switches): an event each time a ball crosses it.
   trigger(id,a,b,o={}){part(id,'trigger',{a,b});def.lines.push({id,kind:'trigger',a,b});return T;},
   // One-way gate: the ball passes moving along pass=[dx,dy] and is blocked coming back.
@@ -41,8 +41,9 @@ function tableBuilder({id,name,W=514,H=1067,gravity=1300,slope=6.5,drainY=1040,t
   hole(id,x,y,o={}){part(id,'hole',{x,y,r:o.r||15,label:o.label||'',vuk:!!o.toRail});def.holes.push({id,x,y,r:o.r||15,maxSpeed:o.maxSpeed??1e9,hold:o.hold??.9,eject:o.eject||[0,1200],toRail:o.toRail||null,railSpeed:o.railSpeed||2200});return T;},
   // Ramp or wireform: the ball rides pts [[x,y,z],...] (z = mm above the playfield); entry is a line at the start,
   // the ball must cross it moving along the path. exit: {hole} to feed a hole, else it drops off the end.
-  // noEntry: only a VUK can put the ball on it.
-  rail(id,pts,o={}){part(id,'rail',{look:o.look||'wire',color:o.color,width:o.width||40,label:o.label||''});def.rails.push({id,pts,look:o.look||'wire',width:o.width||40,entry:o.entry||null,exit:o.exit||{},minSpeed:o.minSpeed||0,noEntry:!!o.noEntry});return T;},
+  // noEntry: only a VUK can put the ball on it. carry: a conveyor (the ball moves at this speed whatever the slope,
+  // e.g. through a creature's body); hidden: the ball isn't drawn while on it (the table art shows where it is).
+  rail(id,pts,o={}){part(id,'rail',{look:o.look||'wire',color:o.color,width:o.width||40,label:o.label||''});def.rails.push({id,pts,look:o.look||'wire',width:o.width||40,entry:o.entry||null,exit:o.exit||{},minSpeed:o.minSpeed||0,noEntry:!!o.noEntry,carry:o.carry||0,hidden:!!o.hidden});return T;},
   // Magnet under the playfield. Rules switch parts[id].on (pull) and parts[id].grab (catch, hold holdT s, throw fling).
   magnet(id,x,y,o={}){part(id,'magnet',{x,y,r:o.r||40,on:false,grab:false,fling:o.fling||[0,400],holdT:o.holdT??1.2});def.magnets.push({id,x,y,r:o.r||40,force:o.force||9000});return T;},
   // Toy: a moving target (capsules [[ax,ay,bx,by,r],...] at rest pose). Rules set parts[id].tx/ty (offset from rest)

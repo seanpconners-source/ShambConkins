@@ -90,6 +90,7 @@ function createRenderer(table){
  }
  function drawOver(x){
   for(const r of def.rails){
+   if(r.hidden)continue;   // drawn by the table art (e.g. a creature carrying the ball)
    const pts=r.pts,[L,Rt]=offsets(pts,r.width/2-6);
    x.save();x.globalAlpha=.3;x.strokeStyle='#000';x.lineWidth=r.look==='plastic'?r.width:16;poly(x,pts.map(p=>[p[0]+(p[2]||0)*.25+3,p[1]+(p[2]||0)*.3+4]));x.stroke();x.restore();
    if(r.look==='plastic'){const col=def.parts?.[r.id]?.color||'#e63946';const Ls=L.map(p=>lift(p)),Rs=Rt.map(p=>lift(p));
@@ -150,7 +151,7 @@ function createRenderer(table){
  function nearTint(lamps,px,py){let best=null,bv=0;for(const l of def.lamps){const v=+lamps[l.id]||0;if(!v)continue;const d=Math.hypot(l.x-px,l.y-py);if(d<70&&v*(70-d)>bv){bv=v*(70-d);best=l.color;}}return best;}
  function drawBalls(x,w,onRail,lamps){
   if(!onRail)for(const b of w.captives){x.fillStyle='rgba(0,0,0,.4)';x.beginPath();x.ellipse(b.x+3,b.y+4,b.r*.95,b.r*.8,0,0,TAU);x.fill();chromeBall(x,b.x,b.y,b.r,true);}
-  for(const b of w.balls){if((b.state==='rail')!==onRail)continue;const z=b.z||0,r=b.r*(1+z/260),[lx,ly]=onRail?lift([b.x,b.y,z]):[b.x,b.y];
+  for(const b of w.balls){if((b.state==='rail')!==onRail||b.rail?.r.hidden)continue;const z=b.z||0,r=b.r*(1+z/260),[lx,ly]=onRail?lift([b.x,b.y,z]):[b.x,b.y];
    x.fillStyle='rgba(0,0,0,.4)';x.beginPath();x.ellipse(b.x+3+z*.25,b.y+4+z*.3,r*.95,r*.8,0,0,TAU);x.fill();
    const tint=nearTint(lamps,b.x,b.y);
    if(b.state==='held'&&!b.hold?.hole.magnet){x.save();x.globalAlpha=.75;chromeBall(x,lx,ly,r*.9,false,tint);x.restore();}else chromeBall(x,lx,ly,r,false,tint);}

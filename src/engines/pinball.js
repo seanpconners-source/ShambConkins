@@ -15,7 +15,7 @@ const {createMusic}=require("src/engines/pinball/music.js");
 const {createLights}=require("src/engines/pinball/lights.js");
 const {loadDropins}=require("src/engines/pinball/dropins.js");
 const audio=require("src/audio.js");
-const TABLES={buckethead:require("src/engines/pinball/tables/buckethead.js"),"black-sabbath":require("src/engines/pinball/tables/sabbath.js")};
+const TABLES={buckethead:require("src/engines/pinball/tables/buckethead.js"),"black-sabbath":require("src/engines/pinball/tables/sabbath.js"),"king-gizzard":require("src/engines/pinball/tables/gizzard.js")};
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,fmt=n=>Math.round(n).toLocaleString('en-US');
 const LEFT=new Set(['KeyZ','KeyA','ShiftLeft','ArrowLeft','ControlLeft']),RIGHT=new Set(['Slash','KeyL','ShiftRight','ArrowRight','ControlRight']),PLUNGE=new Set(['Enter','ArrowDown','Space','NumpadEnter']);
 

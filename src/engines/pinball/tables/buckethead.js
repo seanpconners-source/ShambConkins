@@ -21,7 +21,7 @@ function buildTable(){
  // Left orbit: inner wall + one-way gate at the top so plunges can't fall down the orbit.
  T.wall([[58,268],[58,560]],{look:'rail',r:4});T.post(58,560,6);
  T.gate('orbitGate',[13,232],[57,266],[0,-1]);
- T.spinner('spinner',[16,470],[54,470]);
+ T.spinner('spinner',[16,470],[54,470],{label:'NUNCHUCK'});
  T.trigger('orbitL',[16,320],[54,320]);
  T.trigger('orbitR',[463,280],[497,280]);                           // ball coming down the right side = loop made
  // Top lanes B-O-T + guides.

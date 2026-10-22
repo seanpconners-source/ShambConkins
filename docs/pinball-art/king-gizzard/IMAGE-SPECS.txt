@@ -1,0 +1,164 @@
+KING GIZZARD & THE LIZARD WIZARD PINBALL - CUSTOM IMAGE SPECS
+=============================================================
+
+The table has 6 replaceable pictures (no toy: the Rattlesnake is animated by code). Each one has a template PNG in
+this folder that shows the current art at the exact size and framing the game uses. Make a new picture the same size,
+follow the rules below, save it with the exact file name, and put it in:   assets/pinball/king-gizzard/
+then rebuild the game. Any picture you don't supply keeps the built-in art.
+Each section ends with a PROMPT you can paste into an image tool (upload the matching template with it).
+
+GENERAL RULES (all pictures)
+- File names are lowercase and exact: playfield, backglass, apron, logo, character, bumper.
+  Extension: .png, .webp or .jpg (.svg also works).
+- Pictures that need a TRANSPARENT background (logo, character) must be PNG or WebP with a real alpha channel.
+  A "checkerboard" painted into the image is NOT transparency; it will show up as a checkerboard. JPG has none.
+- Transparent pixels show whatever is underneath (the playfield). Semi-transparent pixels blend with it.
+- Use the exact pixel sizes below. Other sizes still load, but the picture gets stretched or cropped.
+- Theme: King Gizzard & the Lizard Wizard's "Gizzverse": a 1970s psychedelic gig poster. Melting concentric
+  rings, nonagons (nine-sided shapes), a lizard wizard in a starry pointed hat with a glowing staff, a rattlesnake,
+  rats escaping to a green planet (Planet B / Venus), a Gila monster, a flying banana, a dragon, fish. Colours:
+  deep night purple, violet, acid green, tangerine, hot pink, a little turquoise. Darker art lets the lights stand out.
+- Inspired-by only: don't copy real album covers or the band's real logo lettering, and no song lyrics.
+- No text that must be read at small sizes: on a phone the whole table is about 390 pixels wide.
+- Keep each file under about 2 MB (the game embeds them). Shrink with:  python3 tools/optimize-art.py
+
+Coordinates below are in pixels of that picture, from its top-left corner (x to the right, y down).
+
+
+1) playfield.png  -  1028 x 2134 px (exact), OPAQUE (no transparency needed)
+---------------------------------------------------------------------------
+What it is: the painted wood of the whole table, under every ball, light, ramp and bumper.
+How it is fitted: stretched over the whole table (1028 x 2134 = 2 px per mm). Not cropped.
+Replaces EVERYTHING painted on the playfield now: the rings, the Rats' Nest floor, the nonagon emblem, the Gila
+monster, the KING GIZZARD logo, the Lizard Wizard and the "MELBOURNE · GIZZVERSE" caption. If you use a custom
+playfield, logo.png and character.png no longer appear on the playfield, so paint them into this picture yourself.
+What is hidden / covered:
+- Outside the cabinet shape (cut off): left of x=24, right of x=1000, and the two top corners outside the arch. The
+  top is a half-circle, centre (512,512), radius 488 (its top touches y=24).
+- The shooter lane on the right (x 920-1000, from y 600 down) is darkened.
+- Bottom: the apron covers everything below a line from (24,1760) to (220,1952) to (336,2008) to (608,2008) to
+  (724,1952) to (920,1760). Nothing below that line is seen.
+- The game also darkens the edges a little (vignette) and adds a faint gloss on top.
+- The table's centre line is x = 472 (not 514): the shooter lane takes the right-hand strip.
+THE RATS' NEST (the upper playfield) - paint it as its own little world (e.g. the green dust of Planet B):
+- It is the area inside the circle centre (512,512), radius 380, above its floor guides: the left guide runs from
+  (155,382) to (320,468), the right one from (824,372) to (624,468); its two mini flippers sit at about y 480
+  (pivots (344,480) and (600,480)); it drains through the gap x 414-530 at y 545-570 into the pop bumpers below.
+- Inside it: the PLANET B scoop (hole) at (472,212), the PLANET B star at (472,276), and four small R-A-T-S targets
+  on a ring of radius 336 round (512,512) (upper left and upper right).
+- Its outline is a chrome rail; a shadow under its bottom edge sells it as raised.
+THE NONAGON LOOP: a lane ring round the Nest between radius 388 and 482 from (512,512), continuing down the left
+side (x 24-132, to y 1120) and the right side (x 824-920, to y 1080). Balls race through it; keep it dark.
+Things the game draws on top (keep important art away from them; see playfield-parts.png and playfield-guide.png):
+- Three MICROTONAL pop bumpers: centres (384,668), (560,676), (488,800), about 116 px across.
+- G-I-L-A drop targets: x 378-566, y 940.
+- K-G standups on the left loop wall (x 140, y 840 and 940), L-W on the right one (x 816).
+- FLIGHT b741 ramp: see-through yellow plastic from its mouth (x 184-280, y 1060-1196) up the left side, over the
+  top of the arch and down the right side to the right inlane. Your art shows through it, tinted.
+- THE RATTLESNAKE (drawn by code, opaque, about 30-50 px thick): from its mouth pocket (x 648-744, y 1052-1184; the
+  head sits at (696,1072)) up the right side (x 720-790) to the Nest's upper right (tail near (650,330)). Anything
+  painted under its body is hidden.
+- GIZZVERSE saucer (hole) at (200,1420); GAMMA KNIFE spinner across the left loop at y 940.
+- Coloured round/arrow/star light inserts are see-through tinted lenses: your art shows under them. The big ones:
+  the NONAGON ring of nine lamps round (472,1224) (radius 60) with the NONAGON star in its middle, FLIGHT arrow
+  (232,1240), SNAKE arrow (696,1240), LOOP arrows (78,1060) and (872,1040), the six album lights at y 1112
+  (x 348-598), the lock lights (660-732,1368), ALBUM / EXTRA BALL (300,1344)/(300,1408), 2X-6X row at y 1476,
+  SHOOT AGAIN (472,1790).
+- Flasher domes (coloured bulbs): (472,144), (776,544), (120,300), (300,600), (880,240).
+- Slingshots: x 188-264 and 680-756, y 1524-1736. Flippers at about y 1890.
+Good spots for big art: the Nest floor (its own scene), the band y 1290-1460 across the middle (where the logo is
+now, centred (472,1424)), the area y 1500-1760 between the slingshots (where the Lizard Wizard is now), and the left
+side under the ramp (x 150-330, y 600-1000).
+Use playfield-parts.png as the top layer in an image editor to check alignment.
+PROMPT: Top-down painted pinball playfield artwork, tall portrait (1:2), King Gizzard & the Lizard Wizard themed,
+1970s psychedelic gig-poster style. The top third is a separate round upper playfield: the green cratered surface
+of a small planet with rats scurrying on it. Below it, melting concentric violet / tangerine / acid-green rings
+radiate from a big nine-sided nonagon emblem in the centre; a Gila monster lizard crawls across the middle; a
+flying banana and stars in the night-purple sky; a lizard wizard in a starry pointed hat holding a glowing staff
+stands near the bottom centre; the words KING GIZZARD & THE LIZARD WIZARD in melting, bubbly psychedelic lettering
+across the lower middle. Flat top-down view, no perspective, no pinball parts (no flippers, bumpers, ramps, balls
+or lamps), keep the same layout as the attached guide.
+
+
+2) backglass.png  -  1200 x 1600 px recommended (3:4 portrait; any size works), OPAQUE
+-------------------------------------------------------------------------------------
+What it is: the big painted "box art" shown as the intro card before a game, like the lit glass on top of a real
+pinball machine.
+How it is fitted:
+- Intro card: the whole picture is shown, shrunk to fit the screen ("contain"); empty space around it is black.
+  On a phone held upright the screen area is roughly 390 x 700, so a taller picture (e.g. 1080 x 1920) fills
+  more of it; 1200 x 1600 leaves black bars above and below.
+- Landscape screens only: a thin banner to the right of the score display uses the picture too, cropped to fill
+  ("cover") a very wide short strip (about 4.5:1), taken from the MIDDLE of the picture.
+So: put the main subject (the Lizard Wizard, the rattlesnake, the title) near the centre, and make the middle
+horizontal band look good on its own. A title at the top is fine on the intro card.
+PROMPT: Vintage 1970s pinball backglass painting, portrait 3:4, King Gizzard & the Lizard Wizard themed: a lizard
+wizard in a starry violet robe and pointed hat raising a glowing green staff, a huge rattlesnake coiled round his
+feet, a spinning golden nonagon halo behind him, melting psychedelic rings in violet, tangerine, acid green and hot
+pink, a small green planet with rats flying toward it, and a title across the top reading KING GIZZARD & THE
+LIZARD WIZARD in bubbly melting psychedelic lettering. Rich airbrushed colours, high detail.
+
+
+3) apron.png  -  896 x 374 px (exact), OPAQUE
+---------------------------------------------
+What it is: the panel at the very bottom of the table, around and below the flippers (where balls drain).
+How it is fitted: scaled to cover a 448 x 187 mm box ("cover"; with this exact size nothing is cropped), then cut to
+the apron shape. A thin edge is drawn around it.
+Visible part only: everything BELOW the line from (0,0) to (196,192) to (312,248) to (584,248) to (700,192) to
+(896,0). The V-shaped area above that line (top middle and top corners) is never seen; the flippers sit there.
+So the usable area is two slanted wings at the left and right, and a full-width band from y 248 to 374.
+Readable text: the current cards are about 112 x 40 px in the band near y 260-360. Your picture replaces the
+painted cards, so include any text you want.
+PROMPT: Pinball apron artwork, wide panel (2.4:1), deep purple with acid-green trim and psychedelic swirls, flat
+front-on view: two cream instruction cards with purple headers, left "KING GIZZARD / 3 BALLS PER GAME / G-I-L-A
+LIGHTS SNAKE LOCKS", right "SPELL R-A-T-S / IN THE NEST: PLANET B / EVERY 2ND: EXTRA BALL", and a centre plate
+reading NONAGON INFINITY. Keep the cards in the bottom third; the top middle is hidden behind the flippers.
+
+
+4) logo.png  -  1056 x 188 px (as the template), TRANSPARENT background REQUIRED
+---------------------------------------------------------------------------------
+What it is: the KING GIZZARD & THE LIZARD WIZARD title on the playfield, also shown in the score banner (landscape).
+How it is fitted: always shown whole, never cropped; aspect ratio kept.
+- Playfield: drawn 528 px wide (in playfield.png pixels), centred at (472,1424). Its height follows its shape.
+- Score banner (landscape only): shrunk to fit the space left of the score display.
+Size rule: any width (about 1000+ px is sharp enough); keep the height at most 25% of the width (e.g. 1056 x 264).
+Use a full-bleed design: the logo should reach the left and right edges with only a small margin.
+Not shown on the playfield when a custom playfield.png is used (it still shows in the score banner).
+PROMPT: The words KING GIZZARD (big) and & THE LIZARD WIZARD (smaller, underneath) as a pinball logo: bubbly,
+melting 1970s psychedelic lettering in a tangerine-to-hot-pink gradient with a dark outline and an acid-green
+glow, wide horizontal layout filling the image edge to edge, transparent background.
+
+
+5) character.png  -  660 x 656 px (as the template), TRANSPARENT background REQUIRED
+-------------------------------------------------------------------------------------
+What it is: the hero art (the Lizard Wizard) on the playfield between the two slingshots, above the flippers.
+How it is fitted: always shown whole, aspect ratio kept. Drawn 220 px wide (in playfield pixels) centred on the
+table's centre line; the point 45% of the way down the image sits at y 1660.
+Size rule: keep 660 wide and a height between 600 and 900. Keep the figure inside the frame and the bottom fifth
+fairly clear (the SHOOT AGAIN light sits just below).
+Not shown when a custom playfield.png is used.
+PROMPT: A lizard wizard standing full length: green lizard head with a yellow eye, a tall starry violet pointed
+hat, a violet robe with gold stars, holding a wooden staff topped by a glowing green orb, 1970s psychedelic
+illustration style with a soft violet rim light, the whole figure inside the image, transparent background.
+
+
+6) bumper.png  -  256 x 256 px (exact square), OPAQUE inside the circle
+-----------------------------------------------------------------------
+What it is: the top of the pop bumpers (the three MICROTONAL bumpers under the Nest). One picture for all three.
+How it is fitted: cut to the circle that touches all four edges (centre 128,128, radius 128). Corners outside the
+circle are never seen. Each cap is only about 42 mm across, about 33 screen pixels on a phone, so use a bold,
+simple design (big shapes, at most 2-3 letters).
+When a bumper is hit the game flashes it brighter and shrinks it slightly; the metal ring is drawn by the game.
+PROMPT: Round pop-bumper cap seen straight from above: a single psychedelic third eye inside a golden nine-sided
+nonagon on a violet disc, bold simple shapes, centred in a circle that fills the square image.
+
+
+REFERENCE FILES (not used by the game)
+- playfield-guide.png: the whole table as it looks now, with every part (the Rattlesnake included).
+- playfield-parts.png: only what the game draws on top of a playfield picture, transparent everywhere else.
+  Lay it over your playfield to check nothing important is hidden.
+
+NOT REPLACEABLE BY PICTURES (drawn by code): the score display (DMD), flippers and mini flippers, slingshots, the
+FLIGHT b741 ramp, the Rattlesnake, light inserts, drop targets and the ball.
+
+Remake the templates: node tools/pinball-art-templates.mjs --table king-gizzard

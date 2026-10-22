@@ -46,7 +46,7 @@ function buildTable(){
  T.lamp('paraArrow',130,616,{shape:'arrow',r:13,color:'#bf5af2',label:'PARANOID'});T.lamp('paraJ',130,648,{r:8,color:'#ffd23f',label:'JACKPOT'});
  // ELECTRIC FUNERAL wire ramp: right mouth (SUPERNAUT spinner inside) → up → across the middle → left inlane.
  T.wall([[336,596],[336,530]],{look:'plastic',r:4}).wall([[384,596],[384,530]],{look:'plastic',r:4});T.post(336,596,5).post(384,596,5);
- T.spinner('supernaut',[340,582],[380,582]);
+ T.spinner('supernaut',[340,582],[380,582],{label:'SUPERNAUT'});
  T.rail('funeral',spline([[360,520,0],[366,440,26],[380,380,48],[330,362,60],[240,368,66],[150,384,64],[94,430,56],[62,500,48],[50,620,34],[64,720,16],[72,770,6],[72,800,0]],8),{look:'wire',width:44,label:'ELECTRIC FUNERAL',exit:{minOut:600}});   // a wireform, so the disc shows through
  T.lamp('funeralArrow',360,616,{shape:'arrow',r:13,color:'#ff2d55',label:'FUNERAL'});T.lamp('funeralJ',360,648,{r:8,color:'#ffd23f',label:'JACKPOT'});
  // M-A-S on the left wall, T-E-R on the shooter wall.

@@ -78,6 +78,30 @@ if(table.id==='black-sabbath'){
  assert.ok(!m3.ball.ironMode&&m3.p.ironsBeaten===1,'five hits beat Iron Man');
  console.log('albums + wizard + Iron Man OK, wizard round 1 paid',(m.players[0].score-before).toLocaleString());
 }
+// King Gizzard: every album mode finishes by its own shots, OMNIUM GATHERUM lights and pays; nine loops start NONAGON
+// INFINITY; G-I-L-A + three snakes start RATTLESNAKE MULTIBALL; R-A-T-S lights PLANET B.
+if(table.id==='king-gizzard'){
+ const fake={hold:{t:1}},R=table.rules;
+ const fire=(m,shot)=>{m.t+=1.1;const e=shot==='flight'?[{type:'junction',id:'flight',to:'flightLoop'}]:shot==='snake'?[{type:'hole',id:'snake'}]:shot==='planet'?[{type:'hole',id:'planetB'}]
+   :shot==='loopL'?[{type:'trigger',id:'orbitL',dir:-1},{type:'trigger',id:'orbitR',dir:1}]:shot==='loopR'?[{type:'trigger',id:'orbitR',dir:-1},{type:'trigger',id:'orbitL',dir:1}]:[shot];
+  for(const x of e)R.event(m,{...x,ball:fake});};
+ const m=createMachine({table,players:1,seed:7});m.startBall();m.phase='play';
+ R.ATTRACTIONS.forEach((A,i)=>{m.p.albumNext=i;R.startAlbum(m);assert.equal(m.ball.attr.def.id,A.id);
+  for(let k=0;k<120&&m.ball.attr;k++){const a=m.ball.attr;
+   fire(m,A.id==='banana'?{type:'spin',id:'gamma'}:A.id==='rats'?{type:'standup',id:'ratA'}:A.id==='fishies'?{type:'bumper',id:'pop1'}:A.id==='dragon'?'snake':A.id==='nonagon'?'loopL':a.lit[0]);}
+  assert.equal(m.p.albums[i],2,`${A.id} completes`);});
+ assert.ok(m.p.wizardLit,'all six albums light OMNIUM GATHERUM');
+ for(let k=0;k<3&&m.mode!=='omnium';k++)R.event(m,{type:'hole',id:'gizzverse',ball:fake});assert.equal(m.mode,'omnium','the Gizzverse starts the wizard');
+ const before=m.players[0].score;for(const s of ['flight','snake','loopL','loopR','planet'])fire(m,s);
+ assert.equal(m.ball.wiz.round,2,'all wizard shots relight round 2');assert.ok(m.players[0].score-before>=15000000,'wizard pays');
+ const m2=createMachine({table,players:1,seed:9});m2.startBall();m2.phase='play';
+ for(let n=0;n<9;n++)fire(m2,n%2?'loopR':'loopL');assert.ok(m2.ball.infinity,'nine loops start NONAGON INFINITY');
+ const s0=m2.players[0].score;fire(m2,'loopL');assert.ok(m2.players[0].score-s0>=250000,'infinity loops pay');
+ for(let n=0;n<3;n++){for(const id of m2.def.drops.gila){m2.w.parts[id].down=true;R.event(m2,{type:'drop',id,bank:'gila',ball:fake});}assert.ok(m2.p.lockLit,'G-I-L-A lights a lock');fire(m2,'snake');m2.resetBank('gila');}
+ assert.equal(m2.mode,'rattle','three snake locks start RATTLESNAKE MULTIBALL');
+ for(const id of ['ratR','ratA','ratT','ratS'])R.event(m2,{type:'standup',id,ball:fake});assert.ok(m2.p.planetLit,'R-A-T-S lights PLANET B');
+ console.log('albums + wizard + infinity + multiball OK, wizard round 1 paid',(m.players[0].score-before).toLocaleString());
+}
 // A plunge too soft to clear the shooter-lane gate rolls back: the ball must be launchable again (not stuck in play).
 {
  const m=createMachine({table,players:1,seed:3});m.startBall();P.plunge(m.w,0);let back=false;

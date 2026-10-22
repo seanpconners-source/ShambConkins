@@ -399,6 +399,21 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   shadow and hit flash in the picture's outline (`drawToy` in dropins.js) instead of a box. Custom playfields hide
   logo/character on the table (logo still shows in the landscape banner). Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
+- **King Gizzard pinball (Oct 22 2026, table 3, game `king-gizzard-pinball`, table id `king-gizzard`, files
+  `pinball/tables/gizzard*.js`):** THE RATS' NEST = an enclosed upper playfield (inside the loop's inner wall, arc r190
+  round 256,256) with its own mini flippers `miniL/miniR` on the same buttons, R-A-T-S standups and the PLANET B scoop;
+  it drains between its flippers through a tilted one-way gate (`nestDrain`) into the pops (a flat gate made an endless
+  pop↔gate bounce). NONAGON loop = left and right orbits joined over the Nest (`orbitL/R` triggers, loop = up one side,
+  down the other in 3 s; 9 loops → NONAGON INFINITY). RATTLESNAKE: hole `snake` is a VUK onto `snakeBody`, a new rail
+  type `carry:300, hidden:true` (physics conveyor, renderer skips the ball/rail; `art.overlay` draws the wiggling snake,
+  gaping jaws and the bulge where the ball is) that drops the ball out of its tail into the Nest. FLIGHT b741 plastic
+  ramp: diverter `flightDiv` (on while something in the Nest is lit) → Nest, else over the top to the right inlane.
+  G-I-L-A drops light snake locks → RATTLESNAKE MULTIBALL (super jackpot at PLANET B), K-G-L-W, GAMMA KNIFE spinner,
+  GIZZVERSE saucer → six album modes → OMNIUM GATHERUM wizard. Source 'King Gizzard': band members added to the
+  roster via referencePack (Stu Mackenzie, Ambrose Kenny-Smith, Joey Walker, Cook Craig, Lucas Harwood, Michael
+  Cavanagh). Spinners now take a label (Sabbath's said NUNCHUCK). Art templates `docs/pinball-art/king-gizzard/` (6
+  slots, no toy). Tests: `pinball-sim.mjs 6 gizzard` (in test:core, with a scripted albums/wizard/infinity/multiball
+  check), `pinball.mjs king-gizzard-pinball`. Real-phone feel, balance and music untested by ears.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 
