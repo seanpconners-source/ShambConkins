@@ -25,7 +25,7 @@ function loadProfile() {
   for(const key of ['boards','modes'])if(Array.isArray(saved[key]))p[key]=strings(saved[key]);
   p.shared=strings(saved.shared).filter(id=>ids.has(id));
   for(const owner of ['Sean','Amber'])p.rosters[owner]=strings(saved.rosters?.[owner]).filter(id=>ids.has(id));
-  for(const key of ['sound','music','reducedMotion','originalLogos','drinkStatus','devMode'])if(typeof saved.settings?.[key]==='boolean')p.settings[key]=saved.settings[key];
+  for(const key of ['sound','music','reducedMotion','originalLogos','drinkStatus','devMode','pinballZoom'])if(typeof saved.settings?.[key]==='boolean')p.settings[key]=saved.settings[key];
   if(Number.isFinite(saved.settings?.flickSensitivity)&&saved.settings.flickSensitivity>0)p.settings.flickSensitivity=Math.min(1.35,Math.max(.65,saved.settings.flickSensitivity));
   if(['auto','touch','pointer'].includes(saved.settings?.touchMode))p.settings.touchMode=saved.settings.touchMode;
   const solo=normalizeSoloSettings(saved.settings?.solo);if(solo)p.settings.solo=solo;

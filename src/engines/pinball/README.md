@@ -7,7 +7,7 @@
 | `build.js` | `tableBuilder()` + geometry helpers (`arc`, `bezier`, `spline`, `mirror`). Tables are plain data in millimetres. |
 | `physics.js` | Steel-ball physics at 600 Hz: capsule walls in a grid, accelerating flippers, ball–ball, sensors, ramps/wireforms as guided 3D paths, holes, magnets, plunger. Emits `w.events`. |
 | `machine.js` | The machine's "operating system": players, alternating balls, plunger phase, ball save, multiball (`addBalls`), extra balls, tilt, bonus, ball search. |
-| `render.js` | Cached playfield layers + per-frame lamps/parts/flippers/balls; width-locked follow camera; DMD strip. |
+| `render.js` | Cached playfield layers + per-frame lamps/parts/flippers/balls; width-locked spring camera (dead zone, look-ahead along ramps, flippers-first, off-screen arrow, optional auto zoom); DMD strip. Measure camera changes with `tests/pinball-camera.mjs`. |
 | `dmd.js` | 128×32 orange dot-matrix display (5×7 font, score/splash scenes). |
 | `sound.js` | Synthesized solenoid/switch sounds, ball roll, short original jingles. |
 | `music.js` | Soundtrack engine: synth band (drums, bass, distorted guitar bus, lead with echo, arps) + 16th sequencer; songs are data. |

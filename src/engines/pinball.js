@@ -44,9 +44,13 @@ async function pinball(s){
  const clear=()=>{for(const id of fingers.keys())s.release({pointerId:id});fingers.clear();keys.flip=[false,false];keys.pull=false;pull=0;};
  const flipInput=()=>{const f=[keys.flip[0],keys.flip[1]];for(const g of fingers.values())if(!g.plunger)f[g.side]=true;return f;};
  const W=()=>s.W,H=()=>s.H;
- s.hint('Hold the left or right half of the screen for that flipper (two thumbs). Ball on the plunger: drag down and let go, a longer pull shoots harder. Flick a finger up to nudge the table; too many nudges and it TILTS. Keys: Z / Shift / ← and / / Shift / → flip, hold Enter or ↓ to pull the plunger, Space nudges.');
+ s.hint('Hold the left or right half of the screen for that flipper (two thumbs). Ball on the plunger: drag down and let go, a longer pull shoots harder. Flick a finger up to nudge the table; too many nudges and it TILTS. Tap the score display to switch AUTO ZOOM (the view pulls back a little while the ball flies). Keys: Z / Shift / ← and / / Shift / → flip, hold Enter or ↓ to pull the plunger, Space nudges, V toggles auto zoom.');
+ // Auto zoom (speed zoom-out) is a saved setting; tapping the DMD or pressing V switches it.
+ R.cam.speedZoom=!!store.profile?.settings?.pinballZoom;
+ const toggleZoom=()=>{R.cam.speedZoom=!R.cam.speedZoom;if(store.profile){store.profile.settings.pinballZoom=R.cam.speedZoom;saveProfile(store.profile);}m.say(['AUTO ZOOM',R.cam.speedZoom?'ON':'OFF'],1.2);pinballSound('rollover');};
  // ---- input
- s.on(c,'pointerdown',ev=>{if(s.paused||!(phase==='ball'))return;ev.preventDefault();const p=s.pointer(ev);fingers.set(ev.pointerId,{side:p.x<W()/2?0:1,x0:p.x,y0:p.y,t0:performance.now(),plunger:false,nudged:false,pull:0});s.capture(ev);});
+ s.on(c,'pointerdown',ev=>{if(s.paused||!(phase==='ball'))return;ev.preventDefault();const p=s.pointer(ev);
+  if(p.y<R.layout(W(),H()).stripH&&p.x<W()-130){toggleZoom();return;}fingers.set(ev.pointerId,{side:p.x<W()/2?0:1,x0:p.x,y0:p.y,t0:performance.now(),plunger:false,nudged:false,pull:0});s.capture(ev);});
  s.on(c,'pointermove',ev=>{const f=fingers.get(ev.pointerId);if(!f||s.paused)return;ev.preventDefault();const p=s.pointer(ev),dy=p.y-f.y0;
   if(!f.plunger&&m.phase==='plunge'&&dy>14&&P.ballOnPlunger(m.w,m.w.balls[0]||{}))f.plunger=true;
   if(f.plunger)f.pull=clamp((dy-8)/(H()*.2),0,1);
@@ -56,7 +60,8 @@ async function pinball(s){
  s.on(document,'keydown',ev=>{if(s.paused||phase!=='ball')return;const k=ev.code;
   if(LEFT.has(k)){keys.flip[0]=true;ev.preventDefault();}else if(RIGHT.has(k)){keys.flip[1]=true;ev.preventDefault();}
   else if(PLUNGE.has(k)){ev.preventDefault();if(m.phase==='plunge'){if(!keys.pull){keys.pull=true;keys.pullT=0;}}else if((k==='Space'||k==='KeyN')&&!ev.repeat)m.nudge(0,-300);}
-  else if(k==='KeyN'&&!ev.repeat)m.nudge(0,-300);});
+  else if(k==='KeyN'&&!ev.repeat)m.nudge(0,-300);
+  else if(k==='KeyV'&&!ev.repeat)toggleZoom();});
  s.on(document,'keyup',ev=>{const k=ev.code;if(LEFT.has(k))keys.flip[0]=false;else if(RIGHT.has(k))keys.flip[1]=false;else if(PLUNGE.has(k)&&keys.pull){keys.pull=false;if(m.phase==='plunge')P.plunge(m.w,clamp(keys.pullT/1.1,.05,1));keys.pullT=0;}});
  s.on(window,'blur',clear);s.resetOnPause?.(clear);s.cleanup(()=>{clear();stopRoll();});
  // ---- autopilot for tests (s.debug.auto = true): flips when a ball drops onto a flipper, plunges at 70%.

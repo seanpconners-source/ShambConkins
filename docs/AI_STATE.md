@@ -363,7 +363,13 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   tinted chrome ball, flipper logos, sheen/vignette); painted backglass intro card; drop-in art slots
   `assets/pinball/<table>/<slot>` (playfield, backglass, apron, logo, character, bumper, toy; build.mjs embeds them as
   `pinball:<table>:<slot>`, `pinball/dropins.js` loads them; optimize-art.py shrinks them, untested here: no Python on the box).
-  All four phases done; next = owner playtest feedback, then new band tables. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
+  All four phases done; next = owner playtest feedback, then new band tables.
+  Camera rework (Oct 21, owner: fast-ball scrolling was jarring): `R.follow` in render.js is now a critically damped spring
+  with a dead zone (goal moves only when the ball leaves 28-68% of the view), smoothed-velocity lead, look-ahead along
+  rails/VUK, flippers-first for falling balls, multiball focus on the ball that reaches the flippers first; never lets a free
+  ball drop below the view; off-screen arrow at the top edge; optional AUTO ZOOM (`profile.settings.pinballZoom`, tap the DMD
+  or V; up to 15% pull-back at speed). `tests/pinball-camera.mjs` measures it: Fold-size 700x840 jolts/min 85 → 0-2, p95
+  accel 30k → 11k px/s²; landscape 844x390 132 → 28 jolts but the ball is above the view ~13% (195 mm view is too tight). Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).

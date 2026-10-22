@@ -25,6 +25,9 @@ await page.evaluate(()=>{const m=window.ShambConkins.store.session.debug.m;m.bal
 await page.waitForTimeout(1500);await page.screenshot({path:`${out}/pbc-vuk.png`});
 const v=await page.evaluate(()=>{const m=window.ShambConkins.store.session.debug.m;return m.w.balls.map(b=>`${b.state} ${b.x|0},${b.y|0} z${b.z|0}`);});
 console.log('vuk',v.join(' | '));
+// off-screen arrow: ball parked high, camera parked low
+await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug,b=d.m.w.balls[0];b.state='held';b.hold={hole:{id:'x',x:180,y:50,eject:[0,0]},t:Infinity};b.x=180;b.y=50;Object.assign(d.R.cam,{y:132,v:0,goal:132,moving:false});});
+await page.waitForTimeout(40);await page.screenshot({path:`${out}/pbc-arrow.png`});
 // DMD contact sheet: every table animation, each grabbed from the top strip twice (early + late in the scene).
 const scenes=await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug,b=d.m.w.balls[0];d.m.ball.attr=null;if(b){b.state='held';b.hold={hole:{id:'freeze',x:236,y:620,eject:[0,0]},t:Infinity};b.x=236;b.y=620;}return d.scenes;});
 await page.evaluate(n=>{const c=document.createElement('canvas');c.id='sheet';c.width=780;c.height=40*n;c.style.cssText='position:fixed;left:0;top:0;z-index:99;background:#000';document.body.appendChild(c);},scenes.length);

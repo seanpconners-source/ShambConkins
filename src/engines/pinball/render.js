@@ -4,6 +4,7 @@
 // (dropins.js) reaches the table art functions as `imgs`; when an image arrives the caches are rebuilt.
 // Camera: the table width always fills the screen width (Game Boy Pokemon Pinball style) and the view pans up and
 // down with the ball; when the whole height fits it stays put. The intro starts on the whole table, then zooms in.
+const {railAt}=require("src/engines/pinball/physics.js");
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,ease=t=>t<.5?2*t*t:1-(-2*t+2)**2/2;
 const TAU=Math.PI*2;
 
@@ -150,17 +151,48 @@ function createRenderer(table){
  }
 
  // ---- camera
- const cam={y:def.H,z:0,introT:0};R.cam=cam;
+ // y = top of the view (mm), v = its speed, z = intro zoom (0 whole table → 1 width-locked), zo = speed zoom-out (0..~.15).
+ const cam={y:def.H,v:0,z:0,zo:0,focus:null,svy:0,moving:false,speedZoom:false,introT:0};R.cam=cam;
+ const flipY=Math.max(...def.flippers.map(f=>f.y));
  // The DMD sits centred in the backbox strip, or left-aligned when it would run under the floating Pause/Exit pills.
  R.layout=(W,H)=>{const portrait=H>=W,dh=Math.round(clamp(portrait?W/4.6:H*.15,42,portrait?H*.15:H*.18)),pillW=128;let dw=Math.min(W-12,dh*4),dx=(W-dw)/2;
   if(dx+dw>W-pillW){dw=Math.min(dw,W-pillW-12);dx=8;}return {stripH:Math.round(dw/4)+10,dmd:{x:dx,w:dw,h:dw/4}};};
- R.view=(W,H)=>{const {stripH}=R.layout(W,H),aH=H-stripH,lock=W/def.W,fit=Math.min(W/def.W,aH/def.H)*.97,e=ease(clamp(cam.z,0,1)),s=lerp(fit,lock,e),vh=aH/s,
-   yFit=(def.H-vh)/2,yLock=vh>=def.H?(def.H-vh)/2:clamp(cam.y,0,def.H-vh),y=lerp(yFit,yLock,e);return {s,ox:(W-def.W*s)/2,oy:stripH-y*s,top:stripH,aH,vh,y,lock};};
- // Follow the most urgent ball (lowest on the table); lead it when it is shooting up the table.
- R.follow=(w,dt,W,H,snap=false)=>{const {stripH}=R.layout(W,H),vh=(H-stripH)/(W/def.W);if(vh>=def.H){cam.y=(def.H-vh)/2;return;}
-  let b=null;for(const q of w.balls)if(!b||q.y>b.y)b=q;if(!b)return;const vy=b.state==='rail'?0:b.vy,lead=vy<0?Math.max(-vh*.32,vy*.14):Math.min(vh*.12,vy*.05);
-  const target=clamp(b.y+lead-vh*.56,0,def.H-vh);cam.y=snap?target:cam.y+(target-cam.y)*(1-Math.exp(-dt*7));
-  const margin=Math.min(70,vh*.18);if(b.y<cam.y+margin)cam.y=b.y-margin;if(b.y>cam.y+vh-margin)cam.y=b.y-vh+margin;cam.y=clamp(cam.y,0,def.H-vh);};
+ R.view=(W,H)=>{const {stripH}=R.layout(W,H),aH=H-stripH,lock=W/def.W*(1-cam.zo),fit=Math.min(W/def.W,aH/def.H)*.97,e=ease(clamp(cam.z,0,1)),s=lerp(fit,lock,e),vh=aH/s,
+   yFit=(def.H-vh)/2,yLock=vh>=def.H?(def.H-vh)/2:clamp(cam.y,0,def.H-vh),y=lerp(yFit,yLock,e);return {s,ox:(W-def.W*s)/2,oy:stripH-y*s,top:stripH,aH,vh,y,lock:W/def.W};};
+ // Where the ball will be: along its ramp/wireform for rails, at the far end of a VUK about to fire, else where it is.
+ const railAhead=(b,sec)=>{const r=b.rail.r;return railAt(r,clamp(b.rail.s+b.rail.v*sec,0,r.len));};
+ const urgency=b=>b.state==='rail'?railAhead(b,.5).y:b.y+Math.max(0,b.vy||0)*.4;
+ // The camera is a critically damped spring (it eases in and out and never snaps) chasing a goal that only moves
+ // when the ball leaves the comfortable middle of the view (dead zone). The goal leads the ball by its *smoothed*
+ // velocity (bumper rattles don't shake it), runs ahead along ramps, gets to the flippers before a falling ball,
+ // and in multiball follows the ball that will reach the flippers first (switching only for a clear winner).
+ R.follow=(w,dt,W,H,snap=false)=>{
+  const balls=w.balls;if(!balls.length)return;dt=Math.min(dt,.05);
+  let best=null,bs=-1e9;for(const q of balls){const u=urgency(q);if(u>bs){bs=u;best=q;}}
+  let b=balls.find(q=>q.id===cam.focus);if(!b||(best!==b&&bs>urgency(b)+90)){b=best;cam.focus=b.id;}
+  // optional speed zoom: pull back a little while the ball is really flying, settle back in when it slows
+  const sp=b.state==='free'?Math.hypot(b.vx,b.vy):b.state==='rail'?Math.abs(b.rail.v):0,tz=cam.speedZoom?clamp((sp-1800)/2600,0,1)*.15:0;
+  cam.zo+=(tz-cam.zo)*(1-Math.exp(-dt*(tz>cam.zo?3:1.1)));
+  const v=R.view(W,H),vh=v.vh;if(vh>=def.H){cam.y=(def.H-vh)/2;cam.v=0;return;}
+  cam.svy+=((b.state==='free'?b.vy:0)-cam.svy)*(1-Math.exp(-dt/.22));
+  let ty;
+  if(b.state==='rail')ty=railAhead(b,.6).y;
+  else if(b.state==='held'){ty=b.y;const h=b.hold?.hole,r=h?.toRail&&w.rails.find(q=>q.id===h.toRail);if(r&&b.hold.t<.5)ty=r.pts[r.pts.length-1][1];}
+  else{const lead=cam.svy<0?-Math.min(vh*.35,cam.svy*cam.svy/(2*w.g)*.7):Math.min(vh*.25,cam.svy*.3);ty=b.y+lead;
+   if(cam.svy>150&&b.y+cam.svy*.5>flipY-vh*.55)ty=Math.max(ty,flipY+30);}
+  const maxY=def.H-vh;
+  if(snap){cam.y=clamp(ty-vh*.55,0,maxY);cam.v=0;cam.moving=false;cam.goal=cam.y;return;}
+  if(cam.goal==null)cam.goal=cam.y;
+  if(ty<cam.y+vh*.28||ty>cam.y+vh*.68)cam.moving=true;
+  if(cam.moving){cam.goal=ty-vh*.52;if(Math.abs(ty-(cam.y+vh*.52))<vh*.07&&Math.abs(cam.v)<250)cam.moving=false;}
+  cam.goal=clamp(cam.goal,0,maxY);
+  // urgent when the real ball is near (or past) an edge: a stiffer spring and more acceleration
+  // tighter views (landscape, big tablets) need a quicker camera: stiffness/acceleration scale with how little shows
+  const f=clamp(517/vh,1,1.5),rel=(b.y-cam.y)/vh,urgent=rel<.14||rel>.88,wn=(urgent?13:7.5)*Math.sqrt(f),amax=(urgent?14000:6000)*f;
+  const a=clamp(wn*wn*(cam.goal-cam.y)-2*wn*cam.v,-amax,amax);cam.v=clamp(cam.v+a*dt,-4200*f,4200*f);cam.y+=cam.v*dt;
+  // the one hard rule: a ball heading for the flippers never drops out of the bottom of the view
+  if(b.state==='free'&&b.y>cam.y+vh*.94){cam.y=b.y-vh*.94;cam.v=Math.max(cam.v,b.vy);}
+  if(cam.y<0||cam.y>maxY){cam.y=clamp(cam.y,0,maxY);cam.v=0;}};
 
  // gi: general illumination 0..1; flashers: m.flashers; backglass: 0..1 opacity of the intro backglass card.
  R.draw=(x,{W,H,dpr,w,lamps,t,dmd,strip,gi=1,flashers=null,flashT=t,backglass=0})=>{
@@ -179,6 +211,10 @@ function createRenderer(table){
   drawBalls(x,w,true,lamps);
   art.overlay?.(x,def,w,t);
   x.restore();
+  // a ball outside the view gets an arrow at that edge (the camera eases after it instead of snapping)
+  for(const b of w.balls){const by=b.state==='rail'?lift([b.x,b.y,b.z||0])[1]:b.y,sy=v.oy+by*v.s,sx=clamp(v.ox+b.x*v.s,12,W-12),up=sy<v.top-2,down=sy>H+2;if(!up&&!down)continue;
+   const ay=up?v.top+14:H-14,d=up?-1:1,pulse=.7+.3*Math.sin(t*14);x.save();x.globalAlpha=pulse;x.fillStyle='#fff';x.strokeStyle='rgba(0,0,0,.6)';x.lineWidth=2;
+   x.beginPath();x.moveTo(sx,ay+d*9);x.lineTo(sx-9,ay-d*5);x.lineTo(sx+9,ay-d*5);x.closePath();x.stroke();x.fill();x.restore();}
   if(backglass>0){x.save();x.globalAlpha=backglass;x.beginPath();x.rect(0,v.top,W,v.aH);x.clip();R.drawBackglass(x,0,v.top,W,v.aH,t);x.restore();}
   // Backbox strip: DMD in the middle, backglass art either side.
   const L=R.layout(W,H),dw=L.dmd.w,dh=L.dmd.h,dx=L.dmd.x,dy=(L.stripH-dh)/2;
