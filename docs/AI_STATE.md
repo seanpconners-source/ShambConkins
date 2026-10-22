@@ -364,6 +364,8 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   `assets/pinball/<table>/<slot>` (playfield, backglass, apron, logo, character, bumper, toy; build.mjs embeds them as
   `pinball:<table>:<slot>`, `pinball/dropins.js` loads them; optimize-art.py shrinks them, untested here: no Python on the box).
   All four phases done; next = owner playtest feedback, then new band tables.
+  Art templates (Oct 22): `docs/pinball-art/buckethead/` = painted art per drop-in slot + playfield guide/parts overlay
+  (`tools/pinball-art-templates.mjs`, renders the table modules in headless Chromium).
   Camera rework (Oct 21, owner: fast-ball scrolling was jarring): `R.follow` in render.js is now a critically damped spring
   with a dead zone (goal moves only when the ball leaves 28-68% of the view), smoothed-velocity lead, look-ahead along
   rails/VUK, flippers-first for falling balls, multiball focus on the ball that reaches the flippers first; never lets a free

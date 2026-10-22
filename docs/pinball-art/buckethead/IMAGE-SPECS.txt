@@ -1,0 +1,143 @@
+BUCKETHEADLAND PINBALL - CUSTOM IMAGE SPECS
+============================================
+
+The table has 7 replaceable pictures. Each one has a template PNG in this folder that shows the current art at the
+exact size and framing the game uses. Make a new picture the same size, follow the rules below, save it with the
+exact file name, and put it in:   assets/pinball/buckethead/
+then rebuild the game. Any picture you don't supply keeps the built-in art.
+
+GENERAL RULES (all pictures)
+- File names are lowercase and exact: playfield, backglass, apron, logo, character, bumper, toy.
+  Extension: .png, .webp or .jpg (.svg also works).
+- Pictures that need a TRANSPARENT background (logo, character, and ideally toy) must be PNG or WebP with a real
+  alpha channel. A "checkerboard" painted into the image is NOT transparency; it will show up as a checkerboard.
+  JPG has no transparency at all.
+- Transparent pixels show whatever is underneath (the playfield). Semi-transparent pixels blend with it.
+- Use the exact pixel sizes below. Other sizes still load, but the picture gets stretched or cropped (see "How it
+  is fitted" for each one).
+- Theme: a night-time theme park (Buckethead's "Bucketheadland"): dark purple/maroon sky, lit rides, Buckethead
+  (white blank mask, red-and-white striped KFC-style bucket, white guitar). Darker art lets the table's lights
+  stand out.
+- No text that must be read at small sizes: on a phone the whole table is about 390 pixels wide.
+- Keep each file under about 2 MB (the game embeds them). Shrink with:  python3 tools/optimize-art.py
+
+Coordinates below are in pixels of that picture, from its top-left corner (x to the right, y down).
+
+
+1) playfield.png  -  1028 x 2134 px (exact), OPAQUE (no transparency needed)
+---------------------------------------------------------------------------
+What it is: the painted wood of the whole table, under every ball, light, ramp and bumper.
+How it is fitted: stretched over the whole table (1028 x 2134 = 2 px per mm). Not cropped.
+Replaces EVERYTHING painted on the playfield now: sky, Ferris wheel, signs, the BUCKETHEADLAND logo, Buckethead
+and the "WELCOME TO THE PARK" text. If you use a custom playfield, logo.png and character.png no longer appear on the
+playfield, so paint the logo and Buckethead into this picture yourself.
+What is hidden / covered:
+- Outside the cabinet shape (cut off): left of x=24, right of x=1000, and the two top corners outside the arch. The
+  top is a half-circle, centre (512,512), radius 488 (its top touches y=24).
+- The shooter lane on the right (x 920-1000, from y 600 down) is darkened.
+- Bottom: the apron covers everything below a line from (24,1760) to (220,1952) to (336,2008) to (608,2008) to
+  (724,1952) to (920,1760). Nothing below that line is seen.
+- The game also darkens the edges a little (vignette) and adds a faint gloss on top.
+- The table's centre line is x = 472 (not 514): the shooter lane takes the right-hand strip.
+Things the game draws on top (keep important art away from them; see playfield-parts.png and playfield-guide.png):
+- Top lanes B-O-T: x 360-600, y 160-240.
+- Three pop bumpers (round caps with a metal ring): centres (400,424), (564,424), (482,556), about 116 px across.
+- Giant Robot toy: about x 712-904, y 300-512.
+- Roller Coaster ramp: see-through red plastic down the left side (your art shows through, tinted red).
+- Robot Ramp and Coop wireforms: thin chrome rails on the right/centre (see-through).
+- Chicken Coop hole at (472,872), the EGG targets just below it at y 948, the Golden Egg lane at about x 640-700,
+  y 640-960, the Haunted Ride hole at (836,1228).
+- Coloured round/arrow light inserts (45 of them) are see-through tinted lenses: your art shows under them.
+  The big ones: JORDAN star at (472,1240), COASTER arrow (300,1232), ROBOT arrow (744,1232), 2X-6X row at y 1476,
+  SHOOT AGAIN at (472,1810).
+- Slingshots: x 188-264 and 680-756, y 1524-1736. Flippers at about y 1890.
+Good spots for big art: the band y 1290-1450 across the middle (where the logo is now), the area y 1500-1800
+between the slingshots (where Buckethead is now), and the sky behind the bumpers.
+Use playfield-parts.png as the top layer in an image editor to check alignment.
+
+
+2) backglass.png  -  1200 x 1600 px recommended (3:4 portrait; any size works), OPAQUE
+-------------------------------------------------------------------------------------
+What it is: the big painted "box art" shown as the intro card before a game, like the lit glass on top of a real
+pinball machine.
+How it is fitted:
+- Intro card: the whole picture is shown, shrunk to fit the screen ("contain"); empty space around it is black.
+  On a phone held upright the screen area is roughly 390 x 700, so a taller picture (e.g. 1080 x 1920) fills
+  more of it; 1200 x 1600 leaves black bars above and below.
+- Landscape screens only: a thin banner to the right of the score display uses the picture too, cropped to fill
+  ("cover") a very wide short strip (about 4.5:1), taken from the MIDDLE of the picture.
+So: put the main subject (Buckethead, title) near the centre, and make the middle horizontal band look good on its
+own. A title at the top is fine on the intro card.
+
+
+3) apron.png  -  896 x 374 px (exact), OPAQUE
+---------------------------------------------
+What it is: the metal panel at the very bottom of the table, around and below the flippers (where balls drain).
+Real tables print the rules cards and the logo here.
+How it is fitted: scaled to cover a 448 x 187 mm box ("cover"; with this exact size nothing is cropped), then cut to
+the apron shape. A thin metal edge is drawn around it.
+Visible part only: everything BELOW the line from (0,0) to (196,192) to (312,248) to (584,248) to (700,192) to
+(896,0). The V-shaped area above that line (top middle and top corners) is never seen; the flippers sit there.
+So the usable area is two slanted wings at the left and right, and a full-width band from y 248 to 374.
+Readable text: the current cards are about 112 x 40 px in the band near y 260-360.
+Transparency: not needed; transparent pixels there would show the dark table colour.
+
+
+4) logo.png  -  1092 x 250 px (as the template), TRANSPARENT background REQUIRED
+---------------------------------------------------------------------------------
+What it is: the BUCKETHEADLAND title painted on the playfield, also shown in the score banner (landscape).
+How it is fitted: always shown whole, never cropped; aspect ratio kept.
+- Playfield: drawn 546 px wide (in playfield.png pixels), centred at (472,1400). Its height follows its shape.
+- Score banner (landscape only): shrunk to fit the space left of the score display.
+Size rule: any width (about 1000+ px is sharp enough); keep the height at most 30% of the width (e.g. 1092 x 330
+at most). Taller logos run into the JORDAN star above and the 2X-6X lights below.
+Use a full-bleed design: the logo should reach the left and right edges of the image with only a small margin,
+because the image width is what sets the drawn width. Extra empty space on the sides makes the logo smaller.
+Not shown on the playfield when a custom playfield.png is used (it still shows in the score banner).
+
+
+5) character.png  -  660 x 805 px (as the template), TRANSPARENT background REQUIRED
+-------------------------------------------------------------------------------------
+What it is: the hero art (Buckethead) on the playfield between the two slingshots, above the flippers.
+How it is fitted: always shown whole, aspect ratio kept. Drawn 220 px wide (in playfield pixels) centred on the
+table's centre line; the point 40% of the way down the image sits at y 1640.
+Size rule: keep 660 wide and a height between 660 and 805 (taller runs into the 2X-6X lights above and the
+SHOOT AGAIN light below). Keep the figure inside the frame: anything outside the image is lost. (The built-in
+Buckethead's guitar is wider than this frame, which is why the guitar's head is cut off in the template.)
+The playfield's "WELCOME TO THE PARK" text is painted over the lower part of this picture.
+Not shown when a custom playfield.png is used.
+
+
+6) bumper.png  -  256 x 256 px (exact square), OPAQUE inside the circle
+-----------------------------------------------------------------------
+What it is: the top of the pop bumpers (the three round mushroom bumpers that kick the ball). One picture is used
+for all three.
+How it is fitted: cut to the circle that touches all four edges (centre 128,128, radius 128). Corners outside the
+circle are never seen, so transparency there doesn't matter. Each cap is only about 45 mm across, about 35
+screen pixels on a phone, so use a bold, simple design (big shapes, at most 2-3 letters).
+When a bumper is hit the game flashes it brighter (a white wash) and shrinks it slightly; the metal ring around it
+is drawn by the game.
+
+
+7) toy.png  -  400 x 350 px (exact, 8:7), TRANSPARENT background recommended, but FILL THE FRAME
+------------------------------------------------------------------------------------------------
+What it is: the Giant Robot, the moving toy at the upper right. It walks left and right during the robot battle.
+How it is fitted: stretched to a 96 x 84 mm box (no cropping; a different shape gets squashed, so keep 8:7).
+Important: the game draws a dark rectangle the size of the whole box as its shadow (offset down-right), and the
+hit flash is also a white wash over the whole box. With a transparent background, that shadow and flash show as
+rectangles around the robot. So make the robot fill nearly the whole image (a boxy robot works best), or paint a
+background plate behind it.
+The ball bounces off a house-shaped outline about 14 mm taller than the box (the roof peak sits above the box top),
+so a pointed head/antenna at the top centre matches what the ball hits.
+The picture is not animated (no walking legs, blinking eyes or glowing beam like the built-in robot).
+
+
+REFERENCE FILES (not used by the game)
+- playfield-guide.png: the whole table as it looks now, with every part.
+- playfield-parts.png: only what the game draws on top of a playfield picture, transparent everywhere else.
+  Lay it over your playfield to check nothing important is hidden.
+
+NOT REPLACEABLE BY PICTURES (drawn by code): the score display (DMD), flippers, slingshots, ramps and rails, light
+inserts, drop targets and the ball.
+
+Remake the templates: node tools/pinball-art-templates.mjs

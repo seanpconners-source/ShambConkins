@@ -7,3 +7,6 @@ local-test-reports/
 releases/*.html
 # The owner's own Doom IWADs (DOOM.WAD / DOOM2.WAD): copyrighted, never commit them. See src/engines/doom/README.md.
 assets/doom/user/
+
+# zipped copy of docs/pinball-art templates (the PNGs themselves are tracked)
+docs/pinball-art/*.zip
