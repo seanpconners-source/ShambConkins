@@ -399,11 +399,12 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   shadow and hit flash in the picture's outline (`drawToy` in dropins.js) instead of a box. Custom playfields hide
   logo/character on the table (logo still shows in the landscape banner).
   Flipper pictures (Oct 22): drop-in slots `flipper-left`/`flipper-right` (600x200, pivot (120,100), tip (510,100), right =
-  mirror; `drawFlipperImage` in dropins.js, drawn under the balls; only the two bottom flippers). Plan (owner): Buckethead's
-  strumming hand = the left flipper. Kit for GPT in `docs/pinball-art/buckethead/gpt/` (empty stage + pose + hand prompts,
-  sketches); when the owner sends the 3 pictures: cut the cutout's hand at the wrist, put the wrist on the flipL pivot
-  (playfield px 296,1892), guitar body ~(495,1860), headstock ≤(650,1610), bucket top ≥1505, sign (logo.webp) ~520 px wide
-  between the ramps at y 1290-1455, blend the stage into the playfield from y ~1100, keep the lamp darkening spots. Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
+  mirror; `drawFlipperImage` in dropins.js, drawn under the balls; only the two bottom flippers). DONE (owner idea): Buckethead's
+  strumming hand IS the left flipper. `tools/pinball-art/buckethead-flipper-hand.py` rebuilds playfield.webp + flipper-left.webp
+  from `assets/originals/pinball/buckethead/` (GPT empty stage blended in below y 1100, lamp dark spots, logo.webp 510 px wide
+  at y 1287 between the ramps, Buckethead scale .5 with his hanging hand inpainted out and his wrist on the flipL pivot
+  (playfield px 296,1892), hand cut at the cuff, scaled to pivot→pick 120→545, slimmed .85, dark edge + warm glow). He sits
+  left of centre (GPT's pose); bigger would push the bucket into the 2X-6X lights. GPT kit: `docs/pinball-art/buckethead/gpt/`. Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
