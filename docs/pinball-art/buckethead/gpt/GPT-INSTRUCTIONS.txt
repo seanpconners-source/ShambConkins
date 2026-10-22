@@ -1,0 +1,73 @@
+BUCKETHEADLAND PLAYFIELD: MAKING BUCKETHEAD FIT THE TABLE
+==========================================================
+
+WHAT'S WRONG NOW (see mockup-now-vs-target.png, left side)
+- Buckethead is painted too big and too low. The 2X-6X lights sit on his bucket, his guitar runs under the right
+  slingshot and its headstock pokes into the right lane, and the guitar body sits under the left flipper.
+- The BUCKETHEADLAND sign spans the full width, so its first and last letters are hidden under the Roller Coaster ramp
+  (left) and the Robot ramp (right). The 2X-6X lights cover its bottom edge.
+- Because he is painted into the playfield, he can't be moved. (The separate Buckethead picture, character.webp, is not
+  shown when a custom playfield is used.)
+
+THE FIX (mockup-now-vs-target.png, right side)
+- The sign gets smaller and sits between the two ramps, under the JORDAN star and above the 2X-6X row.
+- Buckethead gets smaller and moves up between the slingshots, under the 2X-6X row, centred on the table's centre line,
+  with the guitar kept inside the slingshots.
+- To do that, the playfield needs a version of its bottom half WITHOUT Buckethead and WITHOUT the sign. GPT makes that
+  (step 1). Claude then places your existing sign (logo.webp) and Buckethead (character.webp) on it in exactly the right
+  spots, blends it into the top of the playfield and checks it in the game. You don't need to give GPT any measurements.
+  The background in the mock-up is just a blur standing in for the GPT picture.
+
+
+STEP 1 (needed): the empty stage
+--------------------------------
+New ChatGPT chat. Upload: upload-1-current-stage.png
+Paste this prompt exactly:
+
+  I'm making the playfield art for a pinball table. The attached image is the bottom section of my current
+  playfield: "Bucketheadland", a spooky night-time theme park and circus. Recreate this exact same scene in the same
+  painted style, with the same colours, lighting and point of view, but completely REMOVE the guitarist in the
+  bucket hat and completely REMOVE the BUCKETHEADLAND sign. Where they were, continue the scene naturally: the red
+  and cream striped circus big-top canvas fanning out from the centre, glowing marquee bulbs along the tent edges,
+  small tents at the sides, and low red and purple smoke rolling across the bottom. Keep the top edge of the picture
+  (the tents and bulbs) as close to the original as possible so it blends back in. Keep the middle of the picture
+  calm and medium-dark, like an empty stage glowing softly dark red, because a character and a sign will be placed
+  on top of it later. No people, no characters, no faces, no text, no letters, no logos, no signs, no frame or
+  border. Square image, 1024 x 1024.
+
+Check the result before sending it to Claude:
+- No person, mask, guitar or hand left anywhere. If there is, reply: "Remove every person and the guitar, keep
+  everything else the same."
+- No letters or words anywhere (GPT likes to sneak a sign back in). If there are, reply: "Remove all text and signs."
+- The centre should be fairly plain. Bright bulbs or stars in the middle would compete with the table's lights.
+- If the colours drift a lot from the original, reply: "Match the colours and lighting of the attached image more
+  closely."
+
+
+STEP 2 (optional): a Buckethead that fits even better
+-----------------------------------------------------
+Your current Buckethead picture works (it's what the mock-up uses). It has two small flaws on the table: his robe is
+cut off with a straight edge at the lower left, and the guitar body ends up under the left flipper. A waist-up version
+fixes both. Skip this step if you're happy with the mock-up.
+
+New ChatGPT chat. Upload: upload-2-current-buckethead.png
+Paste this prompt exactly:
+
+  Recreate this exact character in the same painted style and lighting: Buckethead, with a blank white mask, a red
+  and white striped bucket on his head with a small "FUNERAL" sticker, long black curly hair, a black robe and a
+  white electric guitar. Change the pose so it fits a narrow space: show him from the waist up, holding the guitar
+  high and close to his chest with the neck pointing up and to the right at about 45 degrees, and nothing sticking
+  out sideways. The bottom of his robe fades out softly into dark red smoke, with no hard cut-off edge. The whole
+  figure is centred and fits inside the picture with a small margin on every side. Transparent background (a real
+  transparent PNG, not a checkerboard pattern and not a coloured background). Portrait, 1024 x 1536.
+
+Check: a real transparent background (in ChatGPT a transparent PNG shows on a plain white or grey background; a painted
+grey-and-white checkerboard is NOT transparent; ask again: "Make the background truly transparent"). The guitar headstock
+must be fully inside the picture.
+
+
+STEP 3: send it back
+--------------------
+Send Claude the picture(s) from step 1 (and step 2 if you did it), downloaded at full size. Claude blends the new stage
+into the playfield, places the sign and Buckethead as in the mock-up, keeps the soft shading under each light, checks it
+in the game on phone and desktop sizes, and pushes it to TESTver.
