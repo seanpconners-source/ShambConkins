@@ -58,11 +58,12 @@ for x, y, r in LAMPS:
   R = r * 2.2; dd = np.sqrt((xx - x) ** 2 + (yy - y) ** 2) / R
   fac = np.minimum(fac, np.where(dd < 1, 1 - .55 * (.5 + .5 * np.cos(np.pi * np.clip(dd, 0, 1))), 1))
 arr[..., :3] *= fac[..., None]; pf = Image.fromarray(arr.clip(0, 255).astype(np.uint8))
-# 6) the sign, over his headstock/bucket (owner's logo.webp) between the ramps, above the 2X-6X row
+# 6) the sign (owner's logo.webp) in the night sky at the top of the arch, above the B-O-T lanes (owner, Oct 22: it used to
+#    sit between the ramps over Buckethead's bucket at x 472, y 1287, 510 wide)
 logo = Image.open(OUT + 'logo.webp').convert('RGBA')
-LW = 510; logo = logo.resize((LW, round(LW * logo.height / logo.width)), Image.LANCZOS)
+LX, LY, LW = 514, 34, 460; logo = logo.resize((LW, round(LW * logo.height / logo.width)), Image.LANCZOS)
 sh = Image.new('RGBA', logo.size, (0, 0, 0, 0)); sh.putalpha(logo.getchannel('A').point(lambda v: v * .6))
-sh = sh.filter(ImageFilter.GaussianBlur(6)); pf.alpha_composite(sh, (472 - LW // 2 + 4, 1287 + 6)); pf.alpha_composite(logo, (472 - LW // 2, 1287))
+sh = sh.filter(ImageFilter.GaussianBlur(6)); pf.alpha_composite(sh, (LX - LW // 2 + 4, LY + 6)); pf.alpha_composite(logo, (LX - LW // 2, LY))
 pf.convert('RGB').save(OUT + 'playfield.webp', quality=90)
 # 7) flipper-left (600 x 200, pivot (120,100), flipper end (510,100)): the forearm (elbow mode) or the hand alone (wrist mode)
 if ELBOW:

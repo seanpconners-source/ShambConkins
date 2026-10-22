@@ -401,14 +401,14 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   Flipper pictures (Oct 22): drop-in slots `flipper-left`/`flipper-right` (600x200, pivot (120,100), tip (510,100), right =
   mirror; `drawFlipperImage` in dropins.js, drawn under the balls; only the two bottom flippers). DONE (owner idea): Buckethead's
   strumming hand IS the left flipper. `tools/pinball-art/buckethead-flipper-hand.py` rebuilds playfield.webp + flipper-left.webp
-  from `assets/originals/pinball/buckethead/` (GPT empty stage blended in below y 1100, lamp dark spots, logo.webp 510 px wide
-  at y 1287 between the ramps, Buckethead scale .5 upright (args `0.5 0`; a .58/26° lean put the pick on the strings but the
+  from `assets/originals/pinball/buckethead/` (GPT empty stage blended in below y 1100, lamp dark spots, logo.webp (now 460 px wide, top
+  centre 514,34 in the sky above the B-O-T lanes; it was 510 wide at y 1287 between the ramps), Buckethead scale .5 upright (args `0.5 0`; a .58/26° lean put the pick on the strings but the
   owner disliked the lean and it was reverted) with his hanging hand inpainted out and his wrist on the flipL pivot
   (playfield px 296,1892), hand cut at the cuff, scaled to pivot→pick 120→545, slimmed .85, dark edge + warm glow).
   BIGGER VERSION (Oct 22, current, script default `0.9 0 wrist`): the owner passed on the lean and on an elbow/forearm
   version (GPT art kept in `docs/pinball-art/buckethead/gpt-strum/` + gpt-04/05 originals, `... 0.5 0 elbow`). Buckethead upright
-  at scale .9 with the wrist on the pivot, so the pick crosses the strings at the bridge pickup on the up-stroke; he now sits
-  UNDER the BUCKETHEADLAND sign and the 2X-6X lamp spots (both composited after him); bucket top pokes above the sign, guitar
+  at scale .9 with the wrist on the pivot, so the pick crosses the strings at the bridge pickup on the up-stroke; lamp dark
+  spots are composited after him (the 2X-6X lights sit on him); the sign moved to the top of the arch (owner); guitar
   lower bout partly under the apron.  GPT kit: `docs/pinball-art/buckethead/gpt/`. Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - **King Gizzard pinball (Oct 22 2026, table 3, game `king-gizzard-pinball`, table id `king-gizzard`, files
