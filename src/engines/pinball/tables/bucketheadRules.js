@@ -36,10 +36,10 @@ const WIZ_SHOTS=['coaster','ramp','orbit','coop','robot'];
 
 const rules={
  balls:3,
- replay:{easy:3000000,normal:6000000,hard:12000000},
+ replay:{easy:1500000,normal:3000000,hard:6000000},
  ATTRACTIONS,
  newPlayer:()=>({bot:[0,0,0],bonusX:1,bucket:[0,0,0,0,0,0],bucketDone:0,locks:0,lockLit:false,kickback:true,extraLit:false,extraGiven:false,
-  coasters:0,robots:0,jackpot:500000,skill:1,mystery:0,robotHits:0,robotNeed:5,robotsBeaten:0,eggHits:0,
+  coasters:0,robots:0,jackpot:500000,skill:1,mystery:0,robotHits:0,robotNeed:3,robotLit:false,robotsBeaten:0,eggHits:0,
   attrLit:true,attr:[0,0,0,0,0],attrNext:0,rampsToAttr:4,wizardLit:false,wizards:0}),
  startBall(m){const p=m.p;p.bot=[0,0,0];Object.assign(m.ball,{coasterCombo:0,skillLane:1,skillOpen:true,battle:null,attr:null});m.ballSave(10);m.w.parts.kickback.lit=p.kickback;
   const beam=m.w.parts.beam;beam.on=beam.grab=false;m.w.parts.giantRobot.tx=0;
@@ -58,7 +58,9 @@ const rules={
    case 'spin':m.score(m.mb>1?2500:1000);break;
    case 'trigger':
     if(e.id==='orbitL'&&e.dir<0){m.score(25000);if(!m.w.parts.kickback.lit){m.w.parts.kickback.lit=p.kickback=true;m.say(['KICKBACK','IS LIT'],1.6);m.sfx('award');}else if(!b.attr)m.say(['NUNCHUCK','ORBIT 25,000'],1.2,{anim:'nunchuck'});}
-    if(e.id==='orbitR'&&e.dir>0)m.score(10000);
+    // a real loop: up the left orbit, round the top, down the right side within 3 s (not the gate return)
+    if(e.id==='orbitL'&&e.dir<0)b.loopT=m.t;
+    if(e.id==='orbitR'&&e.dir>0){if(m.t-(b.loopT??-9)<3){b.loopT=-9;m.score(50000);if(!b.attr&&m.mode!=='wizard')m.say(['LOOP!','50,000'],1.1,{anim:'coaster'});}else m.score(1000);}
     break;
    case 'rollover':{
     const lane=['laneB','laneO','laneT'].indexOf(e.id);
@@ -86,6 +88,7 @@ const rules={
     if((e.id==='coaster'||e.id==='robot')&&!p.attrLit&&!b.attr&&!p.wizardLit&&m.mode!=='wizard'&&--p.rampsToAttr<=0){p.rampsToAttr=4;p.attrLit=true;m.later(1.5,()=>m.say(['ATTRACTION','IS LIT'],1.8,{anim:'ferris'}));}
     if(e.id==='coaster'){p.coasters++;b.coasterCombo++;const v=50000+25000*(b.coasterCombo-1);m.score(v);m.bonus(3);
      if(m.mode==='jordan'&&b.jackC){b.jackC=false;m.jackpot('COASTER');}else if(!b.attr&&m.mode!=='wizard')m.say(['ROLLER COASTER',fmt(v)],1.4,{anim:'coaster'});}
+    if(e.id==='robot'||e.id==='coopVuk')p.robotLit=true;
     if(e.id==='robot'){p.robots++;m.score(50000);m.bonus(3);p.jackpot=Math.min(2000000,p.jackpot+50000);
      if(m.mode==='jordan'&&b.jackR){b.jackR=false;m.jackpot('ROBOT');}else if(b.battle){m.score(100000);m.say(['ROBOT RAMP','100,000'],1.2);}else if(!b.attr&&m.mode!=='wizard')m.say(['ROBOT RAMP',p.jackpot<2000000?'JACKPOT +50,000':'JACKPOT MAXED'],1.4,{anim:'robot'});}
     if(e.id==='coopVuk')m.score(5000);
@@ -130,9 +133,13 @@ const rules={
   if(p.eggHits%3===0){if(!p.lockLit&&!m.mode){p.lockLit=true;for(const id of m.def.drops.egg)m.w.parts[id].down=true;m.say(['GOLDEN EGG','LOCK IS LIT'],2,{flash:true,anim:'egg'});}else{m.score(250000);m.say(['GOLDEN EGG','250,000'],1.8,{flash:true,anim:'egg'});}}
   else m.say(['GOLDEN EGG',`JACKPOT ${fmt(p.jackpot)}`],1.4,{anim:'egg'});},
  // ---- Giant Robot: hits build toward the battle; in the battle the robot walks and its tractor beam grabs the ball.
+ // Outside the battle a hit only counts while the robot is LIT (the Robot Ramp or the Coop VUK lights it for one hit),
+ // so looping the upper flipper into it keeps the ball alive for small change but can't farm the battle.
  robotHit(m){const p=m.p,bt=m.ball.battle;
-  if(bt){bt.hits++;m.score(75000*(p.robotsBeaten+1));m.sfx('jackpot');
-   if(bt.hits>=4){const v=500000*(p.robotsBeaten+1);p.robotsBeaten++;m.ball.battle=null;m.w.parts.beam.on=m.w.parts.beam.grab=false;m.w.parts.giantRobot.tx=0;m.score(v);m.say(['GIANT ROBOT','DEFEATED!',fmt(v)],3,{flash:true,anim:'robotDown'});m.sfx('super');if(!p.kickback){p.kickback=m.w.parts.kickback.lit=true;}}
+  if(m.t-(p.robotLastT??-9)<(bt?.8:1)){m.score(1000);return;}p.robotLastT=m.t;
+  if(!bt&&!p.robotLit){m.score(5000);return;}if(!bt)p.robotLit=false;
+  if(bt){bt.hits++;m.score(75000*Math.min(3,p.robotsBeaten+1));m.sfx('jackpot');
+   if(bt.hits>=4){const v=500000*Math.min(3,p.robotsBeaten+1);p.robotsBeaten++;m.ball.battle=null;m.w.parts.beam.on=m.w.parts.beam.grab=false;m.w.parts.giantRobot.tx=0;m.score(v);m.say(['GIANT ROBOT','DEFEATED!',fmt(v)],3,{flash:true,anim:'robotDown'});m.sfx('super');if(!p.kickback){p.kickback=m.w.parts.kickback.lit=true;}}
    else m.say(['ROBOT HIT',`${4-bt.hits} MORE TO WIN`],1.3,{anim:'robot'});return;}
   p.robotHits++;m.score(15000);
   if(p.robotHits>=p.robotNeed&&m.mode!=='jordan'&&m.mode!=='wizard'){p.robotHits=0;p.robotNeed+=2;m.ball.battle={t:30,hits:0,grabCool:3};m.say(['GIANT ROBOT','BATTLE!','HIT IT 4 TIMES'],2.6,{flash:true,anim:'robot',mode:true});m.sfx('multiball');m.ballSave(8);}
@@ -176,7 +183,7 @@ const rules={
   L.orbitArrow=lit.has('orbit')?blink(7):0;
   L.coasterJ=m.mode==='jordan'&&b.jackC?1:0;L.robotJ=m.mode==='jordan'&&b.jackR?1:0;L.coopJ=lit.has('coop')||b.superLit?blink(6):p.lockLit?blink(2):0;
   L.hauntedEB=p.extraLit?blink(3):0;L.hauntedMy=p.wizardLit||(p.attrLit&&!b.attr&&!m.mode)?blink(4):blink(.6);
-  const bt=b.battle;for(let i=0;i<5;i++)L['rh'+i]=lit.has('robot')?blink(7):bt?(i<bt.hits?1:i===bt.hits?blink(6):0):(i<Math.floor(p.robotHits*5/p.robotNeed)?1:0);
+  const bt=b.battle;for(let i=0;i<5;i++)L['rh'+i]=lit.has('robot')?blink(7):bt?(i<bt.hits?1:i===bt.hits?blink(6):0):(p.robotLit&&i===Math.floor(p.robotHits*5/p.robotNeed)?blink(4):i<Math.floor(p.robotHits*5/p.robotNeed)?1:0);
   for(let i=0;i<3;i++)L['egg'+i]=i<p.eggHits%3?1:0;
   for(let i=0;i<5;i++)L['at'+i]=b.attr?.i===i?blink(6):p.attr[i]===2?1:p.attr[i]===1?blink(1):0;
   L.shootAgain=m.shootAgainLamp?blink(2):0;L.jordan=m.mode==='wizard'?blink(10):m.mode==='jordan'?blink(8):p.locks?1:0;L.spinner=m.mb>1||b.attr?.def.id==='nunchuck'?1:0;

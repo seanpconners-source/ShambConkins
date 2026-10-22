@@ -52,23 +52,23 @@ async function pinball(s){
  s.on(c,'pointerdown',ev=>{if(s.paused||!(phase==='ball'))return;ev.preventDefault();const p=s.pointer(ev);
   if(p.y<R.layout(W(),H()).stripH&&p.x<W()-130){toggleZoom();return;}fingers.set(ev.pointerId,{side:p.x<W()/2?0:1,x0:p.x,y0:p.y,t0:performance.now(),plunger:false,nudged:false,pull:0});s.capture(ev);});
  s.on(c,'pointermove',ev=>{const f=fingers.get(ev.pointerId);if(!f||s.paused)return;ev.preventDefault();const p=s.pointer(ev),dy=p.y-f.y0;
-  if(!f.plunger&&m.phase==='plunge'&&dy>14&&P.ballOnPlunger(m.w,m.w.balls[0]||{}))f.plunger=true;
+  if(!f.plunger&&dy>14&&m.canPlunge())f.plunger=true;
   if(f.plunger)f.pull=clamp((dy-8)/(H()*.2),0,1);
   else if(!f.nudged&&m.phase==='play'&&-dy>H()*.06&&performance.now()-f.t0<260){f.nudged=true;m.nudge(clamp((p.x-f.x0)*2,-160,160),-300);}});
- const up=(ev,cancel)=>{const f=fingers.get(ev.pointerId);if(!f)return;fingers.delete(ev.pointerId);s.release(ev);if(f.plunger&&!cancel&&f.pull>.04&&m.phase==='plunge')P.plunge(m.w,f.pull);};
+ const up=(ev,cancel)=>{const f=fingers.get(ev.pointerId);if(!f)return;fingers.delete(ev.pointerId);s.release(ev);if(f.plunger&&!cancel&&f.pull>.04&&m.canPlunge())P.plunge(m.w,f.pull);};
  s.on(c,'pointerup',ev=>up(ev,false));s.on(c,'pointercancel',ev=>up(ev,true));s.on(c,'lostpointercapture',ev=>up(ev,true));
  s.on(document,'keydown',ev=>{if(s.paused||phase!=='ball')return;const k=ev.code;
   if(LEFT.has(k)){keys.flip[0]=true;ev.preventDefault();}else if(RIGHT.has(k)){keys.flip[1]=true;ev.preventDefault();}
-  else if(PLUNGE.has(k)){ev.preventDefault();if(m.phase==='plunge'){if(!keys.pull){keys.pull=true;keys.pullT=0;}}else if((k==='Space'||k==='KeyN')&&!ev.repeat)m.nudge(0,-300);}
+  else if(PLUNGE.has(k)){ev.preventDefault();if(m.canPlunge()){if(!keys.pull){keys.pull=true;keys.pullT=0;}}else if((k==='Space'||k==='KeyN')&&!ev.repeat)m.nudge(0,-300);}
   else if(k==='KeyN'&&!ev.repeat)m.nudge(0,-300);
   else if(k==='KeyV'&&!ev.repeat)toggleZoom();});
- s.on(document,'keyup',ev=>{const k=ev.code;if(LEFT.has(k))keys.flip[0]=false;else if(RIGHT.has(k))keys.flip[1]=false;else if(PLUNGE.has(k)&&keys.pull){keys.pull=false;if(m.phase==='plunge')P.plunge(m.w,clamp(keys.pullT/1.1,.05,1));keys.pullT=0;}});
+ s.on(document,'keyup',ev=>{const k=ev.code;if(LEFT.has(k))keys.flip[0]=false;else if(RIGHT.has(k))keys.flip[1]=false;else if(PLUNGE.has(k)&&keys.pull){keys.pull=false;if(m.canPlunge())P.plunge(m.w,clamp(keys.pullT/1.1,.05,1));keys.pullT=0;}});
  s.on(window,'blur',clear);s.resetOnPause?.(clear);s.cleanup(()=>{clear();stopRoll();});
  // ---- autopilot for tests (s.debug.auto = true): flips when a ball drops onto a flipper, plunges at 70%.
  let botHold=[0,0],botPlungeAt=0;
  function bot(dt){const f=[false,false];for(const fl of m.w.flippers){const mid=fl.x+Math.cos(fl.rest)*fl.len/2;for(const b of m.w.balls)if(b.state==='free'&&Math.abs(b.x-mid)<58&&b.y-fl.y>-70&&b.y-fl.y<20&&b.vy>40)botHold[fl.input]=.16;}
   for(let i=0;i<2;i++)if(botHold[i]>0){f[i]=true;botHold[i]-=dt;}
-  if(m.phase==='plunge'){botPlungeAt+=dt;if(botPlungeAt>.8){P.plunge(m.w,.72);botPlungeAt=0;}}return f;}
+  if(m.canPlunge()){botPlungeAt+=dt;if(botPlungeAt>.8){P.plunge(m.w,.72);botPlungeAt=0;}}return f;}
 
  // ---- flow
  async function handoff(i,again){
@@ -104,7 +104,7 @@ async function pinball(s){
   else if(phase==='ball'){
    if(keys.pull)keys.pullT+=dt;
    const flip=auto?bot(dt):flipInput();let pl=0;for(const g of fingers.values())if(g.plunger)pl=Math.max(pl,g.pull);if(keys.pull)pl=Math.max(pl,clamp(keys.pullT/1.1,0,1));pull=pl;
-   const ev=m.tick(dt,{flip,pull:m.phase==='plunge'?pull:0});
+   const ev=m.tick(dt,{flip,pull:m.canPlunge()?pull:0});
    for(const e of ev){const snd={flip:'flip',flipDown:'flipDown',bumper:'bumper',sling:'sling',drop:'drop',standup:'standup',rollover:'rollover',spin:'spin',hole:'hole',eject:'eject',plunge:'plunge',kickback:'kick',trigger:'gate',wallHit:'wall',railEnter:null}[e.type];if(snd&&!(e.type==='wallHit'&&e.speed<700))pinballSound(snd);
     if(e.type==='bumper'||e.type==='jackpot')s.react?.(m.cur,'happy');}
    let fast=0;for(const b of m.w.balls)if(b.state==='free')fast=Math.max(fast,Math.hypot(b.vx,b.vy));rollLevel(fast);
@@ -158,7 +158,7 @@ async function pinball(s){
  // Touch hints + plunger meter, drawn in screen space.
  function overlay(v){
   if(phase!=='ball')return;const w=W(),h=H();x.save();x.setTransform(Math.min(2,window.devicePixelRatio||1),0,0,Math.min(2,window.devicePixelRatio||1),0,0);
-  if(m.phase==='plunge'){const pl=m.w.plunger,[sx,sy]=R.toScreen(v,(pl.x0+pl.x1)/2,pl.y);const mh=Math.min(110,h*.18),mx=Math.min(w-14,sx),my=clamp(sy-mh-20,v.top+10,h-mh-10);
+  if(m.canPlunge()){const pl=m.w.plunger,[sx,sy]=R.toScreen(v,(pl.x0+pl.x1)/2,pl.y);const mh=Math.min(110,h*.18),mx=Math.min(w-14,sx),my=clamp(sy-mh-20,v.top+10,h-mh-10);
    x.fillStyle='rgba(0,0,0,.55)';x.fillRect(mx-7,my,14,mh);x.fillStyle=pull>.85?'#ff3b30':'#ffd23f';x.fillRect(mx-5,my+2,10,(mh-4)*pull);
    if(pull<.05){x.fillStyle='rgba(255,255,255,.9)';x.font='bold 13px Arial';x.textAlign='right';x.textBaseline='middle';x.fillText('DRAG DOWN & RELEASE ⤓',mx-12,my+mh/2);}}
   if(hintT>0&&m.players[m.cur].ball===1){x.globalAlpha=Math.min(1,hintT)*.55;x.fillStyle='#fff';x.font='bold 13px Arial';x.textBaseline='bottom';x.textAlign='left';x.fillText('◀ HOLD: LEFT FLIPPER',10,h-34);x.textAlign='right';x.fillText('RIGHT FLIPPER: HOLD ▶',w-10,h-34);

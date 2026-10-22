@@ -32,10 +32,16 @@ function createMachine({table,players=2,seed=1,onSound=()=>{},level='normal'}){
  m.startJordan=()=>R.startJordan?.(m);
  m.extraBall=()=>{m.players[m.cur].extra++;m.shootAgainLamp=true;m.say(['EXTRA BALL'],2.4,{flash:true,anim:'extra'});m.sfx('knocker');};
  // Extra balls for multiball / ball save come up the shooter lane and fire on their own.
- m.addBalls=n=>{for(let i=0;i<n;i++){m.pendingBalls++;m.later(.35+i*1.1,()=>{m.pendingBalls--;P.serveBall(m.w);m.later(.45,()=>{P.plunge(m.w,(m.def.plunger.auto-m.def.plunger.vmin)/(m.def.plunger.vmax-m.def.plunger.vmin));m.sfx('autoPlunge');});});}};
+ m.addBalls=n=>{for(let i=0;i<n;i++){m.pendingBalls++;m.later(.35+i*1.1,()=>{m.pendingBalls--;const b=P.serveBall(m.w);m.autoBalls.add(b.id);m.later(.45,()=>{P.plunge(m.w,autoPower());m.sfx('autoPlunge');});});}};
  m.live=()=>m.w.balls.length+m.pendingBalls;
+ // A ball sitting still on the plunger can always be (re)launched: the first plunge of a ball, or one that was shot
+ // too softly to clear the shooter-lane gate and rolled back. Balls the machine fired itself get re-fired on their own.
+ m.timeScale=def.timeScale||1;m.autoBalls=new Set();
+ m.plungerBall=()=>m.w.balls.find(b=>P.ballOnPlunger(m.w,b)&&Math.abs(b.vy)<80)||null;
+ m.canPlunge=()=>!!m.plungerBall();
+ const autoPower=()=>(def.plunger.auto-def.plunger.vmin)/(def.plunger.vmax-def.plunger.vmin);
  m.startBall=()=>{
-  m.w.balls.length=0;m.timers.length=0;m.pendingBalls=0;m.mode=null;m.ball={bonus:0};m.tilted=m.w.tilted=false;m.tiltMeter=0;m.tiltWarn=0;m.saveUntil=0;m.savePending=0;m.msgs.length=0;m.msg=null;m.shows.length=0;m.giOffUntil=0;m.flashers={};
+  m.w.balls.length=0;m.timers.length=0;m.pendingBalls=0;m.mode=null;m.ball={bonus:0};m.tilted=m.w.tilted=false;m.tiltMeter=0;m.tiltWarn=0;m.saveUntil=0;m.savePending=0;m.msgs.length=0;m.msg=null;m.shows.length=0;m.giOffUntil=0;m.flashers={};m.autoBalls.clear();
   m.shootAgainLamp=m.players[m.cur].extra>0;m.phase='plunge';m.inPlay=0;P.serveBall(m.w);R.startBall?.(m);m.mb=1;
  };
  m.nudge=(vx,vy)=>{if(m.phase!=='play'||m.tilted)return;P.nudge(m.w,vx,vy);m.sfx('nudge');m.tiltMeter+=1;
@@ -48,11 +54,13 @@ function createMachine({table,players=2,seed=1,onSound=()=>{},level='normal'}){
   m.shows=m.shows.filter(s=>m.t-s.t0<s.dur);for(const [id,f] of Object.entries(m.flashers))if(m.t-f.t0>f.count*.16)delete m.flashers[id];
   const giTarget=m.t<m.giOffUntil||m.phase==='drained'?.08:1;m.gi+=(giTarget-m.gi)*Math.min(1,dt*(giTarget>m.gi?4:14));
   if(m.phase!=='plunge'&&m.phase!=='play')return [];
-  const events=P.stepWorld(m.w,dt,input).splice(0);const out=[];
+  const events=P.stepWorld(m.w,dt*m.timeScale,input).splice(0);const out=[];
   for(const e of events){
    out.push(e);
    if(e.type==='flip'){if(!m.flipT||m.flipT[e.input]!==m.w.t){(m.flipT||=[])[e.input]=m.w.t;R.flip?.(m,e.input);}continue;}
-   if(e.type==='plunge'&&m.phase==='plunge'){m.phase='play';m.inPlay=0;if(m.savePending){m.saveUntil=m.t+m.savePending;m.savePending=0;}}
+   if(e.type==='plunge'&&m.phase==='plunge'){m.phase='play';m.inPlay=0;if(m.savePending){m.saveLen=m.savePending;m.saveUntil=m.t+m.savePending;m.savePending=0;}}
+   // a re-plunge of a ball that rolled back: the skill shot and ball save start over
+   else if(e.type==='plunge'&&e.ball.rolledBack){e.ball.rolledBack=false;m.inPlay=0;if(m.saveLen)m.saveUntil=Math.max(m.saveUntil,m.t+m.saveLen);}
    if(e.type==='drain'){
     if(m.saving()&&m.phase==='play'){m.say(['BALL SAVED'],1.6,{anim:'save'});m.sfx('save');m.addBalls(1);continue;}
     const left=m.live();if(left===1&&m.mb>1)R.multiballEnd?.(m);
@@ -61,6 +69,10 @@ function createMachine({table,players=2,seed=1,onSound=()=>{},level='normal'}){
    if(!m.tilted)R.event(m,e);
   }
   m.mb=m.live();
+  // a ball back on the plunger mid-play: machine-fired balls go again by themselves, the player's waits for a new pull
+  const pb=m.phase==='play'&&m.plungerBall();
+  if(pb){if(m.autoBalls.has(pb.id)){pb.restT=(pb.restT||0)+dt;if(pb.restT>.6){pb.restT=0;P.plunge(m.w,autoPower());m.sfx('autoPlunge');}}
+   else if(!pb.rolledBack){pb.rolledBack=true;m.say(['TOO SOFT','PULL AGAIN'],1.8);}}
   if(m.phase==='play')R.tick?.(m,dt);
   // Ball search: a ball sitting still away from the flippers gets a nudge.
   const still=m.phase==='play'&&!input.flip[0]&&!input.flip[1]&&m.w.balls.length&&m.w.balls.every(b=>b.state==='free'&&Math.hypot(b.vx,b.vy)<6&&!P.ballOnPlunger(m.w,b));

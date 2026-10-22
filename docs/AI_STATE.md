@@ -369,7 +369,14 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   rails/VUK, flippers-first for falling balls, multiball focus on the ball that reaches the flippers first; never lets a free
   ball drop below the view; off-screen arrow at the top edge; optional AUTO ZOOM (`profile.settings.pinballZoom`, tap the DMD
   or V; up to 15% pull-back at speed). `tests/pinball-camera.mjs` measures it: Fold-size 700x840 jolts/min 85 → 0-2, p95
-  accel 30k → 11k px/s²; landscape 844x390 132 → 28 jolts but the ball is above the view ~13% (195 mm view is too tight). Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
+  accel 30k → 11k px/s²; landscape 844x390 132 → 28 jolts but the ball is above the view ~13% (195 mm view is too tight).
+  Oct 22 (owner): table `timeScale` .85 (whole physics 15% slower, every shot keeps its line); a ball shot too softly to clear
+  the shooter gate rolls back and can be plunged again (`m.canPlunge()` = a ball resting on the plunger, any phase; DMD "TOO
+  SOFT / PULL AGAIN"; skill shot + ball save restart; machine-fired balls re-fire themselves). The slower speed exposed a
+  flat-top jam on the Golden Egg channel (now peaked) and an upper-flipper ↔ robot loop: robot hits now count only while
+  LIT (Robot Ramp / Coop VUK light it once; battle hits always count, 0.8-1 s debounce), payouts capped at x3, a real LOOP
+  (left orbit up, right side down in 3 s) pays 50k, the gate return 1k. Replay 1.5M/3M/6M. A perfect flipper can still keep
+  the ball cycling upper flipper ↔ robot for small points (no longer farmable). Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).

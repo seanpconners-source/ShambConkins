@@ -9,8 +9,9 @@ function bezier(p0,p1,p2,p3,n=16){const pts=[];for(let i=0;i<=n;i++){const t=i/n
 // Smooth path through points (Catmull-Rom), keeps any z column.
 function spline(pts,n=8){const out=[];for(let i=0;i<pts.length-1;i++){const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)];for(let j=0;j<n;j++){const t=j/n,t2=t*t,t3=t2*t;out.push(p1.map((_,k)=>.5*(2*p1[k]+(-p0[k]+p2[k])*t+(2*p0[k]-5*p1[k]+4*p2[k]-p3[k])*t2+(-p0[k]+3*p1[k]-3*p2[k]+p3[k])*t3)));}}out.push(pts[pts.length-1].slice());return out;}
 
-function tableBuilder({id,name,W=514,H=1067,gravity=1300,slope=6.5,drainY=1040}={}){
- const def={id,name,W,H,gravity,slope,drainY,segs:[],sensors:[],lines:[],holes:[],rails:[],magnets:[],flippers:[],lamps:[],drops:{},toys:[],captives:[],gi:[],flashers:[],plunger:null,parts:{}};
+// timeScale < 1 runs the whole table slower than life (ball, flippers, spinners alike) so every shot keeps its line.
+function tableBuilder({id,name,W=514,H=1067,gravity=1300,slope=6.5,drainY=1040,timeScale=1}={}){
+ const def={id,name,W,H,gravity,slope,drainY,timeScale,segs:[],sensors:[],lines:[],holes:[],rails:[],magnets:[],flippers:[],lamps:[],drops:{},toys:[],captives:[],gi:[],flashers:[],plunger:null,parts:{}};
  const part=(id,kind,extra={})=>{if(id){def.parts[id]={id,kind,...extra};}return id;};
  const seg=(a,b,o={})=>{def.segs.push({ax:a[0],ay:a[1],bx:b[0],by:b[1],r:o.r??3,kind:o.kind||'wall',e:o.e,fr:o.fr,id:o.id||null,pass:o.pass||null,look:o.look||null,layer:o.layer||null});};
  const T={def,arc,bezier,spline,

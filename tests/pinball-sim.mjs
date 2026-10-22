@@ -55,6 +55,20 @@ if(table.rules.ATTRACTIONS){
  assert.equal(m.ball.wiz.round,2,'all wizard shots relight round 2');assert.ok(m.players[0].score-before>=10000000,'wizard pays');
  console.log('attractions + wizard OK, wizard round 1 paid',(m.players[0].score-before).toLocaleString());
 }
+// A plunge too soft to clear the shooter-lane gate rolls back: the ball must be launchable again (not stuck in play).
+{
+ const m=createMachine({table,players:1,seed:3});m.startBall();P.plunge(m.w,0);let back=false;
+ for(let i=0;i<60*6&&!back;i++){m.tick(1/60,{flip:[false,false],pull:0});back=m.phase==='play'&&m.canPlunge();}
+ assert.ok(back,'a soft plunge rolls back onto the plunger and can be launched again');
+ assert.ok(m.msg?.lines?.[0]==='TOO SOFT'||m.msgs.some(x=>x.lines[0]==='TOO SOFT'),'the DMD says to pull again');
+ P.plunge(m.w,1);let out=false;for(let i=0;i<60*3;i++){m.tick(1/60,{flip:[false,false],pull:0});if(m.w.balls[0]&&m.w.balls[0].x<455){out=true;break;}}
+ assert.ok(out,'a full re-plunge reaches the playfield');
+ // machine-fired (multiball) balls that roll back are re-fired automatically
+ const m2=createMachine({table,players:1,seed:4});m2.startBall();P.plunge(m2.w,1);m2.tick(1/60,{flip:[false,false],pull:0});
+ const b=P.serveBall(m2.w);m2.autoBalls.add(b.id);let refired=false;for(let i=0;i<60*3;i++){const ev=m2.tick(1/60,{flip:[false,false],pull:0});if(ev.some(e=>e.type==='plunge'&&e.ball===b))refired=true;}
+ assert.ok(refired,'an auto-plunged ball sitting on the plunger is fired again');
+ console.log('plunger roll-back OK');
+}
 const keys=Object.keys(totals).sort();console.log(keys.map(k=>`${k}=${totals[k]}`).join(' '));
 console.log('scores',scores.map(s=>s.toLocaleString()).join(', '));
 console.log('points by source',Object.entries(points).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>`${k} ${(v/1e6).toFixed(1)}M`).join(', '));

@@ -9,7 +9,8 @@
 const {tableBuilder,arc,spline}=require("src/engines/pinball/build.js");
 
 function buildTable(){
- const T=tableBuilder({id:'buckethead',name:'Bucketheadland',W:514,H:1067,gravity:1300,slope:6.5,drainY:1040});
+ // timeScale .85: the owner found real speed a bit too fast to follow on a phone (Oct 22).
+ const T=tableBuilder({id:'buckethead',name:'Bucketheadland',W:514,H:1067,gravity:1300,slope:6.5,drainY:1040,timeScale:.85});
  const m=p=>[472-p[0],p[1]];             // lower playfield mirror (centre line x 236)
  // Cabinet: left wall, top arch, right wall; shooter lane on the right.
  T.wall([[12,880],[12,256],...arc(256,256,244,180,360,36).slice(1),[500,1062]],{look:'wood',r:3});
@@ -48,12 +49,13 @@ function buildTable(){
  T.rail('robot',spline([[372,520,0],[372,440,28],[380,360,52],[400,314,64],[430,302,68],[452,332,64],[454,440,55],[446,560,40],[430,680,25],[400,752,10],[400,792,0]],10),{look:'wire',width:46,label:'ROBOT RAMP',exit:{minOut:600}});
  // Upper right flipper (right button) under the Giant Robot.
  T.flipper('flipU',450,380,{len:58,r0:10,r1:5.5,rest:170,up:215,input:1,wUp:50});
- // The Giant Robot: a moving toy (body capsules); its tractor-beam magnet sits in front of it.
- T.toy('giantRobot',404,214,{w:96,h:84,speed:60,label:'GIANT ROBOT',segs:[[362,250,446,250,7],[362,250,362,182,7],[446,250,446,182,7],[362,182,404,158,7],[404,158,446,182,7]]});
+ // The Giant Robot: a moving toy (body capsules); its tractor-beam magnet sits in front of it. The underside slopes so a
+ // hit from the upper flipper falls away to the left instead of straight back onto it (no endless robot loop).
+ T.toy('giantRobot',404,214,{w:96,h:84,speed:60,label:'GIANT ROBOT',segs:[[362,262,446,238,7],[362,262,362,182,7],[446,238,446,182,7],[362,182,404,158,7],[404,158,446,182,7]]});
  T.magnet('beam',404,292,{r:34,force:7000,fling:[-650,700],holdT:1.4});
  [0,1,2,3,4].forEach(i=>T.lamp('rh'+i,372+i*16,272,{r:5,color:'#32d74b'}));
  // Golden Egg: captive ball in a closed channel, a target at the top.
- T.wall([[312,478],[312,350],[348,350],[348,478]],{look:'plastic',r:4});T.post(317,492,4).post(343,492,4);
+ T.wall([[312,478],[312,350],[330,336],[348,350],[348,478]],{look:'plastic',r:4});   // peaked: nothing rests on itT.post(317,492,4).post(343,492,4);
  T.standup('eggTarget',[318,358],[342,358],{label:'EGG',color:'#ffd23f'});T.captive('egg',330,470);
  [0,1,2].forEach(i=>T.lamp('egg'+i,318+i*12,512,{r:5,color:'#ffd23f'}));
  T.lamp('robotArrow',372,616,{shape:'arrow',r:13,color:'#32d74b',label:'ROBOT'});
