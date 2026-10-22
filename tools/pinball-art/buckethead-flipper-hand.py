@@ -4,13 +4,13 @@
 # right hand hanging clear of the guitar, gpt-03 the picking hand) on top of playfield-before-flipper-hand.webp.
 # His wrist sits on the left flipper's pivot; the hand picture swings with the flipper (dropins.js drawFlipperImage).
 # Needs: pip install pillow numpy opencv-python-headless, and node (reads the lamp positions from the table).
-# Usage: python3 tools/pinball-art/buckethead-flipper-hand.py [scale .5] [lean degrees 0] [elbow|wrist]
+# Usage: python3 tools/pinball-art/buckethead-flipper-hand.py [scale .9] [lean degrees 0] [wrist|elbow]
 import json, math, subprocess, sys, os
 import numpy as np, cv2
 from PIL import Image, ImageFilter, ImageDraw
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SRC = ROOT + '/assets/originals/pinball/buckethead/'; OUT = ROOT + '/assets/pinball/buckethead/'
-K = float(sys.argv[1]) if len(sys.argv) > 1 else .5          # Buckethead's size (playfield px per GPT px)
+K = float(sys.argv[1]) if len(sys.argv) > 1 else .9          # Buckethead's size (playfield px per GPT px)
 ROT = float(sys.argv[2]) if len(sys.argv) > 2 else 0          # lean (degrees clockwise about his wrist), brings the strings under the pick
 LAMPS_JS = """const fs=require('fs'),path=require('path'),root=process.argv[1],c={};
 function req(id){if(c[id])return c[id];const e=c[id]={};const src=id==='src/data/userPortraits.js'?'Object.assign(exports,{USER_PORTRAITS:{}});':fs.readFileSync(path.join(root,id),'utf8');new Function('exports','require',src)(e,req);return e;}
@@ -23,21 +23,8 @@ Y0, BL = 1100, 150
 m = Image.new('L', st.size, 255); d = ImageDraw.Draw(m)
 for y in range(BL): d.line([(0, y), (1028, y)], fill=int(255 * (.5 - .5 * math.cos(math.pi * y / BL))))
 pf.paste(st, (0, Y0), m)
-# 2) soft dark spots under the lamps in the new area (the old art has them; the inserts must read over busy art)
-arr = np.asarray(pf).astype(np.float32); H, W = arr.shape[:2]; yy, xx = np.mgrid[0:H, 0:W]
-fac = np.ones((H, W), np.float32)
-for x, y, r in LAMPS:
-  if y < Y0 + 40: continue
-  R = r * 2.2; dd = np.sqrt((xx - x) ** 2 + (yy - y) ** 2) / R
-  fac = np.minimum(fac, np.where(dd < 1, 1 - .55 * (.5 + .5 * np.cos(np.pi * np.clip(dd, 0, 1))), 1))
-arr[..., :3] *= fac[..., None]; pf = Image.fromarray(arr.clip(0, 255).astype(np.uint8))
-# 3) the sign (owner's logo.webp) between the ramps, above the 2X-6X row
-logo = Image.open(OUT + 'logo.webp').convert('RGBA')
-LW = 510; logo = logo.resize((LW, round(LW * logo.height / logo.width)), Image.LANCZOS)
-sh = Image.new('RGBA', logo.size, (0, 0, 0, 0)); sh.putalpha(logo.getchannel('A').point(lambda v: v * .6))
-sh = sh.filter(ImageFilter.GaussianBlur(6)); pf.alpha_composite(sh, (472 - LW // 2 + 4, 1287 + 6)); pf.alpha_composite(logo, (472 - LW // 2, 1287))
-# 4) Buckethead on the left flipper pivot (296,1892): by his elbow (default) or, old version, by his wrist
-ELBOW = len(sys.argv) <= 3 or sys.argv[3] != 'wrist'   # default: the forearm is the flipper (gpt-04/05); 'wrist' = the old hand-only version
+# 4) Buckethead on the left flipper pivot (296,1892): by his wrist (default) or by his elbow
+ELBOW = len(sys.argv) > 3 and sys.argv[3] == 'elbow'   # default: the hand is the flipper; 'elbow' = forearm version (gpt-04/05, owner passed on it)
 if ELBOW:
   # 4) Buckethead (gpt-04): his right arm ends at the elbow in a sleeve opening; its centre (222,615) sits on the flipper pivot,
   # upright, so the forearm picture swings from the elbow and the pick rides over the strings from the bridge to the neck.
@@ -60,12 +47,26 @@ if ROT:   # lean about the wrist (padded so nothing is clipped)
   bh = pad.rotate(-ROT, resample=Image.BICUBIC, center=(WX + 512, WY + 512)); WX, WY = WX + 512, WY + 512
 bw = bh.resize((round(bh.width * K), round(bh.height * K)), Image.LANCZOS); ox, oy = round(PX - WX * K), round(PY - WY * K)
 sh = Image.new('RGBA', bw.size, (0, 0, 0, 0)); sh.putalpha(bw.getchannel('A').point(lambda v: v * .55)); sh = sh.filter(ImageFilter.GaussianBlur(8))
-pf.alpha_composite(sh, (ox + 6, oy + 8)); pf.alpha_composite(bw, (ox, oy))
+def paste(im, x, y): pf.alpha_composite(im, (max(x, 0), max(y, 0)), (max(-x, 0), max(-y, 0)))   # he may hang off the left edge
+paste(sh, ox + 6, oy + 8); paste(bw, ox, oy)
 print('Buckethead at', ox, oy, 'size', bw.size, 'scale', K, 'lean', ROT, 'elbow' if ELBOW else 'wrist')
+# 5) soft dark spots under the lamps in the new area, over Buckethead too (the old art has them; the inserts must read over busy art)
+arr = np.asarray(pf).astype(np.float32); H, W = arr.shape[:2]; yy, xx = np.mgrid[0:H, 0:W]
+fac = np.ones((H, W), np.float32)
+for x, y, r in LAMPS:
+  if y < Y0 + 40: continue
+  R = r * 2.2; dd = np.sqrt((xx - x) ** 2 + (yy - y) ** 2) / R
+  fac = np.minimum(fac, np.where(dd < 1, 1 - .55 * (.5 + .5 * np.cos(np.pi * np.clip(dd, 0, 1))), 1))
+arr[..., :3] *= fac[..., None]; pf = Image.fromarray(arr.clip(0, 255).astype(np.uint8))
+# 6) the sign, over his headstock/bucket (owner's logo.webp) between the ramps, above the 2X-6X row
+logo = Image.open(OUT + 'logo.webp').convert('RGBA')
+LW = 510; logo = logo.resize((LW, round(LW * logo.height / logo.width)), Image.LANCZOS)
+sh = Image.new('RGBA', logo.size, (0, 0, 0, 0)); sh.putalpha(logo.getchannel('A').point(lambda v: v * .6))
+sh = sh.filter(ImageFilter.GaussianBlur(6)); pf.alpha_composite(sh, (472 - LW // 2 + 4, 1287 + 6)); pf.alpha_composite(logo, (472 - LW // 2, 1287))
 pf.convert('RGB').save(OUT + 'playfield.webp', quality=90)
-# 5) flipper-left (600 x 200, pivot (120,100), flipper end (510,100)): the forearm (elbow mode) or the hand alone (wrist mode)
+# 7) flipper-left (600 x 200, pivot (120,100), flipper end (510,100)): the forearm (elbow mode) or the hand alone (wrist mode)
 if ELBOW:
-  # 5) flipper-left = the forearm (gpt-05): elbow end (150,470) on the pivot (120,100), pick tip (1470,524) at ~545
+  # flipper-left = the forearm (gpt-05): elbow end (150,470) on the pivot (120,100), pick tip (1470,524) at ~545
   hd = Image.open(SRC + 'gpt-05-strumming-forearm.webp').convert('RGBA')
   P0, P1 = (150, 470), (1470, 524)
   ang = math.degrees(math.atan2(P1[1] - P0[1], P1[0] - P0[0])); hd = hd.rotate(ang, resample=Image.BICUBIC, center=P0)

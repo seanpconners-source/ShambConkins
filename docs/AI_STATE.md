@@ -405,11 +405,11 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   at y 1287 between the ramps, Buckethead scale .5 upright (args `0.5 0`; a .58/26° lean put the pick on the strings but the
   owner disliked the lean and it was reverted) with his hanging hand inpainted out and his wrist on the flipL pivot
   (playfield px 296,1892), hand cut at the cuff, scaled to pivot→pick 120→545, slimmed .85, dark edge + warm glow).
-  ELBOW VERSION (Oct 22, default of the script): owner's GPT art from `docs/pinball-art/buckethead/gpt-strum/` (originals gpt-04 body with
-  the arm ending in a sleeve opening, gpt-05 forearm+hand). Body upright K .5 with the sleeve-opening centre (222,615) on the flipL pivot;
-  flipper-left = the forearm (elbow (150,470) → pivot, pick (1470,524) → 545, SQ .95). The pick sits on the strings at the bridge pickup
-  at rest and passes over them to the neck when flipped. He sits ~90 px lower than before (bucket top y 1595), so the guitar's lower bout
-  is partly under the apron. `... 0.5 0 wrist` rebuilds the old hand-only version.  GPT kit: `docs/pinball-art/buckethead/gpt/`. Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
+  BIGGER VERSION (Oct 22, current, script default `0.9 0 wrist`): the owner passed on the lean and on an elbow/forearm
+  version (GPT art kept in `docs/pinball-art/buckethead/gpt-strum/` + gpt-04/05 originals, `... 0.5 0 elbow`). Buckethead upright
+  at scale .9 with the wrist on the pivot, so the pick crosses the strings at the bridge pickup on the up-stroke; he now sits
+  UNDER the BUCKETHEADLAND sign and the 2X-6X lamp spots (both composited after him); bucket top pokes above the sign, guitar
+  lower bout partly under the apron.  GPT kit: `docs/pinball-art/buckethead/gpt/`. Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - **King Gizzard pinball (Oct 22 2026, table 3, game `king-gizzard-pinball`, table id `king-gizzard`, files
   `pinball/tables/gizzard*.js`):** THE RATS' NEST = an enclosed upper playfield (inside the loop's inner wall, arc r190
