@@ -1,5 +1,9 @@
 # King Gizzard & the Lizard Wizard pinball: art templates
 
+**Making the art with ChatGPT? Start with `gpt/GPT-INSTRUCTIONS.txt`**: step-by-step, what to upload (a layout sketch
+for the playfield, framing guides for the rest), a prompt to paste for each picture, what to check and how to ask for
+fixes. `gpt/how-the-table-looks-now.png` shows the whole table with every part the game draws on top.
+
 Each picture here is the table's current painted art for one drop-in slot, at the size and framing that slot uses.
 Repaint it (same size, same transparency), then save it as `assets/pinball/king-gizzard/<slot>.png` (or `.webp`/`.jpg`)
 and rebuild. Missing slots keep the painted art. Don't put these unchanged copies in `assets/pinball/`: the painted

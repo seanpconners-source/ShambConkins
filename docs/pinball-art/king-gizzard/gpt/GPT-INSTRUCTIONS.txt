@@ -1,0 +1,143 @@
+KING GIZZARD & THE LIZARD WIZARD PINBALL: MAKING THE ART WITH CHATGPT
+=====================================================================
+
+WHAT YOU'RE MAKING
+Six pictures for the King Gizzard table: the playfield (the big one), the backglass, the apron, the logo, the
+Lizard Wizard and the pop-bumper cap. Each one below has: the file(s) to upload, a prompt to paste, what to check
+in the result, and what to type if it's wrong. GPT doesn't need any measurements: the uploaded sketches show it the
+layout. Claude does the exact fitting afterwards (sizes, transparency, darkening under the lights).
+
+Look at how-the-table-looks-now.png first: it's the whole table with every part the game draws on top of the art
+(the upper "Rats' Nest" playfield with its two mini flippers, the bumpers, the yellow ramp, the snake, the lights).
+The game draws all of those itself, so the pictures must NOT contain them.
+
+THE TWO MISTAKES GPT MAKES (seen on the Black Sabbath table)
+- It paints things the game already draws, so they show up twice. Here that's THE SNAKE: the game draws an
+  animated rattlesnake up the right side. Never let GPT paint a snake on the playfield.
+- It puts the title wherever it likes. The title must sit in the yellow box of the sketch, not higher.
+
+Use a NEW ChatGPT chat for each picture. Download each result at full size.
+
+
+PICTURE 1: the playfield (the important one)
+---------------------------------------------
+Upload: upload-1-layout-sketch.png
+Prompt:
+
+  I'm making the painted playfield art for a pinball table themed on the band King Gizzard & the Lizard Wizard.
+  The attached image is ONLY a layout sketch: follow where each area is, but do not draw any of its lines, boxes,
+  labels, words or flat colours. Paint a tall portrait picture (about 1 wide by 2 tall, for example 1024 x 2048)
+  in a 1970s psychedelic gig-poster style: rich airbrushed colours, deep night purple with violet, acid green,
+  tangerine and hot pink, a little film grain. Follow the sketch area by area:
+  - The rounded top, inside the dark curved band, is a separate little round playfield: the green, cratered
+    surface of a small alien planet, with a few cartoon rats scurrying on it. Give it a slightly raised rim and a
+    soft shadow along its bottom edge.
+  - The dark curved band around it and the dark strips down both sides are racing lanes: keep them plain and
+    very dark (deep purple-black), with no objects in them.
+  - The grey band on the right marks where an animated snake will be added later. Keep that strip plain and
+    medium-dark there (just the background), and do NOT paint any snake, serpent or worm anywhere in the picture.
+  - Under the planet, behind the three circles: melting concentric rings glowing softly, nothing important (round
+    bumpers will sit on top).
+  - The middle: a Gila monster lizard crawling left to right where the sketch says, and below it a big glowing
+    nine-sided NONAGON emblem with melting psychedelic rings radiating out from it across the whole table.
+  - Inside the yellow box: the words KING GIZZARD (big) and & THE LIZARD WIZARD (smaller, underneath) in bubbly,
+    melting 1970s psychedelic lettering, tangerine to hot pink with a dark outline, filling the box, no higher.
+  - Inside the green box: a lizard wizard standing full length, facing us: green lizard head with a yellow eye,
+    a tall starry violet pointed hat, a violet robe with gold stars, a wooden staff with a glowing green orb.
+  - The black bottom area is hidden; just continue the background there.
+  Flat top-down view like real pinball playfield art, no perspective. No pinball parts: no flippers, bumpers,
+  ramps, balls, lights or holes. No other text anywhere. No frame or border.
+
+Check (and what to type if it's wrong):
+- No snake anywhere: "Remove the snake completely, keep everything else the same."
+- The title is inside the box area (just above the wizard), not near the top: "Move the KING GIZZARD title down
+  so it sits just above the wizard, where the yellow box was in my sketch."
+- No sketch words, boxes or outlines copied in: "Remove all the labels and box outlines from my sketch."
+- The planet is round at the top and the side lanes are dark and empty.
+- It's tall (about twice as tall as wide): "Make it a taller portrait, 1 by 2, by extending the bottom."
+- No pinball parts painted in: "Remove the flippers / bumpers / balls."
+
+
+PICTURE 2: the Lizard Wizard (shown on the table only if you don't use a custom playfield)
+------------------------------------------------------------------------------------------
+Upload: upload-2-wizard-pose.png (the pose and framing)
+Prompt:
+
+  Use the attached image ONLY as a guide for the pose and framing; repaint it as a detailed 1970s psychedelic
+  illustration. A lizard wizard standing full length, facing us: green scaly lizard head with a long snout and a
+  yellow eye, a tall pointed violet hat covered in gold stars, a violet robe with gold stars, holding a wooden staff
+  topped by a glowing green orb in his left hand (on the right of the picture). Soft violet rim light, rich
+  airbrushed colours. The whole figure inside the picture with a little space around it. Transparent background
+  (a real transparent PNG, not a checkerboard pattern and not a coloured background). Square image, 1024 x 1024.
+
+Check: real transparency ("Make the background truly transparent, with no checkerboard and no background colour");
+the hat tip and the staff orb are not cut off; no text.
+
+
+PICTURE 3: the backglass (the intro card before each game)
+-----------------------------------------------------------
+Upload: upload-3-backglass-layout.png (the layout)
+Prompt:
+
+  Paint a vintage 1970s pinball backglass, portrait 3:4 (1200 x 1600), King Gizzard & the Lizard Wizard themed,
+  using the attached image ONLY as a layout guide: the title across the top, a lizard wizard in the middle, a
+  rattlesnake coiled at his feet. The lizard wizard: green lizard head with a yellow eye, a starry violet pointed
+  hat and robe, raising a glowing green staff. Behind him a spinning golden nonagon (nine-sided) halo and melting
+  psychedelic rings in violet, tangerine, acid green and hot pink; a small green planet with rats flying toward it
+  in the sky. Across the top the title KING GIZZARD & THE LIZARD WIZARD in bubbly melting psychedelic lettering.
+  Keep the wizard and the snake in the middle band of the picture (that band is also used as a wide banner). Rich
+  airbrushed colours, high detail, no other text.
+
+Check: the title is spelled right; the wizard's head and the snake sit in the middle third (top-to-bottom) of the
+picture: "Move the wizard down so his head is in the middle of the picture."
+
+
+PICTURE 4: the apron (the panel under the flippers, with the rule cards)
+-------------------------------------------------------------------------
+Upload: upload-4-apron-shape.png (the shape and the card positions)
+Prompt:
+
+  Repaint the attached pinball apron (the panel under the flippers) as rich artwork, keeping exactly the same
+  wide shape, the same V-shaped empty area at the top middle, and the same positions for the two cards and the
+  centre plate. Deep purple with acid-green trim and psychedelic swirls in the two side wings. Left card: purple
+  header "KING GIZZARD", cream card with "3 BALLS PER GAME" and "G-I-L-A LIGHTS SNAKE LOCKS". Right card: purple
+  header "SPELL R-A-T-S", cream card with "IN THE NEST: PLANET B" and "EVERY 2ND: EXTRA BALL". Centre plate:
+  "NONAGON INFINITY". Flat front-on view. Wide image 2.4:1 (for example 1536 x 640).
+
+Check: the card text is spelled exactly right ("Fix the spelling on the cards: ..."); the cards stay in the bottom
+third (the top middle is hidden behind the flippers).
+
+
+PICTURE 5: the logo (shown in the score banner, and on the table only without a custom playfield)
+--------------------------------------------------------------------------------------------------
+Upload: upload-5-logo-frame.png (the framing)
+Prompt:
+
+  Make a pinball logo using the attached image ONLY as a guide for the wide layout: the words KING GIZZARD (big)
+  and & THE LIZARD WIZARD (smaller, underneath) in bubbly, melting 1970s psychedelic lettering, a tangerine to hot
+  pink gradient with a thick dark outline and a soft acid-green glow. Fill the picture from edge to edge with only
+  a small margin. Transparent background (a real transparent PNG, not a checkerboard). Wide image, 1536 x 512.
+
+Check: spelling; real transparency; the letters reach close to the left and right edges.
+
+
+PICTURE 6: the pop-bumper cap
+-----------------------------
+Upload: upload-6-bumper-shape.png (the shape)
+Prompt:
+
+  Repaint the attached round pop-bumper cap as a detailed painted pinball part seen straight from above: a single
+  psychedelic third eye inside a golden nine-sided nonagon on a violet disc, with a glossy plastic sheen. Bold,
+  simple shapes (it's shown very small). The circle fills the square image edge to edge. No text. Square image,
+  1024 x 1024.
+
+Check: the circle touches all four edges; no text.
+
+
+SEND BACK TO CLAUDE
+-------------------
+The pictures you like (any of the six). Claude fits each one to its slot, paints out anything the game already draws
+(a stray snake, bumpers), darkens the art a little under the lights so they read, checks the whole table in the game
+on a phone and on a desktop, shows you before adding it, and then pushes it to TESTver.
+The exact technical spec for every picture (sizes, what's hidden, where every light sits) is in ../IMAGE-SPECS.txt;
+you don't need it for ChatGPT.
