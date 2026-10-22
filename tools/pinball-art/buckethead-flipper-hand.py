@@ -24,7 +24,30 @@ m = Image.new('L', st.size, 255); d = ImageDraw.Draw(m)
 for y in range(BL): d.line([(0, y), (1028, y)], fill=int(255 * (.5 - .5 * math.cos(math.pi * y / BL))))
 pf.paste(st, (0, Y0), m)
 # 4) Buckethead on the left flipper pivot (296,1892): by his wrist (default) or by his elbow
+# the guitar's lower left edge where his hand hung over it (gpt-02 px): the fill is split along it so cream never smears into the robe
+GUITAR = [(380,690),(372,715),(367,740),(366,770),(368,800),(372,825),(380,850),(390,868),(403,881),(420,893),(445,904),(480,912),(530,918),(640,700)]
+def fill_split(a, hole):
+  """Fills hole (uint8 mask) in RGBA array a: the guitar side is inpainted from guitar pixels only; the robe side is his robe in
+  the shadow of the arm (flat dark cloth with a little grain), ending at his body's left edge (red rim light, then background)."""
+  H2, W2 = a.shape[:2]; yy2, xx2 = np.mgrid[0:H2, 0:W2].astype(np.float32)
+  g = Image.new('L', (W2, H2), 0); ImageDraw.Draw(g).polygon(GUITAR, fill=255); g = np.asarray(g) > 0
+  band = cv2.dilate(hole, np.ones((25, 25), np.uint8)) > 0
+  gm = ((hole > 0) | (band & ~g)).astype(np.uint8) * 255
+  fg = cv2.inpaint(np.ascontiguousarray(a[..., :3]), gm, 9, cv2.INPAINT_TELEA).astype(np.float32)
+  ex = 300 + (yy2 - 760) * 30 / 160 - xx2                       # body's left edge (seen below the sleeve at y 900, x ~330)
+  rim = np.exp(-np.clip(-ex, 0, None) / 4)[..., None]; body = np.clip(.5 - ex / 2, 0, 1)
+  grain = cv2.GaussianBlur(np.random.default_rng(7).normal(0, 5, (H2, W2)).astype(np.float32), (3, 3), .8)[..., None]
+  fr = np.array([22, 12, 20], np.float32) + grain + rim * np.array([85, 20, 14], np.float32)
+  gs = cv2.GaussianBlur(g.astype(np.float32), (5, 5), 1.2)                       # 3 px blend across the guitar outline
+  shade = 1 - .4 * np.clip(cv2.GaussianBlur(g.astype(np.float32), (13, 13), 4) - g, 0, 1)   # robe darker against the guitar
+  mix = fg * gs[..., None] + fr * shade[..., None] * (1 - gs[..., None])
+  al = np.maximum(gs, body) * 255
+  w = cv2.GaussianBlur((hole > 0).astype(np.float32), (7, 7), 1.5)[..., None]     # feathered into the untouched picture
+  a[..., :3] = (a[..., :3] * (1 - w) + mix * w).clip(0, 255).astype(np.uint8)
+  a[..., 3] = (a[..., 3] * (1 - w[..., 0]) + al * w[..., 0]).clip(0, 255).astype(np.uint8)
 ELBOW = len(sys.argv) > 3 and sys.argv[3] == 'elbow'   # default: the hand is the flipper; 'elbow' = forearm version (gpt-04/05, owner passed on it)
+PX, PY = 296, 1892
+DY = 0 if ELBOW else 44   # owner, Oct 22: he sits lower (with the 2X-6X lamps) so the pick rides over the strings
 if ELBOW:
   # 4) Buckethead (gpt-04): his right arm ends at the elbow in a sleeve opening; its centre (222,615) sits on the flipper pivot,
   # upright, so the forearm picture swings from the elbow and the pick rides over the strings from the bridge to the neck.
@@ -32,17 +55,26 @@ if ELBOW:
   for y in range(930, 1024): a[y, :, 3] = (a[y, :, 3] * max(0, 1 - (y - 930) / 70)).astype(np.uint8)
   bh = Image.fromarray(a); WX, WY = 222, 615
 else:
-  bh = Image.open(SRC + 'gpt-02-buckethead-new-pose.webp').convert('RGBA'); a = np.asarray(bh).copy()
+  # 4) Buckethead (gpt-02) with his hanging hand removed; he sits DY lower but his wrist stays on the pivot, so the hanging
+  # sleeve is shortened (squashed up from mid-arm, the cuff lifted by the full amount). Everything the hand and the old
+  # sleeve end uncover is filled in one go (fill_split).
+  bh = Image.open(SRC + 'gpt-02-buckethead-new-pose.webp').convert('RGBA'); a = np.asarray(bh).copy(); H2, W2 = a.shape[:2]
+  WX, WY = 345, 795
   hand = [(307,785),(372,780),(388,825),(400,865),(406,892),(398,904),(382,918),(360,926),(334,918),(315,892),(309,850),(305,810)]
   mk = Image.new('L', bh.size, 0); ImageDraw.Draw(mk).polygon(hand, fill=255); mk = np.asarray(mk.filter(ImageFilter.MaxFilter(5)))
-  rgb = cv2.inpaint(np.ascontiguousarray(a[..., :3]), mk, 9, cv2.INPAINT_TELEA); a[..., :3] = np.where(mk[..., None] > 0, rgb, a[..., :3])
-  # alpha inside the hand: the robe/guitar fill only where the surroundings were solid (left of the robe edge it stays clear)
-  al = a[..., 3].astype(np.float32); alf = cv2.inpaint(al.astype(np.uint8), mk, 9, cv2.INPAINT_TELEA); a[..., 3] = np.where(mk > 0, alf, a[..., 3])
+  arm = [(240,365),(205,450),(188,540),(184,620),(203,700),(214,780),(222,852),(260,870),(304,868),(304,812),(376,800),
+         (378,760),(370,705),(356,690),(334,610),(322,520),(318,365)]
+  am = Image.new('L', (W2, H2), 0); ImageDraw.Draw(am).polygon(arm, fill=255); am = np.asarray(am.filter(ImageFilter.GaussianBlur(2))).astype(np.float32)
+  am = am * (1 - mk / 255)                                       # no skin in the sleeve layer
+  dg = DY / K; yy2 = np.arange(H2, dtype=np.float32); t = np.clip((yy2 - 520) / (790 - 520), 0, 1); f = t * t * (3 - 2 * t)
+  mapy = np.repeat((yy2 + dg * f)[:, None], W2, 1).astype(np.float32); mapx = np.repeat(np.arange(W2, dtype=np.float32)[None], H2, 0)
+  layer = np.dstack([a[..., :3], (a[..., 3] * am / 255).astype(np.uint8)])
+  wl = cv2.remap(layer, mapx, mapy, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+  hole = ((mk > 0) | ((am > 40) & (wl[..., 3] < 200))).astype(np.uint8) * 255
+  fill_split(a, cv2.dilate(hole, np.ones((5, 5), np.uint8)))
+  base = Image.fromarray(a); base.alpha_composite(Image.fromarray(wl)); a = np.asarray(base).copy()   # cuff now dg higher: on the pivot
   for y in range(930, 1024): a[y, :, 3] = (a[y, :, 3] * max(0, 1 - (y - 930) / 70)).astype(np.uint8)
   bh = Image.fromarray(a)
-  WX, WY = 345, 795
-PX, PY = 296, 1892
-DY = 0 if ELBOW else 24   # owner, Oct 22: scooted down a little (with the 2X-6X lamps) so the pick rides over the strings
 if ROT:   # lean about the wrist (padded so nothing is clipped)
   pad = Image.new('RGBA', (2048, 2048), (0, 0, 0, 0)); pad.alpha_composite(bh, (512, 512))
   bh = pad.rotate(-ROT, resample=Image.BICUBIC, center=(WX + 512, WY + 512)); WX, WY = WX + 512, WY + 512

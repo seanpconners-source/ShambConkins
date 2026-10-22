@@ -86,7 +86,7 @@ function buildTable(){
  T.lamp('kickback',31,812,{r:8,color:'#ff3b30',label:'KICK'});T.lamp('outR',441,812,{r:7,color:'#ff3b30'});
  T.lamp('inL',72,780,{r:7,color:'#ffd23f'});T.lamp('inR',400,780,{r:7,color:'#ffd23f'});
  // Centre inserts: bonus X ladder, shoot again.
- ['2','3','4','5','6'].forEach((t,i)=>T.lamp('bx'+t,176+i*30,750,{r:10,color:'#ffd23f',label:t+'X'}));
+ ['2','3','4','5','6'].forEach((t,i)=>T.lamp('bx'+t,176+i*30,760,{r:10,color:'#ffd23f',label:t+'X'}));
  T.lamp('shootAgain',236,905,{r:13,color:'#ff3b30',label:'SHOOT AGAIN',shape:'circle'});
  T.lamp('jordan',236,620,{r:22,shape:'star',color:'#ff2d55',label:'JORDAN'});
  T.lamp('spinner',35,520,{r:7,color:'#64d2ff'});
