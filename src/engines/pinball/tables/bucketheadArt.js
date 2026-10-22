@@ -68,6 +68,25 @@ const art={
   x.save();x.translate(p.x,p.y);for(let i=0;i<12;i++){x.fillStyle=i%2?(lit?'#ffffff':'#ece6d8'):(lit?'#ff3355':'#c8102e');x.beginPath();x.moveTo(0,0);x.arc(0,0,r*.86,i/12*TAU,(i+1)/12*TAU);x.closePath();x.fill();}
   x.fillStyle=lit?'#fffbe0':'#f5f2ea';x.beginPath();x.arc(0,0,r*.42,0,TAU);x.fill();x.fillStyle='#1a1a1a';x.font='bold 9px Arial';x.textAlign='center';x.textBaseline='middle';x.fillText('BH',0,.5);x.restore();
  },
+ // The Giant Robot toy (moves with p.ox/oy; flashes when hit; eyes blaze while the tractor beam is armed).
+ toy(x,p,t){
+  const cx=p.x+(p.ox||0),cy=p.y+(p.oy||0),hit=p.flash>0,walk=Math.sin(t*6)*(Math.abs(p.ox||0)>.5?3:0);
+  x.save();x.translate(cx,cy);
+  x.fillStyle='rgba(0,0,0,.45)';x.fillRect(-40,-28,90,76);
+  // legs + feet
+  x.fillStyle='#3a404c';x.fillRect(-30,22+walk,18,16);x.fillRect(12,22-walk,18,16);x.fillStyle='#5d6573';x.fillRect(-34,34+walk,26,8);x.fillRect(8,34-walk,26,8);
+  // arms
+  x.fillStyle='#4a5160';x.fillRect(-50,-22,10,40);x.fillRect(40,-22,10,40);x.fillStyle='#c8102e';x.beginPath();x.arc(-45,22,7,0,TAU);x.arc(45,22,7,0,TAU);x.fill();
+  // torso
+  const g=x.createLinearGradient(-42,0,42,0);g.addColorStop(0,'#6c7686');g.addColorStop(.5,hit?'#ffffff':'#d7dde8');g.addColorStop(1,'#596170');x.fillStyle=g;x.fillRect(-42,-30,84,58);
+  x.strokeStyle='#22262e';x.lineWidth=2;x.strokeRect(-42,-30,84,58);
+  x.fillStyle='#1b1f27';x.fillRect(-26,-18,52,26);for(let i=0;i<5;i++){x.fillStyle=(Math.floor(t*8)+i)%3?'#32d74b':'#0b3d14';x.fillRect(-22+i*10,-12,6,6);}
+  x.fillStyle='#c8102e';x.fillRect(-26,12,52,6);
+  // head
+  x.fillStyle='#8a94a6';x.fillRect(-20,-52,40,22);x.strokeRect(-20,-52,40,22);x.strokeStyle='#8a94a6';x.beginPath();x.moveTo(0,-52);x.lineTo(0,-62);x.stroke();x.fillStyle=(Math.floor(t*3)%2)?'#ff3b30':'#5a0f0b';x.beginPath();x.arc(0,-63,3,0,TAU);x.fill();
+  const eye=p.armed||hit?'#ff2d2d':'#ff9f0a';x.fillStyle=eye;x.fillRect(-14,-46,10,6);x.fillRect(4,-46,10,6);
+  x.restore();
+ },
  slingArt(x,p){x.save();x.fillStyle='rgba(255,255,255,.5)';const [ax,ay]=p.a,[bx,by]=p.b,[cx,cy]=p.c;x.beginPath();x.moveTo((ax*2+bx+cx)/4,(ay*2+by+cy)/4);x.lineTo((ax+bx*2+cx)/4,(ay+by*2+cy)/4);x.lineTo((ax+bx+cx*2)/4,(ay+by+cy*2)/4);x.closePath();x.fill();x.restore();},
  backbox(x,W,H,dx,dw,t){
   const side=dx-8;const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#2a0b3d');g.addColorStop(1,'#4a0c27');x.fillStyle=g;x.fillRect(0,0,W,H);

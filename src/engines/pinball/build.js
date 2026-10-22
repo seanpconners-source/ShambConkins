@@ -10,7 +10,7 @@ function bezier(p0,p1,p2,p3,n=16){const pts=[];for(let i=0;i<=n;i++){const t=i/n
 function spline(pts,n=8){const out=[];for(let i=0;i<pts.length-1;i++){const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)];for(let j=0;j<n;j++){const t=j/n,t2=t*t,t3=t2*t;out.push(p1.map((_,k)=>.5*(2*p1[k]+(-p0[k]+p2[k])*t+(2*p0[k]-5*p1[k]+4*p2[k]-p3[k])*t2+(-p0[k]+3*p1[k]-3*p2[k]+p3[k])*t3)));}}out.push(pts[pts.length-1].slice());return out;}
 
 function tableBuilder({id,name,W=514,H=1067,gravity=1300,slope=6.5,drainY=1040}={}){
- const def={id,name,W,H,gravity,slope,drainY,segs:[],sensors:[],lines:[],holes:[],rails:[],magnets:[],flippers:[],lamps:[],drops:{},plunger:null,parts:{}};
+ const def={id,name,W,H,gravity,slope,drainY,segs:[],sensors:[],lines:[],holes:[],rails:[],magnets:[],flippers:[],lamps:[],drops:{},toys:[],captives:[],plunger:null,parts:{}};
  const part=(id,kind,extra={})=>{if(id){def.parts[id]={id,kind,...extra};}return id;};
  const seg=(a,b,o={})=>{def.segs.push({ax:a[0],ay:a[1],bx:b[0],by:b[1],r:o.r??3,kind:o.kind||'wall',e:o.e,fr:o.fr,id:o.id||null,pass:o.pass||null,look:o.look||null,layer:o.layer||null});};
  const T={def,arc,bezier,spline,
@@ -33,11 +33,19 @@ function tableBuilder({id,name,W=514,H=1067,gravity=1300,slope=6.5,drainY=1040}=
   // Diverter / post that the rules can raise or drop (seg.on via the part state).
   diverter(id,a,b,o={}){part(id,'diverter',{a,b,up:o.up!==false});seg(a,b,{kind:'diverter',id,r:o.r||4,e:.35,look:'diverter'});return T;},
   // Kicker hole / scoop / saucer / lock: catches a ball slower than maxSpeed; the rules eject it with eject=[vx,vy].
-  hole(id,x,y,o={}){part(id,'hole',{x,y,r:o.r||15,label:o.label||''});def.holes.push({id,x,y,r:o.r||15,maxSpeed:o.maxSpeed??1e9,hold:o.hold??.9,eject:o.eject||[0,1200],toRail:o.toRail||null});return T;},
+  // VUK (vertical up-kicker): a hole with toRail:'<railId>' fires the ball up onto that wireform at railSpeed mm/s.
+  hole(id,x,y,o={}){part(id,'hole',{x,y,r:o.r||15,label:o.label||'',vuk:!!o.toRail});def.holes.push({id,x,y,r:o.r||15,maxSpeed:o.maxSpeed??1e9,hold:o.hold??.9,eject:o.eject||[0,1200],toRail:o.toRail||null,railSpeed:o.railSpeed||2200});return T;},
   // Ramp or wireform: the ball rides pts [[x,y,z],...] (z = mm above the playfield); entry is a line at the start,
   // the ball must cross it moving along the path. exit: {hole} to feed a hole, else it drops off the end.
-  rail(id,pts,o={}){part(id,'rail',{look:o.look||'wire',color:o.color,width:o.width||40});def.rails.push({id,pts,look:o.look||'wire',width:o.width||40,entry:o.entry||null,exit:o.exit||{},minSpeed:o.minSpeed||0});return T;},
-  magnet(id,x,y,o={}){part(id,'magnet',{x,y,r:o.r||40});def.magnets.push({id,x,y,r:o.r||40,force:o.force||9000});return T;},
+  // noEntry: only a VUK can put the ball on it.
+  rail(id,pts,o={}){part(id,'rail',{look:o.look||'wire',color:o.color,width:o.width||40});def.rails.push({id,pts,look:o.look||'wire',width:o.width||40,entry:o.entry||null,exit:o.exit||{},minSpeed:o.minSpeed||0,noEntry:!!o.noEntry});return T;},
+  // Magnet under the playfield. Rules switch parts[id].on (pull) and parts[id].grab (catch, hold holdT s, throw fling).
+  magnet(id,x,y,o={}){part(id,'magnet',{x,y,r:o.r||40,on:false,grab:false,fling:o.fling||[0,400],holdT:o.holdT??1.2});def.magnets.push({id,x,y,r:o.r||40,force:o.force||9000});return T;},
+  // Toy: a moving target (capsules [[ax,ay,bx,by,r],...] at rest pose). Rules set parts[id].tx/ty (offset from rest)
+  // and it glides there at speed mm/s; a hit fires a 'toy' event. x,y = the drawing centre.
+  toy(id,x,y,o={}){part(id,'toy',{x,y,w:o.w||80,h:o.h||70,label:o.label||'',tx:0,ty:0});def.toys.push({id,speed:o.speed||120,segs:(o.segs||[]).map(([ax,ay,bx,by,r])=>({ax,ay,bx,by,r:r??6}))});return T;},
+  // Captive ball: sits in a closed channel (build the channel walls + posts yourself) and is knocked by the real ball.
+  captive(id,x,y){part(id,'captive',{x,y});def.captives.push({id,x,y});return T;},
   // Flipper: pivot (x,y), length, rest/up angles in degrees, input 0 = left button, 1 = right button.
   flipper(id,x,y,o={}){part(id,'flipper',{});def.flippers.push({id,x,y,len:o.len||78,r0:o.r0||12,r1:o.r1||6.5,rest:o.rest*DEG,up:o.up*DEG,input:o.input??0,wUp:o.wUp||55,wDown:o.wDown||22,acc:o.acc||3500,e:o.e??.25,color:o.color});return T;},
   plunger(x0,x1,y,o={}){def.plunger={x0,x1,y,travel:o.travel||36,vmin:o.vmin||900,vmax:o.vmax||3300,auto:o.auto||2600};return T;},

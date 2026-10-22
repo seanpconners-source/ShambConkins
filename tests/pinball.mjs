@@ -13,7 +13,7 @@ const sizes=args.filter(a=>/^\d+x\d+$/.test(a)).map(s=>s.split('x').map(Number))
 for(const [w,h] of sizes){
  const {browser,page,errors}=await open({viewport:{width:w,height:h}});const tag=`pb-${solo?'solo-':''}${w}x${h}`;
  const shot=name=>page.screenshot({path:`${out}/${tag}-${name}.png`});
- const D=()=>page.evaluate(()=>{const d=window.ShambConkins.store.session?.debug;if(d?.engine!=='pinball')return null;const m=d.m;return {phase:d.phase,mphase:m.phase,cur:m.cur,ball:m.players[m.cur].ball,scores:d.scores,balls:m.w.balls.length,z:d.R.cam.z,flipA:m.w.flippers.map(f=>+f.a.toFixed(2))};});
+ const D=()=>page.evaluate(()=>{const d=window.ShambConkins.store.session?.debug;if(d?.engine!=='pinball')return null;const m=d.m;return {phase:d.phase,mphase:m.phase,cur:m.cur,ball:m.players[m.cur].ball,scores:d.scores,balls:m.w.balls.length,z:d.R.cam.z,flipA:m.w.flippers.find(f=>f.id==='flipL').a};});
  try{await page.waitForFunction(()=>window.ShambConkins?.requestGame,null,{timeout:40000});}catch{fail(`${tag} app did not boot: ${errors.join(' | ')}`);await browser.close();continue;}
  const ready=()=>page.evaluate(()=>document.querySelector('.pass-overlay [data-ready]')?.click());
  if(solo)await page.evaluate(()=>{const S=window.ShambConkins;S.store.profile.settings.solo={on:true,who:0,level:'normal'};});
@@ -29,7 +29,7 @@ for(const [w,h] of sizes){
  await page.waitForTimeout(700);await shot('launched');
  // touch: hold the left half → left flipper up
  const rest=d.flipA;await page.mouse.move(w*.2,h*.8);await page.mouse.down();await page.waitForTimeout(150);d=await D();await page.mouse.up();
- if(!(d.flipA[0]<rest[0]-.5))fail(`${tag} left flipper did not rise: ${rest} -> ${d.flipA}`);
+ if(!(d.flipA<rest-.5))fail(`${tag} left flipper did not rise: ${rest} -> ${d.flipA}`);
  await page.evaluate(()=>{window.ShambConkins.store.session.debug.auto=true;});
  await page.waitForTimeout(5000);await shot('play');
  // drain every ball until the game ends

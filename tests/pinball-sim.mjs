@@ -13,7 +13,7 @@ const P=load('src/engines/pinball/physics.js'),{createMachine}=load('src/engines
 const def=table.buildTable();
 // Inside the cabinet outline (x within walls, y above the drain).
 const inside=b=>b.x>def.segs.reduce((a,s)=>Math.min(a,s.ax,s.bx),1e9)-1&&b.x<def.segs.reduce((a,s)=>Math.max(a,s.ax,s.bx),-1e9)+1&&b.y>-1;
-const totals={},ballTimes=[],jams=[];let escapes=0,maxV=0,scores=[],long=0,started=0;
+const totals={},points={},ballTimes=[],jams=[];let escapes=0,maxV=0,scores=[],long=0,started=0;
 for(let g=0;g<games;g++){
  const m=createMachine({table,players:1,seed:1000+g});m.startBall();started++;let t=0,ballT=0,hold=[0,0],pull=0,plungeAt=.6+((g*7)%5)*.15;const dt=1/60;
  for(;;){
@@ -24,7 +24,9 @@ for(let g=0;g<games;g++){
   if(m.phase==='plunge'){pull=Math.min(1,pull+dt*1.6);}
   const input={flip,pull:m.phase==='plunge'&&t<plungeAt?pull:0};
   if(m.phase==='plunge'&&t>=plungeAt){P.plunge(m.w,.55+((g*13)%9)*.05);}
-  const ev=m.tick(dt,input);t+=dt;ballT+=dt;
+  const before=m.players[m.cur].score,ev=m.tick(dt,input);t+=dt;ballT+=dt;
+  // score by source: credit this frame's points to its events (or to timers/modes when no event)
+  const gain=m.players[m.cur].score-before;if(gain){const k=ev.filter(e=>!/flip|wallHit|ballClick|spinnerHit/.test(e.type)).map(e=>e.type+(e.id?':'+e.id:''))[0]||'timer/mode';points[k]=(points[k]||0)+gain;}
   for(const e of ev){const k=e.type+(e.id?':'+e.id:'');totals[k]=(totals[k]||0)+1;if(e.type==='drain'&&e.ball.y<def.drainY)escapes++;}
   for(const b of m.w.balls){maxV=Math.max(maxV,Math.hypot(b.vx,b.vy));if(b.state==='free'&&!inside(b)){escapes++;b.y=2000;}}
   if(m.phase==='drained'){m.endBall();ballTimes.push(ballT);ballT=0;const nx=m.advance();if(!nx)break;m.startBall();started++;t=0;pull=0;plungeAt=.6+((g*7+ballTimes.length)%5)*.15;}
@@ -36,10 +38,11 @@ for(let g=0;g<games;g++){
 }
 const keys=Object.keys(totals).sort();console.log(keys.map(k=>`${k}=${totals[k]}`).join(' '));
 console.log('scores',scores.map(s=>s.toLocaleString()).join(', '));
+console.log('points by source',Object.entries(points).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>`${k} ${(v/1e6).toFixed(1)}M`).join(', '));
 console.log('ball times',ballTimes.map(t=>t.toFixed(0)).join(' '),'max speed',maxV.toFixed(0));
 assert.equal(escapes,0,'balls stay inside the cabinet');
 console.log('balls',started,'kept alive past 240 s by the bot',long,'jams',jams.join(' ')||'none');
 assert.equal(jams.length,0,'no jammed balls');
 assert.ok((totals['plunge']||0)>=started,'every ball plunged');
-for(const k of ['bumper','sling','spin','drop','rail:coaster','rail:robot','hole:haunted','standup','rollover:laneB'])assert.ok(Object.keys(totals).some(x=>x.startsWith(k)),`bot made ${k}`);
+for(const k of ['bumper','sling','spin','drop','rail:coaster','rail:robot','hole:haunted','standup','rollover:laneB','toy:giantRobot','standup:eggTarget','rail:coopVuk','flip:flipU'])assert.ok(Object.keys(totals).some(x=>x.startsWith(k)),`bot made ${k}`);
 console.log('pinball sim OK');

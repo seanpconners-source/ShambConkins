@@ -18,14 +18,21 @@ surfaces (`tests/pinball-sim.mjs` finds jams).
 ## Parts (`T.` in a table's `buildTable`)
 `wall` (looks: wood, rail, plastic, rubber, none) · `post` · `bumper` (pop) · `sling` · `drops` (drop-target bank) ·
 `standup` · `rollover` · `kickback` · `spinner` · `trigger` (orbit/loop switch) · `gate` (one-way) · `diverter` ·
-`hole` (scoop/saucer/lock; `eject`, `maxSpeed`) · `rail` (plastic ramp or wireform; `exit:{hole}` feeds a hole) ·
-`magnet` · `flipper` (any number; `input` 0 = left button, 1 = right) · `plunger` · `lamp` (insert: circle/arrow/star/rect).
+`hole` (scoop/saucer/lock; `eject`, `maxSpeed`; `toRail` makes it a VUK that fires the ball up a wireform) ·
+`rail` (plastic ramp or wireform; `exit:{hole}` feeds a hole; `noEntry` = only a VUK can load it) ·
+`magnet` (rules set `parts[id].on` to pull, `.grab` to catch + hold `holdT` s + throw `fling`) ·
+`toy` (moving target made of capsules; rules set `parts[id].tx/ty`, hits fire `toy`) ·
+`captive` (captive ball; build its channel walls + two posts closer than a ball) ·
+`flipper` (any number, e.g. upper flippers; `input` 0 = left button, 1 = right) · `plunger` · `lamp` (insert: circle/arrow/star/rect).
+Flat tops on anything trap balls (the sim reports jams): peak roofs on toys and pockets.
 
 ## Rules object
 `balls`, `replay:{easy,normal,hard}` (1P target), `newPlayer()` (state kept between balls), `startBall(m)`,
 `flip(m,input)` (lane change / skill-shot lane), `event(m,e)` (scoring: `bumper sling drop standup rollover spin
 trigger hole rail railEnter railFail kickback outlane`), `lamps(m,t)` → `{lampId: 0|1}`, `bonusLines(m)`,
-`bonusTotal(m)`, `multiballEnd(m)`, optional `jackpot`, `startJordan`-style mode starters, `attract` lines.
+`bonusTotal(m)`, `multiballEnd(m)`, optional `jackpot`, `startJordan`-style mode starters, `attract` lines,
+`tick(m,dt)` (per-frame mode clocks, toy motion, magnets), `dmdMode(m)` (DMD bottom line while a mode runs).
+`art.toy(x,part,t)` draws toys. Events also include `toy`, `magnet`, `eject` (`e.vuk` when a VUK fired).
 Machine helpers for rules: `m.score m.bonus m.say m.sfx m.ballSave m.addBalls m.extraBall m.later m.resetBank`,
 `m.p` (player state), `m.ball` (this ball), `m.mode`, `m.mb` (balls in play), `m.w.parts[id]` (lit kickback, magnet on…).
 

@@ -73,7 +73,7 @@ async function pinball(s){
   else s.finish(sc,`${table.title} pinball · 3 balls each${ranks.some(r=>r>=0)?' · new high score':''}`);
  }
 
- s.debug={engine:'pinball',m,phase,R,dmd,auto:false,scores:scores()};
+ s.debug={engine:'pinball',m,phase,R,dmd,auto:false,scores:scores(),plunge:p=>P.plunge(m.w,p)};
  s.frame((dtRaw)=>{
   const dt=Math.min(dtRaw,1/30);t+=dt;phaseT+=dt;
   const dpr=Math.min(2,window.devicePixelRatio||1),cw=Math.round(W()*dpr),ch=Math.round(H()*dpr);if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}
@@ -98,7 +98,7 @@ async function pinball(s){
   const lamps=phase==='ball'?rules.lamps(m,t):attractLamps(m.def,t,phase==='bonus'?m.p:null);
   if(phase==='bonus')bonusScene();else if(phase==='gameover')gameOverScene();else if(phase==='intro'||phase==='zoom'||phase==='wait')attractScene();
   else if(m.msg)splashScene(dmd,{lines:m.msg.lines,flash:m.msg.flash,age:m.msg.age});
-  else scoreScene(dmd,{scores:scores(),cur:m.cur,ball:m.players[m.cur].ball,balls:rules.balls,names,t,credits:solo&&replay?`REPLAY ${fmt(replay)}`:''});
+  else scoreScene(dmd,{scores:scores(),cur:m.cur,ball:m.players[m.cur].ball,balls:rules.balls,names,t,credits:rules.dmdMode?.(m)||(solo&&replay?`REPLAY ${fmt(replay)}`:'')});
   const v=R.draw(x,{W:W(),H:H(),dpr,w:m.w,lamps,t,dmd,strip:null});
   overlay(v);
   s.status(`${names[m.cur]||''} · ball ${m.players[m.cur].ball}/${rules.balls} · ${fmt(m.players[m.cur].score)}`);

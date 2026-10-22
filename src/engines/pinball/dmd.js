@@ -51,8 +51,9 @@ function scoreScene(d,{scores,cur,ball,balls,names,t,credits=''}){
  d.clear();const n=scores.length;
  d.text(`PLAYER ${cur+1}`,1,1,{v:9});d.text(`BALL ${ball}`,127,1,{align:'right',v:9});
  const s=fmt(scores[cur]);d.fit(s,64,10,{scale:2,align:'center',max:124});
- if(n>1){const o=1-cur;d.text(`${(names?.[o]||'P'+(o+1)).slice(0,8)} ${fmt(scores[o])}`,64,25,{align:'center',v:6});}
- else if(credits)d.text(credits,64,25,{align:'center',v:6});
+ // bottom line: the running mode (or 1P replay target), else the other player's score
+ if(credits)d.fit(credits,64,25,{align:'center',v:credits.startsWith('REPLAY')?6:12});
+ else if(n>1){const o=1-cur;d.text(`${(names?.[o]||'P'+(o+1)).slice(0,8)} ${fmt(scores[o])}`,64,25,{align:'center',v:6});}
 }
 // Text splash: 1-3 lines, optional flash (inverts on a beat).
 function splashScene(d,{lines,t,flash=false,age=0}){

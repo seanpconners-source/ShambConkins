@@ -347,9 +347,13 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   ball save, tilt (flick up = nudge), virtual 3-ball lock → JORDAN MULTIBALL. Camera: intro shows the whole table, then the
   view is width-locked in every orientation and pans with the ball (owner's choice; landscape/desktop are very zoomed). 128x32
   DMD strip on top (left-aligned beside the Pause/Exit pills on phones). High scores `profile.pinballHigh[tableId]` (validated
-  in profile.js). Owner plan: phase 2 = more table parts (upper flipper, Giant Robot toy, captive ball, magnets, VUK), phase 3 =
-  modes/DMD animations/music, phase 4 = art, light shows, drop-in art slots `assets/pinball/<table>/`. Tests: `tests/pinball-sim.mjs`
-  (Node bot, in test:core), `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow + screenshots). Real-phone feel untested.
+  in profile.js). Phase 2 (Oct 21): engine parts `toy` (moving capsules, `parts[id].tx/ty`), `captive`, magnet grab/fling,
+  VUK (`hole toRail` → wireform, `rail noEntry`), rules `tick`/`dmdMode`. Table: upper right flipper `flipU` under the Giant Robot
+  toy (5 hits → ROBOT BATTLE: 30 s, robot walks, `beam` magnet grabs + throws, 4 hits wins), Coop = VUK onto the upper flipper,
+  Golden Egg captive ball (hits grow the jackpot, every 3rd lights lock). Scoring guesses: replay 3M/6M/12M; jackpot capped 2M,
+  super = 3x (bot scores 1.4–21M; `pinball-sim` prints points by source). Next: phase 3 = modes/DMD animations/music, phase 4 =
+  art, light shows, drop-in art slots `assets/pinball/<table>/`. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
+  `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 

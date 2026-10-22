@@ -51,6 +51,7 @@ function createMachine({table,players=2,seed=1,onSound=()=>{},level='normal'}){
    if(!m.tilted)R.event(m,e);
   }
   m.mb=m.live();
+  if(m.phase==='play')R.tick?.(m,dt);
   // Ball search: a ball sitting still away from the flippers gets a nudge.
   const still=m.phase==='play'&&!input.flip[0]&&!input.flip[1]&&m.w.balls.length&&m.w.balls.every(b=>b.state==='free'&&Math.hypot(b.vx,b.vy)<6&&!P.ballOnPlunger(m.w,b));
   m.stillT=still?m.stillT+dt:0;if(m.stillT>4){m.stillT=0;for(const b of m.w.balls){b.vx+=(m.w.random()-.5)*500;b.vy-=500;}m.say(['BALL SEARCH'],1);}
