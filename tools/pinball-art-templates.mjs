@@ -47,7 +47,7 @@ await page.setContent(`<!doctype html><body><script>${bundle}</script></body>`);
 
 const shots = await page.evaluate(cfg => {
   const {createMachine} = require('src/engines/pinball/machine.js');
-  const {createRenderer} = require('src/engines/pinball/render.js');
+  const {createRenderer, drawFlipper} = require('src/engines/pinball/render.js');
   const table = require(cfg.table);
   const {art, logo, drawCharacter} = require(cfg.art);
   const m = createMachine({table, players: 1, seed: 1});
@@ -104,6 +104,14 @@ const shots = await page.evaluate(cfg => {
     art.toy(x2, {x: 100, y: 100, w: p.w, h: p.h, ox: 0, oy: 0, flash: 0, armed: 0}, 0, {});
     const b = bbox(c2), bw = b.x1 - b.x0, bh = b.y1 - b.y0, [W, H] = cfg.toyPx, s = Math.min(W / bw, H / bh) * .98, [o, ox] = canvas(W, H);
     ox.drawImage(c2, b.x0, b.y0, bw, bh, (W - bw * s) / 2, (H - bh * s) / 2, bw * s, bh * s); res.toy = png(o);}
+
+  // flippers: the painted bottom flippers in the flipper-left / flipper-right frame (600 x 200 px, pivot (120,100), end
+  // (510,100); the right one points left from (480,100)) laid flat, so a picture drawn over the template lines up with the flipper
+  {const low = Math.max(...def.flippers.map(f => f.y));
+    for (const f of def.flippers.filter(f => f.y === low)) {const right = !!f.input, k = 390 / f.len, [c, x] = canvas(600, 200);
+      x.translate(right ? 480 : 120, 100); x.scale(k, k);
+      drawFlipper(x, {...f, x: 0, y: 0, a: right ? Math.PI : 0}, f.color || art.flipper, art.flipperRubber, art.flipperText || '');
+      res[right ? 'flipper-right' : 'flipper-left'] = png(c);}}
   return res;
 }, cfg);
 

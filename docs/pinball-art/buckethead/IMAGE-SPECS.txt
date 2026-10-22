@@ -1,7 +1,7 @@
 BUCKETHEADLAND PINBALL - CUSTOM IMAGE SPECS
 ============================================
 
-The table has 7 replaceable pictures. Each one has a template PNG in this folder that shows the current art at the
+The table has 9 replaceable pictures. Each one has a template PNG in this folder that shows the current art at the
 exact size and framing the game uses. Make a new picture the same size, follow the rules below, save it with the
 exact file name, and put it in:   assets/pinball/buckethead/
 then rebuild the game. Any picture you don't supply keeps the built-in art.
@@ -123,13 +123,23 @@ is drawn by the game.
 ------------------------------------------------------------------------------------------------
 What it is: the Giant Robot, the moving toy at the upper right. It walks left and right during the robot battle.
 How it is fitted: stretched to a 96 x 84 mm box (no cropping; a different shape gets squashed, so keep 8:7).
-Important: the game draws a dark rectangle the size of the whole box as its shadow (offset down-right), and the
-hit flash is also a white wash over the whole box. With a transparent background, that shadow and flash show as
-rectangles around the robot. So make the robot fill nearly the whole image (a boxy robot works best), or paint a
-background plate behind it.
+The game draws the shadow and the white hit flash in the picture's own outline, so a transparent background is fine.
 The ball bounces off a house-shaped outline about 14 mm taller than the box (the roof peak sits above the box top),
 so a pointed head/antenna at the top centre matches what the ball hits.
 The picture is not animated (no walking legs, blinking eyes or glowing beam like the built-in robot).
+
+
+
+8) flipper-left.png / flipper-right.png  -  600 x 200 px (exact, 3:1), TRANSPARENT background REQUIRED
+-------------------------------------------------------------------------------------------------------
+What it is: a picture on a bottom flipper that swings with it (e.g. Buckethead's strumming hand on the left flipper).
+How it is fitted: drawn in the flipper's own frame. Left flipper: the pivot (where it turns) is at (120,100) and the
+end of the flipper is at (510,100), so draw it pointing right with the pivot end on the left. Right flipper: the
+mirror image (pivot at (480,100), end at (90,100)). The real flipper is a tapered bar: a 126 px circle round the pivot
+narrowing to a 68 px round end. Keep the art close to that shape: the ball bounces off the real flipper, not the
+picture. The picture is drawn under the ball, with a soft shadow in its outline. Either slot can be left out (that
+flipper keeps its painted look). Templates: flipper-left.png and flipper-right.png show the painted flippers in this
+frame.
 
 
 REFERENCE FILES (not used by the game)
@@ -137,7 +147,7 @@ REFERENCE FILES (not used by the game)
 - playfield-parts.png: only what the game draws on top of a playfield picture, transparent everywhere else.
   Lay it over your playfield to check nothing important is hidden.
 
-NOT REPLACEABLE BY PICTURES (drawn by code): the score display (DMD), flippers, slingshots, ramps and rails, light
+NOT REPLACEABLE BY PICTURES (drawn by code): the score display (DMD), the upper flipper, slingshots, ramps and rails, light
 inserts, drop targets and the ball.
 
 Remake the templates: node tools/pinball-art-templates.mjs

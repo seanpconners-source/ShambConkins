@@ -7,9 +7,12 @@
 //   character  the hero art between the slingshots
 //   bumper     pop bumper cap (square, cropped to a circle)
 //   toy        the moving toy (Bucketheadland: the Giant Robot), drawn in the toy's box
+//   flipper-left / flipper-right  the two bottom flippers (e.g. a hand). Drawn in the flipper's own frame, so it swings
+//              with it: 600 x 200 px, pivot at (120,100), flipper tip at (510,100). Draw the left one pointing right
+//              (pivot on the left); the right one is its mirror (pivot at (480,100), tip at (90,100)). See drawFlipperImage.
 // Missing slots fall back to the code-drawn art. onLoad() fires when an image finishes decoding (redraw caches).
 const {USER_PORTRAITS}=require("src/data/userPortraits.js");
-const SLOTS=['playfield','backglass','apron','logo','character','bumper','toy'];
+const SLOTS=['playfield','backglass','apron','logo','character','bumper','toy','flipper-left','flipper-right'];
 function loadDropins(tableId,onLoad=()=>{}){
  const imgs={};
  for(const slot of SLOTS){const url=USER_PORTRAITS[`pinball:${tableId}:${slot}`];if(!url||typeof Image==='undefined')continue;
@@ -36,4 +39,14 @@ function drawToy(x,img,rx,ry,rw,rh,{shadow=.45,hit=false}={}){
  if(hit){x.globalCompositeOperation='lighter';x.globalAlpha=.35;x.drawImage(tinted(img,'#fff'),rx,ry,rw,rh);}
  x.restore();
 }
-Object.assign(exports,{loadDropins,drawCover,drawToy,PINBALL_ART_SLOTS:SLOTS});
+// A flipper picture (600 x 200 px) drawn in the flipper's frame: 390 px = the flipper's length, pivot at (120,100) for a
+// left flipper; a right flipper's picture is the mirror image (pivot at (480,100)), so the art stays upright on both sides.
+// A shadow in the picture's outline goes under it, like the painted flippers.
+const FLIP={w:600,h:200,px:120,py:100,len:390};
+function drawFlipperImage(x,f,img,right){
+ const k=f.len/FLIP.len,px=right?FLIP.w-FLIP.px:FLIP.px;
+ const place=(src,off)=>{x.save();x.translate(f.x+off,f.y+off*1.3);x.rotate(f.a);if(right)x.scale(-1,-1);
+  x.drawImage(src,-px*k,-FLIP.py*k,FLIP.w*k,FLIP.h*k);x.restore();};
+ x.save();x.globalAlpha=.35;place(tinted(img,'#000'),3);x.restore();place(img,0);
+}
+Object.assign(exports,{loadDropins,drawCover,drawToy,drawFlipperImage,PINBALL_ART_SLOTS:SLOTS});

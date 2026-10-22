@@ -1,0 +1,99 @@
+BUCKETHEADLAND PLAYFIELD: BUCKETHEAD PLAYS THE LEFT FLIPPER
+===========================================================
+
+THE IDEA (see target-layout.png)
+Buckethead stands between the slingshots playing his guitar, and the LEFT FLIPPER IS HIS STRUMMING HAND. His arm is
+painted on the playfield and ends at the wrist right on the flipper's pivot. The hand itself is a separate picture that
+the game draws on the left flipper, so it moves: at rest it hangs just below the strings, and every flip swings it up
+across the strings like a strum. The game already supports a picture on each bottom flipper (new slots
+flipper-left / flipper-right). The right flipper keeps its normal look.
+
+WHAT ELSE GETS FIXED
+- Now the 2X-6X lights sit on his bucket: the bucket top moves just under that row of lights.
+- Now his guitar headstock pokes into the right lane: the guitar is held more upright so the headstock stays inside the
+  right slingshot.
+- Now the BUCKETHEADLAND sign's first and last letters are hidden under the two ramps: Claude places your existing
+  sign (logo.webp) smaller, between the ramps, above the 2X-6X row.
+
+HOW IT'S MADE: three GPT pictures, then Claude assembles them
+1. The empty stage: the bottom half of your current playfield with Buckethead and the sign removed.
+2. Buckethead in the new pose, on a transparent background.
+3. His hand holding a pick, on a transparent background.
+Claude then cuts the painted hand off picture 2 at the wrist, places him so the wrist sits exactly on the flipper
+pivot, blends everything into the playfield, puts the sign back, fits the hand to the flipper, and checks it in the
+game with the flipper down and up. GPT doesn't need any measurements; the sketches show it the layout.
+
+Use a NEW ChatGPT chat for each picture. Download each result at full size.
+
+
+PICTURE 1: the empty stage
+--------------------------
+Upload: upload-1-current-stage.png
+Prompt:
+
+  I'm making the playfield art for a pinball table. The attached image is the bottom section of my current
+  playfield: "Bucketheadland", a spooky night-time theme park and circus. Recreate this exact same scene in the same
+  painted style, with the same colours, lighting and point of view, but completely REMOVE the guitarist in the
+  bucket hat and completely REMOVE the BUCKETHEADLAND sign. Where they were, continue the scene naturally: the red
+  and cream striped circus big-top canvas fanning out from the centre, glowing marquee bulbs along the tent edges,
+  small tents at the sides, and low red and purple smoke rolling across the bottom. Keep the top edge of the picture
+  (the tents and bulbs) as close to the original as possible so it blends back in. Keep the middle of the picture
+  calm and medium-dark, like an empty stage glowing softly dark red, because a character and a sign will be placed
+  on top of it later. No people, no characters, no faces, no text, no letters, no logos, no signs, no frame or
+  border. Square image, 1024 x 1024.
+
+Check: no person, mask, guitar or hand left ("Remove every person and the guitar, keep everything else the same");
+no letters anywhere ("Remove all text and signs"); a fairly plain centre.
+
+
+PICTURE 2: Buckethead in the new pose
+-------------------------------------
+Upload BOTH: upload-2-current-buckethead.png (how he should look) and upload-3-pose-sketch.png (the pose layout)
+Prompt:
+
+  Create a new picture of the character in the first attached image, in exactly the same painted style, lighting
+  and look: Buckethead, with a blank white mask, a red and white striped bucket on his head with a small "FUNERAL"
+  sticker, long black curly hair, a black robe and a white electric guitar. Use the second attached image ONLY as a
+  layout sketch for the pose and framing; do not draw any of its lines, shapes, labels or colours. Seen from the
+  front, filling the square the same way the sketch does: the top of the bucket touches the top of the picture,
+  his head is in the upper middle, and his robe runs off the bottom edge. He holds the guitar fairly upright: the
+  guitar body sits low and slightly right of centre, and the neck rises steeply up to the right, with the whole
+  headstock inside the picture where the sketch shows it. His left hand frets the neck. His right arm hangs down on
+  the left side of the picture, bent at the elbow, and his right hand is a loose fist just BELOW and to the left of
+  the guitar body, at the end of a strum, not touching or covering the guitar or its strings. Transparent background
+  (a real transparent PNG, not a checkerboard pattern and not a coloured background). Square image, 1024 x 1024.
+
+Check:
+- Real transparency. A painted grey-and-white checkerboard is NOT transparent ("Make the background truly
+  transparent, with no checkerboard and no background colour").
+- His right hand must be clear of the guitar, with background showing between them; Claude cuts it off there. If it is
+  on the strings: "Move his right hand down below the guitar body so it doesn't touch the guitar."
+- The headstock is fully inside the picture; the bucket is not cut off at the top.
+- None of the sketch's lines or words got drawn in.
+
+
+PICTURE 3: the hand (goes on the left flipper)
+----------------------------------------------
+Upload BOTH: upload-2-current-buckethead.png (skin, sleeve and lighting to match) and upload-4-hand-sketch.png (shape)
+Prompt:
+
+  Paint a single right hand holding a guitar pick, in the same painted style, skin tone and lighting as the hand
+  in the first attached image. Seen from directly above, lying flat and pointing to the right: the wrist with the
+  cuff of a black robe sleeve on the left, a loose fist in the middle (back of the hand facing the viewer), and the
+  thumb and index finger pinching a cream-coloured guitar pick on the right, the pick's point aiming right. Use the
+  second attached image ONLY as a layout sketch: the hand fills the outlined shape (wider at the wrist, narrower
+  toward the pick) and stays horizontal and centred on it; do not draw any of its lines, labels or colours. Give
+  the hand a thin dark outline so it stands out on a dark background. Nothing else in the picture: no guitar, no
+  strings, no arm beyond the cuff. Transparent background (a real transparent PNG, not a checkerboard). Landscape,
+  1536 x 1024.
+
+Check: real transparency; the hand lies horizontal with the wrist on the left and the pick on the right; it is long and
+slim like the sketch shape (a round, chunky fist won't match the flipper the ball bounces off).
+
+
+SEND BACK TO CLAUDE
+-------------------
+The three pictures. Claude assembles them, saves the playfield and the new flipper-left picture in
+assets/pinball/buckethead/, checks the table in the game (flipper down and up, phone and desktop), and pushes it.
+Gameplay note: the ball still bounces off the real flipper shape. The hand only has to look like it covers that shape,
+so a slim hand reads best.

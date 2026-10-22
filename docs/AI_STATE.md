@@ -397,7 +397,14 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   its painted robot was cloned out with sky (the toy sits there). Both playfields are darkened in soft spots under every
   lamp (lamp list read from `buildTable().lamps`, mm×2 = px) so inserts read over the busy art. Drop-in toys now draw their
   shadow and hit flash in the picture's outline (`drawToy` in dropins.js) instead of a box. Custom playfields hide
-  logo/character on the table (logo still shows in the landscape banner). Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
+  logo/character on the table (logo still shows in the landscape banner).
+  Flipper pictures (Oct 22): drop-in slots `flipper-left`/`flipper-right` (600x200, pivot (120,100), tip (510,100), right =
+  mirror; `drawFlipperImage` in dropins.js, drawn under the balls; only the two bottom flippers). DONE (owner idea): Buckethead's
+  strumming hand IS the left flipper. `tools/pinball-art/buckethead-flipper-hand.py` rebuilds playfield.webp + flipper-left.webp
+  from `assets/originals/pinball/buckethead/` (GPT empty stage blended in below y 1100, lamp dark spots, logo.webp 510 px wide
+  at y 1287 between the ramps, Buckethead scale .5 with his hanging hand inpainted out and his wrist on the flipL pivot
+  (playfield px 296,1892), hand cut at the cuff, scaled to pivot→pick 120→545, slimmed .85, dark edge + warm glow). He sits
+  left of centre (GPT's pose); bigger would push the bucket into the 2X-6X lights. GPT kit: `docs/pinball-art/buckethead/gpt/`. Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - **King Gizzard pinball (Oct 22 2026, table 3, game `king-gizzard-pinball`, table id `king-gizzard`, files
   `pinball/tables/gizzard*.js`):** THE RATS' NEST = an enclosed upper playfield (inside the loop's inner wall, arc r190
