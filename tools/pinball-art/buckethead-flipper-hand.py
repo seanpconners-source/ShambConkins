@@ -28,16 +28,19 @@ pf.paste(st, (0, Y0), m)
 GUITAR = [(380,690),(372,715),(367,740),(366,770),(368,800),(372,825),(380,850),(390,868),(403,881),(420,893),(445,904),(480,912),(530,918),(640,700)]
 def fill_split(a, hole):
   """Fills hole (uint8 mask) in RGBA array a: the guitar side is inpainted from guitar pixels only; the robe side is his robe in
-  the shadow of the arm (flat dark cloth with a little grain), ending at his body's left edge (red rim light, then background)."""
+  the shadow of the arm (cloth borrowed from his robe right of the guitar, x 615-650, darker near the cuff), ending at his body's
+  soft left edge (red rim light lower down, then background)."""
   H2, W2 = a.shape[:2]; yy2, xx2 = np.mgrid[0:H2, 0:W2].astype(np.float32)
   g = Image.new('L', (W2, H2), 0); ImageDraw.Draw(g).polygon(GUITAR, fill=255); g = np.asarray(g) > 0
   band = cv2.dilate(hole, np.ones((25, 25), np.uint8)) > 0
   gm = ((hole > 0) | (band & ~g)).astype(np.uint8) * 255
   fg = cv2.inpaint(np.ascontiguousarray(a[..., :3]), gm, 9, cv2.INPAINT_TELEA).astype(np.float32)
-  ex = 300 + (yy2 - 760) * 30 / 160 - xx2                       # body's left edge (seen below the sleeve at y 900, x ~330)
-  rim = np.exp(-np.clip(-ex, 0, None) / 4)[..., None]; body = np.clip(.5 - ex / 2, 0, 1)
-  grain = cv2.GaussianBlur(np.random.default_rng(7).normal(0, 5, (H2, W2)).astype(np.float32), (3, 3), .8)[..., None]
-  fr = np.array([22, 12, 20], np.float32) + grain + rim * np.array([85, 20, 14], np.float32)
+  ex = 302 + (yy2 - 760) * 28 / 160 + 3 * np.sin(yy2 / 23) - xx2   # body's left edge (seen below the sleeve at y 900, x ~330)
+  rim = (np.exp(-np.clip(-ex, 0, None) / 4) * np.clip((yy2 - 790) / 90, 0, 1))[..., None]; body = np.clip(.5 - ex / 3.5, 0, 1)
+  sx = np.clip(615 + (xx2 - 290) * .4, 0, W2 - 1); sy = np.clip(yy2 - 15, 725, 930)   # robe cloth, stretched across
+  cloth = cv2.remap(np.ascontiguousarray(a[..., :3]), sx.astype(np.float32), sy.astype(np.float32), cv2.INTER_LINEAR).astype(np.float32)
+  dark = (.7 + .3 * np.clip((yy2 - 760) / 110, 0, 1))[..., None]   # deepest in the shadow right under the cuff
+  fr = cloth * dark + rim * np.array([85, 20, 14], np.float32)
   gs = cv2.GaussianBlur(g.astype(np.float32), (5, 5), 1.2)                       # 3 px blend across the guitar outline
   shade = 1 - .4 * np.clip(cv2.GaussianBlur(g.astype(np.float32), (13, 13), 4) - g, 0, 1)   # robe darker against the guitar
   mix = fg * gs[..., None] + fr * shade[..., None] * (1 - gs[..., None])
@@ -65,12 +68,14 @@ else:
   arm = [(240,365),(205,450),(188,540),(184,620),(203,700),(214,780),(222,852),(260,870),(304,868),(304,812),(376,800),
          (378,760),(370,705),(356,690),(334,610),(322,520),(318,365)]
   am = Image.new('L', (W2, H2), 0); ImageDraw.Draw(am).polygon(arm, fill=255); am = np.asarray(am.filter(ImageFilter.GaussianBlur(2))).astype(np.float32)
-  am = am * (1 - mk / 255)                                       # no skin in the sleeve layer
+  gd = Image.new('L', (W2, H2), 0); ImageDraw.Draw(gd).polygon(GUITAR, fill=255); gd = np.asarray(gd.filter(ImageFilter.GaussianBlur(1)))
+  am = am * (1 - mk / 255) * (1 - gd / 255)                     # no skin or guitar in the sleeve layer
   dg = DY / K; yy2 = np.arange(H2, dtype=np.float32); t = np.clip((yy2 - 520) / (790 - 520), 0, 1); f = t * t * (3 - 2 * t)
   mapy = np.repeat((yy2 + dg * f)[:, None], W2, 1).astype(np.float32); mapx = np.repeat(np.arange(W2, dtype=np.float32)[None], H2, 0)
   layer = np.dstack([a[..., :3], (a[..., 3] * am / 255).astype(np.uint8)])
   wl = cv2.remap(layer, mapx, mapy, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
-  hole = ((mk > 0) | ((am > 40) & (wl[..., 3] < 200))).astype(np.uint8) * 255
+  wm = cv2.remap(am, mapx, mapy, cv2.INTER_LINEAR)               # where the shortened sleeve still covers
+  hole = ((mk > 0) | ((am > 40) & (wm < 200))).astype(np.uint8) * 255
   fill_split(a, cv2.dilate(hole, np.ones((5, 5), np.uint8)))
   base = Image.fromarray(a); base.alpha_composite(Image.fromarray(wl)); a = np.asarray(base).copy()   # cuff now dg higher: on the pivot
   for y in range(930, 1024): a[y, :, 3] = (a[y, :, 3] * max(0, 1 - (y - 930) / 70)).astype(np.uint8)

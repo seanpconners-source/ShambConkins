@@ -52,6 +52,40 @@ function logo(x,cx,cy,size,imgs){if(imgs?.logo){const w=size*13,h=w*imgs.logo.he
  for(let i=0;i<word.length;i++){const a=(i-(word.length-1)/2)*.05;x.save();x.rotate(a);x.lineWidth=size*.2;x.strokeStyle='#1a0610';x.strokeText(word[i],0,-size*15.7);x.fillStyle=i%2?'#ffd23f':'#ff6b35';x.fillText(word[i],0,-size*15.7);x.restore();}
  x.restore();}
 
+// The BUCKETHEADLAND sign baked into the owner's playfield (top of the arch; tools/pinball-art/buckethead-flipper-hand.py
+// pastes logo.webp 460 px wide, top centre (514,34) px = (257,17) mm) is lit like a sign with a bad bulb: a warm glow
+// that hums, stutters off in bursts every few seconds and now and then dies for a moment.
+const SIGN={cx:257,y:17,w:230},signCache=new WeakMap();
+function signLayers(img){
+ let c=signCache.get(img);if(c)return c;
+ const W=img.width,H=img.height,pad=Math.round(W*.12),mk=(w,h)=>{const k=document.createElement('canvas');k.width=w;k.height=h;return k;};
+ // glow: the logo shrunk and blown back up twice (a cheap blur that works without ctx.filter)
+ const glow=mk(W+pad*2,H+pad*2),small=mk(Math.ceil(glow.width/10),Math.ceil(glow.height/10)),mid=mk(Math.ceil(glow.width/4),Math.ceil(glow.height/4));
+ const g=glow.getContext('2d');g.drawImage(img,pad,pad);
+ mid.getContext('2d').drawImage(glow,0,0,mid.width,mid.height);small.getContext('2d').drawImage(glow,0,0,small.width,small.height);
+ g.clearRect(0,0,glow.width,glow.height);g.globalAlpha=.8;g.drawImage(small,0,0,glow.width,glow.height);g.globalAlpha=.6;g.drawImage(mid,0,0,glow.width,glow.height);
+ g.globalCompositeOperation='source-in';g.globalAlpha=1;g.fillStyle='#ffb347';g.fillRect(0,0,glow.width,glow.height);
+ // shade: the sign's own shape in black, laid over it when the bulb is out
+ const shade=mk(W,H),d=shade.getContext('2d');d.drawImage(img,0,0);d.globalCompositeOperation='source-in';d.fillStyle='#000';d.fillRect(0,0,W,H);
+ c={glow,shade,pad};signCache.set(img,c);return c;
+}
+const hash=i=>{const v=Math.sin(i*127.1+311.7)*43758.5453;return v-Math.floor(v);};
+function signLevel(t){
+ let L=.9+.06*Math.sin(t*47)+.04*Math.sin(t*113);                 // mains hum
+ const P=2.6,k=Math.floor(t/P),ph=t-k*P,st=hash(k)*(P-1.4),len=.3+hash(k+.5);
+ if(hash(k+.25)<.8&&ph>st&&ph<st+len){const r=hash(k*31+Math.floor((ph-st)*14));L=r<.55?.03+r*.15:r<.75?.5:L;}   // stutter
+ if(hash(k+.75)<.25&&ph>st+len&&ph<st+len+.7)L=.03;               // dead for a moment, then catches again
+ return L;
+}
+function drawSign(x,img,t,gi){
+ const {glow,shade,pad}=signLayers(img),s=SIGN.w/img.width,L=signLevel(t)*gi,X=SIGN.cx-SIGN.w/2,Y=SIGN.y,h=img.height*s;
+ x.save();playfieldPath(x);x.clip();
+ if(L<.6){x.globalAlpha=.7*(1-L/.6);x.drawImage(shade,X,Y,SIGN.w,h);}
+ x.globalCompositeOperation='lighter';
+ x.globalAlpha=.9*L;x.drawImage(glow,X-pad*s,Y-pad*s,glow.width*s,glow.height*s);
+ x.globalAlpha=.3*L;x.drawImage(img,X,Y,SIGN.w,h);
+ x.restore();
+}
 const art={
  plastic:'#ffbf3f',sling:'#c8102e',drop:'#ffb703',flipper:'#f7f4ec',flipperRubber:'#c8102e',flipperText:'BUCKETHEAD',
  base(x,def,imgs={}){
@@ -105,6 +139,7 @@ const art={
   x.fillStyle=lit?'#fffbe0':'#f5f2ea';x.beginPath();x.arc(0,0,r*.42,0,TAU);x.fill();x.fillStyle='#1a1a1a';x.font='bold 9px Arial';x.textAlign='center';x.textBaseline='middle';x.fillText('BH',0,.5);x.restore();
  },
  // The Giant Robot toy (moves with p.ox/oy; flashes when hit; eyes blaze while the tractor beam is armed).
+ underlay(x,def,w,t,imgs={},gi=1){if(imgs.playfield&&imgs.logo)drawSign(x,imgs.logo,t,gi);},
  toy(x,p,t,imgs={}){
   const cx=p.x+(p.ox||0),cy=p.y+(p.oy||0),hit=p.flash>0,walk=Math.sin(t*6)*(Math.abs(p.ox||0)>.5?3:0);
   if(imgs.toy){drawToy(x,imgs.toy,cx-p.w/2,cy-p.h/2,p.w,p.h,{shadow:.45,hit});return;}

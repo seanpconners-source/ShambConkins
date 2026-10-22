@@ -410,7 +410,10 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   at scale .9 with the wrist on the pivot, then 44 px lower (`DY`, 2X-6X lamps moved with him to y 760 mm; his hanging sleeve is squashed up so the cuff
   stays on the pivot; `fill_split` fills the hand/old cuff area split along the traced guitar edge `GUITAR`: guitar side
   inpainted, robe side flat shadowed robe with a rim-lit body edge), so the pick crosses the strings at the bridge pickup on the up-stroke; lamp dark
-  spots are composited after him (the 2X-6X lights sit on him); the sign moved to the top of the arch (owner); guitar
+  spots are composited after him (the 2X-6X lights sit on him); the sign moved to the top of the arch (owner) and flickers like a bad bulb (`underlay` hook in render.js, new: table art
+  drawn over the playfield under parts/balls; `drawSign`/`signLevel` in bucketheadArt.js: glow + shade layers, hum, stutter bursts
+  every ~2.6 s, short dead spells, dims with GI); sleeve layer excludes the guitar (no cream sliver), robe under the cuff is cloth
+  borrowed from his robe right of the guitar (x 615-650); guitar
   lower bout partly under the apron.  GPT kit: `docs/pinball-art/buckethead/gpt/`. Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - **King Gizzard pinball (Oct 22 2026, table 3, game `king-gizzard-pinball`, table id `king-gizzard`, files

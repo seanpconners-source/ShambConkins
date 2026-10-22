@@ -211,6 +211,7 @@ function createRenderer(table){
   x.translate(v.ox,v.oy);x.scale(v.s,v.s);x.lineCap='round';x.lineJoin='round';
   x.drawImage(R.cache.base,0,0,def.W,def.H);
   drawLights(x,lamps,gi);
+  art.underlay?.(x,def,w,t,imgs,gi);   // table effects on the playfield art (under parts and balls)
   drawDynamic(x,w,t);
   // a flipper picture (e.g. a hand) may be wider than the flipper, so it goes under the balls; painted flippers go over
   const flipImg=f=>f.y===flipY&&imgs[f.input?'flipper-right':'flipper-left'];
