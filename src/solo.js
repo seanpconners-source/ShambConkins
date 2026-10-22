@@ -2,7 +2,8 @@
 // Kinds: 'levels' = one player plays level after level until the run ends or they bank it;
 //        'rounds' = timed turn game replayed in harder rounds (turnRunner / arcadeRounds handle it);
 //        'turns' = pass-and-play engine the launcher runs once per round (soloTurnRounds); 'cpu' = player 2 is a CPU;
-//        'alone' = a co-op game played by one player, no CPU teammate (the engine thins out the enemies).
+//        'alone' = a co-op game played by one player, no CPU teammate (the engine thins out the enemies);
+//        'game' = one whole game on your own (pinball: 3 balls, beat the replay score; engine calls soloFinish).
 const SOLO_LEVELS=['easy','normal','hard'];
 const SOLO_LEVEL_NAMES={easy:'Easy',normal:'Normal',hard:'Hard'};
 // CPU skill 0..1 per difficulty; engines scale reaction time, aim error and speed from it.
@@ -23,7 +24,7 @@ const SOLO_IDS={
  // pass-and-play engines run once per round by the launcher (soloTurnRounds); the hand-off to P2 ends the round
  'taskmaster-fruit-ninja':'turns','angry-heads':'turns','neon-ball-storm':'turns','home-alone-paint-can':'turns','tm-cones':'turns',
  'paper-route':'turns','warehouse-shift':'turns','matrix-hardline-hack':'turns','alien-sonar-grid':'turns','kitchen-service':'turns',
- 'space-swarm':'turns','taskmaster-micro-relay':'turns','kingpin-bowling':'turns','bucketheadland-pinball':'turns',
+ 'space-swarm':'turns','taskmaster-micro-relay':'turns','kingpin-bowling':'turns',
  'major-league-fielding':'turns','flipadelphia-cup':'turns','office-hockey-shootout':'turns','chutes-spinner-showdown':'turns',
  'smb3-spade-slots':'turns',
  // batch 3: CPU opponents (cpuKit / cpuBoards)
@@ -48,7 +49,7 @@ const SOLO_IDS={
  'django-hangman-wanted':'cpu','microgame-rush':'cpu','rush-marathon':'cpu',
  // batch 5: co-op games with a take-turns version (Space Swarm plays solo) keep a CPU teammate (engine sets s.solo.coop +
  // s.solo.won); co-op games without one are played alone. Rainbow Rivals runs leg after leg, Balloon Battle is vs a CPU kart
- 'living-dead-horde':'alone','space-swarm-coop':'cpu','rainbow-rivals':'levels','rainbow-balloon-battle':'cpu',
+ 'living-dead-horde':'alone','bucketheadland-pinball':'game','space-swarm-coop':'cpu','rainbow-rivals':'levels','rainbow-balloon-battle':'cpu',
 };
 // Purely social games (they need two real people) are hidden from the 1P Arcade list.
 const SOLO_HIDDEN=new Set(['newlywed-spirit','roast-battle','draw-it']);

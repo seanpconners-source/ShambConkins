@@ -1,130 +1,126 @@
-const {clamp, seededRandom}=require("src/utils.js");
-const {circle}=require("src/engines/session.js");
-const {sound}=require("src/audio.js");
-// Original table and collision code. Both humans receive this same seeded table.
-function pinballTable(seed) {
- const random=seededRandom(seed);
- return { W:460,H:700,
-  rails:[[25,90,25,495],[25,90,85,30],[85,30,390,30],[390,30,445,85],[445,85,445,675],
-   [403,130,403,532],[25,495,95,550],[85,545,122,590],[403,495,365,550],[375,545,338,590]],
-  bumpers:[{x:145,y:202},{x:310,y:202},{x:230,y:304}].map((b,i)=>({...b,r:29+(i===2?4:0),value:100,y:b.y+random()*12})),
-  targets:Array.from({length:6},(_,i)=>({x:97+i*43,y:88,r:12,letter:'BUCKET'[i]})),
-  rollovers:[{x:57,y:435,r:17},{x:371,y:435,r:17}]
- };
-}
-function newPinballBall(table) {
- return {x:424,y:638,vx:0,vy:0,r:13,age:0,launched:false,escaped:false,drained:false,
-  score:0,multiplier:1,lit:Array(6).fill(false),bumperLit:[false,false,false],rolloverLit:[false,false],
-  cooldowns:Array(11).fill(0),flippers:[.32,Math.PI-.32],events:[],trail:[],saveUntil:3};
-}
-function launchPinball(a,power=1) {
- if(a.launched||a.drained)return false;
- a.launched=true;a.vx=0;a.vy=-980*clamp(power,.75,1.12);a.age=0;a.events.push({type:'launch'});return true;
-}
-function reflectSegment(ball,segment,restitution=.88,velocity={x:0,y:0}) {
- const [ax,ay,bx,by]=segment,dx=bx-ax,dy=by-ay,length2=dx*dx+dy*dy;
- const t=clamp(((ball.x-ax)*dx+(ball.y-ay)*dy)/length2,0,1),px=ax+t*dx,py=ay+t*dy;
- const distance=Math.hypot(ball.x-px,ball.y-py),reach=ball.r+4;
- if(distance>=reach)return false;
- let nx=(ball.x-px)/(distance||1),ny=(ball.y-py)/(distance||1);
- if(distance<.001){const length=Math.sqrt(length2);nx=-dy/length;ny=dx/length;}
- ball.x=px+nx*(reach+.01);ball.y=py+ny*(reach+.01);
- const normal=(ball.vx-velocity.x)*nx+(ball.vy-velocity.y)*ny;
- if(normal<0){ball.vx-=(1+restitution)*normal*nx;ball.vy-=(1+restitution)*normal*ny;return true;}return false;
-}
-function stepPinball(a,dt,table,held=[false,false]) {
- a.events=[];
- if(!Number.isFinite(dt)||dt<=0||!a.launched||a.drained)return a;
- const steps=Math.ceil(Math.min(dt,.1)*240),h=Math.min(dt,.1)/steps;
- for(let sub=0;sub<steps&&!a.drained;sub++){
-  a.age+=h;a.cooldowns=a.cooldowns.map(n=>Math.max(0,n-h));
-  const angular=[];
-  for(let i=0;i<2;i++){const target=i?(held[i]?Math.PI+.55:Math.PI-.32):(held[i]?-.55:.32),old=a.flippers[i];a.flippers[i]+=clamp(target-old,-9*h,9*h);angular[i]=(a.flippers[i]-old)/h;}
-  a.vy+=640*h;const speed=Math.hypot(a.vx,a.vy);if(speed>1600){a.vx*=1600/speed;a.vy*=1600/speed;}
-  a.x+=a.vx*h;a.y+=a.vy*h;
-  // The curved plunger guide releases the ball into the playfield at the top.
-  if(!a.escaped&&a.x>403&&a.y<104){a.escaped=true;a.vx=-510;a.vy=-120;a.events.push({type:'guide'});}
-  for(const segment of table.rails)reflectSegment(a,segment);
-  for(let i=0;i<2;i++){
-   const px=i?338:122,py=590,angle=a.flippers[i],ex=px+83*Math.cos(angle),ey=py+83*Math.sin(angle);
-   const t=clamp(((a.x-px)*(ex-px)+(a.y-py)*(ey-py))/(83*83),0,1),lever=83*t;
-   const velocity={x:-Math.sin(angle)*angular[i]*lever,y:Math.cos(angle)*angular[i]*lever};
-   if(reflectSegment(a,[px,py,ex,ey],.92,velocity))a.events.push({type:'flipper',index:i});
-  }
-  for(let i=0;i<table.bumpers.length;i++){
-   const b=table.bumpers[i],dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy),reach=b.r+a.r;
-   if(d>=reach)continue;const nx=dx/(d||1),ny=dy/(d||1);a.x=b.x+nx*(reach+.01);a.y=b.y+ny*(reach+.01);
-   const toward=a.vx*nx+a.vy*ny;if(toward<0){a.vx-=1.7*toward*nx;a.vy-=1.7*toward*ny;}
-   if(a.cooldowns[i]===0){a.vx+=nx*160;a.vy+=ny*160;a.cooldowns[i]=.2;a.score+=b.value*a.multiplier;a.bumperLit[i]=true;a.events.push({type:'bumper',index:i});}
-  }
-  for(let i=0;i<table.targets.length;i++){
-   const t=table.targets[i];if(Math.hypot(a.x-t.x,a.y-t.y)>t.r+a.r||a.cooldowns[3+i]>0)continue;
-   a.cooldowns[3+i]=.25;a.lit[i]=true;a.score+=50*a.multiplier;a.vy=Math.abs(a.vy)+80;a.events.push({type:'target',index:i});
-  }
-  for(let i=0;i<table.rollovers.length;i++){
-   const t=table.rollovers[i];if(a.rolloverLit[i]||Math.hypot(a.x-t.x,a.y-t.y)>t.r+a.r)continue;
-   a.rolloverLit[i]=true;a.score+=150*a.multiplier;a.events.push({type:'rollover',index:i});
-  }
-  if(a.lit.every(Boolean)||a.bumperLit.every(Boolean)&&a.rolloverLit.every(Boolean)){
-   a.score+=500*a.multiplier;a.multiplier=Math.min(5,a.multiplier+1);a.lit.fill(false);a.bumperLit.fill(false);a.rolloverLit.fill(false);a.events.push({type:'jackpot'});
-  }
-  if(a.y>table.H+22){
-   if(a.age<a.saveUntil){a.x=424;a.y=638;a.vx=0;a.vy=-980;a.escaped=false;a.saveUntil=0;a.events.push({type:'save'});}
-   else{a.drained=true;a.events.push({type:'drain'});}
-  }
- }
- const speed=Math.hypot(a.vx,a.vy);if(speed>1600){a.vx*=1600/speed;a.vy*=1600/speed;}
- a.trail.push({x:a.x,y:a.y});if(a.trail.length>12)a.trail.shift();return a;
-}
-function paintTable(x,table,a,s,player,clock,launchLeft,message) {
- const {W,H}=table,g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#11152b');g.addColorStop(.5,'#3b1749');g.addColorStop(1,'#071e29');x.fillStyle=g;x.fillRect(0,0,W,H);
- x.fillStyle='#302344';x.fillRect(8,9,W-16,H-18);x.fillStyle='#0a1222';x.fillRect(19,25,W-38,H-50);
- x.fillStyle='#e7d9a0';x.textAlign='center';x.font='bold 23px Georgia';x.fillText('BUCKETHEADLAND',W/2,62);
- for(let i=0;i<table.targets.length;i++){const t=table.targets[i];circle(x,t.x,t.y,14,a.lit[i]?'#ffdd66':'#394655');x.fillStyle=a.lit[i]?'#382212':'#d9cfac';x.font='bold 15px Arial';x.fillText(t.letter,t.x,t.y+5);}
- // Stage floor, guitar strings and original bucket bumper illustrations.
- x.strokeStyle='#957ac344';x.lineWidth=1;for(let i=0;i<6;i++){x.beginPath();x.moveTo(175+i*19,115);x.lineTo(188+i*13,513);x.stroke();}
- x.fillStyle='#242449';x.fillRect(169,389,122,47);x.fillStyle='#dba743';x.font='bold 17px Georgia';x.fillText('SHRED THE STAGE',230,419);
- for(let i=0;i<3;i++){const b=table.bumpers[i],lit=a.bumperLit[i];circle(x,b.x,b.y,b.r+6,lit?'#ffb94f':'#86549d');circle(x,b.x,b.y,b.r,'#f7ecd5');x.fillStyle='#da4a48';x.fillRect(b.x-17,b.y-9,34,16);x.fillStyle='#362c48';x.font='bold 11px Arial';x.fillText('BUCKET',b.x,b.y+3);}
- table.rollovers.forEach((t,i)=>{circle(x,t.x,t.y,t.r,a.rolloverLit[i]?'#76ddc4':'#344650');x.fillStyle='#f2dc96';x.font='bold 10px Arial';x.fillText(i?'TOUR':'GIFT',t.x,t.y+4);});
- x.strokeStyle='#75c8d1';x.lineWidth=7;x.lineCap='round';for(const[ax,ay,bx,by]of table.rails){x.beginPath();x.moveTo(ax,ay);x.lineTo(bx,by);x.stroke();}
- x.fillStyle='#a864be';x.font='bold 60px Georgia';x.globalAlpha=.2;x.fillText('♬',230,530);x.globalAlpha=1;
- for(let i=0;i<2;i++){const px=i?338:122,angle=a.flippers[i];x.strokeStyle=i?'#e584b1':'#66bce4';x.lineWidth=18;x.beginPath();x.moveTo(px,590);x.lineTo(px+83*Math.cos(angle),590+83*Math.sin(angle));x.stroke();circle(x,px,590,11,'#f4e6bb');}
- x.fillStyle='#bd7f9f';x.fillRect(418,665,13,21);x.strokeStyle='#c9c8ca';x.lineWidth=3;for(let i=0;i<5;i++){x.beginPath();x.moveTo(417,645+i*4);x.lineTo(432,648+i*4);x.stroke();}
- x.strokeStyle='#bff4e977';x.lineWidth=4;x.beginPath();a.trail.forEach((p,i)=>i?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y));x.stroke();
- if(!a.drained)s.sprite(x,player,a.x,a.y,46,{exact:true,mood:a.launched?'walking':'thinking'});
- x.fillStyle='#ead4a1';x.font='bold 20px monospace';x.fillText(`×${a.multiplier}  ·  ${a.launched?Math.ceil(Math.max(0,clock))+'s':'LAUNCH '+Math.ceil(Math.max(0,launchLeft))+'s'}`,230,474);
- if(!a.launched){x.fillStyle='#ffe5a8';x.font='14px Arial';x.fillText('PULL DOWN ANYWHERE & RELEASE ↓',230,151);}
- if(message){x.fillStyle='#ffe27f';x.font='bold 18px Arial';x.fillText(message,230,361);}
-}
-async function pinball(s) {
- const table=pinballTable(s.seed),[c,x]=s.canvas(table.W,table.H),scores=[0,0],totals=[0,0],fingers=new Map(),buttonHeld=[false,false];
- let player=0,ballNumber=0,a=newPinballBall(table),clock=22,launchLeft=3,phase='handoff',resultLeft=0,message='',messageLeft=0;
- function held(){return [0,1].map(i=>buttonHeld[i]||[...fingers.values()].some(f=>f.flipper===i));}
- function clear(){for(const id of fingers.keys())s.release({pointerId:id});fingers.clear();buttonHeld.fill(false);}
- function launch(power=1){if(s.paused||phase!=='playing')return;launchPinball(a,power);}
- function reset(){a=newPinballBall(table);clock=22;launchLeft=3;message='';clear();}
- async function next(){phase='handoff';clear();reset();if(await s.pass(player,`Bucketheadland pinball · ball ${ballNumber+1}/3. Touch and hold the left or right half of the screen to flip (two thumbs for both). Pull down anywhere and release to launch. Light BUCKET or all three bumpers plus both side lanes for a jackpot and higher multiplier. A new head-ball follows a drain; 22 seconds maximum per ball.`))phase='playing';}
- const keyMap={a:0,arrowleft:0,z:0,l:1,arrowright:1,'/':1};
- s.on(document,'keydown',ev=>{const k=ev.key.toLowerCase();if(s.paused||phase!=='playing')return;if(k in keyMap){ev.preventDefault();buttonHeld[keyMap[k]]=true;}else if(k===' '||k==='enter'){ev.preventDefault();launch();}});
- s.on(document,'keyup',ev=>{const k=ev.key.toLowerCase();if(k in keyMap)buttonHeld[keyMap[k]]=false;});
- s.hint('Tap and hold the left or right half of the screen to raise that flipper (two thumbs work). Before launch, pull down anywhere and release to shoot the plunger: a longer pull is a harder launch. Keyboard: A/L or arrows flip, Space launches. Three alternating balls each on the same table; early drains get one ball save.');
- s.on(c,'pointerdown',ev=>{if(s.paused||phase!=='playing')return;ev.preventDefault();const p=s.pointer(ev);if(!a.launched)fingers.set(ev.pointerId,{plunger:true,start:p.y,y:p.y});else fingers.set(ev.pointerId,{flipper:p.x<table.W/2?0:1});s.capture(ev);});
- s.on(c,'pointermove',ev=>{const f=fingers.get(ev.pointerId);if(!f||s.paused)return;ev.preventDefault();if(f.plunger)f.y=s.pointer(ev).y;});
- const release=(ev,cancelled)=>{const f=fingers.get(ev.pointerId);if(!f)return;fingers.delete(ev.pointerId);s.release(ev);if(f.plunger&&!cancelled&&!s.paused&&phase==='playing')launch(clamp(.75+Math.max(0,s.pointer(ev).y-f.start)/160,.75,1.12));};
- s.on(c,'pointerup',ev=>release(ev,false));s.on(c,'pointercancel',ev=>release(ev,true));s.on(c,'lostpointercapture',ev=>release(ev,true));s.on(window,'blur',clear);s.resetOnPause?.(clear);s.cleanup(clear);
- s.frame(dt=>{
-  if(phase==='handoff')return;
-  if(phase==='result'){resultLeft-=dt;if(resultLeft<=0){if(player===1){ballNumber++;if(ballNumber===3){s.finish(scores,'Bucketheadland · three alternating head-balls each');return;}player=0;}else player=1;void next();return;}}
-  else{
-   messageLeft=Math.max(0,messageLeft-dt);if(messageLeft===0)message='';
-   if(!a.launched){launchLeft-=dt;if(launchLeft<=0)launch();}
-   else{clock-=dt;stepPinball(a,dt,table,held());scores[player]=totals[player]+a.score;s.setScores(scores);
-    for(const event of a.events){if(event.type==='jackpot'){message='JACKPOT! MULTIPLIER UP';messageLeft=1.2;s.react?.(player,'win');sound('win');}else if(event.type==='save'){message='BALL SAVED';messageLeft=.9;}else if(event.type==='bumper'||event.type==='target')sound('tap');}
-    if(a.drained||clock<=0){phase='result';resultLeft=.7;totals[player]=scores[player];message=a.drained?'DRAIN! NEXT HEAD…':'BALL TIME · NEXT HEAD…';s.react?.(player,a.score?'happy':'sad');clear();}
-   }
-  }
-  paintTable(x,table,a,s,player,clock,launchLeft,message);s.status(`${s.players[player].name} · ball ${ballNumber+1}/3 · ${scores[player]} · ×${a.multiplier} · light BUCKET for the jackpot`);s.debug={engine:'pinball',table,a,scores,player,ballNumber,phase,clock,fingers,held:held(),launch};
- });await next();
-}
+// Pinball engine (band/music tables). Real pinball rules: 3 balls each, players alternate balls, no clock; 1P = a
+// whole game on your own (beat the table's replay score). Physics, rules, DMD and art live in src/engines/pinball/;
+// a game picks its table with `pinballTable` (default Bucketheadland). Controls: hold the left / right half of the
+// screen for that flipper; drag down and release to pull the plunger; flick a finger up to nudge (too much = TILT).
+const {fullBleed}=require("src/engines/fullBleed.js");
+const {soloFinish,soloProgress}=require("src/solo.js");
+const {store}=require("src/state.js");
+const {saveProfile}=require("src/profile.js");
+const P=require("src/engines/pinball/physics.js");
+const {createMachine}=require("src/engines/pinball/machine.js");
+const {createRenderer}=require("src/engines/pinball/render.js");
+const {createDMD,scoreScene,splashScene}=require("src/engines/pinball/dmd.js");
+const {pinballSound,rollLevel,stopRoll}=require("src/engines/pinball/sound.js");
+const TABLES={buckethead:require("src/engines/pinball/tables/buckethead.js")};
+const clamp=(v,a,b)=>v<a?a:v>b?b:v,fmt=n=>Math.round(n).toLocaleString('en-US');
+const LEFT=new Set(['KeyZ','KeyA','ShiftLeft','ArrowLeft','ControlLeft']),RIGHT=new Set(['Slash','KeyL','ShiftRight','ArrowRight','ControlRight']),PLUNGE=new Set(['Enter','ArrowDown','Space','NumpadEnter']);
 
-Object.assign(exports,{pinballTable,newPinballBall,launchPinball,stepPinball,pinball});
+function highTable(id){return (store.profile?.pinballHigh?.[id]||[]).slice();}
+function recordHigh(id,name,score){if(!store.profile)return -1;const book=store.profile.pinballHigh||={},list=(book[id]||[]).slice();list.push({name:String(name).toUpperCase().slice(0,12),score:Math.floor(score)});list.sort((a,b)=>b.score-a.score);const rank=list.findIndex(e=>e.score===Math.floor(score)&&e.name===String(name).toUpperCase().slice(0,12));book[id]=list.slice(0,5);saveProfile(store.profile);return rank<5?rank:-1;}
+
+async function pinball(s){
+ const table=TABLES[s.game?.pinballTable]||TABLES.buckethead,solo=!!s.solo,nP=solo?1:2;
+ const [c,x]=s.canvas(390,780,{fill:true});fullBleed(s,{bg:'#07060a'});s.body.classList.add('drag-arena-body');
+ const m=createMachine({table,players:nP,seed:s.seed||1,level:s.solo?.level||'normal',onSound:pinballSound});
+ const R=createRenderer({def:m.def,art:table.art}),dmd=createDMD(),rules=table.rules,names=s.players.slice(0,nP).map(p=>p.name);
+ const replay=rules.replay?.[s.solo?.level||'normal']||rules.replay?.normal||0;
+ let phase='intro',phaseT=0,t=0,bonus=null,hintT=6,over=false,auto=false,lastFlash=null;
+ const fingers=new Map(),keys={flip:[false,false],pull:false,pullT:0};let pull=0;
+ const scores=()=>m.players.map(p=>p.score);
+ const clear=()=>{for(const id of fingers.keys())s.release({pointerId:id});fingers.clear();keys.flip=[false,false];keys.pull=false;pull=0;};
+ const flipInput=()=>{const f=[keys.flip[0],keys.flip[1]];for(const g of fingers.values())if(!g.plunger)f[g.side]=true;return f;};
+ const W=()=>s.W,H=()=>s.H;
+ s.hint('Hold the left or right half of the screen for that flipper (two thumbs). Ball on the plunger: drag down and let go, a longer pull shoots harder. Flick a finger up to nudge the table; too many nudges and it TILTS. Keys: Z / Shift / ← and / / Shift / → flip, hold Enter or ↓ to pull the plunger, Space nudges.');
+ // ---- input
+ s.on(c,'pointerdown',ev=>{if(s.paused||!(phase==='ball'))return;ev.preventDefault();const p=s.pointer(ev);fingers.set(ev.pointerId,{side:p.x<W()/2?0:1,x0:p.x,y0:p.y,t0:performance.now(),plunger:false,nudged:false,pull:0});s.capture(ev);});
+ s.on(c,'pointermove',ev=>{const f=fingers.get(ev.pointerId);if(!f||s.paused)return;ev.preventDefault();const p=s.pointer(ev),dy=p.y-f.y0;
+  if(!f.plunger&&m.phase==='plunge'&&dy>14&&P.ballOnPlunger(m.w,m.w.balls[0]||{}))f.plunger=true;
+  if(f.plunger)f.pull=clamp((dy-8)/(H()*.2),0,1);
+  else if(!f.nudged&&m.phase==='play'&&-dy>H()*.06&&performance.now()-f.t0<260){f.nudged=true;m.nudge(clamp((p.x-f.x0)*2,-160,160),-300);}});
+ const up=(ev,cancel)=>{const f=fingers.get(ev.pointerId);if(!f)return;fingers.delete(ev.pointerId);s.release(ev);if(f.plunger&&!cancel&&f.pull>.04&&m.phase==='plunge')P.plunge(m.w,f.pull);};
+ s.on(c,'pointerup',ev=>up(ev,false));s.on(c,'pointercancel',ev=>up(ev,true));s.on(c,'lostpointercapture',ev=>up(ev,true));
+ s.on(document,'keydown',ev=>{if(s.paused||phase!=='ball')return;const k=ev.code;
+  if(LEFT.has(k)){keys.flip[0]=true;ev.preventDefault();}else if(RIGHT.has(k)){keys.flip[1]=true;ev.preventDefault();}
+  else if(PLUNGE.has(k)){ev.preventDefault();if(m.phase==='plunge'){if(!keys.pull){keys.pull=true;keys.pullT=0;}}else if((k==='Space'||k==='KeyN')&&!ev.repeat)m.nudge(0,-300);}
+  else if(k==='KeyN'&&!ev.repeat)m.nudge(0,-300);});
+ s.on(document,'keyup',ev=>{const k=ev.code;if(LEFT.has(k))keys.flip[0]=false;else if(RIGHT.has(k))keys.flip[1]=false;else if(PLUNGE.has(k)&&keys.pull){keys.pull=false;if(m.phase==='plunge')P.plunge(m.w,clamp(keys.pullT/1.1,.05,1));keys.pullT=0;}});
+ s.on(window,'blur',clear);s.resetOnPause?.(clear);s.cleanup(()=>{clear();stopRoll();});
+ // ---- autopilot for tests (s.debug.auto = true): flips when a ball drops onto a flipper, plunges at 70%.
+ let botHold=[0,0],botPlungeAt=0;
+ function bot(dt){const f=[false,false];for(const fl of m.w.flippers){const mid=fl.x+Math.cos(fl.rest)*fl.len/2;for(const b of m.w.balls)if(b.state==='free'&&Math.abs(b.x-mid)<58&&b.y-fl.y>-70&&b.y-fl.y<20&&b.vy>40)botHold[fl.input]=.16;}
+  for(let i=0;i<2;i++)if(botHold[i]>0){f[i]=true;botHold[i]-=dt;}
+  if(m.phase==='plunge'){botPlungeAt+=dt;if(botPlungeAt>.8){P.plunge(m.w,.72);botPlungeAt=0;}}return f;}
+
+ // ---- flow
+ async function handoff(i,again){
+  clear();phase='wait';
+  const pl=m.players[i],text=solo?`${names[0]}: three balls, no clock. Replay at ${fmt(replay)}. ${rules.howTo||''}`:`${names[i]}, you're up${again?': SHOOT AGAIN':''}. Ball ${pl.ball} of ${rules.balls}. ${pl.score?`You have ${fmt(pl.score)}.`:''} Hold the left/right half of the screen to flip, drag down + release to launch, flick up to nudge.`;
+  if(solo&&(pl.ball>1||again))return true;
+  return s.pass(i,text,'Ready');
+ }
+ function startBall(){m.startBall();phase='ball';phaseT=0;R.follow(m.w,1,W(),H(),true);pinballSound('start');}
+ async function next(){
+  const nx=m.advance();
+  if(!nx){phase='gameover';phaseT=0;pinballSound('gameOver');return;}
+  if(!await handoff(nx.player,nx.again))return;if(!s.alive)return;
+  if(R.cam.z<1){phase='zoom';phaseT=0;return;}startBall();
+ }
+ async function finishGame(){
+  if(over)return;over=true;const sc=scores();
+  // high scores (one line per player)
+  const ranks=sc.map((v,i)=>v>0?recordHigh(table.id||'buckethead',names[i]||`P${i+1}`,v):-1);
+  if(solo){const won=replay>0&&sc[0]>=replay;soloFinish(s,sc[0],won?1:0,`${table.title} · ${fmt(sc[0])}${won?' · REPLAY!':''}${ranks[0]>=0?` · high score #${ranks[0]+1}`:''}`,won);}
+  else s.finish(sc,`${table.title} pinball · 3 balls each${ranks.some(r=>r>=0)?' · new high score':''}`);
+ }
+
+ s.debug={engine:'pinball',m,phase,R,dmd,auto:false,scores:scores()};
+ s.frame((dtRaw)=>{
+  const dt=Math.min(dtRaw,1/30);t+=dt;phaseT+=dt;
+  const dpr=Math.min(2,window.devicePixelRatio||1),cw=Math.round(W()*dpr),ch=Math.round(H()*dpr);if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}
+  auto=!!s.debug?.auto;
+  if(phase==='intro'){R.cam.z=0;if(phaseT>2.4){phase='zoom';phaseT=0;}}
+  else if(phase==='zoom'){R.cam.z=clamp(phaseT/1.3,0,1);R.cam.y=m.def.H;if(R.cam.z>=1)startBall();}
+  else if(phase==='ball'){
+   if(keys.pull)keys.pullT+=dt;
+   const flip=auto?bot(dt):flipInput();let pl=0;for(const g of fingers.values())if(g.plunger)pl=Math.max(pl,g.pull);if(keys.pull)pl=Math.max(pl,clamp(keys.pullT/1.1,0,1));pull=pl;
+   const ev=m.tick(dt,{flip,pull:m.phase==='plunge'?pull:0});
+   for(const e of ev){const snd={flip:'flip',flipDown:'flipDown',bumper:'bumper',sling:'sling',drop:'drop',standup:'standup',rollover:'rollover',spin:'spin',hole:'hole',eject:'eject',plunge:'plunge',kickback:'kick',trigger:'gate',wallHit:'wall',railEnter:null}[e.type];if(snd&&!(e.type==='wallHit'&&e.speed<700))pinballSound(snd);
+    if(e.type==='bumper'||e.type==='jackpot')s.react?.(m.cur,'happy');}
+   let fast=0;for(const b of m.w.balls)if(b.state==='free')fast=Math.max(fast,Math.hypot(b.vx,b.vy));rollLevel(fast);
+   R.follow(m.w,dt,W(),H());hintT=Math.max(0,hintT-dt);
+   s.setScores(solo?[m.players[0].score,0]:scores());if(solo)soloProgress(s,m.players[0].score,0,`${table.title} · ball ${m.players[0].ball}`);
+   if(m.phase==='drained'){rollLevel(0);bonus=m.endBall();bonus.step=0;phase='bonus';phaseT=0;clear();}
+  }
+  else if(phase==='bonus'){const steps=bonus.lines.length+1;if(Math.floor(phaseT/.9)!==bonus.step){bonus.step=Math.floor(phaseT/.9);if(bonus.step<=steps)pinballSound('bonus');}
+   if(phaseT>.9*steps+.6){phase='wait';s.setScores(solo?[m.players[0].score,0]:scores());void next();}}
+  else if(phase==='gameover'){if(phaseT>2.6)void finishGame();}
+  // ---- draw
+  const lamps=phase==='ball'?rules.lamps(m,t):attractLamps(m.def,t,phase==='bonus'?m.p:null);
+  if(phase==='bonus')bonusScene();else if(phase==='gameover')gameOverScene();else if(phase==='intro'||phase==='zoom'||phase==='wait')attractScene();
+  else if(m.msg)splashScene(dmd,{lines:m.msg.lines,flash:m.msg.flash,age:m.msg.age});
+  else scoreScene(dmd,{scores:scores(),cur:m.cur,ball:m.players[m.cur].ball,balls:rules.balls,names,t,credits:solo&&replay?`REPLAY ${fmt(replay)}`:''});
+  const v=R.draw(x,{W:W(),H:H(),dpr,w:m.w,lamps,t,dmd,strip:null});
+  overlay(v);
+  s.status(`${names[m.cur]||''} · ball ${m.players[m.cur].ball}/${rules.balls} · ${fmt(m.players[m.cur].score)}`);
+  Object.assign(s.debug,{phase,auto,scores:scores()});
+ });
+ function attractScene(){const L=rules.attract||[table.title];const i=Math.floor(t/1.6)%L.length;splashScene(dmd,{lines:phase==='wait'&&!over?[names[m.cur]||'PLAYER '+(m.cur+1),`BALL ${m.players[m.cur].ball}`]:[L[i]],age:t%1.6});}
+ function bonusScene(){const i=Math.min(bonus.lines.length,Math.floor(phaseT/.9));dmd.clear();
+  if(i<bonus.lines.length){const [k,v]=bonus.lines[i];dmd.fit(k,64,3,{align:'center'});dmd.fit(typeof v==='number'&&k.includes('X')?`${v}X`:fmt(v),64,14,{scale:2,align:'center'});}
+  else{dmd.fit('TOTAL BONUS',64,3,{align:'center'});dmd.fit(fmt(bonus.total),64,14,{scale:2,align:'center'});}}
+ function gameOverScene(){dmd.clear();dmd.text('GAME OVER',64,1,{align:'center'});const sc=scores();if(nP===1)dmd.fit(fmt(sc[0]),64,12,{scale:2,align:'center'});else sc.forEach((v,i)=>dmd.fit(`${(names[i]||'P'+(i+1)).slice(0,8)} ${fmt(v)}`,64,11+i*10,{align:'center'}));}
+ function attractLamps(def,t,p){const L={},k=Math.floor(t*10);def.lamps.forEach((l,i)=>{L[l.id]=(k+i)%6<2?1:0;});if(p)for(const n of [2,3,4,5,6])L['bx'+n]=p.bonusX>=n?1:0;return L;}
+ // Touch hints + plunger meter, drawn in screen space.
+ function overlay(v){
+  if(phase!=='ball')return;const w=W(),h=H();x.save();x.setTransform(Math.min(2,window.devicePixelRatio||1),0,0,Math.min(2,window.devicePixelRatio||1),0,0);
+  if(m.phase==='plunge'){const pl=m.w.plunger,[sx,sy]=R.toScreen(v,(pl.x0+pl.x1)/2,pl.y);const mh=Math.min(110,h*.18),mx=Math.min(w-14,sx),my=clamp(sy-mh-20,v.top+10,h-mh-10);
+   x.fillStyle='rgba(0,0,0,.55)';x.fillRect(mx-7,my,14,mh);x.fillStyle=pull>.85?'#ff3b30':'#ffd23f';x.fillRect(mx-5,my+2,10,(mh-4)*pull);
+   if(pull<.05){x.fillStyle='rgba(255,255,255,.9)';x.font='bold 13px Arial';x.textAlign='right';x.textBaseline='middle';x.fillText('DRAG DOWN & RELEASE ⤓',mx-12,my+mh/2);}}
+  if(hintT>0&&m.players[m.cur].ball===1){x.globalAlpha=Math.min(1,hintT)*.55;x.fillStyle='#fff';x.font='bold 13px Arial';x.textBaseline='bottom';x.textAlign='left';x.fillText('◀ HOLD: LEFT FLIPPER',10,h-34);x.textAlign='right';x.fillText('RIGHT FLIPPER: HOLD ▶',w-10,h-34);
+   x.fillStyle='rgba(255,255,255,.25)';x.fillRect(w/2-.5,v.top+40,1,h-v.top-80);}
+  x.restore();
+ }
+ if(!await handoff(0,false)||!s.alive)return;
+ phase='intro';phaseT=0;
+}
+Object.assign(exports,{pinball,PINBALL_TABLES:TABLES});

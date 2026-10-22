@@ -339,6 +339,17 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   (Node, all 68 Freedoom maps, in test:core), `tests/doom.mjs` (2P flow + touch, 3 sizes), `tests/doom-solo.mjs`, `tests/doom-finale.mjs`,
   `tests/doom-heads.mjs` (head/face contact sheets). Build is ~78 MB now (+20 MB Freedoom). Real-phone feel, audio by ear and
   the owner's own WADs untested (only Freedoom tested).
+- **Pinball engine (Oct 21 2026, phase 1 of 4, branch `claude/pinball-engine`, id `bucketheadland-pinball`):** rebuilt as a
+  reusable band-table engine (`src/engines/pinball/`, see its README). Real rules: 3 balls each, players alternate balls, no
+  clock, extra balls; 1P = solo kind `'game'` (new in solo.js/launcher note): one whole game, won = beat `rules.replay[level]`.
+  Table in mm (514x1067, slope 6.5°, 600 Hz physics): accelerating flippers that carry the ball (aim by timing), pops, slings,
+  drop bank, standups, spinner, gates, saucer/lock holes, ramps/wireforms as guided 3D paths, kickback, plunger + skill shot,
+  ball save, tilt (flick up = nudge), virtual 3-ball lock → JORDAN MULTIBALL. Camera: intro shows the whole table, then the
+  view is width-locked in every orientation and pans with the ball (owner's choice; landscape/desktop are very zoomed). 128x32
+  DMD strip on top (left-aligned beside the Pause/Exit pills on phones). High scores `profile.pinballHigh[tableId]` (validated
+  in profile.js). Owner plan: phase 2 = more table parts (upper flipper, Giant Robot toy, captive ball, magnets, VUK), phase 3 =
+  modes/DMD animations/music, phase 4 = art, light shows, drop-in art slots `assets/pinball/<table>/`. Tests: `tests/pinball-sim.mjs`
+  (Node bot, in test:core), `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow + screenshots). Real-phone feel untested.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 
