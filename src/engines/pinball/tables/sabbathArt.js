@@ -49,7 +49,7 @@ const art={
   logo(x,236,692,24,imgs);
   for(const [ax,ay,c] of [[72,700,'#ff7a1a'],[400,700,'#ff7a1a'],[31,760,'#ff3b30'],[441,760,'#ff3b30']]){x.fillStyle=c;x.globalAlpha=.25;x.beginPath();x.moveTo(ax,ay+30);x.lineTo(ax-9,ay);x.lineTo(ax+9,ay);x.fill();x.globalAlpha=1;}
   if(imgs.character){const w=110,h=w*imgs.character.height/imgs.character.width;x.drawImage(imgs.character,236-w/2,830-h*.45,w,h);}
-  else{x.save();x.translate(236,840);x.rotate(-.5);x.scale(.75,.75);sg(x);x.restore();}
+  else drawCharacter(x);
   x.fillStyle='rgba(233,228,218,.55)';x.font='italic bold 7px "Times New Roman",serif';x.textAlign='center';x.fillText('BIRMINGHAM · 1970',236,880);
   x.restore();x.save();x.strokeStyle='rgba(143,43,216,.6)';x.lineWidth=1.2;x.beginPath();x.moveTo(20,872);x.lineTo(20,256);x.arc(256,256,236,Math.PI,TAU);x.lineTo(492,300);x.stroke();x.restore();
  },
@@ -120,4 +120,6 @@ const art={
   x.restore();
  },
 };
-Object.assign(exports,{art});
+// The hero art between the slings (also used by tools/pinball-art-templates.mjs to frame the character template).
+function drawCharacter(x){x.save();x.translate(236,840);x.rotate(-.5);x.scale(.75,.75);sg(x);x.restore();}
+Object.assign(exports,{art,logo,drawCharacter});

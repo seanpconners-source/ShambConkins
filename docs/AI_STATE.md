@@ -388,7 +388,10 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   rail junctions (`exit.next`), pop-up post (`diverter` a===b, `post` event); music engine: riff track, swing, bell, rain,
   thunder; siren sfx. Source 'Black Sabbath' → wins recruit Ozzy / Iommi / Geezer / Bill Ward. Fixed on the way: a touch
   release mid-pull could fail to launch (canPlunge(400) on release). Tests: `pinball-sim.mjs 6 sabbath` (in test:core),
-  `pinball.mjs black-sabbath-pinball`, `GAME=black-sabbath-pinball pinball-closeup.mjs`. Real-phone feel and music untested. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
+  `pinball.mjs black-sabbath-pinball`, `GAME=black-sabbath-pinball pinball-closeup.mjs`. Real-phone feel and music untested.
+  Art templates: `docs/pinball-art/black-sabbath/` (same format as buckethead's + an image PROMPT per slot in
+  IMAGE-SPECS.txt); `tools/pinball-art-templates.mjs --table <id>` now handles both tables (art modules export `logo` and
+  `drawCharacter`). The cloud branch `ccr-17e1cdcc-y2g17r` (Bucketheadland templates) is merged into this branch. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).

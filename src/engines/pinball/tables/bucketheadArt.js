@@ -155,4 +155,6 @@ const art={
   x.restore();
  },
 };
-Object.assign(exports,{art,buckethead,logo});
+// The hero art between the slings (also used by tools/pinball-art-templates.mjs to frame the character template).
+const drawCharacter=x=>buckethead(x,236,812,70,{guitar:true});
+Object.assign(exports,{art,buckethead,logo,drawCharacter});
