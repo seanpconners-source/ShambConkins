@@ -391,7 +391,13 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   `pinball.mjs black-sabbath-pinball`, `GAME=black-sabbath-pinball pinball-closeup.mjs`. Real-phone feel and music untested.
   Art templates: `docs/pinball-art/black-sabbath/` (same format as buckethead's + an image PROMPT per slot in
   IMAGE-SPECS.txt); `tools/pinball-art-templates.mjs --table <id>` now handles both tables (art modules export `logo` and
-  `drawCharacter`). The cloud branch `ccr-17e1cdcc-y2g17r` (Bucketheadland templates) is merged into this branch. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
+  `drawCharacter`). The cloud branch `ccr-17e1cdcc-y2g17r` (Bucketheadland templates) is merged into this branch.
+  Owner art (Oct 22): GPT-made pictures for all 7 slots of BOTH tables in `assets/pinball/buckethead/` and
+  `assets/pinball/black-sabbath/` (resized to the template sizes, WebP q90; uploads not kept in the repo). Buckethead playfield:
+  its painted robot was cloned out with sky (the toy sits there). Both playfields are darkened in soft spots under every
+  lamp (lamp list read from `buildTable().lamps`, mm×2 = px) so inserts read over the busy art. Drop-in toys now draw their
+  shadow and hit flash in the picture's outline (`drawToy` in dropins.js) instead of a box. Custom playfields hide
+  logo/character on the table (logo still shows in the landscape banner). Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).

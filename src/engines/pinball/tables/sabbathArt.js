@@ -3,7 +3,7 @@
 // war-pig pop caps, bats and fog, Tony Iommi's devil-horned guitar between the slingshots, an iron Iron Man toy and
 // the Into the Void disc. Every function takes the owner's drop-in pictures (imgs, see ../dropins.js) first.
 const {seededRandom}=require("src/utils.js");
-const {drawCover}=require("src/engines/pinball/dropins.js");
+const {drawCover,drawToy}=require("src/engines/pinball/dropins.js");
 const TAU=Math.PI*2;
 function playfieldPath(x){x.beginPath();x.moveTo(12,1067);x.lineTo(12,256);x.arc(256,256,244,Math.PI,TAU);x.lineTo(500,1067);x.closePath();}
 function tree(x,bx,by,h,flip=1){x.save();x.strokeStyle='#07040b';x.lineCap='round';const br=(px,py,a,l,w)=>{if(l<6)return;const ex=px+Math.cos(a)*l,ey=py+Math.sin(a)*l;x.lineWidth=w;x.beginPath();x.moveTo(px,py);x.lineTo(ex,ey);x.stroke();br(ex,ey,a-.45*flip,l*.7,w*.65);br(ex,ey,a+.35*flip,l*.62,w*.6);};br(bx,by,-Math.PI/2,h*.4,h*.05);x.restore();}
@@ -75,7 +75,7 @@ const art={
  // IRON MAN: riveted iron hulk, red eye slit (blazing while his mode runs); moves with p.ox/oy.
  toy(x,p,t,imgs={}){
   const cx=p.x+(p.ox||0),cy=p.y+(p.oy||0),hit=p.flash>0,step=Math.sin(t*4)*(p.armed?2:0);
-  if(imgs.toy){x.save();x.fillStyle='rgba(0,0,0,.5)';x.fillRect(cx-p.w/2+5,cy-p.h/2+6,p.w,p.h);drawCover(x,imgs.toy,cx-p.w/2,cy-p.h/2,p.w,p.h,'stretch');if(hit){x.globalCompositeOperation='lighter';x.fillStyle='rgba(255,255,255,.35)';x.fillRect(cx-p.w/2,cy-p.h/2,p.w,p.h);}x.restore();return;}
+  if(imgs.toy){drawToy(x,imgs.toy,cx-p.w/2,cy-p.h/2,p.w,p.h,{shadow:.5,hit});return;}
   x.save();x.translate(cx,cy);
   x.fillStyle='rgba(0,0,0,.5)';x.fillRect(-38,-50,86,112);
   const iron=(a,b)=>{const g=x.createLinearGradient(a,0,b,0);g.addColorStop(0,'#3a3d44');g.addColorStop(.45,hit?'#e8e8ee':'#8a8f99');g.addColorStop(1,'#2a2c31');return g;};

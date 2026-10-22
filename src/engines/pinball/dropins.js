@@ -21,4 +21,19 @@ function drawCover(x,img,rx,ry,rw,rh,mode='cover'){
  if(mode==='stretch'){x.drawImage(img,rx,ry,rw,rh);return;}
  const s=Math.max(rw/img.width,rh/img.height),sw=rw/s,sh=rh/s;x.drawImage(img,(img.width-sw)/2,(img.height-sh)/2,sw,sh,rx,ry,rw,rh);
 }
-Object.assign(exports,{loadDropins,drawCover,PINBALL_ART_SLOTS:SLOTS});
+// A drop-in toy picture stretched to its box, with a shadow and hit flash that follow its outline (transparent
+// pixels get neither), so a toy that doesn't fill its box shows no dark rectangle around it.
+const tints=new WeakMap();
+function tinted(img,color){
+ let m=tints.get(img);if(!m)tints.set(img,m={});
+ if(!m[color]){const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const g=c.getContext('2d');
+  g.drawImage(img,0,0);g.globalCompositeOperation='source-in';g.fillStyle=color;g.fillRect(0,0,c.width,c.height);m[color]=c;}
+ return m[color];
+}
+function drawToy(x,img,rx,ry,rw,rh,{shadow=.45,hit=false}={}){
+ x.save();x.globalAlpha=shadow;x.drawImage(tinted(img,'#000'),rx+5,ry+6,rw,rh);x.globalAlpha=1;
+ x.drawImage(img,rx,ry,rw,rh);
+ if(hit){x.globalCompositeOperation='lighter';x.globalAlpha=.35;x.drawImage(tinted(img,'#fff'),rx,ry,rw,rh);}
+ x.restore();
+}
+Object.assign(exports,{loadDropins,drawCover,drawToy,PINBALL_ART_SLOTS:SLOTS});
