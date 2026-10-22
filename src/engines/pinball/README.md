@@ -68,6 +68,7 @@ Put pictures in `assets/pinball/<table id>/<slot>.webp|png|jpg|svg` and rebuild;
 | `character` | the hero art between the slings (transparent) | ~600 wide |
 | `bumper` | pop bumper caps (square, cut to a circle) | 256 × 256 |
 | `toy` | the moving toy, stretched to its box (Giant Robot: 96 × 84 mm) | ~400 × 350 |
+| `flipper-left` / `flipper-right` | a bottom flipper, swinging with it (drawn under the ball): pivot at (120,100), flipper end at (510,100); the right one is the mirror image | 600 × 200 |
 Shrink big pictures with `python3 tools/optimize-art.py` first (the build embeds them in the HTML).
 Templates (the current painted art per slot, same size/framing, a parts overlay, IMAGE-SPECS.txt with sizes, safe areas
 and image prompts): `docs/pinball-art/<table>/`, remade by `node tools/pinball-art-templates.mjs --table <table>`

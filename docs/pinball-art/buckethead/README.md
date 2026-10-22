@@ -15,8 +15,10 @@ versions animate (the robot walks and blinks, the backglass wheel turns, bumpers
 | `logo.png` | logo | 1092 × 250 | Transparent. Drawn 273 mm wide centred on the logo spot, and in the backbox beside the score display. |
 | `character.png` | character | 660 × 805 | Transparent. Drawn 110 mm wide, centred between the slingshots. The painted guitar reaches past that frame, so its head is cut off here; keep a new picture inside the frame. |
 | `bumper.png` | bumper | 256 × 256 | Cut to a circle; one picture for all three pop bumpers. It's brightened when a bumper is hit. |
-| `toy.png` | toy | 400 × 350 | The Giant Robot, stretched to its 96 × 84 mm box (the robot is shrunk a little to fit). The game adds the shadow and the hit flash. |
+| `toy.png` | toy | 400 × 350 | The Giant Robot, stretched to its 96 × 84 mm box (the robot is shrunk a little to fit). The game adds the shadow and the hit flash in its outline. |
+| `flipper-left.png` / `flipper-right.png` | flipper-left / flipper-right | 600 × 200 | Transparent. Drawn on a bottom flipper and swings with it: pivot at (120,100), flipper end at (510,100); the right one is the mirror image. |
 
-The DMD, flippers, slingshots, ramps, inserts and drop targets are drawn by code and have no picture slot.
+The DMD, the upper flipper, slingshots, ramps, inserts and drop targets are drawn by code and have no picture slot.
 Full specs for each picture (sizes, transparency, what's hidden, safe areas): `IMAGE-SPECS.txt`.
+`gpt/`: the kit for repainting Buckethead so the left flipper is his strumming hand (`gpt/GPT-INSTRUCTIONS.txt`).
 Regenerate these files with `node tools/pinball-art-templates.mjs`.

@@ -5,6 +5,7 @@
 // Camera: the table width always fills the screen width (Game Boy Pokemon Pinball style) and the view pans up and
 // down with the ball; when the whole height fits it stays put. The intro starts on the whole table, then zooms in.
 const {railAt}=require("src/engines/pinball/physics.js");
+const {drawFlipperImage}=require("src/engines/pinball/dropins.js");
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,ease=t=>t<.5?2*t*t:1-(-2*t+2)**2/2;
 const TAU=Math.PI*2;
 
@@ -209,8 +210,11 @@ function createRenderer(table){
   x.drawImage(R.cache.base,0,0,def.W,def.H);
   drawLights(x,lamps,gi);
   drawDynamic(x,w,t);
+  // a flipper picture (e.g. a hand) may be wider than the flipper, so it goes under the balls; painted flippers go over
+  const flipImg=f=>f.y===flipY&&imgs[f.input?'flipper-right':'flipper-left'];
+  for(const f of w.flippers){const img=flipImg(f);if(img)drawFlipperImage(x,f,img,!!f.input);}
   drawBalls(x,w,false,lamps);
-  for(const f of w.flippers)drawFlipper(x,f,f.color||art.flipper,art.flipperRubber,art.flipperText||'');
+  for(const f of w.flippers)if(!flipImg(f))drawFlipper(x,f,f.color||art.flipper,art.flipperRubber,art.flipperText||'');
   x.drawImage(R.cache.over,0,0,def.W,def.H);
   if(gi<.98){x.fillStyle=`rgba(0,0,8,${(1-gi)*.4})`;x.fillRect(0,0,def.W,def.H);}
   drawFlashers(x,flashers,flashT);

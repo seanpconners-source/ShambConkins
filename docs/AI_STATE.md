@@ -397,7 +397,13 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   its painted robot was cloned out with sky (the toy sits there). Both playfields are darkened in soft spots under every
   lamp (lamp list read from `buildTable().lamps`, mm×2 = px) so inserts read over the busy art. Drop-in toys now draw their
   shadow and hit flash in the picture's outline (`drawToy` in dropins.js) instead of a box. Custom playfields hide
-  logo/character on the table (logo still shows in the landscape banner). Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
+  logo/character on the table (logo still shows in the landscape banner).
+  Flipper pictures (Oct 22): drop-in slots `flipper-left`/`flipper-right` (600x200, pivot (120,100), tip (510,100), right =
+  mirror; `drawFlipperImage` in dropins.js, drawn under the balls; only the two bottom flippers). Plan (owner): Buckethead's
+  strumming hand = the left flipper. Kit for GPT in `docs/pinball-art/buckethead/gpt/` (empty stage + pose + hand prompts,
+  sketches); when the owner sends the 3 pictures: cut the cutout's hand at the wrist, put the wrist on the flipL pivot
+  (playfield px 296,1892), guitar body ~(495,1860), headstock ≤(650,1610), bucket top ≥1505, sign (logo.webp) ~520 px wide
+  between the ramps at y 1290-1455, blend the stage into the playfield from y ~1100, keep the lamp darkening spots. Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
