@@ -4,13 +4,14 @@
 # right hand hanging clear of the guitar, gpt-03 the picking hand) on top of playfield-before-flipper-hand.webp.
 # His wrist sits on the left flipper's pivot; the hand picture swings with the flipper (dropins.js drawFlipperImage).
 # Needs: pip install pillow numpy opencv-python-headless, and node (reads the lamp positions from the table).
-# Usage: python3 tools/pinball-art/buckethead-flipper-hand.py [scale .5]
+# Usage: python3 tools/pinball-art/buckethead-flipper-hand.py [scale .5] [lean degrees 0]
 import json, math, subprocess, sys, os
 import numpy as np, cv2
 from PIL import Image, ImageFilter, ImageDraw
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SRC = ROOT + '/assets/originals/pinball/buckethead/'; OUT = ROOT + '/assets/pinball/buckethead/'
 K = float(sys.argv[1]) if len(sys.argv) > 1 else .5          # Buckethead's size (playfield px per GPT px)
+ROT = float(sys.argv[2]) if len(sys.argv) > 2 else 0          # lean (degrees clockwise about his wrist), brings the strings under the pick
 LAMPS_JS = """const fs=require('fs'),path=require('path'),root=process.argv[1],c={};
 function req(id){if(c[id])return c[id];const e=c[id]={};const src=id==='src/data/userPortraits.js'?'Object.assign(exports,{USER_PORTRAITS:{}});':fs.readFileSync(path.join(root,id),'utf8');new Function('exports','require',src)(e,req);return e;}
 console.log(JSON.stringify(req('src/engines/pinball/tables/buckethead.js').buildTable().lamps.map(l=>[l.x*2,l.y*2,l.r*2])));"""
@@ -45,10 +46,13 @@ al = a[..., 3].astype(np.float32); alf = cv2.inpaint(al.astype(np.uint8), mk, 9,
 for y in range(930, 1024): a[y, :, 3] = (a[y, :, 3] * max(0, 1 - (y - 930) / 70)).astype(np.uint8)
 bh = Image.fromarray(a)
 WX, WY = 345, 795; PX, PY = 296, 1892
-bw = bh.resize((round(1024 * K), round(1024 * K)), Image.LANCZOS); ox, oy = round(PX - WX * K), round(PY - WY * K)
+if ROT:   # lean about the wrist (padded so nothing is clipped)
+  pad = Image.new('RGBA', (2048, 2048), (0, 0, 0, 0)); pad.alpha_composite(bh, (512, 512))
+  bh = pad.rotate(-ROT, resample=Image.BICUBIC, center=(WX + 512, WY + 512)); WX, WY = WX + 512, WY + 512
+bw = bh.resize((round(bh.width * K), round(bh.height * K)), Image.LANCZOS); ox, oy = round(PX - WX * K), round(PY - WY * K)
 sh = Image.new('RGBA', bw.size, (0, 0, 0, 0)); sh.putalpha(bw.getchannel('A').point(lambda v: v * .55)); sh = sh.filter(ImageFilter.GaussianBlur(8))
 pf.alpha_composite(sh, (ox + 6, oy + 8)); pf.alpha_composite(bw, (ox, oy))
-print('Buckethead at', ox, oy, 'size', bw.size, 'bucket top y', oy + round(22 * K))
+print('Buckethead at', ox, oy, 'size', bw.size, 'scale', K, 'lean', ROT)
 pf.convert('RGB').save(OUT + 'playfield.webp', quality=90)
 # 5) the hand for flipper-left (600 x 200, pivot (120,100), flipper end (510,100)): cuff edge -> pivot, pick tip -> ~545
 hd = Image.open(SRC + 'gpt-03-left-flipper-picking-hand.webp').convert('RGBA')
