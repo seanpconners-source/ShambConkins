@@ -42,10 +42,11 @@ else:
   bh = Image.fromarray(a)
   WX, WY = 345, 795
 PX, PY = 296, 1892
+DY = 0 if ELBOW else 24   # owner, Oct 22: scooted down a little (with the 2X-6X lamps) so the pick rides over the strings
 if ROT:   # lean about the wrist (padded so nothing is clipped)
   pad = Image.new('RGBA', (2048, 2048), (0, 0, 0, 0)); pad.alpha_composite(bh, (512, 512))
   bh = pad.rotate(-ROT, resample=Image.BICUBIC, center=(WX + 512, WY + 512)); WX, WY = WX + 512, WY + 512
-bw = bh.resize((round(bh.width * K), round(bh.height * K)), Image.LANCZOS); ox, oy = round(PX - WX * K), round(PY - WY * K)
+bw = bh.resize((round(bh.width * K), round(bh.height * K)), Image.LANCZOS); ox, oy = round(PX - WX * K), round(PY - WY * K) + DY
 sh = Image.new('RGBA', bw.size, (0, 0, 0, 0)); sh.putalpha(bw.getchannel('A').point(lambda v: v * .55)); sh = sh.filter(ImageFilter.GaussianBlur(8))
 def paste(im, x, y): pf.alpha_composite(im, (max(x, 0), max(y, 0)), (max(-x, 0), max(-y, 0)))   # he may hang off the left edge
 paste(sh, ox + 6, oy + 8); paste(bw, ox, oy)

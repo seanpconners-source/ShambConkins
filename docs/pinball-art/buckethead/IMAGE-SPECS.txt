@@ -48,7 +48,7 @@ Things the game draws on top (keep important art away from them; see playfield-p
 - Chicken Coop hole at (472,872), the EGG targets just below it at y 948, the Golden Egg lane at about x 640-700,
   y 640-960, the Haunted Ride hole at (836,1228).
 - Coloured round/arrow light inserts (45 of them) are see-through tinted lenses: your art shows under them.
-  The big ones: JORDAN star at (472,1240), COASTER arrow (300,1232), ROBOT arrow (744,1232), 2X-6X row at y 1476,
+  The big ones: JORDAN star at (472,1240), COASTER arrow (300,1232), ROBOT arrow (744,1232), 2X-6X row at y 1500,
   SHOOT AGAIN at (472,1810).
 - Slingshots: x 188-264 and 680-756, y 1524-1736. Flippers at about y 1890.
 Good spots for big art: the band y 1290-1450 across the middle (where the logo is now), the area y 1500-1800
