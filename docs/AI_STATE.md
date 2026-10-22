@@ -421,6 +421,10 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   Cavanagh). Spinners now take a label (Sabbath's said NUNCHUCK). Art templates `docs/pinball-art/king-gizzard/` (6
   slots, no toy). Tests: `pinball-sim.mjs 6 gizzard` (in test:core, with a scripted albums/wizard/infinity/multiball
   check), `pinball.mjs king-gizzard-pinball`. Real-phone feel, balance and music untested by ears.
+  Owner art (Oct 22): all 6 slots in `assets/pinball/king-gizzard/` (GPT, from the `gpt/` kit). The playfield was remapped
+  vertically in sections (planet → Nest, nonagon circles → nonagon lamps, wizard between the slings), its three painted
+  bumper discs moved under the real pops (inpainted old spots), darkened under the lamps. Bonus X lamps moved from a row
+  at y 738 (on the art's title) to an arch over the wizard's hat (y 786-808).
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 

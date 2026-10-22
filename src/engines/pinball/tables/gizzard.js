@@ -81,7 +81,8 @@ function buildTable(){
  T.lamp('inL',72,780,{r:7,color:'#7cff4f'});T.lamp('inR',400,780,{r:7,color:'#7cff4f'});
  // Centre: the six-album ladder, bonus X, shoot again.
  ['#ff2d55','#ffd23f','#bf5af2','#7cff4f','#ff7a1a','#64d2ff'].forEach((c,i)=>T.lamp('al'+i,174+i*25,556,{r:8,color:c}));
- ['2','3','4','5','6'].forEach((t,i)=>T.lamp('bx'+t,176+i*30,738,{r:10,color:'#7cff4f',label:t+'X'}));
+ // bonus X: an arch under the title, over the wizard's hat (the owner's playfield art has its title where a straight row sat)
+ ['2','3','4','5','6'].forEach((t,i)=>T.lamp('bx'+t,[162,196,236,276,310][i],[808,798,786,798,808][i],{r:10,color:'#7cff4f',label:t+'X'}));
  T.lamp('shootAgain',236,895,{r:12,color:'#ff3b30',label:'SHOOT AGAIN'});
  T.lamp('gamma',39,500,{r:6,color:'#64d2ff'});
  T.gi([[70,740],[402,740],[110,900],[362,900],[40,620],[432,620],[150,560],[330,500],[236,300],[120,200],[360,170],[236,180],[440,430],[236,690],[300,40],[180,40]],{color:'#ffd0f0'});
