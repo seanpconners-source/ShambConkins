@@ -18,4 +18,5 @@ versions animate (the robot walks and blinks, the backglass wheel turns, bumpers
 | `toy.png` | toy | 400 × 350 | The Giant Robot, stretched to its 96 × 84 mm box (the robot is shrunk a little to fit). The game adds the shadow and the hit flash. |
 
 The DMD, flippers, slingshots, ramps, inserts and drop targets are drawn by code and have no picture slot.
+Full specs for each picture (sizes, transparency, what's hidden, safe areas): `IMAGE-SPECS.txt`.
 Regenerate these files with `node tools/pinball-art-templates.mjs`.
