@@ -1,0 +1,84 @@
+BUCKETHEADLAND: BUCKETHEAD STRUMS THE STRINGS (UPRIGHT, NO LEAN)
+================================================================
+
+THE IDEA (see preview-pick-path.png)
+Right now the left flipper is his hand from the WRIST, so the pick swings past the side of the guitar. The fix: the flipper
+becomes his whole FOREARM, swinging from the ELBOW, like a real strumming arm. His elbow sits on the flipper's pivot (the
+yellow dot), and the pick travels along the cyan line, straight across the strings by the pickups. Buckethead stays upright,
+the same size, and moves a little to the right, more central on the table.
+
+That takes two new GPT pictures:
+  A. Buckethead exactly as he is now, but his right arm ends at the elbow (no forearm, no hand).
+  B. His forearm in its robe sleeve plus his hand holding the pick, lying flat (this becomes the flipper).
+
+Claude then lines picture A up with the old one, puts his elbow on the flipper pivot, fits picture B to the flipper, and
+checks it in the game with the flipper down and up before adding it.
+
+Use a NEW ChatGPT chat for each picture. Download each result at full size (PNG).
+
+
+PICTURE A: Buckethead with his right arm ending at the elbow
+-----------------------------------------------------------
+Upload BOTH: upload-1-buckethead-now.png (the picture to edit) and upload-2-arm-guide.png (what to change)
+Prompt:
+
+  Edit the first image. It's a cut-out of a guitarist (Buckethead: white mask, red and white striped bucket hat, long
+  black curly hair, black robe, cream electric guitar) on a transparent background. The second image is the same
+  picture with markings that show what to change; use it ONLY as a guide and do not draw any of its lines, circles,
+  hatching, colours or words.
+  Change ONLY his right arm (the arm on the LEFT side of the picture, the one hanging down beside the guitar):
+  1. Remove his hand and the lower part of that sleeve completely (the red hatched area in the guide).
+  2. Repaint that arm as an upper arm only: the black robe sleeve runs from his shoulder down and slightly outward,
+     and ENDS at the bent elbow, at the yellow ring in the guide (just outside his left side, at hip height). The end
+     of the sleeve is the rounded point of the elbow. Nothing of the arm continues past the elbow: no forearm, no hand.
+  3. Where the hand and lower sleeve were, paint what is behind them: the black robe, and the lower edge of the cream
+     guitar body, as if that arm were not in front of them.
+  Keep everything else EXACTLY the same, in the same place and at the same size: the bucket, the mask, the hair, his
+  other hand on the guitar neck, the whole guitar, the robe, the lighting and the painted style. Same square canvas
+  (1024 x 1024). Transparent background (a real transparent PNG, not a checkerboard pattern and not a coloured
+  background). No text.
+
+Check (and what to type if it's wrong):
+- No hand and no forearm on that side: "Remove the hand and forearm completely; the arm must end at the elbow."
+- The elbow (end of the sleeve) is low, at about hip height, sticking out a little from his side, about where the
+  yellow ring was: "Move the elbow lower and a little further out to the left, at hip height."
+- The guitar's lower edge is complete where the hand used to cover it.
+- He hasn't moved, grown or changed (bucket, mask, guitar in the same place): "Keep him exactly the same size and
+  position as the first image; only change the arm."
+- Real transparency: "Make the background truly transparent, with no checkerboard and no background colour."
+- None of the guide's marks (yellow ring, red hatching, words) got drawn in.
+
+
+PICTURE B: the strumming forearm and hand (becomes the left flipper)
+--------------------------------------------------------------------
+Upload BOTH: upload-3-hand-style.png (skin, sleeve and lighting to match) and upload-4-forearm-sketch.png (shape)
+Prompt:
+
+  Paint a right forearm and hand holding a guitar pick, in the same painted style, skin tone, black robe sleeve and
+  lighting as the first attached image. Seen from directly above, lying flat and pointing to the right. Use the
+  second attached image ONLY as a layout sketch for the shape and proportions; do not draw any of its lines, labels
+  or colours. From left to right:
+  - the elbow at the far LEFT edge: the sleeve's rounded end;
+  - a loose black robe sleeve covering the whole forearm, wide at the elbow and narrowing toward the wrist, ending
+    a little past the middle of the picture;
+  - the wrist coming out of the sleeve, then the hand as a loose fist with the back of the hand facing the viewer;
+  - the thumb and index finger pinching a cream-coloured guitar pick at the far RIGHT, the pick's point aiming right.
+  Everything lies in one straight horizontal line through the middle of the picture. Give it a thin dark outline so
+  it stands out on a dark background. Nothing else in the picture: no guitar, no strings, no body. Transparent
+  background (a real transparent PNG, not a checkerboard). Landscape, 1536 x 1024.
+
+Check:
+- Real transparency.
+- It's straight and horizontal: elbow at the left edge, pick at the right edge, all along the middle line.
+- The sleeve covers the forearm for a bit more than half the length; the hand is the right-hand part.
+- Long and slim like the sketch (a chunky or bent arm won't match the flipper the ball bounces off):
+  "Make it straighter and slimmer, like the sketch outline."
+- No guitar, strings or extra arm parts.
+
+
+SEND BACK TO CLAUDE
+-------------------
+Both pictures. Claude lines A up with the current Buckethead, puts his elbow on the flipper pivot, fits B to the flipper
+(the elbow end on the pivot, the pick at the flipper's tip), rebuilds the playfield, and shows you the table with the
+flipper down and up before adding anything.
+Gameplay note: the ball still bounces off the real flipper shape; the arm only has to look like it covers it.

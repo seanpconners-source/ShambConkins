@@ -402,10 +402,13 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   mirror; `drawFlipperImage` in dropins.js, drawn under the balls; only the two bottom flippers). DONE (owner idea): Buckethead's
   strumming hand IS the left flipper. `tools/pinball-art/buckethead-flipper-hand.py` rebuilds playfield.webp + flipper-left.webp
   from `assets/originals/pinball/buckethead/` (GPT empty stage blended in below y 1100, lamp dark spots, logo.webp 510 px wide
-  at y 1287 between the ramps, Buckethead scale .58 leaning 26° clockwise about his wrist (args `0.58 26`; at .5/0 the pick
-  swept the guitar's side, now it crosses the strings at the neck pickup near the top of the flip; bigger/less lean puts the
-  bucket into the 2X-6X lights) with his hanging hand inpainted out and his wrist on the flipL pivot
-  (playfield px 296,1892), hand cut at the cuff, scaled to pivot→pick 120→545, slimmed .85, dark edge + warm glow).  GPT kit: `docs/pinball-art/buckethead/gpt/`. Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
+  at y 1287 between the ramps, Buckethead scale .5 upright (args `0.5 0`; a .58/26° lean put the pick on the strings but the
+  owner disliked the lean and it was reverted) with his hanging hand inpainted out and his wrist on the flipL pivot
+  (playfield px 296,1892), hand cut at the cuff, scaled to pivot→pick 120→545, slimmed .85, dark edge + warm glow).
+  PENDING (Oct 22): owner is making GPT art from `docs/pinball-art/buckethead/gpt-strum/` (kit: tools/pinball-art/buckethead-strum-kit.py):
+  A = Buckethead with the right arm ending at the ELBOW (target GPT px (190,756) → flipL pivot, K .5, upright), B = forearm-in-sleeve +
+  hand + pick, horizontal, elbow at the left edge (becomes flipper-left: elbow on the pivot, pick at the tip). Align A to gpt-02 (feature
+  match), detect the sleeve end, rebuild with the elbow on the pivot; preview-pick-path.png shows the pick crossing the strings.  GPT kit: `docs/pinball-art/buckethead/gpt/`. Suggested re-dos for Sabbath sent to the owner. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - **King Gizzard pinball (Oct 22 2026, table 3, game `king-gizzard-pinball`, table id `king-gizzard`, files
   `pinball/tables/gizzard*.js`):** THE RATS' NEST = an enclosed upper playfield (inside the loop's inner wall, arc r190
