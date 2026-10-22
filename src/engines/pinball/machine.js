@@ -10,14 +10,20 @@ function createMachine({table,players=2,seed=1,onSound=()=>{},level='normal'}){
  const m={def,R,table,w:P.createWorld(def,seed),t:0,
   players:Array.from({length:players},()=>({score:0,ball:1,extra:0,state:R.newPlayer()})),cur:0,
   ball:{bonus:0},phase:'idle',mode:null,mb:0,inPlay:0,saveUntil:0,savePending:0,pendingBalls:0,timers:[],msgs:[],msg:null,
-  tiltMeter:0,tiltWarn:0,tilted:false,shootAgainLamp:false,stillT:0,level};
+  tiltMeter:0,tiltWarn:0,tilted:false,shootAgainLamp:false,stillT:0,level,
+  shows:[],gi:1,giOffUntil:0,flashers:{}};
+ // Lights: m.show(name,sec,{x,y,loop,...}) runs a light show (lights.js); m.giOff(sec) blacks out the general
+ // illumination; m.flash(id|'all',count) fires flasher domes. table.cues[anim] runs with every m.say of that anim.
+ m.show=(name,dur=1,o={})=>{m.shows.push({name,t0:m.t,dur,o});if(m.shows.length>4)m.shows.shift();};
+ m.giOff=sec=>{m.giOffUntil=Math.max(m.giOffUntil,m.t+sec);};
+ m.flash=(id,count=2)=>{for(const f of def.flashers||[])if(id==='all'||f.id===id)m.flashers[f.id]={t0:m.t,count};};
  Object.defineProperty(m,'p',{get:()=>m.players[m.cur].state});
  m.score=n=>{if(m.tilted)return;m.players[m.cur].score+=Math.round(n);};
  m.bonus=n=>{if(!m.tilted)m.ball.bonus+=n;};
  m.sfx=name=>onSound(name);
  // DMD splash queue: newest important message first; short queue so it never lags far behind play.
  // o.anim names a table DMD animation (table.dmdScenes); o.flash inverts the panel on the beat for big awards.
- m.say=(lines,dur=1.5,o={})=>{const msg={lines,dur,flash:!!o.flash,anim:o.anim||null,age:0};if(!m.msg||o.flash||m.msg.age>.4){if(m.msg&&!o.flash)m.msgs.unshift(m.msg);m.msg=msg;}else m.msgs.push(msg);if(m.msgs.length>2)m.msgs.length=2;};
+ m.say=(lines,dur=1.5,o={})=>{const msg={lines,dur,flash:!!o.flash,anim:o.anim||null,age:0};if(!m.msg||o.flash||m.msg.age>.4){if(m.msg&&!o.flash)m.msgs.unshift(m.msg);m.msg=msg;}else m.msgs.push(msg);if(m.msgs.length>2)m.msgs.length=2;if(o.anim)table.cues?.[o.anim]?.(m);if(o.mode){m.giOff(1.2);m.show('chase',2.2);m.flash('all',6);}};
  m.later=(sec,fn)=>m.timers.push({at:m.t+sec,fn});
  m.ballSave=sec=>{if(m.phase==='plunge')m.savePending=Math.max(m.savePending,sec);else m.saveUntil=Math.max(m.saveUntil,m.t+sec);};
  m.saving=()=>m.t<m.saveUntil&&!m.tilted;
@@ -29,15 +35,18 @@ function createMachine({table,players=2,seed=1,onSound=()=>{},level='normal'}){
  m.addBalls=n=>{for(let i=0;i<n;i++){m.pendingBalls++;m.later(.35+i*1.1,()=>{m.pendingBalls--;P.serveBall(m.w);m.later(.45,()=>{P.plunge(m.w,(m.def.plunger.auto-m.def.plunger.vmin)/(m.def.plunger.vmax-m.def.plunger.vmin));m.sfx('autoPlunge');});});}};
  m.live=()=>m.w.balls.length+m.pendingBalls;
  m.startBall=()=>{
-  m.w.balls.length=0;m.timers.length=0;m.pendingBalls=0;m.mode=null;m.ball={bonus:0};m.tilted=m.w.tilted=false;m.tiltMeter=0;m.tiltWarn=0;m.saveUntil=0;m.savePending=0;m.msgs.length=0;m.msg=null;
+  m.w.balls.length=0;m.timers.length=0;m.pendingBalls=0;m.mode=null;m.ball={bonus:0};m.tilted=m.w.tilted=false;m.tiltMeter=0;m.tiltWarn=0;m.saveUntil=0;m.savePending=0;m.msgs.length=0;m.msg=null;m.shows.length=0;m.giOffUntil=0;m.flashers={};
   m.shootAgainLamp=m.players[m.cur].extra>0;m.phase='plunge';m.inPlay=0;P.serveBall(m.w);R.startBall?.(m);m.mb=1;
  };
  m.nudge=(vx,vy)=>{if(m.phase!=='play'||m.tilted)return;P.nudge(m.w,vx,vy);m.sfx('nudge');m.tiltMeter+=1;
-  if(m.tiltMeter>2.6){m.tiltMeter=.8;m.tiltWarn++;if(m.tiltWarn>=3){m.tilted=m.w.tilted=true;m.saveUntil=0;m.say(['TILT'],99,{flash:true});m.sfx('tilt');}else{m.say([m.tiltWarn===1?'DANGER':'DANGER DANGER'],1.2,{flash:true});m.sfx('danger');}}};
+  if(m.tiltMeter>2.6){m.tiltMeter=.8;m.tiltWarn++;if(m.tiltWarn>=3){m.tilted=m.w.tilted=true;m.saveUntil=0;m.giOff(99);m.shows.length=0;m.say(['TILT'],99,{flash:true});m.sfx('tilt');}else{m.say([m.tiltWarn===1?'DANGER':'DANGER DANGER'],1.2,{flash:true});m.sfx('danger');}}};
  m.tick=(dt,input)=>{
   m.t+=dt;if(m.phase==='play')m.inPlay+=dt;m.tiltMeter=Math.max(0,m.tiltMeter-dt*.45);
   if(m.msg){m.msg.age+=dt;if(m.msg.age>=m.msg.dur)m.msg=m.msgs.shift()||null;}
   for(const tm of m.timers.splice(0).sort((a,b)=>a.at-b.at)){if(tm.at<=m.t)tm.fn();else m.timers.push(tm);}
+  // lights: drop finished shows/flashers; GI fades back in after a blackout (and stays off once the ball is lost)
+  m.shows=m.shows.filter(s=>m.t-s.t0<s.dur);for(const [id,f] of Object.entries(m.flashers))if(m.t-f.t0>f.count*.16)delete m.flashers[id];
+  const giTarget=m.t<m.giOffUntil||m.phase==='drained'?.08:1;m.gi+=(giTarget-m.gi)*Math.min(1,dt*(giTarget>m.gi?4:14));
   if(m.phase!=='plunge'&&m.phase!=='play')return [];
   const events=P.stepWorld(m.w,dt,input).splice(0);const out=[];
   for(const e of events){
@@ -47,7 +56,7 @@ function createMachine({table,players=2,seed=1,onSound=()=>{},level='normal'}){
    if(e.type==='drain'){
     if(m.saving()&&m.phase==='play'){m.say(['BALL SAVED'],1.6,{anim:'save'});m.sfx('save');m.addBalls(1);continue;}
     const left=m.live();if(left===1&&m.mb>1)R.multiballEnd?.(m);
-    if(left===0){m.phase='drained';m.sfx(m.tilted?'tiltDrain':'drain');}
+    if(left===0){m.phase='drained';m.sfx(m.tilted?'tiltDrain':'drain');m.shows.length=0;m.show('fade',1.2);}
     continue;}
    if(!m.tilted)R.event(m,e);
   }

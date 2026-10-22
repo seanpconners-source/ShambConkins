@@ -12,6 +12,8 @@ const {createRenderer}=require("src/engines/pinball/render.js");
 const {createDMD,scoreScene,splashScene}=require("src/engines/pinball/dmd.js");
 const {pinballSound,rollLevel,stopRoll}=require("src/engines/pinball/sound.js");
 const {createMusic}=require("src/engines/pinball/music.js");
+const {createLights}=require("src/engines/pinball/lights.js");
+const {loadDropins}=require("src/engines/pinball/dropins.js");
 const audio=require("src/audio.js");
 const TABLES={buckethead:require("src/engines/pinball/tables/buckethead.js")};
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,fmt=n=>Math.round(n).toLocaleString('en-US');
@@ -24,7 +26,10 @@ async function pinball(s){
  const table=TABLES[s.game?.pinballTable]||TABLES.buckethead,solo=!!s.solo,nP=solo?1:2;
  const [c,x]=s.canvas(390,780,{fill:true});fullBleed(s,{bg:'#07060a'});s.body.classList.add('drag-arena-body');
  const m=createMachine({table,players:nP,seed:s.seed||1,level:s.solo?.level||'normal',onSound:pinballSound});
- const R=createRenderer({def:m.def,art:table.art}),dmd=createDMD(),rules=table.rules,names=s.players.slice(0,nP).map(p=>p.name);
+ // drop-in art (assets/pinball/<table>/): rebuild the cached playfield when a picture finishes loading
+ let R=null;const imgs=loadDropins(table.id||'buckethead',()=>R?.invalidate());
+ R=createRenderer({def:m.def,art:table.art,imgs});const lights=createLights(m.def);
+ const dmd=createDMD(),rules=table.rules,names=s.players.slice(0,nP).map(p=>p.name);
  const replay=rules.replay?.[s.solo?.level||'normal']||rules.replay?.normal||0;
  let phase='intro',phaseT=0,t=0,bonus=null,hintT=6,over=false,auto=false,highRanks=null;
  // The table's own soundtrack replaces the board score while the game runs.
@@ -89,7 +94,7 @@ async function pinball(s){
   const dt=Math.min(dtRaw,1/30);t+=dt;phaseT+=dt;
   const dpr=Math.min(2,window.devicePixelRatio||1),cw=Math.round(W()*dpr),ch=Math.round(H()*dpr);if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}
   auto=!!s.debug?.auto;
-  if(phase==='intro'){R.cam.z=0;if(phaseT>2.4){phase='zoom';phaseT=0;}}
+  if(phase==='intro'){R.cam.z=0;if(phaseT>3.2){phase='zoom';phaseT=0;}}
   else if(phase==='zoom'){R.cam.z=clamp(phaseT/1.3,0,1);R.cam.y=m.def.H;if(R.cam.z>=1)startBall();}
   else if(phase==='ball'){
    if(keys.pull)keys.pullT+=dt;
@@ -108,11 +113,16 @@ async function pinball(s){
   // ---- music: attract under the intro and hand-offs, a build-up on the plunger, then whatever the rules ask for
   setSong(phase==='intro'||phase==='zoom'||phase==='gameover'?'attract':phase==='wait'?null:phase==='bonus'?null:m.phase==='plunge'?'plunge':m.tilted?null:rules.music?.(m)||'main');
   // ---- draw
-  const lamps=phase==='ball'?rules.lamps(m,t):attractLamps(m.def,t,phase==='bonus'?m.p:null);
+  // Lights: the rules' lamps with any running light shows on top; attract shows between balls; dim for the bonus.
+  const lamps=phase==='ball'?lights.apply(rules.lamps(m,t),m.shows,m.t):phase==='bonus'?bonusLamps(m.p):lights.attract(t);
+  const gi=phase==='ball'?m.gi:phase==='bonus'?.15:phase==='gameover'?.4:1;
+  // attract: flasher domes fire one after another; in play the rules fire them (m.flashers)
+  const fl=phase==='ball'?m.flashers:attractFlash();
+  const backglass=phase==='intro'?(phaseT<1.6?1:Math.max(0,1-(phaseT-1.6)/.6)):0;
   if(phase==='bonus')bonusScene();else if(phase==='gameover')gameOverScene();else if(phase==='intro'||phase==='zoom'||phase==='wait')attractScene();
   else if(m.msg)msgScene(m.msg);
   else scoreScene(dmd,{scores:scores(),cur:m.cur,ball:m.players[m.cur].ball,balls:rules.balls,names,t,credits:rules.dmdMode?.(m)||(solo&&replay?`REPLAY ${fmt(replay)}`:'')});
-  const v=R.draw(x,{W:W(),H:H(),dpr,w:m.w,lamps,t,dmd,strip:null});
+  const v=R.draw(x,{W:W(),H:H(),dpr,w:m.w,lamps,t,dmd,strip:null,gi,flashers:fl,flashT:phase==='ball'?m.t:t,backglass});
   overlay(v);
   s.status(`${names[m.cur]||''} · ball ${m.players[m.cur].ball}/${rules.balls} · ${fmt(m.players[m.cur].score)}`);
   Object.assign(s.debug,{phase,auto,scores:scores()});
@@ -125,7 +135,7 @@ async function pinball(s){
  function attractScene(){
   if(phase==='wait'&&!over){const sc=table.dmdScenes?.face;const pl=m.players[m.cur],L=[nP>1?`PLAYER ${m.cur+1}`:'',(names[m.cur]||'').toUpperCase().slice(0,12),`BALL ${pl.ball}`];return sc?sc(dmd,phaseT,L,sceneCtx()):splashScene(dmd,{lines:L,age:phaseT});}
   const hs=highTable(table.id||'buckethead'),slot=Math.floor(t/3)%4,age=t%3,sc=table.dmdScenes||{};
-  if(slot===0&&sc.ferris)return sc.ferris(dmd,age,[table.title.toUpperCase(),'WELCOME TO THE PARK'],sceneCtx());
+  if(slot===0&&sc.ferris)return sc.ferris(dmd,age,[table.title.toUpperCase(),'NOW OPEN'],sceneCtx());
   if(slot===1&&hs[0]){dmd.clear();dmd.text('GRAND CHAMPION',64,2,{align:'center',v:10});dmd.fit(hs[0].name,64,11,{align:'center'});dmd.fit(fmt(hs[0].score),64,21,{align:'center'});dmd.sparkle(age,10,6);return;}
   if(slot===2&&hs.length>1){dmd.clear();hs.slice(1,4).forEach((e,i)=>{dmd.text(`${i+2} ${e.name.slice(0,8)}`,2,1+i*11,{v:10});dmd.text(fmt(e.score),126,1+i*11,{align:'right'});});return;}
   const L=rules.attract||[table.title];splashScene(dmd,{lines:[L[Math.floor(t/3)%L.length]],age});}
@@ -138,7 +148,8 @@ async function pinball(s){
   if(best.length&&phaseT>2){const [r,i]=best[Math.floor((phaseT-2)/1.5)%best.length],sc=table.dmdScenes?.jackpot;const L=[r===0?'GRAND CHAMPION':`HIGH SCORE #${r+1}`,`${(names[i]||'').toUpperCase().slice(0,10)} ${fmt(scores()[i])}`];
    if(sc)sc(dmd,(phaseT-2)%1.5,L,sceneCtx());else splashScene(dmd,{lines:L,age:phaseT});return;}
   dmd.clear();dmd.text('GAME OVER',64,1,{align:'center'});const sc=scores();if(nP===1)dmd.fit(fmt(sc[0]),64,12,{scale:2,align:'center'});else sc.forEach((v,i)=>dmd.fit(`${(names[i]||'P'+(i+1)).slice(0,8)} ${fmt(v)}`,64,11+i*10,{align:'center'}));}
- function attractLamps(def,t,p){const L={},k=Math.floor(t*10);def.lamps.forEach((l,i)=>{L[l.id]=(k+i)%6<2?1:0;});if(p)for(const n of [2,3,4,5,6])L['bx'+n]=p.bonusX>=n?1:0;return L;}
+ function bonusLamps(p){const L={};for(const n of [2,3,4,5,6])L['bx'+n]=p.bonusX>=n?1:0;L.shootAgain=m.players[m.cur].extra>0?Math.floor(t*4)%2:0;return L;}
+ function attractFlash(){const fs=m.def.flashers;if(!fs.length)return null;const i=Math.floor(t/1.1)%fs.length,age=t%1.1;return age<.35?{[fs[i].id]:{t0:t-age,count:3}}:null;}
  // Touch hints + plunger meter, drawn in screen space.
  function overlay(v){
   if(phase!=='ball')return;const w=W(),h=H();x.save();x.setTransform(Math.min(2,window.devicePixelRatio||1),0,0,Math.min(2,window.devicePixelRatio||1),0,0);

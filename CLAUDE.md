@@ -13,7 +13,7 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   `node tools/check-modules.mjs` verifies). Entry point is `src/app.js` (game flow, turns, landing, events).
 - `tools/build.mjs` inlines `src/` + `src/styles.css` + `src/index.template.html` + `assets/` into
   `dist/ShambConkins.html` (~30 MB). Drop-in art: `assets/portraits/<characterId>[.<mood>].webp|png`,
-  `assets/items/<id>.*`, `assets/locations/<id>.*`, Photo Hunt pairs `assets/photohunt/` (`tools/photohunt.py`, see its README); shrink big images with `python3 tools/optimize-art.py`.
+  `assets/items/<id>.*`, `assets/locations/<id>.*`, Photo Hunt pairs `assets/photohunt/` (`tools/photohunt.py`, see its README), pinball table art `assets/pinball/<table>/<slot>.*` (slots in `src/engines/pinball/README.md`); shrink big images with `python3 tools/optimize-art.py`.
 - Key systems: `ui.js` (screens, board SVG, HUD), `multiPathBoard.js` + `boardZones.js` + `biomes.js`
   (generation-7 journey map), `boardCamera.js` (camera/zoom), `gameRegistry.js` + `gameLauncher.js`
   (minigame pool, selection, results/rewards/unlocks), `engines/` (minigame engines, `session.js` = the `s` API),

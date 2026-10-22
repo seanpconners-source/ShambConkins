@@ -34,6 +34,11 @@ let row=0;for(const name of scenes){for(const [k,wait] of [[0,450],[1,900]]){
  await page.evaluate(([r,k])=>{const g=document.getElementById('game-canvas'),s=document.getElementById('sheet').getContext('2d'),sc=g.width/g.clientWidth;s.drawImage(g,0,0,260*sc,70*sc,k*390,r*40,260*1.5*.98,40);},[row,k]);}
  row++;}
 await page.waitForTimeout(100);await page.locator('#sheet').screenshot({path:`${out}/pbc-dmd-sheet.png`});
+// light show: multiball start (GI blackout, sweep, all flashers), then a jackpot burst
+await page.evaluate(()=>{document.getElementById('sheet')?.remove();const d=window.ShambConkins.store.session.debug;d.R.cam.y=330;d.m.say(['JORDAN','MULTIBALL'],3,{anim:'multiball',mode:true});});
+await page.waitForTimeout(450);await page.screenshot({path:`${out}/pbc-show-multiball.png`});
+await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug;d.m.say(['SUPER JACKPOT','3,000,000'],3,{anim:'jackpot',flash:true});});
+await page.waitForTimeout(350);await page.screenshot({path:`${out}/pbc-show-jackpot.png`});
 console.log('song now',await page.evaluate(()=>window.ShambConkins.store.session?.debug?.song?.()),'music setting',await page.evaluate(()=>window.ShambConkins.store.profile?.settings?.music));
 if(errors.length)console.log('ERRORS',errors.join(' | '));
 await browser.close();

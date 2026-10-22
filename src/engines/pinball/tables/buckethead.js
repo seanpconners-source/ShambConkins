@@ -39,13 +39,13 @@ function buildTable(){
  // Roller Coaster ramp (left plastic ramp, loops over the left orbit, drops into the left inlane).
  T.wall([[126,592],[126,526]],{look:'plastic',r:4}).wall([[174,592],[174,526]],{look:'plastic',r:4});
  T.post(126,592,5).post(174,592,5);
- T.rail('coaster',spline([[150,520,0],[146,430,26],[126,330,56],[98,236,80],[66,176,92],[34,214,96],[30,330,90],[34,500,70],[46,640,42],[72,752,12],[72,792,0]],10),{look:'plastic',width:46,color:'#e63946',exit:{minOut:600}});
+ T.rail('coaster',spline([[150,520,0],[146,430,26],[126,330,56],[98,236,80],[66,176,92],[34,214,96],[30,330,90],[34,500,70],[46,640,42],[72,752,12],[72,792,0]],10),{look:'plastic',width:46,color:'#e63946',label:'ROLLER COASTER',exit:{minOut:600}});
  T.lamp('coasterArrow',150,616,{shape:'arrow',r:13,color:'#ff3b30',label:'COASTER'});
  T.lamp('coasterJ',150,648,{r:8,color:'#ffd23f',label:'JACKPOT'});
  // Giant Robot wire ramp (right).
  T.wall([[348,592],[348,526]],{look:'plastic',r:4}).wall([[396,592],[396,526]],{look:'plastic',r:4});
  T.post(348,592,5).post(396,592,5);
- T.rail('robot',spline([[372,520,0],[372,440,28],[380,360,52],[400,314,64],[430,302,68],[452,332,64],[454,440,55],[446,560,40],[430,680,25],[400,752,10],[400,792,0]],10),{look:'wire',width:46,exit:{minOut:600}});
+ T.rail('robot',spline([[372,520,0],[372,440,28],[380,360,52],[400,314,64],[430,302,68],[452,332,64],[454,440,55],[446,560,40],[430,680,25],[400,752,10],[400,792,0]],10),{look:'wire',width:46,label:'ROBOT RAMP',exit:{minOut:600}});
  // Upper right flipper (right button) under the Giant Robot.
  T.flipper('flipU',450,380,{len:58,r0:10,r1:5.5,rest:170,up:215,input:1,wUp:50});
  // The Giant Robot: a moving toy (body capsules); its tractor-beam magnet sits in front of it.
@@ -88,6 +88,10 @@ function buildTable(){
  T.lamp('shootAgain',236,905,{r:13,color:'#ff3b30',label:'SHOOT AGAIN',shape:'circle'});
  T.lamp('jordan',236,620,{r:22,shape:'star',color:'#ff2d55',label:'JORDAN'});
  T.lamp('spinner',35,520,{r:7,color:'#64d2ff'});
+ // General illumination: warm bulbs round the slings, inlanes, under the ramps and along the top arch.
+ T.gi([[70,740],[402,740],[110,900],[362,900],[40,640],[432,640],[150,560],[372,560],[236,360],[120,200],[360,170],[60,420],[440,420],[236,680],[300,80],[180,80]]);
+ // Flasher domes (fired by the light cues below).
+ T.flasher('fCoaster',96,262,{color:'#ff3b30'}).flasher('fRobot',452,168,{color:'#32d74b'}).flasher('fCoop',236,384,{color:'#ffd23f',r:8}).flasher('fHaunted',450,592,{color:'#bf5af2'}).flasher('fTop',150,120,{color:'#64d2ff'});
  return T.def;
 }
 
@@ -95,4 +99,26 @@ const {rules}=require("src/engines/pinball/tables/bucketheadRules.js");
 const {art}=require("src/engines/pinball/tables/bucketheadArt.js");
 const {dmdScenes}=require("src/engines/pinball/tables/bucketheadDmd.js");
 const {songs}=require("src/engines/pinball/tables/bucketheadMusic.js");
-Object.assign(exports,{buildTable,rules,art,dmdScenes,songs,id:'buckethead',title:'Bucketheadland'});
+// Light cues: run with every m.say of that DMD animation (light show + flasher domes + GI blackouts).
+const COOP={x:236,y:436},ROBOT={x:404,y:214};
+const cues={
+ jackpot:m=>{m.show('radial',1.4,COOP);m.giOff(.9);m.flash('all',5);},
+ multiball:m=>{m.show('sweepUp',2.6,{loop:.65});m.giOff(1.6);m.flash('all',8);},
+ coaster:m=>{m.show('sweepUp',.9);m.flash('fCoaster',4);},
+ robot:m=>{m.flash('fRobot',4);m.show('radial',.8,ROBOT);},
+ robotDown:m=>{m.show('radial',1.4,ROBOT);m.giOff(1);m.flash('all',6);},
+ beam:m=>{m.flash('fRobot',8);m.show('implode',1,{x:404,y:292});},
+ egg:m=>{m.flash('fCoop',4);m.show('implode',1,COOP);},
+ lock:m=>{m.flash('fCoop',6);m.show('implode',1.2,COOP);m.giOff(.5);},
+ bucket:m=>{m.show('sparkle',1);},
+ ghost:m=>{m.flash('fHaunted',5);m.show('sweepLeft',.9);},
+ nunchuck:m=>{m.show('chase',1,{arms:2,speed:14});},
+ moon:m=>{m.show('sweepDown',1.1);m.flash('fTop',3);},
+ chicken:m=>{m.show('sparkle',.8);m.flash('fCoop',2);},
+ ferris:m=>{m.show('chase',1.6);},
+ wizard:m=>{m.show('chase',3,{arms:4,speed:12});m.flash('all',10);m.giOff(1);},
+ extra:m=>{m.show('blink',1.6);m.flash('all',8);},
+ skill:m=>{m.show('sweepUp',.8);m.flash('fTop',2);},
+ save:m=>{m.show('sweepUp',.7);},
+};
+Object.assign(exports,{buildTable,rules,art,dmdScenes,songs,cues,id:'buckethead',title:'Bucketheadland'});

@@ -47,6 +47,26 @@ Machine helpers for rules: `m.score m.bonus m.say m.sfx m.ballSave m.addBalls m.
 `art.base(x,def)` paints the playfield under everything, `art.over` above balls (apron, plastics), plus optional
 `bumperCap`, `slingArt`, `backbox(x,W,H,dmdX,dmdW,t)` and colours (`plastic sling drop flipper flipperRubber`).
 
+## Lights
+`lights.js` light shows over the inserts (`sweepUp/Down/Left/Right radial implode chase sparkle blink strobe fade`);
+rules or cues call `m.show(name, sec, {x,y,loop})`. `m.giOff(sec)` blacks out the general illumination (`T.gi` bulbs)
+so lit inserts punch through; `m.flash(id|'all', count)` strobes flasher domes (`T.flasher`). A table's
+`cues[anim]` runs with every `m.say` of that DMD animation; `{mode:true}` messages add a blackout + chase.
+Between balls the attract show cycles and the flashers fire in turn. Lamp values may be fractions (0..1).
+
+## Drop-in art (no code changes)
+Put pictures in `assets/pinball/<table id>/<slot>.webp|png|jpg|svg` and rebuild; missing slots keep the painted art.
+| slot | where it shows | best size |
+| --- | --- | --- |
+| `playfield` | the whole playfield under every part (stretched to 514 × 1067 mm) | 1028 × 2134 |
+| `backglass` | the intro card + beside the DMD in landscape | any, e.g. 1200 × 1600 |
+| `apron` | the apron under the flippers (cropped) | 900 × 380 |
+| `logo` | the playfield logo spot and the backbox (transparent PNG/WebP) | ~1000 wide |
+| `character` | the hero art between the slings (transparent) | ~600 wide |
+| `bumper` | pop bumper caps (square, cut to a circle) | 256 × 256 |
+| `toy` | the moving toy, stretched to its box (Giant Robot: 96 × 84 mm) | ~400 × 350 |
+Shrink big pictures with `python3 tools/optimize-art.py` first (the build embeds them in the HTML).
+
 ## Adding a table
 New file in `tables/`, add it to `TABLES` in `src/engines/pinball.js`, add a game with `pinballTable:'<id>'`
 (engine `pinball`), list the new modules in `src/modules.json`, run `node tests/pinball-sim.mjs 8 <id>`.

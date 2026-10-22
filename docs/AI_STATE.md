@@ -357,8 +357,13 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   wizard WELCOME TO BUCKETHEADLAND (4-ball, 5 shots lit, 1M each, relights). DMD animations `tables/bucketheadDmd.js` (player's
   face as dots at ball start, 20 scenes), attract loop with high scores, game-over high-score celebration. Soundtrack:
   `pinball/music.js` + 11 original songs in `tables/bucketheadMusic.js` (attract, plunge, main, one per attraction, battle,
-  jordan, wizard); board music stops while it plays. Music never heard by ears. Next: phase 4 = art, light shows, drop-in art
-  slots `assets/pinball/<table>/`. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
+  jordan, wizard); board music stops while it plays. Music never heard by ears. Phase 4 (Oct 21): `pinball/lights.js` light
+  shows (sweeps, radial, chase, sparkle...), GI bulbs + blackouts (`m.giOff`), flasher domes (`m.flash`), table `cues[anim]`
+  fired by `m.say`; attract light show between balls; renderer polish (beveled inserts with brightness, ramp flaps + decals,
+  tinted chrome ball, flipper logos, sheen/vignette); painted backglass intro card; drop-in art slots
+  `assets/pinball/<table>/<slot>` (playfield, backglass, apron, logo, character, bumper, toy; build.mjs embeds them as
+  `pinball:<table>:<slot>`, `pinball/dropins.js` loads them; optimize-art.py shrinks them, untested here: no Python on the box).
+  All four phases done; next = owner playtest feedback, then new band tables. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).

@@ -50,6 +50,17 @@ if (fs.existsSync(huntDir)) for (const f of fs.readdirSync(huntDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(a|b)\.(webp|png|jpe?g)$/i);
   if (m) userPortraits[`photohunt:${m[1]}:${m[2].toLowerCase()}`] = `data:${MIME[m[3].toLowerCase().replace('jpeg', 'jpg')]};base64,` + fs.readFileSync(path.join(huntDir, f)).toString('base64');
 }
+// Pinball table art: assets/pinball/<table>/<slot>.(webp|png|jpg|svg) -> pinball:<table>:<slot>
+// (slots: playfield, backglass, apron, logo, character, bumper, toy; see src/engines/pinball/README.md).
+const pinDir = path.join(root, 'assets/pinball');
+if (fs.existsSync(pinDir)) for (const t of fs.readdirSync(pinDir)) {
+  const d = path.join(pinDir, t);
+  if (!/^[a-z0-9-]+$/.test(t) || !fs.statSync(d).isDirectory()) continue;
+  for (const f of fs.readdirSync(d)) {
+    const m = f.match(/^([a-z0-9-]+)\.(svg|webp|png|jpe?g)$/i);
+    if (m) userPortraits[`pinball:${t}:${m[1].toLowerCase()}`] = `data:${MIME[m[2].toLowerCase().replace('jpeg', 'jpg')]};base64,` + fs.readFileSync(path.join(d, f)).toString('base64');
+  }
+}
 // Drop-in music: assets/music/<name>.(mp3|ogg|m4a|wav) -> USER_PORTRAITS['music:<name>'] (e.g. cv-symphony, cv-symphony-boss).
 const AUDIO = {mp3: 'audio/mpeg', ogg: 'audio/ogg', m4a: 'audio/mp4', wav: 'audio/wav'};
 const musicDir = path.join(root, 'assets/music');

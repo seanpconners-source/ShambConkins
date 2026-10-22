@@ -367,7 +367,9 @@
   "src/engines/pinball/music.js",
   "src/engines/pinball/tables/bucketheadRules.js",
   "src/engines/pinball/tables/bucketheadDmd.js",
-  "src/engines/pinball/tables/bucketheadMusic.js"
+  "src/engines/pinball/tables/bucketheadMusic.js",
+  "src/engines/pinball/dropins.js",
+  "src/engines/pinball/lights.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
