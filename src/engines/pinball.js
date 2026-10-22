@@ -3,6 +3,7 @@
 // a game picks its table with `pinballTable` (default Bucketheadland). Controls: hold the left / right half of the
 // screen for that flipper; drag down and release to pull the plunger; flick a finger up to nudge (too much = TILT).
 const {fullBleed}=require("src/engines/fullBleed.js");
+const {fullscreenSupported,toggleFullscreen,fullscreenLabel}=require("src/fullscreen.js");
 const {soloFinish,soloProgress}=require("src/solo.js");
 const {store}=require("src/state.js");
 const {saveProfile}=require("src/profile.js");
@@ -19,6 +20,23 @@ const TABLES={buckethead:require("src/engines/pinball/tables/buckethead.js"),"bl
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,fmt=n=>Math.round(n).toLocaleString('en-US');
 const LEFT=new Set(['KeyZ','KeyA','ShiftLeft','ArrowLeft','ControlLeft']),RIGHT=new Set(['Slash','KeyL','ShiftRight','ArrowRight','ControlRight']),PLUNGE=new Set(['Enter','ArrowDown','Space','NumpadEnter']);
 
+// Player view settings, shared by every table and saved in the profile: five zoom notches (0 = whole table, scaled to
+// the height .. 4 = the table's width fills the screen, the default) and five ball speeds (2 = the table as built).
+const ZOOMS=5,SPEEDS=[.8,.9,1,1.1,1.2];
+function viewSettings(){const v=store.profile?.settings?.pinballView||{};return {zoom:Number.isInteger(v.zoom)&&v.zoom>=0&&v.zoom<ZOOMS?v.zoom:ZOOMS-1,speed:Number.isInteger(v.speed)&&v.speed>=0&&v.speed<SPEEDS.length?v.speed:2};}
+function saveView(v){if(!store.profile)return;store.profile.settings.pinballView={zoom:v.zoom,speed:v.speed};saveProfile(store.profile);}
+const PANEL_CSS=`.pb-tools{position:absolute;z-index:13;display:flex;gap:4px}
+ .pb-tools button{width:30px;height:30px;min-width:0;min-height:0;padding:0;margin:0;border-radius:999px;background:#000a;color:#fff;border:1px solid #ffffff40;box-shadow:none;font:700 15px/28px system-ui,sans-serif;text-align:center;cursor:pointer}
+ .pb-shell .fb-fs{display:none}
+ .pb-panel{position:absolute;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;background:#0008;touch-action:none}
+ .pb-card{width:min(340px,88vw);background:#141019f2;color:#fff;border:1px solid #ffffff30;border-radius:14px;padding:16px 18px 14px;font:14px/1.3 system-ui,sans-serif;box-shadow:0 10px 40px #000c}
+ .pb-card h3{margin:0 0 12px;font-size:15px;letter-spacing:.08em;text-align:center}
+ .pb-row{margin:0 0 14px}.pb-row b{display:block;margin-bottom:6px;font-size:13px}
+ .pb-row input[type=range]{width:100%;margin:0;accent-color:#ffd23f;height:28px}
+ .pb-ticks{display:flex;justify-content:space-between;padding:0 6px;margin-top:-4px}.pb-ticks i{width:2px;height:7px;background:#ffffff70}
+ .pb-ends{display:flex;justify-content:space-between;font-size:11px;color:#ffffffa0;margin-top:3px}
+ .pb-check{display:flex;align-items:center;gap:8px;font-size:13px;margin:0 0 14px}.pb-check input{width:18px;height:18px;accent-color:#ffd23f}
+ .pb-card .pb-done{display:block;width:100%;min-height:40px;border-radius:10px;border:0;background:#ffd23f;color:#1a1200;font-weight:800;font-size:14px;cursor:pointer}`;
 function highTable(id){return (store.profile?.pinballHigh?.[id]||[]).slice();}
 function recordHigh(id,name,score){if(!store.profile)return -1;const book=store.profile.pinballHigh||={},list=(book[id]||[]).slice();list.push({name:String(name).toUpperCase().slice(0,12),score:Math.floor(score)});list.sort((a,b)=>b.score-a.score);const rank=list.findIndex(e=>e.score===Math.floor(score)&&e.name===String(name).toUpperCase().slice(0,12));book[id]=list.slice(0,5);saveProfile(store.profile);return rank<5?rank:-1;}
 
@@ -48,8 +66,35 @@ async function pinball(s){
  // Auto zoom (speed zoom-out) is a saved setting; tapping the DMD or pressing V switches it.
  R.cam.speedZoom=!!store.profile?.settings?.pinballZoom;
  const toggleZoom=()=>{R.cam.speedZoom=!R.cam.speedZoom;if(store.profile){store.profile.settings.pinballZoom=R.cam.speedZoom;saveProfile(store.profile);}m.say(['AUTO ZOOM',R.cam.speedZoom?'ON':'OFF'],1.2);pinballSound('rollover');};
+ // Zoom and ball speed (the ⚙ button): five notches each, remembered for every table.
+ const view=viewSettings();const applyView=()=>{R.cam.zoomK=view.zoom/(ZOOMS-1);m.timeScale=(m.def.timeScale||1)*SPEEDS[view.speed];};applyView();
+ let menuOpen=false;
+ const shell=s.body.closest('.game-shell'),tools=document.createElement('div');tools.className='pb-tools';
+ const css=document.createElement('style');css.textContent=PANEL_CSS;
+ if(shell){shell.classList.add('pb-shell');shell.append(css,tools);s.cleanup(()=>{tools.remove();css.remove();shell.querySelector('.pb-panel')?.remove();shell.classList.remove('pb-shell');});}
+ const gear=document.createElement('button');gear.type='button';gear.textContent='⚙';gear.title='Zoom and ball speed';gear.setAttribute('aria-label','Pinball settings');tools.append(gear);
+ let fsb=null;if(fullscreenSupported()){fsb=document.createElement('button');fsb.type='button';fsb.textContent=fullscreenLabel('icon');fsb.title='Full screen';fsb.setAttribute('aria-label','Toggle full screen');tools.append(fsb);
+  s.on(fsb,'click',e=>{e.preventDefault();e.stopPropagation();toggleFullscreen();});const sync=()=>{fsb.textContent=fullscreenLabel('icon');};s.on(document,'fullscreenchange',sync);s.on(document,'webkitfullscreenchange',sync);}
+ for(const b of tools.children)s.on(b,'pointerdown',e=>e.stopPropagation());
+ // the buttons sit left of Pause/Exit when the backbox has room there, else just under them
+ let toolsKey='';const placeTools=()=>{const acts=shell?.querySelector('.game-actions'),r=acts?.getBoundingClientRect(),sr=shell?.getBoundingClientRect();if(!r||!sr)return;
+  const L=R.layout(W(),H()),right=sr.right-r.left+6,row=L.dmd.x+L.dmd.w+8<sr.width-right-70,key=row?`r${Math.round(right)},${Math.round(r.top-sr.top)}`:`c${Math.round(sr.right-r.right)},${Math.round(r.bottom-sr.top)}`;if(key===toolsKey)return;toolsKey=key;
+  Object.assign(tools.style,row?{right:right+'px',top:(r.top-sr.top+1)+'px'}:{right:(sr.right-r.right)+'px',top:(r.bottom-sr.top+5)+'px'});};
+ function openMenu(){if(menuOpen||!shell)return;menuOpen=true;clear();
+  const notch=n=>`<div class="pb-ticks">${'<i></i>'.repeat(n)}</div>`;
+  const panel=document.createElement('div');panel.className='pb-panel';panel.innerHTML=`<div class="pb-card" role="dialog" aria-label="Pinball settings"><h3>TABLE SETTINGS</h3>
+   <div class="pb-row"><b>Zoom</b><input type="range" min="0" max="${ZOOMS-1}" step="1" value="${view.zoom}" data-k="zoom" aria-label="Zoom">${notch(ZOOMS)}<div class="pb-ends"><span>Whole table</span><span>Full width</span></div></div>
+   <div class="pb-row"><b>Ball speed</b><input type="range" min="0" max="${SPEEDS.length-1}" step="1" value="${view.speed}" data-k="speed" aria-label="Ball speed">${notch(SPEEDS.length)}<div class="pb-ends"><span>Slower</span><span>Normal</span><span>Faster</span></div></div>
+   <label class="pb-check"><input type="checkbox" data-k="auto" ${R.cam.speedZoom?'checked':''}>Auto zoom out when the ball is fast</label>
+   <button type="button" class="pb-done">Done</button></div>`;
+  shell.append(panel);
+  for(const ev of ['pointerdown','pointermove','pointerup'])panel.addEventListener(ev,e=>e.stopPropagation());
+  panel.addEventListener('input',e=>{const k=e.target.dataset.k;if(k==='zoom'||k==='speed'){view[k]=+e.target.value;applyView();saveView(view);pinballSound('rollover');}});
+  panel.addEventListener('change',e=>{if(e.target.dataset.k==='auto'&&e.target.checked!==R.cam.speedZoom)toggleZoom();});
+  const close=()=>{panel.remove();menuOpen=false;};panel.querySelector('.pb-done').addEventListener('click',close);panel.addEventListener('click',e=>{if(e.target===panel)close();});}
+ s.on(gear,'click',e=>{e.preventDefault();e.stopPropagation();openMenu();});
  // ---- input
- s.on(c,'pointerdown',ev=>{if(s.paused||!(phase==='ball'))return;ev.preventDefault();const p=s.pointer(ev);
+ s.on(c,'pointerdown',ev=>{if(s.paused||menuOpen||!(phase==='ball'))return;ev.preventDefault();const p=s.pointer(ev);
   if(p.y<R.layout(W(),H()).stripH&&p.x<W()-130){toggleZoom();return;}fingers.set(ev.pointerId,{side:p.x<W()/2?0:1,x0:p.x,y0:p.y,t0:performance.now(),plunger:false,nudged:false,pull:0});s.capture(ev);});
  s.on(c,'pointermove',ev=>{const f=fingers.get(ev.pointerId);if(!f||s.paused)return;ev.preventDefault();const p=s.pointer(ev),dy=p.y-f.y0;
   if(!f.plunger&&dy>14&&m.canPlunge())f.plunger=true;
@@ -57,7 +102,7 @@ async function pinball(s){
   else if(!f.nudged&&m.phase==='play'&&-dy>H()*.06&&performance.now()-f.t0<260){f.nudged=true;m.nudge(clamp((p.x-f.x0)*2,-160,160),-300);}});
  const up=(ev,cancel)=>{const f=fingers.get(ev.pointerId);if(!f)return;fingers.delete(ev.pointerId);s.release(ev);if(f.plunger&&!cancel&&f.pull>.04&&m.canPlunge(400))P.plunge(m.w,f.pull);};
  s.on(c,'pointerup',ev=>up(ev,false));s.on(c,'pointercancel',ev=>up(ev,true));s.on(c,'lostpointercapture',ev=>up(ev,true));
- s.on(document,'keydown',ev=>{if(s.paused||phase!=='ball')return;const k=ev.code;
+ s.on(document,'keydown',ev=>{if(s.paused||menuOpen||phase!=='ball')return;const k=ev.code;
   if(LEFT.has(k)){keys.flip[0]=true;ev.preventDefault();}else if(RIGHT.has(k)){keys.flip[1]=true;ev.preventDefault();}
   else if(PLUNGE.has(k)){ev.preventDefault();if(m.canPlunge()){if(!keys.pull){keys.pull=true;keys.pullT=0;}}else if((k==='Space'||k==='KeyN')&&!ev.repeat)m.nudge(0,-300);}
   else if(k==='KeyN'&&!ev.repeat)m.nudge(0,-300);
@@ -94,13 +139,14 @@ async function pinball(s){
   else s.finish(sc,`${table.title} pinball · 3 balls each${ranks.some(r=>r>=0)?' · new high score':''}`);
  }
 
- s.debug={engine:'pinball',m,phase,R,dmd,auto:false,scores:scores(),plunge:p=>P.plunge(m.w,p),scenes:Object.keys(table.dmdScenes||{}),song:()=>music.current};
+ s.debug={engine:'pinball',m,phase,R,dmd,auto:false,view,openMenu,scores:scores(),plunge:p=>P.plunge(m.w,p),scenes:Object.keys(table.dmdScenes||{}),song:()=>music.current};
  s.frame((dtRaw)=>{
   const dt=Math.min(dtRaw,1/30);t+=dt;phaseT+=dt;
   const dpr=Math.min(2,window.devicePixelRatio||1),cw=Math.round(W()*dpr),ch=Math.round(H()*dpr);if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}
-  auto=!!s.debug?.auto;
+  auto=!!s.debug?.auto;placeTools();
   if(phase==='intro'){R.cam.z=0;if(phaseT>3.2){phase='zoom';phaseT=0;}}
   else if(phase==='zoom'){R.cam.z=clamp(phaseT/1.3,0,1);R.cam.y=m.def.H;if(R.cam.z>=1)startBall();}
+  else if(phase==='ball'&&menuOpen)R.follow(m.w,dt,W(),H());
   else if(phase==='ball'){
    if(keys.pull)keys.pullT+=dt;
    const flip=auto?bot(dt):flipInput();let pl=0;for(const g of fingers.values())if(g.plunger)pl=Math.max(pl,g.pull);if(keys.pull)pl=Math.max(pl,clamp(keys.pullT/1.1,0,1));pull=pl;

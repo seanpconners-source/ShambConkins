@@ -151,7 +151,7 @@ const rules={
   m.w.parts.flightDiv.on=!!(p.planetLit||b.superLit||a?.def.nest||(m.mode==='omnium'&&b.wiz?.lit.includes('planet')));},
  dmdMode(m){const b=m.ball,L=[];
   if(m.mode==='omnium'&&b.wiz)L.push(`OMNIUM GATHERUM · ${b.wiz.lit.length} LIT`);
-  if(b.attr)L.push(b.attr.def.id==='dragon'?`FEED THE SNAKE ${fmt(b.attr.value)} · ${Math.ceil(b.attr.t)}`:`${b.attr.def.short} ${Math.min(b.attr.count,b.attr.def.goal)}/${b.attr.def.goal} · ${Math.ceil(b.attr.t)}`);
+  if(b.attr)L.push(b.attr.def.id==='dragon'?`SNAKE ${fmt(b.attr.value)} · ${Math.ceil(b.attr.t)}`:`${b.attr.def.short} ${Math.min(b.attr.count,b.attr.def.goal)}/${b.attr.def.goal} · ${Math.ceil(b.attr.t)}`);
   if(b.infinity)L.push(`NONAGON INFINITY · ${Math.ceil(b.infinity.t)}`);
   if(m.mode==='rattle')L.push(b.superLit?'SUPER AT PLANET B':'RATTLESNAKE MULTIBALL');
   return L.length?L[Math.floor(m.t/2)%L.length]:'';},

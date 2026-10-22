@@ -1,10 +1,17 @@
 // King Gizzard DMD animations (128 x 32 dots), picked by m.say(lines, dur, {anim}). Psychedelic: the Lizard Wizard
 // with his staff, the rattlesnake (a bulge sliding down its body), the spinning nonagon, a rat escaping to a planet,
 // the Gila monster, a flying banana, the altered beast, a fire-breathing dragon, a fish on a line.
-function text(d,lines,x0=44){const L=lines.filter(Boolean),cx=Math.round((x0+127)/2),max=127-x0;
- if(L.length===1)d.fit(L[0],cx,d.measure(L[0],2)<=max?9:12,{scale:2,align:'center',max});
- else if(L.length===2){d.fit(L[0],cx,3,{align:'center',max});const big=d.measure(L[1],2)<=max;d.fit(L[1],cx,big?15:19,{scale:big?2:1,align:'center',max});}
- else L.slice(0,3).forEach((s,i)=>d.fit(s,cx,1+i*11,{align:'center',max}));}
+// Lines beside the scene art (from column x0). A message too long for that space first closes up its letter spacing,
+// then dims the art and takes the full width, then wraps onto up to three lines, so nothing runs off the panel.
+function text(d,lines,x0=44){let L=lines.filter(Boolean);const fits=(x,sp)=>L.every(s=>d.measure(s,1,sp)<=127-x);
+ if(fits(x0,1))return place(d,L,x0,1);if(fits(x0,0))return place(d,L,x0,0);
+ d.dim(.3);if(fits(0,1))return place(d,L,0,1);if(fits(0,0))return place(d,L,0,0);
+ const words=L.join(' ').split(' '),out=[''];for(const w of words){const t=out[out.length-1]?out[out.length-1]+' '+w:w;if(d.measure(t,1,0)<=126||!out[out.length-1])out[out.length-1]=t;else out.push(w);}
+ L=out.slice(0,3);place(d,L,0,0);}
+function place(d,L,x0,sp){const cx=Math.round((x0+127)/2),max=127-x0,o={align:'center',max,sp};
+ if(L.length===1)d.fit(L[0],cx,d.measure(L[0],2,sp)<=max?9:12,{...o,scale:2});
+ else if(L.length===2){d.fit(L[0],cx,3,o);const big=d.measure(L[1],2,sp)<=max;d.fit(L[1],cx,big?15:19,{...o,scale:big?2:1});}
+ else L.slice(0,3).forEach((s,i)=>d.fit(s,cx,1+i*11,o));}
 function disk(d,cx,cy,r,v){for(let y=-r;y<=r;y++)for(let x=-r;x<=r;x++)if(x*x+y*y<=r*r)d.set(cx+x,cy+y,v);}
 function ball(d,x,y,r=3,v=15){d.circle(x,y,r,Math.round(v*.6),true);d.dot(x-1,y-1,v);}
 // A nonagon (9 sides), turning.
@@ -45,7 +52,7 @@ const dmdScenes={
  rat(d,age,lines){d.clear();rat(d,8,12,age);text(d,lines,40);},
  planet(d,age,lines){d.clear();planet(d,26,16,9);rat(d,Math.min(10,age*12)-6,20-Math.min(12,age*10),age);d.sparkle(age,10,8);text(d,lines,44);},
  loop(d,age,lines){d.clear();nonagon(d,20,16,13,age);ball(d,20+Math.cos(age*9)*13,16+Math.sin(age*9)*12,2);text(d,lines,40);},
- nonagon(d,age,lines){d.clear();for(let k=0;k<3;k++)nonagon(d,64,16,8+k*7+((age*10)%7),age*(k%2?-1:1),15-k*4);d.dim(.5);const L=lines.filter(Boolean);d.zoomText(L[0]||'',64,L.length>1?9:16,age);if(L[1])d.fit(L[1],64,19,{align:'center'});},
+ nonagon(d,age,lines){d.clear();for(let k=0;k<3;k++)nonagon(d,64,16,8+k*7+((age*10)%7),age*(k%2?-1:1),15-k*4);d.dim(.5);const L=lines.filter(Boolean);d.zoomText(L[0]||'',64,L.length>1?9:16,age);if(L[1])d.fit(L[1],64,19,{align:'center',sp:d.measure(L[1])>126?0:1});},
  flight(d,age,lines){d.clear();const x=(age*60)%70-20;d.line(x,16,x+20,16,15);d.line(x+8,16,x+4,8,12);d.line(x+8,16,x+4,24,12);d.line(x+18,16,x+16,12,12);for(let i=0;i<4;i++)d.dot(x-4-i*4,16,10-i*2);text(d,lines,44);},
  gila(d,age,lines){d.clear();gila(d,2,0,age);text(d,lines,46);},
  banana(d,age,lines){d.clear();banana(d,20,18,age);text(d,lines,42);},

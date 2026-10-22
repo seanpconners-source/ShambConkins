@@ -160,12 +160,13 @@ function createRenderer(table){
 
  // ---- camera
  // y = top of the view (mm), v = its speed, z = intro zoom (0 whole table → 1 width-locked), zo = speed zoom-out (0..~.15).
- const cam={y:def.H,v:0,z:0,zo:0,focus:null,svy:0,moving:false,speedZoom:false,introT:0};R.cam=cam;
+ // zoomK: the player's zoom setting, 0 = the whole table fits the screen (scaled to the height) .. 1 = the table's width fills it.
+ const cam={y:def.H,v:0,z:0,zo:0,zoomK:1,focus:null,svy:0,moving:false,speedZoom:false,introT:0};R.cam=cam;
  const flipY=Math.max(...def.flippers.map(f=>f.y));
  // The DMD sits centred in the backbox strip, or left-aligned when it would run under the floating Pause/Exit pills.
  R.layout=(W,H)=>{const portrait=H>=W,dh=Math.round(clamp(portrait?W/4.6:H*.15,42,portrait?H*.15:H*.18)),pillW=128;let dw=Math.min(W-12,dh*4),dx=(W-dw)/2;
   if(dx+dw>W-pillW){dw=Math.min(dw,W-pillW-12);dx=8;}return {stripH:Math.round(dw/4)+10,dmd:{x:dx,w:dw,h:dw/4}};};
- R.view=(W,H)=>{const {stripH}=R.layout(W,H),aH=H-stripH,lock=W/def.W*(1-cam.zo),fit=Math.min(W/def.W,aH/def.H)*.97,e=ease(clamp(cam.z,0,1)),s=lerp(fit,lock,e),vh=aH/s,
+ R.view=(W,H)=>{const {stripH}=R.layout(W,H),aH=H-stripH,fit=Math.min(W/def.W,aH/def.H)*.97,lock=lerp(fit,W/def.W,clamp(cam.zoomK,0,1))*(1-cam.zo),e=ease(clamp(cam.z,0,1)),s=lerp(fit,lock,e),vh=aH/s,
    yFit=(def.H-vh)/2,yLock=vh>=def.H?(def.H-vh)/2:clamp(cam.y,0,def.H-vh),y=lerp(yFit,yLock,e);return {s,ox:(W-def.W*s)/2,oy:stripH-y*s,top:stripH,aH,vh,y,lock:W/def.W};};
  // Where the ball will be: along its ramp/wireform for rails, at the far end of a VUK about to fire, else where it is.
  const railAhead=(b,sec)=>{const r=b.rail.r;return railAt(r,clamp(b.rail.s+b.rail.v*sec,0,r.len));};

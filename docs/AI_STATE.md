@@ -425,6 +425,14 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   vertically in sections (planet → Nest, nonagon circles → nonagon lamps, wizard between the slings), its three painted
   bumper discs moved under the real pops (inpainted old spots), darkened under the lamps. Bonus X lamps moved from a row
   at y 738 (on the art's title) to an arch over the wizard's hat (y 786-808).
+- **Pinball view settings (Oct 22, every table):** ⚙ and ⤢ buttons (`.pb-tools` in pinball.js) sit left of Pause/Exit when
+  the backbox has room, else just under them; the faint bottom-centre ⤢ of fullBleed is hidden on pinball (owner couldn't
+  find it). ⚙ opens TABLE SETTINGS (play frozen while open): Zoom 5 notches (`R.cam.zoomK` 0 = whole table scaled to the
+  height .. 1 = width fills the screen, default 1, linear in scale; `R.view`), Ball speed 5 notches `SPEEDS` .8-1.2 × the
+  table's timeScale (default 1 = as built), Auto zoom toggle. Saved in `profile.settings.pinballView {zoom,speed}`
+  (validated in profile.js), shared by all tables. King Gizzard DMD: `text()` in gizzardDmd.js closes letter spacing,
+  then dims the art and uses the full width, then wraps, so no message runs off the 128-dot panel (they did); the dragon
+  hurry-up line is shorter. Audit script idea: render every m.say through its scene and flag text past x 0..127.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 
