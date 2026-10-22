@@ -38,6 +38,15 @@ function createMusic(songs,{paused=()=>false}={}){
    if(dur>.25){const l=a.createOscillator(),lg=a.createGain();l.frequency.value=5.8;lg.gain.setValueAtTime(0,t);lg.gain.linearRampToValueAtTime(18,t+dur*.6);l.connect(lg).connect(o.detune);l.start(t);l.stop(t+dur+.05);}
    o.connect(g);o.start(t);o.stop(t+dur+.05);}}
  const arp=(t,n,dur)=>{osc('triangle',mtof(n),t,dur,master,.1,.003);osc('sine',mtof(n+12),t,dur*.6,leadBus,.08);};
+ // single-note riff guitar (root + octave through the distortion), palm-muted or ringing
+ function riffNote(t,n,dur,mute){const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=mute?1300:4200;const g=a.createGain();env(g,t,1.1,.003,mute?Math.min(dur,.13):dur);f.connect(g).connect(gtrBus);
+  for(const [iv,det] of [[0,-6],[0,6],[12,0],[-12,0]]){const o=a.createOscillator();o.type='sawtooth';o.frequency.value=mtof(n+iv);o.detune.value=det;o.connect(f);o.start(t);o.stop(t+dur+.05);}}
+ // church bell: inharmonic partials with a long decay
+ function bell(t,n){for(const [m,v,d] of [[.5,.25,4],[1,.35,3],[2,.18,2.2],[2.76,.12,1.6],[5.4,.06,1],[8.9,.03,.6]])osc('sine',mtof(n)*m,t,d,master,v,.002);}
+ function thunder(t){nz(t,2.8,'lowpass',160,.7,.4);nz(t+.05,.5,'lowpass',900,.35,.6);}
+ let rain=null;
+ function setRain(level){if(rain){try{rain.s.stop();}catch{}rain=null;}if(!level)return;const s=a.createBufferSource();s.buffer=noise;s.loop=true;const b=a.createBiquadFilter();b.type='bandpass';b.frequency.value=2600;b.Q.value=.6;const g=a.createGain();g.gain.value=level*.16;s.connect(b).connect(g).connect(master);s.start();rain={s};}
+ const OFF={'.':null,'-':null};const semi=ch=>ch in OFF?null:parseInt(ch,16);
  // song helpers
  const deg=(s,d)=>{const L=s.scale.length,o=Math.floor(d/L);return s.root+s.scale[((d%L)+L)%L]+12*o;};
  function melody(name,s){if(melodies.has(name))return melodies.get(name);const r=seededRandom(s.lead.seed||7),dens=s.lead.density??.45,steps=s.lead.rate===8?2:1;
@@ -52,16 +61,23 @@ function createMusic(songs,{paused=()=>false}={}){
   const leadOn=s.lead&&(s.lead.on==='always'||(s.lead.on!=='never'&&cyc%2===1));
   if(leadOn){const m=melody(songName,s)[bar%4],v=m[k];if(v!=null){let l=1;while(k+l<16&&m[k+l]==null&&l<6)l++;lead(t,deg(s,cd+v)+12*(2+(s.lead.oct||0)),dur16*l*.9,s.lead.type);}}
   if(s.arp){const rate=s.arp.rate===8?2:1;if(k%rate===0){const p=s.arp.pattern,d=p[(k/rate)%p.length];arp(t,deg(s,cd+d)+12*(1+(s.arp.oct||0)),dur16*rate*1.6);}}
+  // riff: one 16-char string per bar, hex semitones above root+12 ('.' rest, '-' hold; 6 = the tritone); riffRing lets notes ring
+  if(s.riff){const row=s.riff[bar%s.riff.length],ch=row[k],v=semi(ch.toLowerCase());if(v!=null){let l=1;while(k+l<16&&row[k+l]==='-')l++;const n=s.root+12+(s.riffOct||0)*12+v;riffNote(t,n,dur16*l*.95,!s.riffRing);
+    if(s.bass==='riff')bass(t,n-12,dur16*l*.95,.36);}}
+  if(s.bell&&at(s.bell))bell(t,s.bellNote||64);
+  if(s.thunder&&k===0&&Math.random()<s.thunder)thunder(t+Math.random()*.5);
  }
  function tick(){if(!a||!song)return;if(paused()){nextT=a.currentTime+.05;return;}
   while(nextT<a.currentTime+.12){
-   if(want!==songName&&step%16===0){songName=want;song=songs[want]||null;step=0;if(!song)return;}
-   try{play16(song,step,nextT);}catch{}
+   if(want!==songName&&step%16===0){songName=want;song=songs[want]||null;step=0;setRain(song?.rain||0);if(!song)return;}
+   // swing: the off-beat 8th lands late (s.swing 1 = full triplet shuffle)
+   const sw=song.swing&&step%4===2?song.swing*(60/song.bpm/2)/3:0;
+   try{play16(song,step,nextT+sw);}catch{}
    nextT+=60/song.bpm/4;step++;}
  }
  return {
-  play(name){if(!songs[name])return;want=name;if(!setup())return;if(!song){songName=name;song=songs[name];step=0;nextT=a.currentTime+.06;}if(!timer)timer=setInterval(tick,25);},
-  stop(){want='';song=null;songName='';if(timer){clearInterval(timer);timer=0;}},
+  play(name){if(!songs[name])return;want=name;if(!setup())return;if(!song){songName=name;song=songs[name];step=0;nextT=a.currentTime+.06;setRain(song.rain||0);}if(!timer)timer=setInterval(tick,25);},
+  stop(){want='';song=null;songName='';if(a)setRain(0);if(timer){clearInterval(timer);timer=0;}},
   get current(){return songName;},
  };
 }

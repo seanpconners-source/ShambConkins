@@ -376,7 +376,17 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   flat-top jam on the Golden Egg channel (now peaked) and an upper-flipper ↔ robot loop: robot hits now count only while
   LIT (Robot Ramp / Coop VUK light it once; battle hits always count, 0.8-1 s debounce), payouts capped at x3, a real LOOP
   (left orbit up, right side down in 3 s) pays 50k, the gate return 1k. Replay 1.5M/3M/6M. A perfect flipper can still keep
-  the ball cycling upper flipper ↔ robot for small points (no longer farmable). Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
+  the ball cycling upper flipper ↔ robot for small points (no longer farmable).
+- **Black Sabbath pinball (Oct 22 2026, table 2, game `black-sabbath-pinball` in `packs/pinballPack.js`, table id
+  `black-sabbath`, files `pinball/tables/sabbath*.js`):** different machine: I-R-O-N lanes, WAR PIGS pops, IRON MAN toy
+  (steps toward you in his mode) fed by a LEFT upper flipper that a full plunge reaches round the arch (super skill shot),
+  INTO THE VOID spinning disc, crossing PARANOID (diverter: right inlane or Graveyard) and ELECTRIC FUNERAL wire ramps,
+  Graveyard lock behind D-O-O-M → WAR PIGS multiball, M-A-S-T-E-R → HAND OF DOOM post between the flippers, six album
+  modes at the Heaven and Hell saucer → HEAVEN AND HELL wizard, right outlane kickback. New engine parts: `disc`, `flag`,
+  rail junctions (`exit.next`), pop-up post (`diverter` a===b, `post` event); music engine: riff track, swing, bell, rain,
+  thunder; siren sfx. Source 'Black Sabbath' → wins recruit Ozzy / Iommi / Geezer / Bill Ward. Fixed on the way: a touch
+  release mid-pull could fail to launch (canPlunge(400) on release). Tests: `pinball-sim.mjs 6 sabbath` (in test:core),
+  `pinball.mjs black-sabbath-pinball`, `GAME=black-sabbath-pinball pinball-closeup.mjs`. Real-phone feel and music untested. Tests: `tests/pinball-sim.mjs` (Node bot, in test:core),
   `tests/pinball.mjs [solo] [WxH]` (full 2P/1P flow), `tests/pinball-closeup.mjs` (battle/VUK shots). Real-phone feel untested.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).

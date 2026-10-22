@@ -15,7 +15,7 @@ const {createMusic}=require("src/engines/pinball/music.js");
 const {createLights}=require("src/engines/pinball/lights.js");
 const {loadDropins}=require("src/engines/pinball/dropins.js");
 const audio=require("src/audio.js");
-const TABLES={buckethead:require("src/engines/pinball/tables/buckethead.js")};
+const TABLES={buckethead:require("src/engines/pinball/tables/buckethead.js"),"black-sabbath":require("src/engines/pinball/tables/sabbath.js")};
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,fmt=n=>Math.round(n).toLocaleString('en-US');
 const LEFT=new Set(['KeyZ','KeyA','ShiftLeft','ArrowLeft','ControlLeft']),RIGHT=new Set(['Slash','KeyL','ShiftRight','ArrowRight','ControlRight']),PLUNGE=new Set(['Enter','ArrowDown','Space','NumpadEnter']);
 
@@ -55,14 +55,14 @@ async function pinball(s){
   if(!f.plunger&&dy>14&&m.canPlunge())f.plunger=true;
   if(f.plunger)f.pull=clamp((dy-8)/(H()*.2),0,1);
   else if(!f.nudged&&m.phase==='play'&&-dy>H()*.06&&performance.now()-f.t0<260){f.nudged=true;m.nudge(clamp((p.x-f.x0)*2,-160,160),-300);}});
- const up=(ev,cancel)=>{const f=fingers.get(ev.pointerId);if(!f)return;fingers.delete(ev.pointerId);s.release(ev);if(f.plunger&&!cancel&&f.pull>.04&&m.canPlunge())P.plunge(m.w,f.pull);};
+ const up=(ev,cancel)=>{const f=fingers.get(ev.pointerId);if(!f)return;fingers.delete(ev.pointerId);s.release(ev);if(f.plunger&&!cancel&&f.pull>.04&&m.canPlunge(400))P.plunge(m.w,f.pull);};
  s.on(c,'pointerup',ev=>up(ev,false));s.on(c,'pointercancel',ev=>up(ev,true));s.on(c,'lostpointercapture',ev=>up(ev,true));
  s.on(document,'keydown',ev=>{if(s.paused||phase!=='ball')return;const k=ev.code;
   if(LEFT.has(k)){keys.flip[0]=true;ev.preventDefault();}else if(RIGHT.has(k)){keys.flip[1]=true;ev.preventDefault();}
   else if(PLUNGE.has(k)){ev.preventDefault();if(m.canPlunge()){if(!keys.pull){keys.pull=true;keys.pullT=0;}}else if((k==='Space'||k==='KeyN')&&!ev.repeat)m.nudge(0,-300);}
   else if(k==='KeyN'&&!ev.repeat)m.nudge(0,-300);
   else if(k==='KeyV'&&!ev.repeat)toggleZoom();});
- s.on(document,'keyup',ev=>{const k=ev.code;if(LEFT.has(k))keys.flip[0]=false;else if(RIGHT.has(k))keys.flip[1]=false;else if(PLUNGE.has(k)&&keys.pull){keys.pull=false;if(m.canPlunge())P.plunge(m.w,clamp(keys.pullT/1.1,.05,1));keys.pullT=0;}});
+ s.on(document,'keyup',ev=>{const k=ev.code;if(LEFT.has(k))keys.flip[0]=false;else if(RIGHT.has(k))keys.flip[1]=false;else if(PLUNGE.has(k)&&keys.pull){keys.pull=false;if(m.canPlunge(400))P.plunge(m.w,clamp(keys.pullT/1.1,.05,1));keys.pullT=0;}});
  s.on(window,'blur',clear);s.resetOnPause?.(clear);s.cleanup(()=>{clear();stopRoll();});
  // ---- autopilot for tests (s.debug.auto = true): flips when a ball drops onto a flipper, plunges at 70%.
  let botHold=[0,0],botPlungeAt=0;
@@ -104,7 +104,7 @@ async function pinball(s){
   else if(phase==='ball'){
    if(keys.pull)keys.pullT+=dt;
    const flip=auto?bot(dt):flipInput();let pl=0;for(const g of fingers.values())if(g.plunger)pl=Math.max(pl,g.pull);if(keys.pull)pl=Math.max(pl,clamp(keys.pullT/1.1,0,1));pull=pl;
-   const ev=m.tick(dt,{flip,pull:m.canPlunge()?pull:0});
+   const ev=m.tick(dt,{flip,pull:m.canPlunge(400)?pull:0});
    for(const e of ev){const snd={flip:'flip',flipDown:'flipDown',bumper:'bumper',sling:'sling',drop:'drop',standup:'standup',rollover:'rollover',spin:'spin',hole:'hole',eject:'eject',plunge:'plunge',kickback:'kick',trigger:'gate',wallHit:'wall',railEnter:null}[e.type];if(snd&&!(e.type==='wallHit'&&e.speed<700))pinballSound(snd);
     if(e.type==='bumper'||e.type==='jackpot')s.react?.(m.cur,'happy');}
    let fast=0;for(const b of m.w.balls)if(b.state==='free')fast=Math.max(fast,Math.hypot(b.vx,b.vy));rollLevel(fast);

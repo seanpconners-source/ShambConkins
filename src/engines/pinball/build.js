@@ -11,7 +11,7 @@ function spline(pts,n=8){const out=[];for(let i=0;i<pts.length-1;i++){const p0=p
 
 // timeScale < 1 runs the whole table slower than life (ball, flippers, spinners alike) so every shot keeps its line.
 function tableBuilder({id,name,W=514,H=1067,gravity=1300,slope=6.5,drainY=1040,timeScale=1}={}){
- const def={id,name,W,H,gravity,slope,drainY,timeScale,segs:[],sensors:[],lines:[],holes:[],rails:[],magnets:[],flippers:[],lamps:[],drops:{},toys:[],captives:[],gi:[],flashers:[],plunger:null,parts:{}};
+ const def={id,name,W,H,gravity,slope,drainY,timeScale,segs:[],sensors:[],lines:[],holes:[],rails:[],magnets:[],flippers:[],lamps:[],drops:{},toys:[],captives:[],gi:[],flashers:[],discs:[],plunger:null,parts:{}};
  const part=(id,kind,extra={})=>{if(id){def.parts[id]={id,kind,...extra};}return id;};
  const seg=(a,b,o={})=>{def.segs.push({ax:a[0],ay:a[1],bx:b[0],by:b[1],r:o.r??3,kind:o.kind||'wall',e:o.e,fr:o.fr,id:o.id||null,pass:o.pass||null,look:o.look||null,layer:o.layer||null});};
  const T={def,arc,bezier,spline,
@@ -32,7 +32,10 @@ function tableBuilder({id,name,W=514,H=1067,gravity=1300,slope=6.5,drainY=1040,t
   // One-way gate: the ball passes moving along pass=[dx,dy] and is blocked coming back.
   gate(id,a,b,pass,o={}){const l=Math.hypot(...pass);part(id,'gate',{a,b,pass});seg(a,b,{kind:'gate',id,r:2,e:.3,pass:[pass[0]/l,pass[1]/l],look:'gate'});return T;},
   // Diverter / post that the rules can raise or drop (seg.on via the part state).
-  diverter(id,a,b,o={}){part(id,'diverter',{a,b,up:o.up!==false});seg(a,b,{kind:'diverter',id,r:o.r||4,e:.35,look:'diverter'});return T;},
+  // A switch with no geometry (e.g. a ramp diverter: rail exit.next {switch:id}); the rules flip parts[id].on.
+  flag(id,o={}){part(id,'flag',{on:!!o.on});return T;},
+  // With a === b it is a pop-up post (e.g. between the flippers); it fires a 'post' event when the ball hits it up.
+  diverter(id,a,b,o={}){part(id,'diverter',{a,b,up:o.up!==false,r:o.r||4});seg(a,b,{kind:'diverter',id,r:o.r||4,e:.35,look:'diverter'});return T;},
   // Kicker hole / scoop / saucer / lock: catches a ball slower than maxSpeed; the rules eject it with eject=[vx,vy].
   // VUK (vertical up-kicker): a hole with toRail:'<railId>' fires the ball up onto that wireform at railSpeed mm/s.
   hole(id,x,y,o={}){part(id,'hole',{x,y,r:o.r||15,label:o.label||'',vuk:!!o.toRail});def.holes.push({id,x,y,r:o.r||15,maxSpeed:o.maxSpeed??1e9,hold:o.hold??.9,eject:o.eject||[0,1200],toRail:o.toRail||null,railSpeed:o.railSpeed||2200});return T;},
@@ -45,6 +48,8 @@ function tableBuilder({id,name,W=514,H=1067,gravity=1300,slope=6.5,drainY=1040,t
   // Toy: a moving target (capsules [[ax,ay,bx,by,r],...] at rest pose). Rules set parts[id].tx/ty (offset from rest)
   // and it glides there at speed mm/s; a hit fires a 'toy' event. x,y = the drawing centre.
   toy(id,x,y,o={}){part(id,'toy',{x,y,w:o.w||80,h:o.h||70,label:o.label||'',tx:0,ty:0});def.toys.push({id,speed:o.speed||120,segs:(o.segs||[]).map(([ax,ay,bx,by,r])=>({ax,ay,bx,by,r:r??6}))});return T;},
+  // Spinning disc set into the playfield: a ball crossing it is dragged round (rules set parts[id].spin, rad/s).
+  disc(id,x,y,o={}){part(id,'disc',{x,y,r:o.r||40,spin:o.spin??3,label:o.label||''});def.discs.push({id,x,y,r:o.r||40,grip:o.grip??2.5});return T;},
   // Captive ball: sits in a closed channel (build the channel walls + posts yourself) and is knocked by the real ball.
   captive(id,x,y){part(id,'captive',{x,y});def.captives.push({id,x,y});return T;},
   // Flipper: pivot (x,y), length, rest/up angles in degrees, input 0 = left button, 1 = right button.

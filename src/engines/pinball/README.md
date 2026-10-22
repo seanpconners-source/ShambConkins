@@ -27,6 +27,9 @@ surfaces (`tests/pinball-sim.mjs` finds jams).
 `standup` · `rollover` · `kickback` · `spinner` · `trigger` (orbit/loop switch) · `gate` (one-way) · `diverter` ·
 `hole` (scoop/saucer/lock; `eject`, `maxSpeed`; `toRail` makes it a VUK that fires the ball up a wireform) ·
 `rail` (plastic ramp or wireform; `exit:{hole}` feeds a hole; `noEntry` = only a VUK can load it) ·
+`disc` (spinning floor disc, `parts[id].spin` rad/s; fires `disc`) · `flag` (geometry-free switch, e.g. a ramp diverter) ·
+rail `exit.next` (`'railId'` or `{switch:flagId,on,off}`: a junction onto another rail; fires `junction`) ·
+`diverter` with a === b = a pop-up post (fires `post`) ·
 `magnet` (rules set `parts[id].on` to pull, `.grab` to catch + hold `holdT` s + throw `fling`) ·
 `toy` (moving target made of capsules; rules set `parts[id].tx/ty`, hits fire `toy`) ·
 `captive` (captive ball; build its channel walls + two posts closer than a ball) ·
@@ -68,5 +71,10 @@ Put pictures in `assets/pinball/<table id>/<slot>.webp|png|jpg|svg` and rebuild;
 Shrink big pictures with `python3 tools/optimize-art.py` first (the build embeds them in the HTML).
 
 ## Adding a table
-New file in `tables/`, add it to `TABLES` in `src/engines/pinball.js`, add a game with `pinballTable:'<id>'`
-(engine `pinball`), list the new modules in `src/modules.json`, run `node tests/pinball-sim.mjs 8 <id>`.
+Tables so far: `buckethead` (Bucketheadland, game `bucketheadland-pinball`) and `black-sabbath` (game
+`black-sabbath-pinball` in `src/packs/pinballPack.js`). Each is a different machine: layout, toys, rules, DMD, music.
+New file in `tables/` (plus its rules/art/DMD/music files), add it to `TABLES` in `src/engines/pinball.js`, add a game
+with `pinballTable:'<id>'` to `src/packs/pinballPack.js` (source = the band, so the roster's band members are the
+unlocks), list the new modules in `src/modules.json`, export `simChecks` (event keys the test bot must hit), and run
+`node tests/pinball-sim.mjs 8 <file>` and `node tests/pinball.mjs <game-id> 390x780`. Music: riff-driven songs use
+`riff` strings, `swing`, `bell`, `rain`, `thunder` (see `tables/sabbathMusic.js`); never borrow real melodies or lyrics.
