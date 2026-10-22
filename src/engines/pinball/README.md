@@ -66,6 +66,8 @@ Put pictures in `assets/pinball/<table id>/<slot>.webp|png|jpg|svg` and rebuild;
 | `bumper` | pop bumper caps (square, cut to a circle) | 256 × 256 |
 | `toy` | the moving toy, stretched to its box (Giant Robot: 96 × 84 mm) | ~400 × 350 |
 Shrink big pictures with `python3 tools/optimize-art.py` first (the build embeds them in the HTML).
+Templates (the current painted art per slot, same size/framing, plus a parts overlay): `docs/pinball-art/buckethead/`,
+remade by `node tools/pinball-art-templates.mjs`.
 
 ## Adding a table
 New file in `tables/`, add it to `TABLES` in `src/engines/pinball.js`, add a game with `pinballTable:'<id>'`

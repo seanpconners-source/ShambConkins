@@ -155,4 +155,4 @@ const art={
   x.restore();
  },
 };
-Object.assign(exports,{art,buckethead});
+Object.assign(exports,{art,buckethead,logo});
