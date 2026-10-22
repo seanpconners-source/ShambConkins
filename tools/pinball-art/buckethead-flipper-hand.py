@@ -4,7 +4,7 @@
 # right hand hanging clear of the guitar, gpt-03 the picking hand) on top of playfield-before-flipper-hand.webp.
 # His wrist sits on the left flipper's pivot; the hand picture swings with the flipper (dropins.js drawFlipperImage).
 # Needs: pip install pillow numpy opencv-python-headless, and node (reads the lamp positions from the table).
-# Usage: python3 tools/pinball-art/buckethead-flipper-hand.py [scale .5] [lean degrees 0]
+# Usage: python3 tools/pinball-art/buckethead-flipper-hand.py [scale .5] [lean degrees 0] [elbow|wrist]
 import json, math, subprocess, sys, os
 import numpy as np, cv2
 from PIL import Image, ImageFilter, ImageDraw
@@ -36,36 +36,54 @@ logo = Image.open(OUT + 'logo.webp').convert('RGBA')
 LW = 510; logo = logo.resize((LW, round(LW * logo.height / logo.width)), Image.LANCZOS)
 sh = Image.new('RGBA', logo.size, (0, 0, 0, 0)); sh.putalpha(logo.getchannel('A').point(lambda v: v * .6))
 sh = sh.filter(ImageFilter.GaussianBlur(6)); pf.alpha_composite(sh, (472 - LW // 2 + 4, 1287 + 6)); pf.alpha_composite(logo, (472 - LW // 2, 1287))
-# 4) Buckethead: hanging right hand erased (inpainted), bottom faded, wrist (345,795) on the left flipper pivot (296,1892)
-bh = Image.open(SRC + 'gpt-02-buckethead-new-pose.webp').convert('RGBA'); a = np.asarray(bh).copy()
-hand = [(307,785),(372,780),(388,825),(400,865),(406,892),(398,904),(382,918),(360,926),(334,918),(315,892),(309,850),(305,810)]
-mk = Image.new('L', bh.size, 0); ImageDraw.Draw(mk).polygon(hand, fill=255); mk = np.asarray(mk.filter(ImageFilter.MaxFilter(5)))
-rgb = cv2.inpaint(np.ascontiguousarray(a[..., :3]), mk, 9, cv2.INPAINT_TELEA); a[..., :3] = np.where(mk[..., None] > 0, rgb, a[..., :3])
-# alpha inside the hand: the robe/guitar fill only where the surroundings were solid (left of the robe edge it stays clear)
-al = a[..., 3].astype(np.float32); alf = cv2.inpaint(al.astype(np.uint8), mk, 9, cv2.INPAINT_TELEA); a[..., 3] = np.where(mk > 0, alf, a[..., 3])
-for y in range(930, 1024): a[y, :, 3] = (a[y, :, 3] * max(0, 1 - (y - 930) / 70)).astype(np.uint8)
-bh = Image.fromarray(a)
-WX, WY = 345, 795; PX, PY = 296, 1892
+# 4) Buckethead on the left flipper pivot (296,1892): by his elbow (default) or, old version, by his wrist
+ELBOW = len(sys.argv) <= 3 or sys.argv[3] != 'wrist'   # default: the forearm is the flipper (gpt-04/05); 'wrist' = the old hand-only version
+if ELBOW:
+  # 4) Buckethead (gpt-04): his right arm ends at the elbow in a sleeve opening; its centre (222,615) sits on the flipper pivot,
+  # upright, so the forearm picture swings from the elbow and the pick rides over the strings from the bridge to the neck.
+  bh = Image.open(SRC + 'gpt-04-buckethead-elbow.webp').convert('RGBA'); a = np.asarray(bh).copy()
+  for y in range(930, 1024): a[y, :, 3] = (a[y, :, 3] * max(0, 1 - (y - 930) / 70)).astype(np.uint8)
+  bh = Image.fromarray(a); WX, WY = 222, 615
+else:
+  bh = Image.open(SRC + 'gpt-02-buckethead-new-pose.webp').convert('RGBA'); a = np.asarray(bh).copy()
+  hand = [(307,785),(372,780),(388,825),(400,865),(406,892),(398,904),(382,918),(360,926),(334,918),(315,892),(309,850),(305,810)]
+  mk = Image.new('L', bh.size, 0); ImageDraw.Draw(mk).polygon(hand, fill=255); mk = np.asarray(mk.filter(ImageFilter.MaxFilter(5)))
+  rgb = cv2.inpaint(np.ascontiguousarray(a[..., :3]), mk, 9, cv2.INPAINT_TELEA); a[..., :3] = np.where(mk[..., None] > 0, rgb, a[..., :3])
+  # alpha inside the hand: the robe/guitar fill only where the surroundings were solid (left of the robe edge it stays clear)
+  al = a[..., 3].astype(np.float32); alf = cv2.inpaint(al.astype(np.uint8), mk, 9, cv2.INPAINT_TELEA); a[..., 3] = np.where(mk > 0, alf, a[..., 3])
+  for y in range(930, 1024): a[y, :, 3] = (a[y, :, 3] * max(0, 1 - (y - 930) / 70)).astype(np.uint8)
+  bh = Image.fromarray(a)
+  WX, WY = 345, 795
+PX, PY = 296, 1892
 if ROT:   # lean about the wrist (padded so nothing is clipped)
   pad = Image.new('RGBA', (2048, 2048), (0, 0, 0, 0)); pad.alpha_composite(bh, (512, 512))
   bh = pad.rotate(-ROT, resample=Image.BICUBIC, center=(WX + 512, WY + 512)); WX, WY = WX + 512, WY + 512
 bw = bh.resize((round(bh.width * K), round(bh.height * K)), Image.LANCZOS); ox, oy = round(PX - WX * K), round(PY - WY * K)
 sh = Image.new('RGBA', bw.size, (0, 0, 0, 0)); sh.putalpha(bw.getchannel('A').point(lambda v: v * .55)); sh = sh.filter(ImageFilter.GaussianBlur(8))
 pf.alpha_composite(sh, (ox + 6, oy + 8)); pf.alpha_composite(bw, (ox, oy))
-print('Buckethead at', ox, oy, 'size', bw.size, 'scale', K, 'lean', ROT)
+print('Buckethead at', ox, oy, 'size', bw.size, 'scale', K, 'lean', ROT, 'elbow' if ELBOW else 'wrist')
 pf.convert('RGB').save(OUT + 'playfield.webp', quality=90)
-# 5) the hand for flipper-left (600 x 200, pivot (120,100), flipper end (510,100)): cuff edge -> pivot, pick tip -> ~545
-hd = Image.open(SRC + 'gpt-03-left-flipper-picking-hand.webp').convert('RGBA')
-P0, P1 = (600, 468), (1390, 505)               # cuff edge (wrist) and pick tip in the GPT picture
-ang = math.degrees(math.atan2(P1[1] - P0[1], P1[0] - P0[0]))
-hd = hd.rotate(ang, resample=Image.BICUBIC, center=P0)   # tip now level with the wrist
-sc = (545 - 120) / math.hypot(P1[0] - P0[0], P1[1] - P0[1]); SQ = .85   # slimmer across, so it hugs the flipper
-hd = hd.crop((P0[0] - 40, 0, hd.width, hd.height))         # keep only a lip of the cuff; the sleeve is on the playfield
-hs = hd.resize((round(hd.width * sc), round(hd.height * sc * SQ)), Image.LANCZOS)
-fl = Image.new('RGBA', (600, 200), (0, 0, 0, 0)); fl.alpha_composite(hs, (round(120 - 40 * sc), round(100 - P0[1] * sc * SQ)))
-fa = np.asarray(fl).copy(); x0 = round(120 - 40 * sc)
-for x in range(x0, x0 + 50): fa[:, x, 3] = (fa[:, x, 3] * ((x - x0) / 50) ** .8).astype(np.uint8)   # wrist melts into the sleeve
-fa[:, :x0, 3] = 0; fl = Image.fromarray(fa)
+# 5) flipper-left (600 x 200, pivot (120,100), flipper end (510,100)): the forearm (elbow mode) or the hand alone (wrist mode)
+if ELBOW:
+  # 5) flipper-left = the forearm (gpt-05): elbow end (150,470) on the pivot (120,100), pick tip (1470,524) at ~545
+  hd = Image.open(SRC + 'gpt-05-strumming-forearm.webp').convert('RGBA')
+  P0, P1 = (150, 470), (1470, 524)
+  ang = math.degrees(math.atan2(P1[1] - P0[1], P1[0] - P0[0])); hd = hd.rotate(ang, resample=Image.BICUBIC, center=P0)
+  sc = (545 - 120) / math.hypot(P1[0] - P0[0], P1[1] - P0[1]); SQ = .95
+  hs = hd.resize((round(hd.width * sc), round(hd.height * sc * SQ)), Image.LANCZOS)
+  fl = Image.new('RGBA', (600, 200), (0, 0, 0, 0)); fl.alpha_composite(hs, (round(120 - P0[0] * sc), round(100 - P0[1] * sc * SQ)))
+else:
+  hd = Image.open(SRC + 'gpt-03-left-flipper-picking-hand.webp').convert('RGBA')
+  P0, P1 = (600, 468), (1390, 505)               # cuff edge (wrist) and pick tip in the GPT picture
+  ang = math.degrees(math.atan2(P1[1] - P0[1], P1[0] - P0[0]))
+  hd = hd.rotate(ang, resample=Image.BICUBIC, center=P0)   # tip now level with the wrist
+  sc = (545 - 120) / math.hypot(P1[0] - P0[0], P1[1] - P0[1]); SQ = .85   # slimmer across, so it hugs the flipper
+  hd = hd.crop((P0[0] - 40, 0, hd.width, hd.height))         # keep only a lip of the cuff; the sleeve is on the playfield
+  hs = hd.resize((round(hd.width * sc), round(hd.height * sc * SQ)), Image.LANCZOS)
+  fl = Image.new('RGBA', (600, 200), (0, 0, 0, 0)); fl.alpha_composite(hs, (round(120 - 40 * sc), round(100 - P0[1] * sc * SQ)))
+  fa = np.asarray(fl).copy(); x0 = round(120 - 40 * sc)
+  for x in range(x0, x0 + 50): fa[:, x, 3] = (fa[:, x, 3] * ((x - x0) / 50) ** .8).astype(np.uint8)   # wrist melts into the sleeve
+  fa[:, :x0, 3] = 0; fl = Image.fromarray(fa)
 # outline so the hand reads as a flipper on a phone: a dark edge (on the cream guitar) inside a soft warm glow (on the robe)
 A = fl.getchannel('A'); edge = A.filter(ImageFilter.MaxFilter(9)); glow = A.filter(ImageFilter.MaxFilter(17)).filter(ImageFilter.GaussianBlur(5))
 ol = Image.new('RGBA', fl.size, (255, 214, 140, 0)); ol.putalpha(glow.point(lambda v: v * .55))
