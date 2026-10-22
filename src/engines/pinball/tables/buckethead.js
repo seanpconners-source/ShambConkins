@@ -123,4 +123,6 @@ const cues={
  skill:m=>{m.show('sweepUp',.8);m.flash('fTop',2);},
  save:m=>{m.show('sweepUp',.7);},
 };
-Object.assign(exports,{buildTable,rules,art,dmdScenes,songs,cues,id:'buckethead',title:'Bucketheadland'});
+// shots the test bot must be able to make (tests/pinball-sim.mjs)
+const simChecks=['bumper','sling','spin','drop','rail:coaster','rail:robot','hole:haunted','standup','rollover:laneB','toy:giantRobot','standup:eggTarget','rail:coopVuk','flip:flipU'];
+Object.assign(exports,{buildTable,rules,art,dmdScenes,songs,cues,simChecks,id:'buckethead',title:'Bucketheadland'});

@@ -369,7 +369,13 @@
   "src/engines/pinball/tables/bucketheadDmd.js",
   "src/engines/pinball/tables/bucketheadMusic.js",
   "src/engines/pinball/dropins.js",
-  "src/engines/pinball/lights.js"
+  "src/engines/pinball/lights.js",
+  "src/engines/pinball/tables/sabbathRules.js",
+  "src/engines/pinball/tables/sabbathArt.js",
+  "src/engines/pinball/tables/sabbathDmd.js",
+  "src/engines/pinball/tables/sabbathMusic.js",
+  "src/engines/pinball/tables/sabbath.js",
+  "src/packs/pinballPack.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

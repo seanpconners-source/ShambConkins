@@ -1,23 +1,23 @@
 // Pinball (bucketheadland-pinball): launches from the arcade, checks the intro shows the whole table and zooms to
 // the plunger, plunges and flips by touch, lets the autopilot play, then drains balls until both players have had
 // 3 balls each (hand-off cards between balls) and the result dialog shows. Screenshots → OUT (default the system temp
-// dir /pinball). Usage: node tests/pinball.mjs [solo] [WxH ...]
+// dir /pinball). Usage: node tests/pinball.mjs [game-id-pinball] [solo] [WxH ...]
 import {open} from './lib.mjs';
 import {mkdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 const out=process.env.OUT||path.join(tmpdir(),'pinball');mkdirSync(out,{recursive:true});
 let ok=true;const fail=m=>{ok=false;console.log('FAIL',m);};
-const args=process.argv.slice(2),solo=args.includes('solo');
+const args=process.argv.slice(2),solo=args.includes('solo'),gameId=args.find(a=>/-pinball$/.test(a))||'bucketheadland-pinball';
 const sizes=args.filter(a=>/^\d+x\d+$/.test(a)).map(s=>s.split('x').map(Number));if(!sizes.length)sizes.push([390,780],[844,390],[1100,700]);
 for(const [w,h] of sizes){
- const {browser,page,errors}=await open({viewport:{width:w,height:h}});const tag=`pb-${solo?'solo-':''}${w}x${h}`;
+ const {browser,page,errors}=await open({viewport:{width:w,height:h}});const tag=`pb-${gameId==='bucketheadland-pinball'?'':gameId.replace('-pinball','')+'-'}${solo?'solo-':''}${w}x${h}`;
  const shot=name=>page.screenshot({path:`${out}/${tag}-${name}.png`});
  const D=()=>page.evaluate(()=>{const d=window.ShambConkins.store.session?.debug;if(d?.engine!=='pinball')return null;const m=d.m;return {phase:d.phase,mphase:m.phase,cur:m.cur,ball:m.players[m.cur].ball,scores:d.scores,balls:m.w.balls.length,z:d.R.cam.z,flipA:m.w.flippers.find(f=>f.id==='flipL').a};});
  try{await page.waitForFunction(()=>window.ShambConkins?.requestGame,null,{timeout:40000});}catch{fail(`${tag} app did not boot: ${errors.join(' | ')}`);await browser.close();continue;}
  const ready=()=>page.evaluate(()=>document.querySelector('.pass-overlay [data-ready]')?.click());
  if(solo)await page.evaluate(()=>{const S=window.ShambConkins;S.store.profile.settings.solo={on:true,who:0,level:'normal'};});
- await page.evaluate(([solo])=>{window.ShambConkins.requestGame({id:'bucketheadland-pinball',origin:'arcade',solo});},[solo]);
+ await page.evaluate(([solo,gameId])=>{window.ShambConkins.requestGame({id:gameId,origin:'arcade',solo});},[solo,gameId]);
  let d=null;for(let i=0;i<60&&!(d=await D());i++){await page.waitForTimeout(200);await page.evaluate(()=>{const b=[...document.querySelectorAll('#dialog button')].find(b=>/start/i.test(b.textContent));b?.click();});}
  if(!d){await shot('noload');fail(`${tag} engine never loaded: ${errors.join(' | ')} dialog: ${await page.evaluate(()=>document.querySelector('#dialog')?.innerText?.slice(0,200))}`);await browser.close();continue;}
  await page.waitForTimeout(300);await ready();await page.waitForTimeout(1200);await shot('intro');d=await D();if(d.phase!=='intro'||d.z!==0)fail(`${tag} intro: ${JSON.stringify(d)}`);
@@ -25,7 +25,7 @@ for(const [w,h] of sizes){
  await page.waitForTimeout(300);await shot('plunge');if(d.mphase!=='plunge')fail(`${tag} not waiting at the plunger: ${JSON.stringify(d)}`);
  // touch: drag down + release = plunge
  await page.mouse.move(w*.75,h*.5);await page.mouse.down();await page.mouse.move(w*.75,h*.5+h*.15,{steps:6});await page.waitForTimeout(200);await shot('pull');await page.mouse.up();
- await page.waitForTimeout(500);d=await D();if(d.mphase!=='play')fail(`${tag} plunge did not fire: ${JSON.stringify(d)}`);
+ await page.waitForTimeout(500);d=await D();if(d.mphase!=='play')fail(`${tag} plunge did not fire: ${JSON.stringify(d)} ${await page.evaluate(()=>{const m=window.ShambConkins.store.session.debug.m,b=m.w.balls[0];return JSON.stringify({can:m.canPlunge(),b:b&&{x:b.x|0,y:+b.y.toFixed(1),vy:+b.vy.toFixed(1),st:b.state},pull:m.w.plunger.pull,top:m.w.plunger.y});})}`);
  await page.waitForTimeout(700);await shot('launched');
  // touch: hold the left half → left flipper up
  const rest=d.flipA;await page.mouse.move(w*.2,h*.8);await page.mouse.down();await page.waitForTimeout(150);d=await D();await page.mouse.up();

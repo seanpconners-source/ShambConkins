@@ -37,8 +37,9 @@ function createMachine({table,players=2,seed=1,onSound=()=>{},level='normal'}){
  // A ball sitting still on the plunger can always be (re)launched: the first plunge of a ball, or one that was shot
  // too softly to clear the shooter-lane gate and rolled back. Balls the machine fired itself get re-fired on their own.
  m.timeScale=def.timeScale||1;m.autoBalls=new Set();
- m.plungerBall=()=>m.w.balls.find(b=>P.ballOnPlunger(m.w,b)&&Math.abs(b.vy)<80)||null;
- m.canPlunge=()=>!!m.plungerBall();
+ // maxVy 80 = settled; a release mid-pull uses 400 (the ball rides the plunger down as it is pulled, still moving)
+ m.plungerBall=(maxVy=80)=>m.w.balls.find(b=>P.ballOnPlunger(m.w,b)&&Math.abs(b.vy)<maxVy)||null;
+ m.canPlunge=(maxVy=80)=>!!m.plungerBall(maxVy);
  const autoPower=()=>(def.plunger.auto-def.plunger.vmin)/(def.plunger.vmax-def.plunger.vmin);
  m.startBall=()=>{
   m.w.balls.length=0;m.timers.length=0;m.pendingBalls=0;m.mode=null;m.ball={bonus:0};m.tilted=m.w.tilted=false;m.tiltMeter=0;m.tiltWarn=0;m.saveUntil=0;m.savePending=0;m.msgs.length=0;m.msg=null;m.shows.length=0;m.giOffUntil=0;m.flashers={};m.autoBalls.clear();

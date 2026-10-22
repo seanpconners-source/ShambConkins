@@ -3,7 +3,7 @@
 // the backglass card shown at the start. Every function takes the drop-in pictures (imgs: playfield, backglass, apron,
 // logo, character, bumper, toy; see ../dropins.js) and uses them instead of the painted version when present.
 const {seededRandom}=require("src/utils.js");
-const {drawCover}=require("src/engines/pinball/dropins.js");
+const {drawCover,drawToy}=require("src/engines/pinball/dropins.js");
 const TAU=Math.PI*2;
 function playfieldPath(x){x.beginPath();x.moveTo(12,1067);x.lineTo(12,256);x.arc(256,256,244,Math.PI,TAU);x.lineTo(500,1067);x.closePath();}
 // A white single-cut guitar (Buckethead's white Les Paul), body centre (0,0), neck up the -y axis, size ~100 units.
@@ -107,7 +107,7 @@ const art={
  // The Giant Robot toy (moves with p.ox/oy; flashes when hit; eyes blaze while the tractor beam is armed).
  toy(x,p,t,imgs={}){
   const cx=p.x+(p.ox||0),cy=p.y+(p.oy||0),hit=p.flash>0,walk=Math.sin(t*6)*(Math.abs(p.ox||0)>.5?3:0);
-  if(imgs.toy){x.save();x.fillStyle='rgba(0,0,0,.45)';x.fillRect(cx-p.w/2+5,cy-p.h/2+6,p.w,p.h);drawCover(x,imgs.toy,cx-p.w/2,cy-p.h/2,p.w,p.h,'stretch');if(hit){x.globalCompositeOperation='lighter';x.fillStyle='rgba(255,255,255,.35)';x.fillRect(cx-p.w/2,cy-p.h/2,p.w,p.h);}x.restore();return;}
+  if(imgs.toy){drawToy(x,imgs.toy,cx-p.w/2,cy-p.h/2,p.w,p.h,{shadow:.45,hit});return;}
   x.save();x.translate(cx,cy);
   x.fillStyle='rgba(0,0,0,.45)';x.fillRect(-40,-28,90,76);
   x.fillStyle='#3a404c';x.fillRect(-30,22+walk,18,16);x.fillRect(12,22-walk,18,16);x.fillStyle='#5d6573';x.fillRect(-34,34+walk,26,8);x.fillRect(8,34-walk,26,8);
@@ -155,4 +155,6 @@ const art={
   x.restore();
  },
 };
-Object.assign(exports,{art,buckethead,logo});
+// The hero art between the slings (also used by tools/pinball-art-templates.mjs to frame the character template).
+const drawCharacter=x=>buckethead(x,236,812,70,{guitar:true});
+Object.assign(exports,{art,buckethead,logo,drawCharacter});

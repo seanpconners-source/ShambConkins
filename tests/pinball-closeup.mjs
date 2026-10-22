@@ -6,28 +6,31 @@ import {mkdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 const out=process.env.OUT||path.join(tmpdir(),'pinball');mkdirSync(out,{recursive:true});
+const GAME=process.env.GAME||'bucketheadland-pinball',PRE=GAME==='bucketheadland-pinball'?'':GAME.replace('-pinball','')+'-';   // GAME=black-sabbath-pinball etc.
 const {browser,page,errors}=await open({viewport:{width:390,height:780}});
 await page.waitForFunction(()=>window.ShambConkins?.requestGame,null,{timeout:40000});
-await page.evaluate(()=>{window.ShambConkins.requestGame({id:'bucketheadland-pinball',origin:'arcade'});});
+await page.evaluate(id=>{window.ShambConkins.requestGame({id,origin:'arcade'});},GAME);
 const D=()=>page.evaluate(()=>window.ShambConkins.store.session?.debug?.phase);
 for(let i=0;i<60&&!(await D());i++){await page.waitForTimeout(200);await page.evaluate(()=>[...document.querySelectorAll('#dialog button')].find(b=>/start/i.test(b.textContent))?.click());}
 await page.evaluate(()=>document.querySelector('.pass-overlay [data-ready]')?.click());
 for(let i=0;i<40&&(await D())!=='ball';i++)await page.waitForTimeout(200);
 await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug;d.plunge(.6);});
 await page.waitForTimeout(400);
+if(GAME==='bucketheadland-pinball'){   // Bucketheadland only: the Giant Robot battle and the Coop VUK
 // battle on, ball dropped onto the beam
 await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug,m=d.m;m.ball.battle={t:30,hits:1,grabCool:0};const b=m.w.balls[0];b.state='free';b.x=404;b.y=300;b.vx=0;b.vy=-50;});
-await page.waitForTimeout(500);await page.screenshot({path:`${out}/pbc-battle.png`});
+await page.waitForTimeout(500);await page.screenshot({path:`${out}/${PRE}pbc-battle.png`});
 const st=await page.evaluate(()=>{const m=window.ShambConkins.store.session.debug.m;return {held:m.w.balls.map(b=>b.state+':'+(b.hold?.hole.id||'')),robot:m.w.parts.giantRobot.ox};});
 console.log('battle',JSON.stringify(st));
 // ball into the Coop VUK
 await page.evaluate(()=>{const m=window.ShambConkins.store.session.debug.m;m.ball.battle=null;const b=m.w.balls[0];b.state='free';b.hold=null;b.ignoreHole=null;b.x=236;b.y=436;b.vx=0;b.vy=0;});
-await page.waitForTimeout(1500);await page.screenshot({path:`${out}/pbc-vuk.png`});
+await page.waitForTimeout(1500);await page.screenshot({path:`${out}/${PRE}pbc-vuk.png`});
 const v=await page.evaluate(()=>{const m=window.ShambConkins.store.session.debug.m;return m.w.balls.map(b=>`${b.state} ${b.x|0},${b.y|0} z${b.z|0}`);});
 console.log('vuk',v.join(' | '));
+}
 // off-screen arrow: ball parked high, camera parked low
 await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug,b=d.m.w.balls[0];b.state='held';b.hold={hole:{id:'x',x:180,y:50,eject:[0,0]},t:Infinity};b.x=180;b.y=50;Object.assign(d.R.cam,{y:132,v:0,goal:132,moving:false});});
-await page.waitForTimeout(40);await page.screenshot({path:`${out}/pbc-arrow.png`});
+await page.waitForTimeout(40);await page.screenshot({path:`${out}/${PRE}pbc-arrow.png`});
 // DMD contact sheet: every table animation, each grabbed from the top strip twice (early + late in the scene).
 const scenes=await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug,b=d.m.w.balls[0];d.m.ball.attr=null;if(b){b.state='held';b.hold={hole:{id:'freeze',x:236,y:620,eject:[0,0]},t:Infinity};b.x=236;b.y=620;}return d.scenes;});
 await page.evaluate(n=>{const c=document.createElement('canvas');c.id='sheet';c.width=780;c.height=40*n;c.style.cssText='position:fixed;left:0;top:0;z-index:99;background:#000';document.body.appendChild(c);},scenes.length);
@@ -36,12 +39,12 @@ let row=0;for(const name of scenes){for(const [k,wait] of [[0,450],[1,900]]){
  await page.waitForTimeout(wait);
  await page.evaluate(([r,k])=>{const g=document.getElementById('game-canvas'),s=document.getElementById('sheet').getContext('2d'),sc=g.width/g.clientWidth;s.drawImage(g,0,0,260*sc,70*sc,k*390,r*40,260*1.5*.98,40);},[row,k]);}
  row++;}
-await page.waitForTimeout(100);await page.locator('#sheet').screenshot({path:`${out}/pbc-dmd-sheet.png`});
+await page.waitForTimeout(100);await page.locator('#sheet').screenshot({path:`${out}/${PRE}pbc-dmd-sheet.png`});
 // light show: multiball start (GI blackout, sweep, all flashers), then a jackpot burst
 await page.evaluate(()=>{document.getElementById('sheet')?.remove();const d=window.ShambConkins.store.session.debug;d.R.cam.y=330;d.m.say(['JORDAN','MULTIBALL'],3,{anim:'multiball',mode:true});});
-await page.waitForTimeout(450);await page.screenshot({path:`${out}/pbc-show-multiball.png`});
+await page.waitForTimeout(450);await page.screenshot({path:`${out}/${PRE}pbc-show-multiball.png`});
 await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug;d.m.say(['SUPER JACKPOT','3,000,000'],3,{anim:'jackpot',flash:true});});
-await page.waitForTimeout(350);await page.screenshot({path:`${out}/pbc-show-jackpot.png`});
+await page.waitForTimeout(350);await page.screenshot({path:`${out}/${PRE}pbc-show-jackpot.png`});
 console.log('song now',await page.evaluate(()=>window.ShambConkins.store.session?.debug?.song?.()),'music setting',await page.evaluate(()=>window.ShambConkins.store.profile?.settings?.music));
 if(errors.length)console.log('ERRORS',errors.join(' | '));
 await browser.close();

@@ -39,7 +39,7 @@ for(let g=0;g<games;g++){
  scores.push(m.players[0].score);
 }
 // Scripted rules check: every attraction can be finished by its shots, then the wizard mode lights and pays.
-if(table.rules.ATTRACTIONS){
+if(table.id==='buckethead'){
  const m=createMachine({table,players:1,seed:7}),R=table.rules,fake={hold:{t:1}};m.startBall();m.phase='play';
  const ev={coaster:{type:'rail',id:'coaster'},ramp:{type:'rail',id:'robot'},orbit:{type:'trigger',id:'orbitL',dir:-1},coop:{type:'hole',id:'coop',ball:fake},robot:{type:'toy',id:'giantRobot'},
   spin:{type:'spin',id:'spinner'},pop:{type:'bumper',id:'pop1'},egg:{type:'standup',id:'eggTarget'}};
@@ -54,6 +54,29 @@ if(table.rules.ATTRACTIONS){
  const before=m.players[0].score;for(const s of ['coaster','ramp','orbit','coop','robot'])R.event(m,{...ev[s],ball:fake});
  assert.equal(m.ball.wiz.round,2,'all wizard shots relight round 2');assert.ok(m.players[0].score-before>=10000000,'wizard pays');
  console.log('attractions + wizard OK, wizard round 1 paid',(m.players[0].score-before).toLocaleString());
+}
+// Black Sabbath: every album mode can be finished by its own shots, then HEAVEN AND HELL lights and pays.
+if(table.id==='black-sabbath'){
+ const m=createMachine({table,players:1,seed:7}),R=table.rules,fake={hold:{t:1}};m.startBall();m.phase='play';
+ const ev={para:{type:'junction',id:'paranoid',to:'paraRight'},funeral:{type:'rail',id:'funeral'},grave:{type:'hole',id:'grave',ball:fake},iron:{type:'toy',id:'ironMan'},void:{type:'disc',id:'void'}};
+ const MASTER=['sM','sA','sS','sT','sE','sR'];
+ R.ATTRACTIONS.forEach((A,i)=>{m.p.albumNext=i;R.startAlbum(m);assert.equal(m.ball.attr.def.id,A.id);
+  for(let k=0;k<120&&m.ball.attr;k++){const a=m.ball.attr;m.t+=1.1;   // time passes (Iron Man hits are debounced)
+   const e=A.id==='master'?{type:'standup',id:MASTER[a.next]}:A.id==='supernaut'?{type:'spin',id:'supernaut'}:A.id==='neversaydie'?{type:'bumper',id:'pig1'}:A.id==='void'?ev.void:A.id==='bloody'?ev.grave:ev[a.lit[0]];
+   R.event(m,{...e,ball:fake});}
+  assert.equal(m.p.albums[i],2,`${A.id} completes`);});
+ assert.ok(m.p.wizardLit,'all six albums light HEAVEN AND HELL');
+ for(let k=0;k<3&&m.mode!=='wizard';k++)R.event(m,{type:'hole',id:'heaven',ball:fake});assert.equal(m.mode,'wizard','Heaven and Hell starts the wizard');
+ const before=m.players[0].score;for(const s of ['para','funeral','grave','iron','void']){m.t+=1.1;R.event(m,{...ev[s],ball:fake});}
+ assert.equal(m.ball.wiz.round,2,'all wizard shots relight round 2');assert.ok(m.players[0].score-before>=15000000,'wizard pays');
+ // Iron Man: I-R-O-N lights him; 4 lit hits wake him; 5 hits in his mode beat him
+ const m3=createMachine({table,players:1,seed:9});m3.startBall();m3.phase='play';const R3=table.rules;
+ for(let n=0;n<2;n++)for(const id of ['laneI','laneR','laneO','laneN'])R3.event(m3,{type:'rollover',id,ball:fake});
+ for(let n=0;n<4;n++){m3.t+=1.5;R3.event(m3,{type:'toy',id:'ironMan',ball:fake});}
+ assert.ok(m3.ball.ironMode,'four lit hits wake Iron Man');
+ for(let n=0;n<5;n++){m3.t+=1;R3.event(m3,{type:'toy',id:'ironMan',ball:fake});}
+ assert.ok(!m3.ball.ironMode&&m3.p.ironsBeaten===1,'five hits beat Iron Man');
+ console.log('albums + wizard + Iron Man OK, wizard round 1 paid',(m.players[0].score-before).toLocaleString());
 }
 // A plunge too soft to clear the shooter-lane gate rolls back: the ball must be launchable again (not stuck in play).
 {
@@ -79,5 +102,5 @@ console.log('modes started',JSON.stringify(modes));
 assert.equal(jams.length,0,'no jammed balls');
 if(table.rules.ATTRACTIONS)assert.ok((modes.attraction||0)>=2,'the bot starts attraction modes');
 assert.ok((totals['plunge']||0)>=started,'every ball plunged');
-for(const k of ['bumper','sling','spin','drop','rail:coaster','rail:robot','hole:haunted','standup','rollover:laneB','toy:giantRobot','standup:eggTarget','rail:coopVuk','flip:flipU'])assert.ok(Object.keys(totals).some(x=>x.startsWith(k)),`bot made ${k}`);
+for(const k of table.simChecks||[])assert.ok(Object.keys(totals).some(x=>x.startsWith(k)),`bot made ${k}`);
 console.log('pinball sim OK');

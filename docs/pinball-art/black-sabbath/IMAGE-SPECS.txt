@@ -1,0 +1,185 @@
+BLACK SABBATH PINBALL - CUSTOM IMAGE SPECS
+==========================================
+
+The table has 7 replaceable pictures. Each one has a template PNG in this folder that shows the current art at the
+exact size and framing the game uses. Make a new picture the same size, follow the rules below, save it with the
+exact file name, and put it in:   assets/pinball/black-sabbath/
+then rebuild the game. Any picture you don't supply keeps the built-in art.
+Each section ends with a PROMPT you can paste into an image tool (upload the matching template with it).
+
+GENERAL RULES (all pictures)
+- File names are lowercase and exact: playfield, backglass, apron, logo, character, bumper, toy.
+  Extension: .png, .webp or .jpg (.svg also works).
+- Pictures that need a TRANSPARENT background (logo, character, and ideally toy) must be PNG or WebP with a real
+  alpha channel. A "checkerboard" painted into the image is NOT transparency; it will show up as a checkerboard.
+  JPG has no transparency at all.
+- Transparent pixels show whatever is underneath (the playfield). Semi-transparent pixels blend with it.
+- Use the exact pixel sizes below. Other sizes still load, but the picture gets stretched or cropped (see "How it
+  is fitted" for each one).
+- Theme: Black Sabbath, gothic 1970s heavy metal: night, a full moon, bare trees, an old water mill with a cloaked
+  hooded figure, a misty graveyard, bats, war pigs in army helmets, a hulking iron man, Tony Iommi's black
+  twin-horned guitar. Colours: near-black, deep purple, violet glow, blood red, sickly grave green, bone white.
+  Darker art lets the table's lights stand out.
+- Inspired-by only: don't copy the real album covers or the band's real logo, and no song lyrics.
+- No text that must be read at small sizes: on a phone the whole table is about 390 pixels wide.
+- Keep each file under about 2 MB (the game embeds them). Shrink with:  python3 tools/optimize-art.py
+
+Coordinates below are in pixels of that picture, from its top-left corner (x to the right, y down).
+
+
+1) playfield.png  -  1028 x 2134 px (exact), OPAQUE (no transparency needed)
+---------------------------------------------------------------------------
+What it is: the painted wood of the whole table, under every ball, light, ramp and bumper.
+How it is fitted: stretched over the whole table (1028 x 2134 = 2 px per mm). Not cropped.
+Replaces EVERYTHING painted on the playfield now: sky, moon, trees, mill and cloaked figure, tombstones, fog, the
+BLACK SABBATH logo, the guitar and the "BIRMINGHAM · 1970" caption. If you use a custom playfield, logo.png and
+character.png no longer appear on the playfield, so paint the logo and the guitar into this picture yourself.
+What is hidden / covered:
+- Outside the cabinet shape (cut off): left of x=24, right of x=1000, and the two top corners outside the arch. The
+  top is a half-circle, centre (512,512), radius 488 (its top touches y=24).
+- The shooter lane on the right (x 920-1000, from y 600 down) is darkened.
+- Bottom: the apron covers everything below a line from (24,1760) to (220,1952) to (336,2008) to (608,2008) to
+  (724,1952) to (920,1760). Nothing below that line is seen.
+- The game also darkens the edges a little (vignette) and adds a faint gloss on top.
+- The table's centre line is x = 472 (not 514): the shooter lane takes the right-hand strip.
+Things the game draws on top (keep important art away from them; see playfield-parts.png and playfield-guide.png):
+- Top lanes I-R-O-N: x 316-668, y 190-296.
+- Three WAR PIGS pop bumpers (round caps with a metal ring): centres (636,428), (792,428), (714,564), about 116 px
+  across.
+- IRON MAN toy: x 296-464, y 374-606. In his mode he steps forward (down) up to 50 px.
+- INTO THE VOID spinning disc, drawn by the game over your art: centre (536,704), radius 76.
+- Upper left flipper: pivot (60,880), it sweeps x 40-180, y 820-910.
+- PARANOID ramp and ELECTRIC FUNERAL ramp: thin chrome wire rails (see-through) that climb the left side, cross the
+  top and cross the middle of the table at about y 720-770 (they form an X over the left side).
+- Ramp mouths (plastic posts): PARANOID x 212-308, ELECTRIC FUNERAL x 672-768, both y 1060-1192.
+- The GRAVEYARD lock: purple walls x 384-560, y 800-972, the hole at (472,892), D-O-O-M drop targets at y 972.
+- HEAVEN AND HELL hole at (88,1200); M-A-S standups on the left wall (x 34, y 578-782); T-E-R standups on the right
+  wall (x 910, y 778-982).
+- Coloured round/arrow/star light inserts are see-through tinted lenses: your art shows under them. The big ones:
+  WAR PIGS star (472,1280), PARANOID arrow (260,1232), FUNERAL arrow (720,1232), the six album lights at y 1180
+  (x 348-598), 2X-6X row at y 1476, SHOOT AGAIN (472,1790), HAND OF DOOM star (472,1860).
+- Flasher domes (coloured bulbs): (240,364), (880,340), (472,776), (804,1040), (600,120).
+- Slingshots: x 188-264 and 680-756, y 1524-1736. Flippers at about y 1890; the HAND OF DOOM post pops up at
+  (472,2000) between them.
+Good spots for big art: the band y 1290-1450 across the middle (where the logo is now), the area y 1500-1760
+between the slingshots (where the guitar is now), the sky behind Iron Man and the moon (top left), and the right
+side y 1100-1500 (where the cloaked figure stands).
+Use playfield-parts.png as the top layer in an image editor to check alignment.
+PROMPT: Top-down painted pinball playfield artwork, tall portrait (1:2), Black Sabbath themed. A huge full moon
+upper left behind bare twisted trees, bats crossing a deep purple night sky; an old English water mill on the right
+with a lone cloaked hooded figure standing before it in the mist; a misty graveyard with crooked tombstones in the
+centre; a muddy battlefield glow upper right with pig soldiers in steel helmets; low fog bands across the lower
+half; a black twin-horned electric guitar painted large near the bottom centre; the words BLACK SABBATH in heavy
+gothic serif lettering across the middle. Flat top-down view, no perspective, no pinball parts (no flippers,
+bumpers, ramps, balls or lamps), dark painterly 1970s heavy-metal style with film grain, keep the same layout as
+the attached guide.
+
+
+2) backglass.png  -  1200 x 1600 px recommended (3:4 portrait; any size works), OPAQUE
+-------------------------------------------------------------------------------------
+What it is: the big painted "box art" shown as the intro card before a game, like the lit glass on top of a real
+pinball machine.
+How it is fitted:
+- Intro card: the whole picture is shown, shrunk to fit the screen ("contain"); empty space around it is black.
+  On a phone held upright the screen area is roughly 390 x 700, so a taller picture (e.g. 1080 x 1920) fills
+  more of it; 1200 x 1600 leaves black bars above and below.
+- Landscape screens only: a thin banner to the right of the score display uses the picture too, cropped to fill
+  ("cover") a very wide short strip (about 4.5:1), taken from the MIDDLE of the picture.
+So: put the main subject (Iron Man, the cloaked figure, the title) near the centre, and make the middle horizontal
+band look good on its own. A title at the top is fine on the intro card.
+PROMPT: Vintage 1970s pinball backglass painting, portrait 3:4, Black Sabbath themed: a full moon over a gothic
+water mill at night, a cloaked hooded figure in the foreground, a towering riveted iron giant with a glowing red
+visor on the left, a row of pig soldiers in army helmets marching along the bottom, bats and lightning in a violet
+sky, and a marquee across the top reading BLACK SABBATH in heavy gothic serif lettering with dripping red edges.
+Rich airbrushed colours, dramatic lighting, high detail.
+
+
+3) apron.png  -  896 x 374 px (exact), OPAQUE
+---------------------------------------------
+What it is: the metal panel at the very bottom of the table, around and below the flippers (where balls drain).
+Real tables print the rules cards and the logo here.
+How it is fitted: scaled to cover a 448 x 187 mm box ("cover"; with this exact size nothing is cropped), then cut to
+the apron shape. A thin edge is drawn around it.
+Visible part only: everything BELOW the line from (0,0) to (196,192) to (312,248) to (584,248) to (700,192) to
+(896,0). The V-shaped area above that line (top middle and top corners) is never seen; the flippers sit there.
+So the usable area is two slanted wings at the left and right, and a full-width band from y 248 to 374.
+Readable text: the current cards are about 112 x 40 px in the band near y 260-360. Your picture replaces the
+painted cards, so include any text you want.
+Transparency: not needed; transparent pixels there would show the dark table colour.
+PROMPT: Pinball apron artwork, wide panel (2.4:1), dark gunmetal with purple trim, flat front-on view: two cream
+instruction cards with purple headers, left "BLACK SABBATH / 3 BALLS PER GAME / BURY 3 FOR WAR PIGS", right
+"SPELL M-A-S-T-E-R / RAISES THE HAND OF DOOM / EVERY 2ND: EXTRA BALL", and a centre plate reading HAND OF DOOM.
+Keep the cards in the bottom third; the top middle is hidden behind the flippers.
+
+
+4) logo.png  -  1152 x 282 px (as the template), TRANSPARENT background REQUIRED
+---------------------------------------------------------------------------------
+What it is: the BLACK SABBATH title painted on the playfield, also shown in the score banner (landscape).
+How it is fitted: always shown whole, never cropped; aspect ratio kept.
+- Playfield: drawn 576 px wide (in playfield.png pixels), centred at (472,1384). Its height follows its shape.
+- Score banner (landscape only): shrunk to fit the space left of the score display.
+Size rule: any width (about 1000+ px is sharp enough); keep the height at most 25% of the width (e.g. 1152 x 288
+at most). Taller logos run into the WAR PIGS star above and the 2X-6X lights below.
+Use a full-bleed design: the logo should reach the left and right edges of the image with only a small margin,
+because the image width is what sets the drawn width. (The built-in logo doesn't fill the template's width; a
+full-width picture will show bigger than it does.)
+Not shown on the playfield when a custom playfield.png is used (it still shows in the score banner).
+PROMPT: The words BLACK SABBATH as a pinball playfield logo: heavy gothic serif lettering, bone white with a dark
+outline, a violet glow and a few blood-red drips, wide horizontal layout filling the image edge to edge,
+transparent background.
+
+
+5) character.png  -  660 x 896 px (as the template), TRANSPARENT background REQUIRED
+-------------------------------------------------------------------------------------
+What it is: the hero art (Tony Iommi's black twin-horned guitar) on the playfield between the two slingshots,
+above the flippers.
+How it is fitted: always shown whole, aspect ratio kept. Drawn 220 px wide (in playfield pixels) centred on the
+table's centre line; the point 45% of the way down the image sits at y 1660.
+Size rule: keep 660 wide and a height between 660 and 896. Keep the bottom quarter of the image mostly empty: the
+"BIRMINGHAM · 1970" caption, the SHOOT AGAIN light and the HAND OF DOOM light sit just below. Keep the subject
+inside the frame: anything outside the image is lost.
+Not shown when a custom playfield.png is used.
+PROMPT: A black twin-horned electric guitar (SG style) with a white pickguard, lying diagonally, seen from above,
+painted in a dark gothic style with a violet rim light, the whole guitar inside the top three quarters of the
+image, transparent background.
+
+
+6) bumper.png  -  256 x 256 px (exact square), OPAQUE inside the circle
+-----------------------------------------------------------------------
+What it is: the top of the pop bumpers (the three round WAR PIGS bumpers that kick the ball). One picture is used
+for all three.
+How it is fitted: cut to the circle that touches all four edges (centre 128,128, radius 128). Corners outside the
+circle are never seen, so transparency there doesn't matter. Each cap is only about 45 mm across, about 35
+screen pixels on a phone, so use a bold, simple design (big shapes, at most 2-3 letters).
+When a bumper is hit the game flashes it brighter (a pink-white wash) and shrinks it slightly; the metal ring
+around it is drawn by the game.
+PROMPT: Round pop-bumper cap seen straight from above: a pink pig face wearing a steel army helmet, bold cartoon
+war-poster style, big simple shapes, centred in a circle that fills the square image.
+
+
+7) toy.png  -  336 x 464 px (exact, 0.72:1 portrait), TRANSPARENT background recommended, but FILL THE FRAME
+-------------------------------------------------------------------------------------------------------------
+What it is: IRON MAN, the moving toy at the upper left. He steps toward the flippers during his mode.
+How it is fitted: stretched to an 84 x 116 mm box (no cropping; a different shape gets squashed, so keep 0.72:1).
+Important: the game draws a dark rectangle the size of the whole box as its shadow (offset down-right), and the
+hit flash is also a white wash over the whole box. With a transparent background, that shadow and flash show as
+rectangles around him. So make Iron Man fill nearly the whole image (a hulking, boxy figure works best), or paint a
+background plate behind him.
+The ball bounces off a house-shaped outline: a pointed head at the top centre (at the top edge of the box), and an
+underside that slopes from about y 444 on the left to about y 372 on the right (in toy.png pixels), so rebounds fall
+away to the right. His legs below that line are only for looks.
+The picture is not animated (no stepping legs or blazing visor like the built-in Iron Man).
+PROMPT: A hulking riveted iron man robot from the 1970s, front view, full body, dark gunmetal plates with rivets,
+a glowing red visor slit in a pointed helmet, heavy fists, standing straight, filling the whole frame, painted toy
+style, transparent background.
+
+
+REFERENCE FILES (not used by the game)
+- playfield-guide.png: the whole table as it looks now, with every part.
+- playfield-parts.png: only what the game draws on top of a playfield picture, transparent everywhere else.
+  Lay it over your playfield to check nothing important is hidden.
+
+NOT REPLACEABLE BY PICTURES (drawn by code): the score display (DMD), flippers, slingshots, ramps and rails, light
+inserts, drop targets, the spinning disc, the Hand of Doom post and the ball.
+
+Remake the templates: node tools/pinball-art-templates.mjs --table black-sabbath

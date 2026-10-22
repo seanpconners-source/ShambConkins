@@ -21,14 +21,14 @@ function createWorld(def,seed=1){
  const w={def,t:0,g:def.gravity,G:def.gravity/Math.sin(def.slope*Math.PI/180),balls:[],segs:[],grid:new Map(),stamp:0,
   flippers:def.flippers.map(f=>({...f,a:f.rest,w:0,held:false})),parts:{},rails:def.rails.map(railTable),events:[],random:seededRandom(seed>>>0||1),
   plunger:def.plunger?{...def.plunger,pull:0,y:def.plunger.y}:null,tilted:false,nextBall:1,acc:0};
- for(const [id,p] of Object.entries(def.parts))w.parts[id]={...p,down:false,lit:false,on:p.kind==='diverter'?p.up:p.kind!=='magnet',flash:0,cool:0,angle:0,spin:0,hits:0};
+ for(const [id,p] of Object.entries(def.parts))w.parts[id]={...p,down:false,lit:false,on:p.kind==='diverter'?p.up:p.kind==='flag'?!!p.on:p.kind!=='magnet',flash:0,cool:0,angle:0,spin:p.spin??0,hits:0};
  for(const s of def.segs){const g={...s,dx:s.bx-s.ax,dy:s.by-s.ay};g.l2=g.dx*g.dx+g.dy*g.dy;g.part=s.id?w.parts[s.id]:null;g.e??=(s.kind==='rubber'?.72:s.kind==='bumper'?.7:s.kind==='sling'?.72:.42);g.fr??=(s.kind==='rubber'?.06:.02);w.segs.push(g);
   const x0=Math.floor((Math.min(s.ax,s.bx)-s.r)/CELL),x1=Math.floor((Math.max(s.ax,s.bx)+s.r)/CELL),y0=Math.floor((Math.min(s.ay,s.by)-s.r)/CELL),y1=Math.floor((Math.max(s.ay,s.by)+s.r)/CELL);
   for(let cx=x0;cx<=x1;cx++)for(let cy=y0;cy<=y1;cy++){const k=cx*4096+cy;if(!w.grid.has(k))w.grid.set(k,[]);w.grid.get(k).push(g);}}
  w.lines=def.lines.map(l=>{const dx=l.b[0]-l.a[0],dy=l.b[1]-l.a[1],L=Math.hypot(dx,dy)||1;return {...l,nx:-dy/L,ny:dx/L,dx,dy,L};});
  // Ramp entries are line switches too: crossing one along the path puts the ball on the rail.
  for(const r of w.rails){if(r.noEntry)continue;const p=railAt(r,0),half=(r.width||40)/2;const a=[p.x-p.ty*half,p.y+p.tx*half],b=[p.x+p.ty*half,p.y-p.tx*half];const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1;w.lines.push({id:r.id+':entry',kind:'railEntry',rail:r,a,b,dx,dy,L,nx:-dy/L,ny:dx/L});}
- w.holes=def.holes.map(h=>({...h}));w.magnets=def.magnets.map(m=>({...m}));w.sensors=def.sensors.map(s=>({...s}));
+ w.holes=def.holes.map(h=>({...h}));w.magnets=def.magnets.map(m=>({...m}));w.sensors=def.sensors.map(s=>({...s}));w.discs=(def.discs||[]).map(d=>({...d}));
  // Toys: moving parts (capsules at their rest pose); the rules set parts[id].tx/ty and the toy glides there.
  w.toys=(def.toys||[]).map(t=>({...t,ox:0,oy:0,vx:0,vy:0,segs:t.segs.map(s=>{const g={...s,kind:'toy',id:t.id,dx:s.bx-s.ax,dy:s.by-s.ay,e:s.e??.35,fr:.03};g.l2=g.dx*g.dx+g.dy*g.dy;g.part=w.parts[t.id];return g;})}));
  // Captive balls live in their own channel: they collide with everything but never drain or count as balls in play.
@@ -68,6 +68,7 @@ function hitSeg(w,b,s,ox=0,oy=0,mvx=0,mvy=0){
  else if(s.kind==='drop'){p.down=true;p.flash=.2;emit(w,'drop',{id:s.id,bank:p.bank,index:p.index,ball:b});}
  else if(s.kind==='standup'){if(p.cool<=0){p.cool=.15;p.flash=.25;emit(w,'standup',{id:s.id,ball:b});}}
  else if(s.kind==='toy'){if(p.cool<=0&&-vn>120){p.cool=.3;p.flash=.25;p.hits++;emit(w,'toy',{id:s.id,ball:b,speed:-vn});}}
+ else if(s.kind==='diverter'){if(p.cool<=0){p.cool=.3;p.flash=.3;emit(w,'post',{id:s.id,ball:b});}}
  else if(-vn>250)emit(w,'wallHit',{speed:-vn,kind:s.kind,ball:b});
  b.vx=mvx+tx*(1-s.fr)+out*nx;b.vy=mvy+ty*(1-s.fr)+out*ny;
 }
@@ -91,6 +92,9 @@ function stepBall(w,b,h){
   const a=w.g*p.ty-w.G*p.dz-Math.sign(b.rail.v)*90;b.rail.v+=a*h;b.rail.s+=b.rail.v*h;
   const q=railAt(r,b.rail.s);b.px=b.x;b.py=b.y;b.x=q.x;b.y=q.y;b.z=q.z;
   if(b.rail.s<=0&&b.rail.v<=0){const v=b.rail.v;b.state='free';b.rail=null;b.z=0;b.vx=q.tx*v;b.vy=q.ty*v;emit(w,'railFail',{id:r.id,ball:b});}
+  // Junction: the path continues on another rail (exit.next = 'id', or {switch:diverterId, on:'idA', off:'idB'}).
+  else if(b.rail.s>=r.len&&r.exit.next){const n=r.exit.next,id=typeof n==='string'?n:(w.parts[n.switch]?.on?n.on:n.off),nr=w.rails.find(x=>x.id===id);
+   if(nr){b.rail={r:nr,s:0,v:b.rail.v};emit(w,'junction',{id:r.id,to:nr.id,ball:b});return;}}
   else if(b.rail.s>=r.len){const v=b.rail.v;b.state='free';b.rail=null;b.z=0;
    const hole=r.exit.hole&&w.holes.find(x=>x.id===r.exit.hole);
    if(hole){b.x=hole.x;b.y=hole.y;b.vx=0;b.vy=0;b.state='held';b.hold={hole,t:hole.hold};emit(w,'rail',{id:r.id,ball:b});emit(w,'hole',{id:hole.id,ball:b,fromRail:r.id});}
@@ -104,6 +108,10 @@ function stepBall(w,b,h){
  if(!b.captive)for(const m of w.magnets){const part=w.parts[m.id];if(!part?.on||b.ignoreHole===m.id)continue;const dx=m.x-b.x,dy=m.y-b.y,d=Math.hypot(dx,dy);
   if(part.grab&&d<9){b.state='held';b.hold={hole:{id:m.id,x:m.x,y:m.y,eject:part.fling||[0,400],magnet:true},t:part.holdT??1.2};b.x=m.x;b.y=m.y;b.vx=b.vy=0;emit(w,'magnet',{id:m.id,ball:b});return;}
   if(d<m.r&&d>.5){const k=m.force*(1-d/m.r)/d;b.vx+=dx*k*h;b.vy+=dy*k*h;if(d<8){b.vx*=1-6*h;b.vy*=1-6*h;}}}
+ // Spinning discs (parts[id].spin rad/s, set by the rules): the turning floor drags the ball round with it.
+ if(!b.captive)for(const d of w.discs){const dx=b.x-d.x,dy=b.y-d.y,inside=dx*dx+dy*dy<d.r*d.r,key='disc:'+d.id,was=b.inside.has(key);
+  if(inside){const om=w.parts[d.id].spin||0,k=d.grip*h;b.vx+=(-om*dy-b.vx)*k;b.vy+=(om*dx-b.vy)*k;if(!was){b.inside.add(key);emit(w,'disc',{id:d.id,ball:b});}}
+  else if(was)b.inside.delete(key);}
  const sp=Math.hypot(b.vx,b.vy);if(sp>MAXV){b.vx*=MAXV/sp;b.vy*=MAXV/sp;}
  b.x+=b.vx*h;b.y+=b.vy*h;
  // Plunger tip (the shooter lane floor); it sits lower while pulled.

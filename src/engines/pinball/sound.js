@@ -41,6 +41,8 @@ const S={
  danger:a=>{const d=out(a,.3);for(let i=0;i<3;i++)blip(a,d,{t:i*.14,f:220,f2:215,dur:.1,type:'square',vol:.2});},
  tilt:a=>{const d=out(a,.35);blip(a,d,{f:110,f2:50,dur:1.2,type:'sawtooth',vol:.3});},
  bonus:a=>{const d=out(a,.2);blip(a,d,{f:1046,f2:1040,dur:.05,type:'square',vol:.15});},
+ // air-raid siren (WAR PIGS multiball)
+ siren:a=>{const d=out(a,.22),o=a.createOscillator(),g=a.createGain(),t=a.currentTime;o.type='sawtooth';o.frequency.setValueAtTime(220,t);o.frequency.linearRampToValueAtTime(760,t+1.1);o.frequency.linearRampToValueAtTime(260,t+2.6);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.35,t+.3);g.gain.linearRampToValueAtTime(0,t+2.7);const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=1400;o.connect(f).connect(g).connect(d);o.start(t);o.stop(t+2.8);},
  start:a=>{const d=out(a,.3);notes(a,d,[48,55,60,63,67,72],{step:.09,type:'sawtooth',vol:.08});},
  gameOver:a=>{const d=out(a,.3);notes(a,d,[67,63,60,55,51,48],{step:.18,type:'triangle',vol:.2});},
 };
