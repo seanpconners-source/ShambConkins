@@ -3,6 +3,7 @@ name: Publish release HTML
 # A version bump pushed to main builds releases/ShambConkins_v<version>.html and publishes it as the asset of a new
 # GitHub Release v<version> (the ~80 MB file is never a git blob). Notes come from docs/releases/v<version>.md, else
 # from that version's CHANGELOG section. Does nothing if the release already exists. Run it by hand to retry.
+# The installable-app folder (`--pwa`) goes up next to it as ShambConkins_v<version>_pwa.zip.
 on:
   push:
     branches:
@@ -38,6 +39,7 @@ jobs:
           V=$(node -p "require('./package.json').version")
           grep -Fq "const VERSION='$V';" src/version.js
           node -p "require('./package.json').scripts.release" | grep -Fq "releases/ShambConkins_v$V.html"
+          node -p "require('./package.json').scripts.release" | grep -Fq -- "--pwa releases/ShambConkins_v${V}_pwa"
           echo "version=$V" >> "$GITHUB_OUTPUT"
           if gh release view "v$V" >/dev/null 2>&1; then
             echo "Release v$V already exists; nothing to do."
@@ -55,7 +57,9 @@ jobs:
           F=releases/ShambConkins_v$V.html
           test "$(stat -c %s "$F")" -gt 1000000
           grep -Fq "const VERSION='$V'" "$F"
-          sha256sum "$F"
+          test -f "releases/ShambConkins_v${V}_pwa/sw.js"
+          (cd releases && zip -qr "ShambConkins_v${V}_pwa.zip" "ShambConkins_v${V}_pwa")
+          sha256sum "$F" "releases/ShambConkins_v${V}_pwa.zip"
       - name: Publish the GitHub Release
         if: steps.v.outputs.exists == 'false'
         shell: bash
@@ -69,7 +73,7 @@ jobs:
           fi
           TITLE=$(sed -n '1s/^# //p' "docs/releases/v$V.md" 2>/dev/null || true)
           if [ -f "docs/releases/v$V.md" ]; then sed -i '1{/^# /d}' "docs/releases/v$V.md"; fi
-          gh release create "v$V" "releases/ShambConkins_v$V.html" \
+          gh release create "v$V" "releases/ShambConkins_v$V.html" "releases/ShambConkins_v${V}_pwa.zip" \
             --target "$GITHUB_SHA" \
             --title "${TITLE:-ShambConkins v$V}" \
             --notes-file "$NOTES"

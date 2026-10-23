@@ -910,3 +910,4 @@ body.gb-open{overflow:hidden}
 @media(prefers-reduced-motion:reduce){.trivia-burst{animation:none}}
 .title-screen .home-stack button.ts-backup{min-height:46px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;column-gap:9px;row-gap:2px;font-size:13px;color:#ffe2a6;border-color:#c99a3d88}
 .title-screen .home-stack button.ts-backup small{flex-basis:100%;font:600 11px/1.1 Arial,sans-serif;letter-spacing:.02em;color:#cdbfe6}
+.ts-icons [hidden]{display:none!important}

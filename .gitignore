@@ -5,6 +5,9 @@ local-test-reports/
 # Built game files (~80 MB) are GitHub Release assets, never git commits: main releases and
 # BUILD-RELEASE.cmd's branch/timestamped builds (e.g. ShambConkins_v0.60.0_TestVer.html).
 releases/*.html
+# ...and the installable-app folders/zips made next to them (tools/build.mjs --pwa)
+releases/*_pwa/
+releases/*.zip
 # The owner's own Doom IWADs (DOOM.WAD / DOOM2.WAD): copyrighted, never commit them. See src/engines/doom/README.md.
 assets/doom/user/
 

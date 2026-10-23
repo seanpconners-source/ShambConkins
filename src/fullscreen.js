@@ -13,8 +13,8 @@ function fullscreenButton(style='text',cls='small ghost'){if(!fullscreenSupporte
 function raiseDialogs(){doc.querySelectorAll('dialog[open]').forEach(d=>{try{if(d.matches(':modal')){d.close();d.showModal();}}catch{}});}
 function syncLabels(){raiseDialogs();doc.querySelectorAll('[data-action="fullscreen"]').forEach(b=>{b.textContent=fullscreenLabel(b.dataset.fsStyle);});}
 function initFullscreen(){if(!fullscreenSupported())return;doc.addEventListener('fullscreenchange',syncLabels);doc.addEventListener('webkitfullscreenchange',syncLabels);
- // First tap anywhere goes fullscreen, except the toggle itself (handles its own click) and backup/restore: entering
- // fullscreen uses up the tap, and the browser then refuses to open the file picker.
- const first=ev=>{doc.removeEventListener('pointerup',first,true);if(ev.target?.closest?.('[data-action="fullscreen"],[data-gb-fs],[data-action="import"],[data-action="backup"]'))return;if(!isFullscreen())enterFullscreen();};
+ // First tap anywhere goes fullscreen, except the toggle itself (handles its own click) and backup/restore/install:
+ // entering fullscreen uses up the tap, and the browser then refuses to open the file picker or install prompt.
+ const first=ev=>{doc.removeEventListener('pointerup',first,true);if(ev.target?.closest?.('[data-action="fullscreen"],[data-gb-fs],[data-action="import"],[data-action="backup"],[data-action="install-app"]'))return;if(!isFullscreen())enterFullscreen();};
  doc.addEventListener('pointerup',first,true);}
 Object.assign(exports,{fullscreenSupported,isFullscreen,enterFullscreen,exitFullscreen,toggleFullscreen,fullscreenLabel,fullscreenButton,initFullscreen});

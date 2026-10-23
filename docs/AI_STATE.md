@@ -456,6 +456,16 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   {at,mark}, validated in profile.js); an empty save shows a "Restore a backup" footer link; exports are dated
   `ShambConkins-save-YYYY-MM-DD.json` (Downloads). The first-tap fullscreen skips backup/import buttons (entering fullscreen
   used the tap and the file picker then refused to open). Test: `tests/backup.mjs`.
+- **PWA / install as an app (Oct 23):** `src/pwa.js` (no engine changes): favicon + apple-touch-icon (embedded), and when
+  served over http(s) a `<link rel=manifest>`: the folder's `manifest.webmanifest` if present, else a Blob manifest built
+  from `PWA_MANIFEST` (defined once in tools/build.mjs, injected at `/*@@PWA_MANIFEST@@*/`) with absolute start_url and
+  embedded icons (Chrome rates both installable). `build.mjs --pwa [dir]` (default dist/pwa; `npm run release` writes
+  `releases/ShambConkins_vX_pwa/`, the release workflow zips it as an asset) = index.html + manifest + `sw.js` (cache-first,
+  BUILD = version + html hash, skipWaiting/claim, old caches dropped; toast on update) + icons/. Icons from the owner's SC
+  logo (`assets/originals/brand/sc-app-icon.png` → `assets/pwa/`, maskable at 66% for the safe circle). Title-screen ⬇
+  `.ts-install` shows only after `beforeinstallprompt` (or on iOS); Settings row "Play as an app" when served and not
+  standalone; `installAppFlow` (app.js) explains the browser menu when there's no prompt. First-tap fullscreen skips it.
+  Asset inliner now accepts subfolders (`assets/pwa/...`). file:// pages get no manifest. Test: `tests/pwa.mjs`.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 

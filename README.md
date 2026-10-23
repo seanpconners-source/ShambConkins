@@ -23,6 +23,19 @@ original HTML byte-for-byte (SHA-256 `3f712823…f076`).
 
 Current release: [v0.62.2 on GitHub Releases](https://github.com/seanpconners-source/ShambConkins/releases/tag/v0.62.2) (three real pinball tables, pinball on iPad, and backup/restore from the title screen). Download `ShambConkins_v0.62.2.html` from its release assets and open it in a phone browser; it runs fully offline. The bundled HTML (~80 MB) is too big for the git tree, so it is only a release asset. Pushing a version bump to `main` publishes the release automatically (`.github/workflows/release-build.yml`).
 
+## Install as an app (PWA)
+The game can be installed to the home screen and run full screen like an app, but only when it is opened from a web
+address (`http://localhost:...` from a local server app, or any `https://` site), not as a file from Downloads.
+- **Best:** serve the app folder. `npm run release` (or `node tools/build.mjs --pwa`) writes it next to the HTML, and each
+  GitHub Release has it as `ShambConkins_vX_pwa.zip`: unzip it and point the server at the folder (`index.html`,
+  `manifest.webmanifest`, `sw.js`, `icons/`). Installed this way it also works offline (the service worker caches the
+  game) and updates itself when a new folder is served.
+- **Just the HTML on a server** also installs in Chrome (the game carries its own manifest and icons), but needs the
+  server running to open.
+- To install: tap the ⬇ button on the title screen when the browser offers it, or Settings → *Play as an app* → Install,
+  or the browser menu (Chrome: *Install app*; Samsung Internet: *Add page to → Home screen*; iPhone/iPad Safari: *Share →
+  Add to Home Screen*). The app keeps the same save as the browser page at that address.
+
 ## Saves
 Progress lives in the browser, separately per browser and per address the file is opened from (a new file location or
 another browser starts empty). Back up from the title screen (💾 button, or Settings → Export backup) and restore with

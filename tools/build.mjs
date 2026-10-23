@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Bundles src/ + assets/ into one self-contained, offline-playable HTML file.
-// Usage: node tools/build.mjs [--out dist/ShambConkins.html]
+// Usage: node tools/build.mjs [--out dist/ShambConkins.html] [--pwa [dir]]
+// --pwa also writes an installable-app folder (default dist/pwa): the game as index.html + manifest.webmanifest +
+// sw.js (offline cache) + icons/. Serve that folder over http(s) or localhost to install the game as an app.
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -10,9 +12,18 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argOut = process.argv.indexOf('--out');
 const out = path.resolve(root, argOut > 0 ? process.argv[argOut + 1] : 'dist/ShambConkins.html');
 const read = p => fs.readFileSync(path.join(root, p), 'utf8');
+const argPwa = process.argv.indexOf('--pwa');
+const pwaDir = argPwa < 0 ? null : path.resolve(root, process.argv[argPwa + 1] && !process.argv[argPwa + 1].startsWith('--') ? process.argv[argPwa + 1] : 'dist/pwa');
+// Web app manifest: written into the PWA folder and embedded in the game (src/pwa.js builds one from it when the
+// page is served without the folder). Icon files live in assets/pwa/.
+const PWA_MANIFEST = {name: 'ShambConkins', short_name: 'ShambConkins', description: 'The home game that keeps getting worse: a pass-and-play party board game.',
+  id: './', start_url: './', scope: './', display: 'standalone', orientation: 'any', background_color: '#000000', theme_color: '#12130f', categories: ['games', 'entertainment'],
+  icons: [{src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any'}, {src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any'},
+    {src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable'}]};
+const PWA_ICONS = ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon-48.png'];
 
 const MIME = {svg: 'image/svg+xml', webp: 'image/webp', jpg: 'image/jpeg', png: 'image/png'};
-const inlineAssets = text => text.replace(/@@asset:(assets\/[A-Za-z0-9_.-]+)@@/g, (_, file) => {
+const inlineAssets = text => text.replace(/@@asset:(assets\/[A-Za-z0-9_./-]+)@@/g, (_, file) => {
   const ext = file.split('.').pop();
   if (!MIME[ext]) throw new Error('Unknown asset type: ' + file);
   return `data:${MIME[ext]};base64,` + fs.readFileSync(path.join(root, file)).toString('base64');
@@ -80,7 +91,7 @@ if (fs.existsSync(doomUser)) for (const f of fs.readdirSync(doomUser)) {
   const m = f.match(/^([a-z0-9_-]+)\.wad$/i);
   if (m) userPortraits['doom:wad:' + m[1].toLowerCase()] = 'data:application/gzip;base64,' + zlib.gzipSync(fs.readFileSync(path.join(doomUser, f)), {level: 9}).toString('base64');
 }
-const js2 = js.replace('/*@@USER_PORTRAITS@@*/{}', () => JSON.stringify(userPortraits));
+const js2 = js.replace('/*@@USER_PORTRAITS@@*/{}', () => JSON.stringify(userPortraits)).replace('/*@@PWA_MANIFEST@@*/null', () => JSON.stringify(PWA_MANIFEST));
 const html = read('src/index.template.html')
   .replace('<!--@@STYLE@@-->', () => '<style>' + inlineAssets(read('src/styles.css')+'\n'+read('src/theme.css')) + '</style>')
   .replace('<!--@@SCRIPT@@-->', () => '<script>' + inlineAssets(js2) + '</script>');
@@ -88,3 +99,23 @@ const html = read('src/index.template.html')
 fs.mkdirSync(path.dirname(out), {recursive: true});
 fs.writeFileSync(out, html);
 console.log(`${path.relative(root, out)}  ${(html.length / 1048576).toFixed(1)} MB  ${order.length} modules  ${Object.keys(userPortraits).length} drop-in art files`);
+if (pwaDir) {
+  // Cache-first service worker: the game is one big file, downloaded once per build. BUILD changes with the game's
+  // contents, so the browser fetches the new sw.js, caches the new game in the background and drops the old copy.
+  const build = read('src/version.js').match(/VERSION='([^']+)'/)[1] + '-' + (await import('node:crypto')).createHash('sha256').update(html).digest('hex').slice(0, 12);
+  const files = ['index.html', 'manifest.webmanifest', ...PWA_ICONS.map(f => 'icons/' + f)];
+  const sw = `// ShambConkins offline cache, written by tools/build.mjs --pwa. Cache-first; a new build changes BUILD.
+const BUILD=${JSON.stringify(build)},CACHE='shambconkins-'+BUILD,FILES=${JSON.stringify(files)};
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))).then(()=>self.skipWaiting()));});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('shambconkins-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||new URL(r.url).origin!==location.origin)return;
+ e.respondWith(caches.open(CACHE).then(c=>c.match(r,{ignoreSearch:true}).then(hit=>hit||(r.mode==='navigate'?c.match('index.html'):undefined))).then(hit=>hit||fetch(r)));});
+`;
+  fs.rmSync(pwaDir, {recursive: true, force: true});
+  fs.mkdirSync(path.join(pwaDir, 'icons'), {recursive: true});
+  fs.writeFileSync(path.join(pwaDir, 'index.html'), html);
+  fs.writeFileSync(path.join(pwaDir, 'manifest.webmanifest'), JSON.stringify(PWA_MANIFEST, null, 1));
+  fs.writeFileSync(path.join(pwaDir, 'sw.js'), sw);
+  for (const f of PWA_ICONS) fs.copyFileSync(path.join(root, 'assets/pwa', f), path.join(pwaDir, 'icons', f));
+  console.log(`${path.relative(root, pwaDir)}/  installable app folder (index.html, manifest.webmanifest, sw.js, icons/)  build ${build}`);
+}
