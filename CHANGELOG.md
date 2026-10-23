@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.62.1
+
+**Pinball on iPad.** The pinball tables wouldn't launch on an iPad: they pre-drew the table at a size that ran past iPad Safari's limit on picture memory. The tables now use a little less memory, free the old picture before drawing a new one (on rotation or when the art loads), and fall back to a lighter picture if Safari still says no. Phones look and play the same.
+
 ## v0.62.0
 
 **Real pinball.** Bucketheadland Pinball is rebuilt as a real pinball machine: three balls each, players alternate ball by ball, no clock, and a 1P mode where you play a whole game to beat the replay score. Accelerating flippers you aim by timing, pop bumpers, slingshots, drop targets, a spinner, ramps and wireforms, a kickback, plunger skill shot, ball save, tilt (flick up to nudge) and a 128x32 dot-matrix display with your face in dots. The Giant Robot toy fights back in ROBOT BATTLE, the Coop kicks the ball up to an upper flipper, the Golden Egg captive ball builds the jackpot, three locks start JORDAN MULTIBALL, five timed attractions at the Haunted Ride lead to the WELCOME TO BUCKETHEADLAND wizard mode, with light shows, flashers, an original soundtrack and high scores per table. The camera follows the ball smoothly. Buckethead himself is painted on the table and his strumming hand is the left flipper, under a flickering BUCKETHEADLAND sign.
