@@ -4,6 +4,9 @@ Version 0.61.0 (1P Arcade for every game, DOOM / DOOM II, Hole.it, Bricks Breake
 `releases/ShambConkins_v0.61.0.html`, 78.4 MB, built Oct 21 on TESTver and NOT committed: upload it as a GitHub Release asset).
 Smoke/route/solo/doom/broforce-turns passed on the release file; last full local run (Oct 21) green apart from 6 Broforce tests, since fixed.
 Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
+Hosted (Oct 23): Cloudflare Worker `cloudflare/worker.js` (README there) serves the newest GitHub Release asset at
+`shambconkins.loki-mylo.work` (+ `shambconkins.sean-p-conners.workers.dev`); new releases appear within ~5 min, nothing to redeploy.
+Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from an Android phone (Samsung Internet blocks paste/OAuth; Chrome works).
 
 ## Implemented systems
 - **Solo / 1P arcade (Oct 19 2026, batch 1 of 4, branch `claude/solo-mode-batch1`):** Arcade 1P / 2P switch + solo player
