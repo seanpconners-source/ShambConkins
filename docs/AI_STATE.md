@@ -449,6 +449,13 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   (validated in profile.js), shared by all tables. King Gizzard DMD: `text()` in gizzardDmd.js closes letter spacing,
   then dims the art and uses the full width, then wraps, so no message runs off the 128-dot panel (they did); the dragon
   hurry-up line is shorter. Audit script idea: render every m.say through its scene and flag text past x 0..127.
+- **Save safety (Oct 23, owner lost progress on both phone shortcuts):** saves are localStorage per browser + address, so
+  another browser, a new file location or the browser clearing site data = empty save (nothing in the game wipes it except
+  Settings → Erase). `src/saveGuard.js`: `keepSave()` asks for persistent storage (no eviction on low disk) on New Game and
+  on backup/restore; title screen shows 💾 BACK UP PROGRESS once 5+ unlocks/runs since the last export (`profile.backup`
+  {at,mark}, validated in profile.js); an empty save shows a "Restore a backup" footer link; exports are dated
+  `ShambConkins-save-YYYY-MM-DD.json` (Downloads). The first-tap fullscreen skips backup/import buttons (entering fullscreen
+  used the tap and the file picker then refused to open). Test: `tests/backup.mjs`.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 
