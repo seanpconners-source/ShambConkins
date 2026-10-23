@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.63.1
+
+**Loading screen.** While the game starts, a loading screen shows the logo, a progress bar and what is happening ("Setting up", "Updating to vX", "Starting") instead of a blank logo screen. The bar is timed from how long the last start took on that phone.
+
+**Full-screen app.** The installed app opens full screen by itself (no status or navigation bar, no tap needed); the full-screen buttons hide inside the app. In a browser tab the first tap still switches to full screen, and tapping install, backup or restore first no longer uses that up.
+
+**Real app from the website.** The website now also serves the app's manifest, offline worker and icons with every release, so Chrome installs a real app (no Chrome badge on the icon) that works offline. A small bar shows "Saving for offline play" or "Downloading update · N%" while it fetches a version in the background.
+
 ## v0.63.0
 
 **Install as an app.** ShambConkins can now be installed to the home screen and run full screen like a real app, with its own SC icon. It works when the game is opened from a web address (your local server or website), not as a file from Downloads. Tap the new ⬇ button on the title screen when the browser offers it, or Settings → Play as an app → Install, or the browser menu (Chrome: Install app; Samsung Internet: Add page to → Home screen; iPhone/iPad: Share → Add to Home Screen). Each release now also has `ShambConkins_vX_pwa.zip`: put that folder on the server and the installed app also works offline and updates itself when a new version is put there. The installed app keeps the same save as the browser page at that address.

@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.63.0 (Oct 23: PWA install + app folder zip, title-screen avatar fix; earlier: pinball tables, iPad fix, backup/restore; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
+Version 0.63.1 (Oct 23: loading screen, full-screen app, Worker serves the app files; v0.63.0 PWA; earlier: pinball tables, iPad fix, backup/restore; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
 pushing a version bump to main runs `.github/workflows/release-build.yml`, which builds `releases/ShambConkins_vX.html` and
 creates release vX with notes from `docs/releases/vX.md` (first line `# ` = title) or the CHANGELOG section; skips if it exists.
 Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
