@@ -21,7 +21,8 @@ const {location}=require("src/locations.js");
 const {brandHTML, portraitHTML, portraitURL, portraitFallbackURL, gameArtHTML, locationArt, locationArtHTML, locationBoardArt, itemArtHTML, logoURL}=require("src/assets.js");
 const {findItem, itemDescription , canUseItem}=require("src/items.js");
 const {pairForCharacters, pairForRun}=require("src/pairs.js");
-const {soloKind, soloHidden, soloCoop, soloSettings, soloBestText, SOLO_LEVELS, SOLO_LEVEL_NAMES}=require("src/solo.js");
+const {duelOK,soloKind, soloHidden, soloCoop, soloSettings, soloBestText, SOLO_LEVELS, SOLO_LEVEL_NAMES}=require("src/solo.js");
+const {netState}=require("src/net.js");
 const {BOARD_THEMES}=require("src/progression.js");
 const {worldNode,cameraBox,boardPiecePoint,pieceScale}=require("src/boardCamera.js");
 const {boardDetail,compactLandmarkName,landmarkLabels}=require("src/boardDetail.js");
@@ -155,9 +156,10 @@ function repaintCamera(from=null,{duration=240}={}){
 }
 function refreshPortraits(){if(!store.run||store.view!=='board')return;const panels=document.getElementById('player-panels'),face=document.getElementById('active-face');panels.innerHTML=playerPanels();panels.__html=null;const p=store.run.players[store.run.current];face.innerHTML=portraitHTML(p.character,'portrait mini',p.mood||'normal');face.__html=null;for(const node of document.querySelectorAll('#map-root .board-piece')){const player=store.run.players[+node.dataset.player],mood=player.large?'silly':player.mood||'normal';node.setAttribute('class',`board-piece p${+node.dataset.player+1} mood-${mood}`);const image=node.querySelector('image'),raw=portraitURL(player.character,mood),url=raw&&headDisplayURL(raw);if(image&&url)image.setAttribute('href',url);}}
 // Arcade 1P / 2P switch. In 1P: who plays (unlocks go to that roster) and the CPU difficulty.
-function soloStripHTML(p){const s=soloSettings(p),seg=(key,value,label,on)=>`<button class="solo-seg${on?' on':''}" data-action="solo-set" data-key="${key}" data-value="${value}" aria-pressed="${on}">${escapeHTML(label)}</button>`;
+function soloStripHTML(p){const s=soloSettings(p),online=!!store.online,seg=(key,value,label,on)=>`<button class="solo-seg${on?' on':''}" data-action="solo-set" data-key="${key}" data-value="${value}" aria-pressed="${on}">${escapeHTML(label)}</button>`;
  const names=[0,1].map(i=>store.setupNames?.[i]||(i?'Amber':'Sean'));
- return `<div class="solo-strip"><div class="solo-group" role="group" aria-label="Players">${seg('on','0','2 Players',!s.on)}${seg('on','1','1 Player',s.on)}</div>${s.on?`<div class="solo-group" role="group" aria-label="Solo player">${names.map((n,i)=>seg('who',i,n,s.who===i)).join('')}</div><div class="solo-group" role="group" aria-label="CPU difficulty"><span class="solo-label">CPU</span>${SOLO_LEVELS.map(l=>seg('level',l,SOLO_LEVEL_NAMES[l],s.level===l)).join('')}</div>`:''}</div>`;}
+ const net=netState(),room=online?`<div class="solo-group net-room" role="status"><span class="solo-label">ROOM</span><b>${escapeHTML(net.room||'')}</b><span class="net-peer">${net.status==='reconnecting'?'reconnecting…':net.peer?`✓ ${escapeHTML(net.peer.name)} is here`:'waiting for player 2…'}</span><button class="solo-seg" data-action="online-leave">Leave</button></div>`:'';
+ return `<div class="solo-strip"><div class="solo-group" role="group" aria-label="Players">${seg('on','0','2 Players',!s.on&&!online)}${seg('on','1','1 Player',s.on&&!online)}<button class="solo-seg${online?' on':''}" data-action="online-mode" aria-pressed="${online}">🌐 Online</button></div>${online?room:s.on?`<div class="solo-group" role="group" aria-label="Solo player">${names.map((n,i)=>seg('who',i,n,s.who===i)).join('')}</div><div class="solo-group" role="group" aria-label="CPU difficulty"><span class="solo-label">CPU</span>${SOLO_LEVELS.map(l=>seg('level',l,SOLO_LEVEL_NAMES[l],s.level===l)).join('')}</div>`:''}</div>`;}
 function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=type==='roster',ownership=new Map(),ownedIds=new Map(),matches=c=>(c.name+' '+c.source).toLowerCase().includes(query.toLowerCase());
  for(const id of p.shared){const identity=characterIdentity(id);ownership.set(identity,'SHARED');ownedIds.set(identity,id);}
  for(const[owner,ids]of Object.entries(p.rosters))for(const id of ids){const identity=characterIdentity(id);if(ownership.get(identity)==='SHARED')continue;const names=(ownership.get(identity)||'').split(' + ').filter(Boolean),label=owner.toUpperCase();if(!names.includes(label))names.push(label);ownership.set(identity,names.join(' + '));if(!ownedIds.has(identity))ownedIds.set(identity,id);}
@@ -181,10 +183,12 @@ function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=
   else if(filter==='variants')list=EVENT_GAMES.filter(g=>!g.bossId&&(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&hit(g));
   else list=[...GAMES.filter(g=>(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&(filter==='all'||g.category===filter)),...(filter==='all'?[...POKEMON_MATCHES,...beaten]:[])].filter(hit);
   // 1P mode: games with a solo version first; the rest stay listed but greyed out. Purely social games are hidden.
-  const solo=soloSettings(p).on,soloOK=g=>!!(g.pokemon||soloKind(g));
+  // Online duels: only games whose 1P run ends in a score (duelOK) can be played across two phones so far.
+  const online=!!store.online,solo=!online&&soloSettings(p).on,soloOK=g=>!!(g.pokemon||soloKind(g));
   if(solo){list=list.filter(g=>!soloHidden(g));list=[...list.filter(soloOK),...list.filter(g=>!soloOK(g))];}
-  playable=g=>!(solo&&!soloOK(g))&&(g.pokemon||gameUnlocked(g,p));
-  render=g=>{const open=g.pokemon||gameUnlocked(g,p),off=solo&&!soloOK(g),best=solo&&!g.pokemon?soloBestText(p,g.id):'',play=off?'<small>2 players only for now</small>':g.pokemon?button('arcade-pokemon','Battle ↗','ghost',`data-id="${g.pokemon}"`):open?button(solo?'arcade-solo':'arcade-game',solo?(soloKind(g)==='cpu'?soloCoop(g)?'Play with CPU ↗':'Play vs CPU ↗':'Play solo ↗'):g.bossId?'Fight again ↗':'Play match ↗','ghost',`data-id="${g.id}"`):`<small>${g.bossId?'Beat this boss on the board to unlock the rematch':`Unlock after ${g.gameUnlockAt||1} matches`}</small>`;
+  if(online){list=list.filter(g=>!soloHidden(g));list=[...list.filter(duelOK),...list.filter(g=>!duelOK(g))];}
+  playable=g=>!(solo&&!soloOK(g))&&!(online&&!duelOK(g))&&(g.pokemon||gameUnlocked(g,p));
+  render=g=>{const open=g.pokemon||gameUnlocked(g,p),off=solo&&!soloOK(g)||online&&!duelOK(g),best=(solo||online)&&!g.pokemon?soloBestText(p,g.id):'',play=off?`<small>${online?'Not online yet':'2 players only for now'}</small>`:online&&open?button('duel-propose','Challenge ↗','ghost',`data-id="${g.id}"`):g.pokemon?button('arcade-pokemon','Battle ↗','ghost',`data-id="${g.pokemon}"`):open?button(solo?'arcade-solo':'arcade-game',solo?(soloKind(g)==='cpu'?soloCoop(g)?'Play with CPU ↗':'Play vs CPU ↗':'Play solo ↗'):g.bossId?'Fight again ↗':'Play match ↗','ghost',`data-id="${g.id}"`):`<small>${g.bossId?'Beat this boss on the board to unlock the rematch':`Unlock after ${g.gameUnlockAt||1} matches`}</small>`;
    return `<article class="arcade-card ${open?'':'locked'}${off?' solo-off':''}${g.bossId?' boss-match':''}">${brandHTML(g.source)}${gameArtHTML(g)}<h3>${e(g.title)}</h3><p>${e(g.rules)}</p><div class="game-info">${e(g.duration.toUpperCase())} · ${g.bossId?(open?'BEATEN':'UNBEATEN'):p.played.includes(g.id)?'PLAYED':'NEW'}${best?` · ${e(best)}`:''}</div>${play}${p.settings.devMode&&!g.pokemon&&!off?button('dev-game','DEV · Test this game','small dev-button',`data-id="${g.id}"`):''}</article>`;};
  }
  catalogFeed={list,render,playable,shown:Math.min(list.length,CATALOG_CHUNK)};

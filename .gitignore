@@ -13,3 +13,6 @@ assets/doom/user/
 
 # zipped copy of docs/pinball-art templates (the PNGs themselves are tracked)
 docs/pinball-art/*.zip
+
+# wrangler dev's local state and build output (cloudflare/)
+.wrangler/

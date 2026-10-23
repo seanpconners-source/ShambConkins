@@ -20,9 +20,29 @@ Free plan is enough (100,000 requests a day; the file is cached by Cloudflare, G
   (from v0.63.1 every release carries them as small assets). They make Chrome install a real app (no Chrome badge on
   the icon) that opens full screen, works offline and updates itself.
 
+## Online rooms (two-phone play)
+`/room/<name>` is a WebSocket into a room: one Durable Object (class `Room` in `worker.js`) per room name, two seats,
+a relay between the phones (the game logic stays on the phones, `src/net.js` + `src/duel.js`). Rooms need the `ROOMS`
+binding in `wrangler.toml`, which the dashboard paste can't create, so the Worker is deployed by GitHub instead.
+
+### One-time setup: let GitHub deploy the Worker (Chrome on the phone works)
+1. Cloudflare dashboard → profile icon → **My Profile** → **API Tokens** → **Create Token** → template
+   **Edit Cloudflare Workers** → **Use template** → Account Resources: your account, Zone Resources: All zones →
+   **Continue to summary** → **Create Token** → copy the token.
+2. Cloudflare dashboard → **Workers & Pages** → the **Account ID** on the right → copy it.
+3. GitHub → the repository → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**:
+   `CLOUDFLARE_API_TOKEN` = the token, then another: `CLOUDFLARE_ACCOUNT_ID` = the account id.
+4. GitHub → **Actions** → **Deploy the website Worker** → **Run workflow** (main). After that it redeploys by itself
+   whenever `cloudflare/` changes on main.
+Check: `https://shambconkins.loki-mylo.work/room/test` should answer "Expected a WebSocket" (not "not set up").
+
+Free plan: SQLite Durable Objects are included; an idle room hibernates and costs nothing.
+Local test: `cd cloudflare && npx wrangler dev --local --port 8787`, then `node tests/online.mjs`.
+
 ## Updating the Worker code (when `worker.js` changes)
+With the GitHub deploy set up (above) nothing to do. Without it:
 Cloudflare dashboard → **Workers & Pages** → `shambconkins` → **Edit code** → select all, paste the new `worker.js`
-→ **Deploy**. Use Chrome on Android (Samsung Internet blocks pasting there).
+→ **Deploy** (the site works that way, online rooms don't). Use Chrome on Android (Samsung Internet blocks pasting there).
 
 ## Notes
 - Browsers keep the 80 MB page and only re-check the version on each visit (a 304 if unchanged).

@@ -9,6 +9,9 @@
 //                     the installable-app files of the newest release (each release carries them as small assets
 //                     next to the .html; tools/build.mjs --pwa). Without them the game still runs, but Chrome can
 //                     only make a badged shortcut instead of a real app, and there is no offline cache.
+//   /room/<name>      online play: a WebSocket into the room of that name (two phones; the Room Durable Object below).
+//                     Needs the ROOMS binding (wrangler.toml); without it the rest of the site works as before.
+import { DurableObject } from 'cloudflare:workers';
 const REPO = 'seanpconners-source/ShambConkins';
 const TAG_TTL = 300;           // seconds before asking GitHub for a newer release again
 const UA = 'shambconkins-worker';
@@ -24,6 +27,8 @@ export default {
     if (req.method !== 'GET' && req.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
     let path = url.pathname.replace(/\/+$/, '') || '/';
     if (path === '/index.html') path = '/';   // the offline cache (sw.js) asks for the game by this name
+    const room = path.match(/^\/room\/([^/]{1,80})$/);
+    if (room) return roomSocket(req, env, room[1]);
     try {
       if (path === '/version') return text(await latestTag(env, ctx));
       const icon = path.match(ICON), app = APP_FILES[path] || (icon && [icon[1], 'image/png', 'public, max-age=86400']);
@@ -102,6 +107,64 @@ async function appFile(req, [name, type, cacheControl], tag, env, ctx) {
     body = new Response(bytes);
   }
   return new Response(req.method === 'HEAD' ? null : body.body, { headers });
+}
+
+// ---- online rooms ----
+// Room names are case-insensitive and forgiving: "Pizza Night" and "pizza-night" are the same room.
+const roomName = raw => decodeURIComponent(raw).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+function roomSocket(req, env, raw) {
+  if (!env.ROOMS) return text('Online rooms are not set up on this site yet.', 503);
+  if ((req.headers.get('Upgrade') || '').toLowerCase() !== 'websocket') return text('Expected a WebSocket', 426);
+  let name; try { name = roomName(raw); } catch { name = ''; }
+  if (!name) return text('Bad room name', 400);
+  return env.ROOMS.get(env.ROOMS.idFromName(name)).fetch(req);
+}
+const clean = (v, n) => String(v ?? '').slice(0, n);
+const pub = a => ({ seat: a.seat, name: a.name, character: a.character, owner: a.owner, v: a.v });
+// One room = one Durable Object: two seats, presence, and a relay. The game logic stays on the phones.
+// Client → room: {t:'hello', id, name, character, owner, v} first, then {t:'msg', d}. Room → client: {t:'welcome', seat,
+// peers}, {t:'join', peer}, {t:'leave', seat}, {t:'msg', from, d}, {t:'full'}. A phone that reconnects with the same id gets
+// its seat back. Hibernating WebSockets: the object sleeps between messages, so an idle room costs nothing.
+export class Room extends DurableObject {
+  constructor(ctx, env) {
+    super(ctx, env);
+    ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'));
+  }
+  async fetch() {
+    const [client, server] = Object.values(new WebSocketPair());
+    this.ctx.acceptWebSocket(server);
+    server.serializeAttachment({ seat: null });
+    return new Response(null, { status: 101, webSocket: client });
+  }
+  seated(except) {
+    return this.ctx.getWebSockets().map(ws => ({ ws, a: ws.deserializeAttachment() || {} })).filter(p => p.ws !== except && p.a.seat != null);
+  }
+  send(ws, m) { try { ws.send(JSON.stringify(m)); } catch {} }
+  async webSocketMessage(ws, raw) {
+    if (typeof raw !== 'string' || raw.length > 16384) return;
+    let m; try { m = JSON.parse(raw); } catch { return; }
+    const me = ws.deserializeAttachment() || {};
+    if (m.t === 'hello') {
+      const id = clean(m.id, 64), others = this.seated(ws), old = id && others.find(p => p.a.id === id);
+      if (old) { old.ws.serializeAttachment({ seat: null }); try { old.ws.close(4000, 'replaced'); } catch {} }
+      const rest = others.filter(p => p !== old), taken = new Set(rest.map(p => p.a.seat));
+      const seat = old ? old.a.seat : [0, 1].find(s => !taken.has(s));
+      if (seat === undefined) { this.send(ws, { t: 'full' }); try { ws.close(4001, 'full'); } catch {} return; }
+      const info = { id, seat, name: clean(m.name, 24), character: clean(m.character, 64), owner: m.owner === 'Amber' ? 'Amber' : 'Sean', v: clean(m.v, 16) };
+      ws.serializeAttachment(info);
+      this.send(ws, { t: 'welcome', seat, peers: rest.map(p => pub(p.a)) });
+      for (const p of rest) this.send(p.ws, { t: 'join', peer: pub(info) });
+      return;
+    }
+    if (me.seat == null || m.t !== 'msg') return;
+    for (const p of this.seated(ws)) this.send(p.ws, { t: 'msg', from: me.seat, d: m.d });
+  }
+  async webSocketClose(ws, code) {
+    const a = ws.deserializeAttachment() || {};
+    try { ws.close(code >= 1000 && code < 5000 && code !== 1005 && code !== 1006 ? code : 1000, 'bye'); } catch {}
+    if (a.seat != null) for (const p of this.seated(ws)) this.send(p.ws, { t: 'leave', seat: a.seat });
+  }
+  async webSocketError(ws) { await this.webSocketClose(ws, 1011); }
 }
 
 // GitHub REST API (fallback only). Add a GITHUB_TOKEN secret to the Worker to lift the rate limit.

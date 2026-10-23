@@ -481,6 +481,19 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   `#sc-dl` bar ("Saving for offline play" / "Downloading update"). Chrome badge on the home icon = a pinned SHORTCUT, not a
   WebAPK: happens when Google's WebAPK server can't fetch the manifest/icons (blob manifest = only the HTML deployed, or
   Cloudflare Access/bot challenge); fix = serve the `_pwa` folder publicly, remove the shortcut, reinstall.
+- **Online duels, phase 1 (Oct 23, 2 phones):** rooms = Durable Object `Room` in `cloudflare/worker.js` (`/room/<name>`
+  WebSocket, names normalised like "pizza-night", seats 0/1, hello {id,name,character,owner,v} → welcome/join/leave/msg/full,
+  same client id (sessionStorage `sc-net-id`) reclaims its seat; hibernation API, ping auto-response). Binding `ROOMS` +
+  migration `rooms-v1` in `cloudflare/wrangler.toml`; deployed by `.github/workflows/deploy-worker.yml` (wrangler-action,
+  secrets CLOUDFLARE_API_TOKEN/ACCOUNT_ID; the dashboard paste can't add the binding). `src/net.js` = connection (host =
+  the site itself, else shambconkins.loki-mylo.work, override localStorage `sc-net-host`), reconnect with backoff.
+  `src/duel.js` = Arcade "🌐 Online" mode (`store.online`, `store.onlineWho`): room dialog, challenge → accept (30 s),
+  simultaneous challenge → seat 0's wins, both run `requestGame({solo:true,duel})`; launcher `duelSeed` (seed
+  `${seed}-${game.id}-${round}`), live score chip `#duel-chip` (progress every 1.5 s), `settleSolo` awaits `duel.finish()`
+  (waiting dialog, forfeit if the other leaves/quits) and shows both scores + Rematch. Only `duelOK` games (solo.js: kinds
+  levels/rounds/turns/game/alone) — CPU-kind games are "Not online yet". Next phases: board game across phones (host
+  runs the logic), then real head-to-head games. Tests: `tests/online.mjs` (two contexts vs `wrangler dev`), protocol
+  scratch test. Not yet tried on two real phones.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 

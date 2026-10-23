@@ -76,5 +76,9 @@ function soloFinish(s,score,level,label,won=level>0){if(!s?.solo||!s.alive)retur
 // Between levels: a card with the run so far. Resolves true to keep going (Exit on the card banks the run).
 async function soloNext(s,{title='Level cleared!',body='',level=1,score=0,label='Next level'}={}){if(!s?.alive)return false;return s.pass(0,body,label,{summary:`${title} Level ${level} · ${Number(score).toLocaleString()} points so far.`,soloTitle:title});}
 
-Object.assign(exports,{SOLO_LEVELS,SOLO_LEVEL_NAMES,SOLO_SKILL,soloKind,soloHidden,soloCoop,soloSettings,setSolo,normalizeSoloSettings,normalizeSoloBest,soloBest,recordSolo,soloBestText,isSolo,cpuSkill,soloProgress,soloFinish,soloNext});
+// Online duels (src/duel.js): both phones play the 1P version from the same seed and compare scores, so only games whose
+// solo run ends in a score qualify; CPU-opponent games need real head-to-head play and come later.
+const DUEL_KINDS=new Set(['levels','rounds','turns','game','alone']);
+function duelOK(g){return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&DUEL_KINDS.has(soloKind(g));}
+Object.assign(exports,{duelOK,SOLO_LEVELS,SOLO_LEVEL_NAMES,SOLO_SKILL,soloKind,soloHidden,soloCoop,soloSettings,setSolo,normalizeSoloSettings,normalizeSoloBest,soloBest,recordSolo,soloBestText,isSolo,cpuSkill,soloProgress,soloFinish,soloNext});
 

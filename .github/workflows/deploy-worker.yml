@@ -1,0 +1,39 @@
+name: Deploy the website Worker
+
+# Deploys cloudflare/worker.js (the site at shambconkins.loki-mylo.work + online rooms) with wrangler whenever cloudflare/
+# changes on main, or by hand. One-time setup: repository secrets CLOUDFLARE_API_TOKEN (Cloudflare → My Profile → API
+# Tokens → "Edit Cloudflare Workers" template) and CLOUDFLARE_ACCOUNT_ID (Workers & Pages overview). See cloudflare/README.md.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'cloudflare/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'seanpconners-source/ShambConkins'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the Cloudflare secrets
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Add the CLOUDFLARE_API_TOKEN repository secret first (see cloudflare/README.md)."
+            exit 1
+          fi
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare
+          wranglerVersion: '4.152.0'
+          command: deploy

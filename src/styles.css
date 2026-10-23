@@ -914,3 +914,8 @@ body.gb-open{overflow:hidden}
 .ts-icons [hidden]{display:none!important}
 #sc-dl{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:2147482000;width:min(88vw,360px);padding:9px 14px 11px;border-radius:14px;background:#160f20ee;border:1px solid #c99a3d66;box-shadow:0 6px 22px #000a;color:#f1e6c8;font:700 13px/1.2 system-ui,sans-serif;text-align:center;pointer-events:none}
 #sc-dl i{display:block;height:5px;margin-top:7px;border-radius:3px;background:#2a2233;overflow:hidden}#sc-dl b{display:block;height:100%;width:0;background:linear-gradient(90deg,#b8862f,#ffe2a6);transition:width .3s}
+/* Online duels (src/duel.js): room dialog, room line in the Arcade strip, live opponent score during a game */
+.net-field{display:grid;gap:6px;margin:6px 0 10px;text-align:left;font-weight:700}.net-field input{font:600 18px/1.2 system-ui,sans-serif;padding:10px 12px;border-radius:10px;border:1px solid #c99a3d88;background:#120c1a;color:#f1e6c8;width:100%;box-sizing:border-box}
+.net-who{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:4px 0 8px;font-weight:700}.net-who label{display:flex;align-items:center;gap:6px}.net-note{font-size:13px;opacity:.85}
+.net-room b{color:#ffe2a6;letter-spacing:.03em}.net-room .net-peer{font-size:12px;opacity:.9}
+#duel-chip{position:fixed;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));z-index:2147481000;padding:6px 12px;border-radius:999px;background:#160f20e6;border:1px solid #c99a3d77;color:#ffe2a6;font:800 13px/1.2 system-ui,sans-serif;pointer-events:none;box-shadow:0 4px 14px #0009}

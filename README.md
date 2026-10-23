@@ -39,6 +39,13 @@ address (`http://localhost:...` from a local server app, or any `https://` site)
   or the browser menu (Chrome: *Install app*; Samsung Internet: *Add page to → Home screen*; iPhone/iPad Safari: *Share →
   Add to Home Screen*). The app keeps the same save as the browser page at that address.
 
+## Online play (two phones)
+Arcade → **🌐 Online** → type a room name; the other phone types the same name and joins as player 2. Either player taps
+**Challenge** on a game; when the other accepts, both phones play that game's 1P version from the same start at the same
+time, see each other's live score, and the higher score wins (unlocks go to the winner's own phone). Games whose 1P mode
+ends in a score are online so far (~55: pinball, Broforce, Mario, Hole.it, DOOM, arcade remakes...); CPU-opponent games
+(trivia, chess, Pong...) say "Not online yet". Needs the internet and the website's room service (`cloudflare/`).
+
 ## Saves
 Progress lives in the browser, separately per browser and per address the file is opened from (a new file location or
 another browser starts empty). Back up from the title screen (💾 button, or Settings → Export backup) and restore with

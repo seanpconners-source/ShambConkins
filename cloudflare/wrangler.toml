@@ -1,8 +1,18 @@
-# Optional: only needed if you deploy with the Wrangler CLI (`npx wrangler deploy` from this folder).
-# Pasting worker.js into the Cloudflare dashboard works just as well.
+# Deploys cloudflare/worker.js as the "shambconkins" Worker: .github/workflows/deploy-worker.yml runs `wrangler deploy`
+# from this folder whenever cloudflare/ changes on main (secrets CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID, see README).
+# The custom domain (shambconkins.loki-mylo.work) was attached in the dashboard and stays attached; it isn't listed here
+# so a deploy never needs DNS permissions. keep_vars keeps any variables set in the dashboard.
 name = "shambconkins"
 main = "worker.js"
 compatibility_date = "2026-10-01"
+workers_dev = true
+keep_vars = true
 
-# Uncomment and set your domain to attach it on deploy:
-# routes = [{ pattern = "play.example.com", custom_domain = true }]
+# Online rooms: one Durable Object per room name (class Room in worker.js). SQLite-backed classes run on the free plan.
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+[[migrations]]
+tag = "rooms-v1"
+new_sqlite_classes = ["Room"]

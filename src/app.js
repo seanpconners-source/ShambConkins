@@ -9,6 +9,7 @@ const {freshProfile, loadProfile, saveProfile, recruitReward, canRecruit, canRec
 const {markBackedUp,keepSave,backupFileName}=require("src/saveGuard.js");
 const {initPWA,installApp,installOffered}=require("src/pwa.js");
 const {bootDone}=require("src/bootScreen.js");
+const {initDuel,setMode:setOnlineMode,leaveOnline,propose:proposeDuel}=require("src/duel.js");
 const {pickSouthPark}=require("src/data/southPark.js");
 const {updateBoardBanter}=require("src/boardBanter.js");
 const {readJSON, writeJSON, removeSaved, RUN_KEY, PROFILE_KEY, validRun}=require("src/persistence.js");
@@ -81,6 +82,8 @@ function saveRun(){rememberCollectibles(store.profile,store.run);let saved=true;
 const onBoard=()=>store.view==='board'&&!!store.run;
 PK.configurePkmn({unlockDialog:(ids,owner)=>unlockDialog(ids,owner),saveRun:()=>onBoard()&&saveRun(),updateBoard:()=>onBoard()&&updateBoard(),logRun:m=>onBoard()&&logRun(m),startMusic:()=>startMusic(),stopMusic:()=>stopMusic()});
 configureLauncher({bossDone:(game,coop)=>bossDone(game,coop),journeyWin:i=>journeyNow('win',{},store.run.players[i]),save:saveRun,endTurn,beforeRoll:resumeItemTurn,arcade:()=>{store.busy=false;store.arcade=false;showCatalog('arcade');}});
+// Online duels: the duel module starts games through the launcher and redraws the Arcade when the room changes.
+initDuel({start:(id,duel)=>requestGame({id,origin:'arcade',solo:true,duel}),refresh:()=>{if(store.view==='arcade'&&!store.session&&!store.dialog)showView('arcade',{query:catalogQuery,filter:catalogFilter,page:catalogPage});}});
 const random=()=>store.run?runRandom(store.run):Math.random();
 function focusEffect(before){const run=store.run;if(!run)return;const after=effectSnapshot(run),ids=[run.players[run.current].node];for(let i=0;i<2;i++)if(before?.players[i]&&JSON.stringify(before.players[i])!==JSON.stringify(after.players[i])){ids.push(run.players[i].node);if(before.players[i].node!==run.players[i].node)ids.push(before.players[i].node);}focusBoardAction(run,ids);}
 function applyPreferences(){document.body.classList.toggle('reduced-motion',store.profile.settings.reducedMotion);}
@@ -497,9 +500,12 @@ async function action(name,target){
   case 'catalog-page':catalogPage=Math.max(0,+target.dataset.page||0);showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;
   case 'arcade-game':await requestGame({id:target.dataset.id,origin:'arcade'});break;
   case 'arcade-solo':await requestGame({id:target.dataset.id,origin:'arcade',solo:true});break;
+  case 'duel-propose':await proposeDuel(target.dataset.id);break;
+  case 'online-mode':await setOnlineMode(true);break;
+  case 'online-leave':leaveOnline();break;
   case 'arcade-random':{const g=randomArcadePick();if(!g){toast('No playable games in this list');break;}
-   if(g.pokemon)await arcadePokemon(g.pokemon);else await requestGame({id:g.id,origin:'arcade',solo:soloSettings(store.profile).on||undefined});break;}
-  case 'solo-set':{const {key,value}=target.dataset;setSolo(store.profile,key==='on'?{on:value==='1'}:key==='who'?{who:+value===1?1:0}:{level:value});saveProfile(store.profile);showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;}
+   if(store.online)await proposeDuel(g.id);else if(g.pokemon)await arcadePokemon(g.pokemon);else await requestGame({id:g.id,origin:'arcade',solo:soloSettings(store.profile).on||undefined});break;}
+  case 'solo-set':{const {key,value}=target.dataset;if(key==='on')store.online=false;setSolo(store.profile,key==='on'?{on:value==='1'}:key==='who'?{who:+value===1?1:0}:{level:value});saveProfile(store.profile);showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;}
   case 'arcade-pokemon':await arcadePokemon(target.dataset.id);break;
   case 'dev-game':if(store.profile.settings.devMode)await requestGame({id:target.dataset.id,origin:'dev'});break;
   case 'dev-mode':store.profile.settings.devMode=!store.profile.settings.devMode;saveProfile(store.profile);showCatalog('arcade');break;
