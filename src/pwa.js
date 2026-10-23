@@ -33,7 +33,17 @@ async function initPWA({onUpdate}={}){
  if(!folder||!navigator.serviceWorker)return;
  const updating=!!navigator.serviceWorker.controller;
  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(updating)onUpdate?.();});
+ navigator.serviceWorker.addEventListener('message',e=>{if(e.data?.type==='sc-download')downloadBar(e.data,updating);});
  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+// Download bar while the service worker saves a version for offline play (first visit) or fetches an update.
+function downloadBar(m,updating){
+ let el=document.getElementById('sc-dl');
+ if(!el){el=Object.assign(document.createElement('div'),{id:'sc-dl',innerHTML:'<span></span><i><b></b></i>'});el.setAttribute('role','status');document.body.append(el);}
+ const pct=m.total?Math.min(100,Math.round(m.got/m.total*100)):0;
+ el.querySelector('span').textContent=m.failed?'Download stopped. It will try again next time.':m.done?(updating?'Update downloaded':'Saved for offline play'):`${updating?'Downloading update':'Saving for offline play'} · ${pct}%`;
+ el.querySelector('b').style.width=(m.done?100:pct)+'%';
+ if(m.done||m.failed){clearTimeout(el._t);el._t=setTimeout(()=>el.remove(),2500);}
 }
 // 'accepted' / 'dismissed' from the browser's prompt, 'ios' (Share → Add to Home Screen), or 'menu' (use the browser menu).
 async function installApp(){

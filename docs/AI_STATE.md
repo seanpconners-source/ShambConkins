@@ -466,6 +466,16 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   `.ts-install` shows only after `beforeinstallprompt` (or on iOS); Settings row "Play as an app" when served and not
   standalone; `installAppFlow` (app.js) explains the browser menu when there's no prompt. First-tap fullscreen skips it.
   Asset inliner now accepts subfolders (`assets/pwa/...`). file:// pages get no manifest. Test: `tests/pwa.mjs`.
+  Oct 23 follow-up (owner installed it from shambconkins.loki-mylo.work, Cloudflare): manifest `display:'fullscreen'`
+  (installed app opens full screen; `APP_FULLSCREEN` in fullscreen.js, checked at load, makes `fullscreenSupported()` false
+  so every ⤢ toggle hides); first-tap fullscreen is no longer used up by a backup/restore/install tap. Loading screen
+  `#boot` at the top of index.template.html (own inline style + tiny script; build runs inlineAssets + `@@VERSION@@` on the
+  template): logo, CSS-animated bar timed from `sc-boot-ms` (last start, saved by `bootScreen.js` `bootDone()` after the
+  first showView), text Setting up / Updating to vX / Starting (from `sc-boot-version`); it paints ~0.3 s in, the start
+  itself is ~20+ s at 4x CPU throttle. sw.js streams index.html and posts `sc-download` {got,total,done}; pwa.js shows the
+  `#sc-dl` bar ("Saving for offline play" / "Downloading update"). Chrome badge on the home icon = a pinned SHORTCUT, not a
+  WebAPK: happens when Google's WebAPK server can't fetch the manifest/icons (blob manifest = only the HTML deployed, or
+  Cloudflare Access/bot challenge); fix = serve the `_pwa` folder publicly, remove the shortcut, reinstall.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 

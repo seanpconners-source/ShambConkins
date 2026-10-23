@@ -32,6 +32,9 @@ address (`http://localhost:...` from a local server app, or any `https://` site)
   game) and updates itself when a new folder is served.
 - **Just the HTML on a server** also installs in Chrome (the game carries its own manifest and icons), but needs the
   server running to open.
+- The installed app opens full screen by itself. If its home-screen icon carries a small Chrome badge, Chrome made a
+  shortcut instead of a real app: usually the site only serves the HTML (Google's servers must be able to download
+  `manifest.webmanifest` and the icons). Serve the whole folder, remove the shortcut and install again.
 - To install: tap the ⬇ button on the title screen when the browser offers it, or Settings → *Play as an app* → Install,
   or the browser menu (Chrome: *Install app*; Samsung Internet: *Add page to → Home screen*; iPhone/iPad Safari: *Share →
   Add to Home Screen*). The app keeps the same save as the browser page at that address.

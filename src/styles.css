@@ -912,3 +912,5 @@ body.gb-open{overflow:hidden}
 .title-screen .home-stack button.ts-backup{min-height:46px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;column-gap:9px;row-gap:2px;font-size:13px;color:#ffe2a6;border-color:#c99a3d88}
 .title-screen .home-stack button.ts-backup small{flex-basis:100%;font:600 11px/1.1 Arial,sans-serif;letter-spacing:.02em;color:#cdbfe6}
 .ts-icons [hidden]{display:none!important}
+#sc-dl{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:2147482000;width:min(88vw,360px);padding:9px 14px 11px;border-radius:14px;background:#160f20ee;border:1px solid #c99a3d66;box-shadow:0 6px 22px #000a;color:#f1e6c8;font:700 13px/1.2 system-ui,sans-serif;text-align:center;pointer-events:none}
+#sc-dl i{display:block;height:5px;margin-top:7px;border-radius:3px;background:#2a2233;overflow:hidden}#sc-dl b{display:block;height:100%;width:0;background:linear-gradient(90deg,#b8862f,#ffe2a6);transition:width .3s}

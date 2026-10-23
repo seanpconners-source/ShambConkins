@@ -1,7 +1,9 @@
 // Fullscreen for phones (Samsung Internet, Chrome). Browsers only allow fullscreen from a user gesture,
 // so the first tap anywhere enters it; the home screen also has a toggle button.
 const doc=document,root=()=>doc.documentElement;
-function fullscreenSupported(){const el=root();return !!(el.requestFullscreen||el.webkitRequestFullscreen)&&doc.fullscreenEnabled!==false;}
+// The installed app opens full screen by itself (manifest display 'fullscreen'): no toggles, nothing to request.
+const APP_FULLSCREEN=(()=>{try{return matchMedia('(display-mode: fullscreen)').matches&&!doc.fullscreenElement;}catch{return false;}})();
+function fullscreenSupported(){const el=root();return !APP_FULLSCREEN&&!!(el.requestFullscreen||el.webkitRequestFullscreen)&&doc.fullscreenEnabled!==false;}
 function isFullscreen(){return !!(doc.fullscreenElement||doc.webkitFullscreenElement);}
 function enterFullscreen(){const el=root();try{const p=el.requestFullscreen?el.requestFullscreen({navigationUI:'hide'}):el.webkitRequestFullscreen?.();p?.catch?.(()=>{});}catch{}}
 function exitFullscreen(){try{const p=doc.exitFullscreen?doc.exitFullscreen():doc.webkitExitFullscreen?.();p?.catch?.(()=>{});}catch{}}
@@ -15,6 +17,7 @@ function syncLabels(){raiseDialogs();doc.querySelectorAll('[data-action="fullscr
 function initFullscreen(){if(!fullscreenSupported())return;doc.addEventListener('fullscreenchange',syncLabels);doc.addEventListener('webkitfullscreenchange',syncLabels);
  // First tap anywhere goes fullscreen, except the toggle itself (handles its own click) and backup/restore/install:
  // entering fullscreen uses up the tap, and the browser then refuses to open the file picker or install prompt.
- const first=ev=>{doc.removeEventListener('pointerup',first,true);if(ev.target?.closest?.('[data-action="fullscreen"],[data-gb-fs],[data-action="import"],[data-action="backup"],[data-action="install-app"]'))return;if(!isFullscreen())enterFullscreen();};
+ // A skipped backup/restore/install tap leaves the automatic fullscreen for the next tap.
+ const first=ev=>{const on=sel=>ev.target?.closest?.(sel);if(on('[data-action="import"],[data-action="backup"],[data-action="install-app"]'))return;doc.removeEventListener('pointerup',first,true);if(on('[data-action="fullscreen"],[data-gb-fs]'))return;if(!isFullscreen())enterFullscreen();};
  doc.addEventListener('pointerup',first,true);}
 Object.assign(exports,{fullscreenSupported,isFullscreen,enterFullscreen,exitFullscreen,toggleFullscreen,fullscreenLabel,fullscreenButton,initFullscreen});

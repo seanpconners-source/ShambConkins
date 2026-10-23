@@ -17,7 +17,7 @@ const pwaDir = argPwa < 0 ? null : path.resolve(root, process.argv[argPwa + 1] &
 // Web app manifest: written into the PWA folder and embedded in the game (src/pwa.js builds one from it when the
 // page is served without the folder). Icon files live in assets/pwa/.
 const PWA_MANIFEST = {name: 'ShambConkins', short_name: 'ShambConkins', description: 'The home game that keeps getting worse: a pass-and-play party board game.',
-  id: './', start_url: './', scope: './', display: 'standalone', orientation: 'any', background_color: '#000000', theme_color: '#12130f', categories: ['games', 'entertainment'],
+  id: './', start_url: './', scope: './', display: 'fullscreen', orientation: 'any', background_color: '#000000', theme_color: '#12130f', categories: ['games', 'entertainment'],
   icons: [{src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any'}, {src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any'},
     {src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable'}]};
 const PWA_ICONS = ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon-48.png'];
@@ -92,7 +92,7 @@ if (fs.existsSync(doomUser)) for (const f of fs.readdirSync(doomUser)) {
   if (m) userPortraits['doom:wad:' + m[1].toLowerCase()] = 'data:application/gzip;base64,' + zlib.gzipSync(fs.readFileSync(path.join(doomUser, f)), {level: 9}).toString('base64');
 }
 const js2 = js.replace('/*@@USER_PORTRAITS@@*/{}', () => JSON.stringify(userPortraits)).replace('/*@@PWA_MANIFEST@@*/null', () => JSON.stringify(PWA_MANIFEST));
-const html = read('src/index.template.html')
+const html = inlineAssets(read('src/index.template.html').replace('@@VERSION@@', () => read('src/version.js').match(/VERSION='([^']+)'/)[1]))
   .replace('<!--@@STYLE@@-->', () => '<style>' + inlineAssets(read('src/styles.css')+'\n'+read('src/theme.css')) + '</style>')
   .replace('<!--@@SCRIPT@@-->', () => '<script>' + inlineAssets(js2) + '</script>');
 
@@ -102,11 +102,17 @@ console.log(`${path.relative(root, out)}  ${(html.length / 1048576).toFixed(1)} 
 if (pwaDir) {
   // Cache-first service worker: the game is one big file, downloaded once per build. BUILD changes with the game's
   // contents, so the browser fetches the new sw.js, caches the new game in the background and drops the old copy.
+  // The game is streamed in so the page can show a download bar (src/pwa.js listens for 'sc-download' messages).
   const build = read('src/version.js').match(/VERSION='([^']+)'/)[1] + '-' + (await import('node:crypto')).createHash('sha256').update(html).digest('hex').slice(0, 12);
   const files = ['index.html', 'manifest.webmanifest', ...PWA_ICONS.map(f => 'icons/' + f)];
   const sw = `// ShambConkins offline cache, written by tools/build.mjs --pwa. Cache-first; a new build changes BUILD.
-const BUILD=${JSON.stringify(build)},CACHE='shambconkins-'+BUILD,FILES=${JSON.stringify(files)};
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))).then(()=>self.skipWaiting()));});
+const BUILD=${JSON.stringify(build)},CACHE='shambconkins-'+BUILD,FILES=${JSON.stringify(files.slice(1))},SIZE=${Buffer.byteLength(html)};
+const tell=m=>self.clients.matchAll({includeUncontrolled:true}).then(cs=>cs.forEach(c=>c.postMessage(m)));
+async function game(c){const r=await fetch(new Request('index.html',{cache:'reload'}));if(!r.ok)throw new Error('index.html '+r.status);
+ const read=r.body.getReader(),parts=[];let got=0,at=0;for(;;){const {done,value}=await read.read();if(done)break;parts.push(value);got+=value.length;
+  if(Date.now()-at>300){at=Date.now();tell({type:'sc-download',got,total:SIZE});}}
+ await c.put('index.html',new Response(new Blob(parts,{type:'text/html'}),{headers:{'content-type':'text/html'}}));tell({type:'sc-download',got,total:SIZE,done:true});}
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>Promise.all([game(c),c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))])).then(()=>self.skipWaiting(),err=>{tell({type:'sc-download',failed:true});throw err;}));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('shambconkins-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||new URL(r.url).origin!==location.origin)return;
  e.respondWith(caches.open(CACHE).then(c=>c.match(r,{ignoreSearch:true}).then(hit=>hit||(r.mode==='navigate'?c.match('index.html'):undefined))).then(hit=>hit||fetch(r)));});

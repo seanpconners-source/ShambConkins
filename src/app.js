@@ -8,6 +8,7 @@ const {store, newRun, logRun, newPlayer}=require("src/state.js");
 const {freshProfile, loadProfile, saveProfile, recruitReward, canRecruit, canRecruitReward, availableCharacters, rememberCollectibles, homePackTurn}=require("src/profile.js");
 const {markBackedUp,keepSave,backupFileName}=require("src/saveGuard.js");
 const {initPWA,installApp,installOffered}=require("src/pwa.js");
+const {bootDone}=require("src/bootScreen.js");
 const {pickSouthPark}=require("src/data/southPark.js");
 const {updateBoardBanter}=require("src/boardBanter.js");
 const {readJSON, writeJSON, removeSaved, RUN_KEY, PROFILE_KEY, validRun}=require("src/persistence.js");
@@ -521,7 +522,7 @@ document.addEventListener('change',event=>{if(event.target.id==='catalog-filter'
 document.addEventListener('input',event=>{if(/^player-name-[01]$/.test(event.target.id)){setupNames[Number(event.target.id.slice(-1))]=event.target.value;store.setupNames=setupNames;return;}if(event.target.id==='catalog-search'){const focus=event.target.selectionStart;catalogQuery=event.target.value;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});const input=document.getElementById('catalog-search');input.focus();input.setSelectionRange(focus,focus);}});
 document.getElementById('dialog').addEventListener('cancel',event=>{event.preventDefault();const i=store.dialog?.choices.findIndex(c=>['cancel','no','stay'].includes(c.value));if(i>=0)resolveDialog(i);});
 window.addEventListener('pagehide',saveRun);window.addEventListener('orientationchange',()=>{if(store.view==='board'&&!store.session)setTimeout(()=>updateBoard(true),100);});
-installViewport(()=>{if(store.view==='board'&&!store.session&&!store.boardTour)repaintCamera();});installMedia();installBoardGestures();installPortraitCycle();installSetupFaceCycle();applyPreferences();saveProfile(store.profile);installAudioUnlock();setMusicZone('home');if(store.profile?.settings.music)startMusic();showView('home');
+installViewport(()=>{if(store.view==='board'&&!store.session&&!store.boardTour)repaintCamera();});installMedia();installBoardGestures();installPortraitCycle();installSetupFaceCycle();applyPreferences();saveProfile(store.profile);installAudioUnlock();setMusicZone('home');if(store.profile?.settings.music)startMusic();showView('home');requestAnimationFrame(bootDone);
 window.ShambConkins={version:VERSION,warpThemes:WARP_THEMES,pkmn:{run:PK,battle:pkBattle,speed:pkSpeed,auto:pkAuto,isOpen:gbIsOpen,messages:gbMessages,sprites:PKSP,portraitMoods,moodCast:()=>CHARACTERS.map(c=>c.id).filter(id=>portraitMoods(id).length)},announceLevel,updateBoard,enterWarpZone,exitWarpZone,startBoss,bossDone,buildWarpBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,nowPlaying,musicScene,unlockDialog,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
 
 function installBoardGestures(){
