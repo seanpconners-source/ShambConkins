@@ -5,17 +5,29 @@
 //   /v0.60.0          a specific release
 //   /download         newest release as a file download
 //   /version          newest release tag (plain text)
+//   /index.html, /manifest.webmanifest, /sw.js, /icons/*.png
+//                     the installable-app files of the newest release (each release carries them as small assets
+//                     next to the .html; tools/build.mjs --pwa). Without them the game still runs, but Chrome can
+//                     only make a badged shortcut instead of a real app, and there is no offline cache.
 const REPO = 'seanpconners-source/ShambConkins';
 const TAG_TTL = 300;           // seconds before asking GitHub for a newer release again
 const UA = 'shambconkins-worker';
+const APP_FILES = {
+  '/manifest.webmanifest': ['manifest.webmanifest', 'application/manifest+json', 'no-cache'],
+  '/sw.js': ['sw.js', 'text/javascript; charset=utf-8', 'no-cache'],   // browsers re-check it to find updates
+};
+const ICON = /^\/icons\/([a-z0-9-]+\.png)$/;
 
 export default {
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
     if (req.method !== 'GET' && req.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
-    const path = url.pathname.replace(/\/+$/, '') || '/';
+    let path = url.pathname.replace(/\/+$/, '') || '/';
+    if (path === '/index.html') path = '/';   // the offline cache (sw.js) asks for the game by this name
     try {
       if (path === '/version') return text(await latestTag(env, ctx));
+      const icon = path.match(ICON), app = APP_FILES[path] || (icon && [icon[1], 'image/png', 'public, max-age=86400']);
+      if (app) return appFile(req, app, await latestTag(env, ctx), env, ctx);
       const pinned = path.match(/^\/(v\d+\.\d+\.\d+[\w.-]*)$/);
       if (path !== '/' && path !== '/download' && !pinned) return text('Not found', 404);
       const tag = pinned ? pinned[1] : await latestTag(env, ctx);
@@ -74,6 +86,22 @@ async function releaseHtml(tag, env, ctx) {
   const stored = await cache.match(key);
   if (stored) return stored.body;
   return (await fetch(`https://github.com/${REPO}/releases/download/${tag}/ShambConkins_${tag}.html`, { headers: { 'User-Agent': UA } })).body;
+}
+
+// One of the release's small installable-app files, cached per data centre like the game itself.
+async function appFile(req, [name, type, cacheControl], tag, env, ctx) {
+  const etag = `"${tag}-${name}"`, headers = { 'Content-Type': type, 'Cache-Control': cacheControl, 'ETag': etag, 'X-ShambConkins-Version': tag };
+  if ((req.headers.get('If-None-Match') || '').split(/,\s*/).includes(etag)) return new Response(null, { status: 304, headers });
+  const cache = caches.default, key = cacheKey(`app/${tag}/${name}`);
+  let body = await cache.match(key);
+  if (!body) {
+    const r = await fetch(`https://github.com/${REPO}/releases/download/${tag}/${name}`, { headers: { 'User-Agent': UA } });
+    if (!r.ok) return text(`Not found (release ${tag} has no ${name})`, 404);
+    const bytes = await r.arrayBuffer();
+    ctx.waitUntil(cache.put(key, new Response(bytes, { headers: { 'Cache-Control': 'max-age=31536000' } })));
+    body = new Response(bytes);
+  }
+  return new Response(req.method === 'HEAD' ? null : body.body, { headers });
 }
 
 // GitHub REST API (fallback only). Add a GITHUB_TOKEN secret to the Worker to lift the rate limit.

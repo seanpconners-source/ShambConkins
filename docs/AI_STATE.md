@@ -6,6 +6,8 @@ creates release vX with notes from `docs/releases/vX.md` (first line `# ` = titl
 Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
 Hosted (Oct 23): Cloudflare Worker `cloudflare/worker.js` (README there) serves the newest GitHub Release asset at
 `shambconkins.loki-mylo.work` (+ `shambconkins.sean-p-conners.workers.dev`); new releases appear within ~5 min, nothing to redeploy.
+It also serves the app files (`/manifest.webmanifest`, `/sw.js`, `/icons/*.png`, `/index.html`) from same-named release assets (the release
+workflow uploads them from v0.63.1); without them the game uses its blob manifest and Chrome makes a badged shortcut, not a WebAPK.
 Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from an Android phone (Samsung Internet blocks paste/OAuth; Chrome works).
 
 ## Implemented systems
