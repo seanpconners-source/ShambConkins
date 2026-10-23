@@ -48,10 +48,13 @@ function drawFlipper(x,f,color='#f4f1ea',rubber='#d7263d',text=''){
 
 function createRenderer(table){
  const def=table.def||table,art=table.art||{},imgs=table.imgs||{},R={def,cache:null,glow:new Map()};
- R.invalidate=()=>{R.cache=null;};R.discA={};R.discT={};
+ R.invalidate=()=>{if(R.cache)R.cache.stale=true;};R.discA={};R.discT={};
  const glowSprite=color=>{if(R.glow.has(color))return R.glow.get(color);const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,2,32,32,32);g.addColorStop(0,hexA(color,.9));g.addColorStop(.35,hexA(color,.45));g.addColorStop(1,hexA(color,0));x.fillStyle=g;x.fillRect(0,0,64,64);R.glow.set(color,c);return c;};
  const glow=(x,color,cx,cy,size,alpha=1)=>{if(alpha<=.01)return;x.save();x.globalCompositeOperation='lighter';x.globalAlpha=Math.min(1,alpha);x.drawImage(glowSprite(color),cx-size/2,cy-size/2,size,size);x.restore();};
- function layer(k,fn){const c=document.createElement('canvas');c.width=Math.ceil(def.W*k);c.height=Math.ceil(def.H*k);const x=c.getContext('2d');x.scale(k,k);x.lineCap='round';x.lineJoin='round';fn(x);return c;}
+ // iPad Safari caps the canvas memory of a page (and only counts a dropped canvas as freed once it is collected): a
+ // canvas over the cap gets no context. So layers are freed by hand (0x0) and a refused one is retried smaller.
+ const free=c=>{if(c){c.width=c.height=0;}};
+ function layer(k,fn){const c=document.createElement('canvas');c.width=Math.ceil(def.W*k);c.height=Math.ceil(def.H*k);const x=c.getContext('2d');if(!x){free(c);return null;}x.scale(k,k);x.lineCap='round';x.lineJoin='round';fn(x);return c;}
  function drawWalls(x){
   const segs=def.segs;const by=look=>segs.filter(s=>(s.look||'')===look);
   for(const s of by('wood')){x.strokeStyle='#2a1a10';x.lineWidth=s.r*2+8;poly(x,[[s.ax,s.ay],[s.bx,s.by]]);x.stroke();}
@@ -110,7 +113,9 @@ function createRenderer(table){
   }
   art.over?.(x,def,imgs);
  }
- R.ensure=k=>{k=Math.min(k,Math.sqrt(14e6/(def.W*def.H)));if(R.cache&&Math.abs(R.cache.k-k)<.02)return;R.cache={k,base:layer(k,drawBase),over:layer(k,drawOver)};};
+ R.ensure=k=>{k=Math.min(k,Math.sqrt(8e6/(def.W*def.H)));if(R.cache&&!R.cache.stale&&Math.abs(R.cache.k-k)<.02)return;
+  if(R.cache){free(R.cache.base);free(R.cache.over);R.cache=null;}
+  for(;;k/=2){const base=layer(k,drawBase),over=base&&layer(k,drawOver);if(over||k<.5){R.cache={k,base,over};return;}free(base);}};
 
  // ---- per frame
  function drawLights(x,lamps,gi){
@@ -209,7 +214,7 @@ function createRenderer(table){
   x.setTransform(dpr,0,0,dpr,0,0);x.fillStyle='#07060a';x.fillRect(0,0,W,H);
   x.save();x.beginPath();x.rect(0,v.top,W,v.aH);x.clip();
   x.translate(v.ox,v.oy);x.scale(v.s,v.s);x.lineCap='round';x.lineJoin='round';
-  x.drawImage(R.cache.base,0,0,def.W,def.H);
+  if(R.cache.base)x.drawImage(R.cache.base,0,0,def.W,def.H);
   drawLights(x,lamps,gi);
   art.underlay?.(x,def,w,t,imgs,gi);   // table effects on the playfield art (under parts and balls)
   drawDynamic(x,w,t);
@@ -218,7 +223,7 @@ function createRenderer(table){
   for(const f of w.flippers){const img=flipImg(f);if(img)drawFlipperImage(x,f,img,!!f.input);}
   drawBalls(x,w,false,lamps);
   for(const f of w.flippers)if(!flipImg(f))drawFlipper(x,f,f.color||art.flipper,art.flipperRubber,art.flipperText||'');
-  x.drawImage(R.cache.over,0,0,def.W,def.H);
+  if(R.cache.over)x.drawImage(R.cache.over,0,0,def.W,def.H);
   if(gi<.98){x.fillStyle=`rgba(0,0,8,${(1-gi)*.4})`;x.fillRect(0,0,def.W,def.H);}
   drawFlashers(x,flashers,flashT);
   drawBalls(x,w,true,lamps);

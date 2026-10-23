@@ -435,6 +435,12 @@ Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
   vertically in sections (planet → Nest, nonagon circles → nonagon lamps, wizard between the slings), its three painted
   bumper discs moved under the real pops (inpainted old spots), darkened under the lamps. Bonus X lamps moved from a row
   at y 738 (on the art's title) to an arch over the wizard's hat (y 786-808).
+- **Pinball on iPad (Oct 23):** pinball wouldn't launch on an iPad. Cause (reproduced in Chromium with a WebKit-style canvas
+  memory cap, not on a real iPad): render.js cached two table layers up to 14M px each (56 MB) and rebuilt them on every drop-in
+  image load and rotation, while Safari keeps counting dropped canvases until GC; over its cap (RAM/4, often 224-384 MB)
+  `getContext` returns null and `layer()` threw every frame. Now layers are capped at 8M px (phones never reach it), old
+  layers are freed (0x0) before a rebuild, `invalidate` marks stale instead of dropping, and a refused layer retries at half k.
+  Scratch test idea: hook `getContext` to refuse past N MB and rotate the viewport (iPad 1024x1366 @2x).
 - **Pinball view settings (Oct 22, every table):** ⚙ and ⤢ buttons (`.pb-tools` in pinball.js) sit left of Pause/Exit when
   the backbox has room, else just under them; the faint bottom-centre ⤢ of fullBleed is hidden on pinball (owner couldn't
   find it). ⚙ opens TABLE SETTINGS (play frozen while open): Zoom 5 notches (`R.cam.zoomK` 0 = whole table scaled to the
