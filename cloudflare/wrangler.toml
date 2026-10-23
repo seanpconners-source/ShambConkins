@@ -1,0 +1,8 @@
+# Optional: only needed if you deploy with the Wrangler CLI (`npx wrangler deploy` from this folder).
+# Pasting worker.js into the Cloudflare dashboard works just as well.
+name = "shambconkins"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+# Uncomment and set your domain to attach it on deploy:
+# routes = [{ pattern = "play.example.com", custom_domain = true }]
