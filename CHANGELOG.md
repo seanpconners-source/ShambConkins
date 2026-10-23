@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.64.0
+
+**Online duels (two phones).** The Arcade has a new **🌐 Online** mode. Type a room name; the other phone types the same name and joins as player 2. Either player taps **Challenge** on a game, the other accepts, and both phones play that game at the same time from the same start (same level, same seed). Each sees the other's live score in the corner, the result waits for both, shows both scores and offers a rematch. The winner's phone gets the usual unlock roll. Online so far: the ~55 games whose 1P mode ends in a score (the pinball tables, Broforce, Super Mario Bros., Sonic, Hole.it, Bricks Breaker Quest, DOOM, Photo Hunt, the arcade remakes and more); games played against a CPU (trivia, chess, Pong...) say "Not online yet". Needs the internet and the website's room service (one-time GitHub setup, see cloudflare/README.md).
+
 ## v0.63.1
 
 **Loading screen.** While the game starts, a loading screen shows the logo, a progress bar and what is happening ("Setting up", "Updating to vX", "Starting") instead of a blank logo screen. The bar is timed from how long the last start took on that phone.
