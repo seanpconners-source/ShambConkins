@@ -1,8 +1,8 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.61.0 (1P Arcade for every game, DOOM / DOOM II, Hole.it, Bricks Breaker Quest, Random game button; release file
-`releases/ShambConkins_v0.61.0.html`, 78.4 MB, built Oct 21 on TESTver and NOT committed: upload it as a GitHub Release asset).
-Smoke/route/solo/doom/broforce-turns passed on the release file; last full local run (Oct 21) green apart from 6 Broforce tests, since fixed.
+Version 0.62.0 (Oct 23: the three pinball tables; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
+pushing a version bump to main runs `.github/workflows/release-build.yml`, which builds `releases/ShambConkins_vX.html` and
+creates release vX with notes from `docs/releases/vX.md` (first line `# ` = title) or the CHANGELOG section; skips if it exists.
 Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
 
 ## Implemented systems

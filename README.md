@@ -7,7 +7,7 @@ shippable game is generated.
 node tools/build.mjs            # -> dist/ShambConkins.html (open in any browser)
 ```
 
-Layout: `src/` (132 CommonJS-style modules, `modules.json` = load order), `src/styles.css`,
+Layout: `src/` (~380 CommonJS-style modules, `modules.json` = load order), `src/styles.css`,
 `src/index.template.html`, `assets/` (images; referenced in code as `@@asset:assets/x.svg@@`
 and inlined at build time). No dependencies.
 
@@ -16,12 +16,12 @@ original HTML byte-for-byte (SHA-256 `3f712823…f076`).
 
 ## Workflow
 - `npm run build` – build `dist/ShambConkins.html`
-- `npm run release` – write the shareable file to `releases/` (committed, so it can be downloaded without Node)
+- `npm run release` – write the shareable file to `releases/` (git-ignored; it is uploaded as a GitHub Release asset)
 - `npm test` – smoke test + fuzz every mini-game for JS errors (needs Playwright + Chromium)
 - `tests/bot.mjs` – plays a whole board game with a random bot; `tests/load.mjs` loads modules in plain Node for unit tests
 - Bump the version in `src/version.js` and `package.json`
 
-Current release: [v0.58.3 on GitHub Releases](https://github.com/seanpconners-source/ShambConkins/releases/tag/v0.58.3). Download the self-contained HTML from its release assets. The bundled HTML exceeds GitHub's 100 MB repository-file limit and is not committed to the git tree.
+Current release: [v0.62.0 on GitHub Releases](https://github.com/seanpconners-source/ShambConkins/releases/tag/v0.62.0) (three real pinball tables: Bucketheadland, Black Sabbath, King Gizzard). Download `ShambConkins_v0.62.0.html` from its release assets and open it in a phone browser; it runs fully offline. The bundled HTML (~80 MB) is too big for the git tree, so it is only a release asset. Pushing a version bump to `main` publishes the release automatically (`.github/workflows/release-build.yml`).
 
 ## Adding art without touching code
 Drop files in these folders and run `npm run release` (or `npm run build`):

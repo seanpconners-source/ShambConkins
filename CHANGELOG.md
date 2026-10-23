@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.62.0
+
+**Real pinball.** Bucketheadland Pinball is rebuilt as a real pinball machine: three balls each, players alternate ball by ball, no clock, and a 1P mode where you play a whole game to beat the replay score. Accelerating flippers you aim by timing, pop bumpers, slingshots, drop targets, a spinner, ramps and wireforms, a kickback, plunger skill shot, ball save, tilt (flick up to nudge) and a 128x32 dot-matrix display with your face in dots. The Giant Robot toy fights back in ROBOT BATTLE, the Coop kicks the ball up to an upper flipper, the Golden Egg captive ball builds the jackpot, three locks start JORDAN MULTIBALL, five timed attractions at the Haunted Ride lead to the WELCOME TO BUCKETHEADLAND wizard mode, with light shows, flashers, an original soundtrack and high scores per table. The camera follows the ball smoothly. Buckethead himself is painted on the table and his strumming hand is the left flipper, under a flickering BUCKETHEADLAND sign.
+
+**Black Sabbath pinball.** A second, different table: I-R-O-N lanes, WAR PIGS pop bumpers, an IRON MAN toy that walks toward you in his mode, the INTO THE VOID spinning disc, crossing PARANOID and ELECTRIC FUNERAL wire ramps, the Graveyard lock for WAR PIGS MULTIBALL, the HAND OF DOOM post between the flippers, six album modes and the HEAVEN AND HELL wizard mode. Wins can recruit Ozzy, Iommi, Geezer or Bill Ward.
+
+**King Gizzard pinball.** A third table with its own mini playfield up top, THE RATS' NEST, with two mini flippers. A rattlesnake swallows the ball and carries it up into the Nest, nine orbit loops light NONAGON INFINITY, G-I-L-A drop targets light RATTLESNAKE MULTIBALL, the FLIGHT b741 ramp lights six album modes and the OMNIUM GATHERUM wizard mode. Band members join the roster.
+
+**Table art and settings.** All three tables use the owner's painted playfield, backglass, apron, logo and toy art (drop-in picture slots, with templates in `docs/pinball-art/`). A ⚙ button sets the zoom (whole table to full width) and ball speed, plus auto zoom; a visible ⤢ button goes full screen. Tables run 15% slower than before, and a ball plunged too softly rolls back so you can pull again.
+
+Saves, character/location/game ids and Android launcher paths are unchanged.
+
 ## v0.61.0
 
 **1-player Arcade.** The Arcade has a 1P / 2P switch. In 1P you pick who's playing (Sean or Amber; unlocks go to that player's roster) and a CPU difficulty (Easy, Normal or Hard), and every Arcade game can be played alone. Level games carry on stage after stage until you lose (Broforce missions, Super Mario Bros. World 1 on a loop, Sonic acts with a new boss pilot each time, Bricks Breaker Quest, Hole.it, Mario Kart Grand Prix, Photo Hunt across the whole library, Time Trials against your own ghost). Timed games become rounds that speed up each time, with a target to beat. Head-to-head games put a CPU in the other seat wearing your other New Game pick: board games (chess, checkers and the rest), Pong, air hockey, sumo, Kart VS, Balloon Battle, Rainbow Rivals and more, plus trivia, Uno, Yahtzee, Liar's Dice, Battleship, Clue, Monopoly, the casino tables and Microgame Rush. Co-op Space Invaders keeps a CPU teammate; Living Dead and the boss rematches are played alone, with a thinner horde, weaker bosses and five hearts. Best results are saved per game. Newlywed, Roast Battle and Draw It stay 2-player only.
