@@ -715,7 +715,8 @@ body[data-view="home"]{background:#0c0814}
 .ts-avatars{display:flex;flex-shrink:0}
 .title-screen .ts-avatar{width:36px;height:36px;margin:0;border-radius:50%;border:2px solid var(--ts-gold);background:#2b1a40;box-shadow:0 0 0 2px #000}
 .title-screen .ts-avatar+.ts-avatar{margin-left:-10px;border-color:#ff7bb0}
-.ts-avatar img{width:100%;height:100%;object-fit:cover}
+.title-screen .ts-avatar{overflow:hidden}
+.ts-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .ts-who{display:flex;flex-direction:column;min-width:0;text-align:left;line-height:1.15}
 .ts-who b{font-size:13px;color:#fff;white-space:nowrap}
 .ts-who small{font:700 10px Arial,sans-serif;color:#d9c9f3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

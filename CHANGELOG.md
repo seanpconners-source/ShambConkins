@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.63.0
+
+**Install as an app.** ShambConkins can now be installed to the home screen and run full screen like a real app, with its own SC icon. It works when the game is opened from a web address (your local server or website), not as a file from Downloads. Tap the new ⬇ button on the title screen when the browser offers it, or Settings → Play as an app → Install, or the browser menu (Chrome: Install app; Samsung Internet: Add page to → Home screen; iPhone/iPad: Share → Add to Home Screen). Each release now also has `ShambConkins_vX_pwa.zip`: put that folder on the server and the installed app also works offline and updates itself when a new version is put there. The installed app keeps the same save as the browser page at that address.
+
+Also fixes the player faces at the top left of the title screen, which showed as squares over their round frames.
+
 ## v0.62.2
 
 **Save safety.** Progress is saved inside the browser, separately for every browser and every place the game file is opened from, so a different browser, a moved file or the browser clearing its data starts from nothing. Now the title screen shows a **💾 Back up progress** button after 5 new unlocks or runs; one tap saves a dated backup file (`ShambConkins-save-YYYY-MM-DD.json`) to Downloads. An empty save shows **Restore a backup** at the bottom of the title screen, so moving progress to a new browser or file takes two taps. The game also asks the browser to keep its save instead of clearing it when the phone runs low on space. Restoring now also works on the very first tap (the automatic full screen used to block the file picker).
