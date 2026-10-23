@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.62.2
+
+**Save safety.** Progress is saved inside the browser, separately for every browser and every place the game file is opened from, so a different browser, a moved file or the browser clearing its data starts from nothing. Now the title screen shows a **💾 Back up progress** button after 5 new unlocks or runs; one tap saves a dated backup file (`ShambConkins-save-YYYY-MM-DD.json`) to Downloads. An empty save shows **Restore a backup** at the bottom of the title screen, so moving progress to a new browser or file takes two taps. The game also asks the browser to keep its save instead of clearing it when the phone runs low on space. Restoring now also works on the very first tap (the automatic full screen used to block the file picker).
+
 ## v0.62.1
 
 **Pinball on iPad.** The pinball tables wouldn't launch on an iPad: they pre-drew the table at a size that ran past iPad Safari's limit on picture memory. The tables now use a little less memory, free the old picture before drawing a new one (on rotation or when the art loads), and fall back to a lighter picture if Safari still says no. Phones look and play the same.

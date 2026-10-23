@@ -21,7 +21,12 @@ original HTML byte-for-byte (SHA-256 `3f712823…f076`).
 - `tests/bot.mjs` – plays a whole board game with a random bot; `tests/load.mjs` loads modules in plain Node for unit tests
 - Bump the version in `src/version.js` and `package.json`
 
-Current release: [v0.62.1 on GitHub Releases](https://github.com/seanpconners-source/ShambConkins/releases/tag/v0.62.1) (three real pinball tables: Bucketheadland, Black Sabbath, King Gizzard; v0.62.1 makes them launch on iPad). Download `ShambConkins_v0.62.1.html` from its release assets and open it in a phone browser; it runs fully offline. The bundled HTML (~80 MB) is too big for the git tree, so it is only a release asset. Pushing a version bump to `main` publishes the release automatically (`.github/workflows/release-build.yml`).
+Current release: [v0.62.2 on GitHub Releases](https://github.com/seanpconners-source/ShambConkins/releases/tag/v0.62.2) (three real pinball tables, pinball on iPad, and backup/restore from the title screen). Download `ShambConkins_v0.62.2.html` from its release assets and open it in a phone browser; it runs fully offline. The bundled HTML (~80 MB) is too big for the git tree, so it is only a release asset. Pushing a version bump to `main` publishes the release automatically (`.github/workflows/release-build.yml`).
+
+## Saves
+Progress lives in the browser, separately per browser and per address the file is opened from (a new file location or
+another browser starts empty). Back up from the title screen (💾 button, or Settings → Export backup) and restore with
+"Restore a backup" / Settings → Import backup.
 
 ## Adding art without touching code
 Drop files in these folders and run `npm run release` (or `npm run build`):

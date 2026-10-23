@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.62.1 (Oct 23: the three pinball tables + the iPad pinball fix; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
+Version 0.62.2 (Oct 23: pinball tables, iPad pinball fix, save backup/restore; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
 pushing a version bump to main runs `.github/workflows/release-build.yml`, which builds `releases/ShambConkins_vX.html` and
 creates release vX with notes from `docs/releases/vX.md` (first line `# ` = title) or the CHANGELOG section; skips if it exists.
 Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
