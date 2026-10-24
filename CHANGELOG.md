@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.66.0
+
+**Play the board game alone against a CPU.** New Game (and the new Choose Characters page) has a **2 Players / 1 Player vs CPU** switch, who you are (Sean or Amber) and the CPU level (Easy / Normal / Hard), the same setting as the Minigame Vault's 1P switch. You go first; the CPU wears a head from the other roster. On its turn it rolls by itself, sometimes uses an item, picks its roads and its own choices (you see the card greyed out while it thinks, then its pick lights up) and plays its Pokémon battles automatically. You still tap through its cards so you can see what happened, and you decide what you do together (starting a minigame, fighting a boss). Board minigames are the ones with a real CPU opponent (about 110), plus boss fights and the zombie horde, which you play alone. The CPU's wins don't add characters to anyone's roster. Versus and Horror modes.
+
+**Choose Characters on the title screen.** A new **CHOOSE CHARACTERS** button picks names and heads once; they are saved and used by every New Game and every Minigame Vault game (you can still change them on New Game).
+
 ## v0.65.0
 
 **Board game on two phones.** Title screen → **🌐 PLAY ONLINE** → both phones type the same room name → **🎲 Board game together**. Each phone picks its own character on a shared New Game screen; the inviting phone picks the board and starts. That phone runs and saves the game, the other shows the same board live. Each player rolls, picks roads, uses items, answers their own cards and plays their own Pokémon battles on their own phone, and watches the other's turn as it happens. Board minigames are played by both phones at once (each plays the 1-player version from the same start; the higher score wins the board result), so only games that work online are dealt for now. Unlocks go to the winner's own phone. A phone that drops is waited for (or its turn can be played on the other phone); leaving hands that player's turns to the host until they rejoin from the room. Both phones need the same version.

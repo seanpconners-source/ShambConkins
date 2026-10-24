@@ -82,9 +82,9 @@ const end=await page.evaluate(o=>({turn:window.ShambConkins.store.run.turn,finis
 console.log('stats',JSON.stringify(stats));console.log('games',end.games.map(g=>`${g.id}:${g.kind}`).join(' '));
 console.log('human answered / watched:',[...titles].slice(0,14).join(' | '));
 check(end.turn>TURNS||end.finished,`the run reached turn ${end.turn} (goal ${TURNS+1})`);
-check(cpuRolls>=3,`the CPU rolled on its own turns (${cpuRolls})`);
+check(cpuRolls>=Math.min(3,TURNS>>1),`the CPU rolled on its own turns (${cpuRolls})`);
 check(!badRoll,'the roll button is off on the CPU\'s turns');
-check((stats.roll||0)>=3,`the human rolled on their turns (${stats.roll||0})`);
+check((stats.roll||0)>=Math.min(3,TURNS>>1),`the human rolled on their turns (${stats.roll||0})`);
 check(end.games.length>=1&&end.games.every(g=>g.board&&['cpu','alone'].includes(g.kind)),`every board minigame was a vs-CPU / play-alone version (${end.games.length})`);
 check(end.amber===amberBefore,`the CPU's roster owner gained no characters (${amberBefore} → ${end.amber})`);
 check((stats.watch||0)+(stats.watchroute||0)>=1,'CPU decisions were shown read-only');
