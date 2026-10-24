@@ -4,6 +4,7 @@ const {shuffle, pick, seededRandom}=require("src/utils.js");
 const {TRIVIA_TOPIC_GAMES}=require("src/triviaCatalog.js");
 const {levelFit}=require("src/levels.js");
 const {TRIVIA_MODE_GAMES}=require("src/data/triviaModes.js");
+const {boardCpuKind}=require("src/solo.js");
 const definitions = [
  ['bucketheadland-pinball','pinball','arcade','3 balls each, taking turns','A real pinball table in Buckethead\'s theme park. Players take turns ball by ball (3 balls each, no clock). Hold the left or right half of the screen to flip, drag down and release to launch, flick up to nudge (too much tilts). Lock 3 balls in the Coop for JORDAN MULTIBALL, ride the Roller Coaster and Giant Robot ramps, spell B-U-C-K-E-T for an extra ball. Highest score wins.'],
  ['major-league-fielding','baseballfield','sports','6 alternating pitches each','Major League: one human bats while the other fields. P1 stays left/P2 right (bottom/top on an upright phone). Drag vertically on your half and release to swing; the fielder drags toward the landing ring. Roles alternate every pitch. Catches +40, quick retrievals +10, singles +25, doubles +45, homers +100, runs +30. Matching pitches for both.'],
@@ -160,10 +161,12 @@ function triviaIsDue(run){const history=run.gameHistory||[],last=history.findLas
 // them (trivia, casino) deals from everything instead.
 let poolFilter=null;
 function setPoolFilter(f){poolFilter=typeof f==='function'?f:null;}
-function selectBoardGame(run,profile,filter='all',random=Math.random){return selectGame(run,profile,filter==='all'&&!poolFilter&&triviaIsDue(run)?'trivia':filter,random);}
-function selectGame(run, profile, filter = 'all', random = Math.random) {
- const pool=RANDOM_GAMES.filter(g=>gameUnlocked(g,profile)&&(filter==='all'||g.category===filter||(filter==='taskmaster'&&g.source==='Taskmaster'))&&(!poolFilter||poolFilter(g)));
- if(!pool.length&&poolFilter&&filter!=='all')return selectGame(run,profile,'all',random);
+// 1P board game (run.cpu, src/cpuBoard.js): only games with a CPU opponent or a co-op game played alone.
+const cpuBoardOnly=g=>!!boardCpuKind(g);
+function selectBoardGame(run,profile,filter='all',random=Math.random){const only=poolFilter||(run?.cpu?cpuBoardOnly:null);return selectGame(run,profile,filter==='all'&&!poolFilter&&triviaIsDue(run)?'trivia':filter,random,only);}
+function selectGame(run, profile, filter = 'all', random = Math.random, only = poolFilter) {
+ const pool=RANDOM_GAMES.filter(g=>gameUnlocked(g,profile)&&(filter==='all'||g.category===filter||(filter==='taskmaster'&&g.source==='Taskmaster'))&&(!only||only(g)));
+ if(!pool.length&&only&&filter!=='all')return selectGame(run,profile,'all',random,only);
  if(!pool.length)throw new Error('No games in this category');
  const families=[...new Set(pool.map(g=>g.family))]; const key=filter;
  run.familyBags ||= {}; let bag=run.familyBags[key]||[];

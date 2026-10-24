@@ -48,7 +48,7 @@ const director=load(prefix+'director.js');
 const extraction=load(prefix+'extraction.js');
 const devil=load(prefix+'devil.js');
 const chars=load('src/characters.js',{'src/contentPolicy.js':{ACTIVE_CATALOG:catalog},'src/utils.js':{hash:()=>0}});
-const profile=load('src/profile.js',{'src/netHooks.js':{fx(){}},
+const profile=load('src/profile.js',{'src/netHooks.js':{fx(){}},'src/cpuHooks.js':{cpuBlocksRecruit:()=>false},
  'src/contentPolicy.js':{ACTIVE_CATALOG:catalog},
  'src/characters.js':chars,
  'src/photoPairs.js':{normalizePhotoPair:()=>null,photoPairLibrary:()=>[],currentPhotoPair:()=>{},photoProfilePayload:p=>p},

@@ -29,7 +29,7 @@ const entries=[
 const catalog=entries.map(([id,name,source,unlockBy])=>({id,name,source,...(unlockBy?{unlockBy}:{})}));
 const content={ACTIVE_CATALOG:{characters:catalog,items:[]}};
 const characters=load('src/characters.js',{'src/contentPolicy.js':content,'src/utils.js':{hash:()=>1}});
-const profiles=load('src/profile.js',{'src/netHooks.js':{fx(){}},
+const profiles=load('src/profile.js',{'src/netHooks.js':{fx(){}},'src/cpuHooks.js':{cpuBlocksRecruit:()=>false},
  'src/photoPairs.js':{normalizePhotoPair:()=>null,photoPairLibrary:()=>[],currentPhotoPair:()=>{},photoProfilePayload:p=>p},
  'src/contentPolicy.js':content,
  'src/persistence.js':{PROFILE_KEY:'test-profile',readJSON:()=>null,writeJSON:()=>{}},

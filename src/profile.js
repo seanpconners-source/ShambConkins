@@ -3,6 +3,7 @@ const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
 const {PROFILE_KEY, readJSON, writeJSON, writeDurableJSON, inspectDurableJSON}=require("src/persistence.js");
 const {characterIdentity}=require("src/characters.js");
 const {fx}=require("src/netHooks.js");
+const {cpuBlocksRecruit}=require("src/cpuHooks.js");
 const {LAB_TEAM}=require("src/data/savoryLab.js");
 const {isMovieBond, missingMovieBonds}=require("src/data/movieBonds.js");
 const {normalizeSoloSettings, normalizeSoloBest}=require("src/solo.js");
@@ -31,6 +32,8 @@ function loadProfile() {
   {const v=saved.settings?.pinballView;if(v&&typeof v==='object'){const ok=(n,max)=>Number.isInteger(n)&&n>=0&&n<=max;if(ok(v.zoom,4)&&ok(v.speed,4))p.settings.pinballView={zoom:v.zoom,speed:v.speed};}}
   if(['auto','touch','pointer'].includes(saved.settings?.touchMode))p.settings.touchMode=saved.settings.touchMode;
   const solo=normalizeSoloSettings(saved.settings?.solo);if(solo)p.settings.solo=solo;
+  // Title-screen character picks (names + characters for players 1/2); app.js checks they are still unlocked.
+  {const v=saved.settings?.picks,ok=(a,n)=>Array.isArray(a)&&a.length===2&&a.every(x=>typeof x==='string'&&x.length&&x.length<=n);if(v&&ok(v.names,28)&&ok(v.chars,64))p.settings.picks={names:[...v.names],chars:[...v.chars]};}
   if(saved.soloBest)p.soloBest=normalizeSoloBest(saved.soloBest);
   for(const key of ['wins','best'])if(saved[key]&&typeof saved[key]==='object'&&!Array.isArray(saved[key]))p[key]=Object.fromEntries(Object.entries(saved[key]).filter(([,v])=>Number.isFinite(v)&&v>=0));
   for(const key of ['migrated','horrorSeen','equipment'])if(saved[key]===true)p[key]=true;
@@ -132,7 +135,7 @@ function canRecruit(profile,id,owner=null,reason='encounter') {
  return !list.some(c=>characterIdentity(c)===identity)&&!(owner&&profile.shared.some(c=>characterIdentity(c)===identity));
 }
 function recruit(profile,id,owner=null,reason='encounter') {
- if(!canRecruit(profile,id,owner,reason))return false;
+ if(!canRecruit(profile,id,owner,reason)||cpuBlocksRecruit(owner))return false;
  (owner?(profile.rosters[owner] ||= []):profile.shared).push(id);
  (profile.earnedUnlocks||={})[id]=reason;profile.xp+=6;saveProfile(profile);fx('recruit',id,owner,reason);return true;
 }

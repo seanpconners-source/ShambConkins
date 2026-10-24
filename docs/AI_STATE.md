@@ -516,6 +516,22 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   Tests: `tests/online-board.mjs` (TURNS, PKMN=1 wild battles, DROP=n drops the guest mid-decision, DEBUG=1 traces;
   bots answer only what their phone may answer). Not yet tried on two real phones. Next: turn-based games online
   (move relay through the CPU hooks), then real-time ones.
+- **1-player board game vs CPU + Choose Characters (Oct 24, branch `ccr-47c456d6-mv2k8z`; kept apart from the online work):**
+  Title screen CHOOSE CHARACTERS (`players` view = `setupHTML(...,{pickOnly:true})`): names + heads saved in
+  `profile.settings.picks` {names,chars} (validated in profile.js; app.js falls back to the starter if a pick is locked),
+  used by New Game and the Arcade (`store.setupSelected`). Both pages carry `playersStripHTML` (ui.js): 2 Players / 1 Player vs
+  CPU, YOU Sean/Amber, CPU Easy/Normal/Hard = the Arcade's own `profile.settings.solo`. 1P New Game: `makeCpuRun`
+  (src/cpuBoard.js) puts the human in seat 0 (players reversed if Amber plays, so rosters/starting items stay with owners),
+  CPU in seat 1 named "<first name> (CPU)", `run.cpu={seat:1,level}`; modes versus/horror only. Seams in `src/cpuHooks.js`
+  (no imports, like netHooks): `showDialog` → `cpuDialog` (CPU's dialogs with 2+ choices open read-only "… is thinking",
+  then it picks, primary-weighted; Continue-only cards and anything with a start/fight/again choice stay the human's),
+  `showRoutePanel` → `cpuRoute` (lights a road, shortcuts tempt it more on Hard), `theirTurn` → `cpuWaiting` (roll/items off),
+  `recruit` → `cpuBlocksRecruit` (the CPU's owner gets no characters during board play). A 300 ms tick rolls for the CPU
+  (sometimes uses an item first, `run.cpu.itemTurn`); its Pokémon battles run on the GB autopilot (`cpuPk` wraps
+  pkWild/pkTrainer/pokemonCenter). Minigames: `boardCpuKind` (solo.js) = 'cpu' or 'alone' kinds only; `selectBoardGame`
+  filters by it on run.cpu, the launcher swaps id'd games without one; board session gets `session.solo={kind,board:true,...}`
+  so engines drive P2 as the CPU, and settles through `settleGame` (alone → co-op result from `s.solo.won`); Exit = normal
+  board exit (no banking). Test: `tests/solo-board.mjs` (WHO=1, TURNS=n). Real-phone feel untested.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 

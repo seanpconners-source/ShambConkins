@@ -2,6 +2,7 @@ const {store}=require("src/state.js");
 const {escapeHTML:e}=require("src/utils.js");
 const {laneStyle,laneKey}=require("src/boardZones.js");
 const {netRoute}=require("src/netHooks.js");
+const {cpuRoute}=require("src/cpuHooks.js");
 // The fork chooser. It docks under the map instead of covering it: the roads stay
 // visible, and tapping an option lights up that road on the map before you commit.
 let current=null;
@@ -21,8 +22,8 @@ function render(){
  const {title,hint,options,selected,watch}=current;
  panel.innerHTML=`<div class="rp-head"><b>${e(title)}</b><small>${e(watch||hint)}</small></div><div class="rp-options" style="--n:${options.length}">${options.map((o,i)=>`<button class="rp-option ${i===selected?'selected':''}" data-action="route-preview" data-id="${i}" style="--tag:${o.color}" ${o.disabled||watch?'disabled':''}><span class="rp-tag">${o.disabled?'🔒 BLOCKED · ':''}${e(o.tag)}</span><b>${e(o.label)}</b><small>${e(o.sub)}</small>${o.journey?`<em>★ ${e(o.journey)}</em>`:''}</button>`).join('')}</div><div class="rp-actions"><button class="primary" data-action="route-go" ${selected<0||watch?'disabled':''}>${watch?'WAITING…':'GO THIS WAY'}</button></div>`;
 }
-// Online board game: the other phone's player chooses on their own phone (src/netBoard.js).
-function showRoutePanel(opts){return netRoute(opts)||openRoutePanel(opts);}
+// Online board game: the other phone's player chooses on their own phone (src/netBoard.js); 1P: the CPU picks (src/cpuBoard.js).
+function showRoutePanel(opts){return netRoute(opts)||cpuRoute(opts)||openRoutePanel(opts);}
 // watch: read-only while the other phone chooses (its taps light up the roads here through routePreview).
 // onPreview(i): called when this phone's player lights up a road.
 function openRoutePanel({title,hint,options,watch='',onPreview=null}){
