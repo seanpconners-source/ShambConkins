@@ -18,7 +18,8 @@ const {pickSouthPark}=require("src/data/southPark.js");
 const {updateBoardBanter}=require("src/boardBanter.js");
 const {readJSON, writeJSON, removeSaved, RUN_KEY, PROFILE_KEY, validRun}=require("src/persistence.js");
 const {generateBoard, addHorrorBoard, routeOptions, evolveBoard, SPACE_TYPES, SPACE_ICONS}=require("src/board.js");
-const {CHARACTERS, character, perkType, differentCharacters, characterIdentity}=require("src/characters.js");
+const {CHARACTERS, character, perkType, differentCharacters, characterIdentity, SPECIAL_UNLOCKS}=require("src/characters.js");
+const {sourceType}=require("src/venues.js");
 const {location, LOCATIONS}=require("src/locations.js");
 const {ITEMS, findItem, itemTag, randomItem, itemDescription, useItemEffect, pointChange, acquireItem, canUseItem, rollMovement, rollDice, settleItemInvestments, itemSupplyChoices}=require("src/items.js");
 const {selectItemDrop, selectItemStock}=require("src/itemDrops.js");
@@ -426,10 +427,16 @@ function locationVisitors(l,p){
  let ids=l.characters.filter(id=>canRecruitReward(store.profile,id,owner,reason));
  if(!ids.length)ids=themedCharacters(l.source,{owned}).filter(c=>canRecruitReward(store.profile,c.id,owner)).map(c=>c.id);
  if(!ids.length&&l.source==='Home'&&l.id!=='parents'){
-  const identities=new Set();ids=CHARACTERS.filter(c=>{const identity=characterIdentity(c.id);if(identities.has(identity)||!canRecruitReward(store.profile,c.id,owner))return false;identities.add(identity);return true;}).map(c=>c.id);
+  ids=visitorPool(owner).map(c=>c.id);
  }
- return {ids,owner,reason};
+ // Over half the landmarks' films/shows have no characters of their own in the game (or they are all found), so a traveller
+ // from the same kind of property (film, TV, game...) drops by instead, else anyone still missing. Not Mom & Dad's or the lab.
+ let stranger=false;
+ if(!ids.length&&l.id!=='parents'&&reason!=='lab'){const pool=visitorPool(owner),kind=sourceType(l.source),same=pool.filter(c=>sourceType(c.source)===kind);ids=(same.length?same:pool).map(c=>c.id);stranger=ids.length>0;}
+ return {ids,owner,reason,stranger};
 }
+// Every regular character this owner can still recruit at a landmark (one per identity; special unlocks never).
+function visitorPool(owner){const identities=new Set();return CHARACTERS.filter(c=>{const identity=characterIdentity(c.id);if(identities.has(identity)||SPECIAL_UNLOCKS.includes(c.unlockBy)||!canRecruitReward(store.profile,c.id,owner))return false;identities.add(identity);return true;});}
 async function visitLocation(id){
  const run=store.run,token=movementToken,p=run.players[run.current],l=location(id);if(!l)return finishEncounter();run.phase='event';const pending=run.pending={kind:'location',locationId:id};saveRun();
  const game=pick(themedGames(l.source),random)||GAMES.find(g=>l.id==='parents'&&g.engine==='snake'),visitors=locationVisitors(l,p);
@@ -439,8 +446,8 @@ async function visitLocation(id){
  if(!store.profile.locations.includes(id)){store.profile.locations.push(id);store.profile.xp+=5;}p.points+=perkType(p.character)==='explorer'||p.character==='sean'?4:3;logRun(`${p.name} discovered ${l.name}.`);journeyNow('landmark');if(choice==='game'){saveRun();return requestGame({id:game.id});}
  const unlocked=[];let message='',item=null;
  if(choice==='recruit'){
-  const {ids,owner,reason}=locationVisitors(l,p),actual=ids.length?recruitReward(store.profile,pick(ids,random),owner,reason,random):null;
-  if(actual){unlocked.push(actual);message=`${character(actual).name} joins ${owner===null?'the shared roster':p.owner+'’s roster'}. Select them on your next expedition.`;}
+  const {ids,owner,reason,stranger}=locationVisitors(l,p),actual=ids.length?recruitReward(store.profile,pick(ids,random),owner,reason,random):null;
+  if(actual){unlocked.push(actual);message=`${stranger?`${character(actual).name} (${character(actual).source}) was passing through ${l.name} and `:character(actual).name+' '}joins ${owner===null?'the shared roster':p.owner+'’s roster'}. Select them on your next expedition.`;}
   else{p.points+=3;message='You caught up with a familiar visitor. All available characters here are already recruited. +3 points.';}
  }else{item=selectItemDrop(themedItems(l.source),{random,player:p,profile:store.profile})||randomItem(random,{player:p,profile:store.profile});const found=acquireItem(run,store.profile,p,item);unlocked.push(...found.unlocked);message=found.message;}
  run.pending={kind:'location-result',locationId:id,message,unlocked,owner:visitors.owner,itemId:item?.id};saveRun();
