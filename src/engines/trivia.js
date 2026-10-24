@@ -10,7 +10,7 @@ const {LEGENDS_TRIVIA_THEMES}=require("src/data/legendsTrivia.js");
 const {TRIVIA3_THEMES}=require("src/data/trivia3.js");
 const {WARP_TRIVIA_THEMES}=require("src/data/warpTrivia.js");
 const {playTriviaMode}=require("src/engines/triviaModes.js");
-const {isCpu,cpuSkill,cpuTriviaPick,cpuThinkTime}=require("src/engines/cpuKit.js");
+const {isCpu,cpuSkill,cpuTriviaPick,cpuThinkTime,cpuTriviaTurn}=require("src/engines/cpuKit.js");
 const TRIVIA=TRIVIA_QUESTIONS;
 const TRIVIA_LEVELS=['easy','medium','hard','impossible'];
 const triviaPoints=d=>d==='impossible'?4:d==='hard'?3:d==='medium'?2:1;
@@ -74,17 +74,17 @@ async function trivia(s) {
   locked=false;s.debug={question:q,round,lead,difficulty,phase:steal?'steal':'lead',answers,left:seconds};
   s.body.querySelectorAll('[data-answer]').forEach(b=>s.on(b,'click',()=>void answer(+b.dataset.answer,player,steal,b)));
   const token=clockToken;stopClock=s.timer(seconds,left=>{if(token!==clockToken)return;s.debug.left=left;const number=document.getElementById('trivia-clock-number'),bar=document.getElementById('trivia-clock-bar');if(number)number.textContent=String(Math.ceil(left));if(bar)bar.style.width=(left/seconds*100)+'%';if(left<5)number?.parentElement?.classList.add('urgent');},()=>{if(token===clockToken&&!locked)void answer(null,player,steal,null);});
-  if(cpu&&player===1){const btns=[...s.body.querySelectorAll('[data-answer]')];btns.forEach(b=>b.disabled=true);s.wait(cpuThinkTime(s,q)*1000).then(ok=>{if(!ok||locked||token!==clockToken)return;const pos=cpuTriviaPick(s,q,answers);void answer(pos,1,steal,btns[pos]);});}
+  if(cpu&&player===1){const btns=[...s.body.querySelectorAll('[data-answer]')];cpuTriviaTurn(s,{q,choices:answers,buttons:btns,feedback:document.getElementById('trivia-feedback'),live:()=>!locked&&token===clockToken&&s.alive,pick:pos=>void answer(pos,1,steal,btns[pos])});}
  }
  function nextButton(label,fn){const b=document.createElement('button');b.textContent=label;b.className='primary';document.getElementById('trivia-next').appendChild(b);let used=false;const go=()=>{if(used||s.paused||!s.alive)return;used=true;void fn();};s.on(b,'click',go);if(cpu&&/^Pass to/.test(label))s.wait(800).then(ok=>ok&&go());}
  function resolved() {document.getElementById('trivia-fact').innerHTML=triviaExplanationHTML(q);s.debug.phase='resolved';nextButton(round===rounds.length-1?'See the result':'Next round',()=>{if(s.paused)return;round++;void startRound();});}
  async function answer(i,player,steal,button) {
   if(locked||s.paused||!s.alive)return;locked=true;clearClock();
-  const choice=i===null?null:answers[i],correct=choice?.index===q.correct;button?.classList.add(correct?'correct':'wrong');
+  const choice=i===null?null:answers[i],correct=choice?.index===q.correct,who=cpu?`${s.players[player].name}: `:'';button?.classList.add(correct?'correct':'wrong');
   s.body.querySelectorAll('[data-answer]').forEach(b=>b.disabled=true);const feedback=document.getElementById('trivia-feedback');
-  if(correct) {const pts=triviaAward(q.difficulty,steal);score[player]+=pts;s.setScores(score);s.react?.(player,'win');triviaMark(feedback,'correct');feedback.textContent=`✨ ${steal?'STEAL!':'CORRECT!'} +${pts} points! ✨ ${q.answers[q.correct]}.`;resolved();}
-  else if(!steal) {wrong=choice?.index??-1;s.react?.(player,'sad');triviaMark(feedback,choice?'wrong':'timeout');feedback.textContent=`${choice?'BUZZ! Wrong — this does not represent me.':'Time’s up!'} The answer stays hidden. ${s.players[1-lead].name} gets a steal.`;s.debug.phase='pass-steal';nextButton(`Pass to ${s.players[1-lead].name}`,async()=>{if(!await s.pass(1-lead,`Steal chance: ${difficulty.toUpperCase()} · ${triviaSeconds(q.difficulty)} seconds. Same question${wrong<0?'':', with the previous wrong answer removed'}.`))return;questionView(1-lead,true);});}
-  else {s.react?.(player,'sad');triviaMark(feedback,choice?'wrong':'timeout');feedback.textContent=`${choice?'BUZZ! No steal — this does not represent me.':'Time’s up on the steal.'} Correct answer: ${q.answers[q.correct]}.`;s.body.querySelectorAll('[data-answer]').forEach((b,i)=>{if(answers[i].index===q.correct)b.classList.add('correct');});resolved();}
+  if(correct) {const pts=triviaAward(q.difficulty,steal);score[player]+=pts;s.setScores(score);s.react?.(player,'win');triviaMark(feedback,'correct');feedback.textContent=`✨ ${who}${steal?'STEAL!':'CORRECT!'} +${pts} points! ✨ ${q.answers[q.correct]}.`;resolved();}
+  else if(!steal) {wrong=choice?.index??-1;s.react?.(player,'sad');triviaMark(feedback,choice?'wrong':'timeout');feedback.textContent=`${who}${choice?'BUZZ! Wrong — this does not represent me.':'Time’s up!'} The answer stays hidden. ${s.players[1-lead].name} gets a steal.`;s.debug.phase='pass-steal';nextButton(`Pass to ${s.players[1-lead].name}`,async()=>{if(!await s.pass(1-lead,`Steal chance: ${difficulty.toUpperCase()} · ${triviaSeconds(q.difficulty)} seconds. Same question${wrong<0?'':', with the previous wrong answer removed'}.`))return;questionView(1-lead,true);});}
+  else {s.react?.(player,'sad');triviaMark(feedback,choice?'wrong':'timeout');feedback.textContent=`${who}${choice?'BUZZ! No steal — this does not represent me.':'Time’s up on the steal.'} Correct answer: ${q.answers[q.correct]}.`;s.body.querySelectorAll('[data-answer]').forEach((b,i)=>{if(answers[i].index===q.correct)b.classList.add('correct');});resolved();}
  }
  async function startRound() {
   clearClock();if(round>=rounds.length)return s.finish(score,`${difficulty.toUpperCase()} · ${rounds.length} timed shared rounds complete.`);

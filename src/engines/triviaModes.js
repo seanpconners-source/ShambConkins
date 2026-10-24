@@ -4,7 +4,7 @@ const {shuffle, escapeHTML}=require("src/utils.js");
 const {brandHTML}=require("src/assets.js");
 const {triviaExplanationHTML}=require("src/triviaCatalog.js");
 const {triviaCue}=require("src/triviaFeedback.js");
-const {isCpu,cpuSkill,cpuTriviaPick,cpuThinkTime}=require("src/engines/cpuKit.js");
+const {isCpu,cpuSkill,cpuTriviaPick,cpuThinkTime,cpuTriviaTurn}=require("src/engines/cpuKit.js");
 async function playTriviaMode(s,{difficulty,rounds,seconds,points,introHTML}){
  const mode=s.game.triviaMode,lightning=mode==='lightning',survival=mode==='survival',lightningPerPlayer=lightning?rounds.length/2:0,score=survival?[0,0]:mode==='wager'?[10,10]:[0,0],lives=[3,3],answersByPlayer=[null,null],bets=[1,1],streak=[0,0],time=[60,60];
  let round=0,player=0,q=null,choices=[],phase='handoff',stop=null,token=0,first=0;
@@ -25,7 +25,7 @@ async function playTriviaMode(s,{difficulty,rounds,seconds,points,introHTML}){
   s.body.innerHTML=frameHTML(`<div class="trivia-clock" role="timer"><span id="trivia-clock-number">${Math.ceil(allowance)}</span><small>${lightning?'ANSWER SECONDS · STREAK '+streak[player]:survival?'ONE MISS COSTS A LIFE':'WAGER '+bets[player]+' CHIPS'}</small><div class="trivia-clock-track"><i id="trivia-clock-bar"></i></div></div><div class="trivia-logo">${brandHTML(q.source)}</div><div class="trivia-question">${escapeHTML(q.q)}</div><div class="trivia-answers">${choices.map((a,i)=>`<button data-answer="${i}">${escapeHTML(a.text)}</button>`).join('')}</div>`);debug(allowance);
   s.body.querySelectorAll('[data-answer]').forEach(b=>s.on(b,'click',()=>answer(+b.dataset.answer)));
   let previous=allowance;const guard=token;stop=s.timer(allowance,left=>{if(guard!==token||phase!=='answer')return;if(lightning)time[player]=Math.max(0,time[player]-(previous-left));previous=left;s.debug.left=left;const number=document.getElementById('trivia-clock-number'),bar=document.getElementById('trivia-clock-bar');if(number)number.textContent=String(Math.ceil(left));if(bar)bar.style.width=(left/allowance*100)+'%';},()=>{if(guard===token)answer(null);});
-  if(cpu&&player===1){const btns=[...s.body.querySelectorAll('[data-answer]')];btns.forEach(b=>b.disabled=true);s.wait(cpuThinkTime(s,q)*1000).then(ok=>{if(!ok||guard!==token||phase!=='answer')return;answer(cpuTriviaPick(s,q,choices));});}
+  if(cpu&&player===1)cpuTriviaTurn(s,{q,choices,buttons:[...s.body.querySelectorAll('[data-answer]')],feedback:document.getElementById('mode-feedback'),hidden:!lightning,live:()=>guard===token&&phase==='answer'&&s.alive,pick:pos=>answer(pos)});
  }
  function finish(){clear();phase='finished';const result=survival?score.map((v,i)=>lives[i]*100+v):score;s.finish(result,survival?`Lives ${lives[0]}–${lives[1]}; correct points ${score[0]}–${score[1]}.`:mode==='wager'?`Quiz bankrolls ${score[0]}–${score[1]}.`:`Lightning points ${score[0]}–${score[1]}.`);}
  async function beginPlayer(intro=false){
@@ -40,7 +40,7 @@ async function playTriviaMode(s,{difficulty,rounds,seconds,points,introHTML}){
  }
  function answer(index){
   if(s.paused||!s.alive||phase!=='answer')return;const selected=index===null?null:choices[index];if(index!==null&&!selected)return;clear();phase='locked';answersByPlayer[player]=selected?.index??null;  if(lightning){const correct=selected?.index===q.correct;if(correct){streak[player]++;score[player]+=value()+Math.min(3,streak[player]-1);s.react?.(player,'win');triviaCue('correct');}else{streak[player]=0;s.react?.(player,'sad');triviaCue(selected?'wrong':'timeout');}s.setScores(score);
-   phase='feedback';const message=correct?'✨ CORRECT! ✨':selected?'BUZZ! MISSED — this does not represent me':'TIME’S UP';
+   phase='feedback';const who=cpu?`${s.players[player].name}: `:'',message=who+(correct?'✨ CORRECT! ✨':selected?'BUZZ! MISSED — this does not represent me':'TIME’S UP');
    s.body.innerHTML=frameHTML(`<div class="trivia-question trivia-result ${correct?'trivia-celebrate'+motion():'trivia-incorrect'}">${message} · ${escapeHTML(q.answers[q.correct])}</div>${triviaExplanationHTML(q)}`);debug();
    const ended=time[player]<=.05||round+1>=lightningPerPlayer;
    action(ended?(player===0?'Pass to player 2':'See the result'):'Next lightning question',async()=>{round++;if(ended){if(player===1)return finish();player=1;round=0;q=rounds[lightningPerPlayer];await beginPlayer();}else{q=rounds[player*lightningPerPlayer+round];questionView();}});return;

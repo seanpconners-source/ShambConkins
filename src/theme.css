@@ -397,3 +397,9 @@ body .pick-controls{justify-content:center;gap:10px}
 .title-screen .ts-pick-face{width:24px;height:24px;margin:0;border-radius:50%;overflow:hidden;border:1.5px solid #ffd34d;background:#2b1a40}
 .title-screen .ts-pick-face+.ts-pick-face{margin-left:-7px;border-color:#ff7bb0}
 .title-screen .ts-pick-face img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+/* Trivia vs CPU (cpuKit.cpuTriviaTurn): the CPU's turn reads as one: thinking pulse, its pick tagged, marks stay bright. */
+.trivia-answers button.correct:disabled,.trivia-answers button.wrong:disabled,.trivia-answers button.cpu-pick:disabled{opacity:1}
+.trivia-answers button.cpu-pick{outline:3px solid #ffd34d;outline-offset:2px;position:relative}
+.trivia-answers button.cpu-pick::after{content:'🤖 CPU';position:absolute;top:-9px;right:8px;font:800 10px/1 system-ui,sans-serif;background:#ffd34d;color:#1c1300;padding:3px 7px;border-radius:999px}
+.trivia-feedback.cpu-thinking{font-weight:700;color:#ffe2a6;animation:watchPulse 1.6s ease-in-out infinite}
+.reduced-motion .trivia-feedback.cpu-thinking{animation:none}

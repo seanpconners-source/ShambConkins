@@ -30,4 +30,16 @@ function cpuTriviaPick(s,q,choices,rand=Math.random){const base={easy:.86,medium
  const right=choices.findIndex(c=>c.index===q.correct);if(right>=0&&rand()<p)return right;const wrong=choices.map((c,i)=>i).filter(i=>i!==right);return wrong.length?pickRandom(wrong,rand):right;}
 // A human-like pause before the CPU answers (seconds): quicker on Hard and on easy questions.
 const cpuThinkTime=(s,q)=>(1.4+(1-cpuSkill(s))*2.2+({hard:1,impossible:1.6}[q?.difficulty]||0))*(.75+Math.random()*.5);
-Object.assign(exports,{isCpu,cpuHotseat,cpuDepth,cpuBlunder,negamax,pickRandom,cpuSkill,cpuTriviaPick,cpuThinkTime});
+// The CPU's trivia turn, made visible: "is thinking…", then its pick lights up for a beat before it counts.
+// hidden: modes where answers stay private until both players commit (wager, survival) only say it locked in.
+function cpuTriviaTurn(s,{q,choices,buttons,feedback,live,pick,hidden=false}){
+ const name=s.players?.[1]?.name||'CPU';buttons.forEach(b=>b.disabled=true);s.body?.querySelector('.trivia-answers')?.classList.add('cpu-turn');
+ if(feedback){feedback.textContent=`🤖 ${name} is thinking…`;feedback.classList.add('cpu-thinking');}
+ s.wait(cpuThinkTime(s,q)*1000).then(async ok=>{
+  if(!ok||!live())return;const pos=cpuTriviaPick(s,q,choices);
+  if(feedback){feedback.classList.remove('cpu-thinking');feedback.textContent=hidden?`🤖 ${name} locks in an answer.`:`🤖 ${name} picks “${choices[pos]?.text??''}”…`;}
+  if(!hidden)buttons[pos]?.classList.add('cpu-pick');
+  if(!await s.wait(hidden?600:1200)||!live())return;pick(pos);
+ });
+}
+Object.assign(exports,{isCpu,cpuHotseat,cpuDepth,cpuBlunder,negamax,pickRandom,cpuSkill,cpuTriviaPick,cpuThinkTime,cpuTriviaTurn});
