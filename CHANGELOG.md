@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.66.1
+
+**Trivia vs the CPU shows its turn.** The CPU was answering its turns and steals, but you couldn't see it: its pick was a faint tint on a greyed-out button and the result didn't say who answered, so it looked like it scored without playing. Now it says "🤖 … is thinking…", lights up its answer with a CPU tag for a second before the result, and the result line names who answered. In Wager and Survival (answers stay private until both are in) it says it locked in an answer instead. Works in the 1P Arcade and the 1P board game.
+
 ## v0.66.0
 
 **Play the board game alone against a CPU.** New Game (and the new Choose Characters page) has a **2 Players / 1 Player vs CPU** switch, who you are (Sean or Amber) and the CPU level (Easy / Normal / Hard), the same setting as the Minigame Vault's 1P switch. You go first; the CPU wears a head from the other roster. On its turn it rolls by itself, sometimes uses an item, picks its roads and its own choices (you see the card greyed out while it thinks, then its pick lights up) and plays its Pokémon battles automatically. You still tap through its cards so you can see what happened, and you decide what you do together (starting a minigame, fighting a boss). Board minigames are the ones with a real CPU opponent (about 110), plus boss fights and the zombie horde, which you play alone. The CPU's wins don't add characters to anyone's roster. Versus and Horror modes.
