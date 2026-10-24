@@ -40,7 +40,19 @@ address (`http://localhost:...` from a local server app, or any `https://` site)
   Add to Home Screen*). The app keeps the same save as the browser page at that address.
 
 ## Online play (two phones)
-Arcade → **🌐 Online** → type a room name; the other phone types the same name and joins as player 2. Either player taps
+Title screen → **🌐 PLAY ONLINE** (or Arcade → **🌐 Online**) → type a room name; the other phone types the same name and
+joins as player 2.
+
+**Board game together:** in the room, tap **🎲 Board game together**; the other phone accepts and both open New Game.
+Each phone picks its own character (the other pick shows live), the inviting phone picks the board and length and starts.
+That phone runs and saves the game; the other shows the same board live. Each player rolls, picks roads, uses items,
+answers their cards and plays their Pokémon battles on their own phone, and watches the other's turn as it happens.
+Board minigames are played by both phones at once (each plays the 1-player version from the same start; higher score
+wins the board result), so only games that work online are dealt for now. If a phone drops, the game waits for it (or
+plays its turns on the other phone); leaving hands that player's turns to the host until they rejoin from the room.
+Both phones need the same version.
+
+**Duels:** either player taps
 **Challenge** on a game; when the other accepts, both phones play that game's 1P version from the same start at the same
 time, see each other's live score, and the higher score wins (unlocks go to the winner's own phone). Games whose 1P mode
 ends in a score are online so far (~55: pinball, Broforce, Mario, Hole.it, DOOM, arcade remakes...); CPU-opponent games

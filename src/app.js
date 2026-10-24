@@ -10,6 +10,9 @@ const {markBackedUp,keepSave,backupFileName}=require("src/saveGuard.js");
 const {initPWA,installApp,installOffered}=require("src/pwa.js");
 const {bootDone}=require("src/bootScreen.js");
 const {initDuel,setMode:setOnlineMode,leaveOnline,propose:proposeDuel}=require("src/duel.js");
+const {initNetBoard,inviteBoard,leaveSetup,sendPick,hostBegin,hostEnd,netAction,netTask,hostGame,allowGame,onlineGames,rejoinBoard}=require("src/netBoard.js");
+const {fx,localDialogs,netChanged}=require("src/netHooks.js");
+const {netState}=require("src/net.js");
 const {pickSouthPark}=require("src/data/southPark.js");
 const {updateBoardBanter}=require("src/boardBanter.js");
 const {readJSON, writeJSON, removeSaved, RUN_KEY, PROFILE_KEY, validRun}=require("src/persistence.js");
@@ -78,21 +81,28 @@ store.profile=loadProfile();const saved=readJSON(RUN_KEY);store.run=validRun(sav
 if(store.run){setupNames=store.run.players.map(p=>p.name);store.run.players.forEach((p,i)=>{if(p.character)setupSelected[i]=p.character;});}
 store.setupNames=setupNames;store.setupSelected=setupSelected;
 if(store.run)for(const p of store.run.players){if(p.character==='eugenia')p.character=p.owner==='Amber'?'amber':'sean';p.items=p.items.filter(id=>id!=='eugenia-pass');}
-function saveRun(){rememberCollectibles(store.profile,store.run);let saved=true;if(store.run)saved=writeJSON(RUN_KEY,store.run);else removeSaved(RUN_KEY);const profileSaved=saveProfile(store.profile);if((!saved||!profileSaved)&&!store.storageNotice){store.storageNotice=true;toast('Browser storage is unavailable. Use Settings → Export backup before closing.');}}
+function saveRun(){rememberCollectibles(store.profile,store.run);if(store.netBoard?.role==='guest'){saveProfile(store.profile);return;}netChanged();let saved=true;if(store.run)saved=writeJSON(RUN_KEY,store.run);else removeSaved(RUN_KEY);const profileSaved=saveProfile(store.profile);if((!saved||!profileSaved)&&!store.storageNotice){store.storageNotice=true;toast('Browser storage is unavailable. Use Settings → Export backup before closing.');}}
 const onBoard=()=>store.view==='board'&&!!store.run;
 PK.configurePkmn({unlockDialog:(ids,owner)=>unlockDialog(ids,owner),saveRun:()=>onBoard()&&saveRun(),updateBoard:()=>onBoard()&&updateBoard(),logRun:m=>onBoard()&&logRun(m),startMusic:()=>startMusic(),stopMusic:()=>stopMusic()});
-configureLauncher({bossDone:(game,coop)=>bossDone(game,coop),journeyWin:i=>journeyNow('win',{},store.run.players[i]),save:saveRun,endTurn,beforeRoll:resumeItemTurn,arcade:()=>{store.busy=false;store.arcade=false;showCatalog('arcade');}});
+configureLauncher({bossDone:(game,coop)=>bossDone(game,coop),journeyWin:i=>journeyNow('win',{},store.run.players[i]),save:saveRun,endTurn,beforeRoll:resumeItemTurn,arcade:()=>{store.busy=false;store.arcade=false;showCatalog('arcade');},
+ onlineGames,onlineAllowed:allowGame,onlineGame:hostGame,onlineSeat:()=>store.netBoard?.me??0});
 // Online duels: the duel module starts games through the launcher and redraws the Arcade when the room changes.
+// Online board game: the other phone's taps arrive as actions; setup picks redraw New Game.
+initNetBoard({action:(name,target,remote)=>action(name,target,remote).catch(error=>{console.error('Action failed',name,error);store.busy=false;saveRun();toast('That action was interrupted. Your progress is saved.');}),home,finishScreen:()=>finishScreen(),trainerSpotted:(i,n)=>trainerSpotted(i,n),refresh:()=>{if(store.view==='arcade'&&!store.session&&!store.dialog)showCatalog('arcade');},
+ showSetup:()=>showView('setup',{selected:setupSelected,names:setupNames}),setPick:(i,id,name)=>{if(typeof id==='string'&&character(id))setupSelected[i]=id;if(typeof name==='string'&&name.trim())setupNames[i]=name.trim().slice(0,28);store.setupNames=setupNames;refreshSetup();},
+ tasks:{wild:(run,p,o)=>PK.wildEncounter(run,p,o),trainer:(run,p,o)=>PK.trainerSpace(run,p,o),center:(run,p)=>pokemonCenterHere(p),team:(run,p)=>PK.openTeam(run,p)}});
+// Redraw New Game keeping this phone's roster scroll and the run options.
+function refreshSetup(){if(store.view!=='setup')return;const scroll=[...document.querySelectorAll('.cs-grid')].map(el=>[el.dataset.player,el.scrollTop||0]);const keep=['run-length','run-seed','board-theme','game-mode'].map(id=>[id,document.getElementById(id)?.value]);const focus=document.activeElement?.id;captureSetup();showView('setup',{selected:setupSelected,names:setupNames});for(const [i,top] of scroll){const el=document.querySelector(`.cs-grid[data-player="${i}"]`);if(el)el.scrollTop=top;}for(const [id,v] of keep){const el=document.getElementById(id);if(el&&v!=null)el.value=v;}if(focus)document.getElementById(focus)?.focus();}
 initDuel({start:(id,duel)=>requestGame({id,origin:'arcade',solo:true,duel}),refresh:()=>{if(store.view==='arcade'&&!store.session&&!store.dialog)showView('arcade',{query:catalogQuery,filter:catalogFilter,page:catalogPage});}});
 const random=()=>store.run?runRandom(store.run):Math.random();
 function focusEffect(before){const run=store.run;if(!run)return;const after=effectSnapshot(run),ids=[run.players[run.current].node];for(let i=0;i<2;i++)if(before?.players[i]&&JSON.stringify(before.players[i])!==JSON.stringify(after.players[i])){ids.push(run.players[i].node);if(before.players[i].node!==run.players[i].node)ids.push(before.players[i].node);}focusBoardAction(run,ids);}
 function applyPreferences(){document.body.classList.toggle('reduced-motion',store.profile.settings.reducedMotion);}
 function showCatalog(type){if(store.view!==type){catalogQuery='';catalogFilter='all';catalogPage=0;}showView(type,{query:catalogQuery,filter:catalogFilter,page:catalogPage});}
-function home(){if(store.view==='setup')captureSetup();setMusicZone('home');if(store.profile?.settings.music)startMusic();movementToken++;cancelGameLaunch();store.session?.dispose();store.session=null;store.arcade=false;store.boardTour=null;cancelCameraAnimation();clearEffects();closeDialog();store.busy=false;saveRun();showView('home');}
+function home(){if(store.view==='setup')captureSetup();if(store.netSetup)leaveSetup();setMusicZone('home');if(store.profile?.settings.music)startMusic();movementToken++;cancelGameLaunch();store.session?.dispose();store.session=null;store.arcade=false;store.boardTour=null;cancelCameraAnimation();clearEffects();closeDialog();store.busy=false;saveRun();showView('home');}
 function captureSetup(){setupNames=[0,1].map(i=>{const input=document.getElementById(`player-name-${i}`);return String(input?input.value:setupNames[i]??'').trim().slice(0,28)||(i?'Amber':'Sean');});store.setupNames=setupNames;}
-async function startRun(){keepSave();captureSetup();if(!differentCharacters(...setupSelected))return toast('Choose two different characters.');if(setupSelected.some((id,i)=>!availableCharacters(store.profile,i?'Amber':'Sean').includes(id)))return toast('Choose a character you have unlocked.');const turns=+document.getElementById('run-length').value;const theme=document.getElementById('board-theme')?.value||'Mashup',mode=document.getElementById('game-mode')?.value||'versus';const mates=[0,1].map(i=>document.getElementById(`team-mate-${i}`)?.value);if(mode==='team'&&(mates.some(id=>!id)||new Set([...setupSelected,...mates].map(characterIdentity)).size!==4))return toast('Team Relay needs four different unlocked characters.');const seed=document.getElementById('run-seed').value.trim();if(store.run&&!store.run.finished){const choice=await showDialog({title:'Start a fresh expedition?',body:'Your current run will be replaced. Every character unlock and all lifetime XP carry forward.',choices:[{label:'Start fresh',value:'yes',primary:true},{label:'Keep this run',value:'no'}]});if(choice!=='yes')return;}
- movementToken++;cancelGameLaunch();cancelCameraAnimation();store.boardTour=null;store.mapAspect=null;store.run=newRun(generateBoard(seed||undefined,turns,theme),setupNames,setupSelected,turns);store.run.mode=mode;if(mode==='horror'&&store.profile.horrorSeen){addHorrorBoard(store.run.board);store.run.horror=true;store.run.players.forEach(p=>p.node='horror-0');}store.run.raceToFinish=turns===999999&&mode!=='coop';store.run.endless=turns===999999&&mode==='coop';if(mode==='coop')store.run.mutation={remaining:999999,won:0};if(mode==='team')store.run.players.forEach((p,i)=>p.bench=mates[i]);store.profile.runs++;for(const p of store.run.players)if(perkType(p.character)==='survivor')p.shields++;
- logRun('A new route. The board has made no promises.');const pair=activatePair(store.run,store.profile);store.busy=true;focusBoardAction(store.run,store.run.players.map(p=>p.node));saveRun();setMusicZone(store.run.board.nodes[store.run.players[0].node].realm);audioContext();startMusic();if(!await playBoardIntro())return;if(pair)await introducePair(pair);store.run.players.forEach(q=>q.levelsSeen=[]);await showGentlemenCard();await showSmashCard();await announceLevel(store.run.players[0]);
+async function startRun(){keepSave();captureSetup();const online=store.netSetup;if(online&&online.role!=='host')return;if(online&&!netState().peer)return toast('Player 2 left the room.');if(!differentCharacters(...setupSelected))return toast('Choose two different characters.');if(setupSelected.some((id,i)=>(!online||i===online.me)&&!availableCharacters(store.profile,i?'Amber':'Sean').includes(id)))return toast('Choose a character you have unlocked.');const turns=+document.getElementById('run-length').value;const theme=document.getElementById('board-theme')?.value||'Mashup',mode=document.getElementById('game-mode')?.value||'versus';const mates=[0,1].map(i=>document.getElementById(`team-mate-${i}`)?.value);if(mode==='team'&&(mates.some(id=>!id)||new Set([...setupSelected,...mates].map(characterIdentity)).size!==4))return toast('Team Relay needs four different unlocked characters.');const seed=document.getElementById('run-seed').value.trim();if(store.run&&!store.run.finished){const choice=await showDialog({title:'Start a fresh expedition?',body:'Your current run will be replaced. Every character unlock and all lifetime XP carry forward.',choices:[{label:'Start fresh',value:'yes',primary:true},{label:'Keep this run',value:'no'}]});if(choice!=='yes')return;}
+ movementToken++;cancelGameLaunch();cancelCameraAnimation();store.boardTour=null;store.mapAspect=null;store.run=newRun(generateBoard(seed||undefined,turns,theme),setupNames,setupSelected,turns);store.run.mode=mode;if(mode==='horror'&&store.profile.horrorSeen){addHorrorBoard(store.run.board);store.run.horror=true;store.run.players.forEach(p=>p.node='horror-0');}if(online)store.run.online={room:netState().room,host:online.me};store.run.raceToFinish=turns===999999&&mode!=='coop';store.run.endless=turns===999999&&mode==='coop';if(mode==='coop')store.run.mutation={remaining:999999,won:0};if(mode==='team')store.run.players.forEach((p,i)=>p.bench=mates[i]);store.profile.runs++;for(const p of store.run.players)if(perkType(p.character)==='survivor')p.shields++;
+ logRun('A new route. The board has made no promises.');const pair=activatePair(store.run,store.profile);store.busy=true;focusBoardAction(store.run,store.run.players.map(p=>p.node));saveRun();if(online)hostBegin(store.run);else hostEnd();setMusicZone(store.run.board.nodes[store.run.players[0].node].realm);audioContext();startMusic();if(!await playBoardIntro())return;if(pair)await introducePair(pair);store.run.players.forEach(q=>q.levelsSeen=[]);await showGentlemenCard();await showSmashCard();await announceLevel(store.run.players[0]);
 }
 
 async function playBoardIntro(){
@@ -118,7 +128,7 @@ async function presentPairTurn(pending){
  animateItemTransfers(pending.before);if(pending.result.skip){endTurn();return;}run.phase='board';run.pending=null;store.busy=false;saveRun();updateBoard(true);await roll(pending.lucky);
 }
 
-async function continueRun(){if(!store.run)return home();movementToken++;store.busy=false;focusBoardAction(store.run);updateBoard(true);const run=store.run,token=movementToken;setMusicZone(run.board.nodes[run.players[run.current].node].realm);startMusic();
+async function continueRun(){if(!store.run)return home();if(store.run.online)hostBegin(store.run);else hostEnd();movementToken++;store.busy=false;focusBoardAction(store.run);updateBoard(true);const run=store.run,token=movementToken;setMusicZone(run.board.nodes[run.players[run.current].node].realm);startMusic();
  if(run.finished)return finishScreen();
  if(run.phase==='moving'){store.busy=true;updateBoard();if(run.pending?.diceAnimation){const p=run.players[run.current];const rolled=await animateDice({...run.pending.dice,name:p.name,character:p.character,valid:()=>store.view==='board'});if(!rolled)return;run.pending.diceAnimation=false;saveRun();}await moveSteps(movementToken);}
  else if(run.phase==='landing'){await resolveLanding();}
@@ -341,12 +351,12 @@ async function pokemonStep(run,p,node,token,resume=false){
  const trainerIdx=resume&&run.pending.wild==='trainer'?run.pending.trainerIdx:watcher;
  run.pending.wild=trainerIdx>=0?'trainer':'wild';run.pending.trainerIdx=trainerIdx;saveRun();
  if(trainerIdx>=0){const t=run.board.warp.trainers[trainerIdx];await trainerSpotted(trainerIdx,node);if(token!==movementToken||store.run!==run)return false;
-  const r=await PK.trainerSpace(run,p,{trainerId:t.id,size:1+Math.floor(random()*3)});if(token!==movementToken||store.run!==run)return false;if(r.outcome==='win'||r.outcome==='lose')t.beaten.push(run.current);}
- else{await PK.wildEncounter(run,p);if(token!==movementToken||store.run!==run)return false;}
+  const r=await pkTrainer(run,p,{trainerId:t.id,size:1+Math.floor(random()*3)});if(token!==movementToken||store.run!==run)return false;if(r.outcome==='win'||r.outcome==='lose')t.beaten.push(run.current);}
+ else{await pkWild(run,p);if(token!==movementToken||store.run!==run)return false;}
  delete run.pending.wild;delete run.pending.trainerIdx;store.busy=true;saveRun();updateBoard();return true;
 }
 // The "!" over a trainer's head, then they walk up to you.
-async function trainerSpotted(i,node){
+async function trainerSpotted(i,node){fx('trainerSpotted',i,node.id);
  const g=document.querySelector(`[data-pk-trainer="${i}"]`);if(!g)return;const t=store.run.board.warp.trainers[i];
  const ns='http://www.w3.org/2000/svg',bang=document.createElementNS(ns,'g');bang.setAttribute('class','pk-bang');bang.innerHTML='<rect x="12" y="-62" width="26" height="30" rx="4" fill="#fff" stroke="#282828" stroke-width="3"/><text x="25" y="-38" text-anchor="middle" font-size="24" font-weight="900" fill="#282828">!</text>';g.append(bang);
  try{require("src/pkmn/pkmnAudio.js").playJingle('bang');}catch{}await wait(700);bang.remove();
@@ -354,14 +364,18 @@ async function trainerSpotted(i,node){
  for(let k=1;k<=steps;k++){const x=from[0]+(to[0]-from[0])*k/steps,y=from[1]+(to[1]-from[1])*k/steps;g.setAttribute('transform',`translate(${x},${y})`);sound('tap');await wait(220);}
  await wait(250);
 }
-async function pokemonCenter(p){
+// Online board game: battles, the Pokémon Center and the team screen run on the phone of the player who is up.
+const pkWild=(run,p,opts={})=>netTask('wild',[opts],()=>PK.wildEncounter(run,p,opts));
+const pkTrainer=(run,p,opts={})=>netTask('trainer',[opts],()=>PK.trainerSpace(run,p,opts));
+const pokemonCenter=p=>netTask('center',[],()=>pokemonCenterHere(p));
+async function pokemonCenterHere(p){
  const run=store.run,T=PK.ensureTeam(run,p);stopMusic();
  await gbMessages(['Welcome to our POKéMON CENTER!','We restore your tired POKéMON to full health. Shall we?'],{keepOpen:true});
  PK.healTeam(p);saveRun();await gbMessages(['...','Thank you! Your POKéMON are fighting fit!','We hope to see you again!'],{jingle:'heal'});startMusic();
 }
 async function pokemonGym(p,token){
  const run=store.run,rival=run.board.warp.rival;
- const r=await PK.trainerSpace(run,p,{gym:true,trainerId:rival,size:6,label:rival?'RIVAL '+character(rival).name.split(' ')[0].toUpperCase():null,intro:'Smell ya later! ...Oh, you made it all the way here? Let’s see what your team can do!'});
+ const r=await pkTrainer(run,p,{gym:true,trainerId:rival,size:6,label:rival?'RIVAL '+character(rival).name.split(' ')[0].toUpperCase():null,intro:'Smell ya later! ...Oh, you made it all the way here? Let’s see what your team can do!'});
  if(store.run!==run||movementToken!==token)return;
  if(r.outcome==='win'){logRun(`${p.name} beat the Gym. The party leaves Kanto.`);await exitWarpZone();return;}
  const again=await showDialog({title:'The Gym wins this round',source:'Pokémon',body:'Your team was healed at the Pokémon Center. Challenge the Gym again on a later turn, or head back to the map.',choices:[{label:'Stay and train',value:'stay',primary:true},{label:'Back to the map',value:'leave'}]});
@@ -381,9 +395,9 @@ async function resolveLanding(){const run=store.run,token=movementToken;if(!run|
   case 'dice':await requestGame({id:'full-shambyahtzee'});break;
   case 'shop':await visitShop();break;
   case 'event':{if(warpTheme(run)){await resolveEvent(warpCard(run,random,findItem));break;}let ev=drawEvent(run,store.profile,random);for(let i=0;i<6&&ev.question;i++)ev=drawEvent(run,store.profile,random);// Trivia lives on trivia spaces; a Chance card is a card.
-  if(ev.e?.[0]==='unlockChar'&&PK.isWildable(character(ev.e[1]))&&canRecruitReward(store.profile,ev.e[1],p.owner,'encounter')){logRun(`${p.name}: a wild ${character(ev.e[1]).name} appeared!`);await PK.wildEncounter(run,p,{id:ev.e[1],cause:'event'});if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}await resolveEvent(ev);break;}
-  case 'trainer':await PK.trainerSpace(run,p);if(store.run!==run||movementToken!==token)return;run.roundsWithoutGame=0;endTurn();break;
-  case 'grass':if(p.wildTurn!==run.turn&&random()<.55){await PK.wildEncounter(run,p);if(store.run!==run||movementToken!==token)return;}await finishEncounter();break;
+  if(ev.e?.[0]==='unlockChar'&&PK.isWildable(character(ev.e[1]))&&canRecruitReward(store.profile,ev.e[1],p.owner,'encounter')){logRun(`${p.name}: a wild ${character(ev.e[1]).name} appeared!`);await pkWild(run,p,{id:ev.e[1],cause:'event'});if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}await resolveEvent(ev);break;}
+  case 'trainer':await pkTrainer(run,p);if(store.run!==run||movementToken!==token)return;run.roundsWithoutGame=0;endTurn();break;
+  case 'grass':if(p.wildTurn!==run.turn&&random()<.55){await pkWild(run,p);if(store.run!==run||movementToken!==token)return;}await finishEncounter();break;
   case 'center':await pokemonCenter(p);if(store.run!==run||movementToken!==token)return;await finishEncounter();break;
   case 'pkitem':{const it=pick(PKMN_CATALOG_ITEMS.filter(i=>i.findWeight>=1),random),found=acquireItem(run,store.profile,p,it);logRun(`${p.name}: ${found.message}`);saveRun();await gbMessages([`${p.name.toUpperCase()} found ${it.name.toUpperCase()}!`,`${p.name.toUpperCase()} put it in the POKéMON bag.`],{jingle:'item'});startMusic();if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}
   case 'path':await finishEncounter();break;
@@ -474,7 +488,15 @@ async function installAppFlow(){const how=await installApp();if(how==='accepted'
  await showDialog({title:'Install ShambConkins',body:steps+' The app opens full screen and keeps the same save as this page.',choices:[{label:'OK',value:'ok',primary:true}]});}
 function exportBackup(){markBackedUp(store.profile);saveProfile(store.profile);keepSave();const json=JSON.stringify({format:'shambconkins-backup',version:20,profile:store.profile,run:store.run},null,2),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));a.download=backupFileName();a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);document.querySelector('.ts-backup')?.remove();toast('Backup saved to Downloads. Restore it from Settings in any browser.');}
 async function importBackup(file){try{const data=JSON.parse(await file.text());if(data.format!=='shambconkins-backup'||data.profile?.version!==20||(data.run&&!validRun(data.run)))throw new Error('Unsupported backup');const choice=await showDialog({title:'Restore this backup?',body:'This replaces the progress saved in this browser. Export a backup first if you want to keep both.',choices:[{label:'Restore backup',value:'yes',primary:true},{label:'Keep current progress',value:'no'}]});if(choice!=='yes')return;writeJSON(PROFILE_KEY,data.profile);store.profile=loadProfile();markBackedUp(store.profile);saveProfile(store.profile);keepSave();store.run=data.run;setupNames=store.run?store.run.players.map(p=>p.name):['Sean','Amber'];store.setupNames=setupNames;saveRun();applyPreferences();home();toast('Backup restored.');}catch{toast('This file is not a valid ShambConkins v0.20 backup.');}}
-async function action(name,target){
+// Menus that only concern this phone (story log, settings, help...) keep their dialogs here in an online board game.
+const LOCAL_UI=new Set(['log','space','obstacle','help','settings','reset-run','erase','quit-app','media-sources','touch-test','install-app','import','backup']);
+// remote: a tap forwarded from the other phone in an online board game (src/netBoard.js).
+async function action(name,target,remote=false){
+ if(netAction(name,target,remote))return;
+ if(LOCAL_UI.has(name))return localDialogs(()=>runAction(name,target));
+ return runAction(name,target);
+}
+async function runAction(name,target){
  if(routePanelAction(name,target))return;
  if(name==='exit-game')return exitGame();if(name==='pause-game')return store.session?.manualPause();
  if(name==='toggle-setting'){const key=target.dataset.id;store.profile.settings[key]=!store.profile.settings[key];saveProfile(store.profile);applyPreferences();if(key==='music'){store.profile.settings.music?startMusic():stopMusic();}return settings();}
@@ -487,7 +509,7 @@ async function action(name,target){
   case 'home':home();break;
   case 'quit-app':await quitApp();break;
   case 'setup':showView('setup',{selected:setupSelected,names:setupNames});break;
-  case 'choose-character':{const rosterScroll=[...document.querySelectorAll('.cs-grid')].map(el=>el.scrollTop||0);captureSetup();const length=document.getElementById('run-length').value,seed=document.getElementById('run-seed').value;const preferences=['board-theme','game-mode','team-mate-0','team-mate-1'].map(id=>[id,document.getElementById(id)?.value]);if(!differentCharacters(target.dataset.id,setupSelected[1-(+target.dataset.player)]))return toast('That character is already travelling with the other player.');setupSelected[+target.dataset.player]=target.dataset.id;showView('setup',{selected:setupSelected,names:setupNames});document.querySelectorAll('.cs-grid').forEach((el,i)=>el.scrollTop=rosterScroll[i]||0);document.getElementById('run-length').value=length;document.getElementById('run-seed').value=seed;for(const[id,value]of preferences)if(document.getElementById(id))document.getElementById(id).value=value;break;}
+  case 'choose-character':{const rosterScroll=[...document.querySelectorAll('.cs-grid')].map(el=>el.scrollTop||0);captureSetup();const length=document.getElementById('run-length').value,seed=document.getElementById('run-seed').value;const preferences=['board-theme','game-mode','team-mate-0','team-mate-1'].map(id=>[id,document.getElementById(id)?.value]);if(!differentCharacters(target.dataset.id,setupSelected[1-(+target.dataset.player)]))return toast('That character is already travelling with the other player.');setupSelected[+target.dataset.player]=target.dataset.id;if(store.netSetup)sendPick();showView('setup',{selected:setupSelected,names:setupNames});document.querySelectorAll('.cs-grid').forEach((el,i)=>el.scrollTop=rosterScroll[i]||0);document.getElementById('run-length').value=length;document.getElementById('run-seed').value=seed;for(const[id,value]of preferences)if(document.getElementById(id))document.getElementById(id).value=value;break;}
   case 'start-run':await startRun();break;
   case 'continue':case 'board':await continueRun();break;
   case 'roll':await roll();break;
@@ -503,6 +525,9 @@ async function action(name,target){
   case 'duel-propose':await proposeDuel(target.dataset.id);break;
   case 'online-mode':await setOnlineMode(true);break;
   case 'online-leave':leaveOnline();break;
+  case 'online-home':showCatalog('arcade');await setOnlineMode(true);break;
+  case 'online-board':await inviteBoard();break;
+  case 'online-rejoin':rejoinBoard();break;
   case 'arcade-random':{const g=randomArcadePick();if(!g){toast('No playable games in this list');break;}
    if(store.online)await proposeDuel(g.id);else if(g.pokemon)await arcadePokemon(g.pokemon);else await requestGame({id:g.id,origin:'arcade',solo:soloSettings(store.profile).on||undefined});break;}
   case 'solo-set':{const {key,value}=target.dataset;if(key==='on')store.online=false;setSolo(store.profile,key==='on'?{on:value==='1'}:key==='who'?{who:+value===1?1:0}:{level:value});saveProfile(store.profile);showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;}
@@ -514,7 +539,7 @@ async function action(name,target){
   case 'recenter':focusBoardAction(store.run);repaintCamera(document.querySelector('#map-root svg')?.getAttribute('viewBox'));saveRun();break;
   case 'camera':store.run.camera=store.run.camera==='overview'?'follow':'overview';store.run.pan=null;saveRun();updateBoard(true);break;
   case 'settings':await settings();break;
-  case 'pkmn':{if(store.busy||!store.run)return;const r=store.run;store.busy=true;try{await PK.openTeam(r,r.players[r.current]);}finally{store.busy=false;}if(store.run===r)updateBoard();break;}
+  case 'pkmn':{if(store.busy||!store.run)return;const r=store.run;store.busy=true;try{await netTask('team',[],()=>PK.openTeam(r,r.players[r.current]));}finally{store.busy=false;}if(store.run===r)updateBoard();break;}
   case 'log':await showDialog({title:'The story so far',html:(store.run?.history||[]).map(line=>`<div class="log-entry">${e(line)}</div>`).join('')||'<p>Your story starts with a new run.</p>'});break;
   case 'space':{if(store.busy)return;const n=store.run.board.nodes[target.dataset.id],p=store.run.players[store.run.current];const l=location(n.location);await showDialog({title:l?.name||SPACE_TYPES[n.type],source:l?.source||n.route?.source||n.source||'ShambConkins',html:l?locationArtHTML(l):'',body:l?.description||(n.route?`${n.route.reward} ${n.route.risk}`:null)||({'game':'Both players compete in a new minigame.','event':'Draw an encounter from the crossover deck.','item':'A supply cache. Find something useful.','casino':'Both players take part in a casino game.','task':'A coded Taskmaster minigame for both players.','trivia':'Both players answer a themed quiz in alternating turns, with steals after a miss. Themes rotate across your references.','bonus':'Gain 4 points.','penalty':'Lose 3 points, unless a shield or cloak blocks it.','gate':'Complete this realm. Gain 4 points and 8 XP.'}[n.type]||'The start of a new route.')});break;}
   case 'obstacle':{if(store.busy||!store.run)return;const run=store.run,o=run.board.obstacles?.find(o=>o.id===target.dataset.id);if(!o)return;const t=obstacleType(o),p=run.players[run.current];await showDialog({title:t.name,source:t.source,body:obstacleRequirement(run,p,o)+' Main-road travel stays available.',html:obstacleArtHTML(run,o),choices:[{label:'Back to the board',value:'ok',primary:true}]});break;}
@@ -525,11 +550,11 @@ async function action(name,target){
 }
 document.addEventListener('click',event=>{const choice=event.target.closest('[data-dialog-choice]');if(choice){resolveDialog(+choice.dataset.dialogChoice);return;}const target=event.target.closest('[data-action]');if(target&&!(target.closest?.('#map-root')&&performance.now()<(store.suppressMapClickUntil||0)))void action(target.dataset.action,target).catch(error=>{console.error('Action failed',target.dataset.action,error);store.busy=false;saveRun();toast('That action was interrupted. Your progress is saved.');});});
 document.addEventListener('change',event=>{if(event.target.id==='catalog-filter'){catalogFilter=event.target.value;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter});}});
-document.addEventListener('input',event=>{if(/^player-name-[01]$/.test(event.target.id)){setupNames[Number(event.target.id.slice(-1))]=event.target.value;store.setupNames=setupNames;return;}if(event.target.id==='catalog-search'){const focus=event.target.selectionStart;catalogQuery=event.target.value;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});const input=document.getElementById('catalog-search');input.focus();input.setSelectionRange(focus,focus);}});
+document.addEventListener('input',event=>{if(/^player-name-[01]$/.test(event.target.id)){setupNames[Number(event.target.id.slice(-1))]=event.target.value;store.setupNames=setupNames;if(store.netSetup)sendPick();return;}if(event.target.id==='catalog-search'){const focus=event.target.selectionStart;catalogQuery=event.target.value;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});const input=document.getElementById('catalog-search');input.focus();input.setSelectionRange(focus,focus);}});
 document.getElementById('dialog').addEventListener('cancel',event=>{event.preventDefault();const i=store.dialog?.choices.findIndex(c=>['cancel','no','stay'].includes(c.value));if(i>=0)resolveDialog(i);});
 window.addEventListener('pagehide',saveRun);window.addEventListener('orientationchange',()=>{if(store.view==='board'&&!store.session)setTimeout(()=>updateBoard(true),100);});
 installViewport(()=>{if(store.view==='board'&&!store.session&&!store.boardTour)repaintCamera();});installMedia();installBoardGestures();installPortraitCycle();installSetupFaceCycle();applyPreferences();saveProfile(store.profile);installAudioUnlock();setMusicZone('home');if(store.profile?.settings.music)startMusic();showView('home');requestAnimationFrame(bootDone);
-window.ShambConkins={version:VERSION,warpThemes:WARP_THEMES,pkmn:{run:PK,battle:pkBattle,speed:pkSpeed,auto:pkAuto,isOpen:gbIsOpen,messages:gbMessages,sprites:PKSP,portraitMoods,moodCast:()=>CHARACTERS.map(c=>c.id).filter(id=>portraitMoods(id).length)},announceLevel,updateBoard,enterWarpZone,exitWarpZone,startBoss,bossDone,buildWarpBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,nowPlaying,musicScene,unlockDialog,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
+window.ShambConkins={version:VERSION,net:{state:netState},warpThemes:WARP_THEMES,pkmn:{run:PK,battle:pkBattle,speed:pkSpeed,auto:pkAuto,isOpen:gbIsOpen,messages:gbMessages,sprites:PKSP,portraitMoods,moodCast:()=>CHARACTERS.map(c=>c.id).filter(id=>portraitMoods(id).length)},announceLevel,updateBoard,enterWarpZone,exitWarpZone,startBoss,bossDone,buildWarpBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,nowPlaying,musicScene,unlockDialog,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
 
 function installBoardGestures(){
  // One finger pans the map, two fingers pinch-zoom, the mouse wheel zooms. Rolling resets the view.

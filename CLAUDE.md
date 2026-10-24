@@ -29,7 +29,7 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   fuzz of every minigame). Must end `EXIT 0` / "N/N games ran clean".
 - Focused tests (Playwright, headless Chromium at /opt/pw-browsers/chromium-1194/chrome-linux/chrome,
   module at /node-tools/node_modules): `tests/bossgate.mjs`, `tests/warpflow.mjs`, `tests/warp.mjs`,
-  `tests/levels.mjs`, `tests/boss.mjs`, `tests/photohunt.mjs`, `tests/controls-audit.mjs`, `tests/music.mjs`, `tests/pwa.mjs` (after `build.mjs --pwa`), `tests/online.mjs` (needs `wrangler dev`, see cloudflare/README.md), `SHAMB_FILE=... node tests/games.mjs 5 3 <id-regex>`.
+  `tests/levels.mjs`, `tests/boss.mjs`, `tests/photohunt.mjs`, `tests/controls-audit.mjs`, `tests/music.mjs`, `tests/pwa.mjs` (after `build.mjs --pwa`), `tests/online.mjs` + `tests/online-board.mjs` (need `wrangler dev`, see cloudflare/README.md), `SHAMB_FILE=... node tests/games.mjs 5 3 <id-regex>`.
 - Release: bump `src/version.js` + `package.json`, `npm run release` → `releases/ShambConkins_vX.html`, add a CHANGELOG entry
   (+ optional `docs/releases/vX.md` notes); pushing the bump to main makes `release-build.yml` publish the GitHub Release.
   Owner's Windows one-click `BUILD-RELEASE.cmd` builds the checked-out branch: main → `ShambConkins_vX.html`, TESTver →
@@ -46,6 +46,10 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   Canvas fills the screen, Pause/Exit float top-right, a small ⤢ full-screen toggle sits bottom-centre, touch buttons are
   drawn floating on the canvas, and the game's HUD keeps clear of the top-right pills (`fullBleed` returns `{top}`).
 - Use seeded randomness (`s.random()`, `runRandom(run)`) for anything that must be fair or reproducible.
+- Online board game (`src/netBoard.js`): the host phone runs the run, the guest mirrors it. Board dialogs must go through
+  `showDialog`/`showRoutePanel` (add `player:i` when a dialog belongs to someone other than the current player,
+  `local:true` for this phone's own menus); a new board visual calls `fx('name',...)` (`src/netHooks.js`) and gets a
+  handler in `FX` in netBoard.js; interactive overlays other than dialogs (like the Pokémon Game Boy) run through `netTask`.
 - Character photos are looked up online at runtime (Wikipedia page in the character's `actor` field);
   offline they fall back to an emoji placeholder. Don't add copyrighted melodies (music uses public-domain tunes).
 - Git: develop on the session's designated branch, commit with clear messages, push; never force-push,

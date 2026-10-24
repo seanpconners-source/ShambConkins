@@ -491,9 +491,31 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   simultaneous challenge → seat 0's wins, both run `requestGame({solo:true,duel})`; launcher `duelSeed` (seed
   `${seed}-${game.id}-${round}`), live score chip `#duel-chip` (progress every 1.5 s), `settleSolo` awaits `duel.finish()`
   (waiting dialog, forfeit if the other leaves/quits) and shows both scores + Rematch. Only `duelOK` games (solo.js: kinds
-  levels/rounds/turns/game/alone) — CPU-kind games are "Not online yet". Next phases: board game across phones (host
-  runs the logic), then real head-to-head games. Tests: `tests/online.mjs` (two contexts vs `wrangler dev`), protocol
-  scratch test. Not yet tried on two real phones.
+  levels/rounds/turns/game/alone) — CPU-kind games are "Not online yet". Tests: `tests/online.mjs` (two contexts vs
+  `wrangler dev`). net.js splits messages over 5000 chars into parts (the room drops >16 KB), pings every 10 s and
+  reconnects a socket silent for 35 s.
+- **Online board game, phase 2 (Oct 24, branch `ccr-206256d0-lz2tp5`):** `src/netBoard.js` + seams in `src/netHooks.js`
+  (no imports). Room line "🎲 Board game together" (`online-board`) → invite → both open New Game (`store.netSetup`: own
+  panel + `remotePanelHTML` of the other pick, host has the options/start; versus/horror only) → host `startRun` sets
+  `run.online={room,host}` and `hostBegin`. HOST runs app.js unchanged and keeps the save; GUEST mirrors (`store.run` =
+  copy, own save untouched, `saveRun` skips the run). Host sends `start` (full run), `state` (run minus boards; `board`/
+  `mainBoard` only when changed) on updateBoard/saveRun, `fx` (levelCard/effects/warpFx/roulette/sound/toast/music/
+  recruit... each calls `fx()`; guest `FX` table), `dlg`/`route` (ui `showDialog`→`netDialog`, routePanel `showRoutePanel`
+  →`netRoute`; owner = `opts.player` ?? `run.current`: the owner's phone answers, the other shows it read-only via
+  `openDialog({watch})`/`openRoutePanel({watch})`), `task` (Pokémon battles/Center/team via `netTask`: run on the
+  guest's phone, the guest's run comes back and `adopt` syncs it in place), `game` (board minigames: launcher online
+  branch after the roulette → `hostGame` → duel.js `boardDuel`, both phones play the 1P version, `settleSolo` board path
+  reports {score,won,recruits}; host `settleGame` with both scores, co-op for bosses/horde = either won). Only `duelOK`
+  games are dealt (`setPoolFilter` in gameRegistry; trivia/casino spaces deal from everything). Guest taps on
+  roll/reroll/item/bag/pkmn go to the host as `act`; the host's own buttons say "AMBER'S TURN" (`theirTurn` in ui.js,
+  `store.netBoard.live`). Recruits for the guest's player land in the guest's profile through profile.js `recruit` → fx.
+  Robustness: host messages are numbered (`n`, gap → guest `hello` → fresh `start`), 4 s beats, unanswered questions
+  re-sent after 8 s, answers cached by id; a dropped guest → host "Keep waiting / Play it on this phone" (`takeOver` =
+  pass and play until they say hello again); guest Home = "Leave" (`bye`), room line then offers "Rejoin". Host Home =
+  `pause` (guest waits), Continue = `start` again; a restarted host rejoins `run.online.room` itself. Same VERSION needed.
+  Tests: `tests/online-board.mjs` (TURNS, PKMN=1 wild battles, DROP=n drops the guest mid-decision, DEBUG=1 traces;
+  bots answer only what their phone may answer). Not yet tried on two real phones. Next: turn-based games online
+  (move relay through the CPU hooks), then real-time ones.
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 

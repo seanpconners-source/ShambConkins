@@ -1,12 +1,15 @@
 const {store}=require("src/state.js");
 const {hash}=require("src/utils.js");
+const {fx}=require("src/netHooks.js");
 const {pairPace}=require("src/pairs.js");
 const music=require("src/music.js");
 const pk=require("src/pkmn/pkmnAudio.js");
 let context=null,zone='home',playing=false;
 function audioContext(){if(!store.profile?.settings.sound&&!store.profile?.settings.music)return null;try{context ||= new (window.AudioContext||window.webkitAudioContext)();if(context.state==='suspended')context.resume();return context;}catch{return null;}}
 function tone(frequency=440,duration=.07,volume=.035,type='sine'){const a=audioContext();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=frequency;g.gain.setValueAtTime(volume,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+duration);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+duration);}
-function sound(name='tap'){if(!store.profile?.settings.sound)return;const notes={tap:[330],tick:[440],pickup:[784,1047],handoff:[392,523],start:[659,988],win:[523,659,784],lose:[240,190],unlock:[392,523,659,784],roll:[150,210,280],shot:[90],card:[220,330],rare:[180,360,540,720]};(notes[name]||notes.tap).forEach((n,i)=>setTimeout(()=>tone(n,.1,.028,name==='shot'?'sawtooth':'sine'),i*65));}
+// lastSound: when each sound last played here, so an online board game doesn't play the other phone's copy twice.
+const lastSound={};
+function sound(name='tap'){fx('sound',name);lastSound[name]=performance.now();if(!store.profile?.settings.sound)return;const notes={tap:[330],tick:[440],pickup:[784,1047],handoff:[392,523],start:[659,988],win:[523,659,784],lose:[240,190],unlock:[392,523,659,784],roll:[150,210,280],shot:[90],card:[220,330],rare:[180,360,540,720]};(notes[name]||notes.tap).forEach((n,i)=>setTimeout(()=>tone(n,.1,.028,name==='shot'?'sawtooth':'sine'),i*65));}
 function vibrate(ms=12){try{navigator.vibrate?.(store.profile?.settings.reducedMotion?0:ms);}catch{}}
 // Small "now playing" chip when a track starts (board only, never during a minigame).
 let chip=null,chipTimer=0;
@@ -28,7 +31,7 @@ let sceneProvider=null;
 function setMusicScene(fn){sceneProvider=fn;}
 // realm: mind | body | spirit | horror | upside-down | warp (warp-<board id>) | home
 // The Pokémon warp zone plays its own chiptune route theme instead of the generative score.
-function setMusicZone(realm){if(realm==='warp'&&store.run?.warp?.id)realm='warp-'+store.run.warp.id;if(zone===realm)return;const was=zone;zone=realm;
+function setMusicZone(realm){fx('setMusicZone',realm);if(realm==='warp'&&store.run?.warp?.id)realm='warp-'+store.run.warp.id;if(zone===realm)return;const was=zone;zone=realm;
  if(realm==='warp-pokemon'){if(playing){music.stopSequencer();pk.playSong('route');}return;}
  if(was==='warp-pokemon'){pk.stopSong();music.setSequencerZone(realm);if(playing)music.startSequencer();return;}
  music.setSequencerZone(realm);}
@@ -67,4 +70,5 @@ function glassSmash(volume=.5){
  const o=a.createOscillator(),og=a.createGain();o.type='sine';o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);og.gain.setValueAtTime(.7,t);og.gain.exponentialRampToValueAtTime(.001,t+.16);o.connect(og);og.connect(out);o.start(t);o.stop(t+.18);
  for(let i=0;i<9;i++){const at=t+.01+Math.random()*.32,s=a.createOscillator(),g=a.createGain();s.type=i%2?'triangle':'sine';s.frequency.value=2200+Math.random()*4800;g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(.16+Math.random()*.12,at+.004);g.gain.exponentialRampToValueAtTime(.0001,at+.07+Math.random()*.12);s.connect(g);g.connect(out);s.start(at);s.stop(at+.22);}
 }
-Object.assign(exports,{installAudioUnlock,glassSmash,audioContext,tone,sound,vibrate,setMusicZone,setMusicScene,playFanfare,startMusic,stopMusic,pickupSound,playMetal,stopMetal,holdMusic,releaseMusic,playQuartet,nowPlaying});
+const soundRecent=(name,ms=700)=>performance.now()-(lastSound[name]||-1e9)<ms;
+Object.assign(exports,{installAudioUnlock,glassSmash,audioContext,tone,sound,soundRecent,vibrate,setMusicZone,setMusicScene,playFanfare,startMusic,stopMusic,pickupSound,playMetal,stopMetal,holdMusic,releaseMusic,playQuartet,nowPlaying});

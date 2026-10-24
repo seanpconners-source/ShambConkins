@@ -2,12 +2,13 @@ const {store}=require("src/state.js");
 const {portraitHTML, itemArtHTML}=require("src/assets.js");
 const {findItem}=require("src/items.js");
 const {escapeHTML, wait}=require("src/utils.js");
+const {fx}=require("src/netHooks.js");
 const dots={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
 let effectToken=0,effectTimer=0;
 function layer(){let root=document.getElementById('fx-layer');if(!root){root=document.createElement('div');root.id='fx-layer';root.className='fx-layer';document.body.appendChild(root);}return root;}
 function clearEffects(){effectToken++;clearTimeout(effectTimer);const root=document.getElementById('fx-layer');if(root){root.innerHTML='';root.className='fx-layer';}}
 function diceFace(value){return `<span class="die-face" role="img" aria-label="Die ${value}">${Array.from({length:9},(_,i)=>`<i class="pip ${dots[value]?.includes(i)?'on':''}"></i>`).join('')}</span>`;}
-async function animateDice({faces,base,steps,name,character,note='',valid=()=>true}){
+async function animateDice({faces,base,steps,name,character,note='',valid=()=>true}){fx('animateDice',{faces,base,steps,name,character,note});
  clearEffects();const token=effectToken,root=layer(),reduced=store.profile.settings.reducedMotion||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
  root.className='fx-layer dice-stage';root.innerHTML=`<article class="roll-card"><div class="roll-player">${portraitHTML(character,'portrait mini')}<b>${escapeHTML(name)} rolls</b></div><div class="rolling-dice">${faces.map((face,i)=>`<div class="dice-cube tumbling" id="roll-cube-${i}" style="--die-delay:${i*-.11}s">${diceFace(face)}</div>`).join('')}</div><div class="roll-outcome" id="roll-outcome" aria-live="polite">Rolling…</div></article>`;
  const die=document.getElementById('die-value');die?.classList.add('rolling');
@@ -29,7 +30,7 @@ function itemTransferDrops(before,run,index){
  for(const drop of run.itemAcquisitions||[])if(drop.serial>(before.acquisitionSerial||0)&&drop.player===index&&drop.consumed)gained.push({id:drop.id,consumed:true});
  return gained;
 }
-function animateItemTransfers(before){
+function animateItemTransfers(before){fx('animateItemTransfers',before);
  if(!before||!store.run||store.profile.settings.reducedMotion)return;
  for(let i=0;i<store.run.players.length;i++)itemTransferDrops(before,store.run,i).slice(0,4).forEach((drop,offset)=>{
   const item=findItem(drop.id);if(!item)return;const node=document.createElement('div');node.className='flying-item';node.innerHTML=itemArtHTML(item);document.body.appendChild(node);
@@ -52,7 +53,7 @@ function effectDetails(before,run=store.run){const details=[];if(!before)return 
  const xp=(store.profile?.xp||0)-before.xp;if(xp)details.push({name:'Collection',tags:[{text:`+${xp} XP saved`,tone:'good'}]});return details;
 }
 function effectHTML(before,{icon='✦',item=null}={}){const details=effectDetails(before);return `<div class="outcome-fx"><div class="effect-emblem">${item?itemArtHTML(item):escapeHTML(icon)}</div>${details.map(d=>`<div class="effect-player">${d.character?portraitHTML(d.character,'portrait tiny'):''}<div><b>${escapeHTML(d.name)}</b><div class="effect-tags">${d.tags.map(t=>`<span class="effect-tag ${t.tone}">${escapeHTML(t.text)}</span>`).join('')}</div></div></div>`).join('')}</div>`;}
-function boardFeedback(before,{title='Something changed',icon='✦',item=null}={}){if(store.view!=='board')return;clearEffects();const root=layer();root.className='fx-layer brief-stage';root.innerHTML=`<article class="board-feedback"><strong>${escapeHTML(title)}</strong>${effectHTML(before,{icon,item})}</article>`;const token=effectToken;effectTimer=setTimeout(()=>{if(token===effectToken)clearEffects();},store.profile.settings.reducedMotion?500:1150);}
-function turnFeedback(player){clearEffects();const root=layer();root.className='fx-layer turn-stage';root.innerHTML=`<div class="turn-banner">${portraitHTML(player.character,'portrait mini')}<span>${escapeHTML(player.name)}’s turn</span></div>`;const token=effectToken;effectTimer=setTimeout(()=>{if(token===effectToken)clearEffects();},store.profile.settings.reducedMotion?300:1000);}
+function boardFeedback(before,{title='Something changed',icon='✦',item=null}={}){fx('boardFeedback',before,{title,icon,item});if(store.view!=='board')return;clearEffects();const root=layer();root.className='fx-layer brief-stage';root.innerHTML=`<article class="board-feedback"><strong>${escapeHTML(title)}</strong>${effectHTML(before,{icon,item})}</article>`;const token=effectToken;effectTimer=setTimeout(()=>{if(token===effectToken)clearEffects();},store.profile.settings.reducedMotion?500:1150);}
+function turnFeedback(player){fx('turnFeedback',player);clearEffects();const root=layer();root.className='fx-layer turn-stage';root.innerHTML=`<div class="turn-banner">${portraitHTML(player.character,'portrait mini')}<span>${escapeHTML(player.name)}’s turn</span></div>`;const token=effectToken;effectTimer=setTimeout(()=>{if(token===effectToken)clearEffects();},store.profile.settings.reducedMotion?300:1000);}
 
 Object.assign(exports,{clearEffects,diceFace,animateDice,effectSnapshot,itemTransferDrops,animateItemTransfers,effectDetails,effectHTML,boardFeedback,turnFeedback});

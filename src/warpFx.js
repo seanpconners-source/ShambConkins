@@ -5,6 +5,7 @@ const {store}=require("src/state.js");
 const {portraitHTML}=require("src/assets.js");
 const {tone}=require("src/audio.js");
 const {escapeHTML:e}=require("src/utils.js");
+const {fx:netFx}=require("src/netHooks.js");
 let filterNode=null;
 function ensureFilter(){
  if(filterNode&&filterNode.isConnected)return filterNode;
@@ -23,7 +24,7 @@ function wobble(app,from,to,ms,reduced){
 }
 function sweep(up){for(let i=0;i<7;i++)setTimeout(()=>tone(up?220*2**(i/4):1100*2**(-i/4),.16,.04,'triangle'),i*95);}
 // apply(): swap the board while the screen is covered. title/subtitle appear on landing.
-async function warpTransition(apply,{title='',subtitle='',icon='🌀'}={}){
+async function warpTransition(apply,{title='',subtitle='',icon='🌀'}={}){netFx('warpTransition',{title,subtitle,icon});
  const run=store.run,reduced=store.profile?.settings.reducedMotion,app=document.getElementById('app');
  ensureFilter();
  const fx=document.createElement('div');fx.className='warp-fx';

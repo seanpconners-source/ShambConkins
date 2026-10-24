@@ -156,9 +156,14 @@ function selectTriviaGame(run,profile,random=Math.random){
  const game=gameById(bag.pop());run.triviaThemeBag=bag;return game;
 }
 function triviaIsDue(run){const history=run.gameHistory||[],last=history.findLastIndex(g=>g.family==='trivia');return last<0?history.length>=2:history.length-last-1>=3;}
-function selectBoardGame(run,profile,filter='all',random=Math.random){return selectGame(run,profile,filter==='all'&&triviaIsDue(run)?'trivia':filter,random);}
+// Online board game (src/netBoard.js): only games both phones can play at once are dealt; a category with none of
+// them (trivia, casino) deals from everything instead.
+let poolFilter=null;
+function setPoolFilter(f){poolFilter=typeof f==='function'?f:null;}
+function selectBoardGame(run,profile,filter='all',random=Math.random){return selectGame(run,profile,filter==='all'&&!poolFilter&&triviaIsDue(run)?'trivia':filter,random);}
 function selectGame(run, profile, filter = 'all', random = Math.random) {
- const pool=RANDOM_GAMES.filter(g=>gameUnlocked(g,profile)&&(filter==='all'||g.category===filter||(filter==='taskmaster'&&g.source==='Taskmaster')));
+ const pool=RANDOM_GAMES.filter(g=>gameUnlocked(g,profile)&&(filter==='all'||g.category===filter||(filter==='taskmaster'&&g.source==='Taskmaster'))&&(!poolFilter||poolFilter(g)));
+ if(!pool.length&&poolFilter&&filter!=='all')return selectGame(run,profile,'all',random);
  if(!pool.length)throw new Error('No games in this category');
  const families=[...new Set(pool.map(g=>g.family))]; const key=filter;
  run.familyBags ||= {}; let bag=run.familyBags[key]||[];
@@ -266,4 +271,4 @@ const REMAKE_META={'office-hockey-shootout':{noBleed:true},'warriors-brawl':{tit
 for(const g of [...GAMES,...EVENT_GAMES])if(REMAKE_META[g.id])Object.assign(g,REMAKE_META[g.id]);
 for(const g of [...GAMES,...EVENT_GAMES]){const r=REMAKES[g.engine];if(r){g.duration=r[0];g.rules=r[1];}if(g.id==='alien-sonar-grid')g.title='Alien · Motion Tracker';if(g.id==='wopr-grid')Object.assign(g,{title:'WarGames · Vanishing Tic-Tac-Toe',source:'WarGames',icon:'❌'});}
 
-Object.assign(exports,{GAMES,EVENT_GAMES,gameById,gameUnlocked,bossBeaten,RANDOM_GAMES,PHONE_TASK,TRIVIA_THEME_IDS,selectTriviaGame,triviaIsDue,selectBoardGame,selectGame,resolveLegacyGame});
+Object.assign(exports,{GAMES,EVENT_GAMES,gameById,gameUnlocked,bossBeaten,RANDOM_GAMES,PHONE_TASK,TRIVIA_THEME_IDS,selectTriviaGame,triviaIsDue,selectBoardGame,selectGame,setPoolFilter,resolveLegacyGame});

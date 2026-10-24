@@ -15,7 +15,7 @@ const catalog=[{id:'sean',name:'Sean',source:'ShambConkins'},{id:'amber',name:'A
 const charMap=new Map(catalog.map(c=>[c.id,c]));
 const chars={CHARACTERS:catalog,character:id=>charMap.get(id),characterIdentity:id=>id};
 let saved=null;
-const profile=load('src/profile.js',{
+const profile=load('src/profile.js',{'src/netHooks.js':{fx(){}},
  'src/photoPairs.js':{normalizePhotoPair:()=>null,photoPairLibrary:()=>[],currentPhotoPair:()=>{},photoProfilePayload:p=>p},
  'src/contentPolicy.js':{ACTIVE_CATALOG:{characters:catalog,items:[]}},
  'src/persistence.js':{PROFILE_KEY:'test-profile',readJSON:()=>saved,writeJSON:(_key,p)=>{saved=JSON.parse(JSON.stringify(p));},

@@ -2,6 +2,7 @@ const {normalizePhotoPair, photoPairLibrary, currentPhotoPair, photoProfilePaylo
 const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
 const {PROFILE_KEY, readJSON, writeJSON, writeDurableJSON, inspectDurableJSON}=require("src/persistence.js");
 const {characterIdentity}=require("src/characters.js");
+const {fx}=require("src/netHooks.js");
 const {LAB_TEAM}=require("src/data/savoryLab.js");
 const {isMovieBond, missingMovieBonds}=require("src/data/movieBonds.js");
 const {normalizeSoloSettings, normalizeSoloBest}=require("src/solo.js");
@@ -133,7 +134,7 @@ function canRecruit(profile,id,owner=null,reason='encounter') {
 function recruit(profile,id,owner=null,reason='encounter') {
  if(!canRecruit(profile,id,owner,reason))return false;
  (owner?(profile.rosters[owner] ||= []):profile.shared).push(id);
- (profile.earnedUnlocks||={})[id]=reason;profile.xp+=6;saveProfile(profile);return true;
+ (profile.earnedUnlocks||={})[id]=reason;profile.xp+=6;saveProfile(profile);fx('recruit',id,owner,reason);return true;
 }
 // Gameplay grants return the actual ID for portraits, messages and saved results.
 // Exact grants above remain available for migrations and prerequisite fixtures.

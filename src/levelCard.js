@@ -4,6 +4,7 @@ const {store}=require("src/state.js");
 const {glassSmash,tone,playMetal,stopMetal,playQuartet,holdMusic,releaseMusic}=require("src/audio.js");
 const {levelInfo}=require("src/levels.js");
 const {escapeHTML:e}=require("src/utils.js");
+const {fx}=require("src/netHooks.js");
 
 const STINGS={
  mind:[[523,.12,'triangle'],[659,.12,'triangle'],[784,.12,'triangle'],[1047,.3,'triangle']],
@@ -20,7 +21,7 @@ let open=null;
 function dismissLevelCard(){open?.();}
 // who: the player's name; first: nobody has been here yet; quick: a shorter card
 // for the second player arriving at a level that has already been announced.
-function showLevelCard(realm,{who='',first=true,drinks=true}={}){
+function showLevelCard(realm,{who='',first=true,drinks=true}={}){fx('showLevelCard',realm,{who,first,drinks});
  dismissLevelCard();
  const l=levelInfo(realm),host=document.body,reduced=store.profile?.settings.reducedMotion;
  return new Promise(resolve=>{
@@ -40,7 +41,7 @@ function showLevelCard(realm,{who='',first=true,drinks=true}={}){
 Object.assign(exports,{showLevelCard,dismissLevelCard});
 
 // "INCOMING BOSS": red siren card before a level boss fight.
-function showBossCard(boss){
+function showBossCard(boss){fx('showBossCard',boss?.id);
  const reduced=store.profile?.settings.reducedMotion;
  return new Promise(resolve=>{
   const node=document.createElement('div');node.className=`level-card boss-card ${reduced?'still':''}`;node.style.setProperty('--lv','#d01c2c');
@@ -52,18 +53,18 @@ function showBossCard(boss){
  });
 }
 // Running tally while a player is dragged to the boss.
-function showDragBanner(name,total){
+function showDragBanner(name,total){fx('showDragBanner',name,total);
  const node=document.createElement('div');node.className='drag-banner';document.body.append(node);
  const update=(n,lost)=>{node.innerHTML=`<b>${e(name)} is dragged to the boss</b><span>${n} / ${total} spaces</span><strong>−${(Math.round(lost*10)/10).toFixed(1)}</strong>`;node.classList.remove('bump');void node.offsetWidth;node.classList.add('bump');};
  update(0,0);
- return {update,close(){node.classList.add('leaving');setTimeout(()=>node.remove(),300);}};
+ return {update(n,lost){fx('dragBanner',n,lost);update(n,lost);},close(){fx('dragBanner',-1);node.classList.add('leaving');setTimeout(()=>node.remove(),300);}};
 }
 Object.assign(exports,{showBossCard,showDragBanner});
 
 // Game-start intro: a very classy card with a very unclassy toast, after the
 // Chardee MacDennis opening. First line, a beat, then the second line; tap to
 // reveal early, tap again (or wait) to continue. Resolves when it closes.
-function showGentlemenCard(){
+function showGentlemenCard(){fx('showGentlemenCard');
  const reduced=store.profile?.settings.reducedMotion;
  return new Promise(resolve=>{
   const node=document.createElement('div');
@@ -83,7 +84,7 @@ Object.assign(exports,{showGentlemenCard});
 
 // Between the Gentlemen card and Level I: a hard cut to bottles and glasses smashing
 // and "SMASH 'EM UP!!", then the metal title card. Short and jarring on purpose.
-function showSmashCard(){
+function showSmashCard(){fx('showSmashCard');
  const reduced=store.profile?.settings.reducedMotion,total=reduced?700:1500;
  return new Promise(resolve=>{
   const node=document.createElement('div');node.className=`smash-card ${reduced?'still':''}`;node.setAttribute('role','dialog');node.setAttribute('aria-label',"Smash 'em up");
@@ -123,7 +124,7 @@ const LANDING={game:['MINIGAME','🎮','#3f8cff','Everybody plays'],minigame:['M
  trivia:['TRIVIA','❓','#24b0d8','Answer fast'],task:['TASKMASTER','📋','#ff3d6e','A timed task'],casino:['CASINO','♠️','#13a27c','Place your bets'],dice:['YAHTZEE','🎲','#5867ff','Full game of dice'],
  shop:['SHOP','🛒','#ffaf2e','Quark is open'],event:['CHANCE CARD','🃏','#ff9a3d','Draw a card'],trainer:['BATTLE','⚔️','#e5352b','Trainer battle'],location:['LANDMARK','🏛️','#19b9b4','Visit'],
  item:['ITEM','🎁','#9d63ff','Supply cache'],bonus:['BONUS','✨','#27c776','Good fortune'],penalty:['BAD LUCK','⚡','#ff4f64','Uh oh']};
-function showLandingBanner(type,sub=''){
+function showLandingBanner(type,sub=''){fx('showLandingBanner',type,sub);
  const spec=LANDING[type];if(!spec||!store.profile)return Promise.resolve(false);
  const [word,icon,color,hint]=spec,reduced=store.profile.settings.reducedMotion;
  return new Promise(resolve=>{

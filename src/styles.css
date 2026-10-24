@@ -919,3 +919,14 @@ body.gb-open{overflow:hidden}
 .net-who{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:4px 0 8px;font-weight:700}.net-who label{display:flex;align-items:center;gap:6px}.net-note{font-size:13px;opacity:.85}
 .net-room b{color:#ffe2a6;letter-spacing:.03em}.net-room .net-peer{font-size:12px;opacity:.9}
 #duel-chip{position:fixed;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));z-index:2147481000;padding:6px 12px;border-radius:999px;background:#160f20e6;border:1px solid #c99a3d77;color:#ffe2a6;font:800 13px/1.2 system-ui,sans-serif;pointer-events:none;box-shadow:0 4px 14px #0009}
+/* Online board game (src/netBoard.js): read-only dialogs while the other phone decides, the room's board button,
+   the title-screen Play online button and the other phone's panel on the shared New Game screen. */
+.dialog-watch{margin:10px 0 2px;padding:8px 12px;border-radius:12px;background:#ffffff12;border:1px dashed #c99a3d88;color:#ffe2a6;font-weight:700;text-align:center;animation:watchPulse 1.6s ease-in-out infinite}
+@keyframes watchPulse{50%{opacity:.6}}
+.reduced-motion .dialog-watch{animation:none}
+.net-room .net-board{font-weight:800}
+.title-screen .home-stack button.ts-online{min-height:46px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;column-gap:9px;row-gap:2px;font-size:13px;color:#d9f1ff}
+.title-screen .home-stack button.ts-online small{flex-basis:100%;font:600 11px/1.1 Arial,sans-serif;letter-spacing:.02em;color:#cdbfe6}
+.cs-remote .cs-remote-name{display:block;font-size:15px;color:#ffe2a6}
+.cs-remote .cs-remote-note{margin:6px 0 0;text-align:center;font-size:12px;opacity:.85}
+.net-setup .setup-controls select:disabled,.net-setup .setup-controls input:disabled{opacity:.6}
