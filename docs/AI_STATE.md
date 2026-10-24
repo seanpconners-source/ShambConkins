@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.64.0 (Oct 23: online duels phase 1; v0.63.1 loading screen, full-screen app, Worker serves the app files; v0.63.0 PWA; earlier: pinball tables, iPad fix, backup/restore; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
+Version 0.65.0 (Oct 24: online board game on two phones; v0.64.0 online duels phase 1; v0.63.1 loading screen, full-screen app, Worker serves the app files; v0.63.0 PWA; earlier: pinball tables, iPad fix, backup/restore; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
 pushing a version bump to main runs `.github/workflows/release-build.yml`, which builds `releases/ShambConkins_vX.html` and
 creates release vX with notes from `docs/releases/vX.md` (first line `# ` = title) or the CHANGELOG section; skips if it exists.
 Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).

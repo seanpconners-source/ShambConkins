@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.65.0
+
+**Board game on two phones.** Title screen → **🌐 PLAY ONLINE** → both phones type the same room name → **🎲 Board game together**. Each phone picks its own character on a shared New Game screen; the inviting phone picks the board and starts. That phone runs and saves the game, the other shows the same board live. Each player rolls, picks roads, uses items, answers their own cards and plays their own Pokémon battles on their own phone, and watches the other's turn as it happens. Board minigames are played by both phones at once (each plays the 1-player version from the same start; the higher score wins the board result), so only games that work online are dealt for now. Unlocks go to the winner's own phone. A phone that drops is waited for (or its turn can be played on the other phone); leaving hands that player's turns to the host until they rejoin from the room. Both phones need the same version.
+
 ## v0.64.0
 
 **Online duels (two phones).** The Arcade has a new **🌐 Online** mode. Type a room name; the other phone types the same name and joins as player 2. Either player taps **Challenge** on a game, the other accepts, and both phones play that game at the same time from the same start (same level, same seed). Each sees the other's live score in the corner, the result waits for both, shows both scores and offers a rematch. The winner's phone gets the usual unlock roll. Online so far: the ~55 games whose 1P mode ends in a score (the pinball tables, Broforce, Super Mario Bros., Sonic, Hole.it, Bricks Breaker Quest, DOOM, Photo Hunt, the arcade remakes and more); games played against a CPU (trivia, chess, Pong...) say "Not online yet". Needs the internet and the website's room service (one-time GitHub setup, see cloudflare/README.md).
