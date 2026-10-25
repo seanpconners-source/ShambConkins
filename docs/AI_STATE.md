@@ -690,9 +690,25 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   Dodgeball `underdog-dodgeball` (`dodgeballOnline` in newGames.js; court turned per phone; victim's phone calls {hi}/{cg}/{ms},
   picker {pk}, thrower {th} with state + round clock; my throw freezes at their player until their call (600 ms timeout); hearts
   by -1 events; roundOutcome per round, the 95 s total kept by adding each round's length from the two outs). Test bots on all.
-  All 4 pass online-native with and without LAG=80-150 at 390x780 + 1100x700; 2P fuzz + 1P CPU clean. Left: South Park
-  dodgeball, Space Invaders versus, Tarantino ×6, South Park ×2, Bond ×3, Hyrule ×2, penalties, Raiders, Fight Night, Sewer
-  Clash, kart ×2, Space Swarm co-op (`node -e` over solo.js: 'cpu' ids minus NET_NATIVE).
+  All 4 pass online-native with and without LAG=80-150 at 390x780 + 1100x700; 2P fuzz + 1P CPU clean.
+  Batch 16 (Oct 25, branch `ccr-184b3db2-2nbkb6`, fast-forwarded from `ccr-6d52b7c8-fuaau5`), the six Tarantino games
+  (tarantinoKit `halfPointers` online: `chooseOwner:()=>me`; keys remapped to me). Standoff (reaction race like Quick Draw:
+  rounds start with nf.start, same seeded fakes/T; one report per round {o:[round,kind,v]}: f = flinch at v s into the
+  stare, d = drew v ms after DRAW!, b = triangle second tap ms (-1 none), n = no draw, w = "my clock passed your moment
+  without acting"; `decide()` on both phones; the triangle winner's phone runs TAP AGAIN locally after every draw).
+  Twist (Shred Hero layout: own lanes 68% left, other 32% on its song clock {clk,score,combo,groove}, hits {e:{n,h}}, finale
+  waits for the other's final). Adrenaline (own patient 64% left, `TW[i]` per patient; rounds via nf.start; needle {r,u,v,d}
+  in patient widths, plunge {pl:[round,res,u,v]}, round wraps when both are in). Bounty (own street 64%, fixed 2x4 grid
+  online so the seeded pattern matches; hits {h:[poster,hp,pts]}; end waits for the final). Crazy 88 (fixed 430x780 hall
+  drawn scaled (`V`), no slow motion, separate seeded streams for waves / O-Ren's guard / her summons (summon ids from 1e5);
+  each phone judges its own swipes and Bride: {k:[id,t,pts]} (both cut it → the later phone takes its points back),
+  {d:[id]} chip damage, {bh:[interrupt]}, {hu:[id]}; a fighter reaching the other Bride waits for her phone's call;
+  snapshots carry score/stamina/trail; end waits for the final). Stunt Chase (fixed road from a 480x640 reference, view
+  shows more/less; own car only, the other from {r,t,y,x,v,...} moved on by v·(t since); pickups/barriers {og}; the
+  RUNNER's phone calls ram/escape {end:[round,kind,t]} and both score from it; bot = CPU brain on your car via `autodrive`).
+  All 6 pass online-native (LAG=80-150 run pending); 2P fuzz + 1P CPU clean. Left: South Park dodgeball, Space Invaders versus,
+  South Park ×2, Bond ×3, Hyrule ×2, penalties, Raiders, Fight Night, Sewer Clash, kart ×2, Space Swarm co-op
+  (`node -e` over solo.js: 'cpu' ids minus NET_NATIVE).
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).
