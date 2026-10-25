@@ -45,7 +45,8 @@ for(const id of GAMES){
  const [ja,jb]=same.map(x=>JSON.parse(x));
  check(ja.seed===jb.seed&&ja.me===0&&jb.me===1,`${id}: same seed, Sean plays seat 1 and Amber seat 2`);
  const t0=Date.now();let ra='',rb='',shot=false,counts={};
- while(Date.now()-t0<LIMIT*1000){
+ const limit=LIMIT*(id==='paddys-beer-pong'&&!process.env.LIMIT_S?1.75:1); // a full Beer Pong match runs to last call, ~4-5 min headless
+ while(Date.now()-t0<limit*1000){
   const [a,b]=[await step(A),await step(B)];for(const x of [a,b]){const k=x.split(':')[0];counts[k]=(counts[k]||0)+1;}
   if(!shot&&a.startsWith('play')&&b.startsWith('play')){shot=true;await A.p.screenshot({path:screenshotPath(`onn-${id}-sean.png`)});await B.p.screenshot({path:screenshotPath(`onn-${id}-amber.png`)});}
   if(a.startsWith('result'))ra=a;if(b.startsWith('result'))rb=b;if(ra&&rb)break;
