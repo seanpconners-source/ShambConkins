@@ -628,6 +628,21 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   in reaction games; prefer "each phone is the authority for its own player and for what hits it" (both run the shared
   world from the seed, send own position/inputs + events like hit/death), and only use a host for contested shared physics
   (sumo pushing, a shared ball both can touch at once), then with own-avatar prediction. Next: apply per game a batch at a time.
+  Batch 12 (Oct 25, branch `ccr-0da72c03-ws0idl`, fast-forwarded from `ccr-70ac8fd3-pxs9bs`), arena games on that rule:
+  `netField` gains `start(tag)` (sync, then seat 1 times 3 pings and both start within ~half the jitter; events are stamped
+  with time since it). `directionGestures` gives every touch/key to `s.online.me`. Each game: fixed world on both phones,
+  turned per phone (matrix `M`/`VM`: you start at the bottom, sideways phones turn 90°), online HUD below the duel chip.
+  TRON `derezzed-cycles` (46x84 grid): own cycle only, every cell stamped {s:[round,x,y,ms..]} ~30/s; a cell they entered
+  first (or within TIE .05 s) is a wall, one learned late derezzes you where you entered it (`retro`); {dead} provisional,
+  {out} final once their stamps pass your crash time (or they're out); both settle from the two outs. Slither
+  `snake-v-snake` (420x740): own snake + own death; other body rebuilt from 20/s heads; 70 pool orbs placed by seed+slot+
+  generation (eating moves the slot on, so phones converge) + own drops; die event carries the killer (+50) and the body
+  orbs; end waits for both {fin:{p}}. Combat `metal-gear-tank-duel` (upright 12x20 maze): own tank, shells flown on both
+  phones from {fire}, each phone judges only hits on its own tank ({hit:[shooter,id,n]}); score = the other phone's hits
+  taken, end from both {fin:{h}}. Sword `kill-bill-duel`: player 2's hall mirrored; the victim's phone resolves the other's
+  thrust ({th} starts it there) as parry {pr} or kill {die}; {sp} respawn, {esc} escape, {tu} time-up progress (both settle).
+  Bots: `s.debug.bot` = the CPU brain on your own side (TRON at Easy so rounds end). `tests/online-native.mjs` LAG=80-150 delays
+  every message; all 4 pass with and without lag, Pong/Block Battle/drag race still pass; 2P fuzz + 1P CPU clean.
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).

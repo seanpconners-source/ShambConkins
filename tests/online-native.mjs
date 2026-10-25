@@ -3,10 +3,12 @@
 // (its own answers, moves and hand-off/next buttons), so the game only finishes if every move reaches the other phone.
 // Checks: both phones deal the same game (same first question / board), it reaches the result on both, the two result
 // cards agree (mine–theirs mirrored), no page errors. GAMES=id,id (default the batch-1 games); screenshots onn-*.
+// LAG=80-150 holds every message back 80..150 ms (in order, with jitter) on both phones.
 import {launchBrowser,root,screenshotPath} from './lib.mjs';
 import path from 'node:path';import {pathToFileURL} from 'node:url';
 const HOST=process.env.SC_NET_HOST||'ws://127.0.0.1:8787',LIMIT=+process.env.LIMIT_S||240;
-const GAMES=(process.env.GAMES||'trivia-mixed,trivia-lightning,trivia-wager,trivia-survival,paddys-beer-pong,shamb-uno,ten-forward-chess,four-lights,strategema-grid,full-shambyahtzee,cheaters-yahtzee,blackjack,five-card,roulette,bond-baccarat,traitors-guess-who,battleship-fog,liars-dice,clue-whodunit,monopoly-speed-die,monopoly-auction,simon-faceoff,price-bid-off,django-hangman-showdown,django-hangman-wanted,matrix-ultimate,greed-island-mancala,office-dots-boxes,trek-mini-chess,wopr-grid,smb3-nspade,clue-lineup,django-hangman,taskmaster-curling,bug-artillery,happy-gilmore-golf,color-of-money,baseketball-shootout,task-tallest-thing,fast-quarter-mile,block-battle,shred-hero,candy-color-dash,chutes-ladder-rush,brawndo-fruit-merge,candy-gumdrop-catch,review-pancakes,terminator-scan,microgame-rush,rush-marathon').split(',');
+const GAMES=(process.env.GAMES||'trivia-mixed,trivia-lightning,trivia-wager,trivia-survival,paddys-beer-pong,shamb-uno,ten-forward-chess,four-lights,strategema-grid,full-shambyahtzee,cheaters-yahtzee,blackjack,five-card,roulette,bond-baccarat,traitors-guess-who,battleship-fog,liars-dice,clue-whodunit,monopoly-speed-die,monopoly-auction,simon-faceoff,price-bid-off,django-hangman-showdown,django-hangman-wanted,matrix-ultimate,greed-island-mancala,office-dots-boxes,trek-mini-chess,wopr-grid,smb3-nspade,clue-lineup,django-hangman,taskmaster-curling,bug-artillery,happy-gilmore-golf,color-of-money,baseketball-shootout,task-tallest-thing,fast-quarter-mile,block-battle,shred-hero,candy-color-dash,chutes-ladder-rush,brawndo-fruit-merge,candy-gumdrop-catch,review-pancakes,terminator-scan,microgame-rush,rush-marathon,pong-duel,derezzed-cycles,snake-v-snake,metal-gear-tank-duel,kill-bill-duel').split(',');
+const LAG=/^\d+-\d+$/.test(process.env.LAG||'')?process.env.LAG.split('-').map(Number):null;
 const url=pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href;
 let failed=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)failed++;};
 const browser=await launchBrowser();
@@ -44,6 +46,8 @@ for(const id of GAMES){
  const same=await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>{const s=window.ShambConkins.store.session;return JSON.stringify({seed:s.seed,me:s.online?.me,q:s.debug?.question?.id??s.debug?.rounds?.[0]?.id??null});})));
  const [ja,jb]=same.map(x=>JSON.parse(x));
  check(ja.seed===jb.seed&&ja.me===0&&jb.me===1,`${id}: same seed, Sean plays seat 1 and Amber seat 2`);
+ // LAG=lo-hi: every move this phone sends is held back lo..hi ms (in order, with jitter), like a slow phone network
+ if(LAG)for(const ph of [A,B])await ph.p.evaluate(([lo,hi])=>{const ch=window.ShambConkins.store.session.online,orig=ch.send.bind(ch);let last=0;ch.send=m=>{const at=Math.max(last,performance.now()+lo+Math.random()*(hi-lo));last=at;setTimeout(()=>orig(m),at-performance.now());};},LAG);
  const t0=Date.now();let ra='',rb='',shot=false,counts={};
  const limit=LIMIT*(id==='paddys-beer-pong'&&!process.env.LIMIT_S?1.75:1); // a full Beer Pong match runs to last call, ~4-5 min headless
  while(Date.now()-t0<limit*1000){

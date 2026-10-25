@@ -19,7 +19,8 @@ function directionGestures(s,move,{players=1,repeat=0,tap=null,threshold=12,onTa
  }
  s.on(s.c,'pointerdown',ev=>{
   if(!usable()||!Number.isFinite(ev.clientX)||!Number.isFinite(ev.clientY)||ev.button>0)return;
-  const point=s.pointer(ev),owner=players===1||s.solo?.kind==='cpu'?0:point.x<s.W/2?0:1;
+  // vs CPU the human owns every touch, online (s.online) this phone's player does
+  const point=s.pointer(ev),owner=s.online&&players>1?s.online.me:players===1||s.solo?.kind==='cpu'?0:point.x<s.W/2?0:1;
   if([...fingers.values()].some(f=>f.owner===owner))return;
   ev.preventDefault();fingers.set(ev.pointerId,{owner,x:ev.clientX,y:ev.clientY,point,direction:null,clock:0,moved:false});s.capture(ev);
  });
@@ -27,7 +28,7 @@ function directionGestures(s,move,{players=1,repeat=0,tap=null,threshold=12,onTa
  const release=(ev,cancelled)=>{const f=fingers.get(ev.pointerId);if(!f)return;if(!cancelled&&usable()){steer(f,ev);if(!f.moved){if(tap)move(f.owner,...tap);onTap?.(f.owner);}}fingers.delete(ev.pointerId);s.release(ev);rebuild();};
  s.on(s.c,'pointerup',ev=>release(ev,false));s.on(s.c,'pointercancel',ev=>release(ev,true));s.on(s.c,'lostpointercapture',ev=>release(ev,true));
  const bindings=players===1?{arrowup:[0,0,-1],arrowdown:[0,0,1],arrowleft:[0,-1,0],arrowright:[0,1,0],w:[0,0,-1],s:[0,0,1],a:[0,-1,0],d:[0,1,0]}:{w:[0,0,-1],s:[0,0,1],a:[0,-1,0],d:[0,1,0],arrowup:[1,0,-1],arrowdown:[1,0,1],arrowleft:[1,-1,0],arrowright:[1,1,0]};
- for(const type of ['keydown','keyup'])s.on(document,type,ev=>{if(['INPUT','TEXTAREA','SELECT'].includes(ev.target?.tagName))return;const binding=bindings[ev.key?.toLowerCase()];if(!binding)return;ev.preventDefault();const [owner,dx,dy]=binding;if(type==='keydown'){if(!usable())return;keyboard[owner][name(dx,dy)]=true;rebuild();move(owner,dx,dy);}else{keyboard[owner][name(dx,dy)]=false;rebuild();}});
+ for(const type of ['keydown','keyup'])s.on(document,type,ev=>{if(['INPUT','TEXTAREA','SELECT'].includes(ev.target?.tagName))return;const binding=bindings[ev.key?.toLowerCase()];if(!binding)return;ev.preventDefault();const [o,dx,dy]=binding,owner=s.online&&players>1?s.online.me:o;if(type==='keydown'){if(!usable())return;keyboard[owner][name(dx,dy)]=true;rebuild();move(owner,dx,dy);}else{keyboard[owner][name(dx,dy)]=false;rebuild();}});
  if(repeat)s.frame(dt=>{for(const f of fingers.values())if(f.direction){f.clock+=dt;if(f.clock>=repeat){f.clock%=repeat;move(f.owner,...f.direction);}}});
  s.on(window,'blur',clear);s.on(window,'resize',clear);s.resetOnPause?.(clear);s.cleanup(clear);
  return {fingers,keys,clear};
