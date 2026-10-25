@@ -20,7 +20,8 @@ const {pairForRun}=require("src/pairs.js");
 const {warpTheme,warpGameId,warpAllowsGame}=require("src/warpThemes.js");
 const {updateProgression}=require("src/progression.js");
 const {drawTriviaDifficulty,chooseTriviaDifficulty,TRIVIA_LEVELS}=require("src/engines/trivia.js");
-const {soloKind, soloCoop, soloSettings, recordSolo, soloBest, soloBestText, SOLO_SKILL, SOLO_LEVEL_NAMES}=require("src/solo.js");
+const {soloKind, soloCoop, soloSettings, recordSolo, soloBest, soloBestText, SOLO_SKILL, SOLO_LEVEL_NAMES, netNative}=require("src/solo.js");
+const {openChannel}=require("src/netPlay.js");
 const hooks={save(){},endTurn(){},beforeRoll(){},arcade(){},bossDone:null,onlineGames:()=>false,onlineAllowed:()=>true,onlineGame:null,onlineSeat:()=>0};
 let launching=false,launchSerial=0;
 function cancelGameLaunch(){launchSerial++;launching=false;}
@@ -222,12 +223,13 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  }
  const soloKindNow=solo&&origin==='arcade'?soloKind(game):null,soloSet=soloKindNow?{...soloSettings(store.profile),...(duel?{who:duel.who===1?1:0}:{})}:null;
  const soloNote=soloKindNow?`<p class="solo-note"><b>${soloKindNow==='cpu'?`SOLO · ${soloCoop(game)?'WITH':'VS'} CPU (${SOLO_LEVEL_NAMES[soloSet.level].toUpperCase()})`:'SOLO RUN'}</b> ${soloKindNow==='cpu'?soloCoop(game)?'A CPU teammate plays alongside you.':'You play against a CPU opponent.':soloKindNow==='alone'?'Just you: the co-op game without a teammate, with fewer enemies to fit one player. Tap Exit any time to bank your score.':soloKindNow==='game'?'A whole game on your own. Beat the replay score to win. Tap Exit any time to bank your score.':soloKindNow==='rounds'||soloKindNow==='turns'?'Play round after round, each one faster, until you miss a round’s goal. Tap Exit any time to bank your score.':'Play level after level until the run ends. Tap Exit any time to bank your score.'}${soloBestText(store.profile,game.id)?` ${escapeHTML(soloBestText(store.profile,game.id))}.`:''}</p>`:'';
- const choice=await showDialog({local:!!duel,title:game.title,source:game.source,html:`${gameArtHTML(game)}${duel?`<p class="solo-note"><b>${duel.board?'BOARD GAME':'ONLINE DUEL'} · VS ${escapeHTML(duel.opponent?.name||'Player 2')}</b> You both play ${duel.board?'the 1-player version':'this'} at the same time from the same start. Highest score wins. Tap Exit any time to bank your score.</p>`:soloNote}<div class="how-to"><b>HOW TO PLAY · ${escapeHTML(game.duration.toUpperCase())}</b>${escapeHTML(game.rules)}</div>${run?.mutation&&origin==='board'&&!bfGame(game)?'<p style="font-size:12px">You are one team. Each person races a live CPU driver, then both relay scores are combined.</p>':''}`,choices:[{label:'Start game',value:'start',primary:true},{label:duel?.board?'Skip (score 0)':origin==='board'?'Return to board':'Back to arcade',value:'cancel'}]});
+ const choice=await showDialog({local:!!duel,title:game.title,source:game.source,html:`${gameArtHTML(game)}${duel?`<p class="solo-note"><b>${duel.board?'BOARD GAME':'ONLINE DUEL'} · VS ${escapeHTML(duel.opponent?.name||'Player 2')}</b> ${netNative(game)?`Head to head: you play your own turns on this phone and see ${escapeHTML(duel.opponent?.name||'Player 2')}’s moves as they make them.`:`You both play ${duel.board?'the 1-player version':'this'} at the same time from the same start. Highest score wins. Tap Exit any time to bank your score.`}</p>`:soloNote}<div class="how-to"><b>HOW TO PLAY · ${escapeHTML(game.duration.toUpperCase())}</b>${escapeHTML(game.rules)}</div>${run?.mutation&&origin==='board'&&!bfGame(game)?'<p style="font-size:12px">You are one team. Each person races a live CPU driver, then both relay scores are combined.</p>':''}`,choices:[{label:'Start game',value:'start',primary:true},{label:duel?.board?'Skip (score 0)':origin==='board'?'Return to board':'Back to arcade',value:'cancel'}]});
  if(!valid())return false;
  if(choice===null){launching=false;store.busy=false;return false;}
  if(choice!=='start'){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else if(!duel?.board)hooks.arcade();return false;}
  // Arcade play uses the latest new-game screen picks (names + characters); the draft starts from the saved run.
  const players=soloKindNow?(duel?.players?duel.players.map(p=>({...p})):soloPlayers(run,soloSet.who)):origin==='board'?run.players:run?structuredClone(run.players).map((p,i)=>({...p,name:store.setupNames?.[i]||p.name,character:store.setupSelected?.[i]||p.character})):[newPlayer(store.setupNames?.[0]??'Sean',store.setupSelected?.[0]||'sean',0),newPlayer(store.setupNames?.[1]??'Amber',store.setupSelected?.[1]||'amber',1)];
+ if(duel&&netNative(game))return netGame(game,duel,valid);
  if(soloKindNow==='turns')return soloTurnRounds(game,players,soloSet,valid,duel);
  let delivered=false,getEvidence=()=>null;
  const session=new GameSession(game,players,(scores,label)=>{
@@ -295,6 +297,22 @@ async function soloTurnRounds(game,players,set,valid,duel=null){
  }
  return settleSolo(game,[total,0],label(),players,{kind:'turns',won:round>0,progress:{level:round},duel},[recruits]);
 }
+// Native online game (src/netPlay.js): the real 2-player game runs on both phones from one seed, in the same player
+// order (players[i].owner = Sean/Amber by index); this phone plays players[duel.who] and the other player's moves arrive
+// through session.online. Settled like a duel: each phone reports its own score.
+async function netGame(game,duel,valid){
+ const me=duel.who===1?1:0,pick=i=>({name:store.setupNames?.[i]||(i?'Amber':'Sean'),character:store.setupSelected?.[i]||(i?'amber':'sean')});
+ const players=[0,1].map(i=>{const p=duel.players?(i===me?duel.players[0]:duel.players[1]):i===me?pick(i):{name:duel.opponent?.name||(i?'Amber':'Sean'),character:duel.opponent?.character||(i?'amber':'sean')};return newPlayer(p.name,p.character,i);});
+ const ch=openChannel(duel.mid,me);let delivered=false;
+ const session=new GameSession(game,players,(scores,label)=>{if(delivered)return;delivered=true;ch.close();
+  const mine=Math.max(0,Math.floor(scores[me])||0),theirs=Math.max(0,Math.floor(scores[1-me])||0),cages=session.broforceRecruits||session.gameRecruits;
+  void settleSolo(game,[mine,theirs],label,[players[me],players[1-me]],{kind:'net',won:mine>theirs,duel},Array.isArray(cages)?[cages[me]||[]]:null);});
+ duelSeed(session,duel,game,0);session.online=ch;session.hotseat=true;
+ ch.onGone=()=>{if(store.session===session&&session.alive&&!delivered)session.finish(session.score.slice(),`${players[1-me].name} left the game.`);};
+ session.active=0;store.session=session;session.updateScores();launching=false;
+ try{await ENGINES[game.engine](session);}catch(error){console.error('Game engine failure',game.id,error);if(valid()&&session.alive)session.finish(session.score.slice(),'The game stopped with an error.');}
+ return true;
+}
 // An online duel's games start from the same seed on both phones (round = the turns-game round).
 function duelSeed(session,duel,game,round){session.seed=`${duel.seed}-${game.id}-${round}`;session.random=seededRandom(session.seed);}
 // Single-attempt pass-and-play games (one ball, flip, pitch or shot per round): keep 60% of the last round.
@@ -304,10 +322,10 @@ async function settleSolo(game,scores,label,players,solo,cageRecruits){
  // co-op with a CPU teammate (solo.coop): the team total is the run's score
  const serial=launchSerial;store.session=null;const p=players[0],coop=!!solo.coop,score=Math.max(0,coop?(scores[0]|0)+(scores[1]|0):scores[0]|0),level=solo.progress?.level||0;
  // Board game on two phones: report this phone's result; the host phone settles the board (rewards, recruits, card).
- if(solo.duel?.board){const won=typeof solo.won==='boolean'?solo.won:solo.kind==='cpu'?scores[0]>scores[1]:level>0;recordSolo(store.profile,game.id,{score,level});saveProfile(store.profile);store.arcade=false;await solo.duel.finish({score,level,label,won,recruits:(Array.isArray(cageRecruits?.[0])?cageRecruits[0]:[]).slice(0,10)});return;}
+ if(solo.duel?.board){const won=typeof solo.won==='boolean'?solo.won:solo.kind==='cpu'?scores[0]>scores[1]:level>0;if(solo.kind!=='net')recordSolo(store.profile,game.id,{score,level});saveProfile(store.profile);store.arcade=false;await solo.duel.finish({score,level,label,won,recruits:(Array.isArray(cageRecruits?.[0])?cageRecruits[0]:[]).slice(0,10)});return;}
  const duel=solo.duel?await solo.duel.finish({score,level,label}):null;if(serial!==launchSerial)return;
  const won=duel?duel.won:typeof solo.won==='boolean'?solo.won:solo.kind==='cpu'?scores[0]>scores[1]:level>0;
- recordGame(store.profile,game,won?0:null,scores);const rec=recordSolo(store.profile,game.id,{score,level});const unlocked=[];
+ recordGame(store.profile,game,won?0:null,scores);const rec=solo.kind==='net'?{best:{score,level},newBest:false}:recordSolo(store.profile,game.id,{score,level});const unlocked=[];
  if(won){const pool=gameRecruitPool(game,store.profile,p),chance=recruitmentChance(store.profile,p,gameHasGuaranteedRecruit(game,store.profile,p));
   if(!cageGame(game)&&pool.length&&Math.random()<chance){const actual=recruitReward(store.profile,pick(pool).id,p.owner,'game');if(actual)unlocked.push(actual);}
   if(!cageGame(game))(store.profile.recruitDryStreak||={Sean:0,Amber:0})[p.owner]=unlocked.length?0:1;

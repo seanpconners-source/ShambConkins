@@ -1,6 +1,10 @@
 // CPU opponents for solo (1P arcade) play. Player 2 (index 1) is the CPU; s.solo.skill is 0.35 / 0.65 / 0.9.
 const {cpuSkill}=require("src/solo.js");
 const isCpu=s=>s?.solo?.kind==='cpu';
+// Online (src/netPlay.js): this phone plays s.online.me; the other player's moves come from s.online.next() and the
+// local player's go out with s.online.send(). Like vs CPU there is one person per phone, so hand-off cards are skipped.
+const isOnline=s=>!!s?.online;
+const remoteSeat=s=>s?.online?s.online.remote:1;
 // Hot-seat games: hand-off cards are skipped after the first one (one human on the phone) and whenever
 // isTurn() is true the CPU waits a beat, then think() plays its move through the engine's own move function.
 function cpuHotseat(s,{isTurn,think,delay=700}){
@@ -30,4 +34,4 @@ function cpuTriviaPick(s,q,choices,rand=Math.random){const base={easy:.86,medium
  const right=choices.findIndex(c=>c.index===q.correct);if(right>=0&&rand()<p)return right;const wrong=choices.map((c,i)=>i).filter(i=>i!==right);return wrong.length?pickRandom(wrong,rand):right;}
 // A human-like pause before the CPU answers (seconds): quicker on Hard and on easy questions.
 const cpuThinkTime=(s,q)=>(1.4+(1-cpuSkill(s))*2.2+({hard:1,impossible:1.6}[q?.difficulty]||0))*(.75+Math.random()*.5);
-Object.assign(exports,{isCpu,cpuHotseat,cpuDepth,cpuBlunder,negamax,pickRandom,cpuSkill,cpuTriviaPick,cpuThinkTime});
+Object.assign(exports,{isCpu,isOnline,remoteSeat,cpuHotseat,cpuDepth,cpuBlunder,negamax,pickRandom,cpuSkill,cpuTriviaPick,cpuThinkTime});

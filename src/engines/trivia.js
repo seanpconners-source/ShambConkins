@@ -10,7 +10,7 @@ const {LEGENDS_TRIVIA_THEMES}=require("src/data/legendsTrivia.js");
 const {TRIVIA3_THEMES}=require("src/data/trivia3.js");
 const {WARP_TRIVIA_THEMES}=require("src/data/warpTrivia.js");
 const {playTriviaMode}=require("src/engines/triviaModes.js");
-const {isCpu,cpuSkill,cpuTriviaPick,cpuThinkTime}=require("src/engines/cpuKit.js");
+const {isCpu,isOnline,cpuSkill,cpuTriviaPick,cpuThinkTime}=require("src/engines/cpuKit.js");
 const TRIVIA=TRIVIA_QUESTIONS;
 const TRIVIA_LEVELS=['easy','medium','hard','impossible'];
 const triviaPoints=d=>d==='impossible'?4:d==='hard'?3:d==='medium'?2:1;
@@ -55,14 +55,17 @@ function difficultyDrawHTML(difficulty){
 }
 async function trivia(s) {
  const tag=s.game.triviaTag||'mixed',mode=s.game.triviaMode;
- const drawn=TRIVIA_LEVELS.includes(s.game.triviaDifficulty)?s.game.triviaDifficulty:s.practice?chooseTriviaDifficulty(tag,s.random):drawTriviaDifficulty(store.profile,tag,s.random);
+ // Online (s.online): both phones must deal the same quiz, so the level and questions come from the shared seed only
+ // (not this phone's history); each phone answers its own turns and steals, the other's answers arrive as moves.
+ const net=isOnline(s)?s.online:null;
+ const drawn=net?chooseTriviaDifficulty(tag,s.random):TRIVIA_LEVELS.includes(s.game.triviaDifficulty)?s.game.triviaDifficulty:s.practice?chooseTriviaDifficulty(tag,s.random):drawTriviaDifficulty(store.profile,tag,s.random);
  const difficulty=TRIVIA_LEVELS.includes(drawn)?drawn:'varied',pool=triviaPool(tag,difficulty==='varied'?null:difficulty);
  // Limit a small authored topic to distinct, on-topic questions, split evenly for lightning.
  const count=mode==='lightning'?Math.min(24,Math.floor(pool.length/2)*2):Math.min(tag==='lore'?6:8,pool.length);
  if(count<(mode==='lightning'?2:1))throw new Error('No playable trivia questions for topic '+tag);
- const rounds=selectTrivia(tag,store.profile.recentTrivia||[],store.run?.triviaSeen||[],s.random,count,difficulty==='varied'?null:difficulty);
+ const rounds=selectTrivia(tag,net?[]:store.profile.recentTrivia||[],net?[]:store.run?.triviaSeen||[],s.random,count,difficulty==='varied'?null:difficulty);
  // vs CPU: one human, so hand-off cards are skipped; the CPU answers its own turns and steals (cpuKit.cpuTriviaPick)
- const cpu=isCpu(s);if(cpu)s.hotseat=true;
+ const cpu=isCpu(s);if(cpu||net)s.hotseat=true;
  if(mode)return playTriviaMode(s,{difficulty,rounds,seconds:triviaSeconds,points:triviaPoints,introHTML:difficultyDrawHTML(difficulty)});
  const score=[0,0];let round=0,lead=0,q,wrong=-1,locked=false,answers=[],stopClock=null,clockToken=0;
  const clearClock=()=>{clockToken++;stopClock?.();stopClock=null;};s.cleanup(clearClock);
@@ -70,17 +73,20 @@ async function trivia(s) {
   clearClock();s.active=player;s.updateScores();
   answers=shuffle(q.answers.map((text,i)=>({text,index:i})).filter(a=>!steal||a.index!==wrong),s.random);
   const seconds=triviaSeconds(q.difficulty);
-  s.body.innerHTML=`<div class="trivia-meta"><span>ROUND ${round+1} / ${rounds.length}</span><span class="difficulty-chip level-${difficulty}">${(difficulty==='varied'?q.difficulty:difficulty).toUpperCase()}${steal?' · STEAL':''} · ${triviaAward(q.difficulty,steal)} PT</span></div><div class="trivia-clock" role="timer" aria-label="Answer time remaining"><span id="trivia-clock-number">${seconds}</span><small>SECONDS TO ANSWER</small><div class="trivia-clock-track"><i id="trivia-clock-bar"></i></div></div><div class="trivia-logo">${brandHTML(q.source)}</div><div class="trivia-question">${escapeHTML(q.q)}</div><div class="trivia-answers">${answers.map((a,i)=>`<button data-answer="${i}">${escapeHTML(a.text)}</button>`).join('')}</div><div id="trivia-feedback" class="trivia-feedback">${escapeHTML(s.players[player].name)} ${steal?'gets the steal.':'answers first.'}</div><div id="trivia-fact"></div><div id="trivia-next" class="game-controls"></div>`;
+  s.body.innerHTML=`<div class="trivia-meta"><span>ROUND ${round+1} / ${rounds.length}</span><span class="difficulty-chip level-${difficulty}">${(difficulty==='varied'?q.difficulty:difficulty).toUpperCase()}${steal?' · STEAL':''} · ${triviaAward(q.difficulty,steal)} PT</span></div><div class="trivia-clock" role="timer" aria-label="Answer time remaining"><span id="trivia-clock-number">${seconds}</span><small>SECONDS TO ANSWER</small><div class="trivia-clock-track"><i id="trivia-clock-bar"></i></div></div><div class="trivia-logo">${brandHTML(q.source)}</div><div class="trivia-question">${escapeHTML(q.q)}</div><div class="trivia-answers">${answers.map((a,i)=>`<button data-answer="${i}">${escapeHTML(a.text)}</button>`).join('')}</div><div id="trivia-feedback" class="trivia-feedback">${escapeHTML(s.players[player].name)} ${steal?'gets the steal':'answers first'}${net&&player===net.remote?' on their phone…':'.'}</div><div id="trivia-fact"></div><div id="trivia-next" class="game-controls"></div>`;
   locked=false;s.debug={question:q,round,lead,difficulty,phase:steal?'steal':'lead',answers,left:seconds};
   s.body.querySelectorAll('[data-answer]').forEach(b=>s.on(b,'click',()=>void answer(+b.dataset.answer,player,steal,b)));
-  const token=clockToken;stopClock=s.timer(seconds,left=>{if(token!==clockToken)return;s.debug.left=left;const number=document.getElementById('trivia-clock-number'),bar=document.getElementById('trivia-clock-bar');if(number)number.textContent=String(Math.ceil(left));if(bar)bar.style.width=(left/seconds*100)+'%';if(left<5)number?.parentElement?.classList.add('urgent');},()=>{if(token===clockToken&&!locked)void answer(null,player,steal,null);});
+  const token=clockToken;stopClock=s.timer(seconds,left=>{if(token!==clockToken)return;s.debug.left=left;const number=document.getElementById('trivia-clock-number'),bar=document.getElementById('trivia-clock-bar');if(number)number.textContent=String(Math.ceil(left));if(bar)bar.style.width=(left/seconds*100)+'%';if(left<5)number?.parentElement?.classList.add('urgent');},()=>{if(token===clockToken&&!locked&&!(net&&player===net.remote))void answer(null,player,steal,null);});
+  // Online: the other phone's answer (the original answer index, or null for time's up) arrives as their move.
+  if(net&&player===net.remote){const btns=[...s.body.querySelectorAll('[data-answer]')];btns.forEach(b=>b.disabled=true);net.next().then(async m=>{if(!m||token!==clockToken)return;while(s.paused&&s.alive)await new Promise(r=>setTimeout(r,200));const pos=m.a==null?-1:answers.findIndex(a=>a.index===m.a);void answer(pos<0?null:pos,player,steal,btns[pos]||null,true);});}
   if(cpu&&player===1){const btns=[...s.body.querySelectorAll('[data-answer]')];btns.forEach(b=>b.disabled=true);s.wait(cpuThinkTime(s,q)*1000).then(ok=>{if(!ok||locked||token!==clockToken)return;const pos=cpuTriviaPick(s,q,answers);void answer(pos,1,steal,btns[pos]);});}
  }
- function nextButton(label,fn){const b=document.createElement('button');b.textContent=label;b.className='primary';document.getElementById('trivia-next').appendChild(b);let used=false;const go=()=>{if(used||s.paused||!s.alive)return;used=true;void fn();};s.on(b,'click',go);if(cpu&&/^Pass to/.test(label))s.wait(800).then(ok=>ok&&go());}
+ function nextButton(label,fn){const b=document.createElement('button');b.textContent=label;b.className='primary';document.getElementById('trivia-next').appendChild(b);let used=false;const go=()=>{if(used||s.paused||!s.alive)return;used=true;void fn();};s.on(b,'click',go);if((cpu||net)&&/^Pass to/.test(label))s.wait(800).then(ok=>ok&&go());}
  function resolved() {document.getElementById('trivia-fact').innerHTML=triviaExplanationHTML(q);s.debug.phase='resolved';nextButton(round===rounds.length-1?'See the result':'Next round',()=>{if(s.paused)return;round++;void startRound();});}
- async function answer(i,player,steal,button) {
-  if(locked||s.paused||!s.alive)return;locked=true;clearClock();
-  const choice=i===null?null:answers[i],correct=choice?.index===q.correct;button?.classList.add(correct?'correct':'wrong');
+ async function answer(i,player,steal,button,remote=false) {
+  if(locked||!remote&&s.paused||!s.alive)return;if(net&&player===net.remote&&!remote)return;locked=true;clearClock();
+  const choice=i===null?null:answers[i],correct=choice?.index===q.correct;
+  if(net&&!remote)net.send({a:choice?choice.index:null});button?.classList.add(correct?'correct':'wrong');
   s.body.querySelectorAll('[data-answer]').forEach(b=>b.disabled=true);const feedback=document.getElementById('trivia-feedback');
   if(correct) {const pts=triviaAward(q.difficulty,steal);score[player]+=pts;s.setScores(score);s.react?.(player,'win');triviaMark(feedback,'correct');feedback.textContent=`✨ ${steal?'STEAL!':'CORRECT!'} +${pts} points! ✨ ${q.answers[q.correct]}.`;resolved();}
   else if(!steal) {wrong=choice?.index??-1;s.react?.(player,'sad');triviaMark(feedback,choice?'wrong':'timeout');feedback.textContent=`${choice?'BUZZ! Wrong — this does not represent me.':'Time’s up!'} The answer stays hidden. ${s.players[1-lead].name} gets a steal.`;s.debug.phase='pass-steal';nextButton(`Pass to ${s.players[1-lead].name}`,async()=>{if(!await s.pass(1-lead,`Steal chance: ${difficulty.toUpperCase()} · ${triviaSeconds(q.difficulty)} seconds. Same question${wrong<0?'':', with the previous wrong answer removed'}.`))return;questionView(1-lead,true);});}
