@@ -714,7 +714,7 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   hit tests on a fixed 390x780 reference (`REF`, `hitRef`), player 1's view turned round (`flip`, also flicks/keys); throws
   {th:[id,u,v,du,dv,t]} flown on by the delay; your phone calls hits on you {hi}, the thrower's phone calls Kenny {kk};
   score rebuilt from `hits`/`kills` (`rescore`), the end swaps the counts each phone judged. Bots = CPU brains on your side
-  (`autodrive`). All 3 pass online-native (LAG=80-150 run pending); 2P fuzz + 1P CPU clean. Left (13): Space Invaders
+  (`autodrive`). All 3 pass online-native with and without LAG=80-150; 2P fuzz + 1P CPU clean. Left (13): Space Invaders
   versus + Space Swarm co-op, Bond ×3, Hyrule ×2, penalties, Raiders, Fight Night, Sewer Clash, kart ×2
   (`node -e` over solo.js: 'cpu' ids minus NET_NATIVE).
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
