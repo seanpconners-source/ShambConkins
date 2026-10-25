@@ -2,6 +2,8 @@
 //  'catch': Gumdrop Mountain Catch. Candies tumble down your field; a colour card at the top says which colour
 //           counts. Drag your head-basket to catch matching candies (+1), skip the rest (−1), dodge Lord Licorice's
 //           black licorice (−2 and sticky) and grab golden King Kandy gumdrops (+5). 45 seconds.
+//           Online (netField): each phone moves and scores its own basket (drag anywhere); the other half runs the same
+//           seeded candies with the other basket from snapshots {x,score,stick,flash}; both end from both final scores.
 //  'dash':  Color Card Dash. A card flips in the middle; race to tap the matching colour square on your side.
 //           Double cards are worth 2. A Lord Licorice card means hands off: whoever taps loses 2. Twenty cards.
 //           Online (s.online): each phone shows only its own pad and times its own taps from the moment ITS card
@@ -10,6 +12,7 @@
 const {clamp}=require("src/utils.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,FONT,PCOL,settle,Countdown}=require("src/engines/arenaKit.js");
 const {isCpu,isOnline,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 
 const COLORS=[['red','#ee4b5b'],['purple','#a85bd6'],['yellow','#f6d93a'],['blue','#3a8ff0'],['orange','#f4902c'],['green','#4ccc6a']];
 const INK='#5a1f4a',CATCH_TIME=45,DASH_CARDS=20;
@@ -47,19 +50,21 @@ async function candyLand(s){
   const cards=[];for(let k=0;k<12;k++)cards.push({color:Math.floor(s.random()*6)});
   for(let k=0;k<cards.length;k++){if(k&&cards[k].color===cards[k-1].color)cards[k].color=(cards[k].color+1+Math.floor(s.random()*5))%6;}
   card=cards[0];
-  const fingers=[null,null];
-  arenaTouch(s,{owner,maxFingers:1,onDown:f=>{fingers[f.owner]={f,start:baskets[f.owner].x};},onMove:f=>{const fi=fingers[f.owner];if(!fi)return;const v=vp(f.owner);baskets[f.owner].x=clamp(fi.start+(f.x-f.sx)/v.w*1.25,.06,.94);},onUp:f=>{fingers[f.owner]=null;}});
-  s.debug={get phase(){return phase;},baskets,fields,score,setClock(v){clock=v;}};
+  const fingers=[null,null];let netEnd=null;
+  const nf=netField(s,{pack:i=>({x:+baskets[i].x.toFixed(3),score:score[i],stick:+baskets[i].stick.toFixed(2),flash:+baskets[i].flash.toFixed(2)}),unpack:(i,d)=>{Object.assign(baskets[i],{x:clamp(+d.x||.5,.06,.94),stick:+d.stick||0,flash:+d.flash||0});score[i]=+d.score||0;}});
+  arenaTouch(s,{owner:p=>nf?nf.me:owner(p),maxFingers:1,onDown:f=>{fingers[f.owner]={f,start:baskets[f.owner].x};},onMove:f=>{const fi=fingers[f.owner];if(!fi)return;const v=vp(f.owner);baskets[f.owner].x=clamp(fi.start+(f.x-f.sx)/v.w*1.25,.06,.94);},onUp:f=>{fingers[f.owner]=null;}});
+  s.debug={get phase(){return phase;},baskets,fields,score,setClock(v){clock=v;},bot:nf?()=>{const b=baskets[nf.me],good=fields[nf.me].filter(cn=>cn.y>.3&&cn.y<.85&&(cn.kind==='gold'||cn.kind!=='licorice'&&cn.color===card.color)).sort((a,c)=>c.y-a.y)[0];if(good){b.x=clamp(b.x+clamp(good.x-b.x,-.15,.15),.06,.94);return 'move';}return '';}:null};
   // vs CPU: basket 2 slides under the best candy about to land (card colour or gold) and away from licorice and wrong colours
   const cpu=isCpu(s);let cpuErr=0;
   const cpuCatch=dt=>{const b=baskets[1],sk=cpuSkill(s),spd=(b.stick>0?.35:1.1)*(.7+sk*.5)*dt;let best=null,bv=-1e9;for(const cn of fields[1]){if(cn.y>.9||cn.y<.15)continue;const val=cn.kind==='gold'?5:cn.kind==='licorice'?-3:cn.color===card.color?1:-1.2,dist=Math.abs(cn.x-b.x),v=val*2-dist*3+cn.y*2;if(val>0&&v>bv){bv=v;best=cn;}}
    if(Math.random()<dt*2)cpuErr=(Math.random()-.5)*(1-sk)*.18;let tx=best?best.x+cpuErr:b.x;for(const cn of fields[1]){const bad=cn.kind==='licorice'||cn.kind!=='gold'&&cn.color!==card.color;if(bad&&cn.y>.68&&cn.y<.9&&Math.abs(cn.x-b.x)<.13&&Math.random()<.5+sk*.5){tx=b.x+(cn.x>b.x?-.25:.25);break;}}for(const cn of fields[1]){if(cn.y<.55||cn.y>.9)continue;const val=cn.kind==='licorice'?-3:cn.kind==='gold'||cn.color===card.color?1:-1;if(val<0&&Math.abs(cn.x-tx)<.09&&Math.random()<.4+sk*.6)tx+=cn.x<tx?.12:-.12;}b.x=clamp(b.x+clamp(tx-b.x,-spd,spd),.06,.94);};
   s.frame((dt)=>{t+=dt;fx.update(dt);
    if(phase==='count'){if(!cd.update(dt))phase='play';}
-   else if(phase==='play'){clock+=dt;cardT+=dt;if(cpu)cpuCatch(dt);
+   else if(phase==='play'&&netEnd){clock+=dt;}
+   else if(phase==='play'){clock+=dt;cardT+=dt;if(cpu)cpuCatch(dt);nf?.tick(dt);
     if(cardT>4.5){cardT=0;cardIdx=(cardIdx+1)%cards.length;card=cards[cardIdx];jingle([659,880],{step:.06,type:'triangle',vol:.03});}
     spawnT-=dt;const rate=.55-Math.min(.25,clock/CATCH_TIME*.25);if(spawnT<=0){spawnT=rate;const sp=seq[spawnIdx++%seq.length];for(let i=0;i<2;i++)fields[i].push({...sp,y:-.08,taken:false});}
-    for(let i=0;i<2;i++){const b=baskets[i],k=kb.state[i];if(b.stick>0)b.stick-=dt;const spd=b.stick>0?.35:1.1;if(k.l)b.x=clamp(b.x-spd*dt,.06,.94);if(k.r)b.x=clamp(b.x+spd*dt,.06,.94);b.flash=Math.max(0,b.flash-dt);
+    for(let i=0;i<2;i++){const b=baskets[i],remote=nf&&i===nf.remote,k=nf?{l:kb.state[0].l||kb.state[1].l,r:kb.state[0].r||kb.state[1].r}:kb.state[i];if(remote){for(let j=fields[i].length-1;j>=0;j--){const cn=fields[i][j];cn.y+=cn.speed*dt*(1+clock/CATCH_TIME*.5)*(side()?.75:1.1);const v=vp(i),r=Math.min(v.w,v.h)*.06;if(Math.abs(v.x+cn.x*v.w-(v.x+b.x*v.w))<r*2.4&&Math.abs(v.y+cn.y*v.h-(v.y+v.h*.86))<r*1.6||cn.y>1.05)fields[i].splice(j,1);}continue;}if(b.stick>0)b.stick-=dt;const spd=b.stick>0?.35:1.1;if(k.l)b.x=clamp(b.x-spd*dt,.06,.94);if(k.r)b.x=clamp(b.x+spd*dt,.06,.94);b.flash=Math.max(0,b.flash-dt);
      const v=vp(i);for(let j=fields[i].length-1;j>=0;j--){const cn=fields[i][j];cn.y+=cn.speed*dt*(1+clock/CATCH_TIME*.5)*(side()?.75:1.1);
       const bx=v.x+b.x*v.w,by=v.y+v.h*.86,cx=v.x+cn.x*v.w,cy=v.y+cn.y*v.h,r=Math.min(v.w,v.h)*.06;
       if(!cn.taken&&Math.abs(cx-bx)<r*2.4&&Math.abs(cy-by)<r*1.6){cn.taken=true;fields[i].splice(j,1);let pts=0,txt='';
@@ -69,7 +74,8 @@ async function candyLand(s){
        else{pts=-1;txt='WRONG COLOUR −1';snd(200,.12,{type:'square',vol:.03});}
        score[i]=Math.max(0,score[i]+pts);b.flash=.25;fx.pop(cx,cy-r,txt,{color:pts>0?'#fff':'#ff6a8a',stroke:INK,size:Math.max(14,r*.9)});fx.burst(cx,cy,{n:8,color:cn.kind==='licorice'?'#333':cn.kind==='gold'?'#ffd21c':COLORS[cn.color][1],speed:140,life:.4,size:3});continue;}
       if(cn.y>1.05)fields[i].splice(j,1);}}
-    if(clock>=CATCH_TIME){phase='end';endT=0;const [a,b]=score;endText=a===b?'SWEET TIE!':`${s.players[a>b?0:1].name.toUpperCase()} REACHES THE CASTLE!`;jingle([523,659,784,1047,1319],{step:.1,type:'triangle',vol:.04});}}
+    const endNow=()=>{phase='end';endT=0;const [a,b]=score;endText=a===b?'SWEET TIE!':`${s.players[a>b?0:1].name.toUpperCase()} REACHES THE CASTLE!`;jingle([523,659,784,1047,1319],{step:.1,type:'triangle',vol:.04});};
+    if(clock>=CATCH_TIME){if(nf){netEnd='wait';nf.finish(score[nf.me]);nf.remoteDone().then(v=>{if(v!=null)score[nf.remote]=+v||0;endNow();});}else endNow();}}
    else{endT+=dt;if(endT>2.8){s.finish(score,`Gumdrop Mountain Catch: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}
    s.setScores(score);x.fillStyle='#fff';x.fillRect(0,0,s.W,s.H);
    for(let i=0;i<2;i++){const v=vp(i),b=baskets[i],r=Math.min(v.w,v.h)*.06;x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();candyBackdrop(x,v,t);

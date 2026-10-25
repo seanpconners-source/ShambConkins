@@ -606,6 +606,14 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   waits for the other's final score); Color Card Dash (Lineup-style: one final per card {r,k|lic,t,w}, wrong taps taken off
   first, then fastest right tap / first licorice toucher); Ladder Rush (own ladders full screen, other = progress line, first
   finishT wins, a phone past the other's finishT ends at once). All 6 pass online-native; 2P fuzz + 1P CPU clean.
+  Batch 11 (Oct 25, same branch): Brawndo `brawndo-fruit-merge` (netField; own jar physics, other jar from fruit snapshots;
+  own jar freezes once its final is sent), Gumdrop Catch `candy-gumdrop-catch` (netField {x,score,stick,flash}; the other half
+  runs the same seeded candies and just removes what its basket touches), pancakes `review-pancakes` (netField, own clock,
+  same seeded calls/golden stacks), Skynet `terminator-scan` (taps anywhere online; walker pauses now from a seeded `wrnd`
+  per round; every tap {c:[r,t,k,m]}; `rescore()` rebuilds both scores from the whole tap log: a Terminator = earliest
+  tap, humans −1 with the clamp in time order; other phone's taps wait until this phone's round clock reaches them; {fin:1}
+  then both finish), Microgame Rush ×2 `microgame-rush`/`rush-marathon` (both deal the same microgames from s.random; own
+  full screen via `netLayout`; {r,res,at}; points once both results are in). All 6 pass online-native; 2P fuzz + 1P CPU clean.
   This clock-stamped timeline is the pattern for other race games. TODO next: the remaining real-time CPU games
   (arena/action: pong, sumo, snakes, Kart VS...) need continuous state, not discrete shots: probably input relay with
   delay (lockstep) or host-authoritative state, decide per game.

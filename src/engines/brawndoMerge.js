@@ -1,10 +1,13 @@
 // Idiocracy · Brawndo Fruit Merge. Suika-style physics merge, both players at once on their own jar.
 // Drag on your half to move the dropper, lift to drop. Two equal fruits that touch merge into the next one up;
 // two of the biggest (your rival's head) explode for a jackpot. Fruit that sits over the line too long tops you out.
+// Online (netField): each phone runs its own jar (drag anywhere); the other jar is drawn from snapshots
+// {f:[[lv,x,y]...],aim,next,score,out,over,combo,comboT}; the game ends on both from both final scores.
 const {clamp,seededRandom}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const {label,rr,makeFx,makeShake,sfx,halfPointers,keyboard,voice}=require("src/engines/tarantinoKit.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 
 const R=[4.6,6.2,7.8,9.6,11.6,13.8,16.2,18.6,21.4,24.4,28];
 const FRUIT=[['🍒','#d6243a'],['🍓','#ff4f6d'],['🍇','#8f4fd8'],['🍊','#ff9a1f'],['🍎','#e8382c'],['🍐','#c9d64a'],['🍑','#ffb38a'],['🍍','#f2c230'],['🥥','#a7744a'],['🍉','#3fae4c'],[null,'#ffe36b']];
@@ -17,7 +20,10 @@ async function fruitmerge(s){
  const fx=makeFx(),shake=makeShake();
  const P=[0,1].map(i=>({i,fruits:[],aim:50,next:0,cool:0,score:0,over:0,out:false,combo:0,comboT:0,merges:0,best:0,flash:0,id:0}));
  let left=DUR,phase='play',endT=0,keysHeld=[{l:0,r:0},{l:0,r:0}];
- s.debug={engine:'fruitmerge',P,get left(){return left;},queue};
+ let netEnd=null;const nf=netField(s,{pack:i=>{const p=P[i];return {f:p.fruits.map(f=>[f.lv,+f.x.toFixed(1),+f.y.toFixed(1)]),aim:+p.aim.toFixed(1),next:p.next,score:p.score,out:p.out,over:+p.over.toFixed(2),combo:p.combo,comboT:+p.comboT.toFixed(2)};},
+  unpack:(i,d)=>{const p=P[i];if(!Array.isArray(d.f))return;p.fruits=d.f.map(([lv,x,y],k)=>({lv:lv|0,x:+x,y:+y,vx:0,vy:0,age:2,id:k,pop:0}));if(d.out&&!p.out){p.flash=1;fx.pop(L.ox[i]+L.jw/2,L.oy+L.jh*.4,'TOPPED OUT!',{color:'#ff6b6b',size:26,life:1.6});}Object.assign(p,{aim:+d.aim||50,next:d.next|0,score:+d.score||0,out:!!d.out,over:+d.over||0,combo:d.combo|0,comboT:+d.comboT||0});s.setScores(P.map(q=>q.score));}});
+ const mine=i=>nf?nf.me:i;
+ s.debug={engine:'fruitmerge',P,get left(){return left;},queue,bot:null};
 
  // ------------------------------------------------------------- layout: each jar fits its half
  const L={};
@@ -27,14 +33,14 @@ async function fruitmerge(s){
 
  // ------------------------------------------------------------- input
  halfPointers(s,{
-  down:(i,r)=>{const p=P[i];if(p.out||phase!=='play')return;p.aim=clamp(toUnit(i,r.x),R[queue[p.next]],JW-R[queue[p.next]]);},
-  move:(i,r)=>{const p=P[i];if(p.out||phase!=='play')return;p.aim=clamp(toUnit(i,r.x),R[queue[p.next]],JW-R[queue[p.next]]);},
-  up:(i,r,{cancelled})=>{if(!cancelled)drop(i);}
+  down:(i,r)=>{i=mine(i);const p=P[i];if(p.out||phase!=='play')return;p.aim=clamp(toUnit(i,r.x),R[queue[p.next]],JW-R[queue[p.next]]);},
+  move:(i,r)=>{i=mine(i);const p=P[i];if(p.out||phase!=='play')return;p.aim=clamp(toUnit(i,r.x),R[queue[p.next]],JW-R[queue[p.next]]);},
+  up:(i,r,{cancelled})=>{if(!cancelled)drop(mine(i));}
  });
- keyboard(s,(i,k,down)=>{if(k==='l'||k==='r')keysHeld[i][k]=down?1:0;if(down&&(k==='act'||k==='d'))drop(i);});
+ keyboard(s,(i,k,down)=>{i=mine(i);if(k==='l'||k==='r')keysHeld[i][k]=down?1:0;if(down&&(k==='act'||k==='d'))drop(i);});
 
  function drop(i){const p=P[i];if(p.out||phase!=='play'||p.cool>0||s.paused)return;const lv=queue[p.next%queue.length];p.next++;
-  p.fruits.push({lv,x:clamp(p.aim+(Math.random()-.5)*.8,R[lv],JW-R[lv]),y:LINE-R[lv]-2,vx:0,vy:20,age:0,id:++p.id,pop:0});p.cool=.45;sfx.whoosh(500,1400,.04,.1);}
+  p.fruits.push({lv,x:clamp(p.aim+(Math.random()-.5)*.8,R[lv],JW-R[lv]),y:LINE-R[lv]-2,vx:0,vy:20,age:0,id:++p.id,pop:0});p.cool=.45;sfx.whoosh(500,1400,.04,.1);nf?.push();}
 
  function merge(p,a,b){
   const lv=a.lv+1,mx=(a.x+b.x)/2,my=(a.y+b.y)/2;p.fruits.splice(p.fruits.indexOf(a),1);p.fruits.splice(p.fruits.indexOf(b),1);
@@ -99,16 +105,19 @@ async function fruitmerge(s){
   const lv=queue[p.next%queue.length],r=R[lv],top=x=>p.fruits.filter(f=>Math.abs(f.x-x)<R[f.lv]+r).reduce((m,f)=>Math.min(m,f.y-R[f.lv]),JH);
   let best=null,bv=-1e9;for(let ax=r;ax<=JW-r;ax+=4){const surf=top(ax),match=p.fruits.some(f=>f.lv===lv&&Math.abs(f.x-ax)<R[f.lv]+r*.6&&f.y-R[f.lv]<=surf+2);const v=surf*.2+(match?40:0)+(Math.random()-.5)*(1-sk)*40;if(v>bv){bv=v;best=ax;}}
   p.aim=clamp(best??JW/2,r,JW-r);drop(1);}
+ if(nf)s.debug.bot=()=>{const p=P[nf.me];if(p.out||phase!=='play'||p.cool>0||netEnd)return '';const lv=queue[p.next%queue.length];p.aim=clamp(R[lv]+Math.random()*(JW-2*R[lv]),R[lv],JW-R[lv]);drop(nf.me);return 'drop';};
  s.frame(dt=>{layout();if(cpu)cpuThink(dt);
   if(phase==='play'){left-=dt;
-   for(const p of P){p.cool=Math.max(0,p.cool-dt);p.comboT=Math.max(0,p.comboT-dt);const k=keysHeld[p.i];if(k.l||k.r)p.aim=clamp(p.aim+(k.r-k.l)*70*dt,4,JW-4);if(!p.out)physics(p,dt);else for(const f of p.fruits)f.pop=0;}
-   if(left<=0||P.every(p=>p.out)){phase='end';endT=1.6;sfx.ding(880);}
+   nf?.tick(dt);for(const p of P){if(nf&&(p.i===nf.remote||netEnd))continue;p.cool=Math.max(0,p.cool-dt);p.comboT=Math.max(0,p.comboT-dt);const k=keysHeld[p.i];if(k.l||k.r)p.aim=clamp(p.aim+(k.r-k.l)*70*dt,4,JW-4);if(!p.out)physics(p,dt);else for(const f of p.fruits)f.pop=0;}
+   if(nf){if(!netEnd&&(left<=0||P.every(p=>p.out))){netEnd='wait';nf.finish(P[nf.me].score);nf.remoteDone().then(v=>{if(v!=null)P[nf.remote].score=+v||0;s.setScores(P.map(q=>q.score));phase='end';endT=1.6;sfx.ding(880);});}}
+   else if(left<=0||P.every(p=>p.out)){phase='end';endT=1.6;sfx.ding(880);}
   }else{endT-=dt;if(endT<=0&&s.alive){const sc=P.map(p=>p.score);s.finish(sc,sc[0]===sc[1]?`Brawndo Fruit Merge ties ${sc[0]}–${sc[1]}.`:`${s.players[sc[0]>sc[1]?0:1].name} wins Brawndo Fruit Merge ${Math.max(...sc)}–${Math.min(...sc)}.`);return;}}
   fx.step(dt);shake.step(dt);
   const W=L.W,H=L.H;x.save();shake.apply(x);
   const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#07150e');bg.addColorStop(1,'#123d22');x.fillStyle=bg;x.fillRect(-20,-20,W+40,H+40);
   for(const p of P)drawJar(p);
-  label(x,phase==='play'?String(Math.ceil(left)):'TIME',W/2,L.top*.5,clamp(W*.05,16,30),{fill:left<10?'#ff6b6b':'#b6ff3a'});
+  if(netEnd==='wait'&&phase==='play')label(x,`Waiting for ${s.players[nf.remote].name}…`,W/2,H*.5,clamp(W*.04,14,24),{fill:'#fff'});
+  label(x,phase==='play'?String(Math.ceil(Math.max(0,left))):'TIME',W/2,L.top*.5,clamp(W*.05,16,30),{fill:left<10?'#ff6b6b':'#b6ff3a'});
   fx.draw(x);x.restore();
   s.status(`${Math.ceil(Math.max(0,left))}s · drag your half to aim, lift to drop · merge two heads for +150`);
  });

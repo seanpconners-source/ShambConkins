@@ -1,10 +1,13 @@
 // Terminator · Skynet Identification. Both players at once on one crowd seen through T-800 vision.
 // One walker (two in the late rounds) is a Terminator. Find the tell, tap it on your half of the screen.
 // Tap a human and your scanner locks for 1.5s. Tells escalate: eye glint, chrome flicker, ignoring the dog, robotic gait.
+// Online (s.online): both phones run the same seeded crowd and either player taps anywhere. Every tap goes over as
+// {c:[round, t, walker, machine]} with t = that phone's own round time; a Terminator belongs to the earliest tap, and
+// both phones work the scores out from the whole tap list, so they end the same whatever the lag. {fin:1} at the end.
 const {clamp,seededRandom}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const {label,rr,makeFx,makeShake,sfx,halfPointers,keyboard,voice,noise}=require("src/engines/tarantinoKit.js");
-const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {isCpu,isOnline,cpuSkill}=require("src/engines/cpuKit.js");
 const ROUNDS=[
  {n:7,tells:['eye'],title:'ROUND 1 · THE EYE',tip:'Infiltrators’ eyes glint red.'},
  {n:8,tells:['chrome'],title:'ROUND 2 · THE SKIN',tip:'Damaged skin flickers chrome.'},
@@ -19,10 +22,19 @@ const SHIRTS=['#7a2a2a','#5a1f3a','#8a4a2a','#3a2a5a','#6a6a2a','#2a4a5a','#7a3a
 async function skynetid(s){
  const [c,x]=s.canvas(760,560,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();
  const fx=makeFx(),shake=makeShake(),score=[0,0],lock=[0,0];
- let ri=-1,R=null,walkers=[],phase='card',pt=0,t=0,dog=null,barks=[],barkT=-9,result='';
+ let ri=-1,R=null,walkers=[],phase='card',pt=0,t=0,dog=null,barks=[],barkT=-9,result='',wrnd=Math.random;
+ const net=isOnline(s)?s.online:null,me=net?net.me:-1,log=[],pending=[];let remoteFin=false,finSent=false,botAt=null;if(net)s.hotseat=true;
+ // online: scores from every tap of both phones, in time order; a Terminator counts for the earliest tap only
+ function rescore(){const win=new Map();for(const e of log)if(e.m){const key=e.r+':'+e.k,o=win.get(key);if(!o||e.t<o.t||e.t===o.t&&e.i<o.i)win.set(key,e);}
+  const sc=[0,0];for(const e of [...log].sort((a,b)=>a.r-b.r||a.t-b.t||a.i-b.i)){if(e.m){if(win.get(e.r+':'+e.k)===e)sc[e.i]+=2;}else sc[e.i]=Math.max(0,sc[e.i]-1);}
+  score[0]=sc[0];score[1]=sc[1];s.setScores(score);}
+ function remoteClaim(e){log.push(e);if(e.r===ri){const w=walkers[e.k];if(w){const q=wpos(w);if(!w.dead){w.dead=1;w.found=e.i;fx.pop(q.x,q.y-L.u*2.1,e.m?`${s.players[e.i].name.toUpperCase()} +2`:`${s.players[e.i].name.toUpperCase()} HIT A HUMAN`,{color:e.m?'#ffd23f':'#ff6b6b',size:18});if(e.m)sfx.gun();}
+   else if(e.m&&w.found===me){const mine=log.find(q=>q.r===e.r&&q.k===e.k&&q.i===me);if(mine&&e.t<mine.t){w.found=e.i;fx.pop(q.x,q.y-L.u*2.1,`${s.players[e.i].name.toUpperCase()} WAS FASTER`,{color:'#ff9fc6',size:18});}}
+   if(phase==='play'&&walkers.every(w=>!w.machine||w.dead)){phase='reveal';pt=0;result=`${s.players[walkers.filter(w=>w.machine).map(w=>w.found).at(-1)??e.i].name} found ${R.two?'the last one':'it'}!`;}}}
+  rescore();}
  s.debug={engine:'skynetid',get walkers(){return walkers;},score,get phase(){return phase;},get round(){return ri;}};
 
- function startRound(){ri++;R=ROUNDS[ri];phase='card';pt=0;t=0;result='';const rnd=seededRandom(s.seed+':sky'+ri);
+ function startRound(){ri++;R=ROUNDS[ri];phase='card';pt=0;t=0;result='';const rnd=seededRandom(s.seed+':sky'+ri);wrnd=seededRandom(s.seed+':skywalk'+ri);
   walkers=[];const rows=5;
   for(let k=0;k<R.n;k++){const row=k%rows,dir=rnd()<.5?1:-1;walkers.push({k,row,dir,x:rnd(),speed:.045+rnd()*.05,phase:rnd()*6,bob:.6+rnd()*.6,machine:false,shirt:SHIRTS[Math.floor(rnd()*SHIRTS.length)],skin:['#e8b89a','#c98e6a','#8a5a3c','#f0c8a8'][Math.floor(rnd()*4)],hair:['#2a1a10','#5a3a1a','#c8a060','#111'][Math.floor(rnd()*4)],glint:rnd()*3,chrome:rnd()*4,flinch:0,dead:0,found:-1,pause:0,ptimer:2+rnd()*4});}
   const idx=[...walkers.keys()].sort(()=>rnd()-.5);walkers[idx[0]].machine=true;if(R.two)walkers[idx[1]].machine=true;
@@ -33,16 +45,19 @@ async function skynetid(s){
  const L={};function layout(){const W=s.W,H=s.H,top=H*.16,bot=H*.92;Object.assign(L,{W,H,top,bot,rowH:(bot-top)/5,u:clamp(Math.min(W/12,(bot-top)/7),22,64)});}
  const wpos=w=>{const y=L.top+(w.row+.75)*L.rowH,hop=w.flinch>0?-Math.sin(w.flinch/.5*Math.PI)*L.u*.35:0,bob=Math.abs(Math.sin(w.phase*2))*L.u*.12*w.bob;return {x:w.x*L.W,y:y-bob+hop};};
 
- function tap(i,p){if(phase!=='play'||s.paused)return;if(lock[i]>0){sfx.buzz();return;}if(!cpu&&(i===0?p.x>L.W/2:p.x<L.W/2))return;
+ function tap(i,p){if(net)i=me;if(phase!=='play'||s.paused)return;if(lock[i]>0){sfx.buzz();return;}if(!cpu&&!net&&(i===0?p.x>L.W/2:p.x<L.W/2))return;
   let best=null,bd=1e9;for(const w of walkers){if(w.dead)continue;const q=wpos(w),d=Math.hypot(p.x-q.x,p.y-(q.y-L.u*.9));if(d<bd){bd=d;best=w;}}
   fx.ring(p.x,p.y,{r:6,grow:160,life:.3,color:i?'#ff9fc6':'#78b6ff',w:2});
   if(!best||bd>L.u*1.3){sfx.click();return;}
   const q=wpos(best);
-  if(best.machine){best.dead=1;best.found=i;score[i]+=2;s.setScores(score);sfx.gun();shake.kick(10);fx.spark(q.x,q.y-L.u,26,'#ffd2a0',380);fx.pop(q.x,q.y-L.u*2.1,'TERMINATED +2',{color:'#ffd23f',size:20});s.react(i,'happy');vibrate(30);
+  if(net){const e={r:ri,t,i:me,k:best.k,m:best.machine?1:0};log.push(e);net.send({c:[ri,+t.toFixed(3),best.k,e.m]});}
+  if(best.machine){best.dead=1;best.found=i;if(net)rescore();else{score[i]+=2;s.setScores(score);}sfx.gun();shake.kick(10);fx.spark(q.x,q.y-L.u,26,'#ffd2a0',380);fx.pop(q.x,q.y-L.u*2.1,'TERMINATED +2',{color:'#ffd23f',size:20});s.react(i,'happy');vibrate(30);
    if(walkers.every(w=>!w.machine||w.dead)){phase='reveal';pt=0;result=`${s.players[i].name} found ${R.two?'the last one':'it'}!`;}}
-  else{best.dead=1;best.found=i;score[i]=Math.max(0,score[i]-1);s.setScores(score);lock[i]=1.5;sfx.groan();shake.kick(6);fx.splat(q.x,q.y-L.u,{n:14,speed:200,color:'#c4161c',size:4});fx.pop(q.x,q.y-L.u*2.1,'HUMAN! -1',{color:'#ff6b6b',size:20});s.react(i,'sad');vibrate([20,30,20]);}
+  else{best.dead=1;best.found=i;if(net)rescore();else{score[i]=Math.max(0,score[i]-1);s.setScores(score);}lock[i]=1.5;sfx.groan();shake.kick(6);fx.splat(q.x,q.y-L.u,{n:14,speed:200,color:'#c4161c',size:4});fx.pop(q.x,q.y-L.u*2.1,'HUMAN! -1',{color:'#ff6b6b',size:20});s.react(i,'sad');vibrate([20,30,20]);}
  }
  halfPointers(s,{down:(i,r)=>tap(i,r)});
+ if(net){void (async()=>{for(;;){const m=await net.next();if(!m||!s.alive){remoteFin=true;return;}if(m.fin)remoteFin=true;else if(Array.isArray(m.c)){const [r,tt,k,mm]=m.c;if(Number.isInteger(r)&&Number.isInteger(k)&&Number.isFinite(tt))pending.push({r,t:tt,i:1-me,k,m:mm?1:0});}}})();
+  s.debug.bot=()=>{if(phase!=='play'||lock[me]>0)return '';if(botAt===null||botAt.r!==ri)botAt={r:ri,at:1+Math.random()*6};if(t<botAt.at)return '';botAt.at=t+1+Math.random()*3;const live=walkers.filter(w=>!w.dead),pool=Math.random()<.2?live.filter(w=>!w.machine):live.filter(w=>w.machine),w=pool[Math.floor(Math.random()*pool.length)];if(!w)return '';const q=wpos(w);tap(me,{x:q.x,y:q.y-L.u*.9});return 'tap';};}
  // vs CPU: the T-800 needs a few seconds to spot the tell (less on Hard) and sometimes shoots a human
  const cpu=isCpu(s);let cpuSpot=null,cpuRound=-1;
  function cpuThink(dt){if(phase!=='play'){return;}const sk=cpuSkill(s);if(cpuRound!==ri){cpuRound=ri;cpuSpot=2.2+(1-sk)*5.5+Math.random()*2.5;}cpuSpot-=dt;if(cpuSpot>0||lock[1]>0)return;
@@ -75,18 +90,20 @@ async function skynetid(s){
  s.hint('Both hunt at once. Tap a walker on YOUR half (left = player 1, right = player 2). A Terminator is +2; a human is −1 and locks your scanner for 1.5 seconds. Each round teaches a tell: red eye glint, chrome skin flicker, not flinching when the dog barks, a perfectly even march. Seven rounds.');
  if(!await s.pass(0,'Skynet has sent infiltrators into the crowd. Each round shows a new tell. Tap the Terminator when it walks through YOUR half of the screen. Shoot a human and your scanner locks.','Both ready — scan',{countdown:3}))return;
  startRound();
- s.frame(dt=>{layout();t+=dt;pt+=dt;if(cpu)cpuThink(dt);for(let i=0;i<2;i++)lock[i]=Math.max(0,lock[i]-dt);
+ s.frame(dt=>{layout();t+=dt;pt+=dt;if(cpu)cpuThink(dt);
+  if(net){for(let k=pending.length-1;k>=0;k--){const e=pending[k];if(e.r<ri||phase==='end'||e.r===ri&&(phase==='reveal'||phase==='play'&&e.t<=t)){pending.splice(k,1);remoteClaim(e);}}}for(let i=0;i<2;i++)lock[i]=Math.max(0,lock[i]-dt);
   if(phase==='card'){if(pt>2.1){phase='play';pt=0;t=0;sfx.ding(660);}}
   else if(phase==='play'||phase==='reveal'){
    if(phase==='play'){if(barks.length&&barks[0]<=t){barks.shift();if(R.tells.includes('dog')){barkT=t;voice(420,.08,.06,'square');voice(360,.1,.06,'square',{delay:.12});for(const w of walkers)if(!w.machine&&!w.dead)w.flinch=.5;}}
     if(pt>15){phase='reveal';pt=0;result='It got away.';sfx.groan();}}
    if(dog){dog.x+=dog.dir*.06*dt;if(dog.x>1.1)dog.dir=-1;if(dog.x<-.1)dog.dir=1;}
    for(const w of walkers){if(w.dead)continue;w.flinch=Math.max(0,w.flinch-dt);w.glint+=dt;w.chrome+=dt;
-    let v=w.speed;if(!w.machine||!R.tells.includes('gait')){w.ptimer-=dt;if(w.ptimer<0){w.pause=.5+Math.random()*.7;w.ptimer=3+Math.random()*4;}if(w.pause>0){w.pause-=dt;v*=.1;}else v*=.75+.5*Math.abs(Math.sin(w.phase*.3));}
+    let v=w.speed;if(!w.machine||!R.tells.includes('gait')){w.ptimer-=dt;if(w.ptimer<0){w.pause=.5+wrnd()*.7;w.ptimer=3+wrnd()*4;}if(w.pause>0){w.pause-=dt;v*=.1;}else v*=.75+.5*Math.abs(Math.sin(w.phase*.3));}
     if(w.machine&&!R.tells.includes('gait'))v=w.speed*(.7+.5*Math.abs(Math.sin(w.phase*.3)));
     w.phase+=dt*(w.machine&&R.tells.includes('gait')?5:4+v*20);w.x+=w.dir*v*dt;if(w.x>1.06)w.x=-.06;if(w.x<-.06)w.x=1.06;}
    if(phase==='reveal'&&pt>2.4){if(ri>=ROUNDS.length-1){phase='end';pt=0;sfx.fanfare();}else startRound();}
-  }else if(phase==='end'&&pt>1.6&&s.alive){s.finish([...score],score[0]===score[1]?`Skynet Identification ties ${score[0]}–${score[1]}.`:`${s.players[score[0]>score[1]?0:1].name} wins Skynet Identification ${Math.max(...score)}–${Math.min(...score)}.`);return;}
+  }else if(phase==='end'&&net&&(!finSent||!(remoteFin&&!pending.length))){if(!finSent){finSent=true;net.send({fin:1});}}
+  else if(phase==='end'&&pt>1.6&&s.alive){s.finish([...score],score[0]===score[1]?`Skynet Identification ties ${score[0]}–${score[1]}.`:`${s.players[score[0]>score[1]?0:1].name} wins Skynet Identification ${Math.max(...score)}–${Math.min(...score)}.`);return;}
   fx.step(dt);shake.step(dt);const W=L.W,H=L.H;x.save();shake.apply(x);
   // T-800 vision
   const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#4a0606');bg.addColorStop(.6,'#7a1010');bg.addColorStop(1,'#3a0404');x.fillStyle=bg;x.fillRect(-20,-20,W+40,H+40);

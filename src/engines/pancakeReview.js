@@ -1,10 +1,13 @@
 // Review · "Pancakes, Divorce, Pancakes". A two-player eating contest on one phone, both at once.
 // Tap your half to take a bite (four bites a pancake). Bites on the chew beat are easy; mashing makes you queasy.
 // Fill the queasy meter and you throw up (lose two pancakes). When Suzanne calls, put the fork DOWN.
+// Online (netField): each phone eats on its own clock (tap anywhere; same seeded calls and golden stacks); the other
+// side is drawn from snapshots {eaten,bites,need,q,stun,golden,chew,sl}; both end from both final counts.
 const {clamp,seededRandom}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const {label,rr,makeFx,makeShake,sfx,halfPointers,keyboard,voice,noise}=require("src/engines/tarantinoKit.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 const DUR=45,BEAT=.5;
 const CALL_LINES=['“Forrest… are you eating pancakes right now?”','“We need to talk about the house.”','“Is that syrup I hear?”','“My lawyer says hi.”'];
 const PUKE_LINES=['Zero stars.','The diner goes quiet.','Not on the menu.','A bold review.'];
@@ -17,10 +20,12 @@ async function pancakes(s){
  const golden=new Set();for(let k=2;k<40;k+=3+Math.floor(rnd()*3))golden.add(k);
  const P=[0,1].map(i=>({i,eaten:0,bites:0,need:4,q:0,last:-9,stun:0,chew:0,pukes:0,streak:0,caught:0,face:0,beatT:0,goldenNow:false}));
  let t=0,phase='play',endT=0,callNow=null,ring=0;
- s.debug={engine:'pancakes',P,calls,get t(){return t;}};
+ let netEnd=null;const nf=netField(s,{pack:i=>{const p=P[i];return {eaten:p.eaten,bites:p.bites,need:p.need,q:Math.round(p.q),stun:+p.stun.toFixed(2),golden:p.goldenNow,chew:+p.chew.toFixed(2),sl:+(t-p.last).toFixed(2)};},
+  unpack:(i,d)=>{const p=P[i],was=p.eaten;Object.assign(p,{eaten:d.eaten|0,bites:d.bites|0,need:d.need|0||4,q:+d.q||0,stun:+d.stun||0,goldenNow:!!d.golden,chew:+d.chew||0,last:t-(+d.sl||9)});if(p.eaten>was)fx.confetti(cx(i),L.plateY,14,['#f3c27a','#fff','#8a4f1d']);s.setScores(P.map(q=>q.eaten));}});
+ s.debug={engine:'pancakes',P,calls,get t(){return t;},bot:null};
  const setup=p=>{p.goldenNow=golden.has(p.eaten);p.need=p.goldenNow?6:4;p.bites=0;};P.forEach(setup);
 
- function bite(i){const p=P[i];if(phase!=='play'||s.paused)return;
+ function bite(i){if(nf){if(netEnd)return;i=nf.me;}const p=P[i];if(phase!=='play'||s.paused)return;
   if(p.stun>0){p.q=Math.min(100,p.q+2);return;}
   if(callNow){p.q=Math.min(100,p.q+22);p.caught++;p.streak=0;shake.kick(6);sfx.buzz();fx.pop(cx(i),L.H*.36,'CAUGHT!',{color:'#ff6b6b',size:24});s.react(i,'sad');checkPuke(p);return;}
   const gap=t-p.last;p.last=t;const onBeat=gap>BEAT*.78&&gap<BEAT*1.7;
@@ -30,7 +35,7 @@ async function pancakes(s){
   voice(onBeat?520+Math.min(6,p.streak)*40:260,.06,.04,onBeat?'triangle':'square');
   if(onBeat&&p.streak>0&&p.streak%4===0)fx.pop(cx(i),L.H*.3,'CHEW RHYTHM ×'+p.streak,{color:'#ffe08a',size:16});
   if(p.bites>=p.need){const gain=p.goldenNow?2:1;p.eaten+=gain;fx.confetti(cx(i),L.plateY,p.goldenNow?40:14,p.goldenNow?['#ffd23f','#fff3b0','#ffb000']:['#f3c27a','#fff','#8a4f1d']);fx.pop(cx(i),L.plateY-40,'+'+gain+' 🥞',{color:'#fff',size:24});sfx.coin();s.setScores(P.map(q=>q.eaten));s.react(i,'happy');setup(p);}
-  checkPuke(p);
+  checkPuke(p);nf?.push();
  }
  function checkPuke(p){if(p.q<100)return;p.pukes++;const lost=Math.min(2,p.eaten);p.eaten-=lost;p.q=35;p.stun=2.4;p.streak=0;setup(p);s.setScores(P.map(q=>q.eaten));
   fx.splat(cx(p.i),L.headY+L.hs*.3,{n:40,speed:420,dir:Math.PI/2,spread:1.6,size:6,color:'#9fc23a'});shake.kick(14);noise(.5,.15,{f0:500,f1:120});vibrate([40,30,60]);s.react(p.i,'sad');
@@ -78,11 +83,12 @@ async function pancakes(s){
 
  s.hint('Both eat at once. Tap your half to bite; four bites finish a pancake (golden stacks take six and count double). Bite on the beat (when the ring glows) to stay calm; mashing fills the QUEASY meter fast and the fuller you get, the worse each bite. Max it out and you throw up two pancakes. When Suzanne calls, stop eating! Keys: Space and Enter.');
  if(!await s.pass(0,'Forrest MacNeil was asked: what is it like to eat 15 pancakes? Find out. Tap your half to bite, ideally on the beat. Don’t get too queasy, and when the phone rings, put the fork down. Most pancakes in 45 seconds wins.','Both ready — dig in',{countdown:3}))return;
+ if(nf)s.debug.bot=()=>{const p=P[nf.me];if(phase!=='play'||p.stun>0||callNow||netEnd)return '';if(t-p.last>BEAT*.85&&p.q<75){bite(nf.me);return 'bite';}return '';};
  s.frame(dt=>{layout();if(cpu)cpuThink(dt);
   if(phase==='play'){t+=dt;
    const call=calls.find(cl=>t>=cl.t&&t<cl.t+cl.len);if(call&&!callNow){ring=0;sfx.phone();}callNow=call||null;if(callNow){ring+=dt;if(ring>.6){ring=0;sfx.phone();}}
-   for(const p of P){p.chew=Math.max(0,p.chew-dt);if(p.stun>0)p.stun-=dt;const calm=t-p.last>.9?14:5;p.q=Math.max(0,p.q-calm*dt);}
-   if(t>=DUR){phase='end';endT=2.2;sfx.fanfare();}
+   nf?.tick(dt);for(const p of P){if(nf&&p.i===nf.remote)continue;p.chew=Math.max(0,p.chew-dt);if(p.stun>0)p.stun-=dt;const calm=t-p.last>.9?14:5;p.q=Math.max(0,p.q-calm*dt);}
+   if(t>=DUR){if(nf){if(!netEnd){netEnd='wait';nf.finish(P[nf.me].eaten);nf.remoteDone().then(v=>{if(v!=null)P[nf.remote].eaten=v|0;s.setScores(P.map(q=>q.eaten));phase='end';endT=2.2;sfx.fanfare();});}}else{phase='end';endT=2.2;sfx.fanfare();}}
   }else{endT-=dt;if(endT<=0&&s.alive){const sc=P.map(p=>p.eaten);s.finish(sc,sc[0]===sc[1]?`Pancakes tie ${sc[0]}–${sc[1]}. Both reviews: three stars.`:`${s.players[sc[0]>sc[1]?0:1].name} eats ${Math.max(...sc)} pancakes to ${Math.min(...sc)}.`);return;}}
   fx.step(dt);shake.step(dt);const W=L.W,H=L.H;x.save();shake.apply(x);
   // diner
@@ -92,7 +98,8 @@ async function pancakes(s){
   x.strokeStyle='#ffffff22';x.lineWidth=2;x.beginPath();x.moveTo(W/2,0);x.lineTo(W/2,H);x.stroke();
   label(x,'REVIEW',W/2,H*.2,clamp(W*.03,10,16),{fill:'#ffd6a8'});
   for(const p of P)drawSide(p);
-  if(phase==='play')label(x,String(Math.ceil(DUR-t)),W/2,H*.11,clamp(W*.05,18,32),{fill:DUR-t<10?'#ff6b6b':'#fff'});
+  if(netEnd==='wait'&&phase==='play')label(x,`Waiting for ${s.players[nf.remote].name}…`,W/2,H*.62,clamp(W*.04,14,24),{fill:'#fff'});
+  if(phase==='play')label(x,String(Math.ceil(Math.max(0,DUR-t))),W/2,H*.11,clamp(W*.05,18,32),{fill:DUR-t<10?'#ff6b6b':'#fff'});
   if(callNow){const a=.75+Math.sin(t*20)*.25;x.fillStyle=`rgba(20,10,30,${.55*a})`;x.fillRect(0,H*.4,W,H*.16);label(x,'📞 SUZANNE IS CALLING — STOP EATING!',W/2,H*.45,clamp(W*.04,13,26),{fill:'#ffd23f'});label(x,callNow.line,W/2,H*.51,clamp(W*.028,11,18),{fill:'#fff'});}
   if(phase==='end'){const best=Math.max(...P.map(p=>p.eaten));for(const p of P){const stars=clamp(Math.round(p.eaten/3)/2,0,5);label(x,'★'.repeat(Math.floor(stars))+(stars%1?'½':''),cx(p.i),H*.16,clamp(W*.045,14,28),{fill:'#ffd23f'});label(x,p.eaten===best?'WINNER':'',cx(p.i),H*.21,14,{fill:'#9dff5c'});}}
   fx.draw(x);x.restore();

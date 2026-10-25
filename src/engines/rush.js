@@ -1,12 +1,14 @@
 // Microgame Rush (WarioWare, Nintendo): both humans play the same 4-8 s microgame at once on split halves.
 // Landscape: left/right. Portrait: top/bottom, the top half rotated so the player across the table can read it.
+// Online (s.online): both phones deal the same microgames from the seed; each phone plays its own full screen and sends
+// {r, res, at: seconds into ITS microgame}; points are given once both results are in (first finisher 2, second 1).
 const {clamp, seededRandom, shuffle}=require("src/utils.js");
 const {sound, tone, vibrate}=require("src/audio.js");
 const R=require("src/engines/rushCore.js");
 const {GAMES_A}=require("src/engines/rushGamesA.js");
 const {GAMES_B}=require("src/engines/rushGamesB.js");
 const {GAMES_C}=require("src/engines/rushGamesC.js");
-const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {isCpu,isOnline,cpuSkill}=require("src/engines/cpuKit.js");
 const {COL, txt, circ, rrect, poly, star, rays, easeOutBack, easeOut, TAU}=R;
 const MICROGAMES=[...GAMES_A,...GAMES_B,...GAMES_C];
 const BOSS_NAMES=['BOSS!'];
@@ -34,7 +36,9 @@ async function rush(s){
  s.hint('Two players, one screen, same microgame at the same time. Landscape: P1 plays the left half, P2 the right. Portrait: P1 top (upside down for the player across the table), P2 bottom. Read the one-word order, then tap, drag, swipe or scrub before the fuse burns out. First to finish scores 2, second scores 1. Every 3rd round the tempo jumps; every 6th round is a longer BOSS worth double. Desktop: P1 WASD + Space, P2 arrows + Enter move a cursor and click.');
  const scores=[0,0],seen=new Set(),used=new Set(),H=[0,1].map(i=>({i,st:null,res:null,at:0,pts:0,ripples:[],cursor:{x:0,y:0,on:false,down:false,was:false},lastSz:''}));
  const cpu=isCpu(s);let cpuPlan=null;
- let phase='intro',pt=0,round=-1,cur=null,curBoss=false,curSpeed=1,dur=5,endAt=Infinity,lastKind='',lastTick=-1,forced=null,bannerKind='',sudden=0,lay=layout(s.W,s.H,cpu),finalText='';
+ const net=isOnline(s)?s.online:null,me=net?net.me:-1,inbox=new Map();if(net){s.hotseat=true;void (async()=>{for(;;){const m=await net.next();if(!m||!s.alive)return;if(Number.isInteger(m.r))inbox.set(m.r,m);}})();}
+ const netLayout=()=>{const hd=clamp(Math.round(s.H*.1),24,38),r={x:0,y:0,w:s.W,h:s.H,rot:false,hd};return {portrait:s.W<s.H*.92,rects:[{...r},{...r}]};};
+ let phase='intro',pt=0,round=-1,cur=null,curBoss=false,curSpeed=1,dur=5,endAt=Infinity,lastKind='',lastTick=-1,forced=null,bannerKind='',sudden=0,lay=net?netLayout():layout(s.W,s.H,cpu),finalText='';
  const total=()=>rounds+sudden;
  const hl=i=>lay.rects[i];
  const playRect=i=>({w:hl(i).w,h:hl(i).h-hl(i).hd});
@@ -61,11 +65,14 @@ async function rush(s){
  }
  function settle(i,res,at){
   const h=H[i],o=H[1-i],base=curBoss?2:1;h.res=res;h.at=at;
+  if(net){if(i===me)net.send({r:round,res,at:+at.toFixed(3)});else h.st.result=res;if(!o.res)return;
+   const w=[0,1].filter(k=>H[k].res==='win').sort((a,b)=>H[a].at-H[b].at);for(const k of w){const second=w.length===2&&k===w[1]&&H[k].at-H[w[0]].at>.03;H[k].pts=(second?1:2)*base;scores[k]+=H[k].pts;}
+   s.setScores([...scores]);for(const k of [0,1]){if(H[k].res==='win'){if(k===me){sound(H[k].pts>=2*base?'win':'pickup');vibrate(18);}s.react(k,'happy');}else{if(k===me)sound('lose');s.react(k,'sad');}}return;}
   if(res==='win'){let pts=2*base;if(o.res==='win'&&at-o.at>.03)pts=1*base;h.pts=pts;scores[i]+=pts;s.setScores([...scores]);sound(pts>=2*base?'win':'pickup');vibrate(18);s.react(i,'happy');}
   else{sound('lose');s.react(i,'sad');}
  }
  function toLocal(p,i){const r=hl(i);return r.rot?{x:r.x+r.w-p.x,y:r.y+r.h-p.y-r.hd}:{x:p.x-r.x,y:p.y-r.y-r.hd};}
- const ownerOf=p=>{const k=lay.rects.findIndex(r=>p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h);return k>=0?k:lay.portrait?(p.y<s.H/2?0:1):(p.x<s.W/2?0:1);};
+ const ownerOf=p=>{if(net)return me;const k=lay.rects.findIndex(r=>p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h);return k>=0?k:lay.portrait?(p.y<s.H/2?0:1):(p.x<s.W/2?0:1);};
  const fingers=new Map();
  function deliver(i,type,lp,id){const h=H[i];if(phase!=='play'||h.res||!h.st)return;const g=h.st.g;if(type==='down'){h.ripples.push({x:lp.x,y:lp.y,t:0});}g[type]?.(h.st,lp,id);}
  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev),i=ownerOf(p);if(cpu&&i===1)return;let n=0;for(const v of fingers.values())if(v===i)n++;if(n>=3)return;fingers.set(ev.pointerId,i);s.capture(ev);H[i].cursor.on=false;deliver(i,'down',toLocal(p,i),ev.pointerId);});
@@ -135,11 +142,12 @@ async function rush(s){
  }
  function render(){
   x.fillStyle=COL.ink;x.fillRect(0,0,s.W,s.H);
-  for(const h of H){const rect=hl(h.i);x.save();x.beginPath();x.rect(rect.x,rect.y,rect.w,rect.h);x.clip();if(rect.rot){x.translate(rect.x+rect.w,rect.y+rect.h);x.rotate(Math.PI);}else x.translate(rect.x,rect.y);
+  for(const h of H){if(net&&h.i!==me)continue;const rect=hl(h.i);x.save();x.beginPath();x.rect(rect.x,rect.y,rect.w,rect.h);x.clip();if(rect.rot){x.translate(rect.x+rect.w,rect.y+rect.h);x.rotate(Math.PI);}else x.translate(rect.x,rect.y);
    const loc={w:rect.w,h:rect.h};
    if(phase==='intro')drawIntro(x,loc,h.i,pt);else if(phase==='banner')drawBanner(x,loc,h.i,pt);else if(phase==='final')drawFinal(x,loc,h.i,pt);
    else if(h.st){drawPlay(x,h,pt,rect,h.i);const frac=phase==='play'?1-pt/dur:0;fuse(x,rect.w,rect.hd,frac,curBoss?'BOSS':`${Math.min(round+1,total())}/${total()}`,curBoss,performance.now()/1000);}
    x.restore();}
+  if(net&&(phase==='play'||phase==='result')){const o=H[1-me],fs=clamp(Math.min(s.W,s.H)*.04,12,18),y=hl(me).hd+fs*1.2;txt(x,`${s.players[1-me].name.toUpperCase()} ${o.res==='win'?'✓':o.res?'✗':'…'}  ${scores[1-me]}`,s.W-fs*5,y,fs,o.res==='win'?COL.green:o.res?COL.red:COL.white,{lw:3});}
  }
  let lastSig='';
  s.debug={engine:'rush',halves:H,scores,get phase(){return phase;},get game(){return cur;},get round(){return round;},get speed(){return curSpeed;},get dur(){return dur;},get pt(){return pt;},force(id,boss){forced=id;if(boss!==undefined)timeline[round+1]={boss,speedUp:false};},skipIntro(){if(phase==='intro')pt=99;},skip(){if(phase==='play')pt=dur;else if(phase==='result'||phase==='banner')pt=99;},layout:()=>lay,pool:()=>pool.map(g=>g.id)};
@@ -151,11 +159,12 @@ async function rush(s){
   const sig=lay.rects.map(r=>r.w+'x'+r.h).join();
   if(sig!==lastSig){if(lastSig&&phase==='play'&&!H.some(h=>h.res)&&pt<dur-.5){const p0=pt;startPlay();pt=Math.min(p0,.6);}lastSig=sig;}
   pumpKeys(dt);
-  for(const h of H){if(!h.st)continue;for(const rp of h.ripples)rp.t+=dt;h.ripples=h.ripples.filter(rp=>rp.t<.3);h.st.t+=dt;h.st.g.update(h.st,dt);if(phase==='play'&&!h.res&&h.st.result&&!(cpu&&h.i===1))settle(h.i,h.st.result,pt);}
+  if(net&&phase==='play'){const m=inbox.get(round),o=H[1-me];if(m&&!o.res&&o.st)settle(1-me,m.res==='win'?'win':'lose',Number.isFinite(m.at)?m.at:dur);}
+  for(const h of H){if(!h.st||net&&h.i!==me)continue;for(const rp of h.ripples)rp.t+=dt;h.ripples=h.ripples.filter(rp=>rp.t<.3);h.st.t+=dt;h.st.g.update(h.st,dt);if(phase==='play'&&!h.res&&h.st.result&&!(cpu&&h.i===1))settle(h.i,h.st.result,pt);}
    if(cpu&&cpuPlan&&phase==='play'&&!H[1].res&&pt>=cpuPlan.at)settle(1,H[1].st.result=cpuPlan.win?'win':'lose',pt);
   if(phase==='play'){
    const left=dur-pt;if(left<1.3&&left>0){const n=Math.floor(left*3);if(n!==lastTick){lastTick=n;if(!H.every(h=>h.res))sound('tick');}}
-   if(pt>=dur){for(const h of H)if(!h.res){const res=h.st.g.timeout==='win'?'win':'lose';h.st.result=h.st.result||res;settle(h.i,h.st.result,dur);}}
+   if(pt>=dur){for(const h of H)if(!h.res&&!(net&&h.i!==me)){const res=h.st.g.timeout==='win'?'win':'lose';h.st.result=h.st.result||res;settle(h.i,h.st.result,dur);}}
    if(H.every(h=>h.res)){if(endAt===Infinity)endAt=pt+.35;if(pt>=endAt){phase='result';pt=0;}}
   }else if(phase==='result'){
    if(pt>(curBoss?1.5:1.15)){
@@ -166,6 +175,7 @@ async function rush(s){
  }
  if(!await s.pass(0,'Microgame Rush: one-word orders, 4 second microgames, both of you at once. Landscape: left half is Player 1, right half is Player 2. Portrait: Player 1 is the upside-down top half. First to finish scores 2, second scores 1.','Both ready',{countdown:3}))return;
  sound('start');for(let i=0;i<6;i++)setTimeout(()=>{if(s.alive)tone([523,659,784,1047,784,1047][i],.09,.05,'square');},i*110);
- s.frame(dt=>{lay=layout(s.W,s.H,cpu);step(dt);if(!s.alive)return;render();s.status(`${s.players[0].name} ${scores[0]} · ${s.players[1].name} ${scores[1]}`+(phase==='play'||phase==='result'?` · ${cur.verb.replace('!','')}`:''));});
+ if(net)s.debug.bot=()=>{const h=H[me];if(phase!=='play'||h.res||!h.st||pt<.6)return '';if(Math.random()<.04){h.st.result=Math.random()<.65?'win':'lose';return 'res';}return '';};
+ s.frame(dt=>{lay=net?netLayout():layout(s.W,s.H,cpu);step(dt);if(!s.alive)return;render();s.status(`${s.players[0].name} ${scores[0]} · ${s.players[1].name} ${scores[1]}`+(phase==='play'||phase==='result'?` · ${cur.verb.replace('!','')}`:''));});
 }
 Object.assign(exports,{rush,MICROGAMES,layout,speedFor});
