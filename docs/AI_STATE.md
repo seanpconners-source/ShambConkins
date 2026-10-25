@@ -552,7 +552,11 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   and `tests/solo-board.mjs` still pass after the merge.
   Trivia carries both seams: the online move relay (`net`) and the CPU's visible turn (`cpuTriviaTurn`); answer lines name
   the player when `cpu||net`. CHANGELOG has an "Unreleased (next release: v0.67.0)" section: rename it `## v0.67.0` when releasing.
-  TODO next: the next batches (Connect 4/Reversi/Yahtzee/casino/Guess Who/Battleship... via the same pattern).
+  Batch 2 (Oct 25, same branch): Connect 4 `four-lights` (moves {c}), Reversi `strategema-grid` ({r,c}; a no-move skip happens
+  on both phones by the rule), Yahtzee `full-shambyahtzee` + `cheaters-yahtzee` (yahtzee.js: {h: held} per hold change, {r: dice
+  values} per roll so dice never depend on matching RNG, {c: category}); waiting phone's buttons off + "PLAYING ON THEIR PHONE".
+  All 4 pass online-native; 2P fuzz and 1P vs CPU still clean.
+  TODO next: casino tables, Guess Who, Battleship... via the same pattern.
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).

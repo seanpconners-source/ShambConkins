@@ -81,7 +81,8 @@ async function soloNext(s,{title='Level cleared!',body='',level=1,score=0,label=
 // online (src/netPlay.js: both phones run the 2P game, each plays its own player) are listed in NET_NATIVE.
 const DUEL_KINDS=new Set(['levels','rounds','turns','game','alone']);
 const NET_NATIVE=new Set(['trivia-mixed','trivia-nick90','trivia-dbz','trivia-hxh','trivia-sitcom','trivia-hardcore','trivia-lightning','trivia-wager','trivia-survival',
- 'paddys-beer-pong','shamb-uno','ten-forward-chess','deadite-checkers']);
+ 'paddys-beer-pong','shamb-uno','ten-forward-chess','deadite-checkers',
+ 'four-lights','strategema-grid','full-shambyahtzee','cheaters-yahtzee']);
 const netNative=g=>!!g&&NET_NATIVE.has(g.id);
 function duelOK(g){return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&(DUEL_KINDS.has(soloKind(g))||netNative(g));}
 // 1P board game (src/cpuBoard.js): the human plays games with a real CPU opponent ('cpu') or co-op games alone ('alone':
