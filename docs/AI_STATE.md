@@ -614,9 +614,20 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   tap, humans −1 with the clamp in time order; other phone's taps wait until this phone's round clock reaches them; {fin:1}
   then both finish), Microgame Rush ×2 `microgame-rush`/`rush-marathon` (both deal the same microgames from s.random; own
   full screen via `netLayout`; {r,res,at}; points once both results are in). All 6 pass online-native; 2P fuzz + 1P CPU clean.
-  This clock-stamped timeline is the pattern for other race games. TODO next: the remaining real-time CPU games
-  (arena/action: pong, sumo, snakes, Kart VS...) need continuous state, not discrete shots: probably input relay with
-  delay (lockstep) or host-authoritative state, decide per game.
+  This clock-stamped timeline is the pattern for other race games.
+  ARENA PROTOTYPE, Pong `pong-duel` (Oct 25, atariPong.js): tried HOST-AUTHORITATIVE first (seat 1 runs the game, guest sends
+  its paddle, draws snapshots): measured with `tests/online-lag.mjs` (LAT_LO/HI ms delay + jitter, frame-rate bots that
+  steer toward the ball they see), the guest reacts ~2x the lag late (sees the ball late AND its paddle arrives late): bot
+  guest lost 4-7 at ~0 ms, 0-7 at 80-150 ms. Shipped instead: NO HOST. Physics on one fixed court (`FIELD` 724x390, not the
+  screen), both phones fly the ball; each phone judges only ITS OWN paddle and sends {e:{hit:[u,v,du,dv,hits]}} / {e:{miss:sc}};
+  at the other paddle a phone GUESSES from the streamed paddle (bounce back, or fly on and wait off court) and the real call
+  replaces the ball (advanced by the time since, `catchUp`) with the difference eased out (`off`, 9/s). Paddles {p} 30/s,
+  `nf.sync('serve')` (new in netField) starts both together, serve dirs from s.random on both, seat 1 calls the 2-min cap,
+  seat 2 sees the court turned round. 80-150 ms: stalls 0.3%, motion p99 .038 vs .029 at 0 ms, max ~.5 on a wrong guess;
+  outcomes even; result cards always agree. LESSON for the other ~38 arena games: a host-authority model handicaps the guest
+  in reaction games; prefer "each phone is the authority for its own player and for what hits it" (both run the shared
+  world from the seed, send own position/inputs + events like hit/death), and only use a host for contested shared physics
+  (sumo pushing, a shared ball both can touch at once), then with own-avatar prediction. Next: apply per game a batch at a time.
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).
