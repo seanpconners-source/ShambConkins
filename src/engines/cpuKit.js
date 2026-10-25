@@ -1,6 +1,10 @@
 // CPU opponents for solo (1P arcade) play. Player 2 (index 1) is the CPU; s.solo.skill is 0.35 / 0.65 / 0.9.
 const {cpuSkill}=require("src/solo.js");
 const isCpu=s=>s?.solo?.kind==='cpu';
+// Online (src/netPlay.js): this phone plays s.online.me; the other player's moves come from s.online.next() and the
+// local player's go out with s.online.send(). Like vs CPU there is one person per phone, so hand-off cards are skipped.
+const isOnline=s=>!!s?.online;
+const remoteSeat=s=>s?.online?s.online.remote:1;
 // Hot-seat games: hand-off cards are skipped after the first one (one human on the phone) and whenever
 // isTurn() is true the CPU waits a beat, then think() plays its move through the engine's own move function.
 function cpuHotseat(s,{isTurn,think,delay=700}){
@@ -42,4 +46,4 @@ function cpuTriviaTurn(s,{q,choices,buttons,feedback,live,pick,hidden=false}){
   if(!await s.wait(hidden?600:1200)||!live())return;pick(pos);
  });
 }
-Object.assign(exports,{isCpu,cpuHotseat,cpuDepth,cpuBlunder,negamax,pickRandom,cpuSkill,cpuTriviaPick,cpuThinkTime,cpuTriviaTurn});
+Object.assign(exports,{isCpu,isOnline,remoteSeat,cpuHotseat,cpuDepth,cpuBlunder,negamax,pickRandom,cpuSkill,cpuTriviaPick,cpuThinkTime,cpuTriviaTurn});

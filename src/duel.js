@@ -89,7 +89,7 @@ async function start(gameId,seed,mid,board=null){
  match={mid,gameId,seed,peer:{...netState().peer,...(board?{name:board[1].name,character:board[1].character}:{})},mine:{score:0,level:0,done:false},theirs:{score:0,level:0,done:false},gone:false,started:false,board:!!board};
  showChip();watchMatch();
  const who=board?(board[0].owner==='Amber'?1:0):store.onlineWho??soloSettings(store.profile).who;
- const ok=await hooks.start(gameId,{seed,who,opponent:match.peer,finish,rematch:()=>propose(gameId),...(board?{board:true,players:board}:{})});
+ const ok=await hooks.start(gameId,{seed,who,mid,opponent:match.peer,finish,rematch:()=>propose(gameId),...(board?{board:true,players:board}:{})});
  if(match?.mid===mid)match.started=!!store.session||match.mine.done;
  if(!ok&&match?.mid===mid&&!match.mine.done&&!store.session){
   if(match.board){void finish({score:0,level:0,label:'Did not play'});return;}   // the board still needs both results

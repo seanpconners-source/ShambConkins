@@ -532,6 +532,21 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   filters by it on run.cpu, the launcher swaps id'd games without one; board session gets `session.solo={kind,board:true,...}`
   so engines drive P2 as the CPU, and settles through `settleGame` (alone → co-op result from `s.solo.won`); Exit = normal
   board exit (no banking). Test: `tests/solo-board.mjs` (WHO=1, TURNS=n). Real-phone feel untested.
+- **Native online games, phase 3 batch 1 (Oct 24-25, WIP on branch `ccr-206256d0-lz2tp5`, not released):** owner chose
+  NATIVE online per game (not screen share), a batch at a time. `src/netPlay.js` `openChannel(mid,me)`: ordered move channel
+  {k:'np',mid,i,m} (`send(m)`, `next()` → the other phone's next move or null when they left, resend on reconnect). Launcher
+  `netGame` (gameLauncher.js): for `netNative(game)` (solo.js `NET_NATIVE`, also feeds `duelOK` so arcade Challenge + online
+  board deal them) the real 2P game runs on both phones from the duel seed, same player order, `session.online` = channel
+  (`me` = duel.who), `hotseat` on; result via `settleSolo` kind 'net' (each phone reports its own score, board path as phase 2).
+  cpuKit `isOnline`/`remoteSeat`. Converted: trivia ×9 (trivia.js + triviaModes.js: seeded difficulty/questions ignoring
+  history, moves {a: answer index|null, t: lightning secs, w: wager}), chess + checkers (classicBoards playSquares: moves {f,t,p},
+  {resign}; Black's phone sees the board turned round; draw offers off online), Uno (moves {p,c}/{d}/{x}/{u}/{to}; each phone
+  shows its own hand), Beer Pong (pubPhysics: shooter sends {sh: throw, hit: cup|-1}/{rr}/{sh:null}; fixed 1/180 s steps online,
+  watcher replays on cup copies and forces the shooter's outcome). Each has `s.debug.bot` online for tests.
+  Test `tests/online-native.mjs` (GAMES=id,...; needs wrangler dev): trivia ×4 modes, chess, checkers, Uno, Beer Pong passed;
+  a Beer Pong watcher crash (`drag.end` of null) was fixed after the last run and is NOT re-tested yet.
+  TODO next: re-run online-native for all batch-1 ids + online-board (board deals native games now), docs/CHANGELOG, release
+  v0.66.0; then the next batches (Connect 4/Reversi/Yahtzee/casino/Guess Who/Battleship... via the same pattern).
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 

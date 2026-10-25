@@ -77,11 +77,14 @@ function soloFinish(s,score,level,label,won=level>0){if(!s?.solo||!s.alive)retur
 async function soloNext(s,{title='Level cleared!',body='',level=1,score=0,label='Next level'}={}){if(!s?.alive)return false;return s.pass(0,body,label,{summary:`${title} Level ${level} · ${Number(score).toLocaleString()} points so far.`,soloTitle:title});}
 
 // Online duels (src/duel.js): both phones play the 1P version from the same seed and compare scores, so only games whose
-// solo run ends in a score qualify; CPU-opponent games need real head-to-head play and come later.
+// solo run ends in a score qualify; CPU-opponent games need real head-to-head play: those whose engine plays natively
+// online (src/netPlay.js: both phones run the 2P game, each plays its own player) are listed in NET_NATIVE.
 const DUEL_KINDS=new Set(['levels','rounds','turns','game','alone']);
-function duelOK(g){return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&DUEL_KINDS.has(soloKind(g));}
+const NET_NATIVE=new Set(['trivia-mixed','trivia-nick90','trivia-dbz','trivia-hxh','trivia-sitcom','trivia-hardcore','trivia-lightning','trivia-wager','trivia-survival',
+ 'paddys-beer-pong','shamb-uno','ten-forward-chess','deadite-checkers']);
+const netNative=g=>!!g&&NET_NATIVE.has(g.id);
+function duelOK(g){return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&(DUEL_KINDS.has(soloKind(g))||netNative(g));}
 // 1P board game (src/cpuBoard.js): the human plays games with a real CPU opponent ('cpu') or co-op games alone ('alone':
 // bosses, the horde); score-attack kinds can't decide a head-to-head board game, and CPU-teammate games are left out.
 function boardCpuKind(g){const k=soloKind(g);return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&!SOLO_COOP.has(g.id)&&(k==='cpu'||k==='alone')?k:null;}
-Object.assign(exports,{boardCpuKind,duelOK,SOLO_LEVELS,SOLO_LEVEL_NAMES,SOLO_SKILL,soloKind,soloHidden,soloCoop,soloSettings,setSolo,normalizeSoloSettings,normalizeSoloBest,soloBest,recordSolo,soloBestText,isSolo,cpuSkill,soloProgress,soloFinish,soloNext});
-
+Object.assign(exports,{boardCpuKind,duelOK,netNative,NET_NATIVE,SOLO_LEVELS,SOLO_LEVEL_NAMES,SOLO_SKILL,soloKind,soloHidden,soloCoop,soloSettings,setSolo,normalizeSoloSettings,normalizeSoloBest,soloBest,recordSolo,soloBestText,isSolo,cpuSkill,soloProgress,soloFinish,soloNext});
