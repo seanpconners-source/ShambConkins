@@ -2,11 +2,14 @@
 // Dom's black Charger against Brian's orange Supra (your heads at the wheel), and a tachometer on each half of the
 // screen. Hold your half to rev, keep the needle in the green and LET GO on the green light (early = red light).
 // Then tap your half to shift when the needle hits the shift zone, and swipe up once for NOS. Best of three.
+// Online (netField): each phone drives its own car (whole screen) against its own tree and times its own run; the other
+// car comes from snapshots {r,d,v,rpm,g,launched,foul,et,penalty,nosT,flame}. A race ends once both times are in.
 const {clamp,seededRandom}=require("src/utils.js");
 const {voice,noise,makeShake,halfPointers,keyboard,label,SANS,rr}=require("src/engines/tarantinoKit.js");
 const {makeBits,pixText}=require("src/engines/retroKit.js");
 const {vibrate}=require("src/audio.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 
 const QUARTER=402,REDLINE=8000,IDLE=900,RATIO=[615,330,226,170,136],ACC=[13.5,10.2,7.8,5.9,4.4],COL=['#1a1a22','#ff8a1f'],ACCENT=['#38c8ff','#ff8a1f'],CAR=['DODGE CHARGER','TOYOTA SUPRA'];
 const torque=r=>.5+.5*Math.sin(Math.PI*clamp((r-1200)/7400,0,1));
@@ -15,7 +18,12 @@ async function dualrace(s){
  const [c,x]=s.canvas(680,420,{fill:true});s.body.classList.add('drag-arena-body');s.controls([]);s.shared=true;s.updateScores();s.ownHud(true,true);
  const rand=seededRandom(s.seed+':drag'),shake=makeShake(),bits=makeBits();const wins=[0,0];let race=0,state='wait',t=0,tree=null,cars=[],msg=[null,null],best=[null,null],result=null,anim=0;
  const fresh=()=>[0,1].map(i=>({i,rpm:IDLE,rev:false,v:0,d:0,g:0,launched:false,foul:false,react:null,penalty:0,penT:0,nos:1,nosT:0,limiter:0,et:null,flame:0,shiftFx:0}));
- function startRace(){cars=fresh();msg=[null,null];result=null;tree={t:0,amber:1.0+rand()*1.2};state='stage';t=0;}
+ const nf=netField(s,{pack:i=>{const c=cars[i]||{};return {r:race,d:+(c.d||0).toFixed(2),v:+(c.v||0).toFixed(2),rpm:Math.round(c.rpm||0),g:c.g|0,launched:!!c.launched,foul:!!c.foul,et:c.et??null,penalty:c.penalty||0,nosT:+(c.nosT||0).toFixed(2),flame:+(c.flame||0).toFixed(2)};},
+  unpack:(i,d)=>{if(d.r!==race){if(d.r>race)early=d;return;}apply(i,d);}});
+ let early=null;
+ function apply(i,d){const cr=cars[i];if(!cr)return;const was=cr.launched;Object.assign(cr,{tD:+d.d||0,v:+d.v||0,rpm:+d.rpm||IDLE,g:d.g|0,launched:!!d.launched,foul:!!d.foul,et:Number.isFinite(d.et)?d.et:null,penalty:+d.penalty||0,nosT:+d.nosT||0,flame:+d.flame||0});if(cr.et!==null){cr.d=QUARTER;cr.tD=QUARTER;}if(cr.launched&&!was&&cr.foul)say(i,'RED LIGHT!','#ff3b3b');}
+ const mine=i=>nf?nf.me:i;
+ function startRace(){cars=fresh();msg=[null,null];result=null;tree={t:0,amber:1.0+rand()*1.2};state='stage';t=0;if(nf){nf.push();if(early?.r===race)apply(nf.remote,early);early=null;}}
  function say(i,text,col='#fff'){msg[i]={text,t:1.1,col};}
  function launch(cr,early){if(cr.launched)return;cr.launched=true;
   if(early){cr.foul=true;cr.penalty=.7;say(cr.i,'RED LIGHT!','#ff3b3b');voice(160,.3,.06,'square');return;}
@@ -27,10 +35,10 @@ async function dualrace(s){
   noise(.12,.06,{f0:1600,f1:500});vibrate(10);}
  function nos(cr){if(state!=='race'||!cr.launched||cr.nos<=0||cr.et!==null)return;cr.nos=0;cr.nosT=2.6;say(cr.i,'NOS!','#38c8ff');noise(.9,.07,{type:'highpass',f0:2000,f1:800});shake.kick(5);}
  const fingers=halfPointers(s,{
-  down:(i)=>{const cr=cars[i];if(!cr)return;if(state==='stage'||state==='tree')cr.rev=true;else shift(cr);},
-  up:(i,r,{cancelled})=>{const cr=cars[i];if(!cr)return;if(state==='stage'||state==='tree'||state==='race'&&!cr.launched){cr.rev=false;if(!cancelled&&(state==='tree'||state==='race'))launch(cr,state==='tree');}
+  down:(i)=>{const cr=cars[mine(i)];if(!cr)return;if(state==='stage'||state==='tree')cr.rev=true;else shift(cr);},
+  up:(i,r,{cancelled})=>{const cr=cars[mine(i)];if(!cr)return;if(state==='stage'||state==='tree'||state==='race'&&!cr.launched){cr.rev=false;if(!cancelled&&(state==='tree'||state==='race'))launch(cr,state==='tree');}
    if(!cancelled&&state==='race'&&r.sy-r.y>60&&Math.abs(r.x-r.sx)<r.sy-r.y)nos(cr);}});
- keyboard(s,(i,name,down)=>{const cr=cars[i];if(!cr)return;if(name==='act'){if(state==='stage'||state==='tree'||state==='race'&&!cr.launched){cr.rev=down;if(!down&&(state==='tree'||state==='race'))launch(cr,state==='tree');}else if(down)shift(cr);}if(name==='u'&&down)nos(cr);});
+ keyboard(s,(i,name,down)=>{const cr=cars[mine(i)];if(!cr)return;if(name==='act'){if(state==='stage'||state==='tree'||state==='race'&&!cr.launched){cr.rev=down;if(!down&&(state==='tree'||state==='race'))launch(cr,state==='tree');}else if(down)shift(cr);}if(name==='u'&&down)nos(cr);});
  s.hint('Hold your half to rev before the start: keep the needle in the green, then let go on GREEN (early = red light). During the run tap your half to shift when the needle reaches the shift zone (perfect shifts give a kick). Swipe up once for NOS. Best of three. Keys: Space / Enter rev+shift, W / ↑ NOS.');
  function stepCar(cr,dt){
   if(!cr.launched){const target=cr.rev?REDLINE+300:IDLE;cr.rpm+=clamp(target-cr.rpm,-4200*dt,6500*dt);if(cr.rpm>REDLINE){cr.rpm=REDLINE-200*Math.random();}return;}
@@ -77,11 +85,12 @@ async function dualrace(s){
    else if(cr.launched&&cr.et===null){if(cr.rpm>=cpuPlan.next){shift(cr);cpuPlan.next=cpuPlan.shift();}if(cr.nos>0&&t-tree.green>cpuPlan.nosAt)nos(cr);}}}
  s.frame(dt=>{
   const W=s.W,H=s.H;anim+=dt;shake.step(dt);bits.step(dt);for(const m of msg)if(m)m.t-=dt;if(cpu)cpuThink();
-  if(state==='stage'||state==='tree'||state==='race'){t+=dt;for(const cr of cars)stepCar(cr,dt);}
+  if(state==='stage'||state==='tree'||state==='race'){t+=dt;for(const cr of cars){if(nf&&cr.i===nf.remote){if(cr.tD!==undefined&&cr.et===null){cr.tD+=cr.v*dt;cr.d+=(cr.tD-cr.d)*Math.min(1,dt*8);}continue;}stepCar(cr,dt);}nf?.tick(dt);}
   if(state==='stage'){if(t>1.2){state='tree';tree.t0=t;}}
   if(state==='tree'){const k=t-tree.t0;if(k>=tree.amber+1.2){state='race';tree.green=t;voice(1046,.3,.06,'square');}else{const n=Math.floor((k-tree.amber)/.4);if(k>tree.amber&&n!==tree.n&&n<3){tree.n=n;voice(523,.12,.05,'square');}}}
-  if(state==='race'){for(const cr of cars)if(!cr.launched&&t-tree.green>3)launch(cr,false);
-   if(cars.every(cr=>cr.et!==null)||cars.some(cr=>cr.et!==null)&&t-tree.green>(Math.min(...cars.map(cr=>cr.et??99))+4)){
+  if(state==='race'){for(const cr of cars)if(!cr.launched&&t-tree.green>3&&!(nf&&cr.i===nf.remote))launch(cr,false);
+   if(nf&&cars[nf.me].et!==null&&!cars[nf.me].sent){cars[nf.me].sent=true;nf.push();}
+   if(cars.every(cr=>cr.et!==null)||!nf&&cars.some(cr=>cr.et!==null)&&t-tree.green>(Math.min(...cars.map(cr=>cr.et??99))+4)){
     const ets=cars.map(cr=>(cr.et??99)+cr.penalty);const w=ets[0]<ets[1]?0:ets[1]<ets[0]?1:-1;if(w>=0){wins[w]++;s.react?.(w,'win',2);s.react?.(1-w,'sad',1.5);}s.setScores(wins);result={w,ets,t:3};state='result';[523,659,784,1046].forEach((f,k)=>voice(f,.14,.05,'triangle',{delay:k*.09}));}}
   if(state==='result'){result.t-=dt;if(result.t<=0){if(wins.some(v=>v>=2)||race>=2){state='over';s.finish(wins,`Quarter mile · ${wins[0]}–${wins[1]} · best ${best.map(b=>b?b.toFixed(2)+'s':'—').join(' / ')}`);return;}race++;startRace();}}
   // ---------- draw
@@ -111,7 +120,7 @@ async function dualrace(s){
   if(state==='tree')label(x,'LET GO ON GREEN',midX,top+trackH*.35,22,{fill:'#ffd23f'});
   if(state==='race'&&t-tree.green<.8)label(x,'GO!',midX,top+trackH*.35,40,{fill:'#3dff6a'});
   if(state==='result')label(x,result.w<0?'DEAD HEAT':`${s.players[result.w].name.toUpperCase()} WINS`,midX,top+trackH*.35,30,{fill:result.w<0?'#fff':ACCENT[result.w]});
-  bits.draw(x);s.debug={engine:'dualrace',cars,state,wins,race,tree};
+  bits.draw(x);s.debug={engine:'dualrace',cars,state,wins,race,tree,bot:nf?()=>{const cr=cars[nf.me];if(!cr)return '';if((state==='stage'||state==='tree')&&!cr.launched){cr.rev=cr.rpm<6300;return '';}if(state==='race'&&!cr.launched){cr.rev=false;launch(cr,false);return 'go';}if(state==='race'&&cr.et===null){if(cr.rpm>=6950&&cr.g<RATIO.length-1){shift(cr);return 'shift';}if(cr.nos>0&&Math.random()<.02){nos(cr);return 'nos';}}return '';}:null};
  });
  if(!await s.pass(0,`Quarter-mile drag race. ${s.players[0].name} drives the Charger (LEFT half), ${s.players[1].name} the Supra (RIGHT). Hold to rev, let go on green; tap to shift in the green zone; swipe up once for NOS. Best of three.`,'Both ready — race!',{countdown:0}))return;
  startRace();

@@ -4,9 +4,12 @@
 //           black licorice (−2 and sticky) and grab golden King Kandy gumdrops (+5). 45 seconds.
 //  'dash':  Color Card Dash. A card flips in the middle; race to tap the matching colour square on your side.
 //           Double cards are worth 2. A Lord Licorice card means hands off: whoever taps loses 2. Twenty cards.
+//           Online (s.online): each phone shows only its own pad and times its own taps from the moment ITS card
+//           flipped; one final {r, k: colour | lic: 1 | neither, t, w: wrong taps} per card; once both are in, both
+//           phones take off the wrong taps, then the faster right tap scores (or the first licorice toucher loses 2).
 const {clamp}=require("src/utils.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,FONT,PCOL,settle,Countdown}=require("src/engines/arenaKit.js");
-const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {isCpu,isOnline,cpuSkill}=require("src/engines/cpuKit.js");
 
 const COLORS=[['red','#ee4b5b'],['purple','#a85bd6'],['yellow','#f6d93a'],['blue','#3a8ff0'],['orange','#f4902c'],['green','#4ccc6a']];
 const INK='#5a1f4a',CATCH_TIME=45,DASH_CARDS=20;
@@ -89,36 +92,49 @@ async function candyLand(s){
  s.hint('Color Card Dash: a Candy Land card flips in the middle. Be first to tap the matching colour on your side (P1 top, P2 bottom; left/right halves on wide screens). Single colour +1, double +2, a wrong tap −1 and a short freeze. Lord Licorice card: hands off! Whoever taps loses 2. Twenty cards. Keyboard: P1 keys 1-6, P2 keys 7-0 and - =.');
  const deck=[];for(let k=0;k<DASH_CARDS;k++){const r=s.random();deck.push(r<.14&&k>2?{lic:true,delay:.7+s.random()*1.1}:{color:Math.floor(s.random()*6),double:r>.78,delay:.7+s.random()*1.1});}
  let idx=-1,card=null,state='wait',waitT=1.2,lock=[0,0],shown=0,winnerFlash=-1,flashT=0;
- const buttons=i=>{const v=vp(i),cols=3,rows=2,pad=Math.min(v.w,v.h)*.04,top=side()?v.y+v.h*.5:v.y+v.h*(i?.24:.2),bh=(side()?v.h*.46:v.h*.56)-pad,bw=(v.w-pad*(cols+1))/cols,h=(bh-pad*(rows-1))/rows;
+ const net=isOnline(s)?s.online:null,me=net?net.me:-1,inbox=new Map();let fin=[null,null],wrong=0,botAt=null;if(net)s.hotseat=true;
+ const vpOn=i=>net&&i===me?(side()?{x:s.W*.45,y:0,w:s.W*.55,h:s.H}:{x:0,y:s.H*.38,w:s.W,h:s.H*.62}):vp(i);
+ function finalize(i,f){if(fin[i])return;fin[i]=f;if(i===me)net.send({r:idx,...f});if(!fin[0]||!fin[1])return;
+  for(const k of [0,1])score[k]=Math.max(0,score[k]-(fin[k].w|0));
+  if(card.lic){const t=[0,1].filter(k=>fin[k].lic).sort((a,b)=>fin[a].t-fin[b].t);if(t.length){const k=t[0];score[k]=Math.max(0,score[k]-2);winnerFlash=1-k;flashT=1;noise(.3,{vol:.06,freq:300});fx.pop(s.W/2,s.H*.3,`${s.players[k].name.toUpperCase()} TOUCHED THE LICORICE! −2`,{color:'#ff6a8a',stroke:INK,size:20});s.react(k,'sad');}else fx.pop(s.W/2,s.H/2-40,'NOBODY TOUCHED IT',{color:'#fff',stroke:INK,size:20});}
+  else{const r=[0,1].filter(k=>fin[k].k===card.color).sort((a,b)=>fin[a].t-fin[b].t);if(r.length){const k=r[0],pts=card.double?2:1;score[k]+=pts;winnerFlash=k;flashT=1;jingle([784,1047,1319],{step:.05,type:'triangle',vol:.04});s.react(k,'happy');fx.pop(s.W/2,s.H*.3,`${s.players[k].name.toUpperCase()} +${pts}`,{color:'#fff',stroke:INK,size:26});}}
+  state='done';setTimeout(next,card.lic?600:800);}
+ const buttons=i=>{const v=vpOn(i),cols=3,rows=2,pad=Math.min(v.w,v.h)*.04,top=side()?v.y+v.h*.5:v.y+v.h*(i?.24:.2),bh=(side()?v.h*.46:v.h*.56)-pad,bw=(v.w-pad*(cols+1))/cols,h=(bh-pad*(rows-1))/rows;
   return COLORS.map((col,k)=>({k,x:v.x+pad+(k%cols)*(bw+pad),y:top+Math.floor(k/cols)*(h+pad),w:bw,h,col:col[1]}));};
- const press=(i,k)=>{if(phase!=='play'||lock[i]>0)return;if(state!=='show'){lock[i]=.5;snd(160,.12,{type:'square',vol:.03});fx.pop(vp(i).x+vp(i).w/2,vp(i).y+vp(i).h*.2,'TOO EARLY',{color:'#ff6a8a',stroke:INK,size:18});return;}
+ const press=(i,k)=>{if(net&&i!==me||phase!=='play'||lock[i]>0)return;
+  if(net&&state==='show'){if(fin[me])return;if(card.lic){finalize(me,{lic:1,t:shown,w:wrong});lock[i]=.8;return;}if(k===card.color){const b=buttons(i)[k];fx.burst(b.x+b.w/2,b.y+b.h/2,{n:16,color:COLORS[k][1],speed:220,life:.5,size:4,shape:'star'});finalize(me,{k,t:shown,w:wrong});return;}
+   wrong++;lock[i]=.9;snd(180,.15,{type:'square',vol:.03});const b=buttons(i)[k];fx.pop(b.x+b.w/2,b.y,'−1',{color:'#ff6a8a',stroke:INK,size:22});return;}if(state!=='show'){lock[i]=.5;snd(160,.12,{type:'square',vol:.03});fx.pop(vp(i).x+vp(i).w/2,vp(i).y+vp(i).h*.2,'TOO EARLY',{color:'#ff6a8a',stroke:INK,size:18});return;}
   if(card.lic){score[i]=Math.max(0,score[i]-2);lock[i]=.8;state='done';winnerFlash=1-i;flashT=1;noise(.3,{vol:.06,freq:300});fx.pop(vp(i).x+vp(i).w/2,vp(i).y+vp(i).h*.2,'LICORICE! −2',{color:'#ff6a8a',stroke:INK,size:22});s.react(i,'sad');setTimeout(next,900);return;}
   if(k===card.color){const pts=card.double?2:1;score[i]+=pts;state='done';winnerFlash=i;flashT=1;jingle([784,1047,1319],{step:.05,type:'triangle',vol:.04});s.react(i,'happy');const b=buttons(i)[k];fx.burst(b.x+b.w/2,b.y+b.h/2,{n:16,color:COLORS[k][1],speed:220,life:.5,size:4,shape:'star'});fx.pop(b.x+b.w/2,b.y,`+${pts}`,{color:'#fff',stroke:INK,size:26});setTimeout(next,800);}
   else{score[i]=Math.max(0,score[i]-1);lock[i]=.9;snd(180,.15,{type:'square',vol:.03});const b=buttons(i)[k];fx.pop(b.x+b.w/2,b.y,'−1',{color:'#ff6a8a',stroke:INK,size:22});}};
- const next=()=>{if(!s.alive)return;idx++;if(idx>=deck.length){phase='end';endT=0;const [a,b]=score;endText=a===b?'SWEET TIE!':`${s.players[a>b?0:1].name.toUpperCase()} REACHES THE CASTLE!`;jingle([523,659,784,1047,1319],{step:.1,type:'triangle',vol:.04});return;}card=deck[idx];state='wait';waitT=card.delay;};
- arenaTouch(s,{owner,maxFingers:2,onDown:f=>{const b=buttons(f.owner).find(b=>f.x>=b.x&&f.x<=b.x+b.w&&f.y>=b.y&&f.y<=b.y+b.h);if(b)press(f.owner,b.k);}});
- s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat)return;const k=ev.key;const p1='123456'.indexOf(k),p2='7890-='.indexOf(k);if(p1>=0){ev.preventDefault();press(0,p1);}else if(p2>=0){ev.preventDefault();press(1,p2);}});
- s.debug={get phase(){return phase;},get card(){return card;},get state(){return state;},score,press};
+ const next=()=>{if(!s.alive)return;idx++;if(idx>=deck.length){phase='end';endT=0;const [a,b]=score;endText=a===b?'SWEET TIE!':`${s.players[a>b?0:1].name.toUpperCase()} REACHES THE CASTLE!`;jingle([523,659,784,1047,1319],{step:.1,type:'triangle',vol:.04});return;}card=deck[idx];state='wait';waitT=card.delay;fin=[null,null];wrong=0;botAt=null;inbox.delete(idx-1);};
+ arenaTouch(s,{owner:p=>net?me:owner(p),maxFingers:2,onDown:f=>{const b=buttons(f.owner).find(b=>f.x>=b.x&&f.x<=b.x+b.w&&f.y>=b.y&&f.y<=b.y+b.h);if(b)press(f.owner,b.k);}});
+ s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat)return;const k=ev.key;const p1='123456'.indexOf(k),p2='7890-='.indexOf(k);if(p1>=0){ev.preventDefault();press(net?me:0,p1);}else if(p2>=0){ev.preventDefault();press(net?me:1,p2);}});
+ s.debug={get phase(){return phase;},get card(){return card;},get state(){return state;},score,press,bot:net?()=>{if(phase!=='play'||state!=='show'||fin[me]||lock[me]>0)return '';if(botAt===null)botAt=.3+Math.random()*1.4;if(shown<botAt)return '';if(card.lic){if(Math.random()<.2)press(me,0);botAt=99;return 'lic';}press(me,Math.random()<.75?card.color:Math.floor(Math.random()*6));return 'tap';}:null};
+ if(net)void (async()=>{for(;;){const m=await net.next();if(!m||!s.alive)return;if(Number.isInteger(m.r))inbox.set(m.r,m);}})();
  // vs CPU: player 2 taps the matching colour after a reaction delay; hands off the licorice (mostly)
  const cpuD=isCpu(s);let cpuReact=null,cpuIdx=-1;
  const cpuDash=dt=>{if(state!=='show'||lock[1]>0)return;const sk=cpuSkill(s);if(cpuIdx!==idx){cpuIdx=idx;cpuReact=.38+(1-sk)*.55+Math.random()*.2;}cpuReact-=dt;if(cpuReact>0)return;cpuReact=9;if(card.lic){if(Math.random()<(1-sk)*.15)press(1,0);return;}press(1,Math.random()<(1-sk)*.12?(card.color+1)%6:card.color);};
  s.frame(dt=>{t+=dt;fx.update(dt);lock[0]=Math.max(0,lock[0]-dt);lock[1]=Math.max(0,lock[1]-dt);flashT=Math.max(0,flashT-dt);
   if(phase==='count'){if(!cd.update(dt)){phase='play';next();}}
-  else if(phase==='play'){if(cpuD)cpuDash(dt);if(state==='wait'){waitT-=dt;if(waitT<=0){state='show';shown=0;snd(520,.06,{type:'square',vol:.03});}}else if(state==='show'){shown+=dt;if(card.lic&&shown>1.6){state='done';fx.pop(s.W/2,s.H/2-40,'NOBODY TOUCHED IT',{color:'#fff',stroke:INK,size:20});setTimeout(next,600);}}}
+  else if(phase==='play'){if(cpuD)cpuDash(dt);if(state==='wait'){waitT-=dt;if(waitT<=0){state='show';shown=0;snd(520,.06,{type:'square',vol:.03});}}else if(state==='show'&&net){shown+=dt;const rem=1-me,m=inbox.get(idx);if(m&&!fin[rem])finalize(rem,{k:Number.isInteger(m.k)?m.k:undefined,lic:m.lic?1:0,t:Number.isFinite(m.t)?m.t:99,w:Math.max(0,Math.min(20,m.w|0))});
+    const f=fin[rem],beaten=f&&(card.lic?f.lic:f.k===card.color)&&shown>f.t;if(state==='show'&&!fin[me]&&(shown>(card.lic?1.6:6)||beaten))finalize(me,{t:shown,w:wrong});}
+   else if(state==='show'){shown+=dt;if(card.lic&&shown>1.6){state='done';fx.pop(s.W/2,s.H/2-40,'NOBODY TOUCHED IT',{color:'#fff',stroke:INK,size:20});setTimeout(next,600);}}}
   else{endT+=dt;if(endT>2.8){s.finish(score,`Color Card Dash: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}
   s.setScores(score);x.fillStyle='#fff';x.fillRect(0,0,s.W,s.H);
-  for(let i=0;i<2;i++){const v=vp(i);x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();candyBackdrop(x,v,t);
+  if(net){candyBackdrop(x,{x:0,y:0,w:s.W,h:s.H},t);const rem=1-me,hs=Math.min(s.W,s.H)*.08;s.sprite(x,rem,hs*.9,hs*.9,hs,{exact:true,mood:winnerFlash===rem&&flashT>0?'happy':undefined});outlined(x,`${s.players[rem].name.toUpperCase()}  ${score[rem]}${state==='show'&&fin[rem]?' ✓':''}`,hs*1.6,hs*.9,{size:Math.max(14,hs*.36),fill:PCOL[rem],stroke:'#fff',align:'left'});}
+  for(let i=0;i<2;i++){if(net&&i!==me)continue;const v=vpOn(i);x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();if(!net)candyBackdrop(x,v,t);
    if(winnerFlash===i&&flashT>0){x.fillStyle=`rgba(255,255,255,${flashT*.5})`;x.fillRect(v.x,v.y,v.w,v.h);}
    for(const b of buttons(i)){x.globalAlpha=lock[i]>0?.45:1;x.fillStyle=b.col;rr(x,b.x,b.y,b.w,b.h,Math.min(b.w,b.h)*.18);x.fill();x.strokeStyle='#fff';x.lineWidth=4;x.stroke();x.fillStyle='rgba(255,255,255,.25)';rr(x,b.x+6,b.y+6,b.w-12,b.h*.3,Math.min(b.w,b.h)*.12);x.fill();x.globalAlpha=1;}
    const hs=Math.min(v.w,v.h)*.15,right=side()&&i===1,hy=!side()&&i===1?v.y+v.h-hs*.65:v.y+hs*.65,hx=right?v.x+v.w-hs*.75:v.x+hs*.75;s.sprite(x,i,hx,hy,hs,{exact:true,mood:lock[i]>0?'sad':winnerFlash===i&&flashT>0?'happy':undefined});
    outlined(x,`${s.players[i].name.toUpperCase()}  ${score[i]}`,right?hx-hs*.75:hx+hs*.75,hy,{size:Math.max(14,hs*.32),fill:PCOL[i],stroke:'#fff',align:right?'right':'left'});
    x.restore();}
   // centre card
-  const ch=side()?Math.min(s.H*.36,s.W*.26):Math.min(s.H*.17,s.W*.3),cw=ch/1.3,cx=s.W/2,cy=side()?s.H*.25:s.H/2;
+  const ch=side()?Math.min(s.H*.36,s.W*.26):Math.min(s.H*.17,s.W*.3),cw=ch/1.3,cx=net&&side()?s.W*.22:s.W/2,cy=net?(side()?s.H*.5:s.H*.21):side()?s.H*.25:s.H/2;
   if(phase==='play'||phase==='end'){if(card&&(state==='show'||state==='done')){const k=Math.min(1,shown*8);x.save();x.translate(cx,cy);x.scale(Math.max(.05,k),1);colorCard(x,0,0,cw,ch,card,t);x.restore();}
    else{x.fillStyle=INK;rr(x,cx-cw/2,cy-ch/2,cw,ch,cw*.1);x.fill();x.strokeStyle='#fff';x.lineWidth=3;x.stroke();outlined(x,'CANDY',cx,cy-ch*.1,{size:cw*.18,fill:'#ffe3f1',stroke:INK});outlined(x,'LAND',cx,cy+ch*.12,{size:cw*.18,fill:'#ffe3f1',stroke:INK});}
    outlined(x,`${Math.max(1,Math.min(DASH_CARDS,idx+1))}/${DASH_CARDS}`,cx+cw*.5+8,cy-ch*.5+8,{size:Math.max(11,cw*.13),fill:'#fff',stroke:INK,align:'left'});}
-  x.fillStyle='#fff';if(side())x.fillRect(s.W/2-2,s.H*.48,4,s.H*.52);else{x.fillRect(0,s.H/2-2,s.W/2-cw*.8,4);x.fillRect(s.W/2+cw*.8,s.H/2-2,s.W/2,4);}
+  x.fillStyle='#fff';if(net){}else if(side())x.fillRect(s.W/2-2,s.H*.48,4,s.H*.52);else{x.fillRect(0,s.H/2-2,s.W/2-cw*.8,4);x.fillRect(s.W/2+cw*.8,s.H/2-2,s.W/2,4);}
   fx.draw(x);
   if(phase==='count')cd.draw(x,s.W,s.H);
   if(phase==='end'){const size=Math.min(s.W*.06,s.H*.06,44);x.fillStyle='rgba(90,31,74,.7)';x.fillRect(0,s.H/2-size,s.W,size*2);outlined(x,endText,s.W/2,s.H/2,{size,fill:'#ffe3f1',stroke:INK});}

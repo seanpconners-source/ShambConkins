@@ -598,6 +598,14 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   {th,sn,fin}; Scorched Earth {aim,fire,ex(+bugs),sync,skip}, field fixed at 390x780 online (size came from the screen);
   putt-putt {sh,sn+gopher,fin{x,y,n,k,w}}; nine-ball {aim,f(+cue spot),sn,fin{b,r}}; BASEketball {sp,l in court units,res},
   psych-out = defender asks {ps}, batter's phone decides {psd}. All 5 pass online-native; 2P fuzz + 1P CPU clean.
+  Batch 10 (Oct 25, same branch), side-by-side games: `engines/netField.js` `netField(s,{pack,unpack,onEvent,hz})`: this
+  phone plays only its own field; snapshots {f} ~10/s when changed (`push()` = now), events {e}, final {fin} (`finish(v)`,
+  `remoteDone()`), all on s.online. Stacker {r,stack,row,...} pushed on every stop (other row slides locally); drag race
+  (own car vs own tree, own ET; online a race ends only when both ETs are in); Block Battle (own board, garbage {e:{g}},
+  ends from both finals {score,dead}); Shred Hero (own highway wide, other narrow on its own song clock, hits {e:{n,h}},
+  waits for the other's final score); Color Card Dash (Lineup-style: one final per card {r,k|lic,t,w}, wrong taps taken off
+  first, then fastest right tap / first licorice toucher); Ladder Rush (own ladders full screen, other = progress line, first
+  finishT wins, a phone past the other's finishT ends at once). All 6 pass online-native; 2P fuzz + 1P CPU clean.
   This clock-stamped timeline is the pattern for other race games. TODO next: the remaining real-time CPU games
   (arena/action: pong, sumo, snakes, Kart VS...) need continuous state, not discrete shots: probably input relay with
   delay (lockstep) or host-authoritative state, decide per game.

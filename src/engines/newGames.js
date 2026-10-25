@@ -5,6 +5,7 @@ const {touchKeys}=require("src/engines/touchDuel.js");
 const {arcadeRounds}=require("src/engines/arcade.js");
 const {circle}=require("src/engines/session.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 // v0.44 additions: Block Battle, Shred Hero, Dodgeball, Fight Night, Gopher Hunt, Archery.
 function relabel(i,key,text,label){const node=document.getElementById(`duel-${i}-${key}`);if(!node)return;node.textContent=text;node.setAttribute('aria-label',label);}
 const rr=(x,px,py,w,h,r)=>{x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath();};
@@ -28,22 +29,28 @@ function spawn(st){const type=st.sequence[st.index++];st.piece=newPiece(type);st
 function tryMove(st,dx,dy){const p={...st.piece,x:st.piece.x+dx,y:st.piece.y+dy};if(collides(st.grid,p))return false;st.piece=p;return true;}
 function tryRotate(st){const rotated={...st.piece,cells:rotateCells(st.piece.cells,st.piece.type)};for(const kick of [0,-1,1,-2,2]){const p={...rotated,x:rotated.x+kick};if(!collides(st.grid,p)){st.piece=p;return true;}if(!collides(st.grid,{...p,y:p.y-1})){st.piece={...p,y:p.y-1};return true;}}return false;}
 function ghostY(st){let p={...st.piece};while(!collides(st.grid,{...p,y:p.y+1}))p.y++;return p.y;}
+// Online (netField): each phone plays its own board (touch anywhere) and sends it {g: rows as strings, p: piece, score,
+// lines, incoming, dead, index}; garbage goes over as {e:{g:n}}. The game ends on both phones from both final results.
 async function blocks(s){
  const[,x]=s.canvas(900,560,{fill:true});s.shared=true;s.updateScores();
  const {keys,virt}=touchKeys(s),sequence=blockSequence(s.seed,600),random=seededRandom(s.seed+':garbage');
- const st=[blockState(sequence),blockState(sequence)];let left=150,over=null;
+ const st=[blockState(sequence),blockState(sequence)];let left=150,over=null,netEnd=null;
+ const nf=netField(s,{pack:i=>{const me=st[i];return {g:me.grid.map(r=>r.map(v=>v||'.').join('')),p:me.piece&&!me.dead?{type:me.piece.type,x:me.piece.x,y:me.piece.y,cells:me.piece.cells}:null,score:me.score,lines:me.lines,incoming:me.incoming,dead:me.dead,index:me.index};},
+  unpack:(i,d)=>{const me=st[i];if(!Array.isArray(d.g))return;me.grid=d.g.map(r=>[...String(r)].map(v=>v==='.'?0:v));me.piece=d.p&&PIECES[d.p.type]?d.p:null;Object.assign(me,{score:+d.score||0,lines:+d.lines||0,incoming:+d.incoming||0,dead:!!d.dead,index:+d.index||0});},
+  onEvent:e=>{if(Number.isInteger(e?.g)&&e.g>0&&e.g<20)st[nf.me].incoming+=e.g;}});
+ const mine=i=>nf?nf.me:i;
  const level=p=>1+Math.floor(p.lines/8),fall=p=>Math.max(.07,.85-level(p)*.075);
  const settle=(i)=>{
   const me=st[i],foe=st[1-i];lockPiece(me.grid,me.piece);const n=clearRows(me.grid);me.flash=n?[Date.now()]:[];
-  if(n){me.lines+=n;me.combo++;me.score+=[0,100,300,500,800][n]*level(me)+Math.max(0,me.combo-1)*50;let send=[0,0,1,2,4][n]+(me.combo>2?1:0);const cancel=Math.min(send,me.incoming);me.incoming-=cancel;send-=cancel;foe.incoming+=send;sound(n>=3?'win':'pickup');s.react?.(i,n>=3?'win':'happy');vibrate(10);}
+  if(n){me.lines+=n;me.combo++;me.score+=[0,100,300,500,800][n]*level(me)+Math.max(0,me.combo-1)*50;let send=[0,0,1,2,4][n]+(me.combo>2?1:0);const cancel=Math.min(send,me.incoming);me.incoming-=cancel;send-=cancel;if(nf){if(send>0)nf.event({g:send});}else foe.incoming+=send;sound(n>=3?'win':'pickup');s.react?.(i,n>=3?'win':'happy');vibrate(10);}
   else{me.combo=0;if(me.incoming>0){addGarbage(me.grid,Math.min(8,me.incoming),random);me.incoming=0;sound('shot');}}
-  spawn(me);
+  spawn(me);nf?.push();
  };
  const hardDrop=i=>{const me=st[i];if(me.dead||!me.piece)return;const y=ghostY(me);me.score+=(y-me.piece.y)*2;me.piece.y=y;settle(i);};
  const nudge=me=>{if(me.lock>0&&me.lockMoves<10){me.lock=0;me.lockMoves++;}};
  const drags=new Map();
  ownedPointers(s,(i,p,id)=>{
-  const me=st[i],now=performance.now();let g=drags.get(id);
+  i=mine(i);const me=st[i],now=performance.now();let g=drags.get(id);
   if(!g){drags.set(id,{ax:p.x,sx:p.x,sy:p.y,t0:now,moved:0,hist:[[now,p.y]],soft:false,dropped:false});return;}
   if(me.dead||g.dropped)return;
   g.moved=Math.max(g.moved,Math.hypot(p.x-g.sx,p.y-g.sy));g.hist.push([now,p.y]);while(g.hist.length>2&&now-g.hist[0][0]>140)g.hist.shift();
@@ -53,12 +60,12 @@ async function blocks(s){
   if(dy>step*1.4&&vy>1.1&&now-g.t0<650){g.dropped=true;virt[i].d=false;g.soft=false;hardDrop(i);return;}
   const soft=dy>step*1.2;if(soft!==g.soft){g.soft=soft;virt[i].d=soft;}
  },(i,id,info)=>{
-  const g=drags.get(id);drags.delete(id);if(!g)return;virt[i].d=false;
+  i=mine(i);const g=drags.get(id);drags.delete(id);if(!g)return;virt[i].d=false;
   if(!info.cancelled&&!g.dropped&&g.moved<12&&performance.now()-g.t0<350&&!st[i].dead&&tryRotate(st[i]))nudge(st[i]);
  });
  spawn(st[0]);spawn(st[1]);
  s.hint('Two boards, one shared piece sequence. On your half of the screen: drag left/right to shift the piece, tap to rotate, drag down to soft drop, flick down fast to hard drop. Clearing 2+ lines sends garbage to your rival. Keyboard: P1 A/D move, W rotate, S soft drop, Space hard drop; P2 arrows + Enter. Last survivor wins; after 2:30 the higher score wins.');
- s.debug={engine:'blocks',state:st,keys};
+ s.debug={engine:'blocks',state:st,keys,bot:nf?()=>{const me=st[nf.me];if(me.dead||!me.piece||over!==null||Math.random()<.5)return '';const dx=Math.floor(Math.random()*7)-3;for(let k=Math.abs(dx);k--;)tryMove(me,Math.sign(dx),0);if(Math.random()<.4)tryRotate(me);hardDrop(nf.me);return 'drop';}:null};
  // vs CPU: board 2 scores every rotation and column (lines, height, holes, bumpiness), then rotates, shifts and drops at a skill pace
  const cpu=isCpu(s);let cpuPlan=null,cpuIdx=-1,cpuT=0;
  function cpuBlocks(dt){const me=st[1];if(me.dead||!me.piece)return;const sk=cpuSkill(s);
@@ -69,8 +76,10 @@ async function blocks(s){
  if(!await s.pass(0,'Block Battle: both players get the identical piece order. Clear lines to send garbage rows to the other board. Top out and you lose.','Both ready — drop!'))return;
  s.frame(dt=>{
   left-=dt;if(cpu)cpuBlocks(dt);
+  nf?.tick(dt);
   for(let i=0;i<2;i++){
-   const me=st[i],k=keys[i];if(me.dead)continue;
+   if(nf&&i!==nf.me)continue;
+   const me=st[i],k=nf?Object.fromEntries(['l','r','u','d','fire'].map(n=>[n,keys[0][n]||keys[1][n]])):keys[i];if(me.dead)continue;
    for(const dir of ['l','r']){if(k[dir]){me.das[dir]+=dt;}else me.das[dir]=0;}
    const stepSide=(dir,dx)=>{if(k[dir]&&!me.prev[dir]){tryMove(me,dx,0);me.das[dir]=0;if(me.lock>0&&me.lockMoves<10){me.lock=0;me.lockMoves++;}}else if(k[dir]&&me.das[dir]>.17){while(me.das[dir]>.17){me.das[dir]-=.055;tryMove(me,dx,0);}}};
    stepSide('l',-1);stepSide('r',1);
@@ -81,7 +90,9 @@ async function blocks(s){
    if(collides(me.grid,{...me.piece,y:me.piece.y+1})){me.lock+=dt;if(me.lock>=.42){settle(i);}}else me.lock=0;
    for(const key of ['l','r','u','d','fire'])me.prev[key]=!!k[key];
   }
-  if(!over){if(st[0].dead||st[1].dead)over=st[0].dead&&st[1].dead?'draw':st[0].dead?1:0;else if(left<=0)over=st[0].score===st[1].score?'draw':st[0].score>st[1].score?0:1;}
+  if(nf){if(!netEnd&&(st[0].dead||st[1].dead||left<=0)){const me=st[nf.me];netEnd='wait';nf.finish({score:me.score,dead:me.dead});nf.remoteDone().then(f=>{const r=st[nf.remote];if(f){r.score=+f.score||0;r.dead=!!f.dead;}netEnd='done';});}
+   if(netEnd==='done'&&over===null)over=st[0].dead&&st[1].dead||!st[0].dead&&!st[1].dead?(st[0].score===st[1].score?'draw':st[0].score>st[1].score?0:1):st[0].dead?1:0;}
+  else if(!over){if(st[0].dead||st[1].dead)over=st[0].dead&&st[1].dead?'draw':st[0].dead?1:0;else if(left<=0)over=st[0].score===st[1].score?'draw':st[0].score>st[1].score?0:1;}
   // draw
   const W=s.W,H=s.H,port=W<H*.8,cell=port?Math.floor(Math.min((W-14)/(BW*2+2.3),(H-14)/(BH+4.4))):Math.floor(Math.min((W-120)/(BW*2+5),(H-86)/BH)),bw=cell*BW,bh=cell*BH,gap=port?Math.floor(cell*2.3):Math.max(cell*4,60),ox=[Math.floor(W/2-gap/2-bw),Math.floor(W/2+gap/2)],oy=port?Math.floor((H-bh+cell*4.4)/2):Math.floor((H-bh)/2)+14;
   const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#16142a');bg.addColorStop(1,'#241a3a');x.fillStyle=bg;x.fillRect(0,0,W,H);
@@ -122,36 +133,40 @@ function shredChart(seed){
  }
  return notes;
 }
+// Online (netField): each phone plays its own highway (wide, left; the other one narrow on the right, run on the other
+// phone's song clock from snapshots {clk,score,combo}); every hit goes over as {e:{n: note, h: perfect|good}}.
 async function shred(s){
  const[c,x]=s.canvas(900,560,{fill:true});s.shared=true;s.updateScores();
  const chart=[shredChart(s.seed),shredChart(s.seed)].map(a=>a.map(n=>({...n}))),beat=60/SHRED.bpm;
- const st=[0,1].map(()=>({score:0,combo:0,best:0,perfect:0,good:0,miss:0,flash:[0,0,0,0],text:'',textT:0,held:[false,false,false,false]})),lastBeat={n:-1};let clock=-2.2,over=false;
- const mult=p=>Math.min(4,1+Math.floor(p.combo/10));
+ const st=[0,1].map(()=>({score:0,combo:0,best:0,perfect:0,good:0,miss:0,flash:[0,0,0,0],text:'',textT:0,held:[false,false,false,false]})),lastBeat={n:-1};let clock=-2.2,over=false,rclock=-2.2,waitFin=false;
+ const nf=netField(s,{pack:i=>({clk:+clock.toFixed(2),score:st[i].score,combo:st[i].combo}),unpack:(i,d)=>{if(Number.isFinite(d.clk))rclock+=(d.clk-rclock)*.5;st[i].score=+d.score||0;st[i].combo=+d.combo||0;},
+  onEvent:e=>{const n=chart[nf.remote][e?.n];if(n&&(e.h==='perfect'||e.h==='good')){n.hit=e.h;st[nf.remote].flash[n.lane]=.14;st[nf.remote].text=e.h==='perfect'?'PERFECT':'GOOD';st[nf.remote].textT=.45;}}});
+ const mult=p=>Math.min(4,1+Math.floor(p.combo/10)),clockOf=()=>clock;
  const hit=(i,lane)=>{
   if(s.paused||!s.alive||clock<0&&clock>-.25)return;const me=st[i];me.flash[lane]=.14;
   let best=null;for(const n of chart[i])if(n.hit===null&&n.lane===lane&&Math.abs(n.t-clock)<=SHRED.good&&(!best||Math.abs(n.t-clock)<Math.abs(best.t-clock)))best=n;
   if(!best){return;}
-  const d=Math.abs(best.t-clock);best.hit=d<=SHRED.perfect?'perfect':'good';me[best.hit]++;me.combo++;me.best=Math.max(me.best,me.combo);me.score+=(best.hit==='perfect'?100:60)*mult(me);me.text=best.hit==='perfect'?'PERFECT':'GOOD';me.textT=.45;
+  const d=Math.abs(best.t-clock);best.hit=d<=SHRED.perfect?'perfect':'good';if(nf)nf.event({n:chart[i].indexOf(best),h:best.hit});me[best.hit]++;me.combo++;me.best=Math.max(me.best,me.combo);me.score+=(best.hit==='perfect'?100:60)*mult(me);me.text=best.hit==='perfect'?'PERFECT':'GOOD';me.textT=.45;
   tone(220*2**(SCALE[(lane*2+Math.floor(best.t/beat))%SCALE.length]/12),.16,.05,i?'sawtooth':'square');
  };
  const KEYS=[{a:0,s:1,d:2,f:3},{h:0,j:1,k:2,l:3}];
- s.on(document,'keydown',ev=>{if(ev.repeat)return;const k=ev.key.toLowerCase();for(let i=0;i<2;i++)if(KEYS[i][k]!==undefined){ev.preventDefault();hit(i,KEYS[i][k]);}});
- s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev),half=s.W/2,side=p.x<half?0:1,i=cpuS?0:side,lx=(p.x-(side?half:0))/half,lane=clamp(Math.floor(lx*4),0,3);hit(i,lane);});
+ s.on(document,'keydown',ev=>{if(ev.repeat)return;const k=ev.key.toLowerCase();for(let i=0;i<2;i++)if(KEYS[i][k]!==undefined){ev.preventDefault();hit(nf?nf.me:i,KEYS[i][k]);}});
+ s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev),half=s.W/2,side=p.x<half?0:1,i=nf?nf.me:cpuS?0:side,lx=nf?p.x/(s.W*.68):(p.x-(side?half:0))/half,lane=clamp(Math.floor(lx*4),0,3);hit(i,lane);});
  // vs CPU: guitarist 2 hits each note with a timing error that shrinks on Hard and skips a few on Easy
  const cpuS=isCpu(s);
  function cpuShred(){const sk=cpuSkill(s);for(const n of chart[1]){if(n.hit!==null||n.cpu)continue;if(n.t-clock>.3)break;if(n.cpuOff===undefined)n.cpuOff=(Math.random()-.5)*2*SHRED.good*(1.15-sk)*.8;if(clock>=n.t+n.cpuOff){n.cpu=true;if(Math.random()<.6+sk*.38)hit(1,n.lane);}}}
  s.hint('Hit notes as they reach the glowing line. Tap a lane at the bottom of your half (P1 left, P2 right), or use keys: P1 A S D F, P2 H J K L. Chain hits to build a multiplier up to ×4. Same song, same chart for both. Highest score wins.');
- s.debug={engine:'shred',chart,state:st,clock:()=>clock};
+ s.debug={engine:'shred',chart,state:st,clock:()=>clock,bot:nf?()=>{let n=0;for(const q of chart[nf.me])if(q.hit===null&&Math.abs(q.t-clock)<=SHRED.good&&Math.random()<.85){hit(nf.me,q.lane);n++;}return n?'hit':'';}:null};
  if(!await s.pass(0,'Shred Hero: the same riff plays for both of you. Hit every note on the beat. Perfect hits score double the multiplier.','Both ready — rock!'))return;
  s.frame(dt=>{
-  clock+=dt;if(cpuS)cpuShred();
+  clock+=dt;rclock+=dt;if(cpuS)cpuShred();nf?.tick(dt);
   // Backing track: kick, hat and a bass riff on the beat grid.
   const sb=Math.floor(clock/(beat/2));if(clock>=0&&sb!==lastBeat.n){lastBeat.n=sb;const q=sb%8;if(q%2===0)tone(q%4===0?62:82,.09,.06,'sine');if(q===2||q===6)tone(180,.05,.03,'square');tone(q%2?7000:5200,.012,.006,'square');const riff=[0,0,7,0,10,7,3,5][q];if(clock>=beat*8)tone(55*2**(riff/12),.18,.045,'sawtooth');}
-  for(let i=0;i<2;i++){const me=st[i];for(const n of chart[i])if(n.hit===null&&clock-n.t>SHRED.good){n.hit='miss';me.miss++;me.combo=0;me.text='MISS';me.textT=.35;}me.textT=Math.max(0,me.textT-dt);for(let l=0;l<4;l++)me.flash[l]=Math.max(0,me.flash[l]-dt);}
+  for(let i=0;i<2;i++){const me=st[i];if(nf&&i===nf.remote){me.textT=Math.max(0,me.textT-dt);for(let l=0;l<4;l++)me.flash[l]=Math.max(0,me.flash[l]-dt);continue;}for(const n of chart[i])if(n.hit===null&&clock-n.t>SHRED.good){n.hit='miss';me.miss++;me.combo=0;me.text='MISS';me.textT=.35;}me.textT=Math.max(0,me.textT-dt);for(let l=0;l<4;l++)me.flash[l]=Math.max(0,me.flash[l]-dt);}
   const W=s.W,H=s.H;x.fillStyle='#0d0a18';x.fillRect(0,0,W,H);
-  const half=W/2,topW=half*.34,botW=half*.86,hy=H*.8;
+  const half=W/2,hy=H*.8;
   for(let i=0;i<2;i++){
-   const cx=half*i+half/2,me=st[i];
+   const vw=nf?(i===nf.me?W*.68:W*.32):half,vx=nf?(i===nf.me?0:W*.68):half*i,topW=vw*.34,botW=vw*.86,cx=vx+vw/2,me=st[i],clock=nf&&i===nf.remote?rclock:clockOf();
    const lane=(l,t)=>{const w=topW+(botW-topW)*t,left=cx-w/2;return {x:left+w*(l+.5)/4,w:w/4};};
    // highway
    x.fillStyle=i?'#201428':'#101a2c';x.beginPath();x.moveTo(cx-topW/2,0);x.lineTo(cx+topW/2,0);x.lineTo(cx+botW/2,H);x.lineTo(cx-botW/2,H);x.closePath();x.fill();
@@ -165,11 +180,13 @@ async function shred(s){
    x.fillStyle='#fff';x.font=`bold ${clamp(W*.03,16,28)}px monospace`;x.textAlign='center';x.fillText(String(me.score),cx,H*.2);x.fillStyle='#ffd24a';x.font=`bold ${clamp(W*.022,12,20)}px monospace`;x.fillText(`×${mult(me)}  ${me.combo?'combo '+me.combo:''}`,cx,H*.2+26);
    if(me.textT>0){x.globalAlpha=Math.min(1,me.textT*3);x.fillStyle=me.text==='MISS'?'#ff7a6a':me.text==='PERFECT'?'#9dffb0':'#ffe48a';x.font=`bold ${clamp(W*.03,16,28)}px monospace`;x.fillText(me.text,cx,H*.5);x.globalAlpha=1;}
   }
-  x.strokeStyle='#ffffff40';x.lineWidth=2;x.beginPath();x.moveTo(half,0);x.lineTo(half,H);x.stroke();
+  x.strokeStyle='#ffffff40';x.lineWidth=2;x.beginPath();x.moveTo(nf?W*.68:half,0);x.lineTo(nf?W*.68:half,H);x.stroke();
   if(clock<0){x.fillStyle='#fff';x.font=`bold ${clamp(W*.08,30,70)}px monospace`;x.textAlign='center';x.fillText(String(Math.ceil(-clock/beat/2)),half,H*.45);}
   s.setScores(st.map(p=>p.score));s.status(`${s.players[0].name} ${st[0].score} · ${s.players[1].name} ${st[1].score} · hit the notes on the glowing line`);
   const end=Math.max(...chart[0].map(n=>n.t))+2;
-  if(!over&&clock>end){over=true;s.finish(st.map(p=>p.score),'Shred Hero');}
+  if(nf&&!over&&clock>end){over=true;waitFin=true;nf.finish(st[nf.me].score);nf.remoteDone().then(v=>{if(v!=null)st[nf.remote].score=+v||0;s.finish(st.map(p=>p.score),'Shred Hero');});}
+  if(waitFin){x.fillStyle='#fff';x.font=`bold ${clamp(W*.03,14,24)}px monospace`;x.textAlign='center';x.fillText(`Waiting for ${s.players[nf.remote].name}…`,W/2,H*.4);}
+  if(!nf&&!over&&clock>end){over=true;s.finish(st.map(p=>p.score),'Shred Hero');}
  });
 }
 

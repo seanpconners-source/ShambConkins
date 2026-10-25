@@ -2,11 +2,14 @@
 // players at once. A row of lit blocks slides back and forth; tap your half to stop it. Only blocks resting on the
 // row below survive, overhangs fall away, the rows speed up, and the cabinet forces you down to two blocks (row 5)
 // and one block (row 11). Minor prize line at row 11, major prize at the top. Two rounds; most points wins.
+// Online (netField): each phone runs its own cabinet (tap anywhere) and sends it {r,stack,row,pos,dir,len,done,won,score}
+// on every stop; the other cabinet's row keeps sliding locally between snapshots.
 const {clamp,seededRandom}=require("src/utils.js");
 const {voice,noise,keyboard,makeShake}=require("src/engines/tarantinoKit.js");
 const {pixText,makeBits,scanlines}=require("src/engines/retroKit.js");
 const {vibrate}=require("src/audio.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 
 const COLS=7,ROWS=15,MINOR=10,COLOR=['#38c8ff','#ff4fa8'];
 const maxBlocks=r=>r>=10?1:r>=4?2:3;
@@ -17,24 +20,30 @@ async function towerstack(s){
  const shake=makeShake(),bits=makeBits();const total=[0,0];let round=0,t=0,state='intro',banner=null;
  let P=[];
  const fresh=()=>[0,1].map(i=>({i,stack:[],row:0,pos:0,dir:1,len:3,clock:0,done:false,won:'',score:0,fall:[],perfect:0,flash:0}));
- function stop(p){if(state!=='play'||p.done)return;
+ const nf=netField(s,{pack:i=>{const p=P[i];return {r:round,stack:p.stack,row:p.row,pos:p.pos,dir:p.dir,len:p.len,done:p.done,won:p.won,score:p.score};},
+  unpack:(i,d)=>{if(d.r!==round||state!=='play'){if(d.r>round||d.r===round&&state!=='between')early=d;return;}apply(i,d);}});
+ let early=null;
+ function apply(i,d){const p=P[i];if(!p||!Array.isArray(d.stack))return;const lost=p.row===d.row-1||d.done&&!p.done?Math.max(0,p.len-(d.stack[p.row]?.length||0)):0;
+  if(lost){for(let k=0;k<lost;k++)p.fall.push({c:p.pos+k,r:p.row,y:0,v:0});}
+  if(d.row>p.row)p.flash=.25;Object.assign(p,{stack:d.stack,row:d.row,pos:d.pos,dir:d.dir,len:d.len,done:!!d.done,won:d.won||'',score:+d.score||0,clock:0});}
+ function stop(p){if(state!=='play'||p.done||nf&&p.i!==nf.me)return;
   const cells=[];for(let k=0;k<p.len;k++)cells.push(p.pos+k);
   let keep=cells;if(p.row>0){const below=new Set(p.stack[p.row-1]);keep=cells.filter(cc=>below.has(cc));const lost=cells.filter(cc=>!below.has(cc));for(const cc of lost)p.fall.push({c:cc,r:p.row,y:0,v:0});if(lost.length){noise(.25,.06,{type:'bandpass',f0:900,f1:200});}}
-  if(!keep.length){p.done=true;p.won=p.row>=ROWS?'MAJOR':p.row>MINOR?'MINOR':'';voice(150,.4,.07,'sawtooth',{slide:.5,lp:600});shake.kick(6);vibrate(40);s.react?.(p.i,'sad',1.4);return;}
+  if(!keep.length){p.done=true;p.won=p.row>=ROWS?'MAJOR':p.row>MINOR?'MINOR':'';voice(150,.4,.07,'sawtooth',{slide:.5,lp:600});shake.kick(6);vibrate(40);s.react?.(p.i,'sad',1.4);nf?.push();return;}
   const perfect=keep.length===cells.length;p.stack.push(keep);p.score+=10+(perfect?5:0);if(perfect){p.perfect++;}
   voice(220+p.row*40,.08,.07,'square');vibrate(10);p.flash=.25;
   p.row++;
   if(p.row===MINOR+1){voice(784,.12,.05,'triangle');voice(988,.16,.05,'triangle',{delay:.1});p.score+=20;s.react?.(p.i,'happy',1);}
-  if(p.row>=ROWS){p.done=true;p.won='MAJOR';p.score+=60;[523,659,784,1046,1319].forEach((f,k)=>voice(f,.14,.06,'triangle',{delay:k*.08}));s.react?.(p.i,'win',2);return;}
-  p.len=Math.min(keep.length,maxBlocks(p.row));p.pos=p.dir>0?0:COLS-p.len;p.clock=0;
+  if(p.row>=ROWS){p.done=true;p.won='MAJOR';p.score+=60;[523,659,784,1046,1319].forEach((f,k)=>voice(f,.14,.06,'triangle',{delay:k*.08}));s.react?.(p.i,'win',2);nf?.push();return;}
+  p.len=Math.min(keep.length,maxBlocks(p.row));p.pos=p.dir>0?0:COLS-p.len;p.clock=0;nf?.push();
  }
- s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const pt=s.pointer(ev);stop(P[cpu||pt.x<s.W/2?0:1]);});
+ s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const pt=s.pointer(ev);stop(P[nf?nf.me:cpu||pt.x<s.W/2?0:1]);});
  // vs CPU: cabinet 2 stops when its row lines up with the stack below, less reliably as rows speed up (and a block early on Easy)
  const cpu=isCpu(s);let cpuSeenPos=null;
  function cpuStack(){const p=P[1];if(!p||p.done||state!=='play')return;if(p.pos===cpuSeenPos)return;cpuSeenPos=p.pos;const sk=cpuSkill(s);
   const cells=[];for(let k=0;k<p.len;k++)cells.push(p.pos+k);const below=p.row?new Set(p.stack[p.row-1]):null,fit=below?cells.filter(cc=>below.has(cc)).length:p.len;
   const speed=.17/tickFor(p.row),chance=fit===p.len?clamp(.35+sk*.6-(speed-1)*.12*(1-sk),.12,.95):fit===p.len-1&&p.row>0?(1-sk)*.25:0;if(Math.random()<chance)stop(p);}
- keyboard(s,(i,name,down)=>{if(down&&(name==='act'||name==='u'||name==='d'))stop(P[i]);});
+ keyboard(s,(i,name,down)=>{if(down&&(name==='act'||name==='u'||name==='d'))stop(P[nf?nf.me:i]);});
  s.hint('Tap your half of the screen (P1 left, P2 right) to stop your sliding row. Only blocks that land on the row below stay. Rows speed up; the cabinet drops you to two blocks at row 5 and one at row 11. 10 a row, +5 perfect, +20 at the minor prize line, +60 at the top. Keys: Space / Enter.');
  function layout(){const W=s.W,H=s.H,gap=8,pw=(W-gap*3)/2,top=48,bottom=36,cell=Math.floor(Math.min(pw/(COLS+1.3),(H-top-bottom)/(ROWS+3.2)));const used=cell*(ROWS+3.2);return {cell,top,panels:[0,1].map(i=>{const px=gap+i*(pw+gap);return {x:px+(pw-cell*COLS)/2,y:top+((H-top-bottom)-used)/2+cell*1.7,pw,px};})};}
  function drawPanel(p,lay){const L=lay.panels[p.i],cs=lay.cell,col=COLOR[p.i];
@@ -62,10 +71,10 @@ async function towerstack(s){
  }
  function frame(dt){if(cpu)cpuStack();
   const W=s.W,H=s.H;t+=dt;shake.step(dt);bits.step(dt);
-  if(state==='play'){for(const p of P){p.flash=Math.max(0,p.flash-dt);for(const f of p.fall){f.v+=900*dt;f.y+=f.v*dt;}p.fall=p.fall.filter(f=>f.y<H);
+  if(state==='play'){nf?.tick(dt);for(const p of P){p.flash=Math.max(0,p.flash-dt);for(const f of p.fall){f.v+=900*dt;f.y+=f.v*dt;}p.fall=p.fall.filter(f=>f.y<H);
     if(p.done)continue;p.clock+=dt;const tk=tickFor(p.row);while(p.clock>=tk){p.clock-=tk;p.pos+=p.dir;if(p.pos+p.len>COLS){p.pos=COLS-p.len-1;p.dir=-1;}if(p.pos<0){p.pos=1;p.dir=1;}if(p.i===0)voice(1500,.012,.012,'square');}}
    if(P.every(p=>p.done)&&P.every(p=>!p.fall.length)){state='between';banner={t:2.2};for(const p of P)total[p.i]+=p.score;s.setScores(total);}}
-  else if(state==='between'){banner.t-=dt;if(banner.t<=0){round++;if(round>=2){state='over';s.finish(total,`Stacker · ${total[0]} vs ${total[1]}`);return;}P=fresh();state='play';}}
+  else if(state==='between'){banner.t-=dt;if(banner.t<=0){round++;if(round>=2){state='over';s.finish(total,`Stacker · ${total[0]} vs ${total[1]}`);return;}P=fresh();state='play';if(nf){nf.push();if(early?.r===round){apply(nf.remote,early);}early=null;}}}
   // draw
   x.setTransform(1,0,0,1,0,0);const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#120a1e');bg.addColorStop(1,'#05030a');x.fillStyle=bg;x.fillRect(0,0,W,H);
   if(shake.mag>.3)x.translate((Math.random()-.5)*shake.mag,(Math.random()-.5)*shake.mag);
@@ -74,10 +83,10 @@ async function towerstack(s){
   if(state==='between')pixText(x,round>=1?'FINAL SCORE':'ROUND 2 NEXT',W/2,H-26,2.4,'#ffd23f',{align:'center',glow:10});
   x.setTransform(1,0,0,1,0,0);scanlines(x,W,H,.12);
   s.setScores(P.map(p=>total[p.i]+(state==='play'?p.score:0)));
-  s.debug={engine:'towerstack',players:P,state,round,total};
+  s.debug={engine:'towerstack',players:P,state,round,total,bot:nf?()=>{const p=P[nf.me];if(state!=='play'||p.done)return '';const below=p.row?new Set(p.stack[p.row-1]):null;let fit=true;for(let k=0;k<p.len;k++)if(below&&!below.has(p.pos+k))fit=false;if(fit&&Math.random()<.7||Math.random()<.05){stop(p);return 'stop';}return '';}:null};
  }
  P=fresh();
  if(!await s.pass(0,`Stacker: two cabinets, both of you at once. ${s.players[0].name} taps the left half, ${s.players[1].name} the right, to stop your sliding row. Only blocks that land on the row below survive. Reach the top for the major prize. Two rounds.`,'Both ready — stack!',{countdown:3}))return;
- state='play';s.frame(frame);
+ state='play';s.frame(frame);if(nf){nf.push();if(early?.r===round)apply(nf.remote,early);early=null;}
 }
 Object.assign(exports,{towerstack});

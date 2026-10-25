@@ -2,11 +2,15 @@
 //  'climb':   Ladder Rush. Both players at once on split halves: tap to climb a rung, swipe sideways to switch between
 //             three ladders. Chute mouths (pictures of misbehaving kids) slide you down; good-deed stars boost you up.
 //             Same seeded layout for both. First to rung 100, or the highest after 45 seconds.
+//             Online (netField): each phone climbs its own ladders full screen, timed by its own race clock; the other
+//             climber shows as a line from snapshots {rung,best,finished,finishT}. Both phones end from both finals; a
+//             phone already past the other's finish time ends at once.
 //  'spinner': Spinner Showdown on the classic 10×10 board (Milton Bradley ladders and chutes). Take turns stopping
 //             the spinner: timing is the skill. First to square 100, or the furthest after 12 spins each.
 const {clamp}=require("src/utils.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,FONT,PCOL,settle,Countdown}=require("src/engines/arenaKit.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 
 const INK='#24402a',RACE_TIME=45,TOP=100,SPINS=12;
 const LADDERS={1:38,4:14,9:31,21:42,28:84,36:44,51:67,71:91,80:100};
@@ -20,23 +24,24 @@ async function chutes(s){
  const fx=new Fx();let t=0,phase='count',endT=0,endText='';const cd=new Countdown(3);
 
  if(mode==='climb'){
-  const side=()=>s.W>s.H*1.05,vp=i=>side()?{x:i?s.W/2+2:0,y:0,w:s.W/2-2,h:s.H}:{x:0,y:i?s.H/2+2:0,w:s.W,h:s.H/2-2},owner=p=>side()?(p.x<s.W/2?0:1):(p.y<s.H/2?0:1);
+  const side=()=>s.W>s.H*1.05,vp=i=>nf&&i===nf.me?{x:0,y:0,w:s.W,h:s.H}:side()?{x:i?s.W/2+2:0,y:0,w:s.W/2-2,h:s.H}:{x:0,y:i?s.H/2+2:0,w:s.W,h:s.H/2-2},owner=p=>side()?(p.x<s.W/2?0:1):(p.y<s.H/2?0:1);
   s.hint('Ladder Rush: tap your half to climb one rung; swipe left or right to hop to the next ladder. Chute mouths (a kid misbehaving) slide you down, so switch ladders before you reach one; good-deed stars send you up. First to rung 100 wins, or the highest after 45 seconds. P1 W climb + A/D; P2 Up climb + Left/Right.');
   // layout: per rung, which lanes hold a chute (drop) or a good deed (boost)
   const hazard=[];for(let r=0;r<=TOP;r++)hazard.push([null,null,null]);
   for(let r=8;r<TOP-3;r+=3+Math.floor(s.random()*3)){const lane=Math.floor(s.random()*3);hazard[r][lane]={kind:'chute',drop:6+Math.floor(s.random()*6),icon:BAD[Math.floor(s.random()*BAD.length)]};
    if(s.random()<.35){const l2=(lane+1+Math.floor(s.random()*2))%3;hazard[r][l2]={kind:'chute',drop:5+Math.floor(s.random()*4),icon:BAD[Math.floor(s.random()*BAD.length)]};}
    if(s.random()<.3){const free=[0,1,2].filter(l=>!hazard[r+1]?.[l]);if(free.length&&r+1<TOP)hazard[r+1][free[Math.floor(s.random()*free.length)]]={kind:'deed',boost:4+Math.floor(s.random()*3),icon:GOOD[Math.floor(s.random()*GOOD.length)]};}}
+  let netEnd=null;const nf=netField(s,{pack:i=>({rung:P[i].rung,best:P[i].best,finished:P[i].finished,finishT:+P[i].finishT.toFixed(3)}),unpack:(i,d)=>{Object.assign(P[i],{rung:+d.rung||0,best:+d.best||0,finished:!!d.finished,finishT:+d.finishT||0});}});
   const P=[0,1].map(()=>({rung:0,lane:1,shown:0,laneShown:1,anim:0,queue:0,slide:0,finished:false,finishT:0,mood:0,best:0}));let clock=0,winner=-1;
   const climb=i=>{const p=P[i];if(phase!=='play'||p.finished||p.slide>0)return;if(p.anim>0){p.queue=Math.min(1,p.queue+1);return;}step(i);};
   const step=i=>{const p=P[i];p.rung=Math.min(TOP,p.rung+1);p.anim=.11;snd(520+p.rung*4,.04,{type:'triangle',vol:.025});const h=hazard[p.rung]?.[p.lane];
    if(h?.kind==='chute'){p.slide=.7;p.rung=Math.max(0,p.rung-h.drop);p.queue=0;noise(.4,{vol:.05,freq:900});snd(700,.5,{type:'triangle',vol:.03,to:200});s.react(i,'sad');fx.pop(vp(i).x+vp(i).w/2,vp(i).y+vp(i).h*.3,`DOWN THE CHUTE −${h.drop}`,{color:'#ff6a5a',stroke:'#fff',size:20});}
    else if(h?.kind==='deed'){p.rung=Math.min(TOP,p.rung+h.boost);p.anim=.3;jingle([659,880,1175],{step:.05,type:'triangle',vol:.035});s.react(i,'happy');fx.pop(vp(i).x+vp(i).w/2,vp(i).y+vp(i).h*.3,`GOOD DEED +${h.boost}`,{color:'#ffd21c',stroke:INK,size:20});}
-   p.best=Math.max(p.best,p.rung);if(p.rung>=TOP&&!p.finished){p.finished=true;p.finishT=clock;if(winner<0){winner=i;s.react(i,'win');jingle([523,659,784,1047,1319],{step:.09,type:'triangle',vol:.04});}}};
+   p.best=Math.max(p.best,p.rung);if(p.rung>=TOP&&!p.finished){p.finished=true;p.finishT=clock;if(nf){nf.push();return;}if(winner<0){winner=i;s.react(i,'win');jingle([523,659,784,1047,1319],{step:.09,type:'triangle',vol:.04});}}};
   const lane=(i,d)=>{const p=P[i];if(phase!=='play'||p.finished||p.slide>0)return;const n=clamp(p.lane+d,0,2);if(n!==p.lane){p.lane=n;snd(380,.05,{type:'square',vol:.02});}};
-  arenaTouch(s,{owner,maxFingers:2,onUp:f=>{if(f.moved>26&&Math.abs(f.x-f.sx)>Math.abs(f.y-f.sy))lane(f.owner,f.x>f.sx?1:-1);else if(f.moved<26)climb(f.owner);}});
-  const kb=arenaKeys(s);kb.onDown((i,k)=>{if(k==='u'||k==='fire')climb(i);else if(k==='l')lane(i,-1);else if(k==='r')lane(i,1);});
-  s.debug={P,hazard,get phase(){return phase;},climb,lane,setClock(v){clock=v;}};
+  arenaTouch(s,{owner:pt=>nf?nf.me:owner(pt),maxFingers:2,onUp:f=>{if(f.moved>26&&Math.abs(f.x-f.sx)>Math.abs(f.y-f.sy))lane(f.owner,f.x>f.sx?1:-1);else if(f.moved<26)climb(f.owner);}});
+  const kb=arenaKeys(s);kb.onDown((i,k)=>{if(nf)i=nf.me;if(k==='u'||k==='fire')climb(i);else if(k==='l')lane(i,-1);else if(k==='r')lane(i,1);});
+  s.debug={P,hazard,get phase(){return phase;},climb,lane,setClock(v){clock=v;},bot:nf?()=>{const p=P[nf.me];if(phase!=='play'||p.finished||netEnd)return '';if(hazard[p.rung+1]?.[p.lane]?.kind==='chute'){const l=[0,1,2].find(l=>hazard[p.rung+1]?.[l]?.kind!=='chute');if(l!==undefined){lane(nf.me,Math.sign(l-p.lane));return 'lane';}}for(let k=0;k<3;k++)climb(nf.me);return 'climb';}:null};
   // vs CPU: climber 2 taps up at a steady pace and hops ladders when a chute is a rung or two ahead (it spots them less often on Easy)
   const cpu=isCpu(s);let cpuT=.5;
   const cpuClimb=dt=>{const p=P[1],sk=cpuSkill(s);if(p.finished||p.slide>0||p.anim>0||p.queue>0)return;cpuT-=dt;if(cpuT>0)return;cpuT=1/(3.5+sk*4.5)*(.8+Math.random()*.4);
@@ -45,12 +50,16 @@ async function chutes(s){
    if(spot&&sk>.5){const deed=[p.lane-1,p.lane+1].find(l=>at(l)==='deed');if(deed!==undefined){lane(1,deed-p.lane);return;}}climb(1);};
   s.frame(dt=>{t+=dt;fx.update(dt);
    if(phase==='count'){if(!cd.update(dt))phase='play';}
+   else if(phase==='play'&&nf){clock+=dt;nf.tick(dt);const p=P[nf.me],r=P[nf.remote];if(p.anim>0){p.anim-=dt;if(p.anim<=0&&p.queue>0){p.queue--;step(nf.me);}}if(p.slide>0)p.slide-=dt;
+    if(!netEnd&&(p.finished||clock>=RACE_TIME||r.finished&&clock>r.finishT)){netEnd='wait';nf.finish({best:p.best,finished:p.finished,finishT:p.finishT});nf.remoteDone().then(f=>{if(f)Object.assign(r,{best:+f.best||0,finished:!!f.finished,finishT:+f.finishT||0});netEnd='done';});}
+    if(netEnd==='done'){const fin=[0,1].filter(i=>P[i].finished).sort((a,b)=>P[a].finishT-P[b].finishT);winner=fin.length?fin[0]:P[0].best===P[1].best?-2:P[0].best>P[1].best?0:1;if(winner>=0){s.react(winner,'win');jingle([523,659,784,1047,1319],{step:.09,type:'triangle',vol:.04});}phase='end';endT=0;
+     endText=winner===-2?'NECK AND NECK!':P[winner].finished?`${s.players[winner].name.toUpperCase()} REACHES 100!`:`${s.players[winner].name.toUpperCase()} CLIMBED HIGHEST!`;}}
    else if(phase==='play'){clock+=dt;if(cpu)cpuClimb(dt);for(let i=0;i<2;i++){const p=P[i];if(p.anim>0){p.anim-=dt;if(p.anim<=0&&p.queue>0){p.queue--;step(i);}}if(p.slide>0)p.slide-=dt;}
     if(winner>=0||clock>=RACE_TIME){phase='end';endT=0;if(winner<0){const a=P[0].best,b=P[1].best;winner=a===b?-2:a>b?0:1;}endText=winner===-2?'NECK AND NECK!':`${s.players[winner].name.toUpperCase()} REACHES 100!`;if(winner>=0&&!P[winner].finished)endText=`${s.players[winner].name.toUpperCase()} CLIMBED HIGHEST!`;}}
    else{endT+=dt;if(endT>2.8){const sc=[P[0].best,P[1].best];s.finish(sc,`Ladder Rush: ${s.players[0].name} rung ${sc[0]}, ${s.players[1].name} rung ${sc[1]}.`);return;}}
    s.setScores([P[0].best,P[1].best]);
    x.fillStyle='#fff';x.fillRect(0,0,s.W,s.H);
-   for(let i=0;i<2;i++){const v=vp(i),p=P[i];p.shown+=(p.rung-p.shown)*Math.min(1,dt*(p.slide>0?5:14));p.laneShown+=(p.lane-p.laneShown)*Math.min(1,dt*16);
+   for(let i=0;i<2;i++){if(nf&&i!==nf.me)continue;const v=vp(i),p=P[i];p.shown+=(p.rung-p.shown)*Math.min(1,dt*(p.slide>0?5:14));p.laneShown+=(p.lane-p.laneShown)*Math.min(1,dt*16);
     x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();
     const g=x.createLinearGradient(0,v.y,0,v.y+v.h);g.addColorStop(0,'#9fd8ff');g.addColorStop(1,'#d8f2c8');x.fillStyle=g;x.fillRect(v.x,v.y,v.w,v.h);
     const gap=v.h/(side()?11:8.5),baseY=v.y+v.h*.78,ry=r=>baseY-(r-p.shown)*gap,lx=l=>v.x+v.w*(.22+l*.28),lw=Math.min(v.w*.16,gap*1.7);
@@ -68,7 +77,8 @@ async function chutes(s){
     const size=Math.max(14,Math.min(v.w,v.h)*.055);outlined(x,`${s.players[i].name.toUpperCase()}  ${p.best}`,v.x+10,v.y+size,{size,fill:PCOL[i],stroke:'#fff',align:'left'});
     outlined(x,`${Math.ceil(Math.max(0,RACE_TIME-clock))}s`,v.x+v.w-10,v.y+size,{size:size*.85,fill:'#fff',stroke:INK,align:'right'});
     x.restore();}
-   x.fillStyle=INK;if(side())x.fillRect(s.W/2-2,0,4,s.H);else x.fillRect(0,s.H/2-2,s.W,4);
+   if(nf){const r=P[nf.remote],size=Math.max(14,Math.min(s.W,s.H)*.045),bw=s.W*.5,bx=s.W*.25,by=size*3.8;x.fillStyle='rgba(36,64,42,.35)';x.fillRect(bx,by,bw,8);x.fillStyle=PCOL[nf.remote];x.fillRect(bx,by,bw*Math.min(1,r.rung/TOP),8);outlined(x,`${s.players[nf.remote].name.toUpperCase()} ${r.finished?'🏁 100':r.rung}`,s.W/2,by-size*.6,{size:size*.8,fill:PCOL[nf.remote],stroke:'#fff'});if(netEnd==='wait')outlined(x,`Waiting for ${s.players[nf.remote].name}…`,s.W/2,s.H*.4,{size,fill:'#fff',stroke:INK});}
+   else{x.fillStyle=INK;if(side())x.fillRect(s.W/2-2,0,4,s.H);else x.fillRect(0,s.H/2-2,s.W,4);}
    fx.draw(x);if(phase==='count')cd.draw(x,s.W,s.H);
    if(phase==='end'){const size=Math.min(s.W*.06,s.H*.06,44);x.fillStyle='rgba(36,64,42,.75)';x.fillRect(0,s.H/2-size,s.W,size*2);outlined(x,endText,s.W/2,s.H/2,{size,fill:'#ffd21c',stroke:INK});}
   });
