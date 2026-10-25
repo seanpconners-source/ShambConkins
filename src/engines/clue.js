@@ -5,6 +5,10 @@
 //            right wins, wrong loses. After ten rounds each, the detective who has ruled out more cards wins.
 //  'lineup': Lineup. Suspects, weapons or rooms are shown, the lights go out, and one is missing when they come back.
 //            Race to tap the missing card on your own answer pad. Ten rounds.
+//            Online (s.online): each phone shows only its own pad and times its own answer from the moment its question
+//            appeared; each phone sends one {r, a: card id|null, t: seconds} per round (a wrong tap locks you out, no
+//            tap by 8 s or after the other's right answer = null). Once both are in, both phones award the round to
+//            the faster right answer, so network lag favours neither phone.
 const {clamp,shuffle}=require("src/utils.js");
 const {Fx,arenaTouch,snd,noise,jingle,outlined,rr,FONT,PCOL,settle,Countdown}=require("src/engines/arenaKit.js");
 const {isCpu,isOnline,cpuHotseat,cpuSkill,cpuBlunder,pickRandom}=require("src/engines/cpuKit.js");
@@ -102,13 +106,22 @@ async function clue(s){
  s.hint('Lineup: the cards are shown, the lights go out, and one is missing when they come back. Be first to tap the missing card on your own answer pad (P1 top or left, P2 bottom or right). Right +1, wrong −1 and you sit out the rest of that round. Ten rounds: suspects, then weapons, then rooms.');
  const rounds=[];for(let r=0;r<10;r++){const cat=r<3?0:r<6?1:2,list=CARDS.filter(c=>c.cat===cat),shownList=cat===2?shuffle(list,s.random).slice(0,7):shuffle(list,s.random),missing=shownList[Math.floor(s.random()*shownList.length)];rounds.push({cat,shownList,missing,back:shuffle(shownList.filter(c=>c!==missing),s.random),pad:list});}
  const score=[0,0],cd=new Countdown(3);let phase='count',r=0,stage='show',stageT=0,locked=[false,false],solved=-1,endT=0,endText='';
- const zones=()=>{const W=s.W,H=s.H;return side()?{pads:[{x:0,y:0,w:W*.3,h:H},{x:W*.7,y:0,w:W*.3,h:H}],mid:{x:W*.3,y:0,w:W*.4,h:H}}:{pads:[{x:0,y:0,w:W,h:H*.33},{x:0,y:H*.67,w:W,h:H*.33}],mid:{x:0,y:H*.33,w:W,h:H*.34}};};
+ const lnet=isOnline(s)?s.online:null,lme=lnet?lnet.me:-1,inbox=new Map();let fin=[null,null],botPlan=null;if(lnet)s.hotseat=true;
+ const zones=()=>{const W=s.W,H=s.H;if(lnet){const pads=[null,null];pads[lme]=side()?{x:W*.5,y:0,w:W*.5,h:H}:{x:0,y:H*.52,w:W,h:H*.48};return {pads,mid:side()?{x:0,y:0,w:W*.5,h:H}:{x:0,y:0,w:W,h:H*.52}};}return side()?{pads:[{x:0,y:0,w:W*.3,h:H},{x:W*.7,y:0,w:W*.3,h:H}],mid:{x:W*.3,y:0,w:W*.4,h:H}}:{pads:[{x:0,y:0,w:W,h:H*.33},{x:0,y:H*.67,w:W,h:H*.33}],mid:{x:0,y:H*.33,w:W,h:H*.34}};};
  const padButtons=i=>{const z=zones().pads[i],R=rounds[r],n=R.pad.length,cols=side()?(n>6?2:1):3,rows=Math.ceil(n/cols),gap=6,bw=(z.w-gap*(cols+1))/cols,bh=Math.min((z.h-gap*(rows+1)-24)/rows,48);
   return R.pad.map((cd,k)=>({cd,x:z.x+gap+(k%cols)*(bw+gap),y:z.y+24+gap+Math.floor(k/cols)*(bh+gap),w:bw,h:bh}));};
- const answer=(i,cd)=>{if(phase!=='play'||stage!=='ask'||locked[i]||solved>=0)return;const R=rounds[r];if(cd===R.missing){score[i]++;solved=i;stage='reveal';stageT=0;jingle([659,880,1175],{step:.06,type:'triangle',vol:.04});s.react(i,'happy');}
+ // Online: one final answer per phone per round; the round resolves once both are in (faster right answer wins).
+ const netFinal=(i,a,t)=>{if(fin[i])return;fin[i]={a,t};const R=rounds[r];if(i===lme)lnet.send({r,a,t});
+  if(a&&a!==R.missing.id){score[i]=Math.max(0,score[i]-1);locked[i]=true;if(i===lme)noise(.15,{vol:.05,freq:500});s.react(i,'sad');}
+  else if(a&&i===lme)snd(700,.06,{type:'triangle',vol:.03});
+  if(fin[0]&&fin[1]){const right=[0,1].filter(k=>fin[k].a===R.missing.id).sort((p,q)=>fin[p].t-fin[q].t);solved=right.length?right[0]:-1;
+   if(solved>=0){score[solved]++;jingle([659,880,1175],{step:.06,type:'triangle',vol:.04});s.react(solved,'happy');}stage='reveal';stageT=0;}};
+ const answer=(i,cd)=>{if(lnet){if(i===lme&&phase==='play'&&stage==='ask'&&!fin[lme])netFinal(lme,cd.id,stageT);return;}
+  if(phase!=='play'||stage!=='ask'||locked[i]||solved>=0)return;const R=rounds[r];if(cd===R.missing){score[i]++;solved=i;stage='reveal';stageT=0;jingle([659,880,1175],{step:.06,type:'triangle',vol:.04});s.react(i,'happy');}
   else{score[i]=Math.max(0,score[i]-1);locked[i]=true;noise(.15,{vol:.05,freq:500});s.react(i,'sad');if(locked[0]&&locked[1]){stage='reveal';stageT=0;}}};
- arenaTouch(s,{owner:p=>{const z=zones().pads;for(let i=0;i<2;i++){const q=z[i];if(p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+q.h)return i;}return -1;},maxFingers:2,onDown:f=>{const b=padButtons(f.owner).find(b=>f.x>=b.x&&f.x<=b.x+b.w&&f.y>=b.y&&f.y<=b.y+b.h);if(b)answer(f.owner,b.cd);}});
- s.debug={rounds,score,get phase(){return phase;},get stage(){return stage;},get r(){return r;},answer};
+ arenaTouch(s,{owner:p=>{const z=zones().pads;for(let i=0;i<2;i++){const q=z[i];if(q&&p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+q.h)return i;}return -1;},maxFingers:2,onDown:f=>{const b=padButtons(f.owner).find(b=>f.x>=b.x&&f.x<=b.x+b.w&&f.y>=b.y&&f.y<=b.y+b.h);if(b)answer(f.owner,b.cd);}});
+ s.debug={rounds,score,get phase(){return phase;},get stage(){return stage;},get r(){return r;},answer,bot:lnet?()=>{if(phase!=='play'||stage!=='ask'||fin[lme])return '';if(botPlan?.r!==r)botPlan={r,at:.4+Math.random()*3};if(stageT<botPlan.at)return '';const R=rounds[r];answer(lme,Math.random()<.6?R.missing:pickRandom(R.pad.filter(c=>c!==R.missing)));return 'ans';}:null};
+ if(lnet)void (async()=>{for(;;){const m=await lnet.next();if(!m||!s.alive)return;if(Number.isInteger(m.r))inbox.set(m.r,m);}})();
  let cpuPlan=null;
  s.frame(dt=>{t+=dt;fx.update(dt);const W=s.W,H=s.H;wood(x,W,H);const Z=zones(),R=rounds[Math.min(r,rounds.length-1)];
   // vs CPU: player 2 answers after a reaction delay; it remembers the missing card less often on Easy and among the rooms.
@@ -116,22 +129,26 @@ async function clue(s){
    if(!cpuPlan.done&&stageT>=cpuPlan.at){cpuPlan.done=true;answer(1,Math.random()<.4+.5*sk-(R.cat===2?.1:0)?R.missing:pickRandom(R.pad.filter(cd=>cd!==R.missing)));}}
   if(phase==='count'){if(!cd.update(dt))phase='play';}
   else if(phase==='play'){stageT+=dt;
+   if(lnet&&stage==='ask'){const rem=1-lme,m=inbox.get(r);if(m&&!fin[rem]){const ok=typeof m.a==='string'&&R.pad.some(c=>c.id===m.a);netFinal(rem,ok?m.a:null,Number.isFinite(m.t)?m.t:99);}
+    // too late to beat a right answer already in, or out of time: pass
+    if(stage==='ask'&&!fin[lme]&&(stageT>8||fin[rem]?.a===R.missing.id&&stageT>fin[rem].t))netFinal(lme,null,stageT);}
    if(stage==='show'&&stageT>(R.cat===2?3:2.4)){stage='dark';stageT=0;noise(.3,{vol:.04,freq:300});}
    else if(stage==='dark'&&stageT>.9){stage='ask';stageT=0;snd(520,.08,{type:'triangle',vol:.03});}
-   else if(stage==='ask'&&stageT>8){stage='reveal';stageT=0;}
-   else if(stage==='reveal'&&stageT>1.6){r++;locked=[false,false];solved=-1;stage='show';stageT=0;if(r>=rounds.length){phase='end';endT=0;const [a,b]=score;endText=a===b?'A DEAD HEAT':`${s.players[a>b?0:1].name.toUpperCase()} HAS THE SHARPER EYE`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});}}}
+   else if(stage==='ask'&&stageT>8&&!lnet){stage='reveal';stageT=0;}
+   else if(stage==='reveal'&&stageT>1.6){inbox.delete(r);r++;locked=[false,false];solved=-1;fin=[null,null];stage='show';stageT=0;if(r>=rounds.length){phase='end';endT=0;const [a,b]=score;endText=a===b?'A DEAD HEAT':`${s.players[a>b?0:1].name.toUpperCase()} HAS THE SHARPER EYE`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});}}}
   else{endT+=dt;if(endT>2.8){s.finish(score,`Clue Lineup: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}
   s.setScores(score);
   // middle: the lineup
-  const m=Z.mid,list=stage==='show'?R.shownList:R.back,n=list.length,cols=side()?2:(n>6?4:3),rows=Math.ceil(n/cols),cw=(m.w-10*(cols+1))/cols,chh=Math.min((m.h-30-10*(rows+1))/rows,46);
+  const m=Z.mid,list=stage==='show'?R.shownList:R.back,n=list.length,cols=side()?2:(n>6?4:3),rows=Math.ceil(n/cols),cw=(m.w-10*(cols+1))/cols,hdr=lnet?44:30,chh=Math.min((m.h-hdr-10*(rows+1))/rows,46);
   x.fillStyle='rgba(0,0,0,.25)';x.fillRect(m.x,m.y,m.w,m.h);
   if(phase!=='end'){outlined(x,`${['SUSPECTS','WEAPONS','ROOMS'][R.cat]} · ROUND ${Math.min(r+1,10)}/10`,m.x+m.w/2,m.y+14,{size:13,fill:GOLD,stroke:INK});
    if(stage==='dark'){x.fillStyle='#000';x.fillRect(m.x,m.y+24,m.w,m.h-24);outlined(x,'LIGHTS OUT…',m.x+m.w/2,m.y+m.h/2,{size:22,fill:'#fff',stroke:'#000'});}
-   else if(phase==='play'){list.forEach((cd,k)=>drawCard(x,cd,m.x+10+(k%cols)*(cw+10)+cw/2,m.y+30+10+Math.floor(k/cols)*(chh+10)+chh/2,cw,chh));
-    if(stage==='ask')outlined(x,'WHICH ONE IS MISSING?',m.x+m.w/2,m.y+m.h-12,{size:15,fill:'#fff',stroke:INK});
+   else if(phase==='play'){list.forEach((cd,k)=>drawCard(x,cd,m.x+10+(k%cols)*(cw+10)+cw/2,m.y+hdr+10+Math.floor(k/cols)*(chh+10)+chh/2,cw,chh));
+    if(stage==='ask')outlined(x,lnet&&fin[lme]?(locked[lme]?'WRONG · YOU SIT THIS ONE OUT':`ANSWER IN · WAITING FOR ${s.players[1-lme].name.toUpperCase()}`):'WHICH ONE IS MISSING?',m.x+m.w/2,m.y+m.h-12,{size:15,fill:'#fff',stroke:INK});
     if(stage==='reveal'){x.fillStyle='rgba(28,15,8,.8)';x.fillRect(m.x,m.y+m.h*.3,m.w,m.h*.4);outlined(x,`MISSING: ${R.missing.name.toUpperCase()}`,m.x+m.w/2,m.y+m.h*.45,{size:18,fill:GOLD,stroke:INK});outlined(x,solved>=0?`${s.players[solved].name} spotted it!`:'Nobody got it.',m.x+m.w/2,m.y+m.h*.58,{size:14,fill:'#fff',stroke:INK});}}}
   // answer pads
-  for(let i=0;i<2;i++){const z=Z.pads[i];x.fillStyle=`rgba(${i?'255,111,168':'74,163,255'},.12)`;x.fillRect(z.x,z.y,z.w,z.h);outlined(x,`${s.players[i].name.toUpperCase()}  ${score[i]}`,z.x+z.w/2,z.y+13,{size:14,fill:PCOL[i],stroke:INK});
+  if(lnet&&phase!=='end'){const rem=1-lme,f=fin[rem],st=stage!=='ask'?'':!f?'thinking…':f.a===null?'passed':locked[rem]?'wrong ✗':'answered';outlined(x,`${s.players[rem].name.toUpperCase()} ${score[rem]}${st?' · '+st:''}`,m.x+m.w/2,m.y+34,{size:12,fill:PCOL[rem],stroke:INK});}
+  for(let i=0;i<2;i++){const z=Z.pads[i];if(!z)continue;x.fillStyle=`rgba(${i?'255,111,168':'74,163,255'},.12)`;x.fillRect(z.x,z.y,z.w,z.h);outlined(x,`${s.players[i].name.toUpperCase()}  ${score[i]}`,z.x+z.w/2,z.y+13,{size:14,fill:PCOL[i],stroke:INK});
    if(phase==='play'&&stage==='ask')for(const b of padButtons(i))drawCard(x,b.cd,b.x+b.w/2,b.y+b.h/2,b.w,b.h,{dim:locked[i]});
    else{s.sprite(x,i,z.x+z.w/2,z.y+z.h*.55,Math.min(z.w,z.h)*.45,{exact:true,mood:solved===i?'win':locked[i]?'sad':undefined});}}
   fx.draw(x);if(phase==='count')cd.draw(x,W,H);

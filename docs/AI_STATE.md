@@ -581,8 +581,20 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   ({m:[r,c,tr,tc]}, violet's phone sees the board turned round via `R()`, only the mover's phone runs the 45 s clock; a
   timed-out random move is sent like any other), WarGames `wopr-grid` ({i}), N-Spade `smb3-nspade` (smb3.js, {k: card}; same
   table from the seed). All 3 pass online-native; 2P fuzz + 1P CPU clean. That finishes the turn-based CPU games.
-  TODO next: real-time games (Clue Lineup, Hangman Quick Draw, then arena/action games): needs a different design than the
-  move relay (a referee phone would favour itself on tap races).
+  Batch 8 (Oct 25, same branch), the first REAL-TIME games: fairness by each phone's own clock, no referee phone.
+  Clue Lineup (clue.js): each phone shows only its own pad; one final {r, a: card id|null, t: secs since ITS question
+  appeared} per round (wrong = locked out, null = 8 s or too late to beat the other's right answer); both phones resolve
+  when both are in (faster right answer wins). Quick Draw `django-hangman` (hangman.js `qd*`): one keyboard each; shots
+  {r,g,t} stamped with the phone's own round time + heartbeats {r,hb} every .3 s; both phones apply all shots in time order
+  (tie → P1); a shot arriving after later ones replays the round silently (`quiet` mutes the SFX proxy/vibrate/floats); a
+  shot stamped past this phone's clock waits until it gets there; the round ends (solve, both hanged, sundown at CLOCK)
+  only when min(own time, other's last reported time) passes that moment. Stress test (scratch: 0-700 ms random send
+  delay, both bots fighting over the top 3 letters): ~15 replays a round, all rounds identical on both phones. Both pass
+  online-native; 2P fuzz, 1P CPU and tests/hangman.mjs clean. Once (not reproduced in 3 reruns) Showdown froze mid-reveal
+  on both phones after clue-whodunit in a 3-game online-native run; watch for it.
+  This clock-stamped timeline is the pattern for other race games. TODO next: the remaining real-time CPU games
+  (arena/action: pong, sumo, snakes, Kart VS...) need continuous state, not discrete shots: probably input relay with
+  delay (lockstep) or host-authoritative state, decide per game.
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).

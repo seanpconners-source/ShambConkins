@@ -5,9 +5,11 @@
 //  'pass'   (django-hangman-wanted): one player writes a phrase (or deals one from the deck), the other guesses; then swap.
 // Six bullets = six misses: torso, arms, legs, then the trapdoor drops. Sounds are all synthesized western SFX.
 const {fullBleed}=require("src/engines/fullBleed.js");
-const {vibrate}=require("src/audio.js");
+const {vibrate:buzz}=require("src/audio.js");
 const {shuffle}=require("src/utils.js");
-const {SFX}=require("src/engines/westernSfx.js");
+const {SFX:WSFX}=require("src/engines/westernSfx.js");
+// Online Quick Draw replays a round silently when a shot arrives out of order (quiet.on mutes sounds and buzzes).
+const quiet={on:false},SFX=new Proxy(WSFX,{get:(o,k)=>quiet.on?()=>{}:o[k]}),vibrate=ms=>quiet.on?false:buzz(ms);
 const {PHRASES,CATEGORIES}=require("src/data/hangmanPhrases.js");
 const {isCpu,isOnline,cpuSkill}=require("src/engines/cpuKit.js");
 
@@ -108,15 +110,39 @@ async function hangman(s){
  }
  const solvedNow=()=>[...st.text].every(ch=>!isLetter(ch)||st.guessed.get(ch)?.hit);
  const players=()=>mode==='shared'?[0,1]:mode==='turns'?[st.turn]:[st.guesser];
- // Online (s.online, Showdown and Wanted; Quick Draw is a real-time race and stays on one phone): each phone shoots only its
+ // Online (s.online, Showdown and Wanted; Quick Draw below): each phone shoots only its
  // own letters {g: letter}; running out of shot clock {to:1} is called by the shooter's phone only. In Wanted the writer's
  // phone sends the bounty {w:{text,cat}} and the guesser's phone shows only the blanks.
  const net=isOnline(s)&&mode!=='shared'?s.online:null,theirs=p=>!!net&&p===net.remote;if(net)s.hotseat=true;let netWait='',theirWritten=null;
+ // Online Quick Draw (both shoot at once): each phone shows only its own keyboard and stamps every shot with ITS OWN time
+ // since the round began, {r, g: letter, t}, plus a heartbeat {r, hb: t} a few times a second. Both phones apply every shot
+ // in time order (a tie goes to P1); a shot that arrives after later ones were applied replays the round silently. The
+ // round ends (solved, both hanged, sundown) only once the other phone has reported a time past that moment, so both
+ // phones end on the same shots and network lag favours neither phone.
+ const qnet=isOnline(s)&&mode==='shared'?s.online:null;if(qnet)s.hotseat=true;
+ const qd={events:[],score0:[0,0],playT:0,heard:0,hbAt:0,end:null,live:false,inbox:[]};
+ const kbOwner=i=>mode==='shared'?(qnet?qnet.me:i):mode==='turns'?st.turn:st.guesser;
+ function qdStart(){Object.assign(qd,{events:[],score0:st.score.slice(),playT:T,heard:0,hbAt:0,end:null,live:true});qdPump();}
+ function qdApply(e){const T0=T;T=qd.playT+e.rt;guess(e.p,e.L,true);T=T0;}
+ function qdAdd(ev){const log=qd.events,prev=log[log.length-1],late=!!prev&&(ev.rt<prev.rt||ev.rt===prev.rt&&ev.p<prev.p);
+  log.push(ev);log.sort((a,b)=>a.rt-b.rt||a.p-b.p);
+  if(!late){if(!qd.end&&ev.rt<CLOCK)qdApply(ev);return;}
+  const sh=shake;quiet.on=true;qd.replays=(qd.replays||0)+1;
+  try{Object.assign(st,{guessed:new Map(),reveal:{},misses:[0,0],partT:[[],[]],hanged:[0,0],cut:[0,0],lock:[0,0],result:null,mood:[null,null]});st.score.splice(0,2,...qd.score0);qd.end=null;
+   for(const e of log){if(qd.end||e.rt>=CLOCK)break;qdApply(e);}}finally{quiet.on=false;}
+  shake=sh;s.setScores(st.score);}
+ // A shot stamped later than this phone's own round clock waits until this phone gets there (no head start for the phone
+ // that started the round first).
+ function qdPump(){while(qd.inbox.length){const m=qd.inbox[0];if(m.r>st.round||m.r===st.round&&!qd.live)return;if(m.r===st.round&&typeof m.g==='string'&&m.t>T-qd.playT)return;qd.inbox.shift();if(m.r!==st.round)continue;
+  const t=Number.isFinite(m.t)?m.t:Number.isFinite(m.hb)?m.hb:null;if(t===null||t<0)continue;
+  if(typeof m.g==='string'&&isLetter(m.g)&&m.g.length===1)qdAdd({rt:t,p:qnet.remote,L:m.g});qd.heard=Math.max(qd.heard,t);}}
  function passTurn(){const o=1-st.turn;if(!st.hanged[o]&&o!==st.turn){st.turn=o;st.turnT=T;SFX.spurs({steps:2,vol:.3,pan:o?.4:-.4});}st.tclock=TURN;st.tick=-1;s.active=st.turn;s.updateScores();}
  function timeout(p,remote=false){if(st.phase!=='play'||theirs(p)&&!remote)return;if(net&&!remote)net.send({to:1});st.misses[p]++;st.partT[p][st.misses[p]]=T;SFX.dryFire({});mood(p,'angry');vibrate(45);shake=.3;floatText(p,'TOO SLOW','#ff6b5e');dust(p);
   if(st.misses[p]>=LIVES)return hang(p);if(st.misses[p]===LIVES-1)floatText(p,'LAST BULLET','#ff8a5c',1.6);passTurn();}
  function mood(p,m,sec=1.2){st.mood[p]={m,until:T+sec};}
  function guess(p,L,remote=false){
+  if(qnet&&!remote){if(p!==qnet.me||!qd.live||qd.end||T-qd.playT>=CLOCK||st.phase!=='play'||!s.alive||s.paused||st.hanged[p]||st.lock[p]>T||!isLetter(L)||st.guessed.has(L))return;
+   const rt=T-qd.playT;qnet.send({r:st.round,g:L,t:rt});qdAdd({rt,p,L});return;}
   if(st.phase!=='play'||!s.alive||!remote&&s.paused||!players().includes(p))return;
   if(st.hanged[p]||st.lock[p]>T||!isLetter(L)||st.guessed.has(L)||theirs(p)&&!remote)return;if(net&&!remote)net.send({g:L});
   const idx=[];[...st.text].forEach((ch,i)=>{if(ch===L)idx.push(i);});
@@ -148,7 +174,7 @@ async function hangman(s){
   else{st.score[st.writer]+=50;st.result={kind:'hanged',p};endRound();}
   s.setScores(st.score);
  }
- function endRound(){st.phase='reveal';st.bannerT=T;s.setScores(st.score);}
+ function endRound(force=false){if(qnet&&!force){if(!qd.end)qd.end={rt:T-qd.playT};return;}st.phase='reveal';st.bannerT=T;s.setScores(st.score);}
  // writer (pass mode)
  const letterCount=t=>[...t].filter(isLetter).length;
  function typeChar(ch){if(st.phase!=='write')return;if(st.draft.length>=MAXLEN){SFX.dryFire({vol:.4});return;}if(ch===' '&&(!st.draft||st.draft.endsWith(' ')))return;st.draft+=ch;SFX.jingle({});}
@@ -160,8 +186,8 @@ async function hangman(s){
 
  // ---------------------------------------------------------------- effects
  function panelCenter(p){const pn=lay.panels?.[duel?p:0];return pn?{x:pn.gx,y:pn.neckY}:{x:W/2,y:H/2};}
- function floatText(p,text,color,life=1.1){const c0=panelCenter(p);floats.push({x:c0.x,y:c0.y-20,text,color,t:T,life});}
- function dust(p){const c0=panelCenter(p);for(let i=0;i<10;i++)fx.push({k:'dust',x:c0.x+(Math.random()-.5)*30,y:c0.y+(Math.random()-.2)*40,vx:(Math.random()-.5)*60,vy:-Math.random()*40,life:.7,t:T,r:3+Math.random()*5});}
+ function floatText(p,text,color,life=1.1){if(quiet.on)return;const c0=panelCenter(p);floats.push({x:c0.x,y:c0.y-20,text,color,t:T,life});}
+ function dust(p){if(quiet.on)return;const c0=panelCenter(p);for(let i=0;i<10;i++)fx.push({k:'dust',x:c0.x+(Math.random()-.5)*30,y:c0.y+(Math.random()-.2)*40,vx:(Math.random()-.5)*60,vy:-Math.random()*40,life:.7,t:T,r:3+Math.random()*5});}
  function smoke(x0,y0){for(let i=0;i<6;i++)fx.push({k:'smoke',x:x0,y:y0,vx:(Math.random()-.5)*40,vy:-20-Math.random()*40,life:.8+Math.random()*.4,t:T,r:4+Math.random()*6});for(let i=0;i<8;i++){const a=Math.random()*7;fx.push({k:'spark',x:x0,y:y0,vx:Math.cos(a)*160,vy:Math.sin(a)*160,life:.25,t:T,r:1.5});}}
  const dusts=Array.from({length:26},()=>({x:Math.random(),y:Math.random(),s:.2+Math.random()*.8,p:Math.random()*7}));
  let weed=null,nextWeed=4;
@@ -170,7 +196,7 @@ async function hangman(s){
  function layout(){
   const M=8,TOP=Math.max(48,fb.top+4),BOT=36,port=W<H*.95,L={port,TOP,BOT,M};
   if(st.phase==='intro'||st.phase==='final')return L;
-  if(mode==='turns'){
+  if(mode==='turns'||mode==='shared'&&qnet){
    if(port){L.scene={x:M,y:TOP,w:W-2*M,h:(H-TOP-BOT)*.33};L.phrase={x:M,y:L.scene.y+L.scene.h+6,w:W-2*M,h:(H-TOP-BOT)*.2};L.kb=[{x:M,y:L.phrase.y+L.phrase.h+8,w:W-2*M,h:H-BOT-(L.phrase.y+L.phrase.h+8)}];}
    else{const lw=W*.47;L.scene={x:M,y:TOP,w:lw-M,h:(H-TOP-BOT)*.58};L.phrase={x:M,y:TOP+L.scene.h+6,w:lw-M,h:H-BOT-(TOP+L.scene.h+6)};const rx=lw+8;L.kb=[{x:rx,y:TOP,w:W-rx-M,h:H-TOP-M}];}
    const sc=L.scene;L.panels=[0,1].map(p=>panel({x:sc.x+(p?sc.w/2+3:0),y:sc.y,w:sc.w/2-3,h:sc.h},p?1:-1));
@@ -434,7 +460,11 @@ async function hangman(s){
   dpr=Math.min(2,window.devicePixelRatio||1);const cw=Math.round(W*dpr),ch=Math.round(H*dpr);if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}
   x.setTransform(dpr,0,0,dpr,0,0);
   for(let i=waits.length-1;i>=0;i--)if(waits[i].f()){waits[i].r();waits.splice(i,1);}
-  if(st.phase==='play'&&mode==='shared'){st.clock-=dt;const sec=Math.ceil(st.clock);if(sec<=5&&sec>0&&sec!==st.tick){st.tick=sec;SFX.spurs({steps:1,vol:.25});}
+  if(st.phase==='play'&&qnet&&qd.live){const rt=T-qd.playT;st.clock=Math.max(0,CLOCK-rt);const sec=Math.ceil(st.clock);if(sec<=5&&sec>0&&sec!==st.tick){st.tick=sec;SFX.spurs({steps:1,vol:.25});}
+   if(T>=qd.hbAt){qd.hbAt=T+.3;qnet.send({r:st.round,hb:rt});}qdPump();
+   const endRt=qd.end?qd.end.rt:CLOCK;
+   if(Math.min(rt,qd.heard)>=endRt){qd.live=false;qnet.send({r:st.round,hb:Math.max(rt,endRt)});if(!qd.end){st.result={kind:'time'};st.clock=0;SFX.whinny({});}endRound(true);}}
+  else if(st.phase==='play'&&mode==='shared'&&!qnet){st.clock-=dt;const sec=Math.ceil(st.clock);if(sec<=5&&sec>0&&sec!==st.tick){st.tick=sec;SFX.spurs({steps:1,vol:.25});}
    if(st.clock<=0){st.clock=0;st.result={kind:'time'};SFX.whinny({});endRound();}}
   if(st.phase==='play'&&mode==='turns'){st.tclock-=dt;const sec=Math.ceil(st.tclock);if(sec<=3&&sec>0&&sec!==st.tick){st.tick=sec;SFX.spurs({steps:1,vol:.25});}if(st.tclock<=0){if(theirs(st.turn))st.tclock=0;else timeout(st.turn);}}
   lay=layout();shake=Math.max(0,shake-dt*1.6);
@@ -447,7 +477,7 @@ async function hangman(s){
     if(st.phase!=='handoff')cowboy(pn,p,Math.min(LIVES-1,st.misses[p]),{hangT:st.hanged[p],cutT:st.cut[p]});card(pn,p,{label:mode==='pass'?(theirs(p)?'GUESSING ON THEIR PHONE':'GUESSING'):mode==='turns'&&st.phase==='play'?(st.turn===p?(theirs(p)?'▼ THEIR SHOT':'▼ YOUR SHOT'):st.hanged[p]?null:'WAITING'):null});
     if(mode==='turns'&&st.phase==='play'&&st.turn!==p&&!st.hanged[p]){x.save();rr(x,pn.r.x,pn.r.y,pn.r.w,pn.r.h,10);x.fillStyle='rgba(12,5,3,.38)';x.fill();x.restore();}}
    if(st.phase!=='handoff'){board(lay.phrase,{all:st.phase==='reveal'});
-    lay.kb.forEach((r,i)=>keyboard(r,lay.keys[i],mode==='shared'?i:mode==='turns'?st.turn:st.guesser,{active:st.phase==='play'}));}
+    lay.kb.forEach((r,i)=>keyboard(r,lay.keys[i],kbOwner(i),{active:st.phase==='play'&&!(qnet&&(qd.end||st.clock<=0))}));}
    hud();
    if(st.phase==='banner')banner();
    if(st.phase==='reveal')resultBanner();
@@ -493,15 +523,17 @@ async function hangman(s){
   if(st.phase==='reveal'||st.phase==='banner'){if(T-st.bannerT>1.2)st.skip=true;return;}
   if(st.phase==='write'){for(const b of lay.act||[])if(inRect(pt,b)){st.press['w'+b.id]=T;({deal,clue:cycleClue,space:()=>typeChar(' '),back:backspace,done:doneWriting})[b.id]();return;}
    for(const k of lay.keys?.[0]||[])if(inRect(pt,k)){st.press['w'+k.L]=T;typeChar(k.L);return;}return;}
-  if(st.phase==='play')(lay.keys||[]).forEach((ks,i)=>{const p=mode==='shared'?i:mode==='turns'?st.turn:st.guesser;if(cpu&&p===1||theirs(p))return;for(const k of ks)if(inRect(pt,{x:k.x-2,y:k.y-2,w:k.w+4,h:k.h+4})){guess(p,k.L);st.press[p+k.L]=T;return;}});
+  if(st.phase==='play')(lay.keys||[]).forEach((ks,i)=>{const p=kbOwner(i);if(cpu&&p===1||theirs(p))return;for(const k of ks)if(inRect(pt,{x:k.x-2,y:k.y-2,w:k.w+4,h:k.h+4})){guess(p,k.L);st.press[p+k.L]=T;return;}});
  });
  s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat||ev.target?.matches?.('input,textarea,[contenteditable]'))return;const k=ev.key;
   if(st.phase==='write'){if(/^[a-z]$/i.test(k))typeChar(k.toUpperCase());else if(k===' '||k==="'"||k==='-')typeChar(k);else if(k==='Backspace')backspace();else if(k==='Enter')doneWriting();else return;ev.preventDefault();return;}
-  if(st.phase==='play'&&/^[a-z]$/i.test(k)){ev.preventDefault();const who=mode==='shared'?0:mode==='turns'?st.turn:st.guesser;if(!(cpu&&who===1)&&!theirs(who))guess(who,k.toUpperCase());}
+  if(st.phase==='play'&&/^[a-z]$/i.test(k)){ev.preventDefault();const who=kbOwner(0);if(!(cpu&&who===1)&&!theirs(who))guess(who,k.toUpperCase());}
   else if(['intro','final','reveal'].includes(st.phase)&&(k==='Enter'||k===' ')){ev.preventDefault();st.skip=true;}});
- s.debug={st,guess,type:t=>{st.draft=String(t).toUpperCase().slice(0,MAXLEN);},deal,done:doneWriting,skip:()=>{st.skip=true;},layout:()=>lay,
-  bot:net?()=>{if(s.paused)return null;const me=net.me;if(st.phase==='write'&&st.writer===me&&!st.written){deal();doneWriting();return 'write';}
+ s.debug={st,qd,guess,type:t=>{st.draft=String(t).toUpperCase().slice(0,MAXLEN);},deal,done:doneWriting,skip:()=>{st.skip=true;},layout:()=>lay,
+  bot:qnet?()=>{const me=qnet.me;if(s.paused||st.phase!=='play'||!qd.live||qd.end||st.hanged[me]||st.lock[me]>T||Math.random()>.12)return null;const left=[...'ETAOINSRHLDCUMFPGWYBVKXJQZ'].filter(L=>!st.guessed.has(L));if(!left.length)return null;guess(me,left[Math.floor(Math.random()*Math.min(8,left.length))]);return 'shot';}
+  :net?()=>{if(s.paused)return null;const me=net.me;if(st.phase==='write'&&st.writer===me&&!st.written){deal();doneWriting();return 'write';}
    if(st.phase==='play'&&players().includes(me)&&!st.hanged[me]){const left=[...'ETAOINSRHLDCUMFPGWYBVKXJQZ'].filter(L=>!st.guessed.has(L));if(left.length&&Math.random()<.5){guess(me,left[Math.floor(Math.random()*Math.min(8,left.length))]);return 'guess';}}return null;}:null};
+ if(qnet)void (async()=>{for(;;){const m=await qnet.next();if(!m||!s.alive)return;if(Number.isInteger(m.r)){qd.inbox.push(m);qdPump();}}})();
  if(net)void (async()=>{for(;;){const m=await net.next();if(!m||!s.alive)return;if(m.w){theirWritten=m.w;continue;}
   while(s.alive&&(s.paused||st.phase!=='play'||!players().some(theirs)))await new Promise(r=>setTimeout(r,50));if(!s.alive)return;
   const p=players().find(theirs);if(typeof m.g==='string')guess(p,m.g.toUpperCase().slice(0,1),true);else if(m.to)timeout(p,true);}})();
@@ -512,7 +544,7 @@ async function hangman(s){
  if(duel){
   const picks=[];for(const q of shuffle(PHRASES,s.random)){if(picks.length>=ROUNDS)break;if(q.text.length>26||picks.some(o=>o.cat===q.cat))continue;picks.push(q);}
   for(let r=0;r<ROUNDS;r++){st.round=r;startRound(picks[r].text,picks[r].cat);st.turn=r%2;st.tclock=TURN;s.active=st.turn;s.updateScores();st.phase='banner';st.bannerT=T;SFX.cylinder({});SFX.cock({delay:.55});
-   await sleep(1.5);if(!s.alive)return;st.skip=false;st.phase='play';st.turnT=T;st.tclock=TURN;await until(()=>st.phase==='reveal');await sleep(3.2);if(!s.alive)return;st.skip=false;}
+   await sleep(1.5);if(!s.alive)return;st.skip=false;st.phase='play';st.turnT=T;st.tclock=TURN;if(qnet)qdStart();await until(()=>st.phase==='reveal');await sleep(3.2);if(!s.alive)return;st.skip=false;}
  }else{
   for(let r=0;r<2;r++){st.round=r;st.writer=r;st.guesser=1-r;st.draft='';st.draftCat=0;st.written=null;st.phase='handoff';
    if(cpu&&st.writer===1){st.phase='write';deal();doneWriting();}
