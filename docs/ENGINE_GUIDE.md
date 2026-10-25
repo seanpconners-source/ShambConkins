@@ -82,6 +82,12 @@ On a solo launch `s.solo={kind,who,level,skill,best}`; `s.players[0]` is the hum
   `keys.cpu`, `controls.cpu`); vs CPU the kits already route every human touch to player 1. Block human input on the CPU's turn,
   and never draw the CPU's private hand/notebook (show "… is thinking" instead). Trivia: `cpuTriviaPick`/`cpuThinkTime`;
   casino tables: `casinoCpu(s,{choose,act})`. Purely social games go in `SOLO_HIDDEN` (hidden from the 1P list).
+* Online versus (two phones, `NET_VERSUS` in solo.js): a turn-based CPU game can also be played move by move online. Both
+  phones run it from one seed with the players in room-seat order; `s.net.seat` is this phone's player. Guard touches with
+  `notMine(s,turn)` (instead of `isCpu(s)&&turn===1`), call `netSend(s,turn,move)` where a move is committed (after it is
+  known to be legal, before any await), write `isTurn` as `p=>turn===p&&…` and give `cpuHotseat` an `apply(move)` that replays
+  the other phone's move; out-of-turn actions (resign, draw offers) go as `{act:…}` to `action(a)`. Never use `Math.random`
+  for the game itself (moves must replay identically). Test: `node tests/online-versus.mjs` (GAMES=id, needs `wrangler dev`).
 * Co-op games: the CPU is a teammate. Add the id to `SOLO_COOP` (solo.js) and before `s.finish` set `s.solo.coop=true` and
   `s.solo.won`; the solo card then scores the team total (horde.js, spaceInvaders.js).
 * Recruits go to `s.gameRecruits[0]` / `s.broforceRecruits[0]` as in 2P; `settleSolo` (gameLauncher) records the best run in

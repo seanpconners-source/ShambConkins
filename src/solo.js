@@ -79,9 +79,14 @@ async function soloNext(s,{title='Level cleared!',body='',level=1,score=0,label=
 // Online duels (src/duel.js): both phones play the 1P version from the same seed and compare scores, so only games whose
 // solo run ends in a score qualify; CPU-opponent games need real head-to-head play and come later.
 const DUEL_KINDS=new Set(['levels','rounds','turns','game','alone']);
-function duelOK(g){return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&DUEL_KINDS.has(soloKind(g));}
+// Online versus (batch 1): turn-based board games the two phones play against each other, one move at a time (the
+// engines relay moves through cpuKit's s.net instead of asking the CPU).
+const NET_VERSUS=new Set(['ten-forward-chess','deadite-checkers','trek-mini-chess','four-lights','strategema-grid','wopr-grid',
+ 'matrix-ultimate','greed-island-mancala','office-dots-boxes']);
+const duelVersus=g=>!!g&&NET_VERSUS.has(g.id);
+function duelOK(g){return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&(DUEL_KINDS.has(soloKind(g))||NET_VERSUS.has(g.id));}
 // 1P board game (src/cpuBoard.js): the human plays games with a real CPU opponent ('cpu') or co-op games alone ('alone':
 // bosses, the horde); score-attack kinds can't decide a head-to-head board game, and CPU-teammate games are left out.
 function boardCpuKind(g){const k=soloKind(g);return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&!SOLO_COOP.has(g.id)&&(k==='cpu'||k==='alone')?k:null;}
-Object.assign(exports,{boardCpuKind,duelOK,SOLO_LEVELS,SOLO_LEVEL_NAMES,SOLO_SKILL,soloKind,soloHidden,soloCoop,soloSettings,setSolo,normalizeSoloSettings,normalizeSoloBest,soloBest,recordSolo,soloBestText,isSolo,cpuSkill,soloProgress,soloFinish,soloNext});
+Object.assign(exports,{boardCpuKind,duelOK,duelVersus,SOLO_LEVELS,SOLO_LEVEL_NAMES,SOLO_SKILL,soloKind,soloHidden,soloCoop,soloSettings,setSolo,normalizeSoloSettings,normalizeSoloBest,soloBest,recordSolo,soloBestText,isSolo,cpuSkill,soloProgress,soloFinish,soloNext});
 

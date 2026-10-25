@@ -195,7 +195,7 @@ function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=
   else if(filter==='variants')list=EVENT_GAMES.filter(g=>!g.bossId&&(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&hit(g));
   else list=[...GAMES.filter(g=>(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&(filter==='all'||g.category===filter)),...(filter==='all'?[...POKEMON_MATCHES,...beaten]:[])].filter(hit);
   // 1P mode: games with a solo version first; the rest stay listed but greyed out. Purely social games are hidden.
-  // Online duels: only games whose 1P run ends in a score (duelOK) can be played across two phones so far.
+  // Online duels: games whose 1P run ends in a score, and the turn-based versus games (duelOK), play across two phones.
   const online=!!store.online,solo=!online&&soloSettings(p).on,soloOK=g=>!!(g.pokemon||soloKind(g));
   if(solo){list=list.filter(g=>!soloHidden(g));list=[...list.filter(soloOK),...list.filter(g=>!soloOK(g))];}
   if(online){list=list.filter(g=>!soloHidden(g));list=[...list.filter(duelOK),...list.filter(g=>!duelOK(g))];}

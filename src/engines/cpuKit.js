@@ -1,12 +1,28 @@
 // CPU opponents for solo (1P arcade) play. Player 2 (index 1) is the CPU; s.solo.skill is 0.35 / 0.65 / 0.9.
 const {cpuSkill}=require("src/solo.js");
-const isCpu=s=>s?.solo?.kind==='cpu';
+// Online versus (src/duel.js): s.net = {seat, send(move), queue}. Both phones run the same game from one seed; this
+// phone's human plays seat s.net.seat and the other phone's moves arrive in s.net.queue. Engines check notMine() before
+// taking a touch, send the local player's committed moves with netSend(), and apply the other phone's in cpuHotseat's
+// apply(). A game played online is never vs the CPU.
+const isCpu=s=>s?.solo?.kind==='cpu'&&!s?.net;
+const isNet=s=>!!s?.net;
+// The seat this phone's human does NOT play: the CPU (1), the other phone, or -1 in pass and play.
+const otherSeat=s=>s?.net?1-s.net.seat:isCpu(s)?1:-1;
+const notMine=(s,p)=>p===otherSeat(s);
+// A move this phone's player p just made: online, the other phone replays it (moves of the other seat are never echoed).
+function netSend(s,p,move){if(s?.net&&p===s.net.seat&&s.alive)s.net.send(move);}
 // Hot-seat games: hand-off cards are skipped after the first one (one human on the phone) and whenever
-// isTurn() is true the CPU waits a beat, then think() plays its move through the engine's own move function.
-function cpuHotseat(s,{isTurn,think,delay=700}){
+// isTurn(seat) is true the CPU waits a beat, then think() plays its move through the engine's own move function.
+// Online, apply(move) plays the next move from the other phone once isTurn(their seat) is true.
+// action(move) handles the other phone's out-of-turn moves ({act:...}: resign, draw offers) as soon as they reach the queue.
+function cpuHotseat(s,{isTurn,think,apply,action,delay=700}){
  s.hotseat=true;let thinking=false;
- s.frame(()=>{if(thinking||!s.alive||s.paused||s.waiting||!isTurn())return;thinking=true;
-  s.delay(delay*(1.25-cpuSkill(s)*.5)).then(async ok=>{try{if(ok&&s.alive&&!s.paused&&isTurn())await think();}catch(e){console.error('cpu move failed',e);}finally{thinking=false;}});});
+ if(s.net){s.frame(()=>{const q=s.net.queue;if(thinking||!q.length||!s.alive||s.waiting)return;
+  if(q[0]?.act!==undefined){const a=q.shift();try{action?.(a);}catch(e){console.error('online action failed',e);}return;}
+  if(!apply||!isTurn(otherSeat(s)))return;thinking=true;
+  Promise.resolve().then(()=>apply(q.shift())).catch(e=>console.error('online move failed',e)).finally(()=>{thinking=false;});});return;}
+ s.frame(()=>{if(thinking||!s.alive||s.paused||s.waiting||!isTurn(1))return;thinking=true;
+  s.delay(delay*(1.25-cpuSkill(s)*.5)).then(async ok=>{try{if(ok&&s.alive&&!s.paused&&isTurn(1))await think();}catch(e){console.error('cpu move failed',e);}finally{thinking=false;}});});
 }
 // Search depth for the skill: easy / normal / hard → lo .. hi.
 const cpuDepth=(s,lo,hi)=>Math.round(lo+(hi-lo)*Math.min(1,Math.max(0,(cpuSkill(s)-.35)/.55)));
@@ -42,4 +58,4 @@ function cpuTriviaTurn(s,{q,choices,buttons,feedback,live,pick,hidden=false}){
   if(!await s.wait(hidden?600:1200)||!live())return;pick(pos);
  });
 }
-Object.assign(exports,{isCpu,cpuHotseat,cpuDepth,cpuBlunder,negamax,pickRandom,cpuSkill,cpuTriviaPick,cpuThinkTime,cpuTriviaTurn});
+Object.assign(exports,{isCpu,isNet,otherSeat,notMine,netSend,cpuHotseat,cpuDepth,cpuBlunder,negamax,pickRandom,cpuSkill,cpuTriviaPick,cpuThinkTime,cpuTriviaTurn});

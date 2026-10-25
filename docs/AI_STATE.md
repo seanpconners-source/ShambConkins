@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.66.1 (Oct 24: trivia vs CPU shows its turn, `cpuTriviaTurn` in cpuKit; v0.66.0 1-player board game vs CPU + Choose Characters; v0.65.0 online board game on two phones; v0.64.0 online duels phase 1; v0.63.1 loading screen, full-screen app, Worker serves the app files; v0.63.0 PWA; earlier: pinball tables, iPad fix, backup/restore; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
+Version 0.66.1 (unreleased on this branch: online versus batch 1, see below; Oct 24: trivia vs CPU shows its turn, `cpuTriviaTurn` in cpuKit; v0.66.0 1-player board game vs CPU + Choose Characters; v0.65.0 online board game on two phones; v0.64.0 online duels phase 1; v0.63.1 loading screen, full-screen app, Worker serves the app files; v0.63.0 PWA; earlier: pinball tables, iPad fix, backup/restore; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
 pushing a version bump to main runs `.github/workflows/release-build.yml`, which builds `releases/ShambConkins_vX.html` and
 creates release vX with notes from `docs/releases/vX.md` (first line `# ` = title) or the CHANGELOG section; skips if it exists.
 Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
@@ -513,9 +513,21 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   re-sent after 8 s, answers cached by id; a dropped guest → host "Keep waiting / Play it on this phone" (`takeOver` =
   pass and play until they say hello again); guest Home = "Leave" (`bye`), room line then offers "Rejoin". Host Home =
   `pause` (guest waits), Continue = `start` again; a restarted host rejoins `run.online.room` itself. Same VERSION needed.
-  Tests: `tests/online-board.mjs` (TURNS, PKMN=1 wild battles, DROP=n drops the guest mid-decision, DEBUG=1 traces;
-  bots answer only what their phone may answer). Not yet tried on two real phones. Next: turn-based games online
-  (move relay through the CPU hooks), then real-time ones.
+  Tests: `tests/online-board.mjs` (TURNS, PKMN=1 wild battles, DROP=n drops the guest mid-decision, VERSUS=1 deals only
+  versus games, DEBUG=1 traces; bots answer only what their phone may answer). Not yet tried on two real phones.
+- **Online versus, batch 1 (Oct 25, branch `ccr-068b9171-9aysxt`):** turn-based board games played against each other on two
+  phones, move by move: chess, checkers, Tri-D chess, Connect 4 (four-lights), reversi (strategema-grid), vanishing tic-tac-toe
+  (wopr-grid), ultimate tic-tac-toe, mancala, dots & boxes (`NET_VERSUS`/`duelVersus` in solo.js; duelOK includes them, so the
+  Arcade's Online mode and the online board game both deal them). Both phones run the same engine from one seed, players in
+  room-seat order (`versusPlayers` in gameLauncher; `duel.seat`); `session.net` = duel.js `moveRelay` {seat, queue, send}.
+  cpuKit: `isCpu` is false online, `notMine(s,turn)` guards touches, `netSend(s,turn,move)` at the commit point, `cpuHotseat`
+  `isTurn(p)` + `apply(move)` replays the other phone's moves, `{act}` moves go to `action()` at once (chess/checkers Resign
+  and Offer draw). Relay: moves numbered (`mv`), `seen` every 1.5 s and on a gap → resend; relays kept after the match for the
+  last move. A dropped player is waited for 60 s (`AWAY_MS`), then forfeits; Exit = "Leave the game?" (`s.solo.left`, sends quit,
+  the other phone wins). `settleSolo` flips seat-1 results so this phone's player is first. Tests: `tests/online-versus.mjs`
+  (all 9 games: identical boards, matching result cards, resign, a move made offline arrives, leaving), `versusBot.mjs`.
+  Seat 1 sees the board from player 1's side (not flipped). Next batches: the other hot-seat games (Uno, Yahtzee, Guess Who,
+  Battleship, Monopoly, Clue, pool: hidden hands/dice need care), trivia, then real-time games.
 - **1-player board game vs CPU + Choose Characters (Oct 24, branch `ccr-47c456d6-mv2k8z`; kept apart from the online work):**
   Title screen CHOOSE CHARACTERS (`players` view = `setupHTML(...,{pickOnly:true})`): names + heads saved in
   `profile.settings.picks` {names,chars} (validated in profile.js; app.js falls back to the starter if a pick is locked),

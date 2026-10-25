@@ -5,6 +5,7 @@
 // moves if every decision reaches the right phone. Checks: both phones keep the same players/turn, each phone rolls on
 // its own turns, minigames are played on both phones, the waiting phone shows read-only dialogs, no page errors.
 // TURNS=n (default 8) board turns; screenshots → /tmp/claude-0/sc/onb-*.
+import {versusStep} from './versusBot.mjs';
 import {launchBrowser,root,screenshotPath} from './lib.mjs';
 import path from 'node:path';import {pathToFileURL} from 'node:url';
 const HOST=process.env.SC_NET_HOST||'ws://127.0.0.1:8787',TURNS=+process.env.TURNS||8,LIMIT=+process.env.LIMIT_S||420;
@@ -49,7 +50,7 @@ if(pick)check(await A.p.evaluate(id=>window.ShambConkins.store.run.players[1].ch
 // One bot step on a phone: answer only what this phone may answer.
 const step=ph=>ph.p.evaluate(()=>{
  const SC=window.ShambConkins,store=SC.store,dlg=document.getElementById('dialog');
- if(store.session){const s=store.session;if(!s.solo)return 'game2p';if(!s.__t)s.__t=performance.now();
+ if(store.session){const s=store.session;if(!s.solo)return 'game2p';if(s.net)return 'versus:'+s.game.id;if(!s.__t)s.__t=performance.now();
   if(!s.__bank&&s.alive&&performance.now()-s.__t>1200){s.__bank=true;s.solo.banked=true;s.solo.won=Math.random()<.5;s.finish([50+Math.floor(Math.random()*400),0],'bot bank');return 'bank';}return 'game';}
  if(dlg.open){
   const title=dlg.querySelector('#dialog-title')?.innerText||'';
@@ -67,6 +68,8 @@ const step=ph=>ph.p.evaluate(()=>{
 const view=ph=>ph.p.evaluate(()=>{const r=window.ShambConkins.store.run;return r&&{turn:r.turn,current:r.current,finished:!!r.finished,players:r.players.map(p=>({node:p.node,points:p.points,items:p.items.join()}))};});
 // PKMN=1: wild Pokémon on every step, so battles happen on both phones' turns (the guest's run on its own phone).
 if(process.env.PKMN)await A.p.evaluate(()=>{window.ShambConkins.store.forceWildChance=.35;});
+// VERSUS=1: the board deals only the turn-based versus games, and both phones play them move by move.
+if(process.env.VERSUS)await A.p.evaluate(()=>{window.ShambConkins.store.testPool=g=>/chess|checkers|lights|strategema|wopr|ultimate|mancala|dots/.test(g.id);});
 // DROP=n: at turn n the guest's connection drops once while it's answering something; play carries on after it reconnects.
 const DROP=+process.env.DROP||0;let dropped=false;
 // WARP=1: on Amber's first turn her piece is put on a warp pipe: the warp dialog is hers, both phones swap boards.
@@ -83,11 +86,13 @@ for(;;){
   warped=true;await A.p.evaluate(()=>{const S=window.ShambConkins,run=S.store.run,w=Object.values(run.board.nodes).find(n=>n.type==='warp');run.players[1].node=w.id;S.focusBoardAction(run);S.updateBoard(true);S.resolveLanding();});console.log('Amber lands on a warp pipe');}
  if(!sawWarp&&process.env.WARP&&await B.p.evaluate(()=>window.ShambConkins.store.run?.board?.format==='warp'&&!!window.ShambConkins.store.run.warp)){sawWarp=true;await B.p.screenshot({path:screenshotPath('onb-guest-warp.png')});}
  const [sa,sb]=[await step(A),await step(B)];tally(A,sa);tally(B,sb);
+ if(sa.startsWith('versus')||sb.startsWith('versus')){for(const ph of [A,B])await versusStep(ph,{resign:(ph.vmoves=(ph.vmoves||0)+1)>120});if(!shots.has('vs')){shots.add('vs');await B.p.screenshot({path:screenshotPath('onb-guest-versus.png')});}}
+ else A.vmoves=B.vmoves=0;
  if(sb.startsWith('watch')&&!shots.has('gw')){shots.add('gw');await B.p.screenshot({path:screenshotPath('onb-guest-watching.png')});}
  if(sa.startsWith('watch')&&!shots.has('hw')){shots.add('hw');await A.p.screenshot({path:screenshotPath('onb-host-watching.png')});}
  if(sb==='roll'&&!shots.has('gr')){shots.add('gr');await A.p.screenshot({path:screenshotPath('onb-host-guest-turn.png')});}
  const [va,vb]=[await view(A),await view(B)];
- const key=JSON.stringify([sa,sb,va?.turn,va?.current,va?.players]);stuck=key===last?stuck+1:0;last=key;
+ const key=JSON.stringify([sa,sb,va?.turn,va?.current,va?.players]);stuck=key===last&&!/versus/.test(sa+sb)?stuck+1:0;last=key;
  if(stuck>200){console.log('STUCK',sa,sb,JSON.stringify(await A.p.evaluate(async()=>({gb:window.ShambConkins.pkmn.isOpen?.(),dlg:document.querySelector('#dialog[open]')?.innerText?.slice(0,60),nb:window.ShambConkins.store.netBoard,cur:window.ShambConkins.store.run.current,phase:window.ShambConkins.store.run.phase,pending:window.ShambConkins.store.run.pending,roll:document.querySelector('[data-action=roll]')?.outerHTML.slice(0,160),busy:window.ShambConkins.store.busy}))),JSON.stringify(await B.p.evaluate(async()=>({nb:window.ShambConkins.store.netBoard,cur:window.ShambConkins.store.run.current,roll:document.querySelector('[data-action=roll]')?.outerHTML.slice(0,160),gb:window.ShambConkins.pkmn.isOpen?.(),enc:!!document.querySelector('.gb-encounter'),vis:document.visibilityState,raf:await new Promise(r=>{requestAnimationFrame(()=>r('ok'));setTimeout(()=>r('no-raf'),1500);}),view:document.body.dataset.view,net:window.ShambConkins.net.state().status,dlg:document.querySelector('#dialog[open]')?.innerText?.slice(0,80),busy:window.ShambConkins.store.busy}))));await A.p.screenshot({path:screenshotPath('onb-stuck-host.png')});console.log('host log\n'+A.log.slice(-40).join('\n')+'\nguest log\n'+B.log.slice(-40).join('\n'));console.log('history',JSON.stringify(await A.p.evaluate(()=>window.ShambConkins.store.run.history.slice(0,6))));
  if(process.env.DEBUG){const probe=ph=>ph.p.evaluate(()=>{const n=window.ShambConkins.net.state();return {status:n.status,ready:n.ws?.readyState,buffered:n.ws?.bufferedAmount,room:n.room,seat:n.seat,peer:n.peer?.name};});
   console.log('net A',JSON.stringify(await probe(A)),'net B',JSON.stringify(await probe(B)));
@@ -105,8 +110,10 @@ check(v.turn>TURNS||v.finished,`the run reached turn ${v.turn} (goal ${TURNS+1})
 check((A.stats.roll||0)>=2&&(B.stats.roll||0)>=2,`each phone rolled on its own turns (Sean ${A.stats.roll||0}, Amber ${B.stats.roll||0})`);
 check((B.stats.dlg||0)>=1,`Amber's phone answered its own dialogs (${B.stats.dlg||0})`);
 check((B.stats.watch||0)>=1&&(A.stats.watch||0)>=1,'each phone showed the other\'s dialogs read-only');
+if(process.env.VERSUS)check(A.stats.versus>0&&B.stats.versus>0,`versus games were played move by move on both phones (${A.stats.versus||0} / ${B.stats.versus||0} steps)`);
 check(!A.stats.game2p&&!B.stats.game2p,'no pass-and-play 2P minigame started (both play the 1P version)');
-check((A.stats.bank||0)>=1&&(B.stats.bank||0)>=1,`minigames were played on both phones (Sean ${A.stats.bank||0}, Amber ${B.stats.bank||0})`);
+const played=ph=>(ph.stats.bank||0)+(ph.stats.versus?1:0);
+check(played(A)>=1&&played(B)>=1,`minigames were played on both phones (Sean ${played(A)}, Amber ${played(B)})`);
 if(process.env.PKMN)check([...(A.titles||[])].some(t=>/battle|Pokémon Center|team/.test(t)),'a Pokémon battle on Amber\'s turn ran on her phone (Sean\'s phone watched)');
 if(process.env.WARP)check(sawWarp,'the warp zone reached Amber\'s phone (both phones on the warp board)');
 if(DROP)check(dropped,'the guest connection was dropped once mid-decision');

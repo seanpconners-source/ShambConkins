@@ -6,7 +6,7 @@ const {store}=require("src/state.js");
 const {showDialog,toast}=require("src/ui.js");
 const {portraitHTML,gameArtHTML}=require("src/assets.js");
 const {gameById}=require("src/gameRegistry.js");
-const {duelOK,soloSettings}=require("src/solo.js");
+const {duelOK,duelVersus,soloSettings}=require("src/solo.js");
 const {escapeHTML:e}=require("src/utils.js");
 const {joinRoom,leaveRoom,sendNet,onNet,netState}=require("src/net.js");
 
@@ -17,6 +17,22 @@ let watch=null,quietPolls=0,incoming=null,waiting=false,boardEnd=null;
 // Results this phone sent, by match: a "done" can be lost on a bad connection, so the waiting phone repeats its own
 // (w:1) and a phone that already finished that match answers with its result again.
 const doneSent=new Map();
+// Turn-based versus games (solo.js duelVersus): both phones run the same game and trade moves. Every move this phone
+// makes is numbered and kept; the other phone says what it has ('seen', every 1.5 s and on a gap) and anything it
+// missed (a dropped connection) is sent again; repeats are ignored. Kept by match after it ends, for the last move.
+const relays=new Map();
+function moveRelay(mid,seat){
+ const sent=[];let got=0;
+ const r={seat,mid,queue:[],sent,get got(){return got;},
+  send(m){sent.push(m);sendNet({k:'mv',mid,n:sent.length,m});},
+  take(n,m){if(n<=got)return;if(n>got+1){sendNet({k:'seen',mid,got});return;}got=n;r.queue.push(m);}};
+ relays.set(mid,r);if(relays.size>6)relays.delete(relays.keys().next().value);
+ return r;
+}
+function resendMoves(mid,from){const r=relays.get(mid);if(!r||!Number.isInteger(from)||from<0)return;for(let i=from;i<r.sent.length;i++)sendNet({k:'mv',mid,n:i+1,m:r.sent[i]});}
+// The other player left a versus game (quit, or gone too long): end it here; duel.finish() then counts it as a forfeit.
+function peerGone(m){const s=store.session;if(s?.net&&s.net===m.net&&s.alive)s.finish([...s.score],`${m.peer.name} left the game.`);}
+const AWAY_MS=60000;
 const id=()=>Math.random().toString(36).slice(2,10);
 const fmt=n=>(Math.max(0,n|0)).toLocaleString();
 const peerName=()=>netState().peer?.name||'Player 2';
@@ -75,7 +91,7 @@ async function challenged(d){
  // Only between games, in the Arcade or on the title screen (not over a board-game run).
  if(match||store.session||store.dialog||store.busy||store.netBoard||!['arcade','home'].includes(store.view)){sendNet({k:'answer',mid:d.mid,ok:false,busy:true});return;}
  sound();incoming=d.mid;
- const ans=await showDialog({local:true,title:`${peerName()} challenges you!`,source:game.source,html:`${gameArtHTML(game)}<p class="net-note"><b>${e(game.title)}</b>: you both play it at the same time from the same start. Highest score wins.</p>`,choices:[{label:'Play',value:'play',primary:true},{label:'Not now',value:'no'}],seconds:30,timeoutValue:'no'});
+ const ans=await showDialog({local:true,title:`${peerName()} challenges you!`,source:game.source,html:`${gameArtHTML(game)}<p class="net-note"><b>${e(game.title)}</b>: ${duelVersus(game)?'you play each other move by move, each on your own phone.':'you both play it at the same time from the same start. Highest score wins.'}</p>`,choices:[{label:'Play',value:'play',primary:true},{label:'Not now',value:'no'}],seconds:30,timeoutValue:'no'});
  incoming=null;
  if(ans==='cancelled'){toast(`${peerName()} cancelled the challenge`);return;}
  sendNet({k:'answer',mid:d.mid,ok:ans==='play'});
@@ -86,10 +102,12 @@ function sound(){try{navigator.vibrate?.(60);}catch{}}
 // ---- the match ----
 // board: a board-game minigame (src/netBoard.js) with both board players (mine first); it resolves boardDuel.
 async function start(gameId,seed,mid,board=null){
- match={mid,gameId,seed,peer:{...netState().peer,...(board?{name:board[1].name,character:board[1].character}:{})},mine:{score:0,level:0,done:false},theirs:{score:0,level:0,done:false},gone:false,started:false,board:!!board};
+ const versus=duelVersus(gameById(gameId)),seat=netState().seat===1?1:0;
+ match={mid,gameId,seed,peer:{...netState().peer,...(board?{name:board[1].name,character:board[1].character}:{})},mine:{score:0,level:0,done:false},theirs:{score:0,level:0,done:false},gone:false,started:false,board:!!board,versus,net:versus?moveRelay(mid,seat):null,away:0};
  showChip();watchMatch();
  const who=board?(board[0].owner==='Amber'?1:0):store.onlineWho??soloSettings(store.profile).who;
- const ok=await hooks.start(gameId,{seed,who,opponent:match.peer,finish,rematch:()=>propose(gameId),...(board?{board:true,players:board}:{})});
+ // versus: the game's player 1 is room seat 0 on both phones; this phone plays `seat`
+ const ok=await hooks.start(gameId,{seed,who,opponent:match.peer,finish,rematch:()=>propose(gameId),...(board?{board:true,players:board}:{}),...(versus?{versus:true,seat,net:match.net,leave:()=>{if(match?.mid===mid)sendNet({k:'quit',mid});}}:{})});
  if(match?.mid===mid)match.started=!!store.session||match.mine.done;
  if(!ok&&match?.mid===mid&&!match.mine.done&&!store.session){
   if(match.board){void finish({score:0,level:0,label:'Did not play'});return;}   // the board still needs both results
@@ -105,7 +123,9 @@ function watchMatch(){
  watch=setInterval(()=>{
   if(!match)return clearInterval(watch);
   const live=liveScore();
-  if(live!==null){match.started=true;quietPolls=0;if(live!==last&&!match.mine.done){last=live;match.mine.score=live;sendNet({k:'progress',mid:match.mid,score:live,level:store.session?.soloProgress?.level||0});}}
+  if(match.versus){sendNet({k:'seen',mid:match.mid,got:match.net.got});if(match.away&&Date.now()-match.away>AWAY_MS){match.gone=true;match.away=0;toast(`${match.peer.name} did not come back`);peerGone(match);}}
+  if(live!==null&&match.versus){match.started=true;quietPolls=0;}
+  else if(live!==null){match.started=true;quietPolls=0;if(live!==last&&!match.mine.done){last=live;match.mine.score=live;sendNet({k:'progress',mid:match.mid,score:live,level:store.session?.soloProgress?.level||0});}}
   // Left the game without banking a score: tell the other phone so it doesn't wait forever.
   else if(match.started&&!match.mine.done&&!store.dialog&&++quietPolls>=3){sendNet({k:'quit',mid:match.mid});toast('You left the duel');endMatch();}
   showChip();
@@ -113,13 +133,13 @@ function watchMatch(){
 }
 function showChip(){
  let el=document.getElementById('duel-chip');
- if(!match||!store.session){el?.remove();return;}
+ if(!match||!store.session||match.versus){el?.remove();return;}   // versus games show both players in their own header
  if(!el){el=Object.assign(document.createElement('div'),{id:'duel-chip'});el.setAttribute('role','status');document.body.append(el);}
  const t=match.theirs;el.textContent=match.gone?`${match.peer.name} left`:`🌐 ${match.peer.name} · ${fmt(t.score)}${t.done?' · done':''}`;
 }
 function endMatch(){match=null;clearInterval(watch);document.getElementById('duel-chip')?.remove();}
 // Called by settleSolo with my final result: tell the other phone, wait for theirs, return the outcome.
-async function finish({score,level,label,won=false,recruits=[]}){
+async function finish({score,level,label,won=false,recruits=[],left=false}){
  const m=match;if(!m)return null;
  m.mine={score,level,done:true,won,recruits,label};const done={k:'done',mid:m.mid,score,level,label,won,recruits};sendNet(done);document.getElementById('duel-chip')?.remove();
  doneSent.set(m.mid,done);if(doneSent.size>12)doneSent.delete(doneSent.keys().next().value);
@@ -132,6 +152,7 @@ async function finish({score,level,label,won=false,recruits=[]}){
  endMatch();
  const theirs=m.theirs.score,forfeit=m.gone||m.theirs.quit;
  if(m.board)settleBoard(m,forfeit);
+ if(left)return {theirs,peer:m.peer,forfeit:false,won:false,tie:false};   // left a versus game: theirs
  return {theirs,peer:m.peer,forfeit,won:forfeit||score>theirs,tie:!forfeit&&score===theirs};
 }
 function settleBoard(m,forfeit){const end=boardEnd;boardEnd=null;end?.({mine:{...m.mine},theirs:{...m.theirs},forfeit:!!forfeit});}
@@ -143,17 +164,21 @@ function onMessage(d){
  if(d.k==='answer'&&pending?.mid===d.mid)return resolveDialog(d.ok?'accepted':d.busy?'busy':'declined');
  if(d.k==='cancel'){if(incoming===d.mid)resolveDialog('cancelled');return;}
  if(d.k==='done'&&d.w&&(!match||d.mid!==match.mid)){const mine=doneSent.get(d.mid);if(mine)sendNet(mine);return;}
+ if(d.k==='seen')return resendMoves(d.mid,d.got);
  if(!match||d.mid!==match.mid)return;
+ if(d.k==='mv'){if(match.net&&Number.isInteger(d.n))match.net.take(d.n,d.m);return;}
  const t=match.theirs;
  if(d.k==='progress'){if(!t.done){t.score=d.score|0;t.level=d.level|0;}setLive('duel-live',fmt(t.score));showChip();}
  else if(d.k==='done'){Object.assign(t,{score:d.score|0,level:d.level|0,done:true,won:!!d.won,label:String(d.label||'').slice(0,200),recruits:Array.isArray(d.recruits)?d.recruits.filter(x=>typeof x==='string').slice(0,10):[]});if(waiting)resolveDialog('done');showChip();}
- else if(d.k==='quit'){Object.assign(t,{done:true,quit:true});toast(`${match.peer.name} left the duel`);if(waiting)resolveDialog('done');showChip();}
+ else if(d.k==='quit'){Object.assign(t,{done:true,quit:true});toast(`${match.peer.name} left the duel`);if(waiting)resolveDialog('done');showChip();if(match.versus)peerGone(match);}
 }
 function initDuel(h){
  hooks={...hooks,...h};
  onNet(ev=>{
   if(ev.t==='msg')return onMessage(ev.d);
-  if(ev.t==='join'){toast(`${ev.peer.name} joined the room`);hooks.refresh();}
+  if(ev.t==='join'){toast(`${ev.peer.name} joined the room`);if(match?.versus){match.away=0;resendMoves(match.mid,0);}hooks.refresh();}
+  // A versus game waits a minute for a dropped player to reconnect (their seat and the moves so far come back).
+  else if(ev.t==='leave'&&match?.versus&&!match.gone){if(!match.away)match.away=Date.now();toast(`${match.peer.name} lost the connection. Waiting for them…`);hooks.refresh();}
   else if(ev.t==='leave'){toast(`${ev.peer?.name||'Player 2'} left the room`);if(match&&!match.board){match.gone=true;if(waiting)resolveDialog('done');showChip();}if(pending)resolveDialog('declined');if(incoming)resolveDialog('cancelled');hooks.refresh();}
   else if(ev.t==='status'&&ev.status==='reconnecting')toast('Connection lost. Reconnecting…');
   else if(ev.t==='welcome'&&store.online)hooks.refresh();

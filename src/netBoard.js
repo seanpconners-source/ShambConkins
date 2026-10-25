@@ -89,7 +89,7 @@ function hostBegin(run){
  else nb={role:'host',me:run.online.host?1:0,peer:run.online.host?0:1,run,seq:0,out:0,heard:0,pending:new Map(),sent:{},showing:null,req:null,guestIn:false,paused:false,flushTimer:0};
  setup=null;store.netSetup=null;store.netBoard={role:'host',me:nb.me,live:false};setLive();
  setNetHooks({fx:hostFx,dialog:hostDialog,route:hostRoute,changed:scheduleFlush,watching:()=>hosting()&&nb.guestIn&&store.run.current===nb.peer?`${peerName()}'s challenge…`:''});
- setPoolFilter(g=>duelOK(g));
+ setPoolFilter(g=>duelOK(g)&&(!store.testPool||store.testPool(g)));   // tests narrow the deal with store.testPool
  if(netState().status==='off'&&run.online.room){const p=run.players[nb.me];joinRoom(run.online.room,{name:p.name,character:p.character,owner:p.owner}).then(()=>{store.online=true;store.onlineWho=nb?.me??0;}).catch(()=>toast(`Couldn't reach room “${run.online.room}”. ${nameOf(nb?.peer??1)}'s turns are played here for now.`,{local:true}));}
  sendStart();
 }
