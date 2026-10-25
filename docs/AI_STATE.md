@@ -544,8 +544,12 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   {resign}; Black's phone sees the board turned round; draw offers off online), Uno (moves {p,c}/{d}/{x}/{u}/{to}; each phone
   shows its own hand), Beer Pong (pubPhysics: shooter sends {sh: throw, hit: cup|-1}/{rr}/{sh:null}; fixed 1/180 s steps online,
   watcher replays on cup copies and forces the shooter's outcome). Each has `s.debug.bot` online for tests.
-  Test `tests/online-native.mjs` (GAMES=id,...; needs wrangler dev): trivia ×4 modes, chess, checkers, Uno, Beer Pong passed;
-  a Beer Pong watcher crash (`drag.end` of null) was fixed after the last run and is NOT re-tested yet.
+  Test `tests/online-native.mjs` (GAMES=id,...; needs wrangler dev, `npx --yes wrangler dev --local --port 8787` works in the
+  cloud box): Oct 25 after the merge all 13 batch-1 ids pass (all 9 trivia, chess, checkers, Uno, Beer Pong incl. the watcher
+  crash fix; a full Beer Pong match runs to last call in ~4-5 min headless, the test gives it 1.75x LIMIT_S). Run the ids in two
+  groups: a game stuck at the limit leaves the room busy and the next challenge times out. `tests/online-board.mjs` banks native
+  games like 1P ones (`nbank`); the board dealt Ten Forward Chess on a 30-turn run and both phones carried on. 1P trivia vs CPU
+  and `tests/solo-board.mjs` still pass after the merge.
   Trivia carries both seams: the online move relay (`net`) and the CPU's visible turn (`cpuTriviaTurn`); answer lines name
   the player when `cpu||net`. CHANGELOG has an "Unreleased (next release: v0.67.0)" section: rename it `## v0.67.0` when releasing.
   TODO next: the next batches (Connect 4/Reversi/Yahtzee/casino/Guess Who/Battleship... via the same pattern).
