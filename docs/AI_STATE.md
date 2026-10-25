@@ -706,8 +706,16 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   snapshots carry score/stamina/trail; end waits for the final). Stunt Chase (fixed road from a 480x640 reference, view
   shows more/less; own car only, the other from {r,t,y,x,v,...} moved on by v·(t since); pickups/barriers {og}; the
   RUNNER's phone calls ram/escape {end:[round,kind,t]} and both score from it; bot = CPU brain on your car via `autodrive`).
-  All 6 pass online-native with and without LAG=80-150 (390x780); 2P fuzz + 1P CPU clean. Left: South Park dodgeball, Space Invaders versus,
-  South Park ×2, Bond ×3, Hyrule ×2, penalties, Raiders, Fight Night, Sewer Clash, kart ×2, Space Swarm co-op
+  All 6 pass online-native with and without LAG=80-150 (390x780); 2P fuzz + 1P CPU clean.
+  Batch 17 (Oct 25, same branch), South Park ×3 (`southPark.js`; arenaTouch/arenaKeys already give everything to `me`).
+  Poofs + Kenny side by side: `halves(s)` online = own 64% left (`SPLIT`), `netStart` (nf.start before the countdown),
+  `netEnd` (final score swap); Poofs catches {g:[snack,pts]} + {u,sc,o} snapshots; Kenny threats carry their schedule `idx`,
+  zaps {z:[idx,hp]}, killed Kenny {kd}; the other half's threats just vanish at Kenny. Dodgeball on one court: physics and
+  hit tests on a fixed 390x780 reference (`REF`, `hitRef`), player 1's view turned round (`flip`, also flicks/keys); throws
+  {th:[id,u,v,du,dv,t]} flown on by the delay; your phone calls hits on you {hi}, the thrower's phone calls Kenny {kk};
+  score rebuilt from `hits`/`kills` (`rescore`), the end swaps the counts each phone judged. Bots = CPU brains on your side
+  (`autodrive`). All 3 pass online-native (LAG=80-150 run pending); 2P fuzz + 1P CPU clean. Left (13): Space Invaders
+  versus + Space Swarm co-op, Bond ×3, Hyrule ×2, penalties, Raiders, Fight Night, Sewer Clash, kart ×2
   (`node -e` over solo.js: 'cpu' ids minus NET_NATIVE).
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
