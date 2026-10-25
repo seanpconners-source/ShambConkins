@@ -1,7 +1,7 @@
 // Online board game on two phones (src/netBoard.js). Needs the Worker running locally, like tests/online.mjs:
 // `cd cloudflare && npx wrangler dev --local --port 8787` (SC_NET_HOST to change). Sean's phone invites Amber's from the
 // room, both pick on the shared New Game screen, Sean's phone starts and hosts the run. A bot on each phone answers only
-// what is enabled on that phone (its own dialogs, road choices and roll button; minigames are banked), so the run only
+// what is enabled on that phone (its own dialogs, road choices and roll button; minigames, 1P or native head-to-head, are banked), so the run only
 // moves if every decision reaches the right phone. Checks: both phones keep the same players/turn, each phone rolls on
 // its own turns, minigames are played on both phones, the waiting phone shows read-only dialogs, no page errors.
 // TURNS=n (default 8) board turns; screenshots → /tmp/claude-0/sc/onb-*.
@@ -49,7 +49,10 @@ if(pick)check(await A.p.evaluate(id=>window.ShambConkins.store.run.players[1].ch
 // One bot step on a phone: answer only what this phone may answer.
 const step=ph=>ph.p.evaluate(()=>{
  const SC=window.ShambConkins,store=SC.store,dlg=document.getElementById('dialog');
- if(store.session){const s=store.session;if(!s.solo)return 'game2p';if(!s.__t)s.__t=performance.now();
+ if(store.session){const s=store.session;
+  // native online game (src/netPlay.js): the real 2P game on both phones; each phone banks its own seat like a 1P game
+  if(!s.solo&&s.online){if(!s.__t)s.__t=performance.now();if(!s.__bank&&s.alive&&performance.now()-s.__t>1200){s.__bank=true;const sc=s.score.slice();sc[s.online.me]=Math.floor(Math.random()*10);s.finish(sc,'bot bank');return 'nbank';}return 'native';}
+  if(!s.solo)return 'game2p';if(!s.__t)s.__t=performance.now();
   if(!s.__bank&&s.alive&&performance.now()-s.__t>1200){s.__bank=true;s.solo.banked=true;s.solo.won=Math.random()<.5;s.finish([50+Math.floor(Math.random()*400),0],'bot bank');return 'bank';}return 'game';}
  if(dlg.open){
   const title=dlg.querySelector('#dialog-title')?.innerText||'';
@@ -106,7 +109,8 @@ check((A.stats.roll||0)>=2&&(B.stats.roll||0)>=2,`each phone rolled on its own t
 check((B.stats.dlg||0)>=1,`Amber's phone answered its own dialogs (${B.stats.dlg||0})`);
 check((B.stats.watch||0)>=1&&(A.stats.watch||0)>=1,'each phone showed the other\'s dialogs read-only');
 check(!A.stats.game2p&&!B.stats.game2p,'no pass-and-play 2P minigame started (both play the 1P version)');
-check((A.stats.bank||0)>=1&&(B.stats.bank||0)>=1,`minigames were played on both phones (Sean ${A.stats.bank||0}, Amber ${B.stats.bank||0})`);
+const played=st=>(st.bank||0)+(st.nbank||0);
+check(played(A.stats)>=1&&played(B.stats)>=1,`minigames were played on both phones (Sean ${played(A.stats)}, Amber ${played(B.stats)}; native head-to-head ${A.stats.nbank||0}/${B.stats.nbank||0})`);
 if(process.env.PKMN)check([...(A.titles||[])].some(t=>/battle|Pokémon Center|team/.test(t)),'a Pokémon battle on Amber\'s turn ran on her phone (Sean\'s phone watched)');
 if(process.env.WARP)check(sawWarp,'the warp zone reached Amber\'s phone (both phones on the warp board)');
 if(DROP)check(dropped,'the guest connection was dropped once mid-decision');
