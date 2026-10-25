@@ -706,7 +706,7 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   snapshots carry score/stamina/trail; end waits for the final). Stunt Chase (fixed road from a 480x640 reference, view
   shows more/less; own car only, the other from {r,t,y,x,v,...} moved on by v·(t since); pickups/barriers {og}; the
   RUNNER's phone calls ram/escape {end:[round,kind,t]} and both score from it; bot = CPU brain on your car via `autodrive`).
-  All 6 pass online-native (LAG=80-150 run pending); 2P fuzz + 1P CPU clean. Left: South Park dodgeball, Space Invaders versus,
+  All 6 pass online-native with and without LAG=80-150 (390x780); 2P fuzz + 1P CPU clean. Left: South Park dodgeball, Space Invaders versus,
   South Park ×2, Bond ×3, Hyrule ×2, penalties, Raiders, Fight Night, Sewer Clash, kart ×2, Space Swarm co-op
   (`node -e` over solo.js: 'cpu' ids minus NET_NATIVE).
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
