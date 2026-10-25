@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased (next release: v0.67.0)
+
+**Head-to-head games online.** In an online duel (Arcade 🌐 Online) and in the online board game, these games are now played for real between the two phones instead of each phone playing its own solo version: all 9 trivia games, Ten Forward chess, Deadite checkers, Uno and Beer Pong. Each phone plays its own turns and sees the other player's moves as they make them: your own Uno hand stays on your phone, Black's phone sees the chess board turned round, and the Beer Pong shot plays out on both screens.
+
+**Meet a visitor works at every landmark.** 393 of the 705 landmarks are from a film or show with no characters of its own in the game (Akira, A Nightmare on Elm Street, The Mighty Ducks...), so "Meet a visitor" always said "Catch up, +3 points" there, even on a new save. Now a character from the same kind of property (film, TV, game) drops by, or anyone you're still missing. Mom & Dad's house and the lab keep their own visitors.
+
 ## v0.66.1
 
 **Trivia vs the CPU shows its turn.** The CPU was answering its turns and steals, but you couldn't see it: its pick was a faint tint on a greyed-out button and the result didn't say who answered, so it looked like it scored without playing. Now it says "🤖 … is thinking…", lights up its answer with a CPU tag for a second before the result, and the result line names who answered. In Wager and Survival (answers stay private until both are in) it says it locked in an answer instead. Works in the 1P Arcade and the 1P board game.

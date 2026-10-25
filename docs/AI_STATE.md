@@ -532,7 +532,8 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   filters by it on run.cpu, the launcher swaps id'd games without one; board session gets `session.solo={kind,board:true,...}`
   so engines drive P2 as the CPU, and settles through `settleGame` (alone → co-op result from `s.solo.won`); Exit = normal
   board exit (no banking). Test: `tests/solo-board.mjs` (WHO=1, TURNS=n). Real-phone feel untested.
-- **Native online games, phase 3 batch 1 (Oct 24-25, WIP on branch `ccr-206256d0-lz2tp5`, not released):** owner chose
+- **Native online games, phase 3 batch 1 (Oct 24-25, built on `ccr-206256d0-lz2tp5` from another account; Oct 25 merged with
+  the 1P-vs-CPU work + visitor fix on `ccr-417ed8e4-pn7r0u`, not released; owner wants more batches before the next release, v0.67.0):** owner chose
   NATIVE online per game (not screen share), a batch at a time. `src/netPlay.js` `openChannel(mid,me)`: ordered move channel
   {k:'np',mid,i,m} (`send(m)`, `next()` → the other phone's next move or null when they left, resend on reconnect). Launcher
   `netGame` (gameLauncher.js): for `netNative(game)` (solo.js `NET_NATIVE`, also feeds `duelOK` so arcade Challenge + online
@@ -545,8 +546,12 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   watcher replays on cup copies and forces the shooter's outcome). Each has `s.debug.bot` online for tests.
   Test `tests/online-native.mjs` (GAMES=id,...; needs wrangler dev): trivia ×4 modes, chess, checkers, Uno, Beer Pong passed;
   a Beer Pong watcher crash (`drag.end` of null) was fixed after the last run and is NOT re-tested yet.
-  TODO next: re-run online-native for all batch-1 ids + online-board (board deals native games now), docs/CHANGELOG, release
-  v0.66.0; then the next batches (Connect 4/Reversi/Yahtzee/casino/Guess Who/Battleship... via the same pattern).
+  Trivia carries both seams: the online move relay (`net`) and the CPU's visible turn (`cpuTriviaTurn`); answer lines name
+  the player when `cpu||net`. CHANGELOG has an "Unreleased (next release: v0.67.0)" section: rename it `## v0.67.0` when releasing.
+  TODO next: the next batches (Connect 4/Reversi/Yahtzee/casino/Guess Who/Battleship... via the same pattern).
+- **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
+  (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
+  their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).
 - Vault 🎲 Random game button (Oct 20): top of the arcade (`arcade-random` in app.js, `randomArcadePick` in ui.js) picks any playable card
   in the current list (filter, search and 1P mode apply).
 
