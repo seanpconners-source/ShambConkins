@@ -1,11 +1,13 @@
 // Super Mario Bros. 3 bonus games, played on one shared screen.
 //  'nspade': N-Spade, the card-matching game from the Toad houses. 18 face-down cards; take turns flipping two.
 //             A pair scores and you go again, a miss passes the turn (both players watch, like Concentration).
+//             Online (s.online): both phones deal the same table from the seed; each phone flips on its own turns and
+//             sends {k: card}, the other phone flips the same card.
 //  'slots':   the Spade Panel picture match. Three strips scroll at different speeds; tap to stop each one and line up
 //             a Mushroom, Fire Flower or Star. Players alternate four spins each.
 const {clamp,shuffle}=require("src/utils.js");
 const {Fx,snd,noise,jingle,outlined,rr,FONT,PCOL,settle}=require("src/engines/arenaKit.js");
-const {isCpu,cpuHotseat,cpuSkill,pickRandom}=require("src/engines/cpuKit.js");
+const {isCpu,isOnline,cpuHotseat,cpuSkill,pickRandom}=require("src/engines/cpuKit.js");
 
 const CARD_FACES=[['mushroom',2],['mushroom',2],['flower',3],['flower',3],['star',5],['oneup',4],['coin10',1],['coin10',1],['coin20',2]];
 const PANEL=['mushroom','flower','star'],PANEL_PTS={mushroom:2,flower:3,star:5};
@@ -35,22 +37,24 @@ async function smb3(s){
  const headBar=(H0)=>{const W=s.W,u=Math.min(W,s.H)/600,size=Math.round(clamp(22*u,14,30));
   for(let i=0;i<2;i++){const cx=i?W-size*3.2:size*3.2,active=turn===i&&!done;x.save();x.globalAlpha=active?1:.55;x.fillStyle=active?PCOL[i]:'rgba(0,0,0,.35)';rr(x,cx-size*2.8,H0-size*1.2,size*5.6,size*2.4,size*.6);x.fill();
    s.sprite(x,i,cx-size*1.6,H0,size*2,{exact:true,mood:active?'happy':undefined});outlined(x,String(score[i]),cx+size*.9,H0,{size:size*1.2,fill:'#fff',stroke:DARK});x.restore();}
-  outlined(x,done?'':`${s.players[turn].name.toUpperCase()}’S TURN`,W/2,H0,{size:size*.9,fill:'#ffe23a',stroke:DARK});};
+  outlined(x,done?'':`${s.players[turn].name.toUpperCase()}’S TURN${s.online&&turn===s.online.remote?' · THEIR PHONE':''}`,W/2,H0,{size:size*.9,fill:'#ffe23a',stroke:DARK});};
 
  if(mode==='nspade'){
   s.hint('N-Spade from Super Mario Bros. 3. Take turns flipping two cards. A matching pair scores its prize (Star 5, 1-Up 4, Flower 3, Mushroom 2, coins 1 or 2) and you go again; a miss passes the turn. Most points when the table is cleared wins. Tap a card to flip it (keyboard: arrows/WASD to move, Enter/Space to flip).');
   const faces=shuffle(CARD_FACES.flatMap(f=>[f,f]),s.random),cards=faces.map(([kind,pts],k)=>({kind,pts,k,up:false,gone:false,flip:0,matchedBy:-1}));
   let open=[],lock=0,cursor=0,keyUsed=false,misses=[0,0];
+  const net=isOnline(s)?s.online:null,theirs=()=>!!net&&turn===net.remote;if(net)s.hotseat=true;
   const layout=()=>{const W=s.W,H=s.H,top=H*.16,avail=H-top-H*.06,cols=W>H*1.15?6:3,rows=18/cols,cw=Math.min((W*.92)/cols,(avail/rows)*.72),ch=cw/.72,gx=(W-cw*cols)/(cols+1),gy=(avail-ch*rows)/(rows+1);
    return cards.map((cd,k)=>({x:gx+(k%cols)*(cw+gx)+cw/2,y:top+gy+Math.floor(k/cols)*(ch+gy)+ch/2,w:cw*.94,h:ch*.94}));};
-  const flip=k=>{const cd=cards[k];if(done||lock>0||cd.up||cd.gone||open.length>=2)return;cd.up=true;cd.flip=0;open.push(k);snd(660,.06,{type:'square',vol:.03});
+  const flip=(k,remote=false)=>{const cd=cards[k];if(!cd||done||lock>0||cd.up||cd.gone||open.length>=2||theirs()&&!remote)return false;if(net&&!remote)net.send({k});cd.up=true;cd.flip=0;open.push(k);snd(660,.06,{type:'square',vol:.03});
    if(open.length===2){const [a,b]=open.map(i=>cards[i]);if(a.kind===b.kind){lock=.7;setTimeout(()=>{if(!s.alive)return;a.gone=b.gone=true;a.matchedBy=b.matchedBy=turn;score[turn]+=a.pts;open=[];lock=0;jingle([784,988,1175,1568],{step:.07,type:'square',vol:.035});s.react(turn,'happy');say(`PAIR! +${a.pts}`);const L=layout()[a.k];fx.burst(L.x,L.y,{n:16,colors:['#ffe23a','#fff'],speed:200,life:.5,size:3,shape:'star'});
      if(cards.every(cd=>cd.gone))finish();},650);}
     else{lock=1.3;setTimeout(()=>{if(!s.alive)return;a.up=b.up=false;open=[];lock=0;misses[turn]++;turn=1-turn;snd(220,.18,{type:'square',vol:.03});say(`${s.players[turn].name.toUpperCase()}’S TURN`);},1200);}}};
   const finish=()=>{done=true;endT=0;s.setScores(score);const [a,b]=score;say(a===b?'TIE!':`${s.players[a>b?0:1].name.toUpperCase()} WINS!`,4);jingle([523,659,784,1047,1319,1568],{step:.1,type:'square',vol:.04});};
-  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||isCpu(s)&&turn===1)return;ev.preventDefault();const p=s.pointer(ev);layout().forEach((L,k)=>{if(Math.abs(p.x-L.x)<L.w/2&&Math.abs(p.y-L.y)<L.h/2)flip(k);});});
-  s.on(document,'keydown',ev=>{if(s.paused||!s.alive)return;const k=ev.key.toLowerCase(),cols=s.W>s.H*1.15?6:3;const mv={arrowleft:-1,a:-1,arrowright:1,d:1,arrowup:-cols,w:-cols,arrowdown:cols,s:cols}[k];if(mv!==undefined){keyUsed=true;cursor=(cursor+mv+18)%18;ev.preventDefault();}else if(k===' '||k==='enter'){keyUsed=true;flip(cursor);ev.preventDefault();}});
-  s.debug={cards,get score(){return score;},get turn(){return turn;},flip,get done(){return done;}};
+  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||isCpu(s)&&turn===1||theirs())return;ev.preventDefault();const p=s.pointer(ev);layout().forEach((L,k)=>{if(Math.abs(p.x-L.x)<L.w/2&&Math.abs(p.y-L.y)<L.h/2)flip(k);});});
+  s.on(document,'keydown',ev=>{if(s.paused||!s.alive)return;const k=ev.key.toLowerCase(),cols=s.W>s.H*1.15?6:3;const mv={arrowleft:-1,a:-1,arrowright:1,d:1,arrowup:-cols,w:-cols,arrowdown:cols,s:cols}[k];if(mv!==undefined){keyUsed=true;cursor=(cursor+mv+18)%18;ev.preventDefault();}else if((k===' '||k==='enter')&&!theirs()){keyUsed=true;flip(cursor);ev.preventDefault();}});
+  s.debug={cards,get score(){return score;},get turn(){return turn;},flip,get done(){return done;},bot:net?()=>{if(done||lock>0||open.length>=2||theirs()||s.paused)return '';const live=cards.filter(cd=>!cd.gone&&!cd.up),cd=live[Math.floor(Math.random()*live.length)];return cd&&flip(cd.k)!==false?'card'+cd.k:'';}:null};
+  if(net)void (async()=>{for(;;){const m=await net.next();if(!m||!s.alive)return;while(s.alive&&!done&&(s.paused||lock>0||open.length>=2||!theirs()))await new Promise(r=>setTimeout(r,60));if(!s.alive||done)return;if(Number.isInteger(m.k))flip(m.k,true);}})();
   // vs CPU: player 2 remembers each card it sees flipped (about 62% / 77% / 90% of them, by level), takes a known pair,
   // matches its first card from memory, and otherwise turns over a card nobody has seen.
   if(isCpu(s)){const memory=new Map(),recall=.45+.5*cpuSkill(s),seen=new Set();

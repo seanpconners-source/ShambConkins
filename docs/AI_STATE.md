@@ -577,7 +577,12 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   Batch 6 (Oct 25): classicBoards.js `netTurns(s,{isTheirs,apply})` helper (ordered reader, waits for this phone's animation
   and their turn): Ultimate `matrix-ultimate` {i}, Mancala `greed-island-mancala` {p} (extra turns by the rule on both),
   Dots `office-dots-boxes` {o,i}. All 3 pass online-native; chess/checkers 2P fuzz still clean.
-  TODO next: mini chess (`trek-mini-chess`), WarGames tic-tac-toe (`wopr-grid`), N-Spade..., then real-time games.
+  Batch 7 (Oct 25, branch `ccr-70ac8fd3-pxs9bs`, fast-forwarded from `ccr-417ed8e4-pn7r0u`): Tri-D chess `trek-mini-chess`
+  ({m:[r,c,tr,tc]}, violet's phone sees the board turned round via `R()`, only the mover's phone runs the 45 s clock; a
+  timed-out random move is sent like any other), WarGames `wopr-grid` ({i}), N-Spade `smb3-nspade` (smb3.js, {k: card}; same
+  table from the seed). All 3 pass online-native; 2P fuzz + 1P CPU clean. That finishes the turn-based CPU games.
+  TODO next: real-time games (Clue Lineup, Hangman Quick Draw, then arena/action games): needs a different design than the
+  move relay (a referee phone would favour itself on tap races).
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).
