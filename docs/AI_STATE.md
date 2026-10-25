@@ -592,6 +592,12 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   delay, both bots fighting over the top 3 letters): ~15 replays a round, all rounds identical on both phones. Both pass
   online-native; 2P fuzz, 1P CPU and tests/hangman.mjs clean. Once (not reproduced in 3 reruns) Showdown froze mid-reveal
   on both phones after clue-whodunit in a 3-game online-native run; watch for it.
+  Batch 9 (Oct 25, same branch), physics shot games, "shooter streams": the shooter's phone runs the physics and sends the
+  shot, snapshots ~12/s (the other phone eases its pieces toward them, runs no physics) and a final exact state; both phones
+  then run the same end-of-shot rules from that state (fin positions are rounded and applied on the shooter too). Curling
+  {th,sn,fin}; Scorched Earth {aim,fire,ex(+bugs),sync,skip}, field fixed at 390x780 online (size came from the screen);
+  putt-putt {sh,sn+gopher,fin{x,y,n,k,w}}; nine-ball {aim,f(+cue spot),sn,fin{b,r}}; BASEketball {sp,l in court units,res},
+  psych-out = defender asks {ps}, batter's phone decides {psd}. All 5 pass online-native; 2P fuzz + 1P CPU clean.
   This clock-stamped timeline is the pattern for other race games. TODO next: the remaining real-time CPU games
   (arena/action: pong, sumo, snakes, Kart VS...) need continuous state, not discrete shots: probably input relay with
   delay (lockstep) or host-authoritative state, decide per game.

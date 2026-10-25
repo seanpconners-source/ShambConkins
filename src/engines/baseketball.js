@@ -5,7 +5,10 @@
 const {clamp}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const {label,rr,makeFx,makeShake,sfx,voice,noise}=require("src/engines/tarantinoKit.js");
-const {isCpu,cpuSkill,cpuHotseat}=require("src/engines/cpuKit.js");
+const {isCpu,isOnline,cpuSkill,cpuHotseat}=require("src/engines/cpuKit.js");
+// Online (s.online): the batter's phone shoots and judges: base spot {sp}, launch {l:[vx,vy] in court units (u)}, then
+// {res: made}; the other phone flies the same ball for show and waits for the result. The defender's phone asks to psych
+// out {ps:1}; the batter's phone decides (still aiming, psych-outs left) and confirms {psd: text} on both.
 const BASES=[['SINGLE',4.2],['DOUBLE',7],['TRIPLE',9.8],['HOME RUN',12.6]];
 const PSYCH=['YOUR MOM!','I SLEPT WITH YOUR SISTER!','AIRHORN!','LOOK, A HOT DOG!','*KAZOO SOLO*','YOU’RE ADOPTED!','BOO-YAH!','NICE SHIRT. NOT.'];
 const INNINGS=2,MAXSHOTS=12;
@@ -14,22 +17,23 @@ async function basketball2p(s){
  const [c,x]=s.canvas(760,560,{fill:true});s.body.classList.add('drag-arena-body');
  const fx=makeFx(),shake=makeShake(),runs=[0,0];
  let half=0,bat=0,outs=0,bases=[0,0,0],spot=1,ball=null,drag=null,psych=2,psyched=0,psychText='',psychT=0,shots=0,phase='wait',msg='',msgT=0,t=0;
+ const net=isOnline(s)?s.online:null,theirs=()=>!!net&&bat===net.remote;if(net)s.hotseat=true;
  s.debug={engine:'basketball2p',runs,get ball(){return ball;},get phase(){return phase;},get spot(){return spot;},shoot:(vx,vy)=>launch(vx,vy)};
  const L={};function layout(){const W=s.W,H=s.H,strip=Math.max(54,H*.14),u=clamp(Math.min(W/16,(H-strip)/10.5),12,60),floor=H-u*1.2;Object.assign(L,{W,H,u,floor,hx:W-u*2.3,hy:floor-u*6.2,rim:u*.85,strip:Math.max(54,H*.14)});}
  const spotX=k=>clamp(L.hx-BASES[k][1]*L.u,L.u*.8,L.W);
  const ballHome=()=>({x:spotX(spot),y:L.floor-L.u*1.6});
 
  function resetBall(){ball={...ballHome(),vx:0,vy:0,fly:false,made:false,done:false,t:0,swish:true};drag=null;psyched=0;}
- function launch(vx,vy){if(!ball||ball.fly||phase!=='aim')return;ball.vx=vx;ball.vy=vy;ball.fly=true;phase='fly';shots++;sfx.whoosh(300,1200,.06,.18);}
+ function launch(vx,vy,remote=false){if(!ball||ball.fly||phase!=='aim'||theirs()&&!remote)return;if(net&&!remote)net.send({l:[vx/L.u,vy/L.u],sp:spot});ball.vx=vx;ball.vy=vy;ball.fly=true;phase='fly';shots++;sfx.whoosh(300,1200,.06,.18);}
 
  // vs CPU: batting, the CPU picks a base spot (riskier on Hard) and launches on a computed arc with error (more if you psych it out); defending, it psychs you out mid-aim
  const cpu=isCpu(s);let cpuPsychT=0;
- const psychOut=()=>{if(psych>0&&!psyched&&phase==='aim'){psych--;psyched=1;psychText=PSYCH[Math.floor(Math.random()*PSYCH.length)];psychT=1.6;shake.kick(9);noise(.4,.12,{type:'bandpass',f0:500,f1:900,q:3});voice(220,.5,.07,'sawtooth');vibrate(40);s.react(1-bat,'happy');}};
+ const psychOut=(text=null)=>{if(net&&!text&&theirs()){if(phase==='aim'&&psych>0&&!psyched)net.send({ps:1});return;}if(psych>0&&!psyched&&(phase==='aim'||text)){psych--;psyched=1;psychText=text||PSYCH[Math.floor(Math.random()*PSYCH.length)];if(net&&!text)net.send({psd:psychText});psychT=1.6;shake.kick(9);noise(.4,.12,{type:'bandpass',f0:500,f1:900,q:3});voice(220,.5,.07,'sawtooth');vibrate(40);s.react(1-bat,'happy');}};
  if(cpu)cpuHotseat(s,{isTurn:()=>bat===1&&phase==='aim'&&ball&&!ball.fly,delay:1100,think:()=>{const sk=cpuSkill(s),r=Math.random();spot=r<.45-sk*.2?0:r<.75?1:r<.92?2:3;resetBall();const b=ball,g=L.u*30,T=.95+Math.random()*.3,vx=(L.hx-b.x)/T,vy=(L.hy-b.y-.5*g*T*T)/T,e=(1-sk)*.09+(psyched?.12:0),a=Math.atan2(vy,vx)+(Math.random()-.5)*e,m=Math.hypot(vx,vy)*(1+(Math.random()-.5)*e*.6);launch(Math.cos(a)*m,Math.sin(a)*m);}});
  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev);if(cpu&&(bat===1||p.y<L.strip))return;
-  if(p.y<L.strip){if(phase==='aim'||phase==='fly'){if(psych>0&&!psyched&&phase==='aim'){psych--;psyched=1;psychText=PSYCH[Math.floor(Math.random()*PSYCH.length)];psychT=1.6;shake.kick(9);noise(.4,.12,{type:'bandpass',f0:500,f1:900,q:3});voice(220,.5,.07,'sawtooth');vibrate(40);s.react(1-bat,'happy');}}return;}
-  if(phase!=='aim')return;
-  for(let k=0;k<4;k++){if(Math.abs(p.x-spotX(k))<L.u*1.1&&p.y>L.floor-L.u*.6){if(!drag){spot=k;resetBall();sfx.click();}return;}}
+  if(p.y<L.strip){if(net&&!theirs())return;if(phase==='aim'||phase==='fly'){if(psych>0&&!psyched&&phase==='aim')psychOut();}return;}
+  if(phase!=='aim'||theirs())return;
+  for(let k=0;k<4;k++){if(Math.abs(p.x-spotX(k))<L.u*1.1&&p.y>L.floor-L.u*.6){if(!drag){spot=k;resetBall();sfx.click();if(net)net.send({sp:k});}return;}}
   s.capture(ev);drag={id:ev.pointerId,sx:p.x,sy:p.y,x:p.x,y:p.y};});
  s.on(c,'pointermove',ev=>{if(!drag||drag.id!==ev.pointerId)return;const p=s.pointer(ev);drag.x=p.x;drag.y=p.y;});
  const up=ev=>{if(!drag||drag.id!==ev.pointerId)return;s.release(ev);const v=pullVec();drag=null;if(v.len>L.u*.4)launch(v.vx,v.vy);};
@@ -38,7 +42,7 @@ async function basketball2p(s){
   let k=5.2;let vx=dx*k,vy=dy*k;if(psyched){const w=Math.sin(t*23)*.12+Math.sin(t*9)*.08;const a=Math.atan2(vy,vx)+w,m=Math.hypot(vx,vy)*(1+Math.sin(t*17)*.06);vx=Math.cos(a)*m;vy=Math.sin(a)*m;}
   return {vx,vy,len:Math.min(len,max)};}
 
- function result(made){ball.done=true;
+ function result(made){ball.done=true;if(net&&!theirs())net.send({res:made?1:0});
   if(made){const n=spot+1;let scored=0;const nb=[0,0,0];for(let b=2;b>=0;b--)if(bases[b]){const to=b+n;if(to>=3)scored++;else nb[to]=1;}if(n>=4)scored++;else nb[n-1]=1;bases=nb;runs[bat]+=scored;s.setScores(runs);
    msg=`${BASES[spot][0]}!${scored?` ${scored} RUN${scored>1?'S':''} SCORE${scored>1?'':'S'}`:''}`;sfx.coin();if(scored){sfx.fanfare();fx.confetti(L.hx,L.hy,30+scored*10);}s.react(bat,'happy');}
   else{outs++;msg=outs>=3?'THREE OUTS!':`OUT ${outs}`;voice(160,.35,.07,'square',{slide:.6});s.react(bat,'sad');}
@@ -52,7 +56,7 @@ async function basketball2p(s){
   for(const rx of [L.hx-L.rim,L.hx+L.rim]){const dx=b.x-rx,dy=b.y-L.hy,dd=Math.hypot(dx,dy);if(dd<r&&dd>0){const nx=dx/dd,ny=dy/dd,vn=b.vx*nx+b.vy*ny;b.x=rx+nx*r;b.y=L.hy+ny*r;if(vn<0){b.vx-=1.6*vn*nx;b.vy-=1.6*vn*ny;b.vx*=.8;b.vy*=.8;}b.swish=false;voice(700,.06,.04,'triangle');}}
   if(!b.made&&b.vy>0&&Math.abs(b.y-L.hy)<b.vy*d+1&&Math.abs(b.x-L.hx)<L.rim-r*.5){b.made=true;fx.spark(L.hx,L.hy+L.u*.5,14,'#fff');if(b.swish){fx.pop(L.hx,L.hy-L.u*1.5,'SWISH',{color:'#9dff5c',size:22});}}
   if(b.y>L.floor-r){b.y=L.floor-r;b.vy*=-.5;b.vx*=.7;}}
-  if(!b.done&&(b.made&&b.y>L.hy+L.u*1.5||b.x<-50||b.x>L.W+50||b.t>3.2||(b.y>=L.floor-r-1&&Math.abs(b.vy)<L.u&&!b.made)))result(b.made);
+  if(!b.done&&!theirs()&&(b.made&&b.y>L.hy+L.u*1.5||b.x<-50||b.x>L.W+50||b.t>3.2||(b.y>=L.floor-r-1&&Math.abs(b.vy)<L.u&&!b.made)))result(b.made);
  }
 
  function drawDiamond(cx,cy,sz){x.save();x.translate(cx,cy);x.rotate(Math.PI/4);x.strokeStyle='#fff8';x.lineWidth=2;x.strokeRect(-sz/2,-sz/2,sz,sz);x.restore();
@@ -94,6 +98,13 @@ async function basketball2p(s){
  async function startHalf(){layout();bat=half%2;outs=0;bases=[0,0,0];psych=2;shots=0;spot=1;resetBall();phase='wait';draw();
   if(!await s.pass(bat,`Inning ${Math.floor(half/2)+1}, ${s.players[bat].name} at bat. Tap a base spot (further = more bases), drag back from anywhere and release. Miss = out, three outs and you switch. ${s.players[1-bat].name}: tap the top strip to psych them out while they aim (twice per inning).`,'Play ball',{summary:half?`${s.players[0].name} ${runs[0]} – ${runs[1]} ${s.players[1].name}`:null}))return false;phase='aim';return true;}
 
+ if(net){s.debug.bot=()=>{if(theirs()&&phase==='aim'&&psych>0&&!psyched&&Math.random()<.15){psychOut();return 'psych';}if(theirs()||phase!=='aim'||!ball||ball.fly||s.paused||Math.random()<.5)return '';spot=Math.floor(Math.random()*4);net.send({sp:spot});resetBall();const b=ball,g=L.u*30,T=.95+Math.random()*.3,vx=(L.hx-b.x)/T,vy=(L.hy-b.y-.5*g*T*T)/T,a=Math.atan2(vy,vx)+(Math.random()-.5)*.12,m=Math.hypot(vx,vy);launch(Math.cos(a)*m,Math.sin(a)*m);return 'shoot';};
+  void (async()=>{const wait=f=>(async()=>{while(s.alive&&!f())await new Promise(r=>setTimeout(r,50));})();for(;;){const m=await net.next();if(!m||!s.alive)return;
+   if(m.ps){if(!theirs())psychOut();}
+   else if(typeof m.psd==='string'){if(theirs()&&!psyched)psychOut(m.psd.slice(0,40));}
+   else if(Array.isArray(m.l)){await wait(()=>phase==='aim'&&theirs()&&ball&&!ball.fly);if(!s.alive)return;if(Number.isInteger(m.sp)&&m.sp>=0&&m.sp<4&&m.sp!==spot){spot=m.sp;resetBall();}const [vx,vy]=m.l.map(Number);if(Number.isFinite(vx)&&Number.isFinite(vy))launch(vx*L.u,vy*L.u,true);}
+   else if(Number.isInteger(m.sp)&&m.sp>=0&&m.sp<4){if(theirs()&&phase==='aim'&&ball&&!ball.fly){spot=m.sp;resetBall();}}
+   else if(m.res!==undefined){await wait(()=>theirs()&&ball&&ball.fly&&!ball.done);if(!s.alive)return;ball.made=!!m.res;result(!!m.res);}}})();}
  s.hint('Tap one of the four base spots on the floor to pick your shot (single = 1 base, home run = clears the bases). Drag back from anywhere and release to shoot; the dotted arc shows your aim. A make advances every runner, a miss is an out. The defender taps the top strip while you aim to psych you out: the guide disappears and your hands shake.');
  s.frame(dt=>{layout();t+=dt;psychT=Math.max(0,psychT-dt);msgT=Math.max(0,msgT-dt);if(cpu&&bat===0&&drag&&phase==='aim'){cpuPsychT+=dt;if(cpuPsychT>.5&&Math.random()<dt*(.4+cpuSkill(s)*.8)){cpuPsychT=0;psychOut();}}
   if(phase==='aim'&&ball&&!ball.fly&&!drag){Object.assign(ball,ballHome());}
