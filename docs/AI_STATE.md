@@ -643,6 +643,22 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   thrust ({th} starts it there) as parry {pr} or kill {die}; {sp} respawn, {esc} escape, {tu} time-up progress (both settle).
   Bots: `s.debug.bot` = the CPU brain on your own side (TRON at Easy so rounds end). `tests/online-native.mjs` LAG=80-150 delays
   every message; all 4 pass with and without lag, Pong/Block Battle/drag race still pass; 2P fuzz + 1P CPU clean.
+  Batch 13 (Oct 25, same branch): `roundOutcome(nf,round)` in netField.js = round result when each phone judges only its own
+  death and a death is never found late: die(t,extra)/timeUp(extra) send the final {o:[round,'f',ms|-1,extra]}; tick(now)
+  declares you alive once your clock passes their death by tie (.1 s); result me/them/none (both down within tie, or both up
+  at time-up; `R.extra/theirExtra` break it, e.g. Bomber crates). arenaKit `arenaTouch`/`arenaKeys` give touches/keys to
+  `s.online.me`. TowerFall `arrow-arena` (fixed 12x19 tower, own archer, arrows {f} flown on both phones without catch-up,
+  victim judges arrows + stomps {k}, pickups {pk}). Battle Royale `battle-royale-island` (player 2's island turned round via
+  separable sx/sy flip; zones on the shared round clock `annAt`; shots {sh} with ids, melee {m} judged at the distance shown
+  on the victim's phone, {hit} back to the attacker, {k}, {bag}; online test bot walks round trees). Bomber `bomber-duel`
+  (upright 9x13, player 2 turned round; bombs {b:[id,cell,range,ms]} explode at plant+1.8 s on both phones, earliest first,
+  chains at once, so crates/pickups match (checked under lag); time-up winner = more crates, each phone's own count in the out).
+  Pac-Man `pac-maze-duel` (player 2 turned round; own chomper ticks every .12 s on the shared clock, {t:[tick,cell,dir,lives,
+  pow,ate]}; ghosts are a deterministic sim on both phones steering by each player's state PAC_DLY=3 ticks earlier and waiting
+  for the other's report; eaten ghost {ge:[g,step,pts]} goes home at a step the other phone knows in time; contested pellet =
+  earlier tick; `net.glog` per step: identical on both phones under 80-150 ms lag). All 4 pass online-native with and without
+  lag; 2P fuzz + 1P CPU clean, other arenaKit games fuzz clean. Space Invaders versus (shared formation/bombs/bunkers) waits
+  for the shared-world batch (air hockey, sumo, dodgeball...).
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).

@@ -1,17 +1,23 @@
 const {clamp}=require("src/utils.js");
 const {PCOL,PDARK,PLIGHT,Fx,arenaKeys,arenaTouch,Countdown,banner,outlined,rr,snd,noise,jingle,gestureHint,settle}=require("src/engines/arenaKit.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField,roundOutcome}=require("src/engines/netField.js");
 // Arrow Arena (after TowerFall): side-view arena, wrap-around edges, one hit kills. Drag to run, flick up to jump,
 // tap to shoot toward the tap, stomp heads. Three arrows each; stuck arrows can be picked up again. First to 3 rounds.
+// Online (netField): one fixed 12x19 tower on both phones (same seeded levels). Each phone runs its own archer and judges
+// only what hits it: arrows (its own after a moment, or theirs, flown on this phone from {f}) and stomps by the other
+// archer as shown here. Archer {f:{r,x,y,vx,vy,...}} 30/s; {k:[by,why,arrow,x,y]} = I went down, {pk:id} = picked an arrow up.
+// Rounds settle with roundOutcome (deaths within .1 s = both down, no point).
 const T=16,GRAV=900,RUN=112,JUMP=335,ARROW_V=360,ARROW_G=70,QUIVER=3,WIN_ROUNDS=3,MAX_ROUNDS=7,ROUND_CAP=22;
 const HW=5,HH=7;
 
 async function arrow(s){
  const [c,x]=s.canvas(900,560,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();if(!await settle(s))return;
  const fx=new Fx(),rnd=s.random;let W=s.W,H=s.H;
- const aspect=W/Math.max(1,H-40),C=aspect>1.3?24:12,R=aspect>1.3?12:clamp(Math.round(C/Math.max(.5,aspect)),14,19);
+ const on=s.online||null,me=on?on.me:0,them=1-me,HUDY=on?40:0;
+ const aspect=W/Math.max(1,H-40),C=on?12:aspect>1.3?24:12,R=on?19:aspect>1.3?12:clamp(Math.round(C/Math.max(.5,aspect)),14,19);
  const WW=C*T,WH=R*T;let sc=1,offx=0,offy=0,bgc=null,bgKey='';
- const fit=()=>{const top=Math.min(40,H*.07);sc=Math.min(W/WW,(H-top-4)/WH);offx=(W-WW*sc)/2;offy=top+(H-top-4-WH*sc)/2;};fit();
+ const fit=()=>{const top=Math.min(40,H*.07)+HUDY;sc=Math.min(W/WW,(H-top-4)/WH);offx=(W-WW*sc)/2;offy=top+(H-top-4-WH*sc)/2;};fit();
  const grid=Array.from({length:R},()=>Array(C).fill(false));
  const solid=(cx,cy)=>{if(cy<0||cy>=R)return true;return grid[cy][((cx%C)+C)%C];};
  const makeLevel=()=>{
@@ -28,7 +34,7 @@ async function arrow(s){
  const intro=new Countdown(3),kb=arenaKeys(s);
  s.hint('Drag on your half to run. FLICK UP to jump. TAP to shoot an arrow toward where you tapped (tap right next to your archer to shoot the way you face). You have three arrows: pick stuck ones back up by running over them. One hit kills, and you can stomp heads. The screen wraps left to right. First to three rounds. P1: A/D run, W jump, Space shoot (hold W/S to aim up/down). P2: arrows + Enter.');
 
- const resetRound=()=>{makeLevel();arrows=[];ps=[mk(0),mk(1)];for(const p of ps){p.joy=null;p.anchor=null;}roundT=ROUND_CAP;endCheck=0;tapMarks=[];s.debug.ps=ps;s.debug.arrows=arrows;};
+ const resetRound=()=>{makeLevel();arrows=[];ps=[mk(0),mk(1)];seen.at=0;OC=null;for(const p of ps){p.joy=null;p.anchor=null;}roundT=ROUND_CAP;endCheck=0;tapMarks=[];s.debug.ps=ps;s.debug.arrows=arrows;};
  // ------------------------------------------------------------------ physics
  const wrapX=v=>((v%WW)+WW)%WW;
  const dxw=(a,b)=>{let d=a-b;if(d>WW/2)d-=WW;if(d<-WW/2)d+=WW;return d;};
@@ -45,7 +51,8 @@ async function arrow(s){
   if(p.arrows<=0){snd(150,.08,{type:'square',vol:.03});fx.pop(p.x,p.y-14,'EMPTY',{size:9,color:'#ffd0d0'});p.cd=.2;return;}
   let l=Math.hypot(dx,dy);if(l<.01){dx=p.face;dy=0;l=1;}const ang=Math.round(Math.atan2(dy,dx)/(Math.PI/4))*(Math.PI/4),ax=Math.cos(ang),ay=Math.sin(ang);
   p.aim={x:ax,y:ay};if(Math.abs(ax)>.3)p.face=Math.sign(ax);
-  arrows.push({x:p.x+ax*7,y:p.y+ay*7-1,vx:ax*ARROW_V,vy:ay*ARROW_V,state:'fly',owner:p.i,age:0,ang,life:2.6});p.arrows--;p.cd=.24;
+  const ar={id:`${p.i}:${arrowN++}`,x:p.x+ax*7,y:p.y+ay*7-1,vx:ax*ARROW_V,vy:ay*ARROW_V,state:'fly',owner:p.i,age:0,ang,life:2.6};arrows.push(ar);p.arrows--;p.cd=.24;
+  if(on)nf.event({r:round,f:[ar.id,+ar.x.toFixed(2),+ar.y.toFixed(2),+ar.vx.toFixed(2),+ar.vy.toFixed(2),+ang.toFixed(4)]});
   snd(520,.1,{type:'triangle',to:260,vol:.05});noise(.06,{vol:.04,freq:3000});fx.burst(p.x+ax*7,p.y+ay*7,{n:3,color:'#fff',speed:40,life:.2,size:1.2});
  };
  const kill=(p,by,why)=>{
@@ -55,6 +62,22 @@ async function arrow(s){
   fx.pop(p.x,p.y-18,why==='stomp'?'STOMPED!':why==='self'?'OOPS!':'SKEWERED!',{size:14,color:'#fff'});
   try{navigator.vibrate?.(35);}catch{}
  };
+
+ // ------------------------------------------------------------------ online
+ let OC=null,playT0=0,arrowN=0,netBot=false;const pendO=[],seen={x:0,y:0,vx:0,vy:0,at:0};
+ const rt=()=>(performance.now()-playT0)/1000;
+ const nf=netField(s,{hz:30,
+  pack:()=>{const p=ps[me];return {r:round,x:+p.x.toFixed(1),y:+p.y.toFixed(1),vx:Math.round(p.vx),vy:Math.round(p.vy),f:p.face,g:p.ground?1:0,a:p.arrows,ai:[+p.aim.x.toFixed(2),+p.aim.y.toFixed(2)],u:p.run,c:p.cd>0?1:0};},
+  unpack:(i,d)=>{if(d?.r!==round||![d.x,d.y].every(Number.isFinite))return;const p=ps[them];Object.assign(seen,{x:d.x,y:d.y,vx:+d.vx||0,vy:+d.vy||0,at:performance.now()});p.face=d.f===-1?-1:1;p.ground=!!d.g;if(Number.isFinite(d.a))p.arrows=d.a;if(Array.isArray(d.ai))p.aim={x:+d.ai[0]||0,y:+d.ai[1]||0};p.run=d.u|0;p.cd=d.c?.1:0;},
+  onEvent:e=>{if(Array.isArray(e.o)){if(OC&&e.o[0]===round)OC.feed(e.o);else if(e.o[0]>=round)pendO.push(e.o);return;}if(e.r!==round)return;const p=ps[them];
+   if(Array.isArray(e.f)){const [id,ax,ay,vx,vy,ang]=e.f;if([ax,ay,vx,vy].every(Number.isFinite)){arrows.push({id,x:ax,y:ay,vx,vy,state:'fly',owner:them,age:0,ang:+ang||0,life:2.6});snd(520,.1,{type:'triangle',to:260,vol:.05});}}
+   else if(Array.isArray(e.k)){const [by,why,id,kx,ky]=e.k;if(Number.isFinite(kx)&&Number.isFinite(ky)){p.x=kx;p.y=ky;}const a=id!=null&&arrows.find(q=>q.id===id);if(a){a.state='stuck';a.vx=a.vy=0;a.x=p.x;a.y=p.y;}
+    if(by===me){ps[me].kills++;if(why==='stomp'){ps[me].vy=-JUMP*.7;ps[me].ground=false;}}kill(p,by===me?ps[me]:null,why);}
+   else if(e.pk!==undefined){const a=arrows.find(q=>q.id===e.pk);if(a)a.state='gone';}}});
+ // online: this phone's archer went down (by = the other archer, or -1)
+ const netDie=(by,why,id)=>{const p=ps[me];nf.event({r:round,k:[by,why,id??null,+p.x.toFixed(1),+p.y.toFixed(1)]});OC?.die(rt());nf.push();};
+ function theirStep(p,dt){if(!seen.at)return;const k=Math.min(.1,(performance.now()-seen.at)/1000),tx=wrapX(seen.x+seen.vx*k),ty=seen.y+seen.vy*k,e=Math.min(1,dt*20);
+  p.x=wrapX(p.x+dxw(tx,p.x)*e);p.y+=(ty-p.y)*e;p.vx=seen.vx;p.vy=seen.vy;if(p.ground)p.anim+=Math.abs(p.vx)*dt*.12;p.cd=Math.max(0,p.cd-dt);p.flash=Math.max(0,p.flash-dt);}
 
  // ------------------------------------------------------------------ input
  const aimFromTap=(p,f)=>{const sx=offx+p.x*sc,sy=offy+p.y*sc,dx=f.x-sx,dy=f.y-sy;if(Math.hypot(dx,dy)<T*sc*1.3)return {x:p.face,y:0};return {x:dx,y:dy};};
@@ -76,29 +99,35 @@ async function arrow(s){
  // ------------------------------------------------------------------ update
  const stepArcher=(p,dt)=>{
   if(p.dead){p.deadT+=dt;if(p.head){const h=p.head;h.vy+=GRAV*.8*dt;h.x+=h.vx*dt;h.y+=h.vy*dt;h.rot+=h.vr*dt;if(h.y>WH-T-4){h.y=WH-T-4;h.vy*=-.45;h.vx*=.7;h.vr*=.6;}h.x=wrapX(h.x);}return;}
+  if(on&&p.i!==me){theirStep(p,dt);return;}
   p.cd=Math.max(0,p.cd-dt);p.flash=Math.max(0,p.flash-dt);p.coyote=p.ground?.09:Math.max(0,p.coyote-dt);p.buffer=Math.max(0,p.buffer-dt);
-  if(phase==='play'){readInput(p);const target=p.run*RUN,acc=p.ground?1500:900;p.vx+=clamp(target-p.vx,-acc*dt,acc*dt);if(p.run)p.face=p.run;
+  if(phase==='play'&&!OC?.R.frozen){readInput(p);const target=p.run*RUN,acc=p.ground?1500:900;p.vx+=clamp(target-p.vx,-acc*dt,acc*dt);if(p.run)p.face=p.run;
    if(p.buffer>0&&p.coyote>0){p.vy=-JUMP;p.buffer=0;p.coyote=0;p.ground=false;snd(380,.1,{type:'square',to:620,vol:.03});fx.burst(p.x,p.y+HH,{n:4,color:'#c8bfff',speed:50,life:.25,size:1.4});}}
   else p.vx*=Math.exp(-8*dt);
   p.vy=Math.min(p.vy+GRAV*dt,520);moveArcher(p,dt);if(p.ground)p.anim+=Math.abs(p.vx)*dt*.12;
   // pick up arrows
-  for(const a of arrows)if(a.state==='stuck'&&p.arrows<QUIVER&&Math.abs(dxw(a.x,p.x))<HW+4&&Math.abs(a.y-p.y)<HH+4){a.state='gone';p.arrows++;snd(700,.08,{type:'triangle',to:1000,vol:.04});fx.burst(a.x,a.y,{n:4,color:'#ffe566',speed:60,life:.3,size:1.4});fx.pop(p.x,p.y-14,'+1',{size:10,color:'#ffe566',life:.6,rise:14});}
+  for(const a of arrows)if(a.state==='stuck'&&p.arrows<QUIVER&&Math.abs(dxw(a.x,p.x))<HW+4&&Math.abs(a.y-p.y)<HH+4){a.state='gone';p.arrows++;if(on)nf.event({r:round,pk:a.id});snd(700,.08,{type:'triangle',to:1000,vol:.04});fx.burst(a.x,a.y,{n:4,color:'#ffe566',speed:60,life:.3,size:1.4});fx.pop(p.x,p.y-14,'+1',{size:10,color:'#ffe566',life:.6,rise:14});}
  };
  // vs CPU: archer 2 closes in (or backs off to keep range), jumps toward higher ground or over walls, refills its quiver and shoots along the 8 directions
  const cpu=isCpu(s);
- function cpuThink(dt){const p=ps[1],o=ps[0],sk=cpuSkill(s);const set=(r)=>{kb.cpu('r',r>0);kb.cpu('l',r<0);};if(phase!=='play'||p.dead){set(0);return;}
+ function cpuThink(dt,i=1){const p=ps[i],o=ps[1-i],sk=cpuSkill(s);const set=r=>{if(on){kb.state[i].r=r>0?1:0;kb.state[i].l=r<0?1:0;}else{kb.cpu('r',r>0);kb.cpu('l',r<0);}};if(phase!=='play'||p.dead){set(0);return;}
   let tx=o.x,ty=o.y;if(p.arrows<=0){let bd=1e9;for(const a of arrows)if(a.state==='stuck'){const d=Math.abs(dxw(a.x,p.x))+Math.abs(a.y-p.y);if(d<bd){bd=d;tx=a.x;ty=a.y;}}}
   const dx=dxw(o.x,p.x),dy=o.y-p.y,tdx=dxw(tx,p.x),away=p.arrows>0&&!o.dead&&Math.abs(dx)<T*2.5&&Math.abs(dy)<T*.8;let run=away?-Math.sign(dx):Math.abs(tdx)>T*.5?Math.sign(tdx):0;set(run);
   if(p.ground&&(ty<p.y-T*1.1&&Math.random()<dt*(2+sk*3)||run&&overlapTile(p,p.x+run*T*.7,p.y)))jump(p);
   if(p.arrows>0&&p.cd<=0&&!o.dead){const ang=Math.atan2(dy,dx),snap=Math.round(ang/(Math.PI/4))*(Math.PI/4);if(Math.abs(ang-snap)<.16+(1-sk)*.14&&Math.hypot(dx,dy)<WW*.6&&Math.random()<dt*(1.5+sk*5))fire(p,Math.cos(snap),Math.sin(snap));}}
  const update=dt=>{
-  time+=dt;fx.update(dt);if(cpu)cpuThink(dt);for(const m of tapMarks)m.t-=dt;tapMarks=tapMarks.filter(m=>m.t>0);
+  time+=dt;fx.update(dt);if(cpu)cpuThink(dt);if(on&&netBot)cpuThink(dt,me);for(const m of tapMarks)m.t-=dt;tapMarks=tapMarks.filter(m=>m.t>0);
   if(phase==='intro'){if(!intro.update(dt)){resetRound();phase='ready';phaseT=1;note='ROUND 1';}}
-  else if(phase==='ready'){phaseT-=dt;if(phaseT<=0){phase='play';snd(700,.2,{type:'square',vol:.05});}}
-  else if(phase==='play'){roundT-=dt;if(roundT<=0)endRound(-1,'time');}
+  else if(phase==='ready'){phaseT-=dt;if(phaseT<=0){phase='play';snd(700,.2,{type:'square',vol:.05});
+   if(on){playT0=performance.now();OC=roundOutcome(nf,round);const keep=[];for(const o of pendO.splice(0))if(o[0]===round)OC.feed(o);else if(o[0]>round)keep.push(o);pendO.push(...keep);}}}
+  else if(phase==='play'){roundT-=dt;
+   // online: the round ends when both phones have called it (roundOutcome)
+   if(on){if(roundT<=0)OC.timeUp();const res=OC.tick(rt());if(res)endRound(res==='me'?me:res==='them'?them:-1,res==='none'&&!ps.some(p=>p.dead)?'time':'kill');}
+   else if(roundT<=0)endRound(-1,'time');}
   else if(phase==='roundover'||phase==='gameover'){phaseT-=dt;if(phaseT<=0){
    if(phase==='gameover'){s.finish(wins.slice(),`Arrow Arena: ${wins[0]} to ${wins[1]}`);return;}
    if(wins.some(w=>w>=WIN_ROUNDS)||round>=MAX_ROUNDS){phase='gameover';phaseT=2.4;const w=wins[0]===wins[1]?-1:wins[0]>wins[1]?0:1;note=w<0?'A TIE!':`${s.players[w].name} wins!`;jingle([523,659,784,1047,1319],{vol:.05,step:.09});}
+   else if(on){round++;resetRound();phase='sync';void nf.start('r'+round).then(()=>{if(!s.alive)return;phase='ready';phaseT=1;note=`ROUND ${round}`;});}
    else{round++;resetRound();phase='ready';phaseT=1;note=`ROUND ${round}`;}}}
   // physics at fixed sub-steps
   const n=Math.max(1,Math.ceil(dt/(1/120))),h=dt/n;
@@ -110,16 +139,16 @@ async function arrow(s){
      const nx=a.x+a.vx*h,ny=a.y+a.vy*h,tx=nx+Math.cos(a.ang)*5,ty=ny+Math.sin(a.ang)*5;
      if(solid(Math.floor(wrapX(tx)/T),Math.floor(ty/T))){a.state='stuck';a.vx=a.vy=0;a.x=wrapX(a.x+Math.cos(a.ang)*2);a.y=a.y+Math.sin(a.ang)*2;a.t=0;fx.burst(a.x+Math.cos(a.ang)*4,a.y+Math.sin(a.ang)*4,{n:5,color:'#c8bfff',speed:70,life:.25,size:1.4});noise(.05,{vol:.04,freq:2500});snd(220,.05,{type:'square',vol:.03});}
      else{a.x=wrapX(nx);a.y=ny;if(a.life<=0)a.state='gone';
-      for(const p of ps){if(p.dead||phase!=='play')continue;if(a.owner===p.i&&a.age<.12)continue;
-       if(Math.abs(dxw(a.x+Math.cos(a.ang)*4,p.x))<HW+1&&Math.abs(a.y+Math.sin(a.ang)*4-p.y)<HH+1){kill(p,ps[a.owner],a.owner===p.i?'self':'arrow');a.state='stuck';a.vx=a.vy=0;if(a.owner!==p.i)ps[a.owner].kills++;a.x=wrapX(a.x);break;}}}
+      for(const p of ps){if(p.dead||phase!=='play')continue;if(a.owner===p.i&&a.age<.12)continue;if(on&&(p.i!==me||OC?.R.frozen))continue;
+       if(Math.abs(dxw(a.x+Math.cos(a.ang)*4,p.x))<HW+1&&Math.abs(a.y+Math.sin(a.ang)*4-p.y)<HH+1){kill(p,ps[a.owner],a.owner===p.i?'self':'arrow');a.state='stuck';a.vx=a.vy=0;if(a.owner!==p.i)ps[a.owner].kills++;a.x=wrapX(a.x);if(on)netDie(a.owner===p.i?-1:a.owner,a.owner===p.i?'self':'arrow',a.id);break;}}}
     }
    }
    // stomps
-   if(phase==='play')for(const a of ps){const b=ps[1-a.i];if(a.dead||b.dead)continue;if(a.vy>30&&Math.abs(dxw(a.x,b.x))<HW+HW-1&&a.y+HH>b.y-HH&&a.y+HH<b.y-HH+7&&a.y<b.y){kill(b,a,'stomp');a.vy=-JUMP*.7;a.ground=false;a.kills++;}}
+   if(phase==='play')for(const a of ps){const b=ps[1-a.i];if(a.dead||b.dead)continue;if(on&&(b.i!==me||OC?.R.frozen))continue;if(a.vy>30&&Math.abs(dxw(a.x,b.x))<HW+HW-1&&a.y+HH>b.y-HH&&a.y+HH<b.y-HH+7&&a.y<b.y){kill(b,a,'stomp');if(!on){a.vy=-JUMP*.7;a.ground=false;}a.kills++;if(on)netDie(a.i,'stomp',null);}}
   }
-  arrows=arrows.filter(a=>a.state!=='gone');s.debug.arrows=arrows;
+  arrows=arrows.filter(a=>a.state!=='gone');s.debug.arrows=arrows;if(on&&phase!=='sync')nf.tick(dt);
   // round end detection
-  if(phase==='play'){const d0=ps[0].dead,d1=ps[1].dead;if(d0||d1){endCheck+=dt;if(endCheck>.05)endRound(d0&&d1?-1:d0?1:0,'kill');}}
+  if(phase==='play'&&!on){const d0=ps[0].dead,d1=ps[1].dead;if(d0||d1){endCheck+=dt;if(endCheck>.05)endRound(d0&&d1?-1:d0?1:0,'kill');}}
   s.setScores(wins.slice());
  };
  const endRound=(winner,why)=>{
@@ -169,20 +198,22 @@ async function arrow(s){
   fx.draw(x);x.restore();fx.end(x);
   for(const m of tapMarks){x.globalAlpha=m.t/.25*.6;x.strokeStyle=PCOL[m.i];x.lineWidth=3;x.beginPath();x.arc(m.x,m.y,10+(.25-m.t)*60,0,6.283);x.stroke();}x.globalAlpha=1;
   // HUD
-  const bar=Math.min(40,H*.07);x.fillStyle='#0c0820';x.fillRect(0,0,W,bar);const fs=clamp(bar*.5,11,18);
+  x.save();x.translate(0,HUDY);const bar=Math.min(40,H*.07);x.fillStyle='#0c0820';x.fillRect(0,0,W,bar);const fs=clamp(bar*.5,11,18);
   for(const p of ps){const left=p.i===0;for(let r=0;r<WIN_ROUNDS;r++){const cx=left?18+r*fs*1.5:W-18-r*fs*1.5;x.fillStyle=r<wins[p.i]?'#ffe566':'#ffffff26';x.beginPath();x.moveTo(cx,bar/2+fs*.55);x.lineTo(cx-fs*.6,bar/2-fs*.1);x.lineTo(cx-fs*.35,bar/2-fs*.6);x.lineTo(cx,bar/2-fs*.1);x.lineTo(cx+fs*.35,bar/2-fs*.6);x.lineTo(cx+fs*.6,bar/2-fs*.1);x.closePath();x.fill();}
    for(let k=0;k<QUIVER;k++){x.fillStyle=k<p.arrows?PLIGHT[p.i]:'#ffffff22';const bx=left?18+WIN_ROUNDS*fs*1.5+8+k*7:W-18-WIN_ROUNDS*fs*1.5-8-k*7;x.fillRect(bx-1,bar/2-fs*.5,2.4,fs);}}
-  outlined(x,`R${round}`,W/2-fs*2,bar/2,{size:fs*.9,fill:'#c8bfff',stroke:'#0c0820',lw:3});outlined(x,String(Math.ceil(roundT)),W/2+fs*.4,bar/2,{size:fs*1.2,fill:roundT<6?'#ff8a7a':'#fff',stroke:'#0c0820'});
+  outlined(x,`R${round}`,W/2-fs*2,bar/2,{size:fs*.9,fill:'#c8bfff',stroke:'#0c0820',lw:3});outlined(x,String(Math.max(0,Math.ceil(roundT))),W/2+fs*.4,bar/2,{size:fs*1.2,fill:roundT<6?'#ff8a7a':'#fff',stroke:'#0c0820'});x.restore();
   if(phase==='intro'||(phase==='ready'&&round===1)){for(const p of ps){const sx=offx+p.x*sc+(p.i?-1:1)*sc*T*3,sy=offy+p.y*sc-sc*T*2.5;if(time<7){gestureHint(x,sx,sy,'drag',time,{color:PLIGHT[p.i],size:sc*T*1.2});outlined(x,'DRAG · FLICK UP · TAP',sx,sy+sc*T*2.6,{size:Math.max(10,sc*T*.8),fill:PLIGHT[p.i],stroke:'#0c0820',alpha:clamp(1-time/7,0,1)});}}}
   if(phase==='intro')intro.draw(x,W,H);
+  if(phase==='sync')outlined(x,'…',W/2,H*.4,{size:Math.min(W*.08,48),fill:'#ffe566',stroke:'#0c0820'});
   if(phase==='ready')banner(x,W,H,note,`${wins[0]} – ${wins[1]}`,{color:'#ffe566',size:Math.min(W*.07,H*.11,56)});
   if(phase==='play'&&roundT>ROUND_CAP-.8)outlined(x,'FIGHT!',W/2,H*.4,{size:Math.min(W*.1,H*.16,80),fill:'#ffe566',stroke:'#7a3a00',alpha:1-(ROUND_CAP-roundT)/.8});
   if(phase==='roundover')banner(x,W,H,note,`${wins[0]} – ${wins[1]}`,{color:'#ffe566',size:Math.min(W*.06,H*.1,48)});
   if(phase==='gameover')banner(x,W,H,note,`${wins[0]} – ${wins[1]} in rounds`,{color:'#ffe566'});
  };
- s.debug={engine:'arrow',ps,arrows,wins,fx,touch,kb,C,R,grid,get phase(){return phase;},get round(){return round;},sc:()=>sc,off:()=>({x:offx,y:offy})};
+ s.debug={engine:'arrow',ps,arrows,wins,fx,touch,kb,C,R,grid,bot:on?()=>{netBot=true;return '';}:null,get oc(){return OC?.R;},get phase(){return phase;},get round(){return round;},sc:()=>sc,off:()=>({x:offx,y:offy})};
  makeLevel();draw();
- if(!await s.pass(0,'Arrow Arena: TowerFall for two thumbs. Run, jump, shoot and stomp. One hit kills; you only have three arrows, so pick them back up. First to three rounds.','Both ready — to arms!'))return;
+ if(!await s.pass(0,on?`Arrow Arena: TowerFall online. You're the ${me?'pink':'blue'} archer; ${s.players[them].name} plays on the other phone. Drag to run, flick up to jump, tap to shoot toward your tap. One hit kills; you only have three arrows, so pick them back up. First to three rounds.`:'Arrow Arena: TowerFall for two thumbs. Run, jump, shoot and stomp. One hit kills; you only have three arrows, so pick them back up. First to three rounds.','Both ready — to arms!'))return;
+ if(on){await nf.start('r1');if(!s.alive)return;}
  s.frame(dt=>{
   if(s.W!==W||s.H!==H){W=s.W;H=s.H;fit();bgc=null;touch.clear();}
   update(Math.min(dt,.033));draw();

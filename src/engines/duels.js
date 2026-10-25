@@ -7,6 +7,7 @@ const {arenaGestures,gestureHint}=require("src/engines/arenaGestures.js");
 const {makePacArena, pacNeighbor, pacNext}=require("src/engines/mobile.js");
 const {airshootout:playShootout, shootoutStep:stepShootout}=require("src/engines/hockeyShootout.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 const airshootout=playShootout;
 const shootoutStep=stepShootout;
 
@@ -113,38 +114,97 @@ function pacDuelStep(a,dt) {
  return events;
 }
 
+// Online (netField): the same seeded maze on both phones, turned round on player 2's phone so you start at the bottom. Each
+// phone moves its own chomper (steps every .12 s on the shared clock) and streams {e:{t:[tick,cell,dir,lives,powered,ate]}}.
+// The ghosts run the same deterministic steps on both phones, steering by where each player was DLY steps earlier, so
+// both phones see the same ghosts; a step waits if the other phone's report for that moment hasn't come in. Each phone
+// judges only ghosts touching its own chomper; an eaten ghost {ge:[ghost,step,points]} goes home at a step far enough ahead
+// that the other phone knows in time. A pellet both phones ate goes to the earlier tick (odd ties to player 1, like the
+// local game). The end waits for both finals {fin:{g,l}}: pellets ×5 from the shared record, ghost points, clear bonus.
+const PAC_TICK=.12,PAC_GHOST=.24,PAC_DLY=3;
 async function pacmaze(s) {
  const [,x]=s.canvas(620,480,{fill:true}),a=pacDuelState(s.seed),{arena}=a;
- s.shared=true;s.updateScores();const controls=directionGestures(s,(i,dx,dy)=>{a.actors[i].next=[dx,dy];},{players:2}),{keys,fingers}=controls;
+ const on=s.online||null,me=on?on.me:0,them=1-me,F=me===1,HUDY=on?40:0;
+ s.shared=true;s.updateScores();const controls=directionGestures(s,(i,dx,dy)=>{a.actors[i].next=on&&F?[-dx,-dy]:[dx,dy];},{players:2}),{keys,fingers}=controls;
  s.resetOnPause?.(()=>{for(const p of a.actors)p.next=[...p.dir];});
  s.debug={engine:'pacmaze',state:a,arena,actors:a.actors,keys,fingers,controls,left:60,pacDuelStep};
- s.hint('Shared maze, separate lives and power-ups. P1 starts a finger on the left; P2 on the right. Swipe or keep dragging to turn; directions follow the screen. P1 WASD; P2 arrows. Most points in 60s wins.');
- if(!await s.pass(0,'Race through one maze together. Collect pellets before your opponent does. Power pellets protect only the player who ate them. You each have three lives.','Both ready — chomp!'))return;
+ s.hint(on?'Swipe or keep dragging to turn; directions follow the screen. Arrows / WASD work too. Power pellets protect only the player who ate them. Most points in 60s wins.':'Shared maze, separate lives and power-ups. P1 starts a finger on the left; P2 on the right. Swipe or keep dragging to turn; directions follow the screen. P1 WASD; P2 arrows. Most points in 60s wins.');
+ // ---- online state
+ const N=arena.N,DIRS=[[1,0],[-1,0],[0,1],[0,-1]],dirIx=d=>DIRS.findIndex(q=>q[0]===d[0]&&q[1]===d[1]);
+ const glog=[],hist=[[],[]],eaten=new Map(),ghostEats=new Map(),pend=new Set(),ghostPts=[0,0];let myTick=0,theirTick=0,gStep=0,playT0=0,phase='wait',netBot=false,fin=null,theirDone=false;
+ a.actors.forEach((p,i)=>{hist[i][0]={pos:p.pos,dir:[...p.dir],lives:p.lives,pow:0};});
+ const rt=()=>(performance.now()-playT0)/1000,tieFirst=n=>n%2?0:1;
+ function claim(k,i,n){const c=eaten.get(k);if(!c||n<c.n||n===c.n&&tieFirst(n)===i)eaten.set(k,{i,n});a.pellets.delete(k);a.power.delete(k);}
+ const nf=on?netField(s,{pack:()=>0,unpack:()=>{},onEvent:e=>{
+  if(Array.isArray(e.t)){const [n,pos,d,lives,pow,ate]=e.t;if(!Number.isInteger(n)||!Number.isInteger(pos))return;const p=a.actors[them];
+   hist[them][n]={pos,dir:DIRS[d]||p.dir,lives,pow};theirTick=Math.max(theirTick,n);p.prev=p.pos;p.pos=pos;p.dir=DIRS[d]||p.dir;if(lives<p.lives){s.react?.(them,'sad');sound('lose');}p.lives=lives;p.powered=pow?1:0;p.seen=performance.now();
+   if(Number.isInteger(ate)&&ate>=0)claim(ate,them,n);}
+  else if(Array.isArray(e.ge)){const [g,j,pts]=e.ge;if(!a.ghosts[g]||!Number.isInteger(j))return;
+   // (too late for its step here: send it home now)
+   if(j<=gStep){const q=a.ghosts[g];q.pos=q.prev=q.home;q.until=gStep*PAC_GHOST+2;}else{(ghostEats.get(j)||ghostEats.set(j,[]).get(j)).push(g);pend.add(g);}ghostPts[them]+=+pts||0;sound('win');}}}):null;
+ // the deterministic ghost step j: players as they were at tick 2j-DLY, eaten ghosts sent home
+ const at=(i,n)=>{const h=hist[i];for(let k=Math.max(0,n);k>=0;k--)if(h[k])return h[k];return h[0];};
+ function ghostStep(j){const tm=j*PAC_GHOST,d=2*j-PAC_DLY;
+  for(const g of ghostEats.get(j)||[]){const q=a.ghosts[g];q.pos=q.prev=q.home;q.until=tm+2;pend.delete(g);}ghostEats.delete(j);
+  for(const g of a.ghosts){g.prev=g.pos;if((g.until||0)>tm){g.returning=1;continue;}g.returning=0;
+   const live=[0,1].map(i=>({p:at(i,d),i})).filter(o=>o.p.lives>0),distance=o=>Math.abs(g.pos%N-o.p.pos%N)+Math.abs(Math.floor(g.pos/N)-Math.floor(o.p.pos/N));
+   const vulnerable=live.filter(o=>!o.p.pow);let target=g.home;
+   if(tm%27>=7&&vulnerable.length){const {p}=vulnerable.sort((u,v)=>distance(u)-distance(v))[0];target=p.pos;
+    if(g.index===1)target+=3*(p.dir[0]+p.dir[1]*N);if(g.index===2)target-=2*(p.dir[0]+p.dir[1]*N);if(g.index===3&&distance({p})<6)target=g.home;}
+   g.pos=pacNext(arena,g.pos,target);}}
+ // this phone's chomper meets the ghosts (crossed = swapped cells on the same beat)
+ function meet(crossedAt){const p=a.actors[me];if(!p.lives||phase!=='play')return;
+  for(const g of a.ghosts){if(g.returning||pend.has(g.index))continue;const crossed=crossedAt&&g.prev===crossedAt.pos&&g.pos===crossedAt.prev;if(g.pos!==p.pos&&!crossed)continue;
+   if(p.powered>0){p.combo++;const pts=50*2**Math.min(3,p.combo-1),j=Math.max(Math.ceil((myTick+4)/2),gStep+1);ghostPts[me]+=pts;pend.add(g.index);(ghostEats.get(j)||ghostEats.set(j,[]).get(j)).push(g.index);nf.event({ge:[g.index,j,pts]});sound('win');s.react?.(me,'win');}
+   else if(p.invuln===0){p.lives--;p.pos=p.prev=arena.spawns[me];p.invuln=2;p.dir=[0,me?1:-1];p.next=[...p.dir];sound('lose');s.react?.(me,'sad');vibrate(15);break;}}}
+ function myStep(n){const p=a.actors[me];p.prev=p.pos;let ate=-1;
+  if(p.lives){if(pacNeighbor(arena,p.pos,...p.next)!==null)p.dir=[...p.next];const k=pacNeighbor(arena,p.pos,...p.dir);if(k!==null)p.pos=k;
+   if(a.pellets.has(p.pos)){ate=p.pos;if(a.power.has(p.pos)){p.powered=7;p.combo=0;sound('win');}else pickupSound(s);claim(p.pos,me,n);}}
+  myTick=n;meet(n%2===0&&gStep===n/2?{pos:p.pos,prev:p.prev}:null);
+  hist[me][n]={pos:p.pos,dir:[...p.dir],lives:p.lives,pow:p.powered>0?1:0};nf.event({t:[n,p.pos,dirIx(p.dir),p.lives,p.powered>0?1:0,ate]});}
+ function netFrame(dt){const now=rt();a.time=now;
+  for(const p of a.actors){p.powered=Math.max(0,p.powered-dt);p.invuln=Math.max(0,p.invuln-dt);}
+  if(phase==='play'){if(netBot)cpuPac(dt,me);while((myTick+1)*PAC_TICK<=now)myStep(myTick+1);}
+  // ghost steps that are due and whose inputs are in (the other phone's report for tick 2j-DLY)
+  while((gStep+1)*PAC_GHOST<=now&&(theirDone||nf.fin!==undefined||nf.gone||theirTick>=2*(gStep+1)-PAC_DLY)){gStep++;ghostStep(gStep);glog[gStep]=a.ghosts.map(g=>g.pos).join(',');const fresh=now-gStep*PAC_GHOST<.15;if(fresh)meet(myTick>=2*gStep?{pos:at(me,2*gStep).pos,prev:at(me,2*gStep-1).pos}:null);}
+  a.clock=now-myTick*PAC_TICK;a.ghostClock=now-gStep*PAC_GHOST;
+  const sc=[0,0];for(const {i} of eaten.values())sc[i]+=5;sc[0]+=ghostPts[0];sc[1]+=ghostPts[1];a.scores=sc;
+  if(phase==='play'&&(now>=60||!a.pellets.size||a.actors.every(p=>p.lives===0)))void netEnd();}
+ async function netEnd(){phase='over';nf.finish({g:ghostPts[me],l:a.actors[me].lives});const f=await nf.remoteDone();theirDone=true;if(!s.alive)return;
+  if(f&&Number.isFinite(f.g))ghostPts[them]=f.g;if(f&&Number.isFinite(f.l))a.actors[them].lives=f.l;
+  const sc=[0,0];for(const {i} of eaten.values())sc[i]+=5;sc[0]+=ghostPts[0];sc[1]+=ghostPts[1];
+  if(eaten.size===arena.pellets.size)for(let i=0;i<2;i++)if(a.actors[i].lives)sc[i]+=100;a.scores=sc;s.setScores(sc);fin=sc;setTimeout(()=>s.finish(sc,'Two-player maze race'),900);}
+ if(!await s.pass(0,on?`Race ${s.players[them].name} through one maze, each on your own phone. Collect pellets before they do. Power pellets protect only the player who ate them. You each have three lives.`:'Race through one maze together. Collect pellets before your opponent does. Power pellets protect only the player who ate them. You each have three lives.','Both ready — chomp!'))return;
  let left=60;
  // vs CPU: chomper 2 paths to the nearest pellet (a power pellet first if ghosts are close), around ghosts, and hunts them while powered
  const cpu=isCpu(s);let cpuT=0;
- function cpuPac(dt){const p=a.actors[1],sk=cpuSkill(s);if(!p.lives)return;cpuT-=dt;if(cpuT>0)return;cpuT=.06+(1-sk)*.14;const N=arena.N,M=arena.M,live=a.ghosts.filter(g=>!(g.returning>0)),near=k=>live.some(g=>{const d=Math.abs(g.pos%N-k%N)+Math.abs(Math.floor(g.pos/N)-Math.floor(k/N));return d<=(sk>.5?2:1);});
+ function cpuPac(dt,i=1){const p=a.actors[i],sk=cpuSkill(s);if(!p.lives)return;cpuT-=dt;if(cpuT>0)return;cpuT=.06+(1-sk)*.14;const M=arena.M,live=a.ghosts.filter(g=>!(g.returning>0)&&!pend.has(g.index)),near=k=>live.some(g=>{const d=Math.abs(g.pos%N-k%N)+Math.abs(Math.floor(g.pos/N)-Math.floor(k/N));return d<=(sk>.5?2:1);});
   const scary=p.powered<=0&&Math.random()<.5+sk*.5,goal=p.powered>1?k=>live.some(g=>g.pos===k):scary&&live.some(g=>near(p.pos))&&a.power.size?k=>a.power.has(k):k=>a.pellets.has(k);
   const prev=new Map([[p.pos,-1]]),q=[p.pos];let hit=null;while(q.length){const k=q.shift();if(k!==p.pos&&goal(k)){hit=k;break;}const r=Math.floor(k/N),cc=k%N;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){let nc=cc+dx;const nr=r+dy;if(nc<0)nc=N-1;if(nc>=N)nc=0;if(nr<0||nr>=M)continue;const n=nr*N+nc;if(arena.walls.has(n)||prev.has(n)||scary&&near(n))continue;prev.set(n,k);q.push(n);}}
   if(hit===null)return;let st=hit;while(prev.get(st)!==p.pos)st=prev.get(st);const r0=Math.floor(p.pos/N),c0=p.pos%N,r1=Math.floor(st/N),c1=st%N;let dx=c1-c0;if(Math.abs(dx)>1)dx=-Math.sign(dx);p.next=[dx,r1-r0];}
- s.frame(dt=>{left-=dt;if(cpu)cpuPac(dt);
-  for(const e of pacDuelStep(a,dt)){if(e.type==='pickup'){pickupSound(s);}else if(e.type==='hurt'){sound('lose');s.react?.(e.owner,'sad');vibrate(15);}else{sound('win');if(e.owner!==undefined)s.react?.(e.owner,'win');}}
-  const W=s.W,H=s.H,{ox,oy,sx,sy}=gestureGrid(W,H,arena.N,arena.M),cell=Math.min(sx,sy),headSize=Math.max(32,Math.min(54,cell*1.45));x.fillStyle='#101731';x.fillRect(0,0,W,H);
-  for(let row=0;row<arena.M;row++)for(let col=0;col<arena.N;col++){const k=row*arena.N+col,px=ox+col*sx,py=oy+row*sy;
+ if(on){phase='sync';void nf.start('go').then(()=>{if(!s.alive)return;playT0=performance.now();phase='play';});}
+ s.frame(dt=>{
+  if(on){if(phase!=='sync')netFrame(dt);}else{left-=dt;if(cpu)cpuPac(dt);
+   for(const e of pacDuelStep(a,dt)){if(e.type==='pickup'){pickupSound(s);}else if(e.type==='hurt'){sound('lose');s.react?.(e.owner,'sad');vibrate(15);}else{sound('win');if(e.owner!==undefined)s.react?.(e.owner,'win');}}}
+  if(on)left=Math.max(0,60-a.time);
+  const W=s.W,H=s.H,{ox,oy:oy0,sx,sy}=gestureGrid(W,H-HUDY,arena.N,arena.M),oy=oy0+HUDY,cell=Math.min(sx,sy),headSize=Math.max(32,Math.min(54,cell*1.45));x.fillStyle='#101731';x.fillRect(0,0,W,H);
+  // player 2's phone online: the maze turned round (vc/vr = drawn column/row of a cell)
+  const vc=k=>F?N-1-k%N:k%N,vr=k=>F?arena.M-1-Math.floor(k/N):Math.floor(k/N);
+  for(let row=0;row<arena.M;row++)for(let col=0;col<arena.N;col++){const k=row*arena.N+col,px=ox+vc(k)*sx,py=oy+vr(k)*sy;
    if(arena.walls.has(k)){x.fillStyle='#21396e';x.fillRect(px+2,py+2,Math.max(1,sx-4),Math.max(1,sy-4));x.strokeStyle='#6396ee';x.lineWidth=1.5;x.strokeRect(px+4,py+4,Math.max(1,sx-8),Math.max(1,sy-8));}
    else if(a.pellets.has(k))circle(x,px+sx/2,py+sy/2,a.power.has(k)?Math.max(4,cell*.18)+Math.sin(a.time*7):Math.max(2,cell*.065),'#ffe4ab');
   }
-  const interp=(p,t)=>{const wrap=Math.abs(p.prev%arena.N-p.pos%arena.N)>2;return {x:ox+((wrap?p.pos%arena.N:p.prev%arena.N*(1-t)+p.pos%arena.N*t)+.5)*sx,y:oy+(Math.floor(p.prev/arena.N)*(1-t)+Math.floor(p.pos/arena.N)*t+.5)*sy};};
-  for(const g of a.ghosts){if(g.returning>0)continue;const p=interp(g,clamp(a.ghostClock/.24,0,1)),frightened=a.actors.every(p=>p.lives===0||p.powered>0);
+  const interp=(p,t)=>{const wrap=Math.abs(p.prev%arena.N-p.pos%arena.N)>2;return {x:ox+((wrap?vc(p.pos):vc(p.prev)*(1-t)+vc(p.pos)*t)+.5)*sx,y:oy+(vr(p.prev)*(1-t)+vr(p.pos)*t+.5)*sy};};
+  for(const g of a.ghosts){if(g.returning>0||pend.has(g.index))continue;const p=interp(g,clamp(a.ghostClock/.24,0,1)),frightened=a.actors.every(p=>p.lives===0||p.powered>0);
    const r=Math.max(8,Math.min(20,cell*.35));x.fillStyle=frightened?'#668ded':['#ef5a75','#f7a6ce','#71dced','#fac76c'][g.index];x.beginPath();x.arc(p.x,p.y-2,r,Math.PI,0);x.lineTo(p.x+r,p.y+r);x.lineTo(p.x+r/2,p.y+r*.6);x.lineTo(p.x,p.y+r);x.lineTo(p.x-r/2,p.y+r*.6);x.lineTo(p.x-r,p.y+r);x.closePath();x.fill();circle(x,p.x-r*.4,p.y-2,r*.3,'#fff');circle(x,p.x+r*.4,p.y-2,r*.3,'#fff');
   }
-  for(let i=0;i<2;i++){const p=a.actors[i];if(!p.lives)continue;const at=interp(p,clamp(a.clock/.12,0,1));x.save();x.globalAlpha=p.invuln>0&&Math.sin(a.time*16)<0?.45:1;
+  for(let i=0;i<2;i++){const p=a.actors[i];if(!p.lives)continue;const tt=on&&i===them?clamp((performance.now()-(p.seen||0))/1000/.12,0,1):clamp(a.clock/.12,0,1),at=interp(p,tt);x.save();x.globalAlpha=p.invuln>0&&Math.sin(a.time*16)<0?.45:1;
    if(p.powered>0){x.strokeStyle='#fff079';x.lineWidth=3;x.beginPath();x.arc(at.x,at.y,headSize*.58,0,Math.PI*2);x.stroke();}s.sprite(x,i,at.x,at.y,headSize,{exact:true,mood:p.powered>0?'silly':undefined});x.restore();
   }
   drawDirectionFeedback(x,controls);
   s.setScores(a.scores);s.status(`${Math.ceil(Math.max(0,left))}s · ${s.players[0].name}: ${a.actors[0].lives} lives${a.actors[0].powered>0?' ⚡':''} · ${s.players[1].name}: ${a.actors[1].lives} lives${a.actors[1].powered>0?' ⚡':''} · ${a.pellets.size} pellets`);
-  s.debug={engine:'pacmaze',state:a,arena,actors:a.actors,keys,fingers,controls,left,pacDuelStep,grid:{ox,oy,sx,sy}};
-  if(left<=0||a.clear||a.actors.every(p=>p.lives===0))s.finish(a.scores,'Two-player maze race');
+  s.debug={engine:'pacmaze',state:a,arena,actors:a.actors,keys,fingers,controls,left,pacDuelStep,grid:{ox,oy,sx,sy},net:on?{myTick,theirTick,gStep,phase,eaten:eaten.size,ghostPts,glog}:null,bot:on?()=>{netBot=true;return '';}:null};
+  if(!on&&(left<=0||a.clear||a.actors.every(p=>p.lives===0)))s.finish(a.scores,'Two-player maze race');
  });
 }
 

@@ -73,7 +73,7 @@ function arenaKeys(s){
   if(['INPUT','TEXTAREA','SELECT'].includes(ev.target?.tagName))return;
   const m=map[String(ev.key).toLowerCase()];if(!m)return;ev.preventDefault();
   if(type==='keydown'&&(s.paused||!s.alive))return;
-  const [i,k]=m;if(type==='keydown'){if(ev.repeat)return;state[i][k]=1;for(const cb of downCbs)cb(i,k,ev);}else{state[i][k]=0;for(const cb of upCbs)cb(i,k,ev);}
+  const [i0,k]=m,i=s.online?s.online.me:i0;if(type==='keydown'){if(ev.repeat)return;state[i][k]=1;for(const cb of downCbs)cb(i,k,ev);}else{state[i][k]=0;for(const cb of upCbs)cb(i,k,ev);}
  };
  s.on(document,'keydown',handler('keydown'));s.on(document,'keyup',handler('keyup'));s.on(window,'blur',clear);s.resetOnPause?.(clear);s.cleanup(clear);
  // CPU opponent (solo vs CPU): press/release player 2's keys as if typed.
@@ -87,6 +87,8 @@ function arenaTouch(s,{owner=p=>p.x<s.W/2?0:1,maxFingers=2,onDown,onMove,onUp,fl
  const fingers=new Map();
  // vs CPU the human owns every touch (player 2 is driven by the CPU finger below)
  if(s.solo?.kind==='cpu'&&cpuOwner){const base=owner;owner=p=>base(p)<0?-1:0;}
+ // online (s.online) every touch belongs to this phone's player
+ else if(s.online){const base=owner,me=s.online.me;owner=p=>base(p)<0?-1:me;}
  const sample=(f,p)=>{const t=performance.now();f.samples.push({x:p.x,y:p.y,t});while(f.samples.length>2&&t-f.samples[0].t>260)f.samples.shift();};
  const velocity=(f,at=performance.now())=>{
   let first=null;for(const q of f.samples)if(at-q.t<=flickWindow){first=q;break;}
