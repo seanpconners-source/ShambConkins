@@ -7,7 +7,7 @@
 //            Race to tap the missing card on your own answer pad. Ten rounds.
 const {clamp,shuffle}=require("src/utils.js");
 const {Fx,arenaTouch,snd,noise,jingle,outlined,rr,FONT,PCOL,settle,Countdown}=require("src/engines/arenaKit.js");
-const {isCpu,cpuHotseat,cpuSkill,cpuBlunder,pickRandom}=require("src/engines/cpuKit.js");
+const {isCpu,isOnline,cpuHotseat,cpuSkill,cpuBlunder,pickRandom}=require("src/engines/cpuKit.js");
 
 const SUSPECTS=[['Miss Scarlet','#d8262c'],['Colonel Mustard','#e8b020'],['Mrs. White','#f4f4f4'],['Mr. Green','#2fa75a'],['Mrs. Peacock','#2f4fd6'],['Professor Plum','#8a3ab8']];
 const WEAPONS=[['Candlestick','🕯️'],['Knife','🔪'],['Lead Pipe','🔩'],['Revolver','🔫'],['Rope','🪢'],['Wrench','🔧']];
@@ -30,7 +30,10 @@ async function clue(s){
  const mode=s.game.clueMode==='lineup'?'lineup':'deduce';
  const [c,x]=s.canvas(900,640,{fill:true});s.body.classList.add('drag-arena-body');s.shared=mode==='lineup';s.updateScores();
  if(!await settle(s))return;
- const fx=new Fx(),cpu=isCpu(s),bot=i=>cpu&&i===1;let t=0,buttons=[];
+ // Online (s.online, Whodunit only): each phone keeps its own notebook; the other detective's suggestions {sg:[ids]},
+ // accusations {ac:[ids]} and end of turn {e} arrive in order, and the shown card is worked out the same way on both phones.
+ const net=isOnline(s)&&mode==='deduce'?s.online:null,me=net?net.me:0;if(net)s.hotseat=true;
+ const fx=new Fx(),cpu=isCpu(s),bot=i=>cpu&&i===1||!!net&&i===net.remote;let t=0,buttons=[];
  const button=(label,bx,by,bw,bh,onTap,{fill='#7b3a45',enabled=true}={})=>{buttons.push({bx,by,bw,bh,onTap,enabled});x.save();x.globalAlpha=enabled?1:.4;x.fillStyle=fill;rr(x,bx,by,bw,bh,bh*.25);x.fill();x.strokeStyle=GOLD;x.lineWidth=2.5;x.stroke();outlined(x,label,bx+bw/2,by+bh/2+1,{size:Math.min(bh*.42,bw*.13),fill:'#fff',stroke:INK});x.restore();};
 
  if(mode==='deduce'){
@@ -42,16 +45,20 @@ async function clue(s){
   let turn=0,turns=[0,0],sel=[null,null,null],state='intro',reveal=null,publicLog='',endT=0,winner=-1,endText='';
   const known=i=>seen[i].size;
   const begin=async()=>{state='wait';if(!await s.pass(turn,`${s.players[turn].name}, your detective turn (round ${turns[turn]+1} of ${ROUNDS}). Keep the notebook to yourself.`,'Open my notebook'))return;sel.fill(null);state='pick';};
-  const suggest=()=>{if(state!=='pick'||sel.some(v=>!v))return;const other=1-turn,pool=hands[other].filter(c=>sel.includes(c));let by=-1,card=null;
+  const ids=()=>sel.map(c=>c.id),fromIds=a=>{if(!Array.isArray(a))return false;a.forEach((id,k)=>sel[k]=CARDS.find(c=>c.cat===k&&c.id===id)||null);return sel.every(Boolean);};
+  const suggest=(remote=false)=>{if(state!=='pick'||sel.some(v=>!v)||net&&turn===net.remote&&!remote)return;if(net&&!remote)net.send({sg:ids()});const other=1-turn,pool=hands[other].filter(c=>sel.includes(c));let by=-1,card=null;
    if(pool.length){by=other;const fresh=pool.filter(c=>!seen[turn].has(c.id));card=(fresh.length?fresh:pool)[Math.floor(s.random()*(fresh.length?fresh:pool).length)];}
    else{const hp=house.filter(c=>sel.includes(c));if(hp.length){by=2;const fresh=hp.filter(c=>!seen[turn].has(c.id));card=(fresh.length?fresh:hp)[Math.floor(s.random()*(fresh.length?fresh:hp).length)];}}
    if(card){seen[turn].add(card.id);shown[turn].add(card.id);snd(660,.1,{type:'triangle',vol:.03});}else{jingle([392,523,659],{step:.1,type:'triangle',vol:.035});}
    reveal={by,card};publicLog=`${s.players[turn].name} suggested ${sel[0].name}, ${sel[1].name}, ${sel[2].name}: ${by===other?s.players[other].name+' showed a card':by===2?'Wadsworth showed a card':'nobody could disprove it'}.`;state='reveal';};
-  const accuse=()=>{if(state!=='pick'||sel.some(v=>!v))return;const right=sel.every((c,k)=>c===answer[k]);winner=right?turn:1-turn;state='end';endT=0;
+  const accuse=(remote=false)=>{if(state!=='pick'||sel.some(v=>!v)||net&&turn===net.remote&&!remote)return;if(net&&!remote)net.send({ac:ids()});const right=sel.every((c,k)=>c===answer[k]);winner=right?turn:1-turn;state='end';endT=0;
    endText=right?`${s.players[turn].name.toUpperCase()} SOLVED IT!`:`WRONG! ${s.players[1-turn].name.toUpperCase()} WINS`;if(right){jingle([523,659,784,1047,1319],{step:.1,type:'triangle',vol:.04});s.react(turn,'win');}else{noise(.5,{vol:.06,freq:300});s.react(turn,'sad');}};
-  const endTurn=()=>{if(state!=='reveal')return;turns[turn]++;if(turns[0]>=ROUNDS&&turns[1]>=ROUNDS){state='end';endT=0;const a=known(0),b=known(1);winner=a===b?-2:a>b?0:1;endText=winner===-2?'THE CASE GOES COLD':`${s.players[winner].name.toUpperCase()} WAS CLOSER`;return;}turn=1-turn;begin();};
-  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev);for(const b of buttons)if(b.enabled&&p.x>=b.bx&&p.x<=b.bx+b.bw&&p.y>=b.by&&p.y<=b.by+b.bh){b.onTap();snd(560,.04,{type:'square',vol:.025});break;}});
-  s.debug={answer,hands,house,seen,get state(){return state;},get turn(){return turn;},sel,pick:(cat,name)=>{sel[cat]=CARDS.find(c=>c.cat===cat&&c.name===name);},suggest,accuse,endTurn};
+  const endTurn=(remote=false)=>{if(state!=='reveal'||net&&turn===net.remote&&!remote)return;if(net&&!remote)net.send({e:1});turns[turn]++;if(turns[0]>=ROUNDS&&turns[1]>=ROUNDS){state='end';endT=0;const a=known(0),b=known(1);winner=a===b?-2:a>b?0:1;endText=winner===-2?'THE CASE GOES COLD':`${s.players[winner].name.toUpperCase()} WAS CLOSER`;return;}turn=1-turn;begin();};
+  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||bot(turn))return;ev.preventDefault();const p=s.pointer(ev);for(const b of buttons)if(b.enabled&&p.x>=b.bx&&p.x<=b.bx+b.bw&&p.y>=b.by&&p.y<=b.by+b.bh){b.onTap();snd(560,.04,{type:'square',vol:.025});break;}});
+  s.debug={answer,hands,house,seen,get state(){return state;},get turn(){return turn;},sel,pick:(cat,name)=>{sel[cat]=CARDS.find(c=>c.cat===cat&&c.name===name);},suggest,accuse,endTurn,
+   bot:net?()=>{if(s.paused||turn!==me)return null;if(state==='reveal'){endTurn();return 'end';}if(state!=='pick')return null;const cand=[0,1,2].map(cat=>CARDS.filter(cd=>cd.cat===cat&&!seen[me].has(cd.id)));cand.forEach((l,k)=>sel[k]=pickRandom(l));if(cand.every(l=>l.length===1)||turns[me]>=ROUNDS-1){accuse();return 'accuse';}suggest();return 'suggest';}:null};
+  if(net)void (async()=>{for(;;){const m=await net.next();if(!m||!s.alive)return;while(s.alive&&(s.paused||turn!==net.remote||state!==(m.e?'reveal':'pick')))await new Promise(r=>setTimeout(r,60));if(!s.alive)return;
+   if(m.e)endTurn(true);else if(m.sg&&fromIds(m.sg))suggest(true);else if(m.ac&&fromIds(m.ac))accuse(true);}})();
   // vs CPU: player 2 keeps an honest notebook (its hand + cards shown to it), suggests unknown cards, accuses once each
   // category is down to one, and gambles on its last turn when behind. Its notebook stays hidden from the human.
   if(cpu)cpuHotseat(s,{isTurn:()=>turn===1&&(state==='pick'||state==='reveal'),delay:1500,think:()=>{if(state==='reveal')return endTurn();
@@ -64,9 +71,9 @@ async function clue(s){
      s.finish(sc,`Clue: it was ${answer[0].name} with the ${answer[1].name} in the ${answer[2].name}. ${endText.toLowerCase().replace(/^./,m=>m.toUpperCase())}.`);return;}}
    s.setScores([known(0),known(1)]);
    const u=Math.min(W,H)/640,wide=W>H*1.05;
-   if((state==='pick'||state==='reveal')&&bot(turn)){outlined(x,`${s.players[1].name.toUpperCase()} IS INVESTIGATING · ROUND ${turns[1]+1}/${ROUNDS}`,W/2,H*.28,{size:20*u,fill:GOLD,stroke:INK});
-    if(state==='reveal'){outlined(x,`${sel[0].name} · ${sel[1].name} · ${sel[2].name}`,W/2,H*.42,{size:16*u,fill:'#fff',stroke:INK});outlined(x,reveal.by===0?`YOU SHOWED ${reveal.card.name.toUpperCase()}`:reveal.by===2?'WADSWORTH SHOWED A CARD':'NOBODY COULD DISPROVE IT',W/2,H*.52,{size:16*u,fill:'#fff',stroke:INK});}
-    s.sprite(x,1,W/2,H*.72,90*u,{exact:true,mood:'think'});}
+   if((state==='pick'||state==='reveal')&&bot(turn)){outlined(x,`${s.players[turn].name.toUpperCase()} IS INVESTIGATING${net?' ON THEIR PHONE':''} · ROUND ${turns[turn]+1}/${ROUNDS}`,W/2,H*.28,{size:20*u,fill:GOLD,stroke:INK});
+    if(state==='reveal'){outlined(x,`${sel[0].name} · ${sel[1].name} · ${sel[2].name}`,W/2,H*.42,{size:16*u,fill:'#fff',stroke:INK});outlined(x,reveal.by===me?`YOU SHOWED ${reveal.card.name.toUpperCase()}`:reveal.by===2?'WADSWORTH SHOWED A CARD':'NOBODY COULD DISPROVE IT',W/2,H*.52,{size:16*u,fill:'#fff',stroke:INK});}
+    s.sprite(x,turn,W/2,H*.72,90*u,{exact:true,mood:'think'});}
    else if(state==='pick'||state==='reveal'){const i=turn;
     outlined(x,`${s.players[i].name.toUpperCase()}’S NOTEBOOK · ROUND ${turns[i]+1}/${ROUNDS}`,W/2,22*u+8,{size:18*u,fill:GOLD,stroke:INK});
     if(publicLog&&state==='pick'){x.fillStyle='rgba(255,255,255,.75)';x.font=`600 ${Math.max(10,12*u)}px ${FONT}`;x.textAlign='center';x.textBaseline='middle';x.fillText(publicLog,W/2,46*u+8,W*.95);}

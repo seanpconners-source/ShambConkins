@@ -564,7 +564,12 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   Guess Who `traitors-guess-who` ({q: label}/{a: id}/{n}; own secret only), Battleship `battleship-fog` ({fleet} once, then
   {f:[x,y]}; the other fleet stays hidden; their turn = watch shots land on your fleet). All 6 pass online-native (ROOM=name
   runs two test rooms at once); 2P fuzz + 1P CPU clean.
-  TODO next: more CPU-kind games (Liar's Dice, Clue, Monopoly, Simon, Price Is Right, Hangman Wanted, Mancala, dots...).
+  Batch 4 (Oct 25): Liar's Dice (both roll the same hidden dice from the seed, own cup only; {type:'bid',q,f}/{type:'liar'}),
+  Clue Whodunit (`clue.js`, deduce mode only: {sg:[ids]}/{ac:[ids]}/{e}; watcher = the CPU's "investigating" screen; shown card
+  picked the same way on both), Monopoly Speed Die ({a:roll|buy|pass|card}/{bus:n}; dice from the seed; `cpuTurn` guard blocks
+  the other's turn) + Auction (both bid at once, {lot,bid}, reveal when both are in). All 4 pass online-native.
+  Clue Lineup is a real-time tap race: left for the real-time phase (a relay would favour the referee phone).
+  TODO next: Simon, Price Is Right, Hangman Wanted/Showdown, Mancala, Dots & Boxes, Ultimate tic-tac-toe, mini chess...
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).

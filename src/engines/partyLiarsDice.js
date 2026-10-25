@@ -1,6 +1,6 @@
 // Liar's Dice (Perudo): 5 dice each under a cup, alternate bids, call LIAR. Ones are wild. Lose all dice, lose the game.
 const {PartyUI,sfx,head,pname,esc,burst,banner,titleCard,extraCSS,shake,tone}=require("src/engines/partyKit.js");
-const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {isCpu,isOnline,cpuSkill}=require("src/engines/cpuKit.js");
 
 const START=5;
 const PIPS={1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]};
@@ -52,7 +52,12 @@ async function liarsDice(s){
  extraCSS('ld-css',CSS);
  const ui=new PartyUI(s,{theme:'liars'});
  const rand=s.random,names=[pname(s,0),pname(s,1)],dice=[START,START],cpu=isCpu(s);if(cpu)s.hotseat=true;
- let starter=0,roundNo=0;
+ // Online (s.online): both phones roll the same hidden dice from the shared seed but each shows only its own cup; the
+ // other phone's bids {type:'bid',q,f} and LIAR calls {type:'liar'} arrive in order.
+ const net=isOnline(s)?s.online:null,theirs=P=>!!net&&P===net.remote;if(net)s.hotseat=true;
+ let starter=0,roundNo=0,phase='title';
+ s.debug={dice,bot:net?()=>{if(!ui.handler||s.paused)return null;if(phase==='turn'){if(curBid&&Math.random()<.35){ui.handler('liar');return 'liar';}ui.handler('bid');if(ui.handler)ui.handler('liar');return 'bid';}if(phase==='reveal'||phase==='over'){ui.handler('go');return 'go';}return null;}:null};
+ let curBid=null;
  s.hint('Each player has hidden dice. Take turns bidding how many dice of one face are on the table in total (both players). Ones are wild. Raise the bid or call LIAR! If the bid was true the caller loses a die; if not, the bidder does.');
  const faceName=f=>`${f}s`;
  const stripHTML=()=>`<div class="ld-count">${[0,1].map(i=>`${head(s,i,'normal','ldsm')}<span class="ld-stack">${Array.from({length:dice[i]},()=>dieHTML(3,'ldsm')).join('')}</span>`).join('<span style="opacity:.5">vs</span>')}</div>`;
@@ -81,8 +86,8 @@ async function liarsDice(s){
     else if(a==='qm'){sfx.tap();q--;redraw();}
     else if(a==='qp'){sfx.tap();q++;redraw();}
     else if(a==='face'){sfx.tap();f=+el.dataset.f;redraw();}
-    else if(a==='bid'){if(!valid(q,f,bid)||q>total())return;sfx.ok();ui.handler=null;res({type:'bid',q,f});}
-    else if(a==='liar'){sfx.drum();ui.handler=null;res({type:'liar'});}
+    else if(a==='bid'){if(!valid(q,f,bid)||q>total())return;sfx.ok();ui.handler=null;net?.send({type:'bid',q,f});res({type:'bid',q,f});}
+    else if(a==='liar'){if(!bid)return;sfx.drum();ui.handler=null;net?.send({type:'liar'});res({type:'liar'});}
    };
   });
  }
@@ -101,7 +106,12 @@ async function liarsDice(s){
   sfx.ok();return {type:'bid',q:opts[0].q,f:opts[0].f};
  }
 
- async function reveal(hands,bid,challenger){
+ // the other phone's turn: their bid or LIAR call
+ async function remoteTurn(P,bid){
+  ui.set(`<div class="pk-screen">${stripHTML()}${bidHTML(bid)}<div class="ld-cupwrap" style="min-height:90px"><div class="ld-cup shake" style="position:relative;inset:auto;height:84px;width:min(260px,70%)">🏴‍☠️ ${esc(names[P])} is deciding on their phone…</div></div></div>`);
+  const m=await net.next();if(!m)return {type:'none'};
+  if(m.type==='bid'&&Number.isInteger(m.q)&&Number.isInteger(m.f)&&m.f>=1&&m.f<=6)return {type:'bid',q:m.q,f:m.f};return bid?{type:'liar'}:{type:'none'};}
+ async function reveal(hands,bid,challenger){phase='reveal';
   s.shared=true;s.updateScores();
   const rows=[0,1].map(i=>`<div class="ld-row"><div class="pk-row" style="gap:8px">${head(s,i,'normal','ldsm')}<b>${esc(names[i])}</b></div><div class="ld-cupwrap"><div class="ld-dice" data-d="${i}">${hands[i].map(v=>dieHTML(v,'ldlg lddim')).join('')}</div><div class="ld-cup" data-cup="${i}">🏴‍☠️</div></div></div>`).join('');
   ui.set(`<div class="pk-screen"><div class="pk-over">${esc(names[challenger])} calls LIAR!</div>
@@ -153,9 +163,10 @@ async function liarsDice(s){
   for(;;){
    blank();
    const sum=bid?`${names[bid.by]} bid ${bid.q} × ${bid.f}s. Raise it, or call LIAR!`:`You open the bidding.`;
-   const bot=cpu&&turnP===1;
-   if(!bot&&!await s.pass(turnP,`${sum} Peek at your dice privately.`,'Ready, matey'))return;
-   const act=bot?await cpuTurn(hands[1],bid):await turn(turnP,hands[turnP],bid);if(!s.alive)return;
+   const bot=cpu&&turnP===1;curBid=bid;
+   if(!bot&&!theirs(turnP)&&!await s.pass(turnP,`${sum} Peek at your dice privately.`,'Ready, matey'))return;
+   phase=theirs(turnP)?'wait':'turn';
+   const act=bot?await cpuTurn(hands[1],bid):theirs(turnP)?await remoteTurn(turnP,bid):await turn(turnP,hands[turnP],bid);if(!s.alive||act.type==='none')return;
    if(act.type==='bid'){bid={q:act.q,f:act.f,by:turnP};turnP=1-turnP;}
    else{res=await reveal(hands,bid,turnP);break;}
   }
@@ -167,9 +178,9 @@ async function liarsDice(s){
  ui.set(`<div class="pk-screen"><div class="pk-over">Dead Man’s Chest</div><div class="pk-row">${head(s,win,'win','xl')}${head(s,loser,'sad','ldlg')}</div>
   <h1 class="pk-h1 pk-pop">${esc(names[win])} rules the seas!</h1><div class="pk-sub">${esc(names[win])} keeps ${dice[win]} dice; ${esc(names[loser])} walks the plank.</div>
   <button class="pk-btn" data-act="go">Finish</button></div>`);
- sfx.cheer();burst(ui.root,{emojis:['🎲','💰','🏴‍☠️'],n:34,spread:250});
+ sfx.cheer();burst(ui.root,{emojis:['🎲','💰','🏴‍☠️'],n:34,spread:250});phase='over';
  await new Promise(res=>{ui.handler=a=>{if(a==='go')res(1);};});if(!s.alive)return;
- s.debug={dice,roundNo};
+ s.debug.roundNo=roundNo;
  s.finish([...dice],`${names[win]} won Liar’s Dice with ${dice[win]} dice left after ${roundNo} rounds.`);
 }
 

@@ -6,7 +6,7 @@
 //             (pass the phone), highest bid buys it. Worth = cash + list prices + $300 per completed pair.
 const {clamp,shuffle}=require("src/utils.js");
 const {Fx,snd,noise,jingle,outlined,rr,FONT,PCOL,settle}=require("src/engines/arenaKit.js");
-const {isCpu,cpuHotseat,cpuSkill,cpuBlunder}=require("src/engines/cpuKit.js");
+const {isCpu,isOnline,cpuHotseat,cpuSkill,cpuBlunder}=require("src/engines/cpuKit.js");
 
 const G={brown:'#8b5a2b',lightblue:'#9ad0f0',pink:'#e0559a',orange:'#f08a1c',red:'#e03a3a',yellow:'#f3d52b',green:'#2fa75a',blue:'#2f4fd6'};
 const BOARD=[['GO','go'],['Mediterranean Ave','prop','brown',60,2],['Community Chest','chest'],['Baltic Ave','prop','brown',60,4],['Oriental Ave','prop','lightblue',100,6],['Connecticut Ave','prop','lightblue',120,8],
@@ -25,6 +25,10 @@ async function monopoly(s){
  const mode=s.game.monopolyMode==='auction'?'auction':'speed';
  const [c,x]=s.canvas(900,640,{fill:true});s.body.classList.add('drag-arena-body');s.shared=mode==='speed';s.updateScores();
  if(!await settle(s))return;
+ // Online (s.online): Speed Die = each phone plays its own turns; the other phone's choices {a:'roll'|'buy'|'pass'|'card'},
+ // {bus:n} arrive in order and the dice come from the shared seed. Auction = both phones bid at once, each seals its own
+ // bid {lot,bid}, and the deed is revealed when both bids are in.
+ const net=isOnline(s)?s.online:null,me=net?net.me:0;if(net)s.hotseat=true;
  const fx=new Fx(),cpu=isCpu(s);if(cpu)s.hotseat=true;let t=0,msg='',msgT=0,buttons=[],cpuTurn=()=>false;
  const say=(m,d=2)=>{msg=m;msgT=d;};
  const button=(label,bx,by,bw,bh,onTap,{color='#fff',fill=MONO_RED,enabled=true}={})=>{buttons.push({bx,by,bw,bh,onTap,enabled});x.save();x.globalAlpha=enabled?1:.4;x.fillStyle=fill;rr(x,bx,by,bw,bh,bh*.25);x.fill();x.strokeStyle='#fff';x.lineWidth=3;x.stroke();outlined(x,label,bx+bw/2,by+bh/2+1,{size:Math.min(bh*.42,bw*.16),fill:color,stroke:INK});x.restore();};
@@ -44,7 +48,8 @@ async function monopoly(s){
   const ownsSet=(i,g)=>BOARD.filter(sp=>sp.group===g).every(sp=>owner[sp.i]===i);
   const pay=(i,amt,to=-1)=>{P[i].cash-=amt;if(to>=0)P[to].cash+=amt;fx.pop(s.W/2,s.H*.45,`−${money(amt)}`,{color:'#ff8a8a',stroke:INK,size:24});noise(.12,{vol:.04,freq:1200});if(P[i].cash<0){state='end';winner=1-i;endT=0;say(`${s.players[i].name.toUpperCase()} IS BANKRUPT!`,4);}};
   const earn=(i,amt)=>{P[i].cash+=amt;fx.pop(s.W/2,s.H*.45,`+${money(amt)}`,{color:'#9effa8',stroke:INK,size:24});jingle([880,1175],{step:.05,type:'square',vol:.03});};
-  const roll=()=>{if(state!=='roll')return;state='rolling';diceT=.8;snd(300,.4,{type:'square',vol:.02,to:500});};
+  const mineNow=remote=>!(net&&turn===net.remote&&!remote),tell=(remote,m)=>{if(net&&!remote)net.send(m);};
+  const roll=(remote=false)=>{if(state!=='roll'||!mineNow(remote))return;tell(remote,{a:'roll'});state='rolling';diceT=.8;snd(300,.4,{type:'square',vol:.02,to:500});};
   const startMove=n=>{steps=n;stepT=.15;state='move';};
   const land=()=>{const p=P[turn],sp=BOARD[p.pos];
    if(sp.kind==='prop'){if(owner[sp.i]<0){if(p.cash>=sp.price){state='buy';say(`${sp.name}: buy for ${money(sp.price)}?`,2.5);return;}say(`Not enough cash for ${sp.name}.`);}
@@ -57,17 +62,22 @@ async function monopoly(s){
    endTurn();};
   const endTurn=()=>{after=null;if(state==='end')return;if(turn===1){round++;if(round>ROUNDS){state='end';const a=worth(0),b=worth(1);winner=a===b?-2:a>b?0:1;endT=0;say(winner===-2?'A PERFECT TIE!':`${s.players[winner].name.toUpperCase()} IS THE TYCOON!`,4);jingle([523,659,784,1047,1319],{step:.1,type:'square',vol:.04});return;}}
    turn=1-turn;state='roll';say(`${s.players[turn].name.toUpperCase()}’S TURN`,1.4);};
-  const buy=()=>{if(state!=='buy')return;const sp=BOARD[P[turn].pos];P[turn].cash-=sp.price;owner[sp.i]=turn;jingle([659,880,1175],{step:.06,type:'square',vol:.035});s.react(turn,'happy');say(ownsSet(turn,sp.group)?`Colour set! Rent doubled on ${sp.group}.`:`${s.players[turn].name} buys ${sp.name}.`,2);afterLanding();};
-  const passBuy=()=>{if(state!=='buy')return;afterLanding();};
-  const bus=n=>{if(state!=='bus')return;startMove(n);};
+  const buy=(remote=false)=>{if(state!=='buy'||!mineNow(remote))return;tell(remote,{a:'buy'});const sp=BOARD[P[turn].pos];P[turn].cash-=sp.price;owner[sp.i]=turn;jingle([659,880,1175],{step:.06,type:'square',vol:.035});s.react(turn,'happy');say(ownsSet(turn,sp.group)?`Colour set! Rent doubled on ${sp.group}.`:`${s.players[turn].name} buys ${sp.name}.`,2);afterLanding();};
+  const passBuy=(remote=false)=>{if(state!=='buy'||!mineNow(remote))return;tell(remote,{a:'pass'});afterLanding();};
+  const bus=(n,remote=false)=>{if(state!=='bus'||!mineNow(remote))return;tell(remote,{bus:n});startMove(n);};
   keyAct[' ']=keyAct.enter=()=>{if(state==='roll')roll();else if(state==='buy')buy();else if(state==='card')resolveCard();else if(state==='bus')bus(dice[0]+dice[1]);};keyAct.n=passBuy;
-  const resolveCard=()=>{if(state!=='card')return;const [text,kind,v]=after.card;after=null;const p=P[turn];
+  const resolveCard=(remote=false)=>{if(state!=='card'||!mineNow(remote))return;tell(remote,{a:'card'});const [text,kind,v]=after.card;after=null;const p=P[turn];
    if(kind==='cash'){if(v>0)earn(turn,v);else pay(turn,-v);if(state==='end')return;afterLanding();}
    else if(kind==='birthday'){pay(1-turn,v,turn);if(state==='end')return;afterLanding();}
    else if(kind==='jail'){p.pos=6;p.shown=6;p.jail=true;afterLanding();}
    else if(kind==='back'){p.pos=(p.pos-v+24)%24;p.shown=p.pos;state='landed';land();}
    else if(kind==='goto'){const k=(v-p.pos+24)%24;if(v===0){startMove(k||24);}else startMove(k);}};
-  s.debug={P,owner,get state(){return state;},roll,buy,passBuy,resolveCard,bus,get turn(){return turn;},get round(){return round;}};
+  s.debug={P,owner,get state(){return state;},roll,buy,passBuy,resolveCard,bus,get turn(){return turn;},get round(){return round;},
+   bot:net?()=>{if(s.paused||turn!==me)return null;if(state==='roll'){roll();return 'roll';}if(state==='buy'){Math.random()<.6?buy():passBuy();return 'buy';}if(state==='card'){resolveCard();return 'card';}if(state==='bus'){bus(dice[0]+dice[1]);return 'bus';}return null;}:null};
+  if(net){cpuTurn=()=>turn===net.remote&&state!=='end';
+   void (async()=>{const need={roll:'roll',buy:'buy',pass:'buy',card:'card'};for(;;){const m=await net.next();if(!m||!s.alive)return;const want=Number.isInteger(m.bus)?'bus':need[m.a];if(!want)continue;
+    while(s.alive&&(s.paused||turn!==net.remote||state!==want))await new Promise(r=>setTimeout(r,60));if(!s.alive)return;
+    if(want==='bus')bus(m.bus,true);else ({roll,buy,pass:passBuy,card:resolveCard})[m.a](true);}})();}
   // vs CPU: player 2 rolls, buys while it keeps a cash cushion (always when it completes or blocks a set),
   // rides the Bus to the best unowned deed in reach, and reads its own cards.
   if(cpu){cpuTurn=()=>turn===1&&state!=='end';
@@ -128,18 +138,25 @@ async function monopoly(s){
  const P=[0,1].map(()=>({cash:1500,deeds:[]}));let lot=0,bidder=0,bids=[0,0],cur=0,state='intro',revealT=0,endT=0,lastWin=-1;
  const worth=i=>P[i].cash+P[i].deeds.reduce((a,sp)=>a+sp.price,0)+groups.filter(g=>P[i].deeds.filter(sp=>sp.group===g).length===2).length*300;
  const adj=d=>{if(state!=='bid')return;cur=clamp(cur+d,0,P[bidder].cash);};
+ const theirBids=[];   // online: the other phone's sealed bid per lot
+ const revealBids=()=>{state='reveal';revealT=0;const sp=lots[lot];const [a,b]=bids;lastWin=a===b?-1:a>b?0:1;if(lastWin>=0){P[lastWin].cash-=bids[lastWin];P[lastWin].deeds.push(sp);s.react(lastWin,'happy');jingle([659,880,1175],{step:.07,type:'square',vol:.035});}else noise(.2,{vol:.04,freq:800});};
+ const tryReveal=()=>{if(net&&state==='wait'&&bids[me]!==null&&theirBids[lot]!==undefined){bids[net.remote]=clamp(theirBids[lot],0,P[net.remote].cash);revealBids();}};
+ if(net)void (async()=>{for(;;){const m=await net.next();if(!m||!s.alive)return;if(Number.isInteger(m.lot)&&Number.isFinite(m.bid)){theirBids[m.lot]=m.bid;tryReveal();}}})();
  const seal=async()=>{if(state!=='bid')return;bids[bidder]=cur;snd(440,.08,{type:'square',vol:.03});
+  if(net){net.send({lot,bid:cur});state='wait';tryReveal();return;}
   // vs CPU: the human always bids; the CPU then seals its own bid without seeing it: list price ± noise,
   // plus most of the $300 pair bonus when it holds the other deed of the colour, and some to block the human's pair.
   if(cpu){const sp=lots[lot],sk=cpuSkill(s),mine=P[1].deeds.some(d=>d.group===sp.group),theirs=P[0].deeds.some(d=>d.group===sp.group);
    const value=sp.price*(.75+.35*sk)+(mine?300*(.5+.4*sk):0)+(theirs?150*sk:0);bids[1]=Math.max(0,Math.min(P[1].cash,Math.round(value*(.8+Math.random()*.35)/10)*10));bidder=1;}
   if(bidder===0){state='wait';if(!await s.pass(1,`${s.players[0].name} has sealed a bid for ${lots[lot].name}. ${s.players[1].name}: your secret bid.`,'Ready to bid'))return;bidder=1;cur=0;state='bid';}
-  else{state='wait';if(!cpu&&!await s.pass(0,'Both bids are sealed. Reveal them together.','Reveal the bids'))return;state='reveal';revealT=0;const sp=lots[lot];const [a,b]=bids;lastWin=a===b?-1:a>b?0:1;if(lastWin>=0){P[lastWin].cash-=bids[lastWin];P[lastWin].deeds.push(sp);s.react(lastWin,'happy');jingle([659,880,1175],{step:.07,type:'square',vol:.035});}else noise(.2,{vol:.04,freq:800});}};
+  else{state='wait';if(!cpu&&!await s.pass(0,'Both bids are sealed. Reveal them together.','Reveal the bids'))return;revealBids();}};
  const nextLot=async()=>{if(state!=='reveal')return;lot++;if(lot>=lots.length){state='end';endT=0;jingle([523,659,784,1047,1319],{step:.1,type:'square',vol:.04});return;}
+  if(net){bidder=me;bids=[null,null];bids[me]=null;cur=0;state='bid';return;}
   state='wait';const first=cpu?0:lot%2;if(!await s.pass(first,`Next deed: ${lots[lot].name} (list price ${money(lots[lot].price)}). ${s.players[first].name} bids first, in secret.`,'Ready to bid'))return;bidder=first;bids=[0,0];cur=0;state='bid';};
  keyAct.arrowup=()=>adj(50);keyAct.arrowright=()=>adj(10);keyAct.arrowleft=()=>adj(-10);keyAct.arrowdown=()=>adj(-50);keyAct.enter=keyAct[' ']=()=>{if(state==='bid')seal();else if(state==='reveal'&&revealT>1.2)nextLot();};
- s.debug={P,get state(){return state;},get lot(){return lot;},adj,seal,nextLot,lots,get revealT(){return revealT;}};
- (async()=>{if(!await s.pass(0,`Deed 1: ${lots[0].name} (list price ${money(lots[0].price)}). ${s.players[0].name} bids first, in secret.`,'Ready to bid'))return;bidder=0;state='bid';})();
+ s.debug={P,get state(){return state;},get lot(){return lot;},adj,seal,nextLot,lots,get revealT(){return revealT;},
+  bot:net?()=>{if(s.paused)return null;if(state==='bid'){adj(10*Math.floor(Math.random()*20));seal();return 'seal';}if(state==='reveal'&&revealT>1.2){nextLot();return 'next';}return null;}:null};
+ (async()=>{if(!await s.pass(0,net?`Deed 1: ${lots[0].name} (list price ${money(lots[0].price)}). You both bid at once, in secret.`:`Deed 1: ${lots[0].name} (list price ${money(lots[0].price)}). ${s.players[0].name} bids first, in secret.`,'Ready to bid'))return;bidder=me;if(net)bids=[null,null];state='bid';})();
  s.frame(dt=>{t+=dt;fx.update(dt);buttons=[];if(state==='reveal')revealT+=dt;
   if(state==='end'){endT+=dt;if(endT>3.4){s.finish([worth(0),worth(1)],`Monopoly Auction: ${s.players[0].name} worth ${money(worth(0))}, ${s.players[1].name} ${money(worth(1))}.`);return;}}
   s.setScores(state==='end'?[worth(0),worth(1)]:[0,0]);
@@ -147,6 +164,7 @@ async function monopoly(s){
   const sp=lots[Math.min(lot,lots.length-1)],u=Math.min(W,H)/600;
   outlined(x,`DEED ${Math.min(lot+1,lots.length)} OF ${lots.length}`,W/2,H*.07,{size:20*u,fill:'#fff',stroke:INK});
   if(state!=='end')deedCard(sp,W/2,H*.32,Math.min(W*.42,H*.3));
+  if(state==='wait'&&net)outlined(x,`BID SEALED · WAITING FOR ${s.players[net.remote].name.toUpperCase()}`,W/2,H*.62,{size:20*u,fill:'#fff',stroke:INK});
   if(state==='bid'){const by=H*.6;outlined(x,`${s.players[bidder].name.toUpperCase()}’S SECRET BID`,W/2,by,{size:20*u,fill:PCOL[bidder],stroke:'#fff'});outlined(x,money(cur),W/2,by+46*u,{size:48*u,fill:'#fff',stroke:INK});
    outlined(x,`cash ${money(P[bidder].cash)}`,W/2,by+84*u,{size:14*u,fill:INK,stroke:'#fff'});
    const bw=Math.min(W*.18,110*u),bh=Math.min(H*.08,50*u),row=by+100*u,labels=[['−50',-50],['−10',-10],['+10',10],['+50',50],['+100',100]];labels.forEach(([l,d],k)=>button(l,W/2+(k-2)*(bw+8)-bw/2,row,bw,bh,()=>adj(d),{fill:d<0?'#777':'#2f4fd6'}));
