@@ -674,8 +674,24 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   Test bots: `s.debug.bot` = the CPU brain on your side (Disc's sits out 4 s in 12 so goals happen; Snowball's also builds walls);
   Disc `s.debug.skip(s)` moves its clock on (time-up/golden point checked under lag). tests/online-native.mjs: SHOT_S=n
   screenshots n s in, VIEW=WxH phone size; at 1100x700 headless runs ~3x slow (game time is frame-capped), give LIMIT_S=420.
-  All 4 pass with and without LAG=80-150 at 390x780 and 1100x700; 2P fuzz + 1P CPU clean. Left: Hippos, air hockey, sumo,
-  dodgeball ×2, Space Invaders versus, Tarantino ×6, South Park ×3, Bond ×3, Hyrule ×2, penalties, Raiders, Fight Night, Sewer
+  All 4 pass with and without LAG=80-150 at 390x780 and 1100x700; 2P fuzz + 1P CPU clean.
+  Batch 15 (Oct 25, branch `ccr-6d52b7c8-fuaau5`, fast-forwarded from `ccr-b69e91e7-srvscq`), shared-table games:
+  air hockey `rink-rivals` (airHockey.js; fixed 680x420 table turned per phone; a paddle never reaches past the line, so the
+  phone whose half the puck is in steps it at 240 Hz with its own paddle only (`puckSub(...,only)`), calls goals into its goal
+  {g} and hands over at the line {c:[tick,x,y,vx,vy]}; a hand-over replays this half from its tick with the own paddle's
+  recorded path (`hist`), exact. Paddle {p} with tick + puck {pk} stream 30/s; the other half is SHOWN lagT+SGAP ticks back
+  (paddle and puck from those samples, straight lines between puck snapshots, `dispAt`/`dispTick`), catching up over your near
+  half; time-up {tu:1}/{tu:2} handshake. NETSTAT=1 prints `s.debug.net` (jumps): 0 ms lag median 5 px, 80-150 ms median ~15 px
+  per snapshot but ~100-200 px catch-ups when they strike right at the line (eased, cap 140)). Sumo `taskmaster-sumo` (own suit
+  only, each phone applies its own half of a shove from the other suit as it shows it; own ring-out → roundOutcome, both out =
+  rematch; bouts start with nf.start; player 2 turned round). Hippos `hungry-hungry-heads` (fixed 420x760 board, same view on
+  both; seat 1's phone runs spits + marble physics, {ms} snapshots 12/s pull the other phone's copy; each phone judges its own
+  bites {c:[t,[[id,v]..]]}, `rescore()` = earliest bite owns a marble, both logs → same scores; fin waits for the other's).
+  Dodgeball `underdog-dodgeball` (`dodgeballOnline` in newGames.js; court turned per phone; victim's phone calls {hi}/{cg}/{ms},
+  picker {pk}, thrower {th} with state + round clock; my throw freezes at their player until their call (600 ms timeout); hearts
+  by -1 events; roundOutcome per round, the 95 s total kept by adding each round's length from the two outs). Test bots on all.
+  All 4 pass online-native with and without LAG=80-150 at 390x780 + 1100x700; 2P fuzz + 1P CPU clean. Left: South Park
+  dodgeball, Space Invaders versus, Tarantino ×6, South Park ×2, Bond ×3, Hyrule ×2, penalties, Raiders, Fight Night, Sewer
   Clash, kart ×2, Space Swarm co-op (`node -e` over solo.js: 'cpu' ids minus NET_NATIVE).
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep

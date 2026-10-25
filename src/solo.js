@@ -94,7 +94,7 @@ const NET_NATIVE=new Set(['trivia-mixed','trivia-nick90','trivia-dbz','trivia-hx
  'pong-duel','derezzed-cycles','snake-v-snake','metal-gear-tank-duel','kill-bill-duel',
  'arrow-arena','battle-royale-island','bomber-duel','pac-maze-duel',
  'driller-duel','bubble-battle','snowball-fight','disc-duel',
- 'rink-rivals','taskmaster-sumo','hungry-hungry-heads']);
+ 'rink-rivals','taskmaster-sumo','hungry-hungry-heads','underdog-dodgeball']);
 const netNative=g=>!!g&&NET_NATIVE.has(g.id);
 function duelOK(g){return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&(DUEL_KINDS.has(soloKind(g))||netNative(g));}
 // 1P board game (src/cpuBoard.js): the human plays games with a real CPU opponent ('cpu') or co-op games alone ('alone':

@@ -5,7 +5,7 @@ const {touchKeys}=require("src/engines/touchDuel.js");
 const {arcadeRounds}=require("src/engines/arcade.js");
 const {circle}=require("src/engines/session.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
-const {netField}=require("src/engines/netField.js");
+const {netField,roundOutcome}=require("src/engines/netField.js");
 // v0.44 additions: Block Battle, Shred Hero, Dodgeball, Fight Night, Gopher Hunt, Archery.
 function relabel(i,key,text,label){const node=document.getElementById(`duel-${i}-${key}`);if(!node)return;node.textContent=text;node.setAttribute('aria-label',label);}
 const rr=(x,px,py,w,h,r)=>{x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath();};
@@ -194,6 +194,7 @@ async function shred(s){
 const DODGE={W:900,H:560,r:26,speed:270,hp:3,rounds:2,throw:640};
 function dodgeInit(round){return {players:[{x:170,y:280,hp:DODGE.hp,ball:null,catching:0,cool:0,face:0,hurt:0},{x:730,y:280,hp:DODGE.hp,ball:null,catching:0,cool:0,face:0,hurt:0}],balls:[0,1,2,3].map(i=>({x:i<2?400:500,y:150+(i%2)*260,vx:0,vy:0,live:false,owner:-1,held:-1,r:13,spin:0})),fx:[],round};}
 async function dodgeball(s){
+ if(s.online)return dodgeballOnline(s);
  const[,x]=s.canvas(900,560,{fill:true});s.shared=true;s.updateScores();
  const {keys}=touchKeys(s);
  let a=dodgeInit(1),wins=[0,0],left=95,pause=0,note='',prevFire=[false,false];const tgt=[null,null],drags=new Map();
@@ -453,6 +454,132 @@ async function archery(s){
    const markup=`<strong>🏹 ${Math.min(a.idx+1,ARROWS)}/${ARROWS}</strong><span>score <b>${a.score}</b></span>`;if(hud.innerHTML!==markup)hud.innerHTML=markup;
    s.status(`${s.players[a.player].name} · ${a.score} points · arrow ${Math.min(a.idx+1,ARROWS)} of ${ARROWS}`);s.debug={actor:a,api};
   }
+ });
+}
+// Dodgeball online (netField, no host): one fixed court on both phones, turned so your side is at the bottom (portrait) or
+// on the left. Each phone runs its own player {x,y,f,c,h} 30/s and calls what happens on its side: throws that hit {hi}
+// or are caught {cg} by its player, throws that go past it {ms}, and loose balls it picks up {pk}. A throw {th} carries
+// the ball's state stamped with the round clock and the other phone flies it on by the time it took; a throw of mine that
+// reaches the other player waits there for their call. Hearts move by -1 events, so both phones end on the same count.
+// Rounds end through roundOutcome (first player down loses it); the match keeps the 95 s total of the one-phone game
+// (each round's length comes from the two outs, so both phones count the same).
+async function dodgeballOnline(s){
+ const[,x]=s.canvas(900,560,{fill:true});s.shared=true;s.updateScores();
+ const {keys}=touchKeys(s),me=s.online.me,them=1-me,dir=me?-1:1,TOTAL=95,R1=v=>+(+v).toFixed(1);
+ let a=dodgeInit(1),wins=[0,0],used=0,limit=TOTAL,pause=0,note='',ro=null,t0=0,playing=false,netBot=false,over=false,prevFire=false,botT=0,botHold=0;
+ const seen={x:0,y:0,vx:0,vy:0,at:0},outs=[],drags=new Map();let tgt=null;
+ const rt=()=>(performance.now()-t0)/1000,P=()=>a.players[me],O=()=>a.players[them];
+ // court → screen: my side at the bottom (portrait) or on the left
+ let M={a:1,b:0,c:0,d:1,e:0,f:0},sc=1;
+ const layout=()=>{const W=s.W,H=s.H,portrait=H>W,FL=portrait?me===0:me===1,top=Math.min(46,H*.07)+40,lw=portrait?DODGE.H:DODGE.W,lh=portrait?DODGE.W:DODGE.H;
+  sc=Math.min((W-8)/lw,(H-top-8)/lh);const ox=(W-lw*sc)/2,oy=top+(H-top-8-lh*sc)/2;
+  const toS=(X,Y)=>{if(FL){X=DODGE.W-X;Y=DODGE.H-Y;}return portrait?{x:ox+(DODGE.H-Y)*sc,y:oy+X*sc}:{x:ox+X*sc,y:oy+Y*sc};},o=toS(0,0),u=toS(1,0),v=toS(0,1);
+  M={a:u.x-o.x,b:u.y-o.y,c:v.x-o.x,d:v.y-o.y,e:o.x,f:o.y};};
+ const toCourt=(dx,dy)=>{const det=M.a*M.d-M.b*M.c;return {x:(M.d*dx-M.c*dy)/det,y:(M.a*dy-M.b*dx)/det};},up=()=>-Math.atan2(M.b,M.a);
+ layout();
+ const boundsX=i=>i?[DODGE.W/2+DODGE.r+6,DODGE.W-DODGE.r-8]:[DODGE.r+8,DODGE.W/2-DODGE.r-6];
+ const nf=netField(s,{hz:30,
+  pack:()=>{const p=P();return {x:Math.round(p.x),y:Math.round(p.y),f:+p.face.toFixed(2),c:p.catching>0?1:0,h:p.hurt>0?1:0};},
+  unpack:(i,q)=>{if(![q?.x,q?.y].every(Number.isFinite))return;const now=performance.now(),k=seen.at?Math.max(.016,(now-seen.at)/1000):0;Object.assign(seen,{vx:k?(q.x-seen.x)/k:0,vy:k?(q.y-seen.y)/k:0,x:q.x,y:q.y,f:+q.f||0,c:q.c,h:q.h,at:now});},
+  onEvent:e=>{if(Array.isArray(e.o)){outs.push(e.o);ro?.feed(e.o);return;}if(e.r===a.round&&playing)theirEvent(e);}});
+ const fx=(p,text,t=.9)=>a.fx.push({x:p.x,y:p.y-40,text,t});
+ const hurt=(i,t)=>{const p=a.players[i];p.hp=Math.max(0,p.hp-1);p.hurt=.6;if(i===me&&p.hp<=0)ro?.die(t);};
+ // the ball flying for dt; contact(b) is checked every small step and stops the flight when it returns true
+ const fly=(b,dt,contact)=>{const steps=Math.ceil(Math.hypot(b.vx,b.vy)*dt/10)||1,h=dt/steps;
+  for(let st=0;st<steps;st++){b.x+=b.vx*h;b.y+=b.vy*h;
+   if(b.y<b.r){b.y=b.r;b.vy=Math.abs(b.vy);}if(b.y>DODGE.H-b.r){b.y=DODGE.H-b.r;b.vy=-Math.abs(b.vy);}
+   if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)*.8;}if(b.x>DODGE.W-b.r){b.x=DODGE.W-b.r;b.vx=-Math.abs(b.vx)*.8;}
+   if(b.live&&contact?.(b))return;}
+  const speed=Math.hypot(b.vx,b.vy);if(!b.live){const f=Math.exp(-1.6*dt);b.vx*=f;b.vy*=f;}else if(speed<230)b.live=false;};
+ const state=b=>[R1(b.x),R1(b.y),R1(b.vx),R1(b.vy)];
+ const setState=(b,v,age)=>{[b.x,b.y,b.vx,b.vy]=v.map(Number);let t=clamp(age,0,.5);while(t>0){const h=Math.min(t,1/60);t-=h;fly(b,h,contactMe);}};
+ // their throws reaching my player: caught (if I'm catching with empty hands) or a hit; past me = a miss
+ const contactMe=b=>{if(b.owner!==them)return false;const p=P();if(Math.hypot(b.x-p.x,b.y-p.y)>=DODGE.r+b.r)return false;const bi=a.balls.indexOf(b),t=+rt().toFixed(3);b.judged=true;
+  if(p.catching>0&&!p.ball){p.ball=b;b.held=me;b.live=false;b.vx=b.vy=0;nf.event({r:a.round,cg:[bi,t]});hurt(them,t);fx(p,'CAUGHT!');sound('win');s.react?.(me,'win');s.react?.(them,'sad');}
+  else{b.live=false;b.vx*=-.35;b.vy*=-.35;nf.event({r:a.round,hi:[bi,t,...state(b)]});hurt(me,t);fx(p,'OUCH!',.8);sound('shot');vibrate(25);s.react?.(me,'sad');}
+  return true;};
+ // my throws reaching their player (as I see it) wait there for their call
+ const contactThem=b=>{if(b.owner!==me||b.noWait)return false;const o=O();if(Math.hypot(b.x-o.x,b.y-o.y)>=DODGE.r+b.r)return false;b.wait={at:performance.now(),s:[b.x,b.y,b.vx,b.vy],live:b.live};return true;};
+ const resume=b=>{const w=b.wait;if(!w)return;b.wait=null;b.noWait=true;[b.x,b.y,b.vx,b.vy]=w.s;b.live=w.live;let t=Math.min(.6,(performance.now()-w.at)/1000);while(t>0){const h=Math.min(t,1/60);t-=h;fly(b,h);}};
+ function theirEvent(e){const o=O(),age=t=>rt()-(+t||0);
+  if(Array.isArray(e.th)){const b=a.balls[e.th[0]];if(!b)return;if(o.ball===b)o.ball=null;for(const p of a.players)if(p.ball===b)p.ball=null;b.held=-1;b.live=true;b.owner=them;b.judged=false;b.wait=null;b.noWait=false;setState(b,e.th.slice(2,6),age(e.th[1]));sound('shot');}
+  else if(Array.isArray(e.hi)){const b=a.balls[e.hi[0]];if(!b)return;b.wait=null;b.live=false;b.held=-1;setState(b,e.hi.slice(2,6),age(e.hi[1]));hurt(them,+e.hi[1]);fx(o,'OUCH!',.8);sound('shot');s.react?.(them,'sad');}
+  else if(Array.isArray(e.cg)){const b=a.balls[e.cg[0]];if(!b)return;b.wait=null;b.live=false;b.vx=b.vy=0;b.held=them;o.ball=b;hurt(me,+e.cg[1]);fx(o,'CAUGHT!');sound('win');s.react?.(them,'win');s.react?.(me,'sad');}
+  else if(Array.isArray(e.ms)){const b=a.balls[e.ms[0]];if(b)resume(b);}
+  else if(Array.isArray(e.pk)){const b=a.balls[e.pk[0]];if(!b||b.held===me)return;b.held=them;b.live=false;b.vx=b.vy=0;o.ball=b;}}
+ const doThrow=aim=>{const p=P();if(!playing||pause>0||!p.ball)return false;const b=p.ball,vy=aim===undefined?p.face:aim,len=Math.hypot(1,vy);
+  b.vx=dir/len*DODGE.throw;b.vy=vy/len*DODGE.throw;b.live=true;b.owner=me;b.held=-1;b.x=p.x+dir*(DODGE.r+b.r+2);b.y=p.y;b.wait=null;b.noWait=false;p.ball=null;
+  nf.event({r:a.round,th:[a.balls.indexOf(b),+rt().toFixed(3),...state(b)]});sound('shot');vibrate(10);return true;};
+ const doCatch=()=>{const p=P();if(!playing||pause>0||p.ball||p.cool>0)return;p.catching=.26;p.cool=.85;};
+ ownedPointers(s,(i,pt,id)=>{
+  const g=drags.get(id),now=performance.now(),p=P();
+  if(!g){drags.set(id,{px:p.x,py:p.y,sx:pt.x,sy:pt.y,t0:now,moved:0,hist:[[now,pt.x,pt.y]]});return;}
+  g.moved=Math.max(g.moved,Math.hypot(pt.x-g.sx,pt.y-g.sy));g.hist.push([now,pt.x,pt.y]);while(g.hist.length>2&&now-g.hist[0][0]>120)g.hist.shift();
+  if(g.moved>=12){const d=toCourt(pt.x-g.sx,pt.y-g.sy);tgt={x:g.px+d.x*1.25,y:g.py+d.y*1.25};}
+ },(i,id,info)=>{
+  const g=drags.get(id);drags.delete(id);tgt=null;if(!g||info.cancelled)return;
+  const now=performance.now(),h=g.hist[0],pt=info.point||{x:h[1],y:h[2]},dtm=Math.max(16,now-h[0]),v=toCourt((pt.x-h[1])/dtm,(pt.y-h[2])/dtm),vx=v.x*sc,vy=v.y*sc;
+  if(g.moved<12&&now-g.t0<320){if(!doThrow())doCatch();}
+  else if(vx*dir>.9&&P().ball)doThrow(clamp(vy/Math.max(.3,vx*dir),-1,1)*.7);
+ },()=>me);
+ // test bot: fetches loose balls, dodges or snatches throws, throws when lined up (worked out as the right-hand player)
+ function bot(dt){const p=P(),o=O(),m=v=>me?v:DODGE.W-v,mv=v=>me?v:-v;if(pause>0||!playing)return;let tx=m(p.x),ty=p.y;const px=m(p.x);
+  for(const b of a.balls){if(!b.live||b.owner!==them||mv(b.vx)<=0)continue;const tt=(px-m(b.x))/mv(b.vx);if(tt<0||tt>.9)continue;const yy=b.y+b.vy*tt;if(Math.abs(yy-p.y)<DODGE.r*2.2){if(!p.ball&&p.cool<=0&&tt<.18&&Math.random()<.35)doCatch();else if(Math.random()<.6)ty=p.y+(yy<p.y?1:-1)*DODGE.r*3;}}
+  if(!p.ball){let best=null,bd=1e9;for(const b of a.balls){if(b.held>=0||b.live||m(b.x)<DODGE.W/2)continue;const d=Math.hypot(b.x-p.x,b.y-p.y);if(d<bd){bd=d;best=b;}}if(best&&ty===p.y){tx=m(best.x);ty=best.y;}}
+  else{botHold+=dt;if(ty===p.y)ty=o.y+Math.sin(botHold*2)*20;tx=DODGE.W/2+DODGE.r+60;if(botHold>.9&&Math.abs(o.y-p.y)<120){botHold=0;doThrow(clamp((o.y-p.y)/(px-m(o.x))+(Math.random()-.5)*.3,-1,1)*.9);}}
+  tgt={x:m(tx),y:clamp(ty,DODGE.r+8,DODGE.H-DODGE.r-8)};}
+ s.hint('Your side of the court is nearest you. Drag to move your player (relative to where you first touch). Tap to throw the ball you are holding, or flick toward the other side to throw with aim. Tap with no ball to make a quick catch: time it just as a ball arrives to snatch it and hurt the thrower. Walk over a loose ball on your side to pick it up. Three hearts each; first to two rounds.');
+ s.debug={engine:'dodgeball',get state(){return a;},keys,wins,bot:()=>{netBot=true;return '';}};
+ if(!await s.pass(0,`Dodgeball online: a True Underdog Story. You play the near side; ${s.players[them].name} plays from the other phone. Dodge, catch and throw. Three hearts each.`,'Ready — dodge!'))return;
+ const startRound=async round=>{a=dodgeInit(round);playing=false;pause=0;tgt=null;await nf.start('r'+round);if(!s.alive)return;t0=performance.now();limit=Math.max(5,TOTAL-used);ro=roundOutcome(nf,round);for(const o of outs)ro.feed(o);playing=true;};
+ const theirStep=dt=>{if(!seen.at)return;const o=O(),k=Math.min(.1,(performance.now()-seen.at)/1000),e=Math.min(1,dt*16);o.x+=(seen.x+seen.vx*k-o.x)*e;o.y+=(seen.y+seen.vy*k-o.y)*e;o.face=seen.f;o.catching=seen.c?.1:0;if(seen.h&&o.hurt<=0)o.hurt=.3;};
+ const settle=r=>{playing=false;const R=ro.R,mt=R.out,tt=R.theirOut,downs=[mt,tt].filter(v=>v>=0);used+=downs.length?Math.min(...downs)/1000:limit;
+  let w=r==='me'?me:r==='them'?them:-1;if(r==='none'&&!(mt>=0&&tt>=0)){const mh=+R.extra||0,th=+R.theirExtra||0;w=mh===th?-1:mh>th?me:them;}
+  if(w>=0){wins[w]++;note=`${s.players[w].name} wins round ${a.round}`;s.react?.(w,'win');sound('win');}else note='Round drawn';pause=2;};
+ void startRound(1);
+ s.frame(dt=>{
+  layout();if(netBot)bot(dt);nf.tick(dt);
+  if(pause>0){pause-=dt;if(pause<=0&&!over){if(wins.some(n=>n>=DODGE.rounds)||used>=TOTAL-1){over=true;s.finish([wins[0]*10+a.players[0].hp,wins[1]*10+a.players[1].hp],'Dodgeball');return;}void startRound(a.round+1);}}
+  else if(playing){
+   const now=rt(),p=P();
+   for(const q of a.players){q.hurt=Math.max(0,q.hurt-dt);q.cool=Math.max(0,q.cool-dt);q.catching=Math.max(0,q.catching-dt);}
+   theirStep(dt);
+   if(!ro.R.frozen){const k=keys[0],k2=keys[1],kx=((k.r||k2.r)?1:0)-((k.l||k2.l)?1:0),ky=((k.d||k2.d)?1:0)-((k.u||k2.u)?1:0),d=toCourt(kx,ky),l=Math.hypot(d.x,d.y);const [lo,hi]=boundsX(me);
+    if(l>.01){p.x=clamp(p.x+d.x/l*DODGE.speed*dt,lo,hi);p.y=clamp(p.y+d.y/l*DODGE.speed*dt,DODGE.r+8,DODGE.H-DODGE.r-8);if(Math.abs(d.y/l)>.2)p.face=Math.sign(d.y)*.55;}
+    const fire=k.fire||k2.fire;if(fire&&!prevFire){if(!doThrow())doCatch();}prevFire=fire;
+    if(l<=.01&&tgt){const tx=tgt.x-p.x,ty=tgt.y-p.y,dd=Math.hypot(tx,ty),st=Math.min(dd,DODGE.speed*1.5*dt);if(dd>1){p.x=clamp(p.x+tx/dd*st,lo,hi);p.y=clamp(p.y+ty/dd*st,DODGE.r+8,DODGE.H-DODGE.r-8);if(Math.abs(ty)>8)p.face=clamp(ty/90,-1,1)*.55;}}}
+   for(const b of a.balls){
+    if(b.held>=0){const h=a.players[b.held];b.x=h.x+(b.held?-1:1)*(DODGE.r-2);b.y=h.y+8;continue;}
+    if(b.wait){if(performance.now()-b.wait.at>600)resume(b);continue;}
+    fly(b,dt,q=>contactMe(q)||contactThem(q));
+    if(b.noWait&&Math.hypot(b.x-O().x,b.y-O().y)>DODGE.r+b.r+8)b.noWait=false;
+    // their throw that went past me (or died) without touching me: tell their phone
+    if(b.owner===them&&!b.judged&&(!b.live||(b.x-p.x)*-dir>DODGE.r+b.r+4)){b.judged=true;nf.event({r:a.round,ms:[a.balls.indexOf(b)]});}
+    const speed=Math.hypot(b.vx,b.vy);
+    if(!b.live&&!p.ball&&b.held<0&&!ro.R.frozen&&Math.hypot(b.x-p.x,b.y-p.y)<DODGE.r+b.r+4&&speed<260&&((me?b.x>DODGE.W/2:b.x<DODGE.W/2))){p.ball=b;b.held=me;b.vx=b.vy=0;nf.event({r:a.round,pk:[a.balls.indexOf(b)]});}
+   }
+   if(now>=limit&&ro.R.out===null)ro.timeUp(p.hp);
+   const r=ro.tick(now,()=>p.hp);if(r)settle(r);
+  }
+  for(const f of a.fx)f.t-=dt;a.fx=a.fx.filter(f=>f.t>0);
+  // draw: the court in court units through M, faces and words kept upright
+  const W=s.W,H=s.H,CW=DODGE.W,CH=DODGE.H;x.fillStyle='#1c120a';x.fillRect(0,0,W,H);
+  x.save();x.transform(M.a,M.b,M.c,M.d,M.e,M.f);
+  x.fillStyle='#d9b684';x.fillRect(0,0,CW,CH);for(let i=0;i<14;i++){x.fillStyle=i%2?'#d2ae7a':'#dcbb8a';x.fillRect(0,i*CH/14,CW,CH/14);}
+  x.strokeStyle='#fff';x.lineWidth=5;x.strokeRect(10,10,CW-20,CH-20);x.beginPath();x.moveTo(CW/2,10);x.lineTo(CW/2,CH-10);x.stroke();x.beginPath();x.arc(CW/2,CH/2,CH*.12,0,Math.PI*2);x.stroke();
+  x.fillStyle='#b8402d33';x.fillRect(10,10,CW/2-10,CH-20);x.fillStyle='#2d5fb833';x.fillRect(CW/2,10,CW/2-10,CH-20);
+  const size=DODGE.r*2.6,ua=up();
+  for(let i=0;i<2;i++){const p=a.players[i];x.fillStyle='#00000030';x.beginPath();x.ellipse(p.x,p.y+size*.3,size*.4,size*.3,0,0,Math.PI*2);x.fill();
+   if(p.catching>0){x.strokeStyle='#8fe3ff';x.lineWidth=4;x.beginPath();x.arc(p.x,p.y,size*.72,0,Math.PI*2);x.stroke();}
+   x.save();x.translate(p.x,p.y);x.rotate(ua);s.sprite(x,i,0,-size*.1+(p.hurt>0?Math.sin(p.hurt*60)*3:0),size,{exact:true,mood:p.hurt>0?'sad':p.catching>0?'angry':'walking'});
+   x.font='bold 24px Arial';x.textAlign='center';for(let h=0;h<DODGE.hp;h++){x.fillStyle=h<p.hp?'#e0392f':'#4a4658';x.strokeStyle='#fff';x.lineWidth=3;x.strokeText('♥',-22+h*22,-size*.78);x.fillText('♥',-22+h*22,-size*.78);}x.restore();}
+  for(const b of a.balls){const br=b.r;x.fillStyle='#00000025';x.beginPath();x.arc(b.x+3,b.y+4,br,0,Math.PI*2);x.fill();const g=x.createRadialGradient(b.x-4,b.y-5,2,b.x,b.y,br+2);g.addColorStop(0,'#ff8a7a');g.addColorStop(1,'#b8261a');x.fillStyle=g;x.beginPath();x.arc(b.x,b.y,br,0,Math.PI*2);x.fill();if(b.live||b.wait){x.strokeStyle='#ffd24a';x.lineWidth=3;x.beginPath();x.arc(b.x,b.y,br+4,0,Math.PI*2);x.stroke();}}
+  for(const f of a.fx){x.save();x.translate(f.x,f.y+40);x.rotate(ua);x.globalAlpha=Math.min(1,f.t*2);x.fillStyle='#fff';x.strokeStyle='#7a1d12';x.lineWidth=4;x.font='bold 26px monospace';x.textAlign='center';x.strokeText(f.text,0,-40-(1-f.t)*30);x.fillText(f.text,0,-40-(1-f.t)*30);x.restore();}
+  x.restore();
+  const left=Math.max(0,playing?limit-rt():TOTAL-used);x.fillStyle='#fff3b9';x.font=`bold ${clamp(W*.035,12,18)}px monospace`;x.textAlign='center';x.fillText(`ROUND ${a.round} · ${Math.ceil(left)}s · ${s.players[me].name} ${wins[me]} – ${wins[them]} ${s.players[them].name}`,W/2,Math.min(46,H*.07)+30);
+  if(pause>0){x.fillStyle='#000a';x.fillRect(0,H*.4,W,H*.2);x.fillStyle='#fff';x.font=`bold ${clamp(W*.05,18,36)}px monospace`;x.textAlign='center';x.fillText(note,W/2,H*.52);}
+  else if(!playing){x.fillStyle='#fff';x.font=`bold ${clamp(W*.05,18,30)}px monospace`;x.textAlign='center';x.fillText('Waiting…',W/2,H*.5);}
+  s.setScores(wins.map((n,i)=>n*10+a.players[i].hp));s.status(`Round ${a.round} · ${s.players[0].name} ${a.players[0].hp}♥ vs ${s.players[1].name} ${a.players[1].hp}♥`);
  });
 }
 Object.assign(exports,{blocks,shred,dodgeball,boxing,gophers,archery,PIECES,blockSequence,shredChart,SHRED,DODGE,BOX});

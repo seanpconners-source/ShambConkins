@@ -69,7 +69,7 @@ s.hint(on?'Hold and drag anywhere like a joystick to shuffle; a quick tap is a s
   x.setTransform(1,0,0,1,0,0);const bg=x.createRadialGradient(cx,cy,R*.5,cx,cy,Math.hypot(W,H)*.7);bg.addColorStop(0,'#3a2a1e');bg.addColorStop(1,'#120c08');x.fillStyle=bg;x.fillRect(0,0,W,H);
   if(shake.mag>.3)x.translate((Math.random()-.5)*shake.mag,(Math.random()-.5)*shake.mag);
   // raised square platform
-  const S=Math.min(R*1.3,Math.min(W,H-48)*.49);x.fillStyle='#b98a5a';x.fillRect(cx-S,cy-S,S*2,S*2);x.fillStyle='#a07446';x.fillRect(cx-S,cy+S-8,S*2,8);
+  const S=Math.min(R*1.3,Math.min(W,H-top)*.49);x.fillStyle='#b98a5a';x.fillRect(cx-S,cy-S,S*2,S*2);x.fillStyle='#a07446';x.fillRect(cx-S,cy+S-8,S*2,8);
   // corner tassels (blue/red/white/black)
   [['#2e7d4f',-1,-1],['#c8302c',1,-1],['#f2efe6',1,1],['#1a1a1a',-1,1]].forEach(([col,sx,sy])=>{x.fillStyle=col;x.beginPath();x.arc(cx+sx*S*.92,cy+sy*S*.92,R*.07,0,Math.PI*2);x.fill();});
   // clay ring + tawara
