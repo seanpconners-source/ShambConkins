@@ -1,8 +1,12 @@
 const {clamp}=require("src/utils.js");
 const {PCOL,PDARK,PLIGHT,Fx,arenaKeys,arenaTouch,Countdown,banner,outlined,rr,heart,snd,noise,jingle,gestureHint,settle,mmss}=require("src/engines/arenaKit.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 // Driller Duel (after Mr. Driller): two identical shafts side by side. Drag to walk, tap beside you to drill sideways, hold
 // on your own column to drill down. Four same-colour blocks that touch pop; blocks fall (and crush); air drains.
+// Online (netField): each phone digs its own shaft (7 columns, same seeded blocks) full screen; the other driller is a dot
+// on the race strip and a line in the HUD from snapshots {d,l,a,x,ft}. A run ends at 120 m, out of lives, at 75 s, or once
+// this phone's clock passes the other's finish time; both phones then settle from both finals {d, ft (finish secs|-1)}.
 let COLS=7;const GOAL=120,TIME=75,LIVES=3,COLORS=['#ff5a5a','#4fd06a','#4a90ff','#ffd84d','#b47bff'],COLORS_D=['#b32d2d','#238a3b','#1f55b8','#b8921a','#7a45c4'];
 const DRILL=.24,STEP=.085,FALL=.075,WARN=.42;
 
@@ -31,11 +35,13 @@ function compSize(rows,cur,r,c,col){
 async function driller(s){
  const [c,x]=s.canvas(900,560,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();if(!await settle(s))return;
  const fx=new Fx(),rnd=s.random;let W=s.W,H=s.H;
- COLS=W/2<260?6:7;const base=genLayout(rnd);
- const mkP=i=>({i,grid:base.map(row=>row.map(cell=>({...cell,wait:0,fall:false,oy:0}))),pr:-1,pc:Math.floor(COLS/2),fx:0,air:100,lives:LIVES,act:0,fallT:0,inv:0,stun:0,dir:'d',cam:-4,depth:0,score:0,chain:0,joy:null,combo:0,dead:false,done:false,lowT:0,oy:0,ox:0,tx:Math.floor(COLS/2),hold:null,blocksPopped:0,face:1});
+ const on=s.online||null,me=on?on.me:0,them=1-me,HUDY=on?40:0,STRIP=on?26:0;
+ COLS=on?7:W/2<260?6:7;const base=genLayout(rnd);
+ const mkP=i=>({i,grid:base.map(row=>row.map(cell=>({...cell,wait:0,fall:false,oy:0}))),pr:-1,pc:Math.floor(COLS/2),fx:0,air:100,lives:LIVES,act:0,fallT:0,inv:0,stun:0,dir:'d',cam:-4,depth:0,score:0,chain:0,joy:null,combo:0,dead:false,done:false,lowT:0,oy:0,ox:0,tx:Math.floor(COLS/2),hold:null,blocksPopped:0,face:1,ft:0});
  const ps=[mkP(0),mkP(1)];let phase='intro',clock=TIME,time=0,note='',phaseT=0,winner=-1;
  const intro=new Countdown(3),kb=arenaKeys(s);
- const L=p=>{const half=W/2,top=Math.min(44,H*.08),cell=Math.max(14,Math.floor(Math.min(half*.9/COLS,(H-top-6)/9))),sw=cell*COLS,x0=p.i*half+(half-sw)/2;return {half,top,cell,sw,x0,vis:Math.ceil((H-top)/cell)+2};};
+ const L=p=>{const half=on?W-STRIP:W/2,top=Math.min(44,H*.08)+HUDY+(on?22:0),cell=Math.max(14,Math.floor(Math.min(half*.9/COLS,(H-top-6)/9))),sw=cell*COLS,x0=(on?0:p.i*half)+(half-sw)/2;return {half,top,cell,sw,x0,vis:Math.ceil((H-top)/cell)+2};};
+ const RX=(p,l)=>on?0:p.i*l.half;
  const at=(p,r,cc)=>{if(cc<0||cc>=COLS)return {k:'wall'};if(r<0)return null;return p.grid[r]?p.grid[r][cc]:{k:'bed'};};
  const solidC=(p,r,cc)=>{const o=at(p,r,cc);return !!o;};
  s.hint('Two shafts, same blocks. DRAG to walk your driller. TAP beside it to drill sideways, TAP or HOLD on its own column to drill down. Four or more same-colour blocks that touch pop when they land. Blocks you undermine fall after a wobble and will crush you: step aside! Grab AIR capsules, hard brown blocks cost air. First to 120 m, or deepest at 75 s. P1: A/D walk, S drill down; P2: arrows, Down drills.');
@@ -125,11 +131,11 @@ async function driller(s){
  });
  // vs CPU: driller 2 drills down, steps out from under wobbling blocks, and skirts hard blocks when air runs low
  const cpu=isCpu(s);let cpuT=0,cpuSide=0;
- function cpuThink(p,dt){const sk=cpuSkill(s),k=['l','r','d'];cpuT-=dt;if(cpuT>0)return;cpuT=.12+(1-sk)*.3;for(const q of k)kb.cpu(q,false);if(p.dead||phase!=='play')return;if(Math.random()<(1-sk)*.15){cpuT=.5;return;}
+ function cpuThink(p,dt){const sk=cpuSkill(s),k=['l','r','d'],key=(q,v)=>{if(on)kb.state[p.i][q]=v?1:0;else kb.cpu(q,v);};cpuT-=dt;if(cpuT>0)return;cpuT=.12+(1-sk)*.3;for(const q of k)key(q,false);if(p.dead||phase!=='play')return;if(Math.random()<(1-sk)*.15){cpuT=.5;return;}
   const danger=[1,2,3].some(d=>{const o=at(p,p.pr-d,p.pc);return o&&o.k!=='bed'&&(o.warned||o.fall);}),below=at(p,p.pr+1,p.pc);
-  if(danger||below?.k==='hard'&&p.air<45){if(!cpuSide)cpuSide=p.pc<COLS/2?1:-1;if(p.pc+cpuSide<0||p.pc+cpuSide>=COLS)cpuSide=-cpuSide;kb.cpu(cpuSide>0?'r':'l',true);return;}cpuSide=0;kb.cpu('d',true);}
+  if(danger||below?.k==='hard'&&p.air<45){if(!cpuSide)cpuSide=p.pc<COLS/2?1:-1;if(p.pc+cpuSide<0||p.pc+cpuSide>=COLS)cpuSide=-cpuSide;key(cpuSide>0?'r':'l',true);return;}cpuSide=0;key('d',true);}
  const control=(p,dt)=>{
-  if(cpu&&p.i===1)cpuThink(p,dt);
+  if(cpu&&p.i===1||netBot&&p.i===me)cpuThink(p,dt);
   const k=kb.state[p.i];let want=null;
   if(k.l||k.r){want={d:k.r-k.l,push:true};}
   if(k.d||k.fire){drill(p,'d');}
@@ -139,17 +145,29 @@ async function driller(s){
   if(want)moveSide(p,want.d,want.push);
  };
 
+ // -------------------------------------------------------- online
+ let netBot=false,netEnd=null,theirFin=null;
+ const nf=netField(s,{pack:()=>{const p=ps[me];return {d:p.depth,l:p.lives,a:Math.round(p.air),x:p.dead?1:0,ft:p.done?+p.ft.toFixed(3):-1};},
+  unpack:(i,d)=>{const p=ps[them];if(!Number.isFinite(d?.d))return;p.depth=d.d|0;p.lives=d.l|0;p.air=+d.a||0;p.dead=!!d.x;if(d.ft>=0&&!p.done){p.done=true;p.ft=+d.ft;}}});
+ // online: this phone's run is over (goal, out, time, or the other got there first); settle once both finals are in
+ const netStop=()=>{if(netEnd)return;netEnd='wait';const p=ps[me];nf.finish({d:p.depth,ft:p.done?+p.ft.toFixed(3):-1});
+  void nf.remoteDone().then(f=>{const r=ps[them];if(f){r.depth=Math.max(0,f.d|0);r.done=f.ft>=0;r.ft=r.done?+f.ft:0;}theirFin=f;netEnd='done';});};
+ const netSettle=()=>{const fin=ps.filter(p=>p.done).sort((a,b)=>a.ft-b.ft||a.i-b.i),a=ps[0].depth,b=ps[1].depth;end(fin.length?fin[0].i:a===b?-1:a>b?0:1);};
+
  // -------------------------------------------------------- update
  const end=(w,text)=>{if(phase==='over')return;phase='over';phaseT=2.6;winner=w;note=w<0?'A TIE!':`${s.players[w].name} wins!`;void text;jingle([523,659,784,1047,1319],{vol:.05,step:.08});if(w>=0){s.react?.(w,'win');}};
  const update=dt=>{
   time+=dt;fx.update(dt);
   if(phase==='intro'){if(!intro.update(dt))phase='play';}
+  else if(phase==='play'&&on){clock=Math.max(0,clock-dt);nf.tick(dt);const p=ps[me],r=ps[them];
+   if(!netEnd&&(p.done||p.dead||clock<=0||r.done&&TIME-clock>r.ft))netStop();if(netEnd==='done')netSettle();}
   else if(phase==='play'){clock-=dt;if(clock<=0){clock=0;const a=ps[0].depth,b=ps[1].depth;end(a===b?-1:a>b?0:1);}if(ps.every(p=>p.dead))end(ps[0].depth===ps[1].depth?-1:ps[0].depth>ps[1].depth?0:1);}
   else if(phase==='over'){phaseT-=dt;if(phaseT<=0){const sc=[ps[0].depth,ps[1].depth];if(winner>=0&&sc[winner]<=sc[1-winner])sc[winner]=sc[1-winner]+1;s.finish(sc,`Driller Duel: ${ps[0].depth} m to ${ps[1].depth} m`);return;}}
   for(const p of ps){
+   if(on&&p.i!==me)continue;
    p.act=Math.max(0,p.act-dt);p.inv=Math.max(0,p.inv-dt);p.stun=Math.max(0,p.stun-dt);p.ox*=Math.exp(-14*dt);p.oy*=Math.exp(-14*dt);
    for(const row of p.grid.slice(Math.max(0,Math.floor(p.cam)-1),Math.floor(p.cam)+30))for(const o of row)if(o){if(o.oy)o.oy=Math.min(0,o.oy+dt/FALL);if(o.warned&&o.wait>0&&!o.fall)o.wait=Math.max(0,o.wait-dt);}
-   if(phase==='play'&&!p.dead){
+   if(phase==='play'&&!p.dead&&!(on&&netEnd)){
     p.air-=dt*(2.0+p.depth*.004);
     if(p.air<=0){p.air=0;p.lives--;p.air=60;p.stun=1.1;p.inv=2;fx.pop(L(p).x0+L(p).sw/2,H*.35,'OUT OF AIR!',{size:26,color:'#9ad8ff'});snd(180,.4,{type:'sawtooth',to:60,vol:.06});s.react?.(p.i,'sad');if(p.lives<=0)knockOut(p);}
     if(p.air<25){p.lowT-=dt;if(p.lowT<=0){p.lowT=.5;snd(900,.06,{type:'square',vol:.03});}}
@@ -158,20 +176,20 @@ async function driller(s){
     p.fallT-=dt;if(p.act<=0&&!at(p,p.pr+1,p.pc)&&p.pr+1<p.grid.length&&p.fallT<=0){p.pr++;p.oy=-1;p.fallT=.075;p.act=0;}
     if(at(p,p.pr,p.pc)){/* buried: dig out */ p.grid[p.pr][p.pc]=null;}
     p.depth=Math.max(p.depth,p.pr+1);
-    if(p.depth>=GOAL&&phase==='play'&&!p.done){p.done=true;end(p.i);}
+    if(p.depth>=GOAL&&phase==='play'&&!p.done){p.done=true;p.ft=TIME-clock;if(on){nf.push();fx.pop(L(p).x0+L(p).sw/2,H*.4,`${GOAL} m!`,{size:30,color:'#ffe566'});}else end(p.i);}
    }
    const target=p.pr-3.2;p.cam+=(target-p.cam)*Math.min(1,dt*7);
   }
   // blocks
-  for(const p of ps){p.sim=(p.sim||0)+dt;if(p.sim>=.03){p.sim=0;p.fm=(p.fm||0)+.03;const mv=p.fm>=FALL;if(mv)p.fm=0;if(phase!=='intro')stepFalls(p,mv);}}
+  for(const p of ps){if(on&&p.i!==me)continue;p.sim=(p.sim||0)+dt;if(p.sim>=.03){p.sim=0;p.fm=(p.fm||0)+.03;const mv=p.fm>=FALL;if(mv)p.fm=0;if(phase!=='intro')stepFalls(p,mv);}}
   s.setScores([ps[0].depth,ps[1].depth]);
  };
 
  // -------------------------------------------------------- draw
  const drawShaft=p=>{
   const l=L(p),{cell,x0,top,sw}=l,g=p.grid;
-  x.save();x.beginPath();x.rect(p.i*l.half,top,l.half,H-top);x.clip();
-  const bg=x.createLinearGradient(0,top,0,H);bg.addColorStop(0,'#2a2038');bg.addColorStop(1,'#15101f');x.fillStyle=p.i?'#1f1830':'#16203a';x.fillRect(p.i*l.half,top,l.half,H-top);
+  x.save();x.beginPath();x.rect(RX(p,l),top,l.half,H-top);x.clip();
+  const bg=x.createLinearGradient(0,top,0,H);bg.addColorStop(0,'#2a2038');bg.addColorStop(1,'#15101f');x.fillStyle=p.i?'#1f1830':'#16203a';x.fillRect(RX(p,l),top,l.half,H-top);
   x.fillStyle=bg;x.globalAlpha=.55;x.fillRect(x0,top,sw,H-top);x.globalAlpha=1;
   x.fillStyle='#00000040';x.fillRect(x0-4,top,4,H-top);x.fillRect(x0+sw,top,4,H-top);
   const r0=Math.max(0,Math.floor(p.cam)-1),r1=Math.min(g.length-1,Math.floor(p.cam)+l.vis);
@@ -203,28 +221,33 @@ async function driller(s){
   }
   fx.draw(x);
   // gauges
-  const gx=Math.max(2,x0-Math.min(12,(x0-p.i*l.half)-4)),gw=Math.max(6,Math.min(11,x0-p.i*l.half-5)),gh=(H-top)*.6,gy0=top+(H-top)*.2;
+  const gx=Math.max(2,x0-Math.min(12,(x0-RX(p,l))-4)),gw=Math.max(6,Math.min(11,x0-RX(p,l)-5)),gh=(H-top)*.6,gy0=top+(H-top)*.2;
   if(gw>=5){const gxx=p.i?x0+sw+4:x0-4-gw;x.fillStyle='#0008';rr(x,gxx,gy0,gw,gh,gw/2);x.fill();const a=p.air/100;x.fillStyle=a<.25?(Math.floor(time*6)%2?'#ff5a4a':'#ffb3a8'):'#4fd8ff';rr(x,gxx+1,gy0+gh*(1-a)+1,gw-2,Math.max(0,gh*a-2),gw/2);x.fill();}
   x.restore();
  };
  const draw=()=>{
   x.clearRect(0,0,W,H);fx.begin(x);x.fillStyle='#0d0a18';x.fillRect(0,0,W,H);
-  for(const p of ps)drawShaft(p);
+  for(const p of ps)if(!on||p.i===me)drawShaft(p);
   fx.end(x);
-  const top=Math.min(44,H*.08),fs=clamp(top*.5,11,19);x.fillStyle='#0a0814';x.fillRect(0,0,W,top);
-  for(const p of ps){const l=L(p),left=p.i===0,ax=left?l.x0:l.x0+l.sw;x.textAlign=left?'left':'right';
-   outlined(x,`${p.depth} m`,ax,top/2,{size:fs*1.3,fill:PLIGHT[p.i],stroke:'#0a0814',align:left?'left':'right'});
-   for(let h=0;h<LIVES;h++)heart(x,left?l.x0+fs*5.4+h*fs*1.3:l.x0+l.sw-fs*5.4-h*fs*1.3,top/2,fs*.95,h<p.lives?'#ff3b4e':'#5a6280',h<p.lives?'#fff':'#9aa3c0');}
-  outlined(x,mmss(clock),W/2,top/2,{size:fs*1.2,fill:clock<10?'#ff8a7a':'#fff',stroke:'#0a0814'});
-  // race strip down the middle
-  const rh=H-top-20,rx=W/2;x.fillStyle='#ffffff18';x.fillRect(rx-2,top+10,4,rh);for(const p of ps){const y=top+10+rh*clamp(p.depth/GOAL,0,1);x.fillStyle=PCOL[p.i];x.beginPath();x.arc(rx+(p.i?5:-5),y,5,0,6.283);x.fill();}
-  if(phase==='intro'||(phase==='play'&&time<8)){for(const p of ps){const l=L(p),hx=l.x0+l.sw/2;if(time<8){gestureHint(x,hx,H*.75,'tap',time,{color:PLIGHT[p.i],size:l.cell});outlined(x,'TAP / HOLD TO DRILL',hx,H*.75+l.cell*1.8,{size:Math.max(10,l.cell*.5),fill:PLIGHT[p.i],stroke:'#0a0814',alpha:clamp(1-time/8,0,1)});outlined(x,'DRAG TO WALK',hx,H*.75+l.cell*2.7,{size:Math.max(10,l.cell*.5),fill:PLIGHT[p.i],stroke:'#0a0814',alpha:clamp(1-time/8,0,1)});}}}
+  const top0=Math.min(44,H*.08),top=top0+HUDY+(on?22:0),cy=HUDY+top0/2,fs=clamp(top0*.5,11,19);x.fillStyle='#0a0814';x.fillRect(0,0,W,top);
+  for(const p of ps){const l=L(p),left=on?p.i===me:p.i===0,ax=left?l.x0:l.x0+l.sw;x.textAlign=left?'left':'right';
+   outlined(x,`${p.depth} m`,ax,cy,{size:fs*1.3,fill:PLIGHT[p.i],stroke:'#0a0814',align:left?'left':'right'});
+   // online the hearts go on a line under the depth (a phone is too narrow for both beside the clock)
+   const hy=on?HUDY+top0+9:cy,hx=on?fs*.6:fs*5.4,hs=on?fs*1.15:fs*1.3;
+   for(let h=0;h<LIVES;h++)heart(x,left?l.x0+hx+h*hs:l.x0+l.sw-hx-h*hs,hy,fs*(on?.8:.95),h<p.lives?'#ff3b4e':'#5a6280',h<p.lives?'#fff':'#9aa3c0');}
+  outlined(x,mmss(clock),W/2,cy,{size:fs*1.2,fill:clock<10?'#ff8a7a':'#fff',stroke:'#0a0814'});
+  if(on){const r=ps[them];if(r.done||r.dead)outlined(x,`${s.players[them].name.toUpperCase()} ${r.done?'FINISHED':'IS OUT'}`,W/2,HUDY+top0+9,{size:fs*.8,fill:PLIGHT[them],stroke:'#0a0814'});
+   if(netEnd==='wait'&&phase==='play')banner(x,W,H,ps[me].done?`${GOAL} m!`:ps[me].dead?'OUT!':'TIME!',`waiting for ${s.players[them].name}…`,{color:'#ffe566',size:Math.min(W*.08,48)});}
+  // race strip down the middle (online: the right edge)
+  const rh=H-top-20,rx=on?W-STRIP/2:W/2;x.fillStyle='#ffffff18';x.fillRect(rx-2,top+10,4,rh);for(const p of ps){const y=top+10+rh*clamp(p.depth/GOAL,0,1);x.fillStyle=PCOL[p.i];x.beginPath();x.arc(rx+(p.i?5:-5),y,5,0,6.283);x.fill();}
+  if(phase==='intro'||(phase==='play'&&time<8)){for(const p of ps){if(on&&p.i!==me)continue;const l=L(p),hx=l.x0+l.sw/2;if(time<8){gestureHint(x,hx,H*.75,'tap',time,{color:PLIGHT[p.i],size:l.cell});outlined(x,'TAP / HOLD TO DRILL',hx,H*.75+l.cell*1.8,{size:Math.max(10,l.cell*.5),fill:PLIGHT[p.i],stroke:'#0a0814',alpha:clamp(1-time/8,0,1)});outlined(x,'DRAG TO WALK',hx,H*.75+l.cell*2.7,{size:Math.max(10,l.cell*.5),fill:PLIGHT[p.i],stroke:'#0a0814',alpha:clamp(1-time/8,0,1)});}}}
   if(phase==='intro')intro.draw(x,W,H);
   if(phase==='over')banner(x,W,H,note,`${ps[0].depth} m – ${ps[1].depth} m`,{color:'#ffe566'});
  };
- s.debug={engine:'driller',ps,fx,touch,kb,get phase(){return phase;},L,GOAL};
+ s.debug={engine:'driller',ps,fx,touch,kb,get phase(){return phase;},L,GOAL,bot:on?()=>{netBot=true;return '';}:null,get netEnd(){return netEnd;}};
  draw();
- if(!await s.pass(0,'Driller Duel: dig! Drag to walk, tap beside you to drill sideways, hold on your column to drill down. Match four colours to pop, grab air, dodge falling blocks. First to 120 m wins.','Both ready — dig!'))return;
+ if(!await s.pass(0,on?`Driller Duel online: you dig the ${me?'pink':'blue'} shaft; ${s.players[them].name} digs the same blocks on the other phone. Drag to walk, tap beside you to drill sideways, hold on your column to drill down. Match four colours to pop, grab air, dodge falling blocks. First to 120 m wins, else the deepest at 75 s.`:'Driller Duel: dig! Drag to walk, tap beside you to drill sideways, hold on your column to drill down. Match four colours to pop, grab air, dodge falling blocks. First to 120 m wins.','Both ready — dig!'))return;
+ if(on){await nf.start('go');if(!s.alive)return;}
  s.frame(dt=>{
   if(s.W!==W||s.H!==H){W=s.W;H=s.H;touch.clear();}
   update(Math.min(dt,.033));draw();

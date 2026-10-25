@@ -3,11 +3,12 @@
 // (its own answers, moves and hand-off/next buttons), so the game only finishes if every move reaches the other phone.
 // Checks: both phones deal the same game (same first question / board), it reaches the result on both, the two result
 // cards agree (mine–theirs mirrored), no page errors. GAMES=id,id (default the batch-1 games); screenshots onn-*.
-// LAG=80-150 holds every message back 80..150 ms (in order, with jitter) on both phones.
+// SHOT_S=n takes the screenshots n seconds into the game. LAG=80-150 holds every message back 80..150 ms (in order, with jitter) on both phones.
 import {launchBrowser,root,screenshotPath} from './lib.mjs';
 import path from 'node:path';import {pathToFileURL} from 'node:url';
 const HOST=process.env.SC_NET_HOST||'ws://127.0.0.1:8787',LIMIT=+process.env.LIMIT_S||240;
 const GAMES=(process.env.GAMES||'trivia-mixed,trivia-lightning,trivia-wager,trivia-survival,paddys-beer-pong,shamb-uno,ten-forward-chess,four-lights,strategema-grid,full-shambyahtzee,cheaters-yahtzee,blackjack,five-card,roulette,bond-baccarat,traitors-guess-who,battleship-fog,liars-dice,clue-whodunit,monopoly-speed-die,monopoly-auction,simon-faceoff,price-bid-off,django-hangman-showdown,django-hangman-wanted,matrix-ultimate,greed-island-mancala,office-dots-boxes,trek-mini-chess,wopr-grid,smb3-nspade,clue-lineup,django-hangman,taskmaster-curling,bug-artillery,happy-gilmore-golf,color-of-money,baseketball-shootout,task-tallest-thing,fast-quarter-mile,block-battle,shred-hero,candy-color-dash,chutes-ladder-rush,brawndo-fruit-merge,candy-gumdrop-catch,review-pancakes,terminator-scan,microgame-rush,rush-marathon,pong-duel,derezzed-cycles,snake-v-snake,metal-gear-tank-duel,kill-bill-duel,arrow-arena,battle-royale-island,bomber-duel,pac-maze-duel').split(',');
+const SHOT_S=+process.env.SHOT_S||0; // screenshot once both phones play and SHOT_S seconds have passed
 const LAG=/^\d+-\d+$/.test(process.env.LAG||'')?process.env.LAG.split('-').map(Number):null;
 const url=pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href;
 let failed=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)failed++;};
@@ -52,7 +53,7 @@ for(const id of GAMES){
  const limit=LIMIT*(id==='paddys-beer-pong'&&!process.env.LIMIT_S?1.75:1); // a full Beer Pong match runs to last call, ~4-5 min headless
  while(Date.now()-t0<limit*1000){
   const [a,b]=[await step(A),await step(B)];for(const x of [a,b]){const k=x.split(':')[0];counts[k]=(counts[k]||0)+1;}
-  if(!shot&&a.startsWith('play')&&b.startsWith('play')){shot=true;await A.p.screenshot({path:screenshotPath(`onn-${id}-sean.png`)});await B.p.screenshot({path:screenshotPath(`onn-${id}-amber.png`)});}
+  if(!shot&&a.startsWith('play')&&b.startsWith('play')&&Date.now()-t0>=SHOT_S*1000){shot=true;await A.p.screenshot({path:screenshotPath(`onn-${id}-sean.png`)});await B.p.screenshot({path:screenshotPath(`onn-${id}-amber.png`)});}
   if(a.startsWith('result'))ra=a;if(b.startsWith('result'))rb=b;if(ra&&rb)break;
   await A.p.waitForTimeout(200);
  }
