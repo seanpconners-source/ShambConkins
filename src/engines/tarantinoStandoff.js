@@ -1,9 +1,14 @@
 // Reservoir Dogs · Mexican Standoff. Simultaneous reflex duel, best of five, with fake-out cues and a
 // third CPU gunman (Mr. Blonde) in the triangle rounds. Tap your half (or Space / Enter) to draw.
+// Online (netField): both phones run the same seeded round from a shared start (nf.start) and each times only its own
+// gunman by its own clock: one report per round {o:[round,kind,v]}: 'f' flinch at v s into the stare, 'd' drew v ms
+// after DRAW!, 'b' the triangle's second tap (v ms after the draw, -1 = none in time), 'n' no draw, 'w' = this phone's
+// clock passed the other's moment without acting (so it is later). Both phones decide the round from the same reports.
 const {clamp}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const K=require("src/engines/tarantinoKit.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 const {label,rr,lerp,filmOverlay,flash,titleCard,subtitle,makeFx,makeShake,makeSlowmo,sfx,halfPointers,keyboard,fmtMs}=K;
 
 const TITLES=['THE STARE-DOWN','THE FAKE-OUT','THE TRIANGLE','NERVES OF STEEL','THE BLOODBATH'];
@@ -32,10 +37,11 @@ async function standoff(s){
   Object.assign(st,{phase:'card',cardT:0,t:0,elapsed:0,taps:[null,null],ms:[null,null],winner:-1,loser:-1,res:null,tri2:null,fakeFx:[],bullets:[],pose:[st.type==='tri'?1:0,st.type==='tri'?1:0],dead:[0,0,0],deadT:[0,0,0],twitch:[0,0,0],flashT:[0,0,0],white:0,light:1,lightDip:0,beat:0,caption:'',captionT:0});
   fx.clear();
   const lo=st.type==='tri'?2.1:1.7+(n>2?.2:0);st.T=lo+rnd()*(4.9-lo);
-  const nf=[1,2,2,3,3,3,3][n-1]||3;let last=.6;st.fakes=[];
-  for(let k=0;k<nf;k++){const t=.6+rnd()*(st.T-.9);if(t<st.T-.1&&st.fakes.every(f=>Math.abs(f.t-t)>.5))st.fakes.push({t,kind:pick(FAKES),who:Math.floor(rnd()*(st.type==='tri'?3:2)),done:false});}
+  const nFake=[1,2,2,3,3,3,3][n-1]||3;let last=.6;st.fakes=[];
+  for(let k=0;k<nFake;k++){const t=.6+rnd()*(st.T-.9);if(t<st.T-.1&&st.fakes.every(f=>Math.abs(f.t-t)>.5))st.fakes.push({t,kind:pick(FAKES),who:Math.floor(rnd()*(st.type==='tri'?3:2)),done:false});}
   st.fakes.sort((a,b)=>a.t-b.t);void last;
   st.B=n>=5?.46:.62;
+  if(nf){rep=[{},{}];decided=false;st.phase='sync';const r=st.round;nf.start('r'+r).then(()=>{if(st.round===r&&st.phase==='sync'){st.phase='card';st.cardT=0;}});}
  }
  function fireFake(f){
   const {kind,who}=f;const p=manPos(who);
@@ -68,6 +74,7 @@ async function standoff(s){
  }
  function tap(i){
   if(st.over||s.paused||!s.alive)return;
+  if(nf){netTap();return;}
   const wall=clamp((performance.now()-st.frameWall)/1000,0,.04);
   if(st.phase==='stare'){if(st.elapsed<.4)return;flinch(i);return;}
   if(st.phase==='draw'){
@@ -82,13 +89,56 @@ async function standoff(s){
   }
   if(st.phase==='tri2'&&st.tri2&&i===st.tri2.w){st.tri2.hit=true;st.phase='shot';st.t=0;bullet(i,2,()=>{kill(2,-Math.PI/2);},2.6);st.reason='blonde';}
  }
- const input=halfPointers(s,{down:i=>tap(i)});void input;
+ // ----- online: each phone judges its own gunman; rep[i] = that phone's report for this round
+ const nf=netField(s,{pack:()=>0,unpack:()=>{},onEvent:e=>{const o=e?.o;if(!Array.isArray(o)||o[0]!==st.round)return;report(nf.remote,o[1],o[2]);}});
+ const me=nf?nf.me:0;let rep=[{},{}],decided=false;
+ const nowE=()=>st.phase==='stare'?st.elapsed:st.T+st.t+clamp((performance.now()-st.frameWall)/1000,0,.04);
+ const mine=()=>rep[me];
+ function send(kind,v){report(me,kind,v);nf.event({o:[st.round,kind,v]});}
+ function report(i,kind,v){const r=rep[i];if(kind==='b'){if(r.b===undefined)r.b=v;}else if(r.k===undefined){r.k=kind;r.v=v;}decide();}
+ // the other phone's decisive moment in this round's clock (seconds since the stare began), if any
+ const theirMoment=()=>{const r=rep[nf.remote];return r.k==='f'?r.v:r.k==='d'?st.T+r.v/1000:null;};
+ // after this phone's report: wait for theirs (unless that report just decided the round)
+ const toWait=()=>{if(!decided)st.phase='wait';};
+ function netTap(){
+  if(mine().k!==undefined){if(st.phase==='tri2'&&mine().b===undefined){send('b',Math.round(st.t*1000));toWait();}return;}
+  if(st.phase!=='stare'&&st.phase!=='draw')return;if(st.phase==='stare'&&st.elapsed<.4)return;
+  const E=nowE(),m=theirMoment();if(m!==null&&E>m){send('w',0);toWait();return;}
+  if(st.phase==='stare'||(st.t+.001)*1000<90){const p=manPos(me);fx.pop(p.x,p.y-L.hs*.9,'FLINCH!',{color:'#ffd84a',size:clamp(L.hs*.32,16,36)});sfx.click();send('f',+E.toFixed(3));toWait();return;}
+  const ms=Math.round((st.t+clamp((performance.now()-st.frameWall)/1000,0,.04))*1000);st.taps[me]=ms;st.ms[me]=ms;send('d',ms);
+  if(st.type==='tri'){st.phase='tri2';st.t=0;st.tri2={w:me,left:st.B};sfx.ding(660);const bp=manPos(2);fx.pop(bp.x,bp.y+L.hs*.7,'!',{color:'#ff3b2f',size:36});}else toWait();
+ }
+ // both reports in → the same outcome on both phones
+ function decide(){
+  if(decided)return;const R=rep,F=i=>R[i].k==='f',D=i=>R[i].k==='d';if(R[0].k===undefined||R[1].k===undefined)return;
+  let res;
+  if(F(0)&&F(1))res=Math.abs(R[0].v-R[1].v)<.001?{kind:'void'}:{kind:'flinch',loser:R[0].v<R[1].v?0:1};
+  else if(F(0)||F(1))res={kind:'flinch',loser:F(0)?0:1};
+  else if(D(0)||D(1)){const w=D(0)&&D(1)?(R[1].v<R[0].v?1:0):D(0)?0:1;if(st.type==='tri'&&R[w].b===undefined)return;res={kind:'draw',winner:w};}
+  else res={kind:'timeout'};
+  decided=true;st.tri2=null;st.ms=[D(0)?R[0].v:null,D(1)?R[1].v:null];
+  if(res.kind==='flinch'){const l=res.loser,p=manPos(l);if(l!==me){fx.pop(p.x,p.y-L.hs*.9,'FLINCH!',{color:'#ffd84a',size:clamp(L.hs*.32,16,36)});sfx.click();}resolve(1-l,l,'flinch');}
+  else if(res.kind==='void'){st.phase='result';endRound('void');}
+  else if(res.kind==='timeout'){if(st.type==='tri'){const a=manPos(2);fx.pop(a.x,a.y,'BANG',{size:30});sfx.gun();}endRound('timeout');}
+  else if(st.type!=='tri')resolve(res.winner,1-res.winner,'draw');
+  else{const w=res.winner,rival=1-w,b=R[w].b;st.winner=w;st.loser=rival;st.phase='shot';st.t=0;bullet(w,rival,()=>kill(rival,rival===1?0:Math.PI),2.2);
+   if(b>=0&&b<=st.B*1000){st.tri2={w,left:0,hit:true};st.reason='blonde';setTimeout(()=>{if(s.alive)bullet(w,2,()=>kill(2,-Math.PI/2),2.6);},140);}
+   else{st.reason='void';setTimeout(()=>{if(s.alive)bullet(2,w,()=>kill(w,w===1?0:Math.PI),2.4);},140);}}
+ }
+ // the other phone's clock is behind mine: once mine passes their moment without a tap, I am later
+ function netTick(){
+  if(!nf||decided)return;const r=mine();
+  if(r.k===undefined&&(st.phase==='stare'||st.phase==='draw')){const m=theirMoment();if(m!==null&&nowE()>m){send('w',0);toWait();}}
+  if(st.phase==='tri2'&&st.tri2&&r.b===undefined){st.tri2.left=st.B-st.t;if(st.t>=st.B){send('b',-1);toWait();}}
+ }
+ if(nf)s.debug.bot=()=>{if(st.phase==='draw'&&mine().k===undefined&&st.t>.12+Math.random()*.25){tap(me);return 'draw';}if(st.phase==='tri2'&&mine().b===undefined&&Math.random()<.7){tap(me);return 'blonde';}if(st.phase==='stare'&&Math.random()<.004){tap(me);return 'flinch';}return '';};
+ const input=halfPointers(s,{down:i=>tap(i),chooseOwner:nf?()=>me:undefined});void input;
  // vs CPU: gunman 2 draws after a reaction time (faster on Hard), may flinch at a fake-out on Easy, and fires again at Mr. Blonde
  const cpu=isCpu(s);let cpuReact=null,cpuFakes=0;
  function cpuThink(dt){if(st.over)return;const sk=cpuSkill(s);
   if(st.phase==='stare'){cpuReact=null;const fired=st.fakes?.filter(f=>f.done).length||0;if(fired>cpuFakes){cpuFakes=fired;if(Math.random()<(1-sk)*.22)tap(1);}return;}
   cpuFakes=0;if(st.phase==='draw'&&st.taps[1]===null||st.phase==='tri2'&&st.tri2?.w===1&&!st.tri2.hit){if(cpuReact===null)cpuReact=(.2+(1-sk)*.38+Math.random()*.1)*(st.phase==='tri2'?.8:1);cpuReact-=dt;if(cpuReact<=0){cpuReact=null;tap(1);}}else cpuReact=null;}
- keyboard(s,(i,name,down)=>{if(down&&name==='act')tap(i);});
+ keyboard(s,(i,name,down)=>{if(down&&name==='act')tap(nf?me:i);});
  s.hint('Tap your half of the screen (or P1 Space, P2 Enter) the instant you see DRAW! Tapping before it is a flinch and loses the round. Beware the fake-outs. In triangle rounds Mr. Blonde shoots whoever draws first: draw, then TAP AGAIN fast to drop him. First to three rounds.');
  if(!await s.pass(0,'Mexican Standoff: first to three rounds. Wait for DRAW! — flinch and you lose. Chapter three adds a third gunman, Mr. Blonde.','Both ready — nobody move',{countdown:3}))return;
  startRound();
@@ -102,13 +152,15 @@ async function standoff(s){
   for(const f of st.fakeFx)f.t+=rdt;st.fakeFx=st.fakeFx.filter(f=>f.t<f.life);
   for(const b of st.bullets){b.t+=sdt*b.speed;if(b.t>=1&&!b.done){b.done=true;b.onHit?.();}}st.bullets=st.bullets.filter(b=>b.t<1.4);
   for(let i=0;i<2;i++){const target=(st.type==='tri'||st.phase==='draw'||st.phase==='tri2'||st.phase==='shot'||st.phase==='result')?1:0;st.pose[i]=clamp(st.pose[i]+(target>st.pose[i]?1:-1)*rdt*(target?9:3),0,1);if(st.dead[i])st.pose[i]=0;}
-  st.t+=dt;
+  st.t+=dt;netTick();
   if(st.phase==='card'){st.cardT+=dt;if(st.cardT>=1.9){st.phase='stare';st.t=0;st.elapsed=0;st.beat=.2;}}
   else if(st.phase==='stare'){
    st.elapsed+=dt;keepBeat(dt);
    for(const f of st.fakes)if(!f.done&&st.elapsed>=f.t){f.done=true;fireFake(f);}
    if(st.elapsed>=st.T){st.phase='draw';st.t=0;st.white=1;sfx.draw();shake.kick(8);vibrate(30);st.fakeFx=[];st.caption='';}
   }
+  else if(st.phase==='draw'&&nf){if(st.t>(st.type==='tri'?2.4:2.2)&&mine().k===undefined){send('n',0);toWait();}}
+  else if(st.phase==='tri2'&&nf){}
   else if(st.phase==='draw'){if(st.t>(st.type==='tri'?2.4:2.2)){if(st.type==='tri'){const a=manPos(2);fx.pop(a.x,a.y,'BANG',{size:30});sfx.gun();}endRound('timeout');}}
   else if(st.phase==='tri2'){
    st.tri2.left-=dt;
@@ -218,6 +270,8 @@ async function standoff(s){
    if(stare&&st.elapsed>.4&&st.round<=1&&st.played===0)label(x,'TAP YOUR SIDE ONLY AFTER “DRAW!”',W/2,H*.2,fs*.95,{fill:'#fff',stroke:'#000',alpha:.5+.3*Math.sin(tt*4)});
    if(stare)for(let i=0;i<2;i++)label(x,'TAP',W*(i?.75:.25),H*.9-hs*.1,fs*1.3,{fill:'#ffffff',stroke:null,alpha:.1+.05*Math.sin(tt*3)});
    if(st.captionT>0)subtitle(x,W,H,st.caption,Math.min(1,st.captionT*3),H*.17);
+   if(st.phase==='wait'&&nf)label(x,`Waiting for ${s.players[nf.remote].name}…`,W/2,H*.33,clamp(W*.045,14,30),{fill:'#fff',stroke:'#000'});
+   if(st.phase==='sync')label(x,`Waiting for ${s.players[nf.remote].name}…`,W/2,H*.5,clamp(W*.045,14,30),{fill:'#fff',stroke:'#000'});
    if(st.phase==='draw'){const k=Math.min(1,st.t*8);label(x,'DRAW!',W/2,H*.33,clamp(W*.17,46,150)*(.8+.2*k),{fill:'#ff3b2f',stroke:'#000',rot:-.06,lw:10});}
    if(st.phase==='tri2'&&st.tri2){const w=st.tri2.w,px=L.cx[w];label(x,'TAP AGAIN!',px,H*.2,clamp(W*.07,22,56)*(1+.08*Math.sin(tt*30)),{fill:'#ffe14a',stroke:'#7a1d12',lw:7});label(x,'BLONDE IS AIMING AT YOU',px,H*.2+clamp(W*.045,16,34),clamp(W*.022,10,16),{fill:'#fff',stroke:'#000'});}
   }

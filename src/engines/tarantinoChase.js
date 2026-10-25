@@ -1,9 +1,15 @@
 // Death Proof · Stunt Chase. Top-down chase on one shared road: one player drives Stuntman Mike's black Charger and
 // tries to ram the other player's white Challenger before the clock runs out; then they swap. Drag sideways on your
 // half to steer, tap for nitro. Ramps, oil, traffic and barriers hit both cars.
+// Online (netField): one fixed road (scale and lane width from a 480x640 reference, the view just shows more or less of
+// it) and a shared start per round (nf.start). Each phone drives only its own car and streams it 30/s {r,t,y,x,v,...};
+// the other car is drawn moved on by its speed for the time since the snapshot. Pickups/smashed barriers {og:i}.
+// The RUNNER's phone calls the round ({end:[round,kind,t]}: rammed by the chaser it shows, or escaped at the bell),
+// so both phones score the same round.
 const {clamp,seededRandom}=require("src/utils.js");
 const K=require("src/engines/tarantinoKit.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 const {label,rr,lerp,filmOverlay,flash,titleCard,subtitle,makeFx,makeShake,makeSlowmo,sfx,voice,noise,halfPointers,keyboard}=K;
 
 const ROUND_TIME=26,ROUNDS=2,BASE=330,CHASER_BONUS=1.025,GAP0=320;
@@ -17,7 +23,8 @@ async function chase(s){
  const mkCar=()=>({y:0,x:0,tx:0,v:BASE,air:0,spin:0,slowT:0,boostT:0,nitro:3,nitroT:0,draft:false,yaw:0,flame:0,hitT:0,kb:0,tapT:0,finger:null,drag:0});
  let car={};// car[player]
  s.debug={engine:'chase',S,get car(){return car;},score};
- const layout=()=>{const W=s.W,H=s.H,U=clamp(Math.min(W/760,H/520),.55,1.4),RW=clamp(Math.min(W*.62,H*.75),190,420);Object.assign(L,{W,H,U,RW,cw:RW*.19,cl:RW*.19*1.95,lane:RW/3});};
+ const on=!!s.online,me=on?s.online.me:0,them=1-me;
+ const layout=()=>{const W=s.W,H=s.H,RW0=on?480:W,RH0=on?640:H,U=clamp(Math.min(RW0/760,RH0/520),.55,1.4),RW=clamp(Math.min(RW0*.62,RH0*.75),190,420);Object.assign(L,{W,H,U,RW,cw:RW*.19,cl:RW*.19*1.95,lane:RW/3,maxGap:(on?640:H)*.74});};
  const chaserP=()=>roles[S.round-1][0],runnerP=()=>roles[S.round-1][1];
  function genObstacles(seed){
   const rnd=seededRandom(seed),out=[];let y=520;
@@ -35,28 +42,41 @@ async function chase(s){
   const U=L.U;car={};for(const p of [0,1]){car[p]=mkCar();}
   const ch=chaserP(),ru=runnerP();car[ch].y=0;car[ru].y=GAP0*U;S.camY=GAP0*U/2;
   S.obs=genObstacles(s.seed+':chase'+S.round);
+  if(on){S.phase='sync';snap=null;S.netEnd=null;const r=S.round;nf.start('r'+r).then(()=>{if(S.round===r&&S.phase==='sync'){S.phase='card';S.card=0;}});}
  }
  const half=p=>p*L.W/2;
+ // ----- online: the other car from snapshots (snap), moved on by its speed for the time since
+ let snap=null;
+ const nf=on?netField(s,{hz:30,pack:()=>{const c=car[me];if(!c||S.phase!=='play')return {r:S.round};return {r:S.round,t:+S.t.toFixed(3),y:Math.round(c.y),x:Math.round(c.x),v:Math.round(c.v),a:+c.air.toFixed(2),sp:+c.spin.toFixed(2),sl:+c.slowT.toFixed(2),b:+c.boostT.toFixed(2),f:+c.flame.toFixed(2),n:c.nitro,w:+c.yaw.toFixed(2),h:c.hitT>0?1:0};},
+  unpack:(i,d)=>{if(d.r!==S.round||!Number.isFinite(d.y))return;snap=d;const c=car[i];if(!c)return;c.nitro=d.n|0;c.air=d.a;c.spin=d.sp;c.slowT=d.sl;c.boostT=d.b;c.flame=d.f;c.yaw=d.w;c.v=d.v;},
+  onEvent:e=>{if(Array.isArray(e?.og)){if(e.og[0]===S.round&&S.obs[e.og[1]])S.obs[e.og[1]].gone=true;}
+   else if(Array.isArray(e?.end)&&e.end[0]===S.round)endRound(e.end[1],e.end[2]);}}):null;
+ function showRemote(){const c=car[them];if(!c||!snap||S.phase!=='play')return;const age=clamp(S.t-snap.t,0,.5);c.y=snap.y+snap.v*age;c.x+=(snap.x-c.x)*.35;c.tx=c.x;}
  const steer=(p,dx)=>{const c=car[p];if(!c||S.phase!=='play')return;c.tx=clamp(c.tx+dx*(L.RW/(L.W*.36))*(p===chaserP()?1:1.05),-L.RW/2+L.cw*.6,L.RW/2-L.cw*.6);};
- halfPointers(s,{down:(i,r)=>{const c=car[i];if(!c)return;c.tapT=performance.now();c.drag=0;},move:(i,r)=>{const c=car[i];if(!c)return;c.drag+=Math.abs(r.x-r.px);steer(i,r.x-r.px);},
+ halfPointers(s,{chooseOwner:on?()=>me:undefined,down:(i,r)=>{const c=car[i];if(!c)return;c.tapT=performance.now();c.drag=0;},move:(i,r)=>{const c=car[i];if(!c)return;c.drag+=Math.abs(r.x-r.px);steer(i,r.x-r.px);},
   up:(i,r)=>{const c=car[i];if(!c)return;if(c.drag<16&&performance.now()-r.t0<320)nitro(i);}});
- keyboard(s,(i,name,down)=>{const c=car[i];if(!c)return;if(name==='act'){if(down)nitro(i);return;}if(name==='l')c.kb=down?-1:(c.kb<0?0:c.kb);if(name==='r')c.kb=down?1:(c.kb>0?0:c.kb);});
+ keyboard(s,(i,name,down)=>{if(on)i=me;const c=car[i];if(!c)return;if(name==='act'){if(down)nitro(i);return;}if(name==='l')c.kb=down?-1:(c.kb<0?0:c.kb);if(name==='r')c.kb=down?1:(c.kb>0?0:c.kb);});
  // vs CPU: car 2 picks the lane that dodges crashes ahead; as chaser it lines up on the runner and boosts in, as runner it keeps away and boosts when caught up
  const cpu=isCpu(s);let cpuT=0,cpuLane=1;
- function cpuThink(dt){const c=car[1],o=car[0],sk=cpuSkill(s),chasing=chaserP()===1,look=(260+sk*260)*L.U;cpuT-=dt;
+ function cpuThink(dt,who=1){const c=car[who],o=car[1-who],sk=cpuSkill(s),chasing=chaserP()===who,look=(260+sk*260)*L.U;cpuT-=dt;
   if(cpuT<=0){cpuT=.18+(1-sk)*.35;const cost=[0,1,2].map(l=>{let v=0;for(const ob of S.obs){if(ob.gone||ob.lane!==l)continue;const ahead=ob.y-c.y;if(ahead<0||ahead>look)continue;v+=ob.kind==='nitro'?-2:ob.kind==='ramp'?-1:6;}const lx=(l-1)*L.lane;v+=chasing?Math.abs(lx-o.x)/L.lane*2.5:-Math.abs(lx-o.x)/L.lane*1.5;v+=Math.abs(l-cpuLane)*.4;return v+(Math.random()-.5)*(1-sk)*3;});cpuLane=cost.indexOf(Math.min(...cost));}
   const want=chasing&&Math.abs(o.y-c.y)<L.cl*2.5?o.x:(cpuLane-1)*L.lane;c.tx=clamp(want,-L.RW/2+L.cw*.6,L.RW/2-L.cw*.6);
-  const gap=chasing?o.y-c.y:c.y-o.y;if(c.nitro>0&&c.boostT<=0&&s.random()<dt*(.4+sk)&&(chasing?gap<L.cl*5&&Math.abs(o.x-c.x)<L.cw:gap<L.cl*3))nitro(1);}
+  const gap=chasing?o.y-c.y:c.y-o.y;if(c.nitro>0&&c.boostT<=0&&(on?Math.random():s.random())<dt*(.4+sk)&&(chasing?gap<L.cl*5&&Math.abs(o.x-c.x)<L.cw:gap<L.cl*3))nitro(who);}
+ // online test bot: the CPU brain drives this phone's car every frame
+ let autodrive=false;if(on)s.debug.bot=()=>{if(autodrive)return '';autodrive=true;return 'drive';};
  function nitro(p){const c=car[p];if(S.phase!=='play'||c.nitro<1||c.boostT>0||c.spin>0)return;c.nitro--;c.boostT=.9;c.flame=.9;sfx.whoosh(300,1400,.1,.35);voice(110,.5,.05,'sawtooth',{slide:2.2,lp:900});shake.kick(3);}
  s.hint('Drag sideways anywhere on your half to steer your car; tap to fire a nitro boost (3 charges, grab blue cans for more). Round 1: P1 drives the black Charger and must ram the white Challenger before 26 seconds run out; P2 flees. Then swap. Ramps jump, oil spins you out, traffic slows you. Keys: P1 A/D + Space, P2 arrows + Enter.');
  if(!await s.pass(0,'Stunt Chase: one driver is Stuntman Mike in the black Charger and must ram the other driver\'s white Challenger within 26 seconds. Then you swap roles. Drag to steer, tap for nitro.','Both ready — start your engines',{countdown:3}))return;
  layout();startRound();
 
- function endRound(kind){
-  if(S.phase!=='play')return;S.phase='wrap';S.wrap=0;const ch=chaserP(),ru=runnerP();
-  if(kind==='ram'){const bonus=Math.round((ROUND_TIME-S.t)*3);score[ch]+=100+bonus;score[ru]+=Math.floor(S.t*2);S.res={title:'SMASH!',line:MIKE_LINES[Math.floor(Math.random()*3)],winner:ch,t:S.t};
+ function endRound(kind,t=S.t){
+  if(S.phase!=='play')return;const ch=chaserP(),ru=runnerP();
+  // online the runner's phone calls it; the chaser's phone takes its call (and its round time) as it comes
+  if(on&&ru===me)nf.event({end:[S.round,kind,+t.toFixed(3)]});
+  S.phase='wrap';S.wrap=0;
+  if(kind==='ram'){const bonus=Math.round((ROUND_TIME-t)*3);score[ch]+=100+bonus;score[ru]+=Math.floor(t*2);S.res={title:'SMASH!',line:MIKE_LINES[Math.floor(Math.random()*3)],winner:ch,t};
    const a=car[ru];fx.splat(a.x,a.y,{n:0,decal:false});slow.hit(1.2,.18);S.white=1;shake.kick(26);sfx.hit();noise(.6,.2,{f0:2400,f1:150});voice(70,.5,.15,'sine',{slide:.4});car[ru].hitT=.0001;s.react?.(ch,'win');s.react?.(ru,'sad');}
-  else{score[ru]+=120;score[ch]+=0;S.res={title:'ESCAPED!',line:ESC_LINES[Math.floor(Math.random()*3)],winner:ru,t:S.t};sfx.fanfare();s.react?.(ru,'win');s.react?.(ch,'sad');}
+  else{score[ru]+=120;score[ch]+=0;S.res={title:'ESCAPED!',line:ESC_LINES[Math.floor(Math.random()*3)],winner:ru,t};sfx.fanfare();s.react?.(ru,'win');s.react?.(ch,'sad');}
   s.setScores([...score]);
  }
  const rect=(a,b,ow,ol,cw,cl)=>Math.abs(a.x-b.x)<(ow+cw)/2*.86&&Math.abs(a.y-b.y)<(ol+cl)/2*.86;
@@ -73,6 +93,7 @@ async function chase(s){
   const c=car[p],U=L.U;if(c.air>.25)return;
   for(const o of S.obs){if(o.gone)continue;const ox=(o.lane-1)*L.lane,w=o.kind==='car'?L.cw:o.kind==='barrier'?L.lane*.8:o.kind==='oil'?L.cw*1.5:o.kind==='ramp'?L.lane*.78:L.cw*.9,l=o.kind==='car'?L.cl:o.kind==='barrier'?L.cw*.5:o.kind==='oil'?L.cw*1.5:o.kind==='ramp'?L.cl*1.2:L.cw*.9;
    if(!(Math.abs(c.x-ox)<(L.cw+w)/2*.86&&Math.abs(c.y-o.y)<(L.cl+l)/2*.86))continue;
+   if(on&&!o.gone&&(o.kind==='nitro'||o.kind==='barrier'&&c.slowT<=0))nf.event({og:[S.round,S.obs.indexOf(o)]});
    if(o.kind==='nitro'){o.gone=true;c.nitro=Math.min(5,c.nitro+1);sfx.coin();fx.pop(L.W/2+c.x,sy(c.y)-40,'+NITRO',{color:'#8fe3ff',size:18});}
    else if(o.kind==='ramp'){if(c.air<=0){c.air=.95;sfx.whoosh(200,900,.08,.3);fx.pop(L.W/2+c.x,sy(c.y)-40,'JUMP!',{color:'#fff',size:20});}}
    else if(o.kind==='oil'){if(c.spin<=0){c.spin=.9;sfx.groan();fx.pop(L.W/2+c.x,sy(c.y)-40,'OIL!',{color:'#222',size:22});}}
@@ -82,20 +103,23 @@ async function chase(s){
  const sy=y=>L.H*.5-(y-S.camY);
  s.frame((rdt,tt)=>{
   layout();slow.step(rdt);const dt=rdt*(S.phase==='wrap'?slow.k:1);shake.step(rdt);fx.step(dt);S.white=Math.max(0,S.white-rdt*2.4);
-  if(S.phase==='card'){S.card+=rdt;if(S.card>=2.4){S.phase='go';S.go=0;}}
+  nf?.tick(rdt);
+  if(S.phase==='sync'){}
+  else if(S.phase==='card'){S.card+=rdt;if(S.card>=2.4){S.phase='go';S.go=0;}}
   else if(S.phase==='go'){S.go+=rdt;S.camY=(car[chaserP()].y+car[runnerP()].y)/2;if(S.go>1.2){S.phase='play';S.t=0;sfx.draw();}}
   else if(S.phase==='play'||S.phase==='wrap'){
    if(S.phase==='play'){S.t+=dt;S.hint=Math.max(0,S.hint-dt);}
    const ch=chaserP(),ru=runnerP(),C=car[ch],R=car[ru];
    if(S.phase==='play'){
-    if(cpu)cpuThink(dt);
-    stepCar(ch,dt,'chase');stepCar(ru,dt,'run');
+    if(cpu)cpuThink(dt);if(autodrive)cpuThink(dt,me);
+    if(on){stepCar(me,dt,me===ch?'chase':'run');showRemote();}else{stepCar(ch,dt,'chase');stepCar(ru,dt,'run');}
     const gap=R.y-C.y;C.draft=gap>0&&gap<L.cl*3.5&&Math.abs(C.x-R.x)<L.cw*1.1;
-    const maxGap=L.H*.74;if(gap>maxGap)R.y=C.y+maxGap;
+    const maxGap=L.maxGap;if(gap>maxGap&&(!on||ru===me))R.y=C.y+maxGap;
     for(const o of S.obs)if(o.kind==='car')o.y+=o.vy*L.U*dt;
-    obstacleHit(ch,dt);obstacleHit(ru,dt);
-    // ramming
-    if(C.air<.3&&R.air<.3&&gap<L.cl*.95&&gap>-L.cl*.5&&Math.abs(C.x-R.x)<L.cw*.86)endRound('ram');
+    if(on)obstacleHit(me,dt);else{obstacleHit(ch,dt);obstacleHit(ru,dt);}
+    // ramming (online the runner's phone calls it)
+    if(on&&ch===me){}
+    else if(C.air<.3&&R.air<.3&&gap<L.cl*.95&&gap>-L.cl*.5&&Math.abs(C.x-R.x)<L.cw*.86)endRound('ram');
     else if(S.t>=ROUND_TIME)endRound('time');
     for(const p of [ch,ru]){const c=car[p];if(Math.random()<dt*30&&c.air<.3)fx.spark(L.W/2+c.x+(Math.random()-.5)*L.cw*.6,sy(c.y)+L.cl*.5,1,'#c8b79a',60);if(c.boostT>0&&Math.random()<dt*60)fx.spark(L.W/2+c.x,sy(c.y)+L.cl*.55,1,'#8fe3ff',140);}
    } else {S.wrap+=rdt;R.y+=R.v*.35*dt;const sp=S.res?.title==='SMASH!';if(sp){R.x+=Math.sin(S.wrap*12)*dt*60;R.spin=1;}C.y+=C.v*.3*dt;
@@ -162,6 +186,7 @@ async function chase(s){
   if(S.phase==='play'||S.phase==='wrap'){const f=clamp(1-S.t/ROUND_TIME,0,1),bw=Math.min(W*.3,200);x.fillStyle='#000a';rr(x,W/2-bw/2-2,H*.03-2,bw+4,14,7);x.fill();x.fillStyle=f>.3?'#e9c84a':'#ff5a3a';rr(x,W/2-bw/2,H*.03,bw*f,10,5);x.fill();label(x,`ROUND ${S.round}/${ROUNDS}`,W/2,H*.03+22,fs*.8,{fill:'#d9bd4a',stroke:'#000'});
    const R=car[ru],C=car[ch],gap=Math.max(0,(R.y-C.y-L.cl)/L.U);label(x,`GAP ${Math.round(gap)}`,W/2,H-fs*1.2,fs*.85,{fill:gap<80?'#ff8f80':'#fff',stroke:'#000'});if(C.draft)label(x,'DRAFTING!',W/2,H-fs*2.6,fs*.9,{fill:'#8fe3ff',stroke:'#000'});}
   if(S.phase==='play'&&S.hint>0){for(let p=0;p<2;p++)label(x,'◀  DRAG TO STEER  ▶  ·  TAP = NITRO',half(p)+W/4,H*.9,fs*.75,{fill:'#fff',stroke:'#000',alpha:Math.min(1,S.hint)});}
+  if(S.phase==='sync')label(x,`Waiting for ${s.players[them].name}…`,W/2,H*.4,clamp(W*.045,14,28),{fill:'#fff',stroke:'#000'});
   if(S.phase==='go'){label(x,S.go<.9?'READY…':'GO!',W/2,H*.4,clamp(W*.1,28,80),{fill:S.go<.9?'#fff':'#9dffb0',stroke:'#000'});}
   flash(x,W,H,S.white*.85);
   if(S.phase==='wrap'&&S.res){const a=Math.min(1,S.wrap*3);x.fillStyle=`rgba(0,0,0,${.55*a})`;x.fillRect(0,H*.36,W,H*.26);x.globalAlpha=a;label(x,S.res.title,W/2,H*.43,clamp(W*.07,24,56),{fill:S.res.title==='SMASH!'?'#ff5a3a':'#9dffb0',stroke:'#000'});label(x,`${s.players[S.res.winner].name} wins the round · ${S.res.t.toFixed(1)}s`,W/2,H*.51,clamp(W*.03,13,24),{fill:'#fff',stroke:'#000'});subtitle(x,W,H,S.res.line,1,H*.58);x.globalAlpha=1;}
