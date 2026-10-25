@@ -574,7 +574,10 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   (hangman.js: {g: letter}, {to:1} = shot clock ran out on the shooter's phone (the watcher's clock just stops at 0), {w:{text,cat}}
   = the writer's bounty; guesser sees blanks; `netWait` overlay while the other writes). Quick Draw (`django-hangman`, both shoot
   at once) left for the real-time phase like Clue Lineup. All 4 pass online-native.
-  TODO next: Mancala, Dots & Boxes, Ultimate tic-tac-toe, mini chess, WarGames tic-tac-toe, N-Spade..., then real-time games.
+  Batch 6 (Oct 25): classicBoards.js `netTurns(s,{isTheirs,apply})` helper (ordered reader, waits for this phone's animation
+  and their turn): Ultimate `matrix-ultimate` {i}, Mancala `greed-island-mancala` {p} (extra turns by the rule on both),
+  Dots `office-dots-boxes` {o,i}. All 3 pass online-native; chess/checkers 2P fuzz still clean.
+  TODO next: mini chess (`trek-mini-chess`), WarGames tic-tac-toe (`wopr-grid`), N-Spade..., then real-time games.
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).
