@@ -87,6 +87,18 @@ On a solo launch `s.solo={kind,who,level,skill,best}`; `s.players[0]` is the hum
 * Recruits go to `s.gameRecruits[0]` / `s.broforceRecruits[0]` as in 2P; `settleSolo` (gameLauncher) records the best run in
   `profile.soloBest[id]` and recruits like an arcade win. Test with `node tests/solo.mjs <id-regex>`.
 
+## Online versus (two phones play each other)
+A `'cpu'` game listed in `NET_VERSUS` (solo.js) can be played online move by move: both phones run the same seeded game with
+`s.players` in seat order and `s.net={seat,...}` (no `s.solo`); the other phone's player takes the CPU's seat.
+* Gate input with `notMine(s,i)` instead of `isCpu(s)&&i===1`, start the turn helper with `if(versus(s))cpuHotseat(...)` and an
+  `isTurn` built on `notMine(s,turn)` (online it says when the other phone's moves may be replayed; no CPU runs).
+* In the move function, right after the move is accepted and before the first `await`, call `tell(s,'name',...args)`; register
+  the same function with `onlineMoves(s,{name:fn},{any:[...]})` (`any` = may arrive outside their turn, e.g. resign). Args must
+  be plain JSON. The launcher's `netPump` replays moves in order and ends the game if a phone leaves.
+* Both phones must draw the same `s.random()` numbers: no `s.random` in drawing/particles or in anything only one phone does
+  (a timeout move uses `Math.random` and is sent like any move). Never show the other seat's private hand on this phone.
+* Test: `node tests/online-versus.mjs` (needs `wrangler dev`, see the file) with a bot branch for the new engine.
+
 ## Look and feel
 Games should feel finished: title/countdown, readable HUD, juicy feedback (screen shake, particles, sounds), clear win/lose state,
 and a 45-90 second playtime unless the design needs more. Draw everything procedurally on the canvas (no external images; heads come

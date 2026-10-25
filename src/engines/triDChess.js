@@ -5,7 +5,7 @@
 const {clamp}=require("src/utils.js");
 const {voice,label,SANS,rr}=require("src/engines/tarantinoKit.js");
 const {vibrate}=require("src/audio.js");
-const {isCpu,cpuHotseat,negamax,cpuDepth,cpuBlunder,pickRandom}=require("src/engines/cpuKit.js");
+const {versus,notMine,onlineMoves,tell,cpuHotseat,negamax,cpuDepth,cpuBlunder,pickRandom}=require("src/engines/cpuKit.js");
 
 const N=5,GLYPH={K:'♚',Q:'♛',R:'♜',B:'♝',N:'♞',P:'♟'},VAL={P:1,N:3,B:3,R:5,Q:9,K:0},COL=['#ffb347','#b38bff'],LC={o:'#ff9c3a',p:'#cc99ff',b:'#9999ff',t:'#ffcc66',r:'#cc6666'};
 const MOVE_SECS=45,MAX_PLY=120;
@@ -32,19 +32,20 @@ async function minichess(s){
  let b=start(),turn=0,sel=null,targets=[],last=null,ply=0,clock=MOVE_SECS,state='wait',t=0,banner=null,anim=null;const captured=[[],[]];
  function geo(){const W=s.W,H=s.H,portrait=H>W*1.05,top=52,size=portrait?Math.min(W-24,H-top-150):Math.min(H-top-74,W*.56),ox=portrait?(W-size)/2:W*.5-size/2,oy=portrait?top+70:top+(H-top-size)/2;return {W,H,portrait,size,ox,oy,cell:size/N};}
  function finish(winner,why){state='over';const sc=winner===0?[1,0]:winner===1?[0,1]:[0,0];banner={text:why,t:9};s.setScores(sc);if(winner!==null)s.react?.(winner,'win',2.5);setTimeout(()=>s.finish(sc,`Tri-D chess · ${why}`),1800);}
- function doMove(m){const cap=b[m[2]][m[3]];const mover=b[m[0]][m[1]];anim={m,p:mover,t:0};b=apply(b,m);last=m;if(cap){captured[turn].push(cap);voice(330,.12,.06,'triangle');voice(220,.18,.05,'triangle',{delay:.08});vibrate(15);s.react?.(turn,'happy',1);s.react?.(1-turn,'sad',1);}else voice(660,.06,.04,'sine');
+ function doMove(m){tell(s,'move',m);const cap=b[m[2]][m[3]];const mover=b[m[0]][m[1]];anim={m,p:mover,t:0};b=apply(b,m);last=m;if(cap){captured[turn].push(cap);voice(330,.12,.06,'triangle');voice(220,.18,.05,'triangle',{delay:.08});vibrate(15);s.react?.(turn,'happy',1);s.react?.(1-turn,'sad',1);}else voice(660,.06,.04,'sine');
   ply++;turn=1-turn;sel=null;targets=[];clock=MOVE_SECS;const moves=allLegal(b,turn),check=inCheck(b,turn);
   if(!moves.length){finish(check?1-turn:null,check?`CHECKMATE · ${s.players[1-turn].name.toUpperCase()} WINS`:'STALEMATE · DRAW');return;}
   if(check){banner={text:'CHECK',t:1.4};voice(880,.2,.05,'square');}
   if(ply>=MAX_PLY){const a=material(b,0),d=material(b,1);finish(a>d?0:d>a?1:null,a===d?'MOVE LIMIT · DRAW':`MOVE LIMIT · ${s.players[a>d?0:1].name.toUpperCase()} AHEAD ON MATERIAL`);}}
- s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||state!=='play'||isCpu(s)&&turn===1)return;ev.preventDefault();const p=s.pointer(ev),g=geo(),cc=Math.floor((p.x-g.ox)/g.cell),r=Math.floor((p.y-g.oy)/g.cell);if(!inside(r,cc)){sel=null;targets=[];return;}
+ s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||state!=='play'||notMine(s,turn))return;ev.preventDefault();const p=s.pointer(ev),g=geo(),cc=Math.floor((p.x-g.ox)/g.cell),r=Math.floor((p.y-g.oy)/g.cell);if(!inside(r,cc)){sel=null;targets=[];return;}
   if(sel&&targets.some(([a,d])=>a===r&&d===cc)){doMove([sel[0],sel[1],r,cc]);return;}
   if(b[r][cc]?.o===turn){sel=[r,cc];targets=legalFrom(b,r,cc);voice(1200,.03,.03,'sine');}else{sel=null;targets=[];}});
  s.hint('Gardner minichess on a 5×5 board: each side has a king, queen, rook, bishop, knight and five pawns. Pawns move one square and promote to a queen. Tap a piece to see its legal moves, then tap a highlighted square. Checkmate wins; 45 seconds a move (a random legal move is played if time runs out).');
  function lcarsBar(X,Y,w,h,col,text,align='left'){x.fillStyle=col;rr(x,X,Y,w,h,h/2);x.fill();if(text)label(x,text,align==='left'?X+h*.7:X+w-h*.7,Y+h/2+1,h*.55,{fill:'#000',stroke:null,align,font:`900 ${h*.55}px ${SANS}`});}
  s.frame(dt=>{
   t+=dt;if(banner&&state!=='over'){banner.t-=dt;if(banner.t<=0)banner=null;}if(anim){anim.t+=dt*5;if(anim.t>=1)anim=null;}
-  if(state==='play'){clock-=dt;if(clock<=0){const moves=allLegal(b,turn);if(moves.length)doMove(moves[Math.floor(s.random()*moves.length)]);}}
+  // online only the phone whose move it is plays the timeout move (sent like any move, so the shared seeded stream is left alone)
+  if(state==='play'){clock=Math.max(0,clock-dt);if(clock<=0&&!(s.net&&notMine(s,turn))){const moves=allLegal(b,turn);if(moves.length)doMove(moves[Math.floor((s.net?Math.random:s.random)()*moves.length)]);}}
   const g=geo(),{W,H,size,ox,oy,cell}=g;
   x.setTransform(1,0,0,1,0,0);const bg=x.createRadialGradient(W/2,H/2,10,W/2,H/2,Math.hypot(W,H)*.6);bg.addColorStop(0,'#141a3a');bg.addColorStop(1,'#04050c');x.fillStyle=bg;x.fillRect(0,0,W,H);
   for(let k=0;k<70;k++){x.fillStyle=`rgba(255,255,255,${.25+.5*Math.abs(Math.sin(t*.7+k))})`;x.fillRect((k*137.3)%W,(k*71.9)%H,1.4,1.4);}
@@ -75,9 +76,9 @@ async function minichess(s){
   s.debug={engine:'minichess',b,turn,ply,state,legal:()=>allLegal(b,turn),move:m=>doMove(m)};
  });
  // vs CPU: material search over the 5x5 board
- if(isCpu(s)){const V={P:1,N:3,B:3,R:5,Q:9,K:0},value=x=>{let v=0;for(const row of x.b)for(const p of row)if(p)v+=(p.o===1?1:-1)*V[p.t];return v;};
+ if(versus(s)){const V={P:1,N:3,B:3,R:5,Q:9,K:0},value=x=>{let v=0;for(const row of x.b)for(const p of row)if(p)v+=(p.o===1?1:-1)*V[p.t];return v;};
   const g={moves:x=>allLegal(x.b,x.t),play:(x,m)=>({b:apply(x.b,m),t:1-x.t}),turn:x=>x.t,over:x=>allLegal(x.b,x.t).length?-1:inCheck(x.b,x.t)?1-x.t:2,value};
-  cpuHotseat(s,{isTurn:()=>turn===1&&state==='play'&&!anim,think:()=>{const ms=allLegal(b,1);if(!ms.length)return;doMove(cpuBlunder(s)?pickRandom(ms):negamax(g,{b,t:1},cpuDepth(s,1,3),{deadline:Date.now()+1200}));}});}
+  onlineMoves(s,{move:doMove});cpuHotseat(s,{isTurn:()=>notMine(s,turn)&&state==='play'&&!anim,think:()=>{const ms=allLegal(b,1);if(!ms.length)return;doMove(cpuBlunder(s)?pickRandom(ms):negamax(g,{b,t:1},cpuDepth(s,1,3),{deadline:Date.now()+1200}));}});}
  if(!await s.pass(0,`Gardner minichess, Star Trek style. ${s.players[0].name} plays gold (bottom) and moves first; ${s.players[1].name} plays violet. Tap a piece, then a highlighted square. Checkmate wins. 45 seconds a move.`,'Engage',{countdown:0}))return;
  state='play';
 }

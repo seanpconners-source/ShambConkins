@@ -3,7 +3,7 @@
 const {clamp}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const {label,rr,makeFx,makeShake,sfx,voice}=require("src/engines/tarantinoKit.js");
-const {isCpu,cpuHotseat}=require("src/engines/cpuKit.js");
+const {versus,notMine,onlineMoves,tell,cpuHotseat}=require("src/engines/cpuKit.js");
 const {pickTicTacToe}=require("src/engines/cpuBoards.js");
 const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 const QUOTES=['SHALL WE PLAY A GAME?','A STRANGE GAME.','THE ONLY WINNING MOVE IS NOT TO PLAY.','HOW ABOUT A NICE GAME OF CHESS?','DEFCON 3','DEFCON 2','GREETINGS, PROFESSOR FALKEN.'];
@@ -16,7 +16,7 @@ async function tictactoe(s){
  const L={};function layout(){const W=s.W,H=s.H,size=Math.min(W*.86,H*.62);Object.assign(L,{W,H,size,ox:(W-size)/2,oy:H*.24,cell:size/3});}
  const cellAt=p=>{const cx=Math.floor((p.x-L.ox)/L.cell),cy=Math.floor((p.y-L.oy)/L.cell);return cx>=0&&cx<3&&cy>=0&&cy<3?cy*3+cx:-1;};
 
- function place(i){if(phase!=='play'||s.paused||board[i]!==null)return;
+ function place(i){if(phase!=='play'||s.paused||board[i]!==null)return;tell(s,'place',i);
   const mine=marks[turn];if(mine.length>=3){const old=mine.shift();board[old]=null;const p=centre(old);fx.spark(p.x,p.y,12,turn?'#ff9fc6':'#78b6ff',200);voice(300,.15,.04,'sine',{slide:.5});}
   board[i]=turn;mine.push(i);born[i]=t;moves++;sfx.click();voice(turn?660:520,.08,.05,'square');
   const w=LINES.find(l=>l.every(k=>board[k]===turn));
@@ -25,8 +25,8 @@ async function tictactoe(s){
   turn=1-turn;}
  const centre=i=>({x:L.ox+(i%3+.5)*L.cell,y:L.oy+(Math.floor(i/3)+.5)*L.cell});
 
- s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||isCpu(s)&&turn===1)return;ev.preventDefault();const i=cellAt(s.pointer(ev));if(i>=0)place(i);});
- s.on(document,'keydown',ev=>{const n=+ev.key;if(n>=1&&n<=9&&!(isCpu(s)&&turn===1)){ev.preventDefault();place(n-1);}});
+ s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||notMine(s,turn))return;ev.preventDefault();const i=cellAt(s.pointer(ev));if(i>=0)place(i);});
+ s.on(document,'keydown',ev=>{const n=+ev.key;if(n>=1&&n<=9&&!notMine(s,turn)){ev.preventDefault();place(n-1);}});
 
  function nextGame(){if(wins[0]>=2||wins[1]>=2||game>=5){if(s.alive)s.finish([...wins],wins[0]===wins[1]?`The WOPR calls it a draw, ${wins[0]}–${wins[1]}.`:`${s.players[wins[0]>wins[1]?0:1].name} beats the WOPR’s game ${Math.max(...wins)}–${Math.min(...wins)}.`);return;}
   game++;starter=1-starter;turn=starter;board=Array(9).fill(null);marks=[[],[]];moves=0;line=null;phase='play';quote=QUOTES[3+game%4];typed=0;}
@@ -52,7 +52,7 @@ async function tictactoe(s){
   fx.draw(x);x.restore();}
 
  s.hint('Take turns tapping an empty square. You can only own three squares: your fourth move removes your oldest head (it pulses and says VANISHES NEXT). Three in a row wins the game; first to two games wins. Keys 1–9.');
- if(isCpu(s))cpuHotseat(s,{isTurn:()=>turn===1&&phase==='play',think:()=>place(pickTicTacToe(s,board,marks)),delay:550});
+ if(versus(s))cpuHotseat(s,{isTurn:()=>notMine(s,turn)&&phase==='play',think:()=>place(pickTicTacToe(s,board,marks)),delay:550});onlineMoves(s,{place});
  if(!await s.pass(0,'SHALL WE PLAY A GAME? Tic-tac-toe on the WOPR, but each of you can only keep three heads on the board. Your fourth move erases your oldest. No draws. First to two wins.','Both ready',{countdown:0}))return;
  s.frame(dt=>{layout();t+=dt;typed+=dt*24;if(phase==='won'){endT-=dt;if(endT<=0)nextGame();}fx.step(dt);shake.step(dt);draw();s.status(phase==='play'?`${s.players[turn].name} to move · game ${game}`:'');});
 }

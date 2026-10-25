@@ -49,6 +49,9 @@ if(pick)check(await A.p.evaluate(id=>window.ShambConkins.store.run.players[1].ch
 // One bot step on a phone: answer only what this phone may answer.
 const step=ph=>ph.p.evaluate(()=>{
  const SC=window.ShambConkins,store=SC.store,dlg=document.getElementById('dialog');
+ // Online versus minigame (VERSUS=1 deals Four Lights): each phone drops a head for its own seat only.
+ if(store.session?.net){const s=store.session,net=s.net,d=s.debug||{};const r=document.querySelector('.pass-overlay [data-ready]');if(r){r.click();return 'vs-ready';}
+  if(s.waiting||s.paused||d.player!==net.seat||d.busy)return 'vs-wait';const n=net.sent.length;for(const c of [3,2,4,1,5,0,6].sort(()=>Math.random()-.5)){d.drop?.(c);if(net.sent.length>n)return 'vs-move';}return 'vs-wait';}
  if(store.session){const s=store.session;if(!s.solo)return 'game2p';if(!s.__t)s.__t=performance.now();
   if(!s.__bank&&s.alive&&performance.now()-s.__t>1200){s.__bank=true;s.solo.banked=true;s.solo.won=Math.random()<.5;s.finish([50+Math.floor(Math.random()*400),0],'bot bank');return 'bank';}return 'game';}
  if(dlg.open){
@@ -71,6 +74,8 @@ if(process.env.PKMN)await A.p.evaluate(()=>{window.ShambConkins.store.forceWildC
 const DROP=+process.env.DROP||0;let dropped=false;
 // WARP=1: on Amber's first turn her piece is put on a warp pipe: the warp dialog is hers, both phones swap boards.
 let warped=!process.env.WARP,sawWarp=false;
+// VERSUS=1: on the host's first free turn it deals Four Lights (a move-by-move versus game) instead of rolling.
+let versusDealt=!process.env.VERSUS,versusDone=false;
 const t0=Date.now();let mismatches=0,agree=0,shots=new Set(),last=null,stuck=0;
 const tally=(ph,s)=>{const k=s.split(':')[0];ph.stats[k]=(ph.stats[k]||0)+1;if(k==='dlg'||k==='watch')(ph.titles||=new Set()).add(s.slice(k.length+1));};
 for(;;){
@@ -82,6 +87,11 @@ for(;;){
  if(!warped&&await A.p.evaluate(()=>{const S=window.ShambConkins,run=S.store.run;return run.current===1&&!S.store.busy&&run.phase==='board'&&!document.getElementById('dialog').open&&run.board.format!=='warp';})){
   warped=true;await A.p.evaluate(()=>{const S=window.ShambConkins,run=S.store.run,w=Object.values(run.board.nodes).find(n=>n.type==='warp');run.players[1].node=w.id;S.focusBoardAction(run);S.updateBoard(true);S.resolveLanding();});console.log('Amber lands on a warp pipe');}
  if(!sawWarp&&process.env.WARP&&await B.p.evaluate(()=>window.ShambConkins.store.run?.board?.format==='warp'&&!!window.ShambConkins.store.run.warp)){sawWarp=true;await B.p.screenshot({path:screenshotPath('onb-guest-warp.png')});}
+ if(!versusDealt&&await A.p.evaluate(()=>{const S=window.ShambConkins,run=S.store.run;return run.current===0&&!S.store.busy&&run.phase==='board'&&!document.getElementById('dialog').open&&!S.store.session&&run.board.format!=='warp';})){
+  versusDealt=true;await A.p.evaluate(()=>{window.ShambConkins.store.busy=false;void window.ShambConkins.requestGame({id:'four-lights',origin:'board'});});console.log('host deals Four Lights');}
+ if(versusDealt&&!versusDone&&process.env.VERSUS&&await A.p.evaluate(()=>(window.ShambConkins.store.run.history||[]).some(h=>/Four Lights/i.test(h)))){versusDone=true;
+  const [ha,hb]=await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>window.ShambConkins.store.run.history.find(h=>/Four Lights/i.test(h))||'')));console.log('versus result',ha,'|',hb);
+  check(/\d+–\d+/.test(ha),'host settles the versus game on the board: '+ha);}
  const [sa,sb]=[await step(A),await step(B)];tally(A,sa);tally(B,sb);
  if(sb.startsWith('watch')&&!shots.has('gw')){shots.add('gw');await B.p.screenshot({path:screenshotPath('onb-guest-watching.png')});}
  if(sa.startsWith('watch')&&!shots.has('hw')){shots.add('hw');await A.p.screenshot({path:screenshotPath('onb-host-watching.png')});}
@@ -102,7 +112,8 @@ const v=await view(A);
 console.log('host',JSON.stringify(A.stats),'guest',JSON.stringify(B.stats));
 console.log('guest answered:',[...(B.titles||[])].slice(0,12).join(' | '));
 check(v.turn>TURNS||v.finished,`the run reached turn ${v.turn} (goal ${TURNS+1})`);
-check((A.stats.roll||0)>=2&&(B.stats.roll||0)>=2,`each phone rolled on its own turns (Sean ${A.stats.roll||0}, Amber ${B.stats.roll||0})`);
+if(process.env.VERSUS)check(versusDone,'the Four Lights versus game finished and was settled on the board');
+check((A.stats.roll||0)>=(process.env.VERSUS?1:2)&&(B.stats.roll||0)>=2,`each phone rolled on its own turns (Sean ${A.stats.roll||0}, Amber ${B.stats.roll||0})`);
 check((B.stats.dlg||0)>=1,`Amber's phone answered its own dialogs (${B.stats.dlg||0})`);
 check((B.stats.watch||0)>=1&&(A.stats.watch||0)>=1,'each phone showed the other\'s dialogs read-only');
 check(!A.stats.game2p&&!B.stats.game2p,'no pass-and-play 2P minigame started (both play the 1P version)');

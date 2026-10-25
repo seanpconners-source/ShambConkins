@@ -3,8 +3,9 @@ const {cpuSkill}=require("src/solo.js");
 const isCpu=s=>s?.solo?.kind==='cpu';
 // Hot-seat games: hand-off cards are skipped after the first one (one human on the phone) and whenever
 // isTurn() is true the CPU waits a beat, then think() plays its move through the engine's own move function.
+// Online (s.net, src/duel.js): the other phone plays that seat instead; isTurn() says when its moves may be replayed.
 function cpuHotseat(s,{isTurn,think,delay=700}){
- s.hotseat=true;let thinking=false;
+ s.hotseat=true;if(s.net){s.net.isTurn=isTurn;return;}let thinking=false;
  s.frame(()=>{if(thinking||!s.alive||s.paused||s.waiting||!isTurn())return;thinking=true;
   s.delay(delay*(1.25-cpuSkill(s)*.5)).then(async ok=>{try{if(ok&&s.alive&&!s.paused&&isTurn())await think();}catch(e){console.error('cpu move failed',e);}finally{thinking=false;}});});
 }
@@ -42,4 +43,26 @@ function cpuTriviaTurn(s,{q,choices,buttons,feedback,live,pick,hidden=false}){
   if(!await s.wait(hidden?600:1200)||!live())return;pick(pos);
  });
 }
-Object.assign(exports,{isCpu,cpuHotseat,cpuDepth,cpuBlunder,negamax,pickRandom,cpuSkill,cpuTriviaPick,cpuThinkTime,cpuTriviaTurn});
+// ---- online versus (two phones, src/duel.js) ----
+// Both phones run the same seeded game. A move made on this phone is sent with tell(s,name,...args) at the point the
+// engine has accepted it (before its first await); the other phone replays it through the function registered for that
+// name in onlineMoves. Engines gate input with notMine(seat) (the CPU's seat offline, the other phone's seat online).
+const versus=s=>isCpu(s)||!!s?.net;
+const notMine=(s,i)=>s?.net?i!==s.net.seat:isCpu(s)&&i===1;
+// fns: {name: fn}; any: names that may arrive outside the other seat's turn (draw offers, resigning).
+function onlineMoves(s,fns,{any=[]}={}){if(!s?.net)return;for(const [name,fn] of Object.entries(fns))s.net.fns[name]={fn,any:any.includes(name)};}
+function tell(s,name,...args){const net=s?.net;if(!net||net.applying)return;net.send(name,args);}
+// The launcher starts this for an online session: replays the other phone's moves in order when the engine is ready,
+// and ends the game when either phone left the match.
+function netPump(s,{peerLeft='They left the match',meLeft='You left the match'}={}){
+ const net=s.net,id=setInterval(()=>{
+  if(!s.alive)return clearInterval(id);
+  if(net.forfeit){clearInterval(id);s.finish([...s.score],net.forfeit==='them'?peerLeft:meLeft);return;}
+  if(s.paused||s.waiting||!net.inbox.length)return;
+  const m=net.inbox[0],h=net.fns[m.name];if(!h||!h.any&&net.isTurn&&!net.isTurn())return;
+  net.inbox.shift();if(Number.isFinite(m.r)&&net.draws&&m.r!==net.draws()){net.desync=(net.desync||0)+1;console.warn('online desync',m.name,m.n,m.r,net.draws());}
+  net.applying=true;try{const out=h.fn(...(m.args||[]));out?.catch?.(e=>console.error('online move failed',m.name,e));}catch(e){console.error('online move failed',m.name,e);}finally{net.applying=false;}
+ },40);
+ s.cleanup(()=>clearInterval(id));
+}
+Object.assign(exports,{versus,notMine,onlineMoves,tell,netPump,isCpu,cpuHotseat,cpuDepth,cpuBlunder,negamax,pickRandom,cpuSkill,cpuTriviaPick,cpuThinkTime,cpuTriviaTurn});

@@ -18,7 +18,7 @@ const {animateRoulette}=require("src/roulette.js");
 const {sound,soundRecent,setMusicZone,playFanfare,startMusic}=require("src/audio.js");
 const {gameById,setPoolFilter}=require("src/gameRegistry.js");
 const {bossById}=require("src/bossGate.js");
-const {duelOK}=require("src/solo.js");
+const {netOK}=require("src/solo.js");
 const {boardDuel}=require("src/duel.js");
 const {recruit,saveProfile}=require("src/profile.js");
 const {readJSON,RUN_KEY,validRun}=require("src/persistence.js");
@@ -89,7 +89,7 @@ function hostBegin(run){
  else nb={role:'host',me:run.online.host?1:0,peer:run.online.host?0:1,run,seq:0,out:0,heard:0,pending:new Map(),sent:{},showing:null,req:null,guestIn:false,paused:false,flushTimer:0};
  setup=null;store.netSetup=null;store.netBoard={role:'host',me:nb.me,live:false};setLive();
  setNetHooks({fx:hostFx,dialog:hostDialog,route:hostRoute,changed:scheduleFlush,watching:()=>hosting()&&nb.guestIn&&store.run.current===nb.peer?`${peerName()}'s challenge…`:''});
- setPoolFilter(g=>duelOK(g));
+ setPoolFilter(g=>netOK(g));
  if(netState().status==='off'&&run.online.room){const p=run.players[nb.me];joinRoom(run.online.room,{name:p.name,character:p.character,owner:p.owner}).then(()=>{store.online=true;store.onlineWho=nb?.me??0;}).catch(()=>toast(`Couldn't reach room “${run.online.room}”. ${nameOf(nb?.peer??1)}'s turns are played here for now.`,{local:true}));}
  sendStart();
 }
@@ -212,12 +212,12 @@ async function hostGame(game){
  const id=++nb.seq,seed=`nb-${store.run.seed}-${store.run.turn}-${id}`,msg={t:'game',id,gameId:game.id,seed};
  nb.pending.set(id,{msg,resolve(){},local:async()=>null});
  flush();send(msg);
- const out=await boardDuel(game.id,seed,'nb'+seed,duelPlayers());
+ const out=await boardDuel(game.id,seed,'nb'+seed,duelPlayers(),nb.me);
  nb?.pending.delete(id);
  return out;
 }
 function duelPlayers(){const run=store.run,me=run.players[nb.me],them=run.players[nb.peer];return [{...plain(me)},{...plain(them)}];}
-const allowGame=g=>!!g&&duelOK(g);
+const allowGame=g=>!!g&&netOK(g);
 const onlineGames=()=>hosting()&&nb.guestIn;
 // Board buttons: returns true when the online game handled the tap.
 function netAction(name,target,remote=false){
@@ -320,7 +320,7 @@ async function guestTask(m){
 async function guestGame(m){
  if(nb.playing===m.id||nb.answered.has(m.id))return;nb.playing=m.id;closeWatch();   // played already: duel.js re-sends the result
  const run=store.run,players=[plain(run.players[nb.me]),plain(run.players[nb.peer])];
- await boardDuel(m.gameId,m.seed,'nb'+m.seed,players);
+ await boardDuel(m.gameId,m.seed,'nb'+m.seed,players,nb.me);
  if(!nb)return;nb.playing=null;nb.answered.set(m.id,true);showBoard();
 }
 const FX={

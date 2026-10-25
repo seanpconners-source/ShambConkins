@@ -21,7 +21,7 @@ const {location}=require("src/locations.js");
 const {brandHTML, portraitHTML, portraitURL, portraitFallbackURL, gameArtHTML, locationArt, locationArtHTML, locationBoardArt, itemArtHTML, logoURL}=require("src/assets.js");
 const {findItem, itemDescription , canUseItem}=require("src/items.js");
 const {pairForCharacters, pairForRun}=require("src/pairs.js");
-const {duelOK,soloKind, soloHidden, soloCoop, soloSettings, soloBestText, SOLO_LEVELS, SOLO_LEVEL_NAMES}=require("src/solo.js");
+const {netOK,netVersus,soloKind, soloHidden, soloCoop, soloSettings, soloBestText, SOLO_LEVELS, SOLO_LEVEL_NAMES}=require("src/solo.js");
 const {netState}=require("src/net.js");
 const {fx,netDialog,netChanged}=require("src/netHooks.js");
 const {cpuDialog,cpuWaiting}=require("src/cpuHooks.js");
@@ -195,12 +195,12 @@ function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=
   else if(filter==='variants')list=EVENT_GAMES.filter(g=>!g.bossId&&(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&hit(g));
   else list=[...GAMES.filter(g=>(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&(filter==='all'||g.category===filter)),...(filter==='all'?[...POKEMON_MATCHES,...beaten]:[])].filter(hit);
   // 1P mode: games with a solo version first; the rest stay listed but greyed out. Purely social games are hidden.
-  // Online duels: only games whose 1P run ends in a score (duelOK) can be played across two phones so far.
+  // Online: score duels (both play the 1P version) and the versus games ported so far (netOK); the rest say so.
   const online=!!store.online,solo=!online&&soloSettings(p).on,soloOK=g=>!!(g.pokemon||soloKind(g));
   if(solo){list=list.filter(g=>!soloHidden(g));list=[...list.filter(soloOK),...list.filter(g=>!soloOK(g))];}
-  if(online){list=list.filter(g=>!soloHidden(g));list=[...list.filter(duelOK),...list.filter(g=>!duelOK(g))];}
-  playable=g=>!(solo&&!soloOK(g))&&!(online&&!duelOK(g))&&(g.pokemon||gameUnlocked(g,p));
-  render=g=>{const open=g.pokemon||gameUnlocked(g,p),off=solo&&!soloOK(g)||online&&!duelOK(g),best=(solo||online)&&!g.pokemon?soloBestText(p,g.id):'',play=off?`<small>${online?'Not online yet':'2 players only for now'}</small>`:online&&open?button('duel-propose','Challenge ↗','ghost',`data-id="${g.id}"`):g.pokemon?button('arcade-pokemon','Battle ↗','ghost',`data-id="${g.pokemon}"`):open?button(solo?'arcade-solo':'arcade-game',solo?(soloKind(g)==='cpu'?soloCoop(g)?'Play with CPU ↗':'Play vs CPU ↗':'Play solo ↗'):g.bossId?'Fight again ↗':'Play match ↗','ghost',`data-id="${g.id}"`):`<small>${g.bossId?'Beat this boss on the board to unlock the rematch':`Unlock after ${g.gameUnlockAt||1} matches`}</small>`;
+  if(online){list=list.filter(g=>!soloHidden(g));list=[...list.filter(netOK),...list.filter(g=>!netOK(g))];}
+  playable=g=>!(solo&&!soloOK(g))&&!(online&&!netOK(g))&&(g.pokemon||gameUnlocked(g,p));
+  render=g=>{const open=g.pokemon||gameUnlocked(g,p),off=solo&&!soloOK(g)||online&&!netOK(g),best=(solo||online)&&!g.pokemon&&!netVersus(g)?soloBestText(p,g.id):'',play=off?`<small>${online?'Not online yet':'2 players only for now'}</small>`:online&&open?button('duel-propose','Challenge ↗','ghost',`data-id="${g.id}"`):g.pokemon?button('arcade-pokemon','Battle ↗','ghost',`data-id="${g.pokemon}"`):open?button(solo?'arcade-solo':'arcade-game',solo?(soloKind(g)==='cpu'?soloCoop(g)?'Play with CPU ↗':'Play vs CPU ↗':'Play solo ↗'):g.bossId?'Fight again ↗':'Play match ↗','ghost',`data-id="${g.id}"`):`<small>${g.bossId?'Beat this boss on the board to unlock the rematch':`Unlock after ${g.gameUnlockAt||1} matches`}</small>`;
    return `<article class="arcade-card ${open?'':'locked'}${off?' solo-off':''}${g.bossId?' boss-match':''}">${brandHTML(g.source)}${gameArtHTML(g)}<h3>${e(g.title)}</h3><p>${e(g.rules)}</p><div class="game-info">${e(g.duration.toUpperCase())} · ${g.bossId?(open?'BEATEN':'UNBEATEN'):p.played.includes(g.id)?'PLAYED':'NEW'}${best?` · ${e(best)}`:''}</div>${play}${p.settings.devMode&&!g.pokemon&&!off?button('dev-game','DEV · Test this game','small dev-button',`data-id="${g.id}"`):''}</article>`;};
  }
  catalogFeed={list,render,playable,shown:Math.min(list.length,CATALOG_CHUNK)};

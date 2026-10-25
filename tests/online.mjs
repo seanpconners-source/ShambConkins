@@ -63,7 +63,10 @@ check(/Rematch/.test(ra)&&/Back to the room/.test(rb),'Rematch and Back to the r
 await A.p.screenshot({path:screenshotPath('online-result.png')});
 // Amber goes back to the room, then Sean asks for a rematch: Amber gets the challenge
 await choose(B,'Back to the room');await B.p.waitForTimeout(800);
-await choose(A,'Rematch');await waitDialog(B,/Sean challenges you/);check(true,'Rematch reaches Amber');
+await choose(A,'Rematch');
+// a win can recruit a character: its card comes before the rematch is sent
+for(let i=0;i<20&&!/Sean challenges you/.test(await dialogText(B));i++){const ta=await dialogText(A);if(ta&&!/Waiting for Amber/.test(ta))await A.p.evaluate(()=>{const bs=[...document.querySelectorAll('#dialog[open] button')];(bs.find(b=>b.classList.contains('primary'))||bs[0])?.click();});await A.p.waitForTimeout(500);}
+await waitDialog(B,/Sean challenges you/);check(true,'Rematch reaches Amber');
 await choose(B,'Not now');await waitDialog(A,/./,3000).catch(()=>{});await A.p.waitForTimeout(800);
 check(!/Waiting for Amber/.test(await dialogText(A)),'"Not now" ends Sean\'s wait');
 // Amber leaves the room

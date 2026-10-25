@@ -516,6 +516,20 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   Tests: `tests/online-board.mjs` (TURNS, PKMN=1 wild battles, DROP=n drops the guest mid-decision, DEBUG=1 traces;
   bots answer only what their phone may answer). Not yet tried on two real phones. Next: turn-based games online
   (move relay through the CPU hooks), then real-time ones.
+- **Online versus, batch 1 (Oct 25, branch `ccr-36294fb1-h63157`):** CPU-opponent ('cpu' kind) games played against each
+  other on two phones. `NET_VERSUS`/`netVersus`/`netOK` in solo.js (netOK = duelOK or versus; used by the Arcade online list,
+  duel.js and netBoard's pool). duel.js `start` builds `match.versus={seat,players,net}` (arcade: room seat; board: `nb.me`),
+  `makeNet`: numbered `mv` messages, `mv-ack` every 1.5 s resends what the other phone lacks, `mv-quit` = forfeit. Launcher:
+  versus session has `s.net` and no `s.solo`, players in seat order, `duelSeed` + counted `s.random` (desync warning per move),
+  `netPump` (cpuKit) replays moves, `settleNet` → settleSolo duel path (forfeit win always outscores); Exit = leave (they win)
+  or "Claim the win" when their phone dropped (its done carries `claim`, re-sent when that phone acks again). Engine pattern in ENGINE_GUIDE "Online versus". Ported (9): wopr-grid,
+  matrix-ultimate, four-lights, strategema-grid, greed-island-mancala, office-dots-boxes, deadite-checkers, ten-forward-chess
+  (online: no draw offers, Resign = own side), trek-mini-chess (only the mover's phone plays the 45 s timeout move).
+  Left: 86 'cpu' games: 28 turn-based card/dice/trivia/table (next batch: Uno, Guess Who, Clue ×2, Monopoly ×2, N-Spade,
+  Yahtzee ×2, Liar's Dice, Battleship, Simon, Price, Hangman showdown/wanted, trivia ×9, casino ×4; hidden hands per seat),
+  7 physics-shot turn games (beer pong, pool, curling, minigolf, artillery, tower stack, Baseketball: relay the shot result,
+  frame timing differs per phone), 51 real-time. Tests: `tests/online-versus.mjs` (all 9 + dropped move + leave),
+  `VERSUS=1 tests/online-board.mjs` (host deals Four Lights on the board). Not yet tried on two real phones.
 - **1-player board game vs CPU + Choose Characters (Oct 24, branch `ccr-47c456d6-mv2k8z`; kept apart from the online work):**
   Title screen CHOOSE CHARACTERS (`players` view = `setupHTML(...,{pickOnly:true})`): names + heads saved in
   `profile.settings.picks` {names,chars} (validated in profile.js; app.js falls back to the starter if a pick is locked),
