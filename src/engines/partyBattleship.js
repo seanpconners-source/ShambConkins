@@ -1,6 +1,6 @@
 // Battleship: hidden fleets on an 8x8 grid, drag-to-place with tap-to-rotate, alternate shots, a hit earns another shot.
 const {PartyUI,sfx,head,pname,esc,burst,banner,titleCard,shuffle,extraCSS,tone}=require("src/engines/partyKit.js");
-const {isCpu,cpuSkill,cpuBlunder,pickRandom}=require("src/engines/cpuKit.js");
+const {isCpu,isOnline,cpuSkill,cpuBlunder,pickRandom}=require("src/engines/cpuKit.js");
 
 const N=8;
 const SHIPS=[['Battleship',4],['Cruiser',3],['Submarine',3],['Destroyer',2],['Patrol Boat',2]];
@@ -84,6 +84,10 @@ async function battleship(s){
  const rand=s.random,names=[pname(s,0),pname(s,1)];
  const fleets=[null,null],shots=[Array.from({length:N},()=>Array(N).fill(0)),Array.from({length:N},()=>Array(N).fill(0))];// shots[p][y][x]: p's shots at the enemy: 1 miss, 2 hit
  const sunk=[0,0],log=[[],[]],cpu=isCpu(s),bot=P=>cpu&&P===1;if(cpu)s.hotseat=true;
+ // Online (s.online): each phone places its own fleet and sends it once ({fleet}); the other phone keeps it hidden (only sunk
+ // ships show) and works out hits itself. Shots go over as {f:[x,y]}. On the other player's turn you watch their shots land on
+ // your fleet, like a CPU turn. Moves are read in order by the game flow (net.next), no background reader.
+ const net=isOnline(s)?s.online:null,theirs=P=>!!net&&P===net.remote,auto=P=>bot(P)||theirs(P);if(net)s.hotseat=true;let phase='title';
  // vs CPU: player 2 hunts on a checkerboard (Easy: anywhere), then works along its hits until the ship sinks.
  function cpuTarget(){const my=shots[1],en=fleets[0],open=(x,y)=>x>=0&&y>=0&&x<N&&y<N&&!my[y][x],live=[];
   for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(my[y][x]===2){const sh=shipAt(en,x,y);if(sh&&sh.hits<sh.len)live.push([x,y]);}
@@ -91,7 +95,8 @@ async function battleship(s){
   if(cand.length&&!cpuBlunder(s)){const top=Math.max(...cand.map(c=>c.w)),c=pickRandom(cand.filter(c=>c.w===top));return [c.x,c.y];}
   const all=[];for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(!my[y][x])all.push([x,y]);const par=all.filter(([x,y])=>(x+y)%2===0);
   return pickRandom(cpuSkill(s)>.5&&par.length?par:all);}
- s.debug={shots,fleets,sunk};
+ s.debug={shots,fleets,sunk,bot:net?()=>{if(!ui.handler||s.paused)return null;if(phase==='place'){ui.handler('ready');return 'ready';}if(phase==='over'){ui.handler('go');return 'finish';}
+  if(phase==='fire'&&s.debug.P===net.me){const open=[];for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(!shots[net.me][y][x])open.push([x,y]);const c=pickRandom(open);if(c)s.debug.fire(c[0],c[1]);return 'fire';}return null;}:null};
  let view=null;// {cv,x,W,H,mode,P,lay,sel,drag,ships,t,parts,rings,shake}
  let t=0;
  s.hint('Setup: drag your ships to move them and tap a ship to rotate it. Battle: tap a square on the enemy waters, then FIRE. A hit lets you shoot again; a miss passes the phone. Sink the whole fleet to win.');
@@ -130,11 +135,11 @@ async function battleship(s){
    const e=lay.enemy,me=fleets[P],en=fleets[1-P],my=shots[P],their=shots[1-P];
    drawGrid(x,e,v.t,true);
    // sunk enemy ships are revealed
-   for(const sh of en)if(sh.hits>=sh.len||bot(P))drawShip(x,e.x+sh.x*e.c,e.y+sh.y*e.c,e.c,sh,sh.hits>=sh.len?'sunk':'own');
+   for(const sh of en)if(sh.hits>=sh.len||auto(P))drawShip(x,e.x+sh.x*e.c,e.y+sh.y*e.c,e.c,sh,sh.hits>=sh.len?'sunk':'own');
    for(let yy=0;yy<N;yy++)for(let xx=0;xx<N;xx++){const m=my[yy][xx];if(m===1)drawMiss(x,e.x+xx*e.c,e.y+yy*e.c,e.c);else if(m===2)drawFire(x,e.x+xx*e.c,e.y+yy*e.c,e.c,v.t,xx+yy);}
    if(v.sel){const [cx,cy]=v.sel,px=e.x+cx*e.c,py=e.y+cy*e.c,pulse=1+Math.sin(v.t*8)*.08;x.save();x.translate(px+e.c/2,py+e.c/2);x.scale(pulse,pulse);x.strokeStyle='#ffe14d';x.lineWidth=Math.max(2,e.c*.07);x.beginPath();x.arc(0,0,e.c*.36,0,Math.PI*2);x.stroke();x.beginPath();x.moveTo(-e.c*.48,0);x.lineTo(-e.c*.18,0);x.moveTo(e.c*.18,0);x.lineTo(e.c*.48,0);x.moveTo(0,-e.c*.48);x.lineTo(0,-e.c*.18);x.moveTo(0,e.c*.18);x.lineTo(0,e.c*.48);x.stroke();x.restore();}
    x.fillStyle='rgba(255,255,255,.9)';x.font='bold 11px Arial';x.textAlign='left';x.textBaseline='alphabetic';
-   if(lay.own&&!bot(P)){
+   if(lay.own&&!auto(P)){
     const o=lay.own;drawGrid(x,o,v.t,false);
     for(const sh of me)drawShip(x,o.x+sh.x*o.c,o.y+sh.y*o.c,o.c,sh,'own');
     for(let yy=0;yy<N;yy++)for(let xx=0;xx<N;xx++){const m=their[yy][xx];if(m===1)drawMiss(x,o.x+xx*o.c,o.y+yy*o.c,o.c);else if(m===2)drawFire(x,o.x+xx*o.c,o.y+yy*o.c,o.c,v.t,xx*3+yy);}
@@ -182,7 +187,7 @@ async function battleship(s){
    screen(note,`<button class="pk-btn off" data-act="fire">FIRE! 💥</button>`,P);
    const v=mkView('fire',P);view=v;const en=fleets[1-P];
    const fire=()=>{
-    if(!v.sel)return;const [cx,cy]=v.sel;if(shots[P][cy][cx])return;
+    if(!v.sel)return;const [cx,cy]=v.sel;if(shots[P][cy][cx])return;if(net&&!theirs(P))net.send({f:[cx,cy]});
     ui.handler=null;v.sel=null;const r=v.lay.enemy,sh=shipAt(en,cx,cy),lbl=COLS[cx]+(cy+1);
     ui.root.querySelector('[data-act=fire]').classList.add('off');
     let res={cell:lbl,hit:!!sh,sunk:null,all:false};
@@ -195,30 +200,35 @@ async function battleship(s){
     log[P].push(res.sunk?`${lbl} (sunk your ${res.sunk.name}!)`:res.hit?`${lbl} (hit)`:`${lbl} (miss)`);
     resolve(res);
    };
-   const tap=ev=>{ev.preventDefault?.();const [px,py]=pt(v,ev),c=cellIn(v.lay.enemy,px,py);if(!c||!view||view!==v||!ui.handler||bot(P))return;if(shots[P][c[1]][c[0]]){sfx.bad();return;}
+   const tap=ev=>{ev.preventDefault?.();const [px,py]=pt(v,ev),c=cellIn(v.lay.enemy,px,py);if(!c||!view||view!==v||!ui.handler||auto(P))return;if(shots[P][c[1]][c[0]]){sfx.bad();return;}
     if(v.sel&&v.sel[0]===c[0]&&v.sel[1]===c[1]){fire();return;}
     v.sel=c;sfx.tap();setStatus(`Aiming at <b>${COLS[c[0]]}${c[1]+1}</b>. Tap FIRE!`);ui.root.querySelector('[data-act=fire]').classList.remove('off');};
    s.on(v.cv,'pointerdown',tap);
-   ui.handler=a=>{if(a==='fire'&&!bot(P))fire();};
+   ui.handler=a=>{if(a==='fire'&&!auto(P))fire();};
    if(bot(P))void (async()=>{if(!await s.wait(700+Math.random()*500))return;const c=cpuTarget();v.sel=c;sfx.tap();setStatus(`${esc(names[1])} aims at <b>${COLS[c[0]]}${c[1]+1}</b>…`);if(await s.wait(650))fire();})();
+   if(theirs(P))void (async()=>{const m=await net.next();if(!m||!s.alive||view!==v)return;const c=Array.isArray(m.f)?m.f.map(Number):null;if(!c||!(c[0]>=0&&c[0]<N&&c[1]>=0&&c[1]<N))return;v.sel=c;sfx.tap();setStatus(`${esc(names[P])} aims at <b>${COLS[c[0]]}${c[1]+1}</b>…`);if(await s.wait(450))fire();})();
    s.debug.fireView=v;s.debug.fire=(cx,cy)=>{v.sel=[cx,cy];fire();};s.debug.P=P;
   });
  }
 
  if(!await titleCard(s,'🚢','Secretly place your fleet, then take turns firing at the enemy waters. A hit earns another shot, a miss passes the phone. Sink every enemy ship to win.','Man the decks'))return;
- for(const P of [0,1]){
+ if(net){const me=net.me,them=net.remote;blank();phase='place';if(!await s.pass(me,'Place your fleet in secret. It stays hidden on the other phone.','Show my ocean'))return;fleets[me]=await place(me);if(!s.alive)return;
+  net.send({fleet:fleets[me].map(({x,y,dir})=>({x,y,dir}))});phase='wait';view=null;ui.set(`<div class="pk-screen"><div class="pk-q" style="font-size:54px">⚓</div><div class="pk-sub">Waiting for ${esc(names[them])} to place their fleet…</div></div>`);
+  const m=await net.next();if(!m||!s.alive)return;const got=SHIPS.map(([name,len],i)=>{const q=m.fleet?.[i]||{};return {name,len,dir:q.dir?1:0,x:+q.x|0,y:+q.y|0,hits:0};});
+  fleets[them]=got.every((sh,i)=>fits(got.slice(0,i),sh))?got:randomFleet(rand);}
+ for(const P of net?[]:[0,1]){
   if(bot(P)){fleets[P]=randomFleet(rand);continue;}
   blank();
   if(!await s.pass(P,`Place your fleet in secret. ${names[1-P]}, look away!`,'Show my ocean'))return;
-  fleets[P]=await place(P);if(!s.alive)return;
+  phase='place';fleets[P]=await place(P);if(!s.alive)return;
  }
  s.setScores([0,0]);
  let P=0,winner=-1,last=null,shotsFired=[0,0];
  while(winner<0){
   const incoming=log[1-P].length?`Since your last turn, ${names[1-P]} fired: ${log[1-P].join(', ')}.`:'No shots at you yet.';
   log[1-P]=[];
-  if(!bot(P)){blank();if(!await s.pass(P,`The seas are fogged. Eyes only for ${names[P]}!`,'Open fire',{summary:incoming}))return;}
-  let note=bot(P)?`<b>${esc(names[1])}</b> is firing at your fleet.`:`<b>${esc(names[P])}</b>: tap a square in the enemy waters.`;
+  if(!auto(P)){blank();if(!await s.pass(P,`The seas are fogged. Eyes only for ${names[P]}!`,'Open fire',{summary:incoming}))return;}
+  phase='fire';let note=auto(P)?`<b>${esc(names[P])}</b> is firing at your fleet.`:`<b>${esc(names[P])}</b>: tap a square in the enemy waters.`;
   for(;;){
    const res=await shoot(P,note);if(!s.alive)return;shotsFired[P]++;
    if(!await s.wait(res.sunk?1700:1100))return;
@@ -239,7 +249,7 @@ async function battleship(s){
   <h1 class="pk-h1 pk-pop">${esc(names[winner])} wins the war!</h1>
   <div class="pk-sub">${esc(names[winner])} sank all ${SHIPS.length} ships with ${survivors} still afloat. ${esc(names[1-winner])} sank ${sunk[1-winner]}.</div>
   <button class="pk-btn" data-act="go">Finish</button></div>`);
- sfx.big();burst(ui.root,{emojis:['⚓','💥','🌊'],n:30,spread:250});
+ sfx.big();burst(ui.root,{emojis:['⚓','💥','🌊'],n:30,spread:250});phase='over';
  await new Promise(res=>{ui.handler=a=>{if(a==='go')res(1);};});if(!s.alive)return;
  s.finish(final,`${names[winner]} sank the whole enemy fleet (${shotsFired[winner]} salvos) and kept ${survivors} ship${survivors===1?'':'s'}.`);
 }

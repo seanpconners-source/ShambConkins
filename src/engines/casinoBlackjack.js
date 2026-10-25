@@ -1,5 +1,5 @@
 const {casinoDeck, blackjackValue, blackjackOutcome}=require("src/engines/casinoCards.js");
-const {casinoCpu, casinoTable, syncCards, casinoWait, casinoTap, paintBanks, announce, setCasinoStatus, showProfits, wireWagers, wireCashout, busted, casinoResultLabel}=require("src/engines/casinoTable.js");
+const {casinoBot, casinoCpu, casinoTable, syncCards, casinoWait, casinoTap, paintBanks, announce, setCasinoStatus, showProfits, wireWagers, wireCashout, busted, casinoResultLabel}=require("src/engines/casinoTable.js");
 const {sound}=require("src/audio.js");
 async function playBlackjack(s){
  const state={chips:[10,10],bets:[2,2],locked:[false,false],hands:[[],[]],dealer:[],status:['betting','betting'],busy:[false,false],round:1,phase:'betting',revealed:false,outcomes:[]};let deck=[],before=[10,10];
@@ -42,6 +42,7 @@ async function playBlackjack(s){
  // vs CPU: basic strategy: hit to 11, stand on 17, and on 12–16 hit against a dealer 7+ (looser on Easy)
  casinoCpu(s,{act:(st,sk)=>{if(st.phase!=='playing'||st.status[1]!=='playing'||st.busy[1])return;const total=blackjackValue(st.hands[1]),up=st.dealer[0]?(st.dealer[0].rank===1?11:Math.min(10,st.dealer[0].rank)):10,limit=sk>.5?17:15+Math.floor(Math.random()*3);
   const hitIt=total<=11||total<limit&&(up>=7||Math.random()<(1-sk)*.4)&&total<17;document.getElementById(hitIt?'bj-hit-1':'bj-stand-1')?.click();}});
+ casinoBot(s,state,(st,me,click)=>st.phase==='playing'&&st.status[me]==='playing'&&!st.busy[me]?click(blackjackValue(st.hands[me])<=15?'bj-hit-'+me:'bj-stand-'+me):null);
  wireWagers(s,state,deal,render);render();await s.pass(0,'Both players start with 10 chips. Place separate wagers, then play your hands at the same time against ONE dealer. Minimum bet 2. Below the minimum is out. You may cash out only when both agree.','Both ready — take your seats');
 }
 

@@ -1,5 +1,5 @@
 const {casinoDeck, comparePoker, pokerRank, POKER_NAMES}=require("src/engines/casinoCards.js");
-const {casinoCpu, casinoTable, syncCards, casinoWait, casinoTap, paintBanks, announce, setCasinoStatus, showProfits, wireWagers, wireCashout, busted, casinoResultLabel}=require("src/engines/casinoTable.js");
+const {casinoBot, casinoCpu, casinoTable, syncCards, casinoWait, casinoTap, paintBanks, announce, setCasinoStatus, showProfits, wireWagers, wireCashout, busted, casinoResultLabel}=require("src/engines/casinoTable.js");
 const {sound}=require("src/audio.js");
 async function playPoker(s){
  const state={chips:[10,10],bets:[2,2],locked:[false,false],hands:[[],[]],discard:new Set(),active:0,phase:'betting',round:1,revealCount:[0,0],matched:2};let deck=[],before=[10,10];
@@ -9,7 +9,9 @@ async function playPoker(s){
  function render(){
   paintBanks(s,state);for(let i=0;i<2;i++){
    const own=['drawing','exchanging'].includes(state.phase)&&state.active===i,all=state.phase==='result',reveal=state.phase==='revealing',root=document.getElementById('casino-hand-'+i);
-   syncCards(root,state.hands[i],{hidden:reveal?index=>index>=state.revealCount[i]:!own&&!all,selectable:true,selected:own?state.discard:new Set()});
+   // online: your own hand stays face up on your phone; the other phone's stays face down until the reveal
+   const mine=s.online?i===s.online.me:own;
+   syncCards(root,state.hands[i],{hidden:reveal?index=>index>=state.revealCount[i]:!mine&&!all,selectable:true,selected:own?state.discard:new Set()});
    for(const node of root.children){node.disabled=state.phase!=='drawing'||state.active!==i;if(!node.dataset.bound){node.dataset.bound='true';casinoTap(s,node,()=>{if(state.phase!=='drawing'||state.active!==i)return;const index=+node.dataset.cardIndex;if(state.discard.has(index))state.discard.delete(index);else if(state.discard.size<3)state.discard.add(index);sound('tap');render();});}}
    document.getElementById('casino-wager-'+i).hidden=state.phase!=='betting';document.getElementById('casino-actions-'+i).hidden=state.phase!=='drawing'||state.active!==i;document.getElementById('poker-draw-'+i).textContent=state.discard.size?`Draw ${state.discard.size} replacement${state.discard.size>1?'s':''}`:'Stand · keep all five';
    document.getElementById('casino-total-'+i).textContent=state.hands[i].length===5&&(own||all||reveal&&state.revealCount[i]===5)?`${POKER_NAMES[pokerRank(state.hands[i])[0]]}${own?' · '+state.discard.size+' to exchange':''}`:state.hands[i].length?'HAND HIDDEN':'';
@@ -33,6 +35,7 @@ async function playPoker(s){
   const suits=new Map();h.forEach(c=>suits.set(c.suit,(suits.get(c.suit)||0)+1));const flushSuit=[...suits].find(([,n])=>n===4)?.[0];let keep;
   if([...counts.values()].some(n=>n>=2))keep=h.map((c,i)=>counts.get(c.rank)>=2?i:-1).filter(i=>i>=0);else if(flushSuit&&sk>.5)keep=h.map((c,i)=>c.suit===flushSuit?i:-1).filter(i=>i>=0);else keep=h.map((c,i)=>i).sort((a,b)=>val(h[b])-val(h[a])).slice(0,2);
   st.discard=new Set(h.map((c,i)=>i).filter(i=>!keep.includes(i)).slice(0,3));document.getElementById('poker-draw-1')?.click();}});
+ casinoBot(s,state,(st,me,click)=>st.phase==='drawing'&&st.active===me?click('poker-draw-'+me):null);
  wireWagers(s,state,deal,render);render();await s.pass(0,'10 chips each, minimum wager 2. Both match the SMALLER chosen wager. Cards are dealt one at a time; private draws alternate, then a shared showdown pays the pot. First player unable to cover 2 chips loses, or both can agree to cash out.','Both ready — Five Card Panic');
 }
 
