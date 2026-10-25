@@ -556,7 +556,15 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   on both phones by the rule), Yahtzee `full-shambyahtzee` + `cheaters-yahtzee` (yahtzee.js: {h: held} per hold change, {r: dice
   values} per roll so dice never depend on matching RNG, {c: category}); waiting phone's buttons off + "PLAYING ON THEIR PHONE".
   All 4 pass online-native; 2P fuzz and 1P vs CPU still clean.
-  TODO next: casino tables, Guess Who, Battleship... via the same pattern.
+  Batch 3 (Oct 25): casino ×4 (`blackjack`, `five-card`, `roulette`, `bond-baccarat`) through ONE relay in casinoTable.js
+  (`tableNet`): seat 1's phone (me 0) referees every `casinoTap`/`casinoChange` (its own at once, the other's requests {q} in
+  arrival order, dropped if not runnable now) and sends {t: control key, v}; the other phone runs only those, waiting until the
+  control is usable, so both draw the same seeded shoe. Key = id, else nearest id'd ancestor + index among its buttons/selects.
+  Remote seat gets `.remote-seat` (no pointer events). Poker shows your own hand on your phone. `casinoBot` = online test bot.
+  Guess Who `traitors-guess-who` ({q: label}/{a: id}/{n}; own secret only), Battleship `battleship-fog` ({fleet} once, then
+  {f:[x,y]}; the other fleet stays hidden; their turn = watch shots land on your fleet). All 6 pass online-native (ROOM=name
+  runs two test rooms at once); 2P fuzz + 1P CPU clean.
+  TODO next: more CPU-kind games (Liar's Dice, Clue, Monopoly, Simon, Price Is Right, Hangman Wanted, Mancala, dots...).
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).

@@ -14,7 +14,7 @@ async function playPoker(s){
    syncCards(root,state.hands[i],{hidden:reveal?index=>index>=state.revealCount[i]:!mine&&!all,selectable:true,selected:own?state.discard:new Set()});
    for(const node of root.children){node.disabled=state.phase!=='drawing'||state.active!==i;if(!node.dataset.bound){node.dataset.bound='true';casinoTap(s,node,()=>{if(state.phase!=='drawing'||state.active!==i)return;const index=+node.dataset.cardIndex;if(state.discard.has(index))state.discard.delete(index);else if(state.discard.size<3)state.discard.add(index);sound('tap');render();});}}
    document.getElementById('casino-wager-'+i).hidden=state.phase!=='betting';document.getElementById('casino-actions-'+i).hidden=state.phase!=='drawing'||state.active!==i;document.getElementById('poker-draw-'+i).textContent=state.discard.size?`Draw ${state.discard.size} replacement${state.discard.size>1?'s':''}`:'Stand · keep all five';
-   document.getElementById('casino-total-'+i).textContent=state.hands[i].length===5&&(own||mine||all||reveal&&state.revealCount[i]===5)?`${POKER_NAMES[pokerRank(state.hands[i])[0]]}${own?' · '+state.discard.size+' to exchange':''}`:state.hands[i].length?'HAND HIDDEN':'';
+   document.getElementById('casino-total-'+i).textContent=state.hands[i].length===5&&(own||mine||all||reveal&&state.revealCount[i]===5)?`${POKER_NAMES[pokerRank(state.hands[i])[0]]}${own?' · '+state.discard.size+' to exchange':''}`:state.hands[i].length&&!(s.online&&mine)?'HAND HIDDEN':'';
    document.getElementById('casino-seat-'+i).classList.toggle('seat-turn',state.phase==='drawing'&&state.active===i);
   }
   next.hidden=state.phase!=='result';next.textContent=busted(state.chips)?'See casino result':'Deal another hand';paintCashout();s.debug=state;
