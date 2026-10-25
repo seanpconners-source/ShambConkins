@@ -659,6 +659,24 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   earlier tick; `net.glog` per step: identical on both phones under 80-150 ms lag). All 4 pass online-native with and without
   lag; 2P fuzz + 1P CPU clean, other arenaKit games fuzz clean. Space Invaders versus (shared formation/bombs/bunkers) waits
   for the shared-world batch (air hockey, sumo, dodgeball...).
+  Batch 14 (Oct 25, branch `ccr-b69e91e7-srvscq`, fast-forwarded from `ccr-0da72c03-ws0idl`), the rest of arenaPack except Hippos:
+  Driller `driller-duel` (netField side-by-side: own shaft full screen, fixed 7 cols, other = race-strip dot + HUD from {d,l,a,x,ft};
+  run ends at goal/out/time/past their finish time, settle from both finals like Ladder Rush), Bubble `bubble-battle` (own field
+  wide, fixed 7 cols + danger row 14, other = small copy in a SIDE column from {g,o,sc,in}; garbage {e:{g}} flies in from the copy;
+  roundOutcome die/timeUp with score as extra), Snowball `snowball-fight` (fixed portrait yard NW 480 x NH 860, point-symmetric
+  seeded layout; each phone simulates in its own frame, player 2's turned round, everything crossing over goes through `flip()`;
+  victim judges hits {h}, thrower guesses and drops the ball; walls carry `dmg[owner]` and only the thrower's phone counts its
+  damage {wd}; built walls {w} name the one they replace), Disc `disc-duel` (like Pong: no host, fixed CH 560, view turned via
+  `FL`; each phone is the authority for its own half: catches {c} (online a catch needs the disc in your half), goals/landings
+  {pt}; throws {th} carry the full disc state + time, the other phone flies it on by the delay (`applyThrow`, `flyDisc`); a guessed
+  catch at the other catcher, a 'wait' at the far line; `rally` counts serves, events carry k, early throws wait in `pendTh`;
+  time-up = {tu:1} handshake so both have the same points, then win or golden point (rally 1000), {tu:2} ends overtime).
+  Test bots: `s.debug.bot` = the CPU brain on your side (Disc's sits out 4 s in 12 so goals happen; Snowball's also builds walls);
+  Disc `s.debug.skip(s)` moves its clock on (time-up/golden point checked under lag). tests/online-native.mjs: SHOT_S=n
+  screenshots n s in, VIEW=WxH phone size; at 1100x700 headless runs ~3x slow (game time is frame-capped), give LIMIT_S=420.
+  All 4 pass with and without LAG=80-150 at 390x780 and 1100x700; 2P fuzz + 1P CPU clean. Left: Hippos, air hockey, sumo,
+  dodgeball ×2, Space Invaders versus, Tarantino ×6, South Park ×3, Bond ×3, Hyrule ×2, penalties, Raiders, Fight Night, Sewer
+  Clash, kart ×2, Space Swarm co-op (`node -e` over solo.js: 'cpu' ids minus NET_NATIVE).
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).

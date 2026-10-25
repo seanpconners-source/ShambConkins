@@ -3,18 +3,18 @@
 // (its own answers, moves and hand-off/next buttons), so the game only finishes if every move reaches the other phone.
 // Checks: both phones deal the same game (same first question / board), it reaches the result on both, the two result
 // cards agree (mine–theirs mirrored), no page errors. GAMES=id,id (default the batch-1 games); screenshots onn-*.
-// SHOT_S=n takes the screenshots n seconds into the game. LAG=80-150 holds every message back 80..150 ms (in order, with jitter) on both phones.
+// SHOT_S=n takes the screenshots n seconds into the game, VIEW=1100x700 sets both phones' screen size. LAG=80-150 holds every message back 80..150 ms (in order, with jitter) on both phones.
 import {launchBrowser,root,screenshotPath} from './lib.mjs';
 import path from 'node:path';import {pathToFileURL} from 'node:url';
 const HOST=process.env.SC_NET_HOST||'ws://127.0.0.1:8787',LIMIT=+process.env.LIMIT_S||240;
-const GAMES=(process.env.GAMES||'trivia-mixed,trivia-lightning,trivia-wager,trivia-survival,paddys-beer-pong,shamb-uno,ten-forward-chess,four-lights,strategema-grid,full-shambyahtzee,cheaters-yahtzee,blackjack,five-card,roulette,bond-baccarat,traitors-guess-who,battleship-fog,liars-dice,clue-whodunit,monopoly-speed-die,monopoly-auction,simon-faceoff,price-bid-off,django-hangman-showdown,django-hangman-wanted,matrix-ultimate,greed-island-mancala,office-dots-boxes,trek-mini-chess,wopr-grid,smb3-nspade,clue-lineup,django-hangman,taskmaster-curling,bug-artillery,happy-gilmore-golf,color-of-money,baseketball-shootout,task-tallest-thing,fast-quarter-mile,block-battle,shred-hero,candy-color-dash,chutes-ladder-rush,brawndo-fruit-merge,candy-gumdrop-catch,review-pancakes,terminator-scan,microgame-rush,rush-marathon,pong-duel,derezzed-cycles,snake-v-snake,metal-gear-tank-duel,kill-bill-duel,arrow-arena,battle-royale-island,bomber-duel,pac-maze-duel').split(',');
+const GAMES=(process.env.GAMES||'trivia-mixed,trivia-lightning,trivia-wager,trivia-survival,paddys-beer-pong,shamb-uno,ten-forward-chess,four-lights,strategema-grid,full-shambyahtzee,cheaters-yahtzee,blackjack,five-card,roulette,bond-baccarat,traitors-guess-who,battleship-fog,liars-dice,clue-whodunit,monopoly-speed-die,monopoly-auction,simon-faceoff,price-bid-off,django-hangman-showdown,django-hangman-wanted,matrix-ultimate,greed-island-mancala,office-dots-boxes,trek-mini-chess,wopr-grid,smb3-nspade,clue-lineup,django-hangman,taskmaster-curling,bug-artillery,happy-gilmore-golf,color-of-money,baseketball-shootout,task-tallest-thing,fast-quarter-mile,block-battle,shred-hero,candy-color-dash,chutes-ladder-rush,brawndo-fruit-merge,candy-gumdrop-catch,review-pancakes,terminator-scan,microgame-rush,rush-marathon,pong-duel,derezzed-cycles,snake-v-snake,metal-gear-tank-duel,kill-bill-duel,arrow-arena,battle-royale-island,bomber-duel,pac-maze-duel,driller-duel,bubble-battle,snowball-fight,disc-duel').split(',');
 const SHOT_S=+process.env.SHOT_S||0; // screenshot once both phones play and SHOT_S seconds have passed
 const LAG=/^\d+-\d+$/.test(process.env.LAG||'')?process.env.LAG.split('-').map(Number):null;
 const url=pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href;
 let failed=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)failed++;};
 const browser=await launchBrowser();
 async function phone(tag){
- const ctx=await browser.newContext({viewport:{width:390,height:780}});const p=await ctx.newPage();const errors=[];
+ const [vw,vh]=(process.env.VIEW||'390x780').split('x').map(Number),ctx=await browser.newContext({viewport:{width:vw,height:vh}});const p=await ctx.newPage();const errors=[];
  p.on('pageerror',e=>errors.push(e.message));
  await p.addInitScript(h=>{try{localStorage.setItem('sc-net-host',h);}catch{}},HOST);
  await p.goto(url);await p.waitForSelector('.title-screen',{timeout:60000});await p.waitForFunction(()=>!document.getElementById('boot'));

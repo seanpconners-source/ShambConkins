@@ -1,21 +1,32 @@
 const {clamp}=require("src/utils.js");
 const {PCOL,PDARK,PLIGHT,Fx,arenaKeys,arenaTouch,Countdown,banner,outlined,rr,snd,noise,jingle,mmss,gestureHint,settle}=require("src/engines/arenaKit.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 // Disc Duel (after Windjammers): one court, a goal on each end (3 / 5 / 3 points). Drag to run your catcher, touch near
 // the disc to dive for it. When you hold the disc, swipe to throw: faster = harder, curve the swipe to curve the disc,
 // tap for a lob. First to 12 or most points at 75 s.
+// Online (netField, like Pong: no host): a fixed court (CH 560), each phone sees its own catcher at the bottom (portrait)
+// or on the left. Each phone runs its own catcher {x,y,ds,h} 30/s and is the authority for its own half: catches there
+// {c}, goals into its goal and lobs landing there {pt}. A throw {th} carries the disc's whole state stamped with the time
+// since start(); both phones fly it and the other phone runs it on by the time it took to arrive. Reaching the other
+// catcher, this phone guesses a catch from its streamed position; at the far goal line it waits for the call. Every
+// serve starts a rally k (overtime starts at 1000) and events carry it. Points count only before time-up: at 75 s each
+// phone sends {tu:1} and waits for the other's, so both have the same points before deciding win or golden point.
 const CW=1000,TARGET=12,TIME=75,PR=30,DR=15,CATCH=PR+DR+14,CLOCK=2.6,LOB_H=190,SPEED=640;
 const zonePts=(y,CH)=>y<CH*.28||y>CH*.72?3:5;
 
 async function disc(s){
  const [c,x]=s.canvas(900,560,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();if(!await settle(s))return;
  const fx=new Fx();let W=s.W,H=s.H;
- const portrait=H>W*1.05,long=portrait?H:W,short=portrait?W:H,CH=clamp(Math.round(CW*short/long),430,680);
+ const on=s.online||null,me=on?on.me:0,them=1-me,HUDY=on?40:0;
+ const portrait=H>W*1.05,long=portrait?H:W,short=portrait?W:H,CH=on?560:clamp(Math.round(CW*short/long),430,680);
+ // online the court is turned so this phone's catcher is at the bottom (portrait) or on the left
+ const FL=on&&(portrait?me===0:me===1),fl=(lx,ly)=>FL?{x:CW-lx,y:CH-ly}:{x:lx,y:ly},flv=v=>FL?{x:-v.x,y:-v.y}:v;
  let sc=1,offx=0,offy=0;
- const fit=()=>{const lw=portrait?CH:CW,lh=portrait?CW:CH,pad=portrait?4:6;const top=Math.min(46,H*.07);sc=Math.min((W-pad*2)/lw,(H-top-pad)/lh);offx=(W-lw*sc)/2;offy=top+(H-top-pad-lh*sc)/2;};
- const toL=(px,py)=>portrait?{x:(py-offy)/sc,y:CH-(px-offx)/sc}:{x:(px-offx)/sc,y:(py-offy)/sc};
- const toS=(lx,ly)=>portrait?{x:offx+(CH-ly)*sc,y:offy+lx*sc}:{x:offx+lx*sc,y:offy+ly*sc};
- const keyVec=(dx,dy)=>portrait?{x:dy,y:-dx}:{x:dx,y:dy};
+ const fit=()=>{const lw=portrait?CH:CW,lh=portrait?CW:CH,pad=portrait?4:6;const top=Math.min(46,H*.07)+HUDY;sc=Math.min((W-pad*2)/lw,(H-top-pad)/lh);offx=(W-lw*sc)/2;offy=top+(H-top-pad-lh*sc)/2;};
+ const toL=(px,py)=>{const q=portrait?{x:(py-offy)/sc,y:CH-(px-offx)/sc}:{x:(px-offx)/sc,y:(py-offy)/sc};return fl(q.x,q.y);};
+ const toS=(lx,ly)=>{const q=fl(lx,ly);return portrait?{x:offx+(CH-q.y)*sc,y:offy+q.x*sc}:{x:offx+q.x*sc,y:offy+q.y*sc};};
+ const keyVec=(dx,dy)=>flv(portrait?{x:dy,y:-dx}:{x:dx,y:dy});
  fit();
  const pl=[0,1].map(i=>({i,x:i?CW*.8:CW*.2,y:CH/2,tx:i?CW*.8:CW*.2,ty:CH/2,dash:0,dvx:0,dvy:0,dcool:0,hold:0,flash:0,catchT:0,hurt:0,throwT:0,joy:null})),
   d={x:CW/2,y:CH/2,vx:0,vy:0,spin:0,z:0,vz:0,state:'held',holder:0,owner:0,lob:null,trail:[],age:0,immune:0,power:0,rot:0};
@@ -24,9 +35,11 @@ async function disc(s){
  const half=i=>i?CW/2+PR+8:PR+8,halfMax=i=>i?CW-PR-8:CW/2-PR-8;
  const clampP=p=>{p.x=clamp(p.x,half(p.i),halfMax(p.i));p.y=clamp(p.y,PR+6,CH-PR-6);};
  const serve=who=>{
+  rally++;
   d.state='held';d.holder=who;d.owner=who;d.vx=d.vy=0;d.z=0;d.vz=0;d.spin=0;d.trail=[];d.lob=null;d.immune=0;d.age=0;
   for(const p of pl){p.x=p.i?CW*.8:CW*.2;p.y=CH/2;p.tx=p.x;p.ty=p.y;p.hold=0;p.dash=0;}
   pl[who].hold=CLOCK;
+  if(on){const th=pendTh.get(rally);pendTh.clear();if(th)applyThrow(th);}
  };
  s.hint('One disc, two catchers. DRAG to run your catcher (touch near the incoming disc to dive for it; a quick flick also dives). When you catch it, SWIPE to throw: a faster swipe is a harder throw, a curved swipe curves the disc, and a TAP is a lob. Goals: 3 points in the corners, 5 in the middle. First to 12 or most points at 75 seconds. P1: WASD run, Space throw (A/D curve, W/S aim), E lob. P2: arrows, Enter, . lob.');
 
@@ -38,6 +51,7 @@ async function disc(s){
   else{const foe=pl[1-p.i];let tx=(p.i?CW*.27:CW*.73)+(Math.random()-.5)*90,ty=clamp(CH-foe.y+(Math.random()-.5)*70,PR+30,CH-PR-30);const T=1.05;
    d.vx=(tx-d.x)/T;d.vy=(ty-d.y)/T;d.vz=LOB_H*4/T*1.0;d.z=1;d.spin=0;d.lob={T,tx,ty};d.power=0;}
   d.state='fly';d.holder=-1;d.owner=p.i;d.immune=.35;d.age=0;d.trail=[];p.hold=0;p.throwT=.25;
+  if(on&&p.i===me){const r=v=>+(+v).toFixed(2);nf.event({k:rally,th:[r(rt()),r(d.x),r(d.y),r(d.vx),r(d.vy),r(d.spin),r(d.power),r(d.z),r(d.vz),d.lob?[d.lob.T,r(d.lob.tx),r(d.lob.ty)]:0]});}
   const k=lob?0:d.power;fx.burst(d.x,d.y,{n:6+Math.round(k*14),color:k>.6?'#ffb347':'#fff',speed:140+k*260,life:.35,size:3+k*3,angle:Math.atan2(d.vy,d.vx)+Math.PI,spread:1.2});
   if(k>.6){fx.shake(6+k*6);noise(.18,{vol:.07,freq:1400});}else if(!lob)noise(.1,{vol:.05,freq:2200});
   snd(lob?260:200+k*200,.18,{type:'sine',to:lob?460:90,vol:.05});
@@ -55,7 +69,7 @@ async function disc(s){
   const spin=clamp(curve/1.0,-1,1);
   throwDisc(p,Math.cos(dir-spin*.18),Math.sin(dir-spin*.18),speed,spin);
  };
- const toLvec=v=>portrait?{x:v.y,y:-v.x}:{x:v.x,y:v.y};
+ const toLvec=v=>flv(portrait?{x:v.y,y:-v.x}:{x:v.x,y:v.y});
  const touch=arenaTouch(s,{
   owner:p=>toL(p.x,p.y).x<CW/2?0:1,maxFingers:2,
   onDown:f=>{const p=pl[f.owner],l=toL(f.x,f.y);
@@ -78,10 +92,11 @@ async function disc(s){
    // keyboard: forward throw, biased by up/down on screen; left/right on screen curves
    const aim=keyVec(0,st.d-st.u),curv=(portrait?(st.r-st.l):(st.d-st.u))*0;void curv;void v;
    throwDisc(pl[i],fwd,aim.y*.8+(portrait?aim.x*0:0),1000,(portrait?0:0)+(st.r-st.l)*(portrait?0:0)+((i?-1:1)*(portrait?(st.r-st.l):0)),false);}});
- for(const [i,key] of [[0,'e'],[1,'.']])s.on(document,'keydown',ev=>{if(ev.key.toLowerCase()===key&&!ev.repeat&&!s.paused&&phase==='play'&&d.state==='held'&&d.holder===i){ev.preventDefault();throwDisc(pl[i],0,0,0,0,true);}});
+ for(const [i0,key] of [[0,'e'],[1,'.']])s.on(document,'keydown',ev=>{const i=on?me:i0;if(ev.key.toLowerCase()===key&&!ev.repeat&&!s.paused&&phase==='play'&&d.state==='held'&&d.holder===i){ev.preventDefault();throwDisc(pl[i],0,0,0,0,true);}});
 
  // ------------------------------------------------------------ scoring
  const point=(who,pts,why,gx,gy)=>{
+  if(on&&(phase==='tu'||phase==='gameover')){if(phase==='tu'){sco[who]+=pts;server=1-who;s.setScores(sco);}return;}
   sco[who]+=pts;s.setScores(sco);phase='goal';phaseT=1.7;note=`${why} +${pts}`;s.react?.(who,'win');s.react?.(1-who,'sad');
   fx.shake(12);fx.ring(gx,gy,{color:'#ffe566',r1:160,life:.6,width:7});
   fx.burst(gx,gy,{n:40,colors:['#ffe566','#fff','#ff9a3d',PCOL[who]],speed:420,life:.9,size:5,gravity:260,shape:'star'});
@@ -93,19 +108,48 @@ async function disc(s){
  // ------------------------------------------------------------ update
  // vs CPU: catcher 2 reads the disc's line to its half and dives when close; when holding it throws at a corner or the middle
  const cpu=isCpu(s);let cpuHold=null,cpuErr=0;
- function cpuThink(dt){const p=pl[1],sk=cpuSkill(s);p.joy='cpu';if(phase!=='play')return;
-  if(d.state==='held'&&d.holder===1){if(cpuHold===null)cpuHold=.35+Math.random()*(.5+(1-sk)*.6);cpuHold-=dt;if(cpuHold<=0){cpuHold=null;if(Math.random()<.12)throwDisc(p,0,0,0,0,true);else{const ty=[PR+40,CH/2,CH-PR-40][Math.floor(Math.random()*3)]+(Math.random()-.5)*(1-sk)*120;throwDisc(p,-(d.x-0),ty-d.y,700+sk*650+Math.random()*150,(Math.random()-.5)*1.2);}}return;}
-  cpuHold=null;if(d.state==='fly'&&d.vx>0&&!d.lob){let t=(p.x-d.x)/Math.max(1,d.vx),y=d.y+d.vy*t;const top=PR,bot=CH-PR,span=bot-top;y=((y-top)%(2*span)+2*span)%(2*span);y=top+(y>span?2*span-y:y);if(Math.random()<dt*3)cpuErr=(Math.random()-.5)*(1-sk)*140;p.tx=CW*.82;p.ty=y+cpuErr;
-   if(p.dcool<=0&&d.x>CW/2&&Math.hypot(d.x-p.x,d.y-p.y)<120&&Math.random()<.4+sk*.5)startDash(p,d.x,d.y);}
-  else if(d.state==='fly'&&d.lob&&d.lob.tx>CW/2){p.tx=d.lob.tx;p.ty=d.lob.ty;}else{p.tx=CW*.8;p.ty=CH/2;}}
+ function cpuThink(dt,i=1){const p=pl[i],sk=cpuSkill(s),fw=i?-1:1,mine=v=>(v<CW/2)===(i===0);p.joy='cpu';if(phase!=='play')return;
+  if(d.state==='held'&&d.holder===i){if(cpuHold===null)cpuHold=.35+Math.random()*(.5+(1-sk)*.6);cpuHold-=dt;if(cpuHold<=0){cpuHold=null;if(Math.random()<.12)throwDisc(p,0,0,0,0,true);else{const ty=[PR+40,CH/2,CH-PR-40][Math.floor(Math.random()*3)]+(Math.random()-.5)*(1-sk)*120;throwDisc(p,fw*(i?d.x:CW-d.x),ty-d.y,700+sk*650+Math.random()*150,(Math.random()-.5)*1.2);}}return;}
+  cpuHold=null;const home=i?CW*.82:CW*.18;if(d.state==='fly'&&d.vx*fw<0&&!d.lob){let t=(p.x-d.x)/(Math.sign(d.vx)*Math.max(1,Math.abs(d.vx))),y=d.y+d.vy*t;const top=PR,bot=CH-PR,span=bot-top;y=((y-top)%(2*span)+2*span)%(2*span);y=top+(y>span?2*span-y:y);if(Math.random()<dt*3)cpuErr=(Math.random()-.5)*(1-sk)*140;p.tx=home;p.ty=y+cpuErr;
+   if(p.dcool<=0&&mine(d.x)&&Math.hypot(d.x-p.x,d.y-p.y)<120&&Math.random()<.4+sk*.5)startDash(p,d.x,d.y);}
+  else if(d.state==='fly'&&d.lob&&mine(d.lob.tx)){p.tx=d.lob.tx;p.ty=d.lob.ty;}else{p.tx=i?CW*.8:CW*.2;p.ty=CH/2;}}
+ // ------------------------------------------------------------ online
+ let rally=0,playT0=0,netBot=false,tuSent=0,tuDone=0,theirTU=0;const pendTh=new Map(),seen={x:0,y:0,vx:0,vy:0,at:0};
+ const rt=()=>(performance.now()-playT0)/1000,limit=()=>overtime?TIME+15:TIME;
+ // the other phone's throw: the disc as it left their hand, flown on by the time the message took
+ const applyThrow=a=>{const [t,dx,dy,vx,vy,spin,power,z,vz,lob]=a;if(![dx,dy,vx,vy].every(Number.isFinite))return;const p=pl[them];
+  Object.assign(d,{x:dx,y:dy,vx,vy,spin:+spin||0,power:+power||0,z:+z||0,vz:+vz||0,lob:Array.isArray(lob)?{T:+lob[0]||1,tx:+lob[1]||0,ty:+lob[2]||0}:null,state:'fly',holder:-1,owner:them,immune:.35,age:0,trail:[]});p.hold=0;p.throwT=.25;
+  snd(d.lob?260:200+d.power*200,.18,{type:'sine',to:d.lob?460:90,vol:.05});let age=clamp(rt()-(+t||0),0,.6);while(age>0&&d.state==='fly'){const h=Math.min(age,1/60);age-=h;flyDisc(h);}};
+ const callPoint=(who,pts,why,gx,gy)=>{if(on)nf.event({k:rally,pt:[+rt().toFixed(3),who,pts,why,Math.round(gx),Math.round(gy)]});point(who,pts,why,gx,gy);};
+ const nf=netField(s,{hz:30,
+  pack:()=>{const p=pl[me];return {x:Math.round(p.x),y:Math.round(p.y),ds:p.dash>0?[+p.dvx.toFixed(2),+p.dvy.toFixed(2)]:0,h:d.state==='held'&&d.holder===me?+p.hold.toFixed(2):0};},
+  unpack:(i,q)=>{if(![q?.x,q?.y].every(Number.isFinite))return;const p=pl[them],now=performance.now(),k=seen.at?Math.max(.016,(now-seen.at)/1000):0;
+   Object.assign(seen,{vx:k?(q.x-seen.x)/k:0,vy:k?(q.y-seen.y)/k:0,x:q.x,y:q.y,at:now});if(Array.isArray(q.ds)&&!(p.dash>0)){p.dash=.2;p.dvx=+q.ds[0]||0;p.dvy=+q.ds[1]||0;}if(q.h>0&&d.state==='held'&&d.holder===them)p.hold=q.h;},
+  onEvent:e=>{
+   if(e.tu>0){theirTU=Math.max(theirTU,e.tu|0);return;}
+   if(!Number.isInteger(e.k)||e.k<rally)return;
+   if(Array.isArray(e.th)){if(e.k>rally||phase!=='play')pendTh.set(e.k,e.th);else applyThrow(e.th);return;}
+   if(e.k!==rally)return;
+   if(Array.isArray(e.c)){const p=pl[them];if(Number.isFinite(e.c[0])){p.x=e.c[0];p.y=e.c[1];}if(!(d.state==='held'&&d.holder===them))catchDisc(p);}
+   else if(Array.isArray(e.pt)){const [t,who,pts,why,gx,gy]=e.pt;if(+t<limit()&&(who===0||who===1)&&pts>0&&pts<=5)point(who,pts,String(why).slice(0,12),+gx||0,+gy||0);}}});
+ const theirStep=(p,dt)=>{if(!seen.at)return;const k=Math.min(.1,(performance.now()-seen.at)/1000),tx=seen.x+seen.vx*k,ty=seen.y+seen.vy*k,e=Math.min(1,dt*(p.dash>0?30:16));p.x+=(tx-p.x)*e;p.y+=(ty-p.y)*e;if(p.dash>0)p.dash-=dt;};
+ // online time-up: both phones must have every point before deciding the game or a golden point
+ const netClock=()=>{const t=rt();if(!overtime)clock=Math.max(0,TIME-t);else otT=Math.max(0,TIME+15-t);
+  if(phase==='gameover')return;
+  if(tuSent<1&&t>=TIME){tuSent=1;nf.event({tu:1});phase='tu';}
+  if(tuSent>=1&&theirTU>=1&&tuDone<1){tuDone=1;if(sco[0]!==sco[1]){phase='gameover';phaseT=2.6;const w=sco[0]>sco[1]?0:1;note=`${s.players[w].name} wins!`;jingle([523,659,784,1047],{vol:.05,step:.09});}
+   else{overtime=true;otT=15;note='';fx.pop(CW/2,CH/2,'GOLDEN POINT!',{color:'#ffe566',size:40});jingle([784,988,1175],{vol:.05});phase='play';rally=999;serve(server);}}
+  if(overtime&&tuSent<2&&t>=TIME+15){tuSent=2;nf.event({tu:2});phase='tu';}
+  if(tuSent>=2&&theirTU>=2&&tuDone<2){tuDone=2;phase='gameover';phaseT=2.4;note=sco[0]===sco[1]?'A TIE!':`${s.players[sco[0]>sco[1]?0:1].name} wins!`;}};
  const update=dt=>{
-  time+=dt;fx.update(dt);if(cpu)cpuThink(dt);
-  if(phase==='intro'){if(!intro.update(dt)){phase='play';serve(0);}}
+  time+=dt;fx.update(dt);if(cpu)cpuThink(dt);if(netBot&&(d.holder===me||Math.floor(rt()/4)%3!==me+1))cpuThink(dt,me);if(on&&phase!=='intro'){nf.tick(dt);netClock();}
+  if(phase==='intro'){if(!intro.update(dt)){phase='play';if(on)playT0=performance.now();serve(0);}}
   else if(phase==='goal'||phase==='gameover'){phaseT-=dt;for(const z of zoneFlash)z.t-=dt;if(phaseT<=0){if(phase==='gameover'){s.finish(sco.slice(),`Disc Duel: ${sco[0]} to ${sco[1]}`);return;}
+    if(on){phase='play';serve(server);return;}
     if(clock<=0&&sco[0]===sco[1]&&!overtime){overtime=true;otT=15;}
     if(clock<=0&&!overtime||(overtime&&otT<=0)){phase='gameover';phaseT=2.4;note=sco[0]===sco[1]?'A TIE!':`${s.players[sco[0]>sco[1]?0:1].name} wins!`;}
     else{phase='play';serve(server);}}}
-  else if(phase==='play'){
+  else if(phase==='play'&&!on){
    if(!overtime){clock-=dt;if(clock<=0){clock=0;if(sco[0]!==sco[1]){phase='gameover';phaseT=2.6;const w=sco[0]>sco[1]?0:1;note=`${s.players[w].name} wins!`;jingle([523,659,784,1047],{vol:.05,step:.09});}else{overtime=true;otT=15;note='';fx.pop(CW/2,CH/2,'GOLDEN POINT!',{color:'#ffe566',size:40});jingle([784,988,1175],{vol:.05});}}}
    else{otT-=dt;if(otT<=0){phase='gameover';phaseT=2.4;note='A TIE!';}}
   }
@@ -114,6 +158,7 @@ async function disc(s){
   for(const p of pl){
    p.dcool=Math.max(0,p.dcool-dt);p.flash=Math.max(0,p.flash-dt);p.catchT=Math.max(0,p.catchT-dt);p.throwT=Math.max(0,p.throwT-dt);
    const live=phase==='play',holding=d.state==='held'&&d.holder===p.i;
+   if(on&&p.i!==me){if(live&&holding)p.hold=Math.max(0,p.hold-dt);if(live)theirStep(p,dt);clampP(p);continue;}
    if(live&&holding){p.hold-=dt;if(p.hold<=0){throwDisc(p,p.i?-1:1,(Math.random()-.5)*.8,0,0,true);}}
    const k=kb.state[p.i];
    if(live&&p.dash>0){p.dash-=dt;p.x+=p.dvx*2300*dt;p.y+=p.dvy*2300*dt;}
@@ -127,27 +172,31 @@ async function disc(s){
   // keep keyboard dive: none
   // disc
   if(d.state==='held'){const h=pl[d.holder],fw=h.i?-1:1;d.x=h.x+fw*(PR+4);d.y=h.y+4;d.z=0;d.rot+=dt*10;d.trail=[];}
-  else if(d.state==='fly'){
-   d.age+=dt;d.immune=Math.max(0,d.immune-dt);d.rot+=dt*(16+d.spin*6);
-   const steps=Math.max(1,Math.ceil(Math.hypot(d.vx,d.vy)*dt/10)),h=dt/steps;let ended=false;
-   for(let st=0;st<steps&&!ended;st++){
-    if(!d.lob){const ang=d.spin*h,cs=Math.cos(ang),sn=Math.sin(ang),vx=d.vx*cs-d.vy*sn,vy=d.vx*sn+d.vy*cs;d.vx=vx;d.vy=vy;const f=Math.exp(-.12*h);d.vx*=f;d.vy*=f;}
-    d.x+=d.vx*h;d.y+=d.vy*h;
-    if(d.lob){d.vz-=LOB_H*8/d.lob.T/d.lob.T*h;d.z+=d.vz*h;if(d.z<=0){d.z=0;ended='ground';break;}}
-    else{
-     if(d.y<DR){d.y=DR;d.vy=Math.abs(d.vy);d.spin*=-.8;bounce();}else if(d.y>CH-DR){d.y=CH-DR;d.vy=-Math.abs(d.vy);d.spin*=-.8;bounce();}
-     if(d.x<=0||d.x>=CW){ended='goal';break;}
-    }
-    // catching
-    if(d.z<46)for(const p of pl){if(p.i===d.owner&&d.immune>0)continue;if(Math.hypot(d.x-p.x,d.y-p.y)<CATCH&&(p.x<CW/2)===(p.i===0)){catchDisc(p);ended='caught';break;}}
-   }
-   if(d.trail.length===0||Math.hypot(d.trail.at(-1).x-d.x,d.trail.at(-1).y-d.y)>9)d.trail.push({x:d.x,y:d.y,z:d.z,t:.35});
-   for(const t of d.trail)t.t-=dt;d.trail=d.trail.filter(t=>t.t>0);
-   if(ended==='goal'){const who=d.x<=0?1:0,pts=zonePts(d.y,CH);point(who,pts,pts===5?'BULLSEYE!':'GOAL!',who?0:CW,clamp(d.y,40,CH-40));}
-   else if(ended==='ground'){const inLeft=d.x<CW/2,who=inLeft?1:0;fx.burst(d.x,d.y,{n:16,color:'#f4d58a',speed:200,life:.5,size:4,gravity:100});fx.ring(d.x,d.y,{color:'#fff',r1:60,life:.4});noise(.15,{vol:.07,freq:500});point(who,2,'LANDED!',d.x,d.y);}
-  }
+  else if(d.state==='fly'&&(!on||phase==='play'))flyDisc(dt);
   s.setScores(sco);
  };
+ // the disc in flight for dt seconds: curve, walls, lob arc, catches and goals
+ function flyDisc(dt){
+  d.age+=dt;d.immune=Math.max(0,d.immune-dt);d.rot+=dt*(16+d.spin*6);
+  const steps=Math.max(1,Math.ceil(Math.hypot(d.vx,d.vy)*dt/10)),h=dt/steps;let ended=false;
+  for(let st=0;st<steps&&!ended;st++){
+   if(!d.lob){const ang=d.spin*h,cs=Math.cos(ang),sn=Math.sin(ang),vx=d.vx*cs-d.vy*sn,vy=d.vx*sn+d.vy*cs;d.vx=vx;d.vy=vy;const f=Math.exp(-.12*h);d.vx*=f;d.vy*=f;}
+   d.x+=d.vx*h;d.y+=d.vy*h;
+   if(d.lob){d.vz-=LOB_H*8/d.lob.T/d.lob.T*h;d.z+=d.vz*h;if(d.z<=0){d.z=0;ended='ground';break;}}
+   else{
+    if(d.y<DR){d.y=DR;d.vy=Math.abs(d.vy);d.spin*=-.8;bounce();}else if(d.y>CH-DR){d.y=CH-DR;d.vy=-Math.abs(d.vy);d.spin*=-.8;bounce();}
+    if(d.x<=0||d.x>=CW){ended='goal';break;}
+   }
+   // catching
+   if(d.z<46)for(const p of pl){if(p.i===d.owner&&d.immune>0)continue;if(Math.hypot(d.x-p.x,d.y-p.y)<CATCH&&(p.x<CW/2)===(p.i===0)&&(!on||(d.x<CW/2)===(p.i===0))){catchDisc(p);if(on&&p.i===me)nf.event({k:rally,c:[Math.round(p.x),Math.round(p.y)]});ended='caught';break;}}
+  }
+  if(d.trail.length===0||Math.hypot(d.trail.at(-1).x-d.x,d.trail.at(-1).y-d.y)>9)d.trail.push({x:d.x,y:d.y,z:d.z,t:.35});
+  for(const t of d.trail)t.t-=dt;d.trail=d.trail.filter(t=>t.t>0);
+  // online this phone calls only goals into its own goal and lobs landing on its own half; otherwise it waits for the call
+  const judge=!on||(d.x<CW/2?0:1)===me;
+  if(ended==='goal'){const who=d.x<=0?1:0,pts=zonePts(d.y,CH);if(judge)callPoint(who,pts,pts===5?'BULLSEYE!':'GOAL!',who?0:CW,clamp(d.y,40,CH-40));else{d.state='wait';d.x=clamp(d.x,0,CW);}}
+  else if(ended==='ground'){const inLeft=d.x<CW/2,who=inLeft?1:0;fx.burst(d.x,d.y,{n:16,color:'#f4d58a',speed:200,life:.5,size:4,gravity:100});fx.ring(d.x,d.y,{color:'#fff',r1:60,life:.4});noise(.15,{vol:.07,freq:500});if(judge)callPoint(who,2,'LANDED!',d.x,d.y);else d.state='wait';}
+ }
  const bounce=()=>{fx.burst(d.x,d.y<CH/2?0:CH,{n:5,color:'#fff',speed:100,life:.25,size:3});snd(700+Math.random()*200,.05,{type:'triangle',vol:.03});};
  const catchDisc=p=>{
   d.state='held';d.holder=p.i;d.vx=d.vy=0;d.z=0;d.trail=[];d.lob=null;p.hold=CLOCK;p.catchT=.3;p.flash=.2;
@@ -158,11 +207,11 @@ async function disc(s){
  };
 
  // ------------------------------------------------------------ drawing
- const upright=(lx,ly,fn)=>{x.save();x.translate(lx,ly);if(portrait)x.rotate(-Math.PI/2);fn();x.restore();};
+ const upright=(lx,ly,fn)=>{x.save();x.translate(lx,ly);if(portrait)x.rotate(-Math.PI/2);if(FL)x.rotate(Math.PI);fn();x.restore();};
  const drawCourt=()=>{
   // outside
   x.fillStyle='#0f1f3a';x.fillRect(0,0,W,H);
-  x.save();portrait?x.setTransform(0,sc,-sc,0,offx+CH*sc,offy):x.setTransform(sc,0,0,sc,offx,offy);
+  x.save();portrait?x.setTransform(0,sc,-sc,0,offx+CH*sc,offy):x.setTransform(sc,0,0,sc,offx,offy);if(FL)x.transform(-1,0,0,-1,CW,CH);
   // stands
   x.fillStyle='#1b2f58';x.fillRect(-30,-50,CW+60,50);x.fillRect(-30,CH,CW+60,50);
   for(let k=0;k<40;k++){x.fillStyle=['#ff6fa8','#4aa3ff','#ffe566','#8affc1'][k%4]+'88';x.beginPath();x.arc(10+k*25,-20+Math.sin(k+time*4+(k%3))*3,7,0,6.283);x.fill();x.beginPath();x.arc(10+k*25,CH+22+Math.sin(k*2+time*4)*3,7,0,6.283);x.fill();}
@@ -208,21 +257,23 @@ async function disc(s){
  const draw=()=>{
   x.clearRect(0,0,W,H);fx.begin(x);drawCourt();fx.end(x);
   // HUD (screen space)
-  const bar=Math.min(46,H*.07);x.fillStyle='#0a1630';x.fillRect(0,0,W,bar);
-  const fs=clamp(bar*.62,13,26);
-  outlined(x,String(sco[0]),W*.5-fs*3.2,bar/2,{size:fs*1.4,fill:PCOL[0],stroke:'#06101f'});outlined(x,String(sco[1]),W*.5+fs*3.2,bar/2,{size:fs*1.4,fill:PCOL[1],stroke:'#06101f'});
-  outlined(x,overtime?'GOLDEN POINT':mmss(clock),W/2,bar/2,{size:fs,fill:clock<10||overtime?'#ff8a7a':'#fff',stroke:'#06101f'});
-  if(W>560)outlined(x,`first to ${TARGET}`,W*.06,bar/2,{size:Math.max(9,fs*.55),fill:'#9fb4de',stroke:'#06101f',align:'left',lw:2});
+  const bar=Math.min(46,H*.07),cy=HUDY+bar/2;x.fillStyle='#0a1630';x.fillRect(0,0,W,bar+HUDY);
+  const fs=clamp(bar*.62,13,26),L0=on?me:0;
+  outlined(x,String(sco[L0]),W*.5-fs*3.2,cy,{size:fs*1.4,fill:PCOL[L0],stroke:'#06101f'});outlined(x,String(sco[1-L0]),W*.5+fs*3.2,cy,{size:fs*1.4,fill:PCOL[1-L0],stroke:'#06101f'});
+  outlined(x,overtime?(on?`GOLDEN ${Math.ceil(otT)}`:'GOLDEN POINT'):mmss(clock),W/2,cy,{size:fs,fill:clock<10||overtime?'#ff8a7a':'#fff',stroke:'#06101f'});
+  if(phase==='tu')banner(x,W,H,'TIME!',`waiting for ${s.players[them].name}…`,{color:'#ffe566'});
+  if(W>560)outlined(x,`first to ${TARGET}`,W*.06,cy,{size:Math.max(9,fs*.55),fill:'#9fb4de',stroke:'#06101f',align:'left',lw:2});
   // prompts
-  if(phase==='play'&&d.state==='held'){const p=pl[d.holder],q=toS(p.x,p.y);const t=CLOCK-p.hold;if(t<3.2){const a=clamp(1.2-t/3.2,0,1);x.globalAlpha=a;outlined(x,'SWIPE TO THROW · TAP TO LOB',W/2,H*.5,{size:Math.max(12,Math.min(W,H*1.4)*.028),fill:PLIGHT[p.i],stroke:'#06101f'});x.globalAlpha=1;
-    if(time<999)gestureHint(x,q.x+(portrait?0:(p.i?-1:1)*sc*130),q.y+(portrait?(p.i?-1:1)*sc*130:0),'flick',t*1.3,{color:PLIGHT[p.i],size:sc*30});}}
-  if(phase==='intro'){for(const p of pl){const q=toS(p.x,p.y);if(time<5.5){gestureHint(x,q.x,q.y+sc*PR*2.2,'drag',time,{color:PLIGHT[p.i],size:sc*30});}}intro.draw(x,W,H);}
+  if(phase==='play'&&d.state==='held'&&(!on||d.holder===me)){const p=pl[d.holder],q=toS(p.x,p.y);const t=CLOCK-p.hold;if(t<3.2){const a=clamp(1.2-t/3.2,0,1);x.globalAlpha=a;outlined(x,'SWIPE TO THROW · TAP TO LOB',W/2,H*.5,{size:Math.max(12,Math.min(W,H*1.4)*.028),fill:PLIGHT[p.i],stroke:'#06101f'});x.globalAlpha=1;
+    const fwd=toS(p.x+(p.i?-130:130),p.y);if(time<999)gestureHint(x,fwd.x,fwd.y,'flick',t*1.3,{color:PLIGHT[p.i],size:sc*30});}}
+  if(phase==='intro'){for(const p of pl){const q=toS(p.x,p.y);if(time<5.5&&(!on||p.i===me)){gestureHint(x,q.x,q.y+sc*PR*2.2,'drag',time,{color:PLIGHT[p.i],size:sc*30});}}intro.draw(x,W,H);}
   if(phase==='goal')banner(x,W,H,note,`${sco[0]} – ${sco[1]}`,{color:'#ffe566'});
   if(phase==='gameover')banner(x,W,H,note,`${sco[0]} – ${sco[1]}`,{color:'#ffe566'});
  };
- s.debug={engine:'disc',pl,d,sco,fx,touch,kb,toS,toL,get phase(){return phase;},CH,portrait,get sc(){return sc;}};
+ s.debug={engine:'disc',pl,d,sco,fx,touch,kb,toS,toL,get phase(){return phase;},CH,portrait,get sc(){return sc;},get rally(){return rally;},skip:t=>{playT0-=t*1000;},bot:on?()=>{netBot=true;return '';}:null}; // test bot: plays this phone's catcher, sits out 4 s in 12 so goals happen
  draw();
- if(!await s.pass(0,'Disc Duel: Windjammers on one screen. Run to catch the disc, then swipe to throw it into the other goal. Corners are 3, the middle is 5. First to 12 wins.','Both ready — throw!'))return;
+ if(!await s.pass(0,on?`Disc Duel online: you're the ${me?'pink':'blue'} catcher at the near end; ${s.players[them].name} plays from the other phone. Run to catch the disc, then swipe to throw it into their goal (tap for a lob). Corners are 3, the middle is 5. First to 12 wins.`:'Disc Duel: Windjammers on one screen. Run to catch the disc, then swipe to throw it into the other goal. Corners are 3, the middle is 5. First to 12 wins.','Both ready — throw!'))return;
+ if(on){await nf.start('go');if(!s.alive)return;}
  s.frame(dt=>{
   if(s.W!==W||s.H!==H){W=s.W;H=s.H;fit();touch.clear();}
   update(Math.min(dt,.033));draw();
