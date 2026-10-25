@@ -33,6 +33,7 @@ const step=ph=>ph.p.evaluate(()=>{
  if(dlg.open){const t=dlg.querySelector('#dialog-title')?.innerText||'';if(/wins the duel|Dead heat|left\. You win|You stopped/i.test(t))return 'result:'+t;
   const b=[...dlg.querySelectorAll('button')].find(b=>!b.disabled&&/Start game|Continue|OK|Welcome/i.test(b.innerText));if(b){b.click();return 'dlg:'+t;}return 'wait:'+t;}
  if(!s)return 'idle';
+ if(s.debug?.net)window.__net=JSON.stringify(s.debug.net);
  const ready=document.querySelector('.pass-overlay [data-ready]');if(ready){ready.click();return 'ready';}
  if(typeof s.debug?.bot==='function'){const r=s.debug.bot();if(r)return 'bot:'+r;}
  const ans=[...document.querySelectorAll('[data-answer]:not([disabled]),[data-wager]:not([disabled])')];if(ans.length){ans[Math.floor(Math.random()*ans.length)].click();return 'answer';}
@@ -63,6 +64,7 @@ for(const id of GAMES){
   const [ta,tb]=await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>document.querySelector('#dialog[open]')?.innerText||'')));
   const nums=t=>(t.match(/(\d[\d,]*)\s*–\s*(\d[\d,]*)/)||[]).slice(1,3).map(x=>+x.replace(/,/g,''));
   const [na,nb]=[nums(ta),nums(tb)];
+  if(process.env.NETSTAT)console.log(' net stats',...await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>window.__net||null))));
   console.log(' final scores',JSON.stringify(await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>window.__lastScores||null)))));
   check(na.length===2&&nb.length===2&&na[0]===nb[1]&&na[1]===nb[0],`${id}: result cards agree (Sean ${na.join('–')} / Amber ${nb.join('–')})`);
   for(const ph of [A,B])await choose(ph,'Back to the room');
