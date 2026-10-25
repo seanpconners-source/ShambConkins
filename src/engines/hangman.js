@@ -9,7 +9,7 @@ const {vibrate}=require("src/audio.js");
 const {shuffle}=require("src/utils.js");
 const {SFX}=require("src/engines/westernSfx.js");
 const {PHRASES,CATEGORIES}=require("src/data/hangmanPhrases.js");
-const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {isCpu,isOnline,cpuSkill}=require("src/engines/cpuKit.js");
 
 const LIVES=6,ROUNDS=3,CLOCK=75,TURN=15,MAXLEN=34;
 const ABC=[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
@@ -108,13 +108,17 @@ async function hangman(s){
  }
  const solvedNow=()=>[...st.text].every(ch=>!isLetter(ch)||st.guessed.get(ch)?.hit);
  const players=()=>mode==='shared'?[0,1]:mode==='turns'?[st.turn]:[st.guesser];
+ // Online (s.online, Showdown and Wanted; Quick Draw is a real-time race and stays on one phone): each phone shoots only its
+ // own letters {g: letter}; running out of shot clock {to:1} is called by the shooter's phone only. In Wanted the writer's
+ // phone sends the bounty {w:{text,cat}} and the guesser's phone shows only the blanks.
+ const net=isOnline(s)&&mode!=='shared'?s.online:null,theirs=p=>!!net&&p===net.remote;if(net)s.hotseat=true;let netWait='',theirWritten=null;
  function passTurn(){const o=1-st.turn;if(!st.hanged[o]&&o!==st.turn){st.turn=o;st.turnT=T;SFX.spurs({steps:2,vol:.3,pan:o?.4:-.4});}st.tclock=TURN;st.tick=-1;s.active=st.turn;s.updateScores();}
- function timeout(p){if(st.phase!=='play')return;st.misses[p]++;st.partT[p][st.misses[p]]=T;SFX.dryFire({});mood(p,'angry');vibrate(45);shake=.3;floatText(p,'TOO SLOW','#ff6b5e');dust(p);
+ function timeout(p,remote=false){if(st.phase!=='play'||theirs(p)&&!remote)return;if(net&&!remote)net.send({to:1});st.misses[p]++;st.partT[p][st.misses[p]]=T;SFX.dryFire({});mood(p,'angry');vibrate(45);shake=.3;floatText(p,'TOO SLOW','#ff6b5e');dust(p);
   if(st.misses[p]>=LIVES)return hang(p);if(st.misses[p]===LIVES-1)floatText(p,'LAST BULLET','#ff8a5c',1.6);passTurn();}
  function mood(p,m,sec=1.2){st.mood[p]={m,until:T+sec};}
- function guess(p,L){
-  if(st.phase!=='play'||!s.alive||s.paused||!players().includes(p))return;
-  if(st.hanged[p]||st.lock[p]>T||!isLetter(L)||st.guessed.has(L))return;
+ function guess(p,L,remote=false){
+  if(st.phase!=='play'||!s.alive||!remote&&s.paused||!players().includes(p))return;
+  if(st.hanged[p]||st.lock[p]>T||!isLetter(L)||st.guessed.has(L)||theirs(p)&&!remote)return;if(net&&!remote)net.send({g:L});
   const idx=[];[...st.text].forEach((ch,i)=>{if(ch===L)idx.push(i);});
   st.guessed.set(L,{by:p,hit:idx.length>0,t:T});st.press[p+L]=T;
   const pan=duel?(p?.5:-.5):0;
@@ -432,7 +436,7 @@ async function hangman(s){
   for(let i=waits.length-1;i>=0;i--)if(waits[i].f()){waits[i].r();waits.splice(i,1);}
   if(st.phase==='play'&&mode==='shared'){st.clock-=dt;const sec=Math.ceil(st.clock);if(sec<=5&&sec>0&&sec!==st.tick){st.tick=sec;SFX.spurs({steps:1,vol:.25});}
    if(st.clock<=0){st.clock=0;st.result={kind:'time'};SFX.whinny({});endRound();}}
-  if(st.phase==='play'&&mode==='turns'){st.tclock-=dt;const sec=Math.ceil(st.tclock);if(sec<=3&&sec>0&&sec!==st.tick){st.tick=sec;SFX.spurs({steps:1,vol:.25});}if(st.tclock<=0)timeout(st.turn);}
+  if(st.phase==='play'&&mode==='turns'){st.tclock-=dt;const sec=Math.ceil(st.tclock);if(sec<=3&&sec>0&&sec!==st.tick){st.tick=sec;SFX.spurs({steps:1,vol:.25});}if(st.tclock<=0){if(theirs(st.turn))st.tclock=0;else timeout(st.turn);}}
   lay=layout();shake=Math.max(0,shake-dt*1.6);
   x.save();if(shake>0)x.translate((Math.random()-.5)*shake*14,(Math.random()-.5)*shake*14);
   backdrop();
@@ -440,7 +444,7 @@ async function hangman(s){
   else if(st.phase==='write'){poster(lay.poster);for(const b of lay.act)actionButton(b);keyboard(lay.kb[0],lay.keys[0].map(k=>({...k})),null);hud();}
   else{
    for(const [i,pn] of (lay.panels||[]).entries()){const p=duel?i:st.guesser,open=st.hanged[p]?Math.min(1,(T-st.hanged[p])/.14):0;gallows(pn,open);
-    if(st.phase!=='handoff')cowboy(pn,p,Math.min(LIVES-1,st.misses[p]),{hangT:st.hanged[p],cutT:st.cut[p]});card(pn,p,{label:mode==='pass'?'GUESSING':mode==='turns'&&st.phase==='play'?(st.turn===p?'▼ YOUR SHOT':st.hanged[p]?null:'WAITING'):null});
+    if(st.phase!=='handoff')cowboy(pn,p,Math.min(LIVES-1,st.misses[p]),{hangT:st.hanged[p],cutT:st.cut[p]});card(pn,p,{label:mode==='pass'?(theirs(p)?'GUESSING ON THEIR PHONE':'GUESSING'):mode==='turns'&&st.phase==='play'?(st.turn===p?(theirs(p)?'▼ THEIR SHOT':'▼ YOUR SHOT'):st.hanged[p]?null:'WAITING'):null});
     if(mode==='turns'&&st.phase==='play'&&st.turn!==p&&!st.hanged[p]){x.save();rr(x,pn.r.x,pn.r.y,pn.r.w,pn.r.h,10);x.fillStyle='rgba(12,5,3,.38)';x.fill();x.restore();}}
    if(st.phase!=='handoff'){board(lay.phrase,{all:st.phase==='reveal'});
     lay.kb.forEach((r,i)=>keyboard(r,lay.keys[i],mode==='shared'?i:mode==='turns'?st.turn:st.guesser,{active:st.phase==='play'}));}
@@ -453,6 +457,7 @@ async function hangman(s){
   for(let i=floats.length-1;i>=0;i--){const f=floats[i],a=(T-f.t)/f.life;if(a>=1){floats.splice(i,1);continue;}x.globalAlpha=Math.min(1,(1-a)*2);x.font=`900 ${clamp(Math.min(W,H)*.05,16,30)}px ${SLAB}`;x.textAlign='center';x.textBaseline='middle';
    x.lineWidth=4;x.strokeStyle='#1a0704';x.strokeText(f.text,f.x,f.y-a*40);x.fillStyle=f.color;x.fillText(f.text,f.x,f.y-a*40);x.globalAlpha=1;}
   x.restore();
+  if(netWait){x.save();x.fillStyle='rgba(10,4,2,.62)';x.fillRect(0,0,W,H);x.textAlign='center';x.textBaseline='middle';x.font=`900 ${clamp(Math.min(W,H)*.05,16,30)}px ${SLAB}`;x.lineWidth=5;x.strokeStyle='#1a0704';x.strokeText(netWait,W/2,H*.45,W-30);x.fillStyle='#ffcf5a';x.fillText(netWait,W/2,H*.45,W-30);x.restore();}
  });
  function drawCard(){
   const lw=Math.min(W*.86,620,H*1.05),logo=makeLogo(lw,dpr,true),hs0=clamp(Math.min(W,H)*.2,60,140),ly=Math.max(8,(H-(logo.h+H*.03+hs0*2.1))/2-H*.05);
@@ -488,13 +493,18 @@ async function hangman(s){
   if(st.phase==='reveal'||st.phase==='banner'){if(T-st.bannerT>1.2)st.skip=true;return;}
   if(st.phase==='write'){for(const b of lay.act||[])if(inRect(pt,b)){st.press['w'+b.id]=T;({deal,clue:cycleClue,space:()=>typeChar(' '),back:backspace,done:doneWriting})[b.id]();return;}
    for(const k of lay.keys?.[0]||[])if(inRect(pt,k)){st.press['w'+k.L]=T;typeChar(k.L);return;}return;}
-  if(st.phase==='play')(lay.keys||[]).forEach((ks,i)=>{const p=mode==='shared'?i:mode==='turns'?st.turn:st.guesser;if(cpu&&p===1)return;for(const k of ks)if(inRect(pt,{x:k.x-2,y:k.y-2,w:k.w+4,h:k.h+4})){guess(p,k.L);st.press[p+k.L]=T;return;}});
+  if(st.phase==='play')(lay.keys||[]).forEach((ks,i)=>{const p=mode==='shared'?i:mode==='turns'?st.turn:st.guesser;if(cpu&&p===1||theirs(p))return;for(const k of ks)if(inRect(pt,{x:k.x-2,y:k.y-2,w:k.w+4,h:k.h+4})){guess(p,k.L);st.press[p+k.L]=T;return;}});
  });
  s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat||ev.target?.matches?.('input,textarea,[contenteditable]'))return;const k=ev.key;
   if(st.phase==='write'){if(/^[a-z]$/i.test(k))typeChar(k.toUpperCase());else if(k===' '||k==="'"||k==='-')typeChar(k);else if(k==='Backspace')backspace();else if(k==='Enter')doneWriting();else return;ev.preventDefault();return;}
-  if(st.phase==='play'&&/^[a-z]$/i.test(k)){ev.preventDefault();const who=mode==='shared'?0:mode==='turns'?st.turn:st.guesser;if(!(cpu&&who===1))guess(who,k.toUpperCase());}
+  if(st.phase==='play'&&/^[a-z]$/i.test(k)){ev.preventDefault();const who=mode==='shared'?0:mode==='turns'?st.turn:st.guesser;if(!(cpu&&who===1)&&!theirs(who))guess(who,k.toUpperCase());}
   else if(['intro','final','reveal'].includes(st.phase)&&(k==='Enter'||k===' ')){ev.preventDefault();st.skip=true;}});
- s.debug={st,guess,type:t=>{st.draft=String(t).toUpperCase().slice(0,MAXLEN);},deal,done:doneWriting,skip:()=>{st.skip=true;},layout:()=>lay};
+ s.debug={st,guess,type:t=>{st.draft=String(t).toUpperCase().slice(0,MAXLEN);},deal,done:doneWriting,skip:()=>{st.skip=true;},layout:()=>lay,
+  bot:net?()=>{if(s.paused)return null;const me=net.me;if(st.phase==='write'&&st.writer===me&&!st.written){deal();doneWriting();return 'write';}
+   if(st.phase==='play'&&players().includes(me)&&!st.hanged[me]){const left=[...'ETAOINSRHLDCUMFPGWYBVKXJQZ'].filter(L=>!st.guessed.has(L));if(left.length&&Math.random()<.5){guess(me,left[Math.floor(Math.random()*Math.min(8,left.length))]);return 'guess';}}return null;}:null};
+ if(net)void (async()=>{for(;;){const m=await net.next();if(!m||!s.alive)return;if(m.w){theirWritten=m.w;continue;}
+  while(s.alive&&(s.paused||st.phase!=='play'||!players().some(theirs)))await new Promise(r=>setTimeout(r,50));if(!s.alive)return;
+  const p=players().find(theirs);if(typeof m.g==='string')guess(p,m.g.toUpperCase().slice(0,1),true);else if(m.to)timeout(p,true);}})();
 
  // ---------------------------------------------------------------- flow
  SFX.gallop({beats:7,vol:.45});SFX.whip({delay:1.3});SFX.gunshot({delay:1.6});SFX.yeehaw({delay:1.85});
@@ -506,9 +516,10 @@ async function hangman(s){
  }else{
   for(let r=0;r<2;r++){st.round=r;st.writer=r;st.guesser=1-r;st.draft='';st.draftCat=0;st.written=null;st.phase='handoff';
    if(cpu&&st.writer===1){st.phase='write';deal();doneWriting();}
+   else if(theirs(st.writer)){netWait=`${name(st.writer).toUpperCase()} IS WRITING A BOUNTY…`;await until(()=>theirWritten||!s.alive);if(!s.alive)return;netWait='';st.written=theirWritten;theirWritten=null;}
    else{if(!await s.pass(st.writer,`${name(st.writer)}: write a phrase for ${name(st.guesser)} to guess, or deal one from the deck. ${name(st.guesser)}, look away!`,'Write the bounty'))return;
-    st.phase='write';SFX.spurs({steps:2});await until(()=>st.written);if(!s.alive)return;}st.phase='handoff';
-   if(!await s.pass(st.guesser,`${name(st.guesser)}: ${name(st.writer)} posted a bounty. Six bullets in the chamber. Guess it before the trapdoor drops.`,'Saddle up',{countdown:3}))return;
+    st.phase='write';SFX.spurs({steps:2});await until(()=>st.written);if(!s.alive)return;if(net)net.send({w:st.written});}st.phase='handoff';
+   if(!theirs(st.guesser)&&!await s.pass(st.guesser,`${name(st.guesser)}: ${name(st.writer)} posted a bounty. Six bullets in the chamber. Guess it before the trapdoor drops.`,'Saddle up',{countdown:3}))return;
    startRound(st.written.text,st.written.cat);st.phase='banner';st.bannerT=T;SFX.cylinder({});await sleep(1.3);if(!s.alive)return;st.skip=false;
    st.phase='play';await until(()=>st.phase==='reveal');await sleep(3.4);if(!s.alive)return;st.skip=false;}
  }

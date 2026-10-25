@@ -1,7 +1,7 @@
 // The Price Is Right Bid-Off: privately bid on absurd items with a slider. Closest without going over wins the round.
 const {ITEMS}=require("src/data/partyPrice.js");
 const {PartyUI,sfx,head,pname,esc,burst,banner,titleCard,shuffle,extraCSS,tone}=require("src/engines/partyKit.js");
-const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {isCpu,isOnline,cpuSkill}=require("src/engines/cpuKit.js");
 
 const ROUNDS=5;
 const CSS=`
@@ -31,6 +31,10 @@ async function priceRight(s){
  extraCSS('pr-css',CSS);
  const ui=new PartyUI(s,{theme:'price'});
  const cpu=isCpu(s);if(cpu)s.hotseat=true;
+ // Online (s.online): both players bid at the same time on their own phones; each sends its sealed bid {r,bid} and the
+ // showcase is revealed once the other phone's bid is in.
+ const net=isOnline(s)?s.online:null;if(net)s.hotseat=true;let phase='title';
+ s.debug={bot:net?()=>{if(!ui.handler||s.paused)return null;if(phase==='bid'){ui.handler('lock');return 'lock';}if(phase==='go'){ui.handler('go');return 'go';}return null;}:null};
  const rand=s.random,names=[pname(s,0),pname(s,1)],score=[0,0],items=shuffle(ITEMS,rand).slice(0,ROUNDS).map(i=>({...i}));items.forEach(i=>rangeFor(i,rand));
  s.hint('Each round an item is shown. Secretly slide to your bid. Closest to the real retail price WITHOUT going over wins 2 points, and a bid within 5 percent earns a bonus point. If you both go over, nobody scores.');
  const blank=()=>ui.set(`<div class="pk-screen"><div class="pk-q" style="font-size:54px">🎡</div><div class="pk-sub">Pass the phone…</div></div>`);
@@ -54,7 +58,10 @@ async function priceRight(s){
  if(!await titleCard(s,'🎡','Secretly bid on absurd showcase items. Closest to the real price without going over wins the round, and a bid within 5 percent earns a bonus.','Come on down!'))return;
  for(let r=0;r<ROUNDS;r++){
   const it=items[r],bids=[0,0],order=r%2?[1,0]:[0,1];
-  for(const P of order){
+  if(net){const me=net.me,them=net.remote;phase='bid';bids[me]=await bidScreen(me,it,r);if(!s.alive)return;net.send({r,bid:bids[me]});phase='wait';
+   ui.set(`<div class="pk-screen">${itemHTML(it,r)}<div class="pk-sub">Bid locked. Waiting for <b>${esc(names[them])}</b>’s secret bid…</div></div>`);
+   const m=await net.next();if(!m||!s.alive)return;const {lo,hi}=rangeFor(it,rand);bids[them]=Math.max(lo,Math.min(hi,Number(m.bid)||lo));}
+  else for(const P of order){
    // vs CPU: player 2 guesses within about ±45% / ±29% / ±21% of the real price (Easy / Normal / Hard) and shades its bid down.
    if(cpu&&P===1){const {lo,hi,step}=rangeFor(it,rand),sig=.5-.32*cpuSkill(s),g=(Math.random()+Math.random()+Math.random()-1.5)*2*sig;bids[1]=Math.max(lo,Math.min(hi,Math.round(it.price*Math.exp(g)*(1-sig*.45)/step)*step));continue;}
    blank();
@@ -81,7 +88,7 @@ async function priceRight(s){
   }
   if(!await s.wait(900))return;
   ui.root.querySelector('[data-out]').innerHTML=`<button class="pk-btn pk-in" data-act="go">${r===ROUNDS-1?'Final results ▸':'Next showcase ▸'}</button>`;
-  await new Promise(res=>{ui.handler=a=>{if(a==='go'){sfx.tap();ui.handler=null;res(1);}};});if(!s.alive)return;
+  phase='go';await new Promise(res=>{ui.handler=a=>{if(a==='go'){sfx.tap();ui.handler=null;res(1);}};});if(!s.alive)return;
   s.shared=false;
  }
  const w=score[0]>score[1]?0:score[1]>score[0]?1:-1;
@@ -89,7 +96,7 @@ async function priceRight(s){
  ui.set(`<div class="pk-screen"><div class="pk-over">The Price Is Right · finale</div><div class="pk-row">${head(s,0,w===0?'win':w<0?'silly':'sad','xl')}${head(s,1,w===1?'win':w<0?'silly':'sad','xl')}</div>
   <h1 class="pk-h1 pk-pop">${w<0?'A tie! Everybody wins a (pretend) car!':esc(names[w])+' is the shrewdest shopper!'}</h1><div class="pk-q">${score[0]} – ${score[1]}</div><button class="pk-btn" data-act="go">Finish</button></div>`);
  sfx.cheer();burst(ui.root,{emojis:['💰','🎡','🎉'],n:30,spread:250});
- await new Promise(res=>{ui.handler=a=>{if(a==='go')res(1);};});if(!s.alive)return;
+ phase='go';await new Promise(res=>{ui.handler=a=>{if(a==='go')res(1);};});if(!s.alive)return;
  s.finish([...score],w<0?'Dead even on the showcase.':`${names[w]} won the showcase ${score[w]}–${score[1-w]}.`);
 }
 Object.assign(exports,{priceRight});

@@ -569,7 +569,12 @@ Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from a
   picked the same way on both), Monopoly Speed Die ({a:roll|buy|pass|card}/{bus:n}; dice from the seed; `cpuTurn` guard blocks
   the other's turn) + Auction (both bid at once, {lot,bid}, reveal when both are in). All 4 pass online-native.
   Clue Lineup is a real-time tap race: left for the real-time phase (a relay would favour the referee phone).
-  TODO next: Simon, Price Is Right, Hangman Wanted/Showdown, Mancala, Dots & Boxes, Ultimate tic-tac-toe, mini chess...
+  Batch 5 (Oct 25): Simon `simon-faceoff` (each tap {t: pad|-1} streams to the watcher, fed into onTap like the CPU; only the
+  tapping phone runs the too-slow clock), Price Is Right `price-bid-off` (both bid at once, {r,bid}), Hangman Showdown/Wanted
+  (hangman.js: {g: letter}, {to:1} = shot clock ran out on the shooter's phone (the watcher's clock just stops at 0), {w:{text,cat}}
+  = the writer's bounty; guesser sees blanks; `netWait` overlay while the other writes). Quick Draw (`django-hangman`, both shoot
+  at once) left for the real-time phase like Clue Lineup. All 4 pass online-native.
+  TODO next: Mancala, Dots & Boxes, Ultimate tic-tac-toe, mini chess, WarGames tic-tac-toe, N-Spade..., then real-time games.
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).

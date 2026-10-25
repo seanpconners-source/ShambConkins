@@ -1,6 +1,6 @@
 // Simon Says Face-Off: a shared, growing sequence. Repeat everything, then add one pad. First mistake loses.
 const {PartyUI,sfx,head,pname,esc,burst,banner,titleCard,extraCSS,tone,shake}=require("src/engines/partyKit.js");
-const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {isCpu,isOnline,cpuSkill}=require("src/engines/cpuKit.js");
 
 const PADS=[{c:'#2fb86a',lit:'#9dffc4',f:415,s:'▲',n:'green'},{c:'#e0453a',lit:'#ffb0a8',f:310,s:'●',n:'red'},{c:'#f2b822',lit:'#fff0a0',f:252,s:'■',n:'yellow'},{c:'#2f6fe0',lit:'#a8c8ff',f:209,s:'★',n:'blue'}];
 const CSS=`
@@ -27,6 +27,11 @@ async function simon(s){
  s.debug={seq,score};
  let phase='idle',onTap=null;
  const rand=s.random,cpu=isCpu(s),bot=P=>cpu&&P===1;if(cpu)s.hotseat=true;
+ // Online (s.online): the player whose turn it is taps on their own phone; each tap {t: pad, or -1 = too slow} streams to
+ // the other phone, which plays it like a CPU turn. Only the tapping phone runs the too-slow clock.
+ const net=isOnline(s)?s.online:null,theirs=P=>!!net&&P===net.remote,auto=P=>bot(P)||theirs(P);if(net)s.hotseat=true;
+ let botTap=null;
+ s.debug.bot=net?()=>{if(s.paused)return null;if(phase==='input'&&botTap&&!auto(s.active)){botTap();return 'tap';}if(phase==='over'&&ui.handler){ui.handler('go');return 'go';}return null;}:null;
  // vs CPU: player 2 replays the pattern pad by pad; past its memory span (about 8 / 14 / 17 pads) slips get likely.
  async function cpuSimon(need){const span=4+14*cpuSkill(s);
   for(let k=0;k<=need;k++){if(!await s.wait(k?330+Math.random()*200:700)||!onTap)return;
@@ -40,9 +45,9 @@ async function simon(s){
  const dots=(n,done)=>{const e=ui.root.querySelector('[data-dots]');if(e)e.innerHTML=Array.from({length:n},(_,i)=>`<i class="${i<done?'d':''}"></i>`).join('');};
  const pad=i=>ui.root.querySelector(`[data-pad="${i}"]`);
  async function flash(i,ms,sound=true){const e=pad(i);if(!e)return false;e.classList.add('on');if(sound)tone(PADS[i].f,Math.max(.12,ms/1000),.08,'triangle');if(!await s.wait(ms))return false;e.classList.remove('on');return true;}
- s.on(ui.root,'pointerdown',ev=>{const b=ev.target.closest?.('[data-pad]');if(!b||phase==='watch'||!onTap||s.paused||bot(s.active))return;ev.preventDefault?.();onTap(+b.dataset.pad);});
+ s.on(ui.root,'pointerdown',ev=>{const b=ev.target.closest?.('[data-pad]');if(!b||phase==='watch'||!onTap||s.paused||auto(s.active))return;ev.preventDefault?.();onTap(+b.dataset.pad);});
  let idle=0,limit=0;
- s.frame(dt=>{if(limit>0&&(phase==='input')){idle+=dt;if(idle>limit&&onTap){const f=onTap;f(-1);}}});
+ s.frame(dt=>{if(limit>0&&(phase==='input')&&!theirs(s.active)){idle+=dt;if(idle>limit&&onTap){const f=onTap;f(-1);}}});
  const speedFor=n=>Math.max(200,560-n*24);
 
  if(!await titleCard(s,'🔴','Pads light up in a growing pattern. Repeat the whole pattern from the start, then add one new pad for your opponent. First mistake loses.','Let’s play'))return;
@@ -50,7 +55,7 @@ async function simon(s){
  while(loser<0){
   render(P,seq.length);
   phase='idle';onTap=null;
-  if(!bot(P)&&!await s.pass(P,seq.length?`Watch the ${seq.length}-pad pattern, repeat it, then add ONE more pad.`:`You start! Tap any pad to begin the pattern.`,'Start my turn',{countdown:2}))return;
+  if(!auto(P)&&!await s.pass(P,seq.length?`Watch the ${seq.length}-pad pattern, repeat it, then add ONE more pad.`:`You start! Tap any pad to begin the pattern.`,'Start my turn',{countdown:2}))return;
   s.shared=false;s.active=P;s.updateScores();
   render(P,seq.length);
   if(seq.length){
@@ -64,8 +69,8 @@ async function simon(s){
   const result=await new Promise(resolve=>{
    phase='input';idle=0;limit=need?6:10;
    st(need?`🎯 ${esc(names[P])}: repeat the pattern (0/${need})`:`✨ ${esc(names[P])}: tap any pad to start`);dots(need,0);
-   onTap=async i=>{
-    if(phase!=='input')return;
+   onTap=async (i,remote=false)=>{
+    if(phase!=='input')return;if(net&&!theirs(P)&&!remote)net.send({t:i});
     if(i<0){phase='busy';onTap=null;resolve({fail:'slow'});return;}
     idle=0;
     if(k<need){
@@ -76,6 +81,9 @@ async function simon(s){
     }else{phase='busy';onTap=null;flash(i,260);resolve({add:i});}
    };
    if(bot(P))void cpuSimon(need);
+   else if(theirs(P))void (async()=>{while(s.alive&&phase==='input'&&onTap){const m=await net.next();if(!m||!s.alive||!onTap)return;if(Number.isInteger(m.t))onTap(m.t,true);}})();
+   // online test bot: repeats the pattern, slips now and then once it gets long, then adds a pad
+   botTap=()=>{if(!onTap)return;onTap(k<need?(need>=4&&Math.random()<.15?(seq[k]+1)%4:seq[k]):Math.floor(Math.random()*4));};
   });
   if(!s.alive)return;
   if(result.fail){
@@ -97,7 +105,7 @@ async function simon(s){
  s.shared=true;s.updateScores();phase='idle';onTap=null;
  ui.set(`<div class="pk-screen"><div class="pk-over">Simon Says · result</div><div class="pk-row">${head(s,win,'win','xl')}${head(s,loser,'sad','lg')}</div>
   <h1 class="pk-h1 pk-pop">${esc(names[win])} outlasts ${esc(names[loser])}!</h1><div class="pk-sub">The pattern reached ${seq.length} pads before ${esc(names[loser])} slipped.</div><button class="pk-btn" data-act="go">Finish</button></div>`);
- sfx.cheer();burst(ui.root,{emojis:['🔴','🟢','🟡','🔵','⭐'],n:30,spread:240});
+ sfx.cheer();burst(ui.root,{emojis:['🔴','🟢','🟡','🔵','⭐'],n:30,spread:240});phase='over';
  await new Promise(res=>{ui.handler=a=>{if(a==='go')res(1);};});if(!s.alive)return;
  s.finish([...score],`${names[win]} won the memory duel; the longest pattern completed was ${Math.max(...score)}.`);
 }
