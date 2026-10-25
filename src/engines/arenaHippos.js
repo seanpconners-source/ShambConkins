@@ -1,8 +1,14 @@
 const {clamp}=require("src/utils.js");
 const {PCOL,PDARK,PLIGHT,Fx,arenaKeys,arenaTouch,Countdown,banner,outlined,rr,snd,noise,jingle,mmss,gestureHint}=require("src/engines/arenaKit.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 // Hungry Hungry Heads (after Hungry Hungry Hippos): two hippo mouths at the bottom of each half, a hub spitting marbles
 // into the middle. Tap to lunge the neck to that spot, hold to keep the mouth open and steer it, release to recover.
+// Online (netField): one fixed board (420x760) seen the same way on both phones. Seat 1's phone runs the marbles (spits,
+// physics, both heads bumping) and sends them ~12/s {ms}; the other phone runs them too and is pulled to each snapshot.
+// Each phone judges only its own hippo's bites {c:[t,[[id,value]..]]} (t = seconds since start()); a marble both bit goes
+// to the earlier bite, and both phones score from the same two bite logs (rescore). Heads stream 20/s; at time-up each
+// phone sends its final bite count and the result waits for the other's.
 const MARBLE_COLORS=['#ff5a5a','#4fa8ff','#4fd06a','#b47bff','#ff9a3d','#38d6d0','#ff7ac0'];
 const HIPPO=['#6f8dff','#ff86b6'],HIPPO_DARK=['#2f46b8','#b8386f'];
 const GAME_TIME=60,FRENZY=10;
@@ -16,7 +22,11 @@ const mkHead=i=>({i,x:0,y:0,state:'rest',tx:0,ty:0,mouth:0,squash:0,cd:0,holdT:0
 
 async function hippos(s){
  const [c,x]=s.canvas(900,560,{fill:true});s.body.classList.add('drag-arena-body');s.queueCanvasFit?.();s.shared=true;s.updateScores();
- const rnd=s.random,fx=new Fx();let W=s.W,H=s.H,g=geo(W,H);
+ const on=s.online||null,me=on?on.me:0,them=1-me,host=!on||me===0;
+ const rnd=s.random,fx=new Fx();let W=on?420:s.W,H=on?760:s.H,g=geo(W,H),sc=1,ox=0,oy=0,nextId=1;
+ // online the board is fixed and scaled into the screen below the duel chip
+ const fitView=()=>{if(!on)return;const top=44;sc=Math.min(s.W/W,(s.H-top)/H);ox=(s.W-W*sc)/2;oy=top+(s.H-top-H*sc)/2;};fitView();
+ const wp=f=>on?{x:(f.x-ox)/sc,y:(f.y-oy)/sc}:{x:f.x,y:f.y};
  const heads=[mkHead(0),mkHead(1)],marbles=[],cursors=[{x:0,y:0,used:false,down:false},{x:0,y:0,used:false,down:false}];
  let clock=GAME_TIME,phase='intro',over=0,time=0,hubPulse=0,nextGold=[12,30,45],frenzy=false,burstCd=0,intro=new Countdown(3),lastBurstT=0,banner1=0,bannerText='';
  const place=()=>{g=geo(W,H);for(const h of heads){h.x=g.bx[h.i];h.y=g.restY;h.tx=h.x;h.ty=h.y;}cursors[0].x=g.cx-g.R*.3;cursors[1].x=g.cx+g.R*.3;cursors[0].y=cursors[1].y=g.cy;};
@@ -25,10 +35,12 @@ async function hippos(s){
  s.hint('Two hippos, one pile of marbles. TAP on your half to snap your hippo’s neck out to that spot and chomp what is there; HOLD to keep the mouth open and drag it around (it tires after a second). Clumps of marbles give bonus chomps, golden marbles are worth 5, and the last ten seconds count double. P1: WASD moves a cursor, Space lunges; P2: arrows + Enter.');
 
  const spit=(n,gold=false)=>{
-  hubPulse=1;noise(.25,{vol:.08,freq:700});snd(120,.2,{type:'sine',to:60,vol:.08});fx.ring(g.cx,g.cy,{color:'#fff',r1:g.rH*2.4,life:.4,width:5});fx.shake(5);
-  for(let k=0;k<n;k++){const a=rnd()*6.283,v=(300+rnd()*420)*g.u;marbles.push({x:g.cx+Math.cos(a)*10,y:g.cy+Math.sin(a)*10,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:g.rM,color:MARBLE_COLORS[Math.floor(rnd()*MARBLE_COLORS.length)],gold:false,value:1,age:0});}
-  if(gold){const a=rnd()*6.283,v=300*g.u;marbles.push({x:g.cx,y:g.cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:g.rM*1.25,color:'#ffd23d',gold:true,value:5,age:0});fx.pop(g.cx,g.cy-g.rH*2,'GOLDEN MARBLE!',{color:'#ffe566',size:Math.max(20,g.u*28)});jingle([784,988,1319],{type:'triangle',vol:.04});}
+  if(!host)return;if(on)nf.event({sp:gold?2:1});spitFx();
+  for(let k=0;k<n;k++){const a=rnd()*6.283,v=(300+rnd()*420)*g.u,ci=Math.floor(rnd()*MARBLE_COLORS.length);marbles.push({id:nextId++,ci,x:g.cx+Math.cos(a)*10,y:g.cy+Math.sin(a)*10,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:g.rM,color:MARBLE_COLORS[ci],gold:false,value:1,age:0});}
+  if(gold){const a=rnd()*6.283,v=300*g.u;marbles.push({id:nextId++,ci:-1,x:g.cx,y:g.cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:g.rM*1.25,color:'#ffd23d',gold:true,value:5,age:0});goldFx();}
  };
+ const spitFx=()=>{hubPulse=1;noise(.25,{vol:.08,freq:700});snd(120,.2,{type:'sine',to:60,vol:.08});fx.ring(g.cx,g.cy,{color:'#fff',r1:g.rH*2.4,life:.4,width:5});fx.shake(5);};
+ const goldFx=()=>{fx.pop(g.cx,g.cy-g.rH*2,'GOLDEN MARBLE!',{color:'#ffe566',size:Math.max(20,g.u*28)});jingle([784,988,1319],{type:'triangle',vol:.04});};
 
  // ---------- head control
  const clampTarget=(h,px,py)=>{const bx=g.bx[h.i],by=g.by;let dx=px-bx,dy=py-by,d=Math.hypot(dx,dy)||1;const lo=g.pit*.5,hi=g.R;const dd=clamp(d,lo,hi);dy=Math.min(dy,-g.pit*.1)*(dd/d);dx*=dd/d;if(dy>-8){dy=-8;}return {x:bx+dx,y:by+dy};};
@@ -36,20 +48,22 @@ async function hippos(s){
   if(phase!=='play')return;const t=clampTarget(h,px,py);
   if(h.state==='out'||(h.cd<=0&&h.tired<=0)){if(h.state!=='out')h.cd=.2;h.state='out';h.tx=t.x;h.ty=t.y;h.holdT=0;h.mouth=Math.max(h.mouth,.6);snd(180,.09,{type:'sawtooth',to:420,vol:.03});}
  };
- const touchDown=f=>{const h=heads[f.owner];h.touch={x:f.x,y:f.y};lunge(h,f.x,f.y);};
- arenaTouch(s,{maxFingers:1,onDown:touchDown,onMove:f=>{const h=heads[f.owner];if(h.touch){h.touch.x=f.x;h.touch.y=f.y;if(h.state==='out')lunge(h,f.x,f.y);}},onUp:f=>{heads[f.owner].touch=null;}});
+ const touchDown=f=>{const h=heads[f.owner],q=wp(f);h.touch={x:q.x,y:q.y};lunge(h,q.x,q.y);};
+ arenaTouch(s,{maxFingers:1,onDown:touchDown,onMove:f=>{const h=heads[f.owner],q=wp(f);if(h.touch){h.touch.x=q.x;h.touch.y=q.y;if(h.state==='out')lunge(h,q.x,q.y);}},onUp:f=>{heads[f.owner].touch=null;}});
  kb.onDown((i,k)=>{cursors[i].used=true;if(k==='fire'){cursors[i].down=true;heads[i].touch={x:cursors[i].x,y:cursors[i].y};lunge(heads[i],cursors[i].x,cursors[i].y);}});
  kb.onUp((i,k)=>{if(k==='fire'){cursors[i].down=false;heads[i].touch=null;}});
 
  // ---------- eating / bumping
  const mouthPos=h=>({x:h.x+h.hx*g.rH*.5,y:h.y+h.hy*g.rH*.5});
  const eat=(h,radius)=>{
-  const mp=mouthPos(h);let n=0,pts=0,gold=false;
+  if(on&&phase!=='play')return 0;
+  const mp=mouthPos(h);let n=0,pts=0,gold=false;const got=[];
   for(let k=marbles.length-1;k>=0;k--){const m=marbles[k];if(Math.hypot(m.x-mp.x,m.y-mp.y)<radius+m.r*.2){
-   marbles.splice(k,1);n++;pts+=m.value*(frenzy?2:1);if(m.gold)gold=true;
+   marbles.splice(k,1);n++;if(on){got.push([m.id,m.value]);gone.add(m.id);}pts+=m.value*(frenzy?2:1);if(m.gold)gold=true;
    fx.burst(m.x,m.y,{n:m.gold?16:7,color:m.color,speed:240,life:.45,size:3.2*g.u+1,shape:m.gold?'star':'circle'});}}
   if(!n)return 0;
-  const bonus=n>=2?n-1:0;pts+=bonus*(frenzy?2:1);h.score+=pts;h.eaten+=n;h.squash=1;h.flash=.25;h.best=Math.max(h.best,n);
+  if(on){const t=+rt().toFixed(3);mine.push([t,got]);nf.event({c:[t,got]});}
+  const bonus=n>=2?n-1:0;pts+=bonus*(frenzy?2:1);if(on)rescore();else h.score+=pts;h.eaten+=n;h.squash=1;h.flash=.25;h.best=Math.max(h.best,n);
   const px=mp.x,py=mp.y-g.rH*.9;
   fx.pop(px,py,gold?`+${pts} GOLD!`:n>=2?`+${pts}  x${n} CHOMP!`:`+${pts}`,{color:gold?'#ffe566':n>=2?'#ffffff':PLIGHT[h.i],size:Math.max(16,g.u*(n>=2||gold?26:20))});
   fx.ring(mp.x,mp.y,{color:'#fff',r1:g.rH*1.6,life:.28});
@@ -109,22 +123,51 @@ async function hippos(s){
  const cursorStep=dt=>{for(let i=0;i<2;i++){const k=kb.state[i],c=cursors[i],sp=620*g.u;if(k.l||k.r||k.u||k.d)c.used=true;c.x=clamp(c.x+(k.r-k.l)*sp*dt,g.x0,g.x1);c.y=clamp(c.y+(k.d-k.u)*sp*dt,g.y0,g.y1);if(c.down&&heads[i].touch){heads[i].touch.x=c.x;heads[i].touch.y=c.y;if(heads[i].state==='out')lunge(heads[i],c.x,c.y);}}};
 
  // ---------- update
+ // ---------- online
+ const mine=[],theirs=[],gone=new Set(),seen={at:0};let t0=0,netBot=false,msT=0,finSent=false;
+ const rt=()=>(performance.now()-t0)/1000-3; // seconds since play began (after the 3 s countdown)
+ const nf=on?netField(s,{hz:20,
+  pack:()=>{const h=heads[me],r=v=>Math.round(v);return {x:r(h.x),y:r(h.y),s:h.state,m:+h.mouth.toFixed(2),hx:+h.hx.toFixed(2),hy:+h.hy.toFixed(2),q:+h.squash.toFixed(2),fl:+h.flash.toFixed(2),ti:+h.tired.toFixed(2),tx:r(h.tx),ty:r(h.ty)};},
+  unpack:(i,q)=>{if(![q?.x,q?.y].every(Number.isFinite))return;const now=performance.now(),k=seen.at?Math.max(.016,(now-seen.at)/1000):0;seen.vx=k?(q.x-seen.x)/k:0;seen.vy=k?(q.y-seen.y)/k:0;Object.assign(seen,q,{at:now});},
+  onEvent:e=>{
+   if(Array.isArray(e.c)&&Number.isFinite(e.c[0])&&Array.isArray(e.c[1])){const ids=e.c[1].filter(a=>Array.isArray(a)&&Number.isInteger(a[0])).map(a=>[a[0],a[1]>=5?5:1]);theirs.push([+e.c[0],ids]);
+    for(const [id] of ids){gone.add(id);const k=marbles.findIndex(m=>m.id===id);if(k>=0){const m=marbles[k];marbles.splice(k,1);fx.burst(m.x,m.y,{n:m.gold?16:7,color:m.color,speed:240,life:.45,size:3.2*g.u+1,shape:m.gold?'star':'circle'});}}
+    if(ids.length){const h=heads[them];h.squash=1;h.flash=.25;snd(300+Math.min(ids.length,6)*70,.12,{type:'square',vol:.03,to:130});s.react?.(them,'happy');}rescore();}
+   else if(e.sp&&!host){spitFx();if(e.sp===2)goldFx();}
+   else if(Array.isArray(e.ms)&&!host)applyMarbles(e.ms);}}):null;
+ // both bite logs → both scores: earliest bite gets a marble, clumps give a bonus chomp, the last ten seconds count double
+ const rescore=()=>{const all=[...mine.map(c=>[c[0],me,c[1]]),...theirs.map(c=>[c[0],them,c[1]])].filter(c=>c[0]<=GAME_TIME+.05).sort((a,b)=>a[0]-b[0]||a[1]-b[1]),taken=new Set(),tot=[0,0],ate=[0,0];
+  for(const [t,i,ids] of all){let n=0,p=0;for(const [id,v] of ids){if(taken.has(id))continue;taken.add(id);n++;p+=v;}if(!n)continue;tot[i]+=(p+(n>=2?n-1:0))*(t>=GAME_TIME-FRENZY?2:1);ate[i]+=n;}
+  for(const h of heads){h.score=tot[h.i];h.eaten=ate[h.i];}};
+ // the marble snapshot from seat 1's phone: run on by its age, the jump eased out
+ const applyMarbles=([t,list])=>{if(!Array.isArray(list))return;const age=clamp(rt()-(+t||0),0,.25),byId=new Map(marbles.map(m=>[m.id,m])),keep=new Set();
+  for(const a of list){if(!Array.isArray(a))continue;const [id,ci,mx,my,vx,vy]=a;if(gone.has(id)||![mx,my,vx,vy].every(Number.isFinite))continue;keep.add(id);const nx=mx+vx*age,ny=my+vy*age;let m=byId.get(id);
+   if(!m){const gold=ci<0;m={id,ci,x:nx,y:ny,vx,vy,r:gold?g.rM*1.25:g.rM,color:gold?'#ffd23d':MARBLE_COLORS[ci%MARBLE_COLORS.length|0],gold,value:gold?5:1,age:1,ox:0,oy:0};marbles.push(m);continue;}
+   m.ox=(m.ox||0)+m.x-nx;m.oy=(m.oy||0)+m.y-ny;const d=Math.hypot(m.ox,m.oy);if(d>40){m.ox*=40/d;m.oy*=40/d;}m.x=nx;m.y=ny;m.vx=vx;m.vy=vy;}
+  for(let k=marbles.length-1;k>=0;k--)if(!keep.has(marbles[k].id))marbles.splice(k,1);};
+ const theirHead=dt=>{if(!seen.at)return;const h=heads[them],k=Math.min(.08,(performance.now()-seen.at)/1000),e=Math.min(1,dt*22),px=h.x,py=h.y;
+  h.x+=(seen.x+seen.vx*k-h.x)*e;h.y+=(seen.y+seen.vy*k-h.y)*e;h.vx=dt?(h.x-px)/dt:0;h.vy=dt?(h.y-py)/dt:0;
+  if(typeof seen.s==='string')h.state=seen.s;h.mouth=+seen.m||0;h.hx=+seen.hx||0;h.hy=+seen.hy||-1;h.squash=Math.max(h.squash-dt*4,+seen.q||0);h.flash=Math.max(h.flash-dt,+seen.fl||0);h.tired=+seen.ti||0;h.tx=+seen.tx||h.x;h.ty=+seen.ty||h.y;bump(h);};
  const update=dt=>{
   time+=dt;hubPulse=Math.max(0,hubPulse-dt*3);
-  if(phase==='intro'){if(!intro.update(dt)){phase='play';spit(15);}}
+  if(phase==='intro'){const done=!intro.update(dt);if(on?rt()>=0:done){phase='play';spit(15);}}
   else if(phase==='play'){
-   clock-=dt;burstCd-=dt;
+   if(on)clock=Math.max(0,GAME_TIME-rt());else clock-=dt;burstCd-=dt;
    if(!frenzy&&clock<=FRENZY){frenzy=true;spit(18);fx.pop(g.cx,g.cy-g.rH*3.5,'DOUBLE POINTS!',{color:'#ff9a3d',size:Math.max(22,g.u*34),life:1.6});jingle([523,659,784,1047],{type:'square',vol:.035,step:.07});}
    while(nextGold.length&&clock<=GAME_TIME-nextGold[0]){nextGold.shift();spit(8,true);}
    if(marbles.filter(m=>!m.gold).length<4&&burstCd<=0){burstCd=2;spit(12);}
    cursorStep(dt);
-   if(clock<=0){clock=0;phase='over';over=0;const a=heads[0].score,b=heads[1].score;bannerText=a===b?'DEAD HEAT!':`${s.players[a>b?0:1].name} wins!`;for(const h of heads){h.touch=null;if(h.state==='out'||h.state==='hold')h.state='back';}jingle([523,659,784,1047,1319],{type:'triangle',vol:.05,step:.09});s.react?.(a>=b?0:1,'win');if(a!==b)s.react?.(a>b?1:0,'sad');}
+   if(on&&clock<=0&&!finSent){finSent=true;phase='wait';for(const h of heads){h.touch=null;if(h.state==='out'||h.state==='hold')h.state='back';}nf.finish({n:mine.length});void nf.remoteDone().then(()=>{if(!s.alive)return;rescore();endGame();});}
+   if(!on&&clock<=0)endGame();
   }
+  else if(phase==='wait'){}
   else{over+=dt;if(over>2.6){s.finish([heads[0].score,heads[1].score],`Hungry Hungry Heads: ${heads[0].score} to ${heads[1].score} (${heads[0].eaten+heads[1].eaten} marbles eaten)`);}}
-  for(const h of shuffled())headStep(h,dt);
-  marblesStep(dt);fx.update(dt);
+  for(const h of shuffled())if(on&&h.i===them)theirHead(dt);else headStep(h,dt);
+  marblesStep(dt);fx.update(dt);for(const m of marbles)if(m.ox){const k=Math.exp(-dt*10);m.ox*=k;m.oy*=k;}
+  if(on&&host&&(msT-=dt)<=0){msT=1/12;const r=v=>Math.round(v);nf.event({ms:[+rt().toFixed(3),marbles.map(m=>[m.id,m.ci,r(m.x),r(m.y),r(m.vx),r(m.vy)])]});}
   s.setScores([heads[0].score,heads[1].score]);
  };
+ const endGame=()=>{clock=0;phase='over';over=0;const a=heads[0].score,b=heads[1].score;bannerText=a===b?'DEAD HEAT!':`${s.players[a>b?0:1].name} wins!`;for(const h of heads){h.touch=null;if(h.state==='out'||h.state==='hold')h.state='back';}jingle([523,659,784,1047,1319],{type:'triangle',vol:.05,step:.09});s.react?.(a>=b?0:1,'win');if(a!==b)s.react?.(a>b?1:0,'sad');};
  const shuffled=()=>Math.random()<.5?heads:[heads[1],heads[0]];
 
  // ---------- drawing
@@ -187,7 +230,7 @@ async function hippos(s){
  };
  const draw=()=>{
   x.clearRect(0,0,W,H);fx.begin(x);drawBoard();
-  for(const m of marbles)drawMarble(m);
+  for(const m of marbles){if(m.ox||m.oy){const X=m.x,Y=m.y;m.x+=m.ox;m.y+=m.oy;drawMarble(m);m.x=X;m.y=Y;}else drawMarble(m);}
   for(const h of heads)drawHippo(h);
   // lunge target markers
   for(const h of heads)if(h.state==='out'){x.strokeStyle=PCOL[h.i];x.lineWidth=3;x.globalAlpha=.7;x.beginPath();x.arc(h.tx,h.ty,g.rE*.8,0,6.283);x.stroke();x.globalAlpha=1;}
@@ -199,22 +242,24 @@ async function hippos(s){
   const tsz=clamp(H*.065,18,34);x.fillStyle='#0b2530cc';rr(x,W/2-tsz*1.6,4,tsz*3.2,tsz*1.5,tsz*.5);x.fill();
   outlined(x,mmss(clock),W/2,4+tsz*.78,{size:tsz,fill:frenzy?'#ffb347':'#fff',stroke:'#0b2530'});
   if(frenzy&&phase==='play')outlined(x,'×2 FRENZY',W/2,g.cy+g.rH*2.4+Math.sin(time*8)*3,{size:Math.max(16,g.u*24),fill:'#ffb347',stroke:'#5a2a00',alpha:.9});
-  if(phase==='intro'||(phase==='play'&&GAME_TIME-clock<4.5)){for(let i=0;i<2;i++){outlined(x,i?'TAP TO LUNGE':'TAP TO LUNGE',g.bx[i],g.y1-g.R*.55,{size:Math.max(13,g.u*18),fill:PLIGHT[i],stroke:'#10303c',alpha:phase==='intro'?1:clamp((4.5-(GAME_TIME-clock))/1.5,0,1)});if(phase==='intro'||GAME_TIME-clock<4)gestureHint(x,g.bx[i],g.y1-g.R*.35,'tap',time,{color:PLIGHT[i],size:g.u*26});}}
+  if(phase==='intro'||(phase==='play'&&GAME_TIME-clock<4.5)){for(let i=0;i<2;i++){if(on&&i!==me)continue;outlined(x,i?'TAP TO LUNGE':'TAP TO LUNGE',g.bx[i],g.y1-g.R*.55,{size:Math.max(13,g.u*18),fill:PLIGHT[i],stroke:'#10303c',alpha:phase==='intro'?1:clamp((4.5-(GAME_TIME-clock))/1.5,0,1)});if(phase==='intro'||GAME_TIME-clock<4)gestureHint(x,g.bx[i],g.y1-g.R*.35,'tap',time,{color:PLIGHT[i],size:g.u*26});}}
   if(phase==='intro')intro.draw(x,W,H,{y:g.cy-g.rH*2.6});
   if(phase==='over'){banner(x,W,H,bannerText,`${heads[0].score} – ${heads[1].score}`,{color:'#ffe566'});}
  };
 
- s.debug={engine:'hippos',heads,marbles,fx,kb,cursors,get phase(){return phase;},get clock(){return clock;},geo:()=>g};
- draw();
- if(!await s.pass(0,'Hungry Hungry Heads: your head is the hippo. Tap your half to lunge for marbles, hold to keep your mouth open. Golden marbles are worth five. Most marbles in sixty seconds wins.','Both ready — chomp!'))return;
+ s.debug={engine:'hippos',heads,marbles,fx,kb,cursors,get phase(){return phase;},get clock(){return clock;},geo:()=>g,bot:on?()=>{netBot=true;return '';}:null};
+ const paint=()=>{if(!on){draw();return;}fitView();x.save();x.fillStyle='#0b2530';x.fillRect(0,0,s.W,s.H);x.translate(ox,oy);x.scale(sc,sc);draw();x.restore();};
+ paint();
+ if(!await s.pass(0,on?`Hungry Hungry Heads online: you are the ${me?'pink hippo on the right':'blue hippo on the left'}; ${s.players[them].name} plays from the other phone. Tap to lunge for marbles, hold to keep your mouth open. Golden marbles are worth five. Most points in sixty seconds wins.`:'Hungry Hungry Heads: your head is the hippo. Tap your half to lunge for marbles, hold to keep your mouth open. Golden marbles are worth five. Most marbles in sixty seconds wins.',on?'Ready — chomp!':'Both ready — chomp!'))return;
+ if(on){await nf.start('go');if(!s.alive)return;t0=performance.now();}
  // vs CPU: hippo 2 snaps at the richest clump of marbles in reach (gold counts five), holds briefly, then lets go
  const cpu=isCpu(s);let cpuT=1,cpuHold=0;
- function cpuThink(dt){const h=heads[1];if(phase!=='play')return;const sk=cpuSkill(s);if(cpuHold>0){cpuHold-=dt;if(cpuHold<=0)h.touch=null;return;}cpuT-=dt;if(cpuT>0)return;cpuT=.35+(1-sk)*.6+Math.random()*.25;
+ function cpuThink(dt,i=1){const h=heads[i];if(phase!=='play')return;const sk=cpuSkill(s);if(cpuHold>0){cpuHold-=dt;if(cpuHold<=0)h.touch=null;return;}cpuT-=dt;if(cpuT>0)return;cpuT=.35+(1-sk)*.6+Math.random()*.25;
   let best=null,bv=0;for(const m of marbles){const t=clampTarget(h,m.x,m.y);if(Math.hypot(t.x-m.x,t.y-m.y)>g.rH)continue;let v=0;for(const q of marbles)if(Math.hypot(q.x-m.x,q.y-m.y)<g.rH*1.3)v+=q.value;v+=Math.random()*(1-sk)*2;if(v>bv){bv=v;best=m;}}
   if(!best)return;const err=(1-sk)*g.rH*.9,px=best.x+(Math.random()-.5)*err+best.vx*.12,py=best.y+(Math.random()-.5)*err+best.vy*.12;h.touch={x:px,y:py};lunge(h,px,py);cpuHold=.18+Math.random()*.2;}
- s.frame(dt=>{if(cpu)cpuThink(dt);
-  if(s.W!==W||s.H!==H){const sx=s.W/W,sy=s.H/H;for(const m of marbles){m.x*=sx;m.y*=sy;}for(const h of heads){h.x*=sx;h.y*=sy;h.tx*=sx;h.ty*=sy;if(h.touch)h.touch=null;h.state=h.state==='rest'?'rest':'back';}W=s.W;H=s.H;g=geo(W,H);for(const c of cursors){c.x*=sx;c.y*=sy;}for(const m of marbles)m.r=m.gold?g.rM*1.25:g.rM;}
-  update(Math.min(dt,.033));draw();
+ s.frame(dt=>{if(cpu)cpuThink(dt);if(netBot)cpuThink(dt,me);
+  if(!on&&(s.W!==W||s.H!==H)){const sx=s.W/W,sy=s.H/H;for(const m of marbles){m.x*=sx;m.y*=sy;}for(const h of heads){h.x*=sx;h.y*=sy;h.tx*=sx;h.ty*=sy;if(h.touch)h.touch=null;h.state=h.state==='rest'?'rest':'back';}W=s.W;H=s.H;g=geo(W,H);for(const c of cursors){c.x*=sx;c.y*=sy;}for(const m of marbles)m.r=m.gold?g.rM*1.25:g.rM;}
+  update(Math.min(dt,.033));paint();
   s.status(`${s.players[0].name} ${heads[0].score} · ${s.players[1].name} ${heads[1].score} · ${Math.ceil(clock)}s${frenzy?' · DOUBLE POINTS':''}`);
  });
 }
