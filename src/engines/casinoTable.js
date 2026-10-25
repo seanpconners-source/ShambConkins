@@ -23,7 +23,8 @@ function tableNet(s){
  const T=s.__table={net,ref:net.me===0,mine:el=>seatOf(el)!==net.remote,
   tap(el,v){const k=key(el);if(!k||seatOf(el)===net.remote)return;if(T.ref){run(el,v);net.send({t:k,v});}else net.send({q:k,v});}};
  void (async()=>{for(;;){const m=await net.next();if(!m||!s.alive)return;const k=T.ref?m.q:m.t;if(typeof k!=='string')continue;
-  let el=find(k);for(let i=0;s.alive&&(s.paused||!usable(el)&&i<400);i++){await sleep(25);el=find(k);}if(!s.alive)return;
+  // the referee rules at once (a request it can't run now, like a double tap, is dropped); the other phone waits to catch up
+  let el=find(k);for(let i=0;s.alive&&(s.paused||!T.ref&&!usable(el)&&i<400);i++){await sleep(25);el=find(k);}if(!s.alive)return;
   if(T.ref){if(!usable(el)||seatOf(el)===net.me)continue;run(el,m.v);net.send({t:k,v:m.v});}else if(el)run(el,m.v);}})();
  return T;
 }

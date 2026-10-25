@@ -29,8 +29,8 @@ async function guesswho(s){const roster=mysteryRoster(s.random),secrets=shuffle(
   else if(typeof m.q==='string'){const q=mysteryQuestions(roster.filter(c=>remaining[actor].includes(c.id))).find(x=>x.label===m.q);if(q)await ask(q,true);}
   else if(typeof m.a==='string')await accuse(m.a,true);}})();
  // online test bot: memorize, ask the best split, accuse at one suspect, end the turn
- function bot(){if(!net||s.paused||busy)return null;if(phase==='secret'){document.getElementById('mystery-hide')?.click();return 'hide';}if(theirs())return null;
-  if(phase==='answer'){document.getElementById('mystery-next')?.click();return 'next';}
+ function bot(){if(!net||s.paused)return null;if(phase==='secret'){document.getElementById('mystery-hide')?.click();return 'hide';}if(theirs())return null;
+  if(phase==='answer'){document.getElementById('mystery-next')?.click();return 'next';}if(busy)return null;
   if(phase==='turn'){const cand=roster.filter(c=>remaining[actor].includes(c.id)),qs=mysteryQuestions(cand);if(cand.length===1||!qs.length){guessMode=true;void accuse(pickRandom(cand).id);return 'accuse';}void ask(qs[0]);return 'ask';}return null;}
  await reveal(net?net.me:0);
 }
