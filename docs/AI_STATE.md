@@ -753,6 +753,26 @@ Remaining list any time: `node -e` over solo.js ('cpu' ids minus NET_NATIVE).
   each phone stops its own read-out by its own clock and sends {st:[round,value|-1 boom]}; a read-out at zero waits ('zero') for
   the other report, then both settle the same round. Bots = CPU brain on your side (`autodrive`). All 3 pass online-native with
   and without LAG=80-150 (390x780); 2P fuzz, 1P solo and tests/bondlair.mjs clean.
+  Batch 20 (Oct 26, branch `online-batch-20-mixed` from TESTver): Boulder Run `raiders-ball-run` (netField side by side: own
+  corridor at the bottom, other on top from {f} ~12/s; a run ends at own death / 60 s / other out and you lead by 40; settle from
+  both {fin}). Sewer Clash `sewer-clash` (8 token slots = 4 mirrored pairs, slot k at generation n placed by seed; own grabs
+  {g:[slot,gen,ms]}, earliest owns it (tie P1), scores rebuilt from the claims; at six or 40 s a phone stops and sends {tu:ms},
+  grabs after the earlier stop dropped; arenaGestures now gives every touch/key to `s.online.me`, `cpu(keys,i)`). Penalties
+  `league-penalties` (each phone plays its own role full screen; striker's phone sends {k:[n,tx,power,curve]}, keeper's phone
+  flies it from arrival, dives {d:[n,dir,early,at]} and calls {r:[n,goal|save|miss]}; the striker's ball waits at the line;
+  kicks/dives arriving during the last result are queued). Fight Night `fight-night` (like Kill Bill: own boxer only, player 2's
+  ring turned round via `vx`; punch {pu:[round,power]} starts on both, the VICTIM's phone judges it at the wind-up end and sends
+  {ld:[round,slip|block|hit|whiff]}; health is its own; rounds via roundOutcome with health as the extra; touchKeys takes
+  `{me,swapLR}`). Hyrule ×2 `hyrule-rupee-rush`/`hyrule-sword-duel` (fixed 11x16 field, player 1's view turned round via
+  VX/VY/VD; monsters are per-slot seeded sims (`netEnemy`, stream `seed:hy:slot:gen`) stepped at 30 Hz on the shared clock,
+  treating every bush tile of the built map as solid (`g0`/`solidE`) so they move alike on both phones; rocks are analytic from
+  their birth; each phone judges only its own Link (rocks {sh}, monster touch, the other's sword from {sl}); kills {ek}, bush
+  cuts {bc} (bush identity = tile + regrow generation, regrow 12 s after the earliest cut) and pickups {pk} are time-stamped
+  claims, earliest wins; drops are named by their source and dealt from the seed; rupee losses {lo} are the victim's call with
+  the spilled drops; wallets rebuilt from both logs; Rupee Rush ends with {tu} from both, Sword Duel through roundOutcome).
+  Bots = CPU brains on your side (`autodrive`/`net.bot`). All 6 pass online-native with and without LAG=80-150 (390x780);
+  2P fuzz + 1P CPU clean. NETSTAT=1 prints Hyrule's claims/losses/damage sources/monster slots (identical on both phones).
+  Bot-only balance: Rupee Rush is decided mostly by rival slashes. Left after this batch: Space Invaders ×2, Bond ×3, kart ×2.
   Batch 21 (Oct 26, branch `online-batch-21-kart` from TESTver), Mario Kart `rainbow-road-kart` + `rainbow-balloon-battle`
   (kart.js; one netField at the top, `NET` = the running race's pack/unpack/event). One full-screen view online (`VK` = this
   phone's kart; HUD 30 px lower, clear of the duel chip). Player 1's phone picks the course and the 6 CPU racers (its own
