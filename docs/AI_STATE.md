@@ -731,6 +731,14 @@ Remaining list any time: `node -e` over solo.js ('cpu' ids minus NET_NATIVE).
   (`autodrive`). All 3 pass online-native with and without LAG=80-150; 2P fuzz + 1P CPU clean. Left (13): Space Invaders
   versus + Space Swarm co-op, Bond ×3, Hyrule ×2, penalties, Raiders, Fight Night, Sewer Clash, kart ×2
   (`node -e` over solo.js: 'cpu' ids minus NET_NATIVE).
+  Batch 19 (Oct 26, branch `online-batch-19-bond` from TESTver), the three Bond games (`bond.js`): side by side like Poofs/Kenny
+  (`split` online = own 64% left, other 36% right, `netStart`/`netEnd`, waiting banner). Laser Vault: own agent only; snapshots
+  {x,y,c,h,st,sc} (other agent eased, heist number picks its beams); plans are the same seeded list on both (first 30 made at
+  start). Funhouse: same seeded schedule; own field spawns from it, the other field is rebuilt from snapshots {sc,g,a:[[sched idx,
+  hit]]} (`made` stops re-creating faded ones); 2x3 windows on a tall half online. Bomb: every round starts with nf.start('b'+r);
+  each phone stops its own read-out by its own clock and sends {st:[round,value|-1 boom]}; a read-out at zero waits ('zero') for
+  the other report, then both settle the same round. Bots = CPU brain on your side (`autodrive`). All 3 pass online-native with
+  and without LAG=80-150 (390x780); 2P fuzz, 1P solo and tests/bondlair.mjs clean.
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).

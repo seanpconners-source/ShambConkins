@@ -7,15 +7,27 @@
 //               The golden gun holds one bullet, so every tap is followed by a short reassembly.
 //  bondBomb     Goldfinger · Stop the Bomb at 007. The Fort Knox device counts down; tap your half to stop your
 //               own read-out as close to 007 as you dare. Hit zero and it goes off. Seven rounds.
+// Online (s.online, netField): side by side, your half wide on the left (64%), theirs narrow on the right, the same seeded
+// beams / cut-outs / bomb rounds on both phones from a shared start. Each phone plays and judges only its own player; the
+// other half is drawn from its snapshots, and the end waits for the other phone's final score. The bomb starts every
+// round together (nf.start) and each phone stops its own read-out by its own clock ({st:[round,value|-1]}).
 const {clamp}=require("src/utils.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,PCOL,settle,Countdown}=require("src/engines/arenaKit.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 
 const INK='#0b0b0d',GOLD='#e8c45a',RED='#ff2a2a';
-const split=s=>{const side=()=>s.W>s.H*1.05;return {side,vp:i=>side()?{x:i?s.W/2+2:0,y:0,w:s.W/2-2,h:s.H}:{x:0,y:i?s.H/2+2:0,w:s.W,h:s.H/2-2},owner:p=>side()?(p.x<s.W/2?0:1):(p.y<s.H/2?0:1)};};
-function divider(x,s,side){x.fillStyle=GOLD;if(side())x.fillRect(s.W/2-2,0,4,s.H);else x.fillRect(0,s.H/2-2,s.W,4);}
+// online the halves are uneven: this phone's player gets the left 64%
+const SPLIT=.64;
+const split=s=>{if(s.online){const me=s.online.me;return {side:()=>true,vp:i=>i===me?{x:0,y:0,w:s.W*SPLIT-2,h:s.H}:{x:s.W*SPLIT+2,y:0,w:s.W*(1-SPLIT)-2,h:s.H},owner:()=>me};}
+ const side=()=>s.W>s.H*1.05;return {side,vp:i=>side()?{x:i?s.W/2+2:0,y:0,w:s.W/2-2,h:s.H}:{x:0,y:i?s.H/2+2:0,w:s.W,h:s.H/2-2},owner:p=>side()?(p.x<s.W/2?0:1):(p.y<s.H/2?0:1)};};
+function divider(x,s,side){x.fillStyle=GOLD;if(s.online)x.fillRect(s.W*SPLIT-2,0,4,s.H);else if(side())x.fillRect(s.W/2-2,0,4,s.H);else x.fillRect(0,s.H/2-2,s.W,4);}
 function endBanner(x,s,text){const size=Math.min(s.W*.06,s.H*.06,44);x.fillStyle='rgba(10,8,8,.78)';x.fillRect(0,s.H/2-size,s.W,size*2);outlined(x,text,s.W/2,s.H/2,{size,fill:GOLD,stroke:INK});}
 function hud(x,s,i,v,text,sub){const size=Math.max(14,Math.min(v.w,v.h)*.055);outlined(x,text,v.x+10,v.y+size*.9,{size,fill:PCOL[i],stroke:'#fff',align:'left'});if(sub)outlined(x,sub,v.x+v.w-10,v.y+size*.9,{size:size*.85,fill:'#fff',stroke:INK,align:'right'});}
+// online side-by-side games: shared start, then the end waits for the other phone's final score
+async function netStart(s,nf){if(nf)await nf.start('go');return s.alive;}
+function netEnd(nf,score,me,done){if(!nf){done();return;}nf.finish(score[me]);nf.remoteDone().then(v=>{if(v!=null)score[1-me]=v|0;done();});}
+const waitBanner=(x,s,phase,them)=>{if(phase==='wait'||phase==='sync')endBanner(x,s,`Waiting for ${s.players[them].name}…`);};
 function segDist(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy||1,t=clamp(((px-ax)*dx+(py-ay)*dy)/l,0,1);return Math.hypot(px-ax-dx*t,py-ay-dy*t);}
 
 // ------------------------------------------------------------------ Laser Vault Heist
@@ -41,22 +53,29 @@ async function bondLaser(s){
  s.hint('Laser Vault Heist: drag anywhere on your half (P1 top, P2 bottom; left/right on wide screens) to move your agent. Grab the diamond at the back of the vault and carry it to the green EXIT. Red beams sweep, slide and blink: touch one and the alarm sends you back to the door, diamond and all. Every heist adds a beam. A Fabergé egg is worth 3. Most loot after 60 seconds wins. P1 WASD, P2 arrows.');
  const plans=[];const plan=k=>{while(plans.length<=k)plans.push(heistPlan(s.random,plans.length));return plans[k];};
  const agents=[0,1].map(()=>({x:START[0],y:START[1],carry:false,heist:0,stun:0,inv:0,flash:0,mood:0}));
- const box=v=>{const sz=Math.min(v.w-16,v.h-(side()?60:34)),ox=v.x+(v.w-sz)/2,oy=v.y+v.h-sz-8;return {ox,oy,k:sz/100};};
+ const box=v=>{const sz=Math.min(v.w-16,v.h-(side()?60:34)),ox=v.x+(v.w-sz)/2,oy=s.online?v.y+(v.h-sz)/2:v.y+v.h-sz-8;return {ox,oy,k:sz/100};};
  const fingers=[null,null];
  arenaTouch(s,{owner,maxFingers:1,onDown:f=>{fingers[f.owner]={lx:f.x,ly:f.y};},onMove:f=>{const fi=fingers[f.owner],a=agents[f.owner];if(!fi||a.stun>0||phase!=='play'){if(fi){fi.lx=f.x;fi.ly=f.y;}return;}const b=box(vp(f.owner));move(a,(f.x-fi.lx)/b.k*1.15,(f.y-fi.ly)/b.k*1.15);fi.lx=f.x;fi.ly=f.y;},onUp:f=>{fingers[f.owner]=null;}});
  // Move in small steps so a fast swipe cannot jump over a beam.
  function move(a,dx,dy){const n=Math.max(1,Math.ceil(Math.hypot(dx,dy)/1.5));for(let k=0;k<n;k++){a.x=clamp(a.x+dx/n,R,100-R);a.y=clamp(a.y+dy/n,R,100-R);if(check(a))return;}}
  function check(a){const i=agents.indexOf(a);if(a.inv>0||a.stun>0||phase!=='play')return false;
   for(const b of plan(a.heist).beams){const L=beamAt(b,clock);if(L.on&&segDist(a.x,a.y,L.ax,L.ay,L.bx,L.by)<R*.9){trip(i);return true;}}
-  const p=plan(a.heist);if(!a.carry&&Math.hypot(a.x-p.gem[0],a.y-p.gem[1])<R+3){a.carry=true;snd(1320,.12,{type:'triangle',vol:.04});snd(1760,.16,{type:'triangle',vol:.03,delay:.07});const bx=box(vp(i));fx.pop(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k-20,p.egg?'FABERGÉ EGG!':'GOT IT!',{color:'#bff6ff',stroke:INK,size:18});}
-  if(a.carry&&a.x<20&&a.y>80){const pts=p.egg?3:1;score[i]+=pts;a.carry=false;a.heist++;a.flash=.5;s.react(i,'happy');jingle([784,988,1175,1568],{step:.06,type:'triangle',vol:.04});const bx=box(vp(i));fx.pop(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k-24,`+${pts}`,{color:GOLD,stroke:INK,size:28});fx.burst(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k,{n:18,color:'#bff6ff',speed:220,life:.55,size:4,shape:'star'});}
+  const p=plan(a.heist);if(!a.carry&&Math.hypot(a.x-p.gem[0],a.y-p.gem[1])<R+3){a.carry=true;snd(1320,.12,{type:'triangle',vol:.04});snd(1760,.16,{type:'triangle',vol:.03,delay:.07});const bx=box(vp(i));fx.pop(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k-20,p.egg?'FABERGÉ EGG!':'GOT IT!',{color:'#bff6ff',stroke:INK,size:18});if(on)nf.push();}
+  if(a.carry&&a.x<20&&a.y>80){const pts=p.egg?3:1;score[i]+=pts;a.carry=false;a.heist++;a.flash=.5;s.react(i,'happy');jingle([784,988,1175,1568],{step:.06,type:'triangle',vol:.04});const bx=box(vp(i));fx.pop(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k-24,`+${pts}`,{color:GOLD,stroke:INK,size:28});fx.burst(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k,{n:18,color:'#bff6ff',speed:220,life:.55,size:4,shape:'star'});if(on)nf.push();}
   return false;}
  function trip(i){const a=agents[i],bx=box(vp(i));a.stun=.9;a.inv=1.8;a.carry=false;s.react(i,'sad');noise(.35,{vol:.06,freq:900});snd(880,.5,{type:'square',vol:.035,to:440});snd(880,.5,{type:'square',vol:.03,to:440,delay:.5});
-  fx.pop(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k-20,'ALARM!',{color:'#ff6a6a',stroke:INK,size:22});fx.shake(8);fx.burst(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k,{n:14,color:RED,speed:200,life:.4,size:3});}
+  fx.pop(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k-20,'ALARM!',{color:'#ff6a6a',stroke:INK,size:22});fx.shake(8);fx.burst(bx.ox+a.x*bx.k,bx.oy+a.y*bx.k,{n:14,color:RED,speed:200,life:.4,size:3});if(on)nf.push();}
  s.debug={get phase(){return phase;},agents,score,plan,beamAt,segDist,clockNow:()=>clock,setClock(v){clock=v;},teleport(i,px,py){agents[i].x=px;agents[i].y=py;check(agents[i]);}};
+ // ----- online: the other agent is drawn from its snapshots (position, diamond, heist number, alarm)
+ const on=!!s.online,me=on?s.online.me:0,them=1-me;
+ if(on)plan(30);
+ const nf=on?netField(s,{hz:15,pack:i=>{const a=agents[i];return {x:+a.x.toFixed(1),y:+a.y.toFixed(1),c:a.carry?1:0,h:a.heist,st:a.stun>0?1:0,sc:score[i]};},
+  unpack:(i,d)=>{const a=agents[i];a.tx=+d.x||START[0];a.ty=+d.y||START[1];a.carry=!!d.c;a.stun=d.st?.5:0;if(d.st)a.inv=1;score[i]=d.sc|0;
+   const h=d.h|0;if(h>a.heist){a.heist=h;a.flash=.5;const bx=box(vp(i));fx.pop(bx.ox+a.tx*bx.k,bx.oy+a.ty*bx.k-16,'+LOOT',{color:GOLD,stroke:INK,size:16});}}}):null;
+ let autodrive=false;if(on)s.debug.bot=()=>{if(autodrive)return '';autodrive=true;return 'drive';};
  // vs CPU: agent 2 heads for the diamond, then the exit, taking the step that stays clear of beams now and a beat ahead
  const cpu=isCpu(s);
- function cpuHeist(dt){const a=agents[1],sk=cpuSkill(s);if(a.stun>0)return;const p=plan(a.heist),tx=a.carry?9:p.gem[0],ty=a.carry?91:p.gem[1],sp=(22+sk*16)*dt,look=.12+sk*.18;
+ function cpuHeist(dt,who=1){const a=agents[who],sk=cpuSkill(s);if(a.stun>0)return;const p=plan(a.heist),tx=a.carry?9:p.gem[0],ty=a.carry?91:p.gem[1],sp=(22+sk*16)*dt,look=.12+sk*.18;
   const safe=(px,py)=>p.beams.every(b=>{for(const tt of [0,look]){const L=beamAt(b,clock+tt);if((L.on||L.warn&&tt>0)&&segDist(px,py,L.ax,L.ay,L.bx,L.by)<R*(1.2+sk*.6))return false;}return true;});
   let best=null,bd=Math.hypot(tx-a.x,ty-a.y)+(safe(a.x,a.y)?0:1e3);for(let k=0;k<8;k++){const an=k*Math.PI/4,nx=clamp(a.x+Math.cos(an)*sp,R,100-R),ny=clamp(a.y+Math.sin(an)*sp,R,100-R);if(!safe(nx,ny)&&Math.random()<sk)continue;const d=Math.hypot(tx-nx,ty-ny);if(d<bd){bd=d;best=[nx-a.x,ny-a.y];}}
   if(best)move(a,best[0],best[1]);}
@@ -84,19 +103,22 @@ async function bondLaser(s){
   if(a.carry){x.fillStyle=p.egg?GOLD:'#bff6ff';x.beginPath();x.arc(ax+hs*.42,ay+hs*.22,b.k*1.8,0,7);x.fill();}
   if(a.stun>0){x.fillStyle=`rgba(255,0,0,${a.stun*.35})`;x.fillRect(v.x,v.y,v.w,v.h);}
   hud(x,s,i,v,`${s.players[i].name.toUpperCase()}  ${score[i]}`,`${Math.ceil(Math.max(0,HEIST_TIME-clock))}s`);}
- s.frame(dt=>{t+=dt;fx.update(dt);
-  if(phase==='count'){if(!cd.update(dt))phase='play';}
-  else if(phase==='play'){clock+=dt;if(cpu)cpuHeist(dt);
+ if(on){phase='sync';netStart(s,nf).then(()=>{if(phase==='sync')phase='count';});}
+ s.frame(dt=>{t+=dt;fx.update(dt);nf?.tick(dt);
+  if(phase==='sync'||phase==='wait'){}
+  else if(phase==='count'){if(!cd.update(dt))phase='play';}
+  else if(phase==='play'){clock+=dt;if(cpu)cpuHeist(dt);if(autodrive)cpuHeist(dt,me);
    for(let i=0;i<2;i++){const a=agents[i],k=kb.state[i];a.flash=Math.max(0,a.flash-dt);a.inv=Math.max(0,a.inv-dt);
+    if(on&&i===them){if(a.tx!==undefined){const e=Math.min(1,dt*12);a.x+=(a.tx-a.x)*e;a.y+=(a.ty-a.y)*e;}a.stun=Math.max(0,a.stun-dt);continue;}
     // Caught: frozen in the beam for a moment, then marched back to the vault door.
     if(a.stun>0){a.stun-=dt;if(a.stun<=0){a.stun=0;a.x=START[0];a.y=START[1];}continue;}
     if(k.l||k.r||k.u||k.d){const sp=34*dt;move(a,(k.r-k.l)*sp,(k.d-k.u)*sp);}else check(a);}
-   if(clock>=HEIST_TIME){phase='end';endT=0;const [p0,p1]=score;endText=p0===p1?'DEAD HEAT':`${s.players[p0>p1?0:1].name.toUpperCase()} CRACKS THE VAULT`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});}}
+   if(clock>=HEIST_TIME){phase='wait';netEnd(nf,score,me,()=>{phase='end';endT=0;const [p0,p1]=score;endText=p0===p1?'DEAD HEAT':`${s.players[p0>p1?0:1].name.toUpperCase()} CRACKS THE VAULT`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});});}}
   else{endT+=dt;if(endT>2.6){s.finish(score,`Laser Vault Heist: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}
   s.setScores(score);fx.begin(x);
   for(let i=0;i<2;i++){const v=vp(i);x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();drawVault(i);x.restore();}
   fx.draw(x);fx.end(x);divider(x,s,side);
-  if(phase==='count')cd.draw(x,s.W,s.H);if(phase==='end')endBanner(x,s,endText);
+  if(phase==='count')cd.draw(x,s.W,s.H);if(phase==='end')endBanner(x,s,endText);if(on)waitBanner(x,s,phase,them);
  });
 }
 
@@ -131,28 +153,38 @@ async function bondFunhouse(s){
  // One shared schedule: [time, window, kind, stay]
  const sched=[];for(let tt=.4,n=0;tt<FUN_TIME-.6;n++){const r=s.random(),kind=r<.42?'scaramanga':r<.62?'nicknack':r<.82?'mirror':'bond';sched.push({at:tt,win:Math.floor(s.random()*6),kind,stay:Math.max(.75,1.35-tt/FUN_TIME*.55)});tt+=.38+s.random()*.5-Math.min(.12,tt/FUN_TIME*.12);}
  const fields=[[],[]],gun=[0,0],shots=[0,0],nextIdx=[0,0];
- const wins=i=>{const v=vp(i),top=v.y+v.h*.16,cw=v.w/3,ch=(v.h*.84)/2;return Array.from({length:6},(_,k)=>({k,x:v.x+(k%3)*cw+cw*.08,y:top+Math.floor(k/3)*ch+ch*.06,w:cw*.84,h:ch*.86}));};
+ const wins=i=>{const v=vp(i),cols=s.online&&v.w<v.h*.8?2:3,rows=6/cols,top=v.y+v.h*.16,cw=v.w/cols,ch=(v.h*.84)/rows;return Array.from({length:6},(_,k)=>({k,x:v.x+(k%cols)*cw+cw*.08,y:top+Math.floor(k/cols)*ch+ch*.06,w:cw*.84,h:ch*.86}));};
  function shoot(i,k){if(phase!=='play')return;if(gun[i]>0){snd(160,.05,{type:'square',vol:.02});return;}gun[i]=RELOAD;shots[i]++;snd(1200,.05,{type:'square',vol:.05,to:200});noise(.08,{vol:.05,freq:3000});
   const w=wins(i)[k],tg=fields[i].find(o=>o.win===k&&!o.hit&&o.up>.35);fx.ring(w.x+w.w/2,w.y+w.h/2,{color:GOLD,r1:w.w*.4,life:.25});
   if(!tg){fx.pop(w.x+w.w/2,w.y+w.h*.4,'MISS',{color:'#bbb',stroke:INK,size:16});return;}
-  tg.hit=true;const T=TARGETS[tg.kind];score[i]=Math.max(0,score[i]+T.pts);s.react(i,T.pts>0?'happy':'sad');
+  tg.hit=true;const T=TARGETS[tg.kind];score[i]=Math.max(0,score[i]+T.pts);s.react(i,T.pts>0?'happy':'sad');if(on)nf.push();
   fx.pop(w.x+w.w/2,w.y+w.h*.35,T.label,{color:T.pts>0?GOLD:'#ff6a6a',stroke:INK,size:Math.max(13,w.w*.12)});
   if(tg.kind==='mirror'){noise(.3,{vol:.06,freq:5000});fx.burst(w.x+w.w/2,w.y+w.h/2,{n:16,color:'#dff4ff',speed:240,life:.5,size:3,shape:'square'});}
   else if(T.pts>0){fx.burst(w.x+w.w/2,w.y+w.h/2,{n:12,color:GOLD,speed:180,life:.45,size:3,shape:'star'});jingle([880,1175],{step:.05,type:'triangle',vol:.035});}
   else{fx.shake(6);snd(140,.3,{type:'sawtooth',vol:.04});}}
  arenaTouch(s,{owner,maxFingers:2,onDown:f=>{const w=wins(f.owner).find(w=>f.x>=w.x&&f.x<=w.x+w.w&&f.y>=w.y&&f.y<=w.y+w.h);if(w)shoot(f.owner,w.k);}});
- s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat)return;const k=String(ev.key).toLowerCase(),a='qweasd'.indexOf(k),b='uiojkl'.indexOf(k);if(a>=0){ev.preventDefault();shoot(0,a);}else if(b>=0){ev.preventDefault();shoot(1,b);}});
+ s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat)return;const k=String(ev.key).toLowerCase(),a='qweasd'.indexOf(k),b='uiojkl'.indexOf(k);if(a>=0){ev.preventDefault();shoot(on?me:0,a);}else if(b>=0){ev.preventDefault();shoot(on?me:1,b);}});
  s.debug={get phase(){return phase;},fields,score,shoot,sched};
+ // ----- online: the other half's cut-outs come from its snapshots (which schedule entries are up, which were shot)
+ const on=!!s.online,me=on?s.online.me:0,them=1-me,made=new Set();
+ const nf=on?netField(s,{hz:15,pack:i=>({sc:score[i],g:gun[i]>0?1:0,a:fields[i].filter(o=>o.up>0||o.age<.2).map(o=>[o.idx,o.hit?1:0])}),
+  unpack:(i,d)=>{score[i]=d.sc|0;if(d.g&&gun[i]<=0)gun[i]=RELOAD;const list=Array.isArray(d.a)?d.a:[],seen=new Set();
+   for(const [idx,h] of list){const e=sched[idx];if(!e)continue;seen.add(idx);let o=fields[i].find(o=>o.idx===idx);if(!o){if(made.has(idx))continue;made.add(idx);o={...e,idx,age:0,up:0,hit:!!h};fields[i].push(o);}
+    if(h&&!o.hit){o.hit=true;const w=wins(i)[o.win],T=TARGETS[o.kind];if(w)fx.pop(w.x+w.w/2,w.y+w.h*.35,T.pts>0?`+${T.pts}`:`${T.pts}`,{color:T.pts>0?GOLD:'#ff6a6a',stroke:INK,size:14});}}
+   for(const o of fields[i])if(!seen.has(o.idx)&&!o.hit)o.age=Math.max(o.age,o.stay);}}):null;
+ let autodrive=false;if(on)s.debug.bot=()=>{if(autodrive)return '';autodrive=true;return 'drive';};
  // vs CPU: gunman 2 shoots Scaramanga and Nick Nack after a reaction delay, and on Easy sometimes a decoy
  const cpu=isCpu(s);
- function cpuFun(){if(gun[1]>0)return;const sk=cpuSkill(s);for(const o of fields[1]){if(o.hit||o.up<.4||o.cpuSeen)continue;if(o.cpuAt===undefined)o.cpuAt=.2+(1-sk)*.45+Math.random()*.15;if(o.age<o.cpuAt)continue;o.cpuSeen=true;const good=TARGETS[o.kind].pts>0;if(good?Math.random()<.65+sk*.33:Math.random()<(1-sk)*.18){shoot(1,o.win);break;}}}
- s.frame(dt=>{t+=dt;fx.update(dt);
-  if(phase==='count'){if(!cd.update(dt))phase='play';}
-  else if(phase==='play'){clock+=dt;if(cpu)cpuFun();
-   for(let i=0;i<2;i++){gun[i]=Math.max(0,gun[i]-dt);while(nextIdx[i]<sched.length&&sched[nextIdx[i]].at<=clock){const e=sched[nextIdx[i]++];if(!fields[i].some(o=>o.win===e.win))fields[i].push({...e,age:0,up:0,hit:false});}
+ function cpuFun(who=1){if(gun[who]>0)return;const sk=cpuSkill(s);for(const o of fields[who]){if(o.hit||o.up<.4||o.cpuSeen)continue;if(o.cpuAt===undefined)o.cpuAt=.2+(1-sk)*.45+Math.random()*.15;if(o.age<o.cpuAt)continue;o.cpuSeen=true;const good=TARGETS[o.kind].pts>0;if(good?Math.random()<.65+sk*.33:Math.random()<(1-sk)*.18){shoot(who,o.win);break;}}}
+ if(on){phase='sync';netStart(s,nf).then(()=>{if(phase==='sync')phase='count';});}
+ s.frame(dt=>{t+=dt;fx.update(dt);nf?.tick(dt);
+  if(phase==='sync'||phase==='wait'){}
+  else if(phase==='count'){if(!cd.update(dt))phase='play';}
+  else if(phase==='play'){clock+=dt;if(cpu)cpuFun();if(autodrive)cpuFun(me);
+   for(let i=0;i<2;i++){gun[i]=Math.max(0,gun[i]-dt);while(!(on&&i===them)&&nextIdx[i]<sched.length&&sched[nextIdx[i]].at<=clock){const idx=nextIdx[i]++,e=sched[idx];if(!fields[i].some(o=>o.win===e.win))fields[i].push({...e,idx,age:0,up:0,hit:false});}
     for(const o of fields[i]){o.age+=dt;o.up=o.hit?Math.max(0,o.up-dt*5):o.age<.15?o.age/.15:o.age>o.stay?Math.max(0,1-(o.age-o.stay)/.15):1;}
     fields[i]=fields[i].filter(o=>!(o.up<=0&&o.age>.2));}
-   if(clock>=FUN_TIME){phase='end';endT=0;const [a,b]=score;endText=a===b?'A GENTLEMAN’S DRAW':`${s.players[a>b?0:1].name.toUpperCase()} HAS THE GOLDEN GUN`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});}}
+   if(clock>=FUN_TIME){phase='wait';netEnd(nf,score,me,()=>{phase='end';endT=0;const [a,b]=score;endText=a===b?'A GENTLEMAN’S DRAW':`${s.players[a>b?0:1].name.toUpperCase()} HAS THE GOLDEN GUN`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});});}}
   else{endT+=dt;if(endT>2.6){s.finish(score,`Funhouse Duel: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}
   s.setScores(score);fx.begin(x);
   for(let i=0;i<2;i++){const v=vp(i);x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();
@@ -167,7 +199,7 @@ async function bondFunhouse(s){
    hud(x,s,i,v,`${s.players[i].name.toUpperCase()}  ${score[i]}`,'');outlined(x,`${Math.ceil(Math.max(0,FUN_TIME-clock))}s`,v.x+10,v.y+Math.max(14,Math.min(v.w,v.h)*.055)*2.1,{size:Math.max(12,Math.min(v.w,v.h)*.045),fill:'#fff',stroke:INK,align:'left'});
    x.restore();}
   fx.draw(x);fx.end(x);divider(x,s,side);
-  if(phase==='count')cd.draw(x,s.W,s.H);if(phase==='end')endBanner(x,s,endText);
+  if(phase==='count')cd.draw(x,s.W,s.H);if(phase==='end')endBanner(x,s,endText);if(on)waitBanner(x,s,phase,them);
  });
 }
 
@@ -181,27 +213,38 @@ async function bondBomb(s){
  const {side,vp,owner}=split(s),fx=new Fx(),score=[0,0],kb=arenaKeys(s),cd=new Countdown(3);let phase='count',t=0,endT=0,endText='';
  s.hint('Stop the Bomb at 007: Goldfinger’s device in Fort Knox counts down. Tap anywhere on your half (P1 top, P2 bottom; left/right on wide screens) to stop YOUR read-out. 0:07.00 exactly scores 5; the further away, the less. Let it reach zero and it goes off. From round 4 the display blacks out partway down; later rounds speed up. Seven rounds. Keyboard: P1 Space, P2 Enter.');
  const rounds=Array.from({length:BOMB_ROUNDS},(_,k)=>({start:12+s.random()*8,rate:k<5?1+s.random()*.5:1.3+s.random()*.6,accel:k>=5?.25+s.random()*.25:0,dark:k>=3?9+s.random()*3:-1}));
- let r=-1,clockV=0,stopped=[null,null],state='wait',waitT=0,result=null,boom=0;
- const nextRound=()=>{r++;if(r>=BOMB_ROUNDS){phase='end';endT=0;const [a,b]=score;endText=a===b?'BOTH LICENSED TO DEFUSE':`${s.players[a>b?0:1].name.toUpperCase()} SAVES FORT KNOX`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});return;}
-  clockV=rounds[r].start;stopped=[null,null];state='wait';waitT=1.1;result=null;};
- const stop=i=>{if(phase!=='play'||state!=='run'||stopped[i]!==null)return;stopped[i]=clockV;snd(660,.08,{type:'square',vol:.04});fx.ring(vp(i).x+vp(i).w/2,vp(i).y+vp(i).h/2,{color:GOLD,r1:80,life:.3});if(stopped[0]!==null&&stopped[1]!==null)settleRound();};
- function settleRound(){state='done';waitT=2.2;const pts=[0,1].map(i=>stopped[i]===null||stopped[i]<=0?0:bombPoints(Math.abs(stopped[i]-7)));score[0]+=pts[0];score[1]+=pts[1];result=pts;
+ let r=-1,clockV=0,stopped=[null,null],known=[false,false],state='wait',waitT=0,result=null,boom=0,banged=false;
+ // ----- online: every round starts together; each phone stops its own read-out and sends {st:[round,value|-1 = boom]}
+ const on=!!s.online,me=on?s.online.me:0,them=1-me,theirs=new Map();
+ const nf=on?netField(s,{hz:4,pack:i=>({sc:score[i]}),unpack:()=>{},onEvent:e=>{const st=e?.st;if(Array.isArray(st)&&!theirs.has(st[0]|0))theirs.set(st[0]|0,+st[1]);}}):null;
+ const nextRound=()=>{r++;if(r>=BOMB_ROUNDS){phase=on?'wait':'end';netEnd(nf,score,me,()=>{phase='end';endT=0;const [a,b]=score;endText=a===b?'BOTH LICENSED TO DEFUSE':`${s.players[a>b?0:1].name.toUpperCase()} SAVES FORT KNOX`;jingle([523,659,784,1047],{step:.1,type:'triangle',vol:.04});});return;}
+  clockV=rounds[r].start;stopped=[null,null];known=[false,false];result=null;banged=false;
+  if(on){state='sync';const rr=r;nf.start('b'+rr).then(()=>{if(r===rr&&state==='sync'){state='wait';waitT=1.1;}});}else{state='wait';waitT=1.1;}};
+ const bang=()=>{banged=true;boom=1;fx.shake(16);noise(.8,{vol:.09,freq:200});snd(80,.8,{type:'sawtooth',vol:.06,to:30});};
+ const stop=i=>{if(phase!=='play'||state!=='run'||known[i])return;stopped[i]=clockV;known[i]=true;if(on)nf.event({st:[r,clockV]});snd(660,.08,{type:'square',vol:.04});fx.ring(vp(i).x+vp(i).w/2,vp(i).y+vp(i).h/2,{color:GOLD,r1:80,life:.3});if(known[0]&&known[1])settleRound();};
+ function settleRound(){state='done';waitT=2.2;if(on&&!banged&&(stopped[0]===null||stopped[1]===null))bang();const pts=[0,1].map(i=>stopped[i]===null||stopped[i]<=0?0:bombPoints(Math.abs(stopped[i]-7)));score[0]+=pts[0];score[1]+=pts[1];result=pts;
   for(let i=0;i<2;i++){const v=vp(i);fx.pop(v.x+v.w/2,v.y+v.h*.3,stopped[i]===null||stopped[i]<=0?'BOOM':pts[i]===5?'007! +5':pts[i]?`+${pts[i]}`:'TOO FAR',{color:pts[i]>=4?GOLD:pts[i]?'#fff':'#ff6a6a',stroke:INK,size:Math.min(v.w,v.h)*.1});if(pts[i]>=4)s.react(i,'happy');else if(!pts[i])s.react(i,'sad');}
   if(pts[0]===5||pts[1]===5)jingle([784,988,1175,1568],{step:.06,type:'triangle',vol:.045});}
  arenaTouch(s,{owner,maxFingers:1,onDown:f=>stop(f.owner)});kb.onDown((i,k)=>{if(k==='fire')stop(i);});
  s.debug={get phase(){return phase;},get state(){return state;},get clock(){return clockV;},score,stop,rounds};
+ let autodrive=false;if(on)s.debug.bot=()=>{if(autodrive)return '';autodrive=true;return 'drive';};
  // vs CPU: agent 2 stops its read-out near 0:07, with a wider error on Easy and once the display goes dark
  const cpu=isCpu(s);let cpuAim=null,cpuR=-1;
- function cpuBomb(){if(state!=='run'||stopped[1]!==null)return;const sk=cpuSkill(s),R0=rounds[r];if(cpuR!==r){cpuR=r;const spread=(1.1-sk)*(R0.dark>0?1.1:.55)+R0.accel*.6;cpuAim=7+(Math.random()-.45)*spread*2;}if(clockV<=cpuAim)stop(1);}
+ function cpuBomb(who=1){if(state!=='run'||known[who])return;const sk=cpuSkill(s),R0=rounds[r];if(cpuR!==r){cpuR=r;const spread=(1.1-sk)*(R0.dark>0?1.1:.55)+R0.accel*.6;cpuAim=7+(Math.random()-.45)*spread*2;}if(clockV<=cpuAim)stop(who);}
  const fmt=v=>{const c2=Math.max(0,v),sec=Math.floor(c2),cs=Math.floor((c2-sec)*100);return `0:${String(sec).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;};
  function digits(txt,cx,cy,size,col,dim=false){x.save();x.font=`900 ${size}px "Courier New",monospace`;x.textAlign='center';x.textBaseline='middle';const w=x.measureText(txt).width+size*.6;x.fillStyle='#060404';rr(x,cx-w/2,cy-size*.65,w,size*1.3,size*.15);x.fill();x.strokeStyle='#3a3d44';x.lineWidth=3;x.stroke();
   x.fillStyle='rgba(255,40,40,.12)';x.fillText('8:88.88',cx,cy);x.fillStyle=dim?'#5a1010':col;x.shadowColor=col;x.shadowBlur=dim?0:size*.3;x.fillText(txt,cx,cy);x.restore();}
- s.frame(dt=>{t+=dt;fx.update(dt);boom=Math.max(0,boom-dt);
-  if(phase==='count'){if(!cd.update(dt)){phase='play';nextRound();}}
+ if(on){phase='sync';netStart(s,nf).then(()=>{if(phase==='sync')phase='count';});}
+ s.frame(dt=>{t+=dt;fx.update(dt);boom=Math.max(0,boom-dt);nf?.tick(dt);
+  if(phase==='sync'||phase==='wait'){}
+  else if(phase==='count'){if(!cd.update(dt)){phase='play';nextRound();}}
   else if(phase==='play'){const R0=rounds[r];
+   if(on&&!known[them]&&(theirs.has(r)||nf.gone)){const v=theirs.has(r)?theirs.get(r):-1;stopped[them]=v<0?null:v;known[them]=true;if(known[me]&&(state==='run'||state==='zero'))settleRound();}
    if(state==='wait'){waitT-=dt;if(waitT<=0){state='run';snd(330,.1,{type:'square',vol:.035});}}
-   else if(state==='run'){if(cpu)cpuBomb();const before=clockV;clockV-=dt*(R0.rate+R0.accel*(R0.start-clockV));if(Math.floor(before)!==Math.floor(clockV)&&clockV>0)snd(clockV<8?1400:1000,.03,{type:'square',vol:.025});
-    if(clockV<=0){clockV=0;boom=1;fx.shake(16);noise(.8,{vol:.09,freq:200});snd(80,.8,{type:'sawtooth',vol:.06,to:30});settleRound();}}
+   else if(state==='run'){if(cpu)cpuBomb();if(autodrive)cpuBomb(me);const before=clockV;clockV-=dt*(R0.rate+R0.accel*(R0.start-clockV));if(Math.floor(before)!==Math.floor(clockV)&&clockV>0)snd(clockV<8?1400:1000,.03,{type:'square',vol:.025});
+    if(clockV<=0){clockV=0;if(!on){bang();settleRound();}
+     // online: this phone's read-out went off; the round settles once the other phone's report is in
+     else{if(!known[me]){known[me]=true;nf.event({st:[r,-1]});bang();}if(known[them])settleRound();else state='zero';}}}
    else if(state==='done'){waitT-=dt;if(waitT<=0)nextRound();}}
   else{endT+=dt;if(endT>2.6){s.finish(score,`Stop the Bomb at 007: ${s.players[0].name} ${score[0]}, ${s.players[1].name} ${score[1]}.`);return;}}
   s.setScores(score);fx.begin(x);
@@ -215,19 +258,19 @@ async function bondBomb(s){
    const rx=v.x+v.w*(side()?.5:.7),ry=v.y+v.h*(side()?.88:.55),sz=Math.min(v.w*.09,v.h*.12,40);
    const show=stopped[i]===null?(state==='done'?'BOOM':'--:--.--'):(state==='done'||!dark?fmt(stopped[i]):'??:??.??');
    digits(stopped[i]===null&&state!=='done'?'TAP':show,rx,ry,sz,stopped[i]!==null?GOLD:'#ff4040',stopped[i]===null&&state!=='done'&&state!=='run');
-   hud(x,s,i,v,`${s.players[i].name.toUpperCase()}  ${score[i]}`,state==='run'&&stopped[i]===null?'TAP TO STOP':'');}
+   hud(x,s,i,v,`${s.players[i].name.toUpperCase()}  ${score[i]}`,state==='run'&&stopped[i]===null&&!(on&&i===them)?'TAP TO STOP':'');}
   divider(x,s,side);
   // the device, centred (over the divider)
-  const S=Math.min(s.W,s.H)*(side()?.34:.2),cx=side()?s.W/2:s.W*.5,cy=side()?s.H*.34:s.H/2;
+  const S=on?Math.min(s.W*SPLIT*.5,s.H*.2):Math.min(s.W,s.H)*(side()?.34:.2),cx=on?s.W*SPLIT/2:side()?s.W/2:s.W*.5,cy=side()?s.H*.34:s.H/2;
   x.fillStyle='#3a3d44';rr(x,cx-S*.8,cy-S*.55,S*1.6,S*1.1,S*.12);x.fill();x.strokeStyle=INK;x.lineWidth=4;x.stroke();
   for(let k=0;k<6;k++){x.strokeStyle=['#c8161d','#3a8fd8','#e8c45a'][k%3];x.lineWidth=3;x.beginPath();x.moveTo(cx-S*.7+k*S*.28,cy+S*.55);x.quadraticCurveTo(cx-S*.6+k*S*.25,cy+S*.8,cx-S*.75+k*S*.3,cy+S*.95);x.stroke();}
   x.fillStyle='#d9d4c8';x.beginPath();x.arc(cx-S*.55,cy-S*.3,S*.1,0,7);x.arc(cx+S*.55,cy-S*.3,S*.1,0,7);x.fill();
-  const txt=phase==='play'?(state==='wait'?fmt(R0.start):dark?(Math.floor(t*6)%2?'--:--.--':'  :  .  '):fmt(clockV)):phase==='end'?'0:07.00':'0:00.00';
+  const txt=phase==='play'?(state==='wait'||state==='sync'?fmt(R0.start):dark?(Math.floor(t*6)%2?'--:--.--':'  :  .  '):fmt(clockV)):phase==='end'?'0:07.00':'0:00.00';
   digits(txt,cx,cy+S*.08,S*.32,'#ff3030');outlined(x,phase==='play'?`ROUND ${r+1}/${BOMB_ROUNDS}`:'FORT KNOX',cx,cy-S*.38,{size:S*.11,fill:GOLD,stroke:INK});
   outlined(x,'TARGET 0:07.00',cx,cy+S*.42,{size:S*.09,fill:'#fff',stroke:INK});
   fx.draw(x);fx.end(x);
   if(boom>0){x.fillStyle=`rgba(255,${180*boom|0},60,${boom*.7})`;x.fillRect(0,0,s.W,s.H);}
-  if(phase==='count')cd.draw(x,s.W,s.H);if(phase==='end')endBanner(x,s,endText);
+  if(phase==='count')cd.draw(x,s.W,s.H);if(phase==='end')endBanner(x,s,endText);if(on)waitBanner(x,s,phase,them);
  });
 }
 Object.assign(exports,{bondLaser,bondFunhouse,bondBomb,heistPlan,beamAt,bombPoints});
