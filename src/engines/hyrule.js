@@ -88,7 +88,7 @@ async function hyrule(s){
  // cut bushes {bc:[tx,ty,gen,ms]} and pickups {pk:[id,ms]} are time-stamped claims: the earlier one counts (tie: player 1).
  // Drops are named by what made them, so both phones deal the same kind. Rupees lost {lo:[ms,n,[[id,kind,x,y]..]]} are
  // the victim's call. Rupee Rush ends with {tu:ms} from both and both wallets rebuilt from the logs; Sword Duel through roundOutcome.
- const STEP=1/30,net={t0:0,clock:-3,slots:[],drops:new Map(),claims:new Map(),loss:[[],[]],bush:new Map(),tu:[null,null],seen:null,outc:null,spill:0,hidden:new Set(),hit:new Set(),started:false},botKeys={l:0,r:0,u:0,d:0};
+ const STEP=1/30,net={src:{},kills:0,cuts:0,t0:0,clock:-3,slots:[],drops:new Map(),claims:new Map(),loss:[[],[]],bush:new Map(),tu:[null,null],seen:null,outc:null,spill:0,hidden:new Set(),hit:new Set(),started:false},botKeys={l:0,r:0,u:0,d:0};
  const nShots=new Map(),nOct=mode==='duel'?2:3,nSlots=mode==='duel'?3:5;
  const nowMs=()=>Math.round(net.clock*1000),VAL={green:1,blue:5,red:20};
  function netEnemy(slot,gen,S){const rnd=seededRandom(`${s.seed}:hy:${slot}:${gen}`),kind=gen===0?(slot<nOct?'octorok':'tektite'):(rnd()<.6?'octorok':'tektite');let tx=Math.floor(cols/2),ty=Math.floor(rows/2);
@@ -107,7 +107,7 @@ async function hyrule(s){
   netDrop(`e:${e.slot}:${e.gen}`,x,y,c);}
  const wallet=i=>{const lim=net.tu[0]!==null&&net.tu[1]!==null?Math.min(net.tu[0],net.tu[1]):Infinity;let v=0;for(const [id,c] of net.claims)if(c.by===i&&c.t<=lim){const d=net.drops.get(id);v+=VAL[d?.kind]||0;}for(const l of net.loss[i])if(l.t<=lim)v-=l.n;return Math.max(0,v);};
  // this phone's Link takes a hit (it alone decides; rupees it loses spill as drops named after it)
- function hurtNet(amt,fromX,fromY,byRival){const l=L[me];if(l.inv>0||l.down>0||net.outc?.R.frozen)return;l.hearts=Math.max(0,l.hearts-amt);l.inv=1;const d=Math.hypot(l.x-fromX,l.y-fromY)||1;l.kx=(l.x-fromX)/d*9;l.ky=(l.y-fromY)/d*9;snd(200,.2,{type:'square',vol:.04,to:80});s.react(me,'sad');
+ function hurtNet(amt,fromX,fromY,byRival,src){const l=L[me];if(l.inv>0||l.down>0||net.outc?.R.frozen)return;net.src[src]=(net.src[src]||0)+1;l.hearts=Math.max(0,l.hearts-amt);l.inv=1;const d=Math.hypot(l.x-fromX,l.y-fromY)||1;l.kx=(l.x-fromX)/d*9;l.ky=(l.y-fromY)/d*9;snd(200,.2,{type:'square',vol:.04,to:80});s.react(me,'sad');
   if(byRival)nf.event({ht:[nowMs()]});
   const spill=(n,shown,spread)=>{if(n<=0)return;const ms=nowMs(),list=[];for(let k=0;k<shown;k++){const id=`l${me}:${net.spill++}`,x=clamp(l.x+(Math.random()-.5)*spread,1.2,cols-1.2),y=clamp(l.y+(Math.random()-.5)*spread,1.2,rows-1.2);list.push([id,'green',+x.toFixed(2),+y.toFixed(2)]);netDrop(id,x,y,ms/1000,'green');}net.loss[me].push({t:ms,n});nf.event({lo:[ms,n,list]});};
   if(mode==='rupees'&&byRival){const n=Math.min(wallet(me),5);spill(n,n,1.4);}
@@ -150,7 +150,7 @@ async function hyrule(s){
   // the other Link eases toward its last report; its slash lands (or not) on this phone's Link here
   if(net.seen&&o.down<=0){const kk=Math.min(1,dt*16);o.x+=(net.seen.x-o.x)*kk;o.y+=(net.seen.y-o.y)*kk;}
   o.inv=Math.max(0,o.inv-dt);if(o.down>0)o.down=Math.max(.01,o.down-dt);
-  if(o.slash>0){o.slash-=dt;const sb=swordBox(o);if(!frozen&&l.down<=0&&l.inv<=0&&Math.hypot(l.x-sb.x,l.y-sb.y)<.8)hurtNet(mode==='duel'?2:1,o.x,o.y,true);}
+  if(o.slash>0){o.slash-=dt;const sb=swordBox(o);if(!frozen&&l.down<=0&&l.inv<=0&&Math.hypot(l.x-sb.x,l.y-sb.y)<.8)hurtNet(mode==='duel'?2:1,o.x,o.y,true,'rival');}
   for(const sh of shots)if(Math.hypot(o.x-sh.x,o.y-sh.y)<.5)net.hidden.add(sh.id);
   // this phone's Link
   l.cd=Math.max(0,l.cd-dt);l.inv=Math.max(0,l.inv-dt);
@@ -162,11 +162,11 @@ async function hyrule(s){
    if(mx&&my){if(Math.abs(mx)>=Math.abs(my))my=0;else mx=0;}
    if((mx||my)&&l.slash<=0){l.dir=mx<0?'l':mx>0?'r':my<0?'u':'d';move(l,mx*4.6*dt,my*4.6*dt);l.walk+=dt*8;}
    if(l.slash>0){l.slash-=dt;const sb=swordBox(l),tx=Math.floor(sb.x),ty=Math.floor(sb.y);
-    if(g[ty]?.[tx]==='bush'){const b=bushOf(tx,ty);if(b.cutT===null&&!b.pending){cutBush(b,net.clock,true);nf.event({bc:[tx,ty,b.gen,nowMs()]});}}
-    for(const e of net.slots)if(e.killT===null&&net.clock>=e.S&&Math.hypot(e.x-sb.x,e.y-sb.y)<.75){const x0=+e.x.toFixed(2),y0=+e.y.toFixed(2);killEnemy(e,net.clock,x0,y0,true);nf.event({ek:[e.slot,e.gen,nowMs(),x0,y0]});}}
-   for(const e of enemies)if(!e.dead&&Math.hypot(l.x-e.x,l.y-e.y)<.7)hurtNet(1,e.x,e.y,false);
+    if(g[ty]?.[tx]==='bush'){const b=bushOf(tx,ty);if(b.cutT===null&&!b.pending){net.cuts++;cutBush(b,net.clock,true);nf.event({bc:[tx,ty,b.gen,nowMs()]});}}
+    for(const e of net.slots)if(e.killT===null&&net.clock>=e.S&&Math.hypot(e.x-sb.x,e.y-sb.y)<.75){const x0=+e.x.toFixed(2),y0=+e.y.toFixed(2);net.kills++;killEnemy(e,net.clock,x0,y0,true);nf.event({ek:[e.slot,e.gen,nowMs(),x0,y0]});}}
+   for(const e of enemies)if(!e.dead&&Math.hypot(l.x-e.x,l.y-e.y)<.7)hurtNet(1,e.x,e.y,false,'touch');
    for(const sh of shots)if(!net.hit.has(sh.id)&&l.down<=0&&Math.hypot(l.x-sh.x,l.y-sh.y)<.5){net.hit.add(sh.id);nf.event({sh:[sh.id]});const [fx0,fy0]=DIRS[l.dir];
-    if(fx0===-sh.dx&&fy0===-sh.dy&&l.slash<=0){snd(1400,.05,{type:'square',vol:.03});fx.burst(VX(sh.x)*curT,VY(sh.y)*curT,{n:6,color:'#fff',speed:3*curT,life:.2,size:.08*curT,drag:3});}else hurtNet(1,sh.x-sh.dx,sh.y-sh.dy,false);}
+    if(fx0===-sh.dx&&fy0===-sh.dy&&l.slash<=0){snd(1400,.05,{type:'square',vol:.03});fx.burst(VX(sh.x)*curT,VY(sh.y)*curT,{n:6,color:'#fff',speed:3*curT,life:.2,size:.08*curT,drag:3});}else hurtNet(1,sh.x-sh.dx,sh.y-sh.dy,false,'rock');}
    for(const d of drops)if(l.down<=0&&d.t>.3&&Math.hypot(l.x-d.x,l.y-d.y)<.6&&!net.claims.has(d.id)){const ms=nowMs();net.claims.set(d.id,{by:me,t:ms});nf.event({pk:[d.id,ms]});
     if(d.kind==='heart'){l.hearts=Math.min(6,l.hearts+2);jingle([1047,1319],{step:.05,type:'square',vol:.03});nf.push();}else{const v=VAL[d.kind];snd(v>1?1568:1319,.06,{type:'square',vol:.03});snd(v>1?2093:1760,.1,{type:'square',vol:.03,delay:.05});fx.pop(VX(d.x)*curT,(VY(d.y)-.4)*curT,`+${v}`,{color:'#fff',stroke:'#000',size:Math.max(12,.45*curT),rise:.8*curT});}}}
   for(const i of [0,1])L[i].rupees=wallet(i);
@@ -182,7 +182,7 @@ async function hyrule(s){
  if(on){phase='sync';for(let k=0;k<nSlots;k++)net.slots.push(netEnemy(k,0,0));s.debug.bot=()=>{if(net.bot)return '';net.bot=true;return 'drive';};
   // test summary (NETSTAT=1): claims and losses per player, monsters at the last whole second
   const probe={};Object.defineProperty(s.debug,'net',{get:()=>{const cl=[0,0];for(const c of net.claims.values())cl[c.by]++;const sec=Math.floor(net.clock);if(probe.sec!==sec){probe.sec=sec;probe.mon=net.slots.map(e=>`${e.slot}.${e.gen}@${e.x.toFixed(1)},${e.y.toFixed(1)}`).join(' ');}
-   return {clock:+net.clock.toFixed(1),wallet:[wallet(0),wallet(1)],claims:cl,loss:net.loss.map(l=>l.reduce((t,q)=>t+q.n,0)),hearts:L.map(l=>l.hearts),drops:net.drops.size,mon:probe.mon,sec};}});
+   return {clock:+net.clock.toFixed(1),wallet:[wallet(0),wallet(1)],claims:cl,loss:net.loss.map(l=>l.reduce((t,q)=>t+q.n,0)),hearts:L.map(l=>l.hearts),drops:net.drops.size,src:net.src,kills:net.kills,cuts:net.cuts,sec};}});
   void (async()=>{await nf.start('go');if(!s.alive)return;net.t0=performance.now();phase='count';})();}
  s.frame(dt=>{t+=dt;fx.update(dt);dt=Math.min(dt,.04);curT=tile().T;
   if(on){if(!netStep(dt))return;}
