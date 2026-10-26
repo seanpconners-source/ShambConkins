@@ -1,10 +1,15 @@
 // Indiana Jones · Boulder Run. Both players at once, one temple corridor each (top = player 1, bottom = player 2),
 // identical traps. Tap or swipe up to jump pits and spikes, swipe down to slide under darts. Every stumble lets
 // the boulder roll closer; clean running slowly wins ground back. Golden idols are bonus points.
+// Online (netField): each phone runs only its own runner in the bottom corridor (the course comes from the seed, the
+// clocks start together via nf.start); the other corridor on top is drawn from {f:{x,y,sl,st,iv,gp,al,id,rn}} ~12/s.
+// A run ends on this phone when its runner is flattened, at 60 s, or once the other is out and this one leads by 40;
+// both phones settle from the two finals {fin:score}.
 const {clamp,seededRandom}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const {label,rr,makeFx,makeShake,sfx,halfPointers,keyboard,voice,noise}=require("src/engines/tarantinoKit.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 const DUR=60,G=44,JV=15.5,STAND=2,SLIDE=.9;
 
 function course(seed){const r=seededRandom(seed+':boulder'),items=[];let x=14;
@@ -21,26 +26,31 @@ async function ballrun2p(s){
  const [c,x]=s.canvas(760,560,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();
  const items=course(s.seed),fx=makeFx(),shake=makeShake();
  const P=[0,1].map(i=>({i,x:0,y:0,vy:0,slide:0,stum:0,inv:0,gap:6,alive:true,idols:0,hits:0,run:0,dead:0,got:new Set(),hitSet:new Set(),jumpQ:0}));
- let t=0,phase='play',endT=0,pace=8;
- s.debug={engine:'ballrun2p',P,items,get t(){return t;}};
+ let t=0,phase='play',endT=0,pace=8,endScores=null;
+ const on=s.online||null,me=on?on.me:0,them=1-me;let autodrive=false,theirFin=null,seen=null,finalSc=null;
+ s.debug={engine:'ballrun2p',P,items,get t(){return t;},get phase(){return phase;},bot:on?()=>{if(autodrive)return '';autodrive=true;return 'drive';}:null};
+ const nf=netField(s,{hz:12,pack:()=>{const p=P[me];return {x:+p.x.toFixed(2),y:+p.y.toFixed(2),sl:+p.slide.toFixed(2),st:+p.stum.toFixed(2),iv:+p.inv.toFixed(2),gp:+p.gap.toFixed(2),al:p.alive?1:0,id:p.idols,rn:+p.run.toFixed(1)};},
+  unpack:(i,d)=>{if(!d||!Number.isFinite(d.x))return;const o=P[them];seen={x:d.x,at:performance.now()};o.y=+d.y||0;o.slide=+d.sl||0;o.stum=+d.st||0;o.inv=+d.iv||0;o.gap=Number.isFinite(d.gp)?d.gp:o.gap;o.idols=d.id|0;o.run=+d.rn||o.run;
+   if(o.alive&&!d.al){o.alive=false;o.dead=1;shake.kick(8);s.react(them,'sad');fx.pop(L.W/2,laneTop(them)+L.lh*.45,'FLATTENED!',{color:'#ffd23f',size:24,life:1.6});}}});
+ if(nf)nf.remoteDone().then(v=>{theirFin=v==null?score(P[them]):v|0;});
  const score=p=>Math.round(p.x)+p.idols*15;
 
  function jump(p){if(!p.alive||phase!=='play')return;if(p.y<=.01){p.vy=JV;p.slide=0;sfx.whoosh(300,900,.04,.1);}else p.jumpQ=.15;}
  function slide(p){if(!p.alive||phase!=='play')return;if(p.y>.01){p.vy=Math.min(p.vy,-18);}p.slide=.65;noise(.15,.05,{f0:800,f1:300});}
- halfPointers(s,{chooseOwner:pt=>pt.y<s.H/2?0:1,
+ halfPointers(s,{chooseOwner:on?()=>me:pt=>pt.y<s.H/2?0:1,
   up:(i,r,{cancelled})=>{if(cancelled)return;const dy=r.y-r.sy;if(dy>28)slide(P[i]);else jump(P[i]);}});
- keyboard(s,(i,k,down)=>{if(!down)return;if(k==='u'||k==='act')jump(P[i]);if(k==='d')slide(P[i]);});
+ keyboard(s,(i,k,down)=>{if(!down)return;if(on)i=me;if(k==='u'||k==='act')jump(P[i]);if(k==='d')slide(P[i]);});
 
  function hit(p,o){if(p.inv>0)return;p.stum=.45;p.inv=1;p.hits++;shake.kick(7);vibrate(30);voice(140,.2,.08,'square',{slide:.5});s.react(p.i,'sad');
   const L0=laneTop(p.i);fx.pop(L.rx,L0+L.lh*.35,o.kind==='dart'?'DART!':o.kind==='pit'?'STUMBLE!':'OUCH!',{color:'#ff6b6b',size:18});}
  // vs CPU: runner 2 reads the next obstacle: jump pits/spikes, slide under darts, sometimes leap for idols
  const cpu=isCpu(s),cpuDone=new Set();
- function cpuThink(p){const sk=cpuSkill(s),lead=.75+(1-sk)*(s.random()-.3)*.9;
+ function cpuThink(p){const sk=cpuSkill(s),rnd=on?Math.random:s.random,lead=.75+(1-sk)*(rnd()-.3)*.9;
   for(const o of items){if(o.x+o.w<p.x)continue;if(o.x-p.x>2.2)break;if(cpuDone.has(o))continue;const dx=o.x-p.x;
-   if((o.kind==='pit'||o.kind==='spikes')&&dx<lead){cpuDone.add(o);if(s.random()<.55+sk*.45)jump(p);}
-   else if(o.kind==='dart'&&dx<lead*.9){cpuDone.add(o);if(s.random()<.5+sk*.5)slide(p);}
-   else if(o.kind==='idol'&&dx<lead){cpuDone.add(o);if(s.random()<sk)jump(p);}}}
- function step(p,dt){if(!p.alive)return;if(cpu&&p.i===1&&phase==='play')cpuThink(p);
+   if((o.kind==='pit'||o.kind==='spikes')&&dx<lead){cpuDone.add(o);if(rnd()<.55+sk*.45)jump(p);}
+   else if(o.kind==='dart'&&dx<lead*.9){cpuDone.add(o);if(rnd()<.5+sk*.5)slide(p);}
+   else if(o.kind==='idol'&&dx<lead){cpuDone.add(o);if(rnd()<sk)jump(p);}}}
+ function step(p,dt){if(!p.alive)return;if(on&&p.i!==me){theirStep(p,dt);return;}if((cpu&&p.i===1||autodrive&&p.i===me)&&phase==='play')cpuThink(p);
   const sp=p.stum>0?pace*.55:pace*1.08;p.stum=Math.max(0,p.stum-dt);p.inv=Math.max(0,p.inv-dt);p.slide=Math.max(0,p.slide-dt);p.jumpQ=Math.max(0,p.jumpQ-dt);
   p.x+=sp*dt;p.run+=dt*sp;p.gap=Math.min(8,p.gap+(sp-pace)*dt);
   p.vy-=G*dt;p.y+=p.vy*dt;
@@ -55,7 +65,9 @@ async function ballrun2p(s){
   if(p.gap<=0){p.alive=false;p.dead=1;shake.kick(16);noise(.6,.18,{f0:300,f1:60});vibrate([60,40,90]);s.react(p.i,'sad');s.react(1-p.i,'happy');fx.pop(L.W/2,laneTop(p.i)+L.lh*.45,'FLATTENED!',{color:'#ffd23f',size:30,life:1.6});}
  }
 
- const L={};const laneTop=i=>i?L.H/2+2:0;
+ // online: the other runner eases toward its last report, run on at the current pace for a moment
+ function theirStep(p,dt){if(!seen)return;const k=Math.min(.25,(performance.now()-seen.at)/1000),tx=seen.x+(p.stum>0?pace*.55:pace*1.08)*k;p.x+=(tx-p.x)*Math.min(1,dt*12);}
+ const L={};const laneTop=i=>(on?i!==me:i)?L.H/2+2:0;
  function layout(){const W=s.W,H=s.H,lh=H/2-2,u=clamp(Math.min(lh/7.5,W/12),16,60);Object.assign(L,{W,H,lh,u,rx:W*.42});}
  function drawLane(p){const top=laneTop(p.i),lh=L.lh,u=L.u,W=L.W,floor=top+lh*.78,sxw=wx=>L.rx+(wx-p.x)*u;
   x.save();x.beginPath();x.rect(0,top,W,lh);x.clip();
@@ -71,7 +83,7 @@ async function ballrun2p(s){
    else if(o.kind==='spikes'){x.fillStyle='#cfcfd6';const n=4;for(let k=0;k<n;k++){x.beginPath();x.moveTo(ox+k*ow/n,floor);x.lineTo(ox+(k+.5)*ow/n,floor-u*.75);x.lineTo(ox+(k+1)*ow/n,floor);x.fill();}}
    else if(o.kind==='dart'){const dy=floor-(o.h0+o.h1)/2*u;x.strokeStyle='#d8c8a0';x.lineWidth=3;x.beginPath();x.moveTo(ox,dy);x.lineTo(ox+ow,dy);x.stroke();x.fillStyle='#c33';x.beginPath();x.moveTo(ox,dy);x.lineTo(ox+u*.25,dy-u*.12);x.lineTo(ox+u*.25,dy+u*.12);x.fill();x.fillStyle='#5a3';x.fillRect(ox+ow-u*.2,dy-u*.15,u*.2,u*.3);
     x.fillStyle='#3a2410';x.fillRect(ox-u*.1,top,u*.2,dy-top-u*.15);}
-   else if(o.kind==='idol'&&!p.got.has(o)){const iy=floor-(o.h0+.4)*u+Math.sin(t*4+o.x)*u*.1;x.font=`${u*.9}px system-ui`;x.textAlign='center';x.textBaseline='middle';const g=x.createRadialGradient(ox,iy,0,ox,iy,u);g.addColorStop(0,'#ffd23f88');g.addColorStop(1,'#ffd23f00');x.fillStyle=g;x.beginPath();x.arc(ox,iy,u,0,7);x.fill();x.fillStyle='#ffd23f';x.fillText('🗿',ox,iy);}}
+   else if(o.kind==='idol'&&!p.got.has(o)&&!(on&&p.i!==me&&o.x<p.x)){const iy=floor-(o.h0+.4)*u+Math.sin(t*4+o.x)*u*.1;x.font=`${u*.9}px system-ui`;x.textAlign='center';x.textBaseline='middle';const g=x.createRadialGradient(ox,iy,0,ox,iy,u);g.addColorStop(0,'#ffd23f88');g.addColorStop(1,'#ffd23f00');x.fillStyle=g;x.beginPath();x.arc(ox,iy,u,0,7);x.fill();x.fillStyle='#ffd23f';x.fillText('🗿',ox,iy);}}
   // boulder
   const br=u*2.6,bx=L.rx-u*.9-clamp(p.gap/8,0,1)*(L.rx-u*.9-br*.25),by=floor-br,rot=p.run*.8;x.save();x.translate(bx,by);x.rotate(rot);const bg2=x.createRadialGradient(-br*.3,-br*.3,br*.1,0,0,br);bg2.addColorStop(0,'#a08a70');bg2.addColorStop(1,'#4a3a2a');x.fillStyle=bg2;x.beginPath();x.arc(0,0,br,0,7);x.fill();x.strokeStyle='#2a1e14';x.lineWidth=3;for(let k=0;k<4;k++){x.beginPath();x.arc(0,0,br*(.3+k*.18),k,k+1.6);x.stroke();}x.restore();
   if(p.alive&&p.gap<2.2){x.fillStyle=`rgba(255,40,20,${(2.2-p.gap)/2.2*.35*(Math.sin(t*16)*.5+.5)})`;x.fillRect(0,top,W,lh);}
@@ -88,13 +100,19 @@ async function ballrun2p(s){
   x.restore();}
 
  s.hint('Both run at once: player 1 owns the TOP corridor, player 2 the BOTTOM. Tap or swipe up on your corridor to jump (pits, spikes); swipe down to slide under darts. Each stumble lets the boulder roll closer; clean running wins ground back. Last one standing, or the furthest runner, wins; idols add 15. Keys: W/S, ↑/↓.');
- if(!await s.pass(0,'The idol is yours. Now RUN. Player 1 runs the top corridor, player 2 the bottom. Tap or swipe up to jump, swipe down to slide. Stumbles let the boulder catch up. Grab idols for bonus points.','Both ready — run!',{countdown:3}))return;
+ if(!await s.pass(0,on?'The idol is yours. Now RUN. Your corridor is the bottom one. Tap or swipe up to jump, swipe down to slide. Stumbles let the boulder catch up. Grab idols for bonus points.':'The idol is yours. Now RUN. Player 1 runs the top corridor, player 2 the bottom. Tap or swipe up to jump, swipe down to slide. Stumbles let the boulder catch up. Grab idols for bonus points.','Both ready — run!',{countdown:3}))return;
+ if(nf){phase='sync';nf.start('go').then(()=>{if(phase==='sync')phase='play';});}
  s.frame(dt=>{layout();
-  if(phase==='play'){t+=dt;pace=8+Math.min(7,t*.14);for(const p of P)step(p,dt);s.setScores(P.map(score));
+  if(phase==='sync'){}
+  else if(phase==='play'&&on){t+=dt;pace=8+Math.min(7,t*.14);for(const p of P)step(p,dt);s.setScores(P.map(score));const m=P[me];
+   // online: this phone's run is over when its runner is out, at the bell, or when the other is out and this one leads by 40
+   if(!m.alive||t>=DUR||theirFin!==null&&score(m)>theirFin+40){phase='wait';nf.finish(score(m));finalSc=score(m);}}
+  else if(phase==='wait'){t+=dt;pace=8+Math.min(7,t*.14);step(P[them],dt);if(theirFin!==null){const sc=[0,0];sc[me]=finalSc;sc[them]=theirFin;phase='end';endT=1.8;sfx.fanfare();endScores=sc;s.setScores(sc);}}
+  else if(phase==='play'){t+=dt;pace=8+Math.min(7,t*.14);for(const p of P)step(p,dt);s.setScores(P.map(score));
    if(t>=DUR||P.every(p=>!p.alive)||(P.some(p=>!p.alive)&&P.find(p=>p.alive)&&score(P.find(p=>p.alive))>score(P.find(p=>!p.alive))+40)){phase='end';endT=1.8;sfx.fanfare();}}
-  else{endT-=dt;if(endT<=0&&s.alive){const sc=P.map(score);s.finish(sc,sc[0]===sc[1]?`Boulder Run ties ${sc[0]}–${sc[1]}.`:`${s.players[sc[0]>sc[1]?0:1].name} outruns the boulder ${Math.max(...sc)}–${Math.min(...sc)}.`);return;}}
+  else{endT-=dt;if(endT<=0&&s.alive){const sc=endScores||P.map(score);s.finish(sc,sc[0]===sc[1]?`Boulder Run ties ${sc[0]}–${sc[1]}.`:`${s.players[sc[0]>sc[1]?0:1].name} outruns the boulder ${Math.max(...sc)}–${Math.min(...sc)}.`);return;}}
   fx.step(dt);shake.step(dt);x.save();shake.apply(x);x.fillStyle='#000';x.fillRect(-20,-20,L.W+40,L.H+40);for(const p of P)drawLane(p);
-  label(x,phase==='play'?String(Math.ceil(DUR-t)):'',L.W/2,L.H/2,clamp(L.u*.7,14,28),{fill:'#fff'});fx.draw(x);x.restore();
+  label(x,phase==='play'?String(Math.ceil(DUR-t)):phase==='wait'?'WAITING FOR THE OTHER RUNNER…':'',L.W/2,L.H/2,clamp(L.u*.7,14,28),{fill:'#fff'});fx.draw(x);x.restore();
   s.status(`${Math.ceil(Math.max(0,DUR-t))}s · tap/swipe up = jump · swipe down = slide`);
  });
 }

@@ -1,8 +1,15 @@
-const {clamp}=require("src/utils.js");
+// TMNT · Sewer Clash. Both turtles on one sewer screen race for pizza tokens; first to six, or most after 40 seconds.
+// Online (netField): each phone runs its own turtle (the other from {f:{x,y,vx,g}} 20/s). The 8 tokens are slots
+// (4 mirrored pairs); slot k at generation n sits where the seed says, so both phones show the same tokens. A phone
+// judges only its own grabs {e:{g:[slot,gen,ms]}} (ms since the shared start); the earlier grab of a token owns it (tie:
+// player 1) and the scores are rebuilt from both phones' grabs. At six or the bell a phone stops and sends {e:{tu:ms}};
+// once both are in, grabs after the earlier stop are dropped and both phones settle the same scores.
+const {clamp,seededRandom}=require("src/utils.js");
 const {sound, vibrate}=require("src/audio.js");
 const {arenaGestures,gestureHint}=require("src/engines/arenaGestures.js");
 const {circle}=require("src/engines/session.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
+const {netField}=require("src/engines/netField.js");
 const SEWER={W:1000,H:640,gravity:1700,jump:900,speed:300,goal:6};
 const SEWER_PLATFORMS=[
  {x:0,y:610,w:1000,h:30},{x:55,y:450,w:330,h:18},{x:615,y:450,w:330,h:18},
@@ -19,22 +26,47 @@ function sewerPlayerStep(p,dt,input){
 }
 function refill(a,random){while(a.coins.length<8){const platform=SEWER_PLATFORMS[[1,3,4][Math.floor(random()*3)]],c={x:platform.x+40+random()*(platform.w-80),y:platform.y-28,bob:random()*6.28};a.coins.push(c);if(a.coins.length<8)a.coins.push({...c,x:SEWER.W-c.x});}}
 async function sewer(s){
- const[,x]=s.canvas(900,560,{fill:true}),a=sewerState();s.shared=true;s.updateScores();refill(a,s.random);
- function jump(i){if(s.paused||!s.alive)return;sewerJump(a.players[i]);sound('jump');}
+ const[,x]=s.canvas(900,560,{fill:true}),a=sewerState();s.shared=true;s.updateScores();
+ const on=s.online||null,me=on?on.me:0,them=1-me;let autodrive=false,phase='play',t0=0,seen=null;
+ // online token slots: slot k (k>=4 mirrors slot k-4) at generation gen[k]; claims "k:n" → {by,t}; tu[i] = when player i stopped
+ const gen=Array(8).fill(0),claims=new Map(),tu=[null,null];
+ const slotCoin=k=>{const r=seededRandom(`${s.seed}:sewer:${k%4}:${gen[k]}`),platform=SEWER_PLATFORMS[[1,3,4][Math.floor(r()*3)]],cx=platform.x+40+r()*(platform.w-80);return {k,n:gen[k],x:k>=4?SEWER.W-cx:cx,y:platform.y-28,bob:r()*6.28};};
+ const rebuild=()=>{a.coins=gen.map((n,k)=>slotCoin(k));};
+ const stopAt=()=>tu[0]!==null&&tu[1]!==null?Math.min(tu[0],tu[1]):Infinity;
+ const rescore=()=>{const lim=stopAt(),sc=[0,0];for(const c of claims.values())if(c.t<=lim)sc[c.by]++;a.players[0].score=sc[0];a.players[1].score=sc[1];};
+ const nowMs=()=>Math.round(performance.now()-t0);
+ const nf=netField(s,{hz:20,pack:()=>{const p=a.players[me];return {x:Math.round(p.x),y:Math.round(p.y),vx:Math.round(p.vx),g:p.grounded?1:0};},
+  unpack:(i,d)=>{if(!d||!Number.isFinite(d.x))return;seen={x:d.x,y:+d.y||0,vx:+d.vx||0,at:performance.now()};a.players[them].grounded=!!d.g;},
+  onEvent:e=>{if(Array.isArray(e?.g)){const [k,n,ms]=e.g;if(!(k>=0&&k<8))return;const key=k+':'+n,c=claims.get(key);
+    if(!c||c.by===me&&(ms<c.t||ms===c.t&&them===0)){if(c)sound('tap');claims.set(key,{by:them,t:ms});}gen[k]=Math.max(gen[k],n+1);rebuild();rescore();}
+   else if(Number.isFinite(e?.tu)){tu[them]=e.tu;rescore();}}});
+ if(on)rebuild();else refill(a,s.random);
+ function jump(i){if(s.paused||!s.alive||phase!=='play')return;sewerJump(a.players[i]);sound('jump');}
  const controls=arenaGestures(s,{horizontal:true,onAction:jump,onTap:jump});
  s.hint('P1 starts a finger on the LEFT half, P2 on the RIGHT. Drag left/right from that first touch to run. Flick up to jump while running, or tap your half to jump. Return the finger to its starting point to stop. First to six pizza tokens, or most after 40 seconds. P1 A/D + W/Space; P2 arrows + Enter.');
- s.debug={engine:'sewer',state:a,players:a.players,platforms:SEWER_PLATFORMS,controls};
- if(!await s.pass(0,'Cowabunga! Both humans run and jump together. Every platform is reachable with one jump. Collect six pizza tokens first.','Both ready — sewer clash!'))return;
+ s.debug={engine:'sewer',state:a,players:a.players,platforms:SEWER_PLATFORMS,controls,get phase(){return phase;},bot:on?()=>{if(autodrive)return '';autodrive=true;return 'drive';}:null};
+ if(!await s.pass(0,on?'Cowabunga! Drag anywhere to run, flick up or tap to jump. Every platform is reachable with one jump. Collect six pizza tokens first.':'Cowabunga! Both humans run and jump together. Every platform is reachable with one jump. Collect six pizza tokens first.','Both ready — sewer clash!'))return;
+ if(nf){phase='sync';nf.start('go').then(()=>{if(phase==='sync'){t0=performance.now();phase='play';}});}
  // vs CPU: turtle 2 runs for the nearest pizza token and jumps when it sits on a higher platform it is under
  const cpu=isCpu(s);let cpuJumpT=0;
- function cpuSewer(dt){const p=a.players[1],sk=cpuSkill(s);let best=null,bd=1e9;for(const cn of a.coins){const d=Math.abs(cn.x-p.x)+Math.max(0,p.y-28-cn.y)*1.2+(cn.y>p.y-8?120:0);if(d<bd){bd=d;best=cn;}}if(!best){controls.cpu({});return;}
-  let dx=best.x-p.x;const above=best.y<p.y-60,below=best.y>p.y-8,plat=SEWER_PLATFORMS.find(q=>Math.abs(q.y-p.y)<2&&p.x>q.x-8&&p.x<q.x+q.w+8);if(below&&plat&&plat.y<600){const left=plat.x-30,right=plat.x+plat.w+30;dx=(Math.abs(best.x-left)<Math.abs(best.x-right)?left:right)-p.x;}controls.cpu({l:dx<-14,r:dx>14});cpuJumpT-=dt;if(p.grounded&&cpuJumpT<=0&&(above&&Math.abs(dx)<170||Math.abs(dx)<40&&best.y<p.y-20)){cpuJumpT=.25+(1-sk)*.5;if(Math.random()<.5+sk*.5)jump(1);}}
+ function cpuSewer(dt,i=1){const p=a.players[i],sk=cpuSkill(s);let best=null,bd=1e9;for(const cn of a.coins){const d=Math.abs(cn.x-p.x)+Math.max(0,p.y-28-cn.y)*1.2+(cn.y>p.y-8?120:0);if(d<bd){bd=d;best=cn;}}if(!best){controls.cpu({},i);return;}
+  let dx=best.x-p.x;const above=best.y<p.y-60,below=best.y>p.y-8,plat=SEWER_PLATFORMS.find(q=>Math.abs(q.y-p.y)<2&&p.x>q.x-8&&p.x<q.x+q.w+8);if(below&&plat&&plat.y<600){const left=plat.x-30,right=plat.x+plat.w+30;dx=(Math.abs(best.x-left)<Math.abs(best.x-right)?left:right)-p.x;}controls.cpu({l:dx<-14,r:dx>14},i);cpuJumpT-=dt;if(p.grounded&&cpuJumpT<=0&&(above&&Math.abs(dx)<170||Math.abs(dx)<40&&best.y<p.y-20)){cpuJumpT=.25+(1-sk)*.5;if(Math.random()<.5+sk*.5)jump(i);}}
  s.frame(dt=>{
+  if(on){a.elapsed+=dt;if(phase==='play'){a.left=40-(performance.now()-t0)/1000;if(autodrive)cpuSewer(dt,me);
+    const steps=Math.ceil(dt*120),h=dt/steps;for(let k=0;k<steps;k++)sewerPlayerStep(a.players[me],h,controls.input[me]);
+    const p=a.players[me];for(const c of a.coins)if(Math.hypot(p.x-c.x,p.y-28-c.y)<34){const key=c.k+':'+c.n;if(!claims.has(key)){const ms=nowMs();claims.set(key,{by:me,t:ms});nf.event({g:[c.k,c.n,ms]});sound('coin');s.react?.(me,'happy');vibrate(8);}gen[c.k]=Math.max(gen[c.k],c.n+1);}
+    rebuild();rescore();
+    if(a.left<=0||a.players.some(q=>q.score>=SEWER.goal)){phase='wait';tu[me]=Math.min(nowMs(),40000);nf.event({tu:tu[me]});nf.push();rescore();}}
+   // the other turtle eases toward its last report, run on by its speed for a moment
+   if(seen){const o=a.players[them],k=Math.min(.15,(performance.now()-seen.at)/1000),tx=clamp(seen.x+seen.vx*k,22,SEWER.W-22);o.x+=(tx-o.x)*Math.min(1,dt*18);o.y+=(seen.y-o.y)*Math.min(1,dt*18);o.vx=seen.vx;}
+   if(phase==='play'||phase==='wait')nf.tick(dt);
+   if(phase==='wait'&&tu[0]!==null&&tu[1]!==null){phase='end';rescore();}
+  }else{
   a.left-=dt;a.elapsed+=dt;if(cpu)cpuSewer(dt);
   // Small fixed substeps keep landings reliable even when a frame is late.
   const steps=Math.ceil(dt*120),h=dt/steps;for(let k=0;k<steps;k++)for(let i=0;i<2;i++)sewerPlayerStep(a.players[i],h,controls.input[i]);
   for(const i of (a.nextOwner++%2?[1,0]:[0,1]))for(let k=a.coins.length-1;k>=0;k--){const p=a.players[i],c=a.coins[k];if(Math.hypot(p.x-c.x,p.y-28-c.y)<34){a.coins.splice(k,1);p.score++;sound('coin');s.react?.(i,'happy');vibrate(8);}}
-  refill(a,s.random);const W=s.W,H=s.H,sx=W/SEWER.W,sy=H/SEWER.H;
+  refill(a,s.random);}const W=s.W,H=s.H,sx=W/SEWER.W,sy=H/SEWER.H;
   // TMNT sewer: brick arches, pipes dripping ooze, toxic river, steel grates, pizza slices, turtle shells
   const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0a1410');bg.addColorStop(1,'#16302a');x.fillStyle=bg;x.fillRect(0,0,W,H);
   x.fillStyle='#2a3a30';for(let yy=40;yy<H;yy+=22)for(let xx=(Math.floor(yy/22)%2)*24;xx<W;xx+=48){x.fillRect(xx+1,yy+1,46,20);}
@@ -53,7 +85,8 @@ async function sewer(s){
    s.sprite(x,i,px,py-size*.72,size,{exact:true,mood:p.grounded?'walking':'silly'});x.fillStyle=mask[i];x.fillRect(px-size*.36,py-size*.82,size*.72,size*.1);x.beginPath();x.moveTo(px+size*.34,py-size*.8);x.lineTo(px+size*.55,py-size*.72+Math.sin(a.elapsed*12+i)*3);x.lineTo(px+size*.34,py-size*.74);x.fill();}
   x.fillStyle='#071723cc';x.fillRect(0,0,W,Math.min(48,H*.11));x.fillStyle='#fff3b9';x.textAlign='center';x.textBaseline='middle';x.font=`bold ${clamp(W*.025,14,25)}px monospace`;{const narrow=W<640,fs=clamp(W*.025,13,24),parts=[[s.players[0].name.slice(0,narrow?6:12)+' '+a.players[0].score,'#6fa0ff'],['  '+Math.ceil(Math.max(0,a.left))+'s  ','#fff3b9'],[a.players[1].score+' '+s.players[1].name.slice(0,narrow?6:12),'#ff7a7a']];x.font=`bold ${fs}px monospace`;const tw=parts.reduce((t,q)=>t+x.measureText(q[0]).width,0);let tx=narrow?12:W/2-tw/2;x.textAlign='left';for(const [t,c] of parts){x.fillStyle=c;x.fillText(t,tx,24);tx+=x.measureText(t).width;}if(!narrow){x.fillStyle='#fff3b988';x.font=`bold ${fs*.6}px monospace`;x.textAlign='center';x.fillText('FIRST TO '+SEWER.goal+' SLICES',W/2,Math.min(48,H*.11)-6);}}
   gestureHint(x,s,controls);s.setScores(a.players.map(p=>p.score));s.status('Drag to run · Flick up / tap to jump · '+s.players.map((p,i)=>p.name+' '+a.players[i].score+'/'+SEWER.goal).join(' · '));
-  if(a.left<=0||a.players.some(p=>p.score>=SEWER.goal))s.finish(a.players.map(p=>p.score),'TMNT · Sewer Clash');
+  if(phase==='wait'){x.fillStyle='#000a';x.fillRect(0,H*.44,W,H*.12);x.fillStyle='#fff3b9';x.textAlign='center';x.font=`bold ${clamp(W*.03,14,26)}px monospace`;x.fillText('WAITING FOR THE OTHER TURTLE…',W/2,H*.5);}
+  if(on?phase==='end':a.left<=0||a.players.some(p=>p.score>=SEWER.goal)){phase='over';s.finish(a.players.map(p=>p.score),'TMNT · Sewer Clash');}
  });
 }
 
