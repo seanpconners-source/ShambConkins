@@ -73,7 +73,7 @@ function drawHUD(x,v,st){
   const left=Math.max(0,battleTime-clock);outlined(x,`${Math.floor(left/60)}:${String(Math.ceil(left)%60).padStart(2,'0')}`,v.x+v.w-pad0,v.y+pad0+12*u,{size:18*u,fill:'#fff',stroke:'#120a2e',align:'right'});
   const cols=['#ff4a4a','#ffd23a','#3a9cff'];for(let b=0;b<3;b++){const bx=v.x+v.w-pad0-10*u-b*22*u,by=v.y+v.h-pad0-18*u;x.globalAlpha=b<k.balloons?1:.22;x.fillStyle=cols[b];x.beginPath();x.ellipse(bx,by,8*u,10*u,0,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=1.5*u;x.stroke();x.globalAlpha=1;}
   // solo: the CPU rival's balloons under the clock
-  if(st.foe){const fy=v.y+pad0+36*u;outlined(x,(names?.[1]||'CPU').toUpperCase(),v.x+v.w-pad0-56*u,fy,{size:11*u,fill:'#ffd0dc',stroke:'#120a2e',align:'right'});
+  if(st.foe){const fy=v.y+pad0+36*u;outlined(x,(st.foeName||names?.[1]||'CPU').toUpperCase(),v.x+v.w-pad0-56*u,fy,{size:11*u,fill:'#ffd0dc',stroke:'#120a2e',align:'right'});
    for(let b=0;b<3;b++){const bx=v.x+v.w-pad0-7*u-b*16*u;x.globalAlpha=b<st.foe.balloons?1:.22;x.fillStyle=cols[b];x.beginPath();x.ellipse(bx,fy,6*u,7.5*u,0,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=1.2*u;x.stroke();x.globalAlpha=1;}}
   if(k.out)outlined(x,'OUT OF BALLOONS',v.x+v.w/2,v.y+v.h*.42,{size:22*u,fill:'#ff8aa8',stroke:'#120a2e'});
  }
