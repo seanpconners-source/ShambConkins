@@ -1,6 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.66.1 (Oct 24: trivia vs CPU shows its turn, `cpuTriviaTurn` in cpuKit; v0.66.0 1-player board game vs CPU + Choose Characters; v0.65.0 online board game on two phones; v0.64.0 online duels phase 1; v0.63.1 loading screen, full-screen app, Worker serves the app files; v0.63.0 PWA; earlier: pinball tables, iPad fix, backup/restore; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
+Version 0.67.0 (Oct 26: every head-to-head (CPU-opponent) game plays natively online, 95 of 95, batches 1-21 below; Meet a visitor everywhere; Oct 24 v0.66.1: trivia vs CPU shows its turn, `cpuTriviaTurn` in cpuKit; v0.66.0 1-player board game vs CPU + Choose Characters; v0.65.0 online board game on two phones; v0.64.0 online duels phase 1; v0.63.1 loading screen, full-screen app, Worker serves the app files; v0.63.0 PWA; earlier: pinball tables, iPad fix, backup/restore; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
 pushing a version bump to main runs `.github/workflows/release-build.yml`, which builds `releases/ShambConkins_vX.html` and
 creates release vX with notes from `docs/releases/vX.md` (first line `# ` = title) or the CHANGELOG section; skips if it exists.
 Test helper `tests/lib.mjs` ignores CORS-blocked online photos (file:// origin).
@@ -11,18 +11,10 @@ workflow uploads them from v0.63.1); without them the game uses its blob manifes
 Release assets must stay named `ShambConkins_<tag>.html`. Owner set it up from an Android phone (Samsung Internet blocks paste/OAuth; Chrome works).
 
 ## ACTIVE PLAN (read first; Oct 26)
-Native online play for the head-to-head games (the ones whose 1P mode has a CPU as player 2) is 82 of 95 done, on
-TESTver (batches 1-17, details under "Native online games" below). Work happens on TESTver or a branch made from TESTver,
-NEVER from main: main is still v0.66.1 and has none of it (on Oct 25 another chat started from main and redid batch 1;
-its branches `ccr-36294fb1-h63157` / `ccr-068b9171-9aysxt` are superseded, don't continue or merge them).
-Left (13), one batch at a time, each tested with `tests/online-native.mjs` (with and without LAG=80-150) + 2P fuzz + 1P CPU:
- 1. Space Invaders `space-swarm-versus` + `space-swarm-coop` (shared formation)
- 2. Bond `bond-laser-vault`, `bond-golden-gun`, `bond-goldfinger-bomb`
- 3. Hyrule `hyrule-rupee-rush`, `hyrule-sword-duel`; `league-penalties`, `raiders-ball-run`, `fight-night`, `sewer-clash`
- 4. Kart `rainbow-road-kart`, `rainbow-balloon-battle` (WebGL, last)
-After each batch: fast-forward/merge into TESTver and push. When all 13 are done: release v0.67.0 to main with the owner's
-OK (rename the CHANGELOG "Unreleased" section, bump `src/version.js` + `package.json`, `npm run release`).
-Remaining list any time: `node -e` over solo.js ('cpu' ids minus NET_NATIVE).
+DONE: native online play for all 95 head-to-head games (batches 1-21, "Native online games" below), released as v0.67.0
+(main = TESTver = this release). Work from TESTver (or a branch made from it) and merge back there; main only gets releases.
+The Oct 25 branches `ccr-36294fb1-h63157` / `ccr-068b9171-9aysxt` (a chat that restarted from old main) are superseded.
+Next: owner playtest on two real phones and fix what they report (nothing has been tried on real phones yet).
 
 ## Implemented systems
 - **Solo / 1P arcade (Oct 19 2026, batch 1 of 4, branch `claude/solo-mode-batch1`):** Arcade 1P / 2P switch + solo player
