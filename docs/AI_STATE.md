@@ -731,6 +731,20 @@ Remaining list any time: `node -e` over solo.js ('cpu' ids minus NET_NATIVE).
   (`autodrive`). All 3 pass online-native with and without LAG=80-150; 2P fuzz + 1P CPU clean. Left (13): Space Invaders
   versus + Space Swarm co-op, Bond ×3, Hyrule ×2, penalties, Raiders, Fight Night, Sewer Clash, kart ×2
   (`node -e` over solo.js: 'cpu' ids minus NET_NATIVE).
+  Batch 18 (Oct 26, branch `online-batch-18-invaders` from TESTver), Space Invaders `space-swarm-versus` + `space-swarm-coop`
+  (spaceInvaders.js; one fixed 224x300 field, same view on both phones, nf.start then play). Seat 1's phone (me 0) runs the
+  shared world (formation, bomb spawns, bunker erosion, saucer, waves, the end) and puts it in its {f} snapshots 15/s: the
+  formation as two offset groups (moved / not yet moved this sweep, split at `ptr`), alive mask, bombs by id, saucer
+  [n,x,dir], bunker bits as hex only when `shieldVer` changed. The other phone just shows that world, lets bombs fall on
+  between snapshots and judges only bombs reaching its own cannon. Each phone moves its own cannon/shot (snapshot {x,a,i,b,r,
+  l,d,s}) and judges its own shot: kills {k:[t,key,pts]} (key = wave*100+index, saucer 10000+n, saucer points `UFO_PTS[n%8]`
+  online), {bk:id} bomb gone (shot down or hit that cannon), {sh:[x,y]} their shot chipped a bunker (seat 1 erodes it).
+  Scores = `rescore()` over both kill logs (earliest kill owns a key, kills after the end time dropped) + 50 each per wave
+  cleared. Co-op lives = 6 − both phones' deaths. Seat 1 calls the end and sends {fin:{log,end:[reason,t,bonus,wave]}}, the
+  other answers {fin:{log}}, both finish on the same numbers. Co-op online result: netGame passes `coop`/`won` from
+  `session.teamResult` (arcade: both phones report the team total, card "X & Y win together!" / "The team goes down" with
+  each one's points; board: individual scores, settled as a survival co-op like the horde). All pass online-native with and
+  without LAG=80-150 (also a scratch run with invulnerable cannons: Earth saved after 4 waves, cards agree); 2P fuzz + 1P CPU clean.
   Batch 19 (Oct 26, branch `online-batch-19-bond` from TESTver), the three Bond games (`bond.js`): side by side like Poofs/Kenny
   (`split` online = own 64% left, other 36% right, `netStart`/`netEnd`, waiting banner). Laser Vault: own agent only; snapshots
   {x,y,c,h,st,sc} (other agent eased, heist number picks its beams); plans are the same seeded list on both (first 30 made at
