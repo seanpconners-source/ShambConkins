@@ -35,7 +35,7 @@ const POOLS={
 const COUNT={banana3:3,shell3:3,mush3:3,golden:99};
 const CPU_COLORS={mario:'#e8322b',luigi:'#2fbf3a',bowser:'#f0a020'},CPU_PALETTE=['#e8322b','#2fbf3a','#ffd21c','#9a5cff','#ff8a2a','#26d7c4','#f04a8a','#5a7cff'];
 const GP_POINTS=[15,12,10,9,8,7,6,5];
-const MODES={race:{vs:true,cpus:6,title:'GRAND PRIX · VS'},gp:{vs:false,cpus:7,title:'GRAND PRIX'},time:{vs:false,cpus:0,title:'TIME TRIALS'},battle:{vs:true,cpus:0,title:'BALLOON BATTLE'}};
+const MODES={race:{vs:true,cpus:6,title:'GRAND PRIX · VS'},gp:{vs:false,cpus:7,title:'GRAND PRIX'},time:{vs:false,cpus:0,title:'TIME TRIALS'},duo:{vs:true,cpus:0,title:'1 V 1 RACE'},battle:{vs:true,cpus:0,title:'BALLOON BATTLE'}};
 const THEME_COLORS={'rainbow-road':['#3a1a7a','#ff5ac8'],'moo-moo-meadows':['#2e7a2a','#9fdc5a'],'cheep-cheep-beach':['#1477b8','#f2dc9a'],'bowsers-castle':['#3a0c08','#ff6a1a']};
 // Full-bleed: the race gets the whole screen; the players' chips and Pause/Exit float in a slim strip at the top,
 // with a small full-screen toggle at the bottom centre. HUD_TOP keeps the in-game HUD clear of that strip.
@@ -80,7 +80,8 @@ function pickCPUs(n,exclude,rand,profile){
 }
 
 async function kart(s){
- const mode=MODES[s.game.kartMode]?s.game.kartMode:'race',MD=MODES[mode];
+ // online, Time Trials becomes 'duo': a 1-v-1 race, just the two of you on the track, item boxes on, no CPU racers
+ const mode0=MODES[s.game.kartMode]?s.game.kartMode:'race',mode=s.online&&mode0==='time'?'duo':mode0,MD=MODES[mode];
  let gl0=null;{const probe=document.createElement('canvas');try{gl0=probe.getContext('webgl',GL_OPTS)||probe.getContext('experimental-webgl',GL_OPTS);}catch{}try{gl0?.getExtension('WEBGL_lose_context')?.loseContext();}catch{}}
  const [cv,x]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.shared=MD.vs;s.updateScores();fullBleed(s);
  if(!await settle(s))return;
@@ -116,6 +117,7 @@ async function kart(s){
  s.hint({race:'GRAND PRIX VS: both of you at once, side by side (P1 left, P2 right), against six CPU racers. Pick a course, then three laps; the better-placed player wins.',
   gp:'GRAND PRIX PASS & PLAY: pick a course. P1 races seven CPU racers on the full screen, then P2 races the same grid. The better finishing place wins (same place: faster time).',
   time:'TIME TRIALS PASS & PLAY: pick a course. P1 runs three laps alone with three mushrooms, then P2 runs the same course against P1’s ghost. Fastest total time wins.',
+  duo:'1 V 1 RACE: just the two of you on the track, item boxes on, no CPU racers. Player 1 picks the course; first over the line after three laps wins.',
   battle:'BALLOON BATTLE VS: side by side (P1 left, P2 right) on a floating rainbow ring. Three balloons each; shells, bananas and bob-ombs pop them, a boosting bump steals one, falling off costs one.'}[mode]+
   ' Controls on your screen, like Mario Kart Tour: the kart drives itself; drag left/right to steer; push all the way to drift (blue, orange, purple sparks) and let go for a mini-turbo. Tap to use your item, swipe up to throw it ahead, swipe down to drop it behind. Keys: P1 A/D steer, S drift, W/Space item; P2 arrows, Down drift, Up/Enter item.');
 
@@ -587,7 +589,7 @@ async function kart(s){
   const prog=h=>h.finished?100:Math.min(99,Math.round(clamp(h.prog/LAPS,0,1)*100)),sc=[prog(a),prog(b)];
   if(a.finished||b.finished){const w=!b.finished||a.finished&&a.finishT<=b.finishT?0:1;sc[w]=100;sc[1-w]=Math.min(sc[1-w],99);}
   const desc=h=>h.finished?`${ord(h.place)} in ${fmtTime(h.finishT)}`:`lap ${Math.min(LAPS,Math.floor(Math.max(0,h.prog))+1)}`;
-  return s.finish(sc,`${course.name} Grand Prix: ${P[0]} ${desc(a)}, ${P[1]} ${desc(b)}.`);
+  return s.finish(sc,`${course.name} ${mode==='duo'?'1 v 1 race':'Grand Prix'}: ${P[0]} ${desc(a)}, ${P[1]} ${desc(b)}.`);
  }
  const res=[];let ghost=null;
  for(const t of [0,1]){

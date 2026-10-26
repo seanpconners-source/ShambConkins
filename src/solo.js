@@ -99,7 +99,7 @@ const NET_NATIVE=new Set(['trivia-mixed','trivia-nick90','trivia-dbz','trivia-hx
  'sp-dodgeball','sp-cheesy-poofs','sp-killed-kenny',
  'bond-laser-vault','bond-golden-gun','bond-goldfinger-bomb',
  'space-swarm-versus','space-swarm-coop',
- 'rainbow-road-kart','rainbow-balloon-battle',
+ 'rainbow-road-kart','rainbow-balloon-battle','kart-time-trial',
  'raiders-ball-run','sewer-clash','league-penalties','fight-night','hyrule-rupee-rush','hyrule-sword-duel']);
 const netNative=g=>!!g&&NET_NATIVE.has(g.id);
 function duelOK(g){return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&(DUEL_KINDS.has(soloKind(g))||netNative(g));}
