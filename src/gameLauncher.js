@@ -218,7 +218,7 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
   scores[me]=Math.max(0,out.mine.score|0);scores[1-me]=out.theirs.done&&!out.theirs.quit?Math.max(0,out.theirs.score|0):0;
   won[me]=!!out.mine.won;won[1-me]=!!out.theirs.won&&!out.theirs.quit;recruits[me]=out.mine.recruits||[];recruits[1-me]=out.theirs.recruits||[];
   const both=won[0]||won[1],team={tied:false,humanTotal:scores[0]+scores[1],cpuTotal:0,cpuScores:[0,0],duration:0};
-  const coop=game.bossId?{kind:'boss',won:both,bossId:game.bossId,...team}:game.engine==='horde'?{kind:'survival',won:both,...team}:null;
+  const coop=game.bossId?{kind:'boss',won:both,bossId:game.bossId,...team}:game.engine==='horde'||game.invaderMode==='coop'?{kind:'survival',won:both,...team}:null;
   const label=`${game.title}: ${run.players.map((p,i)=>`${p.name} ${scores[i].toLocaleString()}`).join(' · ')}${out.forfeit?` (${run.players[1-me].name} left the game)`:''}`;
   updateBoard(true);
   return settleGame(game,scores,label,'board',run.players,coop,returnToRoll,null,recruits);
@@ -311,7 +311,9 @@ async function netGame(game,duel,valid){
  const ch=openChannel(duel.mid,me);let delivered=false;
  const session=new GameSession(game,players,(scores,label)=>{if(delivered)return;delivered=true;ch.close();
   const mine=Math.max(0,Math.floor(scores[me])||0),theirs=Math.max(0,Math.floor(scores[1-me])||0),cages=session.broforceRecruits||session.gameRecruits;
-  void settleSolo(game,[mine,theirs],label,[players[me],players[1-me]],{kind:'net',won:mine>theirs,duel},Array.isArray(cages)?[cages[me]||[]]:null);});
+  // a co-op game (session.teamResult): won = the team's result; in the Arcade both phones report the team total
+  const team=session.cooperative&&session.teamResult?session.teamResult:null;
+  void settleSolo(game,[mine,theirs],label,[players[me],players[1-me]],{kind:'net',won:team?!!team.won:mine>theirs,coop:!!team&&!duel.board,duel},Array.isArray(cages)?[cages[me]||[]]:null);});
  duelSeed(session,duel,game,0);session.online=ch;session.hotseat=true;
  ch.onGone=()=>{if(store.session===session&&session.alive&&!delivered)session.finish(session.score.slice(),`${players[1-me].name} left the game.`);};
  session.active=0;store.session=session;session.updateScores();launching=false;
@@ -329,7 +331,7 @@ async function settleSolo(game,scores,label,players,solo,cageRecruits){
  // Board game on two phones: report this phone's result; the host phone settles the board (rewards, recruits, card).
  if(solo.duel?.board){const won=typeof solo.won==='boolean'?solo.won:solo.kind==='cpu'?scores[0]>scores[1]:level>0;if(solo.kind!=='net')recordSolo(store.profile,game.id,{score,level});saveProfile(store.profile);store.arcade=false;await solo.duel.finish({score,level,label,won,recruits:(Array.isArray(cageRecruits?.[0])?cageRecruits[0]:[]).slice(0,10)});return;}
  const duel=solo.duel?await solo.duel.finish({score,level,label}):null;if(serial!==launchSerial)return;
- const won=duel?duel.won:typeof solo.won==='boolean'?solo.won:solo.kind==='cpu'?scores[0]>scores[1]:level>0;
+ const teamDuel=coop&&duel&&!duel.forfeit&&!duel.abandoned,won=teamDuel?!!solo.won:duel?duel.won:typeof solo.won==='boolean'?solo.won:solo.kind==='cpu'?scores[0]>scores[1]:level>0;
  recordGame(store.profile,game,won?0:null,scores);const rec=solo.kind==='net'?{best:{score,level},newBest:false}:recordSolo(store.profile,game.id,{score,level});const unlocked=[];
  if(won){const pool=gameRecruitPool(game,store.profile,p),chance=recruitmentChance(store.profile,p,gameHasGuaranteedRecruit(game,store.profile,p));
   if(!cageGame(game)&&pool.length&&Math.random()<chance){const actual=recruitReward(store.profile,pick(pool).id,p.owner,'game');if(actual)unlocked.push(actual);}
@@ -337,10 +339,10 @@ async function settleSolo(game,scores,label,players,solo,cageRecruits){
   const heir=CHARACTERS.find(c=>c.unlockBy==='character-win'&&c.requires===p.character);if(heir){const actual=recruitReward(store.profile,heir.id,p.owner,'character');if(actual)unlocked.push(actual);}}
  if(Array.isArray(cageRecruits))for(const id of (cageRecruits[0]||[]).slice(0,10)){const actual=recruitReward(store.profile,id,p.owner,'game');if(actual&&!unlocked.includes(actual))unlocked.push(actual);}
  const milestones=updateProgression(store.profile);saveProfile(store.profile);sound(won||rec.newBest?'win':'lose');
- const cpu=solo.kind==='cpu'&&!coop,title=duel?(duel.abandoned?'You stopped waiting':duel.forfeit?`${duel.peer.name} left. You win!`:duel.tie?'Dead heat!':duel.won?`${p.name} wins the duel!`:`${duel.peer.name} wins the duel`):coop?(won?`${p.name} & ${players[1].name} win!`:'The team goes down'):cpu?(scores[0]>scores[1]?`${p.name} beats the CPU!`:scores[0]===scores[1]?'Dead heat with the CPU':'The CPU takes it'):rec.newBest?'New personal best!':won?'Run banked':'Run over';
+ const cpu=solo.kind==='cpu'&&!coop,title=duel?(duel.abandoned?'You stopped waiting':duel.forfeit?`${duel.peer.name} left. You win!`:teamDuel?(won?`${p.name} & ${duel.peer.name} win together!`:'The team goes down'):duel.tie?'Dead heat!':duel.won?`${p.name} wins the duel!`:`${duel.peer.name} wins the duel`):coop?(won?`${p.name} & ${players[1].name} win!`:'The team goes down'):cpu?(scores[0]>scores[1]?`${p.name} beats the CPU!`:scores[0]===scores[1]?'Dead heat with the CPU':'The CPU takes it'):rec.newBest?'New personal best!':won?'Run banked':'Run over';
  const best=rec.best,bestLine=`Best: ${best.score.toLocaleString()}${best.level?` · ${best.level} cleared`:''}`;
  const html=`<div class="result-portraits"><div>${portraitHTML(p.character,'portrait mini',won||rec.newBest?'win':'sad')}<b>${escapeHTML(p.name)}</b></div>${cpu||coop?`<div>${portraitHTML(players[1].character,'portrait mini',coop?won?'win':'sad':scores[1]>scores[0]?'win':'sad')}<b>${escapeHTML(players[1].name)}</b></div>`:''}</div><p class="solo-result"><b>${cpu?`${scores[0].toLocaleString()} – ${scores[1].toLocaleString()}`:`${score.toLocaleString()} ${coop?'team ':''}points${level?` · ${level} cleared`:''}`}</b><br>${escapeHTML(label||'')}</p><p class="solo-best">${escapeHTML(bestLine)}${rec.newBest&&(rec.old.score||rec.old.level)?` (was ${rec.old.score.toLocaleString()})`:''}${milestones.length?`<br>New unlocks: ${escapeHTML(milestones.join(', '))}.`:''}</p>`;
- const duelHTML=duel&&`<div class="result-portraits"><div>${portraitHTML(p.character,'portrait mini',won?'win':'sad')}<b>${escapeHTML(p.name)}</b></div><div>${portraitHTML(duel.peer.character||'amber','portrait mini',won||duel.tie?'sad':'win')}<b>${escapeHTML(duel.peer.name)}</b></div></div><p class="solo-result"><b>${score.toLocaleString()} – ${(duel.theirs|0).toLocaleString()}</b><br>${escapeHTML(game.title)} · online duel</p><p class="solo-best">${escapeHTML(bestLine)}</p>`;
+ const duelHTML=duel&&`<div class="result-portraits"><div>${portraitHTML(p.character,'portrait mini',won?'win':'sad')}<b>${escapeHTML(p.name)}</b></div><div>${portraitHTML(duel.peer.character||'amber','portrait mini',teamDuel?won?'win':'sad':won||duel.tie?'sad':'win')}<b>${escapeHTML(duel.peer.name)}</b></div></div><p class="solo-result"><b>${teamDuel?`${(scores[0]|0).toLocaleString()} – ${(scores[1]|0).toLocaleString()}`:`${score.toLocaleString()} – ${(duel.theirs|0).toLocaleString()}`}</b>${teamDuel?`<br>${score.toLocaleString()} team points`:''}<br>${escapeHTML(teamDuel?label||game.title:game.title)} · online ${teamDuel?'co-op':'duel'}</p><p class="solo-best">${escapeHTML(bestLine)}</p>`;
  const again=await showDialog({title,source:game.source,html:duelHTML||html,choices:duel?[{label:'Rematch',value:'again',primary:true},{label:'Back to the room',value:'ok'}]:[{label:'Play again',value:'again',primary:true},{label:'Back to the arcade',value:'ok'}]});
  if(serial!==launchSerial)return;
  if(unlocked.length&&!await unlockDialog(unlocked,p.owner))return;

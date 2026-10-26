@@ -30,7 +30,7 @@ await A.p.waitForFunction(()=>/Amber is here/.test(document.querySelector('.net-
 // Bot step: tap whatever this phone may tap. Game-specific hooks (s.debug.bot) play moves where buttons aren't enough.
 const step=ph=>ph.p.evaluate(()=>{
  const S=window.ShambConkins,store=S.store,s=store.session,dlg=document.getElementById('dialog');
- if(dlg.open){const t=dlg.querySelector('#dialog-title')?.innerText||'';if(/wins the duel|Dead heat|left\. You win|You stopped/i.test(t))return 'result:'+t;
+ if(dlg.open){const t=dlg.querySelector('#dialog-title')?.innerText||'';if(/wins the duel|Dead heat|left\. You win|You stopped|win together|team goes down/i.test(t))return 'result:'+t;
   const b=[...dlg.querySelectorAll('button')].find(b=>!b.disabled&&/Start game|Continue|OK|Welcome/i.test(b.innerText));if(b){b.click();return 'dlg:'+t;}return 'wait:'+t;}
  if(!s)return 'idle';
  if(s.debug?.net)window.__net=JSON.stringify(s.debug.net);
