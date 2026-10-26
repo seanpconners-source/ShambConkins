@@ -277,67 +277,110 @@ async function dodgeball(s){
 // ===================================================================== Fight Night (boxing)
 const BOX={W:900,H:560,hp:100,rounds:3,roundTime:35,reach:[120,150]};
 function boxer(side){return {x:side?640:260,hp:BOX.hp,stamina:100,state:'idle',t:0,charge:0,pw:false,blocking:false,ducking:0,hurt:0,flash:0,combo:0};}
+// Online (netField): each phone runs its own boxer; player 2's phone shows the ring turned round so you always stand on
+// the left. Boxer {f:{x,h,sm,b,dk,hu}} 24/s. A punch {e:{pu:[round,power]}} starts on both phones; the VICTIM's phone judges
+// it when the wind-up ends (distance as it sees it, its own guard/duck) and sends {e:{ld:[round,kind]}} (slip/block/hit/
+// whiff); health is its own. Rounds end through roundOutcome (KO = die, the bell = timeUp with health as the extra).
 async function boxing(s){
  const[,x]=s.canvas(900,560,{fill:true});s.shared=true;s.updateScores();
- const {keys,virt,pulse}=touchKeys(s);
+ const on=s.online||null,me=on?on.me:0,them=1-me,flip=me===1;
+ const {keys,virt,pulse}=touchKeys(s,on?{me,swapLR:flip}:{});
  let f=[boxer(0),boxer(1)],wins=[0,0],round=1,left=BOX.roundTime,pause=0,note='',shake=0,fx=[],down=[0,0];const prev=[false,false],held=[0,0];
+ let phase='play',roundT0=0,outc=null,seen=null,autodrive=false;const hpF=[0,0];
+ const vx=v=>flip?BOX.W-v:v; // world x → this phone's view (player 2's ring turned round)
  const fingers=new Map(),holdStart=[0,0];
- const startPunch=(i,power)=>{const me=f[i];if(pause>0||me.state!=='idle'||me.hurt>0||me.stamina<(power?30:8))return;me.state=power?'hook':'jab';me.pw=power;me.t=0;me.stamina-=power?30:8;me.landed=false;};
+ const startPunch=(i,power)=>{const me_=f[i];if(pause>0||phase!=='play'||me_.state!=='idle'||me_.hurt>0||me_.stamina<(power?30:8)||on&&(i!==me||outc?.R.frozen))return;me_.state=power?'hook':'jab';me_.pw=power;me_.t=0;me_.stamina-=power?30:8;me_.landed=false;if(on){stat.thrown++;nf.event({pu:[round,power?1:0]});}};
  ownedPointers(s,(i,p,id)=>{
   const g=fingers.get(id),now=performance.now();
   if(!g){fingers.set(id,{ax:p.x,sx:p.x,sy:p.y,t0:now,mode:null});holdStart[i]=now;return;}
   const dx=p.x-g.sx,dy=p.y-g.sy;
   if(!g.mode&&Math.hypot(dx,dy)>=16){g.mode=Math.abs(dx)>Math.abs(dy)?'move':dy<0?'guard':'duck';holdStart[i]=0;if(g.mode==='duck')pulse(i,'d',320);if(g.mode==='guard')virt[i].u=true;g.ax=p.x;}
-  if(g.mode==='move'||g.mode==='duck'){const lead=p.x-g.ax,max=34;if(Math.abs(lead)>max)g.ax=p.x-Math.sign(lead)*max;const l=p.x-g.ax;virt[i].l=l<-12;virt[i].r=l>12;if(g.mode==='duck'&&Math.abs(dx)>40)g.mode='move';}
+  if(g.mode==='move'||g.mode==='duck'){const lead=p.x-g.ax,max=34;if(Math.abs(lead)>max)g.ax=p.x-Math.sign(lead)*max;const l=p.x-g.ax,L=l<-12,R=l>12;virt[i].l=flip?R:L;virt[i].r=flip?L:R;if(g.mode==='duck'&&Math.abs(dx)>40)g.mode='move';}
  },(i,id,info)=>{
   const g=fingers.get(id);fingers.delete(id);holdStart[i]=0;virt[i].l=virt[i].r=virt[i].u=false;
   if(g&&!g.mode&&!info.cancelled)startPunch(i,performance.now()-g.t0>450);
- });
- s.hint('Your half of the screen is your corner. Tap to jab. Press and hold still, then release, for a slow power hook. Swipe down to duck under a jab (not a hook). Swipe up and keep your finger down to guard: it cuts damage but drains stamina. Drag left or right to step in and out. KO, or most health at the bell, takes the round; first to two rounds. Keyboard: P1 A/D step, W block, S duck, Space punch; P2 arrows + Enter.');
- s.debug={engine:'boxing',state:f,keys,wins};
+ },on?()=>me:undefined);
+ s.hint(on?'Tap to jab. Press and hold still, then release, for a slow power hook. Swipe down to duck under a jab (not a hook). Swipe up and keep your finger down to guard: it cuts damage but drains stamina. Drag left or right to step in and out. KO, or most health at the bell, takes the round; first to two rounds. Keyboard: A/D or ←/→ step, W block, S duck, Space punch.':'Your half of the screen is your corner. Tap to jab. Press and hold still, then release, for a slow power hook. Swipe down to duck under a jab (not a hook). Swipe up and keep your finger down to guard: it cuts damage but drains stamina. Drag left or right to step in and out. KO, or most health at the bell, takes the round; first to two rounds. Keyboard: P1 A/D step, W block, S duck, Space punch; P2 arrows + Enter.');
+ const stat={thrown:0,their:0,judged:{},mine:{},x:[]};
+ s.debug={engine:'boxing',state:f,keys,wins,net:stat,get phase(){return phase;},bot:on?()=>{if(autodrive)return '';autodrive=true;return 'drive';}:null};
  if(!await s.pass(0,'Fight Night: three rounds of thirty-five seconds. Jab to build pressure, hook to finish, block and duck to survive.','Both ready — ding ding!'))return;
  const dist=()=>Math.abs(f[1].x-f[0].x);
  // vs CPU: boxer 2 keeps punching range, reads your wind-up (ducks jabs, blocks hooks) and mixes jabs with power hooks
+ // (ci = the boxer it plays: online the test bot plays this phone's own)
  const cpu=isCpu(s);let cpuT=.6,cpuSeen=null;
- function cpuBox(dt){const me=f[1],o=f[0],v=virt[1],sk=cpuSkill(s),d=dist();if(pause>0){v.l=v.r=v.u=false;return;}
-  v.l=d>135;v.r=d<85;if(o.state!=='idle'&&o.t<.12&&cpuSeen!==o){cpuSeen=o;if(Math.random()<.25+sk*.6){if(o.state==='jab')pulse(1,'d',320);else{v.u=true;cpuT=.5;}}}else if(o.state==='idle')cpuSeen=null;
-  cpuT-=dt;if(cpuT>0)return;v.u=false;cpuT=.35+(1-sk)*.5+Math.random()*.3;if(d<150&&me.state==='idle'&&me.hurt<=0)startPunch(1,me.stamina>45&&Math.random()<.25+sk*.2);}
+ function cpuBox(dt,ci=1){const me_=f[ci],o=f[1-ci],v=virt[ci],sk=cpuSkill(s),d=dist(),fwd=ci?'l':'r',back=ci?'r':'l';if(pause>0||phase!=='play'){v.l=v.r=v.u=false;return;}
+  v[fwd]=d>135;v[back]=d<85;if(o.state!=='idle'&&o.t<.12&&cpuSeen!==o){cpuSeen=o;if(Math.random()<.25+sk*.6){if(o.state==='jab')pulse(ci,'d',320);else{v.u=true;cpuT=.5;}}}else if(o.state==='idle')cpuSeen=null;
+  cpuT-=dt;if(cpuT>0)return;v.u=false;cpuT=.35+(1-sk)*.5+Math.random()*.3;if(d<150&&me_.state==='idle'&&me_.hurt<=0)startPunch(ci,me_.stamina>45&&Math.random()<.25+sk*.2);}
  const land=(i,power)=>{
-  const me=f[i],foe=f[1-i];let dmg=power?18:6;
-  if(foe.ducking>0&&!power){fx.push({x:foe.x,y:230,text:'SLIPPED',t:.7});return;}
-  if(foe.blocking&&foe.stamina>0){dmg*=.2;foe.stamina=Math.max(0,foe.stamina-(power?30:10));fx.push({x:foe.x,y:230,text:'BLOCKED',t:.6});sound('tap');}
-  else{foe.hurt=.35;shake=power?.35:.15;fx.push({x:foe.x,y:220,text:power?'POW!':'JAB',t:.7});sound(power?'shot':'tap');vibrate(power?30:10);s.react?.(1-i,'sad');me.combo++;}
-  foe.hp=Math.max(0,foe.hp-dmg);foe.x+=(foe.x>me.x?1:-1)*(power?34:10);
+  const me_=f[i],foe=f[1-i];let dmg=power?18:6;
+  if(foe.ducking>0&&!power){fx.push({x:foe.x,y:230,text:'SLIPPED',t:.7});return 'slip';}
+  let kind='hit';
+  if(foe.blocking&&foe.stamina>0){dmg*=.2;foe.stamina=Math.max(0,foe.stamina-(power?30:10));fx.push({x:foe.x,y:230,text:'BLOCKED',t:.6});sound('tap');kind='block';}
+  else{foe.hurt=.35;shake=power?.35:.15;fx.push({x:foe.x,y:220,text:power?'POW!':'JAB',t:.7});sound(power?'shot':'tap');vibrate(power?30:10);s.react?.(1-i,'sad');me_.combo++;}
+  foe.hp=Math.max(0,foe.hp-dmg);foe.x+=(foe.x>me_.x?1:-1)*(power?34:10);
+  return kind;
  };
+ // online: the result of my punch, judged on the other phone
+ function landed(kind,power){stat.mine[kind]=(stat.mine[kind]||0)+1;const foe=f[them];if(kind==='whiff'){fx.push({x:f[me].x+(me?-1:1)*80,y:240,text:'WHIFF',t:.4});return;}
+  if(kind==='slip')fx.push({x:foe.x,y:230,text:'SLIPPED',t:.7});else if(kind==='block'){fx.push({x:foe.x,y:230,text:'BLOCKED',t:.6});sound('tap');}
+  else{foe.hurt=.35;shake=power?.35:.15;fx.push({x:foe.x,y:220,text:power?'POW!':'JAB',t:.7});sound(power?'shot':'tap');vibrate(power?30:10);s.react?.(them,'sad');f[me].combo++;}}
+ const nf=netField(s,{hz:24,pack:()=>{const b=f[me];return {x:Math.round(b.x),h:+b.hp.toFixed(1),sm:Math.round(b.stamina),b:b.blocking?1:0,dk:+b.ducking.toFixed(2),hu:+b.hurt.toFixed(2)};},
+  unpack:(i,d)=>{if(!d||!Number.isFinite(d.x)||phase==='sync')return;const o=f[them];seen={x:clamp(d.x,0,BOX.W),at:performance.now()};if(Number.isFinite(d.h))o.hp=clamp(d.h,0,BOX.hp);if(Number.isFinite(d.sm))o.stamina=clamp(d.sm,0,100);o.blocking=!!d.b;o.ducking=+d.dk||0;if(+d.hu>o.hurt)o.hurt=+d.hu;},
+  onEvent:e=>{const k=Object.keys(e||{})[0],a=e?.[k];if(!Array.isArray(a)||a[0]!==round)return;
+   if(k==='pu'){const o=f[them];if(phase==='play'&&o.state==='idle'){o.state=a[1]?'hook':'jab';o.pw=!!a[1];o.t=0;o.landed=false;}}
+   else if(k==='ld'){if(['slip','block','hit','whiff'].includes(a[1]))landed(a[1],!!a[2]);}
+   else if(k==='o')outc?.feed(a);}});
+ function stepBoxer(i,dt){
+  const me_=f[i],k=keys[i],dir=i?-1:1;me_.hurt=Math.max(0,me_.hurt-dt);me_.ducking=Math.max(0,me_.ducking-dt);me_.stamina=Math.min(100,me_.stamina+(me_.blocking?7:16)*dt);
+  me_.blocking=!!k.u&&me_.state==='idle';
+  if(me_.state==='idle'&&me_.hurt<=0){
+   const fwd=i?k.l:k.r,back=i?k.r:k.l,move=((fwd?1:0)-(back?1:0))*dir;me_.x=clamp(me_.x+move*170*dt,i?f[0].x+70:90,i?BOX.W-90:f[1].x-70);
+   if(k.d&&me_.ducking<=0&&me_.stamina>=8){me_.ducking=.3;me_.stamina-=8;}
+  }
+  if(k.fire&&!prev[i]&&me_.state==='idle'&&me_.hurt<=0)held[i]=.001;
+  if(k.fire&&held[i]>0)held[i]+=dt;
+  if(!k.fire&&held[i]>0&&me_.state==='idle'){const power=held[i]>.45;held[i]=0;startPunch(i,power);}
+  prev[i]=!!k.fire;
+  if(me_.state==='jab'||me_.state==='hook'){const wind=me_.pw?.3:.1,total=me_.pw?.62:.28;me_.t+=dt;
+   // online my own punch is judged on the other phone ({ld} comes back)
+   if(!me_.landed&&me_.t>=wind){me_.landed=true;if(!on){if(dist()<BOX.reach[me_.pw?1:0]+40)land(i,me_.pw);else fx.push({x:me_.x+dir*80,y:240,text:'WHIFF',t:.4});}}if(me_.t>=total)me_.state='idle';}
+ }
+ // online: the other boxer eases toward its last report; its punches run from {pu} and land on this phone's boxer here
+ function stepThem(dt){const o=f[them];o.hurt=Math.max(0,o.hurt-dt);o.ducking=Math.max(0,o.ducking-dt);if(seen){const tx=seen.x;o.x+=(tx-o.x)*Math.min(1,dt*16);}
+  if(o.state==='jab'||o.state==='hook'){const wind=o.pw?.3:.1,total=o.pw?.62:.28;o.t+=dt;
+   if(!o.landed&&o.t>=wind){o.landed=true;if(!outc?.R.frozen){const kind=dist()<BOX.reach[o.pw?1:0]+40?land(them,o.pw):'whiff';if(kind==='whiff')fx.push({x:o.x+(them?-1:1)*80,y:240,text:'WHIFF',t:.4});stat.judged[kind]=(stat.judged[kind]||0)+1;if(stat.x.length<12)stat.x.push(Math.round(f[me].x),Math.round(o.x));nf.event({ld:[round,kind,o.pw?1:0]});nf.push();}}
+   if(o.t>=total)o.state='idle';}}
+ function startRound(){phase='sync';seen=null;nf.start('r'+round).then(()=>{if(!s.alive||phase!=='sync')return;roundT0=performance.now();outc=roundOutcome(nf,round);phase='play';});}
+ function endRound(w,ko){if(w>=0){wins[w]++;note=ko>=0?`KNOCKOUT! ${s.players[w].name} takes round ${round}`:`${s.players[w].name} wins round ${round} on points`;s.react?.(w,'win');s.react?.(1-w,'sad');sound('win');}else note=`Round ${round} drawn`;pause=2.4;if(ko>=0)down[ko]=1;}
+ function onlineStep(dt){
+  if(phase==='sync')return;
+  if(phase==='pause'){pause-=dt;if(pause<=0){if(wins.some(n=>n>=2)||round>=BOX.rounds+1){phase='over';s.finish([wins[0]*100+hpF[0],wins[1]*100+hpF[1]],'Fight Night');return;}round++;left=BOX.roundTime;f=[boxer(0),boxer(1)];s.debug.state=f;pause=0;startRound();}return;}
+  const el=(performance.now()-roundT0)/1000;left=BOX.roundTime-el;if(autodrive)cpuBox(dt,me);
+  if(!outc.R.frozen)stepBoxer(me,dt);else{f[me].state='idle';}stepThem(dt);nf.tick(dt);
+  if(!outc.R.frozen){if(f[me].hp<=0)outc.die(el,0);else if(left<=0)outc.timeUp(Math.ceil(f[me].hp));}
+  const res=outc.tick(el,()=>Math.ceil(f[me].hp));
+  if(res!==null){const R=outc.R;hpF[me]=R.out>=0?0:R.extra|0;hpF[them]=R.theirOut>=0?0:R.theirExtra|0;f[me].hp=hpF[me];f[them].hp=hpF[them];
+   let w=res==='me'?me:res==='them'?them:-1;if(w<0&&R.out<0&&R.theirOut<0&&hpF[0]!==hpF[1])w=hpF[0]>hpF[1]?0:1;
+   endRound(w,res==='me'?them:res==='them'?me:-1);phase='pause';}}
+ if(on)startRound();
  s.frame(dt=>{
   shake=Math.max(0,shake-dt);
-  if(pause>0){pause-=dt;if(pause<=0){if(wins.some(n=>n>=2)||round>=BOX.rounds+1){s.finish([wins[0]*100+f[0].hp,wins[1]*100+f[1].hp],'Fight Night');return;}round++;left=BOX.roundTime;f=[boxer(0),boxer(1)];s.debug.state=f;}}
+  if(on){onlineStep(dt);if(phase==='over')return;}
+  else if(pause>0){pause-=dt;if(pause<=0){if(wins.some(n=>n>=2)||round>=BOX.rounds+1){s.finish([wins[0]*100+f[0].hp,wins[1]*100+f[1].hp],'Fight Night');return;}round++;left=BOX.roundTime;f=[boxer(0),boxer(1)];s.debug.state=f;}}
   else{
    left-=dt;if(cpu)cpuBox(dt);
-   for(let i=0;i<2;i++){
-    const me=f[i],k=keys[i],dir=i?-1:1;me.hurt=Math.max(0,me.hurt-dt);me.ducking=Math.max(0,me.ducking-dt);me.stamina=Math.min(100,me.stamina+(me.blocking?7:16)*dt);
-    me.blocking=!!k.u&&me.state==='idle';
-    if(me.state==='idle'&&me.hurt<=0){
-     const fwd=i?k.l:k.r,back=i?k.r:k.l,move=((fwd?1:0)-(back?1:0))*dir;me.x=clamp(me.x+move*170*dt,i?f[0].x+70:90,i?BOX.W-90:f[1].x-70);
-     if(k.d&&me.ducking<=0&&me.stamina>=8){me.ducking=.3;me.stamina-=8;}
-    }
-    if(k.fire&&!prev[i]&&me.state==='idle'&&me.hurt<=0)held[i]=.001;
-    if(k.fire&&held[i]>0)held[i]+=dt;
-    if(!k.fire&&held[i]>0&&me.state==='idle'){const power=held[i]>.45;if(me.stamina>=(power?30:8)){me.state=power?'hook':'jab';me.pw=power;me.t=0;me.stamina-=power?30:8;me.landed=false;}held[i]=0;}
-    prev[i]=!!k.fire;
-    if(me.state==='jab'||me.state==='hook'){const wind=me.pw?.3:.1,total=me.pw?.62:.28;me.t+=dt;if(!me.landed&&me.t>=wind){me.landed=true;if(dist()<BOX.reach[me.pw?1:0]+40)land(i,me.pw);else fx.push({x:me.x+dir*80,y:240,text:'WHIFF',t:.4});}if(me.t>=total)me.state='idle';}
-   }
-   for(const e of fx)e.t-=dt;fx=fx.filter(e=>e.t>0);
+   for(let i=0;i<2;i++)stepBoxer(i,dt);
    const ko=f.findIndex(b=>b.hp<=0);
-   if(ko>=0||left<=0){const w=ko>=0?1-ko:f[0].hp===f[1].hp?-1:f[0].hp>f[1].hp?0:1;if(w>=0){wins[w]++;note=ko>=0?`KNOCKOUT! ${s.players[w].name} takes round ${round}`:`${s.players[w].name} wins round ${round} on points`;s.react?.(w,'win');s.react?.(1-w,'sad');sound('win');}else note=`Round ${round} drawn`;pause=2.4;if(ko>=0)down[ko]=1;s.setScores(wins.map((n,i)=>n*100+f[i].hp));}
+   if(ko>=0||left<=0){const w=ko>=0?1-ko:f[0].hp===f[1].hp?-1:f[0].hp>f[1].hp?0:1;endRound(w,ko);s.setScores(wins.map((n,i)=>n*100+f[i].hp));}
   }
+  for(const e of fx)e.t-=dt;fx=fx.filter(e=>e.t>0);
   // draw
   const W=s.W,H=s.H,sx=W/BOX.W,sy=H/BOX.H;x.save();if(shake>0)x.translate((Math.random()-.5)*8*shake*4,(Math.random()-.5)*6*shake*4);
   const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#1d1830');bg.addColorStop(1,'#3a2a44');x.fillStyle=bg;x.fillRect(-10,-10,W+20,H+20);
   for(let i=0;i<26;i++){x.fillStyle='#ffffff10';x.beginPath();x.arc((i*97)%W,(i*53)%(H*.5),2,0,6.3);x.fill();}
   x.fillStyle='#2c4a8c';x.fillRect(0,H*.7,W,H*.3);x.fillStyle='#c9302c';x.fillRect(0,H*.7,W,6);
   for(let r=0;r<3;r++){x.strokeStyle=['#d6342c','#f2f2f2','#d6342c'][r];x.lineWidth=6;x.beginPath();x.moveTo(0,H*(.3+r*.12));x.lineTo(W,H*(.3+r*.12));x.stroke();}
-  for(let i=0;i<2;i++){const me=f[i],px=me.x*sx,base=H*.78,size=clamp(150*sx,70,150),dir=i?-1:1;
+  for(let i=0;i<2;i++){const me=f[i],px=vx(me.x)*sx,base=H*.78,size=clamp(150*sx,70,150),dir=(i?-1:1)*(flip?-1:1);
    x.fillStyle='#00000040';x.beginPath();x.ellipse(px,base+4,size*.42,size*.1,0,0,Math.PI*2);x.fill();
    const lean=me.state==='jab'?Math.sin(clamp(me.t/.28,0,1)*Math.PI)*28:me.state==='hook'?Math.sin(clamp(me.t/.62,0,1)*Math.PI)*46:0,duck=me.ducking>0?size*.28:0;
    // body
@@ -352,10 +395,11 @@ async function boxing(s){
    if(me.blocking){x.strokeStyle='#8fe3ff';x.lineWidth=5;x.beginPath();x.arc(px+dir*size*.4,base-size*.7,size*.32,-1.2,1.2);x.stroke();}
   }
   // HUD
-  for(let i=0;i<2;i++){const me=f[i],bx=i?W-W*.42-16:16,bw=W*.42;x.fillStyle='#000a';x.fillRect(bx,12,bw,22);x.fillStyle=me.hp>35?'#58d26b':'#ef5a5a';x.fillRect(bx+(i?bw*(1-me.hp/BOX.hp):0),12,bw*me.hp/BOX.hp,22);x.fillStyle='#000a';x.fillRect(bx,38,bw,10);x.fillStyle='#f2d54a';x.fillRect(bx+(i?bw*(1-me.stamina/100):0),38,bw*me.stamina/100,10);x.strokeStyle='#fff';x.lineWidth=2;x.strokeRect(bx,12,bw,22);
-   x.fillStyle='#fff';x.font=`bold ${clamp(W*.017,11,15)}px monospace`;x.textAlign=i?'right':'left';x.fillText(`${s.players[i].name}  ${'★'.repeat(wins[i])}`,i?bx+bw:bx,62);}
+  for(let i=0;i<2;i++){const me=f[i],sl=flip?1-i:i,bx=sl?W-W*.42-16:16,bw=W*.42;x.fillStyle='#000a';x.fillRect(bx,12,bw,22);x.fillStyle=me.hp>35?'#58d26b':'#ef5a5a';x.fillRect(bx+(sl?bw*(1-me.hp/BOX.hp):0),12,bw*me.hp/BOX.hp,22);x.fillStyle='#000a';x.fillRect(bx,38,bw,10);x.fillStyle='#f2d54a';x.fillRect(bx+(sl?bw*(1-me.stamina/100):0),38,bw*me.stamina/100,10);x.strokeStyle='#fff';x.lineWidth=2;x.strokeRect(bx,12,bw,22);
+   x.fillStyle='#fff';x.font=`bold ${clamp(W*.017,11,15)}px monospace`;x.textAlign=sl?'right':'left';x.fillText(`${s.players[i].name}  ${'★'.repeat(wins[i])}`,sl?bx+bw:bx,62);}
   x.fillStyle='#fff3b9';x.font=`bold ${clamp(W*.03,16,28)}px monospace`;x.textAlign='center';x.fillText(String(Math.ceil(Math.max(0,left))),W/2,34);x.font=`bold ${clamp(W*.014,10,13)}px monospace`;x.fillText(`ROUND ${round}`,W/2,52);
-  for(const e of fx){x.globalAlpha=Math.min(1,e.t*2);x.fillStyle='#fff';x.strokeStyle='#7a1d12';x.lineWidth=5;x.font=`bold ${clamp(W*.04,18,34)}px monospace`;x.textAlign='center';x.strokeText(e.text,e.x*sx,(e.y-(1-e.t)*40)*sy);x.fillText(e.text,e.x*sx,(e.y-(1-e.t)*40)*sy);x.globalAlpha=1;}
+  for(const e of fx){x.globalAlpha=Math.min(1,e.t*2);x.fillStyle='#fff';x.strokeStyle='#7a1d12';x.lineWidth=5;x.font=`bold ${clamp(W*.04,18,34)}px monospace`;x.textAlign='center';x.strokeText(e.text,vx(e.x)*sx,(e.y-(1-e.t)*40)*sy);x.fillText(e.text,vx(e.x)*sx,(e.y-(1-e.t)*40)*sy);x.globalAlpha=1;}
+  if(phase==='sync'&&on){x.fillStyle='#000b';x.fillRect(0,H*.4,W,H*.18);x.fillStyle='#ffe48a';x.font=`bold ${clamp(W*.035,16,32)}px monospace`;x.textAlign='center';x.fillText(`ROUND ${round}…`,W/2,H*.51);}
   if(pause>0){x.fillStyle='#000b';x.fillRect(0,H*.4,W,H*.18);x.fillStyle='#ffe48a';x.font=`bold ${clamp(W*.035,16,32)}px monospace`;x.textAlign='center';x.fillText(note,W/2,H*.51);}
   x.restore();
   s.setScores(wins.map((n,i)=>n*100+f[i].hp));s.status(`Round ${round} · ${s.players[0].name} ${Math.ceil(f[0].hp)} hp vs ${s.players[1].name} ${Math.ceil(f[1].hp)} hp`);

@@ -97,7 +97,7 @@ const NET_NATIVE=new Set(['trivia-mixed','trivia-nick90','trivia-dbz','trivia-hx
  'rink-rivals','taskmaster-sumo','hungry-hungry-heads','underdog-dodgeball',
  'tarantino-standoff','tarantino-twist','tarantino-adrenaline','tarantino-bounty','tarantino-crazy88','tarantino-chase',
  'sp-dodgeball','sp-cheesy-poofs','sp-killed-kenny',
- 'raiders-ball-run','sewer-clash','league-penalties',
+ 'raiders-ball-run','sewer-clash','league-penalties','fight-night',
 ]);
 const netNative=g=>!!g&&NET_NATIVE.has(g.id);
 function duelOK(g){return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&(DUEL_KINDS.has(soloKind(g))||netNative(g));}
