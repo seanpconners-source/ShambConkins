@@ -753,6 +753,28 @@ Remaining list any time: `node -e` over solo.js ('cpu' ids minus NET_NATIVE).
   each phone stops its own read-out by its own clock and sends {st:[round,value|-1 boom]}; a read-out at zero waits ('zero') for
   the other report, then both settle the same round. Bots = CPU brain on your side (`autodrive`). All 3 pass online-native with
   and without LAG=80-150 (390x780); 2P fuzz, 1P solo and tests/bondlair.mjs clean.
+  Batch 21 (Oct 26, branch `online-batch-21-kart` from TESTver), Mario Kart `rainbow-road-kart` + `rainbow-balloon-battle`
+  (kart.js; one netField at the top, `NET` = the running race's pack/unpack/event). One full-screen view online (`VK` = this
+  phone's kart; HUD 30 px lower, clear of the duel chip). Player 1's phone picks the course and the 6 CPU racers (its own
+  roster) and sends {setup:{c,cpus}}; the other phone shows "… IS CHOOSING" (`waitCourse`). Ownership: `owns(k)` = your own
+  kart, plus every CPU kart on player 1's phone; the rest are `k.remote`. CPU karts are SIMULATED BY PLAYER 1'S PHONE and
+  streamed (they react to both humans and item boxes/rand, so a deterministic copy on both phones wasn't practical); the
+  guest sees them like the other human. Snapshots {f:{t,k:[packK...]}} ~20/s of owned karts (track s/d/psi/v + state timers,
+  P/V in the air); a remote kart is shown moved on along the TRACK by its speed for the time since (`target`, then
+  `Ph.pose`, so it follows loops), each snapshot's jump eased out (`errS/errD`). The race clock, lights, intro and hazards
+  run on wall time since `nf.start('race')` (`netNow`), not frame dt. Items: a kart you own fires → {it:[kart,id,dir,s,d,psi,
+  v,t,[[list,pid,target]..]]}; the other phone fires the same item from there (`remoteFire`, red/blue target from the
+  sender, extra projectiles trimmed) and flies it on by the delay (`catchUp`). Each phone judges only karts it owns
+  (`hitKart`/`loseBalloon`/bolt/blooper/contacts push+speed check `owns`): a projectile one of them takes → {rm:id}, a
+  bob-omb one sets off → {bm:id}; a shell reaching a remote kart just vanishes locally. Battle steal: the victim's phone
+  calls it {st:attacker}, the attacker's phone adds the balloon. End: race = own kart finished, or clock past the other
+  human's finishT (from its snapshot), or RACE_CAP; battle = own kart out, or clock past their outT, or BATTLE_TIME.
+  `netResults` swaps finals: race {f,t,p,c: CPU finish times (player 1's phone)}: offline scoring, earlier finishT wins
+  (tie P1), places = 1 + CPUs/other human finished earlier; battle {log:[[t,balloons]..],o: outT}: E = first out or time-up,
+  balloons each log shows at E. Bot: `s.debug.bot` = autopilot on your kart (+ random course pick on the picking phone).
+  Both pass online-native with and without LAG=80-150 (headless is slow, so races hit the 200 s cap; a scratch run with
+  `finishLap` on one phone checked the finish path both ways, also under lag); kart.mjs, kart-track, 2P fuzz + 1P CPU
+  clean. Real-phone feel (remote karts' smoothness, WebGL on two phones) untested.
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).

@@ -6,6 +6,8 @@
 
 The three Bond lair games (Laser Vault Heist, Funhouse Duel, Stop the Bomb at 007) are played between the two phones too: your vault, funhouse or read-out fills most of your screen, the other player's runs alongside it, and the bomb rounds start together on both phones.
 
+Mario Kart Grand Prix VS and Balloon Battle are online too: each phone races its own kart on the full screen and sees the other kart (and, in the Grand Prix, the six CPU racers from Player 1's phone) live; Player 1's phone picks the course and both phones agree on the finish.
+
 **Meet a visitor works at every landmark.** 393 of the 705 landmarks are from a film or show with no characters of its own in the game (Akira, A Nightmare on Elm Street, The Mighty Ducks...), so "Meet a visitor" always said "Catch up, +3 points" there, even on a new save. Now a character from the same kind of property (film, TV, game) drops by, or anyone you're still missing. Mom & Dad's house and the lab keep their own visitors.
 
 ## v0.66.1

@@ -23,6 +23,7 @@ const HZ=require("src/engines/kart3d/hazards.js");
 const {createRenderer,TILE}=require("src/engines/kart3d/render.js");
 const {drawHUD}=require("src/engines/kart3d/hud.js");
 const {createKartMusic}=require("src/engines/kart3d/music.js");
+const {netField}=require("src/engines/netField.js");
 
 const LAPS=3,RACE_CAP=200,BATTLE_TIME=100;
 const GL_OPTS={antialias:true,alpha:false,depth:true,stencil:false,preserveDrawingBuffer:false,powerPreference:'high-performance'};
@@ -104,7 +105,14 @@ async function kart(s){
    else if(!cancelled){const dy=f.y-f.sy;ctl.use(f.owner,f.moved<18?0:dy<-24?1:dy>24?-1:0);}
    if(!pd.f&&!kb.state[f.owner].u&&!kb.state[f.owner].d)pd.holdSince=-1;}});
  const auto=[false,false];
- s.debug={mode,auto,pick:null};Object.defineProperty(s.debug,'phase',{get:()=>'select',configurable:true});
+ s.debug={mode,auto,pick:null};
+ // online (s.online, Grand Prix VS + Balloon Battle): each phone drives its own kart on the full screen and streams it
+ // (NET = the running race's pack/unpack/event, see runRace); player 1's phone picks the course and runs the CPU karts.
+ const net=s.online&&MD.vs?s.online:null,me=net?net.me:-1,them=1-me;let NET=null,setupMsg=null,setupWait=null,choosing=false,botPicked=false;
+ const nf=net?netField(s,{hz:20,pack:()=>NET?NET.pack():{},unpack:(i,d)=>NET?.unpack(d),onEvent:e=>{if(e?.setup){setupMsg=e.setup;setupWait?.();}else NET?.event(e);}}):null;
+ // online test bot: the autopilot drives this phone's kart (and picks a course on the picking phone)
+ if(net)s.debug.bot=()=>{if(choosing&&!botPicked&&s.debug.pick){botPicked=true;const c=T.COURSES[Math.floor(Math.random()*T.COURSES.length)].id;setTimeout(()=>s.debug.pick?.(c),800);return 'pick';}
+  if(!auto[me]){auto[me]=true;return 'drive';}return '';};Object.defineProperty(s.debug,'phase',{get:()=>'select',configurable:true});
  s.hint({race:'GRAND PRIX VS: both of you at once, side by side (P1 left, P2 right), against six CPU racers. Pick a course, then three laps; the better-placed player wins.',
   gp:'GRAND PRIX PASS & PLAY: pick a course. P1 races seven CPU racers on the full screen, then P2 races the same grid. The better finishing place wins (same place: faster time).',
   time:'TIME TRIALS PASS & PLAY: pick a course. P1 runs three laps alone with three mushrooms, then P2 runs the same course against P1’s ghost. Fastest total time wins.',
@@ -115,8 +123,9 @@ async function kart(s){
  function chooseCourse(){
   const list=T.COURSES.map(C=>{const c=C.build();let a=Infinity,b=-Infinity,c0=Infinity,d0=-Infinity;for(let i=0;i<c.N;i++){a=Math.min(a,c.px[i]);b=Math.max(b,c.px[i]);c0=Math.min(c0,c.pz[i]);d0=Math.max(d0,c.pz[i]);}
    const sc=1/Math.max(b-a,d0-c0),pts=[];for(let i=0;i<c.N;i+=4)pts.push([(c.px[i]-a)*sc+(1-(b-a)*sc)/2,(c.pz[i]-c0)*sc+(1-(d0-c0)*sc)/2]);return {id:C.id,name:C.name,course:c,pts};});
+  choosing=true;
   return new Promise(resolve=>{let t=0,hi=0,done=false,cards=[];
-   const choose=k=>{if(done||!list[k])return;done=true;ctl.tap=null;ctl.key=null;snd(880,.08,{type:'square',vol:.04});snd(1320,.14,{type:'square',vol:.04,delay:.06});resolve(list[k].course);};
+   const choose=k=>{if(done||!list[k])return;done=true;choosing=false;ctl.tap=null;ctl.key=null;snd(880,.08,{type:'square',vol:.04});snd(1320,.14,{type:'square',vol:.04,delay:.06});resolve(list[k].course);};
    s.debug.pick=id=>choose(Math.max(0,list.findIndex(l=>l.id===id)));
    ctl.tap=(px,py)=>{for(const cd of cards)if(px>=cd.x&&px<=cd.x+cd.w&&py>=cd.y&&py<=cd.y+cd.h)choose(cd.k);};
    ctl.key=k=>{if(k==='l'||k==='u')hi=(hi+list.length-1)%list.length;else if(k==='r'||k==='d')hi=(hi+1)%list.length;else if(k==='fire')choose(hi);};
@@ -136,13 +145,22 @@ async function kart(s){
   });
  }
 
+ // online: the other phone (player 1's) picks the course and sends it with the CPU racers ({setup})
+ function waitCourse(){
+  return new Promise(resolve=>{let t=0;const done=()=>{if(!setupMsg)return;setupWait=null;onFrame=null;resolve(T.courseById(setupMsg.c));};setupWait=done;
+   onFrame=dt=>{t+=dt;const W=s.W,H=s.H,g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#1a0d3e');g.addColorStop(1,'#07041a');x.fillStyle=g;x.fillRect(0,0,W,H);
+    const ts=Math.min(30,W*.06,H*.06);outlined(x,MD.title,W/2,H*.4,{size:ts*.6,fill:'#c9d4ff',stroke:'#120a2e'});
+    outlined(x,`${s.players[them].name.toUpperCase()} IS CHOOSING A COURSE${'.'.repeat(1+Math.floor(t*2)%3)}`,W/2,H*.5,{size:Math.min(ts*.75,W*.045),fill:'#ffe23a',stroke:'#120a2e'});};
+   done();});
+ }
+
  // ---------------------------------------------------------------- one race / battle
  // opts: course, humans (player indices), cpus, seed, ghost (recording to race), record (record a ghost)
  // rival: solo vs CPU — the CPU player's character drives the first CPU kart and its result is returned.
- function runRace({course,humans,cpus,seed,ghost=null,record=false,rivalCpu=false}){
+ function runRace({course,humans,cpus,seed,ghost=null,record=false,rivalCpu=false,cpuIds:cpuIds0=null}){
   return new Promise(resolve=>{
   const battle=mode==='battle',timeTrial=mode==='time',vs=humans.length===2;
-  const rand0=seededRandom(seed),cpuIds=rivalCpu?[s.players[1].character,...pickCPUs(cpus-1,s.players.map(p=>p.character),rand0,store.profile)]:pickCPUs(cpus,s.players.map(p=>p.character),rand0,store.profile);
+  const rand0=seededRandom(seed),cpuIds=cpuIds0?cpuIds0:rivalCpu?[s.players[1].character,...pickCPUs(cpus-1,s.players.map(p=>p.character),rand0,store.profile)]:pickCPUs(cpus,s.players.map(p=>p.character),rand0,store.profile);
   // solo: the Easy / Normal / Hard pick sets the CPU karts' top speed (the 2-player game keeps .955-.995)
   const cpuBase=s.solo?.925+.07*cpuSkill(s):.955;
   const colors=[...humans.map(p=>PCOL[p]),...cpuIds.map((id,j)=>CPU_COLORS[id]||CPU_PALETTE[j%CPU_PALETTE.length])];
@@ -150,7 +168,7 @@ async function kart(s){
   const glc=document.createElement('canvas');let R;
   try{R=createRenderer(glc,course,{colors,battle});}catch(e){console.warn('kart: 3D renderer failed',e);resolve(null);return;}
   const cleanups=[()=>{try{R.gl.getExtension('WEBGL_lose_context')?.loseContext();}catch{}}];let ended=false;
-  const endRace=result=>{if(ended)return;ended=true;onFrame=null;for(const fn of cleanups.splice(0))try{fn();}catch{}resolve(result);};
+  const endRace=result=>{if(ended)return;ended=true;onFrame=null;NET=null;for(const fn of cleanups.splice(0))try{fn();}catch{}resolve(result);};
   s.cleanup(()=>{if(!ended){ended=true;for(const fn of cleanups.splice(0))try{fn();}catch{}}});
   const rand=seededRandom(seed*7+3),itemRand=seededRandom(seed*13+5);
   // world placement of boxes and coins (time trials: an empty track)
@@ -162,6 +180,11 @@ async function kart(s){
    course.miniAt=k=>[ox+(k.P2[0]-a)*sc,oz+(k.P2[2]-c0)*sc];}
   const K=colors.slice(0,ghost?-1:colors.length).map((_,i)=>Object.assign(Ph.makeKart(course,i),{human:i<humans.length,player:i<humans.length?humans[i]:-1,cpu:i>=humans.length?cpuIds[i-humans.length]:null,lane:i>=humans.length?(rand0()-.5)*50:0,topMul:1,baseMul:i>=humans.length?cpuBase+rand0()*.04:1,items:[],rolling:false,rollT:0,frenzy:0,frenzyItem:null,frenzyCD:0,goldenT:0,balloons:3,out:false,finished:false,finishT:0,place:0,best:0,msgs:[],wrongT:0,rel:0,lapT:[]}));
   const H=K.filter(k=>k.human),kartOf=p=>H.find(k=>k.player===p);
+  // online: this phone owns (drives, judges hits on) its own kart, and player 1's phone also the CPU karts; the other
+  // karts are remote, shown from the owning phone's snapshots. VK = the karts that get a view on this phone.
+  const on=!!net&&vs,owns=k=>!on||(k.human?k.player===me:me===0),mine=k=>k.human&&(!on||k.player===me);
+  for(const k of K)k.remote=!owns(k);
+  const VK=on?[kartOf(me)]:H;
   if(timeTrial){const k=K[0];k.s=T.wrapS(course,course.startS-34);k.d=0;k.prevS=k.s;k.safeS=k.s;Ph.pose(course,k);k.items=[{id:'mush3',n:3}];}
   const shells=[],bananas=[],bombs=[],parts=[];
   let phase='intro',introT=0,lights=0,clock=0,endT=0,winner=-1,endText='',simT=0,hintT=7;
@@ -176,7 +199,7 @@ async function kart(s){
    land:()=>noise(.1,{vol:.05,freq:300}),glide:()=>noise(.5,{vol:.04,freq:1500,q:.4}),zap:()=>{noise(.5,{vol:.08,freq:500});snd(1600,.4,{type:'sawtooth',vol:.03,to:200});},ink:()=>noise(.4,{vol:.06,freq:250,q:.4})};
   const SILENT=new Proxy({},{get:()=>()=>{}});
   // engine hum per player kart
-  const engines=[];{const ac=store.profile?.settings?.sound?audioContext():null;if(ac)try{for(const k of H){const o=ac.createOscillator(),o2=ac.createOscillator(),f=ac.createBiquadFilter(),g=ac.createGain();o.type='sawtooth';o2.type='square';f.type='lowpass';f.frequency.value=600;g.gain.value=0;
+  const engines=[];{const ac=store.profile?.settings?.sound?audioContext():null;if(ac)try{for(const k of H.filter(mine)){const o=ac.createOscillator(),o2=ac.createOscillator(),f=ac.createBiquadFilter(),g=ac.createGain();o.type='sawtooth';o2.type='square';f.type='lowpass';f.frequency.value=600;g.gain.value=0;
     o.connect(f);o2.connect(f);f.connect(g);g.connect(ac.destination);o.start();o2.start();engines.push({k,o,o2,f,g,ac});}}catch{}}
   let song=null;try{song=store.profile?.settings?.music?createKartMusic(audioContext(),{transpose:battle?3:{'moo-moo-meadows':-2,'cheep-cheep-beach':2,'bowsers-castle':-5}[course.id]||0}):null;}catch{}
   cleanups.push(()=>song?.stop());
@@ -192,7 +215,7 @@ async function kart(s){
   const local=(k,p)=>{const M=k._M;if(!M)return k.P2.slice();return [M[0]*p[0]+M[4]*p[1]+M[8]*p[2]+M[12],M[1]*p[0]+M[5]*p[1]+M[9]*p[2]+M[13],M[2]*p[0]+M[6]*p[1]+M[10]*p[2]+M[14]];};
   // ---------------------------------------------------------------- items
   let order=K.slice(),finishCount=0;
-  const sortOrder=()=>{order=K.slice().sort((a,b)=>a.finished&&b.finished?a.place-b.place:a.finished?-1:b.finished?1:b.prog-a.prog);};
+  const sortOrder=()=>{order=K.slice().sort((a,b)=>a.finished&&b.finished?(a.finishT-b.finishT)||(a.place-b.place):a.finished?-1:b.finished?1:b.prog-a.prog);};
   const rankOf=k=>battle?1:order.indexOf(k)+1;
   if(!battle){for(const k of K){k.rel=T.wrapS(course,k.s-course.startS);k.prog=k.rel/course.L-1;}sortOrder();}
   const aheadOf=k=>{if(battle)return K[1-k.i];let best=null,bd=Infinity;for(const o of K){if(o===k||o.finished)continue;const d=(o.prog-k.prog)*course.L;if(d>0&&d<bd){bd=d;best=o;}}return bd<1700?best:null;};
@@ -205,10 +228,25 @@ async function kart(s){
    k.items.push({id,n:COUNT[id]||1});if(k.human)sfx.item();
   }
   const rival=k=>K[1-k.i];
-  const hitKart=(k,type,why)=>{const ok=Ph.hit(k,type,ctx);if(ok){if(battle)loseBalloon(k);if(k.human)s.react?.(k.player,'sad');}return ok;};
-  function loseBalloon(k){if(k.balloons<=0)return;k.balloons--;sfx.pop();burst(local(k,[-11,22,0]),14,{tile:TILE.glow,col:[1,.4,.5,1],speed:120,size:4,life:.5});if(k.balloons<=0){k.out=true;msg(k,'OUT!','#ff8aa8',30,2);}}
+  const hitKart=(k,type,why)=>{if(!owns(k))return false;const ok=Ph.hit(k,type,ctx);if(ok){if(battle)loseBalloon(k);if(k.human)s.react?.(k.player,'sad');}return ok;};
+  function loseBalloon(k){if(!owns(k)||k.balloons<=0)return;k.balloons--;if(on){blog.push([r3(clock),k.balloons]);if(k.balloons<=0)k.outT=clock;}sfx.pop();burst(local(k,[-11,22,0]),14,{tile:TILE.glow,col:[1,.4,.5,1],speed:120,size:4,life:.5});if(k.balloons<=0){k.out=true;msg(k,'OUT!','#ff8aa8',30,2);}if(on)nf.push();}
   function fire(k,id,dir){
-   const fwd=dir!==-1;const sfx0=sfx;if(!k.human)sfx=SILENT;try{fireItem(k,id,dir,fwd);}finally{sfx=sfx0;}}
+   const fwd=dir!==-1;const sfx0=sfx;if(!k.human||!owns(k))sfx=SILENT;const n0=on?[shells.length,bananas.length,bombs.length]:null;
+   try{fireItem(k,id,dir,fwd);}finally{sfx=sfx0;}if(n0)netFire(k,id,dir,n0);}
+  // online: an item fired by a kart this phone owns goes to the other phone with the kart's place and an id per projectile
+  // ({it}); that phone fires the same item from there and flies it on by the time since. Each phone judges only the karts it
+  // owns: a projectile one of them takes is removed on the other phone too ({rm}), a bob-omb one of them sets off blows up there ({bm}).
+  const PROJ=[shells,bananas,bombs];let pidN=0;
+  function netFire(k,id,dir,n0){const made=[];PROJ.forEach((list,j)=>{for(const o of list.slice(n0[j])){o.id=me+'.'+(++pidN);made.push([j,o.id,o.target??-1]);}});
+   nf.event({it:[k.i,id,dir,r1(k.s),r1(k.d),r3(k.psi),r1(k.v),r3(netNow()),made]});}
+  function remoteFire([ki,id,dir,s0,d0,psi,v,t,made]){const k=K[ki];if(!k||owns(k)||!Array.isArray(made))return;
+   const n0=PROJ.map(l=>l.length),pk={...k,s:s0,d:d0,psi,v},sfx0=sfx;sfx=SILENT;try{fireItem(pk,id,dir,dir!==-1);}finally{sfx=sfx0;}
+   PROJ.forEach((list,j)=>{const want=made.filter(m=>m[0]===j);if(list.length>n0[j]+want.length)list.splice(n0[j]+want.length);
+    want.forEach(([,pid,tg],q)=>{const o=list[n0[j]+q];if(!o)return;o.id=pid;if(tg>=0)o.target=tg;catchUp(j,o,clamp(netNow()-t,0,.5));});});}
+  function catchUp(j,o,age){for(let a=0;a<age-1e-6;a+=1/60){const h=Math.min(1/60,age-a);o.t+=h;
+    if(j===0){if(o.kind==='blue')break;if(moveShell(o,h)){o.dead=true;break;}}else if(o.air){if(flyItem(o,h)){o.dead=true;break;}}else{if(j===2)o.fuse-=age-a;break;}}
+   if(o.dead&&j>0)PROJ[j].splice(PROJ[j].indexOf(o),1);}
+  const netRm=o=>{if(on&&o.id)nf.event({rm:o.id});};
   function fireItem(k,id,dir,fwd){
    if(id==='mushroom'||id==='mush3'||id==='golden'){Ph.setBoost(k,1.15);k.v+=60;sfx.boost();msg(k,'BOOST!','#ffb02e',18,.6);if(id==='golden'&&!k.goldenT)k.goldenT=6;}
    else if(id==='star'){k.star=7.5;sfx.star();msg(k,'STAR POWER!','#ffe23a',22,1.2);}
@@ -217,8 +255,8 @@ async function kart(s){
    else if(id==='red'){shells.push({kind:fwd?'red':'green',s:T.wrapS(course,k.s+(fwd?16:-18)),d:k.d,psi:fwd?k.psi*.3:Ph.wrapA(k.psi+Math.PI),v:fwd?560:600,h:4,owner:k.i,t:0,bounce:0,target:aheadOf(k)?.i??-1});sfx.shell();}
    else if(id==='blue'){const tg=battle?rival(k):order[0];if(tg===k){Ph.setBoost(k,1);return;}shells.push({kind:'blue',s:T.wrapS(course,k.s+10),d:k.d,psi:0,v:820,h:46,owner:k.i,t:0,target:tg.i});sfx.shell();msg(tg,'BLUE SHELL!','#6aa0ff',22,1.6);}
    else if(id==='bomb'){bombs.push(fwd?{s:k.s+14,d:k.d,h:10,vs:k.v+200,vh:170,air:true,owner:k.i,t:0,fuse:2.4}:{s:T.wrapS(course,k.s-22),d:k.d,h:0,air:false,owner:k.i,t:0,fuse:2.4});snd(240,.12,{type:'square',vol:.03});}
-   else if(id==='bolt'){sfx.zap();for(const o of K)if(o!==k&&o.star<=0&&o.bullet<=0&&!o.out){o.shrink=4.5;o.items=[];o.rolling=false;hitKart(o,'spin','bolt');msg(o,'ZAPPED!','#ffe23a',22,1.2);}}
-   else if(id==='blooper'){sfx.ink();for(const o of K)if(o!==k&&o.bullet<=0&&(battle||o.prog>=k.prog-.02)){o.ink=4.6;msg(o,'BLOOPER!','#c9a0ff',20,1);}}
+   else if(id==='bolt'){sfx.zap();for(const o of K)if(o!==k&&owns(o)&&o.star<=0&&o.bullet<=0&&!o.out){o.shrink=4.5;o.items=[];o.rolling=false;hitKart(o,'spin','bolt');msg(o,'ZAPPED!','#ffe23a',22,1.2);}}
+   else if(id==='blooper'){sfx.ink();for(const o of K)if(o!==k&&owns(o)&&o.bullet<=0&&(battle||o.prog>=k.prog-.02)){o.ink=4.6;msg(o,'BLOOPER!','#c9a0ff',20,1);}}
    else if(id==='coin'){k.coins=Math.min(10,k.coins+2);sfx.coin();}
    else if(id==='bullet'){k.bullet=4.5;k.inv=Math.max(k.inv,4.5);sfx.boost();msg(k,'BULLET BILL!','#fff',22,1.2);}
   }
@@ -231,11 +269,11 @@ async function kart(s){
    fire(k,it.id,dir);it.n--;if(it.n<=0)k.items.shift();
   }
   // ---------------------------------------------------------------- views and input routing
-  const layout=()=>{const W=s.W,Hh=s.H;if(!vs)return [{x:0,y:0,w:W,h:Hh}];const half=Math.floor(W/2);return [{x:0,y:0,w:half-1,h:Hh},{x:half+1,y:0,w:W-half-1,h:Hh}];};
-  ctl={owner:p=>vs?(p.x<s.W/2?0:1):humans[0],keyOwner:i=>vs?i:humans[0],use:(p,dir)=>useItem(kartOf(p),dir),lights:()=>lights,tap:null,rad:()=>clamp((vs?s.W/2:s.W)*.17,42,90)};
+  const layout=()=>{const W=s.W,Hh=s.H;if(!vs||on)return [{x:0,y:0,w:W,h:Hh}];const half=Math.floor(W/2);return [{x:0,y:0,w:half-1,h:Hh},{x:half+1,y:0,w:W-half-1,h:Hh}];};
+  ctl={owner:p=>on?me:vs?(p.x<s.W/2?0:1):humans[0],keyOwner:i=>on?me:vs?i:humans[0],use:(p,dir)=>useItem(kartOf(p),dir),lights:()=>lights,tap:null,rad:()=>clamp((vs&&!on?s.W/2:s.W)*.17,42,90)};
   for(const pd of pads){pd.f=null;pd.latch=0;pd.keyLatch=0;pd.holdSince=-1;}
   function readInput(k){
-   const p=k.player,pd=pads[p],ks=vs?kb.state[p]:{l:kb.state[0].l||kb.state[1].l,r:kb.state[0].r||kb.state[1].r,d:kb.state[0].d||kb.state[1].d};
+   const p=k.player,pd=pads[p],ks=vs&&!on?kb.state[p]:{l:kb.state[0].l||kb.state[1].l,r:kb.state[0].r||kb.state[1].r,d:kb.state[0].d||kb.state[1].d};
    if(auto[p]){if(battle){const o=rival(k),ds=T.sdiff(course,k.s,o.s),half=course.half[T.idx(course,k.s)];let want=Math.atan2(o.d-k.d,ds);if(Math.abs(k.d)>half*.62)want=Math.atan2(-k.d,80*Math.sign(Math.cos(k.psi))||80);
      return {steer:clamp(Ph.wrapA(want-k.psi)*2.5,-1,1),drift:0};}
     return Ph.autoInput(course,k,{target:autoTarget(k)});}
@@ -297,28 +335,36 @@ async function kart(s){
   function blockFromBehind(k,src){const it=k.items[0];if(!it)return false;if(!['banana','banana3','green','shell3','red','bomb'].includes(it.id))return false;
    const ds=T.sdiff(course,k.s,src.s);const behind=ds*Math.cos(k.psi)<0;if(!behind&&it.id!=='shell3')return false;it.n--;if(it.n<=0)k.items.shift();sfx.pop();return true;}
   const FR={P:[0,0,0],T:[0,0,0],R:[0,0,0],U:[0,0,0]};
+  // green/red shell flight (homing, rails, gaps); true when it is gone
+  function moveShell(sh,dt){let gone=false;
+   if(sh.kind==='red'&&K[sh.target]){const tg=K[sh.target],ds=T.sdiff(course,sh.s,tg.s);if(ds>0&&ds<1600&&kartHittable(tg)){const want=Math.atan2(tg.d-sh.d,Math.max(30,ds*.6));sh.psi+=clamp(Ph.wrapA(want-sh.psi),-3*dt,3*dt);}else sh.psi*=Math.pow(.2,dt);}
+   const f=T.frame(course,sh.s,FR),den=Math.max(.35,1-f.kg*sh.d),ds=sh.v*Math.cos(sh.psi)/den*dt;sh.s=T.wrapS(course,sh.s+ds);sh.d+=sh.v*Math.sin(sh.psi)*dt;sh.psi=Ph.wrapA(sh.psi-f.kg*ds);
+   const i=T.idx(course,sh.s),half=course.half[i],rail=course.rail[i];
+   if(Math.abs(sh.d)>half-6){const side=Math.sign(sh.d);if(rail&(side>0?2:1)){sh.d=side*(half-6);sh.psi=Math.atan2(-Math.sin(sh.psi),Math.cos(sh.psi));sh.bounce++;snd(900,.04,{type:'square',vol:.02});if(sh.bounce>6)gone=true;}else if(Math.abs(sh.d)>half+4)gone=true;}
+   if(course.gap[i]||sh.t>8)gone=true;
+   return gone;}
+  // thrown banana / bob-omb in the air; true when it lands off the track
+  const flyItem=(b,dt)=>{b.s=T.wrapS(course,b.s+b.vs*dt);b.h+=b.vh*dt;b.vh-=Ph.G*dt;if(b.h<=0){b.h=0;b.air=false;if(!T.surfaceAt(course,b.s,b.d))return true;}return false;};
   function stepProjectiles(dt){
    for(const sh of shells){if(sh.dead)continue;sh.t+=dt;let gone=false;
     if(sh.kind==='blue'){const tg=K[sh.target]||order[0];const ds=T.sdiff(course,sh.s,tg.s);sh.s=T.wrapS(course,sh.s+Math.min(Math.abs(ds),sh.v*dt)*Math.sign(ds||1));sh.d+=(tg.d-sh.d)*Math.min(1,dt*3);sh.h=Math.abs(ds)<120?Math.max(4,sh.h-dt*160):46;
      if(Math.abs(ds)<16&&kartHittable(tg)){gone=true;explode(tg.s,tg.d,110,sh.owner,true);}}
     else{
-     if(sh.kind==='red'&&K[sh.target]){const tg=K[sh.target],ds=T.sdiff(course,sh.s,tg.s);if(ds>0&&ds<1600&&kartHittable(tg)){const want=Math.atan2(tg.d-sh.d,Math.max(30,ds*.6));sh.psi+=clamp(Ph.wrapA(want-sh.psi),-3*dt,3*dt);}else sh.psi*=Math.pow(.2,dt);}
-     const f=T.frame(course,sh.s,FR),den=Math.max(.35,1-f.kg*sh.d),ds=sh.v*Math.cos(sh.psi)/den*dt;sh.s=T.wrapS(course,sh.s+ds);sh.d+=sh.v*Math.sin(sh.psi)*dt;sh.psi=Ph.wrapA(sh.psi-f.kg*ds);
-     const i=T.idx(course,sh.s),half=course.half[i],rail=course.rail[i];
-     if(Math.abs(sh.d)>half-6){const side=Math.sign(sh.d);if(rail&(side>0?2:1)){sh.d=side*(half-6);sh.psi=Math.atan2(-Math.sin(sh.psi),Math.cos(sh.psi));sh.bounce++;snd(900,.04,{type:'square',vol:.02});if(sh.bounce>6)gone=true;}else if(Math.abs(sh.d)>half+4)gone=true;}
-     if(course.gap[i]||sh.t>8)gone=true;
+     gone=moveShell(sh,dt);
+     // online a shell that reaches a remote kart is gone here (that kart's phone calls the hit and removes it everywhere)
      for(const k of K){if(gone)break;if(sh.t<.3&&k.i===sh.owner)continue;if(!kartHittable(k)||Math.abs(k.h-sh.h)>22)continue;
-      if(dist2(k,sh)<18*18){gone=true;if(k.star>0||k.bullet>0){sfx.pop();continue;}if(blockFromBehind(k,sh))continue;hitKart(k,sh.kind==='red'?'hard':'spin','shell');}}
+      if(dist2(k,sh)<18*18){gone=true;if(!owns(k))continue;netRm(sh);if(k.star>0||k.bullet>0){sfx.pop();continue;}if(blockFromBehind(k,sh))continue;hitKart(k,sh.kind==='red'?'hard':'spin','shell');}}
      if(!gone)for(let q=bananas.length-1;q>=0;q--)if(!bananas[q].air&&dist2(bananas[q],sh)<16*16){bananas.splice(q,1);gone=true;sfx.pop();break;}
      if(!gone&&sh.t>.2)for(const o of shells)if(o!==sh&&!o.dead&&o.kind!=='blue'&&o.t>.2&&dist2(o,sh)<14*14){o.dead=true;gone=true;sfx.pop();break;}
     }
     if(gone)sh.dead=true;}
    for(let j=shells.length-1;j>=0;j--)if(shells[j].dead){const sh=shells[j];burst(T.point(course,sh.s,sh.d,sh.h),8,{tile:TILE.glow,col:sh.kind==='red'?[1,.3,.2,1]:sh.kind==='blue'?[.3,.5,1,1]:[.3,1,.4,1],speed:90,size:4,life:.35});shells.splice(j,1);}
    for(const list of [bananas,bombs])for(let j=list.length-1;j>=0;j--){const b=list[j];b.t+=dt;
-    if(b.air){b.s=T.wrapS(course,b.s+b.vs*dt);b.h+=b.vh*dt;b.vh-=Ph.G*dt;if(b.h<=0){b.h=0;b.air=false;if(!T.surfaceAt(course,b.s,b.d)){list.splice(j,1);continue;}}}
-    if(list===bombs){if(!b.air)b.fuse-=dt;let boom=b.fuse<=0;if(b.t>.5)for(const k of K)if(kartHittable(k)&&dist2(k,b)<24*24&&k.h<20)boom=true;if(boom){list.splice(j,1);explode(b.s,b.d,95,b.owner);}continue;}
+    if(b.air&&flyItem(b,dt)){list.splice(j,1);continue;}
+    if(list===bombs){if(!b.air)b.fuse-=dt;let boom=b.fuse<=0,near=false;if(b.t>.5)for(const k of K)if(owns(k)&&kartHittable(k)&&dist2(k,b)<24*24&&k.h<20)near=true;
+     if(near&&!boom&&on&&b.id)nf.event({bm:b.id});if(boom||near){list.splice(j,1);explode(b.s,b.d,95,b.owner);}continue;}
     if(b.air)continue;
-    for(const k of K){if(b.t<.4&&k.i===b.owner)continue;if(!kartHittable(k)||k.h>12)continue;if(dist2(k,b)<15*15){list.splice(j,1);if(k.star<=0&&k.bullet<=0)hitKart(k,'spin','banana');else sfx.pop();break;}}}
+    for(const k of K){if(b.t<.4&&k.i===b.owner)continue;if(!owns(k)||!kartHittable(k)||k.h>12)continue;if(dist2(k,b)<15*15){list.splice(j,1);netRm(b);if(k.star<=0&&k.bullet<=0)hitKart(k,'spin','banana');else sfx.pop();break;}}}
    if(bananas.length>14)bananas.shift();
   }
   function explode(s0,d0,r,owner,blue){const P=T.point(course,s0,d0,8);sfx.boom();
@@ -330,29 +376,30 @@ async function kart(s){
   // animated track characters (cows, moles, Cheep Cheeps, crabs, Thwomps, fire bars): same clock for everyone
   const hazards=course.hazards||[];let hzs=[];
   const stepHazards=()=>{const prev=hzs;hzs=hazards.map(h=>HZ.state(course,h,simT));
-   hzs.forEach((st,j)=>{if(st.landed&&!prev[j]?.landed)for(const k of H){const ds=Math.abs(T.sdiff(course,hazards[j].s,k.s));if(ds<260){shake(k,ds<120?5:2);if(ds<200)sfx.land();}}});};
-  const hazardContacts=()=>{for(const k of K){if(k.out||!kartHittable(k)||k.inv>0||k.star>0)continue;
+   hzs.forEach((st,j)=>{if(st.landed&&!prev[j]?.landed)for(const k of VK){const ds=Math.abs(T.sdiff(course,hazards[j].s,k.s));if(ds<260){shake(k,ds<120?5:2);if(ds<200)sfx.land();}}});};
+  const hazardContacts=()=>{for(const k of K){if(k.remote||k.out||!kartHittable(k)||k.inv>0||k.star>0)continue;
    for(let j=0;j<hazards.length;j++){const hz=hazards[j];if(Math.abs(T.sdiff(course,hz.s,k.s))>90||!HZ.touches(course,hzs[j],k))continue;const info=HZ.KIND[hz.kind];
     if(info.hit==='squash'){k.squash=1.6;if(hitKart(k,'hard',hz.kind)&&k.human)noise(.2,{vol:.14,freq:180});}else hitKart(k,'spin',hz.kind);
     if(k.human)msg(k,info.msg,info.col,20,1);break;}}};
   function contacts(dt){
    hazardContacts();
-   for(let ia=0;ia<K.length;ia++)for(let ib=ia+1;ib<K.length;ib++){const a=K[ia],b=K[ib];if(a.out||b.out||!kartHittable(a)||!kartHittable(b)||Math.abs(a.h-b.h)>=16)continue;const ds=T.sdiff(course,a.s,b.s),dd=b.d-a.d,d=Math.hypot(ds,dd);
-    if(d<19){const nx=ds/(d||1),ny=dd/(d||1),push=(19-d)/2+.5;if(!a.air&&!b.air){a.s=T.wrapS(course,a.s-nx*push);a.d-=ny*push;b.s=T.wrapS(course,b.s+nx*push);b.d+=ny*push;}
-     if((a.bump||0)<=0&&(b.bump||0)<=0){a.bump=b.bump=.45;if(a.human||b.human)noise(.08,{vol:.06,freq:600});
+   for(let ia=0;ia<K.length;ia++)for(let ib=ia+1;ib<K.length;ib++){const a=K[ia],b=K[ib];if(a.remote&&b.remote||a.out||b.out||!kartHittable(a)||!kartHittable(b)||Math.abs(a.h-b.h)>=16)continue;const ds=T.sdiff(course,a.s,b.s),dd=b.d-a.d,d=Math.hypot(ds,dd);
+    if(d<19){const nx=ds/(d||1),ny=dd/(d||1),push=(19-d)/2+.5;if(!a.air&&!b.air){if(owns(a)){a.s=T.wrapS(course,a.s-nx*push);a.d-=ny*push;}if(owns(b)){b.s=T.wrapS(course,b.s+nx*push);b.d+=ny*push;}}
+     if((a.bump||0)<=0&&(b.bump||0)<=0){a.bump=b.bump=.45;if(mine(a)||mine(b))noise(.08,{vol:.06,freq:600});
       for(const [p,q] of [[a,b],[b,a]]){if((p.star>0||p.bullet>0)&&q.star<=0&&q.bullet<=0)hitKart(q,p.bullet>0?'tumble':'hard','ram');else if(q.shrink>0&&p.shrink<=0&&q.inv<=0){q.squash=1.4;hitKart(q,'spin','squash');}}
-      if(course.glue[T.idx(course,a.s)]&&course.glue[T.idx(course,b.s)]){Ph.setBoost(a,.45);Ph.setBoost(b,.45);msg(a,'SPIN BOOST','#5af0ff',14,.6);msg(b,'SPIN BOOST','#5af0ff',14,.6);}
-      else{const va=a.v,vb=b.v;a.v=vb*.6+va*.4;b.v=va*.6+vb*.4;}
-      if(battle)for(const [p,q] of [[a,b],[b,a]])if(p.boostT>0&&q.star<=0&&q.inv<=0&&p.balloons<3&&q.balloons>0){hitKart(q,'spin','steal');p.balloons++;msg(p,'BALLOON STOLEN!','#ff8aa8',18,1);}}}}
+      if(course.glue[T.idx(course,a.s)]&&course.glue[T.idx(course,b.s)]){if(owns(a))Ph.setBoost(a,.45);if(owns(b))Ph.setBoost(b,.45);msg(a,'SPIN BOOST','#5af0ff',14,.6);msg(b,'SPIN BOOST','#5af0ff',14,.6);}
+      else{const va=a.v,vb=b.v;if(owns(a))a.v=vb*.6+va*.4;if(owns(b))b.v=va*.6+vb*.4;}
+      if(battle)for(const [p,q] of [[a,b],[b,a]])if(p.boostT>0&&q.star<=0&&q.inv<=0&&p.balloons<3&&q.balloons>0){if(on){if(hitKart(q,'spin','steal'))nf.event({st:p.i});continue;}hitKart(q,'spin','steal');p.balloons++;msg(p,'BALLOON STOLEN!','#ff8aa8',18,1);}}}}
    for(const k of K){k.bump=Math.max(0,(k.bump||0)-dt);if(!kartHittable(k)||k.h>34)continue;
-    for(const b of boxes)if(b.t<=0&&dist2(k,b)<17*17){b.t=1.8;b.pop=.25;if(k.human)sfx.box();burst(b.P,14,{tile:TILE.glow,col:[...hsvc(rand()),1],speed:120,size:3.5,life:.45});
-     if(k.frenzy<=0&&k.items.length+(k.rolling?1:0)<2){k.rolling=true;k.rollT=1.05;}}
-    for(const cn of coins)if(cn.t<=0&&dist2(k,cn)<15*15){cn.t=9;if(k.coins<10){k.coins++;if(k.human)sfx.coin();}burst(cn.P,6,{tile:TILE.spark,col:[1,.85,.2,1],speed:70,size:3,life:.3});}}
+    for(const b of boxes)if(b.t<=0&&dist2(k,b)<17*17){b.t=1.8;b.pop=.25;if(mine(k))sfx.box();burst(b.P,14,{tile:TILE.glow,col:[...hsvc(rand()),1],speed:120,size:3.5,life:.45});
+     if(owns(k)&&k.frenzy<=0&&k.items.length+(k.rolling?1:0)<2){k.rolling=true;k.rollT=1.05;}}
+    for(const cn of coins)if(cn.t<=0&&dist2(k,cn)<15*15){cn.t=9;if(owns(k)&&k.coins<10){k.coins++;if(mine(k))sfx.coin();}burst(cn.P,6,{tile:TILE.spark,col:[1,.85,.2,1],speed:70,size:3,life:.3});}}
    for(const b of boxes){if(b.t>0)b.t-=dt;b.pop=Math.max(0,b.pop-dt);}for(const cn of coins)if(cn.t>0)cn.t-=dt;
   }
   // ---------------------------------------------------------------- per kart update
   const leadHuman=()=>Math.max(...H.map(k=>k.prog));
   function updateKart(k,dt){
+   if(k.remote)applyRemote(k,dt);else{
    const racing=phase==='play'||phase==='end';
    const inp=!k.human&&racing&&battle&&!k.out?battleBrain(k,dt):!k.human&&racing?Ph.autoInput(course,k,{target:k.lane+(k.items.length<2?autoTarget(k)*.6:0)}):phase==='play'&&!k.out&&!k.finished?readInput(k):(phase==='end'||k.finished)&&!k.out?{steer:Ph.autoInput(course,k).steer,drift:0}:{steer:0,drift:0};
    if(k.out){k.v*=Math.pow(.3,dt);inp.steer=0;}
@@ -366,11 +413,12 @@ async function kart(s){
    // laps
    if(!battle){const rel=T.wrapS(course,k.s-course.startS),L=course.L;
     if(!k.finished&&k.lakitu<=0&&k.falling<=0){if(k.rel>L*.8&&rel<L*.2&&k.half){k.lap++;k.half=false;k.lapT.push(clock);
-      if(k.lap>=LAPS){k.finished=true;k.finishT=clock;k.place=++finishCount;if(k.human){if(winner<0){winner=k.player;s.react?.(k.player,'win');}jingle([523,659,784,1047,1319],{step:.09,type:'square',vol:.04});msg(k,timeTrial?`FINISH! ${fmtTime(clock)}`:`FINISH! ${ord(k.place)}`,'#ffe23a',30,3);}}
+      if(k.lap>=LAPS){k.finished=true;k.finishT=clock;k.place=++finishCount;if(on)nf.push();if(k.human){if(winner<0){winner=k.player;s.react?.(k.player,'win');}jingle([523,659,784,1047,1319],{step:.09,type:'square',vol:.04});msg(k,timeTrial?`FINISH! ${fmtTime(clock)}`:`FINISH! ${ord(k.place)}`,'#ffe23a',30,3);}}
       else if(!k.human){}else if(k.lap===LAPS-1){sfx.final();msg(k,'FINAL LAP!','#ff5a5a',28,1.8);}else{sfx.lap();msg(k,timeTrial?`LAP ${k.lap} ${fmtTime(clock-(k.lapT[k.lap-2]||0))}`:`LAP ${k.lap+1}`,'#fff',22,1.4);}}
      if(rel>L*.4&&rel<L*.62)k.half=true;}
     k.rel=rel;k.prog=k.finished?LAPS:k.lap+(rel>L*.9&&!k.half?rel/L-1:rel/L);k.best=Math.max(k.best,k.prog);
     const back=!k.air&&k.lakitu<=0&&Math.abs(k.psi)>2.1&&k.v>40;k.wrongT=back?k.wrongT+dt:0;}
+   }
    for(const m of k.msgs)m.t+=dt;k.msgs=k.msgs.filter(m=>m.t<m.life);
    // particles from the kart
    if(k._M&&k.falling<=0&&k.lakitu<=0&&(k.human||rand()<.5)){
@@ -381,6 +429,36 @@ async function kart(s){
     if(k.offroad&&!k.air&&k.v>80&&rand()<.7)spawn(local(k,[-9,1,(rand()-.5)*18]),{tile:TILE.smoke,add:false,col:course.theme==='meadow'?[.45,.7,.3,.7]:[.95,.88,.68,.7],size:3,grow:8,life:.4,V:[(rand()-.5)*40,30+rand()*30,(rand()-.5)*40],g:-120});
     if((k.spin>0||k.tumble>0)&&rand()<.5)spawn(local(k,[0,3,0]),{tile:TILE.smoke,add:false,col:[1,1,1,.5],size:5,grow:10,life:.5,V:[0,20,0]});}
   }
+  // ---------------------------------------------------------------- online: snapshots of the karts this phone owns
+  // {t: shared race time, k: [kart...]} ~20/s; a remote kart is shown from the newest one, moved on along the track by its
+  // speed for the time since (track space, so it follows curves and loops), with the jump at each new snapshot eased out.
+  function packK(k){const a=[k.i,r1(k.s),r1(k.d),r3(k.psi),r1(k.v),r3(k.hop||0),r3(k.visYaw),r3(k.steer||0),k.drift||0,(k.air?1:0)|(k.glide?2:0)|(k.out?4:0)|(k.finished?8:0),
+    r3(k.spin),r3(k.spinA||0),r3(k.tumble),r3(k.lakitu),r3(k.falling),r3(k.star),r3(k.bullet),r3(k.shrink),r3(k.squash),r3(k.inv),r3(k.boostT),r3(k.glue),r3(k.trick),r3(k.frenzy),
+    k.balloons,r3(k.prog),k.finished?r3(k.finishT):k.out?r3(k.outT??clock):-1,k.lap,k.spark||0,k.items[0]?.id||0,r1(k.h)];
+   if(k.air||k.falling>0)a.push(...k.P.map(r1),...k.V.map(r1));return a;}
+  const target=(k,a,age)=>{const v=a[4],psi=a[3],ag=k.lakitu>0||k.falling>0?0:age;return [T.wrapS(course,a[1]+v*Math.cos(psi)*ag),a[2]+v*Math.sin(psi)*ag];};
+  function applySnap(k,a,t){
+   const fl=a[9];k.v=a[4];k.hop=a[5];k.steer=a[7];k.drift=a[8];k.air=!!(fl&1);k.glide=!!(fl&2);k.out=!!(fl&4);
+   [k.spin,k.spinA,k.tumble,k.lakitu,k.falling,k.star,k.bullet,k.shrink,k.squash,k.inv,k.boostT,k.glue,k.trick,k.frenzy]=a.slice(10,24);
+   k.balloons=a[24];k.prog=k.best=a[25];k.lap=a[27];k.spark=a[28];k.items=a[29]?[{id:a[29],n:1}]:[];k.h=a[30];
+   if(fl&8&&!k.finished){k.finished=true;k.finishT=a[26];k.place=++finishCount;}if(k.out&&k.outT==null)k.outT=a[26];
+   const [s1,d1]=target(k,a,clamp(netNow()-t,0,.3));
+   if(k.snap){k.errS=T.sdiff(course,s1,k.s);k.errD=k.d-d1;if(Math.abs(k.errS)>140||Math.abs(k.errD)>70||k.air)k.errS=k.errD=0;}else{k.errS=k.errD=0;}
+   k.snap={a,t};}
+  function applyRemote(k,dt){if(!k.snap)return;const a=k.snap.a,age=clamp(netNow()-k.snap.t,0,.3),e=Math.exp(-dt*9);k.errS*=e;k.errD*=e;
+   const [s1,d1]=target(k,a,age);k.s=T.wrapS(course,s1+k.errS);k.d=d1+k.errD;k.psi=a[3];
+   if((k.air||k.falling>0)&&a.length>=37){const V=a.slice(34,37),P=a.slice(31,34);k.V=[V[0],V[1]-Ph.G*age,V[2]];k.P=[P[0]+V[0]*age,P[1]+V[1]*age-.5*Ph.G*age*age,P[2]+V[2]*age];}
+   Ph.pose(course,k);k.visYaw=a[6];}
+  const r1=v=>Math.round((v||0)*10)/10,r3=v=>Math.round((v||0)*1000)/1000;
+  const INTRO=2.4,COUNT=4/1.2;let started=!on,netT0=0;const blog=[[0,3]];   // blog: this phone's balloons over time (battle)
+  const wall=()=>started&&on?(performance.now()-netT0)/1000:0,netNow=()=>on?(started?wall()-INTRO-COUNT:-99):clock;
+  if(on){NET={pack:()=>started?{t:r3(netNow()),k:K.filter(owns).map(packK)}:{},
+   unpack:d=>{if(!d||!Array.isArray(d.k))return;for(const a of d.k){const k=K[a?.[0]];if(k&&!owns(k)&&Array.isArray(a)&&a.length>=31)applySnap(k,a,+d.t||0);}},
+   event:e=>{if(Array.isArray(e.it))remoteFire(e.it);
+    else if(e.rm!=null){for(const list of PROJ){const j=list.findIndex(o=>o.id===e.rm);if(j>=0){const o=list[j];list.splice(j,1);if(list===shells)burst(T.point(course,o.s,o.d,o.h),8,{tile:TILE.glow,col:[1,1,1,1],speed:90,size:4,life:.35});}}}
+    else if(e.bm!=null){const j=bombs.findIndex(o=>o.id===e.bm);if(j>=0){const b=bombs[j];bombs.splice(j,1);explode(b.s,b.d,95,b.owner);}}
+    else if(e.st!=null){const k=K[e.st];if(k&&owns(k)&&!k.out&&k.balloons<3&&phase==='play'){k.balloons++;blog.push([r3(clock),k.balloons]);msg(k,'BALLOON STOLEN!','#ff8aa8',18,1);nf.push();}}}};
+   nf.start('race').then(()=>{if(ended)return;netT0=performance.now();started=true;});}
   // ---------------------------------------------------------------- cameras
   const cams=K.map(k=>({E:[k.P2[0]-k.F[0]*55+k.N[0]*22,k.P2[1]-k.F[1]*55+k.N[1]*22,k.P2[2]-k.F[2]*55+k.N[2]*22],F:k.F.slice(),N:k.N.slice(),fov:0,snap:false}));
   const lerp3=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
@@ -432,28 +510,36 @@ async function kart(s){
    get headOK(){return R.headOK.slice();},get lastUse(){return lastUse;},get particles(){return parts.length;},get ghost(){return ghost?ghost.frames.length:0;}}));
   // ---------------------------------------------------------------- main loop
   onFrame=dt=>{
-   lastFrame=performance.now();simT+=dt;R.tick(dt);stepHazards();
+   lastFrame=performance.now();simT=on?wall():simT+dt;R.tick(dt);stepHazards();
    headTimer-=dt;if(headTimer<=0){headTimer=simT<6?.5:1;refreshHeads(true);}else refreshHeads(false);
-   if(phase==='intro'){introT+=dt;if(introT>2.4)phase='count';}
-   else if(phase==='count'){const before=Math.floor(lights);lights+=dt*1.2;const now=Math.floor(lights);if(now!==before&&now>=1&&now<=4)sfx.light(now>=4);
-    if(lights>=4){phase='play';for(const k of H){const p=k.player,pd=pads[p],held=pd.f||(vs?[p]:[0,1]).some(q=>kb.state[q].u||kb.state[q].d||kb.state[q].fire)||auto[p];if(held&&pd.holdSince>=2&&pd.holdSince<4||auto[p]){Ph.setBoost(k,1);k.v=200;msg(k,'ROCKET START!','#ffb02e',20,1.1);sfx.boost();}}
-     for(const k of K)if(!k.human&&rand()<.5){Ph.setBoost(k,.8);k.v=180;}}}
+   // online the intro, the lights and the race clock all run on the shared start time from nf.start
+   if(phase==='intro'){introT=on?wall():introT+dt;if(introT>INTRO)phase='count';}
+   else if(phase==='count'){const before=Math.floor(lights);lights=on?Math.min(4,(wall()-INTRO)*1.2):lights+dt*1.2;const now=Math.floor(lights);if(now!==before&&now>=1&&now<=4)sfx.light(now>=4);
+    if(lights>=4){phase='play';for(const k of VK){const p=k.player,pd=pads[p],held=pd.f||(vs&&!on?[p]:[0,1]).some(q=>kb.state[q].u||kb.state[q].d||kb.state[q].fire)||auto[p];if(held&&pd.holdSince>=2&&pd.holdSince<4||auto[p]){Ph.setBoost(k,1);k.v=200;msg(k,'ROCKET START!','#ffb02e',20,1.1);sfx.boost();}}
+     for(const k of K)if(!k.human&&owns(k)&&rand()<.5){Ph.setBoost(k,.8);k.v=180;}}}
    else{
-    if(phase==='play'){clock+=dt;hintT-=dt;}
+    if(phase==='play'){clock=on?Math.max(clock,netNow()):clock+dt;hintT-=dt;}
     for(const k of K)updateKart(k,dt);stepProjectiles(dt);contacts(dt);if(!battle)sortOrder();
     if(rec&&phase==='play'){const k=K[0];rec.push({t:clock,P:k.P2.slice(),F:k.F.slice(),N:k.N.slice(),vy:k.visYaw,st:k.steer,g:k.glue,gl:k.glide});}
     if(phase==='play'){
-     const done=battle?(K.some(k=>k.out)||clock>=BATTLE_TIME):vs?(winner>=0||clock>=RACE_CAP):(H[0].finished||clock>=RACE_CAP);
+     // online each phone's race ends when its own kart finishes / is out, or its clock passes the other kart's finish / out
+     const mk=on?kartOf(me):null,tk=on?kartOf(them):null;
+     const done=on?(battle?mk.out||tk.out&&tk.outT!=null&&clock>=tk.outT||clock>=BATTLE_TIME:mk.finished||tk.finished&&clock>=tk.finishT||clock>=RACE_CAP)
+      :battle?(K.some(k=>k.out)||clock>=BATTLE_TIME):vs?(winner>=0||clock>=RACE_CAP):(H[0].finished||clock>=RACE_CAP);
      if(done){phase='end';endT=0;song?.victory();
-      if(battle){const a=K[0].balloons,b=K[1].balloons;endText=a===b?'DRAW!':`${s.players[a>b?0:1].name.toUpperCase()} WINS THE BATTLE!`;jingle([523,659,784,1047],{step:.1,type:'square',vol:.04});}
+      if(on){const N=p=>s.players[p].name.toUpperCase();endText=battle?(mk.out?`${N(them)} WINS THE BATTLE!`:tk.out?`${N(me)} WINS THE BATTLE!`:'TIME UP!'):mk.finished?'FINISH!':tk.finished?`${N(them)} FINISHED FIRST!`:'TIME UP!';
+       jingle([523,659,784,1047],{step:.1,type:'square',vol:.04});}
+      else if(battle){const a=K[0].balloons,b=K[1].balloons;endText=a===b?'DRAW!':`${s.players[a>b?0:1].name.toUpperCase()} WINS THE BATTLE!`;jingle([523,659,784,1047],{step:.1,type:'square',vol:.04});}
       else if(vs){if(winner<0){const a=K[0].best,b=K[1].best;winner=Math.abs(a-b)<.002?-2:a>b?0:1;}endText=winner===-2?'PHOTO FINISH!':`${s.players[winner].name.toUpperCase()} WINS THE CUP!`;}
       else{const k=H[0];endText=k.finished?(timeTrial?`${fmtTime(k.finishT)}`:`${ord(k.place)} PLACE!`):'TIME UP!';}}}
     else{endT+=dt;if(endT>3.2){
      const res={course,ghost:rec?{player:humans[0],frames:rec}:null,humans:H.map(k=>({player:k.player,finished:k.finished,place:k.finished?k.place:rankOf(k),finishT:k.finished?k.finishT:Infinity,prog:k.best,balloons:k.balloons,lapT:k.lapT.slice()}))};
+     if(on){const k=kartOf(me);res.net=battle?{log:blog,o:k.out?r3(k.outT):-1}:{f:k.finished?1:0,t:k.finished?r3(k.finishT):-1,p:r3(k.best),c:me===0?K.filter(q=>!q.human).map(q=>q.finished?r3(q.finishT):-1):null};}
      if(rivalCpu){const k=K[humans.length];if(k)res.rival={finished:k.finished,place:k.finished?k.place:rankOf(k),finishT:k.finished?k.finishT:Infinity,balloons:k.balloons};}
      endRace(res);return;}}
    }
    for(let j=parts.length-1;j>=0;j--){const p=parts[j];p.life-=dt;if(p.life<=0){parts.splice(j,1);continue;}const dr=Math.exp(-p.drag*dt);p.V[0]*=dr;p.V[1]=p.V[1]*dr+(p.g||0)*dt;p.V[2]*=dr;p.P[0]+=p.V[0]*dt;p.P[1]+=p.V[1]*dt;p.P[2]+=p.V[2]*dt;}
+   if(on&&started)nf.tick(dt);
    updateEngines();if(phase!=='intro'&&phase!=='end'&&!s.paused)song?.tick();if(!battle)song?.setRate(H.some(k=>k.lap===LAPS-1&&!k.finished)?1.08:1);
    if(battle)s.setScores([K[0].balloons,K[1].balloons]);else if(vs){ s.setScores(K.slice(0,2).map(k=>k.finished?100:Math.min(99,Math.round(clamp(k.best/LAPS,0,1)*100))));}
    // render each player's view into the GL canvas, then composite + HUD
@@ -468,16 +554,18 @@ async function kart(s){
      return {kind:sh.kind,P:[f.P[0]+f.R[0]*sh.d+f.U[0]*(sh.h+1),f.P[1]+f.R[1]*sh.d+f.U[1]*(sh.h+1),f.P[2]+f.R[2]*sh.d+f.U[2]*(sh.h+1)],F,N:f.U.slice(),R:T.cross(F,f.U)};}),
     bananas:bananas.map(b=>{const f=T.frame(course,b.s,{P:[0,0,0],T:[0,0,0],R:[0,0,0],U:[0,0,0]});return {P:[f.P[0]+f.R[0]*b.d+f.U[0]*b.h,f.P[1]+f.R[1]*b.d+f.U[1]*b.h,f.P[2]+f.R[2]*b.d+f.U[2]*b.h],N:f.U.slice()};}),
     bombs:bombs.map(b=>{const f=T.frame(course,b.s,{P:[0,0,0],T:[0,0,0],R:[0,0,0],U:[0,0,0]});return {P:[f.P[0]+f.R[0]*b.d+f.U[0]*b.h,f.P[1]+f.R[1]*b.d+f.U[1]*b.h,f.P[2]+f.R[2]*b.d+f.U[2]*b.h],N:f.U.slice(),fuse:b.fuse};})};
-   const camsNow=views.map((v,j)=>cameraFor(H[j],dt,v));const proj=[];
-   for(let j=0;j<views.length;j++){scene.view=H[j].i;R.renderView(views[j],camsNow[j],scene,W,Hh);proj[j]=K.map(k=>k._head?R.project(k._head.P):null);}
+   const camsNow=views.map((v,j)=>cameraFor(VK[j],dt,v));const proj=[];
+   for(let j=0;j<views.length;j++){scene.view=VK[j].i;R.renderView(views[j],camsNow[j],scene,W,Hh);proj[j]=K.map(k=>k._head?R.project(k._head.P):null);}
    x.drawImage(glc,0,0,W,Hh);
-   for(let j=0;j<views.length;j++){const v=views[j],k=H[j];x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();
+   for(let j=0;j<views.length;j++){const v=views[j],k=VK[j];x.save();x.beginPath();x.rect(v.x,v.y,v.w,v.h);x.clip();
     // heads drawn in 2D only when the portrait could not become a texture (cross-origin photo)
     for(const q of H)if(!R.headOK[q.i]&&proj[j][q.i]&&q._head){const p=proj[j][q.i],sz=q._head.size*2*v.h/(2*Math.tan(camsNow[j].fov/2)*p.w);if(sz>4&&sz<v.h)s.sprite(x,q.player,p.x,p.y,sz,{exact:true});}
-    drawHUD(x,{x:v.x,y:v.y+HUD_TOP,w:v.w,h:v.h-HUD_TOP},{k,i:k.player,mode:battle?'battle':timeTrial?'time':'race',laps:LAPS,rank:rankOf(k),total:K.length,t:simT,phase,lights,clock,course,other:vs?H[1-j]:null,karts:K,pad:{f:pads[k.player].f,ox:pads[k.player].ox,latch:pads[k.player].latch},msgs:k.msgs,rad:ctl.rad(),battleTime:BATTLE_TIME,foe:battle&&!vs?K[1]:null,
+    const ht=HUD_TOP+(on?30:0);   // online: clear of the duel chip
+    drawHUD(x,{x:v.x,y:v.y+ht,w:v.w,h:v.h-ht},{k,i:k.player,mode:battle?'battle':timeTrial?'time':'race',laps:LAPS,rank:rankOf(k),total:K.length,t:simT,phase,lights,clock,course,other:on?kartOf(them):vs?H[1-j]:null,karts:K,pad:{f:pads[k.player].f,ox:pads[k.player].ox,latch:pads[k.player].latch},msgs:k.msgs,rad:ctl.rad(),battleTime:BATTLE_TIME,foe:battle&&!vs?K[1]:battle&&on?kartOf(them):null,foeName:on?s.players[them].name:null,
      names:s.players.map(p=>p.name),hint:phase==='play'||phase==='count'?Math.min(1,hintT):0,wrongWay:k.wrongT>1,ghostBest:ghost?ghost.total:null});
     x.restore();}
-   if(vs){const hx=Math.floor(W/2);x.fillStyle='#120a2e';x.fillRect(hx-1,0,2,Hh);x.fillStyle='#ffe23a';x.fillRect(hx-.5,0,1,Hh);}
+   if(on&&!started)outlined(x,`WAITING FOR ${s.players[them].name.toUpperCase()}…`,W/2,Hh*.3,{size:Math.min(W*.05,24),fill:'#ffe23a',stroke:'#120a2e'});
+   if(vs&&!on){const hx=Math.floor(W/2);x.fillStyle='#120a2e';x.fillRect(hx-1,0,2,Hh);x.fillStyle='#ffe23a';x.fillRect(hx-.5,0,1,Hh);}
    if(phase==='end'){const a=Math.min(1,endT*3),size=Math.min(W*.06,Hh*.065,44);x.save();x.globalAlpha=a;x.fillStyle='rgba(18,10,46,.6)';x.fillRect(0,Hh*.42,W,Hh*.16);
     x.font=`900 ${size}px ${FONT}`;x.textAlign='center';x.textBaseline='middle';x.lineWidth=size*.2;x.strokeStyle='#120a2e';x.lineJoin='round';x.strokeText(endText,W/2,Hh/2);x.fillStyle='#ffe23a';x.fillText(endText,W/2,Hh/2);x.restore();}
   };
@@ -486,13 +574,15 @@ async function kart(s){
 
  // ---------------------------------------------------------------- game flow
  const seed=Math.floor(s.random()*1e9);
- const course=mode==='battle'?T.battleRing():await chooseCourse();
+ const course=mode==='battle'?T.battleRing():net&&me!==0?await waitCourse():await chooseCourse();
  if(!s.alive)return;
  const P=s.players.map(p=>p.name);
  if(s.solo)return soloKart(course,seed);
+ // online player 1's phone picks the CPU racers (from its own roster) and sends them with the course
+ let cpuIds=null;if(net&&mode!=='battle'){if(me===0){cpuIds=pickCPUs(MD.cpus,s.players.map(p=>p.character),seededRandom(seed),store.profile);nf.event({setup:{c:course.id,cpus:cpuIds}});}else cpuIds=setupMsg.cpus;}
  if(MD.vs){
-  const r=await runRace({course,humans:[0,1],cpus:MD.cpus,seed});if(!r||!s.alive)return;
-  const [a,b]=r.humans;
+  const r=await runRace({course,humans:[0,1],cpus:MD.cpus,seed,cpuIds});if(!r||!s.alive)return;
+  const [a,b]=net?await netResults(r):r.humans;if(!a||!s.alive)return;
   if(mode==='battle')return s.finish([a.balloons,b.balloons],`Balloon Battle: ${P[0]} ${a.balloons} balloons left, ${P[1]} ${b.balloons}.`);
   const prog=h=>h.finished?100:Math.min(99,Math.round(clamp(h.prog/LAPS,0,1)*100)),sc=[prog(a),prog(b)];
   if(a.finished||b.finished){const w=!b.finished||a.finished&&a.finishT<=b.finishT?0:1;sc[w]=100;sc[1-w]=Math.min(sc[1-w],99);}
@@ -516,6 +606,16 @@ async function kart(s){
  const d=h=>h.finished?`${ord(h.place)} (${fmtTime(h.finishT)})`:`${ord(h.place)}, did not finish`;
  s.finish([sa,sb],`${course.name} Grand Prix: ${P[0]} ${d(a)}, ${P[1]} ${d(b)}.`);
 
+ // online: both phones swap their final {fin} and score the same two results. Race: finish times on the shared clock
+ // (P1 wins a tie), places counted against the CPU finish times from player 1's phone. Battle: the battle ends at the
+ // first out (or time-up); each kart keeps the balloons its log shows at that moment.
+ async function netResults(r){
+  const F=[];F[me]=r.net;nf.finish(r.net);F[them]=await nf.remoteDone();if(!F[them])return [];
+  if(mode==='battle'){const E=Math.min(...F.map(f=>f.o>=0?f.o:Infinity),BATTLE_TIME),bal=f=>{let b=3;for(const [t,n] of f.log||[])if(t<=E)b=n;return b;};return F.map(f=>({balloons:bal(f)}));}
+  const cpuT=(F[0].c||[]).filter(t=>t>=0),h=F.map(f=>({finished:!!f.f,finishT:f.f?f.t:Infinity,prog:f.p}));
+  h.forEach((q,j)=>{const o=h[1-j];q.place=!q.finished?0:1+cpuT.filter(t=>t<q.finishT).length+(o.finished&&(o.finishT<q.finishT||o.finishT===q.finishT&&j===1)?1:0);});
+  return h;
+ }
  // ---------------------------------------------------------------- solo (1P arcade)
  // race: one Grand Prix vs 7 CPUs; the CPU player's character is your rival — finish ahead of it to win.
  // gp: course after course; a podium (top 3) moves you on, anything lower ends the cup run.
