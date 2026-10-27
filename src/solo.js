@@ -104,7 +104,9 @@ const NET_NATIVE=new Set(['trivia-mixed','trivia-nick90','trivia-dbz','trivia-hx
  'sonic-ring-rush','sonic-goal-dash','smb-world-1','smb-coin-rush','smb-castle-dash',
  'broforce-jungle','broforce-factory','broforce-city','broforce-desert',
  'raiders-ball-run','sewer-clash','league-penalties','fight-night','hyrule-rupee-rush','hyrule-sword-duel']);
-const netNative=g=>!!g&&NET_NATIVE.has(g.id);
+// whole engines that play natively online (every boss fight is co-op on two phones)
+const NET_ENGINES=new Set(['bossfight']);
+const netNative=g=>!!g&&(NET_NATIVE.has(g.id)||NET_ENGINES.has(g.engine));
 function duelOK(g){return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&(DUEL_KINDS.has(soloKind(g))||netNative(g));}
 // 1P board game (src/cpuBoard.js): the human plays games with a real CPU opponent ('cpu') or co-op games alone ('alone':
 // bosses, the horde); score-attack kinds can't decide a head-to-head board game, and CPU-teammate games are left out.

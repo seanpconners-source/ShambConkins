@@ -4,6 +4,8 @@
 // Moves ride the room of src/net.js as {k:'np', mid, i, m}; resent after a reconnect, duplicates dropped.
 const {sendNet,onNet}=require("src/net.js");
 const channels=new Map();   // mid → channel
+// moves that arrive before this phone has opened the game's channel (the other phone started first) wait here
+const early=new Map();   // mid → [[i, m]...]
 function openChannel(mid,me){
  const ch={mid,me,remote:1-me,out:[],got:[],read:0,waiters:[],gone:false,onGone:null,
   send(m){const i=ch.out.length;ch.out.push(m);sendNet({k:'np',mid,i,m});},
@@ -13,12 +15,15 @@ function openChannel(mid,me){
   ready(){return ch.read<ch.got.length&&ch.got[ch.read]!==undefined;},
   leave(){if(ch.gone)return;ch.gone=true;for(const r of ch.waiters.splice(0))r(null);ch.onGone?.();},
   close(){channels.delete(mid);for(const r of ch.waiters.splice(0))r(null);}};
- channels.set(mid,ch);return ch;
+ channels.set(mid,ch);
+ for(const [i,m] of early.get(mid)||[])if(ch.got[i]===undefined)ch.got[i]=m;early.delete(mid);
+ return ch;
 }
 function deliver(ch){while(ch.waiters.length&&ch.read<ch.got.length&&ch.got[ch.read]!==undefined)ch.waiters.shift()(ch.got[ch.read++]);}
 onNet(ev=>{
  if(ev.t==='msg'){const d=ev.d;
-  if(d?.k==='np'){const ch=channels.get(d.mid);if(!ch||!Number.isInteger(d.i)||d.i<0||d.i>100000)return;if(ch.got[d.i]===undefined)ch.got[d.i]=d.m??null;deliver(ch);return;}
+  if(d?.k==='np'){const ch=channels.get(d.mid);if(!Number.isInteger(d.i)||d.i<0||d.i>100000)return;
+   if(!ch){if(typeof d.mid==='string'||typeof d.mid==='number'){if(early.size>8)early.delete(early.keys().next().value);const q=early.get(d.mid)||[];if(q.length<2000)q.push([d.i,d.m??null]);early.set(d.mid,q);}return;}if(ch.got[d.i]===undefined)ch.got[d.i]=d.m??null;deliver(ch);return;}
   if((d?.k==='quit')){const ch=channels.get(d.mid);if(ch)ch.leave();}
   return;}
  // After a reconnect, send every move again (the other phone keeps the ones it already has).
