@@ -15,6 +15,10 @@ DONE: native online play for all 95 head-to-head games (batches 1-21, "Native on
 (main = TESTver = this release). Work from TESTver (or a branch made from it) and merge back there; main only gets releases.
 The Oct 25 branches `ccr-36294fb1-h63157` / `ccr-068b9171-9aysxt` (a chat that restarted from old main) are superseded.
 Next: owner playtest on two real phones and fix what they report (nothing has been tried on real phones yet).
+ONLINE CO-OP (Oct 26, branch `online-coop-kart`, not pushed/merged yet; owner's design answers in "Online co-op/live" below):
+games that used to run as two separate solo runs online now share one world, ONLY when `s.online` (1-phone 2P and 1P unchanged).
+Done: kart Time Trial → 1v1 race, Sonic ×2, SMB ×3, Broforce ×4, every boss fight. Left (owner picked all): Living Dead horde,
+Castlevania ×3, Warriors, DOOM co-op, Photo Hunt same photos, Kart GP (pass) as one GP with CPUs.
 
 ## Implemented systems
 - **Solo / 1P arcade (Oct 19 2026, batch 1 of 4, branch `claude/solo-mode-batch1`):** Arcade 1P / 2P switch + solo player
@@ -787,6 +791,24 @@ Next: owner playtest on two real phones and fix what they report (nothing has be
   Both pass online-native with and without LAG=80-150 (headless is slow, so races hit the 200 s cap; a scratch run with
   `finishLap` on one phone checked the finish path both ways, also under lag); kart.mjs, kart-track, 2P fuzz + 1P CPU
   clean. Real-phone feel (remote karts' smoothness, WebGL on two phones) untested.
+- **Online co-op/live (Oct 26, branch `online-coop-kart`):** owner: when online, turn-taking games become ONE shared world, each
+  on their own phone/camera, partner off screen = edge arrow (`engines/partnerArrow.js`); scoring/winner as before. Owner's rules:
+  lose a life → respawn next to the partner; out of lives → watch until the next level, back with 1 life; run ends when both are
+  out; first to the goal → partner gets 10 s (NET_GRACE) then is pulled along; both start the next level together. All ids are in
+  NET_NATIVE (solo.js; `NET_ENGINES` = whole engines, bossfight). Kart: `kartMode` 'time' online → 'duo' (MODES.duo, 2 karts,
+  items on, reuses the batch-21 race code). Sonic (sonic.js): own runner per phone, snapshots {p} + boss/capsule from player 1's
+  phone, events {r} ring {en} badnik {mo} monitor {bh} boss hit {cap}; boss act co-op (pilot joins both, highest score wins), Goal
+  Dash = live race. SMB (marioBros.js): one world per stage (`stageWorld`, key stage*16+lap) changed by events {cn,tl,it,ig,es,bd,
+  ax}; World 1 co-op (bubble respawn `p.bubble`, `p.out` spectates, {gl} goal → grace, {sc} stage done → both start next stage);
+  Coin Rush / Castle Dash live. Enemies wake/vanish by either runner (`reachX/backX`). Broforce (broforce.js): player 1's phone
+  ("host") runs foes/Devil/cage line-up (`pickNetCages`, GOLD cage = someone locked for both, frees for both), streams foes near
+  the other bro; the other phone sends hits {fh}/{bh}, replays enemy shots {fb,fn,fs,fw}, judges own hits; each phone breaks
+  terrain for its own shots {tb}, blasts {ex} (`remoteBlast`), cages {cg} (a freed prisoner revives an out partner), flags {fl};
+  chopper waits 10 s; `nextStage` syncs. Also fixed: bros could wall-climb out of the map (x clamp). Boss fights (bossFight.js):
+  each phone flies its own plane vs its own copy of the attacks; player 1's phone owns HP (other sends {d}), streams HP/phase/
+  mode; {rv} revive. netPlay.js: moves arriving before a channel opens are queued (`early`) — needed when an engine starts its
+  sync at once. Test: `tests/online-native.mjs` GAMES=... (+ new SHOT_JS = code run on Sean's phone before the screenshot, PROBE /
+  PROBE_S = print state every n s). All pass with bots; offline sonic/mario/broforce-turns/boss tests still pass. Real phones untested.
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
   their own visitors only. Checked on 140 sampled landmarks (all offer a visitor; v0.66.1 offered 51).
