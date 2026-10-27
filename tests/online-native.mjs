@@ -16,6 +16,8 @@ const browser=await launchBrowser();
 async function phone(tag){
  const [vw,vh]=(process.env.VIEW||'390x780').split('x').map(Number),ctx=await browser.newContext({viewport:{width:vw,height:vh}});const p=await ctx.newPage();const errors=[];
  p.on('pageerror',e=>errors.push(e.message));
+ // engine crashes are caught by the launcher (console.error 'Game engine failure'): count them as errors too
+ p.on('console',m=>{if(m.type()==='error'&&/engine failure|TypeError|ReferenceError|RangeError/.test(m.text()))errors.push('console: '+m.text().slice(0,300));});
  await p.addInitScript(h=>{try{localStorage.setItem('sc-net-host',h);}catch{}},HOST);
  await p.goto(url);await p.waitForSelector('.title-screen',{timeout:60000});await p.waitForFunction(()=>!document.getElementById('boot'));
  await p.evaluate(()=>{window.ShambConkins.store.profile.settings.reducedMotion=true;});
@@ -43,8 +45,9 @@ const step=ph=>ph.p.evaluate(()=>{
 for(const id of GAMES){
  console.log('== '+id);
  await act(A,'duel-propose',{id});await waitDialog(B,/challenges you/);await choose(B,'Play');
- for(const ph of [A,B])await waitDialog(ph,/Head to head/,15000).then(()=>choose(ph,'Start game'),()=>check(false,`${ph.tag}: rules card says head to head`));
- await A.p.waitForFunction(()=>!!window.ShambConkins.store.session,null,{timeout:20000});await B.p.waitForFunction(()=>!!window.ShambConkins.store.session,null,{timeout:20000});
+ for(const ph of [A,B])await waitDialog(ph,/Head to head/,15000).then(()=>choose(ph,'Start game'),async()=>{check(false,`${ph.tag}: rules card says head to head`);console.log(' dialog:',(await ph.p.evaluate(()=>document.querySelector('#dialog[open]')?.innerText||'(none)')).slice(0,300).replace(/\s+/g,' '));});
+ try{await A.p.waitForFunction(()=>!!window.ShambConkins.store.session,null,{timeout:20000});await B.p.waitForFunction(()=>!!window.ShambConkins.store.session,null,{timeout:20000});}
+ catch(err){console.log(' no session:',...await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>(document.querySelector('#dialog[open]')?.innerText||document.body.innerText||'').slice(0,240).replace(/\s+/g,' ')))),[...A.errors,...B.errors].slice(0,3).join(' | '));throw err;}
  const same=await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>{const s=window.ShambConkins.store.session;return JSON.stringify({seed:s.seed,me:s.online?.me,q:s.debug?.question?.id??s.debug?.rounds?.[0]?.id??null});})));
  const [ja,jb]=same.map(x=>JSON.parse(x));
  check(ja.seed===jb.seed&&ja.me===0&&jb.me===1,`${id}: same seed, Sean plays seat 1 and Amber seat 2`);

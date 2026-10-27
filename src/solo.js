@@ -105,7 +105,7 @@ const NET_NATIVE=new Set(['trivia-mixed','trivia-nick90','trivia-dbz','trivia-hx
  'broforce-jungle','broforce-factory','broforce-city','broforce-desert',
  'raiders-ball-run','sewer-clash','league-penalties','fight-night','hyrule-rupee-rush','hyrule-sword-duel']);
 // whole engines that play natively online (every boss fight is co-op on two phones)
-const NET_ENGINES=new Set(['bossfight']);
+const NET_ENGINES=new Set(['bossfight','horde']);
 const netNative=g=>!!g&&(NET_NATIVE.has(g.id)||NET_ENGINES.has(g.engine));
 function duelOK(g){return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&(DUEL_KINDS.has(soloKind(g))||netNative(g));}
 // 1P board game (src/cpuBoard.js): the human plays games with a real CPU opponent ('cpu') or co-op games alone ('alone':
