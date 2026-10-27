@@ -705,56 +705,70 @@ dialog.sheet button:disabled .choice-badge{background:#8b8f99}
 @media(max-width:430px){.topbar .top-logo{width:104px!important}.topbar .top-actions{gap:4px}.topbar .top-actions button{padding:7px 8px}.top-actions .fullscreen-toggle{font-size:15px;min-width:32px;padding:6px!important}}
 /* Title screen (home): dark animated backdrop, outlined sticker-style buttons that match the logo outline. */
 body[data-view="home"]{background:#0c0814}
-.title-screen{--ts-ink:#0b0710;--ts-cream:#f3e6c4;--ts-gold:#ffc83d;--ts-gold2:#f28a1a;position:relative;isolation:isolate;display:flex!important;flex-direction:column;align-items:center;justify-content:space-between;gap:10px;padding:max(12px,env(safe-area-inset-top)) 16px max(10px,env(safe-area-inset-bottom))!important;color:var(--ts-cream);font-family:"Arial Black",Arial,Helvetica,sans-serif}
+/* Title screen (homeHTML in ui.js). Three tiers: the gold play button, an even 2x2 grid of the main sections, a quiet
+   dock of small extras. One plum surface for everything; gold only on play. Keep .ts-play free of transform animations. */
+.title-screen{--ts-ink:#0b0710;--ts-cream:#f3e6c4;--ts-mute:#b9a8d6;--ts-gold:#ffc83d;--ts-gold2:#d9a441;--ts-col:440px;--ts-gap:12px;--ts-surf:linear-gradient(180deg,#2c2139 0%,#1b1325 100%);--ts-surf-hi:linear-gradient(180deg,#372a47 0%,#21182d 100%);--ts-edge:inset 0 0 0 1px #ffffff12,inset 0 2px 0 #ffffff17;position:relative;isolation:isolate;display:flex!important;flex-direction:column;align-items:center;justify-content:space-between;gap:10px;padding:max(12px,env(safe-area-inset-top)) 16px max(8px,env(safe-area-inset-bottom))!important;color:var(--ts-cream);font-family:"Arial Black",Arial,Helvetica,sans-serif}
 .ts-bg{position:absolute;inset:0;z-index:-1;overflow:hidden;background:radial-gradient(ellipse 90% 55% at 50% 30%,#4a2370 0%,#24123a 45%,transparent 75%),radial-gradient(ellipse 70% 40% at 50% 105%,#7a2a1a88,transparent 70%),linear-gradient(180deg,#140b22 0%,#0c0814 60%,#08050d 100%)}
 .ts-bg::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,#000a 100%);pointer-events:none}
 .ts-rays{position:absolute;left:50%;top:30%;width:180vmax;height:180vmax;margin:-90vmax 0 0 -90vmax;background:repeating-conic-gradient(from 0deg,#ffd27a10 0deg 7deg,transparent 7deg 20deg);-webkit-mask:radial-gradient(circle,#000 0%,transparent 45%);mask:radial-gradient(circle,#000 0%,transparent 45%);animation:ts-spin 90s linear infinite}
 .ts-embers i{position:absolute;left:var(--x);bottom:-10px;width:var(--s);height:var(--s);border-radius:50%;background:#ffb347;box-shadow:0 0 6px 2px #ff7a1a99;opacity:0;animation:ts-ember var(--d) linear var(--t) infinite}
-.ts-top{width:100%;max-width:560px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0}
-.ts-profile{display:flex;align-items:center;gap:9px;min-width:0;padding:4px 14px 4px 4px;background:#0b0710b8;border:2px solid #000;border-radius:999px;box-shadow:inset 0 1px 0 #ffffff1a,0 4px 14px #0008}
+/* top bar: who is playing on the left, full screen + settings on the right */
+.ts-top{width:100%;max-width:calc(var(--ts-col) + 120px);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0}
+.ts-profile{display:flex;align-items:center;gap:9px;min-width:0;padding:4px 14px 4px 4px;background:#0b0710b8;border:1px solid #ffffff14;border-radius:999px;box-shadow:0 4px 14px #0008}
 .ts-avatars{display:flex;flex-shrink:0}
-.title-screen .ts-avatar{width:36px;height:36px;margin:0;border-radius:50%;border:2px solid var(--ts-gold);background:#2b1a40;box-shadow:0 0 0 2px #000}
+.title-screen .ts-avatar{width:34px;height:34px;margin:0;overflow:hidden;border-radius:50%;border:2px solid var(--ts-gold);background:#2b1a40;box-shadow:0 0 0 2px #000}
 .title-screen .ts-avatar+.ts-avatar{margin-left:-10px;border-color:#ff7bb0}
-.title-screen .ts-avatar{overflow:hidden}
 .ts-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .ts-who{display:flex;flex-direction:column;min-width:0;text-align:left;line-height:1.15}
-.ts-who b{font-size:13px;color:#fff;white-space:nowrap}
+.ts-who b{font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ts-who small{font:700 10px Arial,sans-serif;color:#d9c9f3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ts-icons{display:flex;gap:8px;flex-shrink:0}
-.title-screen button.ts-icon{width:44px;height:44px;min-height:0;min-width:0;padding:0!important;display:grid;place-items:center;font-size:21px;line-height:1;color:var(--ts-cream);background:linear-gradient(180deg,#2b2038 0%,#1a1224 100%);border:2px solid #000;border-radius:14px;box-shadow:inset 0 0 0 1px #ffffff12,inset 0 2px 0 #ffffff1a,0 4px 0 #000}
-.title-screen button.ts-icon:active{transform:translateY(3px);box-shadow:inset 0 0 0 1px #ffffff12,inset 0 2px 0 #ffffff1a,0 1px 0 #000}
-.title-screen .ts-main{flex:1;min-height:0;width:min(460px,100%);justify-content:center;gap:12px;overflow:visible}
+.title-screen button.ts-icon{width:42px;height:42px;min-height:0;min-width:0;padding:0!important;display:grid;place-items:center;font-size:20px;line-height:1;color:var(--ts-cream);background:#0b0710b8;border:1px solid #ffffff1c;border-radius:50%;box-shadow:0 4px 14px #0008}
+.title-screen button.ts-icon:hover{background:#2a1f37;border-color:#ffffff33}
+.title-screen button.ts-icon:active{transform:scale(.94)}
+/* centre column: logo, play, tiles */
+.title-screen .ts-main{flex:1;min-height:0;width:min(var(--ts-col),100%);justify-content:center;gap:var(--ts-gap);overflow:visible}
 .ts-logo{position:relative;width:100%;display:flex;justify-content:center;animation:ts-float 5s ease-in-out infinite}
 .ts-logo::before{content:"";position:absolute;inset:-10% 5%;background:radial-gradient(ellipse at center,#ffcf7a55,#b0428a22 45%,transparent 70%);filter:blur(10px);z-index:-1;animation:ts-pulse 4s ease-in-out infinite}
-.title-screen .ts-logo .hero-logo{width:min(440px,94%)!important;max-height:min(170px,22vh)!important;height:auto;filter:drop-shadow(0 8px 0 #000a) drop-shadow(0 14px 24px #000c)}
-.ts-tagline{font:900 11px/1.2 Arial,sans-serif;letter-spacing:.24em;text-transform:uppercase;color:#e7d6ff;text-shadow:0 2px 0 #000,0 0 12px #9b5cff88}
-.ts-levels{display:flex;gap:6px;justify-content:center}
-.ts-levels span{font:900 10px/1 Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:6px 11px;border:2px solid #000;border-radius:999px;background:#140d1fcc;box-shadow:inset 0 0 0 1px currentColor,0 3px 0 #000;opacity:.95}
-.ts-levels .mind{color:#e8b54a}
-.ts-levels .body{color:#e88a5a}
-.ts-levels .spirit{color:#ae8cf0}
-.title-screen .ts-main .home-stack{width:100%;display:grid;gap:12px;margin:8px 0 0}
-.title-screen .home-stack button.ts-play{position:relative;overflow:hidden;min-height:68px;padding:0 20px;display:flex;align-items:center;justify-content:center;gap:12px;font:900 24px/1 "Arial Black",Arial,sans-serif;letter-spacing:.06em;color:#ffd77e;background:linear-gradient(180deg,#33243f 0%,#1c1326 100%);border:2px solid #000;border-radius:20px;box-shadow:inset 0 0 0 2px #d9a441,inset 0 3px 0 #ffffff22,0 6px 0 #000,0 10px 18px #ffb34722;text-shadow:0 2px 0 #000,0 0 14px #ffb34766;animation:ts-breathe 2.6s ease-in-out infinite}
-.title-screen .home-stack button.ts-play::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(100deg,transparent,#ffffffa0,transparent);transform:skewX(-18deg);animation:ts-shine 3.4s ease-in-out infinite}
-.title-screen .home-stack button.ts-play:active{animation:none;transform:translateY(5px);box-shadow:inset 0 0 0 2px #d9a441,inset 0 3px 0 #ffffff22,0 1px 0 #000}
-.ts-play-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:linear-gradient(180deg,#ffd77e,#d9a441);color:#1c1326;font-size:15px;padding-left:3px;box-sizing:border-box;text-shadow:none;box-shadow:0 2px 0 #000}
-.title-screen .home-stack button.ts-secondary{min-height:48px;padding:0 16px;font:900 15px/1 "Arial Black",Arial,sans-serif;letter-spacing:.08em;color:var(--ts-cream);background:linear-gradient(180deg,#2b2038 0%,#1a1224 100%);border:2px solid #000;border-radius:16px;box-shadow:inset 0 0 0 1px #ffffff12,inset 0 2px 0 #ffffff1a,0 5px 0 #000;text-shadow:0 2px 0 #000}
-.title-screen .home-stack button.ts-secondary:active{transform:translateY(4px);box-shadow:inset 0 0 0 1px #ffffff12,inset 0 2px 0 #ffffff1a,0 1px 0 #000}
-.ts-tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.title-screen .home-stack button.ts-tile{min-height:78px;padding:10px 12px;display:flex;align-items:center;gap:10px;text-align:left;color:var(--ts-cream);background:linear-gradient(180deg,#2b2038 0%,#1a1224 100%);border:2px solid #000;border-radius:18px;box-shadow:inset 0 0 0 1px #ffffff12,inset 0 2px 0 #ffffff1a,0 5px 0 #000}
-.title-screen .home-stack button.ts-tile:active{transform:translateY(4px);box-shadow:inset 0 0 0 1px #ffffff12,inset 0 2px 0 #ffffff1a,0 1px 0 #000}
-.title-screen .home-stack button:is(.ts-tile,.ts-secondary,.ts-icon):hover,.title-screen button.ts-icon:hover{background:linear-gradient(180deg,#362848 0%,#20172d 100%)}
+.title-screen .ts-logo .hero-logo{width:min(420px,92%)!important;max-height:min(176px,23vh)!important;height:auto;filter:drop-shadow(0 8px 0 #000a) drop-shadow(0 14px 24px #000c)}
+.title-screen .ts-main .home-stack{width:100%;display:grid;gap:var(--ts-gap);margin:6px 0 0}
+.ts-primary{display:grid;gap:var(--ts-gap)}
+.ts-primary.has-run{grid-template-columns:minmax(0,1fr) minmax(108px,32%)}
+.title-screen .home-stack button.ts-play{position:relative;overflow:hidden;min-height:72px;padding:0 18px;display:flex;align-items:center;justify-content:center;gap:12px;font:900 24px/1 "Arial Black",Arial,sans-serif;letter-spacing:.06em;color:#ffd77e;background:var(--ts-surf);border:2px solid #000;border-radius:20px;box-shadow:inset 0 0 0 2px var(--ts-gold2),inset 0 3px 0 #ffffff22,0 6px 0 #000,0 10px 18px #ffb34722;text-shadow:0 2px 0 #000,0 0 14px #ffb34766;animation:ts-breathe 2.6s ease-in-out infinite}
+.title-screen .home-stack button.ts-play::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(100deg,transparent,#ffffff8a,transparent);transform:skewX(-18deg);animation:ts-shine 3.4s ease-in-out infinite;pointer-events:none}
 .title-screen .home-stack button.ts-play:hover{background:linear-gradient(180deg,#3b2a49 0%,#21172c 100%)}
-.ts-tile-icon{flex-shrink:0;display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#0b0710;box-shadow:inset 0 0 0 1px #d9a44166;font-size:23px}
-.ts-tile-text{display:flex;flex-direction:column;gap:4px;min-width:0}
-.ts-tile-text b{font:900 15px/1.05 "Arial Black",Arial,sans-serif;text-shadow:0 2px 0 #0007}
-.ts-tile-text small{font:800 11px Arial,sans-serif;color:#b9a8d6;letter-spacing:.04em}
-.title-screen .ts-foot>span{display:block}
-.title-screen .ts-foot{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;gap:4px;margin:0;font:700 10px Arial,sans-serif;letter-spacing:.12em;color:#9c8bb8;flex-shrink:0}
-.ts-foot nav{display:flex;flex-wrap:wrap;justify-content:center;gap:2px 4px}
-.title-screen button.ts-link{min-height:32px;padding:4px 10px;background:none;border:0;box-shadow:none;border-radius:8px;font:700 12px Arial,sans-serif;color:#cdbfe6;text-decoration:none}
-.title-screen button.ts-link:hover{color:#fff;background:#ffffff12}
-.title-screen button.ts-danger{color:#ff8a8a}
+.title-screen .home-stack button.ts-play:active{animation:none;transform:translateY(5px);box-shadow:inset 0 0 0 2px var(--ts-gold2),inset 0 3px 0 #ffffff22,0 1px 0 #000}
+.ts-play-icon{flex-shrink:0;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:linear-gradient(180deg,#ffd77e,#d9a441);color:#1c1326;font-size:15px;padding-left:3px;box-sizing:border-box;text-shadow:none;box-shadow:0 2px 0 #000}
+.title-screen .home-stack button.ts-secondary{min-height:72px;padding:0 10px;font:900 14px/1.1 "Arial Black",Arial,sans-serif;letter-spacing:.07em;color:var(--ts-cream);background:var(--ts-surf);border:2px solid #000;border-radius:20px;box-shadow:var(--ts-edge),0 6px 0 #000;text-shadow:0 2px 0 #000}
+/* main sections: four equal tiles */
+.ts-tiles{display:grid;grid-template-columns:1fr 1fr;gap:var(--ts-gap)}
+.title-screen .home-stack button.ts-tile{min-width:0;min-height:108px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;letter-spacing:0;color:var(--ts-cream);background:var(--ts-surf);border:2px solid #000;border-radius:18px;box-shadow:var(--ts-edge),0 5px 0 #000}
+.title-screen .home-stack button:is(.ts-tile,.ts-secondary):hover{background:var(--ts-surf-hi)}
+.title-screen .home-stack button:is(.ts-tile,.ts-secondary):active{transform:translateY(4px);box-shadow:var(--ts-edge),0 1px 0 #000}
+.ts-tile-icon{flex-shrink:0;display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:#0b0710;box-shadow:inset 0 0 0 1px #ffffff1f,0 2px 0 #0008;font:400 24px/1 system-ui,sans-serif}
+.ts-tile-text{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;max-width:100%}
+.ts-tile-text b{font:900 15px/1.05 "Arial Black",Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;text-shadow:0 2px 0 #0007}
+.ts-tile-text small{max-width:100%;font:700 11.5px/1.15 Arial,sans-serif;color:var(--ts-mute);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title-screen .ts-pick-faces{display:flex;align-items:center;justify-content:center}
+.title-screen .ts-pick-face{width:30px;height:30px;margin:0;overflow:hidden;border-radius:50%;border:2px solid var(--ts-gold);background:#2b1a40}
+.title-screen .ts-pick-face+.ts-pick-face{margin-left:-9px;border-color:#ff7bb0}
+.title-screen .ts-pick-face img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+/* quiet dock: small, equal, icon over label */
+.title-screen .ts-foot{width:min(var(--ts-col),100%);display:flex;flex-direction:column;align-items:stretch;gap:5px;margin:0;flex-shrink:0;font:700 10px Arial,sans-serif;color:#8d7da8}
+.ts-dock{display:flex;justify-content:center;gap:2px;padding:4px;border-radius:18px;background:#0b0710a6;border:1px solid #ffffff12}
+.ts-dock [hidden]{display:none!important}
+.title-screen .ts-dock button.ts-dock-btn{flex:1 1 0;min-width:0;max-width:110px;min-height:48px;padding:5px 2px!important;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:0;border-radius:14px;box-shadow:none;color:var(--ts-mute);font:800 10.5px/1 Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.title-screen .ts-dock button.ts-dock-btn:hover{color:#fff;background:#ffffff10}
+.title-screen .ts-dock button.ts-dock-btn:active{background:#ffffff18}
+.ts-dock-icon{position:relative;display:grid;place-items:center;height:20px;color:var(--ts-cream)}
+.ts-dock-icon svg{display:block;width:20px;height:20px}
+.title-screen .ts-dock button.ts-backup{color:#ffe2a6}
+.ts-dot{position:absolute;top:-3px;right:-6px;width:8px;height:8px;border-radius:50%;background:var(--ts-gold);box-shadow:0 0 0 2px #0b0710,0 0 8px #ffc83d}
+.title-screen .ts-dock button.ts-exit .ts-dock-icon{color:#ff9a8a}
+.title-screen .ts-foot>.ts-ver{display:block;text-align:center;letter-spacing:.16em;opacity:.8}
+.title-screen .ts-pick .ts-tile-icon{width:auto;min-width:46px;padding:0 7px}
+/* the "now playing" chip sits above the dock on the title screen */
+body[data-view="home"] .music-chip{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .title-screen button:focus-visible{outline:3px solid #fff;outline-offset:3px}
 @keyframes ts-spin{to{transform:rotate(360deg)}}
 @keyframes ts-ember{0%{transform:translate(0,0);opacity:0}10%{opacity:.9}100%{transform:translate(30px,-105vh);opacity:0}}
@@ -762,16 +776,16 @@ body[data-view="home"]{background:#0c0814}
 @keyframes ts-pulse{0%,100%{opacity:.7}50%{opacity:1}}
 @keyframes ts-breathe{0%,100%{box-shadow:inset 0 0 0 2px #d9a441,inset 0 3px 0 #ffffff22,0 6px 0 #000,0 10px 16px #ffb34718}50%{box-shadow:inset 0 0 0 2px #ffcf6a,inset 0 3px 0 #ffffff22,0 6px 0 #000,0 12px 30px #ffb3474d}}
 @keyframes ts-shine{0%,55%{left:-40%}85%,100%{left:130%}}
-@media(min-height:720px){.title-screen .ts-main{gap:14px}.title-screen .ts-logo{margin-bottom:6px}.title-screen .home-stack button.ts-play{min-height:76px}.title-screen .home-stack button.ts-tile{min-height:96px;flex-direction:column;justify-content:center;text-align:center;gap:8px}.title-screen .ts-tile-text{align-items:center}}
-@media(max-height:680px){.title-screen .ts-main{gap:8px}.title-screen .ts-logo .hero-logo{max-height:18vh!important}.title-screen .home-stack button.ts-play{min-height:58px;font-size:21px}.title-screen .home-stack button.ts-tile{min-height:64px}.ts-tile-icon{width:36px;height:36px;font-size:20px}}
-@media(max-width:430px){.ts-tagline{font-size:10px;letter-spacing:.14em}.title-screen button.ts-link{padding:4px 7px;font-size:11.5px}}
-@media(max-width:360px){.ts-tile-text b{font-size:13px}.title-screen .home-stack button.ts-tile{padding:8px;gap:7px}.ts-who small{display:none}}
-/* Short landscape phones: logo on the left, menu on the right. */
-@media(orientation:landscape) and (max-height:520px){.title-screen{gap:4px}.title-screen .ts-main{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto;column-gap:22px;row-gap:6px;width:min(860px,100%);align-content:center;align-items:center}.title-screen .ts-main>.ts-logo,.title-screen .ts-main>.ts-tagline,.title-screen .ts-main>.ts-levels{grid-column:1}.title-screen .ts-main>.home-stack{grid-column:2;grid-row:1/4;margin:0;gap:9px}.title-screen .ts-logo .hero-logo{max-height:28vh!important}.ts-levels span{padding:4px 9px}.title-screen button.ts-icon{width:38px;height:38px;font-size:18px}.title-screen .ts-avatar{width:30px;height:30px}.title-screen .home-stack button.ts-play{min-height:54px;font-size:20px}.title-screen .home-stack button.ts-secondary{min-height:40px}.title-screen .home-stack button.ts-tile{min-height:58px}.title-screen .ts-foot{flex-direction:row;justify-content:space-between}.title-screen button.ts-link{min-height:26px;padding:2px 8px}}
+/* big screens: a slightly wider column and a bigger logo */
+@media(min-width:900px) and (min-height:860px){.title-screen{--ts-col:480px;--ts-gap:14px}.title-screen .ts-logo .hero-logo{max-height:min(220px,24vh)!important;width:min(470px,96%)!important}.title-screen .home-stack button.ts-play{min-height:80px;font-size:26px}.title-screen .home-stack button.ts-secondary{min-height:80px}.title-screen .home-stack button.ts-tile{min-height:122px}}
+/* shorter phones: tiles turn into icon-beside-text rows */
+@media(max-height:660px){.title-screen .ts-foot>.ts-ver{display:none}}
+@media(max-height:700px){.title-screen{--ts-gap:10px}.title-screen .ts-logo .hero-logo{max-height:19vh!important}.title-screen .home-stack button.ts-play{min-height:62px;font-size:21px}.title-screen .home-stack button.ts-secondary{min-height:62px}.title-screen .home-stack button.ts-tile{min-height:70px;flex-direction:row;justify-content:flex-start;gap:10px;padding:8px 10px;text-align:left}.title-screen .ts-tile-text{align-items:flex-start}.ts-tile-icon{width:40px;height:40px;font-size:21px;border-radius:12px}.title-screen .ts-pick .ts-tile-icon{width:40px;min-width:0;padding:0}.title-screen .ts-pick-face{width:24px;height:24px}.title-screen .ts-pick-face+.ts-pick-face{margin-left:-8px}.ts-tile-text b{font-size:14px}.title-screen .ts-dock button.ts-dock-btn{min-height:44px}}
+@media(max-width:370px){.ts-who small{display:none}.ts-tile-text b{font-size:13px;letter-spacing:.01em}.ts-tile-text small{font-size:11px}.title-screen .home-stack button.ts-play{font-size:20px}}
+/* short landscape phones: logo on the left, play + tiles on the right, dock along the bottom */
+@media(orientation:landscape) and (max-height:520px){.title-screen{--ts-gap:8px;gap:6px}.title-screen .ts-top{max-width:none}.title-screen .ts-main{display:grid;grid-template-columns:1fr minmax(0,400px);column-gap:28px;width:min(880px,100%);align-content:center;align-items:center}.title-screen .ts-main>.ts-logo{grid-column:1}.title-screen .ts-main>.home-stack{grid-column:2;margin:0}.title-screen .ts-logo .hero-logo{max-height:46vh!important;width:min(380px,100%)!important}.title-screen button.ts-icon{width:36px;height:36px;font-size:17px}.title-screen .ts-avatar{width:28px;height:28px}.ts-profile{padding:3px 12px 3px 3px}.title-screen .home-stack button.ts-play{min-height:54px;font-size:20px}.title-screen .home-stack button.ts-secondary{min-height:54px;font-size:13px}.title-screen .home-stack button.ts-tile{min-height:56px;padding:6px 10px}.ts-tile-icon{width:36px;height:36px;font-size:19px}.title-screen .ts-pick .ts-tile-icon{width:36px}.title-screen .ts-pick-face{width:22px;height:22px}.ts-tile-text{gap:3px}.title-screen .ts-foot{width:min(880px,100%);flex-direction:row;align-items:center;justify-content:center;gap:12px}.ts-dock{padding:2px}.title-screen .ts-dock button.ts-dock-btn{min-height:34px;flex-direction:row;gap:7px;padding:4px 12px!important;max-width:none;flex:0 0 auto}.ts-dock-icon,.ts-dock-icon svg{height:18px;width:18px}.title-screen .ts-foot>.ts-ver{display:block;position:absolute;right:16px;bottom:max(12px,env(safe-area-inset-bottom))}body[data-view="home"] .music-chip{bottom:calc(58px + env(safe-area-inset-bottom,0px))}}
 @media(prefers-reduced-motion:reduce){.ts-rays,.ts-embers i,.ts-logo,.ts-logo::before,.title-screen .home-stack button.ts-play,.title-screen .home-stack button.ts-play::after{animation:none}.ts-embers{display:none}}
-/* Title screen: exit button + the closed screen shown when the browser won't close the tab. */
-.title-screen .home-stack button.ts-exit{min-height:42px;display:flex;align-items:center;justify-content:center;gap:9px;font-size:13px;color:#cdbfe6}
-.ts-exit-icon{font:900 15px/1 Arial,sans-serif;color:#ff9a8a}
+/* The closed screen shown when the browser won't close the tab. */
 .exit-screen{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:16px;box-sizing:border-box;background:radial-gradient(circle at 50% 35%,#2a1c3a 0%,#0b0710 70%)}
 .exit-card{width:100%;max-width:420px;display:grid;gap:14px;justify-items:center;text-align:center;color:#f3e9d2}
 .exit-card h2{margin:0;font:900 26px/1.1 "Arial Black",Arial,sans-serif;color:#ffd77e;text-shadow:0 3px 0 #000}
@@ -909,9 +923,6 @@ body.gb-open{overflow:hidden}
 .trivia-burst{animation:trivia-feedback-pop .34s ease-out both}
 @keyframes trivia-feedback-pop{0%{transform:scale(.94);opacity:.75}55%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
 @media(prefers-reduced-motion:reduce){.trivia-burst{animation:none}}
-.title-screen .home-stack button.ts-backup{min-height:46px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;column-gap:9px;row-gap:2px;font-size:13px;color:#ffe2a6;border-color:#c99a3d88}
-.title-screen .home-stack button.ts-backup small{flex-basis:100%;font:600 11px/1.1 Arial,sans-serif;letter-spacing:.02em;color:#cdbfe6}
-.ts-icons [hidden]{display:none!important}
 #sc-dl{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:2147482000;width:min(88vw,360px);padding:9px 14px 11px;border-radius:14px;background:#160f20ee;border:1px solid #c99a3d66;box-shadow:0 6px 22px #000a;color:#f1e6c8;font:700 13px/1.2 system-ui,sans-serif;text-align:center;pointer-events:none}
 #sc-dl i{display:block;height:5px;margin-top:7px;border-radius:3px;background:#2a2233;overflow:hidden}#sc-dl b{display:block;height:100%;width:0;background:linear-gradient(90deg,#b8862f,#ffe2a6);transition:width .3s}
 /* Online duels (src/duel.js): room dialog, room line in the Arcade strip, live opponent score during a game */
@@ -920,13 +931,11 @@ body.gb-open{overflow:hidden}
 .net-room b{color:#ffe2a6;letter-spacing:.03em}.net-room .net-peer{font-size:12px;opacity:.9}
 #duel-chip{position:fixed;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));z-index:2147481000;padding:6px 12px;border-radius:999px;background:#160f20e6;border:1px solid #c99a3d77;color:#ffe2a6;font:800 13px/1.2 system-ui,sans-serif;pointer-events:none;box-shadow:0 4px 14px #0009}
 /* Online board game (src/netBoard.js): read-only dialogs while the other phone decides, the room's board button,
-   the title-screen Play online button and the other phone's panel on the shared New Game screen. */
+   the other phone's panel on the shared New Game screen. */
 .dialog-watch{margin:10px 0 2px;padding:8px 12px;border-radius:12px;background:#ffffff12;border:1px dashed #c99a3d88;color:#ffe2a6;font-weight:700;text-align:center;animation:watchPulse 1.6s ease-in-out infinite}
 @keyframes watchPulse{50%{opacity:.6}}
 .reduced-motion .dialog-watch{animation:none}
 .net-room .net-board{font-weight:800}
-.title-screen .home-stack button.ts-online{min-height:46px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;column-gap:9px;row-gap:2px;font-size:13px;color:#d9f1ff}
-.title-screen .home-stack button.ts-online small{flex-basis:100%;font:600 11px/1.1 Arial,sans-serif;letter-spacing:.02em;color:#cdbfe6}
 .cs-remote .cs-remote-name{display:block;font-size:15px;color:#ffe2a6}
 .cs-remote .cs-remote-note{margin:6px 0 0;text-align:center;font-size:12px;opacity:.85}
 .net-setup .setup-controls select:disabled,.net-setup .setup-controls input:disabled{opacity:.6}

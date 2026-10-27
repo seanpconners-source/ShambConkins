@@ -857,6 +857,13 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   `styles.css`). Logo `ART.brand` = `assets/shambconkins-logo.webp` (transparent + black outline, from
   `tools/brand-logo.py`; original in `assets/originals/brand/`). Keep the NEW GAME button free of transform animations
   (Playwright clicks need it stable). Screenshots: `tests/homeshots.mjs`.
+  Oct 27 tidy (owner: menu was messy): three tiers only: gold play button (CONTINUE + a NEW GAME button beside it when a run
+  is saved), an even 2x2 grid of tiles (Players = Choose Characters, Online, Arcade, Collection), and a quiet bottom dock
+  (About, Back up when due (`.ts-backup`, gold dot), Restore on an empty save, Install `.ts-install`, Exit) with line-icon SVGs
+  (`TS_ICON` in ui.js). No tagline / Mind-Body-Spirit pills / pass-and-play footer; page title is just "ShambConkins".
+  Erase progress and Clear run moved to a "Start over" zone at the bottom of Settings (confirm, Keep returns to Settings).
+  `help` (dock About + the board's help button) = `aboutHTML()` in app.js: credits (Sean Conners, `RELEASED` month in
+  version.js: update it with VERSION when releasing), how to play, modes, board tips (details), sources, "Art sources" button.
 
 - v0.47.0: interface theme. `src/theme.css` (appended after styles.css by `tools/build.mjs`) restyles every menu, HUD,
   dialog, sheet and minigame frame in the title-screen look via tokens (`--t-bg0`, `--t-s1/s2/s3`, `--t-acc/acc2`, ...)

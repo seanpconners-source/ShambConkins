@@ -16,7 +16,7 @@ const argPwa = process.argv.indexOf('--pwa');
 const pwaDir = argPwa < 0 ? null : path.resolve(root, process.argv[argPwa + 1] && !process.argv[argPwa + 1].startsWith('--') ? process.argv[argPwa + 1] : 'dist/pwa');
 // Web app manifest: written into the PWA folder and embedded in the game (src/pwa.js builds one from it when the
 // page is served without the folder). Icon files live in assets/pwa/.
-const PWA_MANIFEST = {name: 'ShambConkins', short_name: 'ShambConkins', description: 'The home game that keeps getting worse: a pass-and-play party board game.',
+const PWA_MANIFEST = {name: 'ShambConkins', short_name: 'ShambConkins', description: 'ShambConkins: a party board game for two, with minigames, unlockable characters and online play.',
   id: './', start_url: './', scope: './', display: 'fullscreen', orientation: 'any', background_color: '#000000', theme_color: '#12130f', categories: ['games', 'entertainment'],
   icons: [{src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any'}, {src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any'},
     {src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable'}]};
