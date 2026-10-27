@@ -48,15 +48,6 @@ jobs:
            for(const x of e.logs||[])if(x.level!=="log")console.log("LOG",x.level,JSON.stringify(x.message).slice(0,300));
            if(e.outcome&&e.outcome!=="ok"&&e.outcome!=="canceled")console.log("OUTCOME",e.outcome,JSON.stringify(e.event).slice(0,300));}
           console.log("events",n,JSON.stringify(out));'
-      - name: Cloudflare analytics (last 3 days)
+      - name: Cloudflare analytics (last 30 hours)
         continue-on-error: true
-        run: |
-          SINCE=$(date -u -d '3 days ago' +%F)
-          q() { node -e 'const [acc,since,body]=process.argv.slice(1);process.stdout.write(JSON.stringify({query:`query($acc:String!,$since:Date!){viewer{accounts(filter:{accountTag:$acc}){${body}}}}`,variables:{acc,since}}))' "$CLOUDFLARE_ACCOUNT_ID" "$SINCE" "$1" |
-            curl -sS https://api.cloudflare.com/client/v4/graphql -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H 'Content-Type: application/json' --data @- ; echo; }
-          echo "--- Durable Object invocations by day/status"
-          q 'durableObjectsInvocationsAdaptiveGroups(limit:200,filter:{date_geq:$since},orderBy:[date_ASC]){sum{requests errors} dimensions{date status}}'
-          echo "--- Durable Object usage by day"
-          q 'durableObjectsPeriodicGroups(limit:200,filter:{date_geq:$since},orderBy:[date_ASC]){sum{activeTime cpuTime inboundWebsocketMsgCount outboundWebsocketMsgCount exceededCpuErrors exceededMemoryErrors fatalInternalErrors} dimensions{date}}'
-          echo "--- Worker invocations by day/status"
-          q 'workersInvocationsAdaptive(limit:200,filter:{date_geq:$since,scriptName:"shambconkins"},orderBy:[date_ASC]){sum{requests errors subrequests} dimensions{date status}}'
+        run: node tools/cf-report.mjs 30
