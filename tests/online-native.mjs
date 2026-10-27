@@ -14,7 +14,8 @@ const url=pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambCon
 let failed=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)failed++;};
 const browser=await launchBrowser();
 async function phone(tag){
- const [vw,vh]=(process.env.VIEW||'390x780').split('x').map(Number),ctx=await browser.newContext({viewport:{width:vw,height:vh}});const p=await ctx.newPage();const errors=[];
+ // VIEW2: a different screen size for Amber's phone (e.g. a landscape phone against a portrait one)
+ const [vw,vh]=((tag==='Amber'&&process.env.VIEW2)||process.env.VIEW||'390x780').split('x').map(Number),ctx=await browser.newContext({viewport:{width:vw,height:vh}});const p=await ctx.newPage();const errors=[];
  p.on('pageerror',e=>errors.push(e.message));
  // engine crashes are caught by the launcher (console.error 'Game engine failure'): count them as errors too
  p.on('console',m=>{if(m.type()==='error'&&/engine failure|TypeError|ReferenceError|RangeError/.test(m.text()))errors.push('console: '+m.text().slice(0,300));});

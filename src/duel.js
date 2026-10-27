@@ -8,12 +8,12 @@ const {portraitHTML,gameArtHTML}=require("src/assets.js");
 const {gameById}=require("src/gameRegistry.js");
 const {duelOK,soloSettings}=require("src/solo.js");
 const {escapeHTML:e}=require("src/utils.js");
-const {joinRoom,leaveRoom,sendNet,onNet,netState}=require("src/net.js");
+const {joinRoom,leaveRoom,sendNet,onNet,netState,netLogText}=require("src/net.js");
 
 let hooks={start:async()=>false,refresh:()=>{}};
 let pending=null;   // my challenge waiting for an answer {mid, gameId, seed}
 let match=null;     // {mid, gameId, seed, peer, mine:{score,level,done}, theirs:{score,level,done,quit}, gone, started}
-let watch=null,quietPolls=0,incoming=null,waiting=false,boardEnd=null;
+let watch=null,quietPolls=0,incoming=null,queued=null,waiting=false,boardEnd=null;
 // Results this phone sent, by match: a "done" can be lost on a bad connection, so the waiting phone repeats its own
 // (w:1) and a phone that already finished that match answers with its result again.
 const doneSent=new Map();
@@ -45,9 +45,20 @@ async function openOnline(){
   store.online=true;store.onlineWho=me;hooks.refresh();
   toast(peer?`${peer.name} is here. Pick a game to challenge them.`:`In room “${netState().room}”. Waiting for player 2…`);
  }catch(err){
-  const why={full:'That room already has two players. Try another name.',name:'Use letters or numbers in the room name.'}[err.message]||'Could not reach the online rooms. Check the internet connection and try again.';
-  await showDialog({local:true,title:'Could not join',body:why});
+  const ans=await showDialog({local:true,title:'Could not join',html:joinErrorHTML(err),choices:[{label:'Try again',value:'again',primary:true},{label:'Cancel',value:'cancel'}]});
+  if(ans==='again')return openOnline();
  }
+}
+// Why the room could not be joined, in words that say what to do (err.info from net.js joinRoom).
+function joinErrorHTML(err){
+ const i=err.info||{},host=e(location.protocol.startsWith('http')&&/loki-mylo\.work$|workers\.dev$/.test(location.hostname)?location.hostname:'shambconkins.loki-mylo.work');
+ const msg={full:'That room already has two players. Try another room name.',name:'Use letters or numbers in the room name.'}[err.message]
+  ||(!i.online?'This device is offline. Connect to Wi-Fi or mobile data and try again.'
+  :i.site==='down'?`This device can’t reach <b>${host}</b> right now. Check the Wi-Fi or mobile data; a VPN or a network filter (work or school Wi-Fi, a router’s blocker) can also stop it.`
+  :i.site==='ok'?`The game’s site answers, but the live connection to the room was refused. That is almost always something on this device or network blocking WebSockets: an ad or tracker blocker (uBlock Origin, Brave Shields, AdGuard…), an antivirus “web shield”, a VPN or a firewall. Allow <b>${host}</b> there (or try a private window) and try again.`
+  :'The online rooms didn’t answer. Try again in a moment.');
+ const tech=[err.message,i.opened?'opened':'never opened',i.code?`close ${i.code}`:'',i.ms!=null?`${(i.ms/1000).toFixed(1)} s`:'',i.site?`site ${i.site}`:''].filter(Boolean).join(' · ');
+ return `<p>${msg}</p>${err.message==='full'||err.message==='name'?'':`<p class="net-note">Details: ${e(tech)}</p><details class="net-note"><summary>Connection log</summary><pre style="white-space:pre-wrap;font-size:11px;margin:4px 0 0">${e(netLogText(9))}</pre></details>`}`;
 }
 function leaveOnline(){if(match)sendNet({k:'quit',mid:match.mid});endMatch();leaveRoom();store.online=false;hooks.refresh();toast('Left the room');}
 function setMode(online){if(online)return openOnline();store.online=false;hooks.refresh();}
@@ -72,8 +83,17 @@ async function challenged(d){
  if(!duelOK(game)){sendNet({k:'answer',mid:d.mid,ok:false});return;}
  // Both challenged at the same moment: player 1's challenge goes ahead (player 2 accepts it, player 1 ignores theirs).
  if(pending){if(netState().seat!==1)return;resolveDialog('swap');sendNet({k:'answer',mid:d.mid,ok:true});return start(d.gameId,d.seed,d.mid);}
- // Only between games, in the Arcade or on the title screen (not over a board-game run).
- if(match||store.session||store.dialog||store.busy||store.netBoard||!['arcade','home'].includes(store.view)){sendNet({k:'answer',mid:d.mid,ok:false,busy:true});return;}
+ // Only between games, in the Arcade or on the title screen (not over a board-game run). A phone still on a result
+ // card, a toast-like card or between screens gets the challenge as soon as it's free (up to 30 s; the challenger
+ // waits and can cancel); one in a game or a board run answers "busy" at once.
+ const free=()=>!match&&!store.session&&!store.dialog&&!store.busy&&!store.netBoard&&['arcade','home'].includes(store.view);
+ if(!free()){
+  if(store.session||store.netBoard){sendNet({k:'answer',mid:d.mid,ok:false,busy:true});return;}
+  queued=d.mid;toast(`${peerName()} wants to play ${game.title}`);
+  const t0=Date.now();while(!free()&&Date.now()-t0<30000&&queued===d.mid&&!store.session&&!store.netBoard)await new Promise(r=>setTimeout(r,300));
+  if(queued!==d.mid)return;queued=null;   // they cancelled meanwhile
+  if(!free()){sendNet({k:'answer',mid:d.mid,ok:false,busy:true});return;}
+ }
  sound();incoming=d.mid;
  const ans=await showDialog({local:true,title:`${peerName()} challenges you!`,source:game.source,html:`${gameArtHTML(game)}<p class="net-note"><b>${e(game.title)}</b>: you both play it at the same time from the same start. Highest score wins.</p>`,choices:[{label:'Play',value:'play',primary:true},{label:'Not now',value:'no'}],seconds:30,timeoutValue:'no'});
  incoming=null;
@@ -141,8 +161,9 @@ function onMessage(d){
  if(!d||typeof d!=='object')return;
  if(d.k==='propose')return void challenged(d);
  if(d.k==='answer'&&pending?.mid===d.mid)return resolveDialog(d.ok?'accepted':d.busy?'busy':'declined');
- if(d.k==='cancel'){if(incoming===d.mid)resolveDialog('cancelled');return;}
- if(d.k==='done'&&d.w&&(!match||d.mid!==match.mid)){const mine=doneSent.get(d.mid);if(mine)sendNet(mine);return;}
+ if(d.k==='cancel'){if(queued===d.mid)queued=null;if(incoming===d.mid)resolveDialog('cancelled');return;}
+ // they finished and wait for my result: send it again, or say I'm not in that match any more (my app restarted)
+ if(d.k==='done'&&d.w&&(!match||d.mid!==match.mid)){const mine=doneSent.get(d.mid);sendNet(mine||{k:'quit',mid:d.mid});return;}
  if(!match||d.mid!==match.mid)return;
  const t=match.theirs;
  if(d.k==='progress'){if(!t.done){t.score=d.score|0;t.level=d.level|0;}setLive('duel-live',fmt(t.score));showChip();}
@@ -153,11 +174,13 @@ function initDuel(h){
  hooks={...hooks,...h};
  onNet(ev=>{
   if(ev.t==='msg')return onMessage(ev.d);
-  if(ev.t==='join'){toast(`${ev.peer.name} joined the room`);hooks.refresh();}
-  else if(ev.t==='leave'){toast(`${ev.peer?.name||'Player 2'} left the room`);if(match&&!match.board){match.gone=true;if(waiting)resolveDialog('done');showChip();}if(pending)resolveDialog('declined');if(incoming)resolveDialog('cancelled');hooks.refresh();}
+  // a short drop (phone asleep, Wi-Fi hand-over) is not leaving: their game carries on when they're back
+  if(ev.t==='join'){clearTimeout(match?.goneT);if(match?.gone&&!match.theirs.quit){match.gone=false;showChip();toast(`${ev.peer.name} is back`);}else toast(`${ev.peer.name} joined the room`);hooks.refresh();}
+  // they dropped out of the room: give them 20 s to come back before the duel counts as left
+  else if(ev.t==='leave'){toast(`${ev.peer?.name||'Player 2'} ${match&&!match.theirs.done?'lost the connection…':'left the room'}`);const m=match;if(m&&!m.board){clearTimeout(m.goneT);m.goneT=setTimeout(()=>{if(match===m&&!netState().peer){m.gone=true;toast(`${m.peer.name} left the room`);if(waiting)resolveDialog('done');showChip();}},20000);}if(pending)resolveDialog('declined');if(incoming)resolveDialog('cancelled');hooks.refresh();}
   else if(ev.t==='status'&&ev.status==='reconnecting')toast('Connection lost. Reconnecting…');
   else if(ev.t==='welcome'&&store.online)hooks.refresh();
-  else if(ev.t==='lost'){toast('Lost the room connection');store.online=false;hooks.refresh();}
+  else if(ev.t==='lost'){toast(ev.reason==='replaced'?'This room was opened in another tab or window':'Lost the room connection');store.online=false;hooks.refresh();}
  });
 }
 Object.assign(exports,{initDuel,openOnline,leaveOnline,setMode,propose,boardDuel});

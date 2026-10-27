@@ -147,16 +147,32 @@ export class Room extends DurableObject {
     if (m.t === 'hello') {
       const id = clean(m.id, 64), others = this.seated(ws), old = id && others.find(p => p.a.id === id);
       if (old) { old.ws.serializeAttachment({ seat: null }); try { old.ws.close(4000, 'replaced'); } catch {} }
-      const rest = others.filter(p => p !== old), taken = new Set(rest.map(p => p.a.seat));
+      let rest = others.filter(p => p !== old);
+      // Room full: a seat whose phone has been silent for a minute (no message, no ping) is a ghost — a phone that
+      // vanished without closing (tab killed, app swiped away, network gone). Phones ping every 10 s, so free it.
+      if (!old && rest.length >= 2) {
+        const now = Date.now();
+        for (const p of rest) {
+          const pinged = this.ctx.getWebSocketAutoResponseTimestamp(p.ws)?.getTime() || 0;
+          if (now - Math.max(pinged, p.a.at || 0) > 60000) {
+            p.ws.serializeAttachment({ seat: null }); try { p.ws.close(4003, 'stale'); } catch {}
+            for (const q of rest) if (q !== p) this.send(q.ws, { t: 'leave', seat: p.a.seat });
+            p.gone = true;
+          }
+        }
+        rest = rest.filter(p => !p.gone);
+      }
+      const taken = new Set(rest.map(p => p.a.seat));
       const seat = old ? old.a.seat : [0, 1].find(s => !taken.has(s));
       if (seat === undefined) { this.send(ws, { t: 'full' }); try { ws.close(4001, 'full'); } catch {} return; }
-      const info = { id, seat, name: clean(m.name, 24), character: clean(m.character, 64), owner: m.owner === 'Amber' ? 'Amber' : 'Sean', v: clean(m.v, 16) };
+      const info = { id, seat, name: clean(m.name, 24), character: clean(m.character, 64), owner: m.owner === 'Amber' ? 'Amber' : 'Sean', v: clean(m.v, 16), at: Date.now() };
       ws.serializeAttachment(info);
       this.send(ws, { t: 'welcome', seat, peers: rest.map(p => pub(p.a)) });
       for (const p of rest) this.send(p.ws, { t: 'join', peer: pub(info) });
       return;
     }
     if (me.seat == null || m.t !== 'msg') return;
+    if (Date.now() - (me.at || 0) > 20000) { me.at = Date.now(); ws.serializeAttachment(me); }   // last heard (see the ghost check)
     for (const p of this.seated(ws)) this.send(p.ws, { t: 'msg', from: me.seat, d: m.d });
   }
   async webSocketClose(ws, code) {

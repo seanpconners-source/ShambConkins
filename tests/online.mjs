@@ -34,7 +34,7 @@ check(/Sean is here/.test(await B.p.evaluate(()=>document.querySelector('.net-ro
 check(await A.p.evaluate(()=>document.querySelectorAll('[data-action="duel-propose"]').length>5),'Arcade cards have Challenge buttons');
 await A.p.screenshot({path:screenshotPath('online-arcade.png')});
 await act(A,'filter',{id:'trivia'});await A.p.waitForTimeout(400);
-check(await A.p.evaluate(()=>[...document.querySelectorAll('.arcade-card')].some(c=>/Not online yet/.test(c.innerText))&&!document.querySelector('[data-action="duel-propose"]')),'CPU-opponent games (trivia) say "Not online yet"');
+check(await A.p.evaluate(()=>[...document.querySelectorAll('.arcade-card')].every(c=>c.querySelector('[data-action="duel-propose"]')||/Not online yet/.test(c.innerText))),'every Arcade card offers Challenge or says "Not online yet"');
 await act(A,'filter',{id:'all'});await A.p.waitForTimeout(400);
 // Sean challenges, Amber accepts
 await act(A,'duel-propose',{id:GAME});await waitDialog(A,/Waiting for Amber/);
@@ -63,9 +63,13 @@ check(/Rematch/.test(ra)&&/Back to the room/.test(rb),'Rematch and Back to the r
 await A.p.screenshot({path:screenshotPath('online-result.png')});
 // Amber goes back to the room, then Sean asks for a rematch: Amber gets the challenge
 await choose(B,'Back to the room');await B.p.waitForTimeout(800);
-await choose(A,'Rematch');await waitDialog(B,/Sean challenges you/);check(true,'Rematch reaches Amber');
+await choose(A,'Rematch');
+// a win can unlock a character first: Sean welcomes them, then the rematch goes out
+for(let i=0;i<6;i++){await A.p.waitForTimeout(400);await choose(A,'Welcome');}
+const busy=ph=>S(ph,()=>{const st=window.ShambConkins.store;return JSON.stringify({view:st.view,dialog:!!st.dialog,busy:st.busy,session:!!st.session,netBoard:!!st.netBoard,dlg:(document.querySelector('#dialog[open]')?.innerText||'').slice(0,80)});});
+await waitDialog(B,/Sean challenges you/).then(()=>check(true,'Rematch reaches Amber'),async()=>{check(false,'Rematch reaches Amber '+await busy(B)+' / Sean '+await busy(A));});
 await choose(B,'Not now');await waitDialog(A,/./,3000).catch(()=>{});await A.p.waitForTimeout(800);
-check(!/Waiting for Amber/.test(await dialogText(A)),'"Not now" ends Sean\'s wait');
+await waitDialog(A,/./,1).catch(()=>{});check(!/Waiting for Amber/.test(await dialogText(A)),'"Not now" ends Sean\'s wait');
 // Amber leaves the room
 await act(B,'online-leave');await A.p.waitForFunction(()=>/waiting for player 2/.test(document.querySelector('.net-room')?.innerText||''),null,{timeout:10000});
 check(true,'Sean sees Amber leave');
