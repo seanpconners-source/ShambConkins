@@ -11,6 +11,8 @@ async function localDialogs(fn){localDepth++;try{return await fn();}finally{loca
 function netDialog(opts){return hooks.dialog&&!localDepth&&!opts.local?hooks.dialog(opts):null;}
 function netRoute(opts){return hooks.route&&!localDepth?hooks.route(opts):null;}
 function netChanged(){hooks.changed?.();}
+// A menu of this phone's own (story log, settings, help...) is open right now.
+function localBusy(){return localDepth>0;}
 // Read-only note for animated dialogs (the game roulette) while the other phone's player is up, else ''.
 function netWatching(){return hooks.watching?.()||'';}
-Object.assign(exports,{setNetHooks,fx,localDialogs,netDialog,netRoute,netChanged,netWatching});
+Object.assign(exports,{setNetHooks,fx,localDialogs,localBusy,netDialog,netRoute,netChanged,netWatching});

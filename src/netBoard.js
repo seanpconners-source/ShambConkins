@@ -6,7 +6,7 @@
 // (duel.js boardDuel) and settled on the host. If the guest leaves, the host plays their turns (pass and play) until
 // they come back. Messages ride the room of src/net.js as {k:'nb', t, ...}.
 const {store}=require("src/state.js");
-const {setNetHooks}=require("src/netHooks.js");
+const {setNetHooks,localBusy}=require("src/netHooks.js");
 const {sendNet,onNet,netState,joinRoom}=require("src/net.js");
 const {VERSION}=require("src/version.js");
 const {openDialog,closeDialog,toast,updateBoard,showView}=require("src/ui.js");
@@ -22,6 +22,8 @@ const {duelOK}=require("src/solo.js");
 const {boardDuel}=require("src/duel.js");
 const {recruit,saveProfile}=require("src/profile.js");
 const {readJSON,RUN_KEY,validRun}=require("src/persistence.js");
+const {ART}=require("src/data/art.js");
+const {FACE_ART}=require("src/data/faceArt.js");
 
 const BIG=['board','mainBoard'];                       // sent only when they change
 const TURN=new Set(['roll','reroll','item','bag','pkmn']); // board buttons that belong to whoever's turn it is
@@ -31,7 +33,7 @@ let app={};      // from app.js: action, home, startRun, setPick, tasks {wild, t
 let offered=null;// guest: a board game the host announced after this phone left it ({name}); mirrored in store.netOffer for the room line
 // localStorage sc-net-debug=1 logs every message (tests/online-board.mjs DEBUG=1).
 const debug=(()=>{try{return !!localStorage.getItem('sc-net-debug');}catch{return false;}})();
-const trace=(dir,d)=>{if(debug)console.log(`nb ${dir} ${d.t}${d.id!=null?' #'+d.id:''}${d.name?' '+d.name:''}${d.kind?' '+d.kind:''}`);};
+const trace=(dir,d)=>{if(debug)console.log(`nb ${dir} ${d.t}${d.id!=null?' #'+d.id:''}${d.name?' '+d.name:''}${d.kind?' '+d.kind:''}${d.t==='state'||d.t==='start'?' '+Object.keys(d.set||d.run||{}).concat(BIG.filter(k=>k in d).map(k=>'+'+k),Object.keys(d.bp||{}).map(k=>'~'+k)).join(','):''} ${JSON.stringify(d).length}`);};
 // The host numbers its messages (n); a guest that sees a gap (a message lost on the way) asks for a fresh start.
 const send=d=>{if(nb?.role==='host')d={...d,n:++nb.out};trace('>',d);return sendNet({k:'nb',...d});};
 function setOffered(v){offered=v;store.netOffer=v?{rejoin:true,name:v.name}:null;}
@@ -86,7 +88,7 @@ function setupMsg(m){
 function hostBegin(run){
  if(!run?.online)return;
  if(nb?.role==='host'&&nb.run===run){nb.paused=false;}
- else nb={role:'host',me:run.online.host?1:0,peer:run.online.host?0:1,run,seq:0,out:0,heard:0,pending:new Map(),sent:{},showing:null,req:null,guestIn:false,paused:false,flushTimer:0};
+ else nb={role:'host',sid:Math.random().toString(36).slice(2,9),me:run.online.host?1:0,peer:run.online.host?0:1,run,seq:0,out:0,heard:0,pending:new Map(),sent:{},showing:null,req:null,guestIn:false,paused:false,flushTimer:0};
  setup=null;store.netSetup=null;store.netBoard={role:'host',me:nb.me,live:false};setLive();
  setNetHooks({fx:hostFx,dialog:hostDialog,route:hostRoute,changed:scheduleFlush,watching:()=>hosting()&&nb.guestIn&&store.run.current===nb.peer?`${peerName()}'s challenge…`:''});
  setPoolFilter(g=>duelOK(g));
@@ -105,8 +107,21 @@ function stopHooks(){setNetHooks({fx:null,dialog:null,route:null,changed:null,wa
 function sendStart(){
  if(!hosting()||!connected())return;
  clearTimeout(nb.flushTimer);nb.flushTimer=0;
- const run=store.run;nb.sent={rest:JSON.stringify(rest(run)),busy:!!store.busy};for(const k of BIG)nb.sent[k]=run[k]?JSON.stringify(run[k]):'';
- send({t:'start',you:nb.peer,run,busy:!!store.busy,host:nameOf(nb.me)});
+ const run=store.run;nb.sent={keys:{},busy:!!store.busy};for(const [k,v] of Object.entries(rest(run)))if(v!==undefined)nb.sent.keys[k]=JSON.stringify(v);for(const k of BIG)nb.sent[k]=run[k]?boardParts(run[k]):null;
+ send({t:'start',sid:nb.sid,you:nb.peer,run,busy:!!store.busy,host:nameOf(nb.me)});
+}
+// A board as flat parts for diffing: each top-level key, and each node of `nodes` on its own (a board is ~90 KB, most of
+// it nodes; a step changes a node or two, or only the board's random state, and used to send the whole board again).
+function boardParts(b){
+ const out={};
+ for(const [k,v] of Object.entries(b)){if(v===undefined)continue;
+  if(k==='nodes'&&v&&typeof v==='object'&&!Array.isArray(v)){out['nodes/']='{}';for(const [id,n] of Object.entries(v))if(n!==undefined)out['nodes/'+id]=JSON.stringify(n);}
+  else out[k]=JSON.stringify(v);}
+ return out;
+}
+function patchBoard(b,p){
+ for(const k of p.d||[]){if(k==='nodes/')delete b.nodes;else if(k.startsWith('nodes/')){if(b.nodes)delete b.nodes[k.slice(6)];}else delete b[k];}
+ for(const [k,v] of Object.entries(p.s||{})){if(k==='nodes/'){if(!b.nodes||typeof b.nodes!=='object'||Array.isArray(b.nodes))b.nodes={};}else if(k.startsWith('nodes/'))(b.nodes||={})[k.slice(6)]=v;else b[k]=v;}
 }
 function rest(run){const out={};for(const k of Object.keys(run))if(!BIG.includes(k))out[k]=run[k];return out;}
 function scheduleFlush(){if(guestHere()&&!nb.flushTimer)nb.flushTimer=setTimeout(flush,0);}
@@ -114,18 +129,66 @@ function scheduleFlush(){if(guestHere()&&!nb.flushTimer)nb.flushTimer=setTimeout
 function flush(){
  if(!nb||nb.role!=='host')return;clearTimeout(nb.flushTimer);nb.flushTimer=0;if(!guestHere())return;
  const run=store.run,msg={t:'state'};let any=false;
- const r=rest(run),s=JSON.stringify(r);if(s!==nb.sent.rest){msg.run=r;nb.sent.rest=s;any=true;}
- for(const k of BIG){const b=run[k]?JSON.stringify(run[k]):'';if(b!==nb.sent[k]){msg[k]=run[k]||null;nb.sent[k]=b;any=true;}}
+ // only the parts of the run that changed (a long run's history and log would otherwise go again with every step)
+ const r=rest(run),sent=nb.sent.keys,set={},del=[];
+ for(const [k,v] of Object.entries(r)){if(v===undefined)continue;const j=JSON.stringify(v);if(j!==sent[k]){set[k]=v;sent[k]=j;}}
+ for(const k of Object.keys(sent))if(r[k]===undefined){del.push(k);delete sent[k];}
+ if(Object.keys(set).length){msg.set=set;any=true;}if(del.length){msg.del=del;any=true;}
+ // boards: whole when one appears, null when it goes, else only the parts that changed (bp)
+ for(const k of BIG){const cur=run[k]?boardParts(run[k]):null,old=nb.sent[k];
+  if(!cur){if(old){msg[k]=null;nb.sent[k]=null;any=true;}continue;}
+  if(!old){msg[k]=run[k];nb.sent[k]=cur;any=true;continue;}
+  const set={},del=[];for(const [p,j] of Object.entries(cur))if(old[p]!==j)set[p]=JSON.parse(j);for(const p of Object.keys(old))if(!(p in cur))del.push(p);
+  if(Object.keys(set).length||del.length){(msg.bp||={})[k]=del.length?{s:set,d:del}:{s:set};nb.sent[k]=cur;any=true;}}
  const busy=!!store.busy;if(busy!==nb.sent.busy){nb.sent.busy=busy;any=true;}msg.busy=busy;
  if(any)send(msg);
 }
 function hostFx(name,args){
+ // A character recruited for the guest's player (or for everyone) is also written into the run, so the guest's phone
+ // adds it to its own profile even if it was offline when it happened (see owed()).
+ if(name==='recruit'&&hosting()){const [id,owner]=args,theirs=store.run.players[nb.peer]?.owner;
+  if(typeof id==='string'&&(owner===null||owner===theirs)){const o=store.run.online;(o.gave||=[]).push([id,owner??null,String(args[2]||'encounter')]);scheduleFlush();}}
  if(!guestHere()||!connected())return;
  if(name!=='recruit'&&(store.session||store.view!=='board'))return;
  flush();send({t:'fx',name,args:plain(args)});
 }
-function cleanDialog(o){const {title,source,body,html,choices,rare,seconds,timeoutValue,sheet}=o;return plain({title,source,body,html,choices,rare,seconds,timeoutValue,sheet});}
-function cleanRoute(o){return plain({title:o.title,hint:o.hint,options:o.options});}
+function cleanDialog(o){const {title,source,body,html,choices,rare,seconds,timeoutValue,sheet}=o;return packBlobs({title,source,body,html,choices,rare,seconds,timeoutValue,sheet});}
+function cleanRoute(o){return packBlobs({title:o.title,hint:o.hint,options:o.options});}
+// Pictures inside dialogs are data: URIs (an unlock card's portrait alone can be 1 MB). Both phones run the same build,
+// so a picture of the game's own art goes as "sc-art:<key>" (the guest takes it from its own ART). Any other picture
+// (drawn at run time) goes once: "sc-blob:<hash>"; the guest keeps what it received and asks for what it lacks ({t:'blobs'}).
+const BLOB=/data:[a-z]+\/[a-z0-9.+-]+(?:;[a-z0-9=.+-]+)*,[A-Za-z0-9+/=%._~-]{400,}/g,TOKEN=/sc-blob:([a-z0-9]+)/g,ARTTOKEN=/sc-art:([A-Za-z0-9:._-]+)/g;
+const ART_MAPS={a:ART,f:FACE_ART};   // the build's own pictures (identical on both phones)
+let artIndex=null;   // length + last 40 characters → "a:<key>" / "f:<key>" (built on first use)
+const artOf=ref=>{const m=ART_MAPS[ref[0]],k=ref.slice(2);return ref[1]===':'&&m&&Object.prototype.hasOwnProperty.call(m,k)&&typeof m[k]==='string'?m[k]:null;};
+function artKey(uri){
+ if(!artIndex){artIndex=new Map();for(const [c,m] of Object.entries(ART_MAPS))for(const [k,v] of Object.entries(m||{}))if(typeof v==='string'&&v.length>=400&&/^[A-Za-z0-9:._-]+$/.test(k))artIndex.set(v.length+v.slice(-40),c+':'+k);}
+ const ref=artIndex.get(uri.length+uri.slice(-40));return ref&&artOf(ref)===uri?ref:null;
+}
+const blobs=new Map();   // hash → data URI: on the host what it sent, on the guest what it received (newest last)
+let blobBytes=0;
+function keepBlob(h,uri){if(blobs.has(h)){blobBytes-=blobs.get(h).length;blobs.delete(h);}blobs.set(h,uri);blobBytes+=uri.length;
+ while(blobBytes>48e6&&blobs.size>1){const [k,v]=blobs.entries().next().value;blobs.delete(k);blobBytes-=v.length;}}
+function blobHash(t){let a=0x811c9dc5,b=0x9e3779b1;for(let i=0;i<t.length;i++){const c=t.charCodeAt(i);a=Math.imul(a^c,16777619);b=Math.imul(b^c,2246822507);}return (a>>>0).toString(36)+(b>>>0).toString(36)+t.length.toString(36);}
+function packBlobs(v){
+ const json=JSON.stringify(v);if(json===undefined)return null;
+ try{return JSON.parse(json.replace(BLOB,uri=>{const art=artKey(uri);if(debug)console.log(`nb pack ${uri.length} ${art||'blob'}`);if(art)return 'sc-art:'+art;const h=blobHash(uri);keepBlob(h,blobs.get(h)??uri);return 'sc-blob:'+h;}));}catch(err){console.error('Online board: could not pack pictures',err);return JSON.parse(json);}
+}
+// Guest: put the pictures back, asking the host for any this phone hasn't had yet (resolves once all are in, or after 20 s).
+const blobWait=new Map();   // hash → [resolve...]
+async function unpackBlobs(v){
+ let json=JSON.stringify(v);if(!json)return v;if(json.includes('sc-art:'))json=json.replace(ARTTOKEN,(x,ref)=>artOf(ref)??'');if(!json.includes('sc-blob:'))return JSON.parse(json);
+ const need=[...new Set([...json.matchAll(TOKEN)].map(x=>x[1]))].filter(h=>!blobs.has(h));
+ if(need.length){
+  const t0=Date.now();
+  while(need.some(h=>!blobs.has(h))&&Date.now()-t0<20000&&nb){
+   send({t:'blobs',ids:need.filter(h=>!blobs.has(h))});
+   await Promise.race([Promise.all(need.map(h=>blobs.has(h)?null:new Promise(r=>{const l=blobWait.get(h)||[];l.push(r);blobWait.set(h,l);}))),new Promise(r=>setTimeout(r,6000))]);
+  }
+ }
+ return JSON.parse(json.replace(TOKEN,(x,h)=>blobs.get(h)??''));
+}
+function gotBlob(m){if(typeof m.id!=='string')return;if(typeof m.d==='string')keepBlob(m.id,m.d);else if(!blobs.has(m.id))keepBlob(m.id,'');for(const r of blobWait.get(m.id)||[])r();blobWait.delete(m.id);}
 function owner(opts){return Number.isInteger(opts?.player)?opts.player:store.run.current;}
 function hostDialog(opts){
  if(!hosting()||store.session)return null;
@@ -251,6 +314,7 @@ function hostMsg(m){
  if(m.t==='ans'){const req=nb.pending.get(m.id);if(req)finish(req,m.value);return;}
  if(m.t==='done'){const req=nb.pending.get(m.id);if(req)finish(req,{...m,fromGuest:true});return;}
  if(m.t==='sel'){if(nb.req?.msg.id===m.id)routePreview(m.i);return;}
+ if(m.t==='blobs'){if(Array.isArray(m.ids))for(const id of m.ids.slice(0,40))if(typeof id==='string')send({t:'blob',id,d:blobs.get(id)??null});return;}
  if(m.t==='act'){
   if(!hosting()||!nb.guestIn||store.run.current!==nb.peer||store.busy||!TURN.has(m.name))return;
   void app.action?.(m.name,{dataset:{index:m.index==null?undefined:String(m.index)}},true);
@@ -259,41 +323,57 @@ function hostMsg(m){
 
 // ---------------------------------------------------------------- guest
 function enterGuest(m){
- if(store.session){send({t:'busy'});return;}
+ // Playing something else (an arcade game) when the board game calls: not now. During the board game's own minigame the
+ // fresh run is taken in quietly (the board shows when the game is over).
+ if(store.session&&nb?.role!=='guest'){send({t:'busy'});return;}
+ // A host phone that restarted numbers its questions from 1 again: forget the answers given to the old one.
+ if(nb?.role==='guest'&&m.sid!==nb.sid){nb.answered.clear();nb.asking=null;nb.view=null;}
  if(nb?.role!=='guest'){
   if(offered?.declined){setOffered({name:m.host,declined:true});app.refresh?.();return;}
-  nb={role:'guest',me:m.you,peer:1-m.you,own:store.run,inN:0,heard:0,answered:new Map(),asking:null,view:null,drag:null,fxBusy:0,playing:null,lostOpen:false};
+  nb={role:'guest',sid:m.sid,me:m.you,peer:1-m.you,own:store.run,inN:0,heard:0,gave:0,answered:new Map(),asking:null,view:null,drag:null,fxBusy:0,playing:null,lostOpen:false};
   setup=null;store.netSetup=null;store.netBoard={role:'guest',me:m.you,live:true};
  }
  setOffered(null);
- nb.inN=m.n||0;
+ nb.sid=m.sid;nb.inN=m.n||0;nb.helloAt=0;nb.resync=false;
  if(nb.lostOpen){nb.lostOpen=false;if(store.dialog&&!store.dialog.watch)closeDialog();}
  const zoom=store.run===m.run?null:nb.zoom;
- store.run=m.run;if(zoom)store.run.zoom=zoom;store.busy=!!m.busy;
+ store.run=m.run;if(zoom)store.run.zoom=zoom;store.busy=!!m.busy;nb.gave=0;owed();
  if(!store.session){showView('board');updateBoard(true);const realm=store.run.board.nodes[store.run.players[store.run.current].node]?.realm;if(realm)setMusicZone(realm);if(store.profile.settings.music)startMusic();}
  send({t:'in'});
 }
 function applyState(m){
  const run=store.run;if(!run)return;nb.zoom=run.zoom;let boards=false;
- if(m.run){for(const k of Object.keys(run))if(!BIG.includes(k)&&!(k in m.run))delete run[k];Object.assign(run,m.run);if(nb.zoom)run.zoom=nb.zoom;}
+ if(m.set||m.del){for(const k of m.del||[])if(!BIG.includes(k))delete run[k];for(const [k,v] of Object.entries(m.set||{}))if(!BIG.includes(k))run[k]=v;if(nb.zoom)run.zoom=nb.zoom;}
  for(const k of BIG)if(k in m){if(m[k]===null)delete run[k];else run[k]=m[k];boards=true;}
+ for(const [k,p] of Object.entries(m.bp||{})){if(!BIG.includes(k))continue;if(run[k])patchBoard(run[k],p);else nb.resync=true;boards=true;}
  if('busy' in m)store.busy=!!m.busy;
+ owed();
  if(run.finished){if(store.view!=='finished'&&!store.session)app.finishScreen?.();return;}
  if(store.view==='board'&&!store.session)updateBoard(boards);
 }
+// Characters the host recruited for this phone's player (run.online.gave): add each to this phone's profile once.
+function owed(){
+ const list=store.run?.online?.gave;if(!Array.isArray(list))return;const mine=store.run.players?.[nb.me]?.owner;let changed=false;
+ for(;nb.gave<list.length;nb.gave++){const [id,owner,reason]=list[nb.gave]||[];if(typeof id==='string'&&(owner===null||owner===mine)&&recruit(store.profile,id,owner,reason))changed=true;}
+ if(changed)saveProfile(store.profile);
+}
 function showBoard(){if(store.session)return;store.arcade=false;showView('board');updateBoard(true);}
+// A dialog this phone opened for itself (Leave the game?, the story log, settings...) stays up: a dialog, battle or game
+// the host sends meanwhile waits until it is closed (opening it would have closed the guest's own menu under their finger).
+const localOpen=()=>!!nb&&(nb.leaving||localBusy())&&!!store.dialog&&!store.dialog.watch;
+async function afterLocal(){while(localOpen())await new Promise(r=>setTimeout(r,150));}
 // The host's own dialogs show here read-only; the guest's own ones are answered here.
 async function guestDialog(m){
  if(m.own){
   if(nb.answered.has(m.id)){send({t:'ans',id:m.id,value:nb.answered.get(m.id)});return;}
   if(nb.asking===m.id)return;
-  nb.asking=m.id;nb.view=null;const v=await openDialog(m.opts);
+  nb.asking=m.id;nb.view=null;const opts=await unpackBlobs(m.opts);await afterLocal();if(!nb||nb.asking!==m.id)return;const v=await openDialog(opts);
   if(!nb||nb.asking!==m.id)return;nb.asking=null;
   if(v===null)return;                                   // closed by something else; the host asks again
   nb.answered.set(m.id,v);send({t:'ans',id:m.id,value:v});
  }else{
   if(nb.view===m.id&&store.dialog?.watch)return;
-  nb.view=m.id;const who=nameOf(nb.peer);openDialog({...m.opts,watch:`${who} ${m.opts.choices?.length>1?'is choosing':'is reading'} on their phone…`});
+  nb.view=m.id;const opts=await unpackBlobs(m.opts);await afterLocal();if(!nb||nb.view!==m.id)return;const who=nameOf(nb.peer);openDialog({...opts,watch:`${who} ${opts.choices?.length>1?'is choosing':'is reading'} on their phone…`});
  }
 }
 async function guestRoute(m){
@@ -301,24 +381,24 @@ async function guestRoute(m){
  if(m.own){
   if(nb.answered.has(m.id)){send({t:'ans',id:m.id,value:nb.answered.get(m.id)});return;}
   if(nb.asking===m.id)return;
-  nb.asking=m.id;nb.view=null;closeWatch();
-  const v=await openRoutePanel({...m.opts,onPreview:i=>send({t:'sel',id:m.id,i})});
+  nb.asking=m.id;nb.view=null;const opts=await unpackBlobs(m.opts);if(!nb||nb.asking!==m.id)return;closeWatch();
+  const v=await openRoutePanel({...opts,onPreview:i=>send({t:'sel',id:m.id,i})});
   if(!nb||nb.asking!==m.id)return;nb.asking=null;if(v===null)return;
   nb.answered.set(m.id,v);send({t:'ans',id:m.id,value:v});
- }else{nb.view=m.id;openRoutePanel({...m.opts,watch:`${nameOf(nb.peer)} is choosing a road on their phone…`});}
+ }else{nb.view=m.id;const opts=await unpackBlobs(m.opts);if(!nb||nb.view!==m.id)return;openRoutePanel({...opts,watch:`${nameOf(nb.peer)} is choosing a road on their phone…`});}
 }
 function closeWatch(){if(store.dialog?.watch){const d=store.dialog;store.dialog=null;document.getElementById('dialog')?.close();d.resolve(null);}closeRoutePanel();}
 async function guestTask(m){
  if(nb.answered.has(m.id)){send(nb.answered.get(m.id));return;}
- if(nb.asking===m.id)return;nb.asking=m.id;closeWatch();
- const run=store.run,p=run.players[run.current],fn=app.tasks?.[m.kind];
+ if(nb.asking===m.id)return;nb.asking=m.id;await afterLocal();if(!nb||nb.asking!==m.id)return;closeWatch();
+ const run=store.run,p=run.players[run.current],fn=app.tasks?.[m.kind],before={};for(const k of BIG)before[k]=run[k]?JSON.stringify(run[k]):'';
  let result=null;trace('task-run',m);try{result=fn?await fn(run,p,...(m.args||[])):null;}catch(err){console.error('Online task failed',m.kind,err);}
  if(!nb||nb.asking!==m.id)return;nb.asking=null;
- const out={t:'done',id:m.id,result:plain(result),run:rest(run)};for(const k of BIG)out[k]=run[k]||null;
+ const out={t:'done',id:m.id,result:plain(result),run:rest(run)};for(const k of BIG){const j=run[k]?JSON.stringify(run[k]):'';if(j!==before[k])out[k]=run[k]||null;}   // boards only if the task changed them
  nb.answered.set(m.id,out);send(out);showBoard();
 }
 async function guestGame(m){
- if(nb.playing===m.id||nb.answered.has(m.id))return;nb.playing=m.id;closeWatch();   // played already: duel.js re-sends the result
+ if(nb.playing===m.id||nb.answered.has(m.id))return;nb.playing=m.id;await afterLocal();if(!nb||nb.playing!==m.id)return;closeWatch();   // played already: duel.js re-sends the result
  const run=store.run,players=[plain(run.players[nb.me]),plain(run.players[nb.peer])];
  await boardDuel(m.gameId,m.seed,'nb'+m.seed,players);
  if(!nb)return;nb.playing=null;nb.answered.set(m.id,true);showBoard();
@@ -340,10 +420,13 @@ async function runFx(name,args){
  const f=FX[name];if(!f)return;
  if(name==='recruit'){f(...(args||[]));return;}
  if(store.session||store.view!=='board')return;
+ if(name==='animateRoulette'&&localOpen())return;   // the wheel is a dialog: not over the guest's own menu
  nb.fxBusy++;try{await f(...(args||[]));}catch(err){console.error('Online board effect failed',name,err);}finally{if(nb)nb.fxBusy--;}
 }
 async function guestLeave(){
+ if(nb.leaving)return;nb.leaving=true;const g=nb;
  const c=await openDialog({title:'Leave the online game?',body:`${nameOf(nb.peer)}'s phone keeps the game and plays your turns until you rejoin from the room.`,choices:[{label:'Leave',value:'leave',danger:true},{label:'Stay',value:'stay',primary:true}],local:true});
+ g.leaving=false;
  if(c!=='leave'||nb?.role!=='guest')return;
  send({t:'bye'});setOffered({name:nameOf(nb.peer),declined:true});guestExit();
 }
@@ -365,8 +448,10 @@ function guestMsg(m){
  // Not in the game any more (our "bye" may have been lost): say so again when the host asks us something.
  if(!nb||nb.role!=='guest'){if(['dlg','route','task','game'].includes(m.t)&&(m.own||m.t==='task'||m.t==='game'))send({t:'bye'});return;}
  nb.heard=Date.now();
- if(m.n){const gap=nb.inN&&m.n>nb.inN+1;nb.inN=Math.max(nb.inN,m.n);if(gap){trace('gap',{t:'resync'});send({t:'hello'});}}
+ // a message went missing: ask for a fresh start, and keep asking (every 3 s, at the latest with the next beat) until it comes
+ if(m.n){if(nb.inN&&m.n>nb.inN+1)nb.resync=true;nb.inN=Math.max(nb.inN,m.n);if(nb.resync&&Date.now()-(nb.helloAt||0)>3000){nb.helloAt=Date.now();trace('gap',{t:'resync'});send({t:'hello'});}}
  if(m.t==='beat')return;
+ if(m.t==='blob')return gotBlob(m);
  if(m.t==='state')return applyState(m);
  if(m.t==='fx')return void runFx(m.name,m.args);
  if(m.t==='dlg')return void guestDialog(m);
