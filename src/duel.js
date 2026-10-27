@@ -9,6 +9,7 @@ const {gameById}=require("src/gameRegistry.js");
 const {duelOK,soloSettings}=require("src/solo.js");
 const {escapeHTML:e}=require("src/utils.js");
 const {joinRoom,leaveRoom,sendNet,onNet,netState,netLogText}=require("src/net.js");
+const {VERSION}=require("src/version.js");
 
 let hooks={start:async()=>false,refresh:()=>{}};
 let pending=null;   // my challenge waiting for an answer {mid, gameId, seed}
@@ -69,6 +70,8 @@ async function propose(gameId){
  if(!net.room||net.status==='off')return openOnline();
  if(!net.peer){toast(`Waiting for player 2 to join “${net.room}”`);return;}
  if(!duelOK(game)){toast('This game is not online yet');return;}
+ // both phones run the same game code from one seed: a different version could play out differently on each
+ if(net.peer.v&&/^\d/.test(net.peer.v)&&net.peer.v!==VERSION){await showDialog({local:true,title:'Update first',body:`This phone has v${VERSION} and ${peerName()}’s has v${net.peer.v}. Online games need the same version on both: reload the game on the older one (an installed app updates when it’s closed and opened again).`});return;}
  const mid=id(),seed=id();pending={mid,gameId,seed};
  sendNet({k:'propose',mid,gameId,seed});
  const ans=await showDialog({local:true,title:`Waiting for ${peerName()}…`,html:`${gameArtHTML(game)}<p class="net-note">You challenged ${e(peerName())} to <b>${e(game.title)}</b>. It starts on both phones as soon as they accept.</p>`,choices:[{label:'Cancel',value:'cancel'}]});
@@ -81,6 +84,7 @@ async function propose(gameId){
 async function challenged(d){
  const game=gameById(d.gameId);
  if(!duelOK(game)){sendNet({k:'answer',mid:d.mid,ok:false});return;}
+ const pv=netState().peer?.v;if(pv&&/^\d/.test(pv)&&pv!==VERSION){sendNet({k:'answer',mid:d.mid,ok:false});toast(`${peerName()} has v${pv}, this phone v${VERSION}: reload the older one to play online`);return;}
  // Both challenged at the same moment: player 1's challenge goes ahead (player 2 accepts it, player 1 ignores theirs).
  if(pending){if(netState().seat!==1)return;resolveDialog('swap');sendNet({k:'answer',mid:d.mid,ok:true});return start(d.gameId,d.seed,d.mid);}
  // Only between games, in the Arcade or on the title screen (not over a board-game run). A phone still on a result
