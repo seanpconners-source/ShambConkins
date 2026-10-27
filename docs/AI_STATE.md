@@ -18,8 +18,14 @@ Next: owner playtest on two real phones and fix what they report (nothing has be
 ONLINE CO-OP (Oct 26, branch `online-coop-kart`, not pushed/merged yet; owner's design answers in "Online co-op/live" below):
 games that used to run as two separate solo runs online now share one world, ONLY when `s.online` (1-phone 2P and 1P unchanged).
 Done: kart Time Trial → 1v1 race, Sonic ×2, SMB ×3, Broforce ×4, every boss fight, horde ×2 (Living Dead, Evil Dead),
-Castlevania NES ×2. Left (owner picked all): Symphony of the Night (cv-symphony, sotn.js), Warriors, DOOM co-op (lockstep
-ticcmds would suit the vanilla-style rebuild), Photo Hunt on the same photos, Kart GP (pass) as one GP with the CPUs.
+Castlevania NES ×2, and (Oct 26, later) SotN, Warriors, Photo Hunt, Kart GP, DOOM ×2: ALL owner-picked games done (see the
+top-of-file comments in sotn.js, warriorsBeatEmUp.js, photohunt.js, doom.js). SotN = castlevania pattern (player 1's phone
+runs Dracula, straggler pulled into the throne room after 10 s, +5000 each). Warriors = player 1's phone runs the gangs,
+fights lock both into one ARENA stretch, KO'd → back after the fight. Photo Hunt = same bundled photos, clock-stamped claims
+{c}, earliest owns, round decided by {re} handshake. Kart GP online = 'race' mode. DOOM = lockstep ticcmds (adaptive lead
+4-12 tics, hash every 35 tics, `s.debug.net`), game.coop in game.js/actions.js (starts, MP things, weapons stay, shared
+keys, 3 lives, respawn by partner, spectate), one level, tally score each. All pass online-native with and without
+LAG=80-150 and their offline tests; real phones untested.
 
 ## Implemented systems
 - **Solo / 1P arcade (Oct 19 2026, batch 1 of 4, branch `claude/solo-mode-batch1`):** Arcade 1P / 2P switch + solo player
