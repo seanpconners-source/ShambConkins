@@ -102,7 +102,7 @@ const NET_NATIVE=new Set(['trivia-mixed','trivia-nick90','trivia-dbz','trivia-hx
  'rainbow-road-kart','rainbow-balloon-battle','kart-time-trial',
  // online co-op / live races (Oct 26): one shared world instead of two separate solo runs
  'sonic-ring-rush','sonic-goal-dash','smb-world-1','smb-coin-rush','smb-castle-dash',
- 'broforce-jungle','broforce-factory','broforce-city','broforce-desert','cv-vampire-killer','cv-candle-hunt','cv-symphony',
+ 'broforce-jungle','broforce-factory','broforce-city','broforce-desert','cv-vampire-killer','cv-candle-hunt','cv-symphony','warriors-brawl',
  'raiders-ball-run','sewer-clash','league-penalties','fight-night','hyrule-rupee-rush','hyrule-sword-duel']);
 // whole engines that play natively online (every boss fight is co-op on two phones)
 const NET_ENGINES=new Set(['bossfight','horde']);
