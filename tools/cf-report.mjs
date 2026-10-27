@@ -7,8 +7,9 @@ const H={Authorization:`Bearer ${TOKEN}`,'Content-Type':'application/json'};
 async function gql(query,variables){const r=await fetch('https://api.cloudflare.com/client/v4/graphql',{method:'POST',headers:H,body:JSON.stringify({query,variables})});return r.json();}
 const show=(title,j)=>{console.log('--- '+title);if(j.errors?.length){console.log('  errors:',JSON.stringify(j.errors).slice(0,400));return;}console.log(JSON.stringify(j.data,null,0).slice(0,6000));};
 const acc=body=>gql(`query($acc:String!,$since:Time!,$until:Time!){viewer{accounts(filter:{accountTag:$acc}){${body}}}}`,{acc:ACC,since,until});
-show('Durable Object invocations by hour/status',await acc('durableObjectsInvocationsAdaptiveGroups(limit:500,filter:{datetime_geq:$since,datetime_leq:$until},orderBy:[datetimeHour_ASC]){sum{requests errors} dimensions{datetimeHour status}}'));
-show('Worker invocations by hour/status',await acc('workersInvocationsAdaptive(limit:500,filter:{datetime_geq:$since,datetime_leq:$until,scriptName:"shambconkins"},orderBy:[datetimeHour_ASC]){sum{requests errors} dimensions{datetimeHour status}}'));
+show('Durable Object invocations by hour/script/status/room',await acc('durableObjectsInvocationsAdaptiveGroups(limit:500,filter:{datetime_geq:$since,datetime_leq:$until},orderBy:[datetimeHour_ASC]){sum{requests errors} dimensions{datetimeHour scriptName status objectId}}'));
+show('Durable Object usage by hour',await acc('durableObjectsPeriodicGroups(limit:500,filter:{datetime_geq:$since,datetime_leq:$until},orderBy:[datetimeHour_ASC]){sum{activeTime cpuTime inboundWebsocketMsgCount outboundWebsocketMsgCount} dimensions{datetimeHour}}'));
+show('Worker invocations by hour/script/status (every Worker on the account)',await acc('workersInvocationsAdaptive(limit:500,filter:{datetime_geq:$since,datetime_leq:$until},orderBy:[datetimeHour_ASC]){sum{requests errors subrequests} dimensions{datetimeHour scriptName status}}'));
 // zone level: needs Zone read + Analytics read on the token
 const z=await (await fetch('https://api.cloudflare.com/client/v4/zones?name=loki-mylo.work',{headers:H})).json();
 const zone=z.result?.[0]?.id;console.log('--- zone',zone||('not readable: '+JSON.stringify(z.errors||z).slice(0,300)));
