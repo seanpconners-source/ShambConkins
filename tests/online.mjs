@@ -22,7 +22,7 @@ const S=(ph,f)=>ph.p.evaluate(f);
 async function join(ph,who){
  await act(ph,'arcade');await ph.p.waitForSelector('.solo-strip');
  await act(ph,'online-mode');await waitDialog(ph,/Play online/);
- await ph.p.fill('#net-room','Test Room');await ph.p.check(`input[name="net-who"][value="${who}"]`);
+ await ph.p.fill('#net-room',process.env.ROOM||'Test Room');await ph.p.check(`input[name="net-who"][value="${who}"]`);
  await choose(ph,'Join room');
 }
 const A=await phone('A'),B=await phone('B');

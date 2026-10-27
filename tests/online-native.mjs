@@ -22,7 +22,7 @@ async function phone(tag){
  await p.addInitScript(h=>{try{localStorage.setItem('sc-net-host',h);}catch{}},HOST);
  // NETCOUNT=1: count what this phone sends to the room (messages and bytes), printed per game
  await p.addInitScript(()=>{const W=WebSocket.prototype,o=W.send;window.__wsc={n:0,b:0};W.send=function(d){window.__wsc.n++;window.__wsc.b+=d?.length||0;return o.call(this,d);};});
- await p.goto(url);await p.waitForSelector('.title-screen',{timeout:60000});await p.waitForFunction(()=>!document.getElementById('boot'));
+ await p.goto(url,{timeout:180000});await p.waitForSelector('.title-screen',{timeout:60000});await p.waitForFunction(()=>!document.getElementById('boot'));
  await p.evaluate(()=>{window.ShambConkins.store.profile.settings.reducedMotion=true;});
  return {p,errors,tag};
 }
