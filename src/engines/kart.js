@@ -80,8 +80,9 @@ function pickCPUs(n,exclude,rand,profile){
 }
 
 async function kart(s){
- // online, Time Trials becomes 'duo': a 1-v-1 race, just the two of you on the track, item boxes on, no CPU racers
- const mode0=MODES[s.game.kartMode]?s.game.kartMode:'race',mode=s.online&&mode0==='time'?'duo':mode0,MD=MODES[mode];
+ // online, Time Trials becomes 'duo': a 1-v-1 race, just the two of you on the track, item boxes on, no CPU racers;
+ // Grand Prix pass & play becomes one Grand Prix VS race together against the CPU racers
+ const mode0=MODES[s.game.kartMode]?s.game.kartMode:'race',mode=s.online&&mode0==='time'?'duo':s.online&&mode0==='gp'?'race':mode0,MD=MODES[mode];
  let gl0=null;{const probe=document.createElement('canvas');try{gl0=probe.getContext('webgl',GL_OPTS)||probe.getContext('experimental-webgl',GL_OPTS);}catch{}try{gl0?.getExtension('WEBGL_lose_context')?.loseContext();}catch{}}
  const [cv,x]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.shared=MD.vs;s.updateScores();fullBleed(s);
  if(!await settle(s))return;

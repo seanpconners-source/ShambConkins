@@ -99,7 +99,7 @@ const NET_NATIVE=new Set(['trivia-mixed','trivia-nick90','trivia-dbz','trivia-hx
  'sp-dodgeball','sp-cheesy-poofs','sp-killed-kenny',
  'bond-laser-vault','bond-golden-gun','bond-goldfinger-bomb',
  'space-swarm-versus','space-swarm-coop',
- 'rainbow-road-kart','rainbow-balloon-battle','kart-time-trial',
+ 'rainbow-road-kart','rainbow-balloon-battle','kart-time-trial','kart-grand-prix-pass',
  // online co-op / live races (Oct 26): one shared world instead of two separate solo runs
  'sonic-ring-rush','sonic-goal-dash','smb-world-1','smb-coin-rush','smb-castle-dash',
  'broforce-jungle','broforce-factory','broforce-city','broforce-desert','cv-vampire-killer','cv-candle-hunt','cv-symphony','warriors-brawl','megatouch-photohunt',
