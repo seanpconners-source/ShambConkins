@@ -7,9 +7,18 @@
 // ends with the Phantom Bat and its magic crystal. Modes: 'boss' (fastest to beat the Phantom Bat) and 'hearts' (most
 // hearts after 60 s; the exit door sends you round the castle again with fresh candles). Everything is drawn
 // procedurally in an NES-like palette; no ROM art and no Konami music.
+// Online (s.online) both hunters run the castle AT ONCE, each on their own phone (P1 Simon, P2 in Richter blue), the
+// partner drawn from snapshots with an edge arrow when off screen. Candles {cd}, cracked walls {wb} and placed monsters
+// {fk} one of you destroys are gone for both (the drops go to whoever did it). 'boss' = co-op: a hunter who dies comes
+// back next to the partner, player 1's phone runs the Phantom Bat (the other sends hits {bh}), a straggler is pulled into
+// the arena, the bat's +3000 goes to both, everyone who grabs a crystal finishes, the other gets 10 s, highest score wins.
+// 'hearts' = both in the same 60 s; most hearts wins. Both phones swap finals {fin}.
 const {clamp,seededRandom}=require("src/utils.js");
 const {soloFinish,soloProgress}=require("src/solo.js");
 const {Fx,arenaTouch,snd,noise,jingle,outlined,PCOL,Countdown,settle}=require("src/engines/arenaKit.js");
+const {netField}=require("src/engines/netField.js");
+const {partnerArrow}=require("src/engines/partnerArrow.js");
+const NET_GRACE=10;
 
 const STEP=1/60,T=16,ROWS=12,FL=10,HUDH=44,MAXC=420; // tile size, rows, floor row, HUD height (logical px), column stride
 const STONE=1,BLOCK=2,CRACK=3;
@@ -79,6 +88,7 @@ function makePlayer(i,L,mode){return {i,x:L.start,y:FL*T,vx:0,vy:0,grounded:true
 // ------------------------------------------------------------------ the game
 async function castlevania(s){
  const mode=s.game.cvMode==='hearts'?'hearts':'boss';
+ const net=s.online||null,me=net?net.me:0,them=1-me,host=!net||me===0;
  const [c,g]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.updateScores();
  if(!await settle(s))return;
  let L=buildCastle(s.random,mode);const seedBase=Math.floor(s.random()*1e9);
@@ -88,7 +98,7 @@ async function castlevania(s){
  const worlds=[makeWorld(L,seedBase),makeWorld(L,seedBase)],pl=[makePlayer(0,L,mode),makePlayer(1,L,mode)];
  const cams=[{x:0,w:256},{x:0,w:256}];
  const touchUI=typeof matchMedia==='function'&&matchMedia('(pointer: coarse)').matches;
- let phase='title',titleT=0,cd=new Countdown(3),clock=0,acc=0,endT=0,winner=-1,simT=0,frames=0,turn=0,gi=0,turnText='',endText='';
+ let phase='title',titleT=0,cd=new Countdown(3),clock=0,acc=0,endT=0,winner=-1,simT=0,frames=0,turn=net?me:0,gi=0,turnText='',endText='';
  // P1's run is recorded every step and replayed as a ghost during P2's turn
  const ghost=[],ghostAt=i=>i===1&&gi<ghost.length?ghost[gi]:null;
  const snap=p=>({i:p.i,x:p.x,y:p.y,facing:p.facing,crouch:p.crouch,whip:p.whip&&{t:p.whip.t,crouch:p.whip.crouch},lvl:p.lvl,dead:p.dead,stair:!!p.stair,grounded:p.grounded,hurt:p.hurt,
@@ -114,7 +124,7 @@ async function castlevania(s){
   onUp:f=>{if(pads.jump===f)pads.jump=null;if(pads.stick===f)pads.stick=null;}});
  const readInput=i=>{const inp=inputs[i],st=pads.stick;let {l,r,u,d,jump}=keys;
   if(st){const dx=st.x-st.sx,dy=st.y-st.sy;if(dx>10)r=1;if(dx<-10)l=1;if(dy<-18&&-dy>Math.abs(dx)*.6)u=1;if(dy>18&&dy>Math.abs(dx)*.6)d=1;}
-  if(pads.jump)jump=1;Object.assign(inp,{l,r,u,d,jump});};
+  if(pads.jump)jump=1;Object.assign(inp,{l,r,u,d,jump});if(bot&&i===me)botInput(inp);};
 
  // ---------------- sounds (original synth effects)
  const sfx={
@@ -161,7 +171,10 @@ async function castlevania(s){
  function kill(p,pit){if(p.dead||p.finished)return;note(p,pit?'pit':'die');p.dead=1;p.pit=pit;p.deaths++;p.whip=null;p.stair=null;p.hurt=false;p.vx=0;p.vy=0;sfx.die();s.react(p.i,'sad');
   if(mode==='hearts')p.hearts-=Math.min(p.hearts,3);}
  function respawn(p){const w=worlds[p.i];let check=L.checks[0];for(const k of L.checks)if(k<=p.best+4)check=Math.max(check,k);
-  if(w.locked&&w.boss&&!w.boss.dead){w.bossHp=w.boss.hp;w.locked=false;w.boss=null;check=Math.min(check,L.arena.x0-24);}
+  // online boss run: back next to the partner (same castle lap, standing on the floor, further on)
+  if(net&&mode==='boss'){const q=pl[them];if(q.net&&!q.dead&&q.lap===p.lap&&q.x>check&&q.grounded&&Math.abs(q.y-FL*T)<1){check=q.x-12;}
+   if(w.locked){Object.assign(p,{x:L.arena.x0+48,y:FL*T,vx:0,vy:0,grounded:true,jumped:false,dead:0,pit:false,stair:null,whip:null,hurt:false,crouch:false,hp:HP,inv:90});return;}}
+  if(w.locked&&w.boss&&!w.boss.dead&&!net){w.bossHp=w.boss.hp;w.locked=false;w.boss=null;check=Math.min(check,L.arena.x0-24);}
   Object.assign(p,{x:check,y:FL*T,vx:0,vy:0,grounded:true,jumped:false,dead:0,pit:false,stair:null,whip:null,hurt:false,crouch:false,hp:HP,inv:90});
   w.foes=L.foes.filter(e=>e.x>check+120).map(spawnFoe);w.eshots=[];w.flames=[];w.shots=[];w.zoneT=L.zones.map(()=>60);cams[p.i].x=check-cams[p.i].w*.4;}
  function hurt(p,w,dmg,fromX){if(p.inv>0||p.dead||p.finished)return;p.hp=Math.max(0,p.hp-dmg);sfx.hurt();s.react(p.i,'sad');w.fx.shake(3);note(p,'hurt');
@@ -171,15 +184,20 @@ async function castlevania(s){
  function nextLap(p){p.lap++;note(p,'lap');worlds[p.i]=makeWorld(L,seedBase+p.lap*7919);Object.assign(p,{x:L.lapX,y:FL*T,vx:0,vy:0,grounded:true,stair:null,whip:null,crouch:false});p.best=Math.max(p.best,p.x);
   cams[p.i].x=p.x-cams[p.i].w*.4;flash[p.i]=.8;sfx.clear();}
  const dropItem=(w,type,x,y)=>w.items.push({type,x,y,x0:x,vy:type==='heart'?0:-1.6,t:0,ground:false});
- function breakCandle(p,w,cd){cd.alive=false;sfx.candle();w.fx.burst(cd.x,cd.y,{n:8,colors:[N.white,N.orange,N.gold],speed:50,life:.3,size:1.6});dropItem(w,cd.item,cd.x,cd.y);}
- function breakWall(p,w,cc,r){w.tiles[r*MAXC+cc]=0;sfx.wall();w.fx.burst(cc*T+8,r*T+8,{n:10,colors:['#a87848','#5c3818',N.lgray],speed:70,life:.4,size:2,gravity:200});
+ function breakCandle(p,w,cd){cd.alive=false;if(net)ev({cd:[p.lap,w.candles.indexOf(cd)]});sfx.candle();w.fx.burst(cd.x,cd.y,{n:8,colors:[N.white,N.orange,N.gold],speed:50,life:.3,size:1.6});dropItem(w,cd.item,cd.x,cd.y);}
+ function breakWall(p,w,cc,r){w.tiles[r*MAXC+cc]=0;if(net)ev({wb:[p.lap,cc,r]});sfx.wall();w.fx.burst(cc*T+8,r*T+8,{n:10,colors:['#a87848','#5c3818',N.lgray],speed:70,life:.4,size:2,gravity:200});
   const what=w.hidden.get(r*MAXC+cc);if(what){w.hidden.delete(r*MAXC+cc);dropItem(w,what,cc*T+8,r*T+8);}}
  function damageFoe(p,w,e,dmg){e.hp-=dmg;
   if(e.hp>0){e.inv=14;sfx.hit();if(e.type==='skeleton')e.x+=p.x<e.x?3:-3;return;}
-  e.state='dying';e.t=0;p.score+=PTS[e.type]||100;sfx.hit();w.fx.pop(e.x,e.y-(e.type==='bat'||e.type==='medusa'?10:34),String(PTS[e.type]||100),{color:N.white,stroke:'#000',size:7,rise:16,life:.6});
+  e.state='dying';e.t=0;if(net&&!e.spawned)ev({fk:[p.lap,e.home]});p.score+=PTS[e.type]||100;sfx.hit();w.fx.pop(e.x,e.y-(e.type==='bat'||e.type==='medusa'?10:34),String(PTS[e.type]||100),{color:N.white,stroke:'#000',size:7,rise:16,life:.6});
   const r=w.rng();if(r<(mode==='hearts'?.45:.25))dropItem(w,r<.06?'bigheart':'heart',e.x,e.type==='bat'||e.type==='medusa'?e.y:e.y-16);}
- function damageBoss(p,w,dmg){const B=w.boss;B.hp=Math.max(0,B.hp-dmg);B.inv=20;sfx.hit();w.fx.shake(2);w.fx.burst(B.x,B.y,{n:5,colors:[N.white,N.orange],speed:60,life:.25,size:1.6});
-  if(B.hp<=0){B.dead=true;B.state='die';B.t=0;p.score+=3000;sfx.boss();note(p,'boss down');}}
+ function damageBoss(p,w,dmg,remote=false){const B=w.boss;B.inv=20;sfx.hit();w.fx.shake(2);w.fx.burst(B.x,B.y,{n:5,colors:[N.white,N.orange],speed:60,life:.25,size:1.6});
+  // online the other phone sends its hits; player 1's phone owns the bat's HP
+  if(net&&!host){ev({bh:dmg});return;}
+  B.hp=Math.max(0,B.hp-dmg);
+  if(B.hp<=0){B.dead=true;B.state='die';B.t=0;batDown(remote?pl[me]:p);}}
+ // the bat falls: +3000 (online: to both hunters)
+ function batDown(p){p.score+=3000;sfx.boss();note(p,'boss down');}
  // anything that hurts monsters: the whip, sub-weapons and holy-water flames
  function hitBox(p,w,b,dmg,hits,whip=false){let any=false;
   for(const cd of w.candles)if(cd.alive&&!hits.has(cd)&&overlap(b,{x0:cd.x-5,x1:cd.x+5,y0:cd.y-9,y1:cd.y+7})){hits.add(cd);breakCandle(p,w,cd);any=true;}
@@ -240,11 +258,14 @@ async function castlevania(s){
   if(p.y-30>ROWS*T+8){kill(p,true);return;}
   p.best=Math.max(p.best,p.x);
   const A=L.arena;
-  if(A&&!w.locked&&!w.crystal&&p.x>A.x0+40&&!p.dead){w.locked=true;w.boss={x:A.cx,y:3*T,hp:w.bossHp||BAT_HP,max:BAT_HP,state:'sleep',t:0,inv:0,tx:A.cx,ty:56,vx:0,vy:0,flap:0,dead:false};sfx.boss();note(p,'boss room');}
+  if(A&&!w.locked&&!w.crystal&&p.x>A.x0+40&&!p.dead&&host)wakeBat(w,p);
   if(A&&w.locked&&!w.crystal)p.x=Math.max(p.x,A.x0+6);
   if(L.exitX&&p.x>=L.exitX&&p.grounded&&!p.dead)nextLap(p);
  }
 
+ // the boss room locks and the Phantom Bat wakes (online: a hunter still outside is pulled in)
+ function wakeBat(w,p){const A=L.arena;w.locked=true;w.boss={x:A.cx,y:3*T,hp:w.bossHp||BAT_HP,max:BAT_HP,state:'sleep',t:0,inv:0,tx:A.cx,ty:56,vx:0,vy:0,flap:0,dead:false};sfx.boss();note(p,'boss room');
+  const q=pl[me];if(net&&!q.dead&&q.x<A.x0+12){Object.assign(q,{x:A.x0+48,y:FL*T,vx:0,vy:0,grounded:true,jumped:false,stair:null,whip:null,hurt:false,crouch:false,inv:60});q.best=Math.max(q.best,q.x);cams[me].x=A.x0-20;flash[me]=.8;}}
  // ---------------- monsters, pickups, projectiles, the boss
  function pickUp(p,w,it){const t=it.type;
   if(t==='heart'){p.hearts++;sfx.heart();if(mode==='hearts')w.fx.pop(it.x,it.y-12,'+1',{color:N.orange,stroke:'#000',size:7,rise:16,life:.5});}
@@ -307,16 +328,18 @@ async function castlevania(s){
   // the Phantom Bat
   const B=w.boss,A=L.arena;
   if(B){if(B.inv>0)B.inv--;B.flap+=B.state==='sleep'?.04:.25;
-   if(B.state==='die'){B.t++;if(B.t%6===0)w.fx.burst(B.x+(w.rng()-.5)*34,B.y+(w.rng()-.5)*16,{n:6,colors:[N.white,N.orange,N.gold],speed:60,life:.35,size:2});
+   // online the other phone's bat follows player 1's snapshots (its fireballs come as {bf})
+   if(net&&!host){if(B.nx!=null&&B.state!=='die'){B.x+=(B.nx-B.x)*.25;B.y+=(B.ny-B.y)*.25;}if(B.state==='die'){B.t++;if(B.t%6===0)w.fx.burst(B.x+(w.rng()-.5)*34,B.y+(w.rng()-.5)*16,{n:6,colors:[N.white,N.orange,N.gold],speed:60,life:.35,size:2});}}
+   else if(B.state==='die'){B.t++;if(B.t%6===0)w.fx.burst(B.x+(w.rng()-.5)*34,B.y+(w.rng()-.5)*16,{n:6,colors:[N.white,N.orange,N.gold],speed:60,life:.35,size:2});
     if(B.t>70){B.state='gone';w.crystal=true;dropItem(w,'crystal',A.cx,2*T);}}
-   else if(B.state!=='gone'&&(!fr||B.state==='sleep')){B.t++;
+   else if(B.state!=='gone'&&(!fr||B.state==='sleep')){B.t++;const tp=batTarget(p,w);
     const roam=()=>{B.state='hover';B.t=0;B.tx=A.x0+40+w.rng()*(A.x1-A.x0-80);B.ty=88+w.rng()*26;};
     if(B.state==='sleep'){if(B.t>50)roam();}
     else if(B.state==='hover'){B.x+=(B.tx-B.x)*.03;B.y+=(B.ty-B.y)*.03+Math.sin(B.t*.1)*.4;
-     if(B.t>(B.hp<6?70:95)){B.t=0;B.state=w.rng()<.6&&!p.dead?'tell':'shoot';}}
-    else if(B.state==='tell'){B.x+=Math.sin(B.t*1.7)*1.2;if(B.t>26){B.t=0;B.state='swoop';const dx=p.x-B.x,dy=p.y-14-B.y,d=Math.max(1,Math.hypot(dx,dy));B.vx=dx/d*1.8;B.vy=dy/d*1.8;}}
+     if(B.t>(B.hp<6?70:95)){B.t=0;B.state=w.rng()<.6&&!tp.dead?'tell':'shoot';}}
+    else if(B.state==='tell'){B.x+=Math.sin(B.t*1.7)*1.2;if(B.t>26){B.t=0;B.state='swoop';const dx=tp.x-B.x,dy=tp.y-14-B.y,d=Math.max(1,Math.hypot(dx,dy));B.vx=dx/d*1.8;B.vy=dy/d*1.8;}}
     else if(B.state==='swoop'){B.x+=B.vx;B.y+=B.vy;if(B.y>FL*T-14||B.t>60||B.x<A.x0+22||B.x>A.x1-22)roam();}
-    else if(B.state==='shoot'){if((B.t===24||B.t===46&&B.hp<5)&&!p.dead){const dx=p.x-B.x,dy=p.y-16-B.y,d=Math.max(1,Math.hypot(dx,dy));w.eshots.push({kind:'fire',x:B.x,y:B.y+6,vx:dx/d*1.4,vy:dy/d*1.4,g:0,t:0});sfx.sub();}
+    else if(B.state==='shoot'){if((B.t===24||B.t===46&&B.hp<5)&&!tp.dead){const dx=tp.x-B.x,dy=tp.y-16-B.y,d=Math.max(1,Math.hypot(dx,dy)),f={kind:'fire',x:B.x,y:B.y+6,vx:dx/d*1.4,vy:dy/d*1.4,g:0,t:0};w.eshots.push(f);if(net)ev({bf:[Math.round(f.x),Math.round(f.y),+f.vx.toFixed(2),+f.vy.toFixed(2)]});sfx.sub();}
      if(B.t>58)roam();}
     B.x=clamp(B.x,A.x0+24,A.x1-24);B.y=clamp(B.y,24,FL*T-12);}
    if(!['sleep','die','gone'].includes(B.state)&&!p.dead&&!p.finished&&overlap(playerBox(p),bossBox(B)))hurt(p,w,2,B.x);}
@@ -469,7 +492,8 @@ async function castlevania(s){
   for(let k=0;k*4<len;k++)R(whipCol(lvl,k),hx+k*4,hy-(k%2),3,2);if(lvl===3){R(whipCol(3,1),hx+len-3,hy-2,5,5);}}
 
  // ---------------- screen layout: a 16-column NES screen (12 on a portrait phone) plus the status bar, scaled to fit, controls underneath
- const layout=()=>{const cols=s.W<s.H?12:16,sc=Math.max(.5,Math.min(s.W/(cols*T),s.H/(ROWS*T+HUDH))),hh=HUDH*sc,lh=ROWS*T*sc,oy=Math.max(0,(s.H-hh-lh)*.28);return {sc,oy,ly:oy+hh,lh,hh};};
+ // online the status bar starts below the duel chip
+ const layout=()=>{const top=net?30:0,cols=s.W<s.H?12:16,sc=Math.max(.5,Math.min(s.W/(cols*T),(s.H-top)/(ROWS*T+HUDH))),hh=HUDH*sc,lh=ROWS*T*sc,oy=Math.max(top,(s.H-hh-lh)*.28);return {sc,oy,ly:oy+hh,lh,hh};};
  function drawView(i){
   const lay=layout(),{sc,ly,lh}=lay,p=pl[i],w=worlds[i],cam=cams[i];cam.w=s.W/sc;
   g.save();g.beginPath();g.rect(0,ly,s.W,lh);g.clip();
@@ -488,11 +512,13 @@ async function castlevania(s){
   for(const b of w.eshots)drawShot(b);
   for(const b of w.shots)drawShot(b);
   const o=ghostAt(i);if(o&&o.x>x0-20&&o.x<x1+20)drawHunter(o,.42);
+  const q=net&&pl[them].net&&pl[them].lap===p.lap?pl[them]:null;if(q&&q.x>x0-20&&q.x<x1+20)drawHunter(q);
   drawHunter(p);
   if(w.freeze>0){g.fillStyle='rgba(60,120,255,.1)';g.fillRect(x0,0,x1-x0,ROWS*T);}
   w.fx.draw(g);w.fx.end(g);
   g.restore();
   if(flash[i]>0){g.fillStyle=`rgba(0,0,0,${flash[i]})`;g.fillRect(0,ly,s.W,lh);}
+  if(q)partnerArrow(s,g,{x:0,y:ly,w:s.W,h:lh},(q.x-cam.x)*sc,ly+(q.y-18)*sc,{player:them,color:PCOL[them],label:`${Math.round(Math.abs(q.x-p.x)/T)} m`,size:Math.round(clamp(10*sc,14,24))});
   drawHUD(i,lay);
  }
  const prog=q=>{if(q.finished)return 100;const w=worlds[q.i],B=w.boss,boss=w.crystal?9:B?(B.max-B.hp)/B.max*9:0;return Math.min(99,Math.round(clamp((q.best-L.start)/(L.end-L.start),0,1)*90+boss));};
@@ -514,8 +540,11 @@ async function castlevania(s){
   txt(`P-${s.players[i].name.toUpperCase().slice(0,8)}`,hx,r3,size,PCOL[i]);
   // progress strip (both players) and the target to beat
   const sw=Math.min(s.W*.5,320),sx=(s.W-sw)/2,sy=hy+hh*.88;g.fillStyle='rgba(255,255,255,.18)';g.fillRect(sx,sy-1,sw,2);
-  const gh=ghostAt(i),track=q=>clamp((q.best-L.start)/(L.end-L.start),0,1);for(const q of gh?[gh,p]:[p]){g.save();g.globalAlpha=q===p?1:.6;g.fillStyle=PCOL[q.i];g.beginPath();g.arc(sx+track(q)*sw,sy,q===p?size*.32:size*.24,0,7);g.fill();g.restore();}
-  if(i===1&&phase!=='title'){const q=pl[0];txt(`BEAT ${s.players[0].name.toUpperCase().slice(0,9)}: ${mode==='hearts'?q.hearts+' HEARTS':q.finished?fmtRace(q.finishT):prog(q)+'%'}`,s.W/2,hy+hh+size*.3,Math.round(size*.8),PCOL[0],'center');}
+  const gh=net?(pl[them].net?pl[them]:null):ghostAt(i),track=q=>clamp((q.best-L.start)/(L.end-L.start),0,1);for(const q of gh?[gh,p]:[p]){g.save();g.globalAlpha=q===p?1:.6;g.fillStyle=PCOL[q.i];g.beginPath();g.arc(sx+track(q)*sw,sy,q===p?size*.32:size*.24,0,7);g.fill();g.restore();}
+  if(net&&phase!=='title'){const q=pl[them],first=Math.min(p.finished?p.finishT:Infinity,q.finished?q.finishT:Infinity);
+   txt(`${s.players[them].name.toUpperCase().slice(0,9)}: ${mode==='hearts'?q.hearts+' HEARTS':q.score+(q.finished?' · CRYSTAL':'')}`,s.W/2,hy+hh+size*.3,Math.round(size*.8),PCOL[them],'center');
+   if(mode==='boss'&&first<Infinity&&!(p.finished&&q.finished)&&phase==='play'){const left=Math.max(0,Math.ceil(first+NET_GRACE-clock));outlined(g,p.finished?`${s.players[them].name.toUpperCase()} HAS ${left} s`:`GRAB THE CRYSTAL! ${left}`,s.W/2,lay.ly+lay.lh*.2,{size:size*1.3,fill:left<=3?N.orange:N.gold,stroke:'#000'});}}
+  if(i===1&&phase!=='title'&&!net){const q=pl[0];txt(`BEAT ${s.players[0].name.toUpperCase().slice(0,9)}: ${mode==='hearts'?q.hearts+' HEARTS':q.finished?fmtRace(q.finishT):prog(q)+'%'}`,s.W/2,hy+hh+size*.3,Math.round(size*.8),PCOL[0],'center');}
   const ly=lay.ly,lh=lay.lh;
   if(p.dead&&p.dead>20)outlined(g,p.pit?'INTO THE ABYSS!':'YOU DIED',s.W/2,ly+lh*.45,{size:size*1.5,fill:N.white,stroke:'#000'});
   if(mode==='boss'&&p.finished&&phase==='play')outlined(g,'STAGE CLEAR',s.W/2,ly+lh*.42,{size:size*1.6,fill:N.gold,stroke:'#000'});
@@ -543,10 +572,48 @@ async function castlevania(s){
   Object.assign(q,{x:cc*T+8,y:FL*T,vx:0,vy:0,grounded:true,stair:null,dead:0,pit:false,hurt:false,whip:null});q.best=Math.max(q.best,q.x);cams[i].x=Math.max(0,q.x-120);};
  s.debug={log,get phase(){return phase;},get clock(){return clock;},get turn(){return turn;},ghost,pl,L,worlds,cams,inputs,setClock(v){clock=v;},teleport,
   toBoss(i){teleport(i,L.arena?L.arena.x0+60:L.end-40);},hurtBoss(i,n){const B=worlds[i].boss;if(B&&!B.dead){B.inv=0;damageBoss(pl[i],worlds[i],n);}}};
+ if(net)setTimeout(()=>{if(s.debug)s.debug.bot=()=>{if(!bot){bot={t:0,stuck:0};return 'drive';}return '';};},0);
 
+ // ---------------- online (see the top of the file)
+ let nf=null,netStarted=false,netScores=null,bot=null;
+ function ev(e){nf?.event(e);}
+ // the bat goes after the nearer hunter in the arena (online, on player 1's phone)
+ function batTarget(p,w){const q=pl[them];if(!net||!q.net||q.dead||q.lap!==p.lap||q.x<L.arena.x0)return p;if(p.dead)return q;return Math.abs(q.x-w.boss.x)<Math.abs(p.x-w.boss.x)?q:p;}
+ const packP=p=>({...snap(p),i:p.i,sc:p.score,h:p.hearts,b:Math.round(p.best),lap:p.lap,f:p.finished?1:0,ft:+p.finishT.toFixed(2),hp:p.hp,sub:p.sub,inv:p.inv>0?1:0,flash:p.flash>0?1:0});
+ function unpackP(o){const q=pl[them];if(!o||typeof o!=='object')return;const first=!q.net||q.lap!==o.lap;q.net={o,at:performance.now()};
+  Object.assign(q,{facing:o.facing,crouch:o.crouch,whip:o.whip,lvl:o.lvl,dead:o.dead,stair:o.stair,grounded:o.grounded,hurt:o.hurt,vx:o.vx,throwT:o.throwT,score:o.sc,hearts:o.h,lap:o.lap,hp:o.hp,sub:o.sub,inv:o.inv?30:0,flash:o.flash?20:0});
+  q.best=Math.max(q.best,o.b);if(o.f&&!q.finished){q.finished=true;q.finishT=o.ft;}if(first){q.x=o.x;q.y=o.y;}}
+ function stepRemote(dt){const q=pl[them],n=q.net;if(!n)return;const o=n.o,k=1-Math.exp(-dt*16);if(Math.abs(o.x-q.x)>80){q.x=o.x;q.y=o.y;}else{q.x+=(o.x-q.x)*k;q.y+=(o.y-q.y)*k;}if(q.grounded&&Math.abs(q.vx)>.05||q.stair)q.anim+=.12*dt*60;}
+ function unpackBat(b){const w=worlds[me],A=L.arena;if(!A||!Array.isArray(b))return;const [x0,y0,st,hp]=b;
+  if(!w.boss){if(st==='gone'&&w.crystal)return;wakeBat(w,pl[me]);w.boss.x=x0;w.boss.y=y0;}
+  const B=w.boss,prev=B.state;B.nx=x0;B.ny=y0;B.hp=hp;
+  if(st!==prev){B.state=st;B.t=0;if((st==='die'||st==='gone')&&!B.dead){B.dead=true;batDown(pl[me]);}
+   if(st==='gone'&&!w.crystal){w.crystal=true;dropItem(w,'crystal',A.cx,2*T);}}}
+ function onNetEvent(e){const p=pl[me],w=worlds[me];
+  if(e.cd){const [lap,k]=e.cd,cd0=lap===p.lap&&w.candles[k];if(cd0&&cd0.alive){cd0.alive=false;w.fx.burst(cd0.x,cd0.y,{n:6,colors:[N.white,N.orange,N.gold],speed:50,life:.3,size:1.6});}}
+  else if(e.wb){const [lap,cc,r]=e.wb;if(lap===p.lap&&w.tiles[r*MAXC+cc]){w.tiles[r*MAXC+cc]=0;w.hidden.delete(r*MAXC+cc);w.fx.burst(cc*T+8,r*T+8,{n:8,colors:['#a87848','#5c3818',N.lgray],speed:70,life:.4,size:2,gravity:200});}}
+  else if(e.fk){const [lap,home]=e.fk;if(lap===p.lap)for(const f of w.foes)if(f.alive&&!f.spawned&&f.home===home&&f.state!=='dying'){f.state='dying';f.t=0;f.active=true;break;}}
+  else if(e.bh&&host){const B=w.boss;if(B&&!B.dead&&B.state!=='sleep')damageBoss(p,w,+e.bh||0,true);}
+  else if(e.bf&&!host){const [x0,y0,vx,vy]=e.bf;w.eshots.push({kind:'fire',x:x0,y:y0,vx,vy,g:0,t:0});}}
+ if(net){nf=netField(s,{hz:20,pack:()=>{const o={p:packP(pl[me]),c:+clock.toFixed(2)};const B=worlds[me].boss;if(host&&B)o.b=[Math.round(B.x),Math.round(B.y),B.state,B.hp];return o;},
+  unpack:(i,d)=>{if(!d)return;unpackP(d.p);if(!host&&d.b&&mode==='boss')unpackBat(d.b);},onEvent:onNetEvent});}
+ // the boss run ends 10 s after the first crystal (or when both have one); the candle hunt after 60 s
+ const netOver=()=>{const p=pl[me],q=pl[them];if(mode==='hearts')return clock>=HUNT_TIME;if(clock>=RACE_CAP)return true;
+  if(p.finished&&q.finished)return clock-Math.max(p.finishT,q.finishT)>2.5;return clock>Math.min(p.finished?p.finishT:Infinity,q.finished?q.finishT:Infinity)+NET_GRACE;};
+ async function netEnd(){phase='net-end';endT=0;const p=pl[me],mine={sc:p.score,h:p.hearts,f:p.finished?1:0,t:+p.finishT.toFixed(2),b:Math.round(p.best)};nf.finish(mine);
+  const o=await nf.remoteDone();if(!o||!s.alive)return;const q=pl[them];Object.assign(q,{score:o.sc,hearts:o.h,finished:!!o.f,finishT:o.t});q.best=Math.max(q.best,o.b);
+  const F=[];F[me]=mine;F[them]=o;const v=F.map(f=>mode==='hearts'?f.h:f.sc);winner=v[0]===v[1]?-2:v[0]>v[1]?0:1;netScores=v;
+  phase='end';endT=0;endText=winner===-2?'A DRAW IN THE DARK!':`${s.players[winner].name.toUpperCase()} WINS!`;if(winner>=0)s.react(winner,'win');jingle([523,659,784,1047,1319],{type:'square',vol:.035,step:.1});}
+ // online test bot: walks right whipping, jumps when stuck, climbs the stairs it meets
+ function botInput(inp){const p=pl[me];bot.t++;inp.r=1;inp.l=0;inp.u=0;inp.d=0;inp.jump=0;if(bot.t%28===0)inp.atk=1;
+  if(p.grounded&&Math.abs(p.vx)<.1&&!p.whip)bot.stuck++;else bot.stuck=0;if(bot.stuck>20||bot.t%150===0){inp.press=1;bot.stuck=0;}
+  const B=worlds[me].boss;if(B&&!B.dead&&B.state!=='sleep'){inp.r=p.x<B.x-20?1:0;inp.l=p.x>B.x+20?1:0;if(bot.t%40===0)inp.press=1;}
+  const it=worlds[me].items.find(q=>q.type==='crystal');if(it){inp.r=p.x<it.x?1:0;inp.l=p.x>it.x?1:0;}}
  // ---------------- turns: title → P1 hand-off → countdown → run → P2 hand-off → countdown → run vs ghost → results
  const score=q=>mode==='hearts'?`${q.hearts} hearts`:q.finished?fmtRace(q.finishT):`${prog(q)}% of the way`;
  async function beginTurn(i){
+  // online: no hand-off; both phones start the countdown together
+  if(net){phase='wait';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;clock=0;acc=0;cd=new Countdown(3);phase='count';cams[me].x=0;return;}
   phase='handoff';turn=i;pads.stick=null;pads.jump=null;clearKeys();for(const inp of inputs)Object.assign(inp,{l:0,r:0,u:0,d:0,jump:0,press:0,atk:0,sub:0});
   const n0=s.players[0].name,desc=s.solo?(mode==='hearts'?`Night ${soloCleared+1}: whip candles and monsters for at least ${heartGoal()} hearts in 60 seconds to reach the next night.`:`Castle run ${soloCleared+1}: slay the Phantom Bat within ${fmtRace(raceCap())} to go again with less time.`):i===0?(mode==='hearts'?`You go first: whip candles and monsters for as many hearts as you can in 60 seconds. ${s.players[1].name} plays next against your ghost.`:`You go first: get through the castle and slay the Phantom Bat as fast as you can. ${s.players[1].name} plays next against your ghost.`)
    :(mode==='hearts'?`Beat ${n0}'s ${pl[0].hearts} hearts in 60 seconds. ${n0}'s ghost runs beside you.`:`Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'}. Follow or overtake ${n0}'s ghost.`);
@@ -565,17 +632,22 @@ async function castlevania(s){
   if(!s.alive)return;
   if(phase==='title'){titleT+=dt;if(titleT>2.45)beginTurn(0);}
   else if(phase==='count'){const lay=layout();cams[turn].w=s.W/lay.sc;updateCamera(pl[turn],turn);if(!cd.update(dt)){phase='play';for(const inp of inputs){inp.press=0;inp.atk=0;inp.sub=0;}}}
-  else if(phase==='play'||phase==='turn-end'||phase==='end'){
+  else if(phase==='play'||phase==='turn-end'||phase==='end'||phase==='net-end'){
    if(!cd.done)cd.update(dt);acc+=dt;let steps=0;const i=turn,p=pl[i];
+   if(net){stepRemote(dt);nf.tick(dt);
+    // player 1's phone wakes the bat when the partner walks into the boss room first
+    const w=worlds[me],q=pl[them],A=L.arena;if(host&&mode==='boss'&&A&&!w.locked&&!w.crystal&&q.net&&q.lap===p.lap&&q.x>A.x0+40&&!q.dead)wakeBat(w,p);}
    while(acc>=STEP&&steps<5){acc-=STEP;steps++;frames++;simT+=STEP;
     if(phase==='play'){clock+=STEP;const inp=inputs[i];readInput(i);stepPlayer(p,worlds[i],inp);stepWorld(worlds[i],p);}
     else{stepPlayer(p,worlds[i],still);}
     updateCamera(p,i);
-    if(turn===0&&phase!=='end'&&!s.solo)ghost.push(snap(p));else if(turn===1)gi++;
+    if(turn===0&&phase!=='end'&&!s.solo&&!net)ghost.push(snap(p));else if(turn===1)gi++;
    }
    if(steps===5)acc=0;
    for(const w of worlds)w.fx.update(dt);for(let k=0;k<2;k++)flash[k]=Math.max(0,flash[k]-dt*1.8);
-   if(phase==='play'){
+   if(phase==='play'&&net){if(netOver())netEnd();}
+   else if(phase==='net-end'){endT+=dt;}
+   else if(phase==='play'){
     if(turnOver(p)){endT=0;
      if(s.solo){soloOk=mode==='hearts'?p.hearts>=heartGoal():p.finished;phase='turn-end';turnText=mode==='hearts'?`${p.hearts}/${heartGoal()} HEARTS`:p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;jingle(soloOk?[523,659,784,1047]:[392,330,262],{type:'square',vol:.03,step:.09});}
      else if(turn===0){phase='turn-end';turnText=mode==='hearts'?`${p.hearts} HEARTS`:p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;jingle([523,659,784,1047],{type:'square',vol:.03,step:.09});}
@@ -587,17 +659,19 @@ async function castlevania(s){
       if(winner>=0)s.react(winner,'win');jingle([523,659,784,1047,1319],{type:'square',vol:.035,step:.1});}}
    }else if(phase==='turn-end'){endT+=dt;if(endT>2.4){if(s.solo){phase='handoff';soloAfter();return;}beginTurn(1);}}
    else{endT+=dt;if(endT>3.4){
+    if(net){s.finish(netScores,mode==='hearts'?`Night of the Candles live: ${s.players[0].name} ${pl[0].hearts} hearts, ${s.players[1].name} ${pl[1].hearts} hearts.`:`Vampire Killer together: ${s.players[0].name} ${pl[0].score} points${pl[0].finished?'':' (no crystal)'}, ${s.players[1].name} ${pl[1].score} points${pl[1].finished?'':' (no crystal)'}.`);return;}
     if(mode==='hearts'){const a=pl[0].hearts,b=pl[1].hearts;s.finish([a,b],`Night of the Candles: ${s.players[0].name} ${a} hearts, ${s.players[1].name} ${b} hearts.`);}
     else{const sc=[prog(pl[0]),prog(pl[1])];if(winner>=0){sc[winner]=100;sc[1-winner]=Math.min(sc[1-winner],99);}
      s.finish(sc,`Vampire Killer Dash: ${s.players[0].name} ${score(pl[0])}, ${s.players[1].name} ${score(pl[1])}.`);}
     return;}}
-   if(s.solo)s.setScores([soloTotal+(phase==='play'||phase==='turn-end'?soloPoints(pl[0]):0),0]);else if(mode==='hearts')s.setScores([pl[0].hearts,pl[1].hearts]);else s.setScores(pl.map(prog));
+   if(s.solo)s.setScores([soloTotal+(phase==='play'||phase==='turn-end'?soloPoints(pl[0]):0),0]);else if(net&&mode==='boss')s.setScores(pl.map(q=>q.score));else if(mode==='hearts')s.setScores([pl[0].hearts,pl[1].hearts]);else s.setScores(pl.map(prog));
   }
   // draw
   g.fillStyle='#000';g.fillRect(0,0,s.W,s.H);
   drawView(turn);
   if(phase==='title')drawTitle(titleT);
   if(phase==='count'||!cd.done&&phase==='play')cd.draw(g,s.W,s.H);
+  if(phase==='wait'||phase==='net-end')outlined(g,`WAITING FOR ${s.players[them].name.toUpperCase()}…`,s.W/2,s.H*.3,{size:Math.min(s.W*.05,22),fill:N.gold,stroke:'#000'});
   if(phase==='turn-end'||phase==='end'){const a=Math.min(1,endT*3),size=Math.min(s.W*.07,s.H*.07,46);g.save();g.globalAlpha=a;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(0,s.H*.4,s.W,s.H*.2);
    if(phase==='turn-end'){outlined(g,s.solo&&!soloOk&&mode==='hearts'?'NOT ENOUGH HEARTS':mode==='boss'&&pl[0].finished?'STAGE CLEAR!':'TIME UP',s.W/2,s.H/2-size*.3,{size,fill:N.gold,stroke:'#000'});outlined(g,`${s.players[0].name.toUpperCase()}: ${turnText}`,s.W/2,s.H/2+size*.75,{size:size*.5,fill:N.white,stroke:'#000'});}
    else{outlined(g,mode==='hearts'&&endT<1.2?'TIME UP':endText,s.W/2,s.H/2-size*.3,{size,fill:N.gold,stroke:'#000'});
