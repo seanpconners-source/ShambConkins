@@ -27,7 +27,7 @@ Object.assign(Game.prototype,{
   // nightmare: faster monsters and missiles
   for(let i=S.SARG_RUN1;i<=S.SARG_PAIN2;i++)this.states[i].tics=skill===4?this.baseTics[i]>>1:this.baseTics[i];
   const fast={[MT.BRUISERSHOT]:[15,20],[MT.HEADSHOT]:[10,20],[MT.TROOPSHOT]:[10,20]};for(const [t,[n,f]] of Object.entries(fast))this.mobjinfo[t].speed=skill===4?f:n;
-  if(!keepPlayer)this.players=[newPlayer()];
+  if(!keepPlayer)this.players=this.coop?[newPlayer(),newPlayer()]:[newPlayer()];
   this.loadMap();},
  loadMap(){
   const lv=loadLevel(this.wad,this.gfx,this.mapLump(this.gameepisode,this.gamemap));this.lv=lv;this.thinkers=[];this.leveltime=0;this.exiting=null;this.events.length=0;this.sounds.length=0;
@@ -36,12 +36,14 @@ Object.assign(Game.prototype,{
   this.playerstarts=[];
   for(const mt of lv.things)this.spawnMapThing(mt);
   const pl=this.players[0];if(!pl.mo&&this.playerstarts[0])this.spawnPlayer(this.playerstarts[0]);
+  // co-op: player 2 on its own start (or beside player 1 when the map has none)
+  if(this.coop)for(let i=1;i<this.players.length;i++)if(!this.players[i].mo){if(this.playerstarts[i])this.spawnPlayer(this.playerstarts[i],i);else if(pl.mo)this.spawnNear(i,pl.mo);}
   this.sky=this.commercial?(this.gamemap<12?'SKY1':this.gamemap<21?'SKY2':'SKY3'):'SKY'+this.gameepisode;
   this.levelStart=this.gametic;},
  spawnMapThing(mt){
   if(mt.type===11)return;
-  if(mt.type>=1&&mt.type<=4){if(mt.type===1)this.playerstarts[0]=mt;return;}
-  if(mt.options&16)return;// multiplayer only
+  if(mt.type>=1&&mt.type<=4){if(mt.type===1||this.coop)this.playerstarts[mt.type-1]=mt;return;}
+  if(mt.options&16&&!this.coop)return;// multiplayer only (co-op spawns them)
   const bit=this.skill===0?1:this.skill===4?4:1<<(this.skill-1);if(!(mt.options&bit))return;
   const type=I.BY_DOOMEDNUM.get(mt.type);if(type===undefined)return;
   const info=this.mobjinfo[type];if(this.nomonsters&&(type===MT.SKULL||info.flags&MF.COUNTKILL))return;
@@ -50,13 +52,25 @@ Object.assign(Game.prototype,{
   if(mo.flags&MF.COUNTKILL)this.totalkills++;if(mo.flags&MF.COUNTITEM)this.totalitems++;
   mo.angle=(P.ANG45*Math.floor(mt.angle/45))>>>0;if(mt.options&8)mo.flags|=MF.AMBUSH;
   this.events.push({kind:'spawn',mo,map:true});},
- spawnPlayer(mt){
-  let p=this.players[0];if(p.playerstate==='reborn'){const keep={killcount:p.killcount,itemcount:p.itemcount,secretcount:p.secretcount};p=this.players[0]=Object.assign(newPlayer(),keep);p.playerstate='live';}
+ spawnPlayer(mt,i=0){
+  let p=this.players[i];if(p.playerstate==='reborn'){const keep={killcount:p.killcount,itemcount:p.itemcount,secretcount:p.secretcount};if(this.coop)Object.assign(keep,{lives:p.lives,cards:p.cards.slice()});p=this.players[i]=Object.assign(newPlayer(),keep);p.playerstate='live';}
   const mo=this.spawnMobj(mt.x,mt.y,P.ONFLOORZ,MT.PLAYER);mo.angle=(P.ANG45*Math.floor(mt.angle/45))>>>0;mo.player=p;mo.health=p.health;
   p.mo=mo;p.playerstate='live';p.refire=0;p.message=null;p.damagecount=0;p.bonuscount=0;p.extralight=0;p.fixedcolormap=0;p.viewheight=VIEWHEIGHT;p.viewz=mo.z+VIEWHEIGHT;
   this.setupPsprites(p);},
  // pistol start after a death (single player: the level restarts)
  rebornLevel(){this.players[0]=newPlayer();this.loadMap();},
+ // co-op: player i comes back (pistol start, keys and stats kept) next to the other player if they are alive, else
+ // on its own start; the corpse stays where it fell
+ rebornCoop(i){const old=this.players[i];if(old.mo)old.mo.player=null;old.mo=null;
+  const mate=this.players.find((p,k)=>k!==i&&p.mo&&p.playerstate==='live');
+  if(mate)this.spawnNear(i,mate.mo);else this.spawnPlayer(this.playerstarts[i]||this.playerstarts[0],i);
+  const mo=this.players[i].mo;if(mo){const fog=this.spawnMobj(mo.x,mo.y,mo.subsector.sector.floorheight,MT.TFOG);this.sound(fog,'telept');}},
+ // spawn player i on a free spot beside mobj m (tries a ring of spots, then gives up and stands on m's own start)
+ spawnNear(i,m){const R=48;for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1],[-2,0],[2,0],[0,-2],[0,2]]){
+   const mt={x:m.x+dx*R,y:m.y+dy*R,angle:Math.round(m.angle/4294967296*360)};
+   this.spawnPlayer(mt,i);const mo=this.players[i].mo;mo.angle=m.angle;if(this.checkPosition(mo,mo.x,mo.y)&&mo.subsector.sector.floorheight<=m.z+24&&mo.subsector.sector.ceilingheight-mo.subsector.sector.floorheight>=56)return true;
+   this.removeMobj(mo);this.players[i].mo=null;this.players[i].playerstate='reborn';}
+  this.spawnPlayer(this.playerstarts[i]||this.playerstarts[0],i);return false;},
  exitLevel(){this.exiting=this.exiting||'normal';},
  secretExitLevel(){this.exiting=this.commercial&&!this.wad.has('MAP31')?'normal':'secret';},
  // ---- the player (P_PlayerThink) ----
@@ -100,16 +114,17 @@ Object.assign(Game.prototype,{
   if(att&&att!==mo){const ang=pointToAngle2(mo.x,mo.y,att.x,att.y),d=(ang-mo.angle)>>>0,A5=ANG90/18;
    if(d<A5||d>(-A5>>>0)){mo.angle=ang;if(pl.damagecount)pl.damagecount--;}else if(d<0x80000000)mo.angle=(mo.angle+A5)>>>0;else mo.angle=(mo.angle-A5)>>>0;}
   else if(pl.damagecount)pl.damagecount--;
-  if(pl.cmd.buttons&2)pl.playerstate='reborn';},
+  // co-op: USE brings you back while you have a spare life; with none left you watch your partner
+  if(pl.cmd.buttons&2&&(!this.coop||pl.lives>0))pl.playerstate='reborn';},
  // ---- one game tic ----
  tick(){
-  const pl=this.players[0];
-  if(pl.mo)this.playerThink(pl);
+  for(const pl of this.players)if(pl.mo)this.playerThink(pl);
+  if(this.coop)this.players.forEach((p,i)=>{if(p.playerstate==='reborn'&&p.mo){p.lives--;this.rebornCoop(i);}});
   this.runThinkers();this.updateSpecials();
   this.leveltime++;this.gametic++;},
  // stats for the intermission (WI) and the next map number
- levelStats(){
-  const pl=this.players[0],ep=this.gameepisode,map=this.gamemap,secret=this.exiting==='secret';
+ levelStats(i=0){
+  const pl=this.players[i],ep=this.gameepisode,map=this.gamemap,secret=this.exiting==='secret';
   let next;
   if(this.commercial){next=secret?(map===15?31:map===31?32:map+1):(map===31||map===32?16:map+1);}
   else{if(secret)next=9;else if(map===9)next=[4,6,7,3][ep-1];else next=map+1;}
@@ -119,10 +134,10 @@ Object.assign(Game.prototype,{
    // after the last map of an episode / special Doom II maps the text finale plays
    finale:this.commercial?((map===6||map===11||map===20||map===30)&&!secret?map:(map===15||map===31)&&secret?map:0):(map===8?ep:0),
    endOfGame:this.commercial?map===30:map===8};},
- finishLevel(){const pl=this.players[0];pl.powers=[0,0,0,0,0,0];pl.cards=[false,false,false,false,false,false];if(pl.mo)pl.mo.flags&=~MF.SHADOW;pl.extralight=0;pl.fixedcolormap=0;pl.damagecount=0;pl.bonuscount=0;},
- nextLevel(stats){this.finishLevel();if(stats.secret)this.players[0].didsecret=true;this.gamemap=stats.next;this.loadMap();},
+ finishLevel(){for(const pl of this.players){pl.powers=[0,0,0,0,0,0];pl.cards=[false,false,false,false,false,false];if(pl.mo)pl.mo.flags&=~MF.SHADOW;pl.extralight=0;pl.fixedcolormap=0;pl.damagecount=0;pl.bonuscount=0;}},
+ nextLevel(stats){this.finishLevel();if(stats.secret)for(const pl of this.players)pl.didsecret=true;this.gamemap=stats.next;this.loadMap();},
  // classic cheats
- cheat(code){const pl=this.players[0];if(!pl?.mo)return;
+ cheat(code,i=0){const pl=this.players[i];if(!pl?.mo)return;
   if(code==='iddqd'){pl.cheats^=2;if(pl.cheats&2){pl.mo.health=100;pl.health=100;}pl.message=this.str(pl.cheats&2?'STSTR_DQDON':'STSTR_DQDOFF');}
   else if(code==='idkfa'||code==='idfa'){pl.armorpoints=200;pl.armortype=2;pl.weaponowned=pl.weaponowned.map((_,i)=>i!==WP.supershotgun||this.commercial);if(!pl.backpack){pl.maxammo=pl.maxammo.map(m=>m*2);pl.backpack=true;}pl.ammo=pl.maxammo.slice();if(code==='idkfa'){pl.cards=pl.cards.map(()=>true);pl.message=this.str('STSTR_KFAADDED');}else pl.message=this.str('STSTR_FAADDED');}
   else if(code==='idclip'||code==='idspispopd'){pl.cheats^=1;pl.message=this.str(pl.cheats&1?'STSTR_NCON':'STSTR_NCOFF');}

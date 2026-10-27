@@ -49,7 +49,7 @@ class Heads{
   const inSeq=(s0)=>s0&&st>=s0&&st<s0+12;if(inSeq(info.missilestate)||inSeq(info.meleestate))return 'angry';return 'normal';}
  // renderer hook: draw the head over vissprite v (clip arrays ct/cb)
  draw(r,v,ct,cb){
-  const mo=v.thing;if(!mo.head||NOHEAD.has(mo.type))return;
+  const mo=v.thing;if(!mo.head||NOHEAD.has(mo.type)&&!mo.coopHead)return;// online co-op: the partner wears their own head
   // blown to pieces: no head left after the first frames of the gib animation
   if(mo.info.xdeathstate&&mo.stnum>=mo.info.xdeathstate+2&&mo.stnum<mo.info.xdeathstate+12)return;
   const a=this.anchor(v.lump,v.patch,mo.type);if(!a)return;const hd=this.head(mo.head,this.mood(mo));if(!hd)return;

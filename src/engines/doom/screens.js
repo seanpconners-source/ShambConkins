@@ -44,9 +44,10 @@ class Menu{
    return {id,x:80,y:54,items,save:true,title:[[id==='load'?'M_LOADG':'M_SAVEG',72,28]]};}
   if(id==='readthis'){const pages=commercial?['HELP','CREDIT']:g.wad.has('HELP1')?['HELP1','HELP2']:['HELP2','CREDIT'];return {id,pages,page:0,items:[{fn:()=>{}}],full:true};}
   return null;}
- newGame(){if(this.app.inLevel()&&this.app.twoPlayer){this.message('you can\'t start a new game\nduring a 2 player turn.\n\ntap to continue.');return;}
+ newGame(){if(this.app.inLevel()&&(this.app.twoPlayer||this.app.net)){this.message('you can\'t start a new game\nduring a 2 player turn.\n\ntap to continue.');return;}
+  if(this.app.net&&this.app.me!==0){this.message(`${this.app.mateName} picks the level.\n\ntap to continue.`.toLowerCase());return;}
   if(this.g.commercial){this.ep=1;this.afterEpisode();}else this.go('episode');}
- afterEpisode(){if(this.app.twoPlayer){this.go('level');return;}this.map=1;this.go('skill');}
+ afterEpisode(){if(this.app.twoPlayer||this.app.net){this.go('level');return;}this.map=1;this.go('skill');}
  start(skill){this.close();this.app.newGame(skill,this.ep||1,this.map||1);}
  quit(){const g=this.g,list=['QUITMSG',...Array.from({length:14},(_,i)=>'QUITMSG'+(i+1))].map(k=>g.strings?.[k]||(k==='QUITMSG'||/QUITMSG[1-7]$/.test(k)?require("src/engines/doom/strings.js").STRINGS[k]:null)).filter(Boolean);
   const t=list[g.M_Random()%list.length]||'are you sure you want to quit?';

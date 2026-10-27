@@ -7,7 +7,17 @@
 // Touch (like the Android port): left thumb = floating move stick, right side = drag to turn, FIRE / USE buttons
 // (drag on FIRE also turns), tap the status-bar arms numbers or the weapon button to switch, MAP and menu buttons.
 // Keys: WASD / arrows move, Q/E or arrows turn, Ctrl/Space/J fire, Enter/F use, 1-7 weapons, Tab map, Esc menu.
+// Online (s.online): CO-OP on one level, the way 1993 netgames ran: both phones run the same deterministic game and
+// swap only ticcmds. Each phone sends its player's ticcmd for tic n+DELAY {t}, and a tic runs once both are in (a slow
+// link stalls both rather than drifting). The phones first agree on the data {wad} (different WADs → both use Freedoom),
+// player 1 picks episode, level and skill {go}; every second a state hash {h} is swapped to spot a desync. Co-op rules
+// (game.js/actions.js coop): both player starts, multiplayer things, placed weapons stay for the partner, keys are
+// shared, USE brings you back beside your partner while you have a spare life (3 lives each); with none left you watch
+// your partner's view. One player at the exit ends the level for both; both out = the run ends. Tally score each
+// (your kills/items/secrets share + 100 exit + par bonus); highest wins.
 const {fullBleed}=require("src/engines/fullBleed.js");
+const {netField}=require("src/engines/netField.js");
+const DELAY=4; // online: ticcmds run this many tics (~0.11 s) after they are made
 const {store}=require("src/state.js");
 const {soloProgress,soloFinish}=require("src/solo.js");
 const audio=require("src/audio.js");
@@ -32,19 +42,30 @@ async function doom(s){
  loadingText('LOADING…');
  let wad;try{wad=await W.loadWad(kind);}catch(e){loadingText('No Doom data in this build.');await s.wait(2500);s.finish([0,0],'Doom could not load.');return;}
  if(!s.alive)return;
- const app=new DoomApp(s,wad,kind,c,x,FB);s.debug=app.debugApi();
+ // online: one channel for the whole game; both phones must run the same WAD (else both fall back to Freedoom)
+ let nf=null,app=null;const early=[];
+ if(s.online){let theirs=null,got=null;const mine=wadId(wad);
+  nf=netField(s,{pack:()=>({}),unpack:()=>{},onEvent:e=>{if(e&&typeof e==='object'&&e.wad!==undefined){theirs=e.wad;got?.();}else if(app)app.onNet(e);else early.push(e);}});
+  loadingText('WAITING FOR '+(s.players[1-s.online.me]?.name||'YOUR PARTNER').toUpperCase()+'…');nf.event({wad:mine});
+  if(theirs===null)await new Promise(r=>{got=r;s.cleanup(r);});if(!s.alive)return;
+  if(theirs!==mine){try{wad=await W.loadWad(kind,{freedoom:true});}catch{}}if(!s.alive)return;}
+ app=new DoomApp(s,wad,kind,c,x,FB,nf);s.debug=app.debugApi();for(const e of early.splice(0))app.onNet(e);
  app.start();
 }
 
+// the same data on both phones: name, game mode and the whole lump directory
+function wadId(w){let h=w.dir.length;for(const l of w.dir)h=(Math.imul(h,31)+l.size+l.name.charCodeAt(0))|0;return `${w.label}|${w.mode}|${h>>>0}`;}
+
 class DoomApp{
- constructor(s,wad,kind,c,x,fb){
+ constructor(s,wad,kind,c,x,fb,nf=null){
   this.s=s;this.wad=wad;this.kind=kind;this.c=c;this.x=x;this.fb=fb;this.options=loadOptions();
+  this.nf=nf;this.net=nf?s.online:null;this.me=this.net?this.net.me:0;this.mate=1-this.me;this.mateName=s.players[this.mate]?.name||'your partner';
   this.gfx=new Gfx(wad);const deh=wad.lump('DEHACKED');this.tables=I.applyDehacked(deh?I.dehText(new TextDecoder('latin1').decode(deh)):'');
   this.game=new Game(wad,this.gfx,this.tables);this.game.seed(Math.floor((s.random?.()??Math.random())*2**31));
   this.r=new Renderer(this.gfx);this.video=new Video(this.gfx,this.r);this.hud=new Hud(this.video,this.game);this.automap=new Automap(this.video);
   this.menu=new Menu(this);this.snd=new DoomSound(wad);this.mus=new DoomMusic(wad);this.heads=new Heads(this.gfx);this.applyVolume();
   this.r.headHook=(r,v,ct,cb)=>{try{this.heads.draw(r,v,ct,cb);}catch{}};
-  this.twoPlayer=!s.solo;this.turn=0;this.scores=[0,0];this.turnStats=[null,null];this.soloTotal=0;this.soloCleared=0;
+  this.twoPlayer=!s.solo&&!this.net;this.game.coop=!!this.net;this.turn=0;this.scores=[0,0];this.turnStats=[null,null];this.soloTotal=0;this.soloCleared=0;
   this.state='title';this.titleTics=0;this.titlePage=0;this.acc=0;this.wipe=null;this.pendingTurn=0;this.keys=new Set();this.pointers=new Map();this.tapQueue=[];
   this.headPool=this.buildHeadPool();this.recruitPool=s.players.map((p,i)=>{try{return require("src/rewards.js").gameRecruitPool(s.game,store.profile,p).map(ch=>ch.id);}catch{return [];}});
   s.gameRecruits=[[],[]];}
@@ -77,27 +98,36 @@ class DoomApp{
  startWipe(){this.wipe=new Melt(this.r.screen,this.r.W,this.r.H,()=>this.game.M_Random());}
  async newGame(skill,ep,map){
   const s=this.s;this.skill=skill;this.ep=ep;this.map=map;
+  // online: player 1's pick goes to the other phone, then both start the level together
+  if(this.net){if(this.state==='level'||this.netDone)return;if(this.me===0)this.nf.event({go:[skill,ep,map]});this.menu.close();this.beginLevel();return;}
   if(this.twoPlayer){this.turn=0;this.scores=[0,0];this.turnStats=[null,null];
    const name=this.game.levelName(ep,map);
    if(!await s.pass(0,`${s.players[0].name} goes first on ${name}. One life each: kills, items, secrets, reaching the exit and beating par all score. ${s.players[1].name} plays the same level next.`,'Ready — start my turn'))return;}
   this.beginLevel();}
  beginLevel(){const g=this.game;this.startWipe();
-  if(this.twoPlayer)g.seed(1000+this.ep*100+this.map);
-  g.initNew(this.skill,this.ep,this.map);this.afterLoad();}
+  if(this.twoPlayer||this.net)g.seed(1000+this.ep*100+this.map);
+  if(this.net)g.gametic=0;
+  g.initNew(this.skill,this.ep,this.map);
+  // online: two spare lives each; the first DELAY tics run with empty ticcmds on both phones
+  if(this.net){for(const p of g.players)p.lives=2;const z=()=>({forwardmove:0,sidemove:0,angleturn:0,buttons:0});
+   this.ls={simTic:0,cmdTic:DELAY,lead:DELAY,stallWin:0,calm:0,cmds:[new Map(),new Map()],mine:new Map(),theirs:new Map(),desync:0,stalls:0,outTics:0};for(let t=0;t<DELAY;t++){this.ls.cmds[0].set(t,z());this.ls.cmds[1].set(t,z());}
+   for(const [t,c] of this.pendingCmds||[])this.ls.cmds[this.mate].set(t,c);this.pendingCmds=null;}
+  this.afterLoad();}
  afterLoad(){const g=this.game;this.state='level';this.hud.reset();this.automap.on=false;this.pendingTurn=0;this.r.skytex=this.gfx.texture(g.sky);this.levelMusic();this.assignHeads();this.snd.bossmap=!g.commercial&&g.gamemap===8;}
  // random roster heads on every monster (same per map for both players), plus one WANTED monster per map that
  // wears a character the current player has not unlocked: kill it to recruit them
  assignHeads(){const g=this.game,pool=this.headPool;if(!pool.length)return;let i=0;const mobjs=[...g.mobjs()].filter(m=>m.flags&MF.COUNTKILL||m.type===MT.SKULL);
   const seedOf=k=>{let h=2166136261^(g.gameepisode*977+g.gamemap*131+k);h=Math.imul(h^(h>>>15),2246822507);h=Math.imul(h^(h>>>13),3266489909);return (h^(h>>>16))>>>0;};
   for(const m of mobjs)m.head=pool[seedOf(i++)%pool.length];
-  const me=this.twoPlayer?this.turn:0,locked=(this.recruitPool[me]||[]).filter(id=>!this.s.gameRecruits[0].includes(id)&&!this.s.gameRecruits[1].includes(id));
+  const me=this.twoPlayer?this.turn:this.me,locked=(this.recruitPool[me]||[]).filter(id=>!this.s.gameRecruits[0].includes(id)&&!this.s.gameRecruits[1].includes(id));
   if(locked.length&&mobjs.length){const boss=mobjs.reduce((a,b)=>b.info.spawnhealth>a.info.spawnhealth?b:a);boss.head=locked[seedOf(999)%locked.length];boss.wanted=true;
-   let name='someone new';try{name=require("src/characters.js").character(boss.head)?.name||name;}catch{}g.players[0].message=`wanted: ${name}. kill them to recruit them.`.toLowerCase();}
+   let name='someone new';try{name=require("src/characters.js").character(boss.head)?.name||name;}catch{}g.players[this.me].message=`wanted: ${name}. kill them to recruit them.`.toLowerCase();}
   this.heads.preload(new Set([...mobjs.map(m=>m.head).filter(Boolean),...this.s.players.map(p=>p.character).filter(Boolean)]));
   g.onSpawnHead=m=>{if(!m.head&&(m.flags&MF.COUNTKILL||m.type===MT.SKULL))m.head=pool[(seedOf(i++))%pool.length];};}
  endGame(){this.mus.stop();this.state='title';this.titleTics=0;this.music(this.game.commercial?'D_DM2TTL':'D_INTRO',false);}
  quit(){this.leave();}
- leave(){const s=this.s;if(this.twoPlayer){if(this.state==='level'&&this.turnStats[this.turn]===null){this.endTurn(false,true);return;}
+ leave(){const s=this.s;if(this.net){if(this.netDone&&this.netScores)this.netFinish();else{this.netDone=true;s.finish(this.netScores||[0,0],'DOOM co-op: left before the end of the level.');}return;}
+  if(this.twoPlayer){if(this.state==='level'&&this.turnStats[this.turn]===null){this.endTurn(false,true);return;}
    s.finish(this.scores,`DOOM: ${s.players[0].name} ${this.scores[0]}, ${s.players[1].name} ${this.scores[1]}.`);return;}
   soloFinish(s,this.soloTotal,this.soloCleared,`DOOM: ${this.soloCleared} level${this.soloCleared===1?'':'s'} cleared, ${this.soloTotal} points.`);}
  // Doom tally score: kills% + items% + secrets% + 100 for reaching the exit + up to 100 for beating par
@@ -115,6 +145,7 @@ class DoomApp{
   if(gaveUp)this.afterInter();}
  async afterInter(){
   const s=this.s,g=this.game,st=this.stats||g.levelStats();
+  if(this.net){this.netFinish();return;}
   if(this.twoPlayer){
    if(this.turn===0){this.turn=1;this.mus.stop();const a=this.turnStats[0];
     if(!await s.pass(1,`${s.players[0].name} scored ${a.score} (${a.exited?'reached the exit':'died'}). Same level, same skill: beat it.`,'Ready — start my turn',{summary:`${s.players[0].name}: ${a.score}.`}))return;
@@ -129,10 +160,10 @@ class DoomApp{
  saveSlots(){return this.slots||(this.loadSlotNames(),[]);}
  loadSlotNames(){this.slots=[];const req=window.indexedDB?.open('shambconkins-doom-saves',1);if(!req)return;req.onupgradeneeded=()=>req.result.createObjectStore('saves');
   req.onsuccess=()=>{try{const tx=req.result.transaction('saves','readonly'),st=tx.objectStore('saves');for(let i=0;i<6;i++){const g=st.get(this.kind+':'+i);g.onsuccess=()=>{if(g.result)this.slots[i]=g.result.label;};}}catch{}};}
- saveGame(i){const data=require("src/engines/doom/savegame.js").serialize(this.game,{skill:this.skill,soloTotal:this.soloTotal,soloCleared:this.soloCleared});
+ saveGame(i){if(this.net){this.menu.message('you can\'t save an online game.\n\ntap to continue.');return;}const data=require("src/engines/doom/savegame.js").serialize(this.game,{skill:this.skill,soloTotal:this.soloTotal,soloCleared:this.soloCleared});
   const label=`${this.game.levelName().toUpperCase().slice(0,20)}`;const req=indexedDB.open('shambconkins-doom-saves',1);req.onupgradeneeded=()=>req.result.createObjectStore('saves');
   req.onsuccess=()=>{try{const tx=req.result.transaction('saves','readwrite');tx.objectStore('saves').put({label,data},this.kind+':'+i);tx.oncomplete=()=>{this.slots[i]=label;this.game.players[0].message='game saved.';};}catch{}};}
- loadGame(i){const req=indexedDB.open('shambconkins-doom-saves',1);req.onupgradeneeded=()=>req.result.createObjectStore('saves');
+ loadGame(i){if(this.net){this.menu.message('you can\'t load during an online game.\n\ntap to continue.');return;}const req=indexedDB.open('shambconkins-doom-saves',1);req.onupgradeneeded=()=>req.result.createObjectStore('saves');
   req.onsuccess=()=>{try{const tx=req.result.transaction('saves','readonly'),g=tx.objectStore('saves').get(this.kind+':'+i);g.onsuccess=()=>{if(!g.result)return;this.startWipe();
    const meta=require("src/engines/doom/savegame.js").deserialize(this.game,g.result.data);this.skill=meta.skill;this.ep=this.game.gameepisode;this.map=this.game.gamemap;if(!this.twoPlayer){this.soloTotal=meta.soloTotal||0;this.soloCleared=meta.soloCleared||0;}this.afterLoad();};}catch{}};}
  pickWad(){const inp=document.createElement('input');inp.type='file';inp.accept='.wad,.WAD';inp.style.display='none';document.body.appendChild(inp);
@@ -142,8 +173,62 @@ class DoomApp{
  frame(dt){
   const s=this.s;if(s.W+'x'+s.H+':'+(this.options.detail?400:200)+':'+this.options.screenblocks!==this.lastSize)this.resize();
   this.mus.pump();
+  // online in a level: the lockstep runs the tics (a tic waits for both ticcmds); menus never pause it
+  if(this.net&&this.state==='level'&&!this.wipe&&this.ls){this.processTaps();if(this.menu.active)this.menu.tick();
+   if(this.nf.gone&&!this.netDone){this.netLevelEnd(false);}
+   this.acc+=dt;let n=0,stalled=false;while(this.acc>=TIC&&n<4&&this.state==='level'){if(!this.lockstep()){stalled=true;break;}this.acc-=TIC;n++;}this.acc=Math.min(this.acc,TIC*2);if(stalled&&this.ls)this.ls.stallWin+=dt;
+   this.draw(Math.min(1,this.acc/TIC));return;}
   this.acc+=dt;let n=0;while(this.acc>=TIC&&n<4){this.acc-=TIC;this.tick();n++;}if(n===4)this.acc=Math.min(this.acc,TIC);
   this.draw(this.acc/TIC);}
+ // ---- online co-op (see the top of the file) ----
+ onNet(e){if(!e||typeof e!=='object')return;
+  if(Array.isArray(e.t)){const [t,fwd,side,turn,buttons,weapon,exit]=e.t;const c={forwardmove:fwd|0,sidemove:side|0,angleturn:turn|0,buttons:buttons|0};if(weapon>=0)c.weapon=weapon|0;if(exit)c.exit=1;
+   if(this.ls&&!this.netDone)this.ls.cmds[this.mate].set(t,c);else(this.pendingCmds=this.pendingCmds||[]).push([t,c]);}
+  else if(Array.isArray(e.go)){if(this.me!==0&&this.state==='title'){const [sk,ep,map]=e.go;this.newGame(sk|0,ep|0,map|0);}}
+  else if((e.ld===1||e.ld===-1)&&this.ls)this.ls.lead=Math.max(DELAY,Math.min(12,this.ls.lead+e.ld));
+  else if(Array.isArray(e.h)&&this.ls){const [t,h]=e.h;const m=this.ls.mine.get(t);if(m===undefined)this.ls.theirs.set(t,h);else if(m!==h)this.netDesync(t);}}
+ netDesync(t){if(!this.ls.desync++)console.warn('DOOM online: the two phones disagree at tic',t);}
+ // a cheap fingerprint of the game state (positions, health, the random index)
+ simHash(){const g=this.game;let h=(g.prndindex*31+g.leveltime)|0;for(const m of g.mobjs())h=(Math.imul(h,31)+((m.x*16)|0)+Math.imul((m.y*16)|0,7)+m.health*13+m.type)|0;return h;}
+ lockstep(){const g=this.game,L=this.ls,me=this.me;
+  while(L.cmdTic<L.simTic+L.lead){const pl=g.players[me];this.buildCmd(pl);const c=pl.cmd;if(this.botExit){c.exit=1;this.botExit=false;}L.cmds[me].set(L.cmdTic,c);
+   this.nf.event({t:[L.cmdTic,c.forwardmove,c.sidemove,c.angleturn,c.buttons,c.weapon??-1,c.exit?1:0]});L.cmdTic++;}
+  const a=L.cmds[0].get(L.simTic),b=L.cmds[1].get(L.simTic);if(!a||!b){L.stalls++;if(!L.stallSince)L.stallSince=performance.now();return false;}L.stallSince=0;
+  L.cmds[0].delete(L.simTic);L.cmds[1].delete(L.simTic);g.players[0].cmd=a;g.players[1].cmd=b;
+  if(a.exit||b.exit)g.exitLevel();// test bots end the level the same tic on both phones
+  const vp=this.viewPlayer();vp.pviewz=vp.viewz;vp.pbob=vp.psprites.map(p=>[p.sx,p.sy]);
+  g.tick();L.simTic++;
+  for(let i=0;i<2;i++){const mo=g.players[i].mo;if(mo&&!mo.coopHead){mo.coopHead=true;mo.head=this.s.players[i]?.character||null;}}
+  this.hud.tick(this.viewPlayer());this.playSounds();this.events();
+  if(L.simTic%35===0){// the partner's lead adapts to the link: this phone stalling > .12 s a second (their ticcmds came late)
+   // asks them to send a tic further ahead {ld:1}; three clean seconds ask for one tic less {ld:-1}
+   if(L.stallWin>.12){this.nf.event({ld:1});L.calm=0;}else if(L.stallWin===0&&++L.calm>=3){this.nf.event({ld:-1});L.calm=0;}L.stallWin=0;
+   const h=this.simHash();L.mine.set(L.simTic,h);this.nf.event({h:[L.simTic,h]});const t=L.theirs.get(L.simTic);if(t!==undefined&&t!==h)this.netDesync(L.simTic);L.mine.delete(L.simTic-35*20);L.theirs.delete(L.simTic-35*20);}
+  if(!this.netDone){if(g.exiting)this.netLevelEnd(true);
+   else if(g.players.every(p=>p.playerstate==='dead'&&p.lives<=0)){if(++L.outTics>35*3)this.netLevelEnd(false);}}
+  return true;}
+ // turning made since the last simulated tic shows at once (the ticcmds carrying it run DELAY tics later)
+ predTurn(){const L=this.ls;if(!this.net||!L)return 0;let a=0;for(const [t,c] of L.cmds[this.me])if(t>=L.simTic)a+=c.angleturn*65536;return a;}
+ // online overlay: lives, the partner, out-of-lives spectating, a stalled link
+ drawNetHud(){const x=this.x,V=this.view,g=this.game,me=g.players[this.me],q=g.players[this.mate];if(!me||!q)return;x.save();x.textAlign='center';x.textBaseline='top';
+  const f=Math.round(Math.max(11,Math.min(V.cw,V.ch)*.032));x.font=`bold ${f}px monospace`;x.lineWidth=3;x.strokeStyle='#000';
+  const line=(t,y,c)=>{x.strokeText(t,V.cw/2,y);x.fillStyle=c;x.fillText(t,V.cw/2,y);};
+  const qs=q.playerstate==='dead'?(q.lives>0?'DOWN':'OUT'):`${Math.max(0,q.health)}%`;
+  line(`LIVES ${Math.max(0,me.lives+(me.playerstate==='dead'?0:1))} · ${this.mateName.toUpperCase()} ${qs}`,Math.max(34,V.h*.06),'#e8d0a0');
+  if(this.isOut())line(`OUT OF LIVES · WATCHING ${this.mateName.toUpperCase()}`,V.h*.4,'#ff6060');
+  else if(me.playerstate==='dead')line('TAP TO COME BACK BESIDE '+this.mateName.toUpperCase(),V.h*.4,'#ffd060');
+  if(this.ls?.stallSince&&performance.now()-this.ls.stallSince>300)line('WAITING FOR '+this.mateName.toUpperCase()+'…',V.h*.5,'#bbb');
+  x.restore();}
+ // the player this phone looks through: its own, or the partner's once out of lives
+ viewIndex(){if(!this.net)return 0;const g=this.game,p=g.players[this.me],q=g.players[this.mate];return p?.playerstate==='dead'&&p.lives<=0&&q?.mo&&q.playerstate!=='dead'?this.mate:this.me;}
+ viewPlayer(){return this.game.players[this.viewIndex()];}
+ isOut(i=this.me){const p=this.game.players[i];return !!p&&p.playerstate==='dead'&&p.lives<=0;}
+ // the level is over (exit reached, both out, or the partner left): both phones score it the same way from the game
+ netLevelEnd(exited){if(this.netDone)return;this.netDone=true;const g=this.game;this.netScores=[0,1].map(i=>this.tallyScore(g.levelStats(i),exited));this.s.setScores(this.netScores);
+  const st=g.levelStats(this.me);this.stats=st;this.startWipe();this.state='inter';this.inter=new Intermission(this,st);this.inter.noNextLoc=true;if(!exited)this.inter.dead=true;this.interTics=0;
+  this.music(g.commercial?'D_DM2INT':'D_INTER');}
+ netFinish(){if(this.finished)return;this.finished=true;this.mus.stop();const s=this.s,g=this.game,sc=this.netScores||[0,0];
+  s.finish(sc,`DOOM co-op, ${g.levelName(this.ep,this.map)}: ${s.players[0].name} ${sc[0]}, ${s.players[1].name} ${sc[1]}.`);}
  tick(){
   const g=this.game;this.processTaps();
   if(this.wipe){if(this.wipe.tick())this.wipe=null;return;}
@@ -157,18 +242,19 @@ class DoomApp{
     if(this.deadTics&&++this.deadTics>35*3&&this.twoPlayer&&this.turnStats[this.turn]===null){this.deadTics=0;this.endTurn(false);}
     if(g.players[0].playerstate!=='dead')this.deadTics=0;
     break;}
-   case 'inter':this.inter.tick();this.playSounds();if(this.inter.done)this.afterInter();break;
+   case 'inter':this.inter.tick();this.playSounds();if(this.net&&++this.interTics%(35*3)===0)this.inter.press();if(this.inter.done)this.afterInter();break;
    case 'finale':this.finale.tick();if(this.finale.done)this.afterFinale();break;}}
- playSounds(){const g=this.game,pl=g.players[0];this.snd.listener=pl.mo;
+ playSounds(){const g=this.game,pl=g.players[this.net?this.viewIndex():0];this.snd.listener=pl.mo;
   for(const e of g.sounds){if(e.stop){this.snd.stopOrigin(e.origin);continue;}if(store.profile?.settings.sound===false)continue;this.snd.start(e.origin,e.name);}
   g.sounds.length=0;this.snd.update();}
  events(){const g=this.game,s=this.s;
   for(const e of g.events){
    if(e.kind==='spawn'&&!e.map)g.onSpawnHead?.(e.mo);
    if(e.kind==='raise'&&e.mo&&!e.mo.head)g.onSpawnHead?.(e.mo);
-   if(e.kind==='kill'&&e.mo.wanted){const me=this.twoPlayer?this.turn:0;if(!s.gameRecruits[me].includes(e.mo.head))s.gameRecruits[me].push(e.mo.head);e.mo.wanted=false;
-    let name='them';try{name=require("src/characters.js").character(e.mo.head)?.name||name;}catch{}g.players[0].message=`wanted: ${name} recruited!`.toLowerCase();s.react?.(me,'win');}
-   if(e.kind==='playerdeath')s.react?.(this.twoPlayer?this.turn:0,'sad');}
+   // online each phone has its own WANTED monster; only this phone's player recruits it
+   if(e.kind==='kill'&&e.mo.wanted&&(!this.net||e.by===g.players[this.me])){const me=this.twoPlayer?this.turn:this.me;if(!s.gameRecruits[me].includes(e.mo.head))s.gameRecruits[me].push(e.mo.head);e.mo.wanted=false;
+    let name='them';try{name=require("src/characters.js").character(e.mo.head)?.name||name;}catch{}g.players[this.me].message=`wanted: ${name} recruited!`.toLowerCase();s.react?.(me,'win');}
+   if(e.kind==='playerdeath'){const pi=this.twoPlayer?this.turn:this.net?g.players.indexOf(e.player):0;if(pi>=0)s.react?.(pi,'sad');}}
   g.events.length=0;}
  // ---- input → ticcmd ----
  buildCmd(pl){
@@ -182,8 +268,13 @@ class DoomApp{
   let buttons=(fire?1:0)|(use?2:0);this.useTap=Math.max(0,(this.useTap||0)-1);this.fireTap=Math.max(0,(this.fireTap||0)-1);
   const cmd={forwardmove:fwd,sidemove:side,angleturn:turn,buttons};
   if(this.weaponReq!==undefined){cmd.buttons|=4;cmd.weapon=this.weaponReq;this.weaponReq=undefined;}
+  if(this.botOn)this.botCmd(pl,cmd);
   pl.cmd=cmd;}
- nextWeapon(dir){const pl=this.game.players[0];if(!pl?.mo)return;const order=[WP.fist,WP.chainsaw,WP.pistol,WP.shotgun,WP.supershotgun,WP.chaingun,WP.missile,WP.plasma,WP.bfg];
+ // online test bot: runs forward firing, turns away when stuck, presses USE now and then (doors, coming back)
+ botCmd(pl,cmd){const mo=pl.mo,b=this.botS||(this.botS={t:0,x:0,y:0,stuck:0,dir:1});b.t++;cmd.forwardmove=50;cmd.buttons|=1;if(b.t%20===0)cmd.buttons|=2;
+  if(mo){if(Math.hypot(mo.x-b.x,mo.y-b.y)<1)b.stuck++;else b.stuck=0;b.x=mo.x;b.y=mo.y;}
+  if(b.stuck>8){cmd.angleturn=b.dir*1280;if(b.stuck>40){b.dir=-b.dir;b.stuck=0;}}else if(b.t%90<12)cmd.angleturn=b.dir*640;}
+ nextWeapon(dir){const pl=this.game.players[this.me];if(!pl?.mo)return;const order=[WP.fist,WP.chainsaw,WP.pistol,WP.shotgun,WP.supershotgun,WP.chaingun,WP.missile,WP.plasma,WP.bfg];
   const cur=pl.pendingweapon!==WP.nochange?pl.pendingweapon:pl.readyweapon;let i=order.indexOf(cur);
   for(let n=0;n<order.length;n++){i=(i+dir+order.length)%order.length;const w=order[i];if(!pl.weaponowned[w])continue;const am=I.WEAPONS[w].ammo;if(am>=0&&pl.ammo[am]<(w===WP.bfg?40:w===WP.supershotgun?2:1))continue;if(w===WP.plasma||w===WP.bfg){if(this.game.gamemode==='shareware')continue;}this.weaponReq=w;return;}}
  releaseAll(){this.stick=null;this.fireHeld=false;this.pointers.clear();}
@@ -194,7 +285,7 @@ class DoomApp{
   const fire={x:v.cw-R*1.35,y:bottom,r:R,id:'fire',label:'FIRE'};
   const use={x:fire.x-R*2.25,y:bottom+R*.25,r:R*.72,id:'use',label:'USE'};
   const wpn={x:fire.x,y:fire.y-R*2.05,r:R*.6,id:'wpn',label:'WPN'};
-  const map={x:R*.75+6,y:R*.75+Math.max(26,v.h*.09),r:R*.55,id:'map',label:'MAP'};const menu={x:map.x+R*1.35,y:map.y,r:R*.55,id:'menu',label:'☰'};
+  const map={x:R*.75+6,y:R*.75+Math.max(26,v.h*.09)+(this.net?30:0),r:R*.55,id:'map',label:'MAP'};const menu={x:map.x+R*1.35,y:map.y,r:R*.55,id:'menu',label:'☰'};
   return [fire,use,wpn,map,menu];}
  installInput(){
   const s=this.s,c=this.c;
@@ -202,7 +293,7 @@ class DoomApp{
   s.on(c,'pointerdown',e=>{if(s.paused)return;e.preventDefault();try{c.setPointerCapture(e.pointerId);}catch{}const [px,py]=pos(e);
    const p={id:e.pointerId,x0:px,y0:py,x:px,y:py,t0:performance.now(),role:null};this.pointers.set(e.pointerId,p);
    if(this.state!=='level'||this.menu.active){p.role='tap';return;}
-   if(this.game.players[0]?.playerstate==='dead'){this.useTap=2;p.role='bar';return;}
+   if(this.game.players[this.me]?.playerstate==='dead'){this.useTap=2;p.role='bar';return;}
    const hit=this.buttons().find(b=>Math.hypot(px-b.x,py-b.y)<=b.r*1.15);
    if(hit){p.role=hit.id;if(hit.id==='fire'){this.fireHeld=true;p.turn=true;}else if(hit.id==='use')this.useTap=2;else if(hit.id==='wpn')this.nextWeapon(1);else if(hit.id==='map')this.automap.toggle();else if(hit.id==='menu'){this.menu.open('main');this.releaseAll();}return;}
    // status bar arms numbers
@@ -235,7 +326,7 @@ class DoomApp{
    this.keys.add(k);if(k==='ShiftLeft'||k==='ShiftRight')this.keys.add('Shift');});
   s.on(window,'keyup',e=>{this.keys.delete(e.code);if(e.code==='ShiftLeft'||e.code==='ShiftRight')this.keys.delete('Shift');});
   s.on(window,'blur',()=>{this.keys.clear();this.releaseAll();});}
- selectSlot(slot){const pl=this.game.players[0];if(!pl?.mo)return;let w=[0,WP.fist,WP.pistol,WP.shotgun,WP.chaingun,WP.missile,WP.plasma,WP.bfg][slot];
+ selectSlot(slot){const pl=this.game.players[this.me];if(!pl?.mo)return;let w=[0,WP.fist,WP.pistol,WP.shotgun,WP.chaingun,WP.missile,WP.plasma,WP.bfg][slot];
   if(slot===1&&pl.weaponowned[WP.chainsaw]&&(pl.readyweapon!==WP.chainsaw))w=WP.chainsaw;
   if(slot===3&&pl.weaponowned[WP.supershotgun]&&this.game.commercial&&(pl.readyweapon===WP.shotgun||!pl.weaponowned[WP.shotgun]))w=WP.supershotgun;
   this.weaponReq=w;}
@@ -247,11 +338,12 @@ class DoomApp{
  draw(alpha){
   this.t0=performance.now();const g=this.game,r=this.r,v=this.video;
   let palette=0;
-  if(this.state==='title'){v.fill(0);v.patchAt(this.titlePage?'CREDIT':'TITLEPIC',0,0);if(!v.gfx.patch('TITLEPIC'))v.text('DOOM',140,90);}
-  else if(this.state==='level'){const pl=g.players[0];
+  if(this.state==='title'){v.fill(0);v.patchAt(this.titlePage?'CREDIT':'TITLEPIC',0,0);if(!v.gfx.patch('TITLEPIC'))v.text('DOOM',140,90);
+   if(this.net){const t=this.me===0?'TAP: PICK A LEVEL TO PLAY TOGETHER':`WAITING FOR ${this.mateName.toUpperCase()} TO PICK A LEVEL`;v.text(t,160-v.textWidth(t)/2,186);}}
+  else if(this.state==='level'){const pl=this.viewPlayer(),own=!this.net||this.viewIndex()===this.me;
    if(this.automap.on)this.automap.draw(g,pl,r.viewH);
    else if(pl.mo){for(const m of g.mobjs()){m.rx=m.px+(m.x-m.px)*alpha;m.ry=m.py+(m.y-m.py)*alpha;m.rz=m.pz+(m.z-m.pz)*alpha;}
-    const mo=pl.mo,ang=(mo.angle+(pl.playerstate==='dead'?0:this.pendingTurn))/BAM*Math.PI*2,lerp=(a,b)=>a+(b-a)*alpha;
+    const mo=pl.mo,ang=(mo.angle+(pl.playerstate==='dead'||!own?0:this.pendingTurn+this.predTurn()))/BAM*Math.PI*2,lerp=(a,b)=>a+(b-a)*alpha;
     // moving floors/ceilings and the weapon bob drawn between tics
     const moved=[];for(const sec of g.movedSectors||[]){if(sec.movedTic!==g.gametic-1){g.movedSectors.delete(sec);continue;}moved.push([sec,sec.floorheight,sec.ceilingheight]);sec.floorheight=lerp(sec.pf,sec.floorheight);sec.ceilingheight=lerp(sec.pc,sec.ceilingheight);}
     const ps=pl.psprites.map((p,i)=>{const b=pl.pbob?.[i];return b&&p.state?{...p,sx:lerp(b[0],p.sx),sy:lerp(b[1],p.sy)}:p;});
@@ -269,9 +361,10 @@ class DoomApp{
   r.blit(this.img,palette);this.ox.putImageData(this.img,0,0);
   const x=this.x,V=this.view;x.imageSmoothingEnabled=false;x.fillStyle='#000';x.fillRect(0,0,V.cw,V.ch);x.drawImage(this.off,0,0,V.w,V.h);
   if(this.state==='level'&&!this.wipe){this.drawFace();if(!this.menu.active)this.drawControls();}
+  if(this.net&&this.state==='level'&&!this.wipe)this.drawNetHud();
   if(V.portrait)this.drawPortraitPanel();}
- faceCanvas(pl){const id=this.s.players[this.twoPlayer?this.turn:0]?.character;if(!id)return null;try{return this.heads.face(id,this.hud.faceindex);}catch{return null;}}
- drawFace(){const pl=this.game.players[0];if(this.r.viewH>=this.r.H)return;const fc=this.faceCanvas(pl);if(!fc)return;const V=this.view,k=V.h/200,sx=V.w/this.r.W*this.video.s;
+ faceCanvas(pl){const id=this.s.players[this.twoPlayer?this.turn:this.viewIndex()]?.character;if(!id)return null;try{return this.heads.face(id,this.hud.faceindex);}catch{return null;}}
+ drawFace(){const pl=this.viewPlayer();if(this.r.viewH>=this.r.H)return;const fc=this.faceCanvas(pl);if(!fc)return;const V=this.view,k=V.h/200,sx=V.w/this.r.W*this.video.s;
   const ox=this.video.ox*(V.w/this.r.W),x=ox+144*sx,y=169*k,w=30*sx,h=30*k;this.x.imageSmoothingEnabled=false;this.x.drawImage(fc,x,y,w,h);}
  drawControls(){const x=this.x;x.save();x.textAlign='center';x.textBaseline='middle';
   for(const b of this.buttons()){const held=(b.id==='fire'&&this.fireHeld);x.globalAlpha=held?.42:.26;x.fillStyle='#000';x.beginPath();x.arc(b.x,b.y,b.r,0,7);x.fill();
@@ -284,7 +377,13 @@ class DoomApp{
   x.fillStyle='#a33';x.font='bold 13px monospace';x.textAlign='center';x.fillText(this.state==='level'?'TURN YOUR PHONE SIDEWAYS FOR FULL SCREEN':'TAP THE SCREEN ABOVE',V.cw/2,V.h+22);
   if(this.state==='level'&&!this.menu.active)this.drawControls();x.restore();}
  turnScore(v){if(!this.twoPlayer)return;const t=this.turnStats[this.turn];if(!t)return;const name=(this.s.players[this.turn]?.name||'').toUpperCase(),txt=`${name}: ${t.score} POINTS${t.exited?'':' (DIED)'}`;v.text(txt,160-v.textWidth(txt)/2,186);}
- debugApi(){const app=this;return {get state(){return app.state;},get game(){return app.game;},get app(){return app;},
+ debugApi(){const app=this;return {get state(){return app.state;},
+  // online test: player 1's phone picks E1M1 on skill 2; both phones' bots drive; after BOT_EXIT ms player 1's bot
+  // puts an exit request in its ticcmd so both phones end the level on the same tic
+  get bot(){if(!app.net)return undefined;return ()=>{if(app.state==='title'&&app.me===0&&!app.botPicked){app.botPicked=true;app.newGame(1,1,1);return 'pick';}
+   if(app.state==='level'&&!app.botOn){app.botOn=true;app.botT0=performance.now();return 'drive';}
+   if(app.state==='level'&&app.me===0&&!app.botExitSent&&app.botT0&&performance.now()-app.botT0>(app.botExitMs??45000)){app.botExitSent=true;app.botExit=true;return 'exit';}return '';};},
+  get net(){return app.ls?{tic:app.ls.simTic,desync:app.ls.desync,stalls:app.ls.stalls,lead:app.ls.lead,lives:app.game.players.map(p=>p.lives),hp:app.game.players.map(p=>p.health)}:null;},get game(){return app.game;},get app(){return app;},
   start(skill=2,ep=1,map=1){app.menu.close();return app.newGame(skill,ep,map);},menu(){return app.menu;},
   tap(vx,vy){app.menu.tap(vx,vy);},cheat(c){app.game.cheat(c);},exit(){app.game.exitLevel();},
   kill(){const pl=app.game.players[0];if(pl.mo)app.game.damageMobj(pl.mo,null,null,10000);},skipInter(){if(app.inter){app.inter.accel=true;}},

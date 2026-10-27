@@ -257,10 +257,14 @@ Object.assign(Game.prototype,{
   else if(ammo===2){if((rw===WP.fist||rw===WP.pistol)&&own[WP.plasma])pl.pendingweapon=WP.plasma;}
   else if(ammo===3){if(rw===WP.fist&&own[WP.missile])pl.pendingweapon=WP.missile;}
   return true;},
- giveWeapon(pl,w,dropped){const ammo=I.WEAPONS[w].ammo,ga=ammo>=0?this.giveAmmo(pl,ammo,dropped?1:2):false;let gw=false;if(!pl.weaponowned[w]){gw=true;pl.weaponowned[w]=true;pl.pendingweapon=w;}return gw||ga;},
+ giveWeapon(pl,w,dropped){
+  // co-op (vanilla netgame rule): a placed weapon stays for the other player; each takes it once
+  if(this.coop&&!dropped){if(pl.weaponowned[w])return false;pl.weaponowned[w]=true;const am=I.WEAPONS[w].ammo;if(am>=0)this.giveAmmo(pl,am,2);pl.pendingweapon=w;pl.bonuscount+=BONUSADD;pl.grinTic=this.gametic;this.sound(null,'wpnup');return false;}
+  const ammo=I.WEAPONS[w].ammo,ga=ammo>=0?this.giveAmmo(pl,ammo,dropped?1:2):false;let gw=false;if(!pl.weaponowned[w]){gw=true;pl.weaponowned[w]=true;pl.pendingweapon=w;}return gw||ga;},
  giveBody(pl,n){if(pl.health>=100)return false;pl.health=Math.min(100,pl.health+n);pl.mo.health=pl.health;return true;},
  giveArmor(pl,t){const h=t*100;if(pl.armorpoints>=h)return false;pl.armortype=t;pl.armorpoints=h;return true;},
- giveCard(pl,c){if(pl.cards[c])return;pl.bonuscount=BONUSADD;pl.cards[c]=true;},
+ // co-op: a key card one player picks up opens doors for both
+ giveCard(pl,c){if(this.coop)for(const q of this.players)if(q!==pl)q.cards[c]=true;if(pl.cards[c])return;pl.bonuscount=BONUSADD;pl.cards[c]=true;},
  givePower(pl,p){
   if(p===PW.invulnerability){pl.powers[p]=30*35;return true;}
   if(p===PW.invisibility){pl.powers[p]=60*35;pl.mo.flags|=MF.SHADOW;return true;}
