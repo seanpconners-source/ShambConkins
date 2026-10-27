@@ -14,7 +14,16 @@ const {clamp,seededRandom}=require("src/utils.js");
 const {soloFinish,soloProgress}=require("src/solo.js");
 const {arenaTouch,outlined,PCOL,Countdown,settle}=require("src/engines/arenaKit.js");
 const {fullBleed}=require("src/engines/fullBleed.js");
+const {netField}=require("src/engines/netField.js");
+const {partnerArrow}=require("src/engines/partnerArrow.js");
 const A=require("src/engines/sotnArt.js");
+// Online (s.online) both heroes storm the castle AT ONCE, each on their own phone, the partner drawn from snapshots with
+// an edge arrow when off screen. Candles {cd}, the pot-roast wall {wb} and placed monsters {fk} one of you destroys are
+// gone for both (drops go to whoever did it); sub-weapons and Hellfire are shown on the other phone {ps}. A fallen hero
+// comes back next to the partner. Player 1's phone runs Dracula (the other mirrors its snapshots, gets his shots {bs} and
+// bats {bb}, sends its hits {bh}); whoever reaches the throne room first locks it and the other has 10 s before being
+// pulled in. Destroying Dracula gives both +5000; after the first blood orb the other has 10 s. Highest score wins.
+const NET_GRACE=10,DRAC_PTS=5000;
 const SA=require("src/engines/sotnAudio.js"),{sfx,ambience,music,tick,stopAll}=SA;
 
 const STEP=1/60,VH=240,NONE=1e4,RACE_CAP=240,LEN=3400;
@@ -114,14 +123,16 @@ async function sotn(s){
  const [c,g]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');const FB=fullBleed(s,{bg:'#000'});s.updateScores();
  if(!await settle(s))return;
  s.cleanup(()=>stopAll());
- const L=buildCastle(s.random),seedBase=Math.floor(s.random()*1e9),AR=L.arena;
+ const net=s.online||null,me=net?net.me:0,them=1-me,host=!net||me===0;
+ const L=buildCastle(s.random),seedBase=Math.floor(s.random()*1e9),AR=L.arena;L.foes.forEach((e,k)=>{e.id=k;});
+ const netKilled=new Set();let pullAt=0,nf=null;const ev=e=>{nf?.event(e);};
  const worlds=[makeWorld(L,seedBase),makeWorld(L,seedBase)],pl=[makePlayer(0,L),makePlayer(1,L)];
  // Solo: storm the castle again and again; each time Dracula falls the next run has less time.
  let soloTotal=0,soloCleared=0;const raceCap=()=>s.solo?Math.max(120,RACE_CAP-25*soloCleared):RACE_CAP;
  const cams=[{x:0,w:300,look:0},{x:0,w:300,look:0}];
  const scen=new A.Scenery();
  const touchUI=typeof matchMedia==='function'&&matchMedia('(pointer: coarse)').matches;
- let phase='title',titleT=0,cd=new Countdown(3),clock=0,acc=0,endT=0,winner=-1,simT=0,frames=0,turn=0,gi=0,turnText='',endText='',stop=0;
+ let phase='title',titleT=0,cd=new Countdown(3),clock=0,acc=0,endT=0,winner=-1,simT=0,frames=0,turn=net?me:0,gi=0,turnText='',endText='',stop=0;
  const ghost=[],ghostAt=i=>i===1&&gi<ghost.length?ghost[gi]:null;
 
  // ---------------- input
@@ -195,9 +206,11 @@ async function sotn(s){
  function kill(p,w,pit){if(p.dead||p.finished)return;p.dead=1;p.pit=pit;p.deaths++;p.atk=null;p.kick=0;p.hurt=0;p.vx=0;p.vy=0;p.dash=0;p.cast=0;
   if(!pit){blood(w,p.x,p.y-24,40,0,1.4);sfx.die();}s.react(p.i,'sad');w.flash=.5;w.flashCol='160,0,0';}
  function respawn(p){const w=worlds[p.i];let check=L.checks[0];for(const k of L.checks)if(k<=p.best+4)check=Math.max(check,k);
+  // online: back inside the throne room while Dracula lives (the fight goes on), else next to the partner
+  if(net){if(w.locked&&!w.orb){pullIn(p,w,false);return;}const q=pl[them];if(q.net&&!q.dead&&q.grounded&&q.x>check)check=q.x;}
   if(w.locked&&!w.orb){w.locked=false;w.blocks=w.blocks.filter(b=>b.kind!=='bars');check=AR.x0-30;const B=w.boss;if(B){if(B.phase===1&&B.state!=='dying'){B.state='hidden';B.t=0;B.vis=0;B.open=0;}else if(B.phase===2&&B.state!=='die'){B.state='idle';B.t=0;B.x=AR.x1-90;B.y=AR.floor;B.vy=0;B.air=false;B.crouch=0;B.low=0;B.mouth=0;}}}
   Object.assign(p,{x:check,y:support(w,check,5,-50,true),vx:0,vy:0,grounded:true,dead:0,pit:false,atk:null,kick:0,flip:0,comboN:-1,hurt:0,crouch:false,dash:0,hp:p.maxHp,inv:100,cast:0,charge:0});
-  w.foes=w.foes.filter(e=>e.boss).concat(L.foes.filter(e=>e.x>check+140).map(spawnFoe));w.eshots=[];w.shots=[];w.flames=[];w.corpses=[];w.zoneT=L.zones.map(()=>90);
+  w.foes=w.foes.filter(e=>e.boss).concat(L.foes.filter(e=>e.x>check+140&&!netKilled.has(e.id)).map(spawnFoe));w.eshots=[];w.shots=[];w.flames=[];w.corpses=[];w.zoneT=L.zones.map(()=>90);
   cams[p.i].x=clamp(check-cams[p.i].w*.4,0,LEN-cams[p.i].w);}
  function hurt(p,w,dmg,fromX){if(p.inv>0||p.dead||p.finished||w.scene)return;p.hp=Math.max(0,p.hp-dmg);num(w,p.x,p.y-PH-4,dmg,'#ff6a6a');blood(w,p.x,p.y-26,10+dmg,p.x<fromX?-1:1,.9);
   sfx.hit(false);sfx.grunt();s.react(p.i,'sad');shake(w,4);stop=Math.max(stop,4);
@@ -220,16 +233,18 @@ async function sotn(s){
  function throwSub(p,w){const k=p.sub;if(!k)return;const S=SUBS[k];if(p.hearts<S.cost||w.shots.filter(sh=>sh.own).length>=2){sfx.deny();return;}
   p.hearts-=S.cost;p.throwT=12;const f=p.facing,sh={kind:k,own:true,x:p.x+f*6,y:p.y-(p.crouch?16:30),vx:0,vy:0,g:0,t:0,f,hits:new Set()};
   if(k==='dagger'){sh.vx=f*5;sfx.dagger();}else if(k==='axe'){sh.vx=f*1.9;sh.vy=-5.4;sh.g=.2;sfx.axe();}else if(k==='holy'){sh.vx=f*2.1;sh.vy=-2.2;sh.g=.26;sfx.dagger();}else{sh.vx=f*4.4;sfx.cross();}
-  w.shots.push(sh);}
+  w.shots.push(sh);shotOut(sh);}
+ // online: the other phone sees this hero's sub-weapons and Hellfire fly (they hurt nothing there)
+ const shotOut=sh=>{if(net)ev({ps:[sh.kind,Math.round(sh.x),Math.round(sh.y),+sh.vx.toFixed(2),+sh.vy.toFixed(2),sh.g,sh.f,sh.t]});};
  function castHellfire(p,w){p.mp-=HELL_MP;p.cast=26;p.vx=0;sfx.hellfire();shake(w,2);w.flash=Math.max(w.flash,.25);w.flashCol='255,120,40';
-  for(const [k,vy] of [[0,-.7],[1,0],[2,.7]])w.shots.push({kind:'pfire',own:true,x:p.x+p.facing*8,y:p.y-30,vx:p.facing*(3.1-k*.15),vy,g:0,t:-k*4,f:p.facing,hits:new Set(),dmg:18});}
+  for(const [k,vy] of [[0,-.7],[1,0],[2,.7]]){const sh={kind:'pfire',own:true,x:p.x+p.facing*8,y:p.y-30,vx:p.facing*(3.1-k*.15),vy,g:0,t:-k*4,f:p.facing,hits:new Set(),dmg:18};w.shots.push(sh);shotOut(sh);}}
  function jump(p,w){p.vy=-JUMPV;p.grounded=false;p.coy=0;p.jbuf=0;p.usedDouble=false;p.crouch=false;p.atk=null;p.dash=0;sfx.jump();dust(w,p.x,p.y,3);}
  function stepPlayer(p,w,inp){
   const press=inp.press,atk=inp.atk,sub=inp.sub,dash=inp.dash;inp.press=0;inp.atk=0;inp.sub=0;inp.dash=0;
   p.t+=STEP;if(p.throwT>0)p.throwT--;if(p.land>0)p.land--;if(p.comboT<99&&!p.atk)p.comboT++;
   if(!p.atk&&p.sw.length)p.sw.shift();
   if(p.dead){p.dead++;if(p.dead>(p.pit?80:140))respawn(p);return;}
-  if(p.finished||w.scene){p.vx=0;p.atk=null;p.kick=0;p.flip=0;p.charge=0;p.dash=0;const r=moveBody(w,p,5,PH);p.grounded=r.landed;return;}
+  if(p.finished||w.scene&&!(net&&w.scene.kind==='dracula'&&p.x<AR.x0)){p.vx=0;p.atk=null;p.kick=0;p.flip=0;p.charge=0;p.dash=0;const r=moveBody(w,p,5,PH);p.grounded=r.landed;return;}
   if(p.inv>0)p.inv--;if(p.dashCD>0)p.dashCD--;p.mp=Math.min(MP_MAX,p.mp+.07);
   if(p.hurt>0){p.hurt--;p.flip=0;const r=moveBody(w,p,5,PH);p.grounded=r.landed;if(r.landed)p.vx*=.6;afterMove(p,w);return;}
   if(p.cast>0){p.cast--;p.vx=0;const r=moveBody(w,p,5,PH);p.grounded=r.landed;afterMove(p,w);return;}
@@ -282,9 +297,17 @@ async function sotn(s){
   const reg=regionAt(p.x);if(reg.name!==w.area){if(w.area&&!(w.area==='Castle Entrance'&&reg.name==='Castle Entrance'))w.banner={text:reg.name,t:0};w.area=reg.name;}
   if(!w.gateShut&&p.x>L.gateX){w.gateShut=true;w.blocks.push({x0:922,x1:938,y0:96,y1:200,kind:'gate'});sfx.gate();shake(w,6);dust(w,930,200,12);}
   if(!w.deathDone&&p.x>L.deathX&&p.grounded){w.deathDone=true;w.scene={kind:'death',t:0,x:p.x};p.atk=null;p.vx=0;}
-  if(!w.locked&&!w.orb&&p.x>AR.lockX&&!p.dead){w.locked=true;w.blocks.push({x0:AR.x0-16,x1:AR.x0,y0:0,y1:VH,kind:'bars'});sfx.gate();shake(w,5);
-   if(!w.boss)w.boss=makeDracula();if(!w.introDone){w.introDone=true;w.scene={kind:'dracula',t:0};}}
+  if(!w.locked&&!w.orb&&p.x>AR.lockX&&!p.dead)lockArena(w);
  }
+ // the throne room's bars come down and Dracula's intro starts
+ function lockArena(w){w.locked=true;w.blocks.push({x0:AR.x0-16,x1:AR.x0,y0:0,y1:VH,kind:'bars'});sfx.gate();shake(w,5);
+  if(!w.boss)w.boss=makeDracula();if(!w.introDone){w.introDone=true;w.scene={kind:'dracula',t:0};}
+  if(net&&pl[me].x<AR.x0)pullAt=clock+NET_GRACE;}
+ // online: put this phone's hero inside the throne room (a straggler after the grace, or after a death mid-fight)
+ function pullIn(p,w,straggler=true){if(w.scene?.kind==='death')w.scene=null;w.deathDone=true;w.gateShut=true;
+  if(straggler){if(p.weapon==='alucard'||p.weapon==='fist')p.weapon='short';p.leap=true;}
+  Object.assign(p,{x:AR.x0+40,y:AR.floor,vx:0,vy:0,grounded:true,dead:0,pit:false,atk:null,kick:0,flip:0,comboN:-1,hurt:0,crouch:false,dash:0,hp:straggler?p.hp:p.maxHp,inv:110,cast:0,charge:0});
+  p.best=Math.max(p.best,p.x);pullAt=0;cams[p.i].x=AR.x0-10;w.flash=Math.max(w.flash,.5);w.flashCol='120,0,30';}
  // ---------------- pickups
  function dropItem(w,type,x,y){w.items.push({type,x,y,vy:type==='heart'?0:-2.2,x0:x,t:0,ground:false});}
  function pickUp(p,w,it){const t=it.type;
@@ -299,7 +322,7 @@ async function sotn(s){
   else if(t==='orb'){p.hp=p.maxHp;if(!p.finished){p.finished=true;p.finishT=clock;p.atk=null;sfx.orb();setTimeout(()=>s.alive&&sfx.clear(),700);s.react(p.i,'win');w.flash=.6;w.flashCol='255,60,90';}}}
  // ---------------- damage
  function dropFrom(w,x,y,rate=.35){const r=w.rng();if(r<rate)dropItem(w,r<rate*.18?'bigheart':r<rate*.3?'money':'heart',x,y);}
- function killFoe(p,w,e,o){e.dead=true;const F=FOE[e.type],H=e.h;sfx.kill();sfx.blood();stop=Math.max(stop,6);shake(w,3);
+ function killFoe(p,w,e,o){e.dead=true;if(net&&e.id!=null){netKilled.add(e.id);ev({fk:e.id});}const F=FOE[e.type],H=e.h;sfx.kill();sfx.blood();stop=Math.max(stop,6);shake(w,3);
   const cutY=e.y-H*.5,dir=o.dir||(p.x<e.x?1:-1);
   if(e.type==='skeleton'){sfx.collapse();embers(w,e.x,e.y-H*.5,14,'bone');w.corpses.push({foe:{...e},x:e.x,y:e.y,h:H,part:'whole',t:0,life:40,rot:0});}
   else if(e.type==='bat'){blood(w,e.x,e.y,14,dir,1);w.corpses.push({foe:{...e},x:e.x,y:e.y,h:8,part:'whole',t:0,life:36,vy:.5,fall:true});}
@@ -316,10 +339,10 @@ async function sotn(s){
   if(e.type!=='armor'&&e.type!=='warg'&&e.type!=='bat'){e.x+=(o.dir||Math.sign(e.x-p.x)||1)*(o.fin?11:4);}
   if(e.type==='warg'&&e.state==='idle')wake(w,e,p);}
  function hitBox(p,w,box,dmg,hits,o={}){let any=false;
-  for(const cd of w.candles)if(cd.alive&&!hits.has(cd)&&overlap(box,{x0:cd.fx-6,x1:cd.fx+6,y0:cd.fy-10,y1:cd.fy+8})){hits.add(cd);cd.alive=false;sfx.candle();embers(w,cd.fx,cd.fy,8);dropItem(w,cd.item,cd.fx,cd.fy);any=true;}
+  for(const cd of w.candles)if(cd.alive&&!hits.has(cd)&&overlap(box,{x0:cd.fx-6,x1:cd.fx+6,y0:cd.fy-10,y1:cd.fy+8})){hits.add(cd);cd.alive=false;if(net)ev({cd:w.candles.indexOf(cd)});sfx.candle();embers(w,cd.fx,cd.fy,8);dropItem(w,cd.item,cd.fx,cd.fy);any=true;}
   for(const e of w.foes)if(!e.dead&&e.active&&!hits.has(e)&&!(e.state==='rise'&&e.t<14)&&overlap(box,fBox(e))){hits.add(e);damageFoe(p,w,e,dmg,o);any=true;}
   for(const b of w.blocks)if(b.kind==='crack'&&!hits.has(b)&&overlap(box,{x0:b.x0,x1:b.x1,y0:b.y0,y1:b.y1})){hits.add(b);b.hp-=dmg;sfx.wall();dust(w,(b.x0+b.x1)/2,b.y0+10,6);shake(w,2);
-   if(b.hp<=0){w.blocks.splice(w.blocks.indexOf(b),1);for(let k=0;k<16;k++)w.parts.push({kind:'rubble',x:b.x0+Math.random()*16,y:b.y0+Math.random()*50,vx:(Math.random()-.5)*3,vy:-Math.random()*3,life:60,max:60,size:1.5+Math.random()*2.5});dropItem(w,b.item,(b.x0+b.x1)/2,b.y0+20);}any=true;}
+   if(b.hp<=0){w.blocks.splice(w.blocks.indexOf(b),1);if(net)ev({wb:b.x0});for(let k=0;k<16;k++)w.parts.push({kind:'rubble',x:b.x0+Math.random()*16,y:b.y0+Math.random()*50,vx:(Math.random()-.5)*3,vy:-Math.random()*3,life:60,max:60,size:1.5+Math.random()*2.5});dropItem(w,b.item,(b.x0+b.x1)/2,b.y0+20);}any=true;}
   const B=w.boss;if(B&&!hits.has(B)){const r=bossHit(B,box);if(r){hits.add(B);damageBoss(p,w,B,Math.round(dmg*r),o);any=true;}}
   return any;}
 
@@ -386,20 +409,28 @@ async function sotn(s){
   if(overlap(box,{x0:H.x-15,x1:H.x+15,y0:H.y-14,y1:H.y+14}))return 1;if(overlap(box,demonBody(B)))return .6;return 0;}
  const demonHead=B=>({x:B.x+B.facing*(26+(B.low||0)*10+14),y:B.y-112+(B.crouch||0)*14+(B.low||0)*32-4});
  const demonBody=B=>({x0:B.x-30,x1:B.x+32,y0:B.y-100+(B.crouch||0)*14,y1:B.y});
- function damageBoss(p,w,B,dmg,o){B.hp=Math.max(0,B.hp-dmg);B.flash=8;sfx.hit(true);if(o.sword)sfx.slashHit();stop=Math.max(stop,4);shake(w,2);
+ // online player 1's phone owns Dracula's HP; the other phone shows its hits and sends them {bh}
+ function damageBoss(p,w,B,dmg,o){if(!net||host)B.hp=Math.max(0,B.hp-dmg);else ev({bh:dmg});B.flash=8;sfx.hit(true);if(o.sword)sfx.slashHit();stop=Math.max(stop,4);shake(w,2);
   const hp=B.phase===1?{x:B.x,y:B.y-40}:demonHead(B);num(w,hp.x,hp.y-16,dmg);blood(w,hp.x,hp.y,10+dmg/3,o.dir||0,1.1);sparks(w,hp.x,hp.y,o.fin?9:5,o.dir||0);if(o.fin)stop=Math.max(stop,6);
-  if(B.hp>0)return;
+  if(B.hp>0||net&&!host)return;
   if(B.phase===1){B.state='dying';B.t=0;B.open=0;sfx.laugh(true);w.eshots=[];}
-  else{B.state='die';B.t=0;w.eshots=[];for(const e of w.foes)if(e.type==='bat')e.dead=true;sfx.roar();}}
- function stepBoss(w,p){const B=w.boss;if(!B)return;if(B.flash>0)B.flash--;if(w.scene&&B.state!=='throne')return;B.t++;
+  else{B.state='die';B.t=0;w.eshots=[];for(const e of w.foes)if(e.type==='bat')e.dead=true;sfx.roar();if(net)draculaDown(pl[me]);}}
+ // online: destroying Dracula pays both heroes
+ function draculaDown(p){p.score+=DRAC_PTS;num(worlds[p.i],p.x,p.y-PH-10,'+'+DRAC_PTS,'#ffd060');}
+ // online: Dracula goes after the nearer hero in the throne room (player 1's phone)
+ function bossTarget(w,own){const q=pl[them],B=w.boss;if(!net||!q.net||q.dead||q.x<AR.x0)return own;if(own.dead||own.x<AR.x0)return q;return Math.abs(q.x-B.x)<Math.abs(own.x-B.x)?q:own;}
+ // the boss's shots and bats (online player 1's phone sends them to the other phone)
+ function bossShot(w,b){w.eshots.push(b);if(net&&host)ev({bs:[b.kind,Math.round(b.x),Math.round(b.y),+b.vx.toFixed(2),+b.vy.toFixed(2),b.dmg,b.h||0]});}
+ function summonBats(w,D){for(let k=0;k<3;k++)w.foes.push({...spawnFoe({type:'bat',x:D.x-20+k*12,y:D.y-110+k*10}),active:true,state:'fly',vx:(k-1)*.9,baseY:D.y-110+k*10,t:k*20});sfx.squeak();sfx.laugh(true);if(net&&host)ev({bb:1});}
+ function stepBoss(w,own){const B=w.boss;if(!B)return;const p=bossTarget(w,own);if(B.flash>0)B.flash--;if(w.scene&&B.state!=='throne')return;B.t++;
   const face=()=>{B.facing=p.x<B.x?-1:1;};
   if(B.phase===1){
    switch(B.state){
     case 'throne':break;
     case 'idle':face();if(B.t>32){B.t=0;B.state=w.rng()<.55?'hellfire':'inferno';}break;
-    case 'hellfire':B.open=Math.min(1,B.t/18);if(B.t===20&&!p.dead){const dx=p.x-B.x,dy=p.y-24-(B.y-40),a=Math.atan2(dy,dx);for(const da of [-.22,0,.22])w.eshots.push({kind:'hellfire',x:B.x+B.facing*10,y:B.y-40,vx:Math.cos(a+da)*2.4,vy:Math.sin(a+da)*2.4,g:0,t:0,dmg:10});sfx.fireball();sfx.hellfire();}
+    case 'hellfire':B.open=Math.min(1,B.t/18);if(B.t===20&&!p.dead){const dx=p.x-B.x,dy=p.y-24-(B.y-40),a=Math.atan2(dy,dx);for(const da of [-.22,0,.22])bossShot(w,{kind:'hellfire',x:B.x+B.facing*10,y:B.y-40,vx:Math.cos(a+da)*2.4,vy:Math.sin(a+da)*2.4,g:0,t:0,dmg:10});sfx.fireball();sfx.hellfire();}
      if(B.t>60)B.open=Math.max(0,B.open-.08);if(B.t>80){B.state='vanish';B.t=0;}break;
-    case 'inferno':B.open=Math.min(.7,B.t/30);if(B.t===32&&!p.dead){for(const da of [0,-.35]){const dx=p.x-B.x,dy=p.y-22-(B.y-36),a=Math.atan2(dy,dx)+da*B.facing;w.eshots.push({kind:'inferno',x:B.x+B.facing*12,y:B.y-36,vx:Math.cos(a)*1.75,vy:Math.sin(a)*1.75,g:0,t:0,dmg:14});}sfx.inferno();}
+    case 'inferno':B.open=Math.min(.7,B.t/30);if(B.t===32&&!p.dead){for(const da of [0,-.35]){const dx=p.x-B.x,dy=p.y-22-(B.y-36),a=Math.atan2(dy,dx)+da*B.facing;bossShot(w,{kind:'inferno',x:B.x+B.facing*12,y:B.y-36,vx:Math.cos(a)*1.75,vy:Math.sin(a)*1.75,g:0,t:0,dmg:14});}sfx.inferno();}
      if(B.t>70)B.open=Math.max(0,B.open-.06);if(B.t>88){B.state='vanish';B.t=0;}break;
     case 'vanish':if(B.t===1)sfx.teleport();B.vis=Math.max(0,1-B.t/24);if(B.t>24){B.state='hidden';B.t=0;}break;
     case 'hidden':B.vis=0;if(B.t>26&&!p.dead){const mid=(AR.x0+AR.x1)/2,side=p.x>mid?-1:1;B.x=clamp(p.x+side*(78+w.rng()*42),AR.x0+26,AR.x1-26);B.y=AR.floor;face();B.state='appear';B.t=0;sfx.appear();}break;
@@ -408,7 +439,7 @@ async function sotn(s){
      if(B.t===80){sfx.roar();w.flash=.9;w.flashCol='255,255,255';}
      if(B.t>110){Object.assign(B,{phase:2,hp:D2_HP,max:D2_HP,state:'rise',t:0,rise:0,x:clamp(B.x,AR.x0+70,AR.x1-70),y:AR.floor,vy:0,air:false,crouch:0,low:0,mouth:0,swipe:0});w.banner={text:'Dracula, true form',t:0,boss:true};}break;
    }
-   if(B.vis>.6&&['idle','hellfire','inferno','appear'].includes(B.state)&&!p.dead&&overlap(pBox(p),{x0:B.x-9,x1:B.x+9,y0:B.y-60,y1:B.y}))hurt(p,w,10,B.x);
+   if(B.vis>.6&&['idle','hellfire','inferno','appear'].includes(B.state)&&!own.dead&&overlap(pBox(own),{x0:B.x-9,x1:B.x+9,y0:B.y-60,y1:B.y}))hurt(own,w,10,B.x);
    return;}
   // the demon
   const D=B;
@@ -418,26 +449,26 @@ async function sotn(s){
    case 'leap':if(!D.air){D.crouch=Math.min(1,D.t/24);if(D.t===24){const tx=clamp(p.x,AR.x0+60,AR.x1-60);D.vy=-7.4;D.vx=(tx-D.x)/50;D.air=true;sfx.growl();}}
     else{D.crouch=Math.max(0,D.crouch-.08);D.vy+=.3;D.x=clamp(D.x+D.vx,AR.x0+46,AR.x1-46);D.y+=D.vy;
      if(D.y>=AR.floor&&D.vy>0){D.y=AR.floor;D.air=false;D.vy=0;D.crouch=1;sfx.stomp();shake(w,9);dust(w,D.x,AR.floor,16);
-      for(const s2 of [-1,1])w.eshots.push({kind:'wave',x:D.x+s2*34,y:AR.floor,vx:s2*2.7,vy:0,g:0,t:0,dmg:14,h:14});D.state='recover';D.t=0;}}break;
+      for(const s2 of [-1,1])bossShot(w,{kind:'wave',x:D.x+s2*34,y:AR.floor,vx:s2*2.7,vy:0,g:0,t:0,dmg:14,h:14});D.state='recover';D.t=0;}}break;
    case 'recover':D.crouch=Math.max(0,1-D.t/36);if(D.t>40){D.state='idle';D.t=0;}break;
    case 'breath':if(D.t<30){D.low=Math.min(1,D.t/24);D.mouth=D.t/30;face();}
     if(D.t===30)sfx.breath();
-    if([30,38,46,54].includes(D.t)&&!p.dead){const H=demonHead(D),mx=H.x+D.facing*8,my=H.y+8,a=Math.atan2(p.y-24-my,p.x-mx);w.eshots.push({kind:'breath',x:mx,y:my,vx:Math.cos(a)*2.9,vy:Math.sin(a)*2.9,g:0,t:0,dmg:12});}
+    if([30,38,46,54].includes(D.t)&&!p.dead){const H=demonHead(D),mx=H.x+D.facing*8,my=H.y+8,a=Math.atan2(p.y-24-my,p.x-mx);bossShot(w,{kind:'breath',x:mx,y:my,vx:Math.cos(a)*2.9,vy:Math.sin(a)*2.9,g:0,t:0,dmg:12});}
     if(D.t>56)D.mouth=Math.max(0,D.mouth-.05);if(D.t>104)D.low=Math.max(0,D.low-.06);if(D.t>120){D.state='idle';D.t=0;}break;
-   case 'summon':D.swipe=Math.sin(D.t/30*Math.PI);if(D.t===18){for(let k=0;k<3;k++)w.foes.push({...spawnFoe({type:'bat',x:D.x-20+k*12,y:D.y-110+k*10}),active:true,state:'fly',vx:(k-1)*.9,baseY:D.y-110+k*10,t:k*20});sfx.squeak();sfx.laugh(true);}
+   case 'summon':D.swipe=Math.sin(D.t/30*Math.PI);if(D.t===18)summonBats(w,D);
     if(D.t>34){D.state='idle';D.t=0;D.swipe=0;}break;
    case 'die':if(D.t%6===0){blood(w,D.x+(Math.random()-.5)*70,D.y-30-Math.random()*90,16,0,1.6);embers(w,D.x+(Math.random()-.5)*60,D.y-Math.random()*100,6);if(D.t%12===0)sfx.boom();shake(w,5);}
     if(D.t===60)sfx.roar();if(D.t>100)D.rise=Math.max(0,1-(D.t-100)/90);
     if(D.t===150){w.flash=1;w.flashCol='255,255,255';sfx.shatter();}
-    if(D.t>195){D.state='gone';w.orb=true;dropItem(w,'orb',clamp(p.x+(p.x<(AR.x0+AR.x1)/2?60:-60),AR.x0+40,AR.x1-40),40);}break;
+    if(D.t>195){D.state='gone';w.orb=true;dropItem(w,'orb',clamp(own.x+(own.x<(AR.x0+AR.x1)/2?60:-60),AR.x0+40,AR.x1-40),40);}break;
   }
-  if(!['rise','die','gone'].includes(D.state)&&!p.dead&&overlap(pBox(p),demonBody(D)))hurt(p,w,12,D.x);
+  if(!['rise','die','gone'].includes(D.state)&&!own.dead&&overlap(pBox(own),demonBody(D)))hurt(own,w,12,D.x);
  }
 
  // ---------------- world step: projectiles, pickups, particles, scenes
  function stepWorld(w,p){const cam=cams[p.i],fr=!!w.scene;
   if(w.scene)stepScene(w,p);
-  stepFoes(w,p,cam);stepBoss(w,p);
+  stepFoes(w,p,cam);if(net&&!host)mirrorBoss(w,p);else stepBoss(w,p);
   for(let k=w.eshots.length-1;k>=0;k--){const b=w.eshots[k];if(fr)continue;b.t++;
    if(b.boom){b.vx-=b.f*.055;if(b.t>40&&b.owner&&Math.abs(b.x-b.owner.x)<10){b.owner.thrown=false;w.eshots.splice(k,1);continue;}}
    b.vy+=b.g;b.x+=b.vx;b.y+=b.vy;
@@ -446,6 +477,7 @@ async function sotn(s){
    if(!p.dead&&!p.finished&&overlap(pBox(p),{x0:b.x-r,x1:b.x+r,y0:hy0,y1:hy1})){hurt(p,w,b.dmg,b.x);if(b.kind!=='wave'&&b.kind!=='inferno'){if(b.owner)b.owner.thrown=false;w.eshots.splice(k,1);continue;}}
    if(b.y>VH+20||b.t>420||b.x<cam.x-80||b.x>cam.x+cam.w+80){if(b.owner)b.owner.thrown=false;w.eshots.splice(k,1);}}
   for(let k=w.shots.length-1;k>=0;k--){const sh=w.shots[k];sh.t++;if(sh.t<0)continue;let gone=false;
+   if(sh.vis){if(sh.kind==='cross')sh.vx-=sh.f*.11;sh.vy+=sh.g;sh.x+=sh.vx;sh.y+=sh.vy;if(sh.t>(sh.kind==='cross'?60:90)||sh.y>VH+20||sh.kind!=='cross'&&sh.y>=terrain(sh.x))w.shots.splice(k,1);continue;}
    if(sh.kind==='cross'){sh.vx-=sh.f*.11;sh.x+=sh.vx;if(sh.t>30&&Math.sign(sh.vx)!==sh.f&&Math.abs(sh.x-p.x)<10&&Math.abs(sh.y-(p.y-24))<30)gone=true;}
    else{sh.vy+=sh.g;sh.x+=sh.vx;sh.y+=sh.vy;}
    const box={x0:sh.x-5,x1:sh.x+5,y0:sh.y-5,y1:sh.y+5};
@@ -648,6 +680,10 @@ async function sotn(s){
   if(w.scene?.kind==='death'){const sc=w.scene,dx=sc.x+62,a=sc.t<16?0:sc.t<46?(sc.t-16)/30:sc.t>300?Math.max(0,1-(sc.t-300)/40):1;
    if(a>0)A.drawDeath(g,dx,p.y-26,simT,a,sc.t>200&&sc.t<240?Math.sin((sc.t-200)/40*Math.PI):0);
    if(sc.gear)for(const gr of sc.gear){const k=clamp((sc.t-226-gr.k*6)/40,0,1);if(k<=0||k>=1)continue;const gx=p.x+(dx-p.x)*k,gyy=p.y-30-Math.sin(k*Math.PI)*40-gr.k*6;A.glow(g,gx,gyy,10,A.GLOW.purple,1-k*.5);A.drawPickup(g,['alucard','cross','potion','holy'][gr.k],gx,gyy+6,simT);}}
+  // online: the partner
+  const pq=net&&pl[them].net?pl[them]:null;
+  if(pq&&pq.x>x0-30&&pq.x<x1+30){const o=pq.net.o;if(!(o.inv&&!o.dead&&(frames>>2)%2)){const mood=o.finished?'win':o.pose==='hurt'||o.dead?'sad':undefined;
+   A.glow(g,pq.x,pq.y-26,30,A.GLOW.moon,.1);A.drawHero(g,{...o,x:pq.x,y:pq.y},{head:headFn(them,mood),headSize:23});}}
   // ghost, after-images, hero
   let o=ghostAt(i);const o0=o&&gi>0?ghost[gi-1]:null;if(o0&&Math.abs(o.x-o0.x)<40)o={...o,x:o0.x+(o.x-o0.x)*ghostAl,y:o0.y+(o.y-o0.y)*ghostAl};if(o&&o.x>x0-30&&o.x<x1+30&&!o.dead){A.drawAfterimage(g,o,.9,'rgba(150,70,230,.55)');g.save();g.globalAlpha=.45;s.sprite(g,0,o.x+(o.facing||1)*.5,o.y-39+(o.pose==='crouch'||o.pose==='crouchAtk'?8:0),19,{exact:true});g.restore();}
   for(const a of w.ai){const u=a.life/(a.max||20);A.drawAfterimage(g,a.q,u*u*(a.k??.6));}
@@ -666,6 +702,7 @@ async function sotn(s){
   if(w.flash>0){g.fillStyle=`rgba(${w.flashCol},${Math.min(.85,w.flash)})`;g.fillRect(lay.ox,lay.oy,lay.vw*lay.sc,lay.vh);}
   if(p.dead&&!p.pit&&p.dead>30){g.fillStyle=`rgba(90,0,0,${Math.min(.45,(p.dead-30)/80)})`;g.fillRect(lay.ox,lay.oy,lay.vw*lay.sc,lay.vh);}
   drawScene(w,p,lay);
+  if(pq)partnerArrow(s,g,{x:lay.ox,y:lay.oy,w:lay.vw*lay.sc,h:lay.vh},lay.ox+(pq.x-cam.x)*lay.sc,lay.oy+(pq.y-24)*lay.sc,{player:them,color:PCOL[them],label:`${Math.round(Math.abs(pq.x-p.x)/16)} m`,size:Math.round(clamp(8*lay.sc,14,24))});
   drawHUD(i);
  }
  // ---------------- HUD (SOTN-style status frame top-left, time top-right, boss bar, item/relic boxes, area names)
@@ -689,9 +726,14 @@ async function sotn(s){
   const ry=Y+Math.max(0,FB.top-Y);
   gtext(fmtRace(p.finished?p.finishT:clock),X+W-6*u,ry+5*u,Math.round(9*u),'#f2eee6','right');
   gtext(w.area||'',X+W-6*u,ry+16*u,Math.round(5.5*u),'#c9a24a','right',{italic:true});
-  if(i===1){const q=pl[0];gtext(`Beat ${s.players[0].name}: ${q.finished?fmtRace(q.finishT):prog(q)+'%'}`,X+W-6*u,ry+24*u,Math.round(5.5*u),PCOL[0],'right');}
+  if(net&&phase!=='title'){const q=pl[them],first=Math.min(p.finished?p.finishT:Infinity,q.finished?q.finishT:Infinity);
+   gtext(`${p.score.toLocaleString()} pts · ${s.players[them].name}: ${q.score.toLocaleString()}`,X+W-6*u,ry+24*u,Math.round(5.5*u),PCOL[them],'right');
+   let warn='';if(first<Infinity&&!(p.finished&&q.finished)&&phase==='play'){const left=Math.max(0,Math.ceil(first+NET_GRACE-clock));warn=p.finished?`${s.players[them].name} has ${left} s`:`Grab the blood orb! ${left}`;}
+   else if(pullAt&&phase==='play'&&p.x<AR.x0)warn=`Dracula awaits! ${Math.max(0,Math.ceil(pullAt-clock))}`;
+   if(warn)gtext(warn,X+W/2,Y+H*.2,Math.round(10*u),'#ff3a4a','center',{italic:true});}
+  if(i===1&&!net){const q=pl[0];gtext(`Beat ${s.players[0].name}: ${q.finished?fmtRace(q.finishT):prog(q)+'%'}`,X+W-6*u,ry+24*u,Math.round(5.5*u),PCOL[0],'right');}
   // progress strip
-  const roomBelow=s.H-(Y+H)>90,sw=Math.min(W*(roomBelow?.6:.3),200),sx=X+(W-sw)/2,sy=roomBelow?Y+H+8*u:Y+6*u;g.fillStyle='rgba(255,255,255,.15)';g.fillRect(sx,sy-1,sw,2);const gh=ghostAt(i),track=q=>clamp((q.best-L.start)/(L.end-L.start),0,1);
+  const roomBelow=s.H-(Y+H)>90,sw=Math.min(W*(roomBelow?.6:.3),200),sx=X+(W-sw)/2,sy=roomBelow?Y+H+8*u:Y+6*u;g.fillStyle='rgba(255,255,255,.15)';g.fillRect(sx,sy-1,sw,2);const gh=net?(pl[them].net?pl[them]:null):ghostAt(i),track=q=>clamp((q.best-L.start)/(L.end-L.start),0,1);
   for(const q of gh?[gh,p]:[p]){g.globalAlpha=q===p?1:.6;g.fillStyle=PCOL[q.i];g.beginPath();g.arc(sx+track(q)*sw,sy,q===p?3*u:2.2*u,0,6.3);g.fill();}g.globalAlpha=1;
   // boss bar
   if(B&&w.locked&&!w.scene&&B.state!=='gone'){const bw2=Math.min(W*.7,360),bx2=X+(W-bw2)/2,by2=Y+H-16*u;gtext(B.phase===1?'DRACULA':'DRACULA · TRUE FORM',bx2,by2-8*u,Math.round(6*u),'#ff6a6a','left',{italic:true});
@@ -732,13 +774,66 @@ async function sotn(s){
   g.restore();}
 
  const teleport=(i,X)=>{const q=pl[i],w=worlds[i];let x=X;while(x<LEN-30&&terrain(x)>=NONE)x+=4;Object.assign(q,{x,y:support(w,x,5,-50,true),vx:0,vy:0,grounded:true,dead:0,pit:false,hurt:0,atk:null,dash:0});q.best=Math.max(q.best,q.x);cams[i].x=clamp(q.x-cams[i].w*.4,0,LEN-cams[i].w);};
- s.debug={art:A,audio:SA,head:headFn,set bot(f){bot=f;},get phase(){return phase;},get clock(){return clock;},get turn(){return turn;},ghost,pl,L,worlds,cams,inputs,setClock(v){clock=v;},teleport,
+ s.debug={art:A,audio:SA,head:headFn,set bot(f){bot=f;},get bot(){return net?netBotHook:bot;},get phase(){return phase;},get clock(){return clock;},get turn(){return turn;},ghost,pl,L,worlds,cams,inputs,setClock(v){clock=v;},teleport,
   toBoss(i){teleport(i,AR.lockX+12);},skipScene(i){const w=worlds[i],sc=w.scene;if(!sc)return;w.scene=null;if(sc.kind==='death')pl[i].weapon='fist';else if(w.boss){w.boss.state='idle';w.boss.t=0;w.boss.vis=1;}},
   hurtBoss(i,n){const w=worlds[i],B=w.boss;if(B&&B.hp>0)damageBoss(pl[i],w,B,n,{});},get stop(){return stop;}};
 
+ // ---------------- online (see the top of the file)
+ let netStarted=false,netScores=null,nb=null;
+ const packP=p=>({...snap(p),x:+p.x.toFixed(1),y:+p.y.toFixed(1),g:p.grounded?1:0,sc:p.score,ft:+p.finishT.toFixed(2),hp:Math.round(p.hp),mh:p.maxHp,lv:p.lv,inv:p.inv>0?1:0,cr:p.crouch?1:0});
+ function unpackP(o){const q=pl[them];if(!o||typeof o!=='object')return;const first=!q.net;q.net={o};
+  Object.assign(q,{facing:o.facing,dead:o.dead,grounded:!!o.g,vx:o.vx,vy:o.vy,score:o.sc,hp:o.hp,maxHp:o.mh,lv:o.lv,inv:o.inv?30:0,crouch:!!o.cr});
+  q.best=Math.max(q.best,o.best);if(o.finished&&!q.finished){q.finished=true;q.finishT=o.ft;}if(first){q.x=o.x;q.y=o.y;}}
+ function stepRemote(dt){const q=pl[them],n=q.net;if(!n)return;const o=n.o,k=1-Math.exp(-dt*16);if(Math.abs(o.x-q.x)>80){q.x=o.x;q.y=o.y;}else{q.x+=(o.x-q.x)*k;q.y+=(o.y-q.y)*k;}}
+ const r2=v=>Math.round((v||0)*100)/100;
+ const packBoss=B=>[B.phase,B.state,Math.round(B.x),Math.round(B.y),B.hp,B.max,B.facing,r2(B.vis),r2(B.open),r2(B.crouch),r2(B.low),r2(B.mouth),r2(B.rise),r2(B.swipe),B.t];
+ // the other phone's Dracula follows player 1's snapshots
+ function unpackBoss(b){const w=worlds[me];if(!Array.isArray(b))return;if(!w.boss){if(w.orb)return;lockArena(w);}
+  const B=w.boss,[ph,st,x,y,hp,max,f,vis,open,cr,low,mo,rise,sw,t]=b,prev=B.state,prevPh=B.phase;
+  Object.assign(B,{phase:ph,hp,max,facing:f,vis,open,crouch:cr,low,mouth:mo,rise,swipe:sw});B.nx=x;B.ny=y;if(Math.abs(B.x-x)>60||ph!==prevPh){B.x=x;B.y=y;}
+  if(st===prev&&ph===prevPh)return;B.state=st;B.t=t;
+  if(w.scene?.kind==='dracula'&&st!=='throne'){w.scene=null;w.banner={text:'Dracula',t:0,boss:true};music('boss');}
+  if(st==='vanish')sfx.teleport();else if(st==='appear')sfx.appear();else if(st==='dying'){w.eshots=[];sfx.laugh(true);}
+  if((st==='die'||st==='gone')&&!B.paid){B.paid=true;w.eshots=[];for(const e of w.foes)if(e.type==='bat')e.dead=true;sfx.roar();draculaDown(pl[me]);}
+  if(st==='gone'&&!w.orb){w.orb=true;const p=pl[me];dropItem(w,'orb',clamp(p.x+(p.x<(AR.x0+AR.x1)/2?60:-60),AR.x0+40,AR.x1-40),40);}}
+ // the mirrored Dracula: eased to the snapshots, death throes, and touching this phone's hero
+ function mirrorBoss(w,p){const B=w.boss;if(!B)return;if(B.flash>0)B.flash--;B.t++;if(B.nx!=null){B.x+=(B.nx-B.x)*.3;B.y+=(B.ny-B.y)*.3;}
+  if(B.state==='dying'&&B.t%7===0){blood(w,B.x+(Math.random()-.5)*20,B.y-20-Math.random()*40,14,0,1.4);shake(w,4);}
+  if(B.state==='die'&&B.t%6===0){blood(w,B.x+(Math.random()-.5)*70,B.y-30-Math.random()*90,16,0,1.6);embers(w,B.x+(Math.random()-.5)*60,B.y-Math.random()*100,6);shake(w,5);}
+  if(B.phase===1){if(B.vis>.6&&['idle','hellfire','inferno','appear'].includes(B.state)&&!p.dead&&overlap(pBox(p),{x0:B.x-9,x1:B.x+9,y0:B.y-60,y1:B.y}))hurt(p,w,10,B.x);}
+  else if(!['rise','die','gone'].includes(B.state)&&!p.dead&&overlap(pBox(p),demonBody(B)))hurt(p,w,12,B.x);}
+ function onNetEvent(e){const p=pl[me],w=worlds[me];if(!e||typeof e!=='object')return;
+  if(e.cd!=null){const c0=w.candles[e.cd];if(c0&&c0.alive){c0.alive=false;embers(w,c0.fx,c0.fy,6);}}
+  else if(e.wb!=null){const b=w.blocks.find(b=>b.kind==='crack'&&b.x0===e.wb);if(b){w.blocks.splice(w.blocks.indexOf(b),1);dust(w,(b.x0+b.x1)/2,b.y0+20,8);}}
+  else if(e.fk!=null){netKilled.add(e.fk);const f=w.foes.find(f=>f.id===e.fk&&!f.dead);if(f){f.dead=true;if(f.active){blood(w,f.x,f.y-f.h*.5,16,0,1);embers(w,f.x,f.y-f.h*.5,6);}}}
+  else if(Array.isArray(e.ps)){const [kind,x,y,vx,vy,gg,f,t]=e.ps;if(w.shots.length<40)w.shots.push({kind,own:false,vis:true,x,y,vx,vy,g:gg,f,t,hits:new Set()});}
+  else if(e.bh&&host){const B=w.boss;if(B&&B.hp>0&&!['throne','dying','die','rise','gone'].includes(B.state))damageBoss(p,w,B,+e.bh||0,{});}
+  else if(Array.isArray(e.bs)&&!host){const [kind,x,y,vx,vy,dmg,h]=e.bs,b={kind,x,y,vx,vy,g:0,t:0,dmg};if(h)b.h=h;w.eshots.push(b);if(kind==='hellfire')sfx.fireball();}
+  else if(e.bb&&!host&&w.boss)summonBats(w,w.boss);}
+ if(net){nf=netField(s,{hz:20,pack:()=>{const o={p:packP(pl[me])};const B=worlds[me].boss;if(host&&B)o.b=packBoss(B);return o;},
+  unpack:(i,d)=>{if(!d)return;unpackP(d.p);if(!host&&d.b)unpackBoss(d.b);},onEvent:onNetEvent});}
+ // the run ends 10 s after the first blood orb (or 2.5 s after both have one), or at the race cap
+ const netOver=()=>{const p=pl[me],q=pl[them];if(clock>=RACE_CAP)return true;if(p.finished&&q.finished)return clock-Math.max(p.finishT,q.finishT)>2.5;
+  return clock>Math.min(p.finished?p.finishT:Infinity,q.finished?q.finishT:Infinity)+NET_GRACE;};
+ async function netEnd(){phase='net-end';endT=0;const p=pl[me],mine={sc:p.score,f:p.finished?1:0,t:+p.finishT.toFixed(2),b:Math.round(p.best)};nf.finish(mine);
+  const o=await nf.remoteDone();if(!o||!s.alive)return;const q=pl[them];Object.assign(q,{score:o.sc,finished:!!o.f,finishT:o.t});q.best=Math.max(q.best,o.b);
+  const F=[];F[me]=mine;F[them]=o;netScores=F.map(f=>f.sc);winner=netScores[0]===netScores[1]?-2:netScores[0]>netScores[1]?0:1;
+  phase='end';endT=0;endText=winner===-2?'A draw in the dark':`${s.players[winner].name} wins`;if(winner>=0)s.react(winner,'win');sfx.bell();}
+ // online test bot: walks right slashing, jumps when stuck (and, being a test, hops past what it can't clear), fights Dracula
+ const netBotHook=()=>{if(!bot){nb={t:0,stuck:0,x:0};bot=netBot;return 'drive';}return '';};
+ function netBot(inp){const p=pl[me],w=worlds[me],B=w.boss;nb.t++;Object.assign(inp,{l:0,r:1,u:0,d:0,jump:0,atkHeld:0});if(nb.t%10===0)inp.atk=1;
+  if(Math.abs(p.x-nb.x)<.4&&!w.scene&&!p.dead&&!p.finished)nb.stuck++;else nb.stuck=0;nb.x=p.x;
+  if(nb.stuck>15&&p.grounded){inp.press=1;inp.jump=1;}if(nb.stuck>120){teleport(me,p.x+60);nb.stuck=0;}
+  const wa=L.water[0];if(p.x>wa.x0-14&&p.x<wa.x1&&p.grounded&&!w.scene)teleport(me,wa.x1+20);
+  if(B&&w.locked&&B.state!=='gone'){inp.r=p.x<B.x-18?1:0;inp.l=p.x>B.x+18?1:0;if(!inp.r&&!inp.l)p.facing=B.x<p.x?-1:1;if(B.phase===2&&nb.t%40<4){inp.press=1;inp.jump=1;}}
+  const orb=w.items.find(it=>it.type==='orb');if(orb){inp.r=p.x<orb.x-4?1:0;inp.l=p.x>orb.x+4?1:0;}}
+
  // ---------------- turns
  const score=q=>q.finished?fmtRace(q.finishT):`${prog(q)}% of the way`;
- async function beginTurn(i){phase='handoff';turn=i;pads.stick=null;pads.jump=null;pads.atk=null;clearKeys();for(const inp of inputs)Object.assign(inp,{l:0,r:0,u:0,d:0,jump:0,press:0,atk:0,atkHeld:0,sub:0,dash:0});
+ async function beginTurn(i){
+  // online: no hand-off; both phones start the countdown together
+  if(net){phase='wait';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;clock=0;acc=0;cd=new Countdown(3);phase='count';cams[me].x=0;worlds[me].area='';ambience('wind');music('stage');return;}
+  phase='handoff';turn=i;pads.stick=null;pads.jump=null;pads.atk=null;clearKeys();for(const inp of inputs)Object.assign(inp,{l:0,r:0,u:0,d:0,jump:0,press:0,atk:0,atkHeld:0,sub:0,dash:0});
   const n0=s.players[0].name,desc=s.solo?`Castle run ${soloCleared+1}: destroy Dracula within ${fmtRace(raceCap())} to go again with less time. Getting further scores too.`:i===0?`You go first: storm Dracula's castle and destroy him as fast as you can. ${s.players[1].name} plays next against your ghost.`
    :`Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'}. ${n0}'s violet after-image runs beside you.`;
   if(!await s.pass(i,desc,'Ready — start my countdown',s.solo?{soloTitle:`Castle run ${soloCleared+1}`,summary:soloCleared?`${soloTotal.toLocaleString()} points so far.`:null}:{summary:i?`${n0}: ${score(pl[0])}. ${s.players[1].name}, take the controls.`:null}))return;
@@ -755,18 +850,25 @@ async function sotn(s){
   if(!s.alive)return;tick();
   if(phase==='title'){if(!titleT){sfx.bell();setTimeout(()=>s.alive&&sfx.thunder(true),900);}titleT+=dt;if(titleT>3.2)beginTurn(0);}
   else if(phase==='count'){layout();cams[turn].w=lay.vw;updateCamera(pl[turn],turn);savePrev(turn);if(!cd.update(dt)){phase='play';for(const inp of inputs){inp.press=0;inp.atk=0;inp.sub=0;inp.dash=0;}}}
-  else if(phase==='play'||phase==='turn-end'||phase==='end'){
+  else if(phase==='play'||phase==='turn-end'||phase==='end'||phase==='net-end'){
    if(!cd.done)cd.update(dt);acc+=dt;let steps=0;const i=turn,p=pl[i],w=worlds[i];
+   // online the clock is wall time (scenes and hit-stop differ per phone); player 1's phone locks the throne room when
+   // the partner walks in first; a hero left outside a locked throne room is pulled in after the grace
+   if(net){stepRemote(dt);nf.tick(dt);if(phase==='play')clock+=dt;const q=pl[them];
+    if(host&&!w.locked&&!w.orb&&q.net&&q.x>AR.lockX&&!q.dead)lockArena(w);
+    if(phase==='play'&&w.locked&&!w.orb&&p.x<AR.x0&&!p.dead&&!p.finished){if(!pullAt)pullAt=clock+NET_GRACE;if(clock>=pullAt||p.x>AR.x0-60)pullIn(p,w);}}
    while(acc>=STEP&&steps<5){acc-=STEP;steps++;savePrev(i);
     if(stop>0){stop--;continue;}
     frames++;simT+=STEP;
-    if(phase==='play'){if(!w.scene)clock+=STEP;readInput(i);stepPlayer(p,w,inputs[i]);stepWorld(w,p);}
+    if(phase==='play'){if(!w.scene&&!net)clock+=STEP;readInput(i);stepPlayer(p,w,inputs[i]);stepWorld(w,p);}
     else{stepPlayer(p,w,still);stepWorld(w,p);}
     updateCamera(p,i);
     if(w.msg&&++w.msg.t>150)w.msg=null;if(w.banner&&++w.banner.t>140)w.banner=null;w.flash=Math.max(0,w.flash-.04);w.shake=Math.max(0,w.shake-.35);
-    if(turn===0&&phase!=='end'&&!s.solo)ghost.push(snap(p));else if(turn===1)gi++;}
+    if(turn===0&&phase!=='end'&&!s.solo&&!net)ghost.push(snap(p));else if(turn===1&&!net)gi++;}
    if(steps===5)acc=0;
-   if(phase==='play'){ambience(AMB[regionAt(p.x).kind]||'hall');
+   if(phase==='play'&&net){ambience(AMB[regionAt(p.x).kind]||'hall');if(netOver())netEnd();}
+   else if(phase==='net-end')endT+=dt;
+   else if(phase==='play'){ambience(AMB[regionAt(p.x).kind]||'hall');
     if(turnOver(p)){endT=0;
      if(turn===0||s.solo){phase='turn-end';turnText=p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;}
      else{phase='end';const a=pl[0],b=pl[1];
@@ -775,17 +877,20 @@ async function sotn(s){
       endText=winner===-2?'A draw in the dark':pl[winner].finished?`${s.players[winner].name} destroyed Dracula`:`${s.players[winner].name} got further`;
       if(winner>=0)s.react(winner,'win');sfx.bell();}}}
    else if(phase==='turn-end'){endT+=dt;if(endT>2.6){if(s.solo){phase='handoff';soloAfter();return;}beginTurn(1);}}
-   else{endT+=dt;if(endT>3.6){const sc=[prog(pl[0]),prog(pl[1])];if(winner>=0){sc[winner]=100;sc[1-winner]=Math.min(sc[1-winner],99);}
+   else{endT+=dt;if(endT>3.6){
+    if(net){s.finish(netScores,`Symphony of the Night together: ${s.players[0].name} ${pl[0].score.toLocaleString()} points${pl[0].finished?'':' (no blood orb)'}, ${s.players[1].name} ${pl[1].score.toLocaleString()} points${pl[1].finished?'':' (no blood orb)'}.`);return;}
+    const sc=[prog(pl[0]),prog(pl[1])];if(winner>=0){sc[winner]=100;sc[1-winner]=Math.min(sc[1-winner],99);}
     s.finish(sc,`Symphony of the Night: ${s.players[0].name} ${score(pl[0])}, ${s.players[1].name} ${score(pl[1])}.`);return;}}
-   s.setScores(s.solo?[soloTotal+(phase==='end'?0:soloPoints(pl[0])),0]:pl.map(prog));}
+   s.setScores(s.solo?[soloTotal+(phase==='end'?0:soloPoints(pl[0])),0]:net?pl.map(q=>q.score):pl.map(prog));}
   // draw
   g.fillStyle='#000';g.fillRect(0,0,s.W,s.H);
-  if(phase!=='title'){const lerp=phase==='play'||phase==='turn-end'||phase==='end';if(lerp)interp(turn,clamp(acc/STEP,0,1));drawWorld(turn);if(lerp)uninterp();}else{layout();scen.ensure(g,lay.sc);}
+  if(phase!=='title'){const lerp=phase==='play'||phase==='turn-end'||phase==='end'||phase==='net-end';if(lerp)interp(turn,clamp(acc/STEP,0,1));drawWorld(turn);if(lerp)uninterp();}else{layout();scen.ensure(g,lay.sc);}
   if(phase==='title')drawTitle(titleT);
   if(phase==='count'||!cd.done&&phase==='play')cd.draw(g,s.W,s.H);
+  if(phase==='wait'||phase==='net-end')gtext(`Waiting for ${s.players[them].name}…`,s.W/2,s.H*.3,Math.round(Math.min(s.W*.055,26)),'#c9a24a','center',{italic:true});
   if(phase==='turn-end'||phase==='end'){const a=Math.min(1,endT*2.5),size=Math.min(s.W*.07,s.H*.07,46);g.save();g.globalAlpha=a;g.fillStyle='rgba(0,0,0,.65)';g.fillRect(0,s.H*.38,s.W,s.H*.24);
    if(phase==='turn-end'){gtext(pl[0].finished?'Dracula is destroyed':'The night is over',s.W/2,s.H/2-size*.9,size,'#ff3a4a','center',{italic:true});gtext(`${s.players[0].name}: ${turnText}`,s.W/2,s.H/2+size*.3,Math.round(size*.55),'#f2eee6','center');}
-   else{gtext(endText,s.W/2,s.H/2-size*.9,size,'#ff3a4a','center',{italic:true});const sub=pl.map(q=>q.finished?fmtRace(q.finishT):`${prog(q)}%`).join('  ·  ');gtext(sub,s.W/2,s.H/2+size*.3,Math.round(size*.55),'#f2eee6','center');}
+   else{gtext(endText,s.W/2,s.H/2-size*.9,size,'#ff3a4a','center',{italic:true});const sub=pl.map(q=>net?q.score.toLocaleString():q.finished?fmtRace(q.finishT):`${prog(q)}%`).join('  ·  ');gtext(sub,s.W/2,s.H/2+size*.3,Math.round(size*.55),'#f2eee6','center');}
    g.restore();}
  });
 }
