@@ -1,7 +1,8 @@
 const {validPhotoPair:isValidPhotoPair, photoPairLibrary}=require("src/photoPairs.js");
 const {PHOTO_HUNT_PAIRS}=require("src/data/photoHuntPairs.js");
 const {USER_PORTRAITS}=require("src/data/userPortraits.js");
-const {shuffle}=require("src/utils.js");
+const {shuffle,seededRandom}=require("src/utils.js");
+const {netField}=require("src/engines/netField.js");
 const {circle}=require("src/engines/session.js");
 const {store}=require("src/state.js");
 const {saveProfile}=require("src/profile.js");
@@ -46,6 +47,13 @@ function sceneDraw(x,scene,changes,right,rect){
 // One player hunts round after round until the timer bar runs out; then the other player gets their own photo set.
 // Find = the clock value (counts down from 1000, resets after each find); a cleared round converts the pills left into a time bonus.
 // Scoring numbers were read off cabinet photos (≈14k a round, ≈320 per pill); tweak them here.
+// Online (s.online) it is the cabinet's 2-player race: both phones show the SAME photos at the same time (bundled pairs
+// only, dealt from the seed) and whoever touches a difference first takes it. Each touch is a claim {c:[round,i,t]}
+// stamped with that phone's round clock; the earliest claim owns the difference (tie → player 1) and scores the clock
+// at that moment (1,000 counting down, reset by every find), so both phones rebuild the same scores from the two logs.
+// A wrong touch locks that player out for 1.2 s (the shared timer is never cut). A round ends on each phone when it
+// knows every difference is taken or its timer runs out; it sends {re:round} after its last claim and the round is
+// decided once both are in: all taken = cleared (both get the time bonus, next round), otherwise game over.
 const RULES=Object.freeze({diffs:5,pills:48,roundTime:48,timeStep:1.5,minTime:30,missPenalty:3,clockStart:1000,clockDecay:25,clockFloor:250,pillBonus:320,hints:3,houseName:'WILLYZ CREW',houseScore:369127});
 // The cabinet screen is 800x600; on other screens the layout stretches to the screen's shape (same parts, same look):
 // wide phones get one header row and side columns, portrait phones stack the photos.
@@ -199,6 +207,7 @@ function fullBleed(s){
 async function photohunt(s){
  const [c,x]=s.canvas(DW,DH,{fill:true});s.body.classList.add('drag-arena-body');fullBleed(s);
  s.hint('Tap a difference on either photo. A wrong tap costs time. Tap a magnifying glass for a hint (3 per game).');
+ const net=s.online||null,me=net?net.me:0,them=1-me;
  const players=[0,1].map(()=>({score:0,round:0,hints:RULES.hints,done:false,high:false}));
  const photos=shuffle([...bundledPairs(),...profilePairs()],s.random),decks=[photos.filter((_,i)=>i%2===0),photos.filter((_,i)=>i%2===1)];
  if(photos.length===1)decks[1]=[...decks[0]];
@@ -232,7 +241,7 @@ async function photohunt(s){
   pushScores();
   if(st.found.length>=st.regions.length){phase='solved';T=0;sfx('complete');}
  }
- function useHint(){if(phase!=='hunt'||P().hints<=0)return;const open=st.regions.map((_,i)=>i).filter(i=>!st.found.includes(i));if(!open.length)return;P().hints--;find(open[Math.floor(s.random()*open.length)],true);}
+ function useHint(){if(phase!=='hunt'||P().hints<=0)return;if(net){const own=resolveRound(st.n,st.regions.length).own,open=st.regions.map((_,i)=>i).filter(i=>!own.has(i));if(open.length){P().hints--;claim(open[Math.floor(Math.random()*open.length)],true);}return;}const open=st.regions.map((_,i)=>i).filter(i=>!st.found.includes(i));if(!open.length)return;P().hints--;find(open[Math.floor(s.random()*open.length)],true);}
  function update(dt){
   clockGlow=Math.max(0,clockGlow-dt*2.2);quitGlow=Math.max(0,quitGlow-dt*3);
   if(help||!st)return;
@@ -267,9 +276,9 @@ async function photohunt(s){
   x.fillStyle='#14171c';x.font=`900 17px ${FONT}`;x.fillText(String(actor+1),b.x,b.y+1);
   darkPill(x,LAY.score);x.fillStyle='#fff';x.font=`bold 17px ${FONT}`;x.fillText(fmt(P().score),LAY.score.x+LAY.score.w/2,LAY.score.y+LAY.score.h/2+1);
   // hi score bar
-  const h=LAY.hi,rec=houseRecord();rr(x,h.x-2,h.y-2,h.w+4,h.h+4,(h.h+4)/2);x.fillStyle='#8c1a17';x.fill();rr(x,h.x,h.y,h.w,h.h,h.h/2);x.fillStyle=vgrad(x,h.y,h.y+h.h,['#ff8a7c','#ea3b31','#c0201c','#a5171a']);x.fill();
+  const h=LAY.hi,rec=net?{name:name(them).toUpperCase(),score:netTotals()[them]}:houseRecord();rr(x,h.x-2,h.y-2,h.w+4,h.h+4,(h.h+4)/2);x.fillStyle='#8c1a17';x.fill();rr(x,h.x,h.y,h.w,h.h,h.h/2);x.fillStyle=vgrad(x,h.y,h.y+h.h,['#ff8a7c','#ea3b31','#c0201c','#a5171a']);x.fill();
   rr(x,h.x+8,h.y+3,h.w-16,h.h*.38,h.h*.19);x.fillStyle='rgba(255,255,255,.2)';x.fill();
-  x.textAlign='left';x.fillStyle='#ffe3df';x.font=`bold 8px ${FONT}`;x.fillText('HI SCORE',h.x+20,h.y+8.5);
+  x.textAlign='left';x.fillStyle='#ffe3df';x.font=`bold 8px ${FONT}`;x.fillText(net?'OPPONENT':'HI SCORE',h.x+20,h.y+8.5);
   x.fillStyle='#fff';x.font=`bold 18px ${FONT}`;x.fillText(String(rec.name).slice(0,16),h.x+17,h.y+h.h/2+5);x.textAlign='right';x.fillText(fmt(rec.score),h.x+h.w-18,h.y+h.h/2+5);
   // frame
   const f=LAY.frame;rr(x,f.x,f.y,f.w,f.h,22);x.fillStyle=vgrad(x,f.y,f.y+f.h,['#d6e6f6','#bcd4ec','#aac7e5']);x.fill();x.lineWidth=3;x.strokeStyle='#5f8fc2';x.stroke();
@@ -297,11 +306,11 @@ async function photohunt(s){
   LAY.photos.forEach((p,i)=>{
    x.fillStyle='rgba(30,60,100,.25)';x.fillRect(p.x+3,p.y+4,p.w,p.h);x.fillStyle='#ffffff';x.fillRect(p.x-3,p.y-3,p.w+6,p.h+6);
    x.save();x.beginPath();x.rect(p.x,p.y,p.w,p.h);x.clip();
-   if(vs&&['hunt','solved','bonus','timeup','over'].includes(phase)){
+   if(vs&&['hunt','ending','solved','bonus','timeup','over'].includes(phase)){
     const v=vs[i],img=st.images[i];x.save();if(v.mirror){x.translate(v.x+v.w,v.y);x.scale(-1,1);x.drawImage(img,0,0,v.w,v.h);}else x.drawImage(img,v.x,v.y,v.w,v.h);x.restore();
     for(const m of st.marks){const r=st.regions[m.i],c=toSlot(v,r.x,r.y),rx=r.rx*v.w,ry=r.ry*v.h;
      if(m.hinted&&m.t<.7){const k=Math.min(1,m.t/.35);magnifier(x,c.x+(1-k)*40,c.y+(1-k)*40,false,1.4);}
-     marker(x,c.x,c.y,rx,ry,m.seed,m.hinted?Math.max(0,(m.t-.45)/.3):m.t/.28,m.hinted?'#ffe44d':'#3cf03c',m.hinted?'rgba(110,80,0,.6)':undefined);}
+     marker(x,c.x,c.y,rx,ry,m.seed,m.hinted?Math.max(0,(m.t-.45)/.3):m.t/.28,m.hinted?'#ffe44d':m.col||'#3cf03c',m.hinted?'rgba(110,80,0,.6)':undefined);}
     if(phase==='timeup'||phase==='over')st.regions.forEach((r,j)=>{if(st.found.includes(j)||Math.sin(now*9)<-.2)return;const c=toSlot(v,r.x,r.y);marker(x,c.x,c.y,r.rx*v.w,r.ry*v.h,(j*.29)%1,1,'#ff3a2e','rgba(90,0,0,.6)');});
     for(const m of st.misses)if(m.side===i){const a=1-m.t/.9,sz=16;x.save();x.globalAlpha=a;x.lineCap='round';for(const [w,col] of [[9,'#5a0000'],[5,'#ff2b2b']]){x.strokeStyle=col;x.lineWidth=w;x.beginPath();x.moveTo(m.x-sz,m.y-sz);x.lineTo(m.x+sz,m.y+sz);x.moveTo(m.x+sz,m.y-sz);x.lineTo(m.x-sz,m.y+sz);x.stroke();}x.restore();}
    }else{x.fillStyle=vgrad(x,p.y,p.y+p.h,['#2f4f86','#1b2f57','#101d38']);x.fillRect(p.x,p.y,p.w,p.h);
@@ -313,6 +322,9 @@ async function photohunt(s){
   else if(phase==='solved')banner('ROUND COMPLETE!',st.hinted.length?`${st.hinted.length} hint${st.hinted.length>1?'s':''} used`:'Nice eyes!');
   else if(phase==='bonus')banner('TIME BONUS',fmt(st.bonusLeft));
   else if(phase==='timeup')banner("TIME'S UP!",`${st.regions.length-st.found.length} left to find`);
+  else if(phase==='sync')banner('GET READY',`Waiting for ${name(them)}…`);
+  else if(phase==='ending')banner(st.found.length>=st.regions.length?'ALL FOUND!':"TIME'S UP!",`Waiting for ${name(them)}…`);
+  else if(phase==='over'&&net){const t=netTotals(),w=t[0]===t[1]?-1:t[0]>t[1]?0:1;banner(w<0?'DEAD HEAT!':`${name(w).toUpperCase()} WINS!`,`${fmt(t[me])} – ${fmt(t[them])}`);}
   else if(phase==='over')banner(P().high?'NEW HIGH SCORE!':'GAME OVER',`${name(actor)} · ${fmt(P().score)} · round ${P().round+1}`);
  }
  function banner(title,sub){
@@ -340,14 +352,63 @@ async function photohunt(s){
   x.setTransform(dpr*k,0,0,dpr*k,dpr*view.ox,dpr*view.oy);
   rr(x,-4,-4,DW+8,DH+8,14);x.fillStyle='#1b1c22';x.fill();x.save();rr(x,0,0,DW,DH,10);x.clip();drawScreen();if(help)drawHelp();x.restore();
  }
- s.frame(dt=>{update(dt);draw();refresh();});
- function refresh(){if(s.solo)soloProgress(s,players[0].score,players[0].round,`Photo Hunt solo: ${fmt(players[0].score)}, reached round ${players[0].round+1}.`);s.debug={phase,actor,round:P().round,players,regions:st?.regions||[],found:st?.found||[],left:st?.left??0,total:st?.total??0,clock:st?.clock??0,help,mode:LAY.mode,decks:decks.map(d=>d.map(p=>p.id)),pair:st?.spec?.pair?.id,mirror:!!st?.spec?.mirror,
+ s.frame(dt=>{if(net)netUpdate(dt);else update(dt);draw();refresh();});
+ function refresh(){if(s.solo)soloProgress(s,players[0].score,players[0].round,`Photo Hunt solo: ${fmt(players[0].score)}, reached round ${players[0].round+1}.`);s.debug={bot:net?()=>{if(netBot)return '';netBot=true;return 'drive';}:undefined,phase,actor,round:P().round,players,regions:st?.regions||[],found:st?.found||[],left:st?.left??0,total:st?.total??0,clock:st?.clock??0,help,mode:LAY.mode,decks:decks.map(d=>d.map(p=>p.id)),pair:st?.spec?.pair?.id,mirror:!!st?.spec?.mirror,
   // canvas-relative CSS px of difference i on photo `side` (tests tap here)
   point:(i,side=0)=>{const v=views()?.[side],r=st?.regions[i];if(!v||!r)return null;const p=toSlot(v,r.x,r.y);return {x:view.ox+p.x*view.k,y:view.oy+p.y*view.k};},
   at:(side,u,v)=>{const w=views()?.[side];if(!w)return null;const p=toSlot(w,u,v);return {x:view.ox+p.x*view.k,y:view.oy+p.y*view.k};},
   ui:(key,i=0)=>{const b=key==='glass'?LAY.glasses[i]:LAY[key];return {x:view.ox+b.x*view.k,y:view.oy+b.y*view.k};},
   expire:()=>{if(st)st.left=.01;}};}
 
+ // ---------------- online race (see the top of the file)
+ const NL=[],nlog=n=>NL[n]||(NL[n]={c:[[],[]],re:[0,0],R:0,total:0,solved:false});let nfh=null,lockT=0,netBot=false,botT=2;
+ const netLib=net?shuffle(bundledPairs(),seededRandom(s.seed+':photohunt')):[];
+ function netSpec(n){if(netLib.length){const q=netLib[n%netLib.length];return {pair:q,mirror:Math.floor(n/netLib.length)%2===1};}return {pair:illustratedPair(n,seededRandom(s.seed+':scene'+n)),mirror:false};}
+ const pillsAt=(total,t)=>Math.max(0,Math.min(RULES.pills,Math.ceil((total-t)/total*RULES.pills-1e-9)));
+ // round n from both claim logs: who owns each difference (earliest claim, tie → player 1) and the points each scored
+ function resolveRound(n,R){const lg=nlog(n),all=[];lg.c.forEach((a,p)=>a.forEach(c=>all.push({...c,p})));all.sort((a,b)=>a.t-b.t||a.p-b.p);
+  const own=new Map(),pts=[0,0];let last=0,end=0;
+  for(const c of all){if(own.has(c.i)||c.i>=R)continue;own.set(c.i,c);end=Math.max(end,c.t);if(!c.h){pts[c.p]+=Math.round(Math.max(RULES.clockFloor,RULES.clockStart-RULES.clockDecay*(c.t-last)));last=c.t;}}
+  return {own,pts,last,solvedT:R&&own.size>=R?end:null};}
+ function netTotals(){const tot=[0,0];NL.forEach((lg,n)=>{if(!lg?.R)return;const r=resolveRound(n,lg.R);tot[0]+=r.pts[0];tot[1]+=r.pts[1];
+  if(lg.solved&&r.solvedT!=null){const b=pillsAt(lg.total,r.solvedT)*RULES.pillBonus;tot[0]+=b;tot[1]+=b;}});return tot;}
+ // the rings on the photos: green = mine, pink = theirs, yellow = a hint
+ function syncMarks(){if(!st)return;const r=resolveRound(st.n,st.regions.length),old=new Map(st.marks.map(m=>[m.i,m]));st.marks=[];st.found=[];st.hinted=[];
+  for(const [i,c] of r.own){const m=old.get(i)||{i,t:0,seed:((i+1)*.618+r.own.size*.37)%1};m.hinted=!!c.h;m.col=c.p===me?'#3cf03c':'#ff5fb4';st.marks.push(m);st.found.push(i);if(c.h)st.hinted.push(i);}}
+ function claim(i,h=false){if(phase!=='hunt'||!st||resolveRound(st.n,st.regions.length).own.has(i))return;const t=+st.el.toFixed(3);
+  nlog(st.n).c[me].push({i,t,h});nfh.event({c:[st.n,i,t,h?1:0]});syncMarks();if(h)sfx('hint');else{clockGlow=1;sfx('find');s.react(me,'happy');}}
+ async function netStartRound(n){const spec=netSpec(n),total=roundTime(n),lg=nlog(n);P().round=n;
+  st={n,spec,regions:spec.pair.regions.slice(0,8),found:[],hinted:[],marks:[],misses:[],total,left:total,clock:RULES.clockStart,swap:seededRandom(s.seed+':swap'+n)()<.5,images:null,bonusLeft:0,bonusT:0,el:0};
+  lg.R=st.regions.length;lg.total=total;phase='loading';T=0;const mine=st;
+  let imgs=await imagesFor(spec.pair);if(mine!==st||!s.alive)return;
+  if(!imgs||imgs.some(i=>!i)){spec.pair=illustratedPair(n,seededRandom(s.seed+':scene'+n));spec.mirror=false;st.regions=spec.pair.regions;lg.R=st.regions.length;imgs=spec.pair.images;}
+  st.images=st.swap?[imgs[1],imgs[0]]:imgs;phase='sync';await nfh.start('r'+n);if(mine!==st||!s.alive)return;phase='intro';T=0;syncMarks();
+  const next=netSpec(n+1);if(next.pair.urls)void imagesFor(next.pair);}
+ function netEndRound(){phase='ending';T=0;nlog(st.n).re[me]=1;nfh.event({re:st.n});}
+ function netDecide(){const lg=nlog(st.n),r=resolveRound(st.n,st.regions.length);lg.solved=r.solvedT!=null;syncMarks();
+  if(lg.solved){phase='solved';T=0;st.left=st.total-r.solvedT;sfx('complete');}else{phase='timeup';T=0;st.left=0;sfx('timeup');s.react(me,'sad');}}
+ function netUpdate(dt){clockGlow=Math.max(0,clockGlow-dt*2.2);quitGlow=Math.max(0,quitGlow-dt*3);lockT=Math.max(0,lockT-dt);
+  if(!st)return;T+=dt;for(const m of st.marks)m.t+=dt;for(const m of st.misses)m.t+=dt;st.misses=st.misses.filter(m=>m.t<.9);
+  if(phase==='intro'&&T>1.7){phase='hunt';T=0;st.el=0;sfx('go');}
+  else if(phase==='hunt'){st.el+=dt;st.left=Math.max(0,st.total-st.el);const r=resolveRound(st.n,st.regions.length);st.clock=Math.max(RULES.clockFloor,RULES.clockStart-RULES.clockDecay*(st.el-r.last));
+   if(st.left<st.total*.2&&st.left>0){const sec=Math.ceil(st.left);if(sec!==lastTick){lastTick=sec;sfx('tick');}}
+   // online test bot: takes an open difference every 1-4 s for three rounds, then lets the clock run out
+   if(netBot&&st.n<3&&(botT-=dt)<=0){botT=1+Math.random()*3;const open=st.regions.map((_,i)=>i).filter(i=>!r.own.has(i));if(open.length)claim(open[Math.floor(Math.random()*open.length)]);}
+   if(r.solvedT!=null||st.left<=0)netEndRound();}
+  else if(phase==='ending'){if(nlog(st.n).re[them])netDecide();}
+  else if(phase==='solved'&&T>1.1){phase='bonus';T=0;st.bonusT=0;}
+  else if(phase==='bonus'){st.bonusT+=dt;const per=st.total/RULES.pills;
+   while(st.bonusT>.04&&lit()>0){st.bonusT-=.04;st.left=Math.max(0,(lit()-1)*per);st.bonusLeft+=RULES.pillBonus;sfx('bonus');}
+   if(lit()===0&&st.bonusT>1){phase='loading';void netStartRound(st.n+1);}}
+  else if(phase==='timeup'&&T>3.4){phase='over';T=0;sfx('high');}
+  else if(phase==='over'&&T>3.6){phase='done';const t=netTotals();
+   s.finish(t,`Photo Hunt head to head · ${name(0)} ${fmt(t[0])} vs ${name(1)} ${fmt(t[1])} (${st.n+1} round${st.n?'s':''}).`);return;}
+  const t=netTotals();players[0].score=t[0];players[1].score=t[1];pushScores();}
+ function netHunt(){actor=me;s.active=me;
+  nfh=netField(s,{pack:()=>({}),unpack:()=>{},onEvent:e=>{if(!e||typeof e!=='object')return;
+   if(Array.isArray(e.c)){const [n,i,t,h]=e.c;if(!Number.isInteger(n)||!Number.isInteger(i)||!Number.isFinite(t))return;nlog(n).c[them].push({i,t,h:!!h});if(st?.n===n){syncMarks();if(phase==='hunt'&&!h)clockGlow=.6;}}
+   else if(Number.isInteger(e.re))nlog(e.re).re[them]=1;}});
+  void netStartRound(0);}
  const inCircle=(p,b,pad=6)=>Math.hypot(p.x-b.x,p.y-b.y)<=b.r+pad;
  s.on(c,'pointerdown',ev=>{
   if(s.paused||!s.alive)return;ev.preventDefault();const sp=s.pointer(ev);
@@ -360,11 +421,14 @@ async function photohunt(s){
   const side=LAY.photos.findIndex(q=>p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+q.h);if(side<0)return;
   const v=views()[side],tol=13/view.k;
   let best=-1,bestD=Infinity;st.regions.forEach((r,i)=>{const c=toSlot(v,r.x,r.y),d=Math.hypot((p.x-c.x)/(r.rx*v.w+tol),(p.y-c.y)/(r.ry*v.h+tol));if(d<=1&&d<bestD){best=i;bestD=d;}});
-  if(best>=0){if(!st.found.includes(best))find(best);return;}
+  if(net&&lockT>0)return;
+  if(best>=0){if(net)claim(best);else if(!st.found.includes(best))find(best);return;}
+  if(net){lockT=1.2;st.misses.push({side,x:p.x,y:p.y,t:0});sfx('miss');s.react(me,'sad');return;}
   st.left=Math.max(0,st.left-RULES.missPenalty);st.misses.push({side,x:p.x,y:p.y,t:0});sfx('miss');s.react(actor,'sad');
  });
  s.on(document,'keydown',ev=>{if(s.paused||!s.alive)return;if(ev.key==='h'||ev.key==='H')useHint();else if(ev.key==='?')help=!help;});
 
+ if(net)return netHunt();
  for(let p=0;p<(s.solo?1:2);p++){
   actor=p;s.active=p;phase='wait';st=null;help=false;s.updateScores();
   const intro=s.solo?`Find the differences between the two photos before the timer bar runs out. Round after round, each one a little faster, until the bar empties.`:p===0?`${name(0)} plays first. Find the differences between the two photos before the timer bar runs out. The game goes round after round until time runs out.`
