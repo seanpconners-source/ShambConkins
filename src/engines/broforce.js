@@ -558,6 +558,8 @@ async function broforce(s){
  function alertNear(e,tx=P.x){for(const o of W.foes)if(o!==e&&o.alive&&o.active&&(o.state==='patrol'||o.state==='search')&&Math.abs(o.x-e.x)<150&&Math.abs(o.y-e.y)<80){o.state='alert';o.t=.55+Math.random()*.4;o.dir=tx>o.x?1:-1;o.bubble={ch:'!',t:.9};}}
  // online (host) a foe goes after the nearer bro that is up; only this phone's bro is hurt here (the other phone judges its own)
  const upBro=b=>!!b&&!b.dead&&!b.boarded&&!b.out;
+ // online: a foe gone without a kill (fell in a pit, a bomber went off) is gone on the other phone too, no gore there
+ function quietDeath(e){if(net&&host)ev({fk:[stageIdx,e.k,Math.round(e.x),0,-1,1]});}
  function foeTarget(e){if(!net||!R?.net||!partnerHere()||!upBro(R))return P;if(!upBro(P))return R;return Math.hypot(R.x-e.x,R.y-e.y)<Math.hypot(P.x-e.x,P.y-e.y)?R:P;}
  function updateFoe(e,dt){
   const st=FOES[e.type];e.flash=Math.max(0,e.flash-dt);if(e.bubble){e.bubble.t-=dt;if(e.bubble.t<=0)e.bubble=null;}
@@ -575,7 +577,7 @@ async function broforce(s){
   else if(e.state==='attack'||e.state==='search'){
    if(sees){e.lost=0;e.seenX=px;e.dir=Math.sign(dx)||e.dir;if(e.state==='search'){e.state='attack';e.bubble={ch:'!',t:.6};}}else{e.lost+=dt;if(e.lost>2.6&&e.state==='attack'){e.state='search';e.bubble={ch:'?',t:1.2};e.t=4;}}
    if(e.state==='search'){speed=st.speed;e.dir=Math.sign(e.seenX-e.x)||e.dir;if(Math.abs(e.seenX-e.x)<6||e.t<0){e.state='patrol';e.t=2;}}
-   else if(e.type==='bomber'){speed=98;e.fuse+=dt;if(Math.abs(dx)<14&&Math.abs(dy)<22||e.fuse>5){e.alive=false;queueBoom(e.x,e.y-10,42,4,'env');}
+   else if(e.type==='bomber'){speed=98;e.fuse+=dt;if(Math.abs(dx)<14&&Math.abs(dy)<22||e.fuse>5){e.alive=false;quietDeath(e);queueBoom(e.x,e.y-10,42,4,'env');}
     if(frames%40===0)fx.pop(e.x,e.y-e.h-10,'AAAH!',{color:'#fff',stroke:'#900',size:7,rise:10,life:.5});}
    else if(e.type==='dog'){speed=135;if(e.grounded&&Math.abs(dx)<56&&e.lunge<=0&&sees){e.vy=-210;e.lunge=1;speed=170;}e.lunge-=dt;
     if(mine&&Math.abs(dx)<10&&Math.abs(dy)<16)hurtPlayer(1,e.x);}
@@ -589,7 +591,7 @@ async function broforce(s){
   e.vx=speed*e.dir;
   const res=moveBody(e,dt,{grav:900,maxFall:420});if(res.wall&&e.state==='patrol')e.dir*=-1;
   if(mine&&e.type!=='dog'&&e.type!=='bomber'&&e.alive&&!P.dead&&!P.boarded&&Math.abs(dx)<8&&Math.abs(dy)<14&&P.inv<=0)hurtPlayer(1,e.x);
-  if(e.y>ROWS*T)e.alive=false;
+  if(e.y>ROWS*T){e.alive=false;quietDeath(e);}
  }
  function shootFoe(e,dx,dy){const a=Math.atan2(clamp(dy,-Math.abs(dx)*.5,Math.abs(dx)*.5),Math.abs(dx))+(Math.random()-.5)*.08;
   const b={x:e.x+e.dir*10,y:e.y-e.h*.55,vx:Math.cos(a)*e.dir*215,vy:Math.sin(a)*215,life:1.5,owner:'e',dmg:1,tile:.35};W.bullets.push(b);e.muzzle=.06;sfx.enemy();
@@ -811,7 +813,7 @@ async function broforce(s){
   if(e.fh&&host)for(const [k,dmg,fx0,bl] of e.fh){const f=foeByK(k);if(f)hitFoe(f,dmg,fx0,!!bl,'r');}
   if(e.bh&&host){const B=W.boss;if(B?.alive)hitBoss(e.bh[0],e.bh[1]);}
   if(e.ex){const [si,x,y,r,owner]=e.ex;if(si===stageIdx)remoteBlast(x,y,r,owner);}
-  if(e.fk&&!host){const [si,k,fx0,bl,by]=e.fk,f=si===stageIdx&&foeByK(k);if(f&&f.alive){f.alive=false;if(by===me)foeScore(f);sfx.splat();
+  if(e.fk&&!host){const [si,k,fx0,bl,by,quiet]=e.fk,f=si===stageIdx&&foeByK(k);if(f&&f.alive&&quiet){f.alive=false;}else if(f&&f.alive){f.alive=false;if(by===me)foeScore(f);sfx.splat();
    fx.burst(f.x,f.y-f.h*.5,{n:bl?22:12,colors:['#a00','#d11','#700','#f44'],speed:bl?220:140,life:.8,size:1.8,gravity:600});
    const dir=Math.sign(f.x-fx0)||1;W.corpses.push({x:f.x,y:f.y,vx:dir*(bl?220:90),vy:bl?-260:-110,rot:0,vr:dir*(bl?14:6),t:5,kind:f.type,flip:f.dir});}}
   if(e.cg){const [si,k,rv]=e.cg,cg=si===stageIdx&&W.cages[k];if(cg&&!cg.open){cg.open=true;cg.freeT=1.2;sfx.clink();
