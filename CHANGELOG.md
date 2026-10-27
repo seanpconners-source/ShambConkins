@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.68.1
+
+**DOOM looks.** The roster faces the monsters wear are twice as big. The touch buttons look like the official DOOM Android app: a crosshair FIRE button on the right and a second one above the move stick, an open-hand USE button beside it, a pistol button for the next weapon, a map pin for the automap and a resting move stick bottom-left. Your face in the status bar is a little bigger, filling its box.
+
 ## v0.68.0
 
 **Play together online.** Online (Arcade 🌐 Online duels and the online board game), the games you used to take turns at now share one world played at the same time, each of you on your own phone with your own camera; an arrow on the screen edge points to your partner when they're off screen. Super Mario Bros. World 1, Sonic, Broforce (all four missions), Castlevania Vampire Killer, Symphony of the Night, every boss fight, the Return of the Living Dead / Evil Dead horde, The Warriors and DOOM / DOOM II are co-op: lose a life and you come back next to your partner, out of lives you watch and return on the next level, and the first one to the goal gives the other 10 seconds before pulling them along. Coin Rush, Castle Dash, Sonic Goal Dash, Night of the Candles and Photo Hunt are live races in the same world. Mario Kart Time Trials becomes a 1-on-1 race with items, and Grand Prix (pass & play) one race together with the CPU racers. Scoring and winners are as before. On one phone nothing changes. Also fixed: in Broforce a bro could wall-climb out over the edge of the map.

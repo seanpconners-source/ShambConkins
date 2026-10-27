@@ -1,6 +1,7 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.68.0 (Oct 27: online co-op / shared-world play for the take-turns games, see "Online co-op/live"; full npm test
+Version 0.68.1 (Oct 27: DOOM heads 2x (`HEAD_K` in doom/heads.js), Android-port touch buttons (`drawButton`/`stickHome` in doom.js), status-bar face 33x31.5.
+v0.68.0 Oct 27: online co-op / shared-world play for the take-turns games, see "Online co-op/live"; full npm test
 156/156 clean before release. Oct 26 v0.67.0: every head-to-head (CPU-opponent) game plays natively online, 95 of 95, batches 1-21 below; Meet a visitor everywhere; Oct 24 v0.66.1: trivia vs CPU shows its turn, `cpuTriviaTurn` in cpuKit; v0.66.0 1-player board game vs CPU + Choose Characters; v0.65.0 online board game on two phones; v0.64.0 online duels phase 1; v0.63.1 loading screen, full-screen app, Worker serves the app files; v0.63.0 PWA; earlier: pinball tables, iPad fix, backup/restore; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
 pushing a version bump to main runs `.github/workflows/release-build.yml`, which builds `releases/ShambConkins_vX.html` and
 creates release vX with notes from `docs/releases/vX.md` (first line `# ` = title) or the CHANGELOG section; skips if it exists.
@@ -358,7 +359,10 @@ LAG=80-150 and their offline tests; real phones untested.
   status-bar face = player's character with Doom's 42 expressions), `savegame.js` (6 slots, IndexedDB). 1P = whole game (death
   restarts the level, each cleared level banks its tally score); 2P = P1 picks level + skill, one life each, score = kills%+items%+
   secrets% +100 exit + up to 100 par bonus. One WANTED monster per map wears a locked character → `s.gameRecruits` (cageGame).
-  Touch like the Android port (left stick, right drag turn, FIRE/USE/WPN/MAP/☰ circles, tap arms numbers). Tests: `tests/doom-sim.mjs`
+  Touch like the Android port (floating left stick drawn resting bottom-left, right drag turn, tap arms numbers); buttons drawn like the official
+  Android app (Oct 27, `drawButton`): crosshair FIRE right + a second above the stick, open-hand USE, pistol = next weapon, map-pin MAP, bare ☰.
+  Roster heads are drawn 2x the sprite's head (`HEAD_K`, chin kept at the neck; all-head monsters capped inside the body); render.js
+  drawSprite works out clipping half a sprite wider each side (`spr.hx1/hx2`) for them. Tests: `tests/doom-sim.mjs`
   (Node, all 68 Freedoom maps, in test:core), `tests/doom.mjs` (2P flow + touch, 3 sizes), `tests/doom-solo.mjs`, `tests/doom-finale.mjs`,
   `tests/doom-heads.mjs` (head/face contact sheets). Build is ~78 MB now (+20 MB Freedoom). Real-phone feel, audio by ear and
   the owner's own WADs untested (only Freedoom tested).
