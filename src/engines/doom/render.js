@@ -230,16 +230,18 @@ class Renderer{
   for(let i=this.drawsegs.length-1;i>=0;i--){const ds=this.drawsegs[i];if(ds.masked)this.renderMaskedSegRange(ds,ds.x1,ds.x2);}
   if(view.psprites)for(const ps of view.psprites)this.drawPSprite(ps,view);}
  drawSprite(spr){
-  const cb=this.clipbot,ct=this.cliptop;for(let x=spr.x1;x<=spr.x2;x++){cb[x]=-2;ct[x]=-2;}
+  // a sprite wearing a roster head gets its clipping worked out half its width further each side (the head can be wider)
+  const pad=this.headHook&&spr.thing?.head?Math.ceil((spr.x2-spr.x1+1)/2):0,sx1=Math.max(0,spr.x1-pad),sx2=Math.min(this.W-1,spr.x2+pad);spr.hx1=sx1;spr.hx2=sx2;
+  const cb=this.clipbot,ct=this.cliptop;for(let x=sx1;x<=sx2;x++){cb[x]=-2;ct[x]=-2;}
   for(let i=this.drawsegs.length-1;i>=0;i--){const ds=this.drawsegs[i];
-   if(ds.x1>spr.x2||ds.x2<spr.x1||(!ds.silhouette&&!ds.masked))continue;
-   const r1=Math.max(ds.x1,spr.x1),r2=Math.min(ds.x2,spr.x2);
+   if(ds.x1>sx2||ds.x2<sx1||(!ds.silhouette&&!ds.masked))continue;
+   const r1=Math.max(ds.x1,sx1),r2=Math.min(ds.x2,sx2);
    const lowscale=Math.min(ds.scale1,ds.scale2),scale=Math.max(ds.scale1,ds.scale2);
    if(scale<spr.scale||(lowscale<spr.scale&&!segSide(spr.gx,spr.gy,ds.curline))){if(ds.masked)this.renderMaskedSegRange(ds,r1,r2);continue;}
    let sil=ds.silhouette;if(spr.gz>=ds.bsilheight)sil&=~SIL_BOTTOM;if(spr.gzt<=ds.tsilheight)sil&=~SIL_TOP;
    if(sil&SIL_BOTTOM)for(let r=r1;r<=r2;r++)if(cb[r]===-2)cb[r]=ds.sprbot[r-ds.sprbotOff];
    if(sil&SIL_TOP)for(let r=r1;r<=r2;r++)if(ct[r]===-2)ct[r]=ds.sprtop[r-ds.sprtopOff];}
-  for(let x=spr.x1;x<=spr.x2;x++){if(cb[x]===-2)cb[x]=this.viewH;if(ct[x]===-2)ct[x]=-1;}
+  for(let x=sx1;x<=sx2;x++){if(cb[x]===-2)cb[x]=this.viewH;if(ct[x]===-2)ct[x]=-1;}
   this.drawVisSprite(spr,ct,cb);
   if(this.headHook&&spr.thing)this.headHook(this,spr,ct,cb);}
  drawVisSprite(v,ct,cb){

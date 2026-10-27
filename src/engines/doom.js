@@ -282,11 +282,16 @@ class DoomApp{
  toVirtual(px,py){const V=this.view;return [(px/V.w*this.r.W-this.video.ox)/this.video.s,(py/V.h*this.r.H)/this.video.s];}
  buttons(){const v=this.view,R=Math.max(26,Math.min(v.cw,v.ch)*.1),inPortrait=v.portrait;
   const bottom=inPortrait?v.ch-R*1.3:v.h*(this.options.screenblocks<11?168/200:1)-R*1.25;
-  const fire={x:v.cw-R*1.35,y:bottom,r:R,id:'fire',label:'FIRE'};
-  const use={x:fire.x-R*2.25,y:bottom+R*.25,r:R*.72,id:'use',label:'USE'};
-  const wpn={x:fire.x,y:fire.y-R*2.05,r:R*.6,id:'wpn',label:'WPN'};
-  const map={x:R*.75+6,y:R*.75+Math.max(26,v.h*.09)+(this.net?30:0),r:R*.55,id:'map',label:'MAP'};const menu={x:map.x+R*1.35,y:map.y,r:R*.55,id:'menu',label:'☰'};
-  return [fire,use,wpn,map,menu];}
+  const fire={x:v.cw-R*1.35,y:bottom,r:R,id:'fire',key:'fire',icon:'aim'};
+  const wpn={x:fire.x,y:fire.y-R*2.05,r:R*.6,id:'wpn',key:'wpn',icon:'gun'};
+  // left thumb, above the move stick (as on the official Android port): USE hand and a second FIRE
+  const st=this.stickHome();
+  const use={x:st.x-R*.75,y:st.y-R*2.1,r:R*.72,id:'use',key:'use',icon:'hand'};
+  const fire2={x:st.x+R*1.15,y:st.y-R*2.5,r:R*.82,id:'fire',key:'fire2',icon:'aim'};
+  const map={x:R*.75+6,y:R*.75+Math.max(26,v.h*.09)+(this.net?30:0),r:R*.55,id:'map',key:'map',icon:'pin'};const menu={x:map.x+R*1.35,y:map.y,r:R*.55,id:'menu',key:'menu',icon:'menu'};
+  return [fire,fire2,use,wpn,map,menu];}
+ // where the move stick rests when no thumb is on it (it still starts wherever the left thumb lands)
+ stickHome(){const v=this.view,R=Math.max(40,Math.min(v.cw,v.ch)*.12);return v.portrait?{x:R*1.6,y:v.ch-R*1.6,r:R}:{x:R*1.75,y:v.ch-R*1.2,r:R};}
  installInput(){
   const s=this.s,c=this.c;
   const pos=e=>{const b=c.getBoundingClientRect();return [(e.clientX-b.left)*(this.view.cw/b.width),(e.clientY-b.top)*(this.view.ch/b.height)];};
@@ -295,7 +300,7 @@ class DoomApp{
    if(this.state!=='level'||this.menu.active){p.role='tap';return;}
    if(this.game.players[this.me]?.playerstate==='dead'){this.useTap=2;p.role='bar';return;}
    const hit=this.buttons().find(b=>Math.hypot(px-b.x,py-b.y)<=b.r*1.15);
-   if(hit){p.role=hit.id;if(hit.id==='fire'){this.fireHeld=true;p.turn=true;}else if(hit.id==='use')this.useTap=2;else if(hit.id==='wpn')this.nextWeapon(1);else if(hit.id==='map')this.automap.toggle();else if(hit.id==='menu'){this.menu.open('main');this.releaseAll();}return;}
+   if(hit){p.role=hit.id;p.key=hit.key;if(hit.id==='fire'){this.fireHeld=true;p.turn=true;}else if(hit.id==='use')this.useTap=2;else if(hit.id==='wpn')this.nextWeapon(1);else if(hit.id==='map')this.automap.toggle();else if(hit.id==='menu'){this.menu.open('main');this.releaseAll();}return;}
    // status bar arms numbers
    const bar=this.options.screenblocks<11,v=this.view;if(bar&&py<=v.h&&py>=v.h*168/200){const [vx,vy]=this.toVirtual(px,py);if(vx>=104&&vx<=142){const col=Math.max(0,Math.min(2,Math.floor((vx-108)/12))),row=vy>181?1:0,slot=row*3+col+2;this.selectSlot(slot);p.role='bar';return;}if(vx>=143&&vx<=177){this.useTap=2;p.role='bar';return;}}
    if(this.automap.on){p.role='mappan';return;}
@@ -308,7 +313,7 @@ class DoomApp{
    else if(p.role==='turn'||(p.role==='fire'&&p.turn)){const k=(.55+this.options.sens*.17)*Math.PI/this.view.cw;this.pendingTurn-=dx*k/(Math.PI*2)*BAM;}
    else if(p.role==='mappan')this.automap.pan(dx/this.view.w*this.r.W,dy/this.view.h*this.r.H);});
   const up=e=>{const p=this.pointers.get(e.pointerId);if(!p)return;this.pointers.delete(e.pointerId);
-   if(p.role==='stick')this.stick=null;if(p.role==='fire')this.fireHeld=false;
+   if(p.role==='stick')this.stick=null;if(p.role==='fire')this.fireHeld=[...this.pointers.values()].some(q=>q.role==='fire');
    if(p.role==='tap'&&Math.hypot(p.x-p.x0,p.y-p.y0)<30)this.tapQueue.push([p.x0,p.y0]);
    if(p.role==='mappan'&&Math.hypot(p.x-p.x0,p.y-p.y0)<12)this.automap.zoom(p.x0>this.view.cw/2?1.4:1/1.4);};
   s.on(c,'pointerup',up);s.on(c,'pointercancel',up);s.on(c,'lostpointercapture',up);
@@ -365,13 +370,15 @@ class DoomApp{
   if(V.portrait)this.drawPortraitPanel();}
  faceCanvas(pl){const id=this.s.players[this.twoPlayer?this.turn:this.viewIndex()]?.character;if(!id)return null;try{return this.heads.face(id,this.hud.faceindex);}catch{return null;}}
  drawFace(){const pl=this.viewPlayer();if(this.r.viewH>=this.r.H)return;const fc=this.faceCanvas(pl);if(!fc)return;const V=this.view,k=V.h/200,sx=V.w/this.r.W*this.video.s;
-  const ox=this.video.ox*(V.w/this.r.W),x=ox+144*sx,y=169*k,w=30*sx,h=30*k;this.x.imageSmoothingEnabled=false;this.x.drawImage(fc,x,y,w,h);}
- drawControls(){const x=this.x;x.save();x.textAlign='center';x.textBaseline='middle';
-  for(const b of this.buttons()){const held=(b.id==='fire'&&this.fireHeld);x.globalAlpha=held?.42:.26;x.fillStyle='#000';x.beginPath();x.arc(b.x,b.y,b.r,0,7);x.fill();
-   x.globalAlpha=held?.85:.5;x.strokeStyle='#ddd';x.lineWidth=2;x.stroke();x.fillStyle='#eee';x.font=`bold ${Math.round(b.r*(b.id==='menu'?.8:.42))}px sans-serif`;x.fillText(b.label,b.x,b.y+1);}
-  let st=this.stick;if(!st&&this.view.portrait){const R=Math.max(40,Math.min(this.view.cw,this.view.ch)*.12);x.globalAlpha=.35;x.strokeStyle='#a33';x.lineWidth=2;x.beginPath();x.arc(R*1.6,this.view.ch-R*1.6,R,0,7);x.stroke();x.fillStyle='#a33';x.font='bold 13px sans-serif';x.fillText('MOVE',R*1.6,this.view.ch-R*1.6);x.globalAlpha=1;}
-  if(st){const R=Math.max(40,Math.min(this.view.cw,this.view.ch)*.12);x.globalAlpha=.25;x.fillStyle='#000';x.beginPath();x.arc(st.ox,st.oy,R,0,7);x.fill();x.globalAlpha=.55;x.strokeStyle='#ccc';x.stroke();
-   x.globalAlpha=.6;x.fillStyle='#ddd';x.beginPath();x.arc(st.ox+st.dx*R*.8,st.oy+st.dy*R*.8,R*.38,0,7);x.fill();}
+  const ox=this.video.ox*(V.w/this.r.W),x=ox+143.5*sx,y=168.5*k,w=33*sx,h=31.5*k;this.x.imageSmoothingEnabled=false;this.x.drawImage(fc,x,y,w,h);}
+ drawControls(){const x=this.x;x.save();
+  // the move stick: a thin ring with a soft knob, at rest bottom-left, or under the thumb while moving
+  const st=this.stick,home=this.stickHome(),R=home.r,sx=st?st.ox:home.x,sy=st?st.oy:home.y;
+  x.globalAlpha=st?.3:.18;x.fillStyle='#000';x.beginPath();x.arc(sx,sy,R,0,7);x.fill();
+  x.globalAlpha=st?.65:.45;x.strokeStyle='#ddd';x.lineWidth=Math.max(1.5,R*.03);x.stroke();
+  x.globalAlpha=st?.6:.4;x.fillStyle='#e6e6e6';x.beginPath();x.arc(sx+(st?st.dx*R*.8:0),sy+(st?st.dy*R*.8:0),R*.4,0,7);x.fill();
+  const held=new Set([...this.pointers.values()].map(p=>p.key).filter(Boolean));
+  for(const b of this.buttons())drawButton(x,b,held.has(b.key));
   x.restore();}
  drawPortraitPanel(){const x=this.x,V=this.view;x.save();x.fillStyle='#120808';x.fillRect(0,V.h,V.cw,V.ch-V.h);x.fillStyle='#5a1e1e';x.fillRect(0,V.h,V.cw,2);
   x.fillStyle='#a33';x.font='bold 13px monospace';x.textAlign='center';x.fillText(this.state==='level'?'TURN YOUR PHONE SIDEWAYS FOR FULL SCREEN':'TAP THE SCREEN ABOVE',V.cw/2,V.h+22);
@@ -397,6 +404,33 @@ class DoomApp{
   get finale(){return app.finale&&{stage:app.finale.stage,count:app.finale.count,cast:app.finale.cast?.i};},
   get scores(){return app.scores;},get stats(){return app.turnStats;}};}
 }
+// touch buttons drawn like the official Android port: a dark disc with white rings and a white icon
+// (crosshair = FIRE, open hand = USE, pistol = next weapon); MAP (map pin) and the menu are bare icons
+function drawButton(x,b,held){const r=b.r;x.save();x.translate(b.x,b.y);x.lineCap='round';x.lineJoin='round';
+ if(b.icon==='pin'||b.icon==='menu'){x.globalAlpha=held?1:.85;x.shadowColor='rgba(0,0,0,.9)';x.shadowBlur=r*.25;x.fillStyle=x.strokeStyle='#fff';
+  if(b.icon==='pin'){x.beginPath();x.moveTo(0,r*.42);x.arc(0,-r*.22,r*.36,Math.PI*.78,Math.PI*.22);x.closePath();x.moveTo(r*.14,-r*.22);x.arc(0,-r*.22,r*.14,0,7,true);x.fill('evenodd');
+   x.lineWidth=r*.08;x.beginPath();x.ellipse(0,r*.45,r*.5,r*.16,0,0,7);x.stroke();}
+  else for(const yy of [-.3,0,.3])rrect(x,-r*.45,yy*r-r*.07,r*.9,r*.14,r*.07),x.fill();
+  x.restore();return;}
+ x.globalAlpha=held?.55:.35;x.fillStyle='#000';x.beginPath();x.arc(0,0,r,0,7);x.fill();
+ x.globalAlpha=held?1:.8;x.strokeStyle='#f4f4f4';
+ if(b.icon==='aim'){x.lineWidth=Math.max(1,r*.035);x.beginPath();x.arc(0,0,r,0,7);x.stroke();x.lineWidth=Math.max(2,r*.1);x.beginPath();x.arc(0,0,r*.84,0,7);x.stroke();
+  x.lineWidth=Math.max(1.5,r*.07);x.beginPath();x.arc(0,0,r*.36,0,7);x.stroke();x.beginPath();
+  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){x.moveTo(dx*r*.2,dy*r*.2);x.lineTo(dx*r*.52,dy*r*.52);}
+  x.moveTo(-r*.06,0);x.lineTo(r*.06,0);x.moveTo(0,-r*.06);x.lineTo(0,r*.06);x.stroke();}
+ else{x.lineWidth=Math.max(1.5,r*.06);x.beginPath();x.arc(0,0,r,0,7);x.stroke();
+  const k=r/62;x.scale(k,k);x.fillStyle='#e8e8e8';x.strokeStyle='rgba(0,0,0,.55)';
+  if(b.icon==='hand'){x.translate(3,7);
+   const parts=[[-19,-38,12,42,6],[-6,-44,12,48,6],[7,-40,12,44,6],[20,-30,10,34,5],[-19,-6,49,36,12]];
+   // outline stroked under the fill, so only the hand's outside edge stays dark
+   x.lineWidth=5;x.beginPath();for(const p of parts)rrect(x,...p,true);x.save();x.translate(-17,12);x.rotate(-.75);rrect(x,-6,-30,12,34,6,true);x.restore();x.stroke();x.fill();
+   x.lineWidth=1.5;x.beginPath();for(const fx of [-6.5,6.5,19.5]){x.moveTo(fx,-14);x.lineTo(fx,-4);}x.stroke();}
+  else{// pistol, pointing left
+   x.beginPath();x.moveTo(-34,-16);x.lineTo(26,-16);x.lineTo(26,-2);x.lineTo(20,-2);x.lineTo(26,26);x.lineTo(10,26);x.lineTo(6,6);x.lineTo(-2,6);x.quadraticCurveTo(-6,14,-12,6);x.lineTo(-12,-2);x.lineTo(-34,-2);x.closePath();
+   x.lineWidth=5;x.stroke();x.fill();}}
+ x.restore();}
+// rounded rectangle path (added to the current path when keep is true)
+function rrect(x,l,t,w,h,rad,keep){if(!keep)x.beginPath();x.moveTo(l+rad,t);x.arcTo(l+w,t,l+w,t+h,rad);x.arcTo(l+w,t+h,l,t+h,rad);x.arcTo(l,t+h,l,t,rad);x.arcTo(l,t,l+w,t,rad);x.closePath();}
 function paletteFor(pl){let cnt=pl.damagecount;if(pl.powers[1]){const bz=12-(pl.powers[1]>>6);if(bz>cnt)cnt=bz;}
  if(cnt){let p=(cnt+7)>>3;if(p>=8)p=7;return p+1;}if(pl.bonuscount){let p=(pl.bonuscount+7)>>3;if(p>=4)p=3;return p+9;}
  if(pl.powers[3]>4*32||pl.powers[3]&8)return 13;return 0;}

@@ -31,7 +31,8 @@ for(const [w,h] of sizes){
  // touch: left-thumb stick forward, right-side drag turns, FIRE button shoots
  const A=()=>page.evaluate(()=>{const g=window.ShambConkins.store.session.debug.game,mo=g.players[0].mo;return {x:mo.x,y:mo.y,a:mo.angle,ammo:g.players[0].ammo[0]};});
  await page.evaluate(()=>{const mo=window.ShambConkins.store.session.debug.game.players[0].mo;mo.angle=(mo.angle+0x80000000)>>>0;});
- let a0=await A();await page.mouse.move(w*.2,h*.55);await page.mouse.down();await page.mouse.move(w*.2,h*.55-80,{steps:4});await page.waitForTimeout(900);await shot('touch-stick');const stick=await page.evaluate(()=>window.ShambConkins.store.session.debug.app.stick?.dy);await page.mouse.up();
+ const sh=await page.evaluate(()=>{const app=window.ShambConkins.store.session.debug.app,h=app.stickHome(),r=app.c.getBoundingClientRect();return {x:r.left+h.x*r.width/app.view.cw,y:r.top+h.y*r.height/app.view.ch};});
+ let a0=await A();await page.mouse.move(sh.x,sh.y);await page.mouse.down();await page.mouse.move(sh.x,sh.y-80,{steps:4});await page.waitForTimeout(900);await shot('touch-stick');const stick=await page.evaluate(()=>window.ShambConkins.store.session.debug.app.stick?.dy);await page.mouse.up();
  let a1=await A();if(!(stick<-.5)||Math.hypot(a1.x-a0.x,a1.y-a0.y)<8)fail(`${tag} touch stick did not move (stick ${stick}, ${JSON.stringify([a0,a1])})`);
  await page.mouse.move(w*.65,h*.35);await page.mouse.down();await page.mouse.move(w*.65-120,h*.35,{steps:6});await page.waitForTimeout(300);await page.mouse.up();
  let a2=await A();if(a2.a===a1.a)fail(`${tag} touch drag did not turn`);

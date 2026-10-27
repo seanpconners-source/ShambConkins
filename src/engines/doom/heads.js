@@ -11,6 +11,8 @@ const MT=I.MT;
 // monsters whose whole sprite is a head (the face goes in the middle) / lower-middle for the flaming skull
 const WHOLE={[MT.HEAD]:.62,[MT.PAIN]:.5,[MT.SKULL]:.7};
 const BAND={[MT.SPIDER]:.34,[MT.BABY]:.42,[MT.CYBORG]:.16,[MT.FATSO]:.2,[MT.SERGEANT]:.3,[MT.SHADOWS]:.3,[MT.VILE]:.15,[MT.UNDEAD]:.15,[MT.KEEN]:.22};
+// roster heads are drawn this many times the size of the sprite's own head
+const HEAD_K=2;
 const NOHEAD=new Set([MT.PLAYER,MT.BOSSBRAIN,MT.BOSSSPIT,MT.BOSSTARGET,MT.BARREL]);
 
 class Heads{
@@ -25,7 +27,7 @@ class Heads{
   // a mood portrait still loading shows the stand-in (64px): use the face we already have meanwhile
   if(mood!=='normal'&&src.width===64){const n=headCanvas(id,'normal');if(n.width!==64)src=n;}
   const key=id+':'+mood;let h=this.cache.get(key);if(h&&h.src===src)return h;
-  const N=40,c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(src,0,0,N,N);
+  const N=64,c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(src,0,0,N,N);
   let d;try{d=x.getImageData(0,0,N,N).data;}catch{return h||null;}
   const pix=new Uint8Array(N*N),mask=new Uint8Array(N*N);let hr=0,hg=0,hb=0,hn=0;
   for(let yy=0;yy<N;yy++)for(let xx=0;xx<N;xx++){const i=(yy*N+xx)*4;if(d[i+3]<110)continue;const o=xx*N+yy;pix[o]=this.nearest(d[i],d[i+1],d[i+2]);mask[o]=1;if(yy<N*.32){hr+=d[i];hg+=d[i+1];hb+=d[i+2];hn++;}}
@@ -53,13 +55,16 @@ class Heads{
   // blown to pieces: no head left after the first frames of the gib animation
   if(mo.info.xdeathstate&&mo.stnum>=mo.info.xdeathstate+2&&mo.stnum<mo.info.xdeathstate+12)return;
   const a=this.anchor(v.lump,v.patch,mo.type);if(!a)return;const hd=this.head(mo.head,this.mood(mo));if(!hd)return;
-  const [ax,ay,size]=a;
+  const [ax,ay,size0]=a,whole=!!WHOLE[mo.type];
+  // big heads: twice the sprite's own head, the chin kept at the neck (it grows upward); a monster that is all head
+  // keeps the face centred and inside its body
+  const size=whole?Math.min(size0*HEAD_K,size0/WHOLE[mo.type]*.95):size0*HEAD_K;
   const rot=v.rot,side=rot===0?1:rot===1||rot===7?.86:rot===2||rot===6?.62:.8,useBack=rot>=3&&rot<=5;
   // patch column -> screen x
   const colToX=c=>v.x1+(c-v.startfrac)/v.xiscale,top=r.centery-v.texturemid*v.scale;
-  const cxs=colToX(ax),cys=top+ay*v.scale,hw=size*v.scale*side,hh=size*v.scale*1.08;
+  const hw=size*v.scale*side,hh=size*v.scale*1.08,cxs=colToX(ax),cys=top+ay*v.scale-(whole?0:(size-size0)*v.scale*1.08/2);
   const shift=(rot===1||rot===2?-1:rot===6||rot===7?1:0)*hw*.08;
-  const x0=Math.max(v.x1,Math.ceil(cxs-hw/2+shift)),x1=Math.min(v.x2,Math.ceil(cxs+hw/2+shift)-1),y0=Math.ceil(cys-hh/2),y1=Math.ceil(cys+hh/2)-1;
+  const x0=Math.max(v.hx1??v.x1,Math.ceil(cxs-hw/2+shift)),x1=Math.min(v.hx2??v.x2,Math.ceil(cxs+hw/2+shift)-1),y0=Math.ceil(cys-hh/2),y1=Math.ceil(cys+hh/2)-1;
   if(x1<x0||y1<y0)return;
   const scr=r.screen,W=r.W,cm=r.gfx.colormaps,N=hd.w,src=useBack?hd.back:hd.pix,mirror=rot>=5;
   for(let x=x0;x<=x1;x++){let u=((x-(cxs-hw/2+shift))/hw);if(mirror)u=1-u;const col=Math.max(0,Math.min(N-1,Math.floor(u*N)));
