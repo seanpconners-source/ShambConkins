@@ -8,9 +8,20 @@
 // Prisoners: every cage you open is a new bro (you switch to them, +1 life). The GOLD cage on each stage holds a
 // character you have not unlocked; free it and they join your roster after the game (session.broforceRecruits).
 // Each owner keeps their own roster; nothing unlocks unless a gold cage was opened. Ids/game ids are unchanged.
+// Online (s.online) the mission is CO-OP: both bros run the same mission at once, each phone following its own bro (the
+// partner drawn from snapshots, an edge arrow when off screen). Player 1's phone ("host") runs the enemies, the Devil and
+// the cage line-up and streams them; the other phone draws them, sends its hits ({fh} foes, {bh} the Devil) and judges
+// only what hits its own bro (enemy shots {fb}/{fw} replayed there, blasts {ex}). Each phone damages terrain for what it
+// fires and sends the broken tiles {tb}; cages {cg} and flags {fl} are shared, a GOLD cage frees its character for both.
+// A dead bro respawns next to the partner; out of bros you watch until the next stage (or until the partner frees a
+// prisoner, which brings you back); the chopper waits 10 s for the partner, then pulls them along; both start the next
+// stage together. Own score as usual, higher wins; the mission ends when the chopper leaves stage 3 or both are out.
 const {clamp,hash}=require('src/utils.js');
 const {soloFinish,soloProgress}=require('src/solo.js');
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,PCOL,Countdown,settle}=require('src/engines/arenaKit.js');
+const {netField}=require('src/engines/netField.js');
+const {partnerArrow}=require('src/engines/partnerArrow.js');
+const NET_GRACE=10,FOE_STATES=['patrol','alert','attack','search'],FOE_TYPES=['mook','bomber','bruiser','dog','grenadier'];
 
 const STEP=1/60,T=16,ROWS=34,MAXW=260,G=19; // tile px, map rows, map stride, surface row
 const E=0,DIRT=1,BRICK=2,STEEL=3,WOOD=4,LADDER=5,BARREL=6,BAGS=7,PLAT=8,CRATE=9,ROCK=10;
@@ -242,7 +253,9 @@ async function broforce(s){
  const vipPools=s.players.map(p=>{try{return gameRecruitPool(s.game,store.profile,p).map(ch=>ch.id);}catch{return [];}});
  const touchUI=typeof matchMedia==='function'&&matchMedia('(pointer: coarse)').matches;
  s.broforceRecruits=[[],[]];
- let phase='title',titleT=0,cd=new Countdown(3),acc=0,endT=0,turn=0,clock=0,frames=0,simT=0,winner=-1;
+ const net=s.online||null,me=net?net.me:0,them=1-me,host=!net||me===0;
+ let phase='title',titleT=0,cd=new Countdown(3),acc=0,endT=0,turn=net?me:0,clock=0,frames=0,simT=0,winner=-1;
+ let R=null,netCages=null,setupMsg=null,setupWait=null,netStarted=false,nf=null;   // online: the partner's bro, the host's cage line-up
  let W=null,P=null,fx=new Fx(),banner=null,cam={x:0,y:0},Z=2,stageT=0,stageIdx=0,shake=0;
  const results=[null,null];
  for(const id of [...s.players.map(p=>p.character)])headCanvas(id);
@@ -268,6 +281,10 @@ async function broforce(s){
   if(st){const dx=st.x-st.sx,dy=st.y-st.sy;if(dx>11)r=1;if(dx<-11)l=1;if(dy<-20)u=1;if(dy>20&&Math.abs(dx)<dy*1.3)d=1;}
   let jumpHeld=u;for(const f of pad.fire){if(f.data.up||f.data.tapJump)jumpHeld=1;else fire=1;}
   if(pad.fire.size)fire=1;
+  if(bot&&P){bot.t++;r=1;l=0;fire=1;if(P.grounded&&Math.abs(P.vx)<15)bot.stuck++;else bot.stuck=0;
+   if(bot.stuck>12||bot.t%95===0){inp.jumpPress=1;bot.stuck=0;bot.hold=22;}jumpHeld=(bot.hold=(bot.hold||0)-1)>0?1:0;if(bot.t%400===0)inp.gren=1;
+   // at the chopper: climb in
+   const H=W?.heli;if(H&&H.state==='hover'&&Math.abs(P.x-(H.x-8))<160&&(stageIdx<2||!W.boss?.alive)){r=P.x<H.x-8?1:0;l=P.x>H.x-8?1:0;u=1;}}
   Object.assign(inp,{l,r,u,d,fire,jumpHeld});
  }
  const clearInput=()=>{Object.assign(inp,{l:0,r:0,u:0,d:0,fire:0,jumpPress:0,jumpHeld:0,gren:0,downPress:0});pad.stick=null;pad.fire.clear();};
@@ -332,12 +349,14 @@ async function broforce(s){
   const pool=vipPools[turn],used=new Set(s.broforceRecruits[turn]);
   const free=pool.filter(id=>!used.has(id)),rng=mulberry(seed+turn*101+si*13);
   const others=rosters[turn].length?rosters[turn]:s.players.map(p=>p.character);
-  for(const cg of S.cages){
+  S.cages.forEach((cg,k)=>{
    let id=null,vip=cg.vip&&free.length>0;
-   if(vip){id=free.splice(Math.floor(rng()*free.length),1)[0];}
+   // online both phones use player 1's line-up (a GOLD cage holds someone locked for both, if there is anyone)
+   if(netCages){const nc=netCages[si]?.[k];id=nc?.[0]||others[0];vip=!!(cg.vip&&nc?.[1]);}
+   else if(vip){id=free.splice(Math.floor(rng()*free.length),1)[0];}
    else id=others[Math.floor(rng()*others.length)];
    W.cages.push({x:cg.x,y:cg.y,vip,id,hp:3,open:false,t:rng()*3});headCanvas(id);
-  }
+  });
   if(keepPlayer){Object.assign(P,{x:S.spawn.x,y:S.spawn.y,vx:0,vy:0,grenades:3,inv:1.5,board:0,boarded:false});}
   cam.x=clamp(S.spawn.x-viewW()*.35,0,W.W*T-viewW());cam.y=clamp(S.spawn.y-viewH()*.62,0,ROWS*T-viewH());
   banner={big:`STAGE ${si+1}`,small:theme.stages[si],t:2.6};
@@ -381,7 +400,9 @@ async function broforce(s){
  }
  function respawn(){
   P.lives--;const pool=rosters[P.i].filter(id=>id!==P.bro);const id=pool.length?pool[Math.floor(Math.random()*pool.length)]:P.bro;
-  setBro(id);Object.assign(P,{x:W.checkpoint.x,y:W.checkpoint.y-2,vx:0,vy:-60,hp:2,inv:2.2,dead:0,grenades:3,mood:'normal',climb:false,ladder:false});
+  // online: drop in next to the partner (if they are up and on this stage), else at the checkpoint
+  const near=net&&partnerHere()&&!R.dead&&!R.boarded,sx=near?R.x:W.checkpoint.x,sy=near?R.y-10:W.checkpoint.y-2;
+  setBro(id);Object.assign(P,{x:sx,y:sy,vx:0,vy:-60,hp:2,inv:2.2,dead:0,grenades:3,mood:'normal',climb:false,ladder:false});
   banner={big:nameOf(id).toUpperCase(),small:`${WEAPONS[P.weapon].name} · ${P.lives+1} ${P.lives+1===1?'BRO':'BROS'}`,t:1.8};
   fx.ring(P.x,P.y-10,{color:'#fff',r0:4,r1:28,life:.4,width:2});
  }
@@ -413,8 +434,8 @@ async function broforce(s){
  }
  function onLadder(b){const t=tileAt(b.x,b.y-6);const t2=tileAt(b.x,b.y+2);return t===LADDER||t2===LADDER&&inp.d;}
  function updatePlayer(dt){
-  const p=P;if(p.boarded){return;}
-  if(p.dead){p.dead-=dt;if(p.dead<=0){if(p.lives>0)respawn();else endTurn('lives');}return;}
+  const p=P;if(p.boarded||p.out){return;}
+  if(p.dead){p.dead-=dt;if(p.dead<=0){if(p.lives>0)respawn();else if(net)netOut();else endTurn('lives');}return;}
   p.inv=Math.max(0,p.inv-dt);p.fireCD-=dt;p.muzzle=Math.max(0,p.muzzle-dt);p.recoil=Math.max(0,p.recoil-dt*8);p.lastHurt=Math.max(0,p.lastHurt-dt);
   if(p.moodT>0){p.moodT-=dt;if(p.moodT<=0)p.mood='normal';}
   p.fireT=(p.fireT??9)+dt;p.idleT=p.grounded&&!p.ladder&&Math.abs(p.vx)<20&&!inp.fire?(p.idleT||0)+dt:0;
@@ -451,13 +472,16 @@ async function broforce(s){
   // fire
   const wpn=WEAPONS[p.weapon];
   if(inp.fire&&p.fireCD<=0){p.fireCD=wpn.rate;fireWeapon(p,wpn);}
-  if(inp.gren){inp.gren=0;if(p.grenades>0){p.grenades--;throwNade(p.x+p.facing*6,p.y-16,p.facing*190+p.vx*.3,-230,'p');}}
+  if(inp.gren){inp.gren=0;if(p.grenades>0){p.grenades--;const nv=[p.x+p.facing*6,p.y-16,p.facing*190+p.vx*.3,-230];throwNade(...nv,'p');if(net)outbox.gr.push(nv.map(Math.round));}}
   inp.downPress=0;
   // fell into the abyss? (bedrock makes this rare) — or squashed inside rebuilt rock
   if(p.y>ROWS*T+40)killPlayer();
+  // never climb out over the map's steel edges (a wall-climb could vault a bro onto the roof outside the map)
+  p.x=clamp(p.x,T+p.w,(W.W-1)*T-p.w);
  }
  function fireWeapon(p,w){
   p.shotsFired=(p.shotsFired||0)+1;p.fireT=0;const mx=p.x+p.facing*12,my=p.y-11+(p.ladder?0:0);p.muzzle=.06;p.recoil=1;
+  if(net)outbox.sh.push([Math.round(mx),Math.round(my),p.facing,p.weapon]);   // the partner's phone shows the shot
   if(w.rocket){W.shots.push({x:mx,y:my,vx:p.facing*w.speed,vy:0,life:w.life,owner:'p',kind:'rocket',trail:0});sfx.rocket();p.vx-=p.facing*40;return;}
   if(w.flame){for(let k=0;k<2;k++)W.flames.push({x:mx,y:my+(Math.random()-.5)*3,vx:p.facing*w.speed*(0.8+Math.random()*.4)+p.vx*.5,vy:(Math.random()-.5)*50-20,life:w.life*(0.8+Math.random()*.4),max:w.life,dmg:w.dmg});if(frames%6===0)sfx.flame();return;}
   const n=w.pellets||1;
@@ -467,7 +491,7 @@ async function broforce(s){
   sfx[p.weapon]?.();if(p.weapon==='shotgun'){p.vx-=p.facing*60;fx.shake(2);}
   if(frames%12===0)for(const e of W.foes)if(e.alive&&e.active&&e.state==='patrol'&&Math.abs(e.x-p.x)<120&&Math.abs(e.y-p.y)<64){e.state='search';e.seenX=p.x;e.t=3;e.bubble={ch:'?',t:1};}
  }
- function throwNade(x,y,vx,vy,owner){W.nades.push({x,y,vx,vy,t:owner==='p'?1.3:1.6,owner,w:2,h:4,grounded:false,spin:0});}
+ function throwNade(x,y,vx,vy,owner){W.nades.push({x,y,vx,vy,t:owner==='p'?1.3:1.6,owner,w:2,h:4,grounded:false,spin:0});if(net&&host&&owner==='e')outbox.fn.push([x,y,vx,vy].map(Math.round));}
 
  // ---------------------------------------------------------------- terrain damage & explosions
  function damageTile(c,r,dmg){
@@ -478,7 +502,7 @@ async function broforce(s){
   return false;
  }
  function breakTile(c,r,t){
-  W.tiles[r*MAXW+c]=E;
+  W.tiles[r*MAXW+c]=E;if(net)outbox.tb.push(r*MAXW+c);
   fx.burst((c+.5)*T,(r+.5)*T,{n:t===BARREL?2:6,colors:tileColors(t),speed:110,life:.6,size:2,gravity:600,shape:'square'});
   if(t===BARREL)queueBoom((c+.5)*T,(r+.5)*T,44,4,'env',.06);
   else if(t===CRATE){if(Math.random()<.55)W.pickups.push({x:(c+.5)*T,y:(r+1)*T,vy:-120,vx:0,w:4,h:7,kind:'nade',t:12});addScore(25);}
@@ -487,48 +511,63 @@ async function broforce(s){
  const tileColors=t=>t===DIRT?theme.dirt:t===BRICK?theme.brick:t===ROCK?theme.rock:t===WOOD||t===CRATE||t===PLAT||t===LADDER?[theme.wood,'#5a3a1a']:t===BAGS?['#b8a77a','#8f8058']:t===BARREL?['#c33','#f80','#222']:['#888'];
  function queueBoom(x,y,r,dmg,owner,delay=0){W.booms.push({x,y,r,dmg,owner,delay});}
  function explode(b){
-  const {x,y,r,dmg,owner}=b;sfx.boom(r>40);fx.shake(r>40?12:8);
+  const {x,y,r,dmg,owner}=b;blastFx(x,y,r);
+  if(net)ev({ex:[stageIdx,Math.round(x),Math.round(y),r,owner]});
+  const c0=Math.floor((x-r)/T),c1=Math.floor((x+r)/T),r0=Math.floor((y-r)/T),r1=Math.floor((y+r)/T);
+  for(let cc=c0;cc<=c1;cc++)for(let rr=r0;rr<=r1;rr++){const d=Math.hypot((cc+.5)*T-x,(rr+.5)*T-y);if(d<r)damageTile(cc,rr,d<r*.7?99:2.5);}
+  for(const e of W.foes)if(e.alive){const d=Math.hypot(e.x-x,e.y-e.h/2-y);if(d<r+e.w)hitF(e,dmg*(d<r*.6?1.6:1),x,true);}
+  for(const cg of W.cages)if(!cg.open&&Math.hypot(cg.x-x,cg.y-10-y)<r+8)openCage(cg);
+  if(W.boss&&W.boss.alive){const B=W.boss,d=Math.hypot(B.x-x,B.y-30-y);if(d<r+24)hitB(dmg*3,x);}
+  if(owner!=='p'&&!P.dead&&Math.hypot(P.x-x,P.y-10-y)<r*.95)hurtPlayer(2,x);
+ }
+ function blastFx(x,y,r){sfx.boom(r>40);fx.shake(r>40?12:8);
   fx.burst(x,y,{n:20,colors:['#fff6b0','#ffd23a','#ff8a1a','#ff4a10'],speed:r*5,life:.45,size:r*.12,drag:3});
   fx.burst(x,y,{n:12,colors:['#3a3330','#5a524c','#2a2624'],speed:r*2.4,life:1.3,size:r*.14,drag:2.4,gravity:-60,grow:6});
   fx.ring(x,y,{color:'#fff3c4',r0:4,r1:r*1.25,life:.3,width:4});
-  const c0=Math.floor((x-r)/T),c1=Math.floor((x+r)/T),r0=Math.floor((y-r)/T),r1=Math.floor((y+r)/T);
-  for(let cc=c0;cc<=c1;cc++)for(let rr=r0;rr<=r1;rr++){const d=Math.hypot((cc+.5)*T-x,(rr+.5)*T-y);if(d<r)damageTile(cc,rr,d<r*.7?99:2.5);}
-  for(const e of W.foes)if(e.alive){const d=Math.hypot(e.x-x,e.y-e.h/2-y);if(d<r+e.w)hitFoe(e,dmg*(d<r*.6?1.6:1),x,true);}
-  for(const cg of W.cages)if(!cg.open&&Math.hypot(cg.x-x,cg.y-10-y)<r+8)openCage(cg);
-  if(W.boss&&W.boss.alive){const B=W.boss,d=Math.hypot(B.x-x,B.y-30-y);if(d<r+24)hitBoss(dmg*3,x);}
-  if(owner!=='p'&&!P.dead&&Math.hypot(P.x-x,P.y-10-y)<r*.95)hurtPlayer(2,x);
-  for(const cp of W.corpses){const d=Math.hypot(cp.x-x,cp.y-y);if(d<r*1.5){cp.vx+=(cp.x-x)/(d+1)*260;cp.vy-=200;cp.vr+=(Math.random()-.5)*20;}}
- }
+  for(const cp of W.corpses){const d=Math.hypot(cp.x-x,cp.y-y);if(d<r*1.5){cp.vx+=(cp.x-x)/(d+1)*260;cp.vy-=200;cp.vr+=(Math.random()-.5)*20;}}}
+ // online, the other phone's blast: the bang, and this phone's bro takes it unless the partner set it off (the partner's
+ // phone deals with terrain, enemies, cages and the Devil and sends what changed)
+ function remoteBlast(x,y,r,owner){blastFx(x,y,r);if(owner!=='p'&&!P.dead&&Math.hypot(P.x-x,P.y-10-y)<r*.95)hurtPlayer(2,x);
+  for(const n of W.nades)if(n.owner!=='p'&&Math.hypot(n.x-x,n.y-y)<12)n.t=0;for(const sh of W.shots)if(sh.owner!=='p'&&Math.hypot(sh.x-x,sh.y-y)<18)sh.life=-1;}
 
  // ---------------------------------------------------------------- enemies
  function los(x0,y0,x1,y1){const n=Math.ceil(Math.hypot(x1-x0,y1-y0)/7);for(let k=1;k<n;k++){const t=k/n;if(solidAt(x0+(x1-x0)*t,y0+(y1-y0)*t))return false;}return true;}
- function hitFoe(e,dmg,fromX,blast=false){
+ // by: 'p' = this phone's bro, 'r' = the partner (online, host phone) — kills score for whoever made them
+ function hitFoe(e,dmg,fromX,blast=false,by='p'){
   if(!e.alive)return;e.hp-=dmg;e.flash=.08;
   if(e.state==='patrol'||e.state==='search'){e.state='alert';e.t=.25;e.dir=fromX>e.x?1:-1;e.bubble={ch:'!',t:.8};}
   fx.burst(e.x,e.y-e.h*.6,{n:3,colors:['#b00','#e22'],speed:90,life:.4,size:1.4,gravity:500});
-  if(e.hp<=0)killFoe(e,fromX,blast);
+  if(e.hp<=0)killFoe(e,fromX,blast,by);
  }
- function killFoe(e,fromX,blast){
-  e.alive=false;P.kills++;const st=FOES[e.type];
-  P.combo=P.comboT>0?P.combo+1:1;P.comboT=.9;
-  const bonus=P.combo>1?50*(P.combo-1):0;addScore(st.score+bonus,e.x,e.y-e.h-6,P.combo>1?'#ff8a3a':'#ffe23a');
-  if(P.combo>=3)fx.pop(e.x,e.y-e.h-18,`${P.combo}× BROMBO!`,{color:'#ff5a2a',stroke:'#000',size:10,rise:26,life:1});
+ // online the other phone only reports its hits (batched, see netFlush); the foe flashes at once
+ function hitF(e,dmg,fromX,blast=false){if(net&&!host){if(!e.alive)return;e.flash=.08;fx.burst(e.x,e.y-e.h*.6,{n:3,colors:['#b00','#e22'],speed:90,life:.4,size:1.4,gravity:500});const h=outbox.fh.get(e.k)||[e.k,0,Math.round(fromX),blast?1:0];h[1]+=dmg;if(blast)h[3]=1;outbox.fh.set(e.k,h);return;}hitFoe(e,dmg,fromX,blast,'p');}
+ function hitB(dmg,fromX){if(net&&!host){const B=W.boss;if(!B?.alive||B.state==='wait')return;B.flash=.07;outbox.bh+=dmg;outbox.bx=fromX;return;}hitBoss(dmg,fromX);}
+ function killFoe(e,fromX,blast,by='p'){
+  e.alive=false;if(net&&host)ev({fk:[stageIdx,e.k,Math.round(fromX),blast?1:0,by==='p'?me:them]});
+  if(by==='p')foeScore(e);
   sfx.splat();fx.burst(e.x,e.y-e.h*.5,{n:blast?22:12,colors:['#a00','#d11','#700','#f44'],speed:blast?220:140,life:.8,size:1.8,gravity:600});
   if(blast)fx.burst(e.x,e.y-e.h*.5,{n:5,colors:['#7a1010','#e8c0a0','#5a5a2a'],speed:200,life:1,size:2.4,gravity:700,shape:'square'});
   const dir=Math.sign(e.x-fromX)||1;W.corpses.push({x:e.x,y:e.y,vx:dir*(blast?220:90),vy:blast?-260:-110,rot:0,vr:dir*(blast?14:6),t:5,kind:e.type,flip:e.dir});
-  if(e.type==='bomber')queueBoom(e.x,e.y-10,40,4,'env',.25);
+  if(e.type==='bomber'&&host)queueBoom(e.x,e.y-10,40,4,'env',.25);
   if(e.type==='grenadier'&&Math.random()<.5)W.pickups.push({x:e.x,y:e.y-6,vy:-140,vx:0,w:4,h:7,kind:'nade',t:12});
  }
- function alertNear(e){for(const o of W.foes)if(o!==e&&o.alive&&o.active&&(o.state==='patrol'||o.state==='search')&&Math.abs(o.x-e.x)<150&&Math.abs(o.y-e.y)<80){o.state='alert';o.t=.55+Math.random()*.4;o.dir=P.x>o.x?1:-1;o.bubble={ch:'!',t:.9};}}
+ function foeScore(e){P.kills++;const st=FOES[e.type];
+  P.combo=P.comboT>0?P.combo+1:1;P.comboT=.9;
+  const bonus=P.combo>1?50*(P.combo-1):0;addScore(st.score+bonus,e.x,e.y-e.h-6,P.combo>1?'#ff8a3a':'#ffe23a');
+  if(P.combo>=3)fx.pop(e.x,e.y-e.h-18,`${P.combo}× BROMBO!`,{color:'#ff5a2a',stroke:'#000',size:10,rise:26,life:1});}
+ function alertNear(e,tx=P.x){for(const o of W.foes)if(o!==e&&o.alive&&o.active&&(o.state==='patrol'||o.state==='search')&&Math.abs(o.x-e.x)<150&&Math.abs(o.y-e.y)<80){o.state='alert';o.t=.55+Math.random()*.4;o.dir=tx>o.x?1:-1;o.bubble={ch:'!',t:.9};}}
+ // online (host) a foe goes after the nearer bro that is up; only this phone's bro is hurt here (the other phone judges its own)
+ const upBro=b=>!!b&&!b.dead&&!b.boarded&&!b.out;
+ function foeTarget(e){if(!net||!R?.net||!partnerHere()||!upBro(R))return P;if(!upBro(P))return R;return Math.hypot(R.x-e.x,R.y-e.y)<Math.hypot(P.x-e.x,P.y-e.y)?R:P;}
  function updateFoe(e,dt){
   const st=FOES[e.type];e.flash=Math.max(0,e.flash-dt);if(e.bubble){e.bubble.t-=dt;if(e.bubble.t<=0)e.bubble=null;}
-  const px=P.x,py=P.y-12,dx=px-e.x,dy=py-(e.y-e.h*.6),alive=!P.dead&&!P.boarded;
+  const tg=foeTarget(e),mine=tg===P,px=tg.x,py=tg.y-12,dx=px-e.x,dy=py-(e.y-e.h*.6),alive=upBro(tg);
   const sight=Math.min(st.sight,viewW()*.5+28);
-  const sees=alive&&Math.abs(dx)<sight&&Math.abs(dy)<70&&(Math.sign(dx)===e.dir||Math.abs(dx)<46||e.state!=='patrol')&&P.inv<2&&los(e.x,e.y-e.h*.7,px,py);
+  const sees=alive&&Math.abs(dx)<sight&&Math.abs(dy)<70&&(Math.sign(dx)===e.dir||Math.abs(dx)<46||e.state!=='patrol')&&tg.inv<2&&los(e.x,e.y-e.h*.7,px,py);
   e.t-=dt;e.cool-=dt;e.anim+=Math.abs(e.vx)*dt*.1;
   let speed=0;
   if(e.state==='patrol'){
-   if(sees){e.state='alert';e.t=e.type==='dog'?.2:.36+Math.random()*.22;e.dir=Math.sign(dx)||e.dir;e.bubble={ch:'!',t:.9};sfx.alert();alertNear(e);}
+   if(sees){e.state='alert';e.t=e.type==='dog'?.2:.36+Math.random()*.22;e.dir=Math.sign(dx)||e.dir;e.bubble={ch:'!',t:.9};sfx.alert();alertNear(e,px);}
    else{if(e.t<0){e.t=1.5+Math.random()*2.5;if(Math.random()<.35)e.idle=1+Math.random()*1.5;}
     if(e.idle>0){e.idle-=dt;}else speed=st.speed;
     const ahead=e.x+e.dir*(e.w+3);if(solidAt(ahead,e.y-6)||!solidAt(ahead,e.y+3)&&![PLAT,LADDER].includes(tileAt(ahead,e.y+3)))e.dir*=-1;}
@@ -539,7 +578,7 @@ async function broforce(s){
    else if(e.type==='bomber'){speed=98;e.fuse+=dt;if(Math.abs(dx)<14&&Math.abs(dy)<22||e.fuse>5){e.alive=false;queueBoom(e.x,e.y-10,42,4,'env');}
     if(frames%40===0)fx.pop(e.x,e.y-e.h-10,'AAAH!',{color:'#fff',stroke:'#900',size:7,rise:10,life:.5});}
    else if(e.type==='dog'){speed=135;if(e.grounded&&Math.abs(dx)<56&&e.lunge<=0&&sees){e.vy=-210;e.lunge=1;speed=170;}e.lunge-=dt;
-    if(Math.abs(dx)<10&&Math.abs(dy)<16)hurtPlayer(1,e.x);}
+    if(mine&&Math.abs(dx)<10&&Math.abs(dy)<16)hurtPlayer(1,e.x);}
    else if(e.type==='grenadier'){if(sees&&e.cool<=0){e.cool=2.3+Math.random();const tt=.9,vx=clamp(dx/tt,-220,220),vy=clamp((dy-.5*900*.25*tt*tt)/tt,-330,-120);throwNade(e.x+e.dir*5,e.y-e.h+2,vx,vy,'e');}
     else if(Math.abs(dx)<60)speed=-st.speed;}
    else{ // mook / bruiser shoot in bursts with a short gap between shots
@@ -549,51 +588,61 @@ async function broforce(s){
   if(speed){const ahead=e.x+e.dir*(e.w+3);const cliff=!solidAt(ahead,e.y+3)&&![PLAT,LADDER].includes(tileAt(ahead,e.y+3));if(cliff&&e.type!=='bomber'&&e.type!=='dog')speed=0;}
   e.vx=speed*e.dir;
   const res=moveBody(e,dt,{grav:900,maxFall:420});if(res.wall&&e.state==='patrol')e.dir*=-1;
-  if(e.type!=='dog'&&e.type!=='bomber'&&e.alive&&!P.dead&&!P.boarded&&Math.abs(dx)<8&&Math.abs(dy)<14&&P.inv<=0)hurtPlayer(1,e.x);
+  if(mine&&e.type!=='dog'&&e.type!=='bomber'&&e.alive&&!P.dead&&!P.boarded&&Math.abs(dx)<8&&Math.abs(dy)<14&&P.inv<=0)hurtPlayer(1,e.x);
   if(e.y>ROWS*T)e.alive=false;
  }
  function shootFoe(e,dx,dy){const a=Math.atan2(clamp(dy,-Math.abs(dx)*.5,Math.abs(dx)*.5),Math.abs(dx))+(Math.random()-.5)*.08;
-  W.bullets.push({x:e.x+e.dir*10,y:e.y-e.h*.55,vx:Math.cos(a)*e.dir*215,vy:Math.sin(a)*215,life:1.5,owner:'e',dmg:1,tile:.35});e.muzzle=.06;sfx.enemy();}
+  const b={x:e.x+e.dir*10,y:e.y-e.h*.55,vx:Math.cos(a)*e.dir*215,vy:Math.sin(a)*215,life:1.5,owner:'e',dmg:1,tile:.35};W.bullets.push(b);e.muzzle=.06;sfx.enemy();
+  if(net)outbox.fb.push([Math.round(b.x),Math.round(b.y),Math.round(b.vx),Math.round(b.vy)]);}
 
  // ---------------------------------------------------------------- boss: the Devil (stage 3)
- function hitBoss(dmg,fromX){const B=W.boss;if(!B.alive||B.state==='wait')return;B.hp-=dmg;B.flash=.07;if(B.hp<=0){B.alive=false;B.dead=3;addScore(5000,B.x,B.y-60,'#ff5a2a');sfx.roar();
+ function hitBoss(dmg,fromX){const B=W.boss;if(!B.alive||B.state==='wait')return;B.hp-=dmg;B.flash=.07;if(B.hp<=0){B.alive=false;B.dead=3;devilDown();
   for(let k=0;k<6;k++)queueBoom(B.x+(Math.random()-.5)*40,B.y-10-Math.random()*50,30,0,'p',k*.22);
-  banner={big:'THE DEVIL IS DEAD',small:'GET TO THE CHOPPER!',t:3};W.heli.state='arrive';W.heli.y=W.exit.y-15*T;
-  if(W.lock){for(const [cc,rr] of W.lock.cells)if(T_AT(cc,rr)===STEEL)W.tiles[rr*MAXW+cc]=E;}
   for(const e of W.foes)if(e.alive&&e.summoned)killFoe(e,B.x,true);}}
+ // the Devil falls (online: on both phones, both bros get the 5000)
+ function devilDown(){const B=W.boss;addScore(5000,B.x,B.y-60,'#ff5a2a');sfx.roar();
+  banner={big:'THE DEVIL IS DEAD',small:'GET TO THE CHOPPER!',t:3};W.heli.state='arrive';W.heli.y=W.exit.y-15*T;
+  if(W.lock){for(const [cc,rr] of W.lock.cells)if(T_AT(cc,rr)===STEEL)W.tiles[rr*MAXW+cc]=E;}}
+ // the fight starts: the arena locks behind the bros; online a bro still outside is pulled in
+ function devilWakes(){const A=W.arena;sfx.roar();fx.shake(10);banner={big:'THE DEVIL',small:'PRINCE OF DARKNESS · BOSS',t:2.2};
+  const cells=[];const c=A.c0;for(let r=G-12;r<G;r++){if(T_AT(c,r)===E){W.tiles[r*MAXW+c]=STEEL;cells.push([c,r]);}}
+  const c2=A.c1;for(let r=G-12;r<G;r++){if(T_AT(c2,r)===E){W.tiles[r*MAXW+c2]=STEEL;cells.push([c2,r]);}}W.lock={cells};W.checkpoint={x:A.x0+3*T,y:G*T};
+  if(net&&!P.out&&(P.x<A.x0+T||P.x>A.x1-T)){Object.assign(P,{x:A.x0+3*T,y:G*T-2,vx:0,vy:0,ladder:false,climb:false,inv:Math.max(P.inv,1.5)});fx.pop(P.x,P.y-30,'PULLED IN!',{color:'#ffe23a',stroke:'#000',size:9,rise:18,life:1.2});}}
  function updateBoss(dt){
   const B=W.boss;if(!B)return;B.flash=Math.max(0,B.flash-dt);B.anim+=dt;
   if(!B.alive){B.dead-=dt;return;}
+  if(net&&!host){if(B.tx!=null){B.x+=(B.tx-B.x)*Math.min(1,dt*12);B.y+=(B.ty-B.y)*Math.min(1,dt*12);}
+   if(B.state!=='wait'&&!P.dead&&!P.out&&Math.abs(P.x-B.x)<20&&P.y>B.y-52&&P.y-P.h<B.y)hurtPlayer(B.state==='charge'?2:1,B.x);return;}
   const A=W.arena;
-  if(B.state==='wait'){if(P.x>A.x0+3*T&&!P.dead){B.state='intro';B.t=1.6;sfx.roar();fx.shake(10);banner={big:'THE DEVIL',small:'PRINCE OF DARKNESS · BOSS',t:2.2};
-    // lock the arena behind the player until the Devil falls
-    const cells=[];const c=A.c0;for(let r=G-12;r<G;r++){if(T_AT(c,r)===E){W.tiles[r*MAXW+c]=STEEL;cells.push([c,r]);}}
-    const c2=A.c1;for(let r=G-12;r<G;r++){if(T_AT(c2,r)===E){W.tiles[r*MAXW+c2]=STEEL;cells.push([c2,r]);}}W.lock={cells};W.checkpoint={x:A.x0+3*T,y:G*T};}return;}
-  B.t-=dt;const dx=P.x-B.x;B.dir=Math.sign(dx)||B.dir;
+  if(B.state==='wait'){if(P.x>A.x0+3*T&&!P.dead||net&&upBro(R)&&partnerHere()&&R.x>A.x0+3*T){B.state='intro';B.t=1.6;devilWakes();}return;}
+  const tg=foeTarget(B);B.t-=dt;const dx=tg.x-B.x;B.dir=Math.sign(dx)||B.dir;
   if(B.state==='intro'){if(B.t<=0){B.state='walk';B.t=1.2;}}
   else if(B.state==='walk'){B.vx=B.dir*40;if(B.t<=0){const r=Math.random(),rage=B.hp<B.max*.45;B.state=r<.35?'volley':r<.6?'leap':r<.8&&B.summons<6?'summon':'charge';B.t=B.state==='charge'?.7:B.state==='volley'?1.1:.6;B.vx=0;B.shots=0;if(rage)B.t*=.75;}}
   else if(B.state==='volley'){B.vx=0;if(B.t<.8&&B.shots<(B.hp<B.max*.45?7:5)&&(B.t*10|0)%2===0&&B.lastShot!==(B.t*10|0)){B.lastShot=B.t*10|0;B.shots++;const a=-.9+B.shots*.22;
-    W.shots.push({x:B.x+B.dir*14,y:B.y-46,vx:B.dir*Math.cos(a)*190+dx*.15,vy:Math.sin(a)*190-60,life:3,owner:'e',kind:'fireball',g:420});snd(200,.15,{type:'sawtooth',vol:.03,to:500});}
+    const fb={x:B.x+B.dir*14,y:B.y-46,vx:B.dir*Math.cos(a)*190+dx*.15,vy:Math.sin(a)*190-60,life:3,owner:'e',kind:'fireball',g:420};W.shots.push(fb);snd(200,.15,{type:'sawtooth',vol:.03,to:500});
+    if(net)outbox.fs.push([fb.x,fb.y,fb.vx,fb.vy].map(Math.round));}
    if(B.t<=0){B.state='walk';B.t=1+Math.random()*.8;}}
   else if(B.state==='leap'){if(B.grounded&&!B.jumped){B.vy=-420;B.vx=clamp(dx*1.1,-200,200);B.jumped=true;B.grounded=false;}
-   if(B.jumped&&B.grounded){B.jumped=false;B.state='walk';B.t=1;fx.shake(12);sfx.boom(true);for(const d of [-1,1])W.waves.push({x:B.x+d*18,y:B.y,dir:d,t:1.6});B.vx=0;}}
+   if(B.jumped&&B.grounded){B.jumped=false;B.state='walk';B.t=1;fx.shake(12);sfx.boom(true);for(const d of [-1,1]){W.waves.push({x:B.x+d*18,y:B.y,dir:d,t:1.6});if(net)outbox.fw.push([Math.round(B.x+d*18),Math.round(B.y),d]);}B.vx=0;}}
   else if(B.state==='summon'){B.vx=0;if(B.t<=0){B.summons+=2;for(const d of [-1,1]){const x=clamp(B.x+d*70,A.x0+2*T,A.x1-2*T);const e=makeFoe({type:Math.random()<.5?'bomber':'mook',x,y:B.y-120},900+W.foes.length);e.summoned=true;e.active=true;e.state='alert';e.t=.8;W.foes.push(e);fx.burst(x,B.y-110,{n:14,colors:['#f30','#900','#ff0'],speed:120,life:.6,size:2});}
     B.state='walk';B.t=1.4;}}
   else if(B.state==='charge'){if(B.t>0){B.vx=0;}else{B.vx=B.dir*230;if(B.t<-1.1||Math.abs(B.vx)<1){B.state='walk';B.t=1.2;B.vx=0;}}}
   const res=moveBody(B,dt,{grav:900,maxFall:600});if(res.wall&&B.state==='charge'){B.state='walk';B.t=1;fx.shake(10);sfx.boom(false);}
   B.x=clamp(B.x,A.x0+2*T,A.x1-2*T);
-  if(!P.dead&&Math.abs(P.x-B.x)<20&&P.y>B.y-52&&P.y-P.h<B.y)hurtPlayer(B.state==='charge'?2:1,B.x);
+  if(!P.dead&&!P.out&&Math.abs(P.x-B.x)<20&&P.y>B.y-52&&P.y-P.h<B.y)hurtPlayer(B.state==='charge'?2:1,B.x);
  }
 
  // ---------------------------------------------------------------- cages & rescue
  function openCage(cg){
-  if(cg.open)return;cg.open=true;cg.freeT=1.2;P.rescues++;sfx.clink();
+  if(cg.open||P.out)return;cg.open=true;cg.freeT=1.2;P.rescues++;sfx.clink();
   fx.burst(cg.x,cg.y-12,{n:14,colors:cg.vip?['#ffd84a','#fff1a0','#c9902a']:[theme.wood,'#5a3a1a'],speed:130,life:.7,size:1.8,gravity:600,shape:'square'});
   const nm=nameOf(cg.id).toUpperCase();
-  if(cg.vip){P.gold++;s.broforceRecruits[P.i].push(cg.id);}
-  P.lives++;addScore(cg.vip?1000:500,cg.x,cg.y-30,cg.vip?'#ffd84a':'#9cf');
+  if(cg.vip){P.gold++;if(!s.broforceRecruits[P.i].includes(cg.id))s.broforceRecruits[P.i].push(cg.id);}
+  // online: a partner who is out of bros comes back as this prisoner instead of the extra life
+  const revive=net&&R?.net&&R.out;if(net)ev({cg:[stageIdx,W.cages.indexOf(cg),revive?1:0]});
+  if(!revive)P.lives++;addScore(cg.vip?1000:500,cg.x,cg.y-30,cg.vip?'#ffd84a':'#9cf');
   if(P.dead)return;
-  if(cg.vip){sfx.gold();banner={big:'NEW RECRUIT!',small:`${nm} JOINS ${s.players[P.i].name.toUpperCase()}’S ROSTER`,t:2.6,gold:true,id:cg.id};}
+  if(cg.vip){sfx.gold();banner={big:'NEW RECRUIT!',small:net?`${nm} JOINS BOTH ROSTERS`:`${nm} JOINS ${s.players[P.i].name.toUpperCase()}’S ROSTER`,t:2.6,gold:true,id:cg.id};}
   else{sfx.rescue();banner={big:'BRO IN!',small:`${nm} · ${WEAPONS[weaponFor(cg.id)].name}`,t:1.8};}
   setBro(cg.id);P.hp=2;P.inv=Math.max(P.inv,.8);P.mood='win';P.moodT=1.2;
   fx.ring(P.x,P.y-10,{color:cg.vip?'#ffd84a':'#9cf',r0:4,r1:34,life:.5,width:3});
@@ -604,12 +653,14 @@ async function broforce(s){
   for(const b of W.bullets){
    const sub=2;for(let k=0;k<sub&&b.life>0;k++){b.x+=b.vx*dt/sub;b.y+=b.vy*dt/sub;
     const c=Math.floor(b.x/T),r=Math.floor(b.y/T),t=T_AT(c,r);
-    if(SOLID[t]){damageTile(c,r,b.tile);b.life=0;fx.burst(b.x,b.y,{n:2,colors:['#fff6b0','#ffd23a'],speed:80,life:.15,size:1});break;}
+    // only the phone that owns a shot damages terrain with it (online: own shots; enemy shots on player 1's phone)
+    if(SOLID[t]){if(ownsShot(b.owner))damageTile(c,r,b.tile);b.life=0;fx.burst(b.x,b.y,{n:2,colors:['#fff6b0','#ffd23a'],speed:80,life:.15,size:1});break;}
     if(b.owner==='p'){
-     for(const e of W.foes)if(e.alive&&e.active&&Math.abs(b.x-e.x)<e.w+2&&b.y>e.y-e.h&&b.y<e.y+1){hitFoe(e,b.dmg,b.x-b.vx*.05);b.life=0;break;}
+     for(const e of W.foes)if(e.alive&&e.active&&Math.abs(b.x-e.x)<e.w+2&&b.y>e.y-e.h&&b.y<e.y+1){hitF(e,b.dmg,b.x-b.vx*.05);b.life=0;break;}
      if(b.life>0)for(const cg of W.cages)if(!cg.open&&Math.abs(b.x-cg.x)<9&&b.y>cg.y-24&&b.y<cg.y){cg.hp-=b.dmg;b.life=0;if(cg.hp<=0)openCage(cg);break;}
-     const B=W.boss;if(b.life>0&&B&&B.alive&&Math.abs(b.x-B.x)<18&&b.y>B.y-56&&b.y<B.y){hitBoss(b.dmg,b.x);b.life=0;}
-    }else if(!P.dead&&!P.boarded&&Math.abs(b.x-P.x)<P.w+1&&b.y>P.y-P.h&&b.y<P.y){hurtPlayer(b.dmg,b.x-b.vx);b.life=0;}
+     const B=W.boss;if(b.life>0&&B&&B.alive&&Math.abs(b.x-B.x)<18&&b.y>B.y-56&&b.y<B.y){hitB(b.dmg,b.x);b.life=0;}
+    }else if(b.owner==='r'){for(const e of W.foes)if(e.alive&&e.active&&Math.abs(b.x-e.x)<e.w+2&&b.y>e.y-e.h&&b.y<e.y+1){b.life=0;break;}}
+    else if(!P.dead&&!P.boarded&&!P.out&&Math.abs(b.x-P.x)<P.w+1&&b.y>P.y-P.h&&b.y<P.y){hurtPlayer(b.dmg,b.x-b.vx);b.life=0;}
    }
    b.life-=dt;
   }
@@ -619,29 +670,31 @@ async function broforce(s){
    if(sh.kind==='rocket'){sh.trail-=dt;if(sh.trail<=0){sh.trail=.02;fx.burst(sh.x-Math.sign(sh.vx)*6,sh.y,{n:1,colors:['#bbb','#888'],speed:20,life:.5,size:2,grow:6});}}
    else fx.burst(sh.x,sh.y,{n:1,colors:['#ff4a10','#ffd23a'],speed:20,life:.25,size:2});
    let hit=solidAt(sh.x,sh.y)||sh.life<=0;
-   if(sh.owner==='p'){for(const e of W.foes)if(e.alive&&e.active&&Math.abs(sh.x-e.x)<e.w+3&&sh.y>e.y-e.h&&sh.y<e.y+2)hit=true;
+   if(sh.owner==='p'||sh.owner==='r'){for(const e of W.foes)if(e.alive&&e.active&&Math.abs(sh.x-e.x)<e.w+3&&sh.y>e.y-e.h&&sh.y<e.y+2)hit=true;
     for(const cg of W.cages)if(!cg.open&&Math.abs(sh.x-cg.x)<9&&sh.y>cg.y-24&&sh.y<cg.y)hit=true;
     const B=W.boss;if(B&&B.alive&&Math.abs(sh.x-B.x)<18&&sh.y>B.y-56&&sh.y<B.y)hit=true;}
-   else if(!P.dead&&Math.abs(sh.x-P.x)<P.w+3&&sh.y>P.y-P.h&&sh.y<P.y)hit=true;
-   if(hit){sh.life=-1;queueBoom(sh.x-Math.sign(sh.vx)*2,sh.y,sh.kind==='rocket'?34:26,sh.kind==='rocket'?3:2,sh.owner);}
+   else if(!P.dead&&!P.out&&Math.abs(sh.x-P.x)<P.w+3&&sh.y>P.y-P.h&&sh.y<P.y)hit=true;
+   // online a shot this phone doesn't own just vanishes: its blast comes from the owner's phone ({ex})
+   if(hit){sh.life=-1;if(ownsShot(sh.owner))queueBoom(sh.x-Math.sign(sh.vx)*2,sh.y,sh.kind==='rocket'?34:26,sh.kind==='rocket'?3:2,sh.owner);}
   }
   W.shots=W.shots.filter(sh=>sh.life>0);
   for(const f of W.flames){f.life-=dt;f.vx*=Math.exp(-2.5*dt);f.vy-=60*dt;f.x+=f.vx*dt;f.y+=f.vy*dt;
-   const c=Math.floor(f.x/T),r=Math.floor(f.y/T),t=T_AT(c,r);if(SOLID[t]){if(t===WOOD||t===CRATE||t===BAGS||t===BARREL)damageTile(c,r,.25);f.life=Math.min(f.life,.05);f.vx=0;}
-   for(const e of W.foes)if(e.alive&&e.active&&Math.abs(f.x-e.x)<e.w+4&&f.y>e.y-e.h-2&&f.y<e.y+2){hitFoe(e,f.dmg*dt*20,f.x-f.vx);e.burning=1.5;}
+   const c=Math.floor(f.x/T),r=Math.floor(f.y/T),t=T_AT(c,r);if(SOLID[t]){if(!f.r&&(t===WOOD||t===CRATE||t===BAGS||t===BARREL))damageTile(c,r,.25);f.life=Math.min(f.life,.05);f.vx=0;}
+   if(f.r)continue;   // the partner's flames (online) are only for show here
+   for(const e of W.foes)if(e.alive&&e.active&&Math.abs(f.x-e.x)<e.w+4&&f.y>e.y-e.h-2&&f.y<e.y+2){hitF(e,f.dmg*dt*20,f.x-f.vx);e.burning=1.5;}
    for(const cg of W.cages)if(!cg.open&&Math.abs(f.x-cg.x)<10&&f.y>cg.y-24&&f.y<cg.y){cg.hp-=dt*6;if(cg.hp<=0)openCage(cg);}
-   const B=W.boss;if(B&&B.alive&&Math.abs(f.x-B.x)<20&&f.y>B.y-56&&f.y<B.y)hitBoss(f.dmg*dt*3,f.x);}
+   const B=W.boss;if(B&&B.alive&&Math.abs(f.x-B.x)<20&&f.y>B.y-56&&f.y<B.y)hitB(f.dmg*dt*3,f.x);}
   W.flames=W.flames.filter(f=>f.life>0);
   for(const n of W.nades){n.t-=dt;n.spin+=n.vx*dt*.2;const vx=n.vx;const res=moveBody(n,dt,{grav:700,maxFall:500});
    if(res.wall)n.vx=-vx*.45;if(res.landed){n.vx*=.6;if(Math.abs(n.vy)<1&&n.bounced!==true){n.vy=-80;n.bounced=true;}}if(res.bonk)n.vy=40;
    if(n.owner==='p')for(const e of W.foes)if(e.alive&&e.active&&Math.abs(n.x-e.x)<e.w+3&&n.y>e.y-e.h&&n.y<e.y+3)n.t=Math.min(n.t,0);
-   if(n.t<=0){queueBoom(n.x,n.y-3,40,4,n.owner);}}
+   if(n.t<=0&&ownsShot(n.owner)){queueBoom(n.x,n.y-3,40,4,n.owner);}}
   W.nades=W.nades.filter(n=>n.t>0);
   for(const w of W.waves){w.t-=dt;w.x+=w.dir*170*dt;if(solidAt(w.x,w.y-4))w.t=0;if(frames%3===0)fx.burst(w.x,w.y,{n:2,colors:['#ff6a1a','#ffd23a','#7a2a10'],speed:60,life:.35,size:2.2,angle:-Math.PI/2,spread:.8});
-   if(!P.dead&&Math.abs(P.x-w.x)<8&&P.y>w.y-12&&P.y<=w.y+1)hurtPlayer(1,w.x-w.dir*5);}
+   if(!P.dead&&!P.out&&Math.abs(P.x-w.x)<8&&P.y>w.y-12&&P.y<=w.y+1)hurtPlayer(1,w.x-w.dir*5);}
   W.waves=W.waves.filter(w=>w.t>0);
   for(const b of W.booms)b.delay-=dt;const go=W.booms.filter(b=>b.delay<=0);W.booms=W.booms.filter(b=>b.delay>0);for(const b of go)explode(b);
-  for(const pk of W.pickups){pk.t-=dt;moveBody(pk,dt,{grav:700});if(!P.dead&&Math.abs(pk.x-P.x)<10&&Math.abs(pk.y-P.y)<16){pk.t=0;P.grenades=Math.min(6,P.grenades+1);fx.pop(pk.x,pk.y-14,'+1 GRENADE',{color:'#bdf06a',stroke:'#000',size:8,rise:18,life:.8});sfx.clink();}}
+  for(const pk of W.pickups){pk.t-=dt;moveBody(pk,dt,{grav:700});if(!P.dead&&!P.out&&Math.abs(pk.x-P.x)<10&&Math.abs(pk.y-P.y)<16){pk.t=0;P.grenades=Math.min(6,P.grenades+1);fx.pop(pk.x,pk.y-14,'+1 GRENADE',{color:'#bdf06a',stroke:'#000',size:8,rise:18,life:.8});sfx.clink();}}
   W.pickups=W.pickups.filter(pk=>pk.t>0);
   for(const cp of W.corpses){cp.t-=dt;cp.vy+=900*dt;const nx=cp.x+cp.vx*dt,ny=cp.y+cp.vy*dt;if(solidAt(nx,cp.y-2)){cp.vx*=-.3;}else cp.x=nx;if(solidAt(cp.x,ny)){cp.vy=0;cp.vx*=.8;cp.vr*=.7;cp.y=Math.floor(ny/T)*T;}else cp.y=ny;cp.rot+=cp.vr*dt;}
   W.corpses=W.corpses.filter(cp=>cp.t>0).slice(-40);
@@ -649,13 +702,18 @@ async function broforce(s){
 
  // ---------------------------------------------------------------- stage flow: flags, chopper, timers
  function updateStage(dt){
-  for(const f of W.flags)if(!f.up&&!P.dead&&Math.abs(P.x-f.x)<14&&Math.abs(P.y-f.y)<40){f.up=true;W.checkpoint={x:f.x,y:f.y};addScore(250,f.x,f.y-40,'#9cf');sfx.flag();fx.pop(f.x,f.y-56,'CHECKPOINT',{color:'#fff',stroke:'#036',size:9,rise:16,life:1.2});}
+  for(const f of W.flags)if(!f.up&&!P.dead&&!P.out&&Math.abs(P.x-f.x)<14&&Math.abs(P.y-f.y)<40){f.up=true;W.checkpoint={x:f.x,y:f.y};addScore(250,f.x,f.y-40,'#9cf');sfx.flag();fx.pop(f.x,f.y-56,'CHECKPOINT',{color:'#fff',stroke:'#036',size:9,rise:16,life:1.2});if(net)ev({fl:[stageIdx,W.flags.indexOf(f)]});}
   const H=W.heli;H.t+=dt;
   if(H.state==='arrive'){H.y+=(W.exit.y-6.5*T-H.y)*Math.min(1,dt*1.6);if(Math.abs(H.y-(W.exit.y-6.5*T))<2)H.state='hover';}
   if(H.state==='hover'||H.state==='arrive'){if(frames%9===0&&Math.abs(H.x-P.x)<360)sfx.chop();
-   const ladderX=H.x-8,ladderBot=H.y+5.5*T;if(H.state==='hover'&&!P.dead&&!P.boarded&&Math.abs(P.x-ladderX)<12&&P.y>H.y+2*T&&P.y-P.h<ladderBot){P.boarded=true;H.state='leave';H.t=0;stageClear();}}
+   const ladderX=H.x-8,ladderBot=H.y+5.5*T;if(H.state==='hover'&&!P.dead&&!P.out&&!P.boarded&&Math.abs(P.x-ladderX)<12&&P.y>H.y+2*T&&P.y-P.h<ladderBot){P.boarded=true;stageClear();if(!net){H.state='leave';H.t=0;}else W.boardT=clock;}
+   // online the chopper waits for the partner: it leaves once both are aboard (or the other is out of bros), or
+   // NET_GRACE seconds after the first one climbed in; a bro left behind is pulled along
+   if(net&&H.state==='hover'){const rIn=R?.net&&R.si===stageIdx&&R.boarded;if(rIn&&W.rBoardT==null)W.rBoardT=clock;
+    const first=Math.min(P.boarded?W.boardT:Infinity,W.rBoardT??Infinity),rDone=rIn||R?.out||!R?.net||nf?.gone;
+    if(P.boarded&&rDone||P.out&&rIn||clock>first+NET_GRACE){if(!P.boarded&&!P.out){P.boarded=true;banner={big:'PULLED ALONG',small:'THE CHOPPER WOULDN’T WAIT',t:2};}H.state='leave';H.t=0;}}}
   if(H.state==='leave'){H.y-=dt*(40+H.t*90);H.x+=dt*(30+H.t*120);if(frames%9===0)sfx.chop();}
-  if(P.boarded&&H.state==='leave'&&H.t>2.6&&!W.cleared){W.cleared=true;nextStage();}
+  if((P.boarded||P.out)&&H.state==='leave'&&H.t>2.6&&!W.cleared){W.cleared=true;nextStage();}
  }
  function stageClear(){
   const par=PAR[stageIdx],bonus=1500+Math.max(0,Math.round((par-stageT)*20));P.stagesCleared++;P.stageTimes.push(stageT);
@@ -663,8 +721,13 @@ async function broforce(s){
   banner={big:stageIdx===2?'MISSION ACCOMPLISHED':`STAGE ${stageIdx+1} CLEAR`,small:`+${bonus} · ${fmt(stageT)}`,t:2.6};
   if(stageIdx===2){const lifeBonus=(P.lives)*300;if(lifeBonus)addScore(lifeBonus);}
  }
- function nextStage(){if(stageIdx<2){loadStage(stageIdx+1,true);P.boarded=false;P.mood='normal';}else endTurn('done');}
+ async function nextStage(){
+  // online both phones start the next stage together (a bro who was out of bros comes back with one)
+  if(net){if(stageIdx>=2){endTurn('done');return;}phase='net-wait';await nf.sync('stage'+stageIdx);if(!s.alive||phase!=='net-wait')return;phase='play';
+   if(P.out){P.out=false;P.dead=0;P.hp=2;P.lives=0;}}
+  if(stageIdx<2){loadStage(stageIdx+1,true);P.boarded=false;P.mood='normal';}else endTurn('done');}
  function endTurn(why){
+  if(net){netEnd(why);return;}
   if(phase!=='play')return;phase=turn===0||s.solo?'turn-end':'end';endT=0;P.why=why;
   results[turn]={score:P.score,kills:P.kills,rescues:P.rescues,gold:P.gold,stages:P.stagesCleared,why,recruits:s.broforceRecruits[turn].slice()};
   if(phase==='end'){const a=results[0].score,b=results[1].score;winner=a===b?-2:a>b?0:1;if(winner>=0)s.react(winner,'win');jingle([523,659,784,1047,1319],{type:'square',vol:.035,step:.1});}
@@ -676,13 +739,102 @@ async function broforce(s){
  // ---------------------------------------------------------------- camera
  function computeZoom(){Z=Math.max(1,Math.min(s.H/220,s.W/215));}
  function updateCamera(dt,snap=false){
-  const vw=viewW(),vh=viewH();const H=W.heli;const tx=(P.boarded?H.x:P.x)+P.facing*vw*.12-vw/2,ty=(P.boarded?H.y+40:P.y)-vh*.58;
+  // online, out of bros: the camera follows the partner
+  const vw=viewW(),vh=viewH();const H=W.heli,F=net&&P.out&&R?.net&&!P.boarded?R:P;const tx=(P.boarded?H.x:F.x)+F.facing*vw*.12-vw/2,ty=(P.boarded?H.y+40:F.y)-vh*.58;
   const k=snap?1:Math.min(1,dt*5);cam.x+=(tx-cam.x)*k;cam.y+=(ty-cam.y)*Math.min(1,dt*(snap?99:4));
   cam.x=clamp(cam.x,0,Math.max(0,W.W*T-vw));cam.y=clamp(cam.y,-40,Math.max(0,ROWS*T-vh));
  }
 
+ // ---------------------------------------------------------------- online co-op (see the top of the file)
+ const outbox={sh:[],gr:[],tb:[],fb:[],fn:[],fs:[],fw:[],fh:new Map(),bh:0,bx:0};
+ function ev(e){nf?.event(e);}
+ const ownsShot=o=>o==='p'||o!=='r'&&host;
+ const partnerHere=()=>!!R?.net&&R.si===stageIdx;
+ const foeByK=k=>k<900?W.foes[k]:W.foes.find(f=>f.k===k);
+ const r1=v=>Math.round(v*10)/10;
+ // what this phone did since the last flush goes out in one event (~20 a second, with the snapshots)
+ function netFlush(){const o=outbox,e={};
+  if(o.sh.length)e.sh=o.sh.splice(0);if(o.gr.length)e.gr=o.gr.splice(0);if(o.tb.length)e.tb=o.tb.splice(0);
+  if(o.fb.length)e.fb=o.fb.splice(0);if(o.fn.length)e.fn=o.fn.splice(0);if(o.fs.length)e.fs=o.fs.splice(0);if(o.fw.length)e.fw=o.fw.splice(0);
+  if(o.fh.size){e.fh=[...o.fh.values()].map(h=>[h[0],+h[1].toFixed(2),h[2],h[3]]);o.fh.clear();}
+  if(o.bh>0){e.bh=[+o.bh.toFixed(2),Math.round(o.bx)];o.bh=0;}
+  if(Object.keys(e).length){e.si=stageIdx;ev(e);}}
+ const BF=['dead','boarded','ladder','climb','grounded','out'];
+ const packBro=p=>{let fl=0;BF.forEach((k,j)=>{if(p[k])fl|=1<<j;});return [r1(p.x),r1(p.y),Math.round(p.vx),Math.round(p.vy),p.facing,fl,p.hp,p.lives,p.grenades,p.score,p.bro,p.inv>0?1:0,p.muzzle>0?1:0,p.kills,p.stagesCleared,stageIdx];};
+ function unpackBro(a){if(!Array.isArray(a)||a.length<16||!R)return;const first=!R.net||R.si!==a[15];R.net={a,at:performance.now()};
+  R.vx=a[2];R.vy=a[3];R.facing=a[4]||1;BF.forEach((k,j)=>{R[k]=!!(a[5]&1<<j);});R.dead=R.dead?1:0;R.hp=a[6];R.lives=a[7];R.grenades=a[8];R.score=a[9];
+  if(R.bro!==a[10]){R.bro=a[10];R.weapon=weaponFor(R.bro);for(const m of MOODS)headCanvas(R.bro,m);}R.inv=a[11]?1:0;if(a[12]){R.muzzle=.06;R.fireT=0;}R.kills=a[13];R.stagesCleared=a[14];R.si=a[15];
+  if(first){R.x=a[0];R.y=a[1];}if(R.out&&P?.out)netEnd('lives');}
+ function stepRemote(dt){if(!R?.net)return;const a=R.net.a,age=clamp((performance.now()-R.net.at)/1000,0,.25),tx=a[0]+R.vx*age,ty=a[1]+(R.grounded?0:R.vy*age),k=1-Math.exp(-dt*16);
+  if(Math.abs(tx-R.x)>80||Math.abs(ty-R.y)>80){R.x=tx;R.y=ty;}else{R.x+=(tx-R.x)*k;R.y+=(ty-R.y)*k;}
+  R.anim+=R.grounded?Math.abs(R.vx)*dt*.09:dt*4;R.muzzle=Math.max(0,(R.muzzle||0)-dt);R.recoil=R.muzzle>0?1:0;R.fireT=(R.fireT??9)+dt;
+  R.idleT=R.grounded&&Math.abs(R.vx)<20?(R.idleT||0)+dt:0;}
+ // host: the enemies near the other bro and the Devil; the other phone shows them as they come
+ const FT={};FOE_TYPES.forEach((t,j)=>FT[t]=j);
+ function packWorld(){if(!host||!W)return null;const out=[],near=R?.net&&R.si===stageIdx?R.x:P.x,vw=viewW();
+  for(const e of W.foes)if(e.alive&&e.active&&Math.abs(e.x-near)<vw*.6+160)out.push([e.k,r1(e.x),r1(e.y),e.dir,FOE_STATES.indexOf(e.state),FT[e.type],e.muzzle>0?1:0,e.bubble?e.bubble.ch:'',Math.round(e.vx)]);
+  const B=W.boss;return {fo:out,b:B?[r1(B.x),r1(B.y),B.dir,B.state,Math.round(B.hp),B.alive?1:0,Math.round(B.vx),B.flash>0?1:0]:null};}
+ function unpackWorld(d){if(host||!W||d.si!==stageIdx)return;const now=performance.now();
+  for(const f of d.fo||[]){const [k,x,y,dir,st,ty,mz,bub,vx]=f;let e=foeByK(k);
+   if(!e){e=makeFoe({type:FOE_TYPES[ty]||'mook',x,y},k);e.summoned=k>=900;W.foes.push(e);}
+   if(!e.alive)continue;if(!e.active){e.active=true;e.x=x;e.y=y;}e.tx=x;e.ty=y;e.dir=dir;e.state=FOE_STATES[st]||'patrol';e.vx=vx;if(mz)e.muzzle=.06;
+   e.bubble=bub?{ch:bub,t:.3}:null;e.seen=now;}
+  const B=W.boss;if(B&&d.b){const [x,y,dir,st,hp,alive,vx,fl]=d.b;const prev=B.state;B.tx=x;B.ty=y;B.dir=dir;B.hp=hp;B.vx=vx;if(fl)B.flash=.07;
+   if(prev==='wait'&&st!=='wait'){B.x=x;B.y=y;devilWakes();}B.state=st;
+   if(!alive&&B.alive){B.alive=false;B.dead=3;devilDown();for(let k=0;k<6;k++)setTimeout(()=>{if(s.alive&&W)blastFx(B.x+(Math.random()-.5)*40,B.y-10-Math.random()*50,30);},k*220);}}}
+ // the other phone's enemies: eased toward the host's positions; one missing near this bro for a while is gone
+ function stepNetFoes(dt){const now=performance.now(),k=1-Math.exp(-dt*12);
+  for(const e of W.foes){if(!e.alive||!e.active)continue;e.flash=Math.max(0,e.flash-dt);
+   if(e.tx!=null){e.x+=(e.tx-e.x)*k;e.y+=(e.ty-e.y)*k;}e.anim+=Math.abs(e.vx)*dt*.1;
+   if(e.seen&&now-e.seen>1500&&Math.abs(e.x-P.x)<viewW()*.5){e.alive=false;continue;}
+   // what touches this bro is judged here
+   if(!P.dead&&!P.out&&!P.boarded&&P.inv<=0&&e.state==='attack'&&e.type!=='bomber'){const dx=P.x-e.x,dy=P.y-12-(e.y-e.h*.6);if(Math.abs(dx)<(e.type==='dog'?10:8)&&Math.abs(dy)<(e.type==='dog'?16:14))hurtPlayer(1,e.x);}}}
+ function onNetEvent(e){
+  if(e.setup){setupMsg=e.setup;setupWait?.();return;}
+  if(!W||e.si!=null&&e.si!==stageIdx)return;
+  if(e.sh)for(const [x,y,f,wp] of e.sh){const w=WEAPONS[wp];if(!w)continue;
+   if(w.rocket)W.shots.push({x,y,vx:f*w.speed,vy:0,life:w.life,owner:'r',kind:'rocket',trail:0});
+   else if(w.flame){for(let k=0;k<2;k++)W.flames.push({x,y,vx:f*w.speed*(0.8+Math.random()*.4),vy:(Math.random()-.5)*50-20,life:w.life,max:w.life,dmg:0,r:true});}
+   else{const n=w.pellets||1;for(let k=0;k<n;k++){const sp=n>1?(k/(n-1)-.5)*w.spread:0;W.bullets.push({x,y,vx:Math.cos(sp)*f*w.speed,vy:Math.sin(sp)*w.speed,life:w.life,owner:'r',dmg:0,tile:0});}}
+   if(R&&Math.abs(x-P.x)<viewW())sfx[wp]?.();}
+  if(e.gr)for(const [x,y,vx,vy] of e.gr)W.nades.push({x,y,vx,vy,t:1.3,owner:'r',w:2,h:4,grounded:false,spin:0});
+  if(e.tb)for(const k of e.tb){const t=W.tiles[k];if(t!==E&&t!==STEEL){W.tiles[k]=E;const c=k%MAXW,r=Math.floor(k/MAXW);fx.burst((c+.5)*T,(r+.5)*T,{n:t===BARREL?2:5,colors:tileColors(t),speed:100,life:.5,size:2,gravity:600,shape:'square'});}}
+  if(e.fb)for(const [x,y,vx,vy] of e.fb)W.bullets.push({x,y,vx,vy,life:1.5,owner:'e',dmg:1,tile:.35});
+  if(e.fn)for(const [x,y,vx,vy] of e.fn)W.nades.push({x,y,vx,vy,t:1.6,owner:'e',w:2,h:4,grounded:false,spin:0});
+  if(e.fs)for(const [x,y,vx,vy] of e.fs)W.shots.push({x,y,vx,vy,life:3,owner:'e',kind:'fireball',g:420});
+  if(e.fw)for(const [x,y,d] of e.fw)W.waves.push({x,y,dir:d,t:1.6});
+  if(e.fh&&host)for(const [k,dmg,fx0,bl] of e.fh){const f=foeByK(k);if(f)hitFoe(f,dmg,fx0,!!bl,'r');}
+  if(e.bh&&host){const B=W.boss;if(B?.alive)hitBoss(e.bh[0],e.bh[1]);}
+  if(e.ex){const [si,x,y,r,owner]=e.ex;if(si===stageIdx)remoteBlast(x,y,r,owner);}
+  if(e.fk&&!host){const [si,k,fx0,bl,by]=e.fk,f=si===stageIdx&&foeByK(k);if(f&&f.alive){f.alive=false;if(by===me)foeScore(f);sfx.splat();
+   fx.burst(f.x,f.y-f.h*.5,{n:bl?22:12,colors:['#a00','#d11','#700','#f44'],speed:bl?220:140,life:.8,size:1.8,gravity:600});
+   const dir=Math.sign(f.x-fx0)||1;W.corpses.push({x:f.x,y:f.y,vx:dir*(bl?220:90),vy:bl?-260:-110,rot:0,vr:dir*(bl?14:6),t:5,kind:f.type,flip:f.dir});}}
+  if(e.cg){const [si,k,rv]=e.cg,cg=si===stageIdx&&W.cages[k];if(cg&&!cg.open){cg.open=true;cg.freeT=1.2;sfx.clink();
+   if(cg.vip&&!s.broforceRecruits[me].includes(cg.id)){s.broforceRecruits[me].push(cg.id);sfx.gold();banner={big:'NEW RECRUIT!',small:`${nameOf(cg.id).toUpperCase()} JOINS BOTH ROSTERS`,t:2.6,gold:true,id:cg.id};}
+   // the partner freed a prisoner while this bro was out: back in as that bro
+   if(rv&&P.out){P.out=false;P.dead=0;P.hp=2;P.lives=0;P.inv=2;setBro(cg.id);Object.assign(P,{x:cg.x,y:cg.y-2,vx:0,vy:-120});banner={big:'BACK IN!',small:`${nameOf(cg.id).toUpperCase()} · FREED BY ${s.players[them].name.toUpperCase()}`,t:2};}}}
+  if(e.fl){const [si,k]=e.fl,f=si===stageIdx&&W.flags[k];if(f&&!f.up){f.up=true;W.checkpoint={x:f.x,y:f.y};}}}
+ function netOut(){P.out=true;P.dead=0;banner={big:'OUT OF BROS',small:R?.net&&!R.out?`WATCHING ${s.players[them].name.toUpperCase()} · A FREED PRISONER BRINGS YOU BACK`:'MISSION OVER',t:2.6};
+  if(!R?.net||R.out||nf?.gone)netEnd('lives');}
+ // the mission is over on this phone: swap finals, then both score the same
+ async function netEnd(why){if(phase==='net-end'||phase==='end')return;phase='net-end';endT=0;P.why=why;
+  const mine={score:P.score,kills:P.kills,rescues:P.rescues,gold:P.gold,stages:P.stagesCleared,why,recruits:s.broforceRecruits[me].slice()};results[me]=mine;nf.finish(mine);
+  const o=await nf.remoteDone();if(!s.alive)return;results[them]=o||{score:R?.score||0,kills:R?.kills||0,rescues:0,gold:0,stages:R?.stagesCleared||0,why:'left',recruits:[]};
+  const a=results[0].score,b=results[1].score;winner=a===b?-2:a>b?0:1;phase='end';endT=0;if(winner>=0)s.react(winner,'win');jingle([523,659,784,1047,1319],{type:'square',vol:.035,step:.1});}
+ // player 1's phone picks the cages for all three stages: a GOLD cage holds someone locked for both players if possible
+ function pickNetCages(){const used=new Set(),both=vipPools[0].filter(id=>vipPools[1].includes(id)),any=[...new Set([...vipPools[0],...vipPools[1]])];
+  const others=[...new Set([...rosters[0],...rosters[1]])].filter(Boolean);if(!others.length)others.push(...s.players.map(p=>p.character));
+  return STAGES.map((S,si)=>{const rng=mulberry(seed+si*13+7);return S.cages.map(cg=>{if(cg.vip){const pool=(both.some(id=>!used.has(id))?both:any).filter(id=>!used.has(id));if(pool.length){const id=pool[Math.floor(rng()*pool.length)];used.add(id);return [id,1];}}return [others[Math.floor(rng()*others.length)],0];});});}
+ let bot=null;
+ if(net){nf=netField(s,{hz:20,pack:()=>P&&W?{p:packBro(P),w:packWorld(),si:stageIdx}:{},unpack:(i,d)=>{if(!d?.p)return;unpackBro(d.p);if(d.w){d.w.si=d.si;unpackWorld(d.w);}},onEvent:onNetEvent});}
  // ---------------------------------------------------------------- turns
  async function beginTurn(i){
+  // online: no hand-off; player 1's phone sends the cage line-up, then both start together
+  if(net){phase='handoff';clearInput();if(host){netCages=pickNetCages();ev({setup:{cages:netCages}});}
+   await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;
+   if(!host){if(!setupMsg)await new Promise(r=>{setupWait=r;});netCages=setupMsg?.cages||null;}
+   clock=0;acc=0;P=newPlayer(me);setBro(P.bro);R=newPlayer(them);R.net=null;R.si=-1;for(const m of MOODS)headCanvas(R.bro,m);
+   loadStage(0,false);P.x=W.S.spawn.x+(me?8:-8);P.y=W.S.spawn.y;P.inv=1.5;computeZoom();updateCamera(0,true);cd=new Countdown(3);phase='count';return;}
   phase='handoff';turn=i;clearInput();
   const n0=s.players[0].name;
   const desc=s.solo?`Mission ${soloCleared+1}: blast through all three stages of ${theme.op}. Kills, freed prisoners, checkpoints and fast clears score points; GOLD cages unlock new characters. Complete the mission to get a brand-new one.`:i===0?`You go first: blast through all three stages of ${theme.op}. Kills, freed prisoners, checkpoints and fast stage clears score points. Open the GOLD cage on each stage to unlock a new character. ${s.players[1].name} plays the same mission next.`
@@ -731,7 +883,8 @@ async function broforce(s){
   for(const cp of W.corpses)drawCorpse(cp);
   for(const e of W.foes)if(e.alive&&e.active)drawFoe(e,time);
   if(W.boss)drawBoss(W.boss,time);
-  if(!P.dead&&!P.boarded)drawBro(P,time);
+  if(net&&partnerHere()&&!R.dead&&!R.boarded&&!R.out)drawBro(R,time);
+  if(!P.dead&&!P.boarded&&!P.out)drawBro(P,time);
   drawHeli(W.heli,time);
   for(const n of W.nades)drawNade(n);
   for(const sh of W.shots)drawShot(sh);
@@ -900,7 +1053,8 @@ async function broforce(s){
   if(H.state==='away')return;g.save();g.translate(H.x,H.y);const tilt=H.state==='leave'?-.12:Math.sin(time*1.5)*.03;g.rotate(tilt);
   // rope ladder
   if(H.state!=='leave'||H.t<.6){g.strokeStyle='#c8b080';g.lineWidth=1;g.beginPath();g.moveTo(-12,10);g.lineTo(-12,5.5*T);g.moveTo(-4,10);g.lineTo(-4,5.5*T);g.stroke();for(let y=16;y<5.5*T;y+=7){g.beginPath();g.moveTo(-12,y);g.lineTo(-4,y);g.stroke();}}
-  if(P.boarded&&H.state==='leave'){drawHead(P.bro,'win',-8,2,13);}
+  if(P.boarded&&(H.state==='leave'||net)){drawHead(P.bro,'win',-8,2,13);}
+  if(net&&partnerHere()&&R.boarded)drawHead(R.bro,'win',P.boarded?4:-8,2,13);
   g.fillStyle='#3e4e2a';g.beginPath();g.ellipse(0,0,22,11,0,0,7);g.fill();g.fillRect(14,-5,34,6);g.fillStyle='#2e3a1e';g.fillRect(44,-12,4,14);
   g.fillStyle='#9fd0e8';g.beginPath();g.ellipse(-12,-2,9,7,0,Math.PI*.9,Math.PI*1.95);g.fill();g.fillStyle='#2a2a1a';g.fillRect(-16,9,30,2);g.fillRect(-12,7,2,4);g.fillRect(8,7,2,4);
   g.fillStyle='#fff';g.font='bold 5px Arial';g.textAlign='center';g.fillText('★',4,2);
@@ -912,8 +1066,8 @@ async function broforce(s){
  // ---------------------------------------------------------------- HUD
  function drawHUD(time){
   const u=clamp(Math.min(s.W/700,s.H/390),.62,1.5),size=Math.round(14*u),m=8*u;
-  // top-left: player head, name, score, lives, grenades
-  g.save();g.fillStyle='rgba(10,12,8,.55)';g.beginPath();g.roundRect?.(m,m,214*u,52*u,10*u);g.fill();
+  // top-left: player head, name, score, lives, grenades (online: below the duel chip)
+  g.save();if(net)g.translate(0,38);g.fillStyle='rgba(10,12,8,.55)';g.beginPath();g.roundRect?.(m,m,214*u,52*u,10*u);g.fill();
   drawHeadScreen(P.bro,P.boarded?'win':broMood(P),m+24*u,m+26*u,40*u);
   outlined(g,s.players[P.i].name.toUpperCase().slice(0,10),m+50*u,m+14*u,{size:Math.round(11*u),fill:PCOL[P.i],stroke:'#000',align:'left'});
   outlined(g,P.score.toLocaleString(),m+50*u,m+31*u,{size:Math.round(17*u),fill:'#fff',stroke:'#000',align:'left'});
@@ -926,9 +1080,16 @@ async function broforce(s){
   const bw=Math.min(s.W*.3,180*u),bx=s.W/2-bw/2,by=m+42*u;g.fillStyle='rgba(0,0,0,.45)';g.fillRect(bx,by,bw,4*u);
   g.fillStyle=PCOL[P.i];g.fillRect(bx,by,bw*clamp(P.x/(W.W*T),0,1),4*u);
   for(const cg of W.cages){g.fillStyle=cg.open?'#555':cg.vip?'#ffd84a':'#9cf';g.fillRect(bx+bw*cg.x/(W.W*T)-1.5*u,by-2*u,3*u,8*u);}
-  // P2 sees the number to beat
-  const rt=52;if(turn===1&&results[0])outlined(g,`BEAT ${s.players[0].name.toUpperCase().slice(0,9)}: ${results[0].score.toLocaleString()}`,s.W-m,rt+12*u,{size:Math.round(10*u),fill:PCOL[0],stroke:'#000',align:'right'});
-  if(s.broforceRecruits[P.i].length)outlined(g,`★ ${s.broforceRecruits[P.i].length} NEW RECRUIT${s.broforceRecruits[P.i].length>1?'S':''}`,s.W-m,rt+(turn===1?28:12)*u,{size:Math.round(10*u),fill:'#ffd84a',stroke:'#3a2400',align:'right'});
+  // online: the partner's line, the edge arrow, the chopper countdown and what this bro is waiting for
+  const rt=52;
+  if(net&&R){outlined(g,`${s.players[them].name.toUpperCase().slice(0,9)}: ${R.score.toLocaleString()}${R.out?' · OUT':` · BROS ×${R.lives+(R.dead?0:1)}`}`,s.W-m,rt+12*u,{size:Math.round(10*u),fill:PCOL[them],stroke:'#000',align:'right'});
+   if(partnerHere()&&!R.boarded&&!R.out&&!P.out){const sx=(R.x-cam.x)*Z,sy=(R.y-12-cam.y)*Z;partnerArrow(s,g,{x:0,y:-38,w:s.W,h:s.H},sx,sy-38,{player:them,color:PCOL[them],label:`${Math.round(Math.abs(R.x-P.x)/T)} m`,size:Math.round(16*u),top:62*u});}
+   const H=W.heli,first=Math.min(P.boarded&&W.boardT!=null?W.boardT:Infinity,W.rBoardT??Infinity);
+   if(phase==='play'&&H.state==='hover'&&first<Infinity){const left=Math.max(0,Math.ceil(first+NET_GRACE-clock));outlined(g,P.boarded?`WAITING FOR ${s.players[them].name.toUpperCase()} · ${left}`:`${s.players[them].name.toUpperCase()} IS AT THE CHOPPER · ${left}`,s.W/2,s.H*.24,{size:Math.round(13*u),fill:left<=3?'#ff5a3a':'#ffe23a',stroke:'#000'});}
+   if(phase==='net-wait'||phase==='net-end')outlined(g,`WAITING FOR ${s.players[them].name.toUpperCase()}…`,s.W/2,s.H*.24,{size:Math.round(14*u),fill:'#ffe23a',stroke:'#000'});
+   else if(P.out&&phase==='play')outlined(g,`OUT OF BROS · WATCHING ${s.players[them].name.toUpperCase()}`,s.W/2,s.H*.24,{size:Math.round(12*u),fill:'#fff',stroke:'#000'});}
+  if(turn===1&&results[0]&&!net)outlined(g,`BEAT ${s.players[0].name.toUpperCase().slice(0,9)}: ${results[0].score.toLocaleString()}`,s.W-m,rt+12*u,{size:Math.round(10*u),fill:PCOL[0],stroke:'#000',align:'right'});
+  if(s.broforceRecruits[P.i].length)outlined(g,`★ ${s.broforceRecruits[P.i].length} NEW RECRUIT${s.broforceRecruits[P.i].length>1?'S':''}`,s.W-m,rt+(turn===1||net?28:12)*u,{size:Math.round(10*u),fill:'#ffd84a',stroke:'#3a2400',align:'right'});
   // boss bar
   const B=W.boss;if(B&&B.alive&&B.state!=='wait'){const w=Math.min(s.W*.6,420*u),x=s.W/2-w/2,y=s.H-(touchUI?118:40)*u;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(x-3,y-3,w+6,14*u+6);g.fillStyle='#4a0a0a';g.fillRect(x,y,w,14*u);g.fillStyle='#e8281a';g.fillRect(x,y,w*B.hp/B.max,14*u);outlined(g,'THE DEVIL',s.W/2,y+7*u,{size:Math.round(9*u),fill:'#fff',stroke:'#000'});}
   // banners
@@ -952,8 +1113,8 @@ async function broforce(s){
   outlined(g,'BROFORCE',s.W/2,s.H*.27,{size:sz,fill:'#fff',stroke:'#8a0a0a',lw:sz*.16});
   outlined(g,theme.op,s.W/2,s.H*.27+sz*.75,{size:Math.round(sz*.3),fill:'#ffd23a',stroke:'#000'});
   for(let i=0;i<2;i++){const cx=s.W/2+(i?1:-1)*Math.min(s.W*.2,150),cy=s.H*.6;drawHeadScreen(s.players[i].character,'win',cx,cy,sz*1.3);outlined(g,s.players[i].name.toUpperCase().slice(0,12),cx,cy+sz*.9,{size:Math.round(sz*.3),fill:PCOL[i],stroke:'#000'});}
-  outlined(g,'VS',s.W/2,s.H*.6,{size:Math.round(sz*.45),fill:'#fff',stroke:'#000'});
-  outlined(g,'3 STAGES · TAKE TURNS · HIGHEST SCORE WINS',s.W/2,s.H*.82,{size:Math.round(Math.min(sz*.26,s.W*.032)),fill:'#fff',stroke:'#000'});
+  outlined(g,net?'&':'VS',s.W/2,s.H*.6,{size:Math.round(sz*.45),fill:'#fff',stroke:'#000'});
+  outlined(g,net?'3 STAGES · CO-OP · HIGHEST SCORE WINS':'3 STAGES · TAKE TURNS · HIGHEST SCORE WINS',s.W/2,s.H*.82,{size:Math.round(Math.min(sz*.26,s.W*.032)),fill:'#fff',stroke:'#000'});
   outlined(g,'★ FREE THE GOLD CAGES TO UNLOCK NEW CHARACTERS ★',s.W/2,s.H*.82+sz*.4,{size:Math.round(Math.min(sz*.24,s.W*.03)),fill:'#ffd84a',stroke:'#000'});
   if(s.H>s.W)outlined(g,'↻ turn the phone sideways for a wider view',s.W/2,s.H*.93,{size:Math.round(s.W*.035),fill:'#9cf',stroke:'#000'});
   g.restore();
@@ -967,25 +1128,31 @@ async function broforce(s){
   hurt(){hurtPlayer(2,P.x+1);},mood(){return broMood(P);},head(id){return headCanvas(id);},renderFrom(url){return new Promise(r=>{const i=new Image();i.onload=()=>r(renderHead(i));i.onerror=()=>r(null);i.src=url;});},ids(){return require('src/characters.js').CHARACTERS.map(ch=>ch.id);},portrait(id){const u=require('src/assets.js').portraitURL(id,'normal');return String(u).slice(0,300);},get recruits(){return s.broforceRecruits;}};
 
  // ---------------------------------------------------------------- main loop
+ let flushT=0;
+ // online test bot: runs right firing, jumps when blocked, a grenade now and then
+ if(net)s.debug.bot=()=>{if(!bot){bot={t:0,stuck:0};return 'drive';}return '';};
  computeZoom();
  s.frame((dt,time)=>{
   if(!s.alive)return;computeZoom();
-  if(phase==='title'){titleT+=dt;g.fillStyle='#000';g.fillRect(0,0,s.W,s.H);drawTitle(titleT);if(titleT>2.75)beginTurn(0);return;}
+  if(phase==='title'){titleT+=dt;g.fillStyle='#000';g.fillRect(0,0,s.W,s.H);drawTitle(titleT);if(titleT>2.75&&phase==='title')beginTurn(net?me:0);return;}
   if(!P||!W){g.fillStyle='#000';g.fillRect(0,0,s.W,s.H);return;}
+  if(net&&netStarted){stepRemote(dt);flushT-=dt;if(flushT<=0){flushT=.05;netFlush();}nf.tick(dt);}
   if(phase==='count'||phase==='play')music();
   if(phase==='count'){updateCamera(dt);if(!cd.update(dt)){phase='play';clearInput();}}
-  else if(phase==='play'||phase==='turn-end'||phase==='end'){
+  else if(['play','turn-end','end','net-wait','net-end'].includes(phase)){
    if(!cd.done)cd.update(dt);acc+=dt;let steps=0;
    while(acc>=STEP&&steps<4){acc-=STEP;steps++;frames++;simT+=STEP;
     if(phase==='play'){clock+=STEP;stageT+=STEP;readInput();updatePlayer(STEP);P.comboT=Math.max(0,P.comboT-STEP);if(P.comboT<=0)P.combo=0;
-     const vw=viewW();for(const e of W.foes){if(!e.alive)continue;if(!e.active&&Math.abs(e.x-(cam.x+vw/2))<vw*.5+90)e.active=true;if(e.active)updateFoe(e,STEP);}
+     // online the enemies live on player 1's phone (woken near either bro); the other phone shows them
+     const vw=viewW();if(net&&!host)stepNetFoes(STEP);
+     else for(const e of W.foes){if(!e.alive)continue;if(!e.active&&(Math.abs(e.x-(cam.x+vw/2))<vw*.5+90||partnerHere()&&Math.abs(e.x-R.x)<vw*.5+90))e.active=true;if(e.active)updateFoe(e,STEP);}
      updateBoss(STEP);stepBullets(STEP);updateStage(STEP);
      if(clock>=TURN_TIME&&phase==='play'){banner={big:'TIME UP',small:'',t:2};endTurn('time');}}
     else{stepBullets(STEP);const H=W.heli;if(H.state==='leave'){H.t+=STEP;H.y-=STEP*(40+H.t*90);H.x+=STEP*(30+H.t*120);}}
     updateCamera(STEP);
    }
    if(steps===4)acc=0;
-   s.setScores(s.solo?[soloTotal+(phase==='turn-end'||phase==='play'?P.score:0),0]:[turn===0?P.score:results[0]?.score||0,turn===1?P.score:0]);
+   s.setScores(s.solo?[soloTotal+(phase==='turn-end'||phase==='play'?P.score:0),0]:net?[me?R.score:P.score,me?P.score:R.score]:[turn===0?P.score:results[0]?.score||0,turn===1?P.score:0]);
    if(phase==='turn-end'){endT+=dt;if(endT>3){if(s.solo){phase='handoff';soloAfter();return;}beginTurn(1);}}
    else if(phase==='end'){endT+=dt;if(endT>3.6){
     const a=results[0],b=results[1],n=s.players.map(p=>p.name);
