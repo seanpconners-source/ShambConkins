@@ -22,7 +22,7 @@ async function phone(tag){
  await p.addInitScript(h=>{try{localStorage.setItem('sc-net-host',h);}catch{}},HOST);
  // NETCOUNT=1: count what this phone sends to the room (messages and bytes), printed per game
  await p.addInitScript(()=>{const W=WebSocket.prototype,o=W.send;window.__wsc={n:0,b:0};W.send=function(d){window.__wsc.n++;window.__wsc.b+=d?.length||0;return o.call(this,d);};});
- await p.goto(url);await p.waitForSelector('.title-screen',{timeout:60000});await p.waitForFunction(()=>!document.getElementById('boot'));
+ await p.goto(url,{timeout:180000});await p.waitForSelector('.title-screen',{timeout:60000});await p.waitForFunction(()=>!document.getElementById('boot'));
  await p.evaluate(()=>{window.ShambConkins.store.profile.settings.reducedMotion=true;});
  return {p,errors,tag};
 }
@@ -56,6 +56,9 @@ for(const id of GAMES){
  check(ja.seed===jb.seed&&ja.me===0&&jb.me===1,`${id}: same seed, Sean plays seat 1 and Amber seat 2`);
  // LAG=lo-hi: every move this phone sends is held back lo..hi ms (in order, with jitter), like a slow phone network
  if(LAG)for(const ph of [A,B])await ph.p.evaluate(([lo,hi])=>{const ch=window.ShambConkins.store.session.online,orig=ch.send.bind(ch);let last=0;ch.send=m=>{const at=Math.max(last,performance.now()+lo+Math.random()*(hi-lo));last=at;setTimeout(()=>orig(m),at-performance.now());};},LAG);
+ // STALL=at:secs (e.g. 20:3): at `at` s into the game, hold back everything Sean's phone (STALL_WHO=Amber: Amber's) sends for
+ // `secs` s, then let it all through in order, like a network stall; both phones must agree again afterwards
+ const STALL=/^\d+(\.\d+)?:\d+(\.\d+)?$/.test(process.env.STALL||'')?process.env.STALL.split(':').map(Number):null,stallPh=process.env.STALL_WHO==='Amber'?B:A;let stalled=false;
  const t0=Date.now();let ra='',rb='',shot=false,counts={};
  const wc0=await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>({...window.__wsc}))));
  const limit=LIMIT*(id==='paddys-beer-pong'&&!process.env.LIMIT_S?1.75:1); // a full Beer Pong match runs to last call, ~4-5 min headless
@@ -64,7 +67,9 @@ for(const id of GAMES){
   if(!shot&&a.startsWith('play')&&b.startsWith('play')&&Date.now()-t0>=SHOT_S*1000){shot=true;
    // SHOT_JS: an expression run on Sean's phone (s = the session) just before the screenshots, e.g. to move a player away
    if(process.env.SHOT_JS){await A.p.evaluate(js=>{const s=window.ShambConkins.store.session;return new Function('s',js)(s);},process.env.SHOT_JS);await A.p.waitForTimeout(700);}
-   await A.p.screenshot({path:screenshotPath(`onn-${id}-sean.png`)});await B.p.screenshot({path:screenshotPath(`onn-${id}-amber.png`)});}
+   for(const [ph,n] of [[A,'sean'],[B,'amber']])await ph.p.screenshot({path:screenshotPath(`onn-${id}-${n}.png`),timeout:60000}).catch(e=>console.log(' screenshot failed',n,e.message.split('\n')[0]));}
+  if(STALL&&!stalled&&Date.now()-t0>=STALL[0]*1000){stalled=true;console.log(` stall: ${stallPh.tag}'s phone holds its messages for ${STALL[1]} s`);
+   await stallPh.p.evaluate(ms=>{const ch=window.ShambConkins.store.session?.online;if(!ch)return;const orig=ch.send,held=[];ch.send=m=>{held.push(m);};setTimeout(()=>{ch.send=orig;for(const m of held)orig(m);},ms);},STALL[1]*1000);}
   if(a.startsWith('result'))ra=a;if(b.startsWith('result'))rb=b;if(ra&&rb)break;
   // PROBE: an expression (s = the session) printed for both phones every PROBE_S (5) seconds, to watch a game's state
   if(process.env.PROBE&&Date.now()-(globalThis.__probeT||0)>(+process.env.PROBE_S||5)*1000){globalThis.__probeT=Date.now();
