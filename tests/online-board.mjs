@@ -19,10 +19,10 @@ async function phone(tag){
   const S=window.__netStat={n:0,b:0,max:0,by:{}},o=WebSocket.prototype.send;
   // window.__holdUntil: hold outgoing messages back until then (a network stall); window.__loseUntil: drop them (lost)
   const held=[];const flushHeld=()=>{while(held.length&&!(window.__holdUntil>Date.now())){const [ws,x]=held.shift();try{o.call(ws,x);}catch{}}if(held.length)setTimeout(flushHeld,100);};
-  WebSocket.prototype.send=function(x){if(x!=='ping'){if(window.__loseUntil>Date.now())return;if(window.__holdUntil>Date.now()||held.length){held.push([this,x]);if(held.length===1)setTimeout(flushHeld,100);return;}}try{const s=String(x);if(s!=='ping'){S.n++;S.b+=s.length;S.max=Math.max(S.max,s.length);const m=/"k":"(\w+)"(?:,"t":"([\w-]+)")?/.exec(s),k=m?m[1]+(m[2]?':'+m[2]:''):'other',e=S.by[k]||=[0,0];e[0]++;e[1]+=s.length;}}catch{}return o.call(this,x);};
+  WebSocket.prototype.send=function(x){if(x!=='ping'){if(window.__loseUntil>Date.now())return;if(window.__holdUntil>Date.now()||held.length){held.push([this,x]);if(held.length===1)setTimeout(flushHeld,100);return;}}try{const s=String(x);if(s!=='ping'){S.n++;S.b+=s.length;S.max=Math.max(S.max,s.length);const m=/"k":"(\w+)"(?:,"t":"([\w-]+)")?/.exec(s),k=m?m[1]+(m[2]?':'+m[2]:''):'other',e=S.by[k]||=[0,0];e[0]++;e[1]+=s.length;if(d&&m&&m[1]!=='nb'&&m[1]!=='part')console.log('nb ws > '+s.slice(0,160));}}catch{}return o.call(this,x);};
  },[HOST,!!process.env.DEBUG]);
  const log=[];p.on('console',m=>{if(/^nb |error/i.test(m.text()))log.push(`${((Date.now()-T0)/1000).toFixed(1)} ${m.text()}`);});
- await p.goto(url);await p.waitForSelector('.title-screen',{timeout:60000});await p.waitForFunction(()=>!document.getElementById('boot'));
+ await p.goto(url,{timeout:180000});await p.waitForSelector('.title-screen',{timeout:60000});await p.waitForFunction(()=>!document.getElementById('boot'));
  await p.evaluate(()=>{const s=window.ShambConkins;s.pkmn?.auto?.(menu=>menu.kind==='party'?menu.list.findIndex(m=>m.hp>0):menu.kind==='yesno'?1:0);s.pkmn?.speed?.(8);s.store.profile.settings.reducedMotion=true;document.body.classList.add('reduced-motion');});
  return {p,errors,tag,stats:{},log};
 }
@@ -94,6 +94,9 @@ for(;;){
   for(let k=0;k<20&&JSON.stringify(x)!==JSON.stringify(y);k++){await A.p.waitForTimeout(200);const x2=await view(A);if(JSON.stringify(x2)!==JSON.stringify(x))break;y=await view(B);}
   if(JSON.stringify(x)===JSON.stringify(y))agree++;else if(JSON.stringify(x)===JSON.stringify(await view(A))){mismatches++;if(mismatches<4)console.log('mismatch',JSON.stringify(x),JSON.stringify(y));}}
  if(nextStall&&(await view(A))?.turn>=nextStall){const ph=stalls%2?B:A;stalls++;nextStall+=7;await ph.p.evaluate(([k])=>{window[k]=Date.now()+3000;},[STALL?'__holdUntil':'__loseUntil']);console.log(`${STALL?'stalled':'lost'} ${ph.tag}'s messages for 3 s at turn ${(await view(A)).turn}`);}
+ // DROPGAME=1: the guest's connection drops once while a board minigame's start card is open on its phone
+ if(process.env.DROPGAME&&!dropped&&await B.p.evaluate(()=>[...document.querySelectorAll('#dialog[open] button')].some(b=>/Start game/.test(b.innerText)&&!b.disabled))){
+  dropped=true;await B.p.evaluate(()=>window.ShambConkins.net.state().ws?.close());console.log('dropped the guest connection at a minigame start card');}
  if(DROP&&!dropped&&(await view(A))?.turn>=DROP&&await B.p.evaluate(()=>{const d=document.getElementById('dialog');return d.open&&!d.querySelector('.dialog-watch')||!!document.querySelector('[data-action="route-go"]:not([disabled])');})){
   dropped=true;await B.p.evaluate(()=>window.ShambConkins.net.state().ws?.close());console.log('dropped the guest connection');await A.p.screenshot({path:screenshotPath('onb-host-lost.png')});}
  // PAUSE=n: at turn n the host goes Home (the guest is told it's paused), waits 3 s, and continues the run
@@ -137,6 +140,7 @@ check(played(A.stats)>=1&&played(B.stats)>=1,`minigames were played on both phon
 if(process.env.PKMN)check([...(A.titles||[])].some(t=>/battle|Pokémon Center|team/.test(t)),'a Pokémon battle on Amber\'s turn ran on her phone (Sean\'s phone watched)');
 if(process.env.WARP)check(sawWarp,'the warp zone reached Amber\'s phone (both phones on the warp board)');
 if(STALL||LOSE)check(stalls>=2,`messages were ${STALL?'held back':'lost'} on both phones (${stalls} times)`);
+if(process.env.DROPGAME)check(dropped,'the guest connection was dropped at a minigame start card');
 if(DROP)check(dropped,'the guest connection was dropped once mid-decision');
 check(agree>=3&&mismatches===0,`both phones agree on players/turn when quiet (${agree} checks, ${mismatches} mismatches)`);
 check(await B.p.evaluate(()=>{try{const r=JSON.parse(localStorage.getItem('shambconkins-run-v20')||'null');return !r||!r.online;}catch{return true;}}),'the guest phone never saved the host\'s run');

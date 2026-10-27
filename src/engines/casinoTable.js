@@ -28,7 +28,9 @@ function tableNet(s){
   if(T.ref){if(!usable(el)||seatOf(el)===net.me)continue;run(el,m.v);net.send({t:k,v:m.v});}else if(el)run(el,m.v);}})();
  return T;
 }
-function casinoTap(s,button,action){const T=tableNet(s);if(T)button.__casino=action;const go=ev=>T?T.tap(button):void action(ev);
+// opts.relay false: a game with its own online moves (Uno) uses only the tap handling, not the table relay (a second reader
+// on s.online would swallow its moves).
+function casinoTap(s,button,action,opts={}){const T=opts.relay===false?null:tableNet(s);if(T)button.__casino=action;const go=ev=>T?T.tap(button):void action(ev);
  s.on(button,'pointerdown',ev=>{if(s.paused||!s.alive||button.disabled)return;ev.preventDefault();go(ev);});s.on(button,'click',ev=>{if(!ev.detail&&!ev.sourceCapabilities?.firesTouchEvents&&!s.paused&&s.alive&&!button.disabled)go(ev);});}
 // A select (roulette numbers): fn(value) runs on both phones, through the referee when online.
 function casinoChange(s,el,fn){const T=tableNet(s);if(T)el.__casino=fn;s.on(el,'change',ev=>{const v=ev.target.value;if(T)T.tap(el,v);else fn(v);});}

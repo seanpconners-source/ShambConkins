@@ -536,8 +536,20 @@ LAG=80-150 and their offline tests; real phones untested.
   pass and play until they say hello again); guest Home = "Leave" (`bye`), room line then offers "Rejoin". Host Home =
   `pause` (guest waits), Continue = `start` again; a restarted host rejoins `run.online.room` itself. Same VERSION needed.
   Tests: `tests/online-board.mjs` (TURNS, PKMN=1 wild battles, DROP=n drops the guest mid-decision, DEBUG=1 traces;
-  bots answer only what their phone may answer). Not yet tried on two real phones. Next: turn-based games online
-  (move relay through the CPU hooks), then real-time ones.
+  bots answer only what their phone may answer). Not yet tried on two real phones.
+  Oct 27 sync audit: `state` carries only changed run keys (`set`/`del`) and board patches (`bp`, per top-level key and
+  per node; board.rng changes used to resend the 90 KB board several times a turn); dialog pictures go as `sc-art:a|f:<key>`
+  (ART / FACE_ART, same build on both phones) or once as a hashed `sc-blob` the guest asks for ({t:'blobs'}); a 15-turn run
+  went from ~14 MB to ~2 MB. Guest-owned recruits are also kept in `run.online.gave` (applied on start/state, idempotent).
+  A guest that sees a numbering gap keeps sending `hello` every 3 s until a `start` arrives; `start` carries the host's
+  session id `sid` (a restarted host's question ids don't hit old cached answers); a guest in the board's own minigame takes
+  a `start` quietly. A dialog/battle/game sent while the guest's own Leave/settings/log dialog is open waits for it
+  (`afterLocal`, `localBusy` in netHooks). Test options: ROOM, STALL=n / LOSE=n (3 s held / lost messages, both phones in
+  turn), PAUSE=n (host Home + Continue), WARP=1, DEBUG_OUT=path (message logs), message counts per kind at the end.
+  Uno online was broken (both phones stuck after the first move): its buttons used `casinoTap`, which started the casino
+  table relay as a second reader on s.online and swallowed Uno's moves; `casinoTap(...,{relay:false})` now (uno.js).
+  Known limit: the host's profile decides what can be recruited for the guest's player (its rosters for both owners);
+  a character the host phone already lists for the guest's owner is never offered, even if the guest's phone lacks it.
 - **1-player board game vs CPU + Choose Characters (Oct 24, branch `ccr-47c456d6-mv2k8z`; kept apart from the online work):**
   Title screen CHOOSE CHARACTERS (`players` view = `setupHTML(...,{pickOnly:true})`): names + heads saved in
   `profile.settings.picks` {names,chars} (validated in profile.js; app.js falls back to the starter if a pick is locked),
