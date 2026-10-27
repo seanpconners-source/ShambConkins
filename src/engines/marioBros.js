@@ -11,14 +11,23 @@
 //  'race'  (smb-castle-dash) time trial through 1-1 to the flagpole.
 // Taking a Warp Zone pipe in 1-2 recruits a character the player has not unlocked yet (session.gameRecruits), then
 // the run continues in 1-3. The game takes the whole screen; Pause/Exit/full screen float in the corner.
+// Online (s.online) both phones play AT ONCE in one shared World 1, each following its own runner (P1 Mario, P2 Luigi),
+// the partner drawn from snapshots with an edge arrow when off screen. One world per stage (`stageWorld`) is kept on both
+// phones and changed by events: coins {cn}, tiles {tl}, block items {it} and pick-ups {ig}, enemy states {es}, Bowser {bd}/{ax}.
+// World 1 is co-op: a lost life brings you back next to your partner in a bubble; out of lives you watch them and come
+// back with 1 life on the next stage; the game ends when both are out or through 1-4. Reaching the flag (or the axe, or
+// the Warp Zone) {gl} gives the partner 10 s, then they are pulled along; both start the next stage together {sc}. Highest
+// score wins. Coin Rush = both in the same 60 s (coins taken vanish for both); Castle Dash = live race to the 1-1 flag.
 const {clamp}=require("src/utils.js");
 const {soloFinish,soloProgress}=require("src/solo.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,PCOL,settle}=require("src/engines/arenaKit.js");
+const {netField}=require("src/engines/netField.js");
+const {partnerArrow}=require("src/engines/partnerArrow.js");
 const {T,ROWS,TILE,SOLID,BACK,buildStage,STAGE_COUNT}=require("src/engines/smb/smbLevels.js");
 const A_=require("src/engines/smb/smbArt.js");
 const {C,nesText,textW}=A_;
 
-const STEP=1/60,LIVES=3,COIN_TIME=60,RACE_CAP=150;
+const STEP=1/60,LIVES=3,COIN_TIME=60,RACE_CAP=150,NET_GRACE=10,BUBBLE=120;
 // NES SMB1 movement in px/frame (sub-pixel values from the original game)
 const PH={minWalk:.07421875,walkAcc:.037109375,runAcc:.0556640625,rel:.05078125,skid:.1015625,walk:1.5625,run:2.5625,skidTurn:.5625,backFast:1.8125,maxFall:4.5,fallReset:4};
 const JUMP=[[1,-4,.125,.4375],[2.3125,-4,.1171875,.375],[Infinity,-5,.15625,.5625]];
@@ -38,10 +47,11 @@ function makeWorld(st){
 }
 function makePlayer(i){return {i,stage:0,area:'main',x:40,y:13*T,prevY:13*T,vx:0,vy:0,grounded:true,facing:1,big:false,fire:false,star:0,inv:0,coins:0,score:0,lives:LIVES,time:400,timeAcc:0,
  dead:0,deadKind:'',pipe:null,flag:null,tf:null,crouch:false,jumping:false,gHold:.125,gFall:.4375,jumpSpd:0,runT:0,anim:0,skidding:false,combo:0,ride:null,best:0,progress:0,
- finished:false,finishT:0,lap:0,deaths:0,inCastle:false,castleT:0,auto:false,checkOn:false,over:false,done:false,warped:false,flagged:false,axe:null,stagesCleared:0,fireworksDue:0,tally:null,idle:0};}
+ finished:false,finishT:0,lap:0,deaths:0,inCastle:false,castleT:0,auto:false,checkOn:false,over:false,done:false,warped:false,flagged:false,axe:null,stagesCleared:0,fireworksDue:0,tally:null,idle:0,bubble:0,out:false};}
 
 async function marioBros(s){
  const mode=['race','world'].includes(s.game.marioMode)?s.game.marioMode:'coins';
+ const net=s.online||null,me=net?net.me:0,them=1-me;
  const [c,g]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.updateScores();
  fullBleed(s);
  if(!await settle(s))return;
@@ -53,7 +63,10 @@ async function marioBros(s){
  const inputs=[0,1].map(()=>({l:0,r:0,d:0,jump:0,b:0,press:0,bPress:0}));
  const pads=[{stick:null,jump:null},{stick:null,jump:null}];
  const view={sc:1,w:256,h:240,band:0,fx:0};
- let phase='title',titleT=0,menuSel=0,twoPlayer=false,cardT=0,cardKind='world',warpMsg=null,clock=0,acc=0,endT=0,winner=-1,simT=0,frames=0,turn=0,gi=0,turnText='',endText='',top=0;
+ let phase='title',titleT=0,menuSel=0,twoPlayer=false,cardT=0,cardKind='world',warpMsg=null,clock=0,acc=0,endT=0,winner=-1,simT=0,frames=0,turn=net?me:0,gi=0,turnText='',endText='',top=0;
+ // online: one world per stage (and Coin Rush lap), kept for the whole game and changed by both phones' events
+ const sharedWorlds=new Map(),wkey=(stage,lap)=>stage*16+(mode==='coins'?Math.min(15,lap|0):0);
+ const stageWorld=(stage,lap)=>{const k=wkey(stage,lap);let w=sharedWorlds.get(k);if(!w){w=makeWorld(STAGES[stage]);w.key=k;sharedWorlds.set(k,w);}return w;};
  const flash=[0,0];
  // P1's run is recorded every play step and replayed as a ghost during P2's turn (not in the NES hand-off mode)
  const ghost=[],ghostAt=i=>i===1&&!twoPlayer&&gi<ghost.length?ghost[gi]:null;
@@ -88,7 +101,7 @@ async function marioBros(s){
   onUp:f=>{const pd=pads[f.owner];if(pd.jump===f)pd.jump=null;if(pd.stick===f){pd.stick=null;if(f.moved<10&&f.held<220)inputs[f.owner].bPress=1;}}});
  const readInput=i=>{const [k0,k1]=kb.state,st=pads[i].stick,inp=inputs[i];let l=k0.l||k1.l,r=k0.r||k1.r,d=k0.d||k1.d,jump=k0.u||k1.u,b=k0.fire||k1.fire;
   if(st){const dx=st.x-st.sx,dy=st.y-st.sy;if(dx>10)r=1;if(dx<-10)l=1;if(Math.abs(dx)>34)b=1;if(dy>20&&Math.abs(dx)<dy)d=1;if(st.data.flick)jump=1;}
-  if(pads[i].jump)jump=1;inp.l=l;inp.r=r;inp.d=d;inp.jump=jump;inp.b=b;};
+  if(pads[i].jump)jump=1;inp.l=l;inp.r=r;inp.d=d;inp.jump=jump;inp.b=b;if(bot&&i===me)botInput(inp);};
 
  // ---------------- sounds (original synth effects, no music)
  const sfx={
@@ -144,16 +157,16 @@ async function marioBros(s){
  }
 
  // ---------------- player events
- const hurt=(p,w)=>{if(p.inv>0||p.star>0||p.dead||p.tf||p.flag||p.inCastle||p.axe)return;
+ const hurt=(p,w)=>{if(p.inv>0||p.star>0||p.dead||p.tf||p.flag||p.inCastle||p.axe||p.bubble>0)return;
   if(p.big){note(p,'shrink');p.tf={t:0,to:'small',from:p.fire?'fire':'big'};p.big=false;p.fire=false;p.inv=120;sfx.shrink();s.react(p.i,'sad');}else kill(p,'hit');};
  const kill=(p,kind)=>{if(p.dead)return;note(p,kind);p.dead=1;p.deadKind=kind;p.deaths++;p.vx=0;p.vy=0;p.big=false;p.fire=false;p.star=0;p.tf=null;p.ride=null;p.crouch=false;sfx.die();s.react(p.i,'sad');};
  const grow=(p,to)=>{p.tf={t:0,to,from:p.fire?'fire':p.big?'big':'small'};p.big=true;if(to==='fire')p.fire=true;sfx.power();s.react(p.i,'happy');};
- const killFoe=(w,e,dir,p,n=100)=>{if(e.state==='dying')return;e.state='dying';e.vx=dir*1.1;e.vy=-3.4;e.active=true;if(p)addScore(p,w,n,e.x,e.y-16);sfx.kick();};
+ const killFoe=(w,e,dir,p,n=100)=>{if(e.state==='dying')return;e.state='dying';e.vx=dir*1.1;e.vy=-3.4;e.active=true;if(p)addScore(p,w,n,e.x,e.y-16);sfx.kick();if(p&&p.i===me)esync(w,e);};
 
  // put the runner at the stage start or the checkpoint (the NES restarts a life there with the stage rebuilt)
  function placeRunner(p,fresh){
   const st=stageOf(p),spot=p.checkOn?st.check:st.start;
-  if(fresh||!worlds[p.i]||worlds[p.i].st!==st)worlds[p.i]=makeWorld(st);
+  if(net)worlds[p.i]=stageWorld(p.stage,p.lap);else if(fresh||!worlds[p.i]||worlds[p.i].st!==st)worlds[p.i]=makeWorld(st);
   Object.assign(p,{area:spot.area,x:spot.x,y:spot.y,prevY:spot.y,vx:0,vy:0,grounded:true,dead:0,deadKind:'',pipe:null,flag:null,tf:null,crouch:false,jumping:false,inv:0,star:0,skidding:false,combo:0,ride:null,
    inCastle:false,castleT:0,auto:!!spot.auto,flagged:false,axe:null,tally:null,runT:0,facing:1});
   if(mode==='world')p.time=st.time;
@@ -171,18 +184,18 @@ async function marioBros(s){
    let spent=true;
    if(what==='coin'||what==='multi'||!what){gainCoin(p,w);w.pops.push({x:cc*T+8,y:r*T-8,vy:-5,t:0,area:an});
     if(what==='multi'){const m=w.multi.get(key)||{n:0,t:simT};m.n++;w.multi.set(key,m);spent=m.n>=10||simT-m.t>4;}}
-   else if(what==='power'){w.items.push({type:p.big?'flower':'mushroom',x:cc*T+8,y:r*T,emerge:16,vx:0,vy:0,area:an});sfx.sprout();}
-   else if(what==='star'||what==='1up'){w.items.push({type:what,x:cc*T+8,y:r*T,emerge:16,vx:0,vy:0,area:an});sfx.sprout();}
-   if(spent){setTile(w,an,cc,r,TILE.USED);a.content.delete(idx);}
+   else if(what==='power'||what==='star'||what==='1up'){const it={type:what==='power'?(p.big?'flower':'mushroom'):what,x:cc*T+8,y:r*T,emerge:16,vx:0,vy:0,area:an,id:`${me}.${itemSeq++}`};w.items.push(it);sfx.sprout();
+    if(net)ev({it:[w.key,an,it.id,it.type,it.x,it.y]});}
+   if(spent){setTile(w,an,cc,r,TILE.USED);a.content.delete(idx);if(net)ev({tl:[w.key,an,idx,TILE.USED]});}
    w.bumps.set(key,0);
   }else if(t===TILE.BRICK){
-   if(p.big){setTile(w,an,cc,r,0);w.bumps.delete(key);for(const [dx,dy] of [[-1,-1],[1,-1],[-1,0],[1,0]])w.debris.push({x:cc*T+8+dx*4,y:r*T+8+dy*4,vx:dx*1.2,vy:-4.5-(dy?0:-1.5),t:0,area:an});addScore(p,w,50);sfx.brk();}
+   if(p.big){setTile(w,an,cc,r,0);w.bumps.delete(key);if(net)ev({tl:[w.key,an,idx,0]});for(const [dx,dy] of [[-1,-1],[1,-1],[-1,0],[1,0]])w.debris.push({x:cc*T+8+dx*4,y:r*T+8+dy*4,vx:dx*1.2,vy:-4.5-(dy?0:-1.5),t:0,area:an});addScore(p,w,50);sfx.brk();}
    else{w.bumps.set(key,0);sfx.bump();}
   }else{sfx.bump();return;}
   // whatever stands on a bumped block gets knocked
   for(const e of a.enemies)if(e.alive&&e.state!=='dying'&&e.type!=='piranha'&&Math.abs(e.y-r*T)<2&&Math.abs(e.x-(cc*T+8))<14)killFoe(w,e,e.x<cc*T+8?-1:1,p,100);
   for(const it of w.items)if(it.area===an&&!it.emerge&&Math.abs(it.y-r*T)<2&&Math.abs(it.x-(cc*T+8))<14){it.vy=-3.5;if(it.type!=='flower')it.vx=it.x<cc*T+8?-1:1;}
-  a.def.coins.forEach((q,k)=>{if(!a.got[k]&&Math.abs(q.x-(cc*T+8))<4&&Math.abs(q.y-(r*T-8))<4){a.got[k]=1;gainCoin(p,w);w.pops.push({x:q.x,y:q.y,vy:-4,t:0,area:an});}});
+  a.def.coins.forEach((q,k)=>{if(!a.got[k]&&Math.abs(q.x-(cc*T+8))<4&&Math.abs(q.y-(r*T-8))<4){a.got[k]=1;if(net)ev({cn:[w.key,an,k]});gainCoin(p,w);w.pops.push({x:q.x,y:q.y,vy:-4,t:0,area:an});}});
  }
 
  // ---------------- the runner
@@ -190,6 +203,9 @@ async function marioBros(s){
   const press=inp.press,bPress=inp.bPress;inp.press=0;inp.bPress=0;
   p.prevY=p.y;
   if(p.inCastle){p.castleT++;return;}
+  // online: back from a lost life in a bubble that floats after the partner; jump (or time) pops it
+  if(p.bubble>0){p.bubble--;const q=pl[them];if(partnerIn(w,p.area)){p.x+=(q.x-p.x)*.06;p.y+=(q.y-30-p.y)*.06;}p.y=Math.min(p.y,(ROWS-3)*T);p.vx=0;p.vy=0;p.grounded=false;p.anim+=.05;
+   if(press&&p.bubble<BUBBLE-30)p.bubble=0;if(p.bubble===0){p.inv=60;p.jumpSpd=0;sfx.kick();}return;}
   if(p.dead){p.dead++;if(p.deadKind==='pit'||p.deadKind==='lava'){if(p.dead>150)deathDone(p);return;}if(p.dead<30)return;if(p.dead===30)p.vy=-4.4;p.vy=Math.min(p.vy+.2,5);p.y+=p.vy;if(p.dead>190)deathDone(p);return;}
   if(p.tf){p.tf.t++;if(p.tf.t>=48)p.tf=null;return;}
   if(p.pipe){stepPipe(p,w);return;}
@@ -261,9 +277,10 @@ async function marioBros(s){
    p.flag={t:0,phase:'slide'};p.flagged=true;p.x=f.x-6;p.vx=0;p.vy=0;p.facing=1;p.crouch=false;p.ride=null;addScore(p,w,pts,f.x+14,p.y-30);sfx.flag();note(p,'flag');
    p.fireworksDue=mode==='world'&&[1,3,6].includes(p.time%10)?p.time%10:0;
    if(mode==='race'&&!p.finished){p.finished=true;p.finishT=clock;s.react(p.i,'win');}
+   goalReached(p);
   }
   // the axe behind Bowser
-  if(def.axe&&!p.axe&&Math.abs(p.x-def.axe.x)<12&&p.y>def.axe.y-8&&p.y-h<def.axe.y+8){p.axe={t:0,phase:'bridge',next:def.bridge.c1};p.vx=0;p.vy=0;p.ride=null;p.grounded=true;p.y=Math.min(p.y,def.bridge.r*T);note(p,'axe');}
+  if(def.axe&&!p.axe&&Math.abs(p.x-def.axe.x)<12&&p.y>def.axe.y-8&&p.y-h<def.axe.y+8){p.axe={t:0,phase:'bridge',next:def.bridge.c1};p.vx=0;p.vy=0;p.ride=null;p.grounded=true;p.y=Math.min(p.y,def.bridge.r*T);note(p,'axe');if(net)ev({ax:[w.key,p.area]});goalReached(p);}
   // walk into the castle door
   if(p.auto&&def.castle&&p.flagged&&p.x>=def.castle.door){p.inCastle=true;p.castleT=0;p.auto=false;p.vx=0;sfx.clear();p.tally={phase:mode==='world'?'time':'flag',t:0};}
  }
@@ -298,9 +315,9 @@ async function marioBros(s){
  // ---------------- per-player interactions (coins, enemies, items, hazards)
  function hits(p,x0,y0,x1,y1){const h=pH(p);return p.x+HW>x0&&p.x-HW<x1&&p.y>y0&&p.y-h<y1;}
  function interact(p,w,inp){
-  if(p.dead||p.pipe||p.tf||p.inCastle||p.axe)return;
+  if(p.dead||p.pipe||p.tf||p.inCastle||p.axe||p.bubble>0||p.out)return;
   const a=AR(w,p.area),def=a.def,h=pH(p),topY=p.y-h,list=def.coins,got=a.got;
-  for(let k=0;k<list.length;k++){const q=list[k];if(!got[k]&&Math.abs(q.x-p.x)<11&&q.y>topY-5&&q.y<p.y+5){got[k]=1;gainCoin(p,w);}}
+  for(let k=0;k<list.length;k++){const q=list[k];if(!got[k]&&Math.abs(q.x-p.x)<11&&q.y>topY-5&&q.y<p.y+5){got[k]=1;if(net)ev({cn:[w.key,p.area,k]});gainCoin(p,w);}}
   if(p.flag)return;
   for(const e of a.enemies){
    if(!e.alive||!e.active||e.state==='dying'||e.state==='squash')continue;
@@ -317,14 +334,15 @@ async function marioBros(s){
     else if(e.state==='walk'){e.state='shell';e.vx=0;e.t=0;}
     else if(e.vx!==0){e.vx=0;e.t=0;}
     else{e.vx=p.x<e.x?3:-3;e.grace=10;e.chain=0;sfx.kick();}
+    e.remote=false;esync(w,e);
     p.y=Math.min(p.y,eTop);p.vy=-4;p.jumping=!!inp.jump;p.grounded=false;p.ride=null;continue;
    }
-   if(e.state==='shell'&&e.vx===0){e.vx=p.x<e.x?3:-3;e.grace=12;e.t=0;e.chain=0;sfx.kick();addScore(p,w,400,e.x,eTop-6);continue;}
+   if(e.state==='shell'&&e.vx===0){e.vx=p.x<e.x?3:-3;e.grace=12;e.t=0;e.chain=0;sfx.kick();addScore(p,w,400,e.x,eTop-6);e.remote=false;esync(w,e);continue;}
    if(e.state==='shell'&&e.grace>0)continue;
    hurt(p,w);
   }
   for(let k=w.items.length-1;k>=0;k--){const it=w.items[k];if(it.area!==p.area||it.emerge>8)continue;
-   if(Math.abs(it.x-p.x)<13&&it.y>topY-2&&it.y-14<p.y){w.items.splice(k,1);
+   if(Math.abs(it.x-p.x)<13&&it.y>topY-2&&it.y-14<p.y){w.items.splice(k,1);if(net&&it.id)ev({ig:[w.key,it.id]});
     if(it.type==='1up'){oneUp(p,w,it.x,it.y-18);continue;}
     addScore(p,w,1000,it.x,it.y-18);
     if(it.type==='mushroom'){if(!p.big)grow(p,'big');else sfx.power();}
@@ -332,7 +350,7 @@ async function marioBros(s){
     else{p.star=600;sfx.star();s.react(p.i,'happy');}}}
   // firebars, Bowser and his flames
   for(const fb of def.firebars){const ang=fbAngle(fb,a);for(let k=0;k<fb.n;k++){const bx=fb.x+Math.cos(ang)*k*8,by=fb.y+Math.sin(ang)*k*8;if(hits(p,bx-3,by-3,bx+3,by+3)){hurt(p,w);break;}}}
-  const b=a.bowser;if(b&&b.state!=='dead'&&b.state!=='fall'&&hits(p,b.x-12,b.y-30,b.x+12,b.y)){if(p.star>0){b.state='dead';b.vy=-3;addScore(p,w,5000,b.x,b.y-40);}else hurt(p,w);}
+  const b=a.bowser;if(b&&b.state!=='dead'&&b.state!=='fall'&&hits(p,b.x-12,b.y-30,b.x+12,b.y)){if(p.star>0){b.state='dead';b.vy=-3;addScore(p,w,5000,b.x,b.y-40);if(net)ev({bd:[w.key,p.area,0]});}else hurt(p,w);}
   for(const f of w.flames)if(f.area===p.area&&hits(p,f.x-10,f.y-3,f.x+14,f.y+3))hurt(p,w);
  }
  const fbAngle=(fb,a)=>{const step=Math.PI*2/32,raw=a.fbT*.04*fb.dir+(fb.c*.7);return Math.floor(raw/step)*step;};
@@ -348,8 +366,9 @@ async function marioBros(s){
    l.dx=l.x-ox;l.dy=l.wrapped?0:l.y-oy;}
   for(const e of a.enemies){
    if(!e.alive)continue;
-   if(!e.active){if(e.x<cam.x+view.w+24)e.active=true;else continue;}
-   if(e.x<cam.x-96||e.y>ROWS*T+48){e.alive=false;continue;}
+   // online the partner's view wakes enemies too, and an enemy is dropped only once it is behind both runners
+   if(!e.active){if(e.x<reachX(cam,w,an)+view.w+24)e.active=true;else continue;}
+   if(e.x<backX(cam,w,an)-96||e.y>ROWS*T+48){e.alive=false;continue;}
    e.frame+=STEP;
    if(e.state==='dying'){e.vy+=.25;e.x+=e.vx;e.y+=e.vy;continue;}
    if(e.state==='squash'){e.t++;if(e.t>30)e.alive=false;continue;}
@@ -367,8 +386,10 @@ async function marioBros(s){
    if(isLava(tileAt(w,an,Math.floor(e.x/T),Math.floor((e.y-4)/T))))e.alive=false;
    if(e.state==='shell'){if(e.grace>0)e.grace--;
     if(e.vx===0){e.t++;if(e.t>480){e.state='walk';e.vx=p.x<e.x?-.5:.5;}}
-    else{if(e.x>cam.x+view.w+48){e.alive=false;continue;}
-     for(const o of a.enemies)if(o!==e&&o.alive&&o.active&&o.state!=='dying'&&o.state!=='squash'&&Math.abs(o.x-e.x)<14&&(o.type==='piranha'?o.off>4&&e.y>o.home-o.off&&e.y-14<o.home:Math.abs(o.y-e.y)<16)){e.chain=(e.chain||0)+1;if(e.chain>7){killFoe(w,o,Math.sign(e.vx),null);oneUp(p,w,o.x,o.y-16);}else killFoe(w,o,Math.sign(e.vx),p,SHELL_CHAIN[e.chain-1]);}}}
+    else{if(e.x>reachX(cam,w,an)+view.w+48){e.alive=false;continue;}
+     // a shell the partner kicked knocks enemies over here too, but the points are theirs
+     const kp=e.remote?null:p;
+     for(const o of a.enemies)if(o!==e&&o.alive&&o.active&&o.state!=='dying'&&o.state!=='squash'&&Math.abs(o.x-e.x)<14&&(o.type==='piranha'?o.off>4&&e.y>o.home-o.off&&e.y-14<o.home:Math.abs(o.y-e.y)<16)){e.chain=(e.chain||0)+1;if(e.chain>7){killFoe(w,o,Math.sign(e.vx),null);if(kp)oneUp(p,w,o.x,o.y-16);}else killFoe(w,o,Math.sign(e.vx),kp,SHELL_CHAIN[e.chain-1]);}}}
   }
   // walkers turn round when they meet
   const ws=a.enemies.filter(e=>e.alive&&e.active&&e.state==='walk'&&e.type!=='piranha'&&e.type!=='paraRed');
@@ -378,14 +399,14 @@ async function marioBros(s){
    if(it.emerge>0){it.y-=.5;it.emerge-=.5;if(it.emerge<=0){it.emerge=0;if(it.type==='mushroom'||it.type==='1up')it.vx=1;if(it.type==='star'){it.vx=1.2;it.vy=-4;}}continue;}
    if(it.type==='flower')continue;
    const res=moveBody(it,w,an,6,14,it.type==='star'?.2:.25);if(res.wall)it.vx=-it.vx;if(it.type==='star'&&res.landed)it.vy=-4.5;
-   if(it.y>ROWS*T+32||it.x<cam.x-64)w.items.splice(k,1);}
+   if(it.y>ROWS*T+32||it.x<backX(cam,w,an)-64)w.items.splice(k,1);}
   // fireballs
   for(let k=w.fire.length-1;k>=0;k--){const f=w.fire[k];if(f.area!==an){w.fire.splice(k,1);continue;}f.t++;f.x+=f.vx;f.vy=Math.min(f.vy+.3125,3);f.y+=f.vy;let gone=false;
    if(solidAt(w,an,f.x,f.y+4)&&f.vy>0){f.y=Math.floor((f.y+4)/T)*T-4;f.vy=-3;}
    if(solidAt(w,an,f.x+Math.sign(f.vx)*4,f.y))gone=true;
    for(const e of a.enemies){if(gone||!e.alive||!e.active||e.state==='dying'||e.state==='squash')continue;const eTop=e.type==='piranha'?e.home-e.off:e.y-(e.state==='walk'&&e.type!=='goomba'?22:14),eBot=e.type==='piranha'?e.home:e.y;
     if(e.type==='piranha'&&e.off<4)continue;if(Math.abs(f.x-e.x)<10&&f.y>eTop-4&&f.y<eBot+4){killFoe(w,e,Math.sign(f.vx),p,200);gone=true;}}
-   const b=a.bowser;if(!gone&&b&&(b.state==='idle')&&Math.abs(f.x-b.x)<14&&f.y>b.y-32&&f.y<b.y){gone=true;b.hp--;sfx.bump();if(b.hp<=0){b.state='dead';b.fake=true;b.vy=-3;addScore(p,w,5000,b.x,b.y-40);sfx.bowserFall();}}
+   const b=a.bowser;if(!gone&&b&&(b.state==='idle')&&Math.abs(f.x-b.x)<14&&f.y>b.y-32&&f.y<b.y){gone=true;b.hp--;sfx.bump();if(b.hp<=0){b.state='dead';b.fake=true;b.vy=-3;addScore(p,w,5000,b.x,b.y-40);sfx.bowserFall();if(net)ev({bd:[w.key,an,1]});}}
    if(gone){w.fx.burst(f.x,f.y,{n:6,colors:['#fff','#fc9838','#d82800'],speed:60,life:.25,size:1.6});}
    if(gone||f.x<cam.x-16||f.x>cam.x+view.w+16||f.y>ROWS*T+16||f.t>300)w.fire.splice(k,1);}
   stepBowser(w,p,a);
@@ -425,6 +446,7 @@ async function marioBros(s){
  function stageClear(p){
   p.stagesCleared++;note(p,'clear '+(p.stage+1));
   if(mode==='race'){p.inCastle=true;return;}
+  if(net&&mode==='world'){netStageDone(p,p.stage>=lastStage?-1:p.stage+1);return;}
   if(p.stage>=lastStage){
    if(mode==='world'&&!s.solo){p.done=true;p.stage=lastStage;advanceTurn();return;}
    p.lap++;p.stage=0;
@@ -433,7 +455,7 @@ async function marioBros(s){
  }
  // the Warp Zone: somebody you have not unlocked yet was hiding in the pipe; then on to 1-3
  function warpFound(p,n){
-  p.warped=true;let id=null;
+  p.warped=true;let id=null;goalReached(p);
   if(!s.gameRecruits[p.i].length){const pool=recruitPools[p.i].filter(c=>!s.gameRecruits[0].includes(c)&&!s.gameRecruits[1].includes(c));if(pool.length){id=pool[Math.floor(Math.random()*pool.length)];s.gameRecruits[p.i].push(id);s.react(p.i,'win');}}
   warpMsg={i:p.i,world:n,id,name:id?charName(id):null,t:0};phase='warp';sfx.warp();note(p,'warp zone '+n+' '+(id||'-'));
  }
@@ -474,6 +496,8 @@ async function marioBros(s){
   const frame=Math.floor(p.anim)%3;
   g.save();g.scale(f,1);body(big,pose,frame);if(p.throwT>0&&pose!=='crouch'){if(big){R(pal.shirt,4,-21,6,3);R(C.skin,10,-21,2,3);}else{R(pal.shirt,3,-10,5,2);R(C.skin,8,-10,2,2);}}g.restore();
   head(big,p.finished||p.inCastle||p.axe?'win':p.star>0||run>2.3?'happy':'normal',crouch?1:0,f);
+  // online: the bubble a lost life comes back in
+  if(p.bubble>0){const r=big?24:17,cy=big?-20:-14,wob=Math.sin(simT*5)*1.2;g.globalAlpha=.85;g.fillStyle='rgba(160,220,255,.22)';g.strokeStyle='#bfe8ff';g.lineWidth=1.5;g.beginPath();g.ellipse(0,cy,r+wob,r-wob,0,0,7);g.fill();g.stroke();g.fillStyle='rgba(255,255,255,.75)';g.beginPath();g.ellipse(-r*.45,cy-r*.5,r*.22,r*.12,-.6,0,7);g.fill();}
   g.restore();
   function R(col,X,Y,W,H){g.fillStyle=col;g.fillRect(X,Y,W,H);}
   function body(bg,pose,fr){
@@ -524,7 +548,8 @@ async function marioBros(s){
   // runners sit behind the tiles: a head that pokes into a block or a pipe disappears into it
   const o=ghostAt(i);
   if(o&&o.stage===p.stage&&o.area===an&&!o.inCastle&&o.x>x0-20&&o.x<x1+20)drawRunner(o,.42);
-  if(!p.inCastle)drawRunner(p);
+  if(partnerIn(w,an)&&pl[them].x>x0-20&&pl[them].x<x1+20)drawRunner(pl[them]);
+  if(!p.inCastle&&!p.out)drawRunner(p);
   drawTiles(w,an,x0,x1,y0,y1,false);
   if(def.axe&&!pl[i].axe)A_.drawAxe(g,def.axe.x,def.axe.y,simT);
   if(def.toad)A_.drawToad(g,def.toad.x,def.toad.y);
@@ -557,8 +582,13 @@ async function marioBros(s){
   nesText(g,'TIME',fx+200,y);
   if(time){const t=mode==='world'?String(p.time).padStart(3,'0'):mode==='coins'?String(Math.ceil(Math.max(0,COIN_TIME-clock))).padStart(3,'0'):String(Math.floor(p.finished?p.finishT:clock)).padStart(3,'0');
    nesText(g,t,fx+208,y+8,mode==='coins'&&COIN_TIME-clock<10&&(frames>>4)%2?'#fc7460':'#fcfcfc');}
+  // online: the partner's line under the bar (and where they are when it isn't here)
+  if(net&&phase!=='title'){const q=pl[them],n1=s.players[them].name.toUpperCase().replace(/[^A-Z0-9 ]/g,'').slice(0,8)||(them?'LUIGI':'MARIO');
+   const val=mode==='coins'?`×${String(q.coins).padStart(2,'0')}`:mode==='race'?(q.finished?fmtRace(q.finishT):`${prog(q)}%`):`${String(q.score).padStart(6,'0')} ×${q.lives}`;
+   const where=q.out?' OUT':q.done?' DONE':q.stage!==p.stage?` ${STAGES[q.stage]?.name||''}`:q.area!==p.area&&!p.out?(q.area==='main'?' ▲':' ▼'):'';
+   nesText(g,`${n1} ${val}${where}`,fx+24,y+20,them?'#9cfc88':'#fcbcb0');}
   // P2's target from P1's turn (not part of the NES bar; shown under it)
-  if(i===1&&!twoPlayer&&phase!=='title'){const q=pl[0],n0=s.players[0].name.toUpperCase().replace(/[^A-Z0-9 ]/g,'').slice(0,8);
+  if(i===1&&!twoPlayer&&phase!=='title'&&!net){const q=pl[0],n0=s.players[0].name.toUpperCase().replace(/[^A-Z0-9 ]/g,'').slice(0,8);
    const goal=mode==='coins'?`${q.coins} COINS`:mode==='race'?(q.finished?fmtRace(q.finishT):'---'):String(q.score).padStart(6,'0');
    nesText(g,`TO BEAT ${n0} ${goal}`,fx+24,y+20,'#fcbcb0');}
  }
@@ -568,8 +598,8 @@ async function marioBros(s){
   g.save();g.translate(fx,0);
   drawWorld(0);if(!s.solo)drawRunner({...pl[1],x:64,y:13*T});
   A_.drawLogo(g,40,32);
-  nesText(g,'1 PLAYER GAME',88,144);if(!s.solo)nesText(g,'2 PLAYER GAME',88,160);
-  const my=s.solo?144:mode==='world'?(menuSel?160:144):160;g.save();g.translate(80,my+8);A_.drawItem(g,{type:'mushroom',x:0,y:0},0);g.restore();
+  nesText(g,net?'2 PLAYER ONLINE':'1 PLAYER GAME',88,144);if(!s.solo&&!net)nesText(g,'2 PLAYER GAME',88,160);
+  const my=s.solo||net?144:mode==='world'?(menuSel?160:144):160;g.save();g.translate(80,my+8);A_.drawItem(g,{type:'mushroom',x:0,y:0},0);g.restore();
   nesText(g,'TOP- '+String(top).padStart(6,'0'),96,184);
   g.restore();
  }
@@ -605,7 +635,7 @@ async function marioBros(s){
   else{g.globalAlpha=.16*a;const r=Math.min(s.H*.12,44*u+6),sx=pad*1.6+r,sy=s.H-r-pad*1.6;g.beginPath();g.arc(sx,sy,r,0,7);g.stroke();g.globalAlpha=.45*a;outlined(g,pl[i].fire?'◀ ▶ · TAP 🔥':'◀  ▶',sx,sy,{size:Math.round(r*.32),fill:'#fff',stroke:'#000'});}
   g.restore();
  }
- const hudY=()=>view.band>40?Math.round(-view.band+48/view.sc):16;
+ const hudY=()=>(view.band>40?Math.round(-view.band+48/view.sc):16)+(net?Math.ceil(24/view.sc):0);   // online: clear of the duel chip
  function layoutView(){const sc=Math.min(s.W/256,s.H/240);view.sc=sc;view.w=s.W/sc;view.h=s.H/sc;view.band=view.h>240?Math.round((view.h-240)*.55):0;view.fx=Math.floor((view.w-256)/2);}
 
  // ---------------- flow: title → hand-off → WORLD card → play → (death / clear / warp) … → results
@@ -617,8 +647,10 @@ async function marioBros(s){
   if(!soloOk)return soloFinish(s,soloTotal,soloCleared,mode==='coins'?`World 1 Coin Rush solo: ${soloCleared} round${soloCleared===1?'':'s'} beaten; ${p.coins}/${coinGoal()} coins on the last.`:`World 1-1 Castle Dash solo: ${soloCleared} dash${soloCleared===1?'':'es'} in time; last run ${score(p)}.`);
   soloCleared++;soloProgress(s,soloTotal,soloCleared,mode==='coins'?`World 1 Coin Rush solo: ${soloCleared} round${soloCleared===1?'':'s'} beaten.`:`World 1-1 Castle Dash solo: ${soloCleared} dash${soloCleared===1?'':'es'} in time.`);
   pl[0]=makePlayer(0);worlds[0]=makeWorld(STAGES[0]);cams[0].x=0;beginTurn(0);}
- function startFromTitle(){if(phase!=='title'||titleT<.4)return;twoPlayer=mode==='world'&&menuSel===1&&!s.solo;sfx.coin();note(pl[0],twoPlayer?'2 player game':'1 player game');beginTurn(0);}
+ function startFromTitle(){if(phase!=='title'||titleT<.4)return;twoPlayer=mode==='world'&&menuSel===1&&!s.solo&&!net;sfx.coin();note(pl[0],twoPlayer?'2 player game':'1 player game');beginTurn(net?me:0);}
  async function beginTurn(i){
+  // online: no hand-off; both phones show the WORLD card and start together
+  if(net){phase='handoff';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;clock=0;acc=0;startCard(i);return;}   // i = this phone's player
   phase='handoff';turn=i;for(const pd of pads){pd.stick=null;pd.jump=null;}for(const inp of inputs)Object.assign(inp,{l:0,r:0,d:0,jump:0,b:0,press:0,bPress:0});
   const n0=s.players[0].name,n1=s.players[1].name,me=s.players[i].name,other=s.players[1-i].name;let desc,summary=null;
   if(s.solo){desc=mode==='world'?`Play World 1 with ${LIVES} lives. Rescue Toad and the world starts over with your score and lives; keep going until game over.`:mode==='coins'?`Round ${soloCleared+1}: grab at least ${coinGoal()} coins in 60 seconds to reach the next round.`:`Dash ${soloCleared+1}: reach the flagpole within ${dashCap()} seconds to go again with less time.`;
@@ -641,6 +673,7 @@ async function marioBros(s){
   placeRunner(p,true);
  }
  function deathDone(p){
+  if(net){if(mode==='world'){p.lives--;if(p.lives<=0){p.lives=0;p.out=true;p.dead=0;note(p,'out');ev({out:1});checkNetEnd();return;}}netRespawn(p);return;}
   if(mode!=='world'){respawnHere(p);return;}
   p.lives--;
   if(p.lives<=0){p.over=true;phase='card';cardKind='gameover';cardT=0;sfx.over();return;}
@@ -667,6 +700,74 @@ async function marioBros(s){
  const turnOver=p=>mode==='coins'?clock>=COIN_TIME:mode==='race'?(p.finished&&(p.inCastle&&p.castleT>40||clock-p.finishT>6)||clock>=dashCap()||turn===1&&pl[0].finished&&!p.finished&&clock>pl[0].finishT+4):false;
  const still={l:0,r:0,d:0,jump:0,b:0,press:0,bPress:0};
 
+ // ---------------- online: this phone's runner {f} ~20/s; world changes as events (see the top of the file)
+ let itemSeq=0,graceUntil=0,nextStage=0,bot=null,netStarted=false;const theirDone=new Map();
+ function ev(e){if(nf)nf.event(e);}
+ const enemyRef=(w,e)=>{for(const [an,a] of Object.entries(w.areas)){const k=a.enemies.indexOf(e);if(k>=0)return [an,k];}return null;};
+ function esync(w,e){if(!net||w.key==null)return;const r=enemyRef(w,e);if(r)ev({es:[w.key,r[0],r[1],e.state,e.type,Math.round(e.x*10)/10,Math.round(e.y*10)/10,e.vx,e.vy]});}
+ const partnerIn=(w,an)=>!!net&&!!pl[them].net&&!pl[them].out&&!pl[them].inCastle&&w&&pl[them].wk===w.key&&pl[them].area===an;
+ const reachX=(cam,w,an)=>partnerIn(w,an)?Math.max(cam.x,pl[them].x-view.w*.44):cam.x;
+ const backX=(cam,w,an)=>partnerIn(w,an)?Math.min(cam.x,pl[them].x-view.w*.44):cam.x;
+ // World 1: the first one to the goal gives the other NET_GRACE seconds; Castle Dash: the race is on the flag time
+ function goalReached(p){if(!net||p.i!==me||mode==='coins')return;ev({gl:[p.stage]});}
+ function netStageDone(p,next){graceUntil=0;nextStage=next;phase='stage-wait';ev({sc:[p.stage,next]});tryAdvance();}
+ // both start the next stage together: wait until the partner is through too (or out of lives, or gone)
+ function tryAdvance(){if(phase!=='stage-wait')return;const p=pl[me],q=pl[them];
+  if(!(theirDone.has(p.stage)||q.out||nf.gone))return;
+  if(nextStage<0){p.done=true;phase='net-wait';checkNetEnd();return;}
+  if(p.out){p.out=false;p.lives=1;}p.stage=nextStage;p.checkOn=false;worlds[me]=null;startCard(me);}
+ function checkNetEnd(){const p=pl[me],q=pl[them];if(phase==='net-end'||phase==='end')return;
+  if(mode==='world'&&(p.out||p.done)&&(q.out||q.done||nf.gone)){if(p.out&&!q.out&&!q.done)return;netEnd();}}
+ // a lost life: next to the partner in a bubble (same stage and area, partner up and running), else the checkpoint
+ function netRespawn(p){const q=pl[them],st=stageOf(p),w=worlds[me];let spot=p.checkOn?st.check:st.start.auto?{...st.startPlay}:st.start,near=false;
+  if(partnerIn(w,q.area)&&!q.dead&&!q.flag&&!q.axe&&!q.pipe){spot={area:q.area,x:q.x,y:Math.max(3*T,q.y-30)};near=true;}
+  Object.assign(p,{area:spot.area,x:spot.x,y:spot.y,prevY:spot.y,vx:0,vy:0,grounded:!near,dead:0,pipe:null,flag:null,tf:null,crouch:false,jumping:false,inv:near?0:60,star:0,skidding:false,combo:0,ride:null,auto:false,big:false,fire:false,bubble:near?BUBBLE:0});
+  if(mode==='world'&&p.deadKind==='time')p.time=st.time;p.deadKind='';cams[me].x=0;updateCamera(p,me,true);}
+ const PF=['big','fire','star','inv','left','crouch','grounded','skidding','finished','inCastle','flag','sidePipe','out','done','dead','auto','axe','over'];
+ function packP(p){const v={big:p.big,fire:p.fire,star:p.star>0,inv:p.inv>0,left:p.facing<0,crouch:p.crouch,grounded:p.grounded,skidding:p.skidding,finished:p.finished,inCastle:p.inCastle,flag:!!p.flag,sidePipe:p.pipe?.kind==='side',out:p.out,done:p.done,dead:p.dead>0,auto:p.auto,axe:!!p.axe,over:p.over};
+  let fl=0;PF.forEach((k,j)=>{if(v[k])fl|=1<<j;});const r=n=>Math.round(n*10)/10;
+  return [r(p.x),r(p.y),+p.vx.toFixed(3),+p.vy.toFixed(3),fl,p.area,p.stage,p.lap,p.score,p.coins,p.lives,Math.round(p.best),+p.finishT.toFixed(3),p.bubble,p.stagesCleared,wkey(p.stage,p.lap),p.pipe?.kind==='down'||p.pipe?.kind==='up'?Math.round(p.y):null];}
+ function unpackP(a){const q=pl[them];if(!Array.isArray(a)||a.length<16)return;const first=!q.net||q.area!==a[5]||q.wk!==a[15];q.net={a,at:performance.now()};const fl=a[4],F=k=>!!(fl&1<<PF.indexOf(k));
+  q.vx=a[2];q.vy=a[3];q.big=F('big');q.fire=F('fire');q.star=F('star')?60:0;q.inv=F('inv')?60:0;q.facing=F('left')?-1:1;q.crouch=F('crouch');q.grounded=F('grounded');q.skidding=F('skidding');
+  if(F('finished')&&!q.finished){q.finished=true;q.finishT=a[12];}q.inCastle=F('inCastle');q.flag=F('flag')?{t:0,phase:'slide'}:null;q.pipe=F('sidePipe')?{kind:'side'}:null;q.out=F('out');q.done=F('done');q.dead=F('dead')?1:0;q.auto=F('auto');q.axe=F('axe')?{}:null;q.over=F('over');
+  q.area=a[5];q.stage=a[6];q.lap=a[7];q.score=a[8];q.coins=a[9];q.lives=a[10];q.best=Math.max(q.best,a[11]);q.bubble=a[13];q.stagesCleared=a[14];q.wk=a[15];
+  if(first){q.x=a[0];q.y=a[1];}if(q.out||q.done)checkNetEnd();if(q.out)tryAdvance();}
+ // the partner is shown moved on by its speed for the time since the snapshot, the jump eased out
+ function stepRemote(dt){const q=pl[them],n=q.net;if(!n)return;const a=n.a,f=clamp((performance.now()-n.at)/1000,0,.25)*60;let tx=a[0]+(q.dead||q.bubble?0:q.vx*f),ty=a[1]+(q.grounded||q.dead||q.bubble?0:q.vy*f);
+  const e=1-Math.exp(-dt*16);if(Math.abs(tx-q.x)>96||Math.abs(ty-q.y)>96){q.x=tx;q.y=ty;}else{q.x+=(tx-q.x)*e;q.y+=(ty-q.y)*e;}q.anim+=Math.abs(q.vx)*.11*dt*60;}
+ function onNetEvent(e){
+  const W=k=>[...sharedWorlds.values()].find(w=>w.key===k)||(Number.isInteger(k)&&k>=0&&Math.floor(k/16)<STAGES.length?stageWorld(Math.floor(k/16),k%16):null);
+  if(e.cn){const w=W(e.cn[0]),a=w&&AR(w,e.cn[1]);if(a&&!a.got[e.cn[2]])a.got[e.cn[2]]=1;}
+  else if(e.tl){const [k,an,idx,t]=e.tl,w=W(k),a=w&&AR(w,an);if(!a||idx<0||idx>=a.tiles.length)return;const old=a.tiles[idx];a.tiles[idx]=t;a.content.delete(idx);w.bumps.set(a.ai*1e6+idx,0);
+   if(t===0&&old===TILE.BRICK){const cc=idx%a.def.W,r=Math.floor(idx/a.def.W);w.bumps.delete(a.ai*1e6+idx);for(const [dx,dy] of [[-1,-1],[1,-1],[-1,0],[1,0]])w.debris.push({x:cc*T+8+dx*4,y:r*T+8+dy*4,vx:dx*1.2,vy:-4.5-(dy?0:-1.5),t:0,area:an});}}
+  else if(e.it){const [k,an,id,type,x0,y0]=e.it,w=W(k);if(w&&AR(w,an)&&!w.items.some(it=>it.id===id))w.items.push({type,x:x0,y:y0,emerge:16,vx:0,vy:0,area:an,id});}
+  else if(e.ig){const w=W(e.ig[0]);if(w){const j=w.items.findIndex(it=>it.id===e.ig[1]);if(j>=0)w.items.splice(j,1);}}
+  else if(e.es){const [k,an,idx,st,type,x0,y0,vx,vy]=e.es,w=W(k),a=w&&AR(w,an),en=a?.enemies[idx];if(!en||!en.alive||en.state==='dying')return;
+   Object.assign(en,{state:st,type,x:x0,y:y0,vx,vy,t:0,active:true,remote:true,grace:st==='shell'&&vx?12:0,chain:0});}
+  else if(e.bd){const [k,an,fake]=e.bd,w=W(k),b=w&&AR(w,an)?.bowser;if(b&&b.state!=='dead'){b.state='dead';b.vy=-3;if(fake)b.fake=true;}}
+  else if(e.ax){const [k,an]=e.ax,w=W(k),b=w&&AR(w,an)?.bowser;if(b&&b.state!=='dead'&&b.state!=='fall'){b.state='fall';b.vy=0;}}
+  else if(e.gl){const p=pl[me];if(mode==='world'&&p.stage===e.gl[0]&&!graceUntil&&phase==='play')graceUntil=clock+NET_GRACE;}
+  else if(e.sc){const [st,next]=e.sc;theirDone.set(st,next);const p=pl[me];
+   // out of lives: follow the partner on to the next stage (and come back with a life)
+   if(p.out&&p.stage===st&&phase!=='stage-wait'){nextStage=next;phase='stage-wait';}tryAdvance();}
+  else if(e.out){pl[them].out=true;checkNetEnd();tryAdvance();}}
+ const nf=net?netField(s,{hz:20,pack:()=>({t:+clock.toFixed(3),p:packP(pl[me])}),unpack:(i,d)=>{if(d)unpackP(d.p);},onEvent:onNetEvent}):null;
+ // the run is over on this phone: swap finals and score the same on both
+ async function netEnd(){if(phase==='net-end'||phase==='end')return;phase='net-end';endT=0;const p=pl[me];
+  const mine={sc:p.score,co:p.coins,f:p.finished?1:0,t:+p.finishT.toFixed(3),b:Math.round(p.best),st:p.stage,done:p.done?1:0,cl:p.stagesCleared};nf.finish(mine);
+  const o=await nf.remoteDone();if(!o||!s.alive)return;const q=pl[them];Object.assign(q,{score:o.sc,coins:o.co,finished:!!o.f,finishT:o.t,best:o.b,stage:o.st,done:!!o.done,stagesCleared:o.cl});endGame();}
+ const netOver=()=>{const p=pl[me],q=pl[them];
+  if(mode==='coins')return clock>=COIN_TIME;
+  if(mode==='race'){if(clock>=RACE_CAP)return true;if(p.finished&&q.finished)return clock-Math.max(p.finishT,q.finishT)>3;return clock>Math.min(p.finished?p.finishT:Infinity,q.finished?q.finishT:Infinity)+NET_GRACE;}
+  return false;};
+ // online test bot: runs right holding B, jumps over what it bumps into
+ function botInput(inp){const p=pl[me];bot.t++;inp.l=0;inp.r=1;inp.d=0;inp.b=bot.t%240<200?1:0;
+  if(p.grounded&&Math.abs(p.vx)<.4)bot.stuck++;else bot.stuck=0;
+  const w=worlds[me],foe=w&&AR(w,p.area).enemies.some(e=>e.alive&&e.active&&e.state!=='dying'&&e.state!=='squash'&&e.x-p.x>4&&e.x-p.x<46&&Math.abs(e.y-p.y)<28);
+  if(p.grounded&&(foe||bot.stuck>10||bot.t%70===0||Math.random()<.01)){inp.press=1;bot.hold=foe?30:12+Math.floor(Math.random()*18);bot.stuck=0;}inp.jump=bot.hold-->0?1:0;}
+ if(net)s.hint(mode==='world'?'SUPER MARIO BROS. WORLD 1 TOGETHER: you both play at once, each on your own phone (P1 Mario, P2 Luigi); an arrow on the edge points to your partner. Blocks, coins, power-ups and enemies are shared: what one of you takes is gone for both. Lose a life and you float back next to your partner in a bubble (tap jump to pop it); out of lives, you watch until the next stage and come back with one life. First to the flagpole gives the other 10 seconds before they are pulled along. Highest score wins; the Warp Zone in 1-2 still recruits someone new. '+HELP
+  :mode==='coins'?`COIN RUSH LIVE: both of you at once in the same World 1 for 60 seconds, each on your own phone; coins and blocks one of you takes are gone for the other. Most coins wins. ${HELP}`
+  :`CASTLE DASH LIVE: race each other through World 1-1 at the same time, each on your own phone. First to the flagpole wins; the other then has 10 seconds. ${HELP}`);
  // debug hooks for tests
  const teleport=(i,X,stage)=>{const q=pl[i];if(stage!==undefined&&stage!==q.stage){q.stage=stage;q.checkOn=false;worlds[i]=makeWorld(STAGES[stage]);q.area='main';}const w=worlds[i],a=AR(w,q.area),W=a.def.W;let cc=Math.floor(X/T),r=13;
   const ok=(c,r)=>solid(a.tiles[r*W+c])&&!a.tiles[(r-1)*W+c]&&!a.tiles[(r-2)*W+c];
@@ -682,25 +783,35 @@ async function marioBros(s){
   skipCard(){if(phase==='card')cardT=99;}};
 
  // ---------------- main loop
+ const LIVE=['play','turn-end','end','stage-wait','net-wait','net-end'];
+ if(net)s.debug.bot=()=>{if(!bot){bot={t:0,stuck:0,hold:0};return 'drive';}return '';};
  worlds[0]=makeWorld(STAGES[0]);
  s.frame((dt)=>{
   if(!s.alive)return;
   layoutView();
-  if(phase==='title'){titleT+=dt;simT+=dt;if(mode!=='world'&&titleT>3.2)startFromTitle();}
+  if(net&&netStarted){nf.tick(dt);stepRemote(dt);}
+  if(phase==='title'){titleT+=dt;simT+=dt;if((mode!=='world'||net)&&titleT>3.2)startFromTitle();}
   else if(phase==='card'){cardT+=dt;const p=pl[turn];
    if(cardT>(cardKind==='gameover'?3:2.4)){if(cardKind==='gameover')advanceTurn();else{phase='play';for(const inp of inputs){inp.press=0;inp.bPress=0;}note(p,'play '+stageName(p));}}}
-  else if(phase==='warp'){acc+=dt;while(acc>=STEP){acc-=STEP;warpMsg.t++;frames++;}if(warpMsg.t>720){const p=pl[warpMsg.i];warpMsg=null;p.stage=Math.min(2,lastStage);p.checkOn=false;p.stagesCleared++;worlds[p.i]=null;startCard(p.i);}}
-  else if(phase==='play'||phase==='turn-end'||phase==='end'){
+  else if(phase==='warp'){acc+=dt;while(acc>=STEP){acc-=STEP;warpMsg.t++;frames++;}if(warpMsg.t>720){const p=pl[warpMsg.i];warpMsg=null;
+   if(net&&mode==='world'){p.stagesCleared++;netStageDone(p,Math.min(2,lastStage));}else{p.stage=Math.min(2,lastStage);p.checkOn=false;p.stagesCleared++;worlds[p.i]=null;startCard(p.i);}}}
+  else if(LIVE.includes(phase)){
    acc+=dt;let steps=0;const i=turn,p=pl[i];
-   const moving=phase==='play'||mode==='race';
-   while(acc>=STEP&&steps<5&&(phase==='play'||phase==='turn-end'||phase==='end')){acc-=STEP;steps++;frames++;simT+=STEP;
+   const moving=phase==='play'||mode==='race'||!!net;
+   while(acc>=STEP&&steps<5&&LIVE.includes(phase)){acc-=STEP;steps++;frames++;simT+=STEP;
     if(phase==='play'&&!p.inCastle&&!p.axe)clock+=STEP;
-    if(moving&&worlds[i]){const w=worlds[i],inp=phase==='play'?inputs[i]:still;readInput(i);stepPlayer(p,w,inp);if(worlds[i]===w&&(phase==='play'||phase==='turn-end'||phase==='end')){interact(p,w,inp);stepWorld(w,p);updateCamera(p,i);}}
-    if(phase==='play'){if(turn===0&&!twoPlayer&&!s.solo)ghost.push(snap(p));else if(turn===1)gi++;}
+    // online, out of lives: the view follows the partner until the next stage
+    if(net&&p.out&&worlds[i]){const q=pl[them];if(q.net&&q.wk===worlds[i].key){p.area=q.area;p.x=q.x;p.y=q.y;}stepWorld(worlds[i],p);updateCamera(p,i);}
+    else if(moving&&worlds[i]){const w=worlds[i],inp=phase==='play'?inputs[i]:still;readInput(i);stepPlayer(p,w,inp);if(worlds[i]===w&&LIVE.includes(phase)){interact(p,w,inp);stepWorld(w,p);updateCamera(p,i);}}
+    if(phase==='play'&&!net){if(turn===0&&!twoPlayer&&!s.solo)ghost.push(snap(p));else if(turn===1)gi++;}
    }
    if(steps===5)acc=0;
    for(const w of worlds)w&&w.fx.update(dt);for(let k=0;k<2;k++)flash[k]=Math.max(0,flash[k]-dt*1.8);
-   if(phase==='play'&&mode!=='world'&&turnOver(p)){endT=0;
+   if(net&&phase==='play'){
+    // the partner reached the goal NET_GRACE seconds ago: pulled along to the next stage
+    if(mode==='world'&&graceUntil&&clock>graceUntil&&!p.out&&!p.flagged&&!p.axe&&!p.inCastle){p.dead=0;p.bubble=0;note(p,'pulled along');netStageDone(p,p.stage>=lastStage?-1:p.stage+1);}
+    else if(netOver())netEnd();}
+   else if(phase==='play'&&mode!=='world'&&turnOver(p)){endT=0;
     if(turn===0||s.solo){if(s.solo)soloOk=mode==='coins'?p.coins>=coinGoal():p.finished;phase='turn-end';turnText=mode==='coins'?(s.solo?`${p.coins}/${coinGoal()} COINS`:`${p.coins} COINS`):p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;jingle(s.solo&&!soloOk?[392,330,262]:[523,659,784,1047],{type:'square',vol:.03,step:.09});}
     else endGame();}
    else if(phase==='turn-end'){endT+=dt;if(endT>2.4){if(s.solo){phase='handoff';soloAfter();return;}beginTurn(1);}}
@@ -720,6 +831,7 @@ async function marioBros(s){
   else if(phase==='card'||phase==='handoff'&&!worlds[turn])drawCard(turn);
   else if(phase==='warp')drawWarpMsg();
   else{const cam=cams[turn],cx=Math.round(cam.x*view.sc)/view.sc;g.save();g.translate(-cx,0);drawWorld(turn);g.restore();drawHUD(turn);
+   if(net&&!pl[turn].out&&partnerIn(worlds[turn],pl[turn].area)){const q=pl[them];partnerArrow(s,g,{x:0,y:-view.band,w:view.w,h:view.h},q.x-cx,q.y-(q.big?20:12),{player:them,color:them?'#9cfc88':'#fcbcb0',label:`${Math.round(Math.abs(q.x-pl[turn].x)/T)} m`,size:11,top:hudY()+view.band+26});}
    if(flash[turn]>0){g.fillStyle=`rgba(0,0,0,${flash[turn]})`;g.fillRect(0,-view.band,view.w,view.h);}
    const p=pl[turn];if(p.dead&&p.dead>25&&mode!=='world')outlined(g,p.deadKind==='pit'?'DOWN THE PIT!':'OUCH!',view.w/2,110,{size:14,fill:'#fff',stroke:'#000'});
    if(mode==='race'&&p.finished&&phase==='play')outlined(g,`${s.players[turn].name.toUpperCase()} REACHED THE CASTLE`,view.w/2,96,{size:12,fill:'#ffe23a',stroke:'#000'});
@@ -727,6 +839,11 @@ async function marioBros(s){
    if(def&&p.grounded&&!p.pipe&&(frames>>4)%2)for(const d of def.doors)if(d.kind==='down'&&Math.abs(p.y-d.top*T)<.5&&Math.abs(p.x-(d.c+1)*T)<=8)outlined(g,'▼',(d.c+1)*T-cx,d.top*T-48,{size:12,fill:'#fff',stroke:'#000'});
   }
   g.restore();
+  if(net&&LIVE.includes(phase)&&phase!=='end'){const p=pl[me],nm=s.players[them].name.toUpperCase(),sz=Math.min(s.W*.05,22);
+   if(phase==='stage-wait'||phase==='net-wait'||phase==='net-end')outlined(g,`WAITING FOR ${nm}…`,s.W/2,s.H*.3,{size:sz,fill:'#ffe23a',stroke:'#000'});
+   else if(p.out){outlined(g,`OUT OF LIVES · WATCHING ${nm}`,s.W/2,s.H*.3,{size:sz*.8,fill:'#fff',stroke:'#000'});outlined(g,'BACK WITH ONE LIFE NEXT STAGE',s.W/2,s.H*.3+sz*1.2,{size:sz*.6,fill:'#ffe23a',stroke:'#000'});}
+   else{const q=pl[them],lead=mode==='world'?graceUntil:mode==='race'&&q.finished&&!p.finished?q.finishT+NET_GRACE:0;
+    if(lead&&!p.flagged&&!p.inCastle){const left=Math.max(0,Math.ceil(lead-clock));outlined(g,`${nm} ${mode==='race'?'FINISHED':'REACHED THE GOAL'}!`,s.W/2,s.H*.3,{size:sz*.8,fill:'#fff',stroke:'#000'});outlined(g,String(left),s.W/2,s.H*.3+sz*1.9,{size:sz*2.4,fill:left<=3?'#fc7460':'#ffe23a',stroke:'#000'});}}}
   if(phase==='play')drawTouchGuides(turn);
   if(phase==='turn-end'||phase==='end'){const a=Math.min(1,endT*3),size=Math.min(s.W*.07,s.H*.07,46);g.save();g.globalAlpha=a;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(0,s.H*.4,s.W,s.H*.2);
    if(phase==='turn-end'){outlined(g,mode==='race'&&pl[0].finished?'COURSE CLEAR!':'TIME UP',s.W/2,s.H/2-size*.3,{size,fill:'#ffe23a',stroke:'#000'});outlined(g,`${s.players[0].name.toUpperCase()}: ${turnText}`,s.W/2,s.H/2+size*.75,{size:size*.5,fill:'#fff',stroke:'#000'});}

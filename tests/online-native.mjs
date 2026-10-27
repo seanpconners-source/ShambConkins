@@ -54,8 +54,14 @@ for(const id of GAMES){
  const limit=LIMIT*(id==='paddys-beer-pong'&&!process.env.LIMIT_S?1.75:1); // a full Beer Pong match runs to last call, ~4-5 min headless
  while(Date.now()-t0<limit*1000){
   const [a,b]=[await step(A),await step(B)];for(const x of [a,b]){const k=x.split(':')[0];counts[k]=(counts[k]||0)+1;}
-  if(!shot&&a.startsWith('play')&&b.startsWith('play')&&Date.now()-t0>=SHOT_S*1000){shot=true;await A.p.screenshot({path:screenshotPath(`onn-${id}-sean.png`)});await B.p.screenshot({path:screenshotPath(`onn-${id}-amber.png`)});}
+  if(!shot&&a.startsWith('play')&&b.startsWith('play')&&Date.now()-t0>=SHOT_S*1000){shot=true;
+   // SHOT_JS: an expression run on Sean's phone (s = the session) just before the screenshots, e.g. to move a player away
+   if(process.env.SHOT_JS){await A.p.evaluate(js=>{const s=window.ShambConkins.store.session;return new Function('s',js)(s);},process.env.SHOT_JS);await A.p.waitForTimeout(700);}
+   await A.p.screenshot({path:screenshotPath(`onn-${id}-sean.png`)});await B.p.screenshot({path:screenshotPath(`onn-${id}-amber.png`)});}
   if(a.startsWith('result'))ra=a;if(b.startsWith('result'))rb=b;if(ra&&rb)break;
+  // PROBE: an expression (s = the session) printed for both phones every PROBE_S (5) seconds, to watch a game's state
+  if(process.env.PROBE&&Date.now()-(globalThis.__probeT||0)>(+process.env.PROBE_S||5)*1000){globalThis.__probeT=Date.now();
+   console.log(' probe',Math.round((Date.now()-t0)/1000)+'s',...await Promise.all([A,B].map(ph=>ph.p.evaluate(js=>{try{const s=window.ShambConkins.store.session;return JSON.stringify(s?new Function('s',js)(s):null);}catch(e){return 'ERR '+e.message;}},process.env.PROBE))));}
   await A.p.waitForTimeout(200);
  }
  console.log(' steps',JSON.stringify(counts));
@@ -68,7 +74,8 @@ for(const id of GAMES){
   console.log(' final scores',JSON.stringify(await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>window.__lastScores||null)))));
   check(na.length===2&&nb.length===2&&na[0]===nb[1]&&na[1]===nb[0],`${id}: result cards agree (Sean ${na.join('–')} / Amber ${nb.join('–')})`);
   for(const ph of [A,B])await choose(ph,'Back to the room');
- }else{await A.p.screenshot({path:screenshotPath(`onn-${id}-stuck-sean.png`)});await B.p.screenshot({path:screenshotPath(`onn-${id}-stuck-amber.png`)});
+ }else{console.log(' stuck:',JSON.stringify(await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>{const s=window.ShambConkins.store.session;return {phase:s?.debug?.phase,clock:s?.debug?.clock,log:(s?.debug?.log||[]).slice(-6)};})))),'errors:',[...A.errors,...B.errors].slice(0,3).join(' | '));
+  await A.p.screenshot({path:screenshotPath(`onn-${id}-stuck-sean.png`)});await B.p.screenshot({path:screenshotPath(`onn-${id}-stuck-amber.png`)});
   for(const ph of [A,B])await ph.p.evaluate(()=>{const S=window.ShambConkins;S.store.session?.dispose();S.store.session=null;S.store.busy=false;document.getElementById('dialog').open&&document.getElementById('dialog').close();S.store.dialog=null;});}
  // clear leftover cards (a new character won, toasts) before the next challenge
  for(let i=0;i<40;i++){const open=await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>{const d=document.getElementById('dialog');if(!d.open)return false;const b=[...d.querySelectorAll('button')].find(b=>!b.disabled&&/Welcome|Continue|OK|Back to/i.test(b.innerText));b?.click();return true;})));if(!open.some(Boolean)&&i>4)break;await A.p.waitForTimeout(300);}

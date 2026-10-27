@@ -100,6 +100,8 @@ const NET_NATIVE=new Set(['trivia-mixed','trivia-nick90','trivia-dbz','trivia-hx
  'bond-laser-vault','bond-golden-gun','bond-goldfinger-bomb',
  'space-swarm-versus','space-swarm-coop',
  'rainbow-road-kart','rainbow-balloon-battle','kart-time-trial',
+ // online co-op / live races (Oct 26): one shared world instead of two separate solo runs
+ 'sonic-ring-rush','sonic-goal-dash','smb-world-1','smb-coin-rush','smb-castle-dash',
  'raiders-ball-run','sewer-clash','league-penalties','fight-night','hyrule-rupee-rush','hyrule-sword-duel']);
 const netNative=g=>!!g&&NET_NATIVE.has(g.id);
 function duelOK(g){return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&(DUEL_KINDS.has(soloKind(g))||netNative(g));}

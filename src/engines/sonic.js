@@ -6,13 +6,21 @@
 // the Green Hill boss, an Egg Mobile with a checkered wrecking ball piloted by a character the players have not unlocked;
 // 8 hits beat it, then open the capsule. Beating it recruits that character; the faster capsule wins). Game id
 // 'sonic-ring-rush' (kept for old saves) now plays the boss act.
+// Online (s.online) both phones run the act AT ONCE, each its own runner on its own full screen (P1 Sonic, P2 Tails), the
+// partner drawn from snapshots with an edge arrow when off screen. Rings, badniks and monitors taken by either vanish for
+// both; player 1's phone runs the boss and the capsule, the other phone sends its hits {bh}. Boss act = co-op: a runner who
+// dies respawns next to the partner, the fight pulls a straggler into the arena, beating the boss frees the pilot for both,
+// the capsule opener gets the bonus and the higher score wins. Goal Dash = live race: first to the signpost wins; the
+// other gets 10 s to finish. Both phones swap finals {fin} and score the same.
 const {clamp}=require("src/utils.js");
 const {soloFinish,soloProgress}=require("src/solo.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,FONT,PCOL,Countdown,settle,reduced}=require("src/engines/arenaKit.js");
+const {netField}=require("src/engines/netField.js");
+const {partnerArrow}=require("src/engines/partnerArrow.js");
 
 const STEP=1/60;
 const P={acc:.046875,dec:.5,frc:.046875,top:6,air:.09375,grv:.21875,jump:6.5,slp:.125,slpUp:.078125,slpDown:.3125,rollFrc:.0234375,rollDec:.125,maxFall:16};
-const RACE_CAP=150,BOSS_CAP=200,BOSS_W=440,BOSS_HP=8,BOSS_Y=92,CHAIN=58,BALL_R=15;
+const RACE_CAP=150,BOSS_CAP=200,NET_GRACE=10,BOSS_W=440,BOSS_HP=8,BOSS_Y=92,CHAIN=58,BALL_R=15;
 const HUD_YEL='#ffe23a',HUD_FONT='italic 900 %spx "Arial Black",Impact,system-ui,sans-serif';
 const SKY=['#1458d8','#3c86f0','#8cc8ff'];
 const MON_TYPES=['rings','rings','shield','shoes','star'];
@@ -87,6 +95,7 @@ function makePlayer(i,L){return {i,x:L.start,y:groundAt(L,L.start),gsp:0,vx:0,vy
 // ------------------------------------------------------------------ the game
 async function sonic(s){
  const mode=s.game.sonicMode==='race'?'race':'boss';
+ const net=s.online||null,me=net?net.me:0,them=1-me,host=!net||me===0;
  const [c,x]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.updateScores();
  if(!await settle(s))return;
  let L=buildLevel(s.random,mode);const worlds=[makeWorld(L),makeWorld(L)],pl=[makePlayer(0,L),makePlayer(1,L)];
@@ -105,7 +114,7 @@ async function sonic(s){
  const touchUI=typeof matchMedia==='function'&&matchMedia('(pointer: coarse)').matches;
  const inputs=[0,1].map(()=>({l:0,r:0,d:0,jump:0,press:0}));
  const pads=[{stick:null,jump:null,jumpT:0},{stick:null,jump:null,jumpT:0}];
- let phase='title',titleT=0,cd=new Countdown(3),clock=0,acc=0,endT=0,winner=-1,simT=0,frames=0,endText='',turn=0,gi=0,turnText='';
+ let phase='title',titleT=0,cd=new Countdown(3),clock=0,acc=0,endT=0,winner=-1,simT=0,frames=0,endText='',turn=net?me:0,gi=0,turnText='';
  // P1's run is recorded every step and replayed as a ghost during P2's turn
  const ghost=[],ghostAt=i=>i===1&&gi<ghost.length?ghost[gi]:null;
  const snap=p=>({i:p.i,x:p.x,y:p.y,dead:p.dead,shield:p.shield,ball:p.ball,spin:p.spin,spindash:p.spindash,facing:p.facing,on:p.on,theta:p.theta,angle:p.angle,grounded:p.grounded,gsp:p.gsp,vx:p.vx,vy:p.vy,anim:p.anim,springPose:p.springPose,hurt:p.hurt,crouch:p.crouch,idle:p.idle,finished:p.finished,star:p.star,shoes:0,inv:0});
@@ -122,7 +131,7 @@ async function sonic(s){
   onUp:f=>{const pd=pads[f.owner];if(pd.jump===f)pd.jump=null;if(pd.stick===f){pd.stick=null;if(f.moved<10&&f.held<200)inputs[f.owner].press=1;}}});
  const readInput=i=>{const [k0,k1]=kb.state,st=pads[i].stick,inp=inputs[i];let l=k0.l||k1.l,r=k0.r||k1.r,d=k0.d||k1.d,jump=k0.u||k0.fire||k1.u||k1.fire;
   if(st){const dx=st.x-st.sx,dy=st.y-st.sy;if(dx>11)r=1;if(dx<-11)l=1;if(dy>20)d=1;if(st.data.flick)jump=1;}
-  if(pads[i].jump)jump=1;inp.l=l;inp.r=r;inp.d=d;inp.jump=jump;};
+  if(pads[i].jump)jump=1;inp.l=l;inp.r=r;inp.d=d;inp.jump=jump;if(bot&&i===me)botInput(inp);};
 
  // ---------------- sounds
  const sfx={
@@ -170,7 +179,10 @@ async function sonic(s){
   const dir=fromX>p.x?-1:1;toAir(p,2*dir,-4);p.hurt=true;p.ball=p.rolling=p.spindash=false;p.inv=120;w.fx.shake(6);s.react(p.i,'sad');
  };
  const kill=(p,w)=>{if(p.dead)return;note(p,'die');p.dead=1;p.deaths++;p.grounded=false;p.on='air';p.vx=0;p.vy=-7;p.ball=false;p.rolling=false;p.spindash=false;p.shield=false;p.rings=0;sfx.die();s.react(p.i,'sad');};
- const respawn=p=>{const x0=p.check,gy=groundAt(L,x0)??0;Object.assign(p,{x:x0,y:gy,gsp:0,vx:0,vy:0,grounded:true,on:'ground',plat:null,loop:null,angle:0,dead:0,hurt:false,inv:90,ball:false,rolling:false,spindash:false,springPose:false,star:0,shoes:0});};
+ // online boss act: a runner who dies comes back next to the partner (if they are further on and on solid ground)
+ const respawn=p=>{let x0=p.check;
+  if(net&&mode==='boss'&&p.i===me){const q=pl[them],gx=q.x-30;if(q.net&&!q.dead&&gx>x0&&groundAt(L,gx)!==null&&!L.gaps.some(g=>gx>g.x0-30&&gx<g.x1+30)&&!L.loops.some(l=>Math.abs(gx-l.cx)<l.R+20))x0=gx;}
+  const gy=groundAt(L,x0)??0;Object.assign(p,{x:x0,y:gy,gsp:0,vx:0,vy:0,grounded:true,on:'ground',plat:null,loop:null,angle:0,dead:0,hurt:false,inv:90,ball:false,rolling:false,spindash:false,springPose:false,star:0,shoes:0});};
  const popEnemy=(p,w,e)=>{e.alive=false;p.score+=100;w.fx.burst(e.x,e.y-10,{n:14,colors:['#fff','#ffd84a','#ff7a2a'],speed:150,life:.4,size:2.4});w.fx.ring(e.x,e.y-10,{color:'#fff',r1:26});w.animals.push({x:e.x,y:e.y-10,vx:(Math.random()<.5?-1:1)*1.6,vy:-3,kind:Math.random()<.5?'flicky':'pocky',t:0});
   w.fx.pop(e.x,e.y-34,'100',{color:'#fff',size:12,rise:22});sfx.pop();if(!p.grounded&&p.vy>0)p.vy=-Math.max(3,p.vy);else if(!p.grounded)p.vy=Math.max(p.vy-1,-6);};
 
@@ -242,7 +254,7 @@ async function sonic(s){
   if(p.dead)return;const c=center(p),hh=halfH(p);
   // rings (sorted by x)
   let lo=0,hi=L.rings.length;while(lo<hi){const m=(lo+hi)>>1;if(L.rings[m].x<c.x-24)lo=m+1;else hi=m;}
-  for(let k=lo;k<L.rings.length&&L.rings[k].x<c.x+24;k++){if(w.got[k])continue;const r=L.rings[k];if(Math.abs(r.x-c.x)<16&&Math.abs(r.y-c.y)<hh+8){w.got[k]=1;p.rings++;p.score+=10;sfx.ring();w.fx.burst(r.x,r.y,{n:5,colors:['#fff','#ffe680'],speed:70,life:.3,size:2,shape:'star'});}}
+  for(let k=lo;k<L.rings.length&&L.rings[k].x<c.x+24;k++){if(w.got[k])continue;const r=L.rings[k];if(Math.abs(r.x-c.x)<16&&Math.abs(r.y-c.y)<hh+8){w.got[k]=1;ev({r:k});p.rings++;p.score+=10;sfx.ring();w.fx.burst(r.x,r.y,{n:5,colors:['#fff','#ffe680'],speed:70,life:.3,size:2,shape:'star'});}}
   for(let k=w.loose.length-1;k>=0;k--){const r=w.loose[k];if(r.t>40&&Math.abs(r.x-c.x)<16&&Math.abs(r.y-c.y)<hh+8){w.loose.splice(k,1);p.rings++;sfx.ring();}}
   // springs
   L.springs.forEach((sp,k)=>{if(Math.abs(c.x-sp.x)<15&&p.y>=sp.y-18&&p.y<=sp.y+4&&(p.grounded||p.vy>=0)){const v=sp.color==='red'?-16:-10;p.x=clamp(p.x,sp.x-14,sp.x+14);toAir(p,p.grounded?p.gsp*.5:p.vx,v);p.springPose=true;p.ball=false;p.rolling=false;p.jumping=false;w.spring[k]=1;sfx.spring();}});
@@ -250,7 +262,7 @@ async function sonic(s){
   for(const sp of L.spikes){if(c.x>sp.x-8&&c.x<sp.x+sp.w+8&&p.y>sp.y-16&&p.y<=sp.y+4)hurt(p,w,c.x<sp.x+sp.w/2?sp.x+sp.w:sp.x);}
   // monitors
   for(const m of w.monitors){if(m.broken)continue;const my=m.y-15;if(Math.abs(c.x-m.x)<9+14&&Math.abs(c.y-my)<hh+14){
-   if(attacking(p)||!p.grounded&&p.vy>0){m.broken=true;sfx.monitor();w.debris.push({x:m.x,y:m.y,t:0,type:m.type});w.fx.burst(m.x,my,{n:12,colors:['#ccc','#fff','#7ab8ff'],speed:140,life:.4,size:2.4,shape:'square'});
+   if(attacking(p)||!p.grounded&&p.vy>0){m.broken=true;ev({mo:w.monitors.indexOf(m)});sfx.monitor();w.debris.push({x:m.x,y:m.y,t:0,type:m.type});w.fx.burst(m.x,my,{n:12,colors:['#ccc','#fff','#7ab8ff'],speed:140,life:.4,size:2.4,shape:'square'});
     if(!p.grounded&&p.vy>0)p.vy=-p.vy;
     setTimeout(()=>{if(!s.alive)return;if(m.type==='rings'){p.rings+=10;sfx.ring();}else if(m.type==='shield'){p.shield=true;sfx.shield();}else if(m.type==='shoes'){p.shoes=20*60;sfx.power();}else if(m.type==='star'){p.star=20*60;sfx.power();}w.fx.pop(m.x,m.y-50,m.type==='rings'?'+10 RINGS':m.type==='shield'?'SHIELD':m.type==='shoes'?'SPEED SHOES':'INVINCIBLE',{color:HUD_YEL,size:13});},450);}
    else if(p.grounded){p.x=c.x<m.x?m.x-24:m.x+24;p.gsp=0;}}}
@@ -258,7 +270,7 @@ async function sonic(s){
   L.lamps.forEach((l,k)=>{if(!w.lamps[k]&&p.x>l.x){w.lamps[k]=1;p.check=l.x;sfx.lamp();w.fx.burst(l.x,l.y-58,{n:10,colors:['#ff4040','#fff'],speed:90,life:.4,size:2,shape:'star'});}});
   // badniks and shots
   for(const e of w.enemies){if(!e.alive)continue;const box=e.type==='buzz'?{x:e.x,y:e.y-8,r:13}:e.type==='chop'?{x:e.x,y:e.y,r:11}:{x:e.x,y:e.y-11,r:12};
-   if(hitBox(p,box.x,box.y,box.r)){if(attacking(p))popEnemy(p,w,e);else hurt(p,w,e.x);}}
+   if(hitBox(p,box.x,box.y,box.r)){if(attacking(p)){popEnemy(p,w,e);ev({en:w.enemies.indexOf(e)});}else hurt(p,w,e.x);}}
   for(let k=w.shots.length-1;k>=0;k--){const b=w.shots[k];if(hitBox(p,b.x,b.y,4)){w.shots.splice(k,1);if(p.star<=0)hurt(p,w,b.x);}}
   // goal
   if(mode==='boss')bossTouch(p,w,c);
@@ -286,12 +298,16 @@ async function sonic(s){
  // ---------------- the Green Hill boss (Egg Mobile + wrecking ball), one per player world
  function stepBoss(w,p){
   const b=w.boss,A=L.arena;b.t+=STEP;b.flash=Math.max(0,b.flash-STEP);
-  if(b.state==='wait'){if(p.x>A.x0+40&&!p.dead){b.state='enter';b.t=0;w.locked=true;p.check=A.x0+40;sfx.alarm();}}
+  const blasts=()=>{if(frames%7===0){const ex=b.x+(Math.random()-.5)*50,ey=b.y+(Math.random()-.5)*36;w.fx.burst(ex,ey,{n:10,colors:['#fff','#ffd84a','#ff7a2a','#e8282c'],speed:120,life:.45,size:3});w.fx.ring(ex,ey,{color:'#fff',r1:20});if(frames%14===0)sfx.boom();}};
+  const flee=()=>{b.x+=3.4;b.y-=1.4;const h=b.head;if(h){h.vy+=.2;h.x+=h.vx;h.y+=h.vy;}};
+  // online, the other phone's boss follows player 1's snapshots (state, hit points, capsule; position eased)
+  if(net&&!host){if(b.tx!=null&&b.state!=='flee'){b.x+=(b.tx-b.x)*.2;b.y+=(b.ty-b.y)*.2;}if(b.state!=='wait'&&!w.locked)enterArena(w,p);if(b.state==='dying')blasts();else if(b.state==='flee')flee();}
+  else if(b.state==='wait'){if(p.x>A.x0+40&&!p.dead||net&&pl[them].net&&pl[them].x>A.x0+40&&!pl[them].dead){b.state='enter';b.t=0;enterArena(w,p);sfx.alarm();}}
   else if(b.state==='enter'){const tx=A.x1-80,ty=A.y-BOSS_Y;b.x+=(tx-b.x)*.035;b.y+=(ty-b.y)*.035;if(b.t>2.4){b.state='fight';b.t=0;b.dir=-1;}}
   else if(b.state==='fight'){const sp=.75+(BOSS_HP-b.hp)*.07;b.x+=b.dir*sp;if(b.x<A.x0+80){b.x=A.x0+80;b.dir=1;}if(b.x>A.x1-80){b.x=A.x1-80;b.dir=-1;}b.y=A.y-BOSS_Y+Math.sin(b.t*2.2)*3;}
-  else if(b.state==='dying'){if(frames%7===0){const ex=b.x+(Math.random()-.5)*50,ey=b.y+(Math.random()-.5)*36;w.fx.burst(ex,ey,{n:10,colors:['#fff','#ffd84a','#ff7a2a','#e8282c'],speed:120,life:.45,size:3});w.fx.ring(ex,ey,{color:'#fff',r1:20});if(frames%14===0)sfx.boom();}
+  else if(b.state==='dying'){blasts();
    if(b.t>2.4){b.state='flee';b.t=0;b.head={x:b.x,y:b.y-20,vx:-1.2,vy:-5.5};}}
-  else if(b.state==='flee'){b.x+=3.4;b.y-=1.4;const h=b.head;if(h){h.vy+=.2;h.x+=h.vx;h.y+=h.vy;}
+  else if(b.state==='flee'){flee();
    if(b.t>1.1&&!b.cap){b.cap={x:A.x1-110,y:A.y,open:false,t:0,drop:-260};}}
   if(b.cap){const cp=b.cap;cp.t+=STEP;cp.drop=Math.min(0,cp.drop+6);if(cp.open&&frames%9===0&&cp.t<1.6)w.animals.push({x:cp.x+(Math.random()-.5)*16,y:cp.y-30,vx:(Math.random()<.5?-1:1)*(1+Math.random()*1.4),vy:-4-Math.random()*2,kind:Math.random()<.5?'flicky':'pocky',t:0});}
   // the wrecking ball swings under the Egg Mobile like a pendulum
@@ -299,20 +315,26 @@ async function sonic(s){
   b.ballX=b.x+Math.sin(b.ang)*CHAIN;b.ballY=b.y+19+Math.cos(b.ang)*CHAIN;
   if(w.locked&&b.state!=='gone'){if(p.x<A.x0+12){p.x=A.x0+12;if(p.grounded&&p.gsp<0)p.gsp=0;if(p.vx<0)p.vx=0;}if(p.x>A.x1-12){p.x=A.x1-12;if(p.grounded&&p.gsp>0)p.gsp=0;if(p.vx>0)p.vx=0;}}
  }
- function damageBoss(p,w,c=center(p)){const b=w.boss;b.hp--;b.hits++;b.flash=1.05;sfx.bossHit();w.fx.shake(5);w.fx.burst(c.x,c.y-6,{n:8,colors:['#fff','#ffd84a'],speed:110,life:.3,size:2.4,shape:'star'});p.score+=100;
-  if(b.hp<=0){b.state='dying';b.t=0;b.flash=0;p.score+=1000;w.fx.shake(10);if(bossChar&&!s.broforceRecruits[p.i].includes(bossChar))s.broforceRecruits[p.i].push(bossChar);s.react(p.i,'win');}}
+ // remote: online, player 1's phone takes a hit the other phone reported ({bh}); the points stay on that phone
+ function damageBoss(p,w,c=center(p),remote=false){const b=w.boss;b.hp--;b.hits++;b.flash=1.05;sfx.bossHit();w.fx.shake(5);if(!remote){w.fx.burst(c.x,c.y-6,{n:8,colors:['#fff','#ffd84a'],speed:110,life:.3,size:2.4,shape:'star'});p.score+=100;}
+  if(b.hp<=0){b.state='dying';b.t=0;b.flash=0;w.fx.shake(10);bossBeaten(p);}}
+ // online a beaten boss is a win for both: +1000 each and the pilot joins both rosters
+ function bossBeaten(p){p.score+=1000;if(bossChar)for(const k of net?[0,1]:[p.i])if(!s.broforceRecruits[k].includes(bossChar))s.broforceRecruits[k].push(bossChar);s.react(p.i,'win');}
+ // the fight starts: lock this phone's runner in the arena; online a straggler is pulled in
+ function enterArena(w,p){const A=L.arena;w.locked=true;p.check=A.x0+40;
+  if(p.x<A.x0+12&&!p.dead){Object.assign(p,{x:A.x0+40,y:A.y,gsp:0,vx:0,vy:0,grounded:true,on:'ground',plat:null,loop:null,angle:0,hurt:false,inv:90,ball:false,rolling:false,spindash:false});cams[p.i].x=A.x0-40;flash[p.i]=.8;w.fx.pop(p.x,p.y-60,'PULLED IN!',{color:HUD_YEL,size:13});}}
  function bossTouch(p,w,c){
   const b=w.boss;if(!b)return;
   if(b.state==='fight'||b.state==='enter'){
    if(hitBox(p,b.ballX,b.ballY,BALL_R-3))hurt(p,w,b.ballX);
    if(b.state==='fight'&&Math.abs(c.x-b.x)<34&&Math.abs(c.y-b.y)<halfH(p)+14){
-    if(attacking(p)||!p.grounded&&p.vy<0){if(b.flash<=0)damageBoss(p,w,c);
+    if(attacking(p)||!p.grounded&&p.vy<0){if(b.flash<=0){if(net&&!host){b.flash=1.05;sfx.bossHit();w.fx.shake(5);w.fx.burst(c.x,c.y-6,{n:8,colors:['#fff','#ffd84a'],speed:110,life:.3,size:2.4,shape:'star'});p.score+=100;ev({bh:1});}else damageBoss(p,w,c);}
      const away=c.x<b.x?-1:1;if(p.grounded){toAir(p,away*3,-4);}else{p.vx=away*Math.max(2,Math.abs(p.vx)*.6);p.vy=-Math.max(3.5,Math.abs(p.vy)*.5);}p.ball=true;}
     else hurt(p,w,b.x);}
   }
   const cp=b.cap;
   if(cp&&!cp.open&&cp.drop>=0){const top=cp.y-44;
-   if(Math.abs(c.x-cp.x)<22&&p.y>=top-6&&p.y<=top+10&&(p.vy>=0||p.grounded)){cp.open=true;cp.t=0;sfx.capsule();w.fx.burst(cp.x,top,{n:18,colors:['#fff','#ffd84a','#7ab8ff'],speed:160,life:.5,size:2.6,shape:'star'});toAir(p,p.vx||0,-4.5);p.ball=true;
+   if(Math.abs(c.x-cp.x)<22&&p.y>=top-6&&p.y<=top+10&&(p.vy>=0||p.grounded)){cp.open=true;cp.t=0;ev({cap:1});sfx.capsule();w.fx.burst(cp.x,top,{n:18,colors:['#fff','#ffd84a','#7ab8ff'],speed:160,life:.5,size:2.6,shape:'star'});toAir(p,p.vx||0,-4.5);p.ball=true;
     if(!p.finished){p.finished=true;p.finishT=clock;p.score+=1000;}}
    else if(Math.abs(c.x-cp.x)<26&&p.y>top+10){p.x=c.x<cp.x?cp.x-26:cp.x+26;if(p.grounded)p.gsp=0;else p.vx=0;}}
  }
@@ -536,11 +558,15 @@ async function sonic(s){
   for(const b of w.shots){x.fillStyle=(frames>>2)%2?'#ff5a2a':'#ffe23a';x.beginPath();x.arc(b.x,b.y,3.5,0,7);x.fill();}
   for(const a of w.animals)drawAnimal(a);
   const gh=ghostAt(i);if(gh&&gh.x>x0-40&&gh.x<x1+40)drawRunner(gh,.42);
+  const q=net&&pl[them].net?pl[them]:null;if(q&&q.x>x0-40&&q.x<x1+40)drawRunner(q);
   drawRunner(p);
   w.fx.draw(x);
   w.fx.end(x);x.restore();
   if(flash[i]>0){x.fillStyle=`rgba(255,255,255,${flash[i]})`;x.fillRect(v.x,v.y,v.w,v.h);}
-  drawHUD(i,v,t);
+  // online: the duel chip sits at the top; an arrow on the edge points to the partner when they are off screen
+  const hv=net?{x:v.x,y:v.y+28,w:v.w,h:v.h-28}:v;
+  if(q){const c0=center(q);partnerArrow(s,x,hv,v.x+(c0.x-cam.x)*sc,v.y+(c0.y-cam.y)*sc,{player:them,color:PCOL[them],label:`${Math.round(Math.abs(q.x-p.x)/16)} m`,size:Math.round(clamp(16*sc,16,26))});}
+  drawHUD(i,hv,t);
   x.restore();
  }
  const prog=q=>q.finished?100:Math.min(99,Math.round(clamp((q.best-L.start)/(L.end-L.start),0,1)*100));
@@ -554,13 +580,17 @@ async function sonic(s){
   const name=s.players[i].name.toUpperCase(),nx=v.x+v.w-pad;x.font=HUD_FONT.replace('%s',size);x.textAlign='right';x.textBaseline='top';x.lineWidth=Math.max(3,size*.28);x.strokeStyle='#08103a';x.strokeText(name,nx,v.y+pad);x.fillStyle=PCOL[i];x.fillText(name,nx,v.y+pad);
   {const who=i===0?'SONIC':'TAILS';x.font=HUD_FONT.replace('%s',Math.round(size*.8));x.strokeText(who,nx,v.y+pad+size*1.2);x.fillStyle=i===0?'#5a8cff':'#ffb444';x.fillText(who,nx,v.y+pad+size*1.2);}
   const bw=Math.min(v.w*.34,220*u),bx=v.x+v.w-pad-bw,by=v.y+pad+size*2.9;x.fillStyle='rgba(8,16,58,.55)';rr(x,bx-4,by-4,bw+8,8,4);x.fill();x.fillStyle='#ffe23a';x.fillRect(bx,by-1,2,2);
-  const gh=ghostAt(i);for(const q of gh?[gh,p]:[p]){const k=clamp((q.x-L.start)/(L.end-L.start),0,1),hx=bx+k*bw;x.save();x.globalAlpha=q===p?1:.6;x.fillStyle=PCOL[q.i];x.beginPath();x.arc(hx,by,q===p?5*u:3.5*u,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=1.5;x.stroke();x.restore();}
-  if(i===1){const q=pl[0],goal=q.finished?fmtRace(q.finishT):mode==='boss'&&worlds[0].boss.hits?`BOSS ${worlds[0].boss.hits}/${BOSS_HP} HITS`:`${prog(q)}%`;x.font=HUD_FONT.replace('%s',Math.round(size*.75));x.textAlign='right';x.lineWidth=Math.max(3,size*.22);const lbl=`BEAT ${s.players[0].name.toUpperCase()}: ${goal}`;x.strokeText(lbl,nx,by+8*u);x.fillStyle=PCOL[0];x.fillText(lbl,nx,by+8*u);}
+  const gh=net?(pl[them].net?pl[them]:null):ghostAt(i);for(const q of gh?[gh,p]:[p]){const k=clamp((q.x-L.start)/(L.end-L.start),0,1),hx=bx+k*bw;x.save();x.globalAlpha=q===p?1:.6;x.fillStyle=PCOL[q.i];x.beginPath();x.arc(hx,by,q===p?5*u:3.5*u,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=1.5;x.stroke();x.restore();}
+  if(net){const q=pl[them],lbl=`${s.players[them].name.toUpperCase()}: ${mode==='boss'?`${q.score} PTS`:q.finished?fmtRace(q.finishT):`${prog(q)}%`}`;x.font=HUD_FONT.replace('%s',Math.round(size*.75));x.textAlign='right';x.lineWidth=Math.max(3,size*.22);x.strokeText(lbl,nx,by+8*u);x.fillStyle=PCOL[them];x.fillText(lbl,nx,by+8*u);
+   // Goal Dash: once one runner is through, the other has NET_GRACE seconds
+   const first=Math.min(p.finished?p.finishT:Infinity,q.finished?q.finishT:Infinity);
+   if(mode==='race'&&phase==='play'&&first<Infinity&&!(p.finished&&q.finished)){const left=Math.max(0,Math.ceil(first+NET_GRACE-clock));outlined(x,p.finished?`${s.players[them].name.toUpperCase()} HAS ${left} s`:`${left}`,v.x+v.w/2,v.y+v.h*(p.finished?.6:.2),{size:p.finished?size*1.2:size*3,fill:left<=3?'#ff3a3a':HUD_YEL,stroke:'#08103a'});}}
+  if(i===1&&!net){const q=pl[0],goal=q.finished?fmtRace(q.finishT):mode==='boss'&&worlds[0].boss.hits?`BOSS ${worlds[0].boss.hits}/${BOSS_HP} HITS`:`${prog(q)}%`;x.font=HUD_FONT.replace('%s',Math.round(size*.75));x.textAlign='right';x.lineWidth=Math.max(3,size*.22);const lbl=`BEAT ${s.players[0].name.toUpperCase()}: ${goal}`;x.strokeText(lbl,nx,by+8*u);x.fillStyle=PCOL[0];x.fillText(lbl,nx,by+8*u);}
   x.fillStyle='#fff';x.font=`900 ${Math.round(size*.7)}px ${FONT}`;x.textAlign='right';x.fillText('🏁',bx+bw+4,by+5);
   if(mode==='boss'){const b=worlds[i].boss;if(b.state==='enter'||b.state==='fight'&&b.t<1.6){const a=b.state==='enter'?Math.min(1,b.t*2):clamp(1-(b.t-1)/.6,0,1);x.save();x.globalAlpha=a;outlined(x,'BOSS!',v.x+v.w/2,v.y+v.h*.2,{size:size*2.2,fill:'#ff3a3a',stroke:'#08103a'});outlined(x,`PILOT: ${bossName}`,v.x+v.w/2,v.y+v.h*.2+size*2,{size:size*1.05,fill:'#fff',stroke:'#08103a'});x.restore();}
    if(b.state==='dying'||b.state==='flee'){outlined(x,bossChar?`${bossName} JOINS ${s.players[i].name.toUpperCase()}'S ROSTER!`:'BOSS BEATEN!',v.x+v.w/2,v.y+v.h*.3,{size:size*1.1,fill:HUD_YEL,stroke:'#08103a'});}
    if(b.cap&&!b.cap.open&&b.cap.drop>=0&&(frames>>4)%2)outlined(x,'JUMP ON THE CAPSULE!',v.x+v.w/2,v.y+v.h*.3,{size:size*1.1,fill:'#fff',stroke:'#08103a'});}
-  if(p.dead&&p.dead>20){outlined(x,'BACK TO THE LAMPPOST',v.x+v.w/2,v.y+v.h*.45,{size:size*1.4,fill:'#fff',stroke:'#08103a'});}
+  if(p.dead&&p.dead>20){outlined(x,net&&mode==='boss'&&!pl[them].dead?`BACK TO ${s.players[them].name.toUpperCase()}`:'BACK TO THE LAMPPOST',v.x+v.w/2,v.y+v.h*.45,{size:size*1.4,fill:'#fff',stroke:'#08103a'});}
   if(p.finished&&phase==='play'){outlined(x,`${i===0?'SONIC':'TAILS'} GOT THROUGH ${mode==='boss'?'ACT 3':'ACT 1'}`,v.x+v.w/2,v.y+v.h*.42,{size:size*1.7,fill:HUD_YEL,stroke:'#08103a'});outlined(x,fmtRace(p.finishT),v.x+v.w/2,v.y+v.h*.42+size*2,{size:size*1.2,fill:'#fff',stroke:'#08103a'});}
   // touch pad guides
   if(touchUI||clock<6&&phase==='play'){const pd=pads[i],a=touchUI?1:clamp(1-clock/6,0,1);x.save();x.globalAlpha=.18*a;x.fillStyle='#fff';x.strokeStyle='#fff';x.lineWidth=2;
@@ -580,9 +610,66 @@ async function sonic(s){
  }
 
  s.debug={log,get phase(){return phase;},get clock(){return clock;},get turn(){return turn;},ghost,pl,L,worlds,get bossChar(){return bossChar;},recruits:()=>s.broforceRecruits,boss:i=>{const b=worlds[i].boss;return b&&{state:b.state,hp:b.hp,x:b.x,y:b.y,ballX:b.ballX,ballY:b.ballY,cap:b.cap&&{x:b.cap.x,y:b.cap.y,open:b.cap.open,drop:b.cap.drop}};},hitBoss(i){const w=worlds[i],b=w.boss;if(b?.state==='fight'&&b.flash<=0)damageBoss(pl[i],w);},setClock(v){clock=v;},place(i,X,Y){const q=pl[i];q.x=X;q.y=Y;q.grounded=false;q.on='air';q.plat=null;q.loop=null;q.vx=0;q.vy=0;q.gsp=0;},teleport(i,X){const q=pl[i];q.dead=0;q.hurt=false;q.x=X;q.y=groundAt(L,X)??q.y;q.grounded=true;q.on='ground';q.gsp=0;cams[i].x=X-150;}};
+ // ---------------- online: this phone's runner {f:{t,p}} ~20/s (+ the boss and capsule from player 1's phone), events for
+ // what it took (rings {r}, badniks {en}, monitors {mo}), boss hits {bh}, the capsule {cap}; finals {fin} swapped at the end
+ const ON=['ground','air','loop','plat'],r1=v=>Math.round(v*10)/10;
+ const packP=p=>[r1(p.x),r1(p.y),+p.gsp.toFixed(2),+p.vx.toFixed(2),+p.vy.toFixed(2),+p.theta.toFixed(3),+p.angle.toFixed(3),p.facing,p.dead|0,
+  (p.grounded?1:0)|(p.ball?2:0)|(p.spindash?4:0)|(p.shield?8:0)|(p.hurt?16:0)|(p.crouch?32:0)|(p.springPose?64:0)|(p.finished?128:0)|(p.inv>0?256:0)|(p.rolling?512:0),
+  Math.max(0,ON.indexOf(p.on)),p.score,p.rings,Math.round(p.best),+p.finishT.toFixed(3),p.star>0?1:0,p.idle];
+ function unpackP(a){const q=pl[them];if(!Array.isArray(a)||a.length<17)return;const first=!q.net;q.net={a,at:performance.now()};
+  q.gsp=a[2];q.vx=a[3];q.vy=a[4];q.theta=a[5];q.angle=a[6];q.facing=a[7]||1;q.dead=a[8];const fl=a[9];
+  q.grounded=!!(fl&1);q.ball=!!(fl&2);q.spindash=!!(fl&4);q.shield=!!(fl&8);q.hurt=!!(fl&16);q.crouch=!!(fl&32);q.springPose=!!(fl&64);q.inv=fl&256?60:0;q.rolling=!!(fl&512);
+  q.on=ON[a[10]]||'air';q.score=a[11];q.rings=a[12];q.best=Math.max(q.best,a[13]);if(fl&128&&!q.finished){q.finished=true;q.finishT=a[14];}q.star=a[15]?60:0;q.idle=a[16]|0;
+  if(first){q.x=a[0];q.y=a[1];}}
+ // the partner is shown moved on by its speed for the time since the snapshot, the jump eased out
+ function stepRemote(dt){const q=pl[them],n=q.net;if(!n)return;const a=n.a,f=clamp((performance.now()-n.at)/1000,0,.25)*60;let tx=a[0],ty=a[1];
+  if(q.dead){q.dead++;}else if(q.on!=='loop'){if(q.grounded){tx+=q.gsp*Math.cos(q.angle)*f;ty+=q.gsp*Math.sin(q.angle)*f;}else{tx+=q.vx*f;ty+=(q.vy+P.grv*f/2)*f;}}
+  const e=q.on==='loop'?1:1-Math.exp(-dt*14);if(Math.hypot(tx-q.x,ty-q.y)>220){q.x=tx;q.y=ty;}else{q.x+=(tx-q.x)*e;q.y+=(ty-q.y)*e;}
+  const sp=q.grounded?q.gsp:Math.hypot(q.vx,q.vy)*Math.sign(q.vx||1);q.anim+=(Math.abs(q.grounded?q.gsp:q.vx)*.08+.02)*dt*60;q.spin+=sp*.09*dt*60;}
+ function onNetEvent(e){const w=worlds[me];
+  if(e.r!=null){if(L.rings[e.r]&&!w.got[e.r]){w.got[e.r]=1;const r=L.rings[e.r];w.fx.burst(r.x,r.y,{n:4,colors:['#fff','#ffe680'],speed:60,life:.25,size:2,shape:'star'});}}
+  else if(e.en!=null){const en=w.enemies[e.en];if(en?.alive){en.alive=false;w.fx.burst(en.x,en.y-10,{n:12,colors:['#fff','#ffd84a','#ff7a2a'],speed:150,life:.4,size:2.4});w.animals.push({x:en.x,y:en.y-10,vx:(Math.random()<.5?-1:1)*1.6,vy:-3,kind:Math.random()<.5?'flicky':'pocky',t:0});sfx.pop();}}
+  else if(e.mo!=null){const m=w.monitors[e.mo];if(m&&!m.broken){m.broken=true;w.debris.push({x:m.x,y:m.y,t:0,type:m.type});sfx.monitor();}}
+  else if(e.bh&&host){const b=w.boss;if(b&&b.state==='fight')damageBoss(pl[me],w,undefined,true);}
+  else if(e.cap&&host){const cp=w.boss?.cap;if(cp&&!cp.open){cp.open=true;cp.t=0;sfx.capsule();}}}
+ function unpackBoss(d){const w=worlds[me],b=w.boss;if(!b||!Array.isArray(d))return;const [bx,by,st,bt,hp,hits,cap]=d,prev=b.state;
+  b.tx=bx;b.ty=by;b.hp=hp;b.hits=hits;
+  if(st!==prev){b.state=st;b.t=bt;if(prev==='wait'){b.x=bx;b.y=by;}if(st==='flee'&&!b.head)b.head={x:b.x,y:b.y-20,vx:-1.2,vy:-5.5};if(['wait','enter','fight'].includes(prev)&&(st==='dying'||st==='flee')){b.flash=0;w.fx.shake(10);bossBeaten(pl[me]);}}
+  else if(Math.abs(b.t-bt)>.3)b.t=bt;
+  if(Array.isArray(cap)){if(!b.cap)b.cap={x:cap[0],y:cap[1],open:false,t:0,drop:cap[3]};if(cap[2]&&!b.cap.open){b.cap.open=true;b.cap.t=0;sfx.capsule();}}}
+ const nf=net?netField(s,{hz:20,
+  pack:()=>{const o={t:+clock.toFixed(3),p:packP(pl[me])};const b=worlds[me].boss;if(host&&b)o.b=[r1(b.x),r1(b.y),b.state,+b.t.toFixed(2),b.hp,b.hits,b.cap?[b.cap.x,b.cap.y,b.cap.open?1:0,b.cap.drop]:0];return o;},
+  unpack:(i,d)=>{if(!d)return;unpackP(d.p);if(d.b&&!host)unpackBoss(d.b);},onEvent:onNetEvent}):null;
+ function ev(e){if(nf)nf.event(e);}
+ let netStarted=false;
+ // Goal Dash ends 10 s after the first runner is through (or when both are); the boss act once the capsule is open
+ const netOver=()=>{const p=pl[me],q=pl[them];if(clock>=(mode==='boss'?BOSS_CAP:RACE_CAP))return true;
+  if(mode==='boss')return p.finished&&clock-p.finishT>2.6;
+  if(p.finished&&q.finished)return clock-Math.max(p.finishT,q.finishT)>1.6;
+  return clock>Math.min(p.finished?p.finishT:Infinity,q.finished?q.finishT:Infinity)+NET_GRACE;};
+ async function netEnd(){phase='net-end';endT=0;const p=pl[me];
+  const F=[];F[me]={f:p.finished?1:0,t:+p.finishT.toFixed(3),b:Math.round(p.best),sc:p.score,h:worlds[me].boss?.hits||0};nf.finish(F[me]);F[them]=await nf.remoteDone();if(!F[them]||!s.alive)return;
+  const q=pl[them],o=F[them];q.finished=!!o.f;q.finishT=o.t;q.best=Math.max(q.best,o.b);q.score=o.sc;
+  let sc;if(mode==='boss'){sc=F.map(f=>f.sc|0);winner=sc[0]===sc[1]?-2:sc[0]>sc[1]?0:1;}
+  else{const fin=F.map(f=>f.f?f.t:Infinity);if(fin[0]<Infinity||fin[1]<Infinity)winner=Math.abs(fin[0]-fin[1])<.01?-2:fin[0]<fin[1]?0:1;else winner=Math.abs(F[0].b-F[1].b)<4?-2:F[0].b>F[1].b?0:1;
+   sc=pl.map(prog);if(winner>=0){sc[winner]=100;sc[1-winner]=Math.min(sc[1-winner],99);}else sc[1]=sc[0];}
+  netScores=sc;phase='end';endT=0;endText=winner===-2?'DEAD HEAT!':`${s.players[winner].name.toUpperCase()} WINS${mode==='boss'?'!':' THE DASH!'}`;
+  if(winner>=0)s.react(winner,'win');jingle([784,988,1175,1568,1319,1568],{type:'square',vol:.035,step:.1});}
+ let netScores=null,bot=null;
+ if(net)s.debug.bot=()=>{if(!bot){bot={t:0,stuck:0,hold:0};return 'drive';}return '';};
+ const netDesc=q=>mode==='boss'?`${q.score.toLocaleString()} points${q.finished?'':' (no capsule)'}`:q.finished?fmtRace(q.finishT):`${prog(q)}% of the way`;
+ if(net)s.hint(mode==='boss'?'GREEN HILL ACT 3 TOGETHER: you run the act at the same time, each on your own phone (P1 Sonic, P2 Tails); an arrow on the edge points to your partner. Rings, badniks and monitors one of you takes are gone for both. Fall and you come back next to your partner. Beat the boss together (8 hits) and the pilot joins BOTH rosters; whoever opens the capsule gets +1000. Highest score wins. Touch: drag on the left to run, down to roll; tap the right side to jump; crouch + tap = spin dash.':'GOAL DASH LIVE: both of you race the same act at the same time, each on your own phone (P1 Sonic, P2 Tails); an arrow on the edge points to the other runner. Rings and badniks one of you takes are gone for both. First to the signpost wins; the other then has 10 seconds to get there. Touch: drag on the left to run, down to roll; tap the right side to jump; crouch + tap = spin dash.');
+ // online test bot: holds right, jumps when stuck (and keeps hopping at the boss / capsule)
+ function botInput(inp){const p=pl[me],w=worlds[me],b=w.boss;bot.t++;inp.l=0;inp.r=1;inp.d=0;
+  if(p.grounded&&Math.abs(p.gsp)<1.2)bot.stuck++;else bot.stuck=0;
+  if(w.locked&&b){const tx=b.cap&&!b.cap.open?b.cap.x:b.x;inp.r=p.x<tx-6?1:0;inp.l=p.x>tx+6?1:0;}
+  if(p.grounded&&(bot.stuck>25||bot.t%90===0||w.locked&&bot.t%35===0)){inp.press=1;bot.hold=20;bot.stuck=0;}
+  inp.jump=bot.hold-->0?1:0;}
  // ---------------- turns: title → P1 hand-off → countdown → run → P2 hand-off → countdown → run vs ghost → results
  const score=q=>q.finished?fmtRace(q.finishT):mode==='boss'&&worlds[q.i].boss.hits?`${worlds[q.i].boss.hits} of ${BOSS_HP} boss hits`:`${prog(q)}% of the way`;
  async function beginTurn(i){
+  // online: no hand-off; both phones start the countdown together
+  if(net){phase='wait';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;clock=0;acc=0;cd=new Countdown(3);phase='count';const p=pl[me];cams[me].x=p.x-120;cams[me].y=p.y-150;return;}
   phase='handoff';turn=i;for(const pd of pads){pd.stick=null;pd.jump=null;}for(const inp of inputs)Object.assign(inp,{l:0,r:0,d:0,jump:0,press:0});
   const n0=s.players[0].name,desc=s.solo?(mode==='boss'?`Act ${soloCleared+1}: clear the act and beat the boss${bossChar?` (piloted by ${bossName}; beat it and they join your roster)`:''}. Every clear brings a brand-new act.`:`Act ${soloCleared+1}: reach the signpost before time runs out. Every clear brings a brand-new act.`):i===0?(mode==='boss'?`You run first as Sonic: clear the act and beat the boss${bossChar?` (piloted by ${bossName}; beat it and they join your roster)`:''}. ${s.players[1].name} runs next as Tails against your ghost.`:`You run first as Sonic: reach the signpost as fast as you can. ${s.players[1].name} runs next as Tails against your ghost.`)
    :(mode==='boss'?`You're Tails. Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'} through the act and the boss${bossChar?`, and free ${bossName} for your own roster`:''}. ${n0}'s ghost runs beside you.`:`You're Tails. Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'}. Follow or overtake ${n0}'s ghost.`);
@@ -601,18 +688,21 @@ async function sonic(s){
   if(!s.alive)return;
   if(phase==='title'){titleT+=dt;if(titleT>2.45)beginTurn(0);}
   else if(phase==='count'){if(!cd.update(dt)){phase='play';for(const inp of inputs)inp.press=0;}}
-  else if(phase==='play'||phase==='turn-end'||phase==='end'){
+  else if(phase==='play'||phase==='turn-end'||phase==='end'||phase==='net-end'){
    if(!cd.done)cd.update(dt);acc+=dt;let steps=0;const p=pl[turn],w=worlds[turn];
+   if(net){stepRemote(dt);nf.tick(dt);if(mode==='boss'&&phase==='play'&&!p.finished&&w.boss?.cap?.open){p.finished=true;p.finishT=clock;}}
    // rings freeze when time is up; a race keeps the finished runner jogging past the signpost
    const moving=true;
    while(acc>=STEP&&steps<5){acc-=STEP;steps++;frames++;simT+=STEP;
     if(phase==='play')clock+=STEP;
     if(moving){readInput(turn);stepPlayer(p,w,phase==='play'?inputs[turn]:still);if(phase==='play')interact(p,w);stepWorld(w,p);p.best=Math.max(p.best,p.x);}
-    if(turn===0&&phase!=='end'&&!s.solo)ghost.push(snap(p));else if(turn===1)gi++;
+    if(turn===0&&phase!=='end'&&!s.solo&&!net)ghost.push(snap(p));else if(turn===1)gi++;
    }
    if(steps===5)acc=0;
    for(const w0 of worlds)w0.fx.update(dt);for(let i=0;i<2;i++)flash[i]=Math.max(0,flash[i]-dt*1.8);
-   if(phase==='play'){
+   if(phase==='play'&&net){if(netOver())netEnd();}
+   else if(phase==='net-end'){endT+=dt;}
+   else if(phase==='play'){
     if(turnOver(p)){endT=0;
      if(turn===0||s.solo){phase='turn-end';turnText=score(p).toUpperCase();}
      else{phase='end';const a=pl[0],b=pl[1];
@@ -624,17 +714,20 @@ async function sonic(s){
      if(phase==='turn-end')jingle([523,659,784,1047],{type:'square',vol:.03,step:.09});}
    }else if(phase==='turn-end'){endT+=dt;if(endT>2.4){if(s.solo){phase='handoff';soloAfter();return;}beginTurn(1);}}
    else{endT+=dt;if(endT>3.4){
+    if(net){const freed=mode==='boss'&&bossChar&&worlds[me].boss.hp<=0;
+     s.finish(netScores,`Green Hill ${mode==='boss'?'Boss Act together':'Goal Dash'}: ${s.players[0].name} ${netDesc(pl[0])}, ${s.players[1].name} ${netDesc(pl[1])}.${freed?` ${bossName} joins both rosters.`:''}`);return;}
     {const sc=[prog(pl[0]),prog(pl[1])];if(winner>=0){sc[winner]=100;sc[1-winner]=Math.min(sc[1-winner],99);}else sc[1]=sc[0];
      const freed=mode==='boss'&&bossChar?[0,1].filter(k=>s.broforceRecruits[k].length).map(k=>s.players[k].name):[];
      s.finish(sc,`Green Hill ${mode==='boss'?'Boss Act':'Goal Dash'}: ${s.players[0].name} ${score(pl[0])}, ${s.players[1].name} ${score(pl[1])}.${freed.length?` ${bossName} joins ${freed.join(' and ')}.`:''}`);}
     return;}}
-   s.setScores(s.solo?[soloTotal+soloPoints(pl[0]),0]:pl.map(prog));
+   s.setScores(s.solo?[soloTotal+soloPoints(pl[0]),0]:net&&mode==='boss'?pl.map(q=>q.score):pl.map(prog));
   }
   // draw
   x.fillStyle='#000';x.fillRect(0,0,s.W,s.H);
   drawView(turn,t);
   if(phase==='title')drawTitle(titleT);
   if(phase==='count'||!cd.done&&phase==='play')cd.draw(x,s.W,s.H);
+  if(phase==='wait'||phase==='net-end')outlined(x,`${phase==='net-end'?(pl[me].finished?'GOT THROUGH! ':'TIME UP! '):''}WAITING FOR ${s.players[them].name.toUpperCase()}…`,s.W/2,s.H*.32,{size:Math.min(s.W*.05,24),fill:HUD_YEL,stroke:'#08103a'});
   if(phase==='turn-end'||phase==='end'){const a=Math.min(1,endT*3),size=Math.min(s.W*.07,s.H*.07,48);x.save();x.globalAlpha=a;x.fillStyle='rgba(8,16,58,.55)';x.fillRect(0,s.H*.4,s.W,s.H*.2);
    if(phase==='turn-end'){outlined(x,pl[0].finished?'GOT THROUGH!':'TIME UP',s.W/2,s.H/2-size*.3,{size,fill:HUD_YEL,stroke:'#08103a'});outlined(x,`${s.players[0].name.toUpperCase()}: ${turnText}`,s.W/2,s.H/2+size*.75,{size:size*.5,fill:'#fff',stroke:'#08103a'});}
    else{outlined(x,endText,s.W/2,s.H/2-size*.3,{size,fill:HUD_YEL,stroke:'#08103a'});

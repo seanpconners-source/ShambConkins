@@ -391,7 +391,8 @@
   "src/cpuBoard.js",
   "src/cpuHooks.js",
   "src/netPlay.js",
-  "src/engines/netField.js"
+  "src/engines/netField.js",
+  "src/engines/partnerArrow.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
