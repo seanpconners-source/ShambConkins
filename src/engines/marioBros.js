@@ -768,7 +768,7 @@ async function marioBros(s){
  function tryAdvance(){if(phase!=='stage-wait')return;const p=pl[me],q=pl[them];
   if(!(theirDone.has(p.stage)||q.out||nf.gone))return;
   if(nextStage<0){p.done=true;phase='net-wait';checkNetEnd();return;}
-  if(p.out){p.out=false;p.lives=1;}p.stage=nextStage;p.checkOn=false;worlds[me]=null;startCard(me);}
+  graceUntil=0;if(p.out){p.out=false;p.lives=1;}p.stage=nextStage;p.checkOn=false;worlds[me]=null;startCard(me);}
  function checkNetEnd(){const p=pl[me],q=pl[them];if(phase==='net-end'||phase==='end')return;
   if(mode==='world'&&(p.out||p.done)&&(q.out||q.done||nf.gone)){if(p.out&&!q.out&&!q.done)return;netEnd();}}
  // a lost life: next to the partner in a bubble (same stage and area, partner up and running), else the checkpoint
@@ -807,7 +807,7 @@ async function marioBros(s){
   else if(e.fb){const [k,an,x,y,vx]=e.fb,w=W(k);if(w&&AR(w,an))w.fire.push({x,y,vx,vy:3,t:0,area:an,remote:true});}
   else if(e.bd){const [k,an,fake]=e.bd,w=W(k),b=w&&AR(w,an)?.bowser;if(b&&b.state!=='dead'){b.state='dead';b.vy=-3;if(fake)b.fake=true;}}
   else if(e.ax){const [k,an]=e.ax,w=W(k),b=w&&AR(w,an)?.bowser;if(b&&b.state!=='dead'&&b.state!=='fall'){b.state='fall';b.vy=0;}}
-  else if(e.gl){const p=pl[me];if(mode==='world'&&p.stage===e.gl[0]&&!graceUntil&&phase==='play')graceUntil=clock+NET_GRACE;}
+  else if(e.gl){const p=pl[me];if(mode==='world'&&p.stage===e.gl[0]&&!graceUntil&&phase==='play'&&!p.out)graceUntil=clock+NET_GRACE;}
   else if(e.sc){const [st,next]=e.sc;theirDone.set(st,next);const p=pl[me];
    // out of lives: follow the partner on to the next stage (and come back with a life)
    if(p.out&&p.stage===st&&phase!=='stage-wait'){nextStage=next;phase='stage-wait';}tryAdvance();}
@@ -855,7 +855,7 @@ async function marioBros(s){
   else if(phase==='card'){cardT+=dt;const p=pl[turn];
    if(cardT>(cardKind==='gameover'?3:2.4)){if(cardKind==='gameover')advanceTurn();else{phase='play';for(const inp of inputs){inp.press=0;inp.bPress=0;}note(p,'play '+stageName(p));}}}
   else if(phase==='warp'){acc+=dt;while(acc>=STEP){acc-=STEP;warpMsg.t++;frames++;}if(warpMsg.t>720){const p=pl[warpMsg.i];warpMsg=null;
-   if(net&&mode==='world'){p.stagesCleared++;netStageDone(p,Math.min(2,lastStage));}else{p.stage=Math.min(2,lastStage);p.checkOn=false;p.stagesCleared++;worlds[p.i]=null;startCard(p.i);}}}
+   if(net&&mode==='world'){p.stagesCleared++;p.inCastle=true;netStageDone(p,Math.min(2,lastStage));}else{p.stage=Math.min(2,lastStage);p.checkOn=false;p.stagesCleared++;worlds[p.i]=null;startCard(p.i);}}}
   else if(LIVE.includes(phase)){
    acc+=dt;let steps=0;const i=turn,p=pl[i];
    // online: the shared step count (lifts, firebars) ends this frame on the wall clock since the start, so both phones agree
@@ -873,7 +873,7 @@ async function marioBros(s){
    for(const w of worlds)w&&w.fx.update(dt);for(let k=0;k<2;k++)flash[k]=Math.max(0,flash[k]-dt*1.8);
    if(net&&phase==='play'){
     // the partner reached the goal NET_GRACE seconds ago: pulled along to the next stage
-    if(mode==='world'&&graceUntil&&clock>graceUntil&&!p.out&&!p.flagged&&!p.axe&&!p.inCastle){p.dead=0;p.bubble=0;note(p,'pulled along');netStageDone(p,p.stage>=lastStage?-1:p.stage+1);}
+    if(mode==='world'&&graceUntil&&clock>graceUntil&&!p.out&&!p.flagged&&!p.axe&&!p.inCastle){p.dead=0;p.bubble=0;p.inCastle=true;note(p,'pulled along');netStageDone(p,p.stage>=lastStage?-1:p.stage+1);}
     else if(netOver())netEnd();}
    else if(phase==='play'&&mode!=='world'&&turnOver(p)){endT=0;
     if(turn===0||s.solo){if(s.solo)soloOk=mode==='coins'?p.coins>=coinGoal():p.finished;phase='turn-end';turnText=mode==='coins'?(s.solo?`${p.coins}/${coinGoal()} COINS`:`${p.coins} COINS`):p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;jingle(s.solo&&!soloOk?[392,330,262]:[523,659,784,1047],{type:'square',vol:.03,step:.09});}
