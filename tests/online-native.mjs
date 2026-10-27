@@ -19,6 +19,8 @@ async function phone(tag){
  // engine crashes are caught by the launcher (console.error 'Game engine failure'): count them as errors too
  p.on('console',m=>{if(m.type()==='error'&&/engine failure|TypeError|ReferenceError|RangeError/.test(m.text()))errors.push('console: '+m.text().slice(0,300));});
  await p.addInitScript(h=>{try{localStorage.setItem('sc-net-host',h);}catch{}},HOST);
+ // NETCOUNT=1: count what this phone sends to the room (messages and bytes), printed per game
+ await p.addInitScript(()=>{const W=WebSocket.prototype,o=W.send;window.__wsc={n:0,b:0};W.send=function(d){window.__wsc.n++;window.__wsc.b+=d?.length||0;return o.call(this,d);};});
  await p.goto(url);await p.waitForSelector('.title-screen',{timeout:60000});await p.waitForFunction(()=>!document.getElementById('boot'));
  await p.evaluate(()=>{window.ShambConkins.store.profile.settings.reducedMotion=true;});
  return {p,errors,tag};
@@ -54,6 +56,7 @@ for(const id of GAMES){
  // LAG=lo-hi: every move this phone sends is held back lo..hi ms (in order, with jitter), like a slow phone network
  if(LAG)for(const ph of [A,B])await ph.p.evaluate(([lo,hi])=>{const ch=window.ShambConkins.store.session.online,orig=ch.send.bind(ch);let last=0;ch.send=m=>{const at=Math.max(last,performance.now()+lo+Math.random()*(hi-lo));last=at;setTimeout(()=>orig(m),at-performance.now());};},LAG);
  const t0=Date.now();let ra='',rb='',shot=false,counts={};
+ const wc0=await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>({...window.__wsc}))));
  const limit=LIMIT*(id==='paddys-beer-pong'&&!process.env.LIMIT_S?1.75:1); // a full Beer Pong match runs to last call, ~4-5 min headless
  while(Date.now()-t0<limit*1000){
   const [a,b]=[await step(A),await step(B)];for(const x of [a,b]){const k=x.split(':')[0];counts[k]=(counts[k]||0)+1;}
@@ -68,6 +71,8 @@ for(const id of GAMES){
   await A.p.waitForTimeout(200);
  }
  console.log(' steps',JSON.stringify(counts));
+ if(process.env.NETCOUNT){const wc=await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>({...window.__wsc})))),secs=(Date.now()-t0)/1000;
+  console.log(' sent',[A,B].map((ph,i)=>`${ph.tag} ${((wc[i].n-wc0[i].n)/secs).toFixed(1)} msg/s ${((wc[i].b-wc0[i].b)/secs/1024).toFixed(1)} KB/s`).join(', '),`over ${secs.toFixed(0)} s`);}
  check(ra&&rb,`${id}: both phones reach the result (${ra||'-'} / ${rb||'-'})`);
  if(ra&&rb){
   const [ta,tb]=await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>document.querySelector('#dialog[open]')?.innerText||'')));
