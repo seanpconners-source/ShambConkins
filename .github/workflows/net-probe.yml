@@ -34,6 +34,12 @@ jobs:
       - name: Probe
         continue-on-error: true
         run: node tools/net-probe.mjs "${{ inputs.base }}" "${{ inputs.stream }}"
+      - name: Probe from real browsers (Chromium, Firefox)
+        continue-on-error: true
+        run: |
+          npm i --no-save --silent playwright@1.56.1 >/dev/null 2>&1
+          npx --yes playwright@1.56.1 install --with-deps chromium firefox >/dev/null 2>&1
+          node tools/net-probe-browser.mjs "${{ inputs.base }}"
       - name: Worker log summary
         continue-on-error: true
         run: |
@@ -44,6 +50,7 @@ jobs:
           const out={};let n=0;
           for(const l of lines){let e;try{e=JSON.parse(l);}catch{continue;}n++;
            const k=(e.event?.request?.url?"fetch ":e.event?.webSocketEventType?"ws ":"")+(e.outcome||"?");out[k]=(out[k]||0)+1;
+           const rq=e.event?.request;if(rq&&/\/room\//.test(rq.url))console.log("ROOM",rq.method,rq.url.replace(/^https?:\/\/[^/]+/,""),"upgrade="+(rq.headers?.upgrade||"-"),"status="+(e.event?.response?.status??"?"),(rq.cf?.httpProtocol||""),(rq.headers?.["user-agent"]||"").slice(0,60));
            for(const x of e.exceptions||[])console.log("EXCEPTION",x.name,x.message);
            for(const x of e.logs||[])if(x.level!=="log")console.log("LOG",x.level,JSON.stringify(x.message).slice(0,300));
            if(e.outcome&&e.outcome!=="ok"&&e.outcome!=="canceled")console.log("OUTCOME",e.outcome,JSON.stringify(e.event).slice(0,300));}
