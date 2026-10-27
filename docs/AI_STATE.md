@@ -17,8 +17,9 @@ The Oct 25 branches `ccr-36294fb1-h63157` / `ccr-068b9171-9aysxt` (a chat that r
 Next: owner playtest on two real phones and fix what they report (nothing has been tried on real phones yet).
 ONLINE CO-OP (Oct 26, branch `online-coop-kart`, not pushed/merged yet; owner's design answers in "Online co-op/live" below):
 games that used to run as two separate solo runs online now share one world, ONLY when `s.online` (1-phone 2P and 1P unchanged).
-Done: kart Time Trial → 1v1 race, Sonic ×2, SMB ×3, Broforce ×4, every boss fight. Left (owner picked all): Living Dead horde,
-Castlevania ×3, Warriors, DOOM co-op, Photo Hunt same photos, Kart GP (pass) as one GP with CPUs.
+Done: kart Time Trial → 1v1 race, Sonic ×2, SMB ×3, Broforce ×4, every boss fight, horde ×2 (Living Dead, Evil Dead),
+Castlevania NES ×2. Left (owner picked all): Symphony of the Night (cv-symphony, sotn.js), Warriors, DOOM co-op (lockstep
+ticcmds would suit the vanilla-style rebuild), Photo Hunt on the same photos, Kart GP (pass) as one GP with the CPUs.
 
 ## Implemented systems
 - **Solo / 1P arcade (Oct 19 2026, batch 1 of 4, branch `claude/solo-mode-batch1`):** Arcade 1P / 2P switch + solo player
@@ -807,7 +808,12 @@ Castlevania ×3, Warriors, DOOM co-op, Photo Hunt same photos, Kart GP (pass) as
   chopper waits 10 s; `nextStage` syncs. Also fixed: bros could wall-climb out of the map (x clamp). Boss fights (bossFight.js):
   each phone flies its own plane vs its own copy of the attacks; player 1's phone owns HP (other sends {d}), streams HP/phase/
   mode; {rv} revive. netPlay.js: moves arriving before a channel opens are queued (`early`) — needed when an engine starts its
-  sync at once. Test: `tests/online-native.mjs` GAMES=... (+ new SHOT_JS = code run on Sean's phone before the screenshot, PROBE /
+  sync at once. Horde (horde.js, NET_ENGINES 'horde'): player 1's phone runs director/enemies/shots/zones/drops/end and streams
+  enemies near the other survivor (hz 8, `packEnemies`); the other phone keeps them in `netE` by uid, eases them, judges contact,
+  runs only its own survivor+weapons and sends hits {h}; drops have ids ({gm}/{km} out, {g}/{k} taken), props {pb}, blasts {ex},
+  shots {pr}/weapon flashes {fx}/zones {z}/enemy shots {es} shown on the other phone; modals don't pause online (chooser stands
+  still, safe, auto-pick after 12 s); player 1 picks the night ({night}). Castlevania NES (castlevania.js): Sonic pattern; events
+  {cd} candle {wb} wall {fk} placed monster (by `home`) {bh} bat hit {bf} bat fireball; `wakeBat` pulls a straggler in. Test: `tests/online-native.mjs` GAMES=... (+ new SHOT_JS = code run on Sean's phone before the screenshot, PROBE /
   PROBE_S = print state every n s). All pass with bots; offline sonic/mario/broforce-turns/boss tests still pass. Real phones untested.
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
