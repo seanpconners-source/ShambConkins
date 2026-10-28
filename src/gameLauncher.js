@@ -303,11 +303,13 @@ async function soloTurnRounds(game,players,set,valid,duel=null){
  return settleSolo(game,[total,0],label(),players,{kind:'turns',won:round>0,progress:{level:round},duel},[recruits]);
 }
 // Native online game (src/netPlay.js): the real 2-player game runs on both phones from one seed, in the same player
-// order (players[i].owner = Sean/Amber by index); this phone plays players[duel.who] and the other player's moves arrive
-// through session.online. Settled like a duel: each phone reports its own score.
+// order; this phone plays players[duel.slot] (duel.js: the Sean/Amber pick, or the room seat when both phones picked the
+// same name) and the other player's moves arrive through session.online. Each player keeps its own owner (unlocks go to
+// the right roster). Settled like a duel: each phone reports its own score.
 async function netGame(game,duel,valid){
- const me=duel.who===1?1:0,pick=i=>({name:store.setupNames?.[i]||(i?'Amber':'Sean'),character:store.setupSelected?.[i]||(i?'amber':'sean')});
- const players=[0,1].map(i=>{const p=duel.players?(i===me?duel.players[0]:duel.players[1]):i===me?pick(i):{name:duel.opponent?.name||(i?'Amber':'Sean'),character:duel.opponent?.character||(i?'amber':'sean')};return newPlayer(p.name,p.character,i);});
+ const me=(duel.slot??duel.who)===1?1:0,self=duel.who===1?1:0,pick=i=>({name:store.setupNames?.[i]||(i?'Amber':'Sean'),character:store.setupSelected?.[i]||(i?'amber':'sean'),owner:i?'Amber':'Sean'});
+ const peerOwner=duel.opponent?.owner==='Amber'||duel.opponent?.owner==='Sean'?duel.opponent.owner:self?'Sean':'Amber';
+ const players=[0,1].map(i=>{const p=duel.players?(i===me?duel.players[0]:duel.players[1]):i===me?pick(self):{name:duel.opponent?.name||(self?'Sean':'Amber'),character:duel.opponent?.character||(self?'sean':'amber'),owner:peerOwner};const q=newPlayer(p.name,p.character,i);if(p.owner==='Sean'||p.owner==='Amber')q.owner=p.owner;return q;});
  const ch=openChannel(duel.mid,me);let delivered=false;
  const session=new GameSession(game,players,(scores,label)=>{if(delivered)return;delivered=true;ch.close();
   const mine=Math.max(0,Math.floor(scores[me])||0),theirs=Math.max(0,Math.floor(scores[1-me])||0),cages=session.broforceRecruits||session.gameRecruits;

@@ -30,8 +30,8 @@ const act=(ph,name,data={})=>ph.p.evaluate(([name,data])=>{const b=document.crea
 const choose=(ph,label)=>ph.p.evaluate(l=>{const b=[...document.querySelectorAll('#dialog[open] button')].find(b=>b.textContent.trim().startsWith(l));b?.click();return !!b;},label);
 const waitDialog=(ph,re,ms=20000)=>ph.p.waitForFunction(r=>new RegExp(r).test(document.querySelector('#dialog[open]')?.innerText||''),re.source,{timeout:ms});
 const A=await phone('Sean'),B=await phone('Amber');
-for(const [ph,who] of [[A,0],[B,1]]){await act(ph,'online-home');await waitDialog(ph,/Play online/);await ph.p.fill('#net-room',process.env.ROOM||'Native Night');await ph.p.check(`input[name="net-who"][value="${who}"]`);await choose(ph,'Join room');await ph.p.waitForSelector('.net-room');}
-await A.p.waitForFunction(()=>/Amber is here/.test(document.querySelector('.net-room')?.innerText||''),null,{timeout:15000});
+for(const [ph,who] of [[A,0],[B,process.env.SAME_WHO?0:1]]){await act(ph,'online-home');await waitDialog(ph,/Play online/);await ph.p.fill('#net-room',process.env.ROOM||'Native Night');await ph.p.check(`input[name="net-who"][value="${who}"]`);await choose(ph,'Join room');await ph.p.waitForSelector('.net-room');}
+await A.p.waitForFunction(()=>/ is here/.test(document.querySelector('.net-room')?.innerText||''),null,{timeout:15000});
 // Bot step: tap whatever this phone may tap. Game-specific hooks (s.debug.bot) play moves where buttons aren't enough.
 const step=ph=>ph.p.evaluate(()=>{
  const S=window.ShambConkins,store=S.store,s=store.session,dlg=document.getElementById('dialog');
