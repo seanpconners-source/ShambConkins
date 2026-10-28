@@ -1,8 +1,8 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.69.1 (Oct 28: 49 new owner portraits optimized (480px WebP q88, same bytes as the TESTver sync bot makes); home screen: Continue
+Version 0.69.2 (Oct 28; v0.69.1: 49 new owner portraits optimized (480px WebP q88, same bytes as the TESTver sync bot makes); home screen: Continue
 stacked over a smaller New Game again + slogan "The game playin' the game, disguised as another game!" (`.ts-tagline` under the logo).
-Oct 28 (unreleased): online P1/P2 fix: the room's "You are" pick decided the player slot, and both phones picking the same name
+v0.69.2 Oct 28: online P1/P2 fix: the room's "You are" pick decided the player slot, and both phones picking the same name
 made both P1 (each phone saw itself as Mario/Sonic, both ran the shared world). duel.js now passes `slot` (the pick, or the room
 seat when both picked the same); netGame plays players[slot] with each player's real owner. Test: online-native `SAME_WHO=1`.
 Lag check (same day): code adds no delay vs v0.68.1 (partner shown ~90-110 ms behind with no network, both builds, headless).

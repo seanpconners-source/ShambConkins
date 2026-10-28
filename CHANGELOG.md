@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.69.2
+
+**Online co-op: player 1 and player 2 are the same on both phones.** When both phones picked the same name in the Online room (each phone starts on its own Arcade "You" setting, usually Sean), both phones played as player 1: each saw itself as Mario, Sonic or Simon, and both tried to run the shared world (enemies, bosses) at the same time, so enemies could jump about or go missing for one of you. Now the phone that joined the room first is player 1 (Mario, Sonic…) and the second is player 2 (Luigi, Tails…), on both screens. Names, faces and the characters you win still go to whoever you really are. If you pick different names, nothing changes.
+
 ## v0.69.1
 
 **New portraits.** Biff Tannen, Ben Affleck's Batman, Buckethead, Chuck Norris, Clint Eastwood, Colonel Sanders, Dirty Harry, God, Jackie Brown, Jesus, Chris from *NSYNC, Pennywise, Carl Spackler, Kenny Powers, Walker Texas Ranger, Wang Chi, Sylvester Stallone, The Mountain, Dolores Umbridge, Chazz Michael Michaels and Ron Burgundy, many with extra faces (win, sad, angry, think, silly, walk). Shrunk like the earlier ones (480 px WebP; originals kept in `assets/originals/portraits/`).
