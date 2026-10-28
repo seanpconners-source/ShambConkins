@@ -835,8 +835,13 @@ LAG=80-150 and their offline tests; real phones untested.
   enemies near the other survivor (hz 8, `packEnemies`); the other phone keeps them in `netE` by uid, eases them, judges contact,
   runs only its own survivor+weapons and sends hits {h}; drops have ids ({gm}/{km} out, {g}/{k} taken), props {pb}, blasts {ex},
   shots {pr}/weapon flashes {fx}/zones {z}/enemy shots {es} shown on the other phone; modals don't pause online (chooser stands
-  still, safe, auto-pick after 12 s); player 1 picks the night ({night}). Castlevania NES (castlevania.js): Sonic pattern; events
-  {cd} candle {wb} wall {fk} placed monster (by `home`) {bh} bat hit {bf} bat fireball; `wakeBat` pulls a straggler in. Test: `tests/online-native.mjs` GAMES=... (+ new SHOT_JS = code run on Sean's phone before the screenshot, PROBE /
+  still, safe, auto-pick after 12 s); player 1 picks the night ({night}). Castlevania NES + SotN (Oct 28 rework, owner saw missing/invisible
+  enemies): player 1's phone runs ONE set of monsters for both (Broforce pattern: wake in either view, partner's real screen
+  width `cx/cw` in its snapshot, nearer hunter targeted); snapshots `m:{a:[x0,x1],f}` cover an area, a monster missing inside it
+  is hidden (never culled on silence); other phone reports hits {fh}, deaths {fk}/{fg}, shots {es} (aged by travel time)/{ek};
+  online deaths don't reset monsters; CV also {fz} stopwatch, {ps} partner sub-weapons, per-lap `netLog` for laps the other
+  hasn't reached; clocks/countdown on wall time. Warriors: wall clock, swings >1 s late dropped, HP never rises back. Test
+  harness AT_JS='secs:code;;...' (teleports, 3 s stalls on one phone). `wakeBat` pulls a straggler in. Test: `tests/online-native.mjs` GAMES=... (+ new SHOT_JS = code run on Sean's phone before the screenshot, PROBE /
   PROBE_S = print state every n s). All pass with bots; offline sonic/mario/broforce-turns/boss tests still pass. Real phones untested.
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
