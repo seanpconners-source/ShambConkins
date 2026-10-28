@@ -158,9 +158,10 @@ async function bossfight(s){
  function startKO(){if(net&&host)netOp(['ko']);mode='ko';modeT=0;timeScale=.35;runs.length=0;directorRun=null;B.deadR=0;bullets.length=0;hazards.length=0;warns.length=0;for(const m of minions)burst(m.x,m.y,'#ffd23c',8);minions.length=0;for(const p of P)p.inv=99;duration=Math.round(T-introEnd);shake(18);flashWhite=.6;sound('win');vibrate(120);for(const p of P)s.react(p.i,'win',3);}
  function startLose(){if(mode==='ko'||mode==='lose')return;if(net&&host)netOp(['lose']);mode='lose';modeT=0;timeScale=.5;runs.length=0;directorRun=null;duration=Math.round(T-introEnd);sound('lose');vibrate(200);for(const p of P)s.react(p.i,'sad',3);}
  const introEnd=4.4;
- async function finish(won){if(finished)return;finished=true;const t=duration||Math.round(T-introEnd),bonus=won?250+Math.max(0,Math.round((120-t)*3)):0;
-  // online: each phone counts its own plane, then the two swap
-  if(net){const mine={dmg:P[me].dmg,parries:P[me].parries,kills:P[me].kills};nf.finish(mine);const o=await nf.remoteDone();if(o){P[them].dmg=+o.dmg||0;P[them].parries=o.parries|0;P[them].kills=o.kills|0;}if(!s.alive)return;}
+ async function finish(won){if(finished)return;finished=true;let t=duration||Math.round(T-introEnd);
+  // online: each phone counts its own plane, then the two swap; the time bonus uses player 1's clock on both phones
+  if(net){const mine={dmg:P[me].dmg,parries:P[me].parries,kills:P[me].kills,t};nf.finish(mine);const o=await nf.remoteDone();if(o){P[them].dmg=+o.dmg||0;P[them].parries=o.parries|0;P[them].kills=o.kills|0;if(!host&&Number.isFinite(o.t))t=o.t;}if(!s.alive)return;}
+  const bonus=won?250+Math.max(0,Math.round((120-t)*3)):0;
   const sc=P.map(p=>Math.round(p.dmg+p.parries*50+p.kills*10+bonus));
   if(alone){soloProgress(s,sc[0],0,'');s.solo.won=won;s.finish([sc[0],0],won?`${boss.name} is down in ${t}s! ${P[0].parries} parries, ${sc[0]} points.`:`${boss.name} wins this round. ${sc[0]} points.`);return;}
   s.cooperative=true;s.shared=true;s.teamResult={kind:'boss',won,tied:false,humanTotal:sc[0]+sc[1],cpuTotal:0,cpuScores:[0,0],duration:t,bossId:boss.id};
