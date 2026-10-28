@@ -71,6 +71,11 @@ for(const id of GAMES){
    if(process.env.SHOT_JS){await A.p.evaluate(js=>{const s=window.ShambConkins.store.session;return new Function('s',js)(s);},process.env.SHOT_JS);await A.p.waitForTimeout(700);}
    await A.p.screenshot({path:screenshotPath(`onn-${id}-sean.png`)});await B.p.screenshot({path:screenshotPath(`onn-${id}-amber.png`)});}
   if(a.startsWith('result'))ra=a;if(b.startsWith('result'))rb=b;if(ra&&rb)break;
+  // AT_JS='secs:code;;secs:code': run code on BOTH phones (s = the session, me = its seat) once the game has run secs
+  // seconds, e.g. to teleport players to a boss or hold one phone's messages back ('stall'); prints what it returns
+  if(process.env.AT_JS){globalThis.__atDone??=new Set();for(const [k,part] of process.env.AT_JS.split(';;').entries()){const at=+part.slice(0,part.indexOf(':')),js=part.slice(part.indexOf(':')+1);
+   if(globalThis.__atDone.has(id+k)||Date.now()-t0<at*1000)continue;globalThis.__atDone.add(id+k);
+   console.log(' at',at+'s',...await Promise.all([A,B].map(ph=>ph.p.evaluate(js=>{try{const s=window.ShambConkins.store.session;return JSON.stringify(s?new Function('s','me',js)(s,s.online?.me):null);}catch(e){return 'ERR '+e.message;}},js))));}}
   // PROBE: an expression (s = the session) printed for both phones every PROBE_S (5) seconds, to watch a game's state
   if(process.env.PROBE&&Date.now()-(globalThis.__probeT||0)>(+process.env.PROBE_S||5)*1000){globalThis.__probeT=Date.now();
    console.log(' probe',Math.round((Date.now()-t0)/1000)+'s',...await Promise.all([A,B].map(ph=>ph.p.evaluate(js=>{try{const s=window.ShambConkins.store.session;return JSON.stringify(s?new Function('s',js)(s):null);}catch(e){return 'ERR '+e.message;}},process.env.PROBE))));}

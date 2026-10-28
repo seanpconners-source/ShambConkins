@@ -13,7 +13,7 @@ const {turnRunner}=require("src/engines/retroKit.js");
 const {vibrate}=require("src/audio.js");
 const {netField}=require("src/engines/netField.js");
 const {partnerArrow}=require("src/engines/partnerArrow.js");
-const NET_GRACE=10,ARENA=140; // online: seconds the partner gets after the first one home; width of a locked fight
+const NET_GRACE=10,ARENA=140,SWING_LATE=1; // online: seconds the partner gets after the first one home; width of a locked fight
 
 const GANGS={fury:{name:'BASEBALL FURIES',hp:4,sp:22,reach:15,dmg:1,col:'#f2efe6',stripe:'#1a1a1a',pts:150},punk:{name:'PUNKS',hp:3,sp:34,reach:9,dmg:1,col:'#3a7ac8',stripe:'#e8c41e',pts:100},orphan:{name:'ORPHANS',hp:2,sp:20,reach:9,dmg:1,col:'#7a6a5a',stripe:'#4a3a2a',pts:75}};
 const STAGE_LEN=900;
@@ -61,7 +61,7 @@ async function brawler(s){
   for(const f of w.foes){const G=GANGS[f.g];f.stun=Math.max(0,f.stun-dt);f.x+=f.kvx*dt;f.kvx*=Math.pow(.02,dt);
    if(f.down>0){f.down-=dt;if(f.hp<=0&&f.down<97)f.gone=true;continue;}
    if(f.stun>0)continue;const T=f.wind>0&&f.tgt?f.tgt:target(w,f);if(!T)continue;const dx=T.x-f.x,dy=T.y-f.y;f.face=dx>0?1:-1;
-   if(f.wind>0){f.wind-=dt;if(f.wind<=0){if(T===p)strike(w,f,G);else ev({sw:f.id});f.cool=.9+Math.random()*.6;}continue;}
+   if(f.wind>0){f.wind-=dt;if(f.wind<=0){if(T===p)strike(w,f,G);else ev({sw:f.id,t:Math.round(w.time*100)});f.cool=.9+Math.random()*.6;}continue;}
    f.cool=Math.max(0,(f.cool||0)-dt);
    if(Math.abs(dx)<G.reach&&Math.abs(dy)<.12){if(f.cool<=0){f.wind=f.g==='fury'?.55:.4;f.tgt=T;}}
    else{const sp=G.sp*(f.g==='punk'?1:1);f.x+=Math.sign(dx)*sp*dt*(Math.abs(dx)>G.reach-2?1:0);f.y+=clamp(dy,-.5*dt,.5*dt);f.step+=dt*8;}}
@@ -149,12 +149,14 @@ async function brawler(s){
     Object.assign(m,{net:{x:px,y:py},face,step,atk:!!atk,kick:!!kick,hp,inv:!!inv,out:!!out,won:!!won,score:sc,homeT:ht});
     if(host||!Array.isArray(d.f))return;const seen=new Set();
     for(const [id,g,x0,y0,hp2,f2,down,wind,st] of d.f){if(!GANGS[g])continue;seen.add(id);let f=w.foes.find(f=>f.id===id);if(!f){if(lost.has(id))continue;f={id,g,x:x0,y:y0,hp:hp2,face:f2,state:'walk',t:0,wind:0,kvx:0,stun:0,down:0,step:st};w.foes.push(f);}
-     f.tx=x0;f.ty=y0;f.face=f2;f.wind=wind;f.step=st;if(!f.lk){f.hp=hp2;if(down&&f.down<=0)f.down=hp2<=0?99:.5;else if(!down&&f.down>0)f.down=0;}}
+     f.tx=x0;f.ty=y0;f.face=f2;f.wind=wind;f.step=st;if(!f.lk){f.hp=Math.min(f.hp,hp2);if(down&&f.down<=0)f.down=hp2<=0?99:.5;else if(!down&&f.down>0)f.down=0;}}
     w.foes=w.foes.filter(f=>seen.has(f.id)||f.lk);
-    if(Array.isArray(d.l)){const was=w.lock;w.wave=d.l[0];w.lock=!!d.l[1];w.lx0=d.l[2];if(was&&!w.lock)unlocked(w);else if(!was&&w.lock)voice(220,.2,.05,'sawtooth',{lp:900});}},
+    if(Array.isArray(d.l)){const was=w.lock,wv=w.wave;w.wave=d.l[0];w.lock=!!d.l[1];w.lx0=d.l[2];if(was&&(!w.lock||w.wave!==wv))unlocked(w);if(w.lock&&(!was||w.wave!==wv))voice(220,.2,.05,'sawtooth',{lp:900});}},
    onEvent:e=>{if(!e||typeof e!=='object')return;
     if(Array.isArray(e.h)&&host){const [id,dmg,kx,knock]=e.h,f=w.foes.find(f=>f.id===id);if(f&&f.hp>0)hitFoe(w,f,+dmg||1,+kx||0,!!knock,true);}
-    else if(e.sw!=null&&!host){const f=w.foes.find(f=>f.id===e.sw);if(f)strike(w,f,GANGS[f.g]);}}});
+    // a swing that arrives long after it landed on player 1's phone (a stalled connection) is dropped: this phone never
+    // showed it in time
+    else if(e.sw!=null&&!host){const f=w.foes.find(f=>f.id===e.sw);if(f&&!(e.t!=null&&w.time-e.t/100>SWING_LATE))strike(w,f,GANGS[f.g]);}}});
   // the run ends at the clock, when both are down, when both are home or down, or 10 s after the first one home
   const over=()=>{const m=w.mate;if(w.time>=w.cap||w.dead&&m.out)return true;if((w.dead||w.won)&&(m.out||m.won))return true;
    const first=Math.min(w.won?w.homeT:Infinity,m.won?m.homeT:Infinity);return w.time>first+NET_GRACE;};
@@ -164,9 +166,9 @@ async function brawler(s){
   s.debug={engine:'brawler',get world(){return w;},bot:()=>{if(bot)return '';bot=ww=>{const pp=ww.p;let best=null,bd=1e9;for(const f of ww.foes)if(f.down<=0&&f.hp>0){const d=Math.abs(f.x-pp.x)+Math.abs(f.y-pp.y)*60;if(d<bd){bd=d;best=f;}}
     if(!best)return [1,(.5-pp.y)];const dx=best.x-pp.x,dy=best.y-pp.y;if(Math.abs(dx)<14&&Math.abs(dy)<.1){pp.face=dx>0?1:-1;if(pp.atk<=0&&Math.random()<.2)punch(ww);return [0,0];}
     return [Math.abs(dx)>11?Math.sign(dx):-Math.sign(dx)*.3,clamp(dy*8,-1,1)];};return 'drive';}};
-  void (async()=>{await nf.start('go');if(s.alive)phase='play';})();
+  let t0=0;void (async()=>{await nf.start('go');if(s.alive){phase='play';t0=performance.now();}})();
   s.frame(dt=>{nf.tick(dt);const m=w.mate,k=1-Math.exp(-dt*14);if(m.net){if(Math.abs(m.net.x-m.x)>60){m.x=m.net.x;m.y=m.net.y;}else{m.x+=(m.net.x-m.x)*k;m.y+=(m.net.y-m.y)*k;}}
-   if(phase==='play'){w.time+=dt;if(w.time>=0)step(w,dt);if(over())end();}else if(phase==='done'){endT+=dt;fx.step(dt);if(endT>1.6){phase='gone';
+   if(phase==='play'){w.time=Math.max(w.time,(performance.now()-t0)/1000-3);if(w.time>=0)step(w,dt);if(over())end();}else if(phase==='done'){endT+=dt;fx.step(dt);if(endT>1.6){phase='gone';
     s.finish(finals,`The Warriors together · ${s.players[0].name} ${finals[0]}, ${s.players[1].name} ${finals[1]}`);return;}}
    draw(w);if(phase==='wait'||phase==='end')label(x,`WAITING FOR ${s.players[them].name.toUpperCase()}…`,s.W/2,s.H*.42,clamp(s.W*.045,14,24),{fill:'#ffd23f'});
    else if(phase==='play'&&w.time<0)label(x,String(Math.ceil(-w.time)),s.W/2,s.H*.42,clamp(s.W*.12,30,80),{fill:'#fff'});

@@ -113,7 +113,7 @@ function spawnFoe(e){const F=FOE[e.type];return {...e,hw:F.hw,h:F.h,hp:F.hp,max:
  state:e.type==='bat'?'idle':e.type==='warg'?'idle':'walk',cd:60,home:e.home??e.x,baseY:e.y};}
 function makeWorld(L,seed){return {blocks:L.blocks.map(b=>({...b})),candles:L.candles.map(c=>({...c,alive:true})),foes:L.foes.map(spawnFoe),items:L.items.map(it=>({...it,t:0,ground:true,fixed:true})),
  shots:[],eshots:[],flames:[],corpses:[],parts:[],decals:[],nums:[],ai:[],zoneT:L.zones.map(()=>70),gateShut:false,deathDone:false,scene:null,locked:false,boss:null,introDone:false,orb:false,
- rng:seededRandom(seed),shake:0,flash:0,flashCol:'255,255,255',msg:null,banner:null,area:'',bolt:null,lightT:240,thunderT:0};}
+ rng:seededRandom(seed),shake:0,flash:0,flashCol:'255,255,255',msg:null,banner:null,area:'',bolt:null,lightT:240,thunderT:0,nid:1000};}
 function makePlayer(i,L){return {i,x:L.start,y:L.gy[L.start],vx:0,vy:0,grounded:true,facing:1,crouch:false,usedDouble:false,dropT:0,dash:0,dashCD:0,atk:null,charge:0,cast:0,hurt:0,inv:0,
  hp:HP_MAX,maxHp:HP_MAX,lv:1,exp:0,mp:MP_MAX,hearts:10,weapon:'alucard',sub:null,leap:false,dead:0,pit:false,best:L.start,finished:false,finishT:0,anim:0,t:0,throwT:0,deaths:0,score:0,aiT:0,
  coy:0,jbuf:0,comboN:-1,comboT:99,flip:0,kick:0,land:0,sw:[]};}
@@ -210,7 +210,9 @@ async function sotn(s){
   if(net){if(w.locked&&!w.orb){pullIn(p,w,false);return;}const q=pl[them];if(q.net&&!q.dead&&q.grounded&&q.x>check)check=q.x;}
   if(w.locked&&!w.orb){w.locked=false;w.blocks=w.blocks.filter(b=>b.kind!=='bars');check=AR.x0-30;const B=w.boss;if(B){if(B.phase===1&&B.state!=='dying'){B.state='hidden';B.t=0;B.vis=0;B.open=0;}else if(B.phase===2&&B.state!=='die'){B.state='idle';B.t=0;B.x=AR.x1-90;B.y=AR.floor;B.vy=0;B.air=false;B.crouch=0;B.low=0;B.mouth=0;}}}
   Object.assign(p,{x:check,y:support(w,check,5,-50,true),vx:0,vy:0,grounded:true,dead:0,pit:false,atk:null,kick:0,flip:0,comboN:-1,hurt:0,crouch:false,dash:0,hp:p.maxHp,inv:100,cast:0,charge:0});
-  w.foes=w.foes.filter(e=>e.boss).concat(L.foes.filter(e=>e.x>check+140&&!netKilled.has(e.id)).map(spawnFoe));w.eshots=[];w.shots=[];w.flames=[];w.corpses=[];w.zoneT=L.zones.map(()=>90);
+  // offline the castle resets its monsters past the checkpoint; online they are shared with the partner, so they stay
+  if(!net){w.foes=w.foes.filter(e=>e.boss).concat(L.foes.filter(e=>e.x>check+140).map(spawnFoe));w.eshots=[];w.zoneT=L.zones.map(()=>90);}
+  w.shots=[];w.flames=[];w.corpses=[];
   cams[p.i].x=clamp(check-cams[p.i].w*.4,0,LEN-cams[p.i].w);}
  function hurt(p,w,dmg,fromX){if(p.inv>0||p.dead||p.finished||w.scene)return;p.hp=Math.max(0,p.hp-dmg);num(w,p.x,p.y-PH-4,dmg,'#ff6a6a');blood(w,p.x,p.y-26,10+dmg,p.x<fromX?-1:1,.9);
   sfx.hit(false);sfx.grunt();s.react(p.i,'sad');shake(w,4);stop=Math.max(stop,4);
@@ -322,7 +324,7 @@ async function sotn(s){
   else if(t==='orb'){p.hp=p.maxHp;if(!p.finished){p.finished=true;p.finishT=clock;p.atk=null;sfx.orb();setTimeout(()=>s.alive&&sfx.clear(),700);s.react(p.i,'win');w.flash=.6;w.flashCol='255,60,90';}}}
  // ---------------- damage
  function dropFrom(w,x,y,rate=.35){const r=w.rng();if(r<rate)dropItem(w,r<rate*.18?'bigheart':r<rate*.3?'money':'heart',x,y);}
- function killFoe(p,w,e,o){e.dead=true;if(net&&e.id!=null){netKilled.add(e.id);ev({fk:e.id});}const F=FOE[e.type],H=e.h;sfx.kill();sfx.blood();stop=Math.max(stop,6);shake(w,3);
+ function killFoe(p,w,e,o){e.dead=true;if(net&&e.id!=null){netKilled.add(e.id);if(!netMob(w))ev({fk:e.id});}const F=FOE[e.type],H=e.h;sfx.kill();sfx.blood();stop=Math.max(stop,6);shake(w,3);
   const cutY=e.y-H*.5,dir=o.dir||(p.x<e.x?1:-1);
   if(e.type==='skeleton'){sfx.collapse();embers(w,e.x,e.y-H*.5,14,'bone');w.corpses.push({foe:{...e},x:e.x,y:e.y,h:H,part:'whole',t:0,life:40,rot:0});}
   else if(e.type==='bat'){blood(w,e.x,e.y,14,dir,1);w.corpses.push({foe:{...e},x:e.x,y:e.y,h:8,part:'whole',t:0,life:36,vy:.5,fall:true});}
@@ -332,7 +334,9 @@ async function sotn(s){
   embers(w,e.x,cutY,10);dropFrom(w,e.x,e.type==='bat'?e.y:e.y-12,e.type==='warg'||e.type==='armor'||e.type==='bloody'?.7:.35);
   p.score+=F.hp*10;p.exp+=EXP[e.type]||5;
   while(p.lv<=LEVELS.length&&p.exp>=LEVELS[p.lv-1]){p.lv++;p.maxHp+=10;p.hp=Math.min(p.maxHp,p.hp+10);p.mp=MP_MAX;sfx.level();w.levelT=1;}}
- function damageFoe(p,w,e,dmg,o){e.hp-=dmg;num(w,e.x,e.y-e.h-6,dmg);const hy=e.type==='bat'?e.y:e.y-e.h*.55;blood(w,e.x,hy,6+Math.min(16,dmg/2),o.dir||0,1);sfx.hit(dmg>=20||o.fin);if(o.sword)sfx.slashHit();sparks(w,e.x-(o.dir||0)*e.hw*.5,hy,o.fin?9:5,o.dir||0);
+ function damageFoe(p,w,e,dmg,o){e.hp-=dmg;
+  // online the phone showing player 1's monsters reports every hit {fh} (player 1's phone owns their HP; a kill shows and scores here at once)
+  if(netMob(w)&&e.id!=null)ev({fh:[e.id,dmg]});num(w,e.x,e.y-e.h-6,dmg);const hy=e.type==='bat'?e.y:e.y-e.h*.55;blood(w,e.x,hy,6+Math.min(16,dmg/2),o.dir||0,1);sfx.hit(dmg>=20||o.fin);if(o.sword)sfx.slashHit();sparks(w,e.x-(o.dir||0)*e.hw*.5,hy,o.fin?9:5,o.dir||0);
   stop=Math.max(stop,o.stop??3);if(o.fin)shake(w,3);
   if(e.hp<=0){killFoe(p,w,e,o);return;}
   e.flash=8;if(e.type==='bloody')blood(w,e.x,hy,12,0,.8);
@@ -340,7 +344,7 @@ async function sotn(s){
   if(e.type==='warg'&&e.state==='idle')wake(w,e,p);}
  function hitBox(p,w,box,dmg,hits,o={}){let any=false;
   for(const cd of w.candles)if(cd.alive&&!hits.has(cd)&&overlap(box,{x0:cd.fx-6,x1:cd.fx+6,y0:cd.fy-10,y1:cd.fy+8})){hits.add(cd);cd.alive=false;if(net)ev({cd:w.candles.indexOf(cd)});sfx.candle();embers(w,cd.fx,cd.fy,8);dropItem(w,cd.item,cd.fx,cd.fy);any=true;}
-  for(const e of w.foes)if(!e.dead&&e.active&&!hits.has(e)&&!(e.state==='rise'&&e.t<14)&&overlap(box,fBox(e))){hits.add(e);damageFoe(p,w,e,dmg,o);any=true;}
+  for(const e of w.foes)if(!e.dead&&e.active&&!e.hidden&&!hits.has(e)&&!(e.state==='rise'&&e.t<14)&&overlap(box,fBox(e))){hits.add(e);damageFoe(p,w,e,dmg,o);any=true;}
   for(const b of w.blocks)if(b.kind==='crack'&&!hits.has(b)&&overlap(box,{x0:b.x0,x1:b.x1,y0:b.y0,y1:b.y1})){hits.add(b);b.hp-=dmg;sfx.wall();dust(w,(b.x0+b.x1)/2,b.y0+10,6);shake(w,2);
    if(b.hp<=0){w.blocks.splice(w.blocks.indexOf(b),1);if(net)ev({wb:b.x0});for(let k=0;k<16;k++)w.parts.push({kind:'rubble',x:b.x0+Math.random()*16,y:b.y0+Math.random()*50,vx:(Math.random()-.5)*3,vy:-Math.random()*3,life:60,max:60,size:1.5+Math.random()*2.5});dropItem(w,b.item,(b.x0+b.x1)/2,b.y0+20);}any=true;}
   const B=w.boss;if(B&&!hits.has(B)){const r=bossHit(B,box);if(r){hits.add(B);damageBoss(p,w,B,Math.round(dmg*r),o);any=true;}}
@@ -349,58 +353,68 @@ async function sotn(s){
  // ---------------- monsters
  function wake(w,e,p){if(e.state!=='idle')return;e.state=e.type==='bat'?'fly':'run';e.t=0;e.facing=p.x<e.x?-1:1;if(e.type==='warg')sfx.howl();else sfx.squeak();}
  function stepFoes(w,p,cam){
-  const fr=!!w.scene;
-  if(!fr&&!p.dead&&!w.locked&&phase==='play')L.zones.forEach((z,k)=>{if(p.x<z.x0-40||p.x>z.x1||--w.zoneT[k]>0)return;
+  // online the other phone shows player 1's monsters (snapshots) instead of running its own
+  if(netMob(w)){stepNetFoes(w,p);return;}
+  // online player 1's phone runs the monsters for both heroes: they wake in either view, go for the nearer hero and only
+  // go back to sleep when out of both views (the partner's view is its own screen's width); a cutscene on this phone
+  // doesn't freeze them while the partner is in the castle
+  const m=mate(p),hs=m&&!m.dead?[p,m]:[p],views=m?[cam,camOf(m)]:[cam];
+  const inView=(x,pad)=>views.some(v=>x>v.x-pad&&x<v.x+v.w+pad);
+  const near=e=>{let b=p,bd=Infinity;for(const h of hs)if(!h.dead&&Math.abs(h.x-e.x)<bd){bd=Math.abs(h.x-e.x);b=h;}return b;};
+  const fr=!!w.scene&&!m,heard=x=>!m||x>cam.x-20&&x<cam.x+cam.w+20;
+  if(!fr&&!w.locked&&phase==='play')L.zones.forEach((z,k)=>{const inZ=hs.filter(h=>!h.dead&&!(h===p&&w.scene)&&h.x>=z.x0-40&&h.x<=z.x1);if(!inZ.length||--w.zoneT[k]>0)return;
    w.zoneT[k]=z.every[0]+Math.floor(w.rng()*(z.every[1]-z.every[0]));
    if(w.foes.filter(e=>!e.dead&&e.zone===k).length>=z.max)return;
-   if(z.kind==='zombie'){for(let tries=0;tries<4;tries++){const side=w.rng()<.65?p.facing:-p.facing,x=Math.round(p.x+side*(50+w.rng()*70));
+   const P=inZ.length>1?inZ[Math.floor(w.rng()*inZ.length)]:inZ[0],id=(host?0:1e5)+w.nid++;
+   if(z.kind==='zombie'){for(let tries=0;tries<4;tries++){const side=w.rng()<.65?P.facing:-P.facing,x=Math.round(P.x+side*(50+w.rng()*70));
      if(x<z.x0||x>z.x1||Math.abs(terrain(x)-terrain(x+10))>2||Math.abs(terrain(x)-terrain(x-10))>2||terrain(x)>=NONE)continue;
-     w.foes.push({...spawnFoe({type:'zombie',x,y:terrain(x)}),zone:k,active:true,state:'rise',t:0,facing:p.x<x?-1:1});sfx.rise();dust(w,x,terrain(x),8);if(w.rng()<.6)sfx.groan();break;}}
+     w.foes.push({...spawnFoe({type:'zombie',x,y:terrain(x)}),id,zone:k,active:true,state:'rise',t:0,facing:P.x<x?-1:1});if(heard(x)){sfx.rise();dust(w,x,terrain(x),8);if(w.rng()<.6)sfx.groan();}break;}}
    else{const spots=[];for(const b of w.blocks)if(b.kind==='stone')spots.push((b.x0+b.x1)/2);spots.push(1925,2375);
-    const ok=spots.filter(x=>Math.abs(x-p.x)>45&&Math.abs(x-p.x)<150);if(!ok.length)return;const tx=ok[Math.floor(w.rng()*ok.length)];
+    const ok=spots.filter(x=>Math.abs(x-P.x)>45&&Math.abs(x-P.x)<150);if(!ok.length)return;const tx=ok[Math.floor(w.rng()*ok.length)];
     const wa=L.water[0],sx=clamp(tx+(tx<wa.x0+10?28:tx>wa.x1-10?-28:(w.rng()<.5?-26:26)),wa.x0+6,wa.x1-6);
-    w.foes.push({...spawnFoe({type:'merman',x:sx,y:wa.y}),zone:k,active:true,state:'leap',t:0,vx:(tx-sx)/42,vy:-6.6,grounded:false,facing:p.x<sx?-1:1});splash(w,sx,wa.y);}});
+    w.foes.push({...spawnFoe({type:'merman',x:sx,y:wa.y}),id,zone:k,active:true,state:'leap',t:0,vx:(tx-sx)/42,vy:-6.6,grounded:false,facing:P.x<sx?-1:1});splash(w,sx,wa.y);}});
   for(const e of w.foes){
    if(e.dead||e.boss)continue;
-   if(!e.active){if(e.x>cam.x-30&&e.x<cam.x+cam.w+30)e.active=true;else continue;}
-   if(e.x<cam.x-160||e.x>cam.x+cam.w+160){if(e.zone!=null)e.dead=true;else{e.active=false;if(e.type!=='armor'&&e.type!=='skeleton'){e.state=e.type==='bat'||e.type==='warg'?'idle':'walk';e.x=L.foes.find(f=>f.x===e.home)?.x??e.x;}}continue;}
+   if(!e.active){if(inView(e.x,30))e.active=true;else continue;}
+   if(!inView(e.x,160)){if(e.zone!=null)e.dead=true;else{e.active=false;if(e.type!=='armor'&&e.type!=='skeleton'){e.state=e.type==='bat'||e.type==='warg'?'idle':'walk';e.x=L.foes.find(f=>f.x===e.home)?.x??e.x;}}continue;}
    if(e.flash>0)e.flash--;
    if(fr)continue;
-   e.t++;const dx=p.x-e.x,adx=Math.abs(dx);
+   const P=near(e);e.t++;const dx=P.x-e.x,adx=Math.abs(dx);
    switch(e.type){
     case 'zombie':{if(e.state==='rise'){if(e.t>=40){e.state='walk';e.t=0;}break;}
-     if(e.t%80===1)e.facing=dx<0?-1:1;e.vx=e.facing*.45;e.anim+=.09;const r=moveBody(w,e,5,30,{edges:true});if(r.wall)e.facing=-e.facing;if(w.rng()<.003)sfx.groan();break;}
-    case 'bloody':{if(e.state==='swipe'){e.vx=0;if(e.t===12)sfx.growl();if(e.t>=12&&e.t<=18&&!p.dead&&overlap(pBox(p),{x0:e.x+(e.facing>0?0:-22),x1:e.x+(e.facing>0?22:0),y0:e.y-34,y1:e.y-10}))hurt(p,w,e.dmg,e.x);if(e.t>30){e.state='walk';e.t=0;e.cd=50;}}
-     else{e.facing=dx<0?-1:1;e.vx=e.facing*.5;e.anim+=.1;if(--e.cd<0&&adx<28&&!p.dead){e.state='swipe';e.t=0;}}
-     moveBody(w,e,6,36,{edges:true});if(e.t%12===0)blood(w,e.x+(Math.random()-.5)*8,e.y-20-Math.random()*12,1,0,.3);if(w.rng()<.004)sfx.groan();break;}
-    case 'warg':{if(e.state==='idle'){if(adx<210&&!p.dead)wake(w,e,p);break;}
-     if(e.state==='run'){e.facing=dx<0?-1:1;e.vx+=clamp(e.facing*2.1-e.vx,-.12,.12);e.anim+=.22;if(--e.cd<0&&adx<80&&adx>20&&e.grounded&&!p.dead){e.state='tell';e.t=0;sfx.growl();}}
+     if(e.t%80===1)e.facing=dx<0?-1:1;e.vx=e.facing*.45;e.anim+=.09;const r=moveBody(w,e,5,30,{edges:true});if(r.wall)e.facing=-e.facing;if(w.rng()<.003&&heard(e.x))sfx.groan();break;}
+    case 'bloody':{if(e.state==='swipe'){e.vx=0;if(e.t===12)sfx.growl();if(e.t>=12&&e.t<=18&&!p.dead&&overlap(pBox(p),swipeBox(e)))hurt(p,w,e.dmg,e.x);if(e.t>30){e.state='walk';e.t=0;e.cd=50;}}
+     else{e.facing=dx<0?-1:1;e.vx=e.facing*.5;e.anim+=.1;if(--e.cd<0&&adx<28&&!P.dead){e.state='swipe';e.t=0;}}
+     moveBody(w,e,6,36,{edges:true});if(e.t%12===0)blood(w,e.x+(Math.random()-.5)*8,e.y-20-Math.random()*12,1,0,.3);if(w.rng()<.004&&heard(e.x))sfx.groan();break;}
+    case 'warg':{if(e.state==='idle'){if(adx<210&&!P.dead)wake(w,e,P);break;}
+     if(e.state==='run'){e.facing=dx<0?-1:1;e.vx+=clamp(e.facing*2.1-e.vx,-.12,.12);e.anim+=.22;if(--e.cd<0&&adx<80&&adx>20&&e.grounded&&!P.dead){e.state='tell';e.t=0;sfx.growl();}}
      else if(e.state==='tell'){e.vx*=.8;if(e.t>=16){e.state='lunge';e.t=0;e.vx=e.facing*4.4;e.vy=-3.3;e.grounded=false;sfx.bite();}}
      else if(e.state==='lunge'){if(e.grounded&&e.t>4){e.state='skid';e.t=0;}}
      else if(e.state==='skid'){e.vx*=.9;if(e.t>22){e.state='run';e.t=0;e.cd=40;}}
      const r=moveBody(w,e,14,26);e.grounded=r.landed;if(r.wall&&e.state==='run')e.vx=0;break;}
-    case 'skeleton':{if(e.state==='throw'){e.vx=0;if(e.t===10&&!p.dead){const vx=clamp(dx/58,-2.3,2.3);w.eshots.push({kind:'bone',x:e.x,y:e.y-30,vx,vy:-4.3,g:.17,t:0,dmg:8});sfx.bones();}if(e.t>22){e.state='walk';e.t=0;e.cd=90+Math.floor(w.rng()*70);}}
+    case 'skeleton':{if(e.state==='throw'){e.vx=0;if(e.t===10&&!P.dead){const vx=clamp(dx/58,-2.3,2.3);eshot(w,{kind:'bone',x:e.x,y:e.y-30,vx,vy:-4.3,g:.17,t:0,dmg:8});sfx.bones();}if(e.t>22){e.state='walk';e.t=0;e.cd=90+Math.floor(w.rng()*70);}}
      else{if(Math.abs(e.x-e.home)>(e.range||30))e.facing=Math.sign(e.home-e.x);else if(w.rng()<.01)e.facing=-e.facing;e.vx=e.facing*.4;e.anim+=.1;
-      if(--e.cd<0&&adx<190&&!p.dead){e.state='throw';e.t=0;e.facing=dx<0?-1:1;}}
+      if(--e.cd<0&&adx<190&&!P.dead){e.state='throw';e.t=0;e.facing=dx<0?-1:1;}}
      const r=moveBody(w,e,5,32,{edges:true});if(r.wall)e.facing=-e.facing;break;}
-    case 'bat':{if(e.state==='idle'){if(adx<120&&!p.dead)wake(w,e,p);break;}
-     e.anim+=.35;e.facing=e.vx<0?-1:1;if(e.t%70===1)e.vx=(dx<0?-1:1)*1.25;e.baseY+=clamp(p.y-24-e.baseY,-.5,.5);e.x+=e.vx;e.y=e.baseY+Math.sin(e.t*.12)*10;break;}
+    case 'bat':{if(e.state==='idle'){if(adx<120&&!P.dead)wake(w,e,P);break;}
+     e.anim+=.35;e.facing=e.vx<0?-1:1;if(e.t%70===1)e.vx=(dx<0?-1:1)*1.25;e.baseY+=clamp(P.y-24-e.baseY,-.5,.5);e.x+=e.vx;e.y=e.baseY+Math.sin(e.t*.12)*10;break;}
     case 'merman':{if(e.state==='leap'){const r=moveBody(w,e,5,30);if(r.landed){e.state='walk';e.t=0;e.cd=40+Math.floor(w.rng()*30);sfx.land();}
-      const wa=L.water[0];if(!r.landed&&e.vy>0&&e.y>wa.y+6&&e.x>wa.x0&&e.x<wa.x1){e.dead=true;splash(w,e.x,wa.y);}break;}
-     if(e.state==='spit'){e.vx=0;if(e.t===20&&!p.dead){w.eshots.push({kind:'mfire',x:e.x+e.facing*8,y:e.y-29,vx:e.facing*2.3,vy:0,g:0,t:0,dmg:10});sfx.spit();}if(e.t>34){e.state='walk';e.t=0;e.cd=90;}}
-     else{e.facing=dx<0?-1:1;e.vx=e.facing*.4;e.anim+=.12;if(--e.cd<0&&adx<170&&!p.dead){e.state='spit';e.t=0;}
+      const wa=L.water[0];if(!r.landed&&e.vy>0&&e.y>wa.y+6&&e.x>wa.x0&&e.x<wa.x1){foeGone(e);splash(w,e.x,wa.y);}break;}
+     if(e.state==='spit'){e.vx=0;if(e.t===20&&!P.dead){eshot(w,{kind:'mfire',x:e.x+e.facing*8,y:e.y-29,vx:e.facing*2.3,vy:0,g:0,t:0,dmg:10});sfx.spit();}if(e.t>34){e.state='walk';e.t=0;e.cd=90;}}
+     else{e.facing=dx<0?-1:1;e.vx=e.facing*.4;e.anim+=.12;if(--e.cd<0&&adx<170&&!P.dead){e.state='spit';e.t=0;}
       if(e.t>220){e.state='leap';e.t=0;e.vy=-5.5;e.vx=-e.facing*1.4;}}
      if(e.state!=='leap'){const r=moveBody(w,e,5,30,{edges:true});if(r.wall)e.facing=-e.facing;}break;}
-    case 'armor':{if(e.state==='throw'){e.vx=0;if(e.t===20&&!p.dead){e.thrown=true;w.eshots.push({kind:'eaxe',x:e.x+e.facing*8,y:e.y-34,vx:e.facing*2.8,vy:0,g:0,t:0,dmg:14,f:e.facing,owner:e,boom:true});sfx.axe();}if(e.t>32){e.state='walk';e.t=0;e.cd=120;}}
-     else{e.facing=dx<0?-1:1;const want=adx>96?e.facing*.35:adx<60?-e.facing*.3:0;e.vx=want;if(want){e.anim+=.07;if(e.t%30===0)sfx.clank();}
-      if(--e.cd<0&&adx<220&&!e.thrown&&!p.dead){e.state='throw';e.t=0;}}
+    case 'armor':{if(e.state==='throw'){e.vx=0;if(e.t===20&&!P.dead){e.thrown=true;eshot(w,{kind:'eaxe',x:e.x+e.facing*8,y:e.y-34,vx:e.facing*2.8,vy:0,g:0,t:0,dmg:14,f:e.facing,owner:e,boom:true});sfx.axe();}if(e.t>32){e.state='walk';e.t=0;e.cd=120;}}
+     else{e.facing=dx<0?-1:1;const want=adx>96?e.facing*.35:adx<60?-e.facing*.3:0;e.vx=want;if(want){e.anim+=.07;if(e.t%30===0&&heard(e.x))sfx.clank();}
+      if(--e.cd<0&&adx<220&&!e.thrown&&!P.dead){e.state='throw';e.t=0;}}
      moveBody(w,e,7,44,{edges:true});break;}
    }
-   if(e.y>VH+30)e.dead=true;
+   if(e.y>VH+30&&!e.dead)foeGone(e);
    if(!p.dead&&!p.finished&&!(e.state==='rise'&&e.t<20)&&!(e.type==='bat'&&e.state==='idle')&&!(e.type==='warg'&&e.state==='idle')&&overlap(pBox(p),fBox(e)))hurt(p,w,e.dmg,e.x);
   }
   w.foes=w.foes.filter(e=>!e.dead||e.boss);
  }
+ const swipeBox=e=>({x0:e.x+(e.facing>0?0:-22),x1:e.x+(e.facing>0?22:0),y0:e.y-34,y1:e.y-10});
 
  // ---------------- Dracula
  const makeDracula=()=>({boss:true,phase:1,hp:D1_HP,max:D1_HP,state:'throne',t:0,x:AR.x1-80,y:AR.floor,facing:-1,vis:1,open:0,flash:0,vx:0,vy:0});
@@ -420,8 +434,8 @@ async function sotn(s){
  // online: Dracula goes after the nearer hero in the throne room (player 1's phone)
  function bossTarget(w,own){const q=pl[them],B=w.boss;if(!net||!q.net||q.dead||q.x<AR.x0)return own;if(own.dead||own.x<AR.x0)return q;return Math.abs(q.x-B.x)<Math.abs(own.x-B.x)?q:own;}
  // the boss's shots and bats (online player 1's phone sends them to the other phone)
- function bossShot(w,b){w.eshots.push(b);if(net&&host)ev({bs:[b.kind,Math.round(b.x),Math.round(b.y),+b.vx.toFixed(2),+b.vy.toFixed(2),b.dmg,b.h||0]});}
- function summonBats(w,D){for(let k=0;k<3;k++)w.foes.push({...spawnFoe({type:'bat',x:D.x-20+k*12,y:D.y-110+k*10}),active:true,state:'fly',vx:(k-1)*.9,baseY:D.y-110+k*10,t:k*20});sfx.squeak();sfx.laugh(true);if(net&&host)ev({bb:1});}
+ function bossShot(w,b){eshot(w,b);}
+ function summonBats(w,D){if(!netMob(w))for(let k=0;k<3;k++)w.foes.push({...spawnFoe({type:'bat',x:D.x-20+k*12,y:D.y-110+k*10}),id:(host?0:1e5)+w.nid++,active:true,state:'fly',vx:(k-1)*.9,baseY:D.y-110+k*10,t:k*20});sfx.squeak();sfx.laugh(true);if(net&&host)ev({bb:1});}
  function stepBoss(w,own){const B=w.boss;if(!B)return;const p=bossTarget(w,own);if(B.flash>0)B.flash--;if(w.scene&&B.state!=='throne')return;B.t++;
   const face=()=>{B.facing=p.x<B.x?-1:1;};
   if(B.phase===1){
@@ -474,7 +488,7 @@ async function sotn(s){
    b.vy+=b.g;b.x+=b.vx;b.y+=b.vy;
    if(b.kind==='wave'&&(b.x<AR.x0-4||b.x>AR.x1+4)){w.eshots.splice(k,1);continue;}
    const r=b.kind==='inferno'?8:b.kind==='wave'?6:4,hy0=b.kind==='wave'?b.y-b.h:b.y-r,hy1=b.kind==='wave'?b.y:b.y+r;
-   if(!p.dead&&!p.finished&&overlap(pBox(p),{x0:b.x-r,x1:b.x+r,y0:hy0,y1:hy1})){hurt(p,w,b.dmg,b.x);if(b.kind!=='wave'&&b.kind!=='inferno'){if(b.owner)b.owner.thrown=false;w.eshots.splice(k,1);continue;}}
+   if(!p.dead&&!p.finished&&overlap(pBox(p),{x0:b.x-r,x1:b.x+r,y0:hy0,y1:hy1})){hurt(p,w,b.dmg,b.x);if(b.kind!=='wave'&&b.kind!=='inferno'){if(b.owner)b.owner.thrown=false;w.eshots.splice(k,1);if(net&&b.id)ev({ek:b.id});continue;}}
    if(b.y>VH+20||b.t>420||b.x<cam.x-80||b.x>cam.x+cam.w+80){if(b.owner)b.owner.thrown=false;w.eshots.splice(k,1);}}
   for(let k=w.shots.length-1;k>=0;k--){const sh=w.shots[k];sh.t++;if(sh.t<0)continue;let gone=false;
    if(sh.vis){if(sh.kind==='cross')sh.vx-=sh.f*.11;sh.vy+=sh.g;sh.x+=sh.vx;sh.y+=sh.vy;if(sh.t>(sh.kind==='cross'?60:90)||sh.y>VH+20||sh.kind!=='cross'&&sh.y>=terrain(sh.x))w.shots.splice(k,1);continue;}
@@ -671,7 +685,7 @@ async function sotn(s){
   for(const it of w.items)if(it.altar)A.drawPickup(g,it.type,it.x,it.y-2+Math.sin(simT*3)*2,simT);
   for(const f of w.flames)A.drawHolyFlame(g,f,simT);
   for(const c2 of w.corpses)A.drawCorpse(g,c2,simT);
-  for(const e of w.foes){if(e.dead||!e.active||e.boss)continue;if(e.x<x0-60||e.x>x1+60)continue;
+  for(const e of w.foes){if(e.dead||!e.active||e.hidden||e.boss)continue;if(e.x<x0-60||e.x>x1+60)continue;
    if(e.state==='rise'){g.save();g.beginPath();g.rect(e.x-30,0,60,e.y);g.clip();A.drawFoe(g,{...e,y:e.y+e.h*(1-clamp(e.t/36,0,1))},simT);g.restore();}
    else{if(e.flash>0&&(frames>>1)%2){g.save();g.globalAlpha=.5;A.drawFoe(g,e,simT);g.restore();}else A.drawFoe(g,e,simT);}}
   const B=w.boss;if(B&&B.state!=='gone'){if(B.phase===1){if(B.flash>0&&(frames>>1)%2)g.globalAlpha=.55;A.drawDracula(g,B,simT);g.globalAlpha=1;if(B.state==='inferno'&&B.t<32){A.glow(g,B.x-16,B.y-38,10+B.t*.4,A.GLOW.purple,.8);A.glow(g,B.x+16,B.y-38,10+B.t*.4,A.GLOW.purple,.8);}}
@@ -779,10 +793,47 @@ async function sotn(s){
   hurtBoss(i,n){const w=worlds[i],B=w.boss;if(B&&B.hp>0)damageBoss(pl[i],w,B,n,{});},get stop(){return stop;}};
 
  // ---------------- online (see the top of the file)
- let netStarted=false,netScores=null,nb=null;
- const packP=p=>({...snap(p),x:+p.x.toFixed(1),y:+p.y.toFixed(1),g:p.grounded?1:0,sc:p.score,ft:+p.finishT.toFixed(2),hp:Math.round(p.hp),mh:p.maxHp,lv:p.lv,inv:p.inv>0?1:0,cr:p.crouch?1:0});
+ // MONSTERS online: player 1's phone runs them for both heroes (spawns, AI, HP) and streams the ones around the partner's
+ // view {m:{a:[x0,x1] the area covered, f:[[id,type,x,y,state,facing,hp,t,anim,vx,flash,thrown]...]}}; the other phone shows
+ // them (eased, moved on by their speed between snapshots), judges only what touches its own hero (the Bloody Zombie's
+ // swipe too) and reports its hits {fh:[id,dmg]} (a kill shows and scores there at once). A monster missing from a
+ // snapshot INSIDE its area is hidden (not killed: it shows again if listed); real deaths come as {fk:id} (killed) and
+ // {fg:id} (fell/drowned). Monster and Dracula shots {es} fly on both phones; each hits only its own hero and tells the other {ek}.
+ const FTY=['zombie','bloody','warg','skeleton','bat','merman','armor'],FST=['idle','walk','run','tell','lunge','skid','rise','swipe','throw','fly','leap','spit'];
+ const r1=v=>Math.round(v*10)/10;
+ const mate=p=>{const q=pl[them];return net&&host&&q.net&&p.i===me?q:null;};
+ const camOf=q=>!net||q.i===me?cams[q.i]:{x:q.cx??q.x-150,w:q.cw||300};
+ const netMob=w=>!!net&&!host&&w===worlds[me]&&!!w.mobSeen;
+ function eshot(w,b){w.eshots.push(b);if(!net||!host)return;b.id=(w.sid=(w.sid||0)+1);
+  ev({es:[b.id,b.kind,r1(b.x),r1(b.y),+b.vx.toFixed(3),+b.vy.toFixed(3),b.g||0,b.dmg,b.f||0,b.boom?1:0,b.owner?b.owner.id:-1,b.h||0,Math.round(clock*100)]});}
+ function foeGone(e){e.dead=true;if(net&&e.id!=null){netKilled.add(e.id);ev({fg:e.id});}}
+ function packMobs(){const p=pl[me],w=worlds[me],q=mate(p);if(!q)return null;const v=camOf(q),a=[Math.round(v.x-160),Math.round(v.x+v.w+160)],f=[];
+  for(const e of w.foes)if(!e.dead&&!e.boss&&e.active&&e.x>=a[0]&&e.x<=a[1]&&e.id!=null)f.push([e.id,FTY.indexOf(e.type),r1(e.x),r1(e.y),Math.max(0,FST.indexOf(e.state)),e.facing,e.hp,Math.min(e.t,999),r1(e.anim),+(e.vx||0).toFixed(2),e.flash>0?1:0,e.thrown?1:0]);
+  return {a,f};}
+ function unpackMobs(m){const w=worlds[me];if(!m||!Array.isArray(m.f)||!Array.isArray(m.a))return;
+  // the first snapshot: player 1's phone takes over (monsters this phone spawned on its own go)
+  if(!w.mobSeen){w.mobSeen=true;w.foes=w.foes.filter(e=>e.zone==null&&e.id!=null&&e.id<1000);for(const e of w.foes)e.hidden=true;}
+  const seen=new Set();
+  for(const r of m.f){if(!Array.isArray(r))continue;const [id,ty,x,y,st,f,hp,t,an,vx,fl,th]=r,type=FTY[ty];if(!type)continue;seen.add(id);let e=w.foes.find(o=>o.id===id);
+   if(!e){if(netKilled.has(id))continue;e={...spawnFoe({type,x,y}),id,active:true};if(id>=1000)e.zone=-1;w.foes.push(e);}
+   if(e.dead)continue;
+   e.hidden=false;e.active=true;e.nx=x;e.ny=y;e.vx=vx;e.facing=f;e.hp=Math.min(e.hp,hp);e.anim=an;e.thrown=!!th;if(fl&&e.flash<=0)e.flash=4;
+   const ns=FST[st]||'walk';if(ns!==e.state||Math.abs(e.t-t)>8){e.state=ns;e.t=t;}}
+  for(const e of w.foes)if(!e.dead&&!e.boss&&!seen.has(e.id)&&e.x>=m.a[0]&&e.x<=m.a[1])e.hidden=true;}
+ // the other phone between snapshots: ease to the last one, move on by the speed, judge what touches its own hero
+ function stepNetFoes(w,p){
+  for(const e of w.foes){if(e.dead||e.boss)continue;if(e.flash>0)e.flash--;e.t++;
+   if(e.nx!=null){if(e.state!=='idle'&&e.state!=='rise')e.nx+=e.vx||0;
+    if(Math.abs(e.nx-e.x)>60||Math.abs(e.ny-e.y)>60){e.x=e.nx;e.y=e.ny;}else{e.x+=(e.nx-e.x)*.3;e.y+=(e.ny-e.y)*.3;}}
+   if(e.hidden||!e.active||p.dead||p.finished)continue;
+   if(e.type==='bloody'&&e.state==='swipe'&&e.t>=12&&e.t<=18&&overlap(pBox(p),swipeBox(e)))hurt(p,w,e.dmg,e.x);
+   if(!(e.state==='rise'&&e.t<20)&&!(e.type==='bat'&&e.state==='idle')&&!(e.type==='warg'&&e.state==='idle')&&overlap(pBox(p),fBox(e)))hurt(p,w,e.dmg,e.x);}
+  w.foes=w.foes.filter(e=>!e.dead||e.boss);}
+ let netStarted=false,netScores=null,nb=null,netT0=0;
+ const packP=p=>({...snap(p),x:+p.x.toFixed(1),y:+p.y.toFixed(1),g:p.grounded?1:0,sc:p.score,ft:+p.finishT.toFixed(2),hp:Math.round(p.hp),mh:p.maxHp,lv:p.lv,inv:p.inv>0?1:0,cr:p.crouch?1:0,
+  cx:Math.round(cams[p.i].x),cw:Math.round(cams[p.i].w)});
  function unpackP(o){const q=pl[them];if(!o||typeof o!=='object')return;const first=!q.net;q.net={o};
-  Object.assign(q,{facing:o.facing,dead:o.dead,grounded:!!o.g,vx:o.vx,vy:o.vy,score:o.sc,hp:o.hp,maxHp:o.mh,lv:o.lv,inv:o.inv?30:0,crouch:!!o.cr});
+  Object.assign(q,{facing:o.facing,dead:o.dead,grounded:!!o.g,vx:o.vx,vy:o.vy,score:o.sc,hp:o.hp,maxHp:o.mh,lv:o.lv,inv:o.inv?30:0,crouch:!!o.cr,cx:o.cx,cw:o.cw});
   q.best=Math.max(q.best,o.best);if(o.finished&&!q.finished){q.finished=true;q.finishT=o.ft;}if(first){q.x=o.x;q.y=o.y;}}
  function stepRemote(dt){const q=pl[them],n=q.net;if(!n)return;const o=n.o,k=1-Math.exp(-dt*16);if(Math.abs(o.x-q.x)>80){q.x=o.x;q.y=o.y;}else{q.x+=(o.x-q.x)*k;q.y+=(o.y-q.y)*k;}}
  const r2=v=>Math.round((v||0)*100)/100;
@@ -805,13 +856,20 @@ async function sotn(s){
  function onNetEvent(e){const p=pl[me],w=worlds[me];if(!e||typeof e!=='object')return;
   if(e.cd!=null){const c0=w.candles[e.cd];if(c0&&c0.alive){c0.alive=false;embers(w,c0.fx,c0.fy,6);}}
   else if(e.wb!=null){const b=w.blocks.find(b=>b.kind==='crack'&&b.x0===e.wb);if(b){w.blocks.splice(w.blocks.indexOf(b),1);dust(w,(b.x0+b.x1)/2,b.y0+20,8);}}
-  else if(e.fk!=null){netKilled.add(e.fk);const f=w.foes.find(f=>f.id===e.fk&&!f.dead);if(f){f.dead=true;if(f.active){blood(w,f.x,f.y-f.h*.5,16,0,1);embers(w,f.x,f.y-f.h*.5,6);}}}
+  else if(e.fk!=null||e.fg!=null){const id=e.fk??e.fg;netKilled.add(id);const f=w.foes.find(f=>f.id===id&&!f.dead);if(f){f.dead=true;if(e.fk!=null&&f.active&&!f.hidden){blood(w,f.x,f.y-f.h*.5,16,0,1);embers(w,f.x,f.y-f.h*.5,6);}}}
+  // the other phone hit one of player 1's monsters (a kill already scored there)
+  else if(Array.isArray(e.fh)&&host){const [id,dmg]=e.fh,f=w.foes.find(f=>f.id===id&&!f.dead&&!f.boss);if(!f)return;f.hp-=+dmg||1;
+   if(f.hp>0){f.flash=8;if(f.type==='warg'&&f.state==='idle')wake(w,f,pl[them]);}else{f.dead=true;netKilled.add(id);blood(w,f.x,f.y-f.h*.5,16,0,1);embers(w,f.x,f.y-f.h*.5,6);}}
+  else if(Array.isArray(e.es)&&!host){const [id,kind,x,y,vx,vy,gg,dmg,f,boom,own,h,ct]=e.es,b={id,kind,x,y,vx,vy,g:+gg||0,t:0,dmg,f};if(h)b.h=h;
+   if(boom){b.boom=true;b.owner=w.foes.find(o=>o.id===own)||null;}if(kind==='hellfire')sfx.fireball();
+   // fly it on by the time it spent on the way (both clocks run from the same start)
+   let n=clamp(Math.round((clock-(+ct||0)/100)*60),0,240);while(n-->0){b.t++;if(b.boom)b.vx-=b.f*.055;b.vy+=b.g;b.x+=b.vx;b.y+=b.vy;}if(b.y<VH+20)w.eshots.push(b);}
+  else if(e.ek!=null){const k=w.eshots.findIndex(b=>b.id===e.ek);if(k>=0)w.eshots.splice(k,1);}
   else if(Array.isArray(e.ps)){const [kind,x,y,vx,vy,gg,f,t]=e.ps;if(w.shots.length<40)w.shots.push({kind,own:false,vis:true,x,y,vx,vy,g:gg,f,t,hits:new Set()});}
   else if(e.bh&&host){const B=w.boss;if(B&&B.hp>0&&!['throne','dying','die','rise','gone'].includes(B.state))damageBoss(p,w,B,+e.bh||0,{});}
-  else if(Array.isArray(e.bs)&&!host){const [kind,x,y,vx,vy,dmg,h]=e.bs,b={kind,x,y,vx,vy,g:0,t:0,dmg};if(h)b.h=h;w.eshots.push(b);if(kind==='hellfire')sfx.fireball();}
-  else if(e.bb&&!host&&w.boss)summonBats(w,w.boss);}
- if(net){nf=netField(s,{hz:20,pack:()=>{const o={p:packP(pl[me])};const B=worlds[me].boss;if(host&&B)o.b=packBoss(B);return o;},
-  unpack:(i,d)=>{if(!d)return;unpackP(d.p);if(!host&&d.b)unpackBoss(d.b);},onEvent:onNetEvent});}
+  else if(e.bb&&!host&&w.boss){sfx.squeak();sfx.laugh(true);}}
+ if(net){nf=netField(s,{hz:20,pack:()=>{const o={p:packP(pl[me])};const B=worlds[me].boss;if(host&&B)o.b=packBoss(B);if(host){const m=packMobs();if(m)o.m=m;}return o;},
+  unpack:(i,d)=>{if(!d)return;unpackP(d.p);if(!host&&d.b)unpackBoss(d.b);if(!host&&d.m)unpackMobs(d.m);},onEvent:onNetEvent});}
  // the run ends 10 s after the first blood orb (or 2.5 s after both have one), or at the race cap
  const netOver=()=>{const p=pl[me],q=pl[them];if(clock>=RACE_CAP)return true;if(p.finished&&q.finished)return clock-Math.max(p.finishT,q.finishT)>2.5;
   return clock>Math.min(p.finished?p.finishT:Infinity,q.finished?q.finishT:Infinity)+NET_GRACE;};
@@ -832,7 +890,7 @@ async function sotn(s){
  const score=q=>q.finished?fmtRace(q.finishT):`${prog(q)}% of the way`;
  async function beginTurn(i){
   // online: no hand-off; both phones start the countdown together
-  if(net){phase='wait';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;clock=0;acc=0;cd=new Countdown(3);phase='count';cams[me].x=0;worlds[me].area='';ambience('wind');music('stage');return;}
+  if(net){phase='wait';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;clock=0;acc=0;netT0=performance.now()+3000;cd=new Countdown(3);phase='count';cams[me].x=0;worlds[me].area='';ambience('wind');music('stage');return;}
   phase='handoff';turn=i;pads.stick=null;pads.jump=null;pads.atk=null;clearKeys();for(const inp of inputs)Object.assign(inp,{l:0,r:0,u:0,d:0,jump:0,press:0,atk:0,atkHeld:0,sub:0,dash:0});
   const n0=s.players[0].name,desc=s.solo?`Castle run ${soloCleared+1}: destroy Dracula within ${fmtRace(raceCap())} to go again with less time. Getting further scores too.`:i===0?`You go first: storm Dracula's castle and destroy him as fast as you can. ${s.players[1].name} plays next against your ghost.`
    :`Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'}. ${n0}'s violet after-image runs beside you.`;
@@ -849,12 +907,12 @@ async function sotn(s){
  s.frame((dt,t)=>{
   if(!s.alive)return;tick();
   if(phase==='title'){if(!titleT){sfx.bell();setTimeout(()=>s.alive&&sfx.thunder(true),900);}titleT+=dt;if(titleT>3.2)beginTurn(0);}
-  else if(phase==='count'){layout();cams[turn].w=lay.vw;updateCamera(pl[turn],turn);savePrev(turn);if(!cd.update(dt)){phase='play';for(const inp of inputs){inp.press=0;inp.atk=0;inp.sub=0;inp.dash=0;}}}
+  else if(phase==='count'){layout();cams[turn].w=lay.vw;updateCamera(pl[turn],turn);savePrev(turn);if(!cd.update(dt)||net&&performance.now()>=netT0){phase='play';for(const inp of inputs){inp.press=0;inp.atk=0;inp.sub=0;inp.dash=0;}}}
   else if(phase==='play'||phase==='turn-end'||phase==='end'||phase==='net-end'){
    if(!cd.done)cd.update(dt);acc+=dt;let steps=0;const i=turn,p=pl[i],w=worlds[i];
    // online the clock is wall time (scenes and hit-stop differ per phone); player 1's phone locks the throne room when
    // the partner walks in first; a hero left outside a locked throne room is pulled in after the grace
-   if(net){stepRemote(dt);nf.tick(dt);if(phase==='play')clock+=dt;const q=pl[them];
+   if(net){stepRemote(dt);nf.tick(dt);if(phase==='play')clock=Math.max(clock,(performance.now()-netT0)/1000);const q=pl[them];
     if(host&&!w.locked&&!w.orb&&q.net&&q.x>AR.lockX&&!q.dead)lockArena(w);
     if(phase==='play'&&w.locked&&!w.orb&&p.x<AR.x0&&!p.dead&&!p.finished){if(!pullAt)pullAt=clock+NET_GRACE;if(clock>=pullAt||p.x>AR.x0-60)pullIn(p,w);}}
    while(acc>=STEP&&steps<5){acc-=STEP;steps++;savePrev(i);

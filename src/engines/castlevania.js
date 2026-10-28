@@ -75,13 +75,14 @@ function buildCastle(rand,mode){
  const subs=['dagger','axe','holy','cross','watch'];let whips=0;
  L.candles.forEach((cd,k)=>{let it;if(cd.kind==='arena'){cd.kind='candle';cd.item=k%2?'axe':'bigheart';return;}if(k===0||k===4&&whips<2)it='whip';else{const r=rand();it=r<.15?pick(subs):r<(mode==='hearts'?.42:.26)?'bigheart':r<.32?'bag':'heart';}if(it==='whip')whips++;cd.item=it;});
  if(!L.candles.slice(1,6).some(cd=>subs.includes(cd.item)))L.candles[2].item=pick(['dagger','axe','cross']);
+ L.foes.forEach((f,k)=>{f.id=k;}); // placed monsters keep their id in every lap's world (online kills and snapshots name them)
  return L;
 }
 
 // ------------------------------------------------------------------ per-player world state
 function spawnFoe(e){return {...e,alive:true,active:false,hp:e.type==='skeleton'?2:1,vx:0,vy:0,t:0,inv:0,home:e.x,baseY:e.y,state:'idle',throwT:80,dir:1};}
 function makeWorld(L,seed){return {tiles:L.tiles.slice(),hidden:new Map(L.hidden),candles:L.candles.map(cd=>({...cd,alive:true})),foes:L.foes.map(spawnFoe),items:[],shots:[],eshots:[],flames:[],
- zoneT:L.zones.map(()=>50),freeze:0,locked:false,boss:null,crystal:false,fx:new Fx(),rng:seededRandom(seed)};}
+ zoneT:L.zones.map(()=>50),freeze:0,locked:false,boss:null,crystal:false,fx:new Fx(),rng:seededRandom(seed),nid:1000};}
 function makePlayer(i,L,mode){return {i,x:L.start,y:FL*T,vx:0,vy:0,grounded:true,jumped:false,facing:1,crouch:false,stair:null,whip:null,lvl:1,sub:null,hearts:mode==='hearts'?0:5,
  hp:HP,inv:0,hurt:false,dead:0,pit:false,best:L.start,finished:false,finishT:0,score:0,anim:0,lap:0,deaths:0,flash:0,throwT:0};}
 
@@ -176,20 +177,25 @@ async function castlevania(s){
    if(w.locked){Object.assign(p,{x:L.arena.x0+48,y:FL*T,vx:0,vy:0,grounded:true,jumped:false,dead:0,pit:false,stair:null,whip:null,hurt:false,crouch:false,hp:HP,inv:90});return;}}
   if(w.locked&&w.boss&&!w.boss.dead&&!net){w.bossHp=w.boss.hp;w.locked=false;w.boss=null;check=Math.min(check,L.arena.x0-24);}
   Object.assign(p,{x:check,y:FL*T,vx:0,vy:0,grounded:true,jumped:false,dead:0,pit:false,stair:null,whip:null,hurt:false,crouch:false,hp:HP,inv:90});
-  w.foes=L.foes.filter(e=>e.x>check+120).map(spawnFoe);w.eshots=[];w.flames=[];w.shots=[];w.zoneT=L.zones.map(()=>60);cams[p.i].x=check-cams[p.i].w*.4;}
+  // offline the castle resets its monsters past the checkpoint; online they are shared with the partner, so they stay
+  if(!net){w.foes=L.foes.filter(e=>e.x>check+120).map(spawnFoe);w.eshots=[];w.zoneT=L.zones.map(()=>60);}
+  w.flames=[];w.shots=[];cams[p.i].x=check-cams[p.i].w*.4;}
  function hurt(p,w,dmg,fromX){if(p.inv>0||p.dead||p.finished)return;p.hp=Math.max(0,p.hp-dmg);sfx.hurt();s.react(p.i,'sad');w.fx.shake(3);note(p,'hurt');
   if(p.hp<=0){kill(p,false);return;}
   p.inv=100;if(p.stair)return;
   const d=p.x<fromX?-1:1;Object.assign(p,{whip:null,crouch:false,hurt:true,grounded:false,vx:d*1.1,vy:-2.8,facing:-d});}
- function nextLap(p){p.lap++;note(p,'lap');worlds[p.i]=makeWorld(L,seedBase+p.lap*7919);Object.assign(p,{x:L.lapX,y:FL*T,vx:0,vy:0,grounded:true,stair:null,whip:null,crouch:false});p.best=Math.max(p.best,p.x);
+ function nextLap(p){p.lap++;note(p,'lap');worlds[p.i]=makeWorld(L,seedBase+p.lap*7919);if(net)applyLog(worlds[p.i],p.lap);Object.assign(p,{x:L.lapX,y:FL*T,vx:0,vy:0,grounded:true,stair:null,whip:null,crouch:false});p.best=Math.max(p.best,p.x);
   cams[p.i].x=p.x-cams[p.i].w*.4;flash[p.i]=.8;sfx.clear();}
  const dropItem=(w,type,x,y)=>w.items.push({type,x,y,x0:x,vy:type==='heart'?0:-1.6,t:0,ground:false});
  function breakCandle(p,w,cd){cd.alive=false;if(net)ev({cd:[p.lap,w.candles.indexOf(cd)]});sfx.candle();w.fx.burst(cd.x,cd.y,{n:8,colors:[N.white,N.orange,N.gold],speed:50,life:.3,size:1.6});dropItem(w,cd.item,cd.x,cd.y);}
  function breakWall(p,w,cc,r){w.tiles[r*MAXC+cc]=0;if(net)ev({wb:[p.lap,cc,r]});sfx.wall();w.fx.burst(cc*T+8,r*T+8,{n:10,colors:['#a87848','#5c3818',N.lgray],speed:70,life:.4,size:2,gravity:200});
   const what=w.hidden.get(r*MAXC+cc);if(what){w.hidden.delete(r*MAXC+cc);dropItem(w,what,cc*T+8,r*T+8);}}
  function damageFoe(p,w,e,dmg){e.hp-=dmg;
+  // online: player 1's phone owns the monsters' HP, so the other phone (showing them) reports every hit {fh}; a kill shows
+  // here at once and scores here. Player 1's phone (or a phone on a lap of its own) reports its kills {fk}.
+  if(net){if(netMob(w))ev({fh:[p.lap,e.id,dmg]});else if(e.hp<=0)ev({fk:[p.lap,e.id]});if(e.hp<=0)e.lk=true;}
   if(e.hp>0){e.inv=14;sfx.hit();if(e.type==='skeleton')e.x+=p.x<e.x?3:-3;return;}
-  e.state='dying';e.t=0;if(net&&!e.spawned)ev({fk:[p.lap,e.home]});p.score+=PTS[e.type]||100;sfx.hit();w.fx.pop(e.x,e.y-(e.type==='bat'||e.type==='medusa'?10:34),String(PTS[e.type]||100),{color:N.white,stroke:'#000',size:7,rise:16,life:.6});
+  e.state='dying';e.t=0;p.score+=PTS[e.type]||100;sfx.hit();w.fx.pop(e.x,e.y-(e.type==='bat'||e.type==='medusa'?10:34),String(PTS[e.type]||100),{color:N.white,stroke:'#000',size:7,rise:16,life:.6});
   const r=w.rng();if(r<(mode==='hearts'?.45:.25))dropItem(w,r<.06?'bigheart':'heart',e.x,e.type==='bat'||e.type==='medusa'?e.y:e.y-16);}
  function damageBoss(p,w,dmg,remote=false){const B=w.boss;B.inv=20;sfx.hit();w.fx.shake(2);w.fx.burst(B.x,B.y,{n:5,colors:[N.white,N.orange],speed:60,life:.25,size:1.6});
   // online the other phone sends its hits; player 1's phone owns the bat's HP
@@ -201,7 +207,7 @@ async function castlevania(s){
  // anything that hurts monsters: the whip, sub-weapons and holy-water flames
  function hitBox(p,w,b,dmg,hits,whip=false){let any=false;
   for(const cd of w.candles)if(cd.alive&&!hits.has(cd)&&overlap(b,{x0:cd.x-5,x1:cd.x+5,y0:cd.y-9,y1:cd.y+7})){hits.add(cd);breakCandle(p,w,cd);any=true;}
-  for(const e of w.foes)if(e.alive&&e.active&&e.state!=='dying'&&e.inv<=0&&!hits.has(e)&&overlap(b,foeBox(e))){hits.add(e);damageFoe(p,w,e,dmg);any=true;}
+  for(const e of w.foes)if(e.alive&&e.active&&!e.hidden&&e.state!=='dying'&&e.inv<=0&&!hits.has(e)&&overlap(b,foeBox(e))){hits.add(e);damageFoe(p,w,e,dmg);any=true;}
   const B=w.boss;if(B&&B.state!=='sleep'&&!B.dead&&B.inv<=0&&!hits.has(B)&&overlap(b,bossBox(B))){hits.add(B);damageBoss(p,w,dmg);any=true;}
   if(whip){const c0=Math.floor(b.x0/T),c1=Math.floor(b.x1/T),r0=Math.floor(b.y0/T),r1=Math.floor(b.y1/T);
    for(let cc=c0;cc<=c1;cc++)for(let r=r0;r<=r1;r++){const key='t'+cc+'-'+r;if(tileAt(w,cc,r)===CRACK&&!hits.has(key)){hits.add(key);breakWall(p,w,cc,r);any=true;}}}
@@ -211,11 +217,11 @@ async function castlevania(s){
   if(wp.t>=12&&wp.t<=19)hitBox(p,w,whipBox(p),WHIP_DMG[p.lvl],wp.hits,true);
   if(wp.t>=26)p.whip=null;}
  function throwSub(p,w){const k=p.sub;if(!k)return false;
-  if(p.hearts<SUBS[k]||k!=='watch'&&w.shots.length){sfx.deny();return true;}
-  if(k==='watch'){if(w.freeze>0)return true;p.hearts-=SUBS[k];w.freeze=150;sfx.freeze();note(p,'stopwatch');return true;}
+  if(p.hearts<SUBS[k]||k!=='watch'&&w.shots.some(sh=>!sh.vis)){sfx.deny();return true;}
+  if(k==='watch'){if(w.freeze>0)return true;p.hearts-=SUBS[k];w.freeze=150;if(net)ev({fz:[p.lap]});sfx.freeze();note(p,'stopwatch');return true;}
   p.hearts-=SUBS[k];sfx.sub();p.throwT=12;const f=p.facing,sh={kind:k,x:p.x+f*6,y:p.y-(p.crouch?13:23),vx:0,vy:0,g:0,t:0,f,hits:new Set()};
   if(k==='dagger')sh.vx=f*3.4;else if(k==='axe'){sh.vx=f*1.7;sh.vy=-4.6;sh.g=.16;}else if(k==='holy'){sh.vx=f*1.7;sh.vy=-1.6;sh.g=.22;}else sh.vx=f*3.2;
-  w.shots.push(sh);note(p,'throw '+k);return true;}
+  w.shots.push(sh);note(p,'throw '+k);if(net)ev({ps:[p.lap,k,r1(sh.x),r1(sh.y),sh.vx,sh.vy,sh.g,f]});return true;}
 
  function stepPlayer(p,w,inp){
   const press=inp.press,atk=inp.atk,sub=inp.sub;inp.press=0;inp.atk=0;inp.sub=0;
@@ -277,39 +283,54 @@ async function castlevania(s){
   else if(t==='crystal'){p.hp=HP;if(!p.finished){p.finished=true;p.finishT=clock;p.whip=null;sfx.clear();s.react(p.i,'win');note(p,'crystal');}}}
  function stepWorld(w,p){
   const cam=cams[p.i],fr=w.freeze>0;if(fr)w.freeze--;
+  // online the other phone on player 1's castle lap shows player 1's monsters (snapshots) instead of running its own
+  const mob=netMob(w);if(w.netMob&&!mob)leaveNetMob(w);
+  // online player 1's phone runs the monsters for both hunters: they wake in either view, go for the nearer hunter,
+  // and only vanish when they are out of both views (the partner's view is its own screen's width)
+  const m=mob?null:mate(p),hs=m&&!m.dead?[p,m]:[p],views=m?[cam,camOf(m)]:[cam];
+  const inView=(x,pad)=>views.some(v=>x>v.x-pad&&x<v.x+v.w+pad);
+  const near=e=>{let b=p,bd=Infinity;for(const h of hs)if(!h.dead&&Math.abs(h.x-e.x)<bd){bd=Math.abs(h.x-e.x);b=h;}return b;};
+  if(mob)stepNetFoes(w,p);
+  else{
   // zombies walk in from the screen edges in halls; Medusa heads drift in over the pits
-  if(!fr&&!p.dead&&!w.locked&&phase==='play')L.zones.forEach((z,k)=>{if(p.x<z.x0||p.x>z.x1||--w.zoneT[k]>0)return;
+  if(!fr&&!w.locked&&phase==='play')L.zones.forEach((z,k)=>{const inZ=hs.filter(h=>!h.dead&&h.x>=z.x0&&h.x<=z.x1);if(!inZ.length||--w.zoneT[k]>0)return;
    w.zoneT[k]=z.every[0]+Math.floor(w.rng()*(z.every[1]-z.every[0]));
    if(w.foes.filter(e=>e.alive&&e.spawned&&e.type===z.kind).length>=(z.kind==='zombie'?3:2))return;
-   const side=z.kind==='medusa'?p.facing:w.rng()<.5?-1:1,x=side>0?cam.x+cam.w+8:cam.x-8;
-   if(z.kind==='zombie'){const cc=Math.floor(x/T);if(!tileAt(w,cc,FL)||tileAt(w,cc,FL-1)||tileAt(w,cc,FL-2))return;w.foes.push({...spawnFoe({type:'zombie',x,y:FL*T}),spawned:true,active:true,state:'walk',vx:-side*.55});}
-   else w.foes.push({...spawnFoe({type:'medusa',x,y:p.y-22}),spawned:true,active:true,state:'fly',vx:-side*1.05,baseY:clamp(p.y-22+(w.rng()-.5)*20,40,FL*T-20),t:Math.floor(w.rng()*60)});});
+   const h=inZ.length>1?inZ[Math.floor(w.rng()*inZ.length)]:inZ[0],hc=camOf(h);
+   const side=z.kind==='medusa'?h.facing:w.rng()<.5?-1:1;let x=side>0?hc.x+hc.w+8:hc.x-8;
+   for(const v of views)if(v!==hc&&x>v.x-8&&x<v.x+v.w+8)x=side>0?v.x+v.w+8:v.x-8; // online: not inside the other view either
+   const id=(host?0:1e5)+w.nid++;
+   if(z.kind==='zombie'){const cc=Math.floor(x/T);if(!tileAt(w,cc,FL)||tileAt(w,cc,FL-1)||tileAt(w,cc,FL-2))return;w.foes.push({...spawnFoe({type:'zombie',x,y:FL*T}),id,spawned:true,active:true,state:'walk',vx:-side*.55});}
+   else w.foes.push({...spawnFoe({type:'medusa',x,y:h.y-22}),id,spawned:true,active:true,state:'fly',vx:-side*1.05,baseY:clamp(h.y-22+(w.rng()-.5)*20,40,FL*T-20),t:Math.floor(w.rng()*60)});});
   for(const e of w.foes){
    if(!e.alive)continue;
-   if(!e.active){if(e.x>cam.x-24&&e.x<cam.x+cam.w+24)e.active=true;else continue;}
+   if(!e.active){if(inView(e.x,24))e.active=true;else continue;}
    if(e.state==='dying'){e.t++;if(e.t>20)e.alive=false;continue;}
-   if(e.x<cam.x-90||e.x>cam.x+cam.w+90){if(e.spawned||e.state!=='idle')e.alive=false;else e.active=false;continue;}
+   if(!inView(e.x,90)){if(e.spawned||e.state!=='idle')e.alive=false;else e.active=false;continue;}
    if(e.inv>0)e.inv--;
    if(fr)continue;
-   e.t++;
-   if(e.type==='zombie'){const r=moveBody(w,e,5,30);if(r.wall)e.vx=-e.vx;if(e.y>ROWS*T+40)e.alive=false;}
-   else if(e.type==='bat'){if(e.state==='idle'){if(Math.abs(p.x-e.x)<110&&!p.dead){e.state='fly';e.vx=(p.x<e.x?-1:1)*1.05;e.t=0;}}
-    else{e.baseY+=clamp(p.y-20-e.baseY,-.45,.45);e.x+=e.vx;e.y=e.baseY+Math.sin(e.t*.13)*9;}}
+   e.t++;const h=near(e);
+   if(e.type==='zombie'){const r=moveBody(w,e,5,30);if(r.wall)e.vx=-e.vx;if(e.y>ROWS*T+40)foeGone(p,e);}
+   else if(e.type==='bat'){if(e.state==='idle'){if(Math.abs(h.x-e.x)<110&&!h.dead){e.state='fly';e.vx=(h.x<e.x?-1:1)*1.05;e.t=0;}}
+    else{e.baseY+=clamp(h.y-20-e.baseY,-.45,.45);e.x+=e.vx;e.y=e.baseY+Math.sin(e.t*.13)*9;}}
    else if(e.type==='medusa'){e.x+=e.vx;e.y=e.baseY+Math.sin(e.t*.065)*30;}
    else if(e.type==='skeleton'){
     if(Math.abs(e.x-e.home)>22)e.dir=Math.sign(e.home-e.x);else if(w.rng()<.008)e.dir=-e.dir;
     e.vx=e.dir*.35;const ahead=Math.floor((e.x+e.dir*8)/T);if(!tileAt(w,ahead,Math.floor(e.y/T))){e.dir=-e.dir;e.vx=0;}
-    const r=moveBody(w,e,5,30);if(r.wall)e.dir=-e.dir;if(e.y>ROWS*T+40)e.alive=false;
-    if(--e.throwT<=0&&Math.abs(p.x-e.x)<170&&!p.dead){e.throwT=95+Math.floor(w.rng()*60);const face=p.x<e.x?-1:1;w.eshots.push({kind:'bone',x:e.x,y:e.y-26,vx:face*(.7+Math.min(1.2,Math.abs(p.x-e.x)/110)),vy:-4.2,g:.15,t:0});}}
+    const r=moveBody(w,e,5,30);if(r.wall)e.dir=-e.dir;if(e.y>ROWS*T+40)foeGone(p,e);
+    if(--e.throwT<=0&&Math.abs(h.x-e.x)<170&&!h.dead){e.throwT=95+Math.floor(w.rng()*60);const face=h.x<e.x?-1:1;eshot(w,{kind:'bone',x:e.x,y:e.y-26,vx:face*(.7+Math.min(1.2,Math.abs(h.x-e.x)/110)),vy:-4.2,g:.15,t:0});}}
   }
   if(!p.dead&&!p.finished){const pb=playerBox(p);for(const e of w.foes){if(!e.alive||!e.active||e.state==='dying'||e.state==='idle'&&e.type==='bat')continue;
-   if(overlap(pb,foeBox(e))){hurt(p,w,e.type==='medusa'?3:2,e.x);if(e.type==='bat'){e.state='dying';e.t=0;}}}}
-  // enemy bones and fireballs
+   if(overlap(pb,foeBox(e))){hurt(p,w,e.type==='medusa'?3:2,e.x);if(e.type==='bat'){e.state='dying';e.t=0;if(net)ev({fk:[p.lap,e.id]});}}}}
+  }
+  // enemy bones and fireballs (online both phones fly them; each hits only its own hunter)
   for(let k=w.eshots.length-1;k>=0;k--){const b=w.eshots[k];if(!fr){b.t++;b.vy+=b.g;b.x+=b.vx;b.y+=b.vy;}
-   if(!p.dead&&!p.finished&&Math.abs(b.x-p.x)<8&&b.y>p.y-pH(p)-3&&b.y<p.y+2){hurt(p,w,2,b.x);w.eshots.splice(k,1);continue;}
-   if(b.y>ROWS*T+20||b.x<cam.x-40||b.x>cam.x+cam.w+40||b.t>400)w.eshots.splice(k,1);}
+   if(!p.dead&&!p.finished&&Math.abs(b.x-p.x)<8&&b.y>p.y-pH(p)-3&&b.y<p.y+2){hurt(p,w,2,b.x);w.eshots.splice(k,1);if(net&&b.id)ev({ek:[p.lap,b.id]});continue;}
+   if(b.y>ROWS*T+20||!inView(b.x,40)||b.t>400)w.eshots.splice(k,1);}
   // the player's sub-weapons
   for(let k=w.shots.length-1;k>=0;k--){const sh=w.shots[k];sh.t++;let gone=false;
+   // online: the partner's sub-weapons, only shown (their hits come through player 1's monsters)
+   if(sh.vis){if(sh.kind==='cross')sh.vx-=sh.f*.075;else sh.vy+=sh.g;sh.x+=sh.vx;sh.y+=sh.vy;if(sh.t>(sh.kind==='cross'?70:120)||sh.y>ROWS*T+16||sh.kind!=='cross'&&solidAt(w,sh.x,sh.y))w.shots.splice(k,1);continue;}
    if(sh.kind==='cross'){sh.vx-=sh.f*.075;sh.x+=sh.vx;if(sh.t>30&&Math.sign(sh.vx)!==sh.f&&Math.abs(sh.x-p.x)<10&&Math.abs(sh.y-(p.y-20))<26)gone=true;}
    else{sh.vy+=sh.g;sh.x+=sh.vx;sh.y+=sh.vy;}
    const box={x0:sh.x-5,x1:sh.x+5,y0:sh.y-5,y1:sh.y+5};
@@ -339,7 +360,7 @@ async function castlevania(s){
      if(B.t>(B.hp<6?70:95)){B.t=0;B.state=w.rng()<.6&&!tp.dead?'tell':'shoot';}}
     else if(B.state==='tell'){B.x+=Math.sin(B.t*1.7)*1.2;if(B.t>26){B.t=0;B.state='swoop';const dx=tp.x-B.x,dy=tp.y-14-B.y,d=Math.max(1,Math.hypot(dx,dy));B.vx=dx/d*1.8;B.vy=dy/d*1.8;}}
     else if(B.state==='swoop'){B.x+=B.vx;B.y+=B.vy;if(B.y>FL*T-14||B.t>60||B.x<A.x0+22||B.x>A.x1-22)roam();}
-    else if(B.state==='shoot'){if((B.t===24||B.t===46&&B.hp<5)&&!tp.dead){const dx=tp.x-B.x,dy=tp.y-16-B.y,d=Math.max(1,Math.hypot(dx,dy)),f={kind:'fire',x:B.x,y:B.y+6,vx:dx/d*1.4,vy:dy/d*1.4,g:0,t:0};w.eshots.push(f);if(net)ev({bf:[Math.round(f.x),Math.round(f.y),+f.vx.toFixed(2),+f.vy.toFixed(2)]});sfx.sub();}
+    else if(B.state==='shoot'){if((B.t===24||B.t===46&&B.hp<5)&&!tp.dead){const dx=tp.x-B.x,dy=tp.y-16-B.y,d=Math.max(1,Math.hypot(dx,dy)),f={kind:'fire',x:B.x,y:B.y+6,vx:dx/d*1.4,vy:dy/d*1.4,g:0,t:0};eshot(w,f);sfx.sub();}
      if(B.t>58)roam();}
     B.x=clamp(B.x,A.x0+24,A.x1-24);B.y=clamp(B.y,24,FL*T-12);}
    if(!['sleep','die','gone'].includes(B.state)&&!p.dead&&!p.finished&&overlap(playerBox(p),bossBox(B)))hurt(p,w,2,B.x);}
@@ -507,7 +528,7 @@ async function castlevania(s){
   for(const cd of w.candles)if(cd.alive&&cd.x>x0&&cd.x<x1)drawCandle(cd);
   for(const it of w.items)drawItem(it);
   for(const f of w.flames)drawFlames(f);
-  for(const e of w.foes)if(e.alive&&e.active)drawFoe(e);
+  for(const e of w.foes)if(e.alive&&e.active&&!e.hidden)drawFoe(e);
   if(w.boss)drawBoss(w.boss);
   for(const b of w.eshots)drawShot(b);
   for(const b of w.shots)drawShot(b);
@@ -575,13 +596,57 @@ async function castlevania(s){
  if(net)setTimeout(()=>{if(s.debug)s.debug.bot=()=>{if(!bot){bot={t:0,stuck:0};return 'drive';}return '';};},0);
 
  // ---------------- online (see the top of the file)
- let nf=null,netStarted=false,netScores=null,bot=null;
+ let nf=null,netStarted=false,netScores=null,bot=null,netT0=0;
  function ev(e){nf?.event(e);}
  // the bat goes after the nearer hunter in the arena (online, on player 1's phone)
  function batTarget(p,w){const q=pl[them];if(!net||!q.net||q.dead||q.lap!==p.lap||q.x<L.arena.x0)return p;if(p.dead)return q;return Math.abs(q.x-w.boss.x)<Math.abs(p.x-w.boss.x)?q:p;}
- const packP=p=>({...snap(p),i:p.i,sc:p.score,h:p.hearts,b:Math.round(p.best),lap:p.lap,f:p.finished?1:0,ft:+p.finishT.toFixed(2),hp:p.hp,sub:p.sub,inv:p.inv>0?1:0,flash:p.flash>0?1:0});
+ // MONSTERS online: player 1's phone runs them for both hunters (spawns, AI, HP) and streams the ones around the partner's
+ // view {m:{l: lap, a: [x0,x1] the area covered, f: [[id,type,x,y,state,vx,hp,dir,inv]...], z: freeze}}; the other phone
+ // shows them (eased, moved on by their speed between snapshots), judges only what touches its own hunter and reports its
+ // hits {fh:[lap,id,dmg]} (a kill shows and scores there at once). A monster missing from a snapshot INSIDE its area is hidden
+ // (not killed: it shows again if listed); real deaths come as {fk:[lap,id]} (killed) and {fg:[lap,id]} (fell). Enemy bones
+ // and fireballs {es} fly on both phones, each hits only its own hunter and tells the other {ek}. A phone alone on its castle
+ // lap (Night of the Candles: the exit door) runs its own monsters; what the other did to a lap it hasn't reached is kept
+ // in netLog and applied when it gets there.
+ const FTY=['zombie','bat','medusa','skeleton'],FST=['idle','walk','fly','dying'],r1=v=>Math.round(v*10)/10;
+ const mate=p=>{const q=pl[them];return net&&host&&q.net&&q.lap===p.lap?q:null;};
+ const camOf=q=>!net||q.i===me?cams[q.i]:{x:q.cx??q.x-128,w:q.cw||256};
+ const netMob=w=>!!net&&!host&&w===worlds[me]&&!!pl[them].net&&pl[them].lap===pl[me].lap&&!!w.mobSeen;
+ function eshot(w,b){w.eshots.push(b);if(!net)return;b.id=(w.sid=(w.sid||0)+1);
+  if(host&&mate(pl[me]))ev({es:[pl[me].lap,b.id,b.kind,r1(b.x),r1(b.y),+b.vx.toFixed(3),+b.vy.toFixed(3),b.g,Math.round(clock*100)]});}
+ function foeGone(p,e){e.alive=false;if(net)ev({fg:[p.lap,e.id]});}
+ function packMobs(){const p=pl[me],w=worlds[me],q=mate(p);if(!q)return null;const v=camOf(q),a=[Math.round(v.x-120),Math.round(v.x+v.w+120)],f=[];
+  for(const e of w.foes)if(e.alive&&e.active&&e.x>=a[0]&&e.x<=a[1])f.push([e.id,FTY.indexOf(e.type),r1(e.x),r1(e.y),Math.max(0,FST.indexOf(e.state)),+e.vx.toFixed(2),e.hp,e.dir,e.inv>0?1:0]);
+  return {l:p.lap,a,f,z:w.freeze};}
+ function unpackMobs(m){const p=pl[me],w=worlds[me];if(!m||m.l!==p.lap||!Array.isArray(m.f)||!Array.isArray(m.a))return;
+  // the first snapshot of this lap: player 1's phone takes over (monsters this phone spawned on its own go)
+  if(!w.mobSeen){w.mobSeen=true;w.netMob=true;w.foes=w.foes.filter(e=>!e.spawned);for(const e of w.foes)e.hidden=true;}
+  const seen=new Set();
+  for(const r of m.f){if(!Array.isArray(r))continue;const [id,ty,x,y,st,vx,hp,dir,inv]=r,type=FTY[ty];if(!type)continue;seen.add(id);let e=w.foes.find(f=>f.id===id);
+   if(!e){if(w.gone?.has(id))continue;e={...spawnFoe({type,x,y}),id,spawned:id>=1000,active:true,state:FST[st]||'idle'};w.foes.push(e);}
+   if(!e.alive||e.lk)continue;
+   e.hidden=false;e.active=true;e.nx=x;e.ny=y;e.vx=vx;e.dir=dir;e.hp=Math.min(e.hp,hp);if(inv&&e.inv<=0)e.inv=6;
+   if(e.state!=='dying'){e.state=FST[st]||'idle';if(e.state==='dying')e.t=0;}}
+  for(const e of w.foes)if(e.alive&&!seen.has(e.id)&&e.state!=='dying'&&e.x>=m.a[0]&&e.x<=m.a[1])e.hidden=true;
+  if(m.z>0)w.freeze=Math.max(w.freeze,m.z);}
+ // the other phone between snapshots: ease to the last one, move on by the speed, judge contact with its own hunter
+ function stepNetFoes(w,p){const fr=w.freeze>0;
+  for(const e of w.foes){if(!e.alive)continue;
+   if(e.state==='dying'){e.t++;if(e.t>20)e.alive=false;continue;}
+   if(e.inv>0)e.inv--;if(!fr)e.t++;
+   if(e.nx!=null){if(!fr&&e.state!=='idle'&&e.type!=='skeleton')e.nx+=e.vx;
+    if(Math.abs(e.nx-e.x)>48||Math.abs(e.ny-e.y)>48){e.x=e.nx;e.y=e.ny;}else{e.x+=(e.nx-e.x)*.3;e.y+=(e.ny-e.y)*.3;}}
+   if(e.hidden||!e.active||p.dead||p.finished||e.state==='idle'&&e.type==='bat')continue;
+   if(overlap(playerBox(p),foeBox(e))){hurt(p,w,e.type==='medusa'?3:2,e.x);if(e.type==='bat'){e.state='dying';e.t=0;e.lk=true;ev({fh:[p.lap,e.id,9]});}}}}
+ // player 1's phone went on to another lap: this phone runs what it sees again
+ function leaveNetMob(w){w.netMob=false;w.foes=w.foes.filter(e=>!e.hidden&&e.alive);for(const e of w.foes){e.nx=null;e.baseY=e.y;}}
+ const netLog=new Map(),logFor=lap=>{if(!netLog.has(lap))netLog.set(lap,{cd:new Set(),wb:[],fk:new Set()});return netLog.get(lap);};
+ function applyLog(w,lap){const g=netLog.get(lap);if(!g)return;for(const k of g.cd)if(w.candles[k])w.candles[k].alive=false;
+  for(const [cc,r] of g.wb){w.tiles[r*MAXC+cc]=0;w.hidden.delete(r*MAXC+cc);}for(const f of w.foes)if(g.fk.has(f.id))f.alive=false;}
+ const packP=p=>({...snap(p),i:p.i,sc:p.score,h:p.hearts,b:Math.round(p.best),lap:p.lap,f:p.finished?1:0,ft:+p.finishT.toFixed(2),hp:p.hp,sub:p.sub,inv:p.inv>0?1:0,flash:p.flash>0?1:0,
+  cx:Math.round(cams[p.i].x),cw:Math.round(cams[p.i].w)});
  function unpackP(o){const q=pl[them];if(!o||typeof o!=='object')return;const first=!q.net||q.lap!==o.lap;q.net={o,at:performance.now()};
-  Object.assign(q,{facing:o.facing,crouch:o.crouch,whip:o.whip,lvl:o.lvl,dead:o.dead,stair:o.stair,grounded:o.grounded,hurt:o.hurt,vx:o.vx,throwT:o.throwT,score:o.sc,hearts:o.h,lap:o.lap,hp:o.hp,sub:o.sub,inv:o.inv?30:0,flash:o.flash?20:0});
+  Object.assign(q,{facing:o.facing,crouch:o.crouch,whip:o.whip,lvl:o.lvl,dead:o.dead,stair:o.stair,grounded:o.grounded,hurt:o.hurt,vx:o.vx,throwT:o.throwT,score:o.sc,hearts:o.h,lap:o.lap,hp:o.hp,sub:o.sub,inv:o.inv?30:0,flash:o.flash?20:0,cx:o.cx,cw:o.cw});
   q.best=Math.max(q.best,o.b);if(o.f&&!q.finished){q.finished=true;q.finishT=o.ft;}if(first){q.x=o.x;q.y=o.y;}}
  function stepRemote(dt){const q=pl[them],n=q.net;if(!n)return;const o=n.o,k=1-Math.exp(-dt*16);if(Math.abs(o.x-q.x)>80){q.x=o.x;q.y=o.y;}else{q.x+=(o.x-q.x)*k;q.y+=(o.y-q.y)*k;}if(q.grounded&&Math.abs(q.vx)>.05||q.stair)q.anim+=.12*dt*60;}
  function unpackBat(b){const w=worlds[me],A=L.arena;if(!A||!Array.isArray(b))return;const [x0,y0,st,hp]=b;
@@ -589,14 +654,25 @@ async function castlevania(s){
   const B=w.boss,prev=B.state;B.nx=x0;B.ny=y0;B.hp=hp;
   if(st!==prev){B.state=st;B.t=0;if((st==='die'||st==='gone')&&!B.dead){B.dead=true;batDown(pl[me]);}
    if(st==='gone'&&!w.crystal){w.crystal=true;dropItem(w,'crystal',A.cx,2*T);}}}
- function onNetEvent(e){const p=pl[me],w=worlds[me];
-  if(e.cd){const [lap,k]=e.cd,cd0=lap===p.lap&&w.candles[k];if(cd0&&cd0.alive){cd0.alive=false;w.fx.burst(cd0.x,cd0.y,{n:6,colors:[N.white,N.orange,N.gold],speed:50,life:.3,size:1.6});}}
-  else if(e.wb){const [lap,cc,r]=e.wb;if(lap===p.lap&&w.tiles[r*MAXC+cc]){w.tiles[r*MAXC+cc]=0;w.hidden.delete(r*MAXC+cc);w.fx.burst(cc*T+8,r*T+8,{n:8,colors:['#a87848','#5c3818',N.lgray],speed:70,life:.4,size:2,gravity:200});}}
-  else if(e.fk){const [lap,home]=e.fk;if(lap===p.lap)for(const f of w.foes)if(f.alive&&!f.spawned&&f.home===home&&f.state!=='dying'){f.state='dying';f.t=0;f.active=true;break;}}
-  else if(e.bh&&host){const B=w.boss;if(B&&!B.dead&&B.state!=='sleep')damageBoss(p,w,+e.bh||0,true);}
-  else if(e.bf&&!host){const [x0,y0,vx,vy]=e.bf;w.eshots.push({kind:'fire',x:x0,y:y0,vx,vy,g:0,t:0});}}
- if(net){nf=netField(s,{hz:20,pack:()=>{const o={p:packP(pl[me]),c:+clock.toFixed(2)};const B=worlds[me].boss;if(host&&B)o.b=[Math.round(B.x),Math.round(B.y),B.state,B.hp];return o;},
-  unpack:(i,d)=>{if(!d)return;unpackP(d.p);if(!host&&d.b&&mode==='boss')unpackBat(d.b);},onEvent:onNetEvent});}
+ function onNetEvent(e){const p=pl[me],w=worlds[me];if(!e||typeof e!=='object')return;
+  const lapOf=a=>Array.isArray(a)?a[0]|0:-1,later=a=>lapOf(a)>p.lap,here=a=>lapOf(a)===p.lap;
+  if(e.cd){const [lap,k]=e.cd;if(later(e.cd))logFor(lap).cd.add(k);const cd0=here(e.cd)&&w.candles[k];if(cd0&&cd0.alive){cd0.alive=false;w.fx.burst(cd0.x,cd0.y,{n:6,colors:[N.white,N.orange,N.gold],speed:50,life:.3,size:1.6});}}
+  else if(e.wb){const [lap,cc,r]=e.wb;if(later(e.wb))logFor(lap).wb.push([cc,r]);if(here(e.wb)&&w.tiles[r*MAXC+cc]){w.tiles[r*MAXC+cc]=0;w.hidden.delete(r*MAXC+cc);w.fx.burst(cc*T+8,r*T+8,{n:8,colors:['#a87848','#5c3818',N.lgray],speed:70,life:.4,size:2,gravity:200});}}
+  else if(e.fk||e.fg){const a=e.fk||e.fg,[lap,id]=a;if(later(a)&&id<1000)logFor(lap).fk.add(id);if(!here(a))return;
+   (w.gone||(w.gone=new Set())).add(id);const f=w.foes.find(f=>f.id===id&&f.alive);if(!f)return;
+   if(e.fg)f.alive=false;else if(f.state!=='dying'){f.state='dying';f.t=0;f.active=true;f.hidden=false;}}
+  // the other phone hit one of player 1's monsters (its kill already scored there)
+  else if(e.fh&&host){const [lap,id,dmg]=e.fh;if(!here(e.fh))return;const f=w.foes.find(f=>f.id===id&&f.alive&&f.state!=='dying');if(!f)return;
+   f.hp-=+dmg||1;if(f.hp>0){f.inv=14;sfx.hit();if(f.type==='skeleton')f.x+=pl[them].x<f.x?3:-3;}else{f.state='dying';f.t=0;}}
+  else if(e.es&&!host){const [lap,id,kind,x,y,vx,vy,g,ct]=e.es;if(!here(e.es))return;const b={id,kind,x,y,vx,vy,g:+g||0,t:0};
+   // fly it on by the time it spent on the way (both clocks run from the same start)
+   let n=clamp(Math.round((clock-(+ct||0)/100)*60),0,240);while(n-->0){b.t++;b.vy+=b.g;b.x+=b.vx;b.y+=b.vy;}if(b.y<ROWS*T+20)w.eshots.push(b);}
+  else if(e.ps){const [lap,kind,x,y,vx,vy,g,f]=e.ps;if(here(e.ps)&&w.shots.length<12)w.shots.push({kind,x,y,vx,vy,g,f,t:0,vis:true,hits:new Set()});}
+  else if(e.ek){if(!here(e.ek))return;const k=w.eshots.findIndex(b=>b.id===e.ek[1]);if(k>=0)w.eshots.splice(k,1);}
+  else if(e.fz&&host){if(here(e.fz))w.freeze=Math.max(w.freeze,150);}
+  else if(e.bh&&host){const B=w.boss;if(B&&!B.dead&&B.state!=='sleep')damageBoss(p,w,+e.bh||0,true);}}
+ if(net){nf=netField(s,{hz:20,pack:()=>{const o={p:packP(pl[me])};const B=worlds[me].boss;if(host&&B)o.b=[Math.round(B.x),Math.round(B.y),B.state,B.hp];if(host){const m=packMobs();if(m)o.m=m;}return o;},
+  unpack:(i,d)=>{if(!d)return;unpackP(d.p);if(!host&&d.b&&mode==='boss')unpackBat(d.b);if(!host&&d.m)unpackMobs(d.m);},onEvent:onNetEvent});}
  // the boss run ends 10 s after the first crystal (or when both have one); the candle hunt after 60 s
  const netOver=()=>{const p=pl[me],q=pl[them];if(mode==='hearts')return clock>=HUNT_TIME;if(clock>=RACE_CAP)return true;
   if(p.finished&&q.finished)return clock-Math.max(p.finishT,q.finishT)>2.5;return clock>Math.min(p.finished?p.finishT:Infinity,q.finished?q.finishT:Infinity)+NET_GRACE;};
@@ -607,13 +683,15 @@ async function castlevania(s){
  // online test bot: walks right whipping, jumps when stuck, climbs the stairs it meets
  function botInput(inp){const p=pl[me];bot.t++;inp.r=1;inp.l=0;inp.u=0;inp.d=0;inp.jump=0;if(bot.t%28===0)inp.atk=1;
   if(p.grounded&&Math.abs(p.vx)<.1&&!p.whip)bot.stuck++;else bot.stuck=0;if(bot.stuck>20||bot.t%150===0){inp.press=1;bot.stuck=0;}
+  // being a test, it hops past what it can't get over (a cracked wall needs a crouching whip, a pit a well-timed jump)
+  if(p.x>(bot.bx||0)+4||p.dead||p.finished||worlds[me].locked){bot.bx=p.x;bot.since=bot.t;}else if(bot.t-bot.since>240){teleport(me,p.x+48);bot.since=bot.t;}
   const B=worlds[me].boss;if(B&&!B.dead&&B.state!=='sleep'){inp.r=p.x<B.x-20?1:0;inp.l=p.x>B.x+20?1:0;if(bot.t%40===0)inp.press=1;}
   const it=worlds[me].items.find(q=>q.type==='crystal');if(it){inp.r=p.x<it.x?1:0;inp.l=p.x>it.x?1:0;}}
  // ---------------- turns: title → P1 hand-off → countdown → run → P2 hand-off → countdown → run vs ghost → results
  const score=q=>mode==='hearts'?`${q.hearts} hearts`:q.finished?fmtRace(q.finishT):`${prog(q)}% of the way`;
  async function beginTurn(i){
   // online: no hand-off; both phones start the countdown together
-  if(net){phase='wait';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;clock=0;acc=0;cd=new Countdown(3);phase='count';cams[me].x=0;return;}
+  if(net){phase='wait';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;clock=0;acc=0;netT0=performance.now()+3000;cd=new Countdown(3);phase='count';cams[me].x=0;return;}
   phase='handoff';turn=i;pads.stick=null;pads.jump=null;clearKeys();for(const inp of inputs)Object.assign(inp,{l:0,r:0,u:0,d:0,jump:0,press:0,atk:0,sub:0});
   const n0=s.players[0].name,desc=s.solo?(mode==='hearts'?`Night ${soloCleared+1}: whip candles and monsters for at least ${heartGoal()} hearts in 60 seconds to reach the next night.`:`Castle run ${soloCleared+1}: slay the Phantom Bat within ${fmtRace(raceCap())} to go again with less time.`):i===0?(mode==='hearts'?`You go first: whip candles and monsters for as many hearts as you can in 60 seconds. ${s.players[1].name} plays next against your ghost.`:`You go first: get through the castle and slay the Phantom Bat as fast as you can. ${s.players[1].name} plays next against your ghost.`)
    :(mode==='hearts'?`Beat ${n0}'s ${pl[0].hearts} hearts in 60 seconds. ${n0}'s ghost runs beside you.`:`Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'}. Follow or overtake ${n0}'s ghost.`);
@@ -631,14 +709,15 @@ async function castlevania(s){
  s.frame((dt,t)=>{
   if(!s.alive)return;
   if(phase==='title'){titleT+=dt;if(titleT>2.45)beginTurn(0);}
-  else if(phase==='count'){const lay=layout();cams[turn].w=s.W/lay.sc;updateCamera(pl[turn],turn);if(!cd.update(dt)){phase='play';for(const inp of inputs){inp.press=0;inp.atk=0;inp.sub=0;}}}
+  else if(phase==='count'){const lay=layout();cams[turn].w=s.W/lay.sc;updateCamera(pl[turn],turn);if(!cd.update(dt)||net&&performance.now()>=netT0){phase='play';for(const inp of inputs){inp.press=0;inp.atk=0;inp.sub=0;}}}
   else if(phase==='play'||phase==='turn-end'||phase==='end'||phase==='net-end'){
    if(!cd.done)cd.update(dt);acc+=dt;let steps=0;const i=turn,p=pl[i];
-   if(net){stepRemote(dt);nf.tick(dt);
+   // online the clock is wall time from the shared start (frame rates differ per phone)
+   if(net){if(phase==='play')clock=Math.max(clock,(performance.now()-netT0)/1000);stepRemote(dt);nf.tick(dt);
     // player 1's phone wakes the bat when the partner walks into the boss room first
     const w=worlds[me],q=pl[them],A=L.arena;if(host&&mode==='boss'&&A&&!w.locked&&!w.crystal&&q.net&&q.lap===p.lap&&q.x>A.x0+40&&!q.dead)wakeBat(w,p);}
    while(acc>=STEP&&steps<5){acc-=STEP;steps++;frames++;simT+=STEP;
-    if(phase==='play'){clock+=STEP;const inp=inputs[i];readInput(i);stepPlayer(p,worlds[i],inp);stepWorld(worlds[i],p);}
+    if(phase==='play'){if(!net)clock+=STEP;const inp=inputs[i];readInput(i);stepPlayer(p,worlds[i],inp);stepWorld(worlds[i],p);}
     else{stepPlayer(p,worlds[i],still);}
     updateCamera(p,i);
     if(turn===0&&phase!=='end'&&!s.solo&&!net)ghost.push(snap(p));else if(turn===1)gi++;
