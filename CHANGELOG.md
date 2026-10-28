@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.69.1
+
+**New portraits.** Biff Tannen, Ben Affleck's Batman, Buckethead, Chuck Norris, Clint Eastwood, Colonel Sanders, Dirty Harry, God, Jackie Brown, Jesus, Chris from *NSYNC, Pennywise, Carl Spackler, Kenny Powers, Walker Texas Ranger, Wang Chi, Sylvester Stallone, The Mountain, Dolores Umbridge, Chazz Michael Michaels and Ron Burgundy, many with extra faces (win, sad, angry, think, silly, walk). Shrunk like the earlier ones (480 px WebP; originals kept in `assets/originals/portraits/`).
+
+**Home screen.** Continue sits above New Game again (when a game is saved), and the title has its slogan back: *"The game playin' the game, disguised as another game!"*
+
 ## v0.69.0
 
 **Online play, fixed up.** A deep pass over everything online, after the first real two-phone tests.

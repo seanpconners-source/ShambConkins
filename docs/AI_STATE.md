@@ -1,6 +1,8 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.69.0 (Oct 28: online play fix-up after the owner's first real two-phone test ("could not join"; Broforce enemies missing
+Version 0.69.1 (Oct 28: 49 new owner portraits optimized (480px WebP q88, same bytes as the TESTver sync bot makes); home screen: Continue
+stacked over a smaller New Game again + slogan "The game playin' the game, disguised as another game!" (`.ts-tagline` under the logo).
+v0.69.0 Oct 28: online play fix-up after the owner's first real two-phone test ("could not join"; Broforce enemies missing
 for one player): net.js join retries + an error card that names the cause (offline / site unreachable / WebSocket refused by a
 blocker) with a connection log, close 4000 = seat taken by a duplicated tab (no reconnect loop, new id), worker frees seats silent
 60 s, netPlay acks {k:'npa'} (reconnect resends only unconfirmed moves), duel 20 s grace on a drop, queued rematch, version check
@@ -882,10 +884,10 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   `styles.css`). Logo `ART.brand` = `assets/shambconkins-logo.webp` (transparent + black outline, from
   `tools/brand-logo.py`; original in `assets/originals/brand/`). Keep the NEW GAME button free of transform animations
   (Playwright clicks need it stable). Screenshots: `tests/homeshots.mjs`.
-  Oct 27 tidy (owner: menu was messy): three tiers only: gold play button (CONTINUE + a NEW GAME button beside it when a run
-  is saved), an even 2x2 grid of tiles (Players = Choose Characters, Online, Arcade, Collection), and a quiet bottom dock
+  Oct 27 tidy (owner: menu was messy): three tiers only: gold play button (CONTINUE over a smaller NEW GAME bar when a run
+  is saved; owner wanted it stacked again, Oct 28), an even 2x2 grid of tiles (Players = Choose Characters, Online, Arcade, Collection), and a quiet bottom dock
   (About, Back up when due (`.ts-backup`, gold dot), Restore on an empty save, Install `.ts-install`, Exit) with line-icon SVGs
-  (`TS_ICON` in ui.js). No tagline / Mind-Body-Spirit pills / pass-and-play footer; page title is just "ShambConkins".
+  (`TS_ICON` in ui.js). Slogan `.ts-tagline` inside `.ts-logo` (owner's text, Oct 28); no Mind-Body-Spirit pills / pass-and-play footer; page title is just "ShambConkins".
   Erase progress and Clear run moved to a "Start over" zone at the bottom of Settings (confirm, Keep returns to Settings).
   `help` (dock About + the board's help button) = `aboutHTML()` in app.js: credits (Sean Conners, `RELEASED` month in
   version.js: update it with VERSION when releasing), how to play, modes, board tips (details), sources, "Art sources" button.
