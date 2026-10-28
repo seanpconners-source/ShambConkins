@@ -142,6 +142,10 @@ async function horde(s){
  }
  function nearestEnemy(px,py,maxR,skip){let best=null,bd=maxR*maxR;for(let i=0;i<E.length;i++){const e=E[i];if(e.dead||e===skip||e.immune)continue;const dx=e.x-px,dy=e.y-py,d=dx*dx+dy*dy;if(d<bd){bd=d;best=e;}}return best;}
  function randomEnemy(px,py,maxR){const n=E.length;if(!n)return null;const m2=maxR*maxR;for(let k=0;k<10;k++){const e=E[(rnd()*n)|0];if(e.dead||e.immune)continue;const dx=e.x-px,dy=e.y-py;if(dx*dx+dy*dy<m2)return e;}return null;}
+ // online: the partner phone's view from its snapshots [camera x, y, half width, half height]. Spawns and stragglers use the
+ // bigger of the two screens (a landscape phone sees much wider than a portrait one), so nothing pops in or out on either phone
+ let pv=null;
+ const viewHW=()=>Math.max(W/zoom/2,pv?pv[2]:0),viewHH=()=>Math.max(H/zoom/2,pv?pv[3]:0),viewR=()=>Math.hypot(viewHW(),viewHH());
  const onScreen=(px,py,m)=>Math.abs(px-cam.x)<W/zoom/2+m&&Math.abs(py-cam.y)<H/zoom/2+m;
 
  // ---------- players, weapons, cards ----------
@@ -222,7 +226,8 @@ async function horde(s){
   if(e.dead||e.immune)return;
   if(e.armor&&!ignoreArmor)dmg=Math.max(1,dmg-e.armor);
   // online, the other phone reports the hit (batched) and only guesses the kill until player 1's phone confirms it
-  if(net&&!host&&o===me){const h=outbox.h.get(e.uid)||[e.uid,0,0,0];h[1]+=dmg;h[2]+=kx;h[3]+=ky;outbox.h.set(e.uid,h);}
+  // (e.pd = [batch, dmg, ...] not yet confirmed by player 1's phone: its snapshots' hp don't include them yet)
+  if(net&&!host){if(o!==me)return;const h=outbox.h.get(e.uid)||[e.uid,0,0,0];h[1]+=dmg;h[2]+=kx;h[3]+=ky;outbox.h.set(e.uid,h);(e.pd||(e.pd=[])).push(hSent+1,dmg);}
   e.hp-=dmg;e.fl=.09;e.lh=o;P[o].dmgDone+=dmg;e.kx+=kx*e.kbr;e.ky+=ky*e.kbr;
   if(TX.length<26&&(crit||rnd()<.5))text(e.x,e.y-e.r-8,String(Math.round(dmg)),crit?'#ffd23a':'#ffffff',crit?15:11,.55);
   if(e.hp<=0)killEnemy(e);else sfx('hit',65,()=>tone(150+rnd()*60,.03,.008,'square'));
@@ -260,17 +265,19 @@ async function horde(s){
  function tierOf(v){return v>=100?3:v>=25?2:v>=5?1:0;}
  // online every gem / pickup has an id (dropped on player 1's phone, copied to the other phone {gm}/{km})
  let dropId=1;
+ // online only player 1's phone drops things: the other phone asks it to {dr} (a coin from a weapon hit)
  function dropGem(px,py,v){
-  if(G.length>=300){const g=G[(rnd()*G.length)|0];g.v+=v;g.tier=tierOf(g.v);return;}
+  if(net&&!host){outbox.dr.push(['gem',Math.round(px),Math.round(py),v]);return;}
+  if(G.length>=300){const g=G[(rnd()*G.length)|0];g.v+=v;g.tier=tierOf(g.v);if(net)outbox.gu.push([g.id,g.v]);return;}
   const g=take(Gpool,newG);g.x=px+(rnd()-.5)*10;g.y=py+(rnd()-.5)*10;g.v=v;g.tier=tierOf(v);g.pull=false;g.sp=0;g.age=0;g.id=dropId++;G.push(g);
   if(net)outbox.gm.push([g.id,Math.round(g.x),Math.round(g.y),v]);
  }
- function dropK(k,px,py,v){if(K.length>=80)return;const q=take(Kpool,newK);q.x=px;q.y=py;q.k=k;q.v=v;q.age=0;q.life=k==='chest'?600:k==='coin'?24:40;q.pull=false;q.sp=0;q.id=dropId++;K.push(q);
+ function dropK(k,px,py,v){if(net&&!host){outbox.dr.push([k,Math.round(px),Math.round(py),v]);return;}if(K.length>=80)return;const q=take(Kpool,newK);q.x=px;q.y=py;q.k=k;q.v=v;q.age=0;q.life=k==='chest'?600:k==='coin'?24:40;q.pull=false;q.sp=0;q.id=dropId++;K.push(q);
   if(net)outbox.km.push([q.id,k,Math.round(px),Math.round(py),v]);}
  function killEnemy(e){
   if(e.dead)return;
   // online the other phone only guesses: the enemy vanishes until player 1's phone says otherwise
-  if(net&&!host){e.dead=1;burst(e.x,e.y,e.boss?20:5,'#7a8e6a',110,.5,2.4);return;}
+  if(net&&!host){e.dead=1;e.guess=1;burst(e.x,e.y,e.boss?20:5,'#7a8e6a',110,.5,2.4);return;}
   e.dead=1;if(net)outbox.kd.push(e.uid);const o=e.lh,d=e.def,lk=P[o].st.luck;kills[o]++;totalKills++;scoreDirty=1;
   const col=e.type==='bloater'||e.type==='spitter'?'#a3b55a':e.type==='ghost'||e.type==='banshee'?'#bfe6ff':e.type==='tarman'?'#16181d':e.type==='bat'?'#4a3f5c':e.elite?'#d12020':'#7a8e6a';
   burst(e.x,e.y,e.boss?34:e.elite?14:5,col,e.boss?220:110,.55,e.boss?4:2.4);
@@ -293,7 +300,7 @@ async function horde(s){
  const SP={x:0,y:0};
  // online the packs come in around either survivor, turn and turn about
  let edgeTurn=0;
- function edgePos(extra){const R=Math.hypot(W,H)/zoom/2+extra,a=rnd()*TAU,o=net&&!P[them].down&&(edgeTurn++&1)?P[them]:cam;SP.x=o.x+Math.cos(a)*R;SP.y=o.y+Math.sin(a)*R;}
+ function edgePos(extra){const R=viewR()+extra,a=rnd()*TAU,o=net&&!P[them].down&&(edgeTurn++&1)?P[them]:cam;SP.x=o.x+Math.cos(a)*R;SP.y=o.y+Math.sin(a)*R;}
  function spawnEnemy(type,px,py){
   if(E.length>=MAXE)return null;
   const d=ENEMIES[type],e=Epool.pop()||newEnemy(),m=curM;
@@ -317,9 +324,9 @@ async function horde(s){
   switch(ev.type){
    case 'elite':{edgePos(60);const t=ev.k%2?'nurse':'sergeant',e=spawnEnemy(t,SP.x,SP.y);if(e){e.chest=1;toast(foe(t)+' approaches. Kill it for a chest!','#ffb0a0');}break;}
    case 'mini':{const t=HD.MINIS[ev.k%4];edgePos(80);const e=spawnEnemy(t,SP.x,SP.y);if(e){e.chest=1;e.mhp=e.hp=e.hp*(1+Math.floor(ev.k/4)*.5);announce(foe(t),ENEMIES[t].line,'#ff5a4a');}break;}
-   case 'bats':{const a=rnd()*TAU,ex=Math.cos(a),ey=Math.sin(a),R=Math.hypot(W,H)/zoom/2+60,n=Math.round(12+curM*1.2);toast('A swarm of bats!','#c9b6ff');for(let i=0;i<n;i++){const o=(i-n/2)*20,b=spawnEnemy('bat',mid.x+ex*R-ey*o+ex*(i%3)*16,mid.y+ey*R+ex*o+ey*(i%3)*16);if(b){b.mode=1;b.vx=-ex*165;b.vy=-ey*165;b.life=7;}}break;}
-   case 'ring':{const R=Math.hypot(W,H)/zoom/2*.8+70,n=Math.min(44,Math.round(24+curM*3));toast('They are closing in!','#ffb0a0');for(let i=0;i<n;i++){const a=i/n*TAU,t=i%4===0?'crawler':'shambler',e=spawnEnemy(t,mid.x+Math.cos(a)*R,mid.y+Math.sin(a)*R);if(e){e.spd*=1.15;e.mhp=e.hp=e.hp*.8;}}break;}
-   case 'wall':{const a=rnd()*TAU,ex=Math.cos(a),ey=Math.sin(a),R=Math.hypot(W,H)/zoom/2+50,span=Math.max(W,H)/zoom*.9,n=Math.min(34,Math.ceil(span/32));toast('A wall of the dead!','#ffb0a0');for(let i=0;i<n;i++){const o=(i-n/2)*32,e=spawnEnemy(i%5===2?'armored':'shambler',mid.x+ex*R-ey*o,mid.y+ey*R+ex*o);if(e){e.mode=1;e.vx=-ex*118;e.vy=-ey*118;e.life=9;e.xp=Math.max(1,e.xp);}}break;}
+   case 'bats':{const a=rnd()*TAU,ex=Math.cos(a),ey=Math.sin(a),R=viewR()+60,n=Math.round(12+curM*1.2);toast('A swarm of bats!','#c9b6ff');for(let i=0;i<n;i++){const o=(i-n/2)*20,b=spawnEnemy('bat',mid.x+ex*R-ey*o+ex*(i%3)*16,mid.y+ey*R+ex*o+ey*(i%3)*16);if(b){b.mode=1;b.vx=-ex*165;b.vy=-ey*165;b.life=7;}}break;}
+   case 'ring':{const R=viewR()*.8+70,n=Math.min(44,Math.round(24+curM*3));toast('They are closing in!','#ffb0a0');for(let i=0;i<n;i++){const a=i/n*TAU,t=i%4===0?'crawler':'shambler',e=spawnEnemy(t,mid.x+Math.cos(a)*R,mid.y+Math.sin(a)*R);if(e){e.spd*=1.15;e.mhp=e.hp=e.hp*.8;}}break;}
+   case 'wall':{const a=rnd()*TAU,ex=Math.cos(a),ey=Math.sin(a),R=viewR()+50,span=Math.max(viewHW(),viewHH())*1.8,n=Math.min(34,Math.ceil(span/32));toast('A wall of the dead!','#ffb0a0');for(let i=0;i<n;i++){const o=(i-n/2)*32,e=spawnEnemy(i%5===2?'armored':'shambler',mid.x+ex*R-ey*o,mid.y+ey*R+ex*o);if(e){e.mode=1;e.vx=-ex*118;e.vy=-ey*118;e.life=9;e.xp=Math.max(1,e.xp);}}break;}
    case 'hazard':{stormUntil=clock+16;stormAcc=0;announce(cabin?'EVIL STORM':'TRIOXIN RAIN','Keep moving out of the red circles!','#ff7a3a');break;}
    case 'supply':{const a=rnd()*TAU;dropK('chest',mid.x+Math.cos(a)*170,mid.y+Math.sin(a)*170,0);toast('A supply chest dropped nearby!','#ffe27a');break;}
    case 'boss':{edgePos(90);const e=spawnEnemy('titan',SP.x,SP.y);if(e){e.chest=1;finalBoss=e;announce(foe('titan'),'The final boss. Kill it for a bonus, or survive until dawn.','#ff3a3a');}break;}
@@ -436,7 +443,7 @@ async function horde(s){
  function enemyShot(e,ang,spd,k,r,dm){if(ES.length>=120)return;const q=take(ESpool,newES);q.x=e.x;q.y=e.y;q.vx=Math.cos(ang)*spd;q.vy=Math.sin(ang)*spd;q.r=r;q.dmg=e.dmg*dm;q.life=3.2;q.k=k;ES.push(q);if(net)esOut.push(q);}
  function updateEnemyShots(dt){
   for(let i=ES.length-1;i>=0;i--){const q=ES[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;let dead=q.life<=0;
-   if(!dead)for(let k=0;k<P.length;k++){const p=P[k];if(p.down)continue;const dx=p.x-q.x,dy=p.y-q.y,rr=q.r+PRAD-3;if(dx*dx+dy*dy<rr*rr){if(hurtPlayer(p,q.dmg)||p.inv>0)dead=true;break;}}
+   if(!dead)for(let k=0;k<P.length;k++){const p=P[k];if(p.down)continue;const dx=p.x-q.x,dy=p.y-q.y,rr=q.r+PRAD-3;if(dx*dx+dy*dy<rr*rr){if(hurtPlayer(p,q.dmg)||p.inv>0||net&&p.i!==me)dead=true;break;}}   // online the partner's phone judges its hit; here the shot just ends on them
    if(dead){burst(q.x,q.y,3,q.k===0?'#8cff4a':q.k===1?'#ffb04a':'#c07aff',60,.3,2);release(ES,ESpool,i);}}
  }
  function updateZones(dt){
@@ -457,7 +464,7 @@ async function horde(s){
  let auE=null;
  function auraCb2(o){if(o===auE||o.boss)return;if(auE.def.aura==='haste')o.haste=.8;else o.hp=Math.min(o.mhp,o.hp+3+curM);}
  function updateEnemies(dt){
-  const p0=P[0],p1=mate(p0),fwx=W/zoom/2+420,fwy=H/zoom/2+420,Dm=mode.dmg;
+  const p0=P[0],p1=mate(p0),fwx=viewHW()+420,fwy=viewHH()+420,Dm=mode.dmg;
   for(let i=0;i<E.length;i++){
    const e=E[i];if(e.dead)continue;
    if(e.fl>0)e.fl-=dt;if(e.slow>0)e.slow-=dt;if(e.haste>0)e.haste-=dt;if(e.hc>0)e.hc-=dt;if(e.cd0>0)e.cd0-=dt;if(e.cd1>0)e.cd1-=dt;
@@ -515,7 +522,8 @@ async function horde(s){
  function sweepDead(){for(let i=E.length-1;i>=0;i--)if(E[i].dead){const e=E[i];E[i]=E[E.length-1];E.pop();Epool.push(e);}}
  // ---------- pickups ----------
  function bombBlast(p){
-  if(net&&!host)outbox.bomb.push([Math.round(p.x),Math.round(p.y)]);
+  // online player 1's phone kills what this screen shows (the camera and its half size go with it)
+  if(net&&!host)outbox.bomb.push([Math.round(cam.x),Math.round(cam.y),Math.round(W/zoom/2+30),Math.round(H/zoom/2+30)]);
   whiteFlash=1;addShake(14);sound('win');fx(0,p.x,p.y,Math.max(W,H)/zoom*.6,.7,'#ffffff');text(p.x,p.y-50,'BOOM!','#ffe27a',18,1.2);
   for(let i=0;i<E.length;i++){const e=E[i];if(e.dead||e.immune||!onScreen(e.x,e.y,30))continue;e.lh=p.i;if(e.boss||e.elite){hitEnemy(e,e.mhp*.1,p.i,0,0,false,true);}else{e.hp=0;killEnemy(e);}}
   for(let i=0;i<ES.length;i++)ES[i].life=0;
@@ -560,7 +568,8 @@ async function horde(s){
    for(let k=0;k<E.length;k++){const e=E[k];if(e.dead)continue;const ex=e.x-nx,ey=e.y-ny;if(ex>260||ex<-260||ey>260||ey<-260)continue;const d=Math.sqrt(ex*ex+ey*ey),R=e.r+36+(e.boss?50:0);if(d<R*3)sc-=(R*3/Math.max(d,R*.6))**2*(e.boss?3:1);}
    for(const z of Z)if(z.k===3||z.k===1||z.k===0){const zd=Math.hypot(z.x-nx,z.y-ny);if(zd<z.r+30)sc-=40;}
    if(tg&&bd<500*500)sc-=Math.hypot(tg.x-nx,tg.y-ny)*.07;
-   const pd=Math.hypot(o.x-nx,o.y-ny);if(pd>230)sc-=(pd-230)*.05;if(o.down)sc-=pd*.05;
+   // tests: s.debug.goal = {x,y} sends this bot there instead of staying with its partner
+   const goal=s.debug?.goal;if(goal)sc-=Math.hypot(goal.x-nx,goal.y-ny)*.08;else{const pd=Math.hypot(o.x-nx,o.y-ny);if(pd>230)sc-=(pd-230)*.05;if(o.down)sc-=pd*.05;}
    if(sc>best){best=sc;bx=dx;by=dy;}}
   c2.x=dirOut.x=bx;c2.y=dirOut.y=by;c2.m=dirOut.m=1;
  }
@@ -891,8 +900,8 @@ async function horde(s){
  s.on(window,'blur',clearInput);s.resetOnPause?.(clearInput);
 
  // ---------- online co-op (see the top) ----------
- let nf=null,recFx=false,netPick=false,flushT=0;
- const outbox={h:new Map(),fx:[],ex:[],pb:[],g:[],k:[],bomb:[],gm:[],km:[],kd:[],bn:[],ts:[]},prOut=[],zOut=[],esOut=[];
+ let nf=null,recFx=false,netPick=false,flushT=0,hSent=0,hAck=0,fbStub=null;
+ const outbox={h:new Map(),fx:[],ex:[],pb:[],g:[],k:[],bomb:[],gm:[],km:[],kd:[],bn:[],ts:[],dr:[],gu:[]},prOut=[],zOut=[],esOut=[];
  const EIDS=Object.keys(ENEMIES),r1=v=>Math.round(v*10)/10,netE=new Map();
  const packP=p=>[r1(p.x),r1(p.y),p.face,p.moving?1:0,+p.walk.toFixed(1),Math.round(p.hp),p.maxHp,p.down?1:0,+p.revT.toFixed(2),p.inv>0?1:0,p.lvl,Math.round(p.xp),p.need,p.wind?1:0,p.revLeft,p.coins,
   p.weapons.map(w=>[w.id,w.lvl,w.evo?1:0,+w.ang.toFixed(2),w.on?1:0,+w.pulse.toFixed(2)]),p.passives,p.hurt>0?1:0];
@@ -905,38 +914,52 @@ async function horde(s){
  // the partner: eased toward its snapshots; its orbiters keep turning here
  function stepPuppet(q,dt){if(q.nx==null)return;const k=1-Math.exp(-dt*12);if(Math.abs(q.nx-q.x)>300||Math.abs(q.ny-q.y)>300){q.x=q.nx;q.y=q.ny;}else{q.x+=(q.nx-q.x)*k;q.y+=(q.ny-q.y)*k;}if(q.moving)q.walk+=dt*10;
   for(const w of q.weapons)if(w.kind==='orbit'&&w.on)w.ang+=w.st.spd*dt*(.6+.4*q.st.pspeed);}
- // host: the enemies near the other survivor
- function packEnemies(){const q=P[them],R2=760*760,out=[];for(const e of E){if(e.dead)continue;const dx=e.x-q.x,dy=e.y-q.y;if(dx*dx+dy*dy>R2)continue;
-  out.push([e.uid,EIDS.indexOf(e.type),Math.round(e.x),Math.round(e.y),e.face,Math.ceil(e.hp),Math.round(e.dmg),e.elite||e.boss?Math.ceil(e.mhp):0,(e.fuse>0?1:0)|(e.ai===AI.charger&&e.st===1?2:0)]);}return out;}
- function unpackEnemies(list){const now=performance.now(),seen=new Set();
+ // host: the enemies the other phone needs: everything on its screen (its own camera and screen size, from its snapshots,
+ // plus a margin for the lag) and in reach of its weapons around its survivor. `cv` = that area, so the other phone knows
+ // where an enemy missing from the list is really gone.
+ const COV_M=180,COV_R=620;
+ function packEnemies(){const q=P[them],v=pv,out=[],R2=COV_R*COV_R;
+  const cx=v?v[0]:q.x,cy=v?v[1]:q.y,hw=(v?v[2]:W/zoom/2)+COV_M,hh=(v?v[3]:H/zoom/2)+COV_M;
+  for(const e of E){if(e.dead)continue;const dx=e.x-q.x,dy=e.y-q.y;if(dx*dx+dy*dy>R2&&(Math.abs(e.x-cx)>hw||Math.abs(e.y-cy)>hh))continue;
+   out.push([e.uid,EIDS.indexOf(e.type),Math.round(e.x),Math.round(e.y),e.face,Math.ceil(e.hp),Math.round(e.dmg),e.elite||e.boss?Math.ceil(e.mhp):0,(e.fuse>0?1:0)|(e.ai===AI.charger&&e.st===1?2:0)]);}
+  return {l:out,cv:[Math.round(cx),Math.round(cy),Math.round(hw),Math.round(hh),Math.round(q.x),Math.round(q.y),COV_R]};}
+ // ha = how many of this phone's hit batches player 1's phone has applied (hp in the list includes exactly those)
+ function unpackEnemies(list,cv,ha){const seen=new Set();
   for(const a of list||[]){const [uid,ti,x0,y0,face,hp,dmg,mhp,fl]=a;seen.add(uid);let e=netE.get(uid);
    if(!e){const type=EIDS[ti],d=ENEMIES[type];if(!d)continue;e=newEnemy();Object.assign(e,{def:d,type,x:x0,y:y0,r:d.r,sz:d.sz,sc:1,ai:AI[d.ai],fly:d.fly||0,phase:d.phase||0,immune:d.immune||0,armor:d.armor||0,elite:d.elite||0,boss:d.boss||0,aura:d.aura?1:0,kbr:0,dead:0,uid,ph:rnd()*4,hp,mhp:mhp||hp});netE.set(uid,e);E.push(e);}
-   else if(e.dead){if(now-(e.deadAt||0)<700)continue;e.dead=0;E.push(e);}
-   e.tx=x0;e.ty=y0;e.face=face;e.hp=Math.min(e.hp,hp);if(hp>e.hp+5)e.hp=hp;e.dmg=dmg;if(mhp)e.mhp=mhp;e.fuse=fl&1?.3:0;e.st=fl&2?1:0;}
-  for(const [uid,e] of netE)if(!seen.has(uid)){e.dead=1;netE.delete(uid);}}
+   else{// damage this phone dealt that player 1's phone hasn't applied yet
+    let pend=0;const pd=e.pd;if(pd&&pd.length){let j=0;for(let k=0;k<pd.length;k+=2)if(pd[k]>ha){pd[j++]=pd[k];pd[j++]=pd[k+1];pend+=pd[k+1];}pd.length=j;}
+    // a kill this phone guessed: wait until player 1's phone has had the blow; still listed after that = it lived
+    if(e.dead){if(pend>0)continue;e.dead=0;e.guess=0;if(!E.includes(e))E.push(e);}
+    e.hp=hp-pend;}
+   e.tx=x0;e.ty=y0;e.face=face;e.dmg=dmg;if(mhp)e.mhp=mhp;e.fuse=fl&1?.3:0;e.st=fl&2?1:0;}
+  // An enemy inside the covered area that the list leaves out is gone there (killed, recycled to the edge) or out of reach:
+  // hide it until a list names it again. Enemies outside the area keep their last place (never hidden on silence).
+  if(Array.isArray(cv)&&cv.length>=7){const [cx,cy,hw,hh,px,py,r]=cv,m=40,r2=Math.max(0,r-m)**2;
+   for(const [uid,e] of netE){if(seen.has(uid))continue;if(Math.abs(e.x-cx)<hw-m&&Math.abs(e.y-cy)<hh-m||(e.x-px)**2+(e.y-py)**2<r2){e.dead=1;netE.delete(uid);}}}}
  // the other phone's enemies: eased toward player 1's positions; what touches this survivor is judged here
  function stepNetEnemies(dt){const k=1-Math.exp(-dt*10),p=P[me];
   for(const e of E){if(e.dead)continue;if(e.fl>0)e.fl-=dt;if(e.hc>0)e.hc-=dt;if(e.tx!=null){e.x+=(e.tx-e.x)*k;e.y+=(e.ty-e.y)*k;}
-   if(e.hp<=0&&!e.dead){e.dead=1;e.deadAt=performance.now();continue;}
+   if(e.hp<=0&&!e.dead){e.dead=1;e.guess=1;continue;}
    if(e.hc<=0&&e.fuse<=0&&!(e.ai===AI.charger&&e.st===1)&&!p.down){const ex=p.x-e.x,ey=p.y-e.y,rr=e.r+PRAD-2;if(ex*ex+ey*ey<rr*rr){const hit=e.ai===AI.hunger?hurtPlayer(p,0,.34):hurtPlayer(p,e.dmg);if(hit){e.hc=.8;if(e.ai===AI.hunger||e.boss){const l=Math.hypot(ex,ey)||1;p.vx+=ex/l*300;p.vy+=ey/l*300;}}}}}}
  // end of the other phone's step (like sweepDead): dead copies leave the list but stay known by id for a moment
- function netSweep(){for(let i=E.length-1;i>=0;i--)if(E[i].dead){if(!E[i].deadAt)E[i].deadAt=performance.now();E[i]=E[E.length-1];E.pop();}}
- function hostBomb(px,py){const R2=520*520;for(let i=0;i<E.length;i++){const e=E[i];if(e.dead||e.immune||(e.x-px)**2+(e.y-py)**2>R2)continue;e.lh=them;if(e.boss||e.elite)hitEnemy(e,e.mhp*.1,them,0,0,false,true);else{e.hp=0;killEnemy(e);}}}
+ function netSweep(){for(let i=E.length-1;i>=0;i--)if(E[i].dead){E[i]=E[E.length-1];E.pop();}}
+ function hostBomb(px,py,hw,hh){const R2=520*520,box=hw>0&&hh>0;for(let i=0;i<E.length;i++){const e=E[i];if(e.dead||e.immune||(box?Math.abs(e.x-px)>hw||Math.abs(e.y-py)>hh:(e.x-px)**2+(e.y-py)**2>R2))continue;e.lh=them;if(e.boss||e.elite)hitEnemy(e,e.mhp*.1,them,0,0,false,true);else{e.hp=0;killEnemy(e);}}}
  function remoteBlast([px,py,r,dP,col]){fx(0,px,py,r,.45,col);fx(2,px,py,r*.6,.18,'#fff');burst(px,py,14,col,r*2.2,.5,3);addShake(r>100?8:3);sfx('boom',90,()=>{tone(70,.28,.07,'sawtooth');tone(46,.35,.06,'square');});
   const p=P[me];if(dP>0&&!p.down&&(p.x-px)**2+(p.y-py)**2<(r+PRAD)**2)hurtPlayer(p,dP);}
  function remoteProp([px,py]){const ch=getChunk(Math.floor(px/CS),Math.floor(py/CS));for(const p of ch.dest)if(!p.dead&&Math.abs(p.x-px)<2&&Math.abs(p.y-py)<2){breakProp(p,them,true);break;}}
  const rd=v=>Math.round(v*100)/100;
  function netFlush(){const o=outbox,e={};
-  if(o.h.size){e.h=[...o.h.values()].map(h=>[h[0],rd(h[1]),Math.round(h[2]),Math.round(h[3])]);o.h.clear();}
+  if(o.h.size){e.h=[...o.h.values()].map(h=>[h[0],rd(h[1]),Math.round(h[2]),Math.round(h[3])]);o.h.clear();hSent++;}
   if(prOut.length){e.pr=prOut.splice(0).filter(q=>!q.dead||q.k>=5).map(q=>[q.k,Math.round(q.x),Math.round(q.y),Math.round(q.vx),Math.round(q.vy),rd(q.life),rd(q.r),rd(q.a),rd(q.b),Math.round(q.tx),Math.round(q.ty),Math.round(q.sx),Math.round(q.sy)]);}
   if(zOut.length){e.z=zOut.splice(0).map(z=>[z.k,Math.round(z.x),Math.round(z.y),Math.round(z.r),rd(z.dur),rd(z.dmg),rd(z.tick),z.st||0,rd(z.a),z.o]);}
   if(esOut.length){e.es=esOut.splice(0).map(q=>[Math.round(q.x),Math.round(q.y),Math.round(q.vx),Math.round(q.vy),q.r,rd(q.dmg),q.k]);}
-  for(const k of ['fx','ex','pb','g','k','bomb','gm','km','kd','bn','ts'])if(o[k].length)e[k]=o[k].splice(0);
+  for(const k of ['fx','ex','pb','g','k','bomb','gm','km','kd','bn','ts','dr','gu'])if(o[k].length)e[k]=o[k].splice(0);
   if(Object.keys(e).length)nf.event(e);}
  function onNetEvent(e){
   if(e.night!=null&&!host){menuSel=e.night;nf.start('go').then(()=>startRun(e.night,true));return;}
   if(e.end&&!host){bossBonus=!!e.bb;beginEnd(e.end);return;}
-  if(e.h&&host)for(const [uid,dmg,kx,ky] of e.h){const en=E.find(q=>q.uid===uid&&!q.dead);if(en)hitEnemy(en,dmg,them,kx,ky,false,true);}
+  if(e.h&&host){hAck++;for(const [uid,dmg,kx,ky] of e.h){const en=E.find(q=>q.uid===uid&&!q.dead);if(en)hitEnemy(en,dmg,them,kx,ky,false,true);}}
   if(e.pr)for(const a of e.pr){const q=take(PRpool,newProj);const [k,x0,y0,vx,vy,life,r,a2,b,tx,ty,sx,sy]=a;Object.assign(q,{k,o:them,x:x0,y:y0,vx,vy,life,r,a:a2,b,tx,ty,sx,sy,t:0,ang:0,dead:0,vis:1,pierce:0,dmg:0,kb:0,hh:0,st:null});q.hits.length=0;PR.push(q);}
   if(e.z)for(const [k,x0,y0,r,dur,dmg,tick,st,a2,o] of e.z){if(Z.length>=90)break;const z=take(Zpool,newZ);Object.assign(z,{k,x:x0,y:y0,r,t:0,dur,dmg,tick,st:st||null,a:a2,o:o===me?me:them});Z.push(z);}
   if(e.es)for(const [x0,y0,vx,vy,r,dmg,k] of e.es){if(ES.length>=160)break;const q=take(ESpool,newES);Object.assign(q,{x:x0,y:y0,vx,vy,r,dmg,k,life:3.2});ES.push(q);}
@@ -945,22 +968,32 @@ async function horde(s){
   if(e.pb)for(const a of e.pb)remoteProp(a);
   if(e.g)for(const id of e.g){const j=G.findIndex(g=>g.id===id);if(j>=0)release(G,Gpool,j);}
   if(e.k)for(const id of e.k){const j=K.findIndex(q=>q.id===id);if(j>=0)release(K,Kpool,j);}
-  if(e.bomb&&host)for(const [px,py] of e.bomb)hostBomb(px,py);
+  if(e.bomb&&host)for(const [px,py,hw,hh] of e.bomb)hostBomb(px,py,hw,hh);
   if(e.gm&&!host)for(const [id,x0,y0,v] of e.gm){if(G.length>=320)break;const g=take(Gpool,newG);Object.assign(g,{x:x0,y:y0,v,tier:tierOf(v),pull:false,sp:0,age:0,id});G.push(g);}
   if(e.km&&!host)for(const [id,k,x0,y0,v] of e.km){if(K.length>=90)break;const q=take(Kpool,newK);Object.assign(q,{x:x0,y:y0,k,v,age:0,life:k==='chest'?600:k==='coin'?24:40,pull:false,sp:0,id});K.push(q);}
-  if(e.kd&&!host)for(const uid of e.kd){const en=netE.get(uid);if(en){if(!en.dead)burst(en.x,en.y,en.boss?30:5,'#7a8e6a',110,.55,2.4);en.dead=1;en.deadAt=0;netE.delete(uid);}}
+  if(e.kd&&!host)for(const uid of e.kd){const en=netE.get(uid);if(en){if(!en.dead)burst(en.x,en.y,en.boss?30:5,'#7a8e6a',110,.55,2.4);en.dead=1;netE.delete(uid);}}
+  if(e.dr&&host)for(const [k,x0,y0,v] of e.dr){if(k==='gem')dropGem(x0,y0,v);else if(typeof k==='string')dropK(k,x0,y0,v);}
+  if(e.gu&&!host)for(const [id,v] of e.gu){const g=G.find(g=>g.id===id);if(g){g.v=v;g.tier=tierOf(v);}}
   if(e.bn&&!host)for(const a of e.bn)showBanner(...a);
   if(e.ts&&!host)for(const a of e.ts)toast(...a);}
  if(net){nf=netField(s,{hz:8,
-  pack:()=>state==='menu'?{}:host?{c:+clock.toFixed(2),p:packP(P[me]),e:packEnemies(),kk:[kills[0],kills[1],bossKills[0],bossKills[1]],hu:hungerOn?1:0,fb:finalBoss&&!finalBoss.dead?finalBoss.uid:0}:{p:packP(P[me])},
-  unpack:(i,d)=>{if(!d)return;if(d.p)unpackP(d.p);if(!host&&d.e){unpackEnemies(d.e);if(Number.isFinite(d.c)&&Math.abs(d.c-clock)>.25)clock=d.c;curM=clock/D*mode.mt;
-   if(d.kk){kills[0]=d.kk[0];kills[1]=d.kk[1];bossKills[0]=d.kk[2];bossKills[1]=d.kk[3];totalKills=d.kk[0]+d.kk[1];scoreDirty=1;}hungerOn=!!d.hu;finalBoss=d.fb?netE.get(d.fb)||null:null;}},
+  // host: clock, own survivor, the enemies the other phone needs, kills, the final boss (also when it is out of the other
+  // phone's area: its bar and arrow). The other phone: its survivor and its view (camera + half size), see packEnemies.
+  pack:()=>{if(state==='menu')return {};if(!host)return {p:packP(P[me]),v:[Math.round(cam.x),Math.round(cam.y),Math.round(W/zoom/2),Math.round(H/zoom/2)]};
+   const en=packEnemies(),fb=finalBoss&&!finalBoss.dead?finalBoss:null;
+   return {c:+clock.toFixed(2),p:packP(P[me]),e:en.l,cv:en.cv,ha:hAck,kk:[kills[0],kills[1],bossKills[0],bossKills[1]],hu:hungerOn?1:0,fb:fb?[fb.uid,Math.round(fb.x),Math.round(fb.y),Math.ceil(fb.hp),Math.ceil(fb.mhp)]:0};},
+  unpack:(i,d)=>{if(!d)return;if(d.p)unpackP(d.p);if(host&&Array.isArray(d.v)&&d.v.length>=4)pv=d.v;
+   if(!host&&d.e){unpackEnemies(d.e,d.cv,d.ha|0);if(Number.isFinite(d.c)&&Math.abs(d.c-clock)>.25)clock=d.c;curM=clock/D*mode.mt;
+   if(d.kk){kills[0]=d.kk[0];kills[1]=d.kk[1];bossKills[0]=d.kk[2];bossKills[1]=d.kk[3];totalKills=d.kk[0]+d.kk[1];scoreDirty=1;}hungerOn=!!d.hu;
+   if(Array.isArray(d.fb)){const [uid,fx0,fy0,hp,mhp]=d.fb;finalBoss=netE.get(uid)||null;
+    if(!finalBoss){fbStub=fbStub&&fbStub.uid===uid?fbStub:{uid,type:'titan',boss:1,dead:0,x:fx0,y:fy0,hp,mhp};Object.assign(fbStub,{x:fx0,y:fy0,hp,mhp});finalBoss=fbStub;}}
+   else finalBoss=null;}},
   onEvent:onNetEvent});}
  // ---------- bot / test hooks ----------
  function botModal(){if(!modal)return;if(modal.type==='chest'){chooseCard(0);return;}let best=0,bs=-1;modal.cards.forEach((c2,i)=>{const sc=(c2.k==='w'?3:c2.k==='p'?2:1)+rnd();if(sc>bs){bs=sc;best=i;}});chooseCard(best);}
  const perf={u:0,d:0,n:0},skip={};
  function sim(sec,dt){dt=dt||1/30;for(let t=0;t<sec;t+=dt){if(state==='menu'){startRun(1);}if(modal){botModal();continue;}if(state==='ending'&&endT>3.5)break;const t0=performance.now();step(dt);perf.u+=performance.now()-t0;perf.n++;}}
- s.debug={engine:'horde',skip,dragOnly:true,players:P,enemies:E,
+ s.debug={engine:'horde',skip,dragOnly:true,players:P,enemies:E,get net(){return net?{me,netE:netE.size,hSent,hAck,pv,G:G.length,K:K.length,view:[Math.round(cam.x),Math.round(cam.y),Math.round(W/zoom/2),Math.round(H/zoom/2)]}:null;},
   get state(){return state;},get clock(){return clock;},get modal(){return modal;},get kills(){return totalKills;},get counts(){return{E:E.length,PR:PR.length,G:G.length,K:K.length,PT:PT.length,Z:Z.length,ES:ES.length};},
   get perf(){return perf;},get won(){return won;},get endKind(){return endKind;},
   start:i=>startRun(i),sim,botOn:v=>{bot.on=v;},choose:i=>chooseCard(i),
