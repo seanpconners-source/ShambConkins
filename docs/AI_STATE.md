@@ -1,6 +1,14 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.68.1 (Oct 27: DOOM heads 2x (`HEAD_K` in doom/heads.js), Android-port touch buttons (`drawButton`/`stickHome` in doom.js), status-bar face 33x31.5.
+Version 0.69.0 (Oct 28: online play fix-up after the owner's first real two-phone test ("could not join"; Broforce enemies missing
+for one player): net.js join retries + an error card that names the cause (offline / site unreachable / WebSocket refused by a
+blocker) with a connection log, close 4000 = seat taken by a duplicated tab (no reconnect loop, new id), worker frees seats silent
+60 s, netPlay acks {k:'npa'} (reconnect resends only unconfirmed moves), duel 20 s grace on a drop, queued rematch, version check
+before challenges; per-game sync audit (Broforce/Mario/Sonic/CV/SotN/Warriors/horde/bosses/Photo Hunt/kart/board game: shared
+world run by player 1's phone, hide only inside a snapshot's covered area, partner's real view width, wall-clock timers); Uno online
+fixed; home screen tidy + About card. Live-room probe: Actions → "Probe the online rooms" (tools/net-probe*.mjs, tools/cf-report.mjs).
+Server checked healthy and far under the free-plan limits; the owner's "could not join" cause is still unknown (the new card will say).
+v0.68.1 Oct 27: DOOM heads 2x (`HEAD_K` in doom/heads.js), Android-port touch buttons (`drawButton`/`stickHome` in doom.js), status-bar face 33x31.5.
 v0.68.0 Oct 27: online co-op / shared-world play for the take-turns games, see "Online co-op/live"; full npm test
 156/156 clean before release. Oct 26 v0.67.0: every head-to-head (CPU-opponent) game plays natively online, 95 of 95, batches 1-21 below; Meet a visitor everywhere; Oct 24 v0.66.1: trivia vs CPU shows its turn, `cpuTriviaTurn` in cpuKit; v0.66.0 1-player board game vs CPU + Choose Characters; v0.65.0 online board game on two phones; v0.64.0 online duels phase 1; v0.63.1 loading screen, full-screen app, Worker serves the app files; v0.63.0 PWA; earlier: pinball tables, iPad fix, backup/restore; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
 pushing a version bump to main runs `.github/workflows/release-build.yml`, which builds `releases/ShambConkins_vX.html` and
