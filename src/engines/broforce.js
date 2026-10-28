@@ -558,6 +558,8 @@ async function broforce(s){
  function alertNear(e,tx=P.x){for(const o of W.foes)if(o!==e&&o.alive&&o.active&&(o.state==='patrol'||o.state==='search')&&Math.abs(o.x-e.x)<150&&Math.abs(o.y-e.y)<80){o.state='alert';o.t=.55+Math.random()*.4;o.dir=tx>o.x?1:-1;o.bubble={ch:'!',t:.9};}}
  // online (host) a foe goes after the nearer bro that is up; only this phone's bro is hurt here (the other phone judges its own)
  const upBro=b=>!!b&&!b.dead&&!b.boarded&&!b.out;
+ // online: a foe gone without a kill (fell in a pit, a bomber went off) is gone on the other phone too, no gore there
+ function quietDeath(e){if(net&&host)ev({fk:[stageIdx,e.k,Math.round(e.x),0,-1,1]});}
  function foeTarget(e){if(!net||!R?.net||!partnerHere()||!upBro(R))return P;if(!upBro(P))return R;return Math.hypot(R.x-e.x,R.y-e.y)<Math.hypot(P.x-e.x,P.y-e.y)?R:P;}
  function updateFoe(e,dt){
   const st=FOES[e.type];e.flash=Math.max(0,e.flash-dt);if(e.bubble){e.bubble.t-=dt;if(e.bubble.t<=0)e.bubble=null;}
@@ -575,7 +577,7 @@ async function broforce(s){
   else if(e.state==='attack'||e.state==='search'){
    if(sees){e.lost=0;e.seenX=px;e.dir=Math.sign(dx)||e.dir;if(e.state==='search'){e.state='attack';e.bubble={ch:'!',t:.6};}}else{e.lost+=dt;if(e.lost>2.6&&e.state==='attack'){e.state='search';e.bubble={ch:'?',t:1.2};e.t=4;}}
    if(e.state==='search'){speed=st.speed;e.dir=Math.sign(e.seenX-e.x)||e.dir;if(Math.abs(e.seenX-e.x)<6||e.t<0){e.state='patrol';e.t=2;}}
-   else if(e.type==='bomber'){speed=98;e.fuse+=dt;if(Math.abs(dx)<14&&Math.abs(dy)<22||e.fuse>5){e.alive=false;queueBoom(e.x,e.y-10,42,4,'env');}
+   else if(e.type==='bomber'){speed=98;e.fuse+=dt;if(Math.abs(dx)<14&&Math.abs(dy)<22||e.fuse>5){e.alive=false;quietDeath(e);queueBoom(e.x,e.y-10,42,4,'env');}
     if(frames%40===0)fx.pop(e.x,e.y-e.h-10,'AAAH!',{color:'#fff',stroke:'#900',size:7,rise:10,life:.5});}
    else if(e.type==='dog'){speed=135;if(e.grounded&&Math.abs(dx)<56&&e.lunge<=0&&sees){e.vy=-210;e.lunge=1;speed=170;}e.lunge-=dt;
     if(mine&&Math.abs(dx)<10&&Math.abs(dy)<16)hurtPlayer(1,e.x);}
@@ -589,7 +591,7 @@ async function broforce(s){
   e.vx=speed*e.dir;
   const res=moveBody(e,dt,{grav:900,maxFall:420});if(res.wall&&e.state==='patrol')e.dir*=-1;
   if(mine&&e.type!=='dog'&&e.type!=='bomber'&&e.alive&&!P.dead&&!P.boarded&&Math.abs(dx)<8&&Math.abs(dy)<14&&P.inv<=0)hurtPlayer(1,e.x);
-  if(e.y>ROWS*T)e.alive=false;
+  if(e.y>ROWS*T){e.alive=false;quietDeath(e);}
  }
  function shootFoe(e,dx,dy){const a=Math.atan2(clamp(dy,-Math.abs(dx)*.5,Math.abs(dx)*.5),Math.abs(dx))+(Math.random()-.5)*.08;
   const b={x:e.x+e.dir*10,y:e.y-e.h*.55,vx:Math.cos(a)*e.dir*215,vy:Math.sin(a)*215,life:1.5,owner:'e',dmg:1,tile:.35};W.bullets.push(b);e.muzzle=.06;sfx.enemy();
@@ -760,25 +762,31 @@ async function broforce(s){
   if(o.bh>0){e.bh=[+o.bh.toFixed(2),Math.round(o.bx)];o.bh=0;}
   if(Object.keys(e).length){e.si=stageIdx;ev(e);}}
  const BF=['dead','boarded','ladder','climb','grounded','out'];
- const packBro=p=>{let fl=0;BF.forEach((k,j)=>{if(p[k])fl|=1<<j;});return [r1(p.x),r1(p.y),Math.round(p.vx),Math.round(p.vy),p.facing,fl,p.hp,p.lives,p.grenades,p.score,p.bro,p.inv>0?1:0,p.muzzle>0?1:0,p.kills,p.stagesCleared,stageIdx];};
+ const packBro=p=>{let fl=0;BF.forEach((k,j)=>{if(p[k])fl|=1<<j;});return [r1(p.x),r1(p.y),Math.round(p.vx),Math.round(p.vy),p.facing,fl,p.hp,p.lives,p.grenades,p.score,p.bro,p.inv>0?1:0,p.muzzle>0?1:0,p.kills,p.stagesCleared,stageIdx,Math.round(viewW())];};
  function unpackBro(a){if(!Array.isArray(a)||a.length<16||!R)return;const first=!R.net||R.si!==a[15];R.net={a,at:performance.now()};
   R.vx=a[2];R.vy=a[3];R.facing=a[4]||1;BF.forEach((k,j)=>{R[k]=!!(a[5]&1<<j);});R.dead=R.dead?1:0;R.hp=a[6];R.lives=a[7];R.grenades=a[8];R.score=a[9];
-  if(R.bro!==a[10]){R.bro=a[10];R.weapon=weaponFor(R.bro);for(const m of MOODS)headCanvas(R.bro,m);}R.inv=a[11]?1:0;if(a[12]){R.muzzle=.06;R.fireT=0;}R.kills=a[13];R.stagesCleared=a[14];R.si=a[15];
+  if(R.bro!==a[10]){R.bro=a[10];R.weapon=weaponFor(R.bro);for(const m of MOODS)headCanvas(R.bro,m);}R.inv=a[11]?1:0;if(a[12]){R.muzzle=.06;R.fireT=0;}R.kills=a[13];R.stagesCleared=a[14];R.si=a[15];R.vw=a[16]||0;
   if(first){R.x=a[0];R.y=a[1];}if(R.out&&P?.out)netEnd('lives');}
  function stepRemote(dt){if(!R?.net)return;const a=R.net.a,age=clamp((performance.now()-R.net.at)/1000,0,.25),tx=a[0]+R.vx*age,ty=a[1]+(R.grounded?0:R.vy*age),k=1-Math.exp(-dt*16);
   if(Math.abs(tx-R.x)>80||Math.abs(ty-R.y)>80){R.x=tx;R.y=ty;}else{R.x+=(tx-R.x)*k;R.y+=(ty-R.y)*k;}
   R.anim+=R.grounded?Math.abs(R.vx)*dt*.09:dt*4;R.muzzle=Math.max(0,(R.muzzle||0)-dt);R.recoil=R.muzzle>0?1:0;R.fireT=(R.fireT??9)+dt;
   R.idleT=R.grounded&&Math.abs(R.vx)<20?(R.idleT||0)+dt:0;}
- // host: the enemies near the other bro and the Devil; the other phone shows them as they come
+ // host: the enemies near the other bro and the Devil; the other phone shows them as they come. The area covers the
+ // other phone's own screen width (phones differ: a landscape phone sees twice as far as a portrait one).
  const FT={};FOE_TYPES.forEach((t,j)=>FT[t]=j);
- function packWorld(){if(!host||!W)return null;const out=[],near=R?.net&&R.si===stageIdx?R.x:P.x,vw=viewW();
-  for(const e of W.foes)if(e.alive&&e.active&&Math.abs(e.x-near)<vw*.6+160)out.push([e.k,r1(e.x),r1(e.y),e.dir,FOE_STATES.indexOf(e.state),FT[e.type],e.muzzle>0?1:0,e.bubble?e.bubble.ch:'',Math.round(e.vx)]);
-  const B=W.boss;return {fo:out,b:B?[r1(B.x),r1(B.y),B.dir,B.state,Math.round(B.hp),B.alive?1:0,Math.round(B.vx),B.flash>0?1:0]:null};}
- function unpackWorld(d){if(host||!W||d.si!==stageIdx)return;const now=performance.now();
-  for(const f of d.fo||[]){const [k,x,y,dir,st,ty,mz,bub,vx]=f;let e=foeByK(k);
+ const partnerVW=()=>Math.max(viewW(),R?.vw||0);
+ function packWorld(){if(!host||!W)return null;const out=[],near=R?.net&&R.si===stageIdx?R.x:P.x,rad=partnerVW()*.6+160;
+  for(const e of W.foes)if(e.alive&&e.active&&Math.abs(e.x-near)<rad)out.push([e.k,r1(e.x),r1(e.y),e.dir,FOE_STATES.indexOf(e.state),FT[e.type],e.muzzle>0?1:0,e.bubble?e.bubble.ch:'',Math.round(e.vx)]);
+  // c/r = the area this snapshot covers (a foe there that isn't listed is gone or asleep), t = always a fresh snapshot
+  const B=W.boss;return {c:Math.round(near),r:Math.round(rad),t:frames,fo:out,b:B?[r1(B.x),r1(B.y),B.dir,B.state,Math.round(B.hp),B.alive?1:0,Math.round(B.vx),B.flash>0?1:0]:null};}
+ function unpackWorld(d){if(host||!W||d.si!==stageIdx)return;const now=performance.now(),listed=new Set();
+  for(const f of d.fo||[]){const [k,x,y,dir,st,ty,mz,bub,vx]=f;let e=foeByK(k);listed.add(k);
    if(!e){e=makeFoe({type:FOE_TYPES[ty]||'mook',x,y},k);e.summoned=k>=900;W.foes.push(e);}
    if(!e.alive)continue;if(!e.active){e.active=true;e.x=x;e.y=y;}e.tx=x;e.ty=y;e.dir=dir;e.state=FOE_STATES[st]||'patrol';e.vx=vx;if(mz)e.muzzle=.06;
    e.bubble=bub?{ch:bub,t:.3}:null;e.seen=now;}
+  // a foe inside the covered area that the host didn't list is gone there (killed off screen, fell, blew itself up)
+  // or not awake yet: hide it until a snapshot lists it again (never a guess from silence: a late snapshot hides nothing)
+  if(Number.isFinite(d.c)&&Number.isFinite(d.r))for(const e of W.foes)if(e.alive&&e.active&&!listed.has(e.k)&&Math.abs(e.x-d.c)<d.r-40)e.active=false;
   const B=W.boss;if(B&&d.b){const [x,y,dir,st,hp,alive,vx,fl]=d.b;const prev=B.state;B.tx=x;B.ty=y;B.dir=dir;B.hp=hp;B.vx=vx;if(fl)B.flash=.07;
    if(prev==='wait'&&st!=='wait'){B.x=x;B.y=y;devilWakes();}B.state=st;
    if(!alive&&B.alive){B.alive=false;B.dead=3;devilDown();for(let k=0;k<6;k++)setTimeout(()=>{if(s.alive&&W)blastFx(B.x+(Math.random()-.5)*40,B.y-10-Math.random()*50,30);},k*220);}}}
@@ -786,7 +794,6 @@ async function broforce(s){
  function stepNetFoes(dt){const now=performance.now(),k=1-Math.exp(-dt*12);
   for(const e of W.foes){if(!e.alive||!e.active)continue;e.flash=Math.max(0,e.flash-dt);
    if(e.tx!=null){e.x+=(e.tx-e.x)*k;e.y+=(e.ty-e.y)*k;}e.anim+=Math.abs(e.vx)*dt*.1;
-   if(e.seen&&now-e.seen>1500&&Math.abs(e.x-P.x)<viewW()*.5){e.alive=false;continue;}
    // what touches this bro is judged here
    if(!P.dead&&!P.out&&!P.boarded&&P.inv<=0&&e.state==='attack'&&e.type!=='bomber'){const dx=P.x-e.x,dy=P.y-12-(e.y-e.h*.6);if(Math.abs(dx)<(e.type==='dog'?10:8)&&Math.abs(dy)<(e.type==='dog'?16:14))hurtPlayer(1,e.x);}}}
  function onNetEvent(e){
@@ -806,7 +813,7 @@ async function broforce(s){
   if(e.fh&&host)for(const [k,dmg,fx0,bl] of e.fh){const f=foeByK(k);if(f)hitFoe(f,dmg,fx0,!!bl,'r');}
   if(e.bh&&host){const B=W.boss;if(B?.alive)hitBoss(e.bh[0],e.bh[1]);}
   if(e.ex){const [si,x,y,r,owner]=e.ex;if(si===stageIdx)remoteBlast(x,y,r,owner);}
-  if(e.fk&&!host){const [si,k,fx0,bl,by]=e.fk,f=si===stageIdx&&foeByK(k);if(f&&f.alive){f.alive=false;if(by===me)foeScore(f);sfx.splat();
+  if(e.fk&&!host){const [si,k,fx0,bl,by,quiet]=e.fk,f=si===stageIdx&&foeByK(k);if(f&&f.alive&&quiet){f.alive=false;}else if(f&&f.alive){f.alive=false;if(by===me)foeScore(f);sfx.splat();
    fx.burst(f.x,f.y-f.h*.5,{n:bl?22:12,colors:['#a00','#d11','#700','#f44'],speed:bl?220:140,life:.8,size:1.8,gravity:600});
    const dir=Math.sign(f.x-fx0)||1;W.corpses.push({x:f.x,y:f.y,vx:dir*(bl?220:90),vy:bl?-260:-110,rot:0,vr:dir*(bl?14:6),t:5,kind:f.type,flip:f.dir});}}
   if(e.cg){const [si,k,rv]=e.cg,cg=si===stageIdx&&W.cages[k];if(cg&&!cg.open){cg.open=true;cg.freeT=1.2;sfx.clink();
@@ -1121,7 +1128,7 @@ async function broforce(s){
  }
 
  // ---------------------------------------------------------------- debug hooks for tests
- s.debug={engine:'broforce',get phase(){return phase;},get turn(){return turn;},get stage(){return stageIdx;},get P(){return P;},get W(){return W;},STAGES,results,get clock(){return clock;},
+ s.debug={engine:'broforce',get phase(){return phase;},get turn(){return turn;},get stage(){return stageIdx;},get P(){return P;},get R(){return R;},get W(){return W;},get viewW(){return viewW();},STAGES,results,get clock(){return clock;},
   setClock(v){clock=v;},teleport(x,y){if(!P)return;P.x=x;P.y=y??W.S.surfAt(Math.floor(x/T))*T;P.vx=P.vy=0;updateCamera(0,true);},
   killAll(){for(const e of W.foes)if(e.alive)killFoe(e,P.x,false);},killBoss(){if(W.boss){W.boss.state='walk';hitBoss(999,P.x);}},
   freeCage(k){const cg=W.cages[k];if(cg)openCage(cg);},board(){W.heli.state='hover';W.heli.y=W.exit.y-6.5*T;Object.assign(P,{x:W.heli.x-8,y:W.exit.y,dead:0,hp:2,inv:2});},
@@ -1145,7 +1152,7 @@ async function broforce(s){
     if(phase==='play'){clock+=STEP;stageT+=STEP;readInput();updatePlayer(STEP);P.comboT=Math.max(0,P.comboT-STEP);if(P.comboT<=0)P.combo=0;
      // online the enemies live on player 1's phone (woken near either bro); the other phone shows them
      const vw=viewW();if(net&&!host)stepNetFoes(STEP);
-     else for(const e of W.foes){if(!e.alive)continue;if(!e.active&&(Math.abs(e.x-(cam.x+vw/2))<vw*.5+90||partnerHere()&&Math.abs(e.x-R.x)<vw*.5+90))e.active=true;if(e.active)updateFoe(e,STEP);}
+     else for(const e of W.foes){if(!e.alive)continue;if(!e.active&&(Math.abs(e.x-(cam.x+vw/2))<vw*.5+90||partnerHere()&&Math.abs(e.x-R.x)<partnerVW()*.5+90))e.active=true;if(e.active)updateFoe(e,STEP);}
      updateBoss(STEP);stepBullets(STEP);updateStage(STEP);
      if(clock>=TURN_TIME&&phase==='play'){banner={big:'TIME UP',small:'',t:2};endTurn('time');}}
     else{stepBullets(STEP);const H=W.heli;if(H.state==='leave'){H.t+=STEP;H.y-=STEP*(40+H.t*90);H.x+=STEP*(30+H.t*120);}}

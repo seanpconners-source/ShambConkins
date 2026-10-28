@@ -50,3 +50,11 @@ Cloudflare dashboard → **Workers & Pages** → `shambconkins` → **Edit code*
 - Release files must keep the name `ShambConkins_<tag>.html` (any other `.html` asset is found through the
   GitHub API; add a `GITHUB_TOKEN` secret to the Worker if that ever hits GitHub's rate limit).
 - Online character photos work better here than from a downloaded file (no file:// CORS blocks).
+
+## Checking the live rooms
+GitHub → **Actions** → **Probe the online rooms** → **Run workflow**: joins rooms on the live site from a GitHub
+machine (Node + real Chromium and Firefox), streams messages like a real-time game, tails the Worker's logs and prints
+Cloudflare's hourly Worker / Durable Object numbers (`tools/net-probe.mjs`, `tools/net-probe-browser.mjs`,
+`tools/cf-report.mjs`). Free plan: 100,000 Durable Object requests a day (incoming WebSocket messages count 20 to 1);
+a real-time game sends ~15-30 messages a second per phone, far below that.
+A seat whose phone has said nothing for 60 s (phones ping every 10 s) is freed when a third phone needs it.

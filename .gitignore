@@ -16,3 +16,6 @@ docs/pinball-art/*.zip
 
 # wrangler dev's local state and build output (cloudflare/)
 .wrangler/
+
+# Claude Code agent worktrees (temporary checkouts)
+.claude/worktrees/

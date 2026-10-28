@@ -1,6 +1,14 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.68.1 (Oct 27: DOOM heads 2x (`HEAD_K` in doom/heads.js), Android-port touch buttons (`drawButton`/`stickHome` in doom.js), status-bar face 33x31.5.
+Version 0.69.0 (Oct 28: online play fix-up after the owner's first real two-phone test ("could not join"; Broforce enemies missing
+for one player): net.js join retries + an error card that names the cause (offline / site unreachable / WebSocket refused by a
+blocker) with a connection log, close 4000 = seat taken by a duplicated tab (no reconnect loop, new id), worker frees seats silent
+60 s, netPlay acks {k:'npa'} (reconnect resends only unconfirmed moves), duel 20 s grace on a drop, queued rematch, version check
+before challenges; per-game sync audit (Broforce/Mario/Sonic/CV/SotN/Warriors/horde/bosses/Photo Hunt/kart/board game: shared
+world run by player 1's phone, hide only inside a snapshot's covered area, partner's real view width, wall-clock timers); Uno online
+fixed; home screen tidy + About card. Live-room probe: Actions → "Probe the online rooms" (tools/net-probe*.mjs, tools/cf-report.mjs).
+Server checked healthy and far under the free-plan limits; the owner's "could not join" cause is still unknown (the new card will say).
+v0.68.1 Oct 27: DOOM heads 2x (`HEAD_K` in doom/heads.js), Android-port touch buttons (`drawButton`/`stickHome` in doom.js), status-bar face 33x31.5.
 v0.68.0 Oct 27: online co-op / shared-world play for the take-turns games, see "Online co-op/live"; full npm test
 156/156 clean before release. Oct 26 v0.67.0: every head-to-head (CPU-opponent) game plays natively online, 95 of 95, batches 1-21 below; Meet a visitor everywhere; Oct 24 v0.66.1: trivia vs CPU shows its turn, `cpuTriviaTurn` in cpuKit; v0.66.0 1-player board game vs CPU + Choose Characters; v0.65.0 online board game on two phones; v0.64.0 online duels phase 1; v0.63.1 loading screen, full-screen app, Worker serves the app files; v0.63.0 PWA; earlier: pinball tables, iPad fix, backup/restore; TESTver fast-forwarded into main). Releases are GitHub Release assets only:
 pushing a version bump to main runs `.github/workflows/release-build.yml`, which builds `releases/ShambConkins_vX.html` and
@@ -536,8 +544,20 @@ LAG=80-150 and their offline tests; real phones untested.
   pass and play until they say hello again); guest Home = "Leave" (`bye`), room line then offers "Rejoin". Host Home =
   `pause` (guest waits), Continue = `start` again; a restarted host rejoins `run.online.room` itself. Same VERSION needed.
   Tests: `tests/online-board.mjs` (TURNS, PKMN=1 wild battles, DROP=n drops the guest mid-decision, DEBUG=1 traces;
-  bots answer only what their phone may answer). Not yet tried on two real phones. Next: turn-based games online
-  (move relay through the CPU hooks), then real-time ones.
+  bots answer only what their phone may answer). Not yet tried on two real phones.
+  Oct 27 sync audit: `state` carries only changed run keys (`set`/`del`) and board patches (`bp`, per top-level key and
+  per node; board.rng changes used to resend the 90 KB board several times a turn); dialog pictures go as `sc-art:a|f:<key>`
+  (ART / FACE_ART, same build on both phones) or once as a hashed `sc-blob` the guest asks for ({t:'blobs'}); a 15-turn run
+  went from ~14 MB to ~2 MB. Guest-owned recruits are also kept in `run.online.gave` (applied on start/state, idempotent).
+  A guest that sees a numbering gap keeps sending `hello` every 3 s until a `start` arrives; `start` carries the host's
+  session id `sid` (a restarted host's question ids don't hit old cached answers); a guest in the board's own minigame takes
+  a `start` quietly. A dialog/battle/game sent while the guest's own Leave/settings/log dialog is open waits for it
+  (`afterLocal`, `localBusy` in netHooks). Test options: ROOM, STALL=n / LOSE=n (3 s held / lost messages, both phones in
+  turn), PAUSE=n (host Home + Continue), WARP=1, DEBUG_OUT=path (message logs), message counts per kind at the end.
+  Uno online was broken (both phones stuck after the first move): its buttons used `casinoTap`, which started the casino
+  table relay as a second reader on s.online and swallowed Uno's moves; `casinoTap(...,{relay:false})` now (uno.js).
+  Known limit: the host's profile decides what can be recruited for the guest's player (its rosters for both owners);
+  a character the host phone already lists for the guest's owner is never offered, even if the guest's phone lacks it.
 - **1-player board game vs CPU + Choose Characters (Oct 24, branch `ccr-47c456d6-mv2k8z`; kept apart from the online work):**
   Title screen CHOOSE CHARACTERS (`players` view = `setupHTML(...,{pickOnly:true})`): names + heads saved in
   `profile.settings.picks` {names,chars} (validated in profile.js; app.js falls back to the starter if a pick is locked),
@@ -823,8 +843,13 @@ LAG=80-150 and their offline tests; real phones untested.
   enemies near the other survivor (hz 8, `packEnemies`); the other phone keeps them in `netE` by uid, eases them, judges contact,
   runs only its own survivor+weapons and sends hits {h}; drops have ids ({gm}/{km} out, {g}/{k} taken), props {pb}, blasts {ex},
   shots {pr}/weapon flashes {fx}/zones {z}/enemy shots {es} shown on the other phone; modals don't pause online (chooser stands
-  still, safe, auto-pick after 12 s); player 1 picks the night ({night}). Castlevania NES (castlevania.js): Sonic pattern; events
-  {cd} candle {wb} wall {fk} placed monster (by `home`) {bh} bat hit {bf} bat fireball; `wakeBat` pulls a straggler in. Test: `tests/online-native.mjs` GAMES=... (+ new SHOT_JS = code run on Sean's phone before the screenshot, PROBE /
+  still, safe, auto-pick after 12 s); player 1 picks the night ({night}). Castlevania NES + SotN (Oct 28 rework, owner saw missing/invisible
+  enemies): player 1's phone runs ONE set of monsters for both (Broforce pattern: wake in either view, partner's real screen
+  width `cx/cw` in its snapshot, nearer hunter targeted); snapshots `m:{a:[x0,x1],f}` cover an area, a monster missing inside it
+  is hidden (never culled on silence); other phone reports hits {fh}, deaths {fk}/{fg}, shots {es} (aged by travel time)/{ek};
+  online deaths don't reset monsters; CV also {fz} stopwatch, {ps} partner sub-weapons, per-lap `netLog` for laps the other
+  hasn't reached; clocks/countdown on wall time. Warriors: wall clock, swings >1 s late dropped, HP never rises back. Test
+  harness AT_JS='secs:code;;...' (teleports, 3 s stalls on one phone). `wakeBat` pulls a straggler in. Test: `tests/online-native.mjs` GAMES=... (+ new SHOT_JS = code run on Sean's phone before the screenshot, PROBE /
   PROBE_S = print state every n s). All pass with bots; offline sonic/mario/broforce-turns/boss tests still pass. Real phones untested.
 - **Meet a visitor (Oct 24, unreleased):** 393 of 705 landmarks have no characters from their own property, so `visitLocation`
   (app.js) now falls back to a traveller of the same kind (film/TV/game), then anyone missing; Mom & Dad's house and the lab keep
@@ -857,6 +882,13 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   `styles.css`). Logo `ART.brand` = `assets/shambconkins-logo.webp` (transparent + black outline, from
   `tools/brand-logo.py`; original in `assets/originals/brand/`). Keep the NEW GAME button free of transform animations
   (Playwright clicks need it stable). Screenshots: `tests/homeshots.mjs`.
+  Oct 27 tidy (owner: menu was messy): three tiers only: gold play button (CONTINUE + a NEW GAME button beside it when a run
+  is saved), an even 2x2 grid of tiles (Players = Choose Characters, Online, Arcade, Collection), and a quiet bottom dock
+  (About, Back up when due (`.ts-backup`, gold dot), Restore on an empty save, Install `.ts-install`, Exit) with line-icon SVGs
+  (`TS_ICON` in ui.js). No tagline / Mind-Body-Spirit pills / pass-and-play footer; page title is just "ShambConkins".
+  Erase progress and Clear run moved to a "Start over" zone at the bottom of Settings (confirm, Keep returns to Settings).
+  `help` (dock About + the board's help button) = `aboutHTML()` in app.js: credits (Sean Conners, `RELEASED` month in
+  version.js: update it with VERSION when releasing), how to play, modes, board tips (details), sources, "Art sources" button.
 
 - v0.47.0: interface theme. `src/theme.css` (appended after styles.css by `tools/build.mjs`) restyles every menu, HUD,
   dialog, sheet and minigame frame in the title-screen look via tokens (`--t-bg0`, `--t-s1/s2/s3`, `--t-acc/acc2`, ...)

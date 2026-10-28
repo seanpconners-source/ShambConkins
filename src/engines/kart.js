@@ -245,7 +245,7 @@ async function kart(s){
   function remoteFire([ki,id,dir,s0,d0,psi,v,t,made]){const k=K[ki];if(!k||owns(k)||!Array.isArray(made))return;
    const n0=PROJ.map(l=>l.length),pk={...k,s:s0,d:d0,psi,v},sfx0=sfx;sfx=SILENT;try{fireItem(pk,id,dir,dir!==-1);}finally{sfx=sfx0;}
    PROJ.forEach((list,j)=>{const want=made.filter(m=>m[0]===j);if(list.length>n0[j]+want.length)list.splice(n0[j]+want.length);
-    want.forEach(([,pid,tg],q)=>{const o=list[n0[j]+q];if(!o)return;o.id=pid;if(tg>=0)o.target=tg;catchUp(j,o,clamp(netNow()-t,0,.5));});});}
+    want.forEach(([,pid,tg],q)=>{const o=list[n0[j]+q];if(!o)return;o.id=pid;if(tg>=0)o.target=tg;catchUp(j,o,clamp(netNow()-t,0,4));});});}
   function catchUp(j,o,age){for(let a=0;a<age-1e-6;a+=1/60){const h=Math.min(1/60,age-a);o.t+=h;
     if(j===0){if(o.kind==='blue')break;if(moveShell(o,h)){o.dead=true;break;}}else if(o.air){if(flyItem(o,h)){o.dead=true;break;}}else{if(j===2)o.fuse-=age-a;break;}}
    if(o.dead&&j>0)PROJ[j].splice(PROJ[j].indexOf(o),1);}
@@ -513,7 +513,10 @@ async function kart(s){
    get headOK(){return R.headOK.slice();},get lastUse(){return lastUse;},get particles(){return parts.length;},get ghost(){return ghost?ghost.frames.length:0;}}));
   // ---------------------------------------------------------------- main loop
   onFrame=dt=>{
-   lastFrame=performance.now();simT=on?wall():simT+dt;R.tick(dt);stepHazards();
+   // online the simulation runs on wall time (frame time is capped at 25 fps by s.frame): a phone that drops frames or
+   // hitches keeps its kart, the CPU karts and every projectile moving at the same real speed as on the other phone
+   {const now=performance.now();if(on&&lastFrame)dt=clamp((now-lastFrame)/1000,0,.5);lastFrame=now;}
+   simT=on?wall():simT+dt;R.tick(dt);stepHazards();
    headTimer-=dt;if(headTimer<=0){headTimer=simT<6?.5:1;refreshHeads(true);}else refreshHeads(false);
    // online the intro, the lights and the race clock all run on the shared start time from nf.start
    if(phase==='intro'){introT=on?wall():introT+dt;if(introT>INTRO)phase='count';}
@@ -522,7 +525,7 @@ async function kart(s){
      for(const k of K)if(!k.human&&owns(k)&&rand()<.5){Ph.setBoost(k,.8);k.v=180;}}}
    else{
     if(phase==='play'){clock=on?Math.max(clock,netNow()):clock+dt;hintT-=dt;}
-    for(const k of K)updateKart(k,dt);stepProjectiles(dt);contacts(dt);if(!battle)sortOrder();
+    {const n=on?Math.max(1,Math.ceil(dt*30-1e-9)):1,h=dt/n;for(let q=0;q<n;q++){for(const k of K)updateKart(k,h);stepProjectiles(h);contacts(h);}}if(!battle)sortOrder();
     if(rec&&phase==='play'){const k=K[0];rec.push({t:clock,P:k.P2.slice(),F:k.F.slice(),N:k.N.slice(),vy:k.visYaw,st:k.steer,g:k.glue,gl:k.glide});}
     if(phase==='play'){
      // online each phone's race ends when its own kart finishes / is out, or its clock passes the other kart's finish / out

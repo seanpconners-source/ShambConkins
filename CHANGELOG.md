@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.69.0
+
+**Online play, fixed up.** A deep pass over everything online, after the first real two-phone tests.
+
+- **Joining a room:** a join that fails now tries again by itself, and if it still can't connect the card says why (this device is offline / the site can't be reached / the site answers but something on this device or network — an ad blocker like uBlock, an antivirus web shield, a VPN — refuses the live connection), with Try again and a connection log. Two tabs or windows with the game no longer knock each other out of the same seat in a loop. A phone that vanished without leaving (app swiped away, signal lost) no longer keeps the room "full" after a minute. If the two phones have different versions of the game, the room says so (reload the older one) instead of letting the games drift apart.
+- **Staying connected:** a short drop (phone asleep, Wi-Fi switching) gets 20 seconds to come back before the duel counts as left, and after a reconnect only the messages the other phone missed are sent again (it used to resend the whole game). Rematch works even when the other player is still looking at the result card (it used to be refused silently). Uno online works again (both phones froze after the first move).
+- **Shared worlds now really match on both phones:** Broforce (enemies no longer vanish for one player while still alive and shooting on the other phone; the enemy area now covers the partner's real screen, portrait or landscape), Super Mario Bros. (one phone runs each area; lifts, fire bars and Bowser match; Castle Dash no longer hangs), Sonic (badniks, moving platforms, scattered rings and the boss match), Castlevania and Symphony of the Night (one set of monsters for both, deaths no longer reset them), The Warriors, the zombie horde, every boss fight (one shared set of attacks, and both result cards agree), Photo Hunt (the round clock starts together on both phones) and Mario Kart.
+- **Online board game:** sends a fraction of the data it used to (a 15-turn game went from about 14 MB to about 2 MB), recovers by itself after lost messages, characters won by the guest's player always reach the guest's phone, and the guest's own menus are no longer closed by the host's cards.
+
+**Home screen, tidied.** One gold play button (Continue, with New Game beside it), four even tiles (Players, Online, Arcade, Collection) and a small bar for About, Back up, Install and Exit. Erase progress moved to Settings (still asks first). New **About & how to play** card with how the game works, the modes and the credits. The taglines, the Mind/Body/Spirit badges and "pass and play" are gone.
+
 ## v0.68.1
 
 **DOOM looks.** The roster faces the monsters wear are twice as big. The touch buttons look like the official DOOM Android app: a crosshair FIRE button on the right and a second one above the move stick, an open-hand USE button beside it, a pistol button for the next weapon, a map pin for the automap and a resting move stick bottom-left. Your face in the status bar is a little bigger, filling its box.

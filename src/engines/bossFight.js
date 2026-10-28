@@ -17,7 +17,8 @@ const {CHARACTERS}=require("src/characters.js");
 const {entityArtSpec,queueEntityArt}=require("src/entityMedia.js");
 const {headDisplayURL}=require("src/headCutouts.js");
 const {BOSSES,bossById}=require("src/data/bosses.js");
-const {PATTERNS,SIGNATURES,K}=require("src/engines/bossAttacks.js");
+const {PATTERNS,SIGNATURES,K,STEPS}=require("src/engines/bossAttacks.js");
+const STEP_NAME=new Map(Object.entries(STEPS).map(([n,f])=>[f,n]));
 const {BODIES,drawMinion}=require("src/engines/bossBodies.js");
 const {makeScene}=require("src/engines/bossScenes.js");
 const TAU=Math.PI*2,H=640,PR=5.5,PARRY_R=34,HUD_Y=596,PCOL=['#ffd36e','#ff8ec8'],PDARK=['#b8791a','#b0316d'];
@@ -35,6 +36,9 @@ async function bossfight(s){
  const tier=clamp(Math.round(Number(s.game.tier)||boss.tier||2),1,4);
  const alone=!!s.solo,maxHp=alone?SOLO_HP:3;
  const net=s.online||null,me=net?net.me:0,them=1-me,host=!net||me===0;let nf=null,netReady=!net;
+ // gw: online, this phone mirrors player 1's attack world (no director of its own). netW: online both phones share one field
+ // width (the narrower of the two screens' fields), so every bullet flies the same way on both
+ const gw=!!net&&!host;let netW=0;
  const kTab0=alone?{...K[tier],dens:K[tier].dens*SOLO_K.dens}:K[tier],hpScale=(.75+.125*tier)/(.75+.125*(boss.tier||2))*(alone?SOLO_K.hp:1);
  const [c,x]=s.canvas(420,640,{fill:true});s.body.classList.add('drag-arena-body');document.querySelector('.game-shell')?.classList.add('boss-shell');s.queueCanvasFit?.();
  s.shared=true;if(!alone){s.cooperative=true;s.cooperativeLabel='BOSS FIGHT';}s.updateScores();
@@ -66,7 +70,7 @@ async function bossfight(s){
    if(o.emoji!==false){const gr=g.createRadialGradient(-r*.3,-r*.3,2,0,0,r);gr.addColorStop(0,'#fff');gr.addColorStop(1,pal[3]);g.beginPath();g.arc(0,0,r,0,TAU);g.fillStyle=gr;g.fill();g.lineWidth=4;g.strokeStyle='#140a0c';g.stroke();g.font=`${r*1.25}px "Segoe UI Emoji","Apple Color Emoji",Arial`;g.textAlign='center';g.textBaseline='middle';g.fillStyle='#000';g.fillText(boss.icon,0,r*.06);}
    g.restore();return false;}};
  // ---- layout (portrait field 420-560 x 640, centred and scaled to the canvas)
- function layout(){const cw2=s.W,ch2=s.H;if(cw2===cw&&ch2===ch)return;cw=cw2;ch=ch2;const nw=clamp(Math.round(H*cw/ch),420,W_MAX),old=W;
+ function layout(){const cw2=s.W,ch2=s.H;if(cw2===cw&&ch2===ch)return;cw=cw2;ch=ch2;const nw=netW||clamp(Math.round(H*cw/ch),420,W_MAX),old=W;
   if(nw!==old&&old){const r=nw/old;for(const g of [bullets,pshots,minions,hazards,warns,fx])for(const e of g){if(e.x!==undefined)e.x*=r;if(e.tx!==undefined&&g===minions)e.tx*=r;}for(const p of P){p.x*=r;p.tx*=r;p.gx*=r;}B.x*=r;B.hx=nw/2;}
   W=nw;k=Math.min(cw/W,ch/H);ox=(cw-W*k)/2;oy=(ch-H*k)/2;const wasWide=wide;wide=W>=WIDE_AT;kTab=wide?kWide:kTab0;YMIN=wide?90:260;B.hy=wide?185:150;bs=(wide?1.25:clamp(W/420,1,1.15))*(look.size||1)*.97;B.hx=W/2;if(mode==='intro'||!B.tw)B.x=B.x||B.hx;
   if(!old||mode==='intro'||wasWide!==wide)for(const p of P)if(p.hp>0){p.x=p.tx=spawnX(p.i);p.y=p.ty=spawnY();}
@@ -115,17 +119,17 @@ async function bossfight(s){
   nearest(px,py){let best=null,bd=1e9;for(const p of P){if(p.hp<=0)continue;const d=(p.x-px)**2+(p.y-py)**2;if(d<bd){bd=d;best=p;}}return best||{x:W/2,y:480};},
   aim:(a,b)=>Math.atan2(b.y-a.y,b.x-a.x),downs(m){if(!wide)return [Math.PI/2];const a=alive();return a.length?a.map(p=>F.aim(m,p)):[Math.PI/2];},targets(){if(!wide)return [F.target()];const a=alive();return a.length?a:[F.target()];},
   muzzle(name){const m=body.muz[name]||body.muz.center;return{x:B.drawX+m[0]*bs,y:B.drawY+m[1]*bs};},
-  bullet(o){if(bullets.length>460)return o;const b=Object.assign({x:0,y:0,vx:0,vy:0,r:7,kind:'orb',age:0},o);if(o.pink)b.r=Math.max(b.r,o.reflect?o.r||20:8);bullets.push(b);return b;},
+  bullet(o){if(gw||bullets.length>460)return o;const b=Object.assign({x:0,y:0,vx:0,vy:0,r:7,kind:'orb',age:0},o);if(o.pink)b.r=Math.max(b.r,o.reflect?o.r||20:8);bullets.push(b);spawned('b',b);return b;},
   shot(px,py,a,sp,o){return F.bullet(Object.assign({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp},o));},
-  minion(o){if(minions.length>16)return null;const m=Object.assign({age:0,hp:3,r:14,kind:'drone',flash:0},o);m.max=m.hp;minions.push(m);return m;},
+  minion(o){if(gw||minions.length>16)return null;const m=Object.assign({age:0,hp:3,r:14,kind:'drone',flash:0},o);m.max=m.hp;minions.push(m);spawned('m',m);return m;},
   minionCount:()=>minions.length,
-  hazard(o){if(hazards.length>48)return o;const h=Object.assign({age:0,tele:0,dur:1,x0:o.x,y0:o.y},o);h.tele=Math.max(0,h.tele);hazards.push(h);return h;},
-  warn(o){const w=Object.assign({t:0,dur:1},o);if(warns.length<60)warns.push(w);return w;},
+  hazard(o){if(gw||hazards.length>48)return o;const h=Object.assign({age:0,tele:0,dur:1,x0:o.x,y0:o.y},o);h.tele=Math.max(0,h.tele);hazards.push(h);spawned('h',h);return h;},
+  warn(o){const w=Object.assign({t:0,dur:1},o);if(!gw&&warns.length<60){warns.push(w);spawned('w',w);}return w;},
   pose(n,sec){B.pose=n;B.poseT=sec;},
   move(px,py,sec,e='inout'){B.tw={x0:B.x,y0:B.y,x1:px,y1:py,t:0,dur:Math.max(.01,sec),e:ease[e]||ease.inout};},
-  vanish(sec){B.hidden=sec;},shake,sfx,
-  say(str){if(T-lastSay<7||mode!=='fight')return;lastSay=T;says.text=str;says.t=2.4;},
-  clear(){bullets.length=0;hazards.length=0;warns.length=0;}};
+  vanish(sec){B.hidden=sec;},shake(m){shake(m);if(net&&host)netOp(['sh',m]);},sfx(n){sfx(n);if(net&&host)netOp(['sfx',n]);},
+  say(str){if(T-lastSay<7||mode!=='fight')return;lastSay=T;says.text=str;says.t=2.4;if(net&&host)netOp(['say',str]);},
+  clear(){bullets.length=0;hazards.length=0;warns.length=0;if(net&&host)netOp(['clr']);}};
  // ---- run scheduler
  function startRun(gen,isDirector){const r={g:gen,wait:0,dir:!!isDirector};runs.push(r);if(isDirector)directorRun=r;}
  function stepRuns(dt){for(let i=runs.length-1;i>=0;i--){const r=runs[i];r.wait-=dt;let guard=0;while(r.wait<=0&&guard++<40){let res;try{res=r.g.next();}catch(e){console.error('boss attack failed',e);res={done:true};}
@@ -134,16 +138,16 @@ async function bossfight(s){
   for(;;){if(B.phase!==phase)return;if(!queue.length){queue=boss.attacks[phase].slice();for(let i=queue.length-1;i>0;i--){const j=Math.floor(F.rand()*(i+1));[queue[i],queue[j]]=[queue[j],queue[i]];}
     if(phase>0){const si=queue.findIndex(e=>(Array.isArray(e)?e[0]:e)===boss.sig);if(si>0){const [e]=queue.splice(si,1);queue.unshift(e);}}}
    const e=queue.shift(),[name,params]=Array.isArray(e)?e:[e,{}];const pat=PATTERNS[name];if(!pat){yield .5;continue;}
-   if(name===boss.sig&&!sigShown[phase]){sigShown[phase]=true;banner('SIGNATURE MOVE',SIGNATURES[name]||name.toUpperCase(),1.7,'#ff7a3a');}
+   if(name===boss.sig&&!sigShown[phase]){sigShown[phase]=true;banner('SIGNATURE MOVE',SIGNATURES[name]||name.toUpperCase(),1.7,'#ff7a3a');if(net)netOp(['bn','SIGNATURE MOVE',SIGNATURES[name]||name.toUpperCase(),1.7,'#ff7a3a']);}
    yield* pat(F,params||{});B.deadR=0;yield (.5+(phase===0?.3:0))*kTab.rest;}}
  // ---- phases / end states
  const thresholds=[B.max*2/3,B.max/3];
- function startPhase(n){mode='phase';modeT=0;B.phase=n;runs.length=0;directorRun=null;B.deadR=0;B.tw={x0:B.x,y0:B.y,x1:B.hx,y1:B.hy,t:0,dur:.8,e:ease.inout};B.hidden=0;
+ function startPhase(n){if(net&&host)netOp(['ph',n]);mode='phase';modeT=0;B.phase=n;runs.length=0;directorRun=null;B.deadR=0;B.tw={x0:B.x,y0:B.y,x1:B.hx,y1:B.hy,t:0,dur:.8,e:ease.inout};B.hidden=0;
   for(const b of bullets)burst(b.x,b.y,'#fff',1,40,.3);bullets.length=0;hazards.length=0;warns.length=0;for(const m of minions)burst(m.x,m.y,'#ffd23c',6);minions.length=0;
   for(const p of P)p.inv=Math.max(p.inv,3);shake(16);flashWhite=.5;sound('rare');vibrate(60);
   for(const p of P)if(p.hp<=0&&p.out){p.out=false;p.hp=1;p.inv=3;p.ghost=0;p.x=p.tx=spawnX(p.i);p.y=p.ty=spawnY();text(p.x,p.y-30,'SECOND WIND!','#7dffb0',16,1.4);}
   banner(`PHASE ${n+1}!`,boss.phaseLines[n]||'',2.3,'#ff4b3a');}
- function endPhase(){mode='fight';modeT=0;startRun(director(),true);}
+ function endPhase(){mode='fight';modeT=0;if(!gw)startRun(director(),true);}
  function hitBoss(dmg,px,py,owner,super_,remote=false){if(!remote&&(mode!=='fight'||B.hidden>0||B.shown<1))return false;if(remote&&mode!=='fight')return false;if(wide&&owner>=0&&!remote)dmg*=WIDE_K.dmg;
   // online the other phone only reports its damage (player 1's phone owns the HP)
   if(net&&!host){B.flash=.07;if(owner>=0){const p=P[owner];p.dmg+=dmg;if(!super_)p.meter=Math.min(100,p.meter+.42*dmg);}netDmg+=dmg;return true;}
@@ -151,12 +155,13 @@ async function bossfight(s){
   if(owner>=0&&!remote){const p=P[owner];p.dmg+=dmg;if(!super_)p.meter=Math.min(100,p.meter+.42*dmg);}log.dmg+=dmg;
   if(s.debug.holdPhase)B.hp=Math.max(B.hp,B.phase<2?thresholds[B.phase]+1:1);if(B.hp<=0){B.hp=0;startKO();return true;}
   if(B.phase<2&&B.hp<=thresholds[B.phase]){B.hp=thresholds[B.phase];startPhase(B.phase+1);}return true;}
- function startKO(){mode='ko';modeT=0;timeScale=.35;runs.length=0;directorRun=null;B.deadR=0;bullets.length=0;hazards.length=0;warns.length=0;for(const m of minions)burst(m.x,m.y,'#ffd23c',8);minions.length=0;for(const p of P)p.inv=99;duration=Math.round(T-introEnd);shake(18);flashWhite=.6;sound('win');vibrate(120);for(const p of P)s.react(p.i,'win',3);}
- function startLose(){if(mode==='ko'||mode==='lose')return;mode='lose';modeT=0;timeScale=.5;runs.length=0;directorRun=null;duration=Math.round(T-introEnd);sound('lose');vibrate(200);for(const p of P)s.react(p.i,'sad',3);}
+ function startKO(){if(net&&host)netOp(['ko']);mode='ko';modeT=0;timeScale=.35;runs.length=0;directorRun=null;B.deadR=0;bullets.length=0;hazards.length=0;warns.length=0;for(const m of minions)burst(m.x,m.y,'#ffd23c',8);minions.length=0;for(const p of P)p.inv=99;duration=Math.round(T-introEnd);shake(18);flashWhite=.6;sound('win');vibrate(120);for(const p of P)s.react(p.i,'win',3);}
+ function startLose(){if(mode==='ko'||mode==='lose')return;if(net&&host)netOp(['lose']);mode='lose';modeT=0;timeScale=.5;runs.length=0;directorRun=null;duration=Math.round(T-introEnd);sound('lose');vibrate(200);for(const p of P)s.react(p.i,'sad',3);}
  const introEnd=4.4;
- async function finish(won){if(finished)return;finished=true;const t=duration||Math.round(T-introEnd),bonus=won?250+Math.max(0,Math.round((120-t)*3)):0;
-  // online: each phone counts its own plane, then the two swap
-  if(net){const mine={dmg:P[me].dmg,parries:P[me].parries,kills:P[me].kills};nf.finish(mine);const o=await nf.remoteDone();if(o){P[them].dmg=+o.dmg||0;P[them].parries=o.parries|0;P[them].kills=o.kills|0;}if(!s.alive)return;}
+ async function finish(won){if(finished)return;finished=true;let t=duration||Math.round(T-introEnd);
+  // online: each phone counts its own plane, then the two swap; the time bonus uses player 1's clock on both phones
+  if(net){const mine={dmg:P[me].dmg,parries:P[me].parries,kills:P[me].kills,t};nf.finish(mine);const o=await nf.remoteDone();if(o){P[them].dmg=+o.dmg||0;P[them].parries=o.parries|0;P[them].kills=o.kills|0;if(!host&&Number.isFinite(o.t))t=o.t;}if(!s.alive)return;}
+  const bonus=won?250+Math.max(0,Math.round((120-t)*3)):0;
   const sc=P.map(p=>Math.round(p.dmg+p.parries*50+p.kills*10+bonus));
   if(alone){soloProgress(s,sc[0],0,'');s.solo.won=won;s.finish([sc[0],0],won?`${boss.name} is down in ${t}s! ${P[0].parries} parries, ${sc[0]} points.`:`${boss.name} wins this round. ${sc[0]} points.`);return;}
   s.cooperative=true;s.shared=true;s.teamResult={kind:'boss',won,tied:false,humanTotal:sc[0]+sc[1],cpuTotal:0,cpuScores:[0,0],duration:t,bossId:boss.id};
@@ -166,14 +171,14 @@ async function bossfight(s){
   if(p.hp<=0){p.ghost=5;p.out=false;p.gx=p.x;p.gy=p.y;p.sup=0;text(p.x,p.y-30,'DOWN!','#ff5a5a',16,1.2);if(!alive().length&&host)startLose();nf?.push();}return true;}
  function revive(p,by){p.hp=2;p.inv=2.4;p.ghost=0;p.out=false;p.x=p.tx=clamp(p.gx,22,W-22);p.y=p.ty=clamp(p.gy,YMIN,580);burst(p.x,p.y,'#7dffb0',22,220,.7,3.5);ring(p.x,p.y,'#7dffb0',70,.6);text(p.x,p.y-34,'REVIVED!','#7dffb0',17,1.3);sound('unlock');s.react(p.i,'happy');s.react(by.i,'happy');}
  function act(i,onlySuper){const p=P[i];if(p.hp<=0||finished)return;if(mode==='intro'){if(T>1.6&&!intro.skip&&modeT<3.3){intro.skip=true;modeT=3.3;}return;}if(mode!=='fight'&&mode!=='phase')return;
-  const o=mate(p);if(!onlySuper){if(o.hp<=0&&o.ghost>0&&Math.hypot(p.x-o.gx,p.y-o.gy)<62){if(net)nf.event({rv:1});revive(o,p);return;}
+  const o=mate(p);if(!onlySuper){if(o.hp<=0&&o.ghost>0&&Math.hypot(p.x-o.gx,p.y-o.gy)<62){netOp(['rv']);revive(o,p);return;}
    let best=null,bd=PARRY_R*PARRY_R;for(const b of bullets){if(!b.pink||b.friendly)continue;const d=(b.x-p.x)**2+(b.y-p.y)**2;if(d<bd+(b.r*b.r)){bd=d;best=b;}}
    if(best){parry(p,best);return;}}
   if(p.meter>=100&&p.sup<=0)superOn(p);}
- function parry(p,b){p.inv=Math.max(p.inv,.65);p.parryT=.45;p.parries++;p.meter=Math.min(100,p.meter+(b.reflect?30:20));hitstop=.07;burst(b.x,b.y,'#ff9ae0',16,220,.6,3);ring(b.x,b.y,'#ff9ae0',50,.45);text(p.x,p.y-34,b.reflect?'REFLECT!':'PARRY!','#ff9ae0',16,.9);sfx('parry');vibrate(18);s.react(p.i,'happy');
+ function parry(p,b){if(net&&b._id)netOp(['pa',b._id,b.reflect?1:0]);p.inv=Math.max(p.inv,.65);p.parryT=.45;p.parries++;p.meter=Math.min(100,p.meter+(b.reflect?30:20));hitstop=.07;burst(b.x,b.y,'#ff9ae0',16,220,.6,3);ring(b.x,b.y,'#ff9ae0',50,.45);text(p.x,p.y-34,b.reflect?'REFLECT!':'PARRY!','#ff9ae0',16,.9);sfx('parry');vibrate(18);s.react(p.i,'happy');
   if(b.reflect){b.friendly=true;b.pink=false;b.reflect=false;b.step=null;b.homeBoss=true;b.dmg=70;b.col='#ffe66a';b.kind='big';sprites.size>300&&sprites.clear();}else b.dead=true;}
  function superOn(p){p.meter=0;p.sup=p.i===0?1.9:1.5;p.supT=p.sup;p.barrage=0;hitstop=.16;flashWhite=.35;shake(10);sfx('super');vibrate(40);text(p.x,p.y-44,p.i===0?'MEGA BEAM!':'STAR BARRAGE!','#ffe66a',17,1.1);s.react(p.i,'win',2);
-  for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];if(Math.hypot(b.x-p.x,b.y-p.y)<220){burst(b.x,b.y,'#fff',2,80,.3,2);bullets.splice(i,1);}}}
+  for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];if(Math.hypot(b.x-p.x,b.y-p.y)<220){burst(b.x,b.y,'#fff',2,80,.3,2);netGone(b);bullets.splice(i,1);}}}
  // ---- input
  const touch=[null,null];const GAIN=1.45;
  ownedPointers(s,(i,p,id)=>{let t=touch[i];if(!t||t.id!==id){t=touch[i]={id,lx:p.x,ly:p.y,sx:p.x,sy:p.y,t0:performance.now(),maxd:0};}
@@ -219,12 +224,15 @@ async function bossfight(s){
    if(p.sup>0){p.sup-=dt;superTick(p,dt);}
    p.fire-=dt;if(p.fire<=0&&(mode==='fight'||mode==='phase')){p.fire=.15;sfx('shot');const ca=Math.cos(p.aim),sa=Math.sin(p.aim);for(const ox2 of [-7,7])pshots.push({x:p.x-sa*ox2+ca*18,y:p.y+ca*ox2+sa*18,vx:ca*900,vy:sa*900,o:i,dmg:1,r:4});}}}
  function superTick(p,dt){if(p.i===0){p.beamT=(p.beamT||0)-dt;if(p.beamT<=0){p.beamT=.1;const ca=Math.cos(p.aim),sa=Math.sin(p.aim),off=(qx,qy)=>Math.abs((qx-p.x)*sa-(qy-p.y)*ca),ahead=(qx,qy)=>(qx-p.x)*ca+(qy-p.y)*sa>0;
-    for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];if(!b.friendly&&off(b.x,b.y)<30&&ahead(b.x,b.y)){burst(b.x,b.y,'#fff',2,60,.25,2);bullets.splice(i,1);}}
+    for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];if(!b.friendly&&off(b.x,b.y)<30&&ahead(b.x,b.y)){burst(b.x,b.y,'#fff',2,60,.25,2);netGone(b);bullets.splice(i,1);}}
     for(const m of minions)if(!m.hidden&&off(m.x,m.y)<30+m.r&&ahead(m.x,m.y))damageMinion(m,4,p.i);
     for(const [cx,cy,r] of bossCircles())if(off(cx,cy)<r+23&&ahead(cx,cy)){hitBoss(7,cx,cy,p.i,true);break;}}}
   else{p.barrage-=dt;if(p.barrage<=0){p.barrage=.06;p.star=(p.star||0)+1;const a=p.aim+Math.sin(p.star*1.7)*1.1;pshots.push({x:p.x,y:p.y-10,vx:Math.cos(a)*520,vy:Math.sin(a)*520,o:p.i,dmg:5,r:6,homing:true,star:true,life:2.2});}
-   const rad=(1-p.sup/p.supT)*300;for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];if(!b.friendly&&Math.hypot(b.x-p.x,b.y-p.y)<rad){burst(b.x,b.y,'#fff',2,60,.25,2);bullets.splice(i,1);}}}}
- function damageMinion(m,dmg,owner){m.hp-=dmg;m.flash=.08;if(m.hp<=0&&!m.dead){m.dead=true;m.killer=owner;}}
+   const rad=(1-p.sup/p.supT)*300;for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];if(!b.friendly&&Math.hypot(b.x-p.x,b.y-p.y)<rad){burst(b.x,b.y,'#fff',2,60,.25,2);netGone(b);bullets.splice(i,1);}}}}
+ function damageMinion(m,dmg,owner){
+  // online the other phone reports its damage; the kill is player 1's phone's call (until then the minion is just hidden here)
+  if(gw){if(owner!==me||!(dmg>0))return;if(m._id)mh.set(m._id,(mh.get(m._id)||0)+dmg);m.hp-=dmg;m.flash=.08;if(m.hp<=0&&!m.dead){m.dead=true;m.guess=T;}return;}
+  m.hp-=dmg;m.flash=.08;if(m.hp<=0&&!m.dead){m.dead=true;m.killer=owner;}}
  function updateShots(dt){for(let i=pshots.length-1;i>=0;i--){const q=pshots[i];q.life=(q.life??1.4)-dt;
    if(q.homing){let tx=B.drawX,ty=B.drawY+20,bd=1e9;for(const m of minions){if(m.hidden)continue;const d=(m.x-q.x)**2+(m.y-q.y)**2;if(d<bd){bd=d;tx=m.x;ty=m.y;}}
     if(B.shown>=1&&mode==='fight'&&bd>1e8){}const want=Math.atan2(ty-q.y,tx-q.x),cur=Math.atan2(q.vy,q.vx);let d=want-cur;d=Math.atan2(Math.sin(d),Math.cos(d));const na=cur+clamp(d,-7*dt,7*dt);const sp=560;q.vx=Math.cos(na)*sp;q.vy=Math.sin(na)*sp;}
@@ -234,28 +242,27 @@ async function bossfight(s){
    if(hit||q.life<=0||q.y<-30||q.y>H+30||q.x<-40||q.x>W+40)pshots.splice(i,1);}}
  function updateBullets(dt){for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];b.age+=dt;if(b.step)b.step(F,b,dt);if(b.dead){bullets.splice(i,1);continue;}
    if(b.ax)b.vx+=b.ax*dt;if(b.ay)b.vy+=b.ay*dt;
-   if(b.homeBoss){const dx=B.drawX-b.x,dy=B.drawY+30-b.y,l=Math.hypot(dx,dy)||1;b.vx=dx/l*620;b.vy=dy/l*620;if(l<70&&B.hidden<=0){const ok=hitBoss(b.dmg||60,b.x,b.y,-1,true);burst(b.x,b.y,'#ffe66a',34,320,.8,4);ring(b.x,b.y,'#ffe66a',90,.6);text(b.x,b.y-20,'BIG HIT!','#ffe66a',18,1);shake(8);if(ok){const w=net?P[me]:P.find(p=>p.hp>0);if(w)w.dmg+=b.dmg||60;}bullets.splice(i,1);continue;}}
+   if(b.homeBoss){const dx=B.drawX-b.x,dy=B.drawY+30-b.y,l=Math.hypot(dx,dy)||1;b.vx=dx/l*620;b.vy=dy/l*620;if(l<70&&B.hidden<=0){const ok=!b.remote&&hitBoss(b.dmg||60,b.x,b.y,-1,true);burst(b.x,b.y,'#ffe66a',34,320,.8,4);ring(b.x,b.y,'#ffe66a',90,.6);text(b.x,b.y-20,'BIG HIT!','#ffe66a',18,1);shake(8);if(ok){const w=net?P[me]:P.find(p=>p.hp>0);if(w)w.dmg+=b.dmg||60;}bullets.splice(i,1);continue;}}
    b.x+=b.vx*dt;b.y+=b.vy*dt;
    if(b.bounce){if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx);b.bounce--;}else if(b.x>W-b.r){b.x=W-b.r;b.vx=-Math.abs(b.vx);b.bounce--;}if(b.y<b.r&&b.vy<0){b.vy=Math.abs(b.vy);}}
    if(b.spin)b.rot=(b.rot||0)+dt*8;
    const out=(b.keep&&b.age<3)?false:(b.x<-70||b.x>W+70||b.y<-90||b.y>H+70);
    if(out||b.age>(b.life||14)){bullets.splice(i,1);continue;}
    if(b.friendly)continue;
-   for(const p of P){if(p.hp<=0)continue;const r=PR+b.r*.82;if((b.x-p.x)**2+(b.y-p.y)**2<r*r){if(hurt(p,'bullet:'+b.kind)){burst(b.x,b.y,'#fff',4,100,.3,2);bullets.splice(i,1);}break;}}}}
- function updateHazards(dt){for(let i=hazards.length-1;i>=0;i--){const h=hazards[i];h.age+=dt;const act2=h.age>=h.tele;
+   for(const p of P){if(p.hp<=0)continue;const r=PR+b.r*.82;if((b.x-p.x)**2+(b.y-p.y)**2<r*r){if(hurt(p,'bullet:'+b.kind)){burst(b.x,b.y,'#fff',4,100,.3,2);netGone(b);bullets.splice(i,1);}break;}}}}
+ function stepHazard(h,dt,judge){h.age+=dt;const act2=h.age>=h.tele;
    if(h.follow){const mz=F.muzzle('center');h.cx=mz.x;h.cy=mz.y;}else{h.cx=h.x;h.cy=h.y;}
    if(act2){if(h.vx)h.x+=h.vx*dt;if(h.vy)h.y+=h.vy*dt;if(h.da)h.a+=h.da*dt;
     if(h.tween){const u=clamp((h.age-h.tele)/h.tween.t,0,1),e=ease.out(u),fx0=h.tween.fromX!==undefined?h.tween.fromX:h.x0,fy0=h.tween.fromY!==undefined?h.tween.fromY:h.y0;h.x=fx0+(h.tween.x-fx0)*e;h.y=fy0+(h.tween.y-fy0)*e;}
-    if(h.pend){const th=h.pend.amp*Math.sin((h.age-h.tele)*TAU/h.pend.period+(h.pend.phase||0));h.x=h.cx+Math.sin(th)*h.pend.len;h.y=h.cy+Math.cos(th)*h.pend.len;h.th=th;}
-    if(h.shape!=='rect'&&!h.pend&&h.follow){}}
+    if(h.pend){const th=h.pend.amp*Math.sin((h.age-h.tele)*TAU/h.pend.period+(h.pend.phase||0));h.x=h.cx+Math.sin(th)*h.pend.len;h.y=h.cy+Math.cos(th)*h.pend.len;h.th=th;}}
    else if(h.tween){h.x=h.tween.x;h.y=h.tween.y;}
-   if(h.age>h.tele+h.dur){hazards.splice(i,1);continue;}
-   if(act2&&mode==='fight'&&h.age-h.tele>.05)for(const p of P){if(p.hp>0&&hazHit(h,p.x,p.y,PR))hurt(p,'hazard:'+(h.kind||h.shape));}}}
- function updateMinions(dt){for(let i=minions.length-1;i>=0;i--){const m=minions[i];m.age+=dt;m.flash=Math.max(0,m.flash-dt);if(m.step)m.step(F,m,dt);
-   if(m.dead||m.hp<=0){const was=m.dead||!m.expire;minions.splice(i,1);if(m.expire)continue;burst(m.x,m.y,'#ffd23c',12,170,.55,3);ring(m.x,m.y,'#ffd23c',m.r*2.6,.35);sfx('kill');
+   if(judge&&act2&&mode==='fight'&&h.age-h.tele>.05&&h.age<=h.tele+h.dur)for(const p of P){if(p.hp>0&&hazHit(h,p.x,p.y,PR))hurt(p,'hazard:'+(h.kind||h.shape));}}
+ function updateHazards(dt){for(let i=hazards.length-1;i>=0;i--){const h=hazards[i];stepHazard(h,dt,true);if(h.age>h.tele+h.dur)hazards.splice(i,1);}}
+ function updateMinions(dt){if(gw){updateNetMinions(dt);return;}for(let i=minions.length-1;i>=0;i--){const m=minions[i];m.age+=dt;m.flash=Math.max(0,m.flash-dt);if(m.step)m.step(F,m,dt);
+   if(m.dead||m.hp<=0){const was=m.dead||!m.expire;minions.splice(i,1);if(net)netOp(['mk',m._id,m.expire?-1:m.killer??-1,m.expire?1:0]);if(m.expire)continue;burst(m.x,m.y,'#ffd23c',12,170,.55,3);ring(m.x,m.y,'#ffd23c',m.r*2.6,.35);sfx('kill');
     if(m.killer!==undefined&&m.killer>=0){const p=P[m.killer];p.kills++;p.meter=Math.min(100,p.meter+6);}
     if(m.onDie)try{m.onDie(F,m);}catch(e){console.error(e);}continue;}
-   if(m.y>H+70||m.x<-80||m.x>W+80||m.y<-100){minions.splice(i,1);continue;}
+   if(m.y>H+70||m.x<-80||m.x>W+80||m.y<-100){minions.splice(i,1);if(net)netOp(['mk',m._id,-1,1]);continue;}
    if(!m.hidden&&mode==='fight')for(const p of P)if(p.hp>0&&Math.hypot(p.x-m.x,p.y-m.y)<m.r+PR+2){hurt(p,'minion:'+m.kind);}}}
  function updateBoss(dt){B.shown=Math.min(1,B.shown+dt*2);B.flash=Math.max(0,B.flash-dt);B.chip=Math.max(B.hp/B.max,B.chip-dt*.35);B.hidden=Math.max(0,B.hidden-dt);
   if(B.tw){B.tw.t+=dt;const u=Math.min(1,B.tw.t/B.tw.dur),e=B.tw.e(u);B.x=B.tw.x0+(B.tw.x1-B.tw.x0)*e;B.y=B.tw.y0+(B.tw.y1-B.tw.y0)*e;if(u>=1)B.tw=null;}
@@ -272,14 +279,14 @@ async function bossfight(s){
  let introBooms=0;
  function update(dt0,dt){T+=dt;A.t=T;modeT+=dt0;
   if(mode==='intro'){const u=clamp(modeT/1.3,0,1);B.y=B.hy-260*(1-ease.out(u));B.x=B.hx;B.tw=null;B.shown=1;if(modeT>1.3&&introBooms===0){introBooms=1;shake(14);sfx('boom');flashWhite=.25;}
-   if(modeT>=introEnd){mode='fight';modeT=0;T=introEnd;banner('',' ',.01);startRun(director(),true);}}
+   if(modeT>=introEnd){mode='fight';modeT=0;T=introEnd;banner('',' ',.01);if(!gw)startRun(director(),true);}}
   if(mode==='phase'&&modeT>2.3)endPhase();
   if(mode==='ko'){koBoom-=dt0;if(modeT<1.8&&koBoom<=0){koBoom=.11;const cs=bossCircles()[0]||[B.drawX,B.drawY,60];const a=Math.random()*TAU,rr=Math.random()*cs[2]*1.2;burst(cs[0]+Math.cos(a)*rr,cs[1]+Math.sin(a)*rr,['#ffd23c','#ff7a1a','#fff'][Math.floor(Math.random()*3)],14,260,.7,4);ring(cs[0]+Math.cos(a)*rr,cs[1]+Math.sin(a)*rr,'#ff9a3a',46,.4);sfx('boom');shake(5);}
    if(modeT>=1.8&&!koDone){koDone=true;timeScale=1;B.hidden=99;shake(22);flashWhite=1;vibrate(150);sound('win');const cs=bossCircles()[0];for(let r=0;r<4;r++)ring(cs[0],cs[1],['#fff','#ffd23c','#ff7a1a','#ff3b2f'][r],160+r*60,.8+r*.15);burst(cs[0],cs[1],'#ffd23c',90,520,1.4,5);burst(cs[0],cs[1],'#ff5a2a',70,420,1.2,6);burst(cs[0],cs[1],'#fff',40,600,.9,3);}
    if(modeT>5)finish(true);}
   if(mode==='lose'&&modeT>3.4)finish(false);
   if(mode==='fight'||mode==='phase')stepRuns(dt);
-  if(mode!=='lose'||true)updatePlayers(dt);updateBoss(dt);
+  if(mode!=='lose'||true)updatePlayers(dt);netBoss(dt);updateBoss(dt);
   if(mode==='fight'||mode==='phase'||mode==='lose'){updateHazards(dt);updateMinions(dt);updateBullets(dt);}
   updateShots(dt);updateFx(dt);music(dt0);
   shakeMag*=Math.pow(.02,dt0);flashWhite=Math.max(0,flashWhite-dt0*1.6);}
@@ -383,7 +390,7 @@ async function bossfight(s){
   x.beginPath();x.rect(-4,-4,W+8,H+8);x.clip();
   drawBoss(x);
   for(const w of warns)drawWarn(x,w);for(const h of hazards)drawHazard(x,h);
-  for(const m of minions){if(m.hidden)continue;x.save();x.translate(m.x,m.y);const pl=m.flash>0?1.15:1;x.scale(pl,pl);if(m.kind==='hound'||m.kind==='rocket'||m.kind==='glove'){}drawMinion(x,m,T);if(m.max>6&&m.hp<m.max){x.fillStyle='rgba(0,0,0,.6)';x.fillRect(-m.r,m.r+6,m.r*2,4);x.fillStyle='#ff5a5a';x.fillRect(-m.r,m.r+6,m.r*2*m.hp/m.max,4);}x.restore();}
+  for(const m of minions){if(m.hidden||m.guess)continue;x.save();x.translate(m.x,m.y);const pl=m.flash>0?1.15:1;x.scale(pl,pl);if(m.kind==='hound'||m.kind==='rocket'||m.kind==='glove'){}drawMinion(x,m,T);if(m.max>6&&m.hp<m.max){x.fillStyle='rgba(0,0,0,.6)';x.fillRect(-m.r,m.r+6,m.r*2,4);x.fillStyle='#ff5a5a';x.fillRect(-m.r,m.r+6,m.r*2*m.hp/m.max,4);}x.restore();}
   for(const p of P)if(p.hp<=0&&p.ghost>0)drawGhost(x,p);
   for(const p of P)drawBeam(x,p);
   for(const b of bullets)drawBullet(x,b);drawPShots(x);
@@ -401,26 +408,107 @@ async function bossfight(s){
   x.drawImage(vignette,ox,oy);
   if(!reduce){x.fillStyle='rgba(255,230,180,.035)';x.fillRect(ox,oy,W*k,H*k);if(Math.random()<.12){x.fillStyle='rgba(255,255,255,.12)';x.fillRect(Math.random()*cw,0,1,ch);}}}
  // ---- online co-op (see the top of the file)
- let netDmg=0,flushT=0;const MODES=['intro','fight','phase','ko','lose'];
- // the partner's plane: eased toward its snapshots (x as a share of the field width: each phone's field is as wide as its
- // screen); it fires for show only
+ // One attack world, run by player 1's phone (the director, every bullet, hazard, warning and minion, the boss's moves). Every
+ // thing it makes gets an id and goes to the other phone in order with its state at send time (`spawned` → ops 'b'/'h'/'w'/'m');
+ // the other phone rebuilds it, moves it on by the time since (hT = its estimate of player 1's clock, `catchUp`) and flies
+ // plain bullets itself (same field width, so they fly the same way); bullets with a step get position fixes (sb), minions
+ // and the boss follow snapshots. Each phone judges only its own plane and tells the other what its plane took out:
+ // 'bx' a bullet that hit it or that its super cleared, 'pa' a parried bullet, 'mh' minion damage (player 1's phone calls
+ // the kill: 'mk'), 'd' boss damage (player 1's phone owns the HP), 'rv' a revive. Phase / KO / defeat ride the same stream
+ // ('ph','ko','lose'), so a bullet made after a phase change is never cleared by it.
+ let netDmg=0,nid=0,ops=[],opN=0,hT=0,lat=.05,lastMsgAt=0,theirW=0,pingT=0,mapT=0;const MODES=['intro','fight','phase','ko','lose'],mh=new Map(),pings=[],ids=new Map();
+ function netOp(o){if(net)ops.push(o);}
+ function spawned(kind,o){if(!net||!host)return;o._id=++nid;ids.set(nid,o);ops.push([kind,o]);}
+ function netGone(b){if(net&&b._id){ops.push(['bx',b._id]);ids.delete(b._id);}}
+ const r2=v=>Math.round(v*100)/100;
+ // a bullet / hazard / warning / minion as plain data: functions dropped (steps by name), numbers rounded, a warning that
+ // follows a plane names it by its index
+ function ser(o){const d={};for(const k in o){const v=o[k];if(k==='_id'||k==='onDie'||k==='hits')continue;
+   if(k==='step'){const n=STEP_NAME.get(v);if(n)d.step=n;continue;}
+   if(k==='follow'&&v&&typeof v==='object'){if(Number.isInteger(v.i))d.fp=v.i;continue;}
+   if(typeof v==='function'||v===undefined)continue;d[k]=typeof v==='number'?Math.round(v*100)/100:v;}return d;}
+ function live(kind,o){return (kind==='b'?bullets:kind==='h'?hazards:kind==='w'?warns:minions).includes(o);}
+ // the partner's plane: eased toward its snapshots; it fires for show only
  function stepPuppet(p,dt){const k2=1-Math.exp(-dt*14);if(p.nx!=null){p.x+=(p.nx*W-p.x)*k2;p.y+=(p.ny-p.y)*k2;p.gx+=(p.ngx*W-p.gx)*k2;p.gy+=(p.ngy-p.gy)*k2;}
   p.inv=Math.max(0,p.inv-dt);p.parryT=Math.max(0,p.parryT-dt);if(p.sup>0)p.sup-=dt;
   p.fire-=dt;if(p.hp>0&&p.fire<=0&&(mode==='fight'||mode==='phase')){p.fire=.15;const ca=Math.cos(p.aim),sa=Math.sin(p.aim);for(const ox2 of [-7,7])pshots.push({x:p.x-sa*ox2+ca*18,y:p.y+ca*ox2+sa*18,vx:ca*900,vy:sa*900,o:p.i,dmg:0,r:4});}}
- const r2=v=>Math.round(v*100)/100;
  function netPack(){const p=P[me],o={p:[r2(p.x/W),Math.round(p.y),r2(p.aim),p.hp,r2(p.ghost),r2(p.gx/W),Math.round(p.gy),r2(Math.max(0,p.sup)),r2(p.supT),p.inv>0?1:0,p.parryT>0?1:0,Math.round(p.meter)]};
-  if(host)o.b=[Math.round(B.hp*10)/10,B.phase,MODES.indexOf(mode)];return o;}
+  if(gw){if(netDmg>0){ops.push(['d',Math.round(netDmg*100)/100]);netDmg=0;}for(const [id,dm] of mh)ops.push(['mh',id,r2(dm)]);mh.clear();
+   const now=performance.now();if(now-pingT>2000){pingT=now;ops.push(['pi',Math.round(now)]);}}
+  if(host){o.b=[Math.round(B.hp*10)/10,B.phase,MODES.indexOf(mode)];o.T=Math.round(T*1000)/1000;
+   o.B=[r2(B.x),r2(B.y),B.pose,r2(B.poseT),r2(B.hidden),B.deadR|0,B.flash>0?1:0];
+   o.mn=minions.filter(m=>m._id).map(m=>[m._id,r2(m.x),r2(m.y),r2(m.hp),m.hidden?1:0,r2(m.ang||0)]);
+   o.sb=bullets.filter(b=>b._id&&(b.step||b.homeBoss)).map(b=>[b._id,r2(b.x),r2(b.y),r2(b.vx),r2(b.vy)]);
+   // let go of ids that are gone (bullets that flew off, expired hazards...)
+   if(T-mapT>2){mapT=T;const keep=new Set([...bullets,...hazards,...warns,...minions]);for(const [id,v] of ids)if(!keep.has(v))ids.delete(id);}}
+  if(ops.length){const l=[];for(const op of ops){const k=op[0];if(k==='b'||k==='h'||k==='w'||k==='m'){if(live(k,op[1]))l.push([k,op[1]._id,ser(op[1])]);}else l.push(op);}ops=[];if(l.length)o.o={n:++opN,l};}
+  return o;}
+ // move something just rebuilt here on by t seconds (it was made t ago on player 1's phone); nothing is judged on the way
+ function catchUp(kind,o,t){if(!(t>0))return;const st=1/30;
+  if(kind==='w'){o.t+=t;return;}
+  if(kind==='m'){o.age+=t;return;}
+  for(let u=0;u<t;u+=st){const dt=Math.min(st,t-u);
+   if(kind==='b'){o.age+=dt;if(o.step)o.step(F,o,dt);if(o.ax)o.vx+=o.ax*dt;if(o.ay)o.vy+=o.ay*dt;o.x+=o.vx*dt;o.y+=o.vy*dt;
+    if(o.bounce){if(o.x<o.r){o.x=o.r;o.vx=Math.abs(o.vx);o.bounce--;}else if(o.x>W-o.r){o.x=W-o.r;o.vx=-Math.abs(o.vx);o.bounce--;}if(o.y<o.r&&o.vy<0)o.vy=Math.abs(o.vy);}}
+   else if(kind==='h')stepHazard(o,dt,false);}}
+ function makeFrom(kind,id,d,t){const o=Object.assign({},d);if(d.step)o.step=STEPS[d.step]||null;if(kind==='w'&&Number.isInteger(d.fp))o.follow=P[d.fp]||null;delete o.fp;o._id=id;
+  if(kind==='b'){if(bullets.length>520)return;bullets.push(o);}else if(kind==='h')hazards.push(o);else if(kind==='w')warns.push(o);else{o.tx=o.x;o.ty=o.y;o.step=null;minions.push(o);}
+  ids.set(id,o);catchUp(kind,o,t);}
+ function dropBullet(id,fxOn){const b=ids.get(id);ids.delete(id);if(!b)return;const i=bullets.indexOf(b);if(i<0)return;if(fxOn)burst(b.x,b.y,'#fff',2,60,.25,2);bullets.splice(i,1);}
+ // the other phone's ops, in the order they happened there
+ function applyOps(l,age){for(const op of l){if(!Array.isArray(op))continue;const k=op[0];
+   if(gw){if(k==='b'||k==='h'||k==='w'||k==='m'){if(op[2]&&typeof op[2]==='object')makeFrom(k,op[1],op[2],age);continue;}
+    if(k==='ph'){if(op[1]>B.phase&&mode!=='ko'&&mode!=='lose')startPhase(op[1]);continue;}
+    if(k==='ko'){if(mode!=='ko'){B.hp=0;startKO();}continue;}
+    if(k==='lose'){if(mode!=='lose'&&mode!=='ko')startLose();continue;}
+    if(k==='clr'){bullets.length=0;hazards.length=0;warns.length=0;continue;}
+    if(k==='mk'){const m=ids.get(op[1]);ids.delete(op[1]);const i=m?minions.indexOf(m):-1;if(i<0)continue;minions.splice(i,1);
+     if(!op[3]){burst(m.x,m.y,'#ffd23c',12,170,.55,3);ring(m.x,m.y,'#ffd23c',m.r*2.6,.35);sfx('kill');if(op[2]===me){P[me].kills++;P[me].meter=Math.min(100,P[me].meter+6);}}continue;}
+    if(k==='say'){says.text=String(op[1]||'');says.t=2.4;continue;}
+    if(k==='bn'){banner(op[1],op[2],op[3],op[4]);continue;}
+    if(k==='sfx'){sfx(op[1]);continue;}
+    if(k==='sh'){shake(+op[1]||0);continue;}
+    if(k==='po'){const rtt=(performance.now()-op[1])/1000;if(rtt>=0&&rtt<5){pings.push(rtt);if(pings.length>8)pings.shift();lat=Math.min(...pings)/2;}continue;}}
+   else{if(k==='d'){if(mode==='fight')hitBoss(+op[1]||0,B.x,B.y,them,false,true);continue;}
+    if(k==='mh'){const m=ids.get(op[1]);if(m&&minions.includes(m)&&!m.dead)damageMinion(m,+op[2]||0,them);continue;}
+    if(k==='pi'){ops.push(['po',op[1]]);continue;}}
+   if(k==='bx'){dropBullet(op[1],true);continue;}
+   if(k==='pa'){const b=ids.get(op[1]);if(!b||!bullets.includes(b))continue;burst(b.x,b.y,'#ff9ae0',16,220,.6,3);ring(b.x,b.y,'#ff9ae0',50,.45);
+    if(op[2]){b.friendly=true;b.pink=false;b.reflect=false;b.step=null;b.homeBoss=true;b.remote=true;b.dmg=70;b.col='#ffe66a';b.kind='big';}else dropBullet(op[1],false);continue;}
+   if(k==='rv'){const p=P[me];if(p.hp<=0&&p.ghost>0)revive(p,P[them]);continue;}}}
  function netUnpack(d){if(!d)return;const q=P[them],a=d.p;
   if(Array.isArray(a)){const first=q.nx==null;q.nx=a[0];q.ny=a[1];q.aim=a[2];q.hp=a[3];q.ghost=a[4];q.ngx=a[5];q.ngy=a[6];if(a[7]>0&&q.sup<=0){q.sup=a[7];q.supT=a[8]||q.sup;}q.inv=a[9]?Math.max(q.inv,.3):q.inv;if(a[10])q.parryT=.45;q.meter=a[11];q.out=q.hp<=0&&q.ghost<=0;
    if(first){q.x=q.tx=q.nx*W;q.y=q.ty=q.ny;}
    if(host&&mode==='fight'&&!alive().length)startLose();}
-  // player 1's phone owns the boss's HP; this phone follows its phase changes, the KO and the defeat
-  if(!host&&Array.isArray(d.b)){const [hp,ph,md]=d.b;B.hp=Math.min(B.hp,hp);if(ph>B.phase&&mode!=='ko'&&mode!=='lose')startPhase(ph);
-   if(MODES[md]==='ko'&&mode!=='ko'){B.hp=0;startKO();}else if(MODES[md]==='lose'&&mode!=='lose'&&mode!=='ko')startLose();}}
- if(net){nf=netField(s,{hz:20,pack:netPack,unpack:(i,d)=>netUnpack(d),onEvent:e=>{
-   if(e.d&&host){if(mode==='fight')hitBoss(+e.d||0,B.x,B.y,them,false,true);}
-   else if(e.rv){const p=P[me];if(p.hp<=0&&p.ghost>0)revive(p,P[them]);}}});
-  nf.start('go').then(()=>{netReady=true;});}
+  // this phone's estimate of player 1's clock: its stamp + half the round trip. Messages held up by a stall arrive in a
+  // burst and never pull the clock back; a lone late one pulls it back a little (player 1's phone pauses in hit-stops)
+  let age=0;
+  if(gw&&Number.isFinite(d.T)){const now=performance.now(),tgt=d.T+lat,lone=now-lastMsgAt>25;lastMsgAt=now;if(tgt>hT)hT=tgt;else if(lone)hT+=(tgt-hT)*.2;age=Math.max(0,Math.min(8,hT-d.T));}
+  if(d.o&&Array.isArray(d.o.l))applyOps(d.o.l,age);
+  if(!gw)return;
+  // player 1's phone owns the boss's HP, its moves and the minions; this phone follows (ops first: they came before this state)
+  if(Array.isArray(d.b)){const [hp,ph,md]=d.b;B.hp=Math.min(B.hp,hp);if(ph>B.phase&&mode!=='ko'&&mode!=='lose')startPhase(ph);
+   if(MODES[md]==='ko'&&mode!=='ko'){B.hp=0;startKO();}else if(MODES[md]==='lose'&&mode!=='lose'&&mode!=='ko')startLose();}
+  if(Array.isArray(d.B)&&mode!=='intro'){const [bx,by,pose,poseT,hid,deadR,fl]=d.B;B.nx=bx;B.ny=by;if(pose!==B.pose||poseT>B.poseT+.1){B.pose=pose;B.poseT=poseT;}B.hidden=hid;B.deadR=deadR;if(fl)B.flash=Math.max(B.flash,.07);}
+  if(Array.isArray(d.mn))for(const [id,mx,my,hp,hid,ang] of d.mn){const m=ids.get(id);if(!m)continue;m.tx=mx;m.ty=my;m.shp=hp;m.hp=Math.min(m.hp,hp);m.hidden=!!hid;m.ang=ang;}
+  if(Array.isArray(d.sb))for(const [id,bx,by,vx,vy] of d.sb){const b=ids.get(id);if(!b||b.remote)continue;b.vx=vx;b.vy=vy;const px=bx+vx*age,py=by+vy*age;if(Math.hypot(px-b.x,py-b.y)>60){b.x=px;b.y=py;}else{b.x+=(px-b.x)*.5;b.y+=(py-b.y)*.5;}}
+  if(T-mapT>2){mapT=T;const keep=new Set([...bullets,...hazards,...warns,...minions]);for(const [id,v] of ids)if(!keep.has(v))ids.delete(id);}}
+ // the other phone's minions: shown where player 1's phone has them, hit here, killed there ('mk'); a kill guessed here that
+ // player 1's phone doesn't confirm within 1.5 s shows the minion again
+ function updateNetMinions(dt){const k2=1-Math.exp(-dt*14);for(const m of minions){m.age+=dt;m.flash=Math.max(0,m.flash-dt);if(m.tx!=null){m.x+=(m.tx-m.x)*k2;m.y+=(m.ty-m.y)*k2;}
+   if(m.guess&&T-m.guess>1.5){m.guess=0;m.dead=false;m.hp=Math.max(1,m.shp||1);}
+   if(!m.hidden&&!m.guess&&mode==='fight')for(const p of P)if(p.hp>0&&Math.hypot(p.x-m.x,p.y-m.y)<m.r+PR+2)hurt(p,'minion:'+m.kind);}}
+ // the boss on the other phone glides to where player 1's phone has it
+ function netBoss(dt){if(!gw||B.nx==null||mode==='intro')return;const k2=1-Math.exp(-dt*12);B.tw=null;if(mode==='fight'||mode==='phase')T+=(hT-T)*Math.min(1,dt*2);
+  if(Math.hypot(B.nx-B.x,B.ny-B.y)>220){B.x=B.nx;B.y=B.ny;}else{B.x+=(B.nx-B.x)*k2;B.y+=(B.ny-B.y)*k2;}}
+ if(net){nf=netField(s,{hz:20,pack:netPack,unpack:(i,d)=>netUnpack(d),onEvent:e=>{if(Number.isFinite(e.pw))theirW=e.pw;}});
+  // both phones fly one field: the narrower of the two screens' own widths (the wider phone shows it with curtains)
+  // (the screen's own width is read once the canvas has its real size: a few frames in)
+  let myW=0;
+  void (async()=>{for(let i=0;i<6||!(cw>0&&ch>0);i++){await new Promise(r=>requestAnimationFrame(r));if(!s.alive)return;}
+   myW=clamp(Math.round(H*cw/ch),420,W_MAX);nf.event({pw:myW});
+   while(!theirW&&s.alive&&!nf.gone)await new Promise(r=>setTimeout(r,30));if(!s.alive)return;
+   netW=Math.min(myW,theirW||myW);cw=-1;layout();await nf.start('go');hT=T;netReady=true;})();}
  // ---- main loop
  s.debug={get boss(){return B;},get players(){return P;},get bullets(){return bullets;},get minions(){return minions;},get hazards(){return hazards;},get mode(){return mode;},get time(){return T;},bossId:boss.id,tier,autopilot:[false,false],
   setBossHp(v){B.hp=Math.max(1,Math.min(B.max,v));if(B.phase<2&&B.hp<=thresholds[B.phase]&&mode==='fight')startPhase(B.phase+1);},
@@ -430,9 +518,10 @@ async function bossfight(s){
  let msAvg=0;s.debug.ms=()=>msAvg;
  // online test bot: the autopilot flies this phone's plane
  if(net)s.debug.bot=()=>{if(!s.debug.autopilot[me]){s.debug.autopilot[me]=.12;return 'drive';}return '';};
+ // (online there is no hit-stop: it would hold back one phone's copy of the shared attack world)
  s.frame(dt0=>{layout();if(finished)return;
-  if(net){if(!netReady){draw();return;}nf.tick(dt0);flushT-=dt0;if(flushT<=0&&netDmg>0){flushT=.1;nf.event({d:Math.round(netDmg*100)/100});netDmg=0;}}
-  const t0=performance.now();if(hitstop>0){hitstop-=dt0;draw();return;}for(let j=0,n=Math.max(1,s.debug.steps|0);j<n&&!finished;j++)update(dt0,dt0*timeScale);s.setScores(P.map(p=>Math.round(p.dmg+p.parries*50+p.kills*10)));
+  if(net){if(!netReady){draw();return;}nf.tick(dt0);if(gw)hT+=dt0*timeScale;}
+  const t0=performance.now();if(hitstop>0&&!net){hitstop-=dt0;draw();return;}hitstop=0;for(let j=0,n=Math.max(1,s.debug.steps|0);j<n&&!finished;j++)update(dt0,dt0*timeScale);s.setScores(P.map(p=>Math.round(p.dmg+p.parries*50+p.kills*10)));
   const pct=Math.round(B.hp/B.max*100);s.status(`BOSS FIGHT · ${boss.name} · phase ${B.phase+1}/3 · ${pct}% HP · `+P.map((p,i)=>s.players[i].name+' '+(p.hp>0?'♥'.repeat(p.hp):p.ghost>0?'👻 '+Math.ceil(p.ghost)+'s':'💤')).join(' / '));
   if(finished||s.debug.nodraw)return;draw();msAvg+=(performance.now()-t0-msAvg)*.05;});
 }

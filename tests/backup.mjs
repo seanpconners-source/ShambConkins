@@ -12,7 +12,7 @@ const ids=await page.evaluate(()=>window.ShambConkins.pkmn.moodCast().filter(id=
 await page.evaluate(ids=>{const S=window.ShambConkins,p=S.store.profile;p.rosters.Sean.push(...ids);p.runs=1;p.xp=900;},ids);
 // re-render the title screen the way the app does
 await page.evaluate(()=>{const b=document.createElement('button');b.dataset.action='home';document.body.append(b);b.click();b.remove();});await page.waitForTimeout(400);
-check(await has(page,'.ts-backup'),'progress shows the BACK UP PROGRESS button: '+await page.evaluate(()=>document.querySelector('.ts-backup')?.innerText.replace(/\s+/g,' ')));
+check(await has(page,'.ts-backup'),'progress shows the Back up button in the dock: '+await page.evaluate(()=>document.querySelector('.ts-backup')?.innerText.replace(/\s+/g,' ')));
 check(!await has(page,'.ts-foot [data-action="import"]'),'restore link hidden once there is progress');
 await page.screenshot({path:screenshotPath('backup-home-phone.png')});
 const [dl]=await Promise.all([page.waitForEvent('download'),page.click('.ts-backup')]);const file=`${D}/${dl.suggestedFilename()}`;await dl.saveAs(file);
