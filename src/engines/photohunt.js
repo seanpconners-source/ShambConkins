@@ -358,10 +358,15 @@ async function photohunt(s){
   point:(i,side=0)=>{const v=views()?.[side],r=st?.regions[i];if(!v||!r)return null;const p=toSlot(v,r.x,r.y);return {x:view.ox+p.x*view.k,y:view.oy+p.y*view.k};},
   at:(side,u,v)=>{const w=views()?.[side];if(!w)return null;const p=toSlot(w,u,v);return {x:view.ox+p.x*view.k,y:view.oy+p.y*view.k};},
   ui:(key,i=0)=>{const b=key==='glass'?LAY.glasses[i]:LAY[key];return {x:view.ox+b.x*view.k,y:view.oy+b.y*view.k};},
-  expire:()=>{if(st)st.left=.01;}};}
+  expire:()=>{if(st)st.left=.01;},
+  // online: who owns each difference, round by round (both phones must agree)
+  owners:net?()=>NL.map((lg,n)=>lg?.R?[...resolveRound(n,lg.R).own].map(([i,c])=>i+':'+c.p).sort().join(','):'').join('|'):undefined};}
 
  // ---------------- online race (see the top of the file)
  const NL=[],nlog=n=>NL[n]||(NL[n]={c:[[],[]],re:[0,0],R:0,total:0,solved:false});let nfh=null,lockT=0,netBot=false,botT=2;
+ // the round's timeline runs on the wall clock from the shared start (nf.start), not on frame time: a phone that drops frames,
+ // stalls or sits on the pause card keeps the same clock as the other one, so claim stamps stay comparable
+ const INTRO=1.7,netEl=()=>st?.t0!=null?(performance.now()-st.t0)/1000-INTRO:-INTRO;
  const netLib=net?shuffle(bundledPairs(),seededRandom(s.seed+':photohunt')):[];
  function netSpec(n){if(netLib.length){const q=netLib[n%netLib.length];return {pair:q,mirror:Math.floor(n/netLib.length)%2===1};}return {pair:illustratedPair(n,seededRandom(s.seed+':scene'+n)),mirror:false};}
  const pillsAt=(total,t)=>Math.max(0,Math.min(RULES.pills,Math.ceil((total-t)/total*RULES.pills-1e-9)));
@@ -375,22 +380,23 @@ async function photohunt(s){
  // the rings on the photos: green = mine, pink = theirs, yellow = a hint
  function syncMarks(){if(!st)return;const r=resolveRound(st.n,st.regions.length),old=new Map(st.marks.map(m=>[m.i,m]));st.marks=[];st.found=[];st.hinted=[];
   for(const [i,c] of r.own){const m=old.get(i)||{i,t:0,seed:((i+1)*.618+r.own.size*.37)%1};m.hinted=!!c.h;m.col=c.p===me?'#3cf03c':'#ff5fb4';st.marks.push(m);st.found.push(i);if(c.h)st.hinted.push(i);}}
- function claim(i,h=false){if(phase!=='hunt'||!st||resolveRound(st.n,st.regions.length).own.has(i))return;const t=+st.el.toFixed(3);
+ function claim(i,h=false){if(phase!=='hunt'||!st||resolveRound(st.n,st.regions.length).own.has(i))return;st.el=Math.min(st.total,Math.max(st.el,netEl()));const t=+st.el.toFixed(3);
   nlog(st.n).c[me].push({i,t,h});nfh.event({c:[st.n,i,t,h?1:0]});syncMarks();if(h)sfx('hint');else{clockGlow=1;sfx('find');s.react(me,'happy');}}
  async function netStartRound(n){const spec=netSpec(n),total=roundTime(n),lg=nlog(n);P().round=n;
   st={n,spec,regions:spec.pair.regions.slice(0,8),found:[],hinted:[],marks:[],misses:[],total,left:total,clock:RULES.clockStart,swap:seededRandom(s.seed+':swap'+n)()<.5,images:null,bonusLeft:0,bonusT:0,el:0};
   lg.R=st.regions.length;lg.total=total;phase='loading';T=0;const mine=st;
-  let imgs=await imagesFor(spec.pair);if(mine!==st||!s.alive)return;
+  let imgs=await imagesFor(spec.pair);for(let k=0;k<2&&spec.pair.urls&&(!imgs||imgs.some(i=>!i))&&mine===st&&s.alive;k++){cache.delete(spec.pair.id);imgs=await imagesFor(spec.pair);}
+  if(mine!==st||!s.alive)return;
   if(!imgs||imgs.some(i=>!i)){spec.pair=illustratedPair(n,seededRandom(s.seed+':scene'+n));spec.mirror=false;st.regions=spec.pair.regions;lg.R=st.regions.length;imgs=spec.pair.images;}
-  st.images=st.swap?[imgs[1],imgs[0]]:imgs;phase='sync';await nfh.start('r'+n);if(mine!==st||!s.alive)return;phase='intro';T=0;syncMarks();
+  st.images=st.swap?[imgs[1],imgs[0]]:imgs;phase='sync';await nfh.start('r'+n);if(mine!==st||!s.alive)return;st.t0=performance.now();phase='intro';T=0;syncMarks();
   const next=netSpec(n+1);if(next.pair.urls)void imagesFor(next.pair);}
  function netEndRound(){phase='ending';T=0;nlog(st.n).re[me]=1;nfh.event({re:st.n});}
  function netDecide(){const lg=nlog(st.n),r=resolveRound(st.n,st.regions.length);lg.solved=r.solvedT!=null;syncMarks();
   if(lg.solved){phase='solved';T=0;st.left=st.total-r.solvedT;sfx('complete');}else{phase='timeup';T=0;st.left=0;sfx('timeup');s.react(me,'sad');}}
  function netUpdate(dt){clockGlow=Math.max(0,clockGlow-dt*2.2);quitGlow=Math.max(0,quitGlow-dt*3);lockT=Math.max(0,lockT-dt);
   if(!st)return;T+=dt;for(const m of st.marks)m.t+=dt;for(const m of st.misses)m.t+=dt;st.misses=st.misses.filter(m=>m.t<.9);
-  if(phase==='intro'&&T>1.7){phase='hunt';T=0;st.el=0;sfx('go');}
-  else if(phase==='hunt'){st.el+=dt;st.left=Math.max(0,st.total-st.el);const r=resolveRound(st.n,st.regions.length);st.clock=Math.max(RULES.clockFloor,RULES.clockStart-RULES.clockDecay*(st.el-r.last));
+  if(phase==='intro'&&netEl()>=0){phase='hunt';T=0;st.el=0;sfx('go');}
+  else if(phase==='hunt'){st.el=Math.min(st.total,Math.max(st.el,netEl()));st.left=Math.max(0,st.total-st.el);const r=resolveRound(st.n,st.regions.length);st.clock=Math.max(RULES.clockFloor,RULES.clockStart-RULES.clockDecay*(st.el-r.last));
    if(st.left<st.total*.2&&st.left>0){const sec=Math.ceil(st.left);if(sec!==lastTick){lastTick=sec;sfx('tick');}}
    // online test bot: takes an open difference every 1-4 s for three rounds, then lets the clock run out
    if(netBot&&st.n<3&&(botT-=dt)<=0){botT=1+Math.random()*3;const open=st.regions.map((_,i)=>i).filter(i=>!r.own.has(i));if(open.length)claim(open[Math.floor(Math.random()*open.length)]);}
