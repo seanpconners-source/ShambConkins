@@ -16,7 +16,7 @@ for(const [id,course0] of games){
  const D=()=>page.evaluate(()=>{const d=window.ShambConkins.store.session?.debug;if(!d)return null;return {mode:d.mode,phase:d.phase,clock:d.clock,course:d.course?.id,humans:d.humans,ghost:d.ghost,heads:d.headOK,
   K:(d.K||[]).map(k=>({lap:k.lap,s:Math.round(k.s),v:Math.round(k.v),finished:k.finished,place:k.place,balloons:k.balloons,cpu:k.cpu}))};}).catch(()=>null);
  const until=async(test,ms=20000)=>{let d;for(let t=0;t<ms;t+=200){d=await D();if(d&&test(d))return d;await page.waitForTimeout(200);}return d;};
- const pass=async()=>{for(let i=0;i<300;i++){const b=await page.$('.pass-overlay [data-ready]');if(b){await b.click();return true;}await page.waitForTimeout(200);}return false;};
+ const pass=async()=>{for(let i=0;i<300;i++){if(await page.evaluate(()=>{const b=document.querySelector('.pass-overlay [data-ready]');b?.click();return !!b;}))return true;await page.waitForTimeout(200);}return false;};
  const dbg=(fn,...a)=>page.evaluate(([fn,a])=>window.ShambConkins.store.session.debug[fn](...a),[fn,a]);
  const result=async()=>{for(let i=0;i<400;i++){const t=await page.evaluate(()=>{const d=document.getElementById('dialog');return d?.open?d.textContent.replace(/\s+/g,' ').trim():null;}).catch(()=>null);if(t&&/wins|takes|tie|draw/i.test(t))return t;await page.waitForTimeout(250);}return null;};
  if(course){let d=await until(d=>d.phase==='select',10000);if(d?.phase!=='select'){fail(`${tag} no course select (${d?.phase})`);await browser.close();continue;}
