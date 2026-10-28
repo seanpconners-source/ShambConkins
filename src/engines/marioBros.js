@@ -240,7 +240,8 @@ async function marioBros(s){
     p.vx+=dir*accel;const cap=p.jumpSpd<PH.walk?PH.walk:PH.run;if(Math.abs(p.vx)>cap)p.vx=Math.sign(p.vx)*cap;}
    p.vy+=p.jumping&&p.vy<0?p.gHold:p.gFall;if(p.vy>=PH.maxFall)p.vy=PH.fallReset;
   }
-  if(bPress&&p.fire&&!p.crouch&&w.fire.filter(f=>f.area===p.area).length<2){w.fire.push({x:p.x+p.facing*8,y:p.y-pH(p)*.55,vx:p.facing*4,vy:3,t:0,area:p.area});p.throwT=8;sfx.fire();}
+  if(bPress&&p.fire&&!p.crouch&&w.fire.filter(f=>f.area===p.area&&!f.remote).length<2){const fb={x:p.x+p.facing*8,y:p.y-pH(p)*.55,vx:p.facing*4,vy:3,t:0,area:p.area};w.fire.push(fb);p.throwT=8;sfx.fire();
+   if(net)ev({fb:[w.key,p.area,Math.round(fb.x*10)/10,Math.round(fb.y*10)/10,fb.vx,Math.round(performance.now()-netT0)]});}
   // ---- move and collide
   const h=pH(p),cam=cams[p.i];
   p.x+=p.vx;
@@ -334,10 +335,10 @@ async function marioBros(s){
     else if(e.state==='walk'){e.state='shell';e.vx=0;e.t=0;}
     else if(e.vx!==0){e.vx=0;e.t=0;}
     else{e.vx=p.x<e.x?3:-3;e.grace=10;e.chain=0;sfx.kick();}
-    e.remote=false;esync(w,e);
+    e.remote=false;e.kick=me;esync(w,e);
     p.y=Math.min(p.y,eTop);p.vy=-4;p.jumping=!!inp.jump;p.grounded=false;p.ride=null;continue;
    }
-   if(e.state==='shell'&&e.vx===0){e.vx=p.x<e.x?3:-3;e.grace=12;e.t=0;e.chain=0;sfx.kick();addScore(p,w,400,e.x,eTop-6);e.remote=false;esync(w,e);continue;}
+   if(e.state==='shell'&&e.vx===0){e.vx=p.x<e.x?3:-3;e.grace=12;e.t=0;e.chain=0;sfx.kick();addScore(p,w,400,e.x,eTop-6);e.remote=false;e.kick=me;esync(w,e);continue;}
    if(e.state==='shell'&&e.grace>0)continue;
    hurt(p,w);
   }
@@ -357,23 +358,28 @@ async function marioBros(s){
 
  function stepWorld(w,p){
   const cam=cams[p.i],a=AR(w,p.area),an=p.area;
-  if(p.tf)return;
-  a.fbT++;
-  for(const l of a.lifts){const ox=l.x,oy=l.y;l.wrapped=false;
-   if(l.kind==='loop'){l.y+=l.vy;if(l.vy>0&&l.y>ROWS*T+8){l.y=-8;l.wrapped=true;}if(l.vy<0&&l.y<-8){l.y=ROWS*T+8;l.wrapped=true;}}
+  // the NES freezes the world while Mario grows or shrinks; online the partner keeps playing in it, so it runs on
+  if(p.tf&&!net)return;
+  // online: this phone runs this area for both (see authHere); lifts and firebars run on the shared step count
+  const auth=authHere(w,an);if(net){stepped.k=w.key;stepped.an=an;stepped.f=frames;}
+  a.fbT=net?netStep:a.fbT+1;
+  const ln=net?clamp(netStep-(a.lsN??0),0,40000):1;if(net)a.lsN=Math.max(a.lsN??0,netStep);
+  for(const l of a.lifts){l.dx=0;l.dy=0;l.wrapped=false;}
+  for(let k=0;k<ln;k++)for(const l of a.lifts){const ox=l.x,oy=l.y;let wr=false;
+   if(l.kind==='loop'){l.y+=l.vy;if(l.vy>0&&l.y>ROWS*T+8){l.y=-8;wr=true;}if(l.vy<0&&l.y<-8){l.y=ROWS*T+8;wr=true;}}
    else if(l.kind==='h'){l.x+=l.vx;if(l.x<l.x0||l.x>l.x1){l.vx=-l.vx;l.x=clamp(l.x,l.x0,l.x1);}}
    else if(l.kind==='v'){l.y+=l.vy;if(l.y<l.y0||l.y>l.y1){l.vy=-l.vy;l.y=clamp(l.y,l.y0,l.y1);}}
-   l.dx=l.x-ox;l.dy=l.wrapped?0:l.y-oy;}
+   l.dx+=l.x-ox;if(wr)l.wrapped=true;else l.dy+=l.y-oy;}
   for(const e of a.enemies){
    if(!e.alive)continue;
-   // online the partner's view wakes enemies too, and an enemy is dropped only once it is behind both runners
-   if(!e.active){if(e.x<reachX(cam,w,an)+view.w+24)e.active=true;else continue;}
+   // online the partner's screen (its real width) wakes enemies too, and an enemy is dropped only once it is behind both
+   if(!e.active){if(e.x<reachR(cam,w,an)+24)e.active=true;else continue;}
    if(e.x<backX(cam,w,an)-96||e.y>ROWS*T+48){e.alive=false;continue;}
    e.frame+=STEP;
    if(e.state==='dying'){e.vy+=.25;e.x+=e.vx;e.y+=e.vy;continue;}
    if(e.state==='squash'){e.t++;if(e.t>30)e.alive=false;continue;}
    if(e.type==='piranha'){e.t++;
-    if(e.state==='hidden'){if(e.t>90&&Math.abs(p.x-e.x)>26){e.state='up';e.t=0;}}
+    if(e.state==='hidden'){if(e.t>90&&Math.abs(p.x-e.x)>26&&!(partnerIn(w,an)&&Math.abs(pl[them].x-e.x)<=26)){e.state='up';e.t=0;}}
     else if(e.state==='up'){e.off=Math.min(24,e.off+.8);if(e.off>=24){e.state='out';e.t=0;}}
     else if(e.state==='out'){if(e.t>72){e.state='down';e.t=0;}}
     else{e.off=Math.max(0,e.off-.8);if(e.off<=0){e.state='hidden';e.t=0;}}
@@ -386,10 +392,11 @@ async function marioBros(s){
    if(isLava(tileAt(w,an,Math.floor(e.x/T),Math.floor((e.y-4)/T))))e.alive=false;
    if(e.state==='shell'){if(e.grace>0)e.grace--;
     if(e.vx===0){e.t++;if(e.t>480){e.state='walk';e.vx=p.x<e.x?-.5:.5;}}
-    else{if(e.x>reachX(cam,w,an)+view.w+48){e.alive=false;continue;}
-     // a shell the partner kicked knocks enemies over here too, but the points are theirs
+    else{if(e.x>reachR(cam,w,an)+48){e.alive=false;continue;}
+     // a shell the partner kicked knocks enemies over on the phone that runs this area (its snapshots show them
+     // falling here), but the points are theirs; a shell you kicked is yours to judge
      const kp=e.remote?null:p;
-     for(const o of a.enemies)if(o!==e&&o.alive&&o.active&&o.state!=='dying'&&o.state!=='squash'&&Math.abs(o.x-e.x)<14&&(o.type==='piranha'?o.off>4&&e.y>o.home-o.off&&e.y-14<o.home:Math.abs(o.y-e.y)<16)){e.chain=(e.chain||0)+1;if(e.chain>7){killFoe(w,o,Math.sign(e.vx),null);if(kp)oneUp(p,w,o.x,o.y-16);}else killFoe(w,o,Math.sign(e.vx),kp,SHELL_CHAIN[e.chain-1]);}}}
+     if(!(net&&e.remote&&!auth))for(const o of a.enemies)if(o!==e&&o.alive&&o.active&&o.state!=='dying'&&o.state!=='squash'&&Math.abs(o.x-e.x)<14&&(o.type==='piranha'?o.off>4&&e.y>o.home-o.off&&e.y-14<o.home:Math.abs(o.y-e.y)<16)){e.chain=(e.chain||0)+1;if(e.chain>7){killFoe(w,o,Math.sign(e.vx),null);if(kp)oneUp(p,w,o.x,o.y-16);}else killFoe(w,o,Math.sign(e.vx),kp,SHELL_CHAIN[e.chain-1]);}}}
   }
   // walkers turn round when they meet
   const ws=a.enemies.filter(e=>e.alive&&e.active&&e.state==='walk'&&e.type!=='piranha'&&e.type!=='paraRed');
@@ -405,11 +412,14 @@ async function marioBros(s){
    if(solidAt(w,an,f.x,f.y+4)&&f.vy>0){f.y=Math.floor((f.y+4)/T)*T-4;f.vy=-3;}
    if(solidAt(w,an,f.x+Math.sign(f.vx)*4,f.y))gone=true;
    for(const e of a.enemies){if(gone||!e.alive||!e.active||e.state==='dying'||e.state==='squash')continue;const eTop=e.type==='piranha'?e.home-e.off:e.y-(e.state==='walk'&&e.type!=='goomba'?22:14),eBot=e.type==='piranha'?e.home:e.y;
-    if(e.type==='piranha'&&e.off<4)continue;if(Math.abs(f.x-e.x)<10&&f.y>eTop-4&&f.y<eBot+4){killFoe(w,e,Math.sign(f.vx),p,200);gone=true;}}
-   const b=a.bowser;if(!gone&&b&&(b.state==='idle')&&Math.abs(f.x-b.x)<14&&f.y>b.y-32&&f.y<b.y){gone=true;b.hp--;sfx.bump();if(b.hp<=0){b.state='dead';b.fake=true;b.vy=-3;addScore(p,w,5000,b.x,b.y-40);sfx.bowserFall();if(net)ev({bd:[w.key,an,1]});}}
+    // the partner's fireballs (online) are only shown here: their phone judges what they hit
+    if(e.type==='piranha'&&e.off<4)continue;if(Math.abs(f.x-e.x)<10&&f.y>eTop-4&&f.y<eBot+4){if(!f.remote)killFoe(w,e,Math.sign(f.vx),p,200);gone=true;}}
+   const b=a.bowser;if(!gone&&b&&(b.state==='idle')&&Math.abs(f.x-b.x)<14&&f.y>b.y-32&&f.y<b.y){gone=true;sfx.bump();
+    // online a hit on Bowser counts on the phone that runs the castle ({bh}); the 5 hits add up from both players
+    if(!f.remote){b.hp--;if(net)b.lock=evA({bh:[w.key,an]});if(b.hp<=0){b.state='dead';b.fake=true;b.vy=-3;addScore(p,w,5000,b.x,b.y-40);sfx.bowserFall();if(net)ev({bd:[w.key,an,1]});}}}
    if(gone){w.fx.burst(f.x,f.y,{n:6,colors:['#fff','#fc9838','#d82800'],speed:60,life:.25,size:1.6});}
    if(gone||f.x<cam.x-16||f.x>cam.x+view.w+16||f.y>ROWS*T+16||f.t>300)w.fire.splice(k,1);}
-  stepBowser(w,p,a);
+  stepBowser(w,p,a,auth);
   for(let k=w.debris.length-1;k>=0;k--){const d=w.debris[k];d.t++;d.vy+=.3;d.x+=d.vx;d.y+=d.vy;if(d.y>ROWS*T+20)w.debris.splice(k,1);}
   for(let k=w.pops.length-1;k>=0;k--){const q=w.pops[k];q.t++;q.y+=q.vy;q.vy+=.32;if(q.t>30){w.pops.splice(k,1);popText(w,'200',q.x,q.y);}}
   for(const [k,t] of w.bumps){if(t>=10)w.bumps.delete(k);else w.bumps.set(k,t+1);}
@@ -418,22 +428,28 @@ async function marioBros(s){
  }
  // Bowser paces on his bridge, hops, and breathes fire at the runner's height; before he is on screen his flames
  // come in from the right
- function stepBowser(w,p,a){
+ function stepBowser(w,p,a,auth=true){
   const b=a.bowser,def=a.def,cam=cams[p.i];
-  for(let k=w.flames.length-1;k>=0;k--){const f=w.flames[k];f.x+=f.vx;if(Math.abs(f.y-f.ty)>.6)f.y+=Math.sign(f.ty-f.y)*.6;if(f.x<cam.x-40)w.flames.splice(k,1);}
+  for(let k=w.flames.length-1;k>=0;k--){const f=w.flames[k];f.x+=f.vx;if(Math.abs(f.y-f.ty)>.6)f.y+=Math.sign(f.ty-f.y)*.6;if(f.x<cam.x-40&&f.x<backX(cam,w,p.area)-40)w.flames.splice(k,1);}
   if(!b)return;
   if(b.state==='dead'||b.state==='fall'){b.vy+=.2;b.y+=b.vy;return;}
-  const onScreen=b.x<cam.x+view.w+16;
-  if(!onScreen){if(p.x>def.bowserFireFrom&&!p.axe){b.fireT--;if(b.fireT<=0){b.fireT=140+Math.floor(s.random()*80);const ty=Math.floor(p.y/T)*T-[6,22,38][Math.floor(s.random()*3)];w.flames.push({x:cam.x+view.w+12,y:ty,ty,vx:-1.1,area:p.area});sfx.bowserFire();}}return;}
-  if(p.axe)return;
-  b.t++;b.dir=p.x>b.x?1:-1;
+  // online Bowser and his flames run on the phone that runs the castle; this one shows its snapshots and flames {fl}
+  if(!auth){b.mouth=Math.max(0,b.mouth-1);return;}
+  // online he goes after whichever runner is nearer (the partner's real screen counts for "on screen")
+  const q=pl[them],qIn=partnerIn(w,p.area)&&!q.dead,tgt=qIn&&(p.out||p.dead||Math.abs(q.x-b.x)<Math.abs(p.x-b.x))?q:p;
+  const onScreen=b.x<cam.x+view.w+16||qIn&&b.x<(q.cx??q.x)+(q.vw||view.w)+16;
+  const flame=f=>{w.flames.push(f);sfx.bowserFire();if(net)ev({fl:[w.key,p.area,Math.round(f.x),Math.round(f.y),Math.round(f.ty),f.vx,Math.round(performance.now()-netT0)]});};
+  if(!onScreen){if(tgt.x>def.bowserFireFrom&&!tgt.axe){b.fireT--;if(b.fireT<=0){b.fireT=140+Math.floor(s.random()*80);const ty=Math.floor(tgt.y/T)*T-[6,22,38][Math.floor(s.random()*3)];
+   flame({x:tgt===p?cam.x+view.w+12:(q.cx??q.x)+(q.vw||view.w)+12,y:ty,ty,vx:-1.1,area:p.area});}}return;}
+  if(p.axe||qIn&&q.axe)return;
+  b.t++;b.dir=tgt.x>b.x?1:-1;
   // pace a little left and right of home
   if(b.t%120===0)b.goal=b.home+(Math.floor(s.random()*5)-2)*T;b.x+=clamp(b.goal-b.x,-.5,.5);
   const supported=()=>{const r=Math.floor((b.y+1)/T);return solid(tileAt(w,p.area,Math.floor((b.x-8)/T),r))||solid(tileAt(w,p.area,Math.floor((b.x+8)/T),r));};
   if(b.vy!==0||!supported()){b.vy+=.12;b.y+=b.vy;const r=Math.floor(b.y/T);if(b.vy>0&&supported()&&b.y>=r*T){b.y=r*T;b.vy=0;}if(b.y>ROWS*T+40){b.state='dead';}}
   else{b.jumpT--;if(b.jumpT<=0){b.jumpT=90+Math.floor(s.random()*120);b.vy=-3;b.y-=1;}}
   b.mouth=Math.max(0,b.mouth-1);
-  b.fireT--;if(b.fireT<=0){b.fireT=110+Math.floor(s.random()*90);b.mouth=24;const ty=clamp(p.y-14,4*T,b.y-10);w.flames.push({x:b.x-18,y:b.y-20,ty,vx:-1.2,area:p.area});sfx.bowserFire();}
+  b.fireT--;if(b.fireT<=0){b.fireT=110+Math.floor(s.random()*90);b.mouth=24;const ty=clamp(tgt.y-14,4*T,b.y-10);flame({x:b.x-18,y:b.y-20,ty,vx:-1.2,area:p.area});}
  }
  function stepCastle(p,w){
   const tl=p.tally;if(!tl)return;tl.t++;
@@ -650,7 +666,7 @@ async function marioBros(s){
  function startFromTitle(){if(phase!=='title'||titleT<.4)return;twoPlayer=mode==='world'&&menuSel===1&&!s.solo&&!net;sfx.coin();note(pl[0],twoPlayer?'2 player game':'1 player game');beginTurn(net?me:0);}
  async function beginTurn(i){
   // online: no hand-off; both phones show the WORLD card and start together
-  if(net){phase='handoff';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;clock=0;acc=0;startCard(i);return;}   // i = this phone's player
+  if(net){phase='handoff';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;netT0=performance.now();netStep=0;clock=0;acc=0;startCard(i);return;}   // i = this phone's player
   phase='handoff';turn=i;for(const pd of pads){pd.stick=null;pd.jump=null;}for(const inp of inputs)Object.assign(inp,{l:0,r:0,d:0,jump:0,b:0,press:0,bPress:0});
   const n0=s.players[0].name,n1=s.players[1].name,me=s.players[i].name,other=s.players[1-i].name;let desc,summary=null;
   if(s.solo){desc=mode==='world'?`Play World 1 with ${LIVES} lives. Rescue Toad and the world starts over with your score and lives; keep going until game over.`:mode==='coins'?`Round ${soloCleared+1}: grab at least ${coinGoal()} coins in 60 seconds to reach the next round.`:`Dash ${soloCleared+1}: reach the flagpole within ${dashCap()} seconds to go again with less time.`;
@@ -704,10 +720,47 @@ async function marioBros(s){
  let itemSeq=0,graceUntil=0,nextStage=0,bot=null,netStarted=false;const theirDone=new Map();
  function ev(e){if(nf)nf.event(e);}
  const enemyRef=(w,e)=>{for(const [an,a] of Object.entries(w.areas)){const k=a.enemies.indexOf(e);if(k>=0)return [an,k];}return null;};
- function esync(w,e){if(!net||w.key==null)return;const r=enemyRef(w,e);if(r)ev({es:[w.key,r[0],r[1],e.state,e.type,Math.round(e.x*10)/10,Math.round(e.y*10)/10,e.vx,e.vy]});}
+ function esync(w,e){if(!net||w.key==null)return;const r=enemyRef(w,e);if(r)e.lock=evA({es:[w.key,r[0],r[1],e.state,e.type,Math.round(e.x*10)/10,Math.round(e.y*10)/10,e.vx,e.vy]});}
+ // an event that changes what the area's runner phone simulates: numbered, so this phone ignores snapshots older than it
+ function evA(e){ev(e);return ++esOut;}
  const partnerIn=(w,an)=>!!net&&!!pl[them].net&&!pl[them].out&&!pl[them].inCastle&&w&&pl[them].wk===w.key&&pl[them].area===an;
- const reachX=(cam,w,an)=>partnerIn(w,an)?Math.max(cam.x,pl[them].x-view.w*.44):cam.x;
- const backX=(cam,w,an)=>partnerIn(w,an)?Math.min(cam.x,pl[them].x-view.w*.44):cam.x;
+ // the partner's camera (its own screen width: a landscape phone sees twice as far as a portrait one)
+ const reachR=(cam,w,an)=>partnerIn(w,an)?Math.max(cam.x+view.w,(pl[them].cx??pl[them].x)+(pl[them].vw||view.w)):cam.x+view.w;
+ const backX=(cam,w,an)=>partnerIn(w,an)?Math.min(cam.x,pl[them].cx??pl[them].x-view.w*.44):cam.x;
+ // ---- who runs an area. Both phones simulate the area they are in (so play stays smooth), but one of them is the
+ // authority and streams its enemies, power-ups and Bowser ({ws} in the snapshot, ~10/s): player 1's phone for the area
+ // it is in, player 2's phone for an area player 1's isn't in (no fresh player-1 snapshot of it for 0.7 s). The other phone
+ // follows those snapshots: an enemy the authority lists is set to its state, one it lists as gone is removed, one it
+ // hasn't woken yet is left alone (never a guess from silence). Changes this phone made itself (stomps, kicks, kills,
+ // Bowser hits) are numbered events; a snapshot that hasn't seen them yet (ack) doesn't undo them.
+ let netT0=0,netStep=0,esOut=0,esIn=0,wsSeq=0,wsF=-99;const hostSeen=new Map(),stepped={k:null,an:null,f:-99};
+ const areaId=(k,an)=>k+':'+an;
+ function authHere(w,an){if(!net||me===0)return true;const t=hostSeen.get(areaId(w.key,an));return !t||performance.now()-t>700;}
+ const steppingHere=(k,an)=>stepped.k===k&&stepped.an===an&&frames-stepped.f<12;
+ function packArea(){const p=pl[me],w=worlds[me];if(!w||w.key==null||!steppingHere(w.key,stepped.an)||frames-wsF<6)return null;const an=stepped.an;if(!authHere(w,an))return null;
+  wsF=frames;const a=AR(w,an),r=n=>Math.round(n*10)/10,e=[];
+  a.enemies.forEach((o,k)=>{if(o.alive&&o.active)e.push([k,o.state,o.type,r(o.x),r(o.y),+o.vx.toFixed(3),+o.vy.toFixed(3),o.t|0,r(o.off||0),+(o.ph||0).toFixed(3),o.kick??-1]);});
+  const b=a.bowser;
+  return {k:w.key,a:an,n:++wsSeq,ms:Math.round(performance.now()-netT0),ack:esIn,m:a.enemies.map(o=>!o.alive?0:o.active?2:1).join(''),e,
+   it:w.items.filter(i=>i.area===an&&i.id&&!i.emerge).map(i=>[i.id,r(i.x),r(i.y),+i.vx.toFixed(3),+i.vy.toFixed(3)]),
+   b:b?[r(b.x),r(b.y),+b.vy.toFixed(3),b.state,b.hp,b.dir,b.mouth,r(b.goal),b.fireT,b.jumpT,b.t]:0};}
+ function applyArea(d){if(!d||!Number.isInteger(d.k)||typeof d.a!=='string')return;
+  if(me!==0)hostSeen.set(areaId(d.k,d.a),performance.now());
+  else if(steppingHere(d.k,d.a))return;   // player 1's phone runs the area it is in
+  const w=W(d.k),a=w&&AR(w,d.a);if(!a||typeof d.m!=='string')return;
+  const age=clamp((performance.now()-netT0-(+d.ms||0))*.06,0,20),listed=new Map((d.e||[]).map(x=>[x[0],x]));
+  a.enemies.forEach((e,k)=>{const st=d.m[k];if(st===undefined||(e.lock||0)>d.ack)return;
+   if(st==='0'){if(e.alive&&e.state!=='dying'&&e.state!=='squash')e.alive=false;return;}
+   const x=listed.get(k);if(st!=='2'||!x)return;
+   const [,state,type,sx,sy,vx,vy,t,off,ph,kick]=x,fall=state==='dying'||state==='squash';
+   if(!e.alive){if(fall)return;e.alive=true;}
+   const tx=sx+(state==='walk'||state==='shell'?vx*age:0);
+   Object.assign(e,{active:true,state,type,vx,vy,t,off,ph,kick,remote:kick!==me});
+   if(Math.abs(tx-e.x)>24||fall)e.x=tx;else e.x+=(tx-e.x)*.5;e.y=sy;});
+  for(const [id,x,y,vx,vy] of d.it||[]){const it=w.items.find(i=>i.id===id&&i.area===d.a);if(!it||it.emerge)continue;const tx=x+vx*age;if(Math.abs(tx-it.x)>24)it.x=tx;else it.x+=(tx-it.x)*.5;it.y=y;it.vx=vx;it.vy=vy;}
+  const b=a.bowser;if(b&&Array.isArray(d.b)&&b.state!=='dead'&&b.state!=='fall'){const [x,y,vy,state,hp,dir,mouth,goal,fireT,jumpT,t]=d.b;
+   if(Math.abs(x-b.x)>24)b.x=x;else b.x+=(x-b.x)*.5;Object.assign(b,{y,vy,dir,mouth,goal,fireT,jumpT,t});if((b.lock||0)<=d.ack)b.hp=hp;
+   if(state==='dead'||state==='fall'){b.state=state;if(state==='dead'&&b.vy===0)b.vy=-3;}}}
  // World 1: the first one to the goal gives the other NET_GRACE seconds; Castle Dash: the race is on the flag time
  function goalReached(p){if(!net||p.i!==me||mode==='coins')return;ev({gl:[p.stage]});}
  function netStageDone(p,next){graceUntil=0;nextStage=next;phase='stage-wait';ev({sc:[p.stage,next]});tryAdvance();}
@@ -715,7 +768,7 @@ async function marioBros(s){
  function tryAdvance(){if(phase!=='stage-wait')return;const p=pl[me],q=pl[them];
   if(!(theirDone.has(p.stage)||q.out||nf.gone))return;
   if(nextStage<0){p.done=true;phase='net-wait';checkNetEnd();return;}
-  if(p.out){p.out=false;p.lives=1;}p.stage=nextStage;p.checkOn=false;worlds[me]=null;startCard(me);}
+  graceUntil=0;if(p.out){p.out=false;p.lives=1;}p.stage=nextStage;p.checkOn=false;worlds[me]=null;startCard(me);}
  function checkNetEnd(){const p=pl[me],q=pl[them];if(phase==='net-end'||phase==='end')return;
   if(mode==='world'&&(p.out||p.done)&&(q.out||q.done||nf.gone)){if(p.out&&!q.out&&!q.done)return;netEnd();}}
  // a lost life: next to the partner in a bubble (same stage and area, partner up and running), else the checkpoint
@@ -726,32 +779,40 @@ async function marioBros(s){
  const PF=['big','fire','star','inv','left','crouch','grounded','skidding','finished','inCastle','flag','sidePipe','out','done','dead','auto','axe','over'];
  function packP(p){const v={big:p.big,fire:p.fire,star:p.star>0,inv:p.inv>0,left:p.facing<0,crouch:p.crouch,grounded:p.grounded,skidding:p.skidding,finished:p.finished,inCastle:p.inCastle,flag:!!p.flag,sidePipe:p.pipe?.kind==='side',out:p.out,done:p.done,dead:p.dead>0,auto:p.auto,axe:!!p.axe,over:p.over};
   let fl=0;PF.forEach((k,j)=>{if(v[k])fl|=1<<j;});const r=n=>Math.round(n*10)/10;
-  return [r(p.x),r(p.y),+p.vx.toFixed(3),+p.vy.toFixed(3),fl,p.area,p.stage,p.lap,p.score,p.coins,p.lives,Math.round(p.best),+p.finishT.toFixed(3),p.bubble,p.stagesCleared,wkey(p.stage,p.lap),p.pipe?.kind==='down'||p.pipe?.kind==='up'?Math.round(p.y):null];}
+  return [r(p.x),r(p.y),+p.vx.toFixed(3),+p.vy.toFixed(3),fl,p.area,p.stage,p.lap,p.score,p.coins,p.lives,Math.round(p.best),+p.finishT.toFixed(3),p.bubble,p.stagesCleared,wkey(p.stage,p.lap),p.pipe?.kind==='down'||p.pipe?.kind==='up'?Math.round(p.y):null,Math.round(cams[p.i].x),Math.round(view.w)];}
  function unpackP(a){const q=pl[them];if(!Array.isArray(a)||a.length<16)return;const first=!q.net||q.area!==a[5]||q.wk!==a[15];q.net={a,at:performance.now()};const fl=a[4],F=k=>!!(fl&1<<PF.indexOf(k));
   q.vx=a[2];q.vy=a[3];q.big=F('big');q.fire=F('fire');q.star=F('star')?60:0;q.inv=F('inv')?60:0;q.facing=F('left')?-1:1;q.crouch=F('crouch');q.grounded=F('grounded');q.skidding=F('skidding');
   if(F('finished')&&!q.finished){q.finished=true;q.finishT=a[12];}q.inCastle=F('inCastle');q.flag=F('flag')?{t:0,phase:'slide'}:null;q.pipe=F('sidePipe')?{kind:'side'}:null;q.out=F('out');q.done=F('done');q.dead=F('dead')?1:0;q.auto=F('auto');q.axe=F('axe')?{}:null;q.over=F('over');
-  q.area=a[5];q.stage=a[6];q.lap=a[7];q.score=a[8];q.coins=a[9];q.lives=a[10];q.best=Math.max(q.best,a[11]);q.bubble=a[13];q.stagesCleared=a[14];q.wk=a[15];
+  q.area=a[5];q.stage=a[6];q.lap=a[7];q.score=a[8];q.coins=a[9];q.lives=a[10];q.best=Math.max(q.best,a[11]);q.bubble=a[13];q.stagesCleared=a[14];q.wk=a[15];if(Number.isFinite(a[17]))q.cx=a[17];if(a[18]>0)q.vw=a[18];
   if(first){q.x=a[0];q.y=a[1];}if(q.out||q.done)checkNetEnd();if(q.out)tryAdvance();}
  // the partner is shown moved on by its speed for the time since the snapshot, the jump eased out
  function stepRemote(dt){const q=pl[them],n=q.net;if(!n)return;const a=n.a,f=clamp((performance.now()-n.at)/1000,0,.25)*60;let tx=a[0]+(q.dead||q.bubble?0:q.vx*f),ty=a[1]+(q.grounded||q.dead||q.bubble?0:q.vy*f);
   const e=1-Math.exp(-dt*16);if(Math.abs(tx-q.x)>96||Math.abs(ty-q.y)>96){q.x=tx;q.y=ty;}else{q.x+=(tx-q.x)*e;q.y+=(ty-q.y)*e;}q.anim+=Math.abs(q.vx)*.11*dt*60;}
+ const W=k=>sharedWorlds.get(k)||(Number.isInteger(k)&&k>=0&&Math.floor(k/16)<STAGES.length?stageWorld(Math.floor(k/16),k%16):null);
  function onNetEvent(e){
-  const W=k=>[...sharedWorlds.values()].find(w=>w.key===k)||(Number.isInteger(k)&&k>=0&&Math.floor(k/16)<STAGES.length?stageWorld(Math.floor(k/16),k%16):null);
+  if(e.es||e.bh)esIn++;
   if(e.cn){const w=W(e.cn[0]),a=w&&AR(w,e.cn[1]);if(a&&!a.got[e.cn[2]])a.got[e.cn[2]]=1;}
   else if(e.tl){const [k,an,idx,t]=e.tl,w=W(k),a=w&&AR(w,an);if(!a||idx<0||idx>=a.tiles.length)return;const old=a.tiles[idx];a.tiles[idx]=t;a.content.delete(idx);w.bumps.set(a.ai*1e6+idx,0);
    if(t===0&&old===TILE.BRICK){const cc=idx%a.def.W,r=Math.floor(idx/a.def.W);w.bumps.delete(a.ai*1e6+idx);for(const [dx,dy] of [[-1,-1],[1,-1],[-1,0],[1,0]])w.debris.push({x:cc*T+8+dx*4,y:r*T+8+dy*4,vx:dx*1.2,vy:-4.5-(dy?0:-1.5),t:0,area:an});}}
   else if(e.it){const [k,an,id,type,x0,y0]=e.it,w=W(k);if(w&&AR(w,an)&&!w.items.some(it=>it.id===id))w.items.push({type,x:x0,y:y0,emerge:16,vx:0,vy:0,area:an,id});}
   else if(e.ig){const w=W(e.ig[0]);if(w){const j=w.items.findIndex(it=>it.id===e.ig[1]);if(j>=0)w.items.splice(j,1);}}
   else if(e.es){const [k,an,idx,st,type,x0,y0,vx,vy]=e.es,w=W(k),a=w&&AR(w,an),en=a?.enemies[idx];if(!en||!en.alive||en.state==='dying')return;
-   Object.assign(en,{state:st,type,x:x0,y:y0,vx,vy,t:0,active:true,remote:true,grace:st==='shell'&&vx?12:0,chain:0});}
+   Object.assign(en,{state:st,type,x:x0,y:y0,vx,vy,t:0,active:true,remote:true,grace:st==='shell'&&vx?12:0,chain:0});if(st==='shell'&&vx)en.kick=them;}
+  // the partner's fireball hit Bowser: counts on the phone that runs the castle (the partner's phone gives the points)
+  else if(e.bh){const [k,an]=e.bh,w=W(k),b=w&&AR(w,an)?.bowser;if(b&&b.state==='idle'&&authHere(w,an)){b.hp--;if(b.hp<=0){b.state='dead';b.fake=true;b.vy=-3;sfx.bowserFall();}}}
+  // Bowser's flames from the phone that runs the castle, moved on by the time they took to get here
+  else if(e.fl){const [k,an,x,y,ty,vx,ms]=e.fl,w=W(k);if(!w||!AR(w,an)||(me===0?steppingHere(k,an):authHere(w,an)))return;
+   const age=clamp((performance.now()-netT0-(+ms||0))*.06,0,120),f={x:x+vx*age,y,ty,vx,area:an};if(Math.abs(f.y-ty)>.6)f.y+=Math.sign(ty-f.y)*Math.min(Math.abs(ty-f.y),.6*age);w.flames.push(f);if(an===pl[me].area&&w===worlds[me])sfx.bowserFire();}
+  // the partner's fireball: shown only (their phone judges what it hits)
+  else if(e.fb){const [k,an,x,y,vx]=e.fb,w=W(k);if(w&&AR(w,an))w.fire.push({x,y,vx,vy:3,t:0,area:an,remote:true});}
   else if(e.bd){const [k,an,fake]=e.bd,w=W(k),b=w&&AR(w,an)?.bowser;if(b&&b.state!=='dead'){b.state='dead';b.vy=-3;if(fake)b.fake=true;}}
   else if(e.ax){const [k,an]=e.ax,w=W(k),b=w&&AR(w,an)?.bowser;if(b&&b.state!=='dead'&&b.state!=='fall'){b.state='fall';b.vy=0;}}
-  else if(e.gl){const p=pl[me];if(mode==='world'&&p.stage===e.gl[0]&&!graceUntil&&phase==='play')graceUntil=clock+NET_GRACE;}
+  else if(e.gl){const p=pl[me];if(mode==='world'&&p.stage===e.gl[0]&&!graceUntil&&phase==='play'&&!p.out)graceUntil=clock+NET_GRACE;}
   else if(e.sc){const [st,next]=e.sc;theirDone.set(st,next);const p=pl[me];
    // out of lives: follow the partner on to the next stage (and come back with a life)
    if(p.out&&p.stage===st&&phase!=='stage-wait'){nextStage=next;phase='stage-wait';}tryAdvance();}
   else if(e.out){pl[them].out=true;checkNetEnd();tryAdvance();}}
- const nf=net?netField(s,{hz:20,pack:()=>({t:+clock.toFixed(3),p:packP(pl[me])}),unpack:(i,d)=>{if(d)unpackP(d.p);},onEvent:onNetEvent}):null;
+ const nf=net?netField(s,{hz:20,pack:()=>{const o={t:+clock.toFixed(3),p:packP(pl[me])},ws=netStarted?packArea():null;if(ws)o.ws=ws;return o;},unpack:(i,d)=>{if(!d)return;unpackP(d.p);if(d.ws)applyArea(d.ws);},onEvent:onNetEvent}):null;
  // the run is over on this phone: swap finals and score the same on both
  async function netEnd(){if(phase==='net-end'||phase==='end')return;phase='net-end';endT=0;const p=pl[me];
   const mine={sc:p.score,co:p.coins,f:p.finished?1:0,t:+p.finishT.toFixed(3),b:Math.round(p.best),st:p.stage,done:p.done?1:0,cl:p.stagesCleared};nf.finish(mine);
@@ -761,7 +822,7 @@ async function marioBros(s){
   if(mode==='race'){if(clock>=RACE_CAP)return true;if(p.finished&&q.finished)return clock-Math.max(p.finishT,q.finishT)>3;return clock>Math.min(p.finished?p.finishT:Infinity,q.finished?q.finishT:Infinity)+NET_GRACE;}
   return false;};
  // online test bot: runs right holding B, jumps over what it bumps into
- function botInput(inp){const p=pl[me];bot.t++;inp.l=0;inp.r=1;inp.d=0;inp.b=bot.t%240<200?1:0;
+ function botInput(inp){const p=pl[me];bot.t++;inp.l=0;inp.r=1;inp.d=0;inp.b=bot.t%240<200?1:0;if(p.fire&&bot.t%20===0)inp.bPress=1;
   if(p.grounded&&Math.abs(p.vx)<.4)bot.stuck++;else bot.stuck=0;
   const w=worlds[me],foe=w&&AR(w,p.area).enemies.some(e=>e.alive&&e.active&&e.state!=='dying'&&e.state!=='squash'&&e.x-p.x>4&&e.x-p.x<46&&Math.abs(e.y-p.y)<28);
   if(p.grounded&&(foe||bot.stuck>10||bot.t%70===0||Math.random()<.01)){inp.press=1;bot.hold=foe?30:12+Math.floor(Math.random()*18);bot.stuck=0;}inp.jump=bot.hold-->0?1:0;}
@@ -769,14 +830,14 @@ async function marioBros(s){
   :mode==='coins'?`COIN RUSH LIVE: both of you at once in the same World 1 for 60 seconds, each on your own phone; coins and blocks one of you takes are gone for the other. Most coins wins. ${HELP}`
   :`CASTLE DASH LIVE: race each other through World 1-1 at the same time, each on your own phone. First to the flagpole wins; the other then has 10 seconds. ${HELP}`);
  // debug hooks for tests
- const teleport=(i,X,stage)=>{const q=pl[i];if(stage!==undefined&&stage!==q.stage){q.stage=stage;q.checkOn=false;worlds[i]=makeWorld(STAGES[stage]);q.area='main';}const w=worlds[i],a=AR(w,q.area),W=a.def.W;let cc=Math.floor(X/T),r=13;
+ const teleport=(i,X,stage)=>{const q=pl[i];if(stage!==undefined&&stage!==q.stage){q.stage=stage;q.checkOn=false;worlds[i]=net?stageWorld(stage,q.lap):makeWorld(STAGES[stage]);q.area='main';}const w=worlds[i],a=AR(w,q.area),W=a.def.W;let cc=Math.floor(X/T),r=13;
   const ok=(c,r)=>solid(a.tiles[r*W+c])&&!a.tiles[(r-1)*W+c]&&!a.tiles[(r-2)*W+c];
   outer:for(;cc<W-1;cc++)for(r=13;r>=4;r--)if(ok(cc,r))break outer;
   Object.assign(q,{x:cc*T+8,y:r*T,prevY:r*T,vx:0,vy:0,grounded:true,pipe:null,flag:null,dead:0,tf:null,ride:null,axe:null,auto:false});q.best=Math.max(q.best,q.x);cams[i].x=0;updateCamera(q,i,true);};
  s.debug={log,get phase(){return phase;},get clock(){return clock;},get turn(){return turn;},get twoPlayer(){return twoPlayer;},get warpMsg(){return warpMsg;},ghost,pl,STAGES,worlds,cams,view,PH,setClock(v){clock=v;},teleport,
   start(sel){menuSel=sel;titleT=1;startFromTitle();},
   toWarp(i){const q=pl[i],st=STAGES[0];const e=st.areas.main.pipes.find(p=>p.to);Object.assign(q,{area:'main',x:(e.c+1)*T,y:e.top*T,prevY:e.top*T,vx:0,vy:0,grounded:true,pipe:null,dead:0,tf:null,ride:null});cams[i].x=0;updateCamera(q,i,true);},
-  toWarpZone(i,n=4){const q=pl[i];if(q.stage!==1){q.stage=1;worlds[i]=makeWorld(STAGES[1]);}const pp=STAGES[1].areas.main.pipes.find(p=>p.warp===n);Object.assign(q,{area:'main',x:(pp.c+1)*T,y:pp.top*T,prevY:pp.top*T,vx:0,vy:0,grounded:true,pipe:null,dead:0,tf:null,ride:null,auto:false});cams[i].x=0;updateCamera(q,i,true);},
+  toWarpZone(i,n=4){const q=pl[i];if(q.stage!==1){q.stage=1;worlds[i]=net?stageWorld(1,q.lap):makeWorld(STAGES[1]);}const pp=STAGES[1].areas.main.pipes.find(p=>p.warp===n);Object.assign(q,{area:'main',x:(pp.c+1)*T,y:pp.top*T,prevY:pp.top*T,vx:0,vy:0,grounded:true,pipe:null,dead:0,tf:null,ride:null,auto:false});cams[i].x=0;updateCamera(q,i,true);},
   spawn(i,type,x,y=13*T){const a=AR(worlds[i],pl[i].area),e=spawnFoe({type,x,y});e.active=true;a.enemies.push(e);return a.enemies.length-1;},
   power(i,kind){const q=pl[i];q.big=kind!=='small';q.fire=kind==='fire';},
   kill(i){kill(pl[i],'hit');},
@@ -794,12 +855,15 @@ async function marioBros(s){
   else if(phase==='card'){cardT+=dt;const p=pl[turn];
    if(cardT>(cardKind==='gameover'?3:2.4)){if(cardKind==='gameover')advanceTurn();else{phase='play';for(const inp of inputs){inp.press=0;inp.bPress=0;}note(p,'play '+stageName(p));}}}
   else if(phase==='warp'){acc+=dt;while(acc>=STEP){acc-=STEP;warpMsg.t++;frames++;}if(warpMsg.t>720){const p=pl[warpMsg.i];warpMsg=null;
-   if(net&&mode==='world'){p.stagesCleared++;netStageDone(p,Math.min(2,lastStage));}else{p.stage=Math.min(2,lastStage);p.checkOn=false;p.stagesCleared++;worlds[p.i]=null;startCard(p.i);}}}
+   if(net&&mode==='world'){p.stagesCleared++;p.inCastle=true;netStageDone(p,Math.min(2,lastStage));}else{p.stage=Math.min(2,lastStage);p.checkOn=false;p.stagesCleared++;worlds[p.i]=null;startCard(p.i);}}}
   else if(LIVE.includes(phase)){
    acc+=dt;let steps=0;const i=turn,p=pl[i];
+   // online: the shared step count (lifts, firebars) ends this frame on the wall clock since the start, so both phones agree
+   if(net)netStep=Math.floor((performance.now()-netT0)*.06)-Math.min(5,Math.floor(acc/STEP));
    const moving=phase==='play'||mode==='race'||!!net;
-   while(acc>=STEP&&steps<5&&LIVE.includes(phase)){acc-=STEP;steps++;frames++;simT+=STEP;
-    if(phase==='play'&&!p.inCastle&&!p.axe)clock+=STEP;
+   while(acc>=STEP&&steps<5&&LIVE.includes(phase)){acc-=STEP;steps++;frames++;simT+=STEP;if(net)netStep++;
+    // online Coin Rush / Castle Dash end on this clock (the partner's grace, the cap), so it keeps running in the castle
+    if(phase==='play'&&(net&&mode!=='world'||!p.inCastle&&!p.axe))clock+=STEP;
     // online, out of lives: the view follows the partner until the next stage
     if(net&&p.out&&worlds[i]){const q=pl[them];if(q.net&&q.wk===worlds[i].key){p.area=q.area;p.x=q.x;p.y=q.y;}stepWorld(worlds[i],p);updateCamera(p,i);}
     else if(moving&&worlds[i]){const w=worlds[i],inp=phase==='play'?inputs[i]:still;readInput(i);stepPlayer(p,w,inp);if(worlds[i]===w&&LIVE.includes(phase)){interact(p,w,inp);stepWorld(w,p);updateCamera(p,i);}}
@@ -809,7 +873,7 @@ async function marioBros(s){
    for(const w of worlds)w&&w.fx.update(dt);for(let k=0;k<2;k++)flash[k]=Math.max(0,flash[k]-dt*1.8);
    if(net&&phase==='play'){
     // the partner reached the goal NET_GRACE seconds ago: pulled along to the next stage
-    if(mode==='world'&&graceUntil&&clock>graceUntil&&!p.out&&!p.flagged&&!p.axe&&!p.inCastle){p.dead=0;p.bubble=0;note(p,'pulled along');netStageDone(p,p.stage>=lastStage?-1:p.stage+1);}
+    if(mode==='world'&&graceUntil&&clock>graceUntil&&!p.out&&!p.flagged&&!p.axe&&!p.inCastle){p.dead=0;p.bubble=0;p.inCastle=true;note(p,'pulled along');netStageDone(p,p.stage>=lastStage?-1:p.stage+1);}
     else if(netOver())netEnd();}
    else if(phase==='play'&&mode!=='world'&&turnOver(p)){endT=0;
     if(turn===0||s.solo){if(s.solo)soloOk=mode==='coins'?p.coins>=coinGoal():p.finished;phase='turn-end';turnText=mode==='coins'?(s.solo?`${p.coins}/${coinGoal()} COINS`:`${p.coins} COINS`):p.finished?fmtRace(p.finishT):`${prog(p)}% OF THE WAY`;jingle(s.solo&&!soloOk?[392,330,262]:[523,659,784,1047],{type:'square',vol:.03,step:.09});}

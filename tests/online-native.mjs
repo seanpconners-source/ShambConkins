@@ -22,7 +22,7 @@ async function phone(tag){
  await p.addInitScript(h=>{try{localStorage.setItem('sc-net-host',h);}catch{}},HOST);
  // NETCOUNT=1: count what this phone sends to the room (messages and bytes), printed per game
  await p.addInitScript(()=>{const W=WebSocket.prototype,o=W.send;window.__wsc={n:0,b:0};W.send=function(d){window.__wsc.n++;window.__wsc.b+=d?.length||0;return o.call(this,d);};});
- await p.goto(url,{timeout:180000});await p.waitForSelector('.title-screen',{timeout:60000});await p.waitForFunction(()=>!document.getElementById('boot'));
+ await p.goto(url,{timeout:+process.env.NAV_MS||180000});await p.waitForSelector('.title-screen',{timeout:Math.max(60000,+process.env.NAV_MS||0)});await p.waitForFunction(()=>!document.getElementById('boot'));
  await p.evaluate(()=>{window.ShambConkins.store.profile.settings.reducedMotion=true;});
  return {p,errors,tag};
 }
@@ -59,7 +59,12 @@ for(const id of GAMES){
  const t0=Date.now();let ra='',rb='',shot=false,counts={};
  const wc0=await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>({...window.__wsc}))));
  const limit=LIMIT*(id==='paddys-beer-pong'&&!process.env.LIMIT_S?1.75:1); // a full Beer Pong match runs to last call, ~4-5 min headless
+ // STALL=at,secs[,Amber|Sean]: at `at` s into the game that phone's outgoing game messages are held for `secs` s, then sent at once
+ // (a network stall); the game must recover with both phones agreeing afterwards
+ const STALL=(process.env.STALL||'').split(',');let stalled=0;
+ if(STALL.length>=2)await (STALL[2]==='Sean'?A:B).p.evaluate(()=>{const ch=window.ShambConkins.store.session.online,orig=ch.send.bind(ch),q=[];window.__stall=ms=>{window.__held=true;setTimeout(()=>{window.__held=false;for(const m of q.splice(0))orig(m);},ms);};ch.send=m=>{if(window.__held)q.push(m);else orig(m);};});
  while(Date.now()-t0<limit*1000){
+  if(STALL.length>=2&&!stalled&&Date.now()-t0>=+STALL[0]*1000){stalled=1;console.log(' stall',STALL.join(' '));await (STALL[2]==='Sean'?A:B).p.evaluate(ms=>window.__stall(ms),+STALL[1]*1000);}
   const [a,b]=[await step(A),await step(B)];for(const x of [a,b]){const k=x.split(':')[0];counts[k]=(counts[k]||0)+1;}
   if(!shot&&a.startsWith('play')&&b.startsWith('play')&&Date.now()-t0>=SHOT_S*1000){shot=true;
    // SHOT_JS: an expression run on Sean's phone (s = the session) just before the screenshots, e.g. to move a player away

@@ -167,9 +167,13 @@ async function sonic(s){
  const hitBox=(p,ex,ey,er)=>{const c=center(p);return Math.abs(c.x-ex)<9+er&&Math.abs(c.y-ey)<halfH(p)+er;};
  const attacking=p=>p.ball||p.star>0||p.spindash;
 
+ // online the scattered rings appear on both phones ({lr}) and either runner can grab them back ({lg})
+ const scatter=(w,x,y,n,id)=>{let ang=Math.PI*.5+.4,dir=1,speed=4;
+  for(let k=0;k<n;k++){if(k===16){speed=2;ang=Math.PI*.5+.4;}const a=-ang;w.loose.push({x,y,vx:Math.cos(a)*speed*dir,vy:Math.sin(a)*speed,t:0,id:id?id+'.'+k:null});if(dir<0)ang+=.39;dir=-dir;}};
+ let looseSeq=0;
  const loseRings=(p,w,awayX)=>{
-  const n=Math.min(p.rings,32);p.rings=0;let ang=Math.PI*.5+.4,dir=1,speed=4;
-  for(let k=0;k<n;k++){if(k===16){speed=2;ang=Math.PI*.5+.4;}const a=-ang;w.loose.push({x:p.x,y:p.y-18,vx:Math.cos(a)*speed*dir,vy:Math.sin(a)*speed,t:0});if(dir<0)ang+=.39;dir=-dir;}
+  const n=Math.min(p.rings,32);p.rings=0;const id=net?`${me}.${looseSeq++}`:null;scatter(w,p.x,p.y-18,n,id);
+  if(n&&net)ev({lr:[Math.round(p.x*10)/10,Math.round((p.y-18)*10)/10,n,id]});
   if(n)sfx.hurt();
  };
  const log=[];const note=(p,what)=>{log.push(`${(clock).toFixed(1)} P${p.i+1} ${what} x${Math.round(p.x)} rings${p.rings}`);if(log.length>60)log.shift();};
@@ -223,7 +227,7 @@ async function sonic(s){
     else if(p.theta<=0){p.on='ground';p.loop=null;p.x=l.cx-1;p.y=l.y;p.angle=0;p.loopCd=40;}
     else{p.x=l.cx+l.R*Math.sin(p.theta);p.y=l.cy+l.R*Math.cos(p.theta);
      if(Math.abs(p.gsp)<2.5&&p.theta>Math.PI*.35&&p.theta<Math.PI*1.65){const c=center(p);const vx=Math.cos(p.theta)*p.gsp,vy=-Math.sin(p.theta)*p.gsp;p.x=c.x;p.y=c.y+halfH(p);toAir(p,vx,vy);}}
-   }else if(p.on==='plat'){const pp=platPos(p.plat,simT),prev=platPos(p.plat,simT-STEP);p.x+=p.gsp+(pp.x-prev.x);p.y=pp.y;if(p.x<pp.x-4||p.x>pp.x+p.plat.w+4)toAir(p,p.gsp,0);}
+   }else if(p.on==='plat'){const pp=platPos(p.plat,PT()),prev=platPos(p.plat,PT()-STEP);p.x+=p.gsp+(pp.x-prev.x);p.y=pp.y;if(p.x<pp.x-4||p.x>pp.x+p.plat.w+4)toAir(p,p.gsp,0);}
    else{const nx=p.x+p.gsp*tx,gy=groundAt(L,nx),l=p.gsp>0&&p.loopCd<=0?loopAt(p.x,nx):null;
     if(l&&Math.abs(p.y-l.y)<6){p.on='loop';p.loop=l;p.theta=Math.max(.001,(nx-l.cx)/l.R);p.x=l.cx+l.R*Math.sin(p.theta);p.y=l.cy+l.R*Math.cos(p.theta);}
     else if(gy===null){p.x=nx;toAir(p,p.gsp*tx,p.gsp*ty);}
@@ -235,7 +239,7 @@ async function sonic(s){
     if(p.vy<0&&p.vy>-4)p.vx-=p.vx/32;if(p.jumping&&!inp.jump&&p.vy<-4)p.vy=-4;}
    p.vy=Math.min(p.vy+(p.hurt?.1875:P.grv),P.maxFall);
    const nx=p.x+p.vx,ny=p.y+p.vy;let landed=false;
-   if(p.vy>=0)for(const pl0 of L.plats){const pp=platPos(pl0,simT);if(nx>=pp.x-6&&nx<=pp.x+pl0.w+6&&p.y<=pp.y+2&&ny>=pp.y){p.x=nx;land(p,pp.y,0,'plat',pl0);landed=true;break;}}
+   if(p.vy>=0)for(const pl0 of L.plats){const pp=platPos(pl0,PT());if(nx>=pp.x-6&&nx<=pp.x+pl0.w+6&&p.y<=pp.y+2&&ny>=pp.y){p.x=nx;land(p,pp.y,0,'plat',pl0);landed=true;break;}}
    if(!landed){const gy=groundAt(L,nx);
     if(gy!==null&&ny>=gy){if(p.y<=gy+14||p.vy<0&&false){p.x=nx;land(p,gy,slopeAt(L,nx));}else{p.vx=0;p.y=ny;}}
     else{p.x=nx;p.y=ny;}
@@ -255,7 +259,7 @@ async function sonic(s){
   // rings (sorted by x)
   let lo=0,hi=L.rings.length;while(lo<hi){const m=(lo+hi)>>1;if(L.rings[m].x<c.x-24)lo=m+1;else hi=m;}
   for(let k=lo;k<L.rings.length&&L.rings[k].x<c.x+24;k++){if(w.got[k])continue;const r=L.rings[k];if(Math.abs(r.x-c.x)<16&&Math.abs(r.y-c.y)<hh+8){w.got[k]=1;ev({r:k});p.rings++;p.score+=10;sfx.ring();w.fx.burst(r.x,r.y,{n:5,colors:['#fff','#ffe680'],speed:70,life:.3,size:2,shape:'star'});}}
-  for(let k=w.loose.length-1;k>=0;k--){const r=w.loose[k];if(r.t>40&&Math.abs(r.x-c.x)<16&&Math.abs(r.y-c.y)<hh+8){w.loose.splice(k,1);p.rings++;sfx.ring();}}
+  for(let k=w.loose.length-1;k>=0;k--){const r=w.loose[k];if(r.t>40&&Math.abs(r.x-c.x)<16&&Math.abs(r.y-c.y)<hh+8){w.loose.splice(k,1);p.rings++;sfx.ring();if(net&&r.id)ev({lg:r.id});}}
   // springs
   L.springs.forEach((sp,k)=>{if(Math.abs(c.x-sp.x)<15&&p.y>=sp.y-18&&p.y<=sp.y+4&&(p.grounded||p.vy>=0)){const v=sp.color==='red'?-16:-10;p.x=clamp(p.x,sp.x-14,sp.x+14);toAir(p,p.grounded?p.gsp*.5:p.vx,v);p.springPose=true;p.ball=false;p.rolling=false;p.jumping=false;w.spring[k]=1;sfx.spring();}});
   // spikes
@@ -279,7 +283,8 @@ async function sonic(s){
 
  function stepWorld(w,p){
   const t=simT;
-  for(const e of w.enemies){if(!e.alive||Math.abs(e.x-p.x)>700)continue;e.t+=STEP;
+  if(net)stepEnemiesNet(w,p);
+  else for(const e of w.enemies){if(!e.alive||Math.abs(e.x-p.x)>700)continue;e.t+=STEP;
    if(e.type==='moto'){e.x+=e.dir*.9;if(Math.abs(e.x-e.hx)>e.range)e.dir*=-1,e.x+=e.dir*2;e.y=groundAt(L,e.x)??e.y;if(Math.random()<.04)w.fx.burst(e.x-e.dir*12,e.y-8,{n:1,color:'#bbb',speed:20,life:.4,size:2.4});}
    else if(e.type==='crab'){e.cd-=STEP;if(e.state===0){e.x+=e.dir*.45;if(Math.abs(e.x-e.hx)>e.range)e.dir*=-1;e.y=groundAt(L,e.x)??e.y;if(e.cd<=0&&Math.abs(e.x-p.x)<320){e.state=1;e.cd=.7;for(const d of [-1,1])w.shots.push({x:e.x+d*14,y:e.y-20,vx:d*1.4,vy:-4.2,t:0});snd(500,.08,{type:'square',vol:.02});}}else if(e.cd<=0){e.state=0;e.cd=2.4;}}
    else if(e.type==='buzz'){e.y=(groundAt(L,e.x)??e.gy)-e.lift;if(e.state===0&&Math.abs(e.x-p.x)<360)e.state=1;if(e.state===1){e.x-=1.6;if(Math.abs(e.x-p.x-60)<30&&e.cd>0){e.cd=-1;e.state=2;e.t=0;}}
@@ -381,7 +386,7 @@ async function sonic(s){
   else if(d.type==='totem'){const cols=['#e8a020','#3a6ad8','#d83a3a','#3ab858'];for(let k=0;k<4;k++){x.fillStyle=cols[k];rr(x,-11,-22-k*21,22,20,4);x.fill();x.fillStyle='#fff';x.fillRect(-7,-16-k*21,5,5);x.fillRect(2,-16-k*21,5,5);x.fillStyle='#000';x.fillRect(-6,-15-k*21,3,3);x.fillRect(3,-15-k*21,3,3);}x.fillStyle='#e8a020';x.beginPath();x.moveTo(-26,-86);x.lineTo(26,-86);x.lineTo(0,-100);x.fill();}
   else{x.fillStyle='#8a7aa8';x.beginPath();x.ellipse(0,-8,14,10,0,0,7);x.fill();x.fillStyle='#b8a8d8';x.beginPath();x.ellipse(-4,-12,6,4,0,0,7);x.fill();}
   x.restore();};
- const drawPlat=(pl0)=>{const pp=platPos(pl0,simT);x.fillStyle=pattern();x.fillRect(pp.x,pp.y,pl0.w,18);x.strokeStyle='#5a2a0c';x.lineWidth=2;x.strokeRect(pp.x,pp.y,pl0.w,18);x.fillStyle='#2c9a1c';rr(x,pp.x-3,pp.y-3,pl0.w+6,9,4);x.fill();x.fillStyle='#7fe04a';x.fillRect(pp.x,pp.y-3,pl0.w,2);};
+ const drawPlat=(pl0)=>{const pp=platPos(pl0,PT());x.fillStyle=pattern();x.fillRect(pp.x,pp.y,pl0.w,18);x.strokeStyle='#5a2a0c';x.lineWidth=2;x.strokeRect(pp.x,pp.y,pl0.w,18);x.fillStyle='#2c9a1c';rr(x,pp.x-3,pp.y-3,pl0.w+6,9,4);x.fill();x.fillStyle='#7fe04a';x.fillRect(pp.x,pp.y-3,pl0.w,2);};
  const drawRing=(rx,ry,t,alpha=1)=>{const w=Math.abs(Math.cos(t*4+rx*.05));x.save();x.globalAlpha=alpha;x.translate(rx,ry);x.scale(Math.max(.18,w),1);x.strokeStyle='#b07800';x.lineWidth=4.6;x.beginPath();x.arc(0,0,6.5,0,7);x.stroke();x.strokeStyle='#ffd21c';x.lineWidth=3;x.beginPath();x.arc(0,0,6.5,0,7);x.stroke();x.strokeStyle='#fff8c0';x.lineWidth=1.2;x.beginPath();x.arc(0,0,6.5,3.6,5);x.stroke();x.restore();};
  const drawSpring=(sp,k,w)=>{const comp=w.spring[k];x.save();x.translate(sp.x,sp.y);x.fillStyle='#777';x.fillRect(-14,-5,28,5);x.strokeStyle='#bbb';x.lineWidth=2;x.beginPath();for(let j=0;j<4;j++){x.moveTo(-9,-6-j*3*(1-comp*.5));x.lineTo(9,-7.5-j*3*(1-comp*.5));}x.stroke();x.fillStyle=sp.color==='red'?'#e8282c':'#ffd21c';rr(x,-15,-21+comp*6,30,7,3);x.fill();x.strokeStyle='#3a2a10';x.lineWidth=1.5;x.stroke();x.restore();};
  const drawSpikes=sp=>{x.fillStyle='#d8dcea';x.strokeStyle='#59607a';x.lineWidth=1.5;for(let k=0;k<4;k++){const X=sp.x+k*8;x.beginPath();x.moveTo(X,sp.y);x.lineTo(X+4,sp.y-16);x.lineTo(X+8,sp.y);x.closePath();x.fill();x.stroke();}x.fillStyle='#59607a';x.fillRect(sp.x-1,sp.y-2,sp.w+2,4);};
@@ -545,7 +550,7 @@ async function sonic(s){
   for(const l of L.loops)if(l.cx+l.R+40>x0&&l.cx-l.R-40<x1)drawLoop(l);
   drawGround(x0,x1,bottom);drawBridges(x0,x1,bottom,t);
   for(const d of L.decor)if(d.x>x0-30&&d.x<x1+30&&(d.type==='flower'||d.type==='sun'))drawDecor(d);
-  for(const pl0 of L.plats){const pp=platPos(pl0,simT);if(pp.x+pl0.w>x0&&pp.x<x1)drawPlat(pl0);}
+  for(const pl0 of L.plats){const pp=platPos(pl0,PT());if(pp.x+pl0.w>x0&&pp.x<x1)drawPlat(pl0);}
   L.lamps.forEach((l,k)=>{if(l.x>x0&&l.x<x1)drawLamp(l,w.lamps[k],t);});
   for(const sp of L.spikes)if(sp.x+sp.w>x0&&sp.x<x1)drawSpikes(sp);
   L.springs.forEach((sp,k)=>{if(sp.x>x0&&sp.x<x1)drawSpring(sp,k,w);});
@@ -610,6 +615,35 @@ async function sonic(s){
  }
 
  s.debug={log,get phase(){return phase;},get clock(){return clock;},get turn(){return turn;},ghost,pl,L,worlds,get bossChar(){return bossChar;},recruits:()=>s.broforceRecruits,boss:i=>{const b=worlds[i].boss;return b&&{state:b.state,hp:b.hp,x:b.x,y:b.y,ballX:b.ballX,ballY:b.ballY,cap:b.cap&&{x:b.cap.x,y:b.cap.y,open:b.cap.open,drop:b.cap.drop}};},hitBoss(i){const w=worlds[i],b=w.boss;if(b?.state==='fight'&&b.flash<=0)damageBoss(pl[i],w);},setClock(v){clock=v;},place(i,X,Y){const q=pl[i];q.x=X;q.y=Y;q.grounded=false;q.on='air';q.plat=null;q.loop=null;q.vx=0;q.vy=0;q.gsp=0;},teleport(i,X){const q=pl[i];q.dead=0;q.hurt=false;q.x=X;q.y=groundAt(L,X)??q.y;q.grounded=true;q.on='ground';q.gsp=0;cams[i].x=X-150;}};
+ // ---------------- online badniks: they run on a shared step count (the wall clock since the start) instead of only near
+ // this phone's runner, so both phones show them in the same places. Motobugs, Crabmeats and Choppers are a function of
+ // that count (a Crabmeat online fires on its cycle whenever a runner is near); a Buzz Bomber takes off at the step a runner
+ // first came near it ({bz:[k,1,n]}) and swoops at the step one got under it ({bz:[k,2,n]}), whichever phone saw it first.
+ let netT0=0,netStep=0;
+ function PT(){return net?netStep*STEP:simT;}
+ function pushShot(w,x,y,vx,vy,g,age){const o={x:x+vx*age,y:y+vy*age+(g===0?0:.12*age*(age-1)/2),vx,vy:vy+(g===0?0:.12*age),t:age};if(g===0)o.g=0;w.shots.push(o);}
+ function stepEnemiesNet(w,p){const q=pl[them],qOk=!!q.net&&!q.dead;
+  w.enemies.forEach((e,k)=>{if(!e.alive||Math.abs(e.x-p.x)>900)return;
+   if(e.type==='buzz'){
+    if(e.n1==null&&!p.dead&&Math.abs(e.x-p.x)<360){e.n1=netStep;ev({bz:[k,1,netStep]});}
+    if(e.n1!=null&&e.n2==null&&netStep>=e.n1&&!p.dead&&Math.abs(e.x-p.x-60)<30){e.n2=netStep;ev({bz:[k,2,netStep]});}
+    buzzAt(e,netStep,w);return;}
+   let n=Math.max(e.n??0,netStep-40000);
+   for(;n<netStep;n++)stepFoeNet(e,w,p,q,qOk,netStep-n-1,n+1);
+   e.n=n;});}
+ function buzzAt(e,n,w){const n1=e.n1,n2=e.n2;
+  if(n1==null||n<n1){e.x=e.hx;e.state=0;}
+  else if(n2==null||n<n2){e.x=e.hx-1.6*(n-n1);e.state=1;}
+  else{const X=e.hx-1.6*(n2-n1);if(n<n2+55){e.x=X;e.state=2;}else{e.x=X-2.4*(n-n2-55);e.state=3;}
+   const sn=n2+22;if(!e.shot&&n>=sn){e.shot=1;const age=n-sn;if(age<200){const dx=-1,dy=1.2,l=Math.hypot(dx,dy);pushShot(w,X-6,(groundAt(L,X)??e.gy)-e.lift+8,dx/l*2.8,dy/l*2.8,0,age);if(age<4)snd(900,.06,{type:'square',vol:.02});}}}
+  e.y=(groundAt(L,e.x)??e.gy)-e.lift;e.t=(n-(n2??n1??n))*STEP;}
+ // one step of a Motobug / Crabmeat / Chopper at shared step n (age = how many steps ago that was, during a catch-up)
+ function stepFoeNet(e,w,p,q,qOk,age,n){e.t+=STEP;
+  if(e.type==='moto'){e.x+=e.dir*.9;if(Math.abs(e.x-e.hx)>e.range)e.dir*=-1,e.x+=e.dir*2;e.y=groundAt(L,e.x)??e.y;if(!age&&Math.random()<.04)w.fx.burst(e.x-e.dir*12,e.y-8,{n:1,color:'#bbb',speed:20,life:.4,size:2.4});}
+  else if(e.type==='crab'){e.cd-=STEP;if(e.state===0){e.x+=e.dir*.45;if(Math.abs(e.x-e.hx)>e.range)e.dir*=-1;e.y=groundAt(L,e.x)??e.y;
+    if(e.cd<=0){e.state=1;e.cd=.7;if(age<240&&(Math.abs(e.x-p.x)<320||qOk&&Math.abs(e.x-q.x)<320)){for(const d of [-1,1])pushShot(w,e.x+d*14,e.y-20,d*1.4,-4.2,undefined,age);if(!age)snd(500,.08,{type:'square',vol:.02});}}}
+   else if(e.cd<=0){e.state=0;e.cd=2.4;}}
+  else if(e.type==='chop'){const ph=(n*STEP*.9+e.phase)%2.4;e.y=ph<1.2?e.base-Math.sin(ph/1.2*Math.PI)*120:e.base+20;}}
  // ---------------- online: this phone's runner {f:{t,p}} ~20/s (+ the boss and capsule from player 1's phone), events for
  // what it took (rings {r}, badniks {en}, monitors {mo}), boss hits {bh}, the capsule {cap}; finals {fin} swapped at the end
  const ON=['ground','air','loop','plat'],r1=v=>Math.round(v*10)/10;
@@ -631,14 +665,19 @@ async function sonic(s){
   else if(e.en!=null){const en=w.enemies[e.en];if(en?.alive){en.alive=false;w.fx.burst(en.x,en.y-10,{n:12,colors:['#fff','#ffd84a','#ff7a2a'],speed:150,life:.4,size:2.4});w.animals.push({x:en.x,y:en.y-10,vx:(Math.random()<.5?-1:1)*1.6,vy:-3,kind:Math.random()<.5?'flicky':'pocky',t:0});sfx.pop();}}
   else if(e.mo!=null){const m=w.monitors[e.mo];if(m&&!m.broken){m.broken=true;w.debris.push({x:m.x,y:m.y,t:0,type:m.type});sfx.monitor();}}
   else if(e.bh&&host){const b=w.boss;if(b&&b.state==='fight')damageBoss(pl[me],w,undefined,true);}
-  else if(e.cap&&host){const cp=w.boss?.cap;if(cp&&!cp.open){cp.open=true;cp.t=0;sfx.capsule();}}}
- function unpackBoss(d){const w=worlds[me],b=w.boss;if(!b||!Array.isArray(d))return;const [bx,by,st,bt,hp,hits,cap]=d,prev=b.state;
-  b.tx=bx;b.ty=by;b.hp=hp;b.hits=hits;
+  else if(e.cap&&host){const cp=w.boss?.cap;if(cp&&!cp.open){cp.open=true;cp.t=0;sfx.capsule();}}
+  // a Buzz Bomber the partner's runner set off (1) or got under (2), at that step: the earlier one counts on both phones
+  else if(Array.isArray(e.bz)){const [k,which,n]=e.bz,en=w.enemies[k];if(en?.type!=='buzz'||!Number.isInteger(n))return;
+   if(which===1)en.n1=Math.min(en.n1??Infinity,n);else if(which===2)en.n2=Math.max(en.n1??n,Math.min(en.n2??Infinity,n));}
+  else if(Array.isArray(e.lr)){const [x0,y0,n,id]=e.lr;if(n>0&&n<=32&&!w.loose.some(r=>r.id===id+'.0'))scatter(w,x0,y0,n,id);}
+  else if(e.lg!=null){const k=w.loose.findIndex(r=>r.id===e.lg);if(k>=0)w.loose.splice(k,1);}}
+ function unpackBoss(d){const w=worlds[me],b=w.boss;if(!b||!Array.isArray(d))return;const [bx,by,st,bt,hp,hits,cap,fl]=d,prev=b.state;
+  b.tx=bx;b.ty=by;b.hp=hp;b.hits=hits;if(fl)b.flash=Math.max(b.flash,.15);   // hit-flash (and its no-hit window) as player 1's phone has it
   if(st!==prev){b.state=st;b.t=bt;if(prev==='wait'){b.x=bx;b.y=by;}if(st==='flee'&&!b.head)b.head={x:b.x,y:b.y-20,vx:-1.2,vy:-5.5};if(['wait','enter','fight'].includes(prev)&&(st==='dying'||st==='flee')){b.flash=0;w.fx.shake(10);bossBeaten(pl[me]);}}
   else if(Math.abs(b.t-bt)>.3)b.t=bt;
   if(Array.isArray(cap)){if(!b.cap)b.cap={x:cap[0],y:cap[1],open:false,t:0,drop:cap[3]};if(cap[2]&&!b.cap.open){b.cap.open=true;b.cap.t=0;sfx.capsule();}}}
  const nf=net?netField(s,{hz:20,
-  pack:()=>{const o={t:+clock.toFixed(3),p:packP(pl[me])};const b=worlds[me].boss;if(host&&b)o.b=[r1(b.x),r1(b.y),b.state,+b.t.toFixed(2),b.hp,b.hits,b.cap?[b.cap.x,b.cap.y,b.cap.open?1:0,b.cap.drop]:0];return o;},
+  pack:()=>{const o={t:+clock.toFixed(3),p:packP(pl[me])};const b=worlds[me].boss;if(host&&b)o.b=[r1(b.x),r1(b.y),b.state,+b.t.toFixed(2),b.hp,b.hits,b.cap?[b.cap.x,b.cap.y,b.cap.open?1:0,b.cap.drop]:0,b.flash>0?1:0];return o;},
   unpack:(i,d)=>{if(!d)return;unpackP(d.p);if(d.b&&!host)unpackBoss(d.b);},onEvent:onNetEvent}):null;
  function ev(e){if(nf)nf.event(e);}
  let netStarted=false;
@@ -669,7 +708,7 @@ async function sonic(s){
  const score=q=>q.finished?fmtRace(q.finishT):mode==='boss'&&worlds[q.i].boss.hits?`${worlds[q.i].boss.hits} of ${BOSS_HP} boss hits`:`${prog(q)}% of the way`;
  async function beginTurn(i){
   // online: no hand-off; both phones start the countdown together
-  if(net){phase='wait';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;clock=0;acc=0;cd=new Countdown(3);phase='count';const p=pl[me];cams[me].x=p.x-120;cams[me].y=p.y-150;return;}
+  if(net){phase='wait';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;netT0=performance.now();clock=0;acc=0;cd=new Countdown(3);phase='count';const p=pl[me];cams[me].x=p.x-120;cams[me].y=p.y-150;return;}
   phase='handoff';turn=i;for(const pd of pads){pd.stick=null;pd.jump=null;}for(const inp of inputs)Object.assign(inp,{l:0,r:0,d:0,jump:0,press:0});
   const n0=s.players[0].name,desc=s.solo?(mode==='boss'?`Act ${soloCleared+1}: clear the act and beat the boss${bossChar?` (piloted by ${bossName}; beat it and they join your roster)`:''}. Every clear brings a brand-new act.`:`Act ${soloCleared+1}: reach the signpost before time runs out. Every clear brings a brand-new act.`):i===0?(mode==='boss'?`You run first as Sonic: clear the act and beat the boss${bossChar?` (piloted by ${bossName}; beat it and they join your roster)`:''}. ${s.players[1].name} runs next as Tails against your ghost.`:`You run first as Sonic: reach the signpost as fast as you can. ${s.players[1].name} runs next as Tails against your ghost.`)
    :(mode==='boss'?`You're Tails. Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'} through the act and the boss${bossChar?`, and free ${bossName} for your own roster`:''}. ${n0}'s ghost runs beside you.`:`You're Tails. Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'}. Follow or overtake ${n0}'s ghost.`);
@@ -690,10 +729,12 @@ async function sonic(s){
   else if(phase==='count'){if(!cd.update(dt)){phase='play';for(const inp of inputs)inp.press=0;}}
   else if(phase==='play'||phase==='turn-end'||phase==='end'||phase==='net-end'){
    if(!cd.done)cd.update(dt);acc+=dt;let steps=0;const p=pl[turn],w=worlds[turn];
+   // online: the shared step count (badniks, moving platforms) ends this frame on the wall clock since the start
+   if(net)netStep=Math.floor((performance.now()-netT0)*.06)-Math.min(5,Math.floor(acc/STEP));
    if(net){stepRemote(dt);nf.tick(dt);if(mode==='boss'&&phase==='play'&&!p.finished&&w.boss?.cap?.open){p.finished=true;p.finishT=clock;}}
    // rings freeze when time is up; a race keeps the finished runner jogging past the signpost
    const moving=true;
-   while(acc>=STEP&&steps<5){acc-=STEP;steps++;frames++;simT+=STEP;
+   while(acc>=STEP&&steps<5){acc-=STEP;steps++;frames++;simT+=STEP;if(net)netStep++;
     if(phase==='play')clock+=STEP;
     if(moving){readInput(turn);stepPlayer(p,w,phase==='play'?inputs[turn]:still);if(phase==='play')interact(p,w);stepWorld(w,p);p.best=Math.max(p.best,p.x);}
     if(turn===0&&phase!=='end'&&!s.solo&&!net)ghost.push(snap(p));else if(turn===1)gi++;
