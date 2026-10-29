@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.69.3
 
 **Updating the installed app.** The app now looks for a new version every time you come back to it, not only when it is opened fresh (Android often just wakes up the old one). Settings shows the version you're on and has a **Check for updates** button: it tells you if you're up to date, starts the download if not (the bar at the bottom shows progress; it's about 100 MB, so keep the app open until it finishes), and when the new version is in, a **Restart** button appears at the bottom (not during a minigame). Your board game and characters are saved, so restarting loses nothing.
 
