@@ -21,6 +21,7 @@ const {WARP_ITEMS}=require("src/data/warpItems.js");
 const {LAIR_VILLAIN_CHARACTERS}=require("src/data/bondLair.js");
 const {SOUTH_PARK_CHARACTERS}=require("src/data/southPark.js");
 const {balanceItem}=require("src/data/balance.js");
+const {MERGED_CHARACTERS,mergedCharacterId}=require("src/data/characterMerge.js");
 // Preserve the uploaded catalog byte-for-byte. Sean has explicitly disclaimed
 // Eugenia, so its inherited character, pass and four cards are inactive.
 function activeContent(record){return !/eugenia/i.test([record.id,record.name,record.title,record.source,record.body].filter(Boolean).join(' '));}
@@ -53,5 +54,9 @@ ACTIVE_CATALOG.characters.push(...BOSS_CHARACTERS.filter(r=>!ACTIVE_CATALOG.char
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='batman89'?{...c,name:'Batman · Michael Keaton',actor:'Michael Keaton'}:c);
 // The horror icons only appear in the Level IV horror route.
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>HORROR_IDS.includes(c.id)?{...c,unlockBy:'horror',unlockHint:c.id==='satan'?c.unlockHint:'Only found in the Level IV horror route. Look for their landmark deep in the dark.'}:c);
+
+// Doubles (the same person under two ids): only the kept copy stays; cards that unlocked a double unlock the kept one.
+ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.filter(c=>!Object.prototype.hasOwnProperty.call(MERGED_CHARACTERS,c.id));
+ACTIVE_CATALOG.cards=ACTIVE_CATALOG.cards.map(c=>c.e?.[0]==='unlockChar'&&MERGED_CHARACTERS[c.e[1]]?{...c,e:[c.e[0],mergedCharacterId(c.e[1]),...c.e.slice(2)],...(c.unlock?{unlock:mergedCharacterId(c.unlock)}:{})}:c);
 
 Object.assign(exports,{activeContent,ACTIVE_CATALOG});

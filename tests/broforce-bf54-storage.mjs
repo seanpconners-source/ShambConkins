@@ -47,7 +47,7 @@ function harness(initial=new Map()){
  const persistence=load('src/persistence.js',{'src/obstacles.js':{validObstacles:()=>true}});
  const photos=load('src/photoPairs.js',{'src/utils.js':{hash:()=>12345}});
  const profile=load('src/profile.js',{'src/netHooks.js':{fx(){}},'src/cpuHooks.js':{cpuBlocksRecruit:()=>false},
-  'src/photoPairs.js':photos,'src/contentPolicy.js':{ACTIVE_CATALOG:catalog},
+  'src/photoPairs.js':photos,'src/data/characterMerge.js':{mergedCharacterId:id=>id,MERGED_CHARACTERS:{}},'src/contentPolicy.js':{ACTIVE_CATALOG:catalog},
   'src/persistence.js':persistence,
   'src/characters.js':{characterIdentity:id=>id==='john-rambo'?'rambo':id},
   'src/data/savoryLab.js':{LAB_TEAM:[]},

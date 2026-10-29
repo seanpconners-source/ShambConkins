@@ -1,5 +1,11 @@
 # AI state (keep short; update after meaningful work)
 
+UNRELEASED on `claude/amazing-volta-qilhey` (Oct 29, owner holds the merge until more portraits arrive): doubles merged
+(`src/data/characterMerge.js` MERGED_CHARACTERS dup→kept, 45 ids; dropped from ACTIVE_CATALOG, cards remapped, `character`/
+`characterIdentity`/portraits/canRecruit/recruit resolve old ids, loadProfile maps rosters/shared/earnedUnlocks/picks/BF devilId;
+ref-kitana art renamed mk-kitana, George v13's extra moods moved to george-costanza). 19 new characters (legendsPack2 end:
+Little Shop cast, Naked Gun + Leslie Nielsen/O.J., Bundys, Manson, Hitler, Obama, Clinton) + landmarks police-squad, bundy-house.
+682 characters, 445 without own portrait (`local-test-reports/characters-without-portraits.txt`, not in git).
 Version 0.69.4 (Oct 29: 69 more characters with owner portraits (156 PNG + 32 oversized WebP shrunk). The upload had ~60 characters with a
 PNG and a WebP per mood holding the same pictures under different mood labels; owner chose the PNG labels (clashing WebPs dropped).
 A merge from an old base moved 4 replaced PNGs into assets/originals (git rename detection): check `git diff --name-status` for M in originals/.
