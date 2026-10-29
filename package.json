@@ -1,11 +1,11 @@
 {
   "name": "shambconkins",
-  "version": "0.69.0",
+  "version": "0.69.3",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node tools/build.mjs",
-    "release": "node tools/build.mjs --out releases/ShambConkins_v0.69.0.html --pwa releases/ShambConkins_v0.69.0_pwa",
+    "release": "node tools/build.mjs --out releases/ShambConkins_v0.69.3.html --pwa releases/ShambConkins_v0.69.3_pwa",
     "test": "npm run test:core && node tests/games.mjs 3 6",
     "bot": "node tools/build.mjs && node tests/bot.mjs 40",
     "test:core": "node tools/check-modules.mjs && node tools/build.mjs && node tests/gopher-moods.mjs && node tests/fruit-swipe.mjs && node tests/taskmaster-relay.mjs && node tests/player-names.mjs && node tests/pkmn-bond-identity.mjs && node tests/pkmn-haptics.mjs && node tests/trivia-regression.mjs && node tests/board.mjs && node tests/levelflow.mjs && node tests/kart-track.mjs && node tests/pinball-sim.mjs 8 && node tests/pinball-sim.mjs 6 sabbath && node tests/pinball-sim.mjs 6 gizzard && node tests/holeit.mjs --node && node tests/doom-sim.mjs 300 && node tests/unlocks.mjs && node tests/smoke.mjs && node tests/route.mjs"

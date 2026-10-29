@@ -23,18 +23,58 @@ function inlineManifest(){
 }
 // The PWA folder is there when its manifest is (a server answering every path with the page does not count).
 async function folderManifest(){try{const r=await fetch('manifest.webmanifest',{cache:'no-store'});return r.ok&&!/text\/html/.test(r.headers.get('content-type')||'');}catch{return false;}}
-async function initPWA({onUpdate}={}){
+// Updates: the browser only looks at sw.js when the app is opened fresh, and an installed app that Android kept in memory
+// just resumes, so it could run an old version for days. Here the app also asks whenever it comes back on screen (at most
+// every few minutes); a newer sw.js downloads the new game in the background (download bar), and once it is in, a
+// Restart button (#sc-ready) loads it. Settings → Check for updates runs the same check by hand (checkForUpdate).
+let reg=null,ready=false,updating=false,lastAsk=0,canRestart=()=>true;
+const ASK_EVERY=5*60*1000;
+function askForUpdate(force=false){
+ if(!reg||ready||(!force&&Date.now()-lastAsk<ASK_EVERY))return Promise.resolve();
+ lastAsk=Date.now();return reg.update().catch(()=>{});
+}
+async function initPWA({onUpdate,restartOK}={}){
  headLink('icon',FAVICON,{type:'image/png'});headLink('apple-touch-icon',APPLE_ICON);
  if(!served()||!MANIFEST)return;
+ if(restartOK)canRestart=restartOK;
  addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;syncInstallButtons();});
  addEventListener('appinstalled',()=>{deferred=null;syncInstallButtons();});
  const folder=await folderManifest();
  headLink('manifest',folder?'manifest.webmanifest':inlineManifest());
  if(!folder||!navigator.serviceWorker)return;
- const updating=!!navigator.serviceWorker.controller;
- navigator.serviceWorker.addEventListener('controllerchange',()=>{if(updating)onUpdate?.();});
+ updating=!!navigator.serviceWorker.controller;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!updating)return;ready=true;readyPill();onUpdate?.();});
  navigator.serviceWorker.addEventListener('message',e=>{if(e.data?.type==='sc-download')downloadBar(e.data,updating);});
- navigator.serviceWorker.register('sw.js').catch(()=>{});
+ try{reg=await navigator.serviceWorker.register('sw.js');lastAsk=Date.now();}catch{return;}
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)void askForUpdate();});
+}
+// Settings → Check for updates. The game's site answers /version with the newest release tag (cloudflare/worker.js).
+// Resolves {state, latest}: 'current' | 'downloading' (the bar shows progress) | 'ready' (restart to play it) |
+// 'pending' (newer release, download not started yet) | 'reload' (served without the offline cache: a reload fetches it) |
+// 'offline' | 'file' (opened as a file, can't check).
+async function checkForUpdate(current){
+ if(!served())return {state:'file'};
+ if(ready)return {state:'ready'};
+ let latest=null;
+ try{const r=await fetch('version',{cache:'no-store'});const t=r.ok?(await r.text()).trim():'';if(/^v?\d+\.\d+\.\d+[\w.-]*$/.test(t))latest=t.replace(/^v/,'');}
+ catch{if(navigator.onLine===false)return {state:'offline'};}
+ if(!reg){if(!latest)return {state:'offline'};return {state:latest===current?'current':'reload',latest};}
+ if(reg.installing)return {state:'downloading',latest};
+ if(latest===current)return {state:'current',latest};
+ await askForUpdate(true);
+ if(ready)return {state:'ready',latest};
+ if(reg.installing||reg.waiting)return {state:'downloading',latest};
+ return {state:latest?'pending':'current',latest};   // newer release, download not started yet (it starts on its own)
+}
+function restartApp(){location.reload();}
+// Update ready: a small Restart button over the bottom of the screen (hidden while a minigame is running).
+function readyPill(){
+ if(document.getElementById('sc-ready'))return;
+ const el=Object.assign(document.createElement('div'),{id:'sc-ready',innerHTML:'<span>New version ready</span><button type="button">Restart</button><button type="button" class="x" aria-label="Later">✕</button>'});
+ el.setAttribute('role','status');
+ const [go,later]=el.querySelectorAll('button');go.onclick=restartApp;later.onclick=()=>{el.remove();clearInterval(t);};
+ const t=setInterval(()=>{el.hidden=!canRestart();},1000);el.hidden=!canRestart();
+ document.body.append(el);
 }
 // Download bar while the service worker saves a version for offline play (first visit) or fetches an update.
 function downloadBar(m,updating){
@@ -50,4 +90,4 @@ async function installApp(){
  if(deferred){const e=deferred;deferred=null;syncInstallButtons();try{await e.prompt();return (await e.userChoice).outcome;}catch{return 'menu';}}
  return isIOS()?'ios':'menu';
 }
-Object.assign(exports,{initPWA,installApp,canInstall,installOffered,standalone});
+Object.assign(exports,{initPWA,installApp,canInstall,installOffered,standalone,checkForUpdate,restartApp});

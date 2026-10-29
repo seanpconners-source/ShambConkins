@@ -113,7 +113,10 @@ async function start(gameId,seed,mid,board=null){
  match={mid,gameId,seed,peer:{...netState().peer,...(board?{name:board[1].name,character:board[1].character}:{})},mine:{score:0,level:0,done:false},theirs:{score:0,level:0,done:false},gone:false,started:false,board:!!board};
  showChip();watchMatch();
  const who=board?(board[0].owner==='Amber'?1:0):store.onlineWho??soloSettings(store.profile).who;
- const ok=await hooks.start(gameId,{seed,who,mid,opponent:match.peer,finish,rematch:()=>propose(gameId),...(board?{board:true,players:board}:{})});
+ // slot = this phone's place in the game's player order (P1 Mario/Sonic, P2 Luigi/Tails on both phones): the Sean/Amber
+ // pick, or the room seat when both phones picked the same name (both would play P1 otherwise)
+ const po=match.peer?.owner,peerWho=po==='Amber'?1:po==='Sean'?0:-1,slot=board||peerWho!==who?who:netState().seat===1?1:0;
+ const ok=await hooks.start(gameId,{seed,who,slot,mid,opponent:match.peer,finish,rematch:()=>propose(gameId),...(board?{board:true,players:board}:{})});
  if(match?.mid===mid)match.started=!!store.session||match.mine.done;
  if(!ok&&match?.mid===mid&&!match.mine.done&&!store.session){
   if(match.board){void finish({score:0,level:0,label:'Did not play'});return;}   // the board still needs both results

@@ -728,12 +728,13 @@ body[data-view="home"]{background:#0c0814}
 .title-screen button.ts-icon:active{transform:scale(.94)}
 /* centre column: logo, play, tiles */
 .title-screen .ts-main{flex:1;min-height:0;width:min(var(--ts-col),100%);justify-content:center;gap:var(--ts-gap);overflow:visible}
-.ts-logo{position:relative;width:100%;display:flex;justify-content:center;animation:ts-float 5s ease-in-out infinite}
+.ts-logo{position:relative;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;animation:ts-float 5s ease-in-out infinite}
 .ts-logo::before{content:"";position:absolute;inset:-10% 5%;background:radial-gradient(ellipse at center,#ffcf7a55,#b0428a22 45%,transparent 70%);filter:blur(10px);z-index:-1;animation:ts-pulse 4s ease-in-out infinite}
 .title-screen .ts-logo .hero-logo{width:min(420px,92%)!important;max-height:min(176px,23vh)!important;height:auto;filter:drop-shadow(0 8px 0 #000a) drop-shadow(0 14px 24px #000c)}
+.title-screen .ts-tagline{margin:0;max-width:100%;text-align:center;text-wrap:balance;font:italic 800 13.5px/1.25 Georgia,"Times New Roman",serif;letter-spacing:.03em;color:#f3dfb0;text-shadow:0 2px 0 #000,0 0 12px #ffb34755}
 .title-screen .ts-main .home-stack{width:100%;display:grid;gap:var(--ts-gap);margin:6px 0 0}
 .ts-primary{display:grid;gap:var(--ts-gap)}
-.ts-primary.has-run{grid-template-columns:minmax(0,1fr) minmax(108px,32%)}
+.title-screen .ts-primary.has-run button.ts-secondary{min-height:52px;font-size:16px}
 .title-screen .home-stack button.ts-play{position:relative;overflow:hidden;min-height:72px;padding:0 18px;display:flex;align-items:center;justify-content:center;gap:12px;font:900 24px/1 "Arial Black",Arial,sans-serif;letter-spacing:.06em;color:#ffd77e;background:var(--ts-surf);border:2px solid #000;border-radius:20px;box-shadow:inset 0 0 0 2px var(--ts-gold2),inset 0 3px 0 #ffffff22,0 6px 0 #000,0 10px 18px #ffb34722;text-shadow:0 2px 0 #000,0 0 14px #ffb34766;animation:ts-breathe 2.6s ease-in-out infinite}
 .title-screen .home-stack button.ts-play::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(100deg,transparent,#ffffff8a,transparent);transform:skewX(-18deg);animation:ts-shine 3.4s ease-in-out infinite;pointer-events:none}
 .title-screen .home-stack button.ts-play:hover{background:linear-gradient(180deg,#3b2a49 0%,#21172c 100%)}
@@ -939,3 +940,10 @@ body.gb-open{overflow:hidden}
 .cs-remote .cs-remote-name{display:block;font-size:15px;color:#ffe2a6}
 .cs-remote .cs-remote-note{margin:6px 0 0;text-align:center;font-size:12px;opacity:.85}
 .net-setup .setup-controls select:disabled,.net-setup .setup-controls input:disabled{opacity:.6}
+/* Continue over New Game: the smaller New Game bar shrinks with the screen; the tagline shrinks too */
+@media(max-height:700px){.title-screen .ts-primary.has-run button.ts-secondary{min-height:46px;font-size:15px}.title-screen .ts-tagline{font-size:12.5px}}
+@media(orientation:landscape) and (max-height:520px){.title-screen .ts-primary.has-run button.ts-secondary{min-height:40px;font-size:13px}.title-screen .ts-tagline{font-size:12px}}
+#sc-ready{position:fixed;left:50%;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 88px);transform:translateX(-50%);z-index:2147482001;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 16px;border-radius:999px;background:#160f20f2;border:1px solid #c99a3d99;box-shadow:0 6px 22px #000a;color:#f1e6c8;font:700 13px/1.2 system-ui,sans-serif;white-space:nowrap}
+#sc-ready[hidden]{display:none}
+#sc-ready button{border:0;border-radius:999px;padding:8px 16px;font:800 13px/1 system-ui,sans-serif;background:linear-gradient(#ffe2a6,#c99a3d);color:#1a1006;cursor:pointer}
+#sc-ready button.x{padding:8px 10px;background:transparent;color:#f1e6c8aa}
