@@ -1,6 +1,10 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.69.3 (Oct 29: installed-app updates, below; Oct 28: v0.69.1: 49 new owner portraits optimized (480px WebP q88, same bytes as the TESTver sync bot makes); home screen: Continue
+Version 0.69.4 (Oct 29: 69 more characters with owner portraits (156 PNG + 32 oversized WebP shrunk). The upload had ~60 characters with a
+PNG and a WebP per mood holding the same pictures under different mood labels; owner chose the PNG labels (clashing WebPs dropped).
+A merge from an old base moved 4 replaced PNGs into assets/originals (git rename detection): check `git diff --name-status` for M in originals/.
+`chuck-norris (2).png` is ignored by the build (bad name; owner to say its mood). 469 of 708 characters still have no own portrait.
+v0.69.3 Oct 29: installed-app updates, below; Oct 28: v0.69.1: 49 new owner portraits optimized (480px WebP q88, same bytes as the TESTver sync bot makes); home screen: Continue
 stacked over a smaller New Game again + slogan "The game playin' the game, disguised as another game!" (`.ts-tagline` under the logo).
 v0.69.3 Oct 29: installed-app updates (owner: "takes really long to update"). Causes: the browser only checks sw.js on a
 fresh open (Android resumes a kept app without one), the update is a ~100 MB background download that restarts from 0 if the app
@@ -231,7 +235,9 @@ LAG=80-150 and their offline tests; real phones untested.
   `node tests/holeit.mjs <level> 390x780` plays both turns, screenshots `/tmp/claude-0/sc/holeit-*`). The old
   `neighborhoodHole.js` is unused (helpers kept). Real-phone feel, physics speed and GPU load untested.
 - **Portraits:** owner uploads PNG/WebP to `assets/portraits/` on main; TESTver keeps 480px q88 WebP with originals in
-  `assets/originals/portraits/` (`tools/run-claude-optimizer-safe.py` for PNG; oversized WebP uploads are shrunk the same way by hand).
+  `assets/originals/portraits/` (`tools/run-claude-optimizer-safe.py` for PNG; oversized WebP uploads are shrunk the same way by hand:
+  480px LANCZOS, WebP q88 method 6, original moved to originals; neither the safe script nor the TESTver bot touches WebPs).
+  When both a .png and .webp exist for one key the build keeps the last one read (the WebP).
   `artemis.think` has two different pictures (.png and .webp); the .webp is what the game shows.
 - **Photo Hunt hand-edited set (Oct 13 2026):** 14 more pairs from owner phone screenshots (originals in
   `assets/originals/photohunt/<id>.jpg`): `tools/photohunt_handmade/make.py` crops screenshot chrome, paints out Gemini/Lens
