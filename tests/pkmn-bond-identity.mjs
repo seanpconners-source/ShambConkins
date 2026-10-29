@@ -22,7 +22,8 @@ const profile=load('src/profile.js',{'src/netHooks.js':{fx(){}},'src/cpuHooks.js
   // profile.js (Broforce durable saves) inspects the stored copy before writing.
   inspectDurableJSON:()=>saved?{status:'valid',value:JSON.parse(JSON.stringify(saved))}:{status:'missing'},
   writeDurableJSON:(_key,p)=>{saved=JSON.parse(JSON.stringify(p));return true;}},
- 'src/characters.js':chars,'src/data/savoryLab.js':{LAB_TEAM:[]},'src/data/movieBonds.js':bonds,'src/solo.js':load('src/solo.js')
+ 'src/characters.js':chars,'src/data/savoryLab.js':{LAB_TEAM:[]},'src/data/movieBonds.js':bonds,'src/solo.js':load('src/solo.js'),
+ 'src/data/characterMerge.js':load('src/data/characterMerge.js')
 });
 const store={profile:profile.freshProfile(),busy:false};
 const makeMon=(id,lvl=6)=>({id,lvl,exp:0,hp:50,status:null,pp:{}});

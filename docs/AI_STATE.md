@@ -1,6 +1,15 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.69.4 (Oct 29: 69 more characters with owner portraits (156 PNG + 32 oversized WebP shrunk). The upload had ~60 characters with a
+Version 0.70.0 (Oct 29): owner's big face upload (~1,300 PNGs named from the missing-portrait list; 327 more characters with
+their own picture, 118 still without; owner's rejects + rename_log.csv moved to `assets/originals/portraits/discarded/`). Shrunk
+with the optimize-art settings on 4 cores (scratch popt.py: same LANCZOS 480 / WebP q88 m6 / move original).
+Small PNGs (<=480px, <120 KB) were also turned into same-size WebP q88 (837 files, 53→9 MB; build 190→131 MB);
+ace.silly/cedric-bixler-zavala.angry stay PNG (an archived original has that name). 561 of 682 characters have own art, 121 not. Doubles merged
+(`src/data/characterMerge.js` MERGED_CHARACTERS dup→kept, 45 ids; dropped from ACTIVE_CATALOG, cards remapped, `character`/
+`characterIdentity`/portraits/canRecruit/recruit resolve old ids, loadProfile maps rosters/shared/earnedUnlocks/picks/BF devilId;
+ref-kitana art renamed mk-kitana, George v13's extra moods moved to george-costanza). 19 new characters (legendsPack2 end:
+Little Shop cast, Naked Gun + Leslie Nielsen/O.J., Bundys, Manson, Hitler, Obama, Clinton) + landmarks police-squad, bundy-house.
+v0.69.4 (Oct 29: 69 more characters with owner portraits (156 PNG + 32 oversized WebP shrunk). The upload had ~60 characters with a
 PNG and a WebP per mood holding the same pictures under different mood labels; owner chose the PNG labels (clashing WebPs dropped).
 A merge from an old base moved 4 replaced PNGs into assets/originals (git rename detection): check `git diff --name-status` for M in originals/.
 `chuck-norris (2).png` is ignored by the build (bad name; owner to say its mood). 469 of 708 characters still have no own portrait.

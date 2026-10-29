@@ -138,7 +138,30 @@ const ROWS2=[
  ['poop-emoji','The Poop Emoji','Emoji','💩','Pile of Poo emoji','competitor','The real winner is always the one smiling.'],
  ['mr-potato-head','Mr. Potato Head','Toy Story','🥔','Mr. Potato Head','scavenger','Swaps his parts for yours: a bonus supply at each gate.'],
  ['king-coaster','King Coaster','Planet Coaster','👑','','explorer','Ruler of the queue lines. Every ride is his ride.'],
- ['colonel-sanders','Colonel Sanders','KFC','🍗','Colonel Sanders','scavenger','Eleven herbs and spices and a bonus supply.']
+ ['colonel-sanders','Colonel Sanders','KFC','🍗','Colonel Sanders','scavenger','Eleven herbs and spices and a bonus supply.'],
+ // ---- Little Shop of Horrors (Seymour and Audrey II were already here)
+ ['lsoh-audrey','Audrey','Little Shop of Horrors','🌼','Ellen Greene','explorer','Dreams of somewhere that’s green. Finds it at every landmark.'],
+ ['lsoh-mushnik','Mr. Mushnik','Little Shop of Horrors','💐','Vincent Gardenia','scavenger','Skid Row florist with an eye on the till. Always has a little extra.'],
+ ['lsoh-orin','Orin Scrivello, DDS','Little Shop of Horrors','🦷','Steve Martin','competitor','Sadistic dentist on nitrous. Says “ahh” to every win.'],
+ ['lsoh-crystal','Crystal','Little Shop of Horrors','🎤','Tichina Arnold','competitor','Street-corner chorus. Calls the doo-wop on every victory.'],
+ ['lsoh-ronnette','Ronnette','Little Shop of Horrors','🎶','Tisha Campbell','explorer','Street-corner chorus. Sings the way to every landmark.'],
+ ['lsoh-chiffon','Chiffon','Little Shop of Horrors','🎙️','Michelle Weeks','survivor','Street-corner chorus. Harmonizes the penalties away.'],
+ // ---- The Naked Gun
+ ['leslie-nielsen','Leslie Nielsen','The Naked Gun','🎩','Leslie Nielsen','competitor','Surely you can’t be serious. He is, and don’t call him Shirley.'],
+ ['frank-drebin','Frank Drebin','The Naked Gun','🚔','Frank Drebin','survivor','Police Squad’s finest. Nothing to see here, please disperse.'],
+ ['nordberg','Nordberg','The Naked Gun','🩹','O. J. Simpson','survivor','Takes every pratfall for the squad and limps on.'],
+ ['oj-simpson','O.J. Simpson','The Naked Gun','🏈','O. J. Simpson','explorer','Hall of Fame running back. Runs off with the landmark points.'],
+ // ---- Married... with Children
+ ['mwc-al-bundy','Al Bundy','Married... with Children','👞','Al Bundy','survivor','Four touchdowns in one game for Polk High. Survives anything, even shoe sales.'],
+ ['mwc-peggy-bundy','Peggy Bundy','Married... with Children','🛋️','Peggy Bundy','scavenger','Spends Al’s money with style. Always brings a bonus supply.'],
+ ['mwc-kelly-bundy','Kelly Bundy','Married... with Children','💋','Kelly Bundy','explorer','The Verminator. Gets lost on the way to every landmark and arrives anyway.'],
+ ['mwc-bud-bundy','Bud Bundy','Married... with Children','🎧','Bud Bundy','competitor','Grandmaster B. Brags about every win.'],
+ ['mwc-buck','Buck','Married... with Children','🐕','Buck (Married... with Children)','survivor','The Bundys’ briard. Sleeps through the penalties.'],
+ // ---- Real people, each met through a film or show they turned up in
+ ['charles-manson','Charles Manson','Once Upon a Time in Hollywood','🪕','Charles Manson','survivor','Creepy drifter hanging round Spahn Ranch. Cliff Booth is not impressed.'],
+ ['adolf-hitler','Adolf Hitler','Inglourious Basterds','🎞️','Adolf Hitler','survivor','Booked the best seats at the premiere. The Basterds had other plans.'],
+ ['barack-obama','Barack Obama','Key & Peele','🇺🇸','Barack Obama','explorer','Calm, measured, and his anger translator Luther does the rest.'],
+ ['bill-clinton','Bill Clinton','Saturday Night Live','🎷','Bill Clinton','competitor','Plays the sax, stops at every drive-through, wins the room.']
 ];
 const NEW_CHARACTERS2=ROWS2.map(([id,name,source,icon,actor,perk,line,extra={}])=>({
  id,name,source,icon,actor,assetKey:'char:'+id,unlockAt:999,perkType:perk,perk:PERKS2[perk],unlockPhrase:line,

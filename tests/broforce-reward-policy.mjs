@@ -27,7 +27,7 @@ function moduleAt(file,dependencies){
  new Function('require','exports',sources(file))(req,exports);
  return exports;
 }
-const content={'src/contentPolicy.js':{ACTIVE_CATALOG:catalog}};
+const content={'src/data/characterMerge.js':{mergedCharacterId:id=>id,MERGED_CHARACTERS:{}},'src/contentPolicy.js':{ACTIVE_CATALOG:catalog}};
 const chars=moduleAt('src/characters.js', {...content,'src/utils.js':{hash:()=>0}});
 const profile=moduleAt('src/profile.js',{
  ...content,
