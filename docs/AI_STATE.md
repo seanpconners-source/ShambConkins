@@ -1,8 +1,8 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.69.2 (Oct 28; v0.69.1: 49 new owner portraits optimized (480px WebP q88, same bytes as the TESTver sync bot makes); home screen: Continue
+Version 0.69.3 (Oct 29: installed-app updates, below; Oct 28: v0.69.1: 49 new owner portraits optimized (480px WebP q88, same bytes as the TESTver sync bot makes); home screen: Continue
 stacked over a smaller New Game again + slogan "The game playin' the game, disguised as another game!" (`.ts-tagline` under the logo).
-Oct 29 (unreleased): installed-app updates (owner: "takes really long to update"). Causes: the browser only checks sw.js on a
+v0.69.3 Oct 29: installed-app updates (owner: "takes really long to update"). Causes: the browser only checks sw.js on a
 fresh open (Android resumes a kept app without one), the update is a ~100 MB background download that restarts from 0 if the app
 is closed part-way, and the old toast said "close and reopen". Now src/pwa.js asks `reg.update()` whenever the app comes back on
 screen (max every 5 min), Settings has "Version X · Check for updates" (`checkForUpdate`: /version vs VERSION, then reg.update;
