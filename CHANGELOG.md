@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.70.0
+
+**327 more characters have their own pictures**, most with several faces (win, sad, angry, think, silly, walk): the Kill Bill, Pulp Fiction, Reservoir Dogs, Jackie Brown, Inglourious Basterds and Django casts, Red Dead Redemption, the Power Rangers, the Ninja Turtles, Mortal Kombat, the Goonies, the Breakfast Club, Seinfeld's regulars, South Park, Star Trek, Star Wars, the Godfather family, Bond villains, horror icons and many more. Dr. No, Jackie Moon, Ash Ketchum and Dr. Robotnik now have a main picture, so their other faces show too. Cedric and Omar's mixed-up faces are fixed.
+
+**No more doubles.** 45 characters were in the game twice or three times under different names (the Terminator three times, Doc Brown, Marty, Ace Ventura, Michael Scott, Dwight, the Bond and Mortal Kombat pairs and more). Each is now one character. Anyone you'd unlocked under the other name is still in your roster, now as the kept one.
+
+**19 new characters:** from Little Shop of Horrors, Audrey, Mr. Mushnik, Orin Scrivello DDS and the street-corner girls Crystal, Ronnette and Chiffon; from The Naked Gun, Leslie Nielsen, Frank Drebin, Nordberg and O.J. Simpson (new landmark: Police Squad! Headquarters); the whole Bundy family from Married... with Children, Al, Peggy, Kelly, Bud and Buck (new landmark: The Bundy House); plus Charles Manson (Once Upon a Time in Hollywood), Adolf Hitler (Inglourious Basterds), Barack Obama (Key & Peele) and Bill Clinton (Saturday Night Live).
+
 ## v0.69.4
 
 **69 more characters have their own pictures**, many with several faces: Neo and Agent Smith, Arnold Schwarzenegger, Jean-Claude Van Damme, Steven Seagal, Zangief, every Batman (Adam West, Val Kilmer, George Clooney, Kevin Conroy, Will Arnett, Robert Pattinson) and Superman (Christopher Reeve, Dean Cain, Tom Welling, Brandon Routh, Henry Cavill, Tyler Hoechlin, David Corenswet, Keanu Reeves), the Backstreet Boys and the rest of *NSYNC, Jim and Pam, Mr. Burns, Bane and the Riddler, The Hateful Eight, Death Stranding's cast, Bond villains (Zorin, May Day, Largo, Elliot Carver, Renard, Nick Nack), Kaa, Mr. Potato Head, Buzz Lightyear, Stevie Wonder, John Lennon and George Harrison, and more. New faces for Clint Eastwood, Jesus and Chris from *NSYNC. All shrunk like the earlier ones (480 px WebP; full-size originals kept in `assets/originals/portraits/`).
