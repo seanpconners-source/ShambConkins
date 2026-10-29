@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+**Updating the installed app.** The app now looks for a new version every time you come back to it, not only when it is opened fresh (Android often just wakes up the old one). Settings shows the version you're on and has a **Check for updates** button: it tells you if you're up to date, starts the download if not (the bar at the bottom shows progress; it's about 100 MB, so keep the app open until it finishes), and when the new version is in, a **Restart** button appears at the bottom (not during a minigame). Your board game and characters are saved, so restarting loses nothing.
+
 ## v0.69.2
 
 **Online co-op: player 1 and player 2 are the same on both phones.** When both phones picked the same name in the Online room (each phone starts on its own Arcade "You" setting, usually Sean), both phones played as player 1: each saw itself as Mario, Sonic or Simon, and both tried to run the shared world (enemies, bosses) at the same time, so enemies could jump about or go missing for one of you. Now the phone that joined the room first is player 1 (Mario, Sonic…) and the second is player 2 (Luigi, Tails…), on both screens. Names, faces and the characters you win still go to whoever you really are. If you pick different names, nothing changes.

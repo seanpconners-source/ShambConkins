@@ -943,3 +943,7 @@ body.gb-open{overflow:hidden}
 /* Continue over New Game: the smaller New Game bar shrinks with the screen; the tagline shrinks too */
 @media(max-height:700px){.title-screen .ts-primary.has-run button.ts-secondary{min-height:46px;font-size:15px}.title-screen .ts-tagline{font-size:12.5px}}
 @media(orientation:landscape) and (max-height:520px){.title-screen .ts-primary.has-run button.ts-secondary{min-height:40px;font-size:13px}.title-screen .ts-tagline{font-size:12px}}
+#sc-ready{position:fixed;left:50%;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 88px);transform:translateX(-50%);z-index:2147482001;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 16px;border-radius:999px;background:#160f20f2;border:1px solid #c99a3d99;box-shadow:0 6px 22px #000a;color:#f1e6c8;font:700 13px/1.2 system-ui,sans-serif;white-space:nowrap}
+#sc-ready[hidden]{display:none}
+#sc-ready button{border:0;border-radius:999px;padding:8px 16px;font:800 13px/1 system-ui,sans-serif;background:linear-gradient(#ffe2a6,#c99a3d);color:#1a1006;cursor:pointer}
+#sc-ready button.x{padding:8px 10px;background:transparent;color:#f1e6c8aa}

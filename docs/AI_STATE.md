@@ -2,6 +2,14 @@
 
 Version 0.69.2 (Oct 28; v0.69.1: 49 new owner portraits optimized (480px WebP q88, same bytes as the TESTver sync bot makes); home screen: Continue
 stacked over a smaller New Game again + slogan "The game playin' the game, disguised as another game!" (`.ts-tagline` under the logo).
+Oct 29 (unreleased): installed-app updates (owner: "takes really long to update"). Causes: the browser only checks sw.js on a
+fresh open (Android resumes a kept app without one), the update is a ~100 MB background download that restarts from 0 if the app
+is closed part-way, and the old toast said "close and reopen". Now src/pwa.js asks `reg.update()` whenever the app comes back on
+screen (max every 5 min), Settings has "Version X · Check for updates" (`checkForUpdate`: /version vs VERSION, then reg.update;
+states current/downloading/pending/ready/reload/offline/file; `checkUpdateFlow` in app.js), and a finished update shows a
+Restart pill `#sc-ready` above the home dock (hidden while store.session). Test: `tests/pwa-update.mjs` (after build --pwa).
+Not done: the Worker stores a new release fully in its cache before sending the first byte (`releaseHtml`), so the first phone
+per Cloudflare location after a release waits at 0% while it pulls ~100 MB from GitHub; no resume for a half-done download.
 v0.69.2 Oct 28: online P1/P2 fix: the room's "You are" pick decided the player slot, and both phones picking the same name
 made both P1 (each phone saw itself as Mario/Sonic, both ran the shared world). duel.js now passes `slot` (the pick, or the room
 seat when both picked the same); netGame plays players[slot] with each player's real owner. Test: online-native `SAME_WHO=1`.
