@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.69.4
+
+**69 more characters have their own pictures**, many with several faces: Neo and Agent Smith, Arnold Schwarzenegger, Jean-Claude Van Damme, Steven Seagal, Zangief, every Batman (Adam West, Val Kilmer, George Clooney, Kevin Conroy, Will Arnett, Robert Pattinson) and Superman (Christopher Reeve, Dean Cain, Tom Welling, Brandon Routh, Henry Cavill, Tyler Hoechlin, David Corenswet, Keanu Reeves), the Backstreet Boys and the rest of *NSYNC, Jim and Pam, Mr. Burns, Bane and the Riddler, The Hateful Eight, Death Stranding's cast, Bond villains (Zorin, May Day, Largo, Elliot Carver, Renard, Nick Nack), Kaa, Mr. Potato Head, Buzz Lightyear, Stevie Wonder, John Lennon and George Harrison, and more. New faces for Clint Eastwood, Jesus and Chris from *NSYNC. All shrunk like the earlier ones (480 px WebP; full-size originals kept in `assets/originals/portraits/`).
+
 ## v0.69.3
 
 **Updating the installed app.** The app now looks for a new version every time you come back to it, not only when it is opened fresh (Android often just wakes up the old one). Settings shows the version you're on and has a **Check for updates** button: it tells you if you're up to date, starts the download if not (the bar at the bottom shows progress; it's about 100 MB, so keep the app open until it finishes), and when the new version is in, a **Restart** button appears at the bottom (not during a minigame). Your board game and characters are saved, so restarting loses nothing.
