@@ -2,7 +2,9 @@
 
 Version 0.70.0 (Oct 29): owner's big face upload (~1,300 PNGs named from the missing-portrait list; 327 more characters with
 their own picture, 118 still without; owner's rejects + rename_log.csv moved to `assets/originals/portraits/discarded/`). Shrunk
-with the optimize-art settings on 4 cores (scratch popt.py: same LANCZOS 480 / WebP q88 m6 / move original). Doubles merged
+with the optimize-art settings on 4 cores (scratch popt.py: same LANCZOS 480 / WebP q88 m6 / move original).
+Small PNGs (<=480px, <120 KB) were also turned into same-size WebP q88 (837 files, 53→9 MB; build 190→131 MB);
+ace.silly/cedric-bixler-zavala.angry stay PNG (an archived original has that name). 561 of 682 characters have own art, 121 not. Doubles merged
 (`src/data/characterMerge.js` MERGED_CHARACTERS dup→kept, 45 ids; dropped from ACTIVE_CATALOG, cards remapped, `character`/
 `characterIdentity`/portraits/canRecruit/recruit resolve old ids, loadProfile maps rosters/shared/earnedUnlocks/picks/BF devilId;
 ref-kitana art renamed mk-kitana, George v13's extra moods moved to george-costanza). 19 new characters (legendsPack2 end:
