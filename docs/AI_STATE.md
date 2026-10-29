@@ -1,6 +1,21 @@
 # AI state (keep short; update after meaningful work)
 
-Version 0.69.0 (Oct 28: online play fix-up after the owner's first real two-phone test ("could not join"; Broforce enemies missing
+Version 0.69.3 (Oct 29: installed-app updates, below; Oct 28: v0.69.1: 49 new owner portraits optimized (480px WebP q88, same bytes as the TESTver sync bot makes); home screen: Continue
+stacked over a smaller New Game again + slogan "The game playin' the game, disguised as another game!" (`.ts-tagline` under the logo).
+v0.69.3 Oct 29: installed-app updates (owner: "takes really long to update"). Causes: the browser only checks sw.js on a
+fresh open (Android resumes a kept app without one), the update is a ~100 MB background download that restarts from 0 if the app
+is closed part-way, and the old toast said "close and reopen". Now src/pwa.js asks `reg.update()` whenever the app comes back on
+screen (max every 5 min), Settings has "Version X · Check for updates" (`checkForUpdate`: /version vs VERSION, then reg.update;
+states current/downloading/pending/ready/reload/offline/file; `checkUpdateFlow` in app.js), and a finished update shows a
+Restart pill `#sc-ready` above the home dock (hidden while store.session). Test: `tests/pwa-update.mjs` (after build --pwa).
+Not done: the Worker stores a new release fully in its cache before sending the first byte (`releaseHtml`), so the first phone
+per Cloudflare location after a release waits at 0% while it pulls ~100 MB from GitHub; no resume for a half-done download.
+v0.69.2 Oct 28: online P1/P2 fix: the room's "You are" pick decided the player slot, and both phones picking the same name
+made both P1 (each phone saw itself as Mario/Sonic, both ran the shared world). duel.js now passes `slot` (the pick, or the room
+seat when both picked the same); netGame plays players[slot] with each player's real owner. Test: online-native `SAME_WHO=1`.
+Lag check (same day): code adds no delay vs v0.68.1 (partner shown ~90-110 ms behind with no network, both builds, headless).
+Ideas if wanted: stamp snapshots + extrapolate the partner by the full travel time, push a snapshot on jump/turn, 30 Hz.
+v0.69.0 Oct 28: online play fix-up after the owner's first real two-phone test ("could not join"; Broforce enemies missing
 for one player): net.js join retries + an error card that names the cause (offline / site unreachable / WebSocket refused by a
 blocker) with a connection log, close 4000 = seat taken by a duplicated tab (no reconnect loop, new id), worker frees seats silent
 60 s, netPlay acks {k:'npa'} (reconnect resends only unconfirmed moves), duel 20 s grace on a drop, queued rematch, version check
@@ -882,10 +897,10 @@ King Coaster; Always Sunny portraits added by owner (optimized to WebP, original
   `styles.css`). Logo `ART.brand` = `assets/shambconkins-logo.webp` (transparent + black outline, from
   `tools/brand-logo.py`; original in `assets/originals/brand/`). Keep the NEW GAME button free of transform animations
   (Playwright clicks need it stable). Screenshots: `tests/homeshots.mjs`.
-  Oct 27 tidy (owner: menu was messy): three tiers only: gold play button (CONTINUE + a NEW GAME button beside it when a run
-  is saved), an even 2x2 grid of tiles (Players = Choose Characters, Online, Arcade, Collection), and a quiet bottom dock
+  Oct 27 tidy (owner: menu was messy): three tiers only: gold play button (CONTINUE over a smaller NEW GAME bar when a run
+  is saved; owner wanted it stacked again, Oct 28), an even 2x2 grid of tiles (Players = Choose Characters, Online, Arcade, Collection), and a quiet bottom dock
   (About, Back up when due (`.ts-backup`, gold dot), Restore on an empty save, Install `.ts-install`, Exit) with line-icon SVGs
-  (`TS_ICON` in ui.js). No tagline / Mind-Body-Spirit pills / pass-and-play footer; page title is just "ShambConkins".
+  (`TS_ICON` in ui.js). Slogan `.ts-tagline` inside `.ts-logo` (owner's text, Oct 28); no Mind-Body-Spirit pills / pass-and-play footer; page title is just "ShambConkins".
   Erase progress and Clear run moved to a "Start over" zone at the bottom of Settings (confirm, Keep returns to Settings).
   `help` (dock About + the board's help button) = `aboutHTML()` in app.js: credits (Sean Conners, `RELEASED` month in
   version.js: update it with VERSION when releasing), how to play, modes, board tips (details), sources, "Art sources" button.
