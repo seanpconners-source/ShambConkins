@@ -1,5 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
+Version 0.70.1 (Oct 30): 79 newly pictured characters, additional moods/replacements; portrait files encoded as 480px WebP q88 with originals archived. No game code changes.
 Version 0.70.0 (Oct 29): owner's big face upload (~1,300 PNGs named from the missing-portrait list; 327 more characters with
 their own picture, 118 still without; owner's rejects + rename_log.csv moved to `assets/originals/portraits/discarded/`). Shrunk
 with the optimize-art settings on 4 cores (scratch popt.py: same LANCZOS 480 / WebP q88 m6 / move original).
