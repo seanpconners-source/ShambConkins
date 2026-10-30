@@ -45,7 +45,7 @@ def source_art():
             entries.append((p, sha))
         elif name != "README.txt":
             print("SKIP_UNRECOGNIZED", p, flush=True)
-    if len(entries) > 2000:
+    if len(entries) > 10000:
         raise RuntimeError("Unexpected portrait catalog size")
     return entries
 
