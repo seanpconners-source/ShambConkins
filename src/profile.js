@@ -46,6 +46,8 @@ function loadProfile() {
   const photo=normalizePhotoPair(saved.photoHuntPair);
   if(Array.isArray(saved.photoHuntPairs)){p.photoHuntPairs=photoPairLibrary(saved);const selected=photo||p.photoHuntPairs.at(-1);if(selected)currentPhotoPair(p,selected);}else if(photo)p.photoHuntPair=photo;
   if(saved.photoHuntHigh&&typeof saved.photoHuntHigh.name==='string'&&Number.isFinite(saved.photoHuntHigh.score)&&saved.photoHuntHigh.score>=0)p.photoHuntHigh={name:saved.photoHuntHigh.name.slice(0,16),score:Math.floor(saved.photoHuntHigh.score),round:Number.isFinite(saved.photoHuntHigh.round)?Math.max(1,Math.floor(saved.photoHuntHigh.round)):1};
+  // Tony Hawk's Pro Mancala: best trick score and best combo, {name, score} each (src/engines/proMancala.js).
+  if(saved.proMancala&&typeof saved.proMancala==='object'&&!Array.isArray(saved.proMancala)){const pm={};for(const k of ['high','combo']){const e=saved.proMancala[k];if(e&&typeof e.name==='string'&&Number.isFinite(e.score)&&e.score>=0)pm[k]={name:e.name.slice(0,16),score:Math.floor(e.score)};}p.proMancala=pm;}
   // Pinball high-score tables, per table id: [{name, score}] best first (src/engines/pinball.js).
   if(saved.pinballHigh&&typeof saved.pinballHigh==='object'&&!Array.isArray(saved.pinballHigh)){p.pinballHigh={};for(const [id,list] of Object.entries(saved.pinballHigh).slice(0,40))if(/^[a-z0-9-]{1,32}$/.test(id)&&Array.isArray(list))p.pinballHigh[id]=list.filter(e=>e&&typeof e.name==='string'&&Number.isFinite(e.score)&&e.score>=0).slice(0,5).map(e=>({name:e.name.slice(0,12),score:Math.floor(e.score)}));}
   if(saved.bricksQuest&&typeof saved.bricksQuest==='object'&&!Array.isArray(saved.bricksQuest)){const q=saved.bricksQuest,int=(v,d)=>Number.isFinite(v)&&v>=0?Math.floor(v):d;

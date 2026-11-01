@@ -1,5 +1,20 @@
 # AI state (keep short; update after meaningful work)
 
+Nov 1 (branch `claude/pro-mancala`, from TESTver, unreleased): Mancala overhauled into TONY HAWK'S PRO MANCALA (same id
+`greed-island-mancala`, engine name `mancala` → `engines/proMancala.js`; title/source in the engine title table in gameRegistry;
+`noBleed`). Rules/CPU/online/hot-seat kept (strategyRules mancalaMove, cpuBoards pickMancala, classicBoards `netTurns`, now
+exported); old `mancala()` in classicBoards unused. Owner's design: title sequence every time (Tony… Hawk's… Pro… Mancala…
+EXTREME EDITION!!, tap skips, then face-off cards), THPS2-dead-on screen: skateboard-deck board (`proMancalaArt.js`
+deckGeometry/makeDeck: 7-ply rings in the routed bowls, stores in the kicktails, grip, bolts, wheels), glass gems, sunny
+skatepark with a halfpipe per player (P2 top/left, P1 bottom/right), big-head skaters with the players' faces (airs, tricks,
+grinds on captures, bails), guest roster skaters ollie over / grind the board, THPS HUD (score tally, special meter),
+trick strings "A + B / pts X n", COMBO!!! on store landings, bails (being robbed, or gaining nothing and leaving the
+other a 3+ grab: combo lost), special trick when the meter is full, crude popups (owner OK'd all of them), end-of-run tally
+(`profile.proMancala` {high,combo}, validated in profile.js). Trick points are cosmetic; stores decide the winner. Local 2P:
+the per-turn pass card is now an in-canvas "X'S RUN" banner (+0.55 s tap lock). Sound `proMancalaAudio.js`: synth skate SFX
++ 3 original pop-punk songs on the pinball band engine; drop-ins `assets/music/thps-*` (README there). Test:
+`tests/promancala.mjs` (2P + 1P vs CPU, 3 sizes). Online two-phone test not run (no wrangler on the Windows box).
+
 Version 0.70.0 (Oct 29): owner's big face upload (~1,300 PNGs named from the missing-portrait list; 327 more characters with
 their own picture, 118 still without; owner's rejects + rename_log.csv moved to `assets/originals/portraits/discarded/`). Shrunk
 with the optimize-art settings on 4 cores (scratch popt.py: same LANCZOS 480 / WebP q88 m6 / move original).
