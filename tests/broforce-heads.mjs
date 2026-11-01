@@ -8,7 +8,7 @@ import {mkdirSync} from 'node:fs';
 const out=process.env.OUT||'/tmp/claude-0/sc';mkdirSync(out,{recursive:true});
 const browser=await launchBrowser();const page=await browser.newPage({viewport:{width:1200,height:900}});const errors=[];
 page.on('pageerror',e=>errors.push(e.message));
-await page.goto(pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href,{waitUntil:'domcontentloaded',timeout:90000});
+await page.goto(process.env.SHAMB_URL||pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href,{waitUntil:'domcontentloaded',timeout:90000});
 await page.waitForFunction(()=>window.ShambConkins?.requestGame,null,{timeout:60000});
 await page.evaluate(()=>{window.ShambConkins.requestGame({id:'broforce-jungle',origin:'arcade'});});
 await page.waitForTimeout(600);await page.evaluate(()=>[...document.querySelectorAll('#dialog button')].find(b=>/start/i.test(b.textContent))?.click());

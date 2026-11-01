@@ -94,7 +94,8 @@ async function proMancala(s){
  let headOf=null;try{headOf=require("src/engines/broforce.js").headCanvas;}catch{}
  const charOf=i=>s.players[i]?.character||'';
  const nameOf=i=>s.players[i]?.name||('Player '+(i+1));
- const head=(i,mood)=>headOf?headOf(charOf(i),mood||'normal'):null;
+ // faces are drawn big here (cards, skaters, pose shots), so ask for sharp 400 px cut-outs (Broforce's default is 72 px)
+ const head=(i,mood)=>headOf?headOf(charOf(i),mood||'normal',400):null;
  let state=newMancala(),busy=true,phase='intro',moveNo=0;const cpu=isCpu(s);
  const net=netTurns(s,{isTheirs:()=>phase==='play'&&!busy&&state.winner<0&&state.turn===s.online.remote,apply:m=>Number.isInteger(m.p)&&sow(m.p,true)}),theirs=()=>!!net&&state.turn===net.remote;
  const localTurn=()=>!(cpu&&state.turn===1)&&!theirs();
@@ -354,7 +355,7 @@ async function proMancala(s){
   else if(lay.vertical){py=n.lane;hop(lay.bx-geo.D*.6,lay.bx+geo.D*.6,geo.D*.7);}
   else if(n.kind==='grind'){const lo=lay.bx-geo.L/2,hi=lay.bx+geo.L/2,inside=px>lo&&px<hi;py=inside?lay.by+geo.D/2-u*.1:lay.bottom+u*.3;if(inside){pose.crouch=.5;pose.lean=-n.dir*.1;if(!n.popped){n.popped=1;S.sfx('ollie');S.sfx('grind-board',geo.L/((W+12*u)/n.dur));}if(Math.random()<.6)sparks.push({x:px-n.dir*u*1.2,y:py+u*.3,vx:-n.dir*(80+Math.random()*160),vy:-Math.random()*160,t:0,dur:.35});}else if(n.popped===1){n.popped=2;S.sfx('land');}}
   else{py=lay.bottom+u*.3;hop(lay.bx-geo.L/2-u,lay.bx+geo.L/2+u,geo.D+geo.edge+u*4);}
-  x.save();x.translate(px,py);A.drawSkater(x,u,{...pose,hat:n.hat},headOf?headOf(n.id,'normal'):null,n.o);x.restore();
+  x.save();x.translate(px,py);A.drawSkater(x,u,{...pose,hat:n.hat},headOf?headOf(n.id,'normal',160):null,n.o);x.restore();
   if(n.nm&&tau>.08&&tau<.92)thps(x,n.nm.toUpperCase(),clamp(px,lay.hu*4,W-lay.hu*4),clamp(py-u*8.6,lay.hu,H-lay.hu),lay.hu*.7,{fill:'#fff',alpha:.9,maxW:lay.hu*10});}
 
  // ---------------------------------------------------------------- drawing: board, gems, HUD, text
@@ -418,7 +419,7 @@ async function proMancala(s){
   thps(x,b.text,W/2,y-hu*.25,hu*2.1,{grad:b.p?['#e0eeff','#2f8bff']:['#ffe0e0','#ff3b30'],maxW:W*.92});if(b.sub)thps(x,b.sub,W/2,y+hu*.95,hu*.65,{fill:'#fff',maxW:W*.9});x.restore();}
  // the Now Playing card stays clear of the scores: bottom-right on tall screens, bottom-centre on wide ones
  function trackBox(){const W=lay.W,H=lay.H,hu=lay.hu,w=lay.vertical?Math.min(W*.56,hu*16):Math.min(W*.42,hu*18);return {x:lay.vertical?W-w:(W-w)/2,y:H-hu*2.2,w};}
- function drawTrack(dt){if(!track)return;if(phase!=='intro')track.t+=dt;if(track.t>5.5){track=null;return;}const hu=lay.hu,a=clamp(Math.min(track.t*3,(5.5-track.t)*2),0,1),b=trackBox(),y=b.y;
+ function drawTrack(dt){if(!track||cut)return;if(phase!=='intro')track.t+=dt;if(track.t>5.5){track=null;return;}const hu=lay.hu,a=clamp(Math.min(track.t*3,(5.5-track.t)*2),0,1),b=trackBox(),y=b.y;
   x.save();x.globalAlpha=a;x.fillStyle='rgba(0,0,0,.65)';x.fillRect(b.x,y-hu*.9,b.w,hu*2);x.restore();
   thps(x,track.band?`${track.band} — "${track.song}"`:track.song,b.x+hu*.5,y-hu*.15,hu*.7,{align:'left',fill:'#fff',alpha:a,maxW:b.w-hu});
   thps(x,'NOW PLAYING',b.x+hu*.5,y+hu*.6,hu*.5,{align:'left',fill:'#ffe600',alpha:a});}

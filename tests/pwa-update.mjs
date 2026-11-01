@@ -1,73 +1,111 @@
-// Installed-app updates (src/pwa.js): serves the PWA folder like the game's site (with /version), lets the offline cache
-// install, then switches the server to a "next" version (a copy of the folder with the version and sw.js BUILD bumped) and
-// checks: Settings → Check for updates says up to date before the switch, then downloads the new one (download bar),
-// the Restart pill appears, hides while a minigame is running, and Restart loads the new version. Also: coming back on
-// screen asks the browser for an update by itself.
+// Installed-app updates (src/pwa.js + the sw.js tools/build.mjs --pwa writes). Serves the PWA folder like the game's
+// site (cloudflare/worker.js): /version, and the game with ETag "<tag>" + 304 when the phone already has it. Checks:
+//  1. first visit: the page is kept for offline play (sc-keep), and opens with the server down;
+//  2. a new release: Check for updates says it is out, the Update button shows, Update loads the new version straight
+//     away (network-first, like a browser tab), and the new copy is saved;
+//  3. an unchanged release: opening sends If-None-Match, gets 304 and plays the saved copy;
+//  4. a phone still on the old cache-first service worker (one 200 MB background download per release) moves over:
+//     the new sw.js installs at once, keeps the old saved game, drops the old cache, and the next open loads the release.
+// Pictures and sounds (a/ files, docs/PWA_SPLIT_DELIVERY.md): the first visit saves all of them; the new release adds one
+// new picture, and the update downloads the page plus that one file only (measured and printed); 5. a first visit whose
+// download is cut off part-way carries on next time without fetching again what it already has.
 // Usage: node tools/build.mjs --pwa && node tests/pwa-update.mjs
 import {launchBrowser,root,screenshotPath} from './lib.mjs';
 import http from 'node:http';import fs from 'node:fs';import path from 'node:path';import os from 'node:os';
 const dir=path.join(root,'dist/pwa');
-const cur=fs.readFileSync(path.join(dir,'index.html'),'utf8').match(/VERSION='([^']+)'/)[1];
-const next=cur.replace(/(\d+)$/,n=>+n+1);
-// the "next" release: same game with the version number bumped, and a sw.js with a new BUILD
-const dir2=fs.mkdtempSync(path.join(os.tmpdir(),'sc-pwa-next-'));
-fs.cpSync(dir,dir2,{recursive:true});
-fs.writeFileSync(path.join(dir2,'index.html'),fs.readFileSync(path.join(dir,'index.html'),'utf8').replace(`VERSION='${cur}'`,`VERSION='${next}'`));
-fs.writeFileSync(path.join(dir2,'sw.js'),fs.readFileSync(path.join(dir,'sw.js'),'utf8').replace(/const BUILD="[^"]*"/,`const BUILD="${next}-test"`));
-const TYPES={html:'text/html',js:'text/javascript',webmanifest:'application/manifest+json',png:'image/png'};
+const html=fs.readFileSync(path.join(dir,'index.html'),'utf8'),cur=html.match(/VERSION='([^']+)'/)[1],next=cur.replace(/(\d+)$/,n=>+n+1);
+const FILES=JSON.parse(html.match(/const APP_FILES=(\[\[.*?\]\]);/)[1]);
+// the next release: version bumped, plus one new picture in its list of a/ files (like a new portrait)
+const NEW='0123456789abcdef.webp',newBytes=Buffer.from('RIFF\0\0\0\0WEBPtest picture');
+const nextHtml=html.replace(`VERSION='${cur}'`,`VERSION='${next}'`).replace('const APP_FILES=[[',`const APP_FILES=[${JSON.stringify([NEW,newBytes.length])},[`);
+let served=[];const MB=n=>(n/1048576).toFixed(1)+' MB',sum=l=>l.reduce((s,[,b])=>s+b,0);   // [path, bytes] of what the server sent
+const assetCount=p=>p.evaluate(async()=>(await (await caches.open('sc-assets')).keys()).filter(r=>!/lists\.json$/.test(r.url)).length);
+// the cache-first service worker phones have today (before this change), with its own BUILD and cache name
+const OLD_SW=`const BUILD="${cur}-old",CACHE='shambconkins-'+BUILD,FILES=["manifest.webmanifest"];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>Promise.all([fetch(new Request('index.html',{cache:'reload'})).then(r=>c.put('index.html',r)),c.addAll(FILES)])).then(()=>self.skipWaiting()));});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('shambconkins-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||new URL(r.url).origin!==location.origin)return;
+ e.respondWith(caches.open(CACHE).then(c=>c.match(r,{ignoreSearch:true}).then(hit=>hit||(r.mode==='navigate'?c.match('index.html'):undefined))).then(hit=>hit||fetch(r)));});`;
+const TYPES={html:'text/html; charset=utf-8',js:'text/javascript',webmanifest:'application/manifest+json',png:'image/png'};
 let failed=0;const check=(ok,msg)=>{console.log((ok?'ok   ':'FAIL ')+msg);if(!ok)failed++;};
-let live=dir,liveTag=cur,swAsks=0;
-const srv=await new Promise(res=>{const s=http.createServer((q,r)=>{const p=decodeURIComponent(new URL(q.url,'http://x').pathname);
-  if(p==='/version'){r.writeHead(200,{'content-type':'text/plain','cache-control':'no-store'});r.end('v'+liveTag);return;}
-  if(p==='/sw.js')swAsks++;
-  const f=path.join(live,p==='/'?'index.html':p.slice(1));
-  if(!fs.existsSync(f)){r.writeHead(404);r.end('missing');return;}
-  r.writeHead(200,{'content-type':TYPES[f.split('.').pop()]||'application/octet-stream','cache-control':'no-cache'});fs.createReadStream(f).pipe(r);}).listen(8793,()=>res(s));});
+let live={tag:cur,html,sw:null},up=true;const hits={game:0,notModified:0};
+const srv=await new Promise(res=>{const s=http.createServer((q,r)=>{if(!up){q.socket.destroy();return;}
+  const p=decodeURIComponent(new URL(q.url,'http://x').pathname);
+  if(p==='/version'){r.writeHead(200,{'content-type':'text/plain','cache-control':'no-store'});r.end('v'+live.tag);return;}
+  if(p==='/'||p==='/index.html'){const etag=`"v${live.tag}"`;hits.game++;
+   if((q.headers['if-none-match']||'').split(/,\s*/).includes(etag)){hits.notModified++;r.writeHead(304,{etag,'cache-control':'no-cache'});r.end();return;}
+   served.push([p,Buffer.byteLength(live.html)]);r.writeHead(200,{'content-type':TYPES.html,'cache-control':'no-cache',etag});r.end(live.html);return;}
+  if(p==='/sw.js'&&live.sw){r.writeHead(200,{'content-type':TYPES.js,'cache-control':'no-cache'});r.end(live.sw);return;}
+  if(p==='/a/'+NEW){served.push([p,newBytes.length]);r.writeHead(200,{'content-type':'image/webp'});r.end(newBytes);return;}
+  const f=path.join(dir,p.slice(1));if(!fs.existsSync(f)){r.writeHead(404);r.end('missing');return;}
+  served.push([p,fs.statSync(f).size]);r.writeHead(200,{'content-type':TYPES[f.split('.').pop()]||'application/octet-stream','cache-control':'no-cache'});fs.createReadStream(f).pipe(r);}).listen(8793,()=>res(s));});
+const URL0='http://localhost:8793/';
 const browser=await launchBrowser();
-const ctx=await browser.newContext({viewport:{width:390,height:780}});const p=await ctx.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
-await p.addInitScript(()=>{window.__dl=[];navigator.serviceWorker?.addEventListener('message',e=>{if(e.data?.type==='sc-download')window.__dl.push(e.data);});});
-const ver=()=>p.evaluate(()=>window.ShambConkins?.version);
-const dialogText=()=>p.evaluate(()=>document.querySelector('#dialog[open]')?.innerText||'');
-const closeDialog=()=>p.evaluate(()=>{const b=[...document.querySelectorAll('#dialog[open] button')].find(b=>/OK|Later|Back to it/.test(b.textContent));b?.click();});
-const checkNow=async()=>{await p.evaluate(()=>{const b=document.createElement('button');b.dataset.action='check-update';document.body.append(b);b.click();b.remove();});
- await p.waitForFunction(()=>/Up to date|downloading|is ready|Couldn|Opened as a file/.test(document.querySelector('#dialog[open]')?.innerText||''),null,{timeout:30000});return dialogText();};
+async function phone(){const ctx=await browser.newContext({viewport:{width:390,height:780}});const p=await ctx.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));return {ctx,p,errors};}
+const ver=p=>p.evaluate(()=>window.ShambConkins?.version).catch(()=>null);
+const saved=p=>p.evaluate(async()=>{const out={};for(const k of await caches.keys())out[k]=!!(await (await caches.open(k)).match('index.html'));return out;});
+const until=async(p,f,ms=60000,arg)=>{for(let t=0;t<ms;t+=250){if(await p.evaluate(f,arg).catch(()=>false))return true;await p.waitForTimeout(250);}return false;};
+const openGame=async p=>{await p.goto(URL0,{waitUntil:'load',timeout:180000});await until(p,()=>!!window.ShambConkins?.version,60000);};
+const dialogText=p=>p.evaluate(()=>document.querySelector('#dialog[open]')?.innerText||'');
+async function checkUpdates(p){await p.evaluate(()=>{const b=document.createElement('button');b.dataset.action='check-update';document.body.append(b);b.click();b.remove();});
+ await until(p,()=>!!document.querySelector('#dialog[open]'),15000);const t=await dialogText(p);
+ await p.evaluate(()=>{const d=document.querySelector('#dialog[open]');[...d.querySelectorAll('button')].find(b=>/later|ok/i.test(b.textContent))?.click();});await p.waitForTimeout(300);return t;}
 
-// 1. first visit installs the offline cache; reopen so this page runs under it
-await p.goto('http://localhost:8793/');await p.waitForSelector('.title-screen',{timeout:60000});
-await p.waitForFunction(()=>window.__dl.some(m=>m.done),null,{timeout:120000});
-await p.reload();await p.waitForSelector('.title-screen',{timeout:60000});
-check(await p.evaluate(()=>!!navigator.serviceWorker.controller),'the offline cache runs the page');
-check(await ver()===cur,`running v${cur}`);
-// Settings shows the version and the button
-await p.evaluate(()=>{const b=document.createElement('button');b.dataset.action='settings';document.body.append(b);b.click();b.remove();});
-await p.waitForSelector('#dialog[open] [data-action="check-update"]',{timeout:10000});
-check(new RegExp(`Version ${cur.replace(/\./g,'\\.')}`).test(await dialogText()),'Settings shows the version and Check for updates');
-await closeDialog();
-// 2. nothing new yet
-let t=await checkNow();check(/Up to date/.test(t),'Check for updates: up to date before a release');await closeDialog();
-// 3. a release comes out: the check downloads it with the bar, then the Restart pill shows
-live=dir2;liveTag=next;
-t=await checkNow();check(/downloading/.test(t),`Check for updates after the release says v${next} is downloading`);await closeDialog();
-await p.waitForSelector('#sc-ready:not([hidden])',{timeout:120000}).catch(()=>{});
-check(await p.evaluate(()=>window.__dl.some(m=>m.got>0&&!m.done)),'the download bar showed progress');
-check(await p.evaluate(()=>!!document.getElementById('sc-ready')&&!document.getElementById('sc-ready').hidden),'Restart pill shows once the update is in');
-await p.screenshot({path:screenshotPath('pwa-update-ready.png')});
-check(await ver()===cur,'the page keeps running the old version until Restart');
-t=await checkNow();check(/is ready/.test(t),'Check for updates now says it is ready');await closeDialog();
-// hidden while a minigame runs (store.session), back after
-await p.evaluate(()=>{window.ShambConkins.store.session={};});await p.waitForTimeout(1300);
-check(await p.evaluate(()=>document.getElementById('sc-ready').hidden),'Restart pill hides during a minigame');
-await p.evaluate(()=>{window.ShambConkins.store.session=null;});await p.waitForTimeout(1300);
-check(await p.evaluate(()=>!document.getElementById('sc-ready').hidden),'and comes back after it');
-// 4. Restart loads the new version
-await Promise.all([p.waitForNavigation({timeout:60000}),p.click('#sc-ready button')]);
-await p.waitForSelector('.title-screen',{timeout:60000});
-check(await ver()===next,`Restart loads v${next} (got v${await ver()})`);
-// 5. coming back on screen asks for an update by itself (throttled to every 5 min, so pretend 6 min passed)
-const before=swAsks;
-await p.evaluate(()=>{const now=Date.now;Date.now=()=>now()+6*60*1000;Object.defineProperty(document,'hidden',{configurable:true,get:()=>false});document.dispatchEvent(new Event('visibilitychange'));});
-await p.waitForTimeout(1500);
-check(swAsks>before,'coming back on screen checks sw.js for an update');
-check(!errors.length,'no page errors '+errors.slice(0,3).join(' | '));
-await browser.close();srv.close();fs.rmSync(dir2,{recursive:true,force:true});
-console.log(failed?`PWA UPDATE FAILED (${failed})`:'PWA UPDATE OK');process.exit(failed?1:0);
+// ---- 1-3: a fresh phone with the new service worker
+{const {ctx,p,errors}=await phone();
+ await openGame(p);check(await ver(p)===cur,`first visit runs v${cur}`);
+ check(await until(p,async()=>{const c=await caches.open('shambconkins-app');return !!(await c.match('index.html'));},90000),'page kept for offline play after first visit');
+ check(await until(p,async n=>(await (await caches.open('sc-assets')).keys()).length>n,180000,FILES.length),`first visit saves all ${FILES.length} pictures and sounds (${MB(sum(FILES))})`);
+ console.log(`     first visit downloaded ${MB(sum(served))}`);
+ let t=await checkUpdates(p);check(/up to date/i.test(t),`Check for updates: up to date (${t.split('\n')[0]})`);
+ up=false;await openGame(p).catch(()=>{});check(await ver(p)===cur,'opens offline from the saved copy');
+ const song=FILES.find(([n])=>/\.mp3$/.test(n))||FILES[0];
+ check(await p.evaluate(async([n,b])=>{const r=await fetch('a/'+n);return r.ok&&(await r.blob()).size===b;},song).catch(()=>false),'offline: a song comes from the picture/sound cache');
+ check(await p.evaluate(async([n,b])=>{const r=await fetch('a/'+n,{headers:{Range:'bytes=100-199'}});return r.status===206&&(await r.blob()).size===100&&r.headers.get('content-range')===`bytes 100-199/${b}`;},song).catch(()=>false),'offline: byte ranges (how audio players ask) answer 206');
+ up=true;
+ const before={...hits};await openGame(p);check(hits.notModified>before.notModified,`unchanged release: 304 (${hits.notModified-before.notModified}) and the saved copy plays`);
+ live={...live,tag:next,html:nextHtml};
+ t=await checkUpdates(p);check(new RegExp(`v${next.replace(/\./g,'\\.')} is out`).test(t),`Check for updates: v${next} is out`);
+ check(await p.evaluate(()=>!!document.getElementById('sc-ready')&&!document.getElementById('sc-ready').hidden),'Update button shows');
+ await p.screenshot({path:screenshotPath('pwa-update-button.png')});
+ served=[];
+ await Promise.all([p.waitForNavigation({timeout:180000}),p.evaluate(()=>document.querySelector('#sc-ready button').click())]);await until(p,()=>!!window.ShambConkins?.version,60000);
+ check(await ver(p)===next,`Update loads v${next} straight away`);
+ check(await until(p,async()=>{const c=await caches.open('shambconkins-app'),r=await c.match('index.html');return r&&(r.headers.get('etag')||'').includes(window.ShambConkins.version);},90000),'the new version is saved for offline play');
+ check(await until(p,async name=>!!(await (await caches.open('sc-assets')).match('a/'+name)),60000,NEW),'the new picture is saved for offline play');
+ await p.waitForTimeout(1500);
+ const upd=served.filter(([f])=>f!=='/version'),updFiles=upd.filter(([f])=>f.startsWith('/a/'));
+ console.log(`     update download: ${MB(sum(upd))}: ${upd.map(([f,b])=>`${f} ${(b/1024).toFixed(0)} KB`).join(', ')}`);
+ check(updFiles.length===1&&updFiles[0][0]==='/a/'+NEW,`the update fetched only the one new picture from a/ (${updFiles.length} a/ files)`);
+ check(await assetCount(p)===FILES.length+1,'picture cache holds every file of both versions');
+ up=false;await openGame(p).catch(()=>{});check(await ver(p)===next,'offline opens the new saved copy');up=true;
+ check(!errors.length,'no page errors'+(errors.length?': '+errors.slice(0,2).join(' | '):''));await ctx.close();}
+
+// ---- 4: a phone still on the old cache-first service worker
+live={tag:cur,html,sw:OLD_SW};
+{const {ctx,p,errors}=await phone();
+ await openGame(p);check(await until(p,async()=>!!(await caches.open('shambconkins-'+window.ShambConkins.version+'-old').then(c=>c.match('index.html'))),90000),'old service worker saved the game (old style)');
+ live={tag:next,html:nextHtml,sw:null};// the release with the new sw.js
+ await p.evaluate(()=>navigator.serviceWorker.getRegistration().then(r=>r&&r.update()));
+ check(await until(p,async()=>{const r=await navigator.serviceWorker.getRegistration();return !!r?.active&&/shambconkins-app/.test(await (await fetch('sw.js',{cache:'no-store'})).text())&&(await caches.keys()).includes('shambconkins-app')&&(await caches.keys()).filter(k=>k.startsWith('shambconkins-')).length===1;},60000),'new service worker took over and dropped the old cache');
+ const s=await saved(p);check(s['shambconkins-app']===true,'the old saved game was kept until the new one comes in');
+ await openGame(p);check(await ver(p)===next,`next open loads v${next}`);
+ check(!errors.length,'no page errors'+(errors.length?': '+errors.slice(0,2).join(' | '):''));await ctx.close();}
+// ---- 5: a first visit whose picture download stops part-way carries on next time
+live={tag:cur,html,sw:null};
+{const {ctx,p,errors}=await phone();let failAt=400,aReq=0;const dl=[];
+ await p.exposeFunction('__dlMsg',m=>dl.push(m));
+ await p.addInitScript(()=>navigator.serviceWorker?.addEventListener('message',e=>{if(e.data?.type==='sc-download')window.__dlMsg(e.data);}));
+ // from the 400th a/ request on, the network is "gone"
+ await ctx.route('**/a/**',route=>{if(failAt>0&&++aReq>=failAt)return route.fulfill({status:503,body:'busy'});return route.continue();});
+ await openGame(p);
+ for(let t=0;t<180000&&!dl.some(m=>m.failed);t+=250)await p.waitForTimeout(250);
+ check(dl.some(m=>m.failed),'a download error stops the picture download');
+ await p.waitForTimeout(1500);const kept=await assetCount(p);
+ failAt=-1;served=[];await openGame(p);
+ check(await until(p,async n=>(await (await caches.open('sc-assets')).keys()).length>n,180000,FILES.length),'the next start finishes it');
+ const again=new Set(served.filter(([f])=>f.startsWith('/a/')).map(([f])=>f)).size;
+ check(kept>100&&again<=FILES.length-kept+40,`second start fetched ${again} of ${FILES.length} files (${kept} were kept from the first try)`);
+ check(!errors.length,'no page errors'+(errors.length?': '+errors.slice(0,2).join(' | '):''));await ctx.close();}
+await browser.close();srv.close();
+console.log(failed?`pwa-update: ${failed} FAILED`:'pwa-update OK');process.exit(failed?1:0);

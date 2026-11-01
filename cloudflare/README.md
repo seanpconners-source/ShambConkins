@@ -15,7 +15,14 @@ Why a Worker instead of Cloudflare Pages: Pages refuses files over 25 MB, and th
 Free plan is enough (100,000 requests a day; the file is cached by Cloudflare, GitHub is only hit once per data centre per release).
 
 ## Addresses
-- `/` newest release · `/download` newest as a file · `/v0.60.0` a specific release · `/version` newest tag
+- `/` newest release (its small app page when the release has `index.html`, else the one-file game) · `/download`
+  newest as a file · `/v0.60.0` a specific release · `/version` newest tag
+- `/a/<hash>.<ext>`: the app's pictures and sounds (portraits, songs, DOOM, pinball, Photo Hunt, built-in art), one file
+  each, named by their contents, so an update only downloads what changed (docs/PWA_SPLIT_DELIVERY.md). They are the
+  Worker's **static assets** (`[assets]` in wrangler.toml, folder `public/`): the GitHub deploys fill `public/a/` with
+  `tools/worker-assets.sh` from the newest releases' `_pwa.zip` (the release workflow adds the new release's own) and
+  upload only files Cloudflare doesn't have yet. Free plan: 20,000 files, 25 MiB each; these requests don't count
+  against the Worker's daily limit. A Worker pasted in the dashboard has no static assets, so the app can't get them.
 - `/manifest.webmanifest`, `/sw.js`, `/icons/*.png`, `/index.html`: the installable-app files of the newest release
   (from v0.63.1 every release carries them as small assets). They make Chrome install a real app (no Chrome badge on
   the icon) that opens full screen, works offline and updates itself.

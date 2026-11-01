@@ -71,7 +71,7 @@ function chooseDevil(profile,owners=DEFAULT_OWNERS,random=Math.random,prefer=nul
 // Broforce draws offline only, so a devil without bundled raster art shows a
 // placeholder face. Prefer locked characters whose portrait ships in the file.
 function devilHasArt(id){
- try{return /^data:image\/(webp|png|jpe?g|gif)/i.test(require('src/assets.js').portraitURL(id,'normal')||'');}
+ try{return require('src/data/userPortraits.js').isRasterArt(require('src/assets.js').portraitURL(id,'normal'));}
  catch{return false;}
 }
 

@@ -1,7 +1,7 @@
 const {entityArtSpec, cachedEntityURL, queueEntityArt}=require("src/entityMedia.js");
 const {headDisplayURL}=require("src/headCutouts.js");
 const {ART}=require("src/data/art.js");
-const {USER_PORTRAITS}=require("src/data/userPortraits.js");
+const {USER_PORTRAITS,isRasterArt}=require("src/data/userPortraits.js");
 const {mergedCharacterId}=require("src/data/characterMerge.js");
 const {ORIGINAL_REMOTE_PORTRAITS}=require("src/data/originalPortraits.js");
 const {ORIGINAL_LOGOS}=require("src/data/logos.js");
@@ -58,7 +58,7 @@ function brandHTML(source, cls='property-logo') {const fallback=logoURL(source),
 function portraitURL(id, mood='normal') {id=mergedCharacterId(id);const face=suppliedPortraitURL(id,mood);if(face)return face;if(id==='mars-attacker')return martianPortrait();const supplied=ART['photo:char:'+id];if(supplied){const moodKey={idle:'normal',happy:'win',walking:'walk',thinking:'think',lose:'sad',losing:'sad',mad:'angry'}[mood]||mood;return USER_PORTRAITS[`char:${id}:${moodKey}`]||supplied;}if(id==='sean')return ['think','thinking','sad','lose'].includes(mood)?ART['char:sean:lose']||ART['char:sean:normal']:ART['char:sean:win'];const cached=store.profile?.settings.originalLogos&&cachedEntityURL('character',id);if(cached)return cached;const aliases={idle:'normal',happy:'win',walking:'walk',thinking:'think',lose:'sad',mad:'angry'};const direct=ART[`char:${id}:${mood}`];if(direct)return direct;const mapped=aliases[mood]||mood;if(id==='amber'){const amber={walk:'silly',think:'angry',lose:'sad',happy:'win'};return ART[`char:amber:${amber[mapped]||mapped}`]||ART['char:amber:normal'];}const local=ART[`char:${id}:${mapped}`]||ART[`char:${id}:normal`]||ART[`char:${id}`];if(local)return local;const remote=ORIGINAL_REMOTE_PORTRAITS[`char:${id}:normal`];if(remote)return store.profile?.settings.originalLogos?remote:portraitFallbackURL(id);return id==='emilio-estevez'?emilioPortrait():null; }
 // Moods with the owner's own art: drop-in files, supplied faces, or built-in raster photos (Sean, Amber, ...); never generated
 // SVG placeholders or remote photos. A mood is listed when its picture differs from the normal one (two moods may share a picture).
-function ownMoodURL(id,mood){const url=suppliedPortraitURL(id,mood)||USER_PORTRAITS[`char:${id}:${mood}`]||portraitURL(id,mood);return url&&(url===suppliedPortraitURL(id,mood)||url===USER_PORTRAITS[`char:${id}:${mood}`]||/^data:image\/(webp|jpeg|png|gif)/.test(url))?url:null;}
+function ownMoodURL(id,mood){const url=suppliedPortraitURL(id,mood)||USER_PORTRAITS[`char:${id}:${mood}`]||portraitURL(id,mood);return url&&(url===suppliedPortraitURL(id,mood)||url===USER_PORTRAITS[`char:${id}:${mood}`]||isRasterArt(url))?url:null;}
 function portraitMoods(id){id=mergedCharacterId(id);const base=portraitURL(id,'normal');return ['win','think','silly','angry','sad','walk'].filter(mood=>{const url=ownMoodURL(id,mood);return url&&url!==base;});}
 function entityAttributes(kind,entity){const spec=entityArtSpec(kind,entity);if(spec.local)return '';return `data-entity-kind="${kind}" data-entity-id="${escapeHTML(entity.id)}" data-entity-name="${escapeHTML(entity.name)}" data-entity-source="${escapeHTML(entity.source)}" data-entity-page="${escapeHTML(spec.page)}" data-entity-actor="${escapeHTML(spec.actor)}" data-entity-article="${escapeHTML(spec.article)}"`;}
 function portraitHTML(id,cls='portrait',mood='normal'){

@@ -24,9 +24,8 @@ await p.waitForFunction(()=>!document.getElementById('boot'),null,{timeout:5000}
 check(await p.evaluate(()=>!document.getElementById('boot')),'loading screen removed once the title screen is up');
 check(await p.evaluate(()=>+localStorage.getItem('sc-boot-ms')>0&&localStorage.getItem('sc-boot-version')===window.ShambConkins.version),'start time remembered for the next loading bar');
 await p.waitForFunction(()=>navigator.serviceWorker?.controller||null,null,{timeout:120000}).catch(()=>{});
-const dl=await p.evaluate(()=>window.__dl);
-check(dl.some(m=>m.done)&&dl.some(m=>!m.done&&m.got>0),`download progress reported (${dl.length} updates, last ${JSON.stringify(dl.at(-1))})`);
-check(await p.evaluate(()=>/Saved for offline play/.test(document.getElementById('sc-dl')?.textContent||'')),'download bar says the game is saved for offline play');
+// the page that installed the service worker asks it to keep a copy for offline play (sc-keep)
+check(await p.waitForFunction(async()=>{const c=await caches.open('shambconkins-app');return !!await c.match('index.html');},null,{timeout:120000,polling:500}).then(()=>true,()=>false),'first visit is saved for offline play');
 await p.reload();await p.waitForSelector('.title-screen');
 let info=await cdpInfo(p);
 await p.goto('about:blank');await p.goto('http://localhost:8791/');
