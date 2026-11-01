@@ -16,6 +16,8 @@ const {saveProfile}=require("src/profile.js");
 const audio=require("src/audio.js");
 const {USER_PORTRAITS}=require("src/data/userPortraits.js");
 const A=require("src/engines/proMancalaArt.js");
+const SP=require("src/engines/proMancalaSpots.js");
+const {fullscreenSupported,toggleFullscreen,fullscreenLabel}=require("src/fullscreen.js");
 const S=require("src/engines/proMancalaAudio.js");
 const {thps,clamp}=A;
 const TAU=Math.PI*2;
@@ -40,7 +42,7 @@ const PCOL=['#ff3b30','#2f8bff'];
 // ------------------------------------------------------------------ layout: the board is the focus and fills the screen
 // Tall screens turn the deck upright (player 1's bowls the left column, their store at the bottom; player 2's the right
 // column, store at the top). Wide screens lay it flat (player 1's bowls along the bottom, store on the right).
-function layout(W,H){const vertical=H>W*1.08,hu=clamp(Math.min(W,H)/24,11,30),lay={W,H,vertical,hu};
+function layout(W,H,pillsW=130){const vertical=H>W*1.08,hu=clamp(Math.min(W,H)/24,11,30),lay={W,H,vertical,hu,pillsW};
  if(vertical){const geo=A.deckGeometry(Math.min(H*.7,(W*.62)/.249)),L=geo.L,D=geo.D,ext=geo.edge+geo.wheel*.9,top=Math.max(hu*5.2,(H-L-ext)/2);
   Object.assign(lay,{geo,bx:W/2,by:top+L/2,top,bottom:top+L+ext});const colW=(W-D)/2;
   lay.band=[{x:0,y:lay.bottom,w:W,h:H-lay.bottom},{x:0,y:0,w:W,h:top}];
@@ -52,7 +54,7 @@ function layout(W,H){const vertical=H>W*1.08,hu=clamp(Math.min(W,H)/24,11,30),la
   Object.assign(lay,{geo,bx:W/2,by:top+D/2,top,bottom:top+D+ext});
   lay.band=[{x:0,y:lay.bottom,w:W,h:H-lay.bottom},{x:0,y:0,w:W,h:top}];
   lay.hud=[{x:10,y:lay.bottom+4},{x:10,y:6}];
-  const ch=Math.min(top-10,240),cw=ch*.86;lay.card=[{x:W-cw-10,y:lay.bottom+5,w:cw,h:ch},{x:W-130-cw,y:4,w:cw,h:ch}];
+  const ch=Math.min(top-10,240),cw=ch*.86;lay.card=[{x:W-cw-10,y:lay.bottom+5,w:cw,h:ch},{x:W-pillsW-cw,y:4,w:cw,h:ch}];
   lay.trick=[0,1].map(i=>{const b=lay.band[i],x0=10+hu*9.5,x1=lay.card[i].x-10;return x1-x0>=W*.3&&b.h>hu*4?{x:(x0+x1)/2,y:b.y+b.h*.45,w:x1-x0}:{x:W/2,y:lay.by+(i?-1:1)*D*.25,w:W*.9,over:true};});
   lay.cones=[[W/2-L*.47,lay.bottom+hu*.6,hu],[W/2+L*.46,lay.bottom+hu*.7,hu*.9]];}
  lay.pipes=[];lay.horizon=Math.max(30,lay.top*(vertical?.8:.62));
@@ -60,6 +62,15 @@ function layout(W,H){const vertical=H>W*1.08,hu=clamp(Math.min(W,H)/24,11,30),la
 
 async function proMancala(s){
  const [c,x]=s.canvas(900,600,{fill:true});fullBleed(s,{bg:'#3d78b8'});
+ // a small full-screen toggle beside Pause/Exit (only where the browser allows it; the installed app is full screen already)
+ let fsBtn=null,fsKey='';
+ if(fullscreenSupported()){const shell=s.body.closest('.game-shell');if(shell){fsBtn=document.createElement('button');fsBtn.type='button';fsBtn.className='pm-fs';fsBtn.textContent=fullscreenLabel('icon');fsBtn.title='Full screen';fsBtn.setAttribute('aria-label','Toggle full screen');
+  const css=document.createElement('style');css.textContent='.pm-fs{position:absolute;z-index:13;width:30px;height:30px;min-width:0;min-height:0;padding:0;margin:0;border-radius:999px;background:#000a;color:#fff;border:1px solid #ffffff40;box-shadow:none;font:700 15px/28px system-ui,sans-serif;text-align:center;cursor:pointer;opacity:.8}.pm-shell .fb-fs{display:none}';
+  shell.classList.add('pm-shell');shell.append(css,fsBtn);s.cleanup(()=>{fsBtn.remove();css.remove();shell.classList.remove('pm-shell');});
+  s.on(fsBtn,'pointerdown',e=>e.stopPropagation());s.on(fsBtn,'click',e=>{e.preventDefault();e.stopPropagation();toggleFullscreen();});
+  const sync=()=>{fsBtn.textContent=fullscreenLabel('icon');};s.on(document,'fullscreenchange',sync);s.on(document,'webkitfullscreenchange',sync);}}
+ function placeFs(){if(!fsBtn)return;const shell=fsBtn.parentElement,r=shell?.querySelector('.game-actions')?.getBoundingClientRect(),sr=shell?.getBoundingClientRect();if(!r||!sr||!r.width)return;
+  const right=Math.round(sr.right-r.left+6),top=Math.round(r.top-sr.top+(r.height-30)/2),key=right+','+top;if(key===fsKey)return;fsKey=key;fsBtn.style.right=right+'px';fsBtn.style.top=top+'px';}
  let headOf=null;try{headOf=require("src/engines/broforce.js").headCanvas;}catch{}
  const charOf=i=>s.players[i]?.character||'';
  const nameOf=i=>s.players[i]?.name||('Player '+(i+1));
@@ -80,7 +91,7 @@ async function proMancala(s){
  const npcs=[];let npcT=4;
  const guestPool=Object.keys(USER_PORTRAITS).filter(k=>k.startsWith('photo:char:')).map(k=>k.slice(11)).filter(id=>id!==charOf(0)&&id!==charOf(1));
  let lay=null,deck=null,park=null,dpr=1,layKey='';
- function relayout(){const W=s.W,H=s.H;dpr=Math.min(2,window.devicePixelRatio||1);const key=W+'x'+H+'@'+dpr;if(key===layKey)return;layKey=key;lay=layout(W,H);deck=A.makeDeck(lay.geo,dpr,lay.vertical?'end':'side');park=A.makePark(W,H,dpr,lay);}
+ function relayout(){const W=s.W,H=s.H;dpr=Math.min(2,window.devicePixelRatio||1);const key=W+'x'+H+'@'+dpr;if(key===layKey)return;layKey=key;lay=layout(W,H,fsBtn?172:130);deck=A.makeDeck(lay.geo,dpr,lay.vertical?'end':'side');park=A.makePark(W,H,dpr,lay);}
  // deck-local → screen (upright deck = turned 90° clockwise)
  const pitPos=i=>{const p=lay.geo.pits[i];return lay.vertical?{x:lay.bx-p.y,y:lay.by+p.x,rx:p.ry,ry:p.rx,store:p.store}:{x:lay.bx+p.x,y:lay.by+p.y,rx:p.rx,ry:p.ry,store:p.store};};
  const gemR=()=>lay.geo.pr*.31;
@@ -89,20 +100,37 @@ async function proMancala(s){
 
  // ---------------------------------------------------------------- feedback helpers
  function setMood(i,m,sec=2.4){P[i].mood=m;P[i].moodT=sec;}
- // every popup is measured and kept fully on screen (shrunk if it would not fit)
- function pop(text,{x0=null,y0=null,px=null,col=null,dur=1.3,rot=null,big=false,bad=false}={}){const W=lay.W,H=lay.H,hu=lay.hu;
+ // Every popup is measured, kept fully on screen (shrunk if it would not fit) and placed where it covers no other text:
+ // the HUDs, cards, trick string, turn banner, now-playing card, camcorder stamps and the other popups. Big ones
+ // (COMBO!!!, BAIL!, STOLEN!...) always show, pushing small ones out of their way; a small one with nowhere free is dropped.
+ const inter=(a,b)=>Math.max(0,Math.min(a.x1,b.x1)-Math.max(a.x0,b.x0))*Math.max(0,Math.min(a.y1,b.y1)-Math.max(a.y0,b.y0));
+ function textRects(){const W=lay.W,H=lay.H,hu=lay.hu,r=[{x0:W-lay.pillsW,y0:0,x1:W,y1:46}];
+  for(const i of [0,1]){const h=lay.hud[i];r.push({x0:h.x,y0:h.y,x1:h.x+hu*9.2,y1:h.y+hu*5.2});if(!cut){const c=lay.card[i];if(c.h>=36)r.push({x0:c.x,y0:c.y,x1:c.x+c.w,y1:c.y+c.h});}}
+  const cl=comboLayout();if(cl)r.push(cl.rect);
+  if(banner)r.push({x0:0,y0:H/2-hu*2,x1:W,y1:H/2+hu*1.8});
+  if(track)r.push({x0:0,y0:H-hu*3.6,x1:Math.min(W*.8,hu*20),y1:H-hu*1.5});
+  if(cut){r.push({x0:W*.45,y0:44,x1:W,y1:52+hu*3.2});r.push({x0:W-hu*14,y0:H-hu*3.2,x1:W,y1:H});if(cut.impact)r.push({x0:W*.2,y0:H*.4-hu*2.2,x1:W*.8,y1:H*.4+hu*2.2});}
+  return r;}
+ function pop(text,{x0=null,y0=null,px=null,col=null,dur=1.3,rot=null,big=false,bad=false,imp=big}={}){const W=lay.W,H=lay.H,hu=lay.hu;
   const pal=bad?[['#ff4040','#a00000'],['#ff7070','#c01010']]:[['#fff35c','#ff9d00'],['#7dfcff','#1d8bff'],['#ff7ce5','#ff1f6d'],['#b6ff4a','#16b000'],['#ffffff','#ffd000']];
-  let size=px??hu*(big?2.6:1.5+Math.random()*.7);x.font=A.font(size);let w=x.measureText(text).width*.84*1.3+size*.4;if(w>W*.92){size*=W*.92/w;w=W*.92;}
-  const r=rot??(Math.random()-.5)*.4,hh=size*1.3+Math.abs(Math.sin(r))*w*.5;
-  const px0=clamp(x0??W*(.12+Math.random()*.76),w/2+4,W-w/2-4),py0=clamp(y0??H*(.14+Math.random()*.72),hh/2+4+hu,H-hh/2-4);
-  pops.push({text,x:px0,y:py0,px:size,grad:col||pickOf(pal),dur,t:0,rot:r,vy:-hu*.5,top:hh/2+4});if(pops.length>18)pops.shift();}
+  let size=px??hu*(big?2.6:1.5+Math.random()*.7);x.font=A.font(size);let w=x.measureText(text).width*.84*1.25+size*.3;if(w>W*.92){size*=W*.92/w;w=W*.92;}
+  const r=rot??(Math.random()-.5)*.36,h=size*1.25+Math.abs(Math.sin(r))*w*.5+hu*.5;
+  const fixed=textRects(),others=pops.map(p=>p.r),box=(cx,cy)=>({x0:cx-w/2,y0:cy-h/2,x1:cx+w/2,y1:cy+h/2});
+  const cands=[],cl=(cx,cy)=>[clamp(cx,w/2+4,W-w/2-4),clamp(cy,h/2+4,H-h/2-4)];
+  if(x0!=null)for(let k=0;k<24;k++){const a=k*2.4,d=k?h*.55*Math.sqrt(k):0;cands.push(cl(x0+Math.cos(a)*d*1.5,y0+Math.sin(a)*d));}
+  for(let k=0;k<30;k++)cands.push(cl(W*(.06+Math.random()*.88),H*(.08+Math.random()*.84)));
+  let best=null;for(const [cx,cy] of cands){const b=box(cx,cy);let o=0;for(const q of fixed)o+=inter(b,q);for(const q of others)o+=inter(b,q)*(imp?.5:2);if(!best||o<best.o)best={cx,cy,b,o};if(o===0)break;}
+  if(best.o>0&&!imp)return;
+  if(imp)for(let j=pops.length-1;j>=0;j--)if(!pops[j].imp&&inter(best.b,pops[j].r)>0)pops.splice(j,1);
+  pops.push({text,x:best.cx,y:best.cy,px:size,grad:col||pickOf(pal),dur,t:0,rot:r,vy:-hu*.4,r:best.b,imp});if(pops.length>14)pops.shift();}
+ function clearUnder(r){for(let j=pops.length-1;j>=0;j--)if(!pops[j].imp&&inter(r,pops[j].r)>0)pops.splice(j,1);}
  function popNear(i,text,o={}){const p=pitPos(i);pop(text,{x0:p.x+(Math.random()-.5)*p.rx,y0:p.y-p.ry-lay.hu*.6,px:lay.hu*.95,dur:.9,rot:0,...o});}
  function sparkBurst(x0,y0,n=14,sp=260,list=sparks){for(let k=0;k<n;k++){const a=-Math.PI*(.1+Math.random()*.8),v=sp*(.4+Math.random());list.push({x:x0,y:y0,vx:Math.cos(a)*v*(Math.random()<.5?-1:1),vy:Math.sin(a)*v,t:0,dur:.35+Math.random()*.4});}}
  function vibrate(ms){try{audio.vibrate(ms);}catch{}}
  // ---------------------------------------------------------------- the combo (THPS: tricks add up, the multiplier is the trick count)
  function comboAdd(i,tricks){if(!combo||combo.p!==i||combo.phase!=='live')combo={p:i,tricks:[],base:0,mult:0,phase:'live',t:0,chain:0};
   for(const t of tricks){combo.tricks.push(t.name);combo.base+=t.pts;combo.mult++;P[i].meter=Math.min(1,P[i].meter+t.pts/6000);}
-  combo.t=0;S.sfx('text');
+  combo.t=0;S.sfx('text');clearUnder(comboLayout().rect);
   if(!P[i].ready&&P[i].meter>=1){P[i].ready=true;S.sfx('special');pop('SPECIAL!',{big:true,col:['#ffffff','#ffe600'],x0:lay.hud[i].x+lay.hu*5,y0:lay.hud[i].y+lay.hu*3.4,dur:1.6,rot:-.08});setMood(i,'silly');}}
  async function landCombo(){if(!combo||combo.phase!=='live')return;const i=combo.p,total=combo.base*Math.max(1,combo.mult);combo.phase='land';combo.t=0;combo.total=total;
   S.sfx('land-combo');P[i].best=Math.max(P[i].best,total);P[i].combos++;if(P[i].ready&&combo.usedSpecial){P[i].ready=false;P[i].meter=0;}
@@ -161,21 +189,44 @@ async function proMancala(s){
   else{if(special||pl.cut)await cutTo(me,special?'special':'trick',special?{name:'special',special:true,spin:2.5,h:1.6,grab:true}:pl.anim);await landCombo();}
   if(!s.alive)return;turnBanner();busy=false;}
  function syncStones(){for(let i=0;i<14;i++){const d=state.pits[i]-stones[i].length;if(d>0)for(let k=0;k<d;k++)stones[i].push(newStone());else if(d<0)stones[i].splice(d);incoming[i]=0;}}
- function turnBanner(){const i=state.turn,who=theirs()?'THEIR TURN':nameOf(i).toUpperCase()+"'S TURN";banner={text:who,sub:theirs()?'PLAYING ON THEIR PHONE':cpu&&i===1?'':'TAP A GLOWING BOWL',t:0,dur:1.7,p:i};
+ function turnBanner(){const i=state.turn,who=theirs()?'THEIR TURN':nameOf(i).toUpperCase()+"'S TURN";banner={text:who,sub:theirs()?'PLAYING ON THEIR PHONE':cpu&&i===1?'':'TAP A GLOWING BOWL',t:0,dur:1.7,p:i};clearUnder({x0:0,y0:lay.H/2-lay.hu*2,x1:lay.W,y1:lay.H/2+lay.hu*1.8});
   s.active=i;s.updateScores?.();if(!cpu&&!net)lockT=.55;S.sfx('whoosh',.35,true);}
 
  // ---------------------------------------------------------------- 90s fisheye camera cutaways to the player's skater
  // The skater lives on one halfpipe (world units, R ≈ 315) and only appears in these cuts.
  const cutGeo=A.pipeGeo({x:-700,y:-560,w:1400,h:700}),cutSparks=[],cutC=document.createElement('canvas'),cutG=cutC.getContext('2d');
  const SK=[0,1].map(()=>({ph:0,amp:1,mode:'ride',queue:[],air:null,bail:null,t:0,bd:null}));
- let cut=null;
- const STYLES=['follow','low','punch','orbit'];
- function cutTo(p,kind,anim,quick=false){if(!lay||!s.alive)return Promise.resolve();return new Promise(res=>{const k=SK[p],g=cutGeo,cross=1;
-  k.queue=[];k.bd=null;k.amp=1;
-  if(kind==='steal'){k.mode='grind';k.t=0;k.air={side:1,trick:anim};}
-  else{k.mode='ride';k.t=0;k.ph=Math.PI/2-(quick?.25:.42)*Math.PI/cross;k.queue=[anim];}
-  const style=kind==='bail'?'crash':kind==='special'?'orbit':pickOf(STYLES);
-  cut={p,kind,t:0,res,style,ts:1,freeze:0,end:null,max:kind==='special'?4.2:3.4,cam:null,landed:false};S.sfx('cam');S.sfx('rollby',.8);flash=Math.max(flash,.5);});}
+ // Where the cut happens: the halfpipe, or a street spot (proMancalaSpots.js), never the same one twice in a row.
+ let cut=null,lastSpot='';
+ const STYLES=['follow','low','punch','orbit'],LSTYLES=['follow','low','punch','track'];
+ const SPOTS={trick:['pipe','stairs','rail','curb','kicker'],combo:['pipe','kicker','stairs','rail'],special:['pipe','kicker'],steal:['rail','curb','pipe'],bail:['pipe','stairs','rail','kicker','curb']};
+ function cutTo(p,kind,anim,quick=false){if(!lay||!s.alive)return Promise.resolve();return new Promise(res=>{
+  const opts=SPOTS[kind].filter(v=>v!==lastSpot),spot=pickOf(opts.length?opts:SPOTS[kind]);lastSpot=spot;
+  cut={p,kind,spot,t:0,res,ts:1,freeze:0,end:null,cam:null,landed:false,line:null,lt:0,lastPart:-1,bd:null};
+  if(spot==='pipe'){const k=SK[p],cross=1;k.queue=[];k.bd=null;k.amp=1;
+   if(kind==='steal'){k.mode='grind';k.t=0;k.air={side:1,trick:anim};}else{k.mode='ride';k.t=0;k.ph=Math.PI/2-(quick?.25:.42)*Math.PI/cross;k.queue=[anim];}
+   cut.style=kind==='bail'?'crash':kind==='special'?'orbit':pickOf(STYLES);cut.max=kind==='special'?4.2:3.4;}
+  else{cut.line=SP.buildLine(spot,anim,kind==='bail');cut.style=kind==='bail'?'crash':kind==='special'?'punch':pickOf(LSTYLES);cut.max=cut.line.T+.4;if(quick)cut.lt=.25;}
+  S.sfx('cam');S.sfx('rollby',.8);flash=Math.max(flash,.5);});}
+ // street spots: sounds when the run moves on to its next part (pop, grind, land, slam)
+ function lineEvents(st){const k=cut,L=k.line;if(st.idx===k.lastPart)return;const prev=L.parts[st.idx-1],p=st.part;k.lastPart=st.idx;
+  if(p.type==='air'){S.sfx('ollie');if(p.trick&&(L.tr.flip||L.tr.shove))S.sfx('flip');}
+  else if(p.type==='grind'){S.sfx('land',.7);S.sfx('grind',p.t1-p.t0);}
+  else if(p.type==='roll'&&prev&&prev.type==='air'){S.sfx('land',1.2);S.sfx('catch');if(prev.r0)S.sfx('revert');}
+  else if(p.type==='slam'){S.sfx('bail');S.sfx('scratch');k.freeze=.28;k.impact=1;shake=Math.max(shake,12);k.bd={x:st.x,y:st.y-SP.DEPTH*.5,vx:950,vy:-750,rot:0,vr:16};}}
+ function stepBoard(b,dt,floor){b.vy+=2600*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.rot+=b.vr*dt;const fl=floor(b.x);if(b.y>fl){b.y=fl;b.vy*=-.35;b.vr*=.6;b.vx*=.8;if(Math.abs(b.vy)<80)b.vy=0;}}
+ function drawLineSkater(q,i,st,u){const L=cut.line,tr=L.tr,o=A.OUTFITS[i],hd=head(i,P[i].mood),y=st.y-SP.DEPTH*.5;q.save();
+  if(cut.bd){q.save();q.translate(cut.bd.x,cut.bd.y);q.rotate(cut.bd.rot);A.drawBoard(q,u,o,cut.bd.rot*.5,0);q.restore();}
+  q.translate(st.x,y);q.rotate(st.rot);let pose;
+  if(st.mode==='slam')pose={crouch:.1,arms:[2.4,.5,-2.3,-.6],noBoard:true,face:1};
+  else if(st.mode==='air'&&st.part.trick){const tau=st.tau,e=ease(tau),mid=Math.sin(Math.PI*tau),k=clamp((tau-.1)/.65,0,1);
+   pose={face:1,crouch:.35+.55*mid,spin:(tr.spin||0)*TAU*e,flip:(tr.flip||0)*TAU*k,shove:(tr.shove||0)*Math.PI*k,grab:tr.grab&&tau>.2&&tau<.78,arms:tr.grab?[.4,-.3,-2.2,.3]:[2.4,-.6,-2.4,.6],
+    boardY:(tr.flip||tr.shove)&&tau>.1&&tau<.75?u*.4*mid:0,boardRot:(tr.boardSpin||0)*TAU*k};
+   if(tr.special){q.save();q.globalAlpha=.25;for(let j=1;j<=3;j++){q.save();q.translate(-j*u*1.1,j*u*.5);A.drawSkater(q,u,{...pose,spin:(tr.spin||0)*TAU*ease(clamp(tau-j*.04,0,1))},null,{...o,shirt:'#9ff6ff',shirt2:'#fff'});q.restore();}q.restore();}}
+  else if(st.mode==='air')pose={face:1,crouch:.5+.3*Math.sin(Math.PI*st.tau),arms:[2.2,-.5,-2.2,.5]};
+  else if(st.mode==='grind')pose={face:1,crouch:.45,arms:[1.6,-.3,-1.6,.3],lean:-.1};
+  else pose={face:1,crouch:.25+.1*Math.sin(T*7),arms:[1.2,-.5,-1,.5],lean:.06};
+  A.drawSkater(q,u,pose,hd,o);q.restore();}
  function endCut(){if(!cut)return;const r=cut.res;cut=null;flash=Math.max(flash,.35);S.sfx('cam');r();}
  function cutPos(i){const k=SK[i],g=cutGeo;let p;if(k.mode==='air'){const a=k.air,tau=clamp(a.t/a.dur,0,1),side=a.side;p={x:g.cx+side*(g.F+g.R*.94),y:g.floor-g.R-a.h*g.R*4*tau*(1-tau),rot:-side*(Math.PI/2)*(1-Math.sin(Math.PI*tau)),tau,side};}
   else if(k.mode==='grind'){const side=k.air.side;p={x:g.cx+side*(g.F+g.R),y:g.floor-g.R*1.08,rot:0,side};}
@@ -206,34 +257,43 @@ async function proMancala(s){
   else if(k.mode==='grind')A.drawSkater(g,u,{face:-k.air.side,crouch:.45,arms:[1.6,-.3,-1.6,.3],lean:-k.air.side*.12},hd,o);
   else{const dir=Math.cos(k.ph)>=0?1:-1,bottom=1-Math.abs(Math.sin(k.ph));A.drawSkater(g,u,{face:dir,crouch:.2+.45*bottom,arms:[1.2,-.5,-1.0,.5],lean:dir*.08*bottom},hd,o);}
   g.restore();}
- function drawCut(dt){const W=lay.W,H=lay.H,k=cut,p=k.p,g=cutGeo,u=g.R*.115;
+ function drawCut(dt){const W=lay.W,H=lay.H,k=cut,p=k.p,g=cutGeo,u=g.R*.115,L=k.line;
   // time: freeze-frame on a slam, slow motion through the special's peak
-  if(k.freeze>0){k.freeze-=dt;}else{const sk=SK[p],tau=sk.mode==='air'?sk.air.t/sk.air.dur:0;k.ts=sk.mode==='air'&&sk.air.trick.special&&tau>.28&&tau<.72?.4:1;stepSkater(p,dt*k.ts);}
-  k.t+=dt;if(k.landed&&k.end==null)k.end=k.t+.5;if(SK[p].mode==='bail'&&SK[p].t>1.5&&k.end==null)k.end=k.t;if(k.end!=null&&k.t>=k.end||k.t>k.max){endCut();return;}
-  const sk=SK[p],pos=sk.mode==='bail'?bailBody(p,u):cutPos(p),base=.48*Math.min(W,H)/(.72*g.R);
-  const apex=sk.mode==='air'?Math.sin(Math.PI*clamp(sk.air.t/sk.air.dur,0,1)):0;
-  let tx=pos.x,ty=pos.y-g.R*.25,z=base,rot=0;
+  let pos,apex=0,falling=false,fallT=0,st=null;
+  if(L){if(k.freeze>0)k.freeze-=dt;else{st=SP.lineState(L,k.lt);k.ts=L.tr.special&&st.mode==='air'&&st.part.trick&&st.tau>.28&&st.tau<.72?.4:1;k.lt+=dt*k.ts;}
+   st=SP.lineState(L,k.lt);lineEvents(st);if(k.bd)stepBoard(k.bd,dt,x=>SP.ground(L,x)-SP.DEPTH*.5-6);
+   if(st.mode==='grind'&&Math.random()<dt*50)cutSparks.push({x:st.x,y:st.y-SP.DEPTH*.5,vx:-(200+Math.random()*500),vy:-Math.random()*500,t:0,dur:.45});
+   k.t+=dt;if(k.lt>=L.T||k.t>k.max+1.5){endCut();return;}
+   pos={x:st.x,y:st.y-SP.DEPTH*.5};apex=st.mode==='air'?Math.sin(Math.PI*st.tau):0;falling=st.mode==='slam';fallT=falling?k.lt-st.part.t0:0;}
+  else{if(k.freeze>0){k.freeze-=dt;}else{const sk=SK[p],tau=sk.mode==='air'?sk.air.t/sk.air.dur:0;k.ts=sk.mode==='air'&&sk.air.trick.special&&tau>.28&&tau<.72?.4:1;stepSkater(p,dt*k.ts);}
+   k.t+=dt;if(k.landed&&k.end==null)k.end=k.t+.5;if(SK[p].mode==='bail'&&SK[p].t>1.5&&k.end==null)k.end=k.t;if(k.end!=null&&k.t>=k.end||k.t>k.max){endCut();return;}
+   const sk=SK[p];pos=sk.mode==='bail'?bailBody(p,u):cutPos(p);apex=sk.mode==='air'?Math.sin(Math.PI*clamp(sk.air.t/sk.air.dur,0,1)):0;falling=sk.mode==='bail';fallT=falling?sk.t:0;}
+  const base=.48*Math.min(W,H)/(.72*g.R);
+  let tx=pos.x+(L?110:0),ty=pos.y-g.R*.25,z=base,rot=0;
   if(k.style==='follow'){z=base*1.15;rot=.2*Math.sin(k.t*1.3)-.1;}
-  else if(k.style==='low'){tx=g.cx+(g.F+g.R*.5);ty=g.floor-g.R*.9;z=base*.85;rot=-.34+k.t*.05;}
+  else if(k.style==='low'){if(L){tx=L.focus.x;ty=L.focus.y-SP.LU*.5;z=base*.72;rot=-.3+k.t*.06;}else{tx=g.cx+(g.F+g.R*.5);ty=g.floor-g.R*.9;z=base*.85;rot=-.34+k.t*.05;}}
   else if(k.style==='punch'){z=base*(1+.75*apex);rot=.12;}
   else if(k.style==='orbit'){z=base*1.2;rot=-.5+k.t*.4;}
-  else if(k.style==='crash'){z=base*(sk.mode==='bail'?1.2+Math.min(.25,sk.t*.3):1.05);ty=pos.y-(sk.mode==='bail'?g.R*.1:g.R*.25);rot=sk.mode==='bail'?.22*Math.sin(sk.t*3):-.15;}
+  else if(k.style==='track'){z=base*1.12;tx=pos.x+200;rot=-.08+.05*Math.sin(k.t*2);}
+  else if(k.style==='crash'){z=base*(falling?1.2+Math.min(.25,fallT*.3):1.05);ty=pos.y-(falling?g.R*.1:g.R*.25);rot=falling?.22*Math.sin(fallT*3):-.15;}
   if(!k.cam)k.cam={x:tx,y:ty,z,rot};const cm=k.cam,f=Math.min(1,dt*(k.style==='low'?3:9));cm.x+=(tx-cm.x)*f;cm.y+=(ty-cm.y)*f;cm.z+=(z-cm.z)*Math.min(1,dt*6);cm.rot+=(rot-cm.rot)*Math.min(1,dt*5);
   // render the scene, then put it through the fisheye and the camcorder
   const cw=Math.round(W*Math.min(dpr,1.25)),ch=Math.round(H*Math.min(dpr,1.25));if(cutC.width!==cw||cutC.height!==ch){cutC.width=cw;cutC.height=ch;}
   const q=cutG;q.setTransform(cw/W,0,0,ch/H,0,0);const sky=q.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#1d5fc4');sky.addColorStop(.7,'#8fd0f5');sky.addColorStop(1,'#fbe3b0');q.fillStyle=sky;q.fillRect(0,0,W,H);
   const sh=shake?(Math.random()-.5)*shake:0;q.translate(W/2+sh,H/2+sh);q.rotate(cm.rot);q.scale(cm.z,cm.z);q.translate(-cm.x,-cm.y);
   // distant city and palms (parallax), floor, the pipe
-  q.save();q.translate(cm.x*.55,cm.y*.3);q.fillStyle='#6f8db0';for(let i=-8;i<=8;i++){const bw=150+((i*37)%5+5)%5*30,bh=180+((i*53)%7+7)%7*45;q.fillRect(i*190-bw/2,g.floor-g.R*1.2-bh,bw,bh);}
-  q.strokeStyle='#2f2015';q.lineWidth=14;for(let i=-4;i<=4;i++){const px=i*420+90,py=g.floor-g.R*1.15;q.beginPath();q.moveTo(px,py);q.quadraticCurveTo(px+40,py-230,px+20,py-420);q.stroke();q.strokeStyle='#1f5d2e';q.lineWidth=16;for(let j=0;j<6;j++){const a=-Math.PI/2+(j-2.5)*.5;q.beginPath();q.moveTo(px+20,py-420);q.quadraticCurveTo(px+20+Math.cos(a)*120,py-450+Math.sin(a)*60,px+20+Math.cos(a)*170,py-400+Math.sin(a)*90);q.stroke();}q.strokeStyle='#2f2015';q.lineWidth=14;}
+  const hz=L?(L.spot==='stairs'||L.spot==='rail'?-SP.DEPTH-1100:-SP.DEPTH-380):g.floor-g.R*1.2;
+  q.save();q.translate(cm.x*.55,cm.y*.3);q.fillStyle='#6f8db0';for(let i=-8;i<=8;i++){const bw=150+((i*37)%5+5)%5*30,bh=180+((i*53)%7+7)%7*45;q.fillRect(i*190-bw/2,hz-bh,bw,bh);}
+  q.strokeStyle='#2f2015';q.lineWidth=14;for(let i=-4;i<=4;i++){const px=i*420+90,py=hz+g.R*.05;q.beginPath();q.moveTo(px,py);q.quadraticCurveTo(px+40,py-230,px+20,py-420);q.stroke();q.strokeStyle='#1f5d2e';q.lineWidth=16;for(let j=0;j<6;j++){const a=-Math.PI/2+(j-2.5)*.5;q.beginPath();q.moveTo(px+20,py-420);q.quadraticCurveTo(px+20+Math.cos(a)*120,py-450+Math.sin(a)*60,px+20+Math.cos(a)*170,py-400+Math.sin(a)*90);q.stroke();}q.strokeStyle='#2f2015';q.lineWidth=14;}
   q.restore();
-  q.fillStyle='#a9a398';q.fillRect(g.cx-6000,g.floor-g.R*1.2,12000,g.R*1.2+g.depth);q.fillStyle='#8f897f';q.fillRect(g.cx-6000,g.floor,12000,4000);
-  A.drawPipe(q,g,'PRO MANCALA',7);
-  drawCutSkater(q,p,u);
+  if(L){q.fillStyle='#a9a398';q.fillRect(-6000,hz,12000,6000);SP.drawSpot(q,L);drawLineSkater(q,p,st,u);}
+  else{q.fillStyle='#a9a398';q.fillRect(g.cx-6000,g.floor-g.R*1.2,12000,g.R*1.2+g.depth);q.fillStyle='#8f897f';q.fillRect(g.cx-6000,g.floor,12000,4000);
+   A.drawPipe(q,g,'PRO MANCALA',7);drawCutSkater(q,p,u);}
   for(let j=cutSparks.length-1;j>=0;j--){const sp=cutSparks[j];sp.t+=dt;if(sp.t>sp.dur){cutSparks.splice(j,1);continue;}sp.vy+=1800*dt;sp.x+=sp.vx*dt;sp.y+=sp.vy*dt;q.strokeStyle=`rgba(255,${190+Math.random()*60|0},70,${1-sp.t/sp.dur})`;q.lineWidth=5;q.beginPath();q.moveTo(sp.x,sp.y);q.lineTo(sp.x-sp.vx*.025,sp.y-sp.vy*.025);q.stroke();}
   x.save();const pz=k.t<.15?1.25-k.t/.15*.25:1;x.translate(W/2,H/2);x.scale(pz,pz);x.translate(-W/2,-H/2);A.fisheye(x,cutC,W,H,.42);x.restore();A.vhs(x,W,H,T,k.kind!=='bail');
   if(k.impact){thps(x,'BAIL!',W/2,H*.4,lay.hu*3.4,{grad:['#ffb0b0','#ff1010'],rot:-.12,scale:1+.3*Math.max(0,k.freeze),maxW:W*.9});}
-  const lbl=k.kind==='steal'?'STEAL CAM':k.kind==='bail'?'SLAM CAM':k.kind==='special'?'SPECIAL CAM':'REPLAY';thps(x,lbl,W-lay.hu*4,H-lay.hu*1.6,lay.hu*.8,{fill:'#fff',align:'right',alpha:.8});
+  const lbl=k.kind==='steal'?'STEAL CAM':k.kind==='bail'?'SLAM CAM':k.kind==='special'?'SPECIAL CAM':'REPLAY';thps(x,lbl,W-lay.hu*4,H-lay.hu*2.5,lay.hu*.8,{fill:'#fff',align:'right',alpha:.8});
+  thps(x,SP.NAMES[k.spot],W-lay.hu*4,H-lay.hu*1.5,lay.hu*.55,{fill:'#ffe14d',align:'right',alpha:.85,maxW:W*.5});
   thps(x,nameOf(p).toUpperCase(),W-lay.hu*4,H-lay.hu*.6,lay.hu*.6,{fill:PCOL[p],align:'right',alpha:.9});}
 
  // ---------------------------------------------------------------- guest skaters: someone from the roster goes by all the time
@@ -295,15 +355,18 @@ async function proMancala(s){
   const lb=Math.min(hu*1.15,h*.2);x.fillStyle=PCOL[i];x.fillRect(-w/2,h/2-lb,w,lb);thps(x,turn?'YOUR TURN!':nameOf(i).toUpperCase(),0,h/2-lb*.5,lb*.74,{fill:turn?'#ffe600':'#fff',maxW:w-8});
   x.restore();}
  function wrapTricks(list,px,maxW){x.font=A.font(px);const lines=[];let cur='';for(const t of list){const nx=cur?cur+' + '+t:t;if(cur&&x.measureText(nx).width*.84>maxW){lines.push(cur);cur=t;}else cur=nx;}if(cur)lines.push(cur);return lines;}
- function drawCombo(){if(!combo)return;const hu=lay.hu,t=lay.trick[combo.p],ph=combo.phase,a=ph==='live'?1:clamp(1.3-combo.t*.9,0,1);if(a<=0){combo=null;return;}
-  const popIn=Math.min(1,combo.t*8);let px=hu*1.1,lines=wrapTricks(combo.tricks,px,t.w);while(lines.length>2&&px>hu*.72){px*=.9;lines=wrapTricks(combo.tricks,px,t.w);}if(lines.length>2)lines=['… + '+lines[lines.length-2],lines[lines.length-1]];
+ // where the trick string sits this frame (also used to keep popups off it)
+ function comboLayout(){if(!combo)return null;const hu=lay.hu,t=lay.trick[combo.p],ph=combo.phase;let px=hu*1.1,lines=wrapTricks(combo.tricks,px,t.w);while(lines.length>2&&px>hu*.72){px*=.9;lines=wrapTricks(combo.tricks,px,t.w);}if(lines.length>2)lines=['… + '+lines[lines.length-2],lines[lines.length-1]];
   const big=hu*(ph==='land'?1.9:1.4),blockH=lines.length*px*1.05+big*1.1,y0=clamp(t.y-blockH/2+(ph==='bail'?combo.t*hu*1.5:ph==='land'?-combo.t*hu:0),hu*.4,lay.H-blockH-hu*.4);
+  return {t,lines,px,big,blockH,y0,rect:{x0:t.x-t.w/2,y0:y0-hu*.4,x1:t.x+t.w/2,y1:y0+blockH+hu*.6}};}
+ function drawCombo(){if(!combo)return;const hu=lay.hu,ph=combo.phase,a=ph==='live'?1:clamp(1.3-combo.t*.9,0,1);if(a<=0){combo=null;return;}
+  const popIn=Math.min(1,combo.t*8),{t,lines,px,big,blockH,y0}=comboLayout();
   if(t.over){x.save();x.globalAlpha=a*.5;x.fillStyle='#000';x.beginPath();x.roundRect(lay.W/2-t.w/2,y0-hu*.3,t.w,blockH+hu*.6,hu*.5);x.fill();x.restore();}
   lines.forEach((ln,k)=>thps(x,ln,t.x,y0+px*(k+.5)*1.05,px,{fill:ph==='bail'?'#ff4040':'#ffffff',maxW:t.w,alpha:a,scale:.85+.15*popIn}));
   const line2=ph==='land'?fmt(combo.total):`${fmt(combo.base)} X ${combo.mult}`;
   thps(x,line2,t.x,y0+lines.length*px*1.05+big*.55,big,{grad:ph==='bail'?['#ff8080','#ff1010']:ph==='land'?['#e7ffd0','#41e000']:['#fff7a0','#ffbf00'],alpha:a,maxW:t.w,scale:ph==='land'?1+.25*Math.max(0,1-combo.t*3):1});}
  function drawPops(dt){for(let j=pops.length-1;j>=0;j--){const p=pops[j];p.t+=dt;const tau=p.t/p.dur;if(tau>=1){pops.splice(j,1);continue;}
-  const sc=tau<.15?.3+tau/.15*.95:tau<.25?1.25-(tau-.15)/.1*.25:1,a=tau>.7?1-(tau-.7)/.3:1;thps(x,p.text,p.x,Math.max(p.top,p.y+p.vy*p.t),p.px,{grad:p.grad,rot:p.rot,alpha:a,scale:sc,maxW:lay.W*.92,lw:.26});}}
+  const sc=tau<.15?.3+tau/.15*.95:tau<.25?1.25-(tau-.15)/.1*.25:1,a=tau>.7?1-(tau-.7)/.3:1;thps(x,p.text,p.x,p.y+p.vy*p.t,p.px,{grad:p.grad,rot:p.rot,alpha:a,scale:sc,maxW:lay.W*.92,lw:.26});}}
  function drawSparks(dt){for(let j=sparks.length-1;j>=0;j--){const p=sparks[j];p.t+=dt;if(p.t>p.dur){sparks.splice(j,1);continue;}p.vy+=700*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;A.spark(x,p.x,p.y,p.vx,p.vy,1-p.t/p.dur);}}
  function drawBanner(dt){if(!banner)return;banner.t+=dt;const b=banner,tau=b.t/b.dur;if(tau>=1){banner=null;return;}const W=lay.W,hu=lay.hu,slide=tau<.15?1-tau/.15:tau>.85?-(tau-.85)/.15:0,y=lay.H*.5;
   x.save();x.translate(slide*W,0);x.fillStyle='rgba(0,0,0,.6)';x.beginPath();x.moveTo(0,y-hu*1.6);x.lineTo(W,y-hu*1.9);x.lineTo(W,y+hu*1.3);x.lineTo(0,y+hu*1.6);x.closePath();x.fill();
@@ -385,7 +448,8 @@ async function proMancala(s){
  s.hint('Kalah rules: tap a glowing bowl on your side to sow its gems counterclockwise, one per bowl (skip the other store). Last gem in your own store = COMBO and you go again. Last gem in an empty bowl of yours steals the bowl opposite. Tricks, gaps, combos and specials score skate points just for show: the stores decide who wins.');
 
  // ---------------------------------------------------------------- frame
- s.frame(dt=>{T+=dt;relayout();const W=lay.W,H=lay.H;
+ let fsTick=0;
+ s.frame(dt=>{T+=dt;relayout();if(fsTick--<=0){fsTick=30;placeFs();}const W=lay.W,H=lay.H;
   const cw=Math.round(W*dpr),ch=Math.round(H*dpr);if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}x.setTransform(dpr,0,0,dpr,0,0);
   for(let i=waits.length-1;i>=0;i--)if(waits[i].f()||!s.alive){waits[i].r();waits.splice(i,1);}
   if(phase==='intro'){startIntro();const mt=introClock?music.time():null;if(mt!=null&&mt!==lastMt){lastMt=mt;mtStall=0;introT=Math.max(introT,mt-introClock.t0);}else{mtStall+=dt;if(!introClock||mtStall>.15)introT+=dt;}}
@@ -402,13 +466,13 @@ async function proMancala(s){
    drawSparks(dt);}
   for(const i of [0,1]){if(!cut)drawCard(i);drawHud(i);}
   drawCombo();drawPops(dt);if(!cut)drawBanner(dt);drawTrack(dt);
-  if(phase==='play'&&!busy&&!cut){const msg=theirs()?'ON THEIR PHONE…':cpu&&state.turn===1?nameOf(1).toUpperCase()+' IS THINKING…':'';if(msg)thps(x,msg,W/2,H*.5,lay.hu*1.1,{fill:'#fff',alpha:.6+.4*Math.sin(T*5),maxW:W*.9});}
+  if(phase==='play'&&!busy&&!cut&&!banner){const msg=theirs()?'ON THEIR PHONE…':cpu&&state.turn===1?nameOf(1).toUpperCase()+' IS THINKING…':'';if(msg)thps(x,msg,W/2,H*.5,lay.hu*1.1,{fill:'#fff',alpha:.6+.4*Math.sin(T*5),maxW:W*.9});}
   x.restore();
   if(flash>0){x.fillStyle=`rgba(255,255,255,${flash*.6})`;x.fillRect(0,0,W,H);}
   if(phase==='intro')drawIntro(dt);else if(phase==='end'&&endRes)drawEnd(dt);
   s.status(`${nameOf(state.turn)}${theirs()?' · on their phone':''} · stores ${state.pits[6]}–${state.pits[13]}`);
   const centers=lay.geo.pits.map((_,i)=>{const q=pitPos(i);return {x:q.x,y:q.y};});
-  s.debug={state,sow,busy,phase,centers,P,cut:cut?cut.kind:null,skip:()=>{introT=INTRO_END;},skipCut:()=>endCut(),
+  s.debug={state,sow,busy,phase,centers,P,cut:cut?cut.kind:null,cutSpot:cut?cut.spot:null,skip:()=>{introT=INTRO_END;},skipCut:()=>endCut(),
    bot:net?()=>{if(phase==='intro'){finishIntro();return 'intro';}if(phase==='end'){if(endResolve){const r=endResolve;endResolve=null;r();}return 'end';}if(cut){endCut();return 'cut';}if(theirs()||busy||s.paused||state.winner>=0)return null;void sow(pickOf(mancalaMoves(state)));return 'sow';}:null};});
  if(cpu)cpuHotseat(s,{isTurn:()=>phase==='play'&&state.turn===1&&state.winner<0&&!busy,think:()=>sow(B.pickMancala(s,state))});
  S.preload();

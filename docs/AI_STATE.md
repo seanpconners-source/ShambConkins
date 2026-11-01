@@ -11,7 +11,11 @@ round 2): `layout()` fills ~93% of the width when wide (P1 bottom row/right stor
 deck turned 90°: P1 left column + bottom store, P2 right column + top store; `pitPos` maps deck-local → screen). Skaters
 are NOT on screen all the time: `cutTo(p,kind)` = full-screen 90s fisheye camcorder cutaways (`A.fisheye`/`A.vhs`; styles
 follow/low/punch/orbit, crash cam on slams with freeze + record scratch, slow-mo special) for store landings, steals (grind
-then the victim's slam), bails, specials and ~40% of other moves; tap skips. Guest roster skaters go by every 3.5-7 s
+then the victim's slam), bails, specials and ~40% of other moves; tap skips. Spots (Nov 1 round 3): the halfpipe or
+a street spot from `proMancalaSpots.js` (handrail down an 8-set, the 8-set, a red parking-lot curb, a kicker; `buildLine`
+= timed roll/air/grind/slam parts, `lineState`, `drawSpot`), picked per cut kind (`SPOTS` in proMancala.js), never twice
+in a row. Popups are placed where they cover no other text (`textRects`/`pop`, small ones dropped if nowhere is free, big
+ones push small ones out). A ⤢ button sits left of Pause/Exit when fullscreen is available (fullBleed's bottom one hidden). Guest roster skaters go by every 3.5-7 s
 (ollie over, grind the edge, manual, bomb, big air). Turn: row glow in the player's color, "▶ X'S TURN" HUD, YOUR TURN card,
 other side dimmed. Popups are measured and clamped on screen; trick strings wrap to 2 lines. THPS HUD (score tally, special meter),
 trick strings "A + B / pts X n", COMBO!!! on store landings, bails (being robbed, or gaining nothing and leaving the
