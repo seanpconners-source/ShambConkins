@@ -166,7 +166,7 @@ async function proMancala(s){
   if(move.captured){const last=move.trail[move.trail.length-1],opp=12-last,victim=1-me;S.sfx('grind',.9);
    const take=[...stones[last].splice(0),...stones[opp].splice(0)];const src=[pitPos(last),pitPos(opp)];
    take.forEach((st,k)=>fly(st,k===0?src[0]:src[1],mine,{delay:k*.06,dur:.42,land:()=>S.sfx('clack',2)}));sparkBurst(pitPos(opp).x,pitPos(opp).y,22,320);
-   pop('STOLEN!',{big:true,col:['#ffffff','#ff2d55']});pop(pickOf(GOOD));setMood(me,'win');setMood(victim,'angry',3);P[victim].cardShake=.7;P[victim].bails++;P[victim].meter*=.5;
+   pop('STOLEN!',{big:true,col:['#ffffff','#ff2d55']});pop(pickOf(GOOD));setMood(me,'win');setMood(victim,'angry',3);S.sfx('grunt');P[victim].cardShake=.7;P[victim].bails++;P[victim].meter*=.5;
    shake=Math.max(shake,8);vibrate(40);await until(()=>!flyers.length);if(!s.alive)return;
    comboAdd(me,pl.tricks);pl.tricks=[];
    await cutTo(me,'steal',{grind:true});if(!s.alive)return;pop(pickOf(BAD),{bad:true});await cutTo(victim,'bail',{name:'bail',bail:true,h:.55},true);if(!s.alive)return;}
@@ -211,9 +211,9 @@ async function proMancala(s){
  // street spots: sounds when the run moves on to its next part (pop, grind, land, slam)
  function lineEvents(st){const k=cut,L=k.line;if(st.idx===k.lastPart)return;const prev=L.parts[st.idx-1],p=st.part;k.lastPart=st.idx;
   if(p.type==='air'){S.sfx('ollie');if(p.trick&&(L.tr.flip||L.tr.shove))S.sfx('flip');}
-  else if(p.type==='grind'){S.sfx('land',.7);S.sfx('grind',p.t1-p.t0);}
+  else if(p.type==='grind'){S.sfx('land',.7);S.sfx(L.spot==='curb'?'grind-curb':'grind',p.t1-p.t0);}
   else if(p.type==='roll'&&prev&&prev.type==='air'){S.sfx('land',1.2);S.sfx('catch');if(prev.r0)S.sfx('revert');}
-  else if(p.type==='slam'){S.sfx('bail');S.sfx('scratch');k.freeze=.28;k.impact=1;shake=Math.max(shake,12);k.bd={x:st.x,y:st.y-SP.DEPTH*.5,vx:950,vy:-750,rot:0,vr:16};}}
+  else if(p.type==='slam'){S.sfx('bail');S.sfx('scratch');setTimeout(()=>S.sfx('aww'),350);k.freeze=.28;k.impact=1;shake=Math.max(shake,12);k.bd={x:st.x,y:st.y-SP.DEPTH*.5,vx:950,vy:-750,rot:0,vr:16};}}
  function stepBoard(b,dt,floor){b.vy+=2600*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.rot+=b.vr*dt;const fl=floor(b.x);if(b.y>fl){b.y=fl;b.vy*=-.35;b.vr*=.6;b.vx*=.8;if(Math.abs(b.vy)<80)b.vy=0;}}
  function drawLineSkater(q,i,st,u){const L=cut.line,tr=L.tr,o=A.OUTFITS[i],hd=head(i,P[i].mood),y=st.y-SP.DEPTH*.5;q.save();
   if(cut.bd){q.save();q.translate(cut.bd.x,cut.bd.y);q.rotate(cut.bd.rot);A.drawBoard(q,u,o,cut.bd.rot*.5,0);q.restore();}
@@ -232,11 +232,11 @@ async function proMancala(s){
   else if(k.mode==='grind'){const side=k.air.side;p={x:g.cx+side*(g.F+g.R),y:g.floor-g.R*1.08,rot:0,side};}
   else{const q=A.pipePoint(g,g.L*k.amp*Math.sin(k.ph));p={x:q.x,y:q.y,rot:q.rot};}p.y-=g.depth*.5;return p;}
  function startBail(i){const k=SK[i],pos=cutPos(i);k.mode='bail';k.t=0;k.bail={x0:pos.x,y0:pos.y,r0:pos.rot,dir:pos.x<cutGeo.cx?1:-1};k.bd={x:pos.x,y:pos.y,vx:(Math.random()-.5)*900,vy:-900,rot:0,vr:14};
-  S.sfx('bail');S.sfx('scratch');if(cut&&cut.p===i){cut.freeze=.28;cut.impact=1;}shake=Math.max(shake,12);}
+  S.sfx('bail');S.sfx('scratch');setTimeout(()=>S.sfx('aww'),350);if(cut&&cut.p===i){cut.freeze=.28;cut.impact=1;}shake=Math.max(shake,12);}
  function stepSkater(i,dt){const k=SK[i],g=cutGeo,cross=1;
   if(k.mode==='ride'){const before=Math.cos(k.ph);k.ph+=dt*Math.PI/cross;const after=Math.cos(k.ph);
    if(before*after<=0){const side=Math.sign(Math.sin(k.ph))||1,tr=k.queue.shift();
-    if(tr){k.ph=side>0?Math.PI/2:-Math.PI/2;if(tr.grind){k.mode='grind';k.t=0;k.air={side,trick:tr};S.sfx('grind',.85);}else{k.mode='air';k.air={side,trick:tr,t:0,h:tr.h||.6,dur:.7+(tr.h||.6)*.42};S.sfx('ollie');if(tr.flip||tr.shove)S.sfx('flip');}}}}
+    if(tr){k.ph=side>0?Math.PI/2:-Math.PI/2;if(tr.grind){k.mode='grind';k.t=0;k.air={side,trick:tr};S.sfx('grind-pipe',1);}else{k.mode='air';k.air={side,trick:tr,t:0,h:tr.h||.6,dur:.7+(tr.h||.6)*.42};S.sfx('ollie');if(tr.flip||tr.shove)S.sfx('flip');}}}}
   else if(k.mode==='air'){k.air.t+=dt;if(k.air.t>=k.air.dur){if(k.air.trick.bail){startBail(i);return;}k.mode='ride';k.ph=(k.air.side>0?Math.PI/2:-Math.PI/2)+.02;S.sfx('land',k.air.trick.special?1.4:1);S.sfx('catch');if(cut&&cut.p===i)cut.landed=true;}}
   else if(k.mode==='grind'){k.t+=dt;const pos=cutPos(i);if(Math.random()<dt*50)cutSparks.push({x:pos.x+(Math.random()-.5)*30,y:pos.y+g.R*.06,vx:(Math.random()-.5)*700,vy:-Math.random()*600,t:0,dur:.45});if(k.t>1){k.mode='ride';k.ph=(k.air.side>0?Math.PI/2:-Math.PI/2)+.02;S.sfx('revert');if(cut&&cut.p===i)cut.landed=true;}}
   else if(k.mode==='bail'){k.t+=dt;const b=k.bd,fl=g.floor-g.depth*.5-6;if(b){b.vy+=2600*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.rot+=b.vr*dt;if(b.y>fl){b.y=fl;b.vy*=-.35;b.vr*=.6;b.vx*=.8;if(Math.abs(b.vy)<80)b.vy=0;}
@@ -308,7 +308,7 @@ async function proMancala(s){
   if(n.kind==='air'){const a=Math.sin(Math.PI*tau);py=H*.92-a*H*.62;pose.crouch=.5+.4*a;pose.spin=n.spin*TAU*clamp((tau-.2)/.6,0,1);pose.grab=a>.4;if(!n.popped&&tau>.08){n.popped=1;S.sfx('ollie');}if(n.popped===1&&tau>.92){n.popped=2;S.sfx('land');}}
   else if(n.kind==='manual'||n.kind==='bomb'){py=n.band.y+n.band.h*.8;if(n.band.h<u*5)py=lay.bottom+u*3;if(n.kind==='manual')pose.boardRot=-.22*n.dir;else if(tau>.4&&tau<.6){py-=Math.sin((tau-.4)/.2*Math.PI)*u*4;pose.flip=TAU*((tau-.4)/.2);if(!n.popped){n.popped=1;S.sfx('ollie');S.sfx('flip');}}}
   else if(lay.vertical){py=n.lane;hop(lay.bx-geo.D*.6,lay.bx+geo.D*.6,geo.D*.7);}
-  else if(n.kind==='grind'){const lo=lay.bx-geo.L/2,hi=lay.bx+geo.L/2,inside=px>lo&&px<hi;py=inside?lay.by+geo.D/2-u*.1:lay.bottom+u*.3;if(inside){pose.crouch=.5;pose.lean=-n.dir*.1;if(!n.popped){n.popped=1;S.sfx('ollie');S.sfx('grind',geo.L/((W+12*u)/n.dur));}if(Math.random()<.6)sparks.push({x:px-n.dir*u*1.2,y:py+u*.3,vx:-n.dir*(80+Math.random()*160),vy:-Math.random()*160,t:0,dur:.35});}else if(n.popped===1){n.popped=2;S.sfx('land');}}
+  else if(n.kind==='grind'){const lo=lay.bx-geo.L/2,hi=lay.bx+geo.L/2,inside=px>lo&&px<hi;py=inside?lay.by+geo.D/2-u*.1:lay.bottom+u*.3;if(inside){pose.crouch=.5;pose.lean=-n.dir*.1;if(!n.popped){n.popped=1;S.sfx('ollie');S.sfx('grind-board',geo.L/((W+12*u)/n.dur));}if(Math.random()<.6)sparks.push({x:px-n.dir*u*1.2,y:py+u*.3,vx:-n.dir*(80+Math.random()*160),vy:-Math.random()*160,t:0,dur:.35});}else if(n.popped===1){n.popped=2;S.sfx('land');}}
   else{py=lay.bottom+u*.3;hop(lay.bx-geo.L/2-u,lay.bx+geo.L/2+u,geo.D+geo.edge+u*4);}
   x.save();x.translate(px,py);A.drawSkater(x,u,pose,headOf?headOf(n.id,'normal'):null,n.o);x.restore();
   if(n.nm&&tau>.08&&tau<.92)thps(x,n.nm.toUpperCase(),clamp(px,lay.hu*4,W-lay.hu*4),clamp(py-u*8.6,lay.hu,H-lay.hu),lay.hu*.7,{fill:'#fff',alpha:.9,maxW:lay.hu*10});}
@@ -421,7 +421,7 @@ async function proMancala(s){
   const pr=store.profile;let newHigh=-1,newCombo=-1;if(pr){pr.proMancala=pr.proMancala&&typeof pr.proMancala==='object'?pr.proMancala:{};const pm=pr.proMancala;
    for(const i of [0,1]){if(cpu&&i===1)continue;if(!pm.high||P[i].points>pm.high.score){pm.high={name:nameOf(i).slice(0,16),score:P[i].points};newHigh=i;}if(!pm.combo||P[i].best>pm.combo.score){pm.combo={name:nameOf(i).slice(0,16),score:P[i].best};newCombo=i;}}
    try{saveProfile(pr);}catch{}}
-  endRes={w,newHigh,newCombo};S.sfx('crowd',1.4,3);S.sfx('hey');if(w<2){setMood(w,'win',99);setMood(1-w,'sad',99);}
+  endRes={w,newHigh,newCombo};S.sfx('timeup');setTimeout(()=>S.sfx('crowd',1.4,3),500);S.sfx('hey');if(w<2){setMood(w,'win',99);setMood(1-w,'sad',99);}
   await new Promise(r=>{endResolve=r;});if(!s.alive)return;
   s.finish(w===2?[0,0]:w===0?[1,0]:[0,1],`Tony Hawk's Pro Mancala · stores ${state.pits[6]}–${state.pits[13]}`);}
  function drawEnd(dt){const W=lay.W,H=lay.H,hu=Math.min(lay.hu,H/26),e=endRes;endT+=dt;const a=clamp(endT*2,0,1);x.save();x.globalAlpha=a*.92;x.fillStyle='#04060c';x.fillRect(0,0,W,H);x.restore();
@@ -434,7 +434,7 @@ async function proMancala(s){
     thps(x,label,cx,y,hu*.6,{fill:'#9fc3ff',alpha:k>0?1:0});thps(x,fmt(show),cx,y+hu*.75,hu*(r===0?1.3:1),{grad:r===0?['#ffffff','#ffe600']:['#ffffff','#bfe6ff'],alpha:k>0?1:0,maxW:colW});});}
   if(e.newHigh>=0&&endT>3)thps(x,'NEW HIGH SCORE!',W/2,H*.88,hu*1.4,{grad:['#ffffff','#ff3df2'],alpha:.6+.4*Math.sin(T*10),rot:-.05,maxW:W*.9});
   else if(e.newCombo>=0&&endT>3)thps(x,'NEW BEST COMBO!',W/2,H*.88,hu*1.3,{grad:['#ffffff','#38f2ff'],alpha:.6+.4*Math.sin(T*10),rot:-.05,maxW:W*.9});
-  if(endT>2.5)thps(x,'TAP TO CONTINUE',W/2,H*.95,hu*.6,{fill:'#fff',alpha:.5+.5*Math.sin(T*5)});
+  if(endT>3.3&&!e.total){e.total=1;S.sfx('total');}if(endT>2.5)thps(x,'TAP TO CONTINUE',W/2,H*.95,hu*.6,{fill:'#fff',alpha:.5+.5*Math.sin(T*5)});
   if(endT>7.5&&endResolve){const r=endResolve;endResolve=null;r();}}
 
  // ---------------------------------------------------------------- input

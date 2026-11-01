@@ -104,16 +104,27 @@ function oof(){const t=A.currentTime,o=A.createOscillator(),g=A.createGain();o.t
  o.connect(g);o.start(t);o.stop(t+.3);}
 
 // ------------------------------------------------------------------ drop-in sound files (decoded once)
-const DROP=new Map();
-function dropURL(name){return USER_PORTRAITS['music:thps-sfx-'+name]||null;}
-function dropIn(name){const url=dropURL(name);if(!url||!A)return null;let d=DROP.get(name);
- if(!d){d={buf:null};DROP.set(name,d);fetch(url).then(r=>r.arrayBuffer()).then(b=>A.decodeAudioData(b)).then(buf=>{d.buf=buf;}).catch(()=>{d.buf=false;});}
- return d.buf||null;}
-function playBuffer(buf,vol=.9){const s=A.createBufferSource();s.buffer=buf;s.connect(out(vol));s.start();}
+// A sound can have several files: thps-sfx-<name>.* and/or thps-sfx-<name>-1.* .. -20.*; each play picks one at random
+// (never the same one twice in a row). Sounds with a length (rolls, grinds, crowd) loop or fade to fit it. Sounds
+// with no synth version (aww, grunt, timeup, total) only play when files exist; the surface grinds fall back to 'grind'.
+const DROP=new Map(),VARIANTS=new Map(),lastPick=new Map();
+const HOOKS=['aww','grunt','timeup','total','grind-curb','grind-board','grind-pipe'];
+const ALIAS={'grind-curb':'grind','grind-board':'grind','grind-pipe':'grind'};
+const DUR_ARG={roll:0,rollby:0,grind:0,'grind-curb':0,'grind-board':0,'grind-pipe':0,crowd:1};
+function dropURLs(name){let v=VARIANTS.get(name);if(v)return v;v=[];const base=USER_PORTRAITS['music:thps-sfx-'+name];if(base)v.push(base);
+ for(let i=1;i<=20;i++){const u=USER_PORTRAITS['music:thps-sfx-'+name+'-'+i];if(u)v.push(u);}VARIANTS.set(name,v);return v;}
+function decoded(url){if(!A)return null;let d=DROP.get(url);
+ if(!d){d={buf:null};DROP.set(url,d);fetch(url).then(r=>r.arrayBuffer()).then(b=>A.decodeAudioData(b)).then(buf=>{d.buf=buf;}).catch(()=>{d.buf=false;});}
+ return d.buf;}
+function pickDrop(name){const urls=dropURLs(name);if(!urls.length)return null;const ready=urls.filter(u=>decoded(u));if(!ready.length)return urls.some(u=>DROP.get(u)?.buf===null)?'wait':null;
+ const prev=lastPick.get(name),pool=ready.length>1?ready.filter(u=>u!==prev):ready,u=pool[Math.floor(Math.random()*pool.length)];lastPick.set(name,u);return DROP.get(u).buf;}
+function playBuffer(buf,vol=.9,dur=0){const s=A.createBufferSource(),g=out(vol),t=A.currentTime;s.buffer=buf;s.connect(g);
+ if(dur>0){if(dur>buf.duration+.05)s.loop=true;const end=Math.max(.1,dur);g.gain.setValueAtTime(vol,t+Math.max(0,end-.12));g.gain.linearRampToValueAtTime(0,t+end);s.start(t);s.stop(t+end+.02);}else s.start(t);}
 const last=new Map();
 function sfx(name,...args){if(!sfxOn())return;const a=bus();if(!a)return;const now=performance.now(),gap=name==='clack'||name==='tally'?18:40;if(now-(last.get(name)||0)<gap)return;last.set(name,now);
- try{const buf=dropIn(name);if(buf){playBuffer(buf);return;}if(dropURL(name)&&DROP.get(name)?.buf===null)return;SFX[name]?.(...args);}catch{}}
-function preload(){if(!bus())return;for(const n of Object.keys(SFX))dropIn(n);}
+ try{const buf=pickDrop(name);if(buf==='wait')return;if(buf){const di=DUR_ARG[name];playBuffer(buf,.9,di!=null&&typeof args[di]==='number'?args[di]:0);return;}
+  if(ALIAS[name])return sfx(ALIAS[name],...args);SFX[name]?.(...args);}catch{}}
+function preload(){if(!bus())return;for(const n of [...Object.keys(SFX),...HOOKS])for(const u of dropURLs(n))decoded(u);}
 
 // ------------------------------------------------------------------ the band
 // Sections: chords = per bar [first half, second half] in semitones above the key; drums skate (kick on the beat, snare on
