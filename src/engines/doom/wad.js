@@ -3,7 +3,7 @@
 //  2. the owner's own IWAD dropped into assets/doom/user/ before building (git-ignored),
 //  3. Freedoom (BSD licence), embedded from assets/doom/freedoom.pack.gz (tools/doom-pack.mjs).
 // Doom ('doom1') uses an IWAD with E1M1 (Ultimate > registered > shareware), Doom II ('doom2') one with MAP01.
-const {USER_PORTRAITS}=require("src/data/userPortraits.js");
+const {USER_PORTRAITS,assetBytes}=require("src/data/userPortraits.js");
 
 class Wad{
  constructor(bytes,dir,label,source){this.bytes=bytes;this.dir=dir;this.label=label;this.source=source;this.index=new Map();
@@ -29,7 +29,6 @@ function parseWad(bytes,label,source){
  const w=new Wad(bytes,dir,label,source);w.iwad=id==='IWAD';return w;}
 
 // ---- gzip ----
-function b64bytes(url){const s=atob(url.slice(url.indexOf(',')+1)),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;}
 async function gunzip(u8){
  if(typeof DecompressionStream!=='undefined'){try{const st=new Blob([u8]).stream().pipeThrough(new DecompressionStream('gzip'));return new Uint8Array(await new Response(st).arrayBuffer());}catch{}}
  let p=10;const flg=u8[3];if(flg&4)p+=2+(u8[10]|u8[11]<<8);if(flg&8){while(u8[p++]);}if(flg&16){while(u8[p++]);}if(flg&2)p+=2;
@@ -59,11 +58,11 @@ function inflate(src,out){
 let packPromise=null;
 function loadPack(){
  return packPromise||=(async()=>{const url=USER_PORTRAITS['doom:pack:freedoom'];if(!url)return {};
-  const u8=await gunzip(b64bytes(url)),dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength);
+  const u8=await gunzip(await assetBytes(url)),dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength);
   if(String.fromCharCode(...u8.subarray(0,7))!=='SCDPAK1')throw new Error('Bad Doom pack');
   const jl=dv.getUint32(8,true),meta=JSON.parse(new TextDecoder().decode(u8.subarray(12,12+jl))),data=u8.subarray(12+jl),out={};
   for(const [name,w] of Object.entries(meta.wads)){const wad=new Wad(data,w.lumps.map(([n,off,size])=>({name:n,off,size})),name==='freedoom1'?'Freedoom: Phase 1':'Freedoom: Phase 2','freedoom');wad.iwad=true;out[name]=wad;}
-  return out;})();}
+  return out;})().catch(err=>{packPromise=null;throw err;});}   // the app fetches the pack: a failed fetch can be retried
 
 // ---- the owner's own WADs ----
 const DB='shambconkins-doom',STORE='wads';
@@ -85,7 +84,7 @@ function loadWad(kind,opts={}){
    for(const st of await storedWads())if(st.key===kind){try{const w=parseWad(new Uint8Array(st.bytes),st.name,'phone');if(w.kind===kind)return w;}catch{}}
    let best=null;
    for(const [k,url] of Object.entries(USER_PORTRAITS)){if(!k.startsWith('doom:wad:'))continue;
-    try{const w=parseWad(await gunzip(b64bytes(url)),k.slice(9).toUpperCase()+'.WAD','build');if(w.iwad&&w.kind===kind&&(!best||RANK[w.mode]>RANK[best.mode]||kind==='doom2'&&/DOOM2/.test(w.label)))best=w;}catch{}}
+    try{const w=parseWad(await gunzip(await assetBytes(url)),k.slice(9).toUpperCase()+'.WAD','build');if(w.iwad&&w.kind===kind&&(!best||RANK[w.mode]>RANK[best.mode]||kind==='doom2'&&/DOOM2/.test(w.label)))best=w;}catch{}}
    if(best)return best;}
   const pack=await loadPack(),w=pack[kind==='doom2'?'freedoom2':'freedoom1'];if(!w)throw new Error('No Doom data in this build.');return w;})();
  cache.set(key,p);p.catch(()=>cache.delete(key));return p;}

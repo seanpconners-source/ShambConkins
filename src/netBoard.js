@@ -24,6 +24,7 @@ const {recruit,saveProfile}=require("src/profile.js");
 const {readJSON,RUN_KEY,validRun}=require("src/persistence.js");
 const {ART}=require("src/data/art.js");
 const {FACE_ART}=require("src/data/faceArt.js");
+const {APP_FILE}=require("src/data/userPortraits.js");
 
 const BIG=['board','mainBoard'];                       // sent only when they change
 const TURN=new Set(['roll','reroll','item','bag','pkmn']); // board buttons that belong to whoever's turn it is
@@ -157,12 +158,13 @@ function cleanRoute(o){return packBlobs({title:o.title,hint:o.hint,options:o.opt
 // Pictures inside dialogs are data: URIs (an unlock card's portrait alone can be 1 MB). Both phones run the same build,
 // so a picture of the game's own art goes as "sc-art:<key>" (the guest takes it from its own ART). Any other picture
 // (drawn at run time) goes once: "sc-blob:<hash>"; the guest keeps what it received and asks for what it lacks ({t:'blobs'}).
-const BLOB=/data:[a-z]+\/[a-z0-9.+-]+(?:;[a-z0-9=.+-]+)*,[A-Za-z0-9+/=%._~-]{400,}/g,TOKEN=/sc-blob:([a-z0-9]+)/g,ARTTOKEN=/sc-art:([A-Za-z0-9:._-]+)/g;
+// The installed app's pictures are files ("a/<hash>.webp"): they go as "sc-art:<key>" too, so the one-file game understands them.
+const BLOB=/data:[a-z]+\/[a-z0-9.+-]+(?:;[a-z0-9=.+-]+)*,[A-Za-z0-9+/=%._~-]{400,}|(?<![\w/.-])a\/[0-9a-f]{16}\.[a-z0-9]{2,4}(?![\w.])/g,TOKEN=/sc-blob:([a-z0-9]+)/g,ARTTOKEN=/sc-art:([A-Za-z0-9:._-]+)/g;
 const ART_MAPS={a:ART,f:FACE_ART};   // the build's own pictures (identical on both phones)
 let artIndex=null;   // length + last 40 characters → "a:<key>" / "f:<key>" (built on first use)
 const artOf=ref=>{const m=ART_MAPS[ref[0]],k=ref.slice(2);return ref[1]===':'&&m&&Object.prototype.hasOwnProperty.call(m,k)&&typeof m[k]==='string'?m[k]:null;};
 function artKey(uri){
- if(!artIndex){artIndex=new Map();for(const [c,m] of Object.entries(ART_MAPS))for(const [k,v] of Object.entries(m||{}))if(typeof v==='string'&&v.length>=400&&/^[A-Za-z0-9:._-]+$/.test(k))artIndex.set(v.length+v.slice(-40),c+':'+k);}
+ if(!artIndex){artIndex=new Map();for(const [c,m] of Object.entries(ART_MAPS))for(const [k,v] of Object.entries(m||{}))if(typeof v==='string'&&(v.length>=400||APP_FILE.test(v))&&/^[A-Za-z0-9:._-]+$/.test(k))artIndex.set(v.length+v.slice(-40),c+':'+k);}
  const ref=artIndex.get(uri.length+uri.slice(-40));return ref&&artOf(ref)===uri?ref:null;
 }
 const blobs=new Map();   // hash → data URI: on the host what it sent, on the guest what it received (newest last)
@@ -172,7 +174,7 @@ function keepBlob(h,uri){if(blobs.has(h)){blobBytes-=blobs.get(h).length;blobs.d
 function blobHash(t){let a=0x811c9dc5,b=0x9e3779b1;for(let i=0;i<t.length;i++){const c=t.charCodeAt(i);a=Math.imul(a^c,16777619);b=Math.imul(b^c,2246822507);}return (a>>>0).toString(36)+(b>>>0).toString(36)+t.length.toString(36);}
 function packBlobs(v){
  const json=JSON.stringify(v);if(json===undefined)return null;
- try{return JSON.parse(json.replace(BLOB,uri=>{const art=artKey(uri);if(debug)console.log(`nb pack ${uri.length} ${art||'blob'}`);if(art)return 'sc-art:'+art;const h=blobHash(uri);keepBlob(h,blobs.get(h)??uri);return 'sc-blob:'+h;}));}catch(err){console.error('Online board: could not pack pictures',err);return JSON.parse(json);}
+ try{return JSON.parse(json.replace(BLOB,uri=>{const art=artKey(uri);if(debug)console.log(`nb pack ${uri.length} ${art||'blob'}`);if(art)return 'sc-art:'+art;if(!uri.startsWith('data:'))return uri;const h=blobHash(uri);keepBlob(h,blobs.get(h)??uri);return 'sc-blob:'+h;}));}catch(err){console.error('Online board: could not pack pictures',err);return JSON.parse(json);}
 }
 // Guest: put the pictures back, asking the host for any this phone hasn't had yet (resolves once all are in, or after 20 s).
 const blobWait=new Map();   // hash → [resolve...]

@@ -12,7 +12,9 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
 - Every module must be listed in `src/modules.json` (`node tools/add-module.mjs <path>` adds one;
   `node tools/check-modules.mjs` verifies). Entry point is `src/app.js` (game flow, turns, landing, events).
 - `tools/build.mjs` inlines `src/` + `src/styles.css` + `src/index.template.html` + `assets/` into
-  `dist/ShambConkins.html` (~30 MB). Drop-in art: `assets/portraits/<characterId>[.<mood>].webp|png`,
+  `dist/ShambConkins.html` (~200 MB). `--pwa` writes the installed app instead as a small index.html + `a/<hash>.<ext>`
+  files (USER_PORTRAITS values are then file names, not data URIs: test raster art with `isRasterArt`, read bytes with
+  `assetBytes`, both in `src/data/userPortraits.js`; docs/PWA_SPLIT_DELIVERY.md). Drop-in art: `assets/portraits/<characterId>[.<mood>].webp|png`,
   `assets/items/<id>.*`, `assets/locations/<id>.*`, Photo Hunt pairs `assets/photohunt/` (`tools/photohunt.py`, see its README), pinball table art `assets/pinball/<table>/<slot>.*` (slots in `src/engines/pinball/README.md`); shrink big images with `python3 tools/optimize-art.py`.
 - Key systems: `ui.js` (screens, board SVG, HUD), `multiPathBoard.js` + `boardZones.js` + `biomes.js`
   (generation-7 journey map), `boardCamera.js` (camera/zoom), `gameRegistry.js` + `gameLauncher.js`

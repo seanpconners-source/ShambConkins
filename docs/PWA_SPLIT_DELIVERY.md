@@ -1,6 +1,16 @@
 # Installed app: download only what changed (design, Nov 1 2026)
 
-Status: **proposal, waiting for the owner's OK.** Nothing below is built yet.
+Status: **built (Nov 1 2026, branch `claude/pwa-split` from TESTver), owner chose "everything at install".** Not released
+yet; real phones untested. Measured on the build of TESTver `e5faf6a` (one-file game 200.1 MB):
+- app folder: index.html 8.2 MB, a/ 2,430 files 149.8 MB (of which the built-in art script 25.3 MB).
+- a code-only update downloads **8.4 MB** (index.html + sw.js 80 KB + manifest/icons), measured by `tests/pwa-update.mjs`;
+  a new picture adds just that file. First install ~158 MB (page + every a/ file), once.
+- a download stopped at file 400 carried on with the remaining files on the next start (also in `tests/pwa-update.mjs`).
+- the one-file `dist/ShambConkins.html` is byte-identical to the old build script's.
+- After the first release with this, the website needs nothing new by hand: the release workflow deploys the Worker with
+  the files (existing Cloudflare secrets). The first update on a phone from v0.70 is one full download (resumable).
+
+The proposal as approved follows; "Files" below is what was built.
 
 ## The problem
 The installed app (shambconkins.loki-mylo.work) downloads the whole game as one file on every release: 190.6 MB today
@@ -93,24 +103,25 @@ Also to check while building: nothing saves an asset URL into a save file or run
 built-in art before the art script has run.
 
 ## Service worker (sw.js)
-- Two caches: `shambconkins-<build>` for index.html / manifest / icons (as today), and `shambconkins-assets` for the
-  `a/` files, shared across versions.
+- Two caches: `shambconkins-<build>` for index.html / manifest / icons (as today), and `sc-assets` for the `a/` files,
+  shared across versions (a name without the `shambconkins-` prefix, so no older sw.js ever deletes it).
 - Install: fetch index.html, then every listed `a/` file that isn't cached yet (6 at a time). The existing download bar
   shows bytes still to fetch ("Downloading update · 40%"); a code-only update is just index.html.
 - Activate: drop old version caches and `a/` files the new version no longer lists.
 - Requests: `a/` from the cache (with byte ranges for audio), else the network (and cache it).
 - First update from v0.70 to this: a one-time full download (~145 MB, but resumable). After that, only changes.
 
-## Choice for the owner
-Everything is downloaded at install so the whole game works offline (recommended). Alternative: leave the songs
-(45 MB) and DOOM (14.5 MB) out of the install and fetch them the first time those games are played online
-(Pro Mancala falls back to its own synth band offline; DOOM wouldn't start offline until fetched once).
-Since updates only fetch changes either way, this only affects the very first install.
+## Owner's choice (Nov 1)
+Everything is downloaded at install, so the whole game works offline (songs and DOOM included).
 
-## Tests
-- `node tests/pwa.mjs`, `node tests/pwa-update.mjs` (the update test gets a second build with only a code change and
-  counts what the service worker downloads: should be index.html + sw.js only).
-- A focused build + the games that read these assets: Pro Mancala, DOOM, pinball, Photo Hunt, Broforce heads, online
-  board pictures; served from the app folder over localhost.
-- The one-file build is checked to be unchanged.
-- Real phones (Android app update, iPad songs): the owner's step.
+## Files
+- `tools/build.mjs`: `--pwa` writes index.html (USER_PORTRAITS values `a/<sha256-16>.<ext>`; `"@@asset:...webp|png|jpg@@"`
+  strings in the modules (art.js, faceArt.js) become `(globalThis.__SC_ART||[])[n]`, filled by `a/<hash>.js`, a script tag
+  before the game's), a/, sw.js (`ASSETS` = [name, bytes] list). The one-file build is unchanged.
+- `src/data/userPortraits.js`: `APP_FILE`, `isRasterArt(url)`, `assetBytes(url)` (used by assets.js `ownMoodURL`,
+  broforce/roster.js `devilHasArt`, doom/wad.js); `headCutouts.js` `floatingHead` skips `.png` files like PNG data URIs;
+  `netBoard.js` packs `a/` names as `sc-art:` refs.
+- `cloudflare/worker.js` (`/` = release asset `index.html` when the release has one), `wrangler.toml` `[assets]`,
+  `cloudflare/public/_headers`, `tools/worker-assets.sh`, `release-build.yml`, `deploy-worker.yml`.
+- Tests: `tests/pwa.mjs`, `tests/pwa-update.mjs` (counts what an update downloads; resume after a failed file);
+  `SHAMB_URL=http://localhost:<port>/` makes `tests/lib.mjs` `open()` (and broforce-heads) use a served app folder.

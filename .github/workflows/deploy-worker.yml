@@ -11,18 +11,29 @@ on:
       - 'cloudflare/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-worker
   cancel-in-progress: false
 
+# The deploy also carries the app's pictures and sounds (static assets, cloudflare/public/a/): they are gathered from the
+# newest two releases' _pwa.zip first, so a Worker-only change never takes them off the website. A push that also bumps
+# src/version.js is left to release-build.yml, which deploys the Worker together with the new release's files.
 jobs:
   deploy:
     if: github.repository == 'seanpconners-source/ShambConkins'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - name: Check the Cloudflare secrets
+        id: check
         env:
           TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
@@ -30,7 +41,15 @@ jobs:
             echo "::error::Add the CLOUDFLARE_API_TOKEN repository secret first (see cloudflare/README.md)."
             exit 1
           fi
+          if [ "${{ github.event_name }}" = push ] && git diff --name-only HEAD~1 HEAD | grep -qx 'src/version.js'; then
+            echo "Version bump: the release workflow deploys the Worker with the new release."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Gather the app's pictures and sounds from the newest releases
+        if: steps.check.outputs.skip != 'true'
+        run: KEEP=2 bash tools/worker-assets.sh
       - uses: cloudflare/wrangler-action@v3
+        if: steps.check.outputs.skip != 'true'
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -36,7 +36,8 @@ export async function open(opts = {}) {
      return o.call(this, n, v);
    };
  });
- await page.goto(pathToFileURL(path.resolve(root, opts.file || process.env.SHAMB_FILE || 'dist/ShambConkins.html')).href);
+ // SHAMB_URL: open a served copy instead, e.g. the app folder (build --pwa) on localhost, to test its a/ files
+ await page.goto(process.env.SHAMB_URL && !opts.file ? process.env.SHAMB_URL : pathToFileURL(path.resolve(root, opts.file || process.env.SHAMB_FILE || 'dist/ShambConkins.html')).href);
  await page.waitForTimeout(800);
  return {browser, page, errors};
 }

@@ -4,7 +4,10 @@ name: Publish release HTML
 # GitHub Release v<version> (the ~80 MB file is never a git blob). Notes come from docs/releases/v<version>.md, else
 # from that version's CHANGELOG section. Does nothing if the release already exists. Run it by hand to retry.
 # The installable-app folder (`--pwa`) goes up next to it as ShambConkins_v<version>_pwa.zip, and its small files
-# (manifest.webmanifest, sw.js, icon PNGs) as their own assets: cloudflare/worker.js serves them by name.
+# (index.html = the app page, manifest.webmanifest, sw.js, icon PNGs) as their own assets: cloudflare/worker.js serves them
+# by name. The app's pictures and sounds (the folder's a/ files) are put on the website first, as the Worker's static
+# assets (tools/worker-assets.sh + wrangler deploy, secrets CLOUDFLARE_API_TOKEN/ACCOUNT_ID); if that fails, nothing is
+# published. See docs/PWA_SPLIT_DELIVERY.md.
 on:
   push:
     branches:
@@ -24,7 +27,7 @@ jobs:
   publish:
     if: github.repository == 'seanpconners-source/ShambConkins'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -59,8 +62,29 @@ jobs:
           test "$(stat -c %s "$F")" -gt 1000000
           grep -Fq "const VERSION='$V'" "$F"
           test -f "releases/ShambConkins_v${V}_pwa/sw.js"
+          grep -Fq "const VERSION='$V'" "releases/ShambConkins_v${V}_pwa/index.html"
+          test "$(ls "releases/ShambConkins_v${V}_pwa/a" | wc -l)" -gt 100
           (cd releases && zip -qr "ShambConkins_v${V}_pwa.zip" "ShambConkins_v${V}_pwa")
           sha256sum "$F" "releases/ShambConkins_v${V}_pwa.zip"
+      - name: Gather the app's pictures and sounds for the website
+        if: steps.v.outputs.exists == 'false'
+        shell: bash
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TOKEN" ]; then echo "::error::The CLOUDFLARE_API_TOKEN secret is needed to put the app's files on the website (cloudflare/README.md)."; exit 1; fi
+          # this release's files + the current release's (phones that haven't updated yet still find theirs)
+          KEEP=1 bash tools/worker-assets.sh "releases/ShambConkins_v${{ steps.v.outputs.version }}_pwa"
+      - name: Deploy the website Worker with them
+        if: steps.v.outputs.exists == 'false'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare
+          wranglerVersion: '4.152.0'
+          command: deploy
       - name: Publish the GitHub Release
         if: steps.v.outputs.exists == 'false'
         shell: bash
@@ -76,7 +100,7 @@ jobs:
           if [ -f "docs/releases/v$V.md" ]; then sed -i '1{/^# /d}' "docs/releases/v$V.md"; fi
           APP="releases/ShambConkins_v${V}_pwa"
           gh release create "v$V" "releases/ShambConkins_v$V.html" "releases/ShambConkins_v${V}_pwa.zip" \
-            "$APP/manifest.webmanifest" "$APP/sw.js" "$APP"/icons/*.png \
+            "$APP/index.html" "$APP/manifest.webmanifest" "$APP/sw.js" "$APP"/icons/*.png \
             --target "$GITHUB_SHA" \
             --title "${TITLE:-ShambConkins v$V}" \
             --notes-file "$NOTES"

@@ -76,12 +76,13 @@ function readyPill(){
  const t=setInterval(()=>{el.hidden=!canRestart();},1000);el.hidden=!canRestart();
  document.body.append(el);
 }
-// Download bar while the service worker saves a version for offline play (first visit) or fetches an update.
+// Download bar while the service worker saves a version for offline play (first visit) or fetches an update. Only the
+// page and the pictures/sounds it doesn't have yet are downloaded; whatever arrived before a stop is kept (tools/build.mjs).
 function downloadBar(m,updating){
  let el=document.getElementById('sc-dl');
  if(!el){el=Object.assign(document.createElement('div'),{id:'sc-dl',innerHTML:'<span></span><i><b></b></i>'});el.setAttribute('role','status');document.body.append(el);}
  const pct=m.total?Math.min(100,Math.round(m.got/m.total*100)):0;
- el.querySelector('span').textContent=m.failed?'Download stopped. It will try again next time.':m.done?(updating?'Update downloaded':'Saved for offline play'):`${updating?'Downloading update':'Saving for offline play'} · ${pct}%`;
+ el.querySelector('span').textContent=m.failed?'Download stopped. It carries on from there next time.':m.done?(updating?'Update downloaded':'Saved for offline play'):`${updating?'Downloading update':'Saving for offline play'} · ${pct}%`;
  el.querySelector('b').style.width=(m.done?100:pct)+'%';
  if(m.done||m.failed){clearTimeout(el._t);el._t=setTimeout(()=>el.remove(),2500);}
 }

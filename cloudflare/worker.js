@@ -1,14 +1,18 @@
 // Cloudflare Worker: serves the newest GitHub Release of ShambConkins on your own domain.
 // Nothing to update per release: it asks GitHub which release is "latest" (cached 5 min),
 // downloads that release's .html asset once per Cloudflare data centre, and serves it as a web page.
-//   /                 newest release
-//   /v0.60.0          a specific release
-//   /download         newest release as a file download
+//   /, /index.html    newest release: its app page (release asset "index.html", ~8 MB: the code, with the pictures and
+//                     sounds as /a/ files) when the release has one, else the one-file game (releases before the split)
+//   /v0.60.0          a specific release (the one-file game)
+//   /download         newest release as a file download (the one-file game)
 //   /version          newest release tag (plain text)
-//   /index.html, /manifest.webmanifest, /sw.js, /icons/*.png
+//   /manifest.webmanifest, /sw.js, /icons/*.png
 //                     the installable-app files of the newest release (each release carries them as small assets
 //                     next to the .html; tools/build.mjs --pwa). Without them the game still runs, but Chrome can
 //                     only make a badged shortcut instead of a real app, and there is no offline cache.
+//   /a/<hash>.<ext>   the app's pictures and sounds, named by their contents. Not handled here: they are this Worker's
+//                     static assets (wrangler.toml [assets], folder public/, filled by tools/worker-assets.sh from the
+//                     newest releases' _pwa.zip), served by Cloudflare straight from its edge. See docs/PWA_SPLIT_DELIVERY.md.
 //   /room/<name>      online play: a WebSocket into the room of that name (two phones; the Room Durable Object below).
 //                     Needs the ROOMS binding (wrangler.toml); without it the rest of the site works as before.
 import { DurableObject } from 'cloudflare:workers';
@@ -36,6 +40,10 @@ export default {
       const pinned = path.match(/^\/(v\d+\.\d+\.\d+[\w.-]*)$/);
       if (path !== '/' && path !== '/download' && !pinned) return text('Not found', 404);
       const tag = pinned ? pinned[1] : await latestTag(env, ctx);
+      if (path === '/') {
+        const page = await appFile(req, ['index.html', 'text/html; charset=utf-8', 'no-cache'], tag, env, ctx, true);
+        if (page) return page;
+      }
       const etag = `"${tag}"`;
       const headers = {
         'Content-Type': 'text/html; charset=utf-8',
@@ -93,14 +101,17 @@ async function releaseHtml(tag, env, ctx) {
   return (await fetch(`https://github.com/${REPO}/releases/download/${tag}/ShambConkins_${tag}.html`, { headers: { 'User-Agent': UA } })).body;
 }
 
-// One of the release's small installable-app files, cached per data centre like the game itself.
-async function appFile(req, [name, type, cacheControl], tag, env, ctx) {
+// One of the release's installable-app files, cached per data centre like the game itself. optional: answer null (and
+// remember that for the tag) when the release doesn't have it, so older releases fall back without asking GitHub each time.
+async function appFile(req, [name, type, cacheControl], tag, env, ctx, optional = false) {
   const etag = `"${tag}-${name}"`, headers = { 'Content-Type': type, 'Cache-Control': cacheControl, 'ETag': etag, 'X-ShambConkins-Version': tag };
+  const cache = caches.default, key = cacheKey(`app/${tag}/${name}`), none = cacheKey(`app/${tag}/${name}.none`);
+  if (optional && await cache.match(none)) return null;
   if ((req.headers.get('If-None-Match') || '').split(/,\s*/).includes(etag)) return new Response(null, { status: 304, headers });
-  const cache = caches.default, key = cacheKey(`app/${tag}/${name}`);
   let body = await cache.match(key);
   if (!body) {
     const r = await fetch(`https://github.com/${REPO}/releases/download/${tag}/${name}`, { headers: { 'User-Agent': UA } });
+    if (r.status === 404 && optional) { ctx.waitUntil(cache.put(none, new Response('', { headers: { 'Cache-Control': 'max-age=31536000' } }))); return null; }
     if (!r.ok) return text(`Not found (release ${tag} has no ${name})`, 404);
     const bytes = await r.arrayBuffer();
     ctx.waitUntil(cache.put(key, new Response(bytes, { headers: { 'Cache-Control': 'max-age=31536000' } })));

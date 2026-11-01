@@ -16,6 +16,8 @@ docs/pinball-art/*.zip
 
 # wrangler dev's local state and build output (cloudflare/)
 .wrangler/
+# the app's pictures/sounds the Worker serves, filled before a deploy by tools/worker-assets.sh
+cloudflare/public/a/
 
 # Claude Code agent worktrees (temporary checkouts)
 .claude/worktrees/

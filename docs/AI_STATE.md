@@ -1,5 +1,16 @@
 # AI state (keep short; update after meaningful work)
 
+Nov 1 (branch `claude/pwa-split` from TESTver, unreleased): installed-app updates download only what changed
+(docs/PWA_SPLIT_DELIVERY.md, owner-approved, everything downloaded at install). `build.mjs --pwa` = index.html 8.2 MB +
+`a/` 2,430 content-hashed files (byte-identical copies; built-in art of art.js/faceArt.js as one `a/<hash>.js` data-URI
+script) + sw.js (shared `sc-assets` cache, fetches only missing files, resumes, byte ranges for audio). One-file build
+unchanged (byte-identical). Code-only update measured 8.4 MB (was ~200 MB). Hosting: the Worker's static assets
+(`[assets]` public/, filled by `tools/worker-assets.sh` from the newest releases' `_pwa.zip`); release-build.yml deploys
+the Worker with them before publishing (needs the Cloudflare secrets; release also uploads `index.html`), deploy-worker.yml
+rebuilds the set. Worker `/` = release `index.html` when present. Local `wrangler dev` served the static assets right
+(no 206 for ranges there: the service worker does ranges); real Cloudflare deploy, real phones and iOS Safari songs on a
+first, not-yet-cached visit untested.
+
 Version 0.70.1 (Oct 30): 79 newly pictured characters, additional moods/replacements; portrait files encoded as 480px WebP q88 with originals archived. No game code changes.
 Nov 1 (branch `claude/pro-mancala`, from TESTver, unreleased): Mancala overhauled into TONY HAWK'S PRO MANCALA (same id
 `greed-island-mancala`, engine name `mancala` → `engines/proMancala.js`; title/source in the engine title table in gameRegistry;

@@ -8,6 +8,13 @@ compatibility_date = "2026-10-01"
 workers_dev = true
 keep_vars = true
 
+# The app's pictures and sounds (/a/<hash>.<ext>, docs/PWA_SPLIT_DELIVERY.md): static assets from public/, which
+# tools/worker-assets.sh fills from the newest releases' _pwa.zip right before each deploy (public/a/ isn't in git).
+# Cloudflare serves a request that matches a file there without running worker.js; everything else goes to worker.js.
+# Free plan: 20,000 files per deploy, 25 MiB per file; only files Cloudflare doesn't have yet are uploaded.
+[assets]
+directory = "public"
+
 # Online rooms: one Durable Object per room name (class Room in worker.js). SQLite-backed classes run on the free plan.
 [[durable_objects.bindings]]
 name = "ROOMS"
