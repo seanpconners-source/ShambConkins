@@ -221,7 +221,10 @@ function drawHat(g,w,h,hat){const cx=0,base=-h*.5,top=-h*.9,hw=w*.42,lw=Math.max
 function drawSkater(g,u,pose,head,o){const face=pose.face||1,cr=clamp(pose.crouch??.3,0,1),hipY=-u*(2.25-cr*.85),lean=pose.lean||0;
  g.save();if(pose.spin){const k=Math.cos(pose.spin);g.scale(Math.abs(k)<.08?.08*Math.sign(k||1):k,1);}g.scale(face,1);
  // board first (under the shoes), unless it is flying on its own
- if(!pose.noBoard&&!pose.boardHeld){g.save();g.translate(0,u*.05+(pose.boardY||0));g.rotate(pose.boardRot||0);drawBoard(g,u,o,pose.flip||0,pose.shove||0);g.restore();}
+ if(pose.boardEnd){// board seen nose-on (boardslides): a short deck, the truck and both wheels
+  g.fillStyle='#e8c48c';g.strokeStyle='#2a1a0a';g.lineWidth=Math.max(1,u*.06);g.beginPath();g.roundRect(-u*.5,u*.05,u,u*.17,u*.06);g.fill();g.stroke();g.fillStyle='#151515';g.fillRect(-u*.5,u*.03,u,u*.05);
+  g.fillStyle='#8c949c';g.fillRect(-u*.32,u*.22,u*.64,u*.12);for(const s of [-1,1]){g.fillStyle=o.wheel;g.beginPath();g.roundRect(s*u*.42-u*.12,u*.24,u*.24,u*.34,u*.08);g.fill();g.strokeStyle='#555';g.lineWidth=1;g.stroke();}}
+ else if(!pose.noBoard&&!pose.boardHeld){g.save();g.translate(0,u*.05+(pose.boardY||0));g.rotate(pose.boardRot||0);drawBoard(g,u,o,pose.flip||0,pose.shove||0);g.restore();}
  const fx=u*.7,fy=-u*.12+(pose.feetY||0),hx=lean*u*.6,shoulderY=hipY-u*1.55,sx=hx+Math.sin(lean)*u*1.2;
  // legs (socks + shorts), shoes; pose.feet moves each foot (airwalk scissor, christ air dangle)
  const F=pose.feet||[[-fx,fy],[fx,fy]];

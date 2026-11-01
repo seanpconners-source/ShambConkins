@@ -23,7 +23,14 @@ hooks aww/grunt/timeup/total/grind-pipe|curb|board). Songs: 15 THPS2-soundtrack 
 ends, kept across games; pauses with the game). Build is ~190 MB with them (+60 MB). Cutaways: the camera centres the
 skater's body, random hats (`A.hatFor`: backwards cap, trucker, beanie, helmet; guest skaters too), air styles on store
 landings (airwalk/christ/rocket via pose.feet/boardHeld), and a pose shot after most landed cuts (`startPose`: jump cut to
-the skater facing the camera, `A.drawSkaterFront` horns/point/arms/shaka/flex/boardup + caption). Guest roster skaters go by every 3.5-7 s
+the skater facing the camera, `A.drawSkaterFront` horns/point/arms/shaka/flex/boardup + caption).
+Round 5 (Nov 1): title words are measured on the device (Android has no Impact; wider fallback font overlapped) and
+stacked above the face-off cards; `layout()` reserves a `hudH` strip for each score panel so nothing sits on the bowls
+(checked at 11 sizes with a scratch script: HUD/card rects vs `lay.deckRect`); while a human chooses a bowl, trick text,
+popups and the turn banner over the board fade to ~30% (`veil`, `chooseK`). Many more GOOD/BAD popup lines. Grinds in
+cutaways: `GRIND_POSE` (50-50, 5-0, nose, crook, smith, feeble, board, blunt, tail; from the steal's grind name via
+`grindKind`) puts a truck (or the deck for slides) on the rail/curb/coping (`grindPose`); boardslides draw the board
+nose-on (`pose.boardEnd`). `s.debug.cutTo(p,kind,anim,spot)` forces a cutaway for tests. Guest roster skaters go by every 3.5-7 s
 (ollie over, grind the edge, manual, bomb, big air). Turn: row glow in the player's color, "▶ X'S TURN" HUD, YOUR TURN card,
 other side dimmed. Popups are measured and clamped on screen; trick strings wrap to 2 lines. THPS HUD (score tally, special meter),
 trick strings "A + B / pts X n", COMBO!!! on store landings, bails (being robbed, or gaining nothing and leaving the
