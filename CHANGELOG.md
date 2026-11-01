@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.72.2
+
+**Tony Hawk's Pro Mancala:** the gray rail MANCALA grinds in on no longer stays across the title screen: it fades out
+right after the word lands.
+
 ## v0.72.1
 
 **The v0.72.0 update, published.** v0.72.0 never reached the website: one of its files (the built-in pictures) was over

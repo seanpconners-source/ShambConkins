@@ -476,7 +476,8 @@ async function proMancala(s){
   k=fly(HITS[2]-.25,.25);if(k>0){const py=yB-(1-ease(k))*H;x.save();x.translate(xP,py);x.rotate(-.08);x.fillStyle='#d61f1f';x.fillRect(-pw/2,-proPx*.7,pw,proPx*1.4);x.strokeStyle='#000';x.lineWidth=3;x.strokeRect(-pw/2,-proPx*.7,pw,proPx*1.4);x.restore();
    thps(x,'PRO',xP,py,proPx,{fill:'#fff',rot:-.08});}
   k=fly(HITS[3]-.5,.5);if(k>0){const xx=xM+(1-ease(k))*W*1.1,yy=yB;if(k<1)for(let j=0;j<3;j++)sparks.push({x:xx-wM*.45,y:yy+fb*.5,vx:-200-Math.random()*300,vy:-Math.random()*250,t:0,dur:.4});
-   x.strokeStyle='#9aa3ad';x.lineWidth=Math.max(2,fb*.06);x.beginPath();x.moveTo(0,yy+fb*.52);x.lineTo(W,yy+fb*.46);x.stroke();
+   // the rail MANCALA grinds in on: only while it slides, gone a moment after it lands
+   const ra=k<1?1:clamp(1-(introT-HITS[3])*4,0,1);if(ra>0){x.save();x.globalAlpha*=ra;x.strokeStyle='#9aa3ad';x.lineWidth=Math.max(2,fb*.06);x.beginPath();x.moveTo(0,yy+fb*.52);x.lineTo(W,yy+fb*.46);x.stroke();x.restore();}
    thps(x,'MANCALA',xx,yy,fb,{grad:['#fffbd0','#ffd000','#ff7a00','#c42a00'],rot:-.05,lw:.2,maxW:W*.96,scale:k<1?1:1+.06*Math.max(0,1-(introT-HITS[3])*4)});}
   k=fly(BOOM,.18);if(k>0){const sc=1+(1-k)*2.2,pulse=introT>BOOM+.2?1+.04*Math.sin(introT*14):1,bw=Math.min(W*.96,tw('EXTREME EDITION!!',fc)+fc*1.2)/2;x.save();x.translate(cx,yC);x.rotate(-.08);x.scale(sc*pulse,sc*pulse);x.fillStyle='#e01b1b';x.beginPath();x.moveTo(-bw,-fc*.72);x.lineTo(bw*1.02,-fc*.85);x.lineTo(bw,fc*.72);x.lineTo(-bw*1.02,fc*.85);x.closePath();x.fill();x.strokeStyle='#000';x.lineWidth=4;x.stroke();x.restore();
    thps(x,'EXTREME EDITION!!',cx,yC,fc,{grad:['#ffffff','#ffe600'],rot:-.08,scale:sc*pulse,maxW:bw*1.9});}
