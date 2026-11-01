@@ -100,22 +100,38 @@ fs.mkdirSync(path.dirname(out), {recursive: true});
 fs.writeFileSync(out, html);
 console.log(`${path.relative(root, out)}  ${(html.length / 1048576).toFixed(1)} MB  ${order.length} modules  ${Object.keys(userPortraits).length} drop-in art files`);
 if (pwaDir) {
-  // Cache-first service worker: the game is one big file, downloaded once per build. BUILD changes with the game's
-  // contents, so the browser fetches the new sw.js, caches the new game in the background and drops the old copy.
-  // The game is streamed in so the page can show a download bar (src/pwa.js listens for 'sc-download' messages).
-  const build = read('src/version.js').match(/VERSION='([^']+)'/)[1] + '-' + (await import('node:crypto')).createHash('sha256').update(html).digest('hex').slice(0, 12);
+  // Service worker = the installed app's offline copy. The game page is network-first: every open asks the site with the
+  // saved copy's ETag (the release tag). Unchanged: 304 and the saved copy loads at once. New release: it loads straight
+  // from the network like a normal web page (what a browser tab does, which always updated at once) and is saved for
+  // offline play while it streams in. No answer within a few seconds (offline, weak signal): the saved copy. This file is
+  // the same for every release (only SW_VERSION changes it), so the browser never downloads the whole game a second time
+  // in the background, the old flow that stalled for big builds whenever the app was closed part-way.
+  const SW_VERSION = 2;
   const files = ['index.html', 'manifest.webmanifest', ...PWA_ICONS.map(f => 'icons/' + f)];
-  const sw = `// ShambConkins offline cache, written by tools/build.mjs --pwa. Cache-first; a new build changes BUILD.
-const BUILD=${JSON.stringify(build)},CACHE='shambconkins-'+BUILD,FILES=${JSON.stringify(files.slice(1))},SIZE=${Buffer.byteLength(html)};
-const tell=m=>self.clients.matchAll({includeUncontrolled:true}).then(cs=>cs.forEach(c=>c.postMessage(m)));
-async function game(c){const r=await fetch(new Request('index.html',{cache:'reload'}));if(!r.ok)throw new Error('index.html '+r.status);
- const read=r.body.getReader(),parts=[];let got=0,at=0;for(;;){const {done,value}=await read.read();if(done)break;parts.push(value);got+=value.length;
-  if(Date.now()-at>300){at=Date.now();tell({type:'sc-download',got,total:SIZE});}}
- await c.put('index.html',new Response(new Blob(parts,{type:'text/html'}),{headers:{'content-type':'text/html'}}));tell({type:'sc-download',got,total:SIZE,done:true});}
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>Promise.all([game(c),c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))])).then(()=>self.skipWaiting(),err=>{tell({type:'sc-download',failed:true});throw err;}));});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('shambconkins-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+  const sw = `// ShambConkins offline copy, written by tools/build.mjs --pwa (service worker version ${SW_VERSION}).
+const CACHE='shambconkins-app',FILES=${JSON.stringify(files.slice(1))},WAIT=4000;
+const isGame=u=>{const p=new URL(u).pathname,s=new URL(self.registration.scope).pathname;return p===s||p===s+'index.html';};
+const save=(c,res)=>c.put('index.html',res).catch(()=>{});
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))).catch(()=>{}).then(()=>self.skipWaiting()));});
+// keep the game saved by an older version of this file (other cache names), then drop those caches
+self.addEventListener('activate',e=>{e.waitUntil((async()=>{const c=await caches.open(CACHE);
+ for(const k of await caches.keys())if(k!==CACHE&&k.startsWith('shambconkins-')){if(!await c.match('index.html')){const old=await (await caches.open(k)).match('index.html');if(old)await c.put('index.html',old);}await caches.delete(k);}
+ await self.clients.claim();})());});
+async function game(e){const c=await caches.open(CACHE),saved=await c.match('index.html'),tag=saved&&saved.headers.get('etag');
+ const net=fetch(new Request(e.request.url,{cache:'no-store',credentials:'same-origin',headers:tag?{'If-None-Match':tag}:{}}));
+ let res=null;try{res=await (saved?Promise.race([net,new Promise(r=>setTimeout(()=>r(null),WAIT))]):net);}catch{}
+ // slow or offline: play the saved copy now; a new release still coming in is saved for next time
+ if(!res){if(saved){e.waitUntil(net.then(r=>r&&r.status===200?save(c,r):0).catch(()=>{}));return saved;}return net;}
+ if(res.status===304&&saved)return saved;
+ if(res.status===200&&res.body){const h=new Headers(res.headers),[a,b]=res.body.tee();e.waitUntil(save(c,new Response(b,{status:200,headers:h})));return new Response(a,{status:200,headers:h});}
+ return saved||res;}
 self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||new URL(r.url).origin!==location.origin)return;
- e.respondWith(caches.open(CACHE).then(c=>c.match(r,{ignoreSearch:true}).then(hit=>hit||(r.mode==='navigate'?c.match('index.html'):undefined))).then(hit=>hit||fetch(r)));});
+ if(r.mode==='navigate'){e.respondWith(isGame(r.url)?game(e):fetch(r).catch(()=>caches.open(CACHE).then(c=>c.match('index.html'))));return;}
+ e.respondWith(caches.open(CACHE).then(c=>c.match(r,{ignoreSearch:true})).then(hit=>hit||fetch(r)));});
+// first install: the page that registered this file loaded before it was in charge, so it asks to be kept for offline play
+// (from the browser's own cache when it still has it, else downloaded once in the background)
+self.addEventListener('message',e=>{if(e.data&&e.data.type==='sc-keep')e.waitUntil(caches.open(CACHE).then(async c=>{if(await c.match('index.html'))return;
+ const r=await fetch(new Request(self.registration.scope,{cache:'force-cache',credentials:'same-origin'}));if(r.status===200)await save(c,r);}).catch(()=>{}));});
 `;
   fs.rmSync(pwaDir, {recursive: true, force: true});
   fs.mkdirSync(path.join(pwaDir, 'icons'), {recursive: true});
@@ -123,5 +139,5 @@ self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||new URL
   fs.writeFileSync(path.join(pwaDir, 'manifest.webmanifest'), JSON.stringify(PWA_MANIFEST, null, 1));
   fs.writeFileSync(path.join(pwaDir, 'sw.js'), sw);
   for (const f of PWA_ICONS) fs.copyFileSync(path.join(root, 'assets/pwa', f), path.join(pwaDir, 'icons', f));
-  console.log(`${path.relative(root, pwaDir)}/  installable app folder (index.html, manifest.webmanifest, sw.js, icons/)  build ${build}`);
+  console.log(`${path.relative(root, pwaDir)}/  installable app folder (index.html, manifest.webmanifest, sw.js, icons/)  service worker v${SW_VERSION}`);
 }

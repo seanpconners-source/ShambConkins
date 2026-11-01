@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.71.1
+
+**The installed app updates like the website now.** Opening the app asks the site whether there's a newer version: if there is, it loads it right then (like reloading the web page), and saves it for offline play while it comes in. If nothing changed, the saved copy opens at once. With no signal it opens the saved copy after a few seconds. Before, the app had to download the whole game in the background and start over every time it was closed part-way, so with the bigger game it could seem stuck forever. When you come back to an app that stayed open, a **vX is out — Update** button appears. **Settings → Check for updates** now tells the truth: it never says "up to date" when it couldn't reach the site. Phones on the old version switch over by themselves: open the app, tap **Restart** when it offers, and the new version loads.
+
+**Sharper faces in Tony Hawk's Pro Mancala.** The player cards, skaters and pose shots now use big, sharp face pictures instead of small ones stretched up.
+
 ## v0.71.0
 
 **Tony Hawk's Pro Mancala.** Mancala is rebuilt as a Tony Hawk game (same rules, CPU and online play as before). A title sequence plays every time (Tony... Hawk's... Pro... Mancala... EXTREME EDITION!!), then the board is a real skateboard deck with glass gems that fills the screen (standing upright on tall phones). Around it: the THPS2 score and special meter, trick strings with multipliers, COMBO!!! every time your last gem lands in your store, bails when you get robbed or set the other player up, special tricks, crowd reactions and a flood of (very rude) popups that never sit on the bowls while it's your turn. Big moments cut to a 90s fisheye camcorder shot of your skater on a halfpipe, a handrail, a stair set, a curb or a kicker ramp: grinds, airwalks, Christ airs, slams with a freeze-frame, hats, and a pose for the camera. Guest skaters from your roster go by all the time. The music is the THPS soundtrack, one song from the title on and the next when it ends, with the real Tony Hawk sound effects. An end-of-run tally keeps your best trick score and best combo. The game file is bigger now (about 200 MB), so the update takes a few minutes on Wi-Fi.
