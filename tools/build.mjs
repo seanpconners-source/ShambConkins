@@ -126,10 +126,13 @@ if (pwaDir) {
     if (!artAt.has(file)) {artAt.set(file, art.length); art.push(dataURI(MIME[file.split('.').pop()], fs.readFileSync(path.join(root, file))));}
     return `(globalThis.__SC_ART||[])[${artAt.get(file)}]`;
   });
-  const artScript = keep(Buffer.from('globalThis.__SC_ART=' + JSON.stringify(art) + ';\n'), 'js');
+  // in parts of ~8 MB (the website host, Cloudflare, refuses files over 25 MiB), run in order; each adds to __SC_ART
+  const artScripts = [];
+  for (let i = 0; i < art.length;) {let n = 0, j = i;while (j < art.length && (j === i || n + art[j].length < 8e6)) n += art[j++].length;
+    artScripts.push(keep(Buffer.from('globalThis.__SC_ART=(globalThis.__SC_ART||[]).concat(' + JSON.stringify(art.slice(i, j)) + ');\n'), 'js'));i = j;}
   // The page carries its own list of a/ files ([name, bytes], into src/pwa.js APP_FILES) and hands it to the service worker.
   const assets = [...files].map(([name, buf]) => [name, buf.length]).sort((a, b) => a[0] < b[0] ? -1 : 1);
-  const app = page(appPortraits, appJs.replace('/*@@APP_FILES@@*/null', () => JSON.stringify(assets)), `<script src="${artScript}"></script>`);
+  const app = page(appPortraits, appJs.replace('/*@@APP_FILES@@*/null', () => JSON.stringify(assets)), `<script>window.__SC_ARTN=${artScripts.length}</script>` + artScripts.map(f => `<script src="${f}"></script>`).join(''));
   // Service worker = the installed app's offline copy. The game page is network-first: every open asks the site with the
   // saved copy's ETag (the release tag). Unchanged: 304 and the saved copy loads at once. New release: it loads straight
   // from the network like a normal web page (what a browser tab does, which always updated at once) and is saved for
@@ -210,6 +213,8 @@ self.addEventListener('message',e=>{const d=e.data||{};
   const r=await fetch(new Request(self.registration.scope,{cache:'force-cache',credentials:'same-origin'}));if(r.status===200)await save(c,r);}).catch(()=>{}));
  if(d.type==='sc-files'&&typeof d.version==='string'&&Array.isArray(d.files))e.waitUntil(filling=filling.then(()=>fill(d.version,d.files)).catch(()=>{}));});
 `;
+  // the release workflow puts these files on Cloudflare, which refuses any file over 25 MiB: fail here, not there
+  for (const [name, buf] of [...files, ['index.html', Buffer.from(app)]]) if (buf.length > 24 * 1048576) throw new Error(`app file ${name} is ${(buf.length / 1048576).toFixed(1)} MB; Cloudflare takes files up to 25 MiB`);
   fs.rmSync(pwaDir, {recursive: true, force: true});
   fs.mkdirSync(path.join(pwaDir, 'icons'), {recursive: true});
   fs.mkdirSync(path.join(pwaDir, 'a'));
@@ -219,5 +224,5 @@ self.addEventListener('message',e=>{const d=e.data||{};
   fs.writeFileSync(path.join(pwaDir, 'sw.js'), sw);
   for (const f of PWA_ICONS) fs.copyFileSync(path.join(root, 'assets/pwa', f), path.join(pwaDir, 'icons', f));
   const mb = n => (n / 1048576).toFixed(1) + ' MB';
-  console.log(`${path.relative(root, pwaDir)}/  installable app folder: index.html ${mb(app.length)}, a/ ${files.size} files ${mb(assets.reduce((s, [, b]) => s + b, 0))} (built-in art script ${mb(files.get(artScript.slice(2)).length)}), sw.js, manifest, icons/  service worker v${SW_VERSION}`);
+  console.log(`${path.relative(root, pwaDir)}/  installable app folder: index.html ${mb(app.length)}, a/ ${files.size} files ${mb(assets.reduce((s, [, b]) => s + b, 0))} (built-in art ${artScripts.length} scripts, biggest ${mb(Math.max(...artScripts.map(f => files.get(f.slice(2)).length)))}), sw.js, manifest, icons/  service worker v${SW_VERSION}`);
 }

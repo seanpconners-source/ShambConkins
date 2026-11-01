@@ -1,6 +1,13 @@
 # AI state (keep short; update after meaningful work)
 
-v0.72.0 (Nov 1): the split delivery below released to main, plus a real loading-screen progress: sw.js (v4) streams the
+v0.72.1 (Nov 1): v0.72.0's release stopped on Cloudflare's 25 MiB per-file limit (the one 25.3 MB built-in art script);
+build.mjs --pwa now writes it as ~8 MB parts (`window.__SC_ARTN` scripts, each concats onto `__SC_ART`; #boot says "(2 of 4)")
+and throws if any app file is over 24 MiB. Owner: "merging to main" = release (bump, release build, check the site serves it).
+Screen wake lock while the app is visible (`src/wakeLock.js`, re-asked on return/tap). Pro Mancala: no text on the deck
+(trick string/banner/"IS THINKING" in `lay.side[p]` = the player's strip (flat) or column (upright); popups weigh deck overlap
+x60 and drop if still on it; `s.debug.overlays()` + tests/promancala.mjs fail on any overlap); deck lies flat whenever that
+makes it longer (open Fold 900x1000 now flat); fullBleed bg dark for the title, sky/concrete gradient in play (Fold hairlines).
+v0.72.0 (Nov 1, never published): the split delivery below released to main, plus a real loading-screen progress: sw.js (v4) streams the
 game page and the built-in art script through `counted()` and posts {type:'sc-load',kind:'page'|'art',got,total,done} to
 the loading page; index.template.html's #boot shows "Downloading vX · 45%" (MB when the size is unknown). WAIT for the
 network before playing the saved copy is 2.5 s. Measured at 4x CPU: title screen 3 s per open (one-file build 9-10 s).

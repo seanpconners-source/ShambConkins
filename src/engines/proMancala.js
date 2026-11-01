@@ -58,22 +58,28 @@ const PCOL=['#ff3b30','#2f8bff'];
 // ------------------------------------------------------------------ layout: the board is the focus and fills the screen
 // Tall screens turn the deck upright (player 1's bowls the left column, their store at the bottom; player 2's the right
 // column, store at the top). Wide screens lay it flat (player 1's bowls along the bottom, store on the right).
-function layout(W,H,pillsW=130){const vertical=H>W*1.08,hu=clamp(Math.min(W,H)/24,11,30),lay={W,H,vertical,hu,pillsW};
+function layout(W,H,pillsW=130){const hu=clamp(Math.min(W,H)/24,11,30);
  // both score panels always get a strip of their own above/below the board (hudH tall): the board shrinks to make room
- const hudH=hu*5.1+10;lay.hudH=hudH;
- if(vertical){const ext0=.3*.249,geo=A.deckGeometry(Math.min(H*.7,(W*.62)/.249,(H-2*hudH)/(1+ext0))),L=geo.L,D=geo.D,ext=geo.edge+geo.wheel*.9,top=Math.max(hudH,(H-L-ext)/2);
+ const hudH=hu*5.1+10,ext0=.3*.249;
+ // the deck stands upright or lies flat, whichever makes it bigger (near-square screens like an open Fold lie flat)
+ const lenV=Math.min(H*.7,(W*.62)/.249,(H-2*hudH)/(1+ext0)),lenH=Math.min(W*.93,(H*.44)/.249,((H-2*hudH)/1.31)/.249);
+ const vertical=H>W&&lenV>lenH,lay={W,H,vertical,hu,pillsW,hudH};
+ if(vertical){const geo=A.deckGeometry(lenV),L=geo.L,D=geo.D,ext=geo.edge+geo.wheel*.9,top=Math.max(hudH,(H-L-ext)/2);
   Object.assign(lay,{geo,bx:W/2,by:top+L/2,top,bottom:top+L+ext});const colW=(W-D)/2;
   lay.band=[{x:0,y:lay.bottom,w:W,h:H-lay.bottom},{x:0,y:0,w:W,h:top}];
   lay.hud=[{x:10,y:lay.bottom+4},{x:10,y:6}];
   const cw=Math.max(0,colW-16),ch=Math.min(cw*1.25,L*.42);lay.card=[{x:8,y:top+L-ch-4,w:cw,h:ch},{x:W/2+D/2+8,y:top+4,w:cw,h:ch}];
-  lay.trick=[{x:W/2,y:top+L*.8,w:W*.94,over:true},{x:W/2,y:top+L*.2,w:W*.94,over:true}];
+  // trick strings and banners sit in the player's own column, in the part their card leaves free (never on the deck)
+  const c0=lay.card[0],c1=lay.card[1];lay.side=[{x0:6,y0:top+hu*1.6,x1:W/2-D/2-6,y1:c0.y-4},{x0:W/2+D/2+6,y0:c1.y+c1.h+4,x1:W-6,y1:top+L-hu*.4}];
   lay.cones=[[W/2-D*.5-colW*.5,top+L*.06,hu*.9],[W/2+D*.5+colW*.5,top+L*.96,hu*.8]];
- }else{const geo=A.deckGeometry(Math.min(W*.93,(H*.44)/.249,((H-2*hudH)/1.31)/.249)),L=geo.L,D=geo.D,ext=geo.edge+geo.wheel*.95,top=(H-D-ext)/2;
+ }else{const geo=A.deckGeometry(lenH),L=geo.L,D=geo.D,ext=geo.edge+geo.wheel*.95,top=(H-D-ext)/2;
   Object.assign(lay,{geo,bx:W/2,by:top+D/2,top,bottom:top+D+ext});
   lay.band=[{x:0,y:lay.bottom,w:W,h:H-lay.bottom},{x:0,y:0,w:W,h:top}];
   lay.hud=[{x:10,y:lay.bottom+4},{x:10,y:6}];
   const ch=Math.min(top-10,240),cw=ch*.86;lay.card=[{x:W-cw-10,y:lay.bottom+5,w:cw,h:ch},{x:W-pillsW-cw,y:4,w:cw,h:ch}];
-  lay.trick=[0,1].map(i=>{const b=lay.band[i],x0=10+hu*9.5,x1=lay.card[i].x-10;return x1-x0>=W*.3&&b.h>hu*4?{x:(x0+x1)/2,y:b.y+b.h*.45,w:x1-x0}:{x:W/2,y:lay.by+(i?-1:1)*D*.25,w:W*.9,over:true};});
+  // trick strings and banners sit in the player's own strip (bottom = player 1, top = player 2) right of the score,
+  // over the face card if the gap beside it is too narrow (never on the deck)
+  lay.side=[0,1].map(i=>{const b=lay.band[i],x0=10+hu*9.5,edge=i?W-pillsW-6:W-8,x1=lay.card[i].x-10>=x0+W*.35?lay.card[i].x-10:edge;return {x0,y0:b.y+(i?2:4),x1,y1:b.y+b.h-(i?4:2)};});
   lay.cones=[[W/2-L*.47,lay.bottom+hu*.6,hu],[W/2+L*.46,lay.bottom+hu*.7,hu*.9]];}
  lay.pipes=[];lay.horizon=Math.max(30,lay.top*(vertical?.8:.62));
  // the board's own rectangle on screen (overlays covering it fade back while someone is choosing a bowl)
@@ -81,7 +87,10 @@ function layout(W,H,pillsW=130){const vertical=H>W*1.08,hu=clamp(Math.min(W,H)/2
  return lay;}
 
 async function proMancala(s){
- const [c,x]=s.canvas(900,600,{fill:true});fullBleed(s,{bg:'#3d78b8'});
+ // the page behind the canvas matches what is drawn at its edges (dark title, then sky over concrete), so the hairline a
+ // fractional screen scale can leave at the top/bottom (an open Fold) doesn't show as a coloured line
+ const [c,x]=s.canvas(900,600,{fill:true});fullBleed(s,{bg:'#07070a'});
+ const PLAY_BG='linear-gradient(#1f6fd1 0 50%,#8f897f 50% 100%)',setBg=v=>s.body.closest('.game-shell')?.style.setProperty('--fb-bg',v);
  // a small full-screen toggle beside Pause/Exit (only where the browser allows it; the installed app is full screen already)
  let fsBtn=null,fsKey='';
  if(fullscreenSupported()){const shell=s.body.closest('.game-shell');if(shell){fsBtn=document.createElement('button');fsBtn.type='button';fsBtn.className='pm-fs';fsBtn.textContent=fullscreenLabel('icon');fsBtn.title='Full screen';fsBtn.setAttribute('aria-label','Toggle full screen');
@@ -128,7 +137,7 @@ async function proMancala(s){
  function textRects(){const W=lay.W,H=lay.H,hu=lay.hu,r=[{x0:W-lay.pillsW,y0:0,x1:W,y1:46}];
   for(const i of [0,1]){const h=lay.hud[i];r.push({x0:h.x,y0:h.y,x1:h.x+hu*9.2,y1:h.y+hu*5.2});if(!cut){const c=lay.card[i];if(c.h>=36)r.push({x0:c.x,y0:c.y,x1:c.x+c.w,y1:c.y+c.h});}}
   const cl=comboLayout();if(cl)r.push(cl.rect);
-  if(banner)r.push({x0:0,y0:H/2-hu*2,x1:W,y1:H/2+hu*1.8});
+  if(banner)r.push(bannerRect(banner.p));
   if(track){const tr=trackBox();r.push({x0:tr.x,y0:tr.y-hu*.9,x1:tr.x+tr.w,y1:tr.y+hu*1.1});}
   if(cut){r.push({x0:W*.45,y0:44,x1:W,y1:52+hu*3.2});r.push({x0:W-hu*14,y0:H-hu*3.2,x1:W,y1:H});if(cut.impact)r.push({x0:W*.2,y0:H*.4-hu*2.2,x1:W*.8,y1:H*.4+hu*2.2});}
   return r;}
@@ -140,8 +149,10 @@ async function proMancala(s){
   const cands=[],cl=(cx,cy)=>[clamp(cx,w/2+4,W-w/2-4),clamp(cy,h/2+4,H-h/2-4)];
   if(x0!=null)for(let k=0;k<24;k++){const a=k*2.4,d=k?h*.55*Math.sqrt(k):0;cands.push(cl(x0+Math.cos(a)*d*1.5,y0+Math.sin(a)*d));}
   for(let k=0;k<30;k++)cands.push(cl(W*(.06+Math.random()*.88),H*(.08+Math.random()*.84)));
-  let best=null;for(const [cx,cy] of cands){const b=box(cx,cy);let o=0;for(const q of fixed)o+=inter(b,q);for(const q of others)o+=inter(b,q)*(imp?.5:2);if(!best||o<best.o)best={cx,cy,b,o};if(o===0)break;}
-  if(best.o>0&&!imp)return;
+  // no popup ever sits on the deck (wheels included) outside a cutaway
+  const board=cut?null:{x0:lay.deckRect.x0-hu*.3,y0:lay.deckRect.y0-hu*.3,x1:lay.deckRect.x1+hu*.3,y1:lay.bottom};
+  let best=null;for(const [cx,cy] of cands){const b=box(cx,cy);let o=board?inter(b,board)*60:0;for(const q of fixed)o+=inter(b,q);for(const q of others)o+=inter(b,q)*(imp?.5:2);if(!best||o<best.o)best={cx,cy,b,o};if(o===0)break;}
+  if(best.o>0&&!imp)return;if(board&&inter(best.b,board)>0)return;
   if(imp)for(let j=pops.length-1;j>=0;j--)if(!pops[j].imp&&inter(best.b,pops[j].r)>0)pops.splice(j,1);
   pops.push({text,x:best.cx,y:best.cy,px:size,grad:col||pickOf(pal),dur,t:0,rot:r,vy:-hu*.4,r:best.b,imp});if(pops.length>14)pops.shift();}
  // while a human is choosing a bowl, whatever covers the board fades back so every bowl and count stays readable
@@ -212,7 +223,7 @@ async function proMancala(s){
   else{if(special||pl.cut)await cutTo(me,special?'special':'trick',special?{name:'special',special:true,spin:2.5,h:1.6,grab:true}:pl.anim);await landCombo();}
   if(!s.alive)return;turnBanner();busy=false;}
  function syncStones(){for(let i=0;i<14;i++){const d=state.pits[i]-stones[i].length;if(d>0)for(let k=0;k<d;k++)stones[i].push(newStone());else if(d<0)stones[i].splice(d);incoming[i]=0;}}
- function turnBanner(){const i=state.turn,who=theirs()?'THEIR TURN':nameOf(i).toUpperCase()+"'S TURN";banner={text:who,sub:theirs()?'PLAYING ON THEIR PHONE':cpu&&i===1?'':'TAP A GLOWING BOWL',t:0,dur:1.7,p:i};clearUnder({x0:0,y0:lay.H/2-lay.hu*2,x1:lay.W,y1:lay.H/2+lay.hu*1.8});
+ function turnBanner(){const i=state.turn,who=theirs()?'THEIR TURN':nameOf(i).toUpperCase()+"'S TURN";banner={text:who,sub:theirs()?'PLAYING ON THEIR PHONE':cpu&&i===1?'':'TAP A GLOWING BOWL',t:0,dur:1.7,p:i};clearUnder(bannerRect(i));
   s.active=i;s.updateScores?.();if(!cpu&&!net)lockT=.55;S.sfx('whoosh',.35,true);}
 
  // ---------------------------------------------------------------- 90s fisheye camera cutaways to the player's skater
@@ -401,22 +412,28 @@ async function proMancala(s){
   x.restore();}
  function wrapTricks(list,px,maxW){x.font=A.font(px);const lines=[];let cur='';for(const t of list){const nx=cur?cur+' + '+t:t;if(cur&&x.measureText(nx).width*.84>maxW){lines.push(cur);cur=t;}else cur=nx;}if(cur)lines.push(cur);return lines;}
  // where the trick string sits this frame (also used to keep popups off it)
- function comboLayout(){if(!combo)return null;const hu=lay.hu,t=cut?{x:lay.W/2,y:lay.H*.64,w:lay.W*.92,over:true}:lay.trick[combo.p],ph=combo.phase;let px=hu*1.1,lines=wrapTricks(combo.tricks,px,t.w);while(lines.length>2&&px>hu*.72){px*=.9;lines=wrapTricks(combo.tricks,px,t.w);}if(lines.length>2)lines=['… + '+lines[lines.length-2],lines[lines.length-1]];
-  const big=hu*(ph==='land'?1.9:1.4),blockH=lines.length*px*1.05+big*1.1,y0=clamp(t.y-blockH/2+(ph==='bail'?combo.t*hu*1.5:ph==='land'?-combo.t*hu:0),hu*.4,lay.H-blockH-hu*.4);
-  return {t,lines,px,big,blockH,y0,rect:{x0:t.x-t.w/2,y0:y0-hu*.4,x1:t.x+t.w/2,y1:y0+blockH+hu*.6}};}
+ // off the board: in the mover's own strip/column (lay.side), shrunk to fit it; over the whole screen during a cutaway
+ function comboLayout(){if(!combo)return null;const hu=lay.hu,sd=lay.side[combo.p],ph=combo.phase;
+  const t=cut?{x:lay.W/2,y:lay.H*.64,w:lay.W*.92,y0:hu*.4,y1:lay.H-hu*.4,over:true}:{x:(sd.x0+sd.x1)/2,y:(sd.y0+sd.y1)/2,w:sd.x1-sd.x0,y0:sd.y0,y1:sd.y1};
+  const maxL=t.w<hu*12?3:2,room=t.y1-t.y0;let px=hu*1.1,k=1,lines,big,blockH;
+  for(;;){lines=wrapTricks(combo.tricks,px,t.w);big=hu*k*(ph==='land'?1.9:1.4);if(lines.length>maxL)lines=['… + '+lines[lines.length-2],lines[lines.length-1]];blockH=lines.length*px*1.05+big*1.1;if(blockH<=room||px<hu*.5)break;px*=.9;k*=.9;}
+  const y0=clamp(t.y-blockH/2+(ph==='bail'?combo.t*hu*1.5:ph==='land'?-combo.t*hu:0),t.y0,Math.max(t.y0,t.y1-blockH));
+  return {t,lines,px,big,blockH,y0,rect:{x0:t.x-t.w/2,y0:y0-hu*.2,x1:t.x+t.w/2,y1:y0+blockH+hu*.2}};}
  function drawCombo(){if(!combo)return;const hu=lay.hu,ph=combo.phase,a=ph==='live'?1:clamp(1.3-combo.t*.9,0,1);if(a<=0){combo=null;return;}
   const popIn=Math.min(1,combo.t*8),cl=comboLayout(),{t,lines,px,big,blockH,y0}=cl;x.save();x.globalAlpha*=veil(cl.rect);
-  if(t.over){x.save();x.globalAlpha=a*.5;x.fillStyle='#000';x.beginPath();x.roundRect(lay.W/2-t.w/2,y0-hu*.3,t.w,blockH+hu*.6,hu*.5);x.fill();x.restore();}
+  if(t.over){x.save();x.globalAlpha=a*.5;x.fillStyle='#000';x.beginPath();x.roundRect(t.x-t.w/2,y0-hu*.3,t.w,blockH+hu*.6,hu*.5);x.fill();x.restore();}
   lines.forEach((ln,k)=>thps(x,ln,t.x,y0+px*(k+.5)*1.05,px,{fill:ph==='bail'?'#ff4040':'#ffffff',maxW:t.w,alpha:a,scale:.85+.15*popIn}));
   const line2=ph==='land'?fmt(combo.total):`${fmt(combo.base)} X ${combo.mult}`;
   thps(x,line2,t.x,y0+lines.length*px*1.05+big*.55,big,{grad:ph==='bail'?['#ff8080','#ff1010']:ph==='land'?['#e7ffd0','#41e000']:['#fff7a0','#ffbf00'],alpha:a,maxW:t.w,scale:ph==='land'?1+.25*Math.max(0,1-combo.t*3):1});x.restore();}
  function drawPops(dt){for(let j=pops.length-1;j>=0;j--){const p=pops[j];p.t+=dt;const tau=p.t/p.dur;if(tau>=1){pops.splice(j,1);continue;}
   const sc=tau<.15?.3+tau/.15*.95:tau<.25?1.25-(tau-.15)/.1*.25:1,a=(tau>.7?1-(tau-.7)/.3:1)*veil(p.r);thps(x,p.text,p.x,p.y+p.vy*p.t,p.px,{grad:p.grad,rot:p.rot,alpha:a,scale:sc,maxW:lay.W*.92,lw:.26});}}
  function drawSparks(dt){for(let j=sparks.length-1;j>=0;j--){const p=sparks[j];p.t+=dt;if(p.t>p.dur){sparks.splice(j,1);continue;}p.vy+=700*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;A.spark(x,p.x,p.y,p.vx,p.vy,1-p.t/p.dur);}}
- function drawBanner(dt){if(!banner)return;banner.t+=dt;const b=banner,tau=b.t/b.dur;if(tau>=1){banner=null;return;}const W=lay.W,hu=lay.hu,slide=tau<.15?1-tau/.15:tau>.85?-(tau-.85)/.15:0,y=lay.H*.5;
-  x.save();x.translate(slide*W,0);if(b.t>.6)x.globalAlpha*=veil({x0:0,y0:y-hu*2,x1:W,y1:y+hu*1.8});x.fillStyle='rgba(0,0,0,.6)';x.beginPath();x.moveTo(0,y-hu*1.6);x.lineTo(W,y-hu*1.9);x.lineTo(W,y+hu*1.3);x.lineTo(0,y+hu*1.6);x.closePath();x.fill();
-  x.fillStyle=PCOL[b.p];x.fillRect(0,y-hu*1.75,W,hu*.18);x.fillRect(0,y+hu*1.36,W,hu*.18);
-  thps(x,b.text,W/2,y-hu*.25,hu*2.1,{grad:b.p?['#e0eeff','#2f8bff']:['#ffe0e0','#ff3b30'],maxW:W*.92});if(b.sub)thps(x,b.sub,W/2,y+hu*.95,hu*.65,{fill:'#fff',maxW:W*.9});x.restore();}
+ // the turn banner slides through the player's own strip/column, never across the deck
+ function bannerRect(p){const sd=lay.side[p],k=Math.min(1,(sd.y1-sd.y0)/(lay.hu*3.9)),y=(sd.y0+sd.y1)/2;return {x0:sd.x0,y0:y-lay.hu*1.95*k,x1:sd.x1,y1:y+lay.hu*1.95*k,y,k};}
+ function drawBanner(dt){if(!banner)return;banner.t+=dt;const b=banner,tau=b.t/b.dur;if(tau>=1){banner=null;return;}const R=bannerRect(b.p),w=R.x1-R.x0,cx=(R.x0+R.x1)/2,hu=lay.hu*R.k,slide=tau<.15?1-tau/.15:tau>.85?-(tau-.85)/.15:0,y=R.y;
+  x.save();x.beginPath();x.rect(R.x0,R.y0,w,R.y1-R.y0);x.clip();x.translate(slide*w,0);x.fillStyle='rgba(0,0,0,.6)';x.beginPath();x.moveTo(R.x0,y-hu*1.6);x.lineTo(R.x1,y-hu*1.9);x.lineTo(R.x1,y+hu*1.3);x.lineTo(R.x0,y+hu*1.6);x.closePath();x.fill();
+  x.fillStyle=PCOL[b.p];x.fillRect(R.x0,y-hu*1.75,w,hu*.18);x.fillRect(R.x0,y+hu*1.36,w,hu*.18);
+  thps(x,b.text,cx,y-hu*.25,hu*2.1,{grad:b.p?['#e0eeff','#2f8bff']:['#ffe0e0','#ff3b30'],maxW:w*.94});if(b.sub)thps(x,b.sub,cx,y+hu*.95,hu*.65,{fill:'#fff',maxW:w*.92});x.restore();}
  // the Now Playing card stays clear of the scores: bottom-right on tall screens, bottom-centre on wide ones
  function trackBox(){const W=lay.W,H=lay.H,hu=lay.hu,w=lay.vertical?Math.min(W*.56,hu*16):Math.min(W*.42,hu*18);return {x:lay.vertical?W-w:(W-w)/2,y:H-hu*2.2,w};}
  function drawTrack(dt){if(!track||cut)return;if(phase!=='intro')track.t+=dt;if(track.t>5.5){track=null;return;}const hu=lay.hu,a=clamp(Math.min(track.t*3,(5.5-track.t)*2),0,1),b=trackBox(),y=b.y;
@@ -470,7 +487,7 @@ async function proMancala(s){
   thps(x,'TAP TO SKIP',W/2,H-hu*1.2,hu*.55,{fill:'rgba(255,255,255,.55)',stroke:'rgba(0,0,0,.4)',alpha:introT>.4&&introT<6?.6+.4*Math.sin(introT*5):0});
   x.restore();
   if(introT>=INTRO_END)finishIntro();}
- function finishIntro(){if(introDone)return;introDone=true;if(!cues.has('w5'))music.main(onTrack);introT=INTRO_END;phase='play';busy=false;turnBanner();}
+ function finishIntro(){if(introDone)return;introDone=true;if(!cues.has('w5'))music.main(onTrack);introT=INTRO_END;phase='play';busy=false;setBg(PLAY_BG);turnBanner();}
 
  // ---------------------------------------------------------------- end of run tally
  let endT=0,endRes=null,endResolve=null;
@@ -523,13 +540,15 @@ async function proMancala(s){
    drawSparks(dt);}
   for(const i of [0,1]){if(!cut)drawCard(i);drawHud(i);}
   drawCombo();drawPops(dt);if(!cut)drawBanner(dt);drawTrack(dt);
-  if(phase==='play'&&!busy&&!cut&&!banner){const msg=theirs()?'ON THEIR PHONE…':cpu&&state.turn===1?nameOf(1).toUpperCase()+' IS THINKING…':'';if(msg)thps(x,msg,W/2,H*.5,lay.hu*1.1,{fill:'#fff',alpha:.6+.4*Math.sin(T*5),maxW:W*.9});}
+  if(phase==='play'&&!busy&&!cut&&!banner){const msg=theirs()?'ON THEIR PHONE…':cpu&&state.turn===1?nameOf(1).toUpperCase()+' IS THINKING…':'';if(msg){const sd=lay.side[state.turn];thps(x,msg,(sd.x0+sd.x1)/2,(sd.y0+sd.y1)/2,lay.hu*1.1,{fill:'#fff',alpha:.6+.4*Math.sin(T*5),maxW:(sd.x1-sd.x0)*.94});}}
   x.restore();
   if(flash>0){x.fillStyle=`rgba(255,255,255,${flash*.6})`;x.fillRect(0,0,W,H);}
   if(phase==='intro')drawIntro(dt);else if(phase==='end'&&endRes)drawEnd(dt);
   s.status(`${nameOf(state.turn)}${theirs()?' · on their phone':''} · stores ${state.pits[6]}–${state.pits[13]}`);
   const centers=lay.geo.pits.map((_,i)=>{const q=pitPos(i);return {x:q.x,y:q.y};});
   s.debug={state,sow,busy,phase,centers,P,lay,cut:cut?cut.kind:null,cutSpot:cut?cut.spot:null,cutPose:cut&&cut.pose?cut.pose.kind:null,skip:()=>{introT=INTRO_END;},skipCut:()=>endCut(),cutTo:(p,kind,anim,spot)=>{void cutTo(p,kind,anim,false,spot);},
+   // text drawn over the play screen this frame (tests check none of it sits on the deck)
+   overlays:()=>cut?[]:[...(combo?[['combo',comboLayout().rect]]:[]),...(banner?[['banner',bannerRect(banner.p)]]:[]),...pops.map(p=>['pop:'+p.text,p.r])],
    bot:net?()=>{if(phase==='intro'){finishIntro();return 'intro';}if(phase==='end'){if(endResolve){const r=endResolve;endResolve=null;r();}return 'end';}if(cut){endCut();return 'cut';}if(theirs()||busy||s.paused||state.winner>=0)return null;void sow(pickOf(mancalaMoves(state)));return 'sow';}:null};});
  if(cpu)cpuHotseat(s,{isTurn:()=>phase==='play'&&state.turn===1&&state.winner<0&&!busy,think:()=>sow(B.pickMancala(s,state))});
  S.preload();

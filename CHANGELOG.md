@@ -1,6 +1,19 @@
 # Changelog
 
-## v0.72.0
+## v0.72.1
+
+**The v0.72.0 update, published.** v0.72.0 never reached the website: one of its files (the built-in pictures) was over
+the host's 25 MB limit, so the release stopped. It now comes in smaller parts, and the build refuses any file that is too
+big before anything is released. Everything in v0.72.0 below is in this version.
+
+**The screen stays on.** The phone no longer dims and locks itself while the game is open, also while you watch the other
+player's turn. Locking it yourself still works.
+
+**Tony Hawk's Pro Mancala:** the trick string, the "X'S TURN" banner, "IS THINKING…" and the popups never cover the board
+any more: they sit beside it, over the player cards and the park. The board lies flat whenever that makes it bigger, so on
+a near-square screen (an open Fold) it is much larger. No more thin blue lines at the top and bottom of the title.
+
+## v0.72.0 (not published: see v0.72.1)
 
 **Faster start.** The game no longer hangs on the logo for ages when you open it: it starts in about 3 seconds instead of
 9-10 on a phone (measured on a slowed-down test browser), because the pictures and sounds load as separate files instead of

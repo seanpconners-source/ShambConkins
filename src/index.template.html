@@ -4,9 +4,11 @@
 b.style.setProperty('--bt-ms',Math.round(Math.max(2500,Math.min(90000,ms?ms*1.15:20000)))+'ms');
 t.innerHTML=!last?'Setting up ShambConkins…<small>The first start takes the longest.</small>':last!==v?'Updating to v'+v+'…<small>Unpacking the new version.</small>':'Starting ShambConkins…';
 // real progress from the installed app's offline copy (sw.js 'sc-load'): the page and the built-in art script as they download
-var bar=b.querySelector('.bt-bar i'),mb=function(n){return (n/1048576).toFixed(1)+' MB';};
+var bar=b.querySelector('.bt-bar i'),mb=function(n){return (n/1048576).toFixed(1)+' MB';},artDone=0;
 if(navigator.serviceWorker){navigator.serviceWorker.addEventListener('message',function(e){var d=e.data||{};if(d.type!=='sc-load'||!document.getElementById('boot'))return;
- var f=d.total?Math.min(1,d.got/d.total):0,what=d.kind==='art'?'Downloading pictures':!last?'Downloading the game':last!==v?'Downloading v'+v:'Loading';
+ // the built-in art comes in a few parts (window.__SC_ARTN): say which one
+ var n=window.__SC_ARTN||1,part=d.kind==='art'&&n>1?' ('+Math.min(n,artDone+1)+' of '+n+')':'';if(d.kind==='art'&&d.done)artDone++;
+ var f=d.total?Math.min(1,d.got/d.total):0,what=d.kind==='art'?'Downloading pictures'+part:!last?'Downloading the game':last!==v?'Downloading v'+v:'Loading';
  bar.style.animation='none';bar.style.transition='transform .25s';bar.style.transform='scaleX('+(d.done?.94:Math.max(.03,d.total?f*.9:.45))+')';
  t.innerHTML=d.done?(last&&last!==v?'Updating to v'+v+'…':'Starting ShambConkins…')+'<small>Almost there.</small>':what+' · '+(d.total?Math.round(f*100)+'%':mb(d.got))+'<small>'+(d.total?mb(d.got)+' of '+mb(d.total)+'. Keep the app open.':'Keep the app open.')+'</small>';});
  try{navigator.serviceWorker.startMessages();}catch(e){}}

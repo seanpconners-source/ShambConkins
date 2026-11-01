@@ -27,7 +27,11 @@ for(const [w,h] of sizes)for(const mode of modes){
  // play: tap a legal bowl (prefer a store landing, else the biggest) whenever it is a human's turn
  // camera cutaways: one screenshot of each kind (mid-trick), the rest are skipped to keep the run short
  const box=await page.evaluate(()=>document.querySelector('#game-canvas').getBoundingClientRect().toJSON());let moves=0,shots=0,t0=Date.now();const cuts=new Set(),poses=new Set();
+ const onDeck=new Set();
  while(Date.now()-t0<240000){s=await D();if(!s||s.phase!=='play')break;
+  // nothing written over the board: trick strings, turn banners and popups stay beside it
+  const hits=await page.evaluate(()=>{const d=window.ShambConkins.store.session?.debug;if(!d?.overlays)return [];const r=d.lay.deckRect,ov=(a,b)=>Math.min(a.x1,b.x1)-Math.max(a.x0,b.x0)>1&&Math.min(a.y1,b.y1)-Math.max(a.y0,b.y0)>1;return d.overlays().filter(([,q])=>ov(q,r)).map(([k])=>k);});
+  for(const k of hits)if(!onDeck.has(k)){onDeck.add(k);fail(`${tag} ${k} drawn over the board`);if(onDeck.size===1)await shot('over-board');}
   if(s.cut){const key=s.spot+(s.cut==='bail'?'-bail':'');
    // pose shots: a few screenshots (watch some cuts through to see them), then cuts are skipped again
    if(s.pose){if(!poses.has(s.pose)){poses.add(s.pose);await page.waitForTimeout(550);await shot('pose-'+s.pose);}}
