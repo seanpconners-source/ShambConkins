@@ -140,12 +140,16 @@ if (pwaDir) {
   // a/ files ('sc-files', src/pwa.js) and the worker downloads only the ones it doesn't have, in the background, keeping
   // each as soon as it is in (a stopped download carries on next time). It answers byte ranges from that cache (Safari
   // plays songs that way) and drops files that neither of the newest two versions lists.
-  const SW_VERSION = 3;
+  const SW_VERSION = 4;
   const shell = ['index.html', 'manifest.webmanifest', ...PWA_ICONS.map(f => 'icons/' + f)];
   const sw = `// ShambConkins offline copy, written by tools/build.mjs --pwa (service worker version ${SW_VERSION}).
-const CACHE='shambconkins-app',FILES=${JSON.stringify(shell.slice(1))},WAIT=4000;
+const CACHE='shambconkins-app',FILES=${JSON.stringify(shell.slice(1))},WAIT=2500;
 const isGame=u=>{const p=new URL(u).pathname,s=new URL(self.registration.scope).pathname;return p===s||p===s+'index.html';};
 const save=(c,res)=>c.put('index.html',res).catch(()=>{});
+// progress of a download the loading screen is waiting for (the page itself, the built-in art script): counted as it
+// streams and sent to that page ({type:'sc-load', kind, got, total, done}); index.template.html's #boot shows it
+function counted(body,id,kind,total){let got=0,at=0,client=null;const send=done=>{if(!id)return;(client?Promise.resolve(client):self.clients.get(id)).then(c=>{client=c||null;if(c)c.postMessage({type:'sc-load',kind,got,total,done});}).catch(()=>{});};
+ return body.pipeThrough(new TransformStream({transform(ch,ctl){got+=ch.byteLength;if(Date.now()-at>150){at=Date.now();send(false);}ctl.enqueue(ch);},flush(){send(true);}}));}
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))).catch(()=>{}).then(()=>self.skipWaiting()));});
 // keep the game saved by an older version of this file (other cache names), then drop those caches
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{const c=await caches.open(CACHE);
@@ -157,7 +161,7 @@ async function game(e){const c=await caches.open(CACHE),saved=await c.match('ind
  // slow or offline: play the saved copy now; a new release still coming in is saved for next time
  if(!res){if(saved){e.waitUntil(net.then(r=>r&&r.status===200?save(c,r):0).catch(()=>{}));return saved;}return net;}
  if(res.status===304&&saved)return saved;
- if(res.status===200&&res.body){const h=new Headers(res.headers),[a,b]=res.body.tee();e.waitUntil(save(c,new Response(b,{status:200,headers:h})));return new Response(a,{status:200,headers:h});}
+ if(res.status===200&&res.body){const h=new Headers(res.headers),[a,b]=res.body.tee();e.waitUntil(save(c,new Response(b,{status:200,headers:h})));return new Response(counted(a,e.resultingClientId||e.clientId,'page',+h.get('content-length')||0),{status:200,headers:h});}
  return saved||res;}
 // ---- pictures and sounds: a/<content hash>.<type>, cache ART for every release
 const ART='sc-assets',KEEP=2,TYPES={webp:'image/webp',png:'image/png',jpg:'image/jpeg',svg:'image/svg+xml',mp3:'audio/mpeg',ogg:'audio/ogg',m4a:'audio/mp4',wav:'audio/wav',bin:'application/octet-stream',js:'text/javascript'};
@@ -171,7 +175,11 @@ async function ranged(req,res){const m=/^bytes=(\\d*)-(\\d*)$/.exec(req.headers.
  if(s>=n||s>e)return new Response(null,{status:416,headers:{'content-range':'bytes */'+n}});
  return new Response(blob.slice(s,e+1),{status:206,headers:{'content-type':res.headers.get('content-type')||'','content-range':'bytes '+s+'-'+e+'/'+n,'content-length':String(e-s+1),'accept-ranges':'bytes'}});}
 async function file(e){const r=e.request,a=await caches.open(ART);let hit=await a.match(r.url,{ignoreSearch:true});
- if(!hit){const res=await fetch(new Request(r.url,{cache:'no-cache'}));if(!res.ok)return res;const blob=await res.blob(),name=new URL(r.url).pathname.split('/').pop();
+ if(!hit){const res=await fetch(new Request(r.url,{cache:'no-cache'}));if(!res.ok)return res;const name=new URL(r.url).pathname.split('/').pop();
+  // the built-in art script holds up the start: stream it to the page with progress, and save it as it comes
+  if(name.endsWith('.js')&&res.body){const [x,y]=res.body.tee();e.waitUntil(new Response(y).blob().then(b=>a.put(r.url,typed(b,name))).catch(()=>{}));
+   return new Response(counted(x,e.clientId,'art',+res.headers.get('content-length')||0),{headers:{'content-type':TYPES.js}});}
+  const blob=await res.blob();
   e.waitUntil(a.put(r.url,typed(blob,name)).catch(()=>{}));hit=typed(blob,name);}
  return ranged(r,hit);}
 // The page's list (version + [name, bytes]): remember the newest KEEP versions' lists, drop files none of them has, then

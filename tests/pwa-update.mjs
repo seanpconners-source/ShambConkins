@@ -52,7 +52,9 @@ async function checkUpdates(p){await p.evaluate(()=>{const b=document.createElem
  await p.evaluate(()=>{const d=document.querySelector('#dialog[open]');[...d.querySelectorAll('button')].find(b=>/later|ok/i.test(b.textContent))?.click();});await p.waitForTimeout(300);return t;}
 
 // ---- 1-3: a fresh phone with the new service worker
-{const {ctx,p,errors}=await phone();
+{const {ctx,p,errors}=await phone();const ld=[];
+ // the loading screen's progress messages (sw.js 'sc-load') as a new version downloads
+ await p.exposeFunction('__ldMsg',m=>ld.push(m));await p.addInitScript(()=>navigator.serviceWorker?.addEventListener('message',e=>{if(e.data?.type==='sc-load')window.__ldMsg(e.data);}));
  await openGame(p);check(await ver(p)===cur,`first visit runs v${cur}`);
  check(await until(p,async()=>{const c=await caches.open('shambconkins-app');return !!(await c.match('index.html'));},90000),'page kept for offline play after first visit');
  check(await until(p,async n=>(await (await caches.open('sc-assets')).keys()).length>n,180000,FILES.length),`first visit saves all ${FILES.length} pictures and sounds (${MB(sum(FILES))})`);
@@ -71,6 +73,8 @@ async function checkUpdates(p){await p.evaluate(()=>{const b=document.createElem
  served=[];
  await Promise.all([p.waitForNavigation({timeout:180000}),p.evaluate(()=>document.querySelector('#sc-ready button').click())]);await until(p,()=>!!window.ShambConkins?.version,60000);
  check(await ver(p)===next,`Update loads v${next} straight away`);
+ const pg=ld.filter(m=>m.kind==='page');
+ check(pg.some(m=>m.done)&&pg.some(m=>m.got>0),`the loading screen got the download's progress (${pg.length} messages, last ${MB(pg.at(-1)?.got||0)}${pg.at(-1)?.total?' of '+MB(pg.at(-1).total):''})`);
  check(await until(p,async()=>{const c=await caches.open('shambconkins-app'),r=await c.match('index.html');return r&&(r.headers.get('etag')||'').includes(window.ShambConkins.version);},90000),'the new version is saved for offline play');
  check(await until(p,async name=>!!(await (await caches.open('sc-assets')).match('a/'+name)),60000,NEW),'the new picture is saved for offline play');
  await p.waitForTimeout(1500);

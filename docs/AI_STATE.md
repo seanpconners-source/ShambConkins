@@ -1,6 +1,10 @@
 # AI state (keep short; update after meaningful work)
 
-Nov 1 (branch `claude/pwa-split` from TESTver, unreleased): installed-app updates download only what changed
+v0.72.0 (Nov 1): the split delivery below released to main, plus a real loading-screen progress: sw.js (v4) streams the
+game page and the built-in art script through `counted()` and posts {type:'sc-load',kind:'page'|'art',got,total,done} to
+the loading page; index.template.html's #boot shows "Downloading vX · 45%" (MB when the size is unknown). WAIT for the
+network before playing the saved copy is 2.5 s. Measured at 4x CPU: title screen 3 s per open (one-file build 9-10 s).
+Nov 1 (branch `claude/pwa-split` from TESTver): installed-app updates download only what changed
 (docs/PWA_SPLIT_DELIVERY.md, owner-approved, everything downloaded at install). `build.mjs --pwa` = index.html 8.2 MB +
 `a/` 2,430 content-hashed files (byte-identical copies; built-in art of art.js/faceArt.js as one `a/<hash>.js` data-URI
 script) + main's fixed network-first sw.js (now SW_VERSION 3): the page sends its file list (`APP_FILES` in pwa.js,
