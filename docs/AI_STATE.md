@@ -1,6 +1,49 @@
 # AI state (keep short; update after meaningful work)
 
 Version 0.70.1 (Oct 30): 79 newly pictured characters, additional moods/replacements; portrait files encoded as 480px WebP q88 with originals archived. No game code changes.
+Nov 1 (branch `claude/pro-mancala`, from TESTver, unreleased): Mancala overhauled into TONY HAWK'S PRO MANCALA (same id
+`greed-island-mancala`, engine name `mancala` → `engines/proMancala.js`; title/source in the engine title table in gameRegistry;
+`noBleed`). Rules/CPU/online/hot-seat kept (strategyRules mancalaMove, cpuBoards pickMancala, classicBoards `netTurns`, now
+exported); old `mancala()` in classicBoards unused. Owner's design: title sequence every time (Tony… Hawk's… Pro… Mancala…
+EXTREME EDITION!!, tap skips, then face-off cards), THPS2-dead-on screen: skateboard-deck board (`proMancalaArt.js`
+deckGeometry/makeDeck: 7-ply rings in the routed bowls, stores in the kicktails, grip, bolts; view 'side' = one wheel per
+truck under the long edge, 'end' = near truck's two wheels under the tail), glass gems. Board is the focus (owner, Nov 1
+round 2): `layout()` fills ~93% of the width when wide (P1 bottom row/right store) and stands it upright when tall (H>1.08W;
+deck turned 90°: P1 left column + bottom store, P2 right column + top store; `pitPos` maps deck-local → screen). Skaters
+are NOT on screen all the time: `cutTo(p,kind)` = full-screen 90s fisheye camcorder cutaways (`A.fisheye`/`A.vhs`; styles
+follow/low/punch/orbit, crash cam on slams with freeze + record scratch, slow-mo special) for store landings, steals (grind
+then the victim's slam), bails, specials and ~40% of other moves; tap skips. Spots (Nov 1 round 3): the halfpipe or
+a street spot from `proMancalaSpots.js` (handrail down an 8-set, the 8-set, a red parking-lot curb, a kicker; `buildLine`
+= timed roll/air/grind/slam parts, `lineState`, `drawSpot`), picked per cut kind (`SPOTS` in proMancala.js), never twice
+in a row. Popups are placed where they cover no other text (`textRects`/`pop`, small ones dropped if nowhere is free, big
+ones push small ones out). A ⤢ button sits left of Pause/Exit when fullscreen is available (fullBleed's bottom one hidden).
+Round 4 (Nov 1): owner's sound set = Dreamcast THPS rip (named files; picker page built by a scratch script into
+local-test-reports/, gitignored), installed as `assets/music/thps-sfx-<name>-<n>.wav` (random pick per play, `pickDrop`;
+hooks aww/grunt/timeup/total/grind-pipe|curb|board). Songs: 15 THPS2-soundtrack MP3s from the owner as
+`thps-mancala-<band>--<song>.mp3` (name shown on Now Playing; one shuffled playlist from the title on, next song when one
+ends, kept across games; pauses with the game). Build is ~190 MB with them (+60 MB). Cutaways: the camera centres the
+skater's body, random hats (`A.hatFor`: backwards cap, trucker, beanie, helmet; guest skaters too), air styles on store
+landings (airwalk/christ/rocket via pose.feet/boardHeld), and a pose shot after most landed cuts (`startPose`: jump cut to
+the skater facing the camera, `A.drawSkaterFront` horns/point/arms/shaka/flex/boardup + caption).
+Round 5 (Nov 1): title words are measured on the device (Android has no Impact; wider fallback font overlapped) and
+stacked above the face-off cards; `layout()` reserves a `hudH` strip for each score panel so nothing sits on the bowls
+(checked at 11 sizes with a scratch script: HUD/card rects vs `lay.deckRect`); while a human chooses a bowl, trick text,
+popups and the turn banner over the board fade to ~30% (`veil`, `chooseK`). Many more GOOD/BAD popup lines. Grinds in
+cutaways: `GRIND_POSE` (50-50, 5-0, nose, crook, smith, feeble, board, blunt, tail; from the steal's grind name via
+`grindKind`) puts a truck (or the deck for slides) on the rail/curb/coping (`grindPose`); boardslides draw the board
+nose-on (`pose.boardEnd`). `s.debug.cutTo(p,kind,anim,spot)` forces a cutaway for tests. Guest roster skaters go by every 3.5-7 s
+(ollie over, grind the edge, manual, bomb, big air). Turn: row glow in the player's color, "▶ X'S TURN" HUD, YOUR TURN card,
+other side dimmed. Popups are measured and clamped on screen; trick strings wrap to 2 lines. THPS HUD (score tally, special meter),
+trick strings "A + B / pts X n", COMBO!!! on store landings, bails (being robbed, or gaining nothing and leaving the
+other a 3+ grab: combo lost), special trick when the meter is full, crude popups (owner OK'd all of them), end-of-run tally
+(`profile.proMancala` {high,combo}, validated in profile.js). Trick points are cosmetic; stores decide the winner. Local 2P:
+the per-turn pass card is now an in-canvas "X'S RUN" banner (+0.55 s tap lock). Sound `proMancalaAudio.js`: synth skate SFX (+catch,
+revert, scratch, rollby, cam, gang "HEY!") and its own punk band `createPunk` (double-tracked panned power chords, picked
+bass, skate-beat/backbeat drums with snare-roll fills, chorus lead, gang shouts; 3 original songs 216-240 bpm, sections
+V/P/C/B); title = snare-roll crescendo + guitar hit per word exploding into a chorus at 4.55 s, words follow the audio clock.
+Not heard by ears yet. Drop-ins `assets/music/thps-*` (README there). Test:
+`tests/promancala.mjs` (2P + 1P vs CPU, 3 sizes). Online two-phone test not run (no wrangler on the Windows box).
+
 Version 0.70.0 (Oct 29): owner's big face upload (~1,300 PNGs named from the missing-portrait list; 327 more characters with
 their own picture, 118 still without; owner's rejects + rename_log.csv moved to `assets/originals/portraits/discarded/`). Shrunk
 with the optimize-art settings on 4 cores (scratch popt.py: same LANCZOS 480 / WebP q88 m6 / move original).

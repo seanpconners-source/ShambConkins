@@ -55,4 +55,4 @@ async function playSquares(s,kind){const[c,x,W,H]=s.canvas(500,500),isChess=kind
  await s.pass(0,isChess?'Full eight-by-eight Star Trek chess. Your heads are the pieces; P N B R Q K badges show their roles. White moves first. Kings cannot move into check.':challenge?`Deadite challenge: ${s.players[kingOwner].name} has FOUR kings; ${s.players[1-kingOwner].name} has a full twelve-piece army. Captures are compulsory. The underdog side varies each game.`:'Army of Darkness checkers. Twelve heads each, mandatory captures, chain jumps and crowns. Tap your head, then a highlighted destination.');
 }
 
-Object.assign(exports,{ultimate,mancala,dots,checkers,chess});
+Object.assign(exports,{ultimate,mancala,dots,checkers,chess,netTurns});
