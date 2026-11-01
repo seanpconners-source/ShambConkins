@@ -51,7 +51,7 @@ function deckGeometry(L){const pr=L/19.7,D=pr*4.9,pitch=pr*2.18,storeRx=pr*1.15,
  return {L,D,pr,pitch,pits,gapX,edge:D*.11,wheel:D*.2};}
 const PLY=['#efd09a','#e0b47a','#c62828','#efd09a','#1565c0','#e7c088','#f2d9a8','#d9a868'];
 function deckPath(g,L,D){const r=D*.48;g.beginPath();g.roundRect(-L/2,-D/2,L,D,r);}
-function bowl(g,cx,cy,rx,ry,seed){const R=rnd(seed);g.save();
+function bowl(g,cx,cy,rx,ry,seed,lt={x:-1,y:-1}){const R=rnd(seed);g.save();
  // the routed slope shows each ply as a ring, top ply outermost
  const step=.055;for(let k=0;k<PLY.length;k++){const f=1-k*step;g.fillStyle=PLY[k];ell(g,cx,cy,rx*f,ry*f);g.fill();}
  const fb=1-PLY.length*step;g.save();ell(g,cx,cy,rx*fb,ry*fb);g.clip();g.fillStyle='#e9c48e';g.fillRect(cx-rx,cy-ry,rx*2,ry*2);
@@ -59,10 +59,10 @@ function bowl(g,cx,cy,rx,ry,seed){const R=rnd(seed);g.save();
  g.restore();
  // concave shading: light from the top-left falls on the far (bottom-right) wall, the near wall is in shadow
  g.save();ell(g,cx,cy,rx,ry);g.clip();
- const lg=g.createLinearGradient(cx-rx*.8,cy-ry*.8,cx+rx*.8,cy+ry*.8);lg.addColorStop(0,'rgba(10,5,0,.72)');lg.addColorStop(.42,'rgba(10,5,0,.18)');lg.addColorStop(.7,'rgba(0,0,0,0)');lg.addColorStop(1,'rgba(255,236,200,.22)');g.fillStyle=lg;g.fillRect(cx-rx,cy-ry,rx*2,ry*2);
- const rim=g.createRadialGradient(cx+rx*.12,cy+ry*.14,Math.min(rx,ry)*.55,cx,cy,Math.max(rx,ry)*1.02);rim.addColorStop(0,'rgba(0,0,0,0)');rim.addColorStop(.85,'rgba(0,0,0,.25)');rim.addColorStop(1,'rgba(0,0,0,.65)');g.fillStyle=rim;g.fillRect(cx-rx,cy-ry,rx*2,ry*2);
+ const lg=g.createLinearGradient(cx+lt.x*rx*.8,cy+lt.y*ry*.8,cx-lt.x*rx*.8,cy-lt.y*ry*.8);lg.addColorStop(0,'rgba(10,5,0,.72)');lg.addColorStop(.42,'rgba(10,5,0,.18)');lg.addColorStop(.7,'rgba(0,0,0,0)');lg.addColorStop(1,'rgba(255,236,200,.22)');g.fillStyle=lg;g.fillRect(cx-rx,cy-ry,rx*2,ry*2);
+ const rim=g.createRadialGradient(cx-lt.x*rx*.12,cy-lt.y*ry*.14,Math.min(rx,ry)*.55,cx,cy,Math.max(rx,ry)*1.02);rim.addColorStop(0,'rgba(0,0,0,0)');rim.addColorStop(.85,'rgba(0,0,0,.25)');rim.addColorStop(1,'rgba(0,0,0,.65)');g.fillStyle=rim;g.fillRect(cx-rx,cy-ry,rx*2,ry*2);
  // varnish gloss on the lit wall
- g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=Math.max(1,rx*.07);g.beginPath();g.ellipse(cx,cy,rx*.8,ry*.8,0,.15*Math.PI,.55*Math.PI);g.stroke();
+ g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=Math.max(1,rx*.07);const ga=Math.atan2(-lt.y,-lt.x);g.beginPath();g.ellipse(cx,cy,rx*.8,ry*.8,0,ga-.2*Math.PI,ga+.2*Math.PI);g.stroke();
  g.restore();
  // cut edge of the grip tape
  g.strokeStyle='#050505';g.lineWidth=Math.max(1,rx*.06);ell(g,cx,cy,rx,ry);g.stroke();
@@ -73,34 +73,52 @@ function bolt(g,x,y,r){const bg=g.createRadialGradient(x-r*.35,y-r*.35,0,x,y,r);
 function wheel(g,x,y,w,h,col){const wg=g.createLinearGradient(x-w/2,0,x+w/2,0);wg.addColorStop(0,shade(col,-.5));wg.addColorStop(.35,shade(col,.25));wg.addColorStop(.7,col);wg.addColorStop(1,shade(col,-.55));
  g.fillStyle=wg;g.beginPath();g.roundRect(x-w/2,y-h/2,w,h,Math.min(w,h)*.42);g.fill();g.strokeStyle='rgba(0,0,0,.6)';g.lineWidth=1;g.stroke();
  g.fillStyle='rgba(255,255,255,.35)';g.fillRect(x-w*.32,y-h*.42,w*.12,h*.84);}
-// The whole deck pre-rendered: shadow, side plies, trucks and wheels peeking out, grip tape, bowls, bolts, number plates.
-function makeDeck(geo,dpr){const {L,D,pr,pits,edge,wheel:wh}=geo,padX=pr*1.4,padTop=pr*.8,padBot=edge+wh+pr*1.6,w=L+padX*2,h=D+padTop+padBot;
+// The whole deck pre-rendered. view 'side' (landscape): we look at the long front edge, so one wheel per truck shows under
+// it. view 'end' (portrait, drawn turned 90°): we look at the tail end, so the near truck's two wheels show side by side
+// under the tail and the far truck is hidden. The edge is drawn toward local +y (side) or +x (end); after the turn both
+// point down the screen. Light always comes from the screen's top-left.
+function makeDeck(geo,dpr,view='side'){const {L,D,pr,pits,edge,wheel:wh}=geo,side=view==='side',lt=side?{x:-1,y:-1}:{x:-1,y:1};
+ const padX=pr*1.4+(side?0:edge+wh),padTop=pr*.8,padBot=side?edge+wh+pr*1.6:pr*1.2,w=L+padX*2,h=D+padTop+padBot;
  const c=canvas(w*dpr,h*dpr),g=c.getContext('2d');g.scale(dpr,dpr);g.translate(padX+L/2,padTop+D/2);const R=rnd(77);
+ const ex=side?0:edge,ey=side?edge:0;// edge offset direction
  // soft shadow on the concrete
- const sh=g.createRadialGradient(0,D*.62,D*.2,0,D*.62,L*.55);sh.addColorStop(0,'rgba(0,0,0,.5)');sh.addColorStop(1,'rgba(0,0,0,0)');g.save();g.scale(1,.22);g.fillStyle=sh;ell(g,0,D*.62/.22,L*.56,L*.5);g.fill();g.restore();
- // trucks and front wheels under the front edge
- for(const sx of [-1,1]){const tx=sx*(geo.gapX);g.fillStyle='#7c858f';g.beginPath();g.roundRect(tx-D*.09,D/2+edge-2,D*.18,wh*.55,3);g.fill();g.fillStyle='#b9c1ca';g.fillRect(tx-D*.07,D/2+edge,D*.14,wh*.18);
-  wheel(g,tx-D*.26,D/2+edge+wh*.45,D*.2,wh*.95,'#ffe066');wheel(g,tx+D*.26,D/2+edge+wh*.45,D*.2,wh*.95,'#ffe066');}
- // side of the deck: the 7 plies, darker toward the bottom, tails curling up
- for(let k=PLY.length-1;k>=0;k--){g.save();g.translate(0,edge*(k+1)/PLY.length);deckPath(g,L,D);g.fillStyle=shade(PLY[k],-.2-k*.045);g.fill();g.restore();}
- g.save();g.translate(0,edge);deckPath(g,L,D);g.restore();g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=1;g.stroke();
+ g.save();const sry=side?L*.11:D*.6;g.translate(side?0:L*.03,side?D*.62:0);g.scale(1,sry/(L*.52));const sh=g.createRadialGradient(0,0,L*.1,0,0,L*.52);sh.addColorStop(0,'rgba(0,0,0,.5)');sh.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=sh;ell(g,0,0,L*.52,L*.52);g.fill();g.restore();
+ // trucks and wheels
+ if(side){for(const sx of [-1,1]){const tx=sx*geo.gapX;g.fillStyle='#7c858f';g.beginPath();g.roundRect(tx-D*.13,D/2+edge-3,D*.26,wh*.42,3);g.fill();g.fillStyle='#b9c1ca';g.fillRect(tx-D*.1,D/2+edge-1,D*.2,wh*.16);
+   wheel(g,tx,D/2+edge+wh*.48,D*.24,wh*.95,'#ffe066');}}
+ else{const tx=L/2-pr*.6;g.fillStyle='#8c949c';g.fillRect(tx+edge-wh*.1,-D*.36,wh*.5,D*.72);g.fillStyle='#b9c1ca';g.fillRect(tx+edge,-D*.3,wh*.18,D*.6);
+  for(const sy of [-1,1]){g.save();g.translate(tx+edge+wh*.5,sy*D*.36);g.rotate(Math.PI/2);wheel(g,0,0,D*.22,wh*.95,'#ffe066');g.restore();}}
+ // edge: the 7 plies, darker further down, following the outline
+ for(let k=PLY.length-1;k>=0;k--){g.save();g.translate(ex*(k+1)/PLY.length,ey*(k+1)/PLY.length);deckPath(g,L,D);g.fillStyle=shade(PLY[k],-.2-k*.045);g.fill();g.restore();}
+ g.save();g.translate(ex,ey);deckPath(g,L,D);g.restore();g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=1;g.stroke();
  // grip tape: black, gritty, lit from the top-left; worn grey where feet go; tails raised and catching light
  deckPath(g,L,D);g.fillStyle='#17171a';g.fill();g.save();deckPath(g,L,D);g.clip();
  const n=Math.floor(L*D/5);for(let i=0;i<n;i++){const x=(R()-.5)*L,y=(R()-.5)*D,v=R();g.fillStyle=v<.5?'rgba(255,255,255,.07)':v<.8?'rgba(0,0,0,.35)':'rgba(255,255,255,.16)';g.fillRect(x,y,v<.9?1:1.5,v<.9?1:1.5);}
  for(const sx of [-1,1]){const tg=g.createLinearGradient(sx*L/2,0,sx*(L/2-pr*3.4),0);tg.addColorStop(0,'rgba(255,255,255,.12)');tg.addColorStop(.75,'rgba(255,255,255,0)');tg.addColorStop(.85,'rgba(0,0,0,.25)');tg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=tg;g.fillRect(sx>0?L/2-pr*3.4:-L/2,-D/2,pr*3.4,D);
   g.fillStyle='rgba(150,150,150,.09)';ell(g,sx*(geo.gapX+pr*.2),0,pr*1.6,D*.42);g.fill();}
- const lit=g.createLinearGradient(-L/2,-D/2,L/2,D/2);lit.addColorStop(0,'rgba(255,255,255,.08)');lit.addColorStop(1,'rgba(0,0,0,.25)');g.fillStyle=lit;g.fillRect(-L/2,-D/2,L,D);
+ const lit=g.createLinearGradient(lt.x*L/2,lt.y*D/2,-lt.x*L/2,-lt.y*D/2);lit.addColorStop(0,'rgba(255,255,255,.08)');lit.addColorStop(1,'rgba(0,0,0,.25)');g.fillStyle=lit;g.fillRect(-L/2,-D/2,L,D);
  // a strip of the top-ply graphic showing through a cut in the grip, down the middle (flames)
  g.save();g.beginPath();g.rect(-geo.gapX+pr*.6,-pr*.12,geo.gapX*2-pr*1.2,pr*.24);g.clip();const fg=g.createLinearGradient(0,-pr*.12,0,pr*.12);fg.addColorStop(0,'#ffd23a');fg.addColorStop(.5,'#ff6a00');fg.addColorStop(1,'#c40000');g.fillStyle=fg;g.fillRect(-L/2,-pr,L,pr*2);g.restore();
  g.restore();
  // rounded top edge catching the light
- g.strokeStyle='rgba(255,255,255,.22)';g.lineWidth=1.2;g.save();g.translate(-.6,-.6);deckPath(g,L,D);g.restore();g.stroke();
+ g.strokeStyle='rgba(255,255,255,.22)';g.lineWidth=1.2;g.save();g.translate(lt.x*.6,lt.y*.6);deckPath(g,L,D);g.restore();g.stroke();
  g.strokeStyle='#050505';g.lineWidth=1.4;deckPath(g,L,D);g.stroke();
  // bowls, bolts
- pits.forEach((p,i)=>bowl(g,p.x,p.y,p.rx,p.ry,i*31+5));
+ pits.forEach((p,i)=>bowl(g,p.x,p.y,p.rx,p.ry,i*31+5,lt));
  for(const sx of [-1,1])for(const bx of [-.14,.14])for(const by of [-.55,.55])bolt(g,sx*geo.gapX+bx*pr,by*pr,pr*.13);
  return {c,ox:padX+L/2,oy:padTop+D/2,w,h};}
 
+// 90s skate-video look for the camera cutaways: barrel (fisheye) distortion from magnified concentric rings, black
+// fisheye corners, scanlines, a tracking-noise band and the camcorder overlay.
+function fisheye(g,src,W,H,k=.4){const cx=W/2,cy=H/2,Rm=Math.hypot(W,H)/2,N=4;g.drawImage(src,0,0,W,H);
+ for(let i=1;i<=N;i++){const f=1-i/(N+1),r=Rm*f,m=1+k*(1-f*f);g.save();g.beginPath();g.arc(cx,cy,r,0,TAU);g.clip();g.translate(cx,cy);g.scale(m,m);g.drawImage(src,-cx,-cy,W,H);g.restore();}
+ const vg=g.createRadialGradient(cx,cy,Math.min(W,H)*.42,cx,cy,Rm);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(.55,'rgba(0,0,0,.55)');vg.addColorStop(.8,'#000');vg.addColorStop(1,'#000');g.fillStyle=vg;g.fillRect(0,0,W,H);}
+function vhs(g,W,H,t,rec){g.fillStyle='rgba(0,0,0,.13)';for(let y=(t*40)%3;y<H;y+=3)g.fillRect(0,y,W,1);
+ const by=((t*.37)%1.3)*H-H*.15;g.fillStyle='rgba(255,255,255,.06)';g.fillRect(0,by,W,H*.04);for(let i=0;i<14;i++){g.fillStyle=`rgba(255,255,255,${Math.random()*.25})`;g.fillRect(Math.random()*W,by+Math.random()*H*.04,Math.random()*W*.2,1);}
+ g.fillStyle='rgba(255,40,90,.05)';g.fillRect(0,0,W,H);
+ const px=Math.max(11,Math.min(W,H)*.032);g.font=`700 ${px}px "Courier New",monospace`;g.textBaseline='bottom';g.textAlign='right';g.fillStyle='rgba(255,255,255,.85)';
+ const s=Math.floor(t*30),tc=`${String(Math.floor(s/1800)).padStart(2,'0')}:${String(Math.floor(s/30)%60).padStart(2,'0')}:${String(s%30).padStart(2,'0')}`;
+ g.fillText((rec?'● REC  ':'PLAY ▶  ')+'SP '+tc,W-px,48+px*1.2);g.fillText('OCT 17 1999',W-px,48+px*2.4);}
 // ------------------------------------------------------------------ skatepark backdrop with the halfpipes, cached
 function pipeGeo(r){// a halfpipe filling rect r (side view): floor at the bottom, coping at height R
  const R=Math.min(r.h*.45,r.w*.36),F=Math.max(r.w*.04,(r.w-R*2-r.w*.15)/2),cx=r.x+r.w/2,floor=r.y+r.h-r.h*.06;
@@ -151,7 +169,7 @@ function makePark(W,H,dpr,lay){const c=canvas(W*dpr,H*dpr),g=c.getContext('2d');
  // chain-link fence along the horizon, with a graffiti wall section
  const fh=Math.min(hz*.32,H*.08);g.strokeStyle='rgba(70,80,90,.55)';g.lineWidth=.8;for(let x=-fh;x<W+fh;x+=7){g.beginPath();g.moveTo(x,hz-fh);g.lineTo(x+fh,hz);g.moveTo(x+fh,hz-fh);g.lineTo(x,hz);g.stroke();}
  g.fillStyle='#5f6a75';for(let x=0;x<W;x+=W/7)g.fillRect(x,hz-fh-3,3,fh+3);g.fillRect(0,hz-fh-3,W,2);
- const wx=W*.05,ww=W*.36,wh=fh*1.05;g.fillStyle='#9a9087';g.fillRect(wx,hz-wh,ww,wh);g.fillStyle='rgba(0,0,0,.2)';g.fillRect(wx,hz-2,ww,2);
+ const wx=W*.55,ww=W*.36,wh=fh*1.05;g.fillStyle='#9a9087';g.fillRect(wx,hz-wh,ww,wh);g.fillStyle='rgba(0,0,0,.2)';g.fillRect(wx,hz-2,ww,2);
  thps(g,'SKATE OR DIE',wx+ww*.5,hz-wh*.5,wh*.7,{grad:['#ff3d7f','#ffde00'],stroke:'#111',maxW:ww*.92,rot:-.03});
  // halfpipes
  for(const p of lay.pipes)drawPipe(g,p.geo,p.tag,p.seed);
@@ -210,4 +228,4 @@ function drawSlammed(g,u,head,o,t){g.save();g.rotate(Math.PI/2);drawSkater(g,u,{
 // ------------------------------------------------------------------ sparks, the special trail
 function spark(g,x,y,vx,vy,a){g.strokeStyle=`rgba(255,${180+Math.random()*70|0},60,${a})`;g.lineWidth=1.6;g.beginPath();g.moveTo(x,y);g.lineTo(x-vx*.03,y-vy*.03);g.stroke();}
 
-Object.assign(exports,{thps,font,FONT,clamp,shade,rnd,GEM_COLORS,drawGem,gemSprite,deckGeometry,makeDeck,makePark,pipeGeo,pipePoint,drawSkater,drawSlammed,drawBoard,drawHead,OUTFITS,spark,ell,canvas});
+Object.assign(exports,{thps,font,FONT,clamp,shade,rnd,GEM_COLORS,drawGem,gemSprite,deckGeometry,makeDeck,makePark,pipeGeo,pipePoint,drawSkater,drawSlammed,drawBoard,drawHead,OUTFITS,spark,ell,canvas,drawPipe,fisheye,vhs});
