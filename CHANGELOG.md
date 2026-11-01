@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## v0.72.0
+
+**Faster start.** The game no longer hangs on the logo for ages when you open it: it starts in about 3 seconds instead of
+9-10 on a phone (measured on a slowed-down test browser), because the pictures and sounds load as separate files instead of
+one huge page. The loading screen now shows the real download ("Downloading v0.72.0 · 45%", with MB) whenever it has to
+fetch something, instead of a bar that only guessed. With no signal the saved copy opens after 2.5 seconds (was 4).
 
 **Faster app updates.** The installed app now downloads only what changed: a release that changes only the game's code
 is about 8 MB instead of the whole ~200 MB game, a new portrait or song adds just that file, and a download that stops
