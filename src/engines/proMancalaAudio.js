@@ -222,19 +222,24 @@ function rnd(seed){let n=seed>>>0||1;return()=>{n=Math.imul(n^n>>>15,1|n)+0x6D2B
 
 // Drop-in songs (HTML audio) take over from the band when present.
 function createSoundtrack(paused){
- const band=createPunk(paused);let el=null,drops=null,dropIdx=0,onTrack=null,mode='',hold=false;
+ const band=createPunk(paused);let el=null,drops=null,dropIdx=0,onTrack=null,mode='',introFile=false;
  function stopEl(){if(el){const e=el;el=null;try{e.pause();}catch{}}}
  function dropList(){if(drops)return drops;drops=[];if(USER_PORTRAITS['music:thps-mancala'])drops.push({url:USER_PORTRAITS['music:thps-mancala'],band:'',song:'Pro Mancala'});
   for(let i=1;i<10;i++){const u=USER_PORTRAITS['music:thps-mancala-'+i];if(u)drops.push({url:u,band:'',song:'Track '+i});}return drops;}
  function playEl(url,loop,onEnd){stopEl();try{const e=new Audio(url);e.loop=loop;e.volume=.75;e.onended=onEnd||null;e.play()?.catch?.(()=>{});el=e;return true;}catch{return false;}}
  function nextDrop(){const d=dropList();if(!d.length)return false;const t=d[dropIdx%d.length];dropIdx++;onTrack?.(t);return playEl(t.url,d.length===1,()=>nextDrop());}
- return {
-  intro(boom,hits,cb){onTrack=cb;if(!musicOn())return null;mode='intro';band.next();const u=USER_PORTRAITS['music:thps-mancala-intro'];if(u){playEl(u,false);return null;}
-   if(dropList().length)return null;const r=band.intro(boom,hits);setTimeout(()=>{if(mode==='intro'||mode==='main')onTrack?.(band.current());},boom*1000);return r;},
-  main(cb){if(cb)onTrack=cb;if(!musicOn()||mode==='main')return;const was=mode;mode='main';if(dropList().length){nextDrop();return;}stopEl();band.main();if(was!=='intro')onTrack?.(band.current());},
+ // a drop-in title song plays to its end before the game music starts; without one the synth snare-roll intro plays and
+ // the game music (drop-in playlist or the band) takes over on EXTREME EDITION
+ const api={
+  intro(boom,hits,cb){onTrack=cb;if(!musicOn())return null;mode='intro';band.next();const u=USER_PORTRAITS['music:thps-mancala-intro'];
+   if(u){introFile=true;playEl(u,false,()=>{introFile=false;if(mode==='wait'){mode='';api.main();}});return null;}
+   const r=band.intro(boom,hits);setTimeout(()=>{if(!dropList().length&&(mode==='intro'||mode==='main'))onTrack?.(band.current());},boom*1000);return r;},
+  main(cb){if(cb)onTrack=cb;if(!musicOn()||mode==='main'||mode==='wait')return;if(mode==='intro'&&introFile&&el){mode='wait';return;}
+   const was=mode;mode='main';if(dropList().length){band.stop();nextDrop();return;}stopEl();band.main();if(was!=='intro')onTrack?.(band.current());},
   pause(on){if(el){try{on?el.pause():el.play()?.catch?.(()=>{});}catch{}}},
   time(){return band.time();},
   stop(){mode='';band.stop();stopEl();},
  };
+ return api;
 }
 Object.assign(exports,{sfx,preload,createSoundtrack,TRACKS});
