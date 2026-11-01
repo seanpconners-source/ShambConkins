@@ -199,18 +199,36 @@ function drawBoard(g,u,o,flip=0,shove=0){// deck centered at 0,0 along x, wheels
  g.fillStyle='#8c949c';for(const sx of [-1,1])g.fillRect(sx*len*.27-u*.12,th,u*.24,u*.16);
  for(const sx of [-1,1]){g.fillStyle=o.wheel;ell(g,sx*len*.27,th+u*.3,u*.2,u*.2);g.fill();g.strokeStyle='#555';g.lineWidth=1;g.stroke();}
  g.restore();g.restore();}
-function drawHead(g,head,x,y,size,rot=0,squash=1){if(!head)return;const w=size*(head.width/Math.max(head.width,head.height)),h=size*(head.height/Math.max(head.width,head.height));g.save();g.translate(x,y);g.rotate(rot);g.scale(1/Math.sqrt(squash),squash);g.drawImage(head,-w/2,-h*.82,w,h);g.restore();}
+function drawHead(g,head,x,y,size,rot=0,squash=1,hat=null){if(!head)return;const w=size*(head.width/Math.max(head.width,head.height)),h=size*(head.height/Math.max(head.width,head.height));g.save();g.translate(x,y);g.rotate(rot);g.scale(1/Math.sqrt(squash),squash);g.drawImage(head,-w/2,-h*.82,w,h);if(hat)drawHat(g,w,h,hat);g.restore();}
+// Hats over a front-facing head photo (local space of drawHead: the picture spans y -0.82h..0.18h). Backwards cap,
+// trucker cap, beanie with a pom-pom, or a vert helmet with stickers.
+const HAT_COLS=[['#d62020','#ffffff'],['#1d4ed8','#ffd400'],['#111111','#ff3b8d'],['#16a34a','#111111'],['#f97316','#1f2937'],['#7c3aed','#a3e635'],['#e5e7eb','#d62020']];
+function hatFor(r=Math.random){if(r()<.3)return null;const [c1,c2]=HAT_COLS[Math.floor(r()*HAT_COLS.length)];return {type:['back','trucker','beanie','helmet','back'][Math.floor(r()*5)],c1,c2};}
+function drawHat(g,w,h,hat){const cx=0,base=-h*.5,top=-h*.9,hw=w*.42,lw=Math.max(1,w*.025);g.lineJoin='round';g.strokeStyle='#111';g.lineWidth=lw;
+ const dome=(b,t,ww)=>{g.beginPath();g.moveTo(cx-ww,b);g.bezierCurveTo(cx-ww,t,cx+ww,t,cx+ww,b);g.closePath();};
+ if(hat.type==='beanie'){dome(base+h*.04,top-h*.04,hw*1.02);g.fillStyle=hat.c1;g.fill();g.stroke();g.save();dome(base+h*.04,top-h*.04,hw*1.02);g.clip();g.strokeStyle='rgba(0,0,0,.18)';g.lineWidth=lw*1.4;for(let i=-6;i<=6;i++){g.beginPath();g.moveTo(cx+i*hw/6,base);g.lineTo(cx+i*hw/6.6,top-h*.05);g.stroke();}g.restore();
+  g.fillStyle=hat.c2;g.beginPath();g.roundRect(cx-hw*1.05,base-h*.06,hw*2.1,h*.11,h*.04);g.fill();g.stroke();g.fillStyle=hat.c2;ell(g,cx,top-h*.06,w*.08,w*.08);g.fill();g.stroke();return;}
+ if(hat.type==='helmet'){dome(base+h*.02,top-h*.08,hw*1.12);const gr=g.createLinearGradient(cx-hw,top,cx+hw,base);gr.addColorStop(0,shade(hat.c1,.45));gr.addColorStop(.5,hat.c1);gr.addColorStop(1,shade(hat.c1,-.35));g.fillStyle=gr;g.fill();g.stroke();
+  g.fillStyle='rgba(255,255,255,.55)';ell(g,cx-hw*.35,top+h*.06,hw*.28,h*.05);g.fill();g.fillStyle=hat.c2;g.beginPath();g.roundRect(cx+hw*.15,base-h*.2,hw*.5,h*.1,h*.02);g.fill();g.fillStyle='#111';g.font=`900 ${h*.07}px ${FONT}`;g.textAlign='center';g.textBaseline='middle';g.fillText('SK8',cx+hw*.4,base-h*.15);
+  g.strokeStyle='#222';g.lineWidth=lw*1.5;g.beginPath();g.moveTo(cx-hw*1.05,base);g.lineTo(cx-hw*.7,base+h*.32);g.moveTo(cx+hw*1.05,base);g.lineTo(cx+hw*.7,base+h*.32);g.stroke();return;}
+ // caps: crown, then (trucker) a white front panel and the bill, or (backwards) the snapback strap window
+ dome(base,top,hw);g.fillStyle=hat.c1;g.fill();g.stroke();
+ if(hat.type==='trucker'){g.save();dome(base,top,hw);g.clip();g.fillStyle='#f5f5f5';g.fillRect(cx-hw*.55,top,hw*1.1,base-top);g.fillStyle=hat.c1;g.font=`900 ${h*.09}px ${FONT}`;g.textAlign='center';g.textBaseline='middle';g.fillText('THPS',cx,base-h*.12);g.restore();
+  g.fillStyle=shade(hat.c1,-.25);g.beginPath();g.ellipse(cx,base+h*.02,hw*1.05,h*.07,0,0,Math.PI*2);g.fill();g.stroke();}
+ else{g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(cx,base-h*.03,hw*.3,h*.06,0,Math.PI,0);g.fill();g.fillStyle=hat.c2;g.fillRect(cx-hw*.35,base-h*.035,hw*.7,h*.035);}
+ g.fillStyle=hat.c2;ell(g,cx,top+h*.08,w*.03,w*.03);g.fill();}
 // u = size unit (shin length). The skater stands on the board at the origin, up is -y; caller rotates/translates.
 function drawSkater(g,u,pose,head,o){const face=pose.face||1,cr=clamp(pose.crouch??.3,0,1),hipY=-u*(2.25-cr*.85),lean=pose.lean||0;
  g.save();if(pose.spin){const k=Math.cos(pose.spin);g.scale(Math.abs(k)<.08?.08*Math.sign(k||1):k,1);}g.scale(face,1);
  // board first (under the shoes), unless it is flying on its own
- if(!pose.noBoard){g.save();g.translate(0,u*.05+(pose.boardY||0));g.rotate(pose.boardRot||0);drawBoard(g,u,o,pose.flip||0,pose.shove||0);g.restore();}
+ if(!pose.noBoard&&!pose.boardHeld){g.save();g.translate(0,u*.05+(pose.boardY||0));g.rotate(pose.boardRot||0);drawBoard(g,u,o,pose.flip||0,pose.shove||0);g.restore();}
  const fx=u*.7,fy=-u*.12+(pose.feetY||0),hx=lean*u*.6,shoulderY=hipY-u*1.55,sx=hx+Math.sin(lean)*u*1.2;
- // legs (socks + shorts), shoes
- for(const s of [-1,1])limb(g,hx+s*u*.22,hipY,s*fx,fy,u*1.15,-1,u*.42,'#e9c7a3');
+ // legs (socks + shorts), shoes; pose.feet moves each foot (airwalk scissor, christ air dangle)
+ const F=pose.feet||[[-fx,fy],[fx,fy]];
+ for(const s of [0,1])limb(g,hx+(s?1:-1)*u*.22,hipY,F[s][0],F[s][1],u*1.15,-1,u*.42,'#e9c7a3');
  g.fillStyle=o.shorts;g.beginPath();g.moveTo(hx-u*.62,hipY-u*.3);g.lineTo(hx+u*.62,hipY-u*.3);g.lineTo(hx+u*.78,hipY+u*.62);g.lineTo(hx+u*.06,hipY+u*.7);g.lineTo(hx,hipY+u*.3);g.lineTo(hx-u*.06,hipY+u*.7);g.lineTo(hx-u*.78,hipY+u*.62);g.closePath();g.fill();
- g.fillStyle='#fff';for(const s of [-1,1])g.fillRect(s*fx-u*.17,fy-u*.42,u*.34,u*.22);
- g.fillStyle=o.shoe;for(const s of [-1,1]){g.beginPath();g.roundRect(s*fx-u*.32,fy-u*.24,u*.68,u*.28,u*.12);g.fill();}g.fillStyle='rgba(255,255,255,.8)';for(const s of [-1,1])g.fillRect(s*fx-u*.3,fy-u*.02,u*.64,u*.05);
+ g.fillStyle='#fff';for(const [x,y] of F)g.fillRect(x-u*.17,y-u*.42,u*.34,u*.22);
+ g.fillStyle=o.shoe;for(const [x,y] of F){g.beginPath();g.roundRect(x-u*.32,y-u*.24,u*.68,u*.28,u*.12);g.fill();}g.fillStyle='rgba(255,255,255,.8)';for(const [x,y] of F)g.fillRect(x-u*.3,y-u*.02,u*.64,u*.05);
  // torso (tee with a stripe), arms
  const arm=(side,a1,a2,col)=>{const ax=sx+side*u*.45,ay=shoulderY+u*.18;let ex=ax+Math.sin(a1)*u*.95,ey=ay+Math.cos(a1)*u*.95,hx2=ex+Math.sin(a1+a2)*u*.9,hy2=ey+Math.cos(a1+a2)*u*.9;
   if(pose.grab&&side===1){hx2=u*.3;hy2=-u*.1;}const m=limb(g,ax,ay,hx2,hy2,u*.92,side>0?-1:1,u*.36,'#e9c7a3');
@@ -218,14 +236,36 @@ function drawSkater(g,u,pose,head,o){const face=pose.face||1,cr=clamp(pose.crouc
  const A=pose.arms||[.9,-.4,-.9,.4];arm(-1,A[2],A[3],o.shirt);
  g.save();g.translate(hx,hipY);g.rotate(lean);g.fillStyle=o.shirt;g.beginPath();g.roundRect(-u*.62,-u*1.75,u*1.24,u*1.6,u*.3);g.fill();g.fillStyle=o.shirt2;g.fillRect(-u*.62,-u*1.15,u*1.24,u*.22);g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=1;g.beginPath();g.roundRect(-u*.62,-u*1.75,u*1.24,u*1.6,u*.3);g.stroke();g.restore();
  arm(1,A[0],A[1],shade(o.shirt,-.12));
+ // christ air: the board held out at arm's length
+ if(pose.boardHeld){const b=pose.boardHeld;g.save();g.translate(b.x*u,b.y*u);g.rotate(b.rot||0);drawBoard(g,u,o,b.flip||0,0);g.restore();}
  g.restore();
  // the head: big-head mode, kept upright-ish for readability
  const hk=pose.spin?Math.cos(pose.spin):1,hxw=(sx)*face*(Math.abs(hk)<.08?.08:hk);
- if(head)drawHead(g,head,hxw,shoulderY+u*.12,u*(pose.headSize||3.1),(pose.headRot||0)+lean*.4*face,pose.squash||1);}
+ if(head)drawHead(g,head,hxw,shoulderY+u*.12,u*(pose.headSize||3.1),(pose.headRot||0)+lean*.4*face,pose.squash||1,pose.hat);}
+// Facing the camera for the pose shot: standing on the board (seen nose-on), hands doing the pose, big head + hat.
+// kind: horns | point | arms | shaka | flex | boardup
+function drawSkaterFront(g,u,kind,t,head,o,hat){const bob=Math.sin(t*9)*u*.08,hipY=-u*2.15+bob,shY=hipY-u*1.6,skin='#e9c7a3';g.save();g.lineCap='round';g.lineJoin='round';
+ // board nose-on: a thin deck with two wheels, unless it is held up
+ if(kind!=='boardup'){g.fillStyle='#e8c48c';g.fillRect(-u*1.1,-u*.12,u*2.2,u*.14);g.fillStyle='#151515';g.fillRect(-u*1.1,-u*.18,u*2.2,u*.07);g.fillStyle=o.wheel;ell(g,-u*.75,u*.18,u*.2,u*.2);g.fill();ell(g,u*.75,u*.18,u*.2,u*.2);g.fill();}
+ for(const s of [-1,1]){limb(g,s*u*.3,hipY,s*u*.75,-u*.2,u*1.2,s,u*.44,skin);g.fillStyle='#fff';g.fillRect(s*u*.75-u*.17,-u*.62,u*.34,u*.22);g.fillStyle=o.shoe;g.beginPath();g.roundRect(s*u*.75-u*.34,-u*.42,u*.68,u*.32,u*.12);g.fill();}
+ g.fillStyle=o.shorts;g.beginPath();g.moveTo(-u*.75,hipY-u*.3);g.lineTo(u*.75,hipY-u*.3);g.lineTo(u*.9,hipY+u*.75);g.lineTo(u*.08,hipY+u*.8);g.lineTo(0,hipY+u*.35);g.lineTo(-u*.08,hipY+u*.8);g.lineTo(-u*.9,hipY+u*.75);g.closePath();g.fill();
+ g.fillStyle=o.shirt;g.beginPath();g.roundRect(-u*.85,shY,u*1.7,u*1.75,u*.35);g.fill();g.fillStyle=o.shirt2;g.font=`900 ${u*.55}px ${FONT}`;g.textAlign='center';g.textBaseline='middle';g.fillText('SK8',0,shY+u*.8);
+ // arms: shoulder → hand, a hand shape at the end
+ const W=t*7,hands={horns:[[-1.5,-1.3],[1.5,-1.35]],point:[[-1.1,.3],[.2,-.35]],arms:[[-1.7,-1.6],[1.7,-1.6]],shaka:[[-1.45,-.4],[1.45,-.4]],flex:[[-1.35,-.95],[1.35,-.95]],boardup:[[-1.3,-2.2],[1.3,-2.2]]}[kind]||[[-1.4,.3],[1.4,.3]];
+ if(kind==='boardup'){g.save();g.translate(0,shY-u*2.2+Math.sin(t*6)*u*.15);g.rotate(Math.sin(t*4)*.12);drawBoard(g,u*.9,o,0,0);g.restore();}
+ hands.forEach(([hx,hy],i)=>{const s=i?1:-1,ax=s*u*.75,ay=shY+u*.35,x2=hx*u+(kind==='arms'||kind==='horns'?Math.sin(W+i)*u*.12:0),y2=shY+hy*u;
+  limb(g,ax,ay,x2,y2,u*1.0,kind==='flex'?-s:s,u*.38,skin);g.strokeStyle=o.shirt;g.lineWidth=u*.5;g.beginPath();g.moveTo(ax,ay);g.lineTo(ax+(x2-ax)*.3,ay+(y2-ay)*.3);g.stroke();
+  g.fillStyle=skin;ell(g,x2,y2,u*.24,u*.24);g.fill();g.strokeStyle=skin;g.lineWidth=u*.11;
+  if(kind==='horns'){for(const f of [-.15,.15]){g.beginPath();g.moveTo(x2+f*u,y2-u*.1);g.lineTo(x2+f*u*1.6,y2-u*.6);g.stroke();}}
+  else if(kind==='shaka'){g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-s*u*.45,y2-u*.25);g.moveTo(x2,y2);g.lineTo(x2+s*u*.45,y2+u*.2);g.stroke();}
+  else if(kind==='point'&&i===1){g.beginPath();g.moveTo(x2,y2);g.lineTo(x2+u*.15,y2+u*.55);g.stroke();}
+  else if(kind==='flex'){g.fillStyle=skin;ell(g,ax+(x2-ax)*.6,ay+(y2-ay)*.6-u*.18,u*.32,u*.24);g.fill();}});
+ if(head)drawHead(g,head,0,shY+u*.15,u*3.6,Math.sin(t*5)*.06,1,hat);
+ g.restore();}
 // A skater lying after a slam (rotated by the caller), arms and legs splayed
 function drawSlammed(g,u,head,o,t){g.save();g.rotate(Math.PI/2);drawSkater(g,u,{crouch:.1,arms:[2.2,.6,-2.4,-.4],noBoard:true,lean:Math.sin(t*9)*.05},null,o);g.restore();if(head)drawHead(g,head,-u*3.2,-u*.4,u*3,-Math.PI/2+.3,1);}
 
 // ------------------------------------------------------------------ sparks, the special trail
 function spark(g,x,y,vx,vy,a){g.strokeStyle=`rgba(255,${180+Math.random()*70|0},60,${a})`;g.lineWidth=1.6;g.beginPath();g.moveTo(x,y);g.lineTo(x-vx*.03,y-vy*.03);g.stroke();}
 
-Object.assign(exports,{thps,font,FONT,clamp,shade,rnd,GEM_COLORS,drawGem,gemSprite,deckGeometry,makeDeck,makePark,pipeGeo,pipePoint,drawSkater,drawSlammed,drawBoard,drawHead,OUTFITS,spark,ell,canvas,drawPipe,fisheye,vhs});
+Object.assign(exports,{thps,font,FONT,clamp,shade,rnd,GEM_COLORS,drawGem,gemSprite,deckGeometry,makeDeck,makePark,pipeGeo,pipePoint,drawSkater,drawSlammed,drawBoard,drawHead,OUTFITS,spark,ell,canvas,drawPipe,fisheye,vhs,hatFor,drawSkaterFront});

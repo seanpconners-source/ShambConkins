@@ -231,25 +231,34 @@ function createPunk(paused){
 }
 function rnd(seed){let n=seed>>>0||1;return()=>{n=Math.imul(n^n>>>15,1|n)+0x6D2B79F5|0;n^=n+Math.imul(n^n>>>7,61|n);return((n^n>>>14)>>>0)/4294967296;};}
 
-// Drop-in songs (HTML audio) take over from the band when present.
+// Drop-in songs (HTML audio) take over from the band when present: thps-mancala-<band>--<song>.mp3 (any number, the name
+// is shown on the Now Playing card; "--" separates band and song) or plain thps-mancala.mp3 / thps-mancala-<n>.mp3.
+// Like the real game: a random song starts with the title, plays on through the game, and when it ends the next one
+// (shuffled order) starts. A separate title song (thps-mancala-intro) is still honoured if present.
+const titleCase=s=>s.split('-').filter(Boolean).map(w=>/^\d+$/.test(w)?w:w[0].toUpperCase()+w.slice(1)).join(' ');
+let songOrder=null,songPos=0;// kept between games so every game starts on the next song of the shuffle
 function createSoundtrack(paused){
- const band=createPunk(paused);let el=null,drops=null,dropIdx=0,onTrack=null,mode='',introFile=false;
+ const band=createPunk(paused);let el=null,drops=null,onTrack=null,mode='',introFile=false,held=false;
  function stopEl(){if(el){const e=el;el=null;try{e.pause();}catch{}}}
- function dropList(){if(drops)return drops;drops=[];if(USER_PORTRAITS['music:thps-mancala'])drops.push({url:USER_PORTRAITS['music:thps-mancala'],band:'',song:'Pro Mancala'});
-  for(let i=1;i<10;i++){const u=USER_PORTRAITS['music:thps-mancala-'+i];if(u)drops.push({url:u,band:'',song:'Track '+i});}return drops;}
- function playEl(url,loop,onEnd){stopEl();try{const e=new Audio(url);e.loop=loop;e.volume=.75;e.onended=onEnd||null;e.play()?.catch?.(()=>{});el=e;return true;}catch{return false;}}
- function nextDrop(){const d=dropList();if(!d.length)return false;const t=d[dropIdx%d.length];dropIdx++;onTrack?.(t);return playEl(t.url,d.length===1,()=>nextDrop());}
- // a drop-in title song plays to its end before the game music starts; without one the synth snare-roll intro plays and
- // the game music (drop-in playlist or the band) takes over on EXTREME EDITION
+ function dropList(){if(drops)return drops;drops=[];
+  for(const k of Object.keys(USER_PORTRAITS).sort()){const m=k.match(/^music:thps-mancala(?:-(.+))?$/);if(!m||m[1]==='intro')continue;const name=m[1]||'';
+   const [b,s]=name.includes('--')?name.split('--'):['',/^\d+$/.test(name)?'Track '+name:name||'Pro Mancala'];drops.push({url:USER_PORTRAITS[k],band:b?titleCase(b):'',song:/^Track |^Pro /.test(s)?s:titleCase(s)});}
+  return drops;}
+ function playEl(url,loop,onEnd){stopEl();try{const e=new Audio(url);e.loop=loop;e.volume=.7;e.onended=onEnd||null;e.play()?.catch?.(()=>{});el=e;return true;}catch{return false;}}
+ function nextDrop(){const d=dropList();if(!d.length)return false;if(!songOrder||songOrder.length!==d.length){songOrder=d.map((_,i)=>i);for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[songOrder[i],songOrder[j]]=[songOrder[j],songOrder[i]];}songPos=0;}
+  const t=d[songOrder[songPos%d.length]];songPos++;onTrack?.(t);return playEl(t.url,d.length===1,()=>nextDrop());}
+ // the pause menu stops the song; it carries on when play resumes
+ const watch=setInterval(()=>{if(!el)return;const p=paused();if(p&&!held){held=true;try{el.pause();}catch{}}else if(!p&&held){held=false;try{el.play()?.catch?.(()=>{});}catch{}}},250);
  const api={
   intro(boom,hits,cb){onTrack=cb;if(!musicOn())return null;mode='intro';band.next();const u=USER_PORTRAITS['music:thps-mancala-intro'];
    if(u){introFile=true;playEl(u,false,()=>{introFile=false;if(mode==='wait'){mode='';api.main();}});return null;}
-   const r=band.intro(boom,hits);setTimeout(()=>{if(!dropList().length&&(mode==='intro'||mode==='main'))onTrack?.(band.current());},boom*1000);return r;},
+   if(dropList().length){mode='main';nextDrop();return null;}
+   const r=band.intro(boom,hits);setTimeout(()=>{if(mode==='intro'||mode==='main')onTrack?.(band.current());},boom*1000);return r;},
   main(cb){if(cb)onTrack=cb;if(!musicOn()||mode==='main'||mode==='wait')return;if(mode==='intro'&&introFile&&el){mode='wait';return;}
    const was=mode;mode='main';if(dropList().length){band.stop();nextDrop();return;}stopEl();band.main();if(was!=='intro')onTrack?.(band.current());},
   pause(on){if(el){try{on?el.pause():el.play()?.catch?.(()=>{});}catch{}}},
   time(){return band.time();},
-  stop(){mode='';band.stop();stopEl();},
+  stop(){mode='';clearInterval(watch);band.stop();stopEl();},
  };
  return api;
 }

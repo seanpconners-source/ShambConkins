@@ -108,7 +108,7 @@ async function proMancala(s){
   for(const i of [0,1]){const h=lay.hud[i];r.push({x0:h.x,y0:h.y,x1:h.x+hu*9.2,y1:h.y+hu*5.2});if(!cut){const c=lay.card[i];if(c.h>=36)r.push({x0:c.x,y0:c.y,x1:c.x+c.w,y1:c.y+c.h});}}
   const cl=comboLayout();if(cl)r.push(cl.rect);
   if(banner)r.push({x0:0,y0:H/2-hu*2,x1:W,y1:H/2+hu*1.8});
-  if(track)r.push({x0:0,y0:H-hu*3.6,x1:Math.min(W*.8,hu*20),y1:H-hu*1.5});
+  if(track){const tr=trackBox();r.push({x0:tr.x,y0:tr.y-hu*.9,x1:tr.x+tr.w,y1:tr.y+hu*1.1});}
   if(cut){r.push({x0:W*.45,y0:44,x1:W,y1:52+hu*3.2});r.push({x0:W-hu*14,y0:H-hu*3.2,x1:W,y1:H});if(cut.impact)r.push({x0:W*.2,y0:H*.4-hu*2.2,x1:W*.8,y1:H*.4+hu*2.2});}
   return r;}
  function pop(text,{x0=null,y0=null,px=null,col=null,dur=1.3,rot=null,big=false,bad=false,imp=big}={}){const W=lay.W,H=lay.H,hu=lay.hu;
@@ -149,7 +149,7 @@ async function proMancala(s){
   if(trail.some(t=>me===0?t>=7&&t<=12:t<=5))out.push({name:'Hip Transfer',pts:150});
   if(trail.length>=13)out.push({name:'Around The World Gap',pts:1000});
   if(move.captured)out.push({name:GRINDS[Math.floor(rng()*GRINDS.length)]+` (Steal ${move.captured})`,pts:300*move.captured});
-  if(last===mine&&!move.captured){out.push({name:'Store Landing',pts:500});anim={...anim,name:'big',spin:1,grab:true,h:1.15};}
+  if(last===mine&&!move.captured){out.push({name:'Store Landing',pts:500});const sty=['','airwalk','christ','rocket',''][Math.floor(rng()*5)];anim={...anim,name:'big',spin:sty==='christ'?0:sty?1:rng()<.5?1:1.5,grab:true,h:1.15,style:sty};}
   return {tricks:out,anim,cut:rng()<.4};}
  function threat(after){// the most the other player can bank at once after this move (captures, store landings)
   const opp=after.turn,st=opp?13:6;let best=0;for(const m of mancalaMoves(after)){const r=mancalaMove(after,m);if(r){const d=r.state.pits[st]-after.pits[st]+(r.extra?2:0);if(d>best)best=d;}}return best;}
@@ -202,7 +202,7 @@ async function proMancala(s){
  const SPOTS={trick:['pipe','stairs','rail','curb','kicker'],combo:['pipe','kicker','stairs','rail'],special:['pipe','kicker'],steal:['rail','curb','pipe'],bail:['pipe','stairs','rail','kicker','curb']};
  function cutTo(p,kind,anim,quick=false){if(!lay||!s.alive)return Promise.resolve();return new Promise(res=>{
   const opts=SPOTS[kind].filter(v=>v!==lastSpot),spot=pickOf(opts.length?opts:SPOTS[kind]);lastSpot=spot;
-  cut={p,kind,spot,t:0,res,ts:1,freeze:0,end:null,cam:null,landed:false,line:null,lt:0,lastPart:-1,bd:null};
+  cut={p,kind,spot,t:0,res,ts:1,freeze:0,end:null,cam:null,landed:false,line:null,lt:0,lastPart:-1,bd:null,pose:null,hat:A.hatFor(),wantPose:kind==='combo'||kind==='special'||(kind!=='bail'&&Math.random()<.5)};
   if(spot==='pipe'){const k=SK[p],cross=1;k.queue=[];k.bd=null;k.amp=1;
    if(kind==='steal'){k.mode='grind';k.t=0;k.air={side:1,trick:anim};}else{k.mode='ride';k.t=0;k.ph=Math.PI/2-(quick?.25:.42)*Math.PI/cross;k.queue=[anim];}
    cut.style=kind==='bail'?'crash':kind==='special'?'orbit':pickOf(STYLES);cut.max=kind==='special'?4.2:3.4;}
@@ -226,7 +226,19 @@ async function proMancala(s){
   else if(st.mode==='air')pose={face:1,crouch:.5+.3*Math.sin(Math.PI*st.tau),arms:[2.2,-.5,-2.2,.5]};
   else if(st.mode==='grind')pose={face:1,crouch:.45,arms:[1.6,-.3,-1.6,.3],lean:-.1};
   else pose={face:1,crouch:.25+.1*Math.sin(T*7),arms:[1.2,-.5,-1,.5],lean:.06};
-  A.drawSkater(q,u,pose,hd,o);q.restore();}
+  SKD(q,u,st.mode==='air'&&st.part.trick?airStyle(pose,tr,st.tau,u):pose,hd,o);q.restore();}
+ // the pose shot: a jump cut to the skater facing the camera, throwing up a pose, extreme fisheye close-up
+ const POSE_T=1.3,CAPTIONS=['SPONSOR ME!','GET THE SHOT!','DID YOU FILM THAT?!','PRO MANCALA 4 LIFE','STOKED!','MANCALA OR DIE','HELL YEAH!','SKATE AND DESTROY','NO COMPLY!','TOTALLY RAD!','BRING IT!',"WHO'S NEXT?!"];
+ function startPose(px,py){const k=cut;k.pose={t:0,x:px,y:py,kind:pickOf(['horns','point','arms','shaka','flex','boardup']),mood:pickOf(['silly','win','win']),caption:pickOf(CAPTIONS),tilt:(Math.random()-.5)*.35};
+  flash=Math.max(flash,.6);shake=Math.max(shake,6);S.sfx('cam');S.sfx('hey');}
+ // skaters in cutaways wear the cut's hat (guest skaters bring their own)
+ const SKD=(g,u,pose,hd,o)=>A.drawSkater(g,u,cut&&hd&&!pose.hat?{...pose,hat:cut.hat}:pose,hd,o);
+ // air styles on big tricks: airwalk (legs scissor, board kicked out), christ air (arms out, board held up)
+ function airStyle(pose,tr,tau,u){if(!tr.style||tau<.18||tau>.82)return pose;const m=Math.sin(Math.PI*clamp((tau-.18)/.64,0,1));
+  if(tr.style==='airwalk')return {...pose,grab:false,feet:[[-u*(.7+.8*m),-u*.12+u*.5*m],[u*(.7+.9*m),-u*.12-u*.45*m]],boardY:u*.9*m,boardRot:.35*m,arms:[2.4,-.4,-2.6,.5]};
+  if(tr.style==='christ')return {...pose,grab:false,arms:[Math.PI/2+.1,0,-Math.PI/2-.1,0],feet:[[-u*.2,u*.55*m],[u*.2,u*.6*m]],boardHeld:{x:2.4,y:-2.4-m*.4,rot:-Math.PI/2+.2}};
+  if(tr.style==='rocket')return {...pose,grab:true,feet:[[-u*.1,u*.3*m],[u*.1,u*.3*m]],boardRot:-Math.PI/2*m,boardY:u*.3*m,arms:[.2,-.2,.2,-.2]};
+  return pose;}
  function endCut(){if(!cut)return;const r=cut.res;cut=null;flash=Math.max(flash,.35);S.sfx('cam');r();}
  function cutPos(i){const k=SK[i],g=cutGeo;let p;if(k.mode==='air'){const a=k.air,tau=clamp(a.t/a.dur,0,1),side=a.side;p={x:g.cx+side*(g.F+g.R*.94),y:g.floor-g.R-a.h*g.R*4*tau*(1-tau),rot:-side*(Math.PI/2)*(1-Math.sin(Math.PI*tau)),tau,side};}
   else if(k.mode==='grind'){const side=k.air.side;p={x:g.cx+side*(g.F+g.R),y:g.floor-g.R*1.08,rot:0,side};}
@@ -247,36 +259,41 @@ async function proMancala(s){
  function drawCutSkater(g,i,u){const k=SK[i],gg=cutGeo,o=A.OUTFITS[i],hd=head(i,P[i].mood);g.save();
   if(k.mode==='bail'){const bb=bailBody(i,u);
    if(k.bd){g.save();g.translate(k.bd.x,k.bd.y);g.rotate(k.bd.rot);A.drawBoard(g,u,o,k.bd.rot*.5,0);g.restore();}
-   g.translate(bb.x,bb.y);g.rotate(bb.rot);A.drawSkater(g,u,{crouch:.1,arms:[2.4,.5,-2.3,-.6],noBoard:true,face:k.bail.dir,squash:1},hd,o);g.restore();return;}
+   g.translate(bb.x,bb.y);g.rotate(bb.rot);SKD(g,u,{crouch:.1,arms:[2.4,.5,-2.3,-.6],noBoard:true,face:k.bail.dir,squash:1},hd,o);g.restore();return;}
   const pos=cutPos(i);g.translate(pos.x,pos.y);g.rotate(pos.rot);
   if(k.mode==='air'){const a=k.air,tr=a.trick,tau=pos.tau,e=ease(tau),mid=Math.sin(Math.PI*tau);
    const pose={face:a.side,crouch:.35+.55*mid,spin:Math.PI*tau+(tr.spin||0)*TAU*e,flip:(tr.flip||0)*TAU*clamp((tau-.1)/.6,0,1),shove:(tr.shove||0)*Math.PI*clamp((tau-.1)/.6,0,1),
     grab:tr.grab&&tau>.2&&tau<.78,arms:tr.grab?[.4,-.3,-2.2,.3]:[2.4,-.6,-2.4,.6],boardY:(tr.flip||tr.shove)&&tau>.1&&tau<.7?u*.4*mid:0,boardRot:(tr.boardSpin||0)*TAU*clamp((tau-.1)/.6,0,1)};
    if(tr.special){g.save();g.globalAlpha=.25;for(let j=1;j<=3;j++){const sp=Math.PI*tau+tr.spin*TAU*ease(clamp(tau-j*.04,0,1));g.save();g.translate(0,j*u*.9);A.drawSkater(g,u,{...pose,spin:sp},null,{...o,shirt:'#9ff6ff',shirt2:'#fff'});g.restore();}g.restore();}
-   A.drawSkater(g,u,pose,hd,o);}
-  else if(k.mode==='grind')A.drawSkater(g,u,{face:-k.air.side,crouch:.45,arms:[1.6,-.3,-1.6,.3],lean:-k.air.side*.12},hd,o);
-  else{const dir=Math.cos(k.ph)>=0?1:-1,bottom=1-Math.abs(Math.sin(k.ph));A.drawSkater(g,u,{face:dir,crouch:.2+.45*bottom,arms:[1.2,-.5,-1.0,.5],lean:dir*.08*bottom},hd,o);}
+   SKD(g,u,airStyle(pose,tr,tau,u),hd,o);}
+  else if(k.mode==='grind')SKD(g,u,{face:-k.air.side,crouch:.45,arms:[1.6,-.3,-1.6,.3],lean:-k.air.side*.12},hd,o);
+  else{const dir=Math.cos(k.ph)>=0?1:-1,bottom=1-Math.abs(Math.sin(k.ph));SKD(g,u,{face:dir,crouch:.2+.45*bottom,arms:[1.2,-.5,-1.0,.5],lean:dir*.08*bottom},hd,o);}
   g.restore();}
  function drawCut(dt){const W=lay.W,H=lay.H,k=cut,p=k.p,g=cutGeo,u=g.R*.115,L=k.line;
   // time: freeze-frame on a slam, slow motion through the special's peak
-  let pos,apex=0,falling=false,fallT=0,st=null;
-  if(L){if(k.freeze>0)k.freeze-=dt;else{st=SP.lineState(L,k.lt);k.ts=L.tr.special&&st.mode==='air'&&st.part.trick&&st.tau>.28&&st.tau<.72?.4:1;k.lt+=dt*k.ts;}
+  let pos,apex=0,falling=false,fallT=0,st=null,landedNow=false;
+  if(k.pose){k.pose.t+=dt;k.t+=dt;if(k.pose.t>=POSE_T||k.t>k.max+POSE_T+2){endCut();return;}pos={x:k.pose.x,y:k.pose.y,rot:0};}
+  else if(L){if(k.freeze>0)k.freeze-=dt;else{st=SP.lineState(L,k.lt);k.ts=L.tr.special&&st.mode==='air'&&st.part.trick&&st.tau>.28&&st.tau<.72?.4:1;k.lt+=dt*k.ts;}
    st=SP.lineState(L,k.lt);lineEvents(st);if(k.bd)stepBoard(k.bd,dt,x=>SP.ground(L,x)-SP.DEPTH*.5-6);
    if(st.mode==='grind'&&Math.random()<dt*50)cutSparks.push({x:st.x,y:st.y-SP.DEPTH*.5,vx:-(200+Math.random()*500),vy:-Math.random()*500,t:0,dur:.45});
-   k.t+=dt;if(k.lt>=L.T||k.t>k.max+1.5){endCut();return;}
-   pos={x:st.x,y:st.y-SP.DEPTH*.5};apex=st.mode==='air'?Math.sin(Math.PI*st.tau):0;falling=st.mode==='slam';fallT=falling?k.lt-st.part.t0:0;}
+   k.t+=dt;if(k.lt>=L.T||k.t>k.max+1.5){if(k.wantPose&&!L.bail){startPose(st.x-140,SP.ground(L,st.x-140)-SP.DEPTH*.5);landedNow=true;}else{endCut();return;}}
+   if(!landedNow){pos={x:st.x,y:st.y-SP.DEPTH*.5,rot:st.rot};apex=st.mode==='air'?Math.sin(Math.PI*st.tau):0;falling=st.mode==='slam';fallT=falling?k.lt-st.part.t0:0;}}
   else{if(k.freeze>0){k.freeze-=dt;}else{const sk=SK[p],tau=sk.mode==='air'?sk.air.t/sk.air.dur:0;k.ts=sk.mode==='air'&&sk.air.trick.special&&tau>.28&&tau<.72?.4:1;stepSkater(p,dt*k.ts);}
-   k.t+=dt;if(k.landed&&k.end==null)k.end=k.t+.5;if(SK[p].mode==='bail'&&SK[p].t>1.5&&k.end==null)k.end=k.t;if(k.end!=null&&k.t>=k.end||k.t>k.max){endCut();return;}
-   const sk=SK[p];pos=sk.mode==='bail'?bailBody(p,u):cutPos(p);apex=sk.mode==='air'?Math.sin(Math.PI*clamp(sk.air.t/sk.air.dur,0,1)):0;falling=sk.mode==='bail';fallT=falling?sk.t:0;}
-  const base=.48*Math.min(W,H)/(.72*g.R);
-  let tx=pos.x+(L?110:0),ty=pos.y-g.R*.25,z=base,rot=0;
-  if(k.style==='follow'){z=base*1.15;rot=.2*Math.sin(k.t*1.3)-.1;}
-  else if(k.style==='low'){if(L){tx=L.focus.x;ty=L.focus.y-SP.LU*.5;z=base*.72;rot=-.3+k.t*.06;}else{tx=g.cx+(g.F+g.R*.5);ty=g.floor-g.R*.9;z=base*.85;rot=-.34+k.t*.05;}}
+   k.t+=dt;if(k.landed&&k.end==null)k.end=k.t+(k.wantPose?.35:.5);if(SK[p].mode==='bail'&&SK[p].t>1.5&&k.end==null)k.end=k.t;
+   if(k.end!=null&&k.t>=k.end||k.t>k.max){if(k.wantPose&&SK[p].mode!=='bail'){startPose(g.cx-g.F*.35,g.floor-g.depth*.5);landedNow=true;}else{endCut();return;}}
+   if(!landedNow){const sk=SK[p];pos=sk.mode==='bail'?bailBody(p,u):cutPos(p);apex=sk.mode==='air'?Math.sin(Math.PI*clamp(sk.air.t/sk.air.dur,0,1)):0;falling=sk.mode==='bail';fallT=falling?sk.t:0;}}
+  if(landedNow)pos={x:k.pose.x,y:k.pose.y,rot:0};
+  // the camera keeps the skater's body in the middle of the frame (body centre = 3 units up from the feet, turned with them)
+  const base=.48*Math.min(W,H)/(.72*g.R),pr=pos.rot||0,bodyX=pos.x+Math.sin(pr)*u*3,bodyY=pos.y-Math.cos(pr)*u*3;
+  let tx=bodyX,ty=bodyY,z=base,rot=0;
+  if(k.pose){z=base*(1.2+.12*Math.min(1,k.pose.t*3));ty=pos.y-u*3.6;tx=pos.x;rot=k.pose.tilt+Math.sin(k.pose.t*2.2)*.05;}
+  else if(k.style==='follow'){z=base*1.15;rot=.2*Math.sin(k.t*1.3)-.1;}
+  else if(k.style==='low'){z=base*.85;rot=-.32+k.t*.05;}
   else if(k.style==='punch'){z=base*(1+.75*apex);rot=.12;}
   else if(k.style==='orbit'){z=base*1.2;rot=-.5+k.t*.4;}
-  else if(k.style==='track'){z=base*1.12;tx=pos.x+200;rot=-.08+.05*Math.sin(k.t*2);}
-  else if(k.style==='crash'){z=base*(falling?1.2+Math.min(.25,fallT*.3):1.05);ty=pos.y-(falling?g.R*.1:g.R*.25);rot=falling?.22*Math.sin(fallT*3):-.15;}
-  if(!k.cam)k.cam={x:tx,y:ty,z,rot};const cm=k.cam,f=Math.min(1,dt*(k.style==='low'?3:9));cm.x+=(tx-cm.x)*f;cm.y+=(ty-cm.y)*f;cm.z+=(z-cm.z)*Math.min(1,dt*6);cm.rot+=(rot-cm.rot)*Math.min(1,dt*5);
+  else if(k.style==='track'){z=base*1.12;rot=-.08+.05*Math.sin(k.t*2);}
+  else if(k.style==='crash'){z=base*(falling?1.2+Math.min(.25,fallT*.3):1.05);rot=falling?.22*Math.sin(fallT*3):-.15;}
+  if(!k.cam||landedNow)k.cam={x:tx,y:ty,z:landedNow?z*1.3:z,rot};const cm=k.cam,f=Math.min(1,dt*14);cm.x+=(tx-cm.x)*f;cm.y+=(ty-cm.y)*f;cm.z+=(z-cm.z)*Math.min(1,dt*6);cm.rot+=(rot-cm.rot)*Math.min(1,dt*5);
   // render the scene, then put it through the fisheye and the camcorder
   const cw=Math.round(W*Math.min(dpr,1.25)),ch=Math.round(H*Math.min(dpr,1.25));if(cutC.width!==cw||cutC.height!==ch){cutC.width=cw;cutC.height=ch;}
   const q=cutG;q.setTransform(cw/W,0,0,ch/H,0,0);const sky=q.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#1d5fc4');sky.addColorStop(.7,'#8fd0f5');sky.addColorStop(1,'#fbe3b0');q.fillStyle=sky;q.fillRect(0,0,W,H);
@@ -286,12 +303,14 @@ async function proMancala(s){
   q.save();q.translate(cm.x*.55,cm.y*.3);q.fillStyle='#6f8db0';for(let i=-8;i<=8;i++){const bw=150+((i*37)%5+5)%5*30,bh=180+((i*53)%7+7)%7*45;q.fillRect(i*190-bw/2,hz-bh,bw,bh);}
   q.strokeStyle='#2f2015';q.lineWidth=14;for(let i=-4;i<=4;i++){const px=i*420+90,py=hz+g.R*.05;q.beginPath();q.moveTo(px,py);q.quadraticCurveTo(px+40,py-230,px+20,py-420);q.stroke();q.strokeStyle='#1f5d2e';q.lineWidth=16;for(let j=0;j<6;j++){const a=-Math.PI/2+(j-2.5)*.5;q.beginPath();q.moveTo(px+20,py-420);q.quadraticCurveTo(px+20+Math.cos(a)*120,py-450+Math.sin(a)*60,px+20+Math.cos(a)*170,py-400+Math.sin(a)*90);q.stroke();}q.strokeStyle='#2f2015';q.lineWidth=14;}
   q.restore();
-  if(L){q.fillStyle='#a9a398';q.fillRect(-6000,hz,12000,6000);SP.drawSpot(q,L);drawLineSkater(q,p,st,u);}
+  const poser=()=>{q.save();q.translate(k.pose.x,k.pose.y);A.drawSkaterFront(q,u,k.pose.kind,k.pose.t,head(p,k.pose.mood),A.OUTFITS[p],k.hat);q.restore();};
+  if(L){q.fillStyle='#a9a398';q.fillRect(-6000,hz,12000,6000);SP.drawSpot(q,L);if(k.pose)poser();else drawLineSkater(q,p,st,u);}
   else{q.fillStyle='#a9a398';q.fillRect(g.cx-6000,g.floor-g.R*1.2,12000,g.R*1.2+g.depth);q.fillStyle='#8f897f';q.fillRect(g.cx-6000,g.floor,12000,4000);
-   A.drawPipe(q,g,'PRO MANCALA',7);drawCutSkater(q,p,u);}
+   A.drawPipe(q,g,'PRO MANCALA',7);if(k.pose)poser();else drawCutSkater(q,p,u);}
   for(let j=cutSparks.length-1;j>=0;j--){const sp=cutSparks[j];sp.t+=dt;if(sp.t>sp.dur){cutSparks.splice(j,1);continue;}sp.vy+=1800*dt;sp.x+=sp.vx*dt;sp.y+=sp.vy*dt;q.strokeStyle=`rgba(255,${190+Math.random()*60|0},70,${1-sp.t/sp.dur})`;q.lineWidth=5;q.beginPath();q.moveTo(sp.x,sp.y);q.lineTo(sp.x-sp.vx*.025,sp.y-sp.vy*.025);q.stroke();}
   x.save();const pz=k.t<.15?1.25-k.t/.15*.25:1;x.translate(W/2,H/2);x.scale(pz,pz);x.translate(-W/2,-H/2);A.fisheye(x,cutC,W,H,.42);x.restore();A.vhs(x,W,H,T,k.kind!=='bail');
   if(k.impact){thps(x,'BAIL!',W/2,H*.4,lay.hu*3.4,{grad:['#ffb0b0','#ff1010'],rot:-.12,scale:1+.3*Math.max(0,k.freeze),maxW:W*.9});}
+  if(k.pose){const a=Math.min(1,k.pose.t*5);thps(x,k.pose.caption,W/2,H*.8,lay.hu*2.2,{grad:['#ffffff','#ffe14d','#ff7a00'],rot:-.06,scale:.7+.3*a,alpha:a,maxW:W*.86});}
   const lbl=k.kind==='steal'?'STEAL CAM':k.kind==='bail'?'SLAM CAM':k.kind==='special'?'SPECIAL CAM':'REPLAY';thps(x,lbl,W-lay.hu*4,H-lay.hu*2.5,lay.hu*.8,{fill:'#fff',align:'right',alpha:.8});
   thps(x,SP.NAMES[k.spot],W-lay.hu*4,H-lay.hu*1.5,lay.hu*.55,{fill:'#ffe14d',align:'right',alpha:.85,maxW:W*.5});
   thps(x,nameOf(p).toUpperCase(),W-lay.hu*4,H-lay.hu*.6,lay.hu*.6,{fill:PCOL[p],align:'right',alpha:.9});}
@@ -300,7 +319,7 @@ async function proMancala(s){
  function spawnNpc(){if(!guestPool.length||!lay)return;const id=pickOf(guestPool),dir=Math.random()<.5?1:-1,kinds=lay.vertical?['ollie','ollie','manual','bomb','air']:['ollie','grind','grind','manual','bomb','air'],kind=pickOf(kinds);
   let nm='';try{nm=require('src/characters.js').character(id)?.name||'';}catch{}
   const b=lay.band[Math.random()<.5?0:1],lane=lay.vertical?lay.top+lay.geo.L*(.2+Math.random()*.6):0;
-  const dur=kind==='bomb'?1.5:kind==='air'?2.4:2.6;npcs.push({id,nm,dir,kind,t:0,dur,lane,band:b,o:A.OUTFITS[2+Math.floor(Math.random()*2)],flip:Math.random()<.6?1:0,spin:Math.random()<.5?1:0});S.sfx('rollby',dur);if(kind==='air')setTimeout(()=>S.sfx('crowd',.6,1.4),dur*400);}
+  const dur=kind==='bomb'?1.5:kind==='air'?2.4:2.6;npcs.push({id,nm,dir,kind,t:0,dur,lane,band:b,o:A.OUTFITS[2+Math.floor(Math.random()*2)],flip:Math.random()<.6?1:0,spin:Math.random()<.5?1:0,hat:A.hatFor()});S.sfx('rollby',dur);if(kind==='air')setTimeout(()=>S.sfx('crowd',.6,1.4),dur*400);}
  function drawNpc(n){const W=lay.W,H=lay.H,geo=lay.geo,tau=n.t/n.dur,u=clamp(Math.min(W,H)*.03,8,24),x0=n.dir>0?-u*6:W+u*6,x1=n.dir>0?W+u*6:-u*6,px=x0+(x1-x0)*tau;
   let py=0,pose={face:n.dir,crouch:.3,arms:[1.2,-.4,-1.2,.4]};
   const hop=(lo,hi,hgt)=>{const inside=n.dir>0?px>lo&&px<hi:px<hi&&px>lo,over=clamp((n.dir>0?px-lo:hi-px)/(hi-lo),0,1);if(inside){const a=Math.sin(Math.PI*over);py-=a*hgt;pose.crouch=.4+.5*a;pose.flip=n.flip*TAU*over;pose.grab=!n.flip&&a>.3;}
@@ -310,7 +329,7 @@ async function proMancala(s){
   else if(lay.vertical){py=n.lane;hop(lay.bx-geo.D*.6,lay.bx+geo.D*.6,geo.D*.7);}
   else if(n.kind==='grind'){const lo=lay.bx-geo.L/2,hi=lay.bx+geo.L/2,inside=px>lo&&px<hi;py=inside?lay.by+geo.D/2-u*.1:lay.bottom+u*.3;if(inside){pose.crouch=.5;pose.lean=-n.dir*.1;if(!n.popped){n.popped=1;S.sfx('ollie');S.sfx('grind-board',geo.L/((W+12*u)/n.dur));}if(Math.random()<.6)sparks.push({x:px-n.dir*u*1.2,y:py+u*.3,vx:-n.dir*(80+Math.random()*160),vy:-Math.random()*160,t:0,dur:.35});}else if(n.popped===1){n.popped=2;S.sfx('land');}}
   else{py=lay.bottom+u*.3;hop(lay.bx-geo.L/2-u,lay.bx+geo.L/2+u,geo.D+geo.edge+u*4);}
-  x.save();x.translate(px,py);A.drawSkater(x,u,pose,headOf?headOf(n.id,'normal'):null,n.o);x.restore();
+  x.save();x.translate(px,py);A.drawSkater(x,u,{...pose,hat:n.hat},headOf?headOf(n.id,'normal'):null,n.o);x.restore();
   if(n.nm&&tau>.08&&tau<.92)thps(x,n.nm.toUpperCase(),clamp(px,lay.hu*4,W-lay.hu*4),clamp(py-u*8.6,lay.hu,H-lay.hu),lay.hu*.7,{fill:'#fff',alpha:.9,maxW:lay.hu*10});}
 
  // ---------------------------------------------------------------- drawing: board, gems, HUD, text
@@ -356,7 +375,7 @@ async function proMancala(s){
   x.restore();}
  function wrapTricks(list,px,maxW){x.font=A.font(px);const lines=[];let cur='';for(const t of list){const nx=cur?cur+' + '+t:t;if(cur&&x.measureText(nx).width*.84>maxW){lines.push(cur);cur=t;}else cur=nx;}if(cur)lines.push(cur);return lines;}
  // where the trick string sits this frame (also used to keep popups off it)
- function comboLayout(){if(!combo)return null;const hu=lay.hu,t=lay.trick[combo.p],ph=combo.phase;let px=hu*1.1,lines=wrapTricks(combo.tricks,px,t.w);while(lines.length>2&&px>hu*.72){px*=.9;lines=wrapTricks(combo.tricks,px,t.w);}if(lines.length>2)lines=['… + '+lines[lines.length-2],lines[lines.length-1]];
+ function comboLayout(){if(!combo)return null;const hu=lay.hu,t=cut?{x:lay.W/2,y:lay.H*.64,w:lay.W*.92,over:true}:lay.trick[combo.p],ph=combo.phase;let px=hu*1.1,lines=wrapTricks(combo.tricks,px,t.w);while(lines.length>2&&px>hu*.72){px*=.9;lines=wrapTricks(combo.tricks,px,t.w);}if(lines.length>2)lines=['… + '+lines[lines.length-2],lines[lines.length-1]];
   const big=hu*(ph==='land'?1.9:1.4),blockH=lines.length*px*1.05+big*1.1,y0=clamp(t.y-blockH/2+(ph==='bail'?combo.t*hu*1.5:ph==='land'?-combo.t*hu:0),hu*.4,lay.H-blockH-hu*.4);
   return {t,lines,px,big,blockH,y0,rect:{x0:t.x-t.w/2,y0:y0-hu*.4,x1:t.x+t.w/2,y1:y0+blockH+hu*.6}};}
  function drawCombo(){if(!combo)return;const hu=lay.hu,ph=combo.phase,a=ph==='live'?1:clamp(1.3-combo.t*.9,0,1);if(a<=0){combo=null;return;}
@@ -372,10 +391,12 @@ async function proMancala(s){
   x.save();x.translate(slide*W,0);x.fillStyle='rgba(0,0,0,.6)';x.beginPath();x.moveTo(0,y-hu*1.6);x.lineTo(W,y-hu*1.9);x.lineTo(W,y+hu*1.3);x.lineTo(0,y+hu*1.6);x.closePath();x.fill();
   x.fillStyle=PCOL[b.p];x.fillRect(0,y-hu*1.75,W,hu*.18);x.fillRect(0,y+hu*1.36,W,hu*.18);
   thps(x,b.text,W/2,y-hu*.25,hu*2.1,{grad:b.p?['#e0eeff','#2f8bff']:['#ffe0e0','#ff3b30'],maxW:W*.92});if(b.sub)thps(x,b.sub,W/2,y+hu*.95,hu*.65,{fill:'#fff',maxW:W*.9});x.restore();}
- function drawTrack(dt){if(!track)return;track.t+=dt;if(track.t>5.5){track=null;return;}const hu=lay.hu,a=clamp(Math.min(track.t*3,(5.5-track.t)*2),0,1),w=Math.min(lay.W*.8,hu*20),y=lay.H-hu*2.6;
-  x.save();x.globalAlpha=a;x.fillStyle='rgba(0,0,0,.65)';x.fillRect(0,y-hu*.9,w,hu*2);x.restore();
-  thps(x,track.band?`${track.band} — "${track.song}"`:track.song,hu*.6,y-hu*.15,hu*.7,{align:'left',fill:'#fff',alpha:a,maxW:w-hu});
-  thps(x,'NOW PLAYING',hu*.6,y+hu*.6,hu*.5,{align:'left',fill:'#ffe600',alpha:a});}
+ // the Now Playing card stays clear of the scores: bottom-right on tall screens, bottom-centre on wide ones
+ function trackBox(){const W=lay.W,H=lay.H,hu=lay.hu,w=lay.vertical?Math.min(W*.56,hu*16):Math.min(W*.42,hu*18);return {x:lay.vertical?W-w:(W-w)/2,y:H-hu*2.2,w};}
+ function drawTrack(dt){if(!track)return;if(phase!=='intro')track.t+=dt;if(track.t>5.5){track=null;return;}const hu=lay.hu,a=clamp(Math.min(track.t*3,(5.5-track.t)*2),0,1),b=trackBox(),y=b.y;
+  x.save();x.globalAlpha=a;x.fillStyle='rgba(0,0,0,.65)';x.fillRect(b.x,y-hu*.9,b.w,hu*2);x.restore();
+  thps(x,track.band?`${track.band} — "${track.song}"`:track.song,b.x+hu*.5,y-hu*.15,hu*.7,{align:'left',fill:'#fff',alpha:a,maxW:b.w-hu});
+  thps(x,'NOW PLAYING',b.x+hu*.5,y+hu*.6,hu*.5,{align:'left',fill:'#ffe600',alpha:a});}
 
  // ---------------------------------------------------------------- title sequence: Tony... Hawk's... Pro... Mancala... EXTREME EDITION!!
  // The band plays a snare roll with a guitar hit on every word and explodes into the first chorus on EXTREME EDITION;
@@ -472,7 +493,7 @@ async function proMancala(s){
   if(phase==='intro')drawIntro(dt);else if(phase==='end'&&endRes)drawEnd(dt);
   s.status(`${nameOf(state.turn)}${theirs()?' · on their phone':''} · stores ${state.pits[6]}–${state.pits[13]}`);
   const centers=lay.geo.pits.map((_,i)=>{const q=pitPos(i);return {x:q.x,y:q.y};});
-  s.debug={state,sow,busy,phase,centers,P,cut:cut?cut.kind:null,cutSpot:cut?cut.spot:null,skip:()=>{introT=INTRO_END;},skipCut:()=>endCut(),
+  s.debug={state,sow,busy,phase,centers,P,cut:cut?cut.kind:null,cutSpot:cut?cut.spot:null,cutPose:cut&&cut.pose?cut.pose.kind:null,skip:()=>{introT=INTRO_END;},skipCut:()=>endCut(),
    bot:net?()=>{if(phase==='intro'){finishIntro();return 'intro';}if(phase==='end'){if(endResolve){const r=endResolve;endResolve=null;r();}return 'end';}if(cut){endCut();return 'cut';}if(theirs()||busy||s.paused||state.winner>=0)return null;void sow(pickOf(mancalaMoves(state)));return 'sow';}:null};});
  if(cpu)cpuHotseat(s,{isTurn:()=>phase==='play'&&state.turn===1&&state.winner<0&&!busy,think:()=>sow(B.pickMancala(s,state))});
  S.preload();

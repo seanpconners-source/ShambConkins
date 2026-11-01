@@ -15,7 +15,15 @@ then the victim's slam), bails, specials and ~40% of other moves; tap skips. Spo
 a street spot from `proMancalaSpots.js` (handrail down an 8-set, the 8-set, a red parking-lot curb, a kicker; `buildLine`
 = timed roll/air/grind/slam parts, `lineState`, `drawSpot`), picked per cut kind (`SPOTS` in proMancala.js), never twice
 in a row. Popups are placed where they cover no other text (`textRects`/`pop`, small ones dropped if nowhere is free, big
-ones push small ones out). A ⤢ button sits left of Pause/Exit when fullscreen is available (fullBleed's bottom one hidden). Guest roster skaters go by every 3.5-7 s
+ones push small ones out). A ⤢ button sits left of Pause/Exit when fullscreen is available (fullBleed's bottom one hidden).
+Round 4 (Nov 1): owner's sound set = Dreamcast THPS rip (named files; picker page built by a scratch script into
+local-test-reports/, gitignored), installed as `assets/music/thps-sfx-<name>-<n>.wav` (random pick per play, `pickDrop`;
+hooks aww/grunt/timeup/total/grind-pipe|curb|board). Songs: 15 THPS2-soundtrack MP3s from the owner as
+`thps-mancala-<band>--<song>.mp3` (name shown on Now Playing; one shuffled playlist from the title on, next song when one
+ends, kept across games; pauses with the game). Build is ~190 MB with them (+60 MB). Cutaways: the camera centres the
+skater's body, random hats (`A.hatFor`: backwards cap, trucker, beanie, helmet; guest skaters too), air styles on store
+landings (airwalk/christ/rocket via pose.feet/boardHeld), and a pose shot after most landed cuts (`startPose`: jump cut to
+the skater facing the camera, `A.drawSkaterFront` horns/point/arms/shaka/flex/boardup + caption). Guest roster skaters go by every 3.5-7 s
 (ollie over, grind the edge, manual, bomb, big air). Turn: row glow in the player's color, "▶ X'S TURN" HUD, YOUR TURN card,
 other side dimmed. Popups are measured and clamped on screen; trick strings wrap to 2 lines. THPS HUD (score tally, special meter),
 trick strings "A + B / pts X n", COMBO!!! on store landings, bails (being robbed, or gaining nothing and leaving the
