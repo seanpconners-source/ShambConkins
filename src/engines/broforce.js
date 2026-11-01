@@ -141,8 +141,9 @@ function buildStage(seed,si){
 
 // ------------------------------------------------------------------ portrait heads (oval photos or outlined cut-outs)
 const HEADS=new Map();
-function headCanvas(id,mood='normal'){
- const key=id+':'+mood,ready=()=>mood!=='normal'&&HEADS.get(id+':normal')?.c||placeholderHead(id);let h=HEADS.get(key);if(h)return h.c||ready();
+// size: the head canvas's side in px (72 for the bros; games that draw faces big, like Pro Mancala, ask for more)
+function headCanvas(id,mood='normal',size=72){
+ const sk=size!==72?':'+size:'',key=id+':'+mood+sk,ready=()=>mood!=='normal'&&HEADS.get(id+':normal'+sk)?.c||placeholderHead(id);let h=HEADS.get(key);if(h)return h.c||ready();
  h={c:null};HEADS.set(key,h);
  try{
   const {portraitURL,portraitFallbackURL}=require('src/assets.js'),{headDisplayURL}=require('src/headCutouts.js');
@@ -152,8 +153,8 @@ function headCanvas(id,mood='normal'){
   // if that request is refused, load them plainly (oval), then fall back to the stand-in head
   const url=headDisplayURL(src),remote=/^https:/.test(url);let step=0;
   const load=()=>{const img=new Image();if(remote&&step===0)img.crossOrigin='anonymous';
-   img.onload=()=>{h.c=renderHead(img)||placeholderHead(id);};
-   img.onerror=()=>{step++;if(remote&&step===1)load();else if(step<=2&&img.src!==portraitFallbackURL(id)){const fb=new Image();fb.onload=()=>{h.c=renderHead(fb)||placeholderHead(id);};fb.onerror=()=>{h.c=placeholderHead(id);};fb.src=portraitFallbackURL(id);}else h.c=placeholderHead(id);};
+   img.onload=()=>{h.c=renderHead(img,size)||placeholderHead(id);};
+   img.onerror=()=>{step++;if(remote&&step===1)load();else if(step<=2&&img.src!==portraitFallbackURL(id)){const fb=new Image();fb.onload=()=>{h.c=renderHead(fb,size)||placeholderHead(id);};fb.onerror=()=>{h.c=placeholderHead(id);};fb.src=portraitFallbackURL(id);}else h.c=placeholderHead(id);};
    img.src=url;};
   load();
  }catch{h.c=placeholderHead(id);}
@@ -169,9 +170,9 @@ function placeholderHead(id){
 // Every head ends up as the face's own silhouette with a dark cartoon outline (like the owner's drop-in cut-outs):
 // transparent cut-outs keep their shape; a photo with a plain backdrop gets the backdrop flood-filled away from the
 // edges; only a busy photo we cannot separate (or a cross-origin one we cannot read) falls back to an outlined oval.
-function renderHead(img){
- const w=img.naturalWidth,h=img.naturalHeight;if(!w||!h)return null;
- const k=Math.min(1,160/Math.max(w,h)),cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k));
+function renderHead(img,S=72){
+ const w=img.naturalWidth,h=img.naturalHeight;if(!w||!h)return null;const f=S/72;
+ const k=Math.min(1,Math.max(160,S*1.6)/Math.max(w,h)),cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k));
  const work=document.createElement('canvas');work.width=cw;work.height=ch;const wx=work.getContext('2d',{willReadFrequently:true});wx.drawImage(img,0,0,cw,ch);
  let data=null;try{data=wx.getImageData(0,0,cw,ch);}catch{}
  let kind='oval';
@@ -180,10 +181,10 @@ function renderHead(img){
   if(clear/n>.05)kind='cutout';
   else if(removeBackdrop(px,cw,ch,30,95)||removeBackdrop(px,cw,ch,46,150)){kind='removed';wx.putImageData(data,0,0);}
  }
- const c=document.createElement('canvas');c.width=c.height=72;const x=c.getContext('2d');c.headKind=kind;
+ const c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');c.headKind=kind;
  if(kind==='oval'){
   // the face sits in the upper middle of a portrait photo: crop there into a head (egg) shape, outlined
-  const side=Math.min(w*.72,h*.62),sx=(w-side)/2,sy=Math.max(0,h*.06);
+  const side=Math.min(w*.72,h*.62),sx=(w-side)/2,sy=Math.max(0,h*.06);x.scale(f,f);
   const egg=()=>{x.beginPath();x.moveTo(36,4);x.bezierCurveTo(56,4,63,20,62,36);x.bezierCurveTo(61,55,50,69,36,69);x.bezierCurveTo(22,69,11,55,10,36);x.bezierCurveTo(9,20,16,4,36,4);x.closePath();};
   x.save();egg();x.clip();x.drawImage(img,sx,sy,side,side*65/52,10,4,52,65);x.restore();
   x.strokeStyle='#140c08';x.lineWidth=3.5;x.lineJoin='round';egg();x.stroke();return c;
@@ -192,10 +193,10 @@ function renderHead(img){
  const px=wx.getImageData(0,0,cw,ch).data;let x0=cw,y0=ch,x1=-1,y1=-1;
  for(let yy=0;yy<ch;yy++)for(let xx=0;xx<cw;xx++)if(px[(yy*cw+xx)*4+3]>60){if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(yy<y0)y0=yy;if(yy>y1)y1=yy;}
  if(x1<0)return null;
- const bw=x1-x0+1,bh=Math.min(y1-y0+1,Math.round(bw*1.35)),fit=Math.min(64/bw,64/bh),dw=bw*fit,dh=bh*fit,ox=(72-dw)/2,oy=(72-dh)/2;
- const sil=document.createElement('canvas');sil.width=sil.height=72;const sx2=sil.getContext('2d');sx2.drawImage(work,x0,y0,bw,bh,ox,oy,dw,dh);
- sx2.globalCompositeOperation='source-in';sx2.fillStyle='#140c08';sx2.fillRect(0,0,72,72);
- for(let a=0;a<16;a++){const r=2.6;x.drawImage(sil,Math.cos(a*Math.PI/8)*r,Math.sin(a*Math.PI/8)*r);}
+ const bw=x1-x0+1,bh=Math.min(y1-y0+1,Math.round(bw*1.35)),fit=Math.min(64*f/bw,64*f/bh),dw=bw*fit,dh=bh*fit,ox=(S-dw)/2,oy=(S-dh)/2;
+ const sil=document.createElement('canvas');sil.width=sil.height=S;const sx2=sil.getContext('2d');sx2.drawImage(work,x0,y0,bw,bh,ox,oy,dw,dh);
+ sx2.globalCompositeOperation='source-in';sx2.fillStyle='#140c08';sx2.fillRect(0,0,S,S);
+ for(let a=0;a<16;a++){const r=2.6*f;x.drawImage(sil,Math.cos(a*Math.PI/8)*r,Math.sin(a*Math.PI/8)*r);}
  x.drawImage(work,x0,y0,bw,bh,ox,oy,dw,dh);
  return c;
 }

@@ -3,8 +3,9 @@
 Nov 1 (branch `claude/pwa-split` from TESTver, unreleased): installed-app updates download only what changed
 (docs/PWA_SPLIT_DELIVERY.md, owner-approved, everything downloaded at install). `build.mjs --pwa` = index.html 8.2 MB +
 `a/` 2,430 content-hashed files (byte-identical copies; built-in art of art.js/faceArt.js as one `a/<hash>.js` data-URI
-script) + sw.js (shared `sc-assets` cache, fetches only missing files, resumes, byte ranges for audio). One-file build
-unchanged (byte-identical). Code-only update measured 8.4 MB (was ~200 MB). Hosting: the Worker's static assets
+script) + main's fixed network-first sw.js (now SW_VERSION 3): the page sends its file list (`APP_FILES` in pwa.js,
+'sc-files') and the worker fills the shared `sc-assets` cache with only the missing files (resumes, keeps the newest two
+versions' files, byte ranges for audio). One-file build unchanged (byte-identical). Update measured 8.3 MB (was ~200 MB). Hosting: the Worker's static assets
 (`[assets]` public/, filled by `tools/worker-assets.sh` from the newest releases' `_pwa.zip`); release-build.yml deploys
 the Worker with them before publishing (needs the Cloudflare secrets; release also uploads `index.html`), deploy-worker.yml
 rebuilds the set. Worker `/` = release `index.html` when present. Local `wrangler dev` served the static assets right

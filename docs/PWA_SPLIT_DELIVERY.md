@@ -1,14 +1,20 @@
 # Installed app: download only what changed (design, Nov 1 2026)
 
-Status: **built (Nov 1 2026, branch `claude/pwa-split` from TESTver), owner chose "everything at install".** Not released
-yet; real phones untested. Measured on the build of TESTver `e5faf6a` (one-file game 200.1 MB):
+Status: **built (Nov 1 2026, branch `claude/pwa-split` from TESTver, main 0.71.1 merged in), owner chose "everything at
+install".** Not released yet; real phones untested. Measured (one-file game 200.1 MB):
 - app folder: index.html 8.2 MB, a/ 2,430 files 149.8 MB (of which the built-in art script 25.3 MB).
-- a code-only update downloads **8.4 MB** (index.html + sw.js 80 KB + manifest/icons), measured by `tests/pwa-update.mjs`;
-  a new picture adds just that file. First install ~158 MB (page + every a/ file), once.
-- a download stopped at file 400 carried on with the remaining files on the next start (also in `tests/pwa-update.mjs`).
-- the one-file `dist/ShambConkins.html` is byte-identical to the old build script's.
+- an update downloads **8.3 MB** when only code changed (the page; sw.js is the same every release), plus any new
+  picture/sound file, measured by `tests/pwa-update.mjs`. First install ~158 MB (page + every a/ file), once.
+- a download cut off at file 400 carried on with the remaining files on the next start (also in `tests/pwa-update.mjs`).
+- the one-file `dist/ShambConkins.html` comes out byte-identical to the old build script's.
 - After the first release with this, the website needs nothing new by hand: the release workflow deploys the Worker with
-  the files (existing Cloudflare secrets). The first update on a phone from v0.70 is one full download (resumable).
+  the files (existing Cloudflare secrets). A phone on 0.71.1 updating to it loads the 8 MB page, then fetches all the
+  pictures and sounds once in the background (resumable).
+
+**Changed after approval (merge of main 0.71.1):** main made sw.js the same for every release with a network-first game
+page (ETag/304, /version check, Update pill). So the list of a/ files is no longer in sw.js: the page carries it
+(`APP_FILES` in src/pwa.js) and sends it to the service worker at start (`sc-files`), which downloads the missing files
+in the background. "Service worker" below describes that.
 
 The proposal as approved follows; "Files" below is what was built.
 
@@ -103,13 +109,15 @@ Also to check while building: nothing saves an asset URL into a save file or run
 built-in art before the art script has run.
 
 ## Service worker (sw.js)
-- Two caches: `shambconkins-<build>` for index.html / manifest / icons (as today), and `sc-assets` for the `a/` files,
-  shared across versions (a name without the `shambconkins-` prefix, so no older sw.js ever deletes it).
-- Install: fetch index.html, then every listed `a/` file that isn't cached yet (6 at a time). The existing download bar
-  shows bytes still to fetch ("Downloading update · 40%"); a code-only update is just index.html.
-- Activate: drop old version caches and `a/` files the new version no longer lists.
-- Requests: `a/` from the cache (with byte ranges for audio), else the network (and cache it).
-- First update from v0.70 to this: a one-time full download (~145 MB, but resumable). After that, only changes.
+As built (service worker version 3, the same file for every release):
+- Two caches: `shambconkins-app` for the game page / manifest / icons (main's network-first flow, unchanged), and
+  `sc-assets` for the `a/` files, shared across versions (a name without the `shambconkins-` prefix, so no older sw.js
+  ever deletes it).
+- The page sends `{type:'sc-files', version, files}` at start and when the app comes back on screen. The worker keeps the
+  file lists of the newest two versions (`a/lists.json` in that cache), drops files neither lists, and downloads the
+  missing ones 6 at a time, each kept as soon as it is in. The download bar shows it ("Saving for offline play · 40%" /
+  "Saving new pictures and sounds"). One failure (offline) stops the round; the next start carries on.
+- Requests: `a/` from the cache (byte ranges answer 206 for audio), else the network (and cached).
 
 ## Owner's choice (Nov 1)
 Everything is downloaded at install, so the whole game works offline (songs and DOOM included).
@@ -117,7 +125,8 @@ Everything is downloaded at install, so the whole game works offline (songs and 
 ## Files
 - `tools/build.mjs`: `--pwa` writes index.html (USER_PORTRAITS values `a/<sha256-16>.<ext>`; `"@@asset:...webp|png|jpg@@"`
   strings in the modules (art.js, faceArt.js) become `(globalThis.__SC_ART||[])[n]`, filled by `a/<hash>.js`, a script tag
-  before the game's), a/, sw.js (`ASSETS` = [name, bytes] list). The one-file build is unchanged.
+  before the game's; `APP_FILES` in src/pwa.js = [name, bytes] list), a/, sw.js (fixed, SW_VERSION 3). The one-file build
+  is unchanged.
 - `src/data/userPortraits.js`: `APP_FILE`, `isRasterArt(url)`, `assetBytes(url)` (used by assets.js `ownMoodURL`,
   broforce/roster.js `devilHasArt`, doom/wad.js); `headCutouts.js` `floatingHead` skips `.png` files like PNG data URIs;
   `netBoard.js` packs `a/` names as `sc-art:` refs.
