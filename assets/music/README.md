@@ -11,6 +11,13 @@ File name = track name, `.mp3`, `.ogg`, `.m4a` or `.wav`:
 | `thps-mancala-intro.mp3` | Tony Hawk's Pro Mancala: optional separate title song, played to its end before the playlist starts |
 | `thps-sfx-<name>.mp3`, or several: `thps-sfx-<name>-1.mp3` … `-20.mp3` | Tony Hawk's Pro Mancala sound effects, replacing the synth one; with several files the game picks one at random each time (never the same twice in a row). Rolls, grinds and the crowd loop or fade to fit how long they last. Names: `ollie`, `flip`, `catch`, `land`, `revert` (power slide), `grind` (handrail), `grind-pipe` (halfpipe coping), `grind-curb`, `grind-board` (guest skaters on the Mancala board), `bail`, `grunt` (the robbed player), `scratch` (combo lost on a slam), `aww` (crowd reacting to a slam), `combo` (COMBO!!!), `special`, `land-combo` (combo scored), `tally` (score tick), `total` (end tally done), `timeup` (game over), `crowd`, `hey`, `slam` (title words), `clack` (gem into a bowl), `text`, `whoosh`, `cam` (camera cut), `roll`, `rollby`. `aww`, `grunt`, `total` and `timeup` have no synth version, so they are silent without files |
 
+| `bhpin-<song>.mp3` (whitewash, nottingham-lace, welcome-to-bucketheadland, padmasana, soothsayer, jordan, big-sur-moon) | Bucketheadland pinball soundtrack (replaces the synth band): which song plays when is in `src/engines/pinball/tables/bucketheadAudio.js` (playlist + one song per mode, with a start time) |
+| `bhpin-gtr-<big\|mid\|short\|tiny>-<n>.mp3`, `bhpin-gtr-<wail\|hold\|dive>.mp3`, `bhpin-gtr-scrape-<n>.mp3` | Bucketheadland pinball guitar sounds (solo licks grouped by length; neck sounds: vibrato wail, held feedback note, dive bomb, pick scrapes), layered on the machine sounds per `bucketheadAudio.js` |
+
+The Bucketheadland songs were made from the owner's FLAC/MP3s (Nov 1): silence trimmed, two-pass loudnorm to -16 LUFS
+(-1.5 dBTP, linear), 44.1 kHz stereo VBR MP3 (`-q:a 5`, ~130 kbps), tags and cover art stripped: 240 MB of originals → 39 MB.
+The guitar set (MySims Party "Guitar Rockstar") was trimmed, levelled to -14 LUFS and saved as 22 kHz mono MP3 (1 MB).
+
 While a track is present, the game's ambient drones (wind, hall, caverns, throne-room organ) drop to a quiet bed under it.
 Keep sound effects short (a second or two; `tally` and `clack` play many times a second).
 Keep files reasonably small (a 3-minute 128 kbps MP3 is about 3 MB; base64 adds a third).

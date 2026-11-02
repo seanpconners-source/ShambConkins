@@ -1,5 +1,17 @@
 # AI state (keep short; update after meaningful work)
 
+Nov 1 (branch `claude/buckethead-sounds` → TESTver, unreleased, owner to approve by ear, then release as v0.73.0;
+CHANGELOG "Unreleased"): Bucketheadland pinball uses the owner's 7 Buckethead songs + MySims "Guitar Rockstar" guitar set
+(`assets/music/bhpin-*`, how they were made in that README; originals stay in the owner's Claude Share folder, not the repo).
+`pinball/tableAudio.js` (createSongs: HTML-audio playlist + per-role mode songs with start offsets, duck/tilt fades,
+`status()`; createGuitar: decoded clips, one lead lick voice by priority, stabs) driven by `tables/bucketheadAudio.js`
+(roles/sfx map). pinball.js routes every sound through `sound()`; song roles add 'wait'/'bonus'/'tilt' (synth band = null
+as before). Online pinball (all tables, `NET_ENGINES` 'pinball'): balls alternate between the phones, the active phone
+streams snapshots, the other watches (see pinball/README); scoreboard for 2P (local too); duel chip hidden (`body.pb-net`).
+Tested: pinball.mjs (3 tables, solo), pinball-sim, online-native ×3 tables (with LAG=80-150), a scratch audio check (46/46
+clips decode, Jordan/Soothsayer roles seek right, playlist resumes). Nobody has heard it yet; real two-phone play untried.
+Note: generic duel chip `liveScore` reads `s.score[0]` (wrong seat for native games on seat 2); untouched.
+
 v0.72.1 (Nov 1): v0.72.0's release stopped on Cloudflare's 25 MiB per-file limit (the one 25.3 MB built-in art script);
 build.mjs --pwa now writes it as ~8 MB parts (`window.__SC_ARTN` scripts, each concats onto `__SC_ART`; #boot says "(2 of 4)")
 and throws if any app file is over 24 MiB. Owner: "merging to main" = release (bump, release build, check the site serves it).

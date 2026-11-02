@@ -101,6 +101,7 @@ const {rules}=require("src/engines/pinball/tables/bucketheadRules.js");
 const {art}=require("src/engines/pinball/tables/bucketheadArt.js");
 const {dmdScenes}=require("src/engines/pinball/tables/bucketheadDmd.js");
 const {songs}=require("src/engines/pinball/tables/bucketheadMusic.js");
+const {audio}=require("src/engines/pinball/tables/bucketheadAudio.js");
 // Light cues: run with every m.say of that DMD animation (light show + flasher domes + GI blackouts).
 const COOP={x:236,y:436},ROBOT={x:404,y:214};
 const cues={
@@ -125,4 +126,4 @@ const cues={
 };
 // shots the test bot must be able to make (tests/pinball-sim.mjs)
 const simChecks=['bumper','sling','spin','drop','rail:coaster','rail:robot','hole:haunted','standup','rollover:laneB','toy:giantRobot','standup:eggTarget','rail:coopVuk','flip:flipU'];
-Object.assign(exports,{buildTable,rules,art,dmdScenes,songs,cues,simChecks,id:'buckethead',title:'Bucketheadland'});
+Object.assign(exports,{buildTable,rules,art,dmdScenes,songs,audio,cues,simChecks,id:'buckethead',title:'Bucketheadland'});

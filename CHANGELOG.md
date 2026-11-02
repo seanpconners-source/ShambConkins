@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased (next release: v0.73.0)
+
+**Bucketheadland pinball plays Buckethead.** The table's soundtrack is now seven real Buckethead songs: Whitewash,
+Nottingham Lace, Welcome to Bucketheadland, Padmasana and Soothsayer play on through the game (the next one starts when a
+song ends, and it carries on from game to game), and the big moments switch songs: JORDAN MULTIBALL plays Jordan, the Big
+Sur Moon and Soothsayer attractions play their own songs (Soothsayer jumps straight to the solo), Chicken Coop Panic plays
+Nottingham Lace (Enter the Chicken), the Roller Coaster and the wizard mode play Welcome to Bucketheadland. The playlist
+picks up where it left off after a mode. The song dips during the bonus count and the hand-off, and cuts out on a TILT.
+A small "♪ Buckethead · song (album)" shows when a song starts.
+
+**Rock guitar all over the table.** Real guitar licks and noises now ride on the pinball sounds: a guitar hit on every pop
+bumper, sling, target and lane, a pick scrape when you launch, a short lick for every ramp you make, longer solos for locks
+and jackpots, the biggest solos for multiball, mode starts and super jackpots, a vibrato wail for the skill shot and extra
+balls, a dive bomb when the ball drains. The flipper and bumper clacks are all still there.
+
+**Online pinball takes turns like a real machine.** Playing pinball online (any of the three tables) is now one game on two
+phones: player 1 plays ball 1 on their phone while the other phone shows it live (same table, lights, display and sounds),
+then player 2 plays their ball 1, and so on, 3 balls each. Both scores are always on screen (who's up, ball numbers, who
+leads and by how much); highest score wins. Local 2-player games show the same scoreboard.
+
 ## v0.72.2
 
 **Tony Hawk's Pro Mancala:** the gray rail MANCALA grinds in on no longer stays across the title screen: it fades out

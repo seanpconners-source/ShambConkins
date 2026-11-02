@@ -398,7 +398,9 @@
   "src/engines/proMancalaAudio.js",
   "src/engines/proMancala.js",
   "src/engines/proMancalaSpots.js",
-  "src/wakeLock.js"
+  "src/wakeLock.js",
+  "src/engines/pinball/tableAudio.js",
+  "src/engines/pinball/tables/bucketheadAudio.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
