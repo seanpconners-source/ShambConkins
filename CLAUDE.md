@@ -63,6 +63,9 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   triggers. The only automatic one copies portraits uploaded to `main` into TESTver (`portrait-main-to-testver.yml`).
 
 ## How to work here
+- Roadmap: `docs/ROADMAP.md` (owner's to-do list, sorted into phases). When the owner says "continue" or asks what's
+  next, read it and offer 2-4 options from the current phase with a recommendation; start only after they pick.
+  New notes from the owner go in its Inbox or their section with a new ID; mark finished items `[verify]`.
 - Start a task from this file, `docs/AI_STATE.md`, `git status`/`git log`, and only the source files the task touches.
   Don't reread the whole repo; long files have very long lines, so grep/cut instead of dumping them.
 - Test only what the change touches: a build, the focused test for that game/system (or
