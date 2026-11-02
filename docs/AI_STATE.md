@@ -22,6 +22,9 @@ Later that night: D6 duels.js pacmaze (`ghostsStep`/`ghostPick` classic AI share
 online tick mapping `tickAt/beat/stepAfter`, union-outline walls, ghost eyes, `pacSfx`); E2/E3 `frankFakeout` in app.js resolveEvent
 (horror card) + `src/frankFx.js` (netBoard FX.frankReveal); B3 `src/data/cutGames.js` (`isCut` in gameRegistry RANDOM_GAMES, ui
 arcade list, gameLauncher warp pick, encounterGames). online-board.mjs also takes SHAMB_URL.
+Endings: app.js finishRun → `endingKind(run)` (all cleared horror = 'true', spirit = 'fake'; not coop/mutation/warp) →
+`playEnding` (src/endings.js, fx 'ending' → netBoard FX.ending → runEnding on the guest) → finishScreen; `finishRun` exposed on
+window.ShambConkins for tests. games.mjs takes SHAMB_URL too. Full `test:core` passed EXIT 0 mid-night (before endings).
 v0.75.0 (Nov 2, owner asked to release it): the boss-fight overhaul below. Fresh sessions: `docs/HANDOFF.md` first.
 Owner's master to-do list is `docs/ROADMAP.md` (phases; "continue" = offer options from it, wait for a pick).
 Boss work (ROADMAP K section) on branch `claude/boss-fights` (from TESTver, merged to TESTver and main). K1 done:

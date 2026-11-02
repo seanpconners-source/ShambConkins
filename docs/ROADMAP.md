@@ -134,10 +134,10 @@ Level IV
 - **E9** `[todo]` A separate unlockable Horror warp world reached from Level IV.
 
 Endings
-- **E10** `[todo]` Level 3: deliberately strange, a bit unsatisfying fake ending.
-- **E11** `[todo]` Level 4: elaborate, satisfying true ending.
-- **E12** `[todo]` Both suddenly invent ridiculous backstory and lore about the actual chosen characters.
-- **E13** `[todo]` Both skippable, with an "are you sure?" so nobody skips by accident.
+- **E10** `[verify]` (Nov 2 night: src/endings.js 'fake') Level 3: deliberately strange, a bit unsatisfying fake ending.
+- **E11** `[verify]` (Nov 2 night: 'true') Level 4: elaborate, satisfying true ending.
+- **E12** `[verify]` (Nov 2 night: `LORE` templates in endings.js; owner may want to write more) Both suddenly invent ridiculous backstory and lore about the actual chosen characters.
+- **E13** `[verify]` Both skippable, with an "are you sure?" so nobody skips by accident.
 
 ## Phase F — board strategy (sections 4 + 11)
 

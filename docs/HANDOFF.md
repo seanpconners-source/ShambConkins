@@ -51,7 +51,10 @@ the morning. Everything below is on branch `claude/v0.75.0-release-roadmap-so2z5
 9. **Pac-Maze** (D6, built): ghosts are now arcade-smart and as fast as the arcade's (75% of yours, was 50%). Too hard?
    The chompers are still your heads (no yellow Pac-Man); say if you want a Pac body under the head.
 10. **Frank** (E2/E3, built): the card odds are unchanged (20% per Chance card in Level III once both cleared Body).
-   Level III's own ending (E10) isn't built yet, so a run without Frank still ends at the Level III boss.
+   A run without Frank still ends at the Level III boss, now with the deliberately cheap fake ending.
+11. **Endings** (E10-E13, built in `src/endings.js`): the fake ending (NES "CONGRATULATION. THIS STORY IS HAPPY END.",
+   a credits roll that gives up, Frank's empty chair) and the true one (dawn, lore, credits from your run, THE END).
+   The made-up lore is 12 template lines (`LORE`): want to write your own lines, or have them per character/show?
 
 ### Then, in the recommended order
 1. Rebuilds from the triage (D), highest-dealt first; D6 Pac-Man and D7 TowerFall are next in the old list.
@@ -68,7 +71,7 @@ shield, smart bomb, heart) · K15 new player ships · K22 boss music slots · A1
 A2 Color Card Dash "Too Early" · A5 smoother character-select heads · A6 Hole.it props that fit really drop · A7 finished
 goals leave the Hole.it HUD · C3 arcade practice · C9 no run length · G10 King Gizzard stuck balls · D5 Bomber controls ·
 B1 triage sheet · M7 menu mockups · D6 Pac-Maze classic ghosts/maze/sounds · E2/E3 Frank's fake-out into Level IV
-(`src/frankFx.js`) · B3 cut-games list (`src/data/cutGames.js`, empty until the sheet is filled) · regression tests
+(`src/frankFx.js`) · B3 cut-games list (`src/data/cutGames.js`, empty until the sheet is filled) · E10-E13 endings (`src/endings.js`, tests/endings.mjs) · regression tests
 (tests/holeit-fit.mjs in test:core, King Gizzard park check in pinball-sim, tests/frank.mjs). Online checked with a local `wrangler dev` (it works in the cloud box via npx):
 bomber-duel and a boss fight pass with and without LAG=80-150; power-ups appear the same on both phones.
 

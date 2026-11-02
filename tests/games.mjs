@@ -15,7 +15,7 @@ const navTimeoutMs = Number(process.env.SHAMB_NAV_TIMEOUT_MS || 30000);
 if (!Number.isFinite(navTimeoutMs) || navTimeoutMs < 10000 || navTimeoutMs > 120000)
   throw new Error('SHAMB_NAV_TIMEOUT_MS must be between 10000 and 120000');
 if (!Number.isFinite(minFreeGb) || minFreeGb < 0) throw new Error('Invalid SHAMB_MIN_FREE_MEMORY_GB');
-const file = pathToFileURL(path.resolve(root, process.env.SHAMB_FILE || 'dist/ShambConkins.html')).href;
+const file = process.env.SHAMB_URL || pathToFileURL(path.resolve(root, process.env.SHAMB_FILE || 'dist/ShambConkins.html')).href;
 const browser = await launchBrowser();
 const probe = await browser.newPage();
 await probe.goto(file, {waitUntil: 'domcontentloaded', timeout: navTimeoutMs});
