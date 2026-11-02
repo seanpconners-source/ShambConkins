@@ -19,6 +19,9 @@ mapped to almost every machine sound; all sound (synth too) through a reverb bus
 Round 3 (owner): solos only for drain/super/game over (in play: generic FX + pick scrapes); songs change only when the
 game turns heavy (mode/multiball start: cut to heavy) or calms (8 s later: back to the interrupted song where it was) or
 a song ends (next from its start); no hot-streak/heat, no drift switching. `sfxLevel` .7 on the whole bus (-3 dB).
+Round 4 (owner): levels = 1 chill (title, wait/bonus, game over), 2 energetic (play), 3 crazy (mode/multiball); sections
+re-sorted (a section may list two levels); on a level change the director goes to `mem.left[L]` (song last played at that
+level) where it was, else (crazy) a later crazy part of the same song, else choose(); 3→2 waits 8 s.
 Note: generic duel chip `liveScore` reads `s.score[0]` (wrong seat for native games on seat 2); untouched.
 
 v0.72.1 (Nov 1): v0.72.0's release stopped on Cloudflare's 25 MiB per-file limit (the one 25.3 MB built-in art script);

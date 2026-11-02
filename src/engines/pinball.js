@@ -65,8 +65,9 @@ async function pinball(s){
  const gtr=table.audio?createGuitar(table.audio,{onLick:sec=>songs.duck?.(sec)}):{has:false};gtr.preload?.();
  if(gtr.has){setSoundBus(()=>soundBus()?.input,table.audio.synthTrim);}
  s.cleanup(()=>{songs.stop?.();gtr.stop?.();setSoundBus(null);});
- // The music's level: title / game over calm, play medium, a mode or multiball heavy (songs change only on those changes).
- const musicLevel=()=>phase==='intro'||phase==='zoom'||phase==='gameover'?1:m.mb>1||rules.music?.(m)!=='main'?3:2;
+ // The music's level (owner): chill on the title, between balls, after a drain and at game over; energetic in play;
+ // crazy in a mode or multiball. Songs change only when this does.
+ const musicLevel=()=>phase!=='ball'?1:m.mb>1||(m.phase!=='plunge'&&rules.music?.(m)!=='main')?3:2;
  let level=1;const setSong=(name,lv=level)=>{if(songs.has){songs.set(name,lv);song=name;level=lv;return;}const n=name==='wait'||name==='bonus'||name==='tilt'?null:name;if(n===song)return;song=n;if(n)music.play(n);else music.stop();};
  // Every machine sound goes through here: the table's guitar part, then the synth sound unless the guitar replaces it.
  // Online, the sounds of this phone's ball also go to the watching phone (relay=false = one that came from there).
@@ -242,7 +243,7 @@ async function pinball(s){
   // ---- music: attract under the intro and hand-offs, a build-up on the plunger, then whatever the rules ask for
   // (wait/bonus/tilt: the synth band goes quiet, recorded songs duck or fade; watching: the other phone's song)
   const watching=phase==='ball'&&!mine();
-  setSong(phase==='intro'||phase==='zoom'||phase==='gameover'?'attract':phase==='wait'?'wait':phase==='bonus'?'bonus':watching?rsong:m.phase==='plunge'?'plunge':m.tilted?'tilt':rules.music?.(m)||'main',watching?rlevel:phase==='ball'||phase==='intro'||phase==='zoom'||phase==='gameover'?musicLevel():level);
+  setSong(phase==='intro'||phase==='zoom'||phase==='gameover'?'attract':phase==='wait'?'wait':phase==='bonus'?'bonus':watching?rsong:m.phase==='plunge'?'plunge':m.tilted?'tilt':rules.music?.(m)||'main',watching?rlevel:musicLevel());
   // ---- draw
   // Lights: the rules' lamps with any running light shows on top; attract shows between balls; dim for the bonus.
   const lamps=watching?rLamps:phase==='ball'?lights.apply(rules.lamps(m,t),m.shows,m.t):phase==='bonus'?bonusLamps(m.p):lights.attract(t);

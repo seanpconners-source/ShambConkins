@@ -3,14 +3,15 @@
 ## Unreleased (next release: v0.73.0)
 
 **Bucketheadland pinball plays Buckethead, and the music follows the game.** The soundtrack is seven real Buckethead
-songs, each mapped into calm, medium and heavy parts. A song now plays on so you can get into the groove: it only changes
-when the game does. A mode or multiball starting cuts to a heavy part (of the same song if one is coming up, else Jordan,
-Nottingham Lace, Welcome to Bucketheadland or Soothsayer's solo half), and when it's over the song it interrupted comes back
-where it left off. Songs crossfade into each other, and when one ends the next starts from its beginning. Some modes have
-their own song: JORDAN MULTIBALL plays Jordan from its build-up, Big Sur Moon and Soothsayer play their namesakes, Chicken
-Coop Panic plays Nottingham Lace (Enter the Chicken), the wizard mode plays Welcome to Bucketheadland. Every game starts on a
-different calm song, and songs heard lately are skipped. The music dips for the bonus count and hand-offs, and cuts out on
-a TILT. A small "♪ Buckethead · song (album)" shows when a song starts.
+songs sorted into three moods: chill (Padmasana, Big Sur Moon, Whitewash, Soothsayer's quiet start) on the title screen,
+between balls, after a drain and at game over; energetic (Welcome to Bucketheadland, Soothsayer's middle, Nottingham Lace)
+while you play; and the craziest (Jordan, Nottingham Lace, Welcome's heaviest stretches, Soothsayer's closing solo) for
+modes and multiball. A song plays on so you can get into the groove and only changes when the game does; each mood picks
+up its song where it left off (the break music carries on from the last break, play music from the last ball). Songs
+crossfade, and when one ends the next starts from its beginning. Some modes have their own song: JORDAN MULTIBALL plays
+Jordan from its build-up, Soothsayer plays its closing solo, Chicken Coop Panic plays Nottingham Lace (Enter the Chicken),
+the wizard mode plays Welcome to Bucketheadland. Every game starts somewhere different. The music cuts out on a TILT. A
+small "♪ Buckethead · song (album)" shows when a song starts.
 
 **Guitar sounds all over the table, under the music.** Almost every machine sound is a guitar noise now (MTV Music
 Generator 2 guitar FX and pick scrapes): the amp switching on for each ball, a rev-up on the launch, metal sparks on the pop

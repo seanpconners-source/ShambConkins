@@ -14,26 +14,27 @@ const songs={
 // gain (dB): the songs are loudness-matched files, but measured as the game hears them (loudest 50 ms in every 1.6 s,
 // median about -17 dBFS) Whitewash stands out by 4-5 dB and Jordan/Welcome by 1-1.5: evened out here.
 for(const [k,g] of Object.entries({'whitewash':-4.6,'jordan':-1.5,'welcome-to-bucketheadland':-1,'nottingham-lace':.7}))songs[k].gain=g;
-// Sections [from s, to s, level 1 calm | 2 medium | 3 heavy]: measured (loudness, brightness, note density every 2 s,
-// smoothed, cut at phrase dips), then evened out by what the songs are: Colma's Whitewash and Big Sur Moon are mellow
-// (mastered loud), Padmasana is the calm bed, Soothsayer climbs from its quiet riff into the long solo half, Jordan,
-// Nottingham Lace and Welcome to Bucketheadland are the shred.
+// Sections [from s, to s, level or [levels]]: 1 chill (title, between balls, after a drain, game over), 2 energetic
+// (normal play), 3 crazy (modes, multiball). Measured (loudness, brightness, note density every 2 s, smoothed, cut at
+// phrase dips), then sorted by what the songs are (owner, Nov 1: chill between balls, energetic in play, the craziest for
+// multiball): Padmasana, Big Sur Moon, Colma's Whitewash and Soothsayer's quiet first two minutes are the chill set;
+// Welcome to Bucketheadland, Soothsayer's middle and Nottingham Lace drive normal play; Jordan, Nottingham Lace, Welcome's
+// heaviest stretches and Soothsayer's closing solo are the crazy set.
 const sections={
- 'padmasana':[[0,240,1],[240,282,2],[282,409,1],[409,503,2],[503,549,1],[549,613,2],[613,695,1]],
- 'big-sur-moon':[[0,28,1],[28,70,2]],
- 'whitewash':[[0,270,2],[270,282,1]],
- 'soothsayer':[[0,68,1],[68,88,2],[88,112,1],[112,234,2],[234,367,3],[367,383,2],[383,541,3]],
- 'welcome-to-bucketheadland':[[0,32,2],[32,62,3],[62,94,2],[94,136,3],[136,148,2],[148,222,3]],
- 'nottingham-lace':[[0,20,3],[20,28,2],[28,393,3]],
- 'jordan':[[0,8,2],[8,235,3]],
+ 'padmasana':[[0,695,1]],
+ 'big-sur-moon':[[0,70,1]],
+ 'whitewash':[[0,282,1]],
+ 'soothsayer':[[0,112,1],[112,383,2],[383,541,3]],
+ 'welcome-to-bucketheadland':[[0,32,2],[32,62,[2,3]],[62,94,2],[94,136,[2,3]],[136,148,2],[148,222,[2,3]]],
+ 'nottingham-lace':[[0,20,3],[20,28,2],[28,393,[2,3]]],
+ 'jordan':[[0,8,3],[8,235,3]],
 };
-// Modes with a song of their own (others just ask for the heavy level). from = where it starts.
+// Modes with a song of their own (others take a crazy part). from = where it starts.
 const roles={
  jordan:{song:'jordan',from:0},                       // JORDAN MULTIBALL: the build-up into the riff
- bigsur:{song:'big-sur-moon',from:28},                // Big Sur Moon attraction
- soothsayer:{song:'soothsayer',from:234},             // Soothsayer attraction: the solo half
+ soothsayer:{song:'soothsayer',from:383},             // Soothsayer attraction: the closing solo
  coop:{song:'nottingham-lace',from:28},               // Chicken Coop Panic (Enter the Chicken)
- wizard:{song:'welcome-to-bucketheadland',from:3},    // WELCOME TO BUCKETHEADLAND wizard mode
+ wizard:{song:'welcome-to-bucketheadland',from:94},   // WELCOME TO BUCKETHEADLAND wizard mode: its heaviest stretch
 };
 // Machine sound → guitar (a list = one picked at random). one = a clip (off/dur = a slice, rate = pitch range),
 // lick = a solo from the lick set (gtr-big/mid/short/tiny), grain = tiny random slices. The clip replaces the synth sound
