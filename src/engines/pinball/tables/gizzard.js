@@ -32,8 +32,10 @@ function buildTable(){
  T.wall([[14,604],[40,652]],{look:'rubber',r:4});T.wall([[458,604],[432,652]],{look:'rubber',r:4});
  // ---- THE RATS' NEST (upper playfield). Floor guides down to its two mini flippers; walls under the flippers;
  // a one-way gate in the drain gap lets the ball fall out into the pops but never back up.
- T.wall([ring(190,200),[160,234],[166,251],[207,272]],{look:'rail',r:4});
- T.wall([[412,186],[312,234],[306,251],[265,282]],{look:'rail',r:4});
+ // the guides meet the TOP of each mini flipper's pivot (they used to point at its centre, so the pivot stood up out of
+ // the guide like a bump and a slow ball parked in the dip in front of it: ROADMAP G10)
+ T.wall([ring(190,200),[160,224],[166,251],[207,272]],{look:'rail',r:4});
+ T.wall([[412,186],[312,224],[306,251],[265,282]],{look:'rail',r:4});
  T.gate('nestDrain',[207,276],[265,286],[0,1]);   // tilted: a ball kicked up from the pops glances off it sideways
  T.flipper('miniL',172,240,{len:46,r0:9,r1:5,rest:26,up:-32,input:0,wUp:48});
  T.flipper('miniR',300,240,{len:46,r0:9,r1:5,rest:154,up:212,input:1,wUp:48});
@@ -49,6 +51,9 @@ function buildTable(){
  // FLIGHT b741: a plastic ramp up the left, over the arch; the diverter at the top sends it on round to the right
  // inlane, or down into the Nest.
  T.wall([[92,598],[92,530]],{look:'plastic',r:4}).wall([[140,598],[140,530]],{look:'plastic',r:4});T.post(92,598,5).post(140,598,5);
+ // a sloped cap over the narrow slot between the orbit wall and the ramp's left wall: a slow ball used to sit balanced
+ // on the wall's end there (G10)
+ T.wall([[70,506],[92,530]],{look:'plastic',r:4});
  T.flag('flightDiv');
  T.rail('flight',spline([[116,522,0],[112,440,26],[98,350,52],[80,262,74],[70,182,88],[94,112,96],[150,80,98]],8),{look:'plastic',width:46,color:'#ffd23f',label:'FLIGHT b741',exit:{next:{switch:'flightDiv',on:'flightNest',off:'flightLoop'}}});
  T.rail('flightLoop',spline([[150,80,98],[240,58,100],[330,66,98],[396,108,94],[440,190,86],[452,330,76],[450,480,58],[440,640,36],[420,720,20],[400,770,8],[400,800,0]],8),{look:'plastic',width:42,color:'#ffd23f',noEntry:true,exit:{minOut:600}});
