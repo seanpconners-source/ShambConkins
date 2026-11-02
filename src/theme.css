@@ -265,11 +265,11 @@ body .setup-shell .cs-owner input{width:100%;max-width:240px;min-height:34px;pad
 .cs-stage{position:relative;flex:1;min-height:120px}
 .cs-spot{position:absolute;inset:4% 2% 0;background:radial-gradient(ellipse 60% 55% at 50% 45%,color-mix(in srgb,var(--pc) 38%,transparent),transparent 72%);pointer-events:none}
 .cs-spot::after{content:"";position:absolute;left:18%;right:18%;bottom:2%;height:9%;border-radius:50%;background:radial-gradient(ellipse at center,#000a,transparent 70%)}
-.cs-face{position:absolute;inset:0 0 5%;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.9) translateY(8px) rotate(-2deg);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.9,.3,1.2);pointer-events:none}
+.cs-face{position:absolute;inset:0 0 5%;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.95) translateY(6px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.8,.3,1);pointer-events:none}
 .cs-face.on{opacity:1;transform:none}
 body .setup-shell .cs-face .cs-portrait{width:100%;height:100%;max-width:300px;margin:0;border:0;background:none;border-radius:0}
-body .setup-shell .cs-face .cs-portrait img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 10px 14px #000b);animation:cs-float 4.5s ease-in-out infinite}
-@keyframes cs-float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1deg)}}
+body .setup-shell .cs-face .cs-portrait img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 10px 14px #000b);animation:cs-float 5s ease-in-out infinite;will-change:transform;backface-visibility:hidden}
+@keyframes cs-float{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-5px,0)}}
 .cs-info{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:4px;min-width:0}
 body .setup-shell .cs-info h3{margin:0;font:900 clamp(17px,2.2vw,26px)/1.1 "Arial Black",Arial,sans-serif;color:var(--t-head);text-shadow:0 2px 0 #000a;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cs-brand .property-logo{display:block;width:150px;max-width:100%;height:28px;object-fit:contain;margin:0 auto}
@@ -423,3 +423,4 @@ body .boss-medals i{width:10px;height:10px;border-radius:50%;border:2px solid va
 body .boss-medals i.won{background:var(--c);opacity:1;box-shadow:0 0 6px var(--c)}
 body .catalog-shell .arcade-card.boss-extreme:not(.locked){box-shadow:inset 0 0 0 3px #ffd23c,0 0 20px #ffd23c55}
 body .tier-cleared{color:#ffd23c;letter-spacing:.06em}
+.practice-note{display:block;opacity:.7;font-size:12px;margin:4px 0 0;text-align:center}
