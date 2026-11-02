@@ -155,8 +155,12 @@ Endings
 - **G1** `[todo]` Casino games: real Vegas tables, cards dealt, dealer animations, players around the table, atmosphere.
 - **G2** `[todo]` Penalty Kicks: fun already; better graphics, animations, sound, presentation.
 - **G3** `[todo]` Mario Kart: backs of heads with helmets, frequent look-backs, wider courses, more interesting play, more stages and many more tracks.
-- **G4** `[part]` Hole.it: camera much further out (show more playfield on big screens, don't scale objects up); mechanics closer to the reference (video: https://youtu.be/91ly46-nhwc). Lots already measured from earlier owner videos.
-- **G5** `[todo]` Block Breaker (Bricks Breaker Quest): play and feel closer to the reference.
+- **G4** `[part]` Hole.it (owner, Nov 2: good start; the first levels are close, later levels fall apart). Next: study
+  many more real levels, early and late, model the gameplay exactly everywhere we can, then make lots of unique
+  levels from what we learn. Earlier notes: camera much further out (show more playfield on big screens, don't scale objects up); mechanics closer to the reference (video: https://youtu.be/91ly46-nhwc). Lots already measured from earlier owner videos.
+- **G5** `[todo]` Block Breaker (Bricks Breaker Quest): play and feel closer to the reference. Owner (Nov 2): loves it; the
+  parts studied so far are right. Next: study as many real levels as possible, early and late, beginning to end, to
+  work out how the real levels are built, then generate lots and lots of our own levels from those rules.
 - **G6** `[todo]` Yahtzee: more authentic play and presentation.
 - **G7** `[todo]` Horde (Living Dead): better feel, progression, weapons, combat.
 - **G8** `[todo]` DOOM: backs of heads; death animations (head shrinks and sits oddly over the corpse); more varied enemy characters and positions.
@@ -208,6 +212,9 @@ Reuse engines with new skins wherever possible.
 - **H18** `[idea]` Super Mario Bros.: more worlds (2, 3, 4...) toward a full game, then maybe a Mario 3 / World-style
   game. Note: new worlds get our own level designs in the NES style (same physics, enemies, look), not copies of
   Nintendo's maps.
+- **H20** `[idea]` Star Fox 64-style rail shooter with a badass theme (later).
+- **H21** `[idea]` Mega Man warp world + a Mega Man-style game: stage select, robot-master stages, weapons, music and
+  sound effects in that style (original tunes and our own stages: no copied melodies or maps).
 - **H19** `[idea]` Sonic: more levels and zones, look and feel much closer to the Mega Drive games (the way SMB got
   NES physics and art), with our own level layouts in that style.
 - **H10** `[todo]` Warp worlds: visiting one unlocks it in New Game; beating its boss unlocks the boss in Boss Select + the character.
@@ -284,7 +291,7 @@ Make boss fights super badass (owner, Nov 2: "let's make the boss fights so much
 - **K18** `[todo]` Bosses come from unexpected places: up from the bottom, in from the side.
 - **K19** `[idea]` Themed bullets: each boss throws things from its own movie/show/game.
 - **K20** `[verify]` (built Nov 2: engines/bossBoom.js) Huge explosions on a kill, bigger per tier; Extreme kills get a crazy huge extreme explosion.
-- **K21** `[todo]` Star Fox-style talk between phases: boss and players trade lines in comm boxes, with funny jokes.
+- **K21** `[verify]` (built Nov 2: bossComms.js + data/bossTalk.js) Star Fox-style talk between phases: boss and players trade lines in comm boxes, with funny jokes.
   Special lines when a player character and the boss are related (same show/movie, rivals, family).
 - **K22** `[todo]` Boss music: owner will supply tracks. Claude tells the owner when the music slots are ready
   (drop-in files like the pinball/THPS songs).

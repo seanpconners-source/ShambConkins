@@ -28,6 +28,12 @@ K20/K15 (explosions + phases) there: `engines/bossBoom.js` = fx kinds fb/sm/db/s
 screen, shocks, debris, embers, after-blasts, white flash, hold, title KNOCKOUT!/DESTROYED!/ANNIHILATED!!); the boss's
 cut-out head tumbles off. Phase start = `phaseBreak`; phases 2+ smoke/burn (`dmgSmokeT`), aura behind the boss and edge
 tint per phase, final-phase embers. fx capped at 1100.
+K21 (Star Fox talk) there: `engines/bossComms.js` `createComms({blip,headFor})` = queued comm box (zip open, head in a
+static screen, typed text 42 cps, square/triangle blip voice per syllable, tap skip), lines in `data/bossTalk.js`.
+bossFight: `openerTalk` at fight start (SAME_* if a player IS the boss, RELATED_* if a player's character shares the
+boss's `source`, else an opener), `phaseTalk(n)` = boss phaseLines[n] (or pools) + a player reply, picked from s.seed so
+both phones match; phase mode waits for it (max 7 s); `chat(kind,i)` event lines (hit/down/revived/parry/super, 8 s
+cooldown, quiet unless 'down'); win line on KO, boss gloat on a loss. `s.debug.comms`.
 Testing on the Windows laptop: the 346 MB one-file build hangs headless Chromium; build `--pwa` into the scratchpad,
 serve it (tiny node static server) and run tests with SHAMB_URL=http://localhost:8123/.
 

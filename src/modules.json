@@ -403,7 +403,9 @@
   "src/engines/pinball/tables/bucketheadAudio.js",
   "src/engines/pinball/tables/gizzardAudio.js",
   "src/engines/pinball/tables/sabbathAudio.js",
-  "src/engines/bossBoom.js"
+  "src/engines/bossBoom.js",
+  "src/engines/bossComms.js",
+  "src/data/bossTalk.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
