@@ -48,13 +48,13 @@ in headless browsers).
 
 ## Phase A — quick fixes and playtest
 
-- **A1** `[bug]` Terminator T-800 chase broken in 1P: plays absurdly fast, then says "Terminated" at once (ids to check: `t800-scan-long`, `terminator-scan`).
-- **A2** `[bug]` Candy Land Color Card Dash says "Too Early" constantly; fix the rule and explain it on screen (`candyLand.js`).
+- **A1** `[verify]` (fixed Nov 2 night: the 1P round runner's speed-up clashed with the chase's own `w.speed`; Breakout 1P had the same bug) Terminator T-800 chase broken in 1P: plays absurdly fast, then says "Terminated" at once (ids to check: `t800-scan-long`, `terminator-scan`).
+- **A2** `[verify]` (fixed Nov 2 night: late taps after the card is won say TOO SLOW! with no penalty; before the flip WAIT FOR THE FLIP!) Candy Land Color Card Dash says "Too Early" constantly; fix the rule and explain it on screen (`candyLand.js`).
 - **A3** `[verify]` (fixed in K1) Boss fights: parry doesn't work reliably (`bossFight.js`).
 - **A4** `[verify]` (fixed in K1) Boss fights: tapping a downed partner doesn't revive them.
-- **A5** `[bug]` Character select: heads bounce fast and jittery in desktop browsers (phones look smoother).
-- **A6** `[bug]` Hole.it: watermelons (and others) don't fall into holes that are big enough.
-- **A7** `[todo]` Hole.it: remove finished objectives from the HUD.
+- **A5** `[verify]` (Nov 2 night: no rotation, own layer, no overshoot; can't judge desktop feel headless) Character select: heads bounce fast and jittery in desktop browsers (phones look smoother).
+- **A6** `[verify]` (Nov 2 night: fits = radius ≤ hole's, was 96%; a too-big prop sunk almost all the way in drops; Level 34's big melons hung at Size 5) Hole.it: watermelons (and others) don't fall into holes that are big enough.
+- **A7** `[verify]` (Nov 2 night) Hole.it: remove finished objectives from the HUD.
 - **A8** `[verify]` All bosses are too easy (King Kandy most of all): solved by the boss tiers, see "Boss tiers and outfits".
 - **A9** `[verify]` Owner playtest of things that may already be done:
   - Pinball online = real multiplayer pinball (balls alternate between phones, both scores shown): built in v0.73.0.
@@ -64,7 +64,7 @@ in headless browsers).
 
 ## Phase B — minigame triage (section 2 of the notes)
 
-- **B1** `[todo]` Claude makes a triage sheet: every registered game (incl. event-only and alternate versions) with
+- **B1** `[verify]` (Nov 2 night: https://claude.ai/artifact/4XLQDBkBkUJcQGvK2ST6w2 — tap Keep/Polish/Rebuild/Cut per game + notes; 349 rows incl. 156 event variants and 37 bosses; roadmap verdicts pre-filled; Claude reads the marks from the page's database) Claude makes a triage sheet: every registered game (incl. event-only and alternate versions) with
   its modes today (1P / 2P one phone / online versus / online co-op) and a blank Keep / Polish / Rebuild / Cut column.
 - **B2** `[todo]` Owner plays through and fills it in (a few minutes each; fun is the owner's call, passing tests is not proof).
 - **B3** `[todo]` Cut games: hidden from the board pool and arcade (ids kept so old saves still load).
@@ -88,7 +88,7 @@ in headless browsers).
 Unlock rules (section 10)
 - **C1** `[todo]` One device = one shared collection of unlocked characters (pass-and-play included).
 - **C2** `[todo]` Online players use their own device's collection, not an empty local P2 roster. Today the host's profile decides what the guest can recruit (known limit).
-- **C3** `[bug]` Found Nov 2: 1-player Arcade wins can still recruit a random character (`settleSolo` in gameLauncher.js). Boss Select no longer gives characters (K6). Games launched from the game list award no progression unlocks (results card already says "Practice · No unlocks"; check Boss Select and every standalone path).
+- **C3** `[verify]` (Nov 2 night: Arcade/online-duel wins recruit nothing, result card says 'Practice'; `ARCADE_RECRUITS` in gameLauncher.js flips it back) Found Nov 2: 1-player Arcade wins can still recruit a random character (`settleSolo` in gameLauncher.js). Boss Select no longer gives characters (K6). Games launched from the game list award no progression unlocks (results card already says "Practice · No unlocks"; check Boss Select and every standalone path).
 - **C4** `[todo]` Both players can earn unlocks in real board play.
 - **C5** `[todo]` A new unlock goes to the roster for future games; it never swaps the player's current character mid-run.
 - **C6** `[todo]` Audit every unlock trigger, owner and save path.
@@ -286,18 +286,17 @@ Outfits (for every character, not only bosses)
 - **K12** `[todo]` List of every outfit art slot for the owner to fill.
 
 Make boss fights super badass (owner, Nov 2: "let's make the boss fights so much fun!")
-- **K15** `[part]` (done: phase-break blasts, damage smoke/fire, hotter edge tint and aura per phase, final-phase embers; left: better player ships, more boss art) Graphics: distinct-looking phases, better boss art, better player ships; heads/expressions on the
+- **K15** `[part]` (Nov 2 night: ships redrawn with shading, stripes, nav lights, flames, power-up pods; done before: phase-break blasts, damage smoke/fire, hotter edge tint and aura per phase, final-phase embers; left: better player ships, more boss art) Graphics: distinct-looking phases, better boss art, better player ships; heads/expressions on the
   boss and the ships react properly (hurt, angry, laughing, dying).
-- **K16** `[todo]` (next boss chunk, with better ships) Power-ups to pick up mid-fight (weapons, shields, bombs).
+- **K16** `[verify]` (Nov 2 night: engines/bossPowerups.js: SPREAD, TURBO, MISSILES, SHIELD, SMART BOMB, HEART capsules every ~13-19 s + one per phase break) Power-ups to pick up mid-fight (weapons, shields, bombs).
 - **K17** `[verify]` (Nov 2: bombs + carpet run; more weapons welcome) Crazy weapons and bombs, for players and bosses.
 - **K18** `[verify]` (Nov 2: ambush from the bottom or a side) Bosses come from unexpected places: up from the bottom, in from the side.
 - **K19** `[verify]` (Nov 2: AMMO emoji per boss in data/bosses.js) Themed bullets: each boss throws things from its own movie/show/game.
 - **K20** `[verify]` (built Nov 2: engines/bossBoom.js) Huge explosions on a kill, bigger per tier; Extreme kills get a crazy huge extreme explosion.
 - **K21** `[verify]` (built Nov 2: bossComms.js + data/bossTalk.js) Star Fox-style talk between phases: boss and players trade lines in comm boxes, with funny jokes.
   Special lines when a player character and the boss are related (same show/movie, rivals, family).
-- **K22** `[todo]` Boss music: owner will supply tracks. Claude tells the owner when the music slots are ready
-  (drop-in files like the pinball/THPS songs).
-- **K24** `[todo]` Partner-down cutscene: when a co-op partner's plane goes down, a quick slow-mo zoom on the
+- **K22** `[part]` (slots READY Nov 2 night, waiting for the owner's songs: `assets/music/boss-<id>.mp3`, `-p2/-p3/-final`, `boss-any(-n)`, `boss-final`, `boss-win`, `boss-lose`; see assets/music/README.md) Boss music: owner will supply tracks.
+- **K24** `[verify]` (Nov 2 night: engines/bossCutscene.js; offline slow motion, online visuals only) Partner-down cutscene: when a co-op partner's plane goes down, a quick slow-mo zoom on the
   surviving player's character with their sad face as the other plane explodes, big "NOOOOOOO!!!!", then back to
   the fight (short, so the revive window still matters).
 - **K23** `[todo]` Fit the K15-K22 work with the tiers (K2): higher tiers unlock the nastier attacks and bigger finales.

@@ -1,5 +1,19 @@
 # AI state (keep short; update after meaningful work)
 
+Nov 2 night (owner asleep, branch `claude/v0.75.0-release-roadmap-so2z5g` from main v0.75.0, unreleased): K24 partner-down
+cutscene `engines/bossCutscene.js` (bossFight `downed()` fires from an hp>0→≤0 transition seen in `update`, so both phones
+online; offline the world runs at `cutTimeScale` (.12 → .25 → ramp), camera push-in on the survivor, sad head panel (sad
+mood if the character has one, else normal; preloaded via headCanvas), NOOOOOO!!!! + formant `noooVoice`; survivor can't be
+hurt meanwhile; revive/parry timing on real time; the 'down' comm line plays after it). K16/K15 `engines/bossPowerups.js`:
+pickups `PU` spread/turbo/missile/shield/bomb/heart, spawned by player 1's phone (`spawnPower`, op 'pu'; grabs 'pt'; own
+plane judged only), `gunFire`/`stepPower`/`takePower`/`smartBomb` in bossFight, netPack p[12..14] = pw kind/time/shield;
+`drawShip` replaces the old hull drawing. K22 `engines/bossMusic.js` drop-in songs (README in assets/music). Tests:
+`tests/boss-downcut.mjs`, `tests/boss-powerups.mjs`. A1: retroKit `soloTurnRuns` speed field is `w.soloK` (was `w.speed`,
+clashed with freewayChase/atariBreakout). A2 candyLand press(): 'done' = TOO SLOW (no penalty). A5 theme.css cs-float.
+A6 holeIt `FIT=1` (physics.js, was .96) + sunk-in rule in sim.js. A7 `turn.cardDone/cardX` in holeIt drawHUD. C3
+`ARCADE_RECRUITS=false`/`recruitsOn(origin)` in gameLauncher. B1 triage sheet = artifact
+https://claude.ai/artifact/4XLQDBkBkUJcQGvK2ST6w2 (db collection `verdicts`, doc id = game id, bosses `boss--<id>`,
+{v:keep|polish|rebuild|cut|null, note, at}); read it with ArtifactData list.
 v0.75.0 (Nov 2, owner asked to release it): the boss-fight overhaul below. Fresh sessions: `docs/HANDOFF.md` first.
 Owner's master to-do list is `docs/ROADMAP.md` (phases; "continue" = offer options from it, wait for a pick).
 Boss work (ROADMAP K section) on branch `claude/boss-fights` (from TESTver, merged to TESTver and main). K1 done:
