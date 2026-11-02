@@ -22,6 +22,9 @@ a song ends (next from its start); no hot-streak/heat, no drift switching. `sfxL
 Round 4 (owner): levels = 1 chill (title, wait/bonus, game over), 2 energetic (play), 3 crazy (mode/multiball); sections
 re-sorted (a section may list two levels); on a level change the director goes to `mem.left[L]` (song last played at that
 level) where it was, else (crazy) a later crazy part of the same song, else choose(); 3→2 waits 8 s.
+Round 5 (owner: "too chill", chill kept coming back, silence at ball start): chill only at game over, play = the shred,
+crazy = their craziest parts; one pooled audio element per song (`POOL`, kept all session; a switch was a new 4-11 MB
+element = seconds of silence on a phone), a same-song jump dips 0.3 s and seeks.
 Note: generic duel chip `liveScore` reads `s.score[0]` (wrong seat for native games on seat 2); untouched.
 
 v0.72.1 (Nov 1): v0.72.0's release stopped on Cloudflare's 25 MiB per-file limit (the one 25.3 MB built-in art script);

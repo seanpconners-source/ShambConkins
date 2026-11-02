@@ -14,20 +14,19 @@ const songs={
 // gain (dB): the songs are loudness-matched files, but measured as the game hears them (loudest 50 ms in every 1.6 s,
 // median about -17 dBFS) Whitewash stands out by 4-5 dB and Jordan/Welcome by 1-1.5: evened out here.
 for(const [k,g] of Object.entries({'whitewash':-4.6,'jordan':-1.5,'welcome-to-bucketheadland':-1,'nottingham-lace':.7}))songs[k].gain=g;
-// Sections [from s, to s, level or [levels]]: 1 chill (title, between balls, after a drain, game over), 2 energetic
-// (normal play), 3 crazy (modes, multiball). Measured (loudness, brightness, note density every 2 s, smoothed, cut at
-// phrase dips), then sorted by what the songs are (owner, Nov 1: chill between balls, energetic in play, the craziest for
-// multiball): Padmasana, Big Sur Moon, Colma's Whitewash and Soothsayer's quiet first two minutes are the chill set;
-// Welcome to Bucketheadland, Soothsayer's middle and Nottingham Lace drive normal play; Jordan, Nottingham Lace, Welcome's
-// heaviest stretches and Soothsayer's closing solo are the crazy set.
+// Sections [from s, to s, level or [levels]]: 1 chill (game over only), 2 play, 3 crazy (modes, multiball). Measured
+// (loudness, brightness, note density every 2 s, smoothed, cut at phrase dips), then sorted by what the songs are. Owner
+// (Nov 1): "too chill... should be more crazy and fun! Bucketheadland!": play runs on the shred (Welcome to
+// Bucketheadland, Nottingham Lace, Jordan, Soothsayer from its middle on); modes and multiball take their craziest
+// stretches; the mellow ones (Padmasana, Big Sur Moon, Colma's Whitewash, Soothsayer's quiet start) only play at game over.
 const sections={
+ 'welcome-to-bucketheadland':[[0,32,2],[32,62,[2,3]],[62,94,2],[94,136,[2,3]],[136,148,2],[148,222,[2,3]]],
+ 'nottingham-lace':[[0,20,[2,3]],[20,28,2],[28,393,[2,3]]],
+ 'jordan':[[0,8,[2,3]],[8,235,[2,3]]],
+ 'soothsayer':[[0,112,1],[112,383,2],[383,541,[2,3]]],
  'padmasana':[[0,695,1]],
  'big-sur-moon':[[0,70,1]],
  'whitewash':[[0,282,1]],
- 'soothsayer':[[0,112,1],[112,383,2],[383,541,3]],
- 'welcome-to-bucketheadland':[[0,32,2],[32,62,[2,3]],[62,94,2],[94,136,[2,3]],[136,148,2],[148,222,[2,3]]],
- 'nottingham-lace':[[0,20,3],[20,28,2],[28,393,[2,3]]],
- 'jordan':[[0,8,3],[8,235,3]],
 };
 // Modes with a song of their own (others take a crazy part). from = where it starts.
 const roles={

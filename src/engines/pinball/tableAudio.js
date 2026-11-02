@@ -3,14 +3,7 @@
 // cfg = {prefix, songs:{slug:{title,album}}, sections:{slug:[[from,to,level]...]}, roles:{role:{song,from}},
 // sfx:{soundName:{...}}, synthTrim:{soundName:gain}}. Missing files fall back to the synth band / synth sounds.
 //
-// Songs = a music director (HTML audio, streamed, never decoded whole). Every song is mapped into sections with a level
-// (1 chill, 2 energetic, 3 crazy; a section may fit two); the game asks for one (set(role, level)): chill on the title,
-// between balls, after a drain and at game over, energetic in play, crazy in a mode or multiball (owner, Nov 1). A song
-// plays on through its section changes (to get into the groove) and only the game changing level moves it: to where the
-// song last heard at that level was left off if it still fits, else (crazy) a crazy part of the same song, else the best
-// section anywhere. A mode or multiball that ends lets its song ride 8 s first; a mode with its own song (cfg.roles)
-// plays that. At a song's end the next one crossfades in, preferably from its start. 'tilt' fades out, a solo ducks.
-// Which songs played and where they stopped carries on from game to game. iOS ignores el.volume (no fades there).
+// Songs: the music director (createSongs, below).
 //
 // Sounds: everything (guitar clips and the machine's synth sounds, via sound.js setSoundBus) goes through one bus with a
 // short plate-like reverb so hits trail out. Clip kinds: lick(tier) = one lead voice (a bigger award cuts a smaller lick
@@ -25,24 +18,41 @@ const BASE=.92;                              // song volume (el.volume at full)
 const XF={up:1.6,down:4.5,song:3.5,mode:2};  // crossfade seconds: into a heavier part, into a calmer one, song end, mode song
 const MEMORY=new Map();                      // prefix → {resume: slug → seconds, recent: [slug...]}, kept between games
 
+// Songs = a music director over HTML audio (streamed, never decoded whole). One audio element per song, made once and
+// kept (also between games): switching songs never reloads a file (a phone needs seconds to open a 4-11 MB song, which
+// left silence at ball start), a song left off just pauses and carries on from there. Every song is mapped into
+// sections with a level (1 chill, 2 play, 3 crazy; a section may fit two); the game asks for one (set(role, level)).
+// Owner (Nov 1): Bucketheadland should be crazy and fun: play music is the shred, modes and multiball the craziest,
+// chill only at game over. A song plays on through its own section changes (to get into the groove) and only the game
+// changing level moves it: to where the song last heard at that level was left off if it still fits, else (crazy) a crazy
+// part of the same song coming up, else the best section anywhere. A mode or multiball that ends lets its song ride 8 s;
+// a mode with its own song (cfg.roles) plays that. At a song's end the next one crossfades in, preferably from its start.
+// 'tilt' fades out, a solo ducks a little. iOS ignores el.volume (no fades there).
+const POOL=new Map();                        // file → audio element, kept for the whole session
+function element(u){let el=POOL.get(u);if(!el){el=new Audio(u);el.preload='auto';el.volume=0;POOL.set(u,el);}return el;}
 function createSongs(cfg,{paused=()=>false,onSong=null}={}){
  const url=slug=>USER_PORTRAITS[`music:${cfg.prefix}-${slug}`]||null;
  const secs=cfg.sections||{},list=Object.keys(secs).filter(url);
- const api={has:list.length>0,role:'',level:1,now:null};if(!api.has)return api;
+ const api={has:list.length>0,role:'',level:2,now:null};if(!api.has)return api;
  if(!MEMORY.has(cfg.prefix))MEMORY.set(cfg.prefix,{resume:new Map(),recent:[],left:{}});
- const mem=MEMORY.get(cfg.prefix),voices=[];
+ const mem=MEMORY.get(cfg.prefix),voices=new Map();// slug → {el, g 0..1, dir -1|0|1, rate, gain, seekTo}
  let lead=null,followUntil=0,held=false,duckUntil=0,curL=0,prevL=0,edgeAt=0,settled=true,modeRole=null,lastT=performance.now(),lvlNow=1;
  const secAt=(slug,t)=>(secs[slug]||[]).find(s=>t>=s[0]-.5&&t<s[1])||null;
- const has=(s,l)=>!!s&&(Array.isArray(s[2])?s[2].includes(l):s[2]===l);   // a section's level may be a list
- function voice(slug,from,loop){const el=new Audio(url(slug));el.loop=loop;el.volume=0;el.preload='auto';
-  if(from>0){const seek=()=>{try{el.currentTime=from;}catch{}};if(el.readyState>=1)seek();else el.addEventListener('loadedmetadata',seek,{once:true});}
-  const v={slug,el,g:0,dir:1,rate:1,from,gain:Math.pow(10,(cfg.songs?.[slug]?.gain||0)/20)};if(!held)el.play()?.catch?.(()=>{});voices.push(v);return v;}
- const pos=v=>v.el.readyState>=1?v.el.currentTime:v.from;
- // make v the playing song: everything else fades out over xf seconds (and is remembered where it stopped)
+ const has=(s,l)=>!!s&&(Array.isArray(s[2])?s[2].includes(l):s[2]===l);
+ const voice=slug=>{let v=voices.get(slug);if(!v){const el=element(url(slug));try{el.pause();}catch{}el.volume=0;el.loop=false;
+  v={slug,el,g:0,dir:0,rate:1,seekTo:null,gain:Math.pow(10,(cfg.songs?.[slug]?.gain||0)/20)};voices.set(slug,v);}return v;};
+ for(const slug of list)voice(slug);   // open every song now, while the title shows
+ const pos=v=>v.el.currentTime||0;
+ const seek=(v,t)=>{const go=()=>{try{v.el.currentTime=t;}catch{}};if(v.el.readyState>=1)go();else v.el.addEventListener('loadedmetadata',go,{once:true});};
+ const play=v=>{if(!held)v.el.play()?.catch?.(()=>{});};
+ // make slug the playing song from `from`: the others fade out over xf seconds (remembered where they stopped); the same
+ // song at another spot dips out and back in
  function take(slug,from,{loop=false,xf=XF.song}={}){
-  for(const o of voices)if(o.dir>0){o.dir=-1;o.rate=1/xf;if(!o.el.loop)mem.resume.set(o.slug,pos(o));}
-  const v=voice(slug,from,loop);v.rate=1/xf;lead=v;
-  mem.recent=[slug,...mem.recent.filter(s=>s!==slug)].slice(0,4);
+  for(const o of voices.values())if(o.slug!==slug&&o.dir>=0&&(o.dir>0||o.g>0)){o.dir=-1;o.rate=1/xf;o.seekTo=null;if(!o.el.loop)mem.resume.set(o.slug,pos(o));}
+  const v=voice(slug);v.el.loop=loop;
+  if(v.g>.05&&Math.abs(pos(v)-from)>2){v.seekTo=from;v.dir=-1;v.rate=1/.3;}
+  else{if(Math.abs(pos(v)-from)>.5)seek(v,from);v.seekTo=null;v.dir=1;v.rate=1/xf;play(v);}
+  lead=v;mem.recent=[slug,...mem.recent.filter(s=>s!==slug)].slice(0,4);
   const info=cfg.songs?.[slug]||{title:slug};if(api.now!==info){api.now=info;onSong?.(info);}return v;}
  // the best place to go for a level: a section of that level, rather in a song not heard lately, a long one, from a
  // song's own start, or where a song was left off
@@ -53,15 +63,13 @@ function createSongs(cfg,{paused=()=>false,onSong=null}={}){
    if(slug===avoid)score-=12;
    if(!best||score>best.score)best={slug,from,score};}
   return best;}
- // where to go when the game reaches a level: the song last played at that level, where it was, if that spot still
- // fits; for crazy also a crazy part later in the song playing now; else the best section anywhere
  function pickFor(L){const p=mem.left[L],at=p!=null?mem.resume.get(p):null;
   if(p&&at!=null&&url(p)&&p!==lead?.slug&&has(secAt(p,at),L))return {slug:p,from:at};
   if(L===3&&lead){const t=pos(lead),later=(secs[lead.slug]||[]).find(q=>has(q,3)&&q[0]>t&&q[0]-t<120);if(later&&Math.random()<.5)return {slug:lead.slug,from:later[0]};}
   return choose(L,lead?.slug);}
  const go=(c,xf)=>{if(c)take(c.slug,c.from,{xf});};
  function tick(){const now=performance.now(),dt=Math.min(.25,(now-lastT)/1000);lastT=now;
-  const p=paused();if(p!==held){held=p;for(const v of voices){try{p?v.el.pause():v.el.play()?.catch?.(()=>{});}catch{}}}if(held)return;
+  const p=paused();if(p!==held){held=p;for(const v of voices.values())if(v.dir!==0){try{p?v.el.pause():v.el.play()?.catch?.(()=>{});}catch{}}}if(held)return;
   const role=api.role;
   if(now<followUntil){}// watching the other phone's ball: its song (follow) decides
   else if(role&&role!=='tilt'){
@@ -69,34 +77,32 @@ function createSongs(cfg,{paused=()=>false,onSong=null}={}){
    if(L!==curL){if(lead&&!lead.el.loop&&curL)mem.left[curL]=lead.slug;prevL=curL;curL=L;edgeAt=now;settled=false;}
    if(r&&url(r.song)){if(modeRole!==role){modeRole=role;settled=true;if(lead?.slug!==r.song)take(r.song,r.from||0,{loop:true,xf:XF.mode});else lead.el.loop=true;}}
    else{if(modeRole){modeRole=null;if(lead)lead.el.loop=false;}
-    if(!lead){go(pickFor(L),XF.song);settled=true;}
+    if(!lead||lead.dir<0&&lead.seekTo==null){go(pickFor(L),XF.song);settled=true;}
     else{const t=pos(lead),d=lead.el.duration||1e9,s=secAt(lead.slug,t),mine=secs[lead.slug]||[];
-     if(d-t<XF.song+.3)go(choose(L,lead.slug),XF.song);   // the song ends: crossfade into the next one
+     if(!lead.el.loop&&(d-t<XF.song+.3||lead.el.ended))go(choose(L,lead.slug),XF.song);   // the song ends: the next one crossfades in
      else if(!settled){
-      // the game changed level: keep the song if it is already there (or, going crazy, its crazy part starts within
-      // 10 s); a mode or multiball that just ended lets its song ride out 8 s first (a drain may follow); else move
       if(has(s,L))settled=true;
       else if(L===3&&mine.some(q=>has(q,3)&&q[0]>t&&q[0]-t<10)){}
       else if(now-edgeAt>=(L===2&&prevL===3?8000:0)){settled=true;go(pickFor(L),L>(prevL||1)?XF.up:XF.down);}}}}}
   // volumes: equal-power fades, a little down while a solo plays, out on a tilt
   const lv=role==='tilt'||!role?0:1,duck=now<duckUntil?.72:1;lvlNow+=(lv*duck-lvlNow)*Math.min(1,dt*(lv*duck<lvlNow?3:1.2));
-  for(let i=voices.length-1;i>=0;i--){const v=voices[i];v.g=Math.max(0,Math.min(1,v.g+v.dir*v.rate*dt));
-   try{v.el.volume=Math.max(0,Math.min(1,BASE*v.gain*lvlNow*Math.sin(v.g*Math.PI/2)));}catch{}
-   if(v.dir<0&&v.g<=0){try{v.el.pause();}catch{}v.el.removeAttribute('src');voices.splice(i,1);if(v===lead)lead=null;}}
-  if(!role&&!voices.length)lead=null;}
+  for(const v of voices.values()){if(!v.dir&&!v.g)continue;v.g=Math.max(0,Math.min(1,v.g+v.dir*v.rate*dt));
+   if(v.dir<0&&v.g<=0){if(v.seekTo!=null){seek(v,v.seekTo);v.seekTo=null;v.dir=1;v.rate=1/.5;play(v);}else{v.dir=0;try{v.el.pause();}catch{}}}
+   try{v.el.volume=Math.max(0,Math.min(1,BASE*v.gain*lvlNow*Math.sin(v.g*Math.PI/2)));}catch{}}
+  if(lead&&lead.dir===0)lead=null;}
  const timer=setInterval(tick,100);
  api.set=(role,level)=>{if(!musicOn())role=null;
   if(level&&role&&role!=='tilt')api.level=level;
   if(role===api.role)return;api.role=role;
-  if(!role)for(const v of voices){v.dir=-1;v.rate=1/1.5;if(!v.el.loop)mem.resume.set(v.slug,pos(v));}};
+  if(!role)for(const v of voices.values())if(v.dir>0||v.g>0){v.dir=-1;v.rate=1/1.5;v.seekTo=null;if(!v.el.loop)mem.resume.set(v.slug,pos(v));}};
  // online: the watching phone plays what the playing phone plays (song, position), crossfading when that changes
  api.leadPos=()=>lead?[lead.slug,+pos(lead).toFixed(1)]:null;
  api.follow=(slug,t)=>{followUntil=performance.now()+2500;if(!url(slug)||!api.role||api.role==='tilt')return;if(lead?.slug===slug&&Math.abs(pos(lead)-t)<4)return;take(slug,t,{xf:XF.up});};
  api.duck=sec=>{duckUntil=Math.max(duckUntil,performance.now()+sec*1000);};
- api.stop=()=>{clearInterval(timer);for(const v of voices){if(v.dir>0&&!v.el.loop)mem.resume.set(v.slug,pos(v));try{v.el.pause();}catch{}}voices.length=0;lead=null;api.role='';};
+ api.stop=()=>{clearInterval(timer);for(const v of voices.values()){if(v.dir>0&&!v.el.loop)mem.resume.set(v.slug,pos(v));try{v.el.pause();v.el.volume=0;v.el.loop=false;}catch{}}lead=null;api.role='';};
  // tests: what is playing
  const st=v=>v&&{slug:v.slug,t:+pos(v).toFixed(1),dur:+(v.el.duration||0).toFixed(1),vol:+v.el.volume.toFixed(2),paused:v.el.paused,err:v.el.error?.code||0,sec:secAt(v.slug,pos(v))?.[2]??null};
- api.status=()=>({role:api.role,level:api.level,lead:st(lead),voices:voices.length});
+ api.status=()=>({role:api.role,level:api.level,lead:st(lead),voices:[...voices.values()].filter(v=>v.dir!==0).length});
  return api;
 }
 
