@@ -1,4 +1,4 @@
-﻿// Node test for the pinball engine (src/engines/pinball/): a bot flips when a ball comes down onto a flipper and
+// Node test for the pinball engine (src/engines/pinball/): a bot flips when a ball comes down onto a flipper and
 // plays whole 3-ball games on every table. Checks that balls never escape the cabinet or tunnel through walls, the
 // plunge reaches the playfield, the main shots (ramps, pops, holes, drops, spinner) can all be made, and ball
 // times are pinball-like. Run: node tests/pinball-sim.mjs [games=6] [table=buckethead]
@@ -13,7 +13,9 @@ const P=load('src/engines/pinball/physics.js'),{createMachine}=load('src/engines
 const def=table.buildTable();
 // Inside the cabinet outline (x within walls, y above the drain).
 const inside=b=>b.x>def.segs.reduce((a,s)=>Math.min(a,s.ax,s.bx),1e9)-1&&b.x<def.segs.reduce((a,s)=>Math.max(a,s.ax,s.bx),-1e9)+1&&b.y>-1;
-const totals={},points={},modes={},ballTimes=[],jams=[];let escapes=0,maxV=0,scores=[],long=0,started=0;
+const totals={},points={},modes={},ballTimes=[],jams=[];
+// spots where a slow ball used to park and must not any more (ROADMAP G10: King Gizzard's Nest pivots, the orbit/ramp slot)
+const PARK=tableId==='gizzard'?[[167,218],[305,218],[83,515]]:[],parks=[];let escapes=0,maxV=0,scores=[],long=0,started=0;
 for(let g=0;g<games;g++){
  const m=createMachine({table,players:1,seed:1000+g});m.startBall();started++;let t=0,ballT=0,hold=[0,0],pull=0,plungeAt=.6+((g*7)%5)*.15;const dt=1/60;
  for(;;){
@@ -33,7 +35,7 @@ for(let g=0;g<games;g++){
   for(const b of m.w.balls){maxV=Math.max(maxV,Math.hypot(b.vx,b.vy));if(b.state==='free'&&!inside(b)){escapes++;b.y=2000;}}
   if(m.phase==='drained'){m.endBall();ballTimes.push(ballT);ballT=0;const nx=m.advance();if(!nx)break;m.startBall();started++;t=0;pull=0;plungeAt=.6+((g*7+ballTimes.length)%5)*.15;}
   // a still ball for 10 s is a real jam (ball search should have freed it); a bot that keeps the ball alive is fine
-  for(const b of m.w.balls){b.stillT=(b.state==='free'&&Math.hypot(b.vx,b.vy)<20)?(b.stillT||0)+dt:0;if(b.stillT>10){jams.push(`${b.x.toFixed(0)},${b.y.toFixed(0)}`);b.stillT=0;}}
+  for(const b of m.w.balls){b.stillT=(b.state==='free'&&Math.hypot(b.vx,b.vy)<20)?(b.stillT||0)+dt:0;if(b.stillT>3&&!b._park&&PARK.some(([px,py])=>Math.hypot(b.x-px,b.y-py)<14)){b._park=1;parks.push(`${b.x.toFixed(0)},${b.y.toFixed(0)}`);}if(b.stillT<.1)b._park=0;if(b.stillT>10){jams.push(`${b.x.toFixed(0)},${b.y.toFixed(0)}`);b.stillT=0;}}
   if(ballT>240){long++;m.w.balls.length=0;m.phase='drained';}
  }
  scores.push(m.players[0].score);
@@ -124,6 +126,7 @@ assert.equal(escapes,0,'balls stay inside the cabinet');
 console.log('balls',started,'kept alive past 240 s by the bot',long,'jams',jams.join(' ')||'none');
 console.log('modes started',JSON.stringify(modes));
 assert.equal(jams.length,0,'no jammed balls');
+assert.ok(parks.length<=2,'balls park at an old trap spot: '+parks.join(' '));
 if(table.rules.ATTRACTIONS)assert.ok((modes.attraction||0)>=2,'the bot starts attraction modes');
 assert.ok((totals['plunge']||0)>=started,'every ball plunged');
 for(const k of table.simChecks||[])assert.ok(Object.keys(totals).some(x=>x.startsWith(k)),`bot made ${k}`);

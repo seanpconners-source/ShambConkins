@@ -67,7 +67,7 @@ in headless browsers).
 - **B1** `[verify]` (Nov 2 night: https://claude.ai/artifact/4XLQDBkBkUJcQGvK2ST6w2 — tap Keep/Polish/Rebuild/Cut per game + notes; 349 rows incl. 156 event variants and 37 bosses; roadmap verdicts pre-filled; Claude reads the marks from the page's database) Claude makes a triage sheet: every registered game (incl. event-only and alternate versions) with
   its modes today (1P / 2P one phone / online versus / online co-op) and a blank Keep / Polish / Rebuild / Cut column.
 - **B2** `[todo]` Owner plays through and fills it in (a few minutes each; fun is the owner's call, passing tests is not proof).
-- **B3** `[todo]` Cut games: hidden from the board pool and arcade (ids kept so old saves still load).
+- **B3** `[part]` (Nov 2 night: mechanism ready, add ids to `src/data/cutGames.js` from the sheet) Cut games: hidden from the board pool and arcade (ids kept so old saves still load).
 - **B4** `[todo]` Rebuild/Polish lists feed Phase D and G, ordered by how often the board deals them.
 - **B5** `[todo]` Decide per game which modes it should have, and how online players compete (shared world, ghost, scoreboard).
 - Already judged by the owner: KEEP as is = Hangman (all modes, "very fun"); KEEP + polish = Pro Mancala (G11).
@@ -110,7 +110,7 @@ Order to be set by the triage. Current candidates:
 - **D3** `[todo]` Death Proof: looks cool, play is bad; redesign.
 - **D4** `[bug]` Major League Baseball: doesn't work properly. Rebuild in the style of Ken Griffey Jr. Presents MLB (SNES); review batting and fielding games.
 - **D5** `[verify]` (Nov 2 night: floating stick per half + tap/2nd finger/BOMB button, smooth walking with corner sliding, Bomberman bodies; arena look unchanged) Bomberman: controls too hard; SNES Super Bomberman style with character heads.
-- **D6** `[todo]` Pac-Maze Duel: much closer to classic Pac-Man (maze feel, ghost behavior, power pellets, speeds, sounds).
+- **D6** `[verify]` (Nov 2 night: classic ghost AI + waves + frightened, 75% ghost speed, arcade maze/ghosts/sounds; heads stay as the chompers) Pac-Maze Duel: much closer to classic Pac-Man (maze feel, ghost behavior, power pellets, speeds, sounds).
 - **D7** `[todo]` TowerFall Arrow Arena: confusing, not fun; proper competitive archery game.
 - **D8** `[todo]` Rocky boxing: two-player Punch-Out!! style.
 - **D9** `[todo]` Raiders Boulder Run: major improvement.
