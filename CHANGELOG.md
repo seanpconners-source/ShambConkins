@@ -3,22 +3,22 @@
 ## Unreleased (next release: v0.73.0)
 
 **Bucketheadland pinball plays Buckethead, and the music follows the game.** The soundtrack is seven real Buckethead
-songs, each mapped into calm, medium and heavy parts. The title screen starts calm (Padmasana, Soothsayer's intro, Big Sur
-Moon), normal play runs on medium parts, and a mode, multiball or a hot streak of shots cuts to a heavy part (Jordan,
-Nottingham Lace, Welcome to Bucketheadland, Soothsayer's solo half). Songs crossfade into each other instead of stopping,
-jump to the right part of the same song when they can, and the song you were hearing before a mode comes back where it left
-off. Some modes have their own song: JORDAN MULTIBALL plays Jordan from its build-up, Big Sur Moon and Soothsayer play their
-namesakes, Chicken Coop Panic plays Nottingham Lace (Enter the Chicken), the wizard mode plays Welcome to Bucketheadland.
-Every game starts somewhere different, and songs heard lately are skipped. The music dips for the bonus count, hand-offs and
-big guitar solos, and cuts out on a TILT. A small "♪ Buckethead · song (album)" shows when a song starts.
+songs, each mapped into calm, medium and heavy parts. A song now plays on so you can get into the groove: it only changes
+when the game does. A mode or multiball starting cuts to a heavy part (of the same song if one is coming up, else Jordan,
+Nottingham Lace, Welcome to Bucketheadland or Soothsayer's solo half), and when it's over the song it interrupted comes back
+where it left off. Songs crossfade into each other, and when one ends the next starts from its beginning. Some modes have
+their own song: JORDAN MULTIBALL plays Jordan from its build-up, Big Sur Moon and Soothsayer play their namesakes, Chicken
+Coop Panic plays Nottingham Lace (Enter the Chicken), the wizard mode plays Welcome to Bucketheadland. Every game starts on a
+different calm song, and songs heard lately are skipped. The music dips for the bonus count and hand-offs, and cuts out on
+a TILT. A small "♪ Buckethead · song (album)" shows when a song starts.
 
-**Rock guitar all over the table, at the right volume.** Almost every machine sound is now a guitar sound (two sets: the
-MySims Guitar Rockstar licks and the MTV Music Generator 2 guitar FX): the amp switching on for each ball, a rev-up on the
-launch, metal sparks on the pop bumpers, lead bursts on the slings, fretted hits on the drop targets, string scratches on
-the spinner, a scraper up the ramps, a knock in the saucers, deep tremolo for a lock, a wail for the skill shot and extra
-balls, an alarm for DANGER, the amp being unplugged on a TILT, a dive bomb on a drain, solos for ramps, jackpots, multiball
-and mode starts. Every sound was measured and set so it sits under the music (they were far too loud), and they all go
-through a short reverb so they ring out instead of cutting off. The flippers keep their clack, at the same level.
+**Guitar sounds all over the table, under the music.** Almost every machine sound is a guitar noise now (MTV Music
+Generator 2 guitar FX and pick scrapes): the amp switching on for each ball, a rev-up on the launch, metal sparks on the pop
+bumpers, lead bursts on the slings, fretted hits on the targets, pick scrapes on the lanes, string scratches on the spinner,
+a scraper up the ramps, a knock in the saucers, deep tremolo for a lock, a stutter for awards, wails for the skill shot,
+jackpots, extra balls and mode starts, an alarm for DANGER, the amp being unplugged on a TILT. Guitar solos are kept for a
+lost ball, super jackpots and game over, so the songs come through. Every sound was measured and set under the music, and
+they all go through a short reverb so they ring out instead of cutting off. The flippers keep their clack.
 
 **Online pinball takes turns like a real machine.** Playing pinball online (any of the three tables) is now one game on two
 phones: player 1 plays ball 1 on their phone while the other phone shows it live (same table, lights, display, sounds and

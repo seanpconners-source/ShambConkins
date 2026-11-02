@@ -16,6 +16,9 @@ Round 2 (owner listened: SFX far too loud, music jumped calm↔aggressive): song
 per-song gain trims; watcher follows the player's song `mu`). Owner's 2nd FX set (MTV Music Generator 2) as bhpin-fx-*,
 mapped to almost every machine sound; all sound (synth too) through a reverb bus; every volume measured on the bus
 (scratch calibrate: big -19, mid -21, normal -23, small -26 dBFS max-50ms-RMS; songs ≈ -17).
+Round 3 (owner): solos only for drain/super/game over (in play: generic FX + pick scrapes); songs change only when the
+game turns heavy (mode/multiball start: cut to heavy) or calms (8 s later: back to the interrupted song where it was) or
+a song ends (next from its start); no hot-streak/heat, no drift switching. `sfxLevel` .7 on the whole bus (-3 dB).
 Note: generic duel chip `liveScore` reads `s.score[0]` (wrong seat for native games on seat 2); untouched.
 
 v0.72.1 (Nov 1): v0.72.0's release stopped on Cloudflare's 25 MiB per-file limit (the one 25.3 MB built-in art script);

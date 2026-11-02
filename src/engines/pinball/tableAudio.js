@@ -4,11 +4,12 @@
 // sfx:{soundName:{...}}, synthTrim:{soundName:gain}}. Missing files fall back to the synth band / synth sounds.
 //
 // Songs = a music director (HTML audio, streamed, never decoded whole). Every song is mapped into sections with a level
-// (1 calm, 2 medium, 3 heavy); the game asks for a level (set(role, level): attract = calm, play = medium, modes,
-// multiball and hot streaks = heavy). The director keeps the playing section while it fits; when the game's level
-// changes (or the song drifts away from it) it crossfades, preferably to a later section of the same song, else to
-// another song's section of that level, picking up a song where it was faded out before. A named role (rules.music →
-// e.g. 'jordan') plays its own song from `from`. 'wait'/'bonus' duck, 'tilt' fades out, a guitar lick ducks a little.
+// (1 calm, 2 medium, 3 heavy); the game asks for a level (set(role, level): attract = calm, play = medium, a mode or
+// multiball = heavy). Owner (Nov 1): keep a song going to get into the groove. So songs play through (calm and medium
+// parts both count as normal play) and only two things change them: the game turning heavy (a mode or multiball starts:
+// cut to a heavy part, of the same song if one starts soon, else another song; a mode with its own song plays that) and
+// the game calming down again (8 s after: back to the song it interrupted, where it was). At a song's end the next one
+// crossfades in, preferably from its start. 'wait'/'bonus' duck, 'tilt' fades out, a guitar solo ducks a little.
 // Which songs played and where they stopped carries on from game to game. iOS ignores el.volume (no fades there).
 //
 // Sounds: everything (guitar clips and the machine's synth sounds, via sound.js setSoundBus) goes through one bus with a
@@ -30,7 +31,7 @@ function createSongs(cfg,{paused=()=>false,onSong=null}={}){
  const api={has:list.length>0,role:'',level:1,now:null};if(!api.has)return api;
  if(!MEMORY.has(cfg.prefix))MEMORY.set(cfg.prefix,{resume:new Map(),recent:[]});
  const mem=MEMORY.get(cfg.prefix),voices=[];
- let lead=null,followUntil=0,held=false,duckUntil=0,mis=0,changedAt=0,modeRole=null,lastT=performance.now(),lvlNow=1;
+ let lead=null,followUntil=0,held=false,duckUntil=0,wasHeavy=false,edgeAt=0,cut=false,preMode=null,modeRole=null,lastT=performance.now(),lvlNow=1;
  const secAt=(slug,t)=>(secs[slug]||[]).find(s=>t>=s[0]-.5&&t<s[1])||null;
  function voice(slug,from,loop){const el=new Audio(url(slug));el.loop=loop;el.volume=0;el.preload='auto';
   if(from>0){const seek=()=>{try{el.currentTime=from;}catch{}};if(el.readyState>=1)seek();else el.addEventListener('loadedmetadata',seek,{once:true});}
@@ -39,17 +40,19 @@ function createSongs(cfg,{paused=()=>false,onSong=null}={}){
  // make v the playing song: everything else fades out over xf seconds (and is remembered where it stopped)
  function take(slug,from,{loop=false,xf=XF.song}={}){
   for(const o of voices)if(o.dir>0){o.dir=-1;o.rate=1/xf;if(!o.el.loop)mem.resume.set(o.slug,pos(o));}
-  const v=voice(slug,from,loop);v.rate=1/xf;lead=v;mis=0;
+  const v=voice(slug,from,loop);v.rate=1/xf;lead=v;
   mem.recent=[slug,...mem.recent.filter(s=>s!==slug)].slice(0,4);
   const info=cfg.songs?.[slug]||{title:slug};if(api.now!==info){api.now=info;onSong?.(info);}return v;}
  // the best place to go for a level: a section of that level, rather in a song not heard lately, a long one, or where
  // a song was left off (so the song you heard before a mode comes back)
  function choose(level,avoid=null){let best=null;
-  for(const tryL of [level,level===3?2:level===1?2:3])for(const slug of list)for(const s of secs[slug]){if(s[2]!==tryL)continue;
-   let from=s[0],score=Math.random()*2+Math.min(2,(s[1]-s[0])/90)-(tryL!==level?20:0);
+  // heavy = a heavy section; otherwise calm and medium both do (normal play), calm first on the title screen
+  const fits=(l,pass)=>pass?true:level===3?l===3:l<3;
+  for(const pass of [0,1])for(const slug of list)for(const s of secs[slug]){if(!fits(s[2],pass))continue;
+   let from=s[0],score=Math.random()*2+Math.min(2,(s[1]-s[0])/90)-(pass?20:0)+(level===1&&s[2]===1?2:0);
    // a song left off inside this section (e.g. faded out for a mode) comes back where it was; a song's own start is a
    // good entry too; songs heard lately are avoided otherwise
-   const r=mem.resume.get(slug),back=r!=null&&r>=s[0]&&r<s[1]-25;if(back){from=r;score+=5;}else{const ri=mem.recent.indexOf(slug);if(ri>=0)score-=(4-ri)*1.6;if(s[0]===0)score+=1;}
+   const r=mem.resume.get(slug),back=r!=null&&r>=s[0]&&r<s[1]-25;if(back){from=r;score+=5;}else{const ri=mem.recent.indexOf(slug);if(ri>=0)score-=(4-ri)*1.6;if(s[0]===0)score+=2;}
    if(slug===avoid)score-=12;
    if(!best||score>best.score)best={slug,from,score};}
   return best;}
@@ -59,19 +62,20 @@ function createSongs(cfg,{paused=()=>false,onSong=null}={}){
   const role=api.role;
   if(now<followUntil){}// watching the other phone's ball: its song (follow) decides
   else if(role&&role!=='tilt'){
-   const r=cfg.roles?.[role];
+   const r=cfg.roles?.[role],heavy=api.level===3;
+   if(heavy!==wasHeavy){if(heavy&&!preMode&&lead&&!lead.el.loop)preMode=lead.slug;wasHeavy=heavy;edgeAt=now;cut=false;}
    if(r&&url(r.song)){if(modeRole!==role){modeRole=role;if(lead?.slug!==r.song)take(r.song,r.from||0,{loop:true,xf:XF.mode});else lead.el.loop=true;}}
-   else{if(modeRole){modeRole=null;if(lead)lead.el.loop=false;changedAt=now;}// the mode's song plays on while it fits
+   else{if(modeRole){modeRole=null;if(lead)lead.el.loop=false;}// the mode's song plays on until the game calms down
     if(!lead)go(choose(api.level),XF.song);
-    else{const t=pos(lead),d=lead.el.duration||1e9,s=secAt(lead.slug,t),sl=s?s[2]:api.level;
+    else{const t=pos(lead),d=lead.el.duration||1e9,s=secAt(lead.slug,t),sl=s?s[2]:2,mine=secs[lead.slug]||[];
      if(d-t<XF.song+.3)go(choose(api.level,lead.slug),XF.song);   // the song ends: crossfade into the next one
-     else if(sl===api.level)mis=0;
-     else if((secs[lead.slug]||[]).some(q=>q[2]===api.level&&q[0]>t&&q[0]-t<12))mis=0;// the right part is coming up: wait for it
-     else{mis+=dt;const fresh=now-changedAt<12000,diff=Math.abs(sl-api.level);
-      // the game just changed: heavier at once, calmer after a few seconds; the song drifted: tolerate a step for a while
-      const lim=fresh?(api.level>sl?1.2:6):diff>1?3:25;
-      if(mis>lim){const later=(secs[lead.slug]||[]).find(q=>q[2]===api.level&&q[0]>t&&q[0]-t<120);
-       go(later&&Math.random()<.6?{slug:lead.slug,from:later[0]}:choose(api.level,lead.slug),api.level>sl?XF.up:XF.down);}}}}}
+     else if(heavy&&!cut&&sl<3){
+      // the game just got heavy: if this song's heavy part starts within 10 s let it come, else cut to a heavy part
+      if(!mine.some(q=>q[2]===3&&q[0]>t&&q[0]-t<10)){cut=true;const later=mine.find(q=>q[2]===3&&q[0]>t&&q[0]-t<120);
+       go(later&&Math.random()<.5?{slug:lead.slug,from:later[0]}:choose(3,lead.slug),XF.up);}}
+     else if(!heavy&&preMode&&now-edgeAt>8000){
+      // calm again: back to the song the mode interrupted, where it was (or carry on if that is what's playing)
+      const p=preMode,at=mem.resume.get(p);preMode=null;if(lead.slug!==p&&at!=null&&url(p))take(p,at,{xf:XF.down});}}}}
   // volumes: equal-power fades, the whole mix ducked while waiting / a lick plays, out on a tilt
   const lv=role==='tilt'||!role?0:role==='wait'||role==='bonus'?.55:1,duck=now<duckUntil?.72:1;lvlNow+=(lv*duck-lvlNow)*Math.min(1,dt*(lv*duck<lvlNow?3:1.2));
   for(let i=voices.length-1;i>=0;i--){const v=voices[i];v.g=Math.max(0,Math.min(1,v.g+v.dir*v.rate*dt));
@@ -80,7 +84,7 @@ function createSongs(cfg,{paused=()=>false,onSong=null}={}){
   if(!role&&!voices.length)lead=null;}
  const timer=setInterval(tick,100);
  api.set=(role,level)=>{if(!musicOn())role=null;
-  if(level&&role&&role!=='wait'&&role!=='bonus'&&role!=='tilt'&&level!==api.level){api.level=level;changedAt=performance.now();}
+  if(level&&role&&role!=='wait'&&role!=='bonus'&&role!=='tilt')api.level=level;
   if(role===api.role)return;api.role=role;
   if(!role)for(const v of voices){v.dir=-1;v.rate=1/1.5;if(!v.el.loop)mem.resume.set(v.slug,pos(v));}};
  // online: the watching phone plays what the playing phone plays (song, position), crossfading when that changes
@@ -95,14 +99,14 @@ function createSongs(cfg,{paused=()=>false,onSong=null}={}){
 }
 
 // ---- the sound bus: dry + a short reverb (generated impulse: 1.9 s, darker as it decays), one per audio context
-let BUS=null;
-function bus(){const a=audioContext();if(!a)return null;if(BUS&&BUS.a===a)return BUS;
+let BUS=null,BUS_LEVEL=1;// BUS_LEVEL = the table's sfxLevel (everything on the bus together)
+function bus(){const a=audioContext();if(!a)return null;if(BUS&&BUS.a===a){BUS.input.gain.value=BUS_LEVEL;return BUS;}
  const input=a.createGain(),wet=a.createGain(),conv=a.createConvolver(),pre=a.createDelay(.05);
  const len=Math.round(a.sampleRate*1.9),ir=a.createBuffer(2,len,a.sampleRate);
  for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);let lp=0;for(let i=0;i<len;i++){const t=i/a.sampleRate,k=Math.min(.95,.25+t*.45);lp=lp*k+(Math.random()*2-1)*(1-k);d[i]=lp*Math.exp(-t*3.4)*(1+t*.6);}}
  conv.buffer=ir;pre.delayTime.value=.018;wet.gain.value=.4;// the convolver normalises the impulse: .4 ≈ 8 dB under the dry hit
  input.connect(a.destination);input.connect(pre).connect(conv).connect(wet).connect(a.destination);
- BUS={a,input,meter:null};return BUS;}
+ input.gain.value=BUS_LEVEL;BUS={a,input,meter:null};return BUS;}
 // tests: the loudest 50 ms RMS (dBFS) on the dry bus while fn plays
 async function measure(fn,ms=1600){const b=bus();if(!b)return null;const a=b.a;if(!b.meter){b.meter=a.createAnalyser();b.meter.fftSize=2048;b.input.connect(b.meter);}
  const buf=new Float32Array(b.meter.fftSize);let max=0;fn();const t0=performance.now();
@@ -113,7 +117,7 @@ const BUFS=new Map();// url → AudioBuffer | null (loading) | false (failed)
 function decoded(a,u){if(!BUFS.has(u)){BUFS.set(u,null);fetch(u).then(r=>r.arrayBuffer()).then(b=>a.decodeAudioData(b)).then(buf=>BUFS.set(u,buf)).catch(()=>BUFS.set(u,false));}return BUFS.get(u)||null;}
 function createGuitar(cfg,{onLick=null}={}){
  const pre=`music:${cfg.prefix}-`,keys=Object.keys(USER_PORTRAITS).filter(k=>k.startsWith(pre+'gtr-')||k.startsWith(pre+'fx-'));
- const api={has:keys.length>0};if(!api.has)return api;
+ const api={has:keys.length>0};if(!api.has)return api;BUS_LEVEL=cfg.sfxLevel??1;
  // name = file name after the prefix: 'gtr-big' = every gtr-big-<n>, 'fx-sparks' = fx-sparks-1/2, 'fx-wail' = that one
  const files=name=>keys.filter(k=>k===pre+name||k.startsWith(pre+name+'-')).map(k=>USER_PORTRAITS[k]);
  const ctx=()=>{if(!sfxOn())return null;return audioContext();};
@@ -144,7 +148,7 @@ function createGuitar(cfg,{onLick=null}={}){
  api.sound=name=>{let e=cfg.sfx?.[name];if(Array.isArray(e))e=e[Math.floor(Math.random()*e.length)];if(!e)return false;let ok=false;
   try{ok=e.lick?api.lick(e.lick,e.vol??.5,e.prio??1):e.one?api.one(e.one,e.vol??.5,e):e.grain?api.grain(e.grain,e.vol??.3,e.len):e.stab?api.stab(e.vol??.3):false;}catch{ok=false;}
   return ok&&e.replace!==false;};
- api.stop=()=>{for(const v of [lead,...stabs])if(v)fadeOut(v);lead=null;stabs=[];};
+ api.stop=()=>{for(const v of [lead,...stabs])if(v)fadeOut(v);lead=null;stabs=[];BUS_LEVEL=1;};
  api.status=()=>{const u=keys.map(k=>BUFS.get(USER_PORTRAITS[k]));return {files:keys.length,decoded:u.filter(Boolean).length,failed:u.filter(b=>b===false).length};};
  return api;
 }

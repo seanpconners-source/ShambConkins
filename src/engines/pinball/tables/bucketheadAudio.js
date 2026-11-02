@@ -36,36 +36,42 @@ const roles={
  wizard:{song:'welcome-to-bucketheadland',from:3},    // WELCOME TO BUCKETHEADLAND wizard mode
 };
 // Machine sound → guitar (a list = one picked at random). one = a clip (off/dur = a slice, rate = pitch range),
-// lick = a lead lick tier (gtr-big/mid/short/tiny), grain = tiny random slices, stab = the opening of a lick.
-// The clip replaces the synth sound unless replace:false. vol: measured so every sound peaks around -24 dBFS RMS on the
-// bus (licks and big moments -21, small fast ones -27); the songs play at about -18.
+// lick = a solo from the lick set (gtr-big/mid/short/tiny), grain = tiny random slices. The clip replaces the synth sound
+// unless replace:false. Owner (Nov 1): in play only the generic guitar noises (pick scrapes, amp, clicks, sparks...);
+// solos only when a ball is lost and for the really big moments (super jackpot, game over), so the songs come through.
+// vol: measured on the bus (s.debug.audioMeter) to these loudest-50 ms levels before sfxLevel: big moments -19,
+// awards -21, normal hits -23, small fast ones -26 dBFS; sfxLevel then takes everything down together (songs ≈ -17).
 const sfx={
  start:{one:'fx-amp-on',vol:.25},                                          // amp switches on for each ball
  plunge:{one:'fx-rev',vol:.28},autoPlunge:{one:'gtr-scrape',vol:.18},
- bumper:[{one:'fx-sparks',dur:.24,rate:[.94,1.08],vol:.27},{stab:.34}],
+ bumper:{one:'fx-sparks',dur:.24,rate:[.94,1.08],vol:.27},
  sling:{one:'fx-cheap-lead',dur:.32,rate:[.95,1.06],vol:.26},
  drop:{one:'fx-fretted',dur:.42,rate:[.96,1.06],vol:.99},
- standup:{stab:.27},rollover:{stab:.23},
- spin:{grain:'fx-mice',len:.06,vol:.43},
+ standup:{one:'fx-fretted',off:.25,dur:.3,rate:[1.05,1.25],vol:.5},
+ rollover:{one:'gtr-scrape',dur:.3,rate:[1.1,1.3],vol:.21},
+ spin:{grain:'fx-mice',len:.06,vol:.39},
  hole:{one:'fx-knock',vol:.25},eject:{one:'fx-rev',dur:.55,vol:.38},kick:{one:'fx-rev',dur:.7,vol:.38},
  nudge:{one:'fx-amp-on',dur:.32,vol:.26},
- ramp:{one:'fx-scraper',dur:1.3,rate:[.95,1.08],vol:.22},                  // the ball heads up a ramp
- rail:{lick:'gtr-short',prio:1,vol:.41},                                   // a ramp / wireform made
- award:{lick:'gtr-short',prio:1,vol:.38},
+ ramp:{one:'fx-scraper',dur:1.3,rate:[.95,1.08],vol:.21},                  // the ball heads up a ramp
+ rail:{one:'fx-cats',dur:.8,rate:[.95,1.08],vol:.2},                      // a ramp / wireform made
+ award:{one:'fx-stutter',dur:1,vol:.37},
  lock:{one:'fx-trem',vol:.33},
- skill:{one:'fx-wail',dur:3.2,vol:.39},
- jackpot:{lick:'gtr-mid',prio:3,vol:.44},
- super:{lick:'gtr-big',prio:4,vol:.54},
- multiball:{lick:'gtr-big',prio:4,vol:.5},                                 // multiball and every mode start
+ skill:{one:'gtr-wail',vol:.25},
+ jackpot:{one:'fx-wail',dur:2.2,vol:.39},
+ multiball:{one:'gtr-wail',vol:.21},                                        // multiball and every mode start
  knocker:{one:'fx-wail',dur:2.6,vol:.39},                                  // extra ball / replay / high score
  save:{one:'gtr-hold',vol:.42},
- drain:[{one:'fx-diving',vol:.32},{one:'gtr-dive',vol:.34}],tiltDrain:{one:'fx-diving',vol:.32},
+ super:{lick:'gtr-big',prio:4,vol:.48},                                    // super jackpot, mode complete, wizard, robot beaten
+ drain:{lick:'gtr-mid',prio:3,vol:.49},                                     // ball lost: a solo while the bonus counts
+ tiltDrain:{one:'fx-diving',vol:.32},
  danger:{one:'fx-sixty-cop',vol:.97},tilt:{one:'fx-unplug',vol:.28},
  bonus:{one:'fx-cheap-lead',dur:.16,rate:[.9,1.25],vol:.2},
- gameOver:{one:'fx-diving',rate:.85,vol:.28},
+ gameOver:{lick:'gtr-big',prio:4,vol:.55},
 };
 // The machine's own synth sounds that stay (flippers, gates, walls, the rolling ball): one trim on the bus so the
 // flipper clack sits with the small clips (-26); gate/wall ticks keep their place under it.
 const synthTrim={all:.62,roll:.62};
-const audio={prefix:'bhpin',artist:'Buckethead',songs,sections,roles,sfx,synthTrim};
+// every sound on the bus together (owner: still a little loud next to the songs)
+const sfxLevel=.7;
+const audio={prefix:'bhpin',artist:'Buckethead',songs,sections,roles,sfx,synthTrim,sfxLevel};
 Object.assign(exports,{audio});

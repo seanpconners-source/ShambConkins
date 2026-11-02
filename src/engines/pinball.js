@@ -65,16 +65,13 @@ async function pinball(s){
  const gtr=table.audio?createGuitar(table.audio,{onLick:sec=>songs.duck?.(sec)}):{has:false};gtr.preload?.();
  if(gtr.has){setSoundBus(()=>soundBus()?.input,table.audio.synthTrim);}
  s.cleanup(()=>{songs.stop?.();gtr.stop?.();setSoundBus(null);});
- // How hot the game is for the music: recent scoring sounds add heat (half-life 7 s); a mode, multiball or a hot
- // streak asks for heavy music, normal play medium, title / game over calm.
- const HEAT={bumper:.05,sling:.05,drop:.35,standup:.35,rollover:.25,spin:.02,hole:.6,rail:1.2,award:1.2,lock:2,skill:2,jackpot:3,super:4,multiball:4,knocker:2};
- let heat=0,hot=false;// a hot streak starts above 10 and lasts until the heat drops under 5
- const musicLevel=()=>{hot=heat>(hot?5:10);return phase==='intro'||phase==='zoom'||phase==='gameover'?1:m.mb>1||rules.music?.(m)!=='main'||hot?3:2;};
+ // The music's level: title / game over calm, play medium, a mode or multiball heavy (songs change only on those changes).
+ const musicLevel=()=>phase==='intro'||phase==='zoom'||phase==='gameover'?1:m.mb>1||rules.music?.(m)!=='main'?3:2;
  let level=1;const setSong=(name,lv=level)=>{if(songs.has){songs.set(name,lv);song=name;level=lv;return;}const n=name==='wait'||name==='bonus'||name==='tilt'?null:name;if(n===song)return;song=n;if(n)music.play(n);else music.stop();};
  // Every machine sound goes through here: the table's guitar part, then the synth sound unless the guitar replaces it.
  // Online, the sounds of this phone's ball also go to the watching phone (relay=false = one that came from there).
  const netSnd=[];
- const sound=(name,relay=true)=>{heat+=HEAT[name]||0;if(relay&&net&&phase==='ball'&&mine()&&netSnd.length<48)netSnd.push(name);if(gtr.has&&gtr.sound(name))return;pinballSound(name);};
+ const sound=(name,relay=true)=>{if(relay&&net&&phase==='ball'&&mine()&&netSnd.length<48)netSnd.push(name);if(gtr.has&&gtr.sound(name))return;pinballSound(name);};
  // ---- online: one machine on two phones. The phone whose ball it is runs the table and streams it ~20 times a second
  // (balls, flippers, parts, lamps, DMD message, sounds, song); the other phone draws it DELAY s late, easing the balls
  // between snapshots. When the ball drains it sends the bonus and the player's score/ball/extra ({eb}); both phones count
@@ -195,7 +192,7 @@ async function pinball(s){
  function watchBall(){phase='ball';phaseT=0;m.w.balls=[];snapCur=null;rLamps={};rFl=null;rcr='';
   const pl=m.players[m.cur];rmsg={lines:[`PLAYER ${m.cur+1}`,(names[m.cur]||'').toUpperCase().slice(0,12),`BALL ${pl.ball}`],anim:'face',flash:false,age:0,dur:1.8};}
  function startBall(){for(let i=tl.length-1;i>=0;i--)if(tl[i].d)tl.splice(i,1);sentParts={};sentLamps='';netSnd.length=0;
-  m.startBall();heat=0;phase='ball';phaseT=0;R.follow(m.w,1,W(),H(),true);sound('start');
+  m.startBall();phase='ball';phaseT=0;R.follow(m.w,1,W(),H(),true);sound('start');
   // the player's face on the DMD first, then the table's own ball-start message (skill shot)
   const pl=m.players[m.cur],first=m.msg;m.msg={lines:[nP>1?`PLAYER ${m.cur+1}`:'',(names[m.cur]||'').toUpperCase().slice(0,12),`BALL ${pl.ball}${pl.extra&&m.shootAgainLamp?' · AGAIN':''}`],dur:1.8,anim:'face',flash:false,age:0};if(first)m.msgs.unshift(first);}
  async function next(){
@@ -212,7 +209,7 @@ async function pinball(s){
   else s.finish(sc,`${table.title} pinball · 3 balls each${ranks.some(r=>r>=0)?' · new high score':''}`);
  }
 
- s.debug={engine:'pinball',m,phase,R,dmd,auto:false,view,openMenu,scores:scores(),plunge:p=>P.plunge(m.w,p),scenes:Object.keys(table.dmdScenes||{}),song:()=>songs.has?songs.role:music.current,nowSong:()=>songs.now||null,guitar:gtr.has,audio:()=>({songs:songs.status?.()||null,guitar:gtr.status?.()||null,heat:+heat.toFixed(1)}),
+ s.debug={engine:'pinball',m,phase,R,dmd,auto:false,view,openMenu,scores:scores(),plunge:p=>P.plunge(m.w,p),scenes:Object.keys(table.dmdScenes||{}),song:()=>songs.has?songs.role:music.current,nowSong:()=>songs.now||null,guitar:gtr.has,audio:()=>({songs:songs.status?.()||null,guitar:gtr.status?.()||null}),
   // tests: play one machine sound alone and return its loudest 50 ms RMS on the sound bus (dBFS)
   audioMeter:(name,ms)=>measure(()=>sound(name,false),ms),tableAudio:table.audio||null,
   net:()=>net&&{me,mine:mine(),queued:tl.length,balls:m.w.balls.length,remoteScore:m.players[m.cur].score},
@@ -245,7 +242,6 @@ async function pinball(s){
   // ---- music: attract under the intro and hand-offs, a build-up on the plunger, then whatever the rules ask for
   // (wait/bonus/tilt: the synth band goes quiet, recorded songs duck or fade; watching: the other phone's song)
   const watching=phase==='ball'&&!mine();
-  heat*=Math.pow(.5,dt/7);
   setSong(phase==='intro'||phase==='zoom'||phase==='gameover'?'attract':phase==='wait'?'wait':phase==='bonus'?'bonus':watching?rsong:m.phase==='plunge'?'plunge':m.tilted?'tilt':rules.music?.(m)||'main',watching?rlevel:phase==='ball'||phase==='intro'||phase==='zoom'||phase==='gameover'?musicLevel():level);
   // ---- draw
   // Lights: the rules' lamps with any running light shows on top; attract shows between balls; dim for the bonus.
