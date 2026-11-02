@@ -11,7 +11,12 @@ the K table + boss HP; Hard/Extreme = 4 phases with a FINAL PHASE at 25%, `deck(
 `combo()` = extra light bullet volley (aimed/fan/ring/rain/bounce only, via `FC` = F with lighter k and no poses) on top of
 a main attack). Engine reads `s.difficulty`, set by `requestGame({difficulty})`; HUD tag + PHASE x/N; body art gets
 phase ≤2. `tests/bossdiff.mjs` now takes DIFF=0,1,2,3 and SHAMB_URL. Boss faces (`A.face`) = Broforce `headCanvas`
-cut-out heads (no circle; `A.portrait` hides the bust/brute skin oval), moods via `B.mood/moodUntil`. Online doesn't pass difficulty yet (K3).
+cut-out heads (no circle; `A.portrait` hides the bust/brute skin oval), moods via `B.mood/moodUntil`.
+K3 done there: `bossTierFor(run,realm)` (bossGate.js): mind 0, body 1, spirit 2, horror 3; warp boss = `run.warp.realm`
+(stored on entry; old saves: realm of the main-board return node); else levels cleared. `startBoss` passes it to
+`requestGame({difficulty})` and shows it on the intro card. Online: launcher → `hostGame(game,{difficulty})` → 'game'
+msg `difficulty` → `boardDuel(...,difficulty)` → duel `start` → hooks.start duel.difficulty → requestGame on both
+phones. Checked: board walk Mind/Body/Spirit = Easy/Medium/Hard, rule cases in Node; online not run (no wrangler).
 Testing on the Windows laptop: the 346 MB one-file build hangs headless Chromium; build `--pwa` into the scratchpad,
 serve it (tiny node static server) and run tests with SHAMB_URL=http://localhost:8123/.
 
