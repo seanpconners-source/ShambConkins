@@ -1,7 +1,8 @@
 # AI state (keep short; update after meaningful work)
 
-Nov 2: owner's master to-do list is `docs/ROADMAP.md` (phases; "continue" = offer options from it, wait for a pick).
-Current work = boss tiers + outfits (ROADMAP K1-K23), branch `claude/boss-fights` from TESTver. K1 done there:
+v0.75.0 (Nov 2, owner asked to release it): the boss-fight overhaul below. Fresh sessions: `docs/HANDOFF.md` first.
+Owner's master to-do list is `docs/ROADMAP.md` (phases; "continue" = offer options from it, wait for a pick).
+Boss work (ROADMAP K section) on branch `claude/boss-fights` (from TESTver, merged to TESTver and main). K1 done:
 bossFight.js parry/revive fire on touch DOWN (`press`; they used to wait for the finger to lift, ~260 ms, so the bullet
 had already hit), a press with nothing in reach opens a .22 s parry window (`PARRY_WIN`, whiff → .25 s lock), parry
 reach 44 (was 34), revive reach 84 (was 62) and staying on the bubble .6 s revives too (`stepAssist`, `revT` ring);

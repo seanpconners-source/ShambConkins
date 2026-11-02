@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.75.0
+
+**Boss fights, rebuilt to be a real challenge.**
+
+- **Parry and revive work.** Both now react the moment you touch the screen; they used to wait for your finger to
+  lift, by which time the pink bullet had already hit you. A slightly early tap still parries. Revive by tapping near
+  your partner's bubble or just staying on it (a green ring fills, the bubble says TAP!).
+- **Four difficulty tiers: Easy, Medium, Hard, Extreme.** On the board, Level I bosses are Easy, Level II Medium,
+  Level III Hard and Level IV Extreme; a warp zone's boss matches the level you warped in from. Medium mixes in attacks
+  from later phases and extra volleys; Hard and Extreme add a fourth FINAL PHASE. The boss card shows the tier.
+- **Boss Select is a ladder.** Pick a tier when you replay a boss; beating one opens the next. Four medals on each
+  boss card, a gold frame for beating Extreme. Wins on the board count too. Boss characters now only join from board
+  wins.
+- **Bosses look and act better.** Faces are cut-out heads with expressions (smug, laughing when they hit you, hurt,
+  angry, sad) instead of a photo in a circle. They now ambush you from the bottom or the sides, lob bombs at marked
+  spots, carpet-bomb the screen, and throw things from their own world (Biff throws manure, Dracula bats, King Kandy
+  candy...).
+- **Huge explosions.** Each new phase blows armour off the boss; later phases smoke, burn and glow. Knockouts get
+  bigger every tier, and an Extreme knockout fills the screen: ANNIHILATED!! The boss's head goes flying.
+- **Star Fox-style radio chatter.** A comm box with the speaker's face: the boss and you trade lines between phases,
+  quick shouts when someone is hit, goes down, gets revived or fires a super, and special lines when your character
+  comes from the boss's own movie or show (or is the boss).
+- Boss fights online pass the tier to both phones.
+
 ## v0.74.0
 
 **King Gizzard pinball plays King Gizzard.** Eight real King Gizzard & the Lizard Wizard songs, run the same way as
