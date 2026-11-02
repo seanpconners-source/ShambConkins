@@ -34,6 +34,7 @@ _(empty)_
 | **E. Level IV + endings** | Frank's fake-out, hellish Level IV, fake and true endings | The payoff that makes it feel "finished" |
 | **F. Board strategy** | Warps on 2 paths, item feedback, stars | Makes the board itself exciting |
 | **G. Polish the good games** | Casino tables, kart, Hole.it, penalties, Yahtzee... | Good-to-great, once the bad ones are gone |
+| **G+. Menus revamp** | Console-style game select + collection (M1-M7) | Best after the triage (B) decides which games stay and after outfits (K8) exist |
 | **H. New content** | Game shows, ITYSL, Lucy, army-gate game, Sci-Fi + Horror warp worlds | Built on reusable engines |
 | **I. Online + Pokémon online** | Rooms, invites, chat, PvP Pokémon, co-op Elite Four | Needs real two-phone testing first |
 | **Ongoing** | Testing (soak tests, regression tests per fix) | Alongside everything |
@@ -148,6 +149,27 @@ Endings
 - **G6** `[todo]` Yahtzee: more authentic play and presentation.
 - **G7** `[todo]` Horde (Living Dead): better feel, progression, weapons, combat.
 - **G8** `[todo]` DOOM: backs of heads; death animations (head shrinks and sits oddly over the corpse); more varied enemy characters and positions.
+
+- **G9** `[bug]` Pinball physics feel (all tables): near the flippers and elsewhere the ball drags slowly along
+  surfaces and takes too long to come down; doesn't feel real (rolling friction / damping / slope, `pinball/`).
+- **G10** `[bug]` King Gizzard pinball: ball can get stuck in the upper area left of the small top-left flipper.
+
+## Menus revamp (owner, Nov 2: "sleek, modern, professional, not amateur")
+
+Design reference: the PS5 home screen (feel, motion, layout ideas), but its own ShambConkins look, not a copy.
+- **M1** `[todo]` Arcade / game select as a console-style home: a big hero area with key art for the focused game,
+  a horizontal row of game tiles that scrolls with smooth animation, sound on focus, background that changes per game.
+- **M2** `[todo]` Rows/sections: Featured ("old favorites"), Recently played, Recently added, Recently updated,
+  Favorites (star a game), by genre; sorting and filters; search stays.
+- **M3** `[todo]` Game families: versions live under one main game, each with its own title screen/page where you pick
+  the version. E.g. "Replay Bosses" → a menu of unlocked bosses with a screenshot/portrait each (ties in with the
+  tier ladder K5); Pokémon games together; Mario Kart modes (GP, Time Trial, Battle...); likely also Space Invaders,
+  Hangman, Broforce, Castlevania, Sonic, SMB, pinball tables, trivia...
+- **M4** `[todo]` Real tile art per game (icon/key art), not plain cards; locked games look locked.
+- **M5** `[todo]` Character collection revamp in the same style: tap a character → a detail page with their
+  portrait/moods and their unlocked outfits (K8-K12) and how to get the rest.
+- **M6** `[idea]` Carry the same look to the other menus (home, New Game, settings) once M1 is liked.
+- **M7** `[todo]` Before building: Claude mocks up 2-3 design directions (screenshots) for the owner to pick from.
 
 ## Phase H — new content (sections 3 + 7)
 

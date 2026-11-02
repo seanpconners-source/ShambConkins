@@ -1,5 +1,12 @@
 # AI state (keep short; update after meaningful work)
 
+Nov 2: owner's master to-do list is `docs/ROADMAP.md` (phases; "continue" = offer options from it, wait for a pick).
+Current work = boss tiers + outfits (ROADMAP K1-K23), branch `claude/boss-fights` from TESTver. K1 done there:
+bossFight.js parry/revive fire on touch DOWN (`press`; they used to wait for the finger to lift, ~260 ms, so the bullet
+had already hit), a press with nothing in reach opens a .22 s parry window (`PARRY_WIN`, whiff → .25 s lock), parry
+reach 44 (was 34), revive reach 84 (was 62) and staying on the bubble .6 s revives too (`stepAssist`, `revT` ring);
+tap-release only fires the SUPER now.
+
 v0.74.0 (Nov 1): King Gizzard (`gizzardAudio.js`, kgpin-*, 8 songs) and Black Sabbath (`sabbathAudio.js`, bspin-*, 5 songs)
 tables got the owner's songs on the same music director as Bucketheadland (sections measured by scratch scripts, mode
 roles by song; no guitar SFX sets, they keep synth sounds). Pinball intro waits (<=5 s) for the drop-in backglass to

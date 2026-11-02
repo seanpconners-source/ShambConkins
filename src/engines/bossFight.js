@@ -21,7 +21,7 @@ const {PATTERNS,SIGNATURES,K,STEPS}=require("src/engines/bossAttacks.js");
 const STEP_NAME=new Map(Object.entries(STEPS).map(([n,f])=>[f,n]));
 const {BODIES,drawMinion}=require("src/engines/bossBodies.js");
 const {makeScene}=require("src/engines/bossScenes.js");
-const TAU=Math.PI*2,H=640,PR=5.5,PARRY_R=34,HUD_Y=596,PCOL=['#ffd36e','#ff8ec8'],PDARK=['#b8791a','#b0316d'];
+const TAU=Math.PI*2,H=640,PR=5.5,PARRY_R=44,PARRY_WIN=.22,PARRY_LOCK=.25,REVIVE_R=84,REVIVE_HOLD=.6,HUD_Y=596,PCOL=['#ffd36e','#ff8ec8'],PDARK=['#b8791a','#b0316d'];
 // 1P arcade: one plane alone, so the boss has less HP and fires a little less; the player gets a 4th heart (no partner revives)
 const SOLO_K={hp:.5,dens:.7},SOLO_HP=5;
 const ease={inout:u=>u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2,in:u=>u*u*u,out:u=>1-Math.pow(1-u,3)};
@@ -51,7 +51,7 @@ async function bossfight(s){
  const WIDE_K={dens:1.3,spd:1.1,tele:1,restMul:.78,dmg:.96},kWide={dens:kTab0.dens*WIDE_K.dens,spd:kTab0.spd*WIDE_K.spd,rest:kTab0.rest*WIDE_K.restMul,tele:kTab0.tele*WIDE_K.tele};let kTab=kTab0;
  const WIDE_AT=720,W_MAX=1700,spawnX=i=>alone?W/2:wide?W/2+(i?1:-1)*clamp(W*.3,250,380):W*(i?.7:.3),spawnY=()=>wide?B.hy+150:500;
  const B={x:210,y:-260,hx:210,hy:150,hp:Math.round(boss.hp*hpScale),max:Math.round(boss.hp*hpScale),phase:0,flash:0,tw:null,deadR:0,hidden:0,pose:'idle',poseT:0,open:0,glow:0,lookX:0,lookY:0,drawX:210,drawY:-260,shown:0,chip:1,sq:1};
- const P=(alone?[0]:[0,1]).map(i=>({i,x:spawnX(i),y:500,tx:spawnX(i),ty:500,aim:-Math.PI/2,hp:maxHp,inv:0,ghost:0,out:false,gx:0,gy:0,meter:0,fire:0,sup:0,supT:0,dmg:0,parries:0,kills:0,key:{u:0,d:0,l:0,r:0},parryT:0,vx:0,hitFlash:0,barrage:0}));
+ const P=(alone?[0]:[0,1]).map(i=>({i,x:spawnX(i),y:500,tx:spawnX(i),ty:500,aim:-Math.PI/2,hp:maxHp,inv:0,ghost:0,out:false,gx:0,gy:0,meter:0,fire:0,sup:0,supT:0,dmg:0,parries:0,kills:0,key:{u:0,d:0,l:0,r:0},parryT:0,parryW:0,parryLock:0,revT:0,vx:0,hitFlash:0,barrage:0}));
  const bullets=[],pshots=[],minions=[],hazards=[],warns=[],fx=[],runs=[],says={text:'',t:0};
  let T=0,modeT=0,mode='intro',timeScale=1,hitstop=0,shakeMag=0,flashWhite=0,lastSay=-99,bannerQ=[],sigShown=[false,false,false],finished=false,duration=0,musicT=0,musicStep=0,sfxT={},scene=null,sceneKey='',koDone=false,koBoom=0,directorRun=null,intro={skip:false};
  const log={dmg:0,hits:[0,0],src:{}};
@@ -170,27 +170,33 @@ async function bossfight(s){
  function hurt(p,src){if(p.hp<=0||p.inv>0||p.sup>0||mode!=='fight'||net&&p.i!==me)return false;p.hp--;log.hits[p.i]++;log.src[src||'?']=(log.src[src||'?']||0)+1;if(s.debug.immortal&&p.hp<=0)p.hp=1;p.inv=1.9;shake(7);sfx('hurt');vibrate(40);burst(p.x,p.y,'#fff',12,200,.5);ring(p.x,p.y,'#ff4b3a',44);s.react(p.i,'sad');
   if(p.hp<=0){p.ghost=5;p.out=false;p.gx=p.x;p.gy=p.y;p.sup=0;text(p.x,p.y-30,'DOWN!','#ff5a5a',16,1.2);if(!alive().length&&host)startLose();nf?.push();}return true;}
  function revive(p,by){p.hp=2;p.inv=2.4;p.ghost=0;p.out=false;p.x=p.tx=clamp(p.gx,22,W-22);p.y=p.ty=clamp(p.gy,YMIN,580);burst(p.x,p.y,'#7dffb0',22,220,.7,3.5);ring(p.x,p.y,'#7dffb0',70,.6);text(p.x,p.y-34,'REVIVED!','#7dffb0',17,1.3);sound('unlock');s.react(p.i,'happy');s.react(by.i,'happy');}
- function act(i,onlySuper){const p=P[i];if(p.hp<=0||finished)return;if(mode==='intro'){if(T>1.6&&!intro.skip&&modeT<3.3){intro.skip=true;modeT=3.3;}return;}if(mode!=='fight'&&mode!=='phase')return;
-  const o=mate(p);if(!onlySuper){if(o.hp<=0&&o.ghost>0&&Math.hypot(p.x-o.gx,p.y-o.gy)<62){netOp(['rv']);revive(o,p);return;}
-   let best=null,bd=PARRY_R*PARRY_R;for(const b of bullets){if(!b.pink||b.friendly)continue;const d=(b.x-p.x)**2+(b.y-p.y)**2;if(d<bd+(b.r*b.r)){bd=d;best=b;}}
-   if(best){parry(p,best);return;}}
+ // Parry and revive fire on touch DOWN (they used to wait for the finger to lift, by when the bullet had hit or passed).
+ // A press with nothing in reach opens a short parry window (PARRY_WIN); a whiffed window locks the next one briefly.
+ function tryRevive(p){const o=mate(p);if(o===p||o.hp>0||o.ghost<=0||Math.hypot(p.x-o.gx,p.y-o.gy)>=REVIVE_R)return false;netOp(['rv']);revive(o,p);p.revT=0;return true;}
+ function nearPink(p){let best=null,bd=1e9;for(const b of bullets){if(!b.pink||b.friendly||b.dead)continue;const d=(b.x-p.x)**2+(b.y-p.y)**2,r=PARRY_R+b.r;if(d<r*r&&d<bd){bd=d;best=b;}}return best;}
+ function press(i){const p=P[i];if(p.hp<=0||finished)return true;if(mode==='intro'){if(T>1.6&&!intro.skip&&modeT<3.3){intro.skip=true;modeT=3.3;}return true;}if(mode!=='fight'&&mode!=='phase')return true;
+  if(tryRevive(p))return true;const b=nearPink(p);if(b){parry(p,b);return true;}if(p.parryLock<=0)p.parryW=PARRY_WIN;return false;}
+ function act(i,onlySuper){const p=P[i];if(onlySuper){if(p.hp<=0||finished||mode!=='fight'&&mode!=='phase')return;}else if(press(i))return;
   if(p.meter>=100&&p.sup<=0)superOn(p);}
- function parry(p,b){if(net&&b._id)netOp(['pa',b._id,b.reflect?1:0]);p.inv=Math.max(p.inv,.65);p.parryT=.45;p.parries++;p.meter=Math.min(100,p.meter+(b.reflect?30:20));hitstop=.07;burst(b.x,b.y,'#ff9ae0',16,220,.6,3);ring(b.x,b.y,'#ff9ae0',50,.45);text(p.x,p.y-34,b.reflect?'REFLECT!':'PARRY!','#ff9ae0',16,.9);sfx('parry');vibrate(18);s.react(p.i,'happy');
+ function stepAssist(p,dt){p.parryLock=Math.max(0,p.parryLock-dt);if(mode!=='fight'&&mode!=='phase'){p.parryW=0;p.revT=0;return;}
+  if(p.parryW>0){const b=nearPink(p);if(b)parry(p,b);else if((p.parryW-=dt)<=0){p.parryW=0;p.parryLock=PARRY_LOCK;}}
+  const o=mate(p);if(o!==p&&o.hp<=0&&o.ghost>0&&Math.hypot(p.x-o.gx,p.y-o.gy)<REVIVE_R){if((p.revT+=dt)>=REVIVE_HOLD)tryRevive(p);}else p.revT=Math.max(0,p.revT-dt*2);}
+ function parry(p,b){if(net&&b._id)netOp(['pa',b._id,b.reflect?1:0]);p.inv=Math.max(p.inv,.65);p.parryT=.45;p.parryW=0;p.parryLock=0;p.parries++;p.meter=Math.min(100,p.meter+(b.reflect?30:20));hitstop=.07;burst(b.x,b.y,'#ff9ae0',16,220,.6,3);ring(b.x,b.y,'#ff9ae0',50,.45);text(p.x,p.y-34,b.reflect?'REFLECT!':'PARRY!','#ff9ae0',16,.9);sfx('parry');vibrate(18);s.react(p.i,'happy');
   if(b.reflect){b.friendly=true;b.pink=false;b.reflect=false;b.step=null;b.homeBoss=true;b.dmg=70;b.col='#ffe66a';b.kind='big';sprites.size>300&&sprites.clear();}else b.dead=true;}
  function superOn(p){p.meter=0;p.sup=p.i===0?1.9:1.5;p.supT=p.sup;p.barrage=0;hitstop=.16;flashWhite=.35;shake(10);sfx('super');vibrate(40);text(p.x,p.y-44,p.i===0?'MEGA BEAM!':'STAR BARRAGE!','#ffe66a',17,1.1);s.react(p.i,'win',2);
   for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];if(Math.hypot(b.x-p.x,b.y-p.y)<220){burst(b.x,b.y,'#fff',2,80,.3,2);netGone(b);bullets.splice(i,1);}}}
  // ---- input
  const touch=[null,null];const GAIN=1.45;
- ownedPointers(s,(i,p,id)=>{let t=touch[i];if(!t||t.id!==id){t=touch[i]={id,lx:p.x,ly:p.y,sx:p.x,sy:p.y,t0:performance.now(),maxd:0};}
+ ownedPointers(s,(i,p,id)=>{let t=touch[i];if(!t||t.id!==id){t=touch[i]={id,lx:p.x,ly:p.y,sx:p.x,sy:p.y,t0:performance.now(),maxd:0};t.used=press(i);}
    else{P[i].tx=clamp(P[i].tx+(p.x-t.lx)/k*GAIN,22,W-22);P[i].ty=clamp(P[i].ty+(p.y-t.ly)/k*GAIN,YMIN,580);t.lx=p.x;t.ly=p.y;t.maxd=Math.max(t.maxd,Math.hypot(p.x-t.sx,p.y-t.sy));}},
   (i,id,info)=>{const t=touch[i];if(!t||t.id!==id)return;touch[i]=null;if(info&&info.cancelled)return;const dur=performance.now()-t.t0,pt=info?.point;
-   if(dur<260&&t.maxd<18)act(i,false);else if(pt&&dur<340&&t.sy-pt.y>70&&Math.abs(pt.x-t.sx)<(t.sy-pt.y)*.8)act(i,true);},alone?()=>0:net?()=>me:undefined);
+   if(dur<260&&t.maxd<18){if(!t.used&&!P[i].parryT)act(i,true);}else if(pt&&dur<340&&t.sy-pt.y>70&&Math.abs(pt.x-t.sx)<(t.sy-pt.y)*.8)act(i,true);},alone?()=>0:net?()=>me:undefined);
  s.on(s.c,'pointerdown',ev=>{if(s.paused||!s.alive)return;const p=s.pointer(ev),i=net?me:alone||p.x<s.W/2?0:1;if(touch[i]&&touch[i].id!==ev.pointerId)act(i,false);});
  const KEYS={w:[0,'u'],s:[0,'d'],a:[0,'l'],d:[0,'r'],arrowup:[1,'u'],arrowdown:[1,'d'],arrowleft:[1,'l'],arrowright:[1,'r']};
  for(const type of ['keydown','keyup'])s.on(document,type,ev=>{const key=(ev.key||'').toLowerCase();const b=KEYS[key];const isAct=key===' '||key==='spacebar'||key==='enter';if(!b&&!isAct)return;ev.preventDefault();if(s.paused||!s.alive)return;
   if(b)P[alone?0:net?me:b[0]].key[b[1]]=type==='keydown'?1:0;else if(type==='keydown'&&!ev.repeat)act(net?me:key==='enter'&&!alone?1:0,false);});
  s.resetOnPause?.(()=>{for(const p of P)p.key={u:0,d:0,l:0,r:0};touch.fill(null);});
- s.hint(alone?'Drag anywhere to fly (the plane follows your finger movement). You auto-fire; your guns aim at the boss on wide screens. TAP while touching a PINK bullet to PARRY it: brief invulnerability and super meter. Tap or flick up with a full meter for your SUPER. You have 4 hearts and no partner, so dodge! Keys: WASD or arrows + Space.':'Drag on your half of the screen to fly (the plane follows your finger movement). You auto-fire; on wide screens you start on your side of the boss and your guns aim at it. TAP (or tap with a second finger) while touching a PINK bullet to PARRY it: brief invulnerability and super meter. Tap or flick up with a full meter for your SUPER. If your partner is a bubble, fly into it and tap to revive within 5 seconds. Keys: P1 WASD + Space, P2 arrows + Enter.');
+ s.hint(alone?'Drag anywhere to fly (the plane follows your finger movement). You auto-fire; your guns aim at the boss on wide screens. TAP just before a PINK bullet hits you to PARRY it: brief invulnerability and super meter. Tap or flick up with a full meter for your SUPER. You have 4 hearts and no partner, so dodge! Keys: WASD or arrows + Space.':'Drag on your half of the screen to fly (the plane follows your finger movement). You auto-fire; on wide screens you start on your side of the boss and your guns aim at it. TAP (or tap with a second finger) just before a PINK bullet hits you to PARRY it: brief invulnerability and super meter. Tap or flick up with a full meter for your SUPER. If your partner is a bubble, fly into it and tap (or just stay on it) to revive within 5 seconds. Keys: P1 WASD + Space, P2 arrows + Enter.');
  // ---- autopilot (debug / tests): s.debug.autopilot=[true,true] (a number = reaction time in s), s.debug.steps (sim speed), s.debug.immortal, s.debug.hits
  const DIRS=[[0,0],[1,0],[-1,0],[0,1],[0,-1],[.7,.7],[-.7,.7],[.7,-.7],[-.7,-.7]];
  function danger(qx,qy,look){let d=0;for(const b of bullets){if(b.friendly)continue;const bx=b.x+b.vx*look,by=b.y+b.vy*look,r=PR+b.r+7,dd=(bx-qx)**2+(by-qy)**2;if(dd<r*r)d+=1000;else if(dd<5000)d+=200/(dd+1);}
@@ -216,7 +222,7 @@ async function bossfight(s){
    const ap=s.debug.autopilot&&s.debug.autopilot[i];if(ap&&mode==='fight'){if(typeof ap!=='number')autopilot(p);else if((p.apT=(p.apT||0)-dt)<=0){p.apT=ap;autopilot(p);}}
    if(p.hp<=0){if(p.ghost>0){p.ghost-=dt;const o=mate(p);if(o.hp>0){const d=Math.hypot(o.x-p.gx,o.y-p.gy)||1,sp=Math.min(d,46*dt);p.gx+=(o.x-p.gx)/d*sp;p.gy+=(o.y-p.gy)/d*sp;}p.gy-=8*dt;p.gx=clamp(p.gx,24,W-24);p.gy=clamp(p.gy,YMIN-20,590);
      if(p.ghost<=0){p.ghost=0;p.out=true;burst(p.gx,p.gy,'#bfe0ff',16,140,.6);text(p.gx,p.gy-20,'POP...','#bfe0ff',14,1);}}continue;}
-   const kx=p.key.r-p.key.l,ky=p.key.d-p.key.u;if(kx||ky){const l=Math.hypot(kx,ky);p.tx=clamp(p.tx+kx/l*330*dt,22,W-22);p.ty=clamp(p.ty+ky/l*330*dt,YMIN,580);}
+   stepAssist(p,dt);const kx=p.key.r-p.key.l,ky=p.key.d-p.key.u;if(kx||ky){const l=Math.hypot(kx,ky);p.tx=clamp(p.tx+kx/l*330*dt,22,W-22);p.ty=clamp(p.ty+ky/l*330*dt,YMIN,580);}
    const dx=p.tx-p.x,dy=p.ty-p.y,l=Math.hypot(dx,dy),mx=Math.min(l,Math.max(l*dt*16,40*dt),700*dt);if(l>.01){p.x+=dx/l*mx;p.y+=dy/l*mx;}p.vx+=((dx)-p.vx)*Math.min(1,dt*10);
    if(wide){if(B.hidden<=0&&B.deadR<=0&&B.shown>=1)for(const [cx,cy,r] of bossCircles()){const ex=p.x-cx,ey=p.y-cy,d=Math.hypot(ex,ey)||1,rr=r+26;if(d<rr){p.x=clamp(cx+ex/d*rr,22,W-22);p.y=clamp(cy+ey/d*rr,YMIN,580);p.tx=p.x;p.ty=p.y;}}
     let ax=B.drawX,ay=B.drawY+20,ad=Math.hypot(ax-p.x,ay-p.y)*.8;for(const m of minions){if(m.hidden||m.dead)continue;const d=Math.hypot(m.x-p.x,m.y-p.y);if(d<ad&&d<420){ad=d;ax=m.x;ay=m.y;}}
@@ -249,7 +255,7 @@ async function bossfight(s){
    const out=(b.keep&&b.age<3)?false:(b.x<-70||b.x>W+70||b.y<-90||b.y>H+70);
    if(out||b.age>(b.life||14)){bullets.splice(i,1);continue;}
    if(b.friendly)continue;
-   for(const p of P){if(p.hp<=0)continue;const r=PR+b.r*.82;if((b.x-p.x)**2+(b.y-p.y)**2<r*r){if(hurt(p,'bullet:'+b.kind)){burst(b.x,b.y,'#fff',4,100,.3,2);netGone(b);bullets.splice(i,1);}break;}}}}
+   for(const p of P){if(p.hp<=0)continue;const r=PR+b.r*.82;if((b.x-p.x)**2+(b.y-p.y)**2<r*r){if(b.pink&&p.parryW>0&&!(net&&p.i!==me)){parry(p,b);break;}if(hurt(p,'bullet:'+b.kind)){burst(b.x,b.y,'#fff',4,100,.3,2);netGone(b);bullets.splice(i,1);}break;}}}}
  function stepHazard(h,dt,judge){h.age+=dt;const act2=h.age>=h.tele;
    if(h.follow){const mz=F.muzzle('center');h.cx=mz.x;h.cy=mz.y;}else{h.cx=h.x;h.cy=h.y;}
    if(act2){if(h.vx)h.x+=h.vx*dt;if(h.vy)h.y+=h.vy*dt;if(h.da)h.a+=h.da*dt;
@@ -336,6 +342,7 @@ async function bossfight(s){
   g.save();g.translate(p.x,p.y);
   if(p.sup>0){g.globalAlpha=.5+.3*Math.sin(T*30);g.fillStyle=main;g.beginPath();g.arc(0,0,40,0,TAU);g.fill();g.globalAlpha=1;}
   if(p.parryT>0){g.globalAlpha=Math.min(1,p.parryT*3);g.strokeStyle='#ff9ae0';g.lineWidth=4;g.beginPath();g.arc(0,0,22+(.45-p.parryT)*90,0,TAU);g.stroke();g.globalAlpha=1;}
+  else if(p.parryW>0){g.globalAlpha=.6*p.parryW/PARRY_WIN;g.strokeStyle='#ff9ae0';g.lineWidth=2.5;g.beginPath();g.arc(0,0,PARRY_R,0,TAU);g.stroke();g.globalAlpha=1;}
   g.rotate(p.aim+Math.PI/2+bank*.5);g.lineJoin='round';g.lineWidth=3;g.strokeStyle=ink;
   const fl=10+Math.sin(T*50+i)*5;g.fillStyle='#ffb02e';g.beginPath();g.moveTo(-5,16);g.lineTo(0,16+fl+8);g.lineTo(5,16);g.fill();g.fillStyle='#fff6c0';g.beginPath();g.moveTo(-2.5,16);g.lineTo(0,16+fl);g.lineTo(2.5,16);g.fill();
   if(i===0){g.fillStyle=dark;g.beginPath();g.moveTo(-8,8);g.lineTo(-28,26);g.lineTo(-8,20);g.closePath();g.fill();g.stroke();g.beginPath();g.moveTo(8,8);g.lineTo(28,26);g.lineTo(8,20);g.closePath();g.fill();g.stroke();
@@ -346,8 +353,11 @@ async function bossfight(s){
   s.sprite(g,i,p.x,p.y,32,{exact:true,mood:p.parryT>0?'happy':p.inv>0?'sad':'walking'});
   g.save();g.translate(p.x,p.y);g.fillStyle='#fff';g.strokeStyle=ink;g.lineWidth=1.5;g.beginPath();g.arc(0,0,3.6,0,TAU);g.fill();g.stroke();g.fillStyle='#e63b3b';g.beginPath();g.arc(0,0,1.8,0,TAU);g.fill();g.restore();}
  function drawGhost(g,p){const wob=Math.sin(T*3+p.i)*4,x2=p.gx+wob,y2=p.gy,u=p.ghost/5;g.save();g.globalAlpha=.9;const gr=g.createRadialGradient(x2-8,y2-8,2,x2,y2,28);gr.addColorStop(0,'rgba(255,255,255,.9)');gr.addColorStop(1,'rgba(160,210,255,.45)');g.fillStyle=gr;g.beginPath();g.arc(x2,y2,27,0,TAU);g.fill();g.lineWidth=3;g.strokeStyle='rgba(255,255,255,.9)';g.stroke();g.restore();
-  s.sprite(g,p.i,x2,y2,30,{exact:true,mood:'sad'});g.save();g.strokeStyle=u<.35?'#ff5a5a':'#7dffb0';g.lineWidth=4;g.beginPath();g.arc(x2,y2,33,-1.57,-1.57+TAU*u);g.stroke();
-  const o=mate(p);g.fillStyle='#fff';g.strokeStyle=ink;g.lineWidth=3;g.font='bold 13px Arial Black,Arial';g.textAlign='center';g.textBaseline='middle';const lab=o.hp>0?'TAP ME!':'...';g.strokeText(lab,x2,y2-44);g.fillText(lab,x2,y2-44);g.restore();}
+  s.sprite(g,p.i,x2,y2,30,{exact:true,mood:'sad'});
+  g.save();g.strokeStyle=u<.35?'#ff5a5a':'#7dffb0';g.lineWidth=4;g.beginPath();g.arc(x2,y2,33,-1.57,-1.57+TAU*u);g.stroke();
+  // the rescuer's hold-to-revive progress (it fills while they stay on the bubble) and a TAP! once they're in reach
+  const o=mate(p),near=o!==p&&o.hp>0&&Math.hypot(o.x-p.gx,o.y-p.gy)<REVIVE_R;if(o.revT>0){g.strokeStyle='#7dffb0';g.lineWidth=6;g.beginPath();g.arc(x2,y2,41,-1.57,-1.57+TAU*Math.min(1,o.revT/REVIVE_HOLD));g.stroke();}
+  const pulse=near?1+Math.sin(T*12)*.1:1;g.fillStyle=near?'#7dffb0':'#fff';g.strokeStyle=ink;g.lineWidth=3;g.font=`bold ${Math.round(13*pulse)}px Arial Black,Arial`;g.textAlign='center';g.textBaseline='middle';const lab=o.hp>0?near?'TAP!':'TAP ME!':'...';g.strokeText(lab,x2,y2-44);g.fillText(lab,x2,y2-44);g.restore();}
  function drawPShots(g){for(const q of pshots){g.fillStyle=PCOL[q.o];if(q.star){g.save();g.translate(q.x,q.y);g.rotate(T*10);g.beginPath();for(let i=0;i<10;i++){const a=i/10*TAU,r=i%2?3.5:8;g.lineTo(Math.cos(a)*r,Math.sin(a)*r);}g.closePath();g.fill();g.lineWidth=1.5;g.strokeStyle=ink;g.stroke();g.restore();}
    else if(q.vx){g.save();g.translate(q.x,q.y);g.rotate(Math.atan2(q.vy,q.vx)+Math.PI/2);g.fillRect(-2.2,-9,4.4,16);g.fillStyle='#fff';g.fillRect(-.9,-8,1.8,12);g.restore();}
    else{g.fillRect(q.x-2.2,q.y-9,4.4,16);g.fillStyle='#fff';g.fillRect(q.x-.9,q.y-8,1.8,12);}}}
