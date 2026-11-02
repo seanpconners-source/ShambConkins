@@ -17,6 +17,12 @@ K3 done there: `bossTierFor(run,realm)` (bossGate.js): mind 0, body 1, spirit 2,
 `requestGame({difficulty})` and shows it on the intro card. Online: launcher → `hostGame(game,{difficulty})` → 'game'
 msg `difficulty` → `boardDuel(...,difficulty)` → duel `start` → hooks.start duel.difficulty → requestGame on both
 phones. Checked: board walk Mind/Body/Spirit = Easy/Medium/Hard, rule cases in Node; online not run (no wrangler).
+K5-K7 done there: `profile.bossTiers` {bossId: 0..3 highest cleared} (validated in profile.js; a boss beaten before
+tiers counts as Easy), written by `recordBossTier` in gameLauncher (settleGame boss win, settleSolo arcade + online-board
+guest; `curDifficulty` = tier of the launch); boss character recruit only when origin==='board' (K6). Arcade boss cards:
+`arcadeLaunch` → `chooseBossTier` dialog (next tier primary, higher ones locked), medals `.boss-medals`, `.boss-extreme`
+gold frame (theme.css end), result text "MEDIUM CLEARED! Hard is now open in Boss Select." Online arcade boss
+challenges still Easy (proposeDuel has no tier).
 Testing on the Windows laptop: the 346 MB one-file build hangs headless Chromium; build `--pwa` into the scratchpad,
 serve it (tiny node static server) and run tests with SHAMB_URL=http://localhost:8123/.
 

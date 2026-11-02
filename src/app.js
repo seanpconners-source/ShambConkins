@@ -253,6 +253,16 @@ async function warpJump(p,token){
  p.visited.push(p.node);p.node=to.id;focusBoardAction(store.run);saveRun();updateBoard();await wait(450);
 }
 const run_node=p=>store.run.board.nodes[p.node];
+// Boss Select ladder (ROADMAP K5): a boss rematch asks for a tier. Medium opens once Easy is beaten, Hard after Medium,
+// Extreme after Hard (profile.bossTiers, kept by the launcher; a boss beaten before tiers existed counts as Easy).
+async function chooseBossTier(id){
+ const boss=String(id).startsWith('boss-')?bossById(id.slice(5)):null;if(!boss)return 0;
+ const cleared=store.profile.bossTiers?.[boss.id]??0,open=Math.min(BOSS_TIERS.length-1,cleared+1);
+ const choices=BOSS_TIERS.map((t,i)=>({label:i>open?`🔒 ${t.name} · beat ${BOSS_TIERS[i-1].name} first`:i<=cleared?`${t.name} ✓`:`${t.name} · next challenge`,value:i,primary:i===open,disabled:i>open}));
+ const v=await showDialog({title:`${boss.name} · pick a tier`,source:boss.source,body:'Medium mixes in attacks from the next phase. Hard and Extreme add a FINAL PHASE. Beat a tier to open the next one.',choices:[...choices,{label:'Back',value:'back'}]});
+ return typeof v==='number'?v:null;
+}
+async function arcadeLaunch(opts){if(String(opts.id).startsWith('boss-')){const d=await chooseBossTier(opts.id);if(d==null)return;opts.difficulty=d;}await requestGame(opts);}
 async function startBoss(bossId,{level=null,forced=false}={}){
  const run=store.run,boss=bossById(bossId);if(!boss){if(run.warp&&run.bossGate?.warp)await exitWarpZone();else if(run.bossGate)await advanceAfterBoss();else await finishEncounter();return;}
  const warp=!!run.warp,lair=castleName(boss),difficulty=bossTierFor(run,level||run.bossGate?.realm||boss.level),tierName=BOSS_TIERS[difficulty].name;
@@ -553,8 +563,8 @@ async function runAction(name,target){
   case 'roster':case 'arcade':showCatalog(name);break;
   case 'filter':catalogFilter=target.dataset.id;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;
   case 'catalog-page':catalogPage=Math.max(0,+target.dataset.page||0);showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;
-  case 'arcade-game':await requestGame({id:target.dataset.id,origin:'arcade'});break;
-  case 'arcade-solo':await requestGame({id:target.dataset.id,origin:'arcade',solo:true});break;
+  case 'arcade-game':await arcadeLaunch({id:target.dataset.id,origin:'arcade'});break;
+  case 'arcade-solo':await arcadeLaunch({id:target.dataset.id,origin:'arcade',solo:true});break;
   case 'duel-propose':await proposeDuel(target.dataset.id);break;
   case 'online-mode':await setOnlineMode(true);break;
   case 'online-leave':leaveOnline();break;
@@ -562,7 +572,7 @@ async function runAction(name,target){
   case 'online-board':await inviteBoard();break;
   case 'online-rejoin':rejoinBoard();break;
   case 'arcade-random':{const g=randomArcadePick();if(!g){toast('No playable games in this list');break;}
-   if(store.online)await proposeDuel(g.id);else if(g.pokemon)await arcadePokemon(g.pokemon);else await requestGame({id:g.id,origin:'arcade',solo:soloSettings(store.profile).on||undefined});break;}
+   if(store.online)await proposeDuel(g.id);else if(g.pokemon)await arcadePokemon(g.pokemon);else await arcadeLaunch({id:g.id,origin:'arcade',solo:soloSettings(store.profile).on||undefined});break;}
   case 'solo-set':{const {key,value}=target.dataset;if(key==='on')store.online=false;setSolo(store.profile,key==='on'?{on:value==='1'}:key==='who'?{who:+value===1?1:0}:{level:value});saveProfile(store.profile);if(store.view==='setup'||store.view==='players')refreshSetup();else showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;}
   case 'arcade-pokemon':await arcadePokemon(target.dataset.id);break;
   case 'dev-game':if(store.profile.settings.devMode)await requestGame({id:target.dataset.id,origin:'dev'});break;

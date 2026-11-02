@@ -10,6 +10,7 @@ const {closeRoutePanel}=require("src/routePanel.js");
 const {applyTheme,applyRunTheme}=require("src/theme.js");
 const {journeyLabel}=require("src/journeys.js");
 const {headDisplayURL}=require("src/headCutouts.js");
+const {BOSS_TIERS}=require("src/data/bosses.js");
 const {store}=require("src/state.js");
 const {ART}=require("src/data/art.js");
 const {CHARACTERS, character, characterPerk, differentCharacters, characterIdentity}=require("src/characters.js");
@@ -210,7 +211,9 @@ function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=
   if(online){list=list.filter(g=>!soloHidden(g));list=[...list.filter(duelOK),...list.filter(g=>!duelOK(g))];}
   playable=g=>!(solo&&!soloOK(g))&&!(online&&!duelOK(g))&&(g.pokemon||gameUnlocked(g,p));
   render=g=>{const open=g.pokemon||gameUnlocked(g,p),off=solo&&!soloOK(g)||online&&!duelOK(g),best=(solo||online)&&!g.pokemon?soloBestText(p,g.id):'',play=off?`<small>${online?'Not online yet':'2 players only for now'}</small>`:online&&open?button('duel-propose','Challenge ↗','ghost',`data-id="${g.id}"`):g.pokemon?button('arcade-pokemon','Battle ↗','ghost',`data-id="${g.pokemon}"`):open?button(solo?'arcade-solo':'arcade-game',solo?(soloKind(g)==='cpu'?soloCoop(g)?'Play with CPU ↗':'Play vs CPU ↗':'Play solo ↗'):g.bossId?'Fight again ↗':'Play match ↗','ghost',`data-id="${g.id}"`):`<small>${g.bossId?'Beat this boss on the board to unlock the rematch':`Unlock after ${g.gameUnlockAt||1} matches`}</small>`;
-   return `<article class="arcade-card ${open?'':'locked'}${off?' solo-off':''}${g.bossId?' boss-match':''}">${brandHTML(g.source)}${gameArtHTML(g)}<h3>${e(g.title)}</h3><p>${e(g.rules)}</p><div class="game-info">${e(g.duration.toUpperCase())} · ${g.bossId?(open?'BEATEN':'UNBEATEN'):p.played.includes(g.id)?'PLAYED':'NEW'}${best?` · ${e(best)}`:''}</div>${play}${p.settings.devMode&&!g.pokemon&&!off?button('dev-game','DEV · Test this game','small dev-button',`data-id="${g.id}"`):''}</article>`;};
+   // boss tier medals (ROADMAP K5): one per tier, lit once beaten; old saves count a beaten boss as Easy cleared
+   const tiers=g.bossId&&open?p.bossTiers?.[g.bossId]??0:-1,medals=g.bossId?`<span class="boss-medals" title="Tiers beaten">${BOSS_TIERS.map((t,i)=>`<i class="${i<=tiers?'won':''}" style="--c:${t.col}" title="${e(t.name)}"></i>`).join('')}</span>`:'';
+   return `<article class="arcade-card ${open?'':'locked'}${off?' solo-off':''}${g.bossId?' boss-match':''}${tiers>=BOSS_TIERS.length-1?' boss-extreme':''}">${brandHTML(g.source)}${gameArtHTML(g)}<h3>${e(g.title)}</h3><p>${e(g.rules)}</p><div class="game-info">${e(g.duration.toUpperCase())} · ${g.bossId?(open?medals:'UNBEATEN'):p.played.includes(g.id)?'PLAYED':'NEW'}${best?` · ${e(best)}`:''}</div>${play}${p.settings.devMode&&!g.pokemon&&!off?button('dev-game','DEV · Test this game','small dev-button',`data-id="${g.id}"`):''}</article>`;};
  }
  catalogFeed={list,render,playable,shown:Math.min(list.length,CATALOG_CHUNK)};
  const cards=list.slice(0,catalogFeed.shown).map(render).join('');

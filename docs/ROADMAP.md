@@ -86,7 +86,7 @@ in headless browsers).
 Unlock rules (section 10)
 - **C1** `[todo]` One device = one shared collection of unlocked characters (pass-and-play included).
 - **C2** `[todo]` Online players use their own device's collection, not an empty local P2 roster. Today the host's profile decides what the guest can recruit (known limit).
-- **C3** `[verify]` Games launched from the game list award no progression unlocks (results card already says "Practice · No unlocks"; check Boss Select and every standalone path).
+- **C3** `[bug]` Found Nov 2: 1-player Arcade wins can still recruit a random character (`settleSolo` in gameLauncher.js). Boss Select no longer gives characters (K6). Games launched from the game list award no progression unlocks (results card already says "Practice · No unlocks"; check Boss Select and every standalone path).
 - **C4** `[todo]` Both players can earn unlocks in real board play.
 - **C5** `[todo]` A new unlock goes to the roster for future games; it never swaps the player's current character mid-run.
 - **C6** `[todo]` Audit every unlock trigger, owner and save path.
@@ -254,14 +254,14 @@ Difficulty tiers
   (reached the Level 3 checkpoint → warp worlds on Hard).
 
 Boss Select ladder
-- **K5** `[todo]` Per boss a 4-step ladder: Medium locked until Easy is beaten, Hard until Medium, Extreme until Hard
+- **K5** `[verify]` Per boss a 4-step ladder: Medium locked until Easy is beaten, Hard until Medium, Extreme until Hard
   (padlock + "Beat Medium to unlock"). A win counts wherever it happens (board or Boss Select); beating a tier also
   clears every tier under it (beating him on Hard in Level 3 clears Easy + Medium + Hard). Saved as the highest tier
   cleared per boss (add to `profile.js` defensively).
-- **K6** `[todo]` The boss character itself still unlocks only on the board (first win), as now; that also puts it in
+- **K6** `[verify]` The boss character itself still unlocks only on the board (first win), as now; that also puts it in
   Boss Select. Tier wins in Boss Select unlock that boss's tier outfits and nothing else (some bosses only ever meet
   you at one tier on the board).
-- **K7** `[todo]` Polish: 4 medals on each boss card, gold frame on an Extreme clear, win screen "HARD CLEARED — New
+- **K7** `[part]` (medals, gold frame and the "X CLEARED!" line done; the outfit art reveal comes with K8-K11) Polish: 4 medals on each boss card, gold frame on an Extreme clear, win screen "HARD CLEARED — New
   outfit: <name>" with an art reveal.
 
 Outfits (for every character, not only bosses)

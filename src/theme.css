@@ -417,3 +417,9 @@ body .about-more ul{margin-top:8px;font-size:13px}
 body .settings-zone{margin-top:14px;padding:4px 12px 2px;border-radius:12px;border:1px solid color-mix(in srgb,var(--t-bad) 45%,transparent);background:color-mix(in srgb,var(--t-bad) 7%,transparent)}
 body .settings-zone-title{padding:6px 0 2px;font:900 11px/1.2 Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--t-bad)}
 body .settings-zone .settings-row:last-child{border-bottom:0}
+/* boss tier ladder (ROADMAP K5): medals on the boss cards, gold frame once Extreme is beaten, tier lines in dialogs */
+body .boss-medals{display:inline-flex;gap:4px;vertical-align:-1px}
+body .boss-medals i{width:10px;height:10px;border-radius:50%;border:2px solid var(--c);opacity:.4;box-sizing:border-box}
+body .boss-medals i.won{background:var(--c);opacity:1;box-shadow:0 0 6px var(--c)}
+body .catalog-shell .arcade-card.boss-extreme:not(.locked){box-shadow:inset 0 0 0 3px #ffd23c,0 0 20px #ffd23c55}
+body .tier-cleared{color:#ffd23c;letter-spacing:.06em}
