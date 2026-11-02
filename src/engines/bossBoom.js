@@ -74,4 +74,4 @@ function drawBoom(g,e){const a=age(e);if(a<e.delay)return;const p=Math.min(1,(a-
  g.restore();}
 const BOOM_KINDS=new Set(['fb','sm','db','sw','ray','em','hd']);
 
-Object.assign(exports,{KO_STYLE,chainPop,mainBlast,phaseBreak,spotOn,fireball,smoke,ember,head,stepBoom,drawBoom,BOOM_KINDS});
+Object.assign(exports,{KO_STYLE,chainPop,mainBlast,phaseBreak,spotOn,fireball,smoke,ember,head,debris,shockwave,stepBoom,drawBoom,BOOM_KINDS});
