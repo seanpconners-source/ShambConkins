@@ -278,7 +278,9 @@ Make boss fights super badass (owner, Nov 2: "let's make the boss fights so much
 - **K23** `[todo]` Fit the K15-K22 work with the tiers (K2): higher tiers unlock the nastier attacks and bigger finales.
 
 Other boss items
-- **K13** `[todo]` Better boss portraits and face placement.
+- **K13** `[part]` Better boss portraits and face placement. Done: faces are cut-out heads (no circle frame), bigger,
+  with moods (smug intro, laughs on a hit, hurt under supers, angry later, sad on KO). Left: some photos with busy
+  backdrops don't cut out cleanly (e.g. Nurse Ratched) → owner cut-out art would fix them.
 - **K14** `[todo]` Audit 1P, local 2P and online co-op boss behavior; unlocks only for legit wins.
 
 ## Art and presentation (section 13; ongoing)

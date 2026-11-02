@@ -52,7 +52,7 @@ async function bossfight(s){
  // the wider field spreads attacks out and leaves more room to dodge, so wide arenas hit harder (tuned by tests/bossdiff.mjs)
  const WIDE_K={dens:1.3,spd:1.1,tele:1,restMul:.78,dmg:.96},kWide={dens:kTab0.dens*WIDE_K.dens,spd:kTab0.spd*WIDE_K.spd,rest:kTab0.rest*WIDE_K.restMul,tele:kTab0.tele*WIDE_K.tele};let kTab=kTab0;
  const WIDE_AT=720,W_MAX=1700,spawnX=i=>alone?W/2:wide?W/2+(i?1:-1)*clamp(W*.3,250,380):W*(i?.7:.3),spawnY=()=>wide?B.hy+150:500;
- const B={x:210,y:-260,hx:210,hy:150,hp:Math.round(boss.hp*hpScale),max:Math.round(boss.hp*hpScale),phase:0,flash:0,tw:null,deadR:0,hidden:0,pose:'idle',poseT:0,open:0,glow:0,lookX:0,lookY:0,drawX:210,drawY:-260,shown:0,chip:1,sq:1};
+ const B={x:210,y:-260,hx:210,hy:150,hp:Math.round(boss.hp*hpScale),max:Math.round(boss.hp*hpScale),phase:0,flash:0,tw:null,deadR:0,hidden:0,pose:'idle',poseT:0,open:0,glow:0,lookX:0,lookY:0,drawX:210,drawY:-260,shown:0,chip:1,sq:1,mood:'normal',moodUntil:0};
  const P=(alone?[0]:[0,1]).map(i=>({i,x:spawnX(i),y:500,tx:spawnX(i),ty:500,aim:-Math.PI/2,hp:maxHp,inv:0,ghost:0,out:false,gx:0,gy:0,meter:0,fire:0,sup:0,supT:0,dmg:0,parries:0,kills:0,key:{u:0,d:0,l:0,r:0},parryT:0,parryW:0,parryLock:0,revT:0,vx:0,hitFlash:0,barrage:0}));
  const bullets=[],pshots=[],minions=[],hazards=[],warns=[],fx=[],runs=[],says={text:'',t:0};
  let T=0,modeT=0,mode='intro',timeScale=1,hitstop=0,shakeMag=0,flashWhite=0,lastSay=-99,bannerQ=[],sigShown=[false,false,false],finished=false,duration=0,musicT=0,musicStep=0,sfxT={},scene=null,sceneKey='',koDone=false,koBoom=0,directorRun=null,intro={skip:false};
@@ -66,7 +66,13 @@ async function bossfight(s){
    const img=new Image();e={src,img,at:now,ok:false,err:false};faceImgs[mood]=e;img.onload=()=>{if(img.naturalWidth)e.ok=true;};img.onerror=()=>{e.err=true;};try{img.src=headDisplayURL(src);}catch{e.err=true;}}
   return e.ok?e.img:null;}
  const A={t:0,look:{x:0,y:0},open:0,glow:0,phase:0,dmg:0,pal,v:look,pose:'idle',
-  face(g,cx,cy,size,o={}){const mood=mode==='ko'?'sad':B.phase>0?'angry':'normal';const img=faceImage(mood)||faceImage('normal');const r=o.clipR||size*.46;
+  // the portrait is drawn as a cut-out head (Broforce's headCanvas: the face's own silhouette, dark outline, no frame),
+  // with moods: smug intro, laughs when it lands a hit, hurt under a super, angry from phase 2, sad when beaten
+  get portrait(){return hasChar;},
+  face(g,cx,cy,size,o={}){const mood=mode==='ko'?'sad':mode==='intro'||mode==='lose'?'win':T<B.moodUntil?B.mood:B.phase>0?'angry':'normal';const r=o.clipR||size*.46;
+   if(hasChar){let c=null;try{c=require('src/engines/broforce.js').headCanvas(boss.unlockId,mood,192);}catch{}
+    if(c&&c.width){const D=r*2.75;g.save();g.translate(cx,cy-r*.1);if(o.tilt)g.rotate(o.tilt);if(B.flash>0)g.filter='brightness(1.8)';g.drawImage(c,-D/2,-D/2,D,D);g.restore();return true;}}
+   const img=faceImage(mood)||faceImage('normal');
    g.save();g.translate(cx,cy);if(o.tilt)g.rotate(o.tilt);
    if(img){g.beginPath();g.ellipse(0,0,r,r*1.06,0,0,TAU);g.clip();const sc=Math.max(r*2/img.naturalWidth,r*2.1/img.naturalHeight)*1.02;g.fillStyle=pal[3];g.fillRect(-r,-r*1.1,r*2,r*2.2);g.drawImage(img,-img.naturalWidth*sc/2,-img.naturalHeight*sc/2,img.naturalWidth*sc,img.naturalHeight*sc);g.restore();g.save();g.translate(cx,cy);if(o.tilt)g.rotate(o.tilt);g.beginPath();g.ellipse(0,0,r,r*1.06,0,0,TAU);g.lineWidth=4;g.strokeStyle='#140a0c';g.stroke();g.restore();return true;}
    if(o.emoji!==false){const gr=g.createRadialGradient(-r*.3,-r*.3,2,0,0,r);gr.addColorStop(0,'#fff');gr.addColorStop(1,pal[3]);g.beginPath();g.arc(0,0,r,0,TAU);g.fillStyle=gr;g.fill();g.lineWidth=4;g.strokeStyle='#140a0c';g.stroke();g.font=`${r*1.25}px "Segoe UI Emoji","Apple Color Emoji",Arial`;g.textAlign='center';g.textBaseline='middle';g.fillStyle='#000';g.fillText(boss.icon,0,r*.06);}
@@ -164,7 +170,7 @@ async function bossfight(s){
  function hitBoss(dmg,px,py,owner,super_,remote=false){if(!remote&&(mode!=='fight'||B.hidden>0||B.shown<1))return false;if(remote&&mode!=='fight')return false;if(wide&&owner>=0&&!remote)dmg*=WIDE_K.dmg;
   // online the other phone only reports its damage (player 1's phone owns the HP)
   if(net&&!host){B.flash=.07;if(owner>=0){const p=P[owner];p.dmg+=dmg;if(!super_)p.meter=Math.min(100,p.meter+.42*dmg);}netDmg+=dmg;return true;}
-  B.hp-=dmg;B.flash=.07;B.chip=Math.max(B.chip,(B.hp+dmg)/B.max);
+  B.hp-=dmg;B.flash=.07;if(super_){B.mood='sad';B.moodUntil=T+.6;}B.chip=Math.max(B.chip,(B.hp+dmg)/B.max);
   if(owner>=0&&!remote){const p=P[owner];p.dmg+=dmg;if(!super_)p.meter=Math.min(100,p.meter+.42*dmg);}log.dmg+=dmg;
   if(s.debug.holdPhase)B.hp=Math.max(B.hp,B.phase<LAST?thresholds[B.phase]+1:1);if(B.hp<=0){B.hp=0;startKO();return true;}
   if(B.phase<LAST&&B.hp<=thresholds[B.phase]){B.hp=thresholds[B.phase];startPhase(B.phase+1);}return true;}
@@ -180,7 +186,7 @@ async function bossfight(s){
   s.cooperative=true;s.shared=true;s.teamResult={kind:'boss',won,tied:false,humanTotal:sc[0]+sc[1],cpuTotal:0,cpuScores:[0,0],duration:t,bossId:boss.id};
   s.setScores(sc);s.finish(sc,won?`${boss.name} is down in ${t}s! ${P[0].parries+P[1].parries} parries, ${sc[0]+sc[1]} team points.`:`${boss.name} wins this round. Team points: ${sc[0]+sc[1]}.`);}
  // ---- player actions
- function hurt(p,src){if(p.hp<=0||p.inv>0||p.sup>0||mode!=='fight'||net&&p.i!==me)return false;p.hp--;log.hits[p.i]++;log.src[src||'?']=(log.src[src||'?']||0)+1;if(s.debug.immortal&&p.hp<=0)p.hp=1;p.inv=1.9;shake(7);sfx('hurt');vibrate(40);burst(p.x,p.y,'#fff',12,200,.5);ring(p.x,p.y,'#ff4b3a',44);s.react(p.i,'sad');
+ function hurt(p,src){if(p.hp<=0||p.inv>0||p.sup>0||mode!=='fight'||net&&p.i!==me)return false;p.hp--;log.hits[p.i]++;B.mood='win';B.moodUntil=T+1.2;log.src[src||'?']=(log.src[src||'?']||0)+1;if(s.debug.immortal&&p.hp<=0)p.hp=1;p.inv=1.9;shake(7);sfx('hurt');vibrate(40);burst(p.x,p.y,'#fff',12,200,.5);ring(p.x,p.y,'#ff4b3a',44);s.react(p.i,'sad');
   if(p.hp<=0){p.ghost=5;p.out=false;p.gx=p.x;p.gy=p.y;p.sup=0;text(p.x,p.y-30,'DOWN!','#ff5a5a',16,1.2);if(!alive().length&&host)startLose();nf?.push();}return true;}
  function revive(p,by){p.hp=2;p.inv=2.4;p.ghost=0;p.out=false;p.x=p.tx=clamp(p.gx,22,W-22);p.y=p.ty=clamp(p.gy,YMIN,580);burst(p.x,p.y,'#7dffb0',22,220,.7,3.5);ring(p.x,p.y,'#7dffb0',70,.6);text(p.x,p.y-34,'REVIVED!','#7dffb0',17,1.3);sound('unlock');s.react(p.i,'happy');s.react(by.i,'happy');}
  // Parry and revive fire on touch DOWN (they used to wait for the finger to lift, by when the bullet had hit or passed).

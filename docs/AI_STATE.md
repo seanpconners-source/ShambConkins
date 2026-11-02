@@ -10,7 +10,8 @@ K2 done there: difficulty tiers `BOSS_TIERS` (data/bosses.js: Easy = old fights 
 the K table + boss HP; Hard/Extreme = 4 phases with a FINAL PHASE at 25%, `deck()` remixes one next-phase attack in,
 `combo()` = extra light bullet volley (aimed/fan/ring/rain/bounce only, via `FC` = F with lighter k and no poses) on top of
 a main attack). Engine reads `s.difficulty`, set by `requestGame({difficulty})`; HUD tag + PHASE x/N; body art gets
-phase ≤2. `tests/bossdiff.mjs` now takes DIFF=0,1,2,3 and SHAMB_URL. Online doesn't pass difficulty yet (K3).
+phase ≤2. `tests/bossdiff.mjs` now takes DIFF=0,1,2,3 and SHAMB_URL. Boss faces (`A.face`) = Broforce `headCanvas`
+cut-out heads (no circle; `A.portrait` hides the bust/brute skin oval), moods via `B.mood/moodUntil`. Online doesn't pass difficulty yet (K3).
 Testing on the Windows laptop: the 346 MB one-file build hangs headless Chromium; build `--pwa` into the scratchpad,
 serve it (tiny node static server) and run tests with SHAMB_URL=http://localhost:8123/.
 
