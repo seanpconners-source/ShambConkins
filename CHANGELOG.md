@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (next release: v0.73.0)
+## v0.73.0
 
 **Bucketheadland pinball plays Buckethead, and the music follows the game.** The soundtrack is seven real Buckethead
 songs. The table runs on the shred from the title on (Welcome to Bucketheadland, Nottingham Lace, Jordan, Soothsayer from
