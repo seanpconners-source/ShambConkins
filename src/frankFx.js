@@ -13,17 +13,18 @@ function frankSound(){if(!store.profile?.settings?.sound)return;const a=audioCon
  const melt=a.createOscillator(),mg=a.createGain();melt.type='sawtooth';melt.frequency.setValueAtTime(420,t);melt.frequency.exponentialRampToValueAtTime(60,t+2.8);const lfo=a.createOscillator(),lg=a.createGain();lfo.frequency.value=7;lg.gain.value=30;lfo.connect(lg);lg.connect(melt.frequency);mg.gain.value=.5;melt.connect(mg);mg.connect(out);melt.start(t);melt.stop(t+3);lfo.start(t);lfo.stop(t+3);
  for(const f of [41.2,61.7]){const d=a.createOscillator(),dg=a.createGain(),lp=a.createBiquadFilter();d.type='sawtooth';d.frequency.value=f;lp.type='lowpass';lp.frequency.value=220;dg.gain.value=.55;d.connect(lp);lp.connect(dg);dg.connect(out);d.start(t+2.4);d.stop(t+8);}
  for(let k=0;k<3;k++){const h=a.createOscillator(),hg=a.createGain(),bp=a.createBiquadFilter(),s=t+5.6+k*.24;h.type='sawtooth';h.frequency.setValueAtTime(150-k*12,s);h.frequency.exponentialRampToValueAtTime(110-k*10,s+.16);bp.type='bandpass';bp.frequency.value=700;bp.Q.value=3;hg.gain.setValueAtTime(.0001,s);hg.gain.exponentialRampToValueAtTime(.7,s+.03);hg.gain.exponentialRampToValueAtTime(.0001,s+.18);h.connect(bp);bp.connect(hg);hg.connect(out);h.start(s);h.stop(s+.2);}}catch{}}
-function playFrankReveal(){return new Promise(done=>{
- const reduce=!!store.profile?.settings?.reducedMotion,D=reduce?.6:1,T={melt:2.6*D,black:3,text:3.2,face:5.2,out:7.6,end:8.2};
+// {short:true} (a Level IV checkpoint start, ROADMAP E4): no melt, just the line and Frank's face, ~4 s
+function playFrankReveal({short=false}={}){return new Promise(done=>{
+ const reduce=!!store.profile?.settings?.reducedMotion,D=reduce?.6:1,T=short?{melt:.01,black:.02,text:.2,face:1.4,out:3.6,end:4.1}:{melt:2.6*D,black:3,text:3.2,face:5.2,out:7.6,end:8.2};
  document.getElementById('frank-reveal')?.remove();
  const el=document.createElement('div');el.id='frank-reveal';el.setAttribute('role','presentation');
- el.innerHTML='<canvas></canvas><p class="fr-line"></p><img class="fr-face" alt="">';document.body.append(el);document.body.classList.add('frank-melt');
+ el.innerHTML='<canvas></canvas><p class="fr-line"></p><img class="fr-face" alt="">';document.body.append(el);if(!short)document.body.classList.add('frank-melt');
  const cv=el.querySelector('canvas'),g=cv.getContext('2d'),line=el.querySelector('.fr-line'),face=el.querySelector('.fr-face');
  let src=null;try{src=portraitURL('frank','angry')||portraitURL('frank','normal');}catch{}if(src)face.src=src;
  const dpr=Math.min(2,window.devicePixelRatio||1),size=()=>{cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;};size();
  // drips: columns of brown/red/sick-green goo running down from the top, each with its own speed and wobble
  const drips=Array.from({length:Math.ceil(innerWidth/22)},(_,i)=>({x:(i+Math.random()*.6)/Math.ceil(innerWidth/22),w:.022+Math.random()*.05,v:.3+Math.random()*.6,d:Math.random()*.6,col:['#4a1d0d','#6b0f12','#3e4a12','#2a0d1c'][i%4]}));
- frankSound();let t0=performance.now(),skip=false,raf=0;const hurry=()=>{if((performance.now()-t0)/1000>2)skip=true;};el.addEventListener('pointerdown',hurry);
+ if(!short)frankSound();let t0=performance.now(),skip=false,raf=0;const hurry=()=>{if((performance.now()-t0)/1000>2)skip=true;};el.addEventListener('pointerdown',hurry);
  const frame=()=>{let t=(performance.now()-t0)/1000;if(skip&&t<T.out){t0-=(T.out-t)*1000;t=T.out;skip=false;}
   const W=cv.width,H=cv.height;g.clearRect(0,0,W,H);
   // the melt: goo pours down, then everything goes black
