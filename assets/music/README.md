@@ -16,6 +16,11 @@ File name = track name, `.mp3`, `.ogg`, `.m4a` or `.wav`:
 | `bspin-<song>.mp3` (war-pigs, electric-funeral, black-sabbath, sweet-leaf, children-of-the-grave) | Black Sabbath pinball soundtrack (same treatment): `src/engines/pinball/tables/sabbathAudio.js` |
 | `bhpin-fx-<name>.mp3` (amp-on, knock, cats, cheap-lead, diving, fretted, sparks-1/2, mice, rev, scraper, sixty-cop, stutter, trem, unplug, wail) | Bucketheadland pinball: the MTV Music Generator 2 guitar FX (owner, Nov 1; -14 LUFS or peak -1 dB, 44.1 kHz mono). Which machine sound uses which, and its measured volume, is in `bucketheadAudio.js` |
 | `bhpin-gtr-<big\|mid\|short\|tiny>-<n>.mp3`, `bhpin-gtr-<wail\|hold\|dive>.mp3`, `bhpin-gtr-scrape-<n>.mp3` | Bucketheadland pinball guitar sounds (solo licks grouped by length; neck sounds: vibrato wail, held feedback note, dive bomb, pick scrapes), layered on the machine sounds per `bucketheadAudio.js` |
+| `boss-<boss id>.mp3` (e.g. `boss-king-kandy.mp3`, `boss-hal-9000.mp3`; ids in `src/data/bosses.js`) | Boss fights: that boss's own song for the whole fight, replacing the synth loop (`src/engines/bossMusic.js`) |
+| `boss-<boss id>-p2.mp3`, `-p3.mp3`, `-final.mp3` | Optional: the boss switches to this song when its 2nd / 3rd phase / FINAL PHASE (Hard, Extreme) starts |
+| `boss-any.mp3`, `boss-any-1.mp3` … `-30.mp3` | Shared boss songs for every boss without its own (one is picked per fight) |
+| `boss-final.mp3` | Shared FINAL PHASE song for bosses without their own `-final` |
+| `boss-win.mp3`, `boss-lose.mp3` | Short stingers on the knockout / the defeat |
 
 The Bucketheadland songs were made from the owner's FLAC/MP3s (Nov 1): silence trimmed, two-pass loudnorm to -16 LUFS
 (-1.5 dBTP, linear), 44.1 kHz stereo VBR MP3 (`-q:a 5`, ~130 kbps), tags and cover art stripped: 240 MB of originals → 39 MB.

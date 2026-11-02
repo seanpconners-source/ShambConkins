@@ -19,6 +19,7 @@ const {headDisplayURL}=require("src/headCutouts.js");
 const {BOSSES,bossById,BOSS_TIERS,AMMO}=require("src/data/bosses.js");
 const {createComms}=require("src/engines/bossComms.js");
 const {PU,PU_KINDS:PUK,pickPowerup,puGap,drawPickup,drawPowerRing,drawMissile,drawShip}=require("src/engines/bossPowerups.js");
+const {createBossMusic}=require("src/engines/bossMusic.js");
 const {startDownCut,stepDownCut,cutTimeScale,cutZoom,drawDownCut,noooVoice}=require("src/engines/bossCutscene.js");
 const TALK=require("src/data/bossTalk.js");
 const {KO_STYLE,chainPop,mainBlast,phaseBreak,spotOn,fireball,smoke,ember,head,debris,shockwave,stepBoom,drawBoom,BOOM_KINDS}=require("src/engines/bossBoom.js");
@@ -62,6 +63,8 @@ async function bossfight(s){
  const bullets=[],pshots=[],minions=[],hazards=[],warns=[],fx=[],runs=[],says={text:'',t:0};
  let T=0,modeT=0,mode='intro',timeScale=1,hitstop=0,shakeMag=0,flashWhite=0,lastSay=-99,bannerQ=[],sigShown=[false,false,false],finished=false,duration=0,musicT=0,musicStep=0,sfxT={},scene=null,sceneKey='',koDone=false,koBoom=0,koLater=[],dmgSmokeT=0,directorRun=null,intro={skip:false},downCut=null,prevHp=null,puT=8,puId=0;const pickups=[];
  const log={dmg:0,hits:[0,0],src:{}};
+ // the owner's drop-in songs (bossMusic.js, assets/music/boss-*.mp3) replace the synth loop when present
+ const bm=createBossMusic({bossId:boss.id,seed:s.seed,musicOn});let bmOn=false;
  // ---- boss face (portrait when the unlock character exists in the roster; emoji plate otherwise)
  const hasChar=CHARACTERS.some(ch2=>ch2.id===boss.unlockId),faceImgs={};
  // ---- radio chatter (Star Fox-style comm box, engines/bossComms.js; lines in data/bossTalk.js). Phase exchanges are
@@ -197,7 +200,7 @@ async function bossfight(s){
    yield* pat(F,params||{});B.deadR=0;yield (.5+(phase===0?.3:0))*kTab.rest*(final?.8:1);}}
  // ---- phases / end states
  const thresholds=Array.from({length:NPH-1},(_,i)=>B.max*(NPH-1-i)/NPH),LAST=NPH-1;
- function startPhase(n){if(net&&host)netOp(['ph',n]);if(host&&pickups.length<2)spawnPower();mode='phase';modeT=0;B.phase=n;runs.length=0;directorRun=null;B.deadR=0;B.tw={x0:B.x,y0:B.y,x1:B.hx,y1:B.hy,t:0,dur:.8,e:ease.inout};B.hidden=0;
+ function startPhase(n){if(net&&host)netOp(['ph',n]);bm.phase(n,NPH-1);if(host&&pickups.length<2)spawnPower();mode='phase';modeT=0;B.phase=n;runs.length=0;directorRun=null;B.deadR=0;B.tw={x0:B.x,y0:B.y,x1:B.hx,y1:B.hy,t:0,dur:.8,e:ease.inout};B.hidden=0;
   for(const b of bullets)burst(b.x,b.y,'#fff',1,40,.3);bullets.length=0;hazards.length=0;warns.length=0;for(const m of minions)burst(m.x,m.y,'#ffd23c',6);minions.length=0;
   for(const p of P)p.inv=Math.max(p.inv,3);shake(16);flashWhite=.5;sound('rare');vibrate(60);
   if(B.shown>=1&&B.hidden<=0){phaseBreak(fx,bossCircles(),pal,n===LAST);sfx('boom');}
@@ -214,10 +217,10 @@ async function bossfight(s){
   if(owner>=0&&!remote){const p=P[owner];p.dmg+=dmg;if(!super_)p.meter=Math.min(100,p.meter+.42*dmg);}log.dmg+=dmg;
   if(s.debug.holdPhase)B.hp=Math.max(B.hp,B.phase<LAST?thresholds[B.phase]+1:1);if(B.hp<=0){B.hp=0;startKO();return true;}
   if(B.phase<LAST&&B.hp<=thresholds[B.phase]){B.hp=thresholds[B.phase];startPhase(B.phase+1);}return true;}
- function startKO(){if(net&&host)netOp(['ko']);mode='ko';modeT=0;timeScale=.35;runs.length=0;directorRun=null;B.deadR=0;bullets.length=0;hazards.length=0;warns.length=0;for(const m of minions)burst(m.x,m.y,'#ffd23c',8);minions.length=0;for(const p of P)p.inv=99;duration=Math.round(T-introEnd);shake(18);flashWhite=.6;sound('win');vibrate(120);for(const p of P)s.react(p.i,'win',3);}
- function startLose(){if(mode==='ko'||mode==='lose')return;if(net&&host)netOp(['lose']);mode='lose';modeT=0;timeScale=.5;runs.length=0;directorRun=null;duration=Math.round(T-introEnd);comms.clear();comms.say(bossSp,fill(pickR(TALK.ON_BOSS_HIT),0),{hold:1.6});sound('lose');vibrate(200);for(const p of P)s.react(p.i,'sad',3);}
+ function startKO(){if(net&&host)netOp(['ko']);bm.end(true);mode='ko';modeT=0;timeScale=.35;runs.length=0;directorRun=null;B.deadR=0;bullets.length=0;hazards.length=0;warns.length=0;for(const m of minions)burst(m.x,m.y,'#ffd23c',8);minions.length=0;for(const p of P)p.inv=99;duration=Math.round(T-introEnd);shake(18);flashWhite=.6;sound('win');vibrate(120);for(const p of P)s.react(p.i,'win',3);}
+ function startLose(){if(mode==='ko'||mode==='lose')return;if(net&&host)netOp(['lose']);bm.end(false);mode='lose';modeT=0;timeScale=.5;runs.length=0;directorRun=null;duration=Math.round(T-introEnd);comms.clear();comms.say(bossSp,fill(pickR(TALK.ON_BOSS_HIT),0),{hold:1.6});sound('lose');vibrate(200);for(const p of P)s.react(p.i,'sad',3);}
  const introEnd=4.4;
- async function finish(won){if(finished)return;finished=true;let t=duration||Math.round(T-introEnd);
+ async function finish(won){if(finished)return;finished=true;bm.stop();let t=duration||Math.round(T-introEnd);
   // online: each phone counts its own plane, then the two swap; the time bonus uses player 1's clock on both phones
   if(net){const mine={dmg:P[me].dmg,parries:P[me].parries,kills:P[me].kills,t};nf.finish(mine);const o=await nf.remoteDone();if(o){P[them].dmg=+o.dmg||0;P[them].parries=o.parries|0;P[them].kills=o.kills|0;if(!host&&Number.isFinite(o.t))t=o.t;}if(!s.alive)return;}
   const bonus=won?250+Math.max(0,Math.round((120-t)*3)):0;
@@ -236,7 +239,7 @@ async function bossfight(s){
  if(P.length>1)for(const p of P)sadHead(p.i);
  // K24: a co-op plane goes down while the other flies → partner-down cutscene (bossCutscene.js), on both phones online
  function downed(p){const o=mate(p);if(o===p||o.hp<=0||mode!=='fight'||solo1){chat('down',p.i);return;}
-  downCut=startDownCut({vic:p.i,surv:o.i,reduce});const col=PCOL[p.i];
+  downCut=startDownCut({vic:p.i,surv:o.i,reduce});bm.cut(!net);const col=PCOL[p.i];
   fx.push(fireball(p.x,p.y,50,1.1),fireball(p.x+14,p.y-10,30,.9,.08),fireball(p.x-16,p.y+8,26,.9,.16),shockwave(p.x,p.y,150,.8,0,col),smoke(p.x,p.y-8,42,1.8,.2));for(let k=0;k<(reduce?6:14);k++)fx.push(debris(p.x,p.y,k%2?col:'#c9ced8',260));
   shake(12);flashWhite=Math.max(flashWhite,.35);vibrate(90);if(sfxOn()){sfx('boom');noooVoice(audioContext(),o.i?235:150);}s.react(o.i,'sad',2);}
  function revive(p,by){chat('revived',p.i);p.hp=2;p.inv=2.4;p.ghost=0;p.out=false;p.x=p.tx=clamp(p.gx,22,W-22);p.y=p.ty=clamp(p.gy,YMIN,580);burst(p.x,p.y,'#7dffb0',22,220,.7,3.5);ring(p.x,p.y,'#7dffb0',70,.6);text(p.x,p.y-34,'REVIVED!','#7dffb0',17,1.3);sound('unlock');s.react(p.i,'happy');s.react(by.i,'happy');}
@@ -376,11 +379,11 @@ async function bossfight(s){
   if(fx.length>1100)fx.splice(0,fx.length-1100);
   for(const w of warns){w.t+=dt;if(w.follow&&w.t<(w.freeze??99)&&w.follow.hp>0){w.x=w.follow.x;w.y=w.follow.y;}}for(let i=warns.length-1;i>=0;i--)if(warns[i].t>=warns[i].dur)warns.splice(i,1);
   says.t=Math.max(0,says.t-dt);for(const b of bannerQ)b.t+=dt;while(bannerQ.length&&bannerQ[0].t>bannerQ[0].life)bannerQ.shift();}
- function music(dt){if(!musicOn()||document.hidden||mode==='intro'&&modeT<.5)return;const tn=boss.tone,beat=tn.beat/1000/(mode==='fight'?1+B.phase*.12:1);musicT+=dt;if(musicT<beat)return;musicT-=beat;const n=musicStep++%tn.notes.length;tone(tn.base*2**(tn.notes[n]/12),beat*.8,.009,tn.voice);if(tn.bass&&n%2===0)tone(tn.base/2*(n%4===0?1:1.5),beat*.9,.012,'triangle');}
+ function music(dt){if(!bmOn){bmOn=true;bm.phase(0,NPH-1);}if(bm.playing)return;if(!musicOn()||document.hidden||mode==='intro'&&modeT<.5)return;const tn=boss.tone,beat=tn.beat/1000/(mode==='fight'?1+B.phase*.12:1);musicT+=dt;if(musicT<beat)return;musicT-=beat;const n=musicStep++%tn.notes.length;tone(tn.base*2**(tn.notes[n]/12),beat*.8,.009,tn.voice);if(tn.bass&&n%2===0)tone(tn.base/2*(n%4===0?1:1.5),beat*.9,.012,'triangle');}
  let introBooms=0;
  function update(dt0,dt){T+=dt;A.t=T;modeT+=dt0;
   if(!prevHp)prevHp=P.map(p=>p.hp);for(const p of P){if(prevHp[p.i]>0&&p.hp<=0)downed(p);prevHp[p.i]=p.hp;}
-  if(downCut&&(!stepDownCut(downCut,dt0)||mode!=='fight')){const v=downCut.vic;downCut=null;if(mode==='fight')chat('down',v);}
+  if(downCut&&(!stepDownCut(downCut,dt0)||mode!=='fight')){const v=downCut.vic;downCut=null;bm.cut(false);if(mode==='fight')chat('down',v);}
   if(mode==='intro'){const u=clamp(modeT/1.3,0,1);B.y=B.hy-260*(1-ease.out(u));B.x=B.hx;B.tw=null;B.shown=1;if(modeT>1.3&&introBooms===0){introBooms=1;shake(14);sfx('boom');flashWhite=.25;}
    if(modeT>=introEnd){mode='fight';modeT=0;T=introEnd;banner('',' ',.01);if(!gw)startRun(director(),true);openerTalk();}}
   if(mode==='phase'&&modeT>2.3&&(!comms.busy()||modeT>7))endPhase();
@@ -642,7 +645,7 @@ async function bossfight(s){
    while(!theirW&&s.alive&&!nf.gone)await new Promise(r=>setTimeout(r,30));if(!s.alive)return;
    netW=Math.min(myW,theirW||myW);cw=-1;layout();await nf.start('go');hT=T;netReady=true;})();}
  // ---- main loop
- s.debug={get boss(){return B;},get players(){return P;},get bullets(){return bullets;},get minions(){return minions;},get hazards(){return hazards;},get mode(){return mode;},get downCut(){return downCut;},get pickups(){return pickups;},spawnPower,takePower,get time(){return T;},bossId:boss.id,tier,difficulty:diff,phases:NPH,comms,autopilot:[false,false],
+ s.debug={get boss(){return B;},get players(){return P;},get bullets(){return bullets;},get minions(){return minions;},get hazards(){return hazards;},get mode(){return mode;},get downCut(){return downCut;},get pickups(){return pickups;},get song(){return bm.playing;},spawnPower,takePower,get time(){return T;},bossId:boss.id,tier,difficulty:diff,phases:NPH,comms,autopilot:[false,false],
   attack(name,params){if(PATTERNS[name]&&mode==='fight'){runs.length=0;directorRun=null;startRun(PATTERNS[name](F,params||{}));}},   // tests: force one attack (the director stops)
   setBossHp(v){B.hp=Math.max(1,Math.min(B.max,v));if(B.phase<LAST&&B.hp<=thresholds[B.phase]&&mode==='fight')startPhase(B.phase+1);},
   skipIntro(){if(mode==='intro'){modeT=Math.max(modeT,introEnd);}},
@@ -652,7 +655,7 @@ async function bossfight(s){
  // online test bot: the autopilot flies this phone's plane
  if(net)s.debug.bot=()=>{if(!s.debug.autopilot[me]){s.debug.autopilot[me]=.12;return 'drive';}return '';};
  // (online there is no hit-stop: it would hold back one phone's copy of the shared attack world)
- s.frame(dt0=>{layout();if(finished)return;
+ s.frame(dt0=>{layout();if(finished)return;bm.tick();
   if(net){if(!netReady){draw();return;}nf.tick(dt0);if(gw)hT+=dt0*timeScale;}
   const t0=performance.now();if(hitstop>0&&!net){hitstop-=dt0;draw();return;}hitstop=0;for(let j=0,n=Math.max(1,s.debug.steps|0);j<n&&!finished;j++)update(dt0,dt0*timeScale*(net?1:cutTimeScale(downCut)));s.setScores(P.map(p=>Math.round(p.dmg+p.parries*50+p.kills*10)));
   const pct=Math.round(B.hp/B.max*100);s.status(`BOSS FIGHT · ${boss.name} · ${diff?DT.name+' · ':''}phase ${B.phase+1}/${NPH} · ${pct}% HP · `+P.map((p,i)=>s.players[i].name+' '+(p.hp>0?'♥'.repeat(p.hp):p.ghost>0?'👻 '+Math.ceil(p.ghost)+'s':'💤')).join(' / '));
