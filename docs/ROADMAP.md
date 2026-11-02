@@ -121,9 +121,9 @@ Order to be set by the triage. Current candidates:
 
 Frank's fake-out
 - **E1** `[part]` Frank keeps his current frequency (Chance card, 20% once both cleared Body; `events.js`). Flag: maybe revisit.
-- **E2** `[todo]` Sequence: Frank "starts" Shits and Ladders (laxatives, climb ladders, last to shit wins) → players offered laxatives →
+- **E2** `[verify]` (Nov 2 night: `src/frankFx.js` + `frankFakeout` in app.js; test tests/frank.mjs) Sequence: Frank "starts" Shits and Ladders (laxatives, climb ladders, last to shit wins) → players offered laxatives →
   world melts and fades → "I don't think that was a laxative..." → Frank's face fades in → "LEVEL IV: HORROR".
-- **E3** `[todo]` Players jump from mid-Level 3 straight to Level 4, skipping the Level 3 boss and the fake ending.
+- **E3** `[verify]` (Nov 2 night) Players jump from mid-Level 3 straight to Level 4, skipping the Level 3 boss and the fake ending.
 - **E4** `[todo]` Starting at a Level 4 checkpoint shows a short version of the reveal.
 
 Level IV

@@ -18,6 +18,10 @@ Also: C9 run length removed (startRun turns=999999, co-op not endless), G10 gizz
 (`engines/bomberControls.js` floating stick/BOMB button; mobile.js bomber walk/tryMove/seek float x,y, cells for logic,
 online pack x,y,f), M7 mockups https://claude.ai/artifact/4h7fazkSTgh1oQxDQdpctE. Cloud box: `cd cloudflare && npx --yes
 wrangler@3 dev --local --port 8787` works; online-native takes SHAMB_URL (serve a --pwa build).
+Later that night: D6 duels.js pacmaze (`ghostsStep`/`ghostPick` classic AI shared by local + online `ghostStep(j)`, GHOST_STEP .16,
+online tick mapping `tickAt/beat/stepAfter`, union-outline walls, ghost eyes, `pacSfx`); E2/E3 `frankFakeout` in app.js resolveEvent
+(horror card) + `src/frankFx.js` (netBoard FX.frankReveal); B3 `src/data/cutGames.js` (`isCut` in gameRegistry RANDOM_GAMES, ui
+arcade list, gameLauncher warp pick, encounterGames). online-board.mjs also takes SHAMB_URL.
 v0.75.0 (Nov 2, owner asked to release it): the boss-fight overhaul below. Fresh sessions: `docs/HANDOFF.md` first.
 Owner's master to-do list is `docs/ROADMAP.md` (phases; "continue" = offer options from it, wait for a pick).
 Boss work (ROADMAP K section) on branch `claude/boss-fights` (from TESTver, merged to TESTver and main). K1 done:

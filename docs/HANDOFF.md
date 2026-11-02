@@ -45,6 +45,13 @@ the morning. Everything below is on branch `claude/v0.75.0-release-roadmap-so2z5
    boss for the owner to edit, or the owner names them? (d) art: styled stand-ins until the owner draws them, OK?
 7. **Bomber look** (D5): controls are rebuilt; the arena still looks like before. Want the full SNES Super Bomberman
    look (stage themes, bomb-kick/punch power-ups, Louie mounts) or just the controls?
+8. **TowerFall** (D7, not started): what was confusing: the controls (drag run / flick jump / tap shoot), not knowing
+   what is going on (tiny archers, arrows), or the rules? Claude's guess: on-screen JUMP/SHOOT pads + aim arrow, bigger
+   archers, a 3-second "how to play" at round one, and treasure chests with power arrows like the real game.
+9. **Pac-Maze** (D6, built): ghosts are now arcade-smart and as fast as the arcade's (75% of yours, was 50%). Too hard?
+   The chompers are still your heads (no yellow Pac-Man); say if you want a Pac body under the head.
+10. **Frank** (E2/E3, built): the card odds are unchanged (20% per Chance card in Level III once both cleared Body).
+   Level III's own ending (E10) isn't built yet, so a run without Frank still ends at the Level III boss.
 
 ### Then, in the recommended order
 1. Rebuilds from the triage (D), highest-dealt first; D6 Pac-Man and D7 TowerFall are next in the old list.
@@ -60,7 +67,9 @@ K24 partner-down cutscene (slow motion, push-in, crying head, NOOOOOO!!!!) · K1
 shield, smart bomb, heart) · K15 new player ships · K22 boss music slots · A1 T-800 chase (and Breakout) 1P speed bug ·
 A2 Color Card Dash "Too Early" · A5 smoother character-select heads · A6 Hole.it props that fit really drop · A7 finished
 goals leave the Hole.it HUD · C3 arcade practice · C9 no run length · G10 King Gizzard stuck balls · D5 Bomber controls ·
-B1 triage sheet · M7 menu mockups. Online checked with a local `wrangler dev` (it works in the cloud box via npx):
+B1 triage sheet · M7 menu mockups · D6 Pac-Maze classic ghosts/maze/sounds · E2/E3 Frank's fake-out into Level IV
+(`src/frankFx.js`) · B3 cut-games list (`src/data/cutGames.js`, empty until the sheet is filled) · regression tests
+(tests/holeit-fit.mjs in test:core, King Gizzard park check in pinball-sim, tests/frank.mjs). Online checked with a local `wrangler dev` (it works in the cloud box via npx):
 bomber-duel and a boss fight pass with and without LAG=80-150; power-ups appear the same on both phones.
 
 ## What was done in the Nov 1-2 stretch
