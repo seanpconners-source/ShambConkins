@@ -109,7 +109,7 @@ Order to be set by the triage. Current candidates:
 - **D2** `[todo]` Cone Chaos: major redesign or replace.
 - **D3** `[todo]` Death Proof: looks cool, play is bad; redesign.
 - **D4** `[bug]` Major League Baseball: doesn't work properly. Rebuild in the style of Ken Griffey Jr. Presents MLB (SNES); review batting and fielding games.
-- **D5** `[todo]` Bomberman: controls too hard; SNES Super Bomberman style with character heads.
+- **D5** `[verify]` (Nov 2 night: floating stick per half + tap/2nd finger/BOMB button, smooth walking with corner sliding, Bomberman bodies; arena look unchanged) Bomberman: controls too hard; SNES Super Bomberman style with character heads.
 - **D6** `[todo]` Pac-Maze Duel: much closer to classic Pac-Man (maze feel, ghost behavior, power pellets, speeds, sounds).
 - **D7** `[todo]` TowerFall Arrow Arena: confusing, not fun; proper competitive archery game.
 - **D8** `[todo]` Rocky boxing: two-player Punch-Out!! style.

@@ -1,6 +1,6 @@
 # Handoff: where we left off (read this first in a fresh session)
 
-Last updated Nov 2 2026, at the end of the boss-fight overhaul (released as v0.75.0). Written for the next Claude session,
+Last updated Nov 2 2026 (night), after an overnight solo stretch on the roadmap (unreleased, in TESTver). Written for the next Claude session,
 which may run on a different account with none of the earlier conversation or memory. Everything needed is in the repo:
 this file, `CLAUDE.md`, `docs/ROADMAP.md` (the owner's to-do list, phases, statuses) and `docs/AI_STATE.md` (technical
 state, newest at the top).
@@ -23,29 +23,47 @@ state, newest at the top).
 
 ## Next up (offer these when the owner says "continue")
 
-The owner has not played v0.75.0 yet. **First ask how the boss fights felt** (parry/revive, Hard/Extreme difficulty,
-explosions, comm talk, ambushes/bombs, themed ammo) and fix what they report before anything else.
+Nov 2 night: the owner went to bed and asked Claude to work through the roadmap on its own and leave the decisions for
+the morning. Everything below is on branch `claude/v0.75.0-release-roadmap-so2z5g`, fast-forwarded into TESTver
+(not main, no release). First ask how the night's `[verify]` items play, then the decisions below.
 
-Then, in the recommended order:
+### Decisions waiting for the owner (ask these first)
+1. **Triage sheet** (B1/B2): https://claude.ai/artifact/4XLQDBkBkUJcQGvK2ST6w2 — tap Keep/Polish/Rebuild/Cut per game
+   (+ notes). Roadmap verdicts are pre-filled ("From roadmap"). Claude reads it with ArtifactData `list` on collection
+   `verdicts` (doc id = game id; bosses `boss--<id>`). Cut games then leave the pool (B3).
+2. **Menu direction** (M7): https://claude.ai/artifact/4h7fazkSTgh1oQxDQdpctE — A Console Home, B Marquee Shelves,
+   C Card Deck (or a mix). Build M1-M6 in the picked style.
+3. **Arcade = practice** (C3, built): Arcade/online-duel wins no longer recruit characters, 1P and 2P alike, and
+   cage/pipe/wanted recruits only count on the board. OK? (`ARCADE_RECRUITS` in gameLauncher.js flips it back.)
+4. **No run length** (C9, built): every run is a race to the finish; co-op now ends when both reach the end (it used
+   to lap forever with "no turn limit"). OK?
+5. **Boss music** (K22): the slots are ready; ask for songs: `boss-<boss id>.mp3` per boss, optional `-p2/-p3/-final`,
+   a shared pool `boss-any-1.mp3`…, `boss-final.mp3`, `boss-win.mp3`, `boss-lose.mp3` (assets/music/README.md).
+6. **Outfits** (K8-K12) need answers before building: (a) the groups found by name are Batman (9 actors), Superman (9),
+   James Bond (7 incl. GoldenEye 64); any others to group (Doctors, Jokers, Links…)? (b) which outfit is the
+   character's default face on the board? (c) boss tier outfit names: Claude proposes names like "Turbo Kandy" per
+   boss for the owner to edit, or the owner names them? (d) art: styled stand-ins until the owner draws them, OK?
+7. **Bomber look** (D5): controls are rebuilt; the arena still looks like before. Want the full SNES Super Bomberman
+   look (stage themes, bomb-kick/punch power-ups, Louie mounts) or just the controls?
 
-1. **Finish the boss polish** (roadmap K section; the engine is `src/engines/bossFight.js` + helpers):
-   - **K24 partner-down cutscene** (owner's idea): when a co-op partner's plane goes down, a quick slow-mo zoom on the
-     survivor's character with a sad face while the other plane explodes, a huge "NOOOOOOO!!!!", back to the fight.
-     Hook: `hurt()` → `chat('down',…)` is already the moment; `bossBoom.js` has the explosion pieces.
-   - **K16 power-ups + K15 better player ships** (`drawPlane`, pickups mid-fight: spread shot, shield, bomb...).
-   - **K22 boss music**: build drop-in song slots per boss/phase (like the pinball songs), then ask the owner for tracks.
-2. **Outfits (K8-K12, + the K7 reveal)**: group character versions (6 Bonds in `src/data/movieBonds.js`, Batmans,
-   Supermans...) under one character with swipeable outfits; each outfit keeps its own id and unlock (old saves
-   unchanged); each boss gets Medium/Hard/Extreme outfits unlocked by the tier ladder (`profile.bossTiers`) with
-   drop-in art slots and a styled stand-in until the owner adds pictures.
-3. **Phase A quick fixes**: A1 T-800 chase in 1P, A2 Color Card Dash "Too Early", A5 jittery heads on desktop
-   character select, A6/A7 Hole.it (watermelons, finished objectives in the HUD), C3 (1P Arcade wins still recruit).
-4. **Phase B minigame triage**: build the sheet of every game + modes for the owner to score Keep/Polish/Rebuild/Cut.
+### Then, in the recommended order
+1. Rebuilds from the triage (D), highest-dealt first; D6 Pac-Man and D7 TowerFall are next in the old list.
+2. Menus revamp in the picked direction (M1-M6).
+3. Outfits once 6 is answered (K8-K12).
+4. G9 pinball physics feel (owner: ball drags slowly along surfaces): needs the owner's ears/eyes on a phone.
+Bigger items waiting: Level IV + Frank + endings (E), New Game menu + checkpoints (C7/C8), new games (H), Hole.it /
+Bricks Quest level studies (G4/G5), online (I).
 
-Bigger items waiting in the roadmap: Level IV + Frank + endings (E), New Game menu + checkpoints (C), menus revamp
-(M), many new games (H), Hole.it / Bricks Quest level studies (G4/G5), online (I).
+## What was done in the Nov 2 night stretch (all `[verify]`)
 
-## What was done in this stretch (Nov 1-2)
+K24 partner-down cutscene (slow motion, push-in, crying head, NOOOOOO!!!!) · K16 power-ups (spread, turbo, missiles,
+shield, smart bomb, heart) · K15 new player ships · K22 boss music slots · A1 T-800 chase (and Breakout) 1P speed bug ·
+A2 Color Card Dash "Too Early" · A5 smoother character-select heads · A6 Hole.it props that fit really drop · A7 finished
+goals leave the Hole.it HUD · C3 arcade practice · C9 no run length · G10 King Gizzard stuck balls · D5 Bomber controls ·
+B1 triage sheet · M7 menu mockups. Online checked with a local `wrangler dev` (it works in the cloud box via npx):
+bomber-duel and a boss fight pass with and without LAG=80-150; power-ups appear the same on both phones.
+
+## What was done in the Nov 1-2 stretch
 
 Roadmap created; boss fights overhauled (all in v0.75.0, details in `docs/AI_STATE.md`):
 K1 parry/revive on touch-down · K2 difficulty tiers Easy/Medium/Hard/Extreme (`BOSS_TIERS` in `src/data/bosses.js`) ·

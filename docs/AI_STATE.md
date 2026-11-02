@@ -14,6 +14,10 @@ A6 holeIt `FIT=1` (physics.js, was .96) + sunk-in rule in sim.js. A7 `turn.cardD
 `ARCADE_RECRUITS=false`/`recruitsOn(origin)` in gameLauncher. B1 triage sheet = artifact
 https://claude.ai/artifact/4XLQDBkBkUJcQGvK2ST6w2 (db collection `verdicts`, doc id = game id, bosses `boss--<id>`,
 {v:keep|polish|rebuild|cut|null, note, at}); read it with ArtifactData list.
+Also: C9 run length removed (startRun turns=999999, co-op not endless), G10 gizzard.js Nest guides + ramp cap, D5 bomber
+(`engines/bomberControls.js` floating stick/BOMB button; mobile.js bomber walk/tryMove/seek float x,y, cells for logic,
+online pack x,y,f), M7 mockups https://claude.ai/artifact/4h7fazkSTgh1oQxDQdpctE. Cloud box: `cd cloudflare && npx --yes
+wrangler@3 dev --local --port 8787` works; online-native takes SHAMB_URL (serve a --pwa build).
 v0.75.0 (Nov 2, owner asked to release it): the boss-fight overhaul below. Fresh sessions: `docs/HANDOFF.md` first.
 Owner's master to-do list is `docs/ROADMAP.md` (phases; "continue" = offer options from it, wait for a pick).
 Boss work (ROADMAP K section) on branch `claude/boss-fights` (from TESTver, merged to TESTver and main). K1 done:
