@@ -97,7 +97,7 @@ New Game menu (section 5)
 - **C7** `[todo]` Replace the confusing setup and the options that do nothing. Modes:
   Main Game With Warps (default) · Main Game Without Warps · any visited warp world as a short standalone game.
 - **C8** `[todo]` Checkpoints: start at Level 1/2/3/4 once reached; a later start begins with an empty bag.
-- **C9** `[todo]` Remove the number-of-turns option (`run.maxTurns`); games run to their natural end.
+- **C9** `[verify]` (Nov 2 night: select removed, every run = race to the finish, co-op ends when both finish) Remove the number-of-turns option (`run.maxTurns`); games run to their natural end.
 - **C10** `[todo]` Warp worlds stay single-route, no checkpoints.
 - **C11** `[idea]` Character select before the rest of setup?
 - **C12** `[todo]` Clean up the 1P / local 2P / online challenge setup flow.
@@ -173,7 +173,7 @@ Endings
   street, skatepark, vert ramp, bowl...), with ramps and props, keeping the skaters who roll by.
 - **G9** `[bug]` Pinball physics feel (all tables): near the flippers and elsewhere the ball drags slowly along
   surfaces and takes too long to come down; doesn't feel real (rolling friction / damping / slope, `pinball/`).
-- **G10** `[bug]` King Gizzard pinball: ball can get stuck in the upper area left of the small top-left flipper.
+- **G10** `[verify]` (Nov 2 night: Nest guides raised to the pivot tops, cap over the orbit/ramp slot; sim stops 200 → 1) King Gizzard pinball: ball can get stuck in the upper area left of the small top-left flipper.
 
 ## Menus revamp (owner, Nov 2: "sleek, modern, professional, not amateur")
 
@@ -190,7 +190,7 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
 - **M5** `[todo]` Character collection revamp in the same style: tap a character → a detail page with their
   portrait/moods and their unlocked outfits (K8-K12) and how to get the rest.
 - **M6** `[idea]` Carry the same look to the other menus (home, New Game, settings) once M1 is liked.
-- **M7** `[todo]` Before building: Claude mocks up 2-3 design directions (screenshots) for the owner to pick from.
+- **M7** `[verify]` (Nov 2 night: https://claude.ai/artifact/4h7fazkSTgh1oQxDQdpctE A Console Home / B Marquee Shelves / C Card Deck, owner picks) Before building: Claude mocks up 2-3 design directions (screenshots) for the owner to pick from.
 
 ## Phase H — new content (sections 3 + 7)
 
