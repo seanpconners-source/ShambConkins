@@ -272,12 +272,12 @@ function sync(t,s,skip=[]){
  }
 }
 // Board minigame (gameLauncher): both phones play it at once. null = play it the normal way on this phone.
-async function hostGame(game){
+async function hostGame(game,{difficulty=null}={}){
  if(!hosting()||!nb.guestIn)return null;   // their phone offline right now: they get the game when it reconnects
- const id=++nb.seq,seed=`nb-${store.run.seed}-${store.run.turn}-${id}`,msg={t:'game',id,gameId:game.id,seed};
+ const id=++nb.seq,seed=`nb-${store.run.seed}-${store.run.turn}-${id}`,msg={t:'game',id,gameId:game.id,seed,...(difficulty!=null?{difficulty}:{})};
  nb.pending.set(id,{msg,resolve(){},local:async()=>null});
  flush();send(msg);
- const out=await boardDuel(game.id,seed,'nb'+seed,duelPlayers());
+ const out=await boardDuel(game.id,seed,'nb'+seed,duelPlayers(),difficulty);
  nb?.pending.delete(id);
  return out;
 }
@@ -402,7 +402,7 @@ async function guestTask(m){
 async function guestGame(m){
  if(nb.playing===m.id||nb.answered.has(m.id))return;nb.playing=m.id;await afterLocal();if(!nb||nb.playing!==m.id)return;closeWatch();   // played already: duel.js re-sends the result
  const run=store.run,players=[plain(run.players[nb.me]),plain(run.players[nb.peer])];
- await boardDuel(m.gameId,m.seed,'nb'+m.seed,players);
+ await boardDuel(m.gameId,m.seed,'nb'+m.seed,players,m.difficulty??null);
  if(!nb)return;nb.playing=null;nb.answered.set(m.id,true);showBoard();
 }
 const FX={

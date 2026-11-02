@@ -211,7 +211,7 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  if(!id&&!resume){const played=await animateRoulette(game,run?.mutation?'arcade':game.engine==='trivia'?'trivia':filter,warpPick?warpTheme(run)[game.engine==='trivia'?'trivia':'games'].map(gameById).filter(Boolean):null);if(!valid())return false;if(!played){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();return false;}}
  // Online board game: both phones play the game's 1P version at once from one seed; this (host) phone settles it.
  if(origin==='board'&&hooks.onlineGames()&&hooks.onlineAllowed(game)&&!bfGame(game)){
-  launching=false;const out=await hooks.onlineGame(game);
+  launching=false;const out=await hooks.onlineGame(game,{difficulty});
   if(store.run!==run)return false;
   if(!out){store.busy=false;returnToRoll?hooks.beforeRoll():hooks.endTurn();return false;}
   const me=hooks.onlineSeat(),scores=[0,0],won=[false,false],recruits=[[],[]];

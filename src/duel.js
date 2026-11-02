@@ -109,14 +109,14 @@ function sound(){try{navigator.vibrate?.(60);}catch{}}
 
 // ---- the match ----
 // board: a board-game minigame (src/netBoard.js) with both board players (mine first); it resolves boardDuel.
-async function start(gameId,seed,mid,board=null){
+async function start(gameId,seed,mid,board=null,difficulty=null){
  match={mid,gameId,seed,peer:{...netState().peer,...(board?{name:board[1].name,character:board[1].character}:{})},mine:{score:0,level:0,done:false},theirs:{score:0,level:0,done:false},gone:false,started:false,board:!!board};
  showChip();watchMatch();
  const who=board?(board[0].owner==='Amber'?1:0):store.onlineWho??soloSettings(store.profile).who;
  // slot = this phone's place in the game's player order (P1 Mario/Sonic, P2 Luigi/Tails on both phones): the Sean/Amber
  // pick, or the room seat when both phones picked the same name (both would play P1 otherwise)
  const po=match.peer?.owner,peerWho=po==='Amber'?1:po==='Sean'?0:-1,slot=board||peerWho!==who?who:netState().seat===1?1:0;
- const ok=await hooks.start(gameId,{seed,who,slot,mid,opponent:match.peer,finish,rematch:()=>propose(gameId),...(board?{board:true,players:board}:{})});
+ const ok=await hooks.start(gameId,{seed,who,slot,mid,opponent:match.peer,finish,rematch:()=>propose(gameId),...(board?{board:true,players:board}:{}),...(difficulty!=null?{difficulty}:{})});
  if(match?.mid===mid)match.started=!!store.session||match.mine.done;
  if(!ok&&match?.mid===mid&&!match.mine.done&&!store.session){
   if(match.board){void finish({score:0,level:0,label:'Did not play'});return;}   // the board still needs both results
@@ -124,7 +124,7 @@ async function start(gameId,seed,mid,board=null){
  }
 }
 // Board minigame: both phones play gameId's 1P version from seed; resolves {mine, theirs, forfeit} when both are done.
-function boardDuel(gameId,seed,mid,players){return new Promise(resolve=>{boardEnd?.(null);boardEnd=resolve;void start(gameId,seed,mid,players);});}
+function boardDuel(gameId,seed,mid,players,difficulty=null){return new Promise(resolve=>{boardEnd?.(null);boardEnd=resolve;void start(gameId,seed,mid,players,difficulty);});}
 // The live score of the game in progress (turns games add the banked rounds).
 function liveScore(){const s=store.session;if(!s)return null;const sc=s.score?.[0]||0;return s.solo?.kind==='turns'?(s.solo.base||0)+sc:Math.max(s.soloProgress?.score||0,sc);}
 function watchMatch(){

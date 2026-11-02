@@ -31,7 +31,7 @@ const {showBossCard,showDragBanner,showGentlemenCard,showSmashCard,showLandingBa
 const {warpTransition}=require("src/warpFx.js");
 const {buildWarpBoard,pickWarpId,WARP_DEFS}=require("src/warpBoards.js");
 const {WARP_THEMES,warpTheme,warpItem,warpCard,warpFortune}=require("src/warpThemes.js");
-const {ensureLevelBosses,bossById,castleName}=require("src/bossGate.js");
+const {ensureLevelBosses,bossById,castleName,bossTierFor,BOSS_TIERS}=require("src/bossGate.js");
 const {GAMES, PHONE_TASK, gameById}=require("src/gameRegistry.js");
 const {refitCatalog, randomArcadePick, showView, updateBoard, showDialog, resolveDialog, closeDialog, unlockDialog, toast, repaintCamera, gestureCamera, endGesture, cancelCameraAnimation, clearBoardDetailObserver, refreshPortraits}=require("src/ui.js");
 const {applyTheme}=require("src/theme.js");
@@ -101,7 +101,7 @@ initNetBoard({action:(name,target,remote)=>action(name,target,remote).catch(erro
 function refreshSetup(){if(store.view!=='setup'&&store.view!=='players')return;const scroll=[...document.querySelectorAll('.cs-grid')].map(el=>[el.dataset.player,el.scrollTop||0]);const keep=['run-length','run-seed','board-theme','game-mode','team-mate-0','team-mate-1'].map(id=>[id,document.getElementById(id)?.value]);const focus=document.activeElement?.id;captureSetup();showView(store.view,{selected:setupSelected,names:setupNames});for(const [i,top] of scroll){const el=document.querySelector(`.cs-grid[data-player="${i}"]`);if(el)el.scrollTop=top;}for(const [id,v] of keep){const el=document.getElementById(id);if(el&&v!=null)el.value=v;}if(focus)document.getElementById(focus)?.focus();}
 // 1P board game: the CPU rolls and uses items through the same functions as the buttons.
 initCpuBoard({roll:()=>roll(),useItem:i=>useBagItem(i)});
-initDuel({start:(id,duel)=>requestGame({id,origin:'arcade',solo:true,duel}),refresh:()=>{if(store.view==='arcade'&&!store.session&&!store.dialog)showView('arcade',{query:catalogQuery,filter:catalogFilter,page:catalogPage});}});
+initDuel({start:(id,duel)=>requestGame({id,origin:'arcade',solo:true,duel,difficulty:duel.difficulty??null}),refresh:()=>{if(store.view==='arcade'&&!store.session&&!store.dialog)showView('arcade',{query:catalogQuery,filter:catalogFilter,page:catalogPage});}});
 const random=()=>store.run?runRandom(store.run):Math.random();
 function focusEffect(before){const run=store.run;if(!run)return;const after=effectSnapshot(run),ids=[run.players[run.current].node];for(let i=0;i<2;i++)if(before?.players[i]&&JSON.stringify(before.players[i])!==JSON.stringify(after.players[i])){ids.push(run.players[i].node);if(before.players[i].node!==run.players[i].node)ids.push(before.players[i].node);}focusBoardAction(run,ids);}
 function applyPreferences(){document.body.classList.toggle('reduced-motion',store.profile.settings.reducedMotion);}
@@ -210,7 +210,7 @@ async function enterWarpZone(pipe=null){
  if(choice!=='go'){if(pipe){(pipe.warpDeclined||=[]).push(run.current);saveRun();}await finishEncounter();return;}
  if(pipe)pipe.warpUsed=true;
  const board=buildWarpBoard(id,`${run.seed}:${run.turn}`);if(boss)board.warp.bossName=boss.name;
- run.warpsVisited=[...(run.warpsVisited||[]),id];run.warp={id,returns:run.players.map(q=>q.node),bossId:def.bossId};
+ run.warpsVisited=[...(run.warpsVisited||[]),id];run.warp={id,returns:run.players.map(q=>q.node),bossId:def.bossId,realm:run.board.nodes[run.players[run.current].node]?.realm};
  logRun(`The party warps to ${def.title}.`);saveRun();
  await warpTransition(()=>{run.mainBoard=run.board;run.savedTraps=run.traps;run.traps=[];run.board=board;for(const q of run.players){q.warpVisited=q.visited;q.visited=[];q.node=board.realms.warp.start;}run.camera='follow';run.pan=null;focusBoardAction(run,run.players.map(q=>q.node));updateBoard(true);},{title:def.title,subtitle:def.intro,icon:def.icon});
  if(store.run!==run)return;setMusicZone('warp-'+id);saveRun();
@@ -255,12 +255,12 @@ async function warpJump(p,token){
 const run_node=p=>store.run.board.nodes[p.node];
 async function startBoss(bossId,{level=null,forced=false}={}){
  const run=store.run,boss=bossById(bossId);if(!boss){if(run.warp&&run.bossGate?.warp)await exitWarpZone();else if(run.bossGate)await advanceAfterBoss();else await finishEncounter();return;}
- const warp=!!run.warp,lair=castleName(boss);
+ const warp=!!run.warp,lair=castleName(boss),difficulty=bossTierFor(run,level||run.bossGate?.realm||boss.level),tierName=BOSS_TIERS[difficulty].name;
  const choices=forced?[{label:'Fight together!',value:'fight',primary:true}]:[{label:'Fight together!',value:'fight',primary:true},{label:warp?'Flee to the map':'Sneak past',value:'flee'}];
- const choice=await showDialog({title:`${boss.name} · ${boss.epithet||'Boss'}`,source:boss.source,rare:true,body:`${warp?'You reach the end of the warp zone.':'The level is over, but '+lair+' blocks the way forward.'} Fight together, win together: beat ${boss.name} to unlock a new character.`,html:`<div class="boss-intro"><span class="boss-icon">${e(boss.icon||'👹')}</span><b>${e(lair)}</b></div>`,choices});
+ const choice=await showDialog({title:`${boss.name} · ${boss.epithet||'Boss'}`,source:boss.source,rare:true,body:`${warp?'You reach the end of the warp zone.':'The level is over, but '+lair+' blocks the way forward.'} Fight together, win together: beat ${boss.name} to unlock a new character.`,html:`<div class="boss-intro"><span class="boss-icon">${e(boss.icon||'👹')}</span><b>${e(lair)}</b><span class="boss-tier" style="display:block;margin-top:4px;font-weight:900;letter-spacing:.1em;color:${BOSS_TIERS[difficulty].col}">${e(tierName.toUpperCase())}</span></div>`,choices});
  if(choice===null||store.run!==run)return;
  if(choice!=='fight'){if(warp){await exitWarpZone();}else await finishEncounter();return;}
- await requestGame({id:'boss-'+boss.id,origin:'board'});
+ await requestGame({id:'boss-'+boss.id,origin:'board',difficulty});
 }
 // The end of a warp board (not Kanto: Gary's gym has its own flow) works like a level gate.
 function warpGateReady(run,n){return run.board.format==='warp'&&!!run.warp&&!!run.board.warp?.bossId&&run.board.warp.id!=='pokemon'&&n.id===run.board.realms.warp?.gate&&!run.bossGate;}

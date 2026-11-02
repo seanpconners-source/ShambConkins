@@ -198,6 +198,18 @@ Reuse engines with new skins wherever possible.
 - **H7** `[idea]` Overhead off-road racer (Super Off Road style).
 - **H8** `[idea]` Horde variants: aliens, stormtroopers...
 - **H9** `[idea]` More movie games, and more games for each existing warp world.
+- **H15** `[idea]` Matrix hacker pipe game (rotate tiles to connect the flow): hardcore-hacker look, green code rain,
+  frequent cutaways to Morpheus / Neo hacking (drawn and animated in the movie's style: real film clips can't be
+  shipped in the game). Take turns, online you watch each other's turns; some sections need both players to connect
+  them together; maybe a full online co-op mode.
+- **H16** `[idea]` Lights Out clone with an over-the-top theme like the recent games (Pro Mancala, Hangman).
+- **H17** `[idea]` Tower defense: the best ideas of the great TD games, very fun; designed from day one for 1P,
+  2P co-op, 2P versus, local and online.
+- **H18** `[idea]` Super Mario Bros.: more worlds (2, 3, 4...) toward a full game, then maybe a Mario 3 / World-style
+  game. Note: new worlds get our own level designs in the NES style (same physics, enemies, look), not copies of
+  Nintendo's maps.
+- **H19** `[idea]` Sonic: more levels and zones, look and feel much closer to the Mega Drive games (the way SMB got
+  NES physics and art), with our own level layouts in that style.
 - **H10** `[todo]` Warp worlds: visiting one unlocks it in New Game; beating its boss unlocks the boss in Boss Select + the character.
 - **H11** `[todo]` Review every existing warp world (play, variety, theme, quality); keep special mechanics (Pokémon, Chutes jumps).
 - **H12** `[idea]` Sci-Fi warp world: random Star Wars / Star Trek / Alien / Starship Troopers / MIB places; random boss (Vader, Xenomorph Queen, giant Klendathu bug, Edgar). Edgar unlock TBD.
@@ -233,8 +245,9 @@ Difficulty tiers
   and an extra phase, not just faster bullets. Each boss keeps its own built-in strength (`boss.tier`, `K` table in
   `bossAttacks.js`) on top. Solo/online balance rules (`SOLO_K` etc.) still apply.
   Built: `BOSS_TIERS` in data/bosses.js; `requestGame({difficulty})`. Bot hits per full fight ≈ 5.5 / 7.3 / 9 / 13.6.
-  Not yet: online fights pass no difficulty (the other phone would think Easy) → send it with the challenge in K3.
-- **K3** `[todo]` Board tier = the level: Level 1 Easy, 2 Medium, 3 Hard, 4 Extreme (the true ending is a real
+  Online board fights pass the tier (K3); arcade online challenges will once Boss Select has tiers (K5).
+- **K3** `[verify]` (built Nov 2: `bossTierFor` in bossGate.js, tier on the boss intro card, online passes it to the
+  other phone with the board game message; online untested here) Board tier = the level: Level 1 Easy, 2 Medium, 3 Hard, 4 Extreme (the true ending is a real
   challenge). A warp zone's boss uses the tier of the level it was entered from.
 - **K4** `[todo]` No boss difficulty setting anywhere. The 1P CPU difficulty stays as it is (it's about the CPU player).
   Standalone warp worlds (New Game menu, C7) offer a difficulty, limited to the levels reached in the main game
