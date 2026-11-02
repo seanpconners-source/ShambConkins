@@ -3,6 +3,8 @@
 The owner's master to-do list (dictated Nov 1 2026) sorted into an order of work.
 Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a real ending. Not endless polish.
 
+**Where we left off and what's next: `docs/HANDOFF.md`** (kept up to date at the end of each stretch of work).
+
 ## How we use this file
 
 - **"continue" / "what's next?"** → Claude reads this file, looks at the current phase, and offers 2-4 options
@@ -48,12 +50,12 @@ in headless browsers).
 
 - **A1** `[bug]` Terminator T-800 chase broken in 1P: plays absurdly fast, then says "Terminated" at once (ids to check: `t800-scan-long`, `terminator-scan`).
 - **A2** `[bug]` Candy Land Color Card Dash says "Too Early" constantly; fix the rule and explain it on screen (`candyLand.js`).
-- **A3** `[bug]` Boss fights: parry doesn't work reliably (`bossFight.js`).
-- **A4** `[bug]` Boss fights: tapping a downed partner doesn't revive them.
+- **A3** `[verify]` (fixed in K1) Boss fights: parry doesn't work reliably (`bossFight.js`).
+- **A4** `[verify]` (fixed in K1) Boss fights: tapping a downed partner doesn't revive them.
 - **A5** `[bug]` Character select: heads bounce fast and jittery in desktop browsers (phones look smoother).
 - **A6** `[bug]` Hole.it: watermelons (and others) don't fall into holes that are big enough.
 - **A7** `[todo]` Hole.it: remove finished objectives from the HUD.
-- **A8** `[todo]` All bosses are too easy (King Kandy most of all): solved by the boss tiers, see "Boss tiers and outfits".
+- **A8** `[verify]` All bosses are too easy (King Kandy most of all): solved by the boss tiers, see "Boss tiers and outfits".
 - **A9** `[verify]` Owner playtest of things that may already be done:
   - Pinball online = real multiplayer pinball (balls alternate between phones, both scores shown): built in v0.73.0.
   - Missing visitors at landmarks: fallback visitor added Oct 24 (393 landmarks had none).

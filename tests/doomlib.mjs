@@ -3,7 +3,9 @@
 import fs from 'node:fs';import path from 'node:path';import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const cache={};
-const stubs={'src/data/userPortraits.js':{USER_PORTRAITS:{'doom:pack:freedoom':'data:application/gzip;base64,'+fs.readFileSync(path.join(root,'assets/doom/freedoom.pack.gz')).toString('base64')}}};
+// assetBytes: wad.js reads packs through it since the split app build (v0.72); the stub decodes the data URI
+const stubs={'src/data/userPortraits.js':{USER_PORTRAITS:{'doom:pack:freedoom':'data:application/gzip;base64,'+fs.readFileSync(path.join(root,'assets/doom/freedoom.pack.gz')).toString('base64')},
+ assetBytes:async url=>new Uint8Array(Buffer.from(url.slice(url.indexOf(',')+1),'base64'))}};
 export function req(id){if(stubs[id])return stubs[id];if(cache[id])return cache[id];const exports=cache[id]={};new Function('exports','require',fs.readFileSync(path.join(root,id),'utf8'))(exports,req);return exports;}
 export function stub(id,v){stubs[id]=v;}
 // write an RGBA buffer (Uint8Array w*h*4) as a PNG file
