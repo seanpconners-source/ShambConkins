@@ -11,6 +11,7 @@ const {sendNet,onNet,netState,joinRoom}=require("src/net.js");
 const {VERSION}=require("src/version.js");
 const {openDialog,closeDialog,toast,updateBoard,showView}=require("src/ui.js");
 const {openRoutePanel,closeRoutePanel,routePreview}=require("src/routePanel.js");
+const {playFrankReveal}=require("src/frankFx.js");
 const {showLevelCard,showBossCard,showDragBanner,showGentlemenCard,showSmashCard,showLandingBanner}=require("src/levelCard.js");
 const {animateDice,animateItemTransfers,boardFeedback,turnFeedback}=require("src/effects.js");
 const {warpTransition}=require("src/warpFx.js");
@@ -406,7 +407,7 @@ async function guestGame(m){
  if(!nb)return;nb.playing=null;nb.answered.set(m.id,true);showBoard();
 }
 const FX={
- showLevelCard:(realm,o)=>showLevelCard(realm,o),showBossCard:id=>{const b=bossById(id);if(b)return showBossCard(b);},
+ showLevelCard:(realm,o)=>showLevelCard(realm,o),frankReveal:()=>playFrankReveal(),showBossCard:id=>{const b=bossById(id);if(b)return showBossCard(b);},
  showDragBanner:(name,total)=>{nb.drag?.close();nb.drag=showDragBanner(name,total);},
  dragBanner:(n,lost)=>{if(n<0){nb.drag?.close();nb.drag=null;}else nb.drag?.update(n,lost);},
  showGentlemenCard:()=>showGentlemenCard(),showSmashCard:()=>showSmashCard(),showLandingBanner:(t,s)=>showLandingBanner(t,s),

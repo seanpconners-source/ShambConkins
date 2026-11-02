@@ -23,7 +23,7 @@ function drawEvent(run, profile, random=Math.random) {
  const eligible=CATALOG.cards.filter(c=>(c.level==='ANY'||c.level.toLowerCase()===realm)&&(!c.minTurn||run.turn>=c.minTurn)&&(!c.requiresItem||p.items.includes(c.requiresItem))&&c.e[0]!=='team'&&c.e[0]!=='horror'&&!(c.e[0]==='unlockChar'&&!canRecruitReward(profile,c.e[1],p.owner)));
  let pool=eligible.filter(c=>!seen.has(c.title));
  if(!pool.length&&eligible.length){const recycled=new Set(eligible.map(c=>c.title));run.cardsSeen=run.cardsSeen.filter(title=>!recycled.has(title));pool=eligible;}
- if(run.players.every(p=>p.cleared.includes('body'))&&!run.horror&&random()<.2)return {title:'FRANK',source:'Always Sunny',body:'Frank has been waiting. He has added a route. It does not look welcoming.',e:['horror'],rare:true};
+ if(run.players.every(p=>p.cleared.includes('body'))&&!run.horror&&random()<.2)return {title:'FRANK',source:'Always Sunny',body:'Frank has been waiting for you. He has a game, and he has pills.',e:['horror'],rare:true};
  if(run.players.every(p=>p.cleared.includes('body'))&&['sean','amber'].every(id=>run.players.some(p=>p.character===id))&&!run.mutation&&['mario','luigi'].every(id=>[...profile.shared,...Object.values(profile.rosters).flat()].includes(id))&&random()<.035)return {title:'Oops. You’re on the same team now.',source:'Super Mario',body:'Mario and Luigi have taken over the arcade. You are one relay team for three races against their hard CPU drivers. Collect coins, dodge blocks and boost past them.',e:['team',3],rare:true};
  if(random()<.55||!pool.length){const node=run.board.nodes[p.node],source=node.source||selectReferenceSource(run,random);const event=selectThemedEncounter(source,{owned,items:p.items,player:p,profile,seen:run.cardsSeen,triviaSeen:profile.recentTrivia||run.triviaSeen,realm,turn:run.turn,random});rememberEvent(run,event.title);return event;}
  // Unlocks stay exciting without replacing every encounter with a roster entry.
@@ -65,7 +65,7 @@ function applyEvent(run,profile,event,random=Math.random) {
   case 'swap':[p.node,other.node]=[other.node,p.node];[p.visited,other.visited]=[other.visited,p.visited];message='Positions swapped.';break;
   case 'steal':{if(other.antiSteal){other.antiSteal--;message='Kitten Mittens blocked the steal.';}else{const r=pointChange(other,other.cloak?0:-(Number(a)||3));if(!r.blocked)p.points-=r.delta;message=r.blocked||other.cloak?'The opponent blocked the steal.':`Stole ${-r.delta} points.`;}break;}
   case 'tradeItem':pointChange(p,Number(a)||-2,false);message=`${gainItem(null).message} Paid ${Math.abs(Number(a)||2)} points.`;break;
-  case 'horror':addHorrorBoard(run.board);run.horror=true;profile.horrorSeen=true;profile.modes||=['versus'];if(!profile.modes.includes('horror'))profile.modes.push('horror');message='A new route has opened beneath the Spirit castle. Beat its boss and you both go down.';break;
+  case 'horror':addHorrorBoard(run.board);run.horror=true;profile.horrorSeen=true;profile.modes||=['versus'];if(!profile.modes.includes('horror'))profile.modes.push('horror');message='Frank’s game is starting.';break;
   case 'team':run.mutation={remaining:3,won:0};message='Three cooperative rounds against the plumber brothers.';break;
   case 'horrorTrap':run.traps||=[];run.traps.push({node:pick(run.board.realms[run.board.nodes[p.node].realm].ids,random),owner:-1});message='Something has changed ahead.';break;
   case 'unlockFeature':profile.equipment=true;message=`Equipment locker opened. ${gainItem('heavy-champion-belt').message}`;break;

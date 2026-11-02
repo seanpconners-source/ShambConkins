@@ -424,3 +424,11 @@ body .boss-medals i.won{background:var(--c);opacity:1;box-shadow:0 0 6px var(--c
 body .catalog-shell .arcade-card.boss-extreme:not(.locked){box-shadow:inset 0 0 0 3px #ffd23c,0 0 20px #ffd23c55}
 body .tier-cleared{color:#ffd23c;letter-spacing:.06em}
 .practice-note{display:block;opacity:.7;font-size:12px;margin:4px 0 0;text-align:center}
+/* Frank's fake-out (src/frankFx.js, ROADMAP E2): the board melts, then the black screen with the line and Frank's face */
+#frank-reveal{position:fixed;inset:0;z-index:100000;cursor:pointer}
+#frank-reveal canvas{position:absolute;inset:0;width:100%;height:100%}
+#frank-reveal .fr-line{position:absolute;left:50%;top:24%;transform:translateX(-50%);width:min(90vw,640px);margin:0;text-align:center;color:#eadcc6;font:italic 600 clamp(20px,5.4vw,36px)/1.25 Georgia,"Times New Roman",serif;text-shadow:0 0 14px #b3121f}
+#frank-reveal .fr-face{position:absolute;left:50%;top:62%;width:min(68vw,420px);transform:translate(-50%,-50%);opacity:0;filter:sepia(.6) hue-rotate(-28deg) saturate(2.4) contrast(1.25) drop-shadow(0 0 34px #b3121f)}
+body.frank-melt main{animation:frank-melt 2.6s ease-in forwards;transform-origin:50% 0}
+@keyframes frank-melt{0%{filter:none;transform:none}35%{filter:hue-rotate(35deg) saturate(1.7)}100%{filter:hue-rotate(160deg) saturate(2.6) blur(5px) brightness(.25);transform:scaleY(1.4) skewX(7deg) translateY(14%)}}
+body.reduced-motion.frank-melt main{animation:none}
