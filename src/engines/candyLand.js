@@ -95,7 +95,7 @@ async function candyLand(s){
  }
 
  // ---------------- Color Card Dash
- s.hint('Color Card Dash: a Candy Land card flips in the middle. Be first to tap the matching colour on your side (P1 top, P2 bottom; left/right halves on wide screens). Single colour +1, double +2, a wrong tap −1 and a short freeze. Lord Licorice card: hands off! Whoever taps loses 2. Twenty cards. Keyboard: P1 keys 1-6, P2 keys 7-0 and - =.');
+ s.hint('Color Card Dash: a Candy Land card flips in the middle. Be first to tap the matching colour on your side (P1 top, P2 bottom; left/right halves on wide screens). Single colour +1, double +2, a wrong tap −1 and a short freeze. Tapping before the card flips freezes your buttons for a moment (wait for the flip); a tap after someone already won the card does nothing. Lord Licorice card: hands off! Whoever taps loses 2. Twenty cards. Keyboard: P1 keys 1-6, P2 keys 7-0 and - =.');
  const deck=[];for(let k=0;k<DASH_CARDS;k++){const r=s.random();deck.push(r<.14&&k>2?{lic:true,delay:.7+s.random()*1.1}:{color:Math.floor(s.random()*6),double:r>.78,delay:.7+s.random()*1.1});}
  let idx=-1,card=null,state='wait',waitT=1.2,lock=[0,0],shown=0,winnerFlash=-1,flashT=0;
  const net=isOnline(s)?s.online:null,me=net?net.me:-1,inbox=new Map();let fin=[null,null],wrong=0,botAt=null;if(net)s.hotseat=true;
@@ -109,7 +109,9 @@ async function candyLand(s){
   return COLORS.map((col,k)=>({k,x:v.x+pad+(k%cols)*(bw+pad),y:top+Math.floor(k/cols)*(h+pad),w:bw,h,col:col[1]}));};
  const press=(i,k)=>{if(net&&i!==me||phase!=='play'||lock[i]>0)return;
   if(net&&state==='show'){if(fin[me])return;if(card.lic){finalize(me,{lic:1,t:shown,w:wrong});lock[i]=.8;return;}if(k===card.color){const b=buttons(i)[k];fx.burst(b.x+b.w/2,b.y+b.h/2,{n:16,color:COLORS[k][1],speed:220,life:.5,size:4,shape:'star'});finalize(me,{k,t:shown,w:wrong});return;}
-   wrong++;lock[i]=.9;snd(180,.15,{type:'square',vol:.03});const b=buttons(i)[k];fx.pop(b.x+b.w/2,b.y,'−1',{color:'#ff6a8a',stroke:INK,size:22});return;}if(state!=='show'){lock[i]=.5;snd(160,.12,{type:'square',vol:.03});fx.pop(vp(i).x+vp(i).w/2,vp(i).y+vp(i).h*.2,'TOO EARLY',{color:'#ff6a8a',stroke:INK,size:18});return;}
+   wrong++;lock[i]=.9;snd(180,.15,{type:'square',vol:.03});const b=buttons(i)[k];fx.pop(b.x+b.w/2,b.y,'−1',{color:'#ff6a8a',stroke:INK,size:22});return;}// after the card is won a late tap is just too slow (no penalty); before the flip it freezes you briefly, so mashing doesn't pay
+  if(state==='done'||phase!=='play'){if(i!==winnerFlash&&flashT>0)fx.pop(vpOn(i).x+vpOn(i).w/2,vpOn(i).y+vpOn(i).h*.2,'TOO SLOW!',{color:'#fff',stroke:INK,size:18});return;}
+  if(state!=='show'){lock[i]=.4;snd(160,.12,{type:'square',vol:.03});fx.pop(vpOn(i).x+vpOn(i).w/2,vpOn(i).y+vpOn(i).h*.2,'WAIT FOR THE FLIP!',{color:'#ff6a8a',stroke:INK,size:18});return;}
   if(card.lic){score[i]=Math.max(0,score[i]-2);lock[i]=.8;state='done';winnerFlash=1-i;flashT=1;noise(.3,{vol:.06,freq:300});fx.pop(vp(i).x+vp(i).w/2,vp(i).y+vp(i).h*.2,'LICORICE! −2',{color:'#ff6a8a',stroke:INK,size:22});s.react(i,'sad');setTimeout(next,900);return;}
   if(k===card.color){const pts=card.double?2:1;score[i]+=pts;state='done';winnerFlash=i;flashT=1;jingle([784,1047,1319],{step:.05,type:'triangle',vol:.04});s.react(i,'happy');const b=buttons(i)[k];fx.burst(b.x+b.w/2,b.y+b.h/2,{n:16,color:COLORS[k][1],speed:220,life:.5,size:4,shape:'star'});fx.pop(b.x+b.w/2,b.y,`+${pts}`,{color:'#fff',stroke:INK,size:26});setTimeout(next,800);}
   else{score[i]=Math.max(0,score[i]-1);lock[i]=.9;snd(180,.15,{type:'square',vol:.03});const b=buttons(i)[k];fx.pop(b.x+b.w/2,b.y,'−1',{color:'#ff6a8a',stroke:INK,size:22});}};
@@ -138,7 +140,7 @@ async function candyLand(s){
   // centre card
   const ch=side()?Math.min(s.H*.36,s.W*.26):Math.min(s.H*.17,s.W*.3),cw=ch/1.3,cx=net&&side()?s.W*.22:s.W/2,cy=net?(side()?s.H*.5:s.H*.21):side()?s.H*.25:s.H/2;
   if(phase==='play'||phase==='end'){if(card&&(state==='show'||state==='done')){const k=Math.min(1,shown*8);x.save();x.translate(cx,cy);x.scale(Math.max(.05,k),1);colorCard(x,0,0,cw,ch,card,t);x.restore();}
-   else{x.fillStyle=INK;rr(x,cx-cw/2,cy-ch/2,cw,ch,cw*.1);x.fill();x.strokeStyle='#fff';x.lineWidth=3;x.stroke();outlined(x,'CANDY',cx,cy-ch*.1,{size:cw*.18,fill:'#ffe3f1',stroke:INK});outlined(x,'LAND',cx,cy+ch*.12,{size:cw*.18,fill:'#ffe3f1',stroke:INK});}
+   else{x.fillStyle=INK;rr(x,cx-cw/2,cy-ch/2,cw,ch,cw*.1);x.fill();x.strokeStyle='#fff';x.lineWidth=3;x.stroke();outlined(x,'CANDY',cx,cy-ch*.1,{size:cw*.18,fill:'#ffe3f1',stroke:INK});outlined(x,'LAND',cx,cy+ch*.12,{size:cw*.18,fill:'#ffe3f1',stroke:INK});if(state==='wait'&&phase==='play'){x.globalAlpha=.65+.35*Math.sin(t*9);outlined(x,'WAIT FOR THE FLIP…',cx,cy+ch*.5+Math.max(14,cw*.16),{size:Math.max(14,cw*.15),fill:'#fff',stroke:INK});x.globalAlpha=1;}}
    outlined(x,`${Math.max(1,Math.min(DASH_CARDS,idx+1))}/${DASH_CARDS}`,cx+cw*.5+8,cy-ch*.5+8,{size:Math.max(11,cw*.13),fill:'#fff',stroke:INK,align:'left'});}
   x.fillStyle='#fff';if(net){}else if(side())x.fillRect(s.W/2-2,s.H*.48,4,s.H*.52);else{x.fillRect(0,s.H/2-2,s.W/2-cw*.8,4);x.fillRect(s.W/2+cw*.8,s.H/2-2,s.W/2,4);}
   fx.draw(x);
