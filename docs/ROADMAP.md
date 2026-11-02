@@ -277,13 +277,13 @@ Outfits (for every character, not only bosses)
 - **K12** `[todo]` List of every outfit art slot for the owner to fill.
 
 Make boss fights super badass (owner, Nov 2: "let's make the boss fights so much fun!")
-- **K15** `[todo]` Graphics: distinct-looking phases, better boss art, better player ships; heads/expressions on the
+- **K15** `[part]` (done: phase-break blasts, damage smoke/fire, hotter edge tint and aura per phase, final-phase embers; left: better player ships, more boss art) Graphics: distinct-looking phases, better boss art, better player ships; heads/expressions on the
   boss and the ships react properly (hurt, angry, laughing, dying).
 - **K16** `[todo]` Power-ups to pick up mid-fight (weapons, shields, bombs).
 - **K17** `[todo]` Crazy weapons and bombs, for players and bosses.
 - **K18** `[todo]` Bosses come from unexpected places: up from the bottom, in from the side.
 - **K19** `[idea]` Themed bullets: each boss throws things from its own movie/show/game.
-- **K20** `[todo]` Huge explosions on a kill, bigger per tier; Extreme kills get a crazy huge extreme explosion.
+- **K20** `[verify]` (built Nov 2: engines/bossBoom.js) Huge explosions on a kill, bigger per tier; Extreme kills get a crazy huge extreme explosion.
 - **K21** `[todo]` Star Fox-style talk between phases: boss and players trade lines in comm boxes, with funny jokes.
   Special lines when a player character and the boss are related (same show/movie, rivals, family).
 - **K22** `[todo]` Boss music: owner will supply tracks. Claude tells the owner when the music slots are ready

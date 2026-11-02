@@ -23,6 +23,11 @@ guest; `curDifficulty` = tier of the launch); boss character recruit only when o
 `arcadeLaunch` → `chooseBossTier` dialog (next tier primary, higher ones locked), medals `.boss-medals`, `.boss-extreme`
 gold frame (theme.css end), result text "MEDIUM CLEARED! Hard is now open in Boss Select." Online arcade boss
 challenges still Easy (proposeDuel has no tier).
+K20/K15 (explosions + phases) there: `engines/bossBoom.js` = fx kinds fb/sm/db/sw/ray/em/hd in bossFight's `fx` list
+(`stepBoom`/`drawBoom`, `delay` lays out sequences) + `KO_STYLE` per tier (chain secs/rate, main blast size or whole
+screen, shocks, debris, embers, after-blasts, white flash, hold, title KNOCKOUT!/DESTROYED!/ANNIHILATED!!); the boss's
+cut-out head tumbles off. Phase start = `phaseBreak`; phases 2+ smoke/burn (`dmgSmokeT`), aura behind the boss and edge
+tint per phase, final-phase embers. fx capped at 1100.
 Testing on the Windows laptop: the 346 MB one-file build hangs headless Chromium; build `--pwa` into the scratchpad,
 serve it (tiny node static server) and run tests with SHAMB_URL=http://localhost:8123/.
 

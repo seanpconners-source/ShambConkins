@@ -17,6 +17,7 @@ const {CHARACTERS}=require("src/characters.js");
 const {entityArtSpec,queueEntityArt}=require("src/entityMedia.js");
 const {headDisplayURL}=require("src/headCutouts.js");
 const {BOSSES,bossById,BOSS_TIERS,FINAL_LINES}=require("src/data/bosses.js");
+const {KO_STYLE,chainPop,mainBlast,phaseBreak,spotOn,fireball,smoke,ember,head,stepBoom,drawBoom,BOOM_KINDS}=require("src/engines/bossBoom.js");
 const {PATTERNS,SIGNATURES,K,STEPS}=require("src/engines/bossAttacks.js");
 const STEP_NAME=new Map(Object.entries(STEPS).map(([n,f])=>[f,n]));
 const {BODIES,drawMinion}=require("src/engines/bossBodies.js");
@@ -55,7 +56,7 @@ async function bossfight(s){
  const B={x:210,y:-260,hx:210,hy:150,hp:Math.round(boss.hp*hpScale),max:Math.round(boss.hp*hpScale),phase:0,flash:0,tw:null,deadR:0,hidden:0,pose:'idle',poseT:0,open:0,glow:0,lookX:0,lookY:0,drawX:210,drawY:-260,shown:0,chip:1,sq:1,mood:'normal',moodUntil:0};
  const P=(alone?[0]:[0,1]).map(i=>({i,x:spawnX(i),y:500,tx:spawnX(i),ty:500,aim:-Math.PI/2,hp:maxHp,inv:0,ghost:0,out:false,gx:0,gy:0,meter:0,fire:0,sup:0,supT:0,dmg:0,parries:0,kills:0,key:{u:0,d:0,l:0,r:0},parryT:0,parryW:0,parryLock:0,revT:0,vx:0,hitFlash:0,barrage:0}));
  const bullets=[],pshots=[],minions=[],hazards=[],warns=[],fx=[],runs=[],says={text:'',t:0};
- let T=0,modeT=0,mode='intro',timeScale=1,hitstop=0,shakeMag=0,flashWhite=0,lastSay=-99,bannerQ=[],sigShown=[false,false,false],finished=false,duration=0,musicT=0,musicStep=0,sfxT={},scene=null,sceneKey='',koDone=false,koBoom=0,directorRun=null,intro={skip:false};
+ let T=0,modeT=0,mode='intro',timeScale=1,hitstop=0,shakeMag=0,flashWhite=0,lastSay=-99,bannerQ=[],sigShown=[false,false,false],finished=false,duration=0,musicT=0,musicStep=0,sfxT={},scene=null,sceneKey='',koDone=false,koBoom=0,koLater=[],dmgSmokeT=0,directorRun=null,intro={skip:false};
  const log={dmg:0,hits:[0,0],src:{}};
  // ---- boss face (portrait when the unlock character exists in the roster; emoji plate otherwise)
  const hasChar=CHARACTERS.some(ch2=>ch2.id===boss.unlockId),faceImgs={};
@@ -71,7 +72,7 @@ async function bossfight(s){
   get portrait(){return hasChar;},
   face(g,cx,cy,size,o={}){const mood=mode==='ko'?'sad':mode==='intro'||mode==='lose'?'win':T<B.moodUntil?B.mood:B.phase>0?'angry':'normal';const r=o.clipR||size*.46;
    if(hasChar){let c=null;try{c=require('src/engines/broforce.js').headCanvas(boss.unlockId,mood,192);}catch{}
-    if(c&&c.width){const D=r*2.75;g.save();g.translate(cx,cy-r*.1);if(o.tilt)g.rotate(o.tilt);if(B.flash>0)g.filter='brightness(1.8)';g.drawImage(c,-D/2,-D/2,D,D);g.restore();return true;}}
+    if(c&&c.width){const D=r*2.75;g.save();g.translate(cx,cy-r*.1);if(o.tilt)g.rotate(o.tilt);g.drawImage(c,-D/2,-D/2,D,D);g.restore();return true;}}
    const img=faceImage(mood)||faceImage('normal');
    g.save();g.translate(cx,cy);if(o.tilt)g.rotate(o.tilt);
    if(img){g.beginPath();g.ellipse(0,0,r,r*1.06,0,0,TAU);g.clip();const sc=Math.max(r*2/img.naturalWidth,r*2.1/img.naturalHeight)*1.02;g.fillStyle=pal[3];g.fillRect(-r,-r*1.1,r*2,r*2.2);g.drawImage(img,-img.naturalWidth*sc/2,-img.naturalHeight*sc/2,img.naturalWidth*sc,img.naturalHeight*sc);g.restore();g.save();g.translate(cx,cy);if(o.tilt)g.rotate(o.tilt);g.beginPath();g.ellipse(0,0,r,r*1.06,0,0,TAU);g.lineWidth=4;g.strokeStyle='#140a0c';g.stroke();g.restore();return true;}
@@ -163,6 +164,7 @@ async function bossfight(s){
  function startPhase(n){if(net&&host)netOp(['ph',n]);mode='phase';modeT=0;B.phase=n;runs.length=0;directorRun=null;B.deadR=0;B.tw={x0:B.x,y0:B.y,x1:B.hx,y1:B.hy,t:0,dur:.8,e:ease.inout};B.hidden=0;
   for(const b of bullets)burst(b.x,b.y,'#fff',1,40,.3);bullets.length=0;hazards.length=0;warns.length=0;for(const m of minions)burst(m.x,m.y,'#ffd23c',6);minions.length=0;
   for(const p of P)p.inv=Math.max(p.inv,3);shake(16);flashWhite=.5;sound('rare');vibrate(60);
+  if(B.shown>=1&&B.hidden<=0){phaseBreak(fx,bossCircles(),pal,n===LAST);sfx('boom');}
   for(const p of P)if(p.hp<=0&&p.out){p.out=false;p.hp=1;p.inv=3;p.ghost=0;p.x=p.tx=spawnX(p.i);p.y=p.ty=spawnY();text(p.x,p.y-30,'SECOND WIND!','#7dffb0',16,1.4);}
   if(NPH>3&&n===LAST){banner('FINAL PHASE!',boss.phaseLines[3]||FINAL_LINES[Math.floor(F.rand()*FINAL_LINES.length)],2.6,'#ff2a6a');shake(24);flashWhite=.7;}
   else banner(`PHASE ${n+1}!`,boss.phaseLines[n]||'',2.3,'#ff4b3a');}
@@ -297,7 +299,8 @@ async function bossfight(s){
   const bob=B.tw||B.pose==='dive'||B.deadR>0?0:1;B.drawX=B.x+Math.sin(T*.9)*10*bob+(mode==='phase'||mode==='ko'?(Math.random()-.5)*8:0);B.drawY=B.y+Math.sin(T*1.7)*5*bob+(mode==='phase'||mode==='ko'?(Math.random()-.5)*6:0);
   B.sq=B.pose==='windup'?1+Math.sin(T*18)*.012:B.pose==='roar'?1.05+Math.sin(T*30)*.02:1;
   if(B.deadR>0&&mode==='fight')for(const p of P)if(p.hp>0&&Math.hypot(p.x-B.drawX,p.y-B.drawY)<B.deadR+PR)hurt(p,'body');}
- function updateFx(dt){for(let i=fx.length-1;i>=0;i--){const e=fx[i];e.life-=dt;if(e.life<=0){fx.splice(i,1);continue;}if(e.k==='p'){e.x+=e.vx*dt;e.y+=e.vy*dt;e.vx*=1-dt*2.2;e.vy*=1-dt*2.2;e.vy+=(e.g||0)*dt;}else if(e.k==='t')e.y-=22*dt;}
+ function updateFx(dt){for(let i=fx.length-1;i>=0;i--){const e=fx[i];e.life-=dt;if(e.life<=0){fx.splice(i,1);continue;}if(e.k==='p'){e.x+=e.vx*dt;e.y+=e.vy*dt;e.vx*=1-dt*2.2;e.vy*=1-dt*2.2;e.vy+=(e.g||0)*dt;}else if(e.k==='t')e.y-=22*dt;else if(BOOM_KINDS.has(e.k))stepBoom(e,dt);}
+  if(fx.length>1100)fx.splice(0,fx.length-1100);
   for(const w of warns){w.t+=dt;if(w.follow&&w.t<(w.freeze??99)&&w.follow.hp>0){w.x=w.follow.x;w.y=w.follow.y;}}for(let i=warns.length-1;i>=0;i--)if(warns[i].t>=warns[i].dur)warns.splice(i,1);
   says.t=Math.max(0,says.t-dt);for(const b of bannerQ)b.t+=dt;while(bannerQ.length&&bannerQ[0].t>bannerQ[0].life)bannerQ.shift();}
  function music(dt){if(!musicOn()||document.hidden||mode==='intro'&&modeT<.5)return;const tn=boss.tone,beat=tn.beat/1000/(mode==='fight'?1+B.phase*.12:1);musicT+=dt;if(musicT<beat)return;musicT-=beat;const n=musicStep++%tn.notes.length;tone(tn.base*2**(tn.notes[n]/12),beat*.8,.009,tn.voice);if(tn.bass&&n%2===0)tone(tn.base/2*(n%4===0?1:1.5),beat*.9,.012,'triangle');}
@@ -306,9 +309,18 @@ async function bossfight(s){
   if(mode==='intro'){const u=clamp(modeT/1.3,0,1);B.y=B.hy-260*(1-ease.out(u));B.x=B.hx;B.tw=null;B.shown=1;if(modeT>1.3&&introBooms===0){introBooms=1;shake(14);sfx('boom');flashWhite=.25;}
    if(modeT>=introEnd){mode='fight';modeT=0;T=introEnd;banner('',' ',.01);if(!gw)startRun(director(),true);}}
   if(mode==='phase'&&modeT>2.3)endPhase();
-  if(mode==='ko'){koBoom-=dt0;if(modeT<1.8&&koBoom<=0){koBoom=.11;const cs=bossCircles()[0]||[B.drawX,B.drawY,60];const a=Math.random()*TAU,rr=Math.random()*cs[2]*1.2;burst(cs[0]+Math.cos(a)*rr,cs[1]+Math.sin(a)*rr,['#ffd23c','#ff7a1a','#fff'][Math.floor(Math.random()*3)],14,260,.7,4);ring(cs[0]+Math.cos(a)*rr,cs[1]+Math.sin(a)*rr,'#ff9a3a',46,.4);sfx('boom');shake(5);}
-   if(modeT>=1.8&&!koDone){koDone=true;timeScale=1;B.hidden=99;shake(22);flashWhite=1;vibrate(150);sound('win');const cs=bossCircles()[0];for(let r=0;r<4;r++)ring(cs[0],cs[1],['#fff','#ffd23c','#ff7a1a','#ff3b2f'][r],160+r*60,.8+r*.15);burst(cs[0],cs[1],'#ffd23c',90,520,1.4,5);burst(cs[0],cs[1],'#ff5a2a',70,420,1.2,6);burst(cs[0],cs[1],'#fff',40,600,.9,3);}
-   if(modeT>5)finish(true);}
+  // knockout (bossBoom.js KO_STYLE by tier): slow-motion chain of blasts on the boss, then the main blast with the boss's
+  // head flying off; Hard/Extreme keep blowing up the screen after it; Extreme's blast fills the whole arena
+  if(mode==='ko'){const st=KO_STYLE[diff];koBoom-=dt0;
+   if(modeT<st.chain&&koBoom<=0){koBoom=st.rate;const [px,py]=chainPop(fx,bossCircles(),st,pal);burst(px,py,['#ffd23c','#ff7a1a','#fff'][Math.floor(Math.random()*3)],reduce?4:10,260,.6,3.5);sfx('boom');shake(4+diff*2);B.flash=.05;}
+   if(modeT>=st.chain&&!koDone){koDone=true;timeScale=1;const cs=bossCircles()[0]||[B.drawX,B.drawY,60];B.hidden=99;shake(22+diff*8);flashWhite=st.white;vibrate(150+diff*60);sound('win');sfx('boom');
+    koLater=mainBlast(fx,cs[0],cs[1],st,pal,W,H).map(d=>modeT+d);burst(cs[0],cs[1],'#ffd23c',60,520,1.4,5);burst(cs[0],cs[1],'#fff',30,600,.9,3);
+    if(hasChar){try{const hc=require('src/engines/broforce.js').headCanvas(boss.unlockId,'sad',192);if(hc?.width)fx.push(head(cs[0],cs[1]-30*bs,hc));}catch{}}}
+   for(let i=koLater.length-1;i>=0;i--)if(modeT>=koLater[i]){koLater.splice(i,1);sfx('boom');shake(10+diff*3);flashWhite=Math.max(flashWhite,.2+diff*.05);}
+   if(modeT>st.chain+st.hold)finish(true);}
+  // damage shows: from phase 2 the boss smokes, from phase 3 it burns, and the FINAL PHASE throws up embers
+  if(mode==='fight'&&B.phase>0&&B.hidden<=0&&!reduce&&(dmgSmokeT-=dt0)<=0){dmgSmokeT=.6/B.phase;const [sx,sy]=spotOn(bossCircles());fx.push(smoke(sx,sy,12+B.phase*5,1.5));
+   if(B.phase>=2&&Math.random()<.6)fx.push(fireball(sx,sy,9+B.phase*4,.55));if(NPH>3&&B.phase===LAST)for(let i=0;i<2;i++)fx.push(ember(Math.random()*W,H*(.75+Math.random()*.25),3.2));}
   if(mode==='lose'&&modeT>3.4)finish(false);
   if(mode==='fight'||mode==='phase')stepRuns(dt);
   if(mode!=='lose'||true)updatePlayers(dt);netBoss(dt);updateBoss(dt);
@@ -409,7 +421,8 @@ async function bossfight(s){
   const bq=bannerQ[0];if(bq&&bq.str){const u=bq.t/bq.life,a=clamp(Math.min(bq.t*6,(bq.life-bq.t)*4),0,1);g.save();g.globalAlpha=a;
    if(bq.str==='SIGNATURE MOVE'){g.fillStyle='rgba(10,6,4,.78)';g.fillRect(0,H*.36,W,54);g.fillStyle=bq.col;g.fillRect(0,H*.36,W,3);g.fillRect(0,H*.36+51,W,3);g.font='bold 11px Arial';g.textAlign='center';g.fillStyle=bq.col;g.fillText('SIGNATURE MOVE',W/2,H*.36+16);bigText(g,bq.sub,W/2,H*.36+36,24,'#fff',1,0,W-30);}
    else{bigText(g,bq.str,W/2,H*.33,66,bq.col,pop(Math.min(1,bq.t*2.5)),Math.sin(bq.t*40)*.02*(1-u),W-24);if(bq.sub){g.font='italic 700 14px Georgia,serif';g.textAlign='center';g.lineWidth=4;g.strokeStyle=ink;g.fillStyle='#fff';g.strokeText(bq.sub,W/2,H*.33+48);g.fillText(bq.sub,W/2,H*.33+48);}}g.restore();}
-  if(mode==='ko'&&modeT>1.9){const t=modeT-1.9,u=Math.min(1,t/.5);g.save();g.fillStyle=`rgba(0,0,0,${Math.min(.55,t*.6)})`;g.fillRect(0,0,W,H);bigText(g,'KNOCKOUT!',W/2,H*.36,64,'#ffd23c',pop(u)*(1+Math.sin(t*6)*.02),-.05,W-20);
+  const koAt=KO_STYLE[diff].chain+[.8,.9,1.1,1.5][diff];   // the banner waits so the blast is seen first
+  if(mode==='ko'&&modeT>koAt){const t=modeT-koAt,u=Math.min(1,t/.5);g.save();g.fillStyle=`rgba(0,0,0,${Math.min(.55,t*.6)})`;g.fillRect(0,0,W,H);bigText(g,KO_STYLE[diff].title,W/2,H*.36,64,diff>=3?'#ff3b6b':'#ffd23c',pop(u)*(1+Math.sin(t*6)*.02),-.05,W-20);
    if(t>.6){g.globalAlpha=clamp((t-.6)*2,0,1);g.font='italic 700 14px Georgia,serif';g.textAlign='center';g.fillStyle='#fff';wrapText(g,'“'+boss.koLine+'”',W/2,H*.36+52,W-50,17);g.font='bold 13px Arial';g.fillStyle='#ffe9b0';const dmg=Math.round(sum(p=>p.dmg)),par=sum(p=>p.parries),tm=duration;g.fillText(`DAMAGE ${dmg}   PARRIES ${par}   TIME ${Math.floor(tm/60)}:${String(tm%60).padStart(2,'0')}`,W/2,H*.36+120);}g.restore();}
   if(mode==='lose'&&modeT>.5){const t=modeT-.5;g.save();g.fillStyle=`rgba(40,0,0,${Math.min(.6,t*.7)})`;g.fillRect(0,0,W,H);bigText(g,'DEFEAT',W/2,H*.36,70,'#ff4b3a',pop(Math.min(1,t*1.5)),.04,W-20);g.globalAlpha=clamp(t,0,1);g.font='italic 700 14px Georgia,serif';g.textAlign='center';g.fillStyle='#fff';wrapText(g,'“'+boss.quote+'”',W/2,H*.36+56,W-50,17);g.font='bold 13px Arial';g.fillStyle='#ffd0c0';g.fillText(`${boss.name} stands (${Math.round(B.hp/B.max*100)}% HP left)`,W/2,H*.36+110);g.restore();}
   if(says.t>0&&mode==='fight'){const a=clamp(says.t*3,0,1);g.save();g.globalAlpha=a;g.font='italic 700 12px Georgia,serif';const tw=Math.min(W-30,g.measureText(says.text).width+22),bx=clamp(B.drawX,tw/2+8,W-tw/2-8),by=B.drawY+128*bs;g.fillStyle='#fffbe8';g.strokeStyle=ink;g.lineWidth=2.5;g.beginPath();g.rect(bx-tw/2,by,tw,24);g.fill();g.stroke();g.fillStyle='#222';g.textAlign='center';g.textBaseline='middle';g.fillText(says.text,bx,by+12.5,tw-10);g.restore();}}
@@ -418,6 +431,9 @@ async function bossfight(s){
   x.save();x.translate(ox,oy);x.scale(k,k);
   if(shakeMag>.2){x.translate((Math.random()-.5)*shakeMag,(Math.random()-.5)*shakeMag);}
   x.beginPath();x.rect(-4,-4,W+8,H+8);x.clip();
+  // later phases glow: an orange then red aura behind the boss, crimson and pulsing in the FINAL PHASE
+  if(B.phase>0&&B.hidden<=0&&B.shown>=1&&mode!=='ko'){const fin=B.phase===LAST,r=(fin?230:150+B.phase*25)*bs*(1+Math.sin(T*(fin?7:4))*.06),col=fin?'255,20,60':B.phase>1?'255,60,20':'255,150,40';
+   const ag=x.createRadialGradient(B.drawX,B.drawY,r*.15,B.drawX,B.drawY,r);ag.addColorStop(0,`rgba(${col},${fin?.5:.28})`);ag.addColorStop(1,`rgba(${col},0)`);x.fillStyle=ag;x.fillRect(B.drawX-r,B.drawY-r,r*2,r*2);}
   drawBoss(x);
   for(const w of warns)drawWarn(x,w);for(const h of hazards)drawHazard(x,h);
   for(const m of minions){if(m.hidden||m.guess)continue;x.save();x.translate(m.x,m.y);const pl=m.flash>0?1.15:1;x.scale(pl,pl);if(m.kind==='hound'||m.kind==='rocket'||m.kind==='glove'){}drawMinion(x,m,T);if(m.max>6&&m.hp<m.max){x.fillStyle='rgba(0,0,0,.6)';x.fillRect(-m.r,m.r+6,m.r*2,4);x.fillStyle='#ff5a5a';x.fillRect(-m.r,m.r+6,m.r*2*m.hp/m.max,4);}x.restore();}
@@ -425,9 +441,11 @@ async function bossfight(s){
   for(const p of P)drawBeam(x,p);
   for(const b of bullets)drawBullet(x,b);drawPShots(x);
   for(const p of P)if(p.hp>0)drawPlane(x,p);
-  for(const e of fx){const u=e.life/e.max;if(e.k==='p'){x.globalAlpha=Math.min(1,u*1.6);x.fillStyle=e.col;x.beginPath();x.arc(e.x,e.y,e.r*(.4+u*.6),0,TAU);x.fill();}
+  for(const e of fx){if(BOOM_KINDS.has(e.k)){drawBoom(x,e);continue;}const u=e.life/e.max;if(e.k==='p'){x.globalAlpha=Math.min(1,u*1.6);x.fillStyle=e.col;x.beginPath();x.arc(e.x,e.y,e.r*(.4+u*.6),0,TAU);x.fill();}
    else if(e.k==='r'){x.globalAlpha=u;x.strokeStyle=e.col;x.lineWidth=5*u+1;x.beginPath();x.arc(e.x,e.y,e.r*(1-u)+6,0,TAU);x.stroke();}
    else{x.globalAlpha=Math.min(1,u*2);x.font=`900 ${e.size}px "Arial Black",Arial`;x.textAlign='center';x.textBaseline='middle';x.lineWidth=4;x.strokeStyle=ink;x.strokeText(e.str,e.x,e.y);x.fillStyle=e.col;x.fillText(e.str,e.x,e.y);}x.globalAlpha=1;}
+  // each phase tints the arena's edges hotter: amber, red, then crimson for a FINAL PHASE
+  if(B.phase>0&&mode!=='ko'){const col=['','255,140,30','255,50,20','170,0,50'][Math.min(3,B.phase)],a=[0,.13,.2,.32][Math.min(3,B.phase)]*(1+Math.sin(T*3)*.15);const vg=x.createRadialGradient(W/2,H/2,Math.min(W,H)*.32,W/2,H/2,Math.hypot(W,H)*.62);vg.addColorStop(0,`rgba(${col},0)`);vg.addColorStop(1,`rgba(${col},${a})`);x.fillStyle=vg;x.fillRect(0,0,W,H);}
   drawBossBar(x);drawHud(x);drawCinematics(x);
   if(flashWhite>0){x.fillStyle=`rgba(255,255,255,${Math.min(.85,flashWhite)*(reduce?.4:1)})`;x.fillRect(-10,-10,W+20,H+20);}
   x.restore();
