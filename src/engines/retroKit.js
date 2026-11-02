@@ -110,13 +110,13 @@ async function soloTurnRuns(s,cfg){
  const {soloFinish,soloProgress}=require("src/solo.js");
  let w=null,running=false,res=null,total=0,round=0;
  s.soloWorld=()=>w; // tests: end a round early with s.soloWorld().time=1e9
- s.frame(dt=>{if(!w)return;if(running){w.time+=dt;cfg.step(w,dt*w.speed);if(!w.ending&&(cfg.done(w)||w.time>=cfg.seconds)){w.ending=cfg.endDelay??1.6;w.endReason=w.time>=cfg.seconds&&!cfg.done(w)?'time':'over';}
+ s.frame(dt=>{if(!w)return;if(running){w.time+=dt;cfg.step(w,dt*w.soloK);if(!w.ending&&(cfg.done(w)||w.time>=cfg.seconds)){w.ending=cfg.endDelay??1.6;w.endReason=w.time>=cfg.seconds&&!cfg.done(w)?'time':'over';}
    if(w.ending){w.ending-=dt;if(w.ending<=0){running=false;res?.();}}}
   cfg.draw(w,dt);s.setScores([total+Math.max(0,Math.round(cfg.score(w))),0]);});
  const goal=r=>cfg.soloTarget?`Score at least ${cfg.soloTarget(r)} to reach round ${r+2}.`:cfg.soloGoal?cfg.soloGoal(r):'Last until the clock runs out to reach the next round.';
  for(;;){
-  w=cfg.make(0);w.player=0;w.time=0;w.ending=0;w.cap=cfg.seconds;w.scores=[total,0];w.round=round;w.speed=soloSpeed(round);
-  const body=round?`${goal(round)} Everything moves ${Math.round(w.speed*100-100)}% faster than round 1.`:`${cfg.intro(0,[0,0])} ${goal(0)} Each round after that runs faster.`;
+  w=cfg.make(0);w.player=0;w.time=0;w.ending=0;w.cap=cfg.seconds;w.scores=[total,0];w.round=round;w.soloK=soloSpeed(round);
+  const body=round?`${goal(round)} Everything moves ${Math.round(w.soloK*100-100)}% faster than round 1.`:`${cfg.intro(0,[0,0])} ${goal(0)} Each round after that runs faster.`;
   if(!await s.pass(0,body,cfg.readyText||'Ready — start my countdown',{countdown:3,soloTitle:`Round ${round+1}`,summary:round?`Round ${round} beaten. ${total} points so far.`:null}))return null;
   running=true;await new Promise(r=>res=r);if(!s.alive)return null;
   const sc=Math.max(0,Math.round(cfg.score(w)));total+=sc;s.setScores([total,0]);
