@@ -6,6 +6,9 @@
 // near, when something they touch moves, or when whatever held them up is swallowed.
 const CANNON=require("src/vendor/cannon.js");
 const {KINDS,kindGeometry}=require("src/engines/holeIt/meshes.js");
+// size class: a prop fits the hole when its radius is no bigger than the hole's (was 96%: a watermelon visibly smaller than the
+// hole sat on it; ROADMAP A6). The fridge still wedges at Size 5 (r 1.15 > 1.13) and drops at Size 6, as in the video.
+const FIT=1;
 const G=22,STEP=1/60,RIM_N=40;
 // collision groups: the hole's helper bodies and the static floor/walls only ever test against props
 const G_PROP=1,G_STATIC=2,G_HOLE=4,PULL=.35,LOOSEN=1.6,SHATTER=2.2;
@@ -156,7 +159,7 @@ function createPhysics(def,items){
  function step(dt,h){hole.x=h.x;hole.z=h.z;hole.r=h.r;placeRim(h);
   // props small enough for the hole never touch its rim or throat: they stay put on the floor until the hole is under
   // them, then drop (as in the real game); only props too big to fit catch on the rim, get carried and wedge
-  const fitR=h.r*.96;for(const b of active){if(b.ghost)continue;const m=b.it.r<=fitR?(G_PROP|G_STATIC):(G_PROP|G_STATIC|G_HOLE);if(b.collisionFilterMask!==m)b.collisionFilterMask=m;}
+  const fitR=h.r*FIT;for(const b of active){if(b.ghost)continue;const m=b.it.r<=fitR?(G_PROP|G_STATIC):(G_PROP|G_STATIC|G_HOLE);if(b.collisionFilterMask!==m)b.collisionFilterMask=m;}
   for(const C of compounds){const m=G_PROP|G_STATIC|G_HOLE;if(C.collisionFilterMask!==m)C.collisionFilterMask=m;}
   const reach=h.r+.25;for(const b of active){const p=b.position,d=Math.hypot(p.x-h.x,p.z-h.z);
    if(b.frozen){if(d<h.r+b.it.r*.6)release(b.group);continue;} // the hole is under this column: it comes loose
@@ -184,4 +187,4 @@ function createPhysics(def,items){
  function push(it,fx,fz){const b=it.body;if(!b)return;activate(it);b.wakeUp();b.applyForce(new CANNON.Vec3(fx*b.mass,0,fz*b.mass));}
  return {world,step,remove,wakeNear,settle,velocity,push,inHole,topY,ghost,solid,activate,prune,release,groups,compoundCount:()=>compounds.size,inCompound:it=>!!it.body?.compound,frozen:it=>!!it.body?.frozen,inWorld:it=>!!it.body?.world,activeCount:()=>active.size,awake:()=>{let n=0;for(const b of active)if(b.sleepState!==SLEEPING)n++;return n;}};
 }
-Object.assign(exports,{createPhysics,kindBounds,G});
+Object.assign(exports,{createPhysics,kindBounds,G,FIT});

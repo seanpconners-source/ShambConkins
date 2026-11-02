@@ -4,7 +4,7 @@
 // is mostly below the floor inside the hole it is handed to the throat animation below (it tumbles down out of sight)
 // and every swallowed prop feeds the Size meter. No DOM; tests drive it directly.
 const {holeRadius,sizeNeed,itemXp,kindR,kindH}=require("src/engines/holeIt/levels.js");
-const {createPhysics}=require("src/engines/holeIt/physics.js");
+const {createPhysics,FIT}=require("src/engines/holeIt/physics.js");
 const G=22,CELL=2;
 const qmul=(a,b)=>[a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3],a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]];
 const qaxis=(x,y,z,ang)=>{const s=Math.sin(ang/2);return [x*s,y*s,z*s,Math.cos(ang/2)];};
@@ -49,7 +49,7 @@ function award(sim,it){sim.eaten++;const score=sim.def.mode==='score';const g=sc
 // 2.5 u/s at Size 1, 2.96 at Size 2, 3.17 at 3, 3.61 at 4, 4.12 at 6
 const topSpeed=r=>2.5*Math.pow(r/.5,.53);
 // Without physics (tests that only check layouts): props that fit drop straight in.
-function simpleFalls(sim){const h=sim.hole;forEachNear(sim,h.x,h.z,h.r+sim.maxR,it=>{if(it.state!==0)return;if(it.r<=h.r*.96&&Math.hypot(it.x-h.x,it.z-h.z)<h.r-it.r*.15&&!sim.done)startFall(sim,it,{x:0,y:0,z:0,wx:0,wy:0,wz:0});});}
+function simpleFalls(sim){const h=sim.hole;forEachNear(sim,h.x,h.z,h.r+sim.maxR,it=>{if(it.state!==0)return;if(it.r<=h.r*FIT&&Math.hypot(it.x-h.x,it.z-h.z)<h.r-it.r*.15&&!sim.done)startFall(sim,it,{x:0,y:0,z:0,wx:0,wy:0,wz:0});});}
 // input: {x,z} direction with length 0..1 (screen up = -z).
 function stepSim(sim,dt,input={x:0,z:0}){
  const h=sim.hole,def=sim.def;if(dt<=0)return;
@@ -71,7 +71,7 @@ function stepSim(sim,dt,input={x:0,z:0}){
  for(const o of def.islands||[]){const m=h.r*.85,x0=o[0]-m,x1=o[2]+m,z0=o[1]-m,z1=o[3]+m;if(h.x>x0&&h.x<x1&&h.z>z0&&h.z<z1){const dl=h.x-x0,dr=x1-h.x,dt2=h.z-z0,db=z1-h.z,mn=Math.min(dl,dr,dt2,db);if(mn===dl){h.x=x0;h.vx=Math.min(0,h.vx);}else if(mn===dr){h.x=x1;h.vx=Math.max(0,h.vx);}else if(mn===dt2){h.z=z0;h.vz=Math.min(0,h.vz);}else{h.z=z1;h.vz=Math.max(0,h.vz);}}}
  if(sim.phys){
   // magnet booster: props that fit are pulled toward the hole
-  if(sim.active.magnet>0)forEachNear(sim,h.x,h.z,h.r*4,it=>{if(it.state!==0||it.r>h.r*.96)return;const dx=h.x-it.x,dz=h.z-it.z,d=Math.hypot(dx,dz);if(d>h.r*.4&&d<h.r*4)sim.phys.push(it,dx/d*14,dz/d*14);});
+  if(sim.active.magnet>0)forEachNear(sim,h.x,h.z,h.r*4,it=>{if(it.state!==0||it.r>h.r*FIT)return;const dx=h.x-it.x,dz=h.z-it.z,d=Math.hypot(dx,dz);if(d>h.r*.4&&d<h.r*4)sim.phys.push(it,dx/d*14,dz/d*14);});
   // bring the props around the hole into the physics world (and, below, whatever a moving prop could reach)
   forEachNear(sim,h.x,h.z,h.r+2.4,it=>{if(it.state===0)sim.phys.activate(it);});
   if((sim.pruneT=(sim.pruneT||0)+dt)>.5){sim.pruneT=0;sim.phys.prune(h,h.r+3.6);}
@@ -81,7 +81,10 @@ function stepSim(sim,dt,input={x:0,z:0}){
    const d=Math.hypot(it.x-h.x,it.z-h.z);
    // the hole's size class decides what goes in (Size 6 eats fridges, Size 5 can't): a prop that fits and hangs into
    // the hole is let through even if it tilted and wedged on the way down; one that is too big stays caught
-   if(!sim.done&&it.r<=h.r*.96&&d<h.r-it.r*.3&&it.cy<it.h*.5)sim.phys.ghost(it);
+   if(!sim.done&&it.r<=h.r*FIT&&d<h.r-it.r*.3&&it.cy<it.h*.5)sim.phys.ghost(it)
+   // a prop a little too big that has still sunk almost all the way in (a round one squeezes between the rim beads) goes
+   // the rest of the way: it looked swallowed but hung there (ROADMAP A6, Level 34's big watermelons at Size 5)
+   else if(!sim.done&&it.r<=h.r*1.2&&d<h.r*.45&&it.cy<it.h*.15)sim.phys.ghost(it);
    if(it.cy<0&&d<h.r&&!sim.done&&sim.phys.topY(it)<Math.min(it.h,it.r*2)*.25)startFall(sim,it);
    else if(it.cy<-1.5&&!sim.done)startFall(sim,it); // under the floor anywhere: it went down a hole, so it counts
    else if(it.cy<-4){sim.phys.remove(it);it.state=2;}
@@ -103,13 +106,13 @@ function stepSim(sim,dt,input={x:0,z:0}){
 // Simple autopilot used by tests: head for the nearest prop that fits (goal props first).
 // It remembers its target and gives up on one it cannot reach (an island in the way) for a few seconds.
 function botInput(sim,dt=1/30){const h=sim.hole,b=sim.bot||(sim.bot={t:null,best:1e9,stuck:0,skip:new Map(),clock:0,aim:''});b.clock+=dt;
- if(b.t&&(b.t.state!==0||b.t.r>h.r*.96))b.t=null;
- if(!b.t){let bd=1e9;for(const it of sim.items){if(it.k==='bomb'||it.state!==0||it.cy-it.h/2>.12||it.r>h.r*.96||(b.skip.get(it.i)||0)>b.clock)continue;const d=Math.hypot(it.x-h.x,it.z-h.z)-(it.goal?2:0);if(d<bd){bd=d;b.t=it;}}}
+ if(b.t&&(b.t.state!==0||b.t.r>h.r*FIT))b.t=null;
+ if(!b.t){let bd=1e9;for(const it of sim.items){if(it.k==='bomb'||it.state!==0||it.cy-it.h/2>.12||it.r>h.r*FIT||(b.skip.get(it.i)||0)>b.clock)continue;const d=Math.hypot(it.x-h.x,it.z-h.z)-(it.goal?2:0);if(d<bd){bd=d;b.t=it;}}}
  if(!b.t)return {x:Math.cos(b.clock*.7),z:Math.sin(b.clock*.9)};
  // no-go boxes for the hole's centre: islands (it slides along them) and every bomb that would fit (never get that close)
  const obs=[];for(const o of sim.def.islands||[]){const m=h.r*.85;obs.push([o[0]-m,o[1]-m,o[2]+m,o[3]+m,.5]);}
  // bombs that fit now (or right after the next size-up) get a no-go circle as wide as the hole's reach
- const bombs=[];for(const it of sim.items)if(it.k==='bomb'&&it.state===0&&it.r<=h.r*1.1)bombs.push({x:it.x,z:it.z,R:(it.r<=h.r*.96?h.r*1.08:h.r*1.2)+.15+Math.hypot(h.vx,h.vz)*.06});
+ const bombs=[];for(const it of sim.items)if(it.k==='bomb'&&it.state===0&&it.r<=h.r*1.1)bombs.push({x:it.x,z:it.z,R:(it.r<=h.r*FIT?h.r*1.08:h.r*1.2)+.15+Math.hypot(h.vx,h.vz)*.06});
  let tx=b.t.x,tz=b.t.z,aim='t'+b.t.i;
  // aim at the closest spot the hole can actually reach (props hugging a wall, an island or a bomb)
  const mx0=Math.max(0,sim.def.W/2-h.r*.8),mz0=Math.max(0,sim.def.D/2-h.r*.8);{const mx=mx0,mz=mz0;tx=Math.max(-mx,Math.min(mx,tx));tz=Math.max(-mz,Math.min(mz,tz));

@@ -145,8 +145,12 @@ async function holeIt(s){
   // the score bar is hidden in full bleed: show the target to beat on the second turn
   if(turn.player===1&&results[0]){const r0=results[0];outlined(x,r0.won?`Beat ${r0.time.toFixed(1)} s`:`Beat ${r0.goals} items`,nx,ny+16,11,'#ffe27a','#141a33','right',800);}
   // goal cards pop in one after another as the level appears (as in the video), then sit in a row under the level pill
-  sim.goals.forEach((g,i)=>{const cd=L.cards[i];if(!cd)return;const ap=Math.max(0,Math.min(1,(turn.t-.1-i*.22)/.3));if(ap<=0)return;const pop=ap<1?Math.sin(ap*Math.PI/2)*(1+.18*Math.sin(ap*Math.PI)):1;
-   x.save();x.translate(cd.x+cd.w/2,cd.y+cd.h/2);x.scale(pop,pop);x.translate(-cd.x-cd.w/2,-cd.y-cd.h/2);
+  // finished goals (ROADMAP A7): the card shows its tick for a second, shrinks away and the cards after it slide over
+  {const done=turn.cardDone||(turn.cardDone=[]),cx=turn.cardX||(turn.cardX=[]);let slot=0;const step=(L.cards[0]?.w||0)+12*u,ek=1-Math.exp(-(turn.dtHud||1/60)*10);
+   sim.goals.forEach((g,i)=>{const cd=L.cards[i];if(!cd)return;const left=g.k==='score'?1:Math.max(0,g.need-g.got)+(turn.inflight[g.k]||0);if(left===0&&done[i]==null)done[i]=turn.t;
+    const age=done[i]==null?-1:turn.t-done[i];cd.out=age>1?Math.min(1,(age-1)/.35):0;cd.gone=age>1.35;const tx=32*u+slot*step;cx[i]=cx[i]==null?tx:cx[i]+(tx-cx[i])*ek;cd.x=cx[i];if(!cd.gone)slot++;});}
+  sim.goals.forEach((g,i)=>{const cd=L.cards[i];if(!cd||cd.gone)return;const ap=Math.max(0,Math.min(1,(turn.t-.1-i*.22)/.3));if(ap<=0)return;const pop=(ap<1?Math.sin(ap*Math.PI/2)*(1+.18*Math.sin(ap*Math.PI)):1)*(1-cd.out);if(pop<=.01)return;
+   x.save();x.globalAlpha=1-cd.out*.6;x.translate(cd.x+cd.w/2,cd.y+cd.h/2);x.scale(pop,pop);x.translate(-cd.x-cd.w/2,-cd.y-cd.h/2);
    if(g.k==='score'){drawScoreCard(x,cd,g,turn.cardPulse[i]||0,turn.inflightPts);x.restore();return;}
    const cu=cd.w/113,grd=x.createLinearGradient(0,cd.y,0,cd.y+cd.h);grd.addColorStop(0,'#6f80ee');grd.addColorStop(1,'#4652c4');rr(x,cd.x,cd.y,cd.w,cd.h,9*cu);x.fillStyle=grd;x.fill();x.strokeStyle='#b4bdff';x.lineWidth=Math.max(1,3*cu);x.stroke();
    const ix=cd.x+9*cu,iy=cd.y+10*cu,iw=cd.w-18*cu;rr(x,ix,iy,iw,iw*.98,7*cu);x.fillStyle='#9eabf0';x.fill();x.strokeStyle='#5361cf';x.lineWidth=Math.max(1,2*cu);x.stroke();
@@ -228,7 +232,7 @@ async function holeIt(s){
  s.frame((dt,t)=>{
   if(map){syncCanvases();const k=dpr();hx.setTransform(k,0,0,k,0,0);map.draw(hx,dt);if(s.debug?.pick&&!map.picked){const n=s.debug.pick;s.debug.pick=null;map.pick(n);}return;}
   if(!turn)return;if(turn.sim?.fixedDt)dt=turn.sim.fixedDt; // comparison tool: a fixed step per frame
-  const t0=performance.now();syncCanvases();turn.t+=dt;
+  const t0=performance.now();syncCanvases();turn.t+=dt;turn.dtHud=dt;
   const sim=turn.sim;
   if(turn.phase==='play'){const st=toStick();const kx=(keys.r?1:0)-(keys.l?1:0),kz=(keys.d?1:0)-(keys.u?1:0);const input=contact?st:{x:kx,z:kz};
    stepSim(sim,dt,turn.moved?input:{x:0,z:0});if(!turn.moved){sim.time=sim.def.time;sim.elapsed=0;}
