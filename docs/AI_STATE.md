@@ -1,5 +1,10 @@
 # AI state (keep short; update after meaningful work)
 
+v0.74.0 (Nov 1): King Gizzard (`gizzardAudio.js`, kgpin-*, 8 songs) and Black Sabbath (`sabbathAudio.js`, bspin-*, 5 songs)
+tables got the owner's songs on the same music director as Bucketheadland (sections measured by scratch scripts, mode
+roles by song; no guitar SFX sets, they keep synth sounds). Pinball intro waits (<=5 s) for the drop-in backglass to
+decode (`imgs.pending` in dropins.js; render draws black meanwhile), then holds it `INTRO_HOLD` 4 s, tap skips. Build
+is ~346 MB single file now (songs). Owner hasn't heard the KG/Sabbath songs in the game yet.
 v0.73.0 (Nov 1, owner approved by ear; branch `claude/buckethead-sounds` → TESTver → main): Bucketheadland pinball uses the owner's 7 Buckethead songs + MySims "Guitar Rockstar" guitar set
 (`assets/music/bhpin-*`, how they were made in that README; originals stay in the owner's Claude Share folder, not the repo).
 `pinball/tableAudio.js` (createSongs: HTML-audio playlist + per-role mode songs with start offsets, duck/tilt fades,

@@ -93,6 +93,7 @@ const {rules}=require("src/engines/pinball/tables/gizzardRules.js");
 const {art}=require("src/engines/pinball/tables/gizzardArt.js");
 const {dmdScenes}=require("src/engines/pinball/tables/gizzardDmd.js");
 const {songs}=require("src/engines/pinball/tables/gizzardMusic.js");
+const {audio}=require("src/engines/pinball/tables/gizzardAudio.js");
 const NEST={x:236,y:150},SNAKE={x:370,y:380},POPS={x:236,y:350},CENTRE={x:236,y:612};
 const cues={
  jackpot:m=>{m.show('radial',1.4,CENTRE);m.giOff(.9);m.flash('all',5);},
@@ -115,4 +116,4 @@ const cues={
 };
 // shots the test bot must be able to make (tests/pinball-sim.mjs)
 const simChecks=['bumper','sling','spin','drop','junction:flight','hole:snake','rail:snakeBody','hole:gizzverse','standup','trigger:orbit','flip:miniL','flip:miniR'];
-Object.assign(exports,{buildTable,rules,art,dmdScenes,songs,cues,simChecks,id:'king-gizzard',title:'King Gizzard & the Lizard Wizard'});
+Object.assign(exports,{buildTable,rules,art,dmdScenes,songs,audio,cues,simChecks,id:'king-gizzard',title:'King Gizzard & the Lizard Wizard'});

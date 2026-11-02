@@ -244,7 +244,7 @@ function createRenderer(table){
  // The backglass: the owner's picture if there is one, else the table's painted card.
  R.drawBackglass=(x,bx,by,bw,bh,t)=>{x.fillStyle='#000';x.fillRect(bx,by,bw,bh);
   if(imgs.backglass){const img=imgs.backglass,s=Math.min(bw/img.width,bh/img.height),w=img.width*s,h=img.height*s;x.drawImage(img,bx+(bw-w)/2,by+(bh-h)/2,w,h);}
-  else art.backglass?.(x,bx,by,bw,bh,t,imgs);};
+  else if(!imgs.pending?.has('backglass'))art.backglass?.(x,bx,by,bw,bh,t,imgs);};// (black while the owner's picture loads)
  R.toScreen=(v,px,py)=>[v.ox+px*v.s,v.oy+py*v.s];
  return R;
 }

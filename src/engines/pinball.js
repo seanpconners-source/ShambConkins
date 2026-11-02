@@ -54,7 +54,8 @@ async function pinball(s){
  R=createRenderer({def:m.def,art:table.art,imgs});const lights=createLights(m.def);
  const dmd=createDMD(),rules=table.rules,names=s.players.slice(0,nP).map(p=>p.name);
  const replay=rules.replay?.[s.solo?.level||'normal']||rules.replay?.normal||0;
- let phase='intro',phaseT=0,t=0,bonus=null,hintT=6,over=false,auto=false,highRanks=null,handedOff=false;
+ let phase='intro',phaseT=0,t=0,bonus=null,hintT=6,over=false,auto=false,highRanks=null,handedOff=false,introWait=0;
+ const INTRO_HOLD=4;
  // The table's own soundtrack replaces the board score while the game runs.
  const music=createMusic(table.songs||{},{paused:()=>s.paused||!s.alive});let song=null;
  audio.stopMusic();s.cleanup(()=>{music.stop();if(store.profile?.settings.music)try{audio.startMusic();}catch{}});
@@ -156,7 +157,8 @@ async function pinball(s){
   const close=()=>{panel.remove();menuOpen=false;};panel.querySelector('.pb-done').addEventListener('click',close);panel.addEventListener('click',e=>{if(e.target===panel)close();});}
  s.on(gear,'click',e=>{e.preventDefault();e.stopPropagation();openMenu();});
  // ---- input
- s.on(c,'pointerdown',ev=>{if(s.paused||menuOpen||!(phase==='ball')||!mine())return;ev.preventDefault();const p=s.pointer(ev);
+ s.on(c,'pointerdown',ev=>{if(phase==='intro'&&!s.paused&&!menuOpen&&phaseT>.6&&phaseT<INTRO_HOLD){phaseT=INTRO_HOLD;ev.preventDefault();return;}
+  if(s.paused||menuOpen||!(phase==='ball')||!mine())return;ev.preventDefault();const p=s.pointer(ev);
   if(p.y<R.layout(W(),H()).stripH&&p.x<W()-130){toggleZoom();return;}fingers.set(ev.pointerId,{side:p.x<W()/2?0:1,x0:p.x,y0:p.y,t0:performance.now(),plunger:false,nudged:false,pull:0});s.capture(ev);});
  s.on(c,'pointermove',ev=>{const f=fingers.get(ev.pointerId);if(!f||s.paused)return;ev.preventDefault();const p=s.pointer(ev),dy=p.y-f.y0;
   if(!f.plunger&&dy>14&&m.canPlunge())f.plunger=true;
@@ -220,7 +222,9 @@ async function pinball(s){
   const dt=Math.min(dtRaw,1/30);t+=dt;phaseT+=dt;
   const dpr=Math.min(2,window.devicePixelRatio||1),cw=Math.round(W()*dpr),ch=Math.round(H()*dpr);if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}
   auto=!!s.debug?.auto;placeTools();
-  if(phase==='intro'){R.cam.z=0;if(phaseT>3.2){phase='zoom';phaseT=0;}}
+  // intro: the backglass (title screen), held INTRO_HOLD s then faded; the clock waits (up to 5 s) for the owner's picture
+  // so the painted stand-in never flashes up first; a tap skips it
+  if(phase==='intro'){R.cam.z=0;if(imgs.pending?.has('backglass')&&(introWait+=dt)<5)phaseT=0;else if(phaseT>INTRO_HOLD+1){phase='zoom';phaseT=0;}}
   else if(phase==='zoom'){R.cam.z=clamp(phaseT/1.3,0,1);R.cam.y=m.def.H;if(R.cam.z>=1)begin();}
   else if(phase==='ball'&&!mine()){watchTick(dt);if(phase==='ball'){if(m.w.balls.length)R.follow(m.w,dt,W(),H());s.setScores(scores());}}
   else if(phase==='ball'&&menuOpen)R.follow(m.w,dt,W(),H());
@@ -250,7 +254,7 @@ async function pinball(s){
   const gi=watching?rGi:phase==='ball'?m.gi:phase==='bonus'?.15:phase==='gameover'?.4:1;
   // attract: flasher domes fire one after another; in play the rules fire them (m.flashers)
   const fl=watching?rFl:phase==='ball'?m.flashers:attractFlash();
-  const backglass=phase==='intro'?(phaseT<1.6?1:Math.max(0,1-(phaseT-1.6)/.6)):0;
+  const backglass=phase==='intro'?(phaseT<INTRO_HOLD?1:Math.max(0,1-(phaseT-INTRO_HOLD)/.6)):0;
   if(phase==='bonus')bonusScene();else if(phase==='gameover')gameOverScene();else if(phase==='intro'||phase==='zoom'||phase==='wait')attractScene();
   else if(watching?rmsg:m.msg)msgScene(watching?rmsg:m.msg);
   else scoreScene(dmd,{scores:scores(),cur:m.cur,ball:m.players[m.cur].ball,balls:rules.balls,names,t,credits:watching?rcr:rules.dmdMode?.(m)||(solo&&replay?`REPLAY ${fmt(replay)}`:'')});

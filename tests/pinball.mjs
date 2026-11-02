@@ -21,7 +21,7 @@ for(const [w,h] of sizes){
  let d=null;for(let i=0;i<60&&!(d=await D());i++){await page.waitForTimeout(200);await page.evaluate(()=>{const b=[...document.querySelectorAll('#dialog button')].find(b=>/start/i.test(b.textContent));b?.click();});}
  if(!d){await shot('noload');fail(`${tag} engine never loaded: ${errors.join(' | ')} dialog: ${await page.evaluate(()=>document.querySelector('#dialog')?.innerText?.slice(0,200))}`);await browser.close();continue;}
  await page.waitForTimeout(300);await ready();await page.waitForTimeout(1200);await shot('intro');d=await D();if(d.phase!=='intro'||d.z!==0)fail(`${tag} intro: ${JSON.stringify(d)}`);
- for(let i=0;i<30&&(d=await D()).phase!=='ball';i++)await page.waitForTimeout(200);
+ for(let i=0;i<60&&(d=await D()).phase!=='ball';i++)await page.waitForTimeout(200);
  await page.waitForTimeout(300);await shot('plunge');if(d.mphase!=='plunge')fail(`${tag} not waiting at the plunger: ${JSON.stringify(d)}`);
  // touch: drag down + release = plunge
  await page.mouse.move(w*.75,h*.5);await page.mouse.down();await page.mouse.move(w*.75,h*.5+h*.15,{steps:6});await page.waitForTimeout(200);await shot('pull');await page.mouse.up();

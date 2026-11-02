@@ -10,13 +10,17 @@
 //   flipper-left / flipper-right  the two bottom flippers (e.g. a hand). Drawn in the flipper's own frame, so it swings
 //              with it: 600 x 200 px, pivot at (120,100), flipper tip at (510,100). Draw the left one pointing right
 //              (pivot on the left); the right one is its mirror (pivot at (480,100), tip at (90,100)). See drawFlipperImage.
-// Missing slots fall back to the code-drawn art. onLoad() fires when an image finishes decoding (redraw caches).
+// Missing slots fall back to the code-drawn art. onLoad() fires when an image finishes decoding (redraw caches);
+// imgs.pending (not enumerable) = the slots still loading, so the intro can wait for the backglass.
 const {USER_PORTRAITS}=require("src/data/userPortraits.js");
 const SLOTS=['playfield','backglass','apron','logo','character','bumper','toy','flipper-left','flipper-right'];
 function loadDropins(tableId,onLoad=()=>{}){
- const imgs={};
+ const imgs={},pending=new Set();Object.defineProperty(imgs,'pending',{value:pending});
  for(const slot of SLOTS){const url=USER_PORTRAITS[`pinball:${tableId}:${slot}`];if(!url||typeof Image==='undefined')continue;
-  const img=new Image();img.onload=()=>{imgs[slot]=img;onLoad(slot);};img.src=url;}
+  const img=new Image();pending.add(slot);
+  // decoded before it counts as loaded (a phone needs about a second for a big backglass)
+  img.onload=()=>{Promise.resolve(img.decode?.()).catch(()=>{}).then(()=>{imgs[slot]=img;pending.delete(slot);onLoad(slot);});};
+  img.onerror=()=>pending.delete(slot);img.src=url;}
  return imgs;
 }
 // Draw an image to fill a rect, cropping the overflow ("cover") — or squeezing it in exactly ("stretch").

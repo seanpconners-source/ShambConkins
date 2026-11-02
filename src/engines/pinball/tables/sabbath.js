@@ -82,6 +82,7 @@ const {rules}=require("src/engines/pinball/tables/sabbathRules.js");
 const {art}=require("src/engines/pinball/tables/sabbathArt.js");
 const {dmdScenes}=require("src/engines/pinball/tables/sabbathDmd.js");
 const {songs}=require("src/engines/pinball/tables/sabbathMusic.js");
+const {audio}=require("src/engines/pinball/tables/sabbathAudio.js");
 const GRAVE={x:236,y:446},IRON={x:190,y:245},VOID={x:268,y:352};
 const cues={
  jackpot:m=>{m.show('radial',1.4,GRAVE);m.giOff(.9);m.flash('all',5);},
@@ -104,4 +105,4 @@ const cues={
 };
 // shots the test bot must be able to make (tests/pinball-sim.mjs)
 const simChecks=['bumper','sling','spin','drop','junction:paranoid','rail:funeral','hole:heaven','hole:grave','standup','rollover:lane','toy:ironMan','disc:void','flip:flipUL'];
-Object.assign(exports,{buildTable,rules,art,dmdScenes,songs,cues,simChecks,id:'black-sabbath',title:'Black Sabbath'});
+Object.assign(exports,{buildTable,rules,art,dmdScenes,songs,audio,cues,simChecks,id:'black-sabbath',title:'Black Sabbath'});

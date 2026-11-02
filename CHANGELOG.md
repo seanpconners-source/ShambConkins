@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.74.0
+
+**King Gizzard pinball plays King Gizzard.** Eight real King Gizzard & the Lizard Wizard songs, run the same way as
+Bucketheadland's: the fuzz and the heavy ones from the title on (Robot Stop, People-Vultures, Rattlesnake, Nuclear Fusion,
+Mars for the Rich, Crumbling Castle, I'm in Your Mind, I'm Not in Your Mind), modes and multiball jump to the craziest
+parts, the calmer bits only at game over. NONAGON INFINITY plays Robot Stop, RATTLESNAKE MULTIBALL plays Rattlesnake,
+Infest the Rats' Nest plays Mars for the Rich, Flying Microtonal Banana plays Nuclear Fusion, and the OMNIUM GATHERUM wizard
+plays Crumbling Castle's closing onslaught.
+
+**Black Sabbath pinball plays Black Sabbath.** War Pigs / Luke's Wall, Electric Funeral, Black Sabbath, Sweet Leaf and
+Children of the Grave, run the same way. WAR PIGS MULTIBALL plays War Pigs from the verse riff, Master of Reality plays
+Sweet Leaf, the Graveyard mode plays Children of the Grave, and the HEAVEN AND HELL wizard plays the closing gallop of
+Black Sabbath. Both tables keep their own machine sounds.
+
+**Pinball title screens show the real picture right away.** The table's title picture used to need a moment to load on a
+phone, so the old painted card flashed up first and the real picture only got a moment before the game moved on. Now the
+screen stays dark until the picture is ready, then shows it for about 4 seconds (tap to skip).
+
 ## v0.73.0
 
 **Bucketheadland pinball plays Buckethead, and the music follows the game.** The soundtrack is seven real Buckethead
