@@ -6,6 +6,13 @@ bossFight.js parry/revive fire on touch DOWN (`press`; they used to wait for the
 had already hit), a press with nothing in reach opens a .22 s parry window (`PARRY_WIN`, whiff → .25 s lock), parry
 reach 44 (was 34), revive reach 84 (was 62) and staying on the bubble .6 s revives too (`stepAssist`, `revT` ring);
 tap-release only fires the SUPER now.
+K2 done there: difficulty tiers `BOSS_TIERS` (data/bosses.js: Easy = old fights exactly, Medium, Hard, Extreme; multiply
+the K table + boss HP; Hard/Extreme = 4 phases with a FINAL PHASE at 25%, `deck()` remixes one next-phase attack in,
+`combo()` = extra light bullet volley (aimed/fan/ring/rain/bounce only, via `FC` = F with lighter k and no poses) on top of
+a main attack). Engine reads `s.difficulty`, set by `requestGame({difficulty})`; HUD tag + PHASE x/N; body art gets
+phase ≤2. `tests/bossdiff.mjs` now takes DIFF=0,1,2,3 and SHAMB_URL. Online doesn't pass difficulty yet (K3).
+Testing on the Windows laptop: the 346 MB one-file build hangs headless Chromium; build `--pwa` into the scratchpad,
+serve it (tiny node static server) and run tests with SHAMB_URL=http://localhost:8123/.
 
 v0.74.0 (Nov 1): King Gizzard (`gizzardAudio.js`, kgpin-*, 8 songs) and Black Sabbath (`sabbathAudio.js`, bspin-*, 5 songs)
 tables got the owner's songs on the same music director as Bucketheadland (sections measured by scratch scripts, mode

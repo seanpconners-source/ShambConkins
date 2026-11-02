@@ -321,4 +321,15 @@ const BOSS_CHARACTERS=[
 
 const bossById=id=>BOSSES.find(b=>b.id===id);
 const bossesForLevel=level=>BOSSES.filter(b=>b.level===level);
-Object.assign(exports,{BOSSES,BOSS_CHARACTERS,bossById,bossesForLevel,HP});
+// Difficulty tiers (ROADMAP K2), on top of each boss's own `tier`. Easy = the fights as they were before tiers.
+// dens/spd/rest/tele multiply the attack table, hp the boss's hit points; phases 4 adds a FINAL PHASE (last quarter);
+// remix mixes one attack of the next phase into each phase's deck; combo = chance a main attack gets an extra bullet
+// volley on top (from phase `comboFrom` on; the final phase uses `finalCombo`).
+const BOSS_TIERS=[
+ {id:'easy',name:'Easy',col:'#7dffb0',dens:1,spd:1,rest:1,tele:1,hp:1,phases:3,remix:false,combo:0,comboFrom:9,finalCombo:0},
+ {id:'medium',name:'Medium',col:'#ffd23c',dens:1.15,spd:1.06,rest:.86,tele:.95,hp:1.15,phases:3,remix:true,combo:.3,comboFrom:1,finalCombo:0},
+ {id:'hard',name:'Hard',col:'#ff7a3a',dens:1.3,spd:1.12,rest:.74,tele:.9,hp:1.3,phases:4,remix:true,combo:.45,comboFrom:1,finalCombo:.7},
+ {id:'extreme',name:'Extreme',col:'#ff3b6b',dens:1.75,spd:1.28,rest:.52,tele:.82,hp:1.6,phases:4,remix:true,combo:.85,comboFrom:0,finalCombo:1}];
+const FINAL_LINES=['Enough games. Now I get serious.','You think that was my final form?','No more holding back!','This ends NOW.'];
+
+Object.assign(exports,{BOSSES,BOSS_CHARACTERS,bossById,bossesForLevel,HP,BOSS_TIERS,FINAL_LINES});

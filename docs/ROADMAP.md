@@ -68,6 +68,17 @@ in headless browsers).
 - **B3** `[todo]` Cut games: hidden from the board pool and arcade (ids kept so old saves still load).
 - **B4** `[todo]` Rebuild/Polish lists feed Phase D and G, ordered by how often the board deals them.
 - **B5** `[todo]` Decide per game which modes it should have, and how online players compete (shared world, ghost, scoreboard).
+- Already judged by the owner: KEEP as is = Hangman (all modes, "very fun"); KEEP + polish = Pro Mancala (G11).
+- **B7** `[todo]` Hangman: western music. Claude prompts the owner to supply western tracks (drop-in songs like
+  the pinball/THPS ones), then wires them in.
+
+## Owner-supplied music/art to ask for (Claude: remind the owner when the slot is ready)
+- Boss fight music (K22).
+- Hangman western music (B7).
+- Castlevania music, all versions (NES Vampire Killer / Candle Hunt, Symphony of the Night already has drop-in slots).
+- Super Mario Bros. music (World 1, Coin Rush, Castle Dash).
+- Sonic music (Green Hill acts, boss, race).
+- Boss tier outfit art (K12).
 - **B6** `[todo]` Re-check games rebuilt earlier (Oct audit, v0.58 remakes) instead of assuming they're good.
 
 ## Phase C — progression and New Game menu
@@ -150,6 +161,10 @@ Endings
 - **G7** `[todo]` Horde (Living Dead): better feel, progression, weapons, combat.
 - **G8** `[todo]` DOOM: backs of heads; death animations (head shrinks and sits oddly over the corpse); more varied enemy characters and positions.
 
+- **G11** `[todo]` Tony Hawk's Pro Mancala (owner loves it; polish only): skaters' feet look weird during trick
+  cutaways; fisheye only some of the time, other times other 90s skate-video angles (more camera angles, shots and
+  filters, more variety, cooler and more real); background setting picked at random each game like THPS levels (city
+  street, skatepark, vert ramp, bowl...), with ramps and props, keeping the skaters who roll by.
 - **G9** `[bug]` Pinball physics feel (all tables): near the flippers and elsewhere the ball drags slowly along
   surfaces and takes too long to come down; doesn't feel real (rolling friction / damping / slope, `pinball/`).
 - **G10** `[bug]` King Gizzard pinball: ball can get stuck in the upper area left of the small top-left flipper.
@@ -209,14 +224,16 @@ Reuse engines with new skins wherever possible.
 Build order: K1 → K2-K4 → K5-K7 → K8-K12 (outfits may get their own session).
 
 Fixes
-- **K1** `[bug]` Parry (A3) and revive (A4). Both use one tap test in `bossFight.js` (under 260 ms and under 18 px of
+- **K1** `[verify]` Parry (A3) and revive (A4). Both use one tap test in `bossFight.js` (under 260 ms and under 18 px of
   movement), easy to miss while dragging to fly; parry also needs a pink bullet within 34 px, revive within 62 px of
   the bubble. Fix: forgiving tap test, bigger zones, a clear "TAP!" hint at the partner's bubble.
 
 Difficulty tiers
-- **K2** `[todo]` Four tiers: Easy (= today's difficulty), Medium, Hard, Extreme. Higher tiers add new attack patterns
+- **K2** `[verify]` Four tiers: Easy (= today's difficulty), Medium, Hard, Extreme. Higher tiers add new attack patterns
   and an extra phase, not just faster bullets. Each boss keeps its own built-in strength (`boss.tier`, `K` table in
   `bossAttacks.js`) on top. Solo/online balance rules (`SOLO_K` etc.) still apply.
+  Built: `BOSS_TIERS` in data/bosses.js; `requestGame({difficulty})`. Bot hits per full fight ≈ 5.5 / 7.3 / 9 / 13.6.
+  Not yet: online fights pass no difficulty (the other phone would think Easy) → send it with the challenge in K3.
 - **K3** `[todo]` Board tier = the level: Level 1 Easy, 2 Medium, 3 Hard, 4 Extreme (the true ending is a real
   challenge). A warp zone's boss uses the tier of the level it was entered from.
 - **K4** `[todo]` No boss difficulty setting anywhere. The 1P CPU difficulty stays as it is (it's about the CPU player).

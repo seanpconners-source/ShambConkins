@@ -169,7 +169,7 @@ function soloPlayers(run,who){const pickOf=i=>({name:store.setupNames?.[i]??run?
  return [newPlayer(me.name,me.character,who),{...newPlayer('CPU',cpuChar,1-who),name:cpuName}];}
 // duel (src/duel.js): an online match. Both phones play the 1P version from duel.seed; settleSolo waits for the other
 // phone through duel.finish() and offers duel.rematch().
-async function requestGame({id=null,filter='all',origin='board',resume=false,returnToRoll=false,solo=false,duel=null}={}){
+async function requestGame({id=null,filter='all',origin='board',resume=false,returnToRoll=false,solo=false,duel=null,difficulty=null}={}){
  if(launching||store.session)return false;launching=true;store.busy=true;store.arcade=origin!=='board';
  const run=store.run,serial=++launchSerial,valid=()=>serial===launchSerial&&store.run===run;returnToRoll=returnToRoll||!!(resume&&run?.pending?.returnToRoll);const selectionRun=run||{gameHistory:[],familyBags:{}};if(run&&!(origin!=='board'&&BROFORCE_IDS.includes(id)))run.levelRealm=origin==='board'?run.board.nodes[run.players[run.current].node]?.realm:undefined;
  // Practice and arcade play must not consume the saved board's random stream.
@@ -247,7 +247,7 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  });
  if(soloKindNow){const best=soloBest(store.profile,game.id);session.solo={kind:soloKindNow,who:soloSet.who,level:soloSet.level,skill:SOLO_SKILL[soloSet.level],best:best?.score||0,bestLevel:best?.level||0,duel,board:!!boardCpu};if(duel)duelSeed(session,duel,game,0);}
  if(bfAttempt)getEvidence=bindBroforceSession(session,bfAttempt,()=>valid()&&store.session===session&&!delivered);
- session.practice=origin==='dev';session.returnToRoll=returnToRoll;store.session=session;session.active=origin==='board'?run.current:0;session.updateScores();launching=false;
+ session.practice=origin==='dev';session.returnToRoll=returnToRoll;if(difficulty!=null)session.difficulty=difficulty;store.session=session;session.active=origin==='board'?run.current:0;session.updateScores();launching=false;
  try{await ENGINES[game.engine](session);}catch(error){console.error('Game engine failure',game.id,error);if(valid()&&session.alive){session.dispose();store.session=null;store.busy=false;await showDialog({title:'Let’s get you back to the board',body:'This challenge was interrupted. No rewards were applied.',choices:[{label:'Continue',value:'ok',primary:true}]});if(!valid())return false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();}return false;}return valid();
 }
 // Games that hand out their own recruits (Broforce gold cages, the Sonic boss pilot) skip the random winner recruit.
