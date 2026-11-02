@@ -286,15 +286,18 @@ Outfits (for every character, not only bosses)
 Make boss fights super badass (owner, Nov 2: "let's make the boss fights so much fun!")
 - **K15** `[part]` (done: phase-break blasts, damage smoke/fire, hotter edge tint and aura per phase, final-phase embers; left: better player ships, more boss art) Graphics: distinct-looking phases, better boss art, better player ships; heads/expressions on the
   boss and the ships react properly (hurt, angry, laughing, dying).
-- **K16** `[todo]` Power-ups to pick up mid-fight (weapons, shields, bombs).
-- **K17** `[todo]` Crazy weapons and bombs, for players and bosses.
-- **K18** `[todo]` Bosses come from unexpected places: up from the bottom, in from the side.
-- **K19** `[idea]` Themed bullets: each boss throws things from its own movie/show/game.
+- **K16** `[todo]` (next boss chunk, with better ships) Power-ups to pick up mid-fight (weapons, shields, bombs).
+- **K17** `[verify]` (Nov 2: bombs + carpet run; more weapons welcome) Crazy weapons and bombs, for players and bosses.
+- **K18** `[verify]` (Nov 2: ambush from the bottom or a side) Bosses come from unexpected places: up from the bottom, in from the side.
+- **K19** `[verify]` (Nov 2: AMMO emoji per boss in data/bosses.js) Themed bullets: each boss throws things from its own movie/show/game.
 - **K20** `[verify]` (built Nov 2: engines/bossBoom.js) Huge explosions on a kill, bigger per tier; Extreme kills get a crazy huge extreme explosion.
 - **K21** `[verify]` (built Nov 2: bossComms.js + data/bossTalk.js) Star Fox-style talk between phases: boss and players trade lines in comm boxes, with funny jokes.
   Special lines when a player character and the boss are related (same show/movie, rivals, family).
 - **K22** `[todo]` Boss music: owner will supply tracks. Claude tells the owner when the music slots are ready
   (drop-in files like the pinball/THPS songs).
+- **K24** `[todo]` Partner-down cutscene: when a co-op partner's plane goes down, a quick slow-mo zoom on the
+  surviving player's character with their sad face as the other plane explodes, big "NOOOOOOO!!!!", then back to
+  the fight (short, so the revive window still matters).
 - **K23** `[todo]` Fit the K15-K22 work with the tiers (K2): higher tiers unlock the nastier attacks and bigger finales.
 
 Other boss items

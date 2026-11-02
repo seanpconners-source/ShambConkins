@@ -311,9 +311,41 @@ function* sickles(F,pp){const p=D(pp,{n:4,hp:2,speed:115,life:6});if(F.minionCou
  F.sfx('spawn');F.pose('fire',.4);yield 2.8;}
 function sickleStep(F,m,dt){if(m.age<.7)m.speed=Math.max(20,m.speed-dt*m.speed*2.4);else{m.turn=1.6;m.speed=Math.min(m.base,m.speed+dt*120);}homingStep(F,m,dt);}
 
-const PATTERNS={aimed,fan,spiral,rain,laser,dive,minions,homing,ring,edge,gapwall,strike,wave,lob,bounce,
+// ---- ROADMAP K17/K18: every boss also ambushes from unexpected places and bombs (bossFight's deck() mixes them in)
+// AMBUSH: the boss ducks off the top, a lane lights up, then it bursts up from the bottom (or charges in from a side)
+// spraying shots, and floats back to its spot. Its body hurts while it charges (deadR). F.place teleports it off screen.
+function* ambush(F,pp){const p=D(pp,{n:1,side:null});const tele=tl(F,1.25),b=F.boss;
+ for(let i=0;i<p.n;i++){const side=p.side!=null?p.side:F.rand()<.45;F.say(side?'Coming through!':'Surprise!');F.pose('windup',.4);F.move(b.x,-280,.45,'in');yield .5;
+  if(side){const t=F.target(),y=clampN(t.y,300,F.H-110),dir=F.rand()<.5?1:-1;F.warn({shape:'rect',x:F.W/2,y,w:F.W,h:170,dur:tele,col:'#ff3b2f',mark:dir>0?'→':'←'});F.sfx('charge');yield tele*.75;
+   F.place(dir>0?-240:F.W+240,y);yield tele*.25;b.deadR=80;F.pose('dive',.9);F.shake(8);F.move(dir>0?F.W+240:-240,y,.8,'in');
+   for(let k=0;k<4;k++){yield .18;const n=cnt(F,4);for(let j=0;j<n;j++)F.shot(b.x,b.y,(j%2?-1:1)*PI/2+(F.rand()-.5)*.6,170*F.k.spd,{kind:'orb'});}
+   yield .15;b.deadR=0;F.place(b.hx,-280);F.move(b.hx,b.hy,.9,'out');yield 1.1;}
+  else{const t=F.target(),x=clampN(t.x,80,F.W-80);F.warn({shape:'rect',x,y:F.H/2,w:190,h:F.H,dur:tele,col:'#ff3b2f',mark:'↑'});F.sfx('charge');yield tele*.75;
+   F.place(x,F.H+260);yield tele*.25;b.deadR=82;F.pose('dive',.8);F.shake(10);F.sfx('boom');F.move(x,b.hy,.8,'out');yield .3;
+   // the spray starts once it is past the players, up in the top half
+   for(let k=0;k<3;k++){const n=cnt(F,7);for(let j=0;j<n;j++)F.shot(b.x,b.y,j/n*TAU+k*.3,150*F.k.spd,{kind:'orb'});yield .17;}
+   b.deadR=0;F.move(b.hx,b.hy,.6,'inout');yield .8;}}
+ yield .3;}
+// BOMBS: lobbed bombs sail over (harmless in the air: ghost) onto marked spots and blow up with shrapnel
+function* bombs(F,pp){const p=D(pp,{n:3,rounds:2,r:56,fuse:1.25,shrap:8,gap:.9});const n=cnt(F,p.n),fl=tl(F,p.fuse);F.say('Bombs!');
+ for(let r=0;r<p.rounds;r++){F.pose('fire',.4);F.sfx('shot');const m=F.muzzle('mouth'),ts=F.targets();
+  for(let i=0;i<n;i++){const t=ts[i%ts.length],far=i>=ts.length,tx=clampN(t.x+(F.rand()-.5)*(far?240:40),40,F.W-40),ty=clampN(t.y+(far?(F.rand()-.5)*180:0),250,F.H-60);
+   F.warn({shape:'circle',x:tx,y:ty,r:p.r,dur:fl,col:'#ff7a1a',mark:'!'});
+   F.bullet({x:m.x,y:m.y,vx:0,vy:0,kind:'bomb',r:12,life:fl+.5,ghost:true,sx:m.x,sy:m.y,tx,ty,ft:fl,br:p.r,sh:cnt(F,p.shrap),sp:170*F.k.spd,step:lobBombStep});}
+  yield fl+p.gap;}
+ yield .3;}
+function lobBombStep(F,b,dt){const u=Math.min(1,b.age/b.ft);b.x=b.sx+(b.tx-b.sx)*u;b.y=b.sy+(b.ty-b.sy)*u-680*u*(1-u);
+ if(u>=1&&!b.dead){b.dead=true;F.hazard({shape:'circle',x:b.tx,y:b.ty,r:b.br,tele:0,dur:.3,col:'#ff7a1a',kind:'blast'});F.boom?.(b.tx,b.ty,b.br);F.shake(6);F.sfx('boom');
+  for(let j=0;j<b.sh;j++)F.shot(b.tx,b.ty,j/b.sh*TAU+.2,b.sp,{kind:'orb'});}}
+// CARPET: the boss swoops across the top and a band of bombs goes off across the screen behind it (dodge up or down)
+function* carpet(F,pp){const p=D(pp,{n:6,r:54});const b=F.boss,dir=F.rand()<.5?1:-1,n=Math.max(4,Math.round(p.n*Math.max(1,F.W/420))),y=clampN(F.target().y,280,F.H-90),fl=tl(F,1.3);F.say('Bombs away!');
+ F.move(dir>0?-200:F.W+200,b.hy-30,.55,'in');yield .6;F.place(dir>0?-200:F.W+200,b.hy-30);F.move(dir>0?F.W+200:-200,b.hy-30,1.3,'inout');
+ for(let i=0;i<n;i++){const x=((dir>0?i:n-1-i)+.5)/n*F.W;F.warn({shape:'circle',x,y,r:p.r,dur:fl,col:'#ff7a1a',mark:'!'});
+  F.bullet({x:b.x,y:b.y+30,vx:0,vy:0,kind:'bomb',r:12,life:fl+.5,ghost:true,sx:b.x,sy:b.y+30,tx:x,ty:y,ft:fl,br:p.r,sh:cnt(F,3),sp:150*F.k.spd,step:lobBombStep});yield 1.3/n;}
+ yield fl;F.place(b.hx,-280);F.move(b.hx,b.hy,.9,'out');yield 1.2;}
+const PATTERNS={ambush,bombs,carpet,aimed,fan,spiral,rain,laser,dive,minions,homing,ring,edge,gapwall,strike,wave,lob,bounce,
  doors,rinka,wilybomb,riddle,bullettime,stab,shockwave,glove,puddles,piledriver,iceshards,slam,lockon,ladle,shock,plates,hounds,volley,sidedash,greatknife,rocket,balloons,batswarm,spiderheads,tentaclegrid,flamebreath,gumdrops,jailbars,hypno,flail,passage,energyball,wrecking,trapdoor,zinthar,sickles};
 const SIGNATURES={doors:'POD BAY DOORS',rinka:'RINKA SWARM',wilybomb:'WILY BOMB',riddle:'RIDDLE ME THIS',bullettime:'BULLET TIME',stab:'LIQUID BLADE',shockwave:'SHOCKWAVE',glove:'IRON GLOVE',puddles:'VENOM PUDDLES',piledriver:'SPINNING PILEDRIVER',iceshards:'ICE ERUPTION',slam:'MOUNTAIN SLAM',lockon:'PLASMA LOCK-ON',ladle:'SOUP LADLE',shock:'SHOCK THERAPY',plates:'KITTEN PLATES',hounds:'RELEASE THE HOUNDS',volley:'ROYAL VOLLEY',sidedash:'HOVERBOARD RUSH',greatknife:'GREAT KNIFE',rocket:'ROCKET LAUNCHER',balloons:'FLOATING BALLOONS',batswarm:'BAT SWARM',spiderheads:'SPIDER HEADS',tentaclegrid:'TENTACLE GRID',flamebreath:'FLAME BREATH',gumdrops:'GUMDROP BOUNCE',jailbars:'GO TO JAIL',hypno:'HYPNO RINGS',flail:'SPIN FLAIL',passage:'SECRET PASSAGE',energyball:'REFLECT THE ORB',wrecking:'WRECKING BALL',trapdoor:'PIRANHA TRAPDOORS',zinthar:'TRIANGLE OF ZINTHAR',sickles:'DEATH’S SICKLES'};
 // step functions by name (online the other phone rebuilds bullets from player 1's phone and needs their steps)
-const STEPS={balloonStep,batStep,bombStep,freezeStep,glideDown,headStep,homingStep,houndStep,hoverStep,orbitStep,sickleStep};
+const STEPS={lobBombStep,balloonStep,batStep,bombStep,freezeStep,glideDown,headStep,homingStep,houndStep,hoverStep,orbitStep,sickleStep};
 Object.assign(exports,{PATTERNS,SIGNATURES,K,TAU,STEPS});

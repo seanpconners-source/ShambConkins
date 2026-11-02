@@ -34,6 +34,13 @@ bossFight: `openerTalk` at fight start (SAME_* if a player IS the boss, RELATED_
 boss's `source`, else an opener), `phaseTalk(n)` = boss phaseLines[n] (or pools) + a player reply, picked from s.seed so
 both phones match; phase mode waits for it (max 7 s); `chat(kind,i)` event lines (hit/down/revived/parry/super, 8 s
 cooldown, quiet unless 'down'); win line on KO, boss gloat on a loss. `s.debug.comms`.
+K17-K19 there: bossAttacks.js `ambush` (boss leaves the top, warned lane, bursts up from the bottom or dashes in from a
+side with deadR + shots; `F.place` teleports), `bombs` (lobbed `kind:'bomb'` bullets with `ghost:true` = harmless in the
+air, `lobBombStep` lands on a warned circle: blast hazard + shrapnel + `F.boom` fireball), `carpet` (swoop + a band of
+bombs). `deck()` adds ambush from phase 2 (Medium+: from phase 1), bombs from phase 3 (Medium+: phase 2), carpet in the
+last phase. Themed ammo `AMMO` (data/bosses.js) draws plain orbs as an emoji per boss (pink stays pink). Hit flash on the
+boss toned down (it washed the boss out). `s.debug.attack(name,params)` forces one attack. Bot hits per full fight
+≈ 5.4 / 7.5 / 9.3 / 14.9 by tier.
 Testing on the Windows laptop: the 346 MB one-file build hangs headless Chromium; build `--pwa` into the scratchpad,
 serve it (tiny node static server) and run tests with SHAMB_URL=http://localhost:8123/.
 

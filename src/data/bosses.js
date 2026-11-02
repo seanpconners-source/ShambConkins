@@ -330,6 +330,12 @@ const BOSS_TIERS=[
  {id:'medium',name:'Medium',col:'#ffd23c',dens:1.15,spd:1.06,rest:.86,tele:.95,hp:1.15,phases:3,remix:true,combo:.3,comboFrom:1,finalCombo:0},
  {id:'hard',name:'Hard',col:'#ff7a3a',dens:1.3,spd:1.12,rest:.74,tele:.9,hp:1.3,phases:4,remix:true,combo:.45,comboFrom:1,finalCombo:.7},
  {id:'extreme',name:'Extreme',col:'#ff3b6b',dens:1.75,spd:1.28,rest:.52,tele:.82,hp:1.6,phases:4,remix:true,combo:.85,comboFrom:0,finalCombo:1}];
+// themed ammo (ROADMAP K19): plain enemy orbs are drawn as something from the boss's own world (pink parry bullets stay pink)
+const AMMO={'hal-9000':'🔴','mother-brain':'🧠','dr-wily':'🔩',riddler:'❓','agent-smith':'💊','t-1000':'💧',goro:'👊','ivan-drago':'🥊',
+ bane:'💪',zangief:'🐻',subzero:'❄️','the-mountain':'🗡️',predator:'🔺','mk-shao-kahn':'🔨','soup-nazi':'🥣','nurse-ratched':'💊',
+ umbridge:'🐱','mr-burns':'☢️',joffrey:'🍷','biff-tannen':'💩',pyramid:'🔪',nemesis:'🚀',pennywise:'🎈',dracula:'🦇','the-thing':'🧬',
+ cthulhu:'🐙',bowser:'🔥','king-kandy':'🍬','mr-monopoly':'💵',kaa:'🌀','boom-boom':'🐢','professor-plum':'🕯️',ganon:'🔱',
+ 'dr-robotnik':'⚙️',blofeld:'💎','death-cv':'💀','mecha-streisand':'🎤'};
 const FINAL_LINES=['Enough games. Now I get serious.','You think that was my final form?','No more holding back!','This ends NOW.'];
 
-Object.assign(exports,{BOSSES,BOSS_CHARACTERS,bossById,bossesForLevel,HP,BOSS_TIERS,FINAL_LINES});
+Object.assign(exports,{BOSSES,BOSS_CHARACTERS,bossById,bossesForLevel,HP,BOSS_TIERS,FINAL_LINES,AMMO});
