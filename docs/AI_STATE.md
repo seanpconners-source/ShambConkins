@@ -1,7 +1,6 @@
 # AI state (keep short; update after meaningful work)
 
-Nov 1 (branch `claude/buckethead-sounds` → TESTver, unreleased, owner to approve by ear, then release as v0.73.0;
-CHANGELOG "Unreleased"): Bucketheadland pinball uses the owner's 7 Buckethead songs + MySims "Guitar Rockstar" guitar set
+v0.73.0 (Nov 1, owner approved by ear; branch `claude/buckethead-sounds` → TESTver → main): Bucketheadland pinball uses the owner's 7 Buckethead songs + MySims "Guitar Rockstar" guitar set
 (`assets/music/bhpin-*`, how they were made in that README; originals stay in the owner's Claude Share folder, not the repo).
 `pinball/tableAudio.js` (createSongs: HTML-audio playlist + per-role mode songs with start offsets, duck/tilt fades,
 `status()`; createGuitar: decoded clips, one lead lick voice by priority, stabs) driven by `tables/bucketheadAudio.js`
