@@ -1,5 +1,6 @@
 const {ACTIVE_CATALOG}=require("src/contentPolicy.js");
 const {gameById, GAMES, EVENT_GAMES}=require("src/gameRegistry.js");
+const {isCut}=require("src/data/cutGames.js");
 const {normalizeSource, sourceMatches}=require("src/referenceSources.js");
 const {hash}=require("src/utils.js");
 // Archived tap/timer reskins are not new Vault entries. Their old card and
@@ -33,7 +34,7 @@ const ENGINE_LINKS=Object.freeze({
 });
 const ORIGINAL_GAMES=new Map(ACTIVE_CATALOG.games.map(g=>[g.id,g]));
 const GAME_POOLS=new Map();
-function themedChallengeGames(source){const key=normalizeSource(source);if(!GAME_POOLS.has(key))GAME_POOLS.set(key,GAMES.concat(EVENT_GAMES).filter(g=>sourceMatches(g.source,key)&&g.quality==='substantial'&&!g.secret&&g.engine!=='trivia'));return GAME_POOLS.get(key);}
+function themedChallengeGames(source){const key=normalizeSource(source);if(!GAME_POOLS.has(key))GAME_POOLS.set(key,GAMES.concat(EVENT_GAMES).filter(g=>sourceMatches(g.source,key)&&g.quality==='substantial'&&!g.secret&&g.engine!=='trivia'&&!isCut(g)));return GAME_POOLS.get(key);}
 function resolveEncounterGame(id,{source=null,itemId=null}={}) {
  const exact=gameById(id);if(exact)return exact;
  const linked=ENCOUNTER_GAME_LINKS[id]||ITEM_CHALLENGE_LINKS[itemId];

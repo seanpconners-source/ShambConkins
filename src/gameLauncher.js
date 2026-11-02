@@ -17,6 +17,7 @@ const {sound}=require("src/audio.js");
 const {pointChange}=require("src/items.js");
 const {gameRecruitPool, gameHasGuaranteedRecruit, recruitmentChance, foodGame}=require("src/rewards.js");
 const {pairForRun}=require("src/pairs.js");
+const {isCut}=require("src/data/cutGames.js");
 const {warpTheme,warpGameId,warpAllowsGame}=require("src/warpThemes.js");
 const {updateProgression}=require("src/progression.js");
 const {drawTriviaDifficulty,chooseTriviaDifficulty,TRIVIA_LEVELS}=require("src/engines/trivia.js");
@@ -180,7 +181,7 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  if(origin==='board'&&run?.mutation&&!warp&&!BROFORCE_IDS.includes(id))id='rainbow-rivals';
  if(!id&&!warp&&origin==='board'&&run?.pairState?.queuedGames?.length&&filter==='all')id=run.pairState.queuedGames.shift();
  if(warp&&(id==='phone-task'||gameById(id)?.engine==='task'))id=null;
- const warpPick=warp&&!id?warpGameId(run,filter==='trivia'?'trivia':'all',random,g=>!!gameById(g)):null;
+ const warpPick=warp&&!id?warpGameId(run,filter==='trivia'?'trivia':'all',random,g=>!!gameById(g)&&!isCut(g)):null;
  if(origin==='board'&&!resume&&(id==='phone-task'||gameById(id)?.engine==='task')){id=null;filter='taskmaster';}
  let game;try{game=id==='phone-task'?PHONE_TASK:id?gameById(id):warpPick?gameById(warpPick):(origin==='board'?selectBoardGame:selectGame)(selectionRun,store.profile,run?.mutation?'arcade':filter,random);}catch(error){launching=false;store.busy=false;toast('Challenge selection recovered. Try rolling again.');console.error(error);if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();return false;}
  // Online board game (src/netBoard.js): only games both phones can play at once (their 1P versions) are dealt.
