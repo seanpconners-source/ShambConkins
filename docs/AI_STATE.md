@@ -9,7 +9,13 @@ CHANGELOG "Unreleased"): Bucketheadland pinball uses the owner's 7 Buckethead so
 as before). Online pinball (all tables, `NET_ENGINES` 'pinball'): balls alternate between the phones, the active phone
 streams snapshots, the other watches (see pinball/README); scoreboard for 2P (local too); duel chip hidden (`body.pb-net`).
 Tested: pinball.mjs (3 tables, solo), pinball-sim, online-native ×3 tables (with LAG=80-150), a scratch audio check (46/46
-clips decode, Jordan/Soothsayer roles seek right, playlist resumes). Nobody has heard it yet; real two-phone play untried.
+clips decode, Jordan/Soothsayer roles seek right, playlist resumes). Real two-phone play untried.
+Round 2 (owner listened: SFX far too loud, music jumped calm↔aggressive): songs = music director (sections per song
+[from,to,level] in bucketheadAudio.js, measured then evened by what the songs are; game level 1 title/game over, 2 play,
+3 mode/multiball/hot streak (`heat` in pinball.js, hysteresis 10/5); crossfades, same-song jumps, resume where left off,
+per-song gain trims; watcher follows the player's song `mu`). Owner's 2nd FX set (MTV Music Generator 2) as bhpin-fx-*,
+mapped to almost every machine sound; all sound (synth too) through a reverb bus; every volume measured on the bus
+(scratch calibrate: big -19, mid -21, normal -23, small -26 dBFS max-50ms-RMS; songs ≈ -17).
 Note: generic duel chip `liveScore` reads `s.score[0]` (wrong seat for native games on seat 2); untouched.
 
 v0.72.1 (Nov 1): v0.72.0's release stopped on Cloudflare's 25 MiB per-file limit (the one 25.3 MB built-in art script);

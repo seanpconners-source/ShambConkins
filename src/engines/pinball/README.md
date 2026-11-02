@@ -11,7 +11,7 @@
 | `dmd.js` | 128×32 orange dot-matrix display (5×7 font, score/splash scenes). |
 | `sound.js` | Synthesized solenoid/switch sounds, ball roll, short original jingles. |
 | `music.js` | Soundtrack engine: synth band (drums, bass, distorted guitar bus, lead with echo, arps) + 16th sequencer; songs are data. |
-| `tableAudio.js` | A table's recorded audio (`table.audio`, e.g. `tables/bucketheadAudio.js`): real songs (HTML audio, playlist + a song per mode role, ducking) and guitar clips layered on the machine sounds. Without the files: the synth band and sounds. |
+| `tableAudio.js` | A table's recorded audio (`table.audio`, e.g. `tables/bucketheadAudio.js`): a music director over real songs mapped into calm/medium/heavy sections (the game asks for a level; crossfades; modes can have their own song) and guitar clips for the machine sounds, all through one reverb bus (synth sounds too, via sound.js `setSoundBus`). Volumes are measured with `s.debug.audioMeter(name)`. Without the files: the synth band and sounds. |
 
 Online (`s.online`, pinball is in `NET_ENGINES` in solo.js): one machine on two phones, balls alternate. The phone whose
 ball it is runs the table and streams snapshots at 20 Hz (`packSnap` in pinball.js: balls, flippers, changed parts, lamps

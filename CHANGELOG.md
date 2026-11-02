@@ -2,23 +2,28 @@
 
 ## Unreleased (next release: v0.73.0)
 
-**Bucketheadland pinball plays Buckethead.** The table's soundtrack is now seven real Buckethead songs: Whitewash,
-Nottingham Lace, Welcome to Bucketheadland, Padmasana and Soothsayer play on through the game (the next one starts when a
-song ends, and it carries on from game to game), and the big moments switch songs: JORDAN MULTIBALL plays Jordan, the Big
-Sur Moon and Soothsayer attractions play their own songs (Soothsayer jumps straight to the solo), Chicken Coop Panic plays
-Nottingham Lace (Enter the Chicken), the Roller Coaster and the wizard mode play Welcome to Bucketheadland. The playlist
-picks up where it left off after a mode. The song dips during the bonus count and the hand-off, and cuts out on a TILT.
-A small "♪ Buckethead · song (album)" shows when a song starts.
+**Bucketheadland pinball plays Buckethead, and the music follows the game.** The soundtrack is seven real Buckethead
+songs, each mapped into calm, medium and heavy parts. The title screen starts calm (Padmasana, Soothsayer's intro, Big Sur
+Moon), normal play runs on medium parts, and a mode, multiball or a hot streak of shots cuts to a heavy part (Jordan,
+Nottingham Lace, Welcome to Bucketheadland, Soothsayer's solo half). Songs crossfade into each other instead of stopping,
+jump to the right part of the same song when they can, and the song you were hearing before a mode comes back where it left
+off. Some modes have their own song: JORDAN MULTIBALL plays Jordan from its build-up, Big Sur Moon and Soothsayer play their
+namesakes, Chicken Coop Panic plays Nottingham Lace (Enter the Chicken), the wizard mode plays Welcome to Bucketheadland.
+Every game starts somewhere different, and songs heard lately are skipped. The music dips for the bonus count, hand-offs and
+big guitar solos, and cuts out on a TILT. A small "♪ Buckethead · song (album)" shows when a song starts.
 
-**Rock guitar all over the table.** Real guitar licks and noises now ride on the pinball sounds: a guitar hit on every pop
-bumper, sling, target and lane, a pick scrape when you launch, a short lick for every ramp you make, longer solos for locks
-and jackpots, the biggest solos for multiball, mode starts and super jackpots, a vibrato wail for the skill shot and extra
-balls, a dive bomb when the ball drains. The flipper and bumper clacks are all still there.
+**Rock guitar all over the table, at the right volume.** Almost every machine sound is now a guitar sound (two sets: the
+MySims Guitar Rockstar licks and the MTV Music Generator 2 guitar FX): the amp switching on for each ball, a rev-up on the
+launch, metal sparks on the pop bumpers, lead bursts on the slings, fretted hits on the drop targets, string scratches on
+the spinner, a scraper up the ramps, a knock in the saucers, deep tremolo for a lock, a wail for the skill shot and extra
+balls, an alarm for DANGER, the amp being unplugged on a TILT, a dive bomb on a drain, solos for ramps, jackpots, multiball
+and mode starts. Every sound was measured and set so it sits under the music (they were far too loud), and they all go
+through a short reverb so they ring out instead of cutting off. The flippers keep their clack, at the same level.
 
 **Online pinball takes turns like a real machine.** Playing pinball online (any of the three tables) is now one game on two
-phones: player 1 plays ball 1 on their phone while the other phone shows it live (same table, lights, display and sounds),
-then player 2 plays their ball 1, and so on, 3 balls each. Both scores are always on screen (who's up, ball numbers, who
-leads and by how much); highest score wins. Local 2-player games show the same scoreboard.
+phones: player 1 plays ball 1 on their phone while the other phone shows it live (same table, lights, display, sounds and
+the same song), then player 2 plays their ball 1, and so on, 3 balls each. Both scores are always on screen (who's up, ball
+numbers, who leads and by how much); highest score wins. Local 2-player games show the same scoreboard.
 
 ## v0.72.2
 

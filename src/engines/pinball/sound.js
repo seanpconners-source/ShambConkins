@@ -3,8 +3,13 @@
 const {audioContext}=require("src/audio.js");
 const {store}=require("src/state.js");
 let noise=null,roll=null;
+// A table with recorded sounds (tableAudio.js) routes these through its bus (reverb) with a level per sound so they sit
+// with its clips: setSoundBus(()=>node, {name: gain}); setSoundBus(null) = straight out at the original levels.
+let busFn=null,trims={},trim=1;
+function setSoundBus(fn,t={}){busFn=fn;trims=t||{};if(roll){try{roll.s.stop();}catch{}roll=null;}}
+const dest=a=>{const n=busFn?.();return n&&n.context===a?n:a.destination;};
 function ctx(){if(!store.profile?.settings?.sound)return null;const a=audioContext();if(!a)return null;if(!noise){noise=a.createBuffer(1,a.sampleRate,a.sampleRate);const d=noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}return a;}
-function out(a,vol){const g=a.createGain();g.gain.value=vol;g.connect(a.destination);return g;}
+function out(a,vol){const g=a.createGain();g.gain.value=vol*trim;g.connect(dest(a));return g;}
 // Filtered noise burst.
 function burst(a,dest,{t=0,dur=.04,f=1500,q=1,type='bandpass',vol=.5}={}){const s=a.createBufferSource();s.buffer=noise;const bq=a.createBiquadFilter();bq.type=type;bq.frequency.value=f;bq.Q.value=q;const g=a.createGain(),t0=a.currentTime+t;g.gain.setValueAtTime(vol,t0);g.gain.exponentialRampToValueAtTime(.001,t0+dur);s.connect(bq).connect(g).connect(dest);s.start(t0,Math.random()*.5,dur+.02);}
 // Pitched blip with a downward sweep.
@@ -46,9 +51,9 @@ const S={
  start:a=>{const d=out(a,.3);notes(a,d,[48,55,60,63,67,72],{step:.09,type:'sawtooth',vol:.08});},
  gameOver:a=>{const d=out(a,.3);notes(a,d,[67,63,60,55,51,48],{step:.18,type:'triangle',vol:.2});},
 };
-function pinballSound(name){const a=ctx();if(!a||!S[name])return;try{S[name](a);}catch{}}
+function pinballSound(name){const a=ctx();if(!a||!S[name])return;trim=trims[name]??trims.all??1;try{S[name](a);}catch{}trim=1;}
 // Rolling ball: one looped noise source whose level follows the fastest ball on the playfield.
-function rollLevel(speed){const a=ctx();if(!a){return;}if(!roll){const s=a.createBufferSource();s.buffer=noise;s.loop=true;const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=180;const g=a.createGain();g.gain.value=0;s.connect(f).connect(g).connect(a.destination);s.start();roll={s,f,g};}
- const v=Math.min(1,speed/3500);roll.g.gain.setTargetAtTime(v*.1,a.currentTime,.05);roll.f.frequency.setTargetAtTime(120+v*380,a.currentTime,.05);}
+function rollLevel(speed){const a=ctx();if(!a){return;}if(!roll){const s=a.createBufferSource();s.buffer=noise;s.loop=true;const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=180;const g=a.createGain();g.gain.value=0;s.connect(f).connect(g).connect(dest(a));s.start();roll={s,f,g};}
+ const v=Math.min(1,speed/3500);roll.g.gain.setTargetAtTime(v*.1*(trims.roll??1),a.currentTime,.05);roll.f.frequency.setTargetAtTime(120+v*380,a.currentTime,.05);}
 function stopRoll(){if(roll){try{roll.s.stop();}catch{}roll=null;}}
-Object.assign(exports,{pinballSound,rollLevel,stopRoll});
+Object.assign(exports,{pinballSound,rollLevel,stopRoll,setSoundBus});
