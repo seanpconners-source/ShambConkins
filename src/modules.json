@@ -408,7 +408,8 @@
   "src/data/bossTalk.js",
   "src/engines/bossCutscene.js",
   "src/engines/bossPowerups.js",
-  "src/engines/bossMusic.js"
+  "src/engines/bossMusic.js",
+  "src/engines/bomberControls.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

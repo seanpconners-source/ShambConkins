@@ -17,6 +17,7 @@ const swallowStep=expandedSwallowStep;
 const {holeIt}=require("src/engines/holeIt.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const {netField,roundOutcome}=require("src/engines/netField.js");
+const {createBomberControls}=require("src/engines/bomberControls.js");
 const hole=holeIt; // Hole.it remake; neighborhoodHole.js keeps the old helpers for tests.
 
 function makeBikeCourse(seed){const random=seededRandom(seed);return {length:5200,bumps:Array.from({length:24},(_,i)=>({x:180+i*205,h:18+random()*32,w:35+random()*50})),gaps:Array.from({length:6},(_,i)=>({x:620+i*730,w:65+random()*35}))};}
@@ -100,24 +101,54 @@ function bomberBlastCells(arena,pos,range){const cells=[pos];for(const[dx,dy]of 
 async function bomber(s){const[c,x]=s.canvas(680,440,{fill:true}),scores=[0,0];let N=13,M=9;let controls,keys;let arena,actors,bombs,blasts,pickups,clock=28,round=1,breakTime=0,result='',elapsed=0;
  const on=s.online||null,me=on?on.me:0,them=1-me,F=me===1,HUDY=on?40:0;let phase=on?'sync':'play',OC=null,playT0=0,bombN=0,netBot=false;const pendO=[];
  const rt=()=>(performance.now()-playT0)/1000,toWorld=(dx,dy)=>F?[-dx,-dy]:[dx,dy];
- function reset(){try{s.fitCanvas?.();}catch{}const portrait=on||s.H>s.W*1.1;N=portrait?9:13;M=portrait?13:9;arena=createBomberArena(s.seed+'-'+round,N,M);actors=[{pos:N+1,alive:true,range:2,capacity:1,clock:0,crates:0},{pos:(M-2)*N+N-2,alive:true,range:2,capacity:1,clock:0,crates:0}];bombs=[];blasts=[];pickups=new Map();clock=28;controls?.clear();}
- function move(i,dx,dy){const a=actors[i];if(!a.alive||s.paused||breakTime>0||on&&(i!==me||phase!=='play'||OC?.R.frozen))return;const next=a.pos+dx+dy*N;if(arena.solid.has(next)||arena.crates.has(next)||bombs.some(b=>b.pos===next)||actors.some((p,j)=>j!==i&&p.alive&&p.pos===next))return;a.pos=next;const item=pickups.get(next);if(item){if(item==='range')a.range=Math.min(5,a.range+1);else a.capacity=Math.min(3,a.capacity+1);pickups.delete(next);if(on)nf.event({r:round,pk:next});s.react?.(i,'happy');sound('win');}}
- function plant(i){const a=actors[i];if(!a.alive||s.paused||breakTime>0||on&&(i!==me||phase!=='play'||OC?.R.frozen)||bombs.some(b=>b.pos===a.pos)||bombs.filter(b=>b.owner===i).length>=a.capacity)return;
+ function reset(){try{s.fitCanvas?.();}catch{}const portrait=on||s.H>s.W*1.1;N=portrait?9:13;M=portrait?13:9;arena=createBomberArena(s.seed+'-'+round,N,M);actors=[{pos:N+1,x:1.5,y:1.5,alive:true,range:2,capacity:1,clock:0,crates:0,face:'d',walk:0,goal:null},{pos:(M-2)*N+N-2,x:N-1.5,y:M-1.5,alive:true,range:2,capacity:1,clock:0,crates:0,face:'u',walk:0,goal:null}];bombs=[];blasts=[];pickups=new Map();clock=28;controls?.clear();}
+ // movement (ROADMAP D5): bombers walk smoothly (SPD cells/s) and slide round corners like Super Bomberman: pushing
+ // along a lane straightens you into it, pushing into a wall near an opening slides you into the opening. Bombs,
+ // blasts and pickups still work on cells (pos = the cell under the bomber's centre). move(i,dx,dy) = head for that
+ // neighbouring cell (the CPU brain and tests use it).
+ const SPD=3.6;
+ const canAct=i=>{const a=actors[i];return a.alive&&!s.paused&&breakTime<=0&&!(on&&(i!==me||phase!=='play'||OC?.R.frozen));};
+ function free(i,c,r){if(c<0||r<0||c>=N||r>=M)return false;const k=r*N+c;if(arena.solid.has(k)||arena.crates.has(k))return false;return !bombs.some(b=>b.pos===k&&b.pos!==actors[i].pos);}
+ function tryMove(i,dx,dy,dist){const a=actors[i],hz=!!dx,sg=hz?dx:dy;let m=hz?a.x:a.y,q=hz?a.y:a.x;const lane=Math.floor(q),off=q-(lane+.5),cm=Math.floor(m),open=(mm,ll)=>hz?free(i,mm,ll):free(i,ll,mm);
+  let moved=false;
+  if(open(cm+sg,lane)){if(Math.abs(off)>1e-4){const d=Math.min(Math.abs(off),dist);q-=Math.sign(off)*d;dist-=d;moved=true;}if(dist>0){m+=sg*dist;moved=true;}}
+  else{const toC=(cm+.5-m)*sg;if(toC>1e-4){m+=sg*Math.min(toC,dist);moved=true;}
+   else if(Math.abs(off)>.1){const nl=lane+Math.sign(off);if(open(cm+sg,nl)&&open(cm,nl)){q+=Math.sign(off)*Math.min(dist,.5);moved=true;}}}
+  if(!moved)return false;if(hz){a.x=clamp(m,.5,N-.5);a.y=q;}else{a.y=clamp(m,.5,M-.5);a.x=q;}a.face=dx>0?'r':dx<0?'l':dy>0?'d':'u';return true;}
+ function arrive(i){const a=actors[i],k=Math.floor(a.y)*N+Math.floor(a.x);if(k===a.pos)return;a.pos=k;const item=pickups.get(k);if(item){if(item==='range')a.range=Math.min(5,a.range+1);else a.capacity=Math.min(3,a.capacity+1);pickups.delete(k);if(on)nf.event({r:round,pk:k});s.react?.(i,'happy');sound('win');}}
+ // v = {x,y} stick (world directions); the stronger axis leads, the other slides you round a corner when that is blocked
+ function walk(i,v,dt){if(!v||!canAct(i))return;const a=actors[i],dist=SPD*dt,ax=Math.abs(v.x),ay=Math.abs(v.y);
+  const first=ax>=ay?[Math.sign(v.x),0]:[0,Math.sign(v.y)],second=ax>=ay?[0,Math.sign(v.y)]:[Math.sign(v.x),0];
+  const ok=tryMove(i,...first,dist)||Math.min(ax,ay)>.3&&tryMove(i,...second,dist);if(ok){a.walk+=dt;arrive(i);}}
+ function move(i,dx,dy){const a=actors[i];if(!canAct(i))return;const n=a.pos+dx+dy*N;if(!free(i,n%N,Math.floor(n/N)))return;a.goal=n;}
+ // a bomber heading for a goal cell (CPU, tests): walk to its centre
+ function seek(i,dt){const a=actors[i];if(a.goal==null)return;if(a.goal!==a.goalWas){a.goalWas=a.goal;a.goalT=0;}if((a.goalT+=dt)>.8){a.goal=null;return;}const gx=a.goal%N+.5,gy=Math.floor(a.goal/N)+.5,dx=gx-a.x,dy=gy-a.y;if(Math.hypot(dx,dy)<.04){a.x=gx;a.y=gy;a.goal=null;arrive(i);return;}if(!canAct(i)){a.goal=null;return;}walk(i,{x:Math.abs(dx)>.02?Math.sign(dx):0,y:Math.abs(dx)>.02?0:Math.sign(dy)},dt);}
+ function plant(i){const a=actors[i];if(!canAct(i)||bombs.some(b=>b.pos===a.pos)||bombs.filter(b=>b.owner===i).length>=a.capacity)return;
   if(on){const b={id:`${me}:${bombN++}`,pos:a.pos,owner:i,at:rt()+1.8,fuse:1.8,range:a.range};bombs.push(b);nf.event({r:round,b:[b.id,b.pos,b.range,Math.round(b.at*1000)]});sound('shot');return;}
   bombs.push({pos:a.pos,owner:i,fuse:1.8,range:a.range});sound('shot');}
+ // a Super Bomberman-style body (white suit, player-coloured belt, gloves and boots, walking feet) under the player's head
+ function drawBomber(g,i,px,py,cell,a){const col=['#3a7bff','#ff5fa0'][i],u=cell/40,st=Math.sin(a.walk*16),bob=Math.abs(st)*1.6*u,side=a.face==='l'?-1:a.face==='r'?1:0;
+  g.save();g.translate(px,py+cell*.12);g.fillStyle='#0005';g.beginPath();g.ellipse(0,cell*.34,cell*.3,cell*.1,0,0,Math.PI*2);g.fill();
+  g.lineWidth=Math.max(1.5,2*u);g.strokeStyle='#1a1424';
+  for(const f of [-1,1]){const fy=cell*.26+(f*st>0?-2*u:0);g.fillStyle=col;g.beginPath();g.ellipse(f*cell*.13+side*2*u,fy,cell*.12,cell*.08,0,0,Math.PI*2);g.fill();g.stroke();}
+  g.fillStyle='#f4f4fa';g.beginPath();g.ellipse(0,cell*.08-bob,cell*.22,cell*.2,0,0,Math.PI*2);g.fill();g.stroke();
+  g.fillStyle=col;g.fillRect(-cell*.21,cell*.07-bob,cell*.42,cell*.07);g.fillStyle='#ffd23f';g.fillRect(-cell*.04,cell*.07-bob,cell*.08,cell*.07);
+  for(const f of [-1,1]){g.fillStyle='#ff7aa8';if(i===0)g.fillStyle='#ff5a5a';g.beginPath();g.arc(f*cell*.26,cell*.06-bob+(f*st>0?2*u:-1*u),cell*.075,0,Math.PI*2);g.fill();g.stroke();}
+  g.restore();s.sprite(g,i,px,py-cell*.2-bob,clamp(cell*1.05,26,60),{exact:true,mood:a.alive?undefined:'sad'});}
  function finishRound(){if(breakTime>0)return;const living=actors.map((a,i)=>a.alive?i:-1).filter(i=>i>=0),winner=living.length===1?living[0]:living.length===2?(actors[0].crates===actors[1].crates?null:actors[0].crates>actors[1].crates?0:1):null;if(winner!==null){scores[winner]++;s.react?.(winner,'win');s.react?.(1-winner,'sad');}result=winner===null?'DOUBLE K.O. / DRAW':s.players[winner].name+' wins the round';s.setScores(scores);sound('win');breakTime=1.4;}
- reset();controls=directionGestures(s,(i,dx,dy)=>move(i,...(on?toWorld(dx,dy):[dx,dy])),{players:2,onTap:plant});keys=controls.keys;s.shared=true;s.updateScores();s.hint('P1 starts a finger on the left; P2 on the right. Swipe or hold and drag to move. Lift to stop; tap your half to plant a bomb. P1 WASD + Space; P2 arrows + Enter. Bombs hurt BOTH players.');
- s.on(document,'keydown',ev=>{if(!ev.repeat&&(ev.key===' '||ev.key==='Enter')&&!s.paused){ev.preventDefault();plant(on?me:ev.key===' '?0:1);}});
+ reset();controls=createBomberControls(s,{players:2});controls.onBomb(i=>plant(i));s.shared=true;s.updateScores();s.hint('Put a finger down on your half (P1 left, P2 right) and drag: a stick appears and your bomber walks, sliding round corners. Plant a bomb with a quick tap, a second finger, or your BOMB button, even while walking. P1 WASD + Space; P2 arrows + Enter. Bombs hurt BOTH players.');
+ const stick=i=>{const v=controls.vec(i);if(!v||!on)return v;const [wx,wy]=toWorld(v.x,v.y);return {x:wx,y:wy};};
  // ---- online
- const nf=netField(s,{hz:20,pack:()=>{const a=actors[me];return {r:round,p:a.pos,rg:a.range,cp:a.capacity,v:a.alive?1:0};},
-  unpack:(i,d)=>{if(d?.r!==round)return;const a=actors[them];if(Number.isInteger(d.p)&&d.p>=0&&d.p<N*M&&!arena.solid.has(d.p))a.pos=d.p;if(Number.isFinite(d.rg))a.range=d.rg;if(Number.isFinite(d.cp))a.capacity=d.cp;},
+ const nf=netField(s,{hz:20,pack:()=>{const a=actors[me];return {r:round,p:a.pos,x:Math.round(a.x*100)/100,y:Math.round(a.y*100)/100,f:a.face,rg:a.range,cp:a.capacity,v:a.alive?1:0};},
+  unpack:(i,d)=>{if(d?.r!==round)return;const a=actors[them];if(Number.isInteger(d.p)&&d.p>=0&&d.p<N*M&&!arena.solid.has(d.p))a.pos=d.p;if(Number.isFinite(d.x)&&Number.isFinite(d.y)){a.tx=d.x;a.ty=d.y;}if(d.f)a.face=d.f;if(Number.isFinite(d.rg))a.range=d.rg;if(Number.isFinite(d.cp))a.capacity=d.cp;},
   onEvent:e=>{if(Array.isArray(e.o)){if(OC&&e.o[0]===round)OC.feed(e.o);else if(e.o[0]>=round)pendO.push(e.o);return;}if(e.r!==round)return;
    if(Array.isArray(e.b)){const [id,pos,range,ms]=e.b;if(Number.isInteger(pos)&&Number.isFinite(ms)&&!bombs.some(b=>b.id===id))bombs.push({id,pos,owner:them,at:ms/1000,fuse:1.8,range:range|0});}
    else if(e.k)actors[them].alive=false;else if(e.pk!==undefined)pickups.delete(e.pk);}});
  // online: bombs go off at their own time on both phones (a chain at the same moment), earliest first
  function explodeAt(b){b.dead=true;const cells=bomberBlastCells(arena,b.pos,b.range);blasts.push({cells,left:.42,at:b.at,until:b.at+.42});for(const key of cells)if(arena.crates.delete(key)){actors[b.owner].crates++;if((key+round)%3===0)pickups.set(key,(key+round)%2?'range':'bomb');}for(const o of bombs)if(!o.dead&&cells.includes(o.pos))o.at=Math.min(o.at,b.at);sound('shot');}
- function netStep(dt){if(phase!=='play')return;const now=rt(),a=actors[me],k=keys[me];clock=28-now;if(netBot)cpuBomber(dt,me);
-  a.clock-=dt;if(a.clock<=0&&!OC.R.frozen){const dir=k.l?[-1,0]:k.r?[1,0]:k.u?[0,-1]:k.d?[0,1]:null;if(dir){move(me,...toWorld(...dir));a.clock=.13;}}
+ function netStep(dt){if(phase!=='play')return;const now=rt(),a=actors[me];clock=28-now;if(netBot)cpuBomber(dt,me);
+  if(!OC.R.frozen){if(a.goal!=null)seek(me,dt);else walk(me,stick(me),dt);}
+  {const o=actors[them];if(o.tx!=null){const e=1-Math.exp(-dt*14),ox0=o.x,oy0=o.y;if(Math.hypot(o.tx-o.x,o.ty-o.y)>2){o.x=o.tx;o.y=o.ty;}else{o.x+=(o.tx-o.x)*e;o.y+=(o.ty-o.y)*e;}if(Math.hypot(o.x-ox0,o.y-oy0)>.002)o.walk+=dt;}}
   for(let guard=0;guard<40;guard++){let due=null;for(const b of bombs)if(!b.dead&&b.at<=now&&(!due||b.at<due.at||b.at===due.at&&b.id<due.id))due=b;if(!due)break;explodeAt(due);}
   bombs=bombs.filter(b=>!b.dead);for(const b of bombs)b.fuse=b.at-now;blasts=blasts.filter(bl=>bl.until>now);
   if(a.alive&&!OC.R.frozen&&blasts.some(bl=>bl.cells.includes(a.pos))){a.alive=false;nf.event({r:round,k:1});OC.die(now,a.crates);nf.push();s.react?.(me,'sad');vibrate(30);}
@@ -139,7 +170,7 @@ async function bomber(s){const[c,x]=s.canvas(680,440,{fill:true}),scores=[0,0];l
   const inLine=()=>{const cells=bomberBlastCells(arena,a.pos,a.range);return cells.includes(o.pos)&&o.alive;},byCrate=[1,-1,N,-N].some(d=>arena.crates.has(a.pos+d));
   if((byCrate||inLine())&&bombs.filter(b=>b.owner===i).length<a.capacity&&Math.random()<.4+sk*.5){const blast=new Set(bomberBlastCells(arena,a.pos,a.range));for(const k of danger)blast.add(k);if(bfs(a.pos,k=>!blast.has(k),null)!==null){plant(i);return;}}
   const goal=k=>pickups.has(k)||[1,-1,N,-N].some(d=>arena.crates.has(k+d))||Math.abs(k-o.pos)<=1&&o.alive;step(bfs(a.pos,goal,danger));}
- s.frame(dt=>{elapsed+=dt;if(breakTime>0){breakTime-=dt;if(breakTime<=0){if(scores.some(n=>n>=2)||round>=3){s.finish(scores,'Real two-player Bomber duel');return;}round++;reset();void startRound();}}else if(on)netStep(dt);else{clock-=dt;if(cpu)cpuBomber(dt);for(let i=0;i<2;i++){const a=actors[i],k=keys[i];a.clock-=dt;if(a.clock<=0){const dir=k.l?[-1,0]:k.r?[1,0]:k.u?[0,-1]:k.d?[0,1]:null;if(dir){move(i,...dir);a.clock=.13;}}}for(const b of bombs){b.fuse-=dt;if(b.fuse<=0&&!b.dead){b.dead=true;const cells=bomberBlastCells(arena,b.pos,b.range);blasts.push({cells,left:.42});for(const key of cells)if(arena.crates.delete(key)){actors[b.owner].crates++;if((key+round)%3===0)pickups.set(key,(key+round)%2?'range':'bomb');}for(const other of bombs)if(cells.includes(other.pos))other.fuse=0;sound('shot');}}bombs=bombs.filter(b=>!b.dead);for(const blast of blasts){blast.left-=dt;for(const a of actors)if(blast.cells.includes(a.pos))a.alive=false;}blasts=blasts.filter(b=>b.left>0);if(actors.filter(a=>a.alive).length<2||clock<=0)finishRound();}
+ s.frame(dt=>{elapsed+=dt;if(breakTime>0){breakTime-=dt;if(breakTime<=0){if(scores.some(n=>n>=2)||round>=3){s.finish(scores,'Real two-player Bomber duel');return;}round++;reset();void startRound();}}else if(on)netStep(dt);else{clock-=dt;if(cpu)cpuBomber(dt);for(let i=0;i<2;i++){if(actors[i].goal!=null)seek(i,dt);else if(!(cpu&&i===1))walk(i,stick(i),dt);}for(const b of bombs){b.fuse-=dt;if(b.fuse<=0&&!b.dead){b.dead=true;const cells=bomberBlastCells(arena,b.pos,b.range);blasts.push({cells,left:.42});for(const key of cells)if(arena.crates.delete(key)){actors[b.owner].crates++;if((key+round)%3===0)pickups.set(key,(key+round)%2?'range':'bomb');}for(const other of bombs)if(cells.includes(other.pos))other.fuse=0;sound('shot');}}bombs=bombs.filter(b=>!b.dead);for(const blast of blasts){blast.left-=dt;for(const a of actors)if(blast.cells.includes(a.pos))a.alive=false;}blasts=blasts.filter(b=>b.left>0);if(actors.filter(a=>a.alive).length<2||clock<=0)finishRound();}
  const W=s.W,H=s.H,{ox,oy:oy0,sx,sy}=gestureGrid(W,H-HUDY,N,M,6),oy=oy0+HUDY,cell=Math.min(sx,sy),center=pos=>({x:ox+((F?N-1-pos%N:pos%N)+.5)*sx,y:oy+((F?M-1-Math.floor(pos/N):Math.floor(pos/N))+.5)*sy});
  // Super Bomberman look: stone frame, grass checker floor, bevelled pillars, brick soft blocks, flame crosses
  x.fillStyle='#3a4a5c';x.fillRect(0,0,W,H);x.fillStyle='#6a7a8c';for(let yy=0;yy<H;yy+=24)for(let xx=(yy/24%2)*24;xx<W;xx+=48){x.fillRect(xx,yy,46,22);}
@@ -153,7 +184,7 @@ async function bomber(s){const[c,x]=s.canvas(680,440,{fill:true}),scores=[0,0];l
    if(kind==='range'){x.fillStyle='#ffd23f';x.beginPath();x.moveTo(px+sx/2,py+sy*.2);x.quadraticCurveTo(px+sx*.8,py+sy*.55,px+sx/2,py+sy*.8);x.quadraticCurveTo(px+sx*.2,py+sy*.55,px+sx/2,py+sy*.2);x.fill();}else{circle(x,px+sx/2,py+sy*.56,cell*.22,'#111');x.fillStyle='#fff';x.fillRect(px+sx*.52,py+sy*.22,2,sy*.14);}}}
  for(const b of bombs){const p=center(b.pos),pulse=1+Math.sin(elapsed*(b.fuse<.6?30:12))*.08,r=cell*.32*pulse;x.fillStyle='#0005';x.beginPath();x.ellipse(p.x,p.y+r*.8,r*.9,r*.3,0,0,Math.PI*2);x.fill();circle(x,p.x,p.y,r,'#14141c');circle(x,p.x-r*.35,p.y-r*.35,r*.25,'#ffffff66');x.strokeStyle='#c8a060';x.lineWidth=2;x.beginPath();x.moveTo(p.x+r*.5,p.y-r*.6);x.quadraticCurveTo(p.x+r*.9,p.y-r*1.2,p.x+r*.6,p.y-r*1.4);x.stroke();circle(x,p.x+r*.6,p.y-r*1.4,2.5+Math.random()*2,b.fuse<.5?'#ff654d':'#ffd23f');}
  for(const blast of blasts)for(const key of blast.cells){const p=center(key);x.save();x.shadowColor='#ff9a2e';x.shadowBlur=14;x.fillStyle='#ff7a1e';x.beginPath();x.roundRect?.(p.x-sx/2+1,p.y-sy/2+1,sx-2,sy-2,cell*.3);x.fill();x.fillStyle='#ffd23f';x.beginPath();x.roundRect?.(p.x-sx*.32,p.y-sy*.32,sx*.64,sy*.64,cell*.25);x.fill();x.fillStyle='#fff6d0';x.beginPath();x.arc(p.x,p.y,cell*.18,0,Math.PI*2);x.fill();x.restore();}
- actors.forEach((a,i)=>{if(a.alive){const p=center(a.pos);s.sprite(x,i,p.x,p.y,clamp(cell*1.35,32,72),{exact:true});}});if(breakTime>0)label(x,result,W/2,H/2,clamp(W/28,16,30),'#ffd776');drawDirectionFeedback(x,controls);s.status(`ROUND ${round}/3 · ${Math.ceil(Math.max(0,clock))}s · ${s.players[0].name} ${scores[0]} – ${scores[1]} ${s.players[1].name} · range ${actors[0].range}/${actors[1].range}`);if(phase==='sync')label(x,'…',W/2,H/2,30,'#ffd776');s.debug={arena,actors,bombs,blasts,pickups,plant,move,scores,round,finishRound,controls,grid:{ox,oy,sx,sy},phase,get oc(){return OC?.R;},bot:on?()=>{netBot=true;return '';}:null};});
+ actors.forEach((a,i)=>{if(a.alive){const px=ox+(F?N-a.x:a.x)*sx,py=oy+(F?M-a.y:a.y)*sy;drawBomber(x,i,px,py,cell,a);}});if(breakTime>0)label(x,result,W/2,H/2,clamp(W/28,16,30),'#ffd776');controls.draw(x);s.status(`ROUND ${round}/3 · ${Math.ceil(Math.max(0,clock))}s · ${s.players[0].name} ${scores[0]} – ${scores[1]} ${s.players[1].name} · range ${actors[0].range}/${actors[1].range}`);if(phase==='sync')label(x,'…',W/2,H/2,30,'#ffd776');s.debug={arena,actors,bombs,blasts,pickups,plant,move,scores,round,finishRound,controls,grid:{ox,oy,sx,sy},phase,get oc(){return OC?.R;},bot:on?()=>{netBot=true;return '';}:null};});
  void startRound();
 }
 
