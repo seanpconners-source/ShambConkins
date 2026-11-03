@@ -16,7 +16,7 @@ const SOLO_IDS={
  'bricks-breaker-quest':'levels','doom':'levels','doom-2':'levels','paddys-hole':'levels','megatouch-photohunt':'levels',
  'kart-grand-prix-pass':'levels','kart-time-trial':'levels','rainbow-road-kart':'cpu',
  // batch 2: timed turn games replayed in faster rounds (retroKit turnRunner → soloTurnRuns)
- 'warriors-brawl':'rounds','paddys-darts':'rounds','duck-hunt-turn':'rounds','snake-run':'rounds','mars-missile-defense':'rounds',
+ 'warriors-brawl':'rounds','paddys-darts':'cpu','duck-hunt-turn':'rounds','snake-run':'rounds','mars-missile-defense':'rounds',
  'moonraker-lander':'rounds','t800-scan-long':'rounds','bond-facility':'rounds','major-league-bats':'rounds','asteroid-drift':'rounds',
  'breakout-party':'rounds','banana-money-grab':'rounds',
  // arcadeRounds (arcade.js → soloArcadeRounds)
@@ -85,7 +85,7 @@ const NET_NATIVE=new Set(['trivia-mixed','trivia-nick90','trivia-dbz','trivia-hx
  'four-lights','strategema-grid','full-shambyahtzee','cheaters-yahtzee',
  'blackjack','five-card','roulette','bond-baccarat','traitors-guess-who','battleship-fog',
  'liars-dice','clue-whodunit','monopoly-speed-die','monopoly-auction',
- 'simon-faceoff','price-bid-off','django-hangman-showdown','django-hangman-wanted',
+ 'simon-faceoff','price-bid-off','paddys-darts','django-hangman-showdown','django-hangman-wanted',
  'matrix-ultimate','greed-island-mancala','office-dots-boxes',
  'trek-mini-chess','wopr-grid','smb3-nspade','clue-lineup','django-hangman',
  'taskmaster-curling','bug-artillery','happy-gilmore-golf','color-of-money','baseketball-shootout',
