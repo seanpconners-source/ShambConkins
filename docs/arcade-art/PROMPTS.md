@@ -75,7 +75,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Hangman Unchained · `hangman`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Hangman Unchained", a minigame in a party video game that pays tribute to Django Unchained. Scene: Quick Draw, Showdown, Wanted. Both at once on ONE phrase: P1 has the bottom (or left) keyboard, P2 the top (or right). Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -305,7 +305,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Tony Hawk’s Pro Mancala · `greed-island-mancala`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Tony Hawk’s Pro Mancala", a minigame in a party video game that pays tribute to Tony Hawk’s Pro Skater. Scene: Kalah Mancala on a skateboard deck, six four-gem bowls each. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -563,15 +563,15 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "Duck Hunt · Head Hunt" (Duck Hunt tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
-## Crossy Road Chaos · `crossy-chaos`
+## Crossy Road · `crossy-chaos`
 
 **Key art** 
 
-> Key art for "Crossy Road Chaos", a minigame in a party video game that pays tribute to Crossy Road. Scene: Dodge cars and trains, ride logs and grab coins. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Crossy Road", a minigame in a party video game that pays tribute to Crossy Road. Scene: Dodge cars and trains, ride the logs, grab coins and keep moving: the camera and the eagle won’t wait. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
-> Square game icon for "Crossy Road Chaos" (Crossy Road tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+> Square game icon for "Crossy Road" (Crossy Road tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Pong · Arcade 1972 · `pong-duel`
 
@@ -863,15 +863,15 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "Simon · Face-Off" (Simon tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
-## The Price Is Right · Bid-Off · `price-bid-off`
+## The Price Is Right · Come On Down! · `price-bid-off`
 
 **Key art** 
 
-> Key art for "The Price Is Right · Bid-Off", a minigame in a party video game that pays tribute to The Price Is Right. Scene: Secretly slide to your bid on an absurd showcase item. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "The Price Is Right · Come On Down!", a minigame in a party video game that pays tribute to The Price Is Right. Scene: Three rounds on Contestants’ Row: bid on a prize, closest without going over wins it. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
-> Square game icon for "The Price Is Right · Bid-Off" (The Price Is Right tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+> Square game icon for "The Price Is Right · Come On Down!" (The Price Is Right tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Hungry Hungry Hippos · Hungry Hungry Heads · `hungry-hungry-heads`
 
@@ -923,59 +923,69 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "Puzzle Bobble · Bubble Battle" (Puzzle Bobble tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
-## Broforce · `broforce`
+## Sean of a Gun · `broforce`
 
-**Key art** 
+**Key art** ✅
 
-> Key art for "Broforce", a minigame in a party video game that pays tribute to Broforce. Scene: Choose a world: Jungle, Factory, City or Desert. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
-
-**Icon** 
-
-> Square game icon for "Broforce" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
-
-## Broforce: Jungle · `broforce-jungle`
-
-**Key art** 
-
-> Key art for "Broforce: Jungle", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Sean of a Gun", a minigame in a party video game that pays tribute to Broforce. Scene: Choose a world: Jungle, Factory, City or Desert. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
-> Square game icon for "Broforce: Jungle" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+> Square game icon for "Sean of a Gun" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
-## Broforce: Factory · `broforce-factory`
-
-**Key art** 
-
-> Key art for "Broforce: Factory", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
-
-**Icon** 
-
-> Square game icon for "Broforce: Factory" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
-
-## Broforce: City Siege · `broforce-city`
+## Sean of a Gun: Jungle · `broforce-jungle`
 
 **Key art** 
 
-> Key art for "Broforce: City Siege", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Sean of a Gun: Jungle", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
-> Square game icon for "Broforce: City Siege" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+> Square game icon for "Sean of a Gun: Jungle" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
-## Broforce: Desert Assault · `broforce-desert`
+## Sean of a Gun: Factory · `broforce-factory`
 
 **Key art** 
 
-> Key art for "Broforce: Desert Assault", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Sean of a Gun: Factory", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
-> Square game icon for "Broforce: Desert Assault" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+> Square game icon for "Sean of a Gun: Factory" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Sean of a Gun: City Siege · `broforce-city`
+
+**Key art** 
+
+> Key art for "Sean of a Gun: City Siege", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Sean of a Gun: City Siege" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Sean of a Gun: Desert Assault · `broforce-desert`
+
+**Key art** 
+
+> Key art for "Sean of a Gun: Desert Assault", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Sean of a Gun: Desert Assault" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Frogger · `frogger-heads`
+
+**Key art** 
+
+> Key art for "Frogger", a minigame in a party video game that pays tribute to Frogger. Scene: The 1981 arcade game with your head on the frog. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Frogger" (Frogger tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Bricks Breaker Quest · `bricks-breaker-quest`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Bricks Breaker Quest", a minigame in a party video game that pays tribute to Bricks Breaker Quest. Scene: Pick a stage on the quest map, then take turns playing it. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -1203,15 +1213,15 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "There Are Four Lights!" (Star Trek: The Next Generation tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
-## Paddy's Darts · `paddys-darts`
+## Paddy’s Darts · `paddys-darts`
 
 **Key art** 
 
-> Key art for "Paddy's Darts", a minigame in a party video game that pays tribute to Always Sunny. Scene: A real dartboard in Paddy's Pub, taking turns: three rounds of three darts. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Paddy’s Darts", a minigame in a party video game that pays tribute to Always Sunny. Scene: Three games at Paddy’s: 301 (count down to exactly zero), Rickety Cricket’s Cricket (close 20 to 15 and the bull) and High Score. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
-> Square game icon for "Paddy's Darts" (Always Sunny tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+> Square game icon for "Paddy’s Darts" (Always Sunny tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Taskmaster · Olympic Curling · `taskmaster-curling`
 

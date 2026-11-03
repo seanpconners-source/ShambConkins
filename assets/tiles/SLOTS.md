@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 185 slots: 4 have key art, 0 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 186 slots: 8 have key art, 0 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -14,7 +14,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `castlevania` | Castlevania (cv-symphony, cv-vampire-killer, cv-candle-hunt) | family | · / · |
 | `sonic` | Sonic the Hedgehog (sonic-ring-rush, sonic-goal-dash) | family | · / · |
 | `doom` | DOOM (doom, doom-2) | family | · / · |
-| `hangman` | Hangman Unchained (django-hangman, django-hangman-showdown, django-hangman-wanted) | family | · / · |
+| `hangman` | Hangman Unchained (django-hangman, django-hangman-showdown, django-hangman-wanted) | family | ✅ / · |
 | `invaders` | Space Invaders (space-swarm, space-swarm-versus, space-swarm-coop) | family | · / · |
 | `tarantino` | Tarantino Night (tarantino-crazy88, kill-bill-duel, tarantino-standoff, tarantino-twist, tarantino-adrenaline, tarantino-bounty, tarantino-chase) | family | · / · |
 | `southpark` | South Park (sp-dodgeball, sp-cheesy-poofs, sp-killed-kenny, snowball-fight) | family | · / · |
@@ -37,7 +37,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `pokemon` | Pokémon Battles (pkmn-wild, pkmn-trainer) | family | · / · |
 | `shamb-uno` | ShambUNO · Private Card Duel | game | · / · |
 | `traitors-guess-who` | The Traitors · Find the Traitor | game | · / · |
-| `greed-island-mancala` | Tony Hawk’s Pro Mancala | game | · / · |
+| `greed-island-mancala` | Tony Hawk’s Pro Mancala | game | ✅ / · |
 | `deadite-checkers` | Army of Darkness · Deadite Checkers | game | · / · |
 | `office-dots-boxes` | Call of Duty: Modern Stick Dot | game | · / · |
 | `megatouch-photohunt` | Megatouch · Photo Hunt | game | · / · |
@@ -63,7 +63,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `battle-royale-island` | Battle Royale · The Island | game | · / · |
 | `review-pancakes` | Pancakes, Divorce, Pancakes | game | · / · |
 | `duck-hunt-turn` | Duck Hunt · Head Hunt | game | · / · |
-| `crossy-chaos` | Crossy Road Chaos | game | · / · |
+| `crossy-chaos` | Crossy Road | game | · / · |
 | `pong-duel` | Pong · Arcade 1972 | game | · / · |
 | `color-of-money` | The Color of Money · Nine-ball | game | · / · |
 | `warehouse-shift` | The Office · Warehouse Shift | game | · / · |
@@ -93,18 +93,19 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `draw-it` | Pictionary · Draw It | game | · / · |
 | `battleship-fog` | Battleship · Fog of War | game | · / · |
 | `simon-faceoff` | Simon · Face-Off | game | · / · |
-| `price-bid-off` | The Price Is Right · Bid-Off | game | · / · |
+| `price-bid-off` | The Price Is Right · Come On Down! | game | · / · |
 | `hungry-hungry-heads` | Hungry Hungry Hippos · Hungry Hungry Heads | game | · / · |
 | `disc-duel` | Windjammers · Disc Duel | game | · / · |
 | `arrow-arena` | TowerFall · Arrow Arena | game | · / · |
 | `driller-duel` | Mr. Driller · Driller Duel | game | · / · |
 | `bubble-battle` | Puzzle Bobble · Bubble Battle | game | · / · |
-| `broforce` | Broforce | game | · / · |
-| `broforce-jungle` | Broforce: Jungle | game | · / · |
-| `broforce-factory` | Broforce: Factory | game | · / · |
-| `broforce-city` | Broforce: City Siege | game | · / · |
-| `broforce-desert` | Broforce: Desert Assault | game | · / · |
-| `bricks-breaker-quest` | Bricks Breaker Quest | game | · / · |
+| `broforce` | Sean of a Gun | game | ✅ / · |
+| `broforce-jungle` | Sean of a Gun: Jungle | game | · / · |
+| `broforce-factory` | Sean of a Gun: Factory | game | · / · |
+| `broforce-city` | Sean of a Gun: City Siege | game | · / · |
+| `broforce-desert` | Sean of a Gun: Desert Assault | game | · / · |
+| `frogger-heads` | Frogger | game | · / · |
+| `bricks-breaker-quest` | Bricks Breaker Quest | game | ✅ / · |
 | `bucketheadland-pinball` | Bucketheadland · Buckethead Pinball | version of pinball | ✅ / · |
 | `major-league-fielding` | Major League · Bat & Field | version of baseball | · / · |
 | `taskmaster-micro-relay` | Taskmaster · Frantic Task Relay | version of taskmaster | · / · |
@@ -127,7 +128,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `matrix-hardline-hack` | Hardline Hack | version of matrix | · / · |
 | `strategema-grid` | Strategema Grid | version of trek | · / · |
 | `four-lights` | There Are Four Lights! | version of trek | · / · |
-| `paddys-darts` | Paddy's Darts | version of paddys | · / · |
+| `paddys-darts` | Paddy’s Darts | version of paddys | · / · |
 | `taskmaster-curling` | Taskmaster · Olympic Curling | version of taskmaster | · / · |
 | `office-hockey-shootout` | The Mighty Ducks · Hockey Shootout | version of ducks | · / · |
 | `space-swarm` | Space Invaders · Mars Attacks! | version of invaders | · / · |
