@@ -25,7 +25,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   Owner loves online as it is now: look into it soon, keep it simple, don't disturb what works. Builds on I2/I3 (invite
   links, status dot). Needs: a presence list in the Worker (who is in which room / idle), a "free to interrupt" signal
   from the game (title screen, between board turns, results card), and a queued invite toast.
-- **N2** `[todo]` (owner, Nov 3) New characters: Pee-wee Herman; Stone Cold Steve Austin; The Undertaker; Mick Foley
+- **N2** `[verify]` (Nov 3: 43 added in `src/data/legendsPack3.js`, unreleased; Pee-wee already existed; Mick Foley's personas are 'Mick Foley · <persona>' for the outfit system; photos come from Wikipedia until the owner drops portraits in) (owner, Nov 3) New characters: Pee-wee Herman; Stone Cold Steve Austin; The Undertaker; Mick Foley
   (outfits: Dude Love, Mankind, Cactus Jack); the Whitest Kids U' Know guys; Nick Wiger, Mike Mitchell, Scott Aukerman,
   Paul F. Tompkins, Lauren Lapkus; The Birthday Boys (all of them); the rest of the Reno 911! cast (incl. Terry);
   Idiocracy: Not Sure, Frito, Rita (Maya Rudolph), the general arrested for pimping, Justin Long's doctor, the cabinet,

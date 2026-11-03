@@ -412,7 +412,8 @@
   "src/engines/bomberControls.js",
   "src/data/cutGames.js",
   "src/frankFx.js",
-  "src/endings.js"
+  "src/endings.js",
+  "src/data/legendsPack3.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

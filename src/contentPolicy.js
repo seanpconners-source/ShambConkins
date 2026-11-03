@@ -11,6 +11,7 @@ const {MOVIE_BOND_CHARACTERS, FACE_PACK_CHARACTERS}=require("src/data/movieBonds
 const {NEW_CHARACTERS, HORROR_IDS, PERKS}=require("src/data/legendsPack.js");
 const {BOSSES, BOSS_CHARACTERS}=require("src/data/bosses.js");
 const {NEW_CHARACTERS2}=require("src/data/legendsPack2.js");
+const {NEW_CHARACTERS3}=require("src/data/legendsPack3.js");
 const {LEGENDS_TRIVIA}=require("src/data/legendsTrivia.js");
 const {TRIVIA3}=require("src/data/trivia3.js");
 const {WARP_TRIVIA}=require("src/data/warpTrivia.js");
@@ -44,6 +45,7 @@ ACTIVE_CATALOG.trivia.push(...PARTY_TRIVIA,...EXPANDED_TRIVIA_V42,...LEGENDS_TRI
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='bond'?MOVIE_BOND_CHARACTERS[0]:c.id==='chris-parent'?{...c,name:'Dad · Chris Conners',unlockHint:'Meet Dad at My Parents’ House or a Home encounter.'}:c.id==='angie-parent'?{...c,name:'Mom · Angie Conners',unlockHint:'Meet Mom at My Parents’ House or a Home encounter.'}:c);
 ACTIVE_CATALOG.characters.push(...MOVIE_BOND_CHARACTERS.slice(1),...FACE_PACK_CHARACTERS,...NEW_CHARACTERS);
 ACTIVE_CATALOG.characters.push(...NEW_CHARACTERS2);
+ACTIVE_CATALOG.characters.push(...NEW_CHARACTERS3.filter(c=>!ACTIVE_CATALOG.characters.some(o=>o.id===c.id)));
 ACTIVE_CATALOG.characters.push(...LAIR_VILLAIN_CHARACTERS);
 ACTIVE_CATALOG.characters.push(...SOUTH_PARK_CHARACTERS);
 ACTIVE_CATALOG.characters.push(...POKEMON_CHARACTERS);
