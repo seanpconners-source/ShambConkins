@@ -154,8 +154,11 @@ function placeKey(img){
  Object.assign(img.style,{left:left+'px',top:topP+'px',width:dw+'px',height:dh+'px',maskImage:mask,webkitMaskImage:mask,maskComposite:'intersect',webkitMaskComposite:'source-in'});
  img.classList.add('placed');
  // the shade stays light over the faces' area (theme.css .has-key .arc-shade reads these)
- root.classList.toggle('key-above',side&&ax0<W*.1);
- root.style.setProperty('--key-y0',(ay0/H*100).toFixed(1)+'%');root.style.setProperty('--key-y1',(ay1/H*100).toFixed(1)+'%');
+ // a locked picture keeps the shade the owner saw in the Background Picker: clear from the controls down to the tiles
+ // (wide) or to the text (tall)
+ const sy0=lock?top:ay0,sy1=lock?(side?bot:(info?info.t-6:H*.6)):ay1;
+ root.classList.toggle('key-above',!lock&&side&&ax0<W*.1);
+ root.style.setProperty('--key-y0',(sy0/H*100).toFixed(1)+'%');root.style.setProperty('--key-y1',(sy1/H*100).toFixed(1)+'%');
 }
 const placeKeys=()=>{if(typeof document!=='undefined')document.querySelectorAll('.arc-keyart img').forEach(placeKey);};
 if(typeof document!=='undefined'){document.addEventListener('load',ev=>{if(ev.target?.closest?.('.arc-keyart'))placeKey(ev.target);},true);

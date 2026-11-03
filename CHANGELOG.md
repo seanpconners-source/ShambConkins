@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.80.4
+
+- **Arcade backgrounds placed by hand**: 18 backgrounds now show exactly as you set them in the Background Picker on every screen: Fold closed and open, phones, tablets and desktop, upright and sideways. The rest keep the automatic placement until you lock them in.
+- **Characters screen**: the P1/CPU badge and the name float over the picture, the "Player 1 · roster" line is gone, and the heads are bigger.
+
 ## v0.80.3
 
 - **Characters say their real lines**: 365 characters now have their own famous quote on their character page, their unlock card and as their Pokémon trainer intro. Freddy Krueger has a whole pool of them.

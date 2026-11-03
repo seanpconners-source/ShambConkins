@@ -1,0 +1,205 @@
+<title>Arcade Background Picker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;800;900&display=swap">
+<style>
+/* Layout: a picture rail, then the chosen picture on every screen as a wall of device frames; tap one to edit it full size. */
+:root{
+ --ink:#060a17; --panel:#0e1630; --panel2:#152042; --line:#24315c; --text:#eef2ff; --muted:#93a0c8; --blue:#4d8dff;
+ --ok:#3ccf8e; --warn:#ffc24d; --edit:#ff8a4d; --bad:#ff5a6e;
+ --f-disp:"Bangers","Impact",system-ui,sans-serif; --f-body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+ color-scheme:dark;
+}
+html,body{background:var(--ink);color:var(--text)}
+body{font-family:var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 60px}
+h1{font-family:var(--f-disp);font-weight:400;letter-spacing:.04em;font-size:clamp(28px,5vw,42px);margin:0;line-height:1}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 20px;justify-content:space-between;margin-bottom:12px}
+.progress{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+.progress b{color:var(--text)}
+.status{font-size:13px;color:var(--muted);min-height:18px}
+.rail{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 12px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.pick{flex:0 0 auto;width:132px;border:2px solid transparent;border-radius:12px;background:var(--panel);padding:0;color:var(--text);cursor:pointer;text-align:left;scroll-snap-align:start;overflow:hidden;font:inherit}
+.pick img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
+.pick span{display:flex;align-items:center;gap:6px;padding:6px 8px;font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick small{margin-left:auto;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.pick.on{border-color:var(--blue);box-shadow:0 0 0 3px #4d8dff44}
+.pick:focus-visible,.btn:focus-visible,.frame:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--line);flex:0 0 auto}
+.dot.perfect{background:var(--ok)}.dot.tweak{background:var(--warn)}.dot.edit{background:var(--edit)}.dot.remake{background:var(--bad)}
+.head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin:6px 0 12px}
+.head h2{font-family:var(--f-disp);font-weight:400;font-size:30px;letter-spacing:.03em;margin:0;text-wrap:balance}
+.verdicts{display:flex;flex-wrap:wrap;gap:6px}
+.btn{font:inherit;font-weight:800;font-size:13px;border-radius:999px;border:1.5px solid var(--line);background:var(--panel2);color:var(--text);padding:8px 14px;cursor:pointer;min-height:36px}
+.btn:hover{border-color:var(--blue)}
+.btn.primary{background:var(--text);color:var(--ink);border-color:var(--text)}
+.btn.v.on.perfect{background:var(--ok);border-color:var(--ok);color:var(--ink)}
+.btn.v.on.tweak{background:var(--warn);border-color:var(--warn);color:var(--ink)}
+.btn.v.on.edit{background:var(--edit);border-color:var(--edit);color:var(--ink)}
+.btn.v.on.remake{background:var(--bad);border-color:var(--bad);color:var(--ink)}
+.note{flex:1 1 260px;min-width:0;font:inherit;font-size:14px;background:var(--panel);border:1.5px solid var(--line);border-radius:10px;color:var(--text);padding:8px 10px;resize:vertical;min-height:38px}
+.wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;align-items:start}
+.frame{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:10px;cursor:pointer;display:grid;gap:8px;color:var(--text);font:inherit;text-align:left}
+.frame:hover{border-color:var(--blue)}
+.frame .cap{display:flex;gap:8px;align-items:center;font-size:13px;font-weight:800}
+.frame .cap small{color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.tag{margin-left:auto;font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--panel2);color:var(--muted)}
+.tag.locked{background:var(--ok);color:var(--ink)}
+.screenbox{position:relative;overflow:hidden;border-radius:8px;background:var(--ink);justify-self:center}
+.screen{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden;background:var(--ink)}
+.screen .fill{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(26px) saturate(1.2) brightness(.55)}
+.screen .pic{position:absolute;max-width:none}
+.screen .shade,.screen .ov,.screen .face{position:absolute;inset:0;pointer-events:none}
+.screen .ov{width:100%;height:100%}
+.screen .face{border:3px dashed #ffe14d;inset:auto;border-radius:6px;box-shadow:0 0 0 2px #0008}
+.screen .info{position:absolute;display:grid;align-content:end;gap:6px;pointer-events:none;color:#fff;font-family:var(--f-body)}
+.screen .info .eyebrow{font-size:12px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#c9d3f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.screen .info .logo{max-width:92%;object-fit:contain;object-position:left bottom;filter:drop-shadow(0 4px 10px #000a)}
+.screen .info .ttl{font-family:var(--f-disp);font-size:34px;line-height:1;text-shadow:0 3px 10px #000}
+.screen .info .rules{font-size:15px;line-height:1.35;color:#e6ebff;max-width:560px}
+.screen .info .cta{justify-self:start;background:#fff;color:#0b1020;font-family:var(--f-disp);font-size:20px;letter-spacing:.03em;border-radius:999px;padding:9px 22px;box-shadow:0 0 22px #4d8dff66}
+/* editor */
+.ed{position:fixed;inset:0;z-index:50;background:#030612f2;display:grid;grid-template-rows:auto 1fr auto;padding:calc(env(safe-area-inset-top,0px) + 10px) max(12px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 10px) max(12px,env(safe-area-inset-left,0px));gap:10px}
+[hidden]{display:none!important}
+.ed-top,.ed-bot{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ed-top b{font-size:16px}
+.ed-top .muted{color:var(--muted);font-size:13px}
+.ed-top .sp{flex:1}
+.stage{position:relative;display:grid;place-items:center;min-height:0;touch-action:none;user-select:none;-webkit-user-select:none}
+.stage .screenbox{cursor:grab;box-shadow:0 0 0 2px var(--line),0 20px 60px #000}
+.stage .screenbox:active{cursor:grabbing}
+.zoom{display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:0}
+.zoom input{flex:1;min-width:0;accent-color:var(--blue)}
+.zoom output{font-variant-numeric:tabular-nums;font-weight:800;width:52px;text-align:right}
+.hint{color:var(--muted);font-size:12px}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted)}
+.empty{color:var(--muted);padding:30px 0}
+@media (max-width:520px){.wall{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.frame{padding:7px}.frame .cap{font-size:12px}.head h2{font-size:24px}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="top">
+ <div><h1>Background Picker</h1><div class="status" id="status">Loading your saved choices…</div></div>
+ <div class="progress" id="progress"></div>
+</div>
+<div class="rail" id="rail" role="listbox" aria-label="Backgrounds"></div>
+<div class="head">
+ <h2 id="title"></h2>
+ <div class="verdicts" id="verdicts"></div>
+ <textarea class="note" id="note" rows="1" placeholder="Note for this picture (what to fix, what to keep)…"></textarea>
+</div>
+<div class="wall" id="wall"></div>
+
+<div class="ed" id="ed" hidden>
+ <div class="ed-top">
+  <button class="btn" id="ed-prev" aria-label="Previous screen">◀</button>
+  <div><b id="ed-name"></b> <span class="muted" id="ed-size"></span></div>
+  <button class="btn" id="ed-next" aria-label="Next screen">▶</button>
+  <span class="sp"></span>
+  <span class="tag" id="ed-tag">Auto</span>
+  <button class="btn" id="ed-close">Done</button>
+ </div>
+ <div class="stage" id="stage"></div>
+ <div class="ed-bot">
+  <div class="zoom"><span class="hint">Zoom</span><input type="range" id="ed-zoom" min="0.3" max="3" step="0.01"><output id="ed-zv"></output></div>
+  <label class="chk"><input type="checkbox" id="ed-face"> Faces box</label>
+  <label class="chk"><input type="checkbox" id="ed-ov" checked> Menus</label>
+  <button class="btn" id="ed-reset">Back to game’s current</button>
+  <button class="btn" id="ed-unlock">Unlock</button>
+  <button class="btn primary" id="ed-lock">Lock in</button>
+  <span class="hint" id="ed-hint">Drag to move · pinch or scroll to zoom</span>
+ </div>
+</div>
+
+<script>
+const DATA=/*DATA*/null;
+const VERDICTS=[['perfect','Perfect'],['tweak','Small tweak'],['edit','Needs an edit'],['remake','Remake']];
+const $=id=>document.getElementById(id);
+const state={sel:DATA.slots[0].id,saved:{},db:null,edit:null};
+const rec=slot=>state.saved[slot]||{screens:{}};
+const auto=(slot,sc)=>{const s=DATA.slots.find(x=>x.id===slot),p=s.place[sc.id];if(p)return {...p};
+ // not measured in the game (only shown inside its family page): fill the screen, faces box in the middle
+ const cover=Math.max(sc.w/s.nw,sc.h/s.nh),dw=s.nw*cover,dh=s.nh*cover,b=s.box,cl=(v,a,b2)=>Math.min(b2,Math.max(a,v));
+ return {z:1,fx:cl((b[0]+b[2])/2,sc.w/2/dw,1-sc.w/2/dw),fy:cl((b[1]+b[3])/2,sc.h/2/dh,1-sc.h/2/dh)};};
+const current=(slot,sc)=>rec(slot).screens?.[sc.id]||auto(slot,sc);
+const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// one screen as the game draws it: blurred fill, the picture (cover x zoom, focus point in the middle), the game's shade,
+// the hero text block with the game's logo, and the real menu layer captured from the game on top
+function screenHTML(slot,sc,p,{face=false,ov=true}={}){const s=DATA.slots.find(x=>x.id===slot),R=sc.rects;
+ const cover=Math.max(sc.w/s.nw,sc.h/s.nh),k=cover*p.z,dw=s.nw*k,dh=s.nh*k,l=sc.w/2-p.fx*dw,t=sc.h/2-p.fy*dh;
+ const fl=l>1,fr=l+dw<sc.w-1,ft=t>1,fb=t+dh<sc.h-1,f=(n,d)=>n?Math.round(d*.16)+'px':'0px';
+ const mask=(fl||fr||ft||fb)?`linear-gradient(90deg,#0000,#000 ${f(fl,dw)},#000 calc(100% - ${f(fr,dw)}),#0000),linear-gradient(180deg,#0000,#000 ${f(ft,dh)},#000 calc(100% - ${f(fb,dh)}),#0000)`:'none';
+ const side=sc.w>=700||(sc.w>sc.h&&sc.h<=520),y0=(R.top+8)/sc.h*100,y1=(side?(R.row?R.row[1]-8:sc.h*.8):(R.info?R.info[1]-6:sc.h*.6))/sc.h*100;
+ const shade=side?`linear-gradient(90deg,#060a17 4%,#060a17b3 30%,#0000 50%),linear-gradient(180deg,#060a17cc 0%,#0000 ${y0}%,#0000 ${y1}%,#060a17 ${y1+18}%)`
+  :`linear-gradient(180deg,#060a17d9 0%,#060a1766 ${y0-4}%,#0000 ${y0}%,#0000 ${y1}%,#060a17cc ${y1+12}%,#060a17 ${y1+30}%)`;
+ const I=R.info||[14,sc.h*.45,sc.w-14,sc.h*.75],ih=I[3]-I[1];
+ const info=`<div class="info" style="left:${I[0]}px;top:${I[1]}px;width:${I[2]-I[0]}px;height:${ih}px"><div class="eyebrow">${esc(s.title)}</div>${s.logo?`<img class="logo" src="${s.logo}" alt="" style="max-height:${Math.round(ih*.42)}px">`:`<div class="ttl">${esc(s.title)}</div>`}<div class="rules">${esc(s.title)} · pick a version</div><div class="cta">CHOOSE A VERSION ▸</div></div>`;
+ const B=s.box,fb2=face?`<div class="face" style="left:${l+B[0]*dw}px;top:${t+B[1]*dh}px;width:${(B[2]-B[0])*dw}px;height:${(B[3]-B[1])*dh}px"></div>`:'';
+ return `${fl||fr||ft||fb?`<img class="fill" src="${s.img}" alt="">`:''}<img class="pic" src="${s.img}" alt="" draggable="false" style="left:${l}px;top:${t}px;width:${dw}px;height:${dh}px;-webkit-mask-image:${mask};mask-image:${mask};-webkit-mask-composite:source-in;mask-composite:intersect"><div class="shade" style="background:${shade}"></div>${info}${fb2}${ov?`<img class="ov" src="${sc.overlay}" alt="">`:''}`;}
+function boxHTML(slot,sc,p,maxW,maxH,opt){const k=Math.min(maxW/sc.w,maxH/sc.h);
+ return `<div class="screenbox" style="width:${sc.w*k}px;height:${sc.h*k}px"><div class="screen" style="width:${sc.w}px;height:${sc.h}px;transform:scale(${k})">${screenHTML(slot,sc,p,opt)}</div></div>`;}
+
+function renderRail(){$('rail').innerHTML=DATA.slots.map(s=>{const r=rec(s.id),n=Object.keys(r.screens||{}).length;
+ return `<button class="pick${s.id===state.sel?' on':''}" data-slot="${s.id}" role="option" aria-selected="${s.id===state.sel}"><img src="${s.img}" alt="" loading="lazy"><span><i class="dot ${r.verdict||''}"></i>${esc(s.title)}<small>${n}/${DATA.screens.length}</small></span></button>`;}).join('');
+ const done=DATA.slots.filter(s=>rec(s.id).verdict).length,locks=DATA.slots.reduce((a,s)=>a+Object.keys(rec(s.id).screens||{}).length,0);
+ $('progress').innerHTML=`<b>${done}</b> of ${DATA.slots.length} pictures judged · <b>${locks}</b> of ${DATA.slots.length*DATA.screens.length} screens locked`;}
+function renderHead(){const s=DATA.slots.find(x=>x.id===state.sel),r=rec(s.id);$('title').textContent=s.title;
+ $('verdicts').innerHTML=VERDICTS.map(([v,l])=>`<button class="btn v ${v}${r.verdict===v?' on':''}" data-v="${v}">${l}</button>`).join('');
+ if(document.activeElement!==$('note'))$('note').value=r.note||'';}
+function renderWall(){const w=$('wall').clientWidth||900,cols=Math.max(2,Math.floor((w+14)/244)),cw=Math.min(300,(w-14*(cols-1))/cols-22);
+ $('wall').innerHTML=DATA.screens.map((sc,i)=>{const locked=!!rec(state.sel).screens?.[sc.id];
+  return `<button class="frame" data-i="${i}"><div class="cap">${esc(sc.label)} <small>${sc.w}×${sc.h}</small><span class="tag${locked?' locked':''}">${locked?'Locked':'Auto'}</span></div>${boxHTML(state.sel,sc,current(state.sel,sc),cw,cw*1.5)}</button>`;}).join('');}
+function renderAll(){renderRail();renderHead();renderWall();}
+
+// saving: one doc per picture, written only on change
+async function save(slot,patch){const r={...rec(slot),...patch,at:Date.now()};state.saved[slot]=r;renderRail();
+ if(!state.db){$('status').textContent='Not saved: open this page signed in to keep your choices.';return;}
+ try{await state.db.doc('bg/'+slot).set(r);$('status').textContent='Saved · '+new Date().toLocaleTimeString();}
+ catch(e){$('status').textContent='Couldn’t save ('+(e?.code||e?.message||'error')+'). Try again in a moment.';}}
+
+$('rail').addEventListener('click',e=>{const b=e.target.closest('.pick');if(!b)return;state.sel=b.dataset.slot;renderAll();});
+$('verdicts').addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(!b)return;const v=b.dataset.v;save(state.sel,{verdict:rec(state.sel).verdict===v?null:v});renderHead();});
+let noteT=0;$('note').addEventListener('input',()=>{clearTimeout(noteT);const slot=state.sel,v=$('note').value;noteT=setTimeout(()=>{if((rec(slot).note||'')!==v)save(slot,{note:v});},700);});
+$('wall').addEventListener('click',e=>{const f=e.target.closest('.frame');if(f)openEditor(+f.dataset.i);});
+addEventListener('resize',()=>{renderWall();if(state.edit)drawEditor();});
+
+// editor
+function openEditor(i){const sc=DATA.screens[i];state.edit={i,p:current(state.sel,sc),dirty:false};$('ed').hidden=false;drawEditor();}
+function drawEditor(){const E=state.edit,sc=DATA.screens[E.i],st=$('stage'),locked=rec(state.sel).screens?.[sc.id];
+ $('ed-name').textContent=DATA.slots.find(x=>x.id===state.sel).title+' · '+sc.label;$('ed-size').textContent=sc.w+'×'+sc.h;
+ $('ed-tag').textContent=E.dirty?'Not locked yet':locked?'Locked':'Auto (game’s current)';$('ed-tag').className='tag'+(locked&&!E.dirty?' locked':'');
+ $('ed-zoom').value=E.p.z;$('ed-zv').value=Math.round(E.p.z*100)+'%';
+ const maxW=st.clientWidth-8,maxH=st.clientHeight-8;st.innerHTML=boxHTML(state.sel,sc,E.p,maxW,maxH,{face:$('ed-face').checked,ov:$('ed-ov').checked});
+ E.k=Math.min(maxW/sc.w,maxH/sc.h);}
+function closeEditor(){state.edit=null;$('ed').hidden=true;renderWall();}
+const clampZ=z=>Math.min(3,Math.max(.3,z));
+function zoomAt(f,px,py){const E=state.edit,sc=DATA.screens[E.i],s=DATA.slots.find(x=>x.id===state.sel),cover=Math.max(sc.w/s.nw,sc.h/s.nh);
+ const dw=s.nw*cover*E.p.z,dh=s.nh*cover*E.p.z,l=sc.w/2-E.p.fx*dw,t=sc.h/2-E.p.fy*dh,u=(px-l)/dw,v=(py-t)/dh;
+ const z=clampZ(E.p.z*f),dw2=s.nw*cover*z,dh2=s.nh*cover*z;E.p={z,fx:(sc.w/2-(px-u*dw2))/dw2,fy:(sc.h/2-(py-v*dh2))/dh2};E.dirty=true;drawEditor();}
+const pts=new Map();let last=null;
+$('stage').addEventListener('pointerdown',e=>{if(!state.edit)return;$('stage').setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});last=null;});
+$('stage').addEventListener('pointermove',e=>{const E=state.edit;if(!E||!pts.has(e.pointerId))return;const prev=pts.get(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ const sc=DATA.screens[E.i],s=DATA.slots.find(x=>x.id===state.sel),cover=Math.max(sc.w/s.nw,sc.h/s.nh),dw=s.nw*cover*E.p.z,dh=s.nh*cover*E.p.z;
+ if(pts.size===1){E.p={...E.p,fx:E.p.fx-(e.clientX-prev.x)/E.k/dw,fy:E.p.fy-(e.clientY-prev.y)/E.k/dh};E.dirty=true;drawEditor();return;}
+ const [a,b]=[...pts.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(last){const box=$('stage').querySelector('.screenbox').getBoundingClientRect();
+  zoomAt(d/last,((a.x+b.x)/2-box.left)/E.k,((a.y+b.y)/2-box.top)/E.k);}last=d;});
+const up=e=>{pts.delete(e.pointerId);last=null;};$('stage').addEventListener('pointerup',up);$('stage').addEventListener('pointercancel',up);
+$('stage').addEventListener('wheel',e=>{if(!state.edit)return;e.preventDefault();const box=$('stage').querySelector('.screenbox').getBoundingClientRect();
+ zoomAt(Math.exp(-e.deltaY*.0015),(e.clientX-box.left)/state.edit.k,(e.clientY-box.top)/state.edit.k);},{passive:false});
+$('ed-zoom').addEventListener('input',e=>{const sc=DATA.screens[state.edit.i];zoomAt(+e.target.value/state.edit.p.z,sc.w/2,sc.h/2);});
+$('ed-face').addEventListener('change',drawEditor);$('ed-ov').addEventListener('change',drawEditor);
+$('ed-reset').addEventListener('click',()=>{const E=state.edit;E.p=auto(state.sel,DATA.screens[E.i]);E.dirty=true;drawEditor();});
+$('ed-lock').addEventListener('click',()=>{const E=state.edit,sc=DATA.screens[E.i],r=rec(state.sel),p={z:+E.p.z.toFixed(4),fx:+E.p.fx.toFixed(4),fy:+E.p.fy.toFixed(4)};
+ save(state.sel,{screens:{...r.screens,[sc.id]:p}});E.dirty=false;drawEditor();});
+$('ed-unlock').addEventListener('click',()=>{const E=state.edit,sc=DATA.screens[E.i],r={...rec(state.sel).screens};delete r[sc.id];save(state.sel,{screens:r});E.p=auto(state.sel,sc);E.dirty=false;drawEditor();});
+const step=d=>{const E=state.edit;E.i=(E.i+d+DATA.screens.length)%DATA.screens.length;E.p=current(state.sel,DATA.screens[E.i]);E.dirty=false;drawEditor();};
+$('ed-prev').addEventListener('click',()=>step(-1));$('ed-next').addEventListener('click',()=>step(1));$('ed-close').addEventListener('click',closeEditor);
+addEventListener('keydown',e=>{if(!state.edit)return;if(e.key==='Escape')closeEditor();if(e.key==='ArrowRight')step(1);if(e.key==='ArrowLeft')step(-1);});
+
+renderAll();
+(async()=>{const timer=setTimeout(()=>{$('status').textContent='Couldn’t reach your saved choices yet; changes will save once it connects.';},10000);
+ try{const db=await window.claude?.use?.('db');if(!db){clearTimeout(timer);$('status').textContent='Viewing only: sign in to save choices.';return;}
+  state.db=db;db.collection('bg').onSnapshot(snap=>{clearTimeout(timer);for(const d of snap.docs){const id=d.id.split('/').pop();if(!state.edit||id!==state.sel)state.saved[id]=d.data();}
+   $('status').textContent='Choices save automatically.';renderRail();renderHead();if(!state.edit)renderWall();},err=>{clearTimeout(timer);$('status').textContent='Couldn’t load saved choices ('+(err?.code||'error')+').';});}
+ catch(e){clearTimeout(timer);$('status').textContent='Couldn’t load saved choices.';}})();
+</script>
