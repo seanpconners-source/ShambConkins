@@ -8,9 +8,9 @@ for(const vp of [{width:390,height:780},{width:1100,height:700}]){
   await page.waitForTimeout(500);
   await page.screenshot({path:`${out}/cat-${view}-${vp.width}.png`});
   if(view==='arcade'){console.log(vp.width,'arcade tiles',await page.evaluate(()=>document.querySelectorAll('.arc-tile').length));continue;} // console Arcade: tests/arcade-console.mjs
-  const before=await page.evaluate(()=>document.querySelectorAll('.catalog-grid>article').length);
+  const before=await page.evaluate(()=>document.querySelectorAll('.catalog-grid>article,.catalog-grid>.col-tile').length);
   for(let i=0;i<4;i++){await page.evaluate(()=>{const g=document.querySelector('.catalog-grid');g.scrollTop=g.scrollHeight;});await page.waitForTimeout(250);}
-  const after=await page.evaluate(()=>({cards:document.querySelectorAll('.catalog-grid>article').length,search:document.getElementById('catalog-search')?.getBoundingClientRect().toJSON(),docX:document.documentElement.scrollWidth>innerWidth}));
+  const after=await page.evaluate(()=>({cards:document.querySelectorAll('.catalog-grid>article,.catalog-grid>.col-tile').length,search:document.getElementById('catalog-search')?.getBoundingClientRect().toJSON(),docX:document.documentElement.scrollWidth>innerWidth}));
   await page.screenshot({path:`${out}/cat-${view}-${vp.width}-scrolled.png`});
   console.log(vp.width,view,'cards',before,'→',after.cards,'search',JSON.stringify(after.search),'docScrollX',after.docX);
  }

@@ -268,7 +268,10 @@ function moreCatalog(){
  const grid=document.querySelector('.catalog-grid'),more=grid?.querySelector('.catalog-more');if(!grid||!more||!catalogFeed)return;
  const {list,render}=catalogFeed,next=Math.min(list.length,catalogFeed.shown+CATALOG_CHUNK);
  more.insertAdjacentHTML('beforebegin',list.slice(catalogFeed.shown,next).map(render).join(''));catalogFeed.shown=next;
- if(next>=list.length){catalogObserver?.disconnect();more.remove();}
+ if(next>=list.length){catalogObserver?.disconnect();more.remove();return;}
+ // Re-watch the marker: if it is still in range after this chunk, the observer reports it again and the next chunk loads
+ // (otherwise a marker that never leaves the range stops the feed, which big tiles on wide screens did).
+ catalogObserver?.unobserve(more);catalogObserver?.observe(more);
 }
 function installCatalogFeed(){
  catalogObserver?.disconnect();catalogObserver=null;const grid=document.querySelector('.catalog-grid'),more=grid?.querySelector('.catalog-more');if(!more)return;
