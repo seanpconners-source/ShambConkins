@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.80.0
+
+**New art for the whole Arcade: backgrounds, logos and icons for 30+ games.**
+
+- **Arcade art**: backgrounds starring Sean & Amber, logos and tile icons for Major League, 007, Boss Select, Candy Land, Casino Night, Castlevania, Clue, Monopoly, Pac-Maze Duel, Paddy's Pub, Microgame Rush, Mario Kart, Chutes and Ladders, DOOM and DOOM II, the three pinball tables, Trivia Night, Mighty Ducks, The Matrix, Terminator, Zelda, Taskmaster, Tarantino Night, Star Trek, Space Invaders, Sonic, Super Mario Bros. and South Park; a new Sean of a Gun icon.
+- **Backgrounds never cut you off**: the big picture behind the selected game now moves and zooms so Sean & Amber stay in view on every phone, tablet and screen.
+- **Title screen**: the Arcade tile cycles through your recently played and featured games in a new order each time; the tile pictures no longer flicker.
+- **Faster faces**: your players' faces show at once on the first game's "your turn" card.
+- **Tony Hawk's Pro Mancala**: the EXTREME EDITION banner fits on phones, and the title words come in brighter.
+
 ## v0.79.0
 
 **Arcade Featured, Sean of a Gun, Who Wants to Be a Shambillionaire, Call of Duty: Modern Stick Dot, The Price Is Right, Frogger, Crossy Road, Paddy's Darts.**
