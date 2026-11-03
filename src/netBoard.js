@@ -341,7 +341,10 @@ function enterGuest(m){
  nb.sid=m.sid;nb.inN=m.n||0;nb.helloAt=0;nb.resync=false;
  if(nb.lostOpen){nb.lostOpen=false;if(store.dialog&&!store.dialog.watch)closeDialog();}
  const zoom=store.run===m.run?null:nb.zoom;
- store.run=m.run;if(zoom)store.run.zoom=zoom;store.busy=!!m.busy;nb.gave=0;owed();
+ // A resync (reconnect, missed message) keeps the same run object: a minigame or its start card in progress holds it
+ // (the launcher's valid()), and a swapped object made that game end without ever reporting, so the host waited for good.
+ if(nb.mirror&&store.run===nb.mirror){for(const k of Object.keys(nb.mirror))delete nb.mirror[k];Object.assign(nb.mirror,m.run);}else store.run=nb.mirror=m.run;
+ if(zoom)store.run.zoom=zoom;store.busy=!!m.busy;nb.gave=0;owed();
  if(!store.session){showView('board');updateBoard(true);const realm=store.run.board.nodes[store.run.players[store.run.current].node]?.realm;if(realm)setMusicZone(realm);if(store.profile.settings.music)startMusic();}
  send({t:'in'});
 }

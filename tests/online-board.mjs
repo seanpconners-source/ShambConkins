@@ -100,6 +100,10 @@ for(;;){
  // DROPGAME=1: the guest's connection drops once while a board minigame's start card is open on its phone
  if(process.env.DROPGAME&&!dropped&&await B.p.evaluate(()=>[...document.querySelectorAll('#dialog[open] button')].some(b=>/Start game/.test(b.innerText)&&!b.disabled))){
   dropped=true;await B.p.evaluate(()=>window.ShambConkins.net.state().ws?.close());console.log('dropped the guest connection at a minigame start card');}
+ // DROPPLAY=1: the guest's connection drops once while it is playing a 1P board minigame: the reconnect brings a fresh
+ // `start` mid-game, and its result must still reach the host (soak, Nov 3: the host waited for it for good)
+ if(process.env.DROPPLAY&&!dropped&&await B.p.evaluate(()=>{const s=window.ShambConkins.store.session;if(!s?.solo||!s.alive)return false;s.__t=performance.now()+4000;window.ShambConkins.net.state().ws?.close();return true;})){
+  dropped=true;console.log('dropped the guest connection during a board minigame');}
  if(DROP&&!dropped&&(await view(A))?.turn>=DROP&&await B.p.evaluate(()=>{const d=document.getElementById('dialog');return d.open&&!d.querySelector('.dialog-watch')||!!document.querySelector('[data-action="route-go"]:not([disabled])');})){
   dropped=true;await B.p.evaluate(()=>window.ShambConkins.net.state().ws?.close());console.log('dropped the guest connection');await A.p.screenshot({path:screenshotPath('onb-host-lost.png')});}
  // PAUSE=n: at turn n the host goes Home (the guest is told it's paused), waits 3 s, and continues the run
@@ -145,6 +149,7 @@ if(process.env.WARP)check(sawWarp,'the warp zone reached Amber\'s phone (both ph
 if(STALL||LOSE)check(stalls>=2,`messages were ${STALL?'held back':'lost'} on both phones (${stalls} times)`);
 if(process.env.DROPGAME)check(dropped,'the guest connection was dropped at a minigame start card');
 if(DROP)check(dropped,'the guest connection was dropped once mid-decision');
+if(process.env.DROPPLAY)check(dropped,'the guest connection was dropped during a board minigame');
 check(agree>=3&&mismatches===0,`both phones agree on players/turn when quiet (${agree} checks, ${mismatches} mismatches)`);
 check(await B.p.evaluate(()=>{try{const r=JSON.parse(localStorage.getItem('shambconkins-run-v20')||'null');return !r||!r.online;}catch{return true;}}),'the guest phone never saved the host\'s run');
 // Amber leaves: Sean's phone carries on with her turns
