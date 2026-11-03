@@ -256,8 +256,12 @@ if(typeof document!=='undefined')document.addEventListener('keydown',ev=>{
  else if(ev.key==='Escape'&&state.grid)closeGrid();
 });
 
-// Pictures for the title screen's Arcade tile: the owner's tile icons first, then family / game character cut-outs.
-function arcadeReel(n=10){const out=[];const add=u=>{if(u&&!out.includes(u))out.push(u);};
- for(const f of FAMILY.values())add(tileArt(f.key));for(const f of FAMILY.values())add(own(f.hero));
+// Pictures for the title screen's Arcade tile (owner, Nov 3: "cycling through recently played or featured games so they are
+// always changing"): the given games (recent + featured) in a fresh random order every time the title screen is built,
+// each as its tile icon (game, else family) or character cut-out; a few other families fill in when the list is short.
+function arcadeReel(n=10,games=[]){const out=[];const add=u=>{if(u&&!out.includes(u))out.push(u);};
+ const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+ for(const g of shuffle(games.filter(Boolean))){if(out.length>=n)break;add(tileArt(g.id)||tileArt(familyOf(g))||own(heroId(g)));}
+ for(const f of shuffle([...FAMILY.values()])){if(out.length>=Math.min(n,6))break;add(tileArt(f.key)||own(f.hero));}
  return out.slice(0,n);}
 Object.assign(exports,{arcadeReel,CATEGORIES,categoriesOf,inCategory,arcadeConsoleHTML,installArcadeConsole,resetArcadeConsole,familyOf,heroId,FAMILIES,FAMILY,keyArt,tileArt});
