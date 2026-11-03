@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 186 slots: 34 have key art, 33 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 186 slots: 35 have key art, 33 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -190,6 +190,6 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `django-hangman-showdown` | Hangman Unchained · Showdown | version of hangman | · / · |
 | `django-hangman-wanted` | Hangman Unchained · Wanted | version of hangman | · / · |
 | `doom` | DOOM | version of doom | ✅ / ✅ |
-| `doom-2` | DOOM II: Hell on Earth | version of doom | · / · |
+| `doom-2` | DOOM II: Hell on Earth | version of doom | ✅ / · |
 | `black-sabbath-pinball` | Black Sabbath · Doom Pinball | version of pinball | ✅ / ✅ |
 | `king-gizzard-pinball` | King Gizzard · Nonagon Infinity Pinball | version of pinball | ✅ / ✅ |
