@@ -266,7 +266,7 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
 ## Phase H — new content (sections 3 + 7)
 
 Reuse engines with new skins wherever possible.
-- **M19** `[todo]` (owner, Nov 3, NEXT after the quotes) The title screen and menus still flicker sometimes: find every cause (re-renders that replace the
+- **M19** `[verify]` (Nov 3: measured with frame captures: changing screens showed a near-black frame (new screen invisible while pictures decoded) and taps that re-render a screen blanked every picture for 2+ frames. Fixed: ui.js renderInto reuses decoded <img>s, a frozen ghost of the old screen covers the change until the new pictures are ready (≤.4 s), entrance moves keep their motion without the fade (--enter-op)) (owner, Nov 3) The title screen and menus still flicker sometimes: find every cause (re-renders that replace the
   whole view, reels/pictures swapping, entrance animations replaying, fonts/images popping in) and make every screen smooth and polished.
 - **H1** `[idea]` Game-show set on one engine: Price Is Right Plinko, Jeopardy!, Wheel of Fortune, Who Wants to Be a Millionaire?, Deal or No Deal.
   Owner, Nov 3: **Wheel of Fortune** and **Deal or No Deal** as exact look-alikes (set, music feel, board, host moments), a **Jeopardy!** look-alike trivia game (board of categories × values, Daily Doubles, Final Jeopardy wager) on our trivia bank; triage notes also want Hardcore Trivia → **Who Wants to Be a Millionaire** and Price Bid-Off → a full Price Is Right suite (Plinko, Cliff Hangers yodel guy, Big Wheel).

@@ -300,8 +300,45 @@ function installCatalogFeed(){
 function refitCatalog(){}
 // Menus animate in only when you arrive from another screen (body[data-enter], theme.css), not on every refresh of the same one.
 let enterTimer=0;
-function markEnter(prev,view){if(typeof document==='undefined'||prev===view)return;document.body.dataset.enter=view;clearTimeout(enterTimer);enterTimer=setTimeout(()=>{delete document.body.dataset.enter;},1400);}
-function showView(view,options={}){const prevView=store.view;closeRoutePanel();if(view!=='board'){cancelCameraAnimation();clearBoardDetailObserver();}store.view=view;document.body.dataset.view=view;if(view==='board')applyRunTheme(store.run);else applyTheme('home');const root=document.getElementById('app');root.innerHTML=view==='home'?homeHTML():view==='setup'?setupHTML(options.names,options.selected):view==='players'?setupHTML(options.names,options.selected,{pickOnly:true}):view==='board'?boardHTML():catalogHTML(view,options.query,options.filter);markEnter(prevView,view);if(view==='home')installHomeReels();if(view==='players'||view==='setup')installMenuScreens(view,options.player);if(view==='arcade')installArcadeConsole();else if(view!=='home'&&view!=='setup'&&view!=='players'&&view!=='board'){installCatalogFeed();if(view==='roster')installCollection();}if(view==='board'){watchBoardDetail();applyBoardDetail(document.querySelector('#map-root .board-svg'));}queueViewportFit();window.scrollTo({top:0,behavior:'instant'});}
+// Re-rendering a screen used to replace every picture with a new <img> that stays blank for a few frames while it
+// decodes (owner, Nov 3: "menus flicker"). renderInto() builds the new screen but moves the already-decoded <img>
+// elements with the same picture into it, so nothing blinks. Only attributes that differ are touched (setting src or
+// referrerpolicy again would make the browser reload the picture); floatingHead's cut-outs remember their source.
+function renderInto(root,html){
+ const pool=new Map();
+ for(const im of root.querySelectorAll('img')){if(!im.complete||!im.naturalWidth)continue;const k=im.dataset.scSrc||im.getAttribute('src');if(k)(pool.get(k)||pool.set(k,[]).get(k)).push(im);}
+ const t=document.createElement('template');t.innerHTML=html;
+ if(!pool.size){root.replaceChildren(document.importNode(t.content,true));return;}
+ const reuse=[];
+ for(const im of t.content.querySelectorAll('img')){const old=pool.get(im.getAttribute('src'))?.shift();if(!old)continue;
+  reuse.push([old,im]);im.replaceWith(document.createComment('sc-img:'+(reuse.length-1)));}
+ const frag=document.importNode(t.content,true),w=document.createTreeWalker(frag,NodeFilter.SHOW_COMMENT),marks=[];
+ for(let n=w.nextNode();n;n=w.nextNode())if(n.data.startsWith('sc-img:'))marks.push(n);
+ for(const m of marks){const [old,im]=reuse[+m.data.slice(7)],boxed=old.classList.contains('ts-boxed');
+  for(const a of [...old.attributes])if(!im.hasAttribute(a.name)&&a.name!=='src'&&a.name!=='data-sc-src')old.removeAttribute(a.name);
+  for(const a of [...im.attributes])if(a.name!=='src'&&a.name!=='onload'&&old.getAttribute(a.name)!==a.value)old.setAttribute(a.name,a.value);
+  if(boxed)old.classList.add('ts-boxed');m.replaceWith(old);}
+ root.replaceChildren(frag);
+}
+// Changing screens: the new screen is built at once, but its pictures take a moment to decode and its entrance
+// animations start invisible, so phones showed a near-black frame (owner, Nov 3: "flickers"). A frozen copy of the
+// old screen (ghost) stays on top until the new screen's visible pictures are ready (max .4 s), then fades out
+// while the entrance animations play. The ghost takes no taps, so the new screen works at once.
+let ghostEl=null,ghostRun=0;
+function dropGhost(){if(ghostEl){ghostEl.remove();ghostEl=null;}}
+function makeGhost(root){dropGhost();if(!root.firstElementChild||matchMedia('(prefers-reduced-motion:reduce)').matches)return null;
+ const g=document.createElement('div'),cs=getComputedStyle(document.body);g.className='sc-ghost';g.setAttribute('aria-hidden','true');
+ g.style.background=cs.background;g.style.backgroundColor=cs.backgroundColor;
+ const kids=[...root.children],copies=kids.map(k=>k.cloneNode(true));g.append(...copies);document.body.append(g);
+ kids.forEach((k,i)=>{const a=[k,...k.querySelectorAll('*')],b=[copies[i],...copies[i].querySelectorAll('*')];
+  a.forEach((el,j)=>{if((el.scrollLeft||el.scrollTop)&&b[j]){b[j].scrollLeft=el.scrollLeft;b[j].scrollTop=el.scrollTop;}});});
+ g.scrollTop=root.scrollTop;ghostEl=g;return g;}
+function revealAfterGhost(root,g,done){const run=++ghostRun,vh=innerHeight;
+ const waiting=[...root.querySelectorAll('img')].filter(i=>{if(i.complete&&i.naturalWidth)return false;const r=i.getBoundingClientRect();return r.width>8&&r.bottom>0&&r.top<vh;});
+ const go=()=>{if(run!==ghostRun||ghostEl!==g)return;done();g.classList.add('out');setTimeout(()=>{if(ghostEl===g)dropGhost();},260);};
+ Promise.race([Promise.all(waiting.map(i=>i.decode().catch(()=>{}))),new Promise(r=>setTimeout(r,400))]).then(()=>requestAnimationFrame(go));}
+function markEnter(prev,view,soft=false){if(typeof document==='undefined'||prev===view)return;const b=document.body;b.dataset.enter=view;if(soft)b.dataset.soft='1';else delete b.dataset.soft;clearTimeout(enterTimer);enterTimer=setTimeout(()=>{delete b.dataset.enter;delete b.dataset.soft;},1400);}
+function showView(view,options={}){const prevView=store.view;closeRoutePanel();if(view!=='board'){cancelCameraAnimation();clearBoardDetailObserver();}store.view=view;document.body.dataset.view=view;if(view==='board')applyRunTheme(store.run);else applyTheme('home');const root=document.getElementById('app');const html=view==='home'?homeHTML():view==='setup'?setupHTML(options.names,options.selected):view==='players'?setupHTML(options.names,options.selected,{pickOnly:true}):view==='board'?boardHTML():catalogHTML(view,options.query,options.filter);const ghost=prevView!==view&&view!=='board'&&prevView!=='board'?makeGhost(root):(dropGhost(),null);if(ghost)delete document.body.dataset.enter;if(view==='board'||prevView==='board')root.innerHTML=html;else renderInto(root,html);if(ghost)revealAfterGhost(root,ghost,()=>markEnter(prevView,view,true));else markEnter(prevView,view);if(view==='home')installHomeReels();if(view==='players'||view==='setup')installMenuScreens(view,options.player);if(view==='arcade')installArcadeConsole();else if(view!=='home'&&view!=='setup'&&view!=='players'&&view!=='board'){installCatalogFeed();if(view==='roster')installCollection();}if(view==='board'){watchBoardDetail();applyBoardDetail(document.querySelector('#map-root .board-svg'));}queueViewportFit();window.scrollTo({top:0,behavior:'instant'});}
 function toast(text,{local=false}={}){if(!local)fx('toast',text);const node=document.getElementById('toast');node.textContent=text;node.classList.add('visible');clearTimeout(store.toastTimer);store.toastTimer=setTimeout(()=>node.classList.remove('visible'),3200);}
 // Online board game: a dialog that belongs to the other phone's player is answered there (src/netBoard.js);
 // 1P board game: one that belongs to the CPU is shown read-only while it picks (src/cpuBoard.js).

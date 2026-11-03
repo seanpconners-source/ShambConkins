@@ -24,7 +24,7 @@ function createHeadCutout(image,src) {
 function floatingHead(element) {
  const svg=element.tagName?.toLowerCase()==='image',src=svg?element.getAttribute('href'):element.src;
  if(!src||/^data:image\/png|\.png$/i.test(src))return;
- const set=url=>{const current=svg?element.getAttribute('href'):element.src;if(current!==src||url===src)return;if(svg)element.setAttribute('href',url);else element.src=url;};
+ const set=url=>{const current=svg?element.getAttribute('href'):element.src;if(current!==src||url===src)return;if(!svg)element.dataset.scSrc=element.getAttribute('src');if(svg)element.setAttribute('href',url);else element.src=url;};
  if(cache.has(src)){set(cache.get(src));return;}
  if(!svg&&element.complete&&element.naturalWidth){set(createHeadCutout(element,src));return;}
  const image=new Image(),timer=setTimeout(()=>{image.onload=null;image.onerror=null;},5000);

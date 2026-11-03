@@ -641,15 +641,15 @@ body .title-screen .ts-dock-icon{color:#dbe5ff}
 .arc-hero-art .big{animation:arc-float 6.5s ease-in-out infinite}
 .arc-layer-in{animation:arc-layer-in .55s cubic-bezier(.2,.8,.25,1) both}
 .arc-layer-out{animation:arc-layer-out .45s ease both;pointer-events:none}
-@keyframes arc-layer-in{from{opacity:0;transform:translateX(calc(var(--arc-dir,1)*46px)) scale(.95)}to{opacity:1;transform:none}}
+@keyframes arc-layer-in{from{opacity:var(--enter-op,0);transform:translateX(calc(var(--arc-dir,1)*46px)) scale(.95)}to{opacity:1;transform:none}}
 @keyframes arc-layer-out{to{opacity:0;transform:translateX(calc(var(--arc-dir,1)*-34px)) scale(1.03)}}
 @keyframes arc-float{0%,100%{translate:0 0}50%{translate:0 -7px}}
 @keyframes arc-kenburns{from{transform:scale(1)}to{transform:scale(1.04)}}
-@keyframes arc-rise{from{opacity:0;transform:translateY(12px)}}
-@keyframes arc-drop{from{opacity:0;transform:translateY(-14px)}}
-@keyframes arc-fade{from{opacity:0}}
-@keyframes arc-tile-in{from{opacity:0;transform:translateY(22px) scale(.94)}}
-@keyframes arc-pop{from{opacity:0;transform:translateY(14px) scale(.97)}}
+@keyframes arc-rise{from{opacity:var(--enter-op,0);transform:translateY(12px)}}
+@keyframes arc-drop{from{opacity:var(--enter-op,0);transform:translateY(-14px)}}
+@keyframes arc-fade{from{opacity:var(--enter-op,0)}}
+@keyframes arc-tile-in{from{opacity:var(--enter-op,0);transform:translateY(22px) scale(.94)}}
+@keyframes arc-pop{from{opacity:var(--enter-op,0);transform:translateY(14px) scale(.97)}}
 .arc-info-in>*{animation:arc-rise .48s cubic-bezier(.2,.8,.25,1) backwards}
 .arc-info-in>:nth-child(2){animation-delay:.04s}.arc-info-in>:nth-child(3){animation-delay:.08s}.arc-info-in>:nth-child(4){animation-delay:.12s}.arc-info-in>:nth-child(5){animation-delay:.16s}
 .arcade-console .arc-tile{transition:transform .3s cubic-bezier(.2,.8,.25,1),box-shadow .3s}
@@ -999,3 +999,10 @@ body .title-screen .home-stack button.ts-tile{min-height:104px}
 .arc-info:has(.arc-title-logo) .arc-rules{-webkit-line-clamp:2}
 /* the owner's square tile icons fill the tile */
 .arc-tile .arc-cut.arc-drop{inset:0;left:0;bottom:0;transform:none;width:100%;height:100%;max-width:none;object-fit:cover;filter:none}
+
+/* Screen change: frozen copy of the old screen over the new one until its pictures are ready (ui.js makeGhost) */
+.sc-ghost{position:fixed;inset:0;height:var(--viewport-height,100vh);overflow:hidden;z-index:30;pointer-events:none;transition:opacity .22s ease-out}
+.sc-ghost.out{opacity:0}
+.sc-ghost *{animation:none!important;transition:none!important;pointer-events:none!important}
+/* after a ghost hand-over the screen is already visible: entrance moves keep their motion but not the fade (no dark dip) */
+body[data-soft]{--enter-op:1}
