@@ -42,6 +42,7 @@ await choose(B,'Play');
 for(const ph of [A,B])await ph.p.waitForSelector('.net-setup',{timeout:15000});
 check(true,'both phones open the shared New Game screen');
 // Amber picks someone else on her phone; Sean's phone shows it
+await B.p.evaluate(()=>{const r=window.ShambConkins.store.profile.rosters.Amber;if(!r.includes('dee'))r.push('dee');});
 await act(B,'players');await B.p.waitForSelector('.mx-chars');
 const pick=await B.p.evaluate(()=>{const t=[...document.querySelectorAll('.cs-grid[data-player="1"] .cs-tile:not([disabled])')].find(b=>!b.classList.contains('selected'));t?.click();return t?.dataset.id||null;});
 await B.p.waitForTimeout(300);await act(B,'players-done');await B.p.waitForSelector('.net-setup.mx-newgame');
