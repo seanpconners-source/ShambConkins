@@ -5,7 +5,7 @@
 **Arcade Featured, Sean of a Gun, Who Wants to Be a Shambillionaire, Call of Duty: Modern Stick Dot, The Price Is Right, Frogger, Crossy Road, Paddy's Darts.**
 
 - **Arcade**: opens on a new **Featured** shelf (the list is `src/data/featuredGames.js`). New **Recent** and **Favorites** shelves; tap the star next to Play to keep a game.
-- **Tiles show game names**, and games with their own logo show it on the tile and in place of the title (Sean of a Gun, Hangman Unchained, Tony Hawk's Pro Mancala). New big pictures for those three and Brick Breaker Quest.
+- **Tiles show game names**, and games with their own logo show it on the tile and in place of the title (Sean of a Gun, Hangman Unchained, Tony Hawk's Pro Mancala). Super Mario Bros. and Bricks Breaker Quest logos too. New big pictures and square tile icons from the owner, and the Pro Mancala intro now uses the real logo words.
 - **Broforce is now Sean of a Gun, one game**: pick Jungle, Factory, City or Desert on its own title screen, with the new logo and background.
 - **Who Wants to Be a Shambillionaire?** replaces Trivia Hardcore: 15 questions to $1,000,000, safe havens, 50:50, Ask the Audience, Phone a Friend, final answer, walk away.
 - **Call of Duty: Modern Stick Dot** replaces Office Dividers: dots and boxes with a title sequence, mission card, tactical map, kill cams, sniper shots and an AC-130 on a streak.
