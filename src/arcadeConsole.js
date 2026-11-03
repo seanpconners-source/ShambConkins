@@ -97,7 +97,11 @@ const keyArt=it=>it&&(dropArt('keyart',it.fam?.key)||dropArt('keyart',it.g?.id)|
 // text on wide screens and above it on tall ones; it zooms out (edges fade into the backdrop) rather than cut it off.
 // New key art: add its box here (slot = game id or family key); without one the middle of the picture is kept.
 const KEY_BOX={'bricks-breaker-quest':[.62,.47,.99,.95],'greed-island-mancala':[.26,.03,.92,.78],broforce:[.55,.31,.84,.66],hangman:[.21,.12,.76,.93],
- pinball:[.12,.2,.88,.8],'bucketheadland-pinball':[.12,.2,.88,.8],'black-sabbath-pinball':[.2,.2,.8,.85],'king-gizzard-pinball':[.25,.25,.98,.9]};
+ pinball:[.12,.2,.88,.8],'bucketheadland-pinball':[.25,.4,.85,.95],'black-sabbath-pinball':[.6,.28,.98,.75],'king-gizzard-pinball':[.33,.3,.78,.85],
+ baseball:[.4,.36,.98,.82],bond:[.27,.3,.65,.98],bosses:[.22,.5,.72,.92],candy:[.28,.3,.88,.75],casino:[.36,.28,.9,.75],castlevania:[.45,.5,.78,.95],
+ clue:[.25,.15,.9,.85],monopoly:[.55,.35,.98,.98],'pac-maze-duel':[.36,.7,.9,.98],paddys:[.3,.25,.95,.92],rush:[.25,0,.85,.9],kart:[.3,.25,.95,.92],
+ trivia:[.35,.25,.92,.95],ducks:[.45,.3,.98,.78],matrix:[.48,.4,.92,.98],terminator:[.38,.3,.9,.98],hyrule:[.52,.5,.8,.75],taskmaster:[.55,.42,.88,.85],
+ tarantino:[.48,.42,.92,.92],trek:[.32,.2,.85,.98],invaders:[.6,.6,.96,.98],sonic:[.55,.35,.85,.88],smb:[.27,.45,.53,.88]};
 const KEY_BOX_DEFAULT=[.28,.15,.72,.85];
 const keyBox=it=>KEY_BOX[it.fam?.key]||KEY_BOX[it.g?.id]||KEY_BOX[familyOf(it.g)]||KEY_BOX_DEFAULT;
 const keyImg=it=>{const b=keyBox(it);return `<img src="${e(keyArt(it))}" alt="" data-box="${b.join(',')}" style="transform-origin:${(b[0]+b[2])*50}% ${(b[1]+b[3])*50}%">`;};

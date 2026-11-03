@@ -1,43 +1,43 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 186 slots: 8 have key art, 0 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 186 slots: 31 have key art, 31 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
 
 | slot | game | kind | key art / icon |
 |---|---|---|---|
-| `bosses` | Boss Select (every boss) | family | · / · |
+| `bosses` | Boss Select (every boss) | family | ✅ / ✅ |
 | `pinball` | Pinball Tables (bucketheadland-pinball, black-sabbath-pinball, king-gizzard-pinball) | family | ✅ / · |
-| `smb` | Super Mario Bros. (smb-world-1, smb-coin-rush, smb-castle-dash, smb3-nspade, smb3-spade-slots) | family | · / · |
-| `kart` | Mario Kart (rainbow-road-kart, kart-grand-prix-pass, kart-time-trial, rainbow-balloon-battle) | family | · / · |
-| `castlevania` | Castlevania (cv-symphony, cv-vampire-killer, cv-candle-hunt) | family | · / · |
-| `sonic` | Sonic the Hedgehog (sonic-ring-rush, sonic-goal-dash) | family | · / · |
-| `doom` | DOOM (doom, doom-2) | family | · / · |
-| `hangman` | Hangman Unchained (django-hangman, django-hangman-showdown, django-hangman-wanted) | family | ✅ / · |
-| `invaders` | Space Invaders (space-swarm, space-swarm-versus, space-swarm-coop) | family | · / · |
-| `tarantino` | Tarantino Night (tarantino-crazy88, kill-bill-duel, tarantino-standoff, tarantino-twist, tarantino-adrenaline, tarantino-bounty, tarantino-chase) | family | · / · |
-| `southpark` | South Park (sp-dodgeball, sp-cheesy-poofs, sp-killed-kenny, snowball-fight) | family | · / · |
-| `bond` | 007 Missions (bond-facility, bond-laser-vault, bond-golden-gun, bond-goldfinger-bomb) | family | · / · |
-| `paddys` | Paddy's Pub (paddys-beer-pong, flipadelphia-cup, paddys-darts) | family | · / · |
-| `casino` | Casino Night (blackjack, five-card, roulette, bond-baccarat, liars-dice) | family | · / · |
-| `trivia` | Trivia Night (trivia-mixed, trivia-hardcore, trivia-lightning, trivia-wager, trivia-survival, trivia-sitcom, trivia-nick90, trivia-dbz, trivia-hxh) | family | · / · |
-| `taskmaster` | Taskmaster (taskmaster-micro-relay, taskmaster-fruit-ninja, taskmaster-sumo, task-tallest-thing, taskmaster-curling, tm-cones) | family | · / · |
-| `trek` | Star Trek Game Night (ten-forward-chess, trek-mini-chess, strategema-grid, four-lights) | family | · / · |
-| `rush` | Microgame Rush (microgame-rush, rush-marathon) | family | · / · |
-| `hyrule` | The Legend of Zelda (hyrule-rupee-rush, hyrule-sword-duel) | family | · / · |
-| `clue` | Clue (clue-whodunit, clue-lineup) | family | · / · |
-| `monopoly` | Monopoly (monopoly-speed-die, monopoly-auction) | family | · / · |
-| `chutes` | Chutes and Ladders (chutes-ladder-rush, chutes-spinner-showdown) | family | · / · |
-| `candy` | Candy Land (candy-gumdrop-catch, candy-color-dash) | family | · / · |
-| `baseball` | Major League (major-league-bats, major-league-fielding) | family | · / · |
-| `ducks` | The Mighty Ducks (rink-rivals, office-hockey-shootout) | family | · / · |
-| `matrix` | The Matrix (matrix-ultimate, matrix-hardline-hack) | family | · / · |
-| `terminator` | Terminator (terminator-scan, t800-scan-long) | family | · / · |
+| `smb` | Super Mario Bros. (smb-world-1, smb-coin-rush, smb-castle-dash, smb3-nspade, smb3-spade-slots) | family | ✅ / ✅ |
+| `kart` | Mario Kart (rainbow-road-kart, kart-grand-prix-pass, kart-time-trial, rainbow-balloon-battle) | family | ✅ / · |
+| `castlevania` | Castlevania (cv-symphony, cv-vampire-killer, cv-candle-hunt) | family | ✅ / ✅ |
+| `sonic` | Sonic the Hedgehog (sonic-ring-rush, sonic-goal-dash) | family | ✅ / ✅ |
+| `doom` | DOOM (doom, doom-2) | family | · / ✅ |
+| `hangman` | Hangman Unchained (django-hangman, django-hangman-showdown, django-hangman-wanted) | family | ✅ / ✅ |
+| `invaders` | Space Invaders (space-swarm, space-swarm-versus, space-swarm-coop) | family | ✅ / ✅ |
+| `tarantino` | Tarantino Night (tarantino-crazy88, kill-bill-duel, tarantino-standoff, tarantino-twist, tarantino-adrenaline, tarantino-bounty, tarantino-chase) | family | ✅ / ✅ |
+| `southpark` | South Park (sp-dodgeball, sp-cheesy-poofs, sp-killed-kenny, snowball-fight) | family | · / ✅ |
+| `bond` | 007 Missions (bond-facility, bond-laser-vault, bond-golden-gun, bond-goldfinger-bomb) | family | ✅ / ✅ |
+| `paddys` | Paddy's Pub (paddys-beer-pong, flipadelphia-cup, paddys-darts) | family | ✅ / ✅ |
+| `casino` | Casino Night (blackjack, five-card, roulette, bond-baccarat, liars-dice) | family | ✅ / ✅ |
+| `trivia` | Trivia Night (trivia-mixed, trivia-hardcore, trivia-lightning, trivia-wager, trivia-survival, trivia-sitcom, trivia-nick90, trivia-dbz, trivia-hxh) | family | ✅ / ✅ |
+| `taskmaster` | Taskmaster (taskmaster-micro-relay, taskmaster-fruit-ninja, taskmaster-sumo, task-tallest-thing, taskmaster-curling, tm-cones) | family | ✅ / ✅ |
+| `trek` | Star Trek Game Night (ten-forward-chess, trek-mini-chess, strategema-grid, four-lights) | family | ✅ / ✅ |
+| `rush` | Microgame Rush (microgame-rush, rush-marathon) | family | ✅ / ✅ |
+| `hyrule` | The Legend of Zelda (hyrule-rupee-rush, hyrule-sword-duel) | family | ✅ / ✅ |
+| `clue` | Clue (clue-whodunit, clue-lineup) | family | ✅ / ✅ |
+| `monopoly` | Monopoly (monopoly-speed-die, monopoly-auction) | family | ✅ / ✅ |
+| `chutes` | Chutes and Ladders (chutes-ladder-rush, chutes-spinner-showdown) | family | · / ✅ |
+| `candy` | Candy Land (candy-gumdrop-catch, candy-color-dash) | family | ✅ / ✅ |
+| `baseball` | Major League (major-league-bats, major-league-fielding) | family | ✅ / ✅ |
+| `ducks` | The Mighty Ducks (rink-rivals, office-hockey-shootout) | family | ✅ / ✅ |
+| `matrix` | The Matrix (matrix-ultimate, matrix-hardline-hack) | family | ✅ / ✅ |
+| `terminator` | Terminator (terminator-scan, t800-scan-long) | family | ✅ / ✅ |
 | `pokemon` | Pokémon Battles (pkmn-wild, pkmn-trainer) | family | · / · |
 | `shamb-uno` | ShambUNO · Private Card Duel | game | · / · |
 | `traitors-guess-who` | The Traitors · Find the Traitor | game | · / · |
-| `greed-island-mancala` | Tony Hawk’s Pro Mancala | game | ✅ / · |
+| `greed-island-mancala` | Tony Hawk’s Pro Mancala | game | ✅ / ✅ |
 | `deadite-checkers` | Army of Darkness · Deadite Checkers | game | · / · |
 | `office-dots-boxes` | Call of Duty: Modern Stick Dot | game | · / · |
 | `megatouch-photohunt` | Megatouch · Photo Hunt | game | · / · |
@@ -77,7 +77,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `asteroid-drift` | Asteroids · Atari 1979 | game | · / · |
 | `snake-run` | Snake II · Nokia 3310 | game | · / · |
 | `bomber-duel` | Bomb Grid | game | · / · |
-| `pac-maze-duel` | Pac-Maze Duel | game | · / · |
+| `pac-maze-duel` | Pac-Maze Duel | game | ✅ / · |
 | `metal-gear-tank-duel` | Combat · Metal Gear Tank Duel | game | · / · |
 | `full-shambyahtzee` | Full ShambYahtzee | game | · / · |
 | `kitchen-service` | Dinner Service | game | · / · |
@@ -105,8 +105,8 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `broforce-city` | Sean of a Gun: City Siege | game | · / · |
 | `broforce-desert` | Sean of a Gun: Desert Assault | game | · / · |
 | `frogger-heads` | Frogger | game | · / · |
-| `bricks-breaker-quest` | Bricks Breaker Quest | game | ✅ / · |
-| `bucketheadland-pinball` | Bucketheadland · Buckethead Pinball | version of pinball | ✅ / · |
+| `bricks-breaker-quest` | Bricks Breaker Quest | game | ✅ / ✅ |
+| `bucketheadland-pinball` | Bucketheadland · Buckethead Pinball | version of pinball | ✅ / ✅ |
 | `major-league-fielding` | Major League · Bat & Field | version of baseball | · / · |
 | `taskmaster-micro-relay` | Taskmaster · Frantic Task Relay | version of taskmaster | · / · |
 | `django-hangman` | Hangman Unchained · Quick Draw | version of hangman | · / · |
@@ -189,7 +189,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `space-swarm-coop` | Space Invaders · Mars Attacks! Co-op | version of invaders | · / · |
 | `django-hangman-showdown` | Hangman Unchained · Showdown | version of hangman | · / · |
 | `django-hangman-wanted` | Hangman Unchained · Wanted | version of hangman | · / · |
-| `doom` | DOOM | version of doom | · / · |
+| `doom` | DOOM | version of doom | · / ✅ |
 | `doom-2` | DOOM II: Hell on Earth | version of doom | · / · |
-| `black-sabbath-pinball` | Black Sabbath · Doom Pinball | version of pinball | ✅ / · |
-| `king-gizzard-pinball` | King Gizzard · Nonagon Infinity Pinball | version of pinball | ✅ / · |
+| `black-sabbath-pinball` | Black Sabbath · Doom Pinball | version of pinball | ✅ / ✅ |
+| `king-gizzard-pinball` | King Gizzard · Nonagon Infinity Pinball | version of pinball | ✅ / ✅ |
