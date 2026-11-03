@@ -34,6 +34,27 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **N3** `[idea]` (owner, Nov 3, tabled) Personal install unlocks: if we know who a copy is for, they unlock their own
   people the first time they open it (e.g. Lydia gets Lydia, Houston, Ezra and Friday the dog: her family, not in the game
   yet).
+- **PK1** `[todo]` (owner, Nov 3) Pokémon: moves that fit each character (their show/movie, personality), not generic ones.
+- **PK2** `[idea]` (owner, Nov 3) Pokémon evolutions, and evolving unlocks new outfits for that character (ties to K8-K12).
+- **PK3** `[bug]` (owner, Nov 3) "For some reason Catwoman is unstoppable." Probably her Pokémon battle stats/moves; find
+  where (wild/trainer battles, or elsewhere) and balance.
+- **PK4** `[todo]` (owner, Nov 3) The Poké Ball rocks back and forth while waiting to see if the catch works, like Gen 1
+  (shake count from `gen1Catch`).
+- **PK5** `[todo]` (owner, Nov 3) After catching a wild Pokémon you can put it straight into your team, replacing a member.
+- **C13** `[bug]` (owner, Nov 3) 1P vs CPU board: at the level boss the human fights alone (correct), but the CPU still
+  got points (CPU 11, owner 10) though it wasn't in the fight and the owner beat the boss. Check boss settle in CPU runs.
+- **K25** `[todo]` (owner, Nov 3) Check the boss tiers really get harder in play (not just HP): higher tiers = a wild,
+  fun bullet storm where the player still feels powerful (power-ups and supers scale up too); varied gameplay and
+  power-ups. Measure with tests/bossdiff.mjs DIFF=0..3 and play screenshots.
+- **C14** `[todo]` (owner, Nov 3) Rename the "Mashup" board: call it the Main Board (or similar) so it's clear this is
+  the real game and the warp worlds are sub-worlds.
+- **M8** `[todo]` (owner, Nov 3) Revamp ALL menus in the new arcade look once it's settled: New Game, character select,
+  online/room menus, home.
+- **M9** `[todo]` (owner, Nov 3) New colour scheme for the menus: the owner loves the mockup's look EXCEPT the purple and
+  orange. Something awesome and professional. Offer palette options as mockups first.
+- **W1** (owner, Nov 3) Daily rhythm from now on: release in the MORNING · owner playtests in the DAY · in the EVENING the
+  owner answers Claude's questions (Claude asks all of them first thing when the session starts) · Claude works ALL
+  NIGHT · release the next morning · repeat.
 - **Q0** `[todo]` (owner, Nov 3) REMINDER: run prolonged soak testing tonight and whenever Claude isn't actively working on
   the game (see Q2/Q3), so it keeps improving while the owner is away. Remind the owner of this.
 

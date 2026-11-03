@@ -1,5 +1,11 @@
 # AI state (keep short; update after meaningful work)
 
+Nov 3: v0.76.0 released (main 18b88f8; ARCADE_RECRUITS back to true at the owner's request). After it, on the branch/TESTver:
+43 new characters `src/data/legendsPack3.js` (N2). Soak loop used overnight (Q0): serve a frozen `build --pwa` copy with
+tools/serve-static.mjs, start `npx --yes wrangler@3 dev --local --port 8787` in cloudflare/, then loop with SHAMB_URL set:
+`TURNS=30 node tests/solo-board.mjs`, `TURNS=12 DROP=3 node tests/online-board.mjs`, levelflow-ui, frank, endings,
+checkpoint, `node tests/games.mjs 8 3`, logging the last lines of each. Nov 3 rounds 1-3: all clean.
+
 Nov 2 night (owner asleep, branch `claude/v0.75.0-release-roadmap-so2z5g` from main v0.75.0, unreleased): K24 partner-down
 cutscene `engines/bossCutscene.js` (bossFight `downed()` fires from an hp>0→≤0 transition seen in `update`, so both phones
 online; offline the world runs at `cutTimeScale` (.12 → .25 → ramp), camera push-in on the survivor, sad head panel (sad
