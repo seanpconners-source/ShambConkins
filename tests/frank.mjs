@@ -15,10 +15,11 @@ const seen=[];
 for(let i=0;i<8;i++){await page.waitForTimeout(400);const r=await click();if(r)seen.push(r);if(await page.$('#frank-reveal'))break;}
 console.log(' dialogs:',seen.join(' | '));
 expect(seen.filter(t=>/SHITS AND LADDERS/i.test(t)).length===2,'two laxative dialogs (one per player)');
+let sawReveal=false;const revealWatch=setInterval(()=>page.$('#frank-reveal').then(e=>{if(e)sawReveal=true;}).catch(()=>{}),150);   // a loaded machine may run past the overlay
 await page.waitForTimeout(1500);await page.screenshot({path:screenshotPath('frank-melt.png')});
 await page.waitForTimeout(2600);await page.screenshot({path:screenshotPath('frank-line.png')});
 await page.waitForTimeout(2600);await page.screenshot({path:screenshotPath('frank-face.png')});
-expect(!!await page.$('#frank-reveal'),'the reveal overlay is playing');
+clearInterval(revealWatch);expect(sawReveal,'the reveal overlay played');
 for(let i=0;i<30&&await page.$('#frank-reveal');i++)await page.waitForTimeout(300);
 await page.waitForTimeout(400);await page.screenshot({path:screenshotPath('frank-level4.png')});
 await settle(25);

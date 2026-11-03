@@ -40,6 +40,7 @@ const step=ph=>ph.p.evaluate(()=>{
  if(!s)return 'idle';
  if(s.debug?.net)window.__net=JSON.stringify(s.debug.net);
  const ready=document.querySelector('.pass-overlay [data-ready]');if(ready){ready.click();return 'ready';}
+ if(s.debug?.engine==='pinball'&&s.debug.drainAfter==null)s.debug.drainAfter=15; // a good autopilot keeps a ball up for minutes
  if(typeof s.debug?.bot==='function'){const r=s.debug.bot();if(r)return 'bot:'+r;}
  const ans=[...document.querySelectorAll('[data-answer]:not([disabled]),[data-wager]:not([disabled])')];if(ans.length){ans[Math.floor(Math.random()*ans.length)].click();return 'answer';}
  const next=[...document.querySelectorAll('#trivia-next button,#mode-next button,.game-controls button.primary')].find(b=>!b.disabled&&b.offsetParent);if(next){next.click();return 'next';}
