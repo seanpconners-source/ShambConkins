@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased (next: v0.77.0)
+
+**New menus: a console-style Arcade and a fresh look, picked by the owner.**
+
+- **Arcade** is now a console home screen: a big picture of the selected game with a glowing outline, its own colour
+  wash, category pills and one row of tiles. Versions of a game share one tile (Broforce's 4 missions, the 3 pinball
+  tables, Boss Select with every boss…) and open a page of version tiles.
+- **New colours and lettering** on the title screen and menus: navy, white and electric blue, comic-book titles.
+- **Soak test for the laptop**: SOAK-TEST.cmd plays the long tests over and over and keeps a report in soak-reports/.
+- 43 new characters (wrestlers, Idiocracy, Reno 911!, Comedy Bang Bang regulars, The Birthday Boys and more).
+
 ## v0.76.0
 
 **Frank's fake-out, Level IV, two endings, boss power-ups, Bomber and Pac-Maze rebuilt.**

@@ -1,5 +1,22 @@
 # AI state (keep short; update after meaningful work)
 
+Nov 3 night (branch `ccr-f841e836-ips7j8` from TESTver, merged to TESTver, unreleased): CONSOLE MENUS (owner's look-book
+pick, https://claude.ai/artifact/BTqLZbwnPtUwPKz2tGNTNa). `src/arcadeConsole.js` = the Arcade view: ui.js catalogHTML still
+builds the list (filters/1P/online/dev/cut) and passes `partsFor(g)` (play button, chips, medals; shared with the old card
+render, which the Collection still uses) to `arcadeConsoleHTML`; hero = focused item, tile tap focuses (no rebuild), a
+focused family tile or "Choose a version" opens `.arc-fam` (version tiles); `FAMILIES` (30, incl. 'bosses' = beaten +
+locked) group only on the All list; hero art = `HERO` map → boss unlockId → character with the same source and own art
+→ family hero → game art → icon; drop-in tile art `assets/tiles/<id>.*` → USER_PORTRAITS['tile:<id>'] (build.mjs). Look:
+theme.css end ("v0.77 console menus"): `body[data-theme="home"]` palette (navy/white/#4d8dff), fonts "SC Bangers"/"SC Nunito"
+(assets/fonts, inlined via @@asset; MIME woff2 added), title screen restyle (tiles show neon cut-outs `tileCut` in ui.js).
+Generic themed button rules skip `.arcade-console *`. Tests: `tests/arcade-console.mjs` (4 sizes); vault/boss-ladder/
+solo/catalogshots/online.mjs updated to the pills/tiles/hero. SOAK TEST (Q00): `SOAK-TEST.cmd` → `tools/soak.ps1` (node
++ Playwright setup like run-local-tests.ps1, keep-awake) → `tools/soak.mjs` (build --pwa into soak-reports/app, serve on
+8123, wrangler@3 on 8787 if it starts, then rounds of arcade-console, route, solo-board, frank, endings, checkpoint,
+vault, boss-ladder, bossdiff one random boss/tier, games.mjs one shard of 12 per round, every 3rd round the Node sims,
+online-board (random DROP) + online-native (2 random native games, LAG half the time); kills hung test trees; report
+soak-reports/LATEST.md + history.jsonl + fails/).
+
 Nov 3: v0.76.0 released (main 18b88f8; ARCADE_RECRUITS back to true at the owner's request). After it, on the branch/TESTver:
 43 new characters `src/data/legendsPack3.js` (N2). Soak loop used overnight (Q0): serve a frozen `build --pwa` copy with
 tools/serve-static.mjs, start `npx --yes wrangler@3 dev --local --port 8787` in cloudflare/, then loop with SHAMB_URL set:

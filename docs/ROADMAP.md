@@ -50,12 +50,12 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   the real game and the warp worlds are sub-worlds.
 - **M8** `[todo]` (owner, Nov 3) Revamp ALL menus in the new arcade look once it's settled: New Game, character select,
   online/room menus, home.
-- **M9** `[todo]` (owner, Nov 3) New colour scheme for the menus: the owner loves the mockup's look EXCEPT the purple and
+- **M9** `[verify]` (Nov 3: Clean Console navy/white/blue on every menu (`body[data-theme="home"]` in theme.css); Bangers + Nunito built in (assets/fonts)) (owner, Nov 3) New colour scheme for the menus: the owner loves the mockup's look EXCEPT the purple and
   orange. Something awesome and professional. Offer palette options as mockups first.
 - **W1** (owner, Nov 3) Daily rhythm from now on: release in the MORNING · owner playtests in the DAY · in the EVENING the
   owner answers Claude's questions (Claude asks all of them first thing when the session starts) · Claude works ALL
   NIGHT · release the next morning · repeat.
-- **Q00** `[todo]` (owner, Nov 3 evening, BUILD FIRST TONIGHT) A soak test the OWNER can run without Claude (when usage
+- **Q00** `[verify]` (Nov 3: laptop version built: SOAK-TEST.cmd → tools/soak.ps1 → tools/soak.mjs; rolling report soak-reports/LATEST.md + history.jsonl + fails/; GitHub button not built) (owner, Nov 3 evening, BUILD FIRST TONIGHT) A soak test the OWNER can run without Claude (when usage
   credits are out): (1) a manual GitHub Actions workflow "Soak test" (workflow_dispatch only, input: hours, default 2) that
   builds --pwa, serves it, starts `wrangler dev`, loops the soak suite (long solo-board, online-board with drops, every
   minigame via games.mjs, boss fights per tier, levelflow/frank/endings/checkpoint) until time is up, and uploads a short
@@ -225,15 +225,15 @@ Endings
 ## Menus revamp (owner, Nov 2: "sleek, modern, professional, not amateur")
 
 Design reference: the PS5 home screen (feel, motion, layout ideas), but its own ShambConkins look, not a copy.
-- **M1** `[todo]` Arcade / game select as a console-style home: a big hero area with key art for the focused game,
+- **M1** `[verify]` (Nov 3: `src/arcadeConsole.js`, owner's look-book pick: Console Home + Clean Console + Neon outline + Comic; hero, pills, tile row, focus tone, arrow keys) Arcade / game select as a console-style home: a big hero area with key art for the focused game,
   a horizontal row of game tiles that scrolls with smooth animation, sound on focus, background that changes per game.
 - **M2** `[todo]` Rows/sections: Featured ("old favorites"), Recently played, Recently added, Recently updated,
   Favorites (star a game), by genre; sorting and filters; search stays.
-- **M3** `[todo]` Game families: versions live under one main game, each with its own title screen/page where you pick
+- **M3** `[verify]` (Nov 3: `FAMILIES` in src/arcadeConsole.js, 30 families incl. Boss Select (all bosses, locked ones dark); a family tile opens a version page of TILES (owner's Fold note)) Game families: versions live under one main game, each with its own title screen/page where you pick
   the version. E.g. "Replay Bosses" → a menu of unlocked bosses with a screenshot/portrait each (ties in with the
   tier ladder K5); Pokémon games together; Mario Kart modes (GP, Time Trial, Battle...); likely also Space Invaders,
   Hangman, Broforce, Castlevania, Sonic, SMB, pinball tables, trivia...
-- **M4** `[todo]` Real tile art per game (icon/key art), not plain cards; locked games look locked.
+- **M4** `[part]` (Nov 3: tiles show a character cut-out per game (41 of 91 on the main list), others their icon; drop-in `assets/tiles/<game id or family key>.webp` (README there) for the rest) Real tile art per game (icon/key art), not plain cards; locked games look locked.
 - **M5** `[todo]` Character collection revamp in the same style: tap a character → a detail page with their
   portrait/moods and their unlocked outfits (K8-K12) and how to get the rest.
 - **M6** `[idea]` Carry the same look to the other menus (home, New Game, settings) once M1 is liked.

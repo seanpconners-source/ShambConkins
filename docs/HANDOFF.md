@@ -1,38 +1,30 @@
 # Handoff: where we left off (read this first in a fresh session)
 
-Last updated Nov 3 2026 (evening), after v0.76.0. Read "START HERE" first. Written for the next Claude session,
+Last updated Nov 3 2026 (night): new console menus + laptop soak test in TESTver, unreleased. Read "START HERE" first. Written for the next Claude session,
 which may run on a different account with none of the earlier conversation or memory. Everything needed is in the repo:
 this file, `CLAUDE.md`, `docs/ROADMAP.md` (the owner's to-do list, phases, statuses) and `docs/AI_STATE.md` (technical
 state, newest at the top).
 
-## START HERE (Nov 3 evening): the daily rhythm and tonight's job
+## START HERE (Nov 3 night): new menus are in TESTver, waiting for the owner's playtest
 
-The owner works in a daily cycle (roadmap W1): **release in the morning → owner playtests during the day → evening:
-Claude asks ALL its questions first thing, the owner answers → Claude works through the night → release in the morning.**
-v0.76.0 was released Nov 3 (00:13 UTC). The branch `claude/v0.75.0-release-roadmap-so2z5g` = TESTver (43 new
-characters on top of v0.76.0, unreleased).
+- **Menus (M1/M3/M9)**: the owner picked from the look book https://claude.ai/artifact/BTqLZbwnPtUwPKz2tGNTNa
+  (db `looks` + `combos`: Console Home layout, Clean Console colours, Neon outline pictures, Comic lettering; note: "Game
+  page on open screen should have tiles instead of long bars"). Built: `src/arcadeConsole.js` (Arcade), title screen +
+  menu palette/fonts in theme.css (end, "v0.77 console menus"). Merged to TESTver for the owner to try; **if they like it:
+  release (v0.77.0) to main**, then on with the roadmap. Next menu steps: M2 rows (Featured/Recently played/Favourites),
+  M4 tile art for the 50 games without a character (owner can drop `assets/tiles/<id>.webp`), M5 collection, M8 New
+  Game/character select/online menus in the same look.
+- **Soak test (Q00)**: the owner runs `SOAK-TEST.cmd` on the laptop when Claude's usage runs out (closing the window
+  stops it). At the start of a session, if the owner shares `soak-reports/` (LATEST.md, history.jsonl, fails/), read it
+  first and fix what failed (one regression test per fix). In the cloud box: `node tools/soak.mjs --hours 1`.
+- Then the open questions below (triage Cut list, outfits, Bomber look, TowerFall, K25 boss tiers, Pokémon PK1-PK5).
 
-**When the owner opens the evening session, do this first, before any work:**
-1. Read the triage sheet results: ArtifactData `list` on https://claude.ai/artifact/4XLQDBkBkUJcQGvK2ST6w2,
-   collection `verdicts` (page with `query.cursor`). Summarise: how many Keep/Polish/Rebuild/Cut, the Cut list, notes.
-2. Ask every open question in one go (use the multiple-choice question tool, several at once), in this order:
-   - **Menus (M1-M9), the big one**: which mockup direction (A Console Home / B Marquee Shelves / C Card Deck, the
-     owner liked the look of the PS5-ish one, A) and which colour scheme. Before asking, publish a quick palette mockup
-     (same menu, 3-4 palettes, none purple/orange; e.g. graphite + electric cyan, midnight navy + gold, black + crimson
-     red, deep teal + warm white) so the owner picks by sight. Also: game tile art (portraits for now OK?), which rows
-     (Featured / Recently played / Favourites / by genre / Boss Select / Pinball), and that New Game, character select,
-     online menus and home follow later in the same look (M8). Ask what to call the main board (C14: "Main Board"?).
-   - **Cut games**: confirm the triage Cut list before adding ids to `src/data/cutGames.js` (B3).
-   - The older open decisions further down ("Decisions waiting for the owner": outfits K8-K12 groups/names/art, Bomber
-     look, TowerFall, Pac-Maze difficulty, endings lore, checkpoints, Level IV landmarks).
-   - Boss difficulty (K25): what felt too easy/samey at each tier.
-   - Pokémon (PK1-PK5) priority vs the menus.
-3. Then plan the night with the owner's answers and work until morning: FIRST build the owner-runnable soak test
-   (roadmap Q00: the laptop SOAK-TEST.cmd first, owner's pick; GitHub button optional), then fixes (C13 CPU boss points, PK3
-   Catwoman), then the menus (the owner wants the new look on main soon), then K25 boss tiers, then the rest.
-4. Before morning: run the full suite, write CHANGELOG + docs/releases/vX.md, bump the version, and either release (if the
-   owner said so) or leave it ready for "release". Keep soak testing running whenever not actively coding (Q0):
-   a loop of long solo-board runs, online-board with drops, the flow tests and games.mjs (see AI_STATE for how).
+## The daily rhythm (owner, Nov 3; roadmap W1)
+
+The owner works in a daily cycle: **release in the morning → owner playtests during the day → evening: Claude asks ALL
+its questions first thing, the owner answers → Claude works through the night → release in the morning.**
+Triage sheet: ArtifactData `list` on https://claude.ai/artifact/4XLQDBkBkUJcQGvK2ST6w2, collection `verdicts` (Nov 3:
+~56 filled, no Cuts; long notes on casino, Price Is Right, Millionaire trivia, Call of Duty dots, Battleship cutaways).
 
 ## How the owner works with you
 
