@@ -55,6 +55,12 @@ the morning. Everything below is on branch `claude/v0.75.0-release-roadmap-so2z5
 11. **Endings** (E10-E13, built in `src/endings.js`): the fake ending (NES "CONGRATULATION. THIS STORY IS HAPPY END.",
    a credits roll that gives up, Frank's empty chair) and the true one (dawn, lore, credits from your run, THE END).
    The made-up lore is 12 template lines (`LORE`): want to write your own lines, or have them per character/show?
+12. **Checkpoints** (C8/E4, built): New Game shows START AT once you've reached Level II+; later starts begin with an
+   empty bag. (The checkpoint counts from now on; to try it at once, reach a level in a normal run.) OK as a plain select
+   until the New Game menu (C7) is redesigned?
+13. **Level IV content** (E6/E8): already there: 9 horror landmarks in Level IV (Camp Crystal Lake, Elm Street,
+   Haddonfield, the Jigsaw warehouse…) and Michael Myers, Jason, Freddy, Leatherface, Chucky, Pinhead, Jigsaw,
+   Ghostface unlock there. Some horror landmarks (Evil Dead cabin, Cabin in the Woods) sit in Levels II/III: move them?
 
 ### Then, in the recommended order
 1. Rebuilds from the triage (D), highest-dealt first; D6 Pac-Man and D7 TowerFall are next in the old list.
@@ -71,7 +77,8 @@ shield, smart bomb, heart) · K15 new player ships · K22 boss music slots · A1
 A2 Color Card Dash "Too Early" · A5 smoother character-select heads · A6 Hole.it props that fit really drop · A7 finished
 goals leave the Hole.it HUD · C3 arcade practice · C9 no run length · G10 King Gizzard stuck balls · D5 Bomber controls ·
 B1 triage sheet · M7 menu mockups · D6 Pac-Maze classic ghosts/maze/sounds · E2/E3 Frank's fake-out into Level IV
-(`src/frankFx.js`) · B3 cut-games list (`src/data/cutGames.js`, empty until the sheet is filled) · E10-E13 endings (`src/endings.js`, tests/endings.mjs) · regression tests
+(`src/frankFx.js`) · B3 cut-games list (`src/data/cutGames.js`, empty until the sheet is filled) · E10-E13 endings (`src/endings.js`, tests/endings.mjs) · C8/E4 checkpoints (tests/checkpoint.mjs). Full suite after it all: test:core EXIT 0, 156/156
+games ran clean; board/setup tests re-run green on the final build · regression tests
 (tests/holeit-fit.mjs in test:core, King Gizzard park check in pinball-sim, tests/frank.mjs). Online checked with a local `wrangler dev` (it works in the cloud box via npx):
 bomber-duel and a boss fight pass with and without LAG=80-150; power-ups appear the same on both phones.
 

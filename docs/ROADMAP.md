@@ -96,7 +96,7 @@ Unlock rules (section 10)
 New Game menu (section 5)
 - **C7** `[todo]` Replace the confusing setup and the options that do nothing. Modes:
   Main Game With Warps (default) · Main Game Without Warps · any visited warp world as a short standalone game.
-- **C8** `[todo]` Checkpoints: start at Level 1/2/3/4 once reached; a later start begins with an empty bag.
+- **C8** `[verify]` (Nov 2 night: START AT on New Game, `checkpointStart` in app.js, `profile.levelReached`) Checkpoints: start at Level 1/2/3/4 once reached; a later start begins with an empty bag.
 - **C9** `[verify]` (Nov 2 night: select removed, every run = race to the finish, co-op ends when both finish) Remove the number-of-turns option (`run.maxTurns`); games run to their natural end.
 - **C10** `[todo]` Warp worlds stay single-route, no checkpoints.
 - **C11** `[idea]` Character select before the rest of setup?
@@ -124,7 +124,7 @@ Frank's fake-out
 - **E2** `[verify]` (Nov 2 night: `src/frankFx.js` + `frankFakeout` in app.js; test tests/frank.mjs) Sequence: Frank "starts" Shits and Ladders (laxatives, climb ladders, last to shit wins) → players offered laxatives →
   world melts and fades → "I don't think that was a laxative..." → Frank's face fades in → "LEVEL IV: HORROR".
 - **E3** `[verify]` (Nov 2 night) Players jump from mid-Level 3 straight to Level 4, skipping the Level 3 boss and the fake ending.
-- **E4** `[todo]` Starting at a Level 4 checkpoint shows a short version of the reveal.
+- **E4** `[verify]` (Nov 2 night: `playFrankReveal({short:true})`) Starting at a Level 4 checkpoint shows a short version of the reveal.
 
 Level IV
 - **E5** `[todo]` Keep the layout; make it far darker: fire, blood, chains, filthy dungeons, rusty metal, industrial / Saw-style.
