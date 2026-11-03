@@ -237,7 +237,7 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
 - **M5** `[todo]` Character collection revamp in the same style: tap a character → a detail page with their
   portrait/moods and their unlocked outfits (K8-K12) and how to get the rest.
 - **M6** `[idea]` Carry the same look to the other menus (home, New Game, settings) once M1 is liked.
-- **M7** `[verify]` (Nov 2 night: https://claude.ai/artifact/4h7fazkSTgh1oQxDQdpctE A Console Home / B Marquee Shelves / C Card Deck, owner picks) Before building: Claude mocks up 2-3 design directions (screenshots) for the owner to pick from.
+- **M7** `[verify]` (Nov 3: Look Book https://claude.ai/artifact/BTqLZbwnPtUwPKz2tGNTNa = 3 layouts x 6 palettes x 5 picture styles x 5 letterings on Home/Arcade/Game page/Character, owner votes + notes saved in its db: collections `looks` (doc id `<layout|pal|art|type>--<option>`, {vote,note}) and `combos`; read with ArtifactData list. Older 3-direction mockup: https://claude.ai/artifact/4h7fazkSTgh1oQxDQdpctE) Before building: Claude mocks up 2-3 design directions (screenshots) for the owner to pick from.
 
 ## Phase H — new content (sections 3 + 7)
 
