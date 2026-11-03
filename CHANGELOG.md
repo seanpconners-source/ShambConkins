@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (next: v0.77.0)
+## v0.77.0
 
 **New menus: a console-style Arcade and a fresh look, picked by the owner.**
 

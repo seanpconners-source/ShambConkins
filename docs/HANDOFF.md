@@ -1,6 +1,6 @@
 # Handoff: where we left off (read this first in a fresh session)
 
-Last updated Nov 3 2026 (night): new console menus + laptop soak test in TESTver, unreleased. Read "START HERE" first. Written for the next Claude session,
+Last updated Nov 3 2026 (night): v0.77.0 released (console menus + laptop soak test). Read "START HERE" first. Written for the next Claude session,
 which may run on a different account with none of the earlier conversation or memory. Everything needed is in the repo:
 this file, `CLAUDE.md`, `docs/ROADMAP.md` (the owner's to-do list, phases, statuses) and `docs/AI_STATE.md` (technical
 state, newest at the top).
@@ -10,8 +10,7 @@ state, newest at the top).
 - **Menus (M1/M3/M9)**: the owner picked from the look book https://claude.ai/artifact/BTqLZbwnPtUwPKz2tGNTNa
   (db `looks` + `combos`: Console Home layout, Clean Console colours, Neon outline pictures, Comic lettering; note: "Game
   page on open screen should have tiles instead of long bars"). Built: `src/arcadeConsole.js` (Arcade), title screen +
-  menu palette/fonts in theme.css (end, "v0.77 console menus"). Merged to TESTver for the owner to try; **if they like it:
-  release (v0.77.0) to main**, then on with the roadmap. Next menu steps: M2 rows (Featured/Recently played/Favourites),
+  menu palette/fonts in theme.css (end, "v0.77 console menus"). Released as v0.77.0 (owner said merge to main before playtesting; expect follow-up tweaks). Next menu steps: M2 rows (Featured/Recently played/Favourites),
   M4 tile art for the 50 games without a character (owner can drop `assets/tiles/<id>.webp`), M5 collection, M8 New
   Game/character select/online menus in the same look.
 - **Soak test (Q00)**: the owner runs `SOAK-TEST.cmd` on the laptop when Claude's usage runs out (closing the window

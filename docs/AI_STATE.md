@@ -1,6 +1,7 @@
 # AI state (keep short; update after meaningful work)
 
-Nov 3 night (branch `ccr-f841e836-ips7j8` from TESTver, merged to TESTver, unreleased): CONSOLE MENUS (owner's look-book
+v0.77.0 (Nov 3, owner: "merge to main" without playtesting first): the console menus + soak test below + 43 characters.
+Nov 3 night (branch `ccr-f841e836-ips7j8` from TESTver, merged to TESTver and main): CONSOLE MENUS (owner's look-book
 pick, https://claude.ai/artifact/BTqLZbwnPtUwPKz2tGNTNa). `src/arcadeConsole.js` = the Arcade view: ui.js catalogHTML still
 builds the list (filters/1P/online/dev/cut) and passes `partsFor(g)` (play button, chips, medals; shared with the old card
 render, which the Collection still uses) to `arcadeConsoleHTML`; hero = focused item, tile tap focuses (no rebuild), a
