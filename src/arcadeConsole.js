@@ -92,9 +92,43 @@ const dropArt=(kind,k)=>{const u=k&&USER_PORTRAITS[kind+':'+k];return u&&(isRast
 const tileArt=k=>dropArt('tile',k);
 // Key art: a big picture for the hero (assets/keyart/<game id or family key>.*), shown full-bleed behind the selected game.
 const keyArt=it=>it&&(dropArt('keyart',it.fam?.key)||dropArt('keyart',it.g?.id)||dropArt('keyart',it.g&&familyOf(it.g)));   // a version listed on its own uses its family's picture
-// Where a big picture's subject is, so a phone's narrow crop keeps it in view: 'x% y%' by slot.
-const KEY_FOCUS={'bricks-breaker-quest':'66% 45%','greed-island-mancala':'66% 22%',broforce:'64% 40%',hangman:'64% 50%'};
-const keyImg=it=>`<img src="${e(keyArt(it))}" alt="" style="object-position:${KEY_FOCUS[it.fam?.key]||KEY_FOCUS[it.g?.id]||KEY_FOCUS[familyOf(it.g)]||'50% 50%'}">`;
+// What must stay in view in each big picture: [x0,y0,x1,y1] as fractions of the picture (Sean & Amber, the board...).
+// placeKey() sizes and moves the picture so this box is always fully on screen on any phone/tablet/desktop, beside the
+// text on wide screens and above it on tall ones; it zooms out (edges fade into the backdrop) rather than cut it off.
+// New key art: add its box here (slot = game id or family key); without one the middle of the picture is kept.
+const KEY_BOX={'bricks-breaker-quest':[.62,.47,.99,.95],'greed-island-mancala':[.26,.03,.92,.78],broforce:[.55,.31,.84,.66],hangman:[.21,.12,.76,.93],
+ pinball:[.12,.2,.88,.8],'bucketheadland-pinball':[.12,.2,.88,.8],'black-sabbath-pinball':[.2,.2,.8,.85],'king-gizzard-pinball':[.25,.25,.98,.9]};
+const KEY_BOX_DEFAULT=[.28,.15,.72,.85];
+const keyBox=it=>KEY_BOX[it.fam?.key]||KEY_BOX[it.g?.id]||KEY_BOX[familyOf(it.g)]||KEY_BOX_DEFAULT;
+const keyImg=it=>{const b=keyBox(it);return `<img src="${e(keyArt(it))}" alt="" data-box="${b.join(',')}" style="transform-origin:${(b[0]+b[2])*50}% ${(b[1]+b[3])*50}%">`;};
+const clampR=(v,lo,hi)=>lo>hi?(lo+hi)/2:Math.min(hi,Math.max(lo,v));
+function placeKey(img){
+ const root=img?.closest?.('.arcade-console');if(!root||!img.naturalWidth||!img.dataset.box)return;
+ const R=root.getBoundingClientRect(),W=R.width,H=R.height,iw=img.naturalWidth,ih=img.naturalHeight;if(!W||!H)return;
+ const [bx0,by0,bx1,by1]=img.dataset.box.split(',').map(Number);
+ const rel=sel=>{const el=root.querySelector(sel),r=el&&el.getBoundingClientRect();return r&&r.height?{l:r.left-R.left,t:r.top-R.top,r:r.right-R.left,b:r.bottom-R.top}:null;};
+ const side=matchMedia('(min-width:700px),(orientation:landscape) and (max-height:520px)').matches;
+ const info=rel('.arc-info'),row=rel('.arc-row-head')||rel('.arc-row'),top=(rel('.arc-top')?.b??H*.08)+4;
+ // the area the box should fill: under the top bar, above the tiles (wide) or above most of the text (tall)
+ const ax0=W*.03,ax1=W*.97,ay0=top,ay1=Math.max(top+80,side?(row?.t??H*.8)-4:(info?info.t+(info.b-info.t)*.3:H*.6));
+ const bw=(bx1-bx0)*iw,bh=(by1-by0)*ih,cover=Math.max(W/iw,H/ih),fit=Math.min((ax1-ax0)/bw,(ay1-ay0)/bh),s=Math.min(cover,fit);
+ const dw=iw*s,dh=ih*s,BW=bw*s,BH=bh*s;
+ // wide: the box sits right of the text when it fits there, else as far right as it can
+ let cx=(ax0+ax1)/2;if(side&&info){const c0=Math.min(info.r+8,W*.6);cx=BW<=ax1-c0?(c0+ax1)/2:ax1-BW/2;}
+ const cy=(ay0+ay1)/2;
+ // keep the box inside its area; cover the screen on an axis where the picture is big enough, else stay inside the screen
+ const solve=(want,d,L,b0,b1,a0,a1)=>{const lo=a0-b0*d,hi=a1-b1*d,p=clampR(want,lo,hi);const c0=d>=L?L-d:0,c1=d>=L?0:L-d;
+  const l2=Math.max(lo,c0),h2=Math.min(hi,c1);return l2<=h2?clampR(p,l2,h2):p;};
+ const left=solve(cx-(bx0+bx1)/2*dw,dw,W,bx0,bx1,ax0,ax1),topP=solve(cy-(by0+by1)/2*dh,dh,H,by0,by1,ay0,ay1);
+ // edges that end on screen fade into the backdrop
+ const f=(n,d)=>n?`${Math.round(d*.16)}px`:'0px',fl=left>1,fr=left+dw<W-1,ft=topP>1,fb=topP+dh<H-1;
+ const mask=(fl||fr||ft||fb)?`linear-gradient(90deg,#0000,#000 ${f(fl,dw)},#000 calc(100% - ${f(fr,dw)}),#0000),linear-gradient(180deg,#0000,#000 ${f(ft,dh)},#000 calc(100% - ${f(fb,dh)}),#0000)`:'none';
+ Object.assign(img.style,{left:left+'px',top:topP+'px',width:dw+'px',height:dh+'px',maskImage:mask,webkitMaskImage:mask,maskComposite:'intersect',webkitMaskComposite:'source-in'});
+ img.classList.add('placed');
+}
+const placeKeys=()=>{if(typeof document!=='undefined')document.querySelectorAll('.arc-keyart img').forEach(placeKey);};
+if(typeof document!=='undefined'){document.addEventListener('load',ev=>{if(ev.target?.closest?.('.arc-keyart'))placeKey(ev.target);},true);
+ let rz=0;addEventListener('resize',()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(placeKeys);});}
 // A game's own logo (assets/keyart/<game id or family key>-logo.*, transparent) replaces the plain title on the hero, the version page and the tile.
 const logoOf=it=>it&&(dropArt('keyart',it.fam?.key&&it.fam.key+'-logo')||dropArt('keyart',it.g?.id&&it.g.id+'-logo')||(it.g&&familyOf(it.g)&&dropArt('keyart',familyOf(it.g)+'-logo')));
 const titleHTML=(title,logo)=>logo?`<h2 class="arc-title arc-title-logo"><span>${e(title)}</span><img src="${e(logo)}" alt="" draggable="false"></h2>`:`<h2 class="arc-title">${e(title)}</h2>`;
@@ -182,7 +216,7 @@ function focusTile(i,{scroll=true}={}){
  const was=current.items.findIndex(x=>x.key===state.focus);if(was===i)return;
  state.focus=it.key;root.style.setProperty('--arc-dir',i>=was?1:-1);root.style.setProperty('--arc-h',hue(it.fam?.title||it.g.source));
  const key=keyArt(it);root.classList.toggle('has-key',!!key);
- swapLayer(root.querySelector('.arc-keyart'),key?keyImg(it):'');
+ swapLayer(root.querySelector('.arc-keyart'),key?keyImg(it):'');root.querySelectorAll('.arc-keyart img:not(.placed)').forEach(placeKey);
  swapLayer(root.querySelector('.arc-hero-art'),key?'':heroArt(it));
  const info=root.querySelector('.arc-info');info.innerHTML=infoHTML(it);restart(info,'arc-info-in');
  root.querySelectorAll('.arc-tile').forEach((t,j)=>{t.classList.toggle('on',j===i);t.setAttribute('aria-selected',String(j===i));});
@@ -193,7 +227,7 @@ function openFamily(key){const root=document.querySelector('.arcade-console');if
 // Closing slides the version page away before hiding it.
 function closeFamily(){state.family=null;const s=document.querySelector('.arcade-console .arc-fam');if(!s)return;if(matchMedia('(prefers-reduced-motion: reduce)').matches){s.hidden=true;s.innerHTML='';return;}s.classList.add('arc-fam-out');setTimeout(()=>{if(state.family)return;s.hidden=true;s.innerHTML='';s.classList.remove('arc-fam-out');},260);}
 // After a rebuild: put the focused tile in view (no animation) and reopen the version page if one was open.
-function installArcadeConsole(){const root=document.querySelector('.arcade-console');if(!root||!current)return;
+function installArcadeConsole(){const root=document.querySelector('.arcade-console');if(!root||!current)return;placeKeys();
  const i=current.items.findIndex(it=>it.key===state.focus);const tile=root.querySelectorAll('.arc-tile')[i];if(tile){const row=root.querySelector('.arc-row');row.scrollLeft=tile.offsetLeft-row.clientWidth/2+tile.clientWidth/2;}}
 function resetArcadeConsole(){state.focus=null;state.family=null;state.grid=false;}
 if(typeof document!=='undefined')document.addEventListener('click',ev=>{

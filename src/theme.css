@@ -633,7 +633,8 @@ body .title-screen .ts-dock-icon{color:#dbe5ff}
 @property --arc-h{syntax:'<number>';inherits:true;initial-value:220}
 .arcade-console{transition:--arc-h .75s cubic-bezier(.3,.7,.3,1)}
 .arc-keyart{position:absolute;inset:0;z-index:-3;pointer-events:none;overflow:hidden}
-.arc-keyart img{width:100%;height:100%;object-fit:cover;animation:arc-kenburns 22s ease-in-out infinite alternate}
+.arc-keyart img{position:absolute;left:0;top:0;width:100%;height:100%;max-width:none;object-fit:cover;animation:arc-kenburns 22s ease-in-out infinite alternate}
+.arc-keyart img.placed{object-fit:fill}
 .arc-hero-art .arc-layer,.arc-keyart .arc-layer{position:absolute;inset:0}
 .arc-hero-art .big{animation:arc-float 6.5s ease-in-out infinite}
 .arc-layer-in{animation:arc-layer-in .55s cubic-bezier(.2,.8,.25,1) both}
@@ -641,7 +642,7 @@ body .title-screen .ts-dock-icon{color:#dbe5ff}
 @keyframes arc-layer-in{from{opacity:0;transform:translateX(calc(var(--arc-dir,1)*46px)) scale(.95)}to{opacity:1;transform:none}}
 @keyframes arc-layer-out{to{opacity:0;transform:translateX(calc(var(--arc-dir,1)*-34px)) scale(1.03)}}
 @keyframes arc-float{0%,100%{translate:0 0}50%{translate:0 -7px}}
-@keyframes arc-kenburns{from{transform:scale(1)}to{transform:scale(1.07) translate(-1%,-1%)}}
+@keyframes arc-kenburns{from{transform:scale(1)}to{transform:scale(1.04)}}
 @keyframes arc-rise{from{opacity:0;transform:translateY(12px)}}
 @keyframes arc-drop{from{opacity:0;transform:translateY(-14px)}}
 @keyframes arc-fade{from{opacity:0}}
