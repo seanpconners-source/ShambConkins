@@ -48,7 +48,7 @@ for(const vp of sizes){
   await page.click('.arc-block >> nth=7');await page.waitForTimeout(500);
   if(await page.locator('.arc-grid-page:not([hidden])').count())fail('view all did not close after a pick');
   // categories that make sense: Action has Broforce, Pinball has the 3 tables, Board & cards has chess
-  for(const [cat,re,min] of [['action',/Broforce/,1],['pinball',/Pinball/,3],['board',/Chess/,4]]){await page.click(`.arc-pill[data-id="${cat}"]`);await page.waitForTimeout(300);
+  for(const [cat,re,min] of [['action',/Sean of a Gun|Broforce/,1],['pinball',/Pinball/,3],['board',/Chess/,4]]){await page.click(`.arc-pill[data-id="${cat}"]`);await page.waitForTimeout(300);
    const labels=await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].map(t=>t.getAttribute('aria-label')));if(labels.length<min||!labels.some(l=>re.test(l)))fail(`category ${cat}: ${labels.length} ${labels.slice(0,4)}`);}
   await page.click('.arc-pill[data-id="all"]');await page.waitForTimeout(300);
   // bosses family exists, filters, search, 1P strip
@@ -63,8 +63,8 @@ for(const vp of sizes){
   await page.screenshot({path:screenshotPath(`ac-solo-${tag}.png`)});
   await page.click('.solo-seg[data-key="on"][data-value="0"]');await page.waitForTimeout(300);
   // Broforce is one tile; its play button starts the launcher and opens the world select
-  const bro=await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].findIndex(t=>/Broforce/.test(t.getAttribute('aria-label'))));
-  if(await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].filter(t=>/Broforce/.test(t.getAttribute('aria-label'))).length)!==1)fail('Broforce should be one tile');
+  const bro=await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].findIndex(t=>/Sean of a Gun|Broforce/.test(t.getAttribute('aria-label'))));
+  if(await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].filter(t=>/Sean of a Gun|Broforce/.test(t.getAttribute('aria-label'))).length)!==1)fail('Broforce should be one tile');
    await page.click(`.arc-tile >> nth=${bro}`);await page.waitForTimeout(450);
   await page.click('.arc-info [data-action="arcade-game"]');await page.waitForTimeout(1500);
   const started=await page.evaluate(()=>({session:!!window.ShambConkins?.store?.session,card:/Start game/.test(document.querySelector('#dialog[open]')?.innerText||'')}));

@@ -141,7 +141,7 @@ function infoHTML(it){
    <p class="arc-rules">${e(it.members.slice(0,6).map(g=>shortTitle(g,f)).join(' · '))}${it.members.length>6?' …':''}</p>
    <div class="arc-actions"><button class="arc-cta" data-arc-family="${e(f.key)}">Choose a version ▸</button></div>`;}
  const g=it.g,p=current.partsFor(g);
- return `<div class="arc-src">${e(g.source)} · ${e(catName(g))}</div><h2 class="arc-title">${e(g.title)}</h2><div class="arc-chips">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div>
+ return `<div class="arc-src">${e(g.srcLabel||g.source)} · ${e(catName(g))}</div><h2 class="arc-title">${e(g.title)}</h2><div class="arc-chips">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div>
   <p class="arc-rules">${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${starHTML(g)}${p.dev||''}</div>`;
 }
 // The ☆ next to a game's play button keeps it on the Favorites shelf.

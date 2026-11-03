@@ -6,7 +6,7 @@ const FEATURED_GAMES=[
  'bucketheadland-pinball',    // Bucketheadland pinball
  'smb-world-1',               // Super Mario Bros. World 1
  'cv-symphony',               // Symphony of the Night
- 'broforce',                  // Broforce
+ 'broforce',                  // Sean of a Gun
  'doom',                      // DOOM
  'rainbow-road-kart',         // Mario Kart Grand Prix
  'paddys-hole',               // Hole.it

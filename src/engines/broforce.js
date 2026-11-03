@@ -243,6 +243,7 @@ async function broforce(s){
    .bf-shell .pass-overlay{z-index:30}
    .bf-worlds{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;gap:clamp(6px,1.6vh,14px);padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:radial-gradient(circle at 50% 12%,#5a1a0a,#120a06 70%) center/cover no-repeat;color:#fff}
    .bf-worlds-head{text-align:center}
+   .bf-logo{display:block;width:min(84%,560px);max-height:18vh;margin:0 auto;object-fit:contain;filter:drop-shadow(0 4px 10px #000a)}
    .bf-worlds-head h2{margin:0;font:400 clamp(34px,9vmin,72px)/1 "SC Bangers",Impact,sans-serif;letter-spacing:.04em;color:#fff;text-shadow:0 3px 0 #8a0a0a,0 0 18px #ff6a1a88}
    .bf-worlds-head p{margin:2px 0 0;font:800 clamp(12px,2.6vmin,16px)/1.2 "SC Nunito",sans-serif;color:#ffd23a}
    .bf-world-grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:clamp(6px,1.6vmin,12px)}
@@ -868,10 +869,10 @@ async function broforce(s){
   cd=new Countdown(3);phase='count';
  }
  function soloAfter(){const r=results[0];soloTotal+=r.score;
-  if(r.why!=='done')return soloFinish(s,soloTotal,soloCleared,`Broforce ${theme.name} solo: ${soloCleared} mission${soloCleared===1?'':'s'} accomplished; the last ended at ${r.stages}/3 stages (${r.why==='time'?'time up':'out of bros'}).`);
-  soloCleared++;soloProgress(s,soloTotal,soloCleared,`Broforce ${theme.name} solo: ${soloCleared} mission${soloCleared===1?'':'s'} accomplished.`);
+  if(r.why!=='done')return soloFinish(s,soloTotal,soloCleared,`Sean of a Gun ${theme.name} solo: ${soloCleared} mission${soloCleared===1?'':'s'} accomplished; the last ended at ${r.stages}/3 stages (${r.why==='time'?'time up':'out of bros'}).`);
+  soloCleared++;soloProgress(s,soloTotal,soloCleared,`Sean of a Gun ${theme.name} solo: ${soloCleared} mission${soloCleared===1?'':'s'} accomplished.`);
   const next=Math.floor(s.random()*4294967296);STAGES=[0,1,2].map(si=>buildStage(next+si*7919,si));beginTurn(0);}
- s.hint(`BROFORCE · turns: each player runs the same 3-stage mission and the higher score wins. Touch: drag on the left to run (push up to jump or climb a ladder, down to drop or climb down); hold anywhere on the right to fire, swipe up there to jump, swipe down to throw a grenade. Push into any wall in mid-air to climb it. Free caged prisoners to switch bros (+1 life); the GOLD cage unlocks a new character. Keys: A/D or arrows run, W/Up jump, S/Down ladders, Space/Enter fire, G/E/Shift grenade.`);
+ s.hint(`SEAN OF A GUN · turns: each player runs the same 3-stage mission and the higher score wins. Touch: drag on the left to run (push up to jump or climb a ladder, down to drop or climb down); hold anywhere on the right to fire, swipe up there to jump, swipe down to throw a grenade. Push into any wall in mid-air to climb it. Free caged prisoners to switch bros (+1 life); the GOLD cage unlocks a new character. Keys: A/D or arrows run, W/Up jump, S/Down ladders, Space/Enter fire, G/E/Shift grenade.`);
 
  // ---------------------------------------------------------------- drawing: tiles (pre-rendered per theme)
  let TILEART=makeTileArt(theme);
@@ -1130,11 +1131,12 @@ async function broforce(s){
   g.restore();
  }
  function drawHeadScreen(id,mood,x,y,size){const img=headCanvas(id,mood);g.drawImage(img,x-size/2,y-size/2,size,size);}
+ const logoSrc=USER_PORTRAITS['keyart:broforce-logo'],logoImg=isRasterArt(logoSrc)?Object.assign(new Image(),{src:logoSrc}):null;
  function drawTitle(t){
   const a=t>2.3?Math.max(0,1-(t-2.3)/.45):1,sz=Math.min(s.W*.11,s.H*.13,72);g.save();g.globalAlpha=a;
   const bg=g.createLinearGradient(0,0,0,s.H);bg.addColorStop(0,'#1a0d06');bg.addColorStop(1,'#5a1a0a');g.fillStyle=bg;g.fillRect(0,0,s.W,s.H);
   g.fillStyle='rgba(255,140,40,.12)';for(let k=0;k<12;k++){g.beginPath();g.moveTo(s.W/2,s.H*.32);g.lineTo(s.W/2+Math.cos(k*.52+t*.2)*s.W,s.H*.32+Math.sin(k*.52+t*.2)*s.W);g.lineTo(s.W/2+Math.cos(k*.52+.2+t*.2)*s.W,s.H*.32+Math.sin(k*.52+.2+t*.2)*s.W);g.fill();}
-  outlined(g,'BROFORCE',s.W/2,s.H*.27,{size:sz,fill:'#fff',stroke:'#8a0a0a',lw:sz*.16});
+  if(logoImg?.complete&&logoImg.naturalWidth){const lw=Math.min(s.W*.9,sz*7.5),lh=lw*logoImg.naturalHeight/logoImg.naturalWidth;g.drawImage(logoImg,s.W/2-lw/2,s.H*.27-lh*.62,lw,lh);}else outlined(g,'SEAN OF A GUN',s.W/2,s.H*.27,{size:Math.round(Math.min(sz,s.W*.09)),fill:'#fff',stroke:'#8a0a0a',lw:sz*.16});
   outlined(g,theme.op,s.W/2,s.H*.27+sz*.75,{size:Math.round(sz*.3),fill:'#ffd23a',stroke:'#000'});
   for(let i=0;i<2;i++){const cx=s.W/2+(i?1:-1)*Math.min(s.W*.2,150),cy=s.H*.6;drawHeadScreen(s.players[i].character,'win',cx,cy,sz*1.3);outlined(g,s.players[i].name.toUpperCase().slice(0,12),cx,cy+sz*.9,{size:Math.round(sz*.3),fill:PCOL[i],stroke:'#000'});}
   outlined(g,net?'&':'VS',s.W/2,s.H*.6,{size:Math.round(sz*.45),fill:'#fff',stroke:'#000'});
@@ -1160,7 +1162,7 @@ async function broforce(s){
  async function chooseWorld(){
   const worlds=Object.keys(THEMES),art=id=>{const u=USER_PORTRAITS['keyart:'+id];return isRasterArt(u)?u:null;},picker=!net||me===0,box=document.createElement('div');box.className='bf-worlds';
   if(art('broforce'))box.style.backgroundImage=`linear-gradient(#0006,#0009),url("${art('broforce')}")`;
-  box.innerHTML=`<header class="bf-worlds-head"><h2>BROFORCE</h2><p>${picker?'CHOOSE YOUR WORLD':`${escapeHTML(s.players[them].name.toUpperCase())} IS CHOOSING THE WORLD…`}</p></header><div class="bf-world-grid">${worlds.map(id=>{const t=THEMES[id],pic=art(id);return `<button class="bf-world" data-world="${id}" style="background:linear-gradient(180deg,${t.sky[0]} 0%,${t.sky[1]} 62%,${t.mid} 62%,${t.mid} 100%);color:#fff"${picker?'':' disabled'}>${pic?`<img src="${pic}" alt="" draggable="false">`:`<i aria-hidden="true">${WORLD_ICON[t.decor]}</i>`}<b>${t.name}</b><small>${t.op}</small></button>`;}).join('')}</div>`;
+  box.innerHTML=`<header class="bf-worlds-head">${art('broforce-logo')?`<img class="bf-logo" src="${art('broforce-logo')}" alt="Sean of a Gun" draggable="false">`:'<h2>SEAN OF A GUN</h2>'}<p>${picker?'CHOOSE YOUR WORLD':`${escapeHTML(s.players[them].name.toUpperCase())} IS CHOOSING THE WORLD…`}</p></header><div class="bf-world-grid">${worlds.map(id=>{const t=THEMES[id],pic=art(id);return `<button class="bf-world" data-world="${id}" style="background:linear-gradient(180deg,${t.sky[0]} 0%,${t.sky[1]} 62%,${t.mid} 62%,${t.mid} 100%);color:#fff"${picker?'':' disabled'}>${pic?`<img src="${pic}" alt="" draggable="false">`:`<i aria-hidden="true">${WORLD_ICON[t.decor]}</i>`}<b>${t.name}</b><small>${t.op}</small></button>`;}).join('')}</div>`;
   (shell||s.body).appendChild(box);s.cleanup(()=>box.remove());
   const picked=await new Promise(done=>{
    if(!picker){worldWait=done;if(worldMsg)done(worldMsg);setTimeout(()=>done(null),40000);return;}
@@ -1200,7 +1202,7 @@ async function broforce(s){
    else if(phase==='end'){endT+=dt;if(endT>3.6){
     const a=results[0],b=results[1],n=s.players.map(p=>p.name);
     const recruited=[a,b].map((r,i)=>r.recruits.length?` ${n[i]} freed ${r.recruits.map(nameOf).join(', ')}.`:'').join('');
-    s.finish([a.score,b.score],`Broforce ${theme.name}: ${n[0]} ${a.score.toLocaleString()} (${a.kills} kills, ${a.stages}/3 stages) vs ${n[1]} ${b.score.toLocaleString()} (${b.kills} kills, ${b.stages}/3 stages).${recruited}`);return;}}
+    s.finish([a.score,b.score],`Sean of a Gun ${theme.name}: ${n[0]} ${a.score.toLocaleString()} (${a.kills} kills, ${a.stages}/3 stages) vs ${n[1]} ${b.score.toLocaleString()} (${b.kills} kills, ${b.stages}/3 stages).${recruited}`);return;}}
   }
   fx.update(dt);if(banner)banner.t-=dt;
   // draw

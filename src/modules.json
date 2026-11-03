@@ -420,7 +420,8 @@
   "src/data/featuredGames.js",
   "src/engines/millionaire.js",
   "src/engines/modernStickDot.js",
-  "src/engines/battleshipCuts.js"
+  "src/engines/battleshipCuts.js",
+  "src/engines/priceShow.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
