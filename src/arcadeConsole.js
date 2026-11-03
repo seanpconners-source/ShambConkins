@@ -47,6 +47,27 @@ const FAMILIES=[
 const FAMILY=new Map(FAMILIES.map(([key,title,sub,hero,ids])=>[key,{key,title,sub,hero,ids}]));
 const FAMILY_OF=new Map();for(const f of FAMILY.values())for(const id of f.ids||[])FAMILY_OF.set(id,f.key);
 const familyOf=g=>g.bossId?'bosses':FAMILY_OF.get(g.id)||null;
+// Arcade categories (owner, Nov 3: "make way more sense"): what a player would look for, not the engine's old tags.
+// A game can sit in more than one. Old filter ids (arcade/strategy/skill/sports/dice) are mapped for old links.
+const CATEGORIES=[['all','All games'],['action','Action'],['retro','Retro arcade'],['versus','Head to head'],['sports','Racing & sports'],['board','Board & cards'],['puzzle','Puzzle'],['party','Party'],['trivia','Trivia & shows'],['casino','Casino & dice'],['pinball','Pinball'],['coop','Co-op'],['boss','Bosses'],['pokemon','Pokémon'],['variants','Encounter variants']];
+const CAT_IDS={
+ action:'broforce-jungle broforce-factory broforce-city broforce-desert smb-world-1 smb-coin-rush smb-castle-dash cv-vampire-killer cv-candle-hunt cv-symphony sonic-ring-rush sonic-goal-dash doom doom-2 warriors-brawl bond-facility hyrule-rupee-rush hyrule-sword-duel tarantino-crazy88 tarantino-bounty kill-bill-duel living-dead-horde battle-royale-island raiders-ball-run',
+ retro:'pong-duel breakout-party asteroid-drift space-swarm space-swarm-versus space-swarm-coop snake-run pac-maze-duel moonraker-lander mars-missile-defense duck-hunt-turn crossy-chaos block-battle t800-scan-long driller-duel bubble-battle flappy-disaster paper-route banana-money-grab metal-gear-tank-duel derezzed-cycles snake-v-snake bomber-duel sewer-clash neon-ball-storm smb-world-1 cv-vampire-killer doom',
+ sports:'rainbow-road-kart kart-grand-prix-pass kart-time-trial rainbow-balloon-battle fast-quarter-mile radical-bike major-league-bats major-league-fielding league-penalties baseketball-shootout color-of-money happy-gilmore-golf kingpin-bowling underdog-dodgeball fight-night wind-archery disc-duel rink-rivals office-hockey-shootout taskmaster-curling sp-dodgeball',
+ board:'shamb-uno traitors-guess-who matrix-ultimate greed-island-mancala deadite-checkers ten-forward-chess office-dots-boxes wopr-grid trek-mini-chess strategema-grid four-lights battleship-fog clue-whodunit clue-lineup monopoly-speed-die monopoly-auction chutes-ladder-rush chutes-spinner-showdown candy-color-dash smb3-nspade full-shambyahtzee',
+ puzzle:'megatouch-photohunt brawndo-fruit-merge warehouse-shift matrix-hardline-hack alien-sonar-grid paddys-hole bricks-breaker-quest tm-cones simon-faceoff django-hangman django-hangman-showdown django-hangman-wanted bubble-battle block-battle',
+ party:'taskmaster-micro-relay taskmaster-fruit-ninja taskmaster-sumo task-tallest-thing taskmaster-curling tm-cones microgame-rush rush-marathon review-pancakes newlywed-spirit roast-battle draw-it kitchen-service paddys-beer-pong flipadelphia-cup paddys-darts terminator-scan hungry-hungry-heads home-alone-paint-can angry-heads gopher-hunt tarantino-twist tarantino-adrenaline tarantino-standoff tarantino-chase bond-laser-vault bond-golden-gun bond-goldfinger-bomb sp-cheesy-poofs sp-killed-kenny snowball-fight candy-gumdrop-catch smb3-spade-slots',
+ trivia:'price-bid-off newlywed-spirit',
+ casino:'blackjack five-card roulette bond-baccarat liars-dice full-shambyahtzee',
+ pinball:'bucketheadland-pinball black-sabbath-pinball king-gizzard-pinball',
+ coop:'living-dead-horde space-swarm-coop rainbow-rivals'};
+const CAT_OF=new Map();for(const [cat,ids] of Object.entries(CAT_IDS))for(const id of ids.split(' '))(CAT_OF.get(id)||CAT_OF.set(id,new Set()).get(id)).add(cat);
+const BASE={puzzle:'puzzle',strategy:'board',skill:'party',sports:'sports',trivia:'trivia',casino:'casino',dice:'casino',duel:'versus',coop:'coop',arcade:'retro'};
+const OLD={arcade:'retro',strategy:'board',skill:'party',dice:'casino'};
+function categoriesOf(g){const out=new Set(CAT_OF.get(g.id)||[]);if(g.category==='duel'||g.engine==='trivia')out.add(BASE[g.category]);if(!out.size&&BASE[g.category])out.add(BASE[g.category]);if(g.category==='coop'||g.cooperative)out.add('coop');return out;}
+const inCategory=(g,cat)=>cat==='all'||categoriesOf(g).has(OLD[cat]||cat);
+const CAT_NAME=Object.fromEntries(CATEGORIES);
+
 // Characters picked by hand where the source match would choose someone odd.
 const HERO={'bucketheadland-pinball':'buckethead','black-sabbath-pinball':'ozzy-osbourne','cv-symphony':'alucard','kill-bill-duel':'kb-the-bride','tarantino-crazy88':'kb-the-bride','tarantino-bounty':'dj-django','pac-maze-duel':'pac-man','pkmn-wild':'pikachu','pkmn-trainer':'ash-ketchum','paddys-beer-pong':'charlie','flipadelphia-cup':'charlie','terminator-scan':'terminator','t800-scan-long':'terminator','matrix-hardline-hack':'neo','evil-dead-cabin':'ash','django-hangman':'dj-django','django-hangman-showdown':'dj-king-schultz','django-hangman-wanted':'dj-django','sewer-clash':'leonardo-tmnt','snake-run':'snake','shred-hero':'buckethead','king-gizzard-pinball':'ref-stumackenzie','deadite-checkers':'ash','tarantino-chase':'dp-stuntman-mike','tarantino-adrenaline':'pf-vincent','tarantino-twist':'pf-jules','tarantino-standoff':'pf-jules'};
 
@@ -82,7 +103,7 @@ function art(g,{fam=null,size=''}={}){
 }
 
 // ---- the screen ----
-const state={focus:null,family:null};
+const state={focus:null,family:null,grid:false};
 let current=null;
 // opts: {list, partsFor(g), filter, filters:[[id,label]], query, strip (1P/online strip HTML), devStrip, extraBosses}
 function arcadeConsoleHTML(opts){
@@ -104,9 +125,10 @@ function arcadeConsoleHTML(opts){
   <nav class="arc-pills" aria-label="Game categories">${pills}</nav>
   <div class="arc-strip">${strip||''}</div>
   <section class="arc-info arc-info-in" aria-live="polite">${items[at]?infoHTML(items[at]):'<p class="arc-empty">Nothing here yet. Try another category.</p>'}</section>
-  <div class="arc-row-label">${e(filters.find(f=>f[0]===filter)?.[1]||'Games')} · ${items.length}</div>
+  <div class="arc-row-head"><span class="arc-row-label">${e(filters.find(f=>f[0]===filter)?.[1]||'Games')} · ${items.length}</span>${items.length>1?'<button class="arc-viewall" data-arc-all>View all ▸</button>':''}</div>
   <div class="arc-row" role="listbox" aria-label="Games">${tiles}</div>
   ${devStrip?`<div class="arc-dev">${devStrip}</div>`:''}
+  <section class="arc-grid-page"${state.grid?'':' hidden'} aria-label="All games">${state.grid?gridHTML():''}</section>
   <section class="arc-fam"${state.family?'':' hidden'} aria-label="Versions">${state.family?familyHTML(state.family):''}</section></main>`;
 }
 function heroVars(it){const g=it?.g,h=hue(it?.fam?.title||g?.source||'');return `--arc-h:${h}`;}
@@ -121,19 +143,27 @@ function infoHTML(it){
    <div class="arc-actions"><button class="arc-cta" data-arc-family="${e(f.key)}">Choose a version ▸</button></div>`;}
  const g=it.g,p=current.partsFor(g);
  return `<div class="arc-src">${e(g.source)} · ${e(catName(g))}</div><h2 class="arc-title">${e(g.title)}</h2><div class="arc-chips">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div>
-  <p class="arc-rules">${e(g.rules||'')}</p><div class="arc-actions">${p.play}${p.dev||''}</div>`;
+  <p class="arc-rules">${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${p.dev||''}</div>`;
 }
-const CATS={arcade:'Arcade',puzzle:'Puzzle',strategy:'Strategy',skill:'Skill',sports:'Sports',trivia:'Trivia',casino:'Casino',dice:'Dice',duel:'Duel',coop:'Co-op',pokemon:'Pokémon'};
-const catName=g=>g.bossId?'Boss':CATS[g.category]||'Game';
+// The console's Play buttons start the game at once (no Start/Back card; app.js passes quick to requestGame).
+const quick=html=>String(html).replace(/data-action="arcade-(game|solo)"/,'data-quick="1" data-action="arcade-$1"');
+const catName=g=>g.bossId?'Boss':g.pokemon?'Pokémon':[...categoriesOf(g)].map(c=>CAT_NAME[c]).filter(Boolean)[0]||'Game';
 function shortTitle(g,f){const t=g.title.replace(/^Boss · /,'');const parts=t.split(' · ');return parts.length>1&&norm(parts[0]).includes(norm(f.title).slice(0,5))?parts.slice(1).join(' · '):t.replace(/^Broforce: /,'');}
 function familyHTML(key){const f=FAMILY.get(key);if(!f||!current)return '';
  let members=current.list.filter(g=>familyOf(g)===key);if(key==='bosses')members=[...members,...(current.extraBosses||[])];
  const cards=members.map((g,i)=>{const p=current.partsFor(g);return `<article class="arc-ver${p.open?'':' locked'}" style="--arc-h:${hue(g.source)};--i:${Math.min(i,12)}"><div class="arc-ver-art">${dropArt('keyart',g.id)&&!tileArt(g.id)?`<img class="arc-card-art" src="${e(dropArt('keyart',g.id))}" alt="" loading="lazy">`:art(g)}${p.open?'':'<span class="arc-lock" aria-hidden="true">🔒</span>'}</div>
-  <div class="arc-ver-body"><h3>${e(shortTitle(g,f))}</h3><div class="arc-chips small">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div><p>${e(g.rules||'')}</p><div class="arc-actions">${p.play}${p.dev||''}</div></div></article>`;}).join('');
+  <div class="arc-ver-body"><h3>${e(shortTitle(g,f))}</h3><div class="arc-chips small">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div><p>${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${p.dev||''}</div></div></article>`;}).join('');
  return `<header class="arc-fam-top"><button class="arc-icon" data-arc-close aria-label="Back to the Arcade">←</button><div><div class="arc-src">${e(f.sub)}</div><h2 class="arc-title">${e(f.title)}</h2></div></header>
   <div class="arc-fam-hero" aria-hidden="true">${art(members[0]||{},{fam:f,size:' big'})}</div><div class="arc-ver-grid">${cards}</div>`;}
 
 // Focus a tile without rebuilding the screen (fast, keeps the row's scroll position).
+// "View all": every tile of the current list as big blocks you scroll through (owner, Nov 3).
+function gridHTML(){if(!current)return '';const lab=current.filters.find(f=>f[0]===current.filter)?.[1]||'Games';
+ return `<header class="arc-fam-top"><button class="arc-icon" data-arc-grid-close aria-label="Back to the Arcade">←</button><div><div class="arc-src">${current.items.length} ${current.items.length===1?'game':'tiles'}</div><h2 class="arc-title">${e(lab)}</h2></div></header>
+  <div class="arc-block-grid">${current.items.map((it,i)=>{const g=it.g,locked=!it.fam&&!current.partsFor(g).open;
+   return `<button class="arc-block${locked?' locked':''}" data-arc-pick="${i}" style="--arc-h:${hue(it.fam?.title||g.source)};--i:${Math.min(i,16)}"><span class="arc-block-art">${art(g,{fam:it.fam})}${it.fam?`<span class="arc-count">×${it.fam.key==='bosses'?bossTotal():it.members.length}</span>`:''}${locked?'<span class="arc-lock" aria-hidden="true">🔒</span>':''}</span><span class="arc-block-name">${e(it.fam?.title||g.title)}</span><span class="arc-block-sub">${e(it.fam?it.fam.sub:catName(g))}</span></button>`;}).join('')}</div>`;}
+function openGrid(){const root=document.querySelector('.arcade-console');if(!root)return;state.grid=true;const s=root.querySelector('.arc-grid-page');s.classList.remove('arc-fam-out');s.innerHTML=gridHTML();s.hidden=false;s.scrollTop=0;restart(s,'arc-fam-in');}
+function closeGrid(){state.grid=false;const s=document.querySelector('.arcade-console .arc-grid-page');if(!s)return;if(matchMedia('(prefers-reduced-motion: reduce)').matches){s.hidden=true;s.innerHTML='';return;}s.classList.add('arc-fam-out');setTimeout(()=>{if(state.grid)return;s.hidden=true;s.innerHTML='';s.classList.remove('arc-fam-out');},260);}
 // Swap a picture layer: the new one slides/fades in while the old one fades out (direction follows the tile row).
 function swapLayer(box,html){if(!box)return;const old=[...box.children];old.forEach(o=>{o.classList.add('arc-layer-out');setTimeout(()=>o.remove(),460);});
  if(!html)return;const layer=document.createElement('div');layer.className='arc-layer arc-layer-in';layer.innerHTML=html;box.append(layer);}
@@ -156,9 +186,12 @@ function closeFamily(){state.family=null;const s=document.querySelector('.arcade
 // After a rebuild: put the focused tile in view (no animation) and reopen the version page if one was open.
 function installArcadeConsole(){const root=document.querySelector('.arcade-console');if(!root||!current)return;
  const i=current.items.findIndex(it=>it.key===state.focus);const tile=root.querySelectorAll('.arc-tile')[i];if(tile){const row=root.querySelector('.arc-row');row.scrollLeft=tile.offsetLeft-row.clientWidth/2+tile.clientWidth/2;}}
-function resetArcadeConsole(){state.focus=null;state.family=null;}
+function resetArcadeConsole(){state.focus=null;state.family=null;state.grid=false;}
 if(typeof document!=='undefined')document.addEventListener('click',ev=>{
- const t=ev.target.closest?.('[data-arc-focus],[data-arc-family],[data-arc-close],[data-arc-search]');if(!t||!t.closest('.arcade-console'))return;
+ const t=ev.target.closest?.('[data-arc-focus],[data-arc-family],[data-arc-close],[data-arc-search],[data-arc-all],[data-arc-pick],[data-arc-grid-close]');if(!t||!t.closest('.arcade-console'))return;
+ if(t.dataset.arcAll!==undefined){openGrid();return;}
+ if(t.dataset.arcGridClose!==undefined){closeGrid();return;}
+ if(t.dataset.arcPick!==undefined){const i=+t.dataset.arcPick,it=current?.items[i];if(!it)return;closeGrid();focusTile(i);if(it.fam)openFamily(it.fam.key);return;}
  if(t.dataset.arcFocus!==undefined){const i=+t.dataset.arcFocus;if(current?.items[i]?.key===state.focus&&current.items[i].fam)openFamily(current.items[i].fam.key);else focusTile(i);}
  else if(t.dataset.arcFamily)openFamily(t.dataset.arcFamily);
  else if(t.dataset.arcClose!==undefined)closeFamily();
@@ -170,6 +203,7 @@ if(typeof document!=='undefined')document.addEventListener('keydown',ev=>{
  const i=current.items.findIndex(it=>it.key===state.focus);
  if(ev.key==='ArrowRight'||ev.key==='ArrowLeft'){ev.preventDefault();focusTile(Math.max(0,Math.min(current.items.length-1,i+(ev.key==='ArrowRight'?1:-1))));}
  else if(ev.key==='Escape'&&state.family)closeFamily();
+ else if(ev.key==='Escape'&&state.grid)closeGrid();
 });
 
-Object.assign(exports,{arcadeConsoleHTML,installArcadeConsole,resetArcadeConsole,familyOf,heroId,FAMILIES,FAMILY,keyArt,tileArt});
+Object.assign(exports,{CATEGORIES,categoriesOf,inCategory,arcadeConsoleHTML,installArcadeConsole,resetArcadeConsole,familyOf,heroId,FAMILIES,FAMILY,keyArt,tileArt});

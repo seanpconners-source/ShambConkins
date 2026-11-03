@@ -574,9 +574,13 @@ async function runAction(name,target){
   case 'home':home();break;
   case 'quit-app':await quitApp();break;
   case 'setup':captureSetup();showView('setup',{selected:setupSelected,names:setupNames});break;
-  case 'players':captureSetup();showView('players',{selected:setupSelected,names:setupNames});break;
-  case 'choose-character':{if(store.view==='players'){captureSetup();const i=+target.dataset.player;if(!differentCharacters(target.dataset.id,setupSelected[1-i]))return toast('That character is already travelling with the other player.');setupSelected[i]=target.dataset.id;savePicks();refreshSetup();break;}const rosterScroll=[...document.querySelectorAll('.cs-grid')].map(el=>el.scrollTop||0);captureSetup();const seed=document.getElementById('run-seed')?.value;const preferences=['board-theme','game-mode','start-level','team-mate-0','team-mate-1'].map(id=>[id,document.getElementById(id)?.value]);if(!differentCharacters(target.dataset.id,setupSelected[1-(+target.dataset.player)]))return toast('That character is already travelling with the other player.');setupSelected[+target.dataset.player]=target.dataset.id;savePicks();if(store.netSetup)sendPick();showView('setup',{selected:setupSelected,names:setupNames});document.querySelectorAll('.cs-grid').forEach((el,i)=>el.scrollTop=rosterScroll[i]||0);const seedEl=document.getElementById('run-seed');if(seedEl&&seed!=null)seedEl.value=seed;for(const[id,value]of preferences)if(document.getElementById(id))document.getElementById(id).value=value;break;}
+  case 'players':captureSetup();store.playersFrom=store.view==='setup'?'setup':'home';showView('players',{selected:setupSelected,names:setupNames});break;
+  // Character Select's Done/back: to New Game when it was opened from there (always online), else to the title screen.
+  case 'players-done':captureSetup();if(store.netSetup||store.playersFrom==='setup')showView('setup',{selected:setupSelected,names:setupNames});else home();break;
+  case 'choose-character':{if(store.view==='players'){captureSetup();const i=+target.dataset.player;if(!differentCharacters(target.dataset.id,setupSelected[1-i]))return toast('That character is already travelling with the other player.');setupSelected[i]=target.dataset.id;savePicks();if(store.netSetup)sendPick();refreshSetup();break;}const rosterScroll=[...document.querySelectorAll('.cs-grid')].map(el=>el.scrollTop||0);captureSetup();const seed=document.getElementById('run-seed')?.value;const preferences=['board-theme','game-mode','start-level','team-mate-0','team-mate-1'].map(id=>[id,document.getElementById(id)?.value]);if(!differentCharacters(target.dataset.id,setupSelected[1-(+target.dataset.player)]))return toast('That character is already travelling with the other player.');setupSelected[+target.dataset.player]=target.dataset.id;savePicks();if(store.netSetup)sendPick();showView('setup',{selected:setupSelected,names:setupNames});document.querySelectorAll('.cs-grid').forEach((el,i)=>el.scrollTop=rosterScroll[i]||0);const seedEl=document.getElementById('run-seed');if(seedEl&&seed!=null)seedEl.value=seed;for(const[id,value]of preferences)if(document.getElementById(id))document.getElementById(id).value=value;break;}
   case 'start-run':await startRun();break;
+  // Collection character page: make this character Player 1's / Player 2's (the same picks as Character Select).
+  case 'pick-face':{const i=+target.dataset.player,id=target.dataset.id;if(!differentCharacters(id,setupSelected[1-i]))return toast('That character is already with the other player.');setupSelected[i]=id;savePicks();if(store.netSetup)sendPick();toast(`${character(id).name} now plays for ${setupNames[i]}`);showView('roster',{query:catalogQuery,filter:catalogFilter});break;}
   case 'continue':case 'board':await continueRun();break;
   case 'roll':await roll();break;
   case 'reroll':await roll(true);break;
@@ -586,8 +590,8 @@ async function runAction(name,target){
   case 'roster':case 'arcade':showCatalog(name);break;
   case 'filter':catalogFilter=target.dataset.id;catalogPage=0;showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;
   case 'catalog-page':catalogPage=Math.max(0,+target.dataset.page||0);showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;
-  case 'arcade-game':await arcadeLaunch({id:target.dataset.id,origin:'arcade'});break;
-  case 'arcade-solo':await arcadeLaunch({id:target.dataset.id,origin:'arcade',solo:true});break;
+  case 'arcade-game':await arcadeLaunch({id:target.dataset.id,origin:'arcade',quick:target.dataset.quick==='1'});break;
+  case 'arcade-solo':await arcadeLaunch({id:target.dataset.id,origin:'arcade',solo:true,quick:target.dataset.quick==='1'});break;
   case 'duel-propose':await proposeDuel(target.dataset.id);break;
   case 'online-mode':await setOnlineMode(true);break;
   case 'online-leave':leaveOnline();break;
@@ -595,7 +599,7 @@ async function runAction(name,target){
   case 'online-board':await inviteBoard();break;
   case 'online-rejoin':rejoinBoard();break;
   case 'arcade-random':{const g=randomArcadePick();if(!g){toast('No playable games in this list');break;}
-   if(store.online)await proposeDuel(g.id);else if(g.pokemon)await arcadePokemon(g.pokemon);else await arcadeLaunch({id:g.id,origin:'arcade',solo:soloSettings(store.profile).on||undefined});break;}
+   if(store.online)await proposeDuel(g.id);else if(g.pokemon)await arcadePokemon(g.pokemon);else await arcadeLaunch({id:g.id,origin:'arcade',solo:soloSettings(store.profile).on||undefined,quick:true});break;}
   case 'solo-set':{const {key,value}=target.dataset;if(key==='on')store.online=false;setSolo(store.profile,key==='on'?{on:value==='1'}:key==='who'?{who:+value===1?1:0}:{level:value});saveProfile(store.profile);if(store.view==='setup'||store.view==='players')refreshSetup();else showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;}
   case 'arcade-pokemon':await arcadePokemon(target.dataset.id);break;
   case 'dev-game':if(store.profile.settings.devMode)await requestGame({id:target.dataset.id,origin:'dev'});break;
@@ -637,7 +641,7 @@ function installBoardGestures(){
 }
 
 // Character select: the selected heads slowly cycle through their expressions.
-function installSetupFaceCycle(){setInterval(()=>{if(store.view!=='setup'||document.hidden)return;for(const stage of document.querySelectorAll('.cs-stage')){const faces=[...stage.querySelectorAll('.cs-face')];if(faces.length<2)continue;const at=faces.findIndex(f=>f.classList.contains('on'));faces[Math.max(0,at)].classList.remove('on');faces[(at+1)%faces.length].classList.add("on");}},3600);}
+function installSetupFaceCycle(){setInterval(()=>{if(store.view!=='setup'&&store.view!=='players'||document.hidden)return;for(const stage of document.querySelectorAll('.cs-stage')){const faces=[...stage.querySelectorAll('.cs-face')];if(faces.length<2)continue;const at=faces.findIndex(f=>f.classList.contains('on'));faces[Math.max(0,at)].classList.remove('on');faces[(at+1)%faces.length].classList.add("on");}},3600);}
 function installPortraitCycle(){let tick=0;setInterval(()=>{if(store.view!=='board'||store.busy||store.session||document.hidden||!store.run||store.run.finished)return;tick++;for(const p of store.run.players)if(!['win','sad'].includes(p.mood)||tick%3===0)p.mood=['normal','happy','thinking','silly','normal','angry'][tick%6];refreshPortraits();},3500);}
 
 Object.assign(exports,{saveRun,continueRun,roll,takeRoute,resolveLanding,endTurn});
