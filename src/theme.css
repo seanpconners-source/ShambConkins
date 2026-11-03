@@ -959,3 +959,10 @@ body .title-screen .home-stack button.ts-tile{min-height:104px}
 @media (prefers-reduced-motion:reduce){.ts-signal{animation:none}.ts-reel img.ts-cut{transition:none}}
 .ts-net{right:3%;width:46%;height:76%;bottom:10%}
 .ts-phone{width:42%}
+
+/* v0.78.1 (owner): slower, softer reels: a longer cross-fade and a shorter slide */
+.ts-reel img.ts-cut{transform:translateX(22%) scale(.97);transition:opacity 1.2s ease,transform 1.3s cubic-bezier(.25,.8,.3,1)}
+.ts-reel img.ts-cut.out{transform:translateX(-18%) scale(.97)}
+.ts-duo .ts-reel img.ts-cut{transform:translateX(-30%) scale(.97)}
+.ts-duo .ts-reel img.ts-cut.on{transform:translateX(-50%)}
+.ts-duo .ts-reel img.ts-cut.out{transform:translateX(-70%) scale(.97)}

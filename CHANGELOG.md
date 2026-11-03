@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.78.1
+
+- Title screen tiles change pictures more slowly and softly (longer fade, shorter slide).
+
 ## v0.78.0
 
 **Every menu in the new console look: title screen, Characters, New Game, Collection, a smarter Arcade.**

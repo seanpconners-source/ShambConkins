@@ -66,7 +66,7 @@ function installHomeReels(){clearInterval(reelTimer);if(typeof matchMedia!=='und
  reelTimer=setInterval(()=>{if(store.view!=='home'||document.hidden)return;const reels=[...document.querySelectorAll('.title-screen [data-reel]')];if(!reels.length)return;tick++;
   // one reel moves at a time, in turn, so the screen never jumps all at once
   const r=reels[tick%reels.length],imgs=[...r.querySelectorAll('img')],at=Math.max(0,imgs.findIndex(i=>i.classList.contains('on')));
-  imgs.forEach(i=>i.classList.remove('out'));imgs[at].classList.remove('on');imgs[at].classList.add('out');imgs[(at+1)%imgs.length].classList.add('on');},1100);}
+  imgs.forEach(i=>i.classList.remove('out'));imgs[at].classList.remove('on');imgs[at].classList.add('out');imgs[(at+1)%imgs.length].classList.add('on');},2400);} // owner: subtle; each picture stays ~8-10 s
 function homeHTML(){const p=store.profile,solo=soloSettings(p),names=[0,1].map(i=>store.setupNames?.[i]||(i?'Amber':'Sean')),picks=[0,1].map(i=>store.setupSelected?.[i]||(i?'amber':'sean')),unlocked=new Set([...p.shared,...Object.values(p.rosters).flat()].map(characterIdentity)).size,live=store.run&&!store.run.finished,play='<span class="ts-play-icon" aria-hidden="true">▶</span>';
  // Title screen, three tiers: the play button (Continue over New Game when a run is saved), an even 2x2 grid of the main
  // sections, and a quiet dock of small extras (help/about, backup, install, exit). Erase/Clear run live in Settings.
