@@ -127,10 +127,10 @@ Frank's fake-out
 - **E4** `[verify]` (Nov 2 night: `playFrankReveal({short:true})`) Starting at a Level 4 checkpoint shows a short version of the reveal.
 
 Level IV
-- **E5** `[todo]` Keep the layout; make it far darker: fire, blood, chains, filthy dungeons, rusty metal, industrial / Saw-style.
-- **E6** `[todo]` Random horror landmarks like the other levels: Evil Dead cabin, Camp Crystal Lake, Haddonfield, Elm Street, Jigsaw's warehouse...
+- **E5** `[verify]` (Nov 2 night: `horrorDecor` in gridRender.js; more could come: animated fire, a Saw-style trap room) Keep the layout; make it far darker: fire, blood, chains, filthy dungeons, rusty metal, industrial / Saw-style.
+- **E6** `[part]` (9 horror landmarks already in Level IV; some horror ones sit in II/III, see handoff Q13) Random horror landmarks like the other levels: Evil Dead cabin, Camp Crystal Lake, Haddonfield, Elm Street, Jigsaw's warehouse...
 - **E7** `[todo]` Review its minigame pool; mostly horror games and horror reskins, add new ones where needed.
-- **E8** `[todo]` Michael Myers, Jason, Freddy etc. discoverable and unlockable here.
+- **E8** `[part]` (Myers, Jason, Freddy, Leatherface, Chucky, Pinhead, Jigsaw, Ghostface already unlock in Horror) Michael Myers, Jason, Freddy etc. discoverable and unlockable here.
 - **E9** `[todo]` A separate unlockable Horror warp world reached from Level IV.
 
 Endings
