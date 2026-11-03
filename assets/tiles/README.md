@@ -9,3 +9,9 @@ Drop a picture here to choose the art yourself:
 
 A cut-out with a clear (transparent) background looks best: it gets the same glowing outline as the character art.
 About 480 px tall is plenty; `python3 tools/optimize-art.py` shrinks big pictures. Games without art show their icon.
+
+## Key art (the big picture)
+
+`assets/keyart/<game id or family key>.webp` fills the background behind the selected game (and the version tile on a
+family's page). Portrait or landscape both work (it is cropped to the screen). The pinball tables use their backglass art.
+The full list of slots, with ✅ where art already exists: `assets/tiles/SLOTS.md` (remake it: `node tools/arcade-art-slots.mjs`).

@@ -54,8 +54,9 @@ if (fs.existsSync(portraitDir)) for (const f of fs.readdirSync(portraitDir)) {
   drop(key, MIME[ext], ext, path.join(portraitDir, f));
 }
 // Drop-in item/location art: assets/items/<id>.(svg|webp|png|jpg) -> photo:item:<id>; assets/locations/<id>.* -> photo:location:<id>.
-// Arcade tile art (src/arcadeConsole.js): assets/tiles/<game id or family key>.* -> tile:<id> (a cut-out with a clear background looks best).
-for (const [dir, prefix] of [['items', 'photo:item:'], ['locations', 'photo:location:'], ['tiles', 'tile:']]) {
+// Arcade art (src/arcadeConsole.js, list: node tools/arcade-art-slots.mjs): assets/tiles/<game id or family key>.* -> tile:<id>
+// (the square icon on the tile row), assets/keyart/<id>.* -> keyart:<id> (the big picture behind the selected game).
+for (const [dir, prefix] of [['items', 'photo:item:'], ['locations', 'photo:location:'], ['tiles', 'tile:'], ['keyart', 'keyart:']]) {
   const d = path.join(root, 'assets', dir);
   if (!fs.existsSync(d)) continue;
   for (const f of fs.readdirSync(d)) {

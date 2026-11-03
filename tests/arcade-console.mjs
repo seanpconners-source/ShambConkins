@@ -27,7 +27,7 @@ for(const vp of sizes){
  if(famIdx<0)fail(tag+' no pinball family');else{
   await page.click(`.arc-tile >> nth=${famIdx}`);await page.waitForTimeout(300);await page.click('[data-arc-family]');await page.waitForTimeout(500);
   const vers=await page.locator('.arc-fam:not([hidden]) .arc-ver').count();if(vers!==3)fail(tag+' pinball versions '+vers);
-  const cols=await page.evaluate(()=>{const v=[...document.querySelectorAll('.arc-ver')].map(x=>x.getBoundingClientRect().top);return new Set(v.map(Math.round)).size;});
+  const cols=await page.evaluate(()=>{const v=[...document.querySelectorAll('.arc-ver')].map(x=>x.offsetTop);return new Set(v.map(Math.round)).size;});
   if(vp.width>=700&&cols>1)fail(tag+' version tiles not side by side on a wide screen');
   await page.screenshot({path:screenshotPath(`ac-family-${tag}.png`)});
   await page.click('[data-arc-close]');await page.waitForTimeout(200);

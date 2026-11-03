@@ -519,7 +519,7 @@ body .title-screen .ts-dock-icon{color:#dbe5ff}
  padding:max(10px,env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));
  background:#060a17;color:#eef3ff;font-family:var(--c-text);box-sizing:border-box}
 .arcade-console *{box-sizing:border-box}
-.arc-wash{position:absolute;inset:0;z-index:-3;background:radial-gradient(115% 62% at 78% 24%,hsl(var(--arc-h) 72% 34%) 0%,hsl(var(--arc-h) 60% 16%) 42%,#070c1d 76%);transition:filter .4s}
+.arc-wash{position:absolute;inset:0;z-index:-4;background:radial-gradient(115% 62% at 78% 24%,hsl(var(--arc-h) 72% 34%) 0%,hsl(var(--arc-h) 60% 16%) 42%,#070c1d 76%);transition:filter .4s}
 .arc-hero-art{position:absolute;z-index:-2;right:-6%;top:19%;width:84%;height:40%;display:grid;place-items:end center;pointer-events:none}
 .arc-hero-art .big{max-width:100%;max-height:100%;object-fit:contain;object-position:center bottom}
 .arc-hero-art .arc-cut.big{filter:var(--c-neon-big)}
@@ -571,9 +571,10 @@ body .title-screen .ts-dock-icon{color:#dbe5ff}
 .arcade-console .arc-dev button{border:1px solid #ffffff26;background:transparent;color:#cfdaf5;border-radius:999px;padding:5px 11px;font:800 11px var(--c-text);box-shadow:none;min-height:0}
 /* version page: tiles, never long bars (owner's note on the Fold) */
 .arc-fam{position:absolute;inset:0;z-index:20;overflow-y:auto;overscroll-behavior:contain;background:radial-gradient(110% 50% at 80% 0%,hsl(var(--arc-h) 60% 22%) 0%,#070c1d 60%);
- padding:max(10px,env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) max(20px,env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));animation:arc-up .3s cubic-bezier(.2,.8,.25,1)}
+ padding:max(10px,env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) max(20px,env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px))}
 .arc-fam[hidden]{display:none}
 @keyframes arc-up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes arc-down{to{opacity:0;transform:translateY(28px)}}
 .arc-fam-top{position:relative;z-index:1;display:flex;align-items:center;gap:12px;margin-bottom:6px}
 .arc-fam-top .arc-title{font-size:clamp(28px,7.5vw,42px)}
 .arc-fam-hero{position:absolute;right:-4%;top:0;width:52%;height:200px;display:grid;place-items:end center;opacity:.5;pointer-events:none}
@@ -618,3 +619,72 @@ body .title-screen .ts-dock-icon{color:#dbe5ff}
  .arc-row-label,.arc-dev{display:none}
 }
 @media (prefers-reduced-motion:reduce){.arc-hero-art.arc-in,.arc-fam{animation:none}.arcade-console .arc-tile{transition:none}}
+
+/* ---------- motion (owner, Nov 3: "animated, smooth, sleek") ----------
+   Screens animate in when you arrive (body[data-enter], set by ui.js showView), the Arcade's colour wash blends between
+   games (--arc-h is a registered number, so it transitions), the hero picture cross-fades in the direction you moved,
+   the selected game's text rises in line by line, tiles cascade in, the version page slides up and back down.
+   Only opacity/transform animate (cheap on phones); everything stops for prefers-reduced-motion. */
+@property --arc-h{syntax:'<number>';inherits:true;initial-value:220}
+.arcade-console{transition:--arc-h .75s cubic-bezier(.3,.7,.3,1)}
+.arc-keyart{position:absolute;inset:0;z-index:-3;pointer-events:none;overflow:hidden}
+.arc-keyart img{width:100%;height:100%;object-fit:cover;animation:arc-kenburns 22s ease-in-out infinite alternate}
+.arc-hero-art .arc-layer,.arc-keyart .arc-layer{position:absolute;inset:0}
+.arc-hero-art .big{animation:arc-float 6.5s ease-in-out infinite}
+.arc-layer-in{animation:arc-layer-in .55s cubic-bezier(.2,.8,.25,1) both}
+.arc-layer-out{animation:arc-layer-out .45s ease both;pointer-events:none}
+@keyframes arc-layer-in{from{opacity:0;transform:translateX(calc(var(--arc-dir,1)*46px)) scale(.95)}to{opacity:1;transform:none}}
+@keyframes arc-layer-out{to{opacity:0;transform:translateX(calc(var(--arc-dir,1)*-34px)) scale(1.03)}}
+@keyframes arc-float{0%,100%{translate:0 0}50%{translate:0 -7px}}
+@keyframes arc-kenburns{from{transform:scale(1)}to{transform:scale(1.07) translate(-1%,-1%)}}
+@keyframes arc-rise{from{opacity:0;transform:translateY(12px)}}
+@keyframes arc-drop{from{opacity:0;transform:translateY(-14px)}}
+@keyframes arc-fade{from{opacity:0}}
+@keyframes arc-tile-in{from{opacity:0;transform:translateY(22px) scale(.94)}}
+@keyframes arc-pop{from{opacity:0;transform:translateY(14px) scale(.97)}}
+.arc-info-in>*{animation:arc-rise .48s cubic-bezier(.2,.8,.25,1) backwards}
+.arc-info-in>:nth-child(2){animation-delay:.04s}.arc-info-in>:nth-child(3){animation-delay:.08s}.arc-info-in>:nth-child(4){animation-delay:.12s}.arc-info-in>:nth-child(5){animation-delay:.16s}
+.arcade-console .arc-tile{transition:transform .3s cubic-bezier(.2,.8,.25,1),box-shadow .3s}
+.arcade-console .arc-tile:hover:not(.on){transform:translateY(-4px)}
+.arcade-console .arc-tile:active{transform:scale(.94)}
+.arc-tile .arc-cut{transition:transform .35s cubic-bezier(.2,.8,.25,1)}
+.arc-tile.on .arc-cut{transform:translateX(-50%) scale(1.07)}
+.arcade-console .arc-pill{transition:background .25s,color .25s,transform .15s}
+.arcade-console .arc-pill:active,.arcade-console .arc-icon:active{transform:scale(.93)}
+.arcade-console .arc-icon{transition:background .2s,color .2s,transform .15s}
+.arcade-console .arc-actions button{transition:transform .15s,box-shadow .25s,background .2s}
+.arcade-console .arc-actions button:hover{box-shadow:0 8px 26px #4d8dff88}
+.arc-fam.arc-fam-in{animation:arc-up .36s cubic-bezier(.2,.8,.25,1)}
+.arc-fam.arc-fam-out{animation:arc-down .26s ease forwards}
+.arc-ver{animation:arc-tile-in .48s cubic-bezier(.2,.8,.25,1) backwards;animation-delay:calc(var(--i,0)*50ms + 90ms);transition:transform .25s cubic-bezier(.2,.8,.25,1),box-shadow .25s}
+.arc-ver:hover{transform:translateY(-3px);box-shadow:inset 0 0 0 1px #ffffff2a,0 14px 30px #000a}
+.arc-fam-hero{animation:arc-layer-in .6s .05s cubic-bezier(.2,.8,.25,1) backwards}
+body[data-enter="arcade"] .arc-wash{animation:arc-fade .7s ease backwards}
+body[data-enter="arcade"] .arc-top{animation:arc-drop .45s cubic-bezier(.2,.8,.25,1) backwards}
+body[data-enter="arcade"] .arc-pills{animation:arc-drop .45s .06s cubic-bezier(.2,.8,.25,1) backwards}
+body[data-enter="arcade"] .arc-strip{animation:arc-drop .45s .1s cubic-bezier(.2,.8,.25,1) backwards}
+body[data-enter="arcade"] .arc-hero-art .arc-layer{animation:arc-layer-in .75s .12s cubic-bezier(.2,.8,.25,1) backwards}
+body[data-enter="arcade"] .arc-info>*{animation-delay:.2s}
+body[data-enter="arcade"] .arc-tile{animation:arc-tile-in .5s cubic-bezier(.2,.8,.25,1) backwards;animation-delay:calc(var(--i,0)*38ms + .18s)}
+body[data-enter="arcade"] .arc-row-label,body[data-enter="arcade"] .arc-dev{animation:arc-fade .5s .3s backwards}
+/* title screen */
+body[data-enter="home"] .title-screen .ts-top{animation:arc-drop .5s cubic-bezier(.2,.8,.25,1) backwards}
+body[data-enter="home"] .title-screen .hero-logo{animation:arc-pop .7s cubic-bezier(.2,.8,.25,1) backwards}
+body[data-enter="home"] .title-screen .ts-tagline{animation:arc-rise .5s .18s cubic-bezier(.2,.8,.25,1) backwards}
+body[data-enter="home"] .title-screen .ts-primary{animation:arc-fade .45s .24s backwards}
+body[data-enter="home"] .title-screen .ts-tiles>button{animation:arc-tile-in .5s cubic-bezier(.2,.8,.25,1) backwards}
+body[data-enter="home"] .title-screen .ts-tiles>button:nth-child(1){animation-delay:.3s}body[data-enter="home"] .title-screen .ts-tiles>button:nth-child(2){animation-delay:.36s}
+body[data-enter="home"] .title-screen .ts-tiles>button:nth-child(3){animation-delay:.42s}body[data-enter="home"] .title-screen .ts-tiles>button:nth-child(4){animation-delay:.48s}
+body[data-enter="home"] .title-screen .ts-foot{animation:arc-rise .5s .55s cubic-bezier(.2,.8,.25,1) backwards}
+body .title-screen .home-stack button.ts-tile{transition:transform .25s cubic-bezier(.2,.8,.25,1),box-shadow .25s,background .2s}
+body .title-screen .home-stack button.ts-tile:hover{transform:translateY(-3px);box-shadow:var(--ts-edge),0 14px 28px #000a,0 0 0 1px #4d8dff55}
+body .title-screen .home-stack button.ts-tile:active{transform:scale(.97)}
+/* other menus and dialogs fade/rise in (they get the full console look later, M8) */
+body[data-enter="roster"] .catalog-shell,body[data-enter="setup"] .setup-shell,body[data-enter="players"] .setup-shell{animation:arc-rise .45s cubic-bezier(.2,.8,.25,1) backwards}
+body[data-theme="home"] #dialog[open]:not(.sheet) .dialog-content{animation:arc-pop .3s cubic-bezier(.2,.8,.25,1)}
+@media (prefers-reduced-motion:reduce){
+ .arcade-console{transition:none}
+ .arcade-console *,.arcade-console *::after,.title-screen *,.catalog-shell,.setup-shell,#dialog .dialog-content{animation:none!important;transition:none!important}
+}
+.arcade-console.has-key .arc-shade{background:linear-gradient(180deg,#060a17e6 0%,#060a1780 18%,#0000 34%,#060a17cc 56%,#060a17 74%)}
+@media (min-width:700px){.arcade-console.has-key .arc-shade{background:linear-gradient(90deg,#060a17 6%,#060a17b3 36%,#0000 62%),linear-gradient(180deg,#060a17cc 0%,#0000 20%,#0000 60%,#060a17 84%)}}

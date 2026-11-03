@@ -68,7 +68,10 @@ function hash(s){let h=0;for(const ch of String(s))h=(h*31+ch.charCodeAt(0))|0;r
 const hue=s=>((hash(norm(s))%360)+360)%360;
 // The cut-out with the neon outline; games without a character fall back to their own art, then their icon.
 // Owner's own tile art wins: assets/tiles/<game id>.webp, or <family key>.webp for a family tile.
-const tileArt=k=>{const u=k&&USER_PORTRAITS['tile:'+k];return u&&(isRasterArt(u)||/^data:image\/svg|\.svg$/i.test(u))?u:null;};
+const dropArt=(kind,k)=>{const u=k&&USER_PORTRAITS[kind+':'+k];return u&&(isRasterArt(u)||/^data:image\/svg|\.svg$/i.test(u))?u:null;};
+const tileArt=k=>dropArt('tile',k);
+// Key art: a big picture for the hero (assets/keyart/<game id or family key>.*), shown full-bleed behind the selected game.
+const keyArt=it=>it&&(dropArt('keyart',it.fam?.key)||dropArt('keyart',it.g?.id));
 function art(g,{fam=null,size=''}={}){
  const drop=tileArt(fam?.key)||tileArt(g?.id);if(drop)return `<img class="arc-cut arc-drop${size}" src="${e(drop)}" alt="" loading="lazy" draggable="false">`;
  const cid=fam?.hero&&own(fam.hero)?fam.hero:g?.id?heroId(g):null;
@@ -91,15 +94,16 @@ function arcadeConsoleHTML(opts){
  current={...opts,items};
  let at=items.findIndex(it=>it.key===state.focus);if(at<0){at=0;state.focus=items[0]?.key||null;}
  const pills=filters.map(([id,label])=>`<button class="arc-pill${id===filter?' on':''}" data-action="filter" data-id="${e(id)}">${e(label)}</button>`).join('');
- const tiles=items.map((it,i)=>tileHTML(it,i,i===at)).join('');
- return `<main class="arcade-console" style="${heroVars(items[at])}"><div class="arc-wash" aria-hidden="true"></div>
-  <div class="arc-hero-art" aria-hidden="true">${items[at]?heroArt(items[at]):''}</div><div class="arc-shade" aria-hidden="true"></div>
+ const tiles=items.map((it,i)=>tileHTML(it,i,i===at)).join('');const root0=items[at];
+ return `<main class="arcade-console${root0&&keyArt(root0)?' has-key':''}" style="${heroVars(items[at])}"><div class="arc-wash" aria-hidden="true"></div>
+  <div class="arc-keyart" aria-hidden="true">${items[at]&&keyArt(items[at])?`<div class="arc-layer"><img src="${e(keyArt(items[at]))}" alt=""></div>`:''}</div>
+  <div class="arc-hero-art" aria-hidden="true">${items[at]&&!keyArt(items[at])?`<div class="arc-layer">${heroArt(items[at])}</div>`:''}</div><div class="arc-shade" aria-hidden="true"></div>
   <header class="arc-top"><button class="arc-icon" data-action="home" aria-label="Back to the title screen">←</button><b class="arc-brand">Arcade</b>
    <span class="arc-top-r"><button class="arc-icon" data-action="arcade-random" aria-label="Random game" title="Random game">🎲</button><button class="arc-icon arc-search-btn${query?' on':''}" data-arc-search aria-label="Search games">⌕</button></span></header>
   <div class="arc-search"${query?'':' hidden'}><input id="catalog-search" type="search" value="${e(query)}" placeholder="Search games or shows…" aria-label="Search games" autocomplete="off"></div>
   <nav class="arc-pills" aria-label="Game categories">${pills}</nav>
   <div class="arc-strip">${strip||''}</div>
-  <section class="arc-info" aria-live="polite">${items[at]?infoHTML(items[at]):'<p class="arc-empty">Nothing here yet. Try another category.</p>'}</section>
+  <section class="arc-info arc-info-in" aria-live="polite">${items[at]?infoHTML(items[at]):'<p class="arc-empty">Nothing here yet. Try another category.</p>'}</section>
   <div class="arc-row-label">${e(filters.find(f=>f[0]===filter)?.[1]||'Games')} · ${items.length}</div>
   <div class="arc-row" role="listbox" aria-label="Games">${tiles}</div>
   ${devStrip?`<div class="arc-dev">${devStrip}</div>`:''}
@@ -108,7 +112,7 @@ function arcadeConsoleHTML(opts){
 function heroVars(it){const g=it?.g,h=hue(it?.fam?.title||g?.source||'');return `--arc-h:${h}`;}
 function heroArt(it){return art(it.g,{fam:it.fam,size:' big'});}
 function tileHTML(it,i,on){const g=it.g,locked=!it.fam&&!current.partsFor(g).open;
- return `<button class="arc-tile${on?' on':''}${locked?' locked':''}" role="option" aria-selected="${on}" data-arc-focus="${i}" style="--arc-h:${hue(it.fam?.title||g.source)}" aria-label="${e(it.fam?.title||g.title)}">${art(g,{fam:it.fam})}${it.fam?`<span class="arc-count">×${it.fam.key==='bosses'?bossTotal():it.members.length}</span>`:''}${locked?'<span class="arc-lock" aria-hidden="true">🔒</span>':''}</button>`;}
+ return `<button class="arc-tile${on?' on':''}${locked?' locked':''}" role="option" aria-selected="${on}" data-arc-focus="${i}" style="--arc-h:${hue(it.fam?.title||g.source)};--i:${Math.min(i,14)}" aria-label="${e(it.fam?.title||g.title)}">${art(g,{fam:it.fam})}${it.fam?`<span class="arc-count">×${it.fam.key==='bosses'?bossTotal():it.members.length}</span>`:''}${locked?'<span class="arc-lock" aria-hidden="true">🔒</span>':''}</button>`;}
 function bossTotal(){return (current.extraBosses||[]).length+current.items.find(x=>x.fam?.key==='bosses')?.members.length||0;}
 function infoHTML(it){
  if(it.fam){const f=it.fam,n=f.key==='bosses'?bossTotal():it.members.length,played=it.members.filter(g=>store.profile.played.includes(g.id)).length;
@@ -124,23 +128,31 @@ const catName=g=>g.bossId?'Boss':CATS[g.category]||'Game';
 function shortTitle(g,f){const t=g.title.replace(/^Boss · /,'');const parts=t.split(' · ');return parts.length>1&&norm(parts[0]).includes(norm(f.title).slice(0,5))?parts.slice(1).join(' · '):t.replace(/^Broforce: /,'');}
 function familyHTML(key){const f=FAMILY.get(key);if(!f||!current)return '';
  let members=current.list.filter(g=>familyOf(g)===key);if(key==='bosses')members=[...members,...(current.extraBosses||[])];
- const cards=members.map(g=>{const p=current.partsFor(g);return `<article class="arc-ver${p.open?'':' locked'}" style="--arc-h:${hue(g.source)}"><div class="arc-ver-art">${art(g)}${p.open?'':'<span class="arc-lock" aria-hidden="true">🔒</span>'}</div>
+ const cards=members.map((g,i)=>{const p=current.partsFor(g);return `<article class="arc-ver${p.open?'':' locked'}" style="--arc-h:${hue(g.source)};--i:${Math.min(i,12)}"><div class="arc-ver-art">${dropArt('keyart',g.id)&&!tileArt(g.id)?`<img class="arc-card-art" src="${e(dropArt('keyart',g.id))}" alt="" loading="lazy">`:art(g)}${p.open?'':'<span class="arc-lock" aria-hidden="true">🔒</span>'}</div>
   <div class="arc-ver-body"><h3>${e(shortTitle(g,f))}</h3><div class="arc-chips small">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div><p>${e(g.rules||'')}</p><div class="arc-actions">${p.play}${p.dev||''}</div></div></article>`;}).join('');
  return `<header class="arc-fam-top"><button class="arc-icon" data-arc-close aria-label="Back to the Arcade">←</button><div><div class="arc-src">${e(f.sub)}</div><h2 class="arc-title">${e(f.title)}</h2></div></header>
   <div class="arc-fam-hero" aria-hidden="true">${art(members[0]||{},{fam:f,size:' big'})}</div><div class="arc-ver-grid">${cards}</div>`;}
 
 // Focus a tile without rebuilding the screen (fast, keeps the row's scroll position).
+// Swap a picture layer: the new one slides/fades in while the old one fades out (direction follows the tile row).
+function swapLayer(box,html){if(!box)return;const old=[...box.children];old.forEach(o=>{o.classList.add('arc-layer-out');setTimeout(()=>o.remove(),460);});
+ if(!html)return;const layer=document.createElement('div');layer.className='arc-layer arc-layer-in';layer.innerHTML=html;box.append(layer);}
+function restart(el,cls){if(!el)return;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);}
 function focusTile(i,{scroll=true}={}){
  const root=document.querySelector('.arcade-console');if(!root||!current)return;const it=current.items[i];if(!it)return;
- state.focus=it.key;root.style.setProperty('--arc-h',hue(it.fam?.title||it.g.source));
- root.querySelector('.arc-hero-art').innerHTML=heroArt(it);root.querySelector('.arc-info').innerHTML=infoHTML(it);
+ const was=current.items.findIndex(x=>x.key===state.focus);if(was===i)return;
+ state.focus=it.key;root.style.setProperty('--arc-dir',i>=was?1:-1);root.style.setProperty('--arc-h',hue(it.fam?.title||it.g.source));
+ const key=keyArt(it);root.classList.toggle('has-key',!!key);
+ swapLayer(root.querySelector('.arc-keyart'),key?`<img src="${e(key)}" alt="">`:'');
+ swapLayer(root.querySelector('.arc-hero-art'),key?'':heroArt(it));
+ const info=root.querySelector('.arc-info');info.innerHTML=infoHTML(it);restart(info,'arc-info-in');
  root.querySelectorAll('.arc-tile').forEach((t,j)=>{t.classList.toggle('on',j===i);t.setAttribute('aria-selected',String(j===i));});
  const tile=root.querySelectorAll('.arc-tile')[i];if(scroll&&tile)tile.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',inline:'center',block:'nearest'});
- root.querySelector('.arc-hero-art').classList.remove('arc-in');void root.offsetWidth;root.querySelector('.arc-hero-art').classList.add('arc-in');
  if(store.profile?.settings.sound)tone(660+((i%5)*40),.05,.02,'triangle');
 }
-function openFamily(key){const root=document.querySelector('.arcade-console');if(!root)return;state.family=key;const s=root.querySelector('.arc-fam');s.innerHTML=familyHTML(key);s.hidden=false;s.scrollTop=0;}
-function closeFamily(){state.family=null;const s=document.querySelector('.arcade-console .arc-fam');if(s){s.hidden=true;s.innerHTML='';}}
+function openFamily(key){const root=document.querySelector('.arcade-console');if(!root)return;state.family=key;const s=root.querySelector('.arc-fam');s.classList.remove('arc-fam-out');s.innerHTML=familyHTML(key);s.hidden=false;s.scrollTop=0;restart(s,'arc-fam-in');}
+// Closing slides the version page away before hiding it.
+function closeFamily(){state.family=null;const s=document.querySelector('.arcade-console .arc-fam');if(!s)return;if(matchMedia('(prefers-reduced-motion: reduce)').matches){s.hidden=true;s.innerHTML='';return;}s.classList.add('arc-fam-out');setTimeout(()=>{if(state.family)return;s.hidden=true;s.innerHTML='';s.classList.remove('arc-fam-out');},260);}
 // After a rebuild: put the focused tile in view (no animation) and reopen the version page if one was open.
 function installArcadeConsole(){const root=document.querySelector('.arcade-console');if(!root||!current)return;
  const i=current.items.findIndex(it=>it.key===state.focus);const tile=root.querySelectorAll('.arc-tile')[i];if(tile){const row=root.querySelector('.arc-row');row.scrollLeft=tile.offsetLeft-row.clientWidth/2+tile.clientWidth/2;}}
@@ -160,4 +172,4 @@ if(typeof document!=='undefined')document.addEventListener('keydown',ev=>{
  else if(ev.key==='Escape'&&state.family)closeFamily();
 });
 
-Object.assign(exports,{arcadeConsoleHTML,installArcadeConsole,resetArcadeConsole,familyOf,heroId,FAMILIES});
+Object.assign(exports,{arcadeConsoleHTML,installArcadeConsole,resetArcadeConsole,familyOf,heroId,FAMILIES,FAMILY,keyArt,tileArt});
