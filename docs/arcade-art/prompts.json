@@ -1835,7 +1835,7 @@
   "source": "Doom II",
   "kind": "version of doom",
   "hasKey": true,
-  "hasIcon": false,
+  "hasIcon": true,
   "keyart": "Key art for \"DOOM II: Hell on Earth\", a minigame in a party video game that pays tribute to Doom II. Scene: The real thing: title screen, menus, every episode, the intermission tally. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
   "icon": "Square game icon for \"DOOM II: Hell on Earth\" (Doom II tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
