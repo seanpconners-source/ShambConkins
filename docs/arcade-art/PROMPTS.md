@@ -105,7 +105,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## South Park · `southpark`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "South Park", a minigame in a party video game that pays tribute to South Park. Scene: Dodgeball, Poofs, Kenny, snowballs. The “Conjoined Fetus Lady” championship, one end of the gym each (P1 top, P2 bottom; left/right on wide screens). Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
