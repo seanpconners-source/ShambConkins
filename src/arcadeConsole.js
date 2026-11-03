@@ -101,7 +101,7 @@ const KEY_BOX={'bricks-breaker-quest':[.62,.47,.99,.95],'greed-island-mancala':[
  baseball:[.4,.36,.98,.82],bond:[.27,.3,.65,.98],bosses:[.22,.5,.72,.92],candy:[.28,.3,.88,.75],casino:[.36,.28,.9,.75],castlevania:[.45,.5,.78,.95],
  clue:[.25,.15,.9,.85],monopoly:[.55,.35,.98,.98],'pac-maze-duel':[.36,.7,.9,.98],paddys:[.3,.25,.95,.92],rush:[.25,0,.85,.9],kart:[.3,.25,.95,.92],
  trivia:[.35,.25,.92,.95],ducks:[.45,.3,.98,.78],matrix:[.48,.4,.92,.98],terminator:[.38,.3,.9,.98],hyrule:[.52,.5,.8,.75],taskmaster:[.55,.42,.88,.85],
- tarantino:[.48,.42,.92,.92],trek:[.32,.2,.85,.98],invaders:[.6,.6,.96,.98],sonic:[.55,.35,.85,.88],smb:[.27,.45,.53,.88],southpark:[.5,.38,.95,.95]};
+ tarantino:[.48,.42,.92,.92],trek:[.32,.2,.85,.98],invaders:[.6,.6,.96,.98],sonic:[.55,.35,.85,.88],smb:[.27,.45,.53,.88],southpark:[.5,.38,.95,.95],doom:[.45,.18,.98,.9]};
 const KEY_BOX_DEFAULT=[.28,.15,.72,.85];
 const keyBox=it=>KEY_BOX[it.fam?.key]||KEY_BOX[it.g?.id]||KEY_BOX[familyOf(it.g)]||KEY_BOX_DEFAULT;
 const keyImg=it=>{const b=keyBox(it);return `<img src="${e(keyArt(it))}" alt="" data-box="${b.join(',')}" style="transform-origin:${(b[0]+b[2])*50}% ${(b[1]+b[3])*50}%">`;};

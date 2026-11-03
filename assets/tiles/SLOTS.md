@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 186 slots: 32 have key art, 31 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 186 slots: 34 have key art, 31 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -13,7 +13,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `kart` | Mario Kart (rainbow-road-kart, kart-grand-prix-pass, kart-time-trial, rainbow-balloon-battle) | family | ✅ / · |
 | `castlevania` | Castlevania (cv-symphony, cv-vampire-killer, cv-candle-hunt) | family | ✅ / ✅ |
 | `sonic` | Sonic the Hedgehog (sonic-ring-rush, sonic-goal-dash) | family | ✅ / ✅ |
-| `doom` | DOOM (doom, doom-2) | family | · / ✅ |
+| `doom` | DOOM (doom, doom-2) | family | ✅ / ✅ |
 | `hangman` | Hangman Unchained (django-hangman, django-hangman-showdown, django-hangman-wanted) | family | ✅ / ✅ |
 | `invaders` | Space Invaders (space-swarm, space-swarm-versus, space-swarm-coop) | family | ✅ / ✅ |
 | `tarantino` | Tarantino Night (tarantino-crazy88, kill-bill-duel, tarantino-standoff, tarantino-twist, tarantino-adrenaline, tarantino-bounty, tarantino-chase) | family | ✅ / ✅ |
@@ -189,7 +189,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `space-swarm-coop` | Space Invaders · Mars Attacks! Co-op | version of invaders | · / · |
 | `django-hangman-showdown` | Hangman Unchained · Showdown | version of hangman | · / · |
 | `django-hangman-wanted` | Hangman Unchained · Wanted | version of hangman | · / · |
-| `doom` | DOOM | version of doom | · / ✅ |
+| `doom` | DOOM | version of doom | ✅ / ✅ |
 | `doom-2` | DOOM II: Hell on Earth | version of doom | · / · |
 | `black-sabbath-pinball` | Black Sabbath · Doom Pinball | version of pinball | ✅ / ✅ |
 | `king-gizzard-pinball` | King Gizzard · Nonagon Infinity Pinball | version of pinball | ✅ / ✅ |
