@@ -59,18 +59,33 @@ function castleSVG(data,gate){
  if(!boss)return arch;
  return `<g class="boss-castle gr-castle" transform="translate(${gate.x},${gate.y+205}) scale(.82)"><path d="M0 -150V-215" class="gr-castle-road"/><rect x="-86" y="-36" width="172" height="120" rx="6" fill="#4a4258" stroke="#120d18" stroke-width="5"/><rect x="-118" y="-84" width="46" height="168" rx="5" fill="#5a5070" stroke="#120d18" stroke-width="5"/><rect x="72" y="-84" width="46" height="168" rx="5" fill="#5a5070" stroke="#120d18" stroke-width="5"/>${[-118,-100,-82,72,90,108].map(x=>`<rect x="${x}" y="-102" width="12" height="18" fill="#5a5070" stroke="#120d18" stroke-width="4"/>`).join('')}<path d="M0 -36V-110" stroke="#120d18" stroke-width="5"/><path d="M0 -110l56 16-56 18z" fill="#ff4b55" stroke="#120d18" stroke-width="3"/><circle cx="0" cy="22" r="34" fill="#1d1428" stroke="#ffcf3f" stroke-width="5"/><text y="36" text-anchor="middle" font-size="40">${e(boss.icon||'👹')}</text><text y="122" text-anchor="middle" class="gr-castle-name">${e(castleName(boss))}</text></g>${arch}`;
 }
+// ROADMAP E5: Level IV is far darker: rusty riveted floor plates, blood dripping from the level's top edge, chains and meat
+// hooks hanging into the board, blood splatter, and fire along the edges. Static SVG (grid boards loop no animations).
+function horrorDecor(data,W,seed){const r=seededRandom(seed+':horror-decor'),y0=data.y,h=data.height||1000,out=[];
+ // blood dripping from the top edge
+ let d=`M${-W} ${y0}`;for(let x=-W;x<=2*W;x+=46+r()*40){const len=8+r()*(r()<.25?150:46),w=6+r()*10;d+=`L${f(x)} ${y0}L${f(x)} ${f(y0+len-w)}a${f(w)} ${f(w)} 0 0 0 ${f(w*2)} 0L${f(x+w*2)} ${y0}`;}
+ out.push(`<path d="${d}L${2*W} ${y0}L${2*W} ${y0-8}L${-W} ${y0-8}Z" fill="#6e0710" opacity=".9"/>`);
+ // splatter
+ for(let i=0;i<16;i++){const cx=f(r()*W),cy=f(y0+80+r()*(h-160)),R=10+r()*26;let g=`<circle cx="${cx}" cy="${cy}" r="${f(R)}"/>`;for(let k=0;k<6;k++){const a=r()*6.283,dd=R*(1.1+r()*1.4);g+=`<circle cx="${f(+cx+Math.cos(a)*dd)}" cy="${f(+cy+Math.sin(a)*dd)}" r="${f(2+r()*R*.3)}"/>`;}out.push(`<g fill="#5a0610" opacity=".55">${g}</g>`);}
+ // chains with hooks
+ for(let i=0;i<7;i++){const x=f(60+r()*(W-120)),len=140+r()*380;let g='';for(let y=0;y<len;y+=26){g+=y%52?`<rect x="${x-4}" y="${f(y0+y)}" width="8" height="30" rx="4" fill="none" stroke="#7d756e" stroke-width="5"/>`:`<ellipse cx="${x}" cy="${f(y0+y+14)}" rx="10" ry="17" fill="none" stroke="#5c554f" stroke-width="5"/>`;}
+  if(r()<.6)g+=`<path d="M${x} ${f(y0+len)}v26a18 18 0 1 1 -18 18" fill="none" stroke="#8a7f74" stroke-width="7" stroke-linecap="round"/>`;out.push(`<g opacity=".8">${g}</g>`);}
+ // fire along both edges
+ for(let i=0;i<22;i++){const left=i%2===0,x=f(left?-40+r()*90:W-50+r()*90),y=f(y0+60+r()*(h-80)),s=.8+r()*1.4;
+  out.push(`<g transform="translate(${x} ${y}) scale(${f(s)})"><path d="M0 0C-26 -20 -14 -52 2 -78C4 -54 26 -44 20 -18C18 -6 10 0 0 0Z" fill="#ff5a1a" stroke="#2a0606" stroke-width="3"/><path d="M1 -4C-12 -16 -6 -34 3 -48C5 -32 16 -26 12 -12C10 -6 6 -4 1 -4Z" fill="#ffd23a"/></g>`);}
+ return `<g class="gr-horror-decor" pointer-events="none">${out.join('')}</g>`;}
 function gridZoneSVG(run){
  ensureLevelBosses(run);
  const board=run.board,realms=Object.entries(board.realms),W=board.width||1800,defs=[];
  const body=realms.map(([realm,data],i)=>{
   const [base,hi,acc]=groundOf(realm),first=i===0,last=i===realms.length-1,top=first?data.y-4000:data.y,height=(data.height||1000)+(first?4000:0)+(last?4000:0);
-  defs.push(`<radialGradient id="gz-${realm}" cx="50%" cy="40%" r="65%"><stop offset="0" stop-color="${hi}"/><stop offset="1" stop-color="${hi}" stop-opacity="0"/></radialGradient><pattern id="gp-${realm}" x="50" y="${f(data.y+20)}" width="100" height="100" patternUnits="userSpaceOnUse"><rect x="9" y="9" width="82" height="82" rx="18" fill="#ffffff" opacity=".045"/></pattern>`);
+  defs.push(`<radialGradient id="gz-${realm}" cx="50%" cy="40%" r="65%"><stop offset="0" stop-color="${hi}"/><stop offset="1" stop-color="${hi}" stop-opacity="0"/></radialGradient>`+(realm==='horror'?`<pattern id="gp-${realm}" x="0" y="${f(data.y)}" width="200" height="200" patternUnits="userSpaceOnUse"><rect x="3" y="3" width="194" height="194" rx="6" fill="#3a1410" opacity=".55" stroke="#120404" stroke-width="5"/><path d="M20 60l40 -12M120 150l50 8M90 30l-6 40" stroke="#6b2a17" stroke-width="3" opacity=".6"/><circle cx="16" cy="16" r="5" fill="#7a3a22"/><circle cx="184" cy="16" r="5" fill="#7a3a22"/><circle cx="16" cy="184" r="5" fill="#7a3a22"/><circle cx="184" cy="184" r="5" fill="#7a3a22"/><ellipse cx="140" cy="70" rx="34" ry="18" fill="#7a2a12" opacity=".35"/></pattern>`:`<pattern id="gp-${realm}" x="50" y="${f(data.y+20)}" width="100" height="100" patternUnits="userSpaceOnUse"><rect x="9" y="9" width="82" height="82" rx="18" fill="#ffffff" opacity=".045"/></pattern>`));
   const nodes=realmNodes(board,realm),info=levelInfo(realm),title=info.n?levelLabel(realm):(data.title||realm).toUpperCase();
   const panels=(data.lanes||[]).filter(l=>l.lane<3).map(l=>{const color=TRACK[l.lane],y0=l.top-70,y1=l.bottom+70;return `<rect class="jr-panel gr-band" data-lane-key="${realm}:${l.lane}" x="${l.x0-62}" y="${y0}" width="${l.x1-l.x0+124}" height="${y1-y0}" rx="40" fill="${color}" fill-opacity=".07" stroke="${color}" stroke-opacity=".28" stroke-width="4" stroke-dasharray="3 14" stroke-linecap="round"/>`;}).join('');
   const biomes=nodes.filter(n=>n.type==='location'&&n.card&&location(n.location)).map(n=>{const L=location(n.location),kind=biomeFor(L,sceneProfile(L).kind);if(!kind)return '';const x0=Math.min(n.card.x,n.x-50)-34,y0=Math.min(n.card.y,n.y-50)-34,x1=Math.max(n.card.x+n.card.w,n.x+50)+34,y1=Math.max(n.card.y+n.card.h,n.y+50)+34;return `<g class="gr-biome">${biomePatchSVG(kind,{x:x0,y:y0,w:x1-x0,h:y1-y0},board.seed+':'+n.id,()=>-1e9)}</g>`;}).join('');
   const camp=data.stem?board.nodes[data.stem[0]]:null,gate=board.nodes[data.gate];
   return `<g class="zone-scenery gr-realm" data-realm="${realm}"><rect x="${-W}" y="${top}" width="${W*3}" height="${height}" fill="${base}"/><rect x="0" y="${data.y}" width="${W}" height="${data.height}" fill="url(#gz-${realm})"/><rect x="${-W}" y="${top}" width="${W*3}" height="${height}" fill="url(#gp-${realm})"/>${first?'':`<rect x="${-W}" y="${data.y-3}" width="${W*3}" height="6" fill="${acc}" opacity=".35"/>`}
-   ${panels}${biomes}
+   ${realm==='horror'?horrorDecor(data,W,board.seed):''}${panels}${biomes}
    <text x="900" y="${data.y+(data.lanes?.length>1?92:110)}" text-anchor="middle" class="gr-realm-title" style="fill:${acc}">${e(title)}</text>
    ${data.lanes?.length>1?laneChips(board,realm,data):''}
    ${camp&&data.lanes?`<g class="gr-camp" transform="translate(${camp.x-118},${camp.y+6})"><path d="M0 34L30 -14L60 34Z" fill="#ff9a3c" stroke="#120d18" stroke-width="4" stroke-linejoin="round"/><path d="M30 -14L30 34" stroke="#120d18" stroke-width="3"/><path d="M-6 38H66" stroke="#120d18" stroke-width="5" stroke-linecap="round"/></g>`:''}
