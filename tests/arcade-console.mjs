@@ -33,6 +33,16 @@ for(const vp of sizes){
   await page.click('[data-arc-close]');await page.waitForTimeout(200);
  }
  if(vp.width===390){
+  // View all: every tile as big blocks; picking one closes the grid and focuses it
+  await page.click('[data-arc-all]');await page.waitForTimeout(700);
+  const blocks=await page.locator('.arc-grid-page:not([hidden]) .arc-block').count();if(blocks!==info.tiles)fail('view all shows '+blocks+' of '+info.tiles);
+  await page.screenshot({path:screenshotPath(`ac-viewall-${tag}.png`)});
+  await page.click('.arc-block >> nth=7');await page.waitForTimeout(500);
+  if(await page.locator('.arc-grid-page:not([hidden])').count())fail('view all did not close after a pick');
+  // categories that make sense: Action has Broforce, Pinball has the 3 tables, Board & cards has chess
+  for(const [cat,re,min] of [['action',/Broforce/,4],['pinball',/Pinball/,3],['board',/Chess/,4]]){await page.click(`.arc-pill[data-id="${cat}"]`);await page.waitForTimeout(300);
+   const labels=await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].map(t=>t.getAttribute('aria-label')));if(labels.length<min||!labels.some(l=>re.test(l)))fail(`category ${cat}: ${labels.length} ${labels.slice(0,4)}`);}
+  await page.click('.arc-pill[data-id="all"]');await page.waitForTimeout(300);
   // bosses family exists, filters, search, 1P strip
   await page.click('.arc-pill[data-id="boss"]');await page.waitForSelector('.arcade-console');await page.waitForTimeout(300);
   const bosses=await page.locator('.arc-tile').count();if(bosses<30)fail('boss filter shows '+bosses);
@@ -48,8 +58,8 @@ for(const vp of sizes){
   const bro=await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].findIndex(t=>/Broforce/.test(t.getAttribute('aria-label'))));
   await page.click(`.arc-tile >> nth=${bro}`);await page.waitForTimeout(250);await page.click('[data-arc-family]');await page.waitForTimeout(300);
   await page.click('.arc-ver >> nth=0 >> [data-action="arcade-game"]');await page.waitForTimeout(1500);
-  const started=await page.evaluate(()=>!!document.querySelector('#dialog[open]')||!!window.ShambConkins?.store?.session||!!document.querySelector('.game-body,.game-shell'));
-  if(!started)fail('play button did not start Broforce');
+  const started=await page.evaluate(()=>({session:!!window.ShambConkins?.store?.session,card:/Start game/.test(document.querySelector('#dialog[open]')?.innerText||'')}));
+  if(!started.session)fail('play button did not start Broforce');if(started.card)fail('the Start game / Back to arcade card still shows');
  }
  const errs=errors.filter(x=>!/favicon|net::|Failed to load resource/.test(x));if(errs.length)fail(tag+' page errors '+errs.slice(0,3).join(' | '));
  await browser.close();

@@ -46,10 +46,13 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **K25** `[todo]` (owner, Nov 3) Check the boss tiers really get harder in play (not just HP): higher tiers = a wild,
   fun bullet storm where the player still feels powerful (power-ups and supers scale up too); varied gameplay and
   power-ups. Measure with tests/bossdiff.mjs DIFF=0..3 and play screenshots.
-- **C14** `[todo]` (owner, Nov 3) Rename the "Mashup" board: call it the Main Board (or similar) so it's clear this is
+- **C14** `[part]` (Nov 3: the New Game board list says "Main Board (Mashup)"; the id stays Mashup for old saves) (owner, Nov 3) Rename the "Mashup" board: call it the Main Board (or similar) so it's clear this is
   the real game and the warp worlds are sub-worlds.
-- **M8** `[todo]` (owner, Nov 3) Revamp ALL menus in the new arcade look once it's settled: New Game, character select,
+- **M8** `[part]` (Nov 3: New Game, Character Select, Collection and title screen done in the console look (src/menuScreens.js, src/collection.js); left: online room menus, settings, dialogs, results cards) (owner, Nov 3) Revamp ALL menus in the new arcade look once it's settled: New Game, character select,
   online/room menus, home.
+- **M11** `[verify]` (owner, Nov 3) Arcade round 2: categories rebuilt (Action, Retro arcade, Head to head, Racing & sports, Board & cards, Puzzle, Party, Trivia & shows, Casino & dice, Pinball, Co-op, Bosses, Pokémon; `CATEGORIES`/`CAT_IDS` in arcadeConsole.js), View all grid of big blocks, small-phone sizing, no Start/Back card for games started from the Arcade (online challenges and board games keep it).
+- **M12** `[verify]` (owner, Nov 3) Title tiles animate: Characters = both picks cycling moods, Collection = unlocked characters sliding through, Arcade = game pictures (tile icons once they exist), Online = two phones with the picks and a pulsing signal (owner unsure about Online: offer options, see HANDOFF).
+- **M13** `[todo]` (owner, Nov 3) Game art: a big picture + an icon for every game (186 slots). Art Kit with prompts: https://claude.ai/artifact/Hn2v7kdpz45unnUsT3XNL2 (docs/arcade-art/PROMPTS.md); import with `python3 tools/import-arcade-art.py <folder>`.
 - **M10** `[verify]` (owner, Nov 3: "make sure menus are animated and smooth and feel sleek") Nov 3: entrance animations per screen (body[data-enter]), hero cross-fade, hue blend, staggered tiles, version page slide; reduced-motion respected. Keep this standard for M5/M8.
 - **M9** `[verify]` (Nov 3: Clean Console navy/white/blue on every menu (`body[data-theme="home"]` in theme.css); Bangers + Nunito built in (assets/fonts)) (owner, Nov 3) New colour scheme for the menus: the owner loves the mockup's look EXCEPT the purple and
   orange. Something awesome and professional. Offer palette options as mockups first.
@@ -142,12 +145,12 @@ Unlock rules (section 10)
 - **C6** `[todo]` Audit every unlock trigger, owner and save path.
 
 New Game menu (section 5)
-- **C7** `[todo]` Replace the confusing setup and the options that do nothing. Modes:
+- **C7** `[part]` (Nov 3: New Game rebuilt: players summary (Change characters ▸), mode cards with descriptions, START AT level cards, board + seed; no character picking there. Left: "Main game without warps" and standalone warp worlds as modes) Replace the confusing setup and the options that do nothing. Modes:
   Main Game With Warps (default) · Main Game Without Warps · any visited warp world as a short standalone game.
 - **C8** `[verify]` (Nov 2 night: START AT on New Game, `checkpointStart` in app.js, `profile.levelReached`) Checkpoints: start at Level 1/2/3/4 once reached; a later start begins with an empty bag.
 - **C9** `[verify]` (Nov 2 night: select removed, every run = race to the finish, co-op ends when both finish) Remove the number-of-turns option (`run.maxTurns`); games run to their natural end.
 - **C10** `[todo]` Warp worlds stay single-route, no checkpoints.
-- **C11** `[idea]` Character select before the rest of setup?
+- **C11** `[verify]` (Nov 3: characters are picked only on Character Select; New Game shows them) Character select before the rest of setup?
 - **C12** `[todo]` Clean up the 1P / local 2P / online challenge setup flow.
 
 ## Phase D — rebuild the keepers (section 1, the "execution sucks" games)
@@ -235,7 +238,7 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
   tier ladder K5); Pokémon games together; Mario Kart modes (GP, Time Trial, Battle...); likely also Space Invaders,
   Hangman, Broforce, Castlevania, Sonic, SMB, pinball tables, trivia...
 - **M4** `[part]` (Nov 3: tiles show a character cut-out per game (41 of 91 on the main list), others their icon. OWNER: these character pictures are PLACEHOLDERS; he wants an individual image AND an icon for every game soon. Slots ready: `assets/keyart/<slot>.webp` (big picture behind the selected game) + `assets/tiles/<slot>.webp` (tile icon); `node tools/arcade-art-slots.mjs` lists all 186 slots in assets/tiles/SLOTS.md (pinball tables already use their backglass). Ask the owner for art, or offer to make an image-prompt kit like docs/pinball-art) Real tile art per game (icon/key art), not plain cards; locked games look locked.
-- **M5** `[todo]` Character collection revamp in the same style: tap a character → a detail page with their
+- **M5** `[verify]` (Nov 3: src/collection.js: big blocks, character page with moods, other versions (name prefix "X · Y"), boss medals + stand-in tier outfits, perk/phrase, Play as Sean/Amber; real outfit art comes with K8-K12) Character collection revamp in the same style: tap a character → a detail page with their
   portrait/moods and their unlocked outfits (K8-K12) and how to get the rest.
 - **M6** `[idea]` Carry the same look to the other menus (home, New Game, settings) once M1 is liked.
 - **M7** `[verify]` (Nov 3: Look Book https://claude.ai/artifact/BTqLZbwnPtUwPKz2tGNTNa = 3 layouts x 6 palettes x 5 picture styles x 5 letterings on Home/Arcade/Game page/Character, owner votes + notes saved in its db: collections `looks` (doc id `<layout|pal|art|type>--<option>`, {vote,note}) and `combos`; read with ArtifactData list. Older 3-direction mockup: https://claude.ai/artifact/4h7fazkSTgh1oQxDQdpctE) Before building: Claude mocks up 2-3 design directions (screenshots) for the owner to pick from.

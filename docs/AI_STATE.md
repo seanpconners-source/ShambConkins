@@ -1,5 +1,19 @@
 # AI state (keep short; update after meaningful work)
 
+v0.78.0 (Nov 3 late, owner asked to release): MENUS ROUND 2. Arcade: `CATEGORIES`/`CAT_IDS`/`categoriesOf`/`inCategory`
+(arcadeConsole.js; ui.js catalogHTML filters with inCategory; old ids arcade/strategy/skill/dice aliased), View all
+(`.arc-grid-page`, `gridHTML`, data-arc-all/pick), small-phone CSS, `quick` (console Play buttons get data-quick="1" →
+app.js arcadeLaunch({quick}) → requestGame skips the Start/Back card for origin arcade without a duel; tests that call
+requestGame directly still get the card). Characters (view 'players') + New Game (view 'setup') = src/menuScreens.js
+(same ids/actions as before; mode/level cards set hidden #game-mode/#start-level; `players-done` action returns to
+New Game when opened from there or online; online guest picks on Characters → sendPick). Collection = src/collection.js
+(tiles in .catalog-grid.col-grid so the endless feed still works; detail page client-side; `pick-face` action). Old
+setup/catalog CSS is fenced off with :not(.mx-shell)/:not(.col-shell)/:not(.col-grid); generic themed buttons skip
+.arcade-console/.mx-shell/.col-shell. Title tiles: `reelHTML`/`installHomeReels` (ui.js), `arcadeReel` (arcadeConsole).
+Art: tools/arcade-art-slots.mjs also writes docs/arcade-art/PROMPTS.md + prompts.json; tools/import-arcade-art.py.
+Tests updated: player-names, solo-board, online-board, checkpoint, setupshots, arcade-console (view all, categories,
+no card).
+
 v0.77.0 (Nov 3, owner: "merge to main" without playtesting first): the console menus + soak test below + 43 characters.
 Nov 3 night (branch `ccr-f841e836-ips7j8` from TESTver, merged to TESTver and main): CONSOLE MENUS (owner's look-book
 pick, https://claude.ai/artifact/BTqLZbwnPtUwPKz2tGNTNa). `src/arcadeConsole.js` = the Arcade view: ui.js catalogHTML still

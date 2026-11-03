@@ -206,4 +206,8 @@ if(typeof document!=='undefined')document.addEventListener('keydown',ev=>{
  else if(ev.key==='Escape'&&state.grid)closeGrid();
 });
 
-Object.assign(exports,{CATEGORIES,categoriesOf,inCategory,arcadeConsoleHTML,installArcadeConsole,resetArcadeConsole,familyOf,heroId,FAMILIES,FAMILY,keyArt,tileArt});
+// Pictures for the title screen's Arcade tile: the owner's tile icons first, then family / game character cut-outs.
+function arcadeReel(n=10){const out=[];const add=u=>{if(u&&!out.includes(u))out.push(u);};
+ for(const f of FAMILY.values())add(tileArt(f.key));for(const f of FAMILY.values())add(own(f.hero));
+ return out.slice(0,n);}
+Object.assign(exports,{arcadeReel,CATEGORIES,categoriesOf,inCategory,arcadeConsoleHTML,installArcadeConsole,resetArcadeConsole,familyOf,heroId,FAMILIES,FAMILY,keyArt,tileArt});

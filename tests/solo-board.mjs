@@ -24,7 +24,7 @@ await page.click('.cs-grid[data-player="0"] .cs-tile[data-id="dennis"]');
 // WHO=1: Amber plays, the CPU wears Sean's pick (seat order: the human is always seat 1)
 if(WHO)await page.click('.setup-players [data-key="who"][data-value="1"]');
 await page.screenshot({path:screenshotPath('solo-board-pick.png')});
-await page.click('.pick-controls [data-action="home"]');await page.waitForSelector('.title-screen');
+await page.click('.mx-top [data-action="players-done"]');await page.waitForSelector('.title-screen');
 check(/vs CPU/.test(await page.innerText('.ts-pick')),'the title screen shows the 1-player pick');
 await page.screenshot({path:screenshotPath('solo-board-home.png')});
 await page.reload();await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
@@ -35,7 +35,7 @@ const cpuOwner=WHO?'Sean':'Amber',amberBefore=await page.evaluate(o=>window.Sham
 
 // New Game: 1P vs CPU
 await act('setup');await page.waitForSelector('.setup-shell .setup-players');
-check(await page.$eval('.cs-grid[data-player="0"] .cs-tile.selected',b=>b.dataset.id)==='dennis','New Game starts from the Choose Characters pick');
+check(/Dennis/.test(await page.innerText('.mx-pcard.p1')),'New Game starts from the Choose Characters pick');
 await page.selectOption('#run-length','12').catch(()=>{});
 await page.screenshot({path:screenshotPath('solo-board-setup.png')});
 await act('start-run');
@@ -90,7 +90,7 @@ check(end.amber===amberBefore,`the CPU's roster owner gained no characters (${am
 check((stats.watch||0)+(stats.watchroute||0)>=1,'CPU decisions were shown read-only');
 // 2 Players again: a normal pass-and-play run, no CPU
 await act('home');await page.waitForSelector('.title-screen');await act('setup');await page.waitForSelector('.setup-players');
-await page.click('.setup-players [data-key="on"][data-value="0"]');await page.waitForFunction(()=>!document.querySelector('.cs-panel.cs-cpu'));
+await page.click('.setup-players [data-key="on"][data-value="0"]');await page.waitForFunction(()=>!/CPU/.test(document.querySelector('.mx-pcard.p2')?.innerText||'CPU'));
 await act('start-run');await page.waitForFunction(()=>document.getElementById('dialog').open||document.body.dataset.view==='board');
 await page.evaluate(()=>{const b=[...document.querySelectorAll('#dialog[open] button')].find(b=>/Start fresh/.test(b.innerText));b?.click();});
 await page.waitForFunction(()=>window.ShambConkins.store.run&&!window.ShambConkins.store.run.cpu,null,{timeout:20000}).then(()=>check(true,'2 Players starts a run without a CPU'),()=>check(false,'2 Players starts a run without a CPU'));

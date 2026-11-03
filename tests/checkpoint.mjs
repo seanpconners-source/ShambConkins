@@ -7,8 +7,8 @@ let bad=0;const expect=(ok,msg)=>{console.log(ok?'ok  ':'FAIL',msg);if(!ok)bad++
 const click=()=>page.evaluate(()=>{const d=document.getElementById('dialog');if(d.open){(d.querySelector('button.primary')||d.querySelector('button'))?.click();return 1;}const c=document.querySelector('.level-card,.gentlemen-card,.boss-card,.smash-card');if(c){c.click();return 1;}return 0;});
 async function start(level){await page.evaluate(()=>{window.ShambConkins.store.profile.levelReached=4;});
  await page.evaluate(()=>{const b=document.createElement('button');b.dataset.action='setup';document.body.append(b);b.click();b.remove();});await page.waitForTimeout(500);
- const opts=await page.evaluate(()=>[...document.querySelectorAll('#start-level option')].map(o=>o.value));
- await page.selectOption('#start-level',level);await page.click('[data-action=start-run]');
+ const opts=await page.evaluate(()=>[...document.querySelectorAll('[data-ng-level]')].map(o=>o.dataset.ngLevel));
+ await page.click(`[data-ng-level="${level}"]`);await page.click('[data-action=start-run]');
  let sawReveal=false;for(let i=0;i<40;i++){await page.waitForTimeout(350);if(await page.$('#frank-reveal'))sawReveal=true;await click();if(i>(level==='horror'?28:4)&&await page.evaluate(()=>!window.ShambConkins.store.busy&&window.ShambConkins.store.run?.phase==='board'&&!document.getElementById('dialog').open&&!document.querySelector('#frank-reveal,.level-card')))break;}
  const r=await page.evaluate(()=>{const run=window.ShambConkins.store.run;return {realms:run.players.map(p=>run.board.nodes[p.node].realm),cleared:run.players.map(p=>p.cleared.join('+')),items:run.players.map(p=>p.items.length),horror:!!run.horror};});
  return {opts,sawReveal,...r};}

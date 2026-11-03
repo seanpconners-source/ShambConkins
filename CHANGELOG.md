@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.78.0
+
+**Every menu in the new console look: title screen, Characters, New Game, Collection, a smarter Arcade.**
+
+- **Arcade**: categories that make sense (Action, Retro arcade, Head to head, Racing & sports, Board & cards, Puzzle,
+  Party, Trivia & shows, Casino & dice, Pinball, Co-op, Bosses, Pokémon); **View all** shows every game as big blocks;
+  fits small phones better; Play starts the game straight away (no extra Start/Back card).
+- **Characters** screen: pick each player's character from big blocks with search; the slot shows the character cycling
+  through its moods, its perk and skills. **New Game** no longer picks characters: it shows both players (Change
+  characters ▸), mode cards with plain descriptions, START AT level cards, board and seed.
+- **Collection**: big blocks; tap a character for its page: every mood, other versions, boss medals and tier looks,
+  perk, catchphrase, and "Play as Sean / Amber".
+- **Title screen**: tiles come alive: your two characters cycle through their moods, the Collection and Arcade tiles
+  slide through characters and games, the Online tile shows two phones talking.
+- **Art Kit**: a ready-made prompt for every game's big picture and icon, plus an import tool.
+
 ## v0.77.0
 
 **New menus: a console-style Arcade and a fresh look, picked by the owner.**

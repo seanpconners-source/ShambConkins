@@ -1,22 +1,22 @@
 # Handoff: where we left off (read this first in a fresh session)
 
-Last updated Nov 3 2026 (night): v0.77.0 released (console menus + laptop soak test). Read "START HERE" first. Written for the next Claude session,
+Last updated Nov 3 2026 (late): v0.78.0 released (every menu in the console look). Read "START HERE" first. Written for the next Claude session,
 which may run on a different account with none of the earlier conversation or memory. Everything needed is in the repo:
 this file, `CLAUDE.md`, `docs/ROADMAP.md` (the owner's to-do list, phases, statuses) and `docs/AI_STATE.md` (technical
 state, newest at the top).
 
-## START HERE (Nov 3 night): new menus are in TESTver, waiting for the owner's playtest
+## START HERE (Nov 3, late): v0.78.0 released (all menus in the console look); next = the roadmap
 
-- **Menus (M1/M3/M9)**: the owner picked from the look book https://claude.ai/artifact/BTqLZbwnPtUwPKz2tGNTNa
-  (db `looks` + `combos`: Console Home layout, Clean Console colours, Neon outline pictures, Comic lettering; note: "Game
-  page on open screen should have tiles instead of long bars"). Built: `src/arcadeConsole.js` (Arcade), title screen +
-  menu palette/fonts in theme.css (end, "v0.77 console menus"). Released as v0.77.0 (owner said merge to main before playtesting; expect follow-up tweaks). Next menu steps: M2 rows (Featured/Recently played/Favourites),
-  M4 tile art for the 50 games without a character (owner can drop `assets/tiles/<id>.webp`), M5 collection, M8 New
-  Game/character select/online menus in the same look.
-- **Soak test (Q00)**: the owner runs `SOAK-TEST.cmd` on the laptop when Claude's usage runs out (closing the window
-  stops it). At the start of a session, if the owner shares `soak-reports/` (LATEST.md, history.jsonl, fails/), read it
-  first and fix what failed (one regression test per fix). In the cloud box: `node tools/soak.mjs --hours 1`.
-- Then the open questions below (triage Cut list, outfits, Bomber look, TowerFall, K25 boss tiers, Pokémon PK1-PK5).
+- Released v0.78.0 to main at the owner's request (owner: "merge to main, then I start a new session so you can continue
+  the roadmap"). Menus done this round: Arcade round 2 (categories, View all, small phones, no Start/Back card from the
+  Arcade's own Play buttons: `quick` in requestGame), Characters screen + New Game (src/menuScreens.js), Collection with
+  character pages (src/collection.js), animated title tiles (ui.js `installHomeReels`), Art Kit
+  https://claude.ai/artifact/Hn2v7kdpz45unnUsT3XNL2 (+ tools/import-arcade-art.py, docs/arcade-art/PROMPTS.md).
+- Open owner questions: (1) **Online tile**: built = two phones with the picks and a pulsing signal. Alternatives offered:
+  live room status ("Amber is in Pizza Night" when presence exists, N1), a slideshow of the online-playable games, or the
+  last opponent's face. (2) Game art: the owner will generate pictures with the Art Kit; import them, then check the tiles.
+- The owner may run `SOAK-TEST.cmd` on the laptop overnight instead; if soak-reports/ is shared, read LATEST.md first.
+- Then the roadmap ("continue" = offer 2-4 options from ROADMAP.md, wait for a pick). Old open decisions are below.
 
 ## The daily rhythm (owner, Nov 3; roadmap W1)
 

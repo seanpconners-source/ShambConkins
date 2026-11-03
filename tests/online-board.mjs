@@ -42,7 +42,9 @@ await choose(B,'Play');
 for(const ph of [A,B])await ph.p.waitForSelector('.net-setup',{timeout:15000});
 check(true,'both phones open the shared New Game screen');
 // Amber picks someone else on her phone; Sean's phone shows it
+await act(B,'players');await B.p.waitForSelector('.mx-chars');
 const pick=await B.p.evaluate(()=>{const t=[...document.querySelectorAll('.cs-grid[data-player="1"] .cs-tile:not([disabled])')].find(b=>!b.classList.contains('selected'));t?.click();return t?.dataset.id||null;});
+await B.p.waitForTimeout(300);await act(B,'players-done');await B.p.waitForSelector('.net-setup.mx-newgame');
 if(pick)await A.p.waitForFunction(id=>window.ShambConkins.store.setupSelected?.[1]===id,pick,{timeout:8000}).then(()=>check(true,`Sean's phone shows Amber's pick (${pick})`),()=>check(false,'Amber\'s pick reaches Sean\'s phone'));
 check(await B.p.$('[data-action="start-run"]')===null,'only the host phone has the start button');
 await A.p.screenshot({path:screenshotPath('onb-setup-host.png')});await B.p.screenshot({path:screenshotPath('onb-setup-guest.png')});

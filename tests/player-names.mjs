@@ -24,19 +24,20 @@ try {
     p.rosters.Amber.push('dee');
     p.settings.reducedMotion=true;
   });
-  await page.click('[data-action="setup"]');
+  await page.click('[data-action="players"]');
   await page.fill('#player-name-0', '   ');
   await page.click('.cs-panel.p1 .cs-tile[data-id="charlie"]');
   assert.equal(await page.inputValue('#player-name-0'),'Sean','blank name fallback on character change');
 
   await page.fill('#player-name-0',"O'Neil");
   await page.fill('#player-name-1','<b id=x>Riley</b>');
+  await page.click('[data-cs-pick="1"] .mx-slot-art');
   await page.click('.cs-panel.p2 .cs-tile[data-id="dee"]');
   assert.deepEqual(await page.locator('#player-name-0, #player-name-1').evaluateAll(
     nodes=>nodes.map(n=>n.value)),["O'Neil",'<b id=x>Riley</b>']);
   assert.equal(await page.locator('#x').count(),0,'setup name must be escaped');
-  await page.click('[data-action="home"]');
-  await page.click('[data-action="setup"]');
+  await page.click('.mx-top [data-action="players-done"]');
+  await page.click('[data-action="players"]');
   assert.deepEqual(await page.locator('#player-name-0, #player-name-1').evaluateAll(
     nodes=>nodes.map(n=>n.value)),["O'Neil",'<b id=x>Riley</b>'],'draft survives return to setup');
   await page.screenshot({path:screenshotPath('names-setup-phone.png')});
@@ -45,7 +46,10 @@ try {
   await page.setViewportSize({width:1100,height:700});
   await page.screenshot({path:screenshotPath('names-setup-desktop.png')});
   await page.setViewportSize({width:390,height:780});
-
+  // names and picks are made on Character Select; New Game starts the run with them
+  await page.click('.mx-top [data-action="players-done"]');
+  await page.click('[data-action="setup"]');
+  assert.match(await page.innerText('.mx-pcards'),/O'Neil/,'New Game shows the names from Character Select');
   await page.click('[data-action="start-run"]');
   await page.waitForFunction(()=>window.ShambConkins.store.run?.players[1]?.name==='<b id=x>Riley</b>');
   const active=await page.evaluate(()=>{
