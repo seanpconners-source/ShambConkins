@@ -8,7 +8,9 @@ The owner chooses exactly how every Arcade background (`assets/keyart/<slot>.web
 (see the list below): drag to move,
 pinch/scroll to zoom, **Lock in**, plus a verdict (perfect / small tweak / needs an edit / remake) and a note.
 
-- Picker page (always republish to this same URL): **https://claude.ai/artifact/N1zQ42EPkUqJf8AzpmdmPT**
+- Picker page (always republish to this same URL): **https://claude.ai/artifact/DhpZSVr98T1sEwzjux7AJ9** (since Nov 3; the first
+  picker, https://claude.ai/artifact/N1zQ42EPkUqJf8AzpmdmPT, belongs to the owner's other account and can't be republished from this one; its locks
+  are all in keyPlacements.js already). A publish takes at most 255 files: send the files list in two publishes.
 - Its database: collection `bg`, one doc per slot: `{screens:{<screen id>:{z,fx,fy}}, verdict, note, at}`.
   `z` = zoom (1 = the picture just fills the screen), `fx`/`fy` = the point of the picture (fractions) at the screen's centre.
 - The game reads `src/data/keyPlacements.js` (`KEY_PLACE`, written by `apply.py`): `lockedPlace()` in `src/arcadeConsole.js`

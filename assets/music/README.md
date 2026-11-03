@@ -7,7 +7,7 @@ File name = track name, `.mp3`, `.ogg`, `.m4a` or `.wav`:
 |---|---|
 | `cv-symphony.mp3` | Castlevania · Symphony of the Night: the whole castle run (loops) |
 | `cv-symphony-boss.mp3` | Symphony of the Night: the Dracula fight in the Castle Keep (falls back to `cv-symphony` if missing) |
-| `sunset-song-<genesis or snes>-<nn>-<name>.mp3` (any number) | Hangman Unchained: a random one each game, the next random one when it ends (engines/sunsetAudio.js; for any game that wants them). Add new files' levels to src/data/sunsetSounds.js |
+| `sunset-song-<genesis or snes>-<nn>-<name>.mp3` (any number) | Hangman Unchained's music director (engines/sunsetAudio.js; for any game that wants them): each song is calm, play or tense by its name (`MOODS` there: a new song needs its name added, else it is never dealt) and plays when the game is in that mood. Add new files' levels (el.volume to -18 LUFS) to src/data/sunsetSounds.js |
 | `sunset-sting-<wanted, yippie or gameover>-<genesis or snes>.mp3` | Hangman Unchained: Wanted! before the first song, Stage Clear for a winner, Game Over for a loss or dead heat |
 | `sunset-voice-<name>.wav` | Hangman Unchained: shots, misses, the hanged cry, Sir Richard's laugh, taunts. Owner's Sunset Riders rips, byte for byte; the arcade `.vgz` set isn't used (chip logs, ffmpeg can't play them) |
 | `thps-mancala-<band>--<song>.mp3` (any number; e.g. `thps-mancala-millencolin--no-cigar.mp3`) | Tony Hawk's Pro Mancala soundtrack, replacing the three synth songs: a shuffled playlist, a song starts with the title sequence and plays on through the game, then the next one; the Now Playing card shows the band and song from the file name (`--` between them). Plain `thps-mancala.mp3` / `thps-mancala-<n>.mp3` also work |

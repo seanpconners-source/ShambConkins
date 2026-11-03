@@ -4,7 +4,7 @@
 //  'turns'  (django-hangman-showdown): one keyboard, players take turns guessing the same phrase (15 s shot clock).
 //  'pass'   (django-hangman-wanted): one player writes a phrase (or deals one from the deck), the other guesses; then swap.
 // Six bullets = six misses: torso, arms, legs, then the trapdoor drops. Sounds: synthesized western SFX + the owner's Sunset Riders
-// voices and a random song from its soundtrack for each game (engines/sunsetAudio.js).
+// voices, and its soundtrack through a music director that follows the game (engines/sunsetAudio.js; `musicMood` below).
 const {fullBleed}=require("src/engines/fullBleed.js");
 const {vibrate:buzz}=require("src/audio.js");
 const {shuffle}=require("src/utils.js");
@@ -13,10 +13,11 @@ const audio=require("src/audio.js");
 const {store}=require("src/state.js");
 const {createSunsetMusic,preloadSunsetVoices,sunsetVoice:V}=require("src/engines/sunsetAudio.js");
 const any=a=>a[Math.floor(Math.random()*a.length)];
-// Sunset Riders voices beside the synth ones. A cheer is sometimes the synth Yeehaw (the owner's favourite) and it covers for a clip not loaded yet.
+// Sunset Riders voices (the owner's rips). The synth Yeehaw is gone (owner, Nov 3: "get rid of the synth yeehaw"): cheers are the
+// game's own taunts, and a clip not loaded yet just stays quiet.
 const VOICES={banditDeath:o=>V(any(['bandit-death-1','bandit-death-2','bandit-death-3','bandit-death-short']),{vol:.8,...o}),hurt:o=>V('boss-damage',{vol:.8,...o}),
  hangCry:(female,o)=>V(female?'female-death':'player-death',o),laugh:o=>V('sir-richard-laugh',{vol:.8,...o}),taunt:o=>V(any(['player-taunt-1','player-taunt-2']),o),please:o=>V('please-continue',o),
- cheer:({pitch=1,...o}={})=>{if(Math.random()<.4||!V(any(['player-taunt-1','player-taunt-2','boss-death-1','boss-death-2']),o))WSFX.yeehaw({...o,pitch});}};
+ cheer:({pitch,...o}={})=>V(any(['player-taunt-1','player-taunt-2']),o)};
 // Online Quick Draw replays a round silently when a shot arrives out of order (quiet.on mutes sounds and buzzes).
 const quiet={on:false},SFX=new Proxy({...WSFX,...VOICES},{get:(o,k)=>quiet.on?()=>{}:o[k]}),vibrate=ms=>quiet.on?false:buzz(ms);
 const {PHRASES,CATEGORIES}=require("src/data/hangmanPhrases.js");
@@ -463,6 +464,14 @@ async function hangman(s){
   x.font=`600 ${clamp(r.h*.04,9,12)}px ${SANS}`;x.fillStyle='#5a3a22';x.fillText(`${st.draft.length}/${MAXLEN} · tap 🎲 DEAL for a phrase from the deck`,r.x+r.w/2,r.y+r.h-13,r.w-16);
  }
 
+ // What the music should be doing (sunsetAudio's director; it only changes song when this changes for real): calm while a
+ // bounty is being written or handed over, play while a phrase is being shot at, tense when a cowboy still standing is down
+ // to his last two bullets or Quick Draw's clock is under 20 s.
+ let music=null;
+ function musicMood(){if(st.phase==='write'||st.phase==='handoff')return 'calm';
+  if(st.phase!=='play'&&st.phase!=='reveal'&&st.phase!=='banner')return 'play';
+  const live=duel?[0,1].filter(p=>!st.hanged[p]):[st.guesser];
+  return st.phase==='play'&&(live.some(p=>LIVES-st.misses[p]<=2)||mode==='shared'&&st.clock<=20)?'tense':'play';}
  // ---------------------------------------------------------------- frame
  s.frame(dt=>{
   T+=dt;DT=dt;W=s.W;H=s.H;if(cpu)cpuHang(dt);
@@ -476,6 +485,7 @@ async function hangman(s){
   else if(st.phase==='play'&&mode==='shared'&&!qnet){st.clock-=dt;const sec=Math.ceil(st.clock);if(sec<=5&&sec>0&&sec!==st.tick){st.tick=sec;SFX.spurs({steps:1,vol:.25});}
    if(st.clock<=0){st.clock=0;st.result={kind:'time'};SFX.whinny({});endRound();}}
   if(st.phase==='play'&&mode==='turns'){st.tclock-=dt;const sec=Math.ceil(st.tclock);if(sec<=3&&sec>0&&sec!==st.tick){st.tick=sec;SFX.spurs({steps:1,vol:.25});}if(st.tclock<=0){if(theirs(st.turn))st.tclock=0;else timeout(st.turn);}}
+  music?.mood(musicMood());
   lay=layout();shake=Math.max(0,shake-dt*1.6);
   x.save();if(shake>0)x.translate((Math.random()-.5)*shake*14,(Math.random()-.5)*shake*14);
   backdrop();
@@ -548,11 +558,11 @@ async function hangman(s){
   const p=players().find(theirs);if(typeof m.g==='string')guess(p,m.g.toUpperCase().slice(0,1),true);else if(m.to)timeout(p,true);}})();
 
  // ---------------------------------------------------------------- flow
- // each game: the Wanted! jingle, then a random song from the pool (the synth band and the board music stay quiet)
- const music=createSunsetMusic(()=>s.paused||!s.alive||document.hidden);audio.stopMusic();preloadSunsetVoices();
+ // each game: the Wanted! jingle, then the Sunset Riders songs, picked by what is going on (the board music stays quiet)
+ music=createSunsetMusic(()=>s.paused||!s.alive||document.hidden);audio.stopMusic();preloadSunsetVoices();
  s.cleanup(()=>{music.stop();if(store.profile?.settings?.music)try{audio.startMusic();}catch{}});s.debug.sunset=music;
  music.sting('wanted',()=>music.start());
- SFX.gallop({beats:7,vol:.45});SFX.whip({delay:1.3});SFX.gunshot({delay:1.6});SFX.yeehaw({delay:1.85});
+ SFX.gallop({beats:7,vol:.45});SFX.whip({delay:1.3});SFX.gunshot({delay:1.6});SFX.taunt({delay:1.85});
  st.skip=false;await sleep(3.2);if(!s.alive)return;st.skip=false;
  if(duel){
   const picks=[];for(const q of shuffle(PHRASES,s.random)){if(picks.length>=ROUNDS)break;if(q.text.length>26||picks.some(o=>o.cat===q.cat))continue;picks.push(q);}

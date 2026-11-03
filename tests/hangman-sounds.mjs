@@ -1,6 +1,6 @@
 // Hangman Unchained sounds: each of the 3 versions plays the Wanted! jingle, then a song from the Sunset Riders pool; a new game gets
 // a different song; pause stops it and resume carries on; leaving the game stops it; the Music setting off = silence; the
-// voice clips decode and the synth Yeehaw is still there. SHAMB_URL=http://localhost:8123/ for a --pwa build.
+// voice clips decode; the music director switches to a showdown song when someone is on their last bullets and back after. SHAMB_URL=http://localhost:8123/ for a --pwa build.
 import {chromium, browserLaunchOptions, root} from './lib.mjs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -26,6 +26,19 @@ for(const id of ['django-hangman','django-hangman-showdown','django-hangman-want
   // the song ending moves to another one
   const was=(await state()).song;await page.evaluate(()=>{const e=window.ShambConkins.store.session.debug.sunset.el;e.currentTime=e.duration-.3;});
   const nx=await wait(s=>/^song-/.test(s.song||'')&&s.song!==was&&s.on,8000);check(nx&&nx.song!==was&&nx.on,'a song ending starts another one ('+nx?.song+')');
+  // the music director: last bullets → a showdown song at once (crossfade); safe again → back to the interrupted song after a calm spell
+  const dbg=f=>page.evaluate(f);
+  await page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.st?.phase==='play',null,{timeout:20000});
+  const before=(await state()).song;
+  await dbg(()=>{const d=window.ShambConkins.store.session.debug;d.st.misses[0]=4;d.st.misses[1]=4;d.st.clock=60;});
+  const t=await wait(s=>/^song-/.test(s.song||'')&&s.song!==before&&s.on,4000);
+  const tm=await dbg(()=>window.ShambConkins.store.session.debug.sunset.mood_());
+  check(t&&t.song!==before&&tm.level==='tense',`last bullets: a showdown song comes in (${before} → ${t?.song}, ${JSON.stringify(tm)})`);
+  check(/its-time-to-pay|quick-draw|draw-|fight-bravely|pow-wow|big-trouble|heap-big|blow-you-away/.test(t?.song||''),'it is one of the boss / showdown songs');
+  await page.waitForTimeout(2500);check(await dbg(()=>window.ShambConkins.store.session.debug.sunset.el.volume>.2),'the song is audible (volume '+await dbg(()=>window.ShambConkins.store.session.debug.sunset.el.volume.toFixed(2))+')');
+  await dbg(()=>{const d=window.ShambConkins.store.session.debug;d.st.misses[0]=0;d.st.misses[1]=0;});
+  await page.waitForTimeout(5000);check((await state()).song===t?.song,'a short calm moment does not switch songs');
+  const back=await wait(s=>s.song===before&&s.on,20000);check(back?.song===before,`after a calm spell it goes back to the song it left (${back?.song})`);
  }
  await leave();check(!(await page.evaluate(()=>!!window.ShambConkins.store.session)),`${id}: left the game`);
 }
