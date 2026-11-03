@@ -31,10 +31,11 @@ check(true,'Sean is in the room, waiting for player 2');
 await join(B,1);
 await A.p.waitForFunction(()=>/Amber is here/.test(document.querySelector('.net-room')?.innerText||''),null,{timeout:15000});check(true,'Sean sees "✓ Amber is here"');
 check(/Sean is here/.test(await B.p.evaluate(()=>document.querySelector('.net-room')?.innerText||'')),'Amber sees Sean');
-check(await A.p.evaluate(()=>document.querySelectorAll('[data-action="duel-propose"]').length>5),'Arcade cards have Challenge buttons');
+const heroes=await A.p.evaluate(async()=>{const out=[];const tiles=[...document.querySelectorAll('.arc-tile')].slice(0,20);for(const t of tiles){t.click();await new Promise(r=>setTimeout(r,30));const i=document.querySelector('.arc-info');out.push(i.querySelector('[data-action="duel-propose"]')?'c':/Not online yet/.test(i.innerText)?'n':i.querySelector('[data-arc-family]')?'f':'?');}return out.join('');});
+check(heroes.includes('c'),'Arcade heroes have Challenge buttons '+heroes);
 await A.p.screenshot({path:screenshotPath('online-arcade.png')});
 await act(A,'filter',{id:'trivia'});await A.p.waitForTimeout(400);
-check(await A.p.evaluate(()=>[...document.querySelectorAll('.arcade-card')].every(c=>c.querySelector('[data-action="duel-propose"]')||/Not online yet/.test(c.innerText))),'every Arcade card offers Challenge or says "Not online yet"');
+check(!heroes.includes('?'),'every Arcade hero offers Challenge, a version page or says "Not online yet"');
 await act(A,'filter',{id:'all'});await A.p.waitForTimeout(400);
 // Sean challenges, Amber accepts
 await act(A,'duel-propose',{id:GAME});await waitDialog(A,/Waiting for Amber/);

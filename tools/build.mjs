@@ -25,7 +25,7 @@ const PWA_MANIFEST = {name: 'ShambConkins', short_name: 'ShambConkins', descript
     {src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable'}]};
 const PWA_ICONS = ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon-48.png'];
 
-const MIME = {svg: 'image/svg+xml', webp: 'image/webp', jpg: 'image/jpeg', png: 'image/png'};
+const MIME = {svg: 'image/svg+xml', webp: 'image/webp', jpg: 'image/jpeg', png: 'image/png', woff2: 'font/woff2'};
 const dataURI = (mime, buf) => `data:${mime};base64,` + buf.toString('base64');
 const inlineAssets = text => text.replace(/@@asset:(assets\/[A-Za-z0-9_./-]+)@@/g, (_, file) => {
   const ext = file.split('.').pop();
@@ -54,7 +54,8 @@ if (fs.existsSync(portraitDir)) for (const f of fs.readdirSync(portraitDir)) {
   drop(key, MIME[ext], ext, path.join(portraitDir, f));
 }
 // Drop-in item/location art: assets/items/<id>.(svg|webp|png|jpg) -> photo:item:<id>; assets/locations/<id>.* -> photo:location:<id>.
-for (const [dir, prefix] of [['items', 'photo:item:'], ['locations', 'photo:location:']]) {
+// Arcade tile art (src/arcadeConsole.js): assets/tiles/<game id or family key>.* -> tile:<id> (a cut-out with a clear background looks best).
+for (const [dir, prefix] of [['items', 'photo:item:'], ['locations', 'photo:location:'], ['tiles', 'tile:']]) {
   const d = path.join(root, 'assets', dir);
   if (!fs.existsSync(d)) continue;
   for (const f of fs.readdirSync(d)) {

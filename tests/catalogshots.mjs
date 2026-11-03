@@ -7,6 +7,7 @@ for(const vp of [{width:390,height:780},{width:1100,height:700}]){
   await page.evaluate(v=>{const b=document.createElement('button');b.dataset.action=v;document.body.append(b);b.click();b.remove();},view);
   await page.waitForTimeout(500);
   await page.screenshot({path:`${out}/cat-${view}-${vp.width}.png`});
+  if(view==='arcade'){console.log(vp.width,'arcade tiles',await page.evaluate(()=>document.querySelectorAll('.arc-tile').length));continue;} // console Arcade: tests/arcade-console.mjs
   const before=await page.evaluate(()=>document.querySelectorAll('.catalog-grid>article').length);
   for(let i=0;i<4;i++){await page.evaluate(()=>{const g=document.querySelector('.catalog-grid');g.scrollTop=g.scrollHeight;});await page.waitForTimeout(250);}
   const after=await page.evaluate(()=>({cards:document.querySelectorAll('.catalog-grid>article').length,search:document.getElementById('catalog-search')?.getBoundingClientRect().toJSON(),docX:document.documentElement.scrollWidth>innerWidth}));

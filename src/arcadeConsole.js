@@ -1,0 +1,163 @@
+// Arcade as a console home screen (ROADMAP M1/M3/M4, owner's pick from the Nov 3 look book: "Console Home" layout,
+// Clean Console colours, Neon-outline pictures, Comic lettering). One big hero for the focused game (its character
+// cut out with a glowing outline, its own colour wash), category pills on top, one scrolling row of tiles at the bottom.
+// Versions of one game (Broforce's 4 missions, the 3 pinball tables, every boss…) share ONE tile; its hero opens a
+// version page laid out as tiles. ui.js catalogHTML still decides what is listed and how each game is played
+// (`partsFor` gives the play button, info line and medals), so 1P / online / dev mode work as before.
+const {ART}=require("src/data/art.js");
+const {USER_PORTRAITS,isRasterArt}=require("src/data/userPortraits.js");
+const {CHARACTERS}=require("src/characters.js");
+const {bossById}=require("src/data/bosses.js");
+const {escapeHTML:e}=require("src/utils.js");
+const {store}=require("src/state.js");
+const {tone}=require("src/audio.js");
+
+// Families: [key, title, subtitle, hero character, member ids]. The tile/hero uses the family; the version page lists members.
+const FAMILIES=[
+ ['bosses','Boss Select','Every boss you have beaten','king-kandy',null],
+ ['pinball','Pinball Tables','Bucketheadland · Black Sabbath · King Gizzard','buckethead',['bucketheadland-pinball','black-sabbath-pinball','king-gizzard-pinball']],
+ ['broforce','Broforce','Four missions','rambo',['broforce-jungle','broforce-desert','broforce-city','broforce-factory']],
+ ['smb','Super Mario Bros.','World 1, Coin Rush, Castle Dash, SMB3','mario',['smb-world-1','smb-coin-rush','smb-castle-dash','smb3-nspade','smb3-spade-slots']],
+ ['kart','Mario Kart','Grand Prix, time trials, battle','bowser',['rainbow-road-kart','kart-grand-prix-pass','kart-time-trial','rainbow-balloon-battle']],
+ ['castlevania','Castlevania','NES and Symphony of the Night','alucard',['cv-symphony','cv-vampire-killer','cv-candle-hunt']],
+ ['sonic','Sonic the Hedgehog','Green Hill Zone',null,['sonic-ring-rush','sonic-goal-dash']],
+ ['doom','DOOM','DOOM and DOOM II',null,['doom','doom-2']],
+ ['hangman','Hangman Unchained','Quick Draw, Showdown, Wanted','dj-django',['django-hangman','django-hangman-showdown','django-hangman-wanted']],
+ ['invaders','Space Invaders','Solo, versus and co-op',null,['space-swarm','space-swarm-versus','space-swarm-coop']],
+ ['tarantino','Tarantino Night','Seven Tarantino games','kb-the-bride',['tarantino-crazy88','kill-bill-duel','tarantino-standoff','tarantino-twist','tarantino-adrenaline','tarantino-bounty','tarantino-chase']],
+ ['southpark','South Park','Dodgeball, Poofs, Kenny, snowballs','cartman',['sp-dodgeball','sp-cheesy-poofs','sp-killed-kenny','snowball-fight']],
+ ['bond','007 Missions','GoldenEye and the Bond lair',null,['bond-facility','bond-laser-vault','bond-golden-gun','bond-goldfinger-bomb']],
+ ['paddys',"Paddy's Pub",'Beer pong, flip cup, darts','charlie',['paddys-beer-pong','flipadelphia-cup','paddys-darts']],
+ ['casino','Casino Night','Cards, wheels and dice',null,['blackjack','five-card','roulette','bond-baccarat','liars-dice']],
+ ['trivia','Trivia Night','Nine quiz shows',null,['trivia-mixed','trivia-hardcore','trivia-lightning','trivia-wager','trivia-survival','trivia-sitcom','trivia-nick90','trivia-dbz','trivia-hxh']],
+ ['taskmaster','Taskmaster','Six tasks',null,['taskmaster-micro-relay','taskmaster-fruit-ninja','taskmaster-sumo','task-tallest-thing','taskmaster-curling','tm-cones']],
+ ['trek','Star Trek Game Night','Chess, Tri-D, Strategema, Four Lights',null,['ten-forward-chess','trek-mini-chess','strategema-grid','four-lights']],
+ ['rush','Microgame Rush','Rush and Marathon',null,['microgame-rush','rush-marathon']],
+ ['hyrule','The Legend of Zelda','Rupee Rush and Sword Duel',null,['hyrule-rupee-rush','hyrule-sword-duel']],
+ ['clue','Clue','Whodunit and Lineup',null,['clue-whodunit','clue-lineup']],
+ ['monopoly','Monopoly','Speed Die and Auction',null,['monopoly-speed-die','monopoly-auction']],
+ ['chutes','Chutes and Ladders','Ladder Rush and Spinner Showdown',null,['chutes-ladder-rush','chutes-spinner-showdown']],
+ ['candy','Candy Land','Gumdrop Catch and Color Card Dash',null,['candy-gumdrop-catch','candy-color-dash']],
+ ['baseball','Major League','Home Run Derby and Bat & Field',null,['major-league-bats','major-league-fielding']],
+ ['ducks','The Mighty Ducks','Air hockey and shootout',null,['rink-rivals','office-hockey-shootout']],
+ ['matrix','The Matrix','Nine Realities and Hardline Hack','neo',['matrix-ultimate','matrix-hardline-hack']],
+ ['office','The Office','Dividers and Warehouse Shift','dwight',['office-dots-boxes','warehouse-shift']],
+ ['terminator','Terminator','Skynet scan and freeway chase','terminator',['terminator-scan','t800-scan-long']],
+ ['pokemon','Pokémon Battles','Wild and trainer battles','pikachu',['pkmn-wild','pkmn-trainer']]];
+const FAMILY=new Map(FAMILIES.map(([key,title,sub,hero,ids])=>[key,{key,title,sub,hero,ids}]));
+const FAMILY_OF=new Map();for(const f of FAMILY.values())for(const id of f.ids||[])FAMILY_OF.set(id,f.key);
+const familyOf=g=>g.bossId?'bosses':FAMILY_OF.get(g.id)||null;
+// Characters picked by hand where the source match would choose someone odd.
+const HERO={'bucketheadland-pinball':'buckethead','black-sabbath-pinball':'ozzy-osbourne','cv-symphony':'alucard','kill-bill-duel':'kb-the-bride','tarantino-crazy88':'kb-the-bride','tarantino-bounty':'dj-django','pac-maze-duel':'pac-man','pkmn-wild':'pikachu','pkmn-trainer':'ash-ketchum','paddys-beer-pong':'charlie','flipadelphia-cup':'charlie','terminator-scan':'terminator','t800-scan-long':'terminator','matrix-hardline-hack':'neo','evil-dead-cabin':'ash','django-hangman':'dj-django','django-hangman-showdown':'dj-king-schultz','django-hangman-wanted':'dj-django','sewer-clash':'leonardo-tmnt','snake-run':'snake','shred-hero':'buckethead','king-gizzard-pinball':'ref-stumackenzie','deadite-checkers':'ash','tarantino-chase':'dp-stuntman-mike','tarantino-adrenaline':'pf-vincent','tarantino-twist':'pf-jules','tarantino-standoff':'pf-jules'};
+
+// ---- pictures ----
+const own=id=>{const u=id&&USER_PORTRAITS['photo:char:'+id];return isRasterArt(u)?u:null;};
+const norm=s=>String(s||'').toLowerCase().replace(/^the /,'').replace(/[^a-z0-9]+/g,'');
+let bySource=null;
+function sourceIndex(){if(bySource)return bySource;bySource=new Map();for(const c of CHARACTERS){if(!own(c.id))continue;const k=norm(c.source);if(!k)continue;if(!bySource.has(k))bySource.set(k,[]);bySource.get(k).push(c.id);}return bySource;}
+const heroCache=new Map();
+function heroId(g){
+ if(heroCache.has(g.id))return heroCache.get(g.id);
+ let id=HERO[g.id]&&own(HERO[g.id])?HERO[g.id]:null;
+ if(!id&&g.bossId){const b=bossById(g.bossId);for(const c of [b?.unlockId,g.bossId])if(own(c)){id=c;break;}}
+ if(!id){const k=norm(g.source),idx=sourceIndex();const hit=idx.get(k)||[...idx.entries()].find(([s])=>k.length>3&&s.length>3&&(s.startsWith(k)||k.startsWith(s)))?.[1];if(hit?.length)id=hit[Math.abs(hash(g.id))%hit.length];}
+ if(!id){const f=FAMILY.get(familyOf(g));if(f&&own(f.hero))id=f.hero;}
+ heroCache.set(g.id,id||null);return id||null;
+}
+function hash(s){let h=0;for(const ch of String(s))h=(h*31+ch.charCodeAt(0))|0;return h;}
+const hue=s=>((hash(norm(s))%360)+360)%360;
+// The cut-out with the neon outline; games without a character fall back to their own art, then their icon.
+// Owner's own tile art wins: assets/tiles/<game id>.webp, or <family key>.webp for a family tile.
+const tileArt=k=>{const u=k&&USER_PORTRAITS['tile:'+k];return u&&(isRasterArt(u)||/^data:image\/svg|\.svg$/i.test(u))?u:null;};
+function art(g,{fam=null,size=''}={}){
+ const drop=tileArt(fam?.key)||tileArt(g?.id);if(drop)return `<img class="arc-cut arc-drop${size}" src="${e(drop)}" alt="" loading="lazy" draggable="false">`;
+ const cid=fam?.hero&&own(fam.hero)?fam.hero:g?.id?heroId(g):null;
+ if(cid)return `<img class="arc-cut${size}" src="${e(own(cid))}" alt="" loading="lazy" draggable="false">`;
+ const gameArt=g&&g.id!=='wopr-grid'&&ART[`game:${g.id}`];
+ if(gameArt)return `<img class="arc-card-art${size}" src="${e(gameArt)}" alt="" loading="lazy" draggable="false">`;
+ return `<span class="arc-emoji${size}" aria-hidden="true">${e(g?.icon||'🎮')}</span>`;
+}
+
+// ---- the screen ----
+const state={focus:null,family:null};
+let current=null;
+// opts: {list, partsFor(g), filter, filters:[[id,label]], query, strip (1P/online strip HTML), devStrip, extraBosses}
+function arcadeConsoleHTML(opts){
+ const {list,filter,filters,query,strip,devStrip}=opts;const grouped=!query&&filter==='all'; // families only on the main list; categories, bosses and search list every game
+ const items=[],seen=new Set();
+ for(const g of list){const fk=grouped&&familyOf(g);
+  if(fk){const members=list.filter(x=>familyOf(x)===fk);if(members.length>1||fk==='bosses'){if(!seen.has(fk)){seen.add(fk);items.push({key:'f:'+fk,fam:FAMILY.get(fk),members,g:members[0]});}continue;}}
+  items.push({key:'g:'+g.id,g});}
+ current={...opts,items};
+ let at=items.findIndex(it=>it.key===state.focus);if(at<0){at=0;state.focus=items[0]?.key||null;}
+ const pills=filters.map(([id,label])=>`<button class="arc-pill${id===filter?' on':''}" data-action="filter" data-id="${e(id)}">${e(label)}</button>`).join('');
+ const tiles=items.map((it,i)=>tileHTML(it,i,i===at)).join('');
+ return `<main class="arcade-console" style="${heroVars(items[at])}"><div class="arc-wash" aria-hidden="true"></div>
+  <div class="arc-hero-art" aria-hidden="true">${items[at]?heroArt(items[at]):''}</div><div class="arc-shade" aria-hidden="true"></div>
+  <header class="arc-top"><button class="arc-icon" data-action="home" aria-label="Back to the title screen">←</button><b class="arc-brand">Arcade</b>
+   <span class="arc-top-r"><button class="arc-icon" data-action="arcade-random" aria-label="Random game" title="Random game">🎲</button><button class="arc-icon arc-search-btn${query?' on':''}" data-arc-search aria-label="Search games">⌕</button></span></header>
+  <div class="arc-search"${query?'':' hidden'}><input id="catalog-search" type="search" value="${e(query)}" placeholder="Search games or shows…" aria-label="Search games" autocomplete="off"></div>
+  <nav class="arc-pills" aria-label="Game categories">${pills}</nav>
+  <div class="arc-strip">${strip||''}</div>
+  <section class="arc-info" aria-live="polite">${items[at]?infoHTML(items[at]):'<p class="arc-empty">Nothing here yet. Try another category.</p>'}</section>
+  <div class="arc-row-label">${e(filters.find(f=>f[0]===filter)?.[1]||'Games')} · ${items.length}</div>
+  <div class="arc-row" role="listbox" aria-label="Games">${tiles}</div>
+  ${devStrip?`<div class="arc-dev">${devStrip}</div>`:''}
+  <section class="arc-fam"${state.family?'':' hidden'} aria-label="Versions">${state.family?familyHTML(state.family):''}</section></main>`;
+}
+function heroVars(it){const g=it?.g,h=hue(it?.fam?.title||g?.source||'');return `--arc-h:${h}`;}
+function heroArt(it){return art(it.g,{fam:it.fam,size:' big'});}
+function tileHTML(it,i,on){const g=it.g,locked=!it.fam&&!current.partsFor(g).open;
+ return `<button class="arc-tile${on?' on':''}${locked?' locked':''}" role="option" aria-selected="${on}" data-arc-focus="${i}" style="--arc-h:${hue(it.fam?.title||g.source)}" aria-label="${e(it.fam?.title||g.title)}">${art(g,{fam:it.fam})}${it.fam?`<span class="arc-count">×${it.fam.key==='bosses'?bossTotal():it.members.length}</span>`:''}${locked?'<span class="arc-lock" aria-hidden="true">🔒</span>':''}</button>`;}
+function bossTotal(){return (current.extraBosses||[]).length+current.items.find(x=>x.fam?.key==='bosses')?.members.length||0;}
+function infoHTML(it){
+ if(it.fam){const f=it.fam,n=f.key==='bosses'?bossTotal():it.members.length,played=it.members.filter(g=>store.profile.played.includes(g.id)).length;
+  return `<div class="arc-src">${e(f.sub)}</div><h2 class="arc-title">${e(f.title)}</h2><div class="arc-chips"><span>${n} ${f.key==='bosses'?'bosses':'versions'}</span>${played?`<span>${played} played</span>`:''}${f.key==='bosses'?`<span>${it.members.length} beaten</span>`:''}</div>
+   <p class="arc-rules">${e(it.members.slice(0,6).map(g=>shortTitle(g,f)).join(' · '))}${it.members.length>6?' …':''}</p>
+   <div class="arc-actions"><button class="arc-cta" data-arc-family="${e(f.key)}">Choose a version ▸</button></div>`;}
+ const g=it.g,p=current.partsFor(g);
+ return `<div class="arc-src">${e(g.source)} · ${e(catName(g))}</div><h2 class="arc-title">${e(g.title)}</h2><div class="arc-chips">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div>
+  <p class="arc-rules">${e(g.rules||'')}</p><div class="arc-actions">${p.play}${p.dev||''}</div>`;
+}
+const CATS={arcade:'Arcade',puzzle:'Puzzle',strategy:'Strategy',skill:'Skill',sports:'Sports',trivia:'Trivia',casino:'Casino',dice:'Dice',duel:'Duel',coop:'Co-op',pokemon:'Pokémon'};
+const catName=g=>g.bossId?'Boss':CATS[g.category]||'Game';
+function shortTitle(g,f){const t=g.title.replace(/^Boss · /,'');const parts=t.split(' · ');return parts.length>1&&norm(parts[0]).includes(norm(f.title).slice(0,5))?parts.slice(1).join(' · '):t.replace(/^Broforce: /,'');}
+function familyHTML(key){const f=FAMILY.get(key);if(!f||!current)return '';
+ let members=current.list.filter(g=>familyOf(g)===key);if(key==='bosses')members=[...members,...(current.extraBosses||[])];
+ const cards=members.map(g=>{const p=current.partsFor(g);return `<article class="arc-ver${p.open?'':' locked'}" style="--arc-h:${hue(g.source)}"><div class="arc-ver-art">${art(g)}${p.open?'':'<span class="arc-lock" aria-hidden="true">🔒</span>'}</div>
+  <div class="arc-ver-body"><h3>${e(shortTitle(g,f))}</h3><div class="arc-chips small">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div><p>${e(g.rules||'')}</p><div class="arc-actions">${p.play}${p.dev||''}</div></div></article>`;}).join('');
+ return `<header class="arc-fam-top"><button class="arc-icon" data-arc-close aria-label="Back to the Arcade">←</button><div><div class="arc-src">${e(f.sub)}</div><h2 class="arc-title">${e(f.title)}</h2></div></header>
+  <div class="arc-fam-hero" aria-hidden="true">${art(members[0]||{},{fam:f,size:' big'})}</div><div class="arc-ver-grid">${cards}</div>`;}
+
+// Focus a tile without rebuilding the screen (fast, keeps the row's scroll position).
+function focusTile(i,{scroll=true}={}){
+ const root=document.querySelector('.arcade-console');if(!root||!current)return;const it=current.items[i];if(!it)return;
+ state.focus=it.key;root.style.setProperty('--arc-h',hue(it.fam?.title||it.g.source));
+ root.querySelector('.arc-hero-art').innerHTML=heroArt(it);root.querySelector('.arc-info').innerHTML=infoHTML(it);
+ root.querySelectorAll('.arc-tile').forEach((t,j)=>{t.classList.toggle('on',j===i);t.setAttribute('aria-selected',String(j===i));});
+ const tile=root.querySelectorAll('.arc-tile')[i];if(scroll&&tile)tile.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',inline:'center',block:'nearest'});
+ root.querySelector('.arc-hero-art').classList.remove('arc-in');void root.offsetWidth;root.querySelector('.arc-hero-art').classList.add('arc-in');
+ if(store.profile?.settings.sound)tone(660+((i%5)*40),.05,.02,'triangle');
+}
+function openFamily(key){const root=document.querySelector('.arcade-console');if(!root)return;state.family=key;const s=root.querySelector('.arc-fam');s.innerHTML=familyHTML(key);s.hidden=false;s.scrollTop=0;}
+function closeFamily(){state.family=null;const s=document.querySelector('.arcade-console .arc-fam');if(s){s.hidden=true;s.innerHTML='';}}
+// After a rebuild: put the focused tile in view (no animation) and reopen the version page if one was open.
+function installArcadeConsole(){const root=document.querySelector('.arcade-console');if(!root||!current)return;
+ const i=current.items.findIndex(it=>it.key===state.focus);const tile=root.querySelectorAll('.arc-tile')[i];if(tile){const row=root.querySelector('.arc-row');row.scrollLeft=tile.offsetLeft-row.clientWidth/2+tile.clientWidth/2;}}
+function resetArcadeConsole(){state.focus=null;state.family=null;}
+if(typeof document!=='undefined')document.addEventListener('click',ev=>{
+ const t=ev.target.closest?.('[data-arc-focus],[data-arc-family],[data-arc-close],[data-arc-search]');if(!t||!t.closest('.arcade-console'))return;
+ if(t.dataset.arcFocus!==undefined){const i=+t.dataset.arcFocus;if(current?.items[i]?.key===state.focus&&current.items[i].fam)openFamily(current.items[i].fam.key);else focusTile(i);}
+ else if(t.dataset.arcFamily)openFamily(t.dataset.arcFamily);
+ else if(t.dataset.arcClose!==undefined)closeFamily();
+ else if(t.dataset.arcSearch!==undefined){const s=document.querySelector('.arcade-console .arc-search');s.hidden=!s.hidden;if(!s.hidden)s.querySelector('input').focus();}
+});
+// Keyboard / controller-style browsing on desktop: left/right move the focus, Enter opens a family.
+if(typeof document!=='undefined')document.addEventListener('keydown',ev=>{
+ if(!document.querySelector('.arcade-console')||!current||ev.target.closest?.('input,textarea,dialog'))return;
+ const i=current.items.findIndex(it=>it.key===state.focus);
+ if(ev.key==='ArrowRight'||ev.key==='ArrowLeft'){ev.preventDefault();focusTile(Math.max(0,Math.min(current.items.length-1,i+(ev.key==='ArrowRight'?1:-1))));}
+ else if(ev.key==='Escape'&&state.family)closeFamily();
+});
+
+Object.assign(exports,{arcadeConsoleHTML,installArcadeConsole,resetArcadeConsole,familyOf,heroId,FAMILIES});

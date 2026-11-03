@@ -6,12 +6,14 @@ const act = v => page.evaluate(v => { const b = document.createElement('button')
 let bad = 0; const check = (ok, m) => { console.log(ok ? 'PASS' : 'FAIL', m); if (!ok) bad++; };
 await page.evaluate(() => { const p = window.ShambConkins.store.profile; p.bossesBeaten = ['king-kandy']; delete p.bossTiers; p.settings.solo = {...(p.settings.solo || {}), on: false}; });
 await act('arcade'); await page.waitForTimeout(300);
-await page.selectOption('#catalog-filter', 'boss'); await page.waitForTimeout(300);
-const lit = () => page.evaluate(() => { const c = [...document.querySelectorAll('.catalog-grid>article')].find(a => /King Kandy/.test(a.querySelector('h3')?.textContent)); return c ? c.querySelectorAll('.boss-medals i.won').length : -1; });
+// console Arcade: Bosses pill, focus King Kandy's tile, his medals and Fight button are in the hero
+const bossPill = async () => { await page.click('.arc-pill[data-id="boss"]').catch(() => {}); await page.waitForTimeout(300); };
+const focusKandy = () => page.evaluate(() => { const t = [...document.querySelectorAll('.arc-tile')].find(t => /King Kandy/.test(t.getAttribute('aria-label'))); t?.click(); return !!t; });
+await bossPill();
+const lit = async () => { if (!await focusKandy()) return -1; await page.waitForTimeout(200); return page.evaluate(() => document.querySelectorAll('.arc-info .boss-medals i.won').length); };
 check(await lit() === 1, 'old save: beaten boss shows 1 medal (Easy)');
-const card = await page.evaluateHandle(() => [...document.querySelectorAll('.catalog-grid>article')].find(a => /King Kandy/.test(a.querySelector('h3')?.textContent)));
-await (await card.asElement().$('button')).scrollIntoViewIfNeeded(); await page.screenshot({path: `${out}/ladder-card.png`});
-async function openPicker() { await page.evaluate(() => { const c = [...document.querySelectorAll('.catalog-grid>article')].find(a => /King Kandy/.test(a.querySelector('h3')?.textContent)); c.querySelector('button').click(); }); await page.waitForTimeout(400);
+await page.screenshot({path: `${out}/ladder-card.png`});
+async function openPicker() { await focusKandy(); await page.waitForTimeout(200); await page.evaluate(() => document.querySelector('.arc-info .arc-actions button').click()); await page.waitForTimeout(400);
   return page.evaluate(() => [...document.querySelectorAll('#dialog button')].map(b => ({t: b.innerText.replace(/\s+/g, ' ').trim(), dis: b.disabled, pri: b.classList.contains('primary')}))); }
 let ch = await openPicker(); console.log(JSON.stringify(ch));
 await page.screenshot({path: `${out}/ladder-picker.png`});
@@ -28,7 +30,7 @@ check(/MEDIUM CLEARED/.test(card2 || ''), 'result card says MEDIUM CLEARED');
 check(await page.evaluate(() => window.ShambConkins.store.profile.bossTiers?.['king-kandy']) === 1, 'profile.bossTiers = 1');
 await page.evaluate(() => document.querySelector('#dialog button.primary,#dialog button')?.click()); await page.waitForTimeout(600);
 for (let i = 0; i < 5; i++) { if (await page.evaluate(() => document.getElementById('dialog').open)) { await page.evaluate(() => document.querySelector('#dialog button')?.click()); await page.waitForTimeout(300); } }
-await page.selectOption('#catalog-filter', 'boss').catch(() => {}); await page.waitForTimeout(300);
+await bossPill();
 check(await lit() === 2, 'card now shows 2 medals');
 ch = await openPicker(); check(!ch[2].dis && ch[2].pri && ch[3].dis, 'picker: Hard now open, Extreme locked');
 check(errors.length === 0, 'no page errors ' + errors.join(' | '));

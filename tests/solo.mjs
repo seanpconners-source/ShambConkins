@@ -10,7 +10,7 @@ await S(()=>{window.ShambConkins.store.profile.settings.devMode=true;});
 await act('arcade');await page.waitForTimeout(300);
 if(!await page.$('.solo-strip'))fail('no 1P/2P switch');
 await page.click('[data-action=solo-set][data-key=on][data-value="1"]');await page.waitForTimeout(200);
-const ui=await S(()=>({on:window.ShambConkins.store.profile.settings.solo?.on,solo:document.querySelectorAll('[data-action=arcade-solo]').length,off:document.querySelectorAll('.arcade-card.solo-off').length,first:document.querySelector('.catalog-grid>article h3')?.textContent}));
+const ui=await S(()=>({on:window.ShambConkins.store.profile.settings.solo?.on,solo:document.querySelectorAll('.arc-tile').length,first:document.querySelector('.arc-tile')?.getAttribute('aria-label')}));
 console.log('1P arcade',JSON.stringify(ui));if(!ui.on||!ui.solo)fail('no solo cards in 1P');
 await page.click('[data-action=solo-set][data-key=who][data-value="1"]');await page.click('[data-action=solo-set][data-key=level][data-value=hard]');await page.waitForTimeout(200);
 const set=await S(()=>window.ShambConkins.store.profile.settings.solo);console.log('settings',JSON.stringify(set));if(set.who!==1||set.level!=='hard')fail('switch did not save');
@@ -19,7 +19,7 @@ await page.click('[data-action=solo-set][data-key=who][data-value="0"]');await p
 // Solo runs: start each matching game from its card, let its debug bot / timeouts play, then bank via Exit.
 const ids=await S(()=>Array.from(window.ShambConkins.gameRegistry).map(g=>g.id));
 for(const id of ids.filter(id=>only.test(id))){
- await S(()=>{document.getElementById('catalog-search').value='';});
+ await S(()=>{const i=document.getElementById('catalog-search');if(i)i.value='';});
  await page.evaluate(id=>{const b=document.createElement('button');b.dataset.action='arcade-solo';b.dataset.id=id;document.body.append(b);b.click();b.remove();},id);
  await page.waitForTimeout(400);await page.click('#dialog button.primary');
  const t0=Date.now();let shots=0,state;
