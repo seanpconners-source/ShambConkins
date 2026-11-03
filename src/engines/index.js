@@ -58,7 +58,8 @@ const {moneygrab}=require("src/engines/bananaTapper.js");
 const {bondmission}=require("src/engines/goldeneyeFacility.js");
 const {battleroyale}=require("src/engines/battleIsland.js");
 const {fruitmerge}=require("src/engines/brawndoMerge.js");
-const {hole,bike,flappy,crossy,airhockey,bomber}=require("src/engines/mobile.js");
+const {hole,bike,flappy,airhockey,bomber}=require("src/engines/mobile.js");
+const {frogger,crossyRoad:crossy}=require("src/engines/froggerCrossy.js");
 const {baseball}=require("src/engines/homeRunDerby.js");
 const {pacmaze, airshootout}=require("src/engines/duels.js");
 const {tank}=require("src/engines/atariCombat.js");
@@ -66,6 +67,6 @@ const {coopRivals}=require("src/engines/coop.js");
 const {blocks,shred,dodgeball,boxing,gophers,archery}=require("src/engines/newGames.js");
 function themedPool(s){return s.game?.source==='The Color of Money'?nineball(s):pool(s);}
 const PACKS=require("src/packs/index.js");
-const ENGINES=Object.freeze({blocks,shred,dodgeball,boxing,gophers,archery,sokoban,pipeconnect,sonargrid:motionTracker,connect4,reversi,blackjack,poker,roulette,baccarat,yahtzee,trivia,millionaire,stickdot,towerstack,darts,kitchen,task,hole,bike,baseball,baseballfield,pinball,coopRivals,artillery,airshootout,curling,minigolf,bowling,lander,missiledefense,breakout,asteroids,galaga,snake,bomber,pacmaze,tank,chase,crossy,pong,pool:themedPool,airhockey,flappy,tictactoe,sewer,bondmission,lightcycle,minichess,fruitmerge,slingshot,penalty,sumo,dualrace,snakeduel,moneygrab,sword2p,basketball2p,ballrun2p,conesort,paperboy,brawler,battleroyale,skynetid,pancakes,duckturn,hangman,photohunt,headlaunch,ballvolley,horde,ultimate,mancala,dots,checkers,chess,guesswho,beerpong,flipcup,fruitslice,uno,microrelay,...PACKS.engines});
+const ENGINES=Object.freeze({blocks,shred,dodgeball,boxing,gophers,archery,sokoban,pipeconnect,sonargrid:motionTracker,connect4,reversi,blackjack,poker,roulette,baccarat,yahtzee,trivia,millionaire,stickdot,towerstack,darts,kitchen,task,hole,bike,baseball,baseballfield,pinball,coopRivals,artillery,airshootout,curling,minigolf,bowling,lander,missiledefense,breakout,asteroids,galaga,snake,bomber,pacmaze,tank,chase,crossy,frogger,pong,pool:themedPool,airhockey,flappy,tictactoe,sewer,bondmission,lightcycle,minichess,fruitmerge,slingshot,penalty,sumo,dualrace,snakeduel,moneygrab,sword2p,basketball2p,ballrun2p,conesort,paperboy,brawler,battleroyale,skynetid,pancakes,duckturn,hangman,photohunt,headlaunch,ballvolley,horde,ultimate,mancala,dots,checkers,chess,guesswho,beerpong,flipcup,fruitslice,uno,microrelay,...PACKS.engines});
 
 Object.assign(exports,{ENGINES});

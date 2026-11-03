@@ -20,7 +20,7 @@ const SOLO_IDS={
  'moonraker-lander':'rounds','t800-scan-long':'rounds','bond-facility':'rounds','major-league-bats':'rounds','asteroid-drift':'rounds',
  'breakout-party':'rounds','banana-money-grab':'rounds',
  // arcadeRounds (arcade.js → soloArcadeRounds)
- 'radical-bike':'rounds','flappy-disaster':'rounds','crossy-chaos':'rounds','gopher-hunt':'rounds','wind-archery':'rounds',
+ 'radical-bike':'rounds','flappy-disaster':'rounds','crossy-chaos':'rounds','frogger-heads':'rounds','gopher-hunt':'rounds','wind-archery':'rounds',
  // pass-and-play engines run once per round by the launcher (soloTurnRounds); the hand-off to P2 ends the round
  'taskmaster-fruit-ninja':'turns','angry-heads':'turns','neon-ball-storm':'turns','home-alone-paint-can':'turns','tm-cones':'turns',
  'paper-route':'turns','warehouse-shift':'turns','matrix-hardline-hack':'turns','alien-sonar-grid':'turns','kitchen-service':'turns',
