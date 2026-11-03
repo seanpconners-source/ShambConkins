@@ -92,16 +92,17 @@ const dropArt=(kind,k)=>{const u=k&&USER_PORTRAITS[kind+':'+k];return u&&(isRast
 const tileArt=k=>dropArt('tile',k);
 // Key art: a big picture for the hero (assets/keyart/<game id or family key>.*), shown full-bleed behind the selected game.
 const keyArt=it=>it&&(dropArt('keyart',it.fam?.key)||dropArt('keyart',it.g?.id)||dropArt('keyart',it.g&&familyOf(it.g)));   // a version listed on its own uses its family's picture
-// What must stay in view in each big picture: [x0,y0,x1,y1] as fractions of the picture (Sean & Amber, the board...).
+// What must stay in view in each big picture: [x0,y0,x1,y1] as fractions of the picture, drawn tight round Sean's and Amber's
+// faces (owner, Nov 3: "backgrounds still cut off the faces"; check with a contact sheet of the boxes drawn on the pictures).
 // placeKey() sizes and moves the picture so this box is always fully on screen on any phone/tablet/desktop, beside the
 // text on wide screens and above it on tall ones; it zooms out (edges fade into the backdrop) rather than cut it off.
 // New key art: add its box here (slot = game id or family key); without one the middle of the picture is kept.
-const KEY_BOX={'bricks-breaker-quest':[.62,.47,.99,.95],'greed-island-mancala':[.26,.03,.92,.78],broforce:[.55,.31,.84,.66],hangman:[.21,.12,.76,.93],
- pinball:[.12,.2,.88,.8],'bucketheadland-pinball':[.25,.4,.85,.95],'black-sabbath-pinball':[.6,.28,.98,.75],'king-gizzard-pinball':[.33,.3,.78,.85],
- baseball:[.4,.36,.98,.82],bond:[.27,.3,.65,.98],bosses:[.22,.5,.72,.92],candy:[.28,.3,.88,.75],casino:[.36,.28,.9,.75],castlevania:[.45,.5,.78,.95],
- clue:[.25,.15,.9,.85],monopoly:[.55,.35,.98,.98],'pac-maze-duel':[.36,.7,.9,.98],paddys:[.3,.25,.95,.92],rush:[.25,0,.85,.9],kart:[.3,.25,.95,.92],
- trivia:[.35,.25,.92,.95],ducks:[.45,.3,.98,.78],matrix:[.48,.4,.92,.98],terminator:[.38,.3,.9,.98],hyrule:[.52,.5,.8,.75],taskmaster:[.55,.42,.88,.85],
- tarantino:[.48,.42,.92,.92],trek:[.32,.2,.85,.98],invaders:[.6,.6,.96,.98],sonic:[.55,.35,.85,.88],smb:[.27,.45,.53,.88],southpark:[.5,.38,.95,.95],doom:[.45,.18,.98,.9],'doom-2':[.42,.28,.92,.98]};
+const KEY_BOX={baseball:[.6,.36,.96,.52], 'black-sabbath-pinball':[.68,.28,.97,.5], bond:[.28,.36,.6,.7], bosses:[.3,.5,.6,.8], 'bucketheadland-pinball':[.38,.36,.8,.64], 'king-gizzard-pinball':[.34,.3,.59,.62],
+ candy:[.25,.4,.85,.75], casino:[.37,.28,.67,.5], castlevania:[.52,.5,.79,.7], clue:[.25,.15,.9,.85], monopoly:[.64,.26,.93,.56], 'pac-maze-duel':[.35,.76,.92,.99],
+ paddys:[.43,.33,.88,.55], rush:[.28,0,.68,.55], kart:[.48,.23,.78,.5], trivia:[.42,.22,.85,.5], ducks:[.58,.3,.93,.53], matrix:[.57,.4,.87,.63],
+ terminator:[.45,.36,.79,.6], hyrule:[.53,.47,.78,.68], taskmaster:[.6,.42,.86,.6], tarantino:[.52,.4,.82,.62], trek:[.42,.2,.77,.5], invaders:[.44,.6,.92,.88],
+ sonic:[.55,.34,.82,.75], smb:[.27,.48,.53,.78], southpark:[.52,.46,.92,.72], doom:[.5,.16,.83,.52], 'doom-2':[.43,.3,.75,.58], 'bricks-breaker-quest':[.75,.47,.96,.64],
+ 'greed-island-mancala':[.28,.03,.86,.5], broforce:[.56,.31,.81,.53], hangman:[.25,.11,.72,.57], pinball:[.3,.15,.75,.6]};
 const KEY_BOX_DEFAULT=[.28,.15,.72,.85];
 const keyBox=it=>KEY_BOX[it.fam?.key]||KEY_BOX[it.g?.id]||KEY_BOX[familyOf(it.g)]||KEY_BOX_DEFAULT;
 const keyImg=it=>{const b=keyBox(it);return `<img src="${e(keyArt(it))}" alt="" data-box="${b.join(',')}" style="transform-origin:${(b[0]+b[2])*50}% ${(b[1]+b[3])*50}%">`;};
@@ -112,13 +113,16 @@ function placeKey(img){
  const [bx0,by0,bx1,by1]=img.dataset.box.split(',').map(Number);
  const rel=sel=>{const el=root.querySelector(sel),r=el&&el.getBoundingClientRect();return r&&r.height?{l:r.left-R.left,t:r.top-R.top,r:r.right-R.left,b:r.bottom-R.top}:null;};
  const side=matchMedia('(min-width:700px),(orientation:landscape) and (max-height:520px)').matches;
- const info=rel('.arc-info'),row=rel('.arc-row-head')||rel('.arc-row'),top=(rel('.arc-top')?.b??H*.08)+4;
- // the area the box should fill: under the top bar, above the tiles (wide) or above most of the text (tall)
- const ax0=W*.03,ax1=W*.97,ay0=top,ay1=Math.max(top+80,side?(row?.t??H*.8)-4:(info?info.t+(info.b-info.t)*.3:H*.6));
- const bw=(bx1-bx0)*iw,bh=(by1-by0)*ih,cover=Math.max(W/iw,H/ih),fit=Math.min((ax1-ax0)/bw,(ay1-ay0)/bh),s=Math.min(cover,fit);
+ const info=rel('.arc-info'),row=rel('.arc-row-head')||rel('.arc-row');
+ // clear of every control: below the top bar, the category pills and the player strip (and the search box when open)
+ const top=Math.max(H*.06,...['.arc-top','.arc-pills','.arc-strip','.arc-search'].map(q=>rel(q)?.b||0))+8;
+ // the area the faces should fill: wide = right of the text and above the tiles, tall = between the strip and the text
+ const ay0=top,ay1=Math.max(top+60,side?(row?.t??H*.8)-8:(info?info.t-6:H*.6));
+ let ax0=W*.03,ax1=W*.97;if(side&&info&&info.r<W*.7)ax0=info.r+12;
+ const bw=(bx1-bx0)*iw,bh=(by1-by0)*ih,cover=Math.max(W/iw,H/ih),fit=.92*Math.min((ax1-ax0)/bw,(ay1-ay0)/bh),s=Math.min(cover,fit); // a little room round the faces
  const dw=iw*s,dh=ih*s,BW=bw*s,BH=bh*s;
  // wide: the box sits right of the text when it fits there, else as far right as it can
- let cx=(ax0+ax1)/2;if(side&&info){const c0=Math.min(info.r+8,W*.6);cx=BW<=ax1-c0?(c0+ax1)/2:ax1-BW/2;}
+ const cx=(ax0+ax1)/2;
  const cy=(ay0+ay1)/2;
  // keep the box inside its area; cover the screen on an axis where the picture is big enough, else stay inside the screen
  const solve=(want,d,L,b0,b1,a0,a1)=>{const lo=a0-b0*d,hi=a1-b1*d,p=clampR(want,lo,hi);const c0=d>=L?L-d:0,c1=d>=L?0:L-d;
@@ -129,6 +133,8 @@ function placeKey(img){
  const mask=(fl||fr||ft||fb)?`linear-gradient(90deg,#0000,#000 ${f(fl,dw)},#000 calc(100% - ${f(fr,dw)}),#0000),linear-gradient(180deg,#0000,#000 ${f(ft,dh)},#000 calc(100% - ${f(fb,dh)}),#0000)`:'none';
  Object.assign(img.style,{left:left+'px',top:topP+'px',width:dw+'px',height:dh+'px',maskImage:mask,webkitMaskImage:mask,maskComposite:'intersect',webkitMaskComposite:'source-in'});
  img.classList.add('placed');
+ // the shade stays light over the faces' area (theme.css .has-key .arc-shade reads these)
+ root.style.setProperty('--key-y0',(ay0/H*100).toFixed(1)+'%');root.style.setProperty('--key-y1',(ay1/H*100).toFixed(1)+'%');
 }
 const placeKeys=()=>{if(typeof document!=='undefined')document.querySelectorAll('.arc-keyart img').forEach(placeKey);};
 if(typeof document!=='undefined'){document.addEventListener('load',ev=>{if(ev.target?.closest?.('.arc-keyart'))placeKey(ev.target);},true);

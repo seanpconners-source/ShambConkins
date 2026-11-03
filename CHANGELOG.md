@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.80.1
+
+- **Arcade backgrounds never cut off your faces**: every picture now knows exactly where Sean's and Amber's faces are, and the game keeps them clear of the menu buttons and the text on every screen (Fold open and closed, phones, tablets, desktop, landscape).
+- **Item pictures**: 23 items get proper art: Ash's Chainsaw, Buster Sword, Snake's Cardboard Box, Cheesy Poofs, Codec, Communicator, Dundie, Fight Milk, Flux Capacitor, Freddy's Glove, GameSphere, Green Herb, Jason's Hockey Mask, Hoverboard, Kitten Mittens, Lament Box, Lightsaber, Multipass, Rum Ham, Michael Myers' Mask, Spencer Key, Thermal Detonator, Tricorder.
+
 ## v0.80.0
 
 **New art for the whole Arcade: backgrounds, logos and icons for 30+ games.**

@@ -692,8 +692,9 @@ body[data-theme="home"] #dialog[open]:not(.sheet) .dialog-content{animation:arc-
  .arcade-console{transition:none}
  .arcade-console *,.arcade-console *::after,.title-screen *,.catalog-shell:not(.col-shell),.setup-shell:not(.mx-shell),#dialog .dialog-content{animation:none!important;transition:none!important}
 }
-.arcade-console.has-key .arc-shade{background:linear-gradient(180deg,#060a17e6 0%,#060a1780 18%,#0000 34%,#060a17cc 56%,#060a17 74%)}
-@media (min-width:700px){.arcade-console.has-key .arc-shade{background:linear-gradient(90deg,#060a17 6%,#060a17b3 36%,#0000 62%),linear-gradient(180deg,#060a17cc 0%,#0000 20%,#0000 60%,#060a17 84%)}}
+/* key art: dark behind the controls and the text, clear over the faces (placeKey sets --key-y0/--key-y1 = the faces' band) */
+.arcade-console.has-key .arc-shade{background:linear-gradient(180deg,#060a17d9 0%,#060a1766 calc(var(--key-y0,22%) - 4%),#0000 var(--key-y0,22%),#0000 var(--key-y1,44%),#060a17cc calc(var(--key-y1,44%) + 12%),#060a17 calc(var(--key-y1,44%) + 30%))}
+@media (min-width:700px),(orientation:landscape) and (max-height:520px){.arcade-console.has-key .arc-shade{background:linear-gradient(90deg,#060a17 4%,#060a17b3 30%,#0000 50%),linear-gradient(180deg,#060a17cc 0%,#0000 var(--key-y0,20%),#0000 var(--key-y1,60%),#060a17 calc(var(--key-y1,60%) + 18%))}}
 
 /* ---------- Arcade round 2 (owner, Nov 3): View all grid, small phones ---------- */
 .arc-grid-page{position:absolute;inset:0;z-index:19;overflow-y:auto;overscroll-behavior:contain;background:radial-gradient(120% 45% at 50% 0%,#14224a 0%,#070c1d 62%);
