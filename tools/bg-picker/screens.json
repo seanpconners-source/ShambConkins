@@ -1,3 +1,62 @@
-[{"id":"fold-closed","label":"Fold closed","w":344,"h":882},{"id":"phone","label":"Phone","w":390,"h":844},{"id":"phone-land","label":"Phone sideways","w":844,"h":390},
- {"id":"fold-open","label":"Fold open","w":830,"h":920},{"id":"fold-open-land","label":"Fold open sideways","w":920,"h":830},{"id":"tablet","label":"Tablet","w":820,"h":1180},
- {"id":"tablet-land","label":"Tablet sideways","w":1180,"h":820},{"id":"desktop","label":"Desktop","w":1440,"h":900}]
+[
+ {
+  "id": "my-fold-open",
+  "label": "Your Fold open",
+  "w": 752,
+  "h": 835
+ },
+ {
+  "id": "my-fold-open-land",
+  "label": "Your Fold open sideways",
+  "w": 835,
+  "h": 752
+ },
+ {
+  "id": "fold-closed",
+  "label": "Fold closed",
+  "w": 344,
+  "h": 882
+ },
+ {
+  "id": "phone",
+  "label": "Phone",
+  "w": 390,
+  "h": 844
+ },
+ {
+  "id": "phone-land",
+  "label": "Phone sideways",
+  "w": 844,
+  "h": 390
+ },
+ {
+  "id": "fold-open",
+  "label": "Fold open",
+  "w": 830,
+  "h": 920
+ },
+ {
+  "id": "fold-open-land",
+  "label": "Fold open sideways",
+  "w": 920,
+  "h": 830
+ },
+ {
+  "id": "tablet",
+  "label": "Tablet",
+  "w": 820,
+  "h": 1180
+ },
+ {
+  "id": "tablet-land",
+  "label": "Tablet sideways",
+  "w": 1180,
+  "h": 820
+ },
+ {
+  "id": "desktop",
+  "label": "Desktop",
+  "w": 1440,
+  "h": 900
+ }
+]
