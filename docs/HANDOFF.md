@@ -28,7 +28,7 @@ characters on top of v0.76.0, unreleased).
    - Boss difficulty (K25): what felt too easy/samey at each tier.
    - Pokémon (PK1-PK5) priority vs the menus.
 3. Then plan the night with the owner's answers and work until morning: FIRST build the owner-runnable soak test
-   (roadmap Q00: GitHub Actions button + SOAK-TEST.cmd, owner asked Nov 3), then fixes (C13 CPU boss points, PK3
+   (roadmap Q00: the laptop SOAK-TEST.cmd first, owner's pick; GitHub button optional), then fixes (C13 CPU boss points, PK3
    Catwoman), then the menus (the owner wants the new look on main soon), then K25 boss tiers, then the rest.
 4. Before morning: run the full suite, write CHANGELOG + docs/releases/vX.md, bump the version, and either release (if the
    owner said so) or leave it ready for "release". Keep soak testing running whenever not actively coding (Q0):

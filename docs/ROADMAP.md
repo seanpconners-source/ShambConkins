@@ -62,6 +62,10 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   report (pass/fail per test, failure logs, screenshots) as an artifact; mind the private-repo Actions minutes. (2) the same
   loop as a one-click `SOAK-TEST.cmd` for the Windows laptop writing the report to a folder. Share one script
   (`tools/soak.mjs`). The next session reads the latest report and fixes what it found.
+  OWNER'S PICK (Nov 3): the LAPTOP version (2) first; the laptop can stay on as long as needed. GitHub button optional, later.
+  The laptop is Windows (see HANDOFF "Working on the owner's Windows laptop": Node not on PATH, local Playwright in
+  node_modules, wrangler via npx needs internet); the .cmd should run until closed and keep a rolling report the next
+  session can read (commit-free: e.g. a `soak-reports/` folder the owner can share, or push via GitHub Desktop).
 - **Q0** `[todo]` (owner, Nov 3) REMINDER: run prolonged soak testing tonight and whenever Claude isn't actively working on
   the game (see Q2/Q3), so it keeps improving while the owner is away. Remind the owner of this.
 
