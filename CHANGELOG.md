@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.80.3
+
+- **Characters say their real lines**: 365 characters now have their own famous quote on their character page, their unlock card and as their Pokémon trainer intro. Freddy Krueger has a whole pool of them.
+- **No more menu flicker**: changing screens keeps the old screen up until the new one's pictures are ready, then crossfades (no more dark flash). Tapping a category, 1 Player / 2 Players or searching no longer blinks the pictures.
+- **Title screen**: a game picture on the Arcade tile fades out in a soft circle instead of a hard square.
+
 ## v0.80.2
 
 - **Arcade backgrounds fill the screen**: every picture now zooms in as far as it can while keeping Sean's and Amber's faces clear of the buttons and text, so there's far less empty space on the open Fold, tablets, phones and desktop. When a picture does have to zoom out, a soft blurred copy fills the edges instead of plain black.
