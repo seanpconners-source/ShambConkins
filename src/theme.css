@@ -979,3 +979,14 @@ body .title-screen .home-stack button.ts-tile{min-height:104px}
 @media (min-width:700px) and (min-height:641px){.arcade-console .arc-tile{flex-basis:124px;height:138px;border-radius:20px}.arc-tile-name span{font-size:13px}.arc-tile .arc-emoji{margin-top:20px}}
 @media (max-height:640px){.arcade-console .arc-tile{flex-basis:80px;height:88px}.arc-tile-name{padding:12px 4px 4px}.arc-tile-name span{font-size:9.5px}.arc-tile .arc-emoji{margin-top:8px;font-size:30px}}
 @media (max-height:480px){.arcade-console .arc-tile{flex-basis:92px;height:62px;border-radius:12px}.arc-tile .arc-cut{height:64%;bottom:34%}.arc-tile-name{padding:8px 3px 3px}.arc-tile-name span{font-size:9px}.arc-tile .arc-emoji{margin-top:2px;font-size:22px}}
+
+/* a game's own transparent logo in place of its text title */
+.arc-title-logo{margin:2px 0 4px;line-height:0}
+.arc-title-logo span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.arc-title-logo img{display:block;width:min(90%,440px);max-height:clamp(64px,15vh,140px);object-fit:contain;object-position:left center;filter:drop-shadow(0 3px 10px #000d)}
+.arc-fam-top .arc-title-logo img{max-height:64px;width:min(70vw,300px)}
+.arc-tile-name.has-logo{padding:14px 4px 5px;display:flex;justify-content:center}
+.arc-tile-name.has-logo img{display:block;width:100%;max-height:36px;object-fit:contain;filter:drop-shadow(0 1px 2px #000)}
+@media (min-width:700px) and (min-height:641px){.arc-tile-name.has-logo img{max-height:50px}}
+@media (max-height:480px){.arc-tile-name.has-logo img{max-height:24px}.arc-title-logo img{max-height:52px}}
+.arc-info:has(.arc-title-logo) .arc-rules{-webkit-line-clamp:2}

@@ -93,8 +93,11 @@ const tileArt=k=>dropArt('tile',k);
 // Key art: a big picture for the hero (assets/keyart/<game id or family key>.*), shown full-bleed behind the selected game.
 const keyArt=it=>it&&(dropArt('keyart',it.fam?.key)||dropArt('keyart',it.g?.id)||dropArt('keyart',it.g&&familyOf(it.g)));   // a version listed on its own uses its family's picture
 // Where a big picture's subject is, so a phone's narrow crop keeps it in view: 'x% y%' by slot.
-const KEY_FOCUS={'greed-island-mancala':'66% 22%',broforce:'64% 40%',hangman:'64% 50%'};
+const KEY_FOCUS={'bricks-breaker-quest':'66% 45%','greed-island-mancala':'66% 22%',broforce:'64% 40%',hangman:'64% 50%'};
 const keyImg=it=>`<img src="${e(keyArt(it))}" alt="" style="object-position:${KEY_FOCUS[it.fam?.key]||KEY_FOCUS[it.g?.id]||KEY_FOCUS[familyOf(it.g)]||'50% 50%'}">`;
+// A game's own logo (assets/keyart/<game id or family key>-logo.*, transparent) replaces the plain title on the hero, the version page and the tile.
+const logoOf=it=>it&&(dropArt('keyart',it.fam?.key&&it.fam.key+'-logo')||dropArt('keyart',it.g?.id&&it.g.id+'-logo')||(it.g&&familyOf(it.g)&&dropArt('keyart',familyOf(it.g)+'-logo')));
+const titleHTML=(title,logo)=>logo?`<h2 class="arc-title arc-title-logo"><span>${e(title)}</span><img src="${e(logo)}" alt="" draggable="false"></h2>`:`<h2 class="arc-title">${e(title)}</h2>`;
 function art(g,{fam=null,size=''}={}){
  const drop=tileArt(fam?.key)||tileArt(g?.id);if(drop)return `<img class="arc-cut arc-drop${size}" src="${e(drop)}" alt="" loading="lazy" draggable="false">`;
  const cid=fam?.hero&&own(fam.hero)?fam.hero:g?.id?heroId(g):null;
@@ -136,17 +139,17 @@ function arcadeConsoleHTML(opts){
 function heroVars(it){const g=it?.g,h=hue(it?.fam?.title||g?.source||'');return `--arc-h:${h}`;}
 function heroArt(it){return art(it.g,{fam:it.fam,size:' big'});}
 function tileHTML(it,i,on){const g=it.g,locked=!it.fam&&!current.partsFor(g).open;
- return `<button class="arc-tile${on?' on':''}${locked?' locked':''}" role="option" aria-selected="${on}" data-arc-focus="${i}" style="--arc-h:${hue(it.fam?.title||g.source)};--i:${Math.min(i,14)}" aria-label="${e(it.fam?.title||g.title)}">${art(g,{fam:it.fam})}${it.fam?`<span class="arc-count">×${it.fam.key==='bosses'?bossTotal():it.members.length}</span>`:''}${locked?'<span class="arc-lock" aria-hidden="true">🔒</span>':''}<span class="arc-tile-name" aria-hidden="true"><span>${e(tileName(it))}</span></span></button>`;}
+ return `<button class="arc-tile${on?' on':''}${locked?' locked':''}" role="option" aria-selected="${on}" data-arc-focus="${i}" style="--arc-h:${hue(it.fam?.title||g.source)};--i:${Math.min(i,14)}" aria-label="${e(it.fam?.title||g.title)}">${art(g,{fam:it.fam})}${it.fam?`<span class="arc-count">×${it.fam.key==='bosses'?bossTotal():it.members.length}</span>`:''}${locked?'<span class="arc-lock" aria-hidden="true">🔒</span>':''}${logoOf(it)?`<span class="arc-tile-name has-logo" aria-hidden="true"><img src="${e(logoOf(it))}" alt="" loading="lazy" draggable="false"></span>`:`<span class="arc-tile-name" aria-hidden="true"><span>${e(tileName(it))}</span></span>`}</button>`;}
 // The name on a tile: the family or game title, the separator dropped so it wraps cleanly on two lines.
 const tileName=it=>(it.fam?.title||it.g.title).replace(/^Boss · /,'').replace(/ · /,' ');
 function bossTotal(){return (current.extraBosses||[]).length+current.items.find(x=>x.fam?.key==='bosses')?.members.length||0;}
 function infoHTML(it){
  if(it.fam){const f=it.fam,n=f.key==='bosses'?bossTotal():it.members.length,played=it.members.filter(g=>store.profile.played.includes(g.id)).length;
-  return `<div class="arc-src">${e(f.sub)}</div><h2 class="arc-title">${e(f.title)}</h2><div class="arc-chips"><span>${n} ${f.key==='bosses'?'bosses':'versions'}</span>${played?`<span>${played} played</span>`:''}${f.key==='bosses'?`<span>${it.members.length} beaten</span>`:''}</div>
+  return `<div class="arc-src">${e(f.sub)}</div>${titleHTML(f.title,logoOf(it))}<div class="arc-chips"><span>${n} ${f.key==='bosses'?'bosses':'versions'}</span>${played?`<span>${played} played</span>`:''}${f.key==='bosses'?`<span>${it.members.length} beaten</span>`:''}</div>
    <p class="arc-rules">${e(it.members.slice(0,6).map(g=>shortTitle(g,f)).join(' · '))}${it.members.length>6?' …':''}</p>
    <div class="arc-actions"><button class="arc-cta" data-arc-family="${e(f.key)}">Choose a version ▸</button></div>`;}
  const g=it.g,p=current.partsFor(g);
- return `<div class="arc-src">${e(g.srcLabel||g.source)} · ${e(catName(g))}</div><h2 class="arc-title">${e(g.title)}</h2><div class="arc-chips">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div>
+ return `<div class="arc-src">${e(g.srcLabel||g.source)} · ${e(catName(g))}</div>${titleHTML(g.title,logoOf(it))}<div class="arc-chips">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div>
   <p class="arc-rules">${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${starHTML(g)}${p.dev||''}</div>`;
 }
 // The ☆ next to a game's play button keeps it on the Favorites shelf.
@@ -159,7 +162,7 @@ function familyHTML(key){const f=FAMILY.get(key);if(!f||!current)return '';
  let members=current.list.filter(g=>familyOf(g)===key);if(key==='bosses')members=[...members,...(current.extraBosses||[])];
  const cards=members.map((g,i)=>{const p=current.partsFor(g);return `<article class="arc-ver${p.open?'':' locked'}" style="--arc-h:${hue(g.source)};--i:${Math.min(i,12)}"><div class="arc-ver-art">${dropArt('keyart',g.id)&&!tileArt(g.id)?`<img class="arc-card-art" src="${e(dropArt('keyart',g.id))}" alt="" loading="lazy">`:art(g)}${p.open?'':'<span class="arc-lock" aria-hidden="true">🔒</span>'}</div>
   <div class="arc-ver-body"><h3>${e(shortTitle(g,f))}</h3><div class="arc-chips small">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div><p>${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${starHTML(g)}${p.dev||''}</div></div></article>`;}).join('');
- return `<header class="arc-fam-top"><button class="arc-icon" data-arc-close aria-label="Back to the Arcade">←</button><div><div class="arc-src">${e(f.sub)}</div><h2 class="arc-title">${e(f.title)}</h2></div></header>
+ return `<header class="arc-fam-top"><button class="arc-icon" data-arc-close aria-label="Back to the Arcade">←</button><div><div class="arc-src">${e(f.sub)}</div>${titleHTML(f.title,logoOf({fam:f}))}</div></header>
   <div class="arc-fam-hero" aria-hidden="true">${art(members[0]||{},{fam:f,size:' big'})}</div><div class="arc-ver-grid">${cards}</div>`;}
 
 // Focus a tile without rebuilding the screen (fast, keeps the row's scroll position).
