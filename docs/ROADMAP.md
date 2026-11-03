@@ -50,6 +50,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   the real game and the warp worlds are sub-worlds.
 - **M8** `[todo]` (owner, Nov 3) Revamp ALL menus in the new arcade look once it's settled: New Game, character select,
   online/room menus, home.
+- **M10** `[verify]` (owner, Nov 3: "make sure menus are animated and smooth and feel sleek") Nov 3: entrance animations per screen (body[data-enter]), hero cross-fade, hue blend, staggered tiles, version page slide; reduced-motion respected. Keep this standard for M5/M8.
 - **M9** `[verify]` (Nov 3: Clean Console navy/white/blue on every menu (`body[data-theme="home"]` in theme.css); Bangers + Nunito built in (assets/fonts)) (owner, Nov 3) New colour scheme for the menus: the owner loves the mockup's look EXCEPT the purple and
   orange. Something awesome and professional. Offer palette options as mockups first.
 - **W1** (owner, Nov 3) Daily rhythm from now on: release in the MORNING · owner playtests in the DAY · in the EVENING the
@@ -233,7 +234,7 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
   the version. E.g. "Replay Bosses" → a menu of unlocked bosses with a screenshot/portrait each (ties in with the
   tier ladder K5); Pokémon games together; Mario Kart modes (GP, Time Trial, Battle...); likely also Space Invaders,
   Hangman, Broforce, Castlevania, Sonic, SMB, pinball tables, trivia...
-- **M4** `[part]` (Nov 3: tiles show a character cut-out per game (41 of 91 on the main list), others their icon; drop-in `assets/tiles/<game id or family key>.webp` (README there) for the rest) Real tile art per game (icon/key art), not plain cards; locked games look locked.
+- **M4** `[part]` (Nov 3: tiles show a character cut-out per game (41 of 91 on the main list), others their icon. OWNER: these character pictures are PLACEHOLDERS; he wants an individual image AND an icon for every game soon. Slots ready: `assets/keyart/<slot>.webp` (big picture behind the selected game) + `assets/tiles/<slot>.webp` (tile icon); `node tools/arcade-art-slots.mjs` lists all 186 slots in assets/tiles/SLOTS.md (pinball tables already use their backglass). Ask the owner for art, or offer to make an image-prompt kit like docs/pinball-art) Real tile art per game (icon/key art), not plain cards; locked games look locked.
 - **M5** `[todo]` Character collection revamp in the same style: tap a character → a detail page with their
   portrait/moods and their unlocked outfits (K8-K12) and how to get the rest.
 - **M6** `[idea]` Carry the same look to the other menus (home, New Game, settings) once M1 is liked.

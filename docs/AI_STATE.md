@@ -16,6 +16,11 @@ solo/catalogshots/online.mjs updated to the pills/tiles/hero. SOAK TEST (Q00): `
 vault, boss-ladder, bossdiff one random boss/tier, games.mjs one shard of 12 per round, every 3rd round the Node sims,
 online-board (random DROP) + online-native (2 random native games, LAG half the time); kills hung test trees; report
 soak-reports/LATEST.md + history.jsonl + fails/).
+Same night, owner follow-ups: MOTION (M10) at the end of theme.css: `markEnter` in ui.js showView sets body[data-enter=<view>]
+for 1.4 s when the view changes (entrance keyframes), `@property --arc-h` makes the wash hue transition, `swapLayer` cross-fades
+hero/key-art layers (`--arc-dir`), `.arc-info-in` rises lines, families slide (`arc-fam-in/out`). ART SLOTS: the cut-outs are
+placeholders; `assets/keyart/<slot>` (keyart:<id>, full-bleed behind the hero, `.has-key`) + `assets/tiles/<slot>` (tile icon);
+`tools/arcade-art-slots.mjs` → assets/tiles/SLOTS.md (186 slots). Pinball keyart = backglass art (900 px).
 
 Nov 3: v0.76.0 released (main 18b88f8; ARCADE_RECRUITS back to true at the owner's request). After it, on the branch/TESTver:
 43 new characters `src/data/legendsPack3.js` (N2). Soak loop used overnight (Q0): serve a frozen `build --pwa` copy with
