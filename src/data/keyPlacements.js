@@ -2,7 +2,7 @@
 // KEY_SCREENS = the picker's screens; KEY_PLACE[slot][screen] = {z: zoom (1 = just fills the screen), fx, fy: the point of the
 // picture (fractions) at the screen's centre}. arcadeConsole placeKey() uses the setting of the nearest screen when it is
 // locked; otherwise its automatic placement. Written by tools/bg-picker/apply.py; don't hand-edit.
-const KEY_SCREENS=[['my-fold-open',752,835],['my-fold-open-land',835,752],['amber-phone',360,780],['amber-phone-land',780,360],['fold-closed',344,882],['phone',390,844],['phone-land',844,390],['tablet',820,1180],['tablet-land',1180,820],['desktop',1440,900]];
+const KEY_SCREENS=[['my-fold-open',752,835],['my-fold-open-land',835,752],['my-fold-closed',360,840],['my-fold-closed-land',840,360],['amber-phone',360,780],['amber-phone-land',780,360],['fold-closed',344,882],['phone',390,844],['phone-land',844,390],['tablet',820,1180],['tablet-land',1180,820],['desktop',1440,900]];
 const KEY_PLACE=/*PLACE*/{
   "baseball":{"my-fold-open":{"z":0.6829,"fx":0.5945,"fy":0.5094},"my-fold-open-land":{"z":0.8144,"fx":0.5898,"fy":0.534},"fold-closed":{"z":0.4721,"fx":0.7649,"fy":0.7978},"phone":{"z":0.5895,"fx":0.7702,"fy":0.7639},"phone-land":{"z":1,"fx":0.5,"fy":0.5073},"tablet":{"z":0.8389,"fx":0.7334,"fy":0.5386},"tablet-land":{"z":1,"fx":0.5953,"fy":0.5},"desktop":{"z":1,"fx":0.55,"fy":0.5}},
   "black-sabbath-pinball":{"my-fold-open":{"z":0.8064,"fx":0.5754,"fy":0.6329},"my-fold-open-land":{"z":0.8076,"fx":0.5986,"fy":0.6358},"fold-closed":{"z":0.43,"fx":0.6269,"fy":0.7685},"phone":{"z":0.52,"fx":0.6217,"fy":0.589},"phone-land":{"z":1,"fx":0.5,"fy":0.416},"tablet":{"z":0.72,"fx":0.5979,"fy":0.4671},"tablet-land":{"z":1,"fx":0.5953,"fy":0.5},"desktop":{"z":0.91,"fx":0.5046,"fy":0.5611}},

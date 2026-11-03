@@ -158,9 +158,11 @@ function mapLock(lock,box,iw,ih,W,H,free,side){
  const need2=Math.max(cov.l&&cov.r?W/(iw*s):1,cov.t&&cov.b?H/(ih*s):1),grow=need2>1&&need2<=1.12?need2:1;
  const fcy=faceTop+BH*k/2;s*=grow;
  const dw=iw*s,dh=ih*s;let L=cx-bcx*dw,T=fcy-(by0+by1)/2*dh;
- // covered edges stay covered, moving the picture at most a tenth of the screen
- const pin=(p,d,len,lo,hi)=>{let q=p;if(lo&&hi&&d>=len)q=Math.min(0,Math.max(len-d,p));else if(lo)q=Math.min(p,0);else if(hi)q=Math.max(p,len-d);return Math.abs(q-p)<=len*.1?q:p;};
- L=pin(L,dw,W,cov.l,cov.r);T=pin(T,dh,H,cov.t,cov.b);
+ // covered edges stay covered, moving the picture at most a tenth of the screen and never pushing the faces further out of
+ // the free space (on a short screen that nudge put them under the buttons)
+ const pin=(p,d,len,lo,hi,f0,f1,a0,a1)=>{let q=p;if(lo&&hi&&d>=len)q=Math.min(0,Math.max(len-d,p));else if(lo)q=Math.min(p,0);else if(hi)q=Math.max(p,len-d);
+  q=Math.max(p-Math.max(0,f0-a0),Math.min(p+Math.max(0,a1-f1),q));return Math.abs(q-p)<=len*.1?q:p;};
+ L=pin(L,dw,W,cov.l,cov.r,L+bx0*dw,L+bx1*dw,free.x0,free.x1);T=pin(T,dh,H,cov.t,cov.b,T+by0*dh,T+by1*dh,free.y0,free.y1);
  return {s,left:L,top:T};}
 const clampR=(v,lo,hi)=>lo>hi?(lo+hi)/2:Math.min(hi,Math.max(lo,v));
 function placeKey(img){

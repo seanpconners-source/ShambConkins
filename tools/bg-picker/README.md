@@ -2,7 +2,7 @@
 
 **Rule (owner, Nov 4): every new or replaced Arcade background goes through this picker before it ships.** Tell the owner
 the picker link when new key art is in, wait for them to lock every screen, then apply and release.
-All 34 backgrounds are locked on the first 8 screens; Amber's Samsung (added Nov 3) still needs locking on all of them.
+All 34 backgrounds are locked on the first 8 screens; the owner's Fold closed and Amber's Samsung (added Nov 3) still need locking.
 
 The owner chooses exactly how every Arcade background (`assets/keyart/<slot>.webp`) is shown on 10 screens
 (see the list below): drag to move,
@@ -21,8 +21,9 @@ pinch/scroll to zoom, **Lock in**, plus a verdict (perfect / small tweak / needs
   width and its gap above the text; less height uses up the room above the faces first, then shrinks them (never below 55%
   of the width ratio); more height is shared out like the room above/below them was. On the locked screen itself it gives
   exactly the locked placement. Screens with the other layout (text beside vs under the picture) are only used as a last resort.
-- Screens (10): the owner's Fold open (+ sideways), Amber's Samsung 360x780 (+ sideways), Fold closed, Phone, Phone
-  sideways, Tablet (+ sideways), Desktop.
+- Screens (12): the owner's Fold open 752x835 and Fold closed 360x840 (+ sideways each, from Add this screen), Amber's
+  Samsung 360x780 (+ sideways, read off her screenshot), the guessed Fold closed 344x882, Phone, Phone sideways, Tablet (+
+  sideways), Desktop. The game only uses a screen for a picture once it is locked there.
 - Previews are exact (Nov 4 fix): `measure.mjs` captures the game's REAL hero text block (logo, chips, rules, buttons) for
   every picture on every screen, from the Featured shelf the Arcade opens on and from the All list, as see-through PNGs;
   the picker draws those instead of a stand-in, and tags a screen "Text on faces N%" when that text covers the faces box.
