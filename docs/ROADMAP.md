@@ -53,6 +53,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **M11** `[verify]` (owner, Nov 3) Arcade round 2: categories rebuilt (Action, Retro arcade, Head to head, Racing & sports, Board & cards, Puzzle, Party, Trivia & shows, Casino & dice, Pinball, Co-op, Bosses, Pokémon; `CATEGORIES`/`CAT_IDS` in arcadeConsole.js), View all grid of big blocks, small-phone sizing, no Start/Back card for games started from the Arcade (online challenges and board games keep it).
 - **M12** `[verify]` (owner, Nov 3) Title tiles animate: Characters = both picks cycling moods, Collection = unlocked characters sliding through, Arcade = game pictures (tile icons once they exist), Online = two phones with the picks and a pulsing signal (owner unsure about Online: offer options, see HANDOFF).
 - **M14** `[todo]` (owner, Nov 3, SOON) Arcade categories **Favorites** and **Recent**: quickly see the games you just played, and star games to save them as favorites. Plan: a ★ on the hero (and version tiles) toggles `profile.favorites` (validated in profile.js); `profile.recent` = last ~20 game ids, newest first, written when a game starts from anywhere; two pills first in the row (Recent, Favorites; families show if any member matches). Part of M2.
+- **I13** `[todo]` (owner, Nov 3, SOON) Real high-score tables with names: each game's page (Arcade hero / version page) shows the best scores from EVERY player's phone, with the person's name, not just this phone's. Needs: a small scores store in the Cloudflare Worker (e.g. a Durable Object or KV: game id → top N {name, score, character, date, version}), a submit when a solo/arcade run ends (`settleSolo` / soloBest), a read when a game page opens (cache offline, show "local only" when offline), a player name per install (ask once; reuse Character Select's name), basic anti-junk (score caps per game, one entry per name per game, rate limit). Pairs with N1 (friends online).
 - **M13** `[todo]` (owner, Nov 3) Game art: a big picture + an icon for every game (186 slots). Art Kit with prompts: https://claude.ai/artifact/Hn2v7kdpz45unnUsT3XNL2 (docs/arcade-art/PROMPTS.md); import with `python3 tools/import-arcade-art.py <folder>`.
 - **M10** `[verify]` (owner, Nov 3: "make sure menus are animated and smooth and feel sleek") Nov 3: entrance animations per screen (body[data-enter]), hero cross-fade, hue blend, staggered tiles, version page slide; reduced-motion respected. Keep this standard for M5/M8.
 - **M9** `[verify]` (Nov 3: Clean Console navy/white/blue on every menu (`body[data-theme="home"]` in theme.css); Bangers + Nunito built in (assets/fonts)) (owner, Nov 3) New colour scheme for the menus: the owner loves the mockup's look EXCEPT the purple and
@@ -248,6 +249,8 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
 
 Reuse engines with new skins wherever possible.
 - **H1** `[idea]` Game-show set on one engine: Price Is Right Plinko, Jeopardy!, Wheel of Fortune, Who Wants to Be a Millionaire?, Deal or No Deal.
+  Owner, Nov 3: **Wheel of Fortune** and **Deal or No Deal** as exact look-alikes (set, music feel, board, host moments), a **Jeopardy!** look-alike trivia game (board of categories × values, Daily Doubles, Final Jeopardy wager) on our trivia bank; triage notes also want Hardcore Trivia → **Who Wants to Be a Millionaire** and Price Bid-Off → a full Price Is Right suite (Plinko, Cliff Hangers yodel guy, Big Wheel).
+- **H15** `[idea]` (owner, Nov 3) **Words with Friends** clone (two players, 15x15 tile board, racks, word list built in for offline play) **with a twist**. Ideas to offer: words that name a character or show in the game score double and pop that character's head; special tiles that play a mini-minigame; a "Chardee" square that forces a dare; online play like the other board games.
 - **H2** `[idea]` I Love Lucy chocolate factory: black-and-white conveyor-belt game.
 - **H3** `[idea]` Little Buff Boys (ITYSL): players judge show-accurate contestants; Troll Boy can't win; winning unlocks Troll Boy.
 - **H4** `[idea]` Chunky (ITYSL): he puts your own hat on you / throws your laptop; nobody knows what he does.
@@ -366,6 +369,7 @@ Other boss items
 - **P3** `[todo]` Back-of-head art (DOOM, Mario Kart).
 - **P4** `[todo]` Expressions/reactions used more consistently.
 - **P5** → now K8-K12 (outfits).
+- **P8** `[todo]` (owner, Nov 3) Transparent logos everywhere a property is shown (Army of Darkness, Always Sunny, Black Sabbath…): audit `brandHTML`/`logoURL` (assets.js) and the references' logo sources; where the online logo is poor or has a box behind it, download a clean transparent one into the repo (drop-in folder like `assets/logos/<source-key>.webp|svg`, embedded by build.mjs, preferred over the online one), list the ones still missing for the owner.
 - **P6** `[todo]` Memorable unlock announcements: proper art and animation.
 - **P7** `[todo]` General transitions, animations, sounds, menus.
 
