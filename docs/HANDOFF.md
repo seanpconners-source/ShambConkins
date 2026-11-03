@@ -17,7 +17,7 @@ state, newest at the top).
   last opponent's face. (2) Game art: the owner will generate pictures with the Art Kit; import them, then check the tiles.
 - The owner may run `SOAK-TEST.cmd` on the laptop overnight instead; if soak-reports/ is shared, read LATEST.md first.
 - Owner's SOON list (Nov 3): **M14** Arcade Favorites + Recent, **I13** real online high-score tables with names. Also new:
-  H1 game shows (Wheel of Fortune, Deal or No Deal, Jeopardy! look-alikes), H15 Words with Friends with a twist, P8 transparent logos.
+  H1 game shows (Wheel of Fortune, Deal or No Deal, Jeopardy! look-alikes), H16 Words with Friends with a twist, P8 transparent logos.
 - Then the roadmap ("continue" = offer 2-4 options from ROADMAP.md, wait for a pick). Old open decisions are below.
 
 ## The daily rhythm (owner, Nov 3; roadmap W1)
