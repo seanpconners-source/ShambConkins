@@ -41,3 +41,8 @@ pinch/scroll to zoom, **Lock in**, plus a verdict (perfect / small tweak / needs
    then `python3 -I tools/bg-picker/apply.py <scratch>/bgdump`, build, spot-check one picture in the game against the
    picker (same screen size), commit, release if asked, and republish the picker (steps 3-4) so finished ones drop out.
    Verdicts and notes ("remake", "needs an edit") are the art to-do list: tell the owner which ones they marked.
+6. The owner's own screens: the picker's "Add this screen" button saves the viewer's real screen size (`screen.width x
+   screen.height`) to collection `devices` (doc id `<w>x<h>`). To add one: `ArtifactData` `list` of `devices`, add both
+   orientations to `screens.json` (an id like `fold7-open` / `fold7-open-land`), copy each picture's setting from the
+   nearest old screen into the new screen in KEY_PLACE (so nothing changes until the owner moves it), re-run steps 2-4,
+   and tell the owner to check that screen. The game picks the nearest screen, so an exact one wins on that phone.

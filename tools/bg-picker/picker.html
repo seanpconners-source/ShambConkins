@@ -75,6 +75,8 @@ h1{font-family:var(--f-disp);font-weight:400;letter-spacing:.04em;font-size:clam
 .hint{color:var(--muted);font-size:12px}
 .chk{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted)}
 .empty{color:var(--muted);padding:30px 0}
+.mine{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:12px;font-size:13px;color:var(--muted)}
+.mine b{color:var(--text)}
 @media (max-width:520px){.wall{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.frame{padding:7px}.frame .cap{font-size:12px}.head h2{font-size:24px}}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 </style>
@@ -83,6 +85,7 @@ h1{font-family:var(--f-disp);font-weight:400;letter-spacing:.04em;font-size:clam
  <div><h1>Background Picker</h1><div class="status" id="status">Loading your saved choices…</div></div>
  <div class="progress" id="progress"></div>
 </div>
+<div class="mine" id="mine" hidden><span id="mine-txt"></span><button class="btn" id="mine-add">Add this screen</button></div>
 <div class="rail" id="rail" role="listbox" aria-label="Backgrounds"></div>
 <div class="head">
  <h2 id="title"></h2>
@@ -140,11 +143,23 @@ function screenHTML(slot,sc,p,{face=false,ov=true}={}){const s=DATA.slots.find(x
  const B=s.box,fb2=face?`<div class="face" style="left:${l+B[0]*dw}px;top:${t+B[1]*dh}px;width:${(B[2]-B[0])*dw}px;height:${(B[3]-B[1])*dh}px"></div>`:'';
  return `${fl||fr||ft||fb?`<img class="fill" src="${s.img}" alt="">`:''}<img class="pic" src="${s.img}" alt="" draggable="false" style="left:${l}px;top:${t}px;width:${dw}px;height:${dh}px;-webkit-mask-image:${mask};mask-image:${mask};-webkit-mask-composite:source-in;mask-composite:intersect"><div class="shade" style="background:${shade}"></div>${info}${fb2}${ov?`<img class="ov" src="${sc.overlay}" alt="">`:''}`;}
 // share of the faces box hidden under the game's text (any version of the hero text), for this placement
+// text masks: the real hero text image of a picture on a screen, as a 4 px grid of drawn pixels (a little halo added)
+const masks={};
+function loadMasks(slot){const s=DATA.slots.find(x=>x.id===slot);for(const [sid,v] of Object.entries(s?.info||{})){const key=slot+'|'+sid;if(masks[key])continue;masks[key]='loading';
+ const im=new Image();im.onload=()=>{try{const g=4,w=Math.ceil(im.naturalWidth/g),h=Math.ceil(im.naturalHeight/g),c=document.createElement('canvas');c.width=w;c.height=h;
+  const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0,w,h);const d=x.getImageData(0,0,w,h).data,m=new Uint8Array(w*h);
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++)if(d[(j*w+i)*4+3]>60)for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const a=i+di,b=j+dj;if(a>=0&&b>=0&&a<w&&b<h)m[b*w+a]=1;}
+  masks[key]={g,w,h,m,rect:v.rect};if(state.sel===slot){if(state.edit)drawEditor();else renderWall();}}catch(e){masks[key]=null;}};im.src=v.file;}}
 function covered(slot,sc,p){const s=DATA.slots.find(x=>x.id===slot),rs=(s.infoAll?.[sc.id]||[]);if(!rs.length)return 0;
+ const mk=masks[slot+'|'+sc.id];
+ if(mk&&mk.m){const cover=Math.max(sc.w/s.nw,sc.h/s.nh),dw=s.nw*cover*p.z,dh=s.nh*cover*p.z,l=sc.w/2-p.fx*dw,t=sc.h/2-p.fy*dh,B=s.box;
+  const b=[l+B[0]*dw,t+B[1]*dh,l+B[2]*dw,t+B[3]*dh],A=(b[2]-b[0])*(b[3]-b[1]);if(A<=0)return 0;let on=0;const R=mk.rect;
+  for(let j=0;j<mk.h;j++){const y=R[1]+j*mk.g;if(y<b[1]||y>=b[3])continue;for(let i=0;i<mk.w;i++){const x=R[0]+i*mk.g;if(x>=b[0]&&x<b[2]&&mk.m[j*mk.w+i])on++;}}
+  return on*mk.g*mk.g/A;}
  const cover=Math.max(sc.w/s.nw,sc.h/s.nh),dw=s.nw*cover*p.z,dh=s.nh*cover*p.z,l=sc.w/2-p.fx*dw,t=sc.h/2-p.fy*dh,B=s.box;
  const b=[l+B[0]*dw,t+B[1]*dh,l+B[2]*dw,t+B[3]*dh],A=(b[2]-b[0])*(b[3]-b[1]);if(A<=0)return 0;
  return Math.max(...rs.map(r=>Math.max(0,Math.min(b[2],r[2])-Math.max(b[0],r[0]))*Math.max(0,Math.min(b[3],r[3])-Math.max(b[1],r[1]))/A));}
-const coverTag=(slot,sc,p)=>{const c=covered(slot,sc,p);return c>.12?`<span class="tag warn" title="The game's text covers this much of the faces">Text on faces ${Math.round(c*100)}%</span>`:'';};
+const coverTag=(slot,sc,p)=>{const c=covered(slot,sc,p);return c>.08?`<span class="tag warn" title="The game's text covers this much of the faces">Text on faces ${Math.round(c*100)}%</span>`:'';};
 function boxHTML(slot,sc,p,maxW,maxH,opt){const k=Math.min(maxW/sc.w,maxH/sc.h);
  return `<div class="screenbox" style="width:${sc.w*k}px;height:${sc.h*k}px"><div class="screen" style="width:${sc.w}px;height:${sc.h}px;transform:scale(${k})">${screenHTML(slot,sc,p,opt)}</div></div>`;}
 
@@ -158,7 +173,7 @@ function renderHead(){const s=DATA.slots.find(x=>x.id===state.sel),r=rec(s.id);$
 function renderWall(){const w=$('wall').clientWidth||900,cols=Math.max(2,Math.floor((w+14)/244)),cw=Math.min(300,(w-14*(cols-1))/cols-22);
  $('wall').innerHTML=DATA.screens.map((sc,i)=>{const locked=!!rec(state.sel).screens?.[sc.id];
   return `<button class="frame" data-i="${i}"><div class="cap">${esc(sc.label)} <small>${sc.w}×${sc.h}</small>${coverTag(state.sel,sc,current(state.sel,sc))}<span class="tag${locked?' locked':''}">${locked?'Locked':'Auto'}</span></div>${boxHTML(state.sel,sc,current(state.sel,sc),cw,cw*1.5)}</button>`;}).join('');}
-function renderAll(){renderRail();renderHead();renderWall();}
+function renderAll(){loadMasks(state.sel);renderRail();renderHead();renderWall();}
 
 // saving: one doc per picture, written only on change
 async function save(slot,patch){const r={...rec(slot),...patch,at:Date.now()};state.saved[slot]=r;renderRail();
@@ -205,12 +220,20 @@ const step=d=>{const E=state.edit;E.i=(E.i+d+DATA.screens.length)%DATA.screens.l
 $('ed-prev').addEventListener('click',()=>step(-1));$('ed-next').addEventListener('click',()=>step(1));$('ed-close').addEventListener('click',closeEditor);
 addEventListener('keydown',e=>{if(!state.edit)return;if(e.key==='Escape')closeEditor();if(e.key==='ArrowRight')step(1);if(e.key==='ArrowLeft')step(-1);});
 
+// the viewer's own screen (screen.* = the whole display, like the installed full-screen app sees it): saved on a tap so
+// Claude can measure the game at exactly that size and add it as a picker screen (tools/bg-picker/README.md)
+(()=>{const w=Math.round(screen.width),h=Math.round(screen.height),known=DATA.screens.some(sc=>(sc.w===w&&sc.h===h)||(sc.w===h&&sc.h===w));
+ $('mine-txt').innerHTML=`This screen: <b>${w}×${h}</b>${known?' · already in the picker':' · not in the picker yet. Add it (do it on each phone, folded and open) and the next picker shows it exactly.'}`;
+ $('mine').hidden=false;$('mine-add').hidden=known;
+ $('mine-add').addEventListener('click',async()=>{if(!state.db){$('mine-txt').textContent='Sign in to add this screen.';return;}
+  try{await state.db.doc('devices/'+w+'x'+h).set({w,h,dpr:devicePixelRatio,at:Date.now()});$('mine-txt').innerHTML=`Added <b>${w}×${h}</b>. Tell Claude, and it will show up here next time.`;$('mine-add').hidden=true;}
+  catch(e){$('mine-txt').textContent='Couldn’t add it ('+(e?.code||'error')+').';}});})();
 if(!DATA.slots.length){document.querySelector('.head').hidden=true;$('rail').hidden=true;
  $('wall').outerHTML='<p class="empty">Every background is placed on every screen. New backgrounds show up here when they are added to the game.</p>';$('status').textContent='All done.';}
 else renderAll();
-if(DATA.slots.length)(async()=>{const timer=setTimeout(()=>{$('status').textContent='Couldn’t reach your saved choices yet; changes will save once it connects.';},10000);
+(async()=>{const timer=setTimeout(()=>{$('status').textContent='Couldn’t reach your saved choices yet; changes will save once it connects.';},10000);
  try{const db=await window.claude?.use?.('db');if(!db){clearTimeout(timer);$('status').textContent='Viewing only: sign in to save choices.';return;}
   state.db=db;db.collection('bg').onSnapshot(snap=>{clearTimeout(timer);for(const d of snap.docs){const id=d.id.split('/').pop();if(!state.edit||id!==state.sel)state.saved[id]=d.data();}
-   $('status').textContent='Choices save automatically.';renderRail();renderHead();if(!state.edit)renderWall();},err=>{clearTimeout(timer);$('status').textContent='Couldn’t load saved choices ('+(err?.code||'error')+').';});}
+   if(!DATA.slots.length)return;$('status').textContent='Choices save automatically.';renderRail();renderHead();if(!state.edit)renderWall();},err=>{clearTimeout(timer);$('status').textContent='Couldn’t load saved choices ('+(err?.code||'error')+').';});}
  catch(e){clearTimeout(timer);$('status').textContent='Couldn’t load saved choices.';}})();
 </script>
