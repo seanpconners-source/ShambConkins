@@ -147,6 +147,7 @@ in headless browsers).
 - Super Mario Bros. music (World 1, Coin Rush, Castle Dash).
 - Sonic music (Green Hill acts, boss, race).
 - Boss tier outfit art (K12).
+- Back button arrow image (M18).
 - **B6** `[todo]` Re-check games rebuilt earlier (Oct audit, v0.58 remakes) instead of assuming they're good.
 
 ## Phase C — progression and New Game menu
@@ -257,6 +258,10 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
   portrait/moods and their unlocked outfits (K8-K12) and how to get the rest.
 - **M6** `[idea]` Carry the same look to the other menus (home, New Game, settings) once M1 is liked.
 - **M7** `[verify]` (Nov 3: Look Book https://claude.ai/artifact/BTqLZbwnPtUwPKz2tGNTNa = 3 layouts x 6 palettes x 5 picture styles x 5 letterings on Home/Arcade/Game page/Character, owner votes + notes saved in its db: collections `looks` (doc id `<layout|pal|art|type>--<option>`, {vote,note}) and `combos`; read with ArtifactData list. Older 3-direction mockup: https://claude.ai/artifact/4h7fazkSTgh1oQxDQdpctE) Before building: Claude mocks up 2-3 design directions (screenshots) for the owner to pick from.
+- **M17** `[todo]` (owner, Nov 3) Title screen Arcade tile: when it shows a game's picture (square/rectangular art), show it in a
+  soft faded-out circle instead of a hard edge. Transparent cut-outs stay as they are (they look great).
+- **M18** `[todo]` (owner, Nov 3) The Back button on menus is weak: make it a cool arrow (owner will generate the image: slot
+  `assets/ui/back.*` to be added). Maybe rethink a few other buttons too (offer options when we get there).
 
 ## Phase H — new content (sections 3 + 7)
 
@@ -292,6 +297,19 @@ Reuse engines with new skins wherever possible.
 - **H12** `[idea]` Sci-Fi warp world: random Star Wars / Star Trek / Alien / Starship Troopers / MIB places; random boss (Vader, Xenomorph Queen, giant Klendathu bug, Edgar). Edgar unlock TBD.
 - **H13** `[todo]` Better Edgar portrait (the real MIB character).
 - **H14** `[idea]` More themed warp worlds later.
+- **H23** `[todo]` (owner, Nov 3) **Rummy** (card game: melds, sets/runs, discard pile; pass and play, vs CPU, online like the other card games).
+- **H24** `[todo]` (owner, Nov 3) **Egyptian Rat Screw** (slap game: real-time slaps on doubles/sandwiches/etc., penalty burns, face-card
+  challenges). Natural fit for two people on one phone: each player slaps their own half of the screen; online = clock-stamped
+  slaps like Quick Draw (earliest slap wins). Over-the-top theme to pick (like Pro Mancala / Hangman).
+- **H25** `[idea]` (owner, Nov 3, BIG, owner very excited) **Fighting game**: arcade fighter in the Street Fighter feel plus a brutal,
+  over-the-top Mortal Kombat-style edge (gore, finishers, announcer). Our heads on full fighter bodies. BODY TYPES: a handful of
+  fighter archetypes (e.g. ninja, brawler, grappler, speedster, heavy, magic user), each with its own moves and animations; every
+  character is mapped to one type, so the whole roster can fight. Mobile first: move by dragging on the left side, 4 big buttons
+  on the right (Punch, Kick, Block, Special); direction + button = special moves, a meter for supers, a finisher at the end.
+  Must be actually fun: real combos, hit stop, juggles, chip damage, throws, a CPU that blocks and punishes, a ladder/arcade
+  mode with a boss, 2P on one phone (each player owns half the screen), online later. Owner wanted real sprite bodies from the
+  real games: we use our own bodies drawn in that style (see P11), owner-made art can drop in. Questions for the owner when we
+  start: pixel art vs painted look, how gory, the archetype list, one-phone 2P layout, best-of-3 rounds, names.
 
 ## Phase I — online and Pokémon online (sections 9 + 12)
 
@@ -385,6 +403,19 @@ Other boss items
 - **P8** `[todo]` (owner, Nov 3) Transparent logos everywhere a property is shown (Army of Darkness, Always Sunny, Black Sabbath…): audit `brandHTML`/`logoURL` (assets.js) and the references' logo sources; where the online logo is poor or has a box behind it, download a clean transparent one into the repo (drop-in folder like `assets/logos/<source-key>.webp|svg`, embedded by build.mjs, preferred over the online one), list the ones still missing for the owner.
 - **P6** `[todo]` Memorable unlock announcements: proper art and animation.
 - **P7** `[todo]` General transitions, animations, sounds, menus.
+- **P9** `[todo]` (owner, Nov 3) Character quotes (`src/characterPhrases.js` PHRASES + `unlockPhrase` in the data packs) are mostly
+  placeholders. Give every character their real, famous line: on the nose, what they actually say ("I'll be back.",
+  "Groovy."). Doesn't need to be original or cute. Short catchphrases only.
+- **P10** `[idea]` (owner, Nov 3) Character evolutions: different actors (ties to K8), old versions, transformations, and
+  DE-evolutions (a character turned into a baby, a fetus, a cell...). Could be unlocks, outfits (K8-K12), Pokémon evolutions
+  (PK2), board events or items. Ideas to offer the owner first.
+- **P11** `[todo]` (owner, Nov 3) Real character sprites in games: replace the stick figures in lots of games with proper bodies
+  wearing our heads. Mario and Sonic first ("want it to look real"), then Castlevania and others. We draw them in each game's
+  own style (NES / Mega Drive pixel look) ourselves; the owner can edit them or draw their own into drop-in slots. Not ripped
+  sprite sheets from the real games (same rule as "Make it like <classic game>" above).
+- **P12** `[todo]` (owner, Nov 3) Sound effects and background music to match: Sonic, Mario, Castlevania and the rest. Sound-alike
+  effects and music made in the real chips' style (NES pulse/triangle/noise, Mega Drive FM), our own tunes; the owner's
+  drop-in music slots stay (see "Owner-supplied music/art").
 
 ## Testing and stability (section 14; ongoing)
 
