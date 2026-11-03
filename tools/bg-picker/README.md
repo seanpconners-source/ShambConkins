@@ -2,18 +2,25 @@
 
 **Rule (owner, Nov 4): every new or replaced Arcade background goes through this picker before it ships.** Tell the owner
 the picker link when new key art is in, wait for them to lock every screen, then apply and release.
-All 34 backgrounds of v0.80.5 are locked; the picker shows an "all done" page until new ones are added.
+All 34 backgrounds are locked on the first 8 screens; Amber's Samsung (added Nov 3) still needs locking on all of them.
 
-The owner chooses exactly how every Arcade background (`assets/keyart/<slot>.webp`) is shown on 8 common screens
-(Fold closed, Phone, Phone sideways, Fold open, Fold open sideways, Tablet, Tablet sideways, Desktop): drag to move,
+The owner chooses exactly how every Arcade background (`assets/keyart/<slot>.webp`) is shown on 10 screens
+(see the list below): drag to move,
 pinch/scroll to zoom, **Lock in**, plus a verdict (perfect / small tweak / needs an edit / remake) and a note.
 
 - Picker page (always republish to this same URL): **https://claude.ai/artifact/N1zQ42EPkUqJf8AzpmdmPT**
 - Its database: collection `bg`, one doc per slot: `{screens:{<screen id>:{z,fx,fy}}, verdict, note, at}`.
   `z` = zoom (1 = the picture just fills the screen), `fx`/`fy` = the point of the picture (fractions) at the screen's centre.
 - The game reads `src/data/keyPlacements.js` (`KEY_PLACE`, written by `apply.py`): `lockedPlace()` in `src/arcadeConsole.js`
-  uses the locked setting of the nearest of the 8 screens (shape first, then size), else its automatic placement.
+  uses the locked setting of the nearest of the picker screens (shape first, then size), else its automatic placement.
   A locked picture also gets the picker's shade (clear from the controls down to the tiles / text).
+  On a screen that isn't exactly one of the picker's, `mapLock()` moves the nearest locked setting by the LAYOUT, not by the
+  screen's centre (Nov 3: on Amber's 360x780 Samsung the faces slid under the text): the faces box keeps its share of the
+  width and its gap above the text; less height uses up the room above the faces first, then shrinks them (never below 55%
+  of the width ratio); more height is shared out like the room above/below them was. On the locked screen itself it gives
+  exactly the locked placement. Screens with the other layout (text beside vs under the picture) are only used as a last resort.
+- Screens (10): the owner's Fold open (+ sideways), Amber's Samsung 360x780 (+ sideways), Fold closed, Phone, Phone
+  sideways, Tablet (+ sideways), Desktop.
 - Previews are exact (Nov 4 fix): `measure.mjs` captures the game's REAL hero text block (logo, chips, rules, buttons) for
   every picture on every screen, from the Featured shelf the Arcade opens on and from the All list, as see-through PNGs;
   the picker draws those instead of a stand-in, and tags a screen "Text on faces N%" when that text covers the faces box.
@@ -32,7 +39,7 @@ pinch/scroll to zoom, **Lock in**, plus a verdict (perfect / small tweak / needs
    ```
    (`measure.mjs phone fold-open` re-measures only those screens.) It writes `measure.json` + `overlay-<screen>.png`.
 3. Build the page: `python3 -I tools/bg-picker/assemble.py <scratch>/bgp <scratch>/bgp/pub`
-   (leaves out pictures already locked on all 8 screens; `--all` keeps them, `--check` adds locked ones whose text covers
+   (leaves out pictures already locked on every screen; `--all` keeps them, `--check` adds locked ones whose text covers
    the faces, `--only a,b` picks slots). It also prints which locked pictures have text on the faces. It writes `<scratch>/bgp/picker-files.json`.
 4. Read the live picker first (`Artifact` action `read`, url above), then publish `<scratch>/bgp/pub/index.html` with
    `url` = the picker URL, `root` = `<scratch>/bgp/pub` and `files` = the list in `picker-files.json`. It keeps its

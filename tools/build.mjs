@@ -145,12 +145,12 @@ if (pwaDir) {
   // a/ files ('sc-files', src/pwa.js) and the worker downloads only the ones it doesn't have, in the background, keeping
   // each as soon as it is in (a stopped download carries on next time). It answers byte ranges from that cache (Safari
   // plays songs that way) and drops files that neither of the newest two versions lists.
-  const SW_VERSION = 5;
+  const SW_VERSION = 6;
   const shell = ['index.html', 'manifest.webmanifest', ...PWA_ICONS.map(f => 'icons/' + f)];
   const sw = `// ShambConkins offline copy, written by tools/build.mjs --pwa (service worker version ${SW_VERSION}).
 const CACHE='shambconkins-app',FILES=${JSON.stringify(shell.slice(1))},WAIT=2500;
 const isGame=u=>{const p=new URL(u).pathname,s=new URL(self.registration.scope).pathname;return p===s||p===s+'index.html';};
-const save=(c,res)=>c.put('index.html',res).catch(()=>{});
+const save=(c,res)=>c.put('index.html',res).then(()=>true,()=>false);
 // progress of a download the loading screen is waiting for (the page itself, the built-in art script): counted as it
 // streams and sent to that page ({type:'sc-load', kind, got, total, done}); index.template.html's #boot shows it
 function counted(body,id,kind,total){let got=0,at=0,client=null;const send=done=>{if(!id)return;(client?Promise.resolve(client):self.clients.get(id)).then(c=>{client=c||null;if(c)c.postMessage({type:'sc-load',kind,got,total,done});}).catch(()=>{});};
@@ -164,7 +164,8 @@ async function game(e){const c=await caches.open(CACHE),saved=await c.match('ind
  const net=fetch(new Request(e.request.url,{cache:'no-store',credentials:'same-origin',headers:tag?{'If-None-Match':tag}:{}}));
  let res=null;try{res=await (saved?Promise.race([net,new Promise(r=>setTimeout(()=>r(null),WAIT))]):net);}catch{}
  // slow or offline: play the saved copy now; a new release still coming in is saved for next time
- if(!res){if(saved){e.waitUntil(net.then(r=>r&&r.status===200?save(c,r):0).catch(()=>{}));return saved;}return net;}
+ // (and the page is told, so it can offer a restart: an app kept open on Android never reloads by itself)
+ if(!res){if(saved){e.waitUntil(net.then(r=>r&&r.status===200?save(c,r):false).then(ok=>ok&&tell({type:'sc-saved'})).catch(()=>{}));return saved;}return net;}
  if(res.status===304&&saved)return saved;
  if(res.status===200&&res.body){const h=new Headers(res.headers),[a,b]=res.body.tee();e.waitUntil(save(c,new Response(b,{status:200,headers:h})));return new Response(counted(a,e.resultingClientId||e.clientId,'page',+h.get('content-length')||0),{status:200,headers:h});}
  return saved||res;}
@@ -209,11 +210,24 @@ self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);if(r.method
  if(u.href.startsWith(at(''))){e.respondWith(file(e));return;}
  if(r.mode==='navigate'){e.respondWith(isGame(r.url)?game(e):fetch(r).catch(()=>caches.open(CACHE).then(c=>c.match('index.html'))));return;}
  e.respondWith(caches.open(CACHE).then(c=>c.match(r,{ignoreSearch:true})).then(hit=>hit||fetch(r)));});
+// An update the page asked for ('sc-get', from its Update button): download the newest page in full now, saving it as the
+// offline copy, with progress on the message port; the page restarts once it is in. The start of the game only waits
+// WAIT for the site, so on a slow network a plain restart kept opening the old copy (owner, Nov 3: "won't update on my wifi").
+async function getPage(port){const t0=Date.now(),say=m=>{try{port.postMessage({...m,ms:Date.now()-t0});}catch{}};say({got:0,total:0});
+ try{const r=await fetch(new Request(self.registration.scope,{cache:'no-store',credentials:'same-origin'}));
+  if(r.status!==200||!r.body)throw new Error('the site answered '+r.status);
+  const h=new Headers(r.headers),total=+h.get('content-length')||0,rd=r.body.getReader(),parts=[];let got=0,at=0;
+  for(;;){const {done,value}=await rd.read();if(done)break;parts.push(value);got+=value.byteLength;if(Date.now()-at>200){at=Date.now();say({got,total});}}
+  if(total&&got<total)throw new Error('download cut off at '+got+' of '+total+' bytes');
+  if(!await save(await caches.open(CACHE),new Response(new Blob(parts),{status:200,headers:h})))throw new Error('could not save it on this phone');
+  say({done:true,got,total,version:h.get('x-shambconkins-version')||''});
+ }catch(err){say({failed:true,error:String(err&&err.message||err)});}}
 // first install: the page that registered this file loaded before it was in charge, so it asks to be kept for offline play
 // (from the browser's own cache when it still has it, else downloaded once in the background)
 self.addEventListener('message',e=>{const d=e.data||{};
  if(d.type==='sc-keep')e.waitUntil(caches.open(CACHE).then(async c=>{if(await c.match('index.html'))return;
   const r=await fetch(new Request(self.registration.scope,{cache:'force-cache',credentials:'same-origin'}));if(r.status===200)await save(c,r);}).catch(()=>{}));
+ if(d.type==='sc-get'&&e.ports&&e.ports[0])e.waitUntil(getPage(e.ports[0]));
  if(d.type==='sc-files'&&typeof d.version==='string'&&Array.isArray(d.files))e.waitUntil(filling=filling.then(()=>fill(d.version,d.files)).catch(()=>{}));});
 `;
   // the release workflow puts these files on Cloudflare, which refuses any file over 25 MiB: fail here, not there

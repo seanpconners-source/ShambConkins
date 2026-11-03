@@ -71,12 +71,21 @@ async function latestTag(env, ctx) {
   const cache = caches.default, key = cacheKey('latest-tag');
   const hit = await cache.match(key);
   if (hit) return hit.text();
+  // the last tag this data centre saw, kept a day: answered when GitHub is slow or down, so the site never hangs on it
+  const kept = cacheKey('latest-tag-kept');
   let tag = null;
-  const r = await fetch(`https://github.com/${REPO}/releases/latest`, { redirect: 'manual', headers: { 'User-Agent': UA } });
-  const m = (r.headers.get('Location') || '').match(/\/releases\/tag\/([^/?#]+)$/);
-  if (m) tag = decodeURIComponent(m[1]);
-  if (!tag) tag = (await api(`releases/latest`, env)).tag_name;
+  try {
+    const r = await fetch(`https://github.com/${REPO}/releases/latest`, { redirect: 'manual', headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(6000) });
+    const m = (r.headers.get('Location') || '').match(/\/releases\/tag\/([^/?#]+)$/);
+    if (m) tag = decodeURIComponent(m[1]);
+    if (!tag) tag = (await api(`releases/latest`, env)).tag_name;
+  } catch (e) {
+    const old = await cache.match(kept);
+    if (old) return old.text();
+    throw e;
+  }
   ctx.waitUntil(cache.put(key, new Response(tag, { headers: { 'Cache-Control': `max-age=${TAG_TTL}` } })));
+  ctx.waitUntil(cache.put(kept, new Response(tag, { headers: { 'Cache-Control': 'max-age=86400' } })));
   return tag;
 }
 
@@ -113,9 +122,13 @@ async function appFile(req, [name, type, cacheControl], tag, env, ctx, optional 
     const r = await fetch(`https://github.com/${REPO}/releases/download/${tag}/${name}`, { headers: { 'User-Agent': UA } });
     if (r.status === 404 && optional) { ctx.waitUntil(cache.put(none, new Response('', { headers: { 'Cache-Control': 'max-age=31536000' } }))); return null; }
     if (!r.ok) return text(`Not found (release ${tag} has no ${name})`, 404);
-    const bytes = await r.arrayBuffer();
-    ctx.waitUntil(cache.put(key, new Response(bytes, { headers: { 'Cache-Control': 'max-age=31536000' } })));
-    body = new Response(bytes);
+    // stream it on to the phone while it is stored (the first phone in a data centre after a release used to wait for
+    // the whole 10 MB page to arrive from GitHub before getting its first byte)
+    const [a, b] = r.body.tee();
+    ctx.waitUntil(cache.put(key, new Response(b, { headers: { 'Cache-Control': 'max-age=31536000' } })));
+    body = new Response(a);
+    const len = r.headers.get('Content-Length');
+    if (len) headers['Content-Length'] = len;
   }
   return new Response(req.method === 'HEAD' ? null : body.body, { headers });
 }

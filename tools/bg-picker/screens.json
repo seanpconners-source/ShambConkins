@@ -12,6 +12,18 @@
   "h": 752
  },
  {
+  "id": "amber-phone",
+  "label": "Samsung phone (Amber\u2019s)",
+  "w": 360,
+  "h": 780
+ },
+ {
+  "id": "amber-phone-land",
+  "label": "Samsung phone sideways (Amber\u2019s)",
+  "w": 780,
+  "h": 360
+ },
+ {
   "id": "fold-closed",
   "label": "Fold closed",
   "w": 344,

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Arcade backgrounds on every phone**: on a screen that isn't one of the Background Picker's (most phones), the game takes the picker screen closest in shape and moves your setting over by the layout: Sean and Amber keep the same gap above the text and the same share of the width, and on a shorter screen the empty room above them is used up first before they get smaller. Before, the setting was only moved round the middle of the screen, so on shorter phones the faces slid under the text. Checked on 16 phone sizes (iPhone SE to Pro Max, Samsung, Pixel, Fold).
+- **Amber's Samsung (360x780) is in the Background Picker** (upright and sideways), ready to lock.
+- **The small grey genre line** (RUN AND GUN · ACTION) now sits under the game's logo, above the chips, on every screen, instead of across the faces.
+- **Updates on slow networks**: Update now downloads the new version first, with a progress bar, and restarts only when it is in. Before, the restart waited only 2.5 seconds for the site and then opened the saved old copy, which is why it kept "not updating" on some Wi-Fi. When the app opens the old copy because the site was slow and the new one arrives a bit later, it now offers Restart. Settings → Check for updates says what went wrong and how long it took. The site also starts sending the page at once instead of after fetching it whole.
+
 ## v0.80.7
 
 - **Hangman Unchained has the Sunset Riders soundtrack**: every game plays the Wanted! jingle, then a random song from a pool of 37 (Genesis and SNES versions, volumes evened out), and another random one when it ends. No repeats until all have played. Winners get Stage Clear; a loss or dead heat gets Game Over.

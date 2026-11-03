@@ -127,10 +127,41 @@ async function warmKeyArt(){if(typeof Image==='undefined')return;const run=++war
  const list=[...new Set([...near,...all])];
  for(let i=0;i<list.length;i++){await warmPic(list[i],i<5);if(run!==warmRun)return;await new Promise(r=>setTimeout(r,30));}}
 const SPILL=1.3;   // how much bigger than its area the faces' box may get before the picture zooms out instead
-// The owner's locked setting (Background Picker) for the screen nearest this one, by shape first, then size; null = automatic.
+// The owner's locked setting (Background Picker) for the screen nearest this one, by shape first, then size, with that
+// screen's size ({z,fx,fy,w,h}); null = automatic. Screens with the other layout (text beside the picture vs under it) only
+// count when no locked screen has this one's.
+const sideLayout=(w,h)=>w>=700||(w>h&&h<=520);
 function lockedPlace(slot,W,H){const t=slot&&KEY_PLACE[slot];if(!t)return null;let best=null,bd=1e9;
- for(const [id,w,h] of KEY_SCREENS){const d=3*Math.abs(Math.log((W/H)/(w/h)))+.5*Math.abs(Math.log((W*H)/(w*h)));if(d<bd){bd=d;best=id;}}
- return t[best]||null;}
+ for(const [id,w,h] of KEY_SCREENS){if(!t[id])continue;const d=3*Math.abs(Math.log((W/H)/(w/h)))+.5*Math.abs(Math.log((W*H)/(w*h)))+(sideLayout(w,h)!==sideLayout(W,H)?9:0);if(d<bd){bd=d;best=[id,w,h];}}
+ return best&&{...t[best[0]],id:best[0],w:best[1],h:best[2]};}
+// A locked setting moved onto a screen that isn't exactly the one it was locked on (owner, Nov 3: "pick closest one and scale
+// smart based on that one"). Zoom and focus point alone are relative to the screen's centre, so on a shorter or longer phone
+// the faces drifted under the text, which is pinned to the bottom. Instead the faces' box keeps its place relative to the
+// free space between the controls and the text (tall) or right of the text (wide), as the owner saw it on the locked screen:
+// same share of the width, same gap above the text; with less height it first uses up the room above the faces and only
+// then gets smaller, with more height the extra room is shared out like the room above and below them was. Edges the
+// picture covered there stay covered when a small zoom or nudge does it. On the locked screen itself this gives exactly the
+// locked placement. free = this screen's {x0,x1,y0,y1} free space; the locked screen's is worked out from it: the controls
+// keep their height, the text and tiles their distance from the bottom and (wide) the text column its share of the width.
+function mapLock(lock,box,iw,ih,W,H,free,side){
+ const {w:Wr,h:Hr}=lock,cr=Math.max(Wr/iw,Hr/ih),sr=cr*lock.z,dwr=iw*sr,dhr=ih*sr,Lr=Wr/2-lock.fx*dwr,Tr=Hr/2-lock.fy*dhr;
+ const ref={x0:side?free.x0*Wr/W:free.x0,x1:side?Wr-(W-free.x1)*Wr/W:Wr-(W-free.x1),y0:free.y0,y1:Hr-(H-free.y1)};
+ const [bx0,by0,bx1,by1]=box,bcx=(bx0+bx1)/2;
+ const By0=Tr+by0*dhr,BH=(by1-by0)*dhr,m0=By0-ref.y0,m1=ref.y1-(By0+BH),need=BH+m1+Math.min(m0,0),Ah=free.y1-free.y0;
+ const k=Math.max(.55*W/Wr,Math.min(W/Wr,side?(free.x1-free.x0)/Math.max(1,ref.x1-ref.x0):9,need>1?Ah/need:9));   // never under 55% of the width ratio
+ const slack=Ah-k*need,room=Math.max(m0,0)*k;
+ const faceTop=free.y0+Math.min(m0,0)*k+(slack>=room?room+(slack-room)*(m0>0&&m1>0?m0/(m0+m1):.5):Math.max(0,slack));
+ // across: the box's centre keeps its share of the free width
+ const ux=(Lr+bcx*dwr-ref.x0)/Math.max(1,ref.x1-ref.x0),cx=free.x0+ux*(free.x1-free.x0);
+ let s=sr*k;const cov={l:Lr<=.5,r:Lr+dwr>=Wr-.5,t:Tr<=.5,b:Tr+dhr>=Hr-.5};
+ // an axis the picture filled there: zoom in a little (up to 12%, round the faces' centre) if that fills it here too
+ const need2=Math.max(cov.l&&cov.r?W/(iw*s):1,cov.t&&cov.b?H/(ih*s):1),grow=need2>1&&need2<=1.12?need2:1;
+ const fcy=faceTop+BH*k/2;s*=grow;
+ const dw=iw*s,dh=ih*s;let L=cx-bcx*dw,T=fcy-(by0+by1)/2*dh;
+ // covered edges stay covered, moving the picture at most a tenth of the screen
+ const pin=(p,d,len,lo,hi)=>{let q=p;if(lo&&hi&&d>=len)q=Math.min(0,Math.max(len-d,p));else if(lo)q=Math.min(p,0);else if(hi)q=Math.max(p,len-d);return Math.abs(q-p)<=len*.1?q:p;};
+ L=pin(L,dw,W,cov.l,cov.r);T=pin(T,dh,H,cov.t,cov.b);
+ return {s,left:L,top:T};}
 const clampR=(v,lo,hi)=>lo>hi?(lo+hi)/2:Math.min(hi,Math.max(lo,v));
 function placeKey(img){
  const root=img?.closest?.('.arcade-console');if(!root||!img.naturalWidth||!img.dataset.box)return;
@@ -152,8 +183,9 @@ function placeKey(img){
  // fill the screen first: the faces may spill a little past their area (into the text's edge, never the buttons) rather
  // than the picture zooming out and leaving empty space (owner, Nov 3: "a little covering isn't the end of the world")
  const s0=Math.min(cover,fitIn([ax0,ay0,ax1,ay1])*SPILL,.94*W/bw,.94*(H-top)/bh);   // but never past the screen's edges
- const lock=lockedPlace(img.dataset.slot,W,H),s=lock?cover*lock.z:s0;
- const dw=iw*s,dh=ih*s,BW=bw*s,BH=bh*s;
+ const lock=lockedPlace(img.dataset.slot,W,H);
+ const mapped=lock&&mapLock(lock,[bx0,by0,bx1,by1],iw,ih,W,H,side?{x0:info&&info.r<W*.75?info.r+12:W*.02,x1:W*.98,y0:top,y1:Math.max(top+60,bot)}:{x0:0,x1:W,y0:top,y1:Math.max(top+60,info?info.t-6:H*.6)},side);
+ const s=mapped?mapped.s:s0,dw=iw*s,dh=ih*s;
  // wide: the box sits right of the text when it fits there, else as far right as it can
  const cx=(ax0+ax1)/2,cy=(ay0+ay1)/2;
  // keep the box inside its area; cover the screen on an axis where the picture is big enough, else stay inside the screen
@@ -161,7 +193,7 @@ function placeKey(img){
  // text on tall screens), 1 = keep their right edge (spill left towards the text on wide ones)
  const solve=(want,d,L,b0,b1,a0,a1,bias)=>{const lo=a0-b0*d,hi=a1-b1*d,p=lo>hi?lo+(hi-lo)*bias:clampR(want,lo,hi);const c0=d>=L?L-d:0,c1=d>=L?0:L-d;
   const l2=Math.max(lo,c0),h2=Math.min(hi,c1);return l2<=h2?clampR(p,l2,h2):p;};
- const left=lock?W/2-lock.fx*dw:solve(cx-(bx0+bx1)/2*dw,dw,W,bx0,bx1,ax0,ax1,1),topP=lock?H/2-lock.fy*dh:solve(cy-(by0+by1)/2*dh,dh,H,by0,by1,ay0,ay1,side?.35:0);
+ const left=mapped?mapped.left:solve(cx-(bx0+bx1)/2*dw,dw,W,bx0,bx1,ax0,ax1,1),topP=mapped?mapped.top:solve(cy-(by0+by1)/2*dh,dh,H,by0,by1,ay0,ay1,side?.35:0);
  // edges that end on screen fade into the backdrop
  const f=(n,d)=>n?`${Math.round(d*.16)}px`:'0px',fl=left>1,fr=left+dw<W-1,ft=topP>1,fb=topP+dh<H-1;
  const mask=(fl||fr||ft||fb)?`linear-gradient(90deg,#0000,#000 ${f(fl,dw)},#000 calc(100% - ${f(fr,dw)}),#0000),linear-gradient(180deg,#0000,#000 ${f(ft,dh)},#000 calc(100% - ${f(fb,dh)}),#0000)`:'none';
@@ -226,13 +258,14 @@ function tileHTML(it,i,on){const g=it.g,locked=!it.fam&&!current.partsFor(g).ope
 // The name on a tile: the family or game title, the separator dropped so it wraps cleanly on two lines.
 const tileName=it=>(it.fam?.title||it.g.title).replace(/^Boss · /,'').replace(/ · /,' ');
 function bossTotal(){return (current.extraBosses||[]).length+current.items.find(x=>x.fam?.key==='bosses')?.members.length||0;}
+// The genre line sits under the title/logo, above the chips (owner, Nov 3: above the logo it ran across the faces).
 function infoHTML(it){
  if(it.fam){const f=it.fam,n=f.key==='bosses'?bossTotal():it.members.length,played=it.members.filter(g=>store.profile.played.includes(g.id)).length;
-  return `<div class="arc-src">${e(f.sub)}</div>${titleHTML(f.title,logoOf(it))}<div class="arc-chips"><span>${n} ${f.key==='bosses'?'bosses':'versions'}</span>${played?`<span>${played} played</span>`:''}${f.key==='bosses'?`<span>${it.members.length} beaten</span>`:''}</div>
+  return `${titleHTML(f.title,logoOf(it))}<div class="arc-src">${e(f.sub)}</div><div class="arc-chips"><span>${n} ${f.key==='bosses'?'bosses':'versions'}</span>${played?`<span>${played} played</span>`:''}${f.key==='bosses'?`<span>${it.members.length} beaten</span>`:''}</div>
    <p class="arc-rules">${e(it.members.slice(0,6).map(g=>shortTitle(g,f)).join(' · '))}${it.members.length>6?' …':''}</p>
    <div class="arc-actions"><button class="arc-cta" data-arc-family="${e(f.key)}">Choose a version ▸</button></div>`;}
  const g=it.g,p=current.partsFor(g);
- return `<div class="arc-src">${e(g.srcLabel||g.source)} · ${e(catName(g))}</div>${titleHTML(g.title,logoOf(it))}<div class="arc-chips">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div>
+ return `${titleHTML(g.title,logoOf(it))}<div class="arc-src">${e(g.srcLabel||g.source)} · ${e(catName(g))}</div><div class="arc-chips">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div>
   <p class="arc-rules">${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${starHTML(g)}${p.dev||''}</div>`;
 }
 // The ☆ next to a game's play button keeps it on the Favorites shelf.

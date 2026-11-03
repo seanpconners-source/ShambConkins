@@ -1,8 +1,10 @@
 // Installed-app updates (src/pwa.js + the sw.js tools/build.mjs --pwa writes). Serves the PWA folder like the game's
 // site (cloudflare/worker.js): /version, and the game with ETag "<tag>" + 304 when the phone already has it. Checks:
 //  1. first visit: the page is kept for offline play (sc-keep), and opens with the server down;
-//  2. a new release: Check for updates says it is out, the Update button shows, Update loads the new version straight
-//     away (network-first, like a browser tab), and the new copy is saved;
+//  2. a new release on a SLOW network (the page takes 4 s to start arriving, longer than the 2.5 s a start waits for it):
+//     Check for updates says it is out, the Update button shows, Update downloads the new version first (service worker
+//     'sc-get', progress on the button) and then restarts into it, and the new copy is saved;
+//  2b. a start on that slow network plays the saved copy; once the new one is in, the app offers Restart (sc-saved);
 //  3. an unchanged release: opening sends If-None-Match, gets 304 and plays the saved copy;
 //  4. a phone still on the old cache-first service worker (one 200 MB background download per release) moves over:
 //     the new sw.js installs at once, keeps the old saved game, drops the old cache, and the next open loads the release.
@@ -28,13 +30,14 @@ self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||new URL
  e.respondWith(caches.open(CACHE).then(c=>c.match(r,{ignoreSearch:true}).then(hit=>hit||(r.mode==='navigate'?c.match('index.html'):undefined))).then(hit=>hit||fetch(r)));});`;
 const TYPES={html:'text/html; charset=utf-8',js:'text/javascript',webmanifest:'application/manifest+json',png:'image/png'};
 let failed=0;const check=(ok,msg)=>{console.log((ok?'ok   ':'FAIL ')+msg);if(!ok)failed++;};
-let live={tag:cur,html,sw:null},up=true;const hits={game:0,notModified:0};
+let live={tag:cur,html,sw:null},up=true,slow=0;const hits={game:0,notModified:0};
 const srv=await new Promise(res=>{const s=http.createServer((q,r)=>{if(!up){q.socket.destroy();return;}
   const p=decodeURIComponent(new URL(q.url,'http://x').pathname);
   if(p==='/version'){r.writeHead(200,{'content-type':'text/plain','cache-control':'no-store'});r.end('v'+live.tag);return;}
   if(p==='/'||p==='/index.html'){const etag=`"v${live.tag}"`;hits.game++;
    if((q.headers['if-none-match']||'').split(/,\s*/).includes(etag)){hits.notModified++;r.writeHead(304,{etag,'cache-control':'no-cache'});r.end();return;}
-   served.push([p,Buffer.byteLength(live.html)]);r.writeHead(200,{'content-type':TYPES.html,'cache-control':'no-cache',etag});r.end(live.html);return;}
+   const send=()=>{served.push([p,Buffer.byteLength(live.html)]);r.writeHead(200,{'content-type':TYPES.html,'cache-control':'no-cache',etag});r.end(live.html);};
+   if(slow)setTimeout(send,slow);else send();return;}
   if(p==='/sw.js'&&live.sw){r.writeHead(200,{'content-type':TYPES.js,'cache-control':'no-cache'});r.end(live.sw);return;}
   if(p==='/a/'+NEW){served.push([p,newBytes.length]);r.writeHead(200,{'content-type':'image/webp'});r.end(newBytes);return;}
   const f=path.join(dir,p.slice(1));if(!fs.existsSync(f)){r.writeHead(404);r.end('missing');return;}
@@ -70,11 +73,9 @@ async function checkUpdates(p){await p.evaluate(()=>{const b=document.createElem
  t=await checkUpdates(p);check(new RegExp(`v${next.replace(/\./g,'\\.')} is out`).test(t),`Check for updates: v${next} is out`);
  check(await p.evaluate(()=>!!document.getElementById('sc-ready')&&!document.getElementById('sc-ready').hidden),'Update button shows');
  await p.screenshot({path:screenshotPath('pwa-update-button.png')});
- served=[];
+ served=[];slow=4000;
  await Promise.all([p.waitForNavigation({timeout:180000}),p.evaluate(()=>document.querySelector('#sc-ready button').click())]);await until(p,()=>!!window.ShambConkins?.version,60000);
- check(await ver(p)===next,`Update loads v${next} straight away`);
- const pg=ld.filter(m=>m.kind==='page');
- check(pg.some(m=>m.done)&&pg.some(m=>m.got>0),`the loading screen got the download's progress (${pg.length} messages, last ${MB(pg.at(-1)?.got||0)}${pg.at(-1)?.total?' of '+MB(pg.at(-1).total):''})`);
+ check(await ver(p)===next,`slow network: Update downloads v${next} first and restarts into it`);slow=0;
  check(await until(p,async()=>{const c=await caches.open('shambconkins-app'),r=await c.match('index.html');return r&&(r.headers.get('etag')||'').includes(window.ShambConkins.version);},90000),'the new version is saved for offline play');
  check(await until(p,async name=>!!(await (await caches.open('sc-assets')).match('a/'+name)),60000,NEW),'the new picture is saved for offline play');
  await p.waitForTimeout(1500);
@@ -83,6 +84,12 @@ async function checkUpdates(p){await p.evaluate(()=>{const b=document.createElem
  check(updFiles.length===1&&updFiles[0][0]==='/a/'+NEW,`the update fetched only the one new picture from a/ (${updFiles.length} a/ files)`);
  check(await assetCount(p)===FILES.length+1,'picture cache holds every file of both versions');
  up=false;await openGame(p).catch(()=>{});check(await ver(p)===next,'offline opens the new saved copy');up=true;
+ // 2b: a plain start on the slow network: the saved copy plays at once, the new one comes in behind it, Restart is offered
+ const next2=next.replace(/(\d+)$/,n=>+n+1);live={...live,tag:next2,html:nextHtml.replace(`VERSION='${next}'`,`VERSION='${next2}'`)};slow=4000;
+ await openGame(p);check(await ver(p)===next,`slow start: the saved v${next} plays without waiting`);
+ check(await until(p,()=>/ready/i.test(document.querySelector('#sc-ready span')?.textContent||''),30000),'then the app offers Restart once the new version is saved');slow=0;
+ await Promise.all([p.waitForNavigation({timeout:180000}),p.evaluate(()=>document.querySelector('#sc-ready button').click())]);await until(p,()=>!!window.ShambConkins?.version,60000);
+ check(await ver(p)===next2,`Restart opens v${next2}`);
  check(!errors.length,'no page errors'+(errors.length?': '+errors.slice(0,2).join(' | '):''));await ctx.close();}
 
 // ---- 4: a phone still on the old cache-first service worker

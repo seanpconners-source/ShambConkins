@@ -8,7 +8,7 @@ const {store, newRun, logRun, newPlayer}=require("src/state.js");
 const {noteRecent, freshProfile, loadProfile, saveProfile, recruitReward, canRecruit, canRecruitReward, availableCharacters, rememberCollectibles, homePackTurn}=require("src/profile.js");
 const {markBackedUp,keepSave,backupFileName}=require("src/saveGuard.js");
 const {installWakeLock}=require("src/wakeLock.js");
-const {initPWA,installApp,installOffered,checkForUpdate,restartApp}=require("src/pwa.js");
+const {initPWA,installApp,installOffered,checkForUpdate,restartApp,updateApp}=require("src/pwa.js");
 const {bootDone}=require("src/bootScreen.js");
 const {initDuel,setMode:setOnlineMode,leaveOnline,propose:proposeDuel}=require("src/duel.js");
 const {initNetBoard,inviteBoard,leaveSetup,sendPick,hostBegin,hostEnd,netAction,netTask,hostGame,allowGame,onlineGames,rejoinBoard}=require("src/netBoard.js");
@@ -542,10 +542,11 @@ async function settings(){const p=store.profile;const choice=await showDialog({t
 // from a menu loses nothing.
 async function checkUpdateFlow(){toast('Checking for updates…');const r=await checkForUpdate(VERSION),v=r.latest?`v${r.latest}`:'The new version';
  if(r.state==='current')return showDialog({title:'Up to date',body:`You have the newest version, v${VERSION}.`,choices:[{label:'OK',value:'ok',primary:true}]});
- if(r.state==='available'){const c=await showDialog({title:`${v} is out`,body:`You have v${VERSION}. Restart to get ${v}: it downloads as the game starts (only what changed; new pictures and sounds follow in the background). Your board game and characters are saved.`,choices:[{label:'Restart and update',value:'go',primary:true},{label:'Later',value:'later'}]});if(c==='go')restartApp();return c;}
+ if(r.state==='available'){const c=await showDialog({title:`${v} is out`,body:`You have v${VERSION}. It downloads first (the bar at the bottom shows how far), then the game restarts with it; new pictures and sounds follow in the background. Your board game and characters are saved.`,choices:[{label:'Update now',value:'go',primary:true},{label:'Later',value:'later'}]});if(c==='go')void updateApp(r.latest);return c;}
  if(r.state==='ready'){const c=await showDialog({title:'New version ready',body:'Restart to play it. Your board game and characters are saved.',choices:[{label:'Restart now',value:'go',primary:true},{label:'Later',value:'later'}]});if(c==='go')restartApp();return c;}
  if(r.state==='file')return showDialog({title:'Opened as a file',body:'This copy was opened as a file, so it can’t update itself. Download the newest one from the game’s site or its GitHub releases page.',choices:[{label:'OK',value:'ok',primary:true}]});
- return showDialog({title:'Couldn’t check',body:'The game’s site didn’t answer. Check the Wi-Fi or mobile data and try again.',choices:[{label:'OK',value:'ok',primary:true}]});}
+ const k=r.check,why=k?` (${k.error||'no answer'}, after ${(k.ms/1000).toFixed(1)} s)`:'';
+ return showDialog({title:'Couldn’t check',body:`The game’s site didn’t answer${why}. If it works on mobile data but not on this Wi-Fi, the network is blocking or stalling ${location.host}: often the router’s security filter or its DNS. Try again, or switch to mobile data for the update.`,choices:[{label:'OK',value:'ok',primary:true}]});}
 // Install as an app: the browser's own prompt when it offered one, else how to do it from the browser menu.
 async function installAppFlow(){const how=await installApp();if(how==='accepted'){toast('Installing ShambConkins. Find it on your home screen.');return;}if(how==='dismissed')return;
  const steps=how==='ios'?'In Safari, tap the Share button, then “Add to Home Screen”.':'Open the browser menu (⋮ or ≡) and choose “Install app” or “Add to Home screen”. In Samsung Internet it is under the menu → “Add page to” → “Home screen”.';

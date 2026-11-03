@@ -22,6 +22,23 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **M21** `[verify]` (owner, Nov 3; v0.80.7) Pictures must appear immediately: Arcade backgrounds when picking a game, faces on the get-ready card. Check on the real phone after updating.
 - **M22** `[verify]` (owner, Nov 3; v0.80.7) 🎲 opens a random game's page, not the Ready card. Hangman Unchained = one tile on every shelf with its 3 versions on one page.
 
+- **M23** `[verify]` (owner, Nov 3: "looks weird on normal phones", Amber's Samsung = 360x780) Arcade backgrounds on screens
+  that aren't one of the picker's: `mapLock` (arcadeConsole.js) moves the nearest locked setting by the layout (faces keep
+  their gap above the text and their share of the width; with less height the room above them goes first, then they shrink),
+  not by the screen's centre. Picker screens `amber-phone` 360x780 + sideways added (to lock). Genre line moved under the
+  logo, above the chips, everywhere. Checked by screenshots at 16 phone sizes (iPhone SE to Pro Max, Samsung, Pixel, Fold).
+- **U1** `[verify]` (owner, Nov 3) Updates often don't come through on home Wi-Fi (phone and PC) but do at once on 5G or a
+  VPN. Done: Update now downloads the new version first, with a progress bar, and restarts only when it is in (the start
+  of the game waits just 2.5 s for the site, then plays the saved copy, so a slow network kept reopening the old one);
+  when that saved-for-next-time copy arrives later the app offers Restart; Settings → Check for updates says what failed
+  and how long it took; the site streams the page instead of making the first phone wait. If it still fails on Wi-Fi only,
+  it's the network: test https://shambconkins.loki-mylo.work/version on Wi-Fi; suspects = the router's security filter /
+  DNS blocking the .work domain, or broken HTTP/3 (Cloudflare → Speed → Protocol Optimization → HTTP/3 off, as a test).
+- **N4** `[idea]` (owner, Nov 3) Egg game: a minigame made exactly like the egg game from an *I Think You Should Leave*
+  sketch. Ask the owner which sketch / what happens in it (or a clip) before building; don't guess the rules.
+- **G12** `[idea]` (owner, Nov 3, later) Better-looking soldiers in Call of Duty: Modern Stick Dot and the Battleship cut
+  scenes instead of stick figures. Maybe the owner generates sprites from instructions: write a sprite sheet spec (poses,
+  frames, sizes, transparent PNG, file names) + prompts, like the Arcade Art Kit, and add drop-in slots.
 - **N1** `[idea]` (owner, Nov 3) Friends online: see which friends are playing and whether they can be invited; when a
   friend becomes free (not mid-game, not mid-turn) an invite pops up on their screen at a moment that doesn't interrupt.
   Owner loves online as it is now: look into it soon, keep it simple, don't disturb what works. Builds on I2/I3 (invite

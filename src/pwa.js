@@ -34,7 +34,13 @@ let reg=null,ready=false,updating=false,lastAsk=0,canRestart=()=>true,current=nu
 const APP_FILES=/*@@APP_FILES@@*/null;
 function sendFiles(){if(APP_FILES&&current)navigator.serviceWorker?.ready.then(r=>r.active?.postMessage({type:'sc-files',version:current,files:APP_FILES})).catch(()=>{});}
 const ASK_EVERY=5*60*1000;
-async function latestVersion(){try{const r=await fetch('version',{cache:'no-store'});const t=r.ok?(await r.text()).trim():'';return /^v?\d+\.\d+\.\d+[\w.-]*$/.test(t)?t.replace(/^v/,''):null;}catch{return null;}}
+// last answer from the site: {ok, ms, error} (Settings shows it when a check fails, to tell a blocked network from a slow one)
+let lastCheck=null;
+async function latestVersion(){const t0=Date.now(),ctl=typeof AbortController!=='undefined'?new AbortController():null,stop=setTimeout(()=>ctl?.abort(),20000);
+ try{const r=await fetch('version',{cache:'no-store',signal:ctl?.signal});const t=r.ok?(await r.text()).trim():'',ok=/^v?\d+\.\d+\.\d+[\w.-]*$/.test(t);
+  lastCheck={ok,ms:Date.now()-t0,error:ok?'':`the site answered ${r.status}`};return ok?t.replace(/^v/,''):null;}
+ catch(err){lastCheck={ok:false,ms:Date.now()-t0,error:err?.name==='AbortError'?'no answer in 20 s':String(err?.message||err)};return null;}
+ finally{clearTimeout(stop);}}
 // a > b for "0.71.1" style versions
 function newerThan(a,b){const pa=String(a).split('.').map(n=>parseInt(n,10)||0),pb=String(b).split('.').map(n=>parseInt(n,10)||0);for(let i=0;i<3;i++)if(pa[i]!==pb[i])return pa[i]>pb[i];return false;}
 async function askForUpdate(force=false){
@@ -53,7 +59,9 @@ async function initPWA({onUpdate,restartOK,version}={}){current=version||null;
  if(!folder||!navigator.serviceWorker)return;
  updating=!!navigator.serviceWorker.controller;
  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!updating)return;ready=true;readyPill();onUpdate?.();});
- navigator.serviceWorker.addEventListener('message',e=>{if(e.data?.type==='sc-download')downloadBar(e.data,updating);});
+ navigator.serviceWorker.addEventListener('message',e=>{if(e.data?.type==='sc-download')downloadBar(e.data,updating);
+  // a start that played the saved copy (the site was slow) has since saved the new one: offer the restart
+  if(e.data?.type==='sc-saved'&&updating){ready=true;readyPill();}});
  try{reg=await navigator.serviceWorker.register('sw.js');}catch{return;}
  // first install: ask the offline copy to keep this page (it loaded before the service worker was in charge)
  navigator.serviceWorker.ready.then(r=>r.active?.postMessage({type:'sc-keep'})).catch(()=>{});
@@ -67,21 +75,40 @@ async function initPWA({onUpdate,restartOK,version}={}){current=version||null;
 async function checkForUpdate(version){
  if(!served())return {state:'file'};
  const latest=await latestVersion();
- if(!latest)return {state:navigator.onLine===false?'offline':'unknown'};
+ if(!latest)return {state:navigator.onLine===false?'offline':'unknown',check:lastCheck};
  if(newerThan(latest,version)){readyPill(latest);return {state:'available',latest};}
  if(ready)return {state:'ready',latest};
  return {state:'current',latest};
 }
 function restartApp(){location.reload();}
+// Download a newer release into the offline copy first, then restart (service worker v6 'sc-get'; build.mjs). A plain
+// restart only waits 2.5 s for the site before playing the saved copy, so on a slow network it kept opening the old version.
+// onProgress({got,total}); resolves {done} | {failed,error} | {old} (no service worker, or one from before v6: restart as before).
+function fetchUpdate(onProgress){return new Promise(res=>{const sw=navigator.serviceWorker?.controller;if(!sw||typeof MessageChannel==='undefined')return res({old:true});
+ let t=0;const ch=new MessageChannel(),wait=ms=>{clearTimeout(t);t=setTimeout(()=>res(heard?{failed:true,error:'the download stalled'}:{old:true}),ms);};let heard=false;
+ ch.port1.onmessage=e=>{heard=true;const d=e.data||{};if(d.done||d.failed){clearTimeout(t);res(d);}else{onProgress?.(d);wait(45000);}};
+ wait(4000);sw.postMessage({type:'sc-get'},[ch.port2]);});}
+const mbs=n=>(n/1048576).toFixed(1)+' MB';
+let fetching=null;
+// The Update button (and Settings → Check for updates): download, then restart; the pill shows how far it got.
+function updateApp(latest){if(fetching)return fetching;readyPill(latest);const el=document.getElementById('sc-ready'),label=el?.querySelector('span'),btns=el?[...el.querySelectorAll('button')]:[];
+ btns.forEach(b=>b.disabled=true);if(label)label.textContent=`Downloading v${latest||''}…`;
+ return fetching=fetchUpdate(d=>{if(label)label.textContent=`Downloading v${latest||''} · ${d.total?Math.min(99,Math.round(d.got/d.total*100))+'%':mbs(d.got)}`;}).then(r=>{fetching=null;
+  if(r.done||r.old){restartApp();return r;}
+  btns.forEach(b=>b.disabled=false);if(label)label.textContent=`Download stopped (${r.error}). Tap Update to carry on`;return r;});}
 // Update ready (a newer release on the site, or a new offline copy): a small Update button over the bottom of the screen
 // (hidden while a minigame is running).
 function readyPill(latest){
- const old=document.getElementById('sc-ready');if(old){if(latest)old.querySelector('span').textContent=`v${latest} is out`;return;}
- const el=Object.assign(document.createElement('div'),{id:'sc-ready',innerHTML:`<span>${latest?`v${latest} is out`:'New version ready'}</span><button type="button">${latest?'Update':'Restart'}</button><button type="button" class="x" aria-label="Later">✕</button>`});
- el.setAttribute('role','status');
- const [go,later]=el.querySelectorAll('button');go.onclick=restartApp;later.onclick=()=>{el.remove();clearInterval(t);};
- const t=setInterval(()=>{el.hidden=!canRestart();},1000);el.hidden=!canRestart();
- document.body.append(el);
+ let el=document.getElementById('sc-ready');
+ if(!el){el=Object.assign(document.createElement('div'),{id:'sc-ready',innerHTML:`<span></span><button type="button"></button><button type="button" class="x" aria-label="Later">✕</button>`});
+  el.setAttribute('role','status');const t=setInterval(()=>{el.hidden=!canRestart();},1000);el.hidden=!canRestart();
+  el.querySelector('.x').onclick=()=>{el.remove();clearInterval(t);};document.body.append(el);}
+ else if(fetching)return;   // a download in progress keeps its own text
+ // a saved new copy (no version given) beats "is out": restarting opens it at once, nothing left to download
+ if(!latest&&el.dataset.latest)delete el.dataset.latest;else if(latest&&el.dataset.state==='ready')return;else if(latest)el.dataset.latest=latest;
+ el.dataset.state=latest?'out':'ready';
+ const [label,go]=el.querySelectorAll('span,button');label.textContent=latest?`v${latest} is out`:'New version ready';go.textContent=latest?'Update':'Restart';
+ go.onclick=()=>latest?void updateApp(latest):restartApp();
 }
 // Download bar while the service worker saves pictures and sounds for offline play (all of them on the first visit, the
 // new ones after an update). Whatever arrived before a stop is kept (tools/build.mjs).
@@ -98,4 +125,4 @@ async function installApp(){
  if(deferred){const e=deferred;deferred=null;syncInstallButtons();try{await e.prompt();return (await e.userChoice).outcome;}catch{return 'menu';}}
  return isIOS()?'ios':'menu';
 }
-Object.assign(exports,{initPWA,installApp,canInstall,installOffered,standalone,checkForUpdate,restartApp});
+Object.assign(exports,{initPWA,installApp,canInstall,installOffered,standalone,checkForUpdate,restartApp,updateApp});
