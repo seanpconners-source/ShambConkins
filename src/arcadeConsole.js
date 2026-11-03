@@ -91,7 +91,10 @@ const hue=s=>((hash(norm(s))%360)+360)%360;
 const dropArt=(kind,k)=>{const u=k&&USER_PORTRAITS[kind+':'+k];return u&&(isRasterArt(u)||/^data:image\/svg|\.svg$/i.test(u))?u:null;};
 const tileArt=k=>dropArt('tile',k);
 // Key art: a big picture for the hero (assets/keyart/<game id or family key>.*), shown full-bleed behind the selected game.
-const keyArt=it=>it&&(dropArt('keyart',it.fam?.key)||dropArt('keyart',it.g?.id));
+const keyArt=it=>it&&(dropArt('keyart',it.fam?.key)||dropArt('keyart',it.g?.id)||dropArt('keyart',it.g&&familyOf(it.g)));   // a version listed on its own uses its family's picture
+// Where a big picture's subject is, so a phone's narrow crop keeps it in view: 'x% y%' by slot.
+const KEY_FOCUS={'greed-island-mancala':'66% 22%',broforce:'64% 40%',hangman:'64% 50%'};
+const keyImg=it=>`<img src="${e(keyArt(it))}" alt="" style="object-position:${KEY_FOCUS[it.fam?.key]||KEY_FOCUS[it.g?.id]||KEY_FOCUS[familyOf(it.g)]||'50% 50%'}">`;
 function art(g,{fam=null,size=''}={}){
  const drop=tileArt(fam?.key)||tileArt(g?.id);if(drop)return `<img class="arc-cut arc-drop${size}" src="${e(drop)}" alt="" loading="lazy" draggable="false">`;
  const cid=fam?.hero&&own(fam.hero)?fam.hero:g?.id?heroId(g):null;
@@ -116,7 +119,7 @@ function arcadeConsoleHTML(opts){
  const pills=filters.map(([id,label])=>`<button class="arc-pill${id===filter?' on':''}" data-action="filter" data-id="${e(id)}">${e(label)}</button>`).join('');
  const tiles=items.map((it,i)=>tileHTML(it,i,i===at)).join('');const root0=items[at];
  return `<main class="arcade-console${root0&&keyArt(root0)?' has-key':''}" style="${heroVars(items[at])}"><div class="arc-wash" aria-hidden="true"></div>
-  <div class="arc-keyart" aria-hidden="true">${items[at]&&keyArt(items[at])?`<div class="arc-layer"><img src="${e(keyArt(items[at]))}" alt=""></div>`:''}</div>
+  <div class="arc-keyart" aria-hidden="true">${items[at]&&keyArt(items[at])?`<div class="arc-layer">${keyImg(items[at])}</div>`:''}</div>
   <div class="arc-hero-art" aria-hidden="true">${items[at]&&!keyArt(items[at])?`<div class="arc-layer">${heroArt(items[at])}</div>`:''}</div><div class="arc-shade" aria-hidden="true"></div>
   <header class="arc-top"><button class="arc-icon" data-action="home" aria-label="Back to the title screen">←</button><b class="arc-brand">Arcade</b>
    <span class="arc-top-r"><button class="arc-icon" data-action="arcade-random" aria-label="Random game" title="Random game">🎲</button><button class="arc-icon arc-search-btn${query?' on':''}" data-arc-search aria-label="Search games">⌕</button></span></header>
@@ -133,7 +136,9 @@ function arcadeConsoleHTML(opts){
 function heroVars(it){const g=it?.g,h=hue(it?.fam?.title||g?.source||'');return `--arc-h:${h}`;}
 function heroArt(it){return art(it.g,{fam:it.fam,size:' big'});}
 function tileHTML(it,i,on){const g=it.g,locked=!it.fam&&!current.partsFor(g).open;
- return `<button class="arc-tile${on?' on':''}${locked?' locked':''}" role="option" aria-selected="${on}" data-arc-focus="${i}" style="--arc-h:${hue(it.fam?.title||g.source)};--i:${Math.min(i,14)}" aria-label="${e(it.fam?.title||g.title)}">${art(g,{fam:it.fam})}${it.fam?`<span class="arc-count">×${it.fam.key==='bosses'?bossTotal():it.members.length}</span>`:''}${locked?'<span class="arc-lock" aria-hidden="true">🔒</span>':''}</button>`;}
+ return `<button class="arc-tile${on?' on':''}${locked?' locked':''}" role="option" aria-selected="${on}" data-arc-focus="${i}" style="--arc-h:${hue(it.fam?.title||g.source)};--i:${Math.min(i,14)}" aria-label="${e(it.fam?.title||g.title)}">${art(g,{fam:it.fam})}${it.fam?`<span class="arc-count">×${it.fam.key==='bosses'?bossTotal():it.members.length}</span>`:''}${locked?'<span class="arc-lock" aria-hidden="true">🔒</span>':''}<span class="arc-tile-name" aria-hidden="true"><span>${e(tileName(it))}</span></span></button>`;}
+// The name on a tile: the family or game title, the separator dropped so it wraps cleanly on two lines.
+const tileName=it=>(it.fam?.title||it.g.title).replace(/^Boss · /,'').replace(/ · /,' ');
 function bossTotal(){return (current.extraBosses||[]).length+current.items.find(x=>x.fam?.key==='bosses')?.members.length||0;}
 function infoHTML(it){
  if(it.fam){const f=it.fam,n=f.key==='bosses'?bossTotal():it.members.length,played=it.members.filter(g=>store.profile.played.includes(g.id)).length;
@@ -174,7 +179,7 @@ function focusTile(i,{scroll=true}={}){
  const was=current.items.findIndex(x=>x.key===state.focus);if(was===i)return;
  state.focus=it.key;root.style.setProperty('--arc-dir',i>=was?1:-1);root.style.setProperty('--arc-h',hue(it.fam?.title||it.g.source));
  const key=keyArt(it);root.classList.toggle('has-key',!!key);
- swapLayer(root.querySelector('.arc-keyart'),key?`<img src="${e(key)}" alt="">`:'');
+ swapLayer(root.querySelector('.arc-keyart'),key?keyImg(it):'');
  swapLayer(root.querySelector('.arc-hero-art'),key?'':heroArt(it));
  const info=root.querySelector('.arc-info');info.innerHTML=infoHTML(it);restart(info,'arc-info-in');
  root.querySelectorAll('.arc-tile').forEach((t,j)=>{t.classList.toggle('on',j===i);t.setAttribute('aria-selected',String(j===i));});

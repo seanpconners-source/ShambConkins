@@ -968,3 +968,14 @@ body .title-screen .home-stack button.ts-tile{min-height:104px}
 .ts-duo .ts-reel img.ts-cut{transform:translateX(-30%) scale(.97)}
 .ts-duo .ts-reel img.ts-cut.on{transform:translateX(-50%)}
 .ts-duo .ts-reel img.ts-cut.out{transform:translateX(-70%) scale(.97)}
+
+/* game names on the Arcade's tiles (owner, Nov 3): a caption on a dark fade, the picture sits above it */
+.arcade-console .arc-tile{flex:0 0 92px;height:106px;border-radius:16px}
+.arc-tile .arc-cut{height:72%;bottom:27%}.arc-tile .arc-cut.arc-drop{height:100%;bottom:0;max-width:100%}
+.arc-tile .arc-emoji{align-self:start;margin-top:14px}
+.arc-tile-name{position:absolute;left:0;right:0;bottom:0;padding:16px 5px 6px;background:linear-gradient(transparent,#060a18e6 42%);pointer-events:none}
+.arc-tile-name span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font:800 10.5px/1.15 var(--c-text);color:#fff;text-align:center;text-shadow:0 1px 2px #000;text-transform:none;letter-spacing:0}
+.arcade-console .arc-tile.on .arc-tile-name span{color:#ffe25a}
+@media (min-width:700px) and (min-height:641px){.arcade-console .arc-tile{flex-basis:124px;height:138px;border-radius:20px}.arc-tile-name span{font-size:13px}.arc-tile .arc-emoji{margin-top:20px}}
+@media (max-height:640px){.arcade-console .arc-tile{flex-basis:80px;height:88px}.arc-tile-name{padding:12px 4px 4px}.arc-tile-name span{font-size:9.5px}.arc-tile .arc-emoji{margin-top:8px;font-size:30px}}
+@media (max-height:480px){.arcade-console .arc-tile{flex-basis:92px;height:62px;border-radius:12px}.arc-tile .arc-cut{height:64%;bottom:34%}.arc-tile-name{padding:8px 3px 3px}.arc-tile-name span{font-size:9px}.arc-tile .arc-emoji{margin-top:2px;font-size:22px}}
