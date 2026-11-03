@@ -3,13 +3,22 @@
 //     A letter belongs to whoever shoots it first; a miss adds a piece to your own cowboy and jams your gun briefly.
 //  'turns'  (django-hangman-showdown): one keyboard, players take turns guessing the same phrase (15 s shot clock).
 //  'pass'   (django-hangman-wanted): one player writes a phrase (or deals one from the deck), the other guesses; then swap.
-// Six bullets = six misses: torso, arms, legs, then the trapdoor drops. Sounds are all synthesized western SFX.
+// Six bullets = six misses: torso, arms, legs, then the trapdoor drops. Sounds: synthesized western SFX + the owner's Sunset Riders
+// voices and a random song from its soundtrack for each game (engines/sunsetAudio.js).
 const {fullBleed}=require("src/engines/fullBleed.js");
 const {vibrate:buzz}=require("src/audio.js");
 const {shuffle}=require("src/utils.js");
 const {SFX:WSFX}=require("src/engines/westernSfx.js");
+const audio=require("src/audio.js");
+const {store}=require("src/state.js");
+const {createSunsetMusic,preloadSunsetVoices,sunsetVoice:V}=require("src/engines/sunsetAudio.js");
+const any=a=>a[Math.floor(Math.random()*a.length)];
+// Sunset Riders voices beside the synth ones. A cheer is sometimes the synth Yeehaw (the owner's favourite) and it covers for a clip not loaded yet.
+const VOICES={banditDeath:o=>V(any(['bandit-death-1','bandit-death-2','bandit-death-3','bandit-death-short']),{vol:.8,...o}),hurt:o=>V('boss-damage',{vol:.8,...o}),
+ hangCry:(female,o)=>V(female?'female-death':'player-death',o),laugh:o=>V('sir-richard-laugh',{vol:.8,...o}),taunt:o=>V(any(['player-taunt-1','player-taunt-2']),o),please:o=>V('please-continue',o),
+ cheer:({pitch=1,...o}={})=>{if(Math.random()<.4||!V(any(['player-taunt-1','player-taunt-2','boss-death-1','boss-death-2']),o))WSFX.yeehaw({...o,pitch});}};
 // Online Quick Draw replays a round silently when a shot arrives out of order (quiet.on mutes sounds and buzzes).
-const quiet={on:false},SFX=new Proxy(WSFX,{get:(o,k)=>quiet.on?()=>{}:o[k]}),vibrate=ms=>quiet.on?false:buzz(ms);
+const quiet={on:false},SFX=new Proxy({...WSFX,...VOICES},{get:(o,k)=>quiet.on?()=>{}:o[k]}),vibrate=ms=>quiet.on?false:buzz(ms);
 const {PHRASES,CATEGORIES}=require("src/data/hangmanPhrases.js");
 const {isCpu,isOnline,cpuSkill}=require("src/engines/cpuKit.js");
 
@@ -137,7 +146,7 @@ async function hangman(s){
   const t=Number.isFinite(m.t)?m.t:Number.isFinite(m.hb)?m.hb:null;if(t===null||t<0)continue;
   if(typeof m.g==='string'&&isLetter(m.g)&&m.g.length===1)qdAdd({rt:t,p:qnet.remote,L:m.g});qd.heard=Math.max(qd.heard,t);}}
  function passTurn(){const o=1-st.turn;if(!st.hanged[o]&&o!==st.turn){st.turn=o;st.turnT=T;SFX.spurs({steps:2,vol:.3,pan:o?.4:-.4});}st.tclock=TURN;st.tick=-1;s.active=st.turn;s.updateScores();}
- function timeout(p,remote=false){if(st.phase!=='play'||theirs(p)&&!remote)return;if(net&&!remote)net.send({to:1});st.misses[p]++;st.partT[p][st.misses[p]]=T;SFX.dryFire({});mood(p,'angry');vibrate(45);shake=.3;floatText(p,'TOO SLOW','#ff6b5e');dust(p);
+ function timeout(p,remote=false){if(st.phase!=='play'||theirs(p)&&!remote)return;if(net&&!remote)net.send({to:1});st.misses[p]++;st.partT[p][st.misses[p]]=T;SFX.dryFire({});SFX.hurt({delay:.06});mood(p,'angry');vibrate(45);shake=.3;floatText(p,'TOO SLOW','#ff6b5e');dust(p);
   if(st.misses[p]>=LIVES)return hang(p);if(st.misses[p]===LIVES-1)floatText(p,'LAST BULLET','#ff8a5c',1.6);passTurn();}
  function mood(p,m,sec=1.2){st.mood[p]={m,until:T+sec};}
  function guess(p,L,remote=false){
@@ -150,11 +159,11 @@ async function hangman(s){
   const pan=duel?(p?.5:-.5):0;
   if(idx.length){
    st.score[p]+=10*idx.length;idx.forEach((i,k)=>{st.reveal[i]={t:T+k*.11,by:p};});
-   idx.slice(0,4).forEach((_,k)=>SFX.gunshot({pan,delay:k*.11,vol:k?.6:.9}));if(idx.length===1||Math.random()<.4)SFX.ricochet({pan,delay:.12+idx.length*.1});
+   idx.slice(0,4).forEach((_,k)=>SFX.gunshot({pan,delay:k*.11,vol:k?.6:.9}));if(idx.length===1||Math.random()<.4)SFX.ricochet({pan,delay:.12+idx.length*.1});if(idx.length>=3||Math.random()<.2)SFX.banditDeath({pan,delay:.14});
    floatText(p,`+${10*idx.length}`,'#ffd36a');mood(p,'win');vibrate(14);shake=Math.max(shake,.12);
    if(solvedNow())return collect(p);
   }else{
-   st.misses[p]++;st.partT[p][st.misses[p]]=T;SFX.dryFire({});if(st.misses[p]<LIVES)SFX.snort({delay:.15,vol:.3});
+   st.misses[p]++;st.partT[p][st.misses[p]]=T;SFX.dryFire({});SFX.hurt({pan,delay:.06});if(st.misses[p]<LIVES)SFX.snort({delay:.15,vol:.3});
    if(mode==='shared')st.lock[p]=T+.85;mood(p,'angry');vibrate(45);shake=.35;floatText(p,`${L} ✗`,'#ff6b5e');dust(p);
    if(st.misses[p]>=LIVES)return hang(p);
    if(st.misses[p]===LIVES-1)floatText(p,'LAST BULLET','#ff8a5c',1.6);
@@ -165,11 +174,11 @@ async function hangman(s){
  function collect(p){
   if(duel)st.score[p]+=40;else st.score[p]+=60+15*(LIVES-st.misses[p]);
   st.cut[p]=T;st.result={kind:'solved',p};mood(p,'win',3);
-  SFX.gunshot({delay:.05});SFX.yeehaw({delay:.35,pitch:p?1.12:1});SFX.gunshot({delay:1.45,vol:.6});SFX.gunshot({delay:1.62,vol:.6});SFX.gallop({delay:1.7,beats:5,vol:.4});
+  SFX.gunshot({delay:.05});SFX.cheer({delay:.35,pitch:p?1.12:1});SFX.gunshot({delay:1.45,vol:.6});SFX.gunshot({delay:1.62,vol:.6});SFX.gallop({delay:1.7,beats:5,vol:.4});
   floatText(p,duel?'+40 BOUNTY':`+${60+15*(LIVES-st.misses[p])} BOUNTY`,'#ffe28a',2);vibrate(30);endRound();
  }
  function hang(p){
-  st.hanged[p]=T;mood(p,'sad',99);SFX.trapdoor({});SFX.whinny({delay:.45});vibrate(120);shake=.6;
+  st.hanged[p]=T;mood(p,'sad',99);SFX.trapdoor({});SFX.hangCry(/amber/.test(s.players[p]?.character||''),{delay:.3});SFX.whinny({delay:.6,vol:.3});SFX.laugh({delay:1.2});vibrate(120);shake=.6;
   if(duel){st.score[p]=Math.max(0,st.score[p]-20);floatText(p,'−20 HANGED','#ff6b5e',2);if(st.hanged[1-p]){st.result={kind:'hanged'};endRound();}else if(mode==='turns')passTurn();}
   else{st.score[st.writer]+=50;st.result={kind:'hanged',p};endRound();}
   s.setScores(st.score);
@@ -539,11 +548,15 @@ async function hangman(s){
   const p=players().find(theirs);if(typeof m.g==='string')guess(p,m.g.toUpperCase().slice(0,1),true);else if(m.to)timeout(p,true);}})();
 
  // ---------------------------------------------------------------- flow
+ // each game: the Wanted! jingle, then a random song from the pool (the synth band and the board music stay quiet)
+ const music=createSunsetMusic(()=>s.paused||!s.alive||document.hidden);audio.stopMusic();preloadSunsetVoices();
+ s.cleanup(()=>{music.stop();if(store.profile?.settings?.music)try{audio.startMusic();}catch{}});s.debug.sunset=music;
+ music.sting('wanted',()=>music.start());
  SFX.gallop({beats:7,vol:.45});SFX.whip({delay:1.3});SFX.gunshot({delay:1.6});SFX.yeehaw({delay:1.85});
  st.skip=false;await sleep(3.2);if(!s.alive)return;st.skip=false;
  if(duel){
   const picks=[];for(const q of shuffle(PHRASES,s.random)){if(picks.length>=ROUNDS)break;if(q.text.length>26||picks.some(o=>o.cat===q.cat))continue;picks.push(q);}
-  for(let r=0;r<ROUNDS;r++){st.round=r;startRound(picks[r].text,picks[r].cat);st.turn=r%2;st.tclock=TURN;s.active=st.turn;s.updateScores();st.phase='banner';st.bannerT=T;SFX.cylinder({});SFX.cock({delay:.55});
+  for(let r=0;r<ROUNDS;r++){st.round=r;startRound(picks[r].text,picks[r].cat);st.turn=r%2;st.tclock=TURN;s.active=st.turn;s.updateScores();st.phase='banner';st.bannerT=T;SFX.cylinder({});SFX.cock({delay:.55});if(r&&Math.random()<.5)SFX.taunt({delay:.75});
    await sleep(1.5);if(!s.alive)return;st.skip=false;st.phase='play';st.turnT=T;st.tclock=TURN;if(qnet)qdStart();await until(()=>st.phase==='reveal');await sleep(3.2);if(!s.alive)return;st.skip=false;}
  }else{
   for(let r=0;r<2;r++){st.round=r;st.writer=r;st.guesser=1-r;st.draft='';st.draftCat=0;st.written=null;st.phase='handoff';
@@ -556,8 +569,10 @@ async function hangman(s){
    st.phase='play';await until(()=>st.phase==='reveal');await sleep(3.4);if(!s.alive)return;st.skip=false;}
  }
  st.winner=st.score[0]===st.score[1]?-1:st.score[0]>st.score[1]?0:1;st.phase='final';floats.length=0;fx.length=0;s.setScores(st.score);
- SFX.yeehaw({pitch:st.winner===1?1.12:1});SFX.gunshot({delay:1.1});SFX.gunshot({delay:1.35});SFX.gunshot({delay:1.6});
- await sleep(3.4);if(!s.alive)return;
+ // Stage Clear for a winner; Game Over and Sir Richard's laugh for a dead heat or a loss on this phone (vs CPU, online)
+ const seat=net?net.me:qnet?qnet.me:cpu?0:-1,lost=st.winner<0||seat>=0&&st.winner!==seat;music.sting(lost?'gameover':'yippie');
+ if(lost){SFX.please({delay:.5});SFX.laugh({delay:1.6});}else SFX.cheer({pitch:st.winner===1?1.12:1});SFX.gunshot({delay:1.1});SFX.gunshot({delay:1.35});SFX.gunshot({delay:1.6});
+ await sleep(4.4);if(!s.alive)return;
  s.finish(st.score,st.winner<0?'Hangman Unchained · a dead heat.':`Hangman Unchained · ${name(st.winner)} collects the bounty.`);
 }
 Object.assign(exports,{HANGMAN_WORDS,hangmanGuess,normalizeHangmanAnswer,hangman,makeLogo});
