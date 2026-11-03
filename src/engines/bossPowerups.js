@@ -16,7 +16,8 @@ const PU_KINDS=Object.keys(PU);
 // weighted pick; hurt = someone is low on hearts (hearts get likelier), r = a random number 0..1
 function pickPowerup(r,hurt){const w=PU_KINDS.map(k=>k==='heart'&&hurt?5:PU[k].w),tot=w.reduce((a,b)=>a+b,0);let x=r*tot;for(let i=0;i<w.length;i++){if((x-=w[i])<0)return PU_KINDS[i];}return 'spread';}
 // seconds until the next pickup: rarer on the higher tiers
-const puGap=(diff,r)=>(13+r*6)*(1+diff*.08);
+// seconds to the next pickup: harder tiers drop them more often, so the player stays powerful in the storm (ROADMAP K25)
+const puGap=(diff,r)=>(13+r*6)*(1-diff*.14);
 function heart(g,x,y,s){g.beginPath();g.moveTo(x,y+s*.35);g.bezierCurveTo(x-s*.6,y-s*.05,x-s*.35,y-s*.55,x,y-s*.22);g.bezierCurveTo(x+s*.35,y-s*.55,x+s*.6,y-s*.05,x,y+s*.35);g.closePath();}
 function glyph(g,k,r){g.fillStyle='#fff';g.strokeStyle='#14060a';g.lineWidth=2.2;g.lineJoin='round';
  if(k==='shield'){g.beginPath();g.moveTo(0,-r*.62);g.lineTo(r*.5,-r*.38);g.lineTo(r*.42,r*.2);g.quadraticCurveTo(r*.2,r*.55,0,r*.68);g.quadraticCurveTo(-r*.2,r*.55,-r*.42,r*.2);g.lineTo(-r*.5,-r*.38);g.closePath();g.stroke();g.fill();return;}

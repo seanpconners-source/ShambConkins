@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.79.0
+
+**Arcade Featured, one Broforce, Who Wants to Be a Shambillionaire, Call of Duty: Modern Stick Dot.**
+
+- **Arcade**: opens on a new **Featured** shelf (the list is `src/data/featuredGames.js`). New **Recent** and **Favorites** shelves; tap the star next to Play to keep a game.
+- **Broforce is one game**: pick Jungle, Factory, City or Desert on its own title screen. Ready for new pictures (`assets/keyart/broforce*`).
+- **Who Wants to Be a Shambillionaire?** replaces Trivia Hardcore: 15 questions to $1,000,000, safe havens, 50:50, Ask the Audience, Phone a Friend, final answer, walk away.
+- **Call of Duty: Modern Stick Dot** replaces Office Dividers: dots and boxes with a title sequence, mission card, tactical map, kill cams, sniper shots and an AC-130 on a streak.
+- **Battleship**: cut scenes. A deck gun fires on a hit; on a sunk ship the crew, wearing the loser's head, abandons ship.
+- **Pokémon**: Catwoman is no longer unstoppable; the ball rocks side to side while it decides; a catch can replace someone on a full team.
+- **Boss fights**: harder tiers now drop power-ups more often (they used to drop fewer).
+- **1 player vs CPU**: the CPU earns nothing for a boss or horde it sat out; themed trivia plays against the CPU.
+- **Paper Route**: dogs give up, leave after biting, and run from a thrown paper (+2). **Asteroids**: less zoomed in on big screens.
+- **Online board game**: fixed a freeze when the guest's phone reconnected during a minigame (found by the soak test).
+
 ## v0.78.1
 
 - Title screen tiles change pictures more slowly and softly (longer fade, shorter slide).

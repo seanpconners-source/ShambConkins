@@ -1,0 +1,48 @@
+// Battleship cut scenes (owner's triage note): a quick deck gun shot on a hit; on a sunk ship a torpedo, the ship going down and
+// sailors with the loser's head jumping overboard. Full-screen canvas over the game, drawn here, tap skips. Purely for show:
+// nothing in the game's rules or online moves waits on anything but the promise, and each phone plays its own.
+const {store}=require('src/state.js');
+const {sfx}=require('src/engines/partyKit.js');
+
+function navalCut(s,{kind,shooter,victim,ship=''}){return new Promise(done=>{
+ const calm=!!store.profile?.settings.reducedMotion,dur=(kind==='sunk'?3.4:1.5)*(calm?.6:1),cv=document.createElement('canvas');
+ cv.className='bs-cut';cv.style.cssText='position:fixed;inset:0;width:100%;height:100%;z-index:40;touch-action:none;background:#0a1626';(document.getElementById('game-layer')||document.body).append(cv);
+ const x=cv.getContext('2d'),dpr=Math.min(1.5,window.devicePixelRatio||1);let W=0,H=0,t=0,last=performance.now(),raf=0,over=false;
+ const fit=()=>{const w=cv.clientWidth||innerWidth,h=cv.clientHeight||innerHeight;if(w!==W||h!==H){W=w;H=h;cv.width=W*dpr;cv.height=H*dpr;}x.setTransform(dpr,0,0,dpr,0,0);};
+ const parts=[],sailors=[];let hitDone=false,nextSailor=1.15,fired=false;
+ const end=()=>{if(over)return;over=true;cancelAnimationFrame(raf);cv.remove();done();};
+ s.cleanup(end);cv.addEventListener('pointerdown',()=>{if(t>.25)end();});
+ const blast=(px,py,n,sp)=>{for(let i=0;i<n;i++){const a=Math.random()*6.28,v=Math.random()*sp;parts.push({x:px,y:py,vx:Math.cos(a)*v,vy:Math.sin(a)*v-sp*.25,g:240,life:.5+Math.random()*.8,col:['#fff0a0','#ffb42e','#ee4a1c','#555'][i%4],r:2+Math.random()*7});}};
+ const seaY=()=>H*.64;
+ function sky(){const g=x.createLinearGradient(0,0,0,seaY());g.addColorStop(0,'#172a52');g.addColorStop(.7,'#c8603a');g.addColorStop(1,'#f0a860');x.fillStyle=g;x.fillRect(0,0,W,seaY()+2);}
+ function sea(front=false){const y0=seaY()+(front?H*.05:0);x.fillStyle=front?'#0c3a5e':'#14527e';x.beginPath();x.moveTo(0,H);x.lineTo(0,y0);for(let i=0;i<=W;i+=12)x.lineTo(i,y0+Math.sin(i*.03+t*(front?3:2))*(front?7:4));x.lineTo(W,y0);x.lineTo(W,H);x.fill();}
+ function warship(cx,cy,L,tilt=0,burn=false){x.save();x.translate(cx,cy);x.rotate(tilt);const h=L*.13;x.fillStyle='#4c5866';x.beginPath();x.moveTo(-L/2,-h*.4);x.lineTo(L/2,-h*.6);x.lineTo(L*.42,h*.6);x.lineTo(-L*.45,h*.6);x.fill();x.fillStyle='#7a2e24';x.fillRect(-L*.44,h*.22,L*.86,h*.36);
+  x.fillStyle='#667384';x.fillRect(-L*.2,-h*1.2,L*.32,h*.85);x.fillRect(-L*.08,-h*1.9,L*.14,h*.75);x.fillStyle='#39424e';x.fillRect(L*.13,-h*1.1,L*.06,h*.7);for(const k of [-.34,.28]){x.fillStyle='#39424e';x.fillRect(L*k-L*.04,-h*.7,L*.08,h*.3);x.fillRect(L*k,-h*.68,L*.12*(k<0?-1:1),h*.09);}
+  if(burn)for(let i=0;i<3;i++){const fx=-L*.25+i*L*.25,f=1+Math.sin(t*14+i)*.2;x.fillStyle='#ff8a1f';x.beginPath();x.ellipse(fx,-h*.6,h*.3*f,h*.6*f,0,0,7);x.fill();x.fillStyle='#ffe07a';x.beginPath();x.ellipse(fx,-h*.5,h*.14*f,h*.3*f,0,0,7);x.fill();}
+  x.restore();}
+ function sailor(px,py,size,who,mood,rot=0,arms=0){x.save();x.translate(px,py);x.rotate(rot);x.fillStyle='#f2f5f8';x.fillRect(-size*.2,size*.25,size*.4,size*.55);x.fillStyle='#1f3a68';x.fillRect(-size*.2,size*.6,size*.4,size*.42);x.strokeStyle='#f2f5f8';x.lineWidth=size*.12;x.lineCap='round';x.beginPath();x.moveTo(-size*.2,size*.35);x.lineTo(-size*.48,size*(.35+arms));x.moveTo(size*.2,size*.35);x.lineTo(size*.48,size*(.35+arms));x.stroke();x.lineCap='butt';s.sprite(x,who,0,0,size*.8,{exact:true,mood});x.fillStyle='#fff';x.beginPath();x.ellipse(0,-size*.34,size*.26,size*.07,0,0,7);x.fill();x.restore();}
+ function caption(big,small){const px=Math.min(W*.1,H*.09,52);x.textAlign='center';x.textBaseline='middle';x.font=`900 ${px}px Impact,"Arial Black",sans-serif`;x.lineWidth=px*.14;x.strokeStyle='#000';x.lineJoin='round';x.strokeText(big,W/2,H*.15);x.fillStyle='#ffd24d';x.fillText(big,W/2,H*.15);if(small){x.font=`800 ${px*.36}px Arial`;x.lineWidth=3;x.strokeText(small,W/2,H*.15+px*.72);x.fillStyle='#fff';x.fillText(small,W/2,H*.15+px*.72);}}
+ function drawParts(dt){for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.life-=dt;if(p.life<=0){parts.splice(i,1);continue;}p.vy+=p.g*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;x.globalAlpha=Math.min(1,p.life*1.6);x.fillStyle=p.col;x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill();}x.globalAlpha=1;}
+ // a hit: over the shoulder of a gunner on the deck, the shell arcs into the other ship
+ function hitScene(dt){sky();sea();const L=Math.min(W*.55,H*.55),sx=W*.72,sy=seaY()+2,impact=.72;warship(sx,sy,L,0,t>impact);sea(true);
+  const sz=Math.min(W,H)*.3,gx=W*.1,gy=H-sz*1.2;x.fillStyle='#39424e';x.fillRect(0,gy+sz*.5,W*.52,H-gy);x.save();x.translate(gx+sz*.6,gy+sz*.35);x.rotate(-.42);const kick=t>.22&&t<.42?-sz*.2*(1-(t-.22)/.2):0;x.fillStyle='#232a33';x.fillRect(kick,-sz*.09,sz*1.1,sz*.18);x.restore();
+  sailor(gx,gy,sz,shooter,t>impact?'win':'angry');
+  const m0x=gx+sz*.6+Math.cos(-.42)*sz*1.1,m0y=gy+sz*.35+Math.sin(-.42)*sz*1.1;
+  if(t>.22&&!fired){fired=true;sfx.boom();blast(m0x,m0y,calm?4:14,160);}
+  if(t>.22&&t<impact){const k=(t-.22)/(impact-.22),px=m0x+(sx-m0x)*k,py=m0y+(sy-L*.05-m0y)*k-Math.sin(k*Math.PI)*H*.16;x.fillStyle='#fff6c8';x.beginPath();x.arc(px,py,4,0,7);x.fill();}
+  if(t>impact&&!hitDone){hitDone=true;sfx.boom();blast(sx,sy-L*.06,calm?12:50,320);}
+  drawParts(dt);if(t>impact)caption('DIRECT HIT!');}
+ // sunk: a torpedo runs in, the ship breaks and tips, the crew jumps
+ function sunkScene(dt){sky();const L=Math.min(W*.88,H*.8),sx=W/2,impact=.95,k=Math.max(0,t-impact),tilt=Math.min(.55,k*.22),sy=seaY()+k*k*H*.035;
+  sea();warship(sx,sy,L,tilt,t>impact);
+  if(t<impact){const k0=t/impact,px=-20+(sx-L*.25+20)*k0,py=seaY()+H*.07;x.strokeStyle='#ffffffaa';x.lineWidth=3;x.beginPath();x.moveTo(-20,py);x.lineTo(px,py);x.stroke();x.fillStyle='#10161e';x.fillRect(px-14,py-4,28,8);}
+  if(t>impact&&!hitDone){hitDone=true;sfx.boom();sfx.big?.();blast(sx-L*.2,seaY(),calm?20:110,520);}
+  if(t>nextSailor&&sailors.length<8){nextSailor=t+.26;const from=-.3+Math.random()*.6;sailors.push({x:sx+L*from,y:seaY()-L*.13,vx:(from<0?-1:1)*(40+Math.random()*90),vy:-170-Math.random()*90,rot:0,spin:(Math.random()-.5)*5,wet:false});}
+  const sz=Math.min(W,H)*.13;for(const m of sailors){if(!m.wet){m.vy+=470*dt;m.x+=m.vx*dt;m.y+=m.vy*dt;m.rot+=m.spin*dt;if(m.y>seaY()+H*.03){m.wet=true;m.y=seaY()+H*.03;m.rot=0;sfx.splash();for(let i=0;i<10;i++){const a=-1.57+(Math.random()-.5)*1.4,v=70+Math.random()*120;parts.push({x:m.x,y:m.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:420,life:.6,col:'#dff3ff',r:2+Math.random()*2});}}}
+   sailor(m.x,m.wet?m.y+Math.sin(t*4+m.x)*3:m.y,sz,victim,'sad',m.rot,m.wet?-.45*(1+Math.sin(t*9+m.x)*.3):-.35);}
+  sea(true);drawParts(dt);
+  if(t>impact)caption('ABANDON SHIP!',`${String(s.players[shooter].name).toUpperCase()} SANK THE ${String(ship).toUpperCase()}`);}
+ function loop(now){if(over)return;raf=requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;if(s.paused||!s.alive)return;t+=dt;cv.dataset.t=t.toFixed(1);fit();(kind==='sunk'?sunkScene:hitScene)(dt);if(t>=dur)end();}
+ fit();raf=requestAnimationFrame(loop);
+});}
+Object.assign(exports,{navalCut});

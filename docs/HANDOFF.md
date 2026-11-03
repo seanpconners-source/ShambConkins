@@ -1,11 +1,19 @@
 # Handoff: where we left off (read this first in a fresh session)
 
-Last updated Nov 3 2026 (late): v0.78.0 released (every menu in the console look). Read "START HERE" first. Written for the next Claude session,
+Last updated Nov 3 2026 (night): v0.79.0 prepared while the owner slept. Read "START HERE" first. Written for the next Claude session,
 which may run on a different account with none of the earlier conversation or memory. Everything needed is in the repo:
 this file, `CLAUDE.md`, `docs/ROADMAP.md` (the owner's to-do list, phases, statuses) and `docs/AI_STATE.md` (technical
 state, newest at the top).
 
-## START HERE (Nov 3, late): v0.78.0 released (all menus in the console look); next = the roadmap
+## START HERE (Nov 3, night): morning summary for v0.79.0
+
+Owner asked (asleep): fix the soak report, add an Arcade Featured section, make Broforce one game with a world select, work the roadmap and game notes, then release.
+- **Soak report**: 4 failures of 86. Real bugs: online board froze when the guest reconnected during a minigame (fixed, repro test added); themed trivia came up as pass and play in a 1P board game (fixed). Broforce online failures were only the test's time limit (a mission takes longer; limit raised, passes).
+- **Built, please play**: Featured / Recent / Favorites, one Broforce, Who Wants to Be a Shambillionaire, Call of Duty: Modern Stick Dot, Battleship cut scenes, Pokémon PK3/4/5, CPU boss points C13, boss tier pickups K25, Paper Route dogs, Asteroids zoom.
+- **Questions for the owner**: (1) Broforce pictures: backdrop + one per world, `assets/keyart/broforce*` (BF2), then new levels together (BF3). (2) Real sounds/music for Millionaire and Modern Stick Dot? Both use original synth for now. (3) Is the Featured list right (`src/data/featuredGames.js`)? Should the Arcade keep opening on it? (4) Supers don't scale with boss tier yet: want them to?
+- **Next from the owner's triage notes**, biggest first: casino overhaul, Price Is Right suite, Frogger + Crossy Road split, darts (Paddy's series), Matrix hacking cut scenes, Adrenaline narrative game, Daft Punk tracks.
+
+## Earlier (Nov 3, late): v0.78.0 released (all menus in the console look); next = the roadmap
 
 - Released v0.78.0 to main at the owner's request (owner: "merge to main, then I start a new session so you can continue
   the roadmap"). Menus done this round: Arcade round 2 (categories, View all, small phones, no Start/Back card from the

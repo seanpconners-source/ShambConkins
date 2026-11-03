@@ -1,6 +1,7 @@
 // Battleship: hidden fleets on an 8x8 grid, drag-to-place with tap-to-rotate, alternate shots, a hit earns another shot.
 const {PartyUI,sfx,head,pname,esc,burst,banner,titleCard,shuffle,extraCSS,tone}=require("src/engines/partyKit.js");
 const {isCpu,isOnline,cpuSkill,cpuBlunder,pickRandom}=require("src/engines/cpuKit.js");
+const {navalCut}=require("src/engines/battleshipCuts.js");
 
 const N=8;
 const SHIPS=[['Battleship',4],['Cruiser',3],['Submarine',3],['Destroyer',2],['Patrol Boat',2]];
@@ -231,7 +232,8 @@ async function battleship(s){
   phase='fire';let note=auto(P)?`<b>${esc(names[P])}</b> is firing at your fleet.`:`<b>${esc(names[P])}</b>: tap a square in the enemy waters.`;
   for(;;){
    const res=await shoot(P,note);if(!s.alive)return;shotsFired[P]++;
-   if(!await s.wait(res.sunk?1700:1100))return;
+   if(!await s.wait(res.hit?450:1100))return;
+   if(res.hit){await navalCut(s,{kind:res.sunk?'sunk':'hit',shooter:P,victim:1-P,ship:res.sunk?.name});if(!s.alive)return;}
    if(res.all){winner=P;break;}
    if(res.hit){note=`${res.sunk?'Ship down!':'Direct hit!'} <b>${esc(names[P])}</b>, fire again.`;continue;}
    break;

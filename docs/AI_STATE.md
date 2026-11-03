@@ -1,5 +1,21 @@
 # AI state (keep short; update after meaningful work)
 
+v0.79.0 (Nov 3 night, owner away; branch `claude/nov3-night`). Soak report fixes: netBoard enterGuest keeps the guest's run OBJECT on a
+resync (`nb.mirror`; the launcher's valid() compares it, a swapped object ended the guest's minigame with no report and the host waited for
+good; repro `DROPPLAY=1 tests/online-board.mjs`); themed trivia games have soloKind 'cpu' (selectBoardGame could re-roll into one).
+ARCADE SHELVES: `CATEGORIES` starts featured/recent/favorites; showCatalog opens the Arcade on 'featured'; ui.js catalogHTML builds shelf lists,
+a search looks through everything, `catalogFeed.pool` keeps the dice on all games; `FEATURED_GAMES` in src/data/featuredGames.js (owner's list);
+`profile.recent`/`favorites` + `noteRecent`/`toggleFavorite` in profile.js; ☆ `.arc-star` (arcadeConsole starHTML). ONE BROFORCE: pack game id
+`broforce` (`worldSelect`, randomEligible:false); the 4 world ids stay (saves, board) with `arcadeAs:'broforce'`, filtered from Arcade lists; engine
+`chooseWorld` is DOM over the canvas, phase 'world', online pick = netField event {world} (NOT net.next: netField owns the reader), 30 s auto;
+art slots keyart:broforce (backdrop) and keyart:broforce-<world> (cards). A new THEMES entry gets a card by itself. MILLIONAIRE: engine name
+`millionaire` (id trivia-hardcore, family 'trivia' via REMAKE_META, still in TRIVIA_THEME_IDS), DOM over a stage canvas, online = both ladders at once
+({p},{fin}); tests/millionaire.mjs. STICK DOT: engine `stickdot` = engines/modernStickDot.js (id office-dots-boxes, family 'dots'), rules/CPU/net moves as before
+(dotsMove, pickDots, netTurns {o,i}), CUT table = kill cams (rifle/sniper/ac130); tests/stickdot.mjs. Old `dots` in classicBoards unused. NB the engine title table in
+gameRegistry (GAMES.find by engine) throws at load if an engine name in it no longer exists: blank page. BATTLESHIP: engines/battleshipCuts.js navalCut (canvas in #game-layer, z 40:
+body-level overlays sit BEHIND the game layer); tests/battleship-cuts.mjs. POKEMON: OVERRIDES catwoman-returns, ball.tilt, B.askTeamSwap in pkmnRun battleFlow. C13: coop.sitOut seat
+pays nothing in settleGame. puGap shrinks with tier. Paper Route dog `chase`/`gone`. Asteroids U capped 5.2.
+
 v0.78.0 (Nov 3 late, owner asked to release): MENUS ROUND 2. Arcade: `CATEGORIES`/`CAT_IDS`/`categoriesOf`/`inCategory`
 (arcadeConsole.js; ui.js catalogHTML filters with inCategory; old ids arcade/strategy/skill/dice aliased), View all
 (`.arc-grid-page`, `gridHTML`, data-arc-all/pick), small-phone CSS, `quick` (console Play buttons get data-quick="1" →

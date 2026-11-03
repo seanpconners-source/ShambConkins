@@ -23,7 +23,7 @@ async function asteroids(s){
  keyboard(s,(i,name,down)=>{if(name in keys)keys[name]=down;if(name==='act')keys.f=down;if(name==='d'&&down&&cur)hyperspace(cur);});
  s.resetOnPause(()=>{stick.id=null;for(const k in keys)keys[k]=false;});
  s.hint('Hold anywhere and drag like a joystick: the ship turns toward your drag, thrusts when you drag far and fires while you hold. Tap with a second finger (or press Down) for hyperspace. Keys: ←/→ turn, ↑ thrust, Space fire.');
- const U=()=>Math.min(s.W,s.H)/100;
+ const U=()=>Math.min(Math.min(s.W,s.H)/100,5.2); // big screens (open Fold, tablets) see more space, not a bigger ship
  function rock(w,size,px,py){const r=w.rand,a=r()*TAU,v=(6+r()*9+w.wave*1.2)*(1+size*.45);return {x:px,y:py,vx:Math.cos(a)*v,vy:Math.sin(a)*v,size,rot:r()*TAU,spin:(r()-.5)*1.2,shape:rockShape(r)};}
  function wave(w){const n=Math.min(11,4+w.wave*2),ar=s.W/U(),br=s.H/U();for(let i=0;i<n;i++){const edge=w.rand()<.5;w.rocks.push(rock(w,0,edge?0:w.rand()*ar,edge?w.rand()*br:0));}w.wave++;w.beatT=0;w.beatRate=1;}
  function make(){const w={rand:seededRandom(s.seed+':asteroids'),rocks:[],shots:[],eshots:[],debris:[],dots:[],ship:{x:50,y:50,vx:0,vy:0,a:-Math.PI/2,alive:true,inv:2.5,respawn:0},lives:3,score:0,wave:0,fireT:0,saucer:null,saucerT:14,beatT:0,beat:0,beatRate:1,thrust:false,ar:100,br:100,hyper:0};return w;}

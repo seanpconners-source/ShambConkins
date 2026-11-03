@@ -23,16 +23,6 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "Pinball Tables" (Buckethead tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
-## Broforce · `broforce`
-
-**Key art** 
-
-> Key art for "Broforce", a minigame in a party video game that pays tribute to Broforce. Scene: Four missions. Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
-
-**Icon** 
-
-> Square game icon for "Broforce" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
-
 ## Super Mario Bros. · `smb`
 
 **Key art** 
@@ -273,16 +263,6 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "The Matrix" (The Matrix tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
-## The Office · `office`
-
-**Key art** 
-
-> Key art for "The Office", a minigame in a party video game that pays tribute to The Office. Scene: Dividers and Warehouse Shift. Dunder Mifflin: tap between dots to draw office dividers. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
-
-**Icon** 
-
-> Square game icon for "The Office" (The Office tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
-
 ## Terminator · `terminator`
 
 **Key art** 
@@ -342,6 +322,16 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 **Icon** 
 
 > Square game icon for "Army of Darkness · Deadite Checkers" (Army of Darkness tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Call of Duty: Modern Stick Dot · `office-dots-boxes`
+
+**Key art** 
+
+> Key art for "Call of Duty: Modern Stick Dot", a minigame in a party video game that pays tribute to Call of Duty. Scene: Dots and boxes goes to war. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Call of Duty: Modern Stick Dot" (Call of Duty tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Megatouch · Photo Hunt · `megatouch-photohunt`
 
@@ -602,6 +592,16 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 **Icon** 
 
 > Square game icon for "The Color of Money · Nine-ball" (The Color of Money tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## The Office · Warehouse Shift · `warehouse-shift`
+
+**Key art** 
+
+> Key art for "The Office · Warehouse Shift", a minigame in a party video game that pays tribute to The Office. Scene: Rush Hour in the Dunder Mifflin warehouse. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "The Office · Warehouse Shift" (The Office tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Lunar Lander · Moonraker · `moonraker-lander`
 
@@ -923,6 +923,56 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "Puzzle Bobble · Bubble Battle" (Puzzle Bobble tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
+## Broforce · `broforce`
+
+**Key art** 
+
+> Key art for "Broforce", a minigame in a party video game that pays tribute to Broforce. Scene: Choose a world: Jungle, Factory, City or Desert. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Broforce" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Broforce: Jungle · `broforce-jungle`
+
+**Key art** 
+
+> Key art for "Broforce: Jungle", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Broforce: Jungle" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Broforce: Factory · `broforce-factory`
+
+**Key art** 
+
+> Key art for "Broforce: Factory", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Broforce: Factory" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Broforce: City Siege · `broforce-city`
+
+**Key art** 
+
+> Key art for "Broforce: City Siege", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Broforce: City Siege" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Broforce: Desert Assault · `broforce-desert`
+
+**Key art** 
+
+> Key art for "Broforce: Desert Assault", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Broforce: Desert Assault" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
 ## Bricks Breaker Quest · `bricks-breaker-quest`
 
 **Key art** 
@@ -992,16 +1042,6 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 **Icon** 
 
 > Square game icon for "Star Trek · Ten Forward Chess" (Star Trek tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
-
-## Dunder Mifflin · Office Dividers · `office-dots-boxes`
-
-**Key art** 
-
-> Key art for "Dunder Mifflin · Office Dividers", a minigame in a party video game that pays tribute to The Office. Scene: Dunder Mifflin: tap between dots to draw office dividers. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
-
-**Icon** 
-
-> Square game icon for "Dunder Mifflin · Office Dividers" (The Office tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Paddy’s Pub · Beer Pong · `paddys-beer-pong`
 
@@ -1122,16 +1162,6 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 **Icon** 
 
 > Square game icon for "Skynet Identification" (Terminator tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
-
-## The Office · Warehouse Shift · `warehouse-shift`
-
-**Key art** 
-
-> Key art for "The Office · Warehouse Shift", a minigame in a party video game that pays tribute to The Office. Scene: Rush Hour in the Dunder Mifflin warehouse. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
-
-**Icon** 
-
-> Square game icon for "The Office · Warehouse Shift" (The Office tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Taskmaster · Stacker · `task-tallest-thing`
 
@@ -1303,15 +1333,15 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "Sitcom Brain Damage" (Seinfeld tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
-## Deep Cut Trivia · `trivia-hardcore`
+## Who Wants to Be a Shambillionaire? · `trivia-hardcore`
 
 **Key art** 
 
-> Key art for "Deep Cut Trivia", a minigame in a party video game that pays tribute to Who Wants to Be a Millionaire?. Scene: A mixed-world trivia quiz with a random difficulty draw. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Who Wants to Be a Shambillionaire?", a minigame in a party video game that pays tribute to Who Wants to Be a Millionaire?. Scene: Who Wants to Be a Millionaire: climb 15 questions to $1,000,000, one ladder each, highest bank wins. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
-> Square game icon for "Deep Cut Trivia" (Who Wants to Be a Millionaire? tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+> Square game icon for "Who Wants to Be a Shambillionaire?" (Who Wants to Be a Millionaire? tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Lightning Trivia · 60-Second Sprint · `trivia-lightning`
 
@@ -1742,46 +1772,6 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 **Icon** 
 
 > Square game icon for "Sonic the Hedgehog · Green Hill Goal Dash" (Sonic the Hedgehog tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
-
-## Broforce: Jungle · `broforce-jungle`
-
-**Key art** 
-
-> Key art for "Broforce: Jungle", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
-
-**Icon** 
-
-> Square game icon for "Broforce: Jungle" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
-
-## Broforce: Factory · `broforce-factory`
-
-**Key art** 
-
-> Key art for "Broforce: Factory", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
-
-**Icon** 
-
-> Square game icon for "Broforce: Factory" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
-
-## Broforce: City Siege · `broforce-city`
-
-**Key art** 
-
-> Key art for "Broforce: City Siege", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
-
-**Icon** 
-
-> Square game icon for "Broforce: City Siege" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
-
-## Broforce: Desert Assault · `broforce-desert`
-
-**Key art** 
-
-> Key art for "Broforce: Desert Assault", a minigame in a party video game that pays tribute to Broforce. Scene: Blast through destructible terrain, tunnels and bunkers, climb any wall by pushing into it, and kill the enemy for points. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
-
-**Icon** 
-
-> Square game icon for "Broforce: Desert Assault" (Broforce tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Space Invaders · Mars Attacks! Versus · `space-swarm-versus`
 

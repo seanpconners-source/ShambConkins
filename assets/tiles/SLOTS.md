@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 186 slots: 4 have key art, 0 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 185 slots: 4 have key art, 0 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -9,7 +9,6 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 |---|---|---|---|
 | `bosses` | Boss Select (every boss) | family | · / · |
 | `pinball` | Pinball Tables (bucketheadland-pinball, black-sabbath-pinball, king-gizzard-pinball) | family | ✅ / · |
-| `broforce` | Broforce (broforce-jungle, broforce-desert, broforce-city, broforce-factory) | family | · / · |
 | `smb` | Super Mario Bros. (smb-world-1, smb-coin-rush, smb-castle-dash, smb3-nspade, smb3-spade-slots) | family | · / · |
 | `kart` | Mario Kart (rainbow-road-kart, kart-grand-prix-pass, kart-time-trial, rainbow-balloon-battle) | family | · / · |
 | `castlevania` | Castlevania (cv-symphony, cv-vampire-killer, cv-candle-hunt) | family | · / · |
@@ -34,13 +33,13 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `baseball` | Major League (major-league-bats, major-league-fielding) | family | · / · |
 | `ducks` | The Mighty Ducks (rink-rivals, office-hockey-shootout) | family | · / · |
 | `matrix` | The Matrix (matrix-ultimate, matrix-hardline-hack) | family | · / · |
-| `office` | The Office (office-dots-boxes, warehouse-shift) | family | · / · |
 | `terminator` | Terminator (terminator-scan, t800-scan-long) | family | · / · |
 | `pokemon` | Pokémon Battles (pkmn-wild, pkmn-trainer) | family | · / · |
 | `shamb-uno` | ShambUNO · Private Card Duel | game | · / · |
 | `traitors-guess-who` | The Traitors · Find the Traitor | game | · / · |
 | `greed-island-mancala` | Tony Hawk’s Pro Mancala | game | · / · |
 | `deadite-checkers` | Army of Darkness · Deadite Checkers | game | · / · |
+| `office-dots-boxes` | Call of Duty: Modern Stick Dot | game | · / · |
 | `megatouch-photohunt` | Megatouch · Photo Hunt | game | · / · |
 | `angry-heads` | Angry Heads | game | · / · |
 | `neon-ball-storm` | Daft Punk · Neon Ball Storm | game | · / · |
@@ -67,6 +66,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `crossy-chaos` | Crossy Road Chaos | game | · / · |
 | `pong-duel` | Pong · Arcade 1972 | game | · / · |
 | `color-of-money` | The Color of Money · Nine-ball | game | · / · |
+| `warehouse-shift` | The Office · Warehouse Shift | game | · / · |
 | `moonraker-lander` | Lunar Lander · Moonraker | game | · / · |
 | `mars-missile-defense` | Missile Command · Mars Attacks! | game | · / · |
 | `bug-artillery` | Starship Troopers · Klendathu Scorched Earth | game | · / · |
@@ -99,6 +99,11 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `arrow-arena` | TowerFall · Arrow Arena | game | · / · |
 | `driller-duel` | Mr. Driller · Driller Duel | game | · / · |
 | `bubble-battle` | Puzzle Bobble · Bubble Battle | game | · / · |
+| `broforce` | Broforce | game | · / · |
+| `broforce-jungle` | Broforce: Jungle | game | · / · |
+| `broforce-factory` | Broforce: Factory | game | · / · |
+| `broforce-city` | Broforce: City Siege | game | · / · |
+| `broforce-desert` | Broforce: Desert Assault | game | · / · |
 | `bricks-breaker-quest` | Bricks Breaker Quest | game | · / · |
 | `bucketheadland-pinball` | Bucketheadland · Buckethead Pinball | version of pinball | ✅ / · |
 | `major-league-fielding` | Major League · Bat & Field | version of baseball | · / · |
@@ -106,7 +111,6 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `django-hangman` | Hangman Unchained · Quick Draw | version of hangman | · / · |
 | `matrix-ultimate` | The Matrix · Nine Realities | version of matrix | · / · |
 | `ten-forward-chess` | Star Trek · Ten Forward Chess | version of trek | · / · |
-| `office-dots-boxes` | Dunder Mifflin · Office Dividers | version of office | · / · |
 | `paddys-beer-pong` | Paddy’s Pub · Beer Pong | version of paddys | · / · |
 | `flipadelphia-cup` | Flipadelphia · Flip Cup | version of paddys | · / · |
 | `taskmaster-fruit-ninja` | Taskmaster · Fruit Ninja Buffet | version of taskmaster | · / · |
@@ -119,7 +123,6 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `kill-bill-duel` | Kill Bill · House of Blue Leaves Duel | version of tarantino | · / · |
 | `tm-cones` | Cone Chaos | version of taskmaster | · / · |
 | `terminator-scan` | Skynet Identification | version of terminator | · / · |
-| `warehouse-shift` | The Office · Warehouse Shift | version of office | · / · |
 | `task-tallest-thing` | Taskmaster · Stacker | version of taskmaster | · / · |
 | `matrix-hardline-hack` | Hardline Hack | version of matrix | · / · |
 | `strategema-grid` | Strategema Grid | version of trek | · / · |
@@ -137,7 +140,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `trivia-dbz` | World Trivia Tournament | version of trivia | · / · |
 | `trivia-hxh` | Written Exam | version of trivia | · / · |
 | `trivia-sitcom` | Sitcom Brain Damage | version of trivia | · / · |
-| `trivia-hardcore` | Deep Cut Trivia | version of trivia | · / · |
+| `trivia-hardcore` | Who Wants to Be a Shambillionaire? | version of trivia | · / · |
 | `trivia-lightning` | Lightning Trivia · 60-Second Sprint | version of trivia | · / · |
 | `trivia-wager` | Trivia Casino · Risk & Reward | version of trivia | · / · |
 | `trivia-survival` | Three-Strikes Trivia · Last Brain Standing | version of trivia | · / · |
@@ -181,10 +184,6 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `rainbow-balloon-battle` | Mario Kart · Balloon Battle (VS) | version of kart | · / · |
 | `sonic-ring-rush` | Sonic the Hedgehog · Green Hill Boss Act | version of sonic | · / · |
 | `sonic-goal-dash` | Sonic the Hedgehog · Green Hill Goal Dash | version of sonic | · / · |
-| `broforce-jungle` | Broforce: Jungle | version of broforce | · / · |
-| `broforce-factory` | Broforce: Factory | version of broforce | · / · |
-| `broforce-city` | Broforce: City Siege | version of broforce | · / · |
-| `broforce-desert` | Broforce: Desert Assault | version of broforce | · / · |
 | `space-swarm-versus` | Space Invaders · Mars Attacks! Versus | version of invaders | · / · |
 | `space-swarm-coop` | Space Invaders · Mars Attacks! Co-op | version of invaders | · / · |
 | `django-hangman-showdown` | Hangman Unchained · Showdown | version of hangman | · / · |
