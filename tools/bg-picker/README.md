@@ -14,6 +14,10 @@ pinch/scroll to zoom, **Lock in**, plus a verdict (perfect / small tweak / needs
 - The game reads `src/data/keyPlacements.js` (`KEY_PLACE`, written by `apply.py`): `lockedPlace()` in `src/arcadeConsole.js`
   uses the locked setting of the nearest of the 8 screens (shape first, then size), else its automatic placement.
   A locked picture also gets the picker's shade (clear from the controls down to the tiles / text).
+- Previews are exact (Nov 4 fix): `measure.mjs` captures the game's REAL hero text block (logo, chips, rules, buttons) for
+  every picture on every screen, from the Featured shelf the Arcade opens on and from the All list, as see-through PNGs;
+  the picker draws those instead of a stand-in, and tags a screen "Text on faces N%" when that text covers the faces box.
+  (The first picker drew a small fake logo, so the real logo covered Amber on Hangman.) Never go back to a mock text block.
 - Screens are listed once in `screens.json` (picker, measuring and the game's `KEY_SCREENS` all come from it).
 
 ## When the owner adds new backgrounds (or says "picker")
@@ -28,7 +32,8 @@ pinch/scroll to zoom, **Lock in**, plus a verdict (perfect / small tweak / needs
    ```
    (`measure.mjs phone fold-open` re-measures only those screens.) It writes `measure.json` + `overlay-<screen>.png`.
 3. Build the page: `python3 -I tools/bg-picker/assemble.py <scratch>/bgp <scratch>/bgp/pub`
-   (leaves out pictures already locked on all 8 screens; `--all` keeps them). It writes `<scratch>/bgp/picker-files.json`.
+   (leaves out pictures already locked on all 8 screens; `--all` keeps them, `--check` adds locked ones whose text covers
+   the faces, `--only a,b` picks slots). It also prints which locked pictures have text on the faces. It writes `<scratch>/bgp/picker-files.json`.
 4. Read the live picker first (`Artifact` action `read`, url above), then publish `<scratch>/bgp/pub/index.html` with
    `url` = the picker URL, `root` = `<scratch>/bgp/pub` and `files` = the list in `picker-files.json`. It keeps its
    `db` capability (don't pass `capabilities`), so the owner's saved choices stay.

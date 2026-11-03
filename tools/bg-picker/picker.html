@@ -50,6 +50,8 @@ h1{font-family:var(--f-disp);font-weight:400;letter-spacing:.04em;font-size:clam
 .screen .pic{position:absolute;max-width:none}
 .screen .shade,.screen .ov,.screen .face{position:absolute;inset:0;pointer-events:none}
 .screen .ov{width:100%;height:100%}
+.screen .infoimg{position:absolute;pointer-events:none;max-width:none}
+.tag.warn{background:var(--warn);color:var(--ink)}
 .screen .face{border:3px dashed #ffe14d;inset:auto;border-radius:6px;box-shadow:0 0 0 2px #0008}
 .screen .info{position:absolute;display:grid;align-content:end;gap:6px;pointer-events:none;color:#fff;font-family:var(--f-body)}
 .screen .info .eyebrow{font-size:12px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#c9d3f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -95,7 +97,7 @@ h1{font-family:var(--f-disp);font-weight:400;letter-spacing:.04em;font-size:clam
   <div><b id="ed-name"></b> <span class="muted" id="ed-size"></span></div>
   <button class="btn" id="ed-next" aria-label="Next screen">▶</button>
   <span class="sp"></span>
-  <span class="tag" id="ed-tag">Auto</span>
+  <span id="ed-cover"></span><span class="tag" id="ed-tag">Auto</span>
   <button class="btn" id="ed-close">Done</button>
  </div>
  <div class="stage" id="stage"></div>
@@ -133,9 +135,16 @@ function screenHTML(slot,sc,p,{face=false,ov=true}={}){const s=DATA.slots.find(x
  const shade=side?`linear-gradient(90deg,#060a17 4%,#060a17b3 30%,#0000 50%),linear-gradient(180deg,#060a17cc 0%,#0000 ${y0}%,#0000 ${y1}%,#060a17 ${y1+18}%)`
   :`linear-gradient(180deg,#060a17d9 0%,#060a1766 ${y0-4}%,#0000 ${y0}%,#0000 ${y1}%,#060a17cc ${y1+12}%,#060a17 ${y1+30}%)`;
  const I=R.info||[14,sc.h*.45,sc.w-14,sc.h*.75],ih=I[3]-I[1];
- const info=`<div class="info" style="left:${I[0]}px;top:${I[1]}px;width:${I[2]-I[0]}px;height:${ih}px"><div class="eyebrow">${esc(s.title)}</div>${s.logo?`<img class="logo" src="${s.logo}" alt="" style="max-height:${Math.round(ih*.42)}px">`:`<div class="ttl">${esc(s.title)}</div>`}<div class="rules">${esc(s.title)} · pick a version</div><div class="cta">CHOOSE A VERSION ▸</div></div>`;
+ const real=s.info?.[sc.id];
+ const info=real?`<img class="infoimg" src="${real.file}" alt="" style="left:${real.rect[0]}px;top:${real.rect[1]}px;width:${real.rect[2]-real.rect[0]}px;height:${real.rect[3]-real.rect[1]}px">`:`<div class="info" style="left:${I[0]}px;top:${I[1]}px;width:${I[2]-I[0]}px;height:${ih}px"><div class="eyebrow">${esc(s.title)}</div>${s.logo?`<img class="logo" src="${s.logo}" alt="" style="max-height:${Math.round(ih*.42)}px">`:`<div class="ttl">${esc(s.title)}</div>`}<div class="rules">${esc(s.title)} · pick a version</div><div class="cta">CHOOSE A VERSION ▸</div></div>`;
  const B=s.box,fb2=face?`<div class="face" style="left:${l+B[0]*dw}px;top:${t+B[1]*dh}px;width:${(B[2]-B[0])*dw}px;height:${(B[3]-B[1])*dh}px"></div>`:'';
  return `${fl||fr||ft||fb?`<img class="fill" src="${s.img}" alt="">`:''}<img class="pic" src="${s.img}" alt="" draggable="false" style="left:${l}px;top:${t}px;width:${dw}px;height:${dh}px;-webkit-mask-image:${mask};mask-image:${mask};-webkit-mask-composite:source-in;mask-composite:intersect"><div class="shade" style="background:${shade}"></div>${info}${fb2}${ov?`<img class="ov" src="${sc.overlay}" alt="">`:''}`;}
+// share of the faces box hidden under the game's text (any version of the hero text), for this placement
+function covered(slot,sc,p){const s=DATA.slots.find(x=>x.id===slot),rs=(s.infoAll?.[sc.id]||[]);if(!rs.length)return 0;
+ const cover=Math.max(sc.w/s.nw,sc.h/s.nh),dw=s.nw*cover*p.z,dh=s.nh*cover*p.z,l=sc.w/2-p.fx*dw,t=sc.h/2-p.fy*dh,B=s.box;
+ const b=[l+B[0]*dw,t+B[1]*dh,l+B[2]*dw,t+B[3]*dh],A=(b[2]-b[0])*(b[3]-b[1]);if(A<=0)return 0;
+ return Math.max(...rs.map(r=>Math.max(0,Math.min(b[2],r[2])-Math.max(b[0],r[0]))*Math.max(0,Math.min(b[3],r[3])-Math.max(b[1],r[1]))/A));}
+const coverTag=(slot,sc,p)=>{const c=covered(slot,sc,p);return c>.12?`<span class="tag warn" title="The game's text covers this much of the faces">Text on faces ${Math.round(c*100)}%</span>`:'';};
 function boxHTML(slot,sc,p,maxW,maxH,opt){const k=Math.min(maxW/sc.w,maxH/sc.h);
  return `<div class="screenbox" style="width:${sc.w*k}px;height:${sc.h*k}px"><div class="screen" style="width:${sc.w}px;height:${sc.h}px;transform:scale(${k})">${screenHTML(slot,sc,p,opt)}</div></div>`;}
 
@@ -148,7 +157,7 @@ function renderHead(){const s=DATA.slots.find(x=>x.id===state.sel),r=rec(s.id);$
  if(document.activeElement!==$('note'))$('note').value=r.note||'';}
 function renderWall(){const w=$('wall').clientWidth||900,cols=Math.max(2,Math.floor((w+14)/244)),cw=Math.min(300,(w-14*(cols-1))/cols-22);
  $('wall').innerHTML=DATA.screens.map((sc,i)=>{const locked=!!rec(state.sel).screens?.[sc.id];
-  return `<button class="frame" data-i="${i}"><div class="cap">${esc(sc.label)} <small>${sc.w}×${sc.h}</small><span class="tag${locked?' locked':''}">${locked?'Locked':'Auto'}</span></div>${boxHTML(state.sel,sc,current(state.sel,sc),cw,cw*1.5)}</button>`;}).join('');}
+  return `<button class="frame" data-i="${i}"><div class="cap">${esc(sc.label)} <small>${sc.w}×${sc.h}</small>${coverTag(state.sel,sc,current(state.sel,sc))}<span class="tag${locked?' locked':''}">${locked?'Locked':'Auto'}</span></div>${boxHTML(state.sel,sc,current(state.sel,sc),cw,cw*1.5)}</button>`;}).join('');}
 function renderAll(){renderRail();renderHead();renderWall();}
 
 // saving: one doc per picture, written only on change
@@ -168,7 +177,7 @@ function openEditor(i){const sc=DATA.screens[i];state.edit={i,p:current(state.se
 function drawEditor(){const E=state.edit,sc=DATA.screens[E.i],st=$('stage'),locked=rec(state.sel).screens?.[sc.id];
  $('ed-name').textContent=DATA.slots.find(x=>x.id===state.sel).title+' · '+sc.label;$('ed-size').textContent=sc.w+'×'+sc.h;
  $('ed-tag').textContent=E.dirty?'Not locked yet':locked?'Locked':'Auto (game’s current)';$('ed-tag').className='tag'+(locked&&!E.dirty?' locked':'');
- $('ed-zoom').value=E.p.z;$('ed-zv').value=Math.round(E.p.z*100)+'%';
+ $('ed-cover').innerHTML=coverTag(state.sel,sc,E.p);$('ed-zoom').value=E.p.z;$('ed-zv').value=Math.round(E.p.z*100)+'%';
  const maxW=st.clientWidth-8,maxH=st.clientHeight-8;st.innerHTML=boxHTML(state.sel,sc,E.p,maxW,maxH,{face:$('ed-face').checked,ov:$('ed-ov').checked});
  E.k=Math.min(maxW/sc.w,maxH/sc.h);}
 function closeEditor(){state.edit=null;$('ed').hidden=true;renderWall();}
