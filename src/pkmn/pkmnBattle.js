@@ -234,6 +234,12 @@ async function partyScreen(team,{prompt='Choose a POKéMON.',cancel=true,onPick,
   return -1;
  }finally{S.mode=prev.mode;S.text=prev.text;S.party=null;}
 }
+// Team full after a catch: put the new one on the team now? Returns the team slot it replaces, or -1 (it goes to the PC).
+async function askTeamSwap(team,name){
+ if(!live())return -1;await say(`Your team is full! Put ${name} on the team?`,{wait:false});
+ if(await choose(yesNo())!==0)return -1;
+ return partyScreen(team,{prompt:`Who goes to BILL’s PC?`});
+}
 function subMenu(labels,x=88){const h=8+labels.length*16;const items=labels.map(l=>({label:l}));return {kind:'sub',items,cursor:0,draw(c,hits){box(c,x,144-h-8,160-x,h+8);items.forEach((it,i)=>txt(c,it.label,x+16,144-h+i*16));cursorAt(c,x+8,144-h+this.cursor*16);hitList(hits,this,items.map((_,i)=>({x:x+4,y:144-h-4+i*16,w:160-x-6,h:16})));}};}
 // Bag list (Gen 1 style: names with ×quantities, CANCEL at the end). Returns item id or null.
 async function bagScreen(bag,{filter=null}={}){
@@ -405,15 +411,15 @@ async function battle(opts){
   return r;
  }
  async function throwBall(rate){
-  AU.sfx('throw');const ball={x:24,y:72,show:true,open:false};const fx={draw(c){if(ball.show)SP.drawSprite(c,ball.open?SP.ART.ballOpen:SP.ART.ball,'ball',Math.round(ball.x),Math.round(ball.y));}};S.fx.push(fx);
+  AU.sfx('throw');const ball={x:24,y:72,show:true,open:false};const fx={draw(c){if(!ball.show)return;const art=ball.open?SP.ART.ballOpen:SP.ART.ball,x=Math.round(ball.x),y=Math.round(ball.y);if(!ball.tilt){SP.drawSprite(c,art,'ball',x,y);return;}c.save();c.translate(x+art.w/2,y+art.h);c.rotate(ball.tilt);SP.drawSprite(c,art,'ball',-art.w/2,-art.h);c.restore();}};S.fx.push(fx);
   for(let f=0;f<=24;f++){const t=f/24;ball.x=24+(120-24)*t;ball.y=72-Math.sin(t*Math.PI)*56-(48*t);await frames(1);}
   ball.open=true;AU.sfx('poof');await poof(S.enemy,true);S.enemy.show=false;ball.open=false;
   for(let f=0;f<10;f++){ball.y+=2;await frames(1);}
   const {caught:got,shakes:rocks}=gen1Catch(R,{rate,catchRate:E.sp.catchRate,hp:E.mon.hp,max:E.stats.hp,status:E.mon.status});
   const shakes=got?4:rocks;
   const wob=Math.min(3,shakes);
-  // each shake rocks the ball left, right and back to rest
-  for(let i=0;i<wob;i++){await frames(20);AU.sfx('wobble');for(let f=0;f<16;f++){ball.x=120+Math.round(Math.sin(f/16*Math.PI*2)*3);await frames(1);}ball.x=120;}
+  // each shake tips the ball over to one side, then the other, on its base, and back to rest (like Gen 1)
+  for(let i=0;i<wob;i++){await frames(24);AU.sfx('wobble');for(let f=0;f<24;f++){const k=Math.sin(f/24*Math.PI*2);ball.tilt=k*.6;ball.x=120+Math.round(k*3);await frames(1);}ball.tilt=0;ball.x=120;}
   await frames(16);
   if(shakes>=4){AU.sfx('click');AU.stopSong();await frames(10);AU.playJingle('caught');await say(`All right! ${E.name} was caught!`);S.fx.splice(S.fx.indexOf(fx),1);result.caught={...E.mon,hp:E.mon.hp,status:E.mon.status};E.mon.caught=true;return true;}
   ball.open=true;AU.sfx('poof');await poof(S.enemy,false);ball.show=false;S.enemy.show=true;S.fx.splice(S.fx.indexOf(fx),1);
@@ -726,4 +732,4 @@ async function gbMessages(lines,{song=null,jingle=null,keepOpen=false}={}){
  if(!keepOpen)closeGB();
 }
 
-Object.assign(exports,{gen1Catch,wipeKind,drawWipe,battle,openGB,closeGB,say,gbMessages,fieldMenu,useBagItem,setTestSpeed,setAutoPilot,transition,isOpen:()=>!!G});
+Object.assign(exports,{askTeamSwap,gen1Catch,wipeKind,drawWipe,battle,openGB,closeGB,say,gbMessages,fieldMenu,useBagItem,setTestSpeed,setAutoPilot,transition,isOpen:()=>!!G});

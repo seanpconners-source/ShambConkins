@@ -15,13 +15,13 @@ await page.evaluate(()=>{
   if(menu.kind==='main')return st.plan==='ball'?2:0;
   if(menu.kind==='fight'){const ok=menu.moves.map((m,i)=>i).filter(i=>{const b=menu.battler;return true;});return ok[Math.floor(Math.random()*ok.length)];}
   if(menu.kind==='bag'){const i=menu.items.findIndex(it=>/BALL/.test(it.label));return i>=0?i:menu.items.length-1;}
-  if(menu.kind==='party'){st.party=(st.party||0)+1;if(st.party>30)return -1;const i=menu.list.findIndex(m=>m.hp>0);return i;}
-  if(menu.kind==='yesno')return 1;
+  if(menu.kind==='party'){if(st.swap)return 2;st.party=(st.party||0)+1;if(st.party>30)return -1;const i=menu.list.findIndex(m=>m.hp>0);return i;}
+  if(menu.kind==='yesno')return st.swap?0:1;
   if(menu.kind==='sub')return 0;
   return 0;});
 });
-const runOne=async(js,label,timeout=90000)=>{
- await page.evaluate(js);const t0=Date.now();
+const runOne=async(js,label,timeout=90000,arg)=>{
+ await page.evaluate(js,arg);const t0=Date.now();
  while(Date.now()-t0<timeout){await page.waitForTimeout(300);if(!(await page.evaluate(()=>window.ShambConkins.pkmn.isOpen())))await click();const r=await page.evaluate(()=>window.__res);if(r)return r;}
  return {outcome:'TIMEOUT',label};
 };
@@ -35,6 +35,14 @@ console.log('wild outcomes',outcomes.join(' '));
 const caught=await runOne(()=>{const S=window.ShambConkins,run=S.store.run,p=run.players[run.current];window.__res=null;window.__pk.plan='ball';p.pkbag={'master-ball':1};const before=JSON.stringify(S.store.profile.rosters);S.pkmn.run.wildEncounter(run,p,{id:'ash-ketchum',level:5}).then(r=>window.__res={outcome:r.outcome,unlocked:r.unlocked,team:p.pkmn.team.map(m=>m.id),box:p.pkmn.box.length}).catch(e=>window.__res={outcome:'ERROR '+e.message});},'catch');
 console.log('catch',JSON.stringify(caught));check(caught.outcome==='caught','master ball did not catch');check((caught.unlocked||[]).includes('ash-ketchum'),'caught character was not unlocked');
 // unlock dialog may be open now
+for(let i=0;i<6;i++){await page.waitForTimeout(300);await click();}
+// team full (ROADMAP PK5): a catch can replace a member, who goes to the PC; saying no sends the catch to the PC. Slow first, for a picture of the ball rocking.
+const fullTeam=(id,swap)=>runOne(([id,swap])=>{const S=window.ShambConkins,run=S.store.run,p=run.players[run.current],D=S.pkmn.run;window.__res=null;window.__pk.plan='ball';window.__pk.swap=swap;p.pkbag={'master-ball':1};const seed=p.pkmn.team[0];while(p.pkmn.team.length<6)p.pkmn.team.push({...seed});const third=p.pkmn.team[2],boxBefore=p.pkmn.box.length;D.wildEncounter(run,p,{id,level:5}).then(r=>{window.__pk.swap=false;window.__res={outcome:r.outcome,team:p.pkmn.team.map(m=>m.id),size:p.pkmn.team.length,inSlot:p.pkmn.team[2]?.id,boxed:p.pkmn.box.length-boxBefore,boxTail:p.pkmn.box.at(-1)?.id,was:third.id};}).catch(e=>window.__res={outcome:'ERROR '+e.message});},'team swap',90000,[id,swap]);
+const sw=await fullTeam('misty',true);console.log('swap',JSON.stringify(sw));
+check(sw.outcome==='caught'&&sw.size===6&&sw.inSlot==='misty'&&sw.boxTail===sw.was&&sw.boxed===1,'a catch on a full team replaces the chosen member');
+for(let i=0;i<6;i++){await page.waitForTimeout(300);await click();}
+const ns=await fullTeam('brock',false);console.log('no swap',JSON.stringify(ns));
+check(ns.outcome==='caught'&&ns.size===6&&!ns.team.includes('brock')&&ns.boxTail==='brock','saying no sends the catch to the PC');
 for(let i=0;i<6;i++){await page.waitForTimeout(300);await click();}
 // trainer battle
 const tr=await runOne(()=>{const S=window.ShambConkins,run=S.store.run,p=run.players[run.current];window.__res=null;window.__pk.plan='fight';window.__pk.party=0;S.pkmn.run.trainerSpace(run,p).then(r=>window.__res={outcome:r.outcome,defeated:r.defeated.length,unlocked:r.unlocked}).catch(e=>window.__res={outcome:'ERROR '+e.message});},'trainer',180000);

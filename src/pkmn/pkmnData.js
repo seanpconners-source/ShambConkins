@@ -107,7 +107,7 @@ const MOVE_ROWS=[
  ['BT SLAM','NORMAL',70,100,15,'','tackle'],['TIMEFALL','WATER',75,100,15,'foe.spd-1:30','water'],['DELIVERY','NORMAL',80,90,15,'','tackle'],['STRAND','NORMAL',50,100,20,'foe.spd-1','whip'],
  ['EZEKIEL 2517','PSYCHIC',100,90,10,'flinch:20','psywave'],['ADRENALINE','NORMAL',0,0,10,'heal,self.spd+1','heal'],['ROYALE CHEESE','NORMAL',0,0,10,'heal','heal'],
  ['5 POINT PALM','FIGHTING',110,75,5,'','explode'],['HANZO SWORD','NORMAL',90,100,10,'crit','scratch'],['CRAZY 88','FIGHTING',15,90,20,'multi','punch'],
- ['BATARANG','FLYING',60,0,20,'','stars'],["I'M BATMAN",'NORMAL',0,0,15,'self.atk+1,self.def+1','up'],['BAM POW','FIGHTING',70,100,15,'flinch:20','punch'],
+ ['WHIP CRACK','NORMAL',65,100,15,'flinch:10','whip'],['BATARANG','FLYING',60,0,20,'','stars'],["I'M BATMAN",'NORMAL',0,0,15,'self.atk+1,self.def+1','up'],['BAM POW','FIGHTING',70,100,15,'flinch:20','punch'],
  ['HEAT VISION','FIRE',95,100,15,'brn:10','beam'],['SUPER BREATH','ICE',90,100,10,'frz:10','wind'],['FLY BY','FLYING',80,100,15,'','dash'],
  ['MORPH','NORMAL',0,0,10,'self.atk+1,self.def+1,self.spd+1','up'],['MEGAZORD','ROCK',100,90,5,'','rock'],
  ['COME OUT 2 PLAY','GHOST',0,100,15,'conf','sound'],['BASEBALL BAT','NORMAL',80,100,15,'flinch:20','punch'],
@@ -227,6 +227,8 @@ const SOURCE_TYPES={
 };
 // Hand-picked for the household and a few favourites: [types, signature, ability].
 const OVERRIDES={
+ // Catwoman: her random roll was GHOST/ICE (NORMAL and FIGHTING moves do nothing) with HUGE POWER and a never-miss BATARANG (ROADMAP PK3).
+ 'catwoman-returns':[['NORMAL','FIGHTING'],'WHIP CRACK','SHED SKIN'],
  sean:[['POISON','PSYCHIC'],'MAD SCIENCE','PLOT ARMOR'],amber:[['PSYCHIC','ELECTRIC'],'SPARKLE','SERENE GRACE'],
  kc:[['NORMAL','FIGHTING'],'HERDING','INTIMIDATE'],mylo:[['NORMAL'],'ZOOMIES','SPEED BOOST'],loki:[['NORMAL','GHOST'],'GUARD DOG','STURDY'],
  charlie:[['POISON','GROUND'],'KITTEN MITTEN','GUTS'],mac:[['FIGHTING'],'DAYMAN','INTIMIDATE'],dee:[['NORMAL','FLYING'],'RUM HAM','KEEN EYE'],

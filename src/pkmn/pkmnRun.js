@@ -105,7 +105,11 @@ async function battleFlow(run,p,{mode,foe,random,prize=0,pre=[],intro=null,unloc
   // A caught wild character must grant the exact ID seen in battle, not a random unowned Bond.
   const actual=canRecruit(profile,mon.id,p.owner,'encounter')&&recruit(profile,mon.id,p.owner,'encounter')?mon.id:null;
   if(actual)unlocked.push(actual);
-  const where=addCaught(p,mon);
+  // Team full: it can go straight on the team, the one it replaces goes to the PC (ROADMAP PK5).
+  const slot=p.pkmn.team.length>=6&&B.isOpen()?await B.askTeamSwap(p.pkmn.team,name):-1,gone=slot>=0?p.pkmn.team[slot]:null;
+  if(gone){p.pkmn.team[slot]=mon;p.pkmn.box=[...p.pkmn.box,gone].slice(-60);}
+  const where=gone?'team':addCaught(p,mon);
+  if(gone)lines.push(`${D.speciesFor(gone.id).name} went to BILL’s PC.`);
   lines.push(where==='team'?`${name} joined ${p.name.toUpperCase()}’s team!`:`${name} was transferred to BILL’s PC!`);
   if(actual)lines.push(`${character(actual).name} is now on ${p.name}’s roster! Pick them on any expedition.`);
   else{p.points+=2;lines.push(`${name} was already on your roster. +2 points.`);}
