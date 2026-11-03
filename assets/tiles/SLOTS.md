@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 186 slots: 34 have key art, 32 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 186 slots: 34 have key art, 33 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -99,7 +99,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `arrow-arena` | TowerFall · Arrow Arena | game | · / · |
 | `driller-duel` | Mr. Driller · Driller Duel | game | · / · |
 | `bubble-battle` | Puzzle Bobble · Bubble Battle | game | · / · |
-| `broforce` | Sean of a Gun | game | ✅ / · |
+| `broforce` | Sean of a Gun | game | ✅ / ✅ |
 | `broforce-jungle` | Sean of a Gun: Jungle | game | · / · |
 | `broforce-factory` | Sean of a Gun: Factory | game | · / · |
 | `broforce-city` | Sean of a Gun: City Siege | game | · / · |
