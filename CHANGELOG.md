@@ -2,12 +2,16 @@
 
 ## v0.79.0
 
-**Arcade Featured, one Broforce, Who Wants to Be a Shambillionaire, Call of Duty: Modern Stick Dot.**
+**Arcade Featured, Sean of a Gun, Who Wants to Be a Shambillionaire, Call of Duty: Modern Stick Dot, The Price Is Right, Frogger, Crossy Road, Paddy's Darts.**
 
 - **Arcade**: opens on a new **Featured** shelf (the list is `src/data/featuredGames.js`). New **Recent** and **Favorites** shelves; tap the star next to Play to keep a game.
-- **Broforce is one game**: pick Jungle, Factory, City or Desert on its own title screen. Ready for new pictures (`assets/keyart/broforce*`).
+- **Tiles show game names**, and games with their own logo show it on the tile and in place of the title (Sean of a Gun, Hangman Unchained, Tony Hawk's Pro Mancala). New big pictures for those three and Brick Breaker Quest.
+- **Broforce is now Sean of a Gun, one game**: pick Jungle, Factory, City or Desert on its own title screen, with the new logo and background.
 - **Who Wants to Be a Shambillionaire?** replaces Trivia Hardcore: 15 questions to $1,000,000, safe havens, 50:50, Ask the Audience, Phone a Friend, final answer, walk away.
 - **Call of Duty: Modern Stick Dot** replaces Office Dividers: dots and boxes with a title sequence, mission card, tactical map, kill cams, sniper shots and an AC-130 on a streak.
+- **The Price Is Right**: a whole episode. Bid on Contestants' Row, then Plinko, Cliff Hangers with a yodeling climber, and the Big Wheel.
+- **Frogger**: new, the arcade cabinet's layout with your head on the frog. **Crossy Road** replaces Crossy Chaos: a chunky voxel world, one life, and an eagle for dawdlers.
+- **Paddy's Darts**: rebuilt on a proper board with 301, Rickety Cricket's Cricket and High Score.
 - **Battleship**: cut scenes. A deck gun fires on a hit; on a sunk ship the crew, wearing the loser's head, abandons ship.
 - **Pokémon**: Catwoman is no longer unstoppable; the ball rocks side to side while it decides; a catch can replace someone on a full team.
 - **Boss fights**: harder tiers now drop power-ups more often (they used to drop fewer).

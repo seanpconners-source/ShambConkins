@@ -9,9 +9,9 @@ state, newest at the top).
 
 Owner asked (asleep): fix the soak report, add an Arcade Featured section, make Broforce one game with a world select, work the roadmap and game notes, then release.
 - **Soak report**: 4 failures of 86. Real bugs: online board froze when the guest reconnected during a minigame (fixed, repro test added); themed trivia came up as pass and play in a 1P board game (fixed). Broforce online failures were only the test's time limit (a mission takes longer; limit raised, passes).
-- **Built, please play**: Featured / Recent / Favorites, one Broforce, Who Wants to Be a Shambillionaire, Call of Duty: Modern Stick Dot, Battleship cut scenes, Pokémon PK3/4/5, CPU boss points C13, boss tier pickups K25, Paper Route dogs, Asteroids zoom.
-- **Questions for the owner**: (1) Broforce pictures: backdrop + one per world, `assets/keyart/broforce*` (BF2), then new levels together (BF3). (2) Real sounds/music for Millionaire and Modern Stick Dot? Both use original synth for now. (3) Is the Featured list right (`src/data/featuredGames.js`)? Should the Arcade keep opening on it? (4) Supers don't scale with boss tier yet: want them to?
-- **Next from the owner's triage notes**, biggest first: casino overhaul, Price Is Right suite, Frogger + Crossy Road split, darts (Paddy's series), Matrix hacking cut scenes, Adrenaline narrative game, Daft Punk tracks.
+- **Built, please play**: Featured / Recent / Favorites, tile names and logos, Sean of a Gun (was Broforce), Who Wants to Be a Shambillionaire, Call of Duty: Modern Stick Dot, The Price Is Right, Frogger, Crossy Road, Paddy's Darts, Battleship cut scenes, Pokémon PK3/4/5, CPU boss points C13, boss tier pickups K25, Paper Route dogs, Asteroids zoom.
+- **Questions for the owner**: (1) Sean of a Gun: tile icon and optional per-world pictures (BF2), then new levels together (BF3). (2) Real sounds/music for Millionaire and Modern Stick Dot? Both use original synth for now. (3) Is the Featured list right (`src/data/featuredGames.js`)? Should the Arcade keep opening on it? (4) Supers don't scale with boss tier yet: want them to?
+- **Next from the owner's triage notes**, biggest first: casino overhaul, Matrix hacking cut scenes, more Paddy's bar games, Adrenaline narrative game, Daft Punk tracks.
 
 ## Earlier (Nov 3, late): v0.78.0 released (all menus in the console look); next = the roadmap
 
