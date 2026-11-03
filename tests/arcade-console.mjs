@@ -48,7 +48,7 @@ for(const vp of sizes){
   await page.click('.arc-block >> nth=7');await page.waitForTimeout(500);
   if(await page.locator('.arc-grid-page:not([hidden])').count())fail('view all did not close after a pick');
   // categories that make sense: Action has Broforce, Pinball has the 3 tables, Board & cards has chess
-  for(const [cat,re,min] of [['action',/Broforce/,4],['pinball',/Pinball/,3],['board',/Chess/,4]]){await page.click(`.arc-pill[data-id="${cat}"]`);await page.waitForTimeout(300);
+  for(const [cat,re,min] of [['action',/Broforce/,1],['pinball',/Pinball/,3],['board',/Chess/,4]]){await page.click(`.arc-pill[data-id="${cat}"]`);await page.waitForTimeout(300);
    const labels=await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].map(t=>t.getAttribute('aria-label')));if(labels.length<min||!labels.some(l=>re.test(l)))fail(`category ${cat}: ${labels.length} ${labels.slice(0,4)}`);}
   await page.click('.arc-pill[data-id="all"]');await page.waitForTimeout(300);
   // bosses family exists, filters, search, 1P strip
@@ -62,12 +62,16 @@ for(const vp of sizes){
   await page.click('.solo-seg[data-key="on"][data-value="1"]');await page.waitForTimeout(400);
   await page.screenshot({path:screenshotPath(`ac-solo-${tag}.png`)});
   await page.click('.solo-seg[data-key="on"][data-value="0"]');await page.waitForTimeout(300);
-  // play a game from the hero: Broforce family → version page → first version's play button starts the launcher
+  // Broforce is one tile; its play button starts the launcher and opens the world select
   const bro=await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].findIndex(t=>/Broforce/.test(t.getAttribute('aria-label'))));
-  await page.click(`.arc-tile >> nth=${bro}`);await page.waitForTimeout(250);await page.click('[data-arc-family]');await page.waitForTimeout(300);
-  await page.click('.arc-ver >> nth=0 >> [data-action="arcade-game"]');await page.waitForTimeout(1500);
+  if(await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].filter(t=>/Broforce/.test(t.getAttribute('aria-label'))).length)!==1)fail('Broforce should be one tile');
+   await page.click(`.arc-tile >> nth=${bro}`);await page.waitForTimeout(450);
+  await page.click('.arc-info [data-action="arcade-game"]');await page.waitForTimeout(1500);
   const started=await page.evaluate(()=>({session:!!window.ShambConkins?.store?.session,card:/Start game/.test(document.querySelector('#dialog[open]')?.innerText||'')}));
   if(!started.session)fail('play button did not start Broforce');if(started.card)fail('the Start game / Back to arcade card still shows');
+   if(await page.locator('.bf-world').count()!==4)fail('Broforce world select should show 4 worlds');
+   await page.click('.bf-world[data-world="broforce-city"]');await page.waitForTimeout(800);
+   const picked=await page.evaluate(()=>({phase:window.ShambConkins.store.session?.debug?.phase,left:document.querySelectorAll('.bf-worlds').length}));if(picked.phase==='world'||picked.left)fail('picking a world should start the mission '+JSON.stringify(picked));
  }
  const errs=errors.filter(x=>!/favicon|net::|Failed to load resource/.test(x));if(errs.length)fail(tag+' page errors '+errs.slice(0,3).join(' | '));
  await browser.close();

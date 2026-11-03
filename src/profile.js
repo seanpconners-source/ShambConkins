@@ -41,6 +41,8 @@ function loadProfile() {
   // Title-screen character picks (names + characters for players 1/2); app.js checks they are still unlocked.
   {const v=saved.settings?.picks,ok=(a,n)=>Array.isArray(a)&&a.length===2&&a.every(x=>typeof x==='string'&&x.length&&x.length<=n);if(v&&ok(v.names,28)&&ok(v.chars,64))p.settings.picks={names:[...v.names],chars:v.chars.map(mergedCharacterId)};}
   if(saved.soloBest)p.soloBest=normalizeSoloBest(saved.soloBest);
+  // Broforce became one Arcade game: its best starts from the best of the old world entries
+  if(p.soloBest&&!p.soloBest.broforce){const old=['jungle','factory','city','desert'].map(w=>p.soloBest['broforce-'+w]).filter(Boolean).sort((a,b)=>b.score-a.score)[0];if(old)p.soloBest.broforce={...old};}
   for(const [k,n] of [['recent',RECENT_MAX],['favorites',200]])if(Array.isArray(saved[k]))p[k]=[...new Set(saved[k].filter(x=>typeof x==='string'))].slice(0,n);
   for(const key of ['wins','best'])if(saved[key]&&typeof saved[key]==='object'&&!Array.isArray(saved[key]))p[key]=Object.fromEntries(Object.entries(saved[key]).filter(([,v])=>Number.isFinite(v)&&v>=0));
   for(const key of ['migrated','horrorSeen','equipment'])if(saved[key]===true)p[key]=true;

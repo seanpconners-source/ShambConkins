@@ -62,7 +62,7 @@ for(const id of GAMES){
  const t0=Date.now();let ra='',rb='',shot=false,counts={};
  const wc0=await Promise.all([A,B].map(ph=>ph.p.evaluate(()=>({...window.__wsc}))));
  // a full Beer Pong match runs to last call, ~4-5 min headless; a Broforce mission (3 stages, bots) takes longer still on a busy box
- const limit=LIMIT*(process.env.LIMIT_S?1:id==='paddys-beer-pong'?1.75:id.startsWith('broforce-')?3:1);
+ const limit=LIMIT*(process.env.LIMIT_S?1:id==='paddys-beer-pong'?1.75:id.startsWith('broforce')?3:1);
  // HOLD=at,secs[,Amber|Sean]: at `at` s into the game that phone's outgoing game messages are held for `secs` s, then sent at once
  // (a network stall); the game must recover with both phones agreeing afterwards
  const STALL=(process.env.HOLD||'').split(',');let stalled=0;

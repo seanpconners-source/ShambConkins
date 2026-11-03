@@ -233,7 +233,7 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  if(!valid())return false;
  if(choice===null){launching=false;store.busy=false;return false;}
  if(choice!=='start'){launching=false;store.busy=false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else if(!duel?.board)hooks.arcade();return false;}
- if(origin!=='dev'&&game.id!=='phone-task'){noteRecent(store.profile,game.id);saveProfile(store.profile);}
+ if(origin!=='dev'&&game.id!=='phone-task'){noteRecent(store.profile,game.arcadeAs||game.id);saveProfile(store.profile);}
  // Arcade play uses the latest new-game screen picks (names + characters); the draft starts from the saved run.
  const players=soloKindNow&&!boardCpu?(duel?.players?duel.players.map(p=>({...p})):soloPlayers(run,soloSet.who)):origin==='board'?run.players:run?structuredClone(run.players).map((p,i)=>({...p,name:store.setupNames?.[i]||p.name,character:store.setupSelected?.[i]||p.character})):[newPlayer(store.setupNames?.[0]??'Sean',store.setupSelected?.[0]||'sean',0),newPlayer(store.setupNames?.[1]??'Amber',store.setupSelected?.[1]||'amber',1)];
  if(duel&&netNative(game))return netGame(game,duel,valid);

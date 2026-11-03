@@ -16,7 +16,8 @@
 // A dead bro respawns next to the partner; out of bros you watch until the next stage (or until the partner frees a
 // prisoner, which brings you back); the chopper waits 10 s for the partner, then pulls them along; both start the next
 // stage together. Own score as usual, higher wins; the mission ends when the chopper leaves stage 3 or both are out.
-const {clamp,hash}=require('src/utils.js');
+const {clamp,hash,escapeHTML}=require('src/utils.js');
+const {USER_PORTRAITS,isRasterArt}=require('src/data/userPortraits.js');
 const {soloFinish,soloProgress}=require('src/solo.js');
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,PCOL,Countdown,settle}=require('src/engines/arenaKit.js');
 const {netField}=require('src/engines/netField.js');
@@ -43,6 +44,7 @@ const FOES={
  dog:{hp:1.5,w:7,h:11,speed:34,sight:150,score:150},
  grenadier:{hp:1,w:5,h:20,speed:26,sight:200,score:150}
 };
+const WORLD_ICON={jungle:'🌴',factory:'🏭',city:'🏙️',desert:'🏜️'};
 const THEMES={
  'broforce-jungle':{name:'JUNGLE',op:'OPERATION GREEN HELL',stages:['VILLAGE INSERTION','PRISON CAMP','TEMPLE OF THE DEVIL'],
   sky:['#3f8fc4','#a8d8c8'],far:'#4c7f72',mid:'#2d5a3e',haze:'#bfe3cf',dirt:['#7b4b25','#6c3f1d','#8a5a2e'],top:'#58b334',topDark:'#2f7d1f',
@@ -221,7 +223,8 @@ const weaponFor=id=>WEAPON_IDS[hash('bro:'+id)%WEAPON_IDS.length];
 
 // ------------------------------------------------------------------ the engine
 async function broforce(s){
- const theme=THEMES[s.game.stageId||s.game.id]||THEMES['broforce-jungle'];
+ let theme=THEMES[s.game.stageId||s.game.id]||THEMES['broforce-jungle'];
+ const worldSelect=!!s.game.worldSelect;   // the Arcade's one Broforce entry: the world is picked on a title screen (chooseWorld)
  const [c,g]=s.canvas(900,500,{fill:true});s.body.classList.add('drag-arena-body');s.updateScores();
  // full-bleed: the mission gets the whole screen; Pause/Exit float in the top-right corner
  const shell=s.body.closest('.game-shell'),layer=shell?.parentElement;
@@ -237,7 +240,20 @@ async function broforce(s){
    .bf-shell .canvas-frame{border:0;border-radius:0;flex:1;min-height:0;width:100%;height:100%}
    .bf-shell .game-canvas{display:block;border:0;border-radius:0;max-width:none;max-height:none}
    .bf-shell #game-status,.bf-shell #game-hint,.bf-shell #game-controls{display:none}
-   .bf-shell .pass-overlay{z-index:30}`;
+   .bf-shell .pass-overlay{z-index:30}
+   .bf-worlds{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;gap:clamp(6px,1.6vh,14px);padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:radial-gradient(circle at 50% 12%,#5a1a0a,#120a06 70%) center/cover no-repeat;color:#fff}
+   .bf-worlds-head{text-align:center}
+   .bf-worlds-head h2{margin:0;font:400 clamp(34px,9vmin,72px)/1 "SC Bangers",Impact,sans-serif;letter-spacing:.04em;color:#fff;text-shadow:0 3px 0 #8a0a0a,0 0 18px #ff6a1a88}
+   .bf-worlds-head p{margin:2px 0 0;font:800 clamp(12px,2.6vmin,16px)/1.2 "SC Nunito",sans-serif;color:#ffd23a}
+   .bf-world-grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:clamp(6px,1.6vmin,12px)}
+   @media (min-aspect-ratio:1/1){.bf-world-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+   .bf-worlds .bf-world{position:relative;overflow:hidden;min-height:0;margin:0;padding:clamp(8px,2vmin,14px);display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;gap:2px;text-align:left;border:2px solid #ffffff40;border-radius:14px;box-shadow:0 8px 22px #0008;transition:transform .15s,border-color .15s}
+   .bf-world:not(:disabled):hover{border-color:#ffd23a}.bf-world:not(:disabled):active{transform:scale(.97)}.bf-world:disabled{cursor:default;opacity:.82}
+   .bf-world img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.bf-world i{position:absolute;inset:0 0 28%;display:grid;place-items:center;font:normal clamp(48px,14vmin,92px)/1 sans-serif;filter:drop-shadow(0 4px 8px #0007)}
+   .bf-world::after{content:'';position:absolute;inset:40% 0 0;background:linear-gradient(180deg,transparent,#000c)}
+   .bf-world b,.bf-world small{position:relative;z-index:1;text-shadow:0 2px 4px #000}
+   .bf-world b{font:400 clamp(24px,6vmin,40px)/1 "SC Bangers",Impact,sans-serif;letter-spacing:.04em}
+   .bf-world small{font:800 clamp(10px,2.2vmin,13px)/1.2 "SC Nunito",sans-serif;color:#ffd23a}`;
   shell.appendChild(css);s.cleanup(()=>{css.remove();shell.classList.remove('bf-shell');layer?.classList.remove('bf-layer');});}
  if(!await settle(s))return;
  const {store}=require('src/state.js');
@@ -255,8 +271,8 @@ async function broforce(s){
  const touchUI=typeof matchMedia==='function'&&matchMedia('(pointer: coarse)').matches;
  s.broforceRecruits=[[],[]];
  const net=s.online||null,me=net?net.me:0,them=1-me,host=!net||me===0;
- let phase='title',titleT=0,cd=new Countdown(3),acc=0,endT=0,turn=net?me:0,clock=0,frames=0,simT=0,winner=-1;
- let R=null,netCages=null,setupMsg=null,setupWait=null,netStarted=false,nf=null;   // online: the partner's bro, the host's cage line-up
+ let phase=worldSelect?'world':'title',titleT=0,cd=new Countdown(3),acc=0,endT=0,turn=net?me:0,clock=0,frames=0,simT=0,winner=-1;
+ let R=null,netCages=null,setupMsg=null,setupWait=null,worldMsg=null,worldWait=null,netStarted=false,nf=null;   // online: the partner's bro, the host's cage line-up
  let W=null,P=null,fx=new Fx(),banner=null,cam={x:0,y:0},Z=2,stageT=0,stageIdx=0,shake=0;
  const results=[null,null];
  for(const id of [...s.players.map(p=>p.character)])headCanvas(id);
@@ -798,7 +814,7 @@ async function broforce(s){
    // what touches this bro is judged here
    if(!P.dead&&!P.out&&!P.boarded&&P.inv<=0&&e.state==='attack'&&e.type!=='bomber'){const dx=P.x-e.x,dy=P.y-12-(e.y-e.h*.6);if(Math.abs(dx)<(e.type==='dog'?10:8)&&Math.abs(dy)<(e.type==='dog'?16:14))hurtPlayer(1,e.x);}}}
  function onNetEvent(e){
-  if(e.setup){setupMsg=e.setup;setupWait?.();return;}
+  if(e.world){worldMsg=e.world;worldWait?.(e.world);return;}if(e.setup){setupMsg=e.setup;setupWait?.();return;}
   if(!W||e.si!=null&&e.si!==stageIdx)return;
   if(e.sh)for(const [x,y,f,wp] of e.sh){const w=WEAPONS[wp];if(!w)continue;
    if(w.rocket)W.shots.push({x,y,vx:f*w.speed,vy:0,life:w.life,owner:'r',kind:'rocket',trail:0});
@@ -858,7 +874,7 @@ async function broforce(s){
  s.hint(`BROFORCE · turns: each player runs the same 3-stage mission and the higher score wins. Touch: drag on the left to run (push up to jump or climb a ladder, down to drop or climb down); hold anywhere on the right to fire, swipe up there to jump, swipe down to throw a grenade. Push into any wall in mid-air to climb it. Free caged prisoners to switch bros (+1 life); the GOLD cage unlocks a new character. Keys: A/D or arrows run, W/Up jump, S/Down ladders, Space/Enter fire, G/E/Shift grenade.`);
 
  // ---------------------------------------------------------------- drawing: tiles (pre-rendered per theme)
- const TILEART=makeTileArt(theme);
+ let TILEART=makeTileArt(theme);
  function drawWorld(time){
   const vw=viewW(),vh=viewH();
   // sky & parallax
@@ -1138,10 +1154,29 @@ async function broforce(s){
  // ---------------------------------------------------------------- main loop
  let flushT=0;
  // online test bot: runs right firing, jumps when blocked, a grenade now and then
- if(net)s.debug.bot=()=>{if(!bot){bot={t:0,stuck:0};return 'drive';}return '';};
+ if(net||worldSelect)s.debug.bot=()=>{if(phase==='world'){const open=[...document.querySelectorAll('.bf-world:not(:disabled)')];if(!open.length)return '';open[Math.floor(Math.random()*open.length)].click();return 'world';}if(!net)return '';if(!bot){bot={t:0,stuck:0};return 'drive';}return '';};
+ // World select: one Broforce, each world picked here. Pictures are drop-ins: assets/keyart/broforce-<world>.* on a card,
+ // assets/keyart/broforce.* behind the screen. Online, player 1's phone picks ({world} event) and the other waits; a silent picker is picked for after 30 s.
+ async function chooseWorld(){
+  const worlds=Object.keys(THEMES),art=id=>{const u=USER_PORTRAITS['keyart:'+id];return isRasterArt(u)?u:null;},picker=!net||me===0,box=document.createElement('div');box.className='bf-worlds';
+  if(art('broforce'))box.style.backgroundImage=`linear-gradient(#0006,#0009),url("${art('broforce')}")`;
+  box.innerHTML=`<header class="bf-worlds-head"><h2>BROFORCE</h2><p>${picker?'CHOOSE YOUR WORLD':`${escapeHTML(s.players[them].name.toUpperCase())} IS CHOOSING THE WORLD…`}</p></header><div class="bf-world-grid">${worlds.map(id=>{const t=THEMES[id],pic=art(id);return `<button class="bf-world" data-world="${id}" style="background:linear-gradient(180deg,${t.sky[0]} 0%,${t.sky[1]} 62%,${t.mid} 62%,${t.mid} 100%);color:#fff"${picker?'':' disabled'}>${pic?`<img src="${pic}" alt="" draggable="false">`:`<i aria-hidden="true">${WORLD_ICON[t.decor]}</i>`}<b>${t.name}</b><small>${t.op}</small></button>`;}).join('')}</div>`;
+  (shell||s.body).appendChild(box);s.cleanup(()=>box.remove());
+  const picked=await new Promise(done=>{
+   if(!picker){worldWait=done;if(worldMsg)done(worldMsg);setTimeout(()=>done(null),40000);return;}
+   let timer=null;const go=id=>{clearTimeout(timer);if(net)ev({world:id});done(id);};
+   if(net)timer=setTimeout(()=>{if(s.alive&&phase==='world')go(worlds[Math.floor(Math.random()*worlds.length)]);},30000);
+   s.cleanup(()=>clearTimeout(timer));
+   for(const b of box.querySelectorAll('.bf-world'))s.on(b,'click',()=>go(b.dataset.world));
+  });
+  if(!s.alive)return;
+  theme=THEMES[picked]||theme;TILEART=makeTileArt(theme);box.remove();titleT=0;phase='title';
+ }
+ if(worldSelect)void chooseWorld();
  computeZoom();
  s.frame((dt,time)=>{
   if(!s.alive)return;computeZoom();
+  if(phase==='world'){g.fillStyle='#120a06';g.fillRect(0,0,s.W,s.H);return;}
   if(phase==='title'){titleT+=dt;g.fillStyle='#000';g.fillRect(0,0,s.W,s.H);drawTitle(titleT);if(titleT>2.75&&phase==='title')beginTurn(net?me:0);return;}
   if(!P||!W){g.fillStyle='#000';g.fillRect(0,0,s.W,s.H);return;}
   if(net&&netStarted){stepRemote(dt);flushT-=dt;if(flushT<=0){flushT=.05;netFlush();}nf.tick(dt);}

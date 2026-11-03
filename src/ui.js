@@ -234,6 +234,7 @@ function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=
   else if(filter==='pokemon')list=POKEMON_MATCHES.filter(hit);
   else if(filter==='variants')list=EVENT_GAMES.filter(g=>!g.bossId&&(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&hit(g));
   else list=[...GAMES.filter(g=>(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&(shelf||inCategory(g,filter))),...(filter==='all'||shelf?[...POKEMON_MATCHES,...beaten]:[])].filter(hit);
+  list=list.filter(g=>!g.arcadeAs); // versions that are one game in the Arcade (Broforce's worlds)
   if(!p.settings.devMode)list=list.filter(g=>!isCut(g)); // ROADMAP B3: cut games leave the Arcade (dev mode keeps them)
   // 1P mode: games with a solo version first; the rest stay listed but greyed out. Purely social games are hidden.
   // Online duels: only games whose 1P run ends in a score (duelOK) can be played across two phones so far.
@@ -250,7 +251,7 @@ function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=
   render=g=>{const {open,off,play,best,tiers,status,dev}=partsFor(g);
    return `<article class="arcade-card ${open?'':'locked'}${off?' solo-off':''}${g.bossId?' boss-match':''}${tiers>=BOSS_TIERS.length-1?' boss-extreme':''}">${brandHTML(g.source)}${gameArtHTML(g)}<h3>${e(g.title)}</h3><p>${e(g.rules)}</p><div class="game-info">${e(g.duration.toUpperCase())} · ${status}${best?` · ${e(best)}`:''}</div>${play}${dev}</article>`;};
  }
- catalogFeed={list,render,playable,shown:Math.min(list.length,CATALOG_CHUNK)};if(!isRoster&&['featured','recent','favorites'].includes(filter))catalogFeed.pool=GAMES.filter(g=>(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&!isCut(g)); // the dice button picks from everything, not just the shelf
+ catalogFeed={list,render,playable,shown:Math.min(list.length,CATALOG_CHUNK)};if(!isRoster&&['featured','recent','favorites'].includes(filter))catalogFeed.pool=GAMES.filter(g=>!g.arcadeAs&&(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&!isCut(g)); // the dice button picks from everything, not just the shelf
  const cards=list.slice(0,catalogFeed.shown).map(render).join('');
  const bossCount=EVENT_GAMES.filter(g=>g.bossId),filters=isRoster?[['all','Characters'],['unlocked','Unlocked'],['items',`Items (${p.itemsSeen.length})`],['locations',`Landmarks (${p.locations.length})`]]:[['all','All games'],['arcade','Arcade'],['puzzle','Puzzles'],['strategy','Strategy'],['skill','Skill'],['sports','Sports'],['trivia','Trivia'],['casino','Casino'],['dice','Dice'],['boss',`Bosses (${bossCount.filter(g=>gameUnlocked(g,p)).length}/${bossCount.length})`],['pokemon','Pokémon battles'],['variants','Encounter variants']];
  if(isRoster)return collectionShellHTML({filter,filters,query,count:list.length,cards,more:catalogFeed.shown<list.length});

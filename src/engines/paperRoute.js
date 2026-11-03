@@ -5,7 +5,7 @@ const {clamp,seededRandom}=require("src/utils.js");
 const {vibrate}=require("src/audio.js");
 const {touchTrack}=require("src/engines/duelControls.js");
 const {label,rr,makeFx,makeShake,sfx,voice,noise}=require("src/engines/tarantinoKit.js");
-const DUR=45,GAP=30,ROOFS=['#d9534f','#4f8fd9','#e0a43a','#5fb760','#b05fd9','#e07a3a'];
+const DUR=45,DOG_CHASE=2.2,GAP=30,ROOFS=['#d9534f','#4f8fd9','#e0a43a','#5fb760','#b05fd9','#e07a3a'];
 
 function buildStreet(seed){const r=seededRandom(seed+':paper'),houses=[],obs=[];
  for(let k=0;k<70;k++){const side=k%2,y=60+k*GAP*.5+r()*6;houses.push({k,side,y,sub:r()<.6,roof:ROOFS[Math.floor(r()*ROOFS.length)],done:0,broke:0});}
@@ -40,6 +40,7 @@ async function paperboy(s){
   st.papers--;st.flying.push({x0:b.x,y0:b.y,x1:tx,y1:ty,t:0,dur:.28+Math.min(1,d/max)*.18});sfx.whoosh(600,1800,.05,.12);}
  function say(m,t=1.1){st.msg=m;st.msgT=t;}
  function land(p){const {x1:wx,y1:wy}=p;
+  const dog=st.obs.find(o=>o.kind==='dog'&&!o.gone&&!o.hit&&Math.hypot(o.x-wx,o.y-wy)<7);if(dog){dog.gone=1;gain(2,'SCRAM! +2',wx,wy,'#9dff5c');sfx.coin();return;}
   for(const h of st.houses){if(Math.abs(h.y-wy)>14)continue;const left=!h.side,mbx=left?27:73,mby=h.y,hx0=left?2:78,hx1=left?22:98;
    if(Math.hypot(wx-mbx,wy-mby)<4.2){if(h.sub&&!h.done){h.done=2;gain(10,'MAILBOX! +10',wx,wy,'#ffd23f');sfx.ding(1320);}else if(!h.sub){gain(0,'Not a subscriber',wx,wy,'#ccc');}else gain(0,'Already delivered',wx,wy,'#ccc');return;}
    if(wx>hx0&&wx<hx1&&wy>h.y-4&&wy<h.y+12){ // house body: windows are on the upper half
@@ -58,7 +59,8 @@ async function paperboy(s){
   for(const p of st.flying){p.t+=dt;if(p.t>=p.dur&&!p.done){p.done=1;land(p);}}st.flying=st.flying.filter(p=>!p.done);
   for(const o of st.obs){if(o.y<st.cam-20||o.y>st.cam+150)continue;
    if(o.kind==='car')o.y+=o.vy*dt;
-   if(o.kind==='dog'&&Math.abs(o.y-b.y)<30){o.x+=clamp(b.x-o.x,-1,1)*22*dt;o.y+=(st.speed*.75)*dt*(o.y<b.y?1.1:.6);}
+   // a dog chases for a moment, then loses interest; one that has bitten, given up or been hit by a paper runs back to its yard
+   if(o.kind==='dog'){if(o.hit||o.chase>DOG_CHASE)o.gone=1;if(o.gone){o.x+=(o.x<50?-1:1)*70*dt;continue;}if(Math.abs(o.y-b.y)<30){o.chase+=dt;o.x+=clamp(b.x-o.x,-1,1)*22*dt;o.y+=(st.speed*.75)*dt*(o.y<b.y?1.1:.6);}}
    if(o.hit)continue;const r=o.kind==='car'?6:o.kind==='hole'?3.5:4;
    if(Math.abs(o.x-b.x)<r+2&&Math.abs(o.y-b.y)<r+3){if(o.kind==='bundle'){o.hit=1;st.papers+=5;say('+5 PAPERS');sfx.coin();}else{o.hit=1;crash(o);}}}
   if(st.t>=DUR)endTurn();
@@ -75,7 +77,7 @@ async function paperboy(s){
   const mx=sx(left?27:73),my=sy(h.y);x.fillStyle='#5a4a3a';x.fillRect(mx-1,my,2,3*L.k);x.fillStyle=sub?'#2a6fd6':'#555';rr(x,mx-2.4*L.k,my-2*L.k,4.8*L.k,3*L.k,1.2*L.k);x.fill();
   if(sub&&!h.done){x.fillStyle='#e23';x.fillRect(mx+2.2*L.k,my-3.4*L.k,1*L.k,2.4*L.k);}
   if(h.done>0)label(x,'✓',x0+w/2,y-8*L.k,3.6*L.k,{fill:'#9dff5c'});}
- function drawObs(o){if(o.hit&&o.kind!=='car'&&o.kind!=='dog')return;const px=sx(o.x),py=sy(o.y),k=L.k;
+ function drawObs(o){if(o.hit&&o.kind!=='car'&&o.kind!=='dog')return;if(o.gone&&(o.x<-6||o.x>106))return;const px=sx(o.x),py=sy(o.y),k=L.k;
   if(o.kind==='car'){x.fillStyle='#c33';rr(x,px-4.5*k,py-7*k,9*k,14*k,2*k);x.fill();x.fillStyle='#9cd';x.fillRect(px-3.5*k,py+2*k,7*k,3*k);x.fillStyle='#ff8';x.fillRect(px-4*k,py+6*k,2*k,1*k);x.fillRect(px+2*k,py+6*k,2*k,1*k);}
   else if(o.kind==='dog'){x.font=`${7*k}px system-ui`;x.textAlign='center';x.textBaseline='middle';x.fillText('🐕',px,py);}
   else if(o.kind==='can'){x.fillStyle='#777';rr(x,px-2.5*k,py-3*k,5*k,6*k,1*k);x.fill();x.fillStyle='#999';x.fillRect(px-3*k,py-3.5*k,6*k,1.2*k);}
@@ -107,7 +109,7 @@ async function paperboy(s){
  async function endTurn(){if(ending)return;ending=true;scores[player]=st.score;s.setScores(scores);sfx.ding(880);
   if(player===0){player=1;await begin(`${s.players[0].name} scored ${scores[0]}.`);}
   else{await s.wait(600);s.finish([...scores],scores[0]===scores[1]?`Paper Route ties ${scores[0]}–${scores[1]}.`:`${s.players[scores[0]>scores[1]?0:1].name} wins the route ${Math.max(...scores)}–${Math.min(...scores)}.`);}}
- async function begin(summary){reset();layout();draw();if(!await s.pass(player,'Ride the route. Drag to steer, TAP where the paper should land. Bright houses with blue mailboxes subscribe: mailbox +10, doorstep +5. Smash a dark house’s window for +3, but never a subscriber’s (−5). Dodge cars, dogs, cans and potholes; grab bundles for more papers.','Ready — ride',{countdown:3,summary}))return;ending=false;}
+ async function begin(summary){reset();layout();draw();if(!await s.pass(player,'Ride the route. Drag to steer, TAP where the paper should land. Bright houses with blue mailboxes subscribe: mailbox +10, doorstep +5. Smash a dark house’s window for +3, but never a subscriber’s (−5). Dodge cars, cans and potholes; a dog gives up after a moment, or throw a paper at it (+2); grab bundles for more papers.','Ready — ride',{countdown:3,summary}))return;ending=false;}
  s.hint('Drag to steer the bike. Tap where you want the paper to land (it flies to that spot, within reach). Mailbox +10, doorstep +5, dark house window +3, subscriber window −5. Crashes cost two papers. Keys: ←/→ steer, Space throws at the next mailbox.');
  s.frame(dt=>{if(!st)return;layout();if(!ending)step(dt);fx.step(dt);shake.step(dt);draw();s.status(`${s.players[player].name} · ${st.score} pts · tap to throw, drag to steer`);});
  await begin(null);

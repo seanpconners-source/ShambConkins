@@ -17,7 +17,6 @@ const {saveProfile,toggleFavorite}=require("src/profile.js");
 const FAMILIES=[
  ['bosses','Boss Select','Every boss you have beaten','king-kandy',null],
  ['pinball','Pinball Tables','Bucketheadland · Black Sabbath · King Gizzard','buckethead',['bucketheadland-pinball','black-sabbath-pinball','king-gizzard-pinball']],
- ['broforce','Broforce','Four missions','rambo',['broforce-jungle','broforce-desert','broforce-city','broforce-factory']],
  ['smb','Super Mario Bros.','World 1, Coin Rush, Castle Dash, SMB3','mario',['smb-world-1','smb-coin-rush','smb-castle-dash','smb3-nspade','smb3-spade-slots']],
  ['kart','Mario Kart','Grand Prix, time trials, battle','bowser',['rainbow-road-kart','kart-grand-prix-pass','kart-time-trial','rainbow-balloon-battle']],
  ['castlevania','Castlevania','NES and Symphony of the Night','alucard',['cv-symphony','cv-vampire-killer','cv-candle-hunt']],
@@ -42,7 +41,6 @@ const FAMILIES=[
  ['baseball','Major League','Home Run Derby and Bat & Field',null,['major-league-bats','major-league-fielding']],
  ['ducks','The Mighty Ducks','Air hockey and shootout',null,['rink-rivals','office-hockey-shootout']],
  ['matrix','The Matrix','Nine Realities and Hardline Hack','neo',['matrix-ultimate','matrix-hardline-hack']],
- ['office','The Office','Dividers and Warehouse Shift','dwight',['office-dots-boxes','warehouse-shift']],
  ['terminator','Terminator','Skynet scan and freeway chase','terminator',['terminator-scan','t800-scan-long']],
  ['pokemon','Pokémon Battles','Wild and trainer battles','pikachu',['pkmn-wild','pkmn-trainer']]];
 const FAMILY=new Map(FAMILIES.map(([key,title,sub,hero,ids])=>[key,{key,title,sub,hero,ids}]));
@@ -52,7 +50,7 @@ const familyOf=g=>g.bossId?'bosses':FAMILY_OF.get(g.id)||null;
 // A game can sit in more than one. Old filter ids (arcade/strategy/skill/sports/dice) are mapped for old links.
 const CATEGORIES=[['featured','★ Featured'],['recent','Recent'],['favorites','Favorites'],['all','All games'],['action','Action'],['retro','Retro arcade'],['versus','Head to head'],['sports','Racing & sports'],['board','Board & cards'],['puzzle','Puzzle'],['party','Party'],['trivia','Trivia & shows'],['casino','Casino & dice'],['pinball','Pinball'],['coop','Co-op'],['boss','Bosses'],['pokemon','Pokémon'],['variants','Encounter variants']];
 const CAT_IDS={
- action:'broforce-jungle broforce-factory broforce-city broforce-desert smb-world-1 smb-coin-rush smb-castle-dash cv-vampire-killer cv-candle-hunt cv-symphony sonic-ring-rush sonic-goal-dash doom doom-2 warriors-brawl bond-facility hyrule-rupee-rush hyrule-sword-duel tarantino-crazy88 tarantino-bounty kill-bill-duel living-dead-horde battle-royale-island raiders-ball-run',
+ action:'broforce smb-world-1 smb-coin-rush smb-castle-dash cv-vampire-killer cv-candle-hunt cv-symphony sonic-ring-rush sonic-goal-dash doom doom-2 warriors-brawl bond-facility hyrule-rupee-rush hyrule-sword-duel tarantino-crazy88 tarantino-bounty kill-bill-duel living-dead-horde battle-royale-island raiders-ball-run',
  retro:'pong-duel breakout-party asteroid-drift space-swarm space-swarm-versus space-swarm-coop snake-run pac-maze-duel moonraker-lander mars-missile-defense duck-hunt-turn crossy-chaos block-battle t800-scan-long driller-duel bubble-battle flappy-disaster paper-route banana-money-grab metal-gear-tank-duel derezzed-cycles snake-v-snake bomber-duel sewer-clash neon-ball-storm smb-world-1 cv-vampire-killer doom',
  sports:'rainbow-road-kart kart-grand-prix-pass kart-time-trial rainbow-balloon-battle fast-quarter-mile radical-bike major-league-bats major-league-fielding league-penalties baseketball-shootout color-of-money happy-gilmore-golf kingpin-bowling underdog-dodgeball fight-night wind-archery disc-duel rink-rivals office-hockey-shootout taskmaster-curling sp-dodgeball',
  board:'shamb-uno traitors-guess-who matrix-ultimate greed-island-mancala deadite-checkers ten-forward-chess office-dots-boxes wopr-grid trek-mini-chess strategema-grid four-lights battleship-fog clue-whodunit clue-lineup monopoly-speed-die monopoly-auction chutes-ladder-rush chutes-spinner-showdown candy-color-dash smb3-nspade full-shambyahtzee',
@@ -70,7 +68,7 @@ const inCategory=(g,cat)=>cat==='all'||categoriesOf(g).has(OLD[cat]||cat);
 const CAT_NAME=Object.fromEntries(CATEGORIES);
 
 // Characters picked by hand where the source match would choose someone odd.
-const HERO={'bucketheadland-pinball':'buckethead','black-sabbath-pinball':'ozzy-osbourne','cv-symphony':'alucard','kill-bill-duel':'kb-the-bride','tarantino-crazy88':'kb-the-bride','tarantino-bounty':'dj-django','pac-maze-duel':'pac-man','pkmn-wild':'pikachu','pkmn-trainer':'ash-ketchum','paddys-beer-pong':'charlie','flipadelphia-cup':'charlie','terminator-scan':'terminator','t800-scan-long':'terminator','matrix-hardline-hack':'neo','evil-dead-cabin':'ash','django-hangman':'dj-django','django-hangman-showdown':'dj-king-schultz','django-hangman-wanted':'dj-django','sewer-clash':'leonardo-tmnt','snake-run':'snake','shred-hero':'buckethead','king-gizzard-pinball':'ref-stumackenzie','deadite-checkers':'ash','tarantino-chase':'dp-stuntman-mike','tarantino-adrenaline':'pf-vincent','tarantino-twist':'pf-jules','tarantino-standoff':'pf-jules'};
+const HERO={broforce:'rambo','bucketheadland-pinball':'buckethead','black-sabbath-pinball':'ozzy-osbourne','cv-symphony':'alucard','kill-bill-duel':'kb-the-bride','tarantino-crazy88':'kb-the-bride','tarantino-bounty':'dj-django','pac-maze-duel':'pac-man','pkmn-wild':'pikachu','pkmn-trainer':'ash-ketchum','paddys-beer-pong':'charlie','flipadelphia-cup':'charlie','terminator-scan':'terminator','t800-scan-long':'terminator','matrix-hardline-hack':'neo','evil-dead-cabin':'ash','django-hangman':'dj-django','django-hangman-showdown':'dj-king-schultz','django-hangman-wanted':'dj-django','sewer-clash':'leonardo-tmnt','snake-run':'snake','shred-hero':'buckethead','king-gizzard-pinball':'ref-stumackenzie','deadite-checkers':'ash','tarantino-chase':'dp-stuntman-mike','tarantino-adrenaline':'pf-vincent','tarantino-twist':'pf-jules','tarantino-standoff':'pf-jules'};
 
 // ---- pictures ----
 const own=id=>{const u=id&&USER_PORTRAITS['photo:char:'+id];return isRasterArt(u)?u:null;};
