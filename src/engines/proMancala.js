@@ -14,7 +14,7 @@ const {fullBleed}=require("src/engines/fullBleed.js");
 const {store}=require("src/state.js");
 const {saveProfile}=require("src/profile.js");
 const audio=require("src/audio.js");
-const {USER_PORTRAITS}=require("src/data/userPortraits.js");
+const {USER_PORTRAITS,isRasterArt}=require("src/data/userPortraits.js");
 const A=require("src/engines/proMancalaArt.js");
 const SP=require("src/engines/proMancalaSpots.js");
 const {fullscreenSupported,toggleFullscreen,fullscreenLabel}=require("src/fullscreen.js");
@@ -455,31 +455,38 @@ async function proMancala(s){
   cue('g4',HITS[3]-.55,()=>S.sfx('grind',.55));cue('w4',HITS[3],()=>{S.sfx('slam');S.sfx('land',1.5);shake=12;sparkBurst(lay.W*.5,lay.H*.5,40,500);});
   cue('w5',BOOM,()=>{S.sfx('crowd',1.6,2.5);S.sfx('hey');shake=18;flash=.7;music.main(onTrack);});
   cue('vs',6.1,()=>S.sfx('whoosh',.4,true));cue('vs2',6.45,()=>{S.sfx('slam');shake=8;});}
+ // The owner's word pictures replace the drawn text one by one: assets/keyart/mancala-word-<tony|hawks|pro|mancala|extreme>.*, transparent.
+ const WORD={};for(const k of ['tony','hawks','pro','mancala','extreme']){const u=USER_PORTRAITS['keyart:mancala-word-'+k];if(isRasterArt(u)){const im=new Image();im.src=u;WORD[k]=im;}}
+ const wordOK=k=>WORD[k]?.complete&&WORD[k].naturalWidth>0;
+ // the picture's painted area without its transparent margin (measured once)
+ function wordBox(im){if(im._box)return im._box;const w=200,h=Math.max(1,Math.round(w*im.naturalHeight/im.naturalWidth)),cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d');g.drawImage(im,0,0,w,h);const d=g.getImageData(0,0,w,h).data;let x0=w,x1=0,y0=h,y1=0;for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++)if(d[(yy*w+xx)*4+3]>40){if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(yy<y0)y0=yy;if(yy>y1)y1=yy;}const k=im.naturalWidth/w;return im._box={sx:x0*k,sy:y0*k,sw:Math.max(1,x1-x0+1)*k,sh:Math.max(1,y1-y0+1)*k};}
+ const wordW=(k,px)=>{const b=wordBox(WORD[k]);return px*1.1*b.sw/b.sh;};
+ function putWord(k,xx,yy,px,{rot=-.06,scale=1}={}){const im=WORD[k],b=wordBox(im),h=px*1.1*scale,w=h*b.sw/b.sh;x.save();x.translate(xx,yy);x.rotate(rot);x.drawImage(im,b.sx,b.sy,b.sw,b.sh,-w/2,-h/2,w,h);x.restore();}
  function drawIntro(dt){const W=lay.W,H=lay.H,hu=Math.min(W,H)/20;introAudio();
   const out=clamp((introT-(INTRO_END-.55))/.55,0,1);x.save();x.globalAlpha=1-out;x.fillStyle='#07070a';x.fillRect(0,0,W,H);
   x.save();x.translate(W/2,H/2);x.rotate(introT*(introT>BOOM?.9:.25));const rays=16;for(let k=0;k<rays;k++){x.fillStyle=k%2?(introT>BOOM?'rgba(255,60,0,.3)':'rgba(255,90,0,.16)'):'rgba(255,200,0,.08)';x.beginPath();x.moveTo(0,0);x.arc(0,0,Math.max(W,H),k/rays*TAU,(k+.5)/rays*TAU);x.closePath();x.fill();}x.restore();
   x.fillStyle='rgba(255,255,255,.04)';for(let yy=0;yy<H;yy+=6)for(let xx=(yy/6%2)*3;xx<W;xx+=6)x.fillRect(xx,yy,1.5,1.5);
   // Every line is measured on this device (phones without Impact fall back to wider fonts) and sized to fit: TONY HAWK'S,
   // then [PRO] MANCALA, then the EXTREME EDITION!! banner, stacked above the face-off cards.
-  const cx=W/2,fly=(t0,dur=.3)=>clamp((introT-t0)/dur,0,1),tw=(s,px)=>{x.font=A.font(px);return x.measureText(s).width*.84+px*.3;};
+  const cx=W/2,fly=(t0,dur=.3)=>clamp((introT-t0)/dur,0,1),tw=(s,px)=>{x.font=A.font(px);return x.measureText(s).width*.84+px*.3;},tww=(k,s,px)=>wordOK(k)?wordW(k,px):tw(s,px);
   const Wv=W*.9,gap=Math.min(W,H)*.025,cw=Math.min(W*.36,H*.26),ch=cw*1.18,cardsTop=H-ch-hu*1.9;
-  let fa=Math.min(W,H)*.13;fa*=Math.min(1,Wv/(tw('TONY',fa)+gap+tw("HAWK'S",fa)));
-  let fb=Math.min(W,H)*.2,proPx=fb*.4;const proW=()=>tw('PRO',proPx)+proPx*.5;fb*=Math.min(1,Wv/(proW()+gap+tw('MANCALA',fb)));proPx=fb*.4;
-  let fc=Math.min(W,H)*.085;fc*=Math.min(1,Wv/(tw('EXTREME EDITION!!',fc)+fc*1.2));
+  let fa=Math.min(W,H)*.13;fa*=Math.min(1,Wv/(tww('tony','TONY',fa)+gap+tww('hawks',"HAWK'S",fa)));
+  let fb=Math.min(W,H)*.2,proPx=fb*.4;const proW=()=>wordOK('pro')?wordW('pro',fb):tw('PRO',proPx)+proPx*.5;fb*=Math.min(1,Wv/(proW()+gap+tww('mancala','MANCALA',fb)));proPx=fb*.4;
+  let fc=Math.min(W,H)*.085;fc*=Math.min(1,Wv/(tww('extreme','EXTREME EDITION!!',fc)+fc*1.2));
   // fit the stack between the top and the cards (shrink everything together if needed)
   let stack=fa+fb+fc*1.7+gap*3;const room=cardsTop-gap*2-H*.05;if(stack>room){const s=room/stack;fa*=s;fb*=s;fc*=s;proPx*=s;stack=room;}
   const top=Math.max(H*.05,(cardsTop-gap-stack)/2),yA=top+fa*.55,yB=yA+fa*.55+gap+fb*.5,yC=yB+fb*.5+gap+fc*.85;
-  const wT=tw('TONY',fa),wH=tw("HAWK'S",fa),lineA=wT+gap+wH,xT=cx-lineA/2+wT/2,xH=cx+lineA/2-wH/2;
-  const pw=proW(),wM=tw('MANCALA',fb),lineB=pw+gap+wM,xP=cx-lineB/2+pw/2,xM=cx+lineB/2-wM/2;
-  let k=fly(HITS[0]-.35,.35);if(k>0)thps(x,'TONY',xT+(1-ease(k))*-W,yA,fa,{fill:'#fff',rot:-.06,lw:.22});
-  k=fly(HITS[1]-.35,.35);if(k>0)thps(x,"HAWK'S",xH+(1-ease(k))*W,yA,fa,{fill:'#fff',rot:-.06,lw:.22});
-  k=fly(HITS[2]-.25,.25);if(k>0){const py=yB-(1-ease(k))*H;x.save();x.translate(xP,py);x.rotate(-.08);x.fillStyle='#d61f1f';x.fillRect(-pw/2,-proPx*.7,pw,proPx*1.4);x.strokeStyle='#000';x.lineWidth=3;x.strokeRect(-pw/2,-proPx*.7,pw,proPx*1.4);x.restore();
+  const wT=tww('tony','TONY',fa),wH=tww('hawks',"HAWK'S",fa),lineA=wT+gap+wH,xT=cx-lineA/2+wT/2,xH=cx+lineA/2-wH/2;
+  const pw=proW(),wM=tww('mancala','MANCALA',fb),lineB=pw+gap+wM,xP=cx-lineB/2+pw/2,xM=cx+lineB/2-wM/2;
+  let k=fly(HITS[0]-.35,.35);if(k>0){if(wordOK('tony'))putWord('tony',xT+(1-ease(k))*-W,yA,fa);else thps(x,'TONY',xT+(1-ease(k))*-W,yA,fa,{fill:'#fff',rot:-.06,lw:.22});}
+  k=fly(HITS[1]-.35,.35);if(k>0){if(wordOK('hawks'))putWord('hawks',xH+(1-ease(k))*W,yA,fa);else thps(x,"HAWK'S",xH+(1-ease(k))*W,yA,fa,{fill:'#fff',rot:-.06,lw:.22});}
+  k=fly(HITS[2]-.25,.25);if(k>0&&wordOK('pro'))putWord('pro',xP,yB-(1-ease(k))*H,fb,{rot:-.05});else if(k>0){const py=yB-(1-ease(k))*H;x.save();x.translate(xP,py);x.rotate(-.08);x.fillStyle='#d61f1f';x.fillRect(-pw/2,-proPx*.7,pw,proPx*1.4);x.strokeStyle='#000';x.lineWidth=3;x.strokeRect(-pw/2,-proPx*.7,pw,proPx*1.4);x.restore();
    thps(x,'PRO',xP,py,proPx,{fill:'#fff',rot:-.08});}
   k=fly(HITS[3]-.5,.5);if(k>0){const xx=xM+(1-ease(k))*W*1.1,yy=yB;if(k<1)for(let j=0;j<3;j++)sparks.push({x:xx-wM*.45,y:yy+fb*.5,vx:-200-Math.random()*300,vy:-Math.random()*250,t:0,dur:.4});
    // the rail MANCALA grinds in on: only while it slides, gone a moment after it lands
    const ra=k<1?1:clamp(1-(introT-HITS[3])*4,0,1);if(ra>0){x.save();x.globalAlpha*=ra;x.strokeStyle='#9aa3ad';x.lineWidth=Math.max(2,fb*.06);x.beginPath();x.moveTo(0,yy+fb*.52);x.lineTo(W,yy+fb*.46);x.stroke();x.restore();}
-   thps(x,'MANCALA',xx,yy,fb,{grad:['#fffbd0','#ffd000','#ff7a00','#c42a00'],rot:-.05,lw:.2,maxW:W*.96,scale:k<1?1:1+.06*Math.max(0,1-(introT-HITS[3])*4)});}
-  k=fly(BOOM,.18);if(k>0){const sc=1+(1-k)*2.2,pulse=introT>BOOM+.2?1+.04*Math.sin(introT*14):1,bw=Math.min(W*.96,tw('EXTREME EDITION!!',fc)+fc*1.2)/2;x.save();x.translate(cx,yC);x.rotate(-.08);x.scale(sc*pulse,sc*pulse);x.fillStyle='#e01b1b';x.beginPath();x.moveTo(-bw,-fc*.72);x.lineTo(bw*1.02,-fc*.85);x.lineTo(bw,fc*.72);x.lineTo(-bw*1.02,fc*.85);x.closePath();x.fill();x.strokeStyle='#000';x.lineWidth=4;x.stroke();x.restore();
+   if(wordOK('mancala'))putWord('mancala',xx,yy,fb,{rot:-.05,scale:k<1?1:1+.06*Math.max(0,1-(introT-HITS[3])*4)});else thps(x,'MANCALA',xx,yy,fb,{grad:['#fffbd0','#ffd000','#ff7a00','#c42a00'],rot:-.05,lw:.2,maxW:W*.96,scale:k<1?1:1+.06*Math.max(0,1-(introT-HITS[3])*4)});}
+  k=fly(BOOM,.18);if(k>0&&wordOK('extreme')){const sc=1+(1-k)*2.2,pulse=introT>BOOM+.2?1+.04*Math.sin(introT*14):1;putWord('extreme',cx,yC,fc*1.6,{rot:-.08,scale:sc*pulse});}else if(k>0){const sc=1+(1-k)*2.2,pulse=introT>BOOM+.2?1+.04*Math.sin(introT*14):1,bw=Math.min(W*.96,tw('EXTREME EDITION!!',fc)+fc*1.2)/2;x.save();x.translate(cx,yC);x.rotate(-.08);x.scale(sc*pulse,sc*pulse);x.fillStyle='#e01b1b';x.beginPath();x.moveTo(-bw,-fc*.72);x.lineTo(bw*1.02,-fc*.85);x.lineTo(bw,fc*.72);x.lineTo(-bw*1.02,fc*.85);x.closePath();x.fill();x.strokeStyle='#000';x.lineWidth=4;x.stroke();x.restore();
    thps(x,'EXTREME EDITION!!',cx,yC,fc,{grad:['#ffffff','#ffe600'],rot:-.08,scale:sc*pulse,maxW:bw*1.9});}
   k=fly(6.1,.35);if(k>0){const yy=cardsTop;for(const i of [0,1]){const side=i?1:-1,xx=cx+side*(cw*.62)+(1-ease(k))*side*W;
     x.save();x.translate(xx,yy+ch/2);x.rotate(side*.05);x.fillStyle=PCOL[i];x.fillRect(-cw/2-3,-ch/2-3,cw+6,ch+6);x.fillStyle='#111';x.fillRect(-cw/2,-ch/2,cw,ch);const hd=head(i,'win');if(hd)A.drawHead(x,hd,0,ch*.28,Math.min(cw,ch*.9));

@@ -99,7 +99,7 @@ const keyImg=it=>`<img src="${e(keyArt(it))}" alt="" style="object-position:${KE
 const logoOf=it=>it&&(dropArt('keyart',it.fam?.key&&it.fam.key+'-logo')||dropArt('keyart',it.g?.id&&it.g.id+'-logo')||(it.g&&familyOf(it.g)&&dropArt('keyart',familyOf(it.g)+'-logo')));
 const titleHTML=(title,logo)=>logo?`<h2 class="arc-title arc-title-logo"><span>${e(title)}</span><img src="${e(logo)}" alt="" draggable="false"></h2>`:`<h2 class="arc-title">${e(title)}</h2>`;
 function art(g,{fam=null,size=''}={}){
- const drop=tileArt(fam?.key)||tileArt(g?.id);if(drop)return `<img class="arc-cut arc-drop${size}" src="${e(drop)}" alt="" loading="lazy" draggable="false">`;
+ const drop=tileArt(fam?.key)||tileArt(g?.id)||(g?.id&&tileArt(familyOf(g)));if(drop)return `<img class="arc-cut arc-drop${size}" src="${e(drop)}" alt="" loading="lazy" draggable="false">`;
  const cid=fam?.hero&&own(fam.hero)?fam.hero:g?.id?heroId(g):null;
  if(cid)return `<img class="arc-cut${size}" src="${e(own(cid))}" alt="" loading="lazy" draggable="false">`;
  const gameArt=g&&g.id!=='wopr-grid'&&ART[`game:${g.id}`];
