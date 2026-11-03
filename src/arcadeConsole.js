@@ -5,6 +5,7 @@
 // version page laid out as tiles. ui.js catalogHTML still decides what is listed and how each game is played
 // (`partsFor` gives the play button, info line and medals), so 1P / online / dev mode work as before.
 const {ART}=require("src/data/art.js");
+const {KEY_SCREENS,KEY_PLACE}=require("src/data/keyPlacements.js");
 const {USER_PORTRAITS,isRasterArt}=require("src/data/userPortraits.js");
 const {CHARACTERS}=require("src/characters.js");
 const {bossById}=require("src/data/bosses.js");
@@ -108,8 +109,13 @@ const KEY_BOX={baseball:[.664,.385,.929,.579], 'black-sabbath-pinball':[.674,.29
 const KEY_BOX_DEFAULT=[.28,.15,.72,.85];
 const keyBox=it=>KEY_BOX[it.fam?.key]||KEY_BOX[it.g?.id]||KEY_BOX[familyOf(it.g)]||KEY_BOX_DEFAULT;
 // Behind the picture: a blurred copy covering the whole screen, shown only when the picture had to zoom out (no bare backdrop).
-const keyImg=it=>{const b=keyBox(it),u=e(keyArt(it));return `<img class="arc-keyfill" src="${u}" alt="" hidden><img src="${u}" alt="" data-box="${b.join(',')}" style="transform-origin:${(b[0]+b[2])*50}% ${(b[1]+b[3])*50}%">`;};
+const keySlot=it=>it&&[it.fam?.key,it.g?.id,it.g&&familyOf(it.g)].find(k=>k&&dropArt('keyart',k));
+const keyImg=it=>{const b=keyBox(it),u=e(keyArt(it));return `<img class="arc-keyfill" src="${u}" alt="" hidden><img src="${u}" alt="" data-box="${b.join(',')}" data-slot="${e(keySlot(it)||'')}" style="transform-origin:${(b[0]+b[2])*50}% ${(b[1]+b[3])*50}%">`;};
 const SPILL=1.3;   // how much bigger than its area the faces' box may get before the picture zooms out instead
+// The owner's locked setting (Background Picker) for the screen nearest this one, by shape first, then size; null = automatic.
+function lockedPlace(slot,W,H){const t=slot&&KEY_PLACE[slot];if(!t)return null;let best=null,bd=1e9;
+ for(const [id,w,h] of KEY_SCREENS){const d=3*Math.abs(Math.log((W/H)/(w/h)))+.5*Math.abs(Math.log((W*H)/(w*h)));if(d<bd){bd=d;best=id;}}
+ return t[best]||null;}
 const clampR=(v,lo,hi)=>lo>hi?(lo+hi)/2:Math.min(hi,Math.max(lo,v));
 function placeKey(img){
  const root=img?.closest?.('.arcade-console');if(!root||!img.naturalWidth||!img.dataset.box)return;
@@ -130,7 +136,8 @@ function placeKey(img){
  const [ax0,ay0,ax1,ay1]=areas.reduce((a,b)=>fitIn(b)>fitIn(a)*1.02?b:a);
  // fill the screen first: the faces may spill a little past their area (into the text's edge, never the buttons) rather
  // than the picture zooming out and leaving empty space (owner, Nov 3: "a little covering isn't the end of the world")
- const s=Math.min(cover,fitIn([ax0,ay0,ax1,ay1])*SPILL,.94*W/bw,.94*(H-top)/bh);   // but never past the screen's edges
+ const s0=Math.min(cover,fitIn([ax0,ay0,ax1,ay1])*SPILL,.94*W/bw,.94*(H-top)/bh);   // but never past the screen's edges
+ const lock=lockedPlace(img.dataset.slot,W,H),s=lock?cover*lock.z:s0;
  const dw=iw*s,dh=ih*s,BW=bw*s,BH=bh*s;
  // wide: the box sits right of the text when it fits there, else as far right as it can
  const cx=(ax0+ax1)/2,cy=(ay0+ay1)/2;
@@ -139,7 +146,7 @@ function placeKey(img){
  // text on tall screens), 1 = keep their right edge (spill left towards the text on wide ones)
  const solve=(want,d,L,b0,b1,a0,a1,bias)=>{const lo=a0-b0*d,hi=a1-b1*d,p=lo>hi?lo+(hi-lo)*bias:clampR(want,lo,hi);const c0=d>=L?L-d:0,c1=d>=L?0:L-d;
   const l2=Math.max(lo,c0),h2=Math.min(hi,c1);return l2<=h2?clampR(p,l2,h2):p;};
- const left=solve(cx-(bx0+bx1)/2*dw,dw,W,bx0,bx1,ax0,ax1,1),topP=solve(cy-(by0+by1)/2*dh,dh,H,by0,by1,ay0,ay1,side?.35:0);
+ const left=lock?W/2-lock.fx*dw:solve(cx-(bx0+bx1)/2*dw,dw,W,bx0,bx1,ax0,ax1,1),topP=lock?H/2-lock.fy*dh:solve(cy-(by0+by1)/2*dh,dh,H,by0,by1,ay0,ay1,side?.35:0);
  // edges that end on screen fade into the backdrop
  const f=(n,d)=>n?`${Math.round(d*.16)}px`:'0px',fl=left>1,fr=left+dw<W-1,ft=topP>1,fb=topP+dh<H-1;
  const mask=(fl||fr||ft||fb)?`linear-gradient(90deg,#0000,#000 ${f(fl,dw)},#000 calc(100% - ${f(fr,dw)}),#0000),linear-gradient(180deg,#0000,#000 ${f(ft,dh)},#000 calc(100% - ${f(fb,dh)}),#0000)`:'none';
