@@ -22,6 +22,5 @@ cloudflare/public/a/
 # Claude Code agent worktrees (temporary checkouts)
 .claude/worktrees/
 
-# soak test (tools/soak.mjs): the game build and screenshots stay local; LATEST.md, history.jsonl and fails/ may be shared
-soak-reports/app/
-soak-reports/shots/
+# soak test (tools/soak.mjs) output stays on the machine that ran it; share soak-reports/LATEST.md (+ fails/) by uploading it
+soak-reports/

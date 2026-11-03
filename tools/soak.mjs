@@ -2,11 +2,11 @@
 // run out, and keeps a rolling report a Claude session can read later. No GitHub Actions minutes, nothing uploaded.
 //   node tools/soak.mjs [--hours 8] [--no-online] [--no-build] [--port 8123]
 // Windows one-click: SOAK-TEST.cmd (finds Node, installs Playwright + Chromium once, then runs this).
-// Report folder soak-reports/ (share it, or commit LATEST.md + history.jsonl + fails/ with GitHub Desktop):
+// Report folder soak-reports/ (git-ignored; share LATEST.md and fails/ by uploading them to the Claude chat):
 //   LATEST.md      summary: every test's runs / passes / fails, the newest failures with the end of their log
 //   history.jsonl  one line per test run {at, round, test, ok, secs, code, args}
 //   fails/         the full log of every failed or hung run
-//   shots/, app/   screenshots and the game build (git-ignored)
+//   shots/, app/   screenshots and the game build
 import {spawn, execSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
