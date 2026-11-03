@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.80.5
+
+- **Every Arcade background placed by hand**: all 34 backgrounds now show exactly as you set them in the Background Picker on every screen: Fold closed and open, phones, tablets and desktop, upright and sideways.
+
 ## v0.80.4
 
 - **Arcade backgrounds placed by hand**: 18 backgrounds now show exactly as you set them in the Background Picker on every screen: Fold closed and open, phones, tablets and desktop, upright and sideways. The rest keep the automatic placement until you lock them in.

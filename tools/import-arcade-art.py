@@ -53,3 +53,6 @@ if skipped:
     print('\nSkipped (no slot with that name; see assets/tiles/SLOTS.md):\n  ' + '\n  '.join(skipped))
 if done and not DRY:
     os.system(f'node "{os.path.join(ROOT, "tools/arcade-art-slots.mjs")}"')
+if any('keyart' in d and '-logo' not in d for d in done):
+    print('\nNEW BACKGROUNDS: every new or replaced key art goes through the Background Picker before it ships:'
+          '\n  add its faces box to KEY_BOX, then follow tools/bg-picker/README.md (measure, assemble, publish, owner locks, apply.py).')

@@ -114,7 +114,7 @@ h1{font-family:var(--f-disp);font-weight:400;letter-spacing:.04em;font-size:clam
 const DATA=/*DATA*/null;
 const VERDICTS=[['perfect','Perfect'],['tweak','Small tweak'],['edit','Needs an edit'],['remake','Remake']];
 const $=id=>document.getElementById(id);
-const state={sel:DATA.slots[0].id,saved:{},db:null,edit:null};
+const state={sel:DATA.slots[0]?.id,saved:{},db:null,edit:null};
 const rec=slot=>state.saved[slot]||{screens:{}};
 const auto=(slot,sc)=>{const s=DATA.slots.find(x=>x.id===slot),p=s.place[sc.id];if(p)return {...p};
  // not measured in the game (only shown inside its family page): fill the screen, faces box in the middle
@@ -196,8 +196,10 @@ const step=d=>{const E=state.edit;E.i=(E.i+d+DATA.screens.length)%DATA.screens.l
 $('ed-prev').addEventListener('click',()=>step(-1));$('ed-next').addEventListener('click',()=>step(1));$('ed-close').addEventListener('click',closeEditor);
 addEventListener('keydown',e=>{if(!state.edit)return;if(e.key==='Escape')closeEditor();if(e.key==='ArrowRight')step(1);if(e.key==='ArrowLeft')step(-1);});
 
-renderAll();
-(async()=>{const timer=setTimeout(()=>{$('status').textContent='Couldn’t reach your saved choices yet; changes will save once it connects.';},10000);
+if(!DATA.slots.length){document.querySelector('.head').hidden=true;$('rail').hidden=true;
+ $('wall').outerHTML='<p class="empty">Every background is placed on every screen. New backgrounds show up here when they are added to the game.</p>';$('status').textContent='All done.';}
+else renderAll();
+if(DATA.slots.length)(async()=>{const timer=setTimeout(()=>{$('status').textContent='Couldn’t reach your saved choices yet; changes will save once it connects.';},10000);
  try{const db=await window.claude?.use?.('db');if(!db){clearTimeout(timer);$('status').textContent='Viewing only: sign in to save choices.';return;}
   state.db=db;db.collection('bg').onSnapshot(snap=>{clearTimeout(timer);for(const d of snap.docs){const id=d.id.split('/').pop();if(!state.edit||id!==state.sel)state.saved[id]=d.data();}
    $('status').textContent='Choices save automatically.';renderRail();renderHead();if(!state.edit)renderWall();},err=>{clearTimeout(timer);$('status').textContent='Couldn’t load saved choices ('+(err?.code||'error')+').';});}

@@ -24,8 +24,7 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   `contentPolicy.js` (builds the active catalog of characters/items/trivia), `profile.js` (unlock rules, saves),
   `persistence.js` (`validRun` save validation), `audio.js`/`music.js` (WebAudio) + `musicGen.js` (generative board score).
 - Writing a minigame: read `docs/ENGINE_GUIDE.md` first.
-- Arcade backgrounds (key art): the owner places each one per screen in the Background Picker artifact; new key art or
-  "picker" → follow `tools/bg-picker/README.md` (faces box, measure, assemble, publish to the same URL, apply locked choices).
+- Arcade backgrounds (key art): the owner places each one per screen in the Background Picker artifact (see the rule below).
 
 ## Commands
 - Build: `node tools/build.mjs` (or `--out /tmp/x.html` for a private build).
@@ -50,6 +49,9 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
 - Every new game is full screen: call `fullBleed(s)` (`src/engines/fullBleed.js`) right after `s.canvas(...,{fill:true})`.
   Canvas fills the screen, Pause/Exit float top-right, a small ⤢ full-screen toggle sits bottom-centre, touch buttons are
   drawn floating on the canvas, and the game's HUD keeps clear of the top-right pills (`fullBleed` returns `{top}`).
+- EVERY new or replaced Arcade background (`assets/keyart/<slot>`) goes through the Background Picker before it ships
+  (owner, Nov 4: "all new backgrounds need to go through the picker"): faces box → measure → assemble → publish to the same
+  picker URL → owner locks every screen → `apply.py` → release. Steps in `tools/bg-picker/README.md`. Don't hand-tune placement.
 - Use seeded randomness (`s.random()`, `runRandom(run)`) for anything that must be fair or reproducible.
 - Online board game (`src/netBoard.js`): the host phone runs the run, the guest mirrors it. Board dialogs must go through
   `showDialog`/`showRoutePanel` (add `player:i` when a dialog belongs to someone other than the current player,

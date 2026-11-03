@@ -1,5 +1,9 @@
 # Background Picker (roadmap M20)
 
+**Rule (owner, Nov 4): every new or replaced Arcade background goes through this picker before it ships.** Tell the owner
+the picker link when new key art is in, wait for them to lock every screen, then apply and release.
+All 34 backgrounds of v0.80.5 are locked; the picker shows an "all done" page until new ones are added.
+
 The owner chooses exactly how every Arcade background (`assets/keyart/<slot>.webp`) is shown on 8 common screens
 (Fold closed, Phone, Phone sideways, Fold open, Fold open sideways, Tablet, Tablet sideways, Desktop): drag to move,
 pinch/scroll to zoom, **Lock in**, plus a verdict (perfect / small tweak / needs an edit / remake) and a note.
