@@ -33,5 +33,6 @@ if __name__ == '__main__':
             if sid in [s['id'] for s in SCREENS] and all(k in v for k in ('z', 'fx', 'fy')):
                 place.setdefault(slot, {})[sid] = {'z': round(v['z'], 4), 'fx': round(v['fx'], 4), 'fy': round(v['fy'], 4)}; n += 1
     write(place)
-    full = [k for k, v in place.items() if len(v) == len(SCREENS)]
+    ids = {s['id'] for s in SCREENS}
+    full = [k for k, v in place.items() if ids <= set(v)]
     print(f'{n} screens from the dump; {len(place)} pictures placed, {len(full)} on every screen')

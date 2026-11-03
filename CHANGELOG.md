@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.80.6
+
+- **Arcade backgrounds tuned for your real Fold**: every background now uses the setting you locked at your Fold's exact screen size (upright and sideways), and you re-checked the ones where the title and logo covered faces. The picker now previews the game's real text, so what you pick is what you get.
+
 ## v0.80.5
 
 - **Every Arcade background placed by hand**: all 34 backgrounds now show exactly as you set them in the Background Picker on every screen: Fold closed and open, phones, tablets and desktop, upright and sideways.

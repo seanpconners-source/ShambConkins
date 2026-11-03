@@ -1,13 +1,13 @@
 [
  {
   "id": "my-fold-open",
-  "label": "Your Fold open",
+  "label": "Fold open (Sean\u2019s phone)",
   "w": 752,
   "h": 835
  },
  {
   "id": "my-fold-open-land",
-  "label": "Your Fold open sideways",
+  "label": "Fold open sideways (Sean\u2019s phone)",
   "w": 835,
   "h": 752
  },
@@ -28,18 +28,6 @@
   "label": "Phone sideways",
   "w": 844,
   "h": 390
- },
- {
-  "id": "fold-open",
-  "label": "Fold open",
-  "w": 830,
-  "h": 920
- },
- {
-  "id": "fold-open-land",
-  "label": "Fold open sideways",
-  "w": 920,
-  "h": 830
  },
  {
   "id": "tablet",
