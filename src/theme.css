@@ -866,6 +866,18 @@ body .mx-shell input.mx-name:focus{border-bottom-color:#fff!important}
 .mx-pcard-art .portrait img{position:absolute;inset:0;width:100%!important;height:100%!important;object-fit:contain!important;object-position:center bottom!important}
 @media (max-height:700px) and (max-width:899px){.mx-slot-info label{display:none}.mx-chars{gap:8px}}
 
+/* Characters: the badge and the name float over the picture (owner, Nov 3: bigger heads, no 'Player 1 · roster' bar) */
+.mx-slot-art{height:190px}
+.mx-slot-art::after{content:"";position:absolute;inset:0 0 auto;height:46%;background:linear-gradient(180deg,#060a1799,#0000);pointer-events:none;z-index:1}
+.mx-slot-top{position:absolute;top:9px;left:10px;right:10px;z-index:2;display:flex;align-items:center;gap:8px;min-width:0;pointer-events:none}
+.mx-slot-top>*{pointer-events:auto}
+.mx-slot-top .mx-slot-name{text-shadow:0 2px 8px #000c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body .mx-shell .mx-slot-top input.mx-name{flex:0 1 auto;width:auto!important;min-width:0;max-width:72%;field-sizing:content;text-shadow:0 2px 8px #000c;border-bottom-color:#ffffff40!important;font-size:16px!important}
+.mx-slot-info{padding-top:9px}
+@media (min-width:900px){.mx-slot{grid-template-columns:210px 1fr}.mx-slot-art{min-height:200px}}
+@media (max-width:400px){.mx-slot-art{height:160px}}
+@media (max-height:700px) and (max-width:899px){.mx-slot-art{height:128px}}
+
 /* ---------- Collection (src/collection.js) ---------- */
 body .col-shell{position:relative;height:100dvh;overflow:hidden;display:flex;flex-direction:column;gap:10px;max-width:none!important;width:100%;margin:0!important;box-sizing:border-box;border:0!important;border-radius:0!important;box-shadow:none!important;
  padding:max(10px,env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px))!important;background:radial-gradient(110% 50% at 50% -6%,#1d3c8c 0%,#0c1530 52%,#060a17 100%)!important;color:#eef3ff;font-family:var(--c-text)}

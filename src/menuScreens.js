@@ -35,8 +35,8 @@ function charSelectHTML(names,selected,{strip=''}={}){
   const nameField=cpu?`<b class="mx-slot-name">${e(c.name.split(' ')[0])} (CPU)</b>`:remote?`<b class="mx-slot-name">${e(names[i])}</b>`:`<input id="player-name-${i}" class="mx-name" maxlength="28" value="${e(names[i])}" aria-label="Player ${i+1} name">`;
   return `<section class="cs-panel p${i+1}${cpu?' cs-cpu':''}${remote?' cs-remote':''}${ui.active===i?' on':''}" data-cs-slot="${i}" aria-label="${cpu?'CPU rival':`Player ${i+1}`}">
    <div class="mx-slot" data-cs-pick="${i}" role="button" tabindex="0" aria-label="Pick for ${cpu?'the CPU':`player ${i+1}`}">
-    <div class="mx-slot-art cs-stage" data-cycle="${moods.length}"><div class="mx-glow"></div>${moods.map((m,k)=>`<span class="cs-face ${k?'':'on'}" data-mood-name="${m}">${portraitHTML(c.id,'portrait mx-face mx-big',m)}</span>`).join('')}</div>
-    <div class="mx-slot-info"><span class="mx-badge">${cpu?'CPU':`P${i+1}`}</span><label ${!cpu&&!remote?`for="player-name-${i}"`:''}>${label}</label>${nameField}
+    <div class="mx-slot-art cs-stage" data-cycle="${moods.length}"><div class="mx-glow"></div>${moods.map((m,k)=>`<span class="cs-face ${k?'':'on'}" data-mood-name="${m}">${portraitHTML(c.id,'portrait mx-face mx-big',m)}</span>`).join('')}<div class="mx-slot-top" title="${e(label)}"><span class="mx-badge">${cpu?'CPU':`P${i+1}`}</span>${nameField}</div></div>
+    <div class="mx-slot-info">
      <h3 class="mx-char">${e(c.name)}</h3><div class="mx-src">${brandHTML(c.source)}<span>${e(c.source)}</span></div>
      <p class="mx-perk">${e(characterPerk(c.id))}</p>${skills.length?`<div class="mx-skills">${skills.map(k=>`<span>${e(TRAVEL_SKILLS[k])}</span>`).join('')}</div>`:''}</div>
    </div>
