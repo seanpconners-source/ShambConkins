@@ -423,7 +423,8 @@
   "src/engines/battleshipCuts.js",
   "src/engines/priceShow.js",
   "src/engines/froggerCrossy.js",
-  "src/engines/paddysDarts.js"
+  "src/engines/paddysDarts.js",
+  "src/data/characterQuotes.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

@@ -58,6 +58,12 @@ const tileCut=id=>{const u=USER_PORTRAITS['photo:char:'+id];return isRasterArt(u
 // Characters = each pick cycling through its moods; Collection = unlocked characters; Arcade = game pictures; Online = two
 // phones (the picks) with a signal pulsing between them.
 // float: the built-in Sean/Amber photos get their dark backdrop removed on load, like portraitHTML does.
+// Title-screen reels: a picture with solid corners (a game's square art) shows as a soft faded circle (owner, Nov 3);
+// transparent cut-outs keep their neon outline.
+function reelEdge(img){try{const w=img.naturalWidth,h=img.naturalHeight;if(!w||!h)return;const c=document.createElement('canvas');c.width=c.height=8;
+ const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,8,8);const d=x.getImageData(0,0,8,8).data,a=i=>d[i*4+3];
+ img.classList.toggle('ts-boxed',Math.min(a(0),a(7),a(56),a(63))>200);}catch(_){}}
+if(typeof document!=='undefined')document.addEventListener('load',ev=>{if(ev.target?.matches?.('.ts-reel img'))reelEdge(ev.target);},true);
 const reelHTML=(urls,cls='',float=false)=>`<span class="ts-reel ${cls}" ${urls.length>1?'data-reel':''} aria-hidden="true">${urls.map((u,i)=>`<img class="ts-cut${i?'':' on'}" src="${e(u)}" alt="" draggable="false"${float?' onload="window.ShambConkins?.floatingHead(this)"':''}>`).join('')}</span>`;
 function moodURLs(id){const out=[];for(const m of ['normal',...portraitMoods(id)]){const raw=portraitURL(id,m),u=raw&&headDisplayURL(raw);if(u&&!out.includes(u))out.push(u);}return out.length?out:[portraitURL(id)].filter(Boolean);}
 function collectionReel(p){const ids=[...new Set([...p.shared,...Object.values(p.rosters).flat()])].filter(id=>tileCut(id));for(let i=ids.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ids[i],ids[j]]=[ids[j],ids[i]];}

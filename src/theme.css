@@ -946,6 +946,7 @@ body .title-screen .home-stack button.ts-tile{min-height:104px}
 .ts-reel{position:absolute;right:-2%;bottom:0;width:56%;height:100%;pointer-events:none}
 .ts-reel img.ts-cut{position:absolute!important;right:0!important;bottom:0;height:100%!important;max-width:100%!important;width:auto;object-fit:contain;object-position:right bottom;opacity:0;transform:translateX(38%) scale(.94);transition:opacity .55s ease,transform .6s cubic-bezier(.2,.8,.25,1);filter:var(--c-neon)}
 .ts-reel img.ts-cut.on{opacity:1;transform:none}
+.ts-reel img.ts-cut.ts-boxed{filter:none;aspect-ratio:1;object-fit:cover;-webkit-mask-image:radial-gradient(circle closest-side,#000 58%,#0000 100%);mask-image:radial-gradient(circle closest-side,#000 58%,#0000 100%)}
 /* each reel picture keeps its own composited layer, so the neon outline isn't re-drawn mid-slide (owner: icons flickered) */
 .ts-reel img.ts-cut{will-change:opacity,transform;backface-visibility:hidden}
 .ts-reel img.ts-cut.out{opacity:0;transform:translateX(-30%) scale(.94)}

@@ -258,7 +258,7 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
   portrait/moods and their unlocked outfits (K8-K12) and how to get the rest.
 - **M6** `[idea]` Carry the same look to the other menus (home, New Game, settings) once M1 is liked.
 - **M7** `[verify]` (Nov 3: Look Book https://claude.ai/artifact/BTqLZbwnPtUwPKz2tGNTNa = 3 layouts x 6 palettes x 5 picture styles x 5 letterings on Home/Arcade/Game page/Character, owner votes + notes saved in its db: collections `looks` (doc id `<layout|pal|art|type>--<option>`, {vote,note}) and `combos`; read with ArtifactData list. Older 3-direction mockup: https://claude.ai/artifact/4h7fazkSTgh1oQxDQdpctE) Before building: Claude mocks up 2-3 design directions (screenshots) for the owner to pick from.
-- **M17** `[todo]` (owner, Nov 3) Title screen Arcade tile: when it shows a game's picture (square/rectangular art), show it in a
+- **M17** `[verify]` (Nov 3: `reelEdge` in ui.js marks pictures with solid corners `.ts-boxed` → radial fade) (owner, Nov 3) Title screen Arcade tile: when it shows a game's picture (square/rectangular art), show it in a
   soft faded-out circle instead of a hard edge. Transparent cut-outs stay as they are (they look great).
 - **M18** `[todo]` (owner, Nov 3) The Back button on menus is weak: make it a cool arrow (owner will generate the image: slot
   `assets/ui/back.*` to be added). Maybe rethink a few other buttons too (offer options when we get there).
@@ -266,6 +266,8 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
 ## Phase H — new content (sections 3 + 7)
 
 Reuse engines with new skins wherever possible.
+- **M19** `[todo]` (owner, Nov 3, NEXT after the quotes) The title screen and menus still flicker sometimes: find every cause (re-renders that replace the
+  whole view, reels/pictures swapping, entrance animations replaying, fonts/images popping in) and make every screen smooth and polished.
 - **H1** `[idea]` Game-show set on one engine: Price Is Right Plinko, Jeopardy!, Wheel of Fortune, Who Wants to Be a Millionaire?, Deal or No Deal.
   Owner, Nov 3: **Wheel of Fortune** and **Deal or No Deal** as exact look-alikes (set, music feel, board, host moments), a **Jeopardy!** look-alike trivia game (board of categories × values, Daily Doubles, Final Jeopardy wager) on our trivia bank; triage notes also want Hardcore Trivia → **Who Wants to Be a Millionaire** and Price Bid-Off → a full Price Is Right suite (Plinko, Cliff Hangers yodel guy, Big Wheel).
 - **H22** `[idea]` (owner, Nov 3) **Words with Friends** clone (two players, 15x15 tile board, racks, word list built in for offline play) **with a twist**. Ideas to offer: words that name a character or show in the game score double and pop that character's head; special tiles that play a mini-minigame; a "Chardee" square that forces a dare; online play like the other board games.
@@ -403,7 +405,7 @@ Other boss items
 - **P8** `[todo]` (owner, Nov 3) Transparent logos everywhere a property is shown (Army of Darkness, Always Sunny, Black Sabbath…): audit `brandHTML`/`logoURL` (assets.js) and the references' logo sources; where the online logo is poor or has a box behind it, download a clean transparent one into the repo (drop-in folder like `assets/logos/<source-key>.webp|svg`, embedded by build.mjs, preferred over the online one), list the ones still missing for the owner.
 - **P6** `[todo]` Memorable unlock announcements: proper art and animation.
 - **P7** `[todo]` General transitions, animations, sounds, menus.
-- **P9** `[todo]` (owner, Nov 3) Character quotes (`src/characterPhrases.js` PHRASES + `unlockPhrase` in the data packs) are mostly
+- **P9** `[part]` (Nov 3: 365 of 725 characters have their real line in `src/data/characterQuotes.js`; the rest keep their old line until a real quote is checked: obscure/personal ones) (owner, Nov 3) Character quotes (`src/characterPhrases.js` PHRASES + `unlockPhrase` in the data packs) are mostly
   placeholders. Give every character their real, famous line: on the nose, what they actually say ("I'll be back.",
   "Groovy."). Doesn't need to be original or cute. Short catchphrases only.
 - **P10** `[idea]` (owner, Nov 3) Character evolutions: different actors (ties to K8), old versions, transformations, and
