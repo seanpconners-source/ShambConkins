@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 186 slots: 34 have key art, 31 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 186 slots: 34 have key art, 32 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -10,7 +10,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `bosses` | Boss Select (every boss) | family | ✅ / ✅ |
 | `pinball` | Pinball Tables (bucketheadland-pinball, black-sabbath-pinball, king-gizzard-pinball) | family | ✅ / · |
 | `smb` | Super Mario Bros. (smb-world-1, smb-coin-rush, smb-castle-dash, smb3-nspade, smb3-spade-slots) | family | ✅ / ✅ |
-| `kart` | Mario Kart (rainbow-road-kart, kart-grand-prix-pass, kart-time-trial, rainbow-balloon-battle) | family | ✅ / · |
+| `kart` | Mario Kart (rainbow-road-kart, kart-grand-prix-pass, kart-time-trial, rainbow-balloon-battle) | family | ✅ / ✅ |
 | `castlevania` | Castlevania (cv-symphony, cv-vampire-killer, cv-candle-hunt) | family | ✅ / ✅ |
 | `sonic` | Sonic the Hedgehog (sonic-ring-rush, sonic-goal-dash) | family | ✅ / ✅ |
 | `doom` | DOOM (doom, doom-2) | family | ✅ / ✅ |
