@@ -16,7 +16,7 @@ const {USER_PORTRAITS,isRasterArt}=require("src/data/userPortraits.js");
 const {charSelectHTML,newGameHTML,installMenuScreens}=require("src/menuScreens.js");
 const {collectionTileHTML,collectionShellHTML,installCollection}=require("src/collection.js");
 const {arcadeReel}=require("src/arcadeConsole.js");
-const {arcadeConsoleHTML,installArcadeConsole,CATEGORIES:ARCADE_CATEGORIES,inCategory}=require("src/arcadeConsole.js");
+const {arcadeConsoleHTML,installArcadeConsole,warmKeyArt,CATEGORIES:ARCADE_CATEGORIES,inCategory}=require("src/arcadeConsole.js");
 const {FEATURED_GAMES}=require("src/data/featuredGames.js");
 const {store}=require("src/state.js");
 const {ART}=require("src/data/art.js");
@@ -72,6 +72,7 @@ let reelTimer=0;
 function installHomeReels(){clearInterval(reelTimer);warmFaces([0,1].map(i=>store.setupSelected?.[i]||(i?'amber':'sean')));
  // decode every reel picture now (owner: icons flickered): a hidden picture is otherwise decoded the moment it slides in
  for(const im of document.querySelectorAll('.title-screen .ts-reel img'))im.decode?.().catch(()=>{});
+ setTimeout(()=>{if(store.view==='home')warmKeyArt();},800); // the Arcade's backgrounds, ready before it opens
  if(typeof matchMedia!=='undefined'&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;let tick=0;
  reelTimer=setInterval(()=>{if(store.view!=='home'||document.hidden)return;const reels=[...document.querySelectorAll('.title-screen [data-reel]')];if(!reels.length)return;tick++;
   // one reel moves at a time, in turn, so the screen never jumps all at once
@@ -269,12 +270,13 @@ function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=
  const bossCount=EVENT_GAMES.filter(g=>g.bossId),filters=isRoster?[['all','Characters'],['unlocked','Unlocked'],['items',`Items (${p.itemsSeen.length})`],['locations',`Landmarks (${p.locations.length})`]]:[['all','All games'],['arcade','Arcade'],['puzzle','Puzzles'],['strategy','Strategy'],['skill','Skill'],['sports','Sports'],['trivia','Trivia'],['casino','Casino'],['dice','Dice'],['boss',`Bosses (${bossCount.filter(g=>gameUnlocked(g,p)).length}/${bossCount.length})`],['pokemon','Pokémon battles'],['variants','Encounter variants']];
  if(isRoster)return collectionShellHTML({filter,filters,query,count:list.length,cards,more:catalogFeed.shown<list.length});
  if(!isRoster){const bosses=EVENT_GAMES.filter(g=>g.bossId);
-  return arcadeConsoleHTML({list,partsFor,filter,query,filters:ARCADE_CATEGORIES.map(([id,label])=>[id,id==='boss'?`Bosses (${bossCount.filter(g=>gameUnlocked(g,p)).length}/${bossCount.length})`:label]),extraBosses:bosses.filter(g=>!list.includes(g)&&!isCut(g)),
+  return arcadeConsoleHTML({list,partsFor,filter,query,familyPool:GAMES.filter(g=>!isCut(g)),filters:ARCADE_CATEGORIES.map(([id,label])=>[id,id==='boss'?`Bosses (${bossCount.filter(g=>gameUnlocked(g,p)).length}/${bossCount.length})`:label]),extraBosses:bosses.filter(g=>!list.includes(g)&&!isCut(g)),
    strip:soloStripHTML(p),devStrip:`<span>DEV MODE · ${p.settings.devMode?'ALL GAMES TESTABLE':'OFF'}</span>${button('dev-mode',p.settings.devMode?'Turn off':'Enable game testing','small ghost')}`});}
  return `<main class="shell catalog-shell">${header(isRoster?'YOUR EXPANDING UNIVERSE':'PERMANENT PROGRESSION · MINIGAME VAULT')}<div class="section-heading"><div><div class="overline">${isRoster?'COLLECTION':'THE ARCADE'}</div><h2 style="margin-top:7px">${isRoster?'Familiar faces, strange company.':'MINIGAME VAULT'}</h2><p>${isRoster?'Characters, collected items, and discovered landmarks carry across every run.':'Games unlock through play. Dev mode lets you test every game without changing progress.'}</p></div>${button('home','← Back','small ghost catalog-back')}</div>${!isRoster?`${button('arcade-random','🎲 Random game','primary arcade-random')}<div class="vault-dev-strip"><span>DEV MODE · ${p.settings.devMode?'ALL GAMES TESTABLE':'OFF'}</span>${button('dev-mode',p.settings.devMode?'Turn off':'Enable game testing','small ghost')}</div>${soloStripHTML(p)}`:''}<div class="catalog-tools"><input id="catalog-search" type="search" value="${e(query)}" placeholder="${isRoster?'Search names or shows…':'Search games or shows…'}" aria-label="Search collection" autocomplete="off"><select id="catalog-filter" aria-label="Show">${filters.map(([id,label])=>`<option value="${id}" ${filter===id?'selected':''}>${e(label)}</option>`).join('')}</select><span class="catalog-count">${list.length}</span></div><div class="catalog-grid">${cards||'<p class="empty-message">Nothing discovered here yet. Explore another route.</p>'}${catalogFeed.shown<list.length?'<div class="catalog-more" aria-hidden="true"></div>':''}</div></main>`;
 }
 // Random game button: any playable card in the current list (filter, search and 1P mode apply).
-function randomArcadePick(){const pool=(catalogFeed?.pool||catalogFeed?.list||[]).filter(g=>catalogFeed.playable?.(g));return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;}
+let lastRandom=null;
+function randomArcadePick(){const pool=(catalogFeed?.pool||catalogFeed?.list||[]).filter(g=>catalogFeed.playable?.(g)),fresh=pool.length>1?pool.filter(g=>g.id!==lastRandom):pool;const g=fresh.length?fresh[Math.floor(Math.random()*fresh.length)]:null;lastRandom=g?.id||null;return g;}
 // Vault entries for the Pokémon battles (they run in the Game Boy overlay, not a minigame engine).
 const POKEMON_MATCHES=[
  {id:'pkmn-wild',pokemon:'wild',title:'Pokémon · Random Wild Encounter',source:'Pokémon',icon:'🌿',category:'pokemon',duration:'one battle',rules:'A wild character jumps out of the tall grass. Battle it with your team (your character plus five unlocked friends) or throw a Poké Ball: a catch joins your roster.'},

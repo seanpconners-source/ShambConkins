@@ -19,6 +19,8 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   layouts, art and sounds, not a copy of the original's levels/mazes/music.
 
 ## Inbox (unsorted new notes)
+- **M21** `[verify]` (owner, Nov 3; v0.80.7) Pictures must appear immediately: Arcade backgrounds when picking a game, faces on the get-ready card. Check on the real phone after updating.
+- **M22** `[verify]` (owner, Nov 3; v0.80.7) 🎲 opens a random game's page, not the Ready card. Hangman Unchained = one tile on every shelf with its 3 versions on one page.
 
 - **N1** `[idea]` (owner, Nov 3) Friends online: see which friends are playing and whether they can be invited; when a
   friend becomes free (not mid-game, not mid-turn) an invite pops up on their screen at a moment that doesn't interrupt.
@@ -267,7 +269,7 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
 ## Phase H — new content (sections 3 + 7)
 
 Reuse engines with new skins wherever possible.
-- **M19** `[verify]` (Nov 3: measured with frame captures: changing screens showed a near-black frame (new screen invisible while pictures decoded) and taps that re-render a screen blanked every picture for 2+ frames. Fixed: ui.js renderInto reuses decoded <img>s, a frozen ghost of the old screen covers the change until the new pictures are ready (≤.4 s), entrance moves keep their motion without the fade (--enter-op)) (owner, Nov 3) The title screen and menus still flicker sometimes: find every cause (re-renders that replace the
+- **M19** `[verify]` (v0.80.7: the title tiles' 1.2 s fade was switched off by an older CSS rule, one-frame cuts, fixed; slow pictures in the installed app = the service worker's ignoreSearch lookup, fixed. Nov 3: measured with frame captures: changing screens showed a near-black frame (new screen invisible while pictures decoded) and taps that re-render a screen blanked every picture for 2+ frames. Fixed: ui.js renderInto reuses decoded <img>s, a frozen ghost of the old screen covers the change until the new pictures are ready (≤.4 s), entrance moves keep their motion without the fade (--enter-op)) (owner, Nov 3) The title screen and menus still flicker sometimes: find every cause (re-renders that replace the
   whole view, reels/pictures swapping, entrance animations replaying, fonts/images popping in) and make every screen smooth and polished.
 - **M20** `[verify]` (Nov 4: all 34 locked on every screen and in the game (v0.80.5); every new background goes through it from now on; how-to tools/bg-picker/README.md. Nov 3: picker live at https://claude.ai/artifact/N1zQ42EPkUqJf8AzpmdmPT, db collection `bg`, doc id = key-art slot {screens:{<screen>:{z,fx,fy}},verdict,note}; game reads `src/data/keyPlacements.js` KEY_PLACE (fill it from the db), nearest of KEY_SCREENS by shape then size, `lockedPlace` in arcadeConsole.js) (owner, Nov 3, VERY SOON) **Background picker**: an interactive page (like the Look Book
   artifact) that shows every Arcade background as it really looks on the common screens: closed Fold, phone portrait and

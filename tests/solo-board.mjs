@@ -92,7 +92,9 @@ check((stats.watch||0)+(stats.watchroute||0)>=1,'CPU decisions were shown read-o
 // pays it nothing (ROADMAP C13: the CPU out-scored the human for a fight it wasn't in).
 const idle=async()=>{for(let k=0;k<500;k++){if(await page.evaluate(()=>{const S=window.ShambConkins;return !S.store.session&&!S.store.busy&&!document.getElementById('dialog').open&&!S.pkmn.isOpen();}))return true;await step();await page.waitForTimeout(150);}return false;};
 const launch=async id=>{await idle();await page.evaluate(id=>{window.ShambConkins.requestGame({id,origin:'board'});},id);await page.waitForFunction(()=>[...document.querySelectorAll('#dialog[open] button')].some(b=>/Start game/.test(b.innerText)),null,{timeout:15000});await page.evaluate(()=>[...document.querySelectorAll('#dialog[open] button')].find(b=>/Start game/.test(b.innerText)).click());await page.waitForFunction(()=>!!window.ShambConkins.store.session,null,{timeout:15000});return page.evaluate(()=>{const s=window.ShambConkins.store.session;s.__t=performance.now()+1e7;return {id:s.game.id,kind:s.solo?.kind||null};});};
-if(!end.finished){
+// (Skipped on a warp board: it swaps any game for one from its own zone, soak Nov 3 got bond-baccarat for trivia-martial.)
+const onWarp=await page.evaluate(()=>!!window.ShambConkins.store.run.mainBoard);
+if(!end.finished&&!onWarp){
  const tr=await launch('trivia-martial');check(tr.id==='trivia-martial'&&tr.kind==='cpu',`a themed trivia game plays vs the CPU on the board (${tr.id}: ${tr.kind})`);
  await page.evaluate(()=>{const s=window.ShambConkins.store.session;s.finish([3,1],'bot');});
  const bo=await launch('boss-riddler');check(bo.kind==='alone','a boss is played alone vs the CPU run');

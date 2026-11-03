@@ -14,6 +14,7 @@ const {initDuel,setMode:setOnlineMode,leaveOnline,propose:proposeDuel}=require("
 const {initNetBoard,inviteBoard,leaveSetup,sendPick,hostBegin,hostEnd,netAction,netTask,hostGame,allowGame,onlineGames,rejoinBoard}=require("src/netBoard.js");
 const {fx,localDialogs,netChanged}=require("src/netHooks.js");
 const {initCpuBoard,makeCpuRun,cpuTurn,cpuPk}=require("src/cpuBoard.js");
+const {focusArcadeGame}=require("src/arcadeConsole.js");
 const {netState}=require("src/net.js");
 const {pickSouthPark}=require("src/data/southPark.js");
 const {updateBoardBanter}=require("src/boardBanter.js");
@@ -427,7 +428,7 @@ async function resolveLanding(){const run=store.run,token=movementToken;if(!run|
   case 'trainer':await pkTrainer(run,p);if(store.run!==run||movementToken!==token)return;run.roundsWithoutGame=0;endTurn();break;
   case 'grass':if(p.wildTurn!==run.turn&&random()<.55){await pkWild(run,p);if(store.run!==run||movementToken!==token)return;}await finishEncounter();break;
   case 'center':await pokemonCenter(p);if(store.run!==run||movementToken!==token)return;await finishEncounter();break;
-  case 'pkitem':{const it=pick(PKMN_CATALOG_ITEMS.filter(i=>i.findWeight>=1),random),found=acquireItem(run,store.profile,p,it);logRun(`${p.name}: ${found.message}`);saveRun();await gbMessages([`${p.name.toUpperCase()} found ${it.name.toUpperCase()}!`,`${p.name.toUpperCase()} put it in the POKéMON bag.`],{jingle:'item'});startMusic();if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}
+  case 'pkitem':{const it=pick(PKMN_CATALOG_ITEMS.filter(i=>i.findWeight>=1),random),found=acquireItem(run,store.profile,p,it);logRun(`${p.name}: ${found.message}`);saveRun();await cpuPk(p,()=>gbMessages([`${p.name.toUpperCase()} found ${it.name.toUpperCase()}!`,`${p.name.toUpperCase()} put it in the POKéMON bag.`],{jingle:'item'}));startMusic();if(store.run!==run||movementToken!==token)return;await finishEncounter();break;}
   case 'path':await finishEncounter();break;
   case 'location':await visitLocation(n.location);break;
   case 'item':{const before=effectSnapshot(run);const cacheRandom=Number.isFinite(n.cacheSeed)?seededRandom(n.cacheSeed+':'+(n.cacheVisits||0)):random,tool=run.board.obstacles?.length&&(p.travelFinds||0)<2?nearbyTravelTool(run,p,cacheRandom):null,it=tool||warpItem(run,p,store.profile,cacheRandom,findItem)||randomItem(cacheRandom,{player:p,profile:store.profile}),found=acquireItem(run,store.profile,p,it);if(tool)p.travelFinds=(p.travelFinds||0)+1;n.cacheVisits=(n.cacheVisits||0)+1;logRun(`${p.name}: ${found.message}`);run.phase='event';run.pending={kind:'location-result',message:found.message,unlocked:found.unlocked,owner:found.owner};saveRun();if(found.unlocked.length){sound('unlock');if(!await unlockDialog(found.unlocked,found.owner)||store.run!==run||movementToken!==token)return;}const answer=await showDialog({title:'A useful find',source:it.source,body:found.message,html:`${effectHTML(before,{item:it})}<h3 style="text-align:center">${e(it.name)}</h3><div class="how-to">${e(itemDescription(it))}</div>`,choices:foundChallengeChoices(it)});if(store.run!==run||movementToken!==token)return;animateItemTransfers(before);if(answer==='play')return playFoundChallenge(p,it);await finishEncounter();break;}
@@ -599,7 +600,7 @@ async function runAction(name,target){
   case 'online-board':await inviteBoard();break;
   case 'online-rejoin':rejoinBoard();break;
   case 'arcade-random':{const g=randomArcadePick();if(!g){toast('No playable games in this list');break;}
-   if(store.online)await proposeDuel(g.id);else if(g.pokemon)await arcadePokemon(g.pokemon);else await arcadeLaunch({id:g.id,origin:'arcade',solo:soloSettings(store.profile).on||undefined,quick:true});break;}
+   const shelf=focusArcadeGame(g);if(shelf){catalogQuery='';catalogFilter=shelf;catalogPage=0;showView('arcade',{query:'',filter:shelf,page:0});}break;}
   case 'solo-set':{const {key,value}=target.dataset;if(key==='on')store.online=false;setSolo(store.profile,key==='on'?{on:value==='1'}:key==='who'?{who:+value===1?1:0}:{level:value});saveProfile(store.profile);if(store.view==='setup'||store.view==='players')refreshSetup();else showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;}
   case 'arcade-pokemon':noteRecent(store.profile,'pkmn-'+target.dataset.id);saveProfile(store.profile);await arcadePokemon(target.dataset.id);break;
   case 'dev-game':if(store.profile.settings.devMode)await requestGame({id:target.dataset.id,origin:'dev'});break;

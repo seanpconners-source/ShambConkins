@@ -117,6 +117,19 @@ function addShortcut(board,realm,lane,from,to,skip,id,random){
  board.shortcuts.push({realm,from,to,lane,skip});
  board.obstacles.push({id,from,to,type:pick(OBSTACLE_IDS,random),open:false,openUntil:0,repairs:0});
 }
+// Can tryBridges (its loosest reach) lay at least one plank on this layout? Same rules, on an empty board.
+function hasCrossing({R0,R1,cells,occ},lengths,positions){
+ const laneAt=new Map();cells.forEach((list,lane)=>list.forEach(([c,r],i)=>laneAt.set(key(c,r),{lane,i})));
+ for(let lane=0;lane<3;lane++){const pos=positions[lane],dirs=[];if(pos<2)dirs.push(1);if(pos>0)dirs.push(-1);
+  for(const dir of dirs)for(let i=3;i<=lengths[lane]-4;i++){const [c,r]=cells[lane][i];if(r<=R0+1||r>=R1-1)continue;
+   for(const dr of [0,1,-1,2,-2])for(let span=2;span<=4;span++){if(dr&&span!==2)continue;
+    const t=laneAt.get(key(c+dir*span,r+dr));if(!t||t.lane===lane)continue;
+    const gaps=[];for(let k=1;k<span;k++)gaps.push(key(c+dir*k,r));if(dr)gaps.push(key(c+dir,r+Math.sign(dr)),key(c+dir,r+dr));
+    if(gaps.some(g=>occ.has(g)))continue;
+    const len=lengths[t.lane],fi=i/lengths[lane],ti=t.i/len;if(t.i<2||t.i>len-3||ti<fi-.45||ti>fi+.9)continue;
+    return true;}}}
+ return false;
+}
 function buildGridBoard(board){
  const random=seededRandom(board.seed+':grid-v8');
  board.layout=pick(GRID_LAYOUTS,random);board.generation=8;board.baseSpan=1050;board.grid={p:GRID_P,x0:GRID_X0,cols:GRID_COLS};
@@ -133,6 +146,8 @@ function buildGridBoard(board){
    const T=all.length-stem.length-1,p=T%2;let base=Math.floor((T-4)/3);if(base%2!==p)base--;
    lengths=[base,base+2,T-2*base-2];if(lengths[2]-lengths[1]>=4){lengths[1]+=2;lengths[2]-=2;}
    solved=solveRealm(lengths,positions,stem.length,random,tries>5?'mixed':style);
+   // a layout whose roads never come close enough for a plank is dealt again (soak, Nov 3: 1 realm in 30 had no crossing)
+   if(solved&&tries<10&&!hasCrossing(solved,lengths,positions))solved=null;
   }
   if(!solved)throw new Error('grid board: no layout for '+realm);
   const {R0,R1,cells,occ}=solved,fork=stem.at(-1),entries=shuffle(cards.map(r=>r.entry),random),reserved=new Set([...stem,gate.id,...entries]);

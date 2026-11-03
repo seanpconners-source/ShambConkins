@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.80.7
+
+- **Pictures show up right away in the installed app**: the app was searching its whole saved-picture store (about 2,600 files) for every single picture, about half a second each on a laptop and worse on a phone. It now goes straight to the right file. This is what made Arcade backgrounds and the faces on the get-ready card slow.
+- **Choosing a game in the Arcade**: the old background now stays until the new one is ready, so the plain coloured screen never shows. The backgrounds are loaded ahead of time.
+- **Get-ready card**: the players' faces are loaded before the card appears.
+- **Title screen flicker fixed**: tile pictures were cutting from one to the next in a single frame. They now fade as intended.
+- **🎲 Random game** opens the game's page (picture, rules, Play button) instead of jumping straight to the Ready card.
+- **Hangman Unchained is one game on every shelf**: one tile, and its page lists Quick Draw, Showdown and Wanted.
+- **Soak test fixes**: the CPU no longer waits for a tap when it finds a Poké item; every level of the board now has at least one bridge between roads; the game test no longer hangs for most of an hour if its browser stops answering.
+
 ## v0.80.6
 
 - **Arcade backgrounds tuned for your real Fold**: every background now uses the setting you locked at your Fold's exact screen size (upright and sideways), and you re-checked the ones where the title and logo covered faces. The picker now previews the game's real text, so what you pick is what you get.

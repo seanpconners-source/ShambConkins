@@ -47,6 +47,8 @@ const FAMILIES=[
 const FAMILY=new Map(FAMILIES.map(([key,title,sub,hero,ids])=>[key,{key,title,sub,hero,ids}]));
 const FAMILY_OF=new Map();for(const f of FAMILY.values())for(const id of f.ids||[])FAMILY_OF.set(id,f.key);
 const familyOf=g=>g.bossId?'bosses':FAMILY_OF.get(g.id)||null;
+// These are one game on every shelf (owner, Nov 3): one tile, even where the shelf names a single version; its page lists them all.
+const ONE_TILE=new Set(['hangman']);
 // Arcade categories (owner, Nov 3: "make way more sense"): what a player would look for, not the engine's old tags.
 // A game can sit in more than one. Old filter ids (arcade/strategy/skill/sports/dice) are mapped for old links.
 const CATEGORIES=[['featured','★ Featured'],['recent','Recent'],['favorites','Favorites'],['all','All games'],['action','Action'],['retro','Retro arcade'],['versus','Head to head'],['sports','Racing & sports'],['board','Board & cards'],['puzzle','Puzzle'],['party','Party'],['trivia','Trivia & shows'],['casino','Casino & dice'],['pinball','Pinball'],['coop','Co-op'],['boss','Bosses'],['pokemon','Pokémon'],['variants','Encounter variants']];
@@ -110,7 +112,20 @@ const KEY_BOX_DEFAULT=[.28,.15,.72,.85];
 const keyBox=it=>KEY_BOX[it.fam?.key]||KEY_BOX[it.g?.id]||KEY_BOX[familyOf(it.g)]||KEY_BOX_DEFAULT;
 // Behind the picture: a blurred copy covering the whole screen, shown only when the picture had to zoom out (no bare backdrop).
 const keySlot=it=>it&&[it.fam?.key,it.g?.id,it.g&&familyOf(it.g)].find(k=>k&&dropArt('keyart',k));
-const keyImg=it=>{const b=keyBox(it),u=e(keyArt(it));return `<img class="arc-keyfill" src="${u}" alt="" hidden><img src="${u}" alt="" data-box="${b.join(',')}" data-slot="${e(keySlot(it)||'')}" style="transform-origin:${(b[0]+b[2])*50}% ${(b[1]+b[3])*50}%">`;};
+const keyImg=it=>{const b=keyBox(it),u=e(keyArt(it));return `<img class="arc-keyfill" src="${u}" alt="" decoding="sync" hidden><img src="${u}" alt="" decoding="sync" data-box="${b.join(',')}" data-slot="${e(keySlot(it)||'')}" style="transform-origin:${(b[0]+b[2])*50}% ${(b[1]+b[3])*50}%">`;};
+// Backgrounds kept ready (owner, Nov 3: "it should be immediate"): every picture is fetched once and held, so a new <img> of it
+// has its bytes at once; the ones next to the focused tile are decoded too. Held images let the browser drop decoded pixels
+// under memory pressure, so swapKeyArt below still waits for its own decode.
+const warmed=new Map();
+function warmPic(u,decode=false){if(!u||typeof Image==='undefined')return Promise.resolve();let w=warmed.get(u);
+ if(!w){const im=new Image();im.decoding='async';w={im,load:new Promise(r=>{im.onload=im.onerror=r;})};im.src=u;warmed.set(u,w);}
+ if(decode&&!w.dec)w.dec=w.load.then(()=>w.im.decode?.()).catch(()=>{});return w.dec||w.load;}
+let warmRun=0;
+async function warmKeyArt(){if(typeof Image==='undefined')return;const run=++warmRun,items=current?.items||[],at=Math.max(0,items.findIndex(x=>x.key===state.focus));
+ const near=items.map((it,i)=>[Math.abs(i-at),keyArt(it)]).filter(x=>x[1]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+ const all=Object.keys(USER_PORTRAITS).filter(k=>k.startsWith('keyart:')&&!/-logo$|-word-/.test(k)).map(k=>USER_PORTRAITS[k]);
+ const list=[...new Set([...near,...all])];
+ for(let i=0;i<list.length;i++){await warmPic(list[i],i<5);if(run!==warmRun)return;await new Promise(r=>setTimeout(r,30));}}
 const SPILL=1.3;   // how much bigger than its area the faces' box may get before the picture zooms out instead
 // The owner's locked setting (Background Picker) for the screen nearest this one, by shape first, then size; null = automatic.
 function lockedPlace(slot,W,H){const t=slot&&KEY_PLACE[slot];if(!t)return null;let best=null,bd=1e9;
@@ -180,10 +195,10 @@ const state={focus:null,family:null,grid:false};
 let current=null;
 // opts: {list, partsFor(g), filter, filters:[[id,label]], query, strip (1P/online strip HTML), devStrip, extraBosses}
 function arcadeConsoleHTML(opts){
- const {list,filter,filters,query,strip,devStrip}=opts;const grouped=!query&&filter==='all'; // families only on the main list; categories, bosses and search list every game
+ const {list,filter,filters,query,strip,devStrip,familyPool=list}=opts;const grouped=!query&&filter==='all'; // families only on the main list; categories, bosses and search list every game (but ONE_TILE)
  const items=[],seen=new Set();
- for(const g of list){const fk=grouped&&familyOf(g);
-  if(fk){const members=list.filter(x=>familyOf(x)===fk);if(members.length>1||fk==='bosses'){if(!seen.has(fk)){seen.add(fk);items.push({key:'f:'+fk,fam:FAMILY.get(fk),members,g:members[0]});}continue;}}
+ for(const g of list){const fk0=familyOf(g),one=ONE_TILE.has(fk0),fk=(grouped||one)&&fk0;
+  if(fk){const members=(one?familyPool:list).filter(x=>familyOf(x)===fk);if(members.length>1||fk==='bosses'){if(!seen.has(fk)){seen.add(fk);items.push({key:'f:'+fk,fam:FAMILY.get(fk),members,g:members[0]});}continue;}}
   items.push({key:'g:'+g.id,g});}
  current={...opts,items};
  let at=items.findIndex(it=>it.key===state.focus);if(at<0){at=0;state.focus=items[0]?.key||null;}
@@ -227,7 +242,7 @@ const quick=html=>String(html).replace(/data-action="arcade-(game|solo)"/,'data-
 const catName=g=>g.bossId?'Boss':g.pokemon?'Pokémon':[...categoriesOf(g)].map(c=>CAT_NAME[c]).filter(Boolean)[0]||'Game';
 function shortTitle(g,f){const t=g.title.replace(/^Boss · /,'');const parts=t.split(' · ');return parts.length>1&&norm(parts[0]).includes(norm(f.title).slice(0,5))?parts.slice(1).join(' · '):t.replace(/^Broforce: /,'');}
 function familyHTML(key){const f=FAMILY.get(key);if(!f||!current)return '';
- let members=current.list.filter(g=>familyOf(g)===key);if(key==='bosses')members=[...members,...(current.extraBosses||[])];
+ let members=current.items.find(it=>it.fam?.key===key)?.members||current.list.filter(g=>familyOf(g)===key);if(key==='bosses')members=[...members,...(current.extraBosses||[])];
  const cards=members.map((g,i)=>{const p=current.partsFor(g);return `<article class="arc-ver${p.open?'':' locked'}" style="--arc-h:${hue(g.source)};--i:${Math.min(i,12)}"><div class="arc-ver-art">${dropArt('keyart',g.id)&&!tileArt(g.id)?`<img class="arc-card-art" src="${e(dropArt('keyart',g.id))}" alt="" loading="lazy">`:art(g)}${p.open?'':'<span class="arc-lock" aria-hidden="true">🔒</span>'}</div>
   <div class="arc-ver-body"><h3>${e(shortTitle(g,f))}</h3><div class="arc-chips small">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div><p>${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${starHTML(g)}${p.dev||''}</div></div></article>`;}).join('');
  return `<header class="arc-fam-top"><button class="arc-icon" data-arc-close aria-label="Back to the Arcade">←</button><div><div class="arc-src">${e(f.sub)}</div>${titleHTML(f.title,logoOf({fam:f}))}</div></header>
@@ -244,14 +259,20 @@ function closeGrid(){state.grid=false;const s=document.querySelector('.arcade-co
 // Swap a picture layer: the new one slides/fades in while the old one fades out (direction follows the tile row).
 function swapLayer(box,html){if(!box)return;const old=[...box.children];old.forEach(o=>{o.classList.add('arc-layer-out');setTimeout(()=>o.remove(),460);});
  if(!html)return;const layer=document.createElement('div');layer.className='arc-layer arc-layer-in';layer.innerHTML=html;box.append(layer);}
+// The background swap: the old picture stays until the new one is decoded, then the new one fades in on top of it, so the plain
+// colour behind them never shows (owner, Nov 3). Tapping on quickly only ever shows the last tile picked.
+let keySwap=0;
+function swapKeyArt(box,it,key,then){if(!box)return;const run=++keySwap;if(!key){swapLayer(box,'');then();return;}
+ const layer=document.createElement('div');layer.className='arc-layer arc-layer-in';layer.innerHTML=keyImg(it);const img=layer.querySelector('img:not(.arc-keyfill)');
+ const show=()=>{if(run!==keySwap||!box.isConnected)return;then();const old=[...box.children];box.append(layer);placeKey(img);old.forEach(o=>{o.classList.add('arc-layer-under');setTimeout(()=>o.remove(),600);});};
+ Promise.race([Promise.resolve(img.decode?.()).catch(()=>{}),new Promise(r=>setTimeout(r,1500))]).then(show);}
 function restart(el,cls){if(!el)return;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);}
 function focusTile(i,{scroll=true}={}){
  const root=document.querySelector('.arcade-console');if(!root||!current)return;const it=current.items[i];if(!it)return;
  const was=current.items.findIndex(x=>x.key===state.focus);if(was===i)return;
  state.focus=it.key;root.style.setProperty('--arc-dir',i>=was?1:-1);root.style.setProperty('--arc-h',hue(it.fam?.title||it.g.source));
- const key=keyArt(it);root.classList.toggle('has-key',!!key);
- swapLayer(root.querySelector('.arc-keyart'),key?keyImg(it):'');root.querySelectorAll('.arc-keyart img:not(.placed)').forEach(placeKey);
- swapLayer(root.querySelector('.arc-hero-art'),key?'':heroArt(it));
+ const key=keyArt(it);
+ swapKeyArt(root.querySelector('.arc-keyart'),it,key,()=>{root.classList.toggle('has-key',!!key);swapLayer(root.querySelector('.arc-hero-art'),key?'':heroArt(it));});for(const d of [1,-1,2,-2])warmPic(keyArt(current.items[i+d]),true);
  const info=root.querySelector('.arc-info');info.innerHTML=infoHTML(it);restart(info,'arc-info-in');
  root.querySelectorAll('.arc-tile').forEach((t,j)=>{t.classList.toggle('on',j===i);t.setAttribute('aria-selected',String(j===i));});
  const tile=root.querySelectorAll('.arc-tile')[i];if(scroll&&tile)tile.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',inline:'center',block:'nearest'});
@@ -261,8 +282,13 @@ function openFamily(key){const root=document.querySelector('.arcade-console');if
 // Closing slides the version page away before hiding it.
 function closeFamily(){state.family=null;const s=document.querySelector('.arcade-console .arc-fam');if(!s)return;if(matchMedia('(prefers-reduced-motion: reduce)').matches){s.hidden=true;s.innerHTML='';return;}s.classList.add('arc-fam-out');setTimeout(()=>{if(state.family)return;s.hidden=true;s.innerHTML='';s.classList.remove('arc-fam-out');},260);}
 // After a rebuild: put the focused tile in view (no animation) and reopen the version page if one was open.
-function installArcadeConsole(){const root=document.querySelector('.arcade-console');if(!root||!current)return;placeKeys();
+function installArcadeConsole(){const root=document.querySelector('.arcade-console');if(!root||!current)return;placeKeys();warmKeyArt();
  const i=current.items.findIndex(it=>it.key===state.focus);const tile=root.querySelectorAll('.arc-tile')[i];if(tile){const row=root.querySelector('.arc-row');row.scrollLeft=tile.offsetLeft-row.clientWidth/2+tile.clientWidth/2;}}
+// The dice button: this game's own page (its picture, rules and Play button), not the game itself. It stays on this list when the
+// game has its own tile here; otherwise it returns the category to switch to, whose list shows every game on its own.
+function focusArcadeGame(g){const fk=ONE_TILE.has(familyOf(g))?'f:'+familyOf(g):'g:'+g.id,i=current?current.items.findIndex(it=>it.key===fk):-1;
+ if(i>=0&&document.querySelector('.arcade-console')){if(state.grid)closeGrid();if(state.family)closeFamily();focusTile(i);return null;}
+ state.focus=fk;state.family=null;state.grid=false;return g.bossId?'boss':g.pokemon?'pokemon':[...categoriesOf(g)].find(c=>CAT_NAME[c])||'all';}
 function resetArcadeConsole(){state.focus=null;state.family=null;state.grid=false;}
 if(typeof document!=='undefined')document.addEventListener('click',ev=>{
  const t=ev.target.closest?.('[data-arc-focus],[data-arc-family],[data-arc-close],[data-arc-search],[data-arc-all],[data-arc-pick],[data-arc-grid-close],[data-arc-star]');if(!t||!t.closest('.arcade-console'))return;
@@ -294,4 +320,4 @@ function arcadeReel(n=10,games=[]){const out=[];const add=u=>{if(u&&!out.include
  for(const g of shuffle(games.filter(Boolean))){if(out.length>=n)break;add(tileArt(g.id)||tileArt(familyOf(g))||own(heroId(g)));}
  for(const f of shuffle([...FAMILY.values()])){if(out.length>=Math.min(n,6))break;add(tileArt(f.key)||own(f.hero));}
  return out.slice(0,n);}
-Object.assign(exports,{arcadeReel,CATEGORIES,categoriesOf,inCategory,arcadeConsoleHTML,installArcadeConsole,resetArcadeConsole,familyOf,heroId,FAMILIES,FAMILY,keyArt,tileArt});
+Object.assign(exports,{warmKeyArt,focusArcadeGame,arcadeReel,CATEGORIES,categoriesOf,inCategory,arcadeConsoleHTML,installArcadeConsole,resetArcadeConsole,familyOf,heroId,FAMILIES,FAMILY,keyArt,tileArt});

@@ -16,7 +16,7 @@ if (!Number.isFinite(navTimeoutMs) || navTimeoutMs < 10000 || navTimeoutMs > 120
   throw new Error('SHAMB_NAV_TIMEOUT_MS must be between 10000 and 120000');
 if (!Number.isFinite(minFreeGb) || minFreeGb < 0) throw new Error('Invalid SHAMB_MIN_FREE_MEMORY_GB');
 const file = process.env.SHAMB_URL || pathToFileURL(path.resolve(root, process.env.SHAMB_FILE || 'dist/ShambConkins.html')).href;
-const browser = await launchBrowser();
+let browser = await launchBrowser();
 const probe = await browser.newPage();
 await probe.goto(file, {waitUntil: 'domcontentloaded', timeout: navTimeoutMs});
 let ids = await probe.evaluate(() => window.ShambConkins.gameRegistry.map(g => g.id)); await probe.close();
@@ -65,7 +65,8 @@ async function fuzz(id) {
   results[id] = {errs: [...new Set(errs)], state, clicks};
   } finally {
     // Isolate each game and release its large inlined HTML, even after a crash.
-    await ctx.close().catch(() => {});
+    // (a wedged browser never answers: soak, Nov 3, pong-duel's page never loaded and this waited 47 minutes)
+    await Promise.race([ctx.close().catch(() => {}), new Promise(r => setTimeout(r, 20000))]);
   }
 }
 const queue = [...ids];
@@ -80,13 +81,21 @@ await Promise.all(Array.from({length: conc}, async () => {
       queue.length = 0;
       break;
     }
-    try {
-      await fuzz(id);
-    } catch (e) {
-      results[id] = {errs: ['harness: ' + e.message], state: {crash: e.message}, clicks: 0};
-      // A navigation timeout is a load/performance error, not game combat failure.
-      // Preserve the exact message and keep it separate from in-game JS exceptions.
-      if (/page\.goto: Timeout/.test(e.message)) console.error('BROWSER_NAVIGATION_TIMEOUT', id, navTimeoutMs + 'ms');
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        let limit; await Promise.race([fuzz(id), new Promise((_, no) => { limit = setTimeout(() => no(new Error('GAME_HARD_TIMEOUT')), navTimeoutMs + secs * 1000 + 60000); })]).finally(() => clearTimeout(limit));
+        break;
+      } catch (e) {
+        results[id] = {errs: ['harness: ' + e.message], state: {crash: e.message}, clicks: 0};
+        // A navigation timeout is a load/performance error, not game combat failure.
+        // Preserve the exact message and keep it separate from in-game JS exceptions.
+        if (/page\.goto: Timeout/.test(e.message)) console.error('BROWSER_NAVIGATION_TIMEOUT', id, navTimeoutMs + 'ms');
+        // The browser stopped answering, the game never got to run: a fresh browser, one more try.
+        if (!/GAME_HARD_TIMEOUT|page\.goto: Timeout/.test(e.message)) break;
+        console.error('BROWSER_RESTART', id);
+        await Promise.race([browser.close().catch(() => {}), new Promise(r => setTimeout(r, 15000))]);
+        browser = await launchBrowser();
+      }
     }
     done++;
     const failed = !!(results[id]?.errs?.length || results[id]?.state?.crash);

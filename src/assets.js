@@ -83,8 +83,9 @@ const gameArtHTML = g => g.id!=='wopr-grid'&&ART[`game:${g.id}`] ? `<img class="
 
 // Warm the chosen players' faces (owner, Nov 3: the first game's pass card showed the face late): fetch and decode every
 // mood picture once, and make the Sean/Amber backdrop cut-outs up front, so a card never swaps its picture after it appears.
-const warmedFaces=new Set();
+// The images stay held: dropped ones are forgotten by the browser and the card has to fetch the picture all over again.
+const warmedFaces=new Map();
 function warmFaces(ids){if(typeof Image==='undefined')return;
- for(const id0 of ids||[]){const id=mergedCharacterId(id0);for(const m of ['normal',...portraitMoods(id)]){const raw=portraitURL(id,m);if(!raw||warmedFaces.has(raw))continue;warmedFaces.add(raw);
-  const im=new Image();im.decoding='async';im.onload=()=>{if(['sean','amber'].includes(id))createHeadCutout(im,raw);im.decode?.().catch(()=>{});};im.src=raw;}}}
+ for(const id0 of ids||[]){const id=mergedCharacterId(id0);for(const m of ['normal',...portraitMoods(id)]){const raw=portraitURL(id,m);if(!raw||warmedFaces.has(raw))continue;
+  const im=new Image();warmedFaces.set(raw,im);im.decoding='async';im.onload=()=>{if(['sean','amber'].includes(id))createHeadCutout(im,raw);im.decode?.().catch(()=>{});};im.src=raw;}}}
 Object.assign(exports,{warmFaces,portraitMoods,portraitFallbackURL,logoURL,brandHTML,portraitURL,portraitHTML,emilioPortrait,gordonPortrait,itemArtHTML,locationArt,locationArtHTML,locationBoardArt,gameArtHTML});

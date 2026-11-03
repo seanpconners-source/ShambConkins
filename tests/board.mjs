@@ -33,6 +33,8 @@ for (let seed = 1; seed <= 300; seed++) {
   { const warps = nodes.filter(n => n.type === 'warp'); if (warps.length !== 3) fail(seed, 'expected 3 warp pipes, got ' + warps.length); }
   stats.bridges += board.bridges.length; stats.shortcuts += board.shortcuts.length; stats.heights.push(board.height);
   if (board.bridges.length < 3) fail(seed, 'few bridges ' + board.bridges.length);
+  // every level has at least one crossing (soak, Nov 3: seed 8 had none in Mind and Body)
+  for (const realm of ['mind', 'body', 'spirit']) if (!board.bridges.some(b => b.realm === realm)) fail(seed, 'no bridge in ' + realm);
 }
 console.log({...stats, heights: Math.min(...stats.heights) + '-' + Math.max(...stats.heights)}, bad ? bad + ' failures' : 'all boards ok');
 process.exit(bad ? 1 : 0);

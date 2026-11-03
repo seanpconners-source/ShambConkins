@@ -6,7 +6,7 @@ const {ENGINES}=require("src/engines/index.js");
 const {GameSession}=require("src/engines/session.js");
 const {animateRoulette}=require("src/roulette.js");
 const {showDialog, closeDialog, unlockDialog, updateBoard, toast}=require("src/ui.js");
-const {gameArtHTML, portraitHTML}=require("src/assets.js");
+const {gameArtHTML, portraitHTML, warmFaces}=require("src/assets.js");
 const {recordGame, recruitReward, availableCharacters, canRecruit, saveProfile, validatedBroforceClaims, noteRecent}=require("src/profile.js");
 const {PROFILE_KEY,RUN_KEY,readDurableJSON,writeDurableJSON,validRun,BROFORCE_IDS,validBroforceAttempt,validBroforceTerminal,validBroforceEvidence,validBroforceIntent}=require('src/persistence.js');
 const {pickLairVillain}=require("src/data/bondLair.js");
@@ -171,6 +171,7 @@ function soloPlayers(run,who){const pickOf=i=>({name:store.setupNames?.[i]??run?
 // duel (src/duel.js): an online match. Both phones play the 1P version from duel.seed; settleSolo waits for the other
 // phone through duel.finish() and offers duel.rematch().
 async function requestGame({id=null,filter='all',origin='board',resume=false,returnToRoll=false,solo=false,duel=null,difficulty=null,quick=false}={}){
+ warmFaces(store.run&&origin==='board'?store.run.players.map(p=>p.character):store.setupSelected); // ready for the get-ready card
  if(launching||store.session)return false;launching=true;store.busy=true;store.arcade=origin!=='board';
  const run=store.run,serial=++launchSerial,valid=()=>serial===launchSerial&&store.run===run;returnToRoll=returnToRoll||!!(resume&&run?.pending?.returnToRoll);const selectionRun=run||{gameHistory:[],familyBags:{}};if(run&&!(origin!=='board'&&BROFORCE_IDS.includes(id)))run.levelRealm=origin==='board'?run.board.nodes[run.players[run.current].node]?.realm:undefined;
  // Practice and arcade play must not consume the saved board's random stream.

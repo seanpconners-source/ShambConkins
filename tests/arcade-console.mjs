@@ -10,6 +10,8 @@ for(const vp of sizes){
  await page.waitForTimeout(600);
  await page.screenshot({path:screenshotPath(`ac-home-${tag}.png`)});
  const homeX=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);if(homeX)fail(tag+' home scrolls sideways');
+ // Title tile pictures fade into each other (an older CSS rule used to switch the fade off: a one-frame cut, the owner's flicker)
+ const fade=await page.evaluate(()=>[...document.querySelectorAll('.title-screen .ts-reel img')].filter(i=>!/opacity/.test(getComputedStyle(i).transitionProperty)).length);if(fade)fail(tag+' '+fade+' title pictures have no fade');
  await page.click('[data-action="arcade"]');await page.waitForSelector('.arcade-console');await page.waitForTimeout(400);
  // Featured is what the Arcade opens on; the star keeps a game on Favorites (survives a reload of the shelf); a game started shows on Recent
  const shelf=await page.evaluate(()=>({on:document.querySelector('.arc-pill.on')?.dataset.id,n:document.querySelectorAll('.arc-tile').length,first:document.querySelector('.arc-title')?.textContent}));
@@ -62,6 +64,23 @@ for(const vp of sizes){
   await page.click('.solo-seg[data-key="on"][data-value="1"]');await page.waitForTimeout(400);
   await page.screenshot({path:screenshotPath(`ac-solo-${tag}.png`)});
   await page.click('.solo-seg[data-key="on"][data-value="0"]');await page.waitForTimeout(300);
+  // Hangman is one game on every shelf: one tile, and its page lists all three versions (owner, Nov 3)
+  for(const cat of ['featured','puzzle','all']){await page.click(`.arc-pill[data-id="${cat}"]`);await page.waitForTimeout(250);
+   const hm=await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].map(t=>t.getAttribute('aria-label')).filter(l=>/hangman/i.test(l)));if(hm.join()!=='Hangman Unchained')fail(cat+' Hangman tiles: '+hm);}
+  await page.click('.arc-pill[data-id="featured"]');await page.waitForTimeout(250);await page.click('.arc-tile[aria-label="Hangman Unchained"]');await page.waitForTimeout(300);if(!await page.locator('.arc-fam:not([hidden])').count())await page.click('[data-arc-family]');await page.waitForTimeout(450);
+  const hmv=await page.locator('.arc-fam:not([hidden]) .arc-ver').count();if(hmv!==3)fail('Hangman page from Featured lists '+hmv+' versions');await page.click('[data-arc-close]');await page.waitForTimeout(300);
+  // The dice opens a random game's own page (hero, rules, Play): never the game or a Ready card (owner, Nov 3)
+  await page.click('.arc-pill[data-id="featured"]');await page.waitForTimeout(300);
+  for(let k=0;k<25;k++){await page.click('.arc-top [data-action="arcade-random"]');await page.waitForTimeout(120);
+   const d=await page.evaluate(()=>{const S=window.ShambConkins.store,t=document.querySelector('.arc-tile.on');return {session:!!S.session,dlg:!!document.querySelector('#dialog[open]'),gb:S.view,tile:t?.getAttribute('aria-label'),fam:!!t?.querySelector('.arc-count'),hero:document.querySelector('.arc-info .arc-title')?.textContent,play:!!document.querySelector('.arc-info .arc-actions')?.children.length};});
+   if(d.session||d.dlg)fail('the dice started something: '+JSON.stringify(d));if(!d.tile||(d.fam&&!/Hangman/.test(d.tile))||!d.play||!d.hero)fail('the dice should show one game\'s page: '+JSON.stringify(d));}
+  // Changing tile: a background picture stays up the whole time, the plain colour behind it never shows (owner, Nov 3)
+  await page.click('.arc-pill[data-id="all"]');await page.waitForTimeout(300);
+  const keyed=await page.evaluate(()=>{const S=window.ShambConkins,ts=[...document.querySelectorAll('.arc-tile')];return ts.map((t,i)=>[i,t]).filter(([i,t])=>!t.classList.contains('on')&&/^(Mario Kart|DOOM|Casino Night|Clue|Monopoly|Castlevania)$/.test(t.getAttribute('aria-label'))).map(x=>x[0]);});
+  await page.evaluate(()=>{window.__bare=0;window.__frames=0;const tick=()=>{if(window.__stop)return;const r=document.querySelector('.arcade-console');if(r?.classList.contains('has-key')){window.__frames++;if(![...r.querySelectorAll('.arc-keyart img:not(.arc-keyfill)')].some(i=>i.complete&&i.naturalWidth))window.__bare++;}requestAnimationFrame(tick);};tick();});
+  for(const i of keyed.slice(0,5)){await page.click(`.arc-tile >> nth=${i}`);await page.waitForTimeout(700);}
+  const seen=await page.evaluate(()=>{window.__stop=1;return {bare:window.__bare,frames:window.__frames};});console.log('background swap',JSON.stringify(seen));
+  if(keyed.length<3)fail('too few tiles with backgrounds to test: '+keyed.length);if(seen.bare)fail(`no background picture on screen for ${seen.bare} of ${seen.frames} frames`);
   // Broforce is one tile; its play button starts the launcher and opens the world select
   const bro=await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].findIndex(t=>/Sean of a Gun|Broforce/.test(t.getAttribute('aria-label'))));
   if(await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].filter(t=>/Sean of a Gun|Broforce/.test(t.getAttribute('aria-label'))).length)!==1)fail('Broforce should be one tile');
