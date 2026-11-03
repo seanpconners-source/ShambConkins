@@ -9,6 +9,10 @@ const {LAB_TEAM}=require("src/data/savoryLab.js");
 const {isMovieBond, missingMovieBonds}=require("src/data/movieBonds.js");
 const {normalizeSoloSettings, normalizeSoloBest}=require("src/solo.js");
 function freshProfile() { return { version: 20, starterPolicy:22, holeItLevel:1, earnedUnlocks:{}, xp: 0, runs: 0, completed: 0, minigames:0, modes:['versus'], boards:['Mashup'], played: [], recentGames: [], recentTrivia: [], triviaDifficultyBag: [], recruitDryStreak:{Sean:0,Amber:0}, pairDiscoveries: [], boardUnlocks: [], shared: ['sean','amber'], rosters: { Sean: ['sean'], Amber: ['amber'] }, itemsSeen: [], itemFinds:{Sean:[],Amber:[]},recentItemFinds:{Sean:[],Amber:[]}, locations: [], settings: { sound: true, music: true, reducedMotion: false, originalLogos:true,drinkStatus:true,devMode:false,touchMode:'auto',flickSensitivity:1 }, wins: {}, best: {}, migrated: false }; }
+// Arcade shelves (ROADMAP M14): the last games started, newest first, and the games starred with the hero's ☆.
+const RECENT_MAX=20;
+function noteRecent(profile,id){profile.recent=[id,...(profile.recent||[]).filter(x=>x!==id)].slice(0,RECENT_MAX);}
+function toggleFavorite(profile,id){const had=(profile.favorites||[]).includes(id);profile.favorites=had?profile.favorites.filter(x=>x!==id):[id,...(profile.favorites||[])];return !had;}
 function loadProfile() {
  const disk=inspectDurableJSON(PROFILE_KEY),shadow=readJSON(PROFILE_KEY);
  // With a durable BF receipt or a shadowed BF save, the readable disk copy is
@@ -37,6 +41,7 @@ function loadProfile() {
   // Title-screen character picks (names + characters for players 1/2); app.js checks they are still unlocked.
   {const v=saved.settings?.picks,ok=(a,n)=>Array.isArray(a)&&a.length===2&&a.every(x=>typeof x==='string'&&x.length&&x.length<=n);if(v&&ok(v.names,28)&&ok(v.chars,64))p.settings.picks={names:[...v.names],chars:v.chars.map(mergedCharacterId)};}
   if(saved.soloBest)p.soloBest=normalizeSoloBest(saved.soloBest);
+  for(const [k,n] of [['recent',RECENT_MAX],['favorites',200]])if(Array.isArray(saved[k]))p[k]=[...new Set(saved[k].filter(x=>typeof x==='string'))].slice(0,n);
   for(const key of ['wins','best'])if(saved[key]&&typeof saved[key]==='object'&&!Array.isArray(saved[key]))p[key]=Object.fromEntries(Object.entries(saved[key]).filter(([,v])=>Number.isFinite(v)&&v>=0));
   for(const key of ['migrated','horrorSeen','equipment'])if(saved[key]===true)p[key]=true;
   if(Number.isFinite(saved.backup?.at)&&Number.isFinite(saved.backup?.mark)&&saved.backup.mark>=0)p.backup={at:saved.backup.at,mark:Math.floor(saved.backup.mark)};
@@ -172,4 +177,4 @@ function rememberCollectibles(profile,run){const known=new Set(CATALOG.items.map
 function homePackTurn(run){return Math.max(3,Math.round((run.endless||run.maxTurns===999999?24:run.maxTurns)/3));}
 function recordGame(profile, game, winner, scores) { if (!profile.played.includes(game.id)) profile.played.push(game.id); profile.minigames=(profile.minigames||0)+1; profile.recentGames = [...profile.recentGames, game.id].slice(-40); profile.xp += winner === null ? 3 : 5; if (winner !== null) profile.wins[game.id] = (profile.wins[game.id] || 0) + 1; profile.best[game.id] = Math.max(profile.best[game.id] || 0, ...scores.filter(Number.isFinite)); saveProfile(profile); }
 
-Object.assign(exports,{freshProfile,loadProfile,saveProfile,availableCharacters,canRecruit,recruit,canRecruitReward,recruitReward,rememberCollectibles,homePackTurn,recordGame,validatedBroforceClaims});
+Object.assign(exports,{noteRecent,toggleFavorite,freshProfile,loadProfile,saveProfile,availableCharacters,canRecruit,recruit,canRecruitReward,recruitReward,rememberCollectibles,homePackTurn,recordGame,validatedBroforceClaims});

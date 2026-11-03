@@ -88,7 +88,19 @@ check((stats.roll||0)>=Math.min(3,TURNS>>1),`the human rolled on their turns (${
 check(end.games.length>=1&&end.games.every(g=>g.board&&['cpu','alone'].includes(g.kind)),`every board minigame was a vs-CPU / play-alone version (${end.games.length})`);
 check(end.amber===amberBefore,`the CPU's roster owner gained no characters (${amberBefore} → ${end.amber})`);
 check((stats.watch||0)+(stats.watchroute||0)>=1,'CPU decisions were shown read-only');
+// A themed trivia game has a vs-CPU version (soak, Nov 3: trivia-martial came up as pass and play); a boss the CPU sat out
+// pays it nothing (ROADMAP C13: the CPU out-scored the human for a fight it wasn't in).
+const idle=async()=>{for(let k=0;k<500;k++){if(await page.evaluate(()=>{const S=window.ShambConkins;return !S.store.session&&!S.store.busy&&!document.getElementById('dialog').open&&!S.pkmn.isOpen();}))return true;await step();await page.waitForTimeout(150);}return false;};
+const launch=async id=>{await idle();await page.evaluate(id=>{window.ShambConkins.requestGame({id,origin:'board'});},id);await page.waitForFunction(()=>[...document.querySelectorAll('#dialog[open] button')].some(b=>/Start game/.test(b.innerText)),null,{timeout:15000});await page.evaluate(()=>[...document.querySelectorAll('#dialog[open] button')].find(b=>/Start game/.test(b.innerText)).click());await page.waitForFunction(()=>!!window.ShambConkins.store.session,null,{timeout:15000});return page.evaluate(()=>{const s=window.ShambConkins.store.session;s.__t=performance.now()+1e7;return {id:s.game.id,kind:s.solo?.kind||null};});};
+if(!end.finished){
+ const tr=await launch('trivia-martial');check(tr.id==='trivia-martial'&&tr.kind==='cpu',`a themed trivia game plays vs the CPU on the board (${tr.id}: ${tr.kind})`);
+ await page.evaluate(()=>{const s=window.ShambConkins.store.session;s.finish([3,1],'bot');});
+ const bo=await launch('boss-riddler');check(bo.kind==='alone','a boss is played alone vs the CPU run');
+ const paid=await page.evaluate(()=>new Promise(res=>{const S=window.ShambConkins,run=S.store.run,before=run.players.map(p=>p.points),wins=run.players.map(p=>p.wins),s=S.store.session;s.solo.won=true;s.finish([500,0],'bot');const t=setInterval(()=>{if(run.pending?.kind==='result'){clearInterval(t);res({human:run.players[0].points-before[0],cpu:run.players[1].points-before[1],cpuWins:run.players[1].wins-wins[1]});}},50);}));
+ check(paid.human>0&&paid.cpu===0&&paid.cpuWins===0,`a boss the CPU sat out pays only the human (human +${paid.human}, CPU +${paid.cpu})`);
+}
 // 2 Players again: a normal pass-and-play run, no CPU
+await idle();
 await act('home');await page.waitForSelector('.title-screen');await act('setup');await page.waitForSelector('.setup-players');
 await page.click('.setup-players [data-key="on"][data-value="0"]');await page.waitForFunction(()=>!/CPU/.test(document.querySelector('.mx-pcard.p2')?.innerText||'CPU'));
 await act('start-run');await page.waitForFunction(()=>document.getElementById('dialog').open||document.body.dataset.view==='board');

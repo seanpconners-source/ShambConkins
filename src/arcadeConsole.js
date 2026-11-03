@@ -11,6 +11,7 @@ const {bossById}=require("src/data/bosses.js");
 const {escapeHTML:e}=require("src/utils.js");
 const {store}=require("src/state.js");
 const {tone}=require("src/audio.js");
+const {saveProfile,toggleFavorite}=require("src/profile.js");
 
 // Families: [key, title, subtitle, hero character, member ids]. The tile/hero uses the family; the version page lists members.
 const FAMILIES=[
@@ -49,7 +50,7 @@ const FAMILY_OF=new Map();for(const f of FAMILY.values())for(const id of f.ids||
 const familyOf=g=>g.bossId?'bosses':FAMILY_OF.get(g.id)||null;
 // Arcade categories (owner, Nov 3: "make way more sense"): what a player would look for, not the engine's old tags.
 // A game can sit in more than one. Old filter ids (arcade/strategy/skill/sports/dice) are mapped for old links.
-const CATEGORIES=[['all','All games'],['action','Action'],['retro','Retro arcade'],['versus','Head to head'],['sports','Racing & sports'],['board','Board & cards'],['puzzle','Puzzle'],['party','Party'],['trivia','Trivia & shows'],['casino','Casino & dice'],['pinball','Pinball'],['coop','Co-op'],['boss','Bosses'],['pokemon','Pokémon'],['variants','Encounter variants']];
+const CATEGORIES=[['featured','★ Featured'],['recent','Recent'],['favorites','Favorites'],['all','All games'],['action','Action'],['retro','Retro arcade'],['versus','Head to head'],['sports','Racing & sports'],['board','Board & cards'],['puzzle','Puzzle'],['party','Party'],['trivia','Trivia & shows'],['casino','Casino & dice'],['pinball','Pinball'],['coop','Co-op'],['boss','Bosses'],['pokemon','Pokémon'],['variants','Encounter variants']];
 const CAT_IDS={
  action:'broforce-jungle broforce-factory broforce-city broforce-desert smb-world-1 smb-coin-rush smb-castle-dash cv-vampire-killer cv-candle-hunt cv-symphony sonic-ring-rush sonic-goal-dash doom doom-2 warriors-brawl bond-facility hyrule-rupee-rush hyrule-sword-duel tarantino-crazy88 tarantino-bounty kill-bill-duel living-dead-horde battle-royale-island raiders-ball-run',
  retro:'pong-duel breakout-party asteroid-drift space-swarm space-swarm-versus space-swarm-coop snake-run pac-maze-duel moonraker-lander mars-missile-defense duck-hunt-turn crossy-chaos block-battle t800-scan-long driller-duel bubble-battle flappy-disaster paper-route banana-money-grab metal-gear-tank-duel derezzed-cycles snake-v-snake bomber-duel sewer-clash neon-ball-storm smb-world-1 cv-vampire-killer doom',
@@ -124,7 +125,7 @@ function arcadeConsoleHTML(opts){
   <div class="arc-search"${query?'':' hidden'}><input id="catalog-search" type="search" value="${e(query)}" placeholder="Search games or shows…" aria-label="Search games" autocomplete="off"></div>
   <nav class="arc-pills" aria-label="Game categories">${pills}</nav>
   <div class="arc-strip">${strip||''}</div>
-  <section class="arc-info arc-info-in" aria-live="polite">${items[at]?infoHTML(items[at]):'<p class="arc-empty">Nothing here yet. Try another category.</p>'}</section>
+  <section class="arc-info arc-info-in" aria-live="polite">${items[at]?infoHTML(items[at]):`<p class="arc-empty">${query?'Nothing here yet. Try another category.':filter==='recent'?'The games you play will show up here.':filter==='favorites'?'Tap ☆ on any game to keep it here.':'Nothing here yet. Try another category.'}</p>`}</section>
   <div class="arc-row-head"><span class="arc-row-label">${e(filters.find(f=>f[0]===filter)?.[1]||'Games')} · ${items.length}</span>${items.length>1?'<button class="arc-viewall" data-arc-all>View all ▸</button>':''}</div>
   <div class="arc-row" role="listbox" aria-label="Games">${tiles}</div>
   ${devStrip?`<div class="arc-dev">${devStrip}</div>`:''}
@@ -143,8 +144,10 @@ function infoHTML(it){
    <div class="arc-actions"><button class="arc-cta" data-arc-family="${e(f.key)}">Choose a version ▸</button></div>`;}
  const g=it.g,p=current.partsFor(g);
  return `<div class="arc-src">${e(g.source)} · ${e(catName(g))}</div><h2 class="arc-title">${e(g.title)}</h2><div class="arc-chips">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div>
-  <p class="arc-rules">${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${p.dev||''}</div>`;
+  <p class="arc-rules">${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${starHTML(g)}${p.dev||''}</div>`;
 }
+// The ☆ next to a game's play button keeps it on the Favorites shelf.
+function starHTML(g){const on=(store.profile.favorites||[]).includes(g.id);return `<button class="arc-star${on?' on':''}" data-arc-star="${e(g.id)}" aria-pressed="${on}" aria-label="${on?'Remove from favorites':'Add to favorites'}">${on?'★':'☆'}</button>`;}
 // The console's Play buttons start the game at once (no Start/Back card; app.js passes quick to requestGame).
 const quick=html=>String(html).replace(/data-action="arcade-(game|solo)"/,'data-quick="1" data-action="arcade-$1"');
 const catName=g=>g.bossId?'Boss':g.pokemon?'Pokémon':[...categoriesOf(g)].map(c=>CAT_NAME[c]).filter(Boolean)[0]||'Game';
@@ -152,7 +155,7 @@ function shortTitle(g,f){const t=g.title.replace(/^Boss · /,'');const parts=t.s
 function familyHTML(key){const f=FAMILY.get(key);if(!f||!current)return '';
  let members=current.list.filter(g=>familyOf(g)===key);if(key==='bosses')members=[...members,...(current.extraBosses||[])];
  const cards=members.map((g,i)=>{const p=current.partsFor(g);return `<article class="arc-ver${p.open?'':' locked'}" style="--arc-h:${hue(g.source)};--i:${Math.min(i,12)}"><div class="arc-ver-art">${dropArt('keyart',g.id)&&!tileArt(g.id)?`<img class="arc-card-art" src="${e(dropArt('keyart',g.id))}" alt="" loading="lazy">`:art(g)}${p.open?'':'<span class="arc-lock" aria-hidden="true">🔒</span>'}</div>
-  <div class="arc-ver-body"><h3>${e(shortTitle(g,f))}</h3><div class="arc-chips small">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div><p>${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${p.dev||''}</div></div></article>`;}).join('');
+  <div class="arc-ver-body"><h3>${e(shortTitle(g,f))}</h3><div class="arc-chips small">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div><p>${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${starHTML(g)}${p.dev||''}</div></div></article>`;}).join('');
  return `<header class="arc-fam-top"><button class="arc-icon" data-arc-close aria-label="Back to the Arcade">←</button><div><div class="arc-src">${e(f.sub)}</div><h2 class="arc-title">${e(f.title)}</h2></div></header>
   <div class="arc-fam-hero" aria-hidden="true">${art(members[0]||{},{fam:f,size:' big'})}</div><div class="arc-ver-grid">${cards}</div>`;}
 
@@ -188,7 +191,10 @@ function installArcadeConsole(){const root=document.querySelector('.arcade-conso
  const i=current.items.findIndex(it=>it.key===state.focus);const tile=root.querySelectorAll('.arc-tile')[i];if(tile){const row=root.querySelector('.arc-row');row.scrollLeft=tile.offsetLeft-row.clientWidth/2+tile.clientWidth/2;}}
 function resetArcadeConsole(){state.focus=null;state.family=null;state.grid=false;}
 if(typeof document!=='undefined')document.addEventListener('click',ev=>{
- const t=ev.target.closest?.('[data-arc-focus],[data-arc-family],[data-arc-close],[data-arc-search],[data-arc-all],[data-arc-pick],[data-arc-grid-close]');if(!t||!t.closest('.arcade-console'))return;
+ const t=ev.target.closest?.('[data-arc-focus],[data-arc-family],[data-arc-close],[data-arc-search],[data-arc-all],[data-arc-pick],[data-arc-grid-close],[data-arc-star]');if(!t||!t.closest('.arcade-console'))return;
+ if(t.dataset.arcStar){const id=t.dataset.arcStar,on=toggleFavorite(store.profile,id);saveProfile(store.profile);
+  document.querySelectorAll('.arcade-console [data-arc-star]').forEach(b=>{if(b.dataset.arcStar!==id)return;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));b.setAttribute('aria-label',on?'Remove from favorites':'Add to favorites');b.textContent=on?'★':'☆';});
+  if(store.profile.settings.sound)tone(on?880:440,.06,.02,'triangle');return;}
  if(t.dataset.arcAll!==undefined){openGrid();return;}
  if(t.dataset.arcGridClose!==undefined){closeGrid();return;}
  if(t.dataset.arcPick!==undefined){const i=+t.dataset.arcPick,it=current?.items[i];if(!it)return;closeGrid();focusTile(i);if(it.fam)openFamily(it.fam.key);return;}

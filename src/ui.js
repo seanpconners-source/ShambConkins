@@ -17,6 +17,7 @@ const {charSelectHTML,newGameHTML,installMenuScreens}=require("src/menuScreens.j
 const {collectionTileHTML,collectionShellHTML,installCollection}=require("src/collection.js");
 const {arcadeReel}=require("src/arcadeConsole.js");
 const {arcadeConsoleHTML,installArcadeConsole,CATEGORIES:ARCADE_CATEGORIES,inCategory}=require("src/arcadeConsole.js");
+const {FEATURED_GAMES}=require("src/data/featuredGames.js");
 const {store}=require("src/state.js");
 const {ART}=require("src/data/art.js");
 const {CHARACTERS, character, characterPerk, differentCharacters, characterIdentity}=require("src/characters.js");
@@ -226,10 +227,13 @@ function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=
  }else{
   const q=query.toLowerCase(),hit=g=>(g.title+' '+g.source).toLowerCase().includes(q),bosses=EVENT_GAMES.filter(g=>g.bossId);
   const beaten=bosses.filter(g=>gameUnlocked(g,p));
-  if(filter==='boss')list=[...beaten,...bosses.filter(g=>!gameUnlocked(g,p))].filter(hit);
+  // Shelves (ROADMAP M14): Featured = the owner's list (data/featuredGames.js), Recent and Favorites from the profile. A search looks through everything.
+  const shelf=['featured','recent','favorites'].includes(filter),anyGame=id=>GAMES.find(g=>g.id===id)||EVENT_GAMES.find(g=>g.id===id)||POKEMON_MATCHES.find(g=>g.id===id);
+  if(shelf&&!query)list=(filter==='featured'?FEATURED_GAMES:filter==='recent'?p.recent||[]:p.favorites||[]).map(anyGame).filter(g=>g&&(!g.secret||gameUnlocked(g,p)||p.settings.devMode));
+  else if(filter==='boss')list=[...beaten,...bosses.filter(g=>!gameUnlocked(g,p))].filter(hit);
   else if(filter==='pokemon')list=POKEMON_MATCHES.filter(hit);
   else if(filter==='variants')list=EVENT_GAMES.filter(g=>!g.bossId&&(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&hit(g));
-  else list=[...GAMES.filter(g=>(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&inCategory(g,filter)),...(filter==='all'?[...POKEMON_MATCHES,...beaten]:[])].filter(hit);
+  else list=[...GAMES.filter(g=>(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&(shelf||inCategory(g,filter))),...(filter==='all'||shelf?[...POKEMON_MATCHES,...beaten]:[])].filter(hit);
   if(!p.settings.devMode)list=list.filter(g=>!isCut(g)); // ROADMAP B3: cut games leave the Arcade (dev mode keeps them)
   // 1P mode: games with a solo version first; the rest stay listed but greyed out. Purely social games are hidden.
   // Online duels: only games whose 1P run ends in a score (duelOK) can be played across two phones so far.
@@ -246,7 +250,7 @@ function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=
   render=g=>{const {open,off,play,best,tiers,status,dev}=partsFor(g);
    return `<article class="arcade-card ${open?'':'locked'}${off?' solo-off':''}${g.bossId?' boss-match':''}${tiers>=BOSS_TIERS.length-1?' boss-extreme':''}">${brandHTML(g.source)}${gameArtHTML(g)}<h3>${e(g.title)}</h3><p>${e(g.rules)}</p><div class="game-info">${e(g.duration.toUpperCase())} · ${status}${best?` · ${e(best)}`:''}</div>${play}${dev}</article>`;};
  }
- catalogFeed={list,render,playable,shown:Math.min(list.length,CATALOG_CHUNK)};
+ catalogFeed={list,render,playable,shown:Math.min(list.length,CATALOG_CHUNK)};if(!isRoster&&['featured','recent','favorites'].includes(filter))catalogFeed.pool=GAMES.filter(g=>(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&!isCut(g)); // the dice button picks from everything, not just the shelf
  const cards=list.slice(0,catalogFeed.shown).map(render).join('');
  const bossCount=EVENT_GAMES.filter(g=>g.bossId),filters=isRoster?[['all','Characters'],['unlocked','Unlocked'],['items',`Items (${p.itemsSeen.length})`],['locations',`Landmarks (${p.locations.length})`]]:[['all','All games'],['arcade','Arcade'],['puzzle','Puzzles'],['strategy','Strategy'],['skill','Skill'],['sports','Sports'],['trivia','Trivia'],['casino','Casino'],['dice','Dice'],['boss',`Bosses (${bossCount.filter(g=>gameUnlocked(g,p)).length}/${bossCount.length})`],['pokemon','Pokémon battles'],['variants','Encounter variants']];
  if(isRoster)return collectionShellHTML({filter,filters,query,count:list.length,cards,more:catalogFeed.shown<list.length});
@@ -256,7 +260,7 @@ function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=
  return `<main class="shell catalog-shell">${header(isRoster?'YOUR EXPANDING UNIVERSE':'PERMANENT PROGRESSION · MINIGAME VAULT')}<div class="section-heading"><div><div class="overline">${isRoster?'COLLECTION':'THE ARCADE'}</div><h2 style="margin-top:7px">${isRoster?'Familiar faces, strange company.':'MINIGAME VAULT'}</h2><p>${isRoster?'Characters, collected items, and discovered landmarks carry across every run.':'Games unlock through play. Dev mode lets you test every game without changing progress.'}</p></div>${button('home','← Back','small ghost catalog-back')}</div>${!isRoster?`${button('arcade-random','🎲 Random game','primary arcade-random')}<div class="vault-dev-strip"><span>DEV MODE · ${p.settings.devMode?'ALL GAMES TESTABLE':'OFF'}</span>${button('dev-mode',p.settings.devMode?'Turn off':'Enable game testing','small ghost')}</div>${soloStripHTML(p)}`:''}<div class="catalog-tools"><input id="catalog-search" type="search" value="${e(query)}" placeholder="${isRoster?'Search names or shows…':'Search games or shows…'}" aria-label="Search collection" autocomplete="off"><select id="catalog-filter" aria-label="Show">${filters.map(([id,label])=>`<option value="${id}" ${filter===id?'selected':''}>${e(label)}</option>`).join('')}</select><span class="catalog-count">${list.length}</span></div><div class="catalog-grid">${cards||'<p class="empty-message">Nothing discovered here yet. Explore another route.</p>'}${catalogFeed.shown<list.length?'<div class="catalog-more" aria-hidden="true"></div>':''}</div></main>`;
 }
 // Random game button: any playable card in the current list (filter, search and 1P mode apply).
-function randomArcadePick(){const pool=(catalogFeed?.list||[]).filter(g=>catalogFeed.playable?.(g));return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;}
+function randomArcadePick(){const pool=(catalogFeed?.pool||catalogFeed?.list||[]).filter(g=>catalogFeed.playable?.(g));return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;}
 // Vault entries for the Pokémon battles (they run in the Game Boy overlay, not a minigame engine).
 const POKEMON_MATCHES=[
  {id:'pkmn-wild',pokemon:'wild',title:'Pokémon · Random Wild Encounter',source:'Pokémon',icon:'🌿',category:'pokemon',duration:'one battle',rules:'A wild character jumps out of the tall grass. Battle it with your team (your character plus five unlocked friends) or throw a Poké Ball: a catch joins your roster.'},

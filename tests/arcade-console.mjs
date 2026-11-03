@@ -11,6 +11,14 @@ for(const vp of sizes){
  await page.screenshot({path:screenshotPath(`ac-home-${tag}.png`)});
  const homeX=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);if(homeX)fail(tag+' home scrolls sideways');
  await page.click('[data-action="arcade"]');await page.waitForSelector('.arcade-console');await page.waitForTimeout(400);
+ // Featured is what the Arcade opens on; the star keeps a game on Favorites (survives a reload of the shelf); a game started shows on Recent
+ const shelf=await page.evaluate(()=>({on:document.querySelector('.arc-pill.on')?.dataset.id,n:document.querySelectorAll('.arc-tile').length,first:document.querySelector('.arc-title')?.textContent}));
+ if(shelf.on!=='featured'||shelf.n<5)fail(tag+' Arcade should open on Featured: '+JSON.stringify(shelf));
+ await page.click('.arc-info .arc-star');const starred=await page.evaluate(()=>window.ShambConkins.store.profile.favorites?.length);if(starred!==1)fail(tag+' star did not save a favorite');
+ await page.click('.arc-pill[data-id="favorites"]');await page.waitForTimeout(250);if(await page.locator('.arc-tile').count()!==1)fail(tag+' Favorites shelf should list the starred game');
+ await page.click('.arc-info .arc-star');await page.click('.arc-pill[data-id="recent"]');await page.waitForTimeout(250);
+ if(await page.evaluate(()=>!window.ShambConkins.store.profile.recent?.length)&&await page.locator('.arc-empty').count()!==1)fail(tag+' empty Recent shelf has no message');
+ await page.click('.arc-pill[data-id="all"]');await page.waitForTimeout(400);
  const info=await page.evaluate(()=>{const r=document.querySelector('.arcade-console'),tiles=[...r.querySelectorAll('.arc-tile')];
   return {tiles:tiles.length,fams:r.querySelectorAll('.arc-count').length,cuts:r.querySelectorAll('.arc-tile .arc-cut').length,emoji:r.querySelectorAll('.arc-tile .arc-emoji').length,
    overX:document.documentElement.scrollWidth>innerWidth+1,overY:r.scrollHeight>r.clientHeight+2,title:r.querySelector('.arc-title')?.textContent,

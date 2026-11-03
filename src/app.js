@@ -5,7 +5,7 @@ const {touchDiagnostic}=require("src/touchDiagnostic.js");
 const {floatingHead}=require("src/headCutouts.js");
 const {triviaExplanationHTML, TRIVIA_QUESTIONS}=require("src/triviaCatalog.js");
 const {store, newRun, logRun, newPlayer}=require("src/state.js");
-const {freshProfile, loadProfile, saveProfile, recruitReward, canRecruit, canRecruitReward, availableCharacters, rememberCollectibles, homePackTurn}=require("src/profile.js");
+const {noteRecent, freshProfile, loadProfile, saveProfile, recruitReward, canRecruit, canRecruitReward, availableCharacters, rememberCollectibles, homePackTurn}=require("src/profile.js");
 const {markBackedUp,keepSave,backupFileName}=require("src/saveGuard.js");
 const {installWakeLock}=require("src/wakeLock.js");
 const {initPWA,installApp,installOffered,checkForUpdate,restartApp}=require("src/pwa.js");
@@ -107,7 +107,7 @@ initDuel({start:(id,duel)=>requestGame({id,origin:'arcade',solo:true,duel,diffic
 const random=()=>store.run?runRandom(store.run):Math.random();
 function focusEffect(before){const run=store.run;if(!run)return;const after=effectSnapshot(run),ids=[run.players[run.current].node];for(let i=0;i<2;i++)if(before?.players[i]&&JSON.stringify(before.players[i])!==JSON.stringify(after.players[i])){ids.push(run.players[i].node);if(before.players[i].node!==run.players[i].node)ids.push(before.players[i].node);}focusBoardAction(run,ids);}
 function applyPreferences(){document.body.classList.toggle('reduced-motion',store.profile.settings.reducedMotion);}
-function showCatalog(type){if(store.view!==type){catalogQuery='';catalogFilter='all';catalogPage=0;}showView(type,{query:catalogQuery,filter:catalogFilter,page:catalogPage});}
+function showCatalog(type){if(store.view!==type){catalogQuery='';catalogFilter=type==='arcade'?'featured':'all';catalogPage=0;}showView(type,{query:catalogQuery,filter:catalogFilter,page:catalogPage});}
 function home(){if(store.view==='setup')captureSetup();if(store.netSetup)leaveSetup();setMusicZone('home');if(store.profile?.settings.music)startMusic();movementToken++;cancelGameLaunch();store.session?.dispose();store.session=null;store.arcade=false;store.boardTour=null;cancelCameraAnimation();clearEffects();closeDialog();store.busy=false;saveRun();showView('home');}
 // ROADMAP C8: start a new run at a level already reached (profile.levelReached). Both players begin at that level's start
 // with the levels before it cleared and an empty bag; a Level IV start opens Horror and plays a short Frank reveal (E4).
@@ -601,7 +601,7 @@ async function runAction(name,target){
   case 'arcade-random':{const g=randomArcadePick();if(!g){toast('No playable games in this list');break;}
    if(store.online)await proposeDuel(g.id);else if(g.pokemon)await arcadePokemon(g.pokemon);else await arcadeLaunch({id:g.id,origin:'arcade',solo:soloSettings(store.profile).on||undefined,quick:true});break;}
   case 'solo-set':{const {key,value}=target.dataset;if(key==='on')store.online=false;setSolo(store.profile,key==='on'?{on:value==='1'}:key==='who'?{who:+value===1?1:0}:{level:value});saveProfile(store.profile);if(store.view==='setup'||store.view==='players')refreshSetup();else showView(store.view,{query:catalogQuery,filter:catalogFilter,page:catalogPage});break;}
-  case 'arcade-pokemon':await arcadePokemon(target.dataset.id);break;
+  case 'arcade-pokemon':noteRecent(store.profile,'pkmn-'+target.dataset.id);saveProfile(store.profile);await arcadePokemon(target.dataset.id);break;
   case 'dev-game':if(store.profile.settings.devMode)await requestGame({id:target.dataset.id,origin:'dev'});break;
   case 'dev-mode':store.profile.settings.devMode=!store.profile.settings.devMode;saveProfile(store.profile);showCatalog('arcade');break;
   case 'media-sources':{let page=0;while(true){const choice=await showDialog({title:'Reference artwork sources',body:'Property logos, posters and image collection links. '+MEDIA_SOURCES.length+' source entries.',html:sourcesHTML(page),choices:[...(page?[{label:'← Previous',value:'prev'}]:[]),...((page+1)*10<MEDIA_SOURCES.length?[{label:'Next sources →',value:'next'}]:[]),{label:'Done',value:'done',primary:true}]});if(choice==='next')page++;else if(choice==='prev')page--;else break;}break;}
