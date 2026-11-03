@@ -94,6 +94,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 
 | Phase | What | Why now |
 |---|---|---|
+| **NOW** | Background picker (M20), then the owner's pick from the new notes | Owner asked for it very soon |
 | **A. Quick fixes + playtest** | Broken games, boss parry/revive, jittery heads; owner plays the `[verify]` items | Cheap, and broken stuff kills the fun fastest |
 | **A+. Boss tiers + outfits** | Picked first (Nov 2): K1-K12 below | Bosses end every level, so they're seen the most |
 | **B. Minigame triage** | Owner scores every game Keep / Polish / Rebuild / Cut; cut games leave the board pool | The biggest fun gain for the least work: the board stops dealing bad games |
@@ -268,6 +269,14 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
 Reuse engines with new skins wherever possible.
 - **M19** `[verify]` (Nov 3: measured with frame captures: changing screens showed a near-black frame (new screen invisible while pictures decoded) and taps that re-render a screen blanked every picture for 2+ frames. Fixed: ui.js renderInto reuses decoded <img>s, a frozen ghost of the old screen covers the change until the new pictures are ready (≤.4 s), entrance moves keep their motion without the fade (--enter-op)) (owner, Nov 3) The title screen and menus still flicker sometimes: find every cause (re-renders that replace the
   whole view, reels/pictures swapping, entrance animations replaying, fonts/images popping in) and make every screen smooth and polished.
+- **M20** `[todo]` (owner, Nov 3, VERY SOON, next big menu task) **Background picker**: an interactive page (like the Look Book
+  artifact) that shows every Arcade background as it really looks on the common screens: closed Fold, phone portrait and
+  landscape, open Fold portrait and landscape, tablet, desktop. Each shows the real overlay (top bar, pills, strip, text, tiles)
+  so you see what gets covered. Per picture and per screen you can DRAG to move it and PINCH or slide to zoom, then LOCK IN.
+  You also give each picture a verdict (perfect / small tweak / needs an edit / remake) and a note. Choices are saved on the
+  page; Claude reads them and writes them into the game as a placement table per picture and screen (zoom + position).
+  The game uses the locked setting of the nearest screen (by shape and size) and falls back to automatic placement for
+  anything not locked yet. Remakes and edits become the art to-do list.
 - **H1** `[idea]` Game-show set on one engine: Price Is Right Plinko, Jeopardy!, Wheel of Fortune, Who Wants to Be a Millionaire?, Deal or No Deal.
   Owner, Nov 3: **Wheel of Fortune** and **Deal or No Deal** as exact look-alikes (set, music feel, board, host moments), a **Jeopardy!** look-alike trivia game (board of categories × values, Daily Doubles, Final Jeopardy wager) on our trivia bank; triage notes also want Hardcore Trivia → **Who Wants to Be a Millionaire** and Price Bid-Off → a full Price Is Right suite (Plinko, Cliff Hangers yodel guy, Big Wheel).
 - **H22** `[idea]` (owner, Nov 3) **Words with Friends** clone (two players, 15x15 tile board, racks, word list built in for offline play) **with a twist**. Ideas to offer: words that name a character or show in the game score double and pop that character's head; special tiles that play a mini-minigame; a "Chardee" square that forces a dare; online play like the other board games.

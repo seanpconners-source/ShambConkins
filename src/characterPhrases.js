@@ -1,5 +1,5 @@
 const {character, characterIdentity}=require("src/characters.js");
-const {QUOTES}=require("src/data/characterQuotes.js");
+const {quoteOf}=require("src/data/characterQuotes.js");
 const PHRASES={
  'mars-attacker':'Ack! Ack! Ack!', 'mrs-doubtfire':'Oooh… hello!!!',doubtfire:'Oooh… hello!!!',
  bond:'Shaken, not stirred.','james-bond':'Shaken, not stirred.',
@@ -14,6 +14,6 @@ const PHRASES={
  'uss-hannah':'Let’s see what happens!', 'uss-carson':'The whole team is here!'
 };
 // Lab lines are original game greetings, not attributed quotations.
-function characterPhrase(id){const c=character(id);return QUOTES[id]||QUOTES[characterIdentity(id)]||c.unlockPhrase||PHRASES[id]||PHRASES[characterIdentity(id)]||(/doubtfire/i.test(c.name)?'Oooh… hello!!!':/james bond/i.test(c.name)?'Shaken, not stirred.':'');}
+function characterPhrase(id){const c=character(id);return quoteOf(id)||quoteOf(characterIdentity(id))||c.unlockPhrase||PHRASES[id]||PHRASES[characterIdentity(id)]||(/doubtfire/i.test(c.name)?'Oooh… hello!!!':/james bond/i.test(c.name)?'Shaken, not stirred.':'');}
 
 Object.assign(exports,{characterPhrase});

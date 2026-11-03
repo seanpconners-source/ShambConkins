@@ -4,7 +4,7 @@
 // (catching or beating a character unlocks it). Team and bag live on the player object
 // (player.pkmn, player.pkbag) so old saves simply start without them.
 const {store}=require("src/state.js");
-const {QUOTES}=require("src/data/characterQuotes.js");
+const {quoteOf}=require("src/data/characterQuotes.js");
 const {CHARACTERS,character,characterIdentity}=require("src/characters.js");
 const {availableCharacters,canRecruit,recruit}=require("src/profile.js");
 const {location}=require("src/locations.js");
@@ -145,7 +145,7 @@ async function trainerSpace(run,p,{gym=false,trainerId=null,size=6,label=null,in
  const random=rnd(run,'trainer'),profile=store.profile;ensureTeam(run,p,profile);
  const {trainer,team}=buildTrainer(run,p,random,{size,levelBoost:gym?2:1,trainerId});
  const name=label||trainerLabel(trainer),c=character(trainer);
- const lines=pre||[`${name}: ${intro||QUOTES[c.id]||c.unlockPhrase||INTRO_LINES[Math.floor(random()*INTRO_LINES.length)]}`];
+ const lines=pre||[`${name}: ${intro||quoteOf(c.id)||c.unlockPhrase||INTRO_LINES[Math.floor(random()*INTRO_LINES.length)]}`];
  const prize=gym?6:Math.max(2,Math.round(size*.7));
  return battleFlow(run,p,{mode:gym?'gym':'trainer',foe:{label:name,character:trainer,team,lose:LOSE_LINES[Math.floor(random()*LOSE_LINES.length)]},random,prize,pre:lines,intro:'spotted',unlockFrom:team.map(m=>m.id),extraUnlock:gym?trainer:null});
 }

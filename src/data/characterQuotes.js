@@ -1,5 +1,5 @@
 // Each character's own famous line (owner, Nov 3: "the real things that character says", on the nose).
-// Short catchphrases only. Shown on the character page and the unlock card (characterPhrases.js), and as the
+// Short catchphrases only. A list = several lines, one picked at random each time (owner: Freddy says bitch a lot). Shown on the character page and the unlock card (characterPhrases.js), and as the
 // Pokémon trainer intro. Characters missing here keep their older line.
 const QUOTES={
  charlie:'Wildcard, bitches!', dennis:'Because of the implication.', frank:'Can I offer you a nice egg in this trying time?',
@@ -37,7 +37,7 @@ const QUOTES={
  creed:'I’ve been involved in a number of cults.', data:'I can serve as a flotation device.',
  goro:'Bow to me!', 'happy-gilmore':'The price is wrong, Bob!', 'billy-madison':'Back to school, back to school!',
  'dr-evil':'One million dollars!', 'ian-malcolm':'Life, uh, finds a way.', muldoon:'Clever girl.',
- natalya:'I am not a computer programmer!', jigsaw:'I want to play a game.', freddy:'Welcome to prime time, bitch!',
+ natalya:'I am not a computer programmer!', jigsaw:'I want to play a game.', freddy:['Welcome to prime time, bitch!','Every town has an Elm Street, bitch.','You’re in my world now, bitch!','One, two, Freddy’s coming for you, bitch!','Sweet dreams, bitch!','Nighty-night, bitch!','How’s this for a wet dream?'],
  ghostface:'What’s your favorite scary movie?', pinhead:'We have such sights to show you.', chucky:'Hi, I’m Chucky. Wanna play?',
  macready:'Nobody trusts anybody now.', 'seth-brundle':'Be afraid. Be very afraid.', 'max-renn':'Long live the new flesh!',
  kitano:'Today’s lesson: you kill each other off.', 'eli-sunday':'I am a false prophet!',
@@ -151,4 +151,5 @@ const QUOTES={
  'kb-budd':'That woman deserves her revenge. And we deserve to die.', 'ib-shosanna':'This is the face of Jewish vengeance!',
  'bm-kilmer':'Chicks love the car.',
 };
-Object.assign(exports,{QUOTES});
+const quoteOf=id=>{const q=QUOTES[id];return Array.isArray(q)?q[Math.floor(Math.random()*q.length)]:q;};
+Object.assign(exports,{QUOTES,quoteOf});
