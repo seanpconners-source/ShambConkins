@@ -339,7 +339,7 @@ function recordBossTier(game,won){
  return ` ${BOSS_TIERS[d].name.toUpperCase()} CLEARED!${nx?` ${nx.name} is now open in Boss Select.`:' Every tier beaten!'}`;}
 // ROADMAP C3 (owner's unlock rules): games started from the Arcade list are practice: no characters join from them
 // (scores, bests, boss medals and tier progress still count). Characters come from board play. true = old behaviour.
-const ARCADE_RECRUITS=false;
+const ARCADE_RECRUITS=true; // owner, Nov 3: Arcade wins DO recruit (too many characters to get otherwise); false = practice only
 const recruitsOn=origin=>origin==='board'||ARCADE_RECRUITS&&origin!=='dev';
 async function settleSolo(game,scores,label,players,solo,cageRecruits){
  // co-op with a CPU teammate (solo.coop): the team total is the run's score

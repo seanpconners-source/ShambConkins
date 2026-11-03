@@ -20,7 +20,22 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 
 ## Inbox (unsorted new notes)
 
-_(empty)_
+- **N1** `[idea]` (owner, Nov 3) Friends online: see which friends are playing and whether they can be invited; when a
+  friend becomes free (not mid-game, not mid-turn) an invite pops up on their screen at a moment that doesn't interrupt.
+  Owner loves online as it is now: look into it soon, keep it simple, don't disturb what works. Builds on I2/I3 (invite
+  links, status dot). Needs: a presence list in the Worker (who is in which room / idle), a "free to interrupt" signal
+  from the game (title screen, between board turns, results card), and a queued invite toast.
+- **N2** `[todo]` (owner, Nov 3) New characters: Pee-wee Herman; Stone Cold Steve Austin; The Undertaker; Mick Foley
+  (outfits: Dude Love, Mankind, Cactus Jack); the Whitest Kids U' Know guys; Nick Wiger, Mike Mitchell, Scott Aukerman,
+  Paul F. Tompkins, Lauren Lapkus; The Birthday Boys (all of them); the rest of the Reno 911! cast (incl. Terry);
+  Idiocracy: Not Sure, Frito, Rita (Maya Rudolph), the general arrested for pimping, Justin Long's doctor, the cabinet,
+  President Camacho, all of them; Beavis and Butt-Head; Joe Camel; Mac Tonight (moon head); Sherman Klump, Buddy Love.
+  Owner will add more.
+- **N3** `[idea]` (owner, Nov 3, tabled) Personal install unlocks: if we know who a copy is for, they unlock their own
+  people the first time they open it (e.g. Lydia gets Lydia, Houston, Ezra and Friday the dog: her family, not in the game
+  yet).
+- **Q0** `[todo]` (owner, Nov 3) REMINDER: run prolonged soak testing tonight and whenever Claude isn't actively working on
+  the game (see Q2/Q3), so it keeps improving while the owner is away. Remind the owner of this.
 
 ---
 
@@ -88,7 +103,7 @@ in headless browsers).
 Unlock rules (section 10)
 - **C1** `[todo]` One device = one shared collection of unlocked characters (pass-and-play included).
 - **C2** `[todo]` Online players use their own device's collection, not an empty local P2 roster. Today the host's profile decides what the guest can recruit (known limit).
-- **C3** `[verify]` (Nov 2 night: Arcade/online-duel wins recruit nothing, result card says 'Practice'; `ARCADE_RECRUITS` in gameLauncher.js flips it back) Found Nov 2: 1-player Arcade wins can still recruit a random character (`settleSolo` in gameLauncher.js). Boss Select no longer gives characters (K6). Games launched from the game list award no progression unlocks (results card already says "Practice · No unlocks"; check Boss Select and every standalone path).
+- **C3** `[done]` (owner, Nov 3: Arcade wins DO recruit after all, there are too many characters otherwise; `ARCADE_RECRUITS=true`; some can stay locked behind conditions) Found Nov 2: 1-player Arcade wins can still recruit a random character (`settleSolo` in gameLauncher.js). Boss Select no longer gives characters (K6). Games launched from the game list award no progression unlocks (results card already says "Practice · No unlocks"; check Boss Select and every standalone path).
 - **C4** `[todo]` Both players can earn unlocks in real board play.
 - **C5** `[todo]` A new unlock goes to the roster for future games; it never swaps the player's current character mid-run.
 - **C6** `[todo]` Audit every unlock trigger, owner and save path.

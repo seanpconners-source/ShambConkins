@@ -33,8 +33,7 @@ the morning. Everything below is on branch `claude/v0.75.0-release-roadmap-so2z5
    `verdicts` (doc id = game id; bosses `boss--<id>`). Cut games then leave the pool (B3).
 2. **Menu direction** (M7): https://claude.ai/artifact/4h7fazkSTgh1oQxDQdpctE — A Console Home, B Marquee Shelves,
    C Card Deck (or a mix). Build M1-M6 in the picked style.
-3. **Arcade = practice** (C3, built): Arcade/online-duel wins no longer recruit characters, 1P and 2P alike, and
-   cage/pipe/wanted recruits only count on the board. OK? (`ARCADE_RECRUITS` in gameLauncher.js flips it back.)
+3. **Arcade unlocks** (C3): ANSWERED Nov 3: the owner wants Arcade wins to unlock characters (switched back on in v0.76.0).
 4. **No run length** (C9, built): every run is a race to the finish; co-op now ends when both reach the end (it used
    to lap forever with "no turn limit"). OK?
 5. **Boss music** (K22): the slots are ready; ask for songs: `boss-<boss id>.mp3` per boss, optional `-p2/-p3/-final`,
@@ -61,6 +60,10 @@ the morning. Everything below is on branch `claude/v0.75.0-release-roadmap-so2z5
 13. **Level IV content** (E6/E8): already there: 9 horror landmarks in Level IV (Camp Crystal Lake, Elm Street,
    Haddonfield, the Jigsaw warehouse…) and Michael Myers, Jason, Freddy, Leatherface, Chucky, Pinhead, Jigsaw,
    Ghostface unlock there. Some horror landmarks (Evil Dead cabin, Cabin in the Woods) sit in Levels II/III: move them?
+
+**Owner, Nov 3 (released v0.76.0 to play that night):** new roadmap notes N1 (friends online / invite when free), N2
+(new characters list), N3 (personal install unlocks, tabled), Q0: REMIND the owner about running soak tests whenever
+Claude isn't actively working on the game (and run them).
 
 ### Then, in the recommended order
 1. Rebuilds from the triage (D), highest-dealt first; D6 Pac-Man and D7 TowerFall are next in the old list.

@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.76.0
+
+**Frank's fake-out, Level IV, two endings, boss power-ups, Bomber and Pac-Maze rebuilt.**
+
+- **Frank's card** runs his Shits and Ladders fake-out (laxative dialogs, the melt, Frank's face) and drops both
+  players straight into Level IV from the middle of Level III. Level IV gets rust, blood, chains, hooks and fire.
+- **Endings**: a deliberately cheap fake one after the Level III boss, the true one after Level IV (lore about your
+  characters, credits from your run); both skippable with "are you sure?".
+- **Checkpoints**: New Game → START AT any level already reached (empty bag); a Level IV start plays a short Frank reveal.
+- **Boss fights**: power-ups (spread, turbo, missiles, shield, smart bomb, heart), new ships, partner-down slow-motion
+  NOOOOOO cutscene, drop-in boss music slots (assets/music/boss-*.mp3).
+- **Bomber duel**: floating joystick, BOMB button/tap, smooth walking with corner sliding, Bomberman bodies.
+- **Pac-Maze Duel**: arcade ghost AI (scatter/chase, personalities, frightened), 75% ghost speed, classic maze and sounds.
+- **Fixes**: 1P T-800 chase and Breakout speed; Color Card Dash early taps; Hole.it fit rule and finished goals;
+  King Gizzard Nest traps; character-select head jitter. Run length option removed (runs end at the finish).
+
 ## v0.75.0
 
 **Boss fights, rebuilt to be a real challenge.**
