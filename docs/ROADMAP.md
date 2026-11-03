@@ -55,6 +55,13 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **W1** (owner, Nov 3) Daily rhythm from now on: release in the MORNING · owner playtests in the DAY · in the EVENING the
   owner answers Claude's questions (Claude asks all of them first thing when the session starts) · Claude works ALL
   NIGHT · release the next morning · repeat.
+- **Q00** `[todo]` (owner, Nov 3 evening, BUILD FIRST TONIGHT) A soak test the OWNER can run without Claude (when usage
+  credits are out): (1) a manual GitHub Actions workflow "Soak test" (workflow_dispatch only, input: hours, default 2) that
+  builds --pwa, serves it, starts `wrangler dev`, loops the soak suite (long solo-board, online-board with drops, every
+  minigame via games.mjs, boss fights per tier, levelflow/frank/endings/checkpoint) until time is up, and uploads a short
+  report (pass/fail per test, failure logs, screenshots) as an artifact; mind the private-repo Actions minutes. (2) the same
+  loop as a one-click `SOAK-TEST.cmd` for the Windows laptop writing the report to a folder. Share one script
+  (`tools/soak.mjs`). The next session reads the latest report and fixes what it found.
 - **Q0** `[todo]` (owner, Nov 3) REMINDER: run prolonged soak testing tonight and whenever Claude isn't actively working on
   the game (see Q2/Q3), so it keeps improving while the owner is away. Remind the owner of this.
 
