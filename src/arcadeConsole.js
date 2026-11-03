@@ -97,15 +97,19 @@ const keyArt=it=>it&&(dropArt('keyart',it.fam?.key)||dropArt('keyart',it.g?.id)|
 // placeKey() sizes and moves the picture so this box is always fully on screen on any phone/tablet/desktop, beside the
 // text on wide screens and above it on tall ones; it zooms out (edges fade into the backdrop) rather than cut it off.
 // New key art: add its box here (slot = game id or family key); without one the middle of the picture is kept.
-const KEY_BOX={baseball:[.6,.36,.96,.52], 'black-sabbath-pinball':[.68,.28,.97,.5], bond:[.28,.36,.6,.7], bosses:[.3,.5,.6,.8], 'bucketheadland-pinball':[.38,.36,.8,.64], 'king-gizzard-pinball':[.34,.3,.59,.62],
- candy:[.25,.4,.85,.75], casino:[.37,.28,.67,.5], castlevania:[.52,.5,.79,.7], clue:[.25,.15,.9,.85], monopoly:[.64,.26,.93,.56], 'pac-maze-duel':[.35,.76,.92,.99],
- paddys:[.43,.33,.88,.55], rush:[.28,0,.68,.55], kart:[.48,.23,.78,.5], trivia:[.42,.22,.85,.5], ducks:[.58,.3,.93,.53], matrix:[.57,.4,.87,.63],
- terminator:[.45,.36,.79,.6], hyrule:[.53,.47,.78,.68], taskmaster:[.6,.42,.86,.6], tarantino:[.52,.4,.82,.62], trek:[.42,.2,.77,.5], invaders:[.44,.6,.92,.88],
- sonic:[.55,.34,.82,.75], smb:[.27,.48,.53,.78], southpark:[.52,.46,.92,.72], doom:[.5,.16,.83,.52], 'doom-2':[.43,.3,.75,.58], 'bricks-breaker-quest':[.75,.47,.96,.64],
- 'greed-island-mancala':[.28,.03,.86,.5], broforce:[.56,.31,.81,.53], hangman:[.25,.11,.72,.57], pinball:[.3,.15,.75,.6]};
+const KEY_BOX={baseball:[.664,.385,.929,.579], 'black-sabbath-pinball':[.674,.299,.887,.533], bond:[.302,.394,.608,.762], bosses:[.296,.501,.58,.828],
+ 'bricks-breaker-quest':[.77,.478,.947,.656], broforce:[.579,.308,.816,.542], 'bucketheadland-pinball':[.387,.391,.799,.713], candy:[.668,.342,.795,.442],
+ casino:[.412,.299,.688,.516], castlevania:[.555,.542,.758,.691], clue:[.746,.524,.827,.619], doom:[.526,.168,.831,.506], 'doom-2':[.454,.302,.731,.502],
+ ducks:[.604,.352,.916,.519], 'greed-island-mancala':[.331,.034,.677,.251], hangman:[.258,.1,.709,.617], hyrule:[.565,.478,.77,.638],
+ invaders:[.47,.63,.818,.805], kart:[.47,.258,.787,.601], 'king-gizzard-pinball':[.351,.305,.583,.668], matrix:[.6,.442,.826,.606],
+ monopoly:[.647,.29,.929,.598], 'pac-maze-duel':[.374,.666,.902,.935], paddys:[.477,.345,.838,.517], pinball:[.3,.15,.75,.6], rush:[.287,0,.738,.58],
+ smb:[.296,.493,.494,.792], sonic:[.597,.37,.836,.773], southpark:[.514,.395,.934,.794], tarantino:[.54,.483,.785,.626], taskmaster:[.619,.446,.819,.582],
+ terminator:[.474,.378,.772,.597], trek:[.454,.218,.748,.478], trivia:[.44,.244,.829,.57]};
 const KEY_BOX_DEFAULT=[.28,.15,.72,.85];
 const keyBox=it=>KEY_BOX[it.fam?.key]||KEY_BOX[it.g?.id]||KEY_BOX[familyOf(it.g)]||KEY_BOX_DEFAULT;
-const keyImg=it=>{const b=keyBox(it);return `<img src="${e(keyArt(it))}" alt="" data-box="${b.join(',')}" style="transform-origin:${(b[0]+b[2])*50}% ${(b[1]+b[3])*50}%">`;};
+// Behind the picture: a blurred copy covering the whole screen, shown only when the picture had to zoom out (no bare backdrop).
+const keyImg=it=>{const b=keyBox(it),u=e(keyArt(it));return `<img class="arc-keyfill" src="${u}" alt="" hidden><img src="${u}" alt="" data-box="${b.join(',')}" style="transform-origin:${(b[0]+b[2])*50}% ${(b[1]+b[3])*50}%">`;};
+const SPILL=1.3;   // how much bigger than its area the faces' box may get before the picture zooms out instead
 const clampR=(v,lo,hi)=>lo>hi?(lo+hi)/2:Math.min(hi,Math.max(lo,v));
 function placeKey(img){
  const root=img?.closest?.('.arcade-console');if(!root||!img.naturalWidth||!img.dataset.box)return;
@@ -116,24 +120,34 @@ function placeKey(img){
  const info=rel('.arc-info'),row=rel('.arc-row-head')||rel('.arc-row');
  // clear of every control: below the top bar, the category pills and the player strip (and the search box when open)
  const top=Math.max(H*.06,...['.arc-top','.arc-pills','.arc-strip','.arc-search'].map(q=>rel(q)?.b||0))+8;
- // the area the faces should fill: wide = right of the text and above the tiles, tall = between the strip and the text
- const ay0=top,ay1=Math.max(top+60,side?(row?.t??H*.8)-8:(info?info.t-6:H*.6));
- let ax0=W*.03,ax1=W*.97;if(side&&info&&info.r<W*.7)ax0=info.r+12;
- const bw=(bx1-bx0)*iw,bh=(by1-by0)*ih,cover=Math.max(W/iw,H/ih),fit=.92*Math.min((ax1-ax0)/bw,(ay1-ay0)/bh),s=Math.min(cover,fit); // a little room round the faces
+ // where the faces may go: tall = between the strip and the text; wide = right of the text (down to the tiles) or, when that
+ // is narrow, the full width above the text; whichever lets the picture show biggest (closest to filling the screen)
+ const bw=(bx1-bx0)*iw,bh=(by1-by0)*ih,cover=Math.max(W/iw,H/ih);
+ const bot=(row?.t??H*.8)-8,areas=[];
+ if(!side)areas.push([W*.02,top,W*.98,Math.max(top+60,info?info.t-6:H*.6)]);
+ else{areas.push([info&&info.r<W*.75?info.r+12:W*.02,top,W*.98,Math.max(top+60,bot)]);if(info&&info.t-6-top>60)areas.push([W*.02,top,W*.98,info.t-6]);}
+ const fitIn=a=>.95*Math.min((a[2]-a[0])/bw,(a[3]-a[1])/bh);
+ const [ax0,ay0,ax1,ay1]=areas.reduce((a,b)=>fitIn(b)>fitIn(a)*1.02?b:a);
+ // fill the screen first: the faces may spill a little past their area (into the text's edge, never the buttons) rather
+ // than the picture zooming out and leaving empty space (owner, Nov 3: "a little covering isn't the end of the world")
+ const s=Math.min(cover,fitIn([ax0,ay0,ax1,ay1])*SPILL,.94*W/bw,.94*(H-top)/bh);   // but never past the screen's edges
  const dw=iw*s,dh=ih*s,BW=bw*s,BH=bh*s;
  // wide: the box sits right of the text when it fits there, else as far right as it can
- const cx=(ax0+ax1)/2;
- const cy=(ay0+ay1)/2;
+ const cx=(ax0+ax1)/2,cy=(ay0+ay1)/2;
  // keep the box inside its area; cover the screen on an axis where the picture is big enough, else stay inside the screen
- const solve=(want,d,L,b0,b1,a0,a1)=>{const lo=a0-b0*d,hi=a1-b1*d,p=clampR(want,lo,hi);const c0=d>=L?L-d:0,c1=d>=L?0:L-d;
+ // when the faces are bigger than their area, `bias` says where they spill: 0 = keep their top edge (spill down into the
+ // text on tall screens), 1 = keep their right edge (spill left towards the text on wide ones)
+ const solve=(want,d,L,b0,b1,a0,a1,bias)=>{const lo=a0-b0*d,hi=a1-b1*d,p=lo>hi?lo+(hi-lo)*bias:clampR(want,lo,hi);const c0=d>=L?L-d:0,c1=d>=L?0:L-d;
   const l2=Math.max(lo,c0),h2=Math.min(hi,c1);return l2<=h2?clampR(p,l2,h2):p;};
- const left=solve(cx-(bx0+bx1)/2*dw,dw,W,bx0,bx1,ax0,ax1),topP=solve(cy-(by0+by1)/2*dh,dh,H,by0,by1,ay0,ay1);
+ const left=solve(cx-(bx0+bx1)/2*dw,dw,W,bx0,bx1,ax0,ax1,1),topP=solve(cy-(by0+by1)/2*dh,dh,H,by0,by1,ay0,ay1,side?.35:0);
  // edges that end on screen fade into the backdrop
  const f=(n,d)=>n?`${Math.round(d*.16)}px`:'0px',fl=left>1,fr=left+dw<W-1,ft=topP>1,fb=topP+dh<H-1;
  const mask=(fl||fr||ft||fb)?`linear-gradient(90deg,#0000,#000 ${f(fl,dw)},#000 calc(100% - ${f(fr,dw)}),#0000),linear-gradient(180deg,#0000,#000 ${f(ft,dh)},#000 calc(100% - ${f(fb,dh)}),#0000)`:'none';
+ const fill=img.previousElementSibling;if(fill?.classList.contains('arc-keyfill'))fill.hidden=!(fl||fr||ft||fb);
  Object.assign(img.style,{left:left+'px',top:topP+'px',width:dw+'px',height:dh+'px',maskImage:mask,webkitMaskImage:mask,maskComposite:'intersect',webkitMaskComposite:'source-in'});
  img.classList.add('placed');
  // the shade stays light over the faces' area (theme.css .has-key .arc-shade reads these)
+ root.classList.toggle('key-above',side&&ax0<W*.1);
  root.style.setProperty('--key-y0',(ay0/H*100).toFixed(1)+'%');root.style.setProperty('--key-y1',(ay1/H*100).toFixed(1)+'%');
 }
 const placeKeys=()=>{if(typeof document!=='undefined')document.querySelectorAll('.arc-keyart img').forEach(placeKey);};

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.80.2
+
+- **Arcade backgrounds fill the screen**: every picture now zooms in as far as it can while keeping Sean's and Amber's faces clear of the buttons and text, so there's far less empty space on the open Fold, tablets, phones and desktop. When a picture does have to zoom out, a soft blurred copy fills the edges instead of plain black.
+
 ## v0.80.1
 
 - **Arcade backgrounds never cut off your faces**: every picture now knows exactly where Sean's and Amber's faces are, and the game keeps them clear of the menu buttons and the text on every screen (Fold open and closed, phones, tablets, desktop, landscape).

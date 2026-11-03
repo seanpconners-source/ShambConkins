@@ -635,6 +635,8 @@ body .title-screen .ts-dock-icon{color:#dbe5ff}
 .arc-keyart{position:absolute;inset:0;z-index:-3;pointer-events:none;overflow:hidden}
 .arc-keyart img{position:absolute;left:0;top:0;width:100%;height:100%;max-width:none;object-fit:cover;animation:arc-kenburns 22s ease-in-out infinite alternate}
 .arc-keyart img.placed{object-fit:fill}
+.arc-keyart img.arc-keyfill{inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(26px) saturate(1.2) brightness(.55);animation:none}
+.arc-keyart img.arc-keyfill[hidden]{display:none}
 .arc-hero-art .arc-layer,.arc-keyart .arc-layer{position:absolute;inset:0}
 .arc-hero-art .big{animation:arc-float 6.5s ease-in-out infinite}
 .arc-layer-in{animation:arc-layer-in .55s cubic-bezier(.2,.8,.25,1) both}
@@ -694,7 +696,7 @@ body[data-theme="home"] #dialog[open]:not(.sheet) .dialog-content{animation:arc-
 }
 /* key art: dark behind the controls and the text, clear over the faces (placeKey sets --key-y0/--key-y1 = the faces' band) */
 .arcade-console.has-key .arc-shade{background:linear-gradient(180deg,#060a17d9 0%,#060a1766 calc(var(--key-y0,22%) - 4%),#0000 var(--key-y0,22%),#0000 var(--key-y1,44%),#060a17cc calc(var(--key-y1,44%) + 12%),#060a17 calc(var(--key-y1,44%) + 30%))}
-@media (min-width:700px),(orientation:landscape) and (max-height:520px){.arcade-console.has-key .arc-shade{background:linear-gradient(90deg,#060a17 4%,#060a17b3 30%,#0000 50%),linear-gradient(180deg,#060a17cc 0%,#0000 var(--key-y0,20%),#0000 var(--key-y1,60%),#060a17 calc(var(--key-y1,60%) + 18%))}}
+@media (min-width:700px),(orientation:landscape) and (max-height:520px){.arcade-console.has-key:not(.key-above) .arc-shade{background:linear-gradient(90deg,#060a17 4%,#060a17b3 30%,#0000 50%),linear-gradient(180deg,#060a17cc 0%,#0000 var(--key-y0,20%),#0000 var(--key-y1,60%),#060a17 calc(var(--key-y1,60%) + 18%))}}
 
 /* ---------- Arcade round 2 (owner, Nov 3): View all grid, small phones ---------- */
 .arc-grid-page{position:absolute;inset:0;z-index:19;overflow-y:auto;overscroll-behavior:contain;background:radial-gradient(120% 45% at 50% 0%,#14224a 0%,#070c1d 62%);
