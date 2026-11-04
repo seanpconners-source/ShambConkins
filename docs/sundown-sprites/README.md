@@ -48,7 +48,14 @@ Drawn at **0.5 world units per pixel**: a picture 400 px tall fills the whole vi
 - `<stage>-far.png`, `<stage>-near.png`: wide strips that repeat sideways (make the left and right edges match), bottom
   edge on the ground line; far scrolls slowly, near faster.
 - `<stage>-ground.png`: a tile repeated along the floor, top edge on the ground line (about 64×64).
-- `<stage>-building-1.png` … `-4.png`: building fronts (about 200-320 px wide), bottom on the ground. Every two-storey front gets a walkable balcony: **its floor 80 px above the bottom edge** (the game draws the rail and posts if your picture has none). Gunmen appear in windows across each floor at even spacing, 56 px and 148 px above the ground, and step out of the ground-floor door.
+- `<stage>-building-1.png` … `-4.png` (town, mission): building fronts at a FIXED size per slot, drawn at 0.5 units per
+  pixel, bottom on the ground: town 256×260, 224×260, 320×260, 192×260 (two storeys); mission 288×250, 256×250 (two
+  storeys), 224×150, 320×150 (one storey). Templates `templates/<stage>-building-N.png` show the spots: balcony floor 80 px
+  up (red line, players stand on it), windows centred 60 px and 152 px up (blue, gunmen appear there), door in the middle
+  (green). Sizes and spots live in `BUILDING_ART` (src/data/sundownSprites.js). A picture of another size is stretched to
+  the slot's size.
+- `canyon-rock.png` (tile filling the canyon's rock ledges), `canyon-ledge-top.png` (strip along a ledge's top edge).
+- `trough.png`, `hitching-post.png`, `lamp.png`: street props, bottom centre on the ground, 0.5 units per pixel.
 
 ## Checking your art
 Rebuild (`node tools/build.mjs`, or the release build), open the Arcade → Sundown Showdown. Anything that looks off in

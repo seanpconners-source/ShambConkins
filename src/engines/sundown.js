@@ -65,10 +65,11 @@ async function sundown(s){
   let xx=160;
   while(xx<STAGE_LEN+200){
    if(theme.id==='canyon'){const w=90+r()*90,h=46+r()*34;ledges.push({x:xx,w,y:GY-h});xx+=w+60+r()*90;}
-   else{const w=96+r()*64,floors=theme.id==='town'?2:1+(r()<.5?1:0),h=floors*46+18;const wins=[];const cols=Math.max(2,Math.floor(w/34));
+   else{const hue=Math.floor(r()*4),art=SPR.has(`${theme.id}-building-${hue+1}`)&&SPR.BUILDING_ART[theme.id]?.[hue];
+    const w=art?art[0]*SPR.SCENE_SCALE:96+r()*64,floors=art?art[2]:theme.id==='town'?2:1+(r()<.5?1:0),h=art?art[1]*SPR.SCENE_SCALE:floors*46+18;const wins=[];const cols=Math.max(2,Math.floor(w/34));
     for(let f=0;f<floors;f++)for(let k=0;k<cols;k++)wins.push({x:xx+(k+.5)*w/cols,y:GY-28-f*46,open:0,man:null});
     const signs=theme.id==='town'?['SALOON','BANK','HOTEL','SHERIFF','GENERAL STORE','BARBER','ASSAY OFFICE','STABLES','POST OFFICE']:['CANTINA','MISIÓN','POSADA','TIENDA','CAPILLA'];
-    const b={x:xx,w,h,floors,wins,sign:signs[Math.floor(r()*signs.length)],hue:Math.floor(r()*4),door:xx+w*(.35+r()*.3),balcony:floors>1};b.wins=b.wins.filter(wn=>!(wn.y===GY-28&&Math.abs(wn.x-b.door)<18));bld.push(b);
+    const b={x:xx,w,h,floors,wins,sign:signs[Math.floor(r()*signs.length)],hue,art:!!art,door:art?xx+w/2:xx+w*(.35+r()*.3),balcony:floors>1};b.wins=b.wins.filter(wn=>!(wn.y===GY-28&&Math.abs(wn.x-b.door)<18));bld.push(b);
     // a covered balcony along every two-storey front: players and bandits stand on it (one-way platform, 40 units up)
     if(b.balcony)plats.push({x:xx-6,w:w+12,y:GY-BALC,b});
     const gap=r()<.3?40+r()*50:6;
@@ -442,12 +443,23 @@ async function sundown(s){
   if(cr.kind==='crate'){rect(cr.x,GY-cr.h,cr.w,cr.h,'#9a6a3a');x.strokeStyle='#5a3a1a';x.lineWidth=1.5*k;x.strokeRect(sx(cr.x),sy(GY-cr.h),cr.w*k,cr.h*k);x.beginPath();x.moveTo(sx(cr.x),sy(GY-cr.h));x.lineTo(sx(cr.x+cr.w),sy(GY));x.stroke();}
   else{rect(cr.x,GY-cr.h,cr.w,cr.h,'#7a4a26');rect(cr.x,GY-cr.h+3,cr.w,2,'#3a3a3a');rect(cr.x,GY-5,cr.w,2,'#3a3a3a');}}
  function drawDecor(d){const k=K(),night=L.theme.night;
+  const dp=SPR.picture(d.kind==='post'?'hitching-post':d.kind);if(dp){const w=dp.width*.5*k,h=dp.height*.5*k;x.imageSmoothingEnabled=false;x.drawImage(dp,sx(d.x)-w/2,sy(GY)-h,w,h);return;}
   if(d.kind==='trough'){rect(d.x-12,GY-9,24,9,'#5a3418');rect(d.x-11,GY-8,22,2.5,night?'#2a4a6a':'#4a8ab0');rect(d.x-12,GY-9,24,1.2,'#7a4a24');}
   else if(d.kind==='post'){rect(d.x-12,GY-16,2.5,16,'#4a2c16');rect(d.x+10,GY-16,2.5,16,'#4a2c16');rect(d.x-13,GY-15,26,2,'#5a3418');}
   else{rect(d.x-1,GY-44,2,44,'#2a2a2a');rect(d.x-4,GY-50,8,7,'#3a3a3a');x.fillStyle=night?'#ffd27a':'#fff6d0';x.globalAlpha=night?1:.6;x.fillRect(sx(d.x-3),sy(GY-49),6*k,5*k);
    if(night){x.globalAlpha=.12;x.fillStyle='#ffb54a';x.beginPath();x.arc(sx(d.x),sy(GY-46),28*k,0,7);x.fill();}x.globalAlpha=1;}}
+ // canyon ledges from art: canyon-rock (tile repeated over the ledge, from its top down to the road) + canyon-ledge-top
+ // (a strip repeated along the top edge, its top on the ledge surface); either alone works, the other falls back to a fill
+ function drawLedgeArt(l){const rock=scene('rock'),top=scene('ledge-top');if(!rock&&!top)return false;const k=K(),sc=SPR.SCENE_SCALE*k;x.imageSmoothingEnabled=false;
+  x.save();x.beginPath();x.rect(sx(l.x),sy(l.y),l.w*k,(GY-l.y)*k);x.clip();
+  if(rock){const w=rock.width*sc,h=rock.height*sc;for(let yy=sy(l.y);yy<sy(GY);yy+=h)for(let xx=sx(l.x);xx<sx(l.x+l.w);xx+=w)x.drawImage(rock,xx,yy,w+.5,h+.5);}
+  else{x.fillStyle=L.theme.hills;x.fillRect(sx(l.x),sy(l.y),l.w*k,(GY-l.y)*k);}
+  x.restore();
+  if(top){const w=top.width*sc,h=top.height*sc;x.save();x.beginPath();x.rect(sx(l.x-6),sy(l.y)-h,(l.w+12)*k,h*2);x.clip();for(let xx=sx(l.x-6);xx<sx(l.x+l.w+6);xx+=w)x.drawImage(top,xx,sy(l.y)-h*.25,w+.5,h);x.restore();}
+  else rect(l.x,l.y,l.w,4,'#c2643a');
+  return true;}
  function drawBuildings(){const k=K(),th=L.theme;
-  for(const b of L.bld){if(b.x>cam+view.ww+10||b.x+b.w<cam-10)continue;const bp=scene('building-'+(1+b.hue));if(bp){const h=b.w*bp.height/bp.width;x.imageSmoothingEnabled=false;x.drawImage(bp,sx(b.x),sy(GY-h),b.w*k,h*k);continue;}const pal=(th.id==='mission'?ADOBE:WALL)[b.hue],top=GY-b.h;
+  for(const b of L.bld){if(b.x>cam+view.ww+10||b.x+b.w<cam-10)continue;const bp=scene('building-'+(1+b.hue));if(bp){const h=b.art?b.h:b.w*bp.height/bp.width;x.imageSmoothingEnabled=false;x.drawImage(bp,sx(b.x),sy(GY-h),b.w*k,h*k);if(b.art&&T-(b.doorT??-9)<1.2)rect(b.door-7,GY-27,14,27,'#0a0604');continue;}const pal=(th.id==='mission'?ADOBE:WALL)[b.hue],top=GY-b.h;
    rect(b.x,top,b.w,b.h,pal[0]);
    if(th.id==='town'){rect(b.x-4,top-10,b.w+8,12,pal[1]);for(let yy=top+6;yy<GY;yy+=7){x.fillStyle='#0002';x.fillRect(sx(b.x),sy(yy),b.w*k,1*k);}}
    else{x.fillStyle=pal[1];x.beginPath();x.moveTo(sx(b.x),sy(top));x.quadraticCurveTo(sx(b.x+b.w/2),sy(top-14),sx(b.x+b.w),sy(top));x.fill();for(let px=b.x+8;px<b.x+b.w;px+=16)rect(px,top+4,4,3,'#3a2414');}
@@ -460,7 +472,7 @@ async function sundown(s){
    drawDoor(b,pal,th);if(b.balcony)drawBalcony(b,th);
    if(th.night&&b.wins.length){const tx=b.x+b.w-6;rect(tx-1,GY-40,2,10,'#2a1810');x.fillStyle=`rgba(255,180,60,${.7+.3*Math.sin(T*9+b.x)})`;x.beginPath();x.arc(sx(tx),sy(GY-42),3.5*k,0,7);x.fill();x.fillStyle='rgba(255,150,40,.12)';x.beginPath();x.arc(sx(tx),sy(GY-42),26*k,0,7);x.fill();}
   }
-  for(const l of L.ledges){if(l.x>cam+view.ww+10||l.x+l.w<cam-10)continue;x.fillStyle=th.hills;x.beginPath();x.moveTo(sx(l.x-14),sy(GY));x.lineTo(sx(l.x),sy(l.y));x.lineTo(sx(l.x+l.w),sy(l.y));x.lineTo(sx(l.x+l.w+14),sy(GY));x.fill();
+  for(const l of L.ledges){if(l.x>cam+view.ww+10||l.x+l.w<cam-10)continue;if(drawLedgeArt(l))continue;x.fillStyle=th.hills;x.beginPath();x.moveTo(sx(l.x-14),sy(GY));x.lineTo(sx(l.x),sy(l.y));x.lineTo(sx(l.x+l.w),sy(l.y));x.lineTo(sx(l.x+l.w+14),sy(GY));x.fill();
    rect(l.x,l.y,l.w,4,'#c2643a');for(let yy=l.y+12;yy<GY;yy+=12){x.fillStyle='#0003';x.fillRect(sx(l.x+4),sy(yy),(l.w-8)*k,1.5*k);}}
   for(const d of L.decor||[])if(inView(d.x,30))drawDecor(d);
   for(const cr of L.crates){if(!inView(cr.x,70))continue;drawProp(cr);continue;if(cr.kind==='crate'){rect(cr.x,GY-cr.h,cr.w,cr.h,'#9a6a3a');x.strokeStyle='#5a3a1a';x.lineWidth=1.5*k;x.strokeRect(sx(cr.x),sy(GY-cr.h),cr.w*k,cr.h*k);x.beginPath();x.moveTo(sx(cr.x),sy(GY-cr.h));x.lineTo(sx(cr.x+cr.w),sy(GY));x.stroke();}

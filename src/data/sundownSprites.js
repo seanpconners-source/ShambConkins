@@ -30,6 +30,7 @@ const PICTURES={
  'hat-p1':{scale:.75},'hat-p2':{scale:.75},
  crate:{scale:.75},barrel:{scale:.75},wagon:{scale:.5},'dynamite-stick':{scale:.75,centre:true},bullet:{scale:.75,centre:true},'enemy-bullet':{scale:.75,centre:true},
  'item-gold':{scale:.75},'item-two':{scale:.75},'item-rapid':{scale:.75},
+ trough:{scale:.5},'hitching-post':{scale:.5},lamp:{scale:.5},
  logo:{ui:true},poster:{ui:true},
 };
 // Scenery per stage, named <stage>-<part> with stage town / canyon / mission: -sky (stretched over the view), -far and -near
@@ -38,6 +39,13 @@ const PICTURES={
 // SCENE_SCALE world units per pixel (a 400 px tall picture = the whole view). Missing ones fall back to the drawn scenery.
 const SCENERY=['sky','far','near','ground','building-1','building-2','building-3','building-4'];
 const SCENE_SCALE=.5;
+// Building fronts with art use a FIXED size per slot [width px, height px, floors], drawn at SCENE_SCALE (no stretching), so
+// the balcony (floor 80 px up), the window gunmen (windows centred 60 px and 152 px up, evenly spaced: centre of window k of n
+// = (k+.5)/n of the width, n = floor(width/68)) and the door (middle) land on the picture. The README lists every spot.
+const BUILDING_ART={
+ town:[[256,260,2],[224,260,2],[320,260,2],[192,260,2]],
+ mission:[[288,250,2],[256,250,2],[224,150,1],[320,150,1]],
+};
 const THEME_IDS=['town','canyon','mission'];
 
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
@@ -60,4 +68,4 @@ function frameOf(def,row,t,{fps=10,loop=true,index=null}={}){
 // Head centre (frame pixels) for a row/frame, or null when the sheet carries no head slot.
 function headAt(def,row,f){if(!def.head)return null;const o=def.headRows?.[row];if(!o)return def.head;return Array.isArray(o[0])?(o[f]||o[o.length-1]):o;}
 function preloadSundown(){for(const k of Object.keys(USER))if(k.startsWith('sundown:'))picture(k.slice(8));}
-Object.assign(exports,{SCENE_SCALE,SHEETS,PICTURES,SCENERY,THEME_IDS,picture,sheet,frameOf,headAt,has,preloadSundown});
+Object.assign(exports,{BUILDING_ART,SCENE_SCALE,SHEETS,PICTURES,SCENERY,THEME_IDS,picture,sheet,frameOf,headAt,has,preloadSundown});

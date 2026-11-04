@@ -9,7 +9,7 @@ import {fileURLToPath} from 'node:url';
 import {req} from '../tests/load.mjs';
 import {chromium, browserLaunchOptions} from '../tests/lib.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const {SHEETS} = req('src/data/sundownSprites.js');
+const {SHEETS, BUILDING_ART} = req('src/data/sundownSprites.js');
 const outDir = path.join(root, 'docs/sundown-sprites/templates');
 fs.mkdirSync(outDir, {recursive: true});
 const browser = await chromium.launch(browserLaunchOptions());
@@ -41,4 +41,31 @@ for (const [name, def] of Object.entries(SHEETS)) {
   }
   console.log(name, def.frame.join('x'), Object.entries(def.rows).map(([r, n]) => `${r}:${n}`).join(' '));
 }
+const pending = [];
+// Building fronts: one guide per stage slot at its fixed size (BUILDING_ART): outline, balcony floor (red line, 80 px up),
+// window openings (blue boxes, centred 60 px and 152 px up), the door (green box, middle). Paint the front over it.
+for (const [stage, slots] of Object.entries(BUILDING_ART)) slots.forEach(([W, H, floors], i) => {
+  const name = `${stage}-building-${i + 1}`;
+  for (const zoom of [1, 2]) {
+    const data = page.evaluate(({W, H, floors, zoom, name}) => {
+      const c = document.getElementById('c'); c.width = W * zoom; c.height = H * zoom;
+      const x = c.getContext('2d'); x.scale(zoom, zoom); x.imageSmoothingEnabled = false;
+      x.fillStyle = 'rgba(80,120,200,.12)'; x.fillRect(0, 0, W, H);
+      x.strokeStyle = 'rgba(40,60,120,.8)'; x.lineWidth = 1; x.strokeRect(.5, .5, W - 1, H - 1);
+      const n = Math.max(2, Math.floor(W / 68)), door = W / 2;
+      x.fillStyle = 'rgba(40,170,60,.45)'; x.fillRect(door - 20, H - 64, 40, 64);
+      for (let f = 0; f < floors; f++) for (let k = 0; k < n; k++) {
+        const cx = (k + .5) * W / n, cy = H - 60 - f * 92;
+        if (f === 0 && Math.abs(cx - door) < 36) continue;
+        x.fillStyle = 'rgba(30,90,230,.45)'; x.fillRect(cx - 20, cy - 20, 40, 40);
+      }
+      if (floors > 1) { x.fillStyle = 'rgba(220,30,30,.9)'; x.fillRect(0, H - 80, W, 2); }
+      x.fillStyle = 'rgba(20,30,60,.85)'; x.font = '10px monospace'; x.fillText(`${name}  ${W}x${H}`, 4, 12);
+      return c.toDataURL('image/png');
+    }, {W, H, floors, zoom, name});
+    pending.push(data.then(d => fs.writeFileSync(path.join(outDir, `${name}${zoom > 1 ? '@2x' : ''}.png`), Buffer.from(d.split(',')[1], 'base64'))));
+  }
+  console.log(name, `${W}x${H}`, floors, 'floor(s)');
+});
+await Promise.all(pending);
 await browser.close();
