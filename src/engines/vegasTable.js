@@ -180,7 +180,7 @@ function bubble(x,text,px,py,size,{dir=1,max=220}={}){x.save();x.font=`800 ${siz
  x.fillStyle='#111';x.textAlign='left';x.textBaseline='top';lines.forEach((l,i)=>x.fillText(l,bx+size*.6,by+size*.4+i*size*1.2));x.restore();}
 // a floating, rounded button; returns its hit box
 function button(x,b){const {X,Y,w,h,label,sub,tone='dark',on=true,hot=false}=b;x.save();x.globalAlpha=on?1:.38;
- const g=x.createLinearGradient(0,Y,0,Y+h),c=tone==='gold'?['#ffe07a','#d79a1c']:tone==='green'?['#55d07a','#1f8a3e']:tone==='red'?['#ff7a6a','#b8261a']:['#3a3440','#1c1820'];g.addColorStop(0,c[0]);g.addColorStop(1,c[1]);
+ const g=x.createLinearGradient(0,Y,0,Y+h),c=tone==='gold'?['#ffe07a','#d79a1c']:tone==='green'?['#55d07a','#1f8a3e']:tone==='red'?['#ff7a6a','#b8261a']:tone==='blue'?['#7ab8ff','#1d4fbf']:['#3a3440','#1c1820'];g.addColorStop(0,c[0]);g.addColorStop(1,c[1]);
  x.shadowColor='rgba(0,0,0,.55)';x.shadowBlur=8;x.shadowOffsetY=3;rr(x,X,Y,w,h,Math.min(h*.32,14));x.fillStyle=g;x.fill();x.shadowColor='transparent';x.lineWidth=hot?3:1.5;x.strokeStyle=hot?'#fff':tone==='dark'?'rgba(255,255,255,.35)':'rgba(0,0,0,.35)';x.stroke();
  x.fillStyle=tone==='gold'?'#2a1800':'#fff';x.textAlign='center';x.textBaseline='middle';const fs=Math.min(h*.42,w*.2,24);x.font=`400 ${fs}px ${FONT}`;x.fillText(label,X+w/2,Y+h/2-(sub?fs*.32:0));
  if(sub){x.font=`800 ${Math.max(8,fs*.42)}px ${BODY}`;x.globalAlpha=on?.85:.3;x.fillText(sub,X+w/2,Y+h/2+fs*.5);}x.restore();return b;}
@@ -203,6 +203,9 @@ function tableSound(s){let a=null,bus=null,mus=null,nb=null,amb=null,music=null;
   bust(){if(!sfxOn()||!ok())return;const t=a.currentTime;tone(196,t,.32,.12,'sawtooth');tone(185,t+.12,.36,.1,'sawtooth');},
   crowd(k=1){if(!sfxOn()||!ok())return;const t=a.currentTime;burst(t,1.4,.08*k,700,.6);burst(t+.1,1.2,.06*k,1200,.8);},
   tap(){vibrate(8);},
+  // roulette: the wheel's rumble while it spins, and the ball's clatter as it drops into the pockets
+  whir(secs=4){if(!sfxOn()||!ok())return;const t=a.currentTime,n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=noiseBuf();n.loop=true;f.type='lowpass';f.frequency.setValueAtTime(900,t);f.frequency.exponentialRampToValueAtTime(220,t+secs);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.12,t+.3);g.gain.exponentialRampToValueAtTime(.0001,t+secs);n.connect(f).connect(g).connect(bus);n.start(t);n.stop(t+secs+.1);},
+  clack(k=1){if(!sfxOn()||!ok())return;const t=a.currentTime;tone(2400+Math.random()*900,t,.04,.07*k,'triangle');burst(t,.03,.22*k,4200,3);},
   // murmuring room + a slot machine paying out somewhere far away
   ambience(on){if(!on){try{amb?.n.stop();}catch{}clearInterval(amb?.id);amb=null;return;}if(amb||!sfxOn()||!ok())return;const n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=noiseBuf();n.loop=true;f.type='bandpass';f.frequency.value=520;f.Q.value=.5;g.gain.value=.018;n.connect(f).connect(g).connect(bus);n.start();
    const id=setInterval(()=>{if(!s.alive||s.paused||!a)return;const t=a.currentTime;g.gain.setTargetAtTime(.012+Math.random()*.014,t,.8);if(Math.random()<.22){const base=1200+Math.random()*900;for(let i=0;i<9;i++)tone(base*(1+(i%3)*.25),t+i*.09,.08,.012,'square');}},1400);amb={n,id};},

@@ -443,7 +443,12 @@
   "src/engines/vegasTable.js",
   "src/engines/vegasBlackjack.js",
   "src/engines/blackjackRules.js",
-  "src/noZoom.js"
+  "src/noZoom.js",
+  "src/engines/casinoRules.js",
+  "src/engines/vegasGame.js",
+  "src/engines/vegasBaccarat.js",
+  "src/engines/vegasPoker.js",
+  "src/engines/vegasRoulette.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

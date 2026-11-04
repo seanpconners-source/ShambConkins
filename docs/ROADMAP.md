@@ -229,7 +229,7 @@ Order to be set by the triage. Current candidates:
 - **D8** `[todo]` Rocky boxing: two-player Punch-Out!! style.
 - **D9** `[todo]` Raiders Boulder Run: major improvement.
 - **D10** `[todo]` South Park Dodgeball: decent; move toward Super Dodge Ball (NES).
-- **D11** `[idea]` Baccarat: rework a lot or remove.
+- **D11** `[verify]` (Nov 4: reworked rather than removed: real Punto Banco with the squeeze, see G1) Baccarat: rework a lot or remove.
 
 ## Phase E — Frank's Level IV and the endings (sections 5 + 6)
 
@@ -264,11 +264,11 @@ Endings
 - **F7** `[todo]` Finish missing item artwork.
 - **F8** `[todo]` Pacing, variety, excitement, replay value of the board overall.
 - **F9** `[idea]` Later: a more winding, less predictable main board.
-- **F10** `[part]` (Nov 4: blackjack done: finish with $1,500+ ("break the bank") and the dealer joins you; new dealer-only characters Elvis Presley and Mr. Chow (unlockBy 'dealer'), Vesper and Quark also come this way; poker/roulette/baccarat dealers follow) Casino dealers unlockable ("the dealer was impressed and joined your party").
+- **F10** `[verify]` (Nov 4: every casino table: finish with $1,500+ ("break the bank") and its dealer joins you; dealer-only characters Elvis Presley and Mr. Chow (unlockBy 'dealer'); Vesper and Quark also come this way) Casino dealers unlockable ("the dealer was impressed and joined your party").
 
 ## Phase G — polish the good games (section 1)
 
-- **G1** `[part]` (owner's picks Nov 4: drawn Vegas table, themed dealer + regulars + the F10 unlock, blackjack first then all four. BLACKJACK `[verify]`: engines/vegasBlackjack.js + vegasTable.js kit (drawn room/table/dealer/cards/chips, crowd + lounge jazz), 3-deck shoe and cut card, insurance, double, split, tap = hit / swipe = stand; vs CPU, online. NEXT: five-card draw, roulette, baccarat on the same kit) Casino games: real Vegas tables, cards dealt, dealer animations, players around the table, atmosphere.
+- **G1** `[verify]` (owner's picks Nov 4: drawn Vegas table, themed dealer + regulars + the F10 unlock. All four tables built on `engines/vegasTable.js` (+ `vegasGame.js` scaffold for the last three): BLACKJACK (owner approved the screenshots), BACCARAT (Casino Royale, squeeze the cards, bead road, 10 coups), FIVE-CARD DRAW ($10 ante, $20/$40 limit, draw, side pots, SHOW for pass and play, 8 hands), ROULETTE (spinning wheel and ball, the real layout, own chip colours, 10 spins); all vs CPU and online) Casino games: real Vegas tables, cards dealt, dealer animations, players around the table, atmosphere.
 - **G2** `[todo]` Penalty Kicks: fun already; better graphics, animations, sound, presentation.
 - **G3** `[todo]` Mario Kart: backs of heads with helmets, frequent look-backs, wider courses, more interesting play, more stages and many more tracks.
 - **G4** `[part]` Hole.it (owner, Nov 2: good start; the first levels are close, later levels fall apart). Next: study

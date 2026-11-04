@@ -2,6 +2,9 @@
 // take one out when it has had its turn). Ids are game ids from gameRegistry.js and packs/; an unknown id is skipped.
 const FEATURED_GAMES=[
  'blackjack',                 // Vegas blackjack (new table, Nov 4)
+ 'bond-baccarat',             // Casino Royale baccarat (Nov 4)
+ 'roulette',                  // Vegas roulette (Nov 4)
+ 'five-card',                 // five-card draw (Nov 4)
  'greed-island-mancala',      // Tony Hawk's Pro Mancala
  'django-hangman',            // Hangman Unchained
  'bucketheadland-pinball',    // Bucketheadland pinball

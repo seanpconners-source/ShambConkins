@@ -6,7 +6,8 @@
 - **Swiping between games in the Arcade no longer flashes.** The old game slides away where your finger let go and the new one slides in, instead of everything jumping back and blinking.
 
 - **Blackjack is a real Vegas table now.** A drawn casino: felt with the printed rules, a padded rail, the chip rack and the card shoe, a dealer from the table's movie or show (Vesper at Casino Royale, Elvis at Viva Las Vegas, Mr. Chow at the Wolfpack, Quark at Quark's) and regulars in the other seats who play their own hands. Real rules: $1,000 each, $25 to $500 a hand, a 3-deck shoe with a cut card (that hand is the last), insurance, doubling, splits, dealer stands on all 17s. Tap chips to bet, tap the felt to hit, swipe sideways to stand. Crowd noise and an original lounge-jazz loop.
-- **Break the bank and the dealer joins you.** Finish a blackjack game with $1,500 or more and the dealer is impressed. Elvis Presley and Mr. Chow can only be recruited this way; Alan Garner is a new character too.
+- **Baccarat, five-card draw and roulette moved to the Vegas tables too.** Baccarat at the Casino Royale table: bet Player, Banker or Tie, and the biggest bettor squeezes the cards (drag them up to peel), with the real third-card rules and a scoreboard of the coups. Five-card draw: ante, bet, draw up to three, bet again, showdown, with regulars playing their own hands; on one phone your cards stay face down until you tap SHOW. Roulette: a spinning wheel and ball, the real betting layout, your own chip colour. All play vs the CPU and online.
+- **Break the bank and the dealer joins you.** Finish any casino game with $1,500 or more and the dealer is impressed. Elvis Presley and Mr. Chow can only be recruited this way; Alan Garner is a new character too.
 
 ## v0.83.4
 
