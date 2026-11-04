@@ -150,6 +150,22 @@ const QUOTES={
  'mel-gibson':'They may take our lives, but they’ll never take our freedom!', satan:'What is light without dark?',
  'kb-budd':'That woman deserves her revenge. And we deserve to die.', 'ib-shosanna':'This is the face of Jewish vengeance!',
  'bm-kilmer':'Chicks love the car.',
+ // Nov 4 batch 1 (P10)
+ 'johnny-cage':'Those were five-hundred-dollar sunglasses, asshole!', 'sp-mr-garrison':'There are no stupid questions, only stupid people.',
+ 'sp-ike':'Don’t kick the baby!', 'sp-jimbo':'It’s coming right for us!', 'sp-terrance':'Hey, Phillip!', 'sp-phillip':'Hey, Terrance!',
+ gohan:'Kamehameha!', cell:'I am perfect!', 'majin-buu':'Buu turn you into candy!',
+ leticia:'Ride or die, remember?', 'adolf-hitler':'Nein! Nein! Nein! Nein!', 'rdr-arthur-morgan':'We’re thieves in a world that don’t want us no more.',
+ 'idio-cabinet':'Brawndo’s got what plants crave. It’s got electrolytes.', 'ds-fragile':'Call me Fragile. But I’m not that fragile.',
+ 'sm-alyn':'Up, up and away!', 'bond-lazenby':'This never happened to the other fellow.', pontius:'Party Boy!',
+ 'billy-puppet':'I want to play a game.', 'ref-erniemccracken':'You’re on a gravy train with biscuit wheels.',
+ 'pf-captain-koons':'I hid this uncomfortable hunk of metal up my ass for two years.', misty:'You owe me a bike!',
+ 'darth-maul':'At last we will have revenge.', 'edward-scissorhands':'I’m not finished.', 'mars-attacker':'Ack! Ack-ack!',
+ 'ref-kennypowers':'I’m fucking in!', 'ref-commandcenter':'Ay-yi-yi-yi-yi!', 'wf-chazz':'It’s mind-bottling.',
+ 'mick-foley':'Have a nice day!', 't-1000':'Say… that’s a nice bike.', 'gordon-ramsay':'It’s raw!',
+ cthulhu:'Ph’nglui mglw’nafh Cthulhu R’lyeh wgah’nagl fhtagn.', 'nsync-justin':'It’s gonna be May.', 'bsb-nick':'Backstreet’s back, alright!',
+ // Nov 4 batch 2 (P10)
+ 'gary-king':'Let’s boo-boo.', 'ref-yusukeurameshi':'Spirit Gun!', 'ref-kazumakuwabara':'Spirit Sword!', 'ref-hiei':'Dragon of the Darkness Flame!',
+ 'ref-kurama':'Rose Whip!', 'elliot-carver':'There’s no news like bad news.',
 };
 const quoteOf=id=>{const q=QUOTES[id];return Array.isArray(q)?q[Math.floor(Math.random()*q.length)]:q;};
 Object.assign(exports,{QUOTES,quoteOf});

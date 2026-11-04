@@ -46,7 +46,9 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   describes / screen-records the fan game). OWNER'S ANSWERS (Nov 4): 2P race on one screen (both feed Big Egg at once, the
   voice calls the counts, too fast = misses, higher egg count wins); keep the nude-egg reveal for the winner; the owner will
   allow egggame.org in the environment's network settings so it can be checked first-hand before building.
-- **P10** `[todo]` (owner, Nov 4) Characters still without their own quote: 362 of 726 (Nov 4 count). Biggest gaps: Mortal
+- **P10** `[part]` (owner, Nov 4) Characters still without their own quote: 362 of 726 (Nov 4 count); Nov 4 batches 1-2 added 39
+  famous lines (only ones Claude is sure the character says), 323 left. The rest need a source: allow en.wikiquote.org in the
+  cloud environment's network settings so lines can be checked, or the owner sends lines. Was: Biggest gaps: Mortal
   Kombat 14, South Park 12, Hunter × Hunter 10, Death Stranding 10, Reno 911! 9, King Gizzard 7, Dragon Ball Z 7, Birthday
   Boys 7, the Superman actors 6, Warriors, Little Shop, *NSYNC, Backstreet Boys, WKUK, Idiocracy 5 each; also Dee, Cricket,
   Artemis. Add real lines to `src/data/characterQuotes.js` in small batches (a big block of film quotes got a reply

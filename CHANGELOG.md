@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **39 more characters say their own famous line** (Johnny Cage, Ike, Uncle Jimbo, Majin Buu, Cell, Arthur Morgan, Mick Foley, Kenny Powers, Gordon Ramsay, Cthulhu and more), on their character page, unlock card and Pokémon intro.
 - **Swipe through the Arcade**: on a game's page, swipe left for the next game and right for the previous one, anywhere on the picture, logo, text or buttons. The picture and text follow your finger and snap to the next game. Taps, the tile row and the category pills work as before.
 
 ## v0.80.8
