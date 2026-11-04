@@ -1023,3 +1023,6 @@ body[data-soft]{--enter-op:1}
 /* The older .ts-tile .ts-cut{transition:transform .25s} has higher priority and switched this fade off, so tile pictures cut from one to the next in a single frame (owner: "main screen still flickers") */
 body .title-screen .ts-tile .ts-reel img.ts-cut{transition:opacity 1.2s ease,transform 1.3s cubic-bezier(.25,.8,.3,1)}
 @media (prefers-reduced-motion:reduce){body .title-screen .ts-tile .ts-reel img.ts-cut{transition:none}}
+
+/* Pause card: Restart beside Exit (session.js pass, gameLauncher restartGame) */
+.pass-top .pass-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}

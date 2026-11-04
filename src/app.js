@@ -39,7 +39,7 @@ const {GAMES, PHONE_TASK, gameById}=require("src/gameRegistry.js");
 const {refitCatalog, randomArcadePick, showView, updateBoard, showDialog, resolveDialog, closeDialog, unlockDialog, toast, repaintCamera, gestureCamera, endGesture, cancelCameraAnimation, clearBoardDetailObserver, refreshPortraits}=require("src/ui.js");
 const {applyTheme}=require("src/theme.js");
 const {brandHTML, portraitHTML, locationArtHTML, itemArtHTML}=require("src/assets.js");
-const {configureLauncher, requestGame, cancelGameLaunch, exitGame, presentResult}=require("src/gameLauncher.js");
+const {configureLauncher, requestGame, cancelGameLaunch, exitGame, restartGame, presentResult}=require("src/gameLauncher.js");
 const {setSolo,soloSettings}=require("src/solo.js");
 const {sound, vibrate, audioContext, installAudioUnlock, startMusic, stopMusic, setMusicZone, setMusicScene, nowPlaying}=require("src/audio.js");
 const {biomeFor}=require("src/biomes.js");
@@ -565,7 +565,7 @@ async function action(name,target,remote=false){
 }
 async function runAction(name,target){
  if(routePanelAction(name,target))return;
- if(name==='exit-game')return exitGame();if(name==='pause-game')return store.session?.manualPause();
+ if(name==='exit-game')return exitGame();if(name==='restart-game')return restartGame();if(name==='pause-game')return store.session?.manualPause();
  if(name==='toggle-setting'){const key=target.dataset.id;store.profile.settings[key]=!store.profile.settings[key];saveProfile(store.profile);applyPreferences();if(key==='music'){store.profile.settings.music?startMusic():stopMusic();}return settings();}
  if(name==='touch-mode'){const modes=['auto','touch','pointer'];store.profile.settings.touchMode=modes[(modes.indexOf(store.profile.settings.touchMode)+1)%3];saveProfile(store.profile);return settings();}
  if(name==='flick-mode'){const options=[.65,1,1.35];store.profile.settings.flickSensitivity=options[(options.indexOf(store.profile.settings.flickSensitivity)+1)%3];saveProfile(store.profile);return settings();}
