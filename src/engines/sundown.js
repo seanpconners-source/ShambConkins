@@ -132,7 +132,7 @@ async function sundown(s){
  }
  function spawnBoss(){
   const bx=STAGE_LEN+view.ww-60;
-  L.boss=addEnemy('boss',{x:bx+80,y:GY,goal:bx,hp:Math.round((26+L.n*8)*(np===2?1.5:1)*Math.min(1.6,diff)),max:0,face:-1,fire:1.6,pat:0,patT:0,dmg:[0,0]});
+  L.boss=addEnemy('boss',{x:bx+80,y:GY,goal:bx,hp:Math.round((64+L.n*14)*(np===2?1.7:1)*Math.min(1.6,diff)),max:0,face:-1,fire:1.6,pat:0,patT:0,dmg:[0,0]});
   L.boss.max=L.boss.hp;
  }
 

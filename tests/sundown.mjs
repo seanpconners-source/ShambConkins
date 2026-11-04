@@ -38,9 +38,10 @@ for(const [w,h,tag] of [[390,780,'phone'],[844,390,'land'],[1100,700,'desktop']]
  check(st&&st.stage===1,`1P: after the boss the next stage starts (stage ${st?.stage})`);
  await page.evaluate(()=>{const s=window.ShambConkins.store.session;s.debug.start();});await page.waitForTimeout(2500);await page.screenshot({path:`${SHOTS}/sundown-solo-stage2.png`});
  await page.evaluate(()=>{const s=window.ShambConkins.store.session;s.debug.immortal=false;s.debug.bot=false;});
+ await page.keyboard.down('d');
  await page.waitForFunction(()=>!window.ShambConkins.store.session,null,{timeout:120000}).catch(()=>{});
  await page.waitForTimeout(800);const card=await page.evaluate(()=>document.querySelector('#dialog[open]')?.innerText||'');
- check(/stage/i.test(card),`1P: standing still loses every life and banks the run: "${card.replace(/\s+/g,' ').slice(0,100)}"`);
+ check(/stage/i.test(card),`1P: running in without shooting loses every life and banks the run: "${card.replace(/\s+/g,' ').slice(0,100)}"`);
  const errs=errors.filter(x=>!/favicon|net::|Failed to load resource|Failed to fetch/.test(x));check(!errs.length,'1P: no page errors '+errs.slice(0,3).join(' | '));
  await browser.close();}
 console.log(bad?`${bad} problem(s)`:'SUNDOWN OK');process.exit(bad?1:0);

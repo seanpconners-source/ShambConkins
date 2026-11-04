@@ -320,7 +320,7 @@ Reuse engines with new skins wherever possible.
 - **H3** `[idea]` Little Buff Boys (ITYSL): players judge show-accurate contestants; Troll Boy can't win; winning unlocks Troll Boy.
 - **H4** `[idea]` Chunky (ITYSL): he puts your own hat on you / throws your laptop; nobody knows what he does.
 - **H5** `[idea]` Army-gate lane game (the mobile-ad kind: lanes of enemies, gates multiply your army). Skins: Starship Troopers, zombies, horror...
-- **H6** `[idea]` Western arcade shooter (Sunset Riders style).
+- **H6** `[verify]` (built Nov 4, unreleased: SUNDOWN SHOWDOWN, id `sundown-showdown`, src/engines/sundown.js + packs/westernPack.js; 2P at once on one screen, 3 procedural stages (Main Street / Canyon Pass / Mission at Night), WANTED boss = a locked character (beat him to recruit), the owner's Sunset Riders songs/voices; 1P stage after stage; in the random pool; tests/sundown.mjs. Not online yet; balance and feel bot-tested only) Western arcade shooter (Sunset Riders style).
 - **H7** `[idea]` Overhead off-road racer (Super Off Road style).
 - **H8** `[idea]` Horde variants: aliens, stormtroopers...
 - **H9** `[idea]` More movie games, and more games for each existing warp world.
