@@ -28,7 +28,7 @@ SHEETS['cowboy-p2']=SHEETS['cowboy-p1'];
 // Single pictures (any size, drawn at `scale` units per pixel, bottom-centre on the ground unless noted).
 const PICTURES={
  'hat-p1':{scale:.75},'hat-p2':{scale:.75},
- crate:{scale:.75},barrel:{scale:.75},'dynamite-stick':{scale:.75,centre:true},bullet:{scale:.75,centre:true},'enemy-bullet':{scale:.75,centre:true},
+ crate:{scale:.75},barrel:{scale:.75},wagon:{scale:.5},'dynamite-stick':{scale:.75,centre:true},bullet:{scale:.75,centre:true},'enemy-bullet':{scale:.75,centre:true},
  'item-gold':{scale:.75},'item-two':{scale:.75},'item-rapid':{scale:.75},
  logo:{ui:true},poster:{ui:true},
 };
