@@ -81,6 +81,13 @@ if (fs.existsSync(pinDir)) for (const t of fs.readdirSync(pinDir)) {
     if (m) drop(`pinball:${t}:${m[1].toLowerCase()}`, MIME[ext], ext, path.join(d, f));
   }
 }
+// Sundown Showdown sprite sheets and scenery (the owner's own art): assets/sundown/<name>.(webp|png) -> sundown:<name>
+// (names and layout: src/data/sundownSprites.js, docs/sundown-sprites/README.md).
+const sundownDir = path.join(root, 'assets/sundown');
+if (fs.existsSync(sundownDir)) for (const f of fs.readdirSync(sundownDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('sundown:' + m[1].toLowerCase(), MIME[ext], ext, path.join(sundownDir, f));
+}
 // Drop-in music: assets/music/<name>.(mp3|ogg|m4a|wav) -> USER_PORTRAITS['music:<name>'] (e.g. cv-symphony, cv-symphony-boss).
 const AUDIO = {mp3: 'audio/mpeg', ogg: 'audio/ogg', m4a: 'audio/mp4', wav: 'audio/wav'};
 const musicDir = path.join(root, 'assets/music');
