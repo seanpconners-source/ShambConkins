@@ -34,6 +34,9 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   and how long it took; the site streams the page instead of making the first phone wait. If it still fails on Wi-Fi only,
   it's the network: test https://shambconkins.loki-mylo.work/version on Wi-Fi; suspects = the router's security filter /
   DNS blocking the .work domain, or broken HTTP/3 (Cloudflare → Speed → Protocol Optimization → HTTP/3 off, as a test).
+- **M24** `[todo]` (owner, Nov 4) Arcade game page: swipe left/right anywhere on the hero (background, title, Challenge/Play
+  button area) to go to the previous/next game on the shelf, like flicking through cards. Background, logo and info slide
+  with the finger and snap to the next game; the tile row follows. Taps and vertical scrolling must keep working.
 - **N4** `[idea]` (owner, Nov 3) Egg game: a minigame made exactly like the egg game from an *I Think You Should Leave*
   sketch. Ask the owner which sketch / what happens in it (or a clip) before building; don't guess the rules.
 - **G12** `[idea]` (owner, Nov 3, later) Better-looking soldiers in Call of Duty: Modern Stick Dot and the Battleship cut
