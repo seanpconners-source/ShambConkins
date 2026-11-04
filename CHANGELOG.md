@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Pokémon moves that fit the character**: about 300 new moves (Stone Cold's STUNNER and BEER BONG, Ripley's POWER LOADER, Michael Myers' KITCHEN KNIFE, Hank's PROPANE, Ron Burgundy's JAZZ FLUTE, Mr. Burns' RELEASE DOGS, Cthulhu's R'LYEH RISING…). Every show now has its own moves, and almost every character carries two themed moves instead of one, plus one of its type and a status move. The dogs keep dog moves.
 - **Shared high scores with names**: every 1-player run (and your side of an online duel) goes on the game's scoreboard under your Choose Characters name. A game's page shows the record and who holds it (🏆 chip); tap it for the top 10 from every phone, with faces. Offline, scores wait and go up the next time the game starts, and the board shows what this phone last saw. A new personal top-10 place pops up after a run.
 - **39 more characters say their own famous line** (Johnny Cage, Ike, Uncle Jimbo, Majin Buu, Cell, Arthur Morgan, Mick Foley, Kenny Powers, Gordon Ramsay, Cthulhu and more), on their character page, unlock card and Pokémon intro.
 - **Swipe through the Arcade**: on a game's page, swipe left for the next game and right for the previous one, anywhere on the picture, logo, text or buttons. The picture and text follow your finger and snap to the next game. Taps, the tile row and the category pills work as before.

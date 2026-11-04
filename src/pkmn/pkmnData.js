@@ -4,6 +4,7 @@
 // (types, base stats, moves by level, ability, catch rate). Nothing here touches the DOM.
 const {CHARACTERS,character,characterIdentity}=require("src/characters.js");
 const {hash}=require("src/utils.js");
+const {SIG_ROWS,SOURCE_MORE,CHAR_SIGS}=require("src/pkmn/pkmnSignatures.js");
 
 const TYPES=['NORMAL','FIRE','WATER','ELECTRIC','GRASS','ICE','FIGHTING','POISON','GROUND','FLYING','PSYCHIC','BUG','ROCK','GHOST','DRAGON'];
 // Gen 1 split: the type decides physical (ATTACK/DEFENSE) or special (SPECIAL).
@@ -145,6 +146,8 @@ const MOVE_ROWS=[
  ['MIC DROP','NORMAL',85,100,10,'recoil','punch'],['CAMEO','NORMAL',50,100,20,'prio','dash'],['SPOILER ALERT','PSYCHIC',65,100,20,'foe.spc-1:30','psywave'],['BOX OFFICE','NORMAL',70,100,15,'','stars'],
  ['REBOOT','NORMAL',0,0,10,'heal','heal'],['FAN SERVICE','NORMAL',0,0,15,'heal,self.spc+1','heal'],['ENCORE','NORMAL',60,100,20,'conf:10','sound'],['FINAL CUT','NORMAL',90,90,10,'crit','scratch']
 ];
+// character and show moves (pkmnSignatures.js, ROADMAP PK1)
+for(const r of SIG_ROWS)if(!MOVE_ROWS.some(x=>x[0]===r[0]))MOVE_ROWS.push(r);
 const MOVES={};
 for(const [name,type,power,acc,pp,fx,anim] of MOVE_ROWS){
  const m={id:name,name,type,power,acc,pp,anim,cat:power||/level|fixed/.test(fx)?(PHYSICAL.has(type)?'phys':'spec'):'status',fx:[]};
@@ -275,6 +278,7 @@ const SOURCE_SIGS={
  'Super Troopers':['DUFF SPLASH','BEER BONG'],'Jay and Silent Bob':['WANNA GET HI','BUM RUSH'],'Tommy Boy':['TRUCK NUTS','BUM RUSH'],'ShambConkins Friends':['ROLL A NAT 20','BEER BONG','POWER CHORD'],
  'Friday the 13th':['MACHETE'],'A Nightmare on Elm Street':['DREAM DEMON'],'Unlimited Savory Systems':['SAVORY BLAST','MAD SCIENCE'],'Pokémon':['BLAST OFF','THUNDER JOLT']
 };
+for(const [k,v] of Object.entries(SOURCE_MORE))if(!SOURCE_SIGS[k])SOURCE_SIGS[k]=v;
 const GENERIC_SIGS=['MONOLOGUE','PLOT ARMOR','JUMP SCARE','PLOT TWIST','CATCHPHRASE','STUNT DOUBLE','SEQUEL','DIRECTORS CUT','SLOW MO','MONTAGE','CLIFFHANGER','LAUGH TRACK','MIC DROP','CAMEO','SPOILER ALERT','BOX OFFICE','REBOOT','FAN SERVICE','ENCORE','FINAL CUT'];
 const HORROR=new Set(['horror']);
 
@@ -300,11 +304,15 @@ function speciesFor(id){
  const bst=special||{sean:450,amber:450,loki:430,'gordon-ramsay':470,'gary-oak':500,pikachu:430}[key]||300+(h>>>3)%175;
  const shape=SHAPES[types[0]].map((w,i)=>w*(0.86+((h>>>(5+i*3))%9)*0.035)),sum=shape.reduce((a,b)=>a+b,0);
  const [hp,atk,def,spc,spd]=shape.map(w=>Math.max(20,Math.min(165,Math.round(bst*w/sum))));
- const pool=SOURCE_SIGS[c.source]||[];const sig=ov?.[1]||(pool.length?pool[(h>>>11)%pool.length]:GENERIC_SIGS[(h>>>11)%GENERIC_SIGS.length]);
+ // two themed moves (owner, PK1): the signature (hand-picked, the character's own list, else one of its show's pool) and a second
+ // from the rest of its own list, else its show's pool (starting at its own hash, so cast mates differ)
+ const pool=SOURCE_SIGS[c.source]||[],mine=CHAR_SIGS[key]||CHAR_SIGS[identity]||[];
+ const sig=ov?.[1]||mine[0]||(pool.length?pool[(h>>>11)%pool.length]:GENERIC_SIGS[(h>>>11)%GENERIC_SIGS.length]);
+ const rest=[...mine,...pool.map((_,i)=>pool[((h>>>11)+1+i)%pool.length])],sig2=rest.find(m=>m!==sig&&MOVES[m])||null;
  const abilities=TYPE_ABILITIES[types[0]],ability=ov?.[2]||(((h>>>13)%23===0)?'HUGE POWER':abilities[(h>>>14)%abilities.length]);
  const status=[...STATUS_MOVES[types[0]],...(types[1]?STATUS_MOVES[types[1]]:[])],statusMove=status[(h>>>17)%status.length];
  const dex=Math.max(0,CHARACTERS.findIndex(x=>x.id===key))+1;
- const sp={id:key,name:battleName(c),types,base:{hp,atk,def,spc,spd},bst,sig,ability,statusMove,dex,source:c.source,
+ const sp={id:key,name:battleName(c),types,base:{hp,atk,def,spc,spd},bst,sig,sig2,ability,statusMove,dex,source:c.source,
   catchRate:Math.max(45,Math.min(220,Math.round(255-bst*0.42))),expYield:Math.round(bst/4.6),icon:c.icon,h};
  speciesCache.set(id,sp);return sp;
 }
@@ -324,7 +332,7 @@ function battleName(c){
 function tierAt(level){return level<18?0:level<35?1:2;}
 function movesAt(id,level){
  const sp=speciesFor(id),t=tierAt(level),[t1,t2]=sp.types,pickFrom=(type,salt)=>{const list=TYPE_MOVES[type][t];return list[(sp.h>>>salt)%list.length];};
- const first=pickFrom(t2||'NORMAL',19),second=pickFrom(t1,21);
+ const first=sp.sig2||pickFrom(t2||'NORMAL',19),second=pickFrom(t1,21);   // the second themed move takes the off-type attack's place
  const out=[];for(const m of [first,second,sp.statusMove,sp.sig])if(MOVES[m]&&!out.includes(m))out.push(m);
  if(out.length<4)for(const m of ['TACKLE','QUICK ATTACK','GROWL','LEER'])if(out.length<4&&!out.includes(m))out.push(m);
  return out;

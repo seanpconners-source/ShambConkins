@@ -30,7 +30,7 @@ const makeMon=(id,lvl=6)=>({id,lvl,exp:0,hp:50,status:null,pp:{}});
 // Use the real species and trainer-class calculation: trainerSpace() needs both.
 const pkmnData=load('src/pkmn/pkmnData.js',{
  'src/characters.js':chars,'src/utils.js':{hash:()=>42},
- 'src/data/pkmnItems.js':{PKMN_CATALOG_ITEMS:[]}
+ 'src/data/pkmnItems.js':{PKMN_CATALOG_ITEMS:[]},'src/pkmn/pkmnSignatures.js':load('src/pkmn/pkmnSignatures.js')
 });
 const D={makeMon,normalizeMon:mon=>mon,healMon:mon=>{mon.hp=50;},
  speciesFor:pkmnData.speciesFor,trainerClassFor:pkmnData.trainerClassFor,
