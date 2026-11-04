@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.83.4
+
+- **9 more items have their own picture**: Austin's drumstick, Hector's spear, Merida's bow, the Master Sword, the neuralyzer, the Camp Crystal machete, Charlie's rat stick, Casey Jones's hockey stick and Kevin's BB gun. 223 items now have one.
+
 ## v0.83.3
 
 - **110 more items have their own picture**: the Triforce shard, the blue shell, the ocarina, Doc Brown's Mr. Fusion, the noisy cricket, the scouter, the World's Best Boss mug, Dan Flashes, Towelie, pocket sand, Night Cheese, the Golden God boombox, the Ducks jersey, the Jedi holocron, the R2 repair kit, the facehugger egg and more. 214 items now have one.

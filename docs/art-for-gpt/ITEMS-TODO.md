@@ -1,6 +1,6 @@
 # Items that still need a picture
 
-Made by `node tools/gpt-art-todo.mjs` (214 of 633 items have art). Work top to bottom in batches of ~20.
+Made by `node tools/gpt-art-todo.mjs` (223 of 633 items have art). Work top to bottom in batches of ~20.
 Rules are in START-HERE.md → "Item pictures". File name = the id in the first column, e.g. `rum-ham.png`.
 
 | id (file name) | item | from | what it does in the game |
@@ -36,7 +36,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `tiny-bike` | Tiny Bike | Jackass | Ridiculous, but efficient. Take another turn. |
 | `spray-can` | Spray Can | The Warriors | Tag this space with a trap. |
 | `subway-token` | Subway Token | The Warriors | Take the next branch as a shortcut. |
-| `hector-spear` | Hector's Spear | Troy | Opponent retreats 6 spaces. |
 | `review-pancakes` | Pancake Stack | Review | Pancakes. Divorce. Pancakes. +5 points. |
 | `five-stars` | Five-Star Review | Review | Perfect review. Double next reward. |
 | `walkabout-putter` | Walkabout Putter | Walkabout Mini Golf | Tiny club, serious boost. +4 next roll. |
@@ -47,7 +46,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `tape-measure` | Very Long Tape Measure | Barbarian | Measure twice, descend once. +3 next roll. |
 | `raincoat` | Rain House Coat | Bring Her Back | Something about this is deeply wrong. +2 shields. |
 | `ritual-bowl` | Ritual Bowl | Bring Her Back | Do not ask what is in it. Random effect. |
-| `friendship-drumstick` | Austin's Drumstick | Friendship | A friendship test begins immediately. |
 | `dumas-stage-mic` | Dumas Stage Mic | Nathan for You | Do your stuff. Double the next minigame. |
 | `laser-watch` | Laser Watch | James Bond | Cut through a problem. Opponent back 3. |
 | `martini-glass` | Shaken Martini Glass | James Bond | Classy. +3 points. |
@@ -185,7 +183,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `gremlin-grease` | Gremlin Grease | Gremlins | Halve your opponent’s next two rolls. An attack ward blocks it. |
 | `kamehameha-burst` | Kamehameha Burst | Dragon Ball Z | Push your opponent back up to five visited spaces. An attack ward blocks it. |
 | `pac-power-pellet` | Power Pellet | Pac-Man | Block the next two opponent item attacks. |
-| `mib-neuralyzer` | Neuralyzer | Men in Black | Remove your opponent’s stored movement boosts, double/triple rolls and loaded dice. An attack ward blocks it. |
 | `taskmaster-loaded-die` | Taskmaster’s Loaded Die | Taskmaster | Your base die is at least four this turn. Bonuses still apply. |
 | `bond-loaded-dice` | Bond’s Loaded Dice | James Bond | Your base die is at least five this turn. |
 | `home-pack-whistle` | The Home Pack Whistle | Home | Clear half-roll effects and gain +2 movement on this roll. |
@@ -206,7 +203,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `matrix-emp` | Nebuchadnezzar EMP | The Matrix | Carry: Laser grids and security checkpoints. Reusable at matching obstacles; opening a route with gear does not spend your pre-roll item action. Use before rolling instead: consume this tool for +2 movement and one shield. |
 | `mini-mushroom` | Mini Mushroom | Super Mario Bros. | Carry: Narrow pipes; also shrinks a giant head for the crossing. Reusable at matching obstacles; opening a route with gear does not spend your pre-roll item action. Use before rolling instead: consume this tool for +2 movement and one shield. |
 | `jurassic-winch` | Jurassic Park Rescue Winch | Jurassic Park | Carry: Heavy gates, fallen trees and cliff climbs. Reusable at matching obstacles; opening a route with gear does not spend your pre-roll item action. Use before rolling instead: consume this tool for +2 movement and one shield. |
-| `v43-rat-stick` | Charlie’s Rat Stick | Always Sunny | Remove all hostile traps in your current realm and gain one penalty shield. |
 | `v43-jersey-sunblock` | Jersey Shore Sunblock | Always Sunny | 1 penalty shield. Avoid penalties for 2 personal turns. |
 | `v43-pretzel-day` | Pretzel Day Pass | The Office | This roll uses two dice and keeps the higher. A Lucky Roll does not add a third die. |
 | `v43-li-l-sebastian-ticket` | Li’l Sebastian Benefit Ticket | Parks and Recreation | Gain 5 extra points when you next clear an uncleared realm. |
@@ -245,7 +241,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `v43-replicator-rations` | Replicator Rations | Star Trek | Find 2 different supplies, favoring items you have not found. This uses your one item action; use the finds on later turns. |
 | `v43-ripley-loader-glove` | Ripley’s Loader Glove | Alien | Gain one pass through any locked, broken, flooded or other blocked path. Spend it at a crossing; the obstacle remains for your opponent. |
 | `v43-s-mart-badge` | S-Mart Employee Badge | Evil Dead | Find 2 different supplies, favoring items you have not found. This uses your one item action; use the finds on later turns. |
-| `v43-kevin-bb-gun` | Kevin’s BB Gun | Home Alone | Push your opponent back up to 4 visited spaces. An attack ward blocks it. |
 | `v43-tar-bucket` | Tar Bucket | Home Alone | Your opponent’s next roll uses two dice and keeps the lower. Their Lucky Roll cancels this jinx. An attack ward blocks it. |
 | `v43-kevin-micro-machines` | Kevin’s Micro Machines | Home Alone | Plant a 7-point trap here for your opponent. A penalty shield or cloak blocks the loss. |
 | `v43-obey-sticker` | OBEY Sticker | They Live | Cap your opponent’s next base die at 2; bonuses still apply. An attack ward blocks it. |
@@ -272,7 +267,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `v43-family-photo` | Family Photo | Fast & Furious | Your next individual board minigame win with an eligible guest guarantees a new personal recruit. Losses, ties and practice keep the beacon; special unlock conditions still apply. |
 | `v43-sewer-pizza` | Sewer Pizza Box | Teenage Mutant Ninja Turtles | Gain 3 points. This roll +2. |
 | `v43-shell-cell` | Donatello’s Shell Cell | Teenage Mutant Ninja Turtles | Permanently repair the nearest reachable barrier in this realm for both players. If none needs repair, gain one single-crossing pass. |
-| `v43-casey-stick` | Casey’s Hockey Stick | Teenage Mutant Ninja Turtles | This roll +2. 2 attack wards. |
 | `v43-fire-flower` | Fire Flower | Super Mario Bros. | Remove all hostile traps in your current realm and gain one penalty shield. |
 | `v43-starman` | Starman | Super Mario Bros. | 2 attack wards. Avoid penalties for 1 personal turns. |
 | `v43-lakitu-cloud` | Lakitu’s Cloud | Super Mario Bros. | Gain one pass through any locked, broken, flooded or other blocked path. Spend it at a crossing; the obstacle remains for your opponent. |
@@ -321,11 +315,9 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `jcvd-epic-split` | The Epic Split Pass | Jean-Claude Van Damme | Perfect balance. Your base die is at least four this turn. |
 | `jcvd-timecop-badge` | Timecop Badge | Jean-Claude Van Damme | Rewind your own path by 4 spaces. |
 | `rocky-meat-gloves` | Meat Locker Gloves | Rocky | Gonna fly now. Immediately trigger Fight Night. |
-| `brave-merida-bow` | Merida’s Bow | Brave | Immediately trigger Wind Archery. |
 | `nintendo-super-star` | Super Star | Nintendo | Invincible! For 3 turns you are protected from collision duels and one penalty. |
 | `nintendo-pokeball` | Poké Ball | Nintendo | Gotta catch ’em all. Contains one random supply. |
 | `freddy-sweater` | Striped Sweater | A Nightmare on Elm Street | Do not fall asleep. For 3 turns you are protected from collision duels and one penalty. |
-| `jason-machete` | Camp Crystal Machete | Friday the 13th | Ki ki ki ma ma ma. Blast the other player back 5 spaces. |
 | `halloween-mask` | Haddonfield Mask | Halloween | Say nothing. Two penalty shields. |
 | `pk-poke-balls-5` | Poké Balls ×5 | Pokémon | Five Poké Balls. Weaken a wild character into the red, then throw one. |
 | `pk-poke-balls-10` | Poké Balls ×10 | Pokémon | Ten Poké Balls for wild encounters. |
@@ -411,7 +403,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `wz-pegasus-boots` | Pegasus Boots | The Legend of Zelda | Move forward 5 spaces, then roll normally. Only your dice landing triggers an encounter. |
 | `wz-boomerang` | Boomerang | The Legend of Zelda | Your opponent’s next roll uses two dice and keeps the lower. Their Lucky Roll cancels this jinx. An attack ward blocks it. |
 | `wz-bomb-bag` | Bomb Bag | The Legend of Zelda | Plant a 6-point trap here for your opponent. A penalty shield or cloak blocks the loss. |
-| `wz-master-sword` | Master Sword | The Legend of Zelda | 1 attack ward. Next minigame reward +4. |
 | `wz-blue-candle` | Blue Candle | The Legend of Zelda | Reveal the current realm and gain one Lucky Roll. |
 | `wz-question-block` | ? Block | Super Mario Bros. | Punch the ? block: start World 1 Coin Rush right now. |
 | `wz-goal-flagpole` | Goal Flagpole | Super Mario Bros. | Race for the flagpole: start Castle Dash right now. |
