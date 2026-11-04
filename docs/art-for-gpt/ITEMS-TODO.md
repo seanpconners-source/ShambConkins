@@ -1,6 +1,6 @@
 # Items that still need a picture
 
-Made by `node tools/gpt-art-todo.mjs` (162 of 633 items have art). Work top to bottom in batches of ~20.
+Made by `node tools/gpt-art-todo.mjs` (164 of 633 items have art). Work top to bottom in batches of ~20.
 Rules are in START-HERE.md → "Item pictures". File name = the id in the first column, e.g. `rum-ham.png`.
 
 | id (file name) | item | from | what it does in the game |
@@ -274,11 +274,9 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `v43-jedi-holocron` | Jedi Holocron | Star Wars | This roll uses two dice and keeps the higher. A Lucky Roll does not add a third die. |
 | `v43-hans-sabacc-deck` | Han’s Sabacc Deck | Star Wars | Flip a coin: 50% chance to gain 8 points; otherwise lose up to 4 points. Shields do not cover this voluntary gamble. |
 | `v43-replicator-rations` | Replicator Rations | Star Trek | Find 2 different supplies, favoring items you have not found. This uses your one item action; use the finds on later turns. |
-| `v43-bajoran-orb` | Bajoran Orb | Star Trek | Reverse this roll’s dice: 1 becomes 6, 2 becomes 5, and 3 becomes 4 (and vice versa). Bonuses still apply. |
 | `v43-latinum-slip` | Gold-Pressed Latinum Slip | Star Trek | Bank up to 3 of your points. At your next personal turn, get the deposit back plus 2. It is protected while banked; unfinished deposits pay at the expedition’s end. Keep this item if you have no points. |
 | `v43-nostromo-fire-kit` | Nostromo Fire Kit | Alien | Remove all hostile traps in your current realm and gain one penalty shield. |
 | `v43-ripley-loader-glove` | Ripley’s Loader Glove | Alien | Gain one pass through any locked, broken, flooded or other blocked path. Spend it at a crossing; the obstacle remains for your opponent. |
-| `v43-facehugger-egg` | Facehugger Egg | Alien | Your opponent’s next roll uses two dice and keeps the lower. Their Lucky Roll cancels this jinx. An attack ward blocks it. |
 | `v43-thermal-scope` | Thermal Scope | Predator | Reveal the current realm and gain one Lucky Roll. |
 | `v43-smart-disc` | Predator Smart Disc | Predator | Take a random item from your opponent’s bag, favoring one you do not carry. An attack ward blocks it. Keep this item if their bag is empty. |
 | `v43-yautja-med-kit` | Yautja Med Kit | Predator | Clear half-roll effects, lower-die jinxes and die caps. 1 attack ward. |
