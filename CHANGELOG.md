@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.81.0
 
 - **New game: Sundown Showdown**, a western run-and-gun for two at once on one screen. Each player drags in their half to aim and fire (8 ways), drags further to run while shooting, and taps to jump. Shoot bandits on Main Street, in the windows, on canyon ledges and around the mission at night; jump the knife men and the lit dynamite; grab Two Guns, Rapid Fire and money bags. At the end a WANTED boss wears a character you haven't unlocked: his bounty is split by the damage you each did, and beating him recruits him. One hit costs a life (3 each). With your Sunset Riders songs and voices. In 1P it's stage after stage, each one harder.
 - **Items you can't miss**: using an item now fills the screen: the item zooms in over rays in its colour (red attacks, blue defence, green movement, gold points), its name slams in, then the result lands on each player in big numbers (points count up or down, the victim's face shakes, BLOCKED! when a shield or ward stops it, stamps like NEXT ROLL +3) with one plain sentence underneath. Tap to skip.
