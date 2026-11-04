@@ -338,11 +338,11 @@ async function sundown(s){
 
  // ---------------------------------------------------------------- bot (tests): walk right, aim at the nearest, jump threats
  function botIntent(pl){
-  let best=null,bd=1e9;for(const e of E)if(!e.dead&&(e.kind!=='window'||e.out>.6)&&inView(e.x,-4)){const d=Math.hypot(e.x-pl.x,(e.y-18)-(pl.y-20));if(d<bd){bd=d;best=e;}}
+  let best=null,bd=1e9;for(const e of E)if(!e.dead&&(e.kind!=='window'||e.out>.6)&&(e.kind!=='cover'||e.up>.5)&&inView(e.x,-4)){const d=Math.hypot(e.x-pl.x,(e.y-18)-(pl.y-20));if(d<bd){bd=d;best=e;}}
   let aim=null;if(best){const dx=best.x-pl.x,dy=(best.y-(best.kind==='boss'?26:18))-(pl.y-22);const a=Math.round(Math.atan2(dy,dx)/(Math.PI/4));aim=[[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]][(a+8)%8];if(pl.ground&&aim[1]>0)aim=[Math.sign(dx)||1,0];}
   const danger=EB_.some(b=>Math.abs(b.x-pl.x)<38&&(b.dyn?b.y>GY-30:b.y>pl.y-34&&b.y<pl.y))||E.some(e=>e.kind==='rush'&&!e.dead&&Math.abs(e.x-pl.x)<40);
   if(danger&&pl.ground)pl.jumpQ=.1;
-  const ahead=phase==='boss'?0:best&&bd<120?0:1;
+  const ahead=phase!=='play'?0:best&&bd<70?0:1;
   return {move:ahead,aim,duck:false};
  }
 
@@ -543,7 +543,7 @@ async function sundown(s){
    x.fillStyle='#7a4a24';x.fillRect(sx0,sy0,sw,sh);x.fillStyle='#5a3418';for(let i=1;i<4;i++)x.fillRect(sx0,sy0+sh*i/4,sw,2*u);x.strokeStyle='#2a1a0e';x.lineWidth=4*u;x.strokeRect(sx0,sy0,sw,sh);
    x.textAlign='center';x.textBaseline='middle';x.font=bangers(sh*.42);outlined('SUNDOWN',W/2,sy0+sh*.33,'#ffd34a','#5a0a04',7*u);x.font=bangers(sh*.3);outlined('SHOWDOWN',W/2,sy0+sh*.74,'#fff0c0','#5a0a04',6*u);}
   const fy=H*.6,fs=Math.min(W*.22,96*u);P.forEach((p,i)=>{const cx=np===1?W/2:W/2+(i?1:-1)*Math.min(W*.24,140*u),hc=head(s.players[i].character,'win',128);if(hc&&hc.width)x.drawImage(hc,cx-fs/2,fy-fs/2,fs,fs);
-   x.fillStyle=i?'#5a1a1a':'#2a1a10';x.fillRect(cx-fs*.58,fy-fs*.4,fs*1.16,fs*.11);x.beginPath();x.moveTo(cx-fs*.3,fy-fs*.4);x.quadraticCurveTo(cx,fy-fs*.95,cx+fs*.3,fy-fs*.4);x.fill();x.fillStyle=i?'#c93a4a':'#2d6bd6';x.fillRect(cx-fs*.3,fy-fs*.53,fs*.6,fs*.09);
+   x.fillStyle=i?'#5a1a1a':'#2a1a10';x.fillRect(cx-fs*.58,fy-fs*.3,fs*1.16,fs*.11);x.beginPath();x.moveTo(cx-fs*.3,fy-fs*.3);x.quadraticCurveTo(cx,fy-fs*.85,cx+fs*.3,fy-fs*.3);x.fill();x.fillStyle=i?'#c93a4a':'#2d6bd6';x.fillRect(cx-fs*.3,fy-fs*.43,fs*.6,fs*.09);
    x.font=nunito(13*u,900);x.fillStyle='#fff';x.textAlign='center';x.fillText(s.players[i].name.toUpperCase(),cx,fy+fs*.62);});
   x.font=bangers(18*u);x.textAlign='center';x.fillStyle='#fff';x.fillText(`${solo?`STAGE ${stageNo+1} · `:''}${L.theme.name}`,W/2,H*.82);
   if(Math.floor(T*2.2)%2===0){x.font=bangers(20*u);outlined('TAP TO RIDE',W/2,H*.89,'#ffd34a','#3a0a04',5*u);}}

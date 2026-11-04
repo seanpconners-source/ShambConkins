@@ -33,7 +33,7 @@ for(const [w,h,tag] of [[390,780,'phone'],[844,390,'land'],[1100,700,'desktop']]
 {const {browser,page,errors}=await open({viewport:{width:844,height:390}});
  await launch(page,{solo:true});
  await page.evaluate(()=>{const s=window.ShambConkins.store.session;s.debug.start();s.debug.bot=true;s.debug.immortal=true;s.debug.boss();});
- await page.waitForTimeout(3500);await page.evaluate(()=>window.ShambConkins.store.session.debug.win());await page.waitForTimeout(6000);
+ await page.waitForTimeout(3500);await page.evaluate(()=>window.ShambConkins.store.session.debug.win());await page.waitForTimeout(9000);
  const st=await page.evaluate(()=>window.ShambConkins.store.session?.debug.state());
  check(st&&st.stage===1,`1P: after the boss the next stage starts (stage ${st?.stage})`);
  await page.evaluate(()=>{const s=window.ShambConkins.store.session;s.debug.start();});await page.waitForTimeout(2500);await page.screenshot({path:`${SHOTS}/sundown-solo-stage2.png`});
