@@ -321,14 +321,24 @@ function swapKeyArt(box,it,key,then){if(!box)return;const run=++keySwap;if(!key)
  const layer=document.createElement('div');layer.className='arc-layer arc-layer-in';layer.innerHTML=keyImg(it);const img=layer.querySelector('img:not(.arc-keyfill)');
  const show=()=>{if(run!==keySwap||!box.isConnected)return;then();const old=[...box.children];box.append(layer);placeKey(img);old.forEach(o=>{o.classList.add('arc-layer-under');setTimeout(()=>o.remove(),600);});};
  Promise.race([Promise.resolve(img.decode?.()).catch(()=>{}),new Promise(r=>setTimeout(r,1500))]).then(show);}
+// After a swipe the old text carries on out the way the finger threw it and the new text comes in from the other side, but only
+// once its pictures (logo, chips) are decoded, so nothing blinks empty or snaps back to the middle first (owner, Nov 4).
+let infoRun=0;
+function swipeInfo(info,it,{dir,W}){const run=++infoRun,tmp=document.createElement('div');tmp.innerHTML=infoHTML(it);
+ const imgs=[...tmp.querySelectorAll('img')],wait=ms=>new Promise(r=>setTimeout(r,ms));for(const im of imgs)im.loading='eager';
+ const ready=Promise.race([Promise.all(imgs.map(im=>Promise.resolve(im.decode?.()).catch(()=>{}))),wait(320)]);
+ info.style.transition='transform .14s ease-in,opacity .14s ease-in';info.style.transform=`translateX(${(-dir*W*.32).toFixed(0)}px)`;info.style.opacity='0';
+ Promise.all([ready,wait(140)]).then(()=>{if(run!==infoRun||!info.isConnected)return;info.classList.remove('arc-info-in');info.replaceChildren(...tmp.childNodes);
+  info.style.transition='none';info.style.transform=`translateX(${(dir*W*.2).toFixed(0)}px)`;info.style.opacity='0';void info.offsetWidth;
+  info.style.transition='transform .28s cubic-bezier(.2,.8,.3,1),opacity .22s ease-out';info.style.transform='';info.style.opacity='';});}
 function restart(el,cls){if(!el)return;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);}
-function focusTile(i,{scroll=true}={}){
+function focusTile(i,{scroll=true,swipe=null}={}){
  const root=document.querySelector('.arcade-console');if(!root||!current)return;const it=current.items[i];if(!it)return;
  const was=current.items.findIndex(x=>x.key===state.focus);if(was===i)return;
  state.focus=it.key;root.style.setProperty('--arc-dir',i>=was?1:-1);root.style.setProperty('--arc-h',hue(it.fam?.title||it.g.source));
  const key=keyArt(it);
  swapKeyArt(root.querySelector('.arc-keyart'),it,key,()=>{root.classList.toggle('has-key',!!key);swapLayer(root.querySelector('.arc-hero-art'),key?'':heroArt(it));});for(const d of [1,-1,2,-2])warmPic(keyArt(current.items[i+d]),true);
- const info=root.querySelector('.arc-info');info.innerHTML=infoHTML(it);restart(info,'arc-info-in');if(it.g)void refreshRecord(it.g.id);
+ const info=root.querySelector('.arc-info');if(swipe)swipeInfo(info,it,swipe);else{infoRun++;info.style.transition=info.style.transform=info.style.opacity='';info.innerHTML=infoHTML(it);restart(info,'arc-info-in');}if(it.g)void refreshRecord(it.g.id);
  root.querySelectorAll('.arc-tile').forEach((t,j)=>{t.classList.toggle('on',j===i);t.setAttribute('aria-selected',String(j===i));});
  const tile=root.querySelectorAll('.arc-tile')[i];if(scroll&&tile)tile.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',inline:'center',block:'nearest'});
  if(store.profile?.settings.sound)tone(660+((i%5)*40),.05,.02,'triangle');
@@ -381,7 +391,12 @@ if(typeof document!=='undefined'){
  const end=ev=>{if(!swipe||ev.pointerId!==swipe.id)return;const sw=swipe;swipe=null;if(!sw.on)return;sw.root.classList.remove('arc-swiping');swallowClick=performance.now();
   const W=sw.root.clientWidth||360,v=sw.dx/Math.max(1,performance.now()-sw.t),i=current?current.items.findIndex(x=>x.key===state.focus):-1,
    dir=ev.type==='pointercancel'?0:Math.abs(sw.dx)>W*.22||Math.abs(v)>.5&&Math.abs(sw.dx)>30?(sw.dx<0?1:-1):0,j=i+dir;
-  if(dir&&current&&j>=0&&j<current.items.length){swipeMove(sw.root,0,false);focusTile(j);}else swipeMove(sw.root,0,true);};
+  if(dir&&current&&j>=0&&j<current.items.length){
+   // the pictures stay where the finger left them (their offset moves from the box onto the old layers, which then fade out
+   // under the incoming ones) instead of jumping back to the middle for a frame
+   for(const box of [sw.root.querySelector('.arc-keyart'),sw.root.querySelector('.arc-hero-art')]){if(!box)continue;const off=sw.dx*.45;box.style.transition='none';box.style.transform='';for(const ch of box.children)ch.style.translate=`${off.toFixed(1)}px 0`;}
+   focusTile(j,{swipe:{dir,W}});}
+  else swipeMove(sw.root,0,true);};
  document.addEventListener('pointerup',end,true);document.addEventListener('pointercancel',end,true);
  // the tap that ended a swipe is not a click on whatever button it started on
  document.addEventListener('click',ev=>{if(performance.now()-swallowClick<350&&ev.target.closest?.('.arcade-console')){ev.stopPropagation();ev.preventDefault();swallowClick=0;}},true);

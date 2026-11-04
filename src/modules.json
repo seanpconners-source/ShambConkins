@@ -442,7 +442,8 @@
   "src/data/casinoDealers.js",
   "src/engines/vegasTable.js",
   "src/engines/vegasBlackjack.js",
-  "src/engines/blackjackRules.js"
+  "src/engines/blackjackRules.js",
+  "src/noZoom.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
