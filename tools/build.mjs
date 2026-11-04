@@ -108,13 +108,26 @@ function page(portraits, jsText = js, head = '') {
   const js2 = jsText.replace('/*@@USER_PORTRAITS@@*/{}', () => JSON.stringify(portraits)).replace('/*@@PWA_MANIFEST@@*/null', () => JSON.stringify(PWA_MANIFEST));
   return inlineAssets(read('src/index.template.html').replace('@@VERSION@@', () => version))
     .replace('<!--@@STYLE@@-->', () => '<style>' + inlineAssets(read('src/styles.css')+'\n'+read('src/theme.css')) + '</style>')
-    .replace('<!--@@SCRIPT@@-->', () => head + '<script>' + inlineAssets(js2) + '</script>');
+    .replace('<!--@@SCRIPT@@-->', () => head + '<!--@@MAIN@@--><script>' + inlineAssets(js2) + '</script>');
 }
-const html = page(Object.fromEntries([...drops].map(([k, d]) => [k, dataURI(d.mime, d.buf)])));
-
+// The one-file game: the drop-in pictures and sounds (data: URIs, ~460 MB) go in their own <script> parts of up to ~32 MB
+// that run before the game and fill window.__SC_UP, which src/data/userPortraits.js reads. Inside the game's one script
+// they would make it longer than a browser can hold as one string (~512 MB in Chrome), and the build itself would hit
+// Node's limit on one string; the file is written part by part for the same reason. Same bytes, same data: URIs as before.
+const PART = 32e6;
+const parts = [];
+{let cur = [], n = 0;
+ for (const [k, d] of drops) {const entry = JSON.stringify(k) + ':' + JSON.stringify(dataURI(d.mime, d.buf));
+  if (n && n + entry.length > PART) {parts.push(cur);cur = [];n = 0;}cur.push(entry);n += entry.length;}
+ if (cur.length) parts.push(cur);}
+const shell = page({}, js.replace('/*@@USER_PORTRAITS@@*/{}', () => '(globalThis.__SC_UP||{})'));
+const cut = shell.indexOf('<script>', shell.indexOf('<!--@@MAIN@@-->'));
 fs.mkdirSync(path.dirname(out), {recursive: true});
-fs.writeFileSync(out, html);
-console.log(`${path.relative(root, out)}  ${(html.length / 1048576).toFixed(1)} MB  ${order.length} modules  ${drops.size} drop-in art files`);
+{const fd = fs.openSync(out, 'w');let bytes = 0;const put = str => {bytes += fs.writeSync(fd, str);};
+ put(shell.slice(0, cut));
+ for (const p of parts) {put('<script>(globalThis.__SC_UP=globalThis.__SC_UP||{});Object.assign(globalThis.__SC_UP,{');p.forEach((e, i) => put((i ? ',' : '') + e));put('});</script>');}
+ put(shell.slice(cut));fs.closeSync(fd);
+ console.log(`${path.relative(root, out)}  ${(bytes / 1048576).toFixed(1)} MB  ${order.length} modules  ${drops.size} drop-in art files (${parts.length} parts)`);}
 if (pwaDir) {
   // The app folder: the same game, but the pictures and sounds are files in a/ named by their contents ("a/<hash>.<ext>"),
   // so a new release reuses every file that didn't change. The built-in art of src/data/art.js + faceArt.js has to stay
