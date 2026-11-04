@@ -997,7 +997,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 **Key art** 
 
-> Key art for "Sundown Showdown", a minigame in a party video game that pays tribute to Sunset Riders. Scene: Run and gun through a western town side by side. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Sundown Showdown", a minigame in a party video game that pays tribute to Sunset Riders. Scene: Run and gun through four western stages side by side: Main Street, a runaway train, a canyon and a mission at night. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 

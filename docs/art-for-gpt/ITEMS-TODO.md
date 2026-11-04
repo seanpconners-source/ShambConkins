@@ -1,58 +1,17 @@
 # Items that still need a picture
 
-Made by `node tools/gpt-art-todo.mjs` (23 of 633 items have art). Work top to bottom in batches of ~20.
+Made by `node tools/gpt-art-todo.mjs` (104 of 633 items have art). Work top to bottom in batches of ~20.
 Rules are in START-HERE.md → "Item pictures". File name = the id in the first column, e.g. `rum-ham.png`.
 
 | id (file name) | item | from | what it does in the game |
 |---|---|---|---|
-| `dennis-tools` | The Tools | Always Sunny | Nobody needs the context. Steal 3 points. |
-| `taskmaster-seal` | Taskmaster Seal | Taskmaster | Double the reward from your next minigame. |
-| `little-assistant` | Tiny Assistant Clipboard | Taskmaster | Something has been measured unnecessarily. +3 points. |
 | `mylo-token` | Mylo Token | Home | Mylo blocks the next bad thing because he is busy. |
 | `kc-token` | KC Token | Home | KC herds you forward. +2 to your next roll. |
 | `loki-token` | Loki Token | Home | A legendary good dog. +5 points. |
-| `they-live-glasses` | They Live Sunglasses | They Live | See through one future penalty. |
-| `element-stones` | Element Stones | The Fifth Element | You somehow have all four. +5 points. |
-| `tribble` | Tribble | Star Trek | It has already multiplied. Random effect. |
-| `motion-tracker` | Motion Tracker | Alien | Something is moving. Blocks one penalty. |
 | `predator-cloak` | Predator Cloak | Predator | Hard to penalize what you cannot see. |
-| `power-loader` | Power Loader | Aliens | Get away from her board space. +3 next roll. |
-| `bb-pod` | BB Pod | Death Stranding | Keep on keeping on. +2 next roll. |
-| `parcel-stack` | Impossible Parcel Stack | Death Stranding | Somehow still balanced. +4 points. |
-| `silent-radio` | Silent Hill Radio | Silent Hill | Static means trouble. Blocks one penalty. |
-| `necronomicon` | Necronomicon | Evil Dead | Absolutely should not be in your inventory. Random effect. |
-| `cone` | Cone of Dunshire | Parks and Recreation | You remembered the essence of the game. +3 points. |
-| `propane` | Propane Accessory | King of the Hill | Clean-burning movement. +2 next roll. |
-| `burger` | Burger of the Day | Bob's Burgers | Pun quality varies. +3 points. |
-| `banana` | $10 Banana | Arrested Development | There is always money in the banana stand. +4 points. |
-| `brawndo` | Brawndo Cup | Idiocracy | It has what board-game pieces crave. +3 next roll. |
-| `dino-can` | Dinosaur Embryo Can | Jurassic Park | Absolutely do not shake it. +5 points. |
-| `paint-can` | Paint Can on a Rope | Home Alone | Architecturally irresponsible. Steal 3 points. |
-| `shaguar` | Shaguar Key | Austin Powers | Yeah, baby. +2 next roll. |
-| `wayne-guitar` | Wayne's Guitar | Wayne's World | No Stairway. +4 points. |
 | `blue-steel` | Blue Steel | Zoolander | One look. Apparently enough. +3 points. |
-| `terminator-shades` | Terminator Shades | Terminator | Protects from one penalty and all emotion. |
-| `boomstick` | Boomstick | Army of Darkness | Shop smart. Steal 4 points. |
-| `daft-helmet` | Robot Helmet | Daft Punk | Double your next minigame reward. |
-| `nonagon` | Nonagon Token | King Gizzard | Nonagon infinity opens the chaos effect. |
 | `osees-face` | Castle Face | Osees | Psych-garage board artifact. +4 points. |
-| `jackie-chair` | Jackie Chan Chair | Jackie Chan | Any chair is useful with enough choreography. |
-| `rambo-bandana` | Rambo Bandana | Rambo | Prepared for unnecessary escalation. +2 next roll. |
-| `briefcase` | Mysterious Briefcase | Tarantino-ish | It glows. Nobody explains it. Random effect. |
-| `traitors-shield` | Traitors Shield | The Traitors | Safe from one penalty. |
-| `pasta` | It's About the Pasta | Vanderpump Rules | It is apparently not about the pasta. +3 points. |
-| `coaster-pass` | Priority Pass | Planet Coaster 2 | Skip the line. +3 next roll. |
-| `ace-card` | Pet Detective Card | Ace Ventura | A wildly inappropriate amount of confidence. +3 points. |
-| `doubtfire-mask` | Doubtfire Disguise | Mrs. Doubtfire | Disguise blocks one penalty. |
-| `lonely-boat` | Boat Credential | The Lonely Island | You are, in fact, on a boat. +3 points. |
-| `snoochie` | Quick Stop Token | Jay and Silent Bob | Clerks-adjacent convenience. +3 points. |
-| `troma-mop` | Toxic Mop | Troma | Cheap, radioactive, inexplicable. Random effect. |
-| `wes-suitcase` | Perfectly Centered Suitcase | Wes Anderson | Symmetry bonus. +3 points. |
-| `spielberg-bike` | Moonlit Bicycle | Spielberg | Cinematic silhouette. +2 next roll. |
-| `sandler-golf` | Happy's Putter | Adam Sandler | Aggressive golf energy. Steal 2 points. |
-| `will-cowbell` | More Cowbell | Will Ferrell | The only prescription: double next minigame reward. |
 | `friendship-ring` | Friendship Ring | Friendship | Awkward but sincere. Blocks a penalty. |
-| `nbts-ticket` | Nirvanna Ticket | Nirvanna the Band the Show | The plan is already too elaborate. Random effect. |
 | `warp-pipe` | Suspicious Warp Pipe | Arcade Plumbing | Use it to jump forward 8 spaces immediately. |
 | `force-push` | Force Push | Star Wars | Blast the other player backward 5 spaces. |
 | `transporter` | Emergency Transporter | Star Trek | Beam forward 6 spaces. Pattern integrity not guaranteed. |
@@ -73,28 +32,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `mylo-zoomies` | Mylo Zoomies | Mylo | Mylo is running. You are apparently going too. Forward 8. |
 | `kc-herd` | KC Herding License | KC | KC rearranges the livestock. Swap positions with the opponent. |
 | `loki-guardian` | Loki Guardian Token | Loki | Gain 7 points and a shield. Legendary good-dog protection. |
-| `dingdong-mic` | Ding Dong Daddy Microphone | Nathan for You | Crooner confidence. Double your next minigame or Taskmaster reward. |
-| `golden-gun` | Golden Gun | James Bond | One bullet, wildly overpowered board-game etiquette. Steal 5 points. |
-| `oddjob-hat` | Oddjob's Hat | Goldfinger | Launch it. Opponent back 6 spaces. |
-| `aston-key` | Aston Martin Key | James Bond | Ejector seat optional. Move forward 7 spaces. |
-| `exploding-pen` | Exploding Pen | GoldenEye | Click carefully. Opponent loses 6 points; you gain 2. |
-| `bond-watch` | Q-Branch Watch | James Bond | Laser, grappling hook, whatever the plot needs. +2 shields. |
-| `jetpack` | Bond Jetpack | Thunderball | A tasteful commute. Move forward 8 spaces. |
-| `vesper-martini` | Vesper Martini | Casino Royale | Shaken enough. Double your next minigame reward. |
-| `walther` | Walther PPK | James Bond | Challenge the opponent immediately. |
-| `lotus-key` | Submarine Lotus Key | The Spy Who Loved Me | A car that refuses to remain a car. Randomly jump on the route. |
-| `dude-rug` | The Rug | The Big Lebowski | It really ties the buffs together. +2 shields. |
-| `bowling-ball` | Jesus's Bowling Ball | The Big Lebowski | Mark it zero. Trigger a duel. |
-| `chigurh-coin` | Chigurh's Coin | No Country for Old Men | Call it. Random effect. |
-| `fargo-scraper` | Ice Scraper | Fargo | Very Upper Midwest. Opponent back 4. |
-| `hula-hoop` | Hudsucker Hoop | The Hudsucker Proxy | You know, for kids. +4 next roll. |
-| `mclovin-id` | McLovin ID | Superbad | Hawaii. One name. Preview the route. |
-| `superbad-vest` | Gold Police Vest | Superbad | You are absolutely not authorized. +1 shield. |
-| `anora-diamond` | Vegas Diamond | Anora | Extremely complicated evening. Steal 5 points. |
-| `florida-icecream` | Motel Ice Cream | The Florida Project | Melting fast. +4 points. |
-| `milkshake-straw` | Extremely Long Straw | There Will Be Blood | You drink the opponent's points. Steal 5. |
-| `roller-skates` | Roller Skates | Boogie Nights / Licorice Pizza | Roll directly through several spaces. |
-| `woodcock-thread` | Woodcock Thread | Phantom Thread | Immaculate construction. +2 shields. |
 | `samurai-sword` | Ronin Sword | Kurosawa | A duel is now unavoidable. |
 | `samurai-banner` | Seven Samurai Banner | Seven Samurai | Rally the party. Double next reward. |
 | `rice-ball` | Rice Ball | Seven Samurai | Simple, effective. +5 points and a shield. |
@@ -117,16 +54,11 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `tape-measure` | Very Long Tape Measure | Barbarian | Measure twice, descend once. +3 next roll. |
 | `raincoat` | Rain House Coat | Bring Her Back | Something about this is deeply wrong. +2 shields. |
 | `ritual-bowl` | Ritual Bowl | Bring Her Back | Do not ask what is in it. Random effect. |
-| `osees-fuzz` | Osees Fuzz Pedal | Osees | Everything gets louder. Double next reward. |
 | `nonagon-pick` | Nonagon Guitar Pick | King Gizzard | The loop opens the next turn. |
-| `robot-drum` | Robot Drum Pad | Daft Punk | Harder, better, +3 next roll. |
 | `friendship-drumstick` | Austin's Drumstick | Friendship | A friendship test begins immediately. |
 | `dumas-stage-mic` | Dumas Stage Mic | Nathan for You | Do your stuff. Double the next minigame. |
-| `bond-cufflinks` | Explosive Cufflinks | James Bond | Formalwear that causes property damage. |
-| `spectre-ring` | SPECTRE Ring | James Bond | Nobody asks questions. Cloak for 2 turns. |
 | `laser-watch` | Laser Watch | James Bond | Cut through a problem. Opponent back 3. |
 | `martini-glass` | Shaken Martini Glass | James Bond | Classy. +3 points. |
-| `briefcase-gadget` | Q Branch Briefcase | James Bond | Contains one completely unnecessary gadget. |
 | `warriors-bottle` | Clinking Bottles | The Warriors | Come out to play. Duel now. |
 | `golf-foxhunt` | Foxhunt Ball | Walkabout Mini Golf | A hidden-ball prize. +5 points. |
 | `forrest-review-card` | Forrest's Review Card | Review | Whatever happens, he commits fully. |
@@ -140,13 +72,7 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `vodka-martini` | Vodka Martini | James Bond | Double your next minigame reward. Shaken, obviously. |
 | `laser-table-key` | Laser Table Override | Goldfinger | Immediately trigger the laser-table escape game. |
 | `blofeld-cat` | Blofeld's Cat | James Bond | The cat knows too much. Steal four points. |
-| `saw-key` | Tiny Rusty Key | Saw | Two shields. You are not asking where the key came from. |
-| `reverse-trap` | Reverse Bear Trap | Saw | Start the Reverse Bear Trap challenge now. |
 | `dream-token` | Dream Token | A Nightmare on Elm Street | Two shields against Horror penalties. |
-| `ghostface-phone` | Unknown Caller | Scream | Answer the phone. This is probably a bad idea. |
-| `blood-sample` | Antarctic Blood Sample | The Thing | Start the blood-test challenge. |
-| `battle-collar` | Explosive School Collar | Battle Royale | Start Battle Royale. The rules are worse than school. |
-| `battle-schoolbag` | Mystery Schoolbag | Battle Royale | Contains one random item. Hopefully useful. |
 | `yahtzee-cup` | ShambYahtzee Cup | Yachty | Start the full 13-category dice game. |
 | `bug-rifle` | Morita Rifle | Starship Troopers | Start Mobile Infantry: Bug War. |
 | `bug-helmet` | Mobile Infantry Helmet | Starship Troopers | Two shields. Service guarantees protection. |
@@ -167,9 +93,7 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `review-card` | Five-Star Review Card | Review | Double your next game reward. Forrest would commit too hard. |
 | `mini-goldeneye` | GoldenEye Cartridge | GoldenEye 007 | Start Facility Escape. |
 | `cone-crate` | Crate of Dunshire Cones | Parks and Recreation | Block the route with Dunshire cones. Push the opponent back three spaces. |
-| `handbook-dead` | Handbook for the Recently Deceased | Beetlejuice | Two shields and one deeply unhelpful manual. |
 | `sandworm-ticket` | Sandworm Ticket | Beetlejuice | Start Sandworm Panic immediately. |
-| `scissor-gloves` | Scissor Gloves | Edward Scissorhands | Trim four points off the opponent. |
 | `vampire-killer` | Vampire Killer | Castlevania | Challenge the opponent to a direct duel. |
 | `alucard-shield` | Alucard Shield | Castlevania | Three shields. Cape not included. |
 | `holy-water` | Holy Water | Castlevania | Remove five points from the opponent. |
@@ -482,12 +406,10 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `marley-three-birds` | Three Little Birds | Bob Marley | Every little thing is gonna be alright. +5 points and one penalty shield. |
 | `stevie-clavinet` | Superstition Clavinet | Stevie Wonder | Funky riff. +4 to your next roll. |
 | `stevie-songbook` | Songs in the Key of Life | Stevie Wonder | A masterpiece. +6 points. |
-| `ranger-morpher` | Power Morpher | Power Rangers | It’s morphin’ time! Take another turn after this one. |
 | `ranger-power-coin` | Dino Power Coin | Power Rangers | Summon your Zord. +4 to your next roll. |
 | `ranger-command-center` | Command Center Teleport | Power Rangers | Zordon teleports you. Randomly jump on the route. |
 | `ranger-megazord-key` | Megazord Activation Key | Power Rangers | Zords combine! For 3 turns you are protected from collision duels and one penalty. |
 | `mk-fatality-scroll` | Fatality Scroll | Mortal Kombat | Finish him! The other player loses 5 points; you gain 2. |
-| `mk-dragon-medallion` | Dragon Medallion | Mortal Kombat | Flawless victory. Double the reward from your next minigame. |
 | `mk-toasty` | Toasty! Dispenser | Mortal Kombat | A surprise from the corner of the screen. +3 points. |
 | `mk-test-your-might` | Test Your Might Block | Mortal Kombat | Smash it. Immediately trigger a Warriors brawl. |
 | `ge-proximity-mine` | Proximity Mine | GoldenEye | Plant a mine on your current space. The next opponent landing here loses 5 points. |
@@ -501,9 +423,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `mel-riggs-badge` | Riggs’s Badge | Mel Gibson | Too old for this. Two penalty shields. |
 | `jcvd-epic-split` | The Epic Split Pass | Jean-Claude Van Damme | Perfect balance. Your base die is at least four this turn. |
 | `jcvd-timecop-badge` | Timecop Badge | Jean-Claude Van Damme | Rewind your own path by 4 spaces. |
-| `tetris-cartridge` | Game Boy Tetris Cartridge | Tetris | Immediately challenge the other player to Block Battle. |
-| `guitar-hero-guitar` | Plastic Guitar Controller | Guitar Hero | Immediately trigger Shred Hero. |
-| `dodgeball-wrench` | Adjustable Wrench | Dodgeball | If you can dodge a wrench, you can dodge a ball. Immediately trigger Dodgeball. |
 | `rocky-meat-gloves` | Meat Locker Gloves | Rocky | Gonna fly now. Immediately trigger Fight Night. |
 | `caddyshack-gopher-plush` | Caddyshack Gopher Plush | Caddyshack | Immediately trigger Gopher Hunt. |
 | `brave-merida-bow` | Merida’s Bow | Brave | Immediately trigger Wind Archery. |
