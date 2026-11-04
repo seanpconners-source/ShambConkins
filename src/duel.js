@@ -10,6 +10,7 @@ const {duelOK,soloSettings}=require("src/solo.js");
 const {escapeHTML:e}=require("src/utils.js");
 const {joinRoom,leaveRoom,sendNet,onNet,netState,netLogText}=require("src/net.js");
 const {VERSION}=require("src/version.js");
+const {friendsPanelHTML,handleFriendChoice,noteMet,myCode}=require("src/friends.js");
 
 let hooks={start:async()=>false,refresh:()=>{}};
 let pending=null;   // my challenge waiting for an answer {mid, gameId, seed}
@@ -33,21 +34,30 @@ async function openOnline(){
  const who=soloSettings(store.profile).who,[n0,n1]=names();
  const html=`<label class="net-field"><span>Room name</span><input id="net-room" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="e.g. pizza night" value="${e(lastRoom())}"></label>
   <div class="net-who" role="radiogroup" aria-label="You are"><span>You are</span><label><input type="radio" name="net-who" value="0"${who?'':' checked'}> ${e(n0)}</label><label><input type="radio" name="net-who" value="1"${who?' checked':''}> ${e(n1)}</label></div>
-  <p class="net-note">Both phones need the internet. Type the same room name on both; the second phone joins as player 2. Unlocks you win go to your own roster on this phone.</p>`;
- const choice=await showDialog({local:true,title:'Play online',html,choices:[{label:'Join room',value:'join',primary:true},{label:'Cancel',value:'cancel'}]});
- if(choice!=='join')return;
+  <p class="net-note">Both phones need the internet. Invite a friend above, or type the same room name on both; the second phone joins as player 2. Unlocks you win go to your own roster on this phone.</p>`;
+ const choice=await showDialog({local:true,title:'Play online',html:friendsPanelHTML()+`<h3 class="net-or">Or meet in a room</h3>`+html,choices:[{label:'Join room',value:'join',primary:true},{label:'Cancel',value:'cancel'}]});
  const room=document.getElementById('net-room')?.value.trim()||'',me=+(document.querySelector('input[name="net-who"]:checked')?.value||0);
+ // a button in the friends list (add, remove, invite): do it, then this dialog again unless an invite took us into a room
+ const fr=await handleFriendChoice(choice);
+ if(fr){if(fr==='joined'||netState().room)return;return openOnline();}
+ if(choice!=='join')return;
  if(!room){toast('Type a room name first');return openOnline();}
  try{localStorage.setItem('sc-room',room);}catch{}
+ const ok=await enterRoom(room,me);
+ if(ok==='again')return openOnline();
+}
+// Join a room as player me (0 Sean side, 1 Amber side; default = this phone's 1P pick): the room dialog and friend invites.
+async function enterRoom(room,me=soloSettings(store.profile).who){
  const character=store.setupSelected?.[me]||(me?'amber':'sean');
  toast(`Joining “${room}”…`);
  try{
-  const {peer}=await joinRoom(room,{name:names()[me],character,owner:me?'Amber':'Sean'});
-  store.online=true;store.onlineWho=me;hooks.refresh();
+  const {peer}=await joinRoom(room,{name:names()[me],character,owner:me?'Amber':'Sean',code:myCode()});
+  store.online=true;store.onlineWho=me;hooks.refresh();noteMet(peer);
   toast(peer?`${peer.name} is here. Pick a game to challenge them.`:`In room “${netState().room}”. Waiting for player 2…`);
+  return 'in';
  }catch(err){
   const ans=await showDialog({local:true,title:'Could not join',html:joinErrorHTML(err),choices:[{label:'Try again',value:'again',primary:true},{label:'Cancel',value:'cancel'}]});
-  if(ans==='again')return openOnline();
+  return ans==='again'?'again':'failed';
  }
 }
 // Why the room could not be joined, in words that say what to do (err.info from net.js joinRoom).
@@ -182,7 +192,7 @@ function initDuel(h){
  onNet(ev=>{
   if(ev.t==='msg')return onMessage(ev.d);
   // a short drop (phone asleep, Wi-Fi hand-over) is not leaving: their game carries on when they're back
-  if(ev.t==='join'){clearTimeout(match?.goneT);if(match?.gone&&!match.theirs.quit){match.gone=false;showChip();toast(`${ev.peer.name} is back`);}else toast(`${ev.peer.name} joined the room`);hooks.refresh();}
+  if(ev.t==='join'){noteMet(ev.peer);clearTimeout(match?.goneT);if(match?.gone&&!match.theirs.quit){match.gone=false;showChip();toast(`${ev.peer.name} is back`);}else toast(`${ev.peer.name} joined the room`);hooks.refresh();}
   // they dropped out of the room: give them 20 s to come back before the duel counts as left
   else if(ev.t==='leave'){toast(`${ev.peer?.name||'Player 2'} ${match&&!match.theirs.done?'lost the connection…':'left the room'}`);const m=match;if(m&&!m.board){clearTimeout(m.goneT);m.goneT=setTimeout(()=>{if(match===m&&!netState().peer){m.gone=true;toast(`${m.peer.name} left the room`);if(waiting)resolveDialog('done');showChip();}},20000);}if(pending)resolveDialog('declined');if(incoming)resolveDialog('cancelled');hooks.refresh();}
   else if(ev.t==='status'&&ev.status==='reconnecting')toast('Connection lost. Reconnecting…');
@@ -190,4 +200,4 @@ function initDuel(h){
   else if(ev.t==='lost'){toast(ev.reason==='replaced'?'This room was opened in another tab or window':'Lost the room connection');store.online=false;hooks.refresh();}
  });
 }
-Object.assign(exports,{initDuel,openOnline,leaveOnline,setMode,propose,boardDuel});
+Object.assign(exports,{initDuel,openOnline,enterRoom,leaveOnline,setMode,propose,boardDuel});

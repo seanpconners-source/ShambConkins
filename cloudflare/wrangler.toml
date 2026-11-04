@@ -32,3 +32,13 @@ class_name = "Scores"
 [[migrations]]
 tag = "scores-v1"
 new_sqlite_classes = ["Scores"]
+
+
+# Friends online (ROADMAP N1): one Durable Object (class Lobby in worker.js) keeps presence and passes invites.
+[[durable_objects.bindings]]
+name = "LOBBY"
+class_name = "Lobby"
+
+[[migrations]]
+tag = "lobby-v1"
+new_sqlite_classes = ["Lobby"]

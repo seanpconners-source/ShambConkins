@@ -56,7 +56,7 @@ function open(first){
   netLog(`${first?'join':'reconnect'} ${net.room}`);
   try{ws=new WebSocket(`${netBase()}/room/${encodeURIComponent(net.room)}`);}catch(e){netLog('cannot open: '+e.message);fail('offline');if(!first)retry();return;}
   net.ws=ws;timer=setTimeout(()=>{netLog(`no answer after 12 s (${opened?'opened':'never opened'})`);fail('timeout');},12000);
-  ws.onopen=()=>{opened=true;netLog(`open after ${Date.now()-t0} ms`);ws.send(JSON.stringify({t:'hello',id:clientId(),name:net.me.name,character:net.me.character,owner:net.me.owner,v:VERSION}));};
+  ws.onopen=()=>{opened=true;netLog(`open after ${Date.now()-t0} ms`);ws.send(JSON.stringify({t:'hello',id:clientId(),name:net.me.name,character:net.me.character,owner:net.me.owner,code:net.me.code||'',v:VERSION}));};
   ws.onmessage=e=>{net.lastIn=Date.now();let m;try{m=JSON.parse(e.data);}catch{return;}
    if(m.t==='welcome'){netLog(`seat ${m.seat+1} after ${Date.now()-t0} ms`);done=true;clearTimeout(timer);net.seat=m.seat;net.peer=m.peers[0]||null;net.tries=0;setStatus('in-room');
     // ping every 10 s (the room answers by itself); a socket that hears nothing for 35 s is half-open: reconnect

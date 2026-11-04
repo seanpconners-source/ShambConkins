@@ -1086,3 +1086,30 @@ body[data-theme="home"] #dialog .settings-zone .settings-row{background:transpar
 .dialog-game-logo img{display:block;width:min(78%,300px);max-height:96px;margin:0 auto 4px;object-fit:contain;filter:drop-shadow(0 4px 10px #000b)}
 /* the internet property logo's text fallback (offline) as a quiet caption, not a beige card, in the menus */
 body[data-theme="home"] #dialog .dialog-brand .property-logo{background:transparent}
+
+/* Friends online (N1, src/friends.js): list in the Play online dialog + the Online tile's "N friends online" */
+.fr-panel{margin:4px 0 10px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);text-align:left}
+.fr-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:6px}
+.fr-head b{font-size:15px;letter-spacing:.04em;text-transform:uppercase}
+.fr-head small{opacity:.75;font-size:12px}
+.fr-code{font-weight:800;letter-spacing:.12em;color:var(--t-acc,#4d8dff);user-select:all;-webkit-user-select:all}
+.fr-list{list-style:none;margin:0;padding:0;max-height:min(38vh,260px);overflow:auto}
+.fr-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)}
+.fr-row:first-child{border-top:0}
+.fr-face .portrait.mini{width:38px;height:38px;border-radius:50%}
+.fr-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.fr-text b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr-text small{opacity:.8;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:#6b7280;vertical-align:1px}
+.fr-free .fr-dot{background:#3ddc84;box-shadow:0 0 6px #3ddc84}
+.fr-board .fr-dot,.fr-game .fr-dot,.fr-online .fr-dot{background:#f5b301}
+.fr-off{opacity:.65}
+.fr-off .fr-face{filter:grayscale(1)}
+body #dialog .fr-panel button.fr-invite,body #dialog .fr-panel .fr-add button{min-height:34px!important;padding:4px 16px!important;border-radius:999px!important;font:800 14px/1 var(--c-text,inherit)!important;letter-spacing:.02em!important;text-transform:none!important;background:#4d8dff!important;color:#fff!important;border:0!important;box-shadow:none!important;width:auto!important;flex:none}
+body #dialog .fr-panel button.fr-x{min-height:30px!important;width:30px!important;padding:0!important;border-radius:50%!important;background:transparent!important;border:0!important;box-shadow:none!important;color:#eef3ff!important;opacity:.5;flex:none}
+.fr-empty{padding:6px 0;opacity:.75;font-size:13px}
+.fr-add{display:flex;gap:8px;margin-top:8px}
+.fr-add input::placeholder{text-transform:none;letter-spacing:0}
+.fr-add input{flex:1;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:inherit;font:inherit;letter-spacing:.08em;text-transform:uppercase}
+.net-or{margin:10px 0 4px;font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:.06em;text-align:left}
+.ts-online.has-friends .ts-tile-text small::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#3ddc84;box-shadow:0 0 6px #3ddc84;margin-right:5px;vertical-align:1px}

@@ -15,6 +15,9 @@
 //                     newest releases' _pwa.zip), served by Cloudflare straight from its edge. See docs/PWA_SPLIT_DELIVERY.md.
 //   /room/<name>      online play: a WebSocket into the room of that name (two phones; the Room Durable Object below).
 //                     Needs the ROOMS binding (wrangler.toml); without it the rest of the site works as before.
+//   /lobby            friends online (ROADMAP N1): one WebSocket per open game into the Lobby Durable Object below, for
+//                     presence (free / playing / on the board) and invites between friend codes.
+//   /scores/<game>    shared high-score tables (class Scores below).
 import { DurableObject } from 'cloudflare:workers';
 const REPO = 'seanpconners-source/ShambConkins';
 const TAG_TTL = 300;           // seconds before asking GitHub for a newer release again
@@ -33,6 +36,7 @@ export default {
     if (path === '/index.html') path = '/';   // the offline cache (sw.js) asks for the game by this name
     const room = path.match(/^\/room\/([^/]{1,80})$/);
     if (room) return roomSocket(req, env, room[1]);
+    if (path === '/lobby') return lobbySocket(req, env);
     const board = path.match(/^\/scores\/([a-z0-9-]{1,64})$/);
     if (board) return scoresRequest(req, env, board[1]);
     try {
@@ -146,7 +150,9 @@ function roomSocket(req, env, raw) {
   return env.ROOMS.get(env.ROOMS.idFromName(name)).fetch(req);
 }
 const clean = (v, n) => String(v ?? '').slice(0, n);
-const pub = a => ({ seat: a.seat, name: a.name, character: a.character, owner: a.owner, v: a.v });
+const pub = a => ({ seat: a.seat, name: a.name, character: a.character, owner: a.owner, v: a.v, code: a.code || '' });
+const CODE = /^[A-HJ-NP-Z2-9]{6}$/;   // friend codes: 6 letters/digits without 0/O/1/I
+const friendCode = v => { const c = String(v ?? '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return CODE.test(c) ? c : ''; };
 // One room = one Durable Object: two seats, presence, and a relay. The game logic stays on the phones.
 // Client → room: {t:'hello', id, name, character, owner, v} first, then {t:'msg', d}. Room → client: {t:'welcome', seat,
 // peers}, {t:'join', peer}, {t:'leave', seat}, {t:'msg', from, d}, {t:'full'}. A phone that reconnects with the same id gets
@@ -191,7 +197,7 @@ export class Room extends DurableObject {
       const taken = new Set(rest.map(p => p.a.seat));
       const seat = old ? old.a.seat : [0, 1].find(s => !taken.has(s));
       if (seat === undefined) { this.send(ws, { t: 'full' }); try { ws.close(4001, 'full'); } catch {} return; }
-      const info = { id, seat, name: clean(m.name, 24), character: clean(m.character, 64), owner: m.owner === 'Amber' ? 'Amber' : 'Sean', v: clean(m.v, 16), at: Date.now() };
+      const info = { id, seat, name: clean(m.name, 24), character: clean(m.character, 64), owner: m.owner === 'Amber' ? 'Amber' : 'Sean', v: clean(m.v, 16), code: friendCode(m.code), at: Date.now() };
       ws.serializeAttachment(info);
       this.send(ws, { t: 'welcome', seat, peers: rest.map(p => pub(p.a)) });
       for (const p of rest) this.send(p.ws, { t: 'join', peer: pub(info) });
@@ -205,6 +211,93 @@ export class Room extends DurableObject {
     const a = ws.deserializeAttachment() || {};
     try { ws.close(code >= 1000 && code < 5000 && code !== 1005 && code !== 1006 ? code : 1000, 'bye'); } catch {}
     if (a.seat != null) for (const p of this.seated(ws)) this.send(p.ws, { t: 'leave', seat: a.seat });
+  }
+  async webSocketError(ws) { await this.webSocketClose(ws, 1011); }
+}
+
+// ---- friends online (ROADMAP N1) ----
+// One Durable Object ("all") holds every open game's lobby socket. A phone says hello with its friend code, name and the
+// friend codes it knows; it then hears the status of those friends while they have the game open, and can invite one
+// into a room. Client → lobby: {t:'hello', code, name, character, owner, v, friends:[codes], st, what}, {t:'status', st,
+// what}, {t:'friends', list}, {t:'add', code}, {t:'invite', to, id, room}, {t:'reply', to, id, ok}, {t:'cancel', to, id}.
+// Lobby → client: {t:'hi', presence:[entry]}, {t:'p', code, entry|null} (null = closed the game), {t:'added', by:entry}
+// (someone added this code: add them back), {t:'invite', id, room, from:entry}, {t:'reply', id, ok, from}, {t:'cancel',
+// id, from}, {t:'sent', id, ok} (ok false = that friend isn't online). entry = {code, name, character, owner, st, what, v}.
+// Seeing someone needs their code; adds for a phone that is offline wait in SQLite (a week) until it says hello.
+function lobbySocket(req, env) {
+  if (!env.LOBBY) return text('Friends online are not set up on this site yet.', 503);
+  if ((req.headers.get('Upgrade') || '').toLowerCase() !== 'websocket') return text('Expected a WebSocket', 426);
+  return env.LOBBY.get(env.LOBBY.idFromName('all')).fetch(req);
+}
+const STATES = ['free', 'board', 'game', 'online'];
+const entryOf = a => ({ code: a.code, name: a.name, character: a.character, owner: a.owner, st: a.st, what: a.what, v: a.v });
+export class Lobby extends DurableObject {
+  constructor(ctx, env) {
+    super(ctx, env);
+    ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'));
+    this.sql = ctx.storage.sql;
+    this.sql.exec('CREATE TABLE IF NOT EXISTS adds (to_code TEXT, from_code TEXT, entry TEXT, at INTEGER, PRIMARY KEY (to_code, from_code))');
+    this.rate = new Map();
+  }
+  async fetch() {
+    const [client, server] = Object.values(new WebSocketPair());
+    this.ctx.acceptWebSocket(server);
+    server.serializeAttachment({});
+    return new Response(null, { status: 101, webSocket: client });
+  }
+  send(ws, m) { try { ws.send(JSON.stringify(m)); } catch {} }
+  // open games; one silent for 75 s (no ping, no message: the phone vanished without closing) doesn't count
+  all(except) {
+    const now = Date.now();
+    return this.ctx.getWebSockets().map(ws => ({ ws, a: ws.deserializeAttachment() || {} })).filter(p => p.ws !== except && p.a.code
+      && now - Math.max(this.ctx.getWebSocketAutoResponseTimestamp(p.ws)?.getTime() || 0, p.a.heard || 0) < 75000);
+  }
+  // what a code looks like right now (the newest of its open games), or null when none is open
+  entry(code, except) { const ps = this.all(except).filter(p => p.a.code === code).sort((x, y) => (y.a.at || 0) - (x.a.at || 0)); return ps.length ? entryOf(ps[0].a) : null; }
+  // tell every phone that knows this code how it looks now
+  announce(code, except) { const e = this.entry(code, except); for (const p of this.all(except)) if (p.a.code !== code && (p.a.friends || []).includes(code)) this.send(p.ws, { t: 'p', code, entry: e }); }
+  presence(a) { return (a.friends || []).map(c => this.entry(c)).filter(Boolean); }
+  to(code, m) { let n = 0; for (const p of this.all()) if (p.a.code === code) { this.send(p.ws, m); n++; } return n; }
+  async webSocketMessage(ws, raw) {
+    if (typeof raw !== 'string' || raw.length > 4096) return;
+    let m; try { m = JSON.parse(raw); } catch { return; }
+    const a = ws.deserializeAttachment() || {}, list = v => [...new Set((Array.isArray(v) ? v : []).map(friendCode).filter(c => c && c !== a.code))].slice(0, 60);
+    const state = (st, what) => { a.st = STATES.includes(st) ? st : 'free'; a.what = clean(what, 40); };
+    if (m.t === 'hello') {
+      const code = friendCode(m.code); if (!code) { try { ws.close(4004, 'bad code'); } catch {} return; }
+      Object.assign(a, { code, name: clean(m.name, 24), character: clean(m.character, 64), owner: m.owner === 'Amber' ? 'Amber' : 'Sean', v: clean(m.v, 16), at: Date.now(), heard: Date.now() });
+      a.friends = list(m.friends); state(m.st, m.what);
+      ws.serializeAttachment(a);
+      const week = Date.now() - 7 * 864e5, adds = this.sql.exec('SELECT entry FROM adds WHERE to_code = ? AND at > ?', code, week).toArray();
+      this.sql.exec('DELETE FROM adds WHERE to_code = ? OR at <= ?', code, week);
+      this.send(ws, { t: 'hi', presence: this.presence(a) });
+      for (const r of adds) { try { this.send(ws, { t: 'added', by: JSON.parse(r.entry) }); } catch {} }
+      this.announce(code);
+      return;
+    }
+    if (!a.code) return;
+    if (Date.now() - (a.heard || 0) > 20000) { a.heard = Date.now(); ws.serializeAttachment(a); }
+    if (m.t === 'status') { state(m.st, m.what); a.at = Date.now(); ws.serializeAttachment(a); this.announce(a.code); return; }
+    if (m.t === 'friends') { a.friends = list(m.list); ws.serializeAttachment(a); this.send(ws, { t: 'hi', presence: this.presence(a) }); return; }
+    // invites, replies and adds: a few a minute is plenty for two people
+    const now = Date.now(), hits = (this.rate.get(a.code) || []).filter(t => now - t < 60000);
+    if (hits.length >= 20) return; hits.push(now); this.rate.set(a.code, hits);
+    const target = friendCode(m.to ?? m.code); if (!target || target === a.code) return;
+    if (m.t === 'add') {
+      if (!this.to(target, { t: 'added', by: entryOf(a) })) this.sql.exec('INSERT OR REPLACE INTO adds (to_code, from_code, entry, at) VALUES (?, ?, ?, ?)', target, a.code, JSON.stringify(entryOf(a)), now);
+      if (!(a.friends || []).includes(target)) { a.friends = [...(a.friends || []), target].slice(-60); ws.serializeAttachment(a); }
+      const e = this.entry(target); if (e) this.send(ws, { t: 'p', code: target, entry: e });
+      return;
+    }
+    const id = clean(m.id, 24);
+    if (m.t === 'invite') { const room = clean(m.room, 40); const n = this.to(target, { t: 'invite', id, room, from: entryOf(a) }); this.send(ws, { t: 'sent', id, ok: n > 0 }); return; }
+    if (m.t === 'reply') { this.to(target, { t: 'reply', id, ok: !!m.ok, from: entryOf(a) }); return; }
+    if (m.t === 'cancel') { this.to(target, { t: 'cancel', id, from: entryOf(a) }); return; }
+  }
+  async webSocketClose(ws, code) {
+    const a = ws.deserializeAttachment() || {};
+    try { ws.close(code >= 1000 && code < 5000 && code !== 1005 && code !== 1006 ? code : 1000, 'bye'); } catch {}
+    if (a.code) this.announce(a.code, ws);
   }
   async webSocketError(ws) { await this.webSocketClose(ws, 1011); }
 }

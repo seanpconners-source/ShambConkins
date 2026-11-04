@@ -69,3 +69,6 @@ A seat whose phone has said nothing for 60 s (phones ping every 10 s) is freed w
 
 ## High scores (ROADMAP I13)
 `/scores/<game id>`: GET = that game's top 10, POST (text/plain JSON `{name, score, character, v, install}`) = keep that name's best and answer the new top 10 with the rank. All tables live in one Durable Object (`Scores`, SQLite, binding `SCORES`, migration `scores-v1`). Junk guards: whole numbers 0 to 10 billion, names cut to 16 characters, one entry per name per game, 40 posts an hour per install. The game: `src/scores.js`.
+
+## Friends online (ROADMAP N1)
+`/lobby`: one WebSocket per open game into the `Lobby` Durable Object (binding `LOBBY`, migration `lobby-v1`; SQLite only keeps "X added you" for phones that were offline, a week). A phone says hello with its friend code (6 letters/digits, no 0/O/1/I), name, character and the codes it knows; it then gets the status of those friends that have the game open (`free`, `board`, `game`, `online` + a short "what") and can send invites/replies between codes. Sockets silent for 75 s don't count (phones ping every 20 s; a hidden app closes its socket after 20 s). Rooms (`/room/<name>`) now also pass each phone's `code`, so playing together makes you friends. The game: `src/friends.js`, test `tests/friends.mjs`.

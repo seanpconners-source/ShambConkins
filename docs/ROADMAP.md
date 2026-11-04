@@ -56,7 +56,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **G12** `[idea]` (owner, Nov 3, later) Better-looking soldiers in Call of Duty: Modern Stick Dot and the Battleship cut
   scenes instead of stick figures. Maybe the owner generates sprites from instructions: write a sprite sheet spec (poses,
   frames, sizes, transparent PNG, file names) + prompts, like the Arcade Art Kit, and add drop-in slots.
-- **N1** `[idea]` (owner, Nov 3) Friends online: see which friends are playing and whether they can be invited; when a
+- **N1** `[verify]` (built Nov 4, unreleased: friend code per install, auto-friends from rooms + add by code, presence Free/Playing/On the board, invites that wait until the friend is free; Worker Durable Object `Lobby` + src/friends.js, list in the Play online dialog, tile shows "N friends online"; tests/friends.mjs; live once the Worker is redeployed) (owner, Nov 3) Friends online: see which friends are playing and whether they can be invited; when a
   friend becomes free (not mid-game, not mid-turn) an invite pops up on their screen at a moment that doesn't interrupt.
   Owner loves online as it is now: look into it soon, keep it simple, don't disturb what works. Builds on I2/I3 (invite
   links, status dot). Needs: a presence list in the Worker (who is in which room / idle), a "free to interrupt" signal

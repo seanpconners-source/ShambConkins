@@ -10,7 +10,8 @@ const {markBackedUp,keepSave,backupFileName}=require("src/saveGuard.js");
 const {installWakeLock}=require("src/wakeLock.js");
 const {initPWA,installApp,installOffered,checkForUpdate,restartApp,updateApp}=require("src/pwa.js");
 const {bootDone}=require("src/bootScreen.js");
-const {initDuel,setMode:setOnlineMode,leaveOnline,propose:proposeDuel}=require("src/duel.js");
+const {initDuel,setMode:setOnlineMode,leaveOnline,propose:proposeDuel,enterRoom}=require("src/duel.js");
+const {initFriends,friendsDebug}=require("src/friends.js");
 const {initNetBoard,inviteBoard,leaveSetup,sendPick,hostBegin,hostEnd,netAction,netTask,hostGame,allowGame,onlineGames,rejoinBoard}=require("src/netBoard.js");
 const {fx,localDialogs,netChanged}=require("src/netHooks.js");
 const {initCpuBoard,makeCpuRun,cpuTurn,cpuPk}=require("src/cpuBoard.js");
@@ -106,6 +107,8 @@ function refreshSetup(){if(store.view!=='setup'&&store.view!=='players')return;c
 // 1P board game: the CPU rolls and uses items through the same functions as the buttons.
 initCpuBoard({roll:()=>roll(),useItem:i=>useBagItem(i)});
 initDuel({start:(id,duel)=>requestGame({id,origin:'arcade',solo:true,duel,difficulty:duel.difficulty??null}),refresh:()=>{if(store.view==='arcade'&&!store.session&&!store.dialog)showView('arcade',{query:catalogQuery,filter:catalogFilter,page:catalogPage});}});
+// friend invites (src/friends.js): both phones go to the Arcade's Online mode in the same room
+initFriends({openRoom:async room=>{if(store.view!=='arcade')showCatalog('arcade');await enterRoom(room);}});
 const random=()=>store.run?runRandom(store.run):Math.random();
 function focusEffect(before){const run=store.run;if(!run)return;const after=effectSnapshot(run),ids=[run.players[run.current].node];for(let i=0;i<2;i++)if(before?.players[i]&&JSON.stringify(before.players[i])!==JSON.stringify(after.players[i])){ids.push(run.players[i].node);if(before.players[i].node!==run.players[i].node)ids.push(before.players[i].node);}focusBoardAction(run,ids);}
 function applyPreferences(){document.body.classList.toggle('reduced-motion',store.profile.settings.reducedMotion);}
@@ -627,7 +630,7 @@ document.addEventListener('input',event=>{if(/^player-name-[01]$/.test(event.tar
 document.getElementById('dialog').addEventListener('cancel',event=>{event.preventDefault();const i=store.dialog?.choices.findIndex(c=>['cancel','no','stay'].includes(c.value));if(i>=0)resolveDialog(i);});
 window.addEventListener('pagehide',saveRun);window.addEventListener('orientationchange',()=>{if(store.view==='board'&&!store.session)setTimeout(()=>updateBoard(true),100);});
 installViewport(()=>{if(store.view==='board'&&!store.session&&!store.boardTour)repaintCamera();});installMedia();installBoardGestures();installPortraitCycle();installSetupFaceCycle();applyPreferences();saveProfile(store.profile);installAudioUnlock();installWakeLock();setMusicZone('home');if(store.profile?.settings.music)startMusic();showView('home');requestAnimationFrame(bootDone);
-window.ShambConkins={version:VERSION,net:{state:netState},warpThemes:WARP_THEMES,pkmn:{run:PK,battle:pkBattle,speed:pkSpeed,auto:pkAuto,isOpen:gbIsOpen,messages:gbMessages,sprites:PKSP,portraitMoods,moodCast:()=>CHARACTERS.map(c=>c.id).filter(id=>portraitMoods(id).length)},announceLevel,updateBoard,enterWarpZone,exitWarpZone,startBoss,bossDone,buildWarpBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,finishRun,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,nowPlaying,musicScene,unlockDialog,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
+window.ShambConkins={version:VERSION,net:{state:netState},friends:friendsDebug,warpThemes:WARP_THEMES,pkmn:{run:PK,battle:pkBattle,speed:pkSpeed,auto:pkAuto,isOpen:gbIsOpen,messages:gbMessages,sprites:PKSP,portraitMoods,moodCast:()=>CHARACTERS.map(c=>c.id).filter(id=>portraitMoods(id).length)},announceLevel,updateBoard,enterWarpZone,exitWarpZone,startBoss,bossDone,buildWarpBoard,addHorrorBoard,items:ITEMS,locations:LOCATIONS,brandHTML,portraitHTML,itemArtHTML,locationArtHTML,floatingHead,store,startRun,playBoardIntro,requestGame,roll,continueRun,resolveLanding,saveRun,generateBoard,rareEvents:RARE_EVENTS,finishRun,applyEvent,gameRegistry:GAMES,endTurn,resolveEvent,visitLocation,useBagItem,takeRoute,focusBoardAction,edgeObstacle,crossObstacle,obstacleChoices,shiftObstacles,activatePair,drawPairTurn,applyPairTurn,pairForRun,upgradeRunFormat,nowPlaying,musicScene,unlockDialog,diagnostics:()=>({phase:store.run?.phase,busy:store.busy,game:store.session?.game.id,seed:store.run?.seed,engines:[...new Set(GAMES.map(g=>g.engine))]})};
 
 function installBoardGestures(){
  // One finger pans the map, two fingers pinch-zoom, the mouse wheel zooms. Rolling resets the view.
