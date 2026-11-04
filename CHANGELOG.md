@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.80.8
 
 - **Arcade backgrounds on every phone**: on a screen that isn't one of the Background Picker's (most phones), the game takes the picker screen closest in shape and moves your setting over by the layout: Sean and Amber keep the same gap above the text and the same share of the width, and on a shorter screen the empty room above them is used up first before they get smaller. Before, the setting was only moved round the middle of the screen, so on shorter phones the faces slid under the text. Checked on 16 phone sizes (iPhone SE to Pro Max, Samsung, Pixel, Fold).
 - **Amber's Samsung (360x780) and Sean's closed Fold (360x840) are in the Background Picker** (upright and sideways), ready to lock.

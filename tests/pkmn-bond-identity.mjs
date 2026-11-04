@@ -47,7 +47,7 @@ const PK=load('src/pkmn/pkmnRun.js',{
  'src/locations.js':{location:()=>null},
  'src/utils.js':{seededRandom:()=>()=>0,shuffle:xs=>xs.slice(),clamp:(n,a,b)=>Math.max(a,Math.min(b,n)),hash:()=>42},
  'src/items.js':{pointChange:()=>({blocked:false,delta:-3})},
- 'src/pkmn/pkmnData.js':D,'src/pkmn/pkmnBattle.js':B,'src/pkmn/pkmnAudio.js':{}
+ 'src/pkmn/pkmnData.js':D,'src/pkmn/pkmnBattle.js':B,'src/pkmn/pkmnAudio.js':{},'src/data/characterQuotes.js':{quoteOf:()=>null}
 });
 const dialogs=[];
 PK.configurePkmn({unlockDialog:async(ids,owner)=>{dialogs.push({ids,owner});},saveRun:()=>{},updateBoard:()=>{}});
