@@ -6,6 +6,7 @@ const {recruit, saveProfile}=require("src/profile.js");
 const {character, characterIdentity}=require("src/characters.js");
 const {OBSTACLE_TYPES}=require("src/obstacles.js");
 const {selectItemDrop, selectItemStock, rememberItemFind}=require("src/itemDrops.js");
+const {placeRoadblock,placeToll,dropCoins,magnetJump,COIN}=require("src/boardMarks.js");
 const ITEMS = CATALOG.items;
 const findItem = id => ITEMS.find(i=>i.id===id);
 function canUseItem(run){const p=run?.players?.[run.current];return !!p&&!run.finished&&run.phase==='board'&&p.itemUsedTurn!==run.turn&&p.rollCommittedTurn!==run.turn;}
@@ -28,6 +29,9 @@ function rollMovement(player,base,bonus=0){let steps=Math.max(base,player.rollFl
 function itemDescription(it){const base=baseItemDescription(it);if(it.kind==='trailGear')return base;const routes=OBSTACLE_TYPES.filter(o=>o.tools.includes(it.id)).map(o=>o.name);return base+(routes.length?` Carry instead: reusable passage through ${routes.join(', ')}. Keep it in your bag to cross; using it before rolling consumes it.`:'');}
 function baseItemDescription(it) {
  const val=Number(it.value)||1;
+ // board items (boardMarks.js): one rule text per kind, whatever pack they came from
+ const board={roadblock:'Drop a roadblock on your opponent’s road, 2-3 spaces ahead of them (every branch). They stop dead on it. An attack ward blocks it.',toll:`Build a toll booth on your space. Each time your opponent passes or lands on it they pay you ${val} points (3 times). A shield or cloak gets them through free.`,coinRain:`Scatter ${val} coin stacks on the road up to 8 spaces ahead of you. Whoever passes one first grabs ${COIN} points.`,magnet:'If your opponent is ahead of you in this level, jump straight to their space. Otherwise next roll +3.'};
+ if(board[it.kind])return board[it.kind];
  if(it.itemPack===43)return it.desc;
  const exact={
   'fight-milk':'Next roll +2; next minigame reward +4. After that game, lose 2 points and halve your next roll.',
@@ -48,7 +52,7 @@ function baseItemDescription(it) {
  return descriptions[it.kind]||(it.desc||'Gain 3 points.').replace(/Game art[^.]*\./g,'');
 }
 // Short category tag for shop rows and finds: what kind of help an item gives.
-const ITEM_TAGS=[['◓ Poké bag',['pkmn']],['🎮 Minigame',['game','duel']],['★ Points',['points','healshield','music','chaos','gamble','investment','collectionBonus','bounty','gateDividend']],['👟 Movement',['boost','forward','shortcut','rewind','teleport','statusTriple','rollDouble','rollFloor','bestDie','fixedDie','capDie','mirrorDie','reverseDie','reroll','extraTurn','catchup','cleanse','trailPass','repairPath','preview']],['🛡 Defense',['shield','cloak','ward','insurance','clearTraps']],['⚔ Attack',['steal','bomb','pushOther','slowOther','eraseBoost','siphonBoost','swap','trap','strongTrap','badDie','itemRaid']],['🏆 Reward boost',['double','bonusRisk','gear','trailGear']],['🎁 More items',['randomItem','multiply','chooseSupply','cache']],['👥 Recruit',['recruitBeacon']],['✦ Combo',['bundle']],['✨ Instant',['transform']]];
+const ITEM_TAGS=[['◓ Poké bag',['pkmn']],['🎮 Minigame',['game','duel']],['★ Points',['points','toll','coinRain','healshield','music','chaos','gamble','investment','collectionBonus','bounty','gateDividend']],['👟 Movement',['magnet','boost','forward','shortcut','rewind','teleport','statusTriple','rollDouble','rollFloor','bestDie','fixedDie','capDie','mirrorDie','reverseDie','reroll','extraTurn','catchup','cleanse','trailPass','repairPath','preview']],['🛡 Defense',['shield','cloak','ward','insurance','clearTraps']],['⚔ Attack',['roadblock','steal','bomb','pushOther','slowOther','eraseBoost','siphonBoost','swap','trap','strongTrap','badDie','itemRaid']],['🏆 Reward boost',['double','bonusRisk','gear','trailGear']],['🎁 More items',['randomItem','multiply','chooseSupply','cache']],['👥 Recruit',['recruitBeacon']],['✦ Combo',['bundle']],['✨ Instant',['transform']]];
 function itemTag(it){return ITEM_TAGS.find(([,kinds])=>kinds.includes(it?.kind))?.[0]||'✦ Special';}
 function randomItem(random=Math.random,context={}) { return selectItemDrop(ITEMS,{...context,random}); }
 function itemSupplyChoices(run,profile,player,item,index=player.items.indexOf(item.id)){return selectItemStock(ITEMS,{player,profile,blockedIds:[item.id],random:seededRandom(run.seed+':supply-choice:'+run.turn+':'+item.id+':'+index)},3);}
@@ -106,9 +110,13 @@ function useItemEffect(run, profile, index, random=Math.random,options={}) {
   'hunter-license':()=>{profile.xp+=12;p.triviaRecruitBonus=true;return `${points(3)}, +12 XP, and increased recruitment odds after your next trivia win.`;}
  };
  if(special[it.id])msg=special[it.id]();
- else if(['steal','bomb','pushOther','swap','slowOther','eraseBoost','siphonBoost','badDie','capDie','itemRaid'].includes(it.kind)&&other.ward){other.ward--;msg=`${other.name}'s attack ward blocked ${it.name}.`;}
+ else if(['steal','bomb','pushOther','swap','slowOther','eraseBoost','siphonBoost','badDie','capDie','itemRaid','roadblock'].includes(it.kind)&&other.ward){other.ward--;msg=`${other.name}'s attack ward blocked ${it.name}.`;}
  else switch(it.kind){
   case 'points':msg=points(val);break;
+  case 'roadblock':{const n=placeRoadblock(run,run.current);if(n)msg=`Roadblock down! ${other.name} stops dead ${n>1?'on whichever road they take':'when they reach it'}.`;else{p.boost+=2;msg='No road ahead of them to block. Next roll +2 instead.';}break;}
+  case 'toll':if(placeToll(run,run.current,val))msg=`Toll booth built here. ${other.name} pays you ${val} points each time they come through (3 times).`;else{msg=points(val);}break;
+  case 'coinRain':{const n=dropCoins(run,run.current,val,random);msg=n?`${n} coin stack${n>1?'s':''} on the road ahead: ${COIN} points each to whoever gets there first.`:points(val);break;}
+  case 'magnet':{const n=magnetJump(run,run.current);if(n)msg=`Pulled ${n} space${n>1?'s':''} ahead, right next to ${other.name}! Roll from here.`;else{p.boost+=3;msg=`${other.name} isn’t ahead of you on this road. Next roll +3 instead.`;}break;}
   case 'boost':p.boost+=val;msg=`Next roll +${val}.`;break;
   case 'trailGear':p.boost+=2;p.shields++;msg='Travel tool cashed in: next roll +2 and one shield. The tool is consumed; it no longer opens obstacle paths.';break;
   case 'rollDouble':p.rollDouble=(p.rollDouble||0)+1;if(it.id==='mega-mushroom'){p.large=Math.max(p.large,2);p.largeStart=run.turn;}if(it.id==='time-chamber-pass')p.slowAfterRoll=(p.slowAfterRoll||0)+1;msg=it.desc;break;

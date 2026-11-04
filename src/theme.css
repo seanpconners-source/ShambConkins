@@ -1113,3 +1113,60 @@ body #dialog .fr-panel button.fr-x{min-height:30px!important;width:30px!importan
 .fr-add input{flex:1;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:inherit;font:inherit;letter-spacing:.08em;text-transform:uppercase}
 .net-or{margin:10px 0 4px;font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:.06em;text-align:left}
 .ts-online.has-friends .ts-tile-text small::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#3ddc84;box-shadow:0 0 6px #3ddc84;margin-right:5px;vertical-align:1px}
+
+/* Item cut-in (F5, src/itemFx.js): full screen when an item is used on the board, + mark stamps (roadblock/toll/coins) */
+#ifx{position:fixed;inset:0;z-index:70;display:none;pointer-events:none}
+#ifx.ifx-on{display:grid;place-items:center;pointer-events:auto;background:radial-gradient(circle at 50% 40%,#0006 0,#000d 75%);animation:ifx-fade .2s ease-out}
+#ifx.ifx-mini-on{background:none;pointer-events:none}
+.ifx-card{--c:#8f6bff;position:relative;width:min(92vw,440px);max-height:94vh;display:flex;flex-direction:column;align-items:center;text-align:center;color:#fff;font-family:"SC Nunito",system-ui,sans-serif;padding:18px 14px 14px}
+.ifx-attack{--c:#ff3b4f}.ifx-defense{--c:#3fa7ff}.ifx-move{--c:#3ddc84}.ifx-points{--c:#ffc83d}.ifx-reward{--c:#c46bff}.ifx-more{--c:#2fd6c8}.ifx-game{--c:#ff8a2b}.ifx-pkmn{--c:#ff5555}
+.ifx-card.out{animation:ifx-out .22s ease-in forwards}
+.ifx-rays{position:absolute;left:50%;top:150px;width:900px;height:900px;margin:-450px 0 0 -450px;border-radius:50%;background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--c) 55%,transparent) 0 9deg,transparent 9deg 22deg);-webkit-mask:radial-gradient(circle,#000 0,#0000 62%);mask:radial-gradient(circle,#000 0,#0000 62%);animation:ifx-spin 9s linear infinite,ifx-pop .5s cubic-bezier(.2,1.6,.4,1) both;z-index:-1;pointer-events:none}
+.ifx-user{display:flex;align-items:center;gap:8px;font:800 13px/1 "SC Nunito",sans-serif;letter-spacing:.12em;text-transform:uppercase;opacity:.9;animation:ifx-rise .35s ease-out both}
+.ifx-uface.portrait{width:30px;height:30px;border-radius:50%}
+.ifx-art{width:min(42vw,170px);height:min(42vw,170px);margin:10px 0 2px;display:grid;place-items:center;filter:drop-shadow(0 0 22px var(--c)) drop-shadow(0 10px 18px #000a);animation:ifx-zoom .55s cubic-bezier(.2,1.5,.35,1) both}
+.ifx-art>*,.ifx-art img,.ifx-art svg{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;font-size:min(30vw,120px);line-height:1}
+.ifx-name{margin:4px 0 0;font:400 clamp(30px,9vw,46px)/1 "SC Bangers",Impact,sans-serif;letter-spacing:.04em;text-transform:uppercase;text-shadow:0 3px 0 #000,0 0 18px var(--c);animation:ifx-slam .4s .25s cubic-bezier(.2,1.6,.4,1) both}
+.ifx-tag{margin-top:6px;padding:3px 12px;border-radius:999px;background:var(--c);color:#0a1022;font:800 12px/1.5 "SC Nunito",sans-serif;letter-spacing:.06em;animation:ifx-rise .3s .4s both}
+.ifx-hits{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:14px;width:100%}
+.ifx-hit{flex:1 1 160px;max-width:210px;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:#0b1430e6;border:2px solid #ffffff22;text-align:left;animation:ifx-hit .45s var(--d) cubic-bezier(.2,1.5,.4,1) both}
+.ifx-hit.good{border-color:#3ddc84aa;box-shadow:0 0 18px #3ddc8444}
+.ifx-hit.bad{border-color:#ff3b4faa;box-shadow:0 0 18px #ff3b4f44;animation:ifx-hit .45s var(--d) cubic-bezier(.2,1.5,.4,1) both,ifx-shake .45s calc(var(--d) + .35s) both}
+.ifx-hit.blocked{border-color:#3fa7ffaa;box-shadow:0 0 18px #3fa7ff55}
+.ifx-face.portrait{width:52px;height:52px;border-radius:50%;flex:none;box-shadow:0 0 0 3px #fff3}
+.ifx-hit-text{display:flex;flex-direction:column;min-width:0}
+.ifx-hit-text b{font-size:13px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ifx-big{font:400 40px/1 "SC Bangers",Impact,sans-serif;letter-spacing:.02em;text-shadow:0 3px 0 #000}
+.ifx-hit.good .ifx-big,.ifx-mini.good .ifx-big{color:#7dffb0}.ifx-hit.bad .ifx-big,.ifx-mini.bad .ifx-big{color:#ff7a86}
+.ifx-hit-text small{font:800 10px/1 "SC Nunito",sans-serif;letter-spacing:.14em;opacity:.7;margin-top:-2px}
+.ifx-block{font:400 24px/1.1 "SC Bangers",Impact,sans-serif;color:#9fd4ff;letter-spacing:.04em}
+.ifx-stamps{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.ifx-stamps em{font:800 11px/1 "SC Nunito",sans-serif;font-style:normal;padding:4px 7px;border-radius:7px;background:#ffffff1c;animation:ifx-stamp .3s calc(var(--d) + .25s + var(--k)*.12s) cubic-bezier(.2,1.8,.4,1) both}
+.ifx-stamps em.good{background:#3ddc8433;color:#b9ffd4}.ifx-stamps em.bad{background:#ff3b4f33;color:#ffc2c8}.ifx-stamps em.move{background:#3fa7ff33;color:#cfe8ff}
+.ifx-msg{margin:12px 6px 0;padding:8px 14px;border-radius:12px;background:#0b1430d9;font:700 15px/1.35 "SC Nunito",sans-serif;text-shadow:0 2px 6px #000;animation:ifx-rise .35s 1s both}
+.ifx-tap{margin-top:10px;font:700 11px/1 "SC Nunito",sans-serif;letter-spacing:.1em;text-transform:uppercase;opacity:.55;animation:ifx-rise .3s 1.4s both}
+.ifx-card.still *,.ifx-card.still{animation:none!important}
+.ifx-mini{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 22px;border-radius:20px;background:#0b1430f0;border:3px solid #ff3b4f;color:#fff;text-align:center;font-family:"SC Nunito",sans-serif;box-shadow:0 12px 40px #000a;animation:ifx-zoom .4s cubic-bezier(.2,1.6,.4,1) both;max-width:84vw}
+.ifx-mini.good{border-color:#3ddc84}
+.ifx-mini-icon{font-size:46px;line-height:1}
+.ifx-mini b{font:400 34px/1 "SC Bangers",Impact,sans-serif;letter-spacing:.05em}
+.ifx-mini small{font-weight:700;font-size:14px;opacity:.9}
+@keyframes ifx-fade{from{opacity:0}}
+@keyframes ifx-out{to{opacity:0;transform:scale(.92)}}
+@keyframes ifx-spin{to{transform:rotate(360deg)}}
+@keyframes ifx-pop{from{transform:scale(.2);opacity:0}}
+@keyframes ifx-zoom{0%{transform:scale(.1) rotate(-25deg);opacity:0}70%{opacity:1}100%{transform:none}}
+@keyframes ifx-slam{from{transform:scale(2.4);opacity:0}}
+@keyframes ifx-rise{from{transform:translateY(12px);opacity:0}}
+@keyframes ifx-hit{from{transform:scale(.4) translateY(20px);opacity:0}}
+@keyframes ifx-shake{20%{transform:translateX(-8px) rotate(-2deg)}40%{transform:translateX(7px) rotate(2deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes ifx-stamp{from{transform:scale(2);opacity:0}}
+/* board marks */
+.board-mark .mark-ring{fill:#0008;stroke:#ffc83d;stroke-width:5;stroke-dasharray:10 6;opacity:.95}
+.board-mark.mark-block .mark-ring{stroke:#ff3b4f;animation:mark-pulse 1.2s ease-in-out infinite}
+@keyframes mark-pulse{50%{stroke-width:9;opacity:.6}}
+.board-mark.mark-toll.p1 .mark-ring{stroke:#4d8dff}.board-mark.mark-toll.p2 .mark-ring{stroke:#ff5fa2}
+.board-mark .mark-icon{font-size:56px;filter:drop-shadow(0 3px 2px #0009)}
+.board-mark .mark-fee{font:900 18px "SC Nunito",sans-serif;fill:#fff;stroke:#000;stroke-width:4px;paint-order:stroke}
+.board-mark.mark-coin .mark-icon{animation:mark-bob 1.6s ease-in-out infinite}
+@keyframes mark-bob{50%{transform:translateY(-5px)}}

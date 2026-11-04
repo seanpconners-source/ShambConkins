@@ -15,6 +15,7 @@ const {runEnding}=require("src/endings.js");
 const {playFrankReveal}=require("src/frankFx.js");
 const {showLevelCard,showBossCard,showDragBanner,showGentlemenCard,showSmashCard,showLandingBanner}=require("src/levelCard.js");
 const {animateDice,animateItemTransfers,boardFeedback,turnFeedback}=require("src/effects.js");
+const {playCutIn,playMarkHits}=require("src/itemFx.js");
 const {warpTransition}=require("src/warpFx.js");
 const {animateRoulette}=require("src/roulette.js");
 const {sound,soundRecent,setMusicZone,playFanfare,startMusic}=require("src/audio.js");
@@ -415,7 +416,7 @@ const FX={
  showDragBanner:(name,total)=>{nb.drag?.close();nb.drag=showDragBanner(name,total);},
  dragBanner:(n,lost)=>{if(n<0){nb.drag?.close();nb.drag=null;}else nb.drag?.update(n,lost);},
  showGentlemenCard:()=>showGentlemenCard(),showSmashCard:()=>showSmashCard(),showLandingBanner:(t,s)=>showLandingBanner(t,s),
- animateDice:o=>animateDice(o),animateItemTransfers:b=>animateItemTransfers(b),boardFeedback:(b,o)=>boardFeedback(b,o),turnFeedback:p=>turnFeedback(p),
+ itemCutIn:d=>void playCutIn(d),markHits:d=>void playMarkHits(d), animateDice:o=>animateDice(o),animateItemTransfers:b=>animateItemTransfers(b),boardFeedback:(b,o)=>boardFeedback(b,o),turnFeedback:p=>turnFeedback(p),
  warpTransition:o=>warpTransition(()=>updateBoard(true),o),
  animateRoulette:(id,filter,themed)=>{const g=gameById(id);if(g)return animateRoulette(g,filter,themed?themed.map(gameById).filter(Boolean):null,{watch:store.run?.current===nb.me?'Your challenge…':`${nameOf(nb.peer)}'s challenge…`});},
  sound:name=>{if(!nb.fxBusy&&!soundRecent(name))sound(name);},

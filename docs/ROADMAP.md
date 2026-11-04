@@ -249,8 +249,8 @@ Endings
 - **F2** `[idea]` A special bonus or risk on the path with no warp.
 - **F3** `[todo]` More meaningful path choices; items and spaces matter more to strategy.
 - **F4** `[idea]` Rare Mario Party-style stars / special rewards.
-- **F5** `[todo]` Item use is unmistakable: big animations, big numbers, clear outcome text.
-- **F6** `[todo]` Review every item: is it useful? Add interesting ones that interact with the board.
+- **F5** `[verify]` (built Nov 4, unreleased: src/itemFx.js full-screen cut-in replaces the old small card + result box; tests/item-fx.mjs) Item use is unmistakable: big animations, big numbers, clear outcome text.
+- **F6** `[part]` (Nov 4: 633 items audited by kind (`node tests/item-audit.mjs [kind]`); 4 new board kinds in src/boardMarks.js: roadblock (opponent stops on it), toll booth (opponent pays on the way through, 3 times), coin rain (stacks anyone grabs), magnet (jump to the opponent ahead); 17 plain points/shield/boost items moved to them (`ITEM_REWORK` in data/balance.js, ids and art kept); tests/board-marks.mjs. Left: the 30 plain points / 39 shield / 26 boost items are still the bulk, 12 "preview" items are weak; more board kinds could take them (owner's call which)) Review every item: is it useful? Add interesting ones that interact with the board.
 - **F7** `[todo]` Finish missing item artwork.
 - **F8** `[todo]` Pacing, variety, excitement, replay value of the board overall.
 - **F9** `[idea]` Later: a more winding, less predictable main board.

@@ -1,4 +1,5 @@
 const {validObstacles}=require("src/obstacles.js");
+const {validMarks}=require("src/boardMarks.js");
 const PROFILE_KEY = 'shambconkins-profile-v20';
 const RUN_KEY = 'shambconkins-run-v20';
 const memory = new Map();
@@ -68,6 +69,7 @@ function validRun(run) {
   if(p.itemInvestments!==undefined&&(!Array.isArray(p.itemInvestments)||!p.itemInvestments.every(d=>Number.isInteger(d?.dueTurn)&&d.dueTurn>=1&&Number.isFinite(d.amount)&&d.amount>0)))return false;
   if(p.itemFindHistory!==undefined&&(!Array.isArray(p.itemFindHistory)||!p.itemFindHistory.every(id=>typeof id==='string')))return false;
  }
+ if(!validMarks(run.marks,run.board)||run.savedMarks!==undefined&&!(run.mainBoard&&validMarks(run.savedMarks,run.mainBoard)))return false;
  if(run.traps!==undefined&&(!Array.isArray(run.traps)||!run.traps.every(t=>run.board.nodes[t?.node]&&[-1,0,1].includes(t.owner)&&(t.damage===undefined||Number.isFinite(t.damage)&&t.damage>0))))return false;
  for(const node of Object.values(run.board.nodes))if(!node||typeof node.id!=='string'||!Array.isArray(node.next)||!node.next.every(id=>run.board.nodes[id])||!run.board.realms[node.realm]||![node.x,node.y,node.col,node.lane].every(Number.isFinite))return false;
  for(const realm of Object.values(run.board.realms))if(!Array.isArray(realm.ids)||!realm.ids.every(id=>run.board.nodes[id])||!run.board.nodes[realm.start]||!run.board.nodes[realm.gate])return false;
