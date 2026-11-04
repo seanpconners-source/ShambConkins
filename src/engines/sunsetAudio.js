@@ -38,7 +38,7 @@ const FADE=1.6,HOLD_DOWN=8,MIN_PLAY=15;   // seconds: crossfade, a calmer moment
 function createSunsetMusic(paused=()=>false){
  const ok=typeof Audio!=='undefined';const els=new Map();   // song → its own element, so a resume keeps its place
  const element=n=>{let el=els.get(n);if(!el&&ok){el=new Audio(url(n));el.preload='auto';el.volume=0;els.set(n,el);}return el;};
- let lead=null,level=null,want='play',wantAt=0,switchAt=0,stopped=false,started=false,held=false,sting=null,clock=0;const mem={},fading=new Set();
+ let fixed=null,lead=null,level=null,want='play',wantAt=0,switchAt=0,stopped=false,started=false,held=false,sting=null,clock=0;const mem={},fading=new Set();
  const vol=n=>Math.max(0,Math.min(1,gain(n)));
  // equal-power fade on the element's volume (iOS ignores el.volume: there the songs cut instead of fading)
  function fade(n,to,secs,done){const el=element(n);if(!el)return;clearInterval(el._fi);const from=el.volume,t0=Date.now();fading.add(n);
@@ -49,7 +49,9 @@ function createSunsetMusic(paused=()=>false){
   try{if(at>0&&el.duration&&at<el.duration-4)el.currentTime=at;else el.currentTime=0;}catch{}
   el.volume=0;if(!held)el.play()?.catch?.(()=>{});lead=n;switchAt=clock;fade(n,vol(n),at>0?FADE:.25);return true;}
  function leave(){if(!lead)return;const n=lead,el=element(n);mem[level]={n,t:el?.currentTime||0};lead=null;fade(n,0,FADE,()=>{try{el.pause();}catch{}});}
- function next(){if(stopped||sting||!started||!on('music'))return;level=want;const m=mem[level];mem[level]=null;
+ // a theme asked for by the game (stage song, boss song, title): any version of those tunes, a different one each time
+ function pickFixed(){const all=songList().filter(n=>fixed.includes(tune(n)));if(!all.length)return null;const pool=all.filter(n=>n!==lead&&base(n)!==recent[0]);const from=pool.length?pool:all;const n=from[Math.floor(Math.random()*from.length)];recent.unshift(base(n));recent.length=Math.min(recent.length,3);return n;}
+ function next(){if(stopped||sting||!started||!on('music'))return;if(fixed){const n=pickFixed();if(n){level=want;playSong(n);return;}}level=want;const m=mem[level];mem[level]=null;
   if(m&&playSong(m.n,Math.max(0,m.t-1.5)))return;const n=pickSong(level);if(n)playSong(n);}
  function go(){leave();next();}
  const watch=setInterval(()=>{if(stopped)return;clock+=.25;
@@ -58,11 +60,13 @@ function createSunsetMusic(paused=()=>false){
   if(p){if(!held){held=true;for(const el of live)try{el.pause();}catch{}}return;}
   if(held){held=false;for(const el of live)el.play()?.catch?.(()=>{});}
   if(!started)return;if(!lead){next();return;}
-  if(want===level)return;
+  if(fixed||want===level)return;
   const up=RANK[want]>RANK[level],since=clock-wantAt;
   if(up?since>=.5:since>=HOLD_DOWN&&clock-switchAt>=MIN_PLAY)go();},250);
  return {
-  start(){started=true;next();},
+  start(){if(started)return;started=true;next();},
+  // play these tunes (names without the song-<version>-NN- prefix) until told otherwise; null = back to mood()
+  theme(list){const was=fixed;fixed=list&&list.length?list:null;if(!started||sting)return;if(fixed&&lead&&fixed.includes(tune(lead)))return;if(!fixed&&!was)return;go();},
   // what is going on in the game now: 'calm' | 'play' | 'tense' (cheap to call every frame)
   mood(m){if(!RANK.hasOwnProperty(m)||m===want)return;want=m;wantAt=clock;},
   // kind = wanted | yippie | gameover; the songs fade out under it; then() runs when it ends, also at once if it can't play

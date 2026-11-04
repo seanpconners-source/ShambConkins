@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.83.1
+
+- **Sundown Showdown: bullets leave the end of the gun** in every pose (standing, running, up, diagonals, ducking), measured from your sprite sheets, and bandits' hit areas match their full height, so aiming feels right.
+- **Gunshots you can hear**: a new sharp pistol crack for every shot (the old one was far too quiet under the music), a deeper one for the bandits, and real explosions for dynamite and powder kegs.
+- **Boss bullets are slower** (about a quarter slower; the rifleman's aimed shot too), so you can dodge them.
+- **Music like the arcade**: the title plays The Magnificent Four, every stage starts with the Wanted! jingle and then plays its own stage theme (Main Street, the train, the canyon and the mission each have theirs), the boss gets a boss theme, then Stage Clear or Game Over.
+
 ## v0.83.0
 
 - **Sundown Showdown, rebuilt from the ground up**: four full stages played in order: MAIN STREET, RUNAWAY TRAIN (fight along the roofs of a moving train, jump the gaps between cars, duck under low bridges, riders gallop alongside), CANYON PASS (climb rock shelves and a rope bridge, rockslides of boulders you jump or shoot) and MISSION AT NIGHT (torch-lit adobe streets up to a bell tower). Every stage is layered: balconies and rooftops you jump up onto, wagons, barrels and crates to stand on and hide behind.

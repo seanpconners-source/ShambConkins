@@ -30,6 +30,17 @@ function gunshot({vol=.9,pan=0,delay=0,far=false}={}){const a=ctx();if(!a)return
  osc(a,o,t,{f:170,f2:38,dur:.22,peak:.95,attack:.002});
  burst(a,o,t+.01,{dur:.6,peak:.18,attack:.01,type:'lowpass',f:900,f2:200,q:.4});
  echo(a,o,t,{time:far?.31:.24,fb:.36,wet:.45});}
+// a quick pistol crack for run-and-gun games: sharper and shorter than gunshot(), echo only when asked (rapid fire)
+function shot({vol=.8,pan=0,delay=0,echo:withEcho=false,low=false}={}){const a=ctx();if(!a)return;const t=a.currentTime+delay,o=out(a,vol,pan);
+ burst(a,o,t,{dur:.035,peak:1,attack:.0008,type:'highpass',f:low?1800:3000,q:.6});
+ burst(a,o,t,{dur:.14,peak:1,attack:.001,type:'lowpass',f:low?2600:4200,f2:500,q:.8});
+ osc(a,o,t,{f:low?140:210,f2:low?40:60,dur:.12,peak:.9,attack:.001});
+ if(withEcho)echo(a,o,t,{time:.2,fb:.25,wet:.28,len:.8});}
+function blast({vol=.9,pan=0,delay=0}={}){const a=ctx();if(!a)return;const t=a.currentTime+delay,o=out(a,vol,pan);
+ burst(a,o,t,{dur:.08,peak:1,attack:.001,type:'highpass',f:1500,q:.4});
+ burst(a,o,t,{dur:.9,peak:1,attack:.004,type:'lowpass',f:1400,f2:90,q:.5});
+ osc(a,o,t,{f:90,f2:28,dur:.7,peak:1,attack:.003});
+ echo(a,o,t,{time:.28,fb:.3,wet:.35,len:1.2});}
 function ricochet({vol=.4,pan=0,delay=0}={}){const a=ctx();if(!a)return;const t=a.currentTime+delay,o=out(a,vol,pan),f=2600+Math.random()*900;
  const curve=new Float32Array(32);for(let i=0;i<32;i++){const k=i/31;curve[i]=f*(1-k*.62)+Math.sin(k*40)*90;}
  osc(a,o,t,{type:'sine',curve,dur:.42,peak:.32,attack:.004});osc(a,o,t,{type:'triangle',f:f*1.5,f2:f*.5,dur:.3,peak:.08,attack:.004});
@@ -76,5 +87,5 @@ function yeehaw({vol=.6,delay=0,pitch=1}={}){const a=ctx();if(!a)return;const t=
  src.start(t);vib.start(t);src.stop(t+1.2);vib.stop(t+1.2);
  burst(a,o,t+.37,{dur:.1,peak:.25,attack:.02,type:'bandpass',f:1400,q:.8});// the breathy "h"
 }
-const SFX={gunshot,ricochet,cock,dryFire,cylinder,spurs,jingle,gallop,snort,whinny,whip,trapdoor,yeehaw};
+const SFX={gunshot,shot,blast,ricochet,cock,dryFire,cylinder,spurs,jingle,gallop,snort,whinny,whip,trapdoor,yeehaw};
 Object.assign(exports,{SFX});

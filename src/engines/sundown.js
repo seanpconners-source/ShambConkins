@@ -28,6 +28,8 @@ const RUN=84,ACC=1000,DEC=1300,AIR=760,GRAV=760,JUMPV=262,HOLD_T=.26,FALL=430,CO
 const SLIDE_V=200,SLIDE_T=.42,PB=390,FIRE_CD=.15,RAPID_CD=.085,INV=2.2,RESPAWN=1.4,POWER_T=15,CONT_T=10,HITSTOP=.04;
 const TAUNTS=[['This is my town, cowboy.','Now you made me ANGRY!'],['Nobody collects on my head!','Boys! Get these varmints!'],['Ride on back where you came from.','I\'ll fill you full of lead!'],['Draw, if you got the guts!','No more games!'],['Your bounty\'s mine, not the other way round.','You\'re tougher than you look...']];
 const BOSS_NAMES={gunslinger:['THE BARON','ONE-EYED JACK','BLACK BART','DOC HOLLOWAY'],engineer:['IRON MIKE','BOXCAR WILLIE','THE CONDUCTOR'],rifleman:['DEADEYE','THE VULTURE','LONG RIFLE LOU'],general:['EL GENERAL','EL DIABLO','THE COLONEL']};
+const TITLE_SONG=['the-magnificent-four'],BOSS_SONGS=['its-time-to-pay','draw-your-gun','draw-pilgrim','quick-draw'];
+const STAGE_SONGS={town:['gunfight-at-the-sunset-corral','shoot-out-at-the-sunset-ranch'],train:['train-stage-2','i-will-run-and-face-tomorrow','face-with-courage'],canyon:['mountain-stage-2','butch-cassidy-and-sunset-riders'],mission:['ay-chihuahua','aye-chihuaha','the-great-petal','splendid-flower-petal']};
 const PTS={gun:100,perch:200,window:200,door:150,drop:150,rush:150,dyn:300,cover:250,rider:400,sniper:300,ledge:200,climb:150,gunner:3000,boulder:250,rollkeg:200};
 const DIR8=[[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];
 
@@ -69,7 +71,7 @@ async function sundown(s){
 
  // ------------------------------------------------------------------------------------------------ input
  const controls=createControls(s,c,{np,solo,onDown:(i,p)=>{
-  if(phase==='title'){if(phaseT>.5){phase='card';phaseT=0;}return true;}
+  if(phase==='title'){if(phaseT>.5){phase='card';phaseT=0;music.sting('wanted',()=>music.theme(STAGE_SONGS[L.id]));}return true;}
   if(phase==='card'){if(phaseT>.6){phase='play';phaseT=0;}return true;}
   const pl=P[i];if(pl&&pl.out&&pl.contT>0){continuePlayer(pl);return true;}
   return false;}});
@@ -114,26 +116,29 @@ async function sundown(s){
 
  // ------------------------------------------------------------------------------------------------ combat
  function shoot(p){
-  const [ax,ay]=p.aim,n=Math.hypot(ax,ay)||1,ux=ax/n,uy=ay/n,gy=p.y-(p.slideT>0?7:p.duck?13:p.ground?25:27),mx=p.x+ux*13,my=gy+uy*8;
+  const [ax,ay]=p.aim,n=Math.hypot(ax,ay)||1,ux=ax/n,uy=ay/n;
+  // from the muzzle of the gun in the pose being drawn (the owner's sheet), else from the chest along the aim
+  const def=SPR.sheet('cowboy-p'+(p.i+1))?.def,row=!p.ground?null:p.duck?'duckShoot':ay<0&&!ax?'shootUp':ay<0?'shootDiagUp':ay>0?'shootDiagDown':Math.abs(p.vx)>8?'runShoot':'shoot',tip=row&&def?.gun?.[row];
+  const gy=p.y-(p.duck?16:28),mx=tip?p.x+(tip[0]-def.foot[0])*def.scale*p.face:p.x+ux*16,my=tip?p.y+(tip[1]-def.foot[1])*def.scale:gy+uy*12;
   const shots=p.power==='two'?[[-2.5,-.05],[2.5,.05]]:[[0,0]];
   for(const [off,a] of shots){const ca=Math.cos(a),sa=Math.sin(a),vx=(ux*ca-uy*sa)*PB,vy=(ux*sa+uy*ca)*PB;B.push({x:mx-uy*off,y:my+ux*off,vx,vy,o:p.i,t:0});}
   FX.push({k:'flash',x:mx,y:my,t:0,life:.06,dx:ux,dy:uy});
   FX.push({k:'shell',x:p.x,y:gy,vx:-p.face*(30+fxr()*30),vy:-60-fxr()*40,t:0,life:.6});
-  SFX.gunshot({vol:.26,pan:Math.max(-1,Math.min(1,((toX(p.x)/W)*2-1))),far:true});
+  p.shots=(p.shots||0)+1;SFX.shot?.({vol:.62,pan:Math.max(-1,Math.min(1,((toX(p.x)/W)*2-1)))*.6,echo:p.shots%3===1});
  }
  function enemyShot(e,tx,ty,{speed=0,spread=0,from=null}={}){
   const cap=6+Math.min(6,L.n)+(np-1)*3;if(EB.filter(b=>!b.dyn).length>=cap)return;
   const ex=from?from[0]:e.x+e.face*8,ey=from?from[1]:e.y-(e.kind==='window'?18:e.kind==='rider'?44:e.kind==='cover'?18:e.boss?34:24);
   const v=speed||(128+Math.min(70,(diff-1)*40)),a=Math.atan2(ty-ey,tx-ex)+spread;
   EB.push({x:ex,y:ey,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0});e.fireAnim=.22;FX.push({k:'flash',x:ex,y:ey,t:0,life:.06,dx:Math.cos(a),dy:Math.sin(a),red:true});
-  SFX.gunshot({vol:.15,far:true,pan:Math.max(-1,Math.min(1,(toX(ex)/W)*2-1))});
+  SFX.shot?.({vol:.34,low:true,pan:Math.max(-1,Math.min(1,(toX(ex)/W)*2-1))*.6});
  }
  function lob(e,tx,ty=null){const t=1+fxr()*.15,sx0=e.x,sy0=e.y-30,dx=tx-sx0,dy=(ty??(L.ground??TRAIN_ROOF))-sy0;
   EB.push({x:sx0,y:sy0,vx:dx/t,vy:(dy-.5*GRAV*.8*t*t)/t,t:0,dyn:true,fuse:0,spin:fxr()*6});e.throwT=.35;}
  function boom(x,y,r=34,{hurt=true,by=null,big=false}={}){shake=Math.max(shake,big?12:8);freeze=Math.max(freeze,.05);
   FX.push({k:'boom',x,y,t:0,life:.55,r});for(let k=0;k<26;k++){const a=fxr()*Math.PI*2,v=40+fxr()*150;FX.push({k:'spark',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,t:0,life:.4+fxr()*.5,c:fxr()<.5?'#ffd04a':'#ff6a2a'});}
   for(let k=0;k<8;k++)FX.push({k:'smoke',x:x+(fxr()-.5)*r,y:y-fxr()*r*.5,vx:(fxr()-.5)*20,vy:-20-fxr()*30,t:0,life:1+fxr()*.6,r:4+fxr()*6});
-  SFX.gunshot({vol:.7});SFX.trapdoor?.({vol:.35});
+  SFX.blast?.({vol:.85,pan:Math.max(-1,Math.min(1,(toX(x)/W)*2-1))*.5});
   for(const e of E)if(!e.dead&&!e.boss&&e.kind!=='horse'&&e.kind!=='beam'&&Math.hypot(e.x-x,(e.y-14)-y)<r+6)killEnemy(e,by);
   for(const b of L.boxes)if(!b.dead&&b.kind!=='wagon'&&Math.hypot(b.x+b.w/2-x,b.y-b.h/2-y)<r+8){if(b.kind==='keg')after(.12,()=>breakBox(b,by));else breakBox(b,by);}
   if(L.boss&&!L.boss.dead&&Math.hypot(L.boss.x-x,L.boss.y-24-y)<r+10)for(let k=0;k<5;k++)damage(L.boss,by);
@@ -265,7 +270,7 @@ async function sundown(s){
  // the gatling wagon: rolls in, the gunner sweeps bursts across the street, two pistoleros guard it
  function stepGunner(e,dt,p){const wg=e.wagon;if(wg.dead){killEnemy(e,null);return;}
   if(wg.x>e.stop){wg.x-=80*dt;e.x=wg.x+22;return;}e.x=wg.x+22;e.y=wg.y-wg.h;if(!p)return;e.face=-1;
-  if(e.burst>0){e.burstT-=dt;if(e.burstT<=0){e.burstT=.09;e.burst--;const a=e.sweep0+(e.sweep1-e.sweep0)*(1-e.burst/12);EB.push({x:e.x-16,y:e.y-14,vx:Math.cos(a)*170,vy:Math.sin(a)*170,t:0});e.fireAnim=.15;FX.push({k:'flash',x:e.x-16,y:e.y-14,t:0,life:.05,dx:-1,dy:0,red:true});SFX.gunshot({vol:.14,far:true});}}
+  if(e.burst>0){e.burstT-=dt;if(e.burstT<=0){e.burstT=.09;e.burst--;const a=e.sweep0+(e.sweep1-e.sweep0)*(1-e.burst/12);EB.push({x:e.x-16,y:e.y-14,vx:Math.cos(a)*150,vy:Math.sin(a)*150,t:0});e.fireAnim=.15;FX.push({k:'flash',x:e.x-16,y:e.y-14,t:0,life:.05,dx:-1,dy:0,red:true});SFX.shot?.({vol:.3,low:true});}}
   else if((e.cool-=dt*Math.min(1.8,diff))<=0&&canShoot(e)){const tx=p.x,ty=p.y-14,base=Math.atan2(ty-(e.y-14),tx-(e.x-16));const up=s.random()<.5;e.sweep0=base+(up?-.32:.32);e.sweep1=base+(up?.3:-.3);e.burst=12;e.burstT=0;e.cool=1.6;}}
 
  // ------------------------------------------------------------------------------------------------ bosses
@@ -288,16 +293,16 @@ async function sundown(s){
   const pats={gunslinger:['fan','burst','dash','dyn','fan','burst'],engineer:e.down?['fan','burst','dash','dyn']:['bundle','spread','coal','spread','bundle'],rifleman:['snipe','snipe','dyn','hop','snipe3'],general:['sweep','volley','hop','sweep','dyn']}[e.boss];
   const pat=pats[e.pat++%pats.length];
   const at=(tx,ty,o)=>enemyShot(e,tx,ty,o);
-  if(pat==='fan'){for(const a of e.mad?[-.36,-.18,0,.18,.36]:[-.2,0,.2])at(p.x,p.y-18,{spread:a,speed:150});e.cool=1.5;}
-  else if(pat==='burst'){for(let k=0;k<(e.mad?8:6);k++)after(k*.1,()=>{if(!e.dead&&phase==='boss'){const q=target(e.x,e.y);if(q)at(q.x,q.y-18,{speed:175,spread:(fxr()-.5)*.2});}});e.cool=1.9;}
-  else if(pat==='dash'){e.goal=e.x<cam+ww/2?cam+ww*(.7+R()*.2):cam+ww*(.15+R()*.2);e.dash=true;for(let k=0;k<4;k++)after(.2+k*.22,()=>{if(!e.dead&&phase==='boss'){const q=target(e.x,e.y);if(q)at(q.x,q.y-18,{speed:160});}});e.cool=1.6;}
+  if(pat==='fan'){for(const a of e.mad?[-.36,-.18,0,.18,.36]:[-.2,0,.2])at(p.x,p.y-18,{spread:a,speed:112});e.cool=1.5;}
+  else if(pat==='burst'){for(let k=0;k<(e.mad?8:6);k++)after(k*.1,()=>{if(!e.dead&&phase==='boss'){const q=target(e.x,e.y);if(q)at(q.x,q.y-18,{speed:128,spread:(fxr()-.5)*.2});}});e.cool=1.9;}
+  else if(pat==='dash'){e.goal=e.x<cam+ww/2?cam+ww*(.7+R()*.2):cam+ww*(.15+R()*.2);e.dash=true;for(let k=0;k<4;k++)after(.2+k*.22,()=>{if(!e.dead&&phase==='boss'){const q=target(e.x,e.y);if(q)at(q.x,q.y-18,{speed:120});}});e.cool=1.6;}
   else if(pat==='dyn'){for(let k=0;k<2+(hurt>.6?1:0);k++)lob(e,p.x+(k-1)*34,floorAt(p.x+(k-1)*34,p.y-4));e.cool=1.8;}
   else if(pat==='bundle'){for(let k=0;k<3;k++)after(k*.25,()=>{if(!e.dead){const q=target(e.x,e.y);if(q)lob(e,q.x+(fxr()-.5)*40,floorAt(q.x,q.y-4));}});e.cool=2;}
-  else if(pat==='spread'){for(let k=-3;k<=3;k++)at(p.x,p.y-18,{spread:k*.1,speed:140});e.cool=1.6;}
-  else if(pat==='coal'){for(let k=0;k<10;k++){const x=cam+ww*(.05+k*.09)+fxr()*12;EB.push({x,y:-10-k*14,vx:-20,vy:80+fxr()*40,t:0,coal:true});}e.cool=2.2;}
-  else if(pat==='snipe'||pat==='snipe3'){const n=pat==='snipe3'?3:1;for(let k=0;k<n;k++)after(k*.45,()=>{if(!e.dead){const q=target(e.x,e.y);if(q){e.glint={t:T,x:q.x,y:q.y-18};after(.55,()=>{if(!e.dead&&phase==='boss'&&e.glint)at(e.glint.x,e.glint.y,{speed:300});});}}});e.cool=1.7+n*.3;}
-  else if(pat==='sweep'){for(let k=0;k<10;k++)after(k*.08,()=>{if(!e.dead){const a=.2+k*.12;at(e.x+Math.cos(a)*-100,e.y+100,{speed:150});at(e.x+Math.cos(a)*100,e.y+100,{speed:150});}});e.cool=2;}
-  else if(pat==='volley'){for(let k=0;k<5;k++)at(p.x,p.y-18,{spread:(k-2)*.08,speed:165});e.cool=1.4;}
+  else if(pat==='spread'){for(let k=-3;k<=3;k++)at(p.x,p.y-18,{spread:k*.1,speed:108});e.cool=1.6;}
+  else if(pat==='coal'){for(let k=0;k<10;k++){const x=cam+ww*(.05+k*.09)+fxr()*12;EB.push({x,y:-10-k*14,vx:-16,vy:62+fxr()*30,t:0,coal:true});}e.cool=2.2;}
+  else if(pat==='snipe'||pat==='snipe3'){const n=pat==='snipe3'?3:1;for(let k=0;k<n;k++)after(k*.45,()=>{if(!e.dead){const q=target(e.x,e.y);if(q){e.glint={t:T,x:q.x,y:q.y-18};after(.6,()=>{if(!e.dead&&phase==='boss'&&e.glint)at(e.glint.x,e.glint.y,{speed:215});});}}});e.cool=1.7+n*.3;}
+  else if(pat==='sweep'){for(let k=0;k<10;k++)after(k*.08,()=>{if(!e.dead){const a=.2+k*.12;at(e.x+Math.cos(a)*-100,e.y+100,{speed:110});at(e.x+Math.cos(a)*100,e.y+100,{speed:110});}});e.cool=2;}
+  else if(pat==='volley'){for(let k=0;k<5;k++)at(p.x,p.y-18,{spread:(k-2)*.08,speed:122});e.cool=1.4;}
   else if(pat==='hop'&&e.perches){let ni=e.pi;while(ni===e.pi)ni=Math.floor(R()*e.perches.length);e.pi=ni;const [x1,y1]=e.perches[ni];e.hop={t:0,d:.75,x0:e.x,y0:e.y,x1,y1};e.cool=1.1;}
   else e.cool=.8;
   // the engineer jumps down onto the train when he's hurt
@@ -345,15 +350,15 @@ async function sundown(s){
     // never quiet: when the street empties, someone else shows up
     const lockOn=lk&&lk.started;const want2=2+Math.min(4,L.n+L.loop)+(np-1);
     if(!lockOn&&living().length<want2&&T-lastSpawn>(T-camMoved>8?3:1.15/Math.min(1.6,diff))){lastSpawn=T;const ks=['gun','gun','perch','window','rush','cover','dyn','sniper','drop'].filter(k=>L.id!=='train'||!['window','perch','cover','drop'].includes(k));spawnOne(ks[Math.floor(s.random()*ks.length)],s.random()<.15?-1:1);}
-    if(cam>=L.len){phase='bossintro';phaseT=0;banner={why:'wanted',t:T};music.mood('tense');voice('sir-richard-laugh',{vol:.7});spawnBoss();after(2.8,()=>{if(phase==='bossintro'){phase='boss';phaseT=0;}});}}}
+    if(cam>=L.len){phase='bossintro';phaseT=0;banner={why:'wanted',t:T};music.theme(BOSS_SONGS);voice('sir-richard-laugh',{vol:.7});spawnBoss();after(2.8,()=>{if(phase==='bossintro'){phase='boss';phaseT=0;}});}}}
   if((phase==='bossintro'||phase==='boss')&&L.arenaCam>cam)cam=Math.min(L.arenaCam,cam+140*dt);
   for(const e of E)stepEnemy(e,dt);
   for(let k=E.length-1;k>=0;k--){const e=E[k];if(e.gone||(e.dead&&e.deadT>2.4)||(!e.dead&&!e.boss&&!['horse','beam'].includes(e.kind)&&e.x<cam-150))E.splice(k,1);}
   // player bullets: enemies, kegs and crates, windows
   for(let k=B.length-1;k>=0;k--){const b=B[k];b.x+=b.vx*dt;b.y+=b.vy*dt;b.t+=dt;let used=false;
-   for(const e of E){if(e.dead||e.gone||e.kind==='horse'||e.kind==='beam')continue;let hx=e.x,hy=e.y-16,hw=9,hh=17;
+   for(const e of E){if(e.dead||e.gone||e.kind==='horse'||e.kind==='beam')continue;let hx=e.x,hy=e.y-20,hw=9,hh=21;
     if(e.kind==='window'){if(e.out<.6)continue;hy=e.y-18;hh=10;}else if(e.kind==='cover'){if(e.up<.5)continue;hy=e.y-18;hh=12;}
-    else if(e.kind==='rider'){hy=e.y-40;hw=13;hh=16;}else if(e.boss){if(phase!=='boss')continue;hy=e.y-26;hw=13;hh=26;}else if(e.kind==='boulder'){hy=e.y-11;hw=11;hh=11;}else if(e.kind==='rollkeg'){hy=e.y-9;hw=9;hh=9;}else if(e.kind==='gunner'){hy=e.y-16;hw=9;hh=17;}
+    else if(e.kind==='rider'){hy=e.y-40;hw=13;hh=16;}else if(e.boss){if(phase!=='boss')continue;hy=e.y-26;hw=13;hh=26;}else if(e.kind==='boulder'){hy=e.y-11;hw=11;hh=11;}else if(e.kind==='rollkeg'){hy=e.y-9;hw=9;hh=9;}else if(e.kind==='gunner'){hy=e.y-20;hw=9;hh=21;}
     if(Math.abs(b.x-hx)<hw&&Math.abs(b.y-hy)<hh){damage(e,b.o);used=true;spark(b.x,b.y,'#ffe8b0');break;}}
    if(!used){const bx0=boxAt(b.x,b.y);if(bx0){used=true;spark(b.x,b.y,'#ffe2a0');if(bx0.kind!=='wagon'){bx0.flash=.06;if(--bx0.hp<=0)breakBox(bx0,b.o);}else if(fxr()<.3)SFX.ricochet?.({vol:.12});}}
    if(!used&&!L.night)for(const bl of L.bld){if(b.x<bl.x||b.x>bl.x+bl.w)continue;for(const wn of bl.wins)if(!wn.broken&&!wn.man&&Math.abs(b.x-wn.x)<12&&Math.abs(b.y-wn.y)<12&&b.t>.08){wn.broken=true;for(let q=0;q<8;q++)FX.push({k:'splinter',x:wn.x,y:wn.y,vx:(fxr()-.5)*90,vy:-30-fxr()*60,t:0,life:.7,c:'#c8e0f0'});score(P[b.o],10,wn.x,wn.y-10);}}
@@ -370,7 +375,6 @@ async function sundown(s){
   for(let k=FX.length-1;k>=0;k--){const f=FX[k];f.t+=dt;if(f.vx!==undefined){f.vy+=(f.k==='smoke'?-10:300)*dt;f.x+=f.vx*dt;f.y+=f.vy*dt;}if(f.t>f.life)FX.splice(k,1);}
   for(let k=TX.length-1;k>=0;k--){if((TX[k].t+=dt)>TX[k].life)TX.splice(k,1);}
   for(const b of L.boxes)if(b.flash>0)b.flash-=dt;
-  if(live)music.mood(phase!=='play'||P.every(p=>p.out||p.lives<=1)?'tense':'play');
   if(live&&P.every(p=>p.out&&!p.alive&&p.contT<=0))endStage('dead');
   s.setScores?.(solo?[total[0]+P[0].score,0]:P.map(p=>p.score+total[p.i]));
  }
@@ -383,8 +387,9 @@ async function sundown(s){
   L.taunt=TAUNTS[Math.floor(s.random()*TAUNTS.length)];L.bounty=5000+stageNo*2000;L.bossId=bossPool.length?bossPool[Math.floor(s.random()*bossPool.length)]:null;L.boss=null;
   E.length=0;B.length=0;EB.length=0;FX.length=0;TX.length=0;items.length=0;later.length=0;cam=0;lastCam=0;camMoved=T;lastSpawn=T;ending=false;banner=null;goT=-9;scen.clear();
   for(const p of P)if(!p.out||campaign){const y=floorAt(50+p.i*28,0);Object.assign(p,{x:50+p.i*28,y,vx:0,vy:0,alive:p.lives>0,out:p.lives<=0,inv:INV,power:null,score:0,ground:true,stageKills:0,bounty:0,lifeBonus:0,slideT:0,combo:0});}
+  const theme=STAGE_SONGS[L.id];
+  if(firstStage){music.theme(TITLE_SONG);music.start();}else music.sting('wanted',()=>music.theme(theme));
   phase=firstStage?'title':'card';firstStage=false;phaseT=0;controls.reset();
-  music.sting('wanted',()=>music.start());
  }
  function endStage(why){if(ending)return;ending=true;phase='end';phaseT=0;banner={why,t:T};
   if(why==='clear'){for(const p of P){p.lifeBonus=p.out?0:500*Math.max(0,p.lives);p.score+=p.lifeBonus;}voice(fxr()<.5?'player-taunt-1':'player-taunt-2',{vol:.9});music.sting('yippie');}
@@ -569,7 +574,7 @@ async function sundown(s){
   state:()=>({phase,stage:stageNo,stageId:L?.id,cam,len:L?.len,players:P.map(p=>({x:p.x,y:p.y,lives:p.lives,alive:p.alive,out:p.out,score:p.score,total:total[p.i],ground:p.ground})),enemies:living().length,kinds:[...new Set(living().map(e=>e.kind))],boss:L?.boss?{hp:L.boss.hp,max:L.boss.max,dead:L.boss.dead,type:L.boss.boss}:null,bossId:L?.bossId,recruits:s.gameRecruits,locks:L?.locks.map(l=>l.done)}),
   boss(){cam=L.len;for(const p of P){p.x=cam+40+p.i*20;p.y=floorAt(p.x,0);}for(const sp of L.spawns)sp.done=true;for(const l of L.locks)l.done=true;for(const ev of L.events)ev.done=true;E.length=0;phase='play';},
   win(){if(phase==='bossintro')phase='boss';if(L.boss&&!L.boss.dead){L.boss.dmg[0]=L.boss.hp;L.boss.hp=1;damage(L.boss,0);}},
-  start(){phase='play';phaseT=0;},stage(n){stageNo=n;startStage();phase='play';},immortal:false});
+  start(){if(phase==='title')music.theme(STAGE_SONGS[L.id]);phase='play';phaseT=0;},stage(n){stageNo=n;startStage();phase='play';},immortal:false});
  layout();startStage();
  await new Promise(resolve=>{s.cleanup(resolve);
   s.frame(dt=>{if(!s.alive){resolve();return;}

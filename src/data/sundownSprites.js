@@ -11,7 +11,9 @@
 const SHEETS={
  'cowboy-p1':{frame:[64,64],foot:[32,63],scale:.75,head:[33,13],headSize:20,
   rows:{idle:4,run:8,runShoot:8,shoot:2,shootUp:2,shootDiagUp:2,shootDiagDown:2,duck:2,duckShoot:2,jump:4,slide:3,death:6},
-  headRows:{duck:[33,27],duckShoot:[33,27],slide:[[38,40],[38,40],[38,40]],death:[[33,15],[30,20],[26,30],[22,42],[20,52],[20,56]]}},
+  headRows:{duck:[33,27],duckShoot:[33,27],slide:[[38,40],[38,40],[38,40]],death:[[33,15],[30,20],[26,30],[22,42],[20,52],[20,56]]},
+  // the muzzle in each shooting row (frame pixels): bullets and the flash start here
+  gun:{shoot:[60,19],runShoot:[60,18],shootUp:[27,3],shootDiagUp:[54,8],shootDiagDown:[54,45],duckShoot:[60,35]}},
  'cowboy-p2':null,   // same layout as cowboy-p1 (filled in below)
  bandit:{frame:[64,64],foot:[32,63],scale:.75,rows:{idle:2,walk:6,shoot:2,cover:2,death:6}},
  knife:{frame:[64,64],foot:[32,63],scale:.75,rows:{run:6,slash:2,death:6}},
