@@ -79,7 +79,14 @@ function locationFallbackURL(l) {
  if(locationFallbackCache.has(l.id))return locationFallbackCache.get(l.id);
  const url=svgURL(locationSceneSVG(l,logoURL(l.source)));locationFallbackCache.set(l.id,url);return url;
 }
-const gameArtHTML = g => g.id!=='wopr-grid'&&ART[`game:${g.id}`] ? `<img class="game-art" src="${ART[`game:${g.id}`]}" alt="${escapeHTML(g.title)}">` : `<div class="game-art-strip">${referenceArtHTML(g.source,'game-reference-art',g.title)}<div class="game-emblem">${escapeHTML(g.icon||'⚔')}</div></div>`;
+// a game's own Arcade icon (assets/tiles/<id or family>) comes first; then its built-in picture; then the property strip
+// the Arcade (arcadeConsole.js) tells this file each game's family key, which names most icons (no import back: it requires this file)
+let tileFamily=()=>null;
+const setTileFamily=fn=>{tileFamily=fn;};
+const gameTile = g => [g.id,g.arcadeAs,tileFamily(g),g.family].map(k=>k&&USER_PORTRAITS['tile:'+k]).find(isRasterArt);
+// a game's own Arcade logo (assets/keyart/<id or family>-logo), for its start / result cards
+const gameLogo = g => g&&[g.id,g.arcadeAs,tileFamily(g)].map(k=>k&&USER_PORTRAITS['keyart:'+k+'-logo']).find(isRasterArt)||null;
+const gameArtHTML = g => gameTile(g) ? `<img class="game-art game-art-tile" src="${gameTile(g)}" alt="${escapeHTML(g.title)}">` : g.id!=='wopr-grid'&&ART[`game:${g.id}`] ? `<img class="game-art" src="${ART[`game:${g.id}`]}" alt="${escapeHTML(g.title)}">` : `<div class="game-art-strip">${referenceArtHTML(g.source,'game-reference-art',g.title)}<div class="game-emblem">${escapeHTML(g.icon||'⚔')}</div></div>`;
 
 // Warm the chosen players' faces (owner, Nov 3: the first game's pass card showed the face late): fetch and decode every
 // mood picture once, and make the Sean/Amber backdrop cut-outs up front, so a card never swaps its picture after it appears.
@@ -88,4 +95,4 @@ const warmedFaces=new Map();
 function warmFaces(ids){if(typeof Image==='undefined')return;
  for(const id0 of ids||[]){const id=mergedCharacterId(id0);for(const m of ['normal',...portraitMoods(id)]){const raw=portraitURL(id,m);if(!raw||warmedFaces.has(raw))continue;
   const im=new Image();warmedFaces.set(raw,im);im.decoding='async';im.onload=()=>{if(['sean','amber'].includes(id))createHeadCutout(im,raw);im.decode?.().catch(()=>{});};im.src=raw;}}}
-Object.assign(exports,{warmFaces,portraitMoods,portraitFallbackURL,logoURL,brandHTML,portraitURL,portraitHTML,emilioPortrait,gordonPortrait,itemArtHTML,locationArt,locationArtHTML,locationBoardArt,gameArtHTML});
+Object.assign(exports,{gameLogo,setTileFamily,warmFaces,portraitMoods,portraitFallbackURL,logoURL,brandHTML,portraitURL,portraitHTML,emilioPortrait,gordonPortrait,itemArtHTML,locationArt,locationArtHTML,locationBoardArt,gameArtHTML});

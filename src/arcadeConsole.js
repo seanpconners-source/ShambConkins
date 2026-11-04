@@ -14,7 +14,7 @@ const {store}=require("src/state.js");
 const {tone}=require("src/audio.js");
 const {saveProfile,toggleFavorite}=require("src/profile.js");
 const {cachedTop,loadTop}=require("src/scores.js");
-const {portraitURL}=require("src/assets.js");
+const {portraitURL,setTileFamily}=require("src/assets.js");
 
 // Families: [key, title, subtitle, hero character, member ids]. The tile/hero uses the family; the version page lists members.
 const FAMILIES=[
@@ -396,6 +396,7 @@ if(typeof document!=='undefined')document.addEventListener('keydown',ev=>{
  else if(ev.key==='Escape'&&state.grid)closeGrid();
 });
 
+setTileFamily(g=>{try{return familyOf(g);}catch{return null;}});   // start / result cards show the family's icon too
 // Pictures for the title screen's Arcade tile (owner, Nov 3: "cycling through recently played or featured games so they are
 // always changing"): the given games (recent + featured) in a fresh random order every time the title screen is built,
 // each as its tile icon (game, else family) or character cut-out; a few other families fill in when the list is short.

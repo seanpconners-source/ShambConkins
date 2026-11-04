@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Every menu box in the new console look**: Settings (rounded rows, real On/Off switches), the online room, confirm boxes, the pause card and the start and result cards now match the Arcade: glass cards, comic titles, a white pill for the main choice. Start and result cards show the game's own logo when it has one. Board dialogs keep each level's colours.
 - **Pokémon moves that fit the character**: about 300 new moves (Stone Cold's STUNNER and BEER BONG, Ripley's POWER LOADER, Michael Myers' KITCHEN KNIFE, Hank's PROPANE, Ron Burgundy's JAZZ FLUTE, Mr. Burns' RELEASE DOGS, Cthulhu's R'LYEH RISING…). Every show now has its own moves, and almost every character carries two themed moves instead of one, plus one of its type and a status move. The dogs keep dog moves.
 - **Shared high scores with names**: every 1-player run (and your side of an online duel) goes on the game's scoreboard under your Choose Characters name. A game's page shows the record and who holds it (🏆 chip); tap it for the top 10 from every phone, with faces. Offline, scores wait and go up the next time the game starts, and the board shows what this phone last saw. A new personal top-10 place pops up after a run.
 - **39 more characters say their own famous line** (Johnny Cage, Ike, Uncle Jimbo, Majin Buu, Cell, Arthur Morgan, Mick Foley, Kenny Powers, Gordon Ramsay, Cthulhu and more), on their character page, unlock card and Pokémon intro.
