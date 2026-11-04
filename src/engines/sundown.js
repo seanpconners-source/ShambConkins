@@ -424,7 +424,7 @@ async function sundown(s){
   if(p.out&&!p.alive&&p.y>=GY-1&&p.respawn<-1)return;
   {const blink=p.alive&&p.inv>0&&Math.floor(T*14)%2,[row,o]=cowboyRow(p),at=sprite('cowboy-p'+(p.i+1),row,o,p.x,p.y,p.face,blink?.45:1);
    if(at){x.globalAlpha=blink?.45:1;headOn(at,s.players[p.i].character,p.alive?(p.firing?'angry':'normal'):'sad','hat-p'+(p.i+1));x.globalAlpha=1;
-    if(np>1&&p.alive){x.fillStyle=p.i?'#ff9ad0':'#7fd3ff';x.font=`900 ${Math.max(8,7*K())}px "SC Nunito",sans-serif`;x.textAlign='center';x.fillText('P'+(p.i+1),at.X,at.Y-(at.def.frame[1]*at.sc)-4);}return;}}
+    if(np>1&&p.alive){x.fillStyle=p.i?'#ff9ad0':'#7fd3ff';x.font=`900 ${Math.max(8,7*K())}px "SC Nunito",sans-serif`;x.textAlign='center';x.fillText('P'+(p.i+1),at.X,at.Y-(at.def.frame[1]*at.sc)-at.def.headSize*at.sc*.6-4);}return;}}
   const k=K(),X=sx(p.x),Y=sy(p.y),f=p.face,col=COATS[p.i],ducking=p.duck&&p.alive,sliding=p.slideT>0&&p.alive;
   if(p.alive&&p.inv>0&&Math.floor(T*14)%2)x.globalAlpha=.45;
   x.save();x.translate(X,Y);if(!p.alive){x.rotate(-f*Math.min(1.4,(RESPAWN-p.respawn)*3));}else if(sliding){x.rotate(-f*1.15);x.translate(0,4*k);}
@@ -548,9 +548,9 @@ async function sundown(s){
   x.font=bangers(18*u);x.textAlign='center';x.fillStyle='#fff';x.fillText(`${solo?`STAGE ${stageNo+1} · `:''}${L.theme.name}`,W/2,H*.82);
   if(Math.floor(T*2.2)%2===0){x.font=bangers(20*u);outlined('TAP TO RIDE',W/2,H*.89,'#ffd34a','#3a0a04',5*u);}}
  // the boss rides in: WANTED strip across the top, his line in a bubble
- function bossIntro(){const u=U(),a=Math.min(1,phaseT*3);x.globalAlpha=a;x.fillStyle='#000c';x.fillRect(0,view.y+view.h*.06,W,46*u);x.textAlign='center';x.textBaseline='middle';
-  x.font=bangers(26*u);outlined(`WANTED: ${L.bossName}`,W/2,view.y+view.h*.06+16*u,'#ffd34a','#3a0a04',5*u);x.font=nunito(12*u,900);x.fillStyle='#fff';x.fillText(`DEAD OR ALIVE · $${L.bounty.toLocaleString()}`,W/2,view.y+view.h*.06+36*u);x.globalAlpha=1;}
- function speech(e){const u=U(),X=Math.min(W-90*u,Math.max(90*u,sx(e.x))),Y=sy(e.y-92);x.font=nunito(12*u,900);const w=Math.min(W*.6,x.measureText(e.say.text).width+20*u);
+ function bossIntro(){const u=U(),a=Math.min(1,phaseT*3),y0=view.y+view.h*.3;x.globalAlpha=a;x.fillStyle='#000c';x.fillRect(0,y0,W,46*u);x.textAlign='center';x.textBaseline='middle';
+  x.font=bangers(26*u);outlined(`WANTED: ${L.bossName}`,W/2,y0+16*u,'#ffd34a','#3a0a04',5*u);x.font=nunito(12*u,900);x.fillStyle='#fff';x.fillText(`DEAD OR ALIVE · $${L.bounty.toLocaleString()}`,W/2,y0+36*u);x.globalAlpha=1;}
+ function speech(e){const u=U(),Y=sy(e.y-92);x.font=nunito(12*u,900);const w=Math.min(W*.7,x.measureText(e.say.text).width+20*u),X=Math.min(W-w/2-8,Math.max(w/2+8,sx(e.x)));
   x.fillStyle='#fff';x.strokeStyle='#000';x.lineWidth=2;x.beginPath();x.roundRect?.(X-w/2,Y-14*u,w,26*u,8*u);x.fill();x.stroke();x.beginPath();x.moveTo(X-6*u,Y+12*u);x.lineTo(X+2*u,Y+22*u);x.lineTo(X+8*u,Y+12*u);x.fill();
   x.fillStyle='#1a0a04';x.textAlign='center';x.textBaseline='middle';x.fillText(e.say.text,X,Y,w-12*u);}
  function goArrow(){const u=U(),X=view.x+view.w-70*u,Y=view.y+view.h*.35;x.font=bangers(34*u);x.textAlign='center';x.textBaseline='middle';outlined('GO!',X,Y,'#ffd34a','#3a0a04',6*u);
