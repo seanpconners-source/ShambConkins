@@ -40,6 +40,7 @@ const {refitCatalog, randomArcadePick, showView, updateBoard, showDialog, resolv
 const {applyTheme}=require("src/theme.js");
 const {brandHTML, portraitHTML, locationArtHTML, itemArtHTML}=require("src/assets.js");
 const {configureLauncher, requestGame, cancelGameLaunch, exitGame, restartGame, presentResult}=require("src/gameLauncher.js");
+const {flushScores}=require("src/scores.js");
 const {setSolo,soloSettings}=require("src/solo.js");
 const {sound, vibrate, audioContext, installAudioUnlock, startMusic, stopMusic, setMusicZone, setMusicScene, nowPlaying}=require("src/audio.js");
 const {biomeFor}=require("src/biomes.js");
@@ -81,7 +82,7 @@ const {PKMN_CATALOG_ITEMS}=require("src/data/pkmnItems.js");
 let movementToken=0;
 let setupSelected=['sean','amber'],setupNames=['Sean','Amber'],catalogQuery='',catalogFilter='all',catalogPage=0;
 const e=escapeHTML;
-initFullscreen();void initPWA({restartOK:()=>!store.session,version:VERSION});{let refit=0;const later=()=>{clearTimeout(refit);refit=setTimeout(refitCatalog,180);};window.addEventListener('resize',later);document.addEventListener('fullscreenchange',later);document.addEventListener('webkitfullscreenchange',later);}
+initFullscreen();void initPWA({restartOK:()=>!store.session,version:VERSION});setTimeout(()=>void flushScores(),8000);{let refit=0;const later=()=>{clearTimeout(refit);refit=setTimeout(refitCatalog,180);};window.addEventListener('resize',later);document.addEventListener('fullscreenchange',later);document.addEventListener('webkitfullscreenchange',later);}
 store.profile=loadProfile();const saved=readJSON(RUN_KEY);store.run=validRun(saved)?saved:null;if(store.run&&!store.profile.earnedUnlocks['gordon-ramsay'])for(const p of store.run.players)if(p.character==='gordon-ramsay')p.character=p.owner==='Sean'?'sean':'amber';if(store.run&&!differentCharacters(...store.run.players.map(p=>p.character))){store.run.players[1].character=availableCharacters(store.profile,'Amber').find(id=>differentCharacters(id,store.run.players[0].character))||'amber';if(!differentCharacters(...store.run.players.map(p=>p.character)))store.run.players[0].character='sean';}upgradeRunFormat(store.run);updateProgression(store.profile);
 // Draft display names follow a loaded run, while roster ownership remains Sean/Amber.
 // The title screen's Choose Characters picks win; a pick that is no longer unlocked falls back to the roster's starter.

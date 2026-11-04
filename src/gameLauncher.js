@@ -6,6 +6,7 @@ const {ENGINES}=require("src/engines/index.js");
 const {GameSession}=require("src/engines/session.js");
 const {animateRoulette}=require("src/roulette.js");
 const {showDialog, closeDialog, unlockDialog, updateBoard, toast}=require("src/ui.js");
+const {submitScore}=require("src/scores.js");
 const {gameArtHTML, portraitHTML, warmFaces}=require("src/assets.js");
 const {recordGame, recruitReward, availableCharacters, canRecruit, saveProfile, validatedBroforceClaims, noteRecent}=require("src/profile.js");
 const {PROFILE_KEY,RUN_KEY,readDurableJSON,writeDurableJSON,validRun,BROFORCE_IDS,validBroforceAttempt,validBroforceTerminal,validBroforceEvidence,validBroforceIntent}=require('src/persistence.js');
@@ -355,6 +356,8 @@ async function settleSolo(game,scores,label,players,solo,cageRecruits){
  if(solo.duel?.board){const won=typeof solo.won==='boolean'?solo.won:solo.kind==='cpu'?scores[0]>scores[1]:level>0;if(solo.kind!=='net')recordSolo(store.profile,game.id,{score,level});recordBossTier(game,won);saveProfile(store.profile);store.arcade=false;await solo.duel.finish({score,level,label,won,recruits:(Array.isArray(cageRecruits?.[0])?cageRecruits[0]:[]).slice(0,10)});return;}
  const duel=solo.duel?await solo.duel.finish({score,level,label}):null;if(serial!==launchSerial)return;
  const teamDuel=coop&&duel&&!duel.forfeit&&!duel.abandoned,won=teamDuel?!!solo.won:duel?duel.won:typeof solo.won==='boolean'?solo.won:solo.kind==='cpu'?scores[0]>scores[1]:level>0;
+ // the shared scoreboard (src/scores.js): 1-player runs and online duels, each phone its own score (not team totals or 2P online)
+ if(solo.kind!=='net'&&!coop&&score>0)void submitScore(game.id,{name:p.name,score,character:p.character}).then(r=>{if(r?.rank&&r.rank<=10)toast(`🏆 #${r.rank} on the ${game.title} scoreboard`);});
  recordGame(store.profile,game,won?0:null,scores);const rec=solo.kind==='net'?{best:{score,level},newBest:false}:recordSolo(store.profile,game.id,{score,level});const unlocked=[],tierLine=recordBossTier(game,won).trim();
  if(won&&ARCADE_RECRUITS){const pool=gameRecruitPool(game,store.profile,p),chance=recruitmentChance(store.profile,p,gameHasGuaranteedRecruit(game,store.profile,p));
   if(!cageGame(game)&&pool.length&&Math.random()<chance){const actual=recruitReward(store.profile,pick(pool).id,p.owner,'game');if(actual)unlocked.push(actual);}

@@ -427,7 +427,8 @@
   "src/data/characterQuotes.js",
   "src/data/keyPlacements.js",
   "src/data/sunsetSounds.js",
-  "src/engines/sunsetAudio.js"
+  "src/engines/sunsetAudio.js",
+  "src/scores.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

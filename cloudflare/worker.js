@@ -28,11 +28,13 @@ const ICON = /^\/icons\/([a-z0-9-]+\.png)$/;
 export default {
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
-    if (req.method !== 'GET' && req.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
+    if (req.method !== 'GET' && req.method !== 'HEAD' && !(url.pathname.startsWith('/scores/') && (req.method === 'POST' || req.method === 'OPTIONS'))) return new Response('Method not allowed', { status: 405 });
     let path = url.pathname.replace(/\/+$/, '') || '/';
     if (path === '/index.html') path = '/';   // the offline cache (sw.js) asks for the game by this name
     const room = path.match(/^\/room\/([^/]{1,80})$/);
     if (room) return roomSocket(req, env, room[1]);
+    const board = path.match(/^\/scores\/([a-z0-9-]{1,64})$/);
+    if (board) return scoresRequest(req, env, board[1]);
     try {
       if (path === '/version') return text(await latestTag(env, ctx));
       const icon = path.match(ICON), app = APP_FILES[path] || (icon && [icon[1], 'image/png', 'public, max-age=86400']);
@@ -205,6 +207,45 @@ export class Room extends DurableObject {
     if (a.seat != null) for (const p of this.seated(ws)) this.send(p.ws, { t: 'leave', seat: a.seat });
   }
   async webSocketError(ws) { await this.webSocketClose(ws, 1011); }
+}
+
+// ---- high-score tables (ROADMAP I13) ----
+// GET /scores/<game id> → {top: [{name, score, character, at, v}...]}; POST the same path with a text/plain JSON body
+// {name, score, character, v, install} → keeps that name's best for the game, answers {top, rank}. One table per game,
+// all in one Durable Object (SQLite). Anti-junk: whole numbers 0..1e10, short clean names, one entry per name per game,
+// 40 submissions an hour per install id. Open to any origin (a downloaded copy of the game posts from file://);
+// text/plain keeps the browser from sending a preflight.
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' };
+async function scoresRequest(req, env, game) {
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+  if (!env.SCORES) return new Response(JSON.stringify({ error: 'no scores here' }), { status: 503, headers: { ...CORS, 'Content-Type': 'application/json' } });
+  const stub = env.SCORES.get(env.SCORES.idFromName('all'));
+  const r = await stub.fetch(new Request(`https://scores/${game}`, { method: req.method === 'POST' ? 'POST' : 'GET', body: req.method === 'POST' ? await req.text() : undefined }));
+  return new Response(r.body, { status: r.status, headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+}
+export class Scores extends DurableObject {
+  constructor(ctx, env) {
+    super(ctx, env);
+    this.sql = ctx.storage.sql;
+    this.sql.exec('CREATE TABLE IF NOT EXISTS scores (game TEXT, name TEXT, score INTEGER, character TEXT, at INTEGER, v TEXT, PRIMARY KEY (game, name))');
+    this.rate = new Map();
+  }
+  top(game) { return this.sql.exec('SELECT name, score, character, at, v FROM scores WHERE game = ? ORDER BY score DESC, at ASC LIMIT 10', game).toArray(); }
+  async fetch(req) {
+    const game = new URL(req.url).pathname.slice(1), json = (o, status = 200) => new Response(JSON.stringify(o), { status });
+    if (req.method !== 'POST') return json({ top: this.top(game) });
+    if (req.headers.get('content-length') > 2000) return json({ error: 'too big' }, 413);
+    let m; try { m = JSON.parse(await req.text()); } catch { return json({ error: 'bad json' }, 400); }
+    const name = String((m && m.name) ?? '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16), install = clean(m && m.install, 64) || 'anon', score = Number(m && m.score);
+    if (!name || !Number.isInteger(score) || score < 0 || score > 1e10) return json({ error: 'bad score' }, 400);
+    const now = Date.now(), hits = (this.rate.get(install) || []).filter(t => now - t < 3600000);
+    if (hits.length >= 40) return json({ error: 'slow down' }, 429);
+    hits.push(now); this.rate.set(install, hits);
+    const old = this.sql.exec('SELECT score FROM scores WHERE game = ? AND name = ?', game, name).toArray()[0];
+    if (!old || score > old.score) this.sql.exec('INSERT OR REPLACE INTO scores (game, name, score, character, at, v) VALUES (?, ?, ?, ?, ?, ?)', game, name, score, clean(m.character, 64), now, clean(m.v, 16));
+    const best = Math.max(score, old ? old.score : 0), rank = 1 + this.sql.exec('SELECT COUNT(*) AS n FROM scores WHERE game = ? AND score > ?', game, best).toArray()[0].n;
+    return json({ top: this.top(game), rank, best });
+  }
 }
 
 // GitHub REST API (fallback only). Add a GITHUB_TOKEN secret to the Worker to lift the rate limit.

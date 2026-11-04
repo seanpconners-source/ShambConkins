@@ -13,6 +13,8 @@ const {escapeHTML:e}=require("src/utils.js");
 const {store}=require("src/state.js");
 const {tone}=require("src/audio.js");
 const {saveProfile,toggleFavorite}=require("src/profile.js");
+const {cachedTop,loadTop}=require("src/scores.js");
+const {portraitURL}=require("src/assets.js");
 
 // Families: [key, title, subtitle, hero character, member ids]. The tile/hero uses the family; the version page lists members.
 const FAMILIES=[
@@ -225,7 +227,7 @@ function art(g,{fam=null,size=''}={}){
 }
 
 // ---- the screen ----
-const state={focus:null,family:null,grid:false};
+const state={focus:null,family:null,grid:false,scores:null};
 let current=null;
 // opts: {list, partsFor(g), filter, filters:[[id,label]], query, strip (1P/online strip HTML), devStrip, extraBosses}
 function arcadeConsoleHTML(opts){
@@ -267,10 +269,28 @@ function infoHTML(it){
    <p class="arc-rules">${e(it.members.slice(0,6).map(g=>shortTitle(g,f)).join(' · '))}${it.members.length>6?' …':''}</p>
    <div class="arc-actions"><button class="arc-cta" data-arc-family="${e(f.key)}">Choose a version ▸</button></div>`;}
  const g=it.g,p=current.partsFor(g);
- return `${titleHTML(g.title,logoOf(it))}<div class="arc-src">${e(g.srcLabel||g.source)} · ${e(catName(g))}</div><div class="arc-chips">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div>
+ return `${titleHTML(g.title,logoOf(it))}<div class="arc-src">${e(g.srcLabel||g.source)} · ${e(catName(g))}</div><div class="arc-chips">${p.chips.map(c=>`<span>${c}</span>`).join('')}${recordHTML(g.id)}</div>
   <p class="arc-rules">${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${starHTML(g)}${p.dev||''}</div>`;
 }
 // The ☆ next to a game's play button keeps it on the Favorites shelf.
+// The shared scoreboard (ROADMAP I13, src/scores.js): a 🏆 chip with the record and who holds it (from the last copy this phone
+// saw, refreshed when the game is focused); tapping it opens the top 10 from every phone.
+const recordText=t=>t?.top?.length?`🏆 ${t.top[0].score.toLocaleString()} · ${t.top[0].name}`:'';
+function recordHTML(id){const txt=recordText(cachedTop(id));return `<button class="arc-record" data-arc-scores="${e(id)}"${txt?'':' hidden'}>${e(txt)}</button>`;}
+let recordRun=0;
+async function refreshRecord(id){const run=++recordRun,t=await loadTop(id);if(run!==recordRun)return;
+ document.querySelectorAll(`.arcade-console .arc-record[data-arc-scores="${CSS.escape(id)}"]`).forEach(b=>{const txt=recordText(t);b.textContent=txt;b.hidden=!txt;});
+ if(state.scores===id)drawScores(id,t);}
+const CHAR_IDS=new Set(CHARACTERS.map(c=>c.id));
+const myNames=()=>new Set((store.setupNames||[]).map(n=>String(n||'').trim().toLowerCase()).filter(Boolean));
+const ago=at=>{const d=Math.floor((Date.now()-at)/86400000);return d<1?'today':d<2?'yesterday':d<30?`${d} days ago`:new Date(at).toLocaleDateString();};
+function drawScores(id,t){const box=document.querySelector('.arcade-console .arc-scores');if(!box)return;const g=current?.items.map(x=>x.g).find(x=>x?.id===id),mine=myNames(),top=t?.top||[];
+ box.innerHTML=`<div class="arc-scores-card" role="dialog" aria-label="Scoreboard"><header><h3>🏆 ${e(g?.title||'Scoreboard')}</h3><button class="arc-icon" data-arc-scores-close aria-label="Close">✕</button></header>
+  ${top.length?`<ol>${top.map((r,i)=>{const face=own(r.character)||(CHAR_IDS.has(r.character)?portraitURL(r.character):null);return `<li class="${mine.has(String(r.name).toLowerCase())?'me':''}"><b>${i+1}</b>${face?`<img src="${e(face)}" alt="" loading="lazy">`:`<span class="arc-scores-face">${e(String(r.name||'?')[0])}</span>`}<span class="n">${e(r.name)}<small>${e(ago(r.at))}</small></span><span class="s">${Number(r.score).toLocaleString()}</span></li>`;}).join('')}</ol>`:`<p class="arc-scores-empty">${t?'No scores yet. Play it in 1 Player to set the first one.':'Loading…'}</p>`}
+  <p class="arc-scores-note">${!t?'':t.fresh?'Best score of every player, from every phone. 1-player runs count.':`Offline: the board as this phone last saw it (${e(ago(t.at))}).`}</p></div>`;}
+function openScores(id){const root=document.querySelector('.arcade-console');if(!root)return;let box=root.querySelector('.arc-scores');
+ if(!box){box=document.createElement('div');box.className='arc-scores';root.append(box);}state.scores=id;box.hidden=false;const t=cachedTop(id);drawScores(id,t&&{...t,fresh:false});void refreshRecord(id);}
+function closeScores(){state.scores=null;const box=document.querySelector('.arcade-console .arc-scores');if(box){box.hidden=true;box.innerHTML='';}}
 function starHTML(g){const on=(store.profile.favorites||[]).includes(g.id);return `<button class="arc-star${on?' on':''}" data-arc-star="${e(g.id)}" aria-pressed="${on}" aria-label="${on?'Remove from favorites':'Add to favorites'}">${on?'★':'☆'}</button>`;}
 // The console's Play buttons start the game at once (no Start/Back card; app.js passes quick to requestGame).
 const quick=html=>String(html).replace(/data-action="arcade-(game|solo)"/,'data-quick="1" data-action="arcade-$1"');
@@ -308,7 +328,7 @@ function focusTile(i,{scroll=true}={}){
  state.focus=it.key;root.style.setProperty('--arc-dir',i>=was?1:-1);root.style.setProperty('--arc-h',hue(it.fam?.title||it.g.source));
  const key=keyArt(it);
  swapKeyArt(root.querySelector('.arc-keyart'),it,key,()=>{root.classList.toggle('has-key',!!key);swapLayer(root.querySelector('.arc-hero-art'),key?'':heroArt(it));});for(const d of [1,-1,2,-2])warmPic(keyArt(current.items[i+d]),true);
- const info=root.querySelector('.arc-info');info.innerHTML=infoHTML(it);restart(info,'arc-info-in');
+ const info=root.querySelector('.arc-info');info.innerHTML=infoHTML(it);restart(info,'arc-info-in');if(it.g)void refreshRecord(it.g.id);
  root.querySelectorAll('.arc-tile').forEach((t,j)=>{t.classList.toggle('on',j===i);t.setAttribute('aria-selected',String(j===i));});
  const tile=root.querySelectorAll('.arc-tile')[i];if(scroll&&tile)tile.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',inline:'center',block:'nearest'});
  if(store.profile?.settings.sound)tone(660+((i%5)*40),.05,.02,'triangle');
@@ -318,7 +338,7 @@ function openFamily(key){const root=document.querySelector('.arcade-console');if
 function closeFamily(){state.family=null;const s=document.querySelector('.arcade-console .arc-fam');if(!s)return;if(matchMedia('(prefers-reduced-motion: reduce)').matches){s.hidden=true;s.innerHTML='';return;}s.classList.add('arc-fam-out');setTimeout(()=>{if(state.family)return;s.hidden=true;s.innerHTML='';s.classList.remove('arc-fam-out');},260);}
 // After a rebuild: put the focused tile in view (no animation) and reopen the version page if one was open.
 function installArcadeConsole(){const root=document.querySelector('.arcade-console');if(!root||!current)return;placeKeys();warmKeyArt();
- const i=current.items.findIndex(it=>it.key===state.focus);const tile=root.querySelectorAll('.arc-tile')[i];if(tile){const row=root.querySelector('.arc-row');row.scrollLeft=tile.offsetLeft-row.clientWidth/2+tile.clientWidth/2;}}
+ const i=current.items.findIndex(it=>it.key===state.focus);if(current.items[i]?.g)void refreshRecord(current.items[i].g.id);state.scores=null;const tile=root.querySelectorAll('.arc-tile')[i];if(tile){const row=root.querySelector('.arc-row');row.scrollLeft=tile.offsetLeft-row.clientWidth/2+tile.clientWidth/2;}}
 // The dice button: this game's own page (its picture, rules and Play button), not the game itself. It stays on this list when the
 // game has its own tile here; otherwise it returns the category to switch to, whose list shows every game on its own.
 function focusArcadeGame(g){const fk=ONE_TILE.has(familyOf(g))?'f:'+familyOf(g):'g:'+g.id,i=current?current.items.findIndex(it=>it.key===fk):-1;
@@ -326,6 +346,8 @@ function focusArcadeGame(g){const fk=ONE_TILE.has(familyOf(g))?'f:'+familyOf(g):
  state.focus=fk;state.family=null;state.grid=false;return g.bossId?'boss':g.pokemon?'pokemon':[...categoriesOf(g)].find(c=>CAT_NAME[c])||'all';}
 function resetArcadeConsole(){state.focus=null;state.family=null;state.grid=false;}
 if(typeof document!=='undefined')document.addEventListener('click',ev=>{
+ if(ev.target.closest?.('.arcade-console .arc-scores')&&!ev.target.closest('.arc-scores-card')||ev.target.closest?.('[data-arc-scores-close]')){closeScores();return;}
+ const sb=ev.target.closest?.('.arcade-console [data-arc-scores]');if(sb){openScores(sb.dataset.arcScores);return;}
  const t=ev.target.closest?.('[data-arc-focus],[data-arc-family],[data-arc-close],[data-arc-search],[data-arc-all],[data-arc-pick],[data-arc-grid-close],[data-arc-star]');if(!t||!t.closest('.arcade-console'))return;
  if(t.dataset.arcStar){const id=t.dataset.arcStar,on=toggleFavorite(store.profile,id);saveProfile(store.profile);
   document.querySelectorAll('.arcade-console [data-arc-star]').forEach(b=>{if(b.dataset.arcStar!==id)return;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));b.setAttribute('aria-label',on?'Remove from favorites':'Add to favorites');b.textContent=on?'★':'☆';});
@@ -343,7 +365,7 @@ if(typeof document!=='undefined')document.addEventListener('click',ev=>{
 // or the previous one (drag right) comes in, like the arrow keys. Rows that scroll sideways themselves (tiles, category pills,
 // player strip, search) and the version / View all pages keep their own touches. A drag that turned into a swipe doesn't
 // also count as a tap on the button it started on. Vertical moves are left alone.
-const SWIPE_SKIP='.arc-row,.arc-pills,.arc-strip,.arc-search,.arc-fam,.arc-grid-page,input,select,textarea';
+const SWIPE_SKIP='.arc-row,.arc-pills,.arc-strip,.arc-search,.arc-fam,.arc-grid-page,.arc-scores,input,select,textarea';
 let swipe=null,swallowClick=0;
 function swipeParts(root){return [root.querySelector('.arc-info'),root.querySelector('.arc-keyart'),root.querySelector('.arc-hero-art')].filter(Boolean);}
 function swipeMove(root,dx,anim){for(const el of swipeParts(root)){const k=el.classList.contains('arc-info')?1:.45;el.style.transition=anim?'transform .22s cubic-bezier(.2,.8,.3,1),opacity .22s':'none';
@@ -369,6 +391,7 @@ if(typeof document!=='undefined')document.addEventListener('keydown',ev=>{
  if(!document.querySelector('.arcade-console')||!current||ev.target.closest?.('input,textarea,dialog'))return;
  const i=current.items.findIndex(it=>it.key===state.focus);
  if(ev.key==='ArrowRight'||ev.key==='ArrowLeft'){ev.preventDefault();focusTile(Math.max(0,Math.min(current.items.length-1,i+(ev.key==='ArrowRight'?1:-1))));}
+ else if(ev.key==='Escape'&&state.scores)closeScores();
  else if(ev.key==='Escape'&&state.family)closeFamily();
  else if(ev.key==='Escape'&&state.grid)closeGrid();
 });

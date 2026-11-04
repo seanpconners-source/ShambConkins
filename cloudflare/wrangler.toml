@@ -23,3 +23,12 @@ class_name = "Room"
 [[migrations]]
 tag = "rooms-v1"
 new_sqlite_classes = ["Room"]
+
+# High-score tables (ROADMAP I13): one Durable Object (class Scores in worker.js, SQLite) holds every game's top scores.
+[[durable_objects.bindings]]
+name = "SCORES"
+class_name = "Scores"
+
+[[migrations]]
+tag = "scores-v1"
+new_sqlite_classes = ["Scores"]

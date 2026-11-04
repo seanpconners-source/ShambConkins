@@ -1031,3 +1031,23 @@ body .title-screen .ts-tile .ts-reel img.ts-cut{transition:opacity 1.2s ease,tra
 .arcade-console .arc-row,.arcade-console .arc-pills,.arcade-console .arc-strip{touch-action:pan-x}
 .arcade-console.arc-swiping .arc-keyart img{animation-play-state:paused}
 .arcade-console.arc-swiping{user-select:none;-webkit-user-select:none}
+/* I13 shared scoreboard: 🏆 record chip on the game's page + top-10 sheet (arcadeConsole.js recordHTML/openScores) */
+.arcade-console .arc-chips .arc-record{font:800 10.5px/1 var(--c-text);letter-spacing:.04em;border:0;border-radius:6px;padding:4px 8px;min-height:0;background:#ffd34d29;color:#ffe08a;box-shadow:inset 0 0 0 1px #ffd34d55;cursor:pointer;text-transform:none}
+.arcade-console .arc-chips .arc-record:active{transform:translateY(1px)}
+.arcade-console .arc-chips .arc-record[hidden]{display:none}
+.arc-scores{position:absolute;inset:0;z-index:20;background:#03061199;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;padding:16px;animation:arc-fade .2s ease-out}
+.arc-scores[hidden]{display:none}
+.arc-scores-card{width:min(100%,460px);max-height:min(82vh,640px);overflow:auto;background:#0d1530;border:1px solid #ffffff1f;border-radius:22px;padding:14px 14px 10px;box-shadow:0 18px 50px #000a}
+.arc-scores-card header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.arc-scores-card h3{margin:0;font:400 24px/1.05 var(--c-display);letter-spacing:.03em;color:#fff}
+.arc-scores-card ol{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.arc-scores-card li{display:grid;grid-template-columns:22px 38px 1fr auto;align-items:center;gap:10px;padding:6px 10px;border-radius:14px;background:#ffffff0d}
+.arc-scores-card li:first-child{background:#ffd34d1f;box-shadow:inset 0 0 0 1px #ffd34d44}
+.arc-scores-card li.me{box-shadow:inset 0 0 0 1.5px #4d8dffaa}
+.arc-scores-card li>b{font:800 14px var(--c-text);color:#aebbe0;text-align:center}
+.arc-scores-card li img,.arc-scores-face{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#ffffff14;display:grid;place-items:center;font:800 16px var(--c-text);color:#dbe5ff}
+.arc-scores-card .n{font:800 14px/1.15 var(--c-text);color:#fff;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.arc-scores-card .n small{display:block;font:600 11px var(--c-text);color:#aebbe0}
+.arc-scores-card .s{font:400 20px var(--c-display);letter-spacing:.03em;color:#ffe08a}
+.arc-scores-empty,.arc-scores-note{font:600 12.5px/1.4 var(--c-text);color:#aebbe0;margin:8px 2px 4px}
+@keyframes arc-fade{from{opacity:0}to{opacity:1}}
