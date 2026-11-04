@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.83.3
+
+- **110 more items have their own picture**: the Triforce shard, the blue shell, the ocarina, Doc Brown's Mr. Fusion, the noisy cricket, the scouter, the World's Best Boss mug, Dan Flashes, Towelie, pocket sand, Night Cheese, the Golden God boombox, the Ducks jersey, the Jedi holocron, the R2 repair kit, the facehugger egg and more. 214 items now have one.
+- **Fixed: Pokémon battles that never ended.** When a computer-played battle (the CPU's turns in a 1-player board game) ran its first move out of PP, it kept picking that move forever and the Game Boy screen stayed up. It now uses its other moves. Last night's soak test hit this in 14 runs.
+
 ## v0.83.2
 
 - **81 more items have their own picture**: McLovin's ID, the Dude's rug, Chigurh's coin, the Ace Ventura card, Wayne's guitar, the Necronomicon, the boomstick, Daft Punk's helmet, Tetris on Game Boy, the golden gun, the Power Loader and more. 104 items now have one.
