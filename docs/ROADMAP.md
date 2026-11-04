@@ -22,12 +22,12 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **M21** `[verify]` (owner, Nov 3; v0.80.7) Pictures must appear immediately: Arcade backgrounds when picking a game, faces on the get-ready card. Check on the real phone after updating.
 - **M22** `[verify]` (owner, Nov 3; v0.80.7) 🎲 opens a random game's page, not the Ready card. Hangman Unchained = one tile on every shelf with its 3 versions on one page.
 
-- **M23** `[verify]` (owner, Nov 3: "looks weird on normal phones", Amber's Samsung = 360x780) Arcade backgrounds on screens
+- **M23** `[verify]` (v0.80.8; owner, Nov 3: "looks weird on normal phones", Amber's Samsung = 360x780) Arcade backgrounds on screens
   that aren't one of the picker's: `mapLock` (arcadeConsole.js) moves the nearest locked setting by the layout (faces keep
   their gap above the text and their share of the width; with less height the room above them goes first, then they shrink),
   not by the screen's centre. Picker screens `amber-phone` 360x780 + sideways added (to lock). Genre line moved under the
   logo, above the chips, everywhere. Checked by screenshots at 16 phone sizes (iPhone SE to Pro Max, Samsung, Pixel, Fold).
-- **U1** `[verify]` (owner, Nov 3) Updates often don't come through on home Wi-Fi (phone and PC) but do at once on 5G or a
+- **U1** `[verify]` (v0.80.8; owner, Nov 3) Updates often don't come through on home Wi-Fi (phone and PC) but do at once on 5G or a
   VPN. Done: Update now downloads the new version first, with a progress bar, and restarts only when it is in (the start
   of the game waits just 2.5 s for the site, then plays the saved copy, so a slow network kept reopening the old one);
   when that saved-for-next-time copy arrives later the app offers Restart; Settings → Check for updates says what failed
