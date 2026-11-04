@@ -1026,3 +1026,8 @@ body .title-screen .ts-tile .ts-reel img.ts-cut{transition:opacity 1.2s ease,tra
 
 /* Pause card: Restart beside Exit (session.js pass, gameLauncher restartGame) */
 .pass-top .pass-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+/* M24: sideways swipes on the Arcade game page change game (arcadeConsole.js); the sideways rows keep their own scrolling */
+.arcade-console{touch-action:pan-y}
+.arcade-console .arc-row,.arcade-console .arc-pills,.arcade-console .arc-strip{touch-action:pan-x}
+.arcade-console.arc-swiping .arc-keyart img{animation-play-state:paused}
+.arcade-console.arc-swiping{user-select:none;-webkit-user-select:none}

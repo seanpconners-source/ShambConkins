@@ -338,6 +338,32 @@ if(typeof document!=='undefined')document.addEventListener('click',ev=>{
  else if(t.dataset.arcClose!==undefined)closeFamily();
  else if(t.dataset.arcSearch!==undefined){const s=document.querySelector('.arcade-console .arc-search');s.hidden=!s.hidden;if(!s.hidden)s.querySelector('input').focus();}
 });
+// Swipe through the games (owner, Nov 4, M24): a sideways drag anywhere on the game's page (picture, logo, text, buttons)
+// moves the picture and text with the finger; let go past ~22% of the width (or a quick flick) and the next game (drag left)
+// or the previous one (drag right) comes in, like the arrow keys. Rows that scroll sideways themselves (tiles, category pills,
+// player strip, search) and the version / View all pages keep their own touches. A drag that turned into a swipe doesn't
+// also count as a tap on the button it started on. Vertical moves are left alone.
+const SWIPE_SKIP='.arc-row,.arc-pills,.arc-strip,.arc-search,.arc-fam,.arc-grid-page,input,select,textarea';
+let swipe=null,swallowClick=0;
+function swipeParts(root){return [root.querySelector('.arc-info'),root.querySelector('.arc-keyart'),root.querySelector('.arc-hero-art')].filter(Boolean);}
+function swipeMove(root,dx,anim){for(const el of swipeParts(root)){const k=el.classList.contains('arc-info')?1:.45;el.style.transition=anim?'transform .22s cubic-bezier(.2,.8,.3,1),opacity .22s':'none';
+ el.style.transform=dx?`translateX(${(dx*k).toFixed(1)}px)`:'';if(el.classList.contains('arc-info'))el.style.opacity=dx?String(Math.max(.25,1-Math.abs(dx)/(root.clientWidth*.7))):'';}}
+if(typeof document!=='undefined'){
+ document.addEventListener('pointerdown',ev=>{const root=ev.target.closest?.('.arcade-console');
+  if(!root||!current||state.family||state.grid||ev.button>0||ev.target.closest(SWIPE_SKIP)||current.items.length<2)return;
+  swipe={root,id:ev.pointerId,x:ev.clientX,y:ev.clientY,t:performance.now(),on:false,dx:0};},true);
+ document.addEventListener('pointermove',ev=>{if(!swipe||ev.pointerId!==swipe.id)return;const dx=ev.clientX-swipe.x,dy=ev.clientY-swipe.y;
+  if(!swipe.on){if(Math.abs(dy)>14&&Math.abs(dy)>Math.abs(dx)){swipe=null;return;}if(Math.abs(dx)<12||Math.abs(dx)<Math.abs(dy)*1.4)return;swipe.on=true;swipe.root.classList.add('arc-swiping');}
+  const i=current.items.findIndex(x=>x.key===state.focus),edge=(dx>0&&i<=0)||(dx<0&&i>=current.items.length-1);
+  swipe.dx=edge?dx*.3:dx;swipeMove(swipe.root,swipe.dx,false);},true);
+ const end=ev=>{if(!swipe||ev.pointerId!==swipe.id)return;const sw=swipe;swipe=null;if(!sw.on)return;sw.root.classList.remove('arc-swiping');swallowClick=performance.now();
+  const W=sw.root.clientWidth||360,v=sw.dx/Math.max(1,performance.now()-sw.t),i=current?current.items.findIndex(x=>x.key===state.focus):-1,
+   dir=ev.type==='pointercancel'?0:Math.abs(sw.dx)>W*.22||Math.abs(v)>.5&&Math.abs(sw.dx)>30?(sw.dx<0?1:-1):0,j=i+dir;
+  if(dir&&current&&j>=0&&j<current.items.length){swipeMove(sw.root,0,false);focusTile(j);}else swipeMove(sw.root,0,true);};
+ document.addEventListener('pointerup',end,true);document.addEventListener('pointercancel',end,true);
+ // the tap that ended a swipe is not a click on whatever button it started on
+ document.addEventListener('click',ev=>{if(performance.now()-swallowClick<350&&ev.target.closest?.('.arcade-console')){ev.stopPropagation();ev.preventDefault();swallowClick=0;}},true);
+}
 // Keyboard / controller-style browsing on desktop: left/right move the focus, Enter opens a family.
 if(typeof document!=='undefined')document.addEventListener('keydown',ev=>{
  if(!document.querySelector('.arcade-console')||!current||ev.target.closest?.('input,textarea,dialog'))return;

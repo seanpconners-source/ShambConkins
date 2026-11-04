@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Swipe through the Arcade**: on a game's page, swipe left for the next game and right for the previous one, anywhere on the picture, logo, text or buttons. The picture and text follow your finger and snap to the next game. Taps, the tile row and the category pills work as before.
+
 ## v0.80.8
 
 - **Arcade backgrounds on every phone**: on a screen that isn't one of the Background Picker's (most phones), the game takes the picker screen closest in shape and moves your setting over by the layout: Sean and Amber keep the same gap above the text and the same share of the width, and on a shorter screen the empty room above them is used up first before they get smaller. Before, the setting was only moved round the middle of the screen, so on shorter phones the faces slid under the text. Checked on 16 phone sizes (iPhone SE to Pro Max, Samsung, Pixel, Fold).

@@ -34,7 +34,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   and how long it took; the site streams the page instead of making the first phone wait. If it still fails on Wi-Fi only,
   it's the network: test https://shambconkins.loki-mylo.work/version on Wi-Fi; suspects = the router's security filter /
   DNS blocking the .work domain, or broken HTTP/3 (Cloudflare → Speed → Protocol Optimization → HTTP/3 off, as a test).
-- **M24** `[todo]` (owner, Nov 4) Arcade game page: swipe left/right anywhere on the hero (background, title, Challenge/Play
+- **M24** `[verify]` (owner, Nov 4; built Nov 4, unreleased, tests/arcade-swipe.mjs) Arcade game page: swipe left/right anywhere on the hero (background, title, Challenge/Play
   button area) to go to the previous/next game on the shelf, like flicking through cards. Background, logo and info slide
   with the finger and snap to the next game; the tile row follows. Taps and vertical scrolling must keep working.
 - **N4** `[idea]` (owner, Nov 3-4) Egg game = **"Feed Eggs"** from *I Think You Should Leave* S3E2 ("I Can Do Whatever I
@@ -43,8 +43,9 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   (one egg is sometimes 40 eggs); going too fast makes the eggs miss the mouth; the prize at the end is the "nude egg".
   Original art by Alec Robbins. Fan remake: egggame.org (Matthew Barton) with the random egg-count voice. Not checked
   first-hand: egggame.org and the news sites are blocked from the cloud session's network (allow them there, or the owner
-  describes / screen-records the fan game). Questions for the owner before building: 1P score chase or 2P race, how
-  close to the sketch's look, and whether the ending reveal stays in.
+  describes / screen-records the fan game). OWNER'S ANSWERS (Nov 4): 2P race on one screen (both feed Big Egg at once, the
+  voice calls the counts, too fast = misses, higher egg count wins); keep the nude-egg reveal for the winner; the owner will
+  allow egggame.org in the environment's network settings so it can be checked first-hand before building.
 - **P10** `[todo]` (owner, Nov 4) Characters still without their own quote: 362 of 726 (Nov 4 count). Biggest gaps: Mortal
   Kombat 14, South Park 12, Hunter × Hunter 10, Death Stranding 10, Reno 911! 9, King Gizzard 7, Dragon Ball Z 7, Birthday
   Boys 7, the Superman actors 6, Warriors, Little Shop, *NSYNC, Backstreet Boys, WKUK, Idiocracy 5 each; also Dee, Cricket,
