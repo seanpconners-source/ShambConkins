@@ -79,7 +79,7 @@ function cpuMenu(menu){
  if(menu.kind==='main')return 0;
  if(menu.kind==='party'){const i=(menu.list||[]).findIndex(m=>m.hp>0);return i>=0?i:-1;}
  if(menu.kind==='yesno')return 1;
- if(menu.kind==='fight'){const n=(menu.moves||menu.items||[]).length,list=[...Array(n).keys()].filter(ok);return list.length?list[Math.floor(Math.random()*list.length)]:0;}
+ if(menu.kind==='fight'){const ids=menu.moves||[],n=(ids.length?ids:menu.items||[]).length,mon=menu.battler?.mon,pp=i=>!mon||!ids[i]||(mon.pp?.[ids[i]]??1)>0,list=[...Array(n).keys()].filter(i=>ok(i)&&pp(i));return list.length?list[Math.floor(Math.random()*list.length)]:0;}
  return 0;
 }
 async function cpuPk(p,fn){

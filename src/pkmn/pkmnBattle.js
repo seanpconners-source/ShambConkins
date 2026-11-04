@@ -361,7 +361,8 @@ async function battle(opts){
     if(P.recharge){return {kind:'move',move:null};}
     if(P.moves.every(m=>ppLeft(P.mon,m)<=0))return {kind:'move',move:'STRUGGLE'};
     const fm=fightMenu(P);const m=await choose(fm);if(m<0)continue;P.lastMove=m;const id=P.moves[m];
-    if(ppLeft(P.mon,id)<=0){await say('No PP left for this move!');continue;}
+    // The autopilot (CPU turns, test bots) would pick the same empty move forever: it takes the next move with PP.
+    if(ppLeft(P.mon,id)<=0){if(autoPilot)return {kind:'move',move:P.moves.find(x=>ppLeft(P.mon,x)>0)};await say('No PP left for this move!');continue;}
     return {kind:'move',move:id};
    }
    if(c===1){const r=await switchMenu(false);if(r)return r;continue;}

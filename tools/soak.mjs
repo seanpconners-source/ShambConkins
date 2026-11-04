@@ -103,7 +103,7 @@ function jobs() {
     ['route', 'tests/route.mjs', [pick(['390x780', '1100x700', '740x820'])], {}, 400],
     ['solo-board', 'tests/solo-board.mjs', [], {TURNS: String(20 + rnd(20)), WHO: String(who), LIMIT_S: '900'}, 1100],
     ['frank', 'tests/frank.mjs', [], {}, 500], ['endings', 'tests/endings.mjs', [], {}, 500], ['checkpoint', 'tests/checkpoint.mjs', [], {}, 500],
-    ['vault', 'tests/vault.mjs', [], {}, 500], ['boss-ladder', 'tests/boss-ladder.mjs', [], {}, 500],
+    ['vault', 'tests/vault.mjs', [], {}, 500], ['pkmn-autopp', 'tests/pkmn-autopp.mjs', [], {}, 300], ['boss-ladder', 'tests/boss-ladder.mjs', [], {}, 500],
     ['boss-fight', 'tests/bossdiff.mjs', [boss], {DIFF: String(rnd(4)), PH: '20', C: '1', L: pick(['phone:390x780', 'wide:1100x700'])}, 900],
     [`minigames-${shard + 1}-of-${SHARDS}`, 'tests/games.mjs', ['4', '1', '.*', String(shard), String(SHARDS)], {SHAMB_GAME_COOLDOWN_MS: '800'}, 1800],
   ];
