@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Blackjack is a real Vegas table now.** A drawn casino: felt with the printed rules, a padded rail, the chip rack and the card shoe, a dealer from the table's movie or show (Vesper at Casino Royale, Elvis at Viva Las Vegas, Mr. Chow at the Wolfpack, Quark at Quark's) and regulars in the other seats who play their own hands. Real rules: $1,000 each, $25 to $500 a hand, a 3-deck shoe with a cut card (that hand is the last), insurance, doubling, splits, dealer stands on all 17s. Tap chips to bet, tap the felt to hit, swipe sideways to stand. Crowd noise and an original lounge-jazz loop.
+- **Break the bank and the dealer joins you.** Finish a blackjack game with $1,500 or more and the dealer is impressed. Elvis Presley and Mr. Chow can only be recruited this way; Alan Garner is a new character too.
+
 ## v0.83.4
 
 - **9 more items have their own picture**: Austin's drumstick, Hector's spear, Merida's bow, the Master Sword, the neuralyzer, the Camp Crystal machete, Charlie's rat stick, Casey Jones's hockey stick and Kevin's BB gun. 223 items now have one.

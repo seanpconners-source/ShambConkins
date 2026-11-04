@@ -21,6 +21,7 @@ const {PKMN_CATALOG_ITEMS}=require("src/data/pkmnItems.js");
 const {WARP_ITEMS}=require("src/data/warpItems.js");
 const {LAIR_VILLAIN_CHARACTERS}=require("src/data/bondLair.js");
 const {SOUTH_PARK_CHARACTERS}=require("src/data/southPark.js");
+const {DEALER_CHARACTERS}=require("src/data/casinoDealers.js");
 const {balanceItem}=require("src/data/balance.js");
 const {MERGED_CHARACTERS,mergedCharacterId}=require("src/data/characterMerge.js");
 // Preserve the uploaded catalog byte-for-byte. Sean has explicitly disclaimed
@@ -48,6 +49,7 @@ ACTIVE_CATALOG.characters.push(...NEW_CHARACTERS2);
 ACTIVE_CATALOG.characters.push(...NEW_CHARACTERS3.filter(c=>!ACTIVE_CATALOG.characters.some(o=>o.id===c.id)));
 ACTIVE_CATALOG.characters.push(...LAIR_VILLAIN_CHARACTERS);
 ACTIVE_CATALOG.characters.push(...SOUTH_PARK_CHARACTERS);
+ACTIVE_CATALOG.characters.push(...DEALER_CHARACTERS.filter(c=>!ACTIVE_CATALOG.characters.some(o=>o.id===c.id)));
 ACTIVE_CATALOG.characters.push(...POKEMON_CHARACTERS);
 // KC and Mylo always arrive together (the early family event), never one at a time.
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='kc'||c.id==='mylo'?{...c,unlockBy:'dogs',unlockHint:'KC and Mylo arrive together early in your first run.'}:c);

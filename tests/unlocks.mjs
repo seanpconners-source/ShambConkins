@@ -33,6 +33,7 @@ for (const c of C) {
   else if (rec.unlockBy === 'boss') ok = bossUnlocks.has(c.id);
   else if (rec.unlockBy === 'dogs') ok = ['kc','mylo'].includes(c.id);
   else if (rec.unlockBy === 'southpark') ok = req('src/data/southPark.js').SOUTH_PARK_IDS.includes(c.id);
+  else if (rec.unlockBy === 'dealer') ok = Object.values(req('src/data/casinoDealers.js').TABLES).some(t => t.dealer === c.id); // break the bank at their table
   if (!ok && !pairTargets.has(c.id)) unreachable.push(`${c.id} (${rec.unlockBy || 'random'}) ways=[${[...ways]}]`);
 }
 console.log(C.length, 'characters;', unreachable.length, 'without a working unlock path');

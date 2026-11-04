@@ -264,11 +264,11 @@ Endings
 - **F7** `[todo]` Finish missing item artwork.
 - **F8** `[todo]` Pacing, variety, excitement, replay value of the board overall.
 - **F9** `[idea]` Later: a more winding, less predictable main board.
-- **F10** `[idea]` Casino dealers unlockable ("the dealer was impressed and joined your party").
+- **F10** `[part]` (Nov 4: blackjack done: finish with $1,500+ ("break the bank") and the dealer joins you; new dealer-only characters Elvis Presley and Mr. Chow (unlockBy 'dealer'), Vesper and Quark also come this way; poker/roulette/baccarat dealers follow) Casino dealers unlockable ("the dealer was impressed and joined your party").
 
 ## Phase G — polish the good games (section 1)
 
-- **G1** `[todo]` Casino games: real Vegas tables, cards dealt, dealer animations, players around the table, atmosphere.
+- **G1** `[part]` (owner's picks Nov 4: drawn Vegas table, themed dealer + regulars + the F10 unlock, blackjack first then all four. BLACKJACK `[verify]`: engines/vegasBlackjack.js + vegasTable.js kit (drawn room/table/dealer/cards/chips, crowd + lounge jazz), 3-deck shoe and cut card, insurance, double, split, tap = hit / swipe = stand; vs CPU, online. NEXT: five-card draw, roulette, baccarat on the same kit) Casino games: real Vegas tables, cards dealt, dealer animations, players around the table, atmosphere.
 - **G2** `[todo]` Penalty Kicks: fun already; better graphics, animations, sound, presentation.
 - **G3** `[todo]` Mario Kart: backs of heads with helmets, frequent look-backs, wider courses, more interesting play, more stages and many more tracks.
 - **G4** `[part]` Hole.it (owner, Nov 2: good start; the first levels are close, later levels fall apart). Next: study
