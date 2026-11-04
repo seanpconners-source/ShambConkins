@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 186 slots: 35 have key art, 34 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 187 slots: 35 have key art, 34 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -106,6 +106,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `broforce-desert` | Sean of a Gun: Desert Assault | game | · / · |
 | `frogger-heads` | Frogger | game | · / · |
 | `bricks-breaker-quest` | Bricks Breaker Quest | game | ✅ / ✅ |
+| `sundown-showdown` | Sundown Showdown | game | · / · |
 | `bucketheadland-pinball` | Bucketheadland · Buckethead Pinball | version of pinball | ✅ / ✅ |
 | `major-league-fielding` | Major League · Bat & Field | version of baseball | · / · |
 | `taskmaster-micro-relay` | Taskmaster · Frantic Task Relay | version of taskmaster | · / · |

@@ -1,9 +1,11 @@
 # Changelog
 
-## Unreleased
+## v0.82.0
 
 - **Sundown Showdown, round 2**: flick sideways to slide under bullets; hits freeze the action for a split second; three showdowns per stage hold the screen until the gang is down, then GO!; bandits duck behind crates and pop up to shoot; horseback riders gallop through (shoot them off, or jump); crates and barrels stop bullets both ways, so you can take cover too; the boss rides in under a WANTED banner with a line, and gets mad at half health (more bullets, calls his gang); CONTINUE? 10 seconds to tap back in; a bounty tally after each stage; a new title card with both riders. Main Street and the mission now have two-storey fronts with balconies you can jump onto (drag down to drop off), gunmen who come out on the balconies and step out of doors, covered wagons and stacked barrels to hop on and hide behind, troughs, hitching posts and street lamps. Ready for your own sprite art: drop sheets into assets/sundown/ (spec and templates in docs/sundown-sprites/).
 - **Much smaller install**: the installed app now saves the pictures at install (~100 MB) and each game's songs the first time that game opens (Bucketheadland, King Gizzard and Black Sabbath pinball, Pro Mancala, Hangman, Sundown Showdown, DOOM), instead of everything (~350 MB) up front. Same files, same quality. Settings → Songs for offline play → Download all now gets them all at once, for a trip without signal. A game played offline before its songs are saved is just quiet.
+- **Stage art slots**: Main Street and the mission take your own building fronts at fixed sizes (balconies, windows and doors line up with where gunmen appear and players stand), the canyon takes rock tiles, and troughs, hitching posts and street lamps take pictures too. Your first pixel-art props are in: crates, barrels, dynamite, bullets and the gold bag.
+- **Art kit for later**: docs/art-for-gpt/START-HERE.md tells ChatGPT how to carry on with any kind of art (Sundown sprites and stages, Arcade backgrounds, logos and icons, items, portraits, pinball), with up-to-date to-do lists. Finished pictures go into the art-inbox folder on GitHub.
 - **No more size ceiling on the one-file game**: its pictures and sounds load as separate parts, so new songs and art no longer push it towards the ~512 MB a browser can hold in one script.
 
 ## v0.81.0

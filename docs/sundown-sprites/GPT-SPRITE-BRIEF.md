@@ -118,4 +118,5 @@ Single-storey ones (150 px tall) have only the lower windows and the door, no ba
 plus `crate.png`, `barrel.png` and `wagon.png` from the list above.
 
 ## Hand back
-PNG files named exactly as above. Send them to Claude (or drop them in `assets/sundown/`).
+PNG files named exactly as above. Upload them to `art-inbox/sundown/` in the GitHub repository (or send them to Claude).
+The general art rules and the other areas are in `docs/art-for-gpt/START-HERE.md`.

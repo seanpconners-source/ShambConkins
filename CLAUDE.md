@@ -24,6 +24,8 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   `contentPolicy.js` (builds the active catalog of characters/items/trivia), `profile.js` (unlock rules, saves),
   `persistence.js` (`validRun` save validation), `audio.js`/`music.js` (WebAudio) + `musicGen.js` (generative board score).
 - Writing a minigame: read `docs/ENGINE_GUIDE.md` first.
+- Art made with ChatGPT: `docs/art-for-gpt/START-HERE.md` (areas, rules, to-do lists via `node tools/gpt-art-todo.mjs`);
+  the owner uploads finished pictures to `art-inbox/<area>/`, Claude imports them (steps at the end of that file).
 - Arcade backgrounds (key art): the owner places each one per screen in the Background Picker artifact (see the rule below).
 
 ## Commands
