@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.83.2
+
+- **81 more items have their own picture**: McLovin's ID, the Dude's rug, Chigurh's coin, the Ace Ventura card, Wayne's guitar, the Necronomicon, the boomstick, Daft Punk's helmet, Tetris on Game Boy, the golden gun, the Power Loader and more. 104 items now have one.
+
 ## v0.83.1
 
 - **Sundown Showdown: bullets leave the end of the gun** in every pose (standing, running, up, diagonals, ducking), measured from your sprite sheets, and bandits' hit areas match their full height, so aiming feels right.
