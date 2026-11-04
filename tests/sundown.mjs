@@ -22,9 +22,9 @@ for(const [w,h,tag] of [[390,780,'phone'],[844,390,'land'],[1100,700,'desktop']]
   const b=await page.evaluate(()=>window.ShambConkins.store.session.debug.state());check(b.phase==='boss'&&b.boss&&!b.boss.dead,`boss arena with a WANTED boss (${b.bossId}, hp ${b.boss?.hp})`);
   await page.evaluate(()=>window.ShambConkins.store.session.debug.win());await page.waitForTimeout(800);
   const r=await page.evaluate(()=>window.ShambConkins.store.session.debug.state());check(r.boss?.dead&&(r.recruits[0].length+r.recruits[1].length===(r.bossId?1:0)),`beating the boss recruits ${r.bossId}`);
-  await page.waitForFunction(()=>!window.ShambConkins.store.session,null,{timeout:15000}).catch(()=>{});
-  await page.waitForTimeout(600);const card=await page.evaluate(()=>document.querySelector('#dialog[open]')?.innerText||'');
-  check(/Sundown Showdown/i.test(card)||/win|takes|tie/i.test(card),`2P ends on a result card: "${card.replace(/\s+/g,' ').slice(0,90)}"`);
+  // the Arcade plays the stages in order: after the boss the train stage starts
+  await page.waitForTimeout(7500);const n=await page.evaluate(()=>window.ShambConkins.store.session?.debug.state());
+  check(n&&n.stage===1&&n.stageId==='train',`2P Arcade: after the boss the next stage starts (${n?.stage} ${n?.stageId})`);
  }
  const errs=errors.filter(x=>!/favicon|net::|Failed to load resource|Failed to fetch/.test(x));check(!errs.length,`${tag}: no page errors `+errs.slice(0,3).join(' | '));
  await browser.close();
@@ -37,7 +37,7 @@ for(const [w,h,tag] of [[390,780,'phone'],[844,390,'land'],[1100,700,'desktop']]
  const st=await page.evaluate(()=>window.ShambConkins.store.session?.debug.state());
  check(st&&st.stage===1,`1P: after the boss the next stage starts (stage ${st?.stage})`);
  await page.evaluate(()=>{const s=window.ShambConkins.store.session;s.debug.start();});await page.waitForTimeout(2500);await page.screenshot({path:`${SHOTS}/sundown-solo-stage2.png`});
- await page.evaluate(()=>{const s=window.ShambConkins.store.session;s.debug.immortal=false;s.debug.bot=false;});
+ await page.evaluate(()=>{const s=window.ShambConkins.store.session;s.debug.stage(0);s.debug.immortal=false;s.debug.bot=false;});
  await page.keyboard.down('d');
  await page.waitForFunction(()=>!window.ShambConkins.store.session,null,{timeout:120000}).catch(()=>{});
  await page.waitForTimeout(800);const card=await page.evaluate(()=>document.querySelector('#dialog[open]')?.innerText||'');
