@@ -19,6 +19,16 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   layouts, art and sounds, not a copy of the original's levels/mazes/music.
 
 ## Inbox (unsorted new notes)
+- **Q5** `[idea]` (owner, Nov 4) Smaller files and a faster game with NO quality loss. Measured Nov 4 (v0.81.0): one-file build 477 MB =
+  ~350 MB of media (songs 231 MB MP3 already ~130 kbps; pictures ~100 MB WebP already q88; Freedoom 15 MB; WAV 2.5 MB) + ~33% base64
+  overhead (~115 MB) + ~12 MB code. The installed app (--pwa) stores media as raw files, so phones already skip the base64.
+  Lossless options, biggest first: (1) one-file build: embed media as raw bytes instead of base64 (page saved as single-byte text,
+  only NUL, CR, `<` and the escape byte escaped, ~1.6% overhead; JS/CSS non-ASCII turned into \u escapes by the build) = 477 -> ~365 MB;
+  (2) build writes the file in chunks (tools/build.mjs builds one big Node string: the real ~512 MB ceiling); (3) installed app: songs
+  download the first time their game opens instead of at install (install ~350 -> ~120 MB; those games then need one online open
+  before they work offline); (4) small: built-in art script in index.html as files (~8 MB), WAV -> FLAC (~1.2 MB), 21 PNGs -> lossless
+  WebP (~1.5 MB), MP3 tags/cover art stripped (~1 MB), 15 identical files merged (~0.6 MB). Re-encoding songs or pictures smaller
+  would lose quality, so it's out.
 - **M21** `[verify]` (owner, Nov 3; v0.80.7) Pictures must appear immediately: Arcade backgrounds when picking a game, faces on the get-ready card. Check on the real phone after updating.
 - **M22** `[verify]` (owner, Nov 3; v0.80.7) 🎲 opens a random game's page, not the Ready card. Hangman Unchained = one tile on every shelf with its 3 versions on one page.
 
