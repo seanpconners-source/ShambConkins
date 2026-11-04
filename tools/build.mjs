@@ -158,7 +158,7 @@ if (pwaDir) {
   // a/ files ('sc-files', src/pwa.js) and the worker downloads only the ones it doesn't have, in the background, keeping
   // each as soon as it is in (a stopped download carries on next time). It answers byte ranges from that cache (Safari
   // plays songs that way) and drops files that neither of the newest two versions lists.
-  const SW_VERSION = 6;
+  const SW_VERSION = 7;
   const shell = ['index.html', 'manifest.webmanifest', ...PWA_ICONS.map(f => 'icons/' + f)];
   const sw = `// ShambConkins offline copy, written by tools/build.mjs --pwa (service worker version ${SW_VERSION}).
 const CACHE='shambconkins-app',FILES=${JSON.stringify(shell.slice(1))},WAIT=2500;
@@ -193,31 +193,41 @@ async function ranged(req,res){const m=/^bytes=(\\d*)-(\\d*)$/.exec(req.headers.
  const blob=await res.blob(),n=blob.size;let s=m[1]===''?Math.max(0,n-+m[2]):+m[1],e=m[1]!==''&&m[2]!==''?Math.min(n-1,+m[2]):n-1;
  if(s>=n||s>e)return new Response(null,{status:416,headers:{'content-range':'bytes */'+n}});
  return new Response(blob.slice(s,e+1),{status:206,headers:{'content-type':res.headers.get('content-type')||'','content-range':'bytes '+s+'-'+e+'/'+n,'content-length':String(e-s+1),'accept-ranges':'bytes'}});}
+// One download per file at a time: a game asking for a song while the background download is fetching it shares that fetch.
+const inflight=new Map();
+function grab(n,bytes=0){const u=at(n);let p=inflight.get(u);
+ if(!p){p=(async()=>{const f=await fetch(new Request(u,{cache:'no-cache'}));if(!f.ok)throw new Error('a/'+n+' '+f.status);   // same name = same bytes: a browser copy is fine
+  const blob=await f.blob();if(bytes&&blob.size!==bytes)throw new Error('a/'+n+' is '+blob.size+' bytes, expected '+bytes);
+  await (await caches.open(ART)).put(u,typed(blob,n)).catch(()=>{});return blob;})().finally(()=>inflight.delete(u));inflight.set(u,p);}
+ return p;}
 // Exact URL only: ignoreSearch makes the browser read every entry in the cache (575 ms per picture with 2,600 files, against 0.6 ms).
 async function file(e){const r=e.request,a=await caches.open(ART);let hit=await a.match(r.url);
- if(!hit){const res=await fetch(new Request(r.url,{cache:'no-cache'}));if(!res.ok)return res;const name=new URL(r.url).pathname.split('/').pop();
+ if(!hit){const name=new URL(r.url).pathname.split('/').pop();
   // the built-in art script holds up the start: stream it to the page with progress, and save it as it comes
-  if(name.endsWith('.js')&&res.body){const [x,y]=res.body.tee();e.waitUntil(new Response(y).blob().then(b=>a.put(r.url,typed(b,name))).catch(()=>{}));
+  if(name.endsWith('.js')){const res=await fetch(new Request(r.url,{cache:'no-cache'}));if(!res.ok||!res.body)return res;const [x,y]=res.body.tee();e.waitUntil(new Response(y).blob().then(b=>a.put(r.url,typed(b,name))).catch(()=>{}));
    return new Response(counted(x,e.clientId,'art',+res.headers.get('content-length')||0),{headers:{'content-type':TYPES.js}});}
-  const blob=await res.blob();
-  e.waitUntil(a.put(r.url,typed(blob,name)).catch(()=>{}));hit=typed(blob,name);}
+  let blob;try{blob=await grab(name);}catch{return new Response(null,{status:504});}hit=typed(blob,name);}
  return ranged(r,hit);}
+// Download a list of [name, bytes] the cache lacks, 6 at a time, with progress for the page's download bar (kind: 'app' at
+// install / update, 'songs' for the files a game asked for). One failure (offline...) stops them all.
+async function download(todo,kind){if(!todo.length)return;
+ const total=todo.reduce((s,[,b])=>s+b,0);let got=0,shown=0,next=0,stop=false;
+ const one=async()=>{for(;;){const job=!stop&&todo[next++];if(!job)return;const [n,b]=job;try{await grab(n,b);}catch(err){stop=true;throw err;}
+  got+=b;if(Date.now()-shown>300){shown=Date.now();tell({type:'sc-download',kind,got,total});}}};
+ try{await Promise.all([...Array(6)].map(one));tell({type:'sc-download',kind,got:total,total,done:true});}catch{tell({type:'sc-download',kind,failed:true});}}
 // The page's list (version + [name, bytes]): remember the newest KEEP versions' lists, drop files none of them has, then
-// download what this version lacks, 6 at a time (progress -> the page's download bar). A page older than those is left alone.
-async function fill(version,files){const a=await caches.open(ART);let lists=[];try{const r=await a.match(LISTS());if(r)lists=await r.json();}catch{}
+// download what this version lacks. "later" = files that wait until their game asks for them (songs, Doom: src/pwa.js
+// LATER); they stay on the list, so ones already saved are kept. A page older than those is left alone.
+async function fill(version,files,later){const a=await caches.open(ART);let lists=[];try{const r=await a.match(LISTS());if(r)lists=await r.json();}catch{}
  lists=[{version,files:files.map(f=>f[0])},...lists.filter(l=>l.version!==version)].sort((x,y)=>newer(x.version,y.version)?-1:newer(y.version,x.version)?1:0).slice(0,KEEP);
  if(!lists.some(l=>l.version===version))return;
  await a.put(LISTS(),new Response(JSON.stringify(lists),{headers:{'content-type':'application/json'}}));
  const want=new Set(lists.flatMap(l=>l.files.map(at))),keys=await a.keys(),have=new Set();want.add(LISTS());
  for(const k of keys){if(want.has(k.url))have.add(k.url);else await a.delete(k);}
- const todo=files.filter(([n])=>!have.has(at(n)));if(!todo.length)return;
- const total=todo.reduce((s,[,b])=>s+b,0);let got=0,shown=0,next=0,stop=false;
- const one=async()=>{for(;;){const job=!stop&&todo[next++];if(!job)return;const [n,b]=job;try{
-  const f=await fetch(new Request(at(n),{cache:'no-cache'}));if(!f.ok)throw new Error('a/'+n+' '+f.status);   // same name = same bytes: a browser copy is fine
-  const blob=await f.blob();if(blob.size!==b)throw new Error('a/'+n+' is '+blob.size+' bytes, expected '+b);
-  await a.put(at(n),typed(blob,n));}catch(err){stop=true;throw err;}   // one failure (offline...) stops them all
-  got+=b;if(Date.now()-shown>300){shown=Date.now();tell({type:'sc-download',got,total});}}};
- try{await Promise.all([...Array(6)].map(one));tell({type:'sc-download',got:total,total,done:true});}catch{tell({type:'sc-download',failed:true});}}
+ const wait=new Set(Array.isArray(later)?later:[]);
+ await download(files.filter(([n])=>!have.has(at(n))&&!wait.has(n)),'app');}
+// files a game (or Settings → Download all songs) asked for: whichever of them the cache doesn't have yet
+async function fetchWanted(files){const a=await caches.open(ART),todo=[];for(const f of files)if(Array.isArray(f)&&typeof f[0]==='string'&&!await a.match(at(f[0])))todo.push([f[0],+f[1]||0]);await download(todo,'songs');}
 let filling=Promise.resolve();
 self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);if(r.method!=='GET'||u.origin!==location.origin)return;
  if(u.href.startsWith(at(''))){e.respondWith(file(e));return;}
@@ -241,7 +251,8 @@ self.addEventListener('message',e=>{const d=e.data||{};
  if(d.type==='sc-keep')e.waitUntil(caches.open(CACHE).then(async c=>{if(await c.match('index.html'))return;
   const r=await fetch(new Request(self.registration.scope,{cache:'force-cache',credentials:'same-origin'}));if(r.status===200)await save(c,r);}).catch(()=>{}));
  if(d.type==='sc-get'&&e.ports&&e.ports[0])e.waitUntil(getPage(e.ports[0]));
- if(d.type==='sc-files'&&typeof d.version==='string'&&Array.isArray(d.files))e.waitUntil(filling=filling.then(()=>fill(d.version,d.files)).catch(()=>{}));});
+ if(d.type==='sc-files'&&typeof d.version==='string'&&Array.isArray(d.files))e.waitUntil(filling=filling.then(()=>fill(d.version,d.files,d.later)).catch(()=>{}));
+ if(d.type==='sc-want'&&Array.isArray(d.files))e.waitUntil(fetchWanted(d.files).catch(()=>{}));});
 `;
   // the release workflow puts these files on Cloudflare, which refuses any file over 25 MiB: fail here, not there
   for (const [name, buf] of [...files, ['index.html', Buffer.from(app)]]) if (buf.length > 24 * 1048576) throw new Error(`app file ${name} is ${(buf.length / 1048576).toFixed(1)} MB; Cloudflare takes files up to 25 MiB`);

@@ -32,7 +32,22 @@ let reg=null,ready=false,updating=false,lastAsk=0,canRestart=()=>true,current=nu
 // service worker downloads the ones it doesn't have yet for offline play; sent at start and on coming back on screen
 // (a download that was cut off carries on).
 const APP_FILES=/*@@APP_FILES@@*/null;
-function sendFiles(){if(APP_FILES&&current)navigator.serviceWorker?.ready.then(r=>r.active?.postMessage({type:'sc-files',version:current,files:APP_FILES})).catch(()=>{});}
+// Songs and the Doom data (~245 MB) belong to a few games, so they aren't downloaded at install: each game's files come
+// the first time it opens (wantGameFiles, from the game session) or all at once from Settings (wantAllFiles). Keys by the
+// games that use them; every other file still comes at install. Played offline before its files are in, a game is silent.
+const LATER={'music:bhpin-':['bucketheadland-pinball'],'music:kgpin-':['king-gizzard-pinball'],'music:bspin-':['black-sabbath-pinball'],'music:thps-':['greed-island-mancala'],
+ 'music:sunset-':['django-hangman','django-hangman-showdown','django-hangman-wanted','sundown-showdown'],'doom:':['doom','doom-2']};
+// [name, bytes] of the later files (all, or only those of prefixes that pass `which`)
+function laterFiles(which=()=>true){if(!APP_FILES)return [];let up={};try{up=require("src/data/userPortraits.js").USER_PORTRAITS;}catch{}
+ const names=new Set();for(const [k,url] of Object.entries(up))for(const pre of Object.keys(LATER))if(k.startsWith(pre)&&which(pre)&&typeof url==='string')names.add(url.replace(/^a\//,''));
+ return APP_FILES.filter(([n])=>names.has(n));}
+const post=m=>navigator.serviceWorker?.ready.then(r=>r.active?.postMessage(m)).catch(()=>{});
+function sendFiles(){if(APP_FILES&&current)post({type:'sc-files',version:current,files:APP_FILES,later:laterFiles().map(f=>f[0])});}
+// a game is starting: get its songs now if they aren't saved yet (the service worker skips the ones it has)
+function wantGameFiles(id){if(!APP_FILES||!served())return;const files=laterFiles(pre=>LATER[pre].includes(id));if(files.length)post({type:'sc-want',files});}
+// Settings → Download all songs: total MB asked for (the ones already saved are skipped, the bar shows the rest)
+function wantAllFiles(){const files=laterFiles();if(files.length)post({type:'sc-want',files});return files.reduce((s,[,b])=>s+b,0);}
+const laterBytes=()=>laterFiles().reduce((s,[,b])=>s+b,0);
 const ASK_EVERY=5*60*1000;
 // last answer from the site: {ok, ms, error} (Settings shows it when a check fails, to tell a blocked network from a slow one)
 let lastCheck=null;
@@ -116,7 +131,7 @@ function downloadBar(m,updating){
  let el=document.getElementById('sc-dl');
  if(!el){el=Object.assign(document.createElement('div'),{id:'sc-dl',innerHTML:'<span></span><i><b></b></i>'});el.setAttribute('role','status');document.body.append(el);}
  const pct=m.total?Math.min(100,Math.round(m.got/m.total*100)):0;
- el.querySelector('span').textContent=m.failed?'Download stopped. It carries on from there next time.':m.done?'Saved for offline play':`${updating?'Saving new pictures and sounds':'Saving for offline play'} · ${pct}%`;
+ el.querySelector('span').textContent=m.failed?'Download stopped. It carries on from there next time.':m.done?(m.kind==='songs'?'Songs saved for offline play':'Saved for offline play'):`${m.kind==='songs'?'Downloading songs':updating?'Saving new pictures and sounds':'Saving for offline play'} · ${pct}%`;
  el.querySelector('b').style.width=(m.done?100:pct)+'%';
  if(m.done||m.failed){clearTimeout(el._t);el._t=setTimeout(()=>el.remove(),2500);}
 }
@@ -125,4 +140,4 @@ async function installApp(){
  if(deferred){const e=deferred;deferred=null;syncInstallButtons();try{await e.prompt();return (await e.userChoice).outcome;}catch{return 'menu';}}
  return isIOS()?'ios':'menu';
 }
-Object.assign(exports,{initPWA,installApp,canInstall,installOffered,standalone,checkForUpdate,restartApp,updateApp});
+Object.assign(exports,{wantGameFiles,wantAllFiles,laterBytes,initPWA,installApp,canInstall,installOffered,standalone,checkForUpdate,restartApp,updateApp});

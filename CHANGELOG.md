@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Much smaller install**: the installed app now saves the pictures at install (~100 MB) and each game's songs the first time that game opens (Bucketheadland, King Gizzard and Black Sabbath pinball, Pro Mancala, Hangman, Sundown Showdown, DOOM), instead of everything (~350 MB) up front. Same files, same quality. Settings → Songs for offline play → Download all now gets them all at once, for a trip without signal. A game played offline before its songs are saved is just quiet.
+- **No more size ceiling on the one-file game**: its pictures and sounds load as separate parts, so new songs and art no longer push it towards the ~512 MB a browser can hold in one script.
+
 ## v0.81.0
 
 - **New game: Sundown Showdown**, a western run-and-gun for two at once on one screen. Each player drags in their half to aim and fire (8 ways), drags further to run while shooting, and taps to jump. Shoot bandits on Main Street, in the windows, on canyon ledges and around the mission at night; jump the knife men and the lit dynamite; grab Two Guns, Rapid Fire and money bags. At the end a WANTED boss wears a character you haven't unlocked: his bounty is split by the damage you each did, and beating him recruits him. One hit costs a life (3 each). With your Sunset Riders songs and voices. In 1P it's stage after stage, each one harder.
