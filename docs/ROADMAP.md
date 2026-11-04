@@ -37,8 +37,19 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **M24** `[todo]` (owner, Nov 4) Arcade game page: swipe left/right anywhere on the hero (background, title, Challenge/Play
   button area) to go to the previous/next game on the shelf, like flicking through cards. Background, logo and info slide
   with the finger and snap to the next game; the tile row follows. Taps and vertical scrolling must keep working.
-- **N4** `[idea]` (owner, Nov 3) Egg game: a minigame made exactly like the egg game from an *I Think You Should Leave*
-  sketch. Ask the owner which sketch / what happens in it (or a clip) before building; don't guess the rules.
+- **N4** `[idea]` (owner, Nov 3-4) Egg game = **"Feed Eggs"** from *I Think You Should Leave* S3E2 ("I Can Do Whatever I
+  Want"): Tim Robinson's office worker plays a crude black-and-white computer game, feeding eggs into a Big Egg's mouth, so
+  hooked he ignores his two complaining coworkers ("You're a rockstar"). A voice calls out egg counts that make no sense
+  (one egg is sometimes 40 eggs); going too fast makes the eggs miss the mouth; the prize at the end is the "nude egg".
+  Original art by Alec Robbins. Fan remake: egggame.org (Matthew Barton) with the random egg-count voice. Not checked
+  first-hand: egggame.org and the news sites are blocked from the cloud session's network (allow them there, or the owner
+  describes / screen-records the fan game). Questions for the owner before building: 1P score chase or 2P race, how
+  close to the sketch's look, and whether the ending reveal stays in.
+- **P10** `[todo]` (owner, Nov 4) Characters still without their own quote: 362 of 726 (Nov 4 count). Biggest gaps: Mortal
+  Kombat 14, South Park 12, Hunter × Hunter 10, Death Stranding 10, Reno 911! 9, King Gizzard 7, Dragon Ball Z 7, Birthday
+  Boys 7, the Superman actors 6, Warriors, Little Shop, *NSYNC, Backstreet Boys, WKUK, Idiocracy 5 each; also Dee, Cricket,
+  Artemis. Add real lines to `src/data/characterQuotes.js` in small batches (a big block of film quotes got a reply
+  blocked). The owner's own people (Home, ShambConkins, Friends, Unlimited Savory Systems) need lines from the owner.
 - **G12** `[idea]` (owner, Nov 3, later) Better-looking soldiers in Call of Duty: Modern Stick Dot and the Battleship cut
   scenes instead of stick figures. Maybe the owner generates sprites from instructions: write a sprite sheet spec (poses,
   frames, sizes, transparent PNG, file names) + prompts, like the Arcade Art Kit, and add drop-in slots.
