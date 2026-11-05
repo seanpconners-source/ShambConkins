@@ -1,6 +1,6 @@
 # Items that still need a picture
 
-Made by `node tools/gpt-art-todo.mjs` (223 of 633 items have art). Work top to bottom in batches of ~20.
+Made by `node tools/gpt-art-todo.mjs` (302 of 633 items have art). Work top to bottom in batches of ~20.
 Rules are in START-HERE.md → "Item pictures". File name = the id in the first column, e.g. `rum-ham.png`.
 
 | id (file name) | item | from | what it does in the game |
@@ -31,25 +31,17 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `kc-herd` | KC Herding License | KC | KC rearranges the livestock. Swap positions with the opponent. |
 | `loki-guardian` | Loki Guardian Token | Loki | Gain 7 points and a shield. Legendary good-dog protection. |
 | `toxie-mop` | Toxie's Mop | The Toxic Avenger | Mop the opponent backward 5. |
-| `nuke-barrel` | Tromaville Waste Barrel | Class of Nuke 'Em High | Absolutely not OSHA compliant. Random effect. |
-| `jackass-cart` | Shopping Cart | Jackass | A terrible transportation decision. Move 8. |
-| `tiny-bike` | Tiny Bike | Jackass | Ridiculous, but efficient. Take another turn. |
-| `spray-can` | Spray Can | The Warriors | Tag this space with a trap. |
-| `subway-token` | Subway Token | The Warriors | Take the next branch as a shortcut. |
 | `review-pancakes` | Pancake Stack | Review | Pancakes. Divorce. Pancakes. +5 points. |
 | `five-stars` | Five-Star Review | Review | Perfect review. Double next reward. |
 | `walkabout-putter` | Walkabout Putter | Walkabout Mini Golf | Tiny club, serious boost. +4 next roll. |
 | `lost-golf-ball` | Lost Golf Ball | Walkabout Mini Golf | You actually found one. +6 points. |
 | `presidential-seal` | Presidential Seal | Air Force One | Executive privilege, board-game edition. +2 shields. |
-| `plane-parachute` | Air Force One Parachute | Air Force One | Controlled retreat. Rewind 3 spaces. |
 | `basement-key` | Basement Key | Barbarian | You should probably not go down there. Preview 5 spaces. |
-| `tape-measure` | Very Long Tape Measure | Barbarian | Measure twice, descend once. +3 next roll. |
 | `raincoat` | Rain House Coat | Bring Her Back | Something about this is deeply wrong. +2 shields. |
 | `ritual-bowl` | Ritual Bowl | Bring Her Back | Do not ask what is in it. Random effect. |
 | `dumas-stage-mic` | Dumas Stage Mic | Nathan for You | Do your stuff. Double the next minigame. |
 | `laser-watch` | Laser Watch | James Bond | Cut through a problem. Opponent back 3. |
 | `martini-glass` | Shaken Martini Glass | James Bond | Classy. +3 points. |
-| `warriors-bottle` | Clinking Bottles | The Warriors | Come out to play. Duel now. |
 | `golf-foxhunt` | Foxhunt Ball | Walkabout Mini Golf | A hidden-ball prize. +5 points. |
 | `forrest-review-card` | Forrest's Review Card | Review | Whatever happens, he commits fully. |
 | `airforce-phone` | Presidential Phone | Air Force One | Executive order: take another turn. |
@@ -62,7 +54,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `laser-table-key` | Laser Table Override | Goldfinger | Immediately trigger the laser-table escape game. |
 | `blofeld-cat` | Blofeld's Cat | James Bond | The cat knows too much. Steal four points. |
 | `dream-token` | Dream Token | A Nightmare on Elm Street | Two shields against Horror penalties. |
-| `yahtzee-cup` | ShambYahtzee Cup | Yachty | Start the full 13-category dice game. |
 | `bug-leg` | Arachnid Leg | Starship Troopers | A disgusting trophy worth six points. |
 | `osees-record` | Osees Needle Drop | Osees | Temporarily hijack the soundtrack with the Osees slot. |
 | `gizzard-record` | Nonagon Record | King Gizzard | Open the Nonagon soundtrack slot. |
@@ -94,15 +85,12 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `pizza-slice` | Sewer Pizza | Teenage Mutant Ninja Turtles | Two shields. Sewer pizza has no known downside. |
 | `power-pellet` | Power Pellet | Pac-Man | Start Pac-Maze Duel immediately. |
 | `remote-bomb` | Remote Bomb | Bomberman | Start Bomber Duel immediately. |
-| `cable-box` | Premium Cable Box | The Cable Guy | Start the channel-surf memory game. |
 | `plant-food` | Suspicious Plant Food | Little Shop of Horrors | Feed the plant. Try not to become the food. |
 | `rainbow-pass` | Rainbow Road Pass | Mario Kart | A +4 roll boost and permanent progress toward the Rainbow Road biome. |
 | `nitro-canister` | Nitro Canister | Fast & Furious | TRIPLE movement for your next 3 rolls. It will get out of hand. |
 | `heavy-champion-belt` | Heavy Champion Belt | Taskmaster-ish nonsense | +2 reward on your next minigame, but HALF movement for your next 3 rolls. |
 | `turbo-sneakers` | Turbo Sneakers | Arcade Gear | TRIPLE movement for 2 rolls after the minigame, but -1 reward point. |
 | `flavor-wheel` | Flavor Wheel | Flavor Lab | +3 reward on food/flavor games or +1 otherwise. |
-| `recruiter-headset` | Recruiter Headset | Recruiting | No reward bonus, but winning gives an extra chance to recruit a character. |
-| `adrenaline-battery` | Chev’s Adrenaline Battery | Crank 2 | TRIPLE movement for 2 rolls. Loudly. |
 | `banh-mi` | Bánh Mì | Vietnamese Food | Excellent sandwich. +5 points; Sean gets the Flavorist bonus too. |
 | `pho-bowl` | Phở Break | Vietnamese Food | Two shields. Hot broth fixes at least two bad decisions. |
 | `rivoli-flyer` | Rivoli Gig Flyer | The Rivoli | PLAYING A GIG AT THE RIVOLI TONIGHT!!! You are not. Start the gig game anyway. |
@@ -112,15 +100,11 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `box-tank-key` | Cardboard Box Tank Key | Metal Gear | Start Cardboard Box Tank Duel immediately. |
 | `wopr-terminal` | Matrix Construct Terminal | The Matrix | Start Matrix Tic-Tac-Toe. |
 | `penalty-card` | Fantasy Football Penalty Card | The League | Start The League Penalty Kicks. |
-| `sumo-suit` | Taskmaster Sumo Suit | Taskmaster | Start Taskmaster Sumo Suit. |
 | `snake-ration` | Snake Ration | Metal Gear | Start Snake vs. Snake. |
 | `paddys-cue` | Paddy's Pool Cue | Always Sunny | Start Paddy's Pub Pool. |
 | `hanzo-sword` | Hattori Hanzo Sword | Kill Bill / Tarantino | Start Five Point Sword Duel. |
-| `office-paddle` | Office Ping-Pong Paddle | The Office | Start Office Ping-Pong. |
 | `spinner-disc` | Taskmaster Spinner | Taskmaster | Start Taskmaster Spinner War. |
 | `trooper-rope` | Mobile Infantry Rope | Starship Troopers | Start Mobile Infantry Tug Test. |
-| `trek-chess-set` | Three-Dimensional Chess Set | Star Trek | Start Three-Dimensional-ish Chess. |
-| `baseketball-ball` | BASEketball | BASEketball / Matt & Trey | Start BASEketball Shootout. |
 | `brawndo-melon` | Brawndo Watermelon | Idiocracy | Start Brawndo Fruit Merge. |
 | `reflex-gloves` | Jackie Chan Reflex Gloves | Jackie Chan | Start Jackie Chan Reflex Race. |
 | `iron-man-boots` | Iron Man Boots | Black Sabbath | +3 to your next roll. Heavy as hell. |
@@ -147,8 +131,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `moonraker-thruster` | Moonraker Thruster Pack | James Bond | Start Moonraker Lander immediately. |
 | `martian-defense-button` | Martian Defense Button | Mars Attacks! | Start Missile Defense immediately. |
 | `taskmaster-measuring-tape` | Suspicious Measuring Tape | Taskmaster | Start Build the Tallest Thing immediately. |
-| `morita-artillery-shell` | Morita Artillery Shell | Starship Troopers | Start Bug Bombardment immediately. |
-| `matrix-hardline-phone` | Hardline Phone | The Matrix | Start Hardline Hack immediately. |
 | `pass-electricwizard` | Electric Wizard backstage pass | Electric Wizard | Next minigame reward +4; halve your next dice roll. Trade pace for a bigger challenge payoff. |
 | `pass-boris` | Boris backstage pass | Boris | Next minigame reward +4; halve your next dice roll. Trade pace for a bigger challenge payoff. |
 | `pass-melvins` | Melvins backstage pass | Melvins | Next minigame reward +4; halve your next dice roll. Trade pace for a bigger challenge payoff. |
@@ -186,7 +168,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `taskmaster-loaded-die` | Taskmaster’s Loaded Die | Taskmaster | Your base die is at least four this turn. Bonuses still apply. |
 | `bond-loaded-dice` | Bond’s Loaded Dice | James Bond | Your base die is at least five this turn. |
 | `home-pack-whistle` | The Home Pack Whistle | Home | Clear half-roll effects and gain +2 movement on this roll. |
-| `soup-nazi-ladle` | No Boost For You Ladle | Seinfeld | Take up to three of your opponent’s stored bonus spaces. An attack ward blocks it. |
 | `fight-milk-coupon` | Fight Milk Coupon | Always Sunny | Next minigame reward +5, but halve your next roll after this one. |
 | `leeloo-rescue` | Leeloo’s Rescue Beacon | The Fifth Element | Gain +4 movement this roll when behind in points; otherwise +2. |
 | `time-chamber-pass` | Time Chamber Pass | Dragon Ball Z | Double movement this roll, then halve your following roll. |
@@ -203,33 +184,23 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `matrix-emp` | Nebuchadnezzar EMP | The Matrix | Carry: Laser grids and security checkpoints. Reusable at matching obstacles; opening a route with gear does not spend your pre-roll item action. Use before rolling instead: consume this tool for +2 movement and one shield. |
 | `mini-mushroom` | Mini Mushroom | Super Mario Bros. | Carry: Narrow pipes; also shrinks a giant head for the crossing. Reusable at matching obstacles; opening a route with gear does not spend your pre-roll item action. Use before rolling instead: consume this tool for +2 movement and one shield. |
 | `jurassic-winch` | Jurassic Park Rescue Winch | Jurassic Park | Carry: Heavy gates, fallen trees and cliff climbs. Reusable at matching obstacles; opening a route with gear does not spend your pre-roll item action. Use before rolling instead: consume this tool for +2 movement and one shield. |
-| `v43-jersey-sunblock` | Jersey Shore Sunblock | Always Sunny | 1 penalty shield. Avoid penalties for 2 personal turns. |
 | `v43-pretzel-day` | Pretzel Day Pass | The Office | This roll uses two dice and keeps the higher. A Lucky Roll does not add a third die. |
 | `v43-li-l-sebastian-ticket` | Li’l Sebastian Benefit Ticket | Parks and Recreation | Gain 5 extra points when you next clear an uncleared realm. |
 | `v43-forget-me-now` | Forget-Me-Now | Arrested Development | Your opponent’s next roll uses two dice and keeps the lower. Their Lucky Roll cancels this jinx. An attack ward blocks it. |
 | `v43-chefs-chocolate-balls` | Chef’s Chocolate Salty Balls | South Park | Gain 2 points. Next minigame reward +4. |
-| `v43-linda-wine-shoes` | Linda’s Wine Shoes | Bob’s Burgers | Gain 6 points. Half movement for 1 roll. |
 | `v43-peacock-cufflinks` | Jack’s Peacock Cufflinks | 30 Rock | Bank up to 3 of your points. At your next personal turn, get the deposit back plus 2. It is protected while banked; unfinished deposits pay at the expedition’s end. Keep this item if you have no points. |
-| `v43-red-green-potato` | Red-Green Potato | Taskmaster | Reverse this roll’s dice: 1 becomes 6, 2 becomes 5, and 3 becomes 4 (and vice versa). Bonuses still apply. |
-| `v43-karl-havoc-costume` | Karl Havoc Costume | I Think You Should Leave | 3 attack wards. Half movement for 1 roll. |
 | `v43-turbo-team-voucher` | Turbo Team Voucher | I Think You Should Leave | Cap your opponent’s next base die at 2; bonuses still apply. An attack ward blocks it. |
 | `v43-spite-store-cup` | Spite Store Coffee Cup | Curb Your Enthusiasm | Bank up to 3 of your points. At your next personal turn, get the deposit back plus 2. It is protected while banked; unfinished deposits pay at the expedition’s end. Keep this item if you have no points. |
 | `v43-latte-larry-key` | Latte Larry’s Fire Exit Key | Curb Your Enthusiasm | Permanently repair the nearest reachable barrier in this realm for both players. If none needs repair, gain one single-crossing pass. |
 | `v43-pretty-good-card` | Pretty, Pretty Good Card | Curb Your Enthusiasm | Gain +4 movement this roll when behind in points; otherwise +2. |
 | `v43-dumb-starbucks-cup` | Dumb Starbucks Cup | Nathan for You | Preview three different supplies and choose one. Your crate and item action are spent only after you choose. |
 | `v43-gas-rebate-receipt` | Gas Rebate Receipt | Nathan for You | Bank up to 3 of your points. At your next personal turn, get the deposit back plus 2. It is protected while banked; unfinished deposits pay at the expedition’s end. Keep this item if you have no points. |
-| `v43-orange-juice-prop` | Rehearsal Orange Juice | The Rehearsal | Copy your opponent’s last base die for this roll; use 4 if they have not rolled yet. Bonuses still apply. |
 | `v43-bar-replica-plan` | Bar Replica Blueprint | The Rehearsal | Reveal the current realm and gain one Lucky Roll. |
 | `v43-door-city-key` | Door City Key | The Rehearsal | Gain one pass through any locked, broken, flooded or other blocked path. Spend it at a crossing; the obstacle remains for your opponent. |
-| `v43-doubtfire-oven-gloves` | Doubtfire’s Oven Gloves | Mrs. Doubtfire | Remove all hostile traps in your current realm and gain one penalty shield. |
-| `v43-hillard-recipes` | Hillard Family Recipe Book | Mrs. Doubtfire | Find 2 different supplies, favoring items you have not found. This uses your one item action; use the finds on later turns. |
 | `v43-hello-dear-mask` | Hello, Dear Disguise Kit | Mrs. Doubtfire | Clear half-roll effects, lower-die jinxes and die caps. 2 attack wards. |
-| `v43-snoogans-beanie` | Snoogans Beanie | Jay and Silent Bob | Take a random item from your opponent’s bag, favoring one you do not carry. An attack ward blocks it. Keep this item if their bag is empty. |
 | `v43-mallrats-sailboat` | Mallrats Sailboat Picture | Jay and Silent Bob | Reveal the current realm and gain one Lucky Roll. |
 | `v43-moobys-card` | Mooby’s Loyalty Card | Jay and Silent Bob | Bank up to 3 of your points. At your next personal turn, get the deposit back plus 2. It is protected while banked; unfinished deposits pay at the expedition’s end. Keep this item if you have no points. |
-| `v43-white-russian` | White Russian | The Big Lebowski | Gain 3 points. 1 penalty shield. |
 | `v43-walters-toe` | Walter’s Suspicious Toe | The Big Lebowski | Your opponent’s next roll uses two dice and keeps the lower. Their Lucky Roll cancels this jinx. An attack ward blocks it. |
-| `v43-dude-bathrobe` | The Dude’s Bathrobe | The Big Lebowski | Block the next 2 opponent item attacks. |
 | `v43-paul-bunyan-keyring` | Paul Bunyan Keyring | Fargo | Gain one pass through any locked, broken, flooded or other blocked path. Spend it at a crossing; the obstacle remains for your opponent. |
 | `v43-marge-duck-stamp` | Marge’s Duck Stamp | Fargo | This roll uses two dice and keeps the higher. A Lucky Roll does not add a third die. |
 | `v43-mike-lunch-receipt` | Mike Yanagita’s Lunch Receipt | Fargo | Bank up to 2 of your points. At your next personal turn, get the deposit back plus 2. It is protected while banked; unfinished deposits pay at the expedition’s end. Keep this item if you have no points. |
@@ -238,8 +209,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `v43-worm-guys-coffee` | Worm Guys’ Coffee | Men in Black | Gain 2 points. This base die is at least 4. |
 | `v43-trinity-bike-key` | Trinity’s Motorcycle Key | The Matrix | Move forward 4 spaces, then roll normally. Only your dice landing triggers an encounter. |
 | `v43-white-rabbit` | White Rabbit Tattoo | The Matrix | Preview three different supplies and choose one. Your crate and item action are spent only after you choose. |
-| `v43-replicator-rations` | Replicator Rations | Star Trek | Find 2 different supplies, favoring items you have not found. This uses your one item action; use the finds on later turns. |
-| `v43-ripley-loader-glove` | Ripley’s Loader Glove | Alien | Gain one pass through any locked, broken, flooded or other blocked path. Spend it at a crossing; the obstacle remains for your opponent. |
 | `v43-s-mart-badge` | S-Mart Employee Badge | Evil Dead | Find 2 different supplies, favoring items you have not found. This uses your one item action; use the finds on later turns. |
 | `v43-tar-bucket` | Tar Bucket | Home Alone | Your opponent’s next roll uses two dice and keeps the lower. Their Lucky Roll cancels this jinx. An attack ward blocks it. |
 | `v43-kevin-micro-machines` | Kevin’s Micro Machines | Home Alone | Plant a 7-point trap here for your opponent. A penalty shield or cloak blocks the loss. |
@@ -250,38 +219,25 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `v43-diva-ticket` | Diva’s Blue Ticket | The Fifth Element | Next minigame reward +3. Next realm clear +3 points. |
 | `v43-excalibur-pick` | Excalibur Guitar Pick | Wayne’s World | Your next completed board minigame pays 4 extra points even if you lose or tie. |
 | `v43-waynes-aaa-pass` | Wayne’s AAA Backstage Clip | Wayne’s World | Your next individual board minigame win with an eligible guest guarantees a new personal recruit. Losses, ties and practice keep the beacon; special unlock conditions still apply. |
-| `v43-schwing-meter` | Schwing Meter | Wayne’s World | Flip a coin: 50% chance to gain 8 points; otherwise lose up to 4 points. Shields do not cover this voluntary gamble. |
 | `v43-cryogenic-capsule` | Cryogenic Capsule | Austin Powers | Bank up to 3 of your points. At your next personal turn, get the deposit back plus 2. It is protected while banked; unfinished deposits pay at the expedition’s end. Keep this item if you have no points. |
 | `v43-fembot-shield` | Fembot Shield Circuit | Austin Powers | 2 attack wards. Next minigame reward +2. |
-| `v43-magnum-mirror` | Magnum Mirror | Zoolander | Copy your opponent’s last base die for this roll; use 4 if they have not rolled yet. Bonuses still apply. |
-| `v43-derelicte-bag` | Derelicte Bag | Zoolander | Preview three different supplies and choose one. Your crate and item action are spent only after you choose. |
-| `v43-blue-steel-dryer` | Blue Steel Hairdryer | Zoolander | Gain one pass through any locked, broken, flooded or other blocked path. Spend it at a crossing; the obstacle remains for your opponent. |
 | `v43-shooter-trophy` | Shooter’s Breakfast Trophy | Happy Gilmore | Your opponent’s next roll uses two dice and keeps the lower. Their Lucky Roll cancels this jinx. An attack ward blocks it. |
 | `v43-subway-card` | Happy’s Subway Card | Happy Gilmore | Find 2 different supplies, favoring items you have not found. This uses your one item action; use the finds on later turns. |
-| `v43-flying-v-book` | Flying V Playbook | The Mighty Ducks | This roll +5. Your opponent also gains +2 on their next roll. |
-| `v43-aston-eject-button` | Aston Martin Eject Button | James Bond | Push your opponent back up to 4 visited spaces. An attack ward blocks it. |
 | `v43-q-laser-pen` | Q’s Laser Pen | James Bond | Permanently repair the nearest reachable barrier in this realm for both players. If none needs repair, gain one single-crossing pass. |
 | `v43-felix-poker-chip` | Felix’s Poker Chip | James Bond | Bank up to 3 of your points. At your next personal turn, get the deposit back plus 2. It is protected while banked; unfinished deposits pay at the expedition’s end. Keep this item if you have no points. |
 | `v43-nos-canister` | NOS Canister | Fast & Furious | Double this roll’s movement. Halve your following roll. |
 | `v43-corona-cooler` | Family’s Corona Cooler | Fast & Furious | Gain 3 points. 1 attack ward. |
 | `v43-family-photo` | Family Photo | Fast & Furious | Your next individual board minigame win with an eligible guest guarantees a new personal recruit. Losses, ties and practice keep the beacon; special unlock conditions still apply. |
 | `v43-sewer-pizza` | Sewer Pizza Box | Teenage Mutant Ninja Turtles | Gain 3 points. This roll +2. |
-| `v43-shell-cell` | Donatello’s Shell Cell | Teenage Mutant Ninja Turtles | Permanently repair the nearest reachable barrier in this realm for both players. If none needs repair, gain one single-crossing pass. |
 | `v43-fire-flower` | Fire Flower | Super Mario Bros. | Remove all hostile traps in your current realm and gain one penalty shield. |
 | `v43-starman` | Starman | Super Mario Bros. | 2 attack wards. Avoid penalties for 1 personal turns. |
 | `v43-lakitu-cloud` | Lakitu’s Cloud | Super Mario Bros. | Gain one pass through any locked, broken, flooded or other blocked path. Spend it at a crossing; the obstacle remains for your opponent. |
 | `v43-fairy-bottle` | Fairy in a Bottle | The Legend of Zelda | Clear half-roll effects, lower-die jinxes and die caps. 1 attack ward. |
 | `v43-jill-lockpick` | Jill’s Lockpick | Resident Evil | Permanently repair the nearest reachable barrier in this realm for both players. If none needs repair, gain one single-crossing pass. |
 | `v43-fulton-balloon` | Fulton Balloon | Metal Gear | Take a random item from your opponent’s bag, favoring one you do not carry. An attack ward blocks it. Keep this item if their bag is empty. |
-| `v43-snake-bandana` | Snake’s Infinite Bandana | Metal Gear | Your next completed board minigame pays 4 extra points even if you lose or tie. |
-| `v43-octocamo` | OctoCamo Suit | Metal Gear | 1 attack ward. Avoid penalties for 2 personal turns. |
-| `v43-capsule-case` | Capsule Corp Case | Dragon Ball Z | Preview three different supplies and choose one. Your crate and item action are spent only after you choose. |
 | `v43-flying-nimbus` | Flying Nimbus | Dragon Ball Z | Gain one pass through any locked, broken, flooded or other blocked path. Spend it at a crossing; the obstacle remains for your opponent. |
 | `v43-gons-fishing-rod` | Gon’s Fishing Rod | Hunter × Hunter | Take a random item from your opponent’s bag, favoring one you do not carry. An attack ward blocks it. Keep this item if their bag is empty. |
 | `v43-biscuit-cookie` | Biscuit’s Training Cookie | Hunter × Hunter | Keep the better of two dice this roll. Halve your following roll. |
-| `v43-phoenix-down` | Phoenix Down | Final Fantasy | Clear half-roll effects, lower-die jinxes and die caps. 2 attack wards. |
-| `v43-chocobo-lure` | Chocobo Lure | Final Fantasy | Set your next base die to 6; an opponent’s die cap still applies. Movement bonuses and slowdowns still apply. |
-| `v43-materia-orb` | Mystery Materia Orb | Final Fantasy | Flip a coin: 50% chance to gain 8 points; otherwise lose up to 4 points. Shields do not cover this voluntary gamble. |
 | `v43-container-spray` | Container Repair Spray | Death Stranding | Permanently repair the nearest reachable barrier in this realm for both players. If none needs repair, gain one single-crossing pass. |
 | `v43-fragile-umbrella` | Fragile’s Umbrella | Death Stranding | Move forward 5 spaces, then roll normally. Only your dice landing triggers an encounter. |
 | `v43-likes-token` | Bridges Likes Token | Death Stranding | Bank up to 3 of your points. At your next personal turn, get the deposit back plus 2. It is protected while banked; unfinished deposits pay at the expedition’s end. Keep this item if you have no points. |
@@ -291,7 +247,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `beatles-abbey-sign` | Abbey Road Crosswalk Sign | The Beatles | Cross in a perfect line. Jump forward 4 spaces. |
 | `beatles-yellow-sub` | Yellow Submarine Ticket | The Beatles | Submerge for 2 personal turns: collision duels and one penalty cannot touch you. |
 | `beatles-rooftop-pass` | Rooftop Concert Pass | The Beatles | One last gig on the roof. Double the reward from your next minigame. |
-| `nsync-strings` | Marionette Strings | *NSYNC | Pull some strings. Steal 3 points. |
 | `nsync-bye-bye` | Bye Bye Bye Cue Card | *NSYNC | Wave the other player goodbye: blast them back 4 spaces. |
 | `bsb-larger-than-life` | Larger Than Life Poster | Backstreet Boys | Tell me why. +3 to your next roll. |
 | `bsb-lyric-sheet` | I Want It That Way Lyrics | Backstreet Boys | Nobody knows what it means, but it is certainly a hit. +4 points. |
@@ -300,25 +255,17 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `ranger-power-coin` | Dino Power Coin | Power Rangers | Summon your Zord. +4 to your next roll. |
 | `ranger-command-center` | Command Center Teleport | Power Rangers | Zordon teleports you. Randomly jump on the route. |
 | `ranger-megazord-key` | Megazord Activation Key | Power Rangers | Zords combine! For 3 turns you are protected from collision duels and one penalty. |
-| `mk-fatality-scroll` | Fatality Scroll | Mortal Kombat | Finish him! The other player loses 5 points; you gain 2. |
-| `mk-toasty` | Toasty! Dispenser | Mortal Kombat | A surprise from the corner of the screen. +3 points. |
 | `mk-test-your-might` | Test Your Might Block | Mortal Kombat | Smash it. Immediately trigger a Warriors brawl. |
-| `ge-proximity-mine` | Proximity Mine | GoldenEye | Plant a mine on your current space. The next opponent landing here loses 5 points. |
-| `ge-klobb` | Klobb Submachine Gun | GoldenEye | Not a good gun, but it is yours. Steal 4 points. |
 | `ge-cartridge` | GoldenEye 007 Cartridge | GoldenEye | Four-player split screen. Immediately trigger the Facility escape. |
-| `chuck-roundhouse` | Roundhouse Boots | Chuck Norris | The boots do the talking. Blast the other player back 5 spaces. |
 | `chuck-beard` | Beard of Destiny | Chuck Norris | Nothing hurts the beard. Two penalty shields. |
 | `chuck-ranger-badge` | Texas Ranger Badge | Chuck Norris | Confiscate evidence. Steal 3 points. |
 | `mel-wallace-paint` | Wallace War Paint | Mel Gibson | Freedom! +4 to your next roll. |
 | `mel-interceptor-keys` | V8 Interceptor Keys | Mel Gibson | Witness me. Jump forward 6 spaces. |
 | `mel-riggs-badge` | Riggs’s Badge | Mel Gibson | Too old for this. Two penalty shields. |
 | `jcvd-epic-split` | The Epic Split Pass | Jean-Claude Van Damme | Perfect balance. Your base die is at least four this turn. |
-| `jcvd-timecop-badge` | Timecop Badge | Jean-Claude Van Damme | Rewind your own path by 4 spaces. |
 | `rocky-meat-gloves` | Meat Locker Gloves | Rocky | Gonna fly now. Immediately trigger Fight Night. |
 | `nintendo-super-star` | Super Star | Nintendo | Invincible! For 3 turns you are protected from collision duels and one penalty. |
 | `nintendo-pokeball` | Poké Ball | Nintendo | Gotta catch ’em all. Contains one random supply. |
-| `freddy-sweater` | Striped Sweater | A Nightmare on Elm Street | Do not fall asleep. For 3 turns you are protected from collision duels and one penalty. |
-| `halloween-mask` | Haddonfield Mask | Halloween | Say nothing. Two penalty shields. |
 | `pk-poke-balls-5` | Poké Balls ×5 | Pokémon | Five Poké Balls. Weaken a wild character into the red, then throw one. |
 | `pk-poke-balls-10` | Poké Balls ×10 | Pokémon | Ten Poké Balls for wild encounters. |
 | `pk-great-balls-5` | Great Balls ×5 | Pokémon | Five Great Balls: better catch odds than a Poké Ball. |
@@ -337,29 +284,19 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `wz-stage-map` | Castle Stage Map | Castlevania | Unroll the map: start Vampire Killer Dash right now. |
 | `wz-wall-candle` | Wall Candle | Castlevania | Whip the candle: start Night of the Candles right now. |
 | `wz-morning-star` | Morning Star Whip | Castlevania | 1 attack ward. Next minigame reward +4. |
-| `wz-stopwatch` | Stopwatch | Castlevania | Your opponent’s next roll uses two dice and keeps the lower. Their Lucky Roll cancels this jinx. An attack ward blocks it. |
-| `wz-pot-roast` | Wall Pot Roast | Castlevania | Gain 4 points. 1 penalty shield. |
-| `wz-rosary` | Rosary | Castlevania | Remove all hostile traps in your current realm and gain one penalty shield. |
 | `wz-invisibility-potion` | Invisibility Potion | Castlevania | Avoid point penalties for 3 of your personal turns. |
-| `wz-money-bag` | Money Bag | Castlevania | Your next completed board minigame pays 4 extra points even if you lose or tie. |
 | `wz-magic-crystal` | Magic Crystal | Castlevania | Gain 6 extra points when you next clear an uncleared realm. |
-| `wz-diamond-collar` | Diamond Smuggler’s Collar | Diamonds Are Forever | Start the Laser Vault Heist right now. |
 | `wz-golden-bullet` | Scaramanga’s Golden Bullet | The Man with the Golden Gun | Start the Funhouse Duel right now. |
 | `wz-fort-knox-key` | Fort Knox Vault Key | Goldfinger | Start Stop the Bomb at 007 right now. |
 | `wz-dodgeball` | Red Rubber Dodgeball | South Park | Start the Dodgeball World Championship right now. |
-| `wz-poofs-bowl` | Bowl of Cheesy Poofs | South Park | Start Cheesy Poofs Catch right now. |
 | `wz-kenny-parka` | Kenny’s Parka | South Park | Start They Killed Kenny! right now. |
 | `wz-chinpokomon` | Chinpokomon Card | South Park | Your next completed board minigame pays 4 extra points even if you lose or tie. |
-| `wz-tweek-coffee` | Tweek Bros. Coffee | South Park | Gain 1 points. This roll +3. |
-| `wz-city-wok` | City Wok Takeout | South Park | Gain 3 points. 1 penalty shield. |
 | `wz-big-wheel` | Timmy’s Wheelchair Boost | South Park | Move forward 5 spaces, then roll normally. Only your dice landing triggers an encounter. |
-| `wz-salty-balls` | Chef’s Salty Balls | South Park | Gain 1 points. Next minigame reward +3. |
 | `wz-mr-hat` | Mr. Hat | South Park | Push your opponent back up to 3 visited spaces. An attack ward blocks it. |
 | `wz-triangle-zinthar` | Triangle of Zinthar | South Park | Flip a coin: 50% chance to gain 8 points; otherwise lose up to 4 points. Shields do not cover this voluntary gamble. |
 | `wz-manbearpig-trap` | ManBearPig Trap | South Park | Plant a 5-point trap here for your opponent. A penalty shield or cloak blocks the loss. |
 | `wz-respect-badge` | Respect My Authoritah Badge | South Park | 1 penalty shield. 2 attack wards. |
 | `wz-triple-mushroom` | Triple Mushroom | Mario Kart | This roll +3. This base die is at least 3. |
-| `wz-banana-peel` | Banana Peel | Mario Kart | Plant a 5-point trap here for your opponent. A penalty shield or cloak blocks the loss. |
 | `wz-red-shell` | Red Shell | Mario Kart | Push your opponent back up to 3 visited spaces. An attack ward blocks it. |
 | `wz-lightning-bolt` | Lightning Bolt | Mario Kart | Your opponent’s next roll uses two dice and keeps the lower. Their Lucky Roll cancels this jinx. An attack ward blocks it. |
 | `wz-bullet-bill` | Bullet Bill | Mario Kart | Move forward 6 spaces, then roll normally. Only your dice landing triggers an encounter. |
@@ -367,16 +304,9 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `wz-item-box` | Rainbow Item Box | Mario Kart | Start Rainbow Road Grand Prix right now. |
 | `wz-super-leaf` | Super Leaf | Super Mario Bros. 3 | This roll +2. Avoid penalties for 1 personal turns. |
 | `wz-p-wing` | P-Wing | Super Mario Bros. 3 | Move forward 6 spaces, then roll normally. Only your dice landing triggers an encounter. |
-| `wz-warp-whistle` | Warp Whistle | Super Mario Bros. 3 | Double this roll’s movement. |
 | `wz-hammer-suit` | Hammer Suit | Super Mario Bros. 3 | 1 penalty shield. 2 attack wards. |
-| `wz-music-box` | Music Box | Super Mario Bros. 3 | Your opponent’s next roll uses two dice and keeps the lower. Their Lucky Roll cancels this jinx. An attack ward blocks it. |
-| `wz-frog-suit` | Frog Suit | Super Mario Bros. 3 | This roll uses two dice and keeps the higher. A Lucky Roll does not add a third die. |
 | `wz-n-spade-card` | N-Spade Card | Super Mario Bros. 3 | Start the N-Spade card-matching bonus game right now. |
-| `wz-gumdrop` | Gumdrop Mountain Gumdrop | Candy Land | Gain 3 points. This roll +1. |
 | `wz-gumdrop-pass` | Gumdrop Pass Shortcut | Candy Land | Move forward 5 spaces, then roll normally. Only your dice landing triggers an encounter. |
-| `wz-licorice` | Lord Licorice’s Licorice | Candy Land | Plant a 4-point trap here for your opponent. A penalty shield or cloak blocks the loss. |
-| `wz-molasses` | Molasses Swamp Jar | Candy Land | Cap your opponent’s next base die at 2; bonuses still apply. An attack ward blocks it. |
-| `wz-lolly-lollipop` | Princess Lolly’s Lollipop | Candy Land | Gain 2 points. 2 penalty shields. |
 | `wz-gingerbread-plum` | Gingerbread Plum | Candy Land | Bank up to 3 of your points. At your next personal turn, get the deposit back plus 2. It is protected while banked; unfinished deposits pay at the expedition’s end. Keep this item if you have no points. |
 | `wz-color-card` | Double Color Card | Candy Land | Start Candy Land Color Card Dash right now. |
 | `wz-golden-ladder` | Golden Ladder | Chutes and Ladders | Move forward 5 spaces, then roll normally. Only your dice landing triggers an encounter. |
@@ -388,18 +318,10 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `wz-ladder-rung` | Spare Ladder Rung | Chutes and Ladders | Start Chutes and Ladders Ladder Rush right now. |
 | `wz-jail-free` | Get Out of Jail Free Card | Monopoly | Clear half-roll effects, lower-die jinxes and die caps. 2 attack wards. |
 | `wz-pass-go` | Pass GO · Collect $200 | Monopoly | Gain 6 points. |
-| `wz-hotel` | Hotel on Boardwalk | Monopoly | Bank up to 4 of your points. At your next personal turn, get the deposit back plus 2. It is protected while banked; unfinished deposits pay at the expedition’s end. Keep this item if you have no points. |
 | `wz-free-parking` | Free Parking Jackpot | Monopoly | Flip a coin: 50% chance to gain 8 points; otherwise lose up to 4 points. Shields do not cover this voluntary gamble. |
-| `wz-reading-railroad` | Reading Railroad Ticket | Monopoly | Move forward 5 spaces, then roll normally. Only your dice landing triggers an encounter. |
 | `wz-luxury-tax` | Luxury Tax Bill | Monopoly | Bill your opponent for luxury tax: steal up to 4 points. A shield, cloak, attack ward or Kitten Mittens blocks it. |
-| `wz-speed-die` | Speed Die | Monopoly | Start Monopoly Speed Die right now. |
-| `wz-magnifying-glass` | Detective’s Magnifying Glass | Clue | Reveal the current realm and gain one Lucky Roll. |
 | `wz-secret-passage` | Secret Passage Key | Clue | Move forward 6 spaces, then roll normally. Only your dice landing triggers an encounter. |
-| `wz-candlestick` | The Candlestick | Clue | Plant a 5-point trap here for your opponent. A penalty shield or cloak blocks the loss. |
-| `wz-lead-pipe` | The Lead Pipe | Clue | Your opponent’s next roll uses two dice and keeps the lower. Their Lucky Roll cancels this jinx. An attack ward blocks it. |
-| `wz-rope` | The Rope | Clue | Push your opponent back up to 3 visited spaces. An attack ward blocks it. |
 | `wz-notepad` | Detective Notepad | Clue | Your next completed board minigame pays 4 extra points even if you lose or tie. |
-| `wz-sealed-envelope` | Sealed Case File | Clue | Open the case file: start Clue Whodunit right now. |
 | `wz-pegasus-boots` | Pegasus Boots | The Legend of Zelda | Move forward 5 spaces, then roll normally. Only your dice landing triggers an encounter. |
 | `wz-boomerang` | Boomerang | The Legend of Zelda | Your opponent’s next roll uses two dice and keeps the lower. Their Lucky Roll cancels this jinx. An attack ward blocks it. |
 | `wz-bomb-bag` | Bomb Bag | The Legend of Zelda | Plant a 6-point trap here for your opponent. A penalty shield or cloak blocks the loss. |
@@ -412,6 +334,5 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `wz-invincibility` | Invincibility Monitor | Sonic the Hedgehog | Avoid point penalties for 3 of your personal turns. |
 | `wz-super-ring` | Super Ring Monitor | Sonic the Hedgehog | Gain 5 points. |
 | `wz-chaos-emerald` | Chaos Emerald | Sonic the Hedgehog | Gain 6 extra points when you next clear an uncleared realm. |
-| `wz-yellow-spring` | Yellow Spring | Sonic the Hedgehog | Move forward 5 spaces, then roll normally. Only your dice landing triggers an encounter. |
 | `wz-giant-ring` | Giant Ring | Sonic the Hedgehog | Jump into the Giant Ring: start the Green Hill Boss Act right now. |
 | `wz-end-signpost` | End-of-Act Signpost | Sonic the Hedgehog | Spin the signpost: start Green Hill Goal Dash right now. |

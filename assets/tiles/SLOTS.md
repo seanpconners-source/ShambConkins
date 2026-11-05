@@ -108,7 +108,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `bricks-breaker-quest` | Bricks Breaker Quest | game | ✅ / ✅ |
 | `sundown-showdown` | Sundown Showdown | game | · / · |
 | `bucketheadland-pinball` | Bucketheadland · Buckethead Pinball | version of pinball | ✅ / ✅ |
-| `major-league-fielding` | Major League · Bat & Field | version of baseball | · / · |
+| `major-league-fielding` | Major League Baseball | version of baseball | · / · |
 | `taskmaster-micro-relay` | Taskmaster · Frantic Task Relay | version of taskmaster | · / · |
 | `django-hangman` | Hangman Unchained · Quick Draw | version of hangman | · / · |
 | `matrix-ultimate` | The Matrix · Nine Realities | version of matrix | · / · |

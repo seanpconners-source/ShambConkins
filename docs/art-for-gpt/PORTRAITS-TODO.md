@@ -1,6 +1,6 @@
 # Characters that still need a portrait
 
-Made by `node tools/gpt-art-todo.mjs` (633 of 725 have one).
+Made by `node tools/gpt-art-todo.mjs` (633 of 737 have one).
 Rules are in START-HERE.md → "Character portraits". File name = `<id>.png`, extra faces `<id>.<mood>.png`.
 
 | id (file name) | name | from |
@@ -97,3 +97,15 @@ Rules are in START-HERE.md → "Character portraits". File name = `<id>.png`, ex
 | `mac-tonight` | Mac Tonight | McDonald’s |
 | `sherman-klump` | Sherman Klump | The Nutty Professor |
 | `buddy-love` | Buddy Love | The Nutty Professor |
+| `elvis-presley` | Elvis Presley | Elvis Presley |
+| `leslie-chow` | Mr. Chow | The Hangover |
+| `alan-garner` | Alan Garner | The Hangover |
+| `ml-vaughn` | Rick “Wild Thing” Vaughn | Major League (film) |
+| `ml-jake-taylor` | Jake Taylor | Major League (film) |
+| `ml-willie-mays-hayes` | Willie Mays Hayes | Major League (film) |
+| `ml-cerrano` | Pedro Cerrano | Major League (film) |
+| `ml-roger-dorn` | Roger Dorn | Major League (film) |
+| `ml-eddie-harris` | Eddie Harris | Major League (film) |
+| `ml-lou-brown` | Lou Brown | Major League (film) |
+| `ml-harry-doyle` | Harry Doyle | Major League (film) |
+| `ml-rachel-phelps` | Rachel Phelps | Major League (film) |

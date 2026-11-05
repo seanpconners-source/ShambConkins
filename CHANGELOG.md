@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## v0.84.0
+
+- **79 more items have their own picture** (from the batch 04 and 05 uploads): the Phoenix Down, the materia orb, the White Russian, the Dude's bathrobe, the Mrs. Doubtfire oven gloves, the Warriors bottle, the subway token, the Klobb, the proximity mine, Toasty!, the Fatality scroll, the Timecop badge, Freddy's sweater, the Soup Nazi's ladle, the Blue Steel dryer, City Wok, Tweek's coffee, Salty Balls and more. 303 items now have one.
+- **Sundown Showdown's bosses wear your sprite sheet**: the boss sheet you made (long black coat, red lining) replaces the drawn boss.
+- **Baseball is ready for your own sprites**: batters, pitchers, fielders, the catcher, the umpire, helmets and caps, the ball, the stadium, the outfield wall and both logos each take a picture. Anything not made yet is still drawn by the game. The brief for ChatGPT is `docs/baseball-sprites/GPT-SPRITE-BRIEF.md`.
+- **Smaller installed-app page**: item pictures are now separate app files instead of being packed inside the page, which had grown too big for the server (9 MB now, was 27 MB).
 
 - **Major League Baseball is a real ballgame now** (was Bat & Field), in the style of Ken Griffey Jr. baseball on the SNES. Pick a fastball, curve, slider or change-up and tap where to throw it; batting, hold a finger to aim the bat and let go to swing. Balls in play cut to the field: the nearest fielder runs to the ball (drag to steer him), catches flies, and you tap a base to throw; GO and BACK send or hold your runners. Balls, strikes, walks, force and tag outs, extra innings and walk-offs. 1, 3 or 9 innings in the Arcade, one inning on the board. Your roster bats, filled out by the Major League cast, and Harry Doyle calls the game.
 - **The Batting Cage is a Home Run Derby** in the same look: ten outs each, most home runs wins.

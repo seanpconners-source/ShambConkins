@@ -237,7 +237,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 **Key art** ✅
 
-> Key art for "Major League", a minigame in a party video game that pays tribute to Major League. Scene: Home Run Derby and Bat & Field. A Home Run Derby from behind the plate, taking turns on the same ten pitches from Wild Thing Vaughn. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Major League", a minigame in a party video game that pays tribute to Major League. Scene: Home Run Derby and Bat & Field. A Home Run Derby in the Ken Griffey-style batting view: ten outs each against batting-practice pitches. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** ✅
 
@@ -1013,15 +1013,15 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "Bucketheadland · Buckethead Pinball" (Buckethead tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
-## Major League · Bat & Field · `major-league-fielding`
+## Major League Baseball · `major-league-fielding`
 
 **Key art** 
 
-> Key art for "Major League · Bat & Field", a minigame in a party video game that pays tribute to Major League. Scene: the most iconic moment of Major League · Bat & Field. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Major League Baseball", a minigame in a party video game that pays tribute to Major League. Scene: Real baseball, Ken Griffey Jr. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
-> Square game icon for "Major League · Bat & Field" (Major League tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+> Square game icon for "Major League Baseball" (Major League tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Taskmaster · Frantic Task Relay · `taskmaster-micro-relay`
 
@@ -1097,7 +1097,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 **Key art** 
 
-> Key art for "Major League · Home Run Derby", a minigame in a party video game that pays tribute to Major League. Scene: A Home Run Derby from behind the plate, taking turns on the same ten pitches from Wild Thing Vaughn. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Major League · Home Run Derby", a minigame in a party video game that pays tribute to Major League. Scene: A Home Run Derby in the Ken Griffey-style batting view: ten outs each against batting-practice pitches. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
@@ -1107,7 +1107,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 **Key art** 
 
-> Key art for "Casino Royale Baccarat-ish", a minigame in a party video game that pays tribute to James Bond. Scene: 10 chips each; minimum wager 2. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Casino Royale Baccarat-ish", a minigame in a party video game that pays tribute to James Bond. Scene: Punto Banco at the Casino Royale table: $1,000 each, $25 to $500 a coup. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
@@ -1277,7 +1277,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 **Key art** 
 
-> Key art for "Blackjack", a minigame in a party video game that pays tribute to 21. Scene: 10 chips each; minimum wager 2. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Blackjack", a minigame in a party video game that pays tribute to 21. Scene: A real Vegas table: $1,000 each, $25 to $500 a hand, one themed dealer, regulars in the other seats. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
@@ -1287,7 +1287,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 **Key art** 
 
-> Key art for "Five-Card Panic", a minigame in a party video game that pays tribute to Rounders. Scene: 10 chips each; minimum wager 2. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Five-Card Panic", a minigame in a party video game that pays tribute to Rounders. Scene: Five-card draw at a Vegas card table: $1,000 each, $10 ante, $20 bets before the draw and $40 after (four bets a round). Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
@@ -1297,7 +1297,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 **Key art** 
 
-> Key art for "Bad Decision Roulette", a minigame in a party video game that pays tribute to Casino. Scene: 10 chips each; minimum wager 2. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Bad Decision Roulette", a minigame in a party video game that pays tribute to Casino. Scene: A single-zero wheel and the real layout: $1,000 each, $10 to $500 a spin. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
