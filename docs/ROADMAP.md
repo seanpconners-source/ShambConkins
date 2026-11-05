@@ -222,7 +222,7 @@ Order to be set by the triage. Current candidates:
 - **D1** `[todo]` Home Alone Stairs / Paint Can: good idea, rework into a genuinely fun game.
 - **D2** `[todo]` Cone Chaos: major redesign or replace.
 - **D3** `[todo]` Death Proof: looks cool, play is bad; redesign.
-- **D4** `[bug]` Major League Baseball: doesn't work properly. Rebuild in the style of Ken Griffey Jr. Presents MLB (SNES); review batting and fielding games.
+- **D4** `[verify]` (Nov 4, owner's picks: innings 1/3/9 in the Arcade (board = 1), roster + Major League cast lineups with Harry Doyle calling it, Bat & Field = the real game and the Batting Cage = a Home Run Derby in the same look. Built: engines/griffeyBall.js + baseballRules.js + griffeyArt.js; 9 Major League (1989) characters added; vs CPU and online) Major League Baseball: doesn't work properly. Rebuild in the style of Ken Griffey Jr. Presents MLB (SNES); review batting and fielding games.
 - **D5** `[verify]` (Nov 2 night: floating stick per half + tap/2nd finger/BOMB button, smooth walking with corner sliding, Bomberman bodies; arena look unchanged) Bomberman: controls too hard; SNES Super Bomberman style with character heads.
 - **D6** `[verify]` (Nov 2 night: classic ghost AI + waves + frightened, 75% ghost speed, arcade maze/ghosts/sounds; heads stay as the chompers) Pac-Maze Duel: much closer to classic Pac-Man (maze feel, ghost behavior, power pellets, speeds, sounds).
 - **D7** `[todo]` TowerFall Arrow Arena: confusing, not fun; proper competitive archery game.

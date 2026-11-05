@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Major League Baseball is a real ballgame now** (was Bat & Field), in the style of Ken Griffey Jr. baseball on the SNES. Pick a fastball, curve, slider or change-up and tap where to throw it; batting, hold a finger to aim the bat and let go to swing. Balls in play cut to the field: the nearest fielder runs to the ball (drag to steer him), catches flies, and you tap a base to throw; GO and BACK send or hold your runners. Balls, strikes, walks, force and tag outs, extra innings and walk-offs. 1, 3 or 9 innings in the Arcade, one inning on the board. Your roster bats, filled out by the Major League cast, and Harry Doyle calls the game.
+- **The Batting Cage is a Home Run Derby** in the same look: ten outs each, most home runs wins.
+- **Nine new characters from Major League:** Rick “Wild Thing” Vaughn, Jake Taylor, Willie Mays Hayes, Pedro Cerrano, Roger Dorn, Eddie Harris, Lou Brown, Harry Doyle and Rachel Phelps. Win the baseball games to recruit them.
+
 - **No more pinch-zoom on menus and in games.** Two fingers no longer zoom the page anywhere (menus, the Arcade, every game). The board map still zooms with a pinch, as before.
 - **Swiping between games in the Arcade no longer flashes.** The old game slides away where your finger let go and the new one slides in, instead of everything jumping back and blinking.
 

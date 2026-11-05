@@ -448,7 +448,11 @@
   "src/engines/vegasGame.js",
   "src/engines/vegasBaccarat.js",
   "src/engines/vegasPoker.js",
-  "src/engines/vegasRoulette.js"
+  "src/engines/vegasRoulette.js",
+  "src/engines/baseballRules.js",
+  "src/data/majorLeague.js",
+  "src/engines/griffeyArt.js",
+  "src/engines/griffeyBall.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
