@@ -14,6 +14,7 @@ time, in order, skipping anything marked done (✅). Name every file exactly as 
 |---|---|---|---|
 | **Sundown Showdown sprites** (cowboys, bandits, riders, boss, effects, props) | `docs/sundown-sprites/GPT-SPRITE-BRIEF.md` | `docs/sundown-sprites/templates/*@4x.png` | which files are in `assets/sundown/` |
 | **Sundown Showdown stages** (skies, backgrounds, ground, building fronts, canyon rock, street props) | `docs/sundown-sprites/GPT-SPRITE-BRIEF.md` → "Stage art" | `docs/sundown-sprites/templates/*-building-*@2x.png` | which files are in `assets/sundown/` |
+| **Major League Baseball sprites** (batters, pitchers, fielders, catcher, umpire, helmets/caps, ball, stadium, logos) | `docs/baseball-sprites/GPT-SPRITE-BRIEF.md` | `docs/baseball-sprites/templates/*@2x.png` | which files are in `assets/baseball/` |
 | **Arcade key art, logos, icons** (picture behind each game, its logo, its tile icon) | `docs/arcade-art/PROMPTS.md` (a ready prompt per slot; ✅ = done) | | `assets/tiles/SLOTS.md` |
 | **Item pictures** | this file → "Item pictures" | `docs/art-for-gpt/ITEMS-TODO.md` (every item still without art) | same list |
 | **Character portraits** | this file → "Character portraits" | `docs/art-for-gpt/PORTRAITS-TODO.md` | same list |
@@ -51,13 +52,14 @@ time, in order, skipping anything marked done (✅). Name every file exactly as 
 
 ## Hand back (owner)
 Best: GitHub, which Claude can always read. In the browser, open the repository → folder **`art-inbox/<area>/`** (for example
-`art-inbox/sundown/`, `art-inbox/items/`, `art-inbox/arcade/`, `art-inbox/portraits/`) → **Add file → Upload files** →
+`art-inbox/sundown/`, `art-inbox/baseball/`, `art-inbox/items/`, `art-inbox/arcade/`, `art-inbox/portraits/`) → **Add file → Upload files** →
 commit. Character portraits can also go straight to `assets/portraits/` on main, as always.
 Google Drive also works when Claude runs on the laptop, but a cloud session can only pull tiny files from Drive.
 
 ## For Claude: importing
 - `art-inbox/<area>/` → process into the real folder, then delete from the inbox in the same commit:
   - sundown → check frame sizes against `src/data/sundownSprites.js` (4x art: downscale with nearest-neighbour), `assets/sundown/`
+  - baseball → check frame sizes against `src/data/baseballSprites.js` (2x art: downscale to the frame size), `assets/baseball/`
   - items → trim, 512 px WebP q88 into `assets/items/<id>.webp`, original into `assets/originals/items/`
   - arcade → `python3 tools/import-arcade-art.py art-inbox/arcade` (key art then goes through the Background Picker)
   - portraits → `assets/portraits/` (480 px WebP q88, originals archived: `tools/optimize-art.py`)

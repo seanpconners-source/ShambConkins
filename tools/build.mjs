@@ -88,6 +88,13 @@ if (fs.existsSync(sundownDir)) for (const f of fs.readdirSync(sundownDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('sundown:' + m[1].toLowerCase(), MIME[ext], ext, path.join(sundownDir, f));
 }
+// Major League Baseball sprite sheets and pictures: assets/baseball/<name>.(webp|png) -> baseball:<name>
+// (names and layout: src/data/baseballSprites.js, docs/baseball-sprites/README.md).
+const baseballDir = path.join(root, 'assets/baseball');
+if (fs.existsSync(baseballDir)) for (const f of fs.readdirSync(baseballDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('baseball:' + m[1].toLowerCase(), MIME[ext], ext, path.join(baseballDir, f));
+}
 // Drop-in music: assets/music/<name>.(mp3|ogg|m4a|wav) -> USER_PORTRAITS['music:<name>'] (e.g. cv-symphony, cv-symphony-boss).
 const AUDIO = {mp3: 'audio/mpeg', ogg: 'audio/ogg', m4a: 'audio/mp4', wav: 'audio/wav'};
 const musicDir = path.join(root, 'assets/music');
@@ -139,10 +146,10 @@ if (pwaDir) {
   // The app folder: the same game, but the pictures and sounds are files in a/ named by their contents ("a/<hash>.<ext>"),
   // so a new release reuses every file that didn't change. The built-in art of src/data/art.js + faceArt.js has to stay
   // data URIs (face photos are shown inside SVG frames, which can't load other files), so it goes into one script,
-  // a/<hash>.js, that runs before the game. The 3 tiny item/location drop-ins stay inside the page.
+  // a/<hash>.js, that runs before the game.
   const files = new Map();   // a/ file name -> bytes
   const keep = (buf, ext) => {const name = crypto.createHash('sha256').update(buf).digest('hex').slice(0, 16) + '.' + ext; files.set(name, buf); return 'a/' + name;};
-  const appPortraits = Object.fromEntries([...drops].map(([k, d]) => [k, /^photo:(item|location):/.test(k) ? dataURI(d.mime, d.buf) : keep(d.buf, d.ext)]));
+  const appPortraits = Object.fromEntries([...drops].map(([k, d]) => [k, keep(d.buf, d.ext)]));   // items/locations too (inlined, 300+ items pushed index.html past Cloudflare's 25 MiB)
   const art = [], artAt = new Map();
   const appJs = js.replace(/"@@asset:(assets\/(?!pwa\/)[A-Za-z0-9_./-]+\.(?:webp|png|jpg))@@"/g, (_, file) => {
     if (!artAt.has(file)) {artAt.set(file, art.length); art.push(dataURI(MIME[file.split('.').pop()], fs.readFileSync(path.join(root, file))));}
