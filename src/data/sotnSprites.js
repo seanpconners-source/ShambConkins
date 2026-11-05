@@ -57,9 +57,10 @@ SHEETS['hero-p2']=SHEETS['hero-p1'];
 const PICTURES={
  // weapons and items
  'sword-alucard':{w:34.3,at:'grip'},'sword-short':{w:20.6,at:'grip'},'sword-claymore':{w:36.6,at:'grip'},
- heart:{w:8,at:'bottom'},bigheart:{w:12,at:'bottom'},money:{w:10,at:'bottom'},potion:{w:9,at:'bottom'},roast:{w:17,at:'bottom'},
- dagger:{w:13.7,at:'grip'},axe:{w:13,at:'centre'},'holy-water':{w:9,at:'bottom'},cross:{w:14,at:'centre'},
- 'leap-stone':{w:12,at:'bottom'},'blood-orb':{w:16,at:'bottom'},bone:{w:11,at:'centre'},
+ // (items: `fit` = w is the LONGEST side, so thin pictures like a vial don't come out huge)
+ heart:{w:8,at:'bottom',fit:1},bigheart:{w:12,at:'bottom',fit:1},money:{w:10,at:'bottom',fit:1},potion:{w:11,at:'bottom',fit:1},roast:{w:17,at:'bottom',fit:1},
+ dagger:{w:13.7,at:'grip'},axe:{w:14,at:'centre',fit:1},'holy-water':{w:12,at:'bottom',fit:1},cross:{w:14,at:'centre',fit:1},
+ 'leap-stone':{w:14,at:'bottom',fit:1},'blood-orb':{w:16,at:'bottom',fit:1},bone:{w:11,at:'centre',fit:1},
  // the moonlit approach (outside): sky, moon, the castle on its crag, two repeating strips, a fog strip
  'forest-sky':{at:'cover'},moon:{w:120,at:'centre'},'castle-far':{w:360,at:'bottom'},
  'forest-far':{w:400,h:240,at:'tile'},'forest-near':{w:320,h:240,at:'tile'},fog:{w:512,h:60,at:'tile'},
@@ -110,7 +111,7 @@ function drawFrame(g,sh,fr,x,y,f=1,{tint=null,scale=1}={}){const d=sh.def,k=S*sc
  if(tint)g.drawImage(tinted(sh,fr,tint),-d.foot[0],-d.foot[1],fr.w,fr.h);else g.drawImage(sh.img,fr.sx,fr.sy,fr.w,fr.h,-d.foot[0],-d.foot[1],fr.w,fr.h);
  g.imageSmoothingEnabled=prev;g.restore();}
 // world size {w,h} of a picture drawn at its spec'd width (or S per px when no width is set)
-function sizeOf(name,img){const p=PICTURES[name]||{};const w=p.w||img.width*S;return {w,h:w*img.height/img.width};}
+function sizeOf(name,img){const p=PICTURES[name]||{};if(p.fit&&p.w){const k=p.w/Math.max(img.width,img.height);return {w:img.width*k,h:img.height*k};}const w=p.w||img.width*S;return {w,h:w*img.height/img.width};}
 // Draws a picture by its spec: bottom-centre / centre / top-centre on (x,y), scaled by sc, turned by rot, mirrored by f.
 function drawPicture(g,name,x,y,{sc=1,rot=0,f=1,at=null,alpha=1}={}){const img=picture(name);if(!img)return false;const {w,h}=sizeOf(name,img),W=w*sc,H=h*sc,a=at||(PICTURES[name]||{}).at;
  g.save();g.translate(x,y);if(rot)g.rotate(rot);if(f<0)g.scale(-1,1);if(alpha<1)g.globalAlpha*=alpha;

@@ -102,7 +102,7 @@ const keyArt=it=>it&&(dropArt('keyart',it.fam?.key)||dropArt('keyart',it.g?.id)|
 // placeKey() sizes and moves the picture so this box is always fully on screen on any phone/tablet/desktop, beside the
 // text on wide screens and above it on tall ones; it zooms out (edges fade into the backdrop) rather than cut it off.
 // New key art: add its box here (slot = game id or family key); without one the middle of the picture is kept.
-const KEY_BOX={baseball:[.664,.385,.929,.579], 'black-sabbath-pinball':[.674,.299,.887,.533], bond:[.302,.394,.608,.762], bosses:[.296,.501,.58,.828],
+const KEY_BOX={baseball:[.32,.13,.55,.46], 'black-sabbath-pinball':[.674,.299,.887,.533], bond:[.302,.394,.608,.762], bosses:[.296,.501,.58,.828],
  'bricks-breaker-quest':[.77,.478,.947,.656], broforce:[.579,.308,.816,.542], 'bucketheadland-pinball':[.387,.391,.799,.713], candy:[.668,.342,.795,.442],
  casino:[.412,.299,.688,.516], castlevania:[.555,.542,.758,.691], clue:[.746,.524,.827,.619], doom:[.526,.168,.831,.506], 'doom-2':[.454,.302,.731,.502],
  ducks:[.604,.352,.916,.519], 'greed-island-mancala':[.331,.034,.677,.251], hangman:[.258,.1,.709,.617], hyrule:[.565,.478,.77,.638],
