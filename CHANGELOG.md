@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.85.1
 
 - **Swiping between games in the Arcade is smooth again.** Your screen recording's choppiness came from the moment the finger let go: the phone froze for a moment while it decoded the next game's full background picture, and the text jumped straight from the old game to the new one. Now the next game is made ready while your finger is still moving: dragging the picture aside reveals the next game's picture underneath (no more solid colour block in the gap). When you let go, the old text carries on out at the speed you threw it and the new text slides in from the other side. Measured on a slowed-down phone-size browser: the longest frame at release went from 250 ms to under 50 ms, on phone, Fold, landscape and desktop sizes.
 
