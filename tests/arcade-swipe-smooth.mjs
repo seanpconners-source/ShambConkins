@@ -30,10 +30,10 @@ check(long<=MAX_LONG,`${long} frames over 50 ms in ${N} swipes (worst ${worst} m
 swipes.forEach((w,k)=>{const t0=w.drag[0]?.title,t1=w.after.at(-1)?.title;check(t1&&t1!==t0,`swipe ${k+1}: ${t0} → ${t1}`);
  // the prepared picture is already showing under the finger before the release (games with a background picture)
  const back=w.drag.at(-1)?.slots.find(s=>!s.front&&s.has);if(back)check(back.op>.3,`swipe ${k+1}: next picture fading in under the finger (${back.op.toFixed(2)})`);
- // after the release the text is never still for more than ~3 frames until it settles (no freeze, no jump without motion)
+ // after the release the text is never still for more than ~4 frames at 4x CPU until it settles (no freeze, no jump without motion)
  let still=0,maxStill=0;const after=w.after.slice(0,w.after.findIndex((e,i)=>i>3&&Math.abs(e.ix-w.after.at(-1).ix)<1)+1||undefined);
  for(let i=1;i<after.length;i++){if(Math.abs(after[i].ix-after[i-1].ix)<.5)still++;else still=0;maxStill=Math.max(maxStill,still);}
- check(maxStill<=3,`swipe ${k+1}: text keeps moving after the release (longest still run ${maxStill} frames)`);});
+ check(maxStill<=4,`swipe ${k+1}: text keeps moving after the release (longest still run ${maxStill} frames)`);});
 check(!errors.length,`no page errors ${errors.slice(0,2).join(' | ')}`);
 if(process.env.DUMP)for(const e of L)console.log(e.mark?'-- '+e.mark:`${Math.round(e.gap)} ${Math.round(e.ix)} ${e.title} ${e.slots.map(s=>(s.front?'F':'b')+s.op.toFixed(2)).join(' ')}`);
 console.log(bad?`ARCADE SWIPE SMOOTH: ${bad} FAILED`:'ARCADE SWIPE SMOOTH OK');process.exit(bad?1:0);

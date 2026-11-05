@@ -1176,6 +1176,9 @@ body #dialog .fr-panel button.fr-x{min-height:30px!important;width:30px!importan
 .arc-keyart .arc-layer.arc-key-front{opacity:1}
 /* M25 (Nov 5): the two background slots are their own layers for good, so a swipe's moves are compositor-only from the first frame */
 .arc-keyart .arc-layer{will-change:opacity,translate}
+/* the shown slot sits over the hidden one, so a drag reveals the next game's picture (opaque underneath) instead of the
+   colour wash; a slot leaving after a swipe stays on top while it fades */
+.arc-keyart .arc-layer.arc-key-front{z-index:1}.arc-keyart .arc-layer.arc-key-leaving{z-index:2}
 .arc-fade-in{animation:arc-fade-in .22s ease both}
 .arc-fade-out{animation:arc-fade-out .22s ease both;pointer-events:none}
 @keyframes arc-fade-in{from{opacity:0}to{opacity:1}}

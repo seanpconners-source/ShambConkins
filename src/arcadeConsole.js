@@ -346,19 +346,19 @@ function keySlots(box){let [a,b]=box.children;if(!a){a=document.createElement('d
 const decodeImg=im=>Promise.resolve(im?.decode?.()).catch(()=>{}),waitMs=ms=>new Promise(r=>setTimeout(r,ms));
 // The old front slot leaves: it fades, and after a swipe it carries on drifting the way it was thrown.
 function keyOut(front,o){front.classList.remove('arc-key-front');
- if(o.dir){const cur=parseFloat(front.style.translate)||0;front.style.transition='opacity .28s ease,translate .36s cubic-bezier(.2,.7,.3,1)';front.style.translate=`${(cur-o.dir*o.W*.22).toFixed(0)}px 0`;}
- front._clear=setTimeout(()=>{if(!front.classList.contains('arc-key-front')){front.innerHTML='';front.style.translate='';front.style.transition='';front.style.opacity='';}},380);}
+ if(o.dir){const cur=parseFloat(front.style.translate)||0;front.classList.add('arc-key-leaving');front.style.transition='opacity .28s ease,translate .36s cubic-bezier(.2,.7,.3,1)';front.style.translate=`${(cur-o.dir*o.W*.22).toFixed(0)}px 0`;front.style.opacity='';}
+ front._clear=setTimeout(()=>{front.classList.remove('arc-key-leaving');if(!front.classList.contains('arc-key-front')){front.innerHTML='';front.style.translate='';front.style.transition='';front.style.opacity='';}},380);}
 // o.pre = a swipe's prepared neighbour (its picture already in the hidden slot, decoded and placed while the finger moved)
 function swapKeyArt(box,it,key,then,o={}){if(!box)return;const run=++keySwap;let [front,back]=keySlots(box);
  const pre=o.pre&&o.pre.back===back&&o.pre.key===key&&back.firstChild?o.pre:null;
  for(const l of [front,back])clearTimeout(l._clear);
  if(!pre){// finish whatever fade is running: the front shows, the other slot is empty
-  for(const l of [front,back])l.style.transition='none';back.classList.remove('arc-key-front');back.innerHTML='';back.style.translate='';back.style.opacity='';void box.offsetWidth;for(const l of [front,back])l.style.transition='';}
+  for(const l of [front,back]){l.style.transition='none';l.classList.remove('arc-key-leaving');}back.classList.remove('arc-key-front');back.innerHTML='';back.style.translate='';back.style.opacity='';void box.offsetWidth;for(const l of [front,back])l.style.transition='';}
  if(!key){keyOut(front,o);then();return;}
  if(!pre)back.innerHTML=keyImg(it);const img=back.querySelector('img:not(.arc-keyfill)')||back.querySelector('img');
  const show=()=>{if(run!==keySwap||!box.isConnected)return;if(!pre?.placed)placeKey(img,!o.dir);if(o.dir)o.shade=img;then();
   // from the opacity the drag left it at to fully shown, on the stylesheet's fade
-  back.style.transition=o.dir?'opacity .26s ease-out':'';back.style.opacity='';back.classList.add('arc-key-front');keyOut(front,o);};
+  back.style.transition=o.dir?'opacity .2s ease-out':'';back.style.opacity='';back.classList.add('arc-key-front');keyOut(front,o);};
  (pre?pre.dec:Promise.race([decodeImg(img),waitMs(1500)])).then(show);}
 // The text block of a game, built off the page with its pictures (logo, chips) decoded, so it can go in whole in one frame.
 function buildInfo(it){const tmp=document.createElement('div');tmp.innerHTML=infoHTML(it);const imgs=[...tmp.querySelectorAll('img')];for(const im of imgs)im.loading='eager';
@@ -441,13 +441,14 @@ function prepSwipe(root,dir){const i=current.items.findIndex(x=>x.key===state.fo
  const it=current.items[j];if(!it)return null;const key=keyArt(it),p={j,dir,key,info:buildInfo(it)};prep=p;
  const box=root.querySelector('.arc-keyart');
  if(key&&box){const [,back]=keySlots(box);clearTimeout(back._clear);back.style.transition='none';back.style.opacity='0';back.style.translate='';back.innerHTML=keyImg(it);p.back=back;
-  const img=back.querySelector('img:not(.arc-keyfill)');p.dec=Promise.race([decodeImg(img),waitMs(1500)]).then(()=>{if(prep===p&&img.isConnected){placeKey(img,false);p.placed=true;}});}
+  const img=back.querySelector('img:not(.arc-keyfill)');p.dec=Promise.race([decodeImg(img),waitMs(1500)]).then(()=>{if(prep===p&&img.isConnected){placeKey(img,false);p.placed=true;if(swipe&&!swipe.done){back.style.transition='opacity .12s ease-out';back.style.opacity='1';}}});}
  return p;}
 function swipeMove(root,dx,anim,W=swipe?.W||root.clientWidth||360){const tr=anim?'transform .22s cubic-bezier(.2,.8,.3,1),opacity .22s':'none';
  const info=root.querySelector('.arc-info');if(info){info.style.transition=tr;info.style.transform=dx?`translateX(${dx.toFixed(1)}px)`:'';info.style.opacity=dx?String(Math.max(.25,1-Math.abs(dx)/(W*.7))):'';}
  const hero=root.querySelector('.arc-hero-art');if(hero){hero.style.transition=tr;hero.style.transform=dx?`translateX(${(dx*.45).toFixed(1)}px)`:'';}
- const box=root.querySelector('.arc-keyart');if(box){const [front]=keySlots(box);front.style.transition=anim?'translate .22s cubic-bezier(.2,.8,.3,1)':'none';front.style.translate=dx?`${(dx*.45).toFixed(1)}px 0`:'';
-  if(prep?.back){prep.back.style.transition=anim?'opacity .22s':'none';prep.back.style.opacity=prep.placed?String(Math.min(.85,Math.abs(dx)/(W*.75)).toFixed(3)):'0';}}}
+ const box=root.querySelector('.arc-keyart');if(box){const [front]=keySlots(box);front.style.transition=anim?'translate .22s cubic-bezier(.2,.8,.3,1),opacity .22s':'none';front.style.translate=dx?`${(dx*.45).toFixed(1)}px 0`:'';
+  front.style.opacity=dx&&prep?.placed?String((1-Math.min(.22,Math.abs(dx)/(W*2.2))).toFixed(3)):'';
+  if(prep?.back){prep.back.style.transition=anim?'opacity .22s':'opacity .12s ease-out';prep.back.style.opacity=prep.placed&&dx?'1':'0';}}}
 if(typeof document!=='undefined'){
  document.addEventListener('pointerdown',ev=>{const root=ev.target.closest?.('.arcade-console');
   if(!root||!current||state.family||state.grid||ev.button>0||ev.target.closest(SWIPE_SKIP)||current.items.length<2)return;
