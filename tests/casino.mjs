@@ -16,6 +16,7 @@ const IDS=(process.argv[2]||'bond-baccarat,five-card,roulette').split(',');
  check(R.compareRank(rank([[2],[3,'h'],[4],[5],[1,'d']]),rank([[13],[13,'h'],[12],[12,'h'],[2]]))>0&&R.handName(rank([[2],[3,'h'],[4],[5],[1,'d']]))==='Straight, Five high','poker: the wheel is a five-high straight and beats two pair');
  check(R.compareRank(rank([[13],[13,'h'],[9],[5,'h'],[2]]),rank([[13,'d'],[13,'c'],[9,'h'],[5],[3]]))<0,'poker: kickers decide equal pairs');
  check(JSON.stringify(R.drawPlan(C([2],[9,'h'],[9,'d'],[13,'c'],[4,'h'])).sort())==='[0,3,4]'&&R.drawPlan(C([2],[9],[5],[13],[4,'h']))+''==='4','poker: draw keeps a pair, keeps four to a flush');
+ check(R.rReturn('n:17',10,17)===360&&R.rReturn('s:17:20',10,20)===180&&R.rReturn('f4',10,0)===90&&R.rReturn('sl:0',10,6)===60&&R.rReturn('red',10,0)===0,'roulette: the full table pays 35/17/8/5 and zero beats red');
  check(R.betReturn('n17',10,17)===360&&R.betReturn('red',10,0)===0&&R.betReturn('d3',10,25)===30&&R.betReturn('c1',10,34)===30&&R.betReturn('odd',10,7)===20&&R.betReturn('high',10,18)===0,'roulette: payouts (35, 2, 2, 1 to 1; zero loses the outside)');}
 const browser=await launchBrowser();
 const URL=process.env.SHAMB_URL||'http://localhost:8123/';
@@ -50,11 +51,20 @@ if(IDS.includes('five-card')){const page=await open('five-card',390,780);await w
  await tapHit(page,'show');await tapHit(page,'card:0');await tapHit(page,'card:2');
  const pick=await D(page,()=>window.ShambConkins.store.session.debug.st.ui.opts.pick.slice());check(pick.length===2,'poker: tapping two cards marks them to throw away ('+pick+')');await page.screenshot({path:screenshotPath('casino-pk-draw.png')});
  await tapHit(page,'draw');await page.waitForTimeout(600);check(!errs(page).length,'poker: no page errors '+errs(page).slice(0,2).join(' | '));await page.context().close();}
-if(IDS.includes('roulette')){const page=await open('roulette',390,780);await waitUI(page,'bet');await page.waitForTimeout(400);
- const o=await origin(page);const tapCell=async k=>{const q=await D(page,k=>window.ShambConkins.store.session.debug.cell(k),k);await page.mouse.click(o.x+q.X+q.w/2,o.y+q.Y+q.h/2);await page.waitForTimeout(120);};
- await tapHit(page,'chip:25');await tapCell('n17');await tapCell('red');await tapHit(page,'undo');await tapCell('odd');
- const placed=await D(page,()=>JSON.stringify(window.ShambConkins.store.session.debug.st.ui.opts.placed));check(placed==='[["n17",25],["odd",25]]','roulette: chips land where you tap, UNDO takes the last back '+placed);
- await tapHit(page,'done');check(!errs(page).length,'roulette: no page errors '+errs(page).slice(0,2).join(' | '));await page.context().close();}
+if(IDS.includes('roulette')){const page=await open('roulette',390,780);
+ // the intro card first: TAKE A SEAT, then the first bet
+ await waitUI(page,'front-intro');check(await D(page,()=>!!window.ShambConkins.store.session.debug.hits().find(h=>h.id==='front:seat')),'roulette: the intro card has TAKE A SEAT');
+ await tapHit(page,'front:seat');await waitUI(page,'bet');await page.waitForTimeout(400);
+ const o=await origin(page);const tapAt=async(a,c)=>{const q=await D(page,([a,c])=>window.ShambConkins.store.session.debug.screenOf(a,c),[a,c]);await page.mouse.click(o.x+q.x,o.y+q.y);await page.waitForTimeout(140);};
+ const what=(a,c)=>D(page,([a,c])=>{const d=window.ShambConkins.store.session.debug,q=d.screenOf(a,c);return d.betAt(q.x,q.y)?.key;},[a,c]);
+ check(await what(6.5,3.5)==='n:17'&&await what(6,3.5)==='s:14:17'&&await what(6,3)==='c:13'&&await what(6.5,2.05)==='st:5'&&await what(1,2.5)==='s:0:1'&&await what(1,2.05)==='f4'&&await what(13.5,4.5)==='col:2'&&await what(6,.5)==='red',
+  'roulette: the board reads straights, splits, corners, streets, zero splits, first four, columns and red');
+ await tapHit(page,'chip:25');await tapAt(6.5,3.5);await tapAt(6,.5);await tapHit(page,'undo');await tapAt(10,.5);
+ const placed=await D(page,()=>JSON.stringify(window.ShambConkins.store.session.debug.st.bets.filter(b=>b.who===0).map(b=>[b.key,b.amt])));check(placed==='[["n:17",25],["odd",25]]','roulette: chips land where you tap, UNDO takes the last back '+placed);
+ await tapHit(page,'double');check(await D(page,()=>window.ShambConkins.store.session.debug.st.bets.filter(b=>b.who===0).reduce((a,b)=>a+b.amt,0))===100,'roulette: ×2 doubles the bets');
+ await tapHit(page,'done');await page.waitForFunction(()=>window.ShambConkins.store.session.debug.st.ui?.p===1,null,{timeout:8000}).catch(()=>{});
+ check(await D(page,()=>window.ShambConkins.store.session.debug.st.ui?.mode==='bet'&&window.ShambConkins.store.session.debug.st.ui.p===1),'roulette: DONE hands the board to player 2');
+ check(!errs(page).length,'roulette: no page errors '+errs(page).slice(0,2).join(' | '));await page.context().close();}
 // ---- each table to the result card, three sizes, on the bots
 for(const id of IDS)for(const [w,h] of [[390,780],[844,390],[1100,700]]){const page=await open(id,w,h);
  await D(page,()=>{const d=window.ShambConkins.store.session.debug;d.st.auto=true;d.st.fast=true;});

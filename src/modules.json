@@ -453,7 +453,9 @@
   "src/data/majorLeague.js",
   "src/engines/griffeyArt.js",
   "src/engines/griffeyBall.js",
-  "src/data/baseballSprites.js"
+  "src/data/baseballSprites.js",
+  "src/engines/casinoFront.js",
+  "src/engines/rouletteGame.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

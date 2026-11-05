@@ -268,6 +268,15 @@ Endings
 
 ## Phase G — polish the good games (section 1)
 
+- **G13** `[todo]` (owner, Nov 5: "consider this not done at all") CASINO, round 2: make all four tables great and professional,
+  like the best modern Android casino apps. Owner's problems with round 1: the games just begin; it isn't clear what game it is,
+  what the player is supposed to do ("am I supposed to click on the chips or what"), who the people are, or what is happening;
+  no guidance, no clear structure. ROULETTE is terrible: "a real thought-out game", not the old roulette on the new table.
+  Needed: a title/intro card per game (name, the table, the dealer and the regulars introduced, the goal), a first-time guided
+  tutorial with pointing hints, a clear phase banner (PLACE YOUR BETS, DEALING, YOUR TURN, RESULT) with whose turn it is, a
+  bottom control bar (chip picker, CLEAR / UNDO / REBET / DOUBLE, a big DEAL / SPIN), balance / bet / win always on show,
+  seat labels (YOU, the other player, each regular by name), a ? rules sheet, clear win/lose results, a session summary.
+  Roulette rebuilt from scratch as a full game: proper betting board, racetrack, history, hot/cold numbers, a real spin.
 - **G1** `[verify]` (owner's picks Nov 4: drawn Vegas table, themed dealer + regulars + the F10 unlock. All four tables built on `engines/vegasTable.js` (+ `vegasGame.js` scaffold for the last three): BLACKJACK (owner approved the screenshots), BACCARAT (Casino Royale, squeeze the cards, bead road, 10 coups), FIVE-CARD DRAW ($10 ante, $20/$40 limit, draw, side pots, SHOW for pass and play, 8 hands), ROULETTE (spinning wheel and ball, the real layout, own chip colours, 10 spins); all vs CPU and online) Casino games: real Vegas tables, cards dealt, dealer animations, players around the table, atmosphere.
 - **G2** `[todo]` Penalty Kicks: fun already; better graphics, animations, sound, presentation.
 - **G3** `[todo]` Mario Kart: backs of heads with helmets, frequent look-backs, wider courses, more interesting play, more stages and many more tracks.

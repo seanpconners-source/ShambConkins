@@ -44,4 +44,28 @@ const betPays=key=>BET_PAYS[/^n\d+$/.test(key)?'n':/^[dc][123]$/.test(key)?key[0
 const betReturn=(key,stake,n)=>betWins(key,n)?stake*(1+betPays(key)):0;
 const betLabel=key=>/^n\d+$/.test(key)?key.slice(1):{d1:'1st 12',d2:'2nd 12',d3:'3rd 12',c1:'2 to 1 ·1',c2:'2 to 1 ·2',c3:'2 to 1 ·3',red:'RED',black:'BLACK',odd:'ODD',even:'EVEN',low:'1-18',high:'19-36'}[key]||key;
 
-Object.assign(exports,{bacValue,bacTotal,bankerDraws,POKER_NAMES,pokerRank,compareRank,handName,drawPlan,handStrength,WHEEL,RED,betWins,betPays,betReturn,betLabel});
+// ---- roulette, the full table (engines/rouletteGame.js). Bet keys:
+//  n:K straight · s:A:B split · t:0:1:2 / t:0:2:3 trio · st:R street (row R = 3R+1..3R+3) · c:A corner (A, A+1, A+3, A+4) ·
+//  f4 first four (0-3) · sl:R six line (rows R and R+1) · col:C column (C 0..2 = numbers C+1, C+4..) · doz:D dozen (D 0..2) ·
+//  low / high / even / odd / red / black. Pays 36/n - 1 to 1 for n numbers covered (35, 17, 11, 8, 5, 2, 1).
+function rCover(key){const k=String(key),m=k.split(':'),N=i=>+m[i],R=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
+ if(m[0]==='n')return N(1)>=0&&N(1)<=36?[N(1)]:[];
+ if(m[0]==='s'){const a=N(1),b=N(2);return a>=0&&b<=36&&a<b?[a,b]:[];}
+ if(m[0]==='t')return [N(1),N(2),N(3)];
+ if(m[0]==='st'){const r=N(1);return r>=0&&r<=11?R(3*r+1,3*r+3):[];}
+ if(m[0]==='c'){const a=N(1);return a>=1&&a<=32&&a%3!==0?[a,a+1,a+3,a+4]:[];}
+ if(k==='f4')return [0,1,2,3];
+ if(m[0]==='sl'){const r=N(1);return r>=0&&r<=10?R(3*r+1,3*r+6):[];}
+ if(m[0]==='col'){const c=N(1);return c>=0&&c<=2?R(0,11).map(r=>3*r+c+1):[];}
+ if(m[0]==='doz'){const d=N(1);return d>=0&&d<=2?R(12*d+1,12*d+12):[];}
+ const all=R(1,36);
+ return {low:all.filter(n=>n<=18),high:all.filter(n=>n>18),even:all.filter(n=>n%2===0),odd:all.filter(n=>n%2),red:all.filter(n=>RED.has(n)),black:all.filter(n=>!RED.has(n))}[k]||[];}
+const rPays=key=>{const n=rCover(key).length;return n?36/n-1:0;};
+const rReturn=(key,amt,num)=>rCover(key).includes(num)?amt*(1+rPays(key)):0;
+const rKind=key=>{const k=String(key).split(':')[0];return {n:'STRAIGHT',s:'SPLIT',t:'TRIO',st:'STREET',c:'CORNER',f4:'FIRST FOUR',sl:'SIX LINE',col:'COLUMN',doz:'DOZEN'}[k]||'EVEN MONEY';};
+function rLabel(key){const k=String(key),c=rCover(k),m=k.split(':');
+ if(m[0]==='n')return `${c[0]} STRAIGHT`;if(m[0]==='col')return `COLUMN ${+m[1]+1}`;if(m[0]==='doz')return ['1ST 12','2ND 12','3RD 12'][+m[1]];
+ if({low:1,high:1,even:1,odd:1,red:1,black:1}[k])return {low:'1-18',high:'19-36',even:'EVEN',odd:'ODD',red:'RED',black:'BLACK'}[k];
+ return `${rKind(k)} ${c.length>4?c[0]+'-'+c[c.length-1]:c.join('/')}`;}
+const rColor=n=>n===0?'green':RED.has(n)?'red':'black';
+Object.assign(exports,{bacValue,bacTotal,bankerDraws,POKER_NAMES,pokerRank,compareRank,handName,drawPlan,handStrength,WHEEL,RED,betWins,betPays,betReturn,betLabel,rCover,rPays,rReturn,rKind,rLabel,rColor});

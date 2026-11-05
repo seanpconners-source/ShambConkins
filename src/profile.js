@@ -37,6 +37,7 @@ function loadProfile() {
   if(Number.isFinite(saved.settings?.flickSensitivity)&&saved.settings.flickSensitivity>0)p.settings.flickSensitivity=Math.min(1.35,Math.max(.65,saved.settings.flickSensitivity));
   {const v=saved.settings?.pinballView;if(v&&typeof v==='object'){const ok=(n,max)=>Number.isInteger(n)&&n>=0&&n<=max;if(ok(v.zoom,4)&&ok(v.speed,4))p.settings.pinballView={zoom:v.zoom,speed:v.speed};}}
   if(['auto','touch','pointer'].includes(saved.settings?.touchMode))p.settings.touchMode=saved.settings.touchMode;
+  {const v=saved.settings?.casinoTips;if(v&&typeof v==='object'&&!Array.isArray(v)){const o={};for(const [k,b] of Object.entries(v))if(/^[a-z-]{1,24}$/.test(k)&&b===true)o[k]=true;p.settings.casinoTips=o;}}   // casino first-time tours seen (casinoFront.js)
   const solo=normalizeSoloSettings(saved.settings?.solo);if(solo)p.settings.solo=solo;
   // Title-screen character picks (names + characters for players 1/2); app.js checks they are still unlocked.
   {const v=saved.settings?.picks,ok=(a,n)=>Array.isArray(a)&&a.length===2&&a.every(x=>typeof x==='string'&&x.length&&x.length<=n);if(v&&ok(v.names,28)&&ok(v.chars,64))p.settings.picks={names:[...v.names],chars:v.chars.map(mergedCharacterId)};}
