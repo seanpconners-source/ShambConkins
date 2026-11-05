@@ -11,12 +11,12 @@
 const SHEETS={
  // the batter at the plate, batting view: seen from behind the catcher, a right-handed batter on the LEFT of the plate
  // facing RIGHT (toward the plate). stance = waiting (a small bat waggle), swing = start of the swing .. follow-through.
- 'batter-p1':{frame:[168,172],foot:[72,171],tall:150,head:[74,48],headSize:54,rows:{stance:4,swing:6},
+ 'batter-p1':{frame:[168,172],foot:[72,171],tall:150,head:[74,61],headSize:54,rows:{stance:4,swing:6},
   // sweet = the bat's sweet spot at contact (swing frames 3-4, bat level, pointing at the plate): the game stands the batter
   // so this point crosses the zone where the swing is judged. Bat length ~64 px (a real bat is ~.45 of the player's height).
   // templates only: in the stance the hands are up by the REAR shoulder (the one on the left of the picture, away from the
   // plate) and the bat rests up and back over that shoulder, clear of the face circle (yellow ring = hands, line = bat)
-  sweet:[138,85],guides:{stance:{hands:[54,64],tip:[16,12]}}},
+  sweet:[142,97],guides:{stance:{hands:[46,59],tip:[10,6]}}},
  'batter-p2':null,
  // the pitcher on the mound, batting view: facing the camera (the batter). windup = leg kick, throw = release + follow-through.
  'pitcher-p1':{frame:[96,128],foot:[48,127],tall:118,head:[48,30],headSize:40,rows:{idle:2,windup:4,throw:4}},
