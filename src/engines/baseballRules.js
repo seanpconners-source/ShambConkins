@@ -29,10 +29,10 @@ function contact(p,dt,cu,cv,bat={power:.6,contact:.6},rand=Math.random){
  if(Math.abs(dt)>WINDOW||d>reach)return {kind:'miss'};
  const qt=1-Math.abs(dt)/WINDOW,qd=1-d/reach,q=clamp(qt*.55+qd*.45,0,1);
  // timing sends it: early (dt<0) pulls it to left field (a right-handed batter), late goes the other way (theta>0 = right field)
- let theta=clamp(dt/WINDOW*66+(rand()-.5)*12,-80,80)*D2R;
+ let theta=clamp(dt/WINDOW*72+(rand()-.5)*26,-80,80)*D2R;
  // the bat under the ball lifts it, over it chops it into the ground
  const gauss=()=>(rand()+rand()+rand()-1.5)*1.15;const phi=clamp(9+dv*44+gauss()*16+(1-qd)*(dv>0?10:-10),-30,65);
- if(q<.32)return {kind:'foul',theta:(dt<0?-1:1)*(55+rand()*30)*D2R,phi:clamp(phi+20,10,80),mph:45+rand()*20,tip:true};
+ if(q<.46)return {kind:'foul',theta:(dt<0?-1:1)*(55+rand()*30)*D2R,phi:clamp(phi+20,10,80),mph:45+rand()*20,tip:true};
  const mph=clamp(55+58*q+28*(bat.power-.5)+(bat.boost||0)+(rand()-.5)*8,40,122);
  return {kind:Math.abs(theta)>45*D2R?'foul':'fair',theta,phi,mph,q};}
 
@@ -80,13 +80,13 @@ function ratings(id,over){const h=hash(id),r=k=>.35+((h>>>k)&255)/255*.55;return
 // ---- CPU brains
 // pitcher: count-aware location, mixes pitches; skill makes it hit corners
 function cpuPitch(count,skill,rand){const kinds=['fast','fast','curve','slider','change'],kind=kinds[Math.floor(rand()*kinds.length)];
- const behind=count.b>=3&&count.s<2,ahead=count.s===2&&count.b<2,edge=behind?.45:ahead?1.25:.85;
+ const behind=count.b>=3&&count.s<2,ahead=count.s===2&&count.b<2,edge=behind?.55:ahead?1.4:1.05;
  const u=(rand()<.5?-1:1)*edge*(.4+rand()*.6),v=(rand()-.5)*2*edge*(.6+.4*skill);return {kind,u,v};}
 // batter: reads the pitch with some error, swings at strikes (and some balls), aims at where it will cross
 function cpuSwing(p,count,skill,rand){const breaking=p.kind==='curve'||p.kind==='slider',see=(1.25-skill)*.6+(breaking?.35:0);
  // a breaking ball is read where it would have gone without the break; a change-up looks like a fastball (swing early)
  const fooled=breaking&&rand()<.55-skill*.25,eu=p.u+(fooled?p.bx*.6:0)+(rand()-.5)*see,ev=p.v+(fooled?p.by*.6:0)+(rand()-.5)*see,looks=inZone(eu,ev);
- const swing=looks?rand()<(count.s===2?.95:.82):rand()<(count.s===2?.35:.16)*(1.3-skill);if(!swing)return null;
- const sd=.05+(1-skill)*.08,early=p.kind==='change'&&rand()<.6-skill*.3?-.09:0,dt=early+(rand()+rand()+rand()-1.5)*sd*1.4;return {dt,cu:eu+(rand()-.5)*.4*(1.25-skill),cv:ev+(rand()-.5)*.4*(1.25-skill)};}
+ const swing=looks?rand()<(count.s===2?.92:count.b===3?.55:.68):rand()<(count.s===2?.3:.12)*(1.3-skill);if(!swing)return null;
+ const sd=.05+(1-skill)*.08,early=p.kind==='change'&&rand()<.6-skill*.3?-.09:0,dt=early+(rand()+rand()+rand()-1.5)*sd*1.75;return {dt,cu:eu+(rand()-.5)*.4*(1.25-skill),cv:ev+(rand()-.5)*.4*(1.25-skill)};}
 
 Object.assign(exports,{BASES,MOUND,FENCE_H,fenceAt,POSITIONS,COVER,PITCHES,PITCH_SLOW,pitchTime,pitchPlan,pitchAt,inZone,WINDOW,contact,flight,isFoul,ballAt,intercept,THROW,RELEASE,RUN,BATTER_START,throwTime,onPath,newCount,tally,walk,ratings,hash,cpuPitch,cpuSwing,clamp,D2R});

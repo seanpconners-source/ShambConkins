@@ -34,14 +34,21 @@ const errs=page=>page.__e.filter(e=>!/wikipedia|wikimedia/i.test(e));
 {const page=await open('major-league-fielding',390,780);
  await page.waitForFunction(()=>window.ShambConkins.store.session.debug.st.ui?.mode==='innings',null,{timeout:15000});await page.waitForTimeout(300);await page.screenshot({path:screenshotPath('bb-menu.png')});
  await tapHit(page,'inn:3');check(await D(page,()=>window.ShambConkins.store.session.debug.st.innings)===3,'tapping 3 INNINGS sets a three-inning game');
- // player 2's team fields first: pick a curve and tap low and away
- await page.waitForFunction(()=>window.ShambConkins.store.session.debug.st.ui?.mode==='pitch',null,{timeout:15000});await tapHit(page,'pitch:curve');
- const zone=await D(page,()=>window.ShambConkins.store.session.debug.layout().zone);const o=await origin(page);await page.mouse.click(o.x+zone.x+zone.w*.3,o.y+zone.y+zone.h*.3);
- await page.waitForFunction(()=>window.ShambConkins.store.session.debug.st.pitch,null,{timeout:5000});check(await D(page,()=>window.ShambConkins.store.session.debug.st.pitch.plan.kind)==='curve','picking CURVE and tapping the zone throws a curve');
- // hold to aim, let go to swing as the ball arrives
- const arrive=await D(page,()=>{const d=window.ShambConkins.store.session.debug;return d.st.pitch.arrive-d.T;});await page.mouse.move(o.x+zone.x,o.y+zone.y+80);await page.mouse.down();await page.waitForTimeout(Math.max(0,arrive*1000-120));
- await page.screenshot({path:screenshotPath('bb-aim.png')});await page.mouse.up();await page.waitForTimeout(400);
- check(await D(page,()=>!!window.ShambConkins.store.session.debug.st.swing||window.ShambConkins.store.session.debug.st.res),'letting go swings the bat');
+ // player 2's team fields first (top half of the screen): drag along the rubber, then pick a curve
+ await page.waitForFunction(()=>window.ShambConkins.store.session.debug.st.ui?.mode==='pitch',null,{timeout:15000});const o=await origin(page);
+ await page.mouse.move(o.x+195,o.y+200);await page.mouse.down();await page.mouse.move(o.x+255,o.y+200,{steps:6});await page.mouse.up();
+ check(await D(page,()=>window.ShambConkins.store.session.debug.st.rubber)>.2,'dragging in the pitcher half moves him along the rubber');
+ await tapHit(page,'pitch:curve');
+ await page.waitForFunction(()=>window.ShambConkins.store.session.debug.st.pitch,null,{timeout:5000});check(await D(page,()=>window.ShambConkins.store.session.debug.st.pitch.plan.kind)==='curve','tapping CURVE throws a curve');
+ // aftertouch: drag in the pitcher half while the ball is coming
+ await page.mouse.move(o.x+200,o.y+250);await page.mouse.down();await page.mouse.move(o.x+140,o.y+230,{steps:5});
+ const sv=await D(page,()=>window.ShambConkins.store.session.debug.st.pitch.steer);check(sv&&sv.u<-.1,`dragging during the pitch steers it (${JSON.stringify(sv)})`);await page.mouse.up();
+ // the batter (bottom half): drag on the left to move in the box, then tap on the right to swing as the ball arrives
+ await page.mouse.move(o.x+80,o.y+680);await page.mouse.down();await page.mouse.move(o.x+130,o.y+660,{steps:5});await page.mouse.up();
+ check(await D(page,()=>window.ShambConkins.store.session.debug.st.bx.x)>.2,'dragging on the left moves the batter toward the plate');
+ const arrive=await D(page,()=>{const d=window.ShambConkins.store.session.debug;return d.st.pitch.arrive-d.T;});await page.waitForTimeout(Math.max(0,arrive*1000-150));
+ await page.screenshot({path:screenshotPath('bb-aim.png')});await page.mouse.click(o.x+330,o.y+690);await page.waitForTimeout(60);
+ check(await D(page,()=>!!window.ShambConkins.store.session.debug.st.swing||window.ShambConkins.store.session.debug.st.res),'tapping on the right swings the bat');
  await page.waitForTimeout(900);await page.screenshot({path:screenshotPath('bb-after-swing.png')});check(!errs(page).length,'menu/pitch/swing: no page errors '+errs(page).slice(0,2).join(' | '));await page.context().close();}
 // ---- a whole game on the bots, three sizes (one inning)
 for(const [w,h] of [[390,780],[844,390],[1100,700]]){const page=await open('major-league-fielding',w,h);

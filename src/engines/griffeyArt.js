@@ -83,7 +83,16 @@ function player(x,px,py,h,team,id,{pose='stand',t=0,k=0,facing=1,mood='normal',b
  x.fillStyle=cap;x.beginPath();x.ellipse(0,-u*7.2-hs*.82,hs*.4,hs*.17,0,Math.PI,0);x.fill();x.fillRect(back?-hs*.35:0,-u*7.2-hs*.84,hs*.42,hs*.06);
  x.restore();}
 // the batter, from behind the catcher: a right-handed batter on the left of the plate; swing k 0..1
-function batter(x,B,team,id,swing,mood,t=0){const h=B.H*(B.wide?.3:.22),px=B.zone.x-B.zone.w*(B.wide?.95:.9)-h*.12,py=B.plate.y+B.H*.02,u=h/10,[jer,pant,cap]=TEAM_COL[team]||TEAM_COL[0];
+// the bat: knob at the hands, thin handle, thick barrel with a rounded end; `a` = angle, `flat` squashes the vertical
+// part (a level swing seen from behind the catcher sweeps flat across the body)
+function drawBat(x,hx,hy,a,L,u,flat=1){const dx=Math.cos(a),dy=Math.sin(a)*flat,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len,nx=-uy,ny=ux,l=L*len;
+ const P=(k,w)=>[hx+ux*l*k+nx*w,hy+uy*l*k+ny*w];x.save();x.fillStyle='#d9ae6a';x.strokeStyle='#4a2e12';x.lineWidth=Math.max(1,u*.18);x.lineJoin='round';x.beginPath();
+ const pts=[P(0,u*.16),P(.38,u*.16),P(.62,u*.34),P(.97,u*.4),P(.97,-u*.4),P(.62,-u*.34),P(.38,-u*.16),P(0,-u*.16)];x.moveTo(...pts[0]);for(const q of pts.slice(1))x.lineTo(...q);x.closePath();x.fill();x.stroke();
+ x.beginPath();x.arc(...P(.97,0),u*.4,a-Math.PI/2,a+Math.PI/2);x.fill();x.stroke();
+ x.fillStyle='#222';x.beginPath();x.arc(hx,hy,u*.3,0,7);x.fill();x.restore();}
+// the batter, from behind the catcher: a right-handed batter on the left of the plate. swing k 0..1 (0 = waiting);
+// o.bx/o.by = where he stands in the batter's box (-1..1: toward the plate / up toward the pitcher), o.bunt = squared to bunt
+function batter(x,B,team,id,swing,mood,t=0,o={}){const h=B.H*(B.wide?.3:.22),bx=o.bx||0,by=o.by||0,px=B.zone.x-B.zone.w*(B.wide?.95:.9)-h*.12+bx*B.zone.w*.3,py=B.plate.y+B.H*.02-by*B.H*.03,u=h/10,[jer,pant,cap]=TEAM_COL[team]||TEAM_COL[0];
  const sh=sheetFor('batter-p'+(team+1));
  if(sh){x.fillStyle='rgba(0,0,0,.25)';x.beginPath();x.ellipse(px,py,u*3,u*.8,0,0,7);x.fill();
   const fr=swing>0?SP.frameOf(sh.def,'swing',{k:swing}):SP.frameOf(sh.def,'stance',{t,fps:3});
@@ -91,11 +100,22 @@ function batter(x,B,team,id,swing,mood,t=0){const h=B.H*(B.wide?.3:.22),px=B.zon
    x.fillStyle=cap;x.beginPath();x.ellipse(spot.x,hy-hs*.7,hs*.43,hs*.3,0,Math.PI,0);x.fill();x.beginPath();x.ellipse(spot.x+hs*.32,hy-hs*.56,hs*.13,hs*.17,0,0,7);x.fill();}
   return;}
  x.save();x.translate(px,py);x.fillStyle='rgba(0,0,0,.25)';x.beginPath();x.ellipse(0,0,u*3,u*.8,0,0,7);x.fill();
- x.strokeStyle=pant;x.lineCap='round';x.lineWidth=u*1.5;x.beginPath();x.moveTo(-u*.8,-u*4);x.lineTo(-u*1.8,-u*.2);x.moveTo(u*.8,-u*4);x.lineTo(u*1.6+swing*u*.8,-u*.2);x.stroke();
- x.fillStyle=jer;rr(x,-u*1.8,-u*7.6,u*3.6,u*4,u);x.fill();x.fillStyle='#fff';x.font=`900 ${u*1.6}px ${BODY}`;x.textAlign='center';x.textBaseline='middle';x.fillText(String((R.hash(id)%40)+1),0,-u*5.8);
- // the bat: cocked over the back shoulder, round through the zone on the swing
- const a=-2.2+swing*3.6,hx=u*1.4,hy=-u*6.4;x.strokeStyle=jer;x.lineWidth=u*1.1;x.beginPath();x.moveTo(-u*1.2,-u*7);x.lineTo(hx,hy);x.moveTo(u*1.2,-u*7);x.lineTo(hx,hy);x.stroke();
- x.save();x.translate(hx,hy);x.rotate(a);x.fillStyle='#c89a5a';x.strokeStyle='#5a3a1a';x.lineWidth=1.5;x.beginPath();x.moveTo(0,-u*.35);x.lineTo(u*6.2,-u*.6);x.lineTo(u*6.4,u*.6);x.lineTo(0,u*.35);x.closePath();x.fill();x.stroke();x.restore();
+ // legs: the front foot strides toward the plate as he swings
+ const st=Math.min(1,swing*2.2);x.strokeStyle=pant;x.lineCap='round';x.lineWidth=u*1.5;x.beginPath();x.moveTo(-u*.8,-u*4);x.lineTo(-u*1.9,-u*.2);x.moveTo(u*.8,-u*4);x.lineTo(u*1.5+st*u*1.1,-u*.2);x.stroke();
+ x.fillStyle='#111';x.fillRect(-u*2.6,-u*.55,u*1.4,u*.55);x.fillRect(u*1+st*u*1.1,-u*.55,u*1.4,u*.55);
+ // body turns a little toward the pitcher through the swing
+ const turn=swing>0?Math.sin(Math.min(1,swing*1.6)*Math.PI/2):0;x.fillStyle=jer;rr(x,-u*1.8+turn*u*.4,-u*7.6,u*3.6-turn*u*.6,u*4,u);x.fill();
+ if(turn<.5){x.fillStyle='#fff';x.font=`900 ${u*1.6}px ${BODY}`;x.textAlign='center';x.textBaseline='middle';x.fillText(String((R.hash(id)%40)+1),0,-u*5.8);}
+ // hands and bat: cocked up behind the back shoulder; on the swing the barrel drops behind him, sweeps flat through the
+ // zone toward the plate (contact at about k .5), then wraps up over the front shoulder
+ let hx,hy,a,flat=1;
+ if(o.bunt){hx=u*2.2;hy=-u*6;a=-.08;}
+ else if(swing<=0){const w=Math.sin(t*3)*.08;hx=-u*.4;hy=-u*7.4;a=-1.95+w;}
+ else if(swing<.28){const k=swing/.28;hx=-u*.4+k*u*.2;hy=-u*7.4+k*u*1.2;a=-1.95-k*1.15;}
+ else if(swing<.62){const k=(swing-.28)/.34,th=Math.PI*(1-k);hx=-u*.2+k*u*2.6;hy=-u*6.2+k*u*.6;a=-th;flat=.3;}
+ else{const k=(swing-.62)/.38;hx=u*2.4-k*u*1.6;hy=-u*5.6-k*u*2.2;a=-k*2.5;}
+ x.strokeStyle=jer;x.lineWidth=u*1.05;x.beginPath();x.moveTo(-u*1.2,-u*7);x.lineTo(hx,hy);x.moveTo(u*1.2,-u*7);x.lineTo(hx,hy);x.stroke();
+ drawBat(x,hx,hy,a,u*6.4,u,flat);
  const hc=head(id,mood),hs=u*4.2;if(hc)x.drawImage(hc,-hs/2,-u*7.4-hs*.92,hs,hs);
  // batting helmet: a shiny dome over the top of the head with the ear flap toward the pitcher
  x.fillStyle=cap;x.beginPath();x.ellipse(0,-u*7.4-hs*.7,hs*.43,hs*.3,0,Math.PI,0);x.fill();x.beginPath();x.ellipse(hs*.32,-u*7.4-hs*.56,hs*.13,hs*.17,0,0,7);x.fill();x.fillRect(-hs*.46,-u*7.4-hs*.72,hs*.4,hs*.07);

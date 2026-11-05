@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Baseball plays like the real game now.** Batters move around the batter's box: closer to the plate reaches the outside pitch, and up in the box hits a curve before it breaks. Tap SWING as the ball arrives and flick up to lift it or down to hit it on the ground, or square around to BUNT. Pitchers move along the rubber, pick a pitch and steer it while it flies: curves bend most up and down, sliders sideways. Two players on one phone split the screen: the pitcher has the top half, the batter the bottom.
+- **A proper bat**: tapered with a knob, cocked behind the helmet, and swinging through the zone and over the shoulder.
+- **More real at-bats**: the CPU pitches more off the plate and takes more pitches, and more swings go foul, so counts build and walks happen.
+
 ## v0.84.0
 
 - **79 more items have their own picture** (from the batch 04 and 05 uploads): the Phoenix Down, the materia orb, the White Russian, the Dude's bathrobe, the Mrs. Doubtfire oven gloves, the Warriors bottle, the subway token, the Klobb, the proximity mine, Toasty!, the Fatality scroll, the Timecop badge, Freddy's sweater, the Soup Nazi's ladle, the Blue Steel dryer, City Wok, Tweek's coffee, Salty Balls and more. 303 items now have one.
