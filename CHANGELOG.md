@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.85.0
 
 - **The casino sounds like a casino app now.** The constant static under every table (a looped noise "crowd") is gone, and so is the hissy drum loop. Instead there's quiet lounge music (a warm electric piano over a walking upright bass, jazz chords, a soft room) well under clean, short effects: clay chips clacking, cards swishing and landing, a crisp flip, the roulette ball rolling, slowing, bouncing over the frets and dropping, a bell chime for a win and a coin shower for a big one, a soft low note for a loss. MUSIC and SOUNDS switches on every table's ? sheet.
 - **Every casino table now explains itself.** Blackjack, baccarat and five-card draw open on the same welcome card as roulette (the dealer and regulars by name, the goal, how to play in three steps, RULES & PAYOUTS). A first-time tour points at what to tap. A banner at the top of the controls always says whose turn it is and what to do ("AMBER — $20 TO CALL · CALL to stay in, RAISE to push, FOLD to give up", "MONEYPENNY TURNS THE PLAYER CARDS", "SEAN WINS $50 · AMBER LOSES $25"). There's a ? button for the full rules, and a summary card at the end of the session.
