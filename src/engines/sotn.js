@@ -796,17 +796,48 @@ async function sotn(s){
    else{g.globalAlpha=.13*a;g.beginPath();g.arc(s.W*.2,gy,rr,0,6.3);g.stroke();g.globalAlpha=.55*a;gtext('◀ WALK ▶',s.W*.2,gy,Math.round(rr*.28),'#fff','center',{base:'middle'});}
    g.restore();}
   g.restore();}
- function drawTitle(t){const W=s.W,H=s.H,a=t>2.7?Math.max(0,1-(t-2.7)/.5):Math.min(1,t/.4);g.save();g.globalAlpha=a;g.fillStyle='#000';g.fillRect(0,0,W,H);
-  const m=Math.min(W,H);const gr=g.createRadialGradient(W*.72,H*.24,0,W*.72,H*.24,m*.32);gr.addColorStop(0,'rgba(220,30,40,.9)');gr.addColorStop(.25,'rgba(150,0,20,.55)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,W,H);
-  g.fillStyle='#e8d8c8';g.beginPath();g.arc(W*.72,H*.24,m*.08,0,6.3);g.fill();g.fillStyle='rgba(160,0,20,.5)';g.beginPath();g.arc(W*.72,H*.24,m*.08,0,6.3);g.fill();
-  if(scen.L.castle){g.save();const k=Math.min(W/360,H/VH)*.9;g.translate(W*.5-180*k,H*.62-VH*k);g.scale(k,k);if(!SP.drawPicture(g,'castle-far',180,VH))g.drawImage(scen.L.castle,0,0,360,VH);g.restore();}
-  g.fillStyle='#000';g.fillRect(0,H*.62,W,H*.38);
-  for(let k=0;k<7;k++){const bx=W*(.1+k*.13)+Math.sin(t*2.6+k)*14,by=H*(.12+(k%3)*.06),fl=Math.sin(t*14+k)*m*.012;g.fillStyle='#08040c';g.beginPath();g.moveTo(bx,by);g.lineTo(bx-m*.03,by-m*.01+fl);g.lineTo(bx-m*.018,by+m*.006);g.lineTo(bx,by+m*.004);g.lineTo(bx+m*.018,by+m*.006);g.lineTo(bx+m*.03,by-m*.01+fl);g.closePath();g.fill();}
-  const fs=Math.min(W*.1,H*.11,70);g.font=`italic 900 ${fs}px ${GOTH}`;g.textAlign='center';g.textBaseline='middle';const tg=g.createLinearGradient(0,H*.66-fs/2,0,H*.66+fs/2);tg.addColorStop(0,'#ff5a4a');tg.addColorStop(.5,'#a00010');tg.addColorStop(1,'#3a0006');
-  g.lineWidth=fs*.08;g.strokeStyle='#c9a24a';g.strokeText('Castlevania',W/2,H*.68);g.fillStyle=tg;g.fillText('Castlevania',W/2,H*.68);
-  g.font=`700 ${fs*.3}px ${GOTH}`;g.fillStyle='#e8dcc0';g.fillText('S Y M P H O N Y   O F   T H E   N I G H T',W/2,H*.68+fs*.72);
-  for(let i=0;i<2;i++){const cx=W/2+(i?1:-1)*Math.min(W*.3,200),cy=H*.84;s.sprite(g,i,cx,cy,fs*1.05,{exact:true});g.font=`italic 700 ${fs*.24}px ${GOTH}`;g.fillStyle=PCOL[i];g.fillText(s.players[i].name,cx,cy+fs*.75);}
-  g.font=`italic ${fs*.22}px ${GOTH}`;g.fillStyle='#a89ab8';g.fillText('Fastest to destroy Dracula wins',W/2,H*.94);
+ // ---- the title: bell, then a lightning strike lights the castle, a swarm of bats bursts out of it and the logo burns in
+ // (the owner's Castlevania logo: sotn:logo, else the Arcade's keyart:castlevania-logo; drawn title text without one),
+ // embers rise, fog drifts, then the two players. TITLE_LEN s, the thunder clap at TITLE_BOLT.
+ const TITLE_LEN=4.2,TITLE_BOLT=1;let tLogo=null;
+ const ease=k=>1-Math.pow(1-Math.max(0,Math.min(1,k)),3),hash=n=>{const v=Math.sin(n*127.1+311.7)*43758.5453;return v-Math.floor(v);};
+ function logoLayers(w,h){const img=SP.picture('logo');if(!img)return null;const W=Math.round(w),H=Math.round(h);if(tLogo&&tLogo.W===W&&tLogo.img===img)return tLogo;
+  const a=document.createElement('canvas');a.width=W;a.height=H;a.getContext('2d').drawImage(img,0,0,W,H);const b=document.createElement('canvas');b.width=W;b.height=H;return tLogo={W,H,img,a,b};}
+ function drawTitle(t){const W=s.W,H=s.H,m=Math.min(W,H),a=t>TITLE_LEN-.5?Math.max(0,1-(t-(TITLE_LEN-.5))/.5):Math.min(1,t/.5);g.save();g.globalAlpha=a;g.fillStyle='#000';g.fillRect(0,0,W,H);
+  const bolt=t-TITLE_BOLT,flash=bolt>=0?Math.max(0,1-bolt/.2)*.9+(bolt>.13&&bolt<.27?.55*(1-Math.abs(bolt-.2)/.07):0):0,mx=W*.72,my=H*.22;
+  // sky: a blood-red moon behind drifting cloud
+  const gr=g.createRadialGradient(mx,my,0,mx,my,m*.42);gr.addColorStop(0,'rgba(220,30,40,.95)');gr.addColorStop(.22,'rgba(150,0,20,.55)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  if(!SP.drawPicture(g,'moon',mx,my,{sc:m*.2/120})){g.fillStyle='#ecdccb';g.beginPath();g.arc(mx,my,m*.085,0,6.3);g.fill();g.fillStyle='rgba(170,0,24,.55)';g.beginPath();g.arc(mx,my,m*.085,0,6.3);g.fill();}
+  for(let k=0;k<5;k++){const cy=H*(.12+k*.05),cx=((t*(14+k*6)+k*W*.37)%(W*1.6))-W*.3;g.fillStyle=`rgba(${20+k*4},0,${12+k*3},${.5-k*.06})`;g.beginPath();g.ellipse(cx,cy,W*.32,m*.035,0,0,6.3);g.fill();}
+  // the castle rises a little into place; the lightning lights it from behind
+  const rise=(1-ease(t/1.8))*H*.06;
+  if(scen.L.castle){g.save();const k=Math.min(W/360*.95,H*.56/VH);g.translate(W*.5-180*k,H*.64-VH*k+rise);g.scale(k,k);if(!SP.drawPicture(g,'castle-far',180,VH))g.drawImage(scen.L.castle,0,0,360,VH);g.restore();}
+  g.fillStyle='#000';g.fillRect(0,H*.64+rise-1,W,H*.36+2);
+  if(flash>0){g.save();g.globalAlpha=flash;g.fillStyle='#dfe6ff';g.fillRect(0,0,W,H);g.globalAlpha=Math.min(1,flash*1.6);g.strokeStyle='#fff';g.lineWidth=Math.max(2,m*.006);g.shadowColor='#9fb4ff';g.shadowBlur=m*.04;
+   g.beginPath();let bx=W*.36,by=0;g.moveTo(bx,by);for(let i=1;i<=9;i++){bx+=(hash(i*3.1)-.5)*W*.09;by=H*.5*i/9;g.lineTo(bx,by);}g.stroke();g.restore();}
+  // fog over the castle's feet
+  const fog=SP.picture('fog');if(fog){const fh=H*.16,fw=fh*fog.width/fog.height,off=(t*30)%fw;g.save();g.globalAlpha=.5;for(let x0=-off;x0<W;x0+=fw)g.drawImage(fog,x0,H*.56+rise,fw,fh);g.restore();}
+  else{for(let k=0;k<6;k++){const fx=((t*(20+k*5)+k*W*.3)%(W*1.4))-W*.2;g.fillStyle='rgba(60,50,80,.18)';g.beginPath();g.ellipse(fx,H*.63,W*.3,m*.04,0,0,6.3);g.fill();}}
+  // bats burst out of the castle with the lightning and fly at the camera
+  for(let k=0;k<26;k++){const t0=TITLE_BOLT-.05+hash(k)*.6,u=t-t0;if(u<0||u>1.8)continue;const ang=-Math.PI*(.15+.7*hash(k+9)),sp=.25+.5*hash(k+21),r=u*sp*m*(.6+u*.7);
+   const bx=W*.5+Math.cos(ang)*r*(1.4+hash(k+3)),by=H*.42+Math.sin(ang)*r*.8+u*u*m*.03,sz=m*(.016+.045*u*u),fl=Math.sin(t*20+k*2)*sz*.6;g.fillStyle='#06030a';g.strokeStyle='rgba(150,70,120,.55)';g.lineWidth=Math.max(1,sz*.12);g.beginPath();g.moveTo(bx,by);g.lineTo(bx-sz*1.6,by-sz*.4+fl);g.lineTo(bx-sz*.9,by+sz*.25);g.lineTo(bx,by+sz*.2);g.lineTo(bx+sz*.9,by+sz*.25);g.lineTo(bx+sz*1.6,by-sz*.4+fl);g.closePath();g.stroke();g.fill();}
+  // embers rising from below
+  for(let k=0;k<46;k++){const sp=.08+.12*hash(k+40),y=H-((t*sp+hash(k+60))%1)*H*.9,x0=W*hash(k+80)+Math.sin(t*1.7+k)*m*.02,fl=.5+.5*Math.sin(t*9+k*1.3);g.fillStyle=`rgba(255,${90+Math.round(80*hash(k))},40,${(.35+.6*fl)*Math.min(1,t)})`;const r=m*(.004+.006*hash(k+5));g.shadowColor='rgba(255,90,30,.8)';g.shadowBlur=r*3;g.fillRect(x0,y,r,r);}g.shadowBlur=0;
+  // the logo: burns in on the lightning, settles, pulses blood-red, a shine runs across it
+  const lw=Math.min(W*.86,640,H*.38*2.93),img=SP.picture('logo'),lh=img?lw*img.height/img.width:lw*.34,lx=W/2,ly=H*.62;
+  const lk=Math.max(0,t-TITLE_BOLT),la=Math.min(1,lk/.35),ls=1+.22*(1-ease(lk/.6));
+  if(lk>0){const L=img&&logoLayers(lw,lh);g.save();g.globalAlpha=a*la;g.translate(lx,ly);g.scale(ls,ls);
+   if(L){g.shadowColor='rgba(210,0,24,.85)';g.shadowBlur=m*(.03+.015*Math.sin(t*3));g.drawImage(L.a,-lw/2,-lh/2,lw,lh);g.shadowBlur=0;
+    const sk=(t-TITLE_BOLT-1)/.7;if(sk>0&&sk<1){const c=L.b.getContext('2d');c.globalCompositeOperation='source-over';c.clearRect(0,0,L.W,L.H);const bx=-L.W*.3+sk*L.W*1.6,band=c.createLinearGradient(bx-L.W*.12,0,bx+L.W*.12,L.H);band.addColorStop(0,'rgba(255,255,255,0)');band.addColorStop(.5,'rgba(255,250,235,.9)');band.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=band;c.fillRect(0,0,L.W,L.H);c.globalCompositeOperation='destination-in';c.drawImage(L.a,0,0);c.globalCompositeOperation='source-over';g.globalCompositeOperation='lighter';g.drawImage(L.b,-lw/2,-lh/2,lw,lh);g.globalCompositeOperation='source-over';}}
+   else{const fs=Math.min(W*.1,H*.11,70);g.font=`italic 900 ${fs}px ${GOTH}`;g.textAlign='center';g.textBaseline='middle';const tg=g.createLinearGradient(0,-fs/2,0,fs/2);tg.addColorStop(0,'#ff5a4a');tg.addColorStop(.5,'#a00010');tg.addColorStop(1,'#3a0006');
+    g.lineWidth=fs*.08;g.strokeStyle='#c9a24a';g.strokeText('Castlevania',0,0);g.fillStyle=tg;g.fillText('Castlevania',0,0);g.font=`700 ${fs*.3}px ${GOTH}`;g.fillStyle='#e8dcc0';g.fillText('S Y M P H O N Y   O F   T H E   N I G H T',0,fs*.72);}
+   g.restore();}
+  // the two hunters slide up
+  const pk=ease((t-2.1)/.5),fs=Math.min(W*.1,H*.11,70);if(pk>0){g.save();g.globalAlpha=a*pk;const py=H*.85+(1-pk)*H*.08;
+   for(let i=0;i<2;i++){const cx=W/2+(i?1:-1)*Math.min(W*.3,200);s.sprite(g,i,cx,py,fs*1.05,{exact:true});g.font=`italic 700 ${fs*.24}px ${GOTH}`;g.textAlign='center';g.textBaseline='middle';g.fillStyle=PCOL[i];g.fillText(s.players[i].name,cx,py+fs*.75);}
+   g.font=`italic ${fs*.22}px ${GOTH}`;g.fillStyle='#a89ab8';g.fillText('Fastest to destroy Dracula wins',W/2,H*.95);g.restore();}
+  // vignette
+  const vg=g.createRadialGradient(W/2,H/2,m*.35,W/2,H/2,Math.hypot(W,H)*.6);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.7)');g.fillStyle=vg;g.fillRect(0,0,W,H);
   g.restore();}
 
  const teleport=(i,X)=>{const q=pl[i],w=worlds[i];let x=X;while(x<LEN-30&&terrain(x)>=NONE)x+=4;Object.assign(q,{x,y:support(w,x,5,-50,true),vx:0,vy:0,grounded:true,dead:0,pit:false,hurt:0,atk:null,dash:0});q.best=Math.max(q.best,q.x);cams[i].x=clamp(q.x-cams[i].w*.4,0,LEN-cams[i].w);};
@@ -928,7 +959,7 @@ async function sotn(s){
  const AMB={forest:'wind',gate:'wind',hall:'hall',gallery:'hall',cave:'cave',throne:'throne'};
  s.frame((dt,t)=>{
   if(!s.alive)return;tick();
-  if(phase==='title'){if(!titleT){sfx.bell();setTimeout(()=>s.alive&&sfx.thunder(true),900);}titleT+=dt;if(titleT>3.2)beginTurn(0);}
+  if(phase==='title'){if(!titleT){sfx.bell();setTimeout(()=>s.alive&&sfx.thunder(false),TITLE_BOLT*1000);}titleT+=dt;if(titleT>TITLE_LEN)beginTurn(0);}
   else if(phase==='count'){layout();cams[turn].w=lay.vw;updateCamera(pl[turn],turn);savePrev(turn);if(!cd.update(dt)||net&&performance.now()>=netT0){phase='play';for(const inp of inputs){inp.press=0;inp.atk=0;inp.sub=0;inp.dash=0;}}}
   else if(phase==='play'||phase==='turn-end'||phase==='end'||phase==='net-end'){
    if(!cd.done)cd.update(dt);acc+=dt;let steps=0;const i=turn,p=pl[i],w=worlds[i];

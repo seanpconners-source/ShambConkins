@@ -6,8 +6,8 @@ Paste this whole file into ChatGPT (image generation) together with the template
 ## What the game is
 An original two-player baseball game for phones, in the spirit of 90s console baseball. There are two views:
 - **Batting view**: the camera is behind the catcher. A right-handed batter stands on the left of the plate, and the
-  pitcher stands on the mound in the distance facing the camera. The catcher crouches in front of the camera with the
-  umpire beside them, both seen from behind.
+  pitcher stands on the mound in the distance facing the camera. The camera is the catcher's own view (as in the 16-bit
+  game): only the catcher's mitt shows, so sheets 7-9 (catcher, umpire) are not needed for now.
 - **Field view**: when the ball is hit, a high camera behind home plate shows the whole field, with small fielders and
   runners.
 
@@ -34,18 +34,20 @@ Player 1's team wears **red** jerseys and player 2's team wears **blue**. The pl
 
 ## The sheets (file name, frame size, rows and frame counts)
 
-1. **batter-p1.png** (red team), frame **128×160**. A right-handed batter seen from behind the catcher, slightly from the
+1. **batter-p1.png** (red team), frame **168×172**. A right-handed batter seen from behind the catcher, slightly from the
    side: standing on the left, facing RIGHT toward the plate.
    - Red jersey, white pants with red stripes, red socks, black cleats, batting gloves.
-   - A wooden bat (light tan, dark handle) held in both hands.
+   - A full-length wooden bat (light tan, dark handle), about 64 px from the hands to the end: nearly half the
+     player's height, long enough to reach across the plate. Held in both hands.
+   - The game draws the face BEHIND the bat and the body, so the bat may pass in front of the blue face circle.
    - Rows:
      - stance 4: waiting for the pitch like a real batter: both hands up by the REAR shoulder (the batter's right
        shoulder: the one on the LEFT of the picture, away from the plate) and the bat resting up and back over that
        shoulder, pointing up and to the left. The yellow ring on the template = the hands, the dashed yellow line =
-       the bat. The bat must stay outside the blue face circle (it must not cross where the head goes). Add a small
-       bat waggle across the 4 frames.
-     - swing 6: stride, hips turning, bat coming round level through the zone, contact point in frame 3-4, then the
-       follow-through with the bat wrapped round the front shoulder.
+       the bat. Add a small bat waggle across the 4 frames.
+     - swing 6: stride, hips turning, bat coming round level through the zone, contact in frames 3-4 with the bat level
+       and pointing straight at the plate (its sweet spot at about x 138, y 85 of the frame), then the follow-through
+       with the bat wrapped round the front shoulder.
 2. **batter-p2.png** (blue team): same layout and poses as batter-p1, with a blue jersey, white pants with blue stripes
    and blue socks.
 3. **pitcher-p1.png** (red team), frame **96×128**. The pitcher on the mound, FACING THE CAMERA (toward the batter).
@@ -64,7 +66,7 @@ Player 1's team wears **red** jerseys and player 2's team wears **blue**. The pl
      - run 6: a full sprint cycle.
      - throw 3: wind-up, release, follow-through.
 6. **fielder-p2.png** (blue team): same poses, blue uniform.
-7. **catcher-p1.png** (red team), frame **96×96**. The catcher crouched behind the plate, seen from BEHIND.
+7. (not needed for now) **catcher-p1.png** (red team), frame **96×96**. The catcher crouched behind the plate, seen from BEHIND.
    - We see the back of the helmet and mask straps, the chest-protector straps, the red jersey and white pants, shin
      guards, and the mitt held out in front.
    - Draw this one WITH their (back of the) head: no face slot.
@@ -72,7 +74,7 @@ Player 1's team wears **red** jerseys and player 2's team wears **blue**. The pl
      - idle 2: settled crouch, mitt up.
      - catch 2: the mitt snapping shut on the ball, a small jolt back.
 8. **catcher-p2.png** (blue team): same, blue jersey.
-9. **umpire.png**, frame **96×128**. The home-plate umpire seen from behind: navy shirt and cap, grey trousers, black
+9. (not needed for now) **umpire.png**, frame **96×128**. The home-plate umpire seen from behind: navy shirt and cap, grey trousers, black
    shoes. Draw his whole body including the head (back of the cap).
    - Rows:
      - idle 2: leaning in over the catcher, hands on knees.

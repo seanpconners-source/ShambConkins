@@ -80,13 +80,15 @@ const PICTURES={
 
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
 const imgs=new Map();
+// pictures that fall back to art made for another slot: the title logo is the Arcade logo unless sotn:logo is in
+const ALIAS={logo:'keyart:castlevania-logo'};
 // The loaded picture for 'sotn:<name>', or null (missing, or still loading: the caller draws its fallback meanwhile).
 function picture(name){
- const url=USER['sotn:'+name];if(!url||typeof Image==='undefined')return null;
+ const url=USER['sotn:'+name]||(ALIAS[name]&&USER[ALIAS[name]]);if(!url||typeof Image==='undefined')return null;
  let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;};e.img.src=url;imgs.set(name,e);}
  return e.ok?e.img:null;
 }
-const has=name=>!!USER['sotn:'+name];
+const has=name=>!!(USER['sotn:'+name]||(ALIAS[name]&&USER[ALIAS[name]]));
 // {img,def,name} for an animated sheet that is in, else null
 function sheet(name){const def=SHEETS[name],img=def&&picture(name);return img?{img,def,name}:null;}
 const rowCount=(def,row)=>def.rows[row]||0;

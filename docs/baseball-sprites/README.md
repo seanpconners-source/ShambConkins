@@ -11,11 +11,11 @@ Player-facing brief for ChatGPT: `GPT-SPRITE-BRIEF.md` (same folder). This page 
 
 | Sheet | Frame | Rows | Used for |
 |---|---|---|---|
-| `batter-p1` / `batter-p2` | 128×160 | stance 4, swing 6 | batting view; the swing goes through the frames with the swing progress |
+| `batter-p1` / `batter-p2` | 168×172 | stance 4, swing 6 | batting view; the swing goes through the frames with the swing progress; `sweet` = the bat's sweet spot at contact (the game stands the batter so it crosses the zone where the swing is judged); the face is drawn behind the bat |
 | `pitcher-p1` / `pitcher-p2` | 96×128 | idle 2, windup 4, throw 4 | the mound in the batting view (faces the camera) |
 | `fielder-p1` / `fielder-p2` | 96×128 | stand 2, run 6, throw 3 | field view fielders and runners (faces right, mirrored), innings menu |
-| `catcher-p1` / `catcher-p2` | 96×96 | idle 2, catch 2 | batting view, from behind (catch = pitch arrived, not hit) |
-| `umpire` | 96×128 | idle 2, call 3 | batting view, from behind (call = a called strike) |
+| `catcher-p1` / `catcher-p2` | 96×96 | idle 2, catch 2 | not drawn at the moment: the batting view is the catcher's own view, as in the 16-bit game, and only his mitt shows |
+| `umpire` | 96×128 | idle 2, call 3 | not drawn at the moment (same reason as the catcher) |
 
 How the sheets are drawn:
 - **Size:** each player is scaled so `tall` (soles to the top of the head, in frame px) matches the drawn player's height.

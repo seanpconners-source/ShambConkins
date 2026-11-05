@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Batting looks like Ken Griffey Jr. baseball now.** The batting screen is laid out like the SNES game: the camera high behind the plate, the pitcher on the mound up top, orange clay round home with both batter's boxes and the plate, and the batter standing in the left box. The scores, inning and pitcher are top left, the count and batter bottom left, and a little diamond with the runners bottom right. Tall phones also see the outfield and the stands above.
+- **The pitch comes all the way in.** The ball travels down to the plate, growing as it comes, reaches the batter right where his bat crosses the plate, then pops into the catcher's mitt. The speed shows after each pitch ("94 MPH"). No more floating strike-zone box.
+- **A real bat.** The batter's bat is repainted at full length (it was about 40% too short), so it reaches across the plate. The face now sits behind the bat on his shoulders. The innings menu shows the two batters from your sprite sheets.
+- **Symphony of the Night opens with your logo** and a darker intro: a bell, then lightning strikes and lights the castle, bats burst out of it, the logo burns in with a blood-red glow and a shine runs across it, while embers rise and fog drifts.
+
 ## v0.86.0
 
 - **Casino Night is one game in the Arcade.** Blackjack, baccarat, five-card draw, roulette and Liar's Dice now share one Casino Night tile on every shelf, the way Hangman does. Tap it to pick a table.
