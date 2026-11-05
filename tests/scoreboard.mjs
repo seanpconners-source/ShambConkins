@@ -7,8 +7,7 @@ const URL0=process.env.SHAMB_URL||'http://localhost:8123/',API=process.env.API||
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
 const post=(g,b)=>fetch(`${API}/scores/${g}`,{method:'POST',body:JSON.stringify(b)}).then(r=>r.json());
 const top=g=>fetch(`${API}/scores/${g}`).then(r=>r.json()).then(r=>r.top);
-const tag=Date.now().toString(36),FIRST='greed-island-mancala';
-await post(FIRST,{name:'Zed'+tag.slice(-3),score:987654,character:'sean',install:'t'+tag});
+const tag=Date.now().toString(36);
 const browser=await chromium.launch(browserLaunchOptions());
 const ctx=await browser.newContext({viewport:{width:390,height:780}});
 let host='ws://localhost:8787';await ctx.exposeFunction('__host',()=>host);
@@ -16,6 +15,11 @@ await ctx.addInitScript(h=>{try{localStorage.setItem('sc-net-host',h);}catch{}},
 const page=await ctx.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.goto(URL0);await page.waitForSelector('.title-screen',{timeout:120000});
 await page.evaluate(()=>document.querySelector('[data-action="arcade"]').click());await page.waitForSelector('.arcade-console .arc-tile');
+// the record goes on whichever game the Arcade opens on (the first featured game; it changes as games are added), then the page
+// moves off it and back so the chip asks the site again
+const FIRST=await page.evaluate(()=>document.querySelector('.arc-record')?.dataset.arcScores);
+await post(FIRST,{name:'Zed'+tag.slice(-3),score:987654,character:'sean',install:'t'+tag});
+await page.evaluate(()=>document.querySelectorAll('.arc-tile')[1].click());await page.waitForTimeout(500);await page.evaluate(()=>document.querySelectorAll('.arc-tile')[0].click());
 await page.waitForFunction(()=>{const b=document.querySelector('.arc-record');return b&&!b.hidden;},null,{timeout:15000}).catch(()=>{});
 const chip=await page.evaluate(()=>document.querySelector('.arc-record')?.textContent||'');
 check(/987,654 · Zed/.test(chip),`record chip shows the site's record: "${chip}"`);
