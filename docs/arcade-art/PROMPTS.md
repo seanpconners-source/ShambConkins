@@ -325,11 +325,11 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Call of Duty: Modern Stick Dot · `office-dots-boxes`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Call of Duty: Modern Stick Dot", a minigame in a party video game that pays tribute to Call of Duty. Scene: Dots and boxes goes to war. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Call of Duty: Modern Stick Dot" (Call of Duty tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -845,11 +845,11 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Battleship · Fog of War · `battleship-fog`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Battleship · Fog of War", a minigame in a party video game that pays tribute to Battleship. Scene: Secretly place your fleet, then take turns firing at the enemy waters. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Battleship · Fog of War" (Battleship tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -995,11 +995,11 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Sundown Showdown · `sundown-showdown`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Sundown Showdown", a minigame in a party video game that pays tribute to Sunset Riders. Scene: Run and gun through four western stages side by side: Main Street, a runaway train, a canyon and a mission at night. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Sundown Showdown" (Sunset Riders tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 

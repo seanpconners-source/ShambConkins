@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 187 slots: 36 have key art, 35 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 187 slots: 39 have key art, 38 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -39,7 +39,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `traitors-guess-who` | The Traitors · Find the Traitor | game | · / · |
 | `greed-island-mancala` | Tony Hawk’s Pro Mancala | game | ✅ / ✅ |
 | `deadite-checkers` | Army of Darkness · Deadite Checkers | game | · / · |
-| `office-dots-boxes` | Call of Duty: Modern Stick Dot | game | · / · |
+| `office-dots-boxes` | Call of Duty: Modern Stick Dot | game | ✅ / ✅ |
 | `megatouch-photohunt` | Megatouch · Photo Hunt | game | · / · |
 | `angry-heads` | Angry Heads | game | · / · |
 | `neon-ball-storm` | Daft Punk · Neon Ball Storm | game | · / · |
@@ -91,7 +91,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `newlywed-spirit` | The Newlywed Game · Spirit Battery | game | · / · |
 | `roast-battle` | Roast Battle · Crowd Meter | game | · / · |
 | `draw-it` | Pictionary · Draw It | game | · / · |
-| `battleship-fog` | Battleship · Fog of War | game | · / · |
+| `battleship-fog` | Battleship · Fog of War | game | ✅ / ✅ |
 | `simon-faceoff` | Simon · Face-Off | game | · / · |
 | `price-bid-off` | The Price Is Right · Come On Down! | game | · / · |
 | `hungry-hungry-heads` | Hungry Hungry Hippos · Hungry Hungry Heads | game | · / · |
@@ -106,7 +106,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `broforce-desert` | Sean of a Gun: Desert Assault | game | · / · |
 | `frogger-heads` | Frogger | game | · / · |
 | `bricks-breaker-quest` | Bricks Breaker Quest | game | ✅ / ✅ |
-| `sundown-showdown` | Sundown Showdown | game | · / · |
+| `sundown-showdown` | Sundown Showdown | game | ✅ / ✅ |
 | `bucketheadland-pinball` | Bucketheadland · Buckethead Pinball | version of pinball | ✅ / ✅ |
 | `major-league-fielding` | Major League Baseball | version of baseball | · / · |
 | `taskmaster-micro-relay` | Taskmaster · Frantic Task Relay | version of taskmaster | · / · |
