@@ -16,6 +16,7 @@ const {CASINO_THEMES}=require('src/data/tacticalItems.js');
 const {TABLES,VEGAS_DRIFTERS}=require('src/data/casinoDealers.js');
 const V=require('src/engines/vegasTable.js');
 const {money,FONT,BODY}=V;
+const {createFront}=require('src/engines/casinoFront.js');
 const STOP=Symbol('stop'),BUY_IN=1000,BREAK_BANK=1.5;
 
 function createVegas(s,{seatsUsed=[0,2,4],maxRegulars=3,themeId=null}={}){
@@ -44,6 +45,7 @@ function createVegas(s,{seatsUsed=[0,2,4],maxRegulars=3,themeId=null}={}){
   local:p=>net?p===net.me:!(cpu&&p===1),
   // pass and play: two people share the phone, so private cards stay hidden until asked
   shared:()=>!net&&!cpu};
+ G.front=null;G.useFront=spec=>(G.front=createFront(G,spec));
  G.W8=async ms=>{if(!await s.wait(st.fast?ms*.25:calm?ms*.7:ms))throw STOP;};
  G.scores=()=>s.setScores?.(st.bank.map(v=>Math.floor(v)));
  G.sayD=(kind,secs=2.4)=>{const l=TB.lines[kind];if(!l)return;st.say=l[Math.floor(Math.random()*l.length)];st.sayT=G.T+secs;};
@@ -74,6 +76,7 @@ function createVegas(s,{seatsUsed=[0,2,4],maxRegulars=3,themeId=null}={}){
   else{const g=x.createLinearGradient(0,P.y-14,0,H);g.addColorStop(0,'rgba(10,6,8,0)');g.addColorStop(.2,'rgba(10,6,8,.85)');g.addColorStop(1,'rgba(10,6,8,.96)');x.fillStyle=g;x.fillRect(0,P.y-14,W,P.h+14);}
   const pad=wide?12:10,fs=wide?Math.max(14,Math.min(20,P.w*.075)):Math.max(13,Math.min(19,P.h*.13));
   const A={P,wide,pad,fs,X0:P.x+pad,Wd:P.w-pad*2,top:wide?(G.fb.top||40)+8:P.y+6,bottom:wide?H-34:H-32};
+  if(G.front){G.front.drawPhase(P.x,A.top-4,P.w,44);A.top+=44;}
   A.text=(t,X,Y,size=fs,col='#fff',al='left')=>{x.font=`400 ${size}px ${FONT}`;x.fillStyle=col;x.textAlign=al;x.textBaseline='middle';x.fillText(t,X,Y);};
   A.small=(t,X,Y,al='left',col='rgba(255,255,255,.75)')=>{x.font=`800 ${fs*.68}px ${BODY}`;x.fillStyle=col;x.textAlign=al;x.textBaseline='middle';x.fillText(t,X,Y);};
   A.smallWrap=(t,Y,maxW=A.Wd)=>{const lines=G.wrap(t,maxW,`800 ${fs*.68}px ${BODY}`);lines.forEach((l,i)=>A.small(l,A.X0,Y+i*fs*.85));return Y+lines.length*fs*.85;};
@@ -93,26 +96,28 @@ function createVegas(s,{seatsUsed=[0,2,4],maxRegulars=3,themeId=null}={}){
  G.fly=(amount,from,to,dur=.45)=>{st.flights.push({amount,fx:from.x,fy:from.y,to,t0:G.T,dur});snd.chips(3);};
  G.dealerSpeech=(px,py,size,max)=>{if(st.say&&st.sayT>G.T)V.bubble(x,st.say,px,py,size,{dir:-1,max});};
  G.hud=(title,line,bar)=>{const hx=10,hy=10,L=G.L;x.save();x.font=`400 ${Math.max(14,(L.hd||60)*.2)}px ${FONT}`;x.fillStyle='#ffe9a8';x.textAlign='left';x.textBaseline='top';x.fillText(title,hx,hy);
+  if(G.front){const tw=x.measureText(title).width,qs=Math.max(18,(L.hd||60)*.24),qx=hx+tw+8;x.fillStyle='rgba(255,255,255,.16)';x.beginPath();x.arc(qx+qs/2,hy+qs*.45,qs/2,0,7);x.fill();x.fillStyle='#fff';x.textAlign='center';x.fillText('?',qx+qs/2,hy+qs*.05);x.textAlign='left';G._q={id:'front:rules',X:qx-6,Y:hy-6,w:qs+12,h:qs+12};}
   const by=hy+Math.max(18,(L.hd||60)*.25),bw=Math.min(90,L.W*.2);if(bar!=null){x.fillStyle='rgba(255,255,255,.18)';V.rr(x,hx,by,bw,6,3);x.fill();x.fillStyle=bar.color||'#ffd23f';V.rr(x,hx,by,bw*Math.max(0,Math.min(1,bar.k)),6,3);x.fill();}
   x.font=`800 ${Math.max(9,(L.hd||60)*.12)}px ${BODY}`;x.fillStyle=bar?.color==='#ff7a6a'?'#ff9a8a':'rgba(255,255,255,.7)';x.fillText(line,hx,by+10);x.restore();};
  // ---- input: hit boxes first, else the game's felt handler (tap or swipe)
  let drag=null;
  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev),b=G.hits.find(h=>h.on!==false&&p.x>=h.X&&p.x<=h.X+h.w&&p.y>=h.Y&&p.y<=h.Y+h.h);
-  if(b){st.pressId=b.id;st.pressT=G.T;snd.tap();G.act?.(b.id);return;}drag={id:ev.pointerId,x:p.x,y:p.y,t:G.T};G.onDown?.(p);s.capture(ev);});
+  if(b){st.pressId=b.id;st.pressT=G.T;snd.tap();if(G.front?.act(b.id))return;G.act?.(b.id);return;}if(G.front?.blocking())return;drag={id:ev.pointerId,x:p.x,y:p.y,t:G.T};G.onDown?.(p);s.capture(ev);});
  s.on(c,'pointermove',ev=>{if(!drag||ev.pointerId!==drag.id)return;G.onDrag?.(s.pointer(ev),drag);});
  for(const ty of ['pointerup','pointercancel'])s.on(c,ty,ev=>{if(!drag||ev.pointerId!==drag.id)return;s.release(ev);const p=s.pointer(ev),d=drag;drag=null;if(ty!=='pointerup')return G.onUp?.(null,d);
   const dx=p.x-d.x,dy=p.y-d.y;if(Math.hypot(dx,dy)<16)G.onTap?.(d);else if(Math.abs(dx)>42&&Math.abs(dx)>Math.abs(dy)*1.3)G.onSwipe?.(dx>0?1:-1,d);G.onUp?.(p,d);});
- s.on(document,'keydown',ev=>{if(!st.ui||s.paused)return;const id=G.key?.(ev.key.toLowerCase(),st.ui);if(id){ev.preventDefault();snd.tap();G.act?.(id);}});
+ s.on(document,'keydown',ev=>{if(!st.ui||s.paused)return;if(st.ui.mode.startsWith('front')){if(ev.key==='Enter'){ev.preventDefault();G.front?.act('front:seat');}return;}const id=G.key?.(ev.key.toLowerCase(),st.ui);if(id){ev.preventDefault();snd.tap();G.act?.(id);}});
  // ---- the loop and the test bots: s.debug.bot() answers this phone's open choice; st.auto answers every local one
- let botT=0;G.botAct=()=>{const u=st.ui;if(!u||G.T<botT)return null;botT=G.T+(st.fast?.05:.35);if(u.mode==='bet'&&st.round>=st.leaveAt&&!u.opts.noLeave){u.res({leave:1});return 'leave';}const v=G.bot?.(u);if(v){u.res(v);return u.mode;}return null;};
- s.frame(dt=>{G.T+=dt;if(st.auto)G.botAct();G.render?.();});
+ let botT=0;G.botAct=()=>{const u=st.ui;if(!u||G.T<botT)return null;botT=G.T+(st.fast?.05:.35);if(u.mode.startsWith('front')&&G.front){G.front.res?.();return 'front';}if(u.mode==='bet'&&st.round>=st.leaveAt&&!u.opts.noLeave){u.res({leave:1});return 'leave';}const v=G.bot?.(u);if(v){u.res(v);return u.mode;}return null;};
+ s.frame(dt=>{G.T+=dt;if(st.auto)G.botAct();G.render?.();if(G.front){if(G._q)G.hits.push(G._q);G.front.draw();}});
  // ---- the end: impressed dealer, then the result
  G.end=async(label)=>{st.phase='end';st.active=null;st.ui=null;const recruits=[[],[]];let canRec=()=>false;try{const {canRecruit}=require('src/profile.js');canRec=(id,owner)=>canRecruit(store.profile,id,owner,'dealer');}catch{}
   for(const p of [0,1]){if(cpu&&p===1)continue;if(st.bank[p]>=BUY_IN*BREAK_BANK){st.impressed[p]=true;G.moodS(seatOf(p),'win',4);if(canRec(dealerId,s.players[p].owner))recruits[p].push(dealerId);}}
+  if(G.front){st.ui=null;G.front.phase('TABLE CLOSED','');await G.front.summary();}
   if(st.impressed.some(Boolean)){G.banner('YOU BROKE THE BANK!','#ffd23f',3);G.sayD('impressed',3.4);G.dmood('win',3.4);snd.win(true);await G.W8(3200);}
   else{G.banner('TABLE CLOSED','#ffe9a8',1.8);await G.W8(1600);}
   if(recruits.some(r=>r.length))s.gameRecruits=recruits;snd.stop();const n=s.players.map(p=>p.name);
   s.finish(st.bank.map(v=>Math.floor(v)),`${theme.title} ${label}: ${n[0]} ${money(st.bank[0])} · ${n[1]} ${money(st.bank[1])}${st.impressed.some(Boolean)?` · ${nameOf(dealerId)} was impressed!`:''}`);};
- G.run=async flow=>{try{snd.ambience(true);snd.music(true);G.sayD('hello',2.6);G.dmood('win',1.5);await flow();}catch(e){if(e!==STOP)throw e;}};
+ G.run=async flow=>{try{snd.ambience(true);snd.music(true);if(G.front){await G.front.intro();G.front.coachStart();}G.sayD('hello',2.6);G.dmood('win',1.5);await flow();}catch(e){if(e!==STOP)throw e;}};
  return G;}
 Object.assign(exports,{createVegas,STOP,BUY_IN});

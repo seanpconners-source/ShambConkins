@@ -15,6 +15,17 @@ async function vegasBaccarat(s){
  const G=createVegas(s,{themeId:'bond'}),{x,st,seats,V,money,FONT,BODY,snd}=G;
  Object.assign(st,{lastBet:[MIN,MIN],lastSide:['banker','banker'],shoe:[],hands:{player:[],banker:[]},road:[],squeeze:null,result:null,side:['banker','banker']});
  let room=null,felt=null,layKey='';
+ const first=p=>String(s.players[p].name).split(' ')[0].toUpperCase(),localUI=m=>st.ui?.mode===m&&G.local(st.ui.p);
+ const F=G.useFront({key:'baccarat',title:'BACCARAT',dealerRole:'DEALER',sub:`Punto Banco · 8 decks · ${money(MIN)} to ${money(MAX)} a coup`,
+  goal:`Ten coups (hands). Bet on which hand will finish closer to 9: the PLAYER hand or the BANKER hand (or a tie). Nobody decides anything after the bet: the cards are dealt by fixed rules. Most chips after ten coups wins; break the bank (${money(G.BUY_IN*1.5)}+) and ${G.nameOf(G.dealerId)} joins your party.`,
+  steps:[['Pick a side','PLAYER pays 1 to 1, BANKER pays 19 to 20 (the house takes 5%), TIE pays 8 to 1.'],['Bet chips, then DEAL','Tap the chips to build your bet, then tap DEAL.'],['Squeeze the cards','The biggest bet on each side turns its cards over: drag the cards up to peel them. Closest to 9 wins.']],
+  rules:[['CARD VALUES',['Ace = 1, 2 to 9 = their number, 10 J Q K = 0. A hand counts only the last digit: 7 + 8 = 15 counts 5.']],
+   ['THE DEAL',['Two cards to each hand. An 8 or 9 is a "natural" and ends the coup. Otherwise the Player hand draws a third card on 0-5; the Banker hand draws by the fixed tableau (always on 0-2, never on 7).']],
+   ['PAYOUTS',[['Player','1 to 1'],['Banker (5% commission)','19 to 20'],['Tie','8 to 1'],['Player/Banker bets on a tie','bet back']]],
+   ['THE TABLE',['Ten coups from an 8-deck shoe. The bead road (top left) shows who won each coup. COLOR UP any time to leave with your chips.']]],
+  coach:[{title:'Pick a side',text:'Bet on PLAYER, BANKER or TIE: whichever hand ends closer to 9.',rect:()=>G.L?.coachSides,done:()=>st.coachSide||st.coachDealt,when:()=>localUI('bet')},
+   {title:'Add chips',text:'Tap the chips to build your bet.',rect:()=>G.L?.coachChips,done:()=>st.coachChip||st.coachDealt,when:()=>localUI('bet')},
+   {title:'Deal',text:'Tap DEAL. Then the biggest bettor squeezes the cards.',rect:()=>G.L?.coachDeal,done:()=>st.coachDealt,when:()=>localUI('bet')}]});
  function lay(){const k=s.W+'x'+s.H;if(k===layKey&&G.L)return G.L;layKey=k;const L=G.L=V.tableLayout(s.W,s.H,(G.fb.top||40)+4);
   // the PLAYER and BANKER boxes sit in front of the dealer, where blackjack has the dealer's cards
   const bw=Math.min(L.cw*3.5,(L.TW-L.cw*.5)/2-12),bh=L.ch*1.22,gap=L.cw*.5,y=L.y0+L.rail*.4+bh*.55;L.box={player:{x:L.cx-gap/2-bw/2,y,w:bw,h:bh},banker:{x:L.cx+gap/2+bw/2,y,w:bw,h:bh}};
@@ -30,15 +41,16 @@ async function vegasBaccarat(s){
   G.sayD('bet',2);
   for(const se of seats)if(se.kind==='extra'){const r=G.rand();se.side=r<.5?'banker':r<.93?'player':'tie';se.bet=Math.round((MIN+G.rand()*(se.side==='tie'?40:160))/5)*5;snd.chips(2);}
   for(const p of [0,1]){if(st.out[p])continue;const se=G.seatOf(p);st.active=se.i;
+   F.phase(G.local(p)?`${first(p)} — PLACE YOUR BET`:G.net?`${first(p)} IS BETTING ON THEIR PHONE…`:`${first(p)} IS BETTING…`,G.local(p)?'Pick PLAYER, BANKER or TIE, add chips, then DEAL':'',{p});
    const m=await G.ask(p,'bet',{room:Math.min(MAX,st.bank[p]),cpu:()=>{const sk=G.cpuSkill(),r=Math.random(),side=r<.55+.15*sk?'banker':r<.95?'player':'tie',want=Math.round(st.bank[1]*(.05+.12*sk+Math.random()*.06)/5)*5;return {bet:Math.max(MIN,Math.min(MAX,st.bank[1],side==='tie'?MIN:want)),side};}});
    if(m.leave||!(m.bet>=MIN)||!SIDES[m.side]){st.out[p]=true;G.banner(`${se.name} COLORS UP`,'#7dd3fc',1.6);snd.chips(6);G.moodS(se,'win');continue;}
    const b=Math.max(MIN,Math.min(MAX,st.bank[p],Math.round(m.bet)));st.bank[p]-=b;st.lastBet[p]=b;st.lastSide[p]=m.side;se.bet=b;se.side=m.side;snd.chips(4);G.scores();}
   st.active=null;if(!seats.some(se=>se.kind==='human'&&se.bet))return;
-  st.phase='deal';G.say('No more bets.',1.6);
+  st.phase='deal';G.say('No more bets.',1.6);F.phase('DEALING','Two cards to the PLAYER hand, two to the BANKER hand');
   await deal('player',false);await deal('banker',false);await deal('player',false);await deal('banker',false);
   // the squeeze: the biggest bettor on each side turns that side's cards over
   for(const side of ['player','banker']){const who=seats.filter(se=>se.bet&&(se.side===side)).sort((a,b)=>b.bet-a.bet)[0]||null;await squeeze(side,who);}
-  const p0=value('player'),b0=value('banker');
+  const p0=value('player'),b0=value('banker');F.phase(`PLAYER ${p0} · BANKER ${b0}`,p0>=8||b0>=8?'A natural: no more cards':'Third cards by the house rules…');
   if(p0>=8||b0>=8){G.banner('NATURAL '+Math.max(p0,b0),'#ffd23f',1.4);await G.W8(900);}
   else{let p3=null;if(p0<=5){G.say('Card for the player.',1.4);p3=await deal('player',true);await G.W8(400);}
    if(bankerDraws(b0,p3?bacValue(p3):null)){G.say('Card for the banker.',1.4);await deal('banker',true);await G.W8(400);}}
@@ -50,15 +62,17 @@ async function vegasBaccarat(s){
    if(se.side===win){back=se.bet*(1+SIDES[win].win);se.res='win';}else if(win==='tie'&&se.side!=='tie'){back=se.bet;se.res='push';}else se.res='lose';
    back=Math.round(back*100)/100;se.paid=back;
    if(se.res==='win'){G.fly(back-se.bet,{x:G.L.cx,y:G.L.y0},{x:sp.bx+G.L.cw*.42,y:sp.by});won++;}else if(se.res==='lose'){G.fly(se.bet,{x:sp.bx,y:sp.by},{x:G.L.cx,y:G.L.y0-G.L.rail*.1});lost++;}
-   if(se.kind==='human'){st.bank[se.p]+=back;G.scores();G.moodS(se,se.res==='win'?'win':se.res==='lose'?'sad':'happy',2.4);if(se.res==='win')snd.win(back-se.bet>=200);else if(se.res==='lose')snd.lose();}
+   if(se.kind==='human'){st.bank[se.p]+=back;G.scores();if(se.res==='win')F.note(se.p,back-se.bet,`${SIDES[win].label} won ${Math.max(pv,bv)}-${Math.min(pv,bv)}`);G.moodS(se,se.res==='win'?'win':se.res==='lose'?'sad':'happy',2.4);if(se.res==='win')snd.win(back-se.bet>=200);else if(se.res==='lose')snd.lose();}
    else G.seatSay(se,se.res==='win'?(G.rand()<.5?'Yes!':'Pay me.'):se.res==='lose'?'Figures.':'Push.');
    await G.W8(260);}
+  {const parts=[0,1].map(p=>G.seatOf(p)).filter(se=>se.bet).map(se=>`${first(se.p)} ${se.res==='win'?'WINS '+money(se.paid-se.bet):se.res==='push'?'PUSHES':'LOSES '+money(se.bet)}`);F.phase(win==='tie'?`TIE ${pv} – ${bv}`:`${SIDES[win].label} WINS ${Math.max(pv,bv)} – ${Math.min(pv,bv)}`,parts.join('  ·  '),{color:win==='player'?'#9ad7ff':win==='banker'?'#ff8a7a':'#7dff9a'});}
   if(seats.some(se=>se.kind==='human'&&se.res==='win')){G.sayD('win');G.dmood('sad');}else{G.sayD('house');G.dmood('win');}
   await G.W8(1400);
   for(const side of ['player','banker'])for(const c of st.hands[side])c.lt0=G.T;snd.slide();await G.W8(500);st.hands={player:[],banker:[]};
   for(const p of [0,1])if(!st.out[p]&&st.bank[p]<MIN){st.out[p]=true;G.banner(`${G.seatOf(p).name} IS TAPPED OUT`,'#ff8a7a',2);await G.W8(1200);}}
  // squeezing: a local player drags the big cards up; anyone else's squeeze peels slowly by itself
  async function squeeze(side,who){const cards=st.hands[side].slice(0,2);st.squeeze={side,who,peel:0,t0:G.T,auto:true};
+  F.phase(who&&who.kind==='human'&&G.local(who.p)?`${first(who.p)} — SQUEEZE THE ${SIDES[side].label} CARDS`:`${who?(who.kind==='human'?first(who.p):who.name):'THE DEALER'} TURNS THE ${SIDES[side].label} CARDS`,who&&who.kind==='human'&&G.local(who.p)?'Biggest bet on this side: drag the cards up to peel them':'',{p:who?.kind==='human'?who.p:null});
   if(who&&who.kind==='human'){st.active=who.i;st.squeeze.auto=!G.local(who.p);
    const m=await G.ask(who.p,'squeeze',{side,cpu:()=>({sq:1})},{sq:1});void m;st.active=null;}
   else{await G.W8(st.fast?200:1300);}
@@ -67,10 +81,10 @@ async function vegasBaccarat(s){
  // ---- input
  G.act=id=>{const u=st.ui;if(!u||s.paused)return;
   if(u.mode==='bet'){const o=u.opts;o.bet||=[];const sum=o.bet.reduce((a,b)=>a+b,0);
-   if(id.startsWith('chip:')){const v=+id.slice(5);if(sum+v<=o.room){o.bet.push(v);snd.chips(1);}return;}
-   if(id.startsWith('side:')){st.side[u.p]=id.slice(5);return;}
+   if(id.startsWith('chip:')){st.coachChip=true;const v=+id.slice(5);if(sum+v<=o.room){o.bet.push(v);snd.chips(1);}return;}
+   if(id.startsWith('side:')){st.coachSide=true;st.side[u.p]=id.slice(5);return;}
    if(id==='clear'){o.bet=[];return;}if(id==='rebet'){o.bet=V.breakdown(Math.min(st.lastBet[u.p],o.room),[500,100,25,5]);st.side[u.p]=st.lastSide[u.p];snd.chips(3);return;}
-   if(id==='deal'&&sum>=MIN)u.res({bet:sum,side:st.side[u.p]});if(id==='leave')u.res({leave:1});return;}
+   if(id==='deal'&&sum>=MIN){st.coachDealt=true;u.res({bet:sum,side:st.side[u.p]});}if(id==='leave')u.res({leave:1});return;}
   if(u.mode==='squeeze'&&id==='reveal')u.res({sq:1});};
  G.key=(k,u)=>{if(u.mode==='bet'){const m={'1':5,'2':25,'3':100,'4':500};if(m[k])return 'chip:'+m[k];if(k==='p')return 'side:player';if(k==='b')return 'side:banker';if(k==='t')return 'side:tie';if(k==='enter')return 'deal';}if(u.mode==='squeeze'&&(k==='enter'||k===' '))return 'reveal';return null;};
  let peelFrom=null;
@@ -129,7 +143,8 @@ async function vegasBaccarat(s){
   // which side: three toggles
   const sy=top+fs*2.4,sh=wide?Math.min(46,(A.bottom-top)*.11):Math.min(36,A.P.h*.18),sw=(Wd-A.pad*2)/3;
   ['player','banker','tie'].forEach((k,i)=>{const S=SIDES[k];G.btn({id:'side:'+k,X:X0+i*(sw+A.pad),Y:sy,w:sw,h:sh,label:S.label,sub:'pays '+S.pays,tone:side===k?(k==='player'?'blue':k==='banker'?'red':'green'):'dark'});if(side===k){x.save();x.strokeStyle='#fff';x.lineWidth=2.5;V.rr(x,X0+i*(sw+A.pad),sy,sw,sh,Math.min(sh*.32,14));x.stroke();x.restore();}});
-  A.chips(CHIP_VALUES,sy+sh+A.pad*.6,btnTop-A.pad,o.room-sum);}
+  A.chips(CHIP_VALUES,sy+sh+A.pad*.6,btnTop-A.pad,o.room-sum);
+  G.L.coachSides={x:X0,y:sy,w:A.Wd,h:sh};G.L.coachChips={x:X0,y:sy+sh+A.pad*.6,w:A.Wd,h:Math.max(20,btnTop-A.pad-(sy+sh+A.pad*.6))};{const d=G.hits.find(h=>h.id==='deal');G.L.coachDeal=d?{x:d.X,y:d.Y,w:d.w,h:d.h}:null;}}
  s.debug={engine:'vegas-baccarat',st,seats,get T(){return G.T;},bot:()=>G.botAct(),layout:()=>G.L,hits:()=>G.hits,dealerId:G.dealerId,theme:G.theme.id};
  await G.run(async()=>{lay();newShoe();st.phase='shuffle';snd.riffle();await G.W8(1300);
   while(st.round<COUPS&&![0,1].every(p=>st.out[p]||st.bank[p]<MIN))await coup();

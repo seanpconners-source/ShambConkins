@@ -144,7 +144,7 @@ function tableLayer(W,H,theme,L,{rules=[],ins=''}={}){const c=document.createEle
 // layout of the table for a screen; 5 seats round the rail (index 0 = screen left). The shoe sits at the dealer's left.
 // Tall screens: the controls are a strip under the table. Wide screens: a column on the right, the table uses the height.
 function tableLayout(W,H,top){const wide=W>H*1.15,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
- const pw=wide?clamp(W*.27,190,320):W,panelH=wide?H:clamp(H*.255,150,215),TW=wide?W-pw:W,B=wide?H:H-panelH,panel=wide?{x:TW,y:0,w:pw,h:H}:{x:0,y:B,w:W,h:panelH};
+ const pw=wide?clamp(W*.27,190,320):W,panelH=wide?H:clamp(H*.255,150,215)+44   /* +44: the phase banner (casinoFront.js) tops the panel */,TW=wide?W-pw:W,B=wide?H:H-panelH,panel=wide?{x:TW,y:0,w:pw,h:H}:{x:0,y:B,w:W,h:panelH};
  const hd=wide?clamp(H*.16,40,100):clamp(W*.2,44,96),headY=hd*.62+6,y0=headY+hd*.78,ph=wide?clamp(H*.12,30,64):clamp(W*.13,30,62);
  const cw=Math.round(Math.max(26,Math.min(wide?TW*.075:W*.118,(B-y0-ph*1.1)/4.9,70))),ch=cw*1.4,cx=TW/2;
  const betY=B-ph*1.1-cw*.3,ry=Math.max(60,(betY-y0)/.84),rx=wide?Math.min(TW/2-8,ry*2.2):TW*.6,rail=Math.max(8,Math.min(rx,ry)*.07);

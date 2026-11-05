@@ -62,7 +62,7 @@ function createFront(G,spec){const {x,st,V,FONT,BODY,money}=G;
   text(s.title||'',bx+size*2,by+size*.95,size*.9,'#2a1800','left');lines.forEach((l,i)=>text(l,bx+14,by+size*1.95+i*size*1.05,size*.8,'#3a2a10','left',800,BODY));
   const sk={id:'front:skip',X:bx+bw-62,Y:by+4,w:56,h:size*1.3};text('SKIP',sk.X+sk.w/2,sk.Y+sk.h/2,size*.6,'#9a7a40','center',900,BODY);G.hits.push(sk);x.restore();}
  // ---- the rules sheet
- function drawRules(){const w=W(),h=H();x.save();x.fillStyle='rgba(3,2,6,.88)';x.fillRect(0,0,w,h);G.hits=[{id:'front:close',X:0,Y:0,w,h}];
+ function drawRules(){const w=W(),h=H();x.save();x.fillStyle='rgba(3,2,6,.95)';x.fillRect(0,0,w,h);G.hits=[{id:'front:close',X:0,Y:0,w,h}];
   const cw=Math.min(w-28,520),cx=(w-cw)/2;let y=(G.fb.top||40)+10;const secs=spec.rules||[];
   let size=Math.max(11,Math.min(15,w*.036));const est=secs.reduce((a,[,lines])=>a+size*2+lines.length*size*1.35,size*3);if(est>h-y-40)size*=(h-y-40)/est;
   text(spec.title,w/2,y+size*1.2,size*2.1,'#ffd23f','center');y+=size*3;

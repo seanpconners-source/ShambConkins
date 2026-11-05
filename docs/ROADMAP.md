@@ -268,7 +268,7 @@ Endings
 
 ## Phase G — polish the good games (section 1)
 
-- **G13** `[todo]` (owner, Nov 5: "consider this not done at all") CASINO, round 2: make all four tables great and professional,
+- **G13** `[in progress]` (round 2 so far: casinoFront.js intro/phase banner/first-time tour/rules sheet/summary on all four tables; ROULETTE rebuilt from scratch (engines/rouletteGame.js); next: owner feedback, then more polish per table) (owner, Nov 5: "consider this not done at all") CASINO, round 2: make all four tables great and professional,
   like the best modern Android casino apps. Owner's problems with round 1: the games just begin; it isn't clear what game it is,
   what the player is supposed to do ("am I supposed to click on the chips or what"), who the people are, or what is happening;
   no guidance, no clear structure. ROULETTE is terrible: "a real thought-out game", not the old roulette on the new table.

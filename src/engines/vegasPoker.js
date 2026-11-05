@@ -17,6 +17,15 @@ async function vegasPoker(s){
  const G=createVegas(s,{maxRegulars:3}),{x,st,seats,V,money,FONT,BODY,snd}=G;
  Object.assign(st,{hand:0,pot:0,button:4,betRound:0,peek:false,deck:[],toCall:0,level:0,bets:0,winners:[],showdown:false});
  let room=null,felt=null,layKey='';
+ const first=p=>String(s.players[p].name).split(' ')[0].toUpperCase(),localUI=m=>st.ui?.mode===m&&G.local(st.ui.p);
+ const F=G.useFront({key:'poker',title:'FIVE-CARD DRAW',dealerRole:'DEALER',sub:`Poker · ${money(ANTE)} ante · ${money(LIMITS[0])}/${money(LIMITS[1])} limit · ${HANDS} hands`,
+  goal:`Classic draw poker against the table. Everyone antes ${money(ANTE)}, gets five cards, bets, swaps up to three cards once, bets again, and the best hand takes the pot. Most chips after ${HANDS} hands wins; break the bank (${money(G.BUY_IN*1.5)}+) and ${G.nameOf(G.dealerId)} joins your party.`,
+  steps:[['Bet or fold','Look at your five cards. CHECK or CALL to stay in, RAISE when your hand is strong, FOLD a bad one.'],['Draw','Tap the cards you want to throw away (up to 3, or 4 when you keep an ace), then DRAW for new ones.'],['Showdown','After the second round of betting the hands are shown. The best poker hand wins the pot.']],
+  rules:[['HANDS, BEST FIRST',[['Straight flush','5 in a row, one suit'],['Four of a kind','4 the same'],['Full house','3 + a pair'],['Flush','5 of one suit'],['Straight','5 in a row'],['Three of a kind','3 the same'],['Two pair',''],['One pair',''],['High card','']]],
+   ['BETTING',[`Fixed limit: bets and raises are ${money(LIMITS[0])} before the draw and ${money(LIMITS[1])} after it, at most ${CAP} per round. CHECK = bet nothing when nobody has bet. CALL = match the bet. FOLD = give up the hand.`]],
+   ['THE TABLE',['Pass and play: your cards stay face down until you tap SHOW, so the other player can look away. COLOR UP between hands to leave with your chips.']]],
+  coach:[{title:'Your hand',text:'These are your five cards. CHECK/CALL to stay in, RAISE if they are strong, FOLD if not.',rect:()=>G.L?.coachBet,done:()=>st.coachBet,when:()=>localUI('bet')},
+   {title:'The draw',text:'Tap the cards you want to swap (they lift up), then DRAW. Keep your pairs!',rect:()=>G.L?.coachDraw,done:()=>st.coachDrew,when:()=>localUI('draw')}]});
  const live=()=>seats.filter(se=>se.kind!=='empty'&&se.inHand);
  const bankOf=se=>se.kind==='human'?st.bank[se.p]:se.bank;
  const addBank=(se,v)=>{if(se.kind==='human'){st.bank[se.p]=Math.round((st.bank[se.p]+v)*100)/100;G.scores();}else se.bank+=v;};
@@ -36,18 +45,19 @@ async function vegasPoker(s){
   for(const se of seats){se.inHand=false;se.cards=[];se.folded=false;se.put=0;se.total=0;se.allin=false;se.shown=false;se.res=null;se.disc=null;}
   // who plays: players say so (from the second hand), regulars play while they can pay
   for(const p of [0,1]){if(st.out[p])continue;const se=G.seatOf(p);if(st.bank[p]<ANTE){st.out[p]=true;continue;}
-   if(st.hand>1){st.active=se.i;const m=await G.ask(p,'ready',{cpu:()=>({in:1})});st.active=null;if(m.leave){st.out[p]=true;G.banner(`${se.name} COLORS UP`,'#7dd3fc',1.6);snd.chips(6);continue;}}
+   if(st.hand>1){st.active=se.i;F.phase(G.local(p)?`${first(p)} — NEXT HAND?`:`${first(p)} IS DECIDING…`,G.local(p)?`Tap DEAL ME IN (${money(ANTE)} ante) or COLOR UP to leave`:'',{p});const m=await G.ask(p,'ready',{cpu:()=>({in:1})});st.active=null;if(m.leave){st.out[p]=true;G.banner(`${se.name} COLORS UP`,'#7dd3fc',1.6);snd.chips(6);continue;}}
    se.inHand=true;}
   for(const se of seats)if(se.kind==='extra'){if(se.bank>=LIMITS[1]*2)se.inHand=true;else if(!se.left){se.left=true;G.seatSay(se,'I’m out.',1.6);}}
   if(!seats.some(se=>se.kind==='human'&&se.inHand))return;
   // the button moves to the next live seat
   {const L=live().map(se=>se.i).sort((a,b)=>b-a);const nx=L.find(i=>i<st.button);st.button=nx??L[0];}
-  st.phase='ante';G.sayD('bet',1.8);for(const se of live()){addBank(se,-ANTE);se.total+=ANTE;st.pot+=ANTE;}snd.chips(5);await G.W8(500);
+  st.phase='ante';F.phase(`HAND ${st.hand} OF ${HANDS} · ANTE ${money(ANTE)}`,'Everyone puts in the ante, then five cards each');G.sayD('bet',1.8);for(const se of live()){addBank(se,-ANTE);se.total+=ANTE;st.pot+=ANTE;}snd.chips(5);await G.W8(500);
   st.phase='deal';newDeck();for(let k=0;k<5;k++)for(const se of order()){const c=st.deck.pop();Object.assign(c,{t0:G.T,fx:G.L.shoe.x,fy:G.L.shoe.y});se.cards.push(c);snd.card();await G.W8(st.fast?30:120);}
   await G.W8(300);
   if(!await betting(0))return finishHand();
   // the draw
   st.phase='draw';for(const se of order()){if(se.folded)continue;st.active=se.i;let d;
+   F.phase(se.kind==='extra'?`${se.name} IS DRAWING`:G.local(se.p)?`${first(se.p)} — THE DRAW`:`${first(se.p)} IS DRAWING…`,se.kind!=='extra'&&G.local(se.p)?'Tap the cards to swap (up to 3, 4 with an ace), then DRAW':'',{p:se.kind==='extra'?null:se.p});
    if(se.kind==='extra'){await G.W8(500);d=drawPlan(se.cards);}
    else{st.peek=false;const m=await G.ask(se.p,'draw',{cards:se.cards,max:se.cards.some(c=>c.r===1)?4:3,pick:[],cpu:()=>({d:drawPlan(se.cards)})},{d:[]});d=Array.isArray(m.d)?m.d:[];}
    d=[...new Set(d.filter(i=>i>=0&&i<5))].slice(0,se.cards.some(c=>c.r===1)?4:3);
@@ -58,7 +68,7 @@ async function vegasPoker(s){
   st.active=null;
   if(!await betting(1))return finishHand();
   // showdown
-  st.phase='showdown';st.showdown=true;for(const se of order()){if(se.folded)continue;se.shown=true;se.rank=pokerRank(se.cards);snd.flip();await G.W8(650);}
+  st.phase='showdown';st.showdown=true;F.phase('SHOWDOWN','Cards up: the best hand takes the pot');for(const se of order()){if(se.folded)continue;se.shown=true;se.rank=pokerRank(se.cards);snd.flip();await G.W8(650);}
   return finishHand();}
  // one betting round; false when only one player is left
  async function betting(r){st.betRound=r;st.phase='bet';st.level=0;st.bets=0;for(const se of live())se.put=0;const size=LIMITS[r];
@@ -67,6 +77,7 @@ async function vegasPoker(s){
    if(left.every(se=>se.allin||acted.has(se.i)&&se.put>=st.level))break;
    const se=list[i%list.length];i++;if(se.folded||se.allin)continue;if(acted.has(se.i)&&se.put>=st.level)continue;
    st.active=se.i;const toCall=Math.min(st.level-se.put,bankOf(se)),canRaise=st.bets<CAP&&bankOf(se)>st.level-se.put;let a;
+   F.phase(se.kind==='extra'?`${se.name} IS DECIDING`:G.local(se.p)?`${first(se.p)} — ${toCall?`${money(toCall)} TO CALL`:'CHECK OR BET?'}`:`${first(se.p)} IS DECIDING…`,se.kind!=='extra'&&G.local(se.p)?`${G.shared()?'Tap SHOW to see your cards. ':`You hold ${handName(pokerRank(se.cards))}. `}${toCall?'CALL to stay in, RAISE to push, FOLD to give up':`CHECK for free or BET ${money(size)}`}`:'',{p:se.kind==='extra'?null:se.p});
    if(se.kind==='extra'){await G.W8(550);a=think(se,toCall,canRaise,G.rand);}
    else{const m=await G.ask(se.p,'bet',{noLeave:true,toCall,canRaise,size,cards:se.cards,cpu:()=>({a:think(se,toCall,canRaise,()=>Math.random()*(1.25-G.cpuSkill()*.5))})},{a:'f'});a=m.a;}
    if(a==='r'&&!canRaise)a='c';if(a==='f'&&toCall===0)a='c';
@@ -87,7 +98,8 @@ async function vegasPoker(s){
     let best=[];for(const se of elig){if(!best.length)best=[se];else{const c=compareRank(se.rank,best[0].rank);if(c>0)best=[se];else if(c===0)best.push(se);}}
     const each=Math.floor(slice/best.length*100)/100;best.forEach(se=>pays.set(se,(pays.get(se)||0)+each));}}
   const winners=[...pays.keys()];st.winners=winners.map(se=>se.i);
-  if(winners.length){const w=winners[0],how=inn.length>1?` WITH ${handName(w.rank).toUpperCase()}`:'';G.banner(winners.length>1?'SPLIT POT':`${w.name} WINS${how}`,'#ffd23f',2.4);}
+  for(const [se,amt] of pays)if(se.kind==='human')F.note(se.p,amt-se.total,inn.length>1?handName(se.rank):'everyone folded');
+  if(winners.length){const w=winners[0],how=inn.length>1?` WITH ${handName(w.rank).toUpperCase()}`:'';F.phase(winners.length>1?'SPLIT POT':`${w.kind==='human'?first(w.p):w.name} WINS ${money(st.pot)}`,inn.length>1?handName(w.rank):'Everyone else folded');G.banner(winners.length>1?'SPLIT POT':`${w.name} WINS${how}`,'#ffd23f',2.4);}
   for(const [se,amt] of pays){const sp=G.L.spots[se.i];G.fly(amt,G.L.pot,{x:sp.bx,y:sp.by});addBank(se,amt);se.res='win';if(se.kind==='human'){G.moodS(se,'win',3);snd.win(amt>=200);}else G.seatSay(se,'Ship it.',1.4);}
   for(const se of live())if(!pays.has(se)&&se.kind==='human')G.moodS(se,'sad',2.2);
   st.pot=0;if(seats.some(se=>se.kind==='human'&&se.res==='win')){G.sayD('win');G.dmood('happy');}else{G.sayD('house');}
@@ -96,7 +108,9 @@ async function vegasPoker(s){
  G.act=id=>{const u=st.ui;if(!u||s.paused)return;
   if(id==='show'){st.peek=!st.peek;return;}
   if(u.mode==='ready'){if(id==='in')u.res({in:1});if(id==='leave')u.res({leave:1});return;}
+  if(u.mode==='bet'&&'fcr'.includes(id))st.coachBet=true;
   if(u.mode==='bet'){if(id==='f')u.res({a:'f'});if(id==='c')u.res({a:'c'});if(id==='r'&&u.opts.canRaise)u.res({a:'r'});return;}
+  if(u.mode==='draw'&&id==='draw')st.coachDrew=true;
   if(u.mode==='draw'){if(id.startsWith('card:')){if(G.shared()&&!st.peek)return;const i=+id.slice(5),o=u.opts,at=o.pick.indexOf(i);if(at>=0)o.pick.splice(at,1);else if(o.pick.length<o.max)o.pick.push(i);snd.card();return;}if(id==='draw')u.res({d:[...u.opts.pick]});}};
  G.key=(k,u)=>{if(k==='s')return 'show';if(u.mode==='ready')return k==='enter'?'in':null;if(u.mode==='bet')return {f:'f',c:'c',r:'r',enter:'c'}[k]||null;if(u.mode==='draw'){if('12345'.includes(k)&&k.length===1)return 'card:'+(+k-1);if(k==='enter')return 'draw';}return null;};
  G.bot=u=>u.mode==='ready'?(st.hand>st.leaveAt?{leave:1}:{in:1}):u.mode==='bet'?{a:handStrength(u.opts.cards)>.5&&u.opts.canRaise?'r':'c'}:u.mode==='draw'?{d:drawPlan(u.opts.cards)}:null;
@@ -141,7 +155,8 @@ async function vegasPoker(s){
    const raise=st.level?`RAISE ${money(st.level+o.size)}`:`BET ${money(o.size)}`;
    A.buttons([{id:'f',label:'FOLD',tone:'red',on:o.toCall>0},{id:'c',label:o.toCall?'CALL':'CHECK',sub:o.toCall?money(o.toCall):'free',tone:'green'},{id:'r',label:raise.split(' ')[0],sub:raise.split(' ')[1],tone:'gold',on:o.canRaise}],{cols:wide?1:3});return;}
   if(u.mode==='draw'){const o=u.opts;A.text(`${se.name} · THE DRAW`,X0,top+fs*.6,fs,col);A.smallWrap(G.shared()?'Tap the cards to throw away: up to 3, or 4 if you keep an ace.':`Tap the cards to throw away, up to ${o.max}${o.max===4?' (you hold an ace)':''}.`,top+fs*1.7,infoW);
-   A.buttons([{id:'draw',label:o.pick.length?`DRAW ${o.pick.length}`:'STAND PAT',sub:o.pick.length?'new cards':'keep all five',tone:'gold'}]);}}
+   A.buttons([{id:'draw',label:o.pick.length?`DRAW ${o.pick.length}`:'STAND PAT',sub:o.pick.length?'new cards':'keep all five',tone:'gold'}]);}
+  {const bs=G.hits.filter(h=>u.mode==='bet'?'fcr'.includes(h.id):h.id==='draw'||String(h.id).startsWith('card:'));if(bs.length){const x0=Math.min(...bs.map(b=>b.X)),y0=Math.min(...bs.map(b=>b.Y)),x1=Math.max(...bs.map(b=>b.X+b.w)),y1=Math.max(...bs.map(b=>b.Y+b.h));G.L[u.mode==='bet'?'coachBet':'coachDraw']={x:x0,y:y0,w:x1-x0,h:y1-y0};}}}
  s.debug={engine:'vegas-poker',st,seats,get T(){return G.T;},bot:()=>G.botAct(),layout:()=>G.L,hits:()=>G.hits,dealerId:G.dealerId,theme:G.theme.id};
  await G.run(async()=>{lay();snd.riffle();await G.W8(1200);
   while(st.hand<HANDS&&![0,1].every(p=>st.out[p]||st.bank[p]<ANTE))await playHand();

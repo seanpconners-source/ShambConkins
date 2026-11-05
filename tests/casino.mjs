@@ -23,7 +23,10 @@ const URL=process.env.SHAMB_URL||'http://localhost:8123/';
 async function open(id,w,h,{solo=false}={}){const page=await (await browser.newContext({viewport:{width:w,height:h}})).newPage();page.__e=[];page.on('pageerror',e=>page.__e.push(e.message));
  await page.goto(URL,{timeout:180000});await page.waitForSelector('.title-screen',{timeout:90000});await page.waitForFunction(()=>!document.getElementById('boot'),null,{timeout:90000});
  await page.evaluate(([id,v])=>{const S=window.ShambConkins;if(v)S.store.profile.settings.solo={on:true,who:0,level:'normal'};S.requestGame({id,origin:'arcade',solo:v,quick:true});},[id,solo]);
- await page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.st,null,{timeout:20000});return page;}
+ await page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.st,null,{timeout:20000});
+ // every table opens on its intro card (casinoFront.js): TAKE A SEAT like a player
+ await waitUI(page,'front-intro',20000).catch(()=>{});page.__intro=await D(page,()=>!!window.ShambConkins.store.session?.debug?.hits().find(h=>h.id==='front:seat'));if(page.__intro)await tapHit(page,'front:seat');
+ return page;}
 const D=(page,fn,arg)=>page.evaluate(fn,arg);
 const ui=page=>D(page,()=>{const u=window.ShambConkins.store.session?.debug?.st.ui;return u?{mode:u.mode,p:u.p}:null;});
 const waitUI=(page,mode,ms=40000)=>page.waitForFunction(m=>window.ShambConkins.store.session?.debug?.st.ui?.mode===m,mode,{timeout:ms});
@@ -53,8 +56,7 @@ if(IDS.includes('five-card')){const page=await open('five-card',390,780);await w
  await tapHit(page,'draw');await page.waitForTimeout(600);check(!errs(page).length,'poker: no page errors '+errs(page).slice(0,2).join(' | '));await page.context().close();}
 if(IDS.includes('roulette')){const page=await open('roulette',390,780);
  // the intro card first: TAKE A SEAT, then the first bet
- await waitUI(page,'front-intro');check(await D(page,()=>!!window.ShambConkins.store.session.debug.hits().find(h=>h.id==='front:seat')),'roulette: the intro card has TAKE A SEAT');
- await tapHit(page,'front:seat');await waitUI(page,'bet');await page.waitForTimeout(400);
+ check(page.__intro,'roulette: the intro card has TAKE A SEAT');await waitUI(page,'bet');await page.waitForTimeout(400);
  const o=await origin(page);const tapAt=async(a,c)=>{const q=await D(page,([a,c])=>window.ShambConkins.store.session.debug.screenOf(a,c),[a,c]);await page.mouse.click(o.x+q.x,o.y+q.y);await page.waitForTimeout(140);};
  const what=(a,c)=>D(page,([a,c])=>{const d=window.ShambConkins.store.session.debug,q=d.screenOf(a,c);return d.betAt(q.x,q.y)?.key;},[a,c]);
  check(await what(6.5,3.5)==='n:17'&&await what(6,3.5)==='s:14:17'&&await what(6,3)==='c:13'&&await what(6.5,2.05)==='st:5'&&await what(1,2.5)==='s:0:1'&&await what(1,2.05)==='f4'&&await what(13.5,4.5)==='col:2'&&await what(6,.5)==='red',
@@ -65,6 +67,7 @@ if(IDS.includes('roulette')){const page=await open('roulette',390,780);
  await tapHit(page,'done');await page.waitForFunction(()=>window.ShambConkins.store.session.debug.st.ui?.p===1,null,{timeout:8000}).catch(()=>{});
  check(await D(page,()=>window.ShambConkins.store.session.debug.st.ui?.mode==='bet'&&window.ShambConkins.store.session.debug.st.ui.p===1),'roulette: DONE hands the board to player 2');
  check(!errs(page).length,'roulette: no page errors '+errs(page).slice(0,2).join(' | '));await page.context().close();}
+for(const id of IDS.filter(i=>i!=='roulette')){const page=await open(id,390,780);check(page.__intro,`${id}: opens on its intro card with TAKE A SEAT`);await page.context().close();}
 // ---- each table to the result card, three sizes, on the bots
 for(const id of IDS)for(const [w,h] of [[390,780],[844,390],[1100,700]]){const page=await open(id,w,h);
  await D(page,()=>{const d=window.ShambConkins.store.session.debug;d.st.auto=true;d.st.fast=true;});
