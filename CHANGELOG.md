@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.86.0
+
+- **Casino Night is one game in the Arcade.** Blackjack, baccarat, five-card draw, roulette and Liar's Dice now share one Casino Night tile on every shelf, the way Hangman does. Tap it to pick a table.
+- **Batting plays like the SNES game.** A hit now comes from timing and where you stand in the box. Swing on time with the ball over the plate and you hit it; early pulls it, late goes the other way. How high the ball is only changes how it flies. A gold bar under the zone shows your bat's reach. The fake shadow under the pitch is gone.
+- **Symphony of the Night is ready for your own sprites.** Every character, monster, boss, candle, flame, weapon, item, background, floor and prop has a slot, and the game keeps its drawn art for anything not made yet. Your first pictures are already in: the night skies, the far castle, the forest strips, the fog, the four room walls, the stained glass, the altar, the banner, the stalactite, the carpet, the three swords, the dagger and the items.
+- **New Arcade art for Hole.it, Sundown Showdown, Battleship Fog of War, Stick Dot and Major League**: new backgrounds, logos and tile icons. Each background uses the placement you locked in the Background Picker.
+- **Sundown Showdown's explosions and muzzle flashes** now use your art.
+- **Gon's fishing rod** has its picture (304 of 633 items now have one).
+
 ## v0.85.1
 
 - **Swiping between games in the Arcade is smooth again.** Your screen recording's choppiness came from the moment the finger let go: the phone froze for a moment while it decoded the next game's full background picture, and the text jumped straight from the old game to the new one. Now the next game is made ready while your finger is still moving: dragging the picture aside reveals the next game's picture underneath (no more solid colour block in the gap). When you let go, the old text carries on out at the speed you threw it and the new text slides in from the other side. Measured on a slowed-down phone-size browser: the longest frame at release went from 250 ms to under 50 ms, on phone, Fold, landscape and desktop sizes.
