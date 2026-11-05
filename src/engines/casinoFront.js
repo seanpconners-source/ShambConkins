@@ -36,7 +36,8 @@ function createFront(G,spec){const {x,st,V,FONT,BODY,money}=G;
  F.note=(p,amount,what)=>{if(amount>0&&(!F.best[p]||amount>F.best[p].amount))F.best[p]={amount,what};};
  F.blocking=()=>!!(F.mode||F.rules);
  F.act=id=>{if(id==='front:seat'||id==='front:done'){F.res?.();return true;}if(id==='front:rules'){F.rules=true;return true;}if(id==='front:close'){F.rules=false;return true;}
-  if(id==='front:skip'){F.coachOn=false;markSeen();return true;}return id.startsWith('front:');};
+  if(id==='front:skip'){F.coachOn=false;markSeen();return true;}
+  if(id==='front:music'||id==='front:sound'){const set=store.profile?.settings;if(!set)return true;if(id==='front:music'){const on=set.casinoMusic===false;set.casinoMusic=on;if(on&&!set.music)set.music=true;G.snd?.music(false);if(on)G.snd?.music(true);}else set.sound=!set.sound;try{saveProfile(store.profile);}catch{}return true;}return id.startsWith('front:');};
  F.bot=u=>u.mode==='front-intro'||u.mode==='front-summary'?{go:1}:null;
  // ---- the phase banner
  F.phase=(textLine,sub='',o={})=>{F.phaseInfo={text:textLine,sub,color:o.color||'#ffe9a8',p:o.p??null,t0:F.phaseInfo?.text===textLine?F.phaseInfo.t0:G.T};};
@@ -68,7 +69,10 @@ function createFront(G,spec){const {x,st,V,FONT,BODY,money}=G;
   text(spec.title,w/2,y+size*1.2,size*2.1,'#ffd23f','center');y+=size*3;
   for(const [hd,lines] of secs){text(hd,cx,y,size*1.05,'#ffe9a8','left');y+=size*1.4;for(const l of lines){if(Array.isArray(l)){text(l[0],cx+6,y,size*.92,'#fff','left',800,BODY);text(l[1],cx+cw,y,size*.92,'#ffd23f','right',900,BODY);}
     else{for(const ln of wrapLines(l,cw-8,size*.92)){text(ln,cx+6,y,size*.92,'rgba(255,255,255,.88)','left',800,BODY);y+=size*1.25;}y-=size*1.25;}y+=size*1.3;}y+=size*.5;}
-  text('TAP ANYWHERE TO GO BACK',w/2,h-22,size*.9,'rgba(255,255,255,.6)','center',900,BODY);x.restore();}
+  // the table's own switches: music (this casino only) and sound effects
+  {const set=store.profile?.settings||{},mOn=set.music!==false&&set.casinoMusic!==false,sOn=!!set.sound,bw=Math.min(150,(cw-12)/2),bh=40,by=Math.min(h-80,y+size*.6),keep=G.hits;G.hits=[];
+   G.btn({id:'front:music',X:w/2-bw-6,Y:by,w:bw,h:bh,label:mOn?'♪ MUSIC ON':'♪ MUSIC OFF',tone:mOn?'green':'dark'});G.btn({id:'front:sound',X:w/2+6,Y:by,w:bw,h:bh,label:sOn?'SOUNDS ON':'SOUNDS OFF',tone:sOn?'green':'dark'});G.hits=[...G.hits,...keep];}
+  text('TAP ANYWHERE ELSE TO GO BACK',w/2,h-22,size*.9,'rgba(255,255,255,.6)','center',900,BODY);x.restore();}
  // ---- the intro card
  function drawIntro(){const w=W(),h=H(),T=G.T,th=G.theme;x.save();
   const g=x.createRadialGradient(w/2,h*.3,10,w/2,h*.4,Math.max(w,h)*.8);g.addColorStop(0,th.felt||'#14503f');g.addColorStop(1,'#050307');x.fillStyle=g;x.fillRect(0,0,w,h);

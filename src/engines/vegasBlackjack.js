@@ -252,7 +252,7 @@ async function vegasBlackjack(s){
    lay(wide?list.reverse():list,{h:wide?Math.min(64,(bottom-top)*.16):Math.min(62,P.h*.46)});
    {const bs=hits.filter(h=>'hsdp'.includes(h.id));if(bs.length){const x0=Math.min(...bs.map(b=>b.X)),y0=Math.min(...bs.map(b=>b.Y)),x1=Math.max(...bs.map(b=>b.X+b.w)),y1=Math.max(...bs.map(b=>b.Y+b.h));L.coachPlay={x:x0,y:y0,w:x1-x0,h:y1-y0};}}}}
  // ---- the front of house (casinoFront.js): intro, phase banner, first-time tour, rules, summary
- const Gf={get x(){return x;},st,V,FONT,BODY,money,BUY_IN,net,cpu,local:p=>net?p===net.me:!(cpu&&p===1),dealerId,nameOf,seats,s,theme:{...theme,title:base.title,source:base.source},c,fb,
+ const Gf={get x(){return x;},snd,st,V,FONT,BODY,money,BUY_IN,net,cpu,local:p=>net?p===net.me:!(cpu&&p===1),dealerId,nameOf,seats,s,theme:{...theme,title:base.title,source:base.source},c,fb,
   get T(){return T;},get L(){return L;},get hits(){return hits;},set hits(v){hits=v;},wrap:(t,max,font)=>wrap(t,max,0,font),btn:o=>{hits.push(V.button(x,{...o,hot:st.pressId===o.id&&T-st.pressT<.15}));}};
  const firstName=p=>String(s.players[p].name).split(' ')[0].toUpperCase();
  const localUI=m=>st.ui?.mode===m&&Gf.local(st.ui.p);

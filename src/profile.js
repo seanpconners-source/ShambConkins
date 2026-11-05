@@ -33,7 +33,7 @@ function loadProfile() {
   for(const key of ['boards','modes'])if(Array.isArray(saved[key]))p[key]=strings(saved[key]);
   p.shared=charIds(saved.shared).filter(id=>ids.has(id));
   for(const owner of ['Sean','Amber'])p.rosters[owner]=charIds(saved.rosters?.[owner]).filter(id=>ids.has(id));
-  for(const key of ['sound','music','reducedMotion','originalLogos','drinkStatus','devMode','pinballZoom'])if(typeof saved.settings?.[key]==='boolean')p.settings[key]=saved.settings[key];
+  for(const key of ['sound','music','reducedMotion','originalLogos','drinkStatus','devMode','pinballZoom','casinoMusic'])if(typeof saved.settings?.[key]==='boolean')p.settings[key]=saved.settings[key];
   if(Number.isFinite(saved.settings?.flickSensitivity)&&saved.settings.flickSensitivity>0)p.settings.flickSensitivity=Math.min(1.35,Math.max(.65,saved.settings.flickSensitivity));
   {const v=saved.settings?.pinballView;if(v&&typeof v==='object'){const ok=(n,max)=>Number.isInteger(n)&&n>=0&&n<=max;if(ok(v.zoom,4)&&ok(v.speed,4))p.settings.pinballView={zoom:v.zoom,speed:v.speed};}}
   if(['auto','touch','pointer'].includes(saved.settings?.touchMode))p.settings.touchMode=saved.settings.touchMode;

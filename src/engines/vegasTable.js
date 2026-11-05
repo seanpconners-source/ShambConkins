@@ -186,41 +186,75 @@ function button(x,b){const {X,Y,w,h,label,sub,tone='dark',on=true,hot=false}=b;x
  if(sub){x.font=`800 ${Math.max(8,fs*.42)}px ${BODY}`;x.globalAlpha=on?.85:.3;x.fillText(sub,X+w/2,Y+h/2+fs*.5);}x.restore();return b;}
 
 // ---------- sound
-function tableSound(s){let a=null,bus=null,mus=null,nb=null,amb=null,music=null;
- const sfxOn=()=>!!store.profile?.settings.sound,musOn=()=>!!store.profile?.settings.music;
- const ok=()=>{a=audioContext();if(!a)return false;if(!bus){bus=a.createGain();bus.gain.value=.55;bus.connect(a.destination);mus=a.createGain();mus.gain.value=.16;mus.connect(a.destination);}return true;};
- const noiseBuf=()=>nb||=(()=>{const b=a.createBuffer(1,a.sampleRate*2,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b;})();
- const burst=(t,dur,v,f,q=1,type='bandpass',out=bus)=>{const n=a.createBufferSource(),fl=a.createBiquadFilter(),g=a.createGain();n.buffer=noiseBuf();fl.type=type;fl.frequency.value=f;fl.Q.value=q;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);n.connect(fl).connect(g).connect(out);n.start(t,Math.random()*1.5);n.stop(t+dur+.02);};
- const tone=(f,t,d,v,type='sine',out=bus)=>{const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(out);o.start(t);o.stop(t+d+.05);};
+// The tables' sound, the way a polished casino app does it (owner, Nov 5: "a static sound in the background the whole time...
+// not good sounds"): NO noise bed at all; soft lounge music under everything (FM electric piano + plucked upright bass, jazz
+// voicings, a little room reverb, no hissing drums), and short, clean, tactile effects on top: clay chips clacking, cards
+// swishing and landing, a crisp flip, the roulette ball rolling (its rhythm slowing), bouncing over the frets and dropping,
+// a bell chime for a win and a coin shower for a big one, a soft low note for a loss. Music and effects follow the player's
+// Settings; the casino's own music switch (profile.settings.casinoMusic) is on the ? sheet of every table.
+function tableSound(s){let a=null,bus=null,mus=null,verb=null,nb=null,music=null;
+ const sfxOn=()=>!!store.profile?.settings.sound,musOn=()=>!!store.profile?.settings.music&&store.profile?.settings.casinoMusic!==false;
+ const ok=()=>{a=audioContext();if(!a)return false;if(!bus){
+   // a small room: a generated impulse (decaying, smoothed) through a convolver, mixed in quietly
+   verb=a.createConvolver();const len=Math.floor(a.sampleRate*1.6),ir=a.createBuffer(2,len,a.sampleRate);for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);let lp=0;for(let k=0;k<len;k++){lp=lp*.6+(Math.random()*2-1)*.4;d[k]=lp*Math.pow(1-k/len,3.2);}}verb.buffer=ir;
+   const wet=a.createGain();wet.gain.value=.22;verb.connect(wet).connect(a.destination);
+   bus=a.createGain();bus.gain.value=1.5;bus.connect(a.destination);const bs=a.createGain();bs.gain.value=.12;bus.connect(bs).connect(verb);
+   mus=a.createGain();mus.gain.value=.2;const mlp=a.createBiquadFilter();mlp.type='lowpass';mlp.frequency.value=5200;mus.connect(mlp).connect(a.destination);const ms=a.createGain();ms.gain.value=.55;mlp.connect(ms).connect(verb);}return true;};
+ const noiseBuf=()=>nb||=(()=>{const b=a.createBuffer(1,a.sampleRate,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b;})();
+ // a short filtered noise grain: the raw material of clicks, swishes and taps (never a continuous bed)
+ const grain=(t,dur,v,f,q=1,type='bandpass',out=bus,f2=null)=>{const n=a.createBufferSource(),fl=a.createBiquadFilter(),g=a.createGain();n.buffer=noiseBuf();fl.type=type;fl.frequency.setValueAtTime(f,t);if(f2)fl.frequency.exponentialRampToValueAtTime(f2,t+dur);fl.Q.value=q;
+  g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v,t+Math.min(.004,dur*.2));g.gain.exponentialRampToValueAtTime(.0001,t+dur);n.connect(fl).connect(g).connect(out);n.start(t,Math.random()*.5);n.stop(t+dur+.02);};
+ const tone=(f,t,d,v,type='sine',out=bus,att=.006)=>{const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v,t+att);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(out);o.start(t);o.stop(t+d+.02);};
+ // a bell: two inharmonic partials, a fast attack and a long ring
+ const bell=(f,t,d,v,out=bus)=>{tone(f,t,d,v,'sine',out,.003);tone(f*2.76,t,d*.45,v*.35,'sine',out,.002);tone(f*5.4,t,d*.2,v*.12,'sine',out,.002);};
+ // one clay chip landing on another: a hard click with a body resonance
+ const chip=(t,k=1)=>{const p=.9+Math.random()*.2;grain(t,.018,.55*k,3100*p,7);grain(t,.012,.35*k,5600*p,9);tone(1650*p,t,.03,.06*k,'sine',bus,.001);};
+ const mt=n=>440*Math.pow(2,(n-69)/12);
  const S={
-  card(){if(!sfxOn()||!ok())return;const t=a.currentTime;burst(t,.06,.5,2600,1.4);burst(t+.012,.05,.25,5200,2);},
-  slide(){if(!sfxOn()||!ok())return;const t=a.currentTime;burst(t,.16,.18,1800,.8,'highpass');},
-  flip(){if(!sfxOn()||!ok())return;const t=a.currentTime;burst(t,.05,.4,3400,2);},
-  chips(n=3){if(!sfxOn()||!ok())return;const t=a.currentTime;for(let i=0;i<Math.min(8,n);i++){const tt=t+i*.035+Math.random()*.012;tone(3800+Math.random()*900,tt,.05,.08,'triangle');burst(tt,.03,.22,6200,3);}},
-  riffle(){if(!sfxOn()||!ok())return;const t=a.currentTime;for(let i=0;i<34;i++)burst(t+i*.022,.03,.18+.1*Math.sin(i/34*Math.PI),2000+i*60,2);burst(t+.85,.18,.4,1500,.7);},
-  win(big=false){if(!sfxOn()||!ok())return;const t=a.currentTime;(big?[523,659,784,1047,1319]:[659,784,1047]).forEach((f,i)=>tone(f,t+i*.07,.3,.12,'triangle'));if(big)S.crowd(1.6);},
-  lose(){if(!sfxOn()||!ok())return;const t=a.currentTime;[330,294].forEach((f,i)=>tone(f,t+i*.14,.25,.08,'triangle'));},
-  bust(){if(!sfxOn()||!ok())return;const t=a.currentTime;tone(196,t,.32,.12,'sawtooth');tone(185,t+.12,.36,.1,'sawtooth');},
-  crowd(k=1){if(!sfxOn()||!ok())return;const t=a.currentTime;burst(t,1.4,.08*k,700,.6);burst(t+.1,1.2,.06*k,1200,.8);},
-  tap(){vibrate(8);},
-  // roulette: the wheel's rumble while it spins, and the ball's clatter as it drops into the pockets
-  whir(secs=4){if(!sfxOn()||!ok())return;const t=a.currentTime,n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=noiseBuf();n.loop=true;f.type='lowpass';f.frequency.setValueAtTime(900,t);f.frequency.exponentialRampToValueAtTime(220,t+secs);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.12,t+.3);g.gain.exponentialRampToValueAtTime(.0001,t+secs);n.connect(f).connect(g).connect(bus);n.start(t);n.stop(t+secs+.1);},
-  clack(k=1){if(!sfxOn()||!ok())return;const t=a.currentTime;tone(2400+Math.random()*900,t,.04,.07*k,'triangle');burst(t,.03,.22*k,4200,3);},
-  // murmuring room + a slot machine paying out somewhere far away
-  ambience(on){if(!on){try{amb?.n.stop();}catch{}clearInterval(amb?.id);amb=null;return;}if(amb||!sfxOn()||!ok())return;const n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=noiseBuf();n.loop=true;f.type='bandpass';f.frequency.value=520;f.Q.value=.5;g.gain.value=.018;n.connect(f).connect(g).connect(bus);n.start();
-   const id=setInterval(()=>{if(!s.alive||s.paused||!a)return;const t=a.currentTime;g.gain.setTargetAtTime(.012+Math.random()*.014,t,.8);if(Math.random()<.22){const base=1200+Math.random()*900;for(let i=0;i<9;i++)tone(base*(1+(i%3)*.25),t+i*.09,.08,.012,'square');}},1400);amb={n,id};},
-  // original lounge jazz: ii-V-I-VI in C, walking bass, Rhodes-like comping, brushes; scheduled a little ahead
+  // a card leaving the shoe: a soft swish rising, then the landing
+  card(){if(!sfxOn()||!ok())return;const t=a.currentTime;grain(t,.085,.16,1400,1.1,'bandpass',bus,3800);grain(t+.075,.035,.22,900,1.5,'lowpass');},
+  // cards slid together off the felt
+  slide(){if(!sfxOn()||!ok())return;const t=a.currentTime;grain(t,.22,.1,1200,.9,'bandpass',bus,2600);},
+  flip(){if(!sfxOn()||!ok())return;const t=a.currentTime;grain(t,.028,.3,2600,2.2);grain(t+.01,.02,.18,4800,3);},
+  chips(n=3){if(!sfxOn()||!ok())return;const t=a.currentTime;const m=Math.min(7,Math.max(1,n));for(let i=0;i<m;i++)chip(t+i*.045+Math.random()*.015,1-i*.08);},
+  // a riffle shuffle: a run of quick card ticks, then the bridge
+  riffle(){if(!sfxOn()||!ok())return;const t=a.currentTime;for(let i=0;i<30;i++){const k=Math.sin(i/30*Math.PI);grain(t+i*.024,.016,.12+.12*k,2400+i*40,4);}grain(t+.8,.2,.12,1100,.9,'bandpass',bus,2400);},
+  win(big=false){if(!sfxOn()||!ok())return;const t=a.currentTime;(big?[72,76,79,84,88]:[76,79,84]).forEach((n,i)=>bell(mt(n),t+i*.085,big?1.4:1,.09));
+   if(big)for(let i=0;i<26;i++){const tt=t+.25+i*.045+Math.random()*.03;tone(2400+Math.random()*2200,tt,.09,.03,'sine',bus,.001);grain(tt,.02,.12,6000+Math.random()*2000,8);}},
+  lose(){if(!sfxOn()||!ok())return;const t=a.currentTime;[[57,0],[52,.16]].forEach(([n,dt])=>{tone(mt(n),t+dt,.42,.08,'sine');tone(mt(n)*2,t+dt,.2,.025,'sine');});},
+  bust(){S.lose();},
+  // a happy table: a short brass-less fanfare of bells instead of a noise "crowd"
+  crowd(k=1){if(!sfxOn()||!ok()||k<.5)return;const t=a.currentTime;[84,88,91].forEach((n,i)=>bell(mt(n),t+.1+i*.06,.9,.05*k));},
+  tap(){vibrate(8);if(!sfxOn()||!ok())return;const t=a.currentTime;tone(1320,t,.035,.035,'sine',bus,.002);},
+  // roulette: the ball runs round the track (a rolling whir pulsing with each lap, slowing), then bounces over the frets
+  // and drops into its pocket; `secs` = how long the spin lasts
+  whir(secs=4){if(!sfxOn()||!ok())return;const t=a.currentTime,end=t+secs;let lap=t,period=.24;
+   while(lap<end-secs*.32){const k=(lap-t)/secs;grain(lap,period*.9,.07*(1-k*.4),900+600*(1-k),1.4,'bandpass',bus,700+400*(1-k));lap+=period;period*=1.07;}
+   let bt=end-secs*.3,gap=.09;for(let i=0;i<10&&bt<end;i++){chip(bt,.55-i*.04);bt+=gap;gap*=1.22;}},
+  clack(k=1){if(!sfxOn()||!ok())return;const t=a.currentTime;chip(t,.7*k);grain(t+.03,.05,.12*k,700,1.2,'lowpass');},
+  // no room noise any more; kept so callers stay the same
+  ambience(){},
+  // lounge music: Dm9 G13 Cmaj9 A7(b9) / Dm9 G7 Em7 A7 / Fmaj9 E7 Am9 D9 / Dm9 G13 Cmaj9 (G7) at 84 bpm, swung; scheduled ahead
   music(on){if(!on){if(music){clearInterval(music.id);music=null;}return;}if(music||!musOn()||!ok())return;
-   const bpm=96,beat=60/bpm,bars=[[50,[62,65,69,72]],[43,[59,62,65,69]],[48,[64,67,71,74]],[45,[61,64,67,70]],[50,[60,65,69,72]],[43,[59,62,65,68]],[48,[64,67,71,76]],[48,[60,64,67,71]]];
-   const mt=n=>440*Math.pow(2,(n-69)/12);let next=a.currentTime+.15,step=0;
-   const rhodes=(n,t,d,v)=>{tone(mt(n),t,d,v,'sine',mus);tone(mt(n)*2.002,t,d*.5,v*.25,'sine',mus);};
-   const id=setInterval(()=>{if(!a||!s.alive)return;if(s.paused){next=a.currentTime+.15;return;}while(next<a.currentTime+.5){const bar=bars[(step>>2)%bars.length],b=step%4,swing=b%2?beat*.08:0,t=next+swing;
-     const walk=[0,4,7,b===3?11:9][b];tone(mt(bar[0]+walk-12),t,beat*.9,.22,'triangle',mus);
-     if(b===0||b===2&&Math.random()<.6)bar[1].forEach((n,i)=>rhodes(n,t+i*.008+(b===2?beat*.5:0),beat*1.6,.045));
-     burst(t,beat*.5,b%2?.05:.025,6500,.6,'highpass',mus);if(b%2)burst(t+beat*.66,.05,.03,7000,.8,'highpass',mus);
-     if(b===3&&Math.random()<.5){const m=bar[1][3]+12;rhodes(m,t,beat*.8,.03);}
+   const bpm=84,beat=60/bpm,bars=[[50,[60,64,65,69]],[43,[59,64,65,69]],[48,[59,62,64,67]],[45,[61,64,67,70]],[50,[60,64,65,69]],[43,[59,62,65,69]],[52,[62,67,71,74]],[45,[61,64,67,71]],
+    [41,[60,64,67,69]],[40,[59,62,64,68]],[45,[59,60,64,67]],[50,[60,62,66,69]],[50,[60,64,65,69]],[43,[59,64,65,69]],[48,[59,62,64,67]],[43,[59,62,65,69]]];
+   // FM electric piano: the modulator's index falls fast after the hammer, which gives the bell-like attack
+   const ep=(n,t,d,v)=>{const f=mt(n),c=a.createOscillator(),m=a.createOscillator(),mg=a.createGain(),g=a.createGain();c.frequency.value=f;m.frequency.value=f;mg.gain.setValueAtTime(f*2.2,t);mg.gain.exponentialRampToValueAtTime(f*.25,t+.35);
+    g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v,t+.006);g.gain.exponentialRampToValueAtTime(v*.35,t+.45);g.gain.exponentialRampToValueAtTime(.0001,t+d);m.connect(mg).connect(c.frequency);c.connect(g).connect(mus);c.start(t);m.start(t);c.stop(t+d+.05);m.stop(t+d+.05);};
+   const bass=(n,t,d,v)=>{const f=mt(n),o=a.createOscillator(),o2=a.createOscillator(),lp=a.createBiquadFilter(),g=a.createGain();o.type='sine';o2.type='triangle';o.frequency.value=f;o2.frequency.value=f;lp.type='lowpass';lp.frequency.value=700;
+    g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v,t+.012);g.gain.exponentialRampToValueAtTime(v*.3,t+d*.55);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(lp);o2.connect(lp);lp.connect(g).connect(mus);o.start(t);o2.start(t);o.stop(t+d+.05);o2.stop(t+d+.05);};
+   let next=a.currentTime+.2,step=0,mel=0;
+   const id=setInterval(()=>{if(!a||!s.alive)return;if(s.paused){next=a.currentTime+.2;return;}
+    while(next<a.currentTime+.6){const bar=bars[(step>>2)%bars.length],b=step%4,swing=b%2?beat*.12:0,t=next+swing;
+     // walking bass: root, a chord tone, the fifth, a step toward the next root
+     const nb2=bars[((step>>2)+1)%bars.length][0],walk=[0,bar[1][1]-bar[0]-12>0?3:4,7,(nb2-bar[0]+12)%12-1];bass(bar[0]-12+(b===3?walk[3]%12:walk[b]),t,beat*.95,.34);
+     // comping: the chord on 1 and the "and" of 2, rolled a touch
+     if(b===0)bar[1].forEach((n,i)=>ep(n,t+i*.012,beat*2.4,.05));
+     if(b===1&&Math.random()<.7)bar[1].forEach((n,i)=>ep(n,t+beat*.55+i*.01,beat*1.2,.035));
+     // a few melody notes over the top, from the chord, an octave up
+     if(Math.random()<.42){const n=bar[1][(mel=(mel+1+Math.floor(Math.random()*2))%4)]+12;ep(n,t+(Math.random()<.5?0:beat*.5),beat*1.1,.04);}
      next+=beat;step++;}},120);music={id};},
-  stop(){S.ambience(false);S.music(false);}};
+  stop(){S.music(false);}};
  s.cleanup(()=>S.stop());return S;}
 
 Object.assign(exports,{SUITS,RANKS,CHIPS,chipOf,money,breakdown,ease,FONT,BODY,suit,rr,cardImg,backImg,chipImg,drawStack,SQ,head,roomLayer,tableLayer,tableLayout,drawDealer,bubble,button,tableSound,shade});
