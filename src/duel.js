@@ -11,6 +11,7 @@ const {escapeHTML:e}=require("src/utils.js");
 const {joinRoom,leaveRoom,sendNet,onNet,netState,netLogText}=require("src/net.js");
 const {VERSION}=require("src/version.js");
 const {friendsPanelHTML,handleFriendChoice,noteMet,myCode}=require("src/friends.js");
+const {openChat}=require("src/chat.js");
 
 let hooks={start:async()=>false,refresh:()=>{}};
 let pending=null;   // my challenge waiting for an answer {mid, gameId, seed}
@@ -39,6 +40,7 @@ async function openOnline(){
  const room=document.getElementById('net-room')?.value.trim()||'',me=+(document.querySelector('input[name="net-who"]:checked')?.value||0);
  // a button in the friends list (add, remove, invite): do it, then this dialog again unless an invite took us into a room
  const fr=await handleFriendChoice(choice);
+ if(typeof fr==='string'&&fr.startsWith('chat:')){openChat(fr.slice(5));return;}
  if(fr){if(fr==='joined'||netState().room)return;return openOnline();}
  if(choice!=='join')return;
  if(!room){toast('Type a room name first');return openOnline();}

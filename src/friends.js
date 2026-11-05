@@ -83,6 +83,8 @@ function onMessage(m){
  else if(m.t==='cancel'){const i=invites.findIndex(x=>x.id===m.id);if(i>=0)invites.splice(i,1);if(showing===m.id)resolveDialog('cancelled');}
  else if(m.t==='reply'&&outgoing?.id===m.id)resolveDialog(m.ok?'accepted':'declined');
  else if(m.t==='sent'&&outgoing?.id===m.id&&!m.ok)resolveDialog('offline');
+ else if(m.t==='chat'&&m.from&&cleanCode(m.from.code)&&typeof m.text==='string'){addFriendEntry(m.from,true);chatHook?.(m);}
+ else if(m.t==='chat-sent'&&!m.ok)toast('Your message didn’t arrive: they went offline');
 }
 // newer names/faces for friends who are online
 function learn(list){const l=friends();let dirty=false;for(const p of list){const f=l.find(x=>x.code===p.code);if(f&&(f.name!==p.name||f.character!==p.character)){f.name=p.name;f.character=p.character;f.owner=p.owner;dirty=true;}}if(dirty)saveFriends(l);}
@@ -106,7 +108,7 @@ function rowsHTML(){
  const rank=f=>{const p=presence.get(f.code);return p?(p.st==='free'?0:1):2;};
  return l.slice().sort((a,b)=>rank(a)-rank(b)||String(a.name).localeCompare(String(b.name))).map(f=>{const p=presence.get(f.code),st=p?p.st:'off',name=f.name||`Friend ${showCode(f.code)}`;
   const text=p?(p.what||LABEL[st]||'Online'):'Offline';
-  return `<li class="fr-row fr-${st}"><span class="fr-face">${portraitHTML(f.character||'sean','portrait mini')}</span><span class="fr-text"><b>${e(name)}</b><small><i class="fr-dot"></i>${e(text)}</small></span>${p?`<button type="button" class="fr-invite" data-fr="invite:${f.code}">Invite</button>`:''}<button type="button" class="fr-x" data-fr="remove:${f.code}" aria-label="Remove ${e(name)}">✕</button></li>`;}).join('');
+  return `<li class="fr-row fr-${st}"><span class="fr-face">${portraitHTML(f.character||'sean','portrait mini')}</span><span class="fr-text"><b>${e(name)}</b><small><i class="fr-dot"></i>${e(text)}</small></span>${p?`<button type="button" class="fr-chat" data-fr="chat:${f.code}" aria-label="Message ${e(name)}">💬</button><button type="button" class="fr-invite" data-fr="invite:${f.code}">Invite</button>`:''}<button type="button" class="fr-x" data-fr="remove:${f.code}" aria-label="Remove ${e(name)}">✕</button></li>`;}).join('');
 }
 function friendsPanelHTML(){
  enableFriends();
@@ -131,6 +133,7 @@ async function handleFriendChoice(v){
  if(what==='add')addFriend(typed);
  else if(what==='remove'){const f=friends().find(x=>x.code===code);const ok=await showDialog({local:true,title:`Remove ${f?.name||showCode(code)}?`,body:'They stay on your list again the next time you play together in a room.',choices:[{label:'Remove',value:'yes',danger:true},{label:'Keep',value:'no',primary:true}]});if(ok==='yes')removeFriend(code);}
  else if(what==='invite')return await inviteFriend(code)==='joined'?'joined':true;
+ else if(what==='chat')return 'chat:'+code;
  return true;
 }
 
@@ -188,4 +191,9 @@ function initFriends(h){
 }
 // tests: drop and reopen the lobby connection (a new hello), what the lobby told us
 function friendsDebug(){return {code:myCode(),open:lobby.open,presence:[...presence.values()],friends:friends(),invites:invites.length,reconnect(){disconnect();lobby.next=0;lobby.tries=0;connect();}};}
-Object.assign(exports,{friendsDebug,initFriends,friendsPanelHTML,handleFriendChoice,noteMet,addFriend,enableFriends,myCode,inviteFriend,friendsOnline:onlineCount});
+// ---- messages (src/chat.js): to a friend through the lobby, wherever they are in the game ----
+let chatHook=null;
+function onFriendChat(fn){chatHook=fn;}
+function sendFriendChat(code,{id,text}){return send({t:'chat',to:code,id,text});}
+function friendOf(code){return friends().find(f=>f.code===code)||null;}
+Object.assign(exports,{onFriendChat,sendFriendChat,friendOf,friendMe:me,friendsDebug,initFriends,friendsPanelHTML,handleFriendChoice,noteMet,addFriend,enableFriends,myCode,inviteFriend,friendsOnline:onlineCount});

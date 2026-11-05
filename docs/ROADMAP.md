@@ -401,7 +401,7 @@ Reuse engines with new skins wherever possible.
 - **I1** `[part]` Joining, leaving, drops, reconnects (much done in v0.69.0; real phones untried). Leaving a board game should feel natural.
 - **I2** `[idea]` Invite links.
 - **I3** `[idea]` Simple online status dot (no friends list).
-- **I4** `[idea]` Quiet chat: canned Nintendo-style lines, text, or both.
+- **I4** `[verify]` Chat between online players (Nov 5): quick lines (fresh hand each time: 2 for the moment, 3 nice, 4 nasty incl. 2 crude unless Settings → Clean chat), 16 emotes, your character's quote, typing; bubbles with the sender's face; in rooms, the online board game, online minigames, dialogs, and to friends via the lobby. Needs the Worker deploy (next release) for friend messages.
 - **I5** `[todo]` Room creator sets up the board game and sends challenges; the other player sees, accepts or declines.
 - **I6** `[part]` Every suitable game has online versus or co-op (all 95 head-to-head games native online; co-op shared worlds for the owner's picks).
 - **I7** `[todo]` Better watch views, visible scores, turn-taking.

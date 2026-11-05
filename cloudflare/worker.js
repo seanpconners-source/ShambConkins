@@ -291,6 +291,8 @@ export class Lobby extends DurableObject {
     }
     const id = clean(m.id, 24);
     if (m.t === 'invite') { const room = clean(m.room, 40); const n = this.to(target, { t: 'invite', id, room, from: entryOf(a) }); this.send(ws, { t: 'sent', id, ok: n > 0 }); return; }
+    // a message to a friend (src/chat.js): text only, short; tells the sender whether it reached an open game
+    if (m.t === 'chat') { const text = clean(m.text, 160).trim(); if (!text) return; const n = this.to(target, { t: 'chat', id, text, from: entryOf(a) }); this.send(ws, { t: 'chat-sent', id, ok: n > 0 }); return; }
     if (m.t === 'reply') { this.to(target, { t: 'reply', id, ok: !!m.ok, from: entryOf(a) }); return; }
     if (m.t === 'cancel') { this.to(target, { t: 'cancel', id, from: entryOf(a) }); return; }
   }
