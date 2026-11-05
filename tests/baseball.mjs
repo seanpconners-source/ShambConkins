@@ -13,7 +13,7 @@ let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;
  check(!dribbler.hr&&Math.hypot(dribbler.path.at(-1)[1],dribbler.path.at(-1)[2])<170,'a chopper stops on the infield');
  check(R.flight({mph:100,phi:25,theta:60*D}).foul,'a ball hooked past the line is foul');
  const p={u:0,v:0,kind:'fast'};check(R.contact(p,0,0,0,{power:.6,contact:.6},()=>.5).kind==='fair','a perfectly timed swing on the sweet spot is in play');
- check(R.contact(p,.2,0,0,{power:.6,contact:.6},()=>.5).kind==='miss'&&R.contact(p,0,1.2,0,{power:.6,contact:.6},()=>.5).kind==='miss','too late, or the bat in the wrong place, misses');
+ check(R.contact(p,.26,0,0,{power:.6,contact:.6},()=>.5).kind==='miss'&&R.contact(p,0,1.2,0,{power:.6,contact:.6},()=>.5).kind==='miss','too late, or the bat in the wrong place, misses');
  const early=R.contact(p,-.07,0,0,{power:.6,contact:.6},()=>.5),late=R.contact(p,.07,0,0,{power:.6,contact:.6},()=>.5);check(early.theta<0&&late.theta>0,'early pulls it to left field, late goes the other way');
  let c=R.newCount();for(const r of ['ball','ball','ball'])c=R.tally(c,r).count;check(R.tally(c,'ball').walk,'four balls is a walk');
  c=R.newCount();for(const r of ['foul','foul','foul','foul'])c=R.tally(c,r).count;check(c.s===2,'fouls with two strikes keep the count');check(R.tally(c,'swing').k,'strike three');

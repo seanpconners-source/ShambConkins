@@ -287,10 +287,10 @@ async function griffeyBall(s){
   // the strike zone and the pitch (bending with the pitcher's steering)
   const z=L.zone,zx=z.x-z.w/2,zy=z.y-z.h/2;x.save();x.strokeStyle='rgba(255,255,255,.5)';x.lineWidth=2;x.strokeRect(zx,zy,z.w,z.h);x.globalAlpha=.15;x.strokeRect(zx+z.w/3,zy,z.w/3,z.h);x.strokeRect(zx,zy+z.h/3,z.w,z.h/3);x.restore();
   // where this phone's batter's bat meets the zone (faint), and the plane he is swinging on
-  if(ctrl(bt)==='local'&&st.phase!=='intro'){const p=A.zoneXY(L,sweetU(),PLANE[st.bx.plane]??0);x.save();x.globalAlpha=st.bx.bunt?.45:.28;x.strokeStyle='#ffd23f';x.lineWidth=2;x.beginPath();x.ellipse(p.x,p.y,z.w*.19,z.w*.1,0,0,7);x.stroke();x.restore();}
+  if(ctrl(bt)==='local'&&st.phase!=='intro'){const rc=.56+.14*(batter().r.contact??.6),a0=A.zoneXY(L,sweetU()-rc,0),a1=A.zoneXY(L,sweetU()+rc,0),pm=A.zoneXY(L,sweetU(),0);x.save();x.globalAlpha=st.bx.bunt?.45:.3;x.strokeStyle='#ffd23f';x.lineWidth=2;x.beginPath();x.moveTo(a0.x,zy+z.h+6);x.lineTo(a1.x,zy+z.h+6);x.moveTo(a0.x,zy+z.h);x.lineTo(a0.x,zy+z.h+12);x.moveTo(a1.x,zy+z.h);x.lineTo(a1.x,zy+z.h+12);x.stroke();x.globalAlpha*=.8;x.beginPath();x.arc(pm.x,zy+z.h+6,4,0,7);x.fillStyle='#ffd23f';x.fill();x.restore();}
   if(pp&&T>=pp.rel){const k=clamp((T-pp.rel)/pp.plan.T,0,1.2),e=Math.min(1,k),pa=R.pitchAt(pp.plan,e),sv=steerOf();pa.u+=sv.u*e*e;pa.v+=sv.v*e*e;
    const end=A.zoneXY(L,pa.u,pa.v),start={x:mx+ph*.25,y:L.mound.y-ph*.85},bx=start.x+(end.x-start.x)*e,by=start.y+(end.y-start.y)*e,r=2+e*e*(z.w*.06);
-   if(k<1.15&&!(st.res&&st.res.t>pp.rel&&st.res.r==='hit'&&k>1)){x.fillStyle='rgba(0,0,0,.25)';x.beginPath();x.ellipse(bx,by+r*2+e*z.h*.4,r,r*.4,0,0,7);x.fill();A.ball(x,bx,by,r);}}
+   if(k<1.15&&!(st.res&&st.res.t>pp.rel&&st.res.r==='hit'&&k>1))A.ball(x,bx,by,r);}
   // a hit ball leaving, and fouls flying off
   if(st.res&&st.res.hit&&pp&&T-st.res.t<.8&&T>pp.arrive){const k=(T-pp.arrive)/.8,h=st.res.hit,dx=Math.sin(h.theta)*k*L.W*.7,dy=-k*L.H*(.25+h.phi/90);A.ball(x,L.zone.x+dx,L.zone.y+dy,Math.max(2,6-k*4));}
   const swingK=st.swing?clamp((T-st.swing.t)/.22,0,1):0;A.batter(x,L,bt,batter().id,swingK,st.res&&st.res.r==='hit'?'win':'normal',T,{bx:st.bx.x,by:st.bx.y,bunt:st.bx.bunt&&!st.swing});

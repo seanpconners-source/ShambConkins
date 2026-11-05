@@ -22,18 +22,22 @@ function pitchPlan(kind,aimU,aimV,control,rand){const P=PITCHES[kind]||PITCHES.f
 function pitchAt(p,k){const late=k*k*k;return {u:p.u-p.bx*(1-late),v:p.v-p.by*(1-late)+(1-k)*.6,k};}
 const inZone=(u,v)=>Math.abs(u)<=1&&Math.abs(v)<=1;
 
-// ---- the swing: timing (seconds, + late) and where the bat's sweet spot was (zone units)
-const WINDOW=.14;
+// ---- the swing (SNES-style batting): where the batter stands in the box decides which pitches the bat can reach (a whole
+// bat length across the plate, `reach` either side of the sweet spot); the pitch's height doesn't decide contact, only the
+// kind of hit (high = in the air, low = on the ground; a flick up/down tilts it further); timing (seconds, + late) decides
+// contact and direction, with a little more room for swinging late than early.
+const WINDOW=.15,LATE=.2;
 function contact(p,dt,cu,cv,bat={power:.6,contact:.6},rand=Math.random){
- const reach=.44+.16*bat.contact,du=p.u-cu,dv=p.v-cv,d=Math.hypot(du,dv*1.25);
- if(Math.abs(dt)>WINDOW||d>reach)return {kind:'miss'};
- const qt=1-Math.abs(dt)/WINDOW,qd=1-d/reach,q=clamp(qt*.55+qd*.45,0,1);
+ const reach=.56+.14*bat.contact,du=p.u-cu;
+ if(dt<-WINDOW||dt>LATE||Math.abs(du)>reach||p.v>1.4||p.v<-1.45)return {kind:'miss'};
+ const span=dt<0?WINDOW:LATE,qt=1-Math.abs(dt)/span,qd=1-Math.abs(du)/reach,qh=1-clamp((Math.abs(p.v)-.85)/.6,0,1)*.45,q=clamp((qt*.5+qd*.5)*qh+0,0,1);
  // timing sends it: early (dt<0) pulls it to left field (a right-handed batter), late goes the other way (theta>0 = right field)
- let theta=clamp(dt/WINDOW*72+(rand()-.5)*26,-80,80)*D2R;
- // the bat under the ball lifts it, over it chops it into the ground
- const gauss=()=>(rand()+rand()+rand()-1.5)*1.15;const phi=clamp(9+dv*44+gauss()*16+(1-qd)*(dv>0?10:-10),-30,65);
- if(q<.46)return {kind:'foul',theta:(dt<0?-1:1)*(55+rand()*30)*D2R,phi:clamp(phi+20,10,80),mph:45+rand()*20,tip:true};
- const mph=clamp(55+58*q+28*(bat.power-.5)+(bat.boost||0)+(rand()-.5)*8,40,122);
+ const theta=clamp(dt/span*62+(rand()-.5)*26,-80,80)*D2R;
+ // high pitches and an upward swing lift it, low ones and a chop put it on the ground; the bat's end tops or undercuts it
+ const gauss=()=>(rand()+rand()+rand()-1.5)*1.15,tilt=cv>.3?12:cv<-.3?-12:0;
+ const phi=clamp(9+p.v*15+tilt+gauss()*16+(1-qd)*(rand()<.5?12:-12),-30,62);
+ if(q<.42)return {kind:'foul',theta:(dt<0?-1:1)*(55+rand()*30)*D2R,phi:clamp(phi+20,10,80),mph:45+rand()*20,tip:true};
+ const mph=clamp(53+57*q+28*(bat.power-.5)+(bat.boost||0)+(rand()-.5)*8,40,122);
  return {kind:Math.abs(theta)>45*D2R?'foul':'fair',theta,phi,mph,q};}
 
 // ---- ball flight: drag, bounces, rolling, the fence; a list of samples [t,x,y,z] at 1/60 s plus what happened
@@ -87,6 +91,6 @@ function cpuSwing(p,count,skill,rand){const breaking=p.kind==='curve'||p.kind===
  // a breaking ball is read where it would have gone without the break; a change-up looks like a fastball (swing early)
  const fooled=breaking&&rand()<.55-skill*.25,eu=p.u+(fooled?p.bx*.6:0)+(rand()-.5)*see,ev=p.v+(fooled?p.by*.6:0)+(rand()-.5)*see,looks=inZone(eu,ev);
  const swing=looks?rand()<(count.s===2?.92:count.b===3?.55:.68):rand()<(count.s===2?.3:.12)*(1.3-skill);if(!swing)return null;
- const sd=.05+(1-skill)*.08,early=p.kind==='change'&&rand()<.6-skill*.3?-.09:0,dt=early+(rand()+rand()+rand()-1.5)*sd*1.75;return {dt,cu:eu+(rand()-.5)*.4*(1.25-skill),cv:ev+(rand()-.5)*.4*(1.25-skill)};}
+ const sd=.05+(1-skill)*.08,early=p.kind==='change'&&rand()<.6-skill*.3?-.09:0,dt=early+(rand()+rand()+rand()-1.5)*sd*1.75;return {dt:dt*1.7,cu:eu+(rand()-.5)*1.1*(1.25-skill),cv:ev+(rand()-.5)*.4*(1.25-skill)};}
 
-Object.assign(exports,{BASES,MOUND,FENCE_H,fenceAt,POSITIONS,COVER,PITCHES,PITCH_SLOW,pitchTime,pitchPlan,pitchAt,inZone,WINDOW,contact,flight,isFoul,ballAt,intercept,THROW,RELEASE,RUN,BATTER_START,throwTime,onPath,newCount,tally,walk,ratings,hash,cpuPitch,cpuSwing,clamp,D2R});
+Object.assign(exports,{BASES,MOUND,FENCE_H,fenceAt,POSITIONS,COVER,PITCHES,PITCH_SLOW,pitchTime,pitchPlan,pitchAt,inZone,WINDOW,LATE,contact,flight,isFoul,ballAt,intercept,THROW,RELEASE,RUN,BATTER_START,throwTime,onPath,newCount,tally,walk,ratings,hash,cpuPitch,cpuSwing,clamp,D2R});
