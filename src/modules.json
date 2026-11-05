@@ -455,7 +455,8 @@
   "src/engines/griffeyBall.js",
   "src/data/baseballSprites.js",
   "src/engines/casinoFront.js",
-  "src/engines/rouletteGame.js"
+  "src/engines/rouletteGame.js",
+  "src/data/sotnSprites.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

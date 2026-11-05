@@ -95,6 +95,13 @@ if (fs.existsSync(baseballDir)) for (const f of fs.readdirSync(baseballDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('baseball:' + m[1].toLowerCase(), MIME[ext], ext, path.join(baseballDir, f));
 }
+// Symphony of the Night sprite sheets and stage art: assets/sotn/<name>.(webp|png) -> sotn:<name>
+// (names and layout: src/data/sotnSprites.js, docs/sotn-sprites/README.md).
+const sotnDir = path.join(root, 'assets/sotn');
+if (fs.existsSync(sotnDir)) for (const f of fs.readdirSync(sotnDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('sotn:' + m[1].toLowerCase(), MIME[ext], ext, path.join(sotnDir, f));
+}
 // Drop-in music: assets/music/<name>.(mp3|ogg|m4a|wav) -> USER_PORTRAITS['music:<name>'] (e.g. cv-symphony, cv-symphony-boss).
 const AUDIO = {mp3: 'audio/mpeg', ogg: 'audio/ogg', m4a: 'audio/mp4', wav: 'audio/wav'};
 const musicDir = path.join(root, 'assets/music');

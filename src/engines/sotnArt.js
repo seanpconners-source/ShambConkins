@@ -3,6 +3,9 @@
 // style wearing the player's own head. Also here: the monsters, Death, Dracula and his demon form, pickups, projectiles,
 // and the parallax scenery (moonlit forest and castle, the gate, the entrance hall, the caverns, the marble gallery
 // and the throne room), pre-rendered per scale where it is static.
+// Drop-in art: any sheet or picture in src/data/sotnSprites.js that the owner supplies (assets/sotn/) replaces its drawn
+// version here; the rest stays vector art (docs/sotn-sprites/README.md).
+const SP=require("src/data/sotnSprites.js");
 const VH=240;
 const TAU=Math.PI*2;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
@@ -24,8 +27,9 @@ function ell(g,x,y,rx,ry,fill,rot=0){g.beginPath();g.ellipse(x,y,rx,ry,rot,0,TAU
 // ------------------------------------------------------------------ the hero
 const HERO_PAL=[{coat:'#1d1528',coat2:'#2c2140',trim:'#c9a24a',cape:'#0a0609',lining:'#9e0f22',hair:'#e8edf5',hair2:'#a9b3c6',pants:'#141018',boot:'#2d201a',boot2:'#4a352a'},
  {coat:'#16182c',coat2:'#232846',trim:'#b8c4d8',cape:'#07080d',lining:'#1f45a8',hair:'#eef0f6',hair2:'#a7afc3',pants:'#11121a',boot:'#251c19',boot2:'#3d302a'}];
-const BLADES={alucard:{len:30,w:1.7,col:'#d6ecff',edge:'#7fa6d6',guard:'#d8b04a',glow:GLOW.blue},short:{len:18,w:1.4,col:'#dfe3ea',edge:'#8a93a3',guard:'#a8884a'},
- claymore:{len:32,w:2.4,col:'#d2d6de',edge:'#7a8090',guard:'#8a6a3a'}};
+const BLADES={alucard:{len:30,w:1.7,col:'#d6ecff',edge:'#7fa6d6',guard:'#d8b04a',glow:GLOW.blue,pic:'sword-alucard'},short:{len:18,w:1.4,col:'#dfe3ea',edge:'#8a93a3',guard:'#a8884a',pic:'sword-short'},
+ claymore:{len:32,w:2.4,col:'#d2d6de',edge:'#7a8090',guard:'#8a6a3a',pic:'sword-claymore'}};
+const DAGGER={len:12,w:1.1,col:'#e6eaf0',edge:'#8a93a3',guard:'#a8884a',pic:'dagger'};
 // q: {x,y,facing,pose,anim,vx,vy,t,atkK (0..1 swing), atkN (combo hit 0..2), flip (0..1 somersault), land, weapon, i}
 function heroPose(q){return q.pose||'stand';}
 const ease=u=>u*u*(3-2*u),seg=(k,a,b)=>clamp((k-a)/(b-a),0,1);
@@ -43,7 +47,31 @@ function bladePose(n,k){let hx,hy,ang,lean;
 function bladeWorld(q){const n=q.atkN||0,k=q.atkK||0,f=q.facing||1,bp=bladePose(n,k),bl=BLADES[q.weapon]||{len:7},dy=q.pose==='crouchAtk'?8:0;
  const c=Math.cos(bp.lean),sn=Math.sin(bp.lean),P=(lx,ly)=>[q.x+f*(lx*c-ly*sn),q.y+dy+lx*sn+ly*c];
  const L=bl.len*(n===1?1.08:1),h=P(bp.hx+Math.cos(bp.ang)*L*.3,bp.hy+Math.sin(bp.ang)*L*.3),t=P(bp.hx+Math.cos(bp.ang)*L,bp.hy+Math.sin(bp.ang)*L);return [h[0],h[1],t[0],t[1]];}
+// the drop-in hero sheet: which row/frame shows this pose (see sotnSprites.js for the rows)
+function heroSheet(q){return SP.sheet('hero-p'+((q.i||0)+1))||SP.sheet('hero-p1');}
+function heroFrame(def,q){const pose=heroPose(q),t=q.t||0;let row=pose,o={t,fps:8};
+ switch(pose){
+  case 'stand':o={t,fps:5};break;
+  case 'walk':o={k:(((q.anim||0)/TAU)%1+1)%1};break;
+  case 'crouch':o={t,fps:2};break;
+  case 'crouchAtk':row='crouchSlash';o={k:q.atkK||0};break;
+  case 'attack':row=['slash','stab','cleave'][q.atkN||0]||'slash';o={k:q.atkK||0};break;
+  case 'jump':case 'fall':if(q.flip>0){row='flip';o={k:q.flip};}else o={k:pose==='jump'?clamp(1+(q.vy||0)/5.7,0,.999):clamp((q.vy||0)/5,0,.999)};break;
+  case 'land':o={k:1-clamp((q.land||0)/7,0,1)};break;
+  case 'dash':o={t,fps:14};break;
+  case 'kick':case 'cast':o={t,fps:10};break;
+  case 'dead':o={k:clamp((q.dead||0)/36,0,1)};break;
+ }
+ return SP.frameOf(def,row,o);}
+function drawHeroSprite(g,q,o,sh){const f=q.facing||1,fr=heroFrame(sh.def,q),pose=heroPose(q),sil=o.sil||null;
+ SP.drawFrame(g,sh,fr,q.x,q.y,f,{tint:sil});
+ // the sword: the same hand path as the drawn hero (bladePose), so the trail and the hit boxes line up
+ if(pose==='attack'||pose==='crouchAtk'){const bl=BLADES[q.weapon];if(bl){const bp=bladePose(q.atkN||0,q.atkK||0);g.save();g.translate(q.x,q.y+(pose==='crouchAtk'?8:0));g.scale(f,1);g.rotate(bp.lean);
+  drawBlade(g,bp.hx,bp.hy,bp.ang,q.atkN===1?{...bl,len:bl.len*1.08}:bl,sil);g.restore();}}
+ // the face (never mirrored: it is the player's portrait)
+ if(o.head&&!sil){const h=SP.headOf(sh.def,fr);if(h){g.save();g.translate(q.x+f*h.x,q.y+h.y);if(h.rot)g.rotate(f*h.rot);o.head(g,0,0,h.size);g.restore();}}}
 function drawHero(g,q,o={}){
+ const sheet=heroSheet(q);if(sheet){drawHeroSprite(g,q,o,sheet);return;}
  const sil=o.sil||null,pal=sil?null:(o.pal||HERO_PAL[q.i||0]),f=q.facing||1,pose=heroPose(q),t=q.t||0;
  const C=k=>sil||pal[k];
  g.save();g.translate(q.x,q.y);
@@ -115,6 +143,8 @@ function drawHero(g,q,o={}){
  g.restore();
 }
 function drawBlade(g,hx,hy,ang,bl,sil,sheathed){g.save();g.translate(hx,hy);g.rotate(ang);const L=bl.len,w=bl.w;
+ // drop-in weapon picture: pommel at the left edge, crossguard 1/8 in (on the hand), blade pointing right
+ const pic=!sil&&bl.pic&&SP.picture(bl.pic);if(pic){if(bl.glow&&!sheathed)glow(g,L*.5,0,L*.7,bl.glow,.35);const W=L*8/7,H=W*pic.height/pic.width;g.drawImage(pic,-W/8,-H/2,W,H);g.restore();return;}
  if(!sil&&bl.glow&&!sheathed)glow(g,L*.5,0,L*.7,bl.glow,.35);
  poly(g,[-4,-.9,0,-.9,0,.9,-4,.9],sil||'#3a2418');poly(g,[0,-w,L-3,-w*.75,L,0,L-3,w*.75,0,w],sil||bl.col);
  if(!sil){line(g,1,0,L-3,0,.6,bl.edge);g.fillStyle=bl.guard;g.fillRect(-.6,-3.4,1.8,6.8);}
@@ -124,7 +154,21 @@ function drawBlade(g,hx,hy,ang,bl,sil,sheathed){g.save();g.translate(hx,hy);g.ro
 function drawAfterimage(g,q,a,col='rgba(60,130,255,.6)'){g.save();g.globalAlpha*=a;const prev=g.globalCompositeOperation;g.globalCompositeOperation='lighter';drawHero(g,q,{sil:col});g.globalCompositeOperation=prev;g.restore();}
 
 // ------------------------------------------------------------------ monsters (feet at 0,0, facing right before mirroring)
-function drawFoe(g,e,t){const f=e.facing||1;g.save();g.translate(e.x,e.y);
+// the drop-in monster sheets: row/frame for the monster's state (walk cycles follow e.anim like the drawn legs)
+function foeFrame(def,e,t){const ph=e.anim||0,st=e.state,cyc=c=>({k:((ph/c)%1+1)%1}),k=n=>({k:clamp((e.t||0)/n,0,.999)}),air=()=>({index:(e.vy||0)<0?0:1});
+ switch(e.type){
+  case 'zombie':return st==='rise'?SP.frameOf(def,'rise',k(40)):SP.frameOf(def,'walk',cyc(TAU));
+  case 'bloody':return st==='swipe'?SP.frameOf(def,'swipe',k(30)):SP.frameOf(def,'walk',cyc(TAU));
+  case 'warg':return st==='idle'?SP.frameOf(def,'idle',{t,fps:4}):st==='tell'?SP.frameOf(def,'tell',k(16)):st==='lunge'?SP.frameOf(def,'lunge',air()):st==='skid'?SP.frameOf(def,'skid',k(22)):SP.frameOf(def,'run',cyc(TAU/1.6));
+  case 'skeleton':return st==='throw'?SP.frameOf(def,'throw',k(22)):SP.frameOf(def,'walk',cyc(TAU));
+  case 'bat':return st==='idle'?SP.frameOf(def,'hang',{t,fps:1.5}):SP.frameOf(def,'fly',cyc(TAU/1.8));
+  case 'merman':return st==='leap'?SP.frameOf(def,'leap',air()):st==='spit'?SP.frameOf(def,'spit',k(34)):SP.frameOf(def,'walk',cyc(TAU));
+  case 'armor':return st==='throw'?SP.frameOf(def,'throw',k(32)):SP.frameOf(def,e.thrown?'empty':'walk',cyc(TAU));
+ }
+ return SP.frameOf(def,Object.keys(def.rows)[0],{t,fps:6});}
+function drawFoe(g,e,t){const f=e.facing||1;
+ const sh=SP.sheet(e.type);if(sh){SP.drawFrame(g,sh,foeFrame(sh.def,e,t),e.x,e.y,f);return;}
+ g.save();g.translate(e.x,e.y);
  if(e.flash>0&&!e.dead){g.globalAlpha*=.9;}
  g.scale(f,1);g.lineCap='round';g.lineJoin='round';
  const ph=e.anim||0;
@@ -202,7 +246,11 @@ function drawCorpse(g,c,t){const k=clamp(c.t/c.life,0,1),H=c.h||32,cut=-H*.5;g.s
  if(k>.2)glow(g,c.x+(c.dx||0),c.y+(c.dy||0)+cut*(c.part==='bot'?.5:1.4),H*.8,GLOW.fire,Math.sin(Math.min(1,(k-.2)/.8)*Math.PI)*.6);}
 
 // ------------------------------------------------------------------ Death
-function drawDeath(g,x,y,t,a=1,swing=0){g.save();g.translate(x,y+Math.sin(t*2.2)*3);g.globalAlpha*=a;g.lineCap='round';g.lineJoin='round';
+// swingK: 0..1 through the scythe swing (drop-in sheet only; the drawn version uses swing). Death faces the hero (left).
+function drawDeath(g,x,y,t,a=1,swing=0,swingK=-1){
+ const sh=SP.sheet('death');if(sh){const by=y+Math.sin(t*2.2)*3;g.save();g.globalAlpha*=a;glow(g,x,by-34,60,GLOW.purple,.35);
+  SP.drawFrame(g,sh,swingK>=0&&swingK<1?SP.frameOf(sh.def,'swing',{k:swingK}):SP.frameOf(sh.def,'float',{t,fps:5}),x,by,-1);g.restore();return;}
+ g.save();g.translate(x,y+Math.sin(t*2.2)*3);g.globalAlpha*=a;g.lineCap='round';g.lineJoin='round';
  glow(g,0,-34,60,GLOW.purple,.35);
  // robe with a ragged hem fading into nothing
  g.beginPath();g.moveTo(-8,-58);g.quadraticCurveTo(-22,-30,-24,-4);for(let k=0;k<7;k++){const hx=-24+k*8;g.lineTo(hx+4,6+Math.sin(t*5+k*1.7)*4);g.lineTo(hx+8,-2);}g.quadraticCurveTo(22,-30,8,-58);g.closePath();
@@ -222,6 +270,7 @@ function drawDeath(g,x,y,t,a=1,swing=0){g.save();g.translate(x,y+Math.sin(t*2.2)
 function drawDracula(g,B,t){const f=B.facing||1,vis=B.vis??1,open=B.open||0;if(vis<=0)return;g.save();g.translate(B.x,B.y);g.lineJoin='round';
  if(vis<1){g.beginPath();for(let y=-70;y<4;y+=3){const w=vis*vis;if(((y+70)/3|0)%2===0||vis>.6)g.rect(-50*w-((y*7)%11),y,100*w+((y*5)%9),3*(vis>.6?1:vis*1.6));}g.clip();glow(g,0,-34,50,GLOW.red,(1-vis)*.8);}
  if(B.flash>0)g.globalAlpha*=.75;
+ const sh=SP.sheet('dracula');if(sh){SP.drawFrame(g,sh,open>.05?SP.frameOf(sh.def,'cast',{k:clamp(open,0,.999)}):SP.frameOf(sh.def,'idle',{t,fps:4}),0,0,f);g.restore();return;}
  g.scale(f,1);
  const sp=open*30;
  // cloak: a bat-wing silhouette with a scalloped hem that spreads open to cast
@@ -241,6 +290,15 @@ function drawDracula(g,B,t){const f=B.facing||1,vis=B.vis??1,open=B.open||0;if(v
 function drawDemon(g,D,t){const f=D.facing||1;g.save();g.translate(D.x,D.y);g.lineCap='round';g.lineJoin='round';
  if(D.flash>0)g.globalAlpha*=.8;
  if(D.rise!=null&&D.rise<1){g.beginPath();g.rect(-120,-200*D.rise-10,240,200*D.rise+12);g.clip();}
+ const sh=SP.sheet('demon');if(sh){const d=sh.def,st=D.state;let fr;
+  if(D.air)fr=SP.frameOf(d,'leap',{index:(D.vy||0)<0?0:1});
+  else if(st==='leap'||st==='recover')fr=SP.frameOf(d,'crouch',{k:clamp(D.crouch||0,0,.999)});
+  else if(st==='breath'){const lo=D.low||0,mo=D.mouth||0;fr=SP.frameOf(d,'breath',{index:lo<.5?0:mo<.6?1:2+((t*8|0)%2)});}
+  else if(st==='summon')fr=SP.frameOf(d,'summon',{k:clamp((D.t||0)/34,0,.999)});
+  else fr=SP.frameOf(d,'idle',{t,fps:4});
+  SP.drawFrame(g,sh,fr,0,0,f);
+  if(D.mouth>0)glow(g,f*(26+(D.low||0)*10+30),-112+(D.crouch||0)*14+(D.low||0)*32+4,10+D.mouth*16,GLOW.fire,D.mouth);
+  g.restore();return;}
  g.scale(f,1);
  const crouch=D.crouch||0,low=D.low||0,fl=Math.sin(t*3)*.15+(D.air?.6:0),by=crouch*14;
  const skin='#3b3546',dk='#221e2b',hl='#5d5670',mem='#2b1530',vein='#4f2342';
@@ -272,14 +330,20 @@ function drawDemon(g,D,t){const f=D.facing||1;g.save();g.translate(D.x,D.y);g.li
 
 // ------------------------------------------------------------------ pickups and projectiles
 function heartPath(g,x,y,s){g.beginPath();g.moveTo(x,y+s*.35);g.bezierCurveTo(x-s*.7,y-s*.1,x-s*.4,y-s*.65,x,y-s*.3);g.bezierCurveTo(x+s*.4,y-s*.65,x+s*.7,y-s*.1,x,y+s*.35);g.closePath();}
-function drawPickup(g,type,x,y,t){g.save();g.lineCap='round';g.lineJoin='round';
+// drop-in item pictures (bottom centre on the item's spot) and the glow each keeps
+const PICK={heart:['heart',GLOW.red],bigheart:['bigheart',GLOW.red],money:['money',GLOW.gold],potion:['potion',GLOW.blue],roast:['roast',GLOW.warm],axe:['axe',GLOW.white],
+ holy:['holy-water',GLOW.blue],cross:['cross',GLOW.gold],leap:['leap-stone',GLOW.green],orb:['blood-orb',GLOW.red]};
+function drawPickup(g,type,x,y,t){
+ const pk=PICK[type],pi=pk&&SP.picture(pk[0]);if(pi){const sz=SP.sizeOf(pk[0],pi),pulse=type==='orb'||type==='leap'?.7+Math.sin(t*6)*.3:.45;
+  glow(g,x,y-sz.h*.5,Math.max(sz.w,sz.h)*(type==='orb'?1.6:1.1),pk[1],pulse);SP.drawPicture(g,pk[0],x,y,{at:'bottom'});return;}
+ g.save();g.lineCap='round';g.lineJoin='round';
  switch(type){
   case 'heart':case 'bigheart':{const s=type==='bigheart'?9:6;glow(g,x,y-s*.4,s*1.6,GLOW.red,.5);heartPath(g,x,y-s*.4,s);g.fillStyle='#d8102a';g.fill();g.strokeStyle='#ffd0d6';g.lineWidth=.7;g.stroke();break;}
   case 'money':{glow(g,x,y-5,9,GLOW.gold,.4);ell(g,x,y-4,4.6,4.2,'#b88a2a');poly(g,[x-2,y-8,x+2,y-8,x+3,y-10,x-3,y-10],'#8a6420');g.fillStyle='#ffe9a0';g.font='bold 6px Georgia,serif';g.textAlign='center';g.textBaseline='middle';g.fillText('$',x,y-3.6);break;}
   case 'potion':{glow(g,x,y-6,10,GLOW.blue,.5);ell(g,x,y-4,4,4.4,'#2a62d8');g.fillStyle='#8fc0ff';g.fillRect(x-1,y-12,2,4);g.fillStyle='#6a4a2a';g.fillRect(x-1.4,y-13.4,2.8,1.6);circ(g,x-1.4,y-5,1,'#cfe4ff');break;}
   case 'roast':{glow(g,x,y-4,10,GLOW.warm,.4);ell(g,x,y-1,8,2,'#d8d8e0');ell(g,x,y-5,6,4,'#7a3510');ell(g,x-1,y-6,4,2,'#b8622a');line(g,x+5,y-7,x+8,y-9,1.6,'#f2ead8');break;}
   case 'short':case 'claymore':case 'alucard':{const bl=BLADES[type];glow(g,x,y-6,14,GLOW.white,.35+Math.sin(t*6)*.15);drawBlade(g,x-bl.len*.4,y-4,-.35,{...bl,len:bl.len*.75},null);break;}
-  case 'dagger':glow(g,x,y-5,9,GLOW.white,.3);drawBlade(g,x-6,y-4,0,{len:12,w:1.1,col:'#e6eaf0',edge:'#8a93a3',guard:'#a8884a'},null);break;
+  case 'dagger':glow(g,x,y-5,9,GLOW.white,.3);drawBlade(g,x-6,y-4,0,DAGGER,null);break;
   case 'axe':glow(g,x,y-6,9,GLOW.white,.3);line(g,x-1,y,x-1,y-12,1.6,'#5a3a20');poly(g,[x-1,y-12,x+5,y-14,x+6,y-7,x+4,y-5,x-1,y-7],'#c9ced8');break;
   case 'holy':glow(g,x,y-6,10,GLOW.blue,.4);ell(g,x,y-4,3.6,4,'#3b6fe0');g.fillStyle='#d8e8ff';g.fillRect(x-1,y-11,2,4);circ(g,x-1,y-5,.9,'#e8f2ff');break;
   case 'cross':glow(g,x,y-6,11,GLOW.gold,.45);poly(g,[x-1.2,y-13,x+1.2,y-13,x+1.2,y-9.5,x+4.5,y-9.5,x+4.5,y-7,x+1.2,y-7,x+1.2,y,x-1.2,y,x-1.2,y-7,x-4.5,y-7,x-4.5,y-9.5,x-1.2,y-9.5],'#e8c050');break;
@@ -287,7 +351,14 @@ function drawPickup(g,type,x,y,t){g.save();g.lineCap='round';g.lineJoin='round';
   case 'orb':{const p=.7+Math.sin(t*6)*.3;glow(g,x,y-10,26,GLOW.red,p);glow(g,x,y-10,14,GLOW.white,.5);const gr=g.createRadialGradient(x-2,y-12,1,x,y-10,7);gr.addColorStop(0,'#ffd0e0');gr.addColorStop(.5,'#e01848');gr.addColorStop(1,'#5a0018');g.beginPath();g.arc(x,y-10,7,0,TAU);g.fillStyle=gr;g.fill();break;}
  }
  g.restore();}
-function drawShot(g,b,t){const x=b.x,y=b.y;g.save();g.lineCap='round';
+const SHOT_PIC={bone:['bone',12],eaxe:['axe',.3],axe:['axe',.3],holy:['holy-water',.25],cross:['cross',.5]};
+function drawShot(g,b,t){const x=b.x,y=b.y;
+ const fire={hellfire:4,pfire:5,mfire:4,breath:5.5}[b.kind];
+ if(fire){const sh=SP.sheet('fireball');if(sh){glow(g,x,y,fire*4,GLOW.fire,.9);SP.drawFrame(g,sh,SP.frameOf(sh.def,'burn',{t:t+x*.01,fps:12}),x,y,(b.vx||0)<0?-1:1,{scale:fire/5});return;}}
+ if(b.kind==='inferno'){const sh=SP.sheet('inferno');if(sh){glow(g,x,y,26,GLOW.purple,.7);glow(g,x,y,16,GLOW.fire,.5);SP.drawFrame(g,sh,SP.frameOf(sh.def,'burn',{t,fps:10}),x,y,(b.vx||0)<0?-1:1);return;}}
+ if(b.kind==='wave'){const sh=SP.sheet('fire-wave');if(sh){const h=b.h||14;glow(g,x,y-h*.5,h*2,GLOW.fire,.6);SP.drawFrame(g,sh,SP.frameOf(sh.def,'burn',{t,fps:12}),x,y,(b.vx||0)<0?-1:1,{scale:h/20});return;}}
+ const sp=SHOT_PIC[b.kind];if(sp&&SP.picture(sp[0])){if(b.kind==='cross')glow(g,x,y,12,GLOW.gold,.5);SP.drawPicture(g,sp[0],x,y,{at:'centre',rot:(b.kind==='bone'?t:b.t)*sp[1]*(b.f||1)});return;}
+ g.save();g.lineCap='round';
  switch(b.kind){
   case 'hellfire':case 'pfire':case 'mfire':case 'breath':{const r=b.kind==='breath'?5.5:b.kind==='pfire'?5:4;glow(g,x,y,r*4,GLOW.fire,.9);
    g.fillStyle='rgba(255,110,20,.85)';g.beginPath();g.arc(x-(b.vx>0?2:-2),y,r*1.15,0,TAU);g.fill();circ(g,x,y,r*.75,'#ffd76a');circ(g,x,y,r*.35,'#fff6d8');break;}
@@ -295,12 +366,13 @@ function drawShot(g,b,t){const x=b.x,y=b.y;g.save();g.lineCap='round';
   case 'wave':{const h=b.h||14,k=Math.sin(t*30)*1.5;glow(g,x,y-h*.5,h*2,GLOW.fire,.6);poly(g,[x-7,y,x-3,y-h-k,x,y-h*.6,x+3,y-h+k,x+7,y],'#ff7a20');poly(g,[x-4,y,x-1,y-h*.6,x+2,y-h*.5,x+4,y],'#ffd76a');break;}
   case 'bone':{g.translate(x,y);g.rotate(t*12);line(g,-4,0,4,0,1.8,'#e8e1cc');circ(g,-4.5,-.8,1.2,'#e8e1cc');circ(g,-4.5,.8,1.2,'#e8e1cc');circ(g,4.5,-.8,1.2,'#e8e1cc');circ(g,4.5,.8,1.2,'#e8e1cc');break;}
   case 'eaxe':case 'axe':{g.translate(x,y);g.rotate(b.t*.3*(b.f||1));line(g,0,7,0,-8,1.8,'#5a3a20');poly(g,[0,-8,6,-10,7,-3,5,-1,0,-3],'#c9ced8');poly(g,[0,-8,-4,-9,-5,-4,0,-4],'#8c929f');break;}
-  case 'dagger':{g.translate(x,y);g.scale(b.f||1,1);glow(g,0,0,8,GLOW.white,.3);drawBlade(g,-6,0,0,{len:12,w:1.1,col:'#e6eaf0',edge:'#8a93a3',guard:'#a8884a'},null);break;}
+  case 'dagger':{g.translate(x,y);g.scale(b.f||1,1);glow(g,0,0,8,GLOW.white,.3);drawBlade(g,-6,0,0,DAGGER,null);break;}
   case 'holy':{g.translate(x,y);g.rotate(b.t*.25*(b.f||1));ell(g,0,0,3.4,3.8,'#3b6fe0');g.fillStyle='#d8e8ff';g.fillRect(-1,-7,2,3.4);break;}
   case 'cross':{g.translate(x,y);g.rotate(b.t*.5);glow(g,0,0,12,GLOW.gold,.5);poly(g,[-1.4,-7,1.4,-7,1.4,-1.4,7,-1.4,7,1.4,1.4,1.4,1.4,7,-1.4,7,-1.4,1.4,-7,1.4,-7,-1.4,-1.4,-1.4],'#f0c850');break;}
  }
  g.restore();}
-function drawHolyFlame(g,f,t){const k=f.t/f.life,a=k<.15?k/.15:1-Math.max(0,(k-.7)/.3);for(let j=-1;j<=1;j++){const fx=f.x+j*6,h=12+Math.sin(t*22+j*2+f.x)*3;glow(g,fx,f.y-h*.5,h,GLOW.blue,a*.8);
+function drawHolyFlame(g,f,t){const k=f.t/f.life,a=k<.15?k/.15:1-Math.max(0,(k-.7)/.3);
+ const sh=SP.sheet('holy-flame');if(sh){const pa=g.globalAlpha;g.globalAlpha=pa*clamp(a,0,1);for(let j=-1;j<=1;j++){glow(g,f.x+j*6,f.y-6,12,GLOW.blue,a*.8);SP.drawFrame(g,sh,SP.frameOf(sh.def,'burn',{t:t+j*.13,fps:12}),f.x+j*6,f.y,1);}g.globalAlpha=pa;return;}for(let j=-1;j<=1;j++){const fx=f.x+j*6,h=12+Math.sin(t*22+j*2+f.x)*3;glow(g,fx,f.y-h*.5,h,GLOW.blue,a*.8);
  poly(g,[fx-3,f.y,fx-1,f.y-h,fx+1,f.y-h*.5,fx+3,f.y],`rgba(110,170,255,${a})`);poly(g,[fx-1.5,f.y,fx,f.y-h*.55,fx+1.5,f.y],`rgba(230,245,255,${a})`);}}
 
 // ------------------------------------------------------------------ scenery
@@ -360,13 +432,16 @@ function archWindow(g,x,y,w,h,t,{glass='#0a1240',light=GLOW.moon,stained=false}=
  g.fillStyle='#1a1620';g.fillRect(x-6,y+h+2,w+12,4);}
 function lightShaft(g,x,y,w,len,a){const prev=g.globalCompositeOperation;g.globalCompositeOperation='lighter';const gr=g.createLinearGradient(x,y,x+len*.45,y+len);gr.addColorStop(0,`rgba(130,150,255,${a})`);gr.addColorStop(1,'rgba(130,150,255,0)');g.fillStyle=gr;
  g.beginPath();g.moveTo(x,y);g.lineTo(x+w,y);g.lineTo(x+w+len*.5,y+len);g.lineTo(x+len*.5-w*.3,y+len);g.closePath();g.fill();g.globalCompositeOperation=prev;}
-function pillar(g,x,y0,y1,w,col='#2a2430',hl='#3e3648'){g.fillStyle=col;g.fillRect(x-w/2,y0,w,y1-y0);g.fillStyle=hl;g.fillRect(x-w/2+1,y0,2,y1-y0);g.fillStyle='rgba(0,0,0,.4)';g.fillRect(x+w/2-3,y0,3,y1-y0);
+function pillar(g,x,y0,y1,w,col='#2a2430',hl='#3e3648'){if(SP.drawBox(g,'pillar',x-10,y0,x+10,y1))return;g.fillStyle=col;g.fillRect(x-w/2,y0,w,y1-y0);g.fillStyle=hl;g.fillRect(x-w/2+1,y0,2,y1-y0);g.fillStyle='rgba(0,0,0,.4)';g.fillRect(x+w/2-3,y0,3,y1-y0);
  g.fillStyle=hl;g.fillRect(x-w/2-3,y0,w+6,4);g.fillRect(x-w/2-3,y1-5,w+6,5);}
-function banner(g,x,y,h,t){const sw=Math.sin(t*1.3+x)*1.5;poly(g,[x,y,x+14,y,x+14+sw,y+h,x+7+sw,y+h-6,x+sw,y+h],'#5e0a14');poly(g,[x+2,y,x+5,y,x+5+sw,y+h-3,x+2+sw,y+h-2],'#7e1420');
+function banner(g,x,y,h,t){if(SP.picture('banner')){g.save();g.translate(x+7,y);g.transform(1,0,Math.sin(t*1.3+x)*.025,1,0,0);SP.drawPicture(g,'banner',0,-2,{at:'top'});g.restore();return;}const sw=Math.sin(t*1.3+x)*1.5;poly(g,[x,y,x+14,y,x+14+sw,y+h,x+7+sw,y+h-6,x+sw,y+h],'#5e0a14');poly(g,[x+2,y,x+5,y,x+5+sw,y+h-3,x+2+sw,y+h-2],'#7e1420');
  g.fillStyle='#b88a2a';g.fillRect(x-1,y-2,16,2);g.beginPath();g.arc(x+7+sw*.5,y+h*.35,3.4,0,TAU);g.fill();g.fillStyle='#5e0a14';g.fillRect(x+6+sw*.5,y+h*.35-2,2,4);}
-function statue(g,x,y){g.fillStyle='#24202c';g.fillRect(x-9,y-10,18,10);g.fillStyle='#3a3444';g.fillRect(x-8,y-12,16,3);
+function statue(g,x,y){if(SP.drawPicture(g,'statue',x,y,{at:'bottom'}))return;g.fillStyle='#24202c';g.fillRect(x-9,y-10,18,10);g.fillStyle='#3a3444';g.fillRect(x-8,y-12,16,3);
  poly(g,[x-5,y-12,x+5,y-12,x+4,y-36,x+8,y-44,x+3,y-46,x-3,y-46,x-6,y-38],'#2e2a38');circ(g,x,y-50,4,'#2e2a38');poly(g,[x-8,y-44,x-16,y-56,x-12,y-42],'#2e2a38');poly(g,[x+8,y-44,x+16,y-56,x+12,y-42],'#2e2a38');}
 function candelabra(g,x,y,lit,t,kind){
+ const sh=SP.sheet(kind==='lantern'||kind==='torch'?kind:'candelabra');
+ if(sh){const fr=lit?SP.frameOf(sh.def,'lit',{t:t+x*.37,fps:9}):SP.frameOf(sh.def,'out',{index:0});SP.drawFrame(g,sh,fr,x,kind==='lantern'?y+26:y,1);
+  if(lit){if(kind==='lantern')glow(g,x,y-8,22,GLOW.fire,.7+Math.sin(t*13+x)*.1);else if(kind==='torch')glow(g,x,y-16,26,GLOW.fire,.75);else glow(g,x,y-24,22,GLOW.fire,.6+Math.sin(t*11+x)*.08);}return;}
  if(kind==='lantern'){g.fillStyle='#2a2630';g.fillRect(x-2.5,y,5,26);g.fillStyle='#3e3846';g.fillRect(x-6,y-2,12,3);g.fillRect(x-5,y+24,10,3);
   g.fillStyle='#1a1620';g.fillRect(x-5,y-14,10,12);poly(g,[x-7,y-14,x,y-21,x+7,y-14],'#3e3846');if(lit){g.fillStyle='#ffb04a';g.fillRect(x-3,y-12,6,8);glow(g,x,y-8,22,GLOW.fire,.7+Math.sin(t*13+x)*.1);}return;}
  if(kind==='torch'){g.fillStyle='#3a2a1a';poly(g,[x-2,y,x+2,y,x+3,y-10,x-3,y-10],'#3a2a1a');g.fillStyle='#4a4048';g.fillRect(x-4,y-11,8,2);
@@ -375,7 +450,7 @@ function candelabra(g,x,y,lit,t,kind){
  g.fillStyle='#8a6a2a';g.fillRect(x-.8,y-16,1.6,16);g.fillRect(x-5,y-1,10,1.6);poly(g,[x-9,y-16,x+9,y-16,x+7,y-14,x-7,y-14],'#8a6a2a');
  for(const dx of [-8,0,8]){g.fillStyle='#e8e0d0';g.fillRect(x+dx-1,y-22+(dx?2:0),2,6-(dx?2:0));if(lit){const fl=Math.sin(t*15+x+dx)*.8;poly(g,[x+dx-1.3,y-22+(dx?2:0),x+dx+fl,y-27+(dx?2:0),x+dx+1.3,y-22+(dx?2:0)],'#ffcf6a');}}
  if(lit)glow(g,x,y-24,22,GLOW.fire,.6+Math.sin(t*11+x)*.08);}
-function throne(g,x,y){poly(g,[x-18,y,x-18,y-40,x-14,y-62,x-6,y-52,x,y-70,x+6,y-52,x+14,y-62,x+18,y-40,x+18,y],'#1a0a10');poly(g,[x-12,y-6,x-12,y-36,x,y-46,x+12,y-36,x+12,y-6],'#6a0a1a');
+function throne(g,x,y){if(SP.drawPicture(g,'throne',x,y,{at:'bottom'}))return;poly(g,[x-18,y,x-18,y-40,x-14,y-62,x-6,y-52,x,y-70,x+6,y-52,x+14,y-62,x+18,y-40,x+18,y],'#1a0a10');poly(g,[x-12,y-6,x-12,y-36,x,y-46,x+12,y-36,x+12,y-6],'#6a0a1a');
  g.fillStyle='#8a6a2a';g.fillRect(x-20,y-24,40,3);g.fillRect(x-20,y-4,40,4);circ(g,x,y-58,2.4,'#c9a24a');}
 
-Object.assign(exports,{glow,GLOW,drawHero,drawAfterimage,bladePose,bladeWorld,drawFoe,drawCorpse,drawDeath,drawDracula,drawDemon,drawPickup,drawShot,drawHolyFlame,Scenery,archWindow,lightShaft,pillar,banner,statue,candelabra,throne,heartPath,poly,circ,ell,line,HERO_PAL,BLADES});
+Object.assign(exports,{heroFrame,foeFrame,drawBlade,DAGGER,glow,GLOW,drawHero,drawAfterimage,bladePose,bladeWorld,drawFoe,drawCorpse,drawDeath,drawDracula,drawDemon,drawPickup,drawShot,drawHolyFlame,Scenery,archWindow,lightShaft,pillar,banner,statue,candelabra,throne,heartPath,poly,circ,ell,line,HERO_PAL,BLADES});
