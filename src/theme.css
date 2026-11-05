@@ -631,12 +631,11 @@ body .title-screen .ts-dock-icon{color:#dbe5ff}
    the selected game's text rises in line by line, tiles cascade in, the version page slides up and back down.
    Only opacity/transform animate (cheap on phones); everything stops for prefers-reduced-motion. */
 @property --arc-h{syntax:'<number>';inherits:true;initial-value:220}
-.arcade-console{transition:--arc-h .75s cubic-bezier(.3,.7,.3,1)}
 .arc-keyart{position:absolute;inset:0;z-index:-3;pointer-events:none;overflow:hidden}
-.arc-keyart img{position:absolute;left:0;top:0;width:100%;height:100%;max-width:none;object-fit:cover;animation:arc-kenburns 22s ease-in-out infinite alternate}
+.arc-keyart img{position:absolute;left:0;top:0;width:100%;height:100%;max-width:none;object-fit:cover}
 .arc-keyart img.placed{object-fit:fill}
-.arc-keyart img.arc-keyfill{inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(26px) saturate(1.2) brightness(.55);animation:none}
-.arc-keyart img.arc-keyfill[hidden]{display:none}
+.arc-keyart .arc-keyfill{position:absolute;left:-6%;top:-6%;width:112%;height:112%;object-fit:cover}
+.arc-keyart .arc-keyfill[hidden]{display:none}
 .arc-hero-art .arc-layer,.arc-keyart .arc-layer{position:absolute;inset:0}
 .arc-hero-art .big{animation:arc-float 6.5s ease-in-out infinite}
 .arc-layer-in{animation:arc-layer-in .55s cubic-bezier(.2,.8,.25,1) both}
@@ -1170,3 +1169,12 @@ body #dialog .fr-panel button.fr-x{min-height:30px!important;width:30px!importan
 .board-mark .mark-fee{font:900 18px "SC Nunito",sans-serif;fill:#fff;stroke:#000;stroke-width:4px;paint-order:stroke}
 .board-mark.mark-coin .mark-icon{animation:mark-bob 1.6s ease-in-out infinite}
 @keyframes mark-bob{50%{transform:translateY(-5px)}}
+/* Arcade flicker, for good (owner's video, Nov 5): the background is two fixed slots that swap with a short opacity fade (see
+   swapKeyArt in arcadeConsole.js); the hero picture fades in and out, opacity only. No sliding/scaling big layers, no endless
+   zoom, no live blur, no animated colour wash: those made the phone run out of graphics memory and blank the screen. */
+.arc-keyart .arc-layer{opacity:0;transition:opacity .22s ease}
+.arc-keyart .arc-layer.arc-key-front{opacity:1}
+.arc-fade-in{animation:arc-fade-in .22s ease both}
+.arc-fade-out{animation:arc-fade-out .22s ease both;pointer-events:none}
+@keyframes arc-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes arc-fade-out{to{opacity:0}}

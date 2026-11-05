@@ -114,7 +114,12 @@ const KEY_BOX_DEFAULT=[.28,.15,.72,.85];
 const keyBox=it=>KEY_BOX[it.fam?.key]||KEY_BOX[it.g?.id]||KEY_BOX[familyOf(it.g)]||KEY_BOX_DEFAULT;
 // Behind the picture: a blurred copy covering the whole screen, shown only when the picture had to zoom out (no bare backdrop).
 const keySlot=it=>it&&[it.fam?.key,it.g?.id,it.g&&familyOf(it.g)].find(k=>k&&dropArt('keyart',k));
-const keyImg=it=>{const b=keyBox(it),u=e(keyArt(it));return `<img class="arc-keyfill" src="${u}" alt="" decoding="sync" hidden><img src="${u}" alt="" decoding="sync" data-box="${b.join(',')}" data-slot="${e(keySlot(it)||'')}" style="transform-origin:${(b[0]+b[2])*50}% ${(b[1]+b[3])*50}%">`;};
+const keyImg=it=>{const b=keyBox(it),u=e(keyArt(it));return `<canvas class="arc-keyfill" width="2" height="2" hidden></canvas><img src="${u}" alt="" data-box="${b.join(',')}" data-slot="${e(keySlot(it)||'')}">`;};
+// The soft fill behind a picture that doesn't reach every edge: the picture shrunk to 32 px wide and darkened, stretched back
+// up by the browser (that IS the blur). A live CSS blur of a full-screen picture was the phone's undoing (owner's video, Nov 5:
+// whole screen blank for 3 frames when tapping fast, it ran out of graphics memory).
+function drawFill(cv,img){if(!cv||!img.naturalWidth||cv.dataset.src===img.currentSrc)return;const w=32,h=Math.max(2,Math.round(32*img.naturalHeight/img.naturalWidth));
+ cv.width=w;cv.height=h;const x=cv.getContext('2d');x.drawImage(img,0,0,w,h);x.fillStyle='rgba(0,0,0,.45)';x.fillRect(0,0,w,h);cv.dataset.src=img.currentSrc;}
 // Backgrounds kept ready (owner, Nov 3: "it should be immediate"): every picture is fetched once and held, so a new <img> of it
 // has its bytes at once; the ones next to the focused tile are decoded too. Held images let the browser drop decoded pixels
 // under memory pressure, so swapKeyArt below still waits for its own decode.
@@ -127,7 +132,7 @@ async function warmKeyArt(){if(typeof Image==='undefined')return;const run=++war
  const near=items.map((it,i)=>[Math.abs(i-at),keyArt(it)]).filter(x=>x[1]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
  const all=Object.keys(USER_PORTRAITS).filter(k=>k.startsWith('keyart:')&&!/-logo$|-word-/.test(k)).map(k=>USER_PORTRAITS[k]);
  const list=[...new Set([...near,...all])];
- for(let i=0;i<list.length;i++){await warmPic(list[i],i<5);if(run!==warmRun)return;await new Promise(r=>setTimeout(r,30));}}
+ for(let i=0;i<list.length;i++){await warmPic(list[i],i<3);if(run!==warmRun)return;await new Promise(r=>setTimeout(r,30));}}
 const SPILL=1.3;   // how much bigger than its area the faces' box may get before the picture zooms out instead
 // The owner's locked setting (Background Picker) for the screen nearest this one, by shape first, then size, with that
 // screen's size ({z,fx,fy,w,h}); null = automatic. Screens with the other layout (text beside the picture vs under it) only
@@ -201,7 +206,7 @@ function placeKey(img){
  // edges that end on screen fade into the backdrop
  const f=(n,d)=>n?`${Math.round(d*.16)}px`:'0px',fl=left>1,fr=left+dw<W-1,ft=topP>1,fb=topP+dh<H-1;
  const mask=(fl||fr||ft||fb)?`linear-gradient(90deg,#0000,#000 ${f(fl,dw)},#000 calc(100% - ${f(fr,dw)}),#0000),linear-gradient(180deg,#0000,#000 ${f(ft,dh)},#000 calc(100% - ${f(fb,dh)}),#0000)`:'none';
- const fill=img.previousElementSibling;if(fill?.classList.contains('arc-keyfill'))fill.hidden=!(fl||fr||ft||fb);
+ const fill=img.previousElementSibling;if(fill?.classList.contains('arc-keyfill')){fill.hidden=!(fl||fr||ft||fb);if(!fill.hidden)drawFill(fill,img);}
  Object.assign(img.style,{left:left+'px',top:topP+'px',width:dw+'px',height:dh+'px',maskImage:mask,webkitMaskImage:mask,maskComposite:'intersect',webkitMaskComposite:'source-in'});
  img.classList.add('placed');
  // the shade stays light over the faces' area (theme.css .has-key .arc-shade reads these)
@@ -241,7 +246,7 @@ function arcadeConsoleHTML(opts){
  const pills=filters.map(([id,label])=>`<button class="arc-pill${id===filter?' on':''}" data-action="filter" data-id="${e(id)}">${e(label)}</button>`).join('');
  const tiles=items.map((it,i)=>tileHTML(it,i,i===at)).join('');const root0=items[at];
  return `<main class="arcade-console${root0&&keyArt(root0)?' has-key':''}" style="${heroVars(items[at])}"><div class="arc-wash" aria-hidden="true"></div>
-  <div class="arc-keyart" aria-hidden="true">${items[at]&&keyArt(items[at])?`<div class="arc-layer">${keyImg(items[at])}</div>`:''}</div>
+  <div class="arc-keyart" aria-hidden="true"><div class="arc-layer arc-key-front">${items[at]&&keyArt(items[at])?keyImg(items[at]):''}</div><div class="arc-layer"></div></div>
   <div class="arc-hero-art" aria-hidden="true">${items[at]&&!keyArt(items[at])?`<div class="arc-layer">${heroArt(items[at])}</div>`:''}</div><div class="arc-shade" aria-hidden="true"></div>
   <header class="arc-top"><button class="arc-icon" data-action="home" aria-label="Back to the title screen">←</button><b class="arc-brand">Arcade</b>
    <span class="arc-top-r"><button class="arc-icon" data-action="arcade-random" aria-label="Random game" title="Random game">🎲</button><button class="arc-icon arc-search-btn${query?' on':''}" data-arc-search aria-label="Search games">⌕</button></span></header>
@@ -279,7 +284,7 @@ const recordText=t=>t?.top?.length?`🏆 ${t.top[0].score.toLocaleString()} · $
 function recordHTML(id){const txt=recordText(cachedTop(id));return `<button class="arc-record" data-arc-scores="${e(id)}"${txt?'':' hidden'}>${e(txt)}</button>`;}
 let recordRun=0;
 async function refreshRecord(id){const run=++recordRun,t=await loadTop(id);if(run!==recordRun)return;
- document.querySelectorAll(`.arcade-console .arc-record[data-arc-scores="${CSS.escape(id)}"]`).forEach(b=>{const txt=recordText(t);b.textContent=txt;b.hidden=!txt;});
+ document.querySelectorAll(`.arcade-console .arc-record[data-arc-scores="${CSS.escape(id)}"]`).forEach(b=>{const txt=recordText(t);if(b.textContent!==txt)b.textContent=txt;if(b.hidden!==!txt)b.hidden=!txt;});
  if(state.scores===id)drawScores(id,t);}
 const CHAR_IDS=new Set(CHARACTERS.map(c=>c.id));
 const myNames=()=>new Set((store.setupNames||[]).map(n=>String(n||'').trim().toLowerCase()).filter(Boolean));
@@ -312,33 +317,49 @@ function gridHTML(){if(!current)return '';const lab=current.filters.find(f=>f[0]
 function openGrid(){const root=document.querySelector('.arcade-console');if(!root)return;state.grid=true;const s=root.querySelector('.arc-grid-page');s.classList.remove('arc-fam-out');s.innerHTML=gridHTML();s.hidden=false;s.scrollTop=0;restart(s,'arc-fam-in');}
 function closeGrid(){state.grid=false;const s=document.querySelector('.arcade-console .arc-grid-page');if(!s)return;if(matchMedia('(prefers-reduced-motion: reduce)').matches){s.hidden=true;s.innerHTML='';return;}s.classList.add('arc-fam-out');setTimeout(()=>{if(state.grid)return;s.hidden=true;s.innerHTML='';s.classList.remove('arc-fam-out');},260);}
 // Swap a picture layer: the new one slides/fades in while the old one fades out (direction follows the tile row).
-function swapLayer(box,html){if(!box)return;const old=[...box.children];old.forEach(o=>{o.classList.add('arc-layer-out');setTimeout(()=>o.remove(),460);});
- if(!html)return;const layer=document.createElement('div');layer.className='arc-layer arc-layer-in';layer.innerHTML=html;box.append(layer);}
-// The background swap: the old picture stays until the new one is decoded, then the new one fades in on top of it, so the plain
-// colour behind them never shows (owner, Nov 3). Tapping on quickly only ever shows the last tile picked.
+// The hero picture (games without key art): at most the old and the new one exist; the new one is decoded off screen first,
+// then fades in (opacity only) and the old one is removed. Nothing slides or scales: big moving layers made phones drop frames.
+let heroRun=0;
+function swapLayer(box,html){if(!box)return;const run=++heroRun,old=[...box.children];
+ const drop=()=>old.forEach(o=>{o.classList.add('arc-fade-out');setTimeout(()=>o.remove(),240);});
+ if(!html){drop();return;}const layer=document.createElement('div');layer.className='arc-layer arc-fade-in';layer.innerHTML=html;
+ const imgs=[...layer.querySelectorAll('img')];imgs.forEach(im=>{im.loading='eager';});
+ Promise.race([Promise.all(imgs.map(im=>Promise.resolve(im.decode?.()).catch(()=>{}))),new Promise(r=>setTimeout(r,300))]).then(()=>{
+  if(run!==heroRun||!box.isConnected){return;}[...box.children].filter(c=>!old.includes(c)).forEach(c=>c.remove());box.append(layer);drop();});}
+// The background: exactly two slots, reused for good (owner's video, Nov 5: every tap used to add another full-screen picture
+// layer, with its own blurred copy and an endless zoom, and the old ones lingered; tapping fast stacked them until the phone ran
+// out of graphics memory and showed a blank screen). The new picture goes into the hidden slot, is decoded and placed there,
+// then the slots swap with a short opacity fade and the old slot is emptied. A tap during a fade finishes it at once.
 let keySwap=0;
-function swapKeyArt(box,it,key,then){if(!box)return;const run=++keySwap;if(!key){swapLayer(box,'');then();return;}
- const layer=document.createElement('div');layer.className='arc-layer arc-layer-in';layer.innerHTML=keyImg(it);const img=layer.querySelector('img:not(.arc-keyfill)');
- const show=()=>{if(run!==keySwap||!box.isConnected)return;then();const old=[...box.children];box.append(layer);placeKey(img);old.forEach(o=>{o.classList.add('arc-layer-under');setTimeout(()=>o.remove(),600);});};
+function keySlots(box){let [a,b]=box.children;if(!a){a=document.createElement('div');a.className='arc-layer arc-key-front';box.append(a);}
+ if(!b){b=document.createElement('div');b.className='arc-layer';box.append(b);}return a.classList.contains('arc-key-front')?[a,b]:[b,a];}
+function swapKeyArt(box,it,key,then){if(!box)return;const run=++keySwap;let [front,back]=keySlots(box);
+ // finish whatever fade is running: the front shows, the other slot is empty
+ for(const l of [front,back]){l.style.transition='none';clearTimeout(l._clear);}back.classList.remove('arc-key-front');back.innerHTML='';back.style.translate='';void box.offsetWidth;for(const l of [front,back])l.style.transition='';
+ if(!key){front.classList.remove('arc-key-front');front._clear=setTimeout(()=>{if(!front.classList.contains('arc-key-front')){front.innerHTML='';front.style.translate='';}},260);then();return;}
+ back.innerHTML=keyImg(it);const img=back.querySelector('img');
+ const show=()=>{if(run!==keySwap||!box.isConnected)return;placeKey(img);then();back.classList.add('arc-key-front');front.classList.remove('arc-key-front');
+  front._clear=setTimeout(()=>{if(!front.classList.contains('arc-key-front')){front.innerHTML='';front.style.translate='';}},260);};
  Promise.race([Promise.resolve(img.decode?.()).catch(()=>{}),new Promise(r=>setTimeout(r,1500))]).then(show);}
 // After a swipe the old text carries on out the way the finger threw it and the new text comes in from the other side, but only
 // once its pictures (logo, chips) are decoded, so nothing blinks empty or snaps back to the middle first (owner, Nov 4).
 let infoRun=0;
-function swipeInfo(info,it,{dir,W}){const run=++infoRun,tmp=document.createElement('div');tmp.innerHTML=infoHTML(it);
- const imgs=[...tmp.querySelectorAll('img')],wait=ms=>new Promise(r=>setTimeout(r,ms));for(const im of imgs)im.loading='eager';
- const ready=Promise.race([Promise.all(imgs.map(im=>Promise.resolve(im.decode?.()).catch(()=>{}))),wait(320)]);
- info.style.transition='transform .14s ease-in,opacity .14s ease-in';info.style.transform=`translateX(${(-dir*W*.32).toFixed(0)}px)`;info.style.opacity='0';
- Promise.all([ready,wait(140)]).then(()=>{if(run!==infoRun||!info.isConnected)return;info.classList.remove('arc-info-in');info.replaceChildren(...tmp.childNodes);
-  info.style.transition='none';info.style.transform=`translateX(${(dir*W*.2).toFixed(0)}px)`;info.style.opacity='0';void info.offsetWidth;
-  info.style.transition='transform .28s cubic-bezier(.2,.8,.3,1),opacity .22s ease-out';info.style.transform='';info.style.opacity='';});}
+function swapInfo(info,it,dir=0){const run=++infoRun,tmp=document.createElement('div');tmp.innerHTML=infoHTML(it);
+ const imgs=[...tmp.querySelectorAll('img')];for(const im of imgs)im.loading='eager';
+ Promise.race([Promise.all(imgs.map(im=>Promise.resolve(im.decode?.()).catch(()=>{}))),new Promise(r=>setTimeout(r,300))]).then(()=>{
+  if(run!==infoRun||!info.isConnected)return;info.classList.remove('arc-info-in');info.replaceChildren(...tmp.childNodes);
+  info.style.transition='none';info.style.opacity='';info.style.transform=dir?`translateX(${dir*18}px)`:'';void info.offsetWidth;
+  info.style.transition=dir?'transform .22s cubic-bezier(.2,.8,.3,1)':'';info.style.transform='';});}
+// after a swipe: the old text glides out the way it was thrown (fully visible), then the new one comes in from that side
+function swipeInfo(info,it,{dir,W}){info.style.transition='transform .14s ease-in';info.style.transform=`translateX(${(-dir*W*.25).toFixed(0)}px)`;swapInfo(info,it,dir);}
 function restart(el,cls){if(!el)return;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);}
 function focusTile(i,{scroll=true,swipe=null}={}){
  const root=document.querySelector('.arcade-console');if(!root||!current)return;const it=current.items[i];if(!it)return;
  const was=current.items.findIndex(x=>x.key===state.focus);if(was===i)return;
  state.focus=it.key;root.style.setProperty('--arc-dir',i>=was?1:-1);root.style.setProperty('--arc-h',hue(it.fam?.title||it.g.source));
  const key=keyArt(it);
- swapKeyArt(root.querySelector('.arc-keyart'),it,key,()=>{root.classList.toggle('has-key',!!key);swapLayer(root.querySelector('.arc-hero-art'),key?'':heroArt(it));});for(const d of [1,-1,2,-2])warmPic(keyArt(current.items[i+d]),true);
- const info=root.querySelector('.arc-info');if(swipe)swipeInfo(info,it,swipe);else{infoRun++;info.style.transition=info.style.transform=info.style.opacity='';info.innerHTML=infoHTML(it);restart(info,'arc-info-in');}if(it.g)void refreshRecord(it.g.id);
+ swapKeyArt(root.querySelector('.arc-keyart'),it,key,()=>{root.classList.toggle('has-key',!!key);swapLayer(root.querySelector('.arc-hero-art'),key?'':heroArt(it));});for(const d of [1,-1])warmPic(keyArt(current.items[i+d]),true);for(const d of [2,-2])warmPic(keyArt(current.items[i+d]));
+ const info=root.querySelector('.arc-info');if(swipe)swipeInfo(info,it,swipe);else swapInfo(info,it,0);if(it.g)void refreshRecord(it.g.id);
  root.querySelectorAll('.arc-tile').forEach((t,j)=>{t.classList.toggle('on',j===i);t.setAttribute('aria-selected',String(j===i));});
  const tile=root.querySelectorAll('.arc-tile')[i];if(scroll&&tile)tile.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',inline:'center',block:'nearest'});
  if(store.profile?.settings.sound)tone(660+((i%5)*40),.05,.02,'triangle');
