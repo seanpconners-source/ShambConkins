@@ -4,13 +4,13 @@
 // Moves ride the room of src/net.js as {k:'np', mid, i, m}; duplicates dropped. Each phone confirms what it has
 // ({k:'npa', mid, n} = the first n moves, about once a second), so after a reconnect only the unconfirmed ones go again
 // and the confirmed ones are let go (a real-time game sends thousands of snapshots).
-const {sendNet,onNet}=require("src/net.js");
+const {sendNet,onNet,probeNet,netState}=require("src/net.js");
 const channels=new Map();   // mid → channel
 // moves that arrive before this phone has opened the game's channel (the other phone started first) wait here
 const early=new Map();   // mid → [[i, m]...]
 function openChannel(mid,me){
- const ch={mid,me,remote:1-me,out:[],got:[],read:0,have:0,acked:0,ackSent:0,ackT:null,waiters:[],gone:false,onGone:null,
-  send(m){const i=ch.out.length;ch.out.push(m);sendNet({k:'np',mid,i,m});},
+ const ch={mid,me,remote:1-me,out:[],sentT:[],resentT:0,got:[],read:0,have:0,acked:0,ackSent:0,ackT:null,waiters:[],gone:false,onGone:null,
+  send(m){const i=ch.out.length;ch.out.push(m);ch.sentT[i]=Date.now();sendNet({k:'np',mid,i,m});},
   // The other player's next move (in the order they made them); null once they have left the game.
   next(){if(ch.read<ch.got.length&&ch.got[ch.read]!==undefined)return Promise.resolve(take(ch));if(ch.gone)return Promise.resolve(null);return new Promise(r=>ch.waiters.push(r));},
   // A move already waiting (games that peek before they ask, like a timer on the other player's turn).
@@ -21,15 +21,20 @@ function openChannel(mid,me){
  for(const [i,m] of early.get(mid)||[])if(ch.got[i]===undefined)ch.got[i]=m;early.delete(mid);confirm(ch);
  return ch;
 }
-// Moves 0..have-1 have all arrived: tell the other phone (batched, at most about once a second).
-function confirm(ch){while(ch.got[ch.have]!==undefined)ch.have++;if(ch.have>ch.ackSent&&!ch.ackT)ch.ackT=setTimeout(()=>{ch.ackT=null;ch.ackSent=ch.have;sendNet({k:'npa',mid:ch.mid,n:ch.have});},ch.have-ch.ackSent>200?100:900);}
+// Moves 0..have-1 have all arrived: tell the other phone (batched: at most one confirmation every 150 ms).
+function confirm(ch){while(ch.got[ch.have]!==undefined)ch.have++;if(ch.have>ch.ackSent&&!ch.ackT)ch.ackT=setTimeout(()=>{ch.ackT=null;ch.ackSent=ch.have;sendNet({k:'npa',mid:ch.mid,n:ch.have});},150);}
 function resend(ch){for(let i=ch.acked;i<ch.out.length;i++)sendNet({k:'np',mid:ch.mid,i,m:ch.out[i]});}
+// A move the other phone hasn't confirmed 2.5 s after it went: send the unconfirmed ones again and check the connection
+// is really alive (a half-open socket used to hold a turn-based move back until the 35 s silence check).
+if(globalThis.setInterval)setInterval(()=>{if(!netState().peer)return;const now=Date.now();
+ for(const ch of channels.values()){if(ch.gone||ch.acked>=ch.out.length)continue;const t=ch.sentT[ch.acked]||now;
+  if(now-t>2500&&now-ch.resentT>2500){ch.resentT=now;resend(ch);probeNet();}}},500);
 // read moves are let go (a duplicate is recognised by its index: below `have`)
 function take(ch){const m=ch.got[ch.read];ch.got[ch.read++]=undefined;return m;}
 function deliver(ch){while(ch.waiters.length&&ch.read<ch.got.length&&ch.got[ch.read]!==undefined)ch.waiters.shift()(take(ch));}
 onNet(ev=>{
  if(ev.t==='msg'){const d=ev.d;
-  if(d?.k==='npa'){const ch=channels.get(d.mid);if(ch&&Number.isInteger(d.n)&&d.n>ch.acked&&d.n<=ch.out.length){for(let i=ch.acked;i<d.n;i++)ch.out[i]=undefined;ch.acked=d.n;}return;}
+  if(d?.k==='npa'){const ch=channels.get(d.mid);if(ch&&Number.isInteger(d.n)&&d.n>ch.acked&&d.n<=ch.out.length){for(let i=ch.acked;i<d.n;i++){ch.out[i]=undefined;ch.sentT[i]=undefined;}ch.acked=d.n;}return;}
   if(d?.k==='np'){const ch=channels.get(d.mid);if(!Number.isInteger(d.i)||d.i<0||d.i>1e8)return;
    if(!ch){if(typeof d.mid==='string'||typeof d.mid==='number'){if(early.size>8)early.delete(early.keys().next().value);const q=early.get(d.mid)||[];if(q.length<2000)q.push([d.i,d.m??null]);early.set(d.mid,q);}return;}if(d.i>=ch.have&&ch.got[d.i]===undefined)ch.got[d.i]=d.m??null;confirm(ch);deliver(ch);return;}
   if((d?.k==='quit')){const ch=channels.get(d.mid);if(ch)ch.leave();}

@@ -107,6 +107,9 @@ async function proMancala(s){
  const head=(i,mood)=>headOf?headOf(charOf(i),mood||'normal',400):null;
  let state=newMancala(),busy=true,phase='intro',moveNo=0;const cpu=isCpu(s);
  const net=netTurns(s,{isTheirs:()=>phase==='play'&&!busy&&state.winner<0&&state.turn===s.online.remote,apply:m=>Number.isInteger(m.p)&&sow(m.p,true)}),theirs=()=>!!net&&state.turn===net.remote;
+ // online: the other player's next move is already here while this phone is still showing the last one (they tapped
+ // through a cutaway, or took an extra turn): cut cutaways short and play the gems and pauses faster to catch up
+ const behind=()=>!!net&&(net.held||net.ready());
  const localTurn=()=>!(cpu&&state.turn===1)&&!theirs();
  // stones: every gem keeps its color and its little offset in the bowl
  const gr=A.rnd(9001),newStone=()=>({col:A.GEM_COLORS[Math.floor(gr()*A.GEM_COLORS.length)],jx:gr()-.5,jy:gr()-.5});
@@ -169,7 +172,7 @@ async function proMancala(s){
  async function landCombo(){if(!combo||combo.phase!=='live')return;const i=combo.p,total=combo.base*Math.max(1,combo.mult);combo.phase='land';combo.t=0;combo.total=total;
   S.sfx('land-combo');P[i].best=Math.max(P[i].best,total);P[i].combos++;if(P[i].ready&&combo.usedSpecial){P[i].ready=false;P[i].meter=0;}
   const word=total>=20000?'GODLIKE!!!':total>=8000?'INSANE!!':total>=3000?pickOf(GOOD):total>=1200?pickOf(['NICE!','SWEET!','CLEAN!','SOLID!','RAD!']):null;if(word)pop(word,{big:total>=3000});
-  await wait(s,850);P[i].points+=total;}
+  await wait(s,behind()?200:850);P[i].points+=total;}
  async function bailCombo(why){if(!combo||combo.phase!=='live')return;const i=combo.p;combo.phase='bail';combo.t=0;P[i].bails++;P[i].meter=0;P[i].ready=false;
   pop(pickOf(BAD),{bad:true,big:true});if(why)pop(why,{bad:true,px:lay.hu*1.05,dur:2,y0:lay.H*.62,x0:lay.W/2,rot:0});
   setMood(i,'sad',3);P[i].cardShake=.6;vibrate(60);await cutTo(i,'bail',{name:'bail',bail:true,flip:1,h:.75});}
@@ -216,7 +219,7 @@ async function proMancala(s){
    combo.chain++;const lv=combo.chain;S.sfx('combo',lv);shake=Math.max(shake,8+lv*3);flash=.35;vibrate(30+lv*15);
    pop(COMBO_WORDS[Math.min(COMBO_WORDS.length-1,lv-1)],{big:true,px:lay.hu*(2.6+lv*.45),x0:lay.W/2,y0:lay.H*.45,col:['#ffffff','#ffd000'],dur:1.8,rot:(Math.random()-.5)*.2});
    pop(pickOf(GOOD),{big:true});pop(pickOf(GOOD));setMood(me,'win');setMood(1-me,lv>1?'angry':'sad');P[me].cardKick=1;
-   sparkBurst(pitPos(mine).x,pitPos(mine).y,26,380);await wait(s,450);await cutTo(me,special?'special':'combo',special?{name:'special',special:true,spin:2.5,h:1.6,grab:true}:pl.anim);busy=false;return;}
+   sparkBurst(pitPos(mine).x,pitPos(mine).y,26,380);await wait(s,behind()?120:450);await cutTo(me,special?'special':'combo',special?{name:'special',special:true,spin:2.5,h:1.6,grab:true}:pl.anim);busy=false;return;}
   // the turn is over: land the combo, or slam if this move hands the other player a big one
   const gained=state.pits[mine]-before.pits[mine],danger=threat(state);
   if(gained===0&&danger>=3)await bailCombo(danger>=6?'YOU JUST SET THEM UP!':'SLOPPY LANDING!');
@@ -385,7 +388,7 @@ async function proMancala(s){
    else{const out=lay.vertical?(p.x<lay.bx?-1:1):(p.y<lay.by?-1:1),bx=lay.vertical?p.x+out*p.rx*.82:p.x+p.rx*.78,by=lay.vertical?p.y+p.ry*.78:p.y+out*p.ry*.82,br=Math.max(hu*.5,geo.pr*.36);
     x.fillStyle='rgba(0,0,0,.75)';A.ell(x,bx,by,br,br*.9);x.fill();x.strokeStyle=i<6?PCOL[0]:PCOL[1];x.lineWidth=1.5;x.stroke();
     x.fillStyle='#fff';x.font=A.font(br*1.2);x.textAlign='center';x.textBaseline='middle';x.fillText(String(n),bx,by+1);}}}
- function drawFlyers(dt){const r=gemR();for(let j=flyers.length-1;j>=0;j--){const f=flyers[j];f.t+=dt;if(f.t<0)continue;const tau=clamp(f.t/f.dur,0,1),q=slot(f.to,stones[f.to].length+f.k);
+ function drawFlyers(dt){const r=gemR(),sp=behind()?2.5:1;for(let j=flyers.length-1;j>=0;j--){const f=flyers[j];f.t+=dt*sp;if(f.t<0)continue;const tau=clamp(f.t/f.dur,0,1),q=slot(f.to,stones[f.to].length+f.k);
    const cx=f.a.x+(q.x-f.a.x)*tau,cy=f.a.y+(q.y-f.a.y)*tau,lift=f.h*Math.sin(Math.PI*tau);
    x.fillStyle='rgba(0,0,0,.3)';A.ell(x,cx+r*.3,cy+r*.3,r*.9,r*.6);x.fill();A.drawGem(x,f.st.col,cx,cy-lift,r*(1+.35*Math.sin(Math.PI*tau)),dpr);
    if(tau>=1){flyers.splice(j,1);stones[f.to].push(f.st);incoming[f.to]=Math.max(0,incoming[f.to]-1);for(const g of flyers)if(g.to===f.to&&g.k>f.k)g.k--;f.land?.();}}}
@@ -533,7 +536,7 @@ async function proMancala(s){
 
  // ---------------------------------------------------------------- frame
  let fsTick=0;
- s.frame(dt=>{T+=dt;relayout();chooseK+=((phase==='play'&&!busy&&!cut&&localTurn()&&state.winner<0?1:0)-chooseK)*Math.min(1,dt*6);if(fsTick--<=0){fsTick=30;placeFs();}const W=lay.W,H=lay.H;
+ s.frame(dt=>{T+=dt;relayout();if(cut&&behind()&&cut.t>.2)endCut();chooseK+=((phase==='play'&&!busy&&!cut&&localTurn()&&state.winner<0?1:0)-chooseK)*Math.min(1,dt*6);if(fsTick--<=0){fsTick=30;placeFs();}const W=lay.W,H=lay.H;
   const cw=Math.round(W*dpr),ch=Math.round(H*dpr);if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}x.setTransform(dpr,0,0,dpr,0,0);
   for(let i=waits.length-1;i>=0;i--)if(waits[i].f()||!s.alive){waits[i].r();waits.splice(i,1);}
   if(phase==='intro'){startIntro();const mt=introClock?music.time():null;if(mt!=null&&mt!==lastMt){lastMt=mt;mtStall=0;introT=Math.max(introT,mt-introClock.t0);}else{mtStall+=dt;if(!introClock||mtStall>.15)introT+=dt;}}

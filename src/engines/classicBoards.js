@@ -9,8 +9,9 @@ function backdrop(x,W,H,title){x.fillStyle='#13252c';x.fillRect(0,0,W,H);x.fillS
 function result(s,winner,label){s.finish(winner===2?[0,0]:winner===0?[1,0]:[0,1],label);}
 // Online (s.online): each phone plays its own turns; the other phone's moves are applied in order once this phone is ready
 // for them (its own animation finished) and it really is their turn. Returns null offline.
+// net.held = their move has arrived and waits for this phone to finish showing the last one (games use it to catch up)
 function netTurns(s,{isTheirs,apply}){const net=isOnline(s)?s.online:null;if(!net)return null;s.hotseat=true;
- void (async()=>{for(;;){const m=await net.next();if(!m||!s.alive)return;while(s.alive&&(s.paused||!isTheirs()))await new Promise(r=>setTimeout(r,60));if(!s.alive)return;await apply(m);}})();return net;}
+ void (async()=>{for(;;){const m=await net.next();if(!m||!s.alive)return;net.held=true;while(s.alive&&(s.paused||!isTheirs()))await new Promise(r=>setTimeout(r,30));net.held=false;if(!s.alive)return;await apply(m);}})();return net;}
 const pickOf=list=>list[Math.floor(Math.random()*list.length)];
 async function ultimate(s){const[c,x,W,H]=s.canvas(500,500);let state=newUltimate(),busy=false,last=-1,age=0;const size=420,cell=size/9,ox=(W-size)/2,oy=48;
  const net=netTurns(s,{isTheirs:()=>!busy&&state.winner<0&&state.turn===s.online.remote,apply:m=>Number.isInteger(m.i)&&play(m.i,true)}),theirs=()=>!!net&&state.turn===net.remote;

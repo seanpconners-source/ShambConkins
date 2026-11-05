@@ -31,7 +31,7 @@ function netState(){return net;}
 // back together on the other phone (WebSocket keeps them in order).
 const PART=5000;let partSerial=0;const parts=new Map();   // 5000 chars stay under 16 KB even if every quote is escaped
 function sendNet(d){
- if(net.ws?.readyState!==1)return false;
+ if(net.ws?.readyState!==1){kick();return false;}
  try{const s=JSON.stringify(d);
   if(s.length<=PART){net.ws.send(JSON.stringify({t:'msg',d}));return true;}
   const id=++partSerial+'.'+Math.random().toString(36).slice(2,6),n=Math.ceil(s.length/PART);
@@ -97,6 +97,12 @@ async function siteReachable(){
 }
 // A connection that went quiet without closing (a half-open socket): drop it and reconnect with the same seat.
 function reconnectNet(){const ws=net.ws;if(ws&&net.room)try{ws.close(4002,'stale');}catch{}}
+// Something has to go out but the room connection is down and waiting out its backoff: try again now.
+let kickT=0;function kick(){if(!net.room||net.ws||net.status!=='reconnecting'||Date.now()-kickT<1000)return;kickT=Date.now();clearTimeout(net.retry);net.tries=0;open(false);}
+// Is the connection really alive? Ping now; if nothing at all comes back within 2.5 s it is half-open (a phone that
+// changed networks, a router that dropped it): reconnect at once instead of waiting 35 s of silence.
+let probeT=0;function probeNet(){const ws=net.ws;if(!net.room){return;}if(!ws||ws.readyState!==1){kick();return;}if(Date.now()-probeT<3000)return;const t0=probeT=Date.now();
+ try{ws.send('ping');}catch{}setTimeout(()=>{if(net.ws===ws&&net.lastIn<t0){netLog('no answer to a probe: reconnecting');reconnectNet();}},2500);}
 function leaveRoom(){
  const ws=net.ws;net.room=null;net.peer=null;net.seat=null;net.ws=null;clearTimeout(net.retry);clearInterval(net.ping);
  if(ws)try{ws.close(1000,'left');}catch{}
@@ -104,4 +110,4 @@ function leaveRoom(){
 }
 // Back online after the phone slept or lost signal: reconnect at once instead of waiting out the backoff.
 if(globalThis.addEventListener)for(const ev of ['online','visibilitychange'])addEventListener(ev,()=>{if(net.room&&net.status==='reconnecting'&&!document.hidden){net.tries=0;open(false);}});
-Object.assign(exports,{joinRoom,leaveRoom,reconnectNet,sendNet,onNet,netState,roomKey,netBase,netLogText});
+Object.assign(exports,{joinRoom,leaveRoom,reconnectNet,probeNet,sendNet,onNet,netState,roomKey,netBase,netLogText});
