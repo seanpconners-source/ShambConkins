@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Swiping between games in the Arcade is smooth again.** Your screen recording's choppiness came from the moment the finger let go: the phone froze for a moment while it decoded the next game's full background picture, and the text jumped straight from the old game to the new one. Now the next game is made ready while your finger is still moving, and its picture fades in under your finger. When you let go, the old text carries on out at the speed you threw it and the new text slides in from the other side. Measured on a slowed-down phone-size browser: the longest frame at release went from 250 ms to under 50 ms, on phone, Fold, landscape and desktop sizes.
+
 ## v0.85.0
 
 - **The casino sounds like a casino app now.** The constant static under every table (a looped noise "crowd") is gone, and so is the hissy drum loop. Instead there's quiet lounge music (a warm electric piano over a walking upright bass, jazz chords, a soft room) well under clean, short effects: clay chips clacking, cards swishing and landing, a crisp flip, the roulette ball rolling, slowing, bouncing over the frets and dropping, a bell chime for a win and a coin shower for a big one, a soft low note for a loss. MUSIC and SOUNDS switches on every table's ? sheet.

@@ -118,15 +118,24 @@ const keyImg=it=>{const b=keyBox(it),u=e(keyArt(it));return `<canvas class="arc-
 // The soft fill behind a picture that doesn't reach every edge: the picture shrunk to 32 px wide and darkened, stretched back
 // up by the browser (that IS the blur). A live CSS blur of a full-screen picture was the phone's undoing (owner's video, Nov 5:
 // whole screen blank for 3 frames when tapping fast, it ran out of graphics memory).
-function drawFill(cv,img){if(!cv||!img.naturalWidth||cv.dataset.src===img.currentSrc)return;const w=32,h=Math.max(2,Math.round(32*img.naturalHeight/img.naturalWidth));
- cv.width=w;cv.height=h;const x=cv.getContext('2d');x.drawImage(img,0,0,w,h);x.fillStyle='rgba(0,0,0,.45)';x.fillRect(0,0,w,h);cv.dataset.src=img.currentSrc;}
+// The small copy is made off the main thread from the file (createImageBitmap with a resize) and kept per picture: drawing the
+// full-size <img> into the canvas made the phone decode the whole 1600 px picture on the main thread, ~120 ms, at the moment a
+// swipe let go (owner's video, Nov 5: "choppy"). Browsers without it draw the picture itself, later, off the swipe's frame.
+const fills=new Map();
+function fillFor(u,iw,ih){let p=fills.get(u);if(p)return p;const w=32,h=Math.max(2,Math.round(32*ih/iw));
+ p=(typeof createImageBitmap==='function'&&typeof fetch==='function'?fetch(u).then(r=>r.blob()).then(b=>createImageBitmap(b,{resizeWidth:w,resizeHeight:h,resizeQuality:'low'})):Promise.reject()).catch(()=>null);
+ fills.set(u,p);return p;}
+function drawFill(cv,img){if(!cv||!img.naturalWidth||cv.dataset.src===img.currentSrc)return;const u=img.currentSrc||img.src;cv.dataset.src=u;
+ fillFor(u,img.naturalWidth,img.naturalHeight).then(bm=>{if(cv.dataset.src!==u)return;const w=32,h=Math.max(2,Math.round(32*img.naturalHeight/img.naturalWidth));
+  const paint=()=>{if(cv.dataset.src!==u)return;cv.width=w;cv.height=h;const x=cv.getContext('2d');x.drawImage(bm||img,0,0,w,h);x.fillStyle='rgba(0,0,0,.45)';x.fillRect(0,0,w,h);};
+  if(bm)paint();else setTimeout(paint,400);});}
 // Backgrounds kept ready (owner, Nov 3: "it should be immediate"): every picture is fetched once and held, so a new <img> of it
 // has its bytes at once; the ones next to the focused tile are decoded too. Held images let the browser drop decoded pixels
 // under memory pressure, so swapKeyArt below still waits for its own decode.
 const warmed=new Map();
 function warmPic(u,decode=false){if(!u||typeof Image==='undefined')return Promise.resolve();let w=warmed.get(u);
  if(!w){const im=new Image();im.decoding='async';w={im,load:new Promise(r=>{im.onload=im.onerror=r;})};im.src=u;warmed.set(u,w);}
- if(decode&&!w.dec)w.dec=w.load.then(()=>w.im.decode?.()).catch(()=>{});return w.dec||w.load;}
+ if(decode&&!w.dec)w.dec=w.load.then(()=>w.im.decode?.()).then(()=>{if(w.im.naturalWidth)void fillFor(w.im.currentSrc||u,w.im.naturalWidth,w.im.naturalHeight);}).catch(()=>{});return w.dec||w.load;}
 let warmRun=0;
 async function warmKeyArt(){if(typeof Image==='undefined')return;const run=++warmRun,items=current?.items||[],at=Math.max(0,items.findIndex(x=>x.key===state.focus));
  const near=items.map((it,i)=>[Math.abs(i-at),keyArt(it)]).filter(x=>x[1]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
@@ -172,7 +181,7 @@ function mapLock(lock,box,iw,ih,W,H,free,side){
  L=pin(L,dw,W,cov.l,cov.r,L+bx0*dw,L+bx1*dw,free.x0,free.x1);T=pin(T,dh,H,cov.t,cov.b,T+by0*dh,T+by1*dh,free.y0,free.y1);
  return {s,left:L,top:T};}
 const clampR=(v,lo,hi)=>lo>hi?(lo+hi)/2:Math.min(hi,Math.max(lo,v));
-function placeKey(img){
+function placeKey(img,apply=true){
  const root=img?.closest?.('.arcade-console');if(!root||!img.naturalWidth||!img.dataset.box)return;
  const R=root.getBoundingClientRect(),W=R.width,H=R.height,iw=img.naturalWidth,ih=img.naturalHeight;if(!W||!H)return;
  const [bx0,by0,bx1,by1]=img.dataset.box.split(',').map(Number);
@@ -213,11 +222,12 @@ function placeKey(img){
  // a locked picture keeps the shade the owner saw in the Background Picker: clear from the controls down to the tiles
  // (wide) or to the text (tall)
  const sy0=lock?top:ay0,sy1=lock?(side?bot:(info?info.t-6:H*.6)):ay1;
- root.classList.toggle('key-above',!lock&&side&&ax0<W*.1);
- root.style.setProperty('--key-y0',(sy0/H*100).toFixed(1)+'%');root.style.setProperty('--key-y1',(sy1/H*100).toFixed(1)+'%');
+ img._shade={above:!lock&&side&&ax0<W*.1,y0:(sy0/H*100).toFixed(1)+'%',y1:(sy1/H*100).toFixed(1)+'%'};if(apply)applyShade(img);
 }
+function applyShade(img){const root=img?.closest?.('.arcade-console'),sh=img?._shade;if(!root||!sh)return;root.classList.toggle('key-above',sh.above);
+ root.style.setProperty('--key-y0',sh.y0);root.style.setProperty('--key-y1',sh.y1);}
 const placeKeys=()=>{if(typeof document!=='undefined')document.querySelectorAll('.arc-keyart img').forEach(placeKey);};
-if(typeof document!=='undefined'){document.addEventListener('load',ev=>{if(ev.target?.closest?.('.arc-keyart'))placeKey(ev.target);},true);
+if(typeof document!=='undefined'){document.addEventListener('load',ev=>{if(ev.target?.closest?.('.arc-keyart'))placeKey(ev.target,!!ev.target.closest('.arc-key-front'));},true);
  let rz=0;addEventListener('resize',()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(placeKeys);});}
 // A game's own logo (assets/keyart/<game id or family key>-logo.*, transparent) replaces the plain title on the hero, the version page and the tile.
 const logoOf=it=>it&&(dropArt('keyart',it.fam?.key&&it.fam.key+'-logo')||dropArt('keyart',it.g?.id&&it.g.id+'-logo')||(it.g&&familyOf(it.g)&&dropArt('keyart',familyOf(it.g)+'-logo')));
@@ -333,36 +343,59 @@ function swapLayer(box,html){if(!box)return;const run=++heroRun,old=[...box.chil
 let keySwap=0;
 function keySlots(box){let [a,b]=box.children;if(!a){a=document.createElement('div');a.className='arc-layer arc-key-front';box.append(a);}
  if(!b){b=document.createElement('div');b.className='arc-layer';box.append(b);}return a.classList.contains('arc-key-front')?[a,b]:[b,a];}
-function swapKeyArt(box,it,key,then){if(!box)return;const run=++keySwap;let [front,back]=keySlots(box);
- // finish whatever fade is running: the front shows, the other slot is empty
- for(const l of [front,back]){l.style.transition='none';clearTimeout(l._clear);}back.classList.remove('arc-key-front');back.innerHTML='';back.style.translate='';void box.offsetWidth;for(const l of [front,back])l.style.transition='';
- if(!key){front.classList.remove('arc-key-front');front._clear=setTimeout(()=>{if(!front.classList.contains('arc-key-front')){front.innerHTML='';front.style.translate='';}},260);then();return;}
- back.innerHTML=keyImg(it);const img=back.querySelector('img');
- const show=()=>{if(run!==keySwap||!box.isConnected)return;placeKey(img);then();back.classList.add('arc-key-front');front.classList.remove('arc-key-front');
-  front._clear=setTimeout(()=>{if(!front.classList.contains('arc-key-front')){front.innerHTML='';front.style.translate='';}},260);};
- Promise.race([Promise.resolve(img.decode?.()).catch(()=>{}),new Promise(r=>setTimeout(r,1500))]).then(show);}
-// After a swipe the old text carries on out the way the finger threw it and the new text comes in from the other side, but only
-// once its pictures (logo, chips) are decoded, so nothing blinks empty or snaps back to the middle first (owner, Nov 4).
+const decodeImg=im=>Promise.resolve(im?.decode?.()).catch(()=>{}),waitMs=ms=>new Promise(r=>setTimeout(r,ms));
+// The old front slot leaves: it fades, and after a swipe it carries on drifting the way it was thrown.
+function keyOut(front,o){front.classList.remove('arc-key-front');
+ if(o.dir){const cur=parseFloat(front.style.translate)||0;front.style.transition='opacity .28s ease,translate .36s cubic-bezier(.2,.7,.3,1)';front.style.translate=`${(cur-o.dir*o.W*.22).toFixed(0)}px 0`;}
+ front._clear=setTimeout(()=>{if(!front.classList.contains('arc-key-front')){front.innerHTML='';front.style.translate='';front.style.transition='';front.style.opacity='';}},380);}
+// o.pre = a swipe's prepared neighbour (its picture already in the hidden slot, decoded and placed while the finger moved)
+function swapKeyArt(box,it,key,then,o={}){if(!box)return;const run=++keySwap;let [front,back]=keySlots(box);
+ const pre=o.pre&&o.pre.back===back&&o.pre.key===key&&back.firstChild?o.pre:null;
+ for(const l of [front,back])clearTimeout(l._clear);
+ if(!pre){// finish whatever fade is running: the front shows, the other slot is empty
+  for(const l of [front,back])l.style.transition='none';back.classList.remove('arc-key-front');back.innerHTML='';back.style.translate='';back.style.opacity='';void box.offsetWidth;for(const l of [front,back])l.style.transition='';}
+ if(!key){keyOut(front,o);then();return;}
+ if(!pre)back.innerHTML=keyImg(it);const img=back.querySelector('img:not(.arc-keyfill)')||back.querySelector('img');
+ const show=()=>{if(run!==keySwap||!box.isConnected)return;if(!pre?.placed)placeKey(img,!o.dir);if(o.dir)o.shade=img;then();
+  // from the opacity the drag left it at to fully shown, on the stylesheet's fade
+  back.style.transition=o.dir?'opacity .26s ease-out':'';back.style.opacity='';back.classList.add('arc-key-front');keyOut(front,o);};
+ (pre?pre.dec:Promise.race([decodeImg(img),waitMs(1500)])).then(show);}
+// The text block of a game, built off the page with its pictures (logo, chips) decoded, so it can go in whole in one frame.
+function buildInfo(it){const tmp=document.createElement('div');tmp.innerHTML=infoHTML(it);const imgs=[...tmp.querySelectorAll('img')];for(const im of imgs)im.loading='eager';
+ return {tmp,ready:Promise.race([Promise.all(imgs.map(decodeImg)),waitMs(300)])};}
 let infoRun=0;
-function swapInfo(info,it,dir=0){const run=++infoRun,tmp=document.createElement('div');tmp.innerHTML=infoHTML(it);
- const imgs=[...tmp.querySelectorAll('img')];for(const im of imgs)im.loading='eager';
- Promise.race([Promise.all(imgs.map(im=>Promise.resolve(im.decode?.()).catch(()=>{}))),new Promise(r=>setTimeout(r,300))]).then(()=>{
-  if(run!==infoRun||!info.isConnected)return;info.classList.remove('arc-info-in');info.replaceChildren(...tmp.childNodes);
-  info.style.transition='none';info.style.opacity='';info.style.transform=dir?`translateX(${dir*18}px)`:'';void info.offsetWidth;
-  info.style.transition=dir?'transform .22s cubic-bezier(.2,.8,.3,1)':'';info.style.transform='';});}
-// after a swipe: the old text glides out the way it was thrown (fully visible), then the new one comes in from that side
-function swipeInfo(info,it,{dir,W}){info.style.transition='transform .14s ease-in';info.style.transform=`translateX(${(-dir*W*.25).toFixed(0)}px)`;swapInfo(info,it,dir);}
+function swapInfo(info,it,dir=0){const run=++infoRun,b=buildInfo(it);
+ b.ready.then(()=>{if(run!==infoRun||!info.isConnected)return;info.classList.remove('arc-info-in');info.replaceChildren(...b.tmp.childNodes);
+  info.style.transition='';info.style.opacity='';info.style.transform='';});}
+// After a swipe (owner, Nov 5: "choppy"): the old text carries on out the way it was thrown, at the finger's speed, then the new
+// text (built while the finger was still moving) slides in from the other side. Both are compositor animations (transform and
+// opacity only, Web Animations), nothing waits on a decode at the moment of release and nothing reads layout in between.
+function swipeInfo(info,it,{dir,W,v=0,pre,dx=0}){const run=++infoRun,b=pre?.info||buildInfo(it);
+ const cur=dx,op=Math.max(.25,1-Math.abs(dx)/(W*.7));   // where the drag left it (swipeMove), without reading styles back
+ const sp=Math.max(1.2,Math.abs(v)),d=Math.round(Math.max(120,Math.min(200,W*.3/sp))),outX=cur-dir*Math.max(W*.22,sp*d*.6);
+ info.style.transition='none';info.style.transform='';info.style.opacity='';
+ const a=info.animate?.([{transform:`translateX(${cur}px)`,opacity:op},{transform:`translateX(${outX}px)`,opacity:0}],{duration:d,easing:'cubic-bezier(.25,.6,.6,1)',fill:'forwards'});
+ Promise.all([b.ready,waitMs(d)]).then(()=>{if(run!==infoRun||!info.isConnected){a?.cancel();return;}info.classList.remove('arc-info-in');info.replaceChildren(...b.tmp.childNodes);a?.cancel();
+  info.animate?.([{transform:`translateX(${(dir*W*.32).toFixed(0)}px)`,opacity:0},{transform:'none',opacity:1}],{duration:340,easing:'cubic-bezier(.2,.8,.25,1)',fill:'backwards'});});}
 function restart(el,cls){if(!el)return;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);}
+let tileRun=0;
 function focusTile(i,{scroll=true,swipe=null}={}){
  const root=document.querySelector('.arcade-console');if(!root||!current)return;const it=current.items[i];if(!it)return;
  const was=current.items.findIndex(x=>x.key===state.focus);if(was===i)return;
- state.focus=it.key;root.style.setProperty('--arc-dir',i>=was?1:-1);root.style.setProperty('--arc-h',hue(it.fam?.title||it.g.source));
- const key=keyArt(it);
- swapKeyArt(root.querySelector('.arc-keyart'),it,key,()=>{root.classList.toggle('has-key',!!key);swapLayer(root.querySelector('.arc-hero-art'),key?'':heroArt(it));});for(const d of [1,-1])warmPic(keyArt(current.items[i+d]),true);for(const d of [2,-2])warmPic(keyArt(current.items[i+d]));
- const info=root.querySelector('.arc-info');if(swipe)swipeInfo(info,it,swipe);else swapInfo(info,it,0);if(it.g)void refreshRecord(it.g.id);
- root.querySelectorAll('.arc-tile').forEach((t,j)=>{t.classList.toggle('on',j===i);t.setAttribute('aria-selected',String(j===i));});
- const tile=root.querySelectorAll('.arc-tile')[i];if(scroll&&tile)tile.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',inline:'center',block:'nearest'});
+ const pre=swipe?.pre&&swipe.pre.j===i?swipe.pre:null;if(prep&&prep!==pre)dropPrep(root);prep=null;
+ state.focus=it.key;root.style.setProperty('--arc-dir',i>=was?1:-1);
+ const key=keyArt(it),h=hue(it.fam?.title||it.g.source),ko=swipe?{pre,dir:swipe.dir,W:swipe.W}:{};
+ swapKeyArt(root.querySelector('.arc-keyart'),it,key,()=>{if(!swipe)root.style.setProperty('--arc-h',h);root.classList.toggle('has-key',!!key);swapLayer(root.querySelector('.arc-hero-art'),key?'':heroArt(it));},ko);
+ const info=root.querySelector('.arc-info');if(swipe)swipeInfo(info,it,{...swipe,pre});else swapInfo(info,it);
  if(store.profile?.settings.sound)tone(660+((i%5)*40),.05,.02,'triangle');
+ // the rest (tile highlight, the row's scroll, the record chip, warming the neighbours) waits until a swipe's slide is done,
+ // so none of it lands in the frames of the animation
+ const run=++tileRun,rest=()=>{if(run!==tileRun||!root.isConnected)return;
+  root.querySelectorAll('.arc-tile').forEach((t,j)=>{t.classList.toggle('on',j===i);t.setAttribute('aria-selected',String(j===i));});
+  const tile=root.querySelectorAll('.arc-tile')[i];if(scroll&&tile)tile.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',inline:'center',block:'nearest'});
+  if(swipe){root.style.setProperty('--arc-h',h);if(ko.shade)applyShade(ko.shade);}
+  if(it.g)void refreshRecord(it.g.id);for(const d of [1,-1])warmPic(keyArt(current.items[i+d]),true);for(const d of [2,-2])warmPic(keyArt(current.items[i+d]));};
+ if(swipe)setTimeout(rest,420);else rest();
 }
 function openFamily(key){const root=document.querySelector('.arcade-console');if(!root)return;state.family=key;const s=root.querySelector('.arc-fam');s.classList.remove('arc-fam-out');s.innerHTML=familyHTML(key);s.hidden=false;s.scrollTop=0;restart(s,'arc-fam-in');}
 // Closing slides the version page away before hiding it.
@@ -398,26 +431,44 @@ if(typeof document!=='undefined')document.addEventListener('click',ev=>{
 // also count as a tap on the button it started on. Vertical moves are left alone.
 const SWIPE_SKIP='.arc-row,.arc-pills,.arc-strip,.arc-search,.arc-fam,.arc-grid-page,.arc-scores,input,select,textarea';
 let swipe=null,swallowClick=0;
-function swipeParts(root){return [root.querySelector('.arc-info'),root.querySelector('.arc-keyart'),root.querySelector('.arc-hero-art')].filter(Boolean);}
-function swipeMove(root,dx,anim){for(const el of swipeParts(root)){const k=el.classList.contains('arc-info')?1:.45;el.style.transition=anim?'transform .22s cubic-bezier(.2,.8,.3,1),opacity .22s':'none';
- el.style.transform=dx?`translateX(${(dx*k).toFixed(1)}px)`:'';if(el.classList.contains('arc-info'))el.style.opacity=dx?String(Math.max(.25,1-Math.abs(dx)/(root.clientWidth*.7))):'';}}
+// While the finger moves, the game it is heading for is made ready (prepSwipe): its picture goes into the hidden background
+// slot, decoded and placed, and its text is built off the page. Its picture then fades in under the finger as the drag goes
+// on, so letting go only finishes moves that are already running.
+let prep=null;
+function dropPrep(root){const p=prep;prep=null;if(!p?.back)return;const b=p.back;if(b.classList.contains('arc-key-front'))return;
+ b.style.transition='opacity .2s ease';b.style.opacity='0';clearTimeout(b._clear);b._clear=setTimeout(()=>{if(!b.classList.contains('arc-key-front')&&prep?.back!==b){b.innerHTML='';b.style.opacity='';b.style.transition='';b.style.translate='';}},240);}
+function prepSwipe(root,dir){const i=current.items.findIndex(x=>x.key===state.focus),j=i+dir;if(prep&&prep.j===j)return prep;dropPrep(root);
+ const it=current.items[j];if(!it)return null;const key=keyArt(it),p={j,dir,key,info:buildInfo(it)};prep=p;
+ const box=root.querySelector('.arc-keyart');
+ if(key&&box){const [,back]=keySlots(box);clearTimeout(back._clear);back.style.transition='none';back.style.opacity='0';back.style.translate='';back.innerHTML=keyImg(it);p.back=back;
+  const img=back.querySelector('img:not(.arc-keyfill)');p.dec=Promise.race([decodeImg(img),waitMs(1500)]).then(()=>{if(prep===p&&img.isConnected){placeKey(img,false);p.placed=true;}});}
+ return p;}
+function swipeMove(root,dx,anim,W=swipe?.W||root.clientWidth||360){const tr=anim?'transform .22s cubic-bezier(.2,.8,.3,1),opacity .22s':'none';
+ const info=root.querySelector('.arc-info');if(info){info.style.transition=tr;info.style.transform=dx?`translateX(${dx.toFixed(1)}px)`:'';info.style.opacity=dx?String(Math.max(.25,1-Math.abs(dx)/(W*.7))):'';}
+ const hero=root.querySelector('.arc-hero-art');if(hero){hero.style.transition=tr;hero.style.transform=dx?`translateX(${(dx*.45).toFixed(1)}px)`:'';}
+ const box=root.querySelector('.arc-keyart');if(box){const [front]=keySlots(box);front.style.transition=anim?'translate .22s cubic-bezier(.2,.8,.3,1)':'none';front.style.translate=dx?`${(dx*.45).toFixed(1)}px 0`:'';
+  if(prep?.back){prep.back.style.transition=anim?'opacity .22s':'none';prep.back.style.opacity=prep.placed?String(Math.min(.85,Math.abs(dx)/(W*.75)).toFixed(3)):'0';}}}
 if(typeof document!=='undefined'){
  document.addEventListener('pointerdown',ev=>{const root=ev.target.closest?.('.arcade-console');
   if(!root||!current||state.family||state.grid||ev.button>0||ev.target.closest(SWIPE_SKIP)||current.items.length<2)return;
-  swipe={root,id:ev.pointerId,x:ev.clientX,y:ev.clientY,t:performance.now(),on:false,dx:0};},true);
+  swipe={root,id:ev.pointerId,x:ev.clientX,y:ev.clientY,t:performance.now(),on:false,dx:0,W:root.clientWidth||360,i:current.items.findIndex(x=>x.key===state.focus)};},true);
  document.addEventListener('pointermove',ev=>{if(!swipe||ev.pointerId!==swipe.id)return;const dx=ev.clientX-swipe.x,dy=ev.clientY-swipe.y;
-  if(!swipe.on){if(Math.abs(dy)>14&&Math.abs(dy)>Math.abs(dx)){swipe=null;return;}if(Math.abs(dx)<12||Math.abs(dx)<Math.abs(dy)*1.4)return;swipe.on=true;swipe.root.classList.add('arc-swiping');}
-  const i=current.items.findIndex(x=>x.key===state.focus),edge=(dx>0&&i<=0)||(dx<0&&i>=current.items.length-1);
-  swipe.dx=edge?dx*.3:dx;swipeMove(swipe.root,swipe.dx,false);},true);
- const end=ev=>{if(!swipe||ev.pointerId!==swipe.id)return;const sw=swipe;swipe=null;if(!sw.on)return;sw.root.classList.remove('arc-swiping');swallowClick=performance.now();
-  const W=sw.root.clientWidth||360,v=sw.dx/Math.max(1,performance.now()-sw.t),i=current?current.items.findIndex(x=>x.key===state.focus):-1,
+  if(!swipe.on){if(Math.abs(dy)>14&&Math.abs(dy)>Math.abs(dx)){swipe=null;return;}if(Math.abs(dx)<12||Math.abs(dx)<Math.abs(dy)*1.4)return;swipe.on=true;for(const el of [swipe.root.querySelector('.arc-info'),swipe.root.querySelector('.arc-hero-art')])if(el)el.style.willChange='transform,opacity';}
+  const i=swipe.i,edge=(dx>0&&i<=0)||(dx<0&&i>=current.items.length-1);
+  // the next game is made ready one frame after the drag starts, not inside the move that starts it
+  swipe.dx=edge?dx*.3:dx;if(edge){if(prep)dropPrep(swipe.root);}else if(prep?.j!==i+(dx<0?1:-1)){const sw=swipe,d=dx<0?1:-1;requestAnimationFrame(()=>{if(swipe===sw)prepSwipe(sw.root,d);});}
+  const now=performance.now();swipe.v=(ev.clientX-(swipe.lx??swipe.x))/Math.max(1,now-(swipe.lt??swipe.t));swipe.lx=ev.clientX;swipe.lt=now;
+  swipeMove(swipe.root,swipe.dx,false);},true);
+ const end=ev=>{if(!swipe||ev.pointerId!==swipe.id)return;const sw=swipe;swipe=null;if(!sw.on)return;swallowClick=performance.now();
+  for(const el of [sw.root.querySelector('.arc-info'),sw.root.querySelector('.arc-hero-art')])if(el)el.style.willChange='';
+  const W=sw.W,v=sw.dx/Math.max(1,performance.now()-sw.t),i=current?current.items.findIndex(x=>x.key===state.focus):-1,
    dir=ev.type==='pointercancel'?0:Math.abs(sw.dx)>W*.22||Math.abs(v)>.5&&Math.abs(sw.dx)>30?(sw.dx<0?1:-1):0,j=i+dir;
   if(dir&&current&&j>=0&&j<current.items.length){
-   // the pictures stay where the finger left them (their offset moves from the box onto the old layers, which then fade out
-   // under the incoming ones) instead of jumping back to the middle for a frame
-   for(const box of [sw.root.querySelector('.arc-keyart'),sw.root.querySelector('.arc-hero-art')]){if(!box)continue;const off=sw.dx*.45;box.style.transition='none';box.style.transform='';for(const ch of box.children)ch.style.translate=`${off.toFixed(1)}px 0`;}
-   focusTile(j,{swipe:{dir,W}});}
-  else swipeMove(sw.root,0,true);};
+   // the old hero picture stays where the finger left it (the box's offset moves onto its layer, which fades out under the
+   // incoming one) instead of jumping back to the middle for a frame; the background's front slot already carries its own
+   const hero=sw.root.querySelector('.arc-hero-art');if(hero){const off=sw.dx*.45;hero.style.transition='none';hero.style.transform='';for(const ch of hero.children)ch.style.translate=`${off.toFixed(1)}px 0`;}
+   focusTile(j,{swipe:{dir,W,v:sw.v||v,pre:prep,dx:sw.dx}});}
+  else{swipeMove(sw.root,0,true);dropPrep(sw.root);}};
  document.addEventListener('pointerup',end,true);document.addEventListener('pointercancel',end,true);
  // the tap that ended a swipe is not a click on whatever button it started on
  document.addEventListener('click',ev=>{if(performance.now()-swallowClick<350&&ev.target.closest?.('.arcade-console')){ev.stopPropagation();ev.preventDefault();swallowClick=0;}},true);

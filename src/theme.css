@@ -1028,8 +1028,8 @@ body .title-screen .ts-tile .ts-reel img.ts-cut{transition:opacity 1.2s ease,tra
 /* M24: sideways swipes on the Arcade game page change game (arcadeConsole.js); the sideways rows keep their own scrolling */
 .arcade-console{touch-action:pan-y}
 .arcade-console .arc-row,.arcade-console .arc-pills,.arcade-console .arc-strip{touch-action:pan-x}
-.arcade-console.arc-swiping .arc-keyart img{animation-play-state:paused}
-.arcade-console.arc-swiping{user-select:none;-webkit-user-select:none}
+/* no text selection anywhere on the Arcade page (a swipe used to switch it off with a class on the whole page: a full restyle on the first move) */
+.arcade-console{user-select:none;-webkit-user-select:none}
 /* I13 shared scoreboard: 🏆 record chip on the game's page + top-10 sheet (arcadeConsole.js recordHTML/openScores) */
 .arcade-console .arc-chips .arc-record{font:800 10.5px/1 var(--c-text);letter-spacing:.04em;border:0;border-radius:6px;padding:4px 8px;min-height:0;background:#ffd34d29;color:#ffe08a;box-shadow:inset 0 0 0 1px #ffd34d55;cursor:pointer;text-transform:none}
 .arcade-console .arc-chips .arc-record:active{transform:translateY(1px)}
@@ -1174,6 +1174,8 @@ body #dialog .fr-panel button.fr-x{min-height:30px!important;width:30px!importan
    zoom, no live blur, no animated colour wash: those made the phone run out of graphics memory and blank the screen. */
 .arc-keyart .arc-layer{opacity:0;transition:opacity .22s ease}
 .arc-keyart .arc-layer.arc-key-front{opacity:1}
+/* M25 (Nov 5): the two background slots are their own layers for good, so a swipe's moves are compositor-only from the first frame */
+.arc-keyart .arc-layer{will-change:opacity,translate}
 .arc-fade-in{animation:arc-fade-in .22s ease both}
 .arc-fade-out{animation:arc-fade-out .22s ease both;pointer-events:none}
 @keyframes arc-fade-in{from{opacity:0}to{opacity:1}}

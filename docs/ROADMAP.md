@@ -44,6 +44,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   and how long it took; the site streams the page instead of making the first phone wait. If it still fails on Wi-Fi only,
   it's the network: test https://shambconkins.loki-mylo.work/version on Wi-Fi; suspects = the router's security filter /
   DNS blocking the .work domain, or broken HTTP/3 (Cloudflare → Speed → Protocol Optimization → HTTP/3 off, as a test).
+- **M25** `[verify]` (Nov 5: next game prepared during the drag, its picture fades in under the finger, old text carries on out and new slides in; no frame over 50 ms at 4x CPU, tests/arcade-swipe-smooth.mjs) (owner, Nov 5, screen recording on Drive 1ditSBy4B4pv0Fq5ZlpDGLbYnHTdnfyVa) The flicker is gone, but swiping between games in the Arcade is now choppy. Make the slide smooth, as intended.
 - **M24** `[verify]` (owner, Nov 4; built Nov 4, unreleased, tests/arcade-swipe.mjs) Arcade game page: swipe left/right anywhere on the hero (background, title, Challenge/Play
   button area) to go to the previous/next game on the shelf, like flicking through cards. Background, logo and info slide
   with the finger and snap to the next game; the tile row follows. Taps and vertical scrolling must keep working.
@@ -277,8 +278,12 @@ Endings
   bottom control bar (chip picker, CLEAR / UNDO / REBET / DOUBLE, a big DEAL / SPIN), balance / bet / win always on show,
   seat labels (YOU, the other player, each regular by name), a ? rules sheet, clear win/lose results, a session summary.
   Roulette rebuilt from scratch as a full game: proper betting board, racetrack, history, hot/cold numbers, a real spin.
+- **G14** `[todo]` (owner, Nov 5) **Liar's Dice joins the casino revamp.** Fun now, but it should look like the other tables
+  (casinoFront: intro card with the people, phase banner saying whose turn it is and what to do, first-time tour, ? rules
+  sheet, summary) and state the turns and rules much more clearly.
 - **G1** `[verify]` (owner's picks Nov 4: drawn Vegas table, themed dealer + regulars + the F10 unlock. All four tables built on `engines/vegasTable.js` (+ `vegasGame.js` scaffold for the last three): BLACKJACK (owner approved the screenshots), BACCARAT (Casino Royale, squeeze the cards, bead road, 10 coups), FIVE-CARD DRAW ($10 ante, $20/$40 limit, draw, side pots, SHOW for pass and play, 8 hands), ROULETTE (spinning wheel and ball, the real layout, own chip colours, 10 spins); all vs CPU and online) Casino games: real Vegas tables, cards dealt, dealer animations, players around the table, atmosphere.
-- **G2** `[todo]` Penalty Kicks: fun already; better graphics, animations, sound, presentation.
+- **G2** `[todo]` Penalty Kicks: fun already; better graphics, animations, sound, presentation. Owner, Nov 5: "kind of fun,
+  but overall really bad. I see a fun game here. Make it happen." Treat as a real rebuild of the presentation and feel.
 - **G3** `[todo]` Mario Kart: backs of heads with helmets, frequent look-backs, wider courses, more interesting play, more stages and many more tracks.
 - **G4** `[part]` Hole.it (owner, Nov 2: good start; the first levels are close, later levels fall apart). Next: study
   many more real levels, early and late, model the gameplay exactly everywhere we can, then make lots of unique
@@ -318,6 +323,7 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
   soft faded-out circle instead of a hard edge. Transparent cut-outs stay as they are (they look great).
 - **M18** `[todo]` (owner, Nov 3) The Back button on menus is weak: make it a cool arrow (owner will generate the image: slot
   `assets/ui/back.*` to be added). Maybe rethink a few other buttons too (offer options when we get there).
+  Owner, Nov 5: generate a back-button sprite (art kit slot for GPT) and maybe reposition it. "Come back to this."
 
 ## Phase H — new content (sections 3 + 7)
 
@@ -376,6 +382,19 @@ Reuse engines with new skins wherever possible.
   mode with a boss, 2P on one phone (each player owns half the screen), online later. Owner wanted real sprite bodies from the
   real games: we use our own bodies drawn in that style (see P11), owner-made art can drop in. Questions for the owner when we
   start: pixel art vs painted look, how gory, the archetype list, one-phone 2P layout, best-of-3 rounds, names.
+
+- **H26** `[idea]` (owner, Nov 5, very excited) **Run-toward-the-screen platformer** in the Crash Bandicoot feel: run into
+  the camera down a jungle path, spin attack, crates, boulder chase. Our character heads with their expressions.
+- **H27** `[idea]` (owner, Nov 5, very excited) **Prince of Persia-style platformer**: the original PC game's feel (rotoscoped
+  movement, ledge grabs, careful jumps, traps, sword fights, a clock). Our heads on the hero and the guards.
+- **H28** `[idea]` (owner, Nov 5) **Wordle-style word game** with a crazy, unexpected theme (Crazy Taxi?).
+- **H29** `[idea]` (owner, Nov 5) **Boggle-style word grid**.
+- **H30** `[idea]` (owner, Nov 5) **Words With Friends-style crossword board**, also with a crazy theme.
+- **H31** `[idea]` (owner, Nov 5) **Cine2Nerdle-style movie link game**: generate real puzzles, and they have to be good
+  (link films by shared actors/directors; checked so every puzzle is solvable and fair).
+- **H32** `[idea]` (owner, Nov 5) **Box-office guessing game** in the style of the box office game websites (guess a
+  film's gross / rank films by box office).
+  Note for H26-H32: we build our own levels, art, words and music in those games' style, not copies of the originals.
 
 ## Phase I — online and Pokémon online (sections 9 + 12)
 
@@ -467,6 +486,9 @@ Other boss items
 - **P4** `[todo]` Expressions/reactions used more consistently.
 - **P5** → now K8-K12 (outfits).
 - **P8** `[todo]` (owner, Nov 3) Transparent logos everywhere a property is shown (Army of Darkness, Always Sunny, Black Sabbath…): audit `brandHTML`/`logoURL` (assets.js) and the references' logo sources; where the online logo is poor or has a box behind it, download a clean transparent one into the repo (drop-in folder like `assets/logos/<source-key>.webp|svg`, embedded by build.mjs, preferred over the online one), list the ones still missing for the owner.
+- **P13** `[todo]` (owner, Nov 5: "South Park - kwiek prawdy?? The fuck?") Fix ALL property logos: South Park shows a
+  foreign-language game logo (Polish "Kijek Prawdy" = Stick of Truth). Audit every property's logo (wrong language, wrong
+  game, blurry, cut off, unreadable on the dark background) and make each one read cleanly and look as intended (ties to P8).
 - **P6** `[todo]` Memorable unlock announcements: proper art and animation.
 - **P7** `[todo]` General transitions, animations, sounds, menus.
 - **P9** `[part]` (Nov 3: 365 of 725 characters have their real line in `src/data/characterQuotes.js`; the rest keep their old line until a real quote is checked: obscure/personal ones) (owner, Nov 3) Character quotes (`src/characterPhrases.js` PHRASES + `unlockPhrase` in the data packs) are mostly
