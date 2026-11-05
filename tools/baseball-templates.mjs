@@ -32,6 +32,9 @@ for (const [name, def] of Object.entries(SHEETS)) {
           if (f >= n) continue;
           x.fillStyle = 'rgba(220,30,30,.9)'; x.fillRect(X + def.foot[0] - 4, Y + def.foot[1], 9, 1); x.fillRect(X + def.foot[0], Y + def.foot[1] - 4, 1, 5);
           x.fillStyle = 'rgba(30,170,60,.8)'; x.fillRect(X + 4, Y + def.foot[1] - def.tall, fw - 8, 1);
+          const gd = def.guides && def.guides[row];
+          if (gd) { x.strokeStyle = 'rgba(230,170,0,.95)'; x.lineWidth = 1.5; x.beginPath(); x.arc(X + gd.hands[0], Y + gd.hands[1], 5, 0, 7); x.stroke();
+            x.setLineDash([3, 2]); x.beginPath(); x.moveTo(X + gd.hands[0], Y + gd.hands[1]); x.lineTo(X + gd.tip[0], Y + gd.tip[1]); x.stroke(); x.setLineDash([]); }
           if (def.head) { x.strokeStyle = 'rgba(30,90,230,.9)'; x.lineWidth = 1; x.beginPath(); x.arc(X + def.head[0], Y + def.head[1], def.headSize / 2, 0, 7); x.stroke(); }
           x.fillStyle = 'rgba(20,30,60,.75)'; x.font = '8px monospace'; x.fillText(`${row} ${f + 1}`, X + 3, Y + 10);
         }

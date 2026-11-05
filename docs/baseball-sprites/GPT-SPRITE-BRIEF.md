@@ -39,7 +39,11 @@ Player 1's team wears **red** jerseys and player 2's team wears **blue**. The pl
    - Red jersey, white pants with red stripes, red socks, black cleats, batting gloves.
    - A wooden bat (light tan, dark handle) held in both hands.
    - Rows:
-     - stance 4: waiting, the bat cocked over the back shoulder, a small waggle across the 4 frames.
+     - stance 4: waiting for the pitch like a real batter: both hands up by the REAR shoulder (the batter's right
+       shoulder: the one on the LEFT of the picture, away from the plate) and the bat resting up and back over that
+       shoulder, pointing up and to the left. The yellow ring on the template = the hands, the dashed yellow line =
+       the bat. The bat must stay outside the blue face circle (it must not cross where the head goes). Add a small
+       bat waggle across the 4 frames.
      - swing 6: stride, hips turning, bat coming round level through the zone, contact point in frame 3-4, then the
        follow-through with the bat wrapped round the front shoulder.
 2. **batter-p2.png** (blue team): same layout and poses as batter-p1, with a blue jersey, white pants with blue stripes

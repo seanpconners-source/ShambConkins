@@ -11,7 +11,10 @@
 const SHEETS={
  // the batter at the plate, batting view: seen from behind the catcher, a right-handed batter on the LEFT of the plate
  // facing RIGHT (toward the plate). stance = waiting (a small bat waggle), swing = start of the swing .. follow-through.
- 'batter-p1':{frame:[128,160],foot:[64,159],tall:150,head:[66,36],headSize:54,rows:{stance:4,swing:6}},
+ 'batter-p1':{frame:[128,160],foot:[64,159],tall:150,head:[66,36],headSize:54,rows:{stance:4,swing:6},
+  // templates only: in the stance the hands are up by the REAR shoulder (the one on the left of the picture, away from the
+  // plate) and the bat rests up and back over that shoulder, clear of the face circle (yellow ring = hands, line = bat)
+  guides:{stance:{hands:[46,52],tip:[12,6]}}},
  'batter-p2':null,
  // the pitcher on the mound, batting view: facing the camera (the batter). windup = leg kick, throw = release + follow-through.
  'pitcher-p1':{frame:[96,128],foot:[48,127],tall:118,head:[48,30],headSize:40,rows:{idle:2,windup:4,throw:4}},
