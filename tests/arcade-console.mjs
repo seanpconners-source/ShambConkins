@@ -69,11 +69,16 @@ for(const vp of sizes){
    const hm=await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].map(t=>t.getAttribute('aria-label')).filter(l=>/hangman/i.test(l)));if(hm.join()!=='Hangman Unchained')fail(cat+' Hangman tiles: '+hm);}
   await page.click('.arc-pill[data-id="featured"]');await page.waitForTimeout(250);await page.click('.arc-tile[aria-label="Hangman Unchained"]');await page.waitForTimeout(300);if(!await page.locator('.arc-fam:not([hidden])').count())await page.click('[data-arc-family]');await page.waitForTimeout(450);
   const hmv=await page.locator('.arc-fam:not([hidden]) .arc-ver').count();if(hmv!==3)fail('Hangman page from Featured lists '+hmv+' versions');await page.click('[data-arc-close]');await page.waitForTimeout(300);
+  // Casino is one game too (owner, Nov 5): one Casino Night tile on every shelf, its page lists the tables
+  for(const cat of ['featured','casino','board','all']){await page.click(`.arc-pill[data-id="${cat}"]`);await page.waitForTimeout(250);
+   const cs=await page.evaluate(()=>[...document.querySelectorAll('.arc-tile')].map(t=>t.getAttribute('aria-label')).filter(l=>/casino|blackjack|roulette|baccarat|poker|five.card|liar/i.test(l)));if(cat!=='board'&&cs.join()!=='Casino Night'||cat==='board'&&cs.length&&cs.join()!=='Casino Night')fail(cat+' casino tiles: '+cs);}
+  await page.click('.arc-pill[data-id="featured"]');await page.waitForTimeout(250);await page.click('.arc-tile[aria-label="Casino Night"]');await page.waitForTimeout(300);if(!await page.locator('.arc-fam:not([hidden])').count())await page.click('[data-arc-family]');await page.waitForTimeout(450);
+  const csv=await page.locator('.arc-fam:not([hidden]) .arc-ver').count();if(csv<4)fail('Casino page from Featured lists '+csv+' tables');await page.click('[data-arc-close]');await page.waitForTimeout(300);
   // The dice opens a random game's own page (hero, rules, Play): never the game or a Ready card (owner, Nov 3)
   await page.click('.arc-pill[data-id="featured"]');await page.waitForTimeout(300);
   for(let k=0;k<25;k++){await page.click('.arc-top [data-action="arcade-random"]');await page.waitForTimeout(120);
    const d=await page.evaluate(()=>{const S=window.ShambConkins.store,t=document.querySelector('.arc-tile.on');return {session:!!S.session,dlg:!!document.querySelector('#dialog[open]'),gb:S.view,tile:t?.getAttribute('aria-label'),fam:!!t?.querySelector('.arc-count'),hero:document.querySelector('.arc-info .arc-title')?.textContent,play:!!document.querySelector('.arc-info .arc-actions')?.children.length};});
-   if(d.session||d.dlg)fail('the dice started something: '+JSON.stringify(d));if(!d.tile||(d.fam&&!/Hangman/.test(d.tile))||!d.play||!d.hero)fail('the dice should show one game\'s page: '+JSON.stringify(d));}
+   if(d.session||d.dlg)fail('the dice started something: '+JSON.stringify(d));if(!d.tile||(d.fam&&!/Hangman|Casino/.test(d.tile))||!d.play||!d.hero)fail('the dice should show one game\'s page: '+JSON.stringify(d));}
   // Changing tile: a background picture stays up the whole time, the plain colour behind it never shows (owner, Nov 3)
   await page.click('.arc-pill[data-id="all"]');await page.waitForTimeout(300);
   const keyed=await page.evaluate(()=>{const S=window.ShambConkins,ts=[...document.querySelectorAll('.arc-tile')];return ts.map((t,i)=>[i,t]).filter(([i,t])=>!t.classList.contains('on')&&/^(Mario Kart|DOOM|Casino Night|Clue|Monopoly|Castlevania)$/.test(t.getAttribute('aria-label'))).map(x=>x[0]);});

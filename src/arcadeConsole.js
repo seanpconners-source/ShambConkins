@@ -50,7 +50,7 @@ const FAMILY=new Map(FAMILIES.map(([key,title,sub,hero,ids])=>[key,{key,title,su
 const FAMILY_OF=new Map();for(const f of FAMILY.values())for(const id of f.ids||[])FAMILY_OF.set(id,f.key);
 const familyOf=g=>g.bossId?'bosses':FAMILY_OF.get(g.id)||null;
 // These are one game on every shelf (owner, Nov 3): one tile, even where the shelf names a single version; its page lists them all.
-const ONE_TILE=new Set(['hangman']);
+const ONE_TILE=new Set(['hangman','casino']);
 // Arcade categories (owner, Nov 3: "make way more sense"): what a player would look for, not the engine's old tags.
 // A game can sit in more than one. Old filter ids (arcade/strategy/skill/sports/dice) are mapped for old links.
 const CATEGORIES=[['featured','★ Featured'],['recent','Recent'],['favorites','Favorites'],['all','All games'],['action','Action'],['retro','Retro arcade'],['versus','Head to head'],['sports','Racing & sports'],['board','Board & cards'],['puzzle','Puzzle'],['party','Party'],['trivia','Trivia & shows'],['casino','Casino & dice'],['pinball','Pinball'],['coop','Co-op'],['boss','Bosses'],['pokemon','Pokémon'],['variants','Encounter variants']];
