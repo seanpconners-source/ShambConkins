@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 187 slots: 35 have key art, 34 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 187 slots: 36 have key art, 35 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -44,7 +44,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `angry-heads` | Angry Heads | game | · / · |
 | `neon-ball-storm` | Daft Punk · Neon Ball Storm | game | · / · |
 | `living-dead-horde` | Return of the Living Dead · Horde | game | · / · |
-| `paddys-hole` | Hole.it | game | · / · |
+| `paddys-hole` | Hole.it | game | ✅ / ✅ |
 | `radical-bike` | Radical Bike Trials | game | · / · |
 | `flappy-disaster` | Flappy Disaster | game | · / · |
 | `wopr-grid` | WarGames · Vanishing Tic-Tac-Toe | game | · / · |
