@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.88.0
 
 - **Install only, from the same web address.** The game now ships only as the installable app, the way your phones already run it. The old single-file download is gone: a file that big couldn't grow any more, and lots more art and sound is coming. Old download links now open the site.
 - **Smaller first install.** Each game's own sprites and pictures now download the first time you play that game, like its songs already did. A fresh install is about 100 MB instead of 360 MB. Settings → "Game songs & pictures for offline play" still gets everything at once.
