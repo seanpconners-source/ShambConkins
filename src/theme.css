@@ -1226,3 +1226,64 @@ body #dialog .fr-panel button.fr-x{min-height:30px!important;width:30px!importan
 #sc-chat-dlg .chat-input{flex:1;min-width:0;height:44px;border-radius:12px;border:1.5px solid #ffffff40;background:#0b0812;color:#fff;padding:0 12px;font:600 16px system-ui,sans-serif}
 #sc-chat-dlg .chat-send{height:44px;padding:0 16px;border-radius:12px;border:0;background:linear-gradient(#ffe07a,#d79a1c);color:#1a1205;font-weight:900}
 .fr-chat{width:38px;height:34px;padding:0;border-radius:10px;font-size:17px}
+
+/* New Game fits the screen, never scrolls (owner, Nov 6: Start/levels/board were below the screen with no scroll).
+   <main> = exactly the visible height; .mx-ng = flex column; the player pictures take the height that is left.
+   menuScreens.js fitNewGame() adds .mx-tight/.mx-tighter and finally --mx-k (zoom) when even that is too tall. */
+body .mx-shell.mx-newgame{height:var(--viewport-height,100dvh);min-height:0;max-height:var(--viewport-height,100dvh);overflow:hidden;padding:0!important;display:block;gap:0}
+.mx-newgame .mx-ng{--mx-k:1;zoom:var(--mx-k);height:calc(var(--viewport-height,100dvh) / var(--mx-k));overflow:hidden;display:flex;flex-direction:column;gap:clamp(6px,1.4vh,12px);padding:max(10px,env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) max(10px,env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));box-sizing:border-box}
+@media (min-width:760px){body .mx-shell.mx-newgame{padding:0!important}.mx-newgame .mx-ng{padding-left:max(28px,calc(50% - 420px));padding-right:max(28px,calc(50% - 420px))}}
+.mx-newgame .mx-ng>*{flex:none;min-width:0}
+.mx-newgame .mx-sec{gap:clamp(5px,1vh,9px)}
+.mx-newgame .mx-players{flex:1 1 0;min-height:auto;display:flex;flex-direction:column}
+.mx-newgame .mx-pcards{flex:1 1 0;min-height:auto;align-items:stretch}
+.mx-newgame .mx-vs{align-self:center}
+.mx-newgame .mx-pcard{display:flex;flex-direction:column;min-height:0}
+.mx-newgame .mx-pcard-art{flex:1 1 0;height:auto;min-height:64px}
+.mx-newgame .mx-pcard-info{flex:none;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:8px;row-gap:1px;padding:7px 10px 9px}
+.mx-newgame .mx-pcard-info .mx-badge{grid-row:1/3}
+.mx-newgame .mx-pcard-info small{grid-column:1/-1}
+.mx-newgame .mx-pcard-info .mx-char{grid-column:2}
+.mx-newgame .mx-strip .solo-strip{flex-wrap:wrap;overflow:visible;gap:6px}
+.mx-newgame .mx-strip .solo-group{flex-shrink:1;flex-wrap:wrap;max-width:100%}
+.mx-newgame .mx-strip .solo-strip button.solo-seg{min-height:32px;padding:5px 12px;font-size:13px}
+.mx-newgame .mx-modes{grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px}
+body .mx-newgame .mx-shell .mx-mode,body .mx-shell.mx-newgame .mx-mode{padding:9px 11px;border-radius:15px}
+.mx-newgame .mx-mode-ico{font-size:22px}
+.mx-newgame .mx-mode b{font-size:17px}
+.mx-newgame .mx-mode small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11px}
+.mx-newgame .mx-levels{grid-template-columns:repeat(auto-fit,minmax(68px,1fr));gap:7px}
+body .mx-shell.mx-newgame .mx-level{padding:7px 4px;border-radius:13px}
+.mx-newgame .mx-board{padding:9px 11px;gap:6px 10px}
+.mx-newgame .mx-board select,.mx-newgame .mx-board input{padding:7px 10px;min-height:0}
+@media (min-width:560px){.mx-newgame .mx-board{grid-template-columns:auto minmax(0,1.3fr) auto minmax(0,1fr)}}
+.mx-newgame .mx-foot{position:static;margin:auto 0 0;padding:0;background:none}
+.mx-newgame .mx-cta{min-height:48px}
+/* not enough room: drop the extras */
+.mx-newgame.mx-tight .mx-mode small,.mx-newgame.mx-tight .mx-fine,.mx-newgame.mx-tight .mx-level small,.mx-newgame.mx-tight .mx-pcard-info small{display:none}
+.mx-newgame.mx-tight .mx-mode{grid-template-columns:auto 1fr;align-items:center}
+.mx-newgame.mx-tight .mx-mode-ico{grid-row:auto;font-size:18px}
+.mx-newgame.mx-tight .mx-modes{grid-template-columns:repeat(auto-fit,minmax(min(100%,128px),1fr))}
+.mx-newgame.mx-tight .mx-ng{gap:6px}
+.mx-newgame.mx-tight .mx-pcard-art{min-height:52px}
+.mx-newgame.mx-tighter .mx-sec h3{display:none}
+.mx-newgame.mx-tighter .mx-sec-head{justify-content:flex-end}
+.mx-newgame.mx-tighter .mx-sec-head h3{display:block}
+.mx-newgame.mx-tighter .mx-board label{display:none}
+.mx-newgame.mx-tighter .mx-board{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);padding:6px}
+.mx-newgame.mx-tighter .mx-pcard-art{min-height:40px}
+.mx-newgame.mx-tighter .mx-top .mx-icon{width:34px;height:34px}
+.mx-newgame.mx-tighter .mx-brand{font-size:22px}
+.mx-newgame.mx-tighter .mx-cta{min-height:42px;font-size:22px!important}
+.mx-newgame.mx-tighter .mx-pair{padding:5px 9px;font-size:11px}
+/* the options block: its own column (portrait: under the players) */
+.mx-newgame .mx-opts{display:flex;flex-direction:column;gap:inherit;min-width:0}
+.mx-newgame .mx-opts>*{flex:none;min-width:0}
+/* short and wide (phone on its side): players on the left, options on the right */
+@media (orientation:landscape) and (max-height:560px){
+ .mx-newgame .mx-ng{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);grid-template-rows:auto auto minmax(0,1fr);column-gap:16px}
+ .mx-newgame .mx-top,.mx-newgame .mx-note{grid-column:1/-1}
+ .mx-newgame .mx-players{grid-column:1;grid-row:3;min-height:0}
+ .mx-newgame .mx-opts{grid-column:2;grid-row:3;min-height:0}
+ .mx-newgame .mx-ng:not(:has(.mx-note)) :is(.mx-players,.mx-opts){grid-row:2/4}
+}

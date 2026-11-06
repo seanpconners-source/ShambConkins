@@ -60,23 +60,23 @@ function newGameHTML(names,selected,{strip='',pair=null,teamPicks=''}={}){
  const card=i=>{const c=character(selected[i]),cpu=solo&&s.who!==i,remote=ns&&i===ns.peer;
   return `<article class="mx-pcard p${i+1}"><div class="mx-pcard-art">${face(c.id,'mx-big')}</div><div class="mx-pcard-info"><span class="mx-badge">${cpu?'CPU':`P${i+1}`}</span><b>${e(cpu?`${c.name.split(' ')[0]} (CPU)`:names[i])}</b><span class="mx-char">${e(c.name)}</span><small>${remote?'picks on their phone':cpu?'CPU rival':`${ownerOf(i)}’s roster`}</small></div></article>`;};
  const modeCards=modes.map(m=>`<button class="mx-mode${ui.mode===m?' on':''}" data-ng-mode="${m}"${lock} aria-pressed="${ui.mode===m}"><span class="mx-mode-ico" aria-hidden="true">${MODES[m][2]}</span><b>${MODES[m][0]}</b><small>${MODES[m][1]}</small></button>`).join('');
- const levels=reached>1?`<section class="mx-sec"><h3>Start at</h3><div class="mx-levels">${LEVELS.slice(0,reached).map(([id,n,name],k)=>`<button class="mx-level${ui.level===id?' on':''}" data-ng-level="${id}"${lock} aria-pressed="${ui.level===id}"><b>${n}</b><span>${name}</span>${k?'<small>empty bag</small>':''}</button>`).join('')}</div><input type="hidden" id="start-level" value="${ui.level}"></section>`:'';
+ const levels=reached>1?`<section class="mx-sec mx-levelsec"><h3>Start at</h3><div class="mx-levels">${LEVELS.slice(0,reached).map(([id,n,name],k)=>`<button class="mx-level${ui.level===id?' on':''}" data-ng-level="${id}"${lock} aria-pressed="${ui.level===id}"><b>${n}</b><span>${name}</span>${k?'<small>empty bag</small>':''}</button>`).join('')}</div><input type="hidden" id="start-level" value="${ui.level}"></section>`:'';
  const start=guest?`<button class="mx-cta" disabled>Waiting for ${e(peer)} to start…</button>`:btn('start-run',ns?'Start on both phones ▸':'Start ▸','mx-cta');
- return `<main class="shell setup-shell mx-shell mx-newgame${ns?' net-setup':''}">${topBar('New Game','home')}
+ return `<main class="shell setup-shell mx-shell mx-newgame${ns?' net-setup':''}"><div class="mx-ng">${topBar('New Game','home')}
   ${ns?`<p class="mx-note">🌐 Online · room ${e(netState().room||'')}${guest?` · ${e(peer)} starts the game`:''}</p>`:''}
-  <section class="mx-sec"><div class="mx-sec-head"><h3>Players</h3>${btn('players','Change characters ▸','mx-link')}</div><div class="mx-pcards">${card(0)}<span class="mx-vs">VS</span>${card(1)}</div>${ns?'':`<div class="mx-strip">${strip}</div>`}${pair?`<div class="mx-pair">✦ ${e(pair.title)} · ${e(pair.description)}</div>`:''}</section>
-  <section class="mx-sec"><h3>Mode</h3><div class="mx-modes">${modeCards}</div><input type="hidden" id="game-mode" value="${ui.mode}"></section>
+  <section class="mx-sec mx-players"><div class="mx-sec-head"><h3>Players</h3>${btn('players','Change characters ▸','mx-link')}</div><div class="mx-pcards">${card(0)}<span class="mx-vs">VS</span>${card(1)}</div>${ns?'':`<div class="mx-strip">${strip}</div>`}${pair?`<div class="mx-pair">✦ ${e(pair.title)} · ${e(pair.description)}</div>`:''}</section>
+  <div class="mx-opts"><section class="mx-sec mx-modesec"><h3>Mode</h3><div class="mx-modes">${modeCards}</div><input type="hidden" id="game-mode" value="${ui.mode}"></section>
   ${teamPicks?`<section class="mx-sec mx-team"${ui.mode==='team'?'':' hidden'}><h3>Relay teammates</h3>${teamPicks}</section>`:''}
   ${levels}
-  <section class="mx-sec"><h3>Board</h3><div class="mx-board"><label for="board-theme">Board</label><select id="board-theme"${lock}>${(p.boards||['Mashup']).map(n=>`<option value="${e(n)}">${e(n==='Mashup'?'Main Board (Mashup)':n)}</option>`).join('')}</select><label for="run-seed">Seed (optional)</label><input id="run-seed" maxlength="20" placeholder="Leave blank for a surprise"${lock}></div></section>
+  <section class="mx-sec mx-boardsec"><h3>Board</h3><div class="mx-board"><label for="board-theme">Board</label><select id="board-theme"${lock}>${(p.boards||['Mashup']).map(n=>`<option value="${e(n)}">${e(n==='Mashup'?'Main Board (Mashup)':n)}</option>`).join('')}</select><label for="run-seed">Seed (optional)</label><input id="run-seed" maxlength="20" placeholder="Leave blank for a surprise"${lock}></div></section>
   <p class="mx-fine">${solo?'You play every minigame against the CPU; only your roster collects new characters.':'A fresh route every run. Unlocks and XP carry forward. Both players take part in every minigame.'}</p>
-  <div class="mx-foot setup-controls">${start}</div></main>`;
+  <div class="mx-foot setup-controls">${start}</div></div></div></main>`;
 }
 
 // Mode / level cards and the character search work in place (no rebuild), so a refresh keeps the choice (ui.*).
 if(typeof document!=='undefined'){
  document.addEventListener('click',ev=>{
-  const m=ev.target.closest?.('[data-ng-mode]');if(m&&!m.disabled){ui.mode=m.dataset.ngMode;document.getElementById('game-mode').value=ui.mode;document.querySelectorAll('[data-ng-mode]').forEach(b=>{b.classList.toggle('on',b===m);b.setAttribute('aria-pressed',String(b===m));});const t=document.querySelector('.mx-team');if(t)t.hidden=ui.mode!=='team';return;}
+  const m=ev.target.closest?.('[data-ng-mode]');if(m&&!m.disabled){ui.mode=m.dataset.ngMode;document.getElementById('game-mode').value=ui.mode;document.querySelectorAll('[data-ng-mode]').forEach(b=>{b.classList.toggle('on',b===m);b.setAttribute('aria-pressed',String(b===m));});const t=document.querySelector('.mx-team');if(t){t.hidden=ui.mode!=='team';fitNewGame();}return;}
   const l=ev.target.closest?.('[data-ng-level]');if(l&&!l.disabled){ui.level=l.dataset.ngLevel;document.getElementById('start-level').value=ui.level;document.querySelectorAll('[data-ng-level]').forEach(b=>{b.classList.toggle('on',b===l);b.setAttribute('aria-pressed',String(b===l));});return;}
   const slot=ev.target.closest?.('[data-cs-pick]');if(slot&&!ev.target.closest('input')){setActive(+slot.dataset.csPick);}
  });
@@ -85,7 +85,23 @@ if(typeof document!=='undefined'){
 function setActive(i){const sec=document.querySelector(`.mx-chars [data-cs-slot="${i}"]`);if(!sec||sec.classList.contains('cs-remote'))return;ui.active=i;document.querySelectorAll('.mx-chars [data-cs-slot]').forEach(s=>s.classList.toggle('on',+s.dataset.csSlot===i));}
 function filterTiles(){const q=ui.query.trim().toLowerCase();document.querySelectorAll('.mx-chars .mx-tile').forEach(t=>{t.hidden=!!q&&!t.dataset.name.includes(q);});}
 // After a rebuild: the picked player's roster stays in front, the search still applies.
-function installMenuScreens(view,player){if(view==='players'){if(player!=null)ui.active=player;setActive(ui.active);filterTiles();}}
+function installMenuScreens(view,player){if(view==='players'){if(player!=null)ui.active=player;setActive(ui.active);filterTiles();}if(view==='setup')fitNewGame();}
+// New Game never scrolls (owner, Nov 6: buttons were off screen with no way to reach them): the layout is a column that
+// fills the screen, the player pictures take whatever height is left, and if it still doesn't fit we first drop the
+// extras (mode descriptions, fine print, smaller gaps: .mx-tight, then .mx-tighter) and finally zoom the whole page down.
+// The zoom sits on the inner .mx-ng (viewport.js resets zoom on the <main> after every DOM change).
+let fitQueued=false;
+function fitNewGame(){
+ const box=document.querySelector('.mx-newgame'),ng=box?.querySelector('.mx-ng');if(!ng)return;
+ box.classList.remove('mx-tight','mx-tighter');ng.style.setProperty('--mx-k','1');
+ const over=()=>ng.scrollHeight>ng.clientHeight+1||ng.scrollWidth>ng.clientWidth+1;
+ if(over())box.classList.add('mx-tight');
+ if(over())box.classList.add('mx-tighter');
+ let k=1;
+ for(let i=0;i<4&&over();i++){k=Math.max(.45,k*Math.min(ng.clientHeight/ng.scrollHeight,ng.clientWidth/ng.scrollWidth)*.99);ng.style.setProperty('--mx-k',k.toFixed(3));}
+}
+function queueFit(){if(fitQueued)return;fitQueued=true;requestAnimationFrame(()=>{fitQueued=false;if(store.view==='setup')fitNewGame();});}
+if(typeof window!=='undefined'){window.addEventListener('resize',queueFit);window.addEventListener('orientationchange',queueFit);window.visualViewport?.addEventListener('resize',queueFit);document.fonts?.ready?.then(queueFit);}
 function menuState(){return ui;}
 
 Object.assign(exports,{charSelectHTML,newGameHTML,installMenuScreens,menuState});

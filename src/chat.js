@@ -137,7 +137,8 @@ function onSheetClick(ev){
  if(b.dataset.chat==='close'){ev.preventDefault();closeChat();return;}
  if(b.dataset.chat==='deal'){ev.preventDefault();const typed=dlg.querySelector('.chat-input')?.value||'';openChat(target||'room');const i=dlg.querySelector('.chat-input');if(i)i.value=typed;}
 }
-function closeChat(){if(dlg?.open)dlg.close();}
+// After closing, drop focus (it returns to the 💬 button) so nothing keeps the keyboard or a stale focus on top of the game.
+function closeChat(){if(dlg?.open)dlg.close();try{const a=document.activeElement;if(a&&a!==document.body&&(a===btn||dlg.contains(a)))a.blur();}catch{}}
 
 function initChat(){
  if(typeof document==='undefined')return;ensureUI();
