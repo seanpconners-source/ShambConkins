@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The whole ballpark uses your baseball sprites.** Your pitchers, fielders, catchers, umpire, batting helmets, ball caps, the ball and the outfield wall from Drive are in: pitchers and fielders wear your caps, batters your helmets, and the field view shows your catcher crouched at home with the umpire behind him.
+
 ## v0.87.0
 
 - **Symphony of the Night shows your monsters and bosses.** Death, Dracula, his demon form, the armor knight, mermen, wargs, the Bloody Zombie, skeletons, zombies, bats and the candelabras now use your sprite sheets. So do the six floors, the moon, the bridge, balconies, bars, cracked walls, windows, pillars, rock pillars, arches, the statue and the throne. The hero still uses the drawn art until his sheet arrives.

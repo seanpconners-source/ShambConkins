@@ -15,7 +15,7 @@ function drawSprite(x,sh,fr,px,py,tallPx,facing=1){const d=sh.def,s=tallPx/d.tal
  return d.head?{x:px+(d.head[0]-d.foot[0])*s*facing,y:py+(d.head[1]-d.foot[1])*s,size:d.headSize*s}:null;}
 // the character's face in a sprite's head slot, with the helmet/cap picture over it if there is one
 function faceAt(x,spot,id,mood,hat){if(!spot)return;const hc=head(id,mood);if(hc)x.drawImage(hc,spot.x-spot.size/2,spot.y-spot.size/2,spot.size,spot.size);
- const hp=hat&&pic(hat);if(hp){const w=spot.size*1.05,h=w*hp.height/hp.width;x.drawImage(hp,spot.x-w/2,spot.y-spot.size*.18-h,w,h);return true;}return false;}
+ const hp=hat&&pic(hat);if(hp){const cap=/^cap/.test(hat),w=spot.size*(cap?.92:1.05),h=w*hp.height/hp.width;x.drawImage(hp,spot.x-w/2,spot.y-spot.size*(cap?.03:.18)-h,w,h);return true;}return false;}
 // the ball (picture or drawn) centred at (X,Y), radius r
 function ball(x,X,Y,r){const b=pic('ball');if(b){x.drawImage(b,X-r,Y-r,r*2,r*2);return;}x.fillStyle='#fff';x.strokeStyle='#c22';x.lineWidth=1;x.beginPath();x.arc(X,Y,r,0,7);x.fill();x.stroke();}
 // a title picture (logo / derby-logo) fitted into a box centred at (cx,cy); false if there is none
@@ -80,11 +80,14 @@ function battingBG(B,team){const sPic=pic('stadium'),wPic=pic('wall'),key=B.W+'x
  bgCache.set(key,c);return c;}
 // a ball player: legs, body, arms, cap on the player's head; pose: stand/windup/throw/run/crouch
 function player(x,px,py,h,team,id,{pose='stand',t=0,k=0,facing=1,mood='normal',back=false,kind='fielder'}={}){const [jer,pant,cap]=TEAM_COL[team]||TEAM_COL[0],u=h/10;
- const sh=sheetFor(kind+'-p'+(team+1));
+ // the catcher crouching at home and the umpire behind him use their own sheets (masked: no face slot); a catcher on the
+ // move, or no catcher sheet, falls back to the fielder; no umpire sheet = no umpire
+ if(kind==='catcher'&&(pose==='run'||pose==='throw'||!sheetFor('catcher-p'+(team+1))))kind='fielder';
+ const sh=sheetFor(kind==='umpire'?'umpire':kind+'-p'+(team+1));if(!sh&&kind==='umpire')return;
  if(sh){x.fillStyle='rgba(0,0,0,.25)';x.beginPath();x.ellipse(px,py,u*2.6,u*.7,0,0,7);x.fill();
-  const row=kind==='pitcher'?(pose==='windup'?'windup':pose==='throw'?'throw':'idle'):(pose==='run'?'run':pose==='throw'||pose==='windup'?'throw':'stand');
+  const row=kind==='pitcher'?(pose==='windup'?'windup':pose==='throw'?'throw':'idle'):kind==='catcher'?(pose==='catch'?'catch':'idle'):kind==='umpire'?(pose==='call'?'call':'idle'):(pose==='run'?'run':pose==='throw'||pose==='windup'?'throw':'stand');
   const fr=SP.frameOf(sh.def,row,row==='windup'||row==='throw'?{k}:{t,fps:row==='run'?12:2});
-  const spot=drawSprite(x,sh,fr,px,py,u*10.9,facing);if(!faceAt(x,spot,id,mood,'cap-p'+(team+1))&&spot){x.fillStyle=cap;x.beginPath();x.ellipse(spot.x,spot.y-spot.size*.18,spot.size*.4,spot.size*.17,0,Math.PI,0);x.fill();}
+  const spot=drawSprite(x,sh,fr,px,py,u*10.9*(kind==='catcher'?sh.def.tall/118:1),facing);if(!faceAt(x,spot,id,mood,'cap-p'+(team+1))&&spot){x.fillStyle=cap;x.beginPath();x.ellipse(spot.x,spot.y-spot.size*.18,spot.size*.4,spot.size*.17,0,Math.PI,0);x.fill();}
   return;}
  x.save();x.translate(px,py);x.scale(facing,1);
  x.fillStyle='rgba(0,0,0,.25)';x.beginPath();x.ellipse(0,0,u*2.6,u*.7,0,0,7);x.fill();

@@ -332,7 +332,8 @@ async function griffeyBall(s){
   const ft=1-(st.half&1),bt=st.half&1,h=Math.max(22,cam.k*13);
   if(vs){const list=[];const mv=st.fmove||(st.fmove=[]),thr=P?.ball?.mode==='throw'&&P.t-P.ball.t0<.3?P.ball.by:null;
    vs.fielders.forEach((fe,i)=>{const m=mv[i]||(mv[i]={x:fe.x,y:fe.y,run:0,face:1}),dx=fe.x-m.x,dy=fe.y-m.y;if(Math.hypot(dx,dy)>.05){m.run=T;if(Math.abs(dx)>.02)m.face=dx>0?1:-1;}m.x=fe.x;m.y=fe.y;
-    list.push({y:fe.y,draw:()=>{const p=cam.at(fe.x,fe.y);A.player(x,p.x,p.y,h,ft,P.fielders?.[i]?.id||fld().lineup[i%9].id,{pose:thr===i?'throw':T-m.run<.12?'run':'stand',k:thr===i?(P.t-P.ball.t0)/.3:0,t:T,facing:m.face});}});});
+    list.push({y:fe.y,draw:()=>{const p=cam.at(fe.x,fe.y);A.player(x,p.x,p.y,h,ft,P.fielders?.[i]?.id||fld().lineup[i%9].id,{pose:thr===i?'throw':T-m.run<.12?'run':'stand',k:thr===i?(P.t-P.ball.t0)/.3:0,t:T,facing:m.face,kind:i===1?'catcher':'fielder'});}});});
+   list.push({y:-13,draw:()=>{const p=cam.at(0,-13);A.player(x,p.x,p.y,h,ft,'umpire',{t:T,kind:'umpire'});}});
    vs.runners.forEach(r=>{if(r.state==='out'||r.state==='scored')return;list.push({y:r.pos.y,draw:()=>{const p=cam.at(r.pos.x,r.pos.y);const rk=r.who?.id||r.id||'r',rm=st.rmove||(st.rmove={}),q=rm[rk]||(rm[rk]={x:r.pos.x,face:1});if(Math.abs(r.pos.x-q.x)>.02)q.face=r.pos.x>q.x?1:-1;q.x=r.pos.x;A.player(x,p.x,p.y,h,bt,r.who?.id||batter().id,{pose:r.state==='run'||r.state==='trot'?'run':'stand',t:T,facing:q.face});}});});
    list.sort((a,b)=>b.y-a.y).forEach(o=>o.draw());A.ballShadow(x,cam,ball);
    if(P&&!P.viewer&&P.chase&&P.ball?.mode==='flight'&&ctrl(ft)==='local'){const fe=P.chase.fe,p=cam.at(fe.x,fe.y);x.save();x.strokeStyle='#ffd23f';x.lineWidth=2;x.beginPath();x.ellipse(p.x,p.y,h*.5,h*.2,0,0,7);x.stroke();x.restore();}}
