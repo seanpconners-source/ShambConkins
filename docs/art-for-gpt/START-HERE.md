@@ -70,7 +70,9 @@ Google Drive also works when Claude runs on the laptop, but a cloud session can 
   - sundown → check frame sizes against `src/data/sundownSprites.js` (4x art: downscale with nearest-neighbour), `assets/sundown/`
   - baseball → check frame sizes against `src/data/baseballSprites.js` (2x art: downscale to the frame size), `assets/baseball/`
   - sotn → check frame sizes against `src/data/sotnSprites.js` (steps in `docs/sotn-sprites/README.md` → Importing), `assets/sotn/`
-  - items → trim, 512 px WebP q88 into `assets/items/<id>.webp`, original into `assets/originals/items/`
+  - items → trim, 512 px LOSSLESS WebP into `assets/items/<id>.webp`, original into `assets/originals/items/`
   - arcade → `python3 tools/import-arcade-art.py art-inbox/arcade` (key art then goes through the Background Picker)
-  - portraits → `assets/portraits/` (480 px WebP q88, originals archived: `tools/optimize-art.py`)
+  - portraits → `assets/portraits/` (480 px lossless WebP, originals archived: `tools/optimize-art.py`)
+  - every picture goes in lossless (owner, Nov 6: no quality loss); sprite sheets keep their exact pixels; songs and sounds
+    go in exactly as delivered (never re-encoded; a raw WAV may become FLAC, which is lossless)
 - Then `node tools/gpt-art-todo.mjs` (refreshes ITEMS-TODO, PORTRAITS-TODO and the Arcade prompts), build, check in game.

@@ -1,8 +1,9 @@
 # Hosting ShambConkins on a Cloudflare domain
 
 `worker.js` is a Cloudflare Worker that always serves the **newest GitHub Release** of the game.
-Publishing a new release on GitHub (with its `ShambConkins_vX.html` asset) is all it takes: the site
-switches to it within ~5 minutes. Nothing in Cloudflare needs touching per release.
+Publishing a new release on GitHub (the release workflow uploads the app's `index.html`, `sw.js`, manifest and icons and
+puts its pictures and sounds on the Worker) is all it takes: the site switches to it within ~5 minutes. Since v0.88.0 a
+release is the installable app only (no one-file `ShambConkins_vX.html`): install it from the site.
 
 Why a Worker instead of Cloudflare Pages: Pages refuses files over 25 MB, and the game is ~80 MB.
 
@@ -16,7 +17,8 @@ Free plan is enough (100,000 requests a day; the file is cached by Cloudflare, G
 
 ## Addresses
 - `/` newest release (its small app page when the release has `index.html`, else the one-file game) · `/download`
-  newest as a file · `/v0.60.0` a specific release · `/version` newest tag
+  newest as a file (releases before v0.88.0; later ones send you to `/`) · `/v0.60.0` a specific older release ·
+  `/version` newest tag
 - `/a/<hash>.<ext>`: the app's pictures and sounds (portraits, songs, DOOM, pinball, Photo Hunt, built-in art), one file
   each, named by their contents, so an update only downloads what changed (docs/PWA_SPLIT_DELIVERY.md). They are the
   Worker's **static assets** (`[assets]` in wrangler.toml, folder `public/`): the GitHub deploys fill `public/a/` with
@@ -54,7 +56,7 @@ Cloudflare dashboard → **Workers & Pages** → `shambconkins` → **Edit code*
 ## Notes
 - Browsers keep the 80 MB page and only re-check the version on each visit (a 304 if unchanged).
 - Saves live in the browser per address: the website has its own saves, separate from a downloaded copy.
-- Release files must keep the name `ShambConkins_<tag>.html` (any other `.html` asset is found through the
+- Older releases' one-file games are named `ShambConkins_<tag>.html` (any other `.html` asset is found through the
   GitHub API; add a `GITHUB_TOKEN` secret to the Worker if that ever hits GitHub's rate limit).
 - Online character photos work better here than from a downloaded file (no file:// CORS blocks).
 

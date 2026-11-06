@@ -1,7 +1,7 @@
 // BOSS FIGHT test: node tests/boss.mjs [boss-id ...]   (SHAMB_FILE=/tmp/x.html to use a private build)
 // Launches a boss, flies with the in-engine autopilot (s.debug.autopilot) plus scripted touch taps, screenshots mid-fight at
 // 1100x700 and 390x780, reports frame times, then checks the win path (killBoss) and the loss path (killPlayers).
-import {open, chromium, root} from './lib.mjs';
+import {open, chromium, root,appURL} from './lib.mjs';
 import path from 'node:path';
 const args = process.argv.slice(2), FUZZ = args.includes('--fuzz'), argIds = args.filter(a => !a.startsWith('--') && !/^\d+$/.test(a));
 const ids = argIds.length ? argIds : ['hal-9000'];
@@ -23,7 +23,7 @@ async function waitFinish(page) { for (let i = 0; i < 60; i++) { if (await page.
 
 // --fuzz [seconds-per-phase] [concurrency] : every boss (or the ids given) runs all three phases with random touches/keys + autopilot.
 async function fuzzAll() {
-  const file = 'file://' + path.resolve(root, process.env.SHAMB_FILE || 'dist/ShambConkins.html');
+  const file = (await appURL());
   const browser = await chromium.launch({executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
   const probe = await browser.newPage(); await probe.goto(file);
   const all = await probe.evaluate(() => window.ShambConkins.store && 0); await probe.close();

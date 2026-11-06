@@ -63,13 +63,13 @@ jobs:
           set -euo pipefail
           python3 tools/run-claude-optimizer-safe.py
 
-      - name: Verify modules and build the actual offline TESTver HTML
+      - name: Verify modules and build the TESTver app
         shell: bash
         run: |
           set -euo pipefail
           node tools/check-modules.mjs
           npm run build
-          test -s dist/ShambConkins.html
+          test -s dist/pwa/index.html
 
       - name: Commit only portrait files to TESTver (never main)
         shell: bash

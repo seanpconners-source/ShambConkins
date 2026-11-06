@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-// Bundles src/ + assets/ into one self-contained, offline-playable HTML file.
-// Usage: node tools/build.mjs [--out dist/ShambConkins.html] [--pwa [dir]]
-// --pwa also writes an installable-app folder (default dist/pwa): a small index.html (code only) + a/ (every picture and
-// sound as its own file, copied byte for byte and named by its contents) + manifest.webmanifest + sw.js (offline cache that
-// only downloads the a/ files it doesn't have yet) + icons/. Serve that folder over http(s) or localhost to install the game
-// as an app. See docs/PWA_SPLIT_DELIVERY.md.
+// Bundles src/ + assets/ into the game.
+// Usage: node tools/build.mjs [--pwa dir] [--single | --out file.html]
+// The game ships as the installable app (owner, Nov 6: install only): a folder (default dist/pwa) with a small index.html
+// (code only) + a/ (every picture and sound as its own file, copied byte for byte and named by its contents) +
+// manifest.webmanifest + sw.js (offline cache that only downloads the a/ files it doesn't have yet) + icons/. Serve that
+// folder over http(s) or localhost (tests do it themselves, tests/lib.mjs appURL). See docs/PWA_SPLIT_DELIVERY.md.
+// --single / --out also writes the old one-file HTML (dist/ShambConkins.html unless --out names it). It is no longer
+// released: browsers can't open a file much over ~500 MB, and the game is meant to grow past that.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -13,10 +15,11 @@ import zlib from 'node:zlib';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argOut = process.argv.indexOf('--out');
+const single = argOut > 0 || process.argv.includes('--single');
 const out = path.resolve(root, argOut > 0 ? process.argv[argOut + 1] : 'dist/ShambConkins.html');
 const read = p => fs.readFileSync(path.join(root, p), 'utf8');
 const argPwa = process.argv.indexOf('--pwa');
-const pwaDir = argPwa < 0 ? null : path.resolve(root, process.argv[argPwa + 1] && !process.argv[argPwa + 1].startsWith('--') ? process.argv[argPwa + 1] : 'dist/pwa');
+const pwaDir = argPwa < 0 ? (single ? null : path.resolve(root, 'dist/pwa')) : path.resolve(root, process.argv[argPwa + 1] && !process.argv[argPwa + 1].startsWith('--') ? process.argv[argPwa + 1] : 'dist/pwa');
 // Web app manifest: written into the PWA folder and embedded in the game (src/pwa.js builds one from it when the
 // page is served without the folder). Icon files live in assets/pwa/.
 const PWA_MANIFEST = {name: 'ShambConkins', short_name: 'ShambConkins', description: 'ShambConkins: a party board game for two, with minigames, unlockable characters and online play.',
@@ -135,20 +138,21 @@ function page(portraits, jsText = js, head = '') {
 // that run before the game and fill window.__SC_UP, which src/data/userPortraits.js reads. Inside the game's one script
 // they would make it longer than a browser can hold as one string (~512 MB in Chrome), and the build itself would hit
 // Node's limit on one string; the file is written part by part for the same reason. Same bytes, same data: URIs as before.
-const PART = 32e6;
-const parts = [];
-{let cur = [], n = 0;
- for (const [k, d] of drops) {const entry = JSON.stringify(k) + ':' + JSON.stringify(dataURI(d.mime, d.buf));
-  if (n && n + entry.length > PART) {parts.push(cur);cur = [];n = 0;}cur.push(entry);n += entry.length;}
- if (cur.length) parts.push(cur);}
-const shell = page({}, js.replace('/*@@USER_PORTRAITS@@*/{}', () => '(globalThis.__SC_UP||{})'));
-const cut = shell.indexOf('<script>', shell.indexOf('<!--@@MAIN@@-->'));
-fs.mkdirSync(path.dirname(out), {recursive: true});
-{const fd = fs.openSync(out, 'w');let bytes = 0;const put = str => {bytes += fs.writeSync(fd, str);};
+if (single) {const PART = 32e6;
+ const parts = [];
+ {let cur = [], n = 0;
+  for (const [k, d] of drops) {const entry = JSON.stringify(k) + ':' + JSON.stringify(dataURI(d.mime, d.buf));
+   if (n && n + entry.length > PART) {parts.push(cur);cur = [];n = 0;}cur.push(entry);n += entry.length;}
+  if (cur.length) parts.push(cur);}
+ const shell = page({}, js.replace('/*@@USER_PORTRAITS@@*/{}', () => '(globalThis.__SC_UP||{})'));
+ const cut = shell.indexOf('<script>', shell.indexOf('<!--@@MAIN@@-->'));
+ fs.mkdirSync(path.dirname(out), {recursive: true});
+ const fd = fs.openSync(out, 'w');let bytes = 0;const put = str => {bytes += fs.writeSync(fd, str);};
  put(shell.slice(0, cut));
  for (const p of parts) {put('<script>(globalThis.__SC_UP=globalThis.__SC_UP||{});Object.assign(globalThis.__SC_UP,{');p.forEach((e, i) => put((i ? ',' : '') + e));put('});</script>');}
  put(shell.slice(cut));fs.closeSync(fd);
- console.log(`${path.relative(root, out)}  ${(bytes / 1048576).toFixed(1)} MB  ${order.length} modules  ${drops.size} drop-in art files (${parts.length} parts)`);}
+ console.log(`${path.relative(root, out)}  ${(bytes / 1048576).toFixed(1)} MB  ${order.length} modules  ${drops.size} drop-in art files (${parts.length} parts)`);
+ if (bytes > 480 * 1048576) console.log('  note: a browser may not open a file this big (limit ~512 MB); use the app folder');}
 if (pwaDir) {
   // The app folder: the same game, but the pictures and sounds are files in a/ named by their contents ("a/<hash>.<ext>"),
   // so a new release reuses every file that didn't change. The built-in art of src/data/art.js + faceArt.js has to stay

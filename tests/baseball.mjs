@@ -2,7 +2,7 @@
 // game in the browser: picking a pitch and tapping where to throw it, holding to aim and letting go to swing, the innings
 // menu, a whole game on the bots at three screen sizes, a game vs the CPU, and the Home Run Derby.
 // Usage: node tests/baseball.mjs   (SHAMB_URL=..., default http://localhost:8123/ serving a --pwa build); screenshots bb-*.png
-import {launchBrowser,screenshotPath} from './lib.mjs';
+import {launchBrowser,screenshotPath,appURL} from './lib.mjs';
 import {req} from './load.mjs';
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
 // ---- rules
@@ -20,7 +20,7 @@ let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;
  check(JSON.stringify(R.walk([true,true,true]))===JSON.stringify({bases:[true,true,true],runs:1}),'a walk with the bases loaded forces a run in');
  const fly=R.flight({mph:85,phi:40,theta:0}),cf=R.POSITIONS[7],it=R.intercept(fly,cf.x,cf.y,27);check(it.air,'the centre fielder runs down a lazy fly ball');}
 const browser=await launchBrowser();
-const URL=process.env.SHAMB_URL||'http://localhost:8123/';
+const URL=(await appURL());
 async function open(id,w,h,{solo=false,arcade=true}={}){const page=await (await browser.newContext({viewport:{width:w,height:h}})).newPage();page.__e=[];page.on('pageerror',e=>page.__e.push(e.message));
  await page.goto(URL,{timeout:180000});await page.waitForSelector('.title-screen',{timeout:90000});await page.waitForFunction(()=>!document.getElementById('boot'),null,{timeout:90000});
  await page.evaluate(([id,v,arc])=>{const S=window.ShambConkins;S.store.arcade=arc;if(v)S.store.profile.settings.solo={on:true,who:0,level:'normal'};S.requestGame({id,origin:'arcade',solo:v,quick:true});},[id,solo,arcade]);

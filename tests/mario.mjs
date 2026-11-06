@@ -2,7 +2,7 @@
 // flagpole → 1-2 intro, Warp Zone recruit → 1-3, Bowser's axe → Toad, game over, results), the NES 2 PLAYER GAME
 // hand-off on a lost life, Coin Rush (timer, ghost, stage hand-on) and Castle Dash (flagpole finish).
 // Screenshots go to $OUT (default /tmp/claude-0/sc/smb-*). Usage: node tests/mario.mjs [world|alt|coins|race ...]
-import {chromium,browserLaunchOptions} from './lib.mjs';
+import {chromium,browserLaunchOptions,appURL} from './lib.mjs';
 import {mkdirSync} from 'node:fs';
 const out=process.env.OUT||'/tmp/claude-0/sc';mkdirSync(out,{recursive:true});
 const only=process.argv.slice(2);let ok=true;const fail=m=>{ok=false;console.log('FAIL',m);};
@@ -12,7 +12,7 @@ async function launch(id,[w,h]){
  const browser=await chromium.launch(browserLaunchOptions()),page=await browser.newPage({viewport:{width:w,height:h},hasTouch:w<700,isMobile:w<700}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  page.on('console',m=>{if(m.type()==='error'&&m.text()&&!/Failed to load|ERR_|net::/.test(m.text()))errors.push(m.text().slice(0,300));});
- await page.goto(new URL('../dist/ShambConkins.html',import.meta.url).href,{waitUntil:'domcontentloaded',timeout:120000});
+ await page.goto((await appURL()),{waitUntil:'domcontentloaded',timeout:120000});
  await page.waitForFunction(()=>window.ShambConkins?.requestGame,null,{timeout:60000});await page.waitForTimeout(400);
  await page.evaluate(id=>{window.ShambConkins.requestGame({id,origin:'arcade'});},id);await page.waitForTimeout(400);
  await page.evaluate(()=>[...document.querySelectorAll('#dialog button')].find(b=>/start/i.test(b.textContent))?.click());await page.waitForTimeout(900);

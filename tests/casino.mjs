@@ -3,7 +3,7 @@
 // roulette chips on the layout), every table played to the result card at three screen sizes on the bots, one game vs the CPU each,
 // and the dealer joining a player who broke the bank.
 // Usage: node tests/casino.mjs [ids]   (SHAMB_URL=..., default http://localhost:8123/ serving a --pwa build); screenshots casino-*.png
-import {launchBrowser,screenshotPath} from './lib.mjs';
+import {launchBrowser,screenshotPath,appURL} from './lib.mjs';
 import {req} from './load.mjs';
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
 const IDS=(process.argv[2]||'bond-baccarat,five-card,roulette').split(',');
@@ -19,7 +19,7 @@ const IDS=(process.argv[2]||'bond-baccarat,five-card,roulette').split(',');
  check(R.rReturn('n:17',10,17)===360&&R.rReturn('s:17:20',10,20)===180&&R.rReturn('f4',10,0)===90&&R.rReturn('sl:0',10,6)===60&&R.rReturn('red',10,0)===0,'roulette: the full table pays 35/17/8/5 and zero beats red');
  check(R.betReturn('n17',10,17)===360&&R.betReturn('red',10,0)===0&&R.betReturn('d3',10,25)===30&&R.betReturn('c1',10,34)===30&&R.betReturn('odd',10,7)===20&&R.betReturn('high',10,18)===0,'roulette: payouts (35, 2, 2, 1 to 1; zero loses the outside)');}
 const browser=await launchBrowser();
-const URL=process.env.SHAMB_URL||'http://localhost:8123/';
+const URL=(await appURL());
 async function open(id,w,h,{solo=false}={}){const page=await (await browser.newContext({viewport:{width:w,height:h}})).newPage();page.__e=[];page.on('pageerror',e=>page.__e.push(e.message));
  await page.goto(URL,{timeout:180000});await page.waitForSelector('.title-screen',{timeout:90000});await page.waitForFunction(()=>!document.getElementById('boot'),null,{timeout:90000});
  await page.evaluate(([id,v])=>{const S=window.ShambConkins;if(v)S.store.profile.settings.solo={on:true,who:0,level:'normal'};S.requestGame({id,origin:'arcade',solo:v,quick:true});},[id,solo]);

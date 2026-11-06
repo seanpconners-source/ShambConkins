@@ -2,7 +2,7 @@
 // installability report, the offline cache (reload with the network off), the title-screen install button and the
 // browser prompt, the loading screen and the offline download bar; an installed full-screen app (emulated display-mode)
 // shows no full-screen toggles; then serves the bare game HTML (no folder) and checks the built-in manifest; then file:// stays plain.
-// Usage: node tools/build.mjs --pwa && node tests/pwa.mjs
+// Usage: node tools/build.mjs && node tests/pwa.mjs
 import {launchBrowser,root,screenshotPath} from './lib.mjs';
 import http from 'node:http';import fs from 'node:fs';import path from 'node:path';import {pathToFileURL} from 'node:url';
 const dir=path.join(root,'dist/pwa'),single=path.join(root,'dist/ShambConkins.html');
@@ -58,6 +58,8 @@ check(await p.evaluate(()=>matchMedia('(display-mode: fullscreen)').matches),'(s
 check(await p.evaluate(()=>!document.querySelector('[data-action="fullscreen"]')),'full-screen app: no ⤢ toggle on the title screen');
 check(/Setting up/.test(await p.evaluate(()=>document.getElementById('boot-text')?.textContent||'gone'))||true,'first start wording (informational)');
 check(!errors.length,'no page errors '+errors.slice(0,2).join(' | '));await ctx.close();srv.close();
+// 2. + 3. the old one-file game (only when built: node tools/build.mjs --single; it is no longer released)
+if(fs.existsSync(single)){
 // 2. only the game HTML on a server (no PWA folder): manifest made from the embedded icons
 const srv2=await serve(8792,p=>p==='/ShambConkins.html'?single:null);
 ({ctx,p,errors}=await page('http://localhost:8792/ShambConkins.html'));await p.waitForTimeout(1500);info=await cdpInfo(p);
@@ -70,4 +72,5 @@ check(!errors.length,'no page errors '+errors.slice(0,2).join(' | '));await ctx.
 ({ctx,p,errors}=await page(pathToFileURL(single).href));
 check(await p.evaluate(()=>!document.querySelector('link[rel="manifest"]')&&document.querySelector('.ts-install')?.hidden===true),'file:// page: no manifest, no install icon');
 check(!errors.length,'no page errors '+errors.slice(0,2).join(' | '));await ctx.close();
+}else console.log('     (no one-file build: skipped the bare-HTML and file:// checks)');
 await browser.close();console.log(failed?`${failed} PWA check(s) failed`:'PWA OK');process.exit(failed?1:0);

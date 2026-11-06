@@ -1,7 +1,9 @@
-# ShambConkins one-click local release compiler.
-# Builds whatever branch is checked out (main, TESTver, ...) into releases/ without uploading or
-# modifying game source. Names: main -> ShambConkins_v<ver>.html, TESTver -> ShambConkins_v<ver>_TestVer.html,
-# other branches -> ShambConkins_v<ver>_<branch>.html. Existing files in releases/ are never replaced.
+# ShambConkins one-click local build.
+# Builds whatever branch is checked out (main, TESTver, ...) into an app folder in releases/ without uploading or
+# modifying game source, then plays it in the browser from this computer (http://localhost:8123/).
+# Folder names: main -> ShambConkins_v<ver>_app, TESTver -> ShambConkins_v<ver>_TestVer_app, other branches ->
+# ShambConkins_v<ver>_<branch>_app. Existing folders are never replaced. (Since v0.88.0 the game is an installable app
+# only: there is no one-file .html any more, it grew too big for a browser to open as one file.)
 [CmdletBinding()]
 param()
 $ErrorActionPreference = 'Stop'
@@ -78,34 +80,34 @@ try {
     if (-not (Test-Path -LiteralPath $releaseDir)) {
         New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null
     }
-    $base = 'ShambConkins_v' + $version + $label
-    $name = $base + '.html'
+    $base = 'ShambConkins_v' + $version + $label + '_app'
+    $name = $base
     $target = Join-Path $releaseDir $name
     if (Test-Path -LiteralPath $target) {
-        $name = $base + '_built-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.html'
+        $name = $base + '_built-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
         $target = Join-Path $releaseDir $name
-        Write-Host ('{0}.html already exists; keeping it and using a timestamped name.' -f $base) -ForegroundColor Yellow
+        Write-Host ('{0} already exists; keeping it and using a timestamped name.' -f $base) -ForegroundColor Yellow
     }
 
     Write-Host 'Checking game module registry...'
     & $node (Join-Path $root 'tools\check-modules.mjs')
-    if ($LASTEXITCODE -ne 0) { throw 'Module check failed; release HTML not built.' }
-    Write-Host 'Building self-contained offline HTML (this can take a little while)...'
-    & $node (Join-Path $root 'tools\build.mjs') '--out' $target
-    if ($LASTEXITCODE -ne 0) { throw ('HTML build failed with code ' + $LASTEXITCODE) }
-    if (-not (Test-Path -LiteralPath $target -PathType Leaf)) { throw 'Build claimed success but output HTML is missing.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Module check failed; the game was not built.' }
+    Write-Host 'Building the game app (this can take a little while)...'
+    & $node (Join-Path $root 'tools\build.mjs') '--pwa' $target
+    if ($LASTEXITCODE -ne 0) { throw ('Build failed with code ' + $LASTEXITCODE) }
+    $page = Join-Path $target 'index.html'
+    if (-not (Test-Path -LiteralPath $page -PathType Leaf)) { throw 'Build claimed success but the app page (index.html) is missing.' }
 
-    $size = (Get-Item -LiteralPath $target).Length
-    if ($size -le 0) { throw 'The built HTML file is empty.' }
+    $size = (Get-ChildItem -LiteralPath $target -Recurse -File | Measure-Object -Property Length -Sum).Sum
     Write-Host ''
-    Write-Host 'RELEASE BUILD SUCCESSFUL' -ForegroundColor Green
-    Write-Host ('Output: ' + $target) -ForegroundColor Green
+    Write-Host 'BUILD SUCCESSFUL' -ForegroundColor Green
+    Write-Host ('Output folder: ' + $target) -ForegroundColor Green
     Write-Host ('Size: ' + ([math]::Round(($size / 1MB), 1)) + ' MB')
     Write-Host 'This is LOCAL only. Nothing was pushed or committed to GitHub.'
-    if ($size -gt 100MB) {
-        Write-Host 'WARNING: This file is over GitHub''s 100 MB single-file limit.' -ForegroundColor Yellow
-        Write-Host 'Do not commit it as a regular Git blob; use a GitHub Release asset instead.' -ForegroundColor Yellow
-    }
+    Write-Host ''
+    Write-Host 'Playing it at http://localhost:8123/ (opening the browser). Close this window to stop.' -ForegroundColor Cyan
+    Start-Process 'http://localhost:8123/'
+    & $node (Join-Path $root 'tools\serve-static.mjs') $target 8123
     exit 0
 } catch {
     Write-Host ''

@@ -1,8 +1,8 @@
 // Headless smoke test: load built offline HTML, record JS errors, drive UI.
-import {launchBrowser, root, screenshotPath} from './lib.mjs';
+import {launchBrowser, root, screenshotPath,appURL} from './lib.mjs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
-const file = pathToFileURL(path.resolve(root, process.argv[2] || 'dist/ShambConkins.html')).href;
+const file = (await appURL());
 const browser = await launchBrowser();
 try {
  const page = await browser.newPage({viewport: {width: 1100, height: 700}});

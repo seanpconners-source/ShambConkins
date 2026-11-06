@@ -32,7 +32,7 @@ No `.github/workflows` triggers were added or enabled. This doesn't repair GitHu
 - **GitHub Desktop shows a different branch:** the test runner uses the files from the branch currently checked out. For final Broforce QA, switch to `feature/broforce-wave4-candidate` and pull before running Full. For stable game QA use `TESTver` or `main`.
 - **PowerShell script policy:** launch through either included `.cmd` shortcut. It uses PowerShell's `-ExecutionPolicy Bypass` for that one process only, not a system-wide policy change.
 
-Avoid running two launchers in the *same checkout* simultaneously because both build `dist/ShambConkins.html`. No user data is read or written by these test scripts beyond the synthetic browser test profiles.
+Avoid running two launchers in the *same checkout* simultaneously because both build `dist/pwa`. No user data is read or written by these test scripts beyond the synthetic browser test profiles.
 
 ## Laptop-safe full-game fuzz (updated October 12, 2026)
 

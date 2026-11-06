@@ -1,5 +1,11 @@
 # Installed app: download only what changed (design, Nov 1 2026)
 
+**Nov 6 2026: the installed app is now the ONLY way the game ships** (owner: install only, same web address). The
+one-file `ShambConkins_<tag>.html` is no longer built for releases (from v0.88.0); `tools/build.mjs` writes dist/pwa by
+default and `--single` makes the old file on request. Each game's own sprites/pictures join the songs in `LATER`
+(src/pwa.js): a new install downloads ~100 MB, the rest comes per game on first play. The sections below are the
+original design notes.
+
 Status: **built (Nov 1 2026, branch `claude/pwa-split` from TESTver, main 0.71.1 merged in), owner chose "everything at
 install".** Not released yet; real phones untested. Measured (one-file game 200.1 MB):
 - app folder: index.html 8.2 MB, a/ 2,430 files 149.8 MB (of which the built-in art script 25.3 MB).

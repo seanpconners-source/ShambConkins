@@ -3,8 +3,8 @@
 // style / layout milliseconds, the painted area as screens' worth, and the long frames seen in the page (>34 ms and >50 ms).
 // The owner's flicker ("every move everything flickers on and off") comes from repainting the whole screen on every move;
 // this keeps it measurable. Usage: SHAMB_URL=http://localhost:8123/ node tests/arcade-perf.mjs   (N=10 CPU=4 VIEW=390x780)
-import {launchBrowser} from './lib.mjs';
-const URL0=process.env.SHAMB_URL||'http://localhost:8123/',N=+process.env.N||10,CPU=+process.env.CPU||4,[VW,VH]=(process.env.VIEW||'390x780').split('x').map(Number);
+import {launchBrowser,appURL} from './lib.mjs';
+const URL0=(await appURL()),N=+process.env.N||10,CPU=+process.env.CPU||4,[VW,VH]=(process.env.VIEW||'390x780').split('x').map(Number);
 const browser=await launchBrowser();const page=await (await browser.newContext({viewport:{width:VW,height:VH},deviceScaleFactor:2,isMobile:true,hasTouch:true})).newPage();
 await page.goto(URL0,{timeout:180000});await page.waitForSelector('.title-screen',{timeout:120000});await page.waitForFunction(()=>!document.getElementById('boot'),null,{timeout:120000});
 await page.addStyleTag({content:'#sc-dl,#sc-ready{display:none!important}'});

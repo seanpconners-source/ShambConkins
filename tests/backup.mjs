@@ -1,7 +1,7 @@
 // Save safety (src/saveGuard.js): a fresh save shows "Restore a backup"; progress shows the backup button; backing up downloads a dated file and hides
 // it (also after reload); a brand-new browser restores the file from the title screen link.
-import {launchBrowser,root,screenshotPath} from './lib.mjs';import {pathToFileURL} from 'node:url';import path from 'node:path';import os from 'node:os';import fs from 'node:fs';
-const D=fs.mkdtempSync(path.join(os.tmpdir(),'shamb-backup-')),url=pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href;const browser=await launchBrowser();
+import {launchBrowser,root,screenshotPath,appURL} from './lib.mjs';import {pathToFileURL} from 'node:url';import path from 'node:path';import os from 'node:os';import fs from 'node:fs';
+const D=fs.mkdtempSync(path.join(os.tmpdir(),'shamb-backup-')),url=(await appURL());const browser=await launchBrowser();
 const errors=[];const check=(ok,msg)=>{console.log((ok?'ok   ':'FAIL ')+msg);if(!ok)process.exitCode=1;};
 async function fresh(size){const ctx=await browser.newContext({viewport:size,acceptDownloads:true});const page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(url);await page.waitForFunction(()=>window.ShambConkins?.store?.profile);await page.waitForSelector('.title-screen');return page;}
 const has=(page,sel)=>page.evaluate(s=>!!document.querySelector(s),sel);

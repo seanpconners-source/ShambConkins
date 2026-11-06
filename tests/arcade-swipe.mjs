@@ -1,10 +1,10 @@
 // M24: swiping sideways on the Arcade game page moves to the next / previous game (arcadeConsole.js). Real touch events
 // (CDP, like a phone) and a mouse drag; a short or vertical move changes nothing; a swipe that starts on the Play button
 // doesn't launch the game; the first game doesn't swipe further back; taps still work. SHAMB_URL for a --pwa build.
-import {chromium,browserLaunchOptions,root,screenshotPath} from './lib.mjs';
+import {chromium,browserLaunchOptions,root,screenshotPath,appURL} from './lib.mjs';
 import path from 'node:path';import {pathToFileURL} from 'node:url';
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
-const url=process.env.SHAMB_URL||pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href;
+const url=(await appURL());
 const browser=await chromium.launch(browserLaunchOptions());
 const ctx=await browser.newContext({viewport:{width:390,height:780},hasTouch:true,isMobile:true,deviceScaleFactor:1});
 const page=await ctx.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));

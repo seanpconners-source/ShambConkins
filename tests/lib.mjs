@@ -1,5 +1,6 @@
 import {createRequire} from 'node:module';
-import {existsSync, mkdirSync} from 'node:fs';
+import {existsSync, mkdirSync, statSync, createReadStream} from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 
@@ -17,6 +18,32 @@ export function browserLaunchOptions() {
 }
 export function launchBrowser(options={}) {
  return chromium.launch({...browserLaunchOptions(), ...options});
+}
+// The game the tests open. The game ships only as the installable app (tools/build.mjs writes it to dist/pwa), so by
+// default this serves dist/pwa on a free localhost port inside the test process. SHAMB_URL = an already served copy,
+// SHAMB_FILE = a one-file build (node tools/build.mjs --single) opened from disk.
+const TYPES = {'.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg', '.flac': 'audio/flac', '.gz': 'application/gzip', '.css': 'text/css', '.woff2': 'font/woff2'};
+let served = null;
+export function serveDir(dir, port = 0) {
+ return new Promise((res, rej) => {
+  const s = http.createServer((q, r) => {
+   let f = path.join(dir, decodeURIComponent(q.url.split('?')[0]));
+   if (!f.startsWith(dir)) { r.writeHead(403); r.end(); return; }
+   try { if (statSync(f).isDirectory()) f = path.join(f, 'index.html'); } catch {}
+   let st; try { st = statSync(f); } catch { r.writeHead(404); r.end(); return; }
+   r.writeHead(200, {'content-type': TYPES[path.extname(f)] || 'application/octet-stream', 'content-length': st.size});
+   createReadStream(f).pipe(r);
+  });
+  s.on('error', rej);
+  s.listen(port, '127.0.0.1', () => { s.unref(); res(`http://localhost:${s.address().port}/`); });
+ });
+}
+export async function appURL() {
+ if (process.env.SHAMB_URL) return process.env.SHAMB_URL;
+ if (process.env.SHAMB_FILE) return pathToFileURL(path.resolve(root, process.env.SHAMB_FILE)).href;
+ const dir = path.join(root, 'dist/pwa');
+ if (!existsSync(path.join(dir, 'index.html'))) throw new Error('no game build in dist/pwa: run node tools/build.mjs first');
+ return served ||= serveDir(dir);
 }
 export function screenshotPath(name) {
  const dir=path.resolve(process.env.SHAMB_SHOTS_DIR||path.join(root,'local-test-reports','screenshots'));
@@ -36,8 +63,7 @@ export async function open(opts = {}) {
      return o.call(this, n, v);
    };
  });
- // SHAMB_URL: open a served copy instead, e.g. the app folder (build --pwa) on localhost, to test its a/ files
- await page.goto(process.env.SHAMB_URL && !opts.file ? process.env.SHAMB_URL : pathToFileURL(path.resolve(root, opts.file || process.env.SHAMB_FILE || 'dist/ShambConkins.html')).href);
+  await page.goto(opts.file ? pathToFileURL(path.resolve(root, opts.file)).href : await appURL());
  await page.waitForTimeout(800);
  return {browser, page, errors};
 }

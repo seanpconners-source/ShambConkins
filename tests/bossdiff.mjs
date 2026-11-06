@@ -5,10 +5,10 @@
 // Prints hits/min and boss %HP/min per phase, plus what landed (bullet kind / hazard kind / minion) with SRC=1.
 // Env: PH=60 REACT=.25 STEPS=20 REP=1 C=5 SRC=0 L=phone:390x780,wide:1100x700[,land:844x390]
 // Wide-arena tuning (WIDE_K in engines/bossFight.js) was set so the wide AVG matches the phone AVG (~9-10 hits/min).
-import {launchBrowser, root} from './lib.mjs';
+import {launchBrowser, root,appURL} from './lib.mjs';
 import path from 'node:path';
 import fs from 'node:fs';
-const file = process.env.SHAMB_URL || 'file://' + path.resolve(root, process.env.SHAMB_FILE || 'dist/ShambConkins.html');
+const file = (await appURL());
 const PH = +(process.env.PH || 60), REACT = +(process.env.REACT || .25), STEPS = +(process.env.STEPS || 20), REP = +(process.env.REP || 1), SRC = !!+(process.env.SRC || 0);
 const layouts = (process.env.L || 'phone:390x780,wide:1100x700').split(',').map(s => { const [n, d] = s.split(':'); const [width, height] = d.split('x').map(Number); return [n, {width, height}]; });
 const argIds = process.argv.slice(2);

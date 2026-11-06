@@ -1,11 +1,11 @@
 // The Price Is Right episode (engines/priceShow.js, id price-bid-off): one whole 2-player episode to the result card, plus real taps
 // on the number pad and a real swipe on the wheel. Usage: node tests/priceshow.mjs [WxH] [cpu]   (SHAMB_URL=...); screenshots: pi-*.png
-import {launchBrowser,screenshotPath} from './lib.mjs';
+import {launchBrowser,screenshotPath,appURL} from './lib.mjs';
 const [w,h]=(process.argv[2]||'390x780').split('x').map(Number),tag=`${w}x${h}`,vsCpu=process.argv[3]==='cpu';
 const browser=await launchBrowser(),page=await (await browser.newContext({viewport:{width:w,height:h}})).newPage();
 const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(/engine failure/i.test(m.text()))errors.push(m.text());});page.on('console',async m=>{if(/engine failure/i.test(m.text())){const a=await Promise.all(m.args().map(x=>x.evaluate(v=>v?.stack||String(v)).catch(()=>'')));console.log(a.join(' ').slice(0,600));}});
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
-await page.goto(process.env.SHAMB_URL||'http://localhost:8123/',{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
+await page.goto((await appURL()),{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
 await page.evaluate(v=>{const S=window.ShambConkins;if(v)S.store.profile.settings.solo={on:true,who:0,level:'normal'};S.requestGame({id:'price-bid-off',origin:'arcade',solo:v,quick:true});},vsCpu);
 const seen=new Set(),shots=new Set(),t0=Date.now();let padTapped=false,swiped=false,end='';
 const shot=async k=>{if(!shots.has(k)){shots.add(k);await page.screenshot({path:screenshotPath(`pi-${k}-${tag}.png`)});}};

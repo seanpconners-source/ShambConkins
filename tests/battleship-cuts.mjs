@@ -1,11 +1,11 @@
 // Battleship cut scenes (engines/battleshipCuts.js): a hit plays the deck gun, a sunk ship plays Abandon Ship, a tap skips, and the
 // game carries on with the same player firing. Usage: node tests/battleship-cuts.mjs [WxH]   screenshots: bs-cut-*.png
-import {launchBrowser,screenshotPath} from './lib.mjs';
+import {launchBrowser,screenshotPath,appURL} from './lib.mjs';
 const [w,h]=(process.argv[2]||'390x780').split('x').map(Number),tag=`${w}x${h}`;
 const browser=await launchBrowser(),page=await (await browser.newContext({viewport:{width:w,height:h}})).newPage();
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
-await page.goto(process.env.SHAMB_URL||'http://localhost:8123/',{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
+await page.goto((await appURL()),{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
 await page.evaluate(()=>{window.ShambConkins.requestGame({id:'battleship-fog',origin:'arcade',quick:true});});
 const D=fn=>page.evaluate(fn);
 const tapThrough=async until=>{for(let k=0;k<80;k++){if(await D(until))return true;await D(()=>{document.querySelector('.pass-overlay [data-ready]')?.click();const b=[...document.querySelectorAll('.pk-btn')].find(b=>/Man the decks|Ready/.test(b.textContent));b?.click();});await page.waitForTimeout(250);}return false;};

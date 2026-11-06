@@ -7,6 +7,8 @@ local-test-reports/
 releases/*.html
 # ...and the installable-app folders/zips made next to them (tools/build.mjs --pwa)
 releases/*_pwa/
+releases/*_app/
+releases/*_app_built-*/
 releases/*.zip
 # The owner's own Doom IWADs (DOOM.WAD / DOOM2.WAD): copyrighted, never commit them. See src/engines/doom/README.md.
 assets/doom/user/

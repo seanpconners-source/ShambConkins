@@ -42,11 +42,11 @@ for name in sorted(os.listdir(src)):
         sq = Image.new('RGBA', (side, side), (0, 0, 0, 0)); sq.paste(im, ((side - im.width) // 2, side - im.height))
         sq = sq.resize((512, 512), Image.LANCZOS)
         out = os.path.join(ROOT, 'assets/tiles', s + '.webp')
-        if not DRY: sq.save(out, 'WEBP', quality=88, method=6)
+        if not DRY: sq.save(out, 'WEBP', lossless=True, quality=100, method=6)  # lossless (owner, Nov 6)
     else:
         im = im.convert('RGB'); im.thumbnail((1280, 1280), Image.LANCZOS)
         out = os.path.join(ROOT, 'assets/keyart', s + '.webp')
-        if not DRY: im.save(out, 'WEBP', quality=80, method=6)
+        if not DRY: im.save(out, 'WEBP', lossless=True, quality=100, method=6)  # lossless (owner, Nov 6)
     done.append(f'{name} → {os.path.relpath(out, ROOT)}')
 print('\n'.join(done) or 'Nothing imported.')
 if skipped:

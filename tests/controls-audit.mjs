@@ -1,9 +1,9 @@
 // Measures how much of the screen each minigame spends on on-screen control buttons.
 // Usage: node tests/controls-audit.mjs [WxH] [id-regex]   (SHAMB_FILE overrides the build)
-import {chromium,root} from './lib.mjs';
+import {chromium,root,appURL} from './lib.mjs';
 import path from 'node:path';
 const [w,h]=(process.argv[2]||'390x780').split('x').map(Number),filter=process.argv[3];
-const file='file://'+path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html');
+const file=(await appURL());
 const browser=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
 const probe=await browser.newPage();await probe.goto(file);
 let ids=await probe.evaluate(()=>window.ShambConkins.gameRegistry.map(g=>[g.id,g.engine]));await probe.close();

@@ -1,6 +1,6 @@
 // Launches every registered mini-game, fuzzes input for a few seconds, reports JS errors per game.
 // Usage: node tests/games.mjs [seconds-per-game] [concurrency] [id-filter]
-import {chromium, root, launchBrowser} from './lib.mjs';
+import {chromium, root, launchBrowser,appURL} from './lib.mjs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {freemem} from 'node:os';
@@ -15,7 +15,7 @@ const navTimeoutMs = Number(process.env.SHAMB_NAV_TIMEOUT_MS || 30000);
 if (!Number.isFinite(navTimeoutMs) || navTimeoutMs < 10000 || navTimeoutMs > 120000)
   throw new Error('SHAMB_NAV_TIMEOUT_MS must be between 10000 and 120000');
 if (!Number.isFinite(minFreeGb) || minFreeGb < 0) throw new Error('Invalid SHAMB_MIN_FREE_MEMORY_GB');
-const file = process.env.SHAMB_URL || pathToFileURL(path.resolve(root, process.env.SHAMB_FILE || 'dist/ShambConkins.html')).href;
+const file = (await appURL());
 let browser = await launchBrowser();
 const probe = await browser.newPage();
 await probe.goto(file, {waitUntil: 'domcontentloaded', timeout: navTimeoutMs});

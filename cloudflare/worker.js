@@ -3,8 +3,8 @@
 // downloads that release's .html asset once per Cloudflare data centre, and serves it as a web page.
 //   /, /index.html    newest release: its app page (release asset "index.html", ~8 MB: the code, with the pictures and
 //                     sounds as /a/ files) when the release has one, else the one-file game (releases before the split)
-//   /v0.60.0          a specific release (the one-file game)
-//   /download         newest release as a file download (the one-file game)
+//   /v0.60.0          a specific release (the one-file game; releases from v0.88.0 are the app only and answer a note)
+//   /download         newest release as a file download (the one-file game); from v0.88.0 it sends you to / instead
 //   /version          newest release tag (plain text)
 //   /manifest.webmanifest, /sw.js, /icons/*.png
 //                     the installable-app files of the newest release (each release carries them as small assets
@@ -63,6 +63,9 @@ export default {
       const body = await releaseHtml(tag, env, ctx);
       return new Response(req.method === 'HEAD' ? null : body, { headers });
     } catch (e) {
+      // v0.88.0 on: no one-file game in the release (owner: install only), so a download link opens the site instead
+      if (e.noFile) return path === '/download' ? Response.redirect(new URL('/', url).href, 302)
+        : text(`ShambConkins ${e.noFile} is an app only: open ${url.origin}/ and install it from your browser's menu.`, 404);
       return text(`ShambConkins is unavailable right now: ${e.message}`, 502);
     }
   },
@@ -105,7 +108,7 @@ async function releaseHtml(tag, env, ctx) {
   if (r.status === 404) {
     const rel = await api(`releases/tags/${encodeURIComponent(tag)}`, env);
     const asset = (rel.assets || []).find(a => /\.html?$/i.test(a.name));
-    if (!asset) throw new Error(`release ${tag} has no .html file`);
+    if (!asset) throw Object.assign(new Error(`release ${tag} has no .html file`), { noFile: tag });
     r = await fetch(asset.browser_download_url, { headers: { 'User-Agent': UA } });
   }
   if (!r.ok) throw new Error(`GitHub answered ${r.status} for ${tag}`);

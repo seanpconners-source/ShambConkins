@@ -32,11 +32,16 @@ let reg=null,ready=false,updating=false,lastAsk=0,canRestart=()=>true,current=nu
 // service worker downloads the ones it doesn't have yet for offline play; sent at start and on coming back on screen
 // (a download that was cut off carries on).
 const APP_FILES=/*@@APP_FILES@@*/null;
-// Songs and the Doom data (~245 MB) belong to a few games, so they aren't downloaded at install: each game's files come
-// the first time it opens (wantGameFiles, from the game session) or all at once from Settings (wantAllFiles). Keys by the
-// games that use them; every other file still comes at install. Played offline before its files are in, a game is silent.
+// Songs, the Doom data and each game's own sprites/pictures belong to a few games, so they aren't downloaded at install:
+// each game's files come the first time it opens (wantGameFiles, from the game session) or all at once from Settings
+// (wantAllFiles). Keys by the games that use them; every other file (portraits, items, Arcade art) still comes at install.
+// Played offline before its files are in, a game is silent and uses its drawn art. A new game with its own big art or
+// sounds gets a line here.
 const LATER={'music:bhpin-':['bucketheadland-pinball'],'music:kgpin-':['king-gizzard-pinball'],'music:bspin-':['black-sabbath-pinball'],'music:thps-':['greed-island-mancala'],'music:sotn-':['cv-symphony'],
- 'music:sunset-':['django-hangman','django-hangman-showdown','django-hangman-wanted','sundown-showdown'],'doom:':['doom','doom-2']};
+ 'music:sunset-':['django-hangman','django-hangman-showdown','django-hangman-wanted','sundown-showdown'],'doom:':['doom','doom-2'],
+ // each game's own pictures (owner, Nov 6: lots more art and sounds coming): fetched the first time that game starts
+ 'photohunt:':['megatouch-photohunt'],'pinball:buckethead:':['bucketheadland-pinball'],'pinball:black-sabbath:':['black-sabbath-pinball'],
+ 'pinball:king-gizzard:':['king-gizzard-pinball'],'sundown:':['sundown-showdown'],'baseball:':['major-league-fielding','major-league-bats'],'sotn:':['cv-symphony']};
 // [name, bytes] of the later files (all, or only those of prefixes that pass `which`)
 function laterFiles(which=()=>true){if(!APP_FILES)return [];let up={};try{up=require("src/data/userPortraits.js").USER_PORTRAITS;}catch{}
  const names=new Set();for(const [k,url] of Object.entries(up))for(const pre of Object.keys(LATER))if(k.startsWith(pre)&&which(pre)&&typeof url==='string')names.add(url.replace(/^a\//,''));

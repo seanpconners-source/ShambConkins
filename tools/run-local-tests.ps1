@@ -15,7 +15,9 @@ New-Item -ItemType Directory -Path $ReportDir -Force | Out-Null
 $env:SHAMB_SHOTS_DIR = Join-Path $ReportDir 'screenshots'
 New-Item -ItemType Directory -Path $env:SHAMB_SHOTS_DIR -Force | Out-Null
 $env:SHOT = Join-Path $env:SHAMB_SHOTS_DIR 'home.png'
-$env:SHAMB_FILE = Join-Path $Root 'dist\ShambConkins.html'
+# The tests serve the app folder (dist\pwa) themselves (tests/lib.mjs appURL).
+Remove-Item Env:SHAMB_FILE -ErrorAction SilentlyContinue
+$AppPage = Join-Path $Root 'dist\pwa\index.html'
 $script:Failures = New-Object System.Collections.Generic.List[string]
 $script:Passes = New-Object System.Collections.Generic.List[string]
 $script:FailureDetails = New-Object System.Collections.Generic.List[string]
@@ -191,9 +193,9 @@ Write-Host ("Browser: {0}" -f $chromium)
 # Required prerequisites: if module validation or build fails, don't produce fake
 # browser passes from stale dist/ files.
 if (-not (Run-Step 'Source-module-registry' $nodeExe @('tools/check-modules.mjs'))) { Finish }
-if (-not (Run-Step 'Build-offline-game-HTML' $nodeExe @('tools/build.mjs'))) { Finish }
-if (-not (Test-Path -LiteralPath $env:SHAMB_FILE)) {
-    [void]$script:Failures.Add('Offline built game HTML is missing.')
+if (-not (Run-Step 'Build-the-game-app' $nodeExe @('tools/build.mjs'))) { Finish }
+if (-not (Test-Path -LiteralPath $AppPage)) {
+    [void]$script:Failures.Add('The built game app (dist\pwa\index.html) is missing.')
     Finish
 }
 

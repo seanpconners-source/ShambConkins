@@ -4,11 +4,11 @@
 // changes in its motion (p95/p99/max). Built for Pong (GAMES=pong-duel); needs wrangler dev like online-native.
 // Oct 25 (Pong, no host, each phone judges its own paddle): 80-150 ms → stalls 0.3%, p99 .038 vs .029 at 0 ms, max ~.5 on a
 // wrong guess at the far paddle; result cards always agree.
-import {launchBrowser,root,screenshotPath} from './lib.mjs';
+import {launchBrowser,root,screenshotPath,appURL} from './lib.mjs';
 import path from 'node:path';import {pathToFileURL} from 'node:url';
 const HOST=process.env.SC_NET_HOST||'ws://127.0.0.1:8787',LIMIT=+process.env.LIMIT_S||240;
 const GAMES=(process.env.GAMES||'trivia-mixed,trivia-lightning,trivia-wager,trivia-survival,paddys-beer-pong,shamb-uno,ten-forward-chess,four-lights,strategema-grid,full-shambyahtzee,cheaters-yahtzee,blackjack,five-card,roulette,bond-baccarat,traitors-guess-who,battleship-fog,liars-dice,clue-whodunit,monopoly-speed-die,monopoly-auction,simon-faceoff,price-bid-off,django-hangman-showdown,django-hangman-wanted,matrix-ultimate,greed-island-mancala,office-dots-boxes,trek-mini-chess,wopr-grid,smb3-nspade,clue-lineup,django-hangman,taskmaster-curling,bug-artillery,happy-gilmore-golf,color-of-money,baseketball-shootout,task-tallest-thing,fast-quarter-mile,block-battle,shred-hero,candy-color-dash,chutes-ladder-rush,brawndo-fruit-merge,candy-gumdrop-catch,review-pancakes,terminator-scan,microgame-rush,rush-marathon').split(',');
-const url=pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href;
+const url=(await appURL());
 let failed=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)failed++;};
 const browser=await launchBrowser();
 async function phone(tag){

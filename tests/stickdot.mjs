@@ -1,12 +1,12 @@
 // Call of Duty: Modern Stick Dot (engines/modernStickDot.js, id office-dots-boxes): title, then a whole match by real taps on
 // the map (the CPU or the other player's turns too), kill cams appear on a capture and the result card shows the score.
 // Usage: node tests/stickdot.mjs [WxH] [cpu]   (SHAMB_URL=http://localhost:8123/); screenshots: sd-*.png
-import {launchBrowser,screenshotPath} from './lib.mjs';
+import {launchBrowser,screenshotPath,appURL} from './lib.mjs';
 const [w,h]=(process.argv[2]||'390x780').split('x').map(Number),tag=`${w}x${h}`,vsCpu=process.argv[3]==='cpu';
 const browser=await launchBrowser(),page=await (await browser.newContext({viewport:{width:w,height:h}})).newPage();
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
-await page.goto(process.env.SHAMB_URL||'http://localhost:8123/',{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
+await page.goto((await appURL()),{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
 await page.evaluate(v=>{const S=window.ShambConkins;if(v)S.store.profile.settings.solo={on:true,who:0,level:'normal'};S.requestGame({id:'office-dots-boxes',origin:'arcade',solo:v,quick:true});},vsCpu);
 await page.waitForSelector('.pass-overlay [data-ready]',{timeout:20000});await page.evaluate(()=>document.querySelector('.pass-overlay [data-ready]').click());
 await page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.phase==='title',null,{timeout:15000});

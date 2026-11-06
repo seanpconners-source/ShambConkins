@@ -1,10 +1,10 @@
-// Songs on first open (ROADMAP Q5-3): the installed app downloads every picture at install but leaves the songs and the
-// Doom data (src/pwa.js LATER) until their game opens; Settings → Download all now fetches the rest. Needs a served
-// --pwa build: SHAMB_URL=http://localhost:8124/ (tools/serve-static.mjs <app folder> 8124).
-import {chromium,browserLaunchOptions} from './lib.mjs';
+// Songs on first open (ROADMAP Q5-3): the installed app downloads portraits/items/Arcade art at install but leaves the
+// songs, the Doom data and each game's own pictures (src/pwa.js LATER) until their game opens; Settings → Download all
+// now fetches the rest. Serves dist/pwa itself (tests/lib.mjs appURL) unless SHAMB_URL is set.
+import {chromium,browserLaunchOptions,appURL} from './lib.mjs';
 import fs from 'node:fs';
 const SONG_FILES=new Set(fs.readdirSync(new URL('../assets/music/',import.meta.url)).filter(f=>/^(bhpin|kgpin|bspin|thps|sunset)-.*\.(mp3|wav)$/.test(f)).map(f=>fs.readFileSync(new URL('../assets/music/'+f,import.meta.url)).length+':'+f.split('.').pop())).size;
-const URL0=process.env.SHAMB_URL||'http://localhost:8124/';
+const URL0=(await appURL());
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
 const browser=await chromium.launch(browserLaunchOptions());
 const ctx=await browser.newContext({viewport:{width:390,height:780}}),page=await ctx.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -18,7 +18,7 @@ await page.waitForTimeout(3000);c=await counts();
 check(c.webp>2000,`install saves the pictures (${c.webp} WebP files)`);
 check(c.mp3===0&&c.bin===0,`but no songs or Doom data yet (${c.mp3} MP3, ${c.bin} .bin)`);
 const songsRow=await page.evaluate(async()=>{document.querySelector('[data-action="settings"]')?.click();await new Promise(r=>setTimeout(r,500));const t=document.querySelector('#dialog[open]')?.innerText||'';document.querySelector('#dialog[open] button.primary, #dialog[open] .dialog-actions button')?.click();return t;});
-check(/Songs for offline play \(\d+ MB/.test(songsRow),`Settings offers the songs download: "${(songsRow.match(/Songs for offline play[^\n]*/)||[''])[0]}"`);
+check(/songs &? ?(and )?pictures for offline play \(\d+ MB/i.test(songsRow),`Settings offers the songs download: "${(songsRow.match(/pictures for offline play[^\n]*/)||[''])[0]}"`);
 // open Hangman: its Sunset Riders songs come in
 await page.evaluate(()=>{void window.ShambConkins.requestGame({id:'django-hangman-showdown',origin:'arcade',quick:true});});
 for(let t=0;t<60&&(await counts()).mp3<40;t++)await page.waitForTimeout(1000);

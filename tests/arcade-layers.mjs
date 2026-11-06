@@ -4,8 +4,8 @@
 // full screens (each full screen at the phone's pixel density is ~5 MB of GPU memory). Fails if the peak passes MAX_SCREENS.
 // SWIPE=1 swipes sideways across the game page instead of tapping tiles (each swipe prepares the next game's picture too).
 // Usage: SHAMB_URL=http://localhost:8123/ node tests/arcade-layers.mjs   (N=12 GAP=150 VIEW=412x458 DPR=2.625 MAX_SCREENS=16 SWIPE=1)
-import {launchBrowser} from './lib.mjs';
-const URL0=process.env.SHAMB_URL||'http://localhost:8123/',N=+process.env.N||12,GAP=+process.env.GAP||150,[VW,VH]=(process.env.VIEW||'412x458').split('x').map(Number),DPR=+process.env.DPR||2.625,MAX=+process.env.MAX_SCREENS||16;
+import {launchBrowser,appURL} from './lib.mjs';
+const URL0=(await appURL()),N=+process.env.N||12,GAP=+process.env.GAP||150,[VW,VH]=(process.env.VIEW||'412x458').split('x').map(Number),DPR=+process.env.DPR||2.625,MAX=+process.env.MAX_SCREENS||16;
 const browser=await launchBrowser();const page=await (await browser.newContext({viewport:{width:VW,height:VH},deviceScaleFactor:DPR,isMobile:true,hasTouch:true})).newPage();
 await page.goto(URL0,{timeout:180000});await page.waitForSelector('.title-screen',{timeout:120000});await page.waitForFunction(()=>!document.getElementById('boot'),null,{timeout:120000});
 await page.addStyleTag({content:'#sc-dl,#sc-ready{display:none!important}'});

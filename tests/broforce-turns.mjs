@@ -3,7 +3,7 @@
 // recruits a locked character for the current player, that boarding the chopper advances Stage 1 → 2 → 3, that the
 // Devil arena locks and the chopper only comes after the Devil dies, that P2 gets the same mission, and that the
 // result dialog appears. Screenshots go to OUT (default /tmp/claude-0/sc/bf-*).
-import {launchBrowser, root} from './lib.mjs';
+import {launchBrowser, root,appURL} from './lib.mjs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 const out=process.env.OUT||'/tmp/claude-0/sc';(await import('node:fs')).mkdirSync(out,{recursive:true});let ok=true;const fail=m=>{ok=false;console.log('FAIL',m);};
@@ -12,7 +12,7 @@ for(const [w,h] of sizes){
  const browser=await launchBrowser();const page=await browser.newPage({viewport:{width:w,height:h}});const errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  page.on('console',m=>{if(m.type()==='error'&&!/ERR_|Failed to load resource|viewBox|blocked by CORS policy/.test(m.text()))errors.push('console: '+m.text());});
- await page.goto(pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href,{waitUntil:'domcontentloaded',timeout:90000});
+ await page.goto((await appURL()),{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(()=>window.ShambConkins?.requestGame,null,{timeout:60000});
  const tag=`bf-${w}x${h}`;
  await page.evaluate(()=>{window.ShambConkins.requestGame({id:'broforce-jungle',origin:'arcade'});});

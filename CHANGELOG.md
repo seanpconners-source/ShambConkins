@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Install only, from the same web address.** The game now ships only as the installable app, the way your phones already run it. The old single-file download is gone: a file that big couldn't grow any more, and lots more art and sound is coming. Old download links now open the site.
+- **Smaller first install.** Each game's own sprites and pictures now download the first time you play that game, like its songs already did. A fresh install is about 100 MB instead of 360 MB. Settings → "Game songs & pictures for offline play" still gets everything at once.
+- **No more compression on pictures.** New pictures go in lossless from now on. 354 existing ones were rebuilt from their originals without the old compression: 270 items, 52 Arcade backgrounds and 32 Arcade icons. 102 were left as they are because they were edited or re-delivered after their original was saved (mostly logos and some items).
 - **38 more item pictures:** the Fragile Umbrella (it was on Drive but had been missed) plus 37 new ones from the shared art tally: the Lebowski bowling ball, Brawndo Overdrive, the Rum Ham bomb, the Warriors vest and radio, the Nonagon and Daft Punk records, the presidential seal, Q's watch, the woodchipper and more. 341 of 633 items have art.
 - **Alucard is your sprite now.** Your hero sheets for both players are in: the face sits on his shoulders over the small head the sheet draws (measured frame by frame, including the somersault and the fall), with the silver hair showing round it.
 - **The rest of the Symphony of the Night art.** Lanterns, torches, the fireball, Dark Inferno, holy flame and fire wave, the forest tree, fence and grave, the gate wall, gate and portcullis, the stepping stones and the water now use your pictures. Every slot in the kit has art.

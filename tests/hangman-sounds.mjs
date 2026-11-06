@@ -1,11 +1,11 @@
 // Hangman Unchained sounds: each of the 3 versions plays the Wanted! jingle, then a song from the Sunset Riders pool; a new game gets
 // a different song; pause stops it and resume carries on; leaving the game stops it; the Music setting off = silence; the
 // voice clips decode; the music director switches to a showdown song when someone is on their last bullets and back after. SHAMB_URL=http://localhost:8123/ for a --pwa build.
-import {chromium, browserLaunchOptions, root} from './lib.mjs';
+import {chromium, browserLaunchOptions, root,appURL} from './lib.mjs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
-const url=process.env.SHAMB_URL||pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href;
+const url=(await appURL());
 const browser=await chromium.launch({...browserLaunchOptions(),args:['--autoplay-policy=no-user-gesture-required']});
 const page=await browser.newPage({viewport:{width:390,height:780}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.goto(url,{waitUntil:'domcontentloaded',timeout:120000});await page.waitForSelector('.title-screen',{timeout:120000});

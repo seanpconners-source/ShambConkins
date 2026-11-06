@@ -1,12 +1,12 @@
 // Frogger and Crossy Road (engines/froggerCrossy.js): real swipes hop the frog; a frog on the road gets squashed and in the river drowns
 // off a log; a bay fills and pays; Crossy hops forward, trees block, water kills, the eagle takes a lazy player; both end on the result
 // card. Usage: node tests/frogger-crossy.mjs [WxH]   (SHAMB_URL=...); screenshots: fc-*.png
-import {launchBrowser,screenshotPath} from './lib.mjs';
+import {launchBrowser,screenshotPath,appURL} from './lib.mjs';
 const [w,h]=(process.argv[2]||'390x780').split('x').map(Number),tag=`${w}x${h}`;
 const browser=await launchBrowser();
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
 async function open(id){const page=await (await browser.newContext({viewport:{width:w,height:h}})).newPage();page.__errors=[];page.on('pageerror',e=>page.__errors.push(e.message));
- await page.goto(process.env.SHAMB_URL||'http://localhost:8123/',{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
+ await page.goto((await appURL()),{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
  await page.evaluate(id=>{window.ShambConkins.requestGame({id,origin:'arcade',quick:true});},id);await page.waitForSelector('.pass-overlay [data-ready]',{timeout:20000});await page.evaluate(()=>document.querySelector('.pass-overlay [data-ready]').click());
  await page.waitForFunction(()=>{const s=window.ShambConkins.store.session;return s?.debug?.world&&!document.querySelector('.pass-overlay');},null,{timeout:20000});await page.waitForTimeout(400);return page;}
 const swipeUp=async page=>{await page.mouse.move(w/2,h*.7);await page.mouse.down();await page.mouse.move(w/2,h*.6,{steps:3});await page.mouse.up();await page.waitForTimeout(260);};

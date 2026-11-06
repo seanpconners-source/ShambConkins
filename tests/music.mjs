@@ -1,3 +1,4 @@
+import {appURL} from './lib.mjs';
 // Music + title-screen checks: the generative board score follows level/landmark/warp, the
 // unlock fanfare plays, and the title screen's Exit button closes to the goodbye screen.
 // Screenshots go to $OUT (default /tmp/claude-0/sc).
@@ -7,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 const require=createRequire('/node-tools/node_modules/');
 const {chromium}=require('playwright');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const out=process.env.OUT||'/tmp/claude-0/sc',file='file://'+path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html');
+const out=process.env.OUT||'/tmp/claude-0/sc',file=(await appURL());
 const browser=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
 let fail=0;const check=(ok,msg)=>{console.log((ok?'ok   ':'FAIL ')+msg);if(!ok)fail++;};
 async function page(vp){const p=await browser.newPage({viewport:vp});const errors=[];p.on('pageerror',e=>errors.push(e.message));

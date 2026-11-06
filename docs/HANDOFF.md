@@ -132,9 +132,9 @@ K17-K19 ambushes, bombs, carpet runs, themed ammo.
   It can fetch but **cannot push** (no credentials): commit locally, then ask the owner to push in GitHub Desktop
   (every branch you changed: the work branch, TESTver, main).
 - PowerShell 5.1: no `&&`; `Remove-Item` on variable paths may be blocked (write to new folders instead).
-- Browser tests: build the installable app (`node tools/build.mjs --pwa <scratch>\pwa`), serve it with
-  `node tools/serve-static.mjs <dir> 8123`, and run tests with `SHAMB_URL=http://localhost:8123/`. Loading the
-  346 MB one-file build in headless Chromium is very slow here.
+- Browser tests: `node tools/build.mjs` (→ dist\pwa) and run the test; it serves dist\pwa itself (tests/lib.mjs
+  `appURL`). For a private build: `node tools/build.mjs --pwa <scratch>\pwa`, `node tools/serve-static.mjs <dir> 8123`,
+  `SHAMB_URL=http://localhost:8123/`. Since Nov 6 there is no one-file build any more (install only).
 - Test helpers: `page.evaluate(() => { window.ShambConkins.requestGame({...}); })` — keep the braces: requestGame's
   promise only settles when the game ends, so returning it hangs the test.
 - Boss tests: `tests/boss.mjs`, `tests/bossdiff.mjs` (DIFF=0,1,2,3), `tests/boss-parry.mjs`, `tests/boss-ladder.mjs`,

@@ -1,13 +1,13 @@
 // Broforce from the board: a real run launches the mission, both turns are fast-forwarded through the debug hooks, the
 // result is an ordinary head-to-head result (winner gets the board reward), each player's GOLD-cage recruit lands in
 // that player's own roster, no random "winner recruit" is added on top, and the run stays a valid save.
-import {launchBrowser, root} from './lib.mjs';
+import {launchBrowser, root,appURL} from './lib.mjs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 let ok=true;const fail=m=>{ok=false;console.log('FAIL',m);};
 const browser=await launchBrowser();const page=await browser.newPage({viewport:{width:780,height:390}});const errors=[];
 page.on('pageerror',e=>errors.push(e.message));
-await page.goto(pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href,{waitUntil:'domcontentloaded',timeout:90000});
+await page.goto((await appURL()),{waitUntil:'domcontentloaded',timeout:90000});
 await page.waitForFunction(()=>window.ShambConkins?.requestGame,null,{timeout:60000});
 await page.click('text=NEW GAME').catch(()=>{});await page.click('[data-action=start-run]').catch(()=>{});
 const click=()=>page.evaluate(()=>{const d=document.getElementById('dialog');if(d.open){d.querySelector('button.primary,button')?.click();return true;}const c=document.querySelector('.level-card,.gentlemen-card,.smash-card');if(c){c.click();return true;}return false;});

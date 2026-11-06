@@ -1,14 +1,14 @@
 // Broforce heads: renders every character's in-game head (headCanvas) onto contact sheets and counts how each was made:
 // cutout (transparent art, outlined), removed (photo backdrop flood-filled away, outlined), oval (busy photo fallback),
 // placeholder (no image). Sheets go to OUT/bf-heads-<n>.png (default /tmp/claude-0/sc).
-import {launchBrowser, root} from './lib.mjs';
+import {launchBrowser, root,appURL} from './lib.mjs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {mkdirSync} from 'node:fs';
 const out=process.env.OUT||'/tmp/claude-0/sc';mkdirSync(out,{recursive:true});
 const browser=await launchBrowser();const page=await browser.newPage({viewport:{width:1200,height:900}});const errors=[];
 page.on('pageerror',e=>errors.push(e.message));
-await page.goto(process.env.SHAMB_URL||pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href,{waitUntil:'domcontentloaded',timeout:90000});
+await page.goto((await appURL()),{waitUntil:'domcontentloaded',timeout:90000});
 await page.waitForFunction(()=>window.ShambConkins?.requestGame,null,{timeout:60000});
 await page.evaluate(()=>{window.ShambConkins.requestGame({id:'broforce-jungle',origin:'arcade'});});
 await page.waitForTimeout(600);await page.evaluate(()=>[...document.querySelectorAll('#dialog button')].find(b=>/start/i.test(b.textContent))?.click());

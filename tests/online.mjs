@@ -2,10 +2,10 @@
 // Needs the Worker running locally: `cd cloudflare && npx wrangler dev --local --port 8787` (SC_NET_HOST to change).
 // Two browser contexts join one room, Sean challenges Amber, both play the same seeded game, scores flow both ways,
 // the result card shows both, Amber's rematch reaches Sean, and leaving updates the other phone.
-import {launchBrowser,root,screenshotPath} from './lib.mjs';
+import {launchBrowser,root,screenshotPath,appURL} from './lib.mjs';
 import path from 'node:path';import {pathToFileURL} from 'node:url';
 const HOST=process.env.SC_NET_HOST||'ws://127.0.0.1:8787',GAME=process.env.GAME||'snake-run';
-const url=pathToFileURL(path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html')).href;
+const url=(await appURL());
 let failed=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)failed++;};
 const browser=await launchBrowser();
 async function phone(tag){

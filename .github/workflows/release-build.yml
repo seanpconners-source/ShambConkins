@@ -1,11 +1,12 @@
-name: Publish release HTML
+name: Publish release
 
-# A version bump pushed to main builds releases/ShambConkins_v<version>.html and publishes it as the asset of a new
-# GitHub Release v<version> (the ~80 MB file is never a git blob). Notes come from docs/releases/v<version>.md, else
-# from that version's CHANGELOG section. Does nothing if the release already exists. Run it by hand to retry.
-# The installable-app folder (`--pwa`) goes up next to it as ShambConkins_v<version>_pwa.zip, and its small files
-# (index.html = the app page, manifest.webmanifest, sw.js, icon PNGs) as their own assets: cloudflare/worker.js serves them
-# by name. The app's pictures and sounds (the folder's a/ files) are put on the website first, as the Worker's static
+# A version bump pushed to main builds the installable app (releases/ShambConkins_v<version>_pwa, tools/build.mjs --pwa)
+# and publishes a new GitHub Release v<version>. Notes come from docs/releases/v<version>.md, else from that version's
+# CHANGELOG section. Does nothing if the release already exists. Run it by hand to retry.
+# The app folder goes up as ShambConkins_v<version>_pwa.zip, and its small files (index.html = the app page,
+# manifest.webmanifest, sw.js, icon PNGs) as their own assets: cloudflare/worker.js serves them by name. Since v0.88.0
+# there is no one-file ShambConkins_v<version>.html any more (owner, Nov 6: install only; a browser can't open a file
+# much over ~500 MB). The app's pictures and sounds (the folder's a/ files) are put on the website first, as the Worker's static
 # assets (tools/worker-assets.sh + wrangler deploy, secrets CLOUDFLARE_API_TOKEN/ACCOUNT_ID); if that fails, nothing is
 # published. See docs/PWA_SPLIT_DELIVERY.md.
 on:
@@ -42,7 +43,6 @@ jobs:
           set -euo pipefail
           V=$(node -p "require('./package.json').version")
           grep -Fq "const VERSION='$V';" src/version.js
-          node -p "require('./package.json').scripts.release" | grep -Fq "releases/ShambConkins_v$V.html"
           node -p "require('./package.json').scripts.release" | grep -Fq -- "--pwa releases/ShambConkins_v${V}_pwa"
           echo "version=$V" >> "$GITHUB_OUTPUT"
           if gh release view "v$V" >/dev/null 2>&1; then
@@ -51,21 +51,18 @@ jobs:
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Build the release HTML
+      - name: Build the app
         if: steps.v.outputs.exists == 'false'
         shell: bash
         run: |
           set -euo pipefail
           V=${{ steps.v.outputs.version }}
           npm run release
-          F=releases/ShambConkins_v$V.html
-          test "$(stat -c %s "$F")" -gt 1000000
-          grep -Fq "const VERSION='$V'" "$F"
           test -f "releases/ShambConkins_v${V}_pwa/sw.js"
           grep -Fq "const VERSION='$V'" "releases/ShambConkins_v${V}_pwa/index.html"
           test "$(ls "releases/ShambConkins_v${V}_pwa/a" | wc -l)" -gt 100
           (cd releases && zip -qr "ShambConkins_v${V}_pwa.zip" "ShambConkins_v${V}_pwa")
-          sha256sum "$F" "releases/ShambConkins_v${V}_pwa.zip"
+          sha256sum "releases/ShambConkins_v${V}_pwa.zip"
       - name: Gather the app's pictures and sounds for the website
         if: steps.v.outputs.exists == 'false'
         shell: bash
@@ -99,7 +96,7 @@ jobs:
           TITLE=$(sed -n '1s/^# //p' "docs/releases/v$V.md" 2>/dev/null || true)
           if [ -f "docs/releases/v$V.md" ]; then sed -i '1{/^# /d}' "docs/releases/v$V.md"; fi
           APP="releases/ShambConkins_v${V}_pwa"
-          gh release create "v$V" "releases/ShambConkins_v$V.html" "releases/ShambConkins_v${V}_pwa.zip" \
+          gh release create "v$V" "releases/ShambConkins_v${V}_pwa.zip" \
             "$APP/index.html" "$APP/manifest.webmanifest" "$APP/sw.js" "$APP"/icons/*.png \
             --target "$GITHUB_SHA" \
             --title "${TITLE:-ShambConkins v$V}" \

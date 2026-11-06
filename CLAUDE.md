@@ -11,10 +11,13 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   `Object.assign(exports,{...})`. No ES modules, no npm packages at runtime, no network required.
 - Every module must be listed in `src/modules.json` (`node tools/add-module.mjs <path>` adds one;
   `node tools/check-modules.mjs` verifies). Entry point is `src/app.js` (game flow, turns, landing, events).
-- `tools/build.mjs` inlines `src/` + `src/styles.css` + `src/index.template.html` + `assets/` into
-  `dist/ShambConkins.html` (~200 MB). `--pwa` writes the installed app instead as a small index.html + `a/<hash>.<ext>`
-  files (USER_PORTRAITS values are then file names, not data URIs: test raster art with `isRasterArt`, read bytes with
-  `assetBytes`, both in `src/data/userPortraits.js`; docs/PWA_SPLIT_DELIVERY.md). Drop-in art: `assets/portraits/<characterId>[.<mood>].webp|png`,
+- The game ships ONLY as the installable app (owner, Nov 6: install only, from the same web address; a one-file HTML
+  can't grow past ~500 MB and lots more art/sound is coming). `tools/build.mjs` builds `src/` + `src/styles.css` +
+  `src/index.template.html` + `assets/` into `dist/pwa/` (`--pwa <dir>` elsewhere): a small index.html + `a/<hash>.<ext>`
+  files (USER_PORTRAITS values are file names, not data URIs: test raster art with `isRasterArt`, read bytes with
+  `assetBytes`, both in `src/data/userPortraits.js`; docs/PWA_SPLIT_DELIVERY.md). `--single` still writes the old
+  one-file `dist/ShambConkins.html` for odd jobs; never release it. A game's own big art/sounds get a `LATER` line in
+  `src/pwa.js` (downloaded the first time that game opens, not at install). Drop-in art: `assets/portraits/<characterId>[.<mood>].webp|png`,
   `assets/items/<id>.*`, `assets/locations/<id>.*`, Photo Hunt pairs `assets/photohunt/` (`tools/photohunt.py`, see its README), pinball table art `assets/pinball/<table>/<slot>.*` (slots in `src/engines/pinball/README.md`); shrink big images with `python3 tools/optimize-art.py`.
 - Key systems: `ui.js` (screens, board SVG, HUD), `multiPathBoard.js` + `boardZones.js` + `biomes.js`
   (generation-7 journey map), `boardCamera.js` (camera/zoom), `gameRegistry.js` + `gameLauncher.js`
@@ -29,17 +32,20 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
 - Arcade backgrounds (key art): the owner places each one per screen in the Background Picker artifact (see the rule below).
 
 ## Commands
-- Build: `node tools/build.mjs` (or `--out /tmp/x.html` for a private build).
+- Build: `node tools/build.mjs` (→ dist/pwa; `--pwa /tmp/x` for a private build). Play it: `node tools/serve-static.mjs dist/pwa 8123`.
 - Full test: `npm test` (module check, build, 300-board structure test, unlock audit, smoke, route chooser,
   fuzz of every minigame). Must end `EXIT 0` / "N/N games ran clean".
 - Focused tests (Playwright, headless Chromium at /opt/pw-browsers/chromium-1194/chrome-linux/chrome,
   module at /node-tools/node_modules): `tests/bossgate.mjs`, `tests/warpflow.mjs`, `tests/warp.mjs`,
-  `tests/levels.mjs`, `tests/boss.mjs`, `tests/photohunt.mjs`, `tests/controls-audit.mjs`, `tests/music.mjs`, `tests/pwa.mjs` (after `build.mjs --pwa`), `tests/online.mjs` + `tests/online-board.mjs` (need `wrangler dev`, see cloudflare/README.md), `SHAMB_FILE=... node tests/games.mjs 5 3 <id-regex>`.
-- Release: bump `src/version.js` (VERSION + the RELEASED month shown in About) + `package.json` (`version` AND both file
-  names in the `release` script: the release workflow checks them and publishes nothing if they disagree), `npm run release` → `releases/ShambConkins_vX.html`, add a CHANGELOG entry
-  (+ optional `docs/releases/vX.md` notes); pushing the bump to main makes `release-build.yml` publish the GitHub Release.
-  Owner's Windows one-click `BUILD-RELEASE.cmd` builds the checked-out branch: main → `ShambConkins_vX.html`, TESTver →
-  `ShambConkins_vX_TestVer.html`, other branches → `_<branch>`; never overwrites (adds `_built-<timestamp>`); non-main builds are gitignored. Large generated HTML (v0.58.3 is 130 MB) is a GitHub Release asset, NOT a git blob; maintain tested production build and keep source/artwork unchanged.
+  `tests/levels.mjs`, `tests/boss.mjs`, `tests/photohunt.mjs`, `tests/controls-audit.mjs`, `tests/music.mjs`, `tests/pwa.mjs`, `tests/online.mjs` + `tests/online-board.mjs` (need `wrangler dev`, see cloudflare/README.md), `node tests/games.mjs 5 3 <id-regex>`.
+  Tests open the game through `appURL()` (tests/lib.mjs): they serve dist/pwa on a free port themselves; `SHAMB_URL` = an
+  already served copy (e.g. a private `--pwa` build behind serve-static), `SHAMB_FILE` = a `--single` file.
+- Release: bump `src/version.js` (VERSION + the RELEASED month shown in About) + `package.json` (`version` AND the folder
+  name in the `release` script: the release workflow checks it and publishes nothing if they disagree), `npm run release` → `releases/ShambConkins_vX_pwa/`, add a CHANGELOG entry
+  (+ optional `docs/releases/vX.md` notes); pushing the bump to main makes `release-build.yml` put the app's files on the
+  website Worker and publish the GitHub Release (app zip + index.html/sw.js/manifest/icons; no one-file .html since v0.88.0).
+  Owner's Windows one-click `BUILD-RELEASE.cmd` builds the checked-out branch into `releases/ShambConkins_vX[_TestVer|_<branch>]_app/`
+  (never overwrites: adds `_built-<timestamp>`; gitignored) and plays it at http://localhost:8123/. Built games are never git blobs.
 
 ## Rules (don't break these)
 - Old saves must keep loading: never rename character/location/game ids; add fields defensively;

@@ -1,12 +1,12 @@
 // Who Wants to Be a Shambillionaire? (engines/millionaire.js): P1 climbs past the first safe haven, uses all three lifelines,
 // answers wrong and drops to $1,000; P2 takes one question and walks away with $100; the higher bank wins.
 // Usage: node tests/millionaire.mjs [WxH]   (SHAMB_URL=http://localhost:8123/ for a --pwa build); screenshots: wm-*.png
-import {launchBrowser,screenshotPath} from './lib.mjs';
+import {launchBrowser,screenshotPath,appURL} from './lib.mjs';
 const [w,h]=(process.argv[2]||'390x780').split('x').map(Number),tag=`${w}x${h}`;
 const browser=await launchBrowser(),page=await (await browser.newContext({viewport:{width:w,height:h}})).newPage();
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
-await page.goto(process.env.SHAMB_URL||'http://localhost:8123/',{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
+await page.goto((await appURL()),{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
 const D=fn=>page.evaluate(fn);
 const asking=()=>page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.st?.phase==='ask'&&!document.querySelector('.wm-end'),null,{timeout:30000});
 const ready=()=>page.evaluate(()=>document.querySelector('.pass-overlay [data-ready]')?.click());

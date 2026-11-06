@@ -3,9 +3,9 @@
 // for the moment, 3 nice, 4 nasty (2 crude) and 16 emotes, a fresh hand each time; a tapped line and a typed message arrive
 // on the other phone as a bubble with an unread count; keys typed in the chat don't reach the page behind; the button
 // works over an open dialog; Clean chat drops the crude lines; a friend outside the room gets a message through the lobby.
-import {launchBrowser,screenshotPath} from './lib.mjs';
+import {launchBrowser,screenshotPath,appURL} from './lib.mjs';
 import {req} from './load.mjs';
-const URL0=process.env.SHAMB_URL||'http://localhost:8124/',HOST=process.env.NET_HOST||'ws://localhost:8787';
+const URL0=(await appURL()),HOST=process.env.NET_HOST||'ws://localhost:8787';
 const {CRASS}=req('src/data/chatLines.js');
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
 const browser=await launchBrowser();

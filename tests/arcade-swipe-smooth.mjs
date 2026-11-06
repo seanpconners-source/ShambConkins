@@ -4,8 +4,8 @@
 // text doesn't keep moving after the finger lets go (the old one has to carry on out, the new one come in from the other
 // side), or when the next game's picture isn't already fading in under the finger before the release.
 // Usage: SHAMB_URL=http://localhost:8123/ node tests/arcade-swipe-smooth.mjs   (N=6 GAP=500 CPU=4 VIEW=390x780 MAX_LONG=2 DUMP=1)
-import {launchBrowser} from './lib.mjs';
-const URL0=process.env.SHAMB_URL||'http://localhost:8123/',[VW,VH]=(process.env.VIEW||'390x780').split('x').map(Number),CPU=+process.env.CPU||4,GAP=+process.env.GAP||500,N=+process.env.N||6,MAX_LONG=+(process.env.MAX_LONG??2);
+import {launchBrowser,appURL} from './lib.mjs';
+const URL0=(await appURL()),[VW,VH]=(process.env.VIEW||'390x780').split('x').map(Number),CPU=+process.env.CPU||4,GAP=+process.env.GAP||500,N=+process.env.N||6,MAX_LONG=+(process.env.MAX_LONG??2);
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
 const browser=await launchBrowser();const ctx=await browser.newContext({viewport:{width:VW,height:VH},deviceScaleFactor:2.625,isMobile:true,hasTouch:true});const page=await ctx.newPage();
 const errors=[];page.on('pageerror',e=>errors.push(e.message));

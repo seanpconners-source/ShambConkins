@@ -1,12 +1,12 @@
 // Paddy's Darts (engines/paddysDarts.js): the rules in Node (a board hit maps to the right number and ring), then a real press-and-release
 // throw, 301 with a bust and a checkout, Cricket marks and scoring, High Score to the result card, and a game vs the CPU.
 // Usage: node tests/darts.mjs [WxH]   (SHAMB_URL=...); screenshots: dt-*.png
-import {launchBrowser,screenshotPath} from './lib.mjs';
+import {launchBrowser,screenshotPath,appURL} from './lib.mjs';
 const [w,h]=(process.argv[2]||'390x780').split('x').map(Number),tag=`${w}x${h}`;
 const browser=await launchBrowser();
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
 async function open(mode,{solo=false}={}){const page=await (await browser.newContext({viewport:{width:w,height:h}})).newPage();page.__e=[];page.on('pageerror',e=>page.__e.push(e.message));
- await page.goto(process.env.SHAMB_URL||'http://localhost:8123/',{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
+ await page.goto((await appURL()),{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
  await page.evaluate(v=>{const S=window.ShambConkins;if(v)S.store.profile.settings.solo={on:true,who:0,level:'normal'};S.requestGame({id:'paddys-darts',origin:'arcade',solo:v,quick:true});},solo);
  await page.waitForSelector('.pass-overlay [data-ready]',{timeout:20000});await page.evaluate(()=>document.querySelector('.pass-overlay [data-ready]').click());await page.waitForSelector('.dt-mode',{timeout:15000});await page.waitForTimeout(250);if(mode==='x01')await page.screenshot({path:screenshotPath(`dt-menu-${tag}.png`)});
  await page.click(`.dt-mode[data-mode="${mode}"]`);return page;}

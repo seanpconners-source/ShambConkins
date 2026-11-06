@@ -3,8 +3,8 @@
 // in the Play online dialog; Amber's phone gets Sean as a friend by itself; each sees the other as Free; while Amber plays a
 // minigame Sean sees "Playing <game>" and an invite waits; when Amber's game ends the invite pops up, Join puts both phones
 // in the same room. Then Amber closes the game: Sean sees her offline.
-import {chromium,browserLaunchOptions} from './lib.mjs';
-const URL0=process.env.SHAMB_URL||'http://localhost:8124/',HOST=process.env.NET_HOST||'ws://localhost:8787';
+import {chromium,browserLaunchOptions,appURL} from './lib.mjs';
+const URL0=(await appURL()),HOST=process.env.NET_HOST||'ws://localhost:8787';
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
 const browser=await chromium.launch(browserLaunchOptions());
 async function phone(who){

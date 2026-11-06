@@ -2,7 +2,7 @@
 // 2P table at three screen sizes: bet with chip taps, hit by tapping the felt, stand by swiping, play the whole shoe on the
 // bots to the result card; a game vs the CPU; and the dealer's unlock when someone breaks the bank.
 // Usage: node tests/blackjack.mjs   (SHAMB_URL=..., default http://localhost:8123/ serving a --pwa build); screenshots bj-*.png
-import {launchBrowser,screenshotPath} from './lib.mjs';
+import {launchBrowser,screenshotPath,appURL} from './lib.mjs';
 import {req} from './load.mjs';
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
 // ---- rules in Node
@@ -11,7 +11,7 @@ let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;
  check(basic(C(8,8),{r:10},true,true)==='p'&&basic(C(10,10),{r:6},true,true)==='s','basic strategy: split 8s, never 10s');check(basic(C(6,5),{r:6},true,false)==='d'&&basic(C(10,6),{r:10},true,false)==='h'&&basic(C(10,6),{r:5},true,false)==='s','basic strategy: double 11, hit 16 vs 10, stand 16 vs 5');}
 const browser=await launchBrowser();
 async function open(w,h,{solo=false}={}){const page=await (await browser.newContext({viewport:{width:w,height:h}})).newPage();page.__e=[];page.on('pageerror',e=>page.__e.push(e.message));
- await page.goto(process.env.SHAMB_URL||'http://localhost:8123/',{timeout:180000});await page.waitForSelector('.title-screen',{timeout:90000});await page.waitForFunction(()=>!document.getElementById('boot'),null,{timeout:90000});
+ await page.goto((await appURL()),{timeout:180000});await page.waitForSelector('.title-screen',{timeout:90000});await page.waitForFunction(()=>!document.getElementById('boot'),null,{timeout:90000});
  await page.evaluate(v=>{const S=window.ShambConkins;if(v)S.store.profile.settings.solo={on:true,who:0,level:'normal'};S.requestGame({id:'blackjack',origin:'arcade',solo:v,quick:true});},solo);
  await page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.engine==='vegas-blackjack',null,{timeout:20000});
  // the intro card (casinoFront.js): it must offer TAKE A SEAT; tap it like a player

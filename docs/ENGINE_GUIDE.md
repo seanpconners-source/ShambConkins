@@ -94,7 +94,7 @@ from `s.sprite`). The page background is light; the canvas should supply its own
 
 ## Testing
 * `node tools/build.mjs --out /tmp/yourname.html` builds to a private path (never overwrite `dist/` from a parallel task).
-* `SHAMB_FILE=/tmp/yourname.html node tests/games.mjs 6 3 <id-regex>` launches each game and fuzzes input for 6 s; it must print `N/N games ran clean`.
+* `node tests/games.mjs 6 3 <id-regex>` (after `node tools/build.mjs`; a private build: `node tools/build.mjs --pwa /tmp/x`, `node tools/serve-static.mjs /tmp/x 8123`, `SHAMB_URL=http://localhost:8123/`) launches each game and fuzzes input for 6 s; it must print `N/N games ran clean`.
 * Take screenshots with Playwright (see `tests/lib.mjs` `open({file})`, module at `/node-tools/node_modules/`) and look at them:
   `await page.evaluate(id=>{window.ShambConkins.requestGame({id,origin:'arcade'})},'my-id')` (do NOT await the returned promise),
   then click the "Start game" button in `#dialog`, then drive the canvas with `page.mouse`.

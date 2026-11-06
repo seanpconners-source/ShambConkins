@@ -2,8 +2,8 @@
 """Safely run the project's EXISTING tools/optimize-art.py, unmodified.
 
 Pre-existing compressed files and archived originals are quarantined before the
-original script runs, then restored. Output pixels use exactly the historical
-Pillow LANCZOS 480px / WebP quality=88 method=6 path. Never force overwrite.
+original script runs, then restored. Output = whatever optimize-art.py writes
+(Pillow LANCZOS 480px, lossless WebP since Nov 6; quality=88 before). Never force overwrite.
 """
 import hashlib
 import json
@@ -111,7 +111,7 @@ def main():
         raise RuntimeError("The set of artwork lookup keys changed: preserve character and mood identities")
     after_bytes = sum(item["after"] for item in results)
     report = {
-        "method": "unchanged tools/optimize-art.py (Pillow LANCZOS max 480, WebP quality=88 method=6)",
+        "method": "unchanged tools/optimize-art.py (Pillow LANCZOS max 480, lossless WebP)",
         "optimized_count": len(results),
         "skipped_collisions": [
             {"name": str(source.relative_to(ROOT)), "reason": reason}

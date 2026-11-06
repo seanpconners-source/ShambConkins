@@ -1,9 +1,9 @@
 // Theme audit: opens every minigame (intro card, then a few seconds of play) and reports text whose colour
 // is too close to the background it sits on (WCAG ratio < 2.6). Usage: node tests/contrast.mjs [id-regex] [concurrency]
-import {chromium, root} from './lib.mjs';
+import {chromium, root,appURL} from './lib.mjs';
 import path from 'node:path';
 const filter=process.argv[2], conc=+process.argv[3]||4;
-const file='file://'+path.resolve(root,process.env.SHAMB_FILE||'dist/ShambConkins.html');
+const file=(await appURL());
 const browser=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
 const probe=await browser.newPage();await probe.goto(file);
 let ids=await probe.evaluate(()=>window.ShambConkins.gameRegistry.map(g=>g.id));await probe.close();

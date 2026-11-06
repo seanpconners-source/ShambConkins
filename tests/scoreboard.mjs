@@ -2,8 +2,8 @@
 // in cloudflare/ and a served --pwa build (SHAMB_URL). Checks: the game page shows the record holder from the site; the 🏆
 // chip opens the top 10; a finished 1-player run is sent with the player's name; with the site unreachable a run waits in
 // the outbox and the page still shows the board as last seen (marked offline); the outbox goes once the site is back.
-import {chromium,browserLaunchOptions} from './lib.mjs';
-const URL0=process.env.SHAMB_URL||'http://localhost:8123/',API=process.env.API||'http://localhost:8787';
+import {chromium,browserLaunchOptions,appURL} from './lib.mjs';
+const URL0=(await appURL()),API=process.env.API||'http://localhost:8787';
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
 const post=(g,b)=>fetch(`${API}/scores/${g}`,{method:'POST',body:JSON.stringify(b)}).then(r=>r.json());
 const top=g=>fetch(`${API}/scores/${g}`).then(r=>r.json()).then(r=>r.top);
