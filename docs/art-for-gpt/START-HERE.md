@@ -51,6 +51,14 @@ time, in order, skipping anything marked done (✅). Name every file exactly as 
 - File names: `<slot>-art.png`, `<slot>-icon.png`, `<slot>-logo.png` (slot = the word in backticks after the title).
 - **New key art goes through the Background Picker** before it ships (Claude does that part; the owner locks it).
 
+## Art Tally on Google Drive (Claude ↔ GPT)
+Folder **ShambConkins Art/Art Tally** on Drive is where Claude and GPT leave each other notes. Nobody edits a file there:
+each side adds a new dated one. GPT adds `UPLOADS-GPT-<date-time>.md` after every upload (one line per picture: folder,
+file, slot or id, note) and reads the newest `TALLY-CLAUDE-<date-time>.md` before working (DELETE OK = in the game, the Drive
+copy can go; REDO = fix it; WANTED = what to make next). Claude writes the tally with `node tools/art-tally.mjs --round <notes.md>`
+(copy in `docs/art-for-gpt/ART-TALLY.md`) and uploads it as a new file. Claude's Drive connector can create files but not edit
+them, which is why every update is a new file.
+
 ## Hand back (owner)
 Best: GitHub, which Claude can always read. In the browser, open the repository → folder **`art-inbox/<area>/`** (for example
 `art-inbox/sundown/`, `art-inbox/baseball/`, `art-inbox/sotn/`, `art-inbox/items/`, `art-inbox/arcade/`, `art-inbox/portraits/`) → **Add file → Upload files** →

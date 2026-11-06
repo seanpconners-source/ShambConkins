@@ -1,6 +1,6 @@
 # Items that still need a picture
 
-Made by `node tools/gpt-art-todo.mjs` (303 of 633 items have art). Work top to bottom in batches of ~20.
+Made by `node tools/gpt-art-todo.mjs` (304 of 633 items have art). Work top to bottom in batches of ~20.
 Rules are in START-HERE.md → "Item pictures". File name = the id in the first column, e.g. `rum-ham.png`.
 
 | id (file name) | item | from | what it does in the game |
@@ -238,7 +238,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `v43-flying-nimbus` | Flying Nimbus | Dragon Ball Z | Gain one pass through any locked, broken, flooded or other blocked path. Spend it at a crossing; the obstacle remains for your opponent. |
 | `v43-biscuit-cookie` | Biscuit’s Training Cookie | Hunter × Hunter | Keep the better of two dice this roll. Halve your following roll. |
 | `v43-container-spray` | Container Repair Spray | Death Stranding | Permanently repair the nearest reachable barrier in this realm for both players. If none needs repair, gain one single-crossing pass. |
-| `v43-fragile-umbrella` | Fragile’s Umbrella | Death Stranding | Move forward 5 spaces, then roll normally. Only your dice landing triggers an encounter. |
 | `v43-likes-token` | Bridges Likes Token | Death Stranding | Bank up to 3 of your points. At your next personal turn, get the deposit back plus 2. It is protected while banked; unfinished deposits pay at the expedition’s end. Keep this item if you have no points. |
 | `v43-robot-visor` | Encore Robot Visor | Daft Punk | Copy your opponent’s last base die for this roll; use 4 if they have not rolled yet. Bonuses still apply. |
 | `v43-get-lucky-record` | Get Lucky Record Token | Daft Punk | This roll uses two dice and keeps the higher. A Lucky Roll does not add a third die. |

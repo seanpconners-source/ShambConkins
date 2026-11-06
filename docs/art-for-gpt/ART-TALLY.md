@@ -1,0 +1,559 @@
+# ShambConkins art tally (Claude ↔ ChatGPT)
+
+Written by Claude, 2026-11-06 13:54 UTC. Newest TALLY-CLAUDE-*.md in this folder is the current one.
+
+## How this works
+
+- **This folder is how Claude and ChatGPT talk.** Nobody edits someone else's file: each side adds a NEW file, named with the date and time, so nothing gets overwritten.
+- **ChatGPT, after every upload**, adds `UPLOADS-GPT-<yyyy-mm-dd-hhmm>.md`: one line per picture, `Drive folder | file name | what it is for (slot / item id) | note`. Say so if a file replaces an earlier one. List what you deleted since last time too.
+- **Claude, when Sean says "check the tally"**, reads every UPLOADS-GPT file newer than its last TALLY, imports the pictures into the game, and adds a new `TALLY-CLAUDE-<yyyy-mm-dd-hhmm>.md` with: what came in, **DELETE OK** (in the game, GPT may delete the Drive copy), **REDO** (what is wrong and how to fix it), **NOT USED**, and the WANTED list below.
+- **ChatGPT, before making art**, reads the newest TALLY-CLAUDE: delete everything marked DELETE OK, redo the REDO items first, then work down WANTED. Old TALLY and UPLOADS files can be deleted once a newer TALLY says it has read them.
+- **Names:** file name = the slot or id exactly as written here (lowercase, `.png`). One picture per file, transparent background unless it is a background or key art. Rules and sizes: START-HERE.md and each area's GPT-SPRITE-BRIEF.md (Sean has them).
+- Claude only looks when Sean asks (or on a schedule if Sean sets one up), so tell Sean when a batch is up.
+
+## This round
+
+First tally. Claude listed every file under **ShambConkins Art/Needs Review** (about 950) and compared each one with the game.
+
+**Came in this round:** all 73 Symphony of the Night slots (16 new: hero-p1/p2, lantern, torch, fireball, inferno, holy-flame, fire-wave, tree, fence, grave, gate-wall, gate, portcullis, stepping-stone, water); all 13 remaining baseball sprites (pitchers, fielders, catchers, umpire, helmets, caps, ball, wall); item `v43-fragile-umbrella` (Batch 03, it had been missed).
+
+**Not arrived:** the folders "Transparent Items — Batch 06", "Transparent Items — Batch 07" and "Generated Image Library — Individual Files" (made 2026-11-06 13:35 UTC) were EMPTY when Claude looked. If you uploaded into them, the upload did not finish: please upload again and list the files in an UPLOADS-GPT file.
+
+**DELETE OK** (everything here is in the game, or is a source / preview / full-size copy of a picture that is; the game keeps its own copy of every original). Delete these whole folders, subfolders included:
+- Transparent Items — Batch 01, 02, 03, 04, 05 (with Originals, Game Inventory, Needs Correction)
+- Castlevania [castlevania] (with Symphony of the Night — Sprites and Final Sprites — Complete 73)
+- Major League [baseball] (with Baseball Sprites, Originals, previews, Revised Batters — Updated Templates)
+- Sundown Showdown — Sprites (with Originals, Animation Previews, templates, signs and the small source folders)
+- Sundown Showdown [sundown-showdown], Hole.it [paddys-hole], Battleship Fog of War [battleship-fog], Call of Duty Modern Stick Dot [office-dots-boxes] (with their Originals / previews)
+- Black Sabbath Pinball, Brick Quest, Broforce, Bucketheadland Pinball, Candy Land, Chutes and Ladders, Clue, DOOM, DOOM II, Hangman, James Bond, King Gizzard Pinball, Mario Kart, Microgame Rush, South Park, Space Invaders, Super Mario Bros, The Mighty Ducks, bosses, casino
+- Empty folders: Trivia Night, Tony Hawk's Pro Mancala, The Legend of Zelda, The Matrix, Terminator, taskmaster, Tarantino Night, Star Trek, Paddy's Pub, Sonic the Hedgehog, Pac-Maze Duel, Pokémon Battles, Monopoly, Mancala Animation Words
+- Loose files in Needs Review: Mancala-Animation-Words.zip; GPT's own notes (START-HERE.md, CLAUDE-HANDOFF.md, REVIEW-LIST.md, LIKENESS-QA.md, CURRENT-REVISIONS.md, DELIVERY-MANIFEST.json, ARCHIVE-RECEIPT.json, index.html) if you no longer need them
+
+**ASK SEAN FIRST:** All Versions Archives (6 zips, 385 MB of old game versions; every release is also on GitHub).
+
+**NOT USED:** The Office [office] background / logo / icon: no Arcade entry is called `office` (The Office games have their own slots, e.g. `warehouse-shift`, `office-dots-boxes`). Delete unless Sean wants an Office group.
+
+**KEEP:** Reference Portraits (Sean-original, Amber-original), the likeness references. The new empty Batch 06 / 07 / Generated Image Library folders, if you are about to fill them.
+
+**REDO:** none.
+
+## WANTED (worked out from the game)
+
+### Sprite kits
+
+**Symphony of the Night** (73 of 73 slots have art; brief: `docs/sotn-sprites/GPT-SPRITE-BRIEF.md`)
+All done ✅
+
+**Major League Baseball** (18 of 18 slots have art; brief: `docs/baseball-sprites/GPT-SPRITE-BRIEF.md`)
+All done ✅
+
+**Sundown Showdown** (24 of 47 slots have art; brief: `docs/sundown-sprites/GPT-SPRITE-BRIEF.md`)
+`trough`, `hitching-post`, `lamp`, `town-sky`, `town-far`, `town-near`, `town-ground`, `town-building-1`, `town-building-2`, `town-building-3`, `town-building-4`, `canyon-sky`, `canyon-far`, `canyon-near`, `canyon-ground`, `mission-sky`, `mission-far`, `mission-near`, `mission-ground`, `mission-building-1`, `mission-building-2`, `mission-building-3`, `mission-building-4`
+
+### Arcade backgrounds / icons (68 games still missing one; prompts: `docs/arcade-art/PROMPTS.md`)
+
+- `pinball` Pinball Tables (bucketheadland-pinball, black-sabbath-pinball, king-gizzard-pinball): icon
+- `chutes` Chutes and Ladders (chutes-ladder-rush, chutes-spinner-showdown): background
+- `pokemon` Pokémon Battles (pkmn-wild, pkmn-trainer): background + icon
+- `shamb-uno` ShambUNO · Private Card Duel: background + icon
+- `traitors-guess-who` The Traitors · Find the Traitor: background + icon
+- `deadite-checkers` Army of Darkness · Deadite Checkers: background + icon
+- `megatouch-photohunt` Megatouch · Photo Hunt: background + icon
+- `angry-heads` Angry Heads: background + icon
+- `neon-ball-storm` Daft Punk · Neon Ball Storm: background + icon
+- `living-dead-horde` Return of the Living Dead · Horde: background + icon
+- `radical-bike` Radical Bike Trials: background + icon
+- `flappy-disaster` Flappy Disaster: background + icon
+- `wopr-grid` WarGames · Vanishing Tic-Tac-Toe: background + icon
+- `sewer-clash` Turtle Sewer Clash: background + icon
+- `derezzed-cycles` TRON Legacy · Derezzed Light Cycles: background + icon
+- `brawndo-fruit-merge` Brawndo Fruit Merge: background + icon
+- `home-alone-paint-can` Paint Can Physics: background + icon
+- `league-penalties` Penalty Kicks: background + icon
+- `fast-quarter-mile` Fast & Furious · Quarter-Mile Drag Race: background + icon
+- `snake-v-snake` Slither · Snake vs. Snake: background + icon
+- `banana-money-grab` Arrested Development · Banana Stand Tapper: background + icon
+- `baseketball-shootout` BASEketball Shootout: background + icon
+- `raiders-ball-run` Boulder Run: background + icon
+- `paper-route` Paper Route: background + icon
+- `warriors-brawl` The Warriors · Come Out to Play: background + icon
+- `battle-royale-island` Battle Royale · The Island: background + icon
+- `review-pancakes` Pancakes, Divorce, Pancakes: background + icon
+- `duck-hunt-turn` Duck Hunt · Head Hunt: background + icon
+- `crossy-chaos` Crossy Road: background + icon
+- `pong-duel` Pong · Arcade 1972: background + icon
+- `color-of-money` The Color of Money · Nine-ball: background + icon
+- `warehouse-shift` The Office · Warehouse Shift: background + icon
+- `moonraker-lander` Lunar Lander · Moonraker: background + icon
+- `mars-missile-defense` Missile Command · Mars Attacks!: background + icon
+- `bug-artillery` Starship Troopers · Klendathu Scorched Earth: background + icon
+- `alien-sonar-grid` Alien · Motion Tracker: background + icon
+- `happy-gilmore-golf` Happy Gilmore × Caddyshack · Putt-Putt: background + icon
+- `kingpin-bowling` Kingpin · Hook & Hustle: background + icon
+- `breakout-party` Breakout · Atari 1976: background + icon
+- `asteroid-drift` Asteroids · Atari 1979: background + icon
+- `snake-run` Snake II · Nokia 3310: background + icon
+- `bomber-duel` Bomb Grid: background + icon
+- `pac-maze-duel` Pac-Maze Duel: icon
+- `metal-gear-tank-duel` Combat · Metal Gear Tank Duel: background + icon
+- `full-shambyahtzee` Full ShambYahtzee: background + icon
+- `kitchen-service` Dinner Service: background + icon
+- `rainbow-rivals` Rainbow Rivals: background + icon
+- `block-battle` Tetris · Block Battle: background + icon
+- `shred-hero` Guitar Hero · Shred Hero: background + icon
+- `underdog-dodgeball` Dodgeball · True Underdog Story: background + icon
+- `fight-night` Rocky · Fight Night: background + icon
+- `gopher-hunt` Caddyshack · Gopher Hunt: background + icon
+- `wind-archery` Brave · Wind Archery: background + icon
+- `newlywed-spirit` The Newlywed Game · Spirit Battery: background + icon
+- `roast-battle` Roast Battle · Crowd Meter: background + icon
+- `draw-it` Pictionary · Draw It: background + icon
+- `simon-faceoff` Simon · Face-Off: background + icon
+- `price-bid-off` The Price Is Right · Come On Down!: background + icon
+- `hungry-hungry-heads` Hungry Hungry Hippos · Hungry Hungry Heads: background + icon
+- `disc-duel` Windjammers · Disc Duel: background + icon
+- `arrow-arena` TowerFall · Arrow Arena: background + icon
+- `driller-duel` Mr. Driller · Driller Duel: background + icon
+- `bubble-battle` Puzzle Bobble · Bubble Battle: background + icon
+- `broforce-jungle` Sean of a Gun: Jungle: background + icon
+- `broforce-factory` Sean of a Gun: Factory: background + icon
+- `broforce-city` Sean of a Gun: City Siege: background + icon
+- `broforce-desert` Sean of a Gun: Desert Assault: background + icon
+- `frogger-heads` Frogger: background + icon
+
+### Items (329 of 633 still need a picture; file = id)
+
+- `mylo-token`: Mylo Token (Home)
+- `kc-token`: KC Token (Home)
+- `loki-token`: Loki Token (Home)
+- `predator-cloak`: Predator Cloak (Predator)
+- `blue-steel`: Blue Steel (Zoolander)
+- `osees-face`: Castle Face (Osees)
+- `friendship-ring`: Friendship Ring (Friendship)
+- `force-push`: Force Push (Star Wars)
+- `transporter`: Emergency Transporter (Star Trek)
+- `taskmaster-wax`: Taskmaster Wax Seal (Taskmaster)
+- `predator-cloak2`: Active Camouflage (Predator)
+- `green-herb2`: Mixed Herbs (Resident Evil)
+- `ladder`: Chiral Ladder (Death Stranding)
+- `flux-rewind`: Flux Rewind (Back to the Future)
+- `home-alone-trap`: Micro Machines Trap (Home Alone)
+- `motion-preview`: Motion Tracker Mk II (Alien)
+- `brawndo-overdrive`: Brawndo Overdrive (Idiocracy)
+- `rum-ham-bomb`: Emergency Rum Ham (Always Sunny)
+- `tribble-swarm`: Tribble Swarm (Star Trek)
+- `banana-cash`: Banana Stand Cash (Arrested Development)
+- `dundie-pass`: Dundie Immunity (The Office)
+- `coaster-fastpass`: Priority Queue Pass (Planet Coaster 2)
+- `mylo-zoomies`: Mylo Zoomies (Mylo)
+- `kc-herd`: KC Herding License (KC)
+- `loki-guardian`: Loki Guardian Token (Loki)
+- `toxie-mop`: Toxie's Mop (The Toxic Avenger)
+- `review-pancakes`: Pancake Stack (Review)
+- `five-stars`: Five-Star Review (Review)
+- `walkabout-putter`: Walkabout Putter (Walkabout Mini Golf)
+- `lost-golf-ball`: Lost Golf Ball (Walkabout Mini Golf)
+- `presidential-seal`: Presidential Seal (Air Force One)
+- `basement-key`: Basement Key (Barbarian)
+- `raincoat`: Rain House Coat (Bring Her Back)
+- `ritual-bowl`: Ritual Bowl (Bring Her Back)
+- `dumas-stage-mic`: Dumas Stage Mic (Nathan for You)
+- `laser-watch`: Laser Watch (James Bond)
+- `martini-glass`: Shaken Martini Glass (James Bond)
+- `golf-foxhunt`: Foxhunt Ball (Walkabout Mini Golf)
+- `forrest-review-card`: Forrest's Review Card (Review)
+- `airforce-phone`: Presidential Phone (Air Force One)
+- `toxie-tutu`: Toxie's Tutu (Toxic Avenger)
+- `warriors-radio`: Warriors Radio (The Warriors)
+- `mclovin-beer`: Party Beer (Superbad)
+- `kurosawa-rain`: Kurosawa Rain Machine (Kurosawa)
+- `q-watch`: Q-Branch Watch (James Bond)
+- `vodka-martini`: Vodka Martini (James Bond)
+- `laser-table-key`: Laser Table Override (Goldfinger)
+- `blofeld-cat`: Blofeld's Cat (James Bond)
+- `dream-token`: Dream Token (A Nightmare on Elm Street)
+- `bug-leg`: Arachnid Leg (Starship Troopers)
+- `osees-record`: Osees Needle Drop (Osees)
+- `gizzard-record`: Nonagon Record (King Gizzard)
+- `daft-record`: Robot Record (Daft Punk)
+- `coen-coin`: Anton’s Coin (No Country for Old Men)
+- `woodchipper`: Woodchipper Rental (Fargo)
+- `lebowski-ball`: The Dude's Bowling Ball (The Big Lebowski)
+- `warrior-vest`: Warriors Vest (The Warriors)
+- `troy-spear-item`: Achilles' Spear (Troy)
+- `toxic-mop`: Toxie's Mop (The Toxic Avenger)
+- `nuke-pass`: Tromaville High Hall Pass (Class of Nuke 'Em High)
+- `airforce-badge`: Presidential Security Badge (Air Force One)
+- `barbarian-tape`: Basement Tape Measure (Barbarian)
+- `bring-bowl-item`: Ceramic Bowl (Bring Her Back)
+- `review-card`: Five-Star Review Card (Review)
+- `mini-goldeneye`: GoldenEye Cartridge (GoldenEye 007)
+- `cone-crate`: Crate of Dunshire Cones (Parks and Recreation)
+- `sandworm-ticket`: Sandworm Ticket (Beetlejuice)
+- `area51-keycard`: Area 51 Keycard (Area 51)
+- `greater-good`: The Greater Good (Hot Fuzz)
+- `sex-bob-pick`: Sex Bob-omb Pick (Scott Pilgrim)
+- `skrillex-usb`: Bass Drop USB (Skrillex)
+- `knife-party-drive`: Knife Party Drive (Knife Party)
+- `zomboy-stick`: Zomboy Memory Stick (Zomboy)
+- `brake-pad`: Callahan Brake Pad (Tommy Boy)
+- `deer-antler`: Deer Antler (Tommy Boy)
+- `edm-cue`: Bass Drop Cue (Kavinsky / Skrillex / Knife Party / Zomboy)
+- `frogger-cabinet`: Frogger Arcade Cabinet (Seinfeld / Frogger)
+- `pizza-slice`: Sewer Pizza (Teenage Mutant Ninja Turtles)
+- `power-pellet`: Power Pellet (Pac-Man)
+- `remote-bomb`: Remote Bomb (Bomberman)
+- `plant-food`: Suspicious Plant Food (Little Shop of Horrors)
+- `rainbow-pass`: Rainbow Road Pass (Mario Kart)
+- `nitro-canister`: Nitro Canister (Fast & Furious)
+- `heavy-champion-belt`: Heavy Champion Belt (Taskmaster-ish nonsense)
+- `turbo-sneakers`: Turbo Sneakers (Arcade Gear)
+- `flavor-wheel`: Flavor Wheel (Flavor Lab)
+- `banh-mi`: Bánh Mì (Vietnamese Food)
+- `pho-bowl`: Phở Break (Vietnamese Food)
+- `rivoli-flyer`: Rivoli Gig Flyer (The Rivoli)
+- `pink-slip`: Callahan Pink Slip (Tommy Boy)
+- `four-lights-padd`: Four Lights PADD (Star Trek: The Next Generation)
+- `paint-can-rope`: Paint Can & Rope (Home Alone)
+- `box-tank-key`: Cardboard Box Tank Key (Metal Gear)
+- `wopr-terminal`: Matrix Construct Terminal (The Matrix)
+- `penalty-card`: Fantasy Football Penalty Card (The League)
+- `snake-ration`: Snake Ration (Metal Gear)
+- `paddys-cue`: Paddy's Pool Cue (Always Sunny)
+- `hanzo-sword`: Hattori Hanzo Sword (Kill Bill / Tarantino)
+- `spinner-disc`: Taskmaster Spinner (Taskmaster)
+- `trooper-rope`: Mobile Infantry Rope (Starship Troopers)
+- `brawndo-melon`: Brawndo Watermelon (Idiocracy)
+- `reflex-gloves`: Jackie Chan Reflex Gloves (Jackie Chan)
+- `iron-man-boots`: Iron Man Boots (Black Sabbath)
+- `dopesmoker-staff`: Dopesmoker Staff (Sleep)
+- `pork-soda`: Pork Soda (Primus)
+- `comatorium-pass`: Comatorium Pass (The Mars Volta)
+- `daywalker-sword`: Daywalker Sword (Blade)
+- `bullet-time-shades`: Bullet-Time Shades (The Matrix)
+- `nakatomi-radio`: Nakatomi Radio (Die Hard)
+- `val-verde-launcher`: Val Verde Launcher (Commando)
+- `under-siege-cake`: Under Siege Cake (Under Siege)
+- `crank-battery-v14`: Chev Battery Pack (Crank 2)
+- `golden-birthday-cake-oreos`: Golden Birthday Cake Oreos (Snack Lore)
+- `doom-amp-stack`: Doom Amp Stack (Doom Metal)
+- `rum-ham-reserve`: Reserve Rum Ham (Always Sunny)
+- `brawndo-iv`: Brawndo IV (Idiocracy)
+- `red-pill-overclock`: Red Pill Overclock (The Matrix)
+- `necronomicon-first-edition`: Necronomicon First Edition (Evil Dead)
+- `aggro-crag-piece`: Aggro Crag Trophy (Nickelodeon GUTS)
+- `senzu-bean`: Senzu Bean (Dragon Ball Z)
+- `bungee-gum`: Bungee Gum (Hunter × Hunter)
+- `hang-cat-poster`: Hang in There Cat Poster (Motivational Poster)
+- `warehouse-forklift-key`: Warehouse Forklift Key (The Office)
+- `moonraker-thruster`: Moonraker Thruster Pack (James Bond)
+- `martian-defense-button`: Martian Defense Button (Mars Attacks!)
+- `taskmaster-measuring-tape`: Suspicious Measuring Tape (Taskmaster)
+- `pass-electricwizard`: Electric Wizard backstage pass (Electric Wizard)
+- `pass-boris`: Boris backstage pass (Boris)
+- `pass-melvins`: Melvins backstage pass (Melvins)
+- `pass-highonfire`: High on Fire backstage pass (High on Fire)
+- `pass-om`: OM backstage pass (OM)
+- `pass-kyuss`: Kyuss backstage pass (Kyuss)
+- `pass-queensofthestoneage`: Queens of the Stone Age backstage pass (Queens of the Stone Age)
+- `pass-fumanchu`: Fu Manchu backstage pass (Fu Manchu)
+- `pass-uncleacidthedeadbeats`: Uncle Acid & the Deadbeats backstage pass (Uncle Acid & the Deadbeats)
+- `pass-monolord`: Monolord backstage pass (Monolord)
+- `pass-yob`: YOB backstage pass (YOB)
+- `pass-windhand`: Windhand backstage pass (Windhand)
+- `pass-earth`: Earth backstage pass (Earth)
+- `pass-sunno`: Sunn O))) backstage pass (Sunn O))))
+- `pass-kingbuffalo`: King Buffalo backstage pass (King Buffalo)
+- `pass-slift`: Slift backstage pass (Slift)
+- `pass-frankieandthewitchfingers`: Frankie and the Witch Fingers backstage pass (Frankie and the Witch Fingers)
+- `pass-tysegall`: Ty Segall backstage pass (Ty Segall)
+- `pass-theeohseesdeepcuts`: Thee Oh Sees deep cuts backstage pass (Thee Oh Sees deep cuts)
+- `pass-mrbungle`: Mr. Bungle backstage pass (Mr. Bungle)
+- `pass-faithnomore`: Faith No More backstage pass (Faith No More)
+- `pass-ween`: Ween backstage pass (Ween)
+- `pass-viagraboys`: Viagra Boys backstage pass (Viagra Boys)
+- `pass-deathgrips`: Death Grips backstage pass (Death Grips)
+- `pass-carpenterbrut`: Carpenter Brut backstage pass (Carpenter Brut)
+- `pass-perturbator`: Perturbator backstage pass (Perturbator)
+- `pass-justice`: Justice backstage pass (Justice)
+- `edgar-suit`: Edgar Suit (Men in Black)
+- `mega-mushroom`: Mega Mushroom (Super Mario)
+- `flux-overdrive`: 88 MPH Flux Overdrive (Back to the Future)
+- `obey-remote`: OBEY Remote (They Live)
+- `gremlin-grease`: Gremlin Grease (Gremlins)
+- `kamehameha-burst`: Kamehameha Burst (Dragon Ball Z)
+- `pac-power-pellet`: Power Pellet (Pac-Man)
+- `taskmaster-loaded-die`: Taskmaster’s Loaded Die (Taskmaster)
+- `bond-loaded-dice`: Bond’s Loaded Dice (James Bond)
+- `home-pack-whistle`: The Home Pack Whistle (Home)
+- `fight-milk-coupon`: Fight Milk Coupon (Always Sunny)
+- `leeloo-rescue`: Leeloo’s Rescue Beacon (The Fifth Element)
+- `time-chamber-pass`: Time Chamber Pass (Dragon Ball Z)
+- `michael-expense-card`: Dunder Mifflin Expense Card (The Office)
+- `spagett-ambush`: Spagett Ambush (Tim & Eric)
+- `frogger-quarter`: George’s Frogger Quarter (Seinfeld)
+- `doom-encore`: Black Sabbath Encore (Black Sabbath)
+- `capsule-rescue-kit`: Capsule Rescue Kit (Dragon Ball Z)
+- `clockwork-caddy`: Happy’s Caddy (Happy Gilmore)
+- `goonies-rope`: Goon Docks Rope Rig (The Goonies)
+- `bond-lockpick`: Q’s Lockpick Kit (James Bond)
+- `turtle-raft`: Sewer Surfer Raft (Teenage Mutant Ninja Turtles)
+- `troma-hazmat`: Nuke ’Em High Hazmat Suit (Troma)
+- `matrix-emp`: Nebuchadnezzar EMP (The Matrix)
+- `mini-mushroom`: Mini Mushroom (Super Mario Bros.)
+- `jurassic-winch`: Jurassic Park Rescue Winch (Jurassic Park)
+- `v43-pretzel-day`: Pretzel Day Pass (The Office)
+- `v43-li-l-sebastian-ticket`: Li’l Sebastian Benefit Ticket (Parks and Recreation)
+- `v43-forget-me-now`: Forget-Me-Now (Arrested Development)
+- `v43-chefs-chocolate-balls`: Chef’s Chocolate Salty Balls (South Park)
+- `v43-peacock-cufflinks`: Jack’s Peacock Cufflinks (30 Rock)
+- `v43-turbo-team-voucher`: Turbo Team Voucher (I Think You Should Leave)
+- `v43-spite-store-cup`: Spite Store Coffee Cup (Curb Your Enthusiasm)
+- `v43-latte-larry-key`: Latte Larry’s Fire Exit Key (Curb Your Enthusiasm)
+- `v43-pretty-good-card`: Pretty, Pretty Good Card (Curb Your Enthusiasm)
+- `v43-dumb-starbucks-cup`: Dumb Starbucks Cup (Nathan for You)
+- `v43-gas-rebate-receipt`: Gas Rebate Receipt (Nathan for You)
+- `v43-bar-replica-plan`: Bar Replica Blueprint (The Rehearsal)
+- `v43-door-city-key`: Door City Key (The Rehearsal)
+- `v43-hello-dear-mask`: Hello, Dear Disguise Kit (Mrs. Doubtfire)
+- `v43-mallrats-sailboat`: Mallrats Sailboat Picture (Jay and Silent Bob)
+- `v43-moobys-card`: Mooby’s Loyalty Card (Jay and Silent Bob)
+- `v43-walters-toe`: Walter’s Suspicious Toe (The Big Lebowski)
+- `v43-paul-bunyan-keyring`: Paul Bunyan Keyring (Fargo)
+- `v43-marge-duck-stamp`: Marge’s Duck Stamp (Fargo)
+- `v43-mike-lunch-receipt`: Mike Yanagita’s Lunch Receipt (Fargo)
+- `v43-sports-almanac`: Grays Sports Almanac (Back to the Future)
+- `v43-docs-lightning-rod`: Doc’s Lightning Rod (Back to the Future)
+- `v43-worm-guys-coffee`: Worm Guys’ Coffee (Men in Black)
+- `v43-trinity-bike-key`: Trinity’s Motorcycle Key (The Matrix)
+- `v43-white-rabbit`: White Rabbit Tattoo (The Matrix)
+- `v43-s-mart-badge`: S-Mart Employee Badge (Evil Dead)
+- `v43-tar-bucket`: Tar Bucket (Home Alone)
+- `v43-kevin-micro-machines`: Kevin’s Micro Machines (Home Alone)
+- `v43-obey-sticker`: OBEY Sticker (They Live)
+- `v43-wrist-teleporter`: Wrist Teleporter (They Live)
+- `v43-korben-taxi-key`: Korben’s Taxi Key (The Fifth Element)
+- `v43-ruby-rod-mic`: Ruby Rhod’s Microphone (The Fifth Element)
+- `v43-diva-ticket`: Diva’s Blue Ticket (The Fifth Element)
+- `v43-excalibur-pick`: Excalibur Guitar Pick (Wayne’s World)
+- `v43-waynes-aaa-pass`: Wayne’s AAA Backstage Clip (Wayne’s World)
+- `v43-cryogenic-capsule`: Cryogenic Capsule (Austin Powers)
+- `v43-fembot-shield`: Fembot Shield Circuit (Austin Powers)
+- `v43-shooter-trophy`: Shooter’s Breakfast Trophy (Happy Gilmore)
+- `v43-subway-card`: Happy’s Subway Card (Happy Gilmore)
+- `v43-q-laser-pen`: Q’s Laser Pen (James Bond)
+- `v43-felix-poker-chip`: Felix’s Poker Chip (James Bond)
+- `v43-nos-canister`: NOS Canister (Fast & Furious)
+- `v43-corona-cooler`: Family’s Corona Cooler (Fast & Furious)
+- `v43-family-photo`: Family Photo (Fast & Furious)
+- `v43-sewer-pizza`: Sewer Pizza Box (Teenage Mutant Ninja Turtles)
+- `v43-fire-flower`: Fire Flower (Super Mario Bros.)
+- `v43-starman`: Starman (Super Mario Bros.)
+- `v43-lakitu-cloud`: Lakitu’s Cloud (Super Mario Bros.)
+- `v43-fairy-bottle`: Fairy in a Bottle (The Legend of Zelda)
+- `v43-jill-lockpick`: Jill’s Lockpick (Resident Evil)
+- `v43-fulton-balloon`: Fulton Balloon (Metal Gear)
+- `v43-flying-nimbus`: Flying Nimbus (Dragon Ball Z)
+- `v43-biscuit-cookie`: Biscuit’s Training Cookie (Hunter × Hunter)
+- `v43-container-spray`: Container Repair Spray (Death Stranding)
+- `v43-likes-token`: Bridges Likes Token (Death Stranding)
+- `v43-robot-visor`: Encore Robot Visor (Daft Punk)
+- `v43-get-lucky-record`: Get Lucky Record Token (Daft Punk)
+- `v43-iron-man-badge`: Iron Man Backstage Badge (Black Sabbath)
+- `beatles-abbey-sign`: Abbey Road Crosswalk Sign (The Beatles)
+- `beatles-yellow-sub`: Yellow Submarine Ticket (The Beatles)
+- `beatles-rooftop-pass`: Rooftop Concert Pass (The Beatles)
+- `nsync-bye-bye`: Bye Bye Bye Cue Card (*NSYNC)
+- `bsb-larger-than-life`: Larger Than Life Poster (Backstreet Boys)
+- `bsb-lyric-sheet`: I Want It That Way Lyrics (Backstreet Boys)
+- `tupac-bandana`: All Eyez Bandana (Tupac Shakur)
+- `marley-three-birds`: Three Little Birds (Bob Marley)
+- `ranger-power-coin`: Dino Power Coin (Power Rangers)
+- `ranger-command-center`: Command Center Teleport (Power Rangers)
+- `ranger-megazord-key`: Megazord Activation Key (Power Rangers)
+- `mk-test-your-might`: Test Your Might Block (Mortal Kombat)
+- `ge-cartridge`: GoldenEye 007 Cartridge (GoldenEye)
+- `chuck-beard`: Beard of Destiny (Chuck Norris)
+- `chuck-ranger-badge`: Texas Ranger Badge (Chuck Norris)
+- `mel-wallace-paint`: Wallace War Paint (Mel Gibson)
+- `mel-interceptor-keys`: V8 Interceptor Keys (Mel Gibson)
+- `mel-riggs-badge`: Riggs’s Badge (Mel Gibson)
+- `jcvd-epic-split`: The Epic Split Pass (Jean-Claude Van Damme)
+- `rocky-meat-gloves`: Meat Locker Gloves (Rocky)
+- `nintendo-super-star`: Super Star (Nintendo)
+- `nintendo-pokeball`: Poké Ball (Nintendo)
+- `pk-poke-balls-5`: Poké Balls ×5 (Pokémon)
+- `pk-poke-balls-10`: Poké Balls ×10 (Pokémon)
+- `pk-great-balls-5`: Great Balls ×5 (Pokémon)
+- `pk-ultra-balls-5`: Ultra Balls ×5 (Pokémon)
+- `pk-master-ball`: Master Ball (Pokémon)
+- `pk-potions-5`: Potions ×5 (Pokémon)
+- `pk-super-potions-3`: Super Potions ×3 (Pokémon)
+- `pk-hyper-potions-2`: Hyper Potions ×2 (Pokémon)
+- `pk-full-restore`: Full Restore (Pokémon)
+- `pk-revives-3`: Revives ×3 (Pokémon)
+- `pk-full-heals-3`: Full Heals ×3 (Pokémon)
+- `pk-x-items`: X Items Kit (Pokémon)
+- `pk-rare-candy-2`: Rare Candy ×2 (Pokémon)
+- `pk-elixer`: Elixers ×2 (Pokémon)
+- `pk-poke-doll`: Poké Doll (Pokémon)
+- `wz-stage-map`: Castle Stage Map (Castlevania)
+- `wz-wall-candle`: Wall Candle (Castlevania)
+- `wz-morning-star`: Morning Star Whip (Castlevania)
+- `wz-invisibility-potion`: Invisibility Potion (Castlevania)
+- `wz-magic-crystal`: Magic Crystal (Castlevania)
+- `wz-golden-bullet`: Scaramanga’s Golden Bullet (The Man with the Golden Gun)
+- `wz-fort-knox-key`: Fort Knox Vault Key (Goldfinger)
+- `wz-dodgeball`: Red Rubber Dodgeball (South Park)
+- `wz-kenny-parka`: Kenny’s Parka (South Park)
+- `wz-chinpokomon`: Chinpokomon Card (South Park)
+- `wz-big-wheel`: Timmy’s Wheelchair Boost (South Park)
+- `wz-mr-hat`: Mr. Hat (South Park)
+- `wz-triangle-zinthar`: Triangle of Zinthar (South Park)
+- `wz-manbearpig-trap`: ManBearPig Trap (South Park)
+- `wz-respect-badge`: Respect My Authoritah Badge (South Park)
+- `wz-triple-mushroom`: Triple Mushroom (Mario Kart)
+- `wz-red-shell`: Red Shell (Mario Kart)
+- `wz-lightning-bolt`: Lightning Bolt (Mario Kart)
+- `wz-bullet-bill`: Bullet Bill (Mario Kart)
+- `wz-golden-mushroom`: Golden Mushroom (Mario Kart)
+- `wz-item-box`: Rainbow Item Box (Mario Kart)
+- `wz-super-leaf`: Super Leaf (Super Mario Bros. 3)
+- `wz-p-wing`: P-Wing (Super Mario Bros. 3)
+- `wz-hammer-suit`: Hammer Suit (Super Mario Bros. 3)
+- `wz-n-spade-card`: N-Spade Card (Super Mario Bros. 3)
+- `wz-gumdrop-pass`: Gumdrop Pass Shortcut (Candy Land)
+- `wz-gingerbread-plum`: Gingerbread Plum (Candy Land)
+- `wz-color-card`: Double Color Card (Candy Land)
+- `wz-golden-ladder`: Golden Ladder (Chutes and Ladders)
+- `wz-good-deed-badge`: Good Deed Badge (Chutes and Ladders)
+- `wz-lucky-spinner`: Lucky Spinner (Chutes and Ladders)
+- `wz-bent-spinner`: Bent Spinner (Chutes and Ladders)
+- `wz-chute-wax`: Slippery Chute Wax (Chutes and Ladders)
+- `wz-kaa-coils`: Kaa’s Coils (Chutes and Ladders)
+- `wz-ladder-rung`: Spare Ladder Rung (Chutes and Ladders)
+- `wz-jail-free`: Get Out of Jail Free Card (Monopoly)
+- `wz-pass-go`: Pass GO · Collect $200 (Monopoly)
+- `wz-free-parking`: Free Parking Jackpot (Monopoly)
+- `wz-luxury-tax`: Luxury Tax Bill (Monopoly)
+- `wz-secret-passage`: Secret Passage Key (Clue)
+- `wz-notepad`: Detective Notepad (Clue)
+- `wz-pegasus-boots`: Pegasus Boots (The Legend of Zelda)
+- `wz-boomerang`: Boomerang (The Legend of Zelda)
+- `wz-bomb-bag`: Bomb Bag (The Legend of Zelda)
+- `wz-blue-candle`: Blue Candle (The Legend of Zelda)
+- `wz-question-block`: ? Block (Super Mario Bros.)
+- `wz-goal-flagpole`: Goal Flagpole (Super Mario Bros.)
+- `wz-wooden-sword`: Old Man’s Wooden Sword (The Legend of Zelda)
+- `wz-speed-shoes`: Speed Shoes (Sonic the Hedgehog)
+- `wz-blue-shield`: Blue Shield Monitor (Sonic the Hedgehog)
+- `wz-invincibility`: Invincibility Monitor (Sonic the Hedgehog)
+- `wz-super-ring`: Super Ring Monitor (Sonic the Hedgehog)
+- `wz-chaos-emerald`: Chaos Emerald (Sonic the Hedgehog)
+- `wz-giant-ring`: Giant Ring (Sonic the Hedgehog)
+- `wz-end-signpost`: End-of-Act Signpost (Sonic the Hedgehog)
+
+### Character portraits (102 still need one; file = id, extra faces id.mood)
+
+- `mylo`: Mylo (Home)
+- `kc`: KC (Home)
+- `loki`: Loki (Home)
+- `alex`: Little Alex Horne (Taskmaster)
+- `timr`: Tim Robinson (I Think You Should Leave)
+- `bond`: James Bond · Sean Connery (James Bond)
+- `marge-gunderson`: Marge Gunderson (Fargo)
+- `tajomaru`: Tajomaru (Rashomon)
+- `warren-nuke`: Warren (Class of Nuke 'Em High)
+- `chrissy-nuke`: Chrissy (Class of Nuke 'Em High)
+- `knoxville`: Johnny Knoxville (Jackass)
+- `walkabout-skeleton`: Mini Golf Skeleton (Walkabout Mini Golf)
+- `walkabout-ball`: Lost Ball (Walkabout Mini Golf)
+- `pit-pat`: Pit-Pat (Mr. Show)
+- `bomberman`: Bomberman (Bomberman)
+- `jamie-taco`: Jamie Taco (I Think You Should Leave)
+- `dom-toretto`: Dominic Toretto (Fast & Furious)
+- `chris-parent`: Dad · Chris Conners (Home)
+- `angie-parent`: Mom · Angie Conners (Home)
+- `rob-mcwilliams`: Rob McWilliams (REZN)
+- `spencer-ouellette`: Spencer Ouellette (REZN)
+- `skeeter-valentine`: Skeeter Valentine (Doug)
+- `krumm`: Krumm (Aaahh!!! Real Monsters)
+- `ref-themidnightsociety`: The Midnight Society (Are You Afraid of the Dark?)
+- `ref-tarman`: Tarman (Return of the Living Dead)
+- `ref-commandcenter`: Command Center (Power Rangers)
+- `edgar-bug`: Edgar / The Bug (Men in Black)
+- `uss-lydia`: Lydia (Unlimited Savory Systems)
+- `uss-steve`: Steve (Unlimited Savory Systems)
+- `uss-hannah`: Hannah (Unlimited Savory Systems)
+- `uss-carson`: Carson (Unlimited Savory Systems)
+- `bond-lazenby`: James Bond · George Lazenby (James Bond)
+- `bond-moore`: James Bond · Roger Moore (James Bond)
+- `bond-dalton`: James Bond · Timothy Dalton (James Bond)
+- `bond-brosnan`: James Bond · Pierce Brosnan (James Bond)
+- `bond-craig`: James Bond · Daniel Craig (James Bond)
+- `patrick-bateman`: Patrick Bateman (American Psycho)
+- `vin-diesel`: Vin Diesel (Fast & Furious)
+- `bond-64`: James Bond · GoldenEye 64 (GoldenEye)
+- `kb-crazy-88`: Crazy 88 Fighter (Kill Bill)
+- `wf-craig-buettner`: Craig Buettner (Saturday Night Live)
+- `shane-over`: Shane Over (ShambConkins Friends)
+- `carlos-valle`: Carlos Valle (ShambConkins Friends)
+- `bert`: Bert (ShambConkins Friends)
+- `flarpy`: Flarpy (ShambConkins)
+- `lsoh-crystal`: Crystal (Little Shop of Horrors)
+- `lsoh-chiffon`: Chiffon (Little Shop of Horrors)
+- `stone-cold`: Stone Cold Steve Austin (WWE)
+- `the-undertaker`: The Undertaker (WWE)
+- `mick-foley`: Mick Foley (WWE)
+- `mick-foley-mankind`: Mick Foley · Mankind (WWE)
+- `mick-foley-cactus-jack`: Mick Foley · Cactus Jack (WWE)
+- `mick-foley-dude-love`: Mick Foley · Dude Love (WWE)
+- `wk-trevor-moore`: Trevor Moore (The Whitest Kids U’ Know)
+- `wk-sam-brown`: Sam Brown (The Whitest Kids U’ Know)
+- `wk-zach-cregger`: Zach Cregger (The Whitest Kids U’ Know)
+- `wk-timmy-williams`: Timmy Williams (The Whitest Kids U’ Know)
+- `wk-darren-trumeter`: Darren Trumeter (The Whitest Kids U’ Know)
+- `scott-aukerman`: Scott Aukerman (Comedy Bang! Bang!)
+- `paul-f-tompkins`: Paul F. Tompkins (Comedy Bang! Bang!)
+- `lauren-lapkus`: Lauren Lapkus (Comedy Bang! Bang!)
+- `nick-wiger`: Nick Wiger (Doughboys)
+- `mike-mitchell`: Mike Mitchell (Doughboys)
+- `bb-mike-hanford`: Mike Hanford (The Birthday Boys)
+- `bb-tim-kalpakis`: Tim Kalpakis (The Birthday Boys)
+- `bb-jefferson-dutton`: Jefferson Dutton (The Birthday Boys)
+- `bb-matt-kowalick`: Matt Kowalick (The Birthday Boys)
+- `bb-chris-vanartsdalen`: Chris VanArtsdalen (The Birthday Boys)
+- `bb-dave-ferguson`: Dave Ferguson (The Birthday Boys)
+- `bb-mike-mitchell`: Mike Mitchell (Birthday Boy) (The Birthday Boys)
+- `reno-clementine-johnson`: Clementine Johnson (Reno 911!)
+- `reno-raineesha-williams`: Raineesha Williams (Reno 911!)
+- `reno-james-garcia`: James Oswaldo Garcia (Reno 911!)
+- `reno-sven-jones`: Sven Jones (Reno 911!)
+- `reno-cherisha-kimball`: Cherisha Kimball (Reno 911!)
+- `reno-terry`: Terry Bernardino (Reno 911!)
+- `idio-not-sure`: Not Sure (Idiocracy)
+- `idio-frito`: Frito Pendejo (Idiocracy)
+- `idio-rita`: Rita (Idiocracy)
+- `idio-upgrayedd`: Upgrayedd (Idiocracy)
+- `idio-dr-lexus`: Dr. Lexus (Idiocracy)
+- `idio-camacho`: President Camacho (Idiocracy)
+- `idio-cabinet`: Camacho’s Cabinet (Idiocracy)
+- `idio-beef-supreme`: Beef Supreme (Idiocracy)
+- `beavis`: Beavis (Beavis and Butt-Head)
+- `butt-head`: Butt-Head (Beavis and Butt-Head)
+- `joe-camel`: Joe Camel (Camel (cigarette))
+- `mac-tonight`: Mac Tonight (McDonald’s)
+- `sherman-klump`: Sherman Klump (The Nutty Professor)
+- `buddy-love`: Buddy Love (The Nutty Professor)
+- `elvis-presley`: Elvis Presley (Elvis Presley)
+- `leslie-chow`: Mr. Chow (The Hangover)
+- `alan-garner`: Alan Garner (The Hangover)
+- `ml-vaughn`: Rick “Wild Thing” Vaughn (Major League (film))
+- `ml-jake-taylor`: Jake Taylor (Major League (film))
+- `ml-willie-mays-hayes`: Willie Mays Hayes (Major League (film))
+- `ml-cerrano`: Pedro Cerrano (Major League (film))
+- `ml-roger-dorn`: Roger Dorn (Major League (film))
+- `ml-eddie-harris`: Eddie Harris (Major League (film))
+- `ml-lou-brown`: Lou Brown (Major League (film))
+- `ml-harry-doyle`: Harry Doyle (Major League (film))
+- `ml-rachel-phelps`: Rachel Phelps (Major League (film))
