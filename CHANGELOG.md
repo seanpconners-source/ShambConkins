@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.88.2
+
+- **Sundown Showdown has its full stage art.** All three stages now use your pictures: the sunset sky, mesas and the water tower and windmill behind Main Street with the Saloon, Bank, Hotel and Sheriff's office; the red canyon walls under a setting sun; and the mission at night under a full moon with the Cantina, Posada, Tienda and Capilla. Their floors, the horse trough, hitching post and street lamp are yours too. The gunmen still pop out of the windows and doors, which line up with the pictures. Every slot in the Sundown kit has art now.
+- **2 more item pictures:** Q's laser pen and the golden bullet. 502 of the 633 items have their own picture.
+
 ## v0.88.1
 
 - **159 more item pictures** from the shared art tally (Batches 07-10): the Necronomicon first edition, the Power Rangers coin and Megazord key, the Mario Kart item box, the ? block, P-Wing and Super Leaf, the Chaos Emerald, Kenny's parka, Mr. Hat, the Gremlin grease tin, the Frogger cabinet, Pork Soda, the Golden Birthday Cake Oreos, the Mooby's card and many more. 500 of the 633 items now have their own picture.
