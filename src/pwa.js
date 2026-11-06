@@ -35,7 +35,7 @@ const APP_FILES=/*@@APP_FILES@@*/null;
 // Songs and the Doom data (~245 MB) belong to a few games, so they aren't downloaded at install: each game's files come
 // the first time it opens (wantGameFiles, from the game session) or all at once from Settings (wantAllFiles). Keys by the
 // games that use them; every other file still comes at install. Played offline before its files are in, a game is silent.
-const LATER={'music:bhpin-':['bucketheadland-pinball'],'music:kgpin-':['king-gizzard-pinball'],'music:bspin-':['black-sabbath-pinball'],'music:thps-':['greed-island-mancala'],
+const LATER={'music:bhpin-':['bucketheadland-pinball'],'music:kgpin-':['king-gizzard-pinball'],'music:bspin-':['black-sabbath-pinball'],'music:thps-':['greed-island-mancala'],'music:sotn-':['cv-symphony'],
  'music:sunset-':['django-hangman','django-hangman-showdown','django-hangman-wanted','sundown-showdown'],'doom:':['doom','doom-2']};
 // [name, bytes] of the later files (all, or only those of prefixes that pass `which`)
 function laterFiles(which=()=>true){if(!APP_FILES)return [];let up={};try{up=require("src/data/userPortraits.js").USER_PORTRAITS;}catch{}

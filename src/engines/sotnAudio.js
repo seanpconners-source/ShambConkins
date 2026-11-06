@@ -39,23 +39,47 @@ function voice(f0,f1,dur,vol,forms,{delay=0,att=.02,verb=.3,vib=0,vibRate=6,grit
  env(g,t,vol,att,dur);for(const [fq,q,gain=1] of forms){const f=a.createBiquadFilter(),fg=a.createGain();f.type='bandpass';f.frequency.value=fq;f.Q.value=q;fg.gain.value=gain;head.connect(f);f.connect(fg);fg.connect(g);}
  route(b,g,verb);o.start(t);track(o,t+dur+.05);}
 const R=(a,b2)=>a+Math.random()*(b2-a);
+// ------------------------------------------------------------------ the owner's PS1 sound clips
+// assets/music/sotn-<name>.mp3 (USER_PORTRAITS['music:sotn-<name>']): Alucard's voice (alucard-atk-N, alucard-hurt-N,
+// alucard-die), the monsters (<type>-<event>: bloody-attack/hurt/die, zombie-die, skeleton-throw/die, bat-die,
+// merman-rise/spit/fire-hit/die, armor-walk/windup/attack/hurt/die) and the cutscene lines (line-death-1, line-alucard-1,
+// line-death-2, line-dracula-1, line-dracula-2). Takes that share a name but for a trailing -N are picked at random. A
+// clip stands in for the synth sound it replaces; one that is missing, still decoding or broken leaves the synth playing.
+const CLIPS={};for(const k of Object.keys(USER_PORTRAITS))if(k.startsWith('music:sotn-')){const n=k.slice(11);const base=n.replace(/-\d+$/,'');(CLIPS[base]||(CLIPS[base]=[])).push(n);(CLIPS[n]||(CLIPS[n]=[])).includes(n)||CLIPS[n].push(n);}
+const BUF=new Map();
+function loadClip(n){if(BUF.has(n))return BUF.get(n);const a=audioContext(),url=USER_PORTRAITS['music:sotn-'+n];if(!a||!url)return null;BUF.set(n,null);
+ fetch(url).then(r=>r.arrayBuffer()).then(b=>a.decodeAudioData(b)).then(buf=>BUF.set(n,buf)).catch(()=>BUF.set(n,false));return null;}
+function preloadClips(){for(const n of Object.keys(USER_PORTRAITS))if(n.startsWith('music:sotn-'))loadClip(n.slice(11));}
+const hasClip=base=>!!CLIPS[base];
+function clip(base,{vol=1,verb=.22,rate=1,delay=0}={}){const list=CLIPS[base];if(!list)return null;const b=bus();if(!b||voices>44)return null;
+ const n=list[Math.floor(Math.random()*list.length)],buf=loadClip(n);if(!buf)return null;
+ try{const a=b.a,src=a.createBufferSource(),g=a.createGain();src.buffer=buf;src.playbackRate.value=rate;g.gain.value=vol;src.connect(g);route(b,g,verb);
+  src.start(a.currentTime+delay);voices++;src.onended=()=>{voices--;};return src;}catch{return null;}}
+// a cutscene line: plays it (stopping the one before) and says whether it is playing
+let curLine=null;
+function line(n,vol=1){stopLine();if(!sfxOn())return false;curLine=clip(n,{vol,verb:.3});return !!curLine;}
+function stopLine(){if(curLine){try{curLine.stop();}catch{}curLine=null;}}
+const hasLines=(...ns)=>sfxOn()&&ns.every(n=>!!USER_PORTRAITS['music:sotn-'+n]);
+// a monster's own clip if there is one (true = taken care of, the synth stays quiet); `gap` ms between two of a kind
+function foe(type,ev,{gap=120,vol=.8}={}){const base=type+'-'+ev;if(!sfxOn()||!hasClip(base))return false;const now=performance.now(),k='f:'+base;
+ if(now-(last.get(k)||-1e9)<gap)return true;last.set(k,now);return !!clip(base,{vol,rate:.96+Math.random()*.08});}
 // per-sound throttle so a crowd of zombies doesn't stack fifty groans
 const sfxErrors=[];
 function play(name,gap,fn){if(!sfxOn())return;const now=performance.now();if(now-(last.get(name)||-1e9)<gap)return;last.set(name,now);try{fn();}catch(e){if(sfxErrors.length<20)sfxErrors.push(name+': '+e.message);}}
 
 const sfx={
  // Alucard
- swing:kind=>play('swing',45,()=>{if(kind==='fist'){hiss(.1,.2,{f0:1400,f1:500,q:1.4,verb:.1});return;}
+ swing:kind=>{if(Math.random()<.42)play('atkVoice',420,()=>clip('alucard-atk',{vol:.62,verb:.15}));play('swing',45,()=>{if(kind==='fist'){hiss(.1,.2,{f0:1400,f1:500,q:1.4,verb:.1});return;}
   const heavy=kind==='claymore';hiss(heavy?.2:.13,heavy?.34:.26,{f0:heavy?2600:5200,f1:heavy?500:1100,q:1.3,verb:.15});
   if(kind==='alucard'){tone('sine',3150,3000,.35,.035,{delay:.02,verb:.5});tone('sine',4420,4300,.3,.025,{delay:.02,verb:.5});}
-  else tone('triangle',heavy?1700:2500,heavy?1600:2400,.16,.025,{delay:.015,verb:.35});}),
+  else tone('triangle',heavy?1700:2500,heavy?1600:2400,.16,.025,{delay:.015,verb:.35});});},
  hit:heavy=>play('hit',30,()=>{tone('sine',heavy?150:190,heavy?42:60,heavy?.2:.12,.45,{verb:.12});hiss(.11,.32,{type:'lowpass',f0:2400,f1:300,q:.7,verb:.15});
   hiss(.09,.22,{f0:R(600,900),q:4.5,verb:.1});if(heavy)tone('square',90,40,.12,.06,{verb:.2});}),
  slashHit:()=>play('slashHit',30,()=>{hiss(.07,.2,{type:'highpass',f0:3200,f1:1800,q:.8,verb:.2});tone('triangle',2900,2600,.09,.03,{verb:.3});}),
  blood:()=>play('blood',60,()=>{hiss(.2,.2,{f0:R(700,1000),f1:300,q:3.5,verb:.15});hiss(.12,.12,{f0:450,q:5,delay:.04,verb:.1});}),
  kill:()=>play('kill',50,()=>{hiss(.55,.26,{f0:350,f1:2600,q:.9,att:.04,verb:.4});for(let k=0;k<6;k++)hiss(.03,.12,{type:'highpass',f0:R(2500,5000),q:2,delay:R(.05,.5),verb:.2});tone('sine',220,60,.25,.25,{verb:.2});}),
- grunt:()=>play('grunt',200,()=>voice(R(170,190),105,.24,.5,[[620,6],[1050,8,.8],[2500,10,.4]],{att:.012,verb:.25})),
- die:()=>play('die',500,()=>{voice(210,70,1.1,.55,[[650,6],[1100,8,.8],[2500,10,.3]],{att:.03,verb:.55,vib:6});hiss(.6,.15,{type:'lowpass',f0:900,f1:200,delay:.3,verb:.4});}),
+ grunt:()=>play('grunt',200,()=>clip('alucard-hurt',{vol:.85,verb:.2})||voice(R(170,190),105,.24,.5,[[620,6],[1050,8,.8],[2500,10,.4]],{att:.012,verb:.25})),
+ die:()=>play('die',500,()=>{if(!clip('alucard-die',{vol:.95,verb:.45}))voice(210,70,1.1,.55,[[650,6],[1100,8,.8],[2500,10,.3]],{att:.03,verb:.55,vib:6});hiss(.6,.15,{type:'lowpass',f0:900,f1:200,delay:.3,verb:.4});}),
  jump:()=>play('jump',60,()=>hiss(.12,.08,{f0:700,f1:1600,q:1.1,verb:.1})),
  leap:()=>play('leap',60,()=>{hiss(.18,.1,{f0:900,f1:2600,q:1.2,verb:.2});tone('sine',520,980,.18,.05,{verb:.45});tone('sine',780,1470,.18,.03,{delay:.03,verb:.45});}),
  land:()=>play('land',80,()=>{tone('sine',95,48,.08,.22,{verb:.08});hiss(.06,.1,{type:'lowpass',f0:500,q:.7,verb:.05});}),
@@ -144,4 +168,5 @@ function tick(){lastTick=performance.now();if(suspended){suspended=false;try{if(
  if(!watch)watch=setInterval(()=>{if(!suspended&&performance.now()-lastTick>400){suspended=true;try{if(amb){const t=amb.a.currentTime;amb.g.gain.setTargetAtTime(0,t,.1);}mus?.el.pause();}catch{}}},250);}
 function stopAll(){clearInterval(watch);watch=0;suspended=false;ambKind=null;stopAmb(.6);if(mus){const el=mus.el;mus=null;fadeEl(el,0,500,()=>{try{el.pause();}catch{}});}musName=null;}
 const voiceCount=()=>voices;
-Object.assign(exports,{sfx,ambience,music,hasMusic,tick,stopAll,MUSIC,sfxErrors,voiceCount});
+function stopAllSounds(){stopLine();stopAll();}
+Object.assign(exports,{sfx,ambience,music,hasMusic,tick,stopAll:stopAllSounds,MUSIC,sfxErrors,voiceCount,foe,line,stopLine,hasLines,hasClip,preloadClips});

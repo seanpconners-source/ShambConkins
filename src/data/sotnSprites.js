@@ -20,11 +20,15 @@ const ease=u=>u*u*(3-2*u);
 const HF=[60,122],HEAD=[61,44];
 const flipHeads=n=>Array.from({length:n},(_,f)=>{const a=ease((f+.5)/n)*TAU,px=60,py=80;return [+(px+Math.cos(a)+36*Math.sin(a)).toFixed(1),+(py+Math.sin(a)-36*Math.cos(a)).toFixed(1),+a.toFixed(2)];});
 const deadHeads=n=>Array.from({length:n},(_,f)=>{const k=n>1?f/(n-1):1;return [+(61+(28-61)*k).toFixed(1),+(44+(100-44)*Math.pow(k,1.6)).toFixed(1),+(-1.45*k).toFixed(2)];});
+// face spots measured on the owner's hero sheet by tools/sotn/hero-heads.py (re-run it if the sheet is redrawn); the
+// template's own layout (a headless body, the face circle above it) was HEAD + flipHeads/deadHeads
+const HERO_HEADS={"stand":[[58,66],[57,65],[57,66],[58,66]],"walk":[[56,65],[57,66],[57,64],[56,65],[55,65],[55,66],[56,66],[55,64]],"crouch":[[61,82],[56,81]],"crouchSlash":[[61,74],[61,79],[63,80],[62,80]],"jump":[[54,64],[60,66],[57,64]],"fall":[[55,64],[52,64],[49,64]],"flip":[[59,69,0.07],[70,69,0.58],[73,77,1.46],[68,84,2.56],[55,90,3.73],[52,81,4.83],[55,69,5.7],[54,70,6.21]],"land":[[57,76],[62,70]],"dash":[[62,67],[62,67],[63,67],[64,68]],"kick":[[63,59],[64,58]],"hurt":[[64,69],[63,67]],"cast":[[59,65],[63,64],[61,61],[67,61]],"slash":[[60,61],[58,63],[59,63],[57,64]],"stab":[[51,65],[60,64],[57,65],[60,64],[59,64]],"cleave":[[57,58],[54,55],[60,62],[59,64],[59,63],[60,61]],"dead":[[58,66],[52,72,-0.29],[54,78,-0.58],[52,86,-0.87],[53,99,-1.16],[59,112,-1.45]]};
 const SHEETS={
  // the hero (player 1: crimson cape lining; player 2: `hero-p2`, same layout, royal-blue lining; if only p1 is in, both use it)
- 'hero-p1':{frame:[128,144],foot:HF,head:HEAD,headSize:46,
+ 'hero-p1':{frame:[128,144],foot:HF,head:HEAD,headSize:40,
   rows:{stand:4,walk:8,crouch:2,crouchSlash:4,jump:3,fall:3,flip:8,land:2,dash:4,kick:2,hurt:2,cast:4,slash:4,stab:5,cleave:6,dead:6},
-  headRows:{crouch:[61,60],crouchSlash:[61,60],hurt:[61,46],land:[[61,54],[61,48]],kick:[85,51,.5],flip:flipHeads(8),dead:deadHeads(6)}},
+  // the owner's sheet (Nov 6) draws Alucard with a small head of his own: HERO_HEADS puts the face over it in every frame
+  headRows:HERO_HEADS},
  'hero-p2':null,
  // monsters (anchor = feet on the ground, except the bat: its body's centre)
  zombie:{frame:[96,96],foot:[40,92],rows:{rise:4,walk:6}},

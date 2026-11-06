@@ -36,8 +36,10 @@ for(const [w,h] of sizes){
   await tp(t,900);await hold('d',900);d=await D();if(!d.gate)fail(`${tag} gate did not shut`);
   for(let i=0;i<20&&!(await D()).scene;i++)await hold('d',150);
   d=await D();if(d.scene!=='death')fail(`${tag} Death did not appear (${JSON.stringify(d.pl[t])})`);
-  await page.waitForTimeout(1600);if(t===0)await shot('death');await page.waitForTimeout(2600);if(t===0)await shot('death2');
-  for(let i=0;i<30&&(await D()).scene;i++)await page.waitForTimeout(200);
+  // turn 1 sits through the scene (voiced with the owner's clips it runs ~16 s), turn 2 skips it with a key press
+  if(t===0){await page.waitForTimeout(1600);await shot('death');await page.waitForTimeout(2600);await shot('death2');await page.waitForTimeout(2600);await shot('death3');
+   for(let i=0;i<100&&(await D()).scene;i++)await page.waitForTimeout(200);}
+  else{await page.waitForTimeout(900);await page.keyboard.press('j');await page.waitForTimeout(300);if((await D()).scene)fail(`${tag} a key press did not skip Death's scene`);}
   d=await D();if(d.pl[t].weapon!=='fist')fail(`${tag} Death did not take the sword (${d.pl[t].weapon})`);
   await hold('d',1300);d=await D();if(d.pl[t].weapon!=='short')fail(`${tag} no Short Sword (${JSON.stringify(d.pl[t])})`);
   if(t===0){await tp(t,1200);await page.waitForTimeout(500);await shot('hall');}
@@ -63,8 +65,8 @@ for(const [w,h] of sizes){
   // the keep: intro, phase 1, phase 2, orb
   await page.evaluate(t=>window.ShambConkins.store.session.debug.toBoss(t),t);await hold('d',300);d=await D();
   if(!d.locked||d.scene!=='dracula')fail(`${tag} throne room did not lock with Dracula's intro (${JSON.stringify(d)})`);
-  await page.waitForTimeout(1200);if(t===0)await shot('dracula-intro');
-  for(let i=0;i<40&&(await D()).scene;i++)await page.waitForTimeout(200);
+  await page.waitForTimeout(1200);if(t===0)await shot('dracula-intro');await page.waitForTimeout(2600);if(t===0)await shot('dracula-intro2');
+  for(let i=0;i<60&&(await D()).scene;i++)await page.waitForTimeout(200);
   await page.evaluate(t=>{const d=window.ShambConkins.store.session.debug;d.pl[t].inv=99999;},t);
   for(let k=0;k<14;k++){await page.keyboard.press('j');await page.waitForTimeout(200);if(k===6&&t===0)await shot('dracula');}
   d=await D();console.log(' boss after slashing',JSON.stringify(d.boss));
