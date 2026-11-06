@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **159 more item pictures** from the shared art tally (Batches 07-10): the Necronomicon first edition, the Power Rangers coin and Megazord key, the Mario Kart item box, the ? block, P-Wing and Super Leaf, the Chaos Emerald, Kenny's parka, Mr. Hat, the Gremlin grease tin, the Frogger cabinet, Pork Soda, the Golden Birthday Cake Oreos, the Mooby's card and many more. 500 of the 633 items now have their own picture.
+
 ## v0.88.0
 
 - **Install only, from the same web address.** The game now ships only as the installable app, the way your phones already run it. The old single-file download is gone: a file that big couldn't grow any more, and lots more art and sound is coming. Old download links now open the site.
