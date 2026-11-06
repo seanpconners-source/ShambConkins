@@ -1,6 +1,6 @@
 # Items that still need a picture
 
-Made by `node tools/gpt-art-todo.mjs` (304 of 633 items have art). Work top to bottom in batches of ~20.
+Made by `node tools/gpt-art-todo.mjs` (341 of 633 items have art). Work top to bottom in batches of ~20.
 Rules are in START-HERE.md → "Item pictures". File name = the id in the first column, e.g. `rum-ham.png`.
 
 | id (file name) | item | from | what it does in the game |
@@ -11,60 +11,23 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `predator-cloak` | Predator Cloak | Predator | Hard to penalize what you cannot see. |
 | `blue-steel` | Blue Steel | Zoolander | One look. Apparently enough. +3 points. |
 | `osees-face` | Castle Face | Osees | Psych-garage board artifact. +4 points. |
-| `friendship-ring` | Friendship Ring | Friendship | Awkward but sincere. Blocks a penalty. |
 | `force-push` | Force Push | Star Wars | Blast the other player backward 5 spaces. |
 | `transporter` | Emergency Transporter | Star Trek | Beam forward 6 spaces. Pattern integrity not guaranteed. |
-| `taskmaster-wax` | Taskmaster Wax Seal | Taskmaster | Your next minigame or Taskmaster win is worth double points. |
 | `predator-cloak2` | Active Camouflage | Predator | For 3 turns, collision duels and one penalty cannot touch you. |
-| `green-herb2` | Mixed Herbs | Resident Evil | Gain 5 points and one penalty shield. |
-| `ladder` | Chiral Ladder | Death Stranding | At your next fork, you may jump directly to the rejoin point. |
 | `flux-rewind` | Flux Rewind | Back to the Future | Rewind your own path by 6 spaces. |
-| `home-alone-trap` | Micro Machines Trap | Home Alone | Plant a trap on your current space. The next opponent landing here loses 5 points. |
-| `motion-preview` | Motion Tracker Mk II | Alien | Preview the next 5 spaces on your current route. |
-| `brawndo-overdrive` | Brawndo Overdrive | Idiocracy | Add +4 to your next roll. It has electrolytes. |
-| `rum-ham-bomb` | Emergency Rum Ham | Always Sunny | Throw the ham. The other player loses 4 points; you gain 2. |
 | `tribble-swarm` | Tribble Swarm | Star Trek | Duplicate one random item in your inventory. |
-| `banana-cash` | Banana Stand Cash | Arrested Development | There is always money in the banana stand. +8 points. |
 | `dundie-pass` | Dundie Immunity | The Office | Blocks the next two point-loss effects. |
-| `coaster-fastpass` | Priority Queue Pass | Planet Coaster 2 | Take another turn after this one. |
 | `mylo-zoomies` | Mylo Zoomies | Mylo | Mylo is running. You are apparently going too. Forward 8. |
 | `kc-herd` | KC Herding License | KC | KC rearranges the livestock. Swap positions with the opponent. |
 | `loki-guardian` | Loki Guardian Token | Loki | Gain 7 points and a shield. Legendary good-dog protection. |
 | `toxie-mop` | Toxie's Mop | The Toxic Avenger | Mop the opponent backward 5. |
-| `review-pancakes` | Pancake Stack | Review | Pancakes. Divorce. Pancakes. +5 points. |
 | `five-stars` | Five-Star Review | Review | Perfect review. Double next reward. |
 | `walkabout-putter` | Walkabout Putter | Walkabout Mini Golf | Tiny club, serious boost. +4 next roll. |
-| `lost-golf-ball` | Lost Golf Ball | Walkabout Mini Golf | You actually found one. +6 points. |
-| `presidential-seal` | Presidential Seal | Air Force One | Executive privilege, board-game edition. +2 shields. |
-| `basement-key` | Basement Key | Barbarian | You should probably not go down there. Preview 5 spaces. |
-| `raincoat` | Rain House Coat | Bring Her Back | Something about this is deeply wrong. +2 shields. |
-| `ritual-bowl` | Ritual Bowl | Bring Her Back | Do not ask what is in it. Random effect. |
-| `dumas-stage-mic` | Dumas Stage Mic | Nathan for You | Do your stuff. Double the next minigame. |
-| `laser-watch` | Laser Watch | James Bond | Cut through a problem. Opponent back 3. |
-| `martini-glass` | Shaken Martini Glass | James Bond | Classy. +3 points. |
-| `golf-foxhunt` | Foxhunt Ball | Walkabout Mini Golf | A hidden-ball prize. +5 points. |
-| `forrest-review-card` | Forrest's Review Card | Review | Whatever happens, he commits fully. |
-| `airforce-phone` | Presidential Phone | Air Force One | Executive order: take another turn. |
-| `toxie-tutu` | Toxie's Tutu | Toxic Avenger | Confusing but surprisingly protective. |
-| `warriors-radio` | Warriors Radio | The Warriors | The DJ tells you what is coming. |
-| `mclovin-beer` | Party Beer | Superbad | Terrible decision, +2 next roll. |
-| `kurosawa-rain` | Kurosawa Rain Machine | Kurosawa | Dramatic rain hides you for 2 turns. |
-| `q-watch` | Q-Branch Watch | James Bond | Preview the next six board spaces. Q insists this is not a toy. |
-| `vodka-martini` | Vodka Martini | James Bond | Double your next minigame reward. Shaken, obviously. |
 | `laser-table-key` | Laser Table Override | Goldfinger | Immediately trigger the laser-table escape game. |
 | `blofeld-cat` | Blofeld's Cat | James Bond | The cat knows too much. Steal four points. |
 | `dream-token` | Dream Token | A Nightmare on Elm Street | Two shields against Horror penalties. |
-| `bug-leg` | Arachnid Leg | Starship Troopers | A disgusting trophy worth six points. |
-| `osees-record` | Osees Needle Drop | Osees | Temporarily hijack the soundtrack with the Osees slot. |
-| `gizzard-record` | Nonagon Record | King Gizzard | Open the Nonagon soundtrack slot. |
-| `daft-record` | Robot Record | Daft Punk | Robot music takes over for a while. |
-| `coen-coin` | Anton’s Coin | No Country for Old Men | Call it. |
-| `woodchipper` | Woodchipper Rental | Fargo | Remove five points from the opponent. Extremely tasteful. |
-| `lebowski-ball` | The Dude's Bowling Ball | The Big Lebowski | Start bowling. |
-| `warrior-vest` | Warriors Vest | The Warriors | Start the street brawl. |
 | `troy-spear-item` | Achilles' Spear | Troy | Start the spear competition. |
 | `toxic-mop` | Toxie's Mop | The Toxic Avenger | Clean up Tromaville. |
-| `nuke-pass` | Tromaville High Hall Pass | Class of Nuke 'Em High | Start the radioactive school run. |
 | `airforce-badge` | Presidential Security Badge | Air Force One | Start the aisle escape. |
 | `barbarian-tape` | Basement Tape Measure | Barbarian | Measure something you absolutely should not be measuring. |
 | `bring-bowl-item` | Ceramic Bowl | Bring Her Back | Start the ritual-bowl challenge. |

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **One more item picture:** the Fragile Umbrella (it was on Drive but had been missed). 305 of 633 items have art.
+- **38 more item pictures:** the Fragile Umbrella (it was on Drive but had been missed) plus 37 new ones from the shared art tally: the Lebowski bowling ball, Brawndo Overdrive, the Rum Ham bomb, the Warriors vest and radio, the Nonagon and Daft Punk records, the presidential seal, Q's watch, the woodchipper and more. 341 of 633 items have art.
 - **Alucard is your sprite now.** Your hero sheets for both players are in: the face sits on his shoulders over the small head the sheet draws (measured frame by frame, including the somersault and the fall), with the silver hair showing round it.
 - **The rest of the Symphony of the Night art.** Lanterns, torches, the fireball, Dark Inferno, holy flame and fire wave, the forest tree, fence and grave, the gate wall, gate and portcullis, the stepping stones and the water now use your pictures. Every slot in the kit has art.
 - **Symphony of the Night sounds from the PS1 game.** Alucard grunts on some of his swings and cries out when hit or killed. Bloody Zombies, zombies, skeletons, bats, Mermen and the armor knights use their own sounds. Death and Dracula speak their lines in the cutscenes ("What is a man?"), with subtitles. Tap, slash or jump to skip a cutscene (not online).
