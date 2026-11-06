@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.88.1
 
 - **159 more item pictures** from the shared art tally (Batches 07-10): the Necronomicon first edition, the Power Rangers coin and Megazord key, the Mario Kart item box, the ? block, P-Wing and Super Leaf, the Chaos Emerald, Kenny's parka, Mr. Hat, the Gremlin grease tin, the Frogger cabinet, Pork Soda, the Golden Birthday Cake Oreos, the Mooby's card and many more. 500 of the 633 items now have their own picture.
 
