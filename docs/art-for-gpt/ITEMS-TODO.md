@@ -1,6 +1,6 @@
 # Items that still need a picture
 
-Made by `node tools/gpt-art-todo.mjs` (500 of 633 items have art). Work top to bottom in batches of ~20.
+Made by `node tools/gpt-art-todo.mjs` (502 of 633 items have art). Work top to bottom in batches of ~20.
 Rules are in START-HERE.md → "Item pictures". File name = the id in the first column, e.g. `rum-ham.png`.
 
 | id (file name) | item | from | what it does in the game |
@@ -72,7 +72,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `mini-mushroom` | Mini Mushroom | Super Mario Bros. | Carry: Narrow pipes; also shrinks a giant head for the crossing. Reusable at matching obstacles; opening a route with gear does not spend your pre-roll item action. Use before rolling instead: consume this tool for +2 movement and one shield. |
 | `v43-sports-almanac` | Grays Sports Almanac | Back to the Future | Copy your opponent’s last base die for this roll; use 4 if they have not rolled yet. Bonuses still apply. |
 | `v43-white-rabbit` | White Rabbit Tattoo | The Matrix | Preview three different supplies and choose one. Your crate and item action are spent only after you choose. |
-| `v43-q-laser-pen` | Q’s Laser Pen | James Bond | Permanently repair the nearest reachable barrier in this realm for both players. If none needs repair, gain one single-crossing pass. |
 | `v43-nos-canister` | NOS Canister | Fast & Furious | Double this roll’s movement. Halve your following roll. |
 | `v43-family-photo` | Family Photo | Fast & Furious | Your next individual board minigame win with an eligible guest guarantees a new personal recruit. Losses, ties and practice keep the beacon; special unlock conditions still apply. |
 | `v43-fire-flower` | Fire Flower | Super Mario Bros. | Remove all hostile traps in your current realm and gain one penalty shield. |
@@ -117,7 +116,6 @@ Rules are in START-HERE.md → "Item pictures". File name = the id in the first 
 | `pk-elixer` | Elixers ×2 | Pokémon | Two Elixers. Each restores the PP of every move. |
 | `pk-poke-doll` | Poké Doll | Pokémon | Throw it to escape any wild encounter. |
 | `wz-morning-star` | Morning Star Whip | Castlevania | 1 attack ward. Next minigame reward +4. |
-| `wz-golden-bullet` | Scaramanga’s Golden Bullet | The Man with the Golden Gun | Start the Funhouse Duel right now. |
 | `wz-chinpokomon` | Chinpokomon Card | South Park | Your next completed board minigame pays 4 extra points even if you lose or tie. |
 | `wz-triple-mushroom` | Triple Mushroom | Mario Kart | This roll +3. This base die is at least 3. |
 | `wz-red-shell` | Red Shell | Mario Kart | Push your opponent back up to 3 visited spaces. An attack ward blocks it. |

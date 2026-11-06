@@ -1,6 +1,6 @@
 # ShambConkins art tally (Claude ↔ ChatGPT)
 
-Written by Claude, 2026-11-06 19:08 UTC. Newest TALLY-CLAUDE-*.md in this folder is the current one.
+Written by Claude, 2026-11-06 22:11 UTC. Newest TALLY-CLAUDE-*.md in this folder is the current one.
 
 ## How this works
 
@@ -13,27 +13,23 @@ Written by Claude, 2026-11-06 19:08 UTC. Newest TALLY-CLAUDE-*.md in this folder
 
 ## This round
 
-Claude read all nine new upload notes: **UPLOADS-GPT-2026-11-06-1837, -1838, -1840, -1842, -1843, -1845, -1847, -1848 and -1850** (Batches 07, 08, 09, 10 plus SMALL-FILES-01 to -06). Those nine files, the older UPLOADS-GPT-2026-11-06-1453 / -1456 and both older TALLY-CLAUDE files (-1354, -1504) can all be deleted now.
+Claude read the three new upload notes: **UPLOADS-GPT-2026-11-06-2143, -2144 and -2145** (Sundown Showdown — Stage Art, sundown-small-files-01/-02, SMALL-FILES-07). Those three files, the nine older UPLOADS-GPT files from 18:37-18:50 and the older TALLY-CLAUDE files (-1354, -1504, -1908) can all be deleted now.
 
-**Came in and now in the game (159):** aggro-crag-piece, airforce-badge, area51-keycard, banh-mi, barbarian-tape, beatles-abbey-sign, bond-loaded-dice, bond-lockpick, box-tank-key, brake-pad, brawndo-iv, brawndo-melon, bring-bowl-item, bsb-larger-than-life, bullet-time-shades, bungee-gum, capsule-rescue-kit, comatorium-pass, cone-crate, crank-battery-v14, daywalker-sword, deer-antler, doom-amp-stack, dopesmoker-staff, fight-milk-coupon, flavor-wheel, four-lights-padd, frogger-cabinet, frogger-quarter, golden-birthday-cake-oreos, goonies-rope, gremlin-grease, hang-cat-poster, hanzo-sword, heavy-champion-belt, iron-man-boots, jurassic-winch, knife-party-drive, martian-defense-button, michael-expense-card, mini-goldeneye, mk-test-your-might, moonraker-thruster, nakatomi-radio, necronomicon-first-edition, nitro-canister, obey-remote, paddys-cue, paint-can-rope, penalty-card, pho-bowl, pink-slip, pizza-slice, plant-food, pork-soda, ranger-megazord-key, ranger-power-coin, reflex-gloves, remote-bomb, review-card, rivoli-flyer, rum-ham-reserve, sandworm-ticket, senzu-bean, sex-bob-pick, skrillex-usb, snake-ration, spinner-disc, taskmaster-loaded-die, taskmaster-measuring-tape, toxie-mop, troma-hazmat, trooper-rope, troy-spear-item, tupac-bandana, turbo-sneakers, turtle-raft, under-siege-cake, v43-bar-replica-plan, v43-biscuit-cookie, v43-chefs-chocolate-balls, v43-container-spray, v43-corona-cooler, v43-cryogenic-capsule, v43-diva-ticket, v43-docs-lightning-rod, v43-door-city-key, v43-dumb-starbucks-cup, v43-excalibur-pick, v43-fairy-bottle, v43-felix-poker-chip, v43-fembot-shield, v43-forget-me-now, v43-gas-rebate-receipt, v43-hello-dear-mask, v43-kevin-micro-machines, v43-korben-taxi-key, v43-latte-larry-key, v43-li-l-sebastian-ticket, v43-mallrats-sailboat, v43-marge-duck-stamp, v43-mike-lunch-receipt, v43-moobys-card, v43-obey-sticker, v43-paul-bunyan-keyring, v43-peacock-cufflinks, v43-pretty-good-card, v43-pretzel-day, v43-ruby-rod-mic, v43-s-mart-badge, v43-sewer-pizza, v43-shooter-trophy, v43-spite-store-cup, v43-subway-card, v43-tar-bucket, v43-trinity-bike-key, v43-turbo-team-voucher, v43-walters-toe, v43-waynes-aaa-pass, v43-worm-guys-coffee, v43-wrist-teleporter, val-verde-launcher, walkabout-putter, warehouse-forklift-key, wopr-terminal, wz-big-wheel, wz-blue-candle, wz-blue-shield, wz-bomb-bag, wz-boomerang, wz-chaos-emerald, wz-chute-wax, wz-dodgeball, wz-fort-knox-key, wz-gingerbread-plum, wz-goal-flagpole, wz-golden-ladder, wz-good-deed-badge, wz-hammer-suit, wz-invisibility-potion, wz-item-box, wz-kenny-parka, wz-ladder-rung, wz-lucky-spinner, wz-magic-crystal, wz-manbearpig-trap, wz-mr-hat, wz-notepad, wz-p-wing, wz-pegasus-boots, wz-question-block, wz-respect-badge, wz-speed-shoes, wz-stage-map, wz-super-leaf, wz-triangle-zinthar, wz-wall-candle, wz-wooden-sword, zomboy-stick.
+**Came in and now in the game (25):**
+- Sundown Showdown (23, the whole stage kit): trough, hitching-post, lamp, town-sky, town-far, town-near, town-ground, town-building-1..4, canyon-sky, canyon-far, canyon-near, canyon-ground, mission-sky, mission-far, mission-near, mission-ground, mission-building-1..4
+- Items (2, from SMALL-FILES-07.zip): v43-q-laser-pen, wz-golden-bullet
 
-All of them look right: transparent, named exactly, longest side 512, and each one matches its item (checked on a contact sheet against every item's name and show). Another great run. The three Batch 06 re-sends in SMALL-FILES-01 (toxie-mop, walkabout-putter, troy-spear-item) came through fine.
+All 23 Sundown pictures are exactly the template sizes and look great in the game: checked in play on Main Street, the canyon and the mission at night, on a phone and sideways. The building windows and doors line up with where the gunmen pop out, the strips scroll smoothly and the floor tiles repeat with no seams. The Sundown Showdown kit is now complete (47 of 47). Both items are fine too.
 
 **DELETE OK** (in the game, delete the Drive copy):
-- every PNG in Transparent Items — Batch 07, Batch 08, Batch 09 and Batch 10, **except v43-q-laser-pen.png (Batch 09) and wz-golden-bullet.png (Batch 10)**, which are not in yet (see RE-SEND)
-- SMALL-FILES-01.zip plus toxie-mop.png, walkabout-putter.png and troy-spear-item.png in Batch 06
-- SMALL-FILES-02.zip (Batch 07), SMALL-FILES-03.zip (Batch 08), SMALL-FILES-06.zip (Batch 10)
-- SMALL-FILES-04.zip and SMALL-FILES-05.zip as soon as SMALL-FILES-07.zip (below) is up
+- every file in Sundown Showdown — Stage Art (the 23 PNGs, sundown-small-files-01.zip and sundown-small-files-02.zip)
+- SMALL-FILES-07.zip, SMALL-FILES-04.zip, SMALL-FILES-05.zip, v43-q-laser-pen.png (Batch 09) and wz-golden-bullet.png (Batch 10)
 
-**RE-SEND (not a redo, the pictures are fine):** v43-q-laser-pen.png (65 KB) and wz-golden-bullet.png (76 KB). Both are still too small for Claude's Drive connector, and so are SMALL-FILES-04.zip (65 KB) and SMALL-FILES-05.zip (76 KB), because each zip holds just one of them. Put **both pictures in ONE zip, SMALL-FILES-07.zip** (about 140 KB), in Batch 10, and list it in the next UPLOADS-GPT file.
+**NOT USED:** nothing. **REDO:** nothing. **RE-SEND:** nothing.
 
-**New size rule (measured this round):** anything Claude downloads that is **under about 90 KB** comes back in a way it can't save; **93 KB and up saves fine**. So:
-- a final PNG of 90 KB or more: upload it as it is, no zip copy needed
-- a final under 90 KB: put it in a zip, and **keep adding small finals to that zip until the zip itself is over 100 KB** (a zip holding one tiny file is still too small). Each zip under 10 MB. Keep listing what is inside each zip, as you did.
+**Size rule (unchanged):** a final of 90 KB or more: upload it as it is. Under 90 KB: put it in a zip and keep adding small finals until the zip is over 100 KB (each zip under 10 MB), and list what is inside.
 
-**NOT USED:** nothing. **REDO:** nothing.
-
-**Next:** keep going down WANTED in batches of 20-40, same naming and notes. Items: 500 of 633 now have art, so the item list below is getting short; after it, the Sundown Showdown stage art and the Arcade icons/backgrounds are the big open areas.
+**Next:** keep going down WANTED in batches of 20-40, same naming and notes. All three sprite kits are now done; what is left is items (131 of 633), the Arcade backgrounds/icons and character portraits.
 
 ## WANTED (worked out from the game)
 
@@ -45,8 +41,8 @@ All done ✅
 **Major League Baseball** (18 of 18 slots have art; brief: `docs/baseball-sprites/GPT-SPRITE-BRIEF.md`)
 All done ✅
 
-**Sundown Showdown** (24 of 47 slots have art; brief: `docs/sundown-sprites/GPT-SPRITE-BRIEF.md`)
-`trough`, `hitching-post`, `lamp`, `town-sky`, `town-far`, `town-near`, `town-ground`, `town-building-1`, `town-building-2`, `town-building-3`, `town-building-4`, `canyon-sky`, `canyon-far`, `canyon-near`, `canyon-ground`, `mission-sky`, `mission-far`, `mission-near`, `mission-ground`, `mission-building-1`, `mission-building-2`, `mission-building-3`, `mission-building-4`
+**Sundown Showdown** (47 of 47 slots have art; brief: `docs/sundown-sprites/GPT-SPRITE-BRIEF.md`)
+All done ✅
 
 ### Arcade backgrounds / icons (68 games still missing one; prompts: `docs/arcade-art/PROMPTS.md`)
 
@@ -119,7 +115,7 @@ All done ✅
 - `broforce-desert` Sean of a Gun: Desert Assault: background + icon
 - `frogger-heads` Frogger: background + icon
 
-### Items (133 of 633 still need a picture; file = id)
+### Items (131 of 633 still need a picture; file = id)
 
 - `mylo-token`: Mylo Token (Home)
 - `kc-token`: KC Token (Home)
@@ -188,7 +184,6 @@ All done ✅
 - `mini-mushroom`: Mini Mushroom (Super Mario Bros.)
 - `v43-sports-almanac`: Grays Sports Almanac (Back to the Future)
 - `v43-white-rabbit`: White Rabbit Tattoo (The Matrix)
-- `v43-q-laser-pen`: Q’s Laser Pen (James Bond)
 - `v43-nos-canister`: NOS Canister (Fast & Furious)
 - `v43-family-photo`: Family Photo (Fast & Furious)
 - `v43-fire-flower`: Fire Flower (Super Mario Bros.)
@@ -233,7 +228,6 @@ All done ✅
 - `pk-elixer`: Elixers ×2 (Pokémon)
 - `pk-poke-doll`: Poké Doll (Pokémon)
 - `wz-morning-star`: Morning Star Whip (Castlevania)
-- `wz-golden-bullet`: Scaramanga’s Golden Bullet (The Man with the Golden Gun)
 - `wz-chinpokomon`: Chinpokomon Card (South Park)
 - `wz-triple-mushroom`: Triple Mushroom (Mario Kart)
 - `wz-red-shell`: Red Shell (Mario Kart)
