@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.88.8
+
+- **Symphony of the Night has its real soundtrack.** Each place plays its own song from the game: Dracula's Castle on the approach and in the Entrance, Crystal Teardrops in the caverns, Marble Gallery in the gallery, Prologue for Dracula's speech, Dance of Illusions for the fight, Heavenly Doorway once he's gone, Land of Benediction when time runs out, plus Metamorphosis, Moonlight Nocturne and Prayer on the title and cards. Songs loop without playing the album's fade-out, keep playing under the cards, and dip under Death's and Dracula's voices.
+
 ## v0.88.7
 
 - **Arcade Home.** The first shelf is now called Home: your 8 most recently played games come first, then the featured games. The separate Recent shelf is gone.

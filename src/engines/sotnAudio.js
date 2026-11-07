@@ -1,9 +1,7 @@
 // Castlevania · Symphony of the Night: sound. Original WebAudio synth effects modelled on the PS1 game's palette
 // (sword swishes and metallic rings, wet hits, flame deaths, Warg howls, zombie groans, Mermen splashes, the castle
 // gate, Death's arrival, Dracula's laugh and his demon form), all sent through one generated cathedral reverb.
-// Looping ambience per area (wind, hall drone, dripping caverns, throne-room organ) runs until a music track is supplied.
-// Drop-in music: assets/music/cv-symphony.(mp3|ogg|m4a|wav) for the stage and assets/music/cv-symphony-boss.* for the
-// throne room; tools/build.mjs inlines them as USER_PORTRAITS['music:<name>'] and they replace the ambience drone.
+// Looping ambience per area (wind, hall drone, dripping caverns, throne-room organ) sits quietly under the soundtrack (SONGS).
 const {audioContext}=require("src/audio.js");
 const {store}=require("src/state.js");
 const {USER_PORTRAITS}=require("src/data/userPortraits.js");
@@ -139,13 +137,34 @@ const sfx={
  bell:()=>play('bell',500,()=>{for(const [f,v] of [[196,.12],[392,.06],[587,.04],[784,.03],[1046,.02]])tone('sine',f,f*.995,3,v,{att:.005,verb:.9});})
 };
 
-// ------------------------------------------------------------------ ambience and drop-in music
-let amb=null,ambKind=null,mus=null,musName=null,watch=0,lastTick=0,suspended=false;
-const MUSIC={stage:'cv-symphony',boss:'cv-symphony-boss'};
-const musicURL=k=>USER_PORTRAITS['music:'+(MUSIC[k]||k)]||USER_PORTRAITS['music:'+MUSIC.stage]||null;
+// ------------------------------------------------------------------ ambience and the soundtrack
+// The owner's PS1 soundtrack (assets/music/cv-symphony-<name>.mp3, stream copies of the album tracks: no re-encoding).
+// Each place plays what it plays in the real game. The album tracks are one pass ending in a fade-out over the start of the
+// repeat, so `loop` = [where the music goes back to, where it repeats], measured from that repeat; the file stops just
+// after it and the fade is never heard. The repeat isn't sample-exact on the album, so the join is a short crossfade.
+// `lufs` = measured loudness (every song plays at LEVEL); `next` = the song to decode while this one plays.
+let amb=null,ambKind=null,watch=0,lastTick=0,suspended=false,held=false;
+const LEVEL=-19,BED=.25,XF=.25,KEEP=2;
+const SONGS={
+ title:{lufs:-13.9,next:'story'},                             // Metamorphosis 1: the opening video
+ story:{lufs:-14.2,loop:[0,105.1],next:'castle'},             // Moonlight Nocturne: the intro story
+ save:{lufs:-16.1,loop:[8.5844,52.5],next:'castle'},          // Prayer: the save screen
+ castle:{lufs:-12.9,loop:[22.0395,105.45],next:'caverns'},    // Dracula's Castle: the approach and Castle Entrance
+ caverns:{lufs:-12.8,loop:[12.9152,115.4],next:'gallery'},    // Crystal Teardrops: Underground Caverns
+ gallery:{lufs:-13.4,loop:[5.1042,77.5],next:'dracula'},      // Marble Gallery
+ dracula:{lufs:-12,loop:[53.4819,73.5],next:'boss'},          // Prologue: Dracula's throne room, before the fight
+ boss:{lufs:-12.4,loop:[11.7737,71.9],next:'keep'},           // Dance of Illusions: the Dracula battle, both forms
+ keep:{lufs:-15.4,loop:[20.5956,103.5]},                      // Heavenly Doorway: Castle Keep, once Dracula is gone
+ gameover:{lufs:-13}                                          // Land of Benediction: game over
+};
+const curveIn=new Float32Array(32),curveOut=new Float32Array(32);for(let i=0;i<32;i++){const k=i/31*Math.PI/2;curveIn[i]=Math.sin(k);curveOut[i]=Math.cos(k);}
+const bufs=new Map();let want=null,song=null,duckTo=1,then=null;
+const songURL=n=>USER_PORTRAITS['music:cv-symphony-'+n]||null;
+const bed=()=>want?BED:1;
+function bedLevel(){if(!amb)return;try{amb.g.gain.setTargetAtTime(suspended?0:bed(),amb.a.currentTime,.3);}catch{}}
 function stopAmb(fade=1.2){if(!amb)return;const old=amb;amb=null;try{const t=old.a.currentTime;old.g.gain.cancelScheduledValues(t);old.g.gain.setValueAtTime(old.g.gain.value,t);old.g.gain.linearRampToValueAtTime(0,t+fade);setTimeout(()=>{for(const n of old.nodes)try{n.stop?.();n.disconnect();}catch{}},fade*1000+120);}catch{}}
 function ambience(kind){if(kind===ambKind)return;ambKind=kind;stopAmb();if(!sfxOn()||!kind)return;const b=bus();if(!b)return;const a=b.a,t=a.currentTime;
- try{const g=a.createGain(),nodes=[],quiet=mus?.4:1;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(quiet,t+2.5);g.connect(b.amb);
+ try{const g=a.createGain(),nodes=[],quiet=bed();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(quiet,t+2.5);g.connect(b.amb);
   const noiseLoop=(type,freq,q,vol,lfoRate=0,lfoDepth=0)=>{const src=a.createBufferSource(),f=a.createBiquadFilter(),v=a.createGain();src.buffer=noise(a);src.loop=true;f.type=type;f.frequency.value=freq;f.Q.value=q;v.gain.value=vol;
    src.connect(f);f.connect(v);v.connect(g);src.start(t,Math.random());nodes.push(src);
    if(lfoRate){const l=a.createOscillator(),lg=a.createGain();l.frequency.value=lfoRate;lg.gain.value=lfoDepth;l.connect(lg);lg.connect(f.frequency);l.start(t);nodes.push(l);
@@ -155,18 +174,49 @@ function ambience(kind){if(kind===ambKind)return;ambKind=kind;stopAmb();if(!sfxO
   if(kind==='wind'){noiseLoop('bandpass',420,.8,.07,.09,260);noiseLoop('bandpass',1300,2,.018,.13,500);}
   else if(kind==='hall'){noiseLoop('lowpass',180,.7,.05);drone('sine',55,.03,200,.07);drone('sine',82.4,.018,200,.05);noiseLoop('bandpass',700,3,.006,.05,200);}
   else if(kind==='cave'){noiseLoop('lowpass',260,.7,.06,.05,90);drone('sine',49,.025,150,.04);noiseLoop('bandpass',2600,6,.004,.2,800);}
-  else if(kind==='throne'){if(!mus){drone('sawtooth',65.4,.012,520,.11);drone('sawtooth',98,.009,520,.13);drone('sawtooth',77.8,.008,520,.09);drone('sine',32.7,.04,120);}noiseLoop('lowpass',200,.7,.03);}
+  else if(kind==='throne'){if(!want){drone('sawtooth',65.4,.012,520,.11);drone('sawtooth',98,.009,520,.13);drone('sawtooth',77.8,.008,520,.09);drone('sine',32.7,.04,120);}noiseLoop('lowpass',200,.7,.03);}
   amb={a,g,nodes};}catch{amb=null;}}
-function music(kind){const url=kind&&musicOn()?musicURL(kind):null;if(url&&mus&&mus.url===url)return true;
- if(mus){const old=mus.el;mus=null;fadeEl(old,0,900,()=>{try{old.pause();}catch{}});}musName=kind;if(!url)return false;
- try{const el=new Audio(url);el.loop=true;el.volume=0;el.play()?.catch?.(()=>{});mus={el,url};fadeEl(el,.7,1500);
-  if(amb){try{const t=amb.a.currentTime;amb.g.gain.cancelScheduledValues(t);amb.g.gain.linearRampToValueAtTime(.4,t+1);}catch{}}return true;}catch{mus=null;return false;}}
-function fadeEl(el,to,ms,done){const from=el.volume,t0=performance.now();const step=()=>{const k=Math.min(1,(performance.now()-t0)/ms);try{el.volume=Math.max(0,Math.min(1,from+(to-from)*k));}catch{}if(k<1)setTimeout(step,40);else done?.();};step();}
-const hasMusic=k=>!!musicURL(k);
+// decoded songs are big (about 40 MB each): only the one playing and the next are kept
+function loadSong(n){const a=audioContext(),url=songURL(n);if(!a||!url)return null;let p=bufs.get(n);
+ if(p){bufs.delete(n);bufs.set(n,p);return p;}
+ p=fetch(url).then(r=>r.arrayBuffer()).then(b=>a.decodeAudioData(b)).catch(()=>{bufs.delete(n);return null;});bufs.set(n,p);
+ for(const k of [...bufs.keys()])if(bufs.size>KEEP&&k!==n&&k!==want&&k!==song?.name)bufs.delete(k);return p;}
+function preloadSongs(){if(musicOn())for(const n of ['title','story','castle'])loadSong(n);}
+// one stretch of a song, on the audio clock; `join` = fades in (a loop join or a resume)
+function segment(S,when,from,join){const a=S.a,L=S.def.loop,end=L?L[1]:S.buf.duration,at=Math.max(0,from),t0=Math.max(when,a.currentTime+.02),pad=L?XF/2:0,stopAt=t0+end-at+pad;
+ try{const src=a.createBufferSource(),g=a.createGain();src.buffer=S.buf;src.connect(g);g.connect(S.out);
+  if(join)g.gain.setValueCurveAtTime(curveIn,t0,XF);if(L)g.gain.setValueCurveAtTime(curveOut,stopAt-XF,XF);
+  src.start(t0,at,stopAt-t0);S.parts.push({src,when:t0,from:at,stopAt});S.next=stopAt-XF;S.endAt=stopAt;}catch{}}
+function startSong(n,buf,delay){const a=audioContext();if(!a||!buf)return;const def=SONGS[n],lvl=10**((LEVEL-def.lufs)/20),out=a.createGain();out.gain.value=lvl*duckTo;out.connect(a.destination);
+ const S={name:n,def,buf,a,out,lvl,parts:[],next:0,endAt:0,pos:0,paused:false};song=S;
+ if(suspended)S.paused=true;else segment(S,a.currentTime+delay,0,false);if(def.next)loadSong(def.next);}
+function dropSong(fade=.9){const S=song;if(!S)return;song=null;
+ try{const t=S.a.currentTime,v=S.out.gain.value;S.out.gain.cancelScheduledValues(t);S.out.gain.setValueAtTime(v,t);S.out.gain.linearRampToValueAtTime(0,t+fade);}catch{}
+ setTimeout(()=>{for(const p of S.parts)try{p.src.stop();}catch{}try{S.out.disconnect();}catch{}},fade*1000+80);}
+const songPos=S=>{const now=S.a.currentTime;let cur=null;for(const p of S.parts)if(p.when<=now&&(!cur||p.when>cur.when))cur=p;return cur?cur.from+now-cur.when:S.pos;};
+function pauseSong(){const S=song;if(!S||S.paused)return;S.pos=songPos(S);S.paused=true;for(const p of S.parts)try{p.src.stop();}catch{}S.parts=[];}
+function resumeSong(){const S=song;if(!S||!S.paused)return;S.paused=false;const L=S.def.loop;segment(S,S.a.currentTime+.03,L&&S.pos>L[1]-XF*2?L[0]:S.pos,true);}
+// keeps a looping song going and ends a one-shot; runs from the watch timer, so it also works under a card with no frames
+function pump(){const S=song;if(!S||S.paused)return;const now=S.a.currentTime;S.parts=S.parts.filter(p=>p.stopAt>now-.1);
+ if(S.def.loop){if(S.next-now<1.5)segment(S,S.next,S.def.loop[0]-XF/2,true);}
+ else if(now>=S.endAt){dropSong(.05);const n=then;then=null;if(n)music(n);}}
+// the song this moment wants (null = silence); safe to call every frame
+function music(n){n=n&&musicOn()&&songURL(n)?n:null;if(n===want)return !!n;want=n;then=null;const had=!!song;dropSong();bedLevel();if(!n)return false;
+ loadSong(n)?.then(buf=>{if(want===n&&!song)startSong(n,buf,had?.5:0);});return true;}
+const playing=n=>song?.name===n;
+const after=n=>{then=n;};
+function duck(k){if(k===duckTo)return;duckTo=k;const S=song;if(S)try{S.out.gain.setTargetAtTime(S.lvl*k,S.a.currentTime,.25);}catch{}}
+// a card over the game stops its frames but the music should play on: hold(true) until the card goes
+function hold(v){held=!!v;lastTick=performance.now();}
+function wake(){suspended=false;bedLevel();resumeSong();}
 // the game calls tick() every frame; when frames stop (pause menu, hidden tab) the loops are muted until they resume
-function tick(){lastTick=performance.now();if(suspended){suspended=false;try{if(amb){const t=amb.a.currentTime;amb.g.gain.setTargetAtTime(mus?.4:1,t,.2);}mus?.el.play()?.catch?.(()=>{});}catch{}}
- if(!watch)watch=setInterval(()=>{if(!suspended&&performance.now()-lastTick>400){suspended=true;try{if(amb){const t=amb.a.currentTime;amb.g.gain.setTargetAtTime(0,t,.1);}mus?.el.pause();}catch{}}},250);}
-function stopAll(){clearInterval(watch);watch=0;suspended=false;ambKind=null;stopAmb(.6);if(mus){const el=mus.el;mus=null;fadeEl(el,0,500,()=>{try{el.pause();}catch{}});}musName=null;}
+function tick(){lastTick=performance.now();if(suspended)wake();
+ if(!watch)watch=setInterval(()=>{const idle=document.hidden||!held&&performance.now()-lastTick>400;
+  if(idle&&!suspended){suspended=true;bedLevel();pauseSong();}else if(!idle&&suspended&&held)wake();pump();},250);}
+function stopAll(){clearInterval(watch);watch=0;suspended=false;held=false;ambKind=null;stopAmb(.6);want=null;then=null;duckTo=1;dropSong(.5);bufs.clear();}
 const voiceCount=()=>voices;
 function stopAllSounds(){stopLine();stopAll();}
-Object.assign(exports,{sfx,ambience,music,hasMusic,tick,stopAll:stopAllSounds,MUSIC,sfxErrors,voiceCount,foe,line,stopLine,hasLines,hasClip,preloadClips});
+// tests: what is playing, and a jump to `sec` in it
+const nowPlaying=()=>({want,name:song?.name||null,pos:song?songPos(song):0,paused:!!song?.paused,parts:song?.parts.length||0,level:song?song.out.gain.value:0,loaded:[...bufs.keys()]});
+function seekSong(sec){const S=song;if(!S)return;pauseSong();S.pos=sec;resumeSong();}
+Object.assign(exports,{sfx,ambience,music,playing,after,duck,hold,tick,stopAll:stopAllSounds,SONGS,preloadSongs,nowPlaying,seekSong,sfxErrors,voiceCount,foe,line,stopLine,hasLines,hasClip,preloadClips});

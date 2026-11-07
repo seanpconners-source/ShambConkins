@@ -124,7 +124,7 @@ function makePlayer(i,L){return {i,x:L.start,y:L.gy[L.start],vx:0,vy:0,grounded:
 async function sotn(s){
  SA.preloadClips();const [c,g]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');const FB=fullBleed(s,{bg:'#000'});s.updateScores();
  if(!await settle(s))return;
- s.cleanup(()=>stopAll());
+ s.cleanup(()=>stopAll());SA.preloadSongs();
  const net=s.online||null,me=net?net.me:0,them=1-me,host=!net||me===0;
  const L=buildCastle(s.random),seedBase=Math.floor(s.random()*1e9),AR=L.arena;L.foes.forEach((e,k)=>{e.id=k;});
  const netKilled=new Set();let pullAt=0,nf=null;const ev=e=>{nf?.event(e);};
@@ -543,7 +543,7 @@ async function sotn(s){
  // a tap / attack / jump during a cutscene ends it (not online, where both phones keep the scene in step)
  function skipScene(w,p){const sc=w.scene;if(!sc||net||sc.t<30)return;SA.stopLine();w.scene=null;
   if(sc.kind==='death'){if(p.weapon!=='fist'){sfx.lose();p.weapon='fist';}msg(w,'Equipment lost','Death took the Alucard Sword','lost');}
-  else if(w.boss){const B=w.boss;B.state='idle';B.t=0;B.vis=1;w.banner={text:'Dracula',t:0,boss:true};music('boss');}}
+  else if(w.boss){const B=w.boss;B.state='idle';B.t=0;B.vis=1;w.banner={text:'Dracula',t:0,boss:true};}}
  function stepScene(w,p){const sc=w.scene;sc.t++;
   if(sc.kind==='death'){const t=sc.t;
    const o=sc.o||0,ta=t-o;
@@ -557,7 +557,7 @@ async function sotn(s){
    const o=sc.o||0;
    if(o){for(const ln of DRAC_V)if(t===ln[0]&&ln[3])SA.line(ln[3]);}else for(const [at] of DRAC_LINES)if(t>=at&&t<at+60&&t%3===0)sfx.blip();
    if(t===10){B.state='throne';B.vis=0;}B.vis=Math.min(1,t/30);
-   if(t===240&&!o){sfx.laugh(true);}if(t>=290+o){w.scene=null;B.state='idle';B.t=0;w.banner={text:'Dracula',t:0,boss:true};music('boss');}}
+   if(t===240&&!o){sfx.laugh(true);}if(t>=290+o){w.scene=null;B.state='idle';B.t=0;w.banner={text:'Dracula',t:0,boss:true};}}
  }
  const updateCamera=(p,i)=>{const cam=cams[i],w=worlds[i];cam.look+=((p.facing||1)*cam.w*.08-cam.look)*.04;let tx=p.x-cam.w*.5+cam.look;
   if(w.scene?.kind==='death')tx=w.scene.x-cam.w*.35;
@@ -909,7 +909,7 @@ async function sotn(s){
   const B=w.boss,[ph,st,x,y,hp,max,f,vis,open,cr,low,mo,rise,sw,t]=b,prev=B.state,prevPh=B.phase;
   Object.assign(B,{phase:ph,hp,max,facing:f,vis,open,crouch:cr,low,mouth:mo,rise,swipe:sw});B.nx=x;B.ny=y;if(Math.abs(B.x-x)>60||ph!==prevPh){B.x=x;B.y=y;}
   if(st===prev&&ph===prevPh)return;B.state=st;B.t=t;
-  if(w.scene?.kind==='dracula'&&st!=='throne'){w.scene=null;w.banner={text:'Dracula',t:0,boss:true};music('boss');}
+  if(w.scene?.kind==='dracula'&&st!=='throne'){w.scene=null;w.banner={text:'Dracula',t:0,boss:true};}
   if(st==='vanish')sfx.teleport();else if(st==='appear')sfx.appear();else if(st==='dying'){w.eshots=[];sfx.laugh(true);}
   if((st==='die'||st==='gone')&&!B.paid){B.paid=true;w.eshots=[];for(const e of w.foes)if(e.type==='bat')e.dead=true;sfx.roar();draculaDown(pl[me]);}
   if(st==='gone'&&!w.orb){w.orb=true;const p=pl[me];dropItem(w,'orb',clamp(p.x+(p.x<(AR.x0+AR.x1)/2?60:-60),AR.x0+40,AR.x1-40),40);}}
@@ -952,16 +952,30 @@ async function sotn(s){
   if(B&&w.locked&&B.state!=='gone'){inp.r=p.x<B.x-18?1:0;inp.l=p.x>B.x+18?1:0;if(!inp.r&&!inp.l)p.facing=B.x<p.x?-1:1;if(B.phase===2&&nb.t%40<4){inp.press=1;inp.jump=1;}}
   const orb=w.items.find(it=>it.type==='orb');if(orb){inp.r=p.x<orb.x-4?1:0;inp.l=p.x>orb.x+4?1:0;}}
 
+ // ---------------- the soundtrack: what each moment plays in the real game (the songs are in sotnAudio.js SONGS).
+ // The hand-off cards are the story (first card) and the save screen (the rest); the song of an area starts once you are
+ // clear of its door, so stepping back and forth on the line doesn't restart anything. The throne room's stretch before
+ // the bars is too short for a song of its own, so Marble Gallery plays up to them: then Prologue for Dracula's speech,
+ // Dance of Illusions for the fight, silence for the kill, and the area's own Heavenly Doorway once the orb is taken
+ // (bosses hand back to the area's song). Land of Benediction when the night runs out.
+ const AREA_SONG={forest:'castle',gate:'castle',hall:'castle',cave:'caverns',gallery:'gallery',throne:'gallery'};
+ let zone='castle',firstCard=true;
+ const cardSong=()=>{const n=firstCard?'story':'save';firstCard=false;if(SA.playing('gameover'))SA.after(n);else music(n);};
+ function songFor(p,w){const B=w.boss;
+  if(p.finished)return phase!=='play'||clock-p.finishT>2.2?'keep':null;
+  if(phase!=='play')return 'gameover';
+  if(w.locked&&p.x>=AR.x0-60){if(w.scene?.kind==='dracula')return 'dracula';return w.orb||B?.state==='die'||B?.state==='gone'?null:'boss';}
+  const k=regionAt(p.x-24).kind;if(k===regionAt(p.x+24).kind)zone=AREA_SONG[k]||zone;return zone;}
  // ---------------- turns
  const score=q=>q.finished?fmtRace(q.finishT):`${prog(q)}% of the way`;
  async function beginTurn(i){
   // online: no hand-off; both phones start the countdown together
-  if(net){phase='wait';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;clock=0;acc=0;netT0=performance.now()+3000;cd=new Countdown(3);phase='count';cams[me].x=0;worlds[me].area='';ambience('wind');music('stage');return;}
+  if(net){phase='wait';music('story');await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;clock=0;acc=0;netT0=performance.now()+3000;cd=new Countdown(3);phase='count';cams[me].x=0;worlds[me].area='';ambience('wind');zone='castle';music('castle');return;}
   phase='handoff';turn=i;pads.stick=null;pads.jump=null;pads.atk=null;clearKeys();for(const inp of inputs)Object.assign(inp,{l:0,r:0,u:0,d:0,jump:0,press:0,atk:0,atkHeld:0,sub:0,dash:0});
   const n0=s.players[0].name,desc=s.solo?`Castle run ${soloCleared+1}: destroy Dracula within ${fmtRace(raceCap())} to go again with less time. Getting further scores too.`:i===0?`You go first: storm Dracula's castle and destroy him as fast as you can. ${s.players[1].name} plays next against your ghost.`
    :`Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'}. ${n0}'s violet after-image runs beside you.`;
-  if(!await s.pass(i,desc,'Ready — start my countdown',s.solo?{soloTitle:`Castle run ${soloCleared+1}`,summary:soloCleared?`${soloTotal.toLocaleString()} points so far.`:null}:{summary:i?`${n0}: ${score(pl[0])}. ${s.players[1].name}, take the controls.`:null}))return;
-  clock=0;acc=0;gi=0;cd=new Countdown(3);phase='count';cams[i].x=0;worlds[i].area='';ambience('wind');music('stage');}
+  cardSong();SA.hold(true);const go=await s.pass(i,desc,'Ready — start my countdown',s.solo?{soloTitle:`Castle run ${soloCleared+1}`,summary:soloCleared?`${soloTotal.toLocaleString()} points so far.`:null}:{summary:i?`${n0}: ${score(pl[0])}. ${s.players[1].name}, take the controls.`:null});SA.hold(false);if(!go)return;
+  clock=0;acc=0;gi=0;cd=new Countdown(3);phase='count';cams[i].x=0;worlds[i].area='';ambience('wind');zone='castle';music('castle');}
  const soloPoints=p=>p.finished?2000+Math.max(0,Math.round((raceCap()-p.finishT)*10)):prog(p)*10;
  function soloAfter(){const p=pl[0];soloTotal+=soloPoints(p);
   if(!p.finished)return soloFinish(s,soloTotal,soloCleared,`Symphony of the Night solo: Dracula fell ${soloCleared} time${soloCleared===1?'':'s'}; last run ${score(p)}.`);
@@ -972,7 +986,7 @@ async function sotn(s){
  const AMB={forest:'wind',gate:'wind',hall:'hall',gallery:'hall',cave:'cave',throne:'throne'};
  s.frame((dt,t)=>{
   if(!s.alive)return;tick();
-  if(phase==='title'){if(!titleT){sfx.bell();setTimeout(()=>s.alive&&sfx.thunder(false),TITLE_BOLT*1000);}titleT+=dt;if(titleT>TITLE_LEN)beginTurn(0);}
+  if(phase==='title'){if(!titleT){music('title');sfx.bell();setTimeout(()=>s.alive&&sfx.thunder(false),TITLE_BOLT*1000);}titleT+=dt;if(titleT>TITLE_LEN)beginTurn(0);}
   else if(phase==='count'){layout();cams[turn].w=lay.vw;updateCamera(pl[turn],turn);savePrev(turn);if(!cd.update(dt)||net&&performance.now()>=netT0){phase='play';for(const inp of inputs){inp.press=0;inp.atk=0;inp.sub=0;inp.dash=0;}}}
   else if(phase==='play'||phase==='turn-end'||phase==='end'||phase==='net-end'){
    if(!cd.done)cd.update(dt);acc+=dt;let steps=0;const i=turn,p=pl[i],w=worlds[i];
@@ -990,6 +1004,7 @@ async function sotn(s){
     if(w.msg&&++w.msg.t>150)w.msg=null;if(w.banner&&++w.banner.t>140)w.banner=null;w.flash=Math.max(0,w.flash-.04);w.shake=Math.max(0,w.shake-.35);
     if(turn===0&&phase!=='end'&&!s.solo&&!net)ghost.push(snap(p));else if(turn===1&&!net)gi++;}
    if(steps===5)acc=0;
+    music(songFor(p,w));SA.duck(w.scene?.kind==='death'?.3:w.scene?.kind==='dracula'?.55:1);
    if(phase==='play'&&net){ambience(AMB[regionAt(p.x).kind]||'hall');if(netOver())netEnd();}
    else if(phase==='net-end')endT+=dt;
    else if(phase==='play'){ambience(AMB[regionAt(p.x).kind]||'hall');

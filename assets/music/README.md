@@ -5,8 +5,7 @@ File name = track name, `.mp3`, `.ogg`, `.m4a` or `.wav`:
 
 | File | Plays in |
 |---|---|
-| `cv-symphony.mp3` | Castlevania · Symphony of the Night: the whole castle run (loops) |
-| `cv-symphony-boss.mp3` | Symphony of the Night: the Dracula fight in the Castle Keep (falls back to `cv-symphony` if missing) |
+| `cv-symphony-<name>.mp3` | Symphony of the Night soundtrack (owner's album rips, Nov 6): see the section below. Loaded the first time the game opens (pwa.js LATER). |
 | `sotn-*.mp3` | Symphony of the Night sound clips from the owner's PS1 rips (Nov 6, mono 22 kHz 56 kbps, peaks at -1 dB, loud ones trimmed to about -13 dB mean): Alucard's voice `sotn-alucard-atk-N` / `-hurt-N` / `-die`, monsters `sotn-<type>-<event>` (bloody, zombie, skeleton, bat, merman, armor = the Plate Lord set), cutscene lines `sotn-line-death-1/2`, `sotn-line-alucard-1`, `sotn-line-dracula-1/2`. Loaded the first time the game opens (pwa.js LATER). See the top of `src/engines/sotnAudio.js`. |
 | `sunset-song-<genesis or snes>-<nn>-<name>.mp3` (any number) | Hangman Unchained's music director (engines/sunsetAudio.js; for any game that wants them): each song is calm, play or tense by its name (`MOODS` there: a new song needs its name added, else it is never dealt) and plays when the game is in that mood. Add new files' levels (el.volume to -18 LUFS) to src/data/sunsetSounds.js |
 | `sunset-sting-<wanted, yippie or gameover>-<genesis or snes>.mp3` | Hangman Unchained: Wanted! before the first song, Stage Clear for a winner, Game Over for a loss or dead heat |
@@ -33,3 +32,35 @@ The guitar set (MySims Party "Guitar Rockstar") was trimmed, levelled to -14 LUF
 While a track is present, the game's ambient drones (wind, hall, caverns, throne-room organ) drop to a quiet bed under it.
 Keep sound effects short (a second or two; `tally` and `clack` play many times a second).
 Keep files reasonably small (a 3-minute 128 kbps MP3 is about 3 MB; base64 adds a third).
+
+## Symphony of the Night soundtrack
+
+Stream copies of the album's 320 kbps MP3s (`ffmpeg -t <cut> -map 0:a -map_metadata -1 -c copy`, no re-encoding, tags off). Which
+moment plays what comes from the track lists on the Castlevania Dungeon and VGMuseum; `SONGS` in `src/engines/sotnAudio.js` holds
+the loop points and levels, `songFor` in `src/engines/sotn.js` picks the song.
+
+| File | Album track | Plays |
+|---|---|---|
+| `cv-symphony-title` | Metamorphosis 1 (first 10 s) | Title (the opening video in the real game) |
+| `cv-symphony-story` | Moonlight Nocturne | First card of the game (the intro story) |
+| `cv-symphony-save` | Prayer | Later cards (the save screen) |
+| `cv-symphony-castle` | Dracula's Castle | The approach and Castle Entrance |
+| `cv-symphony-caverns` | Crystal Teardrops | Underground Caverns |
+| `cv-symphony-gallery` | Marble Gallery | Marble Gallery, up to the throne-room bars |
+| `cv-symphony-dracula` | Prologue | Dracula's speech ("What is a man?") |
+| `cv-symphony-boss` | Dance of Illusions | The Dracula battle, both forms |
+| `cv-symphony-keep` | Heavenly Doorway | Castle Keep, after the orb |
+| `cv-symphony-gameover` | Land of Benediction | The night runs out (once, then the next card's song) |
+
+Loops: the album tracks are one pass whose fade-out runs over the start of the repeat. The repeat was found by comparing spectra
+(the last seconds against everything earlier), then its length refined by waveform correlation. It is not sample-exact, so the
+game joins with a .25 s crossfade on the audio clock instead of `el.loop`. Measure a new track the same way and cut it just after the join.
+
+Saved for the rest of the castle (still in the owner's `Claude Share` folder, not in the repo, so they cost nothing until used):
+Alchemy Lab = Dance of Gold; Outer Wall = Tower of Mist; Long Library = Wood Carving Partita; Clock Tower = The Tragic Prince;
+Royal Chapel = Requiem for the Gods; Olrox's Quarters = Dance of Pales; Colosseum = Wandering Ghosts; Abandoned Mine = Abandoned Pit;
+Catacombs = Rainbow Cemetery; Marble Gallery pit = The Door to the Abyss; inverted castle = Lost Painting, Curse Zone, Final Toccata
+(Inverted Library, Inverted Catacombs, Inverted Marble Gallery, and others); bosses = Festival of Servants (most), Death Ballad
+(Hippogryph, Olrox), Enchanted Banquet (Succubus), Blood Relations (Richter), Black Banquet (final battle); videos = Metamorphosis 2
+(inverted castle), Metamorphosis 3 (the castle falls); end credits = I Am the Wind. Nocturne isn't used in the game; the lists give
+no place for Door of Holy Spirits or Silence.
