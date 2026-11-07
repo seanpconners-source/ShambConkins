@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.88.5
+
+- **Warp Zones start in the warp.** Starting a New Game on a warp board played the whole main-board intro first, so it looked like the main board had started (and Roll worked there for a moment). Now it goes straight to the warp board.
+- **Settings no longer flickers.** Flipping a switch used to close and reopen the whole card (back to the top); now only the switch changes. Pop-up cards also lost the blur behind them, which Chrome on Android sometimes dropped for a few frames while the card opened; the dim now fades in with the card. This applies to every menu card.
+- **New Game:** Main Board is the wide button; Warp Zones and its list sit together beside it.
+
 ## v0.88.4
 
 - **New Game, tidied up.** Board now sits above Start at with two choices: **Main Board**, or **Warp Zones** with a list of the warp boards you have found (any warp you've entered, or whose boss you've beaten). Pick a warp and the game starts right on that warp board; when it's done you both land at the start of Level I. Start at greys out for a warp start.
