@@ -1304,3 +1304,9 @@ body .mx-shell .mx-bchoice:disabled{opacity:.4}
 body .mx-shell.mx-newgame .mx-level{padding:9px 4px}
 .mx-pcard-art .cs-face{position:absolute;inset:0;opacity:0;transition:opacity .6s}
 .mx-pcard-art .cs-face.on{opacity:1}
+/* Main Board on its own; Warp Zones + its picker joined as one framed control, with a clear gap between the two choices */
+.mx-newgame .mx-board,.mx-newgame.mx-tighter .mx-board{grid-template-columns:minmax(0,1fr) minmax(0,2.6fr);column-gap:22px;align-items:stretch}
+.mx-newgame .mx-warpgroup{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:4px;min-width:0;padding:4px;margin:-4px;border-radius:16px;background:#ffffff10;box-shadow:inset 0 0 0 1px #ffffff26}
+.mx-newgame .mx-warpgroup select{grid-column:auto}
+@media (max-width:520px){.mx-newgame .mx-board,.mx-newgame.mx-tighter .mx-board{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);column-gap:18px}
+ .mx-newgame .mx-warpgroup{grid-template-columns:minmax(0,1fr)}.mx-newgame .mx-warpgroup select{grid-column:auto;min-height:40px}}
