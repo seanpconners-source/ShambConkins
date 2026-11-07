@@ -65,7 +65,7 @@ function newGameHTML(names,selected,{strip='',pair=null,warps=[]}={}){
  const boardSec=`<section class="mx-sec mx-boardsec"><h3>Board</h3><div class="mx-board" role="radiogroup" aria-label="Board">
   <button class="mx-bchoice${warpOn?'':' on'}" data-ng-board="main" role="radio" aria-checked="${!warpOn}"${lock}>Main Board</button>
   <button class="mx-bchoice${warpOn?' on':''}" data-ng-board="warp" role="radio" aria-checked="${warpOn}"${warps.length?lock:' disabled title="Find a warp pipe on the main board first"'}>Warp Zones</button>
-  <select id="start-warp" aria-label="Warp board"${warps.length?lock:' disabled'}>${warps.length?warps.map(w=>`<option value="${e(w.id)}"${w.id===ui.warp?' selected':''}>${e(w.icon+' '+w.title)}</option>`).join(''):'<option>None found yet</option>'}</select>
+  <select id="start-warp" aria-label="Warp board"${warps.length&&warpOn?lock:' disabled'}>${warps.length?warps.map(w=>`<option value="${e(w.id)}"${w.id===ui.warp?' selected':''}>${e(w.icon+' '+w.title)}</option>`).join(''):'<option>None found yet</option>'}</select>
   <input type="hidden" id="board-kind" value="${warpOn?'warp':'main'}"><input type="hidden" id="board-theme" value="Mashup"><input type="hidden" id="game-mode" value="versus"></div></section>`;
  const levels=reached>1?`<section class="mx-sec mx-levelsec${warpOn?' off':''}"><h3>Start at</h3><div class="mx-levels">${LEVELS.slice(0,reached).map(([id,n,name])=>`<button class="mx-level${ui.level===id?' on':''}" data-ng-level="${id}"${lock||(warpOn?' disabled':'')} aria-pressed="${ui.level===id}"><b>${n}</b><span>${name}</span></button>`).join('')}</div><input type="hidden" id="start-level" value="${ui.level}"></section>`:'';
  const start=guest?`<button class="mx-cta" disabled>Waiting for ${e(peer)} to start…</button>`:btn('start-run',ns?'Start on both phones ▸':'Start ▸','mx-cta');
@@ -91,7 +91,7 @@ if(typeof document!=='undefined'){
 }
 // Main Board / Warp Zones: a radio pair; Warp Zones greys out Start at (a warp run starts on the warp board).
 function setBoard(kind){ui.board=kind;const warp=kind==='warp';document.querySelectorAll('[data-ng-board]').forEach(b=>{const on=b.dataset.ngBoard===kind;b.classList.toggle('on',on);b.setAttribute('aria-checked',String(on));});
- const k=document.getElementById('board-kind');if(k)k.value=kind;const sec=document.querySelector('.mx-levelsec');if(sec){sec.classList.toggle('off',warp);const guest=store.netSetup?.role==='guest';sec.querySelectorAll('[data-ng-level]').forEach(b=>{b.disabled=warp||guest;});}}
+ const k=document.getElementById('board-kind');if(k)k.value=kind;const pick=document.getElementById('start-warp');if(pick&&pick.options.length&&document.querySelector('[data-ng-board="warp"]:not(:disabled)'))pick.disabled=!warp||store.netSetup?.role==='guest';const sec=document.querySelector('.mx-levelsec');if(sec){sec.classList.toggle('off',warp);const guest=store.netSetup?.role==='guest';sec.querySelectorAll('[data-ng-level]').forEach(b=>{b.disabled=warp||guest;});}}
 function setActive(i){const sec=document.querySelector(`.mx-chars [data-cs-slot="${i}"]`);if(!sec||sec.classList.contains('cs-remote'))return;ui.active=i;document.querySelectorAll('.mx-chars [data-cs-slot]').forEach(s=>s.classList.toggle('on',+s.dataset.csSlot===i));}
 function filterTiles(){const q=ui.query.trim().toLowerCase();document.querySelectorAll('.mx-chars .mx-tile').forEach(t=>{t.hidden=!!q&&!t.dataset.name.includes(q);});}
 // After a rebuild: the picked player's roster stays in front, the search still applies.
