@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.88.7
+
+- **Arcade Home.** The first shelf is now called Home: your 8 most recently played games come first, then the featured games. The separate Recent shelf is gone.
+- **Fewer category buttons.** Home, Favorites and All games stay as buttons; every other category is in one Categories dropdown, so the row fits without scrolling.
+- **View all shows every game.** A View all tile now ends the game row; it (and the View all button) opens the big grid of every game, and Back returns to where you were.
+
 ## v0.88.6
 
 - **Warp Zones games are their own game.** Starting a New Game on a warp board now opens straight on that warp board (no main board, no warp animation), and finishing the warp ends the game with the results. Giving up on its boss ends the game too.
