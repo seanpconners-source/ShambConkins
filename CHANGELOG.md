@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.88.3
+
+- **New Game fits the screen again.** Start, the levels and the board picker had slipped below the screen with no way to scroll to them, so a new game couldn't be started. The page now fits any screen without scrolling: the player pictures take the room that's left, small screens drop the mode descriptions and small print first, and a phone held sideways shows the players on the left and the options on the right.
+- **Chat:** closing the chat sheet no longer leaves focus on the 💬 button.
+
 ## v0.88.2
 
 - **Sundown Showdown has its full stage art.** All three stages now use your pictures: the sunset sky, mesas and the water tower and windmill behind Main Street with the Saloon, Bank, Hotel and Sheriff's office; the red canyon walls under a setting sun; and the mission at night under a full moon with the Cantina, Posada, Tienda and Capilla. Their floors, the horse trough, hitching post and street lamp are yours too. The gunmen still pop out of the windows and doors, which line up with the pictures. Every slot in the Sundown kit has art now.
