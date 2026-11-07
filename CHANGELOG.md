@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.88.6
+
+- **Warp Zones games are their own game.** Starting a New Game on a warp board now opens straight on that warp board (no main board, no warp animation), and finishing the warp ends the game with the results. Giving up on its boss ends the game too.
+- **Warp Zones bosses get harder as you beat them.** The boss comes at the next level you haven't beaten it on: Easy, then Medium, Hard, Extreme. Warp pipes on the main board keep the level's difficulty.
+- **More warp pipes:** each level now has a warp pipe on two of its three paths (was one per level). New games only.
+
 ## v0.88.5
 
 - **Warp Zones start in the warp.** Starting a New Game on a warp board played the whole main-board intro first, so it looked like the main board had started (and Roll worked there for a moment). Now it goes straight to the warp board.
