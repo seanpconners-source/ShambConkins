@@ -6,7 +6,7 @@ const {fullscreenButton}=require("src/fullscreen.js");
 const {levelInfo,levelLabel,drinkLine,LEVEL_ORDER}=require("src/levels.js");
 const {zoneLayerSVG,roadLayerSVG,landmarkScene}=require("src/boardZones.js");
 const {gridZoneSVG,gridRoadSVG,gridLandmarkCard}=require("src/gridRender.js");
-const {warpSceneSVG}=require("src/warpBoards.js");
+const {warpSceneSVG,WARP_DEFS}=require("src/warpBoards.js");
 const {closeRoutePanel}=require("src/routePanel.js");
 const {applyTheme,applyRunTheme}=require("src/theme.js");
 const {journeyLabel}=require("src/journeys.js");
@@ -22,7 +22,7 @@ const {store}=require("src/state.js");
 const {ART}=require("src/data/art.js");
 const {CHARACTERS, character, characterPerk, differentCharacters, characterIdentity}=require("src/characters.js");
 const {availableCharacters}=require("src/profile.js");
-const {GAMES, RANDOM_GAMES, EVENT_GAMES, gameUnlocked}=require("src/gameRegistry.js");
+const {GAMES, RANDOM_GAMES, EVENT_GAMES, gameUnlocked, bossBeaten}=require("src/gameRegistry.js");
 const {ACTIVE_CATALOG:CATALOG}=require("src/contentPolicy.js");
 const {SPACE_ICONS, SPACE_TYPES, SPACE_CAPTIONS}=require("src/board.js");
 const {location}=require("src/locations.js");
@@ -112,7 +112,9 @@ function playersStripHTML(names){const s=soloSettings(store.profile),seg=(key,va
 function setupHTML(names=['Sean','Amber'],selected=['sean','amber'],{pickOnly=false}={}){const ns=store.netSetup,solo=!ns&&soloSettings(store.profile).on,strip=ns?'':playersStripHTML(names);
  if(pickOnly)return charSelectHTML(names,selected,{strip});
  const teamPicks=store.profile.modes?.includes('team')&&!ns&&!solo?`<div class="mx-team-picks">${['Sean','Amber'].map((owner,i)=>`<div><label for="team-mate-${i}">${owner}’s teammate</label><select id="team-mate-${i}"><option value="">Choose an unlocked teammate</option>${availableCharacters(store.profile,owner).filter(id=>!selected.some(c=>!differentCharacters(c,id))).map(id=>`<option value="${id}">${e(character(id).name)}</option>`).join('')}</select></div>`).join('')}</div>`:'';
- return newGameHTML(names,selected,{strip,pair:pairForCharacters(selected),teamPicks});}
+ return newGameHTML(names,selected,{strip,pair:pairForCharacters(selected),teamPicks,warps:unlockedWarps()});}
+// Warp boards the players have found: entered on any run (profile.warpsSeen), the one in the saved run, or its boss beaten.
+function unlockedWarps(){const p=store.profile,seen=new Set([...(p.warpsSeen||[]),...(store.run?.warpsVisited||[])]);return Object.values(WARP_DEFS).filter(d=>seen.has(d.id)||d.bossId&&bossBeaten(p,d.bossId)).map(d=>({id:d.id,title:d.title,icon:d.icon}));}
 function statusHTML(p){const chips=[];const jl=store.run?journeyLabel(store.run,p):null;if(jl)chips.push(`${jl.icon} ${jl.name} ${jl.done?'✓':jl.progress+'/'+jl.count}`);if(p.shields)chips.push(`Shield ×${p.shields}`);if(p.boost)chips.push(`Next roll +${p.boost}`);if(p.slow)chips.push(`Half roll · ${p.slow}`);if(p.triple)chips.push(`Triple roll · ${p.triple}`);if(p.rollDouble)chips.push('This roll ×2');if(p.rollFloor)chips.push(`Die ≥ ${p.rollFloor}`);if(p.ward)chips.push(`Attack ward ×${p.ward}`);if(p.large)chips.push(`Size ×2 · ${p.large}`);if(p.cloak)chips.push(`Cloak · ${p.cloak}`);if(p.double)chips.push('Next win ×2');if(p.rewardBonus)chips.push(`Game ${p.rewardBonus>0?'+':''}${p.rewardBonus}`);if(p.rollAdvantage)chips.push('Better of 2 dice');if(p.rollDisadvantage)chips.push('Lower of 2 dice');if(p.rollCeiling)chips.push('Die ≤ '+p.rollCeiling);if(p.rollFixed)chips.push('Fixed die: '+p.rollFixed);if(p.rollReverse)chips.push('Reverse die');if(p.travelPasses)chips.push('Crossing passes ×'+p.travelPasses);if(p.bounty)chips.push('Next game +'+p.bounty);if(p.gateDividend)chips.push('Next gate +'+p.gateDividend);if(p.recruitGuarantee)chips.push('Next board win: new recruit');if(p.itemInvestments?.length)chips.push('Banked payout '+p.itemInvestments.reduce((s,d)=>s+d.amount,0));return chips.map(s=>`<span class="status-chip">${e(s)}</span>`).join('');}
 function levelHudHTML(run){
  const p=run.players[run.current],realm=run.board.nodes[p.node].realm,l=levelInfo(realm),show=store.profile.settings.drinkStatus!==false,horrorKnown=run.horror||store.profile.horrorSeen;

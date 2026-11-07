@@ -1287,3 +1287,20 @@ body .mx-shell.mx-newgame .mx-level{padding:7px 4px;border-radius:13px}
  .mx-newgame .mx-opts{grid-column:2;grid-row:3;min-height:0}
  .mx-newgame .mx-ng:not(:has(.mx-note)) :is(.mx-players,.mx-opts){grid-row:2/4}
 }
+
+/* New Game round 2 (owner, Nov 7): Board = Main Board / Warp Zones radio pair + warp picker, above Start at; no Mode card;
+   Start at greys out for a warp start; the player cards cycle their moods like Character Select. */
+.mx-newgame .mx-board,.mx-newgame.mx-tighter .mx-board{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr);gap:8px;align-items:stretch;padding:8px}
+@media (max-width:520px){.mx-newgame .mx-board,.mx-newgame.mx-tighter .mx-board{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.mx-newgame .mx-board select{grid-column:1/-1}}
+body .mx-shell .mx-bchoice{min-height:44px;padding:8px 10px;border:0;border-radius:12px;background:#0d1530;color:#c9d6f5;font:400 18px/1 var(--c-display);letter-spacing:.05em;box-shadow:inset 0 0 0 1px #ffffff1c;transition:box-shadow .2s,background .2s,transform .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body .mx-shell .mx-bchoice.on{background:#22305a;color:#fff;box-shadow:0 0 0 2.5px #fff,0 0 16px #4d8dff88}
+body .mx-shell .mx-bchoice:active:not(:disabled){transform:scale(.97)}
+body .mx-shell .mx-bchoice:disabled{opacity:.4}
+.mx-newgame .mx-board select{min-height:44px;font-size:15px}
+.mx-newgame .mx-board select:disabled{opacity:.45}
+.mx-newgame .mx-levelsec{transition:opacity .25s}
+.mx-newgame .mx-levelsec.off{opacity:.38;filter:grayscale(.8)}
+.mx-newgame .mx-levelsec.off .mx-level{pointer-events:none}
+body .mx-shell.mx-newgame .mx-level{padding:9px 4px}
+.mx-pcard-art .cs-face{position:absolute;inset:0;opacity:0;transition:opacity .6s}
+.mx-pcard-art .cs-face.on{opacity:1}

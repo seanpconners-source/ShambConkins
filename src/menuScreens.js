@@ -12,7 +12,7 @@ const {netState}=require("src/net.js");
 const {pairForCharacters}=require("src/pairs.js");
 const {escapeHTML:e}=require("src/utils.js");
 
-const ui={active:0,mode:null,level:null,query:''};
+const ui={active:0,mode:null,level:null,query:'',board:'main',warp:null};
 const btn=(action,text,cls='',extra='')=>`<button class="${cls}" data-action="${action}" ${extra}>${text}</button>`;
 const MOODS=['normal','win','think','silly','angry','sad','walk'];
 function moodsOf(id){const seen=new Set(),out=[];for(const m of MOODS){const u=portraitURL(id,m)||m;if(seen.has(u))continue;seen.add(u);out.push(m);}return out;}
@@ -52,23 +52,28 @@ function charSelectHTML(names,selected,{strip=''}={}){
 // ---------- New Game (view 'setup') ----------
 const MODES={versus:['Versus','Race to the end of Level III (or IV). Win minigames, grab items, beat each level’s boss.','⚔️'],horror:['Horror expedition','Straight onto the horror board, once you have found it.','🩸'],team:['Team Relay','Each player brings a teammate who takes turns with them.','🤝'],coop:['Co-op vs Mario + Luigi','Team up and race the plumbers in every game.','🍄']};
 const LEVELS=[['mind','Level I','Mind'],['body','Level II','Body'],['spirit','Level III','Spirit'],['horror','Level IV','Horror']];
-function newGameHTML(names,selected,{strip='',pair=null,teamPicks=''}={}){
+function newGameHTML(names,selected,{strip='',pair=null,warps=[]}={}){
  const p=store.profile,ns=store.netSetup,guest=ns?.role==='guest',lock=guest?' disabled':'',solo=!ns&&soloSettings(p).on,s=soloSettings(p),peer=ns?names[ns.peer]:'';
- const modes=(p.modes||['versus']).filter(m=>MODES[m]&&(!ns&&!solo||['versus','horror'].includes(m)));
- if(!modes.includes(ui.mode))ui.mode=modes[0]||'versus';
+ // Versus is the only mode (owner, Nov 7: the Mode card is gone); a hidden field keeps startRun's reading of it.
  const reached=Math.max(1,Math.min(4,p.levelReached||1));if(!LEVELS.slice(0,reached).some(l=>l[0]===ui.level))ui.level='mind';
  const card=i=>{const c=character(selected[i]),cpu=solo&&s.who!==i,remote=ns&&i===ns.peer;
-  return `<article class="mx-pcard p${i+1}"><div class="mx-pcard-art">${face(c.id,'mx-big')}</div><div class="mx-pcard-info"><span class="mx-badge">${cpu?'CPU':`P${i+1}`}</span><b>${e(cpu?`${c.name.split(' ')[0]} (CPU)`:names[i])}</b><span class="mx-char">${e(c.name)}</span><small>${remote?'picks on their phone':cpu?'CPU rival':`${ownerOf(i)}’s roster`}</small></div></article>`;};
- const modeCards=modes.map(m=>`<button class="mx-mode${ui.mode===m?' on':''}" data-ng-mode="${m}"${lock} aria-pressed="${ui.mode===m}"><span class="mx-mode-ico" aria-hidden="true">${MODES[m][2]}</span><b>${MODES[m][0]}</b><small>${MODES[m][1]}</small></button>`).join('');
- const levels=reached>1?`<section class="mx-sec mx-levelsec"><h3>Start at</h3><div class="mx-levels">${LEVELS.slice(0,reached).map(([id,n,name],k)=>`<button class="mx-level${ui.level===id?' on':''}" data-ng-level="${id}"${lock} aria-pressed="${ui.level===id}"><b>${n}</b><span>${name}</span>${k?'<small>empty bag</small>':''}</button>`).join('')}</div><input type="hidden" id="start-level" value="${ui.level}"></section>`:'';
+  const moods=moodsOf(c.id);
+  return `<article class="mx-pcard p${i+1}"><div class="mx-pcard-art cs-stage" data-cycle="${moods.length}">${moods.map((m,k)=>`<span class="cs-face ${k?'':'on'}" data-mood-name="${m}">${portraitHTML(c.id,'portrait mx-face mx-big',m)}</span>`).join('')}</div><div class="mx-pcard-info"><span class="mx-badge">${cpu?'CPU':`P${i+1}`}</span><b>${e(cpu?`${c.name.split(' ')[0]} (CPU)`:names[i])}</b><span class="mx-char">${e(c.name)}</span><small>${remote?'picks on their phone':cpu?'CPU rival':`${ownerOf(i)}’s roster`}</small></div></article>`;};
+
+ // Board: Main Board or one of the warp boards found so far (radio pair + a picker). A warp start skips Start at.
+ if(!warps.some(w=>w.id===ui.warp))ui.warp=warps[0]?.id||null;if(!ui.warp)ui.board='main';const warpOn=ui.board==='warp';
+ const boardSec=`<section class="mx-sec mx-boardsec"><h3>Board</h3><div class="mx-board" role="radiogroup" aria-label="Board">
+  <button class="mx-bchoice${warpOn?'':' on'}" data-ng-board="main" role="radio" aria-checked="${!warpOn}"${lock}>Main Board</button>
+  <button class="mx-bchoice${warpOn?' on':''}" data-ng-board="warp" role="radio" aria-checked="${warpOn}"${warps.length?lock:' disabled title="Find a warp pipe on the main board first"'}>Warp Zones</button>
+  <select id="start-warp" aria-label="Warp board"${warps.length?lock:' disabled'}>${warps.length?warps.map(w=>`<option value="${e(w.id)}"${w.id===ui.warp?' selected':''}>${e(w.icon+' '+w.title)}</option>`).join(''):'<option>None found yet</option>'}</select>
+  <input type="hidden" id="board-kind" value="${warpOn?'warp':'main'}"><input type="hidden" id="board-theme" value="Mashup"><input type="hidden" id="game-mode" value="versus"></div></section>`;
+ const levels=reached>1?`<section class="mx-sec mx-levelsec${warpOn?' off':''}"><h3>Start at</h3><div class="mx-levels">${LEVELS.slice(0,reached).map(([id,n,name])=>`<button class="mx-level${ui.level===id?' on':''}" data-ng-level="${id}"${lock||(warpOn?' disabled':'')} aria-pressed="${ui.level===id}"><b>${n}</b><span>${name}</span></button>`).join('')}</div><input type="hidden" id="start-level" value="${ui.level}"></section>`:'';
  const start=guest?`<button class="mx-cta" disabled>Waiting for ${e(peer)} to start…</button>`:btn('start-run',ns?'Start on both phones ▸':'Start ▸','mx-cta');
  return `<main class="shell setup-shell mx-shell mx-newgame${ns?' net-setup':''}"><div class="mx-ng">${topBar('New Game','home')}
   ${ns?`<p class="mx-note">🌐 Online · room ${e(netState().room||'')}${guest?` · ${e(peer)} starts the game`:''}</p>`:''}
   <section class="mx-sec mx-players"><div class="mx-sec-head"><h3>Players</h3>${btn('players','Change characters ▸','mx-link')}</div><div class="mx-pcards">${card(0)}<span class="mx-vs">VS</span>${card(1)}</div>${ns?'':`<div class="mx-strip">${strip}</div>`}${pair?`<div class="mx-pair">✦ ${e(pair.title)} · ${e(pair.description)}</div>`:''}</section>
-  <div class="mx-opts"><section class="mx-sec mx-modesec"><h3>Mode</h3><div class="mx-modes">${modeCards}</div><input type="hidden" id="game-mode" value="${ui.mode}"></section>
-  ${teamPicks?`<section class="mx-sec mx-team"${ui.mode==='team'?'':' hidden'}><h3>Relay teammates</h3>${teamPicks}</section>`:''}
+  <div class="mx-opts">${boardSec}
   ${levels}
-  <section class="mx-sec mx-boardsec"><h3>Board</h3><div class="mx-board"><label for="board-theme">Board</label><select id="board-theme"${lock}>${(p.boards||['Mashup']).map(n=>`<option value="${e(n)}">${e(n==='Mashup'?'Main Board (Mashup)':n)}</option>`).join('')}</select><label for="run-seed">Seed (optional)</label><input id="run-seed" maxlength="20" placeholder="Leave blank for a surprise"${lock}></div></section>
   <p class="mx-fine">${solo?'You play every minigame against the CPU; only your roster collects new characters.':'A fresh route every run. Unlocks and XP carry forward. Both players take part in every minigame.'}</p>
   <div class="mx-foot setup-controls">${start}</div></div></div></main>`;
 }
@@ -77,11 +82,16 @@ function newGameHTML(names,selected,{strip='',pair=null,teamPicks=''}={}){
 if(typeof document!=='undefined'){
  document.addEventListener('click',ev=>{
   const m=ev.target.closest?.('[data-ng-mode]');if(m&&!m.disabled){ui.mode=m.dataset.ngMode;document.getElementById('game-mode').value=ui.mode;document.querySelectorAll('[data-ng-mode]').forEach(b=>{b.classList.toggle('on',b===m);b.setAttribute('aria-pressed',String(b===m));});const t=document.querySelector('.mx-team');if(t){t.hidden=ui.mode!=='team';fitNewGame();}return;}
+  const bd=ev.target.closest?.('[data-ng-board]');if(bd&&!bd.disabled){setBoard(bd.dataset.ngBoard);return;}
   const l=ev.target.closest?.('[data-ng-level]');if(l&&!l.disabled){ui.level=l.dataset.ngLevel;document.getElementById('start-level').value=ui.level;document.querySelectorAll('[data-ng-level]').forEach(b=>{b.classList.toggle('on',b===l);b.setAttribute('aria-pressed',String(b===l));});return;}
   const slot=ev.target.closest?.('[data-cs-pick]');if(slot&&!ev.target.closest('input')){setActive(+slot.dataset.csPick);}
  });
+ document.addEventListener('change',ev=>{if(ev.target.id!=='start-warp')return;ui.warp=ev.target.value;setBoard('warp');});
  document.addEventListener('input',ev=>{if(ev.target.id!=='cs-search')return;ui.query=ev.target.value;filterTiles();});
 }
+// Main Board / Warp Zones: a radio pair; Warp Zones greys out Start at (a warp run starts on the warp board).
+function setBoard(kind){ui.board=kind;const warp=kind==='warp';document.querySelectorAll('[data-ng-board]').forEach(b=>{const on=b.dataset.ngBoard===kind;b.classList.toggle('on',on);b.setAttribute('aria-checked',String(on));});
+ const k=document.getElementById('board-kind');if(k)k.value=kind;const sec=document.querySelector('.mx-levelsec');if(sec){sec.classList.toggle('off',warp);const guest=store.netSetup?.role==='guest';sec.querySelectorAll('[data-ng-level]').forEach(b=>{b.disabled=warp||guest;});}}
 function setActive(i){const sec=document.querySelector(`.mx-chars [data-cs-slot="${i}"]`);if(!sec||sec.classList.contains('cs-remote'))return;ui.active=i;document.querySelectorAll('.mx-chars [data-cs-slot]').forEach(s=>s.classList.toggle('on',+s.dataset.csSlot===i));}
 function filterTiles(){const q=ui.query.trim().toLowerCase();document.querySelectorAll('.mx-chars .mx-tile').forEach(t=>{t.hidden=!!q&&!t.dataset.name.includes(q);});}
 // After a rebuild: the picked player's roster stays in front, the search still applies.
