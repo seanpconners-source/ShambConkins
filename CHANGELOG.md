@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.88.9
+
+- **Super Mario Bros. sounds like the NES.** Every jump, coin, stomp, block and power-up is now the real sound, and the music follows the game: overworld, underground and castle themes, the Starman song, the faster hurry-up versions at 100 on the clock with their jingle, the flagpole and castle fanfares, the 1-2 pipe jingle, death and game over. The music stops at the flag, at the axe and when you die, sounds cut each other off the way they do on the NES, and pausing plays the pause sound.
+
 ## v0.88.8
 
 - **Symphony of the Night has its real soundtrack.** Each place plays its own song from the game: Dracula's Castle on the approach and in the Entrance, Crystal Teardrops in the caverns, Marble Gallery in the gallery, Prologue for Dracula's speech, Dance of Illusions for the fight, Heavenly Doorway once he's gone, Land of Benediction when time runs out, plus Metamorphosis, Moonlight Nocturne and Prayer on the title and cards. Songs loop without playing the album's fade-out, keep playing under the cards, and dip under Death's and Dracula's voices.

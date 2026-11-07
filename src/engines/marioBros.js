@@ -25,6 +25,7 @@ const {netField}=require("src/engines/netField.js");
 const {partnerArrow}=require("src/engines/partnerArrow.js");
 const {T,ROWS,TILE,SOLID,BACK,buildStage,STAGE_COUNT}=require("src/engines/smb/smbLevels.js");
 const A_=require("src/engines/smb/smbArt.js");
+const SA=require("src/engines/smbAudio.js");
 const {C,nesText,textW}=A_;
 
 const STEP=1/60,LIVES=3,COIN_TIME=60,RACE_CAP=150,NET_GRACE=10,BUBBLE=120;
@@ -55,6 +56,7 @@ async function marioBros(s){
  const [c,g]=s.canvas(900,600,{fill:true});s.body.classList.add('drag-arena-body');s.updateScores();
  fullBleed(s);
  if(!await settle(s))return;
+ SA.open(s);s.cleanup(()=>SA.stopAll());
  const STAGES=[...Array(STAGE_COUNT)].map((_,k)=>buildStage(k));
  const lastStage=mode==='race'?0:STAGE_COUNT-1;
  const tiles=A_.tileSets();
@@ -81,7 +83,7 @@ async function marioBros(s){
 
  const kb=arenaKeys(s);
  kb.onDown((i,k)=>{
-  if(phase==='title'){if(k==='u'||k==='l')menuSel=0;else if(k==='d')menuSel=1;else if(k==='fire'||k==='r')startFromTitle();sfx.bump();return;}
+  if(phase==='title'){if(k==='u'||k==='l')menuSel=0;else if(k==='d')menuSel=1;else if(k==='fire'||k==='r')startFromTitle();return;}
   if(phase==='warp'){if(warpMsg&&warpMsg.t>90&&(k==='fire'||k==='u'))warpMsg.t=9999;return;}
   if(k==='u')inputs[turn].press=1;if(k==='fire')inputs[turn].bPress=1;});
  const HELP='Touch: drag on the left side to walk, drag further to run, drag down to duck or go down a pipe, tap there to throw fireballs. Tap the right side to jump; hold it to jump higher. Keys: A/D/S or arrows, W/Up jump, Space or Enter run/fire.';
@@ -103,8 +105,8 @@ async function marioBros(s){
   if(st){const dx=st.x-st.sx,dy=st.y-st.sy;if(dx>10)r=1;if(dx<-10)l=1;if(Math.abs(dx)>34)b=1;if(dy>20&&Math.abs(dx)<dy)d=1;if(st.data.flick)jump=1;}
   if(pads[i].jump)jump=1;inp.l=l;inp.r=r;inp.d=d;inp.jump=jump;inp.b=b;if(bot&&i===me)botInput(inp);};
 
- // ---------------- sounds (original synth effects, no music)
- const sfx={
+ // ---------------- sounds: the owner's NES rips (smbAudio.js), or these synth stand-ins until a file is in
+ const synth={
   jump:big=>snd(big?240:320,.16,{type:'square',vol:.03,to:big?620:860}),
   coin:()=>{snd(988,.05,{type:'square',vol:.025});snd(1319,.2,{type:'square',vol:.022,delay:.05});},
   stomp:()=>snd(520,.09,{type:'square',vol:.035,to:160}),
@@ -130,6 +132,17 @@ async function marioBros(s){
   warp:()=>jingle([523,659,784,1047,1319,1568,2093],{step:.07,type:'square',vol:.03,dur:.09}),
   star:()=>jingle([1047,1319,1568,2093],{step:.04,type:'triangle',vol:.03})
  };
+ const NES={jump:big=>SA.play(big?'jump':'jumpsmall'),coin:()=>SA.play('coin'),stomp:()=>SA.play('stompswim'),bump:()=>SA.play('bump'),brk:()=>SA.play('brick'),sprout:()=>SA.play('item'),
+  power:()=>SA.play('powerup'),oneup:()=>SA.play('1up'),shrink:()=>SA.play('pipepowerdown'),fire:()=>SA.play('fireball'),kick:()=>SA.play('kickkill'),pipe:()=>SA.play('pipepowerdown'),
+  die:()=>{SA.hush();return SA.play('death');},flag:()=>SA.play('flagpole'),clear:()=>SA.jingle('clear'),tick:()=>SA.play('beep'),boom:()=>SA.play('billfirework'),bowserFire:()=>SA.play('fire'),
+  // the real bridge: the fireworks sound and the brick sound together
+  bridge:()=>{const a=SA.play('billfirework');return SA.play('brick')||a;},bowserFall:()=>SA.play('bowserfall'),hurry:()=>SA.hurry(),over:()=>{SA.hush();return SA.play('gameover');},warp:()=>SA.play('1up'),star:()=>SA.play('powerup')};
+ const sfx=Object.fromEntries(Object.keys(synth).map(k=>[k,(...a)=>{if(!NES[k](...a))synth[k](...a);}]));
+ // the area's song like the cartridge: silence on the world card, at the flag, the axe and on death; the 1-2 walk-in has
+ // its pipe jingle; the star's song over everything; the fast versions from 100 on the clock
+ function songFor(){if(phase!=='play')return null;const p=pl[turn],w=worlds[turn];if(!w||p.dead||p.flagged||p.inCastle||p.axe)return null;
+  if(p.area==='intro'){if(p.tunnel!==p.lap+1){p.tunnel=p.lap+1;SA.jingle('tunnel');}return null;}
+  const k=AR(w,p.area).def.kind,fast=mode==='world'&&p.time<=100?'-hurry':'';return (p.star>0?'star':k==='under'||k==='castle'?k:'over')+fast;}
 
  // ---------------- map helpers
  const AR=(w,an)=>w.areas[an];
@@ -283,7 +296,7 @@ async function marioBros(s){
   // the axe behind Bowser
   if(def.axe&&!p.axe&&Math.abs(p.x-def.axe.x)<12&&p.y>def.axe.y-8&&p.y-h<def.axe.y+8){p.axe={t:0,phase:'bridge',next:def.bridge.c1};p.vx=0;p.vy=0;p.ride=null;p.grounded=true;p.y=Math.min(p.y,def.bridge.r*T);note(p,'axe');if(net)ev({ax:[w.key,p.area]});goalReached(p);}
   // walk into the castle door
-  if(p.auto&&def.castle&&p.flagged&&p.x>=def.castle.door){p.inCastle=true;p.castleT=0;p.auto=false;p.vx=0;sfx.clear();p.tally={phase:mode==='world'?'time':'flag',t:0};}
+  if(p.auto&&def.castle&&p.flagged&&p.x>=def.castle.door){p.inCastle=true;p.castleT=0;p.auto=false;p.vx=0;p.tally={phase:mode==='world'?'time':'flag',t:0};}
  }
  function land(p){p.grounded=true;p.jumping=false;p.combo=0;p.skidding=false;}
  function stepPipe(p,w){
@@ -301,13 +314,13 @@ async function marioBros(s){
  function stepFlag(p,w){
   const f=p.flag,fl=AR(w,p.area).def.flag;f.t++;const base=fl.base;
   if(f.phase==='slide'){p.y=Math.min(base,p.y+2);w.flagPos=Math.min(base-fl.top-24,w.flagPos+2);if(p.y>=base&&w.flagPos>=base-fl.top-24){f.phase='hold';f.t=0;}}
-  else if(f.phase==='hold'){if(f.t===1){p.x=fl.x+7;p.facing=-1;}if(f.t>24){p.flag=null;p.auto=true;p.facing=1;p.grounded=false;p.vy=-1;}}
+  else if(f.phase==='hold'){if(f.t===1){p.x=fl.x+7;p.facing=-1;}if(f.t>24){p.flag=null;p.auto=true;p.facing=1;p.grounded=false;p.vy=-1;sfx.clear();}}
  }
  function stepAxe(p,w){
   const ax=p.axe,a=AR(w,p.area),def=a.def,b=a.bowser;ax.t++;
   if(ax.phase==='bridge'){if(ax.t%4===0){if(ax.next>=def.bridge.c0){setTile(w,p.area,ax.next,def.bridge.r,0);ax.next--;sfx.bridge();if(ax.next===def.bridge.c0+6)setTile(w,p.area,def.bridge.c1,def.bridge.r-1,0);}
     else{ax.phase='fall';ax.t=0;if(b&&b.state!=='dead'){b.state='fall';b.vy=0;sfx.bowserFall();}}}}
-  else if(ax.phase==='fall'){if(ax.t>90){ax.phase='walk';ax.t=0;p.facing=1;}}
+  else if(ax.phase==='fall'){if(ax.t>90){ax.phase='walk';ax.t=0;p.facing=1;SA.jingle('castle-clear');}}
   else if(ax.phase==='walk'){p.vx=PH.walk;p.x+=p.vx;p.anim+=.17;p.grounded=true;if(p.x>=def.toad.x-26){p.vx=0;ax.phase='toad';ax.t=0;s.react(p.i,'win');}}
   else if(ax.phase==='toad'){if(mode==='world'&&p.time>0){const n=Math.min(2,p.time);p.time-=n;p.score+=50*n;if(ax.t%3===0)sfx.tick();}
    if(ax.t>330){p.axe=null;stageClear(p);}}
@@ -452,7 +465,7 @@ async function marioBros(s){
   b.fireT--;if(b.fireT<=0){b.fireT=110+Math.floor(s.random()*90);b.mouth=24;const ty=clamp(tgt.y-14,4*T,b.y-10);flame({x:b.x-18,y:b.y-20,ty,vx:-1.2,area:p.area});}
  }
  function stepCastle(p,w){
-  const tl=p.tally;if(!tl)return;tl.t++;
+  const tl=p.tally;if(!tl)return;if(tl.phase==='time'&&SA.jingleOn())return;tl.t++;
   if(tl.phase==='time'){if(p.time>0){const n=Math.min(2,p.time);p.time-=n;p.score+=50*n;if(tl.t%3===0)sfx.tick();}else{tl.phase='fireworks';tl.t=0;}}
   else if(tl.phase==='fireworks'){if(p.fireworksDue>0){if(tl.t%32===1){const fl=AR(w,p.area).def.castle;w.fireworks.push({x:fl.x+(s.random()*6-1)*T,y:(3+s.random()*4)*T,t:0});p.score+=500;sfx.boom();p.fireworksDue--;}}
    else{tl.phase='flag';tl.t=0;}}
@@ -663,7 +676,7 @@ async function marioBros(s){
   if(!soloOk)return soloFinish(s,soloTotal,soloCleared,mode==='coins'?`World 1 Coin Rush solo: ${soloCleared} round${soloCleared===1?'':'s'} beaten; ${p.coins}/${coinGoal()} coins on the last.`:`World 1-1 Castle Dash solo: ${soloCleared} dash${soloCleared===1?'':'es'} in time; last run ${score(p)}.`);
   soloCleared++;soloProgress(s,soloTotal,soloCleared,mode==='coins'?`World 1 Coin Rush solo: ${soloCleared} round${soloCleared===1?'':'s'} beaten.`:`World 1-1 Castle Dash solo: ${soloCleared} dash${soloCleared===1?'':'es'} in time.`);
   pl[0]=makePlayer(0);worlds[0]=makeWorld(STAGES[0]);cams[0].x=0;beginTurn(0);}
- function startFromTitle(){if(phase!=='title'||titleT<.4)return;twoPlayer=mode==='world'&&menuSel===1&&!s.solo&&!net;sfx.coin();note(pl[0],twoPlayer?'2 player game':'1 player game');beginTurn(net?me:0);}
+ function startFromTitle(){if(phase!=='title'||titleT<.4)return;twoPlayer=mode==='world'&&menuSel===1&&!s.solo&&!net;note(pl[0],twoPlayer?'2 player game':'1 player game');beginTurn(net?me:0);}
  async function beginTurn(i){
   // online: no hand-off; both phones show the WORLD card and start together
   if(net){phase='handoff';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;netT0=performance.now();netStep=0;clock=0;acc=0;startCard(i);return;}   // i = this phone's player
@@ -680,7 +693,7 @@ async function marioBros(s){
     :(mode==='coins'?`Beat ${n0}'s ${pl[0].coins} coins in 60 seconds. ${n0}'s ghost runs beside you.`:`Beat ${n0}'s ${pl[0].finished?'time of '+fmtRace(pl[0].finishT):'run'}. Follow or overtake ${n0}'s ghost.`);
    if(i)summary=`${n0}: ${score(pl[0])}. ${n1}, take the controls.`;
   }
-  if(!await s.pass(i,desc,'Ready',s.solo?{summary,soloTitle:mode==='world'?'World 1':mode==='coins'?`Round ${soloCleared+1}`:`Dash ${soloCleared+1}`}:{summary}))return;
+  SA.hold(true);const go=await s.pass(i,desc,'Ready',s.solo?{summary,soloTitle:mode==='world'?'World 1':mode==='coins'?`Round ${soloCleared+1}`:`Dash ${soloCleared+1}`}:{summary});SA.hold(false);if(!go)return;
   if(!twoPlayer){clock=0;gi=0;}acc=0;
   startCard(i);
  }
@@ -711,7 +724,7 @@ async function marioBros(s){
   else if(a.finished&&b.finished)winner=Math.abs(a.finishT-b.finishT)<.01?-2:a.finishT<b.finishT?0:1;
   else if(a.finished||b.finished)winner=a.finished?0:1;else winner=Math.abs(a.best-b.best)<4?-2:a.best>b.best?0:1;
   endText=winner===-2?'DEAD HEAT!':mode==='race'&&pl[winner].finished?`THANK YOU ${s.players[winner].name.toUpperCase()}!`:`${s.players[winner].name.toUpperCase()} WINS!`;
-  if(winner>=0)s.react(winner,'win');jingle([523,659,784,1047,1319],{type:'square',vol:.035,step:.1});
+  if(winner>=0)s.react(winner,'win');if(!SA.jingle('clear'))jingle([523,659,784,1047,1319],{type:'square',vol:.035,step:.1});
  }
  const turnOver=p=>mode==='coins'?clock>=COIN_TIME:mode==='race'?(p.finished&&(p.inCastle&&p.castleT>40||clock-p.finishT>6)||clock>=dashCap()||turn===1&&pl[0].finished&&!p.finished&&clock>pl[0].finishT+4):false;
  const still={l:0,r:0,d:0,jump:0,b:0,press:0,bPress:0};
@@ -834,7 +847,7 @@ async function marioBros(s){
   const ok=(c,r)=>solid(a.tiles[r*W+c])&&!a.tiles[(r-1)*W+c]&&!a.tiles[(r-2)*W+c];
   outer:for(;cc<W-1;cc++)for(r=13;r>=4;r--)if(ok(cc,r))break outer;
   Object.assign(q,{x:cc*T+8,y:r*T,prevY:r*T,vx:0,vy:0,grounded:true,pipe:null,flag:null,dead:0,tf:null,ride:null,axe:null,auto:false});q.best=Math.max(q.best,q.x);cams[i].x=0;updateCamera(q,i,true);};
- s.debug={log,get phase(){return phase;},get clock(){return clock;},get turn(){return turn;},get twoPlayer(){return twoPlayer;},get warpMsg(){return warpMsg;},ghost,pl,STAGES,worlds,cams,view,PH,setClock(v){clock=v;},teleport,
+ s.debug={audio:SA,log,get phase(){return phase;},get clock(){return clock;},get turn(){return turn;},get twoPlayer(){return twoPlayer;},get warpMsg(){return warpMsg;},ghost,pl,STAGES,worlds,cams,view,PH,setClock(v){clock=v;},teleport,
   start(sel){menuSel=sel;titleT=1;startFromTitle();},
   toWarp(i){const q=pl[i],st=STAGES[0];const e=st.areas.main.pipes.find(p=>p.to);Object.assign(q,{area:'main',x:(e.c+1)*T,y:e.top*T,prevY:e.top*T,vx:0,vy:0,grounded:true,pipe:null,dead:0,tf:null,ride:null});cams[i].x=0;updateCamera(q,i,true);},
   toWarpZone(i,n=4){const q=pl[i];if(q.stage!==1){q.stage=1;worlds[i]=net?stageWorld(1,q.lap):makeWorld(STAGES[1]);}const pp=STAGES[1].areas.main.pipes.find(p=>p.warp===n);Object.assign(q,{area:'main',x:(pp.c+1)*T,y:pp.top*T,prevY:pp.top*T,vx:0,vy:0,grounded:true,pipe:null,dead:0,tf:null,ride:null,auto:false});cams[i].x=0;updateCamera(q,i,true);},
@@ -849,7 +862,7 @@ async function marioBros(s){
  worlds[0]=makeWorld(STAGES[0]);
  s.frame((dt)=>{
   if(!s.alive)return;
-  layoutView();
+  SA.tick();SA.music(songFor());layoutView();
   if(net&&netStarted){nf.tick(dt);stepRemote(dt);}
   if(phase==='title'){titleT+=dt;simT+=dt;if((mode!=='world'||net)&&titleT>3.2)startFromTitle();}
   else if(phase==='card'){cardT+=dt;const p=pl[turn];
