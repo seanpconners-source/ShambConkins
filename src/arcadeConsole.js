@@ -53,7 +53,9 @@ const familyOf=g=>g.bossId?'bosses':FAMILY_OF.get(g.id)||null;
 const ONE_TILE=new Set(['hangman','casino']);
 // Arcade categories (owner, Nov 3: "make way more sense"): what a player would look for, not the engine's old tags.
 // A game can sit in more than one. Old filter ids (arcade/strategy/skill/sports/dice) are mapped for old links.
-const CATEGORIES=[['featured','★ Featured'],['recent','Recent'],['favorites','Favorites'],['all','All games'],['action','Action'],['retro','Retro arcade'],['versus','Head to head'],['sports','Racing & sports'],['board','Board & cards'],['puzzle','Puzzle'],['party','Party'],['trivia','Trivia & shows'],['casino','Casino & dice'],['pinball','Pinball'],['coop','Co-op'],['boss','Bosses'],['pokemon','Pokémon'],['variants','Encounter variants']];
+// Home = recently played first, then the featured games (owner, Nov 7: no Recent shelf; consoles call the first screen Home).
+// Home, Favorites and All games are pills; every other category sits in one dropdown (MAIN_PILLS) so nothing scrolls.
+const CATEGORIES=[['featured','Home'],['favorites','Favorites'],['all','All games'],['action','Action'],['retro','Retro arcade'],['versus','Head to head'],['sports','Racing & sports'],['board','Board & cards'],['puzzle','Puzzle'],['party','Party'],['trivia','Trivia & shows'],['casino','Casino & dice'],['pinball','Pinball'],['coop','Co-op'],['boss','Bosses'],['pokemon','Pokémon'],['variants','Encounter variants']];
 const CAT_IDS={
  action:'broforce smb-world-1 smb-coin-rush smb-castle-dash cv-vampire-killer cv-candle-hunt cv-symphony sonic-ring-rush sonic-goal-dash doom doom-2 warriors-brawl bond-facility hyrule-rupee-rush hyrule-sword-duel tarantino-crazy88 tarantino-bounty kill-bill-duel living-dead-horde battle-royale-island raiders-ball-run',
  retro:'frogger-heads pong-duel breakout-party asteroid-drift space-swarm space-swarm-versus space-swarm-coop snake-run pac-maze-duel moonraker-lander mars-missile-defense duck-hunt-turn crossy-chaos block-battle t800-scan-long driller-duel bubble-battle flappy-disaster paper-route banana-money-grab metal-gear-tank-duel derezzed-cycles snake-v-snake bomber-duel sewer-clash neon-ball-storm smb-world-1 cv-vampire-killer doom',
@@ -71,6 +73,7 @@ const OLD={arcade:'retro',strategy:'board',skill:'party',dice:'casino'};
 function categoriesOf(g){const out=new Set(CAT_OF.get(g.id)||[]);if(g.category==='duel'||g.engine==='trivia')out.add(BASE[g.category]);if(!out.size&&BASE[g.category])out.add(BASE[g.category]);if(g.category==='coop'||g.cooperative)out.add('coop');return out;}
 const inCategory=(g,cat)=>cat==='all'||categoriesOf(g).has(OLD[cat]||cat);
 const CAT_NAME=Object.fromEntries(CATEGORIES);
+const MAIN_PILLS=new Set(['featured','favorites','all']);
 
 // Characters picked by hand where the source match would choose someone odd.
 const HERO={broforce:'rambo','bucketheadland-pinball':'buckethead','black-sabbath-pinball':'ozzy-osbourne','cv-symphony':'alucard','kill-bill-duel':'kb-the-bride','tarantino-crazy88':'kb-the-bride','tarantino-bounty':'dj-django','pac-maze-duel':'pac-man','pkmn-wild':'pikachu','pkmn-trainer':'ash-ketchum','paddys-beer-pong':'charlie','flipadelphia-cup':'charlie','terminator-scan':'terminator','t800-scan-long':'terminator','matrix-hardline-hack':'neo','evil-dead-cabin':'ash','django-hangman':'dj-django','django-hangman-showdown':'dj-king-schultz','django-hangman-wanted':'dj-django','sewer-clash':'leonardo-tmnt','snake-run':'snake','shred-hero':'buckethead','king-gizzard-pinball':'ref-stumackenzie','deadite-checkers':'ash','tarantino-chase':'dp-stuntman-mike','tarantino-adrenaline':'pf-vincent','tarantino-twist':'pf-jules','tarantino-standoff':'pf-jules'};
@@ -253,7 +256,9 @@ function arcadeConsoleHTML(opts){
   items.push({key:'g:'+g.id,g});}
  current={...opts,items};
  let at=items.findIndex(it=>it.key===state.focus);if(at<0){at=0;state.focus=items[0]?.key||null;}
- const pills=filters.map(([id,label])=>`<button class="arc-pill${id===filter?' on':''}" data-action="filter" data-id="${e(id)}">${e(label)}</button>`).join('');
+ const main=filters.filter(([id])=>MAIN_PILLS.has(id)),more=filters.filter(([id])=>!MAIN_PILLS.has(id)),inMore=more.some(([id])=>id===filter);
+ const pills=main.map(([id,label])=>`<button class="arc-pill${id===filter?' on':''}" data-action="filter" data-id="${e(id)}">${e(label)}</button>`).join('')
+  +(more.length?`<label class="arc-pill arc-more${inMore?' on':''}"><select class="arc-cat-select" aria-label="More categories"><option value=""${inMore?'':' selected'}>Categories</option>${more.map(([id,label])=>`<option value="${e(id)}"${id===filter?' selected':''}>${e(label)}</option>`).join('')}</select></label>`:'');
  const tiles=items.map((it,i)=>tileHTML(it,i,i===at)).join('');const root0=items[at];
  return `<main class="arcade-console${root0&&keyArt(root0)?' has-key':''}" style="${heroVars(items[at])}"><div class="arc-wash" aria-hidden="true"></div>
   <div class="arc-keyart" aria-hidden="true"><div class="arc-layer arc-key-front">${items[at]&&keyArt(items[at])?keyImg(items[at]):''}</div><div class="arc-layer"></div></div>
@@ -263,9 +268,9 @@ function arcadeConsoleHTML(opts){
   <div class="arc-search"${query?'':' hidden'}><input id="catalog-search" type="search" value="${e(query)}" placeholder="Search games or shows…" aria-label="Search games" autocomplete="off"></div>
   <nav class="arc-pills" aria-label="Game categories">${pills}</nav>
   <div class="arc-strip">${strip||''}</div>
-  <section class="arc-info arc-info-in" aria-live="polite">${items[at]?infoHTML(items[at]):`<p class="arc-empty">${query?'Nothing here yet. Try another category.':filter==='recent'?'The games you play will show up here.':filter==='favorites'?'Tap ☆ on any game to keep it here.':'Nothing here yet. Try another category.'}</p>`}</section>
+  <section class="arc-info arc-info-in" aria-live="polite">${items[at]?infoHTML(items[at]):`<p class="arc-empty">${query?'Nothing here yet. Try another category.':filter==='favorites'?'Tap ☆ on any game to keep it here.':'Nothing here yet. Try another category.'}</p>`}</section>
   <div class="arc-row-head"><span class="arc-row-label">${e(filters.find(f=>f[0]===filter)?.[1]||'Games')} · ${items.length}</span>${items.length>1?'<button class="arc-viewall" data-arc-all>View all ▸</button>':''}</div>
-  <div class="arc-row" role="listbox" aria-label="Games">${tiles}</div>
+  <div class="arc-row" role="listbox" aria-label="Games">${tiles}${!query&&filter!=='all'?`<button class="arc-tile arc-tile-all" data-arc-all aria-label="View all games"><span class="arc-tile-allart" aria-hidden="true">▦</span><span class="arc-tile-name"><span>View all</span></span></button>`:''}</div>
   ${devStrip?`<div class="arc-dev">${devStrip}</div>`:''}
   <section class="arc-grid-page"${state.grid?'':' hidden'} aria-label="All games">${state.grid?gridHTML():''}</section>
   <section class="arc-fam"${state.family?'':' hidden'} aria-label="Versions">${state.family?familyHTML(state.family):''}</section></main>`;
@@ -416,14 +421,18 @@ if(typeof document!=='undefined')document.addEventListener('click',ev=>{
  if(t.dataset.arcStar){const id=t.dataset.arcStar,on=toggleFavorite(store.profile,id);saveProfile(store.profile);
   document.querySelectorAll('.arcade-console [data-arc-star]').forEach(b=>{if(b.dataset.arcStar!==id)return;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));b.setAttribute('aria-label',on?'Remove from favorites':'Add to favorites');b.textContent=on?'★':'☆';});
   if(store.profile.settings.sound)tone(on?880:440,.06,.02,'triangle');return;}
- if(t.dataset.arcAll!==undefined){openGrid();return;}
- if(t.dataset.arcGridClose!==undefined){closeGrid();return;}
- if(t.dataset.arcPick!==undefined){const i=+t.dataset.arcPick,it=current?.items[i];if(!it)return;closeGrid();focusTile(i);if(it.fam)openFamily(it.fam.key);return;}
+ if(t.dataset.arcAll!==undefined){// View all = every game in the Arcade (owner, Nov 7), not just this shelf; back returns to the shelf
+  if(current&&current.filter!=='all'&&!current.query){state.grid=true;state.gridBack=current.filter;state.focus=null;setFilter('all');return;}openGrid();return;}
+ if(t.dataset.arcGridClose!==undefined){const back=state.gridBack;state.gridBack=null;closeGrid();if(back){state.focus=null;setTimeout(()=>setFilter(back),0);}return;}
+ if(t.dataset.arcPick!==undefined){const i=+t.dataset.arcPick,it=current?.items[i];if(!it)return;state.gridBack=null;closeGrid();focusTile(i);if(it.fam)openFamily(it.fam.key);return;}
  if(t.dataset.arcFocus!==undefined){const i=+t.dataset.arcFocus;if(current?.items[i]?.key===state.focus&&current.items[i].fam)openFamily(current.items[i].fam.key);else focusTile(i);}
  else if(t.dataset.arcFamily)openFamily(t.dataset.arcFamily);
  else if(t.dataset.arcClose!==undefined)closeFamily();
  else if(t.dataset.arcSearch!==undefined){const s=document.querySelector('.arcade-console .arc-search');s.hidden=!s.hidden;if(!s.hidden)s.querySelector('input').focus();}
 });
+// Change the shelf through the app's own 'filter' action (app.js keeps the list, query and dice pool in step).
+function setFilter(id){const b=document.createElement('button');b.dataset.action='filter';b.dataset.id=id;b.hidden=true;(document.querySelector('.arcade-console')||document.body).append(b);b.click();b.remove();}
+if(typeof document!=='undefined')document.addEventListener('change',ev=>{const sel=ev.target.closest?.('.arcade-console .arc-cat-select');if(!sel||!sel.value)return;state.focus=null;setFilter(sel.value);});
 // Swipe through the games (owner, Nov 4, M24): a sideways drag anywhere on the game's page (picture, logo, text, buttons)
 // moves the picture and text with the finger; let go past ~22% of the width (or a quick flick) and the next game (drag left)
 // or the previous one (drag right) comes in, like the arrow keys. Rows that scroll sideways themselves (tiles, category pills,

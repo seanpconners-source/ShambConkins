@@ -18,6 +18,7 @@ const {collectionTileHTML,collectionShellHTML,installCollection}=require("src/co
 const {arcadeReel}=require("src/arcadeConsole.js");
 const {arcadeConsoleHTML,installArcadeConsole,warmKeyArt,CATEGORIES:ARCADE_CATEGORIES,inCategory}=require("src/arcadeConsole.js");
 const {FEATURED_GAMES}=require("src/data/featuredGames.js");
+const HOME_RECENT=8; // Arcade Home: the last 8 games played, then the featured ones not among them (owner, Nov 7)
 const {store}=require("src/state.js");
 const {ART}=require("src/data/art.js");
 const {CHARACTERS, character, characterPerk, differentCharacters, characterIdentity}=require("src/characters.js");
@@ -249,7 +250,7 @@ function catalogHTML(type,query='',filter='all'){const p=store.profile,isRoster=
   const beaten=bosses.filter(g=>gameUnlocked(g,p));
   // Shelves (ROADMAP M14): Featured = the owner's list (data/featuredGames.js), Recent and Favorites from the profile. A search looks through everything.
   const shelf=['featured','recent','favorites'].includes(filter),anyGame=id=>GAMES.find(g=>g.id===id)||EVENT_GAMES.find(g=>g.id===id)||POKEMON_MATCHES.find(g=>g.id===id);
-  if(shelf&&!query)list=(filter==='featured'?FEATURED_GAMES:filter==='recent'?p.recent||[]:p.favorites||[]).map(anyGame).filter(g=>g&&(!g.secret||gameUnlocked(g,p)||p.settings.devMode));
+  if(shelf&&!query)list=(filter==='featured'?[...new Set([...(p.recent||[]).slice(0,HOME_RECENT),...FEATURED_GAMES])]:filter==='recent'?p.recent||[]:p.favorites||[]).map(anyGame).filter(g=>g&&(!g.secret||gameUnlocked(g,p)||p.settings.devMode));
   else if(filter==='boss')list=[...beaten,...bosses.filter(g=>!gameUnlocked(g,p))].filter(hit);
   else if(filter==='pokemon')list=POKEMON_MATCHES.filter(hit);
   else if(filter==='variants')list=EVENT_GAMES.filter(g=>!g.bossId&&(!g.secret||gameUnlocked(g,p)||p.settings.devMode)&&hit(g));

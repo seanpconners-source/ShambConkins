@@ -7,8 +7,8 @@ let bad = 0; const check = (ok, m) => { console.log(ok ? 'PASS' : 'FAIL', m); if
 await page.evaluate(() => { const p = window.ShambConkins.store.profile; p.bossesBeaten = ['king-kandy']; delete p.bossTiers; p.settings.solo = {...(p.settings.solo || {}), on: false}; });
 await act('arcade'); await page.waitForTimeout(300);
 // console Arcade: Bosses pill, focus King Kandy's tile, his medals and Fight button are in the hero
-const bossPill = async () => { await page.click('.arc-pill[data-id="boss"]').catch(() => {}); await page.waitForTimeout(300); };
-const focusKandy = () => page.evaluate(() => { const t = [...document.querySelectorAll('.arc-tile')].find(t => /King Kandy/.test(t.getAttribute('aria-label'))); t?.click(); return !!t; });
+const bossPill = async () => { await page.selectOption('.arc-cat-select', 'boss').catch(() => {}); await page.waitForTimeout(300); };
+const focusKandy = () => page.evaluate(() => { const t = [...document.querySelectorAll('.arc-tile:not(.arc-tile-all)')].find(t => /King Kandy/.test(t.getAttribute('aria-label'))); t?.click(); return !!t; });
 await bossPill();
 const lit = async () => { if (!await focusKandy()) return -1; await page.waitForTimeout(200); return page.evaluate(() => document.querySelectorAll('.arc-info .boss-medals i.won').length); };
 check(await lit() === 1, 'old save: beaten boss shows 1 medal (Easy)');
