@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.88.4
+
+- **New Game, tidied up.** Board now sits above Start at with two choices: **Main Board**, or **Warp Zones** with a list of the warp boards you have found (any warp you've entered, or whose boss you've beaten). Pick a warp and the game starts right on that warp board; when it's done you both land at the start of Level I. Start at greys out for a warp start.
+- **Gone from New Game:** the Versus card (it's the only mode), the Seed box, the old board styles (City, Jungle, Fantasy…) and the "empty bag" notes.
+- **The player pictures cycle through their moods,** like on Character Select.
+
 ## v0.88.3
 
 - **New Game fits the screen again.** Start, the levels and the board picker had slipped below the screen with no way to scroll to them, so a new game couldn't be started. The page now fits any screen without scrolling: the player pictures take the room that's left, small screens drop the mode descriptions and small print first, and a phone held sideways shows the players on the left and the options on the right.
