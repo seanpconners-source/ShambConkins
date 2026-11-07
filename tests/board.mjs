@@ -30,7 +30,8 @@ for (let seed = 1; seed <= 300; seed++) {
   }
   for (const sc of board.shortcuts) if (!board.obstacles.some(o => o.from === sc.from && o.to === sc.to)) fail(seed, 'unguarded shortcut ' + sc.from);
   if (!validObstacles(board)) fail(seed, 'invalid obstacles');
-  { const warps = nodes.filter(n => n.type === 'warp'); if (warps.length !== 3) fail(seed, 'expected 3 warp pipes, got ' + warps.length); }
+  { const warps = nodes.filter(n => n.type === 'warp'); if (warps.length !== 6) fail(seed, 'expected 6 warp pipes (2 per level), got ' + warps.length);
+    for (const net of board.pathNetworks || []) { if (!['mind', 'body', 'spirit'].includes(net.realm)) continue; const on = net.paths.filter(p => p.some(id => board.nodes[id].type === 'warp')).length; if (on !== 2) fail(seed, `${net.realm}: warp pipes on ${on} roads, expected 2`); } }
   stats.bridges += board.bridges.length; stats.shortcuts += board.shortcuts.length; stats.heights.push(board.height);
   if (board.bridges.length < 3) fail(seed, 'few bridges ' + board.bridges.length);
   // every level has at least one crossing (soak, Nov 3: seed 8 had none in Mind and Body)

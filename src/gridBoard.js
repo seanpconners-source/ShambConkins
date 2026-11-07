@@ -220,8 +220,10 @@ function buildGridBoard(board){
    }
    let gap=0;for(const id of path){const n=board.nodes[id];if(playable.has(n.type))gap=0;else if(++gap>=3&&['event','bonus','penalty'].includes(n.type)){n.type='game';gap=0;}}
   });
-  // One warp pipe per realm, hidden among the encounter spaces of a road.
-  {const lane=Math.floor(random()*3),path=tracks[lane],options=path.map((id,i)=>({id,i})).filter(q=>q.i>=4&&q.i<path.length-4&&['event','bonus','penalty','game'].includes(board.nodes[q.id].type)&&!board.nodes[q.id].location);if(options.length)board.nodes[options[Math.floor(random()*options.length)].id].type='warp';}
+  // Warp pipes on two of the three roads (owner, Nov 7; was one per realm), hidden among the encounter spaces.
+  // The second road and spot use their own random stream, so the rest of the layout matches older builds.
+  {const pipeOn=(lane,rnd)=>{const path=tracks[lane],options=path.map((id,i)=>({id,i})).filter(q=>q.i>=4&&q.i<path.length-4&&['event','bonus','penalty','game'].includes(board.nodes[q.id].type)&&!board.nodes[q.id].location);if(options.length)board.nodes[options[Math.floor(rnd()*options.length)].id].type='warp';};
+   const lane=Math.floor(random()*3);pipeOn(lane,random);const w2=seededRandom(board.seed+':warp2:'+realm),other=[0,1,2].filter(l=>l!==lane);pipeOn(other[Math.floor(w2()*2)],w2);}
   // Pokémon trainer battles: Poké Ball spaces on two of the three roads (own random stream,
   // so the rest of the layout matches older builds).
   {const tr=seededRandom(board.seed+':trainers:'+realm);for(const lane of shuffle([0,1,2],tr).slice(0,2)){const path=tracks[lane],options=path.map((id,i)=>({id,i})).filter(q=>q.i>=3&&q.i<path.length-3&&['event','bonus','penalty'].includes(board.nodes[q.id].type));if(options.length)board.nodes[options[Math.floor(tr()*options.length)].id].type='trainer';}}

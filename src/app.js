@@ -231,6 +231,9 @@ async function enterWarpZone(pipe=null){
  if(!await warpInto(run,id)||store.run!==run)return;
  await finishEncounter();
 }
+// A Warp Zones game (owner, Nov 7): its boss is one tier above the best you've beaten it on (never beaten = Easy,
+// Easy beaten = Medium, ... capped at Extreme). Pipe warps from the main board keep the level's tier (bossTierFor).
+function nextBossTier(bossId){const p=store.profile,best=p.bossTiers?.[bossId]??((p.bossesBeaten||[]).includes(bossId)?0:-1);return Math.max(0,Math.min(3,best+1));}
 // Swap the party onto warp board `id` (from a pipe, or a New Game started on Warp Zones: they come back to where they
 // stood, i.e. the start of Level I). Remembers the warp in the profile so New Game can offer it.
 async function warpInto(run,id,{instant=false}={}){
@@ -295,7 +298,7 @@ async function chooseBossTier(id){
 async function arcadeLaunch(opts){if(String(opts.id).startsWith('boss-')){const d=await chooseBossTier(opts.id);if(d==null)return;opts.difficulty=d;}await requestGame(opts);}
 async function startBoss(bossId,{level=null,forced=false}={}){
  const run=store.run,boss=bossById(bossId);if(!boss){if(run.warp&&run.bossGate?.warp)await exitWarpZone();else if(run.bossGate)await advanceAfterBoss();else await finishEncounter();return;}
- const warp=!!run.warp,lair=castleName(boss),difficulty=bossTierFor(run,level||run.bossGate?.realm||boss.level),tierName=BOSS_TIERS[difficulty].name;
+ const warp=!!run.warp,lair=castleName(boss),difficulty=run.warpOnly&&warp?nextBossTier(boss.id):bossTierFor(run,level||run.bossGate?.realm||boss.level),tierName=BOSS_TIERS[difficulty].name;
  const choices=forced?[{label:'Fight together!',value:'fight',primary:true}]:[{label:'Fight together!',value:'fight',primary:true},{label:warp?(run.warpOnly?'Give up (end the game)':'Flee to the map'):'Sneak past',value:'flee'}];
  const choice=await showDialog({title:`${boss.name} · ${boss.epithet||'Boss'}`,source:boss.source,rare:true,body:`${warp?'You reach the end of the warp zone.':'The level is over, but '+lair+' blocks the way forward.'} Fight together, win together: beat ${boss.name} to unlock a new character.`,html:`<div class="boss-intro"><span class="boss-icon">${e(boss.icon||'👹')}</span><b>${e(lair)}</b><span class="boss-tier" style="display:block;margin-top:4px;font-weight:900;letter-spacing:.1em;color:${BOSS_TIERS[difficulty].col}">${e(tierName.toUpperCase())}</span></div>`,choices});
  if(choice===null||store.run!==run)return;
