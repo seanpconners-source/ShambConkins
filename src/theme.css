@@ -1310,3 +1310,19 @@ body .mx-shell.mx-newgame .mx-level{padding:9px 4px}
 .mx-newgame .mx-warpgroup select{grid-column:auto}
 @media (max-width:520px){.mx-newgame .mx-board,.mx-newgame.mx-tighter .mx-board{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);column-gap:18px}
  .mx-newgame .mx-warpgroup{grid-template-columns:minmax(0,1fr)}.mx-newgame .mx-warpgroup select{grid-column:auto;min-height:40px}}
+
+/* No full-screen backdrop blur (owner, Nov 7: Settings flickered when it opened; the recording shows the dimmed backdrop
+   dropping out for a few frames while the card's pop-in animation ran, a known Chrome-on-Android glitch with backdrop-filter
+   on a full-screen layer). A slightly darker plain dim instead. #game-layer is opaque anyway: its blur only cost GPU time. */
+body dialog::backdrop{backdrop-filter:none;-webkit-backdrop-filter:none;background:color-mix(in srgb,var(--t-bg0,#060a17) 86%,transparent)}
+body dialog.sheet::backdrop{background:#0006}
+#sc-chat-dlg.chat-sheet::backdrop{background:#0007}
+body .pass-overlay{backdrop-filter:none;-webkit-backdrop-filter:none;background:color-mix(in srgb,var(--t-bg0,#060a17) 88%,transparent)}
+#game-layer{backdrop-filter:none;-webkit-backdrop-filter:none}
+.arc-scores{backdrop-filter:none;-webkit-backdrop-filter:none;background:#030611cc}
+/* A dialog redrawn while open (Settings after a switch, a card that changes its text) doesn't replay its entrance */
+body #dialog .dialog-content.dialog-swap,body #dialog .dialog-swap .dialog-icon,body #dialog .dialog-swap .dialog-art{animation:none!important}
+/* the dim fades in with the card instead of switching on at full strength under a still-invisible card (a dark flash) */
+@keyframes dlg-dim{from{opacity:0}}
+body dialog[open]::backdrop{animation:dlg-dim .22s ease-out}
+@media (prefers-reduced-motion:reduce){body dialog[open]::backdrop{animation:none}}
