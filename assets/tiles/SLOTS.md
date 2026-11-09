@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 187 slots: 39 have key art, 38 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 187 slots: 48 have key art, 47 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -8,7 +8,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | slot | game | kind | key art / icon |
 |---|---|---|---|
 | `bosses` | Boss Select (every boss) | family | ✅ / ✅ |
-| `pinball` | Pinball Tables (bucketheadland-pinball, black-sabbath-pinball, king-gizzard-pinball) | family | ✅ / · |
+| `pinball` | Pinball Tables (bucketheadland-pinball, black-sabbath-pinball, king-gizzard-pinball) | family | ✅ / ✅ |
 | `smb` | Super Mario Bros. (smb-world-1, smb-coin-rush, smb-castle-dash, smb3-nspade, smb3-spade-slots) | family | ✅ / ✅ |
 | `kart` | Mario Kart (rainbow-road-kart, kart-grand-prix-pass, kart-time-trial, rainbow-balloon-battle) | family | ✅ / ✅ |
 | `castlevania` | Castlevania (cv-symphony, cv-vampire-killer, cv-candle-hunt) | family | ✅ / ✅ |
@@ -28,22 +28,22 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `hyrule` | The Legend of Zelda (hyrule-rupee-rush, hyrule-sword-duel) | family | ✅ / ✅ |
 | `clue` | Clue (clue-whodunit, clue-lineup) | family | ✅ / ✅ |
 | `monopoly` | Monopoly (monopoly-speed-die, monopoly-auction) | family | ✅ / ✅ |
-| `chutes` | Chutes and Ladders (chutes-ladder-rush, chutes-spinner-showdown) | family | · / ✅ |
+| `chutes` | Chutes and Ladders (chutes-ladder-rush, chutes-spinner-showdown) | family | ✅ / ✅ |
 | `candy` | Candy Land (candy-gumdrop-catch, candy-color-dash) | family | ✅ / ✅ |
 | `baseball` | Major League (major-league-bats, major-league-fielding) | family | ✅ / ✅ |
 | `ducks` | The Mighty Ducks (rink-rivals, office-hockey-shootout) | family | ✅ / ✅ |
 | `matrix` | The Matrix (matrix-ultimate, matrix-hardline-hack) | family | ✅ / ✅ |
 | `terminator` | Terminator (terminator-scan, t800-scan-long) | family | ✅ / ✅ |
-| `pokemon` | Pokémon Battles (pkmn-wild, pkmn-trainer) | family | · / · |
-| `shamb-uno` | ShambUNO · Private Card Duel | game | · / · |
-| `traitors-guess-who` | The Traitors · Find the Traitor | game | · / · |
+| `pokemon` | Pokémon Battles (pkmn-wild, pkmn-trainer) | family | ✅ / ✅ |
+| `shamb-uno` | ShambUNO · Private Card Duel | game | ✅ / ✅ |
+| `traitors-guess-who` | The Traitors · Find the Traitor | game | ✅ / ✅ |
 | `greed-island-mancala` | Tony Hawk’s Pro Mancala | game | ✅ / ✅ |
-| `deadite-checkers` | Army of Darkness · Deadite Checkers | game | · / · |
+| `deadite-checkers` | Army of Darkness · Deadite Checkers | game | ✅ / ✅ |
 | `office-dots-boxes` | Call of Duty: Modern Stick Dot | game | ✅ / ✅ |
-| `megatouch-photohunt` | Megatouch · Photo Hunt | game | · / · |
-| `angry-heads` | Angry Heads | game | · / · |
-| `neon-ball-storm` | Daft Punk · Neon Ball Storm | game | · / · |
-| `living-dead-horde` | Return of the Living Dead · Horde | game | · / · |
+| `megatouch-photohunt` | Megatouch · Photo Hunt | game | ✅ / ✅ |
+| `angry-heads` | Angry Heads | game | ✅ / ✅ |
+| `neon-ball-storm` | Daft Punk · Neon Ball Storm | game | ✅ / ✅ |
+| `living-dead-horde` | Return of the Living Dead · Horde | game | ✅ / ✅ |
 | `paddys-hole` | Hole.it | game | ✅ / ✅ |
 | `radical-bike` | Radical Bike Trials | game | · / · |
 | `flappy-disaster` | Flappy Disaster | game | · / · |

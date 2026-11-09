@@ -112,7 +112,9 @@ const KEY_BOX={baseball:[.32,.13,.55,.46], 'black-sabbath-pinball':[.674,.299,.8
  invaders:[.47,.63,.818,.805], kart:[.47,.258,.787,.601], 'king-gizzard-pinball':[.351,.305,.583,.668], matrix:[.6,.442,.826,.606],
  monopoly:[.647,.29,.929,.598], 'pac-maze-duel':[.374,.666,.902,.935], paddys:[.477,.345,.838,.517], 'paddys-hole':[.30,.18,.86,.86], 'sundown-showdown':[.28,.17,.78,.93], 'battleship-fog':[.45,.05,.95,.58], 'office-dots-boxes':[.30,.05,.98,.70], pinball:[.3,.15,.75,.6], rush:[.287,0,.738,.58],
  smb:[.296,.493,.494,.792], sonic:[.597,.37,.836,.773], southpark:[.514,.395,.934,.794], tarantino:[.54,.483,.785,.626], taskmaster:[.619,.446,.819,.582],
- terminator:[.474,.378,.772,.597], trek:[.454,.218,.748,.478], trivia:[.44,.244,.829,.57]};
+ terminator:[.474,.378,.772,.597], trek:[.454,.218,.748,.478], trivia:[.44,.244,.829,.57],
+ 'angry-heads':[.51,.08,.84,.62], chutes:[.53,.04,.77,.40], 'deadite-checkers':[.70,.17,.93,.67], 'living-dead-horde':[.52,.03,.84,.86],
+ 'megatouch-photohunt':[.47,.06,.75,.70], 'neon-ball-storm':[.65,.04,.93,.55], pokemon:[.50,.08,.86,.73], 'shamb-uno':[.34,.02,.90,.56], 'traitors-guess-who':[.40,.18,.69,.73]};
 const KEY_BOX_DEFAULT=[.28,.15,.72,.85];
 const keyBox=it=>KEY_BOX[it.fam?.key]||KEY_BOX[it.g?.id]||KEY_BOX[familyOf(it.g)]||KEY_BOX_DEFAULT;
 // Behind the picture: a blurred copy covering the whole screen, shown only when the picture had to zoom out (no bare backdrop).

@@ -19,7 +19,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Key art for "Pinball Tables", a minigame in a party video game that pays tribute to Buckethead. Scene: a glowing pinball playfield exploding with lights, a chrome ball mid-flight. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Pinball Tables" (Buckethead tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -215,7 +215,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Chutes and Ladders · `chutes`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Chutes and Ladders", a minigame in a party video game that pays tribute to Chutes and Ladders. Scene: Ladder Rush and Spinner Showdown. Chute mouths (a kid misbehaving) slide you down, so change ladders before you reach one; good-deed stars boost you up. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -275,31 +275,31 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Pokémon Battles · `pokemon`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Pokémon Battles", a minigame in a party video game that pays tribute to pop culture. Scene: a monster-catching battle on a grassy route, a red-and-white capture ball flying. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Pokémon Battles" (pop culture tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## ShambUNO · Private Card Duel · `shamb-uno`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "ShambUNO · Private Card Duel", a minigame in a party video game that pays tribute to Uno. Scene: Two-human Uno: seven cards each, color/symbol matching, Skip, Reverse, +2, Wild and legal +4. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "ShambUNO · Private Card Duel" (Uno tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## The Traitors · Find the Traitor · `traitors-guess-who`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "The Traitors · Find the Traitor", a minigame in a party video game that pays tribute to The Traitors. Scene: The Traitors: a randomized board of 24 real game characters. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "The Traitors · Find the Traitor" (The Traitors tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -315,11 +315,11 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Army of Darkness · Deadite Checkers · `deadite-checkers`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Army of Darkness · Deadite Checkers", a minigame in a party video game that pays tribute to Army of Darkness. Scene: Army of Darkness: twelve heads each, compulsory captures, chain jumps and king crowns. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Army of Darkness · Deadite Checkers" (Army of Darkness tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -335,41 +335,41 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Megatouch · Photo Hunt · `megatouch-photohunt`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Megatouch · Photo Hunt", a minigame in a party video game that pays tribute to Photo Hunt. Scene: Turn the phone sideways. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Megatouch · Photo Hunt" (Photo Hunt tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Angry Heads · `angry-heads`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Angry Heads", a minigame in a party video game that pays tribute to Angry Birds. Scene: the most iconic moment of Angry Heads. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Angry Heads" (Angry Birds tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Daft Punk · Neon Ball Storm · `neon-ball-storm`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Daft Punk · Neon Ball Storm", a minigame in a party video game that pays tribute to Daft Punk. Scene: the most iconic moment of Daft Punk · Neon Ball Storm. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Daft Punk · Neon Ball Storm" (Daft Punk tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Return of the Living Dead · Horde · `living-dead-horde`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Return of the Living Dead · Horde", a minigame in a party video game that pays tribute to Return of the Living Dead. Scene: Collect gems to level up, smash lamps and barrels for pickups, and open boss chests to evolve weapons. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Return of the Living Dead · Horde" (Return of the Living Dead tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 

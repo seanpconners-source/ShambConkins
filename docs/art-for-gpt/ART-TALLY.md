@@ -1,6 +1,6 @@
 # ShambConkins art tally (Claude ↔ ChatGPT)
 
-Written by Claude, 2026-11-06 22:11 UTC. Newest TALLY-CLAUDE-*.md in this folder is the current one.
+Written by Claude, 2026-11-09 22:40 UTC. Newest TALLY-CLAUDE-*.md in this folder is the current one.
 
 ## How this works
 
@@ -13,23 +13,25 @@ Written by Claude, 2026-11-06 22:11 UTC. Newest TALLY-CLAUDE-*.md in this folder
 
 ## This round
 
-Claude read the three new upload notes: **UPLOADS-GPT-2026-11-06-2143, -2144 and -2145** (Sundown Showdown — Stage Art, sundown-small-files-01/-02, SMALL-FILES-07). Those three files, the nine older UPLOADS-GPT files from 18:37-18:50 and the older TALLY-CLAUDE files (-1354, -1504, -1908) can all be deleted now.
+Claude read every upload note since its last tally: **UPLOADS-GPT-2026-11-07-0546, -0548, -0550, -0552, -0553, -0806, -0809, both -1657 files and -1659**. Those ten notes, the three older ones (-2143, -2144, -2145) and the older TALLY-CLAUDE files (-1354, -1504, -1908, -2211) can all be deleted now.
 
-**Came in and now in the game (25):**
-- Sundown Showdown (23, the whole stage kit): trough, hitching-post, lamp, town-sky, town-far, town-near, town-ground, town-building-1..4, canyon-sky, canyon-far, canyon-near, canyon-ground, mission-sky, mission-far, mission-near, mission-ground, mission-building-1..4
-- Items (2, from SMALL-FILES-07.zip): v43-q-laser-pen, wz-golden-bullet
+**Came in and now in the game (151):**
 
-All 23 Sundown pictures are exactly the template sizes and look great in the game: checked in play on Main Street, the canyon and the mission at night, on a phone and sideways. The building windows and doors line up with where the gunmen pop out, the strips scroll smoothly and the floor tiles repeat with no seams. The Sundown Showdown kit is now complete (47 of 47). Both items are fine too.
+- **Items (124)** from Transparent Items — Batch 11 (40), Batch 12 (40), Batch 13 (13) and Batch 14 (31). All 124 file names are real item ids, all have real transparency, and every one is in the game (trimmed, 512 px, lossless). They look great: the backstage passes, the Poké items, the warp-zone items and the illustrated effect icons all read well at board size. The pet tokens (Mylo, KC, Loki) look like the real dogs.
+- **Arcade (27)** from Arcade Art — Batch 01: 9 icons and 9 logos (pinball, pokemon, shamb-uno, traitors-guess-who, deadite-checkers, megatouch-photohunt, angry-heads, neon-ball-storm, living-dead-horde) are in the game now. The 9 backgrounds (chutes, pokemon, shamb-uno, traitors-guess-who, deadite-checkers, megatouch-photohunt, angry-heads, neon-ball-storm, living-dead-horde) are in too, and have gone to Sean's Background Picker so he can place each one on every screen. Mixing in Mylo, KC and Loki as the main characters works really well.
 
 **DELETE OK** (in the game, delete the Drive copy):
-- every file in Sundown Showdown — Stage Art (the 23 PNGs, sundown-small-files-01.zip and sundown-small-files-02.zip)
-- SMALL-FILES-07.zip, SMALL-FILES-04.zip, SMALL-FILES-05.zip, v43-q-laser-pen.png (Batch 09) and wz-golden-bullet.png (Batch 10)
+- every file in Transparent Items — Batch 11, Batch 12, Batch 13 and Batch 14 (the folders can go too)
+- every file in Arcade Art — Batch 01. Keep the backgrounds on your side until Sean has placed them, in case one needs a remake (Claude still has copies).
+- Arcade Art — Batch 02 is empty.
 
 **NOT USED:** nothing. **REDO:** nothing. **RE-SEND:** nothing.
 
+**Still not made (keep them in WANTED, no substitutes):** matrix-emp, v43-sports-almanac, v43-fire-flower, v43-fulton-balloon, wz-bullet-bill, v43-jill-lockpick, v43-starman. If an image generator refuses one, try a plainer object description (for example "a rolled-up sports almanac magazine from the year 2000 with a blank cover" or "a single orange-and-red cartoon flower in a small clay pot") rather than naming the game or film.
+
 **Size rule (unchanged):** a final of 90 KB or more: upload it as it is. Under 90 KB: put it in a zip and keep adding small finals until the zip is over 100 KB (each zip under 10 MB), and list what is inside.
 
-**Next:** keep going down WANTED in batches of 20-40, same naming and notes. All three sprite kits are now done; what is left is items (131 of 633), the Arcade backgrounds/icons and character portraits.
+**Next:** carry on with Arcade Art Batch 02 (the next ten slots in the WANTED list below), same naming, same notes. Then the last 7 items, then character portraits.
 
 ## WANTED (worked out from the game)
 
@@ -44,18 +46,8 @@ All done ✅
 **Sundown Showdown** (47 of 47 slots have art; brief: `docs/sundown-sprites/GPT-SPRITE-BRIEF.md`)
 All done ✅
 
-### Arcade backgrounds / icons (68 games still missing one; prompts: `docs/arcade-art/PROMPTS.md`)
+### Arcade backgrounds / icons (58 games still missing one; prompts: `docs/arcade-art/PROMPTS.md`)
 
-- `pinball` Pinball Tables (bucketheadland-pinball, black-sabbath-pinball, king-gizzard-pinball): icon
-- `chutes` Chutes and Ladders (chutes-ladder-rush, chutes-spinner-showdown): background
-- `pokemon` Pokémon Battles (pkmn-wild, pkmn-trainer): background + icon
-- `shamb-uno` ShambUNO · Private Card Duel: background + icon
-- `traitors-guess-who` The Traitors · Find the Traitor: background + icon
-- `deadite-checkers` Army of Darkness · Deadite Checkers: background + icon
-- `megatouch-photohunt` Megatouch · Photo Hunt: background + icon
-- `angry-heads` Angry Heads: background + icon
-- `neon-ball-storm` Daft Punk · Neon Ball Storm: background + icon
-- `living-dead-horde` Return of the Living Dead · Horde: background + icon
 - `radical-bike` Radical Bike Trials: background + icon
 - `flappy-disaster` Flappy Disaster: background + icon
 - `wopr-grid` WarGames · Vanishing Tic-Tac-Toe: background + icon
@@ -115,141 +107,17 @@ All done ✅
 - `broforce-desert` Sean of a Gun: Desert Assault: background + icon
 - `frogger-heads` Frogger: background + icon
 
-### Items (131 of 633 still need a picture; file = id)
+### Items (7 of 633 still need a picture; file = id)
 
-- `mylo-token`: Mylo Token (Home)
-- `kc-token`: KC Token (Home)
-- `loki-token`: Loki Token (Home)
-- `predator-cloak`: Predator Cloak (Predator)
-- `blue-steel`: Blue Steel (Zoolander)
-- `osees-face`: Castle Face (Osees)
-- `force-push`: Force Push (Star Wars)
-- `transporter`: Emergency Transporter (Star Trek)
-- `predator-cloak2`: Active Camouflage (Predator)
-- `flux-rewind`: Flux Rewind (Back to the Future)
-- `tribble-swarm`: Tribble Swarm (Star Trek)
-- `dundie-pass`: Dundie Immunity (The Office)
-- `mylo-zoomies`: Mylo Zoomies (Mylo)
-- `kc-herd`: KC Herding License (KC)
-- `loki-guardian`: Loki Guardian Token (Loki)
-- `five-stars`: Five-Star Review (Review)
-- `laser-table-key`: Laser Table Override (Goldfinger)
-- `blofeld-cat`: Blofeld's Cat (James Bond)
-- `dream-token`: Dream Token (A Nightmare on Elm Street)
-- `toxic-mop`: Toxie's Mop (The Toxic Avenger)
-- `greater-good`: The Greater Good (Hot Fuzz)
-- `edm-cue`: Bass Drop Cue (Kavinsky / Skrillex / Knife Party / Zomboy)
-- `power-pellet`: Power Pellet (Pac-Man)
-- `rainbow-pass`: Rainbow Road Pass (Mario Kart)
-- `red-pill-overclock`: Red Pill Overclock (The Matrix)
-- `pass-electricwizard`: Electric Wizard backstage pass (Electric Wizard)
-- `pass-boris`: Boris backstage pass (Boris)
-- `pass-melvins`: Melvins backstage pass (Melvins)
-- `pass-highonfire`: High on Fire backstage pass (High on Fire)
-- `pass-om`: OM backstage pass (OM)
-- `pass-kyuss`: Kyuss backstage pass (Kyuss)
-- `pass-queensofthestoneage`: Queens of the Stone Age backstage pass (Queens of the Stone Age)
-- `pass-fumanchu`: Fu Manchu backstage pass (Fu Manchu)
-- `pass-uncleacidthedeadbeats`: Uncle Acid & the Deadbeats backstage pass (Uncle Acid & the Deadbeats)
-- `pass-monolord`: Monolord backstage pass (Monolord)
-- `pass-yob`: YOB backstage pass (YOB)
-- `pass-windhand`: Windhand backstage pass (Windhand)
-- `pass-earth`: Earth backstage pass (Earth)
-- `pass-sunno`: Sunn O))) backstage pass (Sunn O))))
-- `pass-kingbuffalo`: King Buffalo backstage pass (King Buffalo)
-- `pass-slift`: Slift backstage pass (Slift)
-- `pass-frankieandthewitchfingers`: Frankie and the Witch Fingers backstage pass (Frankie and the Witch Fingers)
-- `pass-tysegall`: Ty Segall backstage pass (Ty Segall)
-- `pass-theeohseesdeepcuts`: Thee Oh Sees deep cuts backstage pass (Thee Oh Sees deep cuts)
-- `pass-mrbungle`: Mr. Bungle backstage pass (Mr. Bungle)
-- `pass-faithnomore`: Faith No More backstage pass (Faith No More)
-- `pass-ween`: Ween backstage pass (Ween)
-- `pass-viagraboys`: Viagra Boys backstage pass (Viagra Boys)
-- `pass-deathgrips`: Death Grips backstage pass (Death Grips)
-- `pass-carpenterbrut`: Carpenter Brut backstage pass (Carpenter Brut)
-- `pass-perturbator`: Perturbator backstage pass (Perturbator)
-- `pass-justice`: Justice backstage pass (Justice)
-- `edgar-suit`: Edgar Suit (Men in Black)
-- `mega-mushroom`: Mega Mushroom (Super Mario)
-- `flux-overdrive`: 88 MPH Flux Overdrive (Back to the Future)
-- `kamehameha-burst`: Kamehameha Burst (Dragon Ball Z)
-- `pac-power-pellet`: Power Pellet (Pac-Man)
-- `home-pack-whistle`: The Home Pack Whistle (Home)
-- `leeloo-rescue`: Leeloo’s Rescue Beacon (The Fifth Element)
-- `time-chamber-pass`: Time Chamber Pass (Dragon Ball Z)
-- `spagett-ambush`: Spagett Ambush (Tim & Eric)
-- `doom-encore`: Black Sabbath Encore (Black Sabbath)
-- `clockwork-caddy`: Happy’s Caddy (Happy Gilmore)
 - `matrix-emp`: Nebuchadnezzar EMP (The Matrix)
-- `mini-mushroom`: Mini Mushroom (Super Mario Bros.)
 - `v43-sports-almanac`: Grays Sports Almanac (Back to the Future)
-- `v43-white-rabbit`: White Rabbit Tattoo (The Matrix)
-- `v43-nos-canister`: NOS Canister (Fast & Furious)
-- `v43-family-photo`: Family Photo (Fast & Furious)
 - `v43-fire-flower`: Fire Flower (Super Mario Bros.)
 - `v43-starman`: Starman (Super Mario Bros.)
-- `v43-lakitu-cloud`: Lakitu’s Cloud (Super Mario Bros.)
 - `v43-jill-lockpick`: Jill’s Lockpick (Resident Evil)
 - `v43-fulton-balloon`: Fulton Balloon (Metal Gear)
-- `v43-flying-nimbus`: Flying Nimbus (Dragon Ball Z)
-- `v43-likes-token`: Bridges Likes Token (Death Stranding)
-- `v43-robot-visor`: Encore Robot Visor (Daft Punk)
-- `v43-get-lucky-record`: Get Lucky Record Token (Daft Punk)
-- `v43-iron-man-badge`: Iron Man Backstage Badge (Black Sabbath)
-- `beatles-yellow-sub`: Yellow Submarine Ticket (The Beatles)
-- `beatles-rooftop-pass`: Rooftop Concert Pass (The Beatles)
-- `nsync-bye-bye`: Bye Bye Bye Cue Card (*NSYNC)
-- `bsb-lyric-sheet`: I Want It That Way Lyrics (Backstreet Boys)
-- `marley-three-birds`: Three Little Birds (Bob Marley)
-- `ranger-command-center`: Command Center Teleport (Power Rangers)
-- `ge-cartridge`: GoldenEye 007 Cartridge (GoldenEye)
-- `chuck-beard`: Beard of Destiny (Chuck Norris)
-- `chuck-ranger-badge`: Texas Ranger Badge (Chuck Norris)
-- `mel-wallace-paint`: Wallace War Paint (Mel Gibson)
-- `mel-interceptor-keys`: V8 Interceptor Keys (Mel Gibson)
-- `mel-riggs-badge`: Riggs’s Badge (Mel Gibson)
-- `jcvd-epic-split`: The Epic Split Pass (Jean-Claude Van Damme)
-- `rocky-meat-gloves`: Meat Locker Gloves (Rocky)
-- `nintendo-super-star`: Super Star (Nintendo)
-- `nintendo-pokeball`: Poké Ball (Nintendo)
-- `pk-poke-balls-5`: Poké Balls ×5 (Pokémon)
-- `pk-poke-balls-10`: Poké Balls ×10 (Pokémon)
-- `pk-great-balls-5`: Great Balls ×5 (Pokémon)
-- `pk-ultra-balls-5`: Ultra Balls ×5 (Pokémon)
-- `pk-master-ball`: Master Ball (Pokémon)
-- `pk-potions-5`: Potions ×5 (Pokémon)
-- `pk-super-potions-3`: Super Potions ×3 (Pokémon)
-- `pk-hyper-potions-2`: Hyper Potions ×2 (Pokémon)
-- `pk-full-restore`: Full Restore (Pokémon)
-- `pk-revives-3`: Revives ×3 (Pokémon)
-- `pk-full-heals-3`: Full Heals ×3 (Pokémon)
-- `pk-x-items`: X Items Kit (Pokémon)
-- `pk-rare-candy-2`: Rare Candy ×2 (Pokémon)
-- `pk-elixer`: Elixers ×2 (Pokémon)
-- `pk-poke-doll`: Poké Doll (Pokémon)
-- `wz-morning-star`: Morning Star Whip (Castlevania)
-- `wz-chinpokomon`: Chinpokomon Card (South Park)
-- `wz-triple-mushroom`: Triple Mushroom (Mario Kart)
-- `wz-red-shell`: Red Shell (Mario Kart)
-- `wz-lightning-bolt`: Lightning Bolt (Mario Kart)
 - `wz-bullet-bill`: Bullet Bill (Mario Kart)
-- `wz-golden-mushroom`: Golden Mushroom (Mario Kart)
-- `wz-n-spade-card`: N-Spade Card (Super Mario Bros. 3)
-- `wz-gumdrop-pass`: Gumdrop Pass Shortcut (Candy Land)
-- `wz-color-card`: Double Color Card (Candy Land)
-- `wz-bent-spinner`: Bent Spinner (Chutes and Ladders)
-- `wz-kaa-coils`: Kaa’s Coils (Chutes and Ladders)
-- `wz-jail-free`: Get Out of Jail Free Card (Monopoly)
-- `wz-pass-go`: Pass GO · Collect $200 (Monopoly)
-- `wz-free-parking`: Free Parking Jackpot (Monopoly)
-- `wz-luxury-tax`: Luxury Tax Bill (Monopoly)
-- `wz-secret-passage`: Secret Passage Key (Clue)
-- `wz-invincibility`: Invincibility Monitor (Sonic the Hedgehog)
-- `wz-super-ring`: Super Ring Monitor (Sonic the Hedgehog)
-- `wz-giant-ring`: Giant Ring (Sonic the Hedgehog)
-- `wz-end-signpost`: End-of-Act Signpost (Sonic the Hedgehog)
 
-### Character portraits (102 still need one; file = id, extra faces id.mood)
+### Character portraits (54 still need one; file = id, extra faces id.mood)
 
 - `mylo`: Mylo (Home)
 - `kc`: KC (Home)
@@ -265,19 +133,16 @@ All done ✅
 - `walkabout-skeleton`: Mini Golf Skeleton (Walkabout Mini Golf)
 - `walkabout-ball`: Lost Ball (Walkabout Mini Golf)
 - `pit-pat`: Pit-Pat (Mr. Show)
-- `bomberman`: Bomberman (Bomberman)
 - `jamie-taco`: Jamie Taco (I Think You Should Leave)
 - `dom-toretto`: Dominic Toretto (Fast & Furious)
 - `chris-parent`: Dad · Chris Conners (Home)
 - `angie-parent`: Mom · Angie Conners (Home)
 - `rob-mcwilliams`: Rob McWilliams (REZN)
 - `spencer-ouellette`: Spencer Ouellette (REZN)
-- `skeeter-valentine`: Skeeter Valentine (Doug)
 - `krumm`: Krumm (Aaahh!!! Real Monsters)
 - `ref-themidnightsociety`: The Midnight Society (Are You Afraid of the Dark?)
 - `ref-tarman`: Tarman (Return of the Living Dead)
 - `ref-commandcenter`: Command Center (Power Rangers)
-- `edgar-bug`: Edgar / The Bug (Men in Black)
 - `uss-lydia`: Lydia (Unlimited Savory Systems)
 - `uss-steve`: Steve (Unlimited Savory Systems)
 - `uss-hannah`: Hannah (Unlimited Savory Systems)
@@ -298,58 +163,13 @@ All done ✅
 - `flarpy`: Flarpy (ShambConkins)
 - `lsoh-crystal`: Crystal (Little Shop of Horrors)
 - `lsoh-chiffon`: Chiffon (Little Shop of Horrors)
-- `stone-cold`: Stone Cold Steve Austin (WWE)
-- `the-undertaker`: The Undertaker (WWE)
-- `mick-foley`: Mick Foley (WWE)
-- `mick-foley-mankind`: Mick Foley · Mankind (WWE)
-- `mick-foley-cactus-jack`: Mick Foley · Cactus Jack (WWE)
-- `mick-foley-dude-love`: Mick Foley · Dude Love (WWE)
-- `wk-trevor-moore`: Trevor Moore (The Whitest Kids U’ Know)
-- `wk-sam-brown`: Sam Brown (The Whitest Kids U’ Know)
-- `wk-zach-cregger`: Zach Cregger (The Whitest Kids U’ Know)
-- `wk-timmy-williams`: Timmy Williams (The Whitest Kids U’ Know)
-- `wk-darren-trumeter`: Darren Trumeter (The Whitest Kids U’ Know)
-- `scott-aukerman`: Scott Aukerman (Comedy Bang! Bang!)
-- `paul-f-tompkins`: Paul F. Tompkins (Comedy Bang! Bang!)
-- `lauren-lapkus`: Lauren Lapkus (Comedy Bang! Bang!)
-- `nick-wiger`: Nick Wiger (Doughboys)
-- `mike-mitchell`: Mike Mitchell (Doughboys)
-- `bb-mike-hanford`: Mike Hanford (The Birthday Boys)
-- `bb-tim-kalpakis`: Tim Kalpakis (The Birthday Boys)
 - `bb-jefferson-dutton`: Jefferson Dutton (The Birthday Boys)
-- `bb-matt-kowalick`: Matt Kowalick (The Birthday Boys)
-- `bb-chris-vanartsdalen`: Chris VanArtsdalen (The Birthday Boys)
 - `bb-dave-ferguson`: Dave Ferguson (The Birthday Boys)
-- `bb-mike-mitchell`: Mike Mitchell (Birthday Boy) (The Birthday Boys)
-- `reno-clementine-johnson`: Clementine Johnson (Reno 911!)
-- `reno-raineesha-williams`: Raineesha Williams (Reno 911!)
-- `reno-james-garcia`: James Oswaldo Garcia (Reno 911!)
 - `reno-sven-jones`: Sven Jones (Reno 911!)
 - `reno-cherisha-kimball`: Cherisha Kimball (Reno 911!)
-- `reno-terry`: Terry Bernardino (Reno 911!)
-- `idio-not-sure`: Not Sure (Idiocracy)
 - `idio-frito`: Frito Pendejo (Idiocracy)
-- `idio-rita`: Rita (Idiocracy)
 - `idio-upgrayedd`: Upgrayedd (Idiocracy)
-- `idio-dr-lexus`: Dr. Lexus (Idiocracy)
-- `idio-camacho`: President Camacho (Idiocracy)
 - `idio-cabinet`: Camacho’s Cabinet (Idiocracy)
 - `idio-beef-supreme`: Beef Supreme (Idiocracy)
-- `beavis`: Beavis (Beavis and Butt-Head)
-- `butt-head`: Butt-Head (Beavis and Butt-Head)
-- `joe-camel`: Joe Camel (Camel (cigarette))
 - `mac-tonight`: Mac Tonight (McDonald’s)
-- `sherman-klump`: Sherman Klump (The Nutty Professor)
-- `buddy-love`: Buddy Love (The Nutty Professor)
-- `elvis-presley`: Elvis Presley (Elvis Presley)
-- `leslie-chow`: Mr. Chow (The Hangover)
-- `alan-garner`: Alan Garner (The Hangover)
-- `ml-vaughn`: Rick “Wild Thing” Vaughn (Major League (film))
-- `ml-jake-taylor`: Jake Taylor (Major League (film))
-- `ml-willie-mays-hayes`: Willie Mays Hayes (Major League (film))
-- `ml-cerrano`: Pedro Cerrano (Major League (film))
-- `ml-roger-dorn`: Roger Dorn (Major League (film))
-- `ml-eddie-harris`: Eddie Harris (Major League (film))
-- `ml-lou-brown`: Lou Brown (Major League (film))
 - `ml-harry-doyle`: Harry Doyle (Major League (film))
-- `ml-rachel-phelps`: Rachel Phelps (Major League (film))

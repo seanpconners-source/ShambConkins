@@ -25,14 +25,14 @@ for(const sc of SCREENS.filter(s=>!only.length||only.includes(s.id))){
  // see-through so the picker shows exactly what covers the picture; rects feed the faces-under-text check (assemble.py)
  for(const shelf of ['featured','all']){
   await page.click(`.arc-pill[data-id="${shelf}"]`);await page.waitForTimeout(700);
-  const n=await page.locator('.arc-tile').count();
+  const n=await page.locator('.arc-tile:not(.arc-tile-all)').count();
   for(let i=0;i<n;i++){
-   await page.evaluate(i=>{const t=document.querySelectorAll('.arc-tile')[i];t.scrollIntoView({inline:'center'});t.click();},i);await page.waitForTimeout(650);
-   const r=await page.evaluate(()=>{const root=document.querySelector('.arcade-console');if(!root.classList.contains('has-key'))return null;
-    const im=[...document.querySelectorAll('.arc-keyart .arc-layer')].pop()?.querySelector('img:not(.arc-keyfill)');if(!im||!im.classList.contains('placed'))return null;
+   await page.evaluate(i=>{const t=document.querySelectorAll('.arc-tile:not(.arc-tile-all)')[i];t.scrollIntoView({inline:'center'});t.click();},i);await page.waitForTimeout(650);
+   let r=null;for(let k=0;k<6&&!r;k++){if(k)await page.waitForTimeout(400);r=await page.evaluate(()=>{const root=document.querySelector('.arcade-console');if(!root.classList.contains('has-key'))return null;
+    const im=(document.querySelector('.arc-keyart .arc-key-front')||[...document.querySelectorAll('.arc-keyart .arc-layer')].pop())?.querySelector('img:not(.arc-keyfill)');if(!im||!im.classList.contains('placed'))return null;
     const R=root.getBoundingClientRect(),rel=q=>{const e=root.querySelector(q),b=e&&e.getBoundingClientRect();return b&&b.height?[b.left-R.left,b.top-R.top,b.right-R.left,b.bottom-R.top].map(Math.round):null;};
     return {slot:im.dataset.slot,l:parseFloat(im.style.left),t:parseFloat(im.style.top),w:parseFloat(im.style.width),nw:im.naturalWidth,nh:im.naturalHeight,
-     title:document.querySelector('.arc-title')?.textContent?.trim(),rects:{W:R.width,H:R.height,top:Math.max(...['.arc-top','.arc-pills','.arc-strip'].map(q=>rel(q)?.[3]||0)),info:rel('.arc-info'),row:rel('.arc-row-head')||rel('.arc-row')}};});
+     title:document.querySelector('.arc-title')?.textContent?.trim(),rects:{W:R.width,H:R.height,top:Math.max(...['.arc-top','.arc-pills','.arc-strip'].map(q=>rel(q)?.[3]||0)),info:rel('.arc-info'),row:rel('.arc-row-head')||rel('.arc-row')}};});}  // big lossless key art can take a moment to decode and be placed
    if(!r||!r.slot)continue;
    if(!res.place[r.slot]){const cover=Math.max(sc.w/r.nw,sc.h/r.nh),dh=r.w*r.nh/r.nw;
     res.place[r.slot]={z:+(r.w/(r.nw*cover)).toFixed(4),fx:+((sc.w/2-r.l)/r.w).toFixed(4),fy:+((sc.h/2-r.t)/dh).toFixed(4)};res.titles[r.slot]=r.title;if(!res.rects)res.rects=r.rects;}
