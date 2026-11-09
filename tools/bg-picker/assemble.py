@@ -30,7 +30,7 @@ for s in SCREENS:
     screens.append({**s, 'rects': M[s['id']]['rects'], 'overlay': f"o/{s['id']}.png"})
 titles = {}
 for v in M.values(): titles.update(v.get('titles', {}))
-kd = os.path.join(R, 'assets', 'keyart'); slots = []; done = []; flagged = {}
+kd = os.path.join(R, 'assets', 'keyart'); slots = []; done = []; flagged = {}; unseen = []
 for f in sorted(os.listdir(kd)):
     k, ext = os.path.splitext(f)
     if ext not in ('.webp', '.png', '.jpg') or k.endswith('-logo') or '-word-' in k: continue
@@ -47,9 +47,21 @@ for f in sorted(os.listdir(kd)):
     full = len(PLACE.get(k, {})) >= len(SCREENS)
     if ONLY and k not in ONLY: continue
     if not ALL and not ONLY and full and not (CHECK and hits): done.append(k); continue
-    shutil.copy(os.path.join(kd, f), os.path.join(OUT, 'k', k + ext)); w, h = I.open(os.path.join(kd, f)).size
+    # never shown in the Arcade's shelves (nothing measured on any screen): nothing to place, leave it out
+    measured = [sid for sid in M if M[sid].get('info', {}).get(k)]
+    if not measured and not ONLY: unseen.append(k); continue
+    # previews only: same pixel size as the game's picture (placement maths unchanged) but lossy, so the picker stays light
+    # on a phone (the game's key art is lossless since Nov 6: ~1.5 MB each)
+    src = I.open(os.path.join(kd, f)); w, h = src.size; ext = '.webp'
+    src.convert('RGB').save(os.path.join(OUT, 'k', k + ext), 'WEBP', quality=85, method=6)
     logo = next((x for x in os.listdir(kd) if os.path.splitext(x)[0] == k + '-logo'), None)
-    if logo: shutil.copy(os.path.join(kd, logo), os.path.join(OUT, 'l', logo))
+    # the logo is only drawn on a screen without the game's captured text (which shows the real logo); a version of the
+    # picker holds at most 511 files, so skip it when every screen has that text
+    if len(measured) >= len(M): logo = None
+    if logo:
+        logo = os.path.splitext(logo)[0] + '.webp'
+        I.open(os.path.join(kd, next(x for x in os.listdir(kd) if os.path.splitext(x)[0] == k + '-logo'))).convert('RGBA').save(
+            os.path.join(OUT, 'l', logo), 'WEBP', quality=90, method=6)
     slots.append({'id': k, 'title': titles.get(k) or NICE.get(k) or k.replace('-', ' ').title(), 'box': BOX.get(k, DEFAULT), 'nw': w, 'nh': h,
                   'img': f'k/{k}{ext}', 'logo': f'l/{logo}' if logo else None, 'place': {s: M[s]['place'][k] for s in M if k in M[s].get('place', {})}})
     info, info_all = {}, {}
@@ -66,4 +78,5 @@ open(os.path.join(OUT, 'index.html'), 'w').write(html)
 files = sorted(os.path.relpath(os.path.join(d, f), OUT) for d, _, fs in os.walk(OUT) for f in fs if f != 'index.html')
 json.dump(files, open(os.path.join(OUT, '..', 'picker-files.json'), 'w'))
 if flagged: print('Text covers the faces (share of the faces box, by screen):\n  ' + '\n  '.join(f'{k}: {v}' for k, v in sorted(flagged.items())))
+if unseen: print('Not in any Arcade shelf (nothing to measure), left out: ' + ', '.join(unseen))
 print(f'{len(slots)} pictures in the picker, {len(done)} already locked everywhere and left out; {len(files)} files -> {OUT}/../picker-files.json')

@@ -10,7 +10,11 @@ pinch/scroll to zoom, **Lock in**, plus a verdict (perfect / small tweak / needs
 
 - Picker page (always republish to this same URL): **https://claude.ai/artifact/DhpZSVr98T1sEwzjux7AJ9** (since Nov 3; the first
   picker, https://claude.ai/artifact/N1zQ42EPkUqJf8AzpmdmPT, belongs to the owner's other account and can't be republished from this one; its locks
-  are all in keyPlacements.js already). A publish takes at most 255 files: send the files list in two publishes.
+  are all in keyPlacements.js already). A publish takes at most 255 files: send the files list in two or three publishes.
+  A version holds at most 511 files, so assemble.py leaves out the logo when every screen has the game's captured text
+  (which shows the real logo) and skips pictures no Arcade shelf shows (nothing to measure); key art and logos go in as
+  lossy previews at the same pixel size (the game's own are lossless, ~1.5 MB each). Files dropped from the set are
+  removed in the publish with `null` in the `files` map.
 - Its database: collection `bg`, one doc per slot: `{screens:{<screen id>:{z,fx,fy}}, verdict, note, at}`.
   `z` = zoom (1 = the picture just fills the screen), `fx`/`fy` = the point of the picture (fractions) at the screen's centre.
 - The game reads `src/data/keyPlacements.js` (`KEY_PLACE`, written by `apply.py`): `lockedPlace()` in `src/arcadeConsole.js`
