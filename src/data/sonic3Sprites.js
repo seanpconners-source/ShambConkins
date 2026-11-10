@@ -55,6 +55,10 @@ const SHEETS={
  flower:{frame:[16,32],foot:[8,32],rows:{sway:4}},
  waterfall:{frame:[64,64],foot:[0,0],rows:{flow:4},note:'tiles down; opaque'},
 };
+// the runner cells are wider and taller than the 64x64 the poses were planned in, so dust, tails and flung arms fit:
+// same layout moved 16 px right and 16 px down inside a 96x80 cell
+for(const n of ['runner-p1','runner-p2']){const d=SHEETS[n],mv=h=>h&&(Array.isArray(h[0])?h.map(mv):[h[0]+16,h[1]+16,...h.slice(2)]);
+ d.frame=[96,80];d.foot=[d.foot[0]+16,d.foot[1]+16];d.head=mv(d.head);d.headRows=Object.fromEntries(Object.entries(d.headRows).map(([k,v])=>[k,mv(v)]));}
 // One-off pictures: size [w,h] px, `anchor` = the pixel on the object's position. tile 'x' = repeats sideways,
 // 'xy' = repeats both ways; opaque = no transparency.
 const PICTURES={

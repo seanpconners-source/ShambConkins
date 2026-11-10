@@ -13,10 +13,10 @@ root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 args = sys.argv[1:]
 src, name = args[0], args[1]
 opt = lambda k, d=None: (args[args.index(k) + 1] if k in args else d)
-x0 = int(opt('--x0', 125)); ball = opt('--ball'); RES = 2
+x0 = int(opt('--x0', 150)); ball = opt('--ball'); RES = 2
 spec = json.loads(subprocess.check_output(['node', '-e', "const e={};new Function('exports',require('fs').readFileSync('%s/src/data/sonic3Sprites.js','utf8'))(e);const n=process.argv[1],b=process.argv[2];const pick=k=>{const d=e.sheetOf(k);return {frame:d.frame,foot:d.foot,rows:d.rows,heads:Object.fromEntries(Object.keys(d.rows).map(r=>[r,Array.from({length:d.rows[r]},(_,f)=>e.headOf(k,r,f))]))};};console.log(JSON.stringify({main:pick(n),ball:b?pick(b):null}))" % root, name, ball or '']))
 im = Image.open(src).convert('RGB'); a = np.asarray(im).astype(int); r, g, b = a[..., 0], a[..., 1], a[..., 2]
-bg = (g > 150) & (g - r > 70) & (g - b > 70); fg = ~bg; fg[:, :x0] = False
+bg = (g > 150) & (g - r > 70) & (g - b > 70); fg = ~bg; fgb = fg.copy(); fgb[:, :x0] = False  # fgb: without the label column, for finding the rows
 # green spill on edges: pull green down to the larger of red/blue
 spill = fg & (g - np.maximum(r, b) > 35); a[..., 1] = np.where(spill, np.maximum(r, b) + 8, g)
 rgba = np.dstack([a.astype(np.uint8), (fg * 255).astype(np.uint8)])
@@ -32,43 +32,59 @@ def runs(v, gap=1):
         else: m.append(q)
     return [q for q in m]
 want = list(spec['main']['rows'].items()) + (list(spec['ball']['rows'].items()) if ball else [])
-bands = [q for q in runs(fg.sum(1) > 0) if q[1] - q[0] > 12]
+bands = [q for q in runs(fgb.sum(1) > 0) if q[1] - q[0] > 12]
 while len(bands) < len(want):  # two rows touching: split the tallest band at its emptiest line
-    k = max(range(len(bands)), key=lambda i: bands[i][1] - bands[i][0]); s, e = bands[k]; p = fg[s:e].sum(1); lo, hi = int(len(p) * .3), int(len(p) * .7)
+    k = max(range(len(bands)), key=lambda i: bands[i][1] - bands[i][0]); s, e = bands[k]; p = fgb[s:e].sum(1); lo, hi = int(len(p) * .3), int(len(p) * .7)
     cut = s + lo + int(np.argmin(p[lo:hi])); bands[k:k + 1] = [[s, cut], [cut + 1, e]]
 assert len(bands) == len(want), (len(bands), len(want))
 poses = []
 for (row, n), (s, e) in zip(want, bands):
-    cols = [q for q in runs(fg[s:e].sum(0) > 0, 9) if q[1] - q[0] > 14]
+    raw = runs(fg[s:e].sum(0) > 0)  # the row's label = everything up to the last wide gap inside the label column
+    lab = [k for k in range(len(raw) - 1) if raw[k][1] <= x0 and raw[k + 1][0] - raw[k][1] >= 7]
+    if lab: raw = raw[lab[-1] + 1:]
+    cols = []
+    for q in raw:
+        if cols and q[0] - cols[-1][1] < 9: cols[-1][1] = q[1]
+        else: cols.append(list(q))
+    cols = [q for q in cols if q[1] - q[0] > 14]
     while len(cols) > n:  # dust puffs and motion lines: join the closest neighbours
         k = min(range(len(cols) - 1), key=lambda i: cols[i + 1][0] - cols[i][1]); cols[k:k + 2] = [[cols[k][0], cols[k + 1][1]]]
+    wd = sorted(c[1] - c[0] for c in cols)
+    if len(cols) < n and wd[-1] < 1.5 * wd[len(wd) // 2]:  # the artist drew fewer poses: spread them over the row's slots
+        print('  row %s: %d poses drawn for %d slots' % (row, len(cols), n)); cols = [cols[k * len(cols) // n] for k in range(n)]
     while len(cols) < n:  # two poses touching: split the widest blob at its thinnest column
         k = max(range(len(cols)), key=lambda i: cols[i][1] - cols[i][0]); c0, c1 = cols[k]; pc = fg[s:e, c0:c1].sum(0); lo, hi = int(len(pc) * .3), int(len(pc) * .7)
         cut = c0 + lo + int(np.argmin(pc[lo:hi])); cols[k:k + 1] = [[c0, cut], [cut + 1, c1]]
     assert len(cols) == n, (row, n, [c[1] - c[0] for c in cols])
     for c in cols:
         ys = np.where(fg[s:e, c[0]:c[1]].any(1))[0]; poses.append((row, c[0], s + ys[0], c[1], s + ys[-1] + 1))
+# The neck opening looks the same in every pose (a rim round a dark hole), turned with the body. --neck0 x,y gives its
+# centre in the FIRST pose (read it off the picture); that patch is the template, searched for in every other pose at a
+# few angles. The best match is the neck.
+n0 = [float(v) for v in opt('--neck0').split(',')]
+def patch(cx, cy, hw=9, hh=6): return a[int(cy) - hh:int(cy) + hh + 1, int(cx) - hw:int(cx) + hw + 1].astype(np.uint8)
+TPL = []
+for ang in (0, 20, -20, 40, -40, 65, -65, 90, -90):
+    big = Image.fromarray(patch(n0[0], n0[1], 16, 16)).rotate(ang, resample=Image.BICUBIC)
+    t = np.asarray(big).astype(float)[16 - 7:16 + 8, 16 - 9:16 + 10] if abs(ang) < 50 else np.asarray(big).astype(float)[16 - 9:16 + 10, 16 - 7:16 + 8]
+    TPL.append(t)
 def neck(box):
-    x_0, y_0, x_1, y_1 = box; sub = a[y_0:y_1, x_0:x_1]; R, G, B = sub[..., 0], sub[..., 1], sub[..., 2]
-    # the neck opening = a pink rim round a dark maroon inside: keep only pixels of one kind that touch the other
-    F = fg[y_0:y_1, x_0:x_1]
-    dark = (R > 40) & (R < 135) & (G < 42) & (B < 32) & (R - G > 30) & F
-    pink = (R > 165) & (G > 85) & (G < 160) & (B > 80) & (B < 150) & (R - G > 45) & (abs(G - B) < 34) & F
-    def grow(m, n=3):
-        o = m.copy()
-        for dy in range(-n, n + 1):
-            for dx in range(-n, n + 1):
-                o |= np.roll(np.roll(m, dy, 0), dx, 1)
-        return o
-    m = (pink & grow(dark)) | (dark & grow(pink, 2))
-    if m.sum() < 6: return None
-    ys, xs = np.where(m); mx, my = np.median(xs), np.median(ys); near = (abs(xs - mx) < 14) & (abs(ys - my) < 12)
-    if near.sum() < 5: return None
-    return x_0 + xs[near].mean(), y_0 + ys[near].mean()
+    x_0, y_0, x_1, y_1 = box; pad = 8
+    X0, Y0 = max(0, x_0 - pad), max(0, y_0 - pad); sub = a[Y0:y_1 + pad, X0:x_1 + pad].astype(float); best = None
+    for t in TPL:
+        th, tw = t.shape[:2]; H, W = sub.shape[0] - th + 1, sub.shape[1] - tw + 1
+        if H < 1 or W < 1: continue
+        ssd = np.zeros((H, W))
+        for dy in range(th):
+            for dx in range(tw): ssd += ((sub[dy:dy + H, dx:dx + W] - t[dy, dx]) ** 2).sum(2)
+        ssd /= th * tw * 3; yy, xx = np.unravel_index(np.argmin(ssd), ssd.shape)
+        if best is None or ssd[yy, xx] < best[0]: best = (ssd[yy, xx], X0 + xx + tw // 2, Y0 + yy + th // 2)
+    return (best[1], best[2]) if best and best[0] < 5200 else None
 first = poses[0]; nk = neck(first[1:]); assert nk, 'no neck opening found in the first pose'
 main = spec['main']; h0 = main['heads'][list(main['rows'])[0]][0]
 NECK = 9  # the neck opening sits this far under the face centre (frame px)
 scale = RES * (main['foot'][1] - (h0['y'] + NECK)) / (first[4] - nk[1])
+print('neck of the first pose at', [round(v) for v in nk], 'pose box', first[1:])
 print('scale %.3f, %d poses' % (scale, len(poses)))
 AIR = {'spring', 'fall', 'hurt', 'dead', 'fly', 'tired', 'hang'}
 def build(sp, rowsel, key):
@@ -89,7 +105,8 @@ def build(sp, rowsel, key):
                 px = cx + round(hs['x'] * RES - nx)
                 py = cy + (round((hs['y'] + NECK) * RES - ny) if row in AIR else sp['foot'][1] * RES - h)
                 px = min(max(px, cx), cx + fw * RES - w) if w <= fw * RES else cx; py = min(max(py, cy), cy + fh * RES - h) if h <= fh * RES else cy
-                heads[row].append([round((px - cx + nx) / RES, 1), round((py - cy + ny) / RES - NECK, 1)])
+                if not nkp: print('  no neck found: %s %d' % (row, f + 1))
+                heads[row].append([round((px - cx + nx) / RES, 1), round((py - cy + ny) / RES - NECK, 1)] if nkp else [hs['x'], hs['y']])
             sheet.alpha_composite(cut.crop((0, 0, min(w, fw * RES), min(h, fh * RES))), (px, py))
     return sheet, heads
 mainrows = set(main['rows']); out = {}

@@ -222,6 +222,8 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tai
  backOfHead(hx,hy,skid,true);
  // quills (hedgehog) or ears (+ the three tails for the stand-in fox body) behind the face
  function backOfHead(hx,hy,skid,withTails){const sw=Math.min(1,run/6),dir=skid?f:-f;x.fillStyle=BODY;x.strokeStyle=DARK;x.lineJoin='round';
+  const piece=SP.picture(tails?'ears-p2':'quills-p1');// the owner's head piece, when it is in: drawn centred on the face
+  if(piece){x.save();x.translate(hx,hy);x.scale(f,1);const sm=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;x.drawImage(piece,-piece.width/4,-piece.height/4,piece.width/2,piece.height/2);x.imageSmoothingEnabled=sm;x.restore();if(!tails||!withTails)return;}
   if(tails&&withTails){const bx=hx-f*5,by=hy+26,spin=p.fly>0;for(let k=0;k<3;k++){const a=spin?t*(p.fly>1?26:7)+k*2.094:(k-1)*.5+Math.sin(t*5+k)*.12-sw*.25,L=20;
     const ex=bx+dir*L*(spin?Math.cos(a)*.9:Math.cos(a)),ey=by+(spin?-10+Math.sin(a)*5:Math.sin(a)*L*.8-4);
     x.strokeStyle=DARK;x.lineWidth=8.5;x.lineCap='round';x.beginPath();x.moveTo(bx,by);x.quadraticCurveTo((bx+ex)/2,(by+ey)/2-4,ex,ey);x.stroke();x.strokeStyle=BODY;x.lineWidth=6.5;x.stroke();
@@ -229,7 +231,7 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tai
   else if(!tails){// the hedgehog's quills: a fan of five behind the head, sweeping back (they stream out with speed)
    x.fillStyle=BODY;x.strokeStyle=DARK;x.lineWidth=1.4;for(let k=4;k>=0;k--){const a=-1.0+k*.48+Math.sin(t*15+k)*sw*.05,len=27+sw*6-Math.abs(k-1.5)*2.5,ca=Math.cos(a),sa=Math.sin(a);
     const bx=hx+dir*ca*8,by=hy+sa*8,px=-sa*7.5,py=ca*7.5;x.beginPath();x.moveTo(bx+dir*px*-1,by-py);x.lineTo(hx+dir*ca*len,hy+sa*len+sw*2);x.lineTo(bx+dir*px,by+py);x.closePath();x.fill();x.stroke();}}
-  if(tails)for(const d of [-1,1]){const ex=hx+d*9-f*1,ey=hy-12;x.fillStyle=BODY;x.strokeStyle=DARK;x.lineWidth=1.3;x.beginPath();x.moveTo(ex-5,ey+3);x.lineTo(ex+d*2,ey-13);x.lineTo(ex+5,ey+3);x.closePath();x.fill();x.stroke();
+  if(tails&&!piece)for(const d of [-1,1]){const ex=hx+d*9-f*1,ey=hy-12;x.fillStyle=BODY;x.strokeStyle=DARK;x.lineWidth=1.3;x.beginPath();x.moveTo(ex-5,ey+3);x.lineTo(ex+d*2,ey-13);x.lineTo(ex+5,ey+3);x.closePath();x.fill();x.stroke();
    x.fillStyle=SCARF;x.beginPath();x.moveTo(ex-2,ey+2);x.lineTo(ex+d*1.5,ey-8);x.lineTo(ex+2.5,ey+2);x.closePath();x.fill();}}
  head(x,i,hx,hy+(p.lookUp?-1:0),32,p.hurt?'sad':skid?'angry':run>5?'happy':undefined);
  x.restore();
