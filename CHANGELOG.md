@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.89.0
+
+- **Sonic 3 Test Zone (new engine preview).** Arcade → Sonic: a first look at the Sonic 3 rebuild. Real Mega Drive physics (loops, slopes, rolling, spin dash), the Mega Drive camera, springs, the fire, bubble and lightning shields with their moves, badniks, a zip line, a swing vine, breakable walls, moving and falling platforms, and the end sign with the Sonic 3 score tally. P1 runs as Sonic, then P2 as Tails, with your faces. Placeholder art; the real Zone 1 comes next.
+- **Sonic sounds.** Both Green Hill games now use the real Sonic 3 & Knuckles sound effects.
+- **More item pictures and Arcade art:** 124 new item pictures, and new backgrounds, icons and logos for TRON, Radical Bike, Sewer Clash and 9 other games.
+- **Arcade backgrounds placed for the Fold (closed) and Amber's phone** on every game.
+
 ## v0.88.9
 
 - **Super Mario Bros. sounds like the NES.** Every jump, coin, stomp, block and power-up is now the real sound, and the music follows the game: overworld, underground and castle themes, the Starman song, the faster hurry-up versions at 100 on the clock with their jingle, the flagpole and castle fanfares, the 1-2 pipe jingle, death and game over. The music stops at the flag, at the axe and when you die, sounds cut each other off the way they do on the NES, and pausing plays the pause sound.
