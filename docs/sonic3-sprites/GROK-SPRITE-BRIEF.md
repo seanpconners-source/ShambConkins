@@ -1,92 +1,167 @@
-# Sprite brief for ShambConkins: the island speed-run game (Grok)
+# Sprite handoff for Grok: SEANIC THE HEDGEHOG
 
-How to use this file:
-1. Paste the "What the game is", "Art style" and "Rules" sections into Grok Imagine once, at the start of the chat.
-2. For each picture: attach its template from `docs/sonic3-sprites/templates/` (the `@4x` one) and paste that picture's
-   paragraph from below.
-3. Ask for **ONE sheet, or ONE row, at a time**. The big runner sheet is best done a row at a time: the single-row
-   templates are in `templates/rows/` (for example `runner-p1.walk@4x.png`).
-4. Save each result as `<name>.png` (for a single row: `<name>.<row>.png`, for example `runner-p1.walk.png`) and upload
-   them to GitHub `art-inbox/sonic3/` (or zip them into chat). Claude cuts out the background, lines the frames up on the
-   grid, scales them down and stacks the rows.
+**Read this first (owner).** Do these steps in order. Do not skip step 1.
 
-## What the game is
-A very fast 16-bit style side-scrolling platform game for phones: a tropical island zone with loops, springs, swinging
-vines, zip lines, golden rings to collect and robot enemies to bounce on. Two players take turns. Each player's runner is
-a small cartoon body that wears **the player's own photo face**, so the bodies are drawn **without a head**.
+## Step 1: get ONE good picture of each character (approval first)
+Paste each prompt below into Grok Imagine as it is. Make a few, pick the best, send both to Claude. **Do not make any
+sheets until we both like these two pictures.**
 
-## Art style (everything)
-- **Bright, punchy early-90s 16-bit console pixel art.** Clean chunky pixels, a dark 1 px outline, 3-5 flat tones per
-  colour, strong highlights, saturated tropical colours (deep blue sky, emerald and lime greens, orange-brown checkered
-  earth, turquoise sea). No blur, no airbrush, no photo textures, no 3D render look.
-- **Original designs only.** These are our own characters and robots. Do not draw, copy or imitate any existing game's
-  characters, robots, logos or screens. No text or letters in any picture.
-- Everything faces **RIGHT**. The game mirrors it for left.
+**`seanic-test.png`**
+> Pixel-art game sprite, ONE single pose, centred, filling about 60% of the picture height. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: standing relaxed, feet apart, fists at the sides. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
 
-## Rules for every picture
-- **Background:** transparent. If Grok won't do transparency, use a **flat pure green background (#00FF00) with no
-  shadow or gradient on it** (and then use no pure green in the art). Backdrops and fill tiles marked *opaque* have no
-  transparency.
-- **Keep the template's layout:** same number of frames, left to right, evenly spaced, same size in every frame, all
-  standing on the same line. Don't let frames touch or overlap. The grid, labels and marks must NOT be in your picture.
-- Size: any size Grok makes is fine, as long as the proportions match the template. Claude scales it down.
-- What the template marks mean:
-  - **Red cross** = the anchor: where the feet touch the ground (or the centre, for balls, flyers, shots and effects).
-    Same spot in every frame.
-  - **Blue circle** = where the game puts a face. Leave it EMPTY: no head, no hair, no hat. The little tick shows which
-    way is up for the face in that frame.
-  - **Faint grey figure** (runner) = a pose guide only: match the position, size and pose; your art replaces it.
-  - **Red line** (pictures) = the surface you stand on. **"repeats sideways"** = the left and right edges must join up
-    with no seam.
+**`fox-test.png`**
+> Pixel-art game sprite, ONE single pose, centred, filling about 60% of the picture height. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: standing relaxed, feet apart, fists at the sides. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
 
-## Priority order
-1. The runners and their ball (`runner-p1`, `ball-p1`, then the `-p2` versions).
-2. Rings, springs, item boxes, checkpoint, goal sign, effects, shields.
-3. The four robots, the seed, the critters.
-4. Jungle terrain, props and backdrop.
-5. Mini-boss, boss, capsule, title card.
+Check each result against this list. If any line fails, tell Grok which one and ask again:
+1. **No head.** Nothing above the collar. (The game puts Sean's / Amber's face there.)
+2. **Side view, facing right.** Not facing the camera, not three-quarter.
+3. **Short and stocky.** Legs about as long as the torso. NOT tall or lanky.
+4. Hedgehog: quills on the BACK, pointing backwards. Fox: exactly THREE tails.
+5. Flat green background, no shadow, no text.
 
----
+## Step 2: the animation rows (after approval)
+One request per row. For each one: **attach the approved test picture** (so the character stays the same) **and the row's
+template** from the `templates/rows/` folder, then paste the row's prompt. Add this line at the start of every request:
+> Same character as the attached picture. Use the attached grid only as a guide for the number of poses and their
+> positions; do NOT draw the grid, the blue circles, the red marks or the labels.
 
-## 1. The runners: `runner-p1` and `runner-p2`
-**Template:** `runner-p1@4x.png` (whole sheet) or `rows/runner-p1.<row>@4x.png`. **Frame:** 64×64.
+What the template marks mean: **blue circle** = where the face goes, keep it EMPTY. **Red cross** = where the feet touch
+the ground. **Grey figure** = rough pose only.
 
-**Who (player 1):** a small, stocky cartoon sprinter, seen from the side, about two heads tall including the face that
-the game adds. A cobalt-blue one-piece racing suit with a white lightning stripe down the side, big white cartoon gloves,
-chunky yellow-and-white high-top trainers with thick soles, and a long sky-blue scarf at the neck that streams out behind
-when moving (it shows the speed). **Player 2 (`runner-p2`):** the same body and poses in a bright orange suit with a
-cream stripe, teal trainers and a cream scarf.
+Save each result with the file name shown. Send them all to Claude in a zip (or upload to GitHub `art-inbox/sonic3/`).
+Claude cuts out the green, lines the poses up and builds the sheets, so sizes don't need to be exact.
 
-**NO HEAD.** Draw the body from the neck down and leave the blue circle EMPTY. The collar and scarf end just under the
-circle. Heads are big on purpose.
+### Seanic (player 1): 16 rows
+**`runner-p1.stand.png`** (template `rows/runner-p1.stand@4x.png`)
+> Pixel-art sprite strip. ONE single pose, centred. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: standing relaxed, feet apart, fists at the sides. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
 
-Rows (frames):
-1. **stand** 1: relaxed, feet apart, fists at the sides.
-2. **wait** 4: impatient: arms folded, one foot tapping.
-3. **lookUp** 2: leaning back, looking up.
-4. **crouch** 2: ducking down, then curled low.
-5. **walk** 8: a bouncy walk, one full cycle.
-6. **run** 8: a full sprint, one full cycle, arms pumping, leaning forward, scarf straight back.
-7. **dash** 4: top speed: body leaning far forward, arms thrown back, the legs a spinning blur in the shape of a wheel.
-8. **skid** 3: braking hard: leaning back, heels dug in, one arm out, scarf whipping forward.
-9. **push** 4: shoving a heavy block with both hands, feet slipping.
-10. **balance** 3: teetering on a ledge, arms windmilling.
-11. **spring** 2: launched upward: body straight, both arms up.
-12. **fall** 2: dropping: arms up, legs apart, scarf flying up.
-13. **hurt** 2: knocked backwards, arms and legs thrown out.
-14. **hang** 4: hanging by both hands from a bar above the head, legs swinging.
-15. **win** 4: a victory pose: punches one fist into the air.
-16. **dead** 2: flung into the air, limbs out.
+**`runner-p1.wait.png`** (template `rows/runner-p1.wait@4x.png`)
+> Pixel-art sprite strip. EXACTLY 4 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: impatient: arms folded, one foot tapping (foot down, up, down, up). Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
 
-## 2. The ball: `ball-p1` and `ball-p2`
-**Template:** `ball-p1@4x.png`. **Frame:** 48×48. Anchor = the centre.
-The runner curled into a tight spinning ball (used for jumps, rolling and the spin charge). The face sits in the middle
-(blue circle, leave empty): draw the curled suit, gloves, trainers and scarf wrapped round it as a spinning ring with
-motion streaks. Blue for p1, orange for p2.
-1. **roll** 8: one full turn (the tick shows how far the ball has turned).
-2. **spindash** 6: spinning on the spot, squashed slightly flat and wide, charging up.
+**`runner-p1.lookUp.png`** (template `rows/runner-p1.lookUp@4x.png`)
+> Pixel-art sprite strip. EXACTLY 2 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: leaning back to look up (a little, then more). Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
 
-## 3. Level objects
+**`runner-p1.crouch.png`** (template `rows/runner-p1.crouch@4x.png`)
+> Pixel-art sprite strip. EXACTLY 2 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: ducking down (half way, then curled low). Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p1.walk.png`** (template `rows/runner-p1.walk@4x.png`)
+> Pixel-art sprite strip. EXACTLY 8 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: a bouncy walk cycle, 8 steps of one full cycle. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p1.run.png`** (template `rows/runner-p1.run@4x.png`)
+> Pixel-art sprite strip. EXACTLY 8 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: a full sprint cycle, leaning forward, arms pumping, 8 steps of one full cycle; quills/tails streaming straight back. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p1.dash.png`** (template `rows/runner-p1.dash@4x.png`)
+> Pixel-art sprite strip. EXACTLY 4 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: top speed: body leaning far forward, arms thrown back, the legs replaced by a spinning blur shaped like a wheel. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p1.skid.png`** (template `rows/runner-p1.skid@4x.png`)
+> Pixel-art sprite strip. EXACTLY 3 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: braking hard: leaning back, heels dug in, one arm out. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p1.push.png`** (template `rows/runner-p1.push@4x.png`)
+> Pixel-art sprite strip. EXACTLY 4 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: pushing a heavy block with both hands, feet slipping. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p1.balance.png`** (template `rows/runner-p1.balance@4x.png`)
+> Pixel-art sprite strip. EXACTLY 3 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: teetering on a ledge, arms windmilling. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p1.spring.png`** (template `rows/runner-p1.spring@4x.png`)
+> Pixel-art sprite strip. EXACTLY 2 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: launched straight up: body straight, both arms raised. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p1.fall.png`** (template `rows/runner-p1.fall@4x.png`)
+> Pixel-art sprite strip. EXACTLY 2 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: falling: arms up, legs apart. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p1.hurt.png`** (template `rows/runner-p1.hurt@4x.png`)
+> Pixel-art sprite strip. EXACTLY 2 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: knocked backwards through the air, arms and legs thrown out. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p1.hang.png`** (template `rows/runner-p1.hang@4x.png`)
+> Pixel-art sprite strip. EXACTLY 4 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: hanging by both hands from a bar above, legs swinging forward and back. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p1.win.png`** (template `rows/runner-p1.win@4x.png`)
+> Pixel-art sprite strip. EXACTLY 4 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: victory: one fist punching up into the air, in 4 steps. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p1.dead.png`** (template `rows/runner-p1.dead@4x.png`)
+> Pixel-art sprite strip. EXACTLY 2 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon HEDGEHOG body with NO HEAD, seen from the SIDE, facing RIGHT. Blue-purple (indigo-violet) fur, a lilac belly patch, a thick mane of 5 big pointed quills running down the back and sweeping backwards, a small stub tail, big white cartoon gloves, chunky yellow-and-white high-top trainers with thick white soles. The neck ends in a small fur collar. The body is only as tall as one head: short legs, round torso. Action: flung into the air, limbs spread. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+### The fox (player 2): the same 16 rows + 2 flying rows
+**`runner-p2.stand.png`** (template `rows/runner-p2.stand@4x.png`)
+> Pixel-art sprite strip. ONE single pose, centred. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: standing relaxed, feet apart, fists at the sides. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.wait.png`** (template `rows/runner-p2.wait@4x.png`)
+> Pixel-art sprite strip. EXACTLY 4 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: impatient: arms folded, one foot tapping (foot down, up, down, up). Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.lookUp.png`** (template `rows/runner-p2.lookUp@4x.png`)
+> Pixel-art sprite strip. EXACTLY 2 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: leaning back to look up (a little, then more). Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.crouch.png`** (template `rows/runner-p2.crouch@4x.png`)
+> Pixel-art sprite strip. EXACTLY 2 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: ducking down (half way, then curled low). Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.walk.png`** (template `rows/runner-p2.walk@4x.png`)
+> Pixel-art sprite strip. EXACTLY 8 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: a bouncy walk cycle, 8 steps of one full cycle. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.run.png`** (template `rows/runner-p2.run@4x.png`)
+> Pixel-art sprite strip. EXACTLY 8 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: a full sprint cycle, leaning forward, arms pumping, 8 steps of one full cycle; quills/tails streaming straight back. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.dash.png`** (template `rows/runner-p2.dash@4x.png`)
+> Pixel-art sprite strip. EXACTLY 4 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: top speed: body leaning far forward, arms thrown back, the legs replaced by a spinning blur shaped like a wheel. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.skid.png`** (template `rows/runner-p2.skid@4x.png`)
+> Pixel-art sprite strip. EXACTLY 3 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: braking hard: leaning back, heels dug in, one arm out. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.push.png`** (template `rows/runner-p2.push@4x.png`)
+> Pixel-art sprite strip. EXACTLY 4 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: pushing a heavy block with both hands, feet slipping. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.balance.png`** (template `rows/runner-p2.balance@4x.png`)
+> Pixel-art sprite strip. EXACTLY 3 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: teetering on a ledge, arms windmilling. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.spring.png`** (template `rows/runner-p2.spring@4x.png`)
+> Pixel-art sprite strip. EXACTLY 2 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: launched straight up: body straight, both arms raised. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.fall.png`** (template `rows/runner-p2.fall@4x.png`)
+> Pixel-art sprite strip. EXACTLY 2 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: falling: arms up, legs apart. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.hurt.png`** (template `rows/runner-p2.hurt@4x.png`)
+> Pixel-art sprite strip. EXACTLY 2 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: knocked backwards through the air, arms and legs thrown out. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.hang.png`** (template `rows/runner-p2.hang@4x.png`)
+> Pixel-art sprite strip. EXACTLY 4 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: hanging by both hands from a bar above, legs swinging forward and back. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.win.png`** (template `rows/runner-p2.win@4x.png`)
+> Pixel-art sprite strip. EXACTLY 4 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: victory: one fist punching up into the air, in 4 steps. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.dead.png`** (template `rows/runner-p2.dead@4x.png`)
+> Pixel-art sprite strip. EXACTLY 2 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: flung into the air, limbs spread. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.fly.png`** (template `rows/runner-p2.fly@4x.png`)
+> Pixel-art sprite strip. EXACTLY 4 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: FLYING: body tilted forward in the air, legs tucked, the three tails spinning together like a helicopter rotor behind and above the back (show the spin in 4 steps with motion blur). Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`runner-p2.tired.png`** (template `rows/runner-p2.tired@4x.png`)
+> Pixel-art sprite strip. EXACTLY 2 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: a short, stocky cartoon FOX body with NO HEAD, seen from the SIDE, facing RIGHT. Red-orange fur, a cream belly patch, THREE big bushy tails fanned out behind (exactly three, each with a cream tip), big white cartoon gloves, chunky teal-and-white high-top trainers with thick white soles. The neck ends in a small cream fur ruff. The body is only as tall as one head: short legs, round torso. Action: tired in the air: sinking, arms hanging, the three tails drooping and barely turning. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+### The rolling balls
+**`ball-p1.roll.png`** (template `rows/ball-p1.roll@4x.png`)
+> Pixel-art sprite strip. EXACTLY 8 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: the same blue-purple hedgehog curled into a tight round spiky ball, quills pointing outwards all round, a round EMPTY hole in the middle of the ball (the face goes there), yellow trainers tucked in. Action: spinning: each pose is the ball turned a further 45 degrees, with motion streaks. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`ball-p1.spindash.png`** (template `rows/ball-p1.spindash@4x.png`)
+> Pixel-art sprite strip. EXACTLY 6 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: the same blue-purple hedgehog curled into a tight round spiky ball, quills pointing outwards all round, a round EMPTY hole in the middle of the ball (the face goes there), yellow trainers tucked in. Action: spinning on the spot, squashed a little flat and wide, dust kicking out behind. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`ball-p2.roll.png`** (template `rows/ball-p2.roll@4x.png`)
+> Pixel-art sprite strip. EXACTLY 8 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: the same red-orange fox curled into a tight round ball with its three tails wrapped round it, a round EMPTY hole in the middle of the ball (the face goes there), teal trainers tucked in. Action: spinning: each pose is the ball turned a further 45 degrees, with motion streaks. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+**`ball-p2.spindash.png`** (template `rows/ball-p2.spindash@4x.png`)
+> Pixel-art sprite strip. EXACTLY 6 poses of the same character in ONE horizontal row, left to right, evenly spaced, all the same size, all standing on the same invisible ground line, not touching each other. Character: the same red-orange fox curled into a tight round ball with its three tails wrapped round it, a round EMPTY hole in the middle of the ball (the face goes there), teal trainers tucked in. Action: spinning on the spot, squashed a little flat and wide, dust kicking out behind. Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border. NO HEAD and NO FACE anywhere: the neck is empty.
+
+## Step 3: the logo
+**`logo.png`**
+> Game logo, the words "SEANIC THE HEDGEHOG" only. "SEANIC" in huge fat slanted cartoon letters, blue-purple with a white
+> highlight and a thick dark-blue outline, "THE HEDGEHOG" smaller underneath in yellow on a red ribbon. Speed lines and one
+> golden ring behind the letters. No character, no other words. Flat pure green background (#00FF00). Spell it exactly:
+> S-E-A-N-I-C.
+
+## Later batches (not yet: wait until the characters are approved)
+The rest of the game's art. Same style line, same green background, one picture per request, template from `templates/`
+(the `@4x` files). In these, "the runner" means Seanic or the fox.
+
+**Style line to paste with each:** Bright early-90s 16-bit console pixel art: chunky clean pixels, dark 1-pixel outline, 3-5 flat tones per colour, no blur, no gradients, no 3D look. Flat pure green background (#00FF00), no shadow on the ground, no text, no labels, no grid lines, no border.
+
+## C. Level objects
 - **`ring`** (16×16): a fat golden ring. **spin** 8: turning on its upright axis, one full turn (round → thin edge →
   round). **sparkle** 4: a small white-gold twinkle burst (ring collected).
 - **`spring`** (32×32, anchor bottom centre): a coiled spring on a metal base with a flat coloured plate on top.
@@ -117,7 +192,7 @@ motion streaks. Blue for p1, orange for p2.
 - **`bridge`** (32×16, repeats sideways): rope-bridge planks.
 - **`coconut`** (16×16): a coconut (thrown at you).
 
-## 4. Robots (our own designs: friendly-looking, toy-like, a little dumb)
+## D. Robots (our own designs: friendly-looking, toy-like, a little dumb)
 - **`charger`** (64×40, anchor at the wheels on the ground): a red armoured beetle-rhino robot on two wheels with a
   steel horn and big cartoon eyes. **roll** 4: trundling. **rev** 2: shaking, eyes angry, wheels spinning. **charge** 4:
   rushing forward, dust behind.
@@ -131,7 +206,7 @@ motion streaks. Blue for p1, orange for p2.
 - **`critter`** (24×24): little animals freed from robots, each hopping in 2 frames: **bird** (blue), **rabbit**
   (white), **squirrel** (brown).
 
-## 5. Jungle zone terrain, props and backdrop
+## E. Jungle zone terrain, props and backdrop
 - **`jungle-soil`** (64×64, opaque, repeats both ways): orange-brown earth in a soft checker pattern of two tones.
 - **`jungle-rock`** (64×64, opaque, repeats both ways): grey-brown stacked stone.
 - **`jungle-grass`** (64×32, repeats sideways): the grass edge that sits on top of the soil: lime blades and a darker
@@ -147,7 +222,7 @@ motion streaks. Blue for p1, orange for p2.
   - **`jungle-far`** (512×128): a wall of distant treetops, flat bottom edge.
   - **`jungle-near`** (512×160): big dark trunks, hanging leaves and vines, nearer and darker.
 
-## 6. Bosses and screens
+## F. Bosses and screens
 - **`miniboss`** (96×96, anchor centre): a hovering round robot pod with flame-thrower arms. The pilot's face goes in
   the blue circle behind a glass dome (leave it empty). **hover** 2, **attack** 4 (arms swing down and fire), **hit** 1
   (flashing white, rattled), **wreck** 3 (smoking, breaking up).

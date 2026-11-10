@@ -3,7 +3,7 @@
 - Slots, sizes, anchors, face spots: `src/data/sonic3Sprites.js` (`SHEETS`, `PICTURES`, `headOf`, `frameRect`).
 - Templates: `node tools/sonic3-templates.mjs` → `templates/<name>.png` (real size), `<name>@4x.png` (for Grok),
   `templates/rows/<sheet>.<row>@4x.png` (runner and ball, one row each).
-- Brief for Grok: `GROK-SPRITE-BRIEF.md` (original designs: headless runner bodies that wear the player's face).
+- Brief for Grok: `GROK-SPRITE-BRIEF.md` (our own designs: a blue-purple hedgehog and a red-orange three-tailed fox, headless bodies that wear the player's face; step 1 = one approved test picture each, then rows).
 - Files go in `assets/sonic3/<name>.png|webp`; the build embeds them as `s3:<name>`.
 
 Status (Nov 10): kit only. `render.js` still draws everything itself; the sprite path gets wired in when the first

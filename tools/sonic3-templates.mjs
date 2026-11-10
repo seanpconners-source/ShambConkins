@@ -22,7 +22,7 @@ await page.evaluate(src => {
   const e = {}; new Function('exports', src)(e); window.SP = e;
   const TAU = Math.PI * 2;
   // a plain mannequin for the runner rows, in frame px. Feet and hands are targets; the head circle stays empty.
-  window.mannequin = (g, def, row, f, n, head) => {
+  window.mannequin = (g, def, row, f, n, head, fox) => {
     const k = n > 1 ? f / n : 0, c = k * TAU, [fx, fy] = def.foot, hx = head.x, hy = head.y;
     let hip = [hx - 3, Math.min(hy + 24, fy - 5)], feet = [[-4, 0], [4, 0]], hands = [[-6, 9], [7, 9]], wheel = false, scarf = -1;
     const S = Math.sin, C = Math.cos;
@@ -40,9 +40,13 @@ await page.evaluate(src => {
     if (row === 'hang') feet = [[-3 + S(c) * 3, 0], [3 + S(c) * 3, -1]], hands = [[-2, -30], [3, -30]];
     if (row === 'win') hands = [[-6, 8], [8 - f, [4, -6, -14, -12][f]]];
     if (row === 'dead') feet = [[-8, -2], [8, -2]], hands = [[-11, -10], [11, -10]];
+    if (row === 'fly') feet = [[-6, -4], [2, -2]], hands = [[8, 4], [9, 8]], scarf = -1.4;
+    if (row === 'tired') feet = [[-3, -1], [3, 0]], hands = [[-5, 10], [6, 10]];
     const sh = [hx - 1, hy + 14];
     g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = g.fillStyle = '#46465a';
-    if (scarf) { g.lineWidth = 3; g.beginPath(); g.moveTo(sh[0] - 2, sh[1]); g.quadraticCurveTo(sh[0] + scarf * 8, sh[1] - 3 + S(c * 2) * 2, sh[0] + scarf * 15, sh[1] + 2 + C(c * 2) * 3); g.stroke(); }
+    if (scarf) { const d = Math.sign(scarf), m = Math.abs(scarf);
+      if (fox) { g.lineWidth = 6; for (let k = -1; k <= 1; k++) { const a = (row === 'fly' ? c * 2 + k * 2.1 : k * .45 + S(c * 2) * .15), L = 13 + m * 3; g.beginPath(); g.moveTo(hip[0] + d * 2, hip[1] - 2); g.quadraticCurveTo(hip[0] + d * L * .6, hip[1] - 4 + S(a) * 8, hip[0] + d * L * (row === 'fly' ? C(a) * .6 + .5 : 1), hip[1] - 2 + S(a) * (row === 'fly' ? 12 : 9)); g.stroke(); } }
+      else for (let k = 0; k < 4; k++) { const y0 = sh[1] - 2 + k * 5, L = 9 + m * 4 - k; g.beginPath(); g.moveTo(sh[0] + d * 2, y0 - 3); g.lineTo(sh[0] + d * (3 + L), y0 + 1 + k + S(c * 2 + k) * 1.5); g.lineTo(sh[0] + d * 2, y0 + 4); g.closePath(); g.fill(); } }
     g.lineWidth = 5;
     if (wheel) { g.lineWidth = 3; g.beginPath(); g.ellipse(fx, fy - 6, 11, 6, 0, 0, 7); g.stroke(); g.beginPath(); g.ellipse(fx, fy - 6, 5 + f % 2 * 2, 3, 0, 0, 7); g.stroke(); g.lineWidth = 5; }
     else for (const [dx, dy] of feet) { const tx = fx + dx, ty = fy + dy - 2, kx = (hip[0] + tx) / 2 + 3, ky = (hip[1] + ty) / 2; g.beginPath(); g.moveTo(hip[0], hip[1]); g.lineTo(kx, ky); g.lineTo(tx, ty); g.stroke(); g.beginPath(); g.ellipse(tx + 2, ty, 5, 2.6, 0, 0, 7); g.fill(); }
@@ -55,7 +59,7 @@ await page.evaluate(src => {
     x.fillStyle = (f + r) % 2 ? 'rgba(60,120,200,.10)' : 'rgba(60,120,200,.18)'; x.fillRect(X, Y, fw, fh);
     x.strokeStyle = 'rgba(20,50,120,.6)'; x.lineWidth = 1 / zoom; x.strokeRect(X + .5 / zoom, Y + .5 / zoom, fw - 1 / zoom, fh - 1 / zoom);
     const h = SP.headOf(name, row, f);
-    if (name.startsWith('runner')) { const o = document.createElement('canvas'); o.width = fw; o.height = fh; const g = o.getContext('2d'); mannequin(g, def, row, f, n, h);
+    if (name.startsWith('runner')) { const o = document.createElement('canvas'); o.width = fw; o.height = fh; const g = o.getContext('2d'); mannequin(g, def, row, f, n, h, name.endsWith('p2'));
       g.globalCompositeOperation = 'destination-out'; g.beginPath(); g.arc(h.x, h.y, def.headSize * .52, 0, 7); g.fill(); x.globalAlpha = .42; x.drawImage(o, X, Y); x.globalAlpha = 1; }
     if (name.startsWith('ball')) { x.strokeStyle = 'rgba(70,70,90,.45)'; x.lineWidth = 1.5; x.setLineDash([3, 2]); x.beginPath(); x.arc(X + def.foot[0], Y + def.foot[1], 15, 0, 7); x.stroke(); x.setLineDash([]); }
     x.fillStyle = 'rgba(220,30,30,.95)'; x.fillRect(X + def.foot[0] - 5, Y + Math.min(def.foot[1], fh - 1), 11, 1); x.fillRect(X + def.foot[0], Y + Math.min(def.foot[1], fh - 1) - 5, 1, 6);

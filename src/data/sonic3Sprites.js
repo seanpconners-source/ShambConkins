@@ -3,8 +3,8 @@
 // is optional: whatever is missing keeps the game's drawn stand-in art, so the art can arrive one sheet at a time.
 // Brief for Grok: docs/sonic3-sprites/GROK-SPRITE-BRIEF.md; technical page: docs/sonic3-sprites/README.md; templates
 // (grid, ground points, face circles and a faint pose guide in every frame): node tools/sonic3-templates.mjs.
-// The designs are our own (a tribute in feel, not copies of anyone's characters): the runners are headless bodies that
-// wear the player's face.
+// The designs are our own (a tribute in feel, not copies of anyone's characters): a blue-purple hedgehog and a
+// red-orange fox with three tails, both headless bodies that wear the player's face.
 //
 // SCALE: 1 sprite pixel = 1 world pixel (the Mega Drive's own size: the view is 224 px tall; a runner stands ~52 px
 // with the face on). Art may be drawn bigger (Grok): it is scaled down to these sizes on import.
@@ -16,13 +16,18 @@
 const TAU=Math.PI*2;
 const RF=[32,58],RH=[35,22];
 const SHEETS={
- // the runners (player 1 blue suit, player 2 `runner-p2` orange suit, same layout; if only p1 is in, both use it)
+ // the runners: player 1 = the blue-purple hedgehog, player 2 = the red-orange three-tailed fox (our own designs)
  'runner-p1':{frame:[64,64],foot:RF,head:RH,headSize:30,
   rows:{stand:1,wait:4,lookUp:2,crouch:2,walk:8,run:8,dash:4,skid:3,push:4,balance:3,spring:2,fall:2,hurt:2,hang:4,win:4,dead:2},
   headRows:{lookUp:[[35,21],[34,19]],crouch:[[36,30],[37,36]],run:[38,23],dash:[40,24],skid:[30,23],push:[38,24],balance:[[36,23],[39,25],[36,23]],
    spring:[32,20],fall:[33,21],hurt:[[28,24],[26,26]],hang:[32,26],win:[[35,22],[34,20],[33,19],[34,20]],dead:[[32,26],[32,30]]},
-  note:'headless body; the scarf streams behind'},
- 'runner-p2':{same:'runner-p1'},
+  note:'headless hedgehog body; the back quills stream behind'},
+ // player 2: the three-tailed fox: the same rows plus flying (tails whirling overhead-behind) and tired (sinking)
+ 'runner-p2':{frame:[64,64],foot:RF,head:RH,headSize:30,
+  rows:{stand:1,wait:4,lookUp:2,crouch:2,walk:8,run:8,dash:4,skid:3,push:4,balance:3,spring:2,fall:2,hurt:2,hang:4,win:4,dead:2,fly:4,tired:2},
+  headRows:{lookUp:[[35,21],[34,19]],crouch:[[36,30],[37,36]],run:[38,23],dash:[40,24],skid:[30,23],push:[38,24],balance:[[36,23],[39,25],[36,23]],
+   spring:[32,20],fall:[33,21],hurt:[[28,24],[26,26]],hang:[32,26],win:[[35,22],[34,20],[33,19],[34,20]],dead:[[32,26],[32,30]],fly:[36,24],tired:[36,27]},
+  note:'headless fox body with three bushy tails'},
  // curled up: jumping, rolling, spin dash (the face sits in the middle and turns with the ball in `roll`)
  'ball-p1':{frame:[48,48],foot:[24,24],head:[24,24],headSize:21,rows:{roll:8,spindash:6},
   headRows:{roll:Array.from({length:8},(_,f)=>[24,24,+(f/8*TAU).toFixed(2)])}},
@@ -83,6 +88,7 @@ const PICTURES={
  'jungle-near':{size:[512,160],anchor:[0,160],tile:'x',note:'near trunks and leaves, darker'},
  // screens
  'title-card':{size:[320,224],anchor:[0,0],note:'zone title card shapes, no words'},
+ logo:{size:[1100,520],anchor:[550,260],note:'SEANIC THE HEDGEHOG game logo'},
 };
 const sheetOf=n=>{const d=SHEETS[n];return d&&d.same?SHEETS[d.same]:d;};
 // the face spot of a frame: {x,y,rot} in frame px, or null when the row shows no face
