@@ -5,6 +5,7 @@
 // world px. The HUD is Sonic 3's SCORE / TIME / RINGS block. Everything is drawn with the camera (camera.js): world px
 // times cam.k, image smoothing off, so the chunks keep their hard pixel edges.
 const CH=256,M=12;
+const SP=require("src/data/sonic3Sprites.js");
 const hex=h=>{const n=parseInt(h.slice(1),16);return 0xff000000|(n&255)<<16|(n>>8&255)<<8|n>>16;};// ABGR for Uint32 ImageData
 const PAL={
  jungle:{grassHi:'#c8f070',grass:'#58c428',grass2:'#48b020',grassLo:'#1e6e18',soilA:'#c27a34',soilB:'#a6622a',soilLine:'#7a4218',
@@ -194,6 +195,7 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tai
  L.spin+=p.spindash?.9:(ball?(.25+Math.abs(p.ground?p.gsp:Math.hypot(p.xsp,p.ysp))*.07):0)*(p.ground?Math.sign(p.gsp)||f:f);L.cyc+=Math.max(.06,run*.045);L.idle=p.ground&&run<.05&&!p.crouch&&!p.lookUp?L.idle+1:0;
  x.save();x.globalAlpha*=alpha;
  if(p.inv>0&&!p.hurt&&(p.inv>>2)%2&&alpha===1)x.globalAlpha*=.3;
+ if(sprites())return;
  if(p.dead){x.translate(p.x,p.y);x.rotate(Math.min(p.dead*.05,1.4));head(x,i,0,-4,34,'sad');x.restore();return;}
  shieldUnder(x,p,t);
  if(ball){x.save();x.translate(p.x,p.y);x.rotate(L.spin);const r=13;
@@ -217,12 +219,14 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tai
  x.restore();
  // quills + head, not mirrored (faces stay readable)
  const hx=f*3+(skid?-f*4:0),hy=(p.crouch?-22:-36)+(p.lookUp?-2:0);x.fillStyle=BODY;x.strokeStyle=DARK;x.lineWidth=1.5;x.lineJoin='round';
- {const sw=Math.min(1,run/6),dir=skid?f:-f;x.lineJoin='round';
-  if(tails){const bx=hx-f*5,by=hy+26,spin=p.fly>0;for(let k=0;k<3;k++){const a=spin?t*(p.fly>1?26:7)+k*2.094:(k-1)*.5+Math.sin(t*5+k)*.12-sw*.25,L=20;
+ backOfHead(hx,hy,skid,true);
+ // quills (hedgehog) or ears (+ the three tails for the stand-in fox body) behind the face
+ function backOfHead(hx,hy,skid,withTails){const sw=Math.min(1,run/6),dir=skid?f:-f;x.fillStyle=BODY;x.strokeStyle=DARK;x.lineJoin='round';
+  if(tails&&withTails){const bx=hx-f*5,by=hy+26,spin=p.fly>0;for(let k=0;k<3;k++){const a=spin?t*(p.fly>1?26:7)+k*2.094:(k-1)*.5+Math.sin(t*5+k)*.12-sw*.25,L=20;
     const ex=bx+dir*L*(spin?Math.cos(a)*.9:Math.cos(a)),ey=by+(spin?-10+Math.sin(a)*5:Math.sin(a)*L*.8-4);
     x.strokeStyle=DARK;x.lineWidth=8.5;x.lineCap='round';x.beginPath();x.moveTo(bx,by);x.quadraticCurveTo((bx+ex)/2,(by+ey)/2-4,ex,ey);x.stroke();x.strokeStyle=BODY;x.lineWidth=6.5;x.stroke();
     x.fillStyle=SCARF;x.beginPath();x.arc(ex,ey,3.4,0,7);x.fill();}}
-  else{// the hedgehog's quills: a fan of five behind the head, sweeping back (they stream out with speed)
+  else if(!tails){// the hedgehog's quills: a fan of five behind the head, sweeping back (they stream out with speed)
    x.fillStyle=BODY;x.strokeStyle=DARK;x.lineWidth=1.4;for(let k=4;k>=0;k--){const a=-1.0+k*.48+Math.sin(t*15+k)*sw*.05,len=27+sw*6-Math.abs(k-1.5)*2.5,ca=Math.cos(a),sa=Math.sin(a);
     const bx=hx+dir*ca*8,by=hy+sa*8,px=-sa*7.5,py=ca*7.5;x.beginPath();x.moveTo(bx+dir*px*-1,by-py);x.lineTo(hx+dir*ca*len,hy+sa*len+sw*2);x.lineTo(bx+dir*px,by+py);x.closePath();x.fill();x.stroke();}}
   if(tails)for(const d of [-1,1]){const ex=hx+d*9-f*1,ey=hy-12;x.fillStyle=BODY;x.strokeStyle=DARK;x.lineWidth=1.3;x.beginPath();x.moveTo(ex-5,ey+3);x.lineTo(ex+d*2,ey-13);x.lineTo(ex+5,ey+3);x.closePath();x.fill();x.stroke();
@@ -231,6 +235,34 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tai
  x.restore();
  if(skid&&(t*30|0)%3===0){}// dust is an effect (game)
  shieldOver(x,p,t);
+ // the owner's sprite sheets (src/data/sonic3Sprites.js), when they are in: the body frame, then the face on its spot
+ function sprites(){const nm='runner-p'+(i+1),S=SP.sheet(nm),B=SP.sheet('ball-p'+(i+1));if(!S||!B)return false;
+  const frame=(Sh,row,fr,dx,dy)=>{const [fw,fh]=Sh.def.frame,ri=Object.keys(Sh.def.rows).indexOf(row),r=Sh.res;x.drawImage(Sh.img,fr*fw*r,ri*fh*r,fw*r,fh*r,dx,dy,fw,fh);};
+  const was=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;
+  if(ball&&!p.dead){shieldUnder(x,p,t);const row=p.spindash?'spindash':'roll',n=B.def.rows[row],TAU=Math.PI*2,fr=p.spindash?Math.floor(t*24)%n:Math.floor((((L.spin*f)%TAU)+TAU)%TAU/TAU*n)%n,[bw,bh]=B.def.frame;
+   x.save();x.translate(p.x,p.y);x.save();x.scale(f,1);frame(B,row,fr,-B.def.foot[0],-B.def.foot[1]);x.restore();x.rotate(p.spindash?0:L.spin);head(x,i,0,0,21,'angry');x.restore();
+   x.imageSmoothingEnabled=was;x.restore();shieldOver(x,p,t);return true;}
+  const N=r=>S.def.rows[r]||0,skid=p.ground&&run>1.5&&Math.sign(p.gsp)!==f&&!p.rolling;let row='stand',fr=0;const cyc=(r,v)=>{row=r;fr=Math.floor(v)%N(r);};
+  if(p.dead){row='dead';fr=p.dead>24?1:0;}
+  else if(p.hang)cyc('hang',t*6);
+  else if(p.fly>1&&N('fly'))cyc('fly',t*20);
+  else if(p.fly===1&&N('tired'))cyc('tired',t*5);
+  else if(p.hurt)cyc('hurt',t*7);
+  else if(p.spring){row='spring';fr=1;}
+  else if(!p.ground){if(p.ysp>1.5)cyc('fall',t*8);else cyc('walk',L.cyc*1.3);}
+  else if(p.crouch){row='crouch';fr=1;}
+  else if(skid)cyc('skid',t*10);
+  else if(run>=9.5)cyc('dash',t*24);
+  else if(run>=5.5)cyc('run',L.cyc*1.4);
+  else if(run<.05){if(p.lookUp){row='lookUp';fr=1;}else if(L.idle>180)cyc('wait',L.idle/14);}
+  else cyc('walk',L.cyc*1.3);
+  if(!p.dead)shieldUnder(x,p,t);
+  const [fx0,fy0]=S.def.foot,h=SP.spot(nm,row,fr)||{x:fx0,y:fy0-36};
+  x.translate(p.x,p.y);x.rotate(p.dead?0:p.ground?-p.ang:0);x.translate(0,19);
+  x.save();x.scale(f,1);frame(S,row,fr,-fx0,-fy0);x.restore();
+  const hx=(h.x-fx0)*f,hy=h.y-fy0;backOfHead(hx,hy,skid,false);
+  head(x,i,hx,hy,32,p.dead||p.hurt?'sad':skid?'angry':run>5?'happy':undefined);
+  x.imageSmoothingEnabled=was;x.restore();if(!p.dead)shieldOver(x,p,t);return true;}
  function legs(a,b){x.strokeStyle=BODY;x.lineWidth=5;x.lineCap='round';x.beginPath();x.moveTo(-2,-12);x.lineTo(-3+a*6,-2);x.moveTo(2,-12);x.lineTo(3+b*6,-2);x.stroke();shoe(-3+a*6,-1,0);shoe(3+b*6,-1,0);}
  function shoe(sx,sy,rot){x.save();x.translate(sx,sy);x.rotate(rot);x.fillStyle=SHOE;x.beginPath();x.ellipse(2,-1.5,6.5,3.6,0,0,7);x.fill();x.fillStyle='#fff';x.fillRect(-1,-4.5,3,4);x.fillStyle=SOLE;x.fillRect(-3,0,10,1.6);x.restore();}
  function body(l=0){x.save();x.rotate(l);x.fillStyle=BODY;x.beginPath();x.ellipse(0,-17,8.5,8,0,0,7);x.fill();x.fillStyle=SKIN;x.beginPath();x.ellipse(3,-16,4.2,5.4,0,0,7);x.fill();x.restore();}

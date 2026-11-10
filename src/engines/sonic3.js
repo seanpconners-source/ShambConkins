@@ -125,7 +125,7 @@ async function sonic3(s){
  // ---------------- tests
  s.debug={get state(){return {phase,frames,clock,turn,p,w,cam,score:[...score],tally};},
   set bot(f){dbg={...(dbg||{}),bot:f};},teleport(px,py){Object.assign(p,{x:px,y:py,xsp:0,ysp:0,gsp:0,ground:false});cam.snap(p);},skipCard(){card=100;phase='play';},
-  rings(n){p.rings=n;},chunks:()=>art?.cache.size||0};
+  rings(n){p.rings=n;},player(i){turns[turn]=i;p.canFly=i===1;},chunks:()=>art?.cache.size||0};
  if(!await startTurn(0))return;
  s.frame((dt,t)=>{if(!s.alive||phase==='idle'||phase==='done')return;
   const now=performance.now();acc+=Math.min(100,now-last);last=now;let n=0,res=null;

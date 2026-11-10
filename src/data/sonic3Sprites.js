@@ -93,6 +93,17 @@ const PICTURES={
  'ears-p2':{size:[72,72],anchor:[36,44],head:[36,44,30],note:'the fox: two ears and cheek fur around the face'},
  logo:{size:[1100,520],anchor:[550,260],note:'SEANIC THE HEDGEHOG game logo'},
 };
+// loading: the picture for 's3:<name>' once it is in and decoded, else null (the caller draws its stand-in meanwhile)
+let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
+let MEASURED={};try{MEASURED=require("src/data/sonic3Heads.js").HEADS||{};}catch{}
+const imgs=new Map();
+function picture(name){const url=USER['s3:'+name];if(!url||typeof Image==='undefined')return null;
+ let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;};e.img.src=url;imgs.set(name,e);}
+ return e.ok?e.img:null;}
+// {img,def,name,res,cols} for a sheet that is in (res = art pixels per frame pixel: sheets may be drawn bigger)
+function sheet(name){const def=sheetOf(name),img=def&&picture(name);if(!img)return null;const cols=Math.max(...Object.values(def.rows));return {img,def,name,cols,res:img.width/(cols*def.frame[0])};}
+// where the face goes in a frame: measured on the imported art when there is a measurement, else the template's spot
+function spot(name,row,f=0){const m=MEASURED[name]&&MEASURED[name][row];if(m&&m.length){const q=m[Math.min(f,m.length-1)];return {x:q[0],y:q[1],rot:q[2]||0};}return headOf(name,row,f);}
 const sheetOf=n=>{const d=SHEETS[n];return d&&d.same?SHEETS[d.same]:d;};
 // the face spot of a frame: {x,y,rot} in frame px, or null when the row shows no face
 function headOf(name,row,f=0){const d=sheetOf(name);if(!d||!d.head)return null;let h=d.head;
@@ -101,4 +112,4 @@ function headOf(name,row,f=0){const d=sheetOf(name);if(!d||!d.head)return null;l
 // where a frame sits on the sheet: [sx,sy,w,h]
 function frameRect(name,row,f=0){const d=sheetOf(name);if(!d)return null;const names=Object.keys(d.rows),r=names.indexOf(row);if(r<0)return null;
  return [Math.min(f,d.rows[row]-1)*d.frame[0],r*d.frame[1],d.frame[0],d.frame[1]];}
-Object.assign(exports,{SHEETS,PICTURES,sheetOf,headOf,frameRect});
+Object.assign(exports,{SHEETS,PICTURES,sheetOf,headOf,frameRect,picture,sheet,spot});
