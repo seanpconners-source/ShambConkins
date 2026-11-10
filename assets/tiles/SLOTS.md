@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 187 slots: 48 have key art, 47 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 187 slots: 51 have key art, 50 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -45,11 +45,11 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `neon-ball-storm` | Daft Punk · Neon Ball Storm | game | ✅ / ✅ |
 | `living-dead-horde` | Return of the Living Dead · Horde | game | ✅ / ✅ |
 | `paddys-hole` | Hole.it | game | ✅ / ✅ |
-| `radical-bike` | Radical Bike Trials | game | · / · |
+| `radical-bike` | Radical Bike Trials | game | ✅ / ✅ |
 | `flappy-disaster` | Flappy Disaster | game | · / · |
 | `wopr-grid` | WarGames · Vanishing Tic-Tac-Toe | game | · / · |
-| `sewer-clash` | Turtle Sewer Clash | game | · / · |
-| `derezzed-cycles` | TRON Legacy · Derezzed Light Cycles | game | · / · |
+| `sewer-clash` | Turtle Sewer Clash | game | ✅ / ✅ |
+| `derezzed-cycles` | TRON Legacy · Derezzed Light Cycles | game | ✅ / ✅ |
 | `brawndo-fruit-merge` | Brawndo Fruit Merge | game | · / · |
 | `home-alone-paint-can` | Paint Can Physics | game | · / · |
 | `league-penalties` | Penalty Kicks | game | · / · |

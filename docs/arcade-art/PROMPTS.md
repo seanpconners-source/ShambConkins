@@ -385,11 +385,11 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Radical Bike Trials · `radical-bike`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Radical Bike Trials", a minigame in a party video game that pays tribute to Trials. Scene: the most iconic moment of Radical Bike Trials. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Radical Bike Trials" (Trials tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -415,21 +415,21 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Turtle Sewer Clash · `sewer-clash`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Turtle Sewer Clash", a minigame in a party video game that pays tribute to Mario Bros.. Scene: Tmnt: both humans drag left/right from their first touch on their own half to run. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Turtle Sewer Clash" (Mario Bros. tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## TRON Legacy · Derezzed Light Cycles · `derezzed-cycles`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "TRON Legacy · Derezzed Light Cycles", a minigame in a party video game that pays tribute to TRON: Legacy. Scene: Tron light cycles, both at once: P1 swipes on the left half, P2 on the right. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "TRON Legacy · Derezzed Light Cycles" (TRON: Legacy tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
