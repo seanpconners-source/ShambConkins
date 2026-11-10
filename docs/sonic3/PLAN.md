@@ -18,10 +18,16 @@ tile-for-tile copy of the real zones) and our own art; the owner's own sound rip
   monitors (rings, shields: fire/bubble/lightning with their moves, speed shoes, invincibility, 1-up), starposts, the
   insta-shield, badniks, bumpers, breakable walls/floors, collapsing ledges, moving/falling/swinging platforms, vines and
   zip-lines, corkscrews, tunnels/tubes, water (later zones), and the end-of-act sign/capsule.
-- `camera.js`: the Mega Drive camera (horizontal lag box, vertical look up/down, follow speeds) scaled to the phone.
-- `render.js`: chunks of terrain pre-drawn into canvases (lazy), parallax layers, the player bodies with face heads.
-- `sonic3.js`: the game (acts, title cards, results tally with time/ring bonus, lives/continues, turns, online).
-  Takes over the ids `sonic-ring-rush` / `sonic-goal-dash` when Zone 1 is ready (old engine stays until then).
+- DONE `camera.js`: the Mega Drive camera (16 px box at x 144-160 of 320, air box ±32 round y 96, ground follow 6/16 px a
+  frame, look up 104 / down 88 after 2 s, spin dash lag from a position history, limits that move 2 px a frame), scaled
+  to the phone by k = min(H/224, W/320).
+- DONE (stand-in art) `render.js`: terrain painted pixel for pixel from the collision tiles into 256 px chunk canvases
+  (lazy, 2 per frame, LRU 72), parallax (sky, clouds, sea, far island, jungle), objects, effects, Sonic/Tails bodies with
+  the player's face, Sonic 3 HUD, lives box, title card, tally.
+- DONE (test area) `sonic3.js` + `testZone.js`: game id `sonic3-test` (Arcade, Sonic family, 1P kind 'game'): turns P1
+  Sonic then P2 Tails, score = badniks + tally (time bonus + 100 a ring). Test: `tests/sonic3.mjs`.
+  Still to come in the game: acts, lives/continues across acts, online, music. Takes over the ids `sonic-ring-rush` /
+  `sonic-goal-dash` when Zone 1 is ready (old engine stays until then).
 
 ## Zone 1 (jungle island, Sonic 3's first-zone style)
 - Act 1: ~2-3 minutes, three height bands (high fast route over the canopy, middle, low slower route with secrets),

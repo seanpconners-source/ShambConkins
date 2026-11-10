@@ -23,7 +23,7 @@ const FAMILIES=[
  ['smb','Super Mario Bros.','World 1, Coin Rush, Castle Dash, SMB3','mario',['smb-world-1','smb-coin-rush','smb-castle-dash','smb3-nspade','smb3-spade-slots']],
  ['kart','Mario Kart','Grand Prix, time trials, battle','bowser',['rainbow-road-kart','kart-grand-prix-pass','kart-time-trial','rainbow-balloon-battle']],
  ['castlevania','Castlevania','NES and Symphony of the Night','alucard',['cv-symphony','cv-vampire-killer','cv-candle-hunt']],
- ['sonic','Sonic the Hedgehog','Green Hill Zone',null,['sonic-ring-rush','sonic-goal-dash']],
+ ['sonic','Sonic the Hedgehog','Green Hill Zone',null,['sonic-ring-rush','sonic-goal-dash','sonic3-test']],
  ['doom','DOOM','DOOM and DOOM II',null,['doom','doom-2']],
  ['hangman','Hangman Unchained','Quick Draw, Showdown, Wanted','dj-django',['django-hangman','django-hangman-showdown','django-hangman-wanted']],
  ['invaders','Space Invaders','Solo, versus and co-op',null,['space-swarm','space-swarm-versus','space-swarm-coop']],
@@ -57,7 +57,7 @@ const ONE_TILE=new Set(['hangman','casino']);
 // Home, Favorites and All games are pills; every other category sits in one dropdown (MAIN_PILLS) so nothing scrolls.
 const CATEGORIES=[['featured','Home'],['favorites','Favorites'],['all','All games'],['action','Action'],['retro','Retro arcade'],['versus','Head to head'],['sports','Racing & sports'],['board','Board & cards'],['puzzle','Puzzle'],['party','Party'],['trivia','Trivia & shows'],['casino','Casino & dice'],['pinball','Pinball'],['coop','Co-op'],['boss','Bosses'],['pokemon','Pokémon'],['variants','Encounter variants']];
 const CAT_IDS={
- action:'broforce smb-world-1 smb-coin-rush smb-castle-dash cv-vampire-killer cv-candle-hunt cv-symphony sonic-ring-rush sonic-goal-dash doom doom-2 warriors-brawl bond-facility hyrule-rupee-rush hyrule-sword-duel tarantino-crazy88 tarantino-bounty kill-bill-duel living-dead-horde battle-royale-island raiders-ball-run',
+ action:'broforce smb-world-1 smb-coin-rush smb-castle-dash cv-vampire-killer cv-candle-hunt cv-symphony sonic-ring-rush sonic-goal-dash sonic3-test doom doom-2 warriors-brawl bond-facility hyrule-rupee-rush hyrule-sword-duel tarantino-crazy88 tarantino-bounty kill-bill-duel living-dead-horde battle-royale-island raiders-ball-run',
  retro:'frogger-heads pong-duel breakout-party asteroid-drift space-swarm space-swarm-versus space-swarm-coop snake-run pac-maze-duel moonraker-lander mars-missile-defense duck-hunt-turn crossy-chaos block-battle t800-scan-long driller-duel bubble-battle flappy-disaster paper-route banana-money-grab metal-gear-tank-duel derezzed-cycles snake-v-snake bomber-duel sewer-clash neon-ball-storm smb-world-1 cv-vampire-killer doom',
  sports:'rainbow-road-kart kart-grand-prix-pass kart-time-trial rainbow-balloon-battle fast-quarter-mile radical-bike major-league-bats major-league-fielding league-penalties baseketball-shootout color-of-money happy-gilmore-golf kingpin-bowling underdog-dodgeball fight-night wind-archery disc-duel rink-rivals office-hockey-shootout taskmaster-curling sp-dodgeball',
  board:'shamb-uno traitors-guess-who matrix-ultimate greed-island-mancala deadite-checkers ten-forward-chess office-dots-boxes wopr-grid trek-mini-chess strategema-grid four-lights battleship-fog clue-whodunit clue-lineup monopoly-speed-die monopoly-auction chutes-ladder-rush chutes-spinner-showdown candy-color-dash smb3-nspade full-shambyahtzee',

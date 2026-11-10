@@ -463,7 +463,11 @@
   "src/engines/sonicAudio.js",
   "src/engines/s3/terrain.js",
   "src/engines/s3/physics.js",
-  "src/engines/s3/objects.js"
+  "src/engines/s3/objects.js",
+  "src/engines/s3/camera.js",
+  "src/engines/s3/render.js",
+  "src/engines/s3/testZone.js",
+  "src/engines/sonic3.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }
