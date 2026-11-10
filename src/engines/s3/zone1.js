@@ -112,7 +112,10 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  o.push({type:'sign',x:18350,y:G-16});
  return o;}
 const decor=()=>[
- ...LEDGES.map(([x0,x1,y])=>({type:'land',x0,x1,y,x:x0,w:x1-x0,depth:x1-x0<120?36:52,front:true})),
+ // ledges come three ways: a floating chunk, a tower of rock down to the ground, or a long shelf on rock legs
+ ...LEDGES.flatMap(([x0,x1,y],k)=>{const w=x1-x0,ground=Math.max(gy(x0+8),gy((x0+x1)/2),gy(x1-8)),tall=ground-y,kind=w>=500?'legs':w>=280||k%2?'tower':'float';
+  if(kind==='float'||tall<60)return [{type:'land',x0,x1,y,x:x0,w,depth:w<120?36:52,front:true}];
+  return [{type:'cliff',x0,x1,y,y1:ground+6,x:x0,w,legs:kind==='legs'?(w>=900?4:3):0},{type:'land',x0,x1,y,x:x0,w,depth:kind==='legs'?30:18,front:true}];}),
  {type:'hollow',pts:tubePoly(TUBE1),box:[2280,LG-60,3930,LG+400]},{type:'hollow',pts:tubePoly(TUBE2),box:[9380,G-60,11260,G+340]},
  {type:'hollow',pts:tubePoly(TUBE3),box:[14640,G-60,15620,G]},{type:'hollow',pts:tubePoly(TUBE4),box:[15880,CH-60,16800,CH]},{type:'hollow',pts:rect(4498,P+70,4640,P+140),box:[4498,P+70,4640,P+140]},
  {type:'hollow',pts:rect(4498,LG,6600,LOW),box:[4498,LG,6600,LOW]},{type:'hollow',pts:rect(5350,LOW-2,5650,LOW+70),box:[5350,LOW-2,5650,LOW+70]},

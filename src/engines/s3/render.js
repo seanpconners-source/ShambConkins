@@ -86,6 +86,14 @@ class Backdrop{
 
 // ---------------- scenery (no collision): lakes behind the ground, waterfalls over cliff faces, palms
 function drawDecor(x,d,t){
+ // a cliff under a ledge, reaching the ground: darker checkered rock you walk in front of (drawn behind the terrain)
+ if(d.type==='cliff'){const col=(x0,x1)=>{x.save();x.beginPath();x.rect(x0,d.y+4,x1-x0,d.y1-d.y);x.clip();x.fillStyle='#9a5a26';x.fillRect(x0,d.y,x1-x0,d.y1-d.y+8);x.fillStyle='#7c4418';
+   for(let yy=Math.floor(d.y/32)*32;yy<d.y1+8;yy+=32)for(let xx=Math.floor(x0/32)*32+(((yy/32)&1)?32:0);xx<x1;xx+=64)x.fillRect(xx,yy,32,32);
+   const g=x.createLinearGradient(x0,0,x1,0);g.addColorStop(0,'rgba(30,12,2,.5)');g.addColorStop(.18,'rgba(30,12,2,0)');g.addColorStop(.82,'rgba(30,12,2,0)');g.addColorStop(1,'rgba(30,12,2,.55)');x.fillStyle=g;x.fillRect(x0,d.y,x1-x0,d.y1-d.y+8);
+   x.fillStyle='rgba(30,12,2,.45)';x.fillRect(x0,d.y+4,x1-x0,14);x.restore();x.strokeStyle='#2a1408';x.lineWidth=1.5;x.beginPath();x.moveTo(x0,d.y+4);x.lineTo(x0,d.y1);x.moveTo(x1,d.y+4);x.lineTo(x1,d.y1);x.stroke();};
+  if(d.legs){const n=d.legs,lw=Math.min(110,(d.x1-d.x0)/(n*1.6));for(let k=0;k<n;k++){const cx=d.x0+lw/2+6+(d.x1-d.x0-lw-12)*k/(n-1);col(cx-lw/2,cx+lw/2);}
+   x.fillStyle='#9a5a26';x.fillRect(d.x0+2,d.y+4,d.x1-d.x0-4,26);x.fillStyle='rgba(30,12,2,.4)';x.fillRect(d.x0+2,d.y+22,d.x1-d.x0-4,8);}
+  else col(d.x0+4,d.x1-4);return;}
  // a floating chunk of land under a ledge: checkered earth with a ragged underside and a grass cap
  if(d.type==='land'){const w=d.x1-d.x0,dep=d.depth||44,n=Math.max(2,Math.round(w/28));x.save();x.beginPath();x.moveTo(d.x0-2,d.y+2);x.lineTo(d.x1+2,d.y+2);x.lineTo(d.x1-3,d.y+dep*.55);
   for(let k=n;k>=0;k--){const xx=d.x0+4+(w-8)*k/n,lump=(k%2?dep:dep*.72)+((k*37)%9)-(Math.abs(k-n/2)/(n/2))*dep*.25;x.lineTo(xx,d.y+lump);}
