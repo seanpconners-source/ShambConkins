@@ -11,7 +11,7 @@ const SOLO_SKILL={easy:.35,normal:.65,hard:.9};
 const SOLO_IDS={
  'broforce':'levels','broforce-jungle':'levels','broforce-factory':'levels','broforce-city':'levels','broforce-desert':'levels',
  'smb-world-1':'levels','smb-coin-rush':'levels','smb-castle-dash':'levels',
- 'sonic-ring-rush':'levels','sonic-goal-dash':'levels','sonic3-test':'game',
+ 'sonic-ring-rush':'levels','sonic-goal-dash':'levels','sonic3-test':'game','sonic3-zone1':'game',
  'cv-vampire-killer':'levels','cv-candle-hunt':'levels','cv-symphony':'levels',
  'bricks-breaker-quest':'levels','doom':'levels','doom-2':'levels','paddys-hole':'levels','megatouch-photohunt':'levels',
  'kart-grand-prix-pass':'levels','kart-time-trial':'levels','rainbow-road-kart':'cpu',

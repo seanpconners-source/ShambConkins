@@ -1,0 +1,104 @@
+// ZONE 1, ACT 1 ("SHAMB ISLAND"): our own map, built like a classic first zone: plateaus with high ledges on top, roll
+// tunnels through them, a cave route underneath, lakes with bridges, waterfalls, three loops. Left to right:
+//   start       flat run, a hill, loop 1
+//   plateau 1   GROUND: straight into ROLL TUNNEL 1 (an S-tube through the plateau that bursts out of a waterfall)
+//               TOP: hop on the step and take the red spring: plateau top, spring up to two tiers of high ledges (1-up)
+//   lake 1      top: a log bridge; bottom: the lake bed the tunnel shoots you across
+//   plateau 2   TOP: starpost, robots, high ledges (speed shoes, fire shield), a zip line down the far slope
+//               CAVE: under it, steps, a spike dip, a wall with a star behind it; opens out of the hillside
+//   loop 2      then up to the waterfall gorge: three swing vines; the bottom has rings, spikes and a red spring out
+//   the hill    GROUND: ROLL TUNNEL 2 dives under the hill and back up; TOP (step + red spring): flyers, a high ledge,
+//               then a fast roll down the far slope
+//   finish      spikes and robots, spring-up ledges over loop 3, a log bridge with a crumbling middle over lake 2, the sign
+// Pure data: buildZone1Act1() gives the terrain (built once and reused) and a fresh list of objects for every run.
+const {Terrain,arc,ease}=require("src/engines/s3/terrain.js");
+const G=1500,W=14800,H=2400,R=112,BAND=24,TH=28;
+const LG=G+60,P=G-200,LOW=G+180,GF=G+500,HT=G-260,LB=G+300;// loop-1 ground, plateau tops, low ground, gorge floor, hill top, lake-2 bed
+const LOOPS=[[1900,LG],[7000,LOW],[12500,G]];
+const E=(x0,y0,x1,y1)=>ease(x0,y0,x1,y1).slice(1);
+const SURF=[[0,G],[700,G],...E(700,G,1000,G-120),[1250,G-120],...E(1250,G-120,1600,LG),[2300,LG],...E(2300,LG,2700,P),[3900,P],[3900,LOW],[4500,LOW],[4500,P],[6000,P],
+ ...E(6000,P,6600,LOW),[7400,LOW],...E(7400,LOW,7800,G),[8200,G],[8200,GF],[8900,GF],[8900,G],[9400,G],...E(9400,G,9800,HT),[10800,HT],...E(10800,HT,11200,G),
+ [13000,G],[13000,LB],[13500,LB],[13500,G],[W,G]];
+// the walking surface at x (the top surface: tunnels and the cave are under it)
+function gy(x){for(let i=1;i<SURF.length;i++){const a=SURF[i-1],b=SURF[i];if(x<=b[0]&&b[0]>a[0])return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0]);}return G;}
+// roll tunnels: centre lines (the tunnel is TH above and below)
+const TUBE1=[[2280,LG-TH],[2600,LG-TH],...E(2600,LG-TH,3000,LOW-TH-10),...E(3000,LOW-TH-10,3350,LG+20),...E(3350,LG+20,3700,LOW-TH),[3930,LOW-TH]];
+const TUBE2=[[9380,G-TH],[9750,G-TH],...E(9750,G-TH,10020,G+110),[10250,G+110],...E(10250,G+110,10550,G-TH),[11260,G-TH]];
+const tubeY=(L,x)=>{for(let i=1;i<L.length;i++){const a=L[i-1],b=L[i];if(x<=b[0])return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0]);}return L[L.length-1][1];};
+const tubePoly=L=>[...L.map(([x,y])=>[x,y-TH]),...L.slice().reverse().map(([x,y])=>[x,y+TH])];
+const rect=(x0,y0,x1,y1)=>[[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
+let terrain=null;
+function buildTerrain(){const T=new Terrain(W,H);
+ T.poly([...SURF,[W,H],[0,H]]);
+ T.poly(tubePoly(TUBE1),'all','cut');T.poly(tubePoly(TUBE2),'all','cut');
+ // the cave under plateau 2: steps up and down, a dip
+ T.poly(rect(4498,LG,6600,LOW),'all','cut');T.poly(rect(5350,LOW-2,5650,LOW+70),'all','cut');
+ T.poly(rect(4800,LOW-40,4960,LOW+2));T.poly(rect(4880,LOW-76,4960,LOW-38));T.poly(rect(5900,LOW-40,6060,LOW+2));
+ for(const [cx,fy] of LOOPS){const cy=fy-R;
+  T.poly([...arc(cx,cy,R+BAND,-Math.PI/2,Math.PI/2),...arc(cx,cy,R,Math.PI/2,-Math.PI/2)],'a');
+  T.poly([...arc(cx,cy,R+BAND,Math.PI/2,Math.PI*1.5),...arc(cx,cy,R,Math.PI*1.5,Math.PI/2)],'b');}
+ const ledge=(x0,x1,y)=>T.poly(rect(x0,y,x1,y+16),'top');
+ ledge(2180,2270,LG-70);ledge(9280,9370,G-70);// the steps with the red springs
+ ledge(2960,3400,P-220);ledge(3560,3860,P-400);// high ledges over plateau 1
+ ledge(3900,4500,P);// log bridge over lake 1
+ ledge(4800,5200,P-220);ledge(5450,5800,P-260);// high ledges over plateau 2
+ ledge(10000,10400,HT-220);// over the hill
+ ledge(11900,12200,G-220);ledge(12260,12740,G-440);// over loop 3
+ ledge(13000,13180,G);ledge(13320,13500,G);// log bridge over lake 2 (the middle crumbles)
+ return T.build();}
+const switchers=()=>LOOPS.flatMap(([cx,fy])=>{const cy=fy-R;return [{x:cx,y0:cy-R-60,y1:cy-R*.3,left:'b',right:'a'},{x:cx+R+70,y0:cy-R,y1:fy+40,left:'a',right:'a'},{x:cx-R-70,y0:cy-R,y1:fy+40,left:'a',right:'a'}];});
+function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,dx=24)=>{for(let k=0;k<n;k++)ring(x0+k*dx,y);};
+ const land=(x0,n,dx=32,up=24)=>{for(let k=0;k<n;k++)ring(x0+k*dx,gy(x0+k*dx)-up);};
+ const inTube=(L,x0,n,dx=40)=>{for(let k=0;k<n;k++)ring(x0+k*dx,tubeY(L,x0+k*dx)+6);};
+ const loopRings=(cx,fy)=>{for(let k=0;k<12;k++){const a=Math.PI/2+k/12*Math.PI*2;ring(cx+Math.cos(a)*(R-19),fy-R+Math.sin(a)*(R-19));}};
+ const mon=(x,y,item)=>o.push({type:'monitor',x,y:y-16,item}),bad=(kind,x,y,more)=>o.push({type:'badnik',kind,x,y,...more});
+ const spring=(x,y,dir,color)=>o.push({type:'spring',x,y:y-(dir==='up'?4:8),dir,color}),spikes=(x,y,w=64)=>o.push({type:'spikes',x,y:y-8,dir:'up',w,h:16});
+ const plat=(x,y,more)=>o.push({type:'platform',x,y,w:80,h:16,...more});
+ // ---- start, the hill, loop 1
+ row(260,G-24,6);bad('charger',620,G-14,{dir:-1});land(720,26,32);mon(1120,G-120,'rings');loopRings(1900,LG);row(2060,LG-24,4);
+ // ---- plateau 1, ground: roll tunnel 1
+ o.push({type:'tube',x:(2440+3900)/2,y:LG+40,w:3900-2440,h:300,dir:1,min:7});inTube(TUBE1,2480,34);
+ // ---- plateau 1, top
+ spring(2225,LG-70,'ur','red');row(2760,P-24,5,32);spring(2930,P,'up','yellow');bad('shooter',3120,P-14);bad('thrower',3500,P-60);row(3180,P-24,8,32);
+ row(2990,P-244,12,32);mon(3360,P-220,'lightning');plat(3480,P-300,{move:'v',range:70,period:200});row(3590,P-424,8,32);mon(3820,P-400,'life');
+ // ---- lake 1: bridge on top, lake bed below
+ row(3960,P-24,16,32);bad('flyer',4200,P-110,{w:12,h:12});row(3980,LOW-24,14,32);
+ // ---- plateau 2, top
+ o.push({type:'starpost',x:4600,y:P-24});spring(4760,P,'up','yellow');spikes(5300,P);bad('thrower',5560,P-60);bad('charger',5900,P-14,{dir:-1});row(5080,P-24,6,32);
+ row(4830,P-244,10,32);mon(5160,P-220,'shoes');plat(5320,P-240,{move:'h',range:60,period:220});row(5480,P-284,9,32);mon(5760,P-260,'fire');
+ o.push({type:'zipline',x0:6010,y0:P-40,x1:6690,y1:LOW-70});
+ // ---- plateau 2, cave
+ row(4540,LOW-24,8);mon(4920,LOW-76,'bubble');bad('charger',5150,LOW-14,{dir:1});row(5380,LOW+40,10,26);spikes(5500,LOW+70);
+ o.push({type:'wall',x:5760,y:LOW-32,w:32,h:64});mon(5840,LOW,'star');row(6090,LOW-24,10);
+ // ---- loop 2, uphill, the waterfall gorge
+ land(6030,16,32);loopRings(7000,LOW);row(7160,LOW-24,6);land(7420,12,32);mon(7900,G,'rings');bad('shooter',8060,G-14);
+ [8310,8550,8790].forEach((x,k)=>o.push({type:'vine',x,y:G-200,len:120,amp:.9,period:150,phase:k*50}));for(let k=0;k<3;k++)row(8280+k*240,G-150,3,30);
+ row(8260,GF-24,6);spikes(8440,GF);bad('charger',8580,GF-14,{dir:1});spikes(8700,GF);mon(8790,GF,'rings');spring(8884,GF,'up','red');
+ // ---- the hill, ground: roll tunnel 2
+ o.push({type:'starpost',x:9000,y:G-24});row(9060,G-24,6);
+ o.push({type:'tube',x:(9540+11080)/2,y:G+10,w:11080-9540,h:330,dir:1,min:7});inTube(TUBE2,9580,36);
+ // ---- the hill, top
+ spring(9325,G-70,'ur','red');row(9860,HT-24,4,32);spring(9970,HT,'up','yellow');bad('flyer',10180,HT-120,{w:12,h:12});bad('shooter',10500,HT-14);row(10560,HT-24,7,32);
+ row(10030,HT-244,11,32);mon(10360,HT-220,'lightning');land(10830,12,32);
+ // ---- the last stretch
+ row(11260,G-24,5);spikes(11480,G);bad('charger',11620,G-14,{dir:-1});bad('thrower',11760,G-60);
+ spring(11860,G,'up','yellow');row(11930,G-244,8,32);spring(12170,G-220,'up','yellow');row(12290,G-464,13,32);mon(12700,G-440,'life');bad('flyer',12050,G-330,{w:12,h:12});
+ loopRings(12500,G);row(12680,G-24,8);
+ // ---- lake 2: the bridge's middle crumbles; a red spring on the lake bed
+ [13215,13285].forEach(x=>o.push({type:'platform',x,y:G+8,w:70,h:16,move:'collapse'}));row(13030,G-24,18,26);
+ row(13080,LB-24,10);mon(13380,LB,'rings');spring(13484,LB,'up','red');
+ bad('charger',13800,G-14,{dir:-1});row(13900,G-24,8);
+ o.push({type:'sign',x:14300,y:G-16});
+ return o;}
+const decor=()=>[
+ {type:'hollow',pts:tubePoly(TUBE1),box:[2280,LG-60,3930,LOW+10]},{type:'hollow',pts:tubePoly(TUBE2),box:[9380,G-60,11260,G+140]},
+ {type:'hollow',pts:rect(4498,LG,6600,LOW),box:[4498,LG,6600,LOW]},{type:'hollow',pts:rect(5350,LOW-2,5650,LOW+70),box:[5350,LOW-2,5650,LOW+70]},
+ {type:'lake',x:3900,y:LG+20,w:600,h:LOW-LG-20},{type:'waterfall',x:3836,y:P,w:64,h:LOW-P,front:true},{type:'waterfall',x:4500,y:P,w:48,h:LG-P,front:true},
+ {type:'lake',x:8200,y:GF-90,w:700,h:90},{type:'waterfall',x:8136,y:G,w:64,h:GF-G,front:true},{type:'waterfall',x:8900,y:G,w:48,h:GF-G,front:true},
+ {type:'lake',x:13000,y:G+40,w:500,h:LB-G-40},{type:'waterfall',x:12952,y:G,w:48,h:LB-G,front:true},
+ ...[180,460,1080,1700,2800,3300,4700,5400,5900,7600,8050,9100,9900,10700,11400,13650,14000,14450].map(x=>({type:'palm',x,y:gy(x)+2}))];
+function buildZone1Act1(){if(!terrain)terrain=buildTerrain();
+ return {T:terrain,objs:objects(),switchers:switchers(),decor:decor(),start:{x:120,y:G-19},bounds:{x0:0,x1:14600,y0:0,y1:H-80},bottom:H-80,ref:G+40,zone:'SHAMB ISLAND',act:1,
+  marks:[[1900,'loop 1'],[2225,'step + spring: top route'],[3100,'roll tunnel 1 (inside the plateau)'],[4200,'lake 1 + bridge'],[5300,'high ledges / cave below'],[7000,'loop 2'],[8550,'waterfall gorge: vines'],
+   [9325,'step + spring: top'],[10200,'roll tunnel 2 (under the hill)'],[12500,'loop 3 + ledges'],[13250,'lake 2: crumbling bridge'],[14300,'sign']]};}
+Object.assign(exports,{buildZone1Act1,G,gy});

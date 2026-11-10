@@ -4,7 +4,8 @@
 // (Sonic Physics Guide): spring strengths, ring-loss circles, badnik bounce, invincibility frames, shield moves.
 // Kinds: ring, spring (up/down/left/right/ul/ur/dl/dr, yellow/red), spikes (up/down/left/right), monitor (rings, shoes,
 // star, life, fire/bubble/lightning shield, eggman), badniks (charger, thrower, shooter, flyer) + their shots, starpost,
-// wall (breakable), platform (still / moving / falling / collapsing ledge), vine (swing), zipline, sign (end of act).
+// wall (breakable), platform (still / moving / falling / collapsing ledge), vine (swing), zipline, tube (roll tunnel
+// zone), sign (end of act).
 const P=require("src/engines/s3/physics.js");
 const {C}=P;
 const SPRING={yellow:10,red:16};
@@ -54,6 +55,10 @@ function touch(o,p,w,i,inp){const b=box(p);
  case 'starpost':if(!o.lit&&hit(b,o,8,24)){o.lit=true;o.spin=60;p.check={x:o.x,y:o.y-24,rings:p.rings,time:w.frame};w.ev.push({k:'starpost',p:i,x:o.x,y:o.y});}return;
  case 'vine':if(!p.hang&&!p.dead&&!(p.grab>0)&&Math.hypot(p.x-o.hx,p.y-o.hy-16)<20){p.hang=o;o.who=p;p.ground=false;p.jumping=false;p.rolling=false;p.xsp=p.ysp=0;w.ev.push({k:'grab',p:i});}return;
  case 'zipline':if(!p.hang&&!p.dead&&!(p.grab>0)&&!o.who&&Math.hypot(p.x-o.hx,p.y-o.hy-20)<18){p.hang=o;o.who=p;o.v=Math.max(2,Math.abs(p.xsp||p.gsp));p.ground=false;p.jumping=false;p.rolling=false;w.ev.push({k:'grab',p:i});}return;
+ // roll tunnel: inside it the runner curls up and keeps rolling forward (Green Hill style S-tube)
+ case 'tube':if(Math.abs(p.x-o.x)<o.w/2&&Math.abs(p.y-o.y)<o.h/2&&p.ground&&!p.dead){const d=o.dir||1;
+   if(!p.rolling){p.rolling=true;p.y+=C.hr-C.hrRoll;p.crouch=false;p.spindash=false;w.ev.push({k:'roll',p:i});}
+   if(p.gsp*d<(o.min||6))p.gsp=(o.min||6)*d;p.facing=d;}return;
  case 'sign':if(!o.hit&&p.x>=o.x){o.hit=true;o.by=i;o.spin=150;w.ev.push({k:'sign',p:i,x:o.x,y:o.y});}return;
  case 'goal':if(!o.done&&p.x>=o.x){o.done=true;w.ev.push({k:'goal',p:i});}return;
  }}

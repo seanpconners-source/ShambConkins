@@ -15,6 +15,7 @@ const O=require("src/engines/s3/objects.js");
 const {Camera}=require("src/engines/s3/camera.js");
 const R=require("src/engines/s3/render.js");
 const {buildTestZone}=require("src/engines/s3/testZone.js");
+const {buildZone1Act1}=require("src/engines/s3/zone1.js");
 
 const STEP=1000/60,TIME_CAP=10*60*60,TALLY=60*4.2;
 // Sonic 3 time bonus by the clock at the sign
@@ -27,6 +28,7 @@ async function sonic3(s){
  S3.open();
  const head=(g,i,cx,cy,size,mood)=>s.sprite(g,i,cx,cy,size,{exact:true,mood,noBadge:true});
  const turns=s.solo?[0]:[0,1],score=[0,0],result=[null,null];
+ const zone1=s.game?.s3zone==='zone1',buildZone=zone1?buildZone1Act1:buildTestZone,LABEL=zone1?'Shamb Island Act 1':'Sonic 3 Test Zone';
  let turn=0,Z=null,w=null,p=null,cam=null,art=null,back=null,fx=null;
  let phase='idle',frames=0,clock=0,acc=0,last=0,card=0,endF=0,tally=null,overText='',dbg=null;
  // ---------------- input
@@ -58,11 +60,12 @@ async function sonic3(s){
   if(e.k==='die'){overText=p.lives<=0?'GAME OVER':'';}}}
  // ---------------- a turn
  async function startTurn(k){turn=k;const i=turns[k],nm=s.players[i].name;
-  const desc=s.solo?`Sonic 3 engine test: run the Test Zone. Loops, springs, shields, badniks, a zip line and a swing vine. Reach the sign: time bonus + 100 a ring.`
+  const desc=zone1&&s.solo?`Shamb Island Zone, Act 1. Roll tunnels, loops, high ledges, a cave, lakes and waterfalls. Reach the sign: time bonus + 100 a ring.`
+   :s.solo?`Sonic 3 engine test: run the Test Zone. Loops, springs, shields, badniks, a zip line and a swing vine. Reach the sign: time bonus + 100 a ring.`
    :k===0?`${nm} runs first as Sonic. Reach the sign at the end: badniks + time bonus + 100 a ring. Then ${s.players[1].name} runs it as Tails.`
    :`${nm}, you're Tails. Beat ${s.players[0].name}'s ${score[0].toLocaleString()} points.`;
   if(!await s.pass(i,desc,'Ready',{summary:k?`${s.players[0].name}: ${score[0].toLocaleString()}`:null}))return false;
-  Z=buildTestZone();w=new O.World(Z.T,Z.objs,{switchers:Z.switchers,bottom:Z.bottom});
+  Z=buildZone();w=new O.World(Z.T,Z.objs,{switchers:Z.switchers,bottom:Z.bottom});
   p=P.makeRunner(Z.start.x,Z.start.y);p.rings=0;p.lives=3;p.score=0;p.facing=1;
   cam=new Camera(Z.bounds);cam.resize(s.W,s.H);cam.snap(p);
   art=art||new R.TerrainArt(Z.T);back=back||new R.Backdrop();fx=new R.Fx();art.warm(cam);
@@ -72,9 +75,9 @@ async function sonic3(s){
  async function next(){endTurn();
   if(turn+1<turns.length){phase='idle';if(await startTurn(turn+1))return;return;}
   phase='done';const r0=result[0];
-  if(s.solo){soloFinish(s,score[0],r0.got?1:0,`Sonic 3 Test Zone: ${score[0].toLocaleString()} points${r0.got?` (through in ${R.fmtTime(r0.clock)})`:''}.`,r0.got);return;}
+  if(s.solo){soloFinish(s,score[0],r0.got?1:0,`${LABEL}: ${score[0].toLocaleString()} points${r0.got?` (through in ${R.fmtTime(r0.clock)})`:''}.`,r0.got);return;}
   const win=score[0]===score[1]?-1:score[0]>score[1]?0:1;if(win>=0)s.react(win,'win');
-  s.finish(score,`Sonic 3 Test Zone: ${s.players[0].name} ${score[0].toLocaleString()}, ${s.players[1].name} ${score[1].toLocaleString()}.`);}
+  s.finish(score,`${LABEL}: ${s.players[0].name} ${score[0].toLocaleString()}, ${s.players[1].name} ${score[1].toLocaleString()}.`);}
  // ---------------- one physics frame
  function stepFrame(){frames++;
   if(phase==='card'){card++;if(card>=100)phase='play';}
@@ -90,10 +93,11 @@ async function sonic3(s){
  // ---------------- drawing
  function draw(t){const W=s.W,H=s.H;if(cam.W!==W||cam.H!==H){cam.resize(W,H);cam.clampIn();}
   x.save();x.imageSmoothingEnabled=false;back.draw(x,cam,t,Z.start.y-cam.vh*96/224);
-  art.draw(x,cam,2);x.restore();
   const k=cam.k,cx=Math.round(cam.x*k)/k,cy=Math.round(cam.y*k)/k,v=cam.view(64);
+  const scenery=front=>{if(!Z.decor)return;x.save();x.scale(k,k);x.translate(-cx,-cy);for(const d of Z.decor)if(!!d.front===front&&(d.box?d.box[0]<v.x1&&d.box[2]>v.x0:d.x<v.x1+80&&d.x+(d.w||0)>v.x0-80))R.drawDecor(x,d,t);x.restore();};
+  scenery(false);art.draw(x,cam,2);scenery(true);x.restore();
   x.save();x.scale(k,k);x.translate(-cx,-cy);
-  for(const o of w.objs)if(!o.gone||o.type==='monitor'){const ox=o.x??o.x0,oy=o.y??o.y0;if(o.type!=='zipline'&&(ox<v.x0-80||ox>v.x1+80||oy<v.y0-140||oy>v.y1+140))continue;R.drawObject(x,o,t,{head,me:turns[turn]});}
+  for(const o of w.objs)if(!o.gone||o.type==='monitor'){const ox=o.x??o.x0,oy=o.y??o.y0;if(o.type==='tube')continue;if(o.type!=='zipline'&&(ox<v.x0-80||ox>v.x1+80||oy<v.y0-140||oy>v.y1+140))continue;R.drawObject(x,o,t,{head,me:turns[turn]});}
   for(const r of w.loose)if(r.x>v.x0&&r.x<v.x1)R.drawLoose(x,r,t);
   for(const sh of w.shots)R.drawShot(x,sh,t);
   R.drawRunner(x,p,turns[turn],t,head);

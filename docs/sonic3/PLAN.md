@@ -29,6 +29,17 @@ tile-for-tile copy of the real zones) and our own art; the owner's own sound rip
   Still to come in the game: acts, lives/continues across acts, online, music. Takes over the ids `sonic-ring-rush` /
   `sonic-goal-dash` when Zone 1 is ready (old engine stays until then).
 
+## Zone 1 status (Nov 10)
+- Act 1 DONE as a first playable: `src/engines/s3/zone1.js` (game id `sonic3-zone1`, "Shamb Island Zone"): 14600 px, two
+  roll tunnels (S-tubes: object `tube` forces a roll), three loops, plateaus with two tiers of spring-up ledges, a cave
+  route, three lakes with log bridges (one crumbles), waterfalls, a vine gorge, a zip line, two starposts. Scenery list
+  `decor` (lake / waterfall / palm / hollow = dark tunnel interior) drawn by `render.js drawDecor`.
+- Owner asked (Nov 10) for the first level to be modelled on a real Sonic level map he sent. We build the same KINDS of
+  set pieces in our own layout (the ground rule above), not a copy of that map.
+- Map preview: `node tools/s3-map.mjs` → `docs/sonic3/maps/zone1-act1.png`. Tests: `tests/s3-zone1.mjs` (Node bot, every
+  route reaches the sign; in test:core), `tests/sonic3-zone1.mjs` (browser, screenshots).
+- Next: owner's map review + playtest notes, mini-boss at the end, then Act 2.
+
 ## Zone 1 (jungle island, Sonic 3's first-zone style)
 - Act 1: ~2-3 minutes, three height bands (high fast route over the canopy, middle, low slower route with secrets),
   routes crossing at a few points, loops, swing vines, zip lines, breakable walls, springs, a mid-act starpost or two,
