@@ -105,7 +105,9 @@ function groundStep(p,inp,T){let [wr,hr]=radii(p);
 function airStep(p,inp,T){
  const S=st(p);
  // the second press in a jump: the shield's move, or the insta-shield without one (Sonic 3 & Knuckles)
- if(inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt&&p.star===0){p.ability=true;
+ // the fox (p.canFly): a second press with no shield starts flying: slow sink, hold jump to climb, 5.5 s then tired
+ if(p.canFly&&!p.shield&&inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt){p.ability=true;p.fly=330;p.jumping=false;p.rolling=false;p.y-=C.hr-C.hrRoll;p.ev.push('fly');}
+ else if(inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt&&p.star===0){p.ability=true;
   if(p.shield==='fire'){p.xsp=8*p.facing;p.ysp=0;p.ev.push('fire-dash');}
   else if(p.shield==='lightning'){p.ysp=-5.5;p.ev.push('lightning-jump');}
   else if(p.shield==='bubble'){p.xsp=0;p.ysp=8;p.bubble=true;p.ev.push('bubble-bounce');}
@@ -116,7 +118,9 @@ function airStep(p,inp,T){
   if(inp.l&&!p.airLock){if(p.xsp>-S.top)p.xsp=Math.max(-S.top,p.xsp-S.air);p.facing=-1;}
   if(p.ysp<0&&p.ysp>-4)p.xsp-=Math.trunc(p.xsp/0.125)/256;
   if(p.jumping&&!inp.jump&&p.ysp<-C.jmpRelease)p.ysp=-C.jmpRelease;}
- p.x+=p.xsp;p.y+=p.ysp;p.ysp=Math.min(C.maxFall,p.ysp+(p.hurt?0.1875:C.grv));
+ p.x+=p.xsp;p.y+=p.ysp;
+ if(p.fly>0&&!p.hurt){if(p.fly>1)p.fly--;p.xsp=Math.max(-4,Math.min(4,p.xsp));if(inp.jump&&p.fly>1){if(p.ysp>-1)p.ysp-=0.125;}else p.ysp=Math.min(p.fly>1?2:4,p.ysp+0.03125);}
+ else p.ysp=Math.min(C.maxFall,p.ysp+(p.hurt?0.1875:C.grv));
  const [wr,hr]=radii(p);
  // walls (push sensors at the middle)
  for(const dir of [-1,1]){if(dir<0&&p.xsp>0||dir>0&&p.xsp<0)continue;const d=sense(T,p.x,p.y,dir,0,p.path,false);
@@ -138,14 +142,14 @@ function land(p,ang){const deg=norm(ang)/D,a=deg>180?360-deg:deg;
  if(a<=23)p.gsp=p.xsp;
  else if(a<=45)p.gsp=Math.abs(p.xsp)>Math.abs(p.ysp)?p.xsp:p.ysp*0.5*-Math.sign(Math.sin(ang));
  else p.gsp=Math.abs(p.xsp)>Math.abs(p.ysp)?p.xsp:p.ysp*-Math.sign(Math.sin(ang));
- const wasBall=p.jumping||p.rolling;p.ang=ang;p.ground=true;p.jumping=false;p.lock=0;p.ability=false;p.spring=false;
+ const wasBall=p.jumping||p.rolling;p.fly=0;p.ang=ang;p.ground=true;p.jumping=false;p.lock=0;p.ability=false;p.spring=false;
  if(wasBall){p.rolling=false;p.y-=C.hr-C.hrRoll;}
  p.ev.push('land');}
 // bounce off a spring or anything else that throws you: vx/vy in screen px/frame
 function launch(p,vx,vy,{roll=false}={}){if(vx!==null&&vx!==undefined)p.xsp=vx;p.ysp=vy;
  if(!p.rolling&&roll&&p.ground)p.y+=C.hr-C.hrRoll;if(p.rolling&&!roll)p.y-=C.hr-C.hrRoll;
- p.ground=false;p.jumping=false;p.rolling=roll;p.spindash=false;p.crouch=false;p.onObj=null;p.ability=false;p.bubble=false;p.spring=!roll;}
+ p.fly=0;p.ground=false;p.jumping=false;p.rolling=roll;p.spindash=false;p.crouch=false;p.onObj=null;p.ability=false;p.bubble=false;p.spring=!roll;}
 // knocked back by a hit: away from the danger, up 4, no control until landing
 function knock(p,fromX){const dir=p.x<fromX?-1:1;if(p.rolling||p.jumping)p.y-=C.hr-C.hrRoll;p.xsp=2*dir;p.ysp=-4;p.ground=false;p.jumping=false;p.rolling=false;
- p.spindash=false;p.hurt=true;p.inv=120;p.onObj=null;p.bubble=false;p.ability=false;p.hang=null;}
+ p.fly=0;p.spindash=false;p.hurt=true;p.inv=120;p.onObj=null;p.bubble=false;p.ability=false;p.hang=null;}
 Object.assign(exports,{C,SHOES,step,makeRunner,modeOf,radii,sense,launch,land,knock,down});

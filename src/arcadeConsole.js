@@ -23,7 +23,7 @@ const FAMILIES=[
  ['smb','Super Mario Bros.','World 1, Coin Rush, Castle Dash, SMB3','mario',['smb-world-1','smb-coin-rush','smb-castle-dash','smb3-nspade','smb3-spade-slots']],
  ['kart','Mario Kart','Grand Prix, time trials, battle','bowser',['rainbow-road-kart','kart-grand-prix-pass','kart-time-trial','rainbow-balloon-battle']],
  ['castlevania','Castlevania','NES and Symphony of the Night','alucard',['cv-symphony','cv-vampire-killer','cv-candle-hunt']],
- ['sonic','Sonic the Hedgehog','Green Hill Zone',null,['sonic-ring-rush','sonic-goal-dash','sonic3-zone1','sonic3-test']],
+ ['sonic','Seanic the Hedgehog','Green Hill Zone',null,['sonic-ring-rush','sonic-goal-dash','sonic3-zone1','sonic3-test']],
  ['doom','DOOM','DOOM and DOOM II',null,['doom','doom-2']],
  ['hangman','Hangman Unchained','Quick Draw, Showdown, Wanted','dj-django',['django-hangman','django-hangman-showdown','django-hangman-wanted']],
  ['invaders','Space Invaders','Solo, versus and co-op',null,['space-swarm','space-swarm-versus','space-swarm-coop']],

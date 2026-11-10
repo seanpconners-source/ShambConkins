@@ -169,11 +169,11 @@ function drawLoose(x,r,t){if(r.animal){x.save();x.translate(r.x,r.y);const f=r.v
   x.fillStyle='#ff9a1a';x.fillRect(4,-1,3,2);x.fillStyle='#000';x.fillRect(1,-2,1,1);x.restore();return;}
  ringPath(x,r.x,r.y,7,t*12+r.vx,r.t>200&&(r.t>>2)%2?.3:1);}
 
-// ---------------- the runners (our own design, as in the sprite kit): a racing suit, gloves, trainers and a scarf that
-// streams behind; P1 blue, P2 orange, each wearing the player's face
+// ---------------- the runners (our own designs, as in the sprite kit): P1 a blue-purple hedgehog with a mane of back
+// quills, P2 a red-orange fox with three tails (they whirl when it flies), each wearing the player's face
 const looks=new WeakMap();
 function lookOf(p){let L=looks.get(p);if(!L){L={spin:0,cyc:0,idle:0,tw:0};looks.set(p,L);}return L;}
-function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tails?'#f29b1f':'#1d4fd0',DARK=tails?'#a85a08':'#0b2a8c',SKIN='#fff',ARM=BODY,SCARF=tails?'#fff0c8':'#8fd0ff',SHOE=tails?'#18a8a0':'#ffd428',SOLE=tails?'#0c6660':'#b08400';
+function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tails?'#f0541e':'#6a48e0',DARK=tails?'#96280a':'#32208c',SKIN=tails?'#fff0d0':'#cdbcff',ARM=BODY,SCARF=tails?'#fff0d0':'#8c70ff',SHOE=tails?'#18a8a0':'#ffd428',SOLE=tails?'#0c6660':'#b08400';
  const ball=p.rolling||p.jumping||p.spindash,sp=p.ground?p.gsp:p.xsp,run=Math.abs(sp),f=p.facing||1;
  L.spin+=p.spindash?.9:(ball?(.25+Math.abs(p.ground?p.gsp:Math.hypot(p.xsp,p.ysp))*.07):0)*(p.ground?Math.sign(p.gsp)||f:f);L.cyc+=Math.max(.06,run*.045);L.idle=p.ground&&run<.05&&!p.crouch&&!p.lookUp?L.idle+1:0;
  x.save();x.globalAlpha*=alpha;
@@ -181,8 +181,9 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tai
  if(p.dead){x.translate(p.x,p.y);x.rotate(Math.min(p.dead*.05,1.4));head(x,i,0,-4,34,'sad');x.restore();return;}
  shieldUnder(x,p,t);
  if(ball){x.save();x.translate(p.x,p.y);x.rotate(L.spin);const r=13;
-  x.fillStyle=DARK;x.beginPath();x.arc(0,0,r+2,0,7);x.fill();x.strokeStyle=SCARF;x.lineWidth=3;x.beginPath();x.arc(0,0,r+1,0,1.9);x.stroke();
-  x.fillStyle=tails?'#ffb444':'#3a78ff';x.beginPath();x.arc(0,0,r-1,0,7);x.fill();x.strokeStyle='rgba(255,255,255,.55)';x.lineWidth=2.4;x.beginPath();x.arc(0,0,r-4,.3,1.6);x.stroke();x.beginPath();x.arc(0,0,r-4,3.4,4.7);x.stroke();
+  x.fillStyle=DARK;x.beginPath();if(tails)x.arc(0,0,r+2,0,7);else for(let k=0;k<14;k++){const a=k*Math.PI/7,rr=k%2?r+1:r+5;x.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);}x.fill();
+  if(tails){x.strokeStyle=SCARF;x.lineWidth=3;for(let k=0;k<3;k++){x.beginPath();x.arc(0,0,r+1,k*2.1,k*2.1+.9);x.stroke();}}
+  x.fillStyle=tails?'#ff8a4a':'#8c70ff';x.beginPath();x.arc(0,0,r-1,0,7);x.fill();x.strokeStyle='rgba(255,255,255,.55)';x.lineWidth=2.4;x.beginPath();x.arc(0,0,r-4,.3,1.6);x.stroke();x.beginPath();x.arc(0,0,r-4,3.4,4.7);x.stroke();
   head(x,i,0,0,21,'angry');x.restore();
   if(p.spindash){x.fillStyle='rgba(255,255,255,.75)';for(let k=0;k<4;k++){x.beginPath();x.arc(p.x-f*(16+k*6),p.y+10-k*1.5+Math.sin(t*40+k)*1.5,2+k*.8,0,7);x.fill();}}
   x.restore();shieldOver(x,p,t);return;}
@@ -200,15 +201,20 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tai
  x.restore();
  // quills + head, not mirrored (faces stay readable)
  const hx=f*3+(skid?-f*4:0),hy=(p.crouch?-22:-36)+(p.lookUp?-2:0);x.fillStyle=BODY;x.strokeStyle=DARK;x.lineWidth=1.5;x.lineJoin='round';
- {const sw=Math.min(1,run/6),wv=Math.sin(t*14)*2.5*(.4+sw),len=12+sw*16,dir=skid?f:-f,sx0=hx-f*2,sy0=hy+13;x.strokeStyle=SCARF;x.lineWidth=5;x.lineCap='round';x.beginPath();x.moveTo(sx0,sy0);
-  x.quadraticCurveTo(sx0+dir*len*.5,sy0-2+wv,sx0+dir*len,sy0+3-sw*5-wv);x.stroke();x.strokeStyle=DARK;x.lineWidth=1.2;x.beginPath();x.moveTo(sx0+dir*len*.55,sy0-1+wv*.6);x.lineTo(sx0+dir*len*.8,sy0+1-sw*3);x.stroke();}
+ {const sw=Math.min(1,run/6),dir=skid?f:-f;x.lineJoin='round';
+  if(tails){const bx=hx-f*5,by=hy+26,spin=p.fly>0;for(let k=0;k<3;k++){const a=spin?t*(p.fly>1?26:7)+k*2.094:(k-1)*.5+Math.sin(t*5+k)*.12-sw*.25,L=20;
+    const ex=bx+dir*L*(spin?Math.cos(a)*.9:Math.cos(a)),ey=by+(spin?-10+Math.sin(a)*5:Math.sin(a)*L*.8-4);
+    x.strokeStyle=DARK;x.lineWidth=8.5;x.lineCap='round';x.beginPath();x.moveTo(bx,by);x.quadraticCurveTo((bx+ex)/2,(by+ey)/2-4,ex,ey);x.stroke();x.strokeStyle=BODY;x.lineWidth=6.5;x.stroke();
+    x.fillStyle=SCARF;x.beginPath();x.arc(ex,ey,3.4,0,7);x.fill();}}
+  else{x.fillStyle=BODY;x.strokeStyle=DARK;x.lineWidth=1.3;for(let k=4;k>=0;k--){const y0=hy+10+k*4.4,len=11+sw*7-k*1.2,wv=Math.sin(t*16+k)*sw*1.5;
+    x.beginPath();x.moveTo(hx+dir*1,y0-3.5);x.lineTo(hx+dir*(4+len),y0+1+k*1.2+wv);x.lineTo(hx+dir*1,y0+4);x.closePath();x.fill();x.stroke();}}}
  head(x,i,hx,hy+(p.lookUp?-1:0),32,p.hurt?'sad':skid?'angry':run>5?'happy':undefined);
  x.restore();
  if(skid&&(t*30|0)%3===0){}// dust is an effect (game)
  shieldOver(x,p,t);
  function legs(a,b){x.strokeStyle=BODY;x.lineWidth=5;x.lineCap='round';x.beginPath();x.moveTo(-2,-12);x.lineTo(-3+a*6,-2);x.moveTo(2,-12);x.lineTo(3+b*6,-2);x.stroke();shoe(-3+a*6,-1,0);shoe(3+b*6,-1,0);}
  function shoe(sx,sy,rot){x.save();x.translate(sx,sy);x.rotate(rot);x.fillStyle=SHOE;x.beginPath();x.ellipse(2,-1.5,6.5,3.6,0,0,7);x.fill();x.fillStyle='#fff';x.fillRect(-1,-4.5,3,4);x.fillStyle=SOLE;x.fillRect(-3,0,10,1.6);x.restore();}
- function body(l=0){x.save();x.rotate(l);x.fillStyle=BODY;x.beginPath();x.ellipse(0,-17,8.5,8,0,0,7);x.fill();x.fillStyle=SKIN;x.fillRect(-1.5,-24,3,14);x.restore();}
+ function body(l=0){x.save();x.rotate(l);x.fillStyle=BODY;x.beginPath();x.ellipse(0,-17,8.5,8,0,0,7);x.fill();x.fillStyle=SKIN;x.beginPath();x.ellipse(3,-16,4.2,5.4,0,0,7);x.fill();x.restore();}
  function arm(a,side){x.save();x.translate(side,-21);x.rotate(a);x.strokeStyle=ARM;x.lineWidth=3.2;x.lineCap='round';x.beginPath();x.moveTo(0,0);x.lineTo(5,8);x.stroke();glove(5.5,9);x.restore();}
  function glove(gx,gy){x.fillStyle='#fff';x.beginPath();x.arc(gx,gy,3.2,0,7);x.fill();x.strokeStyle='#aaa';x.lineWidth=.8;x.stroke();}
 }

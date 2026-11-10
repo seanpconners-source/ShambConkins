@@ -62,11 +62,11 @@ async function sonic3(s){
  async function startTurn(k){turn=k;const i=turns[k],nm=s.players[i].name;
   const desc=zone1&&s.solo?`Shamb Island Zone, Act 1. Roll tunnels, loops, high ledges, a cave, lakes and waterfalls. Reach the sign: time bonus + 100 a ring.`
    :s.solo?`Sonic 3 engine test: run the Test Zone. Loops, springs, shields, badniks, a zip line and a swing vine. Reach the sign: time bonus + 100 a ring.`
-   :k===0?`${nm} runs first as Sonic. Reach the sign at the end: badniks + time bonus + 100 a ring. Then ${s.players[1].name} runs it as Tails.`
-   :`${nm}, you're Tails. Beat ${s.players[0].name}'s ${score[0].toLocaleString()} points.`;
+   :k===0?`${nm} runs first as Seanic the hedgehog. Reach the sign at the end: badniks + time bonus + 100 a ring. Then ${s.players[1].name} runs it as the three-tailed fox, who can fly.`
+   :`${nm}, you're the fox: tap jump again in the air to fly, hold it to climb. Beat ${s.players[0].name}'s ${score[0].toLocaleString()} points.`;
   if(!await s.pass(i,desc,'Ready',{summary:k?`${s.players[0].name}: ${score[0].toLocaleString()}`:null}))return false;
   Z=buildZone();w=new O.World(Z.T,Z.objs,{switchers:Z.switchers,bottom:Z.bottom});
-  p=P.makeRunner(Z.start.x,Z.start.y);p.rings=0;p.lives=3;p.score=0;p.facing=1;
+  p=P.makeRunner(Z.start.x,Z.start.y);p.canFly=i===1;p.rings=0;p.lives=3;p.score=0;p.facing=1;
   cam=new Camera(Z.bounds);cam.resize(s.W,s.H);cam.snap(p);
   art=art||new R.TerrainArt(Z.T);back=back||new R.Backdrop();fx=new R.Fx();art.warm(cam);
   frames=0;clock=0;acc=0;last=performance.now();card=0;endF=0;tally=null;overText='';phase='card';return true;}

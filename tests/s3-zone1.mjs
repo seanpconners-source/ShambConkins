@@ -37,5 +37,8 @@ ok=run('cave',4540,G+161)&&ok;
 ok=run('gorge floor',8240,G+481)&&ok;
 ok=run('hill top',9860,G-279)&&ok;
 ok=run('lake 2 bed',13060,G+281)&&ok;
+ok=run('mesa shelf',14760,G-179)&&ok;
+ok=run('mesa top',15140,G-339)&&ok;
+ok=run('chasm floor',15640,G+41)&&ok;
 assert.ok(ok,'every route reaches the sign');
 console.log('zone 1 act 1 ok');
