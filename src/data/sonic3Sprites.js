@@ -21,7 +21,7 @@ const SHEETS={
   rows:{stand:1,wait:4,lookUp:2,crouch:2,walk:8,run:8,dash:4,skid:3,push:4,balance:3,spring:2,fall:2,hurt:2,hang:4,win:4,dead:2},
   headRows:{lookUp:[[35,21],[34,19]],crouch:[[36,30],[37,36]],run:[38,23],dash:[40,24],skid:[30,23],push:[38,24],balance:[[36,23],[39,25],[36,23]],
    spring:[32,20],fall:[33,21],hurt:[[28,24],[26,26]],hang:[32,26],win:[[35,22],[34,20],[33,19],[34,20]],dead:[[32,26],[32,30]]},
-  note:'headless hedgehog body; the back quills stream behind'},
+  note:'headless hedgehog body; the head quills are the separate picture quills-p1'},
  // player 2: the three-tailed fox: the same rows plus flying (tails whirling overhead-behind) and tired (sinking)
  'runner-p2':{frame:[64,64],foot:RF,head:RH,headSize:30,
   rows:{stand:1,wait:4,lookUp:2,crouch:2,walk:8,run:8,dash:4,skid:3,push:4,balance:3,spring:2,fall:2,hurt:2,hang:4,win:4,dead:2,fly:4,tired:2},
@@ -88,6 +88,9 @@ const PICTURES={
  'jungle-near':{size:[512,160],anchor:[0,160],tile:'x',note:'near trunks and leaves, darker'},
  // screens
  'title-card':{size:[320,224],anchor:[0,0],note:'zone title card shapes, no words'},
+ // head pieces, drawn BEHIND the player's face (centre + size of the face given by `head`); they turn with the head
+ 'quills-p1':{size:[96,72],anchor:[62,36],head:[62,36,30],note:'the hedgehog: big quills sweeping back from behind the face'},
+ 'ears-p2':{size:[72,72],anchor:[36,44],head:[36,44,30],note:'the fox: two ears and cheek fur around the face'},
  logo:{size:[1100,520],anchor:[550,260],note:'SEANIC THE HEDGEHOG game logo'},
 };
 const sheetOf=n=>{const d=SHEETS[n];return d&&d.same?SHEETS[d.same]:d;};

@@ -46,7 +46,7 @@ await page.evaluate(src => {
     g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = g.fillStyle = '#46465a';
     if (scarf) { const d = Math.sign(scarf), m = Math.abs(scarf);
       if (fox) { g.lineWidth = 6; for (let k = -1; k <= 1; k++) { const a = (row === 'fly' ? c * 2 + k * 2.1 : k * .45 + S(c * 2) * .15), L = 13 + m * 3; g.beginPath(); g.moveTo(hip[0] + d * 2, hip[1] - 2); g.quadraticCurveTo(hip[0] + d * L * .6, hip[1] - 4 + S(a) * 8, hip[0] + d * L * (row === 'fly' ? C(a) * .6 + .5 : 1), hip[1] - 2 + S(a) * (row === 'fly' ? 12 : 9)); g.stroke(); } }
-      else for (let k = 0; k < 4; k++) { const y0 = sh[1] - 2 + k * 5, L = 9 + m * 4 - k; g.beginPath(); g.moveTo(sh[0] + d * 2, y0 - 3); g.lineTo(sh[0] + d * (3 + L), y0 + 1 + k + S(c * 2 + k) * 1.5); g.lineTo(sh[0] + d * 2, y0 + 4); g.closePath(); g.fill(); } }
+      else for (let k = 0; k < 5; k++) { const a = -1 + k * .48, L = 25 + m * 3, ca = C(a), sa = S(a); g.beginPath(); g.moveTo(hx + d * ca * 8 + sa * 6 * d, hy + sa * 8 - ca * 6); g.lineTo(hx + d * ca * L, hy + sa * L); g.lineTo(hx + d * ca * 8 - sa * 6 * d, hy + sa * 8 + ca * 6); g.closePath(); g.fill(); } }
     g.lineWidth = 5;
     if (wheel) { g.lineWidth = 3; g.beginPath(); g.ellipse(fx, fy - 6, 11, 6, 0, 0, 7); g.stroke(); g.beginPath(); g.ellipse(fx, fy - 6, 5 + f % 2 * 2, 3, 0, 0, 7); g.stroke(); g.lineWidth = 5; }
     else for (const [dx, dy] of feet) { const tx = fx + dx, ty = fy + dy - 2, kx = (hip[0] + tx) / 2 + 3, ky = (hip[1] + ty) / 2; g.beginPath(); g.moveTo(hip[0], hip[1]); g.lineTo(kx, ky); g.lineTo(tx, ty); g.stroke(); g.beginPath(); g.ellipse(tx + 2, ty, 5, 2.6, 0, 0, 7); g.fill(); }
@@ -94,6 +94,7 @@ for (const name of await page.evaluate(() => Object.keys(SP.PICTURES))) {
     const small = W < 48, fs = small ? 3 : W < 128 ? 5 : 8; x.font = fs + 'px monospace';
     if (ay > 0 && ay < H) { x.strokeStyle = 'rgba(220,30,30,.9)'; x.beginPath(); x.moveTo(0, ay); x.lineTo(W, ay); x.stroke(); }
     x.fillStyle = 'rgba(220,30,30,.95)'; const cy = Math.min(H - 1, ay); x.fillRect(Math.max(0, ax - 4), cy, 9, 1); x.fillRect(Math.min(W - 1, ax), Math.max(0, cy - 4), 1, 5);
+    if (p.head) { x.strokeStyle = 'rgba(30,90,240,.95)'; x.lineWidth = 1.2; x.beginPath(); x.arc(p.head[0], p.head[1], p.head[2] / 2, 0, 7); x.stroke(); x.fillStyle = 'rgba(30,90,240,.9)'; x.font = '4px monospace'; x.fillText('FACE', p.head[0] - 5, p.head[1] + 1); x.font = fs + 'px monospace'; }
     x.fillStyle = 'rgba(10,20,50,.9)'; let ty = fs + 1; const line = t => { x.fillText(t, 2, ty); ty += fs + 1; };
     line(`${name} ${W}x${H}`); if (p.tile) line(p.tile === 'x' ? '<-> repeats sideways' : 'repeats both ways'); if (p.opaque) line('opaque');
     if (p.note && !small) { const words = p.note.split(' '); let l = ''; for (const w of words) { if (x.measureText(l + ' ' + w).width > W - 6 && l) { line(l); l = w; } else l = l ? l + ' ' + w : w; } if (l) line(l); }

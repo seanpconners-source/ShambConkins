@@ -206,8 +206,11 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tai
     const ex=bx+dir*L*(spin?Math.cos(a)*.9:Math.cos(a)),ey=by+(spin?-10+Math.sin(a)*5:Math.sin(a)*L*.8-4);
     x.strokeStyle=DARK;x.lineWidth=8.5;x.lineCap='round';x.beginPath();x.moveTo(bx,by);x.quadraticCurveTo((bx+ex)/2,(by+ey)/2-4,ex,ey);x.stroke();x.strokeStyle=BODY;x.lineWidth=6.5;x.stroke();
     x.fillStyle=SCARF;x.beginPath();x.arc(ex,ey,3.4,0,7);x.fill();}}
-  else{x.fillStyle=BODY;x.strokeStyle=DARK;x.lineWidth=1.3;for(let k=4;k>=0;k--){const y0=hy+10+k*4.4,len=11+sw*7-k*1.2,wv=Math.sin(t*16+k)*sw*1.5;
-    x.beginPath();x.moveTo(hx+dir*1,y0-3.5);x.lineTo(hx+dir*(4+len),y0+1+k*1.2+wv);x.lineTo(hx+dir*1,y0+4);x.closePath();x.fill();x.stroke();}}}
+  else{// the hedgehog's quills: a fan of five behind the head, sweeping back (they stream out with speed)
+   x.fillStyle=BODY;x.strokeStyle=DARK;x.lineWidth=1.4;for(let k=4;k>=0;k--){const a=-1.0+k*.48+Math.sin(t*15+k)*sw*.05,len=27+sw*6-Math.abs(k-1.5)*2.5,ca=Math.cos(a),sa=Math.sin(a);
+    const bx=hx+dir*ca*8,by=hy+sa*8,px=-sa*7.5,py=ca*7.5;x.beginPath();x.moveTo(bx+dir*px*-1,by-py);x.lineTo(hx+dir*ca*len,hy+sa*len+sw*2);x.lineTo(bx+dir*px,by+py);x.closePath();x.fill();x.stroke();}}
+  if(tails)for(const d of [-1,1]){const ex=hx+d*9-f*1,ey=hy-12;x.fillStyle=BODY;x.strokeStyle=DARK;x.lineWidth=1.3;x.beginPath();x.moveTo(ex-5,ey+3);x.lineTo(ex+d*2,ey-13);x.lineTo(ex+5,ey+3);x.closePath();x.fill();x.stroke();
+   x.fillStyle=SCARF;x.beginPath();x.moveTo(ex-2,ey+2);x.lineTo(ex+d*1.5,ey-8);x.lineTo(ex+2.5,ey+2);x.closePath();x.fill();}}
  head(x,i,hx,hy+(p.lookUp?-1:0),32,p.hurt?'sad':skid?'angry':run>5?'happy':undefined);
  x.restore();
  if(skid&&(t*30|0)%3===0){}// dust is an effect (game)
