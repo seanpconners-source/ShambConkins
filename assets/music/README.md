@@ -65,3 +65,34 @@ Catacombs = Rainbow Cemetery; Marble Gallery pit = The Door to the Abyss; invert
 (Hippogryph, Olrox), Enchanted Banquet (Succubus), Blood Relations (Richter), Black Banquet (final battle); videos = Metamorphosis 2
 (inverted castle), Metamorphosis 3 (the castle falls); end credits = I Am the Wind. Nocturne isn't used in the game; the lists give
 no place for Door of Holy Spirits or Silence.
+
+## Sonic 3 & Knuckles sound effects (`s3k-sfx-*.wav`, owner's rips, Nov 10 2026)
+
+Mr Lange's rip set (44.1 kHz stereo 16-bit, Gens HQ YM2612), numbered by the game's sound test (`S3K_<id>.wav`).
+Names come from the sound IDs in the game's sound driver, checked against each file's length/pitch (jump rises
+340→1080 Hz in .4 s, spin dash rises 6.8→12.6 kHz, spring boings 260→1040 Hz, rings 33/34 identical...).
+Copied byte for byte; played by `src/engines/sonicAudio.js`. Downloaded the first time Sonic opens (pwa.js LATER).
+In the game: 33 ring-right, 34 ring-left, 35 hurt (also death), 36 skid, 37 spike, 38 bubble, 39 splash, 3A shield,
+3B drown, 3C roll, 3D break, 3E fire-shield, 3F bubble-shield, 41 lightning-shield, 42 insta-shield, 43 fire-dash,
+44 bubble-bounce, 45 lightning-jump, 48 blast, 4E boss-explode, 59 collapse, 5B switch, 5F crash, 62 jump,
+63 starpost, 6E boss-hit, A9 air-ding, AA bumper, AB spindash, AC continue, B0 register (tally), B1 spring,
+B3 big-ring, B4 explode (badnik/monitor), B6 dash (spin dash release), B8 signpost, B9 ring-loss.
+Not copied yet (owner's zip, for later zones): 40 shield (unused), 46 whistle, 47 sand wall, 49 thump, 4A grab,
+4B waterfall, 4C glide land, 4D projectile, 4F flamethrower, 50 boss activate, 51 missile throw, 52 spike move,
+53 charging, 54 boss laser, 55 conveyor, 56 flip bridge, 57 geyser, 58 fan latch, 5A charge, 5C mecha spark,
+5D floor thump, 5E laser, 60 boss zoom, 61 boss hit floor, 64 pulley grab, 65 blue sphere, 66 all spheres,
+67 level projectile, 68 perfect, 69 push block, 6A goal, 6B action block, 6C splash 2, 6D shift, 6F rumble,
+70 lava ball, 71 shield (same as 3A), 72 hover pad, 73 transporter, 74 tunnel booster, 75 balloon platform,
+76 trap door, 77 balloon, 78 gravity machine, 79 lightning, 7A boss magma, 7B small bumpers, 7C chain tension,
+7D pump, 7E ground slide, 7F frost puff, 80 ice spikes, 81 tube launcher, 82 sand splash, 83 bridge collapse,
+84/85 power up/down, 86 alarm, 87 mushroom bounce, 88 pulley move, 89 weather machine, 8A bouncy, 8B chop tree,
+8C chop stuck, 8D flutter, 8E revving, 8F/90/91 door open/move/close, 92 ghost appear, 93 boss recovery, 94 chain
+tick, 95 boss hand, 96 mecha land, 97 enemy breath, 98 boss projectile, 99 plink, 9A spring latch, 9B thump boss,
+9C super emerald, 9D targeting, 9E clank, 9F super transform, A0 missile shoot, A1 ominous, A2 floor launcher,
+A3 gravity lift, A4 mecha transform, A5 rise, A6 launch grab, A7 launch ready, A8 energy zap, AD launch go,
+AE flipper, AF enter special stage, B2 error, B5 diamonds, B7 slot machine, BA/BB Tails flying/tired,
+BC-DB looping sounds (each with a `_sus` long version in the zip's sustain folder): slide skid, large ship, Eggman
+siren, boss rotate, fans, flamethrower, gravity tunnel, boss panic, spin, wave hover, cannon turn, spike balls,
+light tunnel, rumbles, Death Egg rise, wind, rising, gumball tab, turbine hum, lava fall, zap, conveyor platform,
+saw, magnetic spike, leaf blower, water skid. The IDs past the main ones are from memory of the driver's list:
+check by ear before using one.

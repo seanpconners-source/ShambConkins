@@ -459,7 +459,8 @@
   "src/data/sotnSprites.js",
   "src/chat.js",
   "src/data/chatLines.js",
-  "src/engines/smbAudio.js"
+  "src/engines/smbAudio.js",
+  "src/engines/sonicAudio.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

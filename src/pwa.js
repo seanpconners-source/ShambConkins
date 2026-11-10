@@ -37,7 +37,7 @@ const APP_FILES=/*@@APP_FILES@@*/null;
 // (wantAllFiles). Keys by the games that use them; every other file (portraits, items, Arcade art) still comes at install.
 // Played offline before its files are in, a game is silent and uses its drawn art. A new game with its own big art or
 // sounds gets a line here.
-const LATER={'music:bhpin-':['bucketheadland-pinball'],'music:kgpin-':['king-gizzard-pinball'],'music:bspin-':['black-sabbath-pinball'],'music:thps-':['greed-island-mancala'],'music:sotn-':['cv-symphony'],'music:cv-symphony-':['cv-symphony'],'music:smb-':['smb-world-1','smb-coin-rush','smb-castle-dash'],
+const LATER={'music:bhpin-':['bucketheadland-pinball'],'music:kgpin-':['king-gizzard-pinball'],'music:bspin-':['black-sabbath-pinball'],'music:thps-':['greed-island-mancala'],'music:sotn-':['cv-symphony'],'music:cv-symphony-':['cv-symphony'],'music:smb-':['smb-world-1','smb-coin-rush','smb-castle-dash'],'music:s3k-':['sonic-ring-rush','sonic-goal-dash'],
  'music:sunset-':['django-hangman','django-hangman-showdown','django-hangman-wanted','sundown-showdown'],'doom:':['doom','doom-2'],
  // each game's own pictures (owner, Nov 6: lots more art and sounds coming): fetched the first time that game starts
  'photohunt:':['megatouch-photohunt'],'pinball:buckethead:':['bucketheadland-pinball'],'pinball:black-sabbath:':['black-sabbath-pinball'],

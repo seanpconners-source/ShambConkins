@@ -17,6 +17,7 @@ const {soloFinish,soloProgress}=require("src/solo.js");
 const {Fx,arenaKeys,arenaTouch,snd,noise,jingle,outlined,rr,FONT,PCOL,Countdown,settle,reduced}=require("src/engines/arenaKit.js");
 const {netField}=require("src/engines/netField.js");
 const {partnerArrow}=require("src/engines/partnerArrow.js");
+const S3=require("src/engines/sonicAudio.js");
 
 const STEP=1/60;
 const P={acc:.046875,dec:.5,frc:.046875,top:6,air:.09375,grv:.21875,jump:6.5,slp:.125,slpUp:.078125,slpDown:.3125,rollFrc:.0234375,rollDec:.125,maxFall:16};
@@ -133,8 +134,8 @@ async function sonic(s){
   if(st){const dx=st.x-st.sx,dy=st.y-st.sy;if(dx>11)r=1;if(dx<-11)l=1;if(dy>20)d=1;if(st.data.flick)jump=1;}
   if(pads[i].jump)jump=1;inp.l=l;inp.r=r;inp.d=d;inp.jump=jump;if(bot&&i===me)botInput(inp);};
 
- // ---------------- sounds
- const sfx={
+ // ---------------- sounds: the owner's Sonic 3 & Knuckles rips (sonicAudio.js), these synth sounds until a file is in
+ const syn={
   ring:p=>{snd(1568,.05,{type:'square',vol:.025});snd(2093,.16,{type:'square',vol:.022,delay:.05});},
   jump:()=>snd(330,.14,{type:'square',vol:.03,to:1000}),
   rev:r=>snd(420+r*70,.14,{type:'sawtooth',vol:.025,to:1300+r*60}),
@@ -155,6 +156,11 @@ async function sonic(s){
   alarm:()=>jingle([880,660,880,660],{step:.14,type:'square',vol:.025,dur:.12}),
   capsule:()=>{noise(.2,{vol:.06,freq:1200});jingle([523,659,784,1047,1319,1568],{step:.07,type:'square',vol:.03});}
  };
+
+ S3.open();
+ const S3K={ring:()=>S3.ring(),rev:r=>S3.rev(r),jump:'jump',dash:'dash',roll:'roll',spring:'spring',pop:'explode',hurt:'ring-loss',
+  monitor:'explode',lamp:'starpost',skid:'skid',die:'hurt',sign:'signpost',shield:'shield',bossHit:'boss-hit',boom:'boss-explode'};
+ const sfx={};for(const k of Object.keys(syn)){const m=S3K[k];sfx[k]=(...a)=>{const ok=typeof m==='function'?m(...a):m?S3.play(m):false;if(!ok)syn[k](...a);};}
 
  // ---------------- physics helpers
  const topSpeed=p=>p.shoes>0?12:P.top,accel=p=>p.shoes>0?P.acc*2:P.acc;
