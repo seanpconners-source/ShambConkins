@@ -19,6 +19,89 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   layouts, art and sounds, not a copy of the original's levels/mazes/music.
 
 ## Inbox (unsorted new notes)
+### Owner's notes, Nov 10 2026 (all `[todo]` unless tagged; "ASK" = waiting for the owner's answer)
+
+**Bugs first**
+- **R1** `[bug]` Uno vs CPU: "It was my turn and CPU won", and the same hand is dealt over and over. Also wanted: more animations, clearer progress (whose turn, cards left), table music.
+- **R2** `[bug]` Drag race: the owner beats the CPU every time but the game says the CPU wins. Game also "sucks, could be fun": rework after the fix.
+- **R3** `[bug]` Chutes and Ladders: the CPU doesn't play. Board is lame: make it look awesome.
+- **R4** `[bug]` 🎲 Random must pick from ALL games, not from the current category.
+- **R5** `[bug]` Tony Hawk's Pro Mancala intro: very low frame rate on PC (installed app from Edge).
+- **R6** `[bug]` Baseball: a caught ball doesn't register until it's thrown to first; a ball the CPU didn't field became a home run instead of a single; on a home run the fielder runs to the wall and nothing happens.
+- **R7** `[bug]` SotN: fence sprites disappear in the intro part, then come back.
+
+**Arcade and menus**
+- **R8** Game groups everywhere, not just Home: like games are one tile on every shelf (tic-tac-toes, board games, retro games, trivia game shows...), then picked on their sub-menu.
+- **R9** The version sub-menu looks like the main Arcade screen: background on display, logo at the top, version tiles along the bottom; no scrolling, scales to the screen. No "x2 / x3" badges on tiles.
+- **R10** Online must not jump to the Arcade: stay on the home screen so New Game, Arcade etc. can be picked.
+- **R11** High scores: tell the player clearly when they set a high score; a high-score list on the main (or Arcade) screen.
+- **R12** `[idea]` Collection screen "isn't mainly the characters". ASK what it should lead with.
+- **R13** Search bar on character select.
+- **R14** Game logos must not be pulled from online (slow, look bad): revise them all to built-in art.
+- **R15** `[verify]` Recent games at the front of the Featured shelf, no separate Recent (done in v0.88.7). The note about the View all button was cut off: ASK.
+
+**Unlocks**
+- **R16** Character unlocks are far too frequent. Keep them, but make them mean something: a high score, a game milestone. Sundown: unlock the bosses you beat, not somebody every time.
+
+**Rebrands (these are not Taskmaster)**
+- **R17** Fruit Ninja, Stacker, Sumo and Curling leave the Taskmaster brand: each needs its own real reference. Then redo the actual Taskmaster games properly. ASK for the new themes (or Claude proposes).
+- **R18** Matrix "Nine Realities": cooler name, could be sweet. Hardline Hack: separate entry (don't merge), cooler too, maybe techno. The Matrix games need graphics and music: digital raves, gunfights, kung fu.
+- **R19** Kingpin bowling → "Don't F*** with the Jesus" bowling (The Big Lebowski).
+- **R20** Strategema and Connect 4 each become their own tile.
+- **R21** Who Wants to Be a Millionaire: own logo, background, a Trivia game shows group; real sounds, Regis clips (owner supplies).
+
+**Games to rebuild or make great**
+- **R22** Traitors: Guess Who sucks. Build a dope Traitors game instead. "Find the traitor" is fun but bad: do better. (ASK: same game or two?)
+- **R23** Deadite Checkers: it's just checkers. Army of Darkness art, animated captures.
+- **R24** Star Trek chess: rename, crazy animated moves (like old animated PC chess). Merge Tri-D mini chess into it as a cooler mode.
+- **R25** Clue games "suck": rework.
+- **R26** Mancala: sprites/art. Fisheye looks weird: keep sometimes, improve.
+- **R27** Pool: no power control, bad graphics, needs sounds and sprites, and a FULL game (not ~5 turns).
+- **R28** Board-style games: a full-game option, not only a number of turns.
+- **R29** Tetris: music, a new version, pass-and-play "how long can you last".
+- **R30** Simon: normal + challenge versions; look and sound exactly like the real toy.
+- **R31** Crossy Road: too hard; the screen jump when it scrolls up is jarring.
+- **R32** Temple Run for real: look just like it.
+- **R33** Tapper: prettier, smoother, sprites.
+- **R34** Pong: too zoomed in, pull out a bit.
+- **R35** Flip cup: 3D looks kind of bad; improve. Real gang chant clip "flip, flip, Flipadelphia" (owner supplies).
+- **R36** Beer Pong: Paddy's sounds and gang quotes arguing behind us; rebuttal when the final shot is made; Frank clip "I love this feeling!" on a bonus shot (owner supplies clips).
+- **R37** Paddy's bar games are sweet: any more to add?
+- **R38** Photo Hunt needs a huge number of pictures (owner supplies).
+- **R39** Mario Kart: "so much work". ASK what bothers most.
+- **R40** Asteroids is great (keep).
+
+**Baseball**
+- **R41** Batting view: mitt further back, ball travels slightly further back; strike zone bigger and clear, like the original; see the second baseman/fielders while batting; breaking pitches stronger and much clearer; a real animation of bat meeting ball.
+- **R42** Play: stealing, pitcher pick-offs, control of base running; batters turn and yell at the player on a strikeout; throw-to-base buttons look like little bases.
+- **R43** Look: field with grass/dirt feel, visible moving crowd, a real-looking scoreboard (sprites); it's bare and boring now. Home Run Derby with a higher home-run rate.
+
+**Castlevania: Symphony ("f***ing sweet now")**
+- **R44** Death's line is "You shall regret those words. We will meet again." Music should kick in after the Death talk; the intro/title screen needs music from the owner's files; weapon sounds seem unchanged: use the pack's.
+- **R45** Hero: sprite too small (make him bigger so the sword comes from his arm, keep the strike position); head too big, not attached, bounces too much; walk too fast/jittery; sword swipe feels tilted too far down.
+- **R46** Dracula: on screen when he talks, a real back-and-forth; bigger moves and attacks; the setting changes when he transforms (a hell-like place); a dying animation.
+- **R47** Kills: bloodier or burn up like the real game, not just chopped in half. Sounds: wolves need attack/death sounds; Alucard screams too much: refine.
+- **R48** All games: check which way each character head faces, then mirror heads to match the walking/looking direction.
+
+**Mario**
+- **R49** New sprites and scale to match the real game exactly; then World 2 and onward.
+- **R50** `[idea]` Mario 3: think about it.
+
+**Sundown Showdown**
+- **R51** Fill the whole screen (like Castlevania/Mario). Less of a straight line. Enemies come in from off screen, not out of nowhere. Easier aiming. Level 2 (train) is bad: enemies below you can't be shot.
+
+**New games**
+- **R52** `[idea]` Wordle; maybe the real Wordle of the day (needs online).
+- **R53** `[idea]` Baby of the Year contest game (I Think You Should Leave). ASK how it plays.
+- **R54** `[idea]` Aggro Crag / GUTS! game.
+- **R55** `[idea]` "Conners 4 real dick game thing". ASK.
+
+**New characters**
+- **R56** Connor O'Malley, Bart Harley Jarvis, Taffy Lee Fubbins, Michael Patrick Porkins; Amy the gorilla + the Congo people; Corey Feldman + The Goonies; Randal and Dante; The Mask / Stanley Ipkiss; Surf Nazis, more Troma, "mad cowboy" (ASK); Sin City people; Wes Anderson people; M. Night Shyamalan; "Captain D", "Drew mem Danny" (ASK).
+
+**Pokémon**
+- **R57** Evolutions, learning moves at level up, move balance, keeping rosters / saving teams, more than one of the same guy, enemy scaling, a Pokémon town. (See PK2.)
+
 - **I4b** `[bug]` (Nov 6, owner, on PC (Edge?), online Mancala: "I send a message during mancala. Then I can't take a turn anymore.
   It says it's my turn but the game is locked.") NOT reproduced in headless Chromium with two phones on a local Worker: canned line,
   typed + Send, typed + Enter, mouse and touch, 390x780 and 1100x700, sheet open while the other player moves, replying from a
