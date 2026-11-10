@@ -35,23 +35,23 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **R9** The version sub-menu looks like the main Arcade screen: background on display, logo at the top, version tiles along the bottom; no scrolling, scales to the screen. No "x2 / x3" badges on tiles.
 - **R10** Online must not jump to the Arcade: stay on the home screen so New Game, Arcade etc. can be picked.
 - **R11** High scores: tell the player clearly when they set a high score; a high-score list on the main (or Arcade) screen.
-- **R12** `[idea]` Collection screen "isn't mainly the characters". ASK what it should lead with.
+- **R12** `[idea]` Collection screen "isn't mainly the characters": owner (Nov 10) is gathering thoughts; an audit step for much later.
 - **R13** Search bar on character select.
 - **R14** Game logos must not be pulled from online (slow, look bad): revise them all to built-in art.
-- **R15** `[verify]` Recent games at the front of the Featured shelf, no separate Recent (done in v0.88.7). The note about the View all button was cut off: ASK.
+- **R15** `[verify]` Recent games at the front of the Featured shelf, no separate Recent (done in v0.88.7). (The cut-off View all note: dropped by the owner.)
 
 **Unlocks**
 - **R16** Character unlocks are far too frequent. Keep them, but make them mean something: a high score, a game milestone. Sundown: unlock the bosses you beat, not somebody every time.
 
 **Rebrands (these are not Taskmaster)**
-- **R17** Fruit Ninja, Stacker, Sumo and Curling leave the Taskmaster brand: each needs its own real reference. Then redo the actual Taskmaster games properly. ASK for the new themes (or Claude proposes).
+- **R17** Fruit Ninja, Stacker, Sumo and Curling leave the Taskmaster brand: each needs its own real reference. Then redo the actual Taskmaster games properly. TABLED (owner, Nov 10): nobody recognises the themes; either lean hard into a theme or go plain. Decide later.
 - **R18** Matrix "Nine Realities": cooler name, could be sweet. Hardline Hack: separate entry (don't merge), cooler too, maybe techno. The Matrix games need graphics and music: digital raves, gunfights, kung fu.
 - **R19** Kingpin bowling → "Don't F*** with the Jesus" bowling (The Big Lebowski).
 - **R20** Strategema and Connect 4 each become their own tile.
 - **R21** Who Wants to Be a Millionaire: own logo, background, a Trivia game shows group; real sounds, Regis clips (owner supplies).
 
 **Games to rebuild or make great**
-- **R22** Traitors: Guess Who sucks. Build a dope Traitors game instead. "Find the traitor" is fun but bad: do better. (ASK: same game or two?)
+- **R22** Traitors: Guess Who sucks. Build a dope Traitors game instead. "Find the traitor" is fun but bad: do better. Same game as "Find the traitor". Owner wants a really fun Traitors game but isn't sure of the design: think it through together first.
 - **R23** Deadite Checkers: it's just checkers. Army of Darkness art, animated captures.
 - **R24** Star Trek chess: rename, crazy animated moves (like old animated PC chess). Merge Tri-D mini chess into it as a cooler mode.
 - **R25** Clue games "suck": rework.
@@ -68,7 +68,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **R36** Beer Pong: Paddy's sounds and gang quotes arguing behind us; rebuttal when the final shot is made; Frank clip "I love this feeling!" on a bonus shot (owner supplies clips).
 - **R37** Paddy's bar games are sweet: any more to add?
 - **R38** Photo Hunt needs a huge number of pictures (owner supplies).
-- **R39** Mario Kart: "so much work". ASK what bothers most.
+- **R39** `[idea]` Mario Kart, BIG item for soonish (owner, Nov 10): make it feel like a professional game. Tracks more intricate and varied with multiple paths and levels; better 3D models (find out how to get or make good ones); modern polish throughout. Needs a plan first.
 - **R40** Asteroids is great (keep).
 
 **Baseball**
@@ -92,12 +92,14 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 
 **New games**
 - **R52** `[idea]` Wordle; maybe the real Wordle of the day (needs online).
-- **R53** `[idea]` Baby of the Year contest game (I Think You Should Leave). ASK how it plays.
+- **R53** `[idea]` Baby of the Year contest game (I Think You Should Leave). Tabled: needs a funny design.
 - **R54** `[idea]` Aggro Crag / GUTS! game.
-- **R55** `[idea]` "Conners 4 real dick game thing". ASK.
+- **R55** `[idea]` "Conners 4 real": a silly game, for later (owner will explain).
+- **R58** `[idea]` Game shows: a chunky game show like ITYSL; Jeopardy, Wheel of Fortune, Deal or No Deal style games; polish Millionaire and Price Is Right to look like the real shows (Price Is Right also needs to be much more fun).
+- **R59** Sonic rebuild (owner, Nov 10, NEXT): Sonic 2 style zones: big acts with many routes, loops, springs, spikes, then a boss; a few acts per zone, more zones later. Then full stage + character sprite kits (bodies that take the players' faces). Owner is gathering sounds and music.
 
 **New characters**
-- **R56** Connor O'Malley, Bart Harley Jarvis, Taffy Lee Fubbins, Michael Patrick Porkins; Amy the gorilla + the Congo people; Corey Feldman + The Goonies; Randal and Dante; The Mask / Stanley Ipkiss; Surf Nazis, more Troma, "mad cowboy" (ASK); Sin City people; Wes Anderson people; M. Night Shyamalan; "Captain D", "Drew mem Danny" (ASK).
+- **R56** Connor O'Malley, Bart Harley Jarvis, Taffy Lee Fubbins, Michael Patrick Porkins; Amy the gorilla + the Congo people; Corey Feldman + The Goonies; Randal and Dante; The Mask / Stanley Ipkiss; Surf Nazis, more Troma, Mad Cowboy; Sin City people; Wes Anderson people; M. Night Shyamalan; Captain Dissolution, Drew Gooden, memoria, Danny Gonzalez.
 
 **Pokémon**
 - **R57** Evolutions, learning moves at level up, move balance, keeping rosters / saving teams, more than one of the same guy, enemy scaling, a Pokémon town. (See PK2.)
