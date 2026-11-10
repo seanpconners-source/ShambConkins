@@ -14,7 +14,7 @@ tile-for-tile copy of the real zones) and our own art; the owner's own sound rip
   angle, four ground modes, floor/ceiling/push sensors, slope factor (walk/roll up/roll down), friction, skid, roll,
   spin dash (8 + rev/2), jump (6.5, release cap 4), air drag, landing rules, slipping off walls/ceilings under 2.5,
   plane switchers. Test: `tests/s3-physics.mjs` (in test:core).
-- NEXT `objects.js`: springs (all 8 directions, red/yellow), spikes (and hurt), rings + scatter on hit (Sonic 3 rules),
+- DONE `objects.js` (tests/s3-objects.mjs in test:core; still to come: bumpers, water, corkscrews/tubes, mini-boss/boss, capsule): springs (all 8 directions, red/yellow), spikes (and hurt), rings + scatter on hit (Sonic 3 rules),
   monitors (rings, shields: fire/bubble/lightning with their moves, speed shoes, invincibility, 1-up), starposts, the
   insta-shield, badniks, bumpers, breakable walls/floors, collapsing ledges, moving/falling/swinging platforms, vines and
   zip-lines, corkscrews, tunnels/tubes, water (later zones), and the end-of-act sign/capsule.
