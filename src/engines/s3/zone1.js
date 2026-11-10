@@ -30,7 +30,7 @@ const TUBE3=[[14640,G-TH],[15620,G-TH]],TUBE4=[[15880,CH-TH],[16800,CH-TH]];
 const tubeY=(L,x)=>{for(let i=1;i<L.length;i++){const a=L[i-1],b=L[i];if(x<=b[0])return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0]);}return L[L.length-1][1];};
 const tubePoly=L=>{const up=[],dn=[];L.forEach(([x,y],i)=>{const a=L[Math.max(0,i-1)],b=L[Math.min(L.length-1,i+1)],dx=b[0]-a[0],dy=b[1]-a[1],d=Math.hypot(dx,dy)||1,nx=-dy/d,ny=dx/d;up.push([x-nx*TH,y-ny*TH]);dn.push([x+nx*TH,y+ny*TH]);});return [...up,...dn.reverse()];};
 const rect=(x0,y0,x1,y1)=>[[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
-let terrain=null;
+let terrain=null;const LEDGES=[],BRIDGE_Y=new Set();
 function buildTerrain(){const T=new Terrain(W,H);
  T.poly([...SURF,[W,H],[0,H]]);
  for(const L of [TUBE1,TUBE2,TUBE3,TUBE4])T.poly(tubePoly(L),'all','cut');
@@ -41,14 +41,14 @@ function buildTerrain(){const T=new Terrain(W,H);
  for(const [cx,fy] of LOOPS){const cy=fy-R;
   T.poly([...arc(cx,cy,R+BAND,-Math.PI/2,Math.PI/2),...arc(cx,cy,R,Math.PI/2,-Math.PI/2)],'a');
   T.poly([...arc(cx,cy,R+BAND,Math.PI/2,Math.PI*1.5),...arc(cx,cy,R,Math.PI*1.5,Math.PI/2)],'b');}
- const ledge=(x0,x1,y)=>T.poly(rect(x0,y,x1,y+16),'top');
+ const ledge=(x0,x1,y)=>{T.poly(rect(x0,y,x1,y+16),'top');LEDGES.push([x0,x1,y]);};LEDGES.length=0;
  ledge(2180,2270,LG-70);ledge(9280,9370,G-70);// the steps with the red springs
  ledge(2960,3400,P-220);ledge(3560,3860,P-400);// high ledges over plateau 1
- ledge(3900,4500,P);// log bridge over lake 1
+ ledge(3900,4500,P);LEDGES.pop();// log bridge over lake 1 (stays planks)
  ledge(4800,5200,P-220);ledge(5450,5800,P-260);// high ledges over plateau 2
  ledge(10000,10400,HT-220);// over the hill
  ledge(11900,12200,G-220);ledge(12260,12740,G-440);// over loop 3
- ledge(13000,13180,G);ledge(13320,13500,G);// log bridge over lake 2 (the middle crumbles)
+ ledge(13000,13180,G);ledge(13320,13500,G);LEDGES.pop();LEDGES.pop();// log bridge over lake 2 (the middle crumbles)
  ledge(380,480,G-80);ledge(500,600,G-160);ledge(620,720,G-240);// the stairs at the start
  ledge(5850,6150,P-480);// third tier over plateau 2
  ledge(14560,14650,G-70);// the step before the mesa
@@ -112,6 +112,7 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  o.push({type:'sign',x:18350,y:G-16});
  return o;}
 const decor=()=>[
+ ...LEDGES.map(([x0,x1,y])=>({type:'land',x0,x1,y,x:x0,w:x1-x0,depth:x1-x0<120?36:52,front:true})),
  {type:'hollow',pts:tubePoly(TUBE1),box:[2280,LG-60,3930,LG+400]},{type:'hollow',pts:tubePoly(TUBE2),box:[9380,G-60,11260,G+340]},
  {type:'hollow',pts:tubePoly(TUBE3),box:[14640,G-60,15620,G]},{type:'hollow',pts:tubePoly(TUBE4),box:[15880,CH-60,16800,CH]},{type:'hollow',pts:rect(4498,P+70,4640,P+140),box:[4498,P+70,4640,P+140]},
  {type:'hollow',pts:rect(4498,LG,6600,LOW),box:[4498,LG,6600,LOW]},{type:'hollow',pts:rect(5350,LOW-2,5650,LOW+70),box:[5350,LOW-2,5650,LOW+70]},

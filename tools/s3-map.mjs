@@ -40,7 +40,7 @@ const data = await page.evaluate(({mods, file, fn, which}) => {
     for (let gyy = Math.ceil(y0 / 256) * 256; gyy < y1; gyy += 256) { x.beginPath(); x.moveTo(X0, gyy); x.lineTo(X0 + rowW + over, gyy); x.stroke(); }
     const dot = (px, py, r, col, ol = '#000') => { x.fillStyle = col; x.beginPath(); x.arc(px, py, r, 0, 7); x.fill(); x.strokeStyle = ol; x.lineWidth = 2; x.stroke(); };
     const tag = (px, py, t, col = '#fff') => { x.font = 'bold 30px system-ui,sans-serif'; x.textAlign = 'center'; x.lineWidth = 7; x.strokeStyle = '#000'; x.strokeText(t, px, py); x.fillStyle = col; x.fillText(t, px, py); };
-    for (const d of Z.decor || []) { if (d.type === 'lake') { x.fillStyle = 'rgba(60,140,255,.75)'; x.fillRect(d.x, d.y, d.w, d.h); } if (d.type === 'waterfall') { x.fillStyle = 'rgba(200,235,255,.9)'; x.fillRect(d.x, d.y, d.w, d.h); x.fillStyle = '#3a8af0'; for (let yy = d.y; yy < d.y + d.h; yy += 24) x.fillRect(d.x + 8, yy, d.w - 16, 10); }
+    for (const d of Z.decor || []) { if (d.type === 'land') { x.fillStyle = '#b06a2e'; x.fillRect(d.x0, d.y + 8, d.x1 - d.x0, d.depth - 8); x.fillStyle = '#58c428'; x.fillRect(d.x0, d.y, d.x1 - d.x0, 10); } if (d.type === 'lake') { x.fillStyle = 'rgba(60,140,255,.75)'; x.fillRect(d.x, d.y, d.w, d.h); } if (d.type === 'waterfall') { x.fillStyle = 'rgba(200,235,255,.9)'; x.fillRect(d.x, d.y, d.w, d.h); x.fillStyle = '#3a8af0'; for (let yy = d.y; yy < d.y + d.h; yy += 24) x.fillRect(d.x + 8, yy, d.w - 16, 10); }
       if (d.type === 'palm') { x.fillStyle = '#6a4420'; x.fillRect(d.x - 4, d.y - 70, 8, 70); x.fillStyle = '#2e9a2c'; x.beginPath(); x.ellipse(d.x, d.y - 74, 30, 12, 0, 0, 7); x.fill(); } }
     for (const o of Z.objs) switch (o.type) {
       case 'ring': dot(o.x, o.y, 6, '#ffd23a', '#8a5a00'); break;
