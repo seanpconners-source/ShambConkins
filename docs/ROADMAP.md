@@ -96,7 +96,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **R54** `[idea]` Aggro Crag / GUTS! game.
 - **R55** `[idea]` "Conners 4 real": a silly game, for later (owner will explain).
 - **R58** `[idea]` Game shows: a chunky game show like ITYSL; Jeopardy, Wheel of Fortune, Deal or No Deal style games; polish Millionaire and Price Is Right to look like the real shows (Price Is Right also needs to be much more fun).
-- **R59** Sonic rebuild (owner, Nov 10, NEXT): Sonic 2 style zones: big acts with many routes, loops, springs, spikes, then a boss; a few acts per zone, more zones later. Then full stage + character sprite kits (bodies that take the players' faces). Owner is gathering sounds and music.
+- **R59** `[part]` Sonic rebuild (owner, Nov 10, NOW; owner then chose SONIC 3, plan docs/sonic3/PLAN.md; engine terrain + physics done, sounds in): Sonic 2 style zones: big acts with many routes, loops, springs, spikes, then a boss; a few acts per zone, more zones later. Then full stage + character sprite kits (bodies that take the players' faces). Owner is gathering sounds and music.
 
 **New characters**
 - **R56** Connor O'Malley, Bart Harley Jarvis, Taffy Lee Fubbins, Michael Patrick Porkins; Amy the gorilla + the Congo people; Corey Feldman + The Goonies; Randal and Dante; The Mask / Stanley Ipkiss; Surf Nazis, more Troma, Mad Cowboy; Sin City people; Wes Anderson people; M. Night Shyamalan; Captain Dissolution, Drew Gooden, memoria, Danny Gonzalez.

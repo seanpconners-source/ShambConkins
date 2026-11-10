@@ -1,0 +1,125 @@
+// Sonic 3 & Knuckles player physics, after the Sonic Physics Guide's description of the Mega Drive engine: values are
+// pixels and pixels per frame at 60 frames a second, one step per frame. Ground speed (gsp) along the surface, ground
+// angle θ (radians, anticlockwise, 0 = flat floor, π/2 = a wall on the right), four ground modes (floor, right wall,
+// ceiling, left wall) that turn the sensors; floor sensors A/B under each side, push sensors at the middle, ceiling
+// sensors C/D. Two collision paths (terrain.js) and plane switchers for loops. Pure: no drawing, no sound (events are
+// pushed on p.ev for the game to turn into sounds/effects), so tests can run it in Node.
+const C={acc:0.046875,dec:0.5,frc:0.046875,top:6,slp:0.125,slpUp:0.078125,slpDown:0.3125,rollFrc:0.0234375,rollDec:0.125,
+ air:0.09375,grv:0.21875,jmp:6.5,jmpRelease:4,maxFall:16,maxSpeed:16,rollMin:1.03125,unroll:0.5,slipSpeed:2.5,lock:30,
+ wr:9,hr:19,wrRoll:7,hrRoll:14,push:10};
+const TAU=Math.PI*2,D=Math.PI/180;
+const norm=a=>((a%TAU)+TAU)%TAU;
+// ground mode from the angle (Sonic 3 splits at 45° with the floor and ceiling taking the diagonals)
+const modeOf=a=>{a=norm(a);return a<=45*D||a>=315*D?0:a<135*D?1:a<=225*D?2:3;};
+const MODE_ANG=[0,Math.PI/2,Math.PI,Math.PI*1.5];
+// tangent (forward along the surface) and down (into the surface) for an angle, in screen coords
+const r6=v=>Math.abs(v)<1e-9?0:v;
+const tan=a=>[r6(Math.cos(a)),r6(-Math.sin(a))],down=a=>[r6(Math.sin(a)),r6(Math.cos(a))];
+
+function makeRunner(x,y,opt={}){return {x,y,xsp:0,ysp:0,gsp:0,ang:0,ground:true,path:'a',rolling:false,jumping:false,
+ crouch:false,lookUp:false,spindash:false,rev:0,lock:0,facing:1,airLock:false,ev:[],jmp:opt.jmp??C.jmp,frames:0,onObj:null};}
+const radii=p=>p.rolling||!p.ground&&p.jumping?[C.wrRoll,C.hrRoll]:[C.wr,C.hr];
+
+// distance from (x,y) along unit dir (dx,dy) to the surface: negative = (x,y) is inside the ground by that much.
+// null when nothing within -16..+32 px.
+function sense(T,x,y,dx,dy,path,floor){
+ // axis-aligned scans in whole pixels, distances measured to the pixel edge so positions stay exact
+ const ax=Math.abs(dx)>Math.abs(dy),dir=ax?Math.sign(dx):Math.sign(dy),c=ax?x:y,o=ax?y|0:x|0,ci=Math.floor(c);
+ const S=k=>ax?T.solid(k,o,path,floor):T.solid(o,k,path,floor);
+ if(S(ci)){for(let k=1;k<=16;k++){const r=ci-dir*k;if(!S(r))return dir>0?-(c-(r+1)):-((r)-c);}return -16;}
+ for(let k=1;k<=32;k++){const r=ci+dir*k;if(S(r))return dir>0?r-c:c-(r+1);}return null;}
+// the surface angle where a sensor hit, from two probes either side along the surface
+function surfAngle(T,hx,hy,mode,path,floor){const m=MODE_ANG[mode],[tx,ty]=tan(m),[nx,ny]=down(m),h=4;
+ const a=sense(T,hx-tx*h-nx*8,hy-ty*h-ny*8,nx,ny,path,floor),b=sense(T,hx+tx*h-nx*8,hy+ty*h-ny*8,nx,ny,path,floor);
+ if(a===null||b===null)return m;
+ // points on the surface
+ const ax=hx-tx*h-nx*8+nx*a,ay=hy-ty*h-ny*8+ny*a,bx=hx+tx*h-nx*8+nx*b,by=hy+ty*h-ny*8+ny*b;
+ return norm(Math.atan2(-(by-ay),bx-ax));}
+// ---------------- one frame
+// inp = {l,r,u,d,jump (held),jumpPress (this frame)}; T = terrain; objs = plane switchers etc. (optional)
+function step(p,inp,T,opt={}){p.frames++;p.ev.length=0;if(p.lock>0&&p.ground)p.lock--;
+ if(p.ground)groundStep(p,inp,T);else airStep(p,inp,T);
+ for(const s of opt.switchers||[])switcher(p,s);
+ return p;}
+function switcher(p,s){const was=s.side?.get(p)??(p.x<s.x?-1:1),now=p.x<s.x?-1:1;if(!s.side)s.side=new WeakMap();s.side.set(p,now);
+ if(was!==now&&p.y>=s.y0&&p.y<=s.y1&&(!s.ground||p.ground))p.path=now>0?s.right:s.left;}
+
+function groundStep(p,inp,T){let [wr,hr]=radii(p);
+ // spin dash: crouch + jump revs, letting go of down releases
+ if(p.spindash){if(!inp.d){p.spindash=false;p.rolling=true;p.gsp=(8+Math.floor(p.rev)/2)*p.facing;p.rev=0;p.ev.push('dash');p.crouch=false;}
+  else{if(inp.jumpPress){p.rev=Math.min(8,p.rev+2);p.ev.push('rev');}p.rev-=Math.floor(p.rev/0.125)/256;if(p.rev<0)p.rev=0;return;}}
+ // jump
+ if(inp.jumpPress&&!p.crouch){const [nx,ny]=down(p.ang);p.xsp=p.gsp*Math.cos(p.ang)-p.jmp*nx;p.ysp=-p.gsp*Math.sin(p.ang)-p.jmp*ny;
+  if(!p.rolling){p.y+=C.hr-C.hrRoll;}p.ground=false;p.jumping=true;p.rolling=true;p.ev.push('jump');p.onObj=null;return;}
+ if(inp.jumpPress&&p.crouch&&Math.abs(p.gsp)<.1){p.spindash=true;p.rev=2;p.ev.push('rev');return;}
+ // slope factor
+ const s=Math.sin(p.ang);
+ if(p.rolling)p.gsp-=(Math.sign(p.gsp)===Math.sign(s)?C.slpUp:C.slpDown)*s;
+ else if(p.gsp!==0||Math.abs(s)>0.2)p.gsp-=C.slp*s;
+ // input
+ const L=p.lock>0?false:inp.l,R=p.lock>0?false:inp.r;
+ if(p.rolling){if(L&&p.gsp>0)p.gsp=Math.max(0,p.gsp-C.rollDec);else if(R&&p.gsp<0)p.gsp=Math.min(0,p.gsp+C.rollDec);
+  p.gsp-=Math.min(Math.abs(p.gsp),C.rollFrc)*Math.sign(p.gsp);
+  if(Math.abs(p.gsp)<C.unroll&&modeOf(p.ang)===0){p.rolling=false;p.gsp=0;p.y-=C.hr-C.hrRoll;[wr,hr]=radii(p);}}
+ else{
+  if(L){if(p.gsp>0){p.gsp-=C.dec;if(p.gsp<=0)p.gsp=-0.5;if(p.gsp>4&&modeOf(p.ang)===0)p.ev.push('skid');}else if(p.gsp>-C.top)p.gsp=Math.max(-C.top,p.gsp-C.acc);p.facing=-1;}
+  else if(R){if(p.gsp<0){p.gsp+=C.dec;if(p.gsp>=0)p.gsp=0.5;if(p.gsp<-4&&modeOf(p.ang)===0)p.ev.push('skid');}else if(p.gsp<C.top)p.gsp=Math.min(C.top,p.gsp+C.acc);p.facing=1;}
+  else p.gsp-=Math.min(Math.abs(p.gsp),C.frc)*Math.sign(p.gsp);
+  p.crouch=!!inp.d&&Math.abs(p.gsp)<.1&&modeOf(p.ang)===0;p.lookUp=!!inp.u&&Math.abs(p.gsp)<.1&&modeOf(p.ang)===0;
+  if(inp.d&&Math.abs(p.gsp)>=C.rollMin){p.rolling=true;p.y+=C.hr-C.hrRoll;[wr,hr]=radii(p);p.ev.push('roll');}}
+ p.gsp=Math.max(-C.maxSpeed,Math.min(C.maxSpeed,p.gsp));
+ // walls ahead (push sensors), only on floor-ish and wall modes when moving
+ const mode=modeOf(p.ang);
+ if(p.gsp!==0){const dir=Math.sign(p.gsp),m=MODE_ANG[mode],[tx,ty]=tan(m),[nx,ny]=down(m),off=mode===0&&!p.rolling?8:0;
+  const ox=p.x+nx*off,oy=p.y+ny*off,d=sense(T,ox,oy,tx*dir,ty*dir,p.path,false);
+  const reach=C.push+Math.abs(p.gsp);
+  if(d!==null&&d<reach){p.gsp=0;const gap=d-C.push;/* stop flush against the wall */p.x+=tx*dir*Math.min(0,gap);p.y+=ty*dir*Math.min(0,gap);p.ev.push('wall');}}
+ // move
+ p.xsp=p.gsp*Math.cos(p.ang);p.ysp=-p.gsp*Math.sin(p.ang);p.x+=p.xsp;p.y+=p.ysp;
+ // stick to the ground: floor sensors in the current mode
+ const m=MODE_ANG[modeOf(p.ang)],[tx,ty]=tan(m),[nx,ny]=down(m);
+ const ax=p.x-tx*wr+nx*hr,ay=p.y-ty*wr+ny*hr,bx=p.x+tx*wr+nx*hr,by=p.y+ty*wr+ny*hr;
+ const da=sense(T,ax,ay,nx,ny,p.path,true),db=sense(T,bx,by,nx,ny,p.path,true);
+ let d=null,hx=0,hy=0;
+ if(da!==null&&(db===null||da<=db)){d=da;hx=ax+nx*da;hy=ay+ny*da;}else if(db!==null){d=db;hx=bx+nx*db;hy=by+ny*db;}
+ const snap=Math.min(Math.abs(p.xsp)+4,14);
+ if(d===null||d>snap){p.ground=false;p.jumping=false;p.ev.push('leave');return;}
+ p.x+=nx*d;p.y+=ny*d;
+ p.ang=surfAngle(T,hx,hy,modeOf(p.ang),p.path,true);
+ // slip off walls and ceilings when too slow
+ const md=modeOf(p.ang);
+ if(md!==0&&Math.abs(p.gsp)<C.slipSpeed&&p.lock===0){const deg=norm(p.ang)/D;
+  if(deg>=90&&deg<=270){p.ground=false;p.jumping=false;p.xsp=p.gsp*Math.cos(p.ang);p.ysp=-p.gsp*Math.sin(p.ang);p.ang=0;p.ev.push('fall');}
+  else p.lock=C.lock;}}
+
+function airStep(p,inp,T){
+ // air control
+ if(inp.r&&!p.airLock){if(p.xsp<C.top)p.xsp=Math.min(C.top,p.xsp+C.air);p.facing=1;}
+ if(inp.l&&!p.airLock){if(p.xsp>-C.top)p.xsp=Math.max(-C.top,p.xsp-C.air);p.facing=-1;}
+ if(p.ysp<0&&p.ysp>-4)p.xsp-=Math.trunc(p.xsp/0.125)/256;
+ if(p.jumping&&!inp.jump&&p.ysp<-C.jmpRelease)p.ysp=-C.jmpRelease;
+ p.x+=p.xsp;p.y+=p.ysp;p.ysp=Math.min(C.maxFall,p.ysp+C.grv);
+ const [wr,hr]=radii(p);
+ // walls (push sensors at the middle)
+ for(const dir of [-1,1]){if(dir<0&&p.xsp>0||dir>0&&p.xsp<0)continue;const d=sense(T,p.x,p.y,dir,0,p.path,false);
+  if(d!==null&&d<C.push){p.x-=dir*(C.push-d);if(Math.sign(p.xsp)===dir)p.xsp=0;}}
+ // ceiling
+ if(p.ysp<0){let best=null,hx=0;for(const sx of [-wr,wr]){const d=sense(T,p.x+sx,p.y-hr,0,-1,p.path,false);if(d!==null&&d<0&&(best===null||d<best)){best=d;hx=p.x+sx;}}
+  if(best!==null){const ang=surfAngle(T,hx,p.y-hr-best,2,p.path,false),deg=ang/D;
+   if(deg>=91&&deg<=135||deg>=225&&deg<=269){p.ang=ang;p.y-=best;p.gsp=p.ysp*-Math.sign(Math.sin(ang));p.ground=true;p.jumping=false;p.ev.push('land');return;}
+   p.y-=best;p.ysp=0;}}
+ // floor
+ if(p.ysp>=0){let best=null,hx=0,hy=0;for(const sx of [-wr,wr]){const d=sense(T,p.x+sx,p.y+hr,0,1,p.path,true);if(d!==null&&(best===null||d<best)){best=d;hx=p.x+sx;hy=p.y+hr+d;}}
+  if(best!==null&&best<0&&best>=-(p.ysp+8)){p.y+=best;const ang=surfAngle(T,hx,hy,0,p.path,true);land(p,ang);}}
+}
+// landing: ground speed from the air speed and how steep the ground is (Sonic Physics Guide rules)
+function land(p,ang){const deg=norm(ang)/D,a=deg>180?360-deg:deg;
+ if(a<=23)p.gsp=p.xsp;
+ else if(a<=45)p.gsp=Math.abs(p.xsp)>Math.abs(p.ysp)?p.xsp:p.ysp*0.5*-Math.sign(Math.sin(ang));
+ else p.gsp=Math.abs(p.xsp)>Math.abs(p.ysp)?p.xsp:p.ysp*-Math.sign(Math.sin(ang));
+ const wasBall=p.jumping||p.rolling;p.ang=ang;p.ground=true;p.jumping=false;p.lock=0;
+ if(wasBall){p.rolling=false;p.y-=C.hr-C.hrRoll;}
+ p.ev.push('land');}
+// bounce off a spring or anything else that throws you: vx/vy in screen px/frame
+function launch(p,vx,vy,{roll=false,keepX=false}={}){if(!keepX||vx!==null)p.xsp=vx??p.xsp;p.ysp=vy;if(p.ground&&!p.rolling&&roll)p.y+=C.hr-C.hrRoll;p.ground=false;p.jumping=false;p.rolling=roll;p.spindash=false;p.crouch=false;}
+Object.assign(exports,{C,step,makeRunner,modeOf,radii,sense,launch,land});
