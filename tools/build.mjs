@@ -105,6 +105,13 @@ if (fs.existsSync(sotnDir)) for (const f of fs.readdirSync(sotnDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('sotn:' + m[1].toLowerCase(), MIME[ext], ext, path.join(sotnDir, f));
 }
+// Sonic 3 style game sprite sheets and stage art: assets/sonic3/<name>.(webp|png) -> s3:<name>
+// (names and layout: src/data/sonic3Sprites.js, docs/sonic3-sprites/README.md).
+const s3Dir = path.join(root, 'assets/sonic3');
+if (fs.existsSync(s3Dir)) for (const f of fs.readdirSync(s3Dir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('s3:' + m[1].toLowerCase(), MIME[ext], ext, path.join(s3Dir, f));
+}
 // Drop-in music: assets/music/<name>.(mp3|ogg|m4a|wav) -> USER_PORTRAITS['music:<name>'] (e.g. cv-symphony, cv-symphony-boss).
 const AUDIO = {mp3: 'audio/mpeg', ogg: 'audio/ogg', m4a: 'audio/mp4', wav: 'audio/wav'};
 const musicDir = path.join(root, 'assets/music');

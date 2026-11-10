@@ -36,7 +36,7 @@ tile-for-tile copy of the real zones) and our own art; the owner's own sound rip
 - Act 2: the zone after the fire bombing (scorched look, new hazards), longer, then the zone boss.
 - Map review: every act gets a preview picture/page of the whole map before the owner plays it.
 
-## Art (after the levels play right)
+## Art (kit DONE Nov 10: docs/sonic3-sprites/, src/data/sonic3Sprites.js; wiring into render.js when art arrives)
 - Sprite kit like Castlevania/Sundown: templates + a brief for GPT/Grok: player body sheets (head slot = the player's
   face), badniks, objects, terrain tiles/chunks, parallax backgrounds, title card, results screen.
 
