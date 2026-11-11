@@ -1,4 +1,4 @@
-const {newUno, unoLegalCards, unoPlay, unoDraw, unoPass, unoCall, unoResult, UNO_COLORS}=require("src/engines/unoRules.js");
+const {newUno, unoLegalCards, unoPlay, unoDraw, unoPass, unoCall, unoResult, UNO_COLORS, UNO_CAP}=require("src/engines/unoRules.js");
 const {escapeHTML}=require("src/utils.js");
 const {portraitHTML}=require("src/assets.js");
 const {sound}=require("src/audio.js");
@@ -28,7 +28,7 @@ async function uno(s){
   }
   document.getElementById('uno-draw').disabled=!visible||theirs()||busy||pendingWild!==null||state.phase!=='playing';document.getElementById('uno-pass').disabled=!visible||theirs()||busy||pendingWild!==null||state.phase!=='after-draw';
   const call=document.getElementById('uno-call');call.disabled=!visible||theirs()||busy||state.hands[owner].length!==2;call.textContent=state.called?'UNO called ✓':'Call UNO!';
-  document.getElementById('uno-colors').hidden=pendingWild===null;if(cpu&&owner===1&&/^Your turn/.test(message))message=`${s.players[1].name}’s turn`;document.getElementById('uno-status').textContent=message||`${s.players[owner].name}’s turn`;s.active=owner;s.updateScores();
+  document.getElementById('uno-colors').hidden=pendingWild===null;if(cpu&&owner===1&&/^Your turn/.test(message))message=`${s.players[1].name}’s turn`;document.getElementById('uno-status').textContent=(message||`${s.players[owner].name}’s turn`)+(UNO_CAP-state.moves<=20&&!state.ended?` · ${UNO_CAP-state.moves} moves left`:'');s.active=owner;s.updateScores();
   s.debug={engine:'uno',state,view,busy,pendingWild,left,bot:net?()=>{if(theirs()||view!=='playing'||busy||state.ended||s.paused)return null;const legal=unoLegalCards(state);if(legal.length){void play(legal[0].id,legal[0].color?null:'red');return 'play';}if(state.phase==='playing'){void draw();return 'draw';}void pass();return 'pass';}:null};
  }
  async function handoff(previous,message){
@@ -66,7 +66,7 @@ async function uno(s){
   while(s.alive&&!state.ended&&(busy||view!=='playing'||state.turn!==net.remote))await new Promise(r=>setTimeout(r,60));if(!s.alive||state.ended)return;
   if(m.u){if(unoCall(state)){sound('win');render(`${s.players[net.remote].name} calls UNO!`);}}else if(m.p!=null)await play(m.p,m.c||null,true);else if(m.d)await draw(true);else if(m.x)await pass(true);else if(m.to)timeUp();}})();
  for(const button of document.querySelectorAll('[data-uno-color]'))casinoTap(s,button,()=>{if(pendingWild!==null)void play(pendingWild,button.dataset.unoColor);},NOREL);
- render();if(!await s.pass(0,'Seven private cards each. Match the active color or symbol, or draw one; only that newly drawn card may then be played. No draw stacking. In two-player Uno, Skip, Reverse and draw cards return the turn to you. Call UNO before playing your second-last card. Twenty seconds per turn; 80-turn safety limit.','Ready — show my hand'))return;
+ render();if(!await s.pass(0,'Seven private cards each. Match the active color or symbol, or draw one; only that newly drawn card may then be played. No draw stacking. In two-player Uno, Skip, Reverse and draw cards return the turn to you. Call UNO before playing your second-last card. Twenty seconds per turn; a 300-move safety limit (a countdown shows near the end).','Ready — show my hand'))return;
  view='playing';render();s.frame(dt=>{if(view!=='playing'||busy||state.ended)return;left-=dt;document.getElementById('uno-clock').textContent=Math.ceil(Math.max(0,left))+'s';if(left<=0&&!theirs()){net?.send({to:1});timeUp();}});
 }
 
