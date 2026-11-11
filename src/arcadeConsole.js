@@ -34,7 +34,7 @@ const FAMILIES=[
  ['casino','Casino Night','Cards, wheels and dice',null,['blackjack','five-card','roulette','bond-baccarat','liars-dice']],
  ['trivia','Trivia Night','Nine quiz shows',null,['trivia-mixed','trivia-hardcore','trivia-lightning','trivia-wager','trivia-survival','trivia-sitcom','trivia-nick90','trivia-dbz','trivia-hxh']],
  ['taskmaster','Taskmaster','Six tasks',null,['taskmaster-micro-relay','taskmaster-fruit-ninja','taskmaster-sumo','task-tallest-thing','taskmaster-curling','tm-cones']],
- ['trek','Star Trek Game Night','Chess, Tri-D, Strategema, Four Lights',null,['ten-forward-chess','trek-mini-chess','strategema-grid','four-lights']],
+ ['trek','Star Trek Game Night','Chess and Tri-D chess',null,['ten-forward-chess','trek-mini-chess']],// Strategema (Reversi) and Four Lights (Connect 4) have their own tiles (owner, Nov 10: R20)
  ['rush','Microgame Rush','Rush and Marathon',null,['microgame-rush','rush-marathon']],
  ['hyrule','The Legend of Zelda','Rupee Rush and Sword Duel',null,['hyrule-rupee-rush','hyrule-sword-duel']],
  ['clue','Clue','Whodunit and Lineup',null,['clue-whodunit','clue-lineup']],

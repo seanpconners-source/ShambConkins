@@ -63,7 +63,7 @@ for(const vp of sizes){
   await page.screenshot({path:screenshotPath(`ac-bosses-${tag}.png`)});
   await page.click('.arc-pill[data-id="all"]');await page.waitForTimeout(300);
   await page.click('[data-arc-search]');await page.fill('#catalog-search','sonic');await page.waitForTimeout(500);
-  const hits=await page.locator('.arc-tile:not(.arc-tile-all)').count();if(hits<1||hits>4)fail('search sonic gave '+hits);
+  const hits=await page.locator('.arc-tile:not(.arc-tile-all)').count();if(hits<1||hits>6)fail('search sonic gave '+hits);// 5 since Seanic Act 2 (Nov 11)
   await page.fill('#catalog-search','');await page.waitForTimeout(300);
   await page.click('.solo-seg[data-key="on"][data-value="1"]');await page.waitForTimeout(400);
   await page.screenshot({path:screenshotPath(`ac-solo-${tag}.png`)});
