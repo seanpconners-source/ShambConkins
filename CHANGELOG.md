@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.91.0
+
+- **Seanic title screen.** The SEANIC logo bursts in to the real Sonic 3 Title Screen music, with the hedgehog (player 1's face) and the three-tailed fox (player 2's face) popping up behind it over a sea-and-waterfall scene. TAP TO START.
+- **Pick your runner (1 player).** A Sonic 3 Data Select style screen, with its music: swipe or use the arrows to choose Seanic or Tails, then tap the monitor. Tails can fly.
+- **Green Hill Zone music** for Shamb Island Act 1.
+- **Smoother loops.** No more hanging on the wall or sudden stops when you take a loop too slowly. You drop off or slide back like Sonic 3, and the runner turns smoothly round the curve.
+- **Better balance.** Sounds (especially rings) no longer drown out the music.
+- **Camera** shows less ground; the runner sits a little lower on screen.
+- Fixed a palm tree stuck inside the rocks at the start of Act 1.
+
 ## v0.90.0
 
 - **Seanic the Hedgehog, Zone 1 Act 1.** The Sonic 3 rebuild gets its first real level, Shamb Island Act 1: roll tunnels that curve, four loops, stairs, high ledges and a sky route that crumbles, a cave, two lakes with bridges and waterfalls (with a secret room behind one), a vine gorge, a zip line, a mesa with a chasm, and the end sign. Player 1 runs as a blue-purple hedgehog, player 2 as a red-orange fox with three tails who can fly (tap jump again in the air, hold it to climb).
