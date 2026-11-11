@@ -23,16 +23,22 @@ class World{
  // one frame for every runner. inputs[i] = {l,r,u,d,jump,jumpPress}
  step(runners,inputs){this.frame++;
   for(let i=0;i<runners.length;i++){const p=runners[i];if(p.dead){deadStep(p,this);continue;}const inp=inputs[i]||{};
-   if(p.grab>0)p.grab--;p.py=p.y;P.step(p,inp,this.T,{switchers:this.switchers});for(const e of p.ev)this.ev.push({k:e,p:i});
+   if(p.grab>0)p.grab--;if(p.tubeCool>0)p.tubeCool--;p.py=p.y;
+   if(p.tube){p.ev.length=0;tubeStep(p,this);}else P.step(p,inp,this.T,{switchers:this.switchers});for(const e of p.ev)this.ev.push({k:e,p:i});
    if(p.ground&&!p.rolling)p.chain=0;// the bounce chain ends back on your feet
    if(p.hang)hangStep(p,inp,this,i);
    for(const o of this.objs)if(!o.gone)touch(o,p,this,i,inp);
    solids(p,this,i);
+   edges(p,this);
    if(p.y>this.bottom+64)die(p,this,i,'fall');}
   for(const o of this.objs)if(!o.gone)tick(o,this,runners);
   stepLoose(this,runners);stepShots(this,runners);}
  drain(){const e=this.ev;this.ev=[];return e;}
 }
+// the ends of the zone are walls (owner: running left at the start, or coasting on past the sign, fell off the map)
+function edges(p,w){const L=12,R=w.T.w-12;
+ if(p.x<L){p.x=L;if(p.xsp<0)p.xsp=0;if(p.gsp<0)p.gsp=0;}
+ else if(p.x>R){p.x=R;if(p.xsp>0)p.xsp=0;if(p.gsp>0)p.gsp=0;}}
 function init(o,w){
  if(o.type==='monitor'){o.w=o.w||30;o.h=o.h||32;o.solid=true;}
  if(o.type==='wall'){o.w=o.w||32;o.h=o.h||64;o.solid=true;}
@@ -42,7 +48,29 @@ function init(o,w){
  if(o.type==='badnik'){o.alive=true;o.x0=o.x;o.y0=o.y;o.t=0;o.dir=o.dir||-1;o.cool=0;o.w=o.w||14;o.h=o.h||14;}
  if(o.type==='spring'){o.color=o.color||'yellow';o.dir=o.dir||'up';o.w=o.w||16;o.h=o.h||8;o.pop=0;}
  if(o.type==='spikes'){o.dir=o.dir||'up';o.w=o.w||16;o.h=o.h||16;o.solid=true;}
+ if(o.type==='tube'&&o.path)tubePath(o);
 }
+// ---------------- warp tubes (owner, Nov 11: "launch you through the whole thing"; the physics roll snagged on the S-bends):
+// a tube with a `path` (its centre line) carries a runner who reaches either mouth along the line at warp speed, then
+// lets go at the far mouth with that speed in the exit direction. o.ride = the ball centre's line (the centre line moved
+// down onto the floor by the tunnel half-height minus the ball radius), with running lengths.
+function tubePath(o){const L=o.path,half=o.half??28,off=half-C.hrRoll,pts=[];
+ L.forEach(([x,y],i)=>{const a=L[Math.max(0,i-1)],b=L[Math.min(L.length-1,i+1)],dx=b[0]-a[0],dy=b[1]-a[1],d=Math.hypot(dx,dy)||1;pts.push([x-dy/d*off,y+dx/d*off]);});
+ const len=[0];for(let i=1;i<pts.length;i++)len.push(len[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));o.ride=pts;o.rideLen=len;o.total=len[len.length-1];}
+function rideAt(o,d){const P_=o.ride,L=o.rideLen;d=Math.max(0,Math.min(o.total,d));let i=1;while(i<L.length-1&&L[i]<d)i++;
+ const a=P_[i-1],b=P_[i],seg=(L[i]-L[i-1])||1,k=(d-L[i-1])/seg;return {x:a[0]+(b[0]-a[0])*k,y:a[1]+(b[1]-a[1])*k,dx:(b[0]-a[0])/seg,dy:(b[1]-a[1])/seg};}
+function tubeEnter(o,p,w,i){if(p.tube||p.dead||p.hang||p.tubeCool>0)return;const vx=p.ground?p.gsp*Math.cos(p.ang):p.xsp;
+ // one way: in at the start mouth only (o.both = either end). Two-way let a runner bounced back off spikes past the exit
+ // roll back in and warp the wrong way, again and again
+ for(const end of o.both?[0,1]:[0]){const at=rideAt(o,end?o.total:0),out=end?1:-1;// out = which way along x leaves the tube at this mouth
+  if(Math.abs(p.x-at.x)<22&&Math.abs(p.y-at.y)<30&&vx*out<-.5){
+   const v=Math.max(11,Math.min(16,Math.abs(vx)*1.15));p.tube={o,d:end?o.total:0,dir:end?-1:1,v};
+   if(!p.rolling)p.y+=C.hr-C.hrRoll;p.rolling=true;p.ground=false;p.jumping=false;p.spindash=false;p.crouch=false;p.onObj=null;p.fly=0;
+   w.ev.push({k:'dash',p:i});return;}}}
+function tubeStep(p,w){const T=p.tube,o=T.o;T.d+=T.dir*T.v;
+ const done=T.dir>0?T.d>=o.total:T.d<=0,at=rideAt(o,T.d),dx=at.dx*T.dir,dy=at.dy*T.dir;
+ p.x=at.x;p.y=at.y;p.xsp=dx*T.v;p.ysp=dy*T.v;p.gsp=p.xsp;p.facing=dx<0?-1:1;p.ground=false;p.rolling=true;
+ if(done){p.tube=null;p.tubeCool=24;p.jumping=false;}}
 // ---------------- the runner touches an object
 function touch(o,p,w,i,inp){const b=box(p);
  switch(o.type){
@@ -56,7 +84,7 @@ function touch(o,p,w,i,inp){const b=box(p);
  case 'vine':if(!p.hang&&!p.dead&&!(p.grab>0)&&Math.hypot(p.x-o.hx,p.y-o.hy-16)<20){p.hang=o;o.who=p;p.ground=false;p.jumping=false;p.rolling=false;p.xsp=p.ysp=0;w.ev.push({k:'grab',p:i});}return;
  case 'zipline':if(!p.hang&&!p.dead&&!(p.grab>0)&&!o.who&&Math.hypot(p.x-o.hx,p.y-o.hy-20)<18){p.hang=o;o.who=p;o.v=Math.max(2,Math.abs(p.xsp||p.gsp));p.ground=false;p.jumping=false;p.rolling=false;w.ev.push({k:'grab',p:i});}return;
  // roll tunnel: inside it the runner curls up and keeps rolling forward (Green Hill style S-tube)
- case 'tube':if(Math.abs(p.x-o.x)<o.w/2&&Math.abs(p.y-o.y)<o.h/2&&p.ground&&!p.dead){const d=o.dir||1;
+ case 'tube':if(o.path)return tubeEnter(o,p,w,i);if(Math.abs(p.x-o.x)<o.w/2&&Math.abs(p.y-o.y)<o.h/2&&p.ground&&!p.dead){const d=o.dir||1;
    if(!p.rolling){p.rolling=true;p.y+=C.hr-C.hrRoll;p.crouch=false;p.spindash=false;w.ev.push({k:'roll',p:i});}
    if(p.gsp*d<(o.min||6))p.gsp=(o.min||6)*d;p.facing=d;}return;
  case 'sign':if(!o.hit&&p.x>=o.x){o.hit=true;o.by=i;o.spin=150;w.ev.push({k:'sign',p:i,x:o.x,y:o.y});}return;

@@ -11,7 +11,7 @@ const P=require("src/engines/s3/physics.js");
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
 const FONT='italic 900 %spx "Arial Black",Impact,system-ui,sans-serif';
 // faces drawn this much bigger than the painted face circle, so they cover it like the runners' heads in play (owner)
-const FACE_K=1.75;
+const FACE_K=1.95;
 const CHARS=[{body:'hog',name:'SEANIC',pic:'select-hog',does:'SPIN DASH · INSTA-SHIELD · TOP SPEED'},
  {body:'fox',name:'TAILS',pic:'select-fox',does:'FLIES (TAP JUMP AGAIN, HOLD TO CLIMB) · SPIN DASH'}];
 // the logo: the kit slot if it's in, else the Arcade logo the build already ships
@@ -26,6 +26,9 @@ function picWithFace(x,name,cx,by,h,i,head,mood){const img=SP.picture(name),d=SP
  // these pictures are drawn at a quarter of their size or less: smoothed (nearest-pixel shrinking dropped thin outlines
  // and fur tips, which looked like holes in the fox's tails)
  const [ax,ay]=d.anchor;x.save();x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(img,cx-ax*s,by-ay*s,w,h);x.restore();if(d.head){const [hx,hy,hd]=d.head;head(x,i,cx+(hx-ax)*s,by+(hy-ay)*s,hd*s*FACE_K,mood);}return true;}
+// the same, placed by its face: face centre at (fx,fy), painted face circle faceD across on screen
+function picAtFace(x,name,fx,fy,faceD,i,head,mood){const d=SP.PICTURES[name];if(!d||!d.head||!SP.picture(name))return false;const s=faceD/d.head[2];
+ return picWithFace(x,name,fx+(d.anchor[0]-d.head[0])*s,fy+(d.anchor[1]-d.head[1])*s,d.size[1]*s,i,head,mood);}
 // a game runner (the real sprite sheets or their stand-in) drawn big: feet at (fx,fy), sc = screen px per world px
 const dummies={};
 function runner(x,body,i,fx,fy,sc,t,head,opt={}){const p=dummies[body+(opt.fly?'f':'')]||(dummies[body+(opt.fly?'f':'')]=P.makeRunner(0,-19));
@@ -37,7 +40,7 @@ const backdrop=new R.Backdrop();
 function scene(x,W,H,t,u){const bg=SP.picture('title-bg');
  if(bg){const s=Math.max(W/bg.width,H/bg.height);x.drawImage(bg,(W-bg.width*s)/2,(H-bg.height*s)/2,bg.width*s,bg.height*s);return;}
  const k=Math.max(u,H/400),vh=H/k;backdrop.draw(x,{W,H,k,vh,x:t*48,y:-vh*.18},t,0);}
-function drawTitle(x,W,H,t,{head,i=0,foxI=1,mode='1 PLAYER'}){const u=Math.min(W/320,H/224);x.save();
+function drawTitle(x,W,H,t,{head,i=0,foxI=1,mode='1 PLAYER',tap=true}){const u=Math.min(W/320,H/224);x.save();
  scene(x,W,H,t,u);
  // a soft vignette so the logo pops
  const g=x.createRadialGradient(W/2,H*.45,Math.min(W,H)*.2,W/2,H*.45,Math.max(W,H)*.75);g.addColorStop(0,'rgba(0,0,40,0)');g.addColorStop(1,'rgba(0,0,40,.45)');x.fillStyle=g;x.fillRect(0,0,W,H);
@@ -48,11 +51,11 @@ function drawTitle(x,W,H,t,{head,i=0,foxI=1,mode='1 PLAYER'}){const u=Math.min(W
   // the kit pictures are drawn waist up and anchored at that cut line: it sits behind the logo's letters, the faces
   // just above the logo's top edge (the stand-in runners are full bodies with their feet lower down)
   const heroPic=!!SP.picture('title-hero'),foxPic=!!SP.picture('title-fox');
-  if(t>1.05&&foxI!==null){const rf=ease((t-1.05)/.5),fx=cx+lw*(foxPic?.23:.2);
-   if(foxPic){const fh=lh*1.25;picWithFace(x,'title-fox',fx,top+lh*.5+(1-rf)*lh*1.2,fh,foxI,head,'win');}
+  if(t>1.05&&foxI!==null){const rf=ease((t-1.05)/.5),fx=cx+lw*(foxPic?.21:.2);
+   if(foxPic)picAtFace(x,'title-fox',fx,top-lh*.04+(1-rf)*lh*1.3,lh*.36,foxI,head,'win');
    else{const fh=h*.86;runner(x,'fox',foxI,fx,top+lh*.66+(1-rf)*fh*.9,fh/44,t,head,{facing:-1});}}
   const rise=ease((t-.75)/.55),hx=foxI!==null?cx-lw*(heroPic?.1:.06):cx;
-  if(heroPic)picWithFace(x,'title-hero',hx,top+lh*.46+(1-rise)*lh*1.3,lh*1.4,i,head,'win');
+  if(heroPic)picAtFace(x,'title-hero',hx,top-lh*.1+(1-rise)*lh*1.4,lh*.4,i,head,'win');
   else{const by=top+lh*.62+(1-rise)*h*.9;runner(x,'hog',i,hx,by,h/44,t,head);}x.restore();}
  // the logo zooms in with a bounce out of the flash
  const z=t<.15?0:back((t-.15)/.5),sc=t<.15?0:.15+.85*z+(1-Math.min(1,(t-.15)/.5))*1.2;
@@ -63,7 +66,7 @@ function drawTitle(x,W,H,t,{head,i=0,foxI=1,mode='1 PLAYER'}){const u=Math.min(W
   x.fillStyle=`rgba(255,255,255,${a})`;x.beginPath();x.moveTo(sx,sy-r);x.lineTo(sx+r*.22,sy-r*.22);x.lineTo(sx+r,sy);x.lineTo(sx+r*.22,sy+r*.22);x.lineTo(sx,sy+r);x.lineTo(sx-r*.22,sy+r*.22);x.lineTo(sx-r,sy);x.lineTo(sx-r*.22,sy-r*.22);x.fill();}}
  // TAP TO START + mode
  const sz=Math.min(W/14,H/12,40);
- if(t>1.4&&Math.floor(t*2.2)%3!==2)text(x,'TAP TO START',cx,H*(W>H?.84:.8),sz,'#ffe23a');
+ if(tap&&t>1.4&&Math.floor(t*2.2)%3!==2)text(x,'TAP TO START',cx,H*(W>H?.84:.8),sz,'#ffe23a');
  if(t>1.4)text(x,mode,cx,H*(W>H?.84:.8)+sz*1.25,sz*.55,'#fff');
  text(x,'© 2026 SHAMBCONKINS',cx,H-sz*.6,sz*.36,'rgba(255,255,255,.85)','center','rgba(8,16,58,.8)');
  // white flash at the start

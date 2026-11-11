@@ -65,7 +65,7 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  row(260,G-24,4);bad('charger',860,gy(860)-14,{dir:-1});
  row(395,G-104,3,30);row(515,G-184,3,30);row(635,G-264,3,30);plat(860,G-250,{move:'h',range:70,period:200});mon(1060,G-120,'shield');land(720,26,32);mon(1120,G-120,'rings');loopRings(1900,LG);row(2060,LG-24,4);
  // ---- plateau 1, ground: roll tunnel 1
- o.push({type:'tube',x:(2440+3900)/2,y:LG+180,w:3900-2440,h:500,dir:1,min:7});inTube(TUBE1,2480,34);
+ o.push({type:'tube',x:(2440+3900)/2,y:LG+180,w:3900-2440,h:500,dir:1,min:7,path:TUBE1});inTube(TUBE1,2480,34);
  // ---- plateau 1, top
  spring(2225,LG-70,'ur','red');row(2760,P-24,5,32);spring(2930,P,'up','yellow');bad('shooter',3120,P-14);bad('thrower',3500,P-60);row(3180,P-24,8,32);
  row(2990,P-244,12,32);mon(3360,P-220,'lightning');plat(3480,P-300,{move:'v',range:70,period:200});row(3590,P-424,8,32);mon(3820,P-400,'life');
@@ -76,7 +76,7 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  // ---- plateau 2, top
  o.push({type:'starpost',x:4600,y:P-24});spring(4760,P,'up','yellow');spikes(5300,P);bad('thrower',5560,P-60);bad('charger',5900,P-14,{dir:-1});row(5080,P-24,6,32);
  row(4830,P-244,10,32);mon(5160,P-220,'shoes');plat(5320,P-240,{move:'h',range:60,period:220});row(5480,P-284,9,32);mon(5760,P-260,'fire');spring(5790,P-260,'up','yellow');row(5870,P-504,9,32);mon(6120,P-480,'life');
- o.push({type:'zipline',x0:6010,y0:P-40,x1:6690,y1:LOW-70});
+ o.push({type:'zipline',x0:6010,y0:P-40,x1:6690,y1:LOW-70,g0:gy(6004),g1:gy(6696)});
  // ---- plateau 2, cave
  row(4540,LOW-24,8);mon(4920,LOW-76,'bubble');bad('charger',5150,LOW-14,{dir:1});row(5380,LOW+40,10,26);spikes(5500,LOW+70);
  o.push({type:'wall',x:5760,y:LOW-32,w:32,h:64});mon(5840,LOW,'star');row(6090,LOW-24,10);
@@ -86,7 +86,7 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  row(8260,GF-24,6);spikes(8440,GF);bad('charger',8580,GF-14,{dir:1});spikes(8700,GF);mon(8790,GF,'rings');spring(8884,GF,'up','red');
  // ---- the hill, ground: roll tunnel 2
  o.push({type:'starpost',x:9000,y:G-24});row(9060,G-24,6);
- o.push({type:'tube',x:(9540+11080)/2,y:G+150,w:11080-9540,h:440,dir:1,min:7});inTube(TUBE2,9580,36);
+ o.push({type:'tube',x:(9540+11080)/2,y:G+150,w:11080-9540,h:440,dir:1,min:7,path:TUBE2});inTube(TUBE2,9580,36);
  // ---- the hill, top
  spring(9325,G-70,'ur','red');row(9860,HT-24,4,32);spring(9970,HT,'up','yellow');bad('flyer',10180,HT-120,{w:12,h:12});bad('shooter',10500,HT-14);row(10560,HT-24,7,32);
  row(10030,HT-244,11,32);mon(10360,HT-220,'lightning');land(10830,12,32);
@@ -99,9 +99,9 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  row(13080,LB-24,10);mon(13380,LB,'rings');spring(13484,LB,'up','red');
  bad('charger',13800,G-14,{dir:-1});row(13900,G-24,8);o.push({type:'starpost',x:14200,y:G-24});
  // ---- the mesa, ground: two straight roll tunnels with the chasm between them
- o.push({type:'tube',x:(14770+15590)/2,y:G-TH,w:15590-14770,h:80,dir:1,min:8});inTube(TUBE3,14800,20);
+ o.push({type:'tube',x:(14770+15590)/2,y:G-TH,w:15590-14770,h:80,dir:1,min:8,path:TUBE3});inTube(TUBE3,14800,20);
  spring(15622,CH,'up','red');row(15670,CH-24,8,26);mon(15800,CH,'bubble');
- o.push({type:'tube',x:(15930+16690)/2,y:CH-TH,w:16690-15930,h:80,dir:1,min:8});inTube(TUBE4,15960,18);
+ o.push({type:'tube',x:(15930+16690)/2,y:CH-TH,w:16690-15930,h:80,dir:1,min:8,path:TUBE4});inTube(TUBE4,15960,18);
  // ---- the mesa, top: springs up the two cliffs, robots, vines over the chasm, crumbling edges
  spring(14605,G-70,'up','yellow');row(14740,MS-24,8,32);bad('shooter',14900,MS-14);spring(15060,MS,'up','yellow');
  row(15140,MT-24,10,32);bad('thrower',15330,MT-60);mon(15500,MT,'lightning');

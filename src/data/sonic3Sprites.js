@@ -100,14 +100,14 @@ const PICTURES={
  // title screen + character select (docs/sonic3-sprites/TITLE-SELECT-BRIEF.md); src/engines/s3/intro.js draws a stand-in
  // for each until it is in. head = [x,y,size] (centre + diameter) of the plain face circle the player's face is drawn over; screen = the monitor's
  // see-through screen [x0,y0,x1,y1]. Owner's art in (Nov 11): every face circle and the screen hole matched the templates;
- // title-hero/title-fox are waist up, so their anchor is the cut line (y 433 / 446), not the canvas bottom
+ // round 2 (Nov 11): full-body pictures (owner's new set; sizes/anchors/face spots measured on the imported files, so they differ from the templates); the title places them by the face
  'title-bg':{size:[1600,900],anchor:[800,450],opaque:true,note:'title screen scene behind the logo: sky, sea, jungle island; the middle kept calm for the logo'},
- 'title-hero':{size:[640,640],anchor:[320,433],head:[320,170,184],note:'the hedgehog\'s title pose from behind the logo (waist up shows), wagging a finger / thumbs up'},
- 'title-fox':{size:[560,560],anchor:[280,446],head:[290,190,160],note:'the three-tailed fox popping up from behind the logo beside the hedgehog (waist up shows), tails up, a wave'},
+ 'title-hero':{size:[440,608],anchor:[220,602],head:[266,183,146],note:'the hedgehog\'s title pose from behind the logo (waist up shows), wagging a finger / thumbs up'},
+ 'title-fox':{size:[534,640],anchor:[266,637],head:[217,214,157],note:'the three-tailed fox popping up from behind the logo beside the hedgehog (waist up shows), tails up, a wave'},
  'select-bg':{size:[1600,900],anchor:[800,450],opaque:true,note:'character select backdrop (Data Select style), no words'},
  'select-monitor':{size:[800,640],anchor:[400,320],screen:[96,80,704,470],note:'chunky TV monitor frame; the screen area see-through'},
- 'select-hog':{size:[512,512],anchor:[256,512],head:[256,150,160],note:'the hedgehog standing proud, for inside the monitor'},
- 'select-fox':{size:[512,512],anchor:[256,512],head:[256,160,152],note:'the fox standing, tails up, for inside the monitor'},
+ 'select-hog':{size:[459,640],anchor:[229,637],head:[270,184,143],note:'the hedgehog standing proud, for inside the monitor'},
+ 'select-fox':{size:[575,640],anchor:[288,637],head:[236,199,142],note:'the fox standing, tails up, for inside the monitor'},
 };
 // loading: the picture for 's3:<name>' once it is in and decoded, else null (the caller draws its stand-in meanwhile)
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}

@@ -83,7 +83,9 @@ function groundStep(p,inp,T){let [wr,hr]=radii(p);
  // walls ahead (push sensors) while moving, on floor-mode ground only: on a loop's walls and ceiling the cast ran into
  // the loop's own curve ahead and stopped the runner dead (rolling down the back of a loop at 9.9 -> 0)
  const mode=modeOf(p.ang);
- if(p.gsp!==0&&mode===0){const dir=Math.sign(p.gsp),m=MODE_ANG[mode],[tx,ty]=tan(m),[nx,ny]=down(m),off=mode===0&&!p.rolling?8:0;
+ // the sensor drops 8 px only on flat ground (like the Mega Drive): on a slope it took the start of a loop's curve for a
+ // wall at speed (10.7 -> 0 at 42°)
+ if(p.gsp!==0&&mode===0){const dir=Math.sign(p.gsp),m=MODE_ANG[mode],[tx,ty]=tan(m),[nx,ny]=down(m),flat=Math.abs(Math.sin(p.ang))<.09,off=flat&&!p.rolling?8:0;
   const ox=p.x+nx*off,oy=p.y+ny*off,d=sense(T,ox,oy,tx*dir,ty*dir,p.path,false);
   const reach=C.push+Math.abs(p.gsp);
   if(d!==null&&d<reach){p.gsp=0;const gap=d-C.push;/* stop flush against the wall */p.x+=tx*dir*Math.min(0,gap);p.y+=ty*dir*Math.min(0,gap);p.ev.push('wall');}}

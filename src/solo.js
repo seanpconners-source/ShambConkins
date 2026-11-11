@@ -101,7 +101,7 @@ const NET_NATIVE=new Set(['major-league-fielding','major-league-bats','trivia-mi
  'space-swarm-versus','space-swarm-coop',
  'rainbow-road-kart','rainbow-balloon-battle','kart-time-trial','kart-grand-prix-pass',
  // online co-op / live races (Oct 26): one shared world instead of two separate solo runs
- 'sonic-ring-rush','sonic-goal-dash','smb-world-1','smb-coin-rush','smb-castle-dash',
+ 'sonic-ring-rush','sonic-goal-dash','smb-world-1','smb-coin-rush','smb-castle-dash','sonic3-zone1','sonic3-test',
  'broforce','broforce-jungle','broforce-factory','broforce-city','broforce-desert','cv-vampire-killer','cv-candle-hunt','cv-symphony','warriors-brawl','megatouch-photohunt','doom','doom-2',
  'raiders-ball-run','sewer-clash','league-penalties','fight-night','hyrule-rupee-rush','hyrule-sword-duel']);
 // whole engines that play natively online (every boss fight is co-op on two phones; pinball = one machine, balls

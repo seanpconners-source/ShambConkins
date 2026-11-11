@@ -97,6 +97,9 @@ class TerrainArt{
  warm(cam,margin=CH){const v=cam.view(margin);for(let cy=Math.floor(v.y0/CH);cy<=Math.floor(v.y1/CH);cy++)for(let cx=Math.floor(v.x0/CH);cx<=Math.floor(v.x1/CH);cx++)if(cx>=0&&cy>=0&&cx*CH<this.T.w&&cy*CH<this.T.h)this.get(cx,cy);}
 }
 
+// a darkened copy of a picture (once), for a nearer, shadier parallax layer
+function darker(im,k){const c=mk(im.width,im.height),g=c.getContext('2d');g.drawImage(im,0,0);try{const d=g.getImageData(0,0,c.width,c.height),a=d.data;
+ for(let i=0;i<a.length;i+=4){a[i]*=k;a[i+1]*=k*1.04;a[i+2]*=k*.95;}g.putImageData(d,0,0);}catch{}return c;}
 // ---------------- parallax backdrop
 class Backdrop{
  constructor(pal=PAL.jungle){this.pal=pal;this.strips=null;}
@@ -124,7 +127,10 @@ class Backdrop{
    const skyW=sky.width/2*k;if(hz>0){let ox=-((cam.x*.02)*k)%skyW;if(ox>0)ox-=skyW;for(let xx=ox;xx<W;xx+=skyW)x.drawImage(sky,Math.round(xx),0,Math.ceil(skyW)+1,hz+1);}
    rep2(cl,.04,hz-150*k,0,t*6);rep2(isl,.12,hz-isl.height/2*k+2*k);
    const jb=hz+110*k;if(hz<H){const sh=sea.height/2*k;for(let yy=hz,r=0;yy<jb;yy+=sh-1,r++)rep2(sea,.16+r*.04,yy,0,t*(4+r*2));
-    rep2(far,.3,jb-far.height/2*k);const nb=jb+90*k;rep2(near,.45,nb-near.height/2*k);if(nb<H){x.fillStyle='#16300f';x.fillRect(0,Math.round(nb)-1,W,H-nb+1);}}
+    // the near layer: the jungle-near strip has its canopies cut flat at the top (in the art; on the redo list), so the
+    // far treetops are drawn again bigger and darker as the near layer until a new strip comes in
+    if(!this.nearAlt)this.nearAlt=darker(far,.62);
+    rep2(far,.3,jb-far.height/2*k);const nb=jb+90*k,nh=far.height/2*k*1.55;rep2(this.nearAlt,.45,nb-nh+8*k,nh);if(nb<H){x.fillStyle='#0f2a12';x.fillRect(0,Math.round(nb)-1,W,H-nb+1);}}
    x.imageSmoothingEnabled=sm;return;}
   let g=x.createLinearGradient(0,Math.min(0,hz-cam.vh*k),0,Math.max(1,hz));g.addColorStop(0,P.sky[0]);g.addColorStop(.6,P.sky[1]);g.addColorStop(1,P.sky[2]);x.fillStyle=g;x.fillRect(0,0,W,Math.max(0,hz));
   const rep=(c,f,yTop,drift=0)=>{const w=c.width*k,h=c.height*k;if(yTop>H||yTop+h<0)return;let ox=-((cam.x*f+drift)*k)%w;if(ox>0)ox-=w;for(let xx=ox;xx<W;xx+=w)x.drawImage(c,Math.round(xx),Math.round(yTop),Math.ceil(w)+1,Math.ceil(h));};
@@ -219,7 +225,9 @@ function drawObject(x,o,t,ctx){
   x.fillStyle='#3c9a24';for(let k=1;k<6;k++){const f=k/6,lx=o.x+(o.hx-o.x)*f,ly=o.y+(o.hy-o.y)*f;x.beginPath();x.ellipse(lx+(k%2?4:-4),ly,4,2,k%2?.5:-.5,0,7);x.fill();}
   x.fillStyle='#8a5a2a';x.fillRect(o.hx-8,o.hy-2,16,4);x.fillStyle='#5a3a1a';x.fillRect(o.x-6,o.y-4,12,6);return;}
  case 'zipline':{if(SP.picture('zip-handle')){x.strokeStyle='#c8913c';x.lineWidth=2.5;x.beginPath();x.moveTo(o.x0,o.y0);x.lineTo(o.x1,o.y1);x.stroke();
-   pic(x,'zip-post',o.x0-6,o.y0+40,.2,1);pic(x,'zip-post',o.x1+6,o.y1+40,.2,1,{flip:true});pic(x,'zip-handle',o.hx,o.hy+2,.5,.42);return;}
+   // posts reach down to the ground (o.g0/o.g1 from the zone); a fixed 40 px left the low end floating
+   const post=(px,py,g,flip)=>{const b=g??py+40;pic(x,'zip-post',px,b,.2,1,{w:16,h:Math.max(48,b-py+8),flip});};
+   post(o.x0-6,o.y0,o.g0,false);post(o.x1+6,o.y1,o.g1,true);pic(x,'zip-handle',o.hx,o.hy+2,.5,.42);return;}
   x.strokeStyle='#d8c8a0';x.lineWidth=2;x.beginPath();x.moveTo(o.x0,o.y0);x.lineTo(o.x1,o.y1);x.stroke();x.fillStyle='#5a3a1a';for(const [px,py] of [[o.x0,o.y0],[o.x1,o.y1]])x.fillRect(px-4,py-4,8,40);
   x.fillStyle='#707080';x.beginPath();x.arc(o.hx,o.hy,4,0,7);x.fill();x.strokeStyle='#404050';x.lineWidth=2;x.beginPath();x.moveTo(o.hx,o.hy);x.lineTo(o.hx,o.hy+12);x.stroke();x.fillStyle='#e8c040';x.fillRect(o.hx-7,o.hy+11,14,3);return;}
  case 'sign':{const sp=o.spin>0?o.spin:0,a=sp>0?(150-sp)*.35*(sp/150):0,cw=Math.cos(a);
@@ -277,6 +285,9 @@ function drawLoose(x,r,t){if(r.animal&&spr(x,'critter',['bird','rabbit','squirre
 
 // ---------------- the runners (our own designs, as in the sprite kit): P1 a blue-purple hedgehog with a mane of back
 // quills, P2 a red-orange fox with three tails (they whirl when it flies), each wearing the player's face
+// sizes (owner, Nov 11): the fox's body was ~14% taller than the hedgehog's on the sheets, so the hedgehog is drawn 10%
+// bigger and the fox 3% smaller (they match); the hedgehog's ball 30% bigger; faces a little bigger than the 32 / 21 before
+const BODY_K={hog:1.1,fox:.97},BALL_K={hog:1.3,fox:1},RUN_HEAD=36,BALL_HEAD=24;
 const looks=new WeakMap();
 function lookOf(p){let L=looks.get(p);if(!L){L={spin:0,cyc:0,idle:0,tw:0};looks.set(p,L);}return L;}
 // the angle the body is drawn at: follows the ground angle quickly (so the last degree or two of pixel-staircase noise
@@ -287,7 +298,7 @@ function bodyAngle(p){const L=lookOf(p),want=p.dead?0:p.ground?-p.ang:0,now=perf
  L.da+=d*(1-Math.exp(-dt*(p.ground?30:9)));return L.da;}
 function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body==='fox':i===1,BODY=tails?'#f0541e':'#6a48e0',DARK=tails?'#96280a':'#32208c',SKIN=tails?'#fff0d0':'#cdbcff',ARM=BODY,SCARF=tails?'#fff0d0':'#8c70ff',SHOE=tails?'#18a8a0':'#ffd428',SOLE=tails?'#0c6660':'#b08400';
  const ball=p.rolling||p.jumping||p.spindash,sp=p.ground?p.gsp:p.xsp,run=Math.abs(sp),f=p.facing||1;
- L.spin+=p.spindash?.9:(ball?(.25+Math.abs(p.ground?p.gsp:Math.hypot(p.xsp,p.ysp))*.07):0)*(p.ground?Math.sign(p.gsp)||f:f);L.cyc+=Math.max(.06,run*.045);L.idle=p.ground&&run<.05&&!p.crouch&&!p.lookUp?L.idle+1:0;
+ L.spin+=p.spindash?.9:(ball?(.25+Math.abs(p.ground?p.gsp:Math.hypot(p.xsp,p.ysp))*.07):0)*(p.ground?Math.sign(p.gsp)||f:f);L.cyc+=1/Math.max(1,8-run);// Mega Drive timing: each walk/run frame lasts max(1, 8 - speed) game frames (the old rate slid the feet)L.idle=p.ground&&run<.05&&!p.crouch&&!p.lookUp?L.idle+1:0;
  x.save();x.globalAlpha*=alpha;
  if(p.inv>0&&!p.hurt&&(p.inv>>2)%2&&alpha===1)x.globalAlpha*=.3;
  if(sprites())return;
@@ -337,7 +348,9 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
   const frame=(Sh,row,fr,dx,dy)=>{const [fw,fh]=Sh.def.frame,ri=Object.keys(Sh.def.rows).indexOf(row),r=Sh.res;x.drawImage(Sh.img,fr*fw*r,ri*fh*r,fw*r,fh*r,dx,dy,fw,fh);};
   const was=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;
   if(ball&&!p.dead){shieldUnder(x,p,t);const row=p.spindash?'spindash':'roll',n=B.def.rows[row],TAU=Math.PI*2,fr=p.spindash?Math.floor(t*24)%n:Math.floor((((L.spin*f)%TAU)+TAU)%TAU/TAU*n)%n,[bw,bh]=B.def.frame;
-   x.save();x.translate(p.x,p.y);x.save();x.scale(f,1);frame(B,row,fr,-B.def.foot[0],-B.def.foot[1]);x.restore();x.rotate(p.spindash?0:L.spin);head(x,i,0,0,21,'angry');x.restore();
+   // the hedgehog's ball drawn bigger (owner); lifted off the surface by the extra size so it still sits on the ground
+   const bk=BALL_K[tails?'fox':'hog'],lift=14*(bk-1),ga=p.ground?p.ang:0;
+   x.save();x.translate(p.x-Math.sin(ga)*lift,p.y-Math.cos(ga)*lift);x.scale(bk,bk);x.save();x.scale(f,1);frame(B,row,fr,-B.def.foot[0],-B.def.foot[1]);x.restore();x.rotate(p.spindash?0:L.spin);head(x,i,0,0,BALL_HEAD,'angry');x.restore();
    x.imageSmoothingEnabled=was;x.restore();shieldOver(x,p,t);return true;}
   const N=r=>S.def.rows[r]||0,skid=p.ground&&run>1.5&&Math.sign(p.gsp)!==f&&!p.rolling;let row='stand',fr=0;const cyc=(r,v)=>{row=r;fr=Math.floor(v)%N(r);};
   if(p.dead){row='dead';fr=p.dead>24?1:0;}
@@ -346,19 +359,19 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
   else if(p.fly===1&&N('tired'))cyc('tired',t*5);
   else if(p.hurt)cyc('hurt',t*7);
   else if(p.spring){row='spring';fr=1;}
-  else if(!p.ground){if(p.ysp>1.5)cyc('fall',t*8);else cyc('walk',L.cyc*1.3);}
+  else if(!p.ground){if(p.ysp>1.5)cyc('fall',t*8);else cyc('walk',L.cyc);}
   else if(p.crouch){row='crouch';fr=1;}
   else if(skid)cyc('skid',t*10);
   else if(run>=9.5)cyc('dash',t*24);
-  else if(run>=5.5)cyc('run',L.cyc*1.4);
+  else if(run>=5.5)cyc('run',L.cyc);
   else if(run<.05){if(p.lookUp){row='lookUp';fr=1;}else if(L.idle>180)cyc('wait',L.idle/14);}
-  else cyc('walk',L.cyc*1.3);
+  else cyc('walk',L.cyc);
   if(!p.dead)shieldUnder(x,p,t);
   const [fx0,fy0]=S.def.foot,h=SP.spot(nm,row,fr)||{x:fx0,y:fy0-36};
-  x.translate(p.x,p.y);x.rotate(bodyAngle(p));x.translate(0,19);
+  x.translate(p.x,p.y);x.rotate(bodyAngle(p));x.translate(0,19);x.scale(BODY_K[tails?'fox':'hog'],BODY_K[tails?'fox':'hog']);// scaled about the feet
   x.save();x.scale(f,1);frame(S,row,fr,-fx0,-fy0);x.restore();
   const hx=(h.x-fx0)*f,hy=h.y-fy0;backOfHead(hx,hy,skid,false);
-  head(x,i,hx,hy,32,p.dead||p.hurt?'sad':skid?'angry':run>5?'happy':undefined);
+  head(x,i,hx,hy,RUN_HEAD,p.dead||p.hurt?'sad':skid?'angry':run>5?'happy':undefined);
   x.imageSmoothingEnabled=was;x.restore();if(!p.dead)shieldOver(x,p,t);return true;}
  function legs(a,b){x.strokeStyle=BODY;x.lineWidth=5;x.lineCap='round';x.beginPath();x.moveTo(-2,-12);x.lineTo(-3+a*6,-2);x.moveTo(2,-12);x.lineTo(3+b*6,-2);x.stroke();shoe(-3+a*6,-1,0);shoe(3+b*6,-1,0);}
  function shoe(sx,sy,rot){x.save();x.translate(sx,sy);x.rotate(rot);x.fillStyle=SHOE;x.beginPath();x.ellipse(2,-1.5,6.5,3.6,0,0,7);x.fill();x.fillStyle='#fff';x.fillRect(-1,-4.5,3,4);x.fillStyle=SOLE;x.fillRect(-3,0,10,1.6);x.restore();}

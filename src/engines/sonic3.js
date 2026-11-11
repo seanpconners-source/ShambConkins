@@ -20,8 +20,12 @@ const R=require("src/engines/s3/render.js");
 const {buildTestZone}=require("src/engines/s3/testZone.js");
 const {buildZone1Act1}=require("src/engines/s3/zone1.js");
 const I=require("src/engines/s3/intro.js");
+const {netField}=require("src/engines/netField.js");
+const {partnerArrow}=require("src/engines/partnerArrow.js");
 
-const STEP=1000/60,TIME_CAP=10*60*60,TALLY=60*4.2;
+// the game runs ~7% faster than the Mega Drive's 60 steps a second (owner: "maybe a tiny bit faster"); the clock still
+// counts real seconds (clock is in 60ths)
+const SIM_HZ=64,STEP=1000/SIM_HZ,TICK=60/SIM_HZ,TIME_CAP=10*60*60,TALLY=SIM_HZ*4.2;
 // Sonic 3 time bonus by the clock at the sign
 const timeBonus=f=>{const s=f/60;return s<30?50000:s<45?10000:s<60?5000:s<90?4000:s<120?3000:s<180?2000:s<240?1000:s<300?500:0;};
 const PCOL=['#78b6ff','#ffb85a'],NONE={l:false,r:false,u:false,d:false,jump:false,jumpPress:false};
@@ -30,8 +34,15 @@ async function sonic3(s){
  const [c,x]=s.canvas(900,600,{fill:true});const fb=fullBleed(s,{bg:'#000'});s.body.classList.add('drag-arena-body');
  if(!await settle(s))return;
  S3.open(s);s.cleanup(()=>S3.stopAll());
- const head=(g,i,cx,cy,size,mood)=>s.sprite(g,i,cx,cy,size,{exact:true,mood,noBadge:true});
- const turns=s.solo?[0]:[0,1],score=[0,0],result=[null,null];
+ // faces ride the body exactly: no menu bob/sway (owner: heads bounced around on their own)
+ const head=(g,i,cx,cy,size,mood)=>s.sprite(g,i,cx,cy,size,{exact:true,mood,noBadge:true,still:true});
+ // ONLINE (s.online, owner Nov 11: "both on screen at the same time, like the previous one"): both phones run the act at
+ // once, each its own runner (P1 the hedgehog, P2 the fox) on its own screen; the partner is drawn from 20 Hz snapshots
+ // (edge arrow when off screen). Rings, monitors, robots and breakable walls one of you takes are gone for both. When one
+ // gets through the sign the other has NET_GRACE seconds; then both swap their scores {fin} and the higher one wins.
+ const net=s.online||null,me=net?net.me:0,them=1-me,NET_GRACE=10;
+ const turns=net?[me]:s.solo?[0]:[0,1],score=[0,0],result=[null,null];
+ let q=null,qs=null,taken=null,graceAt=null,netDone=false;// partner runner + its latest snapshot; objects taken; grace start
  const zone1=s.game?.s3zone==='zone1',buildZone=zone1?buildZone1Act1:buildTestZone,LABEL=zone1?'Shamb Island Act 1':'Sonic 3 Test Zone',ACT_SONG=zone1?'green-hill':'azure-lake';// owner, Nov 11: Green Hill Zone for Act 1
  let turn=0,Z=null,w=null,p=null,cam=null,art=null,back=null,fx=null;
  let phase='idle',frames=0,clock=0,acc=0,last=0,card=0,endF=0,overLen=150,tally=null,overText='',dbg=null;const vis={x:0,y:0};
@@ -48,12 +59,16 @@ async function sonic3(s){
   if(Math.abs(dx)>40){choose(dx<0?1:-1);return;}
   const h=I.selectHit(s.W,s.H,px,py);if(h==='prev')choose(-1);else if(h==='next')choose(1);else{S3.play('starpost');advance();}}
  async function introScreens(){intro.t0=performance.now();phase='title';S3.jingle('title');await waitIntro();
+  // online: wait for the partner's phone, then both start the act at the same moment
+  if(net){intro.waiting=true;await nf.start('go');intro.waiting=false;if(!s.alive)return false;}
   if(s.solo){S3.stopJingle();phase='select';intro.t0=performance.now();if(intro.skip)intro.pick=intro.skip.pick|0;else{S3.music('data-select');await waitIntro();}bodies[0]=I.CHARS[intro.pick].body;}
   S3.stopJingle();S3.music(null);press=false;phase='idle';return s.alive;}
  function introFrame(){const W=s.W,H=s.H;S3.tick();if(phase==='select')S3.music('data-select');
   // the title theme is one 15 s piece: after it ends and 4 s of quiet, it plays again
   if(phase==='title'){if(S3.nowPlaying().jingle)intro.quietAt=0;else if(!intro.quietAt)intro.quietAt=performance.now();else if(performance.now()-intro.quietAt>4000){intro.quietAt=0;S3.jingle('title');}}
-  if(phase==='title')I.drawTitle(x,W,H,introT(),{head,i:0,foxI:s.players[1]?1:null,mode:s.solo?'1 PLAYER':'2 PLAYERS'});
+  if(net&&phase==='title'&&!intro.waiting&&introT()>6)advance();// online the title moves on by itself (both phones)
+  if(phase==='title')I.drawTitle(x,W,H,introT(),{head,i:0,foxI:s.players[1]?1:null,tap:!intro.waiting,
+   mode:intro.waiting?`WAITING FOR ${s.players[them].name.toUpperCase()}…`:net?'ONLINE · TOGETHER':s.solo?'1 PLAYER':'2 PLAYERS'});
   else{const k=Math.max(0,1-(performance.now()-intro.slideAt)/350);I.drawSelect(x,W,H,introT(),{pick:intro.pick,slide:k*intro.slideDir,head,i:0});}}
  // ---------------- input
  const kb=arenaKeys(s),inp={l:false,r:false,u:false,d:false,jump:false,jumpPress:false};let press=false;
@@ -85,20 +100,57 @@ async function sonic3(s){
   if(e.k==='skid')fx.dust(p.x,p.y+18,Math.sign(p.gsp));
   if(e.k==='dash')cam.dash((Math.abs(p.gsp)-8)*2);
   if(e.k==='sign'&&!tally){S3.music(null);const sang=S3.jingle('act-clear');
-   tally={time:timeBonus(clock),rings:(p.rings|0)*100,t:0,clock,len:Math.max(TALLY,sang?Math.ceil(S3.jingleLen('act-clear')*60)+20:0)};S3.play('signpost');}
+   tally={time:timeBonus(clock),rings:(p.rings|0)*100,t:0,clock,len:Math.max(TALLY,sang?Math.ceil(S3.jingleLen('act-clear')*SIM_HZ)+20:0)};S3.play('signpost');}
   if(e.k==='life')S3.jingle('1up');
   if(e.k==='die'){overText=p.lives<=0?'GAME OVER':'';}}}
  // the song this moment wants: the act song from the title card on, Invincibility while a star lasts
  const songFor=()=>(phase==='card'||phase==='play')&&!tally?(p.star>0&&!p.dead?'invincible':ACT_SONG):null;
- function gameOver(text){overText=text;phase='over';S3.music(null);const sang=S3.jingle('game-over');endF=0;overLen=Math.max(150,sang?Math.ceil(S3.jingleLen('game-over')*60)+20:0);}
+ // ---------------- online: my runner out as snapshots, the partner in; shared objects as events
+ const SHARED=new Set(['ring','monitor','badnik','wall']);
+ const isTaken=o=>o.type==='ring'?!!o.got:o.type==='monitor'?!!o.broken:o.type==='badnik'?o.alive===false:!!o.gone;
+ const flags=r=>(r.ground?1:0)|(r.rolling||r.jumping?2:0)|(r.facing<0?4:0)|(r.spindash?8:0)|(r.dead?16:0)|(r.hurt?32:0)|(r.crouch?64:0)|(r.lookUp?128:0)|(r.hang?256:0)|(tally?512:0)|(r.star>0?1024:0)|(netDone?4096:0);
+ const nf=net?netField(s,{hz:20,
+  pack:()=>p&&Z?{a:[Math.round(p.x),Math.round(p.y),+p.ang.toFixed(2),+p.gsp.toFixed(2),+p.xsp.toFixed(2),+p.ysp.toFixed(2),p.fly|0,p.score|0,p.rings|0,p.lives|0],b:flags(p),sh:p.shield||0}:{w:1},
+  unpack:(i,d)=>{if(d&&d.a)qs={...d,at:performance.now()};},
+  onEvent:e=>{if(e&&e.g!==undefined)takeRemote(e.g);}}):null;
+ function takeRemote(k){const o=w?.objs[k];if(!o||!taken)return;taken[k]=1;
+  if(o.type==='ring')o.got=true;else if(o.type==='monitor'){o.broken=true;o.solid=false;o.rise=0;o.giveTo=null;}
+  else if(o.type==='badnik'){o.alive=false;o.gone=true;}else o.gone=true,o.solid=false;}
+ function shareTaken(){if(!net||!w)return;const os=w.objs;for(let k=0;k<os.length;k++){const o=os[k];if(taken[k]||!SHARED.has(o.type)||!isTaken(o))continue;taken[k]=1;nf.event({g:k});}}
+ // the partner, eased toward its last snapshot moved on by its speed (up to 6 frames ahead)
+ function partnerStep(){if(!qs||!q)return;const [x0,y0,ang,gsp,xsp,ysp,fly,sc,rings,lives]=qs.a,b=qs.b,age=Math.min(6,(performance.now()-qs.at)/STEP);
+  const tx=x0+xsp*age,ty=y0+ysp*age;if(Math.hypot(tx-q.x,ty-q.y)>240){q.x=tx;q.y=ty;}else{q.x+=(tx-q.x)*.45;q.y+=(ty-q.y)*.45;}
+  Object.assign(q,{ang,gsp,xsp,ysp,fly,score:sc,rings,lives,ground:!!(b&1),rolling:!!(b&2),jumping:!!(b&2)&&!(b&1),facing:b&4?-1:1,spindash:!!(b&8),dead:b&16?Math.max(q.dead||0,1)+1:0,hurt:!!(b&32),crouch:!!(b&64),lookUp:!!(b&128),hang:!!(b&256),star:b&1024?60:0,shield:qs.sh||null});
+  q.through=!!(b&512);q.finished=!!(b&4096);}
+ // online test autopilot (the same one tests/s3-zone1.mjs drives the act with): hold right, hop when stuck, spin dash when
+ // stuck longer, back up for a run-up when there is no way forward, let go of vines/zip lines at the far end
+ // (the Test Zone's obstacles suit a simpler one: hold right, spin dash when stuck, hop if still stuck right after)
+ const testBot=(()=>{let stuck=0,hold=0,dash=0,n=0,lastDash=-999;return r=>{n++;
+  if(dash>0){dash--;return {l:false,r:dash<3,u:false,d:dash>2,jump:false,press:dash>2&&dash%5===0};}
+  if(r.ground&&Math.abs(r.gsp)<1.5)stuck++;else stuck=0;let press=false;
+  if(r.ground&&stuck>20){stuck=0;if(n-lastDash<160){press=true;hold=20;}else{lastDash=n;dash=28;return {l:false,r:false,u:false,d:true,jump:false,press:false};}}
+  return {l:false,r:true,u:false,d:false,jump:hold-->0,press};};})();
+ const zoneBot=(()=>{const b={stuck:0,last:0,mode:0,hang:0,best:0,since:0,back:0};return p=>{const o={l:false,r:true,u:false,d:false,jump:false,press:false};
+  if(p.hang){b.hang++;const h=p.hang;const far=h.type==='zipline'?h.s>=.97||b.hang>400:(h.ang>.55&&b.hang>20);if(far){o.jump=o.press=true;b.hang=0;}return o;}b.hang=0;
+  if(p.x>b.best+4){b.best=p.x;b.since=0;}else b.since++;
+  if(b.back>0){b.back--;o.r=false;o.l=true;if(b.back===0)b.since=0;return o;}
+  if(b.since>240&&p.ground){b.back=200;return o;}
+  if(Math.abs(p.x-b.last)<.5)b.stuck++;else b.stuck=0;b.last=p.x;
+  if(b.mode>0){b.mode--;o.r=false;o.d=true;if(b.mode%6===0&&b.mode>8)o.press=o.jump=true;if(b.mode===0)o.d=false;return o;}
+  if(b.stuck>90&&p.ground){b.mode=40;b.stuck=0;return o;}
+  if(b.stuck>12&&p.ground){o.press=true;o.jump=true;}
+  if(!p.ground&&p.ysp<0)o.jump=true;return o;};})();
+ const netBot=zone1?zoneBot:testBot;
+ function gameOver(text){overText=text;phase='over';S3.music(null);const sang=S3.jingle('game-over');endF=0;overLen=Math.max(150,sang?Math.ceil(S3.jingleLen('game-over')*SIM_HZ)+20:0);}
  // ---------------- a turn
  async function startTurn(k,{noCard=false}={}){turn=k;const i=turns[k],nm=s.players[i].name;
   const desc=zone1&&s.solo?`Shamb Island Zone, Act 1. Roll tunnels, loops, high ledges, a cave, lakes and waterfalls. Reach the sign: time bonus + 100 a ring.`
    :s.solo?`Sonic 3 engine test: run the Test Zone. Loops, springs, shields, badniks, a zip line and a swing vine. Reach the sign: time bonus + 100 a ring.`
    :k===0?`${nm} runs first as Seanic the hedgehog. Reach the sign at the end: badniks + time bonus + 100 a ring. Then ${s.players[1].name} runs it as the three-tailed fox, who can fly.`
    :`${nm}, you're the fox: tap jump again in the air to fly, hold it to climb. Beat ${s.players[0].name}'s ${score[0].toLocaleString()} points.`;
-  if(!noCard&&!await s.pass(i,desc,'Ready',{summary:k?`${s.players[0].name}: ${score[0].toLocaleString()}`:null}))return false;
+  if(!noCard&&!net&&!await s.pass(i,desc,'Ready',{summary:k?`${s.players[0].name}: ${score[0].toLocaleString()}`:null}))return false;
   Z=buildZone();w=new O.World(Z.T,Z.objs,{switchers:Z.switchers,bottom:Z.bottom});
+  if(net){taken=new Uint8Array(w.objs.length);q=P.makeRunner(Z.start.x,Z.start.y);q.body=bodies[them];q.canFly=q.body==='fox';q.lives=3;graceAt=null;netDone=false;}
   p=P.makeRunner(Z.start.x,Z.start.y);p.body=bodies[i]||'hog';p.canFly=p.body==='fox';p.rings=0;p.lives=3;p.score=0;p.facing=1;
   cam=new Camera(Z.bounds);cam.resize(s.W,s.H);cam.snap(p);
   art=art||new R.TerrainArt(Z.T);back=back||new R.Backdrop();fx=new R.Fx();art.warm(cam);
@@ -106,6 +158,11 @@ async function sonic3(s){
  function endTurn(){const i=turns[turn];score[i]=(p.score|0)+(tally?tally.time+tally.rings:0);result[i]={got:!!tally,clock:tally?tally.clock:clock,score:score[i]};
   s.setScores(score);}
  async function next(){endTurn();S3.music(null);
+  if(net){phase='netwait';netDone=true;nf.push();nf.finish({sc:score[me],got:result[me].got,clock:Math.round(result[me].clock)});
+   const o=await nf.remoteDone();if(!s.alive)return;
+   score[them]=o?o.sc|0:0;result[them]={got:!!o?.got,clock:o?.clock||0,score:score[them]};s.setScores(score);phase='done';
+   const win=score[0]===score[1]?-1:score[0]>score[1]?0:1;if(win>=0)s.react(win,'win');
+   s.finish(score,`${LABEL} online: ${s.players[0].name} ${score[0].toLocaleString()}, ${s.players[1].name} ${score[1].toLocaleString()}.`);return;}
   if(turn+1<turns.length){phase='idle';if(await startTurn(turn+1))return;return;}
   phase='done';const r0=result[0];
   if(s.solo){soloFinish(s,score[0],r0.got?1:0,`${LABEL}: ${score[0].toLocaleString()} points${r0.got?` (through in ${R.fmtTime(r0.clock)})`:''}.`,r0.got);return;}
@@ -121,8 +178,12 @@ async function sonic3(s){
   // out over a few frames; the physics position stays exact
   vis.x*=.6;vis.y*=.6;if(p.ground&&!p.onObj&&!p.hang&&!p.dead&&roll===p.rolling){const ux=p.x-px-p.xsp,uy=p.y-py-p.ysp,u=Math.hypot(ux,uy);if(u>3&&u<40){vis.x-=ux;vis.y-=uy;}}
   if(Math.hypot(vis.x,vis.y)<.3)vis.x=vis.y=0;
-  if(phase==='play'&&!tally&&!p.dead)clock++;
+  if(phase==='play'&&!tally&&!p.dead)clock+=TICK;
   events();fx.step();cam.update(p);
+  if(net){shareTaken();partnerStep();nf.tick(STEP/1000);
+   if(phase==='netwait')return null;// my run is over: the world goes on (and the partner) while we wait for their score
+   // the partner got through the sign: NET_GRACE seconds to get there too
+   if(phase==='play'&&!tally&&q?.through){graceAt??=clock;if(clock-graceAt>=NET_GRACE*60)return 'next';}}
   if(p.dead&&p.dead>=120&&phase==='play'){if((p.lives|0)<=0)gameOver('GAME OVER');else{O.respawn(p,{x:Z.start.x,y:Z.start.y});p.y-=1;cam.snap(p);S3.restart();}}
   if(tally){tally.t++;if(tally.t===tally.len-60)S3.play('register');if(tally.t>=tally.len)return 'next';}
   if(phase==='over'){if(++endF>overLen)return 'next';}
@@ -138,15 +199,19 @@ async function sonic3(s){
   for(const o of w.objs)if(!o.gone||o.type==='monitor'){const ox=o.x??o.x0,oy=o.y??o.y0;if(o.type==='tube')continue;if(o.type!=='zipline'&&(ox<v.x0-80||ox>v.x1+80||oy<v.y0-140||oy>v.y1+140))continue;R.drawObject(x,o,t,{head,me:turns[turn]});}
   for(const r of w.loose)if(r.x>v.x0&&r.x<v.x1)R.drawLoose(x,r,t);
   for(const sh of w.shots)R.drawShot(x,sh,t);
+  if(net&&q&&qs)R.drawRunner(x,q,them,t,head);// the partner, behind my runner
   p.x+=vis.x;p.y+=vis.y;R.drawRunner(x,p,turns[turn],t,head);p.x-=vis.x;p.y-=vis.y;
   fx.draw(x);x.restore();
+  if(net&&q&&qs)partnerArrow(s,x,{x:0,y:0,w:W,h:H},(q.x-cx)*k,(q.y-cy)*k,{player:them,color:PCOL[them],label:`${Math.round(Math.abs(q.x-p.x)/16)} m`,size:Math.round(Math.max(16,Math.min(26,k*9)))});
   // HUD
   const i=turns[turn];R.drawHUD(x,W,H,{score:(p.score|0)+(tally?Math.round((tally.time+tally.rings)*Math.min(1,tally.t/(tally.len-80))):0),rings:p.rings},tally?tally.clock:clock,{name:s.players[i].name.toUpperCase(),color:PCOL[i]});
   R.drawLives(x,W,H,p,i,head);
   drawPad(W,H);
   if(phase==='card')R.drawTitleCard(x,W,H,card,`${Z.zone}`,Z.act);
-  if(tally)drawTally(W,H,i);
+  if(tally&&phase!=='netwait')drawTally(W,H,i);
   if(overText&&(phase==='over'||p.dead))banner(overText,W,H);
+  if(net&&phase==='netwait')banner(`WAITING FOR ${s.players[them].name.toUpperCase()}…`,W,H);
+  else if(net&&phase==='play'&&!tally&&q?.through&&graceAt!==null)banner(`${s.players[them].name.toUpperCase()} IS THROUGH! ${Math.max(0,Math.ceil(NET_GRACE-(clock-graceAt)/60))}`,W,H);
  }
  const FONT='italic 900 %spx "Arial Black",Impact,system-ui,sans-serif';
  function banner(text,W,H){const sz=Math.round(Math.min(W/9,H/7,60));x.save();x.font=FONT.replace('%s',sz);x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';x.lineWidth=Math.max(4,sz*.16);x.strokeStyle='#08103a';x.strokeText(text,W/2,H*.42);x.fillStyle='#fff';x.fillText(text,W/2,H*.42);x.restore();}
@@ -162,7 +227,10 @@ async function sonic3(s){
   const jx=W-r0*1.9,jy=H-r0*1.9;x.globalAlpha=pad.jump?.55:.2;x.beginPath();x.arc(jx,jy,r0*.9,0,7);x.fill();x.globalAlpha=pad.jump?.9:.5;x.fillStyle='#08103a';x.font=`900 ${Math.round(r0*.55)}px Arial Black,Arial`;x.textAlign='center';x.textBaseline='middle';x.fillText('JUMP',jx,jy+1);x.restore();}
  // ---------------- tests
  s.debug={get state(){return {phase,frames,clock,turn,p,w,cam,score:[...score],tally};},
-  set bot(f){dbg={...(dbg||{}),bot:f};},teleport(px,py){Object.assign(p,{x:px,y:py,xsp:0,ysp:0,gsp:0,ground:false});cam.snap(p);},skipCard(){card=100;phase='play';},
+  set bot(f){dbg={...(dbg||{}),bot:f};},
+  // online test harness: calling debug.bot() switches this phone's runner to an autopilot (hold right, hop when stuck)
+  get bot(){return net?()=>{if(!dbg?.bot)dbg={...(dbg||{}),bot:netBot};return 'drive';}:dbg?.bot;},
+  get net(){return net?{me,partner:qs?{x:qs.a[0],y:qs.a[1],through:!!(qs.b&512),done:!!(qs.b&4096)}:null,taken:taken?taken.reduce((a,v)=>a+v,0):0,graceAt,phase}:null;},teleport(px,py){Object.assign(p,{x:px,y:py,xsp:0,ysp:0,gsp:0,ground:false});cam.snap(p);},skipCard(){card=100;phase='play';},
   rings(n){p.rings=n;},player(i){turns[turn]=i;p.body=i===1?'fox':'hog';p.canFly=i===1;},chunks:()=>art?.cache.size||0,music:()=>S3.nowPlaying(),seekSong:t=>S3.seekSong(t),SONGS:S3.SONGS,
   // tests: past the title (and the 1P select, picking CHARS[pick]: 0 hedgehog, 1 fox)
   skipIntro(pick=0){intro.skip={pick};intro.pick=pick;advance();},intro:()=>({phase,pick:intro.pick,t:introT()}),introTap,choose,get body(){return p?.body||null;}};
