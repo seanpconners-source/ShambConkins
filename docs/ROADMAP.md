@@ -109,7 +109,8 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **R59b** `[todo]` Seanic title/select art from GPT: brief `docs/sonic3-sprites/TITLE-SELECT-BRIEF.md` (title-bg,
   title-hero, title-fox, select-bg, select-monitor, select-hog, select-fox); stand-ins drawn until they arrive.
 - **R59c** `[todo]` Seanic Act 1 mini-boss (the miniboss sheet is already imported), then Act 2 (the scorched jungle) and the
-  zone boss (boss + capsule sheets imported).
+  zone boss (boss + capsule sheets imported). Music (owner, Nov 11): level 2 = the song he meant as "this song" (ask which),
+  level 3 = Sonic 3 Angel Island Act 1 (file already in), boss music picked together later.
 
 **New characters**
 - **R56** Connor O'Malley, Bart Harley Jarvis, Taffy Lee Fubbins, Michael Patrick Porkins; Amy the gorilla + the Congo people; Corey Feldman + The Goonies; Randal and Dante; The Mask / Stanley Ipkiss; Surf Nazis, more Troma, Mad Cowboy; Sin City people; Wes Anderson people; M. Night Shyamalan; Captain Dissolution, Drew Gooden, memoria, Danny Gonzalez.
