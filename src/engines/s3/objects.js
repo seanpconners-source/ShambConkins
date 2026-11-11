@@ -54,6 +54,7 @@ function init(o,w){
  if(o.type==='corkscrew'){o.turn=o.turn||480;o.r=o.r||64;o.x1=o.x0+o.turn*(o.turns||2);o.x=(o.x0+o.x1)/2;o.w=o.x1-o.x0;}
  if(o.type==='seesaw'){o.w=o.w||96;o.tilt=o.tilt||-1;o.h=8;o.gy=o.y;o.ball={side:o.tilt,y:0,vy:0,air:false};o.lift=0;o.top=seesawSurf(o,o.x);o.y=o.top+o.h/2;}
  if(o.type==='platform'&&o.move==='swing'){o.px=o.x;o.py=o.y;o.len=o.len||160;o.t=o.phase||0;swingPos(o);o.x0=o.x;o.y0=o.y;}
+ if(o.type==='boss')bossInit(o);
  if(o.type==='spikelog'){o.w=o.w||64;o.h=o.h||22;o.solid=true;o.t=o.phase||0;o.y0=o.y;o.y=o.y0-o.h/2;}
 }
 // ---------------- warp tubes (owner, Nov 11: "launch you through the whole thing"; the physics roll snagged on the S-bends):
@@ -86,6 +87,7 @@ function touch(o,p,w,i,inp){const b=box(p);
  case 'spring':return spring(o,p,w,i);
  case 'monitor':return monitor(o,p,w,i);
  case 'corkscrew':return corkEnter(o,p,w,i);
+ case 'boss':return bossTouch(o,p,w,i);
  case 'seesaw':return seesawTouch(o,p,w,i);
  case 'spikelog':if(o.spiky&&p.onObj===o&&p.ground)hurt(p,w,i,o.x,'spike');return;
  case 'badnik':if(o.hidden)return;if(o.alive&&hit(b,o,o.w,o.h)){if(attacking(p))popBadnik(o,p,w,i);else hurt(p,w,i,o.x);}return;
@@ -177,6 +179,7 @@ function tick(o,w,runners){
  case 'sign':if(o.spin>0)o.spin--;return;
  case 'platform':platform(o,w,runners);return;
  case 'seesaw':seesawTick(o,w,runners);return;
+ case 'boss':bossTick(o,w,runners);return;
  case 'spikelog':o.t++;o.spin=o.t*2*Math.PI/(o.period||150);o.spiky=Math.cos(o.spin)>.55;return;
  case 'vine':{o.t++;const amp=o.amp??0.9,per=o.period??140;o.ang=amp*Math.sin(o.t*2*Math.PI/per);o.hx=o.x+Math.sin(o.ang)*o.len;o.hy=o.y+Math.cos(o.ang)*o.len;return;}
  case 'zipline':if(o.who){const dx=o.x1-o.x0,dy=o.y1-o.y0,L=Math.hypot(dx,dy);o.v=Math.min(10,o.v+0.21875*dy/L);o.s=Math.min(L,o.s+o.v);
@@ -246,6 +249,57 @@ function seesawTick(o,w,runners){if(o.lift>0)o.lift--;const b=o.ball;
  for(const p of runners){if(p.onObj!==o)continue;const [,hr]=P.radii(p);if(!p.ground||Math.abs(p.x-o.x)>o.w/2+4){p.onObj=null;continue;}
   o.top=seesawSurf(o,p.x);p.y=o.top-hr;}
  o.y=o.top+o.h/2;}
+// ---------------- MINI-BOSS (end of Act 1; our own design, the Sonic 3 first-act mould): a domed pod with a flamethrower
+// on each side and a pilot in the dome. A one-screen arena (o.x0..o.x1, floor o.gy): stepping in closes it (event
+// 'boss-start': the game locks the camera and plays the boss song). It loops: HOVER high, drifting over the runner (out of
+// a jump's reach); SINK low; FLAME: both jets fire sideways at the runner's height (stand clear of its sides; it can be
+// hit from above or below); RISE. A rolling/jumping runner hitting it takes one of its HP (bounce off, 40 frames of
+// flashing); 0 HP = WRECK (explosions, it falls) then 'boss-down' (the arena opens, the act goes on to the sign).
+// Everyone dead or out of the arena = it resets and waits ('boss-reset').
+// it sets down LOW (loY) so the jets sweep the floor: jump over them, come down on top of it
+const BOSS={hp:6,hiY:-170,loY:-34,cycle:350,jet:78,jetH:12};// jet = how far the flames reach each side (as drawn on the sheet)
+// autopilot for the bots (tests, online test bot): keep ~135 px away while it hovers, sinks and fires; when it rises
+// again, run in and jump into it. Returns an input or null when no fight is on.
+function bossBot(w,p){const o=w.objs.find(o=>o.type==='boss'&&o.active&&!o.done&&o.state!=='wreck');if(!o||p.dead)return null;
+ const dx=o.x-p.x,ad=Math.abs(dx),inp={l:false,r:false,u:false,d:false,jump:false,jumpPress:false};
+ if(!p.ground&&p.ysp<0)inp.jump=true;
+ if(o.state==='cool'||o.state==='rise'&&o.y>o.gy-90){if(dx>0)inp.r=true;else inp.l=true;if(ad<50&&p.ground){inp.jump=inp.jumpPress=true;}return inp;}
+ // stand ~120 px to one side of it: the side we're on if there's room there, else run under it (it's high while it
+ // hovers) to the other side; while it is low and firing, hold still or jump a jet that reaches us
+ const room=s=>s<0?o.x-100>o.x0+18:o.x+100<o.x1-18,side=p.x<o.x?-1:1,want=room(side)?side:-side,tx=o.x+want*100;
+ if(o.fire>0&&ad>20&&ad<BOSS.jet+12&&p.ground){inp.jump=inp.jumpPress=true;return inp;}
+ if(o.state==='hover'||o.state==='sink'&&o.y<o.gy-110||Math.abs(tx-p.x)>8&&want===side){if(tx>p.x+6)inp.r=true;else if(tx<p.x-6)inp.l=true;}
+ return inp;}
+// (a reset, when everyone in the arena died, brings it back to full health)
+function bossInit(o){o.maxHp=o.maxHp||o.hp||BOSS.hp;o.hp=o.maxHp;o.state='wait';o.t=0;o.inv=0;o.x=o.x||(o.x0+o.x1)/2;o.y=o.gy+BOSS.hiY;o.vx=0;o.fire=0;o.w=52;o.h=40;o.done=false;o.active=false;}
+function bossBody(o){return {x:o.x,y:o.y-4};}
+function bossTouch(o,p,w,i){if(o.done||!o.active||p.dead||o.state==='wreck')return;const b=box(p),c=bossBody(o);
+ // the flame jets: hurt anyone level with them at the sides
+ if(o.fire>0){const dx=Math.abs(p.x-o.x),dy=Math.abs(p.y-(o.y+6));if(dx>22&&dx<BOSS.jet+8&&dy<BOSS.jetH+b.h){hurt(p,w,i,o.x,'fire');return;}}
+ if(!hit(b,c,24,20))return;
+ if(attacking(p)&&o.inv<=0){o.hp--;o.inv=40;w.ev.push({k:'boss-hit',p:i,x:o.x,y:o.y,hp:o.hp});
+  // bounce off like the Mega Drive bosses: back the way you came, up if you came down on it
+  p.xsp=-(p.xsp||p.gsp||(p.x<o.x?2:-2))*.6-(p.x<o.x?2:-2)*.3;p.gsp=p.xsp;if(!p.ground)p.ysp=p.y<o.y?-4:Math.max(2,p.ysp);
+  if(o.hp<=0){o.state='wreck';o.t=0;o.fire=0;p.score=(p.score||0)+1000;w.ev.push({k:'boss-wreck',p:i,x:o.x,y:o.y});}}
+ else if(!attacking(p)&&o.inv<=0)hurt(p,w,i,o.x,'boss');}
+function bossTick(o,w,runners){if(o.maxHp===undefined)bossInit(o);if(o.done)return;if(o.inv>0)o.inv--;
+ const inside=runners.filter(p=>!p.dead&&p.x>o.x0&&p.x<o.x1);
+ if(!o.active){if(inside.some(p=>p.x>o.x0+48)){o.active=true;o.state='hover';o.t=0;w.ev.push({k:'boss-start',x0:o.x0,x1:o.x1});}return;}
+ // keep the fighters inside the closed arena
+ for(const p of runners){if(p.dead)continue;if(p.x<o.x0+12){p.x=o.x0+12;if(p.xsp<0)p.xsp=0;if(p.gsp<0)p.gsp=0;}if(p.x>o.x1-12&&o.state!=='gone'){p.x=o.x1-12;if(p.xsp>0)p.xsp=0;if(p.gsp>0)p.gsp=0;}}
+ if(!inside.length&&o.state!=='wreck'){o.active=false;bossInit(o);w.ev.push({k:'boss-reset'});return;}
+ o.t++;const p=inside[0]||runners[0],lo=o.gy+BOSS.loY,hi=o.gy+BOSS.hiY,minX=o.x0+70,maxX=o.x1-70;
+ if(o.state==='wreck'){o.fire=0;o.y=Math.min(o.gy-20,o.y+Math.min(4,o.t*.05));if(o.t%8===0)w.ev.push({k:'boss-boom',x:o.x+(Math.random()-.5)*50,y:o.y+(Math.random()-.5)*30});
+  if(o.t>=150){o.done=true;o.state='down';w.ev.push({k:'boss-down',x:o.x,y:o.y});}return;}
+ // the cycle (frames): hover 110 · sink 40 · wind-up 25 (low, about to fire) · FLAME 60 · COOL 80 (low, jets smoking:
+ // the opening to jump on it) · rise 35
+ const k=o.t%BOSS.cycle;
+ if(k<110){o.state='hover';o.fire=0;const goal=Math.max(minX,Math.min(maxX,p.x));o.x+=Math.max(-1.6,Math.min(1.6,(goal-o.x)*.03));o.y+=(hi+Math.sin(o.t*.08)*6-o.y)*.08;}
+ else if(k<150){o.state='sink';o.y+=(lo-o.y)*.1;}
+ else if(k<175){o.state='windup';o.y=lo+Math.sin(o.t*.9)*1.5;}
+ else if(k<235){o.state='flame';o.fire=k-175+1;o.y=lo;if(k===175)w.ev.push({k:'boss-fire',x:o.x,y:o.y});}
+ else if(k<315){o.state='cool';o.fire=0;o.y=lo;}
+ else{o.state='rise';o.fire=0;o.y+=(hi-o.y)*.08;}}
 // held on a vine or zip line: follow the handle; jump lets go with its swing
 function hangStep(p,inp,w,i){const o=p.hang;if(!o)return;
  p.x=o.hx;p.y=o.hy+(o.type==='vine'?16:20);p.facing=o.type==='zipline'?Math.sign(o.x1-o.x0)||1:p.facing;
@@ -303,4 +357,4 @@ function stepLoose(w,runners){for(let k=w.loose.length-1;k>=0;k--){const r=w.loo
  if(r.t>r.life){w.loose.splice(k,1);continue;}
  if(r.t<64)continue;
  for(let i=0;i<runners.length;i++){const p=runners[i];if(p.dead||p.hurt)continue;if(hit(box(p),r,6,6)){w.loose.splice(k,1);gain(p,w,i,1);break;}}}}
-Object.assign(exports,{World,respawn,hurt,die,SPRING,attacking,box});
+Object.assign(exports,{bossBot,World,respawn,hurt,die,SPRING,attacking,box});

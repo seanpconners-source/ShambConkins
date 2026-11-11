@@ -9,7 +9,7 @@ function load(id){if(cache.has(id))return cache.get(id).exports;const mod={expor
  runInNewContext(readFileSync(new URL(id,root),'utf8'),{exports:mod.exports,require:load,Math,console,Map,WeakMap,Set,Uint8Array,Uint16Array,Uint32Array,Float32Array,Error,Object,Array,Number,JSON,Infinity,NaN,isFinite},{filename:id});return mod.exports;}
 const P=load('src/engines/s3/physics.js'),O=load('src/engines/s3/objects.js'),{buildZone1Act1,G}=load('src/engines/s3/zone1.js');
 const V=process.argv.includes('-v');
-function bot(){const b={stuck:0,last:0,mode:0,hang:0,best:0,since:0,back:0};return p=>{const o={l:false,r:true,u:false,d:false,jump:false,jumpPress:false};
+function bot(w){const b={stuck:0,last:0,mode:0,hang:0,best:0,since:0,back:0};return p=>{const fight=w&&O.bossBot(w,p);if(fight){b.since=0;b.best=p.x;return fight;}const o={l:false,r:true,u:false,d:false,jump:false,jumpPress:false};
  if(p.hang){b.hang++;const h=p.hang;const far=h.type==='zipline'?h.s>=.97||b.hang>400:(h.ang>.55&&b.hang>20);if(far){o.jump=o.jumpPress=true;b.hang=0;}return o;}b.hang=0;
  if(p.x>b.best+4){b.best=p.x;b.since=0;}else b.since++;
  if(b.back>0){b.back--;o.r=false;o.l=true;if(b.back===0)b.since=0;return o;}
@@ -20,12 +20,13 @@ function bot(){const b={stuck:0,last:0,mode:0,hang:0,best:0,since:0,back:0};retu
  if(b.stuck>12&&p.ground){o.jumpPress=true;o.jump=true;}
  if(!p.ground&&p.ysp<0)o.jump=true;return o;};}
 function run(name,sx,sy,max=60*240){const Z=buildZone1Act1(),w=new O.World(Z.T,Z.objs,{switchers:Z.switchers,bottom:Z.bottom});
- const p=P.makeRunner(sx??Z.start.x,sy??Z.start.y);p.rings=0;p.lives=99;p.score=0;p.facing=1;const b=bot();let f=0,done=false,deaths=0,maxX=0;
- for(;f<max&&!done;f++){w.step([p],[b(p)]);for(const e of w.drain()){if(e.k==='sign')done=true;if(e.k==='die')deaths++;}
+ const p=P.makeRunner(sx??Z.start.x,sy??Z.start.y);p.rings=0;p.lives=99;p.score=0;p.facing=1;const b=bot(w);let f=0,done=false,deaths=0,maxX=0;
+ let bossHits=0,bossDown=false;
+ for(;f<max&&!done;f++){w.step([p],[b(p)]);for(const e of w.drain()){if(e.k==='sign')done=true;if(e.k==='die')deaths++;if(e.k==='boss-hit')bossHits++;if(e.k==='boss-down')bossDown=true;}
   if(p.dead&&p.dead>=120)O.respawn(p,{x:sx??Z.start.x,y:sy??Z.start.y});maxX=Math.max(maxX,p.x);
   if(V&&f%300===0)console.log(name,f,Math.round(p.x),Math.round(p.y),p.rings,p.hang?'hang':'');}
- console.log(`${done?'ok  ':'FAIL'} ${name}: ${done?`sign in ${(f/60).toFixed(1)} s`:`stopped at x ${Math.round(p.x)} y ${Math.round(p.y)} (furthest ${Math.round(maxX)})`}, rings ${p.rings}, score ${p.score}, deaths ${deaths}`);
- return done;}
+ console.log(`${done?'ok  ':'FAIL'} ${name}: ${done?`sign in ${(f/60).toFixed(1)} s`:`stopped at x ${Math.round(p.x)} y ${Math.round(p.y)} (furthest ${Math.round(maxX)})`}, rings ${p.rings}, score ${p.score}, deaths ${deaths}, mini-boss ${bossDown?'beaten':'NOT beaten'} (${bossHits} hits)`);
+ return done&&bossDown;}
 const Z=buildZone1Act1();console.log('tiles in the pool:',Z.T.tiles(),' objects:',Z.objs.length,' rings:',Z.objs.filter(o=>o.type==='ring').length);
 let ok=true;
 ok=run('from the start')&&ok;

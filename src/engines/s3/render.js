@@ -236,6 +236,7 @@ function drawObject(x,o,t,ctx){
   x.fillStyle='#606070';x.fillRect(x0+6,y0+h-5,4,5);x.fillRect(x0+w-10,y0+h-5,4,5);x.restore();return;}
  case 'badnik':if(o.hidden)return;if(o.alive||o.kind==='thrower')drawBadnik(x,o,t);return;
  case 'corkscrew':drawCorkscrew(x,o,t,false);return;
+ case 'boss':drawBoss(x,o,t,ctx);return;
  case 'seesaw':drawSeesaw(x,o,t);return;
  case 'spikelog':drawSpikeLog(x,o,t);return;
  case 'starpost':{if(spr(x,'starpost',o.lit?'lit':o.spin>0?'spin':'idle',o.lit?(t*4):o.spin>0?(60-o.spin)/3:0,o.x,o.y+24))return;x.fillStyle='#3848a8';x.fillRect(o.x-2,o.y-20,4,44);x.fillStyle='#202030';x.fillRect(o.x-5,o.y+20,10,4);const a=o.spin>0?o.spin*.4:0,bx=o.x+Math.sin(a)*8,by=o.y-22-Math.abs(Math.cos(a))*2;
@@ -305,6 +306,20 @@ function drawSpikeLog(x,o,t){const w=o.w,h=o.h,cx=o.x,cy=o.y,R_=h/2;x.save();
  x.strokeStyle='rgba(60,30,8,.6)';x.lineWidth=1;for(let k=0;k<3;k++){const yy=cy-Math.cos(o.spin*1+k*2.1)*R_*.8;if(Math.sin(o.spin+k*2.1)>0){x.beginPath();x.moveTo(cx-w/2+2,yy);x.lineTo(cx+w/2-2,yy);x.stroke();}}
  x.fillStyle='#d8a868';for(const ex of [cx-w/2,cx+w/2]){x.beginPath();x.ellipse(ex,cy,4,R_,0,0,7);x.fill();x.stroke();}
  for(const a of spikes)if(Math.sin(a)>=.3)spike(a);
+ x.restore();}
+// MINI-BOSS: the owner's sheet (hover / attack = flames out both sides / wreck), the pilot's face in the dome; flashes
+// while it can't be hit. Before the fight starts it waits high over the arena; wrecked, it lies on the ground.
+function drawBoss(x,o,t,ctx){const flash=o.inv>0&&(o.inv>>1)%2,mood=o.state==='wreck'||o.state==='down'||o.inv>0?'sad':'angry';
+ const row=o.state==='wreck'||o.state==='down'?'wreck':o.state==='flame'||o.state==='windup'?'attack':'hover';
+ const fr=row==='wreck'?Math.min(2,Math.floor((o.state==='down'?150:o.t)/50)):row==='attack'?(o.state==='windup'?Math.floor(t*12)%2:2+Math.floor(t*14)%2):t*8;
+ x.save();if(flash)x.globalAlpha=.45;
+ const pilotOn=()=>{if(o.state==='down')return;x.save();if(o.state==='wreck')x.translate(Math.sin(t*40)*1.5,0);ctx?.pilot?.(x,o.x,o.y-12,30,mood);x.restore();};
+ if(spr(x,'miniboss',row,fr,o.x,o.y))pilotOn();// the sheet's dome is the face spot (head [80,36]): the face goes on top
+ else{pilotOn();// stand-in: a grey pod with a blue dome and two side jets
+  x.fillStyle='rgba(140,200,255,.55)';x.beginPath();x.arc(o.x,o.y-12,16,Math.PI,0);x.fill();x.strokeStyle='#14141c';x.lineWidth=1.5;x.stroke();
+  x.fillStyle='#9a9ab0';x.beginPath();x.ellipse(o.x,o.y+2,26,16,0,0,7);x.fill();x.stroke();x.fillStyle='#ffd23a';x.fillRect(o.x-20,o.y-2,40,6);
+  x.fillStyle='#c83a3a';for(const s of [-1,1]){x.beginPath();x.arc(o.x+s*30,o.y,8,0,7);x.fill();x.stroke();}
+  if(o.fire>0){for(const s of [-1,1]){const g=x.createLinearGradient(o.x+s*36,0,o.x+s*80,0);g.addColorStop(0,'#fff6a0');g.addColorStop(.5,'#ff8a1a');g.addColorStop(1,'rgba(255,40,0,0)');x.fillStyle=g;x.beginPath();x.moveTo(o.x+s*36,o.y-6);x.lineTo(o.x+s*(80+Math.sin(t*40)*4),o.y);x.lineTo(o.x+s*36,o.y+8);x.fill();}}}
  x.restore();}
 // a chain from a pivot down to a swinging platform
 function drawChain(x,x0,y0,x1,y1){const n=Math.max(2,Math.round(Math.hypot(x1-x0,y1-y0)/10));x.save();x.fillStyle='#8a8a98';x.strokeStyle='#3a3a48';x.lineWidth=1;

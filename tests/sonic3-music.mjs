@@ -41,7 +41,7 @@ const pz=await N();check(pz.paused,'the pause card stops the song');
 await J(()=>document.querySelector('.pass-overlay [data-ready]')?.click());await page.waitForTimeout(700);
 n=await N();check(!n.paused&&n.name==='green-hill'&&n.pos>=pz.pos&&n.pos<pz.pos+2,`resumes where it was (${p0.pos.toFixed(1)} / ${pz.pos.toFixed(1)} -> ${n.pos.toFixed(1)})`);
 // the sign
-await D(()=>{const d=window.ShambConkins.store.session.debug;d.teleport(17900,1481);d.bot=p=>({l:false,r:true,u:false,d:false,jump:false,press:false});});
+await D(()=>{const d=window.ShambConkins.store.session.debug;d.teleport(18230,1481);d.bot=p=>({l:false,r:true,u:false,d:false,jump:false,press:false});});
 let t=null;for(let k=0;k<60&&!t;k++){await page.waitForTimeout(300);t=await D(()=>window.ShambConkins.store.session?.debug.state.tally);}
 n=await N();check(t&&n.want===null&&!n.name&&n.jingle==='act-clear',`the sign: song stops, Act Complete plays (${JSON.stringify(n)})`);
 check(t&&t.len>=4.8*60,`the tally waits for the jingle (${t?.len} frames)`);

@@ -47,7 +47,16 @@ async function sonic3(s){
  // the act: Zone 1 Act 1 (Green Hill Zone song, owner Nov 11), Act 2 (Emerald Hill Zone song, owner's plan) or the Test Zone
  const ZONES={zone1:[buildZone1Act1,'Shamb Island Act 1','green-hill'],zone1act2:[buildZone1Act2,'Shamb Island Act 2','emerald-hill']};
  const [buildZone,LABEL,ACT_SONG]=ZONES[s.game?.s3zone]||[buildTestZone,'Sonic 3 Test Zone','azure-lake'];
- let turn=0,Z=null,w=null,p=null,cam=null,art=null,back=null,fx=null;
+ let turn=0,Z=null,w=null,p=null,cam=null,art=null,back=null,fx=null,fight=false;
+ // the mini-boss's pilot (Act 1): a character neither player has unlocked yet (prefers one with real art); beating the
+ // mini-boss frees them into the roster (s.gameRecruits; the launcher treats sonic3 like the cage games: no random unlock)
+ s.gameRecruits=[[],[]];const pilot={id:null,name:'',head:null};
+ try{const {store}=require('src/state.js'),{gameRecruitPool}=require('src/rewards.js'),{portraitURL}=require('src/assets.js'),{character}=require('src/characters.js');
+  const pools=s.players.map(q=>{try{return gameRecruitPool(s.game,store.profile,q).map(c=>c.id);}catch{return [];}});if(s.solo||!pools[1])pools[1]=pools[0];
+  const art=id=>{try{const u=portraitURL(id);return !!u&&!/^data:image\/svg/.test(u);}catch{return false;}};
+  const both=pools[0].filter(id=>pools[1].includes(id)),cands=[both.filter(art),pools[0].filter(art),both,pools[0]].find(a=>a.length);
+  if(cands){pilot.id=cands[Math.floor(s.random()*cands.length)];pilot.name=(character(pilot.id)?.name||pilot.id).toUpperCase();pilot.head=require('src/engines/broforce.js').headCanvas;pilot.head(pilot.id);}}catch{}
+ const drawPilot=(g,cx,cy,size,mood)=>{if(!pilot.id||!pilot.head)return false;const hc=pilot.head(pilot.id,mood);if(!hc)return false;const k=size/Math.max(hc.width,hc.height);g.drawImage(hc,cx-hc.width*k/2,cy-hc.height*k/2,hc.width*k,hc.height*k);return true;};
  let phase='idle',frames=0,clock=0,acc=0,last=0,card=0,endF=0,overLen=150,tally=null,overText='',dbg=null;const vis={x:0,y:0};
  // which runner each player is: 2P = P1 the hedgehog, P2 the fox; 1P = picked on the character select
  const bodies=['hog','fox'];
@@ -105,9 +114,19 @@ async function sonic3(s){
   if(e.k==='sign'&&!tally){S3.music(null);const sang=S3.jingle('act-clear');
    tally={time:timeBonus(clock),rings:(p.rings|0)*100,t:0,clock,len:Math.max(TALLY,sang?Math.ceil(S3.jingleLen('act-clear')*SIM_HZ)+20:0)};S3.play('signpost');}
   if(e.k==='life')S3.jingle('1up');
-  if(e.k==='die'){overText=p.lives<=0?'GAME OVER':'';}}}
- // the song this moment wants: the act song from the title card on, Invincibility while a star lasts
- const songFor=()=>(phase==='card'||phase==='play')&&!tally?(p.star>0&&!p.dead?'invincible':ACT_SONG):null;
+  if(e.k==='die'){overText=p.lives<=0?'GAME OVER':'';}
+  // the mini-boss: the arena closes (camera locked to it, boss song), hits, the wreck, then the way on opens
+  if(e.k==='boss-start'){fight=true;cam.setBounds({x0:e.x0,x1:e.x1});}
+  if(e.k==='boss-hit'){S3.play('boss-hit');cam.dash(0);}
+  if(e.k==='boss-fire')S3.play('fire-dash')||S3.play('fire-shield');
+  if(e.k==='boss-wreck'){S3.play('boss-explode');fx.score(e.x,e.y-30,1000);}
+  if(e.k==='boss-boom'){fx.puff(e.x,e.y);if(Math.random()<.5)S3.play('explode');}
+  if(e.k==='boss-down'){fight=false;cam.setBounds({x0:Z.bounds.x0,x1:Z.bounds.x1});
+   if(pilot.id){const i=turns[turn];for(const k of net?[0,1]:[i])if(!s.gameRecruits[k].includes(pilot.id))s.gameRecruits[k].push(pilot.id);fx.score(e.x,e.y-60,`${pilot.name} FREED!`);}}
+  if(e.k==='boss-reset'){fight=false;cam.setBounds({x0:Z.bounds.x0,x1:Z.bounds.x1},true);}}}
+ // the song this moment wants: the act song from the title card on, Invincibility while a star lasts, the Miniboss song
+ // while the arena is closed
+ const songFor=()=>(phase==='card'||phase==='play')&&!tally?(p.star>0&&!p.dead?'invincible':fight?'miniboss':ACT_SONG):null;
  // ---------------- online: my runner out as snapshots, the partner in; shared objects as events
  const SHARED=new Set(['ring','monitor','badnik','wall']);
  const isTaken=o=>o.type==='ring'?!!o.got:o.type==='monitor'?!!o.broken:o.type==='badnik'?o.alive===false:!!o.gone;
@@ -133,7 +152,7 @@ async function sonic3(s){
   if(r.ground&&Math.abs(r.gsp)<1.5)stuck++;else stuck=0;let press=false;
   if(r.ground&&stuck>20){stuck=0;if(n-lastDash<160){press=true;hold=20;}else{lastDash=n;dash=28;return {l:false,r:false,u:false,d:true,jump:false,press:false};}}
   return {l:false,r:true,u:false,d:false,jump:hold-->0,press};};})();
- const zoneBot=(()=>{const b={stuck:0,last:0,mode:0,hang:0,best:0,since:0,back:0};return p=>{const o={l:false,r:true,u:false,d:false,jump:false,press:false};
+ const zoneBot=(()=>{const b={stuck:0,last:0,mode:0,hang:0,best:0,since:0,back:0};return p=>{const fight=w&&O.bossBot(w,p);if(fight){b.since=0;b.best=p.x;return {...fight,press:fight.jumpPress};}const o={l:false,r:true,u:false,d:false,jump:false,press:false};
   if(p.hang){b.hang++;const h=p.hang;const far=h.type==='zipline'?h.s>=.97||b.hang>400:(h.ang>.55&&b.hang>20);if(far){o.jump=o.press=true;b.hang=0;}return o;}b.hang=0;
   if(p.x>b.best+4){b.best=p.x;b.since=0;}else b.since++;
   if(b.back>0){b.back--;o.r=false;o.l=true;if(b.back===0)b.since=0;return o;}
@@ -149,7 +168,7 @@ async function sonic3(s){
  // ---------------- a turn
  async function startTurn(k,{noCard=false}={}){turn=k;const i=turns[k],nm=s.players[i].name;
   const desc=act2&&s.solo?`Shamb Island Zone, Act 2. Corkscrews, waterfall cliffs, a warp tube, leaping fish, seesaws and a double loop. Reach the sign: time bonus + 100 a ring.`
-   :zone1&&s.solo?`Shamb Island Zone, Act 1. Roll tunnels, loops, high ledges, a cave, lakes and waterfalls. Reach the sign: time bonus + 100 a ring.`
+   :zone1&&s.solo?`Shamb Island Zone, Act 1. Roll tunnels, loops, high ledges, a cave, lakes and waterfalls, and a mini-boss before the sign: dodge its flames, jump on it while it cools down, beat it and its pilot joins your roster. Reach the sign: time bonus + 100 a ring.`
    :s.solo?`Sonic 3 engine test: run the Test Zone. Loops, springs, shields, badniks, a zip line and a swing vine. Reach the sign: time bonus + 100 a ring.`
    :k===0?`${nm} runs first as Seanic the hedgehog. Reach the sign at the end: badniks + time bonus + 100 a ring. Then ${s.players[1].name} runs it as the three-tailed fox, who can fly.`
    :`${nm}, you're the fox: tap jump again in the air to fly, hold it to climb. Beat ${s.players[0].name}'s ${score[0].toLocaleString()} points.`;
@@ -201,7 +220,7 @@ async function sonic3(s){
   const scenery=front=>{if(!Z.decor)return;x.save();x.scale(k,k);x.translate(-cx,-cy);for(const d of Z.decor)if(!d.over&&!!d.front===front&&(d.box?d.box[0]<v.x1&&d.box[2]>v.x0:d.x<v.x1+80&&d.x+(d.w||0)>v.x0-80))R.drawDecor(x,d,t);x.restore();};
   scenery(false);art.draw(x,cam,2);scenery(true);x.restore();
   x.save();x.scale(k,k);x.translate(-cx,-cy);
-  for(const o of w.objs)if(!o.gone||o.type==='monitor'||o.kind==='thrower'){const ox=o.x??o.x0,oy=o.y??o.y0,half=o.type==='corkscrew'?o.w/2:0;if(o.type==='tube')continue;if(o.type!=='zipline'&&(ox+half<v.x0-80||ox-half>v.x1+80||(o.kind!=='thrower'&&(oy<v.y0-140||oy>v.y1+140))))continue;R.drawObject(x,o,t,{head,me:turns[turn]});}
+  for(const o of w.objs)if(!o.gone||o.type==='monitor'||o.kind==='thrower'){const ox=o.x??o.x0,oy=o.y??o.y0,half=o.type==='corkscrew'?o.w/2:0;if(o.type==='tube')continue;if(o.type!=='zipline'&&(ox+half<v.x0-80||ox-half>v.x1+80||(o.kind!=='thrower'&&(oy<v.y0-140||oy>v.y1+140))))continue;R.drawObject(x,o,t,{head,me:turns[turn],pilot:drawPilot});}
   for(const r of w.loose)if(r.x>v.x0&&r.x<v.x1)R.drawLoose(x,r,t);
   for(const sh of w.shots)R.drawShot(x,sh,t);
   if(net&&q&&qs)R.drawRunner(x,q,them,t,head);// the partner, behind my runner
@@ -247,7 +266,7 @@ async function sonic3(s){
   const jx=W-r0*1.9,jy=H-r0*1.9;x.globalAlpha=pad.jump?.55:.2;x.beginPath();x.arc(jx,jy,r0*.9,0,7);x.fill();x.globalAlpha=pad.jump?.9:.5;x.fillStyle='#08103a';x.font=`900 ${Math.round(r0*.55)}px Arial Black,Arial`;x.textAlign='center';x.textBaseline='middle';x.fillText('JUMP',jx,jy+1);x.restore();}
  // ---------------- tests
  s.debug={get state(){return {phase,frames,clock,turn,p,w,cam,score:[...score],tally};},
-  set bot(f){dbg={...(dbg||{}),bot:f};},
+  set bot(f){dbg={...(dbg||{}),bot:f};},autopilot(){dbg={...(dbg||{}),bot:zone1?zoneBot:testBot};},get boss(){const o=w?.objs.find(o=>o.type==='boss');return o?{state:o.state,hp:o.hp,active:o.active,done:o.done,x:o.x,y:o.y,fight,pilot:pilot.id,freed:s.gameRecruits.map(a=>[...a])}:null;},
   // online test harness: calling debug.bot() switches this phone's runner to an autopilot (hold right, hop when stuck)
   get bot(){return net?()=>{if(!dbg?.bot)dbg={...(dbg||{}),bot:netBot};return 'drive';}:dbg?.bot;},
   get net(){return net?{me,partner:qs?{x:qs.a[0],y:qs.a[1],through:!!(qs.b&512),done:!!(qs.b&4096)}:null,taken:taken?taken.reduce((a,v)=>a+v,0):0,graceAt,phase}:null;},teleport(px,py){Object.assign(p,{x:px,y:py,xsp:0,ysp:0,gsp:0,ground:false});cam.snap(p);},skipCard(){card=100;phase='play';},

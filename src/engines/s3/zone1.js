@@ -111,8 +111,10 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  row(15140,MT-24,10,32);bad('thrower',15330,MT-60);mon(15500,MT,'lightning');
  [15690,15810].forEach((x,k)=>o.push({type:'vine',x,y:MT-200,len:120,amp:.9,period:150,phase:k*60}));
  row(15930,MT-24,8,32);bad('flyer',16100,MT-120,{w:12,h:12});mon(16240,MT,'shoes');land(16320,20,32);
- // ---- the last run: loop 4 and the sign
- loopRings(17200,RUN);row(17360,RUN-24,4);land(17470,10,32);bad('charger',17950,G-14,{dir:-1});row(18000,G-24,8);
+ // ---- the last run: loop 4, the MINI-BOSS arena (owner's plan R59c: Sonic 3 puts one at the end of a zone's first act),
+ // then the sign
+ loopRings(17200,RUN);row(17360,RUN-24,4);land(17470,10,32);row(17640,G-24,4);mon(17760,G,'rings');// 10 rings for the fight
+ o.push({type:'boss',kind:'mini',x0:17800,x1:18200,gy:G});
  o.push({type:'sign',x:18350,y:G-16});
  return o;}
 // ground scenery: bushes, flowers and stone totems on flat ground (seeded, away from lakes and gaps)
@@ -152,5 +154,5 @@ const decor=()=>[
 function buildZone1Act1(){if(!terrain)terrain=buildTerrain();
  return {T:terrain,objs:objects(),switchers:switchers(),decor:decor(),start:{x:120,y:G-19},bounds:{x0:0,x1:18600,y0:0,y1:H-80},bottom:H-80,ref:G+40,zone:'SHAMB ISLAND',act:1,
   marks:[[1900,'loop 1'],[2225,'step + spring: top route'],[3100,'roll tunnel 1 (inside the plateau)'],[4200,'lake 1 + bridge'],[5300,'high ledges / cave below'],[7000,'loop 2'],[8550,'waterfall gorge: vines'],
-   [9325,'step + spring: top'],[10200,'roll tunnel 2 (under the hill)'],[12500,'loop 3 + ledges'],[13250,'lake 2: crumbling bridge'],[14900,'mesa: step + spring up / tunnel below'],[15750,'chasm'],[17200,'loop 4'],[18350,'sign'],[550,'stairs'],[4580,'secret room']]};}
+   [9325,'step + spring: top'],[10200,'roll tunnel 2 (under the hill)'],[12500,'loop 3 + ledges'],[13250,'lake 2: crumbling bridge'],[14900,'mesa: step + spring up / tunnel below'],[15750,'chasm'],[17200,'loop 4'],[18000,'mini-boss arena'],[18350,'sign'],[550,'stairs'],[4580,'secret room']]};}
 Object.assign(exports,{buildZone1Act1,G,gy});
