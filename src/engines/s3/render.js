@@ -55,7 +55,7 @@ class TerrainArt{
      if(!any&&gx>=M&&gy>=M&&gx<M+CH&&gy<M+CH)any=true;}}}
   if(!any)return null;
   const can=mk(CH,CH),g=can.getContext('2d'),img=g.createImageData(CH,CH),u=new Uint32Array(img.data.buffer),C=this.c;
-  const X=texInfo();this.textured=!!X;
+  const X=texInfo();if(X)this.textured=true;
   if(X){const {S:ST,G,U,g0,u0}=X,solid=(gx,gy)=>S[gy*N+gx]===1;
    for(let y=0;y<CH;y++){const gy=y+M,wy=cy*CH+y;for(let x=0;x<CH;x++){const gx=x+M,s=S[gy*N+gx],wx=cx*CH+x;
     if(s===2){u[y*CH+x]=solid(gx,gy+1)&&!solid(gx,gy-1)?C.woodLine:(wx&7)===0?C.woodLine:C.wood;continue;}
@@ -87,7 +87,10 @@ class TerrainArt{
   g.putImageData(img,0,0);return can;}
  // draw what the camera sees; builds at most `budget` new chunks this frame (the rest show next frame)
  draw(x,cam,budget=2){const v=cam.view(),k=cam.k;
-  if(!this.textured&&this.cache.size&&texInfo()){for(const [,vv] of this.cache)if(vv){vv.width=0;vv.height=0;}this.cache.clear();}
+  // the ground pictures came in: drop the chunks drawn without them, ONCE (textured is set here; it used to be set only
+  // when a chunk WITH ground was built, so a view whose first chunks were empty sky cleared the cache every frame and
+  // never got to the ground: the owner's invisible ground at the start of Act 2, Nov 11)
+  if(!this.textured&&texInfo()){this.textured=true;for(const [,vv] of this.cache)if(vv){vv.width=0;vv.height=0;}this.cache.clear();}
   for(let cy=Math.floor(v.y0/CH);cy<=Math.floor(v.y1/CH);cy++)for(let cx=Math.floor(v.x0/CH);cx<=Math.floor(v.x1/CH);cx++){
    if(cx<0||cy<0||cx*CH>=this.T.w||cy*CH>=this.T.h)continue;
    if(!this.has(cx,cy)){if(budget<=0)continue;budget--;}
@@ -180,7 +183,8 @@ function drawDecor(x,d,t){
  if(d.type==='bush'){pic(x,'bush',d.x,d.y+2);return;}
  if(d.type==='totem'){pic(x,'totem',d.x,d.y+2);return;}
  if(d.type==='flower'){spr(x,'flower','sway',t*5+d.x*.01,d.x,d.y+1);return;}
- if(d.type==='bridge'){stripX(x,'bridge',d.x0,d.x1,d.y-17,26);return;}
+ // a log bridge; `gaps` = stretches whose planks are crumbling platforms (they draw themselves and fall: owner, Nov 11)
+ if(d.type==='bridge'){let a=d.x0;for(const [g0,g1] of d.gaps||[]){if(g0>a)stripX(x,'bridge',a,g0,d.y-17,26);a=Math.max(a,g1);}if(a<d.x1)stripX(x,'bridge',a,d.x1,d.y-17,26);return;}
  if(d.type==='waterfall'){x.fillStyle='#3a8af0';x.fillRect(d.x,d.y,d.w,d.h);const o=(t*220)%32;
   for(let c=0;c<d.w;c+=8){x.fillStyle=c/8%2?'rgba(170,220,255,.9)':'rgba(255,255,255,.75)';for(let yy=d.y-32+(o+c*5)%32;yy<d.y+d.h;yy+=32){const y0=Math.max(d.y,yy),y1=Math.min(d.y+d.h,yy+18);if(y1>y0)x.fillRect(d.x+c+1,y0,5,y1-y0);}}
   x.fillStyle='rgba(255,255,255,.9)';for(let k=0;k<5;k++)x.beginPath(),x.arc(d.x+d.w*(k+.5)/5+Math.sin(t*9+k)*3,d.y+d.h-3,6+Math.sin(t*12+k*2)*2,0,7),x.fill();return;}
@@ -244,7 +248,9 @@ function drawObject(x,o,t,ctx){
  case 'wall':{const x0=o.x-o.w/2,y0=o.y-o.h/2;{const tile=SP.picture('jungle-rock');if(tile){x.save();x.beginPath();x.rect(x0,y0,o.w,o.h);x.clip();const sm=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;
    for(let yy=y0;yy<y0+o.h;yy+=32)x.drawImage(tile,x0,yy,32,32);x.imageSmoothingEnabled=sm;x.fillStyle='rgba(0,0,0,.12)';x.fillRect(x0,y0,o.w,o.h);x.restore();x.strokeStyle='#2a1a10';x.lineWidth=1.5;x.strokeRect(x0+.5,y0+.5,o.w-1,o.h-1);return;}}x.fillStyle='#8a7a6a';x.fillRect(x0,y0,o.w,o.h);x.fillStyle='#a89888';for(let yy=0;yy<o.h;yy+=16)for(let xx=(yy/16&1)*8;xx<o.w;xx+=16)x.fillRect(x0+xx,y0+yy,14,14);
   x.strokeStyle='#4a3a2a';x.lineWidth=1.5;x.strokeRect(x0+.5,y0+.5,o.w-1,o.h-1);x.beginPath();x.moveTo(x0+o.w*.3,y0);x.lineTo(x0+o.w*.5,y0+o.h*.4);x.lineTo(x0+o.w*.35,y0+o.h*.7);x.stroke();return;}
- case 'platform':{if(o.move==='swing')drawChain(x,o.px,o.py,o.x,o.y-o.h/2);if(SP.picture(o.move==='collapse'?'platform-crumble':'platform')){const nm=o.move==='collapse'?'platform-crumble':'platform',sh=o.drop>0&&(o.drop>>1)%2?1:0;pic(x,nm,o.x+sh,o.y-o.h/2-4,.5,0,{w:o.w+8});return;}
+ case 'platform':{if(o.move==='swing')drawChain(x,o.px,o.py,o.x,o.y-o.h/2);
+  // planks of a crumbling bridge: the bridge picture itself, shaking before it drops, then falling away
+  if(o.look==='bridge'&&SP.picture('bridge')){const sh=o.drop>0&&(o.drop>>1)%2?1:0;x.save();x.translate(sh,0);if(o.falling)x.rotate(0);stripX(x,'bridge',o.x-o.w/2,o.x+o.w/2,o.y-o.h/2-17,26);x.restore();return;}if(SP.picture(o.move==='collapse'?'platform-crumble':'platform')){const nm=o.move==='collapse'?'platform-crumble':'platform',sh=o.drop>0&&(o.drop>>1)%2?1:0;pic(x,nm,o.x+sh,o.y-o.h/2-4,.5,0,{w:o.w+8});return;}
   if(o.move!=='collapse'||!(o.drop>0)){drawDecor(x,{type:'land',x0:o.x-o.w/2,x1:o.x+o.w/2,y:o.y-o.h/2,depth:o.move==='collapse'?26:34},t);if(o.move==='collapse'){x.strokeStyle='#5a3214';x.lineWidth=1;for(let xx=12;xx<o.w;xx+=18){x.beginPath();x.moveTo(o.x-o.w/2+xx,o.y-o.h/2+7);x.lineTo(o.x-o.w/2+xx+4,o.y-o.h/2+22);x.stroke();}}return;}const x0=o.x-o.w/2,y0=o.y-o.h/2;x.fillStyle=o.move==='collapse'?'#9a6a3a':'#c27a34';x.fillRect(x0,y0+4,o.w,o.h-4);x.fillStyle='#58c428';x.fillRect(x0-2,y0,o.w+4,6);x.fillStyle='#c8f070';x.fillRect(x0-2,y0,o.w+4,2);
   x.fillStyle='#1e6e18';for(let xx=0;xx<o.w;xx+=6)x.fillRect(x0+xx,y0+6,3,2);if(o.drop>0&&(o.drop>>1)%2){x.fillStyle='rgba(0,0,0,.25)';x.fillRect(x0,y0,o.w,o.h);}
   if(o.move==='collapse'){x.strokeStyle='#5a3214';x.lineWidth=1;for(let xx=12;xx<o.w;xx+=18){x.beginPath();x.moveTo(x0+xx,y0+6);x.lineTo(x0+xx+4,y0+o.h);x.stroke();}}return;}
@@ -310,17 +316,41 @@ function drawSpikeLog(x,o,t){const w=o.w,h=o.h,cx=o.x,cy=o.y,R_=h/2;x.save();
 // MINI-BOSS: the owner's sheet (hover / attack = flames out both sides / wreck), the pilot's face in the dome; flashes
 // while it can't be hit. Before the fight starts it waits high over the arena; wrecked, it lies on the ground.
 function drawBoss(x,o,t,ctx){const flash=o.inv>0&&(o.inv>>1)%2,mood=o.state==='wreck'||o.state==='down'||o.inv>0?'sad':'angry';
- const row=o.state==='wreck'||o.state==='down'?'wreck':o.state==='flame'||o.state==='windup'?'attack':'hover';
- const fr=row==='wreck'?Math.min(2,Math.floor((o.state==='down'?150:o.t)/50)):row==='attack'?(o.state==='windup'?Math.floor(t*12)%2:2+Math.floor(t*14)%2):t*8;
+ // the sheet's flame and smoke frames were cut off at the frame edges (owner, Nov 11: "cropped in a square"), so the pod is
+ // drawn from its clean frames (attack frame 0 = nozzles, no flames; the wreck frames clipped below their smoke) and the
+ // flames and smoke are drawn here, as big as they need to be
+ const wreck=o.state==='wreck'||o.state==='down',row=wreck?'wreck':o.state==='flame'||o.state==='windup'?'attack':'hover';
+ const fr=wreck?Math.min(2,Math.floor((o.state==='down'?150:o.t)/50)):row==='attack'?0:t*8;
  x.save();if(flash)x.globalAlpha=.45;
  const pilotOn=()=>{if(o.state==='down')return;x.save();if(o.state==='wreck')x.translate(Math.sin(t*40)*1.5,0);ctx?.pilot?.(x,o.x,o.y-12,30,mood);x.restore();};
- if(spr(x,'miniboss',row,fr,o.x,o.y))pilotOn();// the sheet's dome is the face spot (head [80,36]): the face goes on top
+ if(wreck)bossSmoke(x,o,t,true);
+ if(o.fire>0||o.state==='windup')bossJets(x,o,t);
+ const clipTop=wreck?o.y-48+34:null;
+ // keep the dome (the middle column) whole, cut the painted smoke in the upper corners
+ if(clipTop!==null){x.save();x.beginPath();x.rect(o.x-90,clipTop,180,120);if(fr<2)x.rect(o.x-30,o.y-48,52,40);x.clip('nonzero');}// (the last wreck frame lies low: no dome up there)
+ const drawn=spr(x,'miniboss',row,fr,o.x,o.y);if(clipTop!==null)x.restore();
+ if(wreck)bossSmoke(x,o,t,false);
+ if(drawn)pilotOn();// the sheet's dome is the face spot (head [80,36]): the face goes on top
  else{pilotOn();// stand-in: a grey pod with a blue dome and two side jets
   x.fillStyle='rgba(140,200,255,.55)';x.beginPath();x.arc(o.x,o.y-12,16,Math.PI,0);x.fill();x.strokeStyle='#14141c';x.lineWidth=1.5;x.stroke();
   x.fillStyle='#9a9ab0';x.beginPath();x.ellipse(o.x,o.y+2,26,16,0,0,7);x.fill();x.stroke();x.fillStyle='#ffd23a';x.fillRect(o.x-20,o.y-2,40,6);
   x.fillStyle='#c83a3a';for(const s of [-1,1]){x.beginPath();x.arc(o.x+s*30,o.y,8,0,7);x.fill();x.stroke();}
   if(o.fire>0){for(const s of [-1,1]){const g=x.createLinearGradient(o.x+s*36,0,o.x+s*80,0);g.addColorStop(0,'#fff6a0');g.addColorStop(.5,'#ff8a1a');g.addColorStop(1,'rgba(255,40,0,0)');x.fillStyle=g;x.beginPath();x.moveTo(o.x+s*36,o.y-6);x.lineTo(o.x+s*(80+Math.sin(t*40)*4),o.y);x.lineTo(o.x+s*36,o.y+8);x.fill();}}}
  x.restore();}
+// the pod's flamethrowers: tongues of fire out of both side nozzles (as long as the hazard, 78 px from the middle);
+// sputtering short during the wind-up
+function bossJets(x,o,t){const wind=o.state==='windup',len=wind?10+Math.abs(Math.sin(t*40))*8:44+Math.sin(t*37)*4,ny=o.y+1;
+ x.save();x.globalCompositeOperation='lighter';
+ for(const s of [-1,1]){const x0=o.x+s*34;
+  for(const [w,c0,c1,k] of [[11,'rgba(255,90,20,.85)','rgba(255,40,0,0)',1],[7,'rgba(255,200,60,.95)','rgba(255,120,20,0)',.82],[3.5,'rgba(255,255,220,1)','rgba(255,230,120,0)',.6]]){
+   const L=len*k,g=x.createLinearGradient(x0,0,x0+s*L,0);g.addColorStop(0,c0);g.addColorStop(1,c1);x.fillStyle=g;x.beginPath();x.moveTo(x0,ny-w*.6);
+   for(let i=1;i<=6;i++){const u=i/6;x.lineTo(x0+s*L*u,ny-w*(1-u*.7)+Math.sin(t*50+i*1.7)*1.6);}
+   for(let i=6;i>=0;i--){const u=i/6;x.lineTo(x0+s*L*u,ny+w*(1-u*.7)+Math.sin(t*44+i*2.1)*1.6);}x.closePath();x.fill();}}
+ x.restore();}
+// wrecked: grey smoke puffs rising from the hull and drifting off (behind = the lower, darker ones; front = lighter ones)
+function bossSmoke(x,o,t,behind){x.save();for(let k=0;k<6;k++){const ph=((t*.55+k/6)%1),sx=o.x+(k%2?16:-14)+Math.sin(t*1.3+k)*4+ph*10,sy=o.y-14-ph*80,r=5+ph*14;
+  if(behind!==(k%2===0))continue;x.globalAlpha=.75*(1-ph);x.fillStyle=k%3?'#c9c4d6':'#a9a3b8';x.beginPath();x.arc(sx,sy,r,0,7);x.arc(sx+r*.6,sy+r*.25,r*.7,0,7);x.fill();
+  x.strokeStyle='rgba(60,50,80,.35)';x.lineWidth=1;x.stroke();}x.restore();}
 // a chain from a pivot down to a swinging platform
 function drawChain(x,x0,y0,x1,y1){const n=Math.max(2,Math.round(Math.hypot(x1-x0,y1-y0)/10));x.save();x.fillStyle='#8a8a98';x.strokeStyle='#3a3a48';x.lineWidth=1;
  for(let k=0;k<=n;k++){const u=k/n,cx=x0+(x1-x0)*u,cy=y0+(y1-y0)*u;x.beginPath();x.ellipse(cx,cy,3,4.5,Math.atan2(y1-y0,x1-x0),0,7);x.fill();x.stroke();}
@@ -344,7 +374,9 @@ function shieldIcon(x,a,b){x.fillStyle=a;x.beginPath();x.arc(0,0,6.5,0,7);x.fill
 // (it used to be a 180 px stub drawn with the robot, so it popped in and out and vanished with it)
 function drawTrunk(x,o){if(!SP.picture('tree-trunk'))return;const bot=o.trunkY??o.y0+90;for(let yy=bot-34;yy>o.y0-700;yy-=34)pic(x,'tree-trunk',o.x+12,yy,.5,0);}
 function drawBadnik(x,o,t){
- if(o.kind==='thrower')drawTrunk(x,o);if(o.alive===false)return;
+ // (the monkey's tree is a palm in the zone's scenery now, behind everything: owner, Nov 11: the bare trunk stood in
+ // front of other props and looked odd once the monkey was gone)
+ if(o.alive===false)return;
  if(o.kind==='charger'&&SP.sheet('charger')){const row=o.state==='rev'?'rev':o.state==='charge'?'charge':'roll';spr(x,'charger',row,t*(row==='roll'?8:14),o.x,o.y+o.h,{flip:o.dir<0});return;}
  if(o.kind==='thrower'&&SP.sheet('thrower')){const cool=o.cool||0;
   spr(x,'thrower',cool>100?'throw':Math.abs(Math.cos(o.t/50))>.25?'climb':'idle',cool>100?(120-cool)/5:t*6,o.x-2,o.y,{flip:true});return;}
@@ -389,7 +421,7 @@ const BODY_K={hog:1.045,fox:.92},RUN_HEAD=36;
 // curled up: matched by FILLED AREA, not outline width: the hedgehog's ball is spiky (outline ~31 px, filled area = a
 // 26.4 px disc), the fox's is solid fur (outline 30, area 28.7), so equal outlines made the fox's ball look ~19% bigger.
 // BALL_SRC = the source size that scales to BALL_D: the hedgehog's is unchanged (owner: its ball is right)
-const BALL_D=42,BALL_SRC={hog:32.1,fox:34.9},WALK_RUN=2.2;
+const BALL_D=42,BALL_SRC={hog:32.1,fox:38.8},WALK_RUN=2.2;// fox ball 10% smaller again (owner, Nov 11 round 3)
 // spin dash dust: puffs kicked out behind the ball
 function spinDust(x,px,py,f,t){x.save();for(let k=0;k<5;k++){const ph=(t*7+k/5)%1,d=8+ph*26,r=3+ph*6;x.globalAlpha=.85*(1-ph);x.fillStyle='#fff';
  x.beginPath();x.arc(px-f*d,py-ph*10-k%2*3,r,0,7);x.fill();x.strokeStyle='rgba(120,130,160,.55)';x.lineWidth=1;x.stroke();}x.restore();}
@@ -435,7 +467,7 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
  // quills (hedgehog) or ears (+ the three tails for the stand-in fox body) behind the face
  function backOfHead(hx,hy,skid,withTails){const sw=Math.min(1,run/6),dir=skid?f:-f;x.fillStyle=BODY;x.strokeStyle=DARK;x.lineJoin='round';
   const piece=SP.picture(tails?'ears-p2':'quills-p1');// the owner's head piece, when it is in: drawn centred on the face
-  if(piece){x.save();x.translate(hx,hy);x.scale(f,1);const sm=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;x.drawImage(piece,-piece.width/4,-piece.height/4,piece.width/2,piece.height/2);x.imageSmoothingEnabled=sm;x.restore();if(!tails||!withTails)return;}
+  if(piece){x.save();x.translate(hx,hy);x.scale(f,1);if(!tails)x.scale(.9,.9);/* the hedgehog's quills 10% smaller (owner, Nov 11) */const sm=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;x.drawImage(piece,-piece.width/4,-piece.height/4,piece.width/2,piece.height/2);x.imageSmoothingEnabled=sm;x.restore();if(!tails||!withTails)return;}
   if(tails&&withTails){const bx=hx-f*5,by=hy+26,spin=p.fly>0;for(let k=0;k<3;k++){const a=spin?t*(p.fly>1?26:7)+k*2.094:(k-1)*.5+Math.sin(t*5+k)*.12-sw*.25,L=20;
     const ex=bx+dir*L*(spin?Math.cos(a)*.9:Math.cos(a)),ey=by+(spin?-10+Math.sin(a)*5:Math.sin(a)*L*.8-4);
     x.strokeStyle=DARK;x.lineWidth=8.5;x.lineCap='round';x.beginPath();x.moveTo(bx,by);x.quadraticCurveTo((bx+ex)/2,(by+ey)/2-4,ex,ey);x.stroke();x.strokeStyle=BODY;x.lineWidth=6.5;x.stroke();
@@ -482,7 +514,11 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
   else cyc('walk',L.cyc);
   if(!p.dead)shieldUnder(x,p,t);
   const [fx0,fy0]=S.def.foot,h=SP.spot(nm,row,fr)||{x:fx0,y:fy0-36};
-  x.translate(p.x,p.y);x.rotate(bodyAngle(p));x.translate(0,19);if(upright)x.rotate(-f*upright);x.scale(BODY_K[tails?'fox':'hog'],BODY_K[tails?'fox':'hog']);// scaled about the feet
+  // on a corkscrew (owner, Nov 11: "like the real game"): Sonic 2 shows the runner barrel-rolling round the track's axis,
+  // not spinning like a wheel: seen from the side that is a squash to a sliver and a flip upside down and back (height
+  // x cos(phase), never thinner than 22%); a `cork-p1/p2` sheet (12 frames) can replace this later
+  if(p.cork){const c=Math.cos(p.cork.a||0),sy=Math.sign(c||1)*Math.max(.22,Math.abs(c));x.translate(p.x,p.y);bodyAngle(p);x.scale(1,sy);x.translate(0,19);}
+  else{x.translate(p.x,p.y);x.rotate(bodyAngle(p));x.translate(0,19);}if(upright)x.rotate(-f*upright);x.scale(BODY_K[tails?'fox':'hog'],BODY_K[tails?'fox':'hog']);// scaled about the feet
   x.save();x.scale(f,1);frame(S,row,fr,-fx0,-fy0);x.restore();
   const hx=(h.x-fx0)*f,hy=h.y-fy0;backOfHead(hx,hy,skid,false);
   head(x,i,hx,hy,RUN_HEAD,p.dead||p.hurt?'sad':skid?'angry':run>5?'happy':undefined);

@@ -4,12 +4,14 @@
 // ceiling, left wall) that turn the sensors; floor sensors A/B under each side, push sensors at the middle, ceiling
 // sensors C/D. Two collision paths (terrain.js) and plane switchers for loops. Pure: no drawing, no sound (events are
 // pushed on p.ev for the game to turn into sounds/effects), so tests can run it in Node.
-const C={acc:0.046875,dec:0.5,frc:0.046875,top:6,slp:0.125,slpUp:0.078125,slpDown:0.3125,rollFrc:0.0234375,rollDec:0.125,
- air:0.09375,grv:0.21875,jmp:6.5,jmpRelease:4,maxFall:16,maxSpeed:16,rollMin:1.03125,unroll:0.5,slipSpeed:2.5,lock:30,
+// acceleration (owner, Nov 11: "should build more speed faster"): 1.65x the Mega Drive's 0.046875, so top speed comes in
+// about 1.2 s instead of 2 (air control the same factor); top speed, friction and the rest stay Mega Drive
+const C={acc:0.0775,dec:0.5,frc:0.046875,top:6,slp:0.125,slpUp:0.078125,slpDown:0.3125,rollFrc:0.0234375,rollDec:0.125,
+ air:0.155,grv:0.21875,jmp:6.5,jmpRelease:4,maxFall:16,maxSpeed:16,rollMin:1.03125,unroll:0.5,slipSpeed:2.5,lock:30,
  wr:9,hr:19,wrRoll:7,hrRoll:14,push:10};
 const TAU=Math.PI*2,D=Math.PI/180;
 // speed shoes double acceleration and top speed (Sonic 3 values)
-const SHOES={acc:0.09375,frc:0.09375,top:12,air:0.1875};
+const SHOES={acc:0.155,frc:0.09375,top:12,air:0.31};
 const st=p=>p.shoes>0?SHOES:C;
 const norm=a=>((a%TAU)+TAU)%TAU;
 // ground mode from the angle (Sonic 3 splits at 45° with the floor and ceiling taking the diagonals)
@@ -65,12 +67,17 @@ function groundStep(p,inp,T){let [wr,hr]=radii(p);
  if(inp.jumpPress&&p.crouch&&Math.abs(p.gsp)<.1){p.spindash=true;p.rev=2;p.ev.push('rev');return;}
  // slope factor
  const s=Math.sin(p.ang);
- if(p.rolling)p.gsp-=(Math.sign(p.gsp)===Math.sign(s)?C.slpUp:C.slpDown)*s;
- else if(p.gsp!==0||Math.abs(s)>0.2)p.gsp-=C.slp*s;
+ // LOOP ASSIST (owner, Nov 11: "had speed, entered the loop, stopped 20% up and fell back... needs to be fluid like the
+ // real game"): on steep or upside-down track (past ~50°: loops and walls, not the hills) a moving runner loses less
+ // than half the speed climbing, and a ball no rolling friction there. Pure Mega Drive numbers stalled a ball arriving at
+ // 4-5 px/frame a quarter of the way up our 112 px loops; with this a roll at 4+ or a run gets round.
+ const steep=(Math.abs(s)>.42||Math.cos(p.ang)<0)&&Math.abs(p.gsp)>=2,uphill=Math.sign(p.gsp)===Math.sign(s),assist=steep&&uphill?(p.rolling?.3:.42):1;
+ if(p.rolling)p.gsp-=(uphill?C.slpUp*assist:C.slpDown)*s;
+ else if(p.gsp!==0||Math.abs(s)>0.2)p.gsp-=C.slp*s*assist;
  // input
  const L=p.lock>0?false:inp.l,R=p.lock>0?false:inp.r;
  if(p.rolling){if(L&&p.gsp>0)p.gsp=Math.max(0,p.gsp-C.rollDec);else if(R&&p.gsp<0)p.gsp=Math.min(0,p.gsp+C.rollDec);
-  p.gsp-=Math.min(Math.abs(p.gsp),C.rollFrc)*Math.sign(p.gsp);
+  if(!steep)p.gsp-=Math.min(Math.abs(p.gsp),C.rollFrc)*Math.sign(p.gsp);
   if(Math.abs(p.gsp)<C.unroll&&modeOf(p.ang)===0){p.rolling=false;p.gsp=0;p.y-=C.hr-C.hrRoll;[wr,hr]=radii(p);}}
  else{
   const S=st(p);

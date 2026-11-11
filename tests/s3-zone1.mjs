@@ -28,6 +28,8 @@ function run(name,sx,sy,max=60*240){const Z=buildZone1Act1(),w=new O.World(Z.T,Z
  console.log(`${done?'ok  ':'FAIL'} ${name}: ${done?`sign in ${(f/60).toFixed(1)} s`:`stopped at x ${Math.round(p.x)} y ${Math.round(p.y)} (furthest ${Math.round(maxX)})`}, rings ${p.rings}, score ${p.score}, deaths ${deaths}, mini-boss ${bossDown?'beaten':'NOT beaten'} (${bossHits} hits)`);
  return done&&bossDown;}
 const Z=buildZone1Act1();console.log('tiles in the pool:',Z.T.tiles(),' objects:',Z.objs.length,' rings:',Z.objs.filter(o=>o.type==='ring').length);
+{const buried=Z.objs.filter(o=>!['tube','zipline','corkscrew','boss','sign','vine','platform','seesaw','spikelog'].includes(o.type)&&o.kind!=='fish'&&Z.T.solid(Math.round(o.x),Math.round(o.y-(o.type==='monitor'?4:0)),'a',false)&&Z.T.solid(Math.round(o.x),Math.round(o.y-(o.type==='monitor'?4:0)),'b',false));
+ assert.equal(buried.length,0,'objects inside the ground: '+buried.map(o=>`${o.type} ${Math.round(o.x)},${Math.round(o.y)}`).join(' '));console.log('ok   nothing buried in the ground');}
 let ok=true;
 ok=run('from the start')&&ok;
 ok=run('plateau 1 top',2760,G-219)&&ok;

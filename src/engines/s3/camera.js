@@ -10,11 +10,12 @@
 // Drive's 96/224 = 43% left more than half a tall phone screen showing ground), and very tall portrait views zoom in a
 // little (at least 480 world px tall instead of the full width-fit height).
 // Nov 11 round 2 (owner): a little less ground again (.64) and zoomed out a touch (ZOOM_OUT: about 12% more level on screen)
-const MD_W=320,MD_H=224,FOCUS_Y=.64,ZOOM_OUT=.89;
+// Nov 11 round 3 (owner): zoomed out more (.8: about a quarter more level on screen than the Mega Drive fraction)
+const MD_W=320,MD_H=224,FOCUS_Y=.64,ZOOM_OUT=.8;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 class Camera{
  constructor(bounds){this.b={...bounds};this.goal={...bounds};this.x=0;this.y=0;this.k=1;this.vw=MD_W;this.vh=MD_H;
-  this.look=0;this.lookT=0;this.lag=0;this.hist=[];this.locked=false;}
+  this.look=0;this.lookT=0;this.lag=0;this.hist=[];this.locked=false;this.glide=0;}
  // screen size in CSS px; returns k (screen px per world px)
  resize(W,H){this.k=clamp(Math.max(Math.min(H/MD_H,W/MD_W),H/480)*ZOOM_OUT,.7,4);this.vw=W/this.k;this.vh=H/this.k;this.W=W;this.H=H;return this.k;}
  // jump straight to the runner (start of an act, respawn)
@@ -28,6 +29,12 @@ class Camera{
   this.hist.push(p.x,this.fy(p));if(this.hist.length>128)this.hist.splice(0,2);
   let px=p.x,py=this.fy(p);
   if(this.lag>0){const j=this.hist.length-2-2*this.lag;if(j>=0){px=this.hist[j];}this.lag--;}
+  // riding a warp tube (owner, Nov 11: "the camera was jarring"): the ball moves 11-16 px a frame through S-bends, so the
+  // box rules snapped and stalled; instead the camera glides after it (eased, capped), and keeps gliding a moment after
+  // the tube lets go (glide) so the hand-back to the normal rules is soft too
+  if(p.tube)this.glide=24;
+  if(!this.locked&&this.glide>0){this.glide--;const tx=px-vw*(152/MD_W),ty=py-vh*FOCUS_Y,e=p.tube?.16:.12;
+   this.x+=clamp((tx-this.x)*e,-22,22);this.y+=clamp((ty-this.y)*e,-22,22);this.moveBounds();this.clampIn();return;}
   if(!this.locked){
    // horizontal box 144..160 of 320
    const L=this.x+vw*(144/MD_W),R=this.x+vw*(160/MD_W);
