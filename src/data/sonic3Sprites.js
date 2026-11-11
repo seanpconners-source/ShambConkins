@@ -33,15 +33,15 @@ const SHEETS={
   headRows:{roll:Array.from({length:8},(_,f)=>[24,24,+(f/8*TAU).toFixed(2)])}},
  'ball-p2':{same:'ball-p1'},
  // robots (our own designs)
- charger:{frame:[64,40],foot:[32,36],rows:{roll:4,rev:2,charge:4}},
+ charger:{frame:[48,40],foot:[24,38],rows:{roll:4,rev:2,charge:4}},
  thrower:{frame:[48,48],foot:[24,24],rows:{idle:2,climb:4,throw:4}},
  shooter:{frame:[48,48],foot:[24,40],rows:{closed:2,open:3,spit:2}},
  flyer:{frame:[48,40],foot:[24,20],rows:{fly:4,dive:2}},
  seed:{frame:[16,16],foot:[8,8],rows:{spin:4}},
- critter:{frame:[24,24],foot:[12,20],rows:{bird:2,rabbit:2,squirrel:2}},
+ critter:{frame:[24,24],foot:[12,22],rows:{bird:2,rabbit:2,squirrel:2}},
  // bosses: the pilot's face goes in the circle (a locked character)
- miniboss:{frame:[96,96],foot:[48,48],head:[48,34],headSize:26,rows:{hover:2,attack:4,hit:1,wreck:3}},
- boss:{frame:[128,128],foot:[64,64],head:[64,44],headSize:30,rows:{hover:2,attack:4,hit:1,wreck:3}},
+ miniboss:{frame:[160,96],foot:[80,48],head:[80,36],headSize:26,rows:{hover:2,attack:4,hit:1,wreck:3}},
+ boss:{frame:[192,128],foot:[96,64],head:[88,46],headSize:30,rows:{hover:2,attack:4,hit:1,wreck:3}},
  capsule:{frame:[64,72],foot:[32,68],rows:{shut:1,open:3}},
  // level objects
  ring:{frame:[16,16],foot:[8,8],rows:{spin:8,sparkle:4}},
@@ -49,11 +49,12 @@ const SHEETS={
  monitor:{frame:[32,32],foot:[16,32],rows:{box:2,broken:1}},
  icons:{frame:[16,16],foot:[8,8],rows:{rings:1,shoes:1,star:1,fire:1,bubble:1,lightning:1,shield:1,trap:1}},
  starpost:{frame:[32,64],foot:[16,64],rows:{idle:1,spin:8,lit:2}},
- sign:{frame:[48,64],foot:[24,64],head:[24,18],headSize:26,rows:{spin:6,done:1},headRows:{spin:null}},
+ // the goal sign: only the blank face-on frame is used; the game spins it and puts the winner's face on the disc
+ sign:{frame:[48,64],foot:[24,64],head:[24,18],headSize:26,rows:{done:1}},
  shields:{frame:[56,56],foot:[28,28],rows:{plain:4,fire:6,bubble:6,lightning:6,stars:4}},
  fx:{frame:[32,32],foot:[16,16],rows:{pop:5,dust:4,spindust:6,rubble:4}},
- flower:{frame:[16,32],foot:[8,32],rows:{sway:4}},
- waterfall:{frame:[64,64],foot:[0,0],rows:{flow:4},note:'tiles down; opaque'},
+ flower:{frame:[24,32],foot:[12,32],rows:{sway:4}},
+ waterfall:{frame:[64,82],foot:[0,0],rows:{flow:4},note:'rock sides + falling water + splash; the middle band tiles down'},
 };
 // the runner cells are wider and taller than the 64x64 the poses were planned in, so dust, tails and flung arms fit:
 // same layout moved 16 px right and 16 px down inside a 96x80 cell

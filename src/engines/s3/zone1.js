@@ -111,7 +111,13 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  loopRings(17200,RUN);row(17360,RUN-24,4);land(17470,10,32);bad('charger',17950,G-14,{dir:-1});row(18000,G-24,8);
  o.push({type:'sign',x:18350,y:G-16});
  return o;}
+// ground scenery: bushes, flowers and stone totems on flat ground (seeded, away from lakes and gaps)
+const WET=[[3880,4520],[8180,8920],[12980,13520],[15540,15960],[5000,5700]];
+const groundProps=()=>{const o=[];let r=4242;const rnd=()=>(r=(r*16807)%2147483647)/2147483647;
+ for(let x=240;x<W-300;x+=70+rnd()*150){if(WET.some(([a,b])=>x>a-40&&x<b+40))continue;const y=gy(x);if(Math.abs(gy(x+24)-gy(x-24))>5)continue;
+  const k=rnd();o.push(k<.5?{type:'bush',x,y}:k<.85?{type:'flower',x,y}:{type:'totem',x,y});}return o;};
 const decor=()=>[
+ ...groundProps(),{type:'bridge',x0:3900,x1:4500,y:P,x:3900,w:600,front:true},{type:'bridge',x0:13000,x1:13500,y:G,x:13000,w:500,front:true},
  // ledges come three ways: a floating chunk, a tower of rock down to the ground, or a long shelf on rock legs
  ...LEDGES.flatMap(([x0,x1,y],k)=>{const w=x1-x0,ground=Math.max(gy(x0+8),gy((x0+x1)/2),gy(x1-8)),tall=ground-y,kind=w>=500?'legs':w>=280||k%2?'tower':'float';
   if(kind==='float'||tall<60)return [{type:'land',x0,x1,y,x:x0,w,depth:w<120?36:52,front:true}];
