@@ -10,7 +10,7 @@ await J(()=>{const st=window.ShambConkins.store.profile.settings;st.music=true;s
 await page.mouse.click(195,300);// a real gesture, so the AudioContext may run
 const N=()=>J(()=>window.ShambConkins.store.session?.debug?.music?.());
 const D=(f,a)=>J(f,a);
-const ready=()=>J(()=>{for(const b of document.querySelectorAll('#dialog[open] button, .pass-overlay button, .pass-card button'))if(/ready|start|play/i.test(b.textContent)){b.click();return true;}return false;});
+const ready=()=>J(()=>{const d=window.ShambConkins.store.session?.debug;if(d?.intro&&/title|select/.test(d.intro().phase))d.skipIntro(0);for(const b of document.querySelectorAll('#dialog[open] button, .pass-overlay button, .pass-card button'))if(/ready|start|play/i.test(b.textContent)){b.click();return true;}return false;});
 const until=async(f,ms=8000)=>{let n;for(let t=0;t<ms;t+=100){n=await N();if(n&&f(n))return n;await page.waitForTimeout(100);}return n;};
 async function start(id){await J(id=>{void window.ShambConkins.requestGame({id,origin:'arcade',solo:true,quick:true});},id);
  for(let k=0;k<40;k++){await page.waitForTimeout(250);await ready();if(await J(()=>window.ShambConkins.store.session?.debug?.state?.phase==='card'))return true;}return false;}

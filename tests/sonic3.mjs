@@ -5,7 +5,7 @@
 import {open} from './lib.mjs';
 const SHOTS=process.env.SHAMB_SHOTS_DIR||'/tmp';
 let bad=0;const check=(ok,msg)=>{console.log((ok?'ok   ':'FAIL ')+msg);if(!ok)bad++;};
-const ready=page=>page.evaluate(()=>{for(const b of document.querySelectorAll('#dialog[open] button, .pass-overlay button, .pass-card button'))if(/ready|start|play/i.test(b.textContent)){b.click();return true;}return false;});
+const ready=page=>page.evaluate(()=>{const d=window.ShambConkins.store.session?.debug;if(d?.intro&&/title|select/.test(d.intro().phase))d.skipIntro(0);for(const b of document.querySelectorAll('#dialog[open] button, .pass-overlay button, .pass-card button'))if(/ready|start|play/i.test(b.textContent)){b.click();return true;}return false;});
 async function launch(page,solo){
  await page.evaluate(solo=>{void window.ShambConkins.requestGame({id:'sonic3-test',origin:'arcade',...(solo?{solo:true}:{}),quick:true});},solo);
  for(let k=0;k<40;k++){await page.waitForTimeout(300);await ready(page);if(await page.evaluate(()=>window.ShambConkins.store.session?.debug?.state?.phase==='card'))return true;}

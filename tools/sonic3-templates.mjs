@@ -70,7 +70,7 @@ await page.evaluate(src => {
 }, src);
 
 const save = (file, data) => fs.writeFileSync(path.join(outDir, file), Buffer.from(data.split(',')[1], 'base64'));
-const sheets = await page.evaluate(() => Object.keys(SP.SHEETS).filter(n => !SP.SHEETS[n].same));
+const sheets = process.argv.some(a => a.startsWith('--only=')) ? [] : await page.evaluate(() => Object.keys(SP.SHEETS).filter(n => !SP.SHEETS[n].same));
 for (const name of sheets) {
   for (const zoom of [1, 4]) save(`${name}${zoom > 1 ? '@4x' : ''}.png`, await page.evaluate(({name, zoom}) => {
     const def = SP.SHEETS[name], rows = Object.entries(def.rows), [fw, fh] = def.frame, cols = Math.max(...rows.map(r => r[1]));
@@ -86,8 +86,11 @@ for (const name of sheets) {
   }, {name, row}));
   console.log('sheet', name);
 }
-for (const name of await page.evaluate(() => Object.keys(SP.PICTURES))) {
-  for (const zoom of [1, 4]) save(`${name}${zoom > 1 ? '@4x' : ''}.png`, await page.evaluate(({name, zoom}) => {
+// --only=a,b: just those pictures (the others' templates stay as they are); full-screen pictures get no @4x copy
+const ONLY = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
+for (const [name, pw] of await page.evaluate(() => Object.entries(SP.PICTURES).map(([n, p]) => [n, p.size[0]]))) {
+  if (ONLY.length && !ONLY.includes(name)) continue;
+  for (const zoom of pw >= 600 ? [1] : [1, 4]) save(`${name}${zoom > 1 ? '@4x' : ''}.png`, await page.evaluate(({name, zoom}) => {
     const p = SP.PICTURES[name], [W, H] = p.size, [ax, ay] = p.anchor, c = document.getElementById('c'); c.width = W * zoom; c.height = H * zoom;
     const x = c.getContext('2d'); x.scale(zoom, zoom); x.fillStyle = p.opaque ? 'rgba(60,120,200,.30)' : 'rgba(60,120,200,.14)'; x.fillRect(0, 0, W, H);
     x.strokeStyle = 'rgba(20,50,120,.6)'; x.lineWidth = 1 / zoom; x.strokeRect(.5 / zoom, .5 / zoom, W - 1 / zoom, H - 1 / zoom);
@@ -95,6 +98,7 @@ for (const name of await page.evaluate(() => Object.keys(SP.PICTURES))) {
     if (ay > 0 && ay < H) { x.strokeStyle = 'rgba(220,30,30,.9)'; x.beginPath(); x.moveTo(0, ay); x.lineTo(W, ay); x.stroke(); }
     x.fillStyle = 'rgba(220,30,30,.95)'; const cy = Math.min(H - 1, ay); x.fillRect(Math.max(0, ax - 4), cy, 9, 1); x.fillRect(Math.min(W - 1, ax), Math.max(0, cy - 4), 1, 5);
     if (p.head) { x.strokeStyle = 'rgba(30,90,240,.95)'; x.lineWidth = 1.2; x.beginPath(); x.arc(p.head[0], p.head[1], p.head[2] / 2, 0, 7); x.stroke(); x.fillStyle = 'rgba(30,90,240,.9)'; x.font = '4px monospace'; x.fillText('FACE', p.head[0] - 5, p.head[1] + 1); x.font = fs + 'px monospace'; }
+    if (p.screen) { const [a0, b0, a1, b1] = p.screen; x.save(); x.setLineDash([6, 4]); x.strokeStyle = 'rgba(220,30,30,.95)'; x.lineWidth = 2; x.strokeRect(a0, b0, a1 - a0, b1 - b0); x.restore(); x.fillStyle = 'rgba(220,30,30,.95)'; x.fillText('SCREEN: leave see-through', a0 + 6, b0 + 14); }
     x.fillStyle = 'rgba(10,20,50,.9)'; let ty = fs + 1; const line = t => { x.fillText(t, 2, ty); ty += fs + 1; };
     line(`${name} ${W}x${H}`); if (p.tile) line(p.tile === 'x' ? '<-> repeats sideways' : 'repeats both ways'); if (p.opaque) line('opaque');
     if (p.note && !small) { const words = p.note.split(' '); let l = ''; for (const w of words) { if (x.measureText(l + ' ' + w).width > W - 6 && l) { line(l); l = w; } else l = l ? l + ' ' + w : w; } if (l) line(l); }

@@ -279,7 +279,13 @@ function drawLoose(x,r,t){if(r.animal&&spr(x,'critter',['bird','rabbit','squirre
 // quills, P2 a red-orange fox with three tails (they whirl when it flies), each wearing the player's face
 const looks=new WeakMap();
 function lookOf(p){let L=looks.get(p);if(!L){L={spin:0,cyc:0,idle:0,tw:0};looks.set(p,L);}return L;}
-function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tails?'#f0541e':'#6a48e0',DARK=tails?'#96280a':'#32208c',SKIN=tails?'#fff0d0':'#cdbcff',ARM=BODY,SCARF=tails?'#fff0d0':'#8c70ff',SHOE=tails?'#18a8a0':'#ffd428',SOLE=tails?'#0c6660':'#b08400';
+// the angle the body is drawn at: follows the ground angle quickly (so the last degree or two of pixel-staircase noise
+// doesn't shake the sprite) and turns back upright gently in the air instead of snapping (dropping off a loop, ramps)
+function bodyAngle(p){const L=lookOf(p),want=p.dead?0:p.ground?-p.ang:0,now=performance.now(),dt=Math.min(.1,L.at?(now-L.at)/1000:1/60);L.at=now;
+ if(L.da===undefined||p.dead){L.da=want;return want;}
+ let d=want-L.da;d=((d+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;
+ L.da+=d*(1-Math.exp(-dt*(p.ground?30:9)));return L.da;}
+function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body==='fox':i===1,BODY=tails?'#f0541e':'#6a48e0',DARK=tails?'#96280a':'#32208c',SKIN=tails?'#fff0d0':'#cdbcff',ARM=BODY,SCARF=tails?'#fff0d0':'#8c70ff',SHOE=tails?'#18a8a0':'#ffd428',SOLE=tails?'#0c6660':'#b08400';
  const ball=p.rolling||p.jumping||p.spindash,sp=p.ground?p.gsp:p.xsp,run=Math.abs(sp),f=p.facing||1;
  L.spin+=p.spindash?.9:(ball?(.25+Math.abs(p.ground?p.gsp:Math.hypot(p.xsp,p.ysp))*.07):0)*(p.ground?Math.sign(p.gsp)||f:f);L.cyc+=Math.max(.06,run*.045);L.idle=p.ground&&run<.05&&!p.crouch&&!p.lookUp?L.idle+1:0;
  x.save();x.globalAlpha*=alpha;
@@ -295,7 +301,7 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tai
   if(p.spindash){x.fillStyle='rgba(255,255,255,.75)';for(let k=0;k<4;k++){x.beginPath();x.arc(p.x-f*(16+k*6),p.y+10-k*1.5+Math.sin(t*40+k)*1.5,2+k*.8,0,7);x.fill();}}
   x.restore();shieldOver(x,p,t);return;}
  // standing body: feet origin at the surface below the centre, turned with the ground angle
- const ang=p.ground?-p.ang:0;x.translate(p.x,p.y);x.rotate(ang);x.translate(0,19);
+ const ang=bodyAngle(p);x.translate(p.x,p.y);x.rotate(ang);x.translate(0,19);
  const skid=p.ground&&run>1.5&&Math.sign(p.gsp)!==f&&!p.rolling,peel=p.ground&&run>=6;
  x.save();x.scale(f,1);
  if(p.hang){legs(0,0);body();x.strokeStyle=ARM;x.lineWidth=3.5;x.lineCap='round';x.beginPath();x.moveTo(-3,-22);x.lineTo(-2,-35);x.moveTo(3,-22);x.lineTo(2,-35);x.stroke();glove(-2,-36);glove(2,-36);}
@@ -327,7 +333,7 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tai
  if(skid&&(t*30|0)%3===0){}// dust is an effect (game)
  shieldOver(x,p,t);
  // the owner's sprite sheets (src/data/sonic3Sprites.js), when they are in: the body frame, then the face on its spot
- function sprites(){const nm='runner-p'+(i+1),S=SP.sheet(nm),B=SP.sheet('ball-p'+(i+1));if(!S||!B)return false;
+ function sprites(){const nm='runner-p'+(tails?2:1),S=SP.sheet(nm),B=SP.sheet('ball-p'+(tails?2:1));if(!S||!B)return false;
   const frame=(Sh,row,fr,dx,dy)=>{const [fw,fh]=Sh.def.frame,ri=Object.keys(Sh.def.rows).indexOf(row),r=Sh.res;x.drawImage(Sh.img,fr*fw*r,ri*fh*r,fw*r,fh*r,dx,dy,fw,fh);};
   const was=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;
   if(ball&&!p.dead){shieldUnder(x,p,t);const row=p.spindash?'spindash':'roll',n=B.def.rows[row],TAU=Math.PI*2,fr=p.spindash?Math.floor(t*24)%n:Math.floor((((L.spin*f)%TAU)+TAU)%TAU/TAU*n)%n,[bw,bh]=B.def.frame;
@@ -349,7 +355,7 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=i===1,BODY=tai
   else cyc('walk',L.cyc*1.3);
   if(!p.dead)shieldUnder(x,p,t);
   const [fx0,fy0]=S.def.foot,h=SP.spot(nm,row,fr)||{x:fx0,y:fy0-36};
-  x.translate(p.x,p.y);x.rotate(p.dead?0:p.ground?-p.ang:0);x.translate(0,19);
+  x.translate(p.x,p.y);x.rotate(bodyAngle(p));x.translate(0,19);
   x.save();x.scale(f,1);frame(S,row,fr,-fx0,-fy0);x.restore();
   const hx=(h.x-fx0)*f,hy=h.y-fy0;backOfHead(hx,hy,skid,false);
   head(x,i,hx,hy,32,p.dead||p.hurt?'sad':skid?'angry':run>5?'happy':undefined);

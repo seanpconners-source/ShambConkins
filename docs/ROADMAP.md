@@ -97,6 +97,15 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **R55** `[idea]` "Conners 4 real": a silly game, for later (owner will explain).
 - **R58** `[idea]` Game shows: a chunky game show like ITYSL; Jeopardy, Wheel of Fortune, Deal or No Deal style games; polish Millionaire and Price Is Right to look like the real shows (Price Is Right also needs to be much more fun).
 - **R59** `[part]` Sonic rebuild (owner, Nov 10, NOW; owner then chose SONIC 3, plan docs/sonic3/PLAN.md; engine terrain + physics done, sounds in): Sonic 2 style zones: big acts with many routes, loops, springs, spikes, then a boss; a few acts per zone, more zones later. Then full stage + character sprite kits (bodies that take the players' faces). Owner is gathering sounds and music.
+  Status Nov 11: engine, Zone 1 Act 1 (Shamb Island), sprites and Sonic 3 music in (v0.90.0); title screen + 1P character
+  select (hedgehog or fox) with their songs, loop feel fixes. Next: R59c mini-boss at the end of Act 1, then Act 2 + boss.
+- **R59a** `[idea]` (owner, Nov 11: "later... too much for now") Seanic 1P: a third choice on the character select,
+  SEANIC & TAILS: the hedgehog with a CPU fox following him like Sonic 2/3 (copies your moves a moment later, flies back in
+  when left behind, can't lose you lives).
+- **R59b** `[todo]` Seanic title/select art from GPT: brief `docs/sonic3-sprites/TITLE-SELECT-BRIEF.md` (title-bg,
+  title-hero, title-fox, select-bg, select-monitor, select-hog, select-fox); stand-ins drawn until they arrive.
+- **R59c** `[todo]` Seanic Act 1 mini-boss (the miniboss sheet is already imported), then Act 2 (the scorched jungle) and the
+  zone boss (boss + capsule sheets imported).
 
 **New characters**
 - **R56** Connor O'Malley, Bart Harley Jarvis, Taffy Lee Fubbins, Michael Patrick Porkins; Amy the gorilla + the Congo people; Corey Feldman + The Goonies; Randal and Dante; The Mask / Stanley Ipkiss; Surf Nazis, more Troma, Mad Cowboy; Sin City people; Wes Anderson people; M. Night Shyamalan; Captain Dissolution, Drew Gooden, memoria, Danny Gonzalez.
@@ -596,6 +605,12 @@ Other boss items
 - **P12** `[todo]` (owner, Nov 3) Sound effects and background music to match: Sonic, Mario, Castlevania and the rest. Sound-alike
   effects and music made in the real chips' style (NES pulse/triangle/noise, Mega Drive FM), our own tunes; the owner's
   drop-in music slots stay (see "Owner-supplied music/art").
+- **P14** `[idea]` (owner, Nov 11) Faces that look where they're going: scan the portraits (at least the main ones: Sean,
+  Amber, the dogs, the most-used characters) and work out which way each face is looking (left / right / straight on), then
+  flip the face in our games so it faces the direction of travel (Sonic, Mario, Broforce, kart, SotN...). Approach: a
+  head-pose estimate per portrait (face landmarks: nose tip vs the eye/jaw midline gives the yaw) run once by a tool, saved
+  as a small table (`src/data/faceLook.js`: id/mood -> 'l'|'r'|'c' + strength), then `s.sprite` flips a face that looks the
+  wrong way; straight-on faces stay as they are. Check a contact sheet by eye before using it.
 
 ## Testing and stability (section 14; ongoing)
 

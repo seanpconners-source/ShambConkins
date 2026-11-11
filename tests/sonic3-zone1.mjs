@@ -5,7 +5,7 @@
 import {open} from './lib.mjs';
 const SHOTS=process.env.SHAMB_SHOTS_DIR||'/tmp';
 let bad=0;const check=(ok,msg)=>{console.log((ok?'ok   ':'FAIL ')+msg);if(!ok)bad++;};
-const ready=page=>page.evaluate(()=>{for(const b of document.querySelectorAll('#dialog[open] button, .pass-overlay button, .pass-card button'))if(/ready|start|play/i.test(b.textContent)){b.click();return true;}return false;});
+const ready=page=>page.evaluate(()=>{const d=window.ShambConkins.store.session?.debug;if(d?.intro&&/title|select/.test(d.intro().phase))d.skipIntro(0);for(const b of document.querySelectorAll('#dialog[open] button, .pass-overlay button, .pass-card button'))if(/ready|start|play/i.test(b.textContent)){b.click();return true;}return false;});
 const G=1500,SPOTS=[['start',300,G-19],['tunnel1',2700,G+180],['lake1',4100,G-219],['ledges',3200,G-439],['cave',5300,G+161],['gorge',8300,G-19],['tunnel2',9900,G+20],['loop3',12300,G-19],['lake2',13150,G-19],['stairs',560,G-179],['secret',4420,G-40],['chasm',15700,G+41],['loop4',17050,G+81]];
 for(const [w,h,tag] of [[390,780,'phone'],[844,390,'land']]){
  const {browser,page,errors}=await open({viewport:{width:w,height:h}});

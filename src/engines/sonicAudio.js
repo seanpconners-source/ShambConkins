@@ -55,6 +55,8 @@ const SONGS={
  'angel-island-1':{loop:[.6,66.13522],gain:1},// Angel Island Act 1: no intro, period 2,890,103 samples
  'azure-lake':{loop:[4.5,58.89998],gain:.78},// Azure Lake (competition): 1.8 s intro, period 2,399,039 samples
  invincible:{loop:[.35,10.65238],gain:.93},// period 454,335 samples
+ 'data-select':{loop:[1.45,61.18347],gain:1.08},// the character select: period 2,634,246 samples, 0.9 s intro
+ title:{gain:.8},// the title screen: played once, like the game (15.7 s)
  '1up':{gain:.8},'act-clear':{gain:.9},'game-over':{gain:1.05}};
 // music sits ~7 dB under the sound rips' level (songs are mastered to 0 dB peaks, the sounds to -4..-14 dB)
 const MUSIC=.45,XF=.08;
@@ -98,4 +100,4 @@ const nowPlaying=()=>({want,name:song?.name||null,pos:song?songPos(song):0,pause
 // tests: jump the song to t seconds
 function seekSong(t){const S=song;if(!S||S.paused)return;for(const p of S.parts)try{p.src.stop();}catch{}S.parts=[];segment(S,S.a.currentTime+.02,t,XF);}
 const loaded=()=>[...fx.values()].filter(Boolean).length;
-Object.assign(exports,{SFX,SONGS,open,play,ring,rev,has,hush,stopAll,loaded,music,restart,jingle,jingleLen,hold,tick,nowPlaying,seekSong});
+Object.assign(exports,{SFX,SONGS,open,play,ring,rev,has,hush,stopAll,loaded,music,restart,jingle,stopJingle,jingleLen,hold,tick,nowPlaying,seekSong});

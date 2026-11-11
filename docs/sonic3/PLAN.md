@@ -39,6 +39,8 @@ tile-for-tile copy of the real zones) and our own art; the owner's own sound rip
 - Map preview: `node tools/s3-map.mjs` → `docs/sonic3/maps/zone1-act1.png`. Tests: `tests/s3-zone1.mjs` (Node bot, every
   route reaches the sign; in test:core), `tests/sonic3-zone1.mjs` (browser, screenshots).
 - Next: owner's map review + playtest notes, mini-boss at the end, then Act 2.
+- Nov 11: title screen + 1P character select (src/engines/s3/intro.js, art brief docs/sonic3-sprites/TITLE-SELECT-BRIEF.md),
+  loop feel fixes (smooth angles, Sonic 3 slip rule, no false walls on loops). Roadmap R59a: a CPU fox following the hedgehog.
 
 ## Zone 1 (jungle island, Sonic 3's first-zone style)
 - Act 1: ~2-3 minutes, three height bands (high fast route over the canopy, middle, low slower route with secrets),
@@ -53,4 +55,6 @@ tile-for-tile copy of the real zones) and our own art; the owner's own sound rip
 
 ## Sound
 - Owner's Sonic 3 & Knuckles sound effects: in (`assets/music/s3k-sfx-*`, `src/engines/sonicAudio.js`).
-- Music: the owner is gathering it.
+- Music: the owner's Sonic 3 soundtrack (Claude Share) in `assets/music/s3k-song-*.flac`: title, data select, Angel Island
+  Act 1, Azure Lake (Test Zone), invincibility, 1-up, act clear, game over. Next to add with their set pieces: Miniboss,
+  Robotnik (boss), Angel Island Act 2, Drowning (water).

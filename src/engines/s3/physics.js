@@ -32,13 +32,18 @@ function sense(T,x,y,dx,dy,path,floor){
  const S=k=>ax?T.solid(k,o,path,floor):T.solid(o,k,path,floor);
  if(S(ci)){for(let k=1;k<=16;k++){const r=ci-dir*k;if(!S(r))return dir>0?-(c-(r+1)):-((r)-c);}return -16;}
  for(let k=1;k<=32;k++){const r=ci+dir*k;if(S(r))return dir>0?r-c:c-(r+1);}return null;}
-// the surface angle where a sensor hit, from two probes either side along the surface
-function surfAngle(T,hx,hy,mode,path,floor){const m=MODE_ANG[mode],[tx,ty]=tan(m),[nx,ny]=down(m),h=4;
- const a=sense(T,hx-tx*h-nx*8,hy-ty*h-ny*8,nx,ny,path,floor),b=sense(T,hx+tx*h-nx*8,hy+ty*h-ny*8,nx,ny,path,floor);
- if(a===null||b===null)return m;
- // points on the surface
- const ax=hx-tx*h-nx*8+nx*a,ay=hy-ty*h-ny*8+ny*a,bx=hx+tx*h-nx*8+nx*b,by=hy+ty*h-ny*8+ny*b;
- return norm(Math.atan2(-(by-ay),bx-ax));}
+// the surface angle where a sensor hit: seven probes across 24 px along the surface and a straight-line fit. (Two probes
+// 8 px apart on whole pixels gave the angle in ~6° steps that rocked back and forth, so the runner wobbled round loops,
+// worst when slow; the fit is good to about a degree, close to the Mega Drive's per-tile angles.)
+const PROBES=[-12,-8,-4,0,4,8,12];
+function surfAngle(T,hx,hy,mode,path,floor){const m=MODE_ANG[mode],[tx,ty]=tan(m),[nx,ny]=down(m);
+ let n=0,su=0,sv=0,suu=0,suv=0;
+ for(const u of PROBES){const d=sense(T,hx+tx*u-nx*8,hy+ty*u-ny*8,nx,ny,path,floor);if(d===null)continue;const v=d-8;// depth along "down" past the hit point
+  n++;su+=u;sv+=v;suu+=u*u;suv+=u*v;}
+ if(n<2)return m;const den=n*suu-su*su;if(Math.abs(den)<1e-9)return m;
+ const k=(n*suv-su*sv)/den;// surface drops k px (along down) per px along the tangent
+ // surface direction in screen coords = tangent + k * down
+ const dx=tx+k*nx,dy=ty+k*ny;return norm(Math.atan2(-dy,dx));}
 // ---------------- one frame
 // inp = {l,r,u,d,jump (held),jumpPress (this frame)}; T = terrain; objs = plane switchers etc. (optional)
 function step(p,inp,T,opt={}){p.frames++;p.ev.length=0;if(p.lock>0&&p.ground)p.lock--;
@@ -75,9 +80,10 @@ function groundStep(p,inp,T){let [wr,hr]=radii(p);
   p.crouch=!!inp.d&&Math.abs(p.gsp)<.1&&modeOf(p.ang)===0;p.lookUp=!!inp.u&&Math.abs(p.gsp)<.1&&modeOf(p.ang)===0;
   if(inp.d&&Math.abs(p.gsp)>=C.rollMin){p.rolling=true;p.y+=C.hr-C.hrRoll;[wr,hr]=radii(p);p.ev.push('roll');}}
  p.gsp=Math.max(-C.maxSpeed,Math.min(C.maxSpeed,p.gsp));
- // walls ahead (push sensors), only on floor-ish and wall modes when moving
+ // walls ahead (push sensors) while moving, on floor-mode ground only: on a loop's walls and ceiling the cast ran into
+ // the loop's own curve ahead and stopped the runner dead (rolling down the back of a loop at 9.9 -> 0)
  const mode=modeOf(p.ang);
- if(p.gsp!==0){const dir=Math.sign(p.gsp),m=MODE_ANG[mode],[tx,ty]=tan(m),[nx,ny]=down(m),off=mode===0&&!p.rolling?8:0;
+ if(p.gsp!==0&&mode===0){const dir=Math.sign(p.gsp),m=MODE_ANG[mode],[tx,ty]=tan(m),[nx,ny]=down(m),off=mode===0&&!p.rolling?8:0;
   const ox=p.x+nx*off,oy=p.y+ny*off,d=sense(T,ox,oy,tx*dir,ty*dir,p.path,false);
   const reach=C.push+Math.abs(p.gsp);
   if(d!==null&&d<reach){p.gsp=0;const gap=d-C.push;/* stop flush against the wall */p.x+=tx*dir*Math.min(0,gap);p.y+=ty*dir*Math.min(0,gap);p.ev.push('wall');}}
@@ -92,15 +98,18 @@ function groundStep(p,inp,T){let [wr,hr]=radii(p);
  const da=sense(T,ax,ay,nx,ny,p.path,true),db=sense(T,bx,by,nx,ny,p.path,true);
  let d=null,hx=0,hy=0;
  if(da!==null&&(db===null||da<=db)){d=da;hx=ax+nx*da;hy=ay+ny*da;}else if(db!==null){d=db;hx=bx+nx*db;hy=by+ny*db;}
- const snap=Math.min(Math.abs(p.xsp)+4,14);
+ // how far the ground may fall away and still be stuck to (Sonic 2+): by the speed across the sensors' direction
+ const md0=modeOf(p.ang),snap=Math.min(Math.abs(md0===1||md0===3?p.ysp:p.xsp)+4,14);
  if(d===null||d>snap){p.ground=false;p.jumping=false;p.ev.push('leave');return;}
  p.x+=nx*d;p.y+=ny*d;
  p.ang=surfAngle(T,hx,hy,modeOf(p.ang),p.path,true);
- // slip off walls and ceilings when too slow
- const md=modeOf(p.ang);
- if(md!==0&&Math.abs(p.gsp)<C.slipSpeed&&p.lock===0){const deg=norm(p.ang)/D;
-  if(deg>=90&&deg<=270){p.ground=false;p.jumping=false;p.xsp=p.gsp*Math.cos(p.ang);p.ysp=-p.gsp*Math.sin(p.ang);p.ang=0;p.ev.push('fall');}
-  else p.lock=C.lock;}}
+ // too slow on a steep slope, wall or ceiling (Sonic 3 & Knuckles rules): steeper than 69° = drop off it; 35-69° =
+ // slide back down (ground speed pushed .5 down the slope); either way 30 frames without control. (The old rule only
+ // dropped off past 90°, so a slow runner hung on a loop's wall at ~70° with no speed before sliding back.)
+ if(Math.abs(p.gsp)<C.slipSpeed&&p.lock===0){const deg=norm(p.ang)/D;
+  if(deg>=35&&deg<=326){p.lock=C.lock;
+   if(deg>=69&&deg<=293){p.ground=false;p.jumping=false;p.xsp=p.gsp*Math.cos(p.ang);p.ysp=-p.gsp*Math.sin(p.ang);p.ang=0;p.ev.push('fall');}
+   else p.gsp+=deg<180?-.5:.5;}}}
 
 function airStep(p,inp,T){
  const S=st(p);
