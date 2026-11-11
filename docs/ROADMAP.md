@@ -102,6 +102,10 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **R59a** `[idea]` (owner, Nov 11: "later... too much for now") Seanic 1P: a third choice on the character select,
   SEANIC & TAILS: the hedgehog with a CPU fox following him like Sonic 2/3 (copies your moves a moment later, flies back in
   when left behind, can't lose you lives).
+- **R59d** `[idea]` (owner, Nov 11: "later tho") More playable runners on the Seanic character select, our own designs in
+  the spirit of: a Knuckles-style one (an echidna-ish bruiser: glides on a second jump press, climbs walls, punches through
+  rock; secret routes only he can reach), a Shadow-style one (a dark rival hedgehog: air dash / skate boost), maybe others.
+  Each = a body sheet + ball sheet (same kit as runner-p1/p2), their moves in physics.js, a name plate on the select.
 - **R59b** `[todo]` Seanic title/select art from GPT: brief `docs/sonic3-sprites/TITLE-SELECT-BRIEF.md` (title-bg,
   title-hero, title-fox, select-bg, select-monitor, select-hog, select-fox); stand-ins drawn until they arrive.
 - **R59c** `[todo]` Seanic Act 1 mini-boss (the miniboss sheet is already imported), then Act 2 (the scorched jungle) and the
