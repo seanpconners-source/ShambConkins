@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.92.0
+
+- **Seanic online: both at once.** Play Shamb Island together on two phones at the same time: you see each other running, with an arrow when your partner is off screen. Rings, item boxes, robots and walls one of you takes are gone for both. When one of you reaches the sign, the other has 10 seconds; the higher score wins.
+- **Warp tubes.** Roll tubes now grab you and shoot you through at speed, no more getting stuck in the bends.
+- **Loops like the real game.** Loops stand on solid feet with grass; you run in front of the entrance and come out behind the exit. Fixed a stop at the start of loops at high speed.
+- **Springs** stand tall, squash when you land, then spring back up.
+- **Runners:** the hedgehog is a little bigger and the fox a little smaller so they match; both balls the same size; bigger faces that move with the body; Tails flies with any shield; better walk animation; Tails' face stays on when flying.
+- **Title and character select:** new art, bigger faces, and they fit your phone's screen. Only the arrows change the character; tap anywhere else to pick.
+- **Camera** a bit higher and zoomed out; the game runs a touch faster.
+- Fixed: falling off either end of the level, the spin dash dust cut off, the monkey's tree popping in and out, a floating zip line post, palms floating on slopes. Backgrounds tile seamlessly and palms vary.
+
 ## v0.91.0
 
 - **Seanic title screen.** The SEANIC logo bursts in to the real Sonic 3 Title Screen music, with the hedgehog (player 1's face) and the three-tailed fox (player 2's face) popping up behind it over a sea-and-waterfall scene. TAP TO START.
