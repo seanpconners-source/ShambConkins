@@ -2,7 +2,7 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-SEANIC ROUND 4 (Nov 11 late, uncommitted on claude/seanic-loops-zoom, shared with the head-check + SotN sessions' edits):
+SEANIC ROUND 4 (Nov 11 late; RELEASED as v0.95.0 on main with the head-check + SotN sessions' work; owner: release, skip tests (test:core passed up to s3-moves before it was stopped)):
 LOOPS: physics.js floor push sensor ignores a hit unless that surface is 50°+ steeper than the ground (a 9-10 ball took
 the loop's own curve at 45° for a wall); loop halves overlap .35 rad over the top (OV in zone1/act2/act3/testZone: a 11+
 px/f ball jumped the a/b seam before the switcher and fell); rolling loop assist .15 up / half pull down when steep
@@ -24,7 +24,7 @@ SEANIC & TAILS (CPU fox follows: sonic3.js buddyInput = Sonic 3 Tails AI, object
 fox. Knux/Shade art = the hedgehog sheets recoloured at runtime (render.js recolour/tintSheet) until GPT sheets come.
 Tests: s3-zone1-act3.mjs + s3-moves.mjs (test:core), sonic3-zone1-act3.mjs (browser); all Seanic Node/browser tests pass.
 
-HEAD CHECK (Nov 11, unreleased, uncommitted on claude/seanic-loops-zoom; owner's idea): tools/head-check.py (OpenCV 4.x Haar:
+HEAD CHECK (Nov 11, RELEASED in v0.95.0; owner's idea): tools/head-check.py (OpenCV 4.x Haar:
 OpenCV 5 has no Haar files, `pip install opencv-python-headless<5`) reads every character picture (assets/portraits + built-in
 char:* raster art + face pack, 2,473) → src/data/headFacts.js HEAD_FACTS[key]=[face box, head box (fractions), look -1/0/1,
 conf, found, aspect] (face found 1,985, outline guess 488); contact sheets local-test-reports/head-check/all-NN.png +
