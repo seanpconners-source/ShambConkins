@@ -11,6 +11,7 @@
 // cleave; presses are buffered), up + attack or swipe up for the sub-weapon (hearts), hold attack and release for
 // Hellfire (MP). Blue after-images trail the hero and the blade. The simulation is a fixed 60 Hz; drawing interpolates. Monsters split in half and burn; blood stains the floor. Art: sotnArt.js; sound: sotnAudio.js.
 const {clamp,seededRandom}=require("src/utils.js");
+const {drawFace}=require("src/headFacts.js");
 const {soloFinish,soloProgress}=require("src/solo.js");
 const {arenaTouch,outlined,PCOL,Countdown,settle}=require("src/engines/arenaKit.js");
 const {fullBleed}=require("src/engines/fullBleed.js");
@@ -584,7 +585,10 @@ async function sotn(s){
   vig=document.createElement('canvas');vig.width=W;vig.height=H;const q=vig.getContext('2d'),gr=q.createRadialGradient(W/2,H*.55,Math.min(W,H)*.25,W/2,H*.55,Math.max(W,H)*.75);
   gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.7,'rgba(0,0,0,.35)');gr.addColorStop(1,'rgba(0,0,0,.8)');q.fillStyle=gr;q.fillRect(0,0,W,H);return vig;}
  // the face moves only with the body (the sheet's per-frame face spots): `still` = no idle bob/lean of its own (owner, Nov 11)
- const headFn=(i,mood)=>(gg,x,y,size)=>s.sprite(gg,i,x,y,size,{exact:true,mood,still:true});
+ // On the sprite hero (dir = facing) the FACE sits on the frame's face spot, HERO_FACE x size wide, and a face looking
+ // against the way the hero faces is mirrored (src/headFacts.js drawFace: one face size through every mood).
+ const HERO_FACE=.6;
+ const headFn=(i,mood)=>(gg,x,y,size,dir)=>dir?drawFace(s,gg,i,x,y,size,mood,dir,HERO_FACE):s.sprite(gg,i,x,y,size,{exact:true,mood,still:true});
  function drawRegionBack(w,r,cam,x0,x1){const t=simT,sk=scen;
   g.save();g.beginPath();g.rect(Math.max(r.x0,x0),0,Math.min(r.x1,x1)-Math.max(r.x0,x0),VH);g.clip();
   if(r.kind==='forest'||r.kind==='gate'){const skyP=SP.picture('forest-sky');if(skyP)g.drawImage(skyP,cam.x-1,0,cam.w+2,VH);else{g.drawImage(sk.L.sky,cam.x-1,0,cam.w+2,VH);sk.tiled(g,'stars',cam.x,.97,x0,x1,0,.9);}

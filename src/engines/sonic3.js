@@ -25,7 +25,7 @@ const {buildZone1Act3}=require("src/engines/s3/zone1act3.js");
 const I=require("src/engines/s3/intro.js");
 const {netField}=require("src/engines/netField.js");
 const {partnerArrow}=require("src/engines/partnerArrow.js");
-const {faceFit,flipFor}=require("src/headFacts.js");
+const {drawFace}=require("src/headFacts.js");
 // a runner's face (brow to chin) is this share of the head size the body asks for (the whole picture used to fill it)
 const FACE_W=.6;
 
@@ -48,10 +48,7 @@ async function sonic3(s){
  // Without facts (online photo, stand-in) the whole picture is centred as before.
  const head=(g,i,cx,cy,size,mood,dir)=>{
   if(dir===undefined)return s.sprite(g,i,cx,cy,size,{exact:true,mood,noBadge:true,still:true});
-  const id=s.players[i]?.character,m=mood||s.spriteMood(i),k=s.players[i]?.large?2:1,fit=id&&faceFit(id,m,size*FACE_W*k);
-  if(!fit)return s.sprite(g,i,cx,cy,size,{exact:true,mood:m,noBadge:true,still:true});
-  const flip=flipFor(id,m,dir);g.save();g.translate(cx,cy);if(flip)g.scale(-1,1);
-  s.sprite(g,i,fit.dx,fit.dy,fit.size/k,{exact:true,mood:m,noBadge:true,still:true});g.restore();};
+  drawFace(s,g,i,cx,cy,size,mood,dir,FACE_W);};
  // ONLINE (s.online, owner Nov 11: "both on screen at the same time, like the previous one"): both phones run the act at
  // once, each its own runner (P1 the hedgehog, P2 the fox) on its own screen; the partner is drawn from 20 Hz snapshots
  // (edge arrow when off screen). Rings, monitors, robots and breakable walls one of you takes are gone for both. When one

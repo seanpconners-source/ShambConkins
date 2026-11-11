@@ -17,6 +17,14 @@ Keys are the game's own picture keys: 'photo:char:<id>' / 'char:<id>:<mood>' (as
 tools/build.mjs), built-in raster art from src/data/art.js ('char:sean:win', ...) and the face pack ('face:043').
 src/headFacts.js turns a character + mood into these numbers at runtime (no detection in the game).
 
+FACE SIZE + LOOK (Nov 11 round 2, owner: faces changed size between moods, looked the wrong way): the main detector is
+now YuNet (tools/models/face_detection_yunet_2023mar.onnx, OpenCV model zoo, MIT licence), which gives the eyes, nose
+and mouth corners. Face size comes from the eye distance (corrected for a turned head) and eye-to-mouth distance,
+not from a detector box (Haar boxes swung 20-40% between two pictures of the same face); the face centre sits a fixed
+step below the eyes; look = where the nose sits between the eyes and mouth. Haar / the outline are only the fallback.
+Then every character is evened out: a mood whose face/head ratio is far off the character's other moods (a missed or
+wrong detection) and every mood without landmarks takes the character's usual ratio, so a face keeps one size.
+
 Needs: pip install opencv-python-headless (4.x: OpenCV 5 dropped the Haar face files) pillow numpy.
 Usage:  python tools/head-check.py                 all pictures -> src/data/headFacts.js + contact sheets
         python tools/head-check.py --only ace,sean    just those ids (prints the facts, writes nothing)
@@ -74,6 +82,54 @@ def cascades():
         for n in ('frontalface_default', 'frontalface_alt2', 'profileface', 'eye'):
             _casc[n] = cv2.CascadeClassifier(os.path.join(d, f'haarcascade_{n}.xml'))
     return _casc
+
+
+YUNET = os.path.join(ROOT, 'tools', 'models', 'face_detection_yunet_2023mar.onnx')
+_yn = []
+# face width = FW_K x the landmark scale S (~ the eye distance); the old Haar boxes were 2.39 S wide on the median, so
+# faces keep the size they had on average. Face centre = CY_K x S below the eye line (old median, owner liked it).
+FW_K, FH_K, CY_K = 2.39, 1.15, .48
+
+
+def yunet(rgb, mask):
+    """Landmark face in an RGB array: dict(S, cx, cy, yaw, score) in its pixels, or None."""
+    if not os.path.exists(YUNET):
+        return None
+    if not _yn:
+        _yn.append(cv2.FaceDetectorYN.create(YUNET, '', (320, 320), .6, .3, 5))
+    det = _yn[0]
+    H, W = rgb.shape[:2]
+    p = int(max(H, W) * .25)  # head cut-outs fill the frame: the detector wants room round a face
+    img = cv2.copyMakeBorder(cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR), p, p, p, p, cv2.BORDER_CONSTANT, value=(128, 128, 128))
+    det.setInputSize((img.shape[1], img.shape[0]))
+    _, fs = det.detect(img)
+    if fs is None:
+        return None
+    best = None
+    for f in fs:
+        f = f.astype(float)
+        f[[0, 4, 6, 8, 10, 12]] -= p
+        f[[1, 5, 7, 9, 11, 13]] -= p
+        cx, cy = f[0] + f[2] / 2, f[1] + f[3] / 2
+        if not (0 <= cx < W and 0 <= cy < H and mask[int(cy), int(cx)]):
+            continue
+        sc = f[2] * f[3] * f[14] ** 2
+        if best is None or sc > best[0]:
+            best = (sc, f)
+    if best is None:
+        return None
+    f = best[1]
+    re_, le, no, mr, ml = f[4:6], f[6:8], f[8:10], f[10:12], f[12:14]
+    eye, mouth = (re_ + le) / 2, (mr + ml) / 2
+    iod, em = float(np.hypot(*(le - re_))), float(np.hypot(*(mouth - eye)))
+    if iod < 2 or em < 2:
+        return None
+    yaw = float((no[0] - (eye[0] + mouth[0]) / 2) / iod)  # > 0 = the nose points to the picture's right
+    y = abs(yaw)
+    # a turned head shows the eyes closer together (measured over every picture: iod/em .94 straight on, .64 at |yaw| .55)
+    w = float(np.clip(1 - (y - .2) / .4, 0, 1))
+    S = w * iod / (1 - .55 * min(y, .8)) + (1 - w) * em * .94
+    return dict(S=S, cx=f[0] + f[2] / 2, cy=eye[1] + CY_K * S, yaw=yaw, score=float(f[14]))
 
 
 def load(path):
@@ -249,29 +305,39 @@ def analyse(item):
     al = (a[..., 3:4] / 255.0)
     comp = (rgb * al + 128 * (1 - al)).astype(np.uint8)
     gray = cv2.equalizeHist(cv2.cvtColor(comp, cv2.COLOR_RGB2GRAY))
-    det = detect(gray, mask, hb)
-    if det:
+    yn = yunet(comp, mask)
+    det = None if yn else detect(gray, mask, hb)
+    if yn:
+        fw, fh = FW_K * yn['S'], FW_K * FH_K * yn['S']
+        face = face0 = (yn['cx'] - fw / 2, yn['cy'] - fh / 2, fw, fh)
+        how, all_, found = 'landmarks', [], 1
+    elif det:
         face0, how, all_ = det
         face = chin_box(face0, mask)
         found = 1
     else:
         face0 = face = outline_face(mask, hb)
         how, all_, found = 'outline', [], 0
-    s_cheek, feat = yaw(a, cv2.cvtColor(comp, cv2.COLOR_RGB2GRAY), mask, face0, hb)
-    s_head = feat.get('s_head', 0.0)
-    prof = 0.0
-    if 'profileface' in how:
-        prof = 1.0 if how.endswith(':flip') else -1.0  # calibrated below via SIGN
-    score = SIGN_CHEEK * s_cheek * .6 + SIGN_HEAD * s_head * .4 + SIGN_PROF * prof * .5
-    look = 0 if abs(score) < .12 else (1 if score > 0 else -1)
-    conf = min(1.0, abs(score) / .45) if look else min(1.0, (.12 - abs(score)) / .12)
-    if not found:
-        conf *= .5
+    if yn:
+        # nose off the eye/mouth middle by 8% of the eye distance = a turn you can see
+        score, feat = yn['yaw'], dict(yaw=round(yn['yaw'], 3), yn=round(yn['score'], 2))
+        look = 0 if abs(score) < .08 else (1 if score > 0 else -1)
+        conf = min(1.0, abs(score) / .18) if look else min(1.0, (.08 - abs(score)) / .08)
+    else:
+        s_cheek, feat = yaw(a, cv2.cvtColor(comp, cv2.COLOR_RGB2GRAY), mask, face0, hb)
+        s_head = feat.get('s_head', 0.0)
+        prof = 0.0
+        if 'profileface' in how:
+            prof = 1.0 if how.endswith(':flip') else -1.0  # calibrated below via SIGN
+        score = SIGN_CHEEK * s_cheek * .6 + SIGN_HEAD * s_head * .4 + SIGN_PROF * prof * .5
+        look = 0 if abs(score) < .12 else (1 if score > 0 else -1)
+        # the old cues guessed wrong often: they only mirror a face when very sure
+        conf = (min(1.0, abs(score) / .45) if look else min(1.0, (.12 - abs(score)) / .12)) * (.6 if found else .4)
     fx, fy, fw, fh = face
     hx, hy, hw, hh = hb
     r3 = lambda v: round(float(v), 3)
     facts = [r3(fx / W), r3(fy / H), r3(fw / W), r3(fh / H), r3(hx / W), r3(hy / H), r3(hw / W), r3(hh / H), look, round(float(conf), 2), found, r3(W0 / H0)]
-    return key, facts, dict(how=how, all=all_, score=round(score, 3), **{k2: (round(v, 3) if isinstance(v, float) else v) for k2, v in feat.items()})
+    return key, facts, dict(how=how, all=all_, fill=round(float(mask.mean()), 3), score=round(float(score), 3), **{k2: (round(v, 3) if isinstance(v, float) else v) for k2, v in feat.items()})
 
 
 # signs found by checking pictures by eye (see --calibrate): +1 means a positive cue = looking right
@@ -335,6 +401,41 @@ def sheet(rows, path, title, cell=150, cols=10):
     img.save(path)
 
 
+def char_of(key):
+    return re.sub(r'^(photo:)?char:|:[a-z]+$', '', key) if 'char:' in key else key
+
+
+def even(res):
+    """One face size per character: face width / head-box width (fw/hw) is about the same in every mood of a character
+    (same person, same kind of cut-out). Moods with landmarks set the character's ratio; moods without landmarks (and an
+    unsure landmark face far off it) use it. Characters with no landmarks at all use their own median ratio."""
+    groups = {}
+    for k, (fa, info) in res.items():
+        # a photo with its background kept has no head outline (nothing cut away): leave it as measured
+        if fa and fa[6] > 0 and info.get('fill', 0) < .97:
+            groups.setdefault(char_of(k), []).append(k)
+    for ch, keys in groups.items():
+        ratio = lambda k: res[k][0][2] / res[k][0][6]
+        good = [ratio(k) for k in keys if res[k][1].get('how') == 'landmarks']
+        Q = float(np.median(good)) if good else float(np.median([ratio(k) for k in keys]))
+        for k in keys:
+            fa, info = res[k]
+            q = ratio(k)
+            if info.get('how') == 'landmarks' and (info.get('yn', 0) >= .8 or len(good) < 3):
+                # a sure face stays as measured, but a mood whose drawing is far bigger round the face (a helmet with a
+                # crest) gives a little, so the whole head doesn't balloon next to the other moods
+                t = min(max(q, Q / 1.3), Q * 1.3)
+            else:
+                t = Q
+            if abs(q - t) < .02 * Q:
+                continue
+            cx, cy = fa[0] + fa[2] / 2, fa[1] + fa[3] / 2
+            fw = t * fa[6]
+            fh = fa[3] * fw / fa[2]
+            fa[0:4] = [round(cx - fw / 2, 3), round(cy - fh / 2, 3), round(fw, 3), round(fh, 3)]
+            info['evened'] = round(q / Q, 2)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--only', default='')
@@ -353,6 +454,7 @@ def main():
             if i % 200 == 0:
                 print(f'{i}/{len(items)}', file=sys.stderr)
     files = dict(items)
+    even(res)
     fixes = json.load(open(FIXES, encoding='utf8')) if os.path.exists(FIXES) else {}
     for k, fx in fixes.items():
         if k in res and res[k][0]:

@@ -83,8 +83,9 @@ function drawHeroSprite(g,q,o,sh){const f=q.facing||1,fr=heroFrame(sh.def,q),pos
  // the big face would hide the fist; a fist drawn back beside the head (the stab's wind-up) stays behind it
  const overFace=s&&s.hand&&h&&s.hand.y<h.y&&Math.hypot(s.hand.x-h.x,s.hand.y-h.y)<h.size*.45;
  if(s&&!overFace)sword();
- // the face (never mirrored: it is the player's portrait; drawn still, so it moves only with the frame's face spot)
- if(h){g.save();g.translate(q.x+f*h.x,q.y+h.y);if(h.rot)g.rotate(f*h.rot);o.head(g,0,0,h.size);g.restore();}
+ // the face (drawn still, so it moves only with the frame's face spot; f = facing: the head turns to look that way when
+ // its picture looks the other way, never mirrored otherwise)
+ if(h){g.save();g.translate(q.x+f*h.x,q.y+h.y);if(h.rot)g.rotate(f*h.rot);o.head(g,0,0,h.size,f);g.restore();}
  if(overFace)sword();}
 function drawHero(g,q,o={}){
  const sheet=heroSheet(q);if(sheet){drawHeroSprite(g,q,o,sheet);return;}

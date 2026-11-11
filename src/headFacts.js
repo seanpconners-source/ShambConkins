@@ -38,4 +38,15 @@ function faceFit(id,mood,faceW,{pad=3}={}){
  return {size:longest+pad,dx:(.5-(f.face.x+f.face.w/2))*longest*wk,dy:(.5-(f.face.y+f.face.h/2))*longest*hk,facts:f};
 }
 
-Object.assign(exports,{headFacts,lookDir,flipFor,faceFit});
+// Draw player i's head on a body with session s: the FACE (brow to chin) is faceK x size wide with its middle on (cx,cy),
+// hair/ears/hats stick out round it, and a face looking against dir (-1 left, 1 right: the way the body faces) is
+// mirrored. Faces keep one size through every mood (tools/head-check.py evens them out per character). Without facts
+// (an online photo, a stand-in) the whole picture is centred in `size`, the old way. Drawn still (no menu bob/sway).
+function drawFace(s,g,i,cx,cy,size,mood,dir,faceK=.6){
+ const id=s.players[i]?.character,m=mood||s.spriteMood(i),k=s.players[i]?.large?2:1,fit=id&&faceFit(id,m,size*faceK*k);
+ if(!fit){s.sprite(g,i,cx,cy,size,{exact:true,mood:m,noBadge:true,still:true});return;}
+ const flip=flipFor(id,m,dir);g.save();g.translate(cx,cy);if(flip)g.scale(-1,1);
+ s.sprite(g,i,fit.dx,fit.dy,fit.size/k,{exact:true,mood:m,noBadge:true,still:true});g.restore();
+}
+
+Object.assign(exports,{headFacts,lookDir,flipFor,faceFit,drawFace});
