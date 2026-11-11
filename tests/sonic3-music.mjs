@@ -16,20 +16,20 @@ async function start(id){await J(id=>{void window.ShambConkins.requestGame({id,o
  for(let k=0;k<40;k++){await page.waitForTimeout(250);await ready();if(await J(()=>window.ShambConkins.store.session?.debug?.state?.phase==='card'))return true;}return false;}
 
 check(await start('sonic3-zone1'),'zone 1 opens on its title card');
-let n=await until(n=>n.name==='angel-island-1'&&n.pos>.3&&n.parts>0);
-check(n?.name==='angel-island-1'&&n.pos>.3,`Angel Island Act 1 plays under the title card (${JSON.stringify(n)})`);
-n=await until(n=>n.songs>=6);check(n?.songs>=6,`all 6 songs decoded (${n?.songs})`);
+let n=await until(n=>n.name==='green-hill'&&n.pos>.3&&n.parts>0);
+check(n?.name==='green-hill'&&n.pos>.3,`Green Hill Zone plays under the title card (${JSON.stringify(n)})`);
+n=await until(n=>n.songs>=9);check(n?.songs>=9,`all songs decoded (${n?.songs})`);
 await D(()=>window.ShambConkins.store.session.debug.skipCard());
 // the loop join
-const L=await D(()=>window.ShambConkins.store.session.debug.SONGS['angel-island-1'].loop);
+const L=await D(()=>window.ShambConkins.store.session.debug.SONGS['green-hill'].loop);
 await D(t=>window.ShambConkins.store.session.debug.seekSong(t),L[1]-1);await page.waitForTimeout(2200);
-n=await N();check(n.name==='angel-island-1'&&n.pos>L[0]&&n.pos<L[0]+2.5&&!n.paused,`loop went back to the top (${n.pos.toFixed(2)}, loop ${L})`);
+n=await N();check(n.name==='green-hill'&&n.pos>L[0]&&n.pos<L[0]+2.5&&!n.paused,`loop went back to the top (${n.pos.toFixed(2)}, loop ${L})`);
 // invincibility
 await page.waitForTimeout(1500);
 await D(()=>{window.ShambConkins.store.session.debug.state.p.star=600;});
 n=await until(n=>n.name==='invincible'&&n.pos>.2,4000);check(n?.name==='invincible',`a star plays Invincibility (${n?.name})`);
 await D(()=>{window.ShambConkins.store.session.debug.state.p.star=0;});
-n=await until(n=>n.name==='angel-island-1'&&n.parts>0,4000);check(n?.name==='angel-island-1'&&n.pos<2,`the act song comes back from the top (${n?.name} ${n?.pos?.toFixed(2)})`);
+n=await until(n=>n.name==='green-hill'&&n.parts>0,4000);check(n?.name==='green-hill'&&n.pos<2,`the act song comes back from the top (${n?.name} ${n?.pos?.toFixed(2)})`);
 // 1-up: pause, jingle, resume where it was
 await page.waitForTimeout(2500);const before=await N();
 await D(()=>{const st=window.ShambConkins.store.session.debug.state;st.w.ev.push({k:'life',p:0});});
@@ -39,7 +39,7 @@ n=await until(n=>!n.jingle&&!n.paused,5000);check(!n.jingle&&!n.paused&&n.pos>=b
 const p0=await N();await J(()=>window.ShambConkins.store.session.manualPause());await page.waitForTimeout(800);
 const pz=await N();check(pz.paused,'the pause card stops the song');
 await J(()=>document.querySelector('.pass-overlay [data-ready]')?.click());await page.waitForTimeout(700);
-n=await N();check(!n.paused&&n.name==='angel-island-1'&&n.pos>=pz.pos&&n.pos<pz.pos+2,`resumes where it was (${p0.pos.toFixed(1)} / ${pz.pos.toFixed(1)} -> ${n.pos.toFixed(1)})`);
+n=await N();check(!n.paused&&n.name==='green-hill'&&n.pos>=pz.pos&&n.pos<pz.pos+2,`resumes where it was (${p0.pos.toFixed(1)} / ${pz.pos.toFixed(1)} -> ${n.pos.toFixed(1)})`);
 // the sign
 await D(()=>{const d=window.ShambConkins.store.session.debug;d.teleport(17900,1481);d.bot=p=>({l:false,r:true,u:false,d:false,jump:false,press:false});});
 let t=null;for(let k=0;k<60&&!t;k++){await page.waitForTimeout(300);t=await D(()=>window.ShambConkins.store.session?.debug.state.tally);}

@@ -3,7 +3,7 @@
 // Players take turns like the old Sonic game: P1 runs the act, then P2 (as Tails). Score = badniks + the Sonic 3 tally
 // at the sign (time bonus + 100 a ring); higher wins. 1P: one run on your own. Full screen (fullBleed), physics at a fixed
 // 60 steps a second, Mega Drive camera, the owner's Sonic 3 & Knuckles sounds and Sonic 3 soundtrack (sonicAudio.js):
-// the act song starts with the title card (Act 1 = Angel Island Act 1, the Test Zone = Azure Lake), Invincibility while a
+// the act song starts with the title card (Act 1 = Sonic 1's Green Hill Zone, the owner's pick; the Test Zone = Azure Lake), Invincibility while a
 // star lasts (then the act song from the top), the 1-Up jingle over it, Act Complete at the sign (the tally waits for it),
 // Game Over / Time Over, silence on the hand-off cards; a respawn starts the act song again.
 // Touch: drag anywhere on the left 55% = a floating d-pad (left/right run, down = crouch/roll/spin dash charge, up =
@@ -15,7 +15,7 @@ const {soloFinish}=require("src/solo.js");
 const S3=require("src/engines/sonicAudio.js");
 const P=require("src/engines/s3/physics.js");
 const O=require("src/engines/s3/objects.js");
-const {Camera}=require("src/engines/s3/camera.js");
+const {Camera,FOCUS_Y}=require("src/engines/s3/camera.js");
 const R=require("src/engines/s3/render.js");
 const {buildTestZone}=require("src/engines/s3/testZone.js");
 const {buildZone1Act1}=require("src/engines/s3/zone1.js");
@@ -32,7 +32,7 @@ async function sonic3(s){
  S3.open(s);s.cleanup(()=>S3.stopAll());
  const head=(g,i,cx,cy,size,mood)=>s.sprite(g,i,cx,cy,size,{exact:true,mood,noBadge:true});
  const turns=s.solo?[0]:[0,1],score=[0,0],result=[null,null];
- const zone1=s.game?.s3zone==='zone1',buildZone=zone1?buildZone1Act1:buildTestZone,LABEL=zone1?'Shamb Island Act 1':'Sonic 3 Test Zone',ACT_SONG=zone1?'angel-island-1':'azure-lake';
+ const zone1=s.game?.s3zone==='zone1',buildZone=zone1?buildZone1Act1:buildTestZone,LABEL=zone1?'Shamb Island Act 1':'Sonic 3 Test Zone',ACT_SONG=zone1?'green-hill':'azure-lake';// owner, Nov 11: Green Hill Zone for Act 1
  let turn=0,Z=null,w=null,p=null,cam=null,art=null,back=null,fx=null;
  let phase='idle',frames=0,clock=0,acc=0,last=0,card=0,endF=0,overLen=150,tally=null,overText='',dbg=null;const vis={x:0,y:0};
  // which runner each player is: 2P = P1 the hedgehog, P2 the fox; 1P = picked on the character select
@@ -51,6 +51,8 @@ async function sonic3(s){
   if(s.solo){S3.stopJingle();phase='select';intro.t0=performance.now();if(intro.skip)intro.pick=intro.skip.pick|0;else{S3.music('data-select');await waitIntro();}bodies[0]=I.CHARS[intro.pick].body;}
   S3.stopJingle();S3.music(null);press=false;phase='idle';return s.alive;}
  function introFrame(){const W=s.W,H=s.H;S3.tick();if(phase==='select')S3.music('data-select');
+  // the title theme is one 15 s piece: after it ends and 4 s of quiet, it plays again
+  if(phase==='title'){if(S3.nowPlaying().jingle)intro.quietAt=0;else if(!intro.quietAt)intro.quietAt=performance.now();else if(performance.now()-intro.quietAt>4000){intro.quietAt=0;S3.jingle('title');}}
   if(phase==='title')I.drawTitle(x,W,H,introT(),{head,i:0,foxI:s.players[1]?1:null,mode:s.solo?'1 PLAYER':'2 PLAYERS'});
   else{const k=Math.max(0,1-(performance.now()-intro.slideAt)/350);I.drawSelect(x,W,H,introT(),{pick:intro.pick,slide:k*intro.slideDir,head,i:0});}}
  // ---------------- input
@@ -128,7 +130,7 @@ async function sonic3(s){
   return null;}
  // ---------------- drawing
  function draw(t){const W=s.W,H=s.H;if(cam.W!==W||cam.H!==H){cam.resize(W,H);cam.clampIn();}
-  x.save();x.imageSmoothingEnabled=false;back.draw(x,cam,t,Z.start.y-cam.vh*96/224);
+  x.save();x.imageSmoothingEnabled=false;back.draw(x,cam,t,Z.start.y-cam.vh*FOCUS_Y);
   const k=cam.k,cx=Math.round(cam.x*k)/k,cy=Math.round(cam.y*k)/k,v=cam.view(64);
   const scenery=front=>{if(!Z.decor)return;x.save();x.scale(k,k);x.translate(-cx,-cy);for(const d of Z.decor)if(!!d.front===front&&(d.box?d.box[0]<v.x1&&d.box[2]>v.x0:d.x<v.x1+80&&d.x+(d.w||0)>v.x0-80))R.drawDecor(x,d,t);x.restore();};
   scenery(false);art.draw(x,cam,2);scenery(true);x.restore();

@@ -15,14 +15,18 @@ const {store}=require("src/state.js");
 const {USER_PORTRAITS}=require("src/data/userPortraits.js");
 
 // name: [slot, volume]. Slots stand in for the driver's channels: a new sound in a slot stops the old one.
-const SFX={'ring-right':['ring',1],'ring-left':['ring',1],'ring-loss':['ring',1],jump:['move',1],roll:['move',.9],skid:['move',1],
- spindash:['move',1],dash:['move',1],spring:['spring',1],hurt:['hurt',1],spike:['hurt',1],explode:['pop',1],break:['pop',1],
- shield:['item',1],'fire-shield':['item',1],'bubble-shield':['item',1],'lightning-shield':['item',1],'insta-shield':['move',1],
- 'fire-dash':['move',1],'bubble-bounce':['move',1],'lightning-jump':['move',1],starpost:['item',1],signpost:['sign',1],
- register:['sign',1],'big-ring':['item',1],bumper:['spring',1],'boss-hit':['boss',1],'boss-explode':['boss2',1],blast:['boss2',1],
- crash:['pop',1],collapse:['world',1],switch:['world',1],splash:['world',1],bubble:['world',1],drown:['hurt',1],'air-ding':['item',1],
- continue:['sign',1]};
-const LEVEL=.9;
+// Volumes (Nov 11, owner: sounds far louder than the music, the ring worst): the rips range from -1.6 to -19 LUFS at their
+// loudest moment (ffmpeg ebur128 max momentary), so each is levelled to a target: -18 for most, -22 for rings (they come
+// in strings), -21 for the moves you make all the time (jump, roll, skid, spin dash), -16/-15 for boss blows; the few too
+// short to measure that way are set from their peak (-9 dBFS). Songs sit at -19 LUFS (SONGS gain), jingles -17.
+const SFX={'ring-right':['ring',.168],'ring-left':['ring',.168],'ring-loss':['ring',.168],jump:['move',.58],roll:['move',.16],skid:['move',.58],
+ spindash:['move',.107],dash:['move',.72],spring:['spring',.367],hurt:['hurt',.54],spike:['hurt',.34],explode:['pop',.81],break:['pop',.35],
+ shield:['item',.5],'fire-shield':['item',.355],'bubble-shield':['item',.447],'lightning-shield':['item',.263],'insta-shield':['move',1.5],
+ 'fire-dash':['move',1],'bubble-bounce':['move',.305],'lightning-jump':['move',.457],starpost:['item',.5],signpost:['sign',.77],
+ register:['sign',.237],'big-ring':['item',.437],bumper:['spring',.305],'boss-hit':['boss',.48],'boss-explode':['boss2',.58],blast:['boss2',1.26],
+ crash:['pop',.54],collapse:['world',.214],switch:['world',1.46],splash:['world',1],bubble:['world',.43],drown:['hurt',.35],'air-ding':['item',.575],
+ continue:['sign',.363]};
+const LEVEL=1;
 const sfxOn=()=>!!store.profile?.settings?.sound;
 const url=n=>USER_PORTRAITS['music:s3k-sfx-'+n]||null;
 const fx=new Map(),slots=new Map();
@@ -50,16 +54,16 @@ function hush(){for(const v of slots.values())try{v.src.stop();}catch{}slots.cle
 // ---------------- music
 // loop = [back to here, from here] in seconds, one period apart: the period is the sample lag that nearly every window
 // of the decoded rip agreed on; 'back to here' sits where the two passes match best (the FM chip's phase isn't the same
-// on each pass, so the join is a short crossfade). gain evens the songs out (measured mean volume).
+// on each pass, so the join is a short crossfade). gain = to -19 LUFS integrated (jingles -17), measured with ebur128.
 const SONGS={
- 'angel-island-1':{loop:[.6,66.13522],gain:1},// Angel Island Act 1: no intro, period 2,890,103 samples
- 'azure-lake':{loop:[4.5,58.89998],gain:.78},// Azure Lake (competition): 1.8 s intro, period 2,399,039 samples
- invincible:{loop:[.35,10.65238],gain:.93},// period 454,335 samples
- 'data-select':{loop:[1.45,61.18347],gain:1.08},// the character select: period 2,634,246 samples, 0.9 s intro
- title:{gain:.8},// the title screen: played once, like the game (15.7 s)
- '1up':{gain:.8},'act-clear':{gain:.9},'game-over':{gain:1.05}};
-// music sits ~7 dB under the sound rips' level (songs are mastered to 0 dB peaks, the sounds to -4..-14 dB)
-const MUSIC=.45,XF=.08;
+ 'green-hill':{loop:[15.4,53.84678],gain:.372},// Zone 1 Act 1 (owner's pick, Sonic 1 CD set, Mega Drive version): 14.5 s intro, period 1,695,503 samples
+ 'angel-island-1':{loop:[.6,66.13522],gain:.556},// Angel Island Act 1: no intro, period 2,890,103 samples
+ 'azure-lake':{loop:[4.5,58.89998],gain:.407},// Azure Lake (competition): 1.8 s intro, period 2,399,039 samples
+ invincible:{loop:[.35,10.65238],gain:.437},// period 454,335 samples
+ 'data-select':{loop:[1.45,61.18347],gain:.624},// the character select: period 2,634,246 samples, 0.9 s intro
+ title:{gain:.335},// the title screen: played once like the game (15.7 s), again after a pause
+ '1up':{gain:.468},'act-clear':{gain:.61},'game-over':{gain:.69}};
+const MUSIC=1,XF=.08;
 const musicOn=()=>!!store.profile?.settings?.music;
 const songURL=n=>USER_PORTRAITS['music:s3k-song-'+n]||null;
 const curveIn=new Float32Array(16),curveOut=new Float32Array(16);for(let i=0;i<16;i++){const k=i/15*Math.PI/2;curveIn[i]=Math.sin(k);curveOut[i]=Math.cos(k);}

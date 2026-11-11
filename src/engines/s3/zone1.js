@@ -116,8 +116,12 @@ const WET=[[3880,4520],[8180,8920],[12980,13520],[15540,15960],[5000,5700]];
 const groundProps=()=>{const o=[];let r=4242;const rnd=()=>(r=(r*16807)%2147483647)/2147483647;
  for(let x=240;x<W-300;x+=70+rnd()*150){if(WET.some(([a,b])=>x>a-40&&x<b+40))continue;const y=gy(x);if(Math.abs(gy(x+24)-gy(x-24))>5)continue;
   const k=rnd();o.push(k<.5?{type:'bush',x,y}:k<.85?{type:'flower',x,y}:{type:'totem',x,y});}return o;};
+// scenery standing on the ground keeps clear of the ledges built with rock under them (towers and legs): a palm at the
+// start stood in the stairs' rock with the ledge tops drawn over it (owner, Nov 11: "looks bad")
+const clearOfRock=x=>!LEDGES.some(([x0,x1,y])=>{const tall=Math.max(gy(x0+8),gy(x1-8))-y;return tall>=60&&x>x0-70&&x<x1+70;});
 const decor=()=>[
- ...groundProps(),{type:'bridge',x0:3900,x1:4500,y:P,x:3900,w:600,front:true},{type:'bridge',x0:13000,x1:13500,y:G,x:13000,w:500,front:true},
+ ...[180,460,1080,1700,2800,3300,4700,5400,5900,7600,8050,9100,9900,10700,11400,13650,14000,14450,16000,17600,18100,18500].filter(clearOfRock).map(x=>({type:'palm',x,y:gy(x)+2})),
+ ...groundProps().filter(o=>clearOfRock(o.x)),{type:'bridge',x0:3900,x1:4500,y:P,x:3900,w:600,front:true},{type:'bridge',x0:13000,x1:13500,y:G,x:13000,w:500,front:true},
  // ledges come three ways: a floating chunk, a tower of rock down to the ground, or a long shelf on rock legs
  ...LEDGES.flatMap(([x0,x1,y],k)=>{const w=x1-x0,ground=Math.max(gy(x0+8),gy((x0+x1)/2),gy(x1-8)),tall=ground-y,kind=w>=500?'legs':w>=280||k%2?'tower':'float';
   if(kind==='float'||tall<60)return [{type:'land',x0,x1,y,x:x0,w,depth:w<120?36:52,front:true}];
@@ -128,8 +132,7 @@ const decor=()=>[
  {type:'lake',x:3900,y:LG+20,w:600,h:LOW-LG-20},{type:'waterfall',x:3836,y:P,w:64,h:LOW-P,front:true},{type:'waterfall',x:4500,y:P,w:48,h:LG-P,front:true},
  {type:'lake',x:8200,y:GF-90,w:700,h:90},{type:'waterfall',x:8136,y:G,w:64,h:GF-G,front:true},{type:'waterfall',x:8900,y:G,w:48,h:GF-G,front:true},
  {type:'lake',x:13000,y:G+40,w:500,h:LB-G-40},{type:'waterfall',x:12952,y:G,w:48,h:LB-G,front:true},
- {type:'lake',x:15600,y:CH-70,w:300,h:70},{type:'waterfall',x:15552,y:MT,w:48,h:CH-MT,front:true},{type:'waterfall',x:15900,y:MT,w:40,h:CH-MT-60,front:true},
- ...[180,460,1080,1700,2800,3300,4700,5400,5900,7600,8050,9100,9900,10700,11400,13650,14000,14450,16000,17600,18100,18500].map(x=>({type:'palm',x,y:gy(x)+2}))];
+ {type:'lake',x:15600,y:CH-70,w:300,h:70},{type:'waterfall',x:15552,y:MT,w:48,h:CH-MT,front:true},{type:'waterfall',x:15900,y:MT,w:40,h:CH-MT-60,front:true}];
 function buildZone1Act1(){if(!terrain)terrain=buildTerrain();
  return {T:terrain,objs:objects(),switchers:switchers(),decor:decor(),start:{x:120,y:G-19},bounds:{x0:0,x1:18600,y0:0,y1:H-80},bottom:H-80,ref:G+40,zone:'SHAMB ISLAND',act:1,
   marks:[[1900,'loop 1'],[2225,'step + spring: top route'],[3100,'roll tunnel 1 (inside the plateau)'],[4200,'lake 1 + bridge'],[5300,'high ledges / cave below'],[7000,'loop 2'],[8550,'waterfall gorge: vines'],
