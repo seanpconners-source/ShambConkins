@@ -24,6 +24,21 @@ SEANIC & TAILS (CPU fox follows: sonic3.js buddyInput = Sonic 3 Tails AI, object
 fox. Knux/Shade art = the hedgehog sheets recoloured at runtime (render.js recolour/tintSheet) until GPT sheets come.
 Tests: s3-zone1-act3.mjs + s3-moves.mjs (test:core), sonic3-zone1-act3.mjs (browser); all Seanic Node/browser tests pass.
 
+ARCADE GROUPS (Nov 11 late, branch claude/gracious-rubin-6l85xp, unreleased; owner: groups everywhere, a group opens as the
+SAME Arcade screen (no card page), groups nest: Console Classics › Seanic › Act 1-3; Home shows group tiles; categories as
+they were). arcadeConsole.js COLLECTIONS = top shelves [key,title,sub,cover game,children: game ids | '@family'] (console,
+arcadecl, boardgames, mobile, sports, paddys (replaces the Paddy's family), party, shows, movies) + '@casino','@pinball',
+'@bosses' straight on top; GROUP map (families + collections), TOP, PARENT, groupOf/pathTo. state.path = open groups;
+enterGroup/upGroup rebuild via setFilter(filter,true) (pill clicks clear the path); header ← = data-arc-up, brand = group
+title, class in-group. Items: in a group = kidItems (table order); All games = TOP tiles; Home/Favorites/categories = a
+franchise is one tile (groupItem), games directly in a collection stay single; search/boss/pokemon/variants = games. Collection
+tile = 2x2 collage of its first 4 kids (until assets/tiles/<key>); hero picture = cover game's key art until keyart:<key>;
+logo only its own. Versions inside a franchise without their own logo get a name tag (verName drops shared words: "Act 1").
+Old version page (.arc-fam, familyHTML, ONE_TILE) removed. Dice (focusArcadeGame) opens the game inside its groups.
+ui.js passes `pool` (every Arcade game, for group screens). Tests: tests/arcade-groups.mjs (Node, in test:core: every game in
+exactly one place), arcade-console.mjs (group/nested/back), vault, boss-ladder, solo, arcade-swipe-smooth pass; scoreboard.mjs +
+online.mjs patched (need wrangler, not run); bg-picker/measure.mjs walks into groups (not run).
+
 HEAD CHECK (Nov 11; round 2 Nov 11 late, branch claude/gracious-rubin-6l85xp, unreleased): tools/head-check.py measures
 every character picture (2,474) → src/data/headFacts.js HEAD_FACTS[key]=[face box, head box, look, conf, found, aspect].
 Round 2 (owner: face size jumped between moods, faces looked the wrong way): YuNet landmarks (tools/models/

@@ -31,7 +31,7 @@ check(true,'Sean is in the room, waiting for player 2');
 await join(B,1);
 await A.p.waitForFunction(()=>/Amber is here/.test(document.querySelector('.net-room')?.innerText||''),null,{timeout:15000});check(true,'Sean sees "✓ Amber is here"');
 check(/Sean is here/.test(await B.p.evaluate(()=>document.querySelector('.net-room')?.innerText||'')),'Amber sees Sean');
-const heroes=await A.p.evaluate(async()=>{const out=[];const tiles=[...document.querySelectorAll('.arc-tile')].slice(0,20);for(const t of tiles){t.click();await new Promise(r=>setTimeout(r,30));const i=document.querySelector('.arc-info');out.push(i.querySelector('[data-action="duel-propose"]')?'c':/Not online yet/.test(i.innerText)?'n':i.querySelector('[data-arc-family]')?'f':'?');}return out.join('');});
+const heroes=await A.p.evaluate(async()=>{const out=[];const tiles=[...document.querySelectorAll('.arc-tile')].slice(0,20);for(const t of tiles){t.click();await new Promise(r=>setTimeout(r,30));const i=document.querySelector('.arc-info');out.push(i.querySelector('[data-action="duel-propose"]')?'c':/Not online yet/.test(i.innerText)?'n':i.querySelector('[data-arc-open]')?'f':'?');}return out.join('');});
 check(heroes.includes('c'),'Arcade heroes have Challenge buttons '+heroes);
 await A.p.screenshot({path:screenshotPath('online-arcade.png')});
 await act(A,'filter',{id:'trivia'});await A.p.waitForTimeout(400);

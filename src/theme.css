@@ -1354,3 +1354,15 @@ body .arcade-console select.arc-cat-select{background:transparent!important;box-
 .sc-new-best small{flex-basis:100%;text-align:center;font-weight:800;font-size:13px;opacity:.8}
 @keyframes sc-best-pop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
 @media (prefers-reduced-motion:reduce){.sc-new-best{animation:none}}
+/* Arcade groups (Nov 11): collection tiles are a 2x2 mosaic of what's inside; versions inside a franchise carry their name */
+.arcade-console .arc-collage,.arcade-console .arc-block-art .arc-collage{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;background:#0008;pointer-events:none}
+.arcade-console .arc-collage>span{position:relative;overflow:hidden;display:grid;place-items:end center;background:radial-gradient(95% 90% at 50% 25%,#ffffff24,#0000)}
+.arcade-console .arc-collage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.arcade-console .arc-collage .arc-cut{height:100%;bottom:0;max-width:100%;filter:none}
+.arcade-console .arc-collage .arc-emoji{font-size:16px;margin:0;align-self:center}
+.arcade-console .arc-collage.n1{grid-template-columns:1fr;grid-template-rows:1fr}
+.arcade-console .arc-collage.n2{grid-template-rows:1fr}
+.arcade-console .arc-collage.n3>span:first-child{grid-row:span 2}
+.arcade-console .arc-ver-tag{position:absolute;top:5px;left:5px;right:5px;z-index:2;font:800 9px/1.15 "SC Nunito",system-ui,sans-serif;color:#fff;text-align:left;text-shadow:0 1px 3px #000,0 0 6px #000;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;pointer-events:none}
+@media (min-width:700px){.arcade-console .arc-ver-tag{font-size:11px}}
+.arcade-console .arc-ver-name{color:#fff;font-weight:900}

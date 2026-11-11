@@ -23,11 +23,11 @@ for(const sc of SCREENS.filter(s=>!only.length||only.includes(s.id))){
  await page.addStyleTag({content:`body.bgp-cap,body.bgp-cap #app,body.bgp-cap .arcade-console{background:transparent!important}body.bgp-cap .arc-wash,body.bgp-cap .arc-shade,body.bgp-cap .arc-keyart,body.bgp-cap .arc-hero-art,body.bgp-cap #sc-dl,body.bgp-cap #sc-ready,body.bgp-cap .toast{visibility:hidden!important}body.bgp-cap .arc-info *{animation:none!important}`});
  // the game's real hero text for every picture (the Featured shelf the Arcade opens on first, then the All list), captured
  // see-through so the picker shows exactly what covers the picture; rects feed the faces-under-text check (assemble.py)
- for(const shelf of ['featured','all']){
-  await page.click(`.arc-pill[data-id="${shelf}"]`);await page.waitForTimeout(700);
-  const n=await page.locator('.arc-tile:not(.arc-tile-all)').count();
+ // All games holds collections and groups (Nov 11): walk into every group too, so every picture is measured
+ const walk=async(shelf,depth=0)=>{
+  const n=await page.locator('.arc-row .arc-tile:not(.arc-tile-all)').count();
   for(let i=0;i<n;i++){
-   await page.evaluate(i=>{const t=document.querySelectorAll('.arc-tile:not(.arc-tile-all)')[i];t.scrollIntoView({inline:'center'});t.click();},i);await page.waitForTimeout(650);
+   await page.evaluate(i=>{const t=document.querySelectorAll('.arc-row .arc-tile:not(.arc-tile-all)')[i];t.scrollIntoView({inline:'center'});t.click();},i);await page.waitForTimeout(650);
    let r=null;for(let k=0;k<6&&!r;k++){if(k)await page.waitForTimeout(400);r=await page.evaluate(()=>{const root=document.querySelector('.arcade-console');if(!root.classList.contains('has-key'))return null;
     const im=(document.querySelector('.arc-keyart .arc-key-front')||[...document.querySelectorAll('.arc-keyart .arc-layer')].pop())?.querySelector('img:not(.arc-keyfill)');if(!im||!im.classList.contains('placed'))return null;
     const R=root.getBoundingClientRect(),rel=q=>{const e=root.querySelector(q),b=e&&e.getBoundingClientRect();return b&&b.height?[b.left-R.left,b.top-R.top,b.right-R.left,b.bottom-R.top].map(Math.round):null;};
@@ -42,7 +42,14 @@ for(const sc of SCREENS.filter(s=>!only.length||only.includes(s.id))){
    const file=`info/${sc.id}/${r.slot}.${tag}.png`;
    await page.screenshot({path:path.join(OUT,file),omitBackground:true,clip:{x:I[0],y:I[1],width:I[2]-I[0],height:I[3]-I[1]}});
    await page.evaluate(()=>document.body.classList.remove('bgp-cap'));
-   (res.info[r.slot]||=[]).push({v:tag,rect:I,file});}}
+   (res.info[r.slot]||=[]).push({v:tag,rect:I,file});}
+  if(shelf==='featured')return;
+  for(let i=0;i<n;i++){const grp=await page.evaluate(i=>!!document.querySelectorAll('.arc-row .arc-tile:not(.arc-tile-all)')[i]?.querySelector('.arc-count'),i);if(!grp||depth>2)continue;
+   await page.evaluate(i=>{const t=document.querySelectorAll('.arc-row .arc-tile:not(.arc-tile-all)')[i];t.scrollIntoView({inline:'center'});t.click();},i);await page.waitForTimeout(400);
+   await page.click('.arc-info [data-arc-open]').catch(()=>{});await page.waitForTimeout(700);await walk(shelf,depth+1);
+   await page.click('[data-arc-up]').catch(()=>{});await page.waitForTimeout(600);}};
+ for(const shelf of ['featured','all']){
+  await page.click(`.arc-pill[data-id="${shelf}"]`);await page.waitForTimeout(700);await walk(shelf);}
  await page.addStyleTag({content:`html,body,#app,.arcade-console{background:transparent!important}.arc-wash,.arc-shade,.arc-keyart,.arc-hero-art,.arc-info,#sc-dl,#sc-ready,.music-chip,.toast,.sc-ghost{visibility:hidden!important}`});
  await page.waitForTimeout(300);await page.screenshot({path:path.join(OUT,`overlay-${sc.id}.png`),omitBackground:true});
  out[sc.id]=res;console.log(sc.id,Object.keys(res.place).length,'pictures',errors.slice(0,2).join(' | '));await browser.close();

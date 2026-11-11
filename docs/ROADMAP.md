@@ -31,7 +31,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **R7** `[verify]` (Nov 11 night: scenery culled by its whole width) SotN: fence sprites disappear in the intro part, then come back.
 
 **Arcade and menus**
-- **R8** Game groups everywhere, not just Home: like games are one tile on every shelf (tic-tac-toes, board games, retro games, trivia game shows...), then picked on their sub-menu.
+- **R8** `[verify]` (Nov 11: COLLECTIONS in arcadeConsole.js; a group opens as the same Arcade screen, groups nest: Console Classics › Seanic › acts; owner to check the draft lists) Game groups everywhere, not just Home: like games are one tile on every shelf (tic-tac-toes, board games, retro games, trivia game shows...), then picked on their sub-menu.
 - **R9** The version sub-menu looks like the main Arcade screen: background on display, logo at the top, version tiles along the bottom; no scrolling, scales to the screen. No "x2 / x3" badges on tiles.
 - **R10** `[verify]` (Nov 11 night: stays home; New Game in a room = board game together) Online must not jump to the Arcade: stay on the home screen so New Game, Arcade etc. can be picked.
 - **R11** `[verify]` (Nov 11 night: NEW HIGH SCORE! badge on result cards; the Arcade already has the 🏆 board per game) High scores: tell the player clearly when they set a high score; a high-score list on the main (or Arcade) screen.

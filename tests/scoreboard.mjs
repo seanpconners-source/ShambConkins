@@ -17,9 +17,12 @@ await page.goto(URL0);await page.waitForSelector('.title-screen',{timeout:120000
 await page.evaluate(()=>document.querySelector('[data-action="arcade"]').click());await page.waitForSelector('.arcade-console .arc-tile');
 // the record goes on whichever game the Arcade opens on (the first featured game; it changes as games are added), then the page
 // moves off it and back so the chip asks the site again
+// (groups have no record: focus the first single game on Home)
+const SOLO=await page.evaluate(()=>{const ts=[...document.querySelectorAll('.arc-row .arc-tile:not(.arc-tile-all)')];return ts.map((t,i)=>[i,t]).filter(([i,t])=>!t.querySelector('.arc-count')).map(x=>x[0]);});
+await page.evaluate(i=>document.querySelectorAll('.arc-row .arc-tile')[i].click(),SOLO[0]);await page.waitForTimeout(500);
 const FIRST=await page.evaluate(()=>document.querySelector('.arc-record')?.dataset.arcScores);
 await post(FIRST,{name:'Zed'+tag.slice(-3),score:987654,character:'sean',install:'t'+tag});
-await page.evaluate(()=>document.querySelectorAll('.arc-tile')[1].click());await page.waitForTimeout(500);await page.evaluate(()=>document.querySelectorAll('.arc-tile')[0].click());
+await page.evaluate(i=>document.querySelectorAll('.arc-row .arc-tile')[i].click(),SOLO[1]);await page.waitForTimeout(500);await page.evaluate(i=>document.querySelectorAll('.arc-row .arc-tile')[i].click(),SOLO[0]);
 await page.waitForFunction(()=>{const b=document.querySelector('.arc-record');return b&&!b.hidden;},null,{timeout:15000}).catch(()=>{});
 const chip=await page.evaluate(()=>document.querySelector('.arc-record')?.textContent||'');
 check(/987,654 · Zed/.test(chip),`record chip shows the site's record: "${chip}"`);
@@ -44,7 +47,7 @@ const S2=S1+500;await runAndFinish('pong-duel',S2);
 const out=await page.evaluate(()=>JSON.parse(localStorage.getItem('sc-scores-out')||'[]'));
 check(out.some(e=>e.score===S2),'offline: the run waits in the outbox');
 check(!(await top('pong-duel')).some(r=>r.score===S2),'and is not on the site yet');
-await page.evaluate(()=>{const t=[...document.querySelectorAll('.arc-tile')][0];t.click();});await page.waitForTimeout(400);
+await page.evaluate(i=>{const t=[...document.querySelectorAll('.arc-row .arc-tile')][i];t.click();},SOLO[0]);await page.waitForTimeout(400);
 await page.click('.arc-record');await page.waitForTimeout(1500);
 check(/offline/i.test(await page.innerText('.arc-scores-note')),'offline: the board shows the last copy, marked offline');
 await page.click('[data-arc-scores-close]');

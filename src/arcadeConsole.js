@@ -49,8 +49,34 @@ const FAMILIES=[
 const FAMILY=new Map(FAMILIES.map(([key,title,sub,hero,ids])=>[key,{key,title,sub,hero,ids}]));
 const FAMILY_OF=new Map();for(const f of FAMILY.values())for(const id of f.ids||[])FAMILY_OF.set(id,f.key);
 const familyOf=g=>g.bossId?'bosses':FAMILY_OF.get(g.id)||null;
-// These are one game on every shelf (owner, Nov 3): one tile, even where the shelf names a single version; its page lists them all.
-const ONE_TILE=new Set(['hangman','casino']);
+// COLLECTIONS (owner, Nov 11): the top shelves of the Arcade. Each holds games and franchise groups (FAMILIES, '@key'), so
+// Console Classics › Seanic the Hedgehog › Act 1/2/3. Every game sits in exactly one place (tests/arcade-groups.mjs). A group
+// (collection or franchise) opens as the same Arcade screen: its own tiles along the bottom, the picture and logo of the one
+// in focus. A franchise is ONE tile everywhere (Home, Favorites, categories, All games); its versions only show inside it.
+// [key, title, subtitle, cover game (its picture stands for the collection until keyart:<key> exists), children]
+const COLLECTIONS=[
+ ['console','Console Classics','The big ones from the consoles','sonic3-zone1',['@sonic','@smb','@kart','@castlevania','@hyrule','@doom','broforce','sundown-showdown','warriors-brawl','@pokemon','living-dead-horde','battle-royale-island','radical-bike','shred-hero']],
+ ['arcadecl','Arcade Classics','Atari, Namco and the arcade greats','pong-duel',['pong-duel','breakout-party','asteroid-drift','@invaders','pac-maze-duel','frogger-heads','mars-missile-defense','moonraker-lander','metal-gear-tank-duel','duck-hunt-turn','block-battle','derezzed-cycles','paper-route','banana-money-grab','driller-duel','bubble-battle','bomber-duel','neon-ball-storm','arrow-arena','disc-duel','sewer-clash','simon-faceoff','bug-artillery']],
+ ['boardgames','Board Games','Cards, boards and dice at the table','greed-island-mancala',['greed-island-mancala','@trek','deadite-checkers','shamb-uno','traitors-guess-who','battleship-fog','four-lights','strategema-grid','full-shambyahtzee','office-dots-boxes','wopr-grid','@matrix','@clue','@monopoly','@candy','@chutes']],
+ ['mobile','Mobile Hits','The games everyone had on their phone','paddys-hole',['flappy-disaster','crossy-chaos','paddys-hole','bricks-breaker-quest','brawndo-fruit-merge','angry-heads','snake-run','snake-v-snake','home-alone-paint-can']],
+ ['sports','Sports','Ballparks, rinks, lanes and greens','major-league-bats',['@baseball','kingpin-bowling','league-penalties','happy-gilmore-golf','@ducks','underdog-dodgeball','fight-night','baseketball-shootout','wind-archery','fast-quarter-mile']],
+ ['paddys',"Paddy's Pub",'Beer pong, flip cup, darts, pool and the bar machine','paddys-beer-pong',['paddys-beer-pong','flipadelphia-cup','paddys-darts','color-of-money','megatouch-photohunt']],
+ ['party','Party Games','Quick, loud and stupid','taskmaster-micro-relay',['@taskmaster','@rush','@southpark','hungry-hungry-heads','review-pancakes','kitchen-service','gopher-hunt','warehouse-shift','rainbow-rivals']],
+ ['shows','Game Shows & Trivia','Quiz nights and TV game shows','trivia-hardcore',['@trivia','price-bid-off','newlywed-spirit','roast-battle','draw-it']],
+ ['movies','Movie Night','Tarantino, Bond, Terminator and friends','tarantino-crazy88',['@tarantino','@bond','@terminator','@hangman','raiders-ball-run','alien-sonar-grid']],
+ ['@casino'],['@pinball'],['@bosses']];
+// A collection that is just one franchise ('@casino') puts that franchise on the top shelf as it is.
+const GROUP=new Map();// key -> {key,title,sub,hero,cover,kids:[{f:key}|{id}],collection}
+for(const f of FAMILIES)GROUP.set(f[0],{key:f[0],title:f[1],sub:f[2],hero:f[3],cover:f[4]?.[0]||null,kids:(f[4]||[]).map(id=>({id}))});
+const TOP=[],PARENT=new Map(),GAME_GROUP=new Map();// group -> parent group; game id -> its nearest group
+for(const [key,title,sub,cover,kids] of COLLECTIONS){
+ if(!title){TOP.push(key.slice(1));continue;}
+ GROUP.set(key,{key,title,sub,hero:null,cover,collection:true,kids:kids.map(k=>k[0]==='@'?{f:k.slice(1)}:{id:k})});TOP.push(key);
+ for(const k of kids)if(k[0]==='@')PARENT.set(k.slice(1),key);}
+for(const g of GROUP.values())for(const k of g.kids)if(k.id)GAME_GROUP.set(k.id,g.key);
+const groupOf=g=>g.bossId?'bosses':GAME_GROUP.get(g.id)||null;
+// the groups above a game, top shelf first: Console Classics, Seanic the Hedgehog
+function pathTo(g){const out=[];let k=groupOf(g);while(k){out.unshift(k);k=PARENT.get(k);}return out;}
 // Arcade categories (owner, Nov 3: "make way more sense"): what a player would look for, not the engine's old tags.
 // A game can sit in more than one. Old filter ids (arcade/strategy/skill/sports/dice) are mapped for old links.
 // Home = recently played first, then the featured games (owner, Nov 7: no Recent shelf; consoles call the first screen Home).
@@ -236,7 +262,7 @@ const placeKeys=()=>{if(typeof document!=='undefined')document.querySelectorAll(
 if(typeof document!=='undefined'){document.addEventListener('load',ev=>{if(ev.target?.closest?.('.arc-keyart'))placeKey(ev.target,!!ev.target.closest('.arc-key-front'));},true);
  let rz=0;addEventListener('resize',()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(placeKeys);});}
 // A game's own logo (assets/keyart/<game id or family key>-logo.*, transparent) replaces the plain title on the hero, the version page and the tile.
-const logoOf=it=>it&&(dropArt('keyart',it.fam?.key&&it.fam.key+'-logo')||dropArt('keyart',it.g?.id&&it.g.id+'-logo')||(it.g&&familyOf(it.g)&&dropArt('keyart',familyOf(it.g)+'-logo')));
+const logoOf=it=>it&&(it.fam?.collection?dropArt('keyart',it.fam.key+'-logo'):dropArt('keyart',it.fam?.key&&it.fam.key+'-logo')||dropArt('keyart',it.g?.id&&it.g.id+'-logo')||(it.g&&familyOf(it.g)&&dropArt('keyart',familyOf(it.g)+'-logo')));
 const titleHTML=(title,logo)=>logo?`<h2 class="arc-title arc-title-logo"><span>${e(title)}</span><img src="${e(logo)}" alt="" draggable="false"></h2>`:`<h2 class="arc-title">${e(title)}</h2>`;
 function art(g,{fam=null,size=''}={}){
  const drop=tileArt(fam?.key)||tileArt(g?.id)||(g?.id&&tileArt(familyOf(g)));if(drop)return `<img class="arc-cut arc-drop${size}" src="${e(drop)}" alt="" loading="lazy" draggable="false">`;
@@ -248,51 +274,79 @@ function art(g,{fam=null,size=''}={}){
 }
 
 // ---- the screen ----
-const state={focus:null,family:null,grid:false,scores:null};
+const state={focus:null,grid:false,scores:null,path:[]};// path = the groups opened, top first
 let current=null;
 // opts: {list, partsFor(g), filter, filters:[[id,label]], query, strip (1P/online strip HTML), devStrip, extraBosses}
 function arcadeConsoleHTML(opts){
- const {list,filter,filters,query,strip,devStrip,familyPool=list}=opts;const grouped=!query&&filter==='all'; // families only on the main list; categories, bosses and search list every game (but ONE_TILE)
- const items=[],seen=new Set();
- for(const g of list){const fk0=familyOf(g),one=ONE_TILE.has(fk0),fk=(grouped||one)&&fk0;
-  if(fk){const members=(one?familyPool:list).filter(x=>familyOf(x)===fk);if(members.length>1||fk==='bosses'){if(!seen.has(fk)){seen.add(fk);items.push({key:'f:'+fk,fam:FAMILY.get(fk),members,g:members[0]});}continue;}}
-  items.push({key:'g:'+g.id,g});}
- current={...opts,items};
+ const {list,filter,filters,query,strip,devStrip,pool=list,extraBosses=[]}=opts;
+ const byId=new Map();for(const g of pool)byId.set(g.id,g);for(const g of list)if(!byId.has(g.id))byId.set(g.id,g);
+ byId.bosses=[...pool.filter(g=>g.bossId),...extraBosses.filter(g=>!byId.has(g.id))];
+ // a group that has nothing left to show (1P / online hides games) closes itself
+ while(state.path.length&&!kidItems(state.path.at(-1),byId).length)state.path.pop();
+ let items;
+ if(state.path.length)items=kidItems(state.path.at(-1),byId);
+ else if(query||['boss','pokemon','variants'].includes(filter))items=list.map(g=>({key:'g:'+g.id,g}));// a search and these lists show the games themselves
+ else if(filter==='all'){items=TOP.map(k=>groupItem(k,byId)).filter(Boolean);for(const g of list)if(!pathTo(g).length)items.push({key:'g:'+g.id,g});}
+ else{items=[];const seen=new Set();// Home, Favorites, categories: a franchise is one tile (its group), anything else the game
+  for(const g of list){const k=groupOf(g),it=k&&!GROUP.get(k).collection?groupItem(k,byId):{key:'g:'+g.id,g};if(it&&!seen.has(it.key)){seen.add(it.key);items.push(it);}}}
+ const inGroup=state.path.length?GROUP.get(state.path.at(-1)):null;
+ current={...opts,items,byId,inGroup};
  let at=items.findIndex(it=>it.key===state.focus);if(at<0){at=0;state.focus=items[0]?.key||null;}
  const main=filters.filter(([id])=>MAIN_PILLS.has(id)),more=filters.filter(([id])=>!MAIN_PILLS.has(id)),inMore=more.some(([id])=>id===filter);
  const pills=main.map(([id,label])=>`<button class="arc-pill${id===filter?' on':''}" data-action="filter" data-id="${e(id)}">${e(label)}</button>`).join('')
   +(more.length?`<label class="arc-pill arc-more${inMore?' on':''}"><select class="arc-cat-select" aria-label="More categories"><option value=""${inMore?'':' selected'}>Categories</option>${more.map(([id,label])=>`<option value="${e(id)}"${id===filter?' selected':''}>${e(label)}</option>`).join('')}</select></label>`:'');
  const tiles=items.map((it,i)=>tileHTML(it,i,i===at)).join('');const root0=items[at];
- return `<main class="arcade-console${root0&&keyArt(root0)?' has-key':''}" style="${heroVars(items[at])}"><div class="arc-wash" aria-hidden="true"></div>
+ return `<main class="arcade-console${root0&&keyArt(root0)?' has-key':''}${inGroup?' in-group':''}" style="${heroVars(items[at])}"><div class="arc-wash" aria-hidden="true"></div>
   <div class="arc-keyart" aria-hidden="true"><div class="arc-layer arc-key-front">${items[at]&&keyArt(items[at])?keyImg(items[at]):''}</div><div class="arc-layer"></div></div>
   <div class="arc-hero-art" aria-hidden="true">${items[at]&&!keyArt(items[at])?`<div class="arc-layer">${heroArt(items[at])}</div>`:''}</div><div class="arc-shade" aria-hidden="true"></div>
-  <header class="arc-top"><button class="arc-icon" data-action="home" aria-label="Back to the title screen">←</button><b class="arc-brand">Arcade</b>
+  <header class="arc-top">${inGroup?`<button class="arc-icon" data-arc-up aria-label="Back">←</button><b class="arc-brand arc-brand-group">${e(inGroup.title)}</b>`:'<button class="arc-icon" data-action="home" aria-label="Back to the title screen">←</button><b class="arc-brand">Arcade</b>'}
    <span class="arc-top-r"><button class="arc-icon" data-action="arcade-random" aria-label="Random game" title="Random game">🎲</button><button class="arc-icon arc-search-btn${query?' on':''}" data-arc-search aria-label="Search games">⌕</button></span></header>
   <div class="arc-search"${query?'':' hidden'}><input id="catalog-search" type="search" value="${e(query)}" placeholder="Search games or shows…" aria-label="Search games" autocomplete="off"></div>
   <nav class="arc-pills" aria-label="Game categories">${pills}</nav>
   <div class="arc-strip">${strip||''}</div>
   <section class="arc-info arc-info-in" aria-live="polite">${items[at]?infoHTML(items[at]):`<p class="arc-empty">${query?'Nothing here yet. Try another category.':filter==='favorites'?'Tap ☆ on any game to keep it here.':'Nothing here yet. Try another category.'}</p>`}</section>
-  <div class="arc-row-head"><span class="arc-row-label">${e(filters.find(f=>f[0]===filter)?.[1]||'Games')} · ${items.length}</span>${items.length>1?'<button class="arc-viewall" data-arc-all>View all ▸</button>':''}</div>
-  <div class="arc-row" role="listbox" aria-label="Games">${tiles}${!query&&filter!=='all'?`<button class="arc-tile arc-tile-all" data-arc-all aria-label="View all games"><span class="arc-tile-allart" aria-hidden="true">▦</span><span class="arc-tile-name"><span>View all</span></span></button>`:''}</div>
+  <div class="arc-row-head"><span class="arc-row-label">${e(inGroup?inGroup.title:filters.find(f=>f[0]===filter)?.[1]||'Games')} · ${items.length}</span>${items.length>1?'<button class="arc-viewall" data-arc-all>View all ▸</button>':''}</div>
+  <div class="arc-row" role="listbox" aria-label="Games">${tiles}${!query&&filter!=='all'&&!inGroup?`<button class="arc-tile arc-tile-all" data-arc-all aria-label="View all games"><span class="arc-tile-allart" aria-hidden="true">▦</span><span class="arc-tile-name"><span>View all</span></span></button>`:''}</div>
   ${devStrip?`<div class="arc-dev">${devStrip}</div>`:''}
-  <section class="arc-grid-page"${state.grid?'':' hidden'} aria-label="All games">${state.grid?gridHTML():''}</section>
-  <section class="arc-fam"${state.family?'':' hidden'} aria-label="Versions">${state.family?familyHTML(state.family):''}</section></main>`;
+  <section class="arc-grid-page"${state.grid?'':' hidden'} aria-label="All games">${state.grid?gridHTML():''}</section></main>`;
 }
+// Everything a group holds (all levels down) that this list can show; bosses = beaten + still locked.
+function membersOf(key,byId){const gr=GROUP.get(key);if(!gr)return [];if(key==='bosses')return byId.bosses;const out=[];
+ for(const k of gr.kids){if(k.id){const g=byId.get(k.id);if(g)out.push(g);}else out.push(...membersOf(k.f,byId));}return out;}
+// The tiles inside a group, in the table's order: its games and its sub-groups.
+function kidItems(key,byId){const gr=GROUP.get(key);if(!gr)return [];if(key==='bosses')return byId.bosses.map(g=>({key:'g:'+g.id,g}));
+ return gr.kids.map(k=>k.id?byId.get(k.id)&&{key:'g:'+k.id,g:byId.get(k.id)}:groupItem(k.f,byId)).filter(Boolean);}
+// One tile for a group (a franchise with just one game showing is that game's own tile).
+function groupItem(key,byId){const fam=GROUP.get(key),members=membersOf(key,byId);if(!fam||!members.length)return null;
+ if(members.length===1&&!fam.collection&&key!=='bosses')return {key:'g:'+members[0].id,g:members[0]};
+ return {key:'f:'+key,fam,members,g:members.find(g=>g.id===fam.cover)||members[0],count:key==='bosses'?members.length:kidItems(key,byId).length};}
 function heroVars(it){const g=it?.g,h=hue(it?.fam?.title||g?.source||'');return `--arc-h:${h}`;}
 function heroArt(it){return art(it.g,{fam:it.fam,size:' big'});}
+// A collection's tile (until it has its own tile art) = a 2x2 mosaic of the first four things inside it, so it never looks
+// like the one game whose picture stands in for it.
+function collage(it){const kids=kidItems(it.fam.key,current.byId).slice(0,4);
+ return `<span class="arc-collage n${kids.length}" aria-hidden="true">${kids.map(k=>`<span>${tileArt(k.fam?.key)||tileArt(k.g.id)||(!k.fam&&tileArt(familyOf(k.g)))?`<img src="${e(tileArt(k.fam?.key)||tileArt(k.g.id)||tileArt(familyOf(k.g)))}" alt="" loading="lazy" draggable="false">`:art(k.g,{fam:k.fam})}</span>`).join('')}</span>`;}
+const tileArtOf=it=>it.fam?.collection&&!tileArt(it.fam.key)?collage(it):art(it.g,{fam:it.fam});
+// inside a franchise, versions that share its picture and logo get their own name on the tile (Act 1, Act 2, ...)
+// (words every version shares are left off: "Shamb Island Zone Act 1/2/3" → "Act 1")
+function verName(g,f){const own=shortTitle(g,f),sib=(current?.items||[]).filter(x=>!x.fam&&x.g).map(x=>shortTitle(x.g,f).split(' '));
+ if(sib.length<2)return own;const w=own.split(' ');let n=0;while(n<w.length-1&&sib.every(s=>s[n]===w[n]))n++;if(n&&/^[\dIVX]+$/.test(w.slice(n).join(' ')))n--;return w.slice(n).join(' ');}// keep 'Act' before a bare number
+const ownLook=g=>!!(dropArt('keyart',g.id+'-logo')||tileArt(g.id));// a version with its own logo or tile needs no name tag
+const verTag=it=>{const f=current?.inGroup;if(!f||f.collection||it.fam||!it.g||ownLook(it.g))return '';return `<span class="arc-ver-tag" aria-hidden="true">${e(verName(it.g,f))}</span>`;};
 function tileHTML(it,i,on){const g=it.g,locked=!it.fam&&!current.partsFor(g).open;
- return `<button class="arc-tile${on?' on':''}${locked?' locked':''}" role="option" aria-selected="${on}" data-arc-focus="${i}" style="--arc-h:${hue(it.fam?.title||g.source)};--i:${Math.min(i,14)}" aria-label="${e(it.fam?.title||g.title)}">${art(g,{fam:it.fam})}${it.fam?`<span class="arc-count">×${it.fam.key==='bosses'?bossTotal():it.members.length}</span>`:''}${locked?'<span class="arc-lock" aria-hidden="true">🔒</span>':''}${logoOf(it)?`<span class="arc-tile-name has-logo" aria-hidden="true"><img src="${e(logoOf(it))}" alt="" loading="lazy" draggable="false"></span>`:`<span class="arc-tile-name" aria-hidden="true"><span>${e(tileName(it))}</span></span>`}</button>`;}
+ return `<button class="arc-tile${on?' on':''}${locked?' locked':''}" role="option" aria-selected="${on}" data-arc-focus="${i}" style="--arc-h:${hue(it.fam?.title||g.source)};--i:${Math.min(i,14)}" aria-label="${e(it.fam?.title||g.title)}">${tileArtOf(it)}${verTag(it)}${it.fam?`<span class="arc-count">×${it.count}</span>`:''}${locked?'<span class="arc-lock" aria-hidden="true">🔒</span>':''}${logoOf(it)?`<span class="arc-tile-name has-logo" aria-hidden="true"><img src="${e(logoOf(it))}" alt="" loading="lazy" draggable="false"></span>`:`<span class="arc-tile-name" aria-hidden="true"><span>${e(tileName(it))}</span></span>`}</button>`;}
 // The name on a tile: the family or game title, the separator dropped so it wraps cleanly on two lines.
 const tileName=it=>(it.fam?.title||it.g.title).replace(/^Boss · /,'').replace(/ · /,' ');
-function bossTotal(){return (current.extraBosses||[]).length+current.items.find(x=>x.fam?.key==='bosses')?.members.length||0;}
 // The genre line sits under the title/logo, above the chips (owner, Nov 3: above the logo it ran across the faces).
 function infoHTML(it){
- if(it.fam){const f=it.fam,n=f.key==='bosses'?bossTotal():it.members.length,played=it.members.filter(g=>store.profile.played.includes(g.id)).length;
-  return `${titleHTML(f.title,logoOf(it))}<div class="arc-src">${e(f.sub)}</div><div class="arc-chips"><span>${n} ${f.key==='bosses'?'bosses':'versions'}</span>${played?`<span>${played} played</span>`:''}${f.key==='bosses'?`<span>${it.members.length} beaten</span>`:''}</div>
-   <p class="arc-rules">${e(it.members.slice(0,6).map(g=>shortTitle(g,f)).join(' · '))}${it.members.length>6?' …':''}</p>
-   <div class="arc-actions"><button class="arc-cta" data-arc-family="${e(f.key)}">Choose a version ▸</button></div>`;}
+ if(it.fam){const f=it.fam,n=it.members.length,played=it.members.filter(g=>store.profile.played.includes(g.id)).length,kids=kidItems(f.key,current.byId);
+  const names=kids.map(k=>k.fam?k.fam.title:shortTitle(k.g,f));
+  return `${titleHTML(f.title,logoOf(it))}<div class="arc-src">${e(f.sub)}</div><div class="arc-chips"><span>${n} ${f.key==='bosses'?'bosses':f.collection?'games':'versions'}</span>${played?`<span>${played} played</span>`:''}${f.key==='bosses'?`<span>${it.members.filter(g=>current.partsFor(g).open).length} beaten</span>`:''}</div>
+   <p class="arc-rules">${e(names.slice(0,8).join(' · '))}${names.length>8?' …':''}</p>
+   <div class="arc-actions"><button class="arc-cta" data-arc-open="${e(f.key)}">Open ▸</button></div>`;}
  const g=it.g,p=current.partsFor(g);
- return `${titleHTML(g.title,logoOf(it))}<div class="arc-src">${e(g.srcLabel||g.source)} · ${e(catName(g))}</div><div class="arc-chips">${p.chips.map(c=>`<span>${c}</span>`).join('')}${recordHTML(g.id)}</div>
+ const f=current.inGroup,ver=f&&!f.collection&&!ownLook(g)?verName(g,f):'';
+ return `${titleHTML(g.title,logoOf(it))}<div class="arc-src">${ver?`<b class="arc-ver-name">${e(ver)}</b> · `:''}${e(g.srcLabel||g.source)} · ${e(catName(g))}</div><div class="arc-chips">${p.chips.map(c=>`<span>${c}</span>`).join('')}${recordHTML(g.id)}</div>
   <p class="arc-rules">${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${starHTML(g)}${p.dev||''}</div>`;
 }
 // The ☆ next to a game's play button keeps it on the Favorites shelf.
@@ -319,19 +373,12 @@ function starHTML(g){const on=(store.profile.favorites||[]).includes(g.id);retur
 const quick=html=>String(html).replace(/data-action="arcade-(game|solo)"/,'data-quick="1" data-action="arcade-$1"');
 const catName=g=>g.bossId?'Boss':g.pokemon?'Pokémon':[...categoriesOf(g)].map(c=>CAT_NAME[c]).filter(Boolean)[0]||'Game';
 function shortTitle(g,f){const t=g.title.replace(/^Boss · /,'');const parts=t.split(' · ');return parts.length>1&&norm(parts[0]).includes(norm(f.title).slice(0,5))?parts.slice(1).join(' · '):t.replace(/^Broforce: /,'');}
-function familyHTML(key){const f=FAMILY.get(key);if(!f||!current)return '';
- let members=current.items.find(it=>it.fam?.key===key)?.members||current.list.filter(g=>familyOf(g)===key);if(key==='bosses')members=[...members,...(current.extraBosses||[])];
- const cards=members.map((g,i)=>{const p=current.partsFor(g);return `<article class="arc-ver${p.open?'':' locked'}" style="--arc-h:${hue(g.source)};--i:${Math.min(i,12)}"><div class="arc-ver-art">${dropArt('keyart',g.id)&&!tileArt(g.id)?`<img class="arc-card-art" src="${e(dropArt('keyart',g.id))}" alt="" loading="lazy">`:art(g)}${p.open?'':'<span class="arc-lock" aria-hidden="true">🔒</span>'}</div>
-  <div class="arc-ver-body"><h3>${e(shortTitle(g,f))}</h3><div class="arc-chips small">${p.chips.map(c=>`<span>${c}</span>`).join('')}</div><p>${e(g.rules||'')}</p><div class="arc-actions">${quick(p.play)}${starHTML(g)}${p.dev||''}</div></div></article>`;}).join('');
- return `<header class="arc-fam-top"><button class="arc-icon" data-arc-close aria-label="Back to the Arcade">←</button><div><div class="arc-src">${e(f.sub)}</div>${titleHTML(f.title,logoOf({fam:f}))}</div></header>
-  <div class="arc-fam-hero" aria-hidden="true">${art(members[0]||{},{fam:f,size:' big'})}</div><div class="arc-ver-grid">${cards}</div>`;}
-
 // Focus a tile without rebuilding the screen (fast, keeps the row's scroll position).
 // "View all": every tile of the current list as big blocks you scroll through (owner, Nov 3).
 function gridHTML(){if(!current)return '';const lab=current.filters.find(f=>f[0]===current.filter)?.[1]||'Games';
  return `<header class="arc-fam-top"><button class="arc-icon" data-arc-grid-close aria-label="Back to the Arcade">←</button><div><div class="arc-src">${current.items.length} ${current.items.length===1?'game':'tiles'}</div><h2 class="arc-title">${e(lab)}</h2></div></header>
   <div class="arc-block-grid">${current.items.map((it,i)=>{const g=it.g,locked=!it.fam&&!current.partsFor(g).open;
-   return `<button class="arc-block${locked?' locked':''}" data-arc-pick="${i}" style="--arc-h:${hue(it.fam?.title||g.source)};--i:${Math.min(i,16)}"><span class="arc-block-art">${art(g,{fam:it.fam})}${it.fam?`<span class="arc-count">×${it.fam.key==='bosses'?bossTotal():it.members.length}</span>`:''}${locked?'<span class="arc-lock" aria-hidden="true">🔒</span>':''}</span><span class="arc-block-name">${e(it.fam?.title||g.title)}</span><span class="arc-block-sub">${e(it.fam?it.fam.sub:catName(g))}</span></button>`;}).join('')}</div>`;}
+   return `<button class="arc-block${locked?' locked':''}" data-arc-pick="${i}" style="--arc-h:${hue(it.fam?.title||g.source)};--i:${Math.min(i,16)}"><span class="arc-block-art">${tileArtOf(it)}${it.fam?`<span class="arc-count">×${it.count}</span>`:''}${locked?'<span class="arc-lock" aria-hidden="true">🔒</span>':''}</span><span class="arc-block-name">${e(it.fam?.title||g.title)}</span><span class="arc-block-sub">${e(it.fam?it.fam.sub:catName(g))}</span></button>`;}).join('')}</div>`;}
 function openGrid(){const root=document.querySelector('.arcade-console');if(!root)return;state.grid=true;const s=root.querySelector('.arc-grid-page');s.classList.remove('arc-fam-out');s.innerHTML=gridHTML();s.hidden=false;s.scrollTop=0;restart(s,'arc-fam-in');}
 function closeGrid(){state.grid=false;const s=document.querySelector('.arcade-console .arc-grid-page');if(!s)return;if(matchMedia('(prefers-reduced-motion: reduce)').matches){s.hidden=true;s.innerHTML='';return;}s.classList.add('arc-fam-out');setTimeout(()=>{if(state.grid)return;s.hidden=true;s.innerHTML='';s.classList.remove('arc-fam-out');},260);}
 // Swap a picture layer: the new one slides/fades in while the old one fades out (direction follows the tile row).
@@ -405,36 +452,39 @@ function focusTile(i,{scroll=true,swipe=null}={}){
   if(it.g)void refreshRecord(it.g.id);for(const d of [1,-1])warmPic(keyArt(current.items[i+d]),true);for(const d of [2,-2])warmPic(keyArt(current.items[i+d]));};
  if(swipe)setTimeout(rest,420);else rest();
 }
-function openFamily(key){const root=document.querySelector('.arcade-console');if(!root)return;state.family=key;const s=root.querySelector('.arc-fam');s.classList.remove('arc-fam-out');s.innerHTML=familyHTML(key);s.hidden=false;s.scrollTop=0;restart(s,'arc-fam-in');}
-// Closing slides the version page away before hiding it.
-function closeFamily(){state.family=null;const s=document.querySelector('.arcade-console .arc-fam');if(!s)return;if(matchMedia('(prefers-reduced-motion: reduce)').matches){s.hidden=true;s.innerHTML='';return;}s.classList.add('arc-fam-out');setTimeout(()=>{if(state.family)return;s.hidden=true;s.innerHTML='';s.classList.remove('arc-fam-out');},260);}
+// Open a group (owner, Nov 11): the same Arcade screen with the group's own tiles; ← goes back up a level.
+function enterGroup(key){if(!GROUP.has(key))return;state.path.push(key);state.focus=null;state.grid=false;rebuild();}
+function upGroup(){const k=state.path.pop();state.focus=k?'f:'+k:null;state.grid=false;rebuild();}
+const rebuild=()=>setFilter(current?.filter||'featured',true);
 // After a rebuild: put the focused tile in view (no animation) and reopen the version page if one was open.
 function installArcadeConsole(){const root=document.querySelector('.arcade-console');if(!root||!current)return;placeKeys();warmKeyArt();
- const i=current.items.findIndex(it=>it.key===state.focus);if(current.items[i]?.g)void refreshRecord(current.items[i].g.id);state.scores=null;const tile=root.querySelectorAll('.arc-tile')[i];if(tile){const row=root.querySelector('.arc-row');row.scrollLeft=tile.offsetLeft-row.clientWidth/2+tile.clientWidth/2;}}
+ const i=current.items.findIndex(it=>it.key===state.focus);if(current.items[i]?.g&&!current.items[i].fam)void refreshRecord(current.items[i].g.id);state.scores=null;const tile=root.querySelectorAll('.arc-tile')[i];if(tile){const row=root.querySelector('.arc-row');row.scrollLeft=tile.offsetLeft-row.clientWidth/2+tile.clientWidth/2;}}
 // The dice button: this game's own page (its picture, rules and Play button), not the game itself. It stays on this list when the
 // game has its own tile here; otherwise it returns the category to switch to, whose list shows every game on its own.
-function focusArcadeGame(g){const fk=ONE_TILE.has(familyOf(g))?'f:'+familyOf(g):'g:'+g.id,i=current?current.items.findIndex(it=>it.key===fk):-1;
- if(i>=0&&document.querySelector('.arcade-console')){if(state.grid)closeGrid();if(state.family)closeFamily();focusTile(i);return null;}
- state.focus=fk;state.family=null;state.grid=false;return g.bossId?'boss':g.pokemon?'pokemon':[...categoriesOf(g)].find(c=>CAT_NAME[c])||'all';}
-function resetArcadeConsole(){state.focus=null;state.family=null;state.grid=false;}
+function focusArcadeGame(g){state.path=pathTo(g);state.focus='g:'+g.id;state.grid=false;
+ if(!state.path.length){const i=current?current.items.findIndex(it=>it.key===state.focus):-1;if(i>=0&&document.querySelector('.arcade-console')){focusTile(i);return null;}}
+ return state.path.length?current?.filter||'all':'all';}
+function resetArcadeConsole(){state.focus=null;state.grid=false;state.path=[];}
 if(typeof document!=='undefined')document.addEventListener('click',ev=>{
  if(ev.target.closest?.('.arcade-console .arc-scores')&&!ev.target.closest('.arc-scores-card')||ev.target.closest?.('[data-arc-scores-close]')){closeScores();return;}
  const sb=ev.target.closest?.('.arcade-console [data-arc-scores]');if(sb){openScores(sb.dataset.arcScores);return;}
- const t=ev.target.closest?.('[data-arc-focus],[data-arc-family],[data-arc-close],[data-arc-search],[data-arc-all],[data-arc-pick],[data-arc-grid-close],[data-arc-star]');if(!t||!t.closest('.arcade-console'))return;
+ const t=ev.target.closest?.('[data-arc-focus],[data-arc-open],[data-arc-up],[data-arc-search],[data-arc-all],[data-arc-pick],[data-arc-grid-close],[data-arc-star]');if(!t||!t.closest('.arcade-console'))return;
  if(t.dataset.arcStar){const id=t.dataset.arcStar,on=toggleFavorite(store.profile,id);saveProfile(store.profile);
   document.querySelectorAll('.arcade-console [data-arc-star]').forEach(b=>{if(b.dataset.arcStar!==id)return;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));b.setAttribute('aria-label',on?'Remove from favorites':'Add to favorites');b.textContent=on?'★':'☆';});
   if(store.profile.settings.sound)tone(on?880:440,.06,.02,'triangle');return;}
  if(t.dataset.arcAll!==undefined){// View all = every game in the Arcade (owner, Nov 7), not just this shelf; back returns to the shelf
-  if(current&&current.filter!=='all'&&!current.query){state.grid=true;state.gridBack=current.filter;state.focus=null;setFilter('all');return;}openGrid();return;}
+  if(current&&current.filter!=='all'&&!current.query&&!state.path.length){state.grid=true;state.gridBack=current.filter;state.focus=null;setFilter('all');return;}openGrid();return;}
  if(t.dataset.arcGridClose!==undefined){const back=state.gridBack;state.gridBack=null;closeGrid();if(back){state.focus=null;setTimeout(()=>setFilter(back),0);}return;}
- if(t.dataset.arcPick!==undefined){const i=+t.dataset.arcPick,it=current?.items[i];if(!it)return;state.gridBack=null;closeGrid();focusTile(i);if(it.fam)openFamily(it.fam.key);return;}
- if(t.dataset.arcFocus!==undefined){const i=+t.dataset.arcFocus;if(current?.items[i]?.key===state.focus&&current.items[i].fam)openFamily(current.items[i].fam.key);else focusTile(i);}
- else if(t.dataset.arcFamily)openFamily(t.dataset.arcFamily);
- else if(t.dataset.arcClose!==undefined)closeFamily();
+ if(t.dataset.arcPick!==undefined){const i=+t.dataset.arcPick,it=current?.items[i];if(!it)return;state.gridBack=null;closeGrid();if(it.fam){enterGroup(it.fam.key);return;}focusTile(i);return;}
+ if(t.dataset.arcFocus!==undefined){const i=+t.dataset.arcFocus;if(current?.items[i]?.key===state.focus&&current.items[i].fam)enterGroup(current.items[i].fam.key);else focusTile(i);}
+ else if(t.dataset.arcOpen)enterGroup(t.dataset.arcOpen);
+ else if(t.dataset.arcUp!==undefined)upGroup();
  else if(t.dataset.arcSearch!==undefined){const s=document.querySelector('.arcade-console .arc-search');s.hidden=!s.hidden;if(!s.hidden)s.querySelector('input').focus();}
 });
 // Change the shelf through the app's own 'filter' action (app.js keeps the list, query and dice pool in step).
-function setFilter(id){const b=document.createElement('button');b.dataset.action='filter';b.dataset.id=id;b.hidden=true;(document.querySelector('.arcade-console')||document.body).append(b);b.click();b.remove();}
+function setFilter(id,keep=false){if(!keep)state.path=[];const b=document.createElement('button');b.dataset.action='filter';b.dataset.id=id;b.hidden=true;(document.querySelector('.arcade-console')||document.body).append(b);b.click();b.remove();}
+// a shelf pill leaves any open group (rebuilds use setFilter(...,true))
+if(typeof document!=='undefined')document.addEventListener('click',ev=>{const b=ev.target.closest?.('.arcade-console .arc-pills [data-action="filter"]');if(b)state.path=[];},true);
 if(typeof document!=='undefined')document.addEventListener('change',ev=>{const sel=ev.target.closest?.('.arcade-console .arc-cat-select');if(!sel||!sel.value)return;state.focus=null;setFilter(sel.value);});
 // Swipe through the games (owner, Nov 4, M24): a sideways drag anywhere on the game's page (picture, logo, text, buttons)
 // moves the picture and text with the finger; let go past ~22% of the width (or a quick flick) and the next game (drag left)
@@ -463,7 +513,7 @@ function swipeMove(root,dx,anim,W=swipe?.W||root.clientWidth||360){const tr=anim
   if(prep?.back){prep.back.style.transition=anim?'opacity .22s':'opacity .12s ease-out';prep.back.style.opacity=prep.placed&&dx?'1':'0';}}}
 if(typeof document!=='undefined'){
  document.addEventListener('pointerdown',ev=>{const root=ev.target.closest?.('.arcade-console');
-  if(!root||!current||state.family||state.grid||ev.button>0||ev.target.closest(SWIPE_SKIP)||current.items.length<2)return;
+  if(!root||!current||state.grid||ev.button>0||ev.target.closest(SWIPE_SKIP)||current.items.length<2)return;
   swipe={root,id:ev.pointerId,x:ev.clientX,y:ev.clientY,t:performance.now(),on:false,dx:0,W:root.clientWidth||360,i:current.items.findIndex(x=>x.key===state.focus)};},true);
  document.addEventListener('pointermove',ev=>{if(!swipe||ev.pointerId!==swipe.id)return;const dx=ev.clientX-swipe.x,dy=ev.clientY-swipe.y;
   if(!swipe.on){if(Math.abs(dy)>14&&Math.abs(dy)>Math.abs(dx)){swipe=null;return;}if(Math.abs(dx)<12||Math.abs(dx)<Math.abs(dy)*1.4)return;swipe.on=true;for(const el of [swipe.root.querySelector('.arc-info'),swipe.root.querySelector('.arc-hero-art')])if(el)el.style.willChange='transform,opacity';}
@@ -492,8 +542,9 @@ if(typeof document!=='undefined')document.addEventListener('keydown',ev=>{
  const i=current.items.findIndex(it=>it.key===state.focus);
  if(ev.key==='ArrowRight'||ev.key==='ArrowLeft'){ev.preventDefault();focusTile(Math.max(0,Math.min(current.items.length-1,i+(ev.key==='ArrowRight'?1:-1))));}
  else if(ev.key==='Escape'&&state.scores)closeScores();
- else if(ev.key==='Escape'&&state.family)closeFamily();
  else if(ev.key==='Escape'&&state.grid)closeGrid();
+ else if(ev.key==='Escape'&&state.path.length)upGroup();
+ else if(ev.key==='Enter'&&current.items[i]?.fam)enterGroup(current.items[i].fam.key);
 });
 
 setTileFamily(g=>{try{return familyOf(g);}catch{return null;}});   // start / result cards show the family's icon too
@@ -505,4 +556,4 @@ function arcadeReel(n=10,games=[]){const out=[];const add=u=>{if(u&&!out.include
  for(const g of shuffle(games.filter(Boolean))){if(out.length>=n)break;add(tileArt(g.id)||tileArt(familyOf(g))||own(heroId(g)));}
  for(const f of shuffle([...FAMILY.values()])){if(out.length>=Math.min(n,6))break;add(tileArt(f.key)||own(f.hero));}
  return out.slice(0,n);}
-Object.assign(exports,{warmKeyArt,focusArcadeGame,arcadeReel,CATEGORIES,categoriesOf,inCategory,arcadeConsoleHTML,installArcadeConsole,resetArcadeConsole,familyOf,heroId,FAMILIES,FAMILY,keyArt,tileArt});
+Object.assign(exports,{COLLECTIONS,GROUP,TOP,groupOf,pathTo,warmKeyArt,focusArcadeGame,arcadeReel,CATEGORIES,categoriesOf,inCategory,arcadeConsoleHTML,installArcadeConsole,resetArcadeConsole,familyOf,heroId,FAMILIES,FAMILY,keyArt,tileArt});
