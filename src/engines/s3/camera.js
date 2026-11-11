@@ -9,13 +9,14 @@
 // Owner, Nov 11: too much ground on screen, the runner dead centre: the runner sits at 58% of the view's height (the Mega
 // Drive's 96/224 = 43% left more than half a tall phone screen showing ground), and very tall portrait views zoom in a
 // little (at least 480 world px tall instead of the full width-fit height).
-const MD_W=320,MD_H=224,FOCUS_Y=.58;
+// Nov 11 round 2 (owner): a little less ground again (.64) and zoomed out a touch (ZOOM_OUT: about 12% more level on screen)
+const MD_W=320,MD_H=224,FOCUS_Y=.64,ZOOM_OUT=.89;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 class Camera{
  constructor(bounds){this.b={...bounds};this.goal={...bounds};this.x=0;this.y=0;this.k=1;this.vw=MD_W;this.vh=MD_H;
   this.look=0;this.lookT=0;this.lag=0;this.hist=[];this.locked=false;}
  // screen size in CSS px; returns k (screen px per world px)
- resize(W,H){this.k=clamp(Math.max(Math.min(H/MD_H,W/MD_W),H/480),.8,4);this.vw=W/this.k;this.vh=H/this.k;this.W=W;this.H=H;return this.k;}
+ resize(W,H){this.k=clamp(Math.max(Math.min(H/MD_H,W/MD_W),H/480)*ZOOM_OUT,.7,4);this.vw=W/this.k;this.vh=H/this.k;this.W=W;this.H=H;return this.k;}
  // jump straight to the runner (start of an act, respawn)
  snap(p){this.hist.length=0;this.lag=0;this.look=0;this.lookT=0;this.x=p.x-this.vw*(152/MD_W);this.y=this.fy(p)-this.vh*FOCUS_Y;this.clampIn();}
  fy(p){return p.y-(p.rolling?5:0);}// the ball is 5 px lower than the standing centre: keep the view still

@@ -81,6 +81,7 @@ const PICTURES={
  'jungle-rock':{size:[64,64],anchor:[0,0],tile:'xy',opaque:true,note:'stone fill for cliffs and loops'},
  // jungle props
  palm:{size:[96,160],anchor:[48,160]},
+ 'palm-2':{size:[112,176],anchor:[48,176],note:'a second, different palm (leaning, or two trunks); trunk runs 24 px past the bottom so it can sink into slopes'},
  bush:{size:[48,32],anchor:[24,32]},
  totem:{size:[32,64],anchor:[16,64]},
  'tree-trunk':{size:[32,64],anchor:[16,0],tile:'xy',note:'the trunk the thrower robot climbs, repeats downwards'},

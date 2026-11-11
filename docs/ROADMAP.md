@@ -106,7 +106,9 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   the spirit of: a Knuckles-style one (an echidna-ish bruiser: glides on a second jump press, climbs walls, punches through
   rock; secret routes only he can reach), a Shadow-style one (a dark rival hedgehog: air dash / skate boost), maybe others.
   Each = a body sheet + ball sheet (same kit as runner-p1/p2), their moves in physics.js, a name plate on the select.
-- **R59b** `[todo]` Seanic title/select art from GPT: brief `docs/sonic3-sprites/TITLE-SELECT-BRIEF.md` (title-bg,
+- **R59e** `[todo]` Seanic art fixes from GPT: `docs/sonic3-sprites/FIXES-2026-11-11.md` (second palm, a whole-canopy
+  near jungle strip, Tails' two tired frames with two arms).
+- **R59b** `[verify]` Seanic title/select art from GPT: brief `docs/sonic3-sprites/TITLE-SELECT-BRIEF.md` (title-bg,
   title-hero, title-fox, select-bg, select-monitor, select-hog, select-fox); stand-ins drawn until they arrive.
 - **R59c** `[todo]` Seanic Act 1 mini-boss (the miniboss sheet is already imported), then Act 2 (the scorched jungle) and the
   zone boss (boss + capsule sheets imported). Music (owner, Nov 11): level 2 = Sonic 2 Emerald Hill Zone,
@@ -610,7 +612,10 @@ Other boss items
 - **P12** `[todo]` (owner, Nov 3) Sound effects and background music to match: Sonic, Mario, Castlevania and the rest. Sound-alike
   effects and music made in the real chips' style (NES pulse/triangle/noise, Mega Drive FM), our own tunes; the owner's
   drop-in music slots stay (see "Owner-supplied music/art").
-- **P14** `[idea]` (owner, Nov 11) Faces that look where they're going: scan the portraits (at least the main ones: Sean,
+- **P14** `[todo]` (owner, Nov 11, "roadmap but very soon") HEAD CIRCLES + FACING, one pass over every portrait: (a) find the
+  main circle of each head (the face itself, not the hair/ears/fur around it): Loki's head sits low in the body slots
+  because his ears and fur count as head; characters with big hair or ears are the same. Save centre + size per
+  portrait/mood so every game that puts a face in a slot scales and places it by the real face. (b) Faces that look where they're going: scan the portraits (at least the main ones: Sean,
   Amber, the dogs, the most-used characters) and work out which way each face is looking (left / right / straight on), then
   flip the face in our games so it faces the direction of travel (Sonic, Mario, Broforce, kart, SotN...). Approach: a
   head-pose estimate per portrait (face landmarks: nose tip vs the eye/jaw midline gives the yaw) run once by a tool, saved

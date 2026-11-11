@@ -35,10 +35,19 @@ function runner(x,body,i,fx,fy,sc,t,head,opt={}){const p=dummies[body+(opt.fly?'
  Object.assign(p,{body,facing:opt.facing||1,gsp:opt.gsp||0,xsp:opt.gsp||0,ground:!opt.fly,fly:opt.fly?100:0,ysp:0,canFly:body==='fox',dead:0,lives:3});
  x.save();x.translate(fx,fy);x.scale(sc,sc);x.imageSmoothingEnabled=false;R.drawRunner(x,p,i,t,head);x.restore();}
 
+// a 16:9 backdrop on any screen (owner: zoomed in and cropped on the Fold): drawn at least 62% of the screen tall and
+// otherwise as wide as the screen allows, so far more of the picture shows; the strips it leaves above/below are filled
+// with the picture's own top/bottom edge colour. anchor 'bottom' keeps the ground at the bottom (title), else centred.
+const edgeCols=new WeakMap();
+function edgeColours(img){let e=edgeCols.get(img);if(e)return e;e=['#1b2d9a','#0a1150'];try{const c=document.createElement('canvas');c.width=1;c.height=2;const g=c.getContext('2d');
+ g.drawImage(img,0,0,img.width,6,0,0,1,1);g.drawImage(img,0,img.height-6,img.width,6,0,1,1,1);const d=g.getImageData(0,0,1,2).data;e=[`rgb(${d[0]},${d[1]},${d[2]})`,`rgb(${d[4]},${d[5]},${d[6]})`];}catch{}edgeCols.set(img,e);return e;}
+function fitBg(x,img,W,H,anchor){const s=Math.max(W/img.width,H*.62/img.height),dw=img.width*s,dh=img.height*s,dx=(W-dw)/2,dy=anchor==='bottom'?H-dh:(H-dh)/2;
+ const [top,bot]=edgeColours(img);if(dy>0){x.fillStyle=top;x.fillRect(0,0,W,Math.ceil(dy)+1);}if(dy+dh<H){x.fillStyle=bot;x.fillRect(0,Math.floor(dy+dh)-1,W,H-dy-dh+2);}
+ x.save();x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(img,dx,dy,dw,dh);x.restore();}
 // ---------------- the title screen. t = seconds since it opened
 const backdrop=new R.Backdrop();
 function scene(x,W,H,t,u){const bg=SP.picture('title-bg');
- if(bg){const s=Math.max(W/bg.width,H/bg.height);x.drawImage(bg,(W-bg.width*s)/2,(H-bg.height*s)/2,bg.width*s,bg.height*s);return;}
+ if(bg){fitBg(x,bg,W,H,'bottom');return;}
  const k=Math.max(u,H/400),vh=H/k;backdrop.draw(x,{W,H,k,vh,x:t*48,y:-vh*.18},t,0);}
 function drawTitle(x,W,H,t,{head,i=0,foxI=1,mode='1 PLAYER',tap=true}){const u=Math.min(W/320,H/224);x.save();
  scene(x,W,H,t,u);
@@ -82,7 +91,7 @@ function selectLayout(W,H){const tall=H>W*1.1,m=Math.min(W,H),hh=m*.11,hy=m*.04+
  return {tall,m,hh,hy,mw,mh,cx,cy,scr,ph,doesY,tapY,arrowL:[cx-mw*.5-m*.08,cy],arrowR:[cx+mw*.5+m*.08,cy],plateY};}
 function drawSelect(x,W,H,t,{pick,slide=0,head,i=0}){const L=selectLayout(W,H),u=Math.min(W/320,H/224),m=Math.min(W,H);x.save();
  const bg=SP.picture('select-bg');
- if(bg){const s=Math.max(W/bg.width,H/bg.height);x.drawImage(bg,(W-bg.width*s)/2,(H-bg.height*s)/2,bg.width*s,bg.height*s);}
+ if(bg)fitBg(x,bg,W,H,'centre');
  else{let g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#1b2d9a');g.addColorStop(1,'#0a1150');x.fillStyle=g;x.fillRect(0,0,W,H);
   // slanted stripes drifting, like the Mega Drive menus
   x.save();x.globalAlpha=.16;x.fillStyle='#6fb4ff';const st=m*.09,off=(t*m*.06)%(st*2);x.translate(-H,0);
@@ -127,5 +136,7 @@ function drawSelect(x,W,H,t,{pick,slide=0,head,i=0}){const L=selectLayout(W,H),u
  x.restore();}
 // what a tap on the select screen means: 'prev', 'next', 'go' (the monitor or the name plate) or null
 function selectHit(W,H,px,py){const L=selectLayout(W,H),m=Math.min(W,H),near=(a,r)=>Math.hypot(px-a[0],py-a[1])<r;
- if(near(L.arrowL,m*.11)||px<L.cx-L.mw*.5)return 'prev';if(near(L.arrowR,m*.11)||px>L.cx+L.mw*.5)return 'next';return 'go';}
-Object.assign(exports,{CHARS,drawTitle,drawSelect,selectHit});
+ // only the arrows change the runner; a tap anywhere else (the monitor, the name plate...) picks it (owner)
+ if(near(L.arrowL,m*.12))return 'prev';if(near(L.arrowR,m*.12))return 'next';return 'go';}
+const selectArrows=(W,H)=>{const L=selectLayout(W,H);return {left:L.arrowL,right:L.arrowR};};
+Object.assign(exports,{CHARS,drawTitle,drawSelect,selectHit,selectArrows});

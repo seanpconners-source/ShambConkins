@@ -18,8 +18,8 @@ for(const [w,h] of [[390,780],[844,390],[1100,700]]){const tag=`${w}x${h}`;
  check(st.phase==='select',`${tag}: a tap opens the character select (${st.phase})`);
  check(st.music.want==='data-select',`${tag}: Data Select song (${st.music.want})`);
  await page.screenshot({path:`${SHOTS}/intro-${tag}-select-hog.png`});
- // the right arrow: tap near the right edge of the monitor row
- await page.mouse.click(w-Math.min(w,h)*.04,h*.45);await page.waitForTimeout(700);st=await D();
+ // the right arrow: tap it (only the arrows change the runner; anywhere else picks it)
+ {const a=await J(()=>window.ShambConkins.store.session.debug.arrows());await page.mouse.click(a.right[0],a.right[1]);}await page.waitForTimeout(700);st=await D();
  check(st.pick===1,`${tag}: the right arrow picks the fox (${st.pick})`);
  await page.screenshot({path:`${SHOTS}/intro-${tag}-select-fox.png`});
  // a swipe changes it back and forth

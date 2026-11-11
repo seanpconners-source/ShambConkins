@@ -117,7 +117,8 @@ function airStep(p,inp,T){
  const S=st(p);
  // the second press in a jump: the shield's move, or the insta-shield without one (Sonic 3 & Knuckles)
  // the fox (p.canFly): a second press with no shield starts flying: slow sink, hold jump to climb, 5.5 s then tired
- if(p.canFly&&!p.shield&&inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt){p.ability=true;p.fly=330;p.jumping=false;p.rolling=false;p.y-=C.hr-C.hrRoll;p.ev.push('fly');}
+ // (like Sonic 3's Tails the fox has no shield moves: with any shield the second press still flies; owner: no fly with a bubble)
+ if(p.canFly&&inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt){p.ability=true;p.fly=330;p.jumping=false;p.rolling=false;p.y-=C.hr-C.hrRoll;p.ev.push('fly');}
  else if(inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt&&p.star===0){p.ability=true;
   if(p.shield==='fire'){p.xsp=8*p.facing;p.ysp=0;p.ev.push('fire-dash');}
   else if(p.shield==='lightning'){p.ysp=-5.5;p.ev.push('lightning-jump');}

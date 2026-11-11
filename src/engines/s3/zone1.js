@@ -40,7 +40,11 @@ function buildTerrain(){const T=new Terrain(W,H);
  T.poly(rect(4800,LOW-40,4960,LOW+2));T.poly(rect(4880,LOW-76,4960,LOW-38));T.poly(rect(5900,LOW-40,6060,LOW+2));
  for(const [cx,fy] of LOOPS){const cy=fy-R;
   T.poly([...arc(cx,cy,R+BAND,-Math.PI/2,Math.PI/2),...arc(cx,cy,R,Math.PI/2,-Math.PI/2)],'a');
-  T.poly([...arc(cx,cy,R+BAND,Math.PI/2,Math.PI*1.5),...arc(cx,cy,R,Math.PI*1.5,Math.PI/2)],'b');}
+  T.poly([...arc(cx,cy,R+BAND,Math.PI/2,Math.PI*1.5),...arc(cx,cy,R,Math.PI*1.5,Math.PI/2)],'b');
+  // the loop's feet (owner: the bases looked silly): solid ground flaring out of the band, on the same collision path as
+  // that half (exit foot = path A like the right half, entrance foot = path B), so the runner passes them exactly as it
+  // passes the band; painted by the terrain art like any ground
+  T.poly(footPoly(cx,fy,1),'a');T.poly(footPoly(cx,fy,-1),'b');}
  const ledge=(x0,x1,y)=>{T.poly(rect(x0,y,x1,y+16),'top');LEDGES.push([x0,x1,y]);};LEDGES.length=0;
  ledge(2180,2270,LG-70);ledge(9280,9370,G-70);// the steps with the red springs
  ledge(2960,3400,P-220);ledge(3560,3860,P-400);// high ledges over plateau 1
@@ -119,8 +123,20 @@ const groundProps=()=>{const o=[];let r=4242;const rnd=()=>(r=(r*16807)%21474836
 // scenery standing on the ground keeps clear of the ledges built with rock under them (towers and legs): a palm at the
 // start stood in the stairs' rock with the ledge tops drawn over it (owner, Nov 11: "looks bad")
 const clearOfRock=x=>!LEDGES.some(([x0,x1,y])=>{const tall=Math.max(gy(x0+8),gy(x1-8))-y;return tall>=60&&x>x0-70&&x<x1+70;});
+// a loop foot's outline: up the band's outer edge from the ground to ~30° below level, then a fillet (steep at the loop,
+// flattening out) down to the ground FOOT px further out, closed along the ground
+const FOOT=40;
+function footPoly(cx,fy,s){const cy=fy-R,RB=R+BAND,ac=Math.asin(Math.min(1,R/RB)),a0=s>0?ac:Math.PI-ac,a1=s>0?Math.PI*.17:Math.PI*.83,pts=[];
+ for(let k=0;k<=12;k++){const a=a0+(a1-a0)*k/12;pts.push([cx+Math.cos(a)*RB,cy+Math.sin(a)*RB]);}
+ const [tx,ty]=pts[pts.length-1],ex=tx+s*FOOT,qx=tx+s*FOOT*.12;for(let k=1;k<=10;k++){const u=k/10;pts.push([(1-u)*(1-u)*tx+2*(1-u)*u*qx+u*u*ex,(1-u)*(1-u)*ty+2*(1-u)*u*fy+u*u*fy]);}
+ pts.push([ex,fy+4],[pts[0][0],fy+4]);return pts;}
+// exit feet are redrawn over the runner (with the band's lower right quarter; sonic3.js loopFronts)
+const loopFeet=()=>LOOPS.map(([cx,fy])=>({type:'loopfoot',cx,cy:fy-R,R,B:BAND,fy,side:1,poly:footPoly(cx,fy,1),over:true,x:cx,w:R+BAND+FOOT+20}));
 const decor=()=>[
- ...[180,460,1080,1700,2800,3300,4700,5400,5900,7600,8050,9100,9900,10700,11400,13650,14000,14450,16000,17600,18100,18500].filter(clearOfRock).map(x=>({type:'palm',x,y:gy(x)+2})),
+ ...loopFeet(),
+ ...[180,460,1080,1700,2800,3300,4700,5400,5900,7600,8050,9100,9900,10700,11400,13650,14000,14450,16000,17600,18100,18500].filter(clearOfRock).map((x,k)=>{const h=(x*7919+k*104729)%997;// a fixed little hash per tree: mirror + size (owner: repetitive)
+  // on a slope the trunk stands on the LOWER side, so its cut-off base never shows above the ground (owner)
+  return {type:'palm',x,y:Math.max(gy(x-14),gy(x+14))+5,flip:h%2===1,s:.84+(h%33)/100,alt:h%3===0};}),// alt = the second palm (palm-2) once it's in
  ...groundProps().filter(o=>clearOfRock(o.x)),{type:'bridge',x0:3900,x1:4500,y:P,x:3900,w:600,front:true},{type:'bridge',x0:13000,x1:13500,y:G,x:13000,w:500,front:true},
  // ledges come three ways: a floating chunk, a tower of rock down to the ground, or a long shelf on rock legs
  ...LEDGES.flatMap(([x0,x1,y],k)=>{const w=x1-x0,ground=Math.max(gy(x0+8),gy((x0+x1)/2),gy(x1-8)),tall=ground-y,kind=w>=500?'legs':w>=280||k%2?'tower':'float';

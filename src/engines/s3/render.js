@@ -123,7 +123,11 @@ class Backdrop{
   const hz=Math.round((cam.vh*.42-(cam.y-camRef)*.15)*k);
   const pic=n=>SP.picture(n),sky=pic('jungle-sky'),cl=pic('jungle-clouds'),isl=pic('jungle-island'),sea=pic('jungle-sea'),far=pic('jungle-far'),near=pic('jungle-near');
   if(sky&&cl&&isl&&sea&&far&&near){const sm=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;
-   const rep2=(im,f,yTop,h,drift=0)=>{const w=im.width/2*k*(h?h/(im.height/2*k):1),hh=h||im.height/2*k;if(yTop>H||yTop+hh<0)return;let ox=-((cam.x*f+drift)*k)%w;if(ox>0)ox-=w;for(let xx=ox;xx<W;xx+=w)x.drawImage(im,Math.round(xx),Math.round(yTop),Math.ceil(w)+1,Math.ceil(hh)+1);};
+   // every other tile is drawn mirrored (owner's idea): a mirrored copy always meets the tile beside it exactly, so the
+   // mountains/trees no longer jump at the seams where the art's left and right edges didn't match
+   const rep2=(im,f,yTop,h,drift=0)=>{const w=im.width/2*k*(h?h/(im.height/2*k):1),hh=h||im.height/2*k;if(yTop>H||yTop+hh<0)return;
+    const start=(cam.x*f+drift)*k,i0=Math.floor(start/w),W1=Math.ceil(w)+1,H1=Math.ceil(hh)+1,Y=Math.round(yTop);
+    for(let i=i0,xx=i0*w-start;xx<W;i++,xx+=w){const X=Math.round(xx);if(i&1){x.save();x.translate(X+W1-1,Y);x.scale(-1,1);x.drawImage(im,0,0,W1,H1);x.restore();}else x.drawImage(im,X,Y,W1,H1);}};
    const skyW=sky.width/2*k;if(hz>0){let ox=-((cam.x*.02)*k)%skyW;if(ox>0)ox-=skyW;for(let xx=ox;xx<W;xx+=skyW)x.drawImage(sky,Math.round(xx),0,Math.ceil(skyW)+1,hz+1);}
    rep2(cl,.04,hz-150*k,0,t*6);rep2(isl,.12,hz-isl.height/2*k+2*k);
    const jb=hz+110*k;if(hz<H){const sh=sea.height/2*k;for(let yy=hz,r=0;yy<jb;yy+=sh-1,r++)rep2(sea,.16+r*.04,yy,0,t*(4+r*2));
@@ -180,7 +184,25 @@ function drawDecor(x,d,t){
  if(d.type==='waterfall'){x.fillStyle='#3a8af0';x.fillRect(d.x,d.y,d.w,d.h);const o=(t*220)%32;
   for(let c=0;c<d.w;c+=8){x.fillStyle=c/8%2?'rgba(170,220,255,.9)':'rgba(255,255,255,.75)';for(let yy=d.y-32+(o+c*5)%32;yy<d.y+d.h;yy+=32){const y0=Math.max(d.y,yy),y1=Math.min(d.y+d.h,yy+18);if(y1>y0)x.fillRect(d.x+c+1,y0,5,y1-y0);}}
   x.fillStyle='rgba(255,255,255,.9)';for(let k=0;k<5;k++)x.beginPath(),x.arc(d.x+d.w*(k+.5)/5+Math.sin(t*9+k)*3,d.y+d.h-3,6+Math.sin(t*12+k*2)*2,0,7),x.fill();return;}
- if(d.type==='palm'&&pic(x,'palm',d.x,d.y+3,.5,1))return;
+ // a loop's foot (owner: the bases looked silly): solid soil flaring from the loop's outer band down into the ground, with a
+ // grass edge, like the Mega Drive loops. side -1 = the entrance foot (drawn behind the runner), +1 = the exit foot (over)
+ if(d.type==='loopfoot'&&d.poly)return;// terrain feet are painted with the ground (sonic3.js redraws the exit one over the runner)
+ if(d.type==='loopfoot'){const {cx,cy,R,B,fy}=d,s=d.side,F=d.F||42,RB=R+B,n=14;
+  // only above the ground line: from where the band's outer edge meets the ground, up the band to a1, then a curved fillet
+  // (steep at the loop, flattening out) down to the ground F px out
+  const ac=Math.asin(Math.min(1,(fy-cy)/RB)),a0=s>0?ac:Math.PI-ac,a1=s>0?Math.PI*.17:Math.PI*.83;
+  const tx=cx+Math.cos(a1)*RB,ty=cy+Math.sin(a1)*RB,ex=tx+s*F,qx=tx+s*F*.12,qy=fy;
+  const path=()=>{x.beginPath();for(let k=0;k<=n;k++){const a=a0+(a1-a0)*k/n,px=cx+Math.cos(a)*RB,py=cy+Math.sin(a)*RB;k?x.lineTo(px,py):x.moveTo(px,py);}x.quadraticCurveTo(qx,qy,ex,fy+1);x.closePath();};
+  x.save();path();const soil=SP.picture('jungle-soil');if(soil){const pat=x.createPattern(soil,'repeat');try{pat.setTransform(new DOMMatrix().scale(.5));}catch{}x.fillStyle=pat;}else x.fillStyle='#c8692a';x.fill();
+  // shade toward the loop so the foot reads as a solid block standing in front
+  const g=x.createLinearGradient(tx,0,ex,0);g.addColorStop(0,'rgba(50,15,0,.28)');g.addColorStop(1,'rgba(50,15,0,0)');x.fillStyle=g;x.fill();
+  // grass along the fillet: a dark rim, a light band, then blades sticking up
+  x.lineCap='round';x.lineJoin='round';x.beginPath();x.moveTo(tx,ty);x.quadraticCurveTo(qx,qy,ex,fy);x.strokeStyle='#1b5a0c';x.lineWidth=9;x.stroke();x.strokeStyle='#4caf22';x.lineWidth=6;x.stroke();x.strokeStyle='#8ee04a';x.lineWidth=2;x.stroke();
+  x.fillStyle='#4caf22';x.strokeStyle='#1b5a0c';x.lineWidth=1;for(let k=1;k<10;k++){const u=k/10,bx=(1-u)*(1-u)*tx+2*(1-u)*u*qx+u*u*ex,by=(1-u)*(1-u)*ty+2*(1-u)*u*qy+u*u*fy;
+   x.beginPath();x.moveTo(bx-2.5,by+1);x.lineTo(bx+s*1.5,by-6-(k%3)*1.5);x.lineTo(bx+2.5,by+1);x.closePath();x.fill();x.stroke();}
+  x.restore();return;}
+ // palms vary (owner: repetitive): mirrored and a little bigger/smaller per tree (d.flip, d.s set by the zone)
+ if(d.type==='palm'&&SP.picture('palm')){const nm=d.alt&&SP.picture('palm-2')?'palm-2':'palm',im=SP.picture(nm),s=d.s||1;pic(x,nm,d.x,d.y+3,.5,1,{w:im.width/2*s,h:im.height/2*s,flip:!!d.flip});return;}
  if(d.type==='palm'){x.fillStyle='#8a5a2a';x.fillRect(d.x-3,d.y-70,6,70);x.fillStyle='#5a3a1a';for(let k=0;k<7;k++)x.fillRect(d.x-3,d.y-66+k*10,6,2);
   x.fillStyle='#2e9a2c';for(let k=0;k<6;k++){const a=-Math.PI/2+(k-2.5)*.55+Math.sin(t*1.5+d.x)*.04;x.save();x.translate(d.x,d.y-70);x.rotate(a);x.beginPath();x.ellipse(18,0,20,5,0,0,7);x.fill();x.restore();}
   x.fillStyle='#58c428';for(let k=0;k<6;k++){const a=-Math.PI/2+(k-2.5)*.55;x.save();x.translate(d.x,d.y-70);x.rotate(a);x.beginPath();x.ellipse(16,-1,15,2.5,0,0,7);x.fill();x.restore();}return;}
@@ -193,7 +215,10 @@ function drawObject(x,o,t,ctx){
  switch(o.type){
  case 'ring':if(!o.got&&!spr(x,'ring','spin',t*10+o.x*.013,o.x,o.y))ringPath(x,o.x,o.y,7,t*4+o.x*.01);return;
  case 'spring':{if(SP.sheet('spring')){const diag=['ur','ul','dr','dl'].includes(o.dir),row=(o.color==='red'?'red':'yellow')+(diag?'Diag':''),side=o.dir==='left'||o.dir==='right',h=side?o.w:o.h;
-   x.save();x.translate(o.x,o.y);x.rotate((ROT[o.dir]||0)-(diag?Math.PI/4:0));spr(x,'spring',row,o.pop>5?0:o.pop>0?1:2,0,h/2);x.restore();return;}
+   // owner: a spring stands tall, squashes as you land on it, then shoots back up (sheet: frame 0 tall, 1 half, 2 squashed).
+   // o.pop counts 10 -> 0 after a launch: squash (10-8), half (7-6), overshoot tall (5-1), tall at rest
+   const pf=o.pop>7?2:o.pop>5?1:0,over=o.pop>0&&o.pop<=5?1+.12*Math.sin((5-o.pop)/5*Math.PI):1;
+   x.save();x.translate(o.x,o.y);x.rotate((ROT[o.dir]||0)-(diag?Math.PI/4:0));x.translate(0,h/2);x.scale(1,over);spr(x,'spring',row,pf,0,0);x.restore();return;}
   const c=o.color==='red'?['#e83030','#901818']:['#ffd828','#b08000'];const side=o.dir==='left'||o.dir==='right';const len=side?o.h:o.w;x.save();x.translate(o.x,o.y);x.rotate(ROT[o.dir]||0);
   const ext=o.pop>0?8*Math.sin(o.pop/10*Math.PI):0,h=side?o.w:o.h;// base at +h/2, plate at -h/2 - ext
   x.fillStyle='#5a5a66';x.fillRect(-len/2,h/2-4,len,4);x.strokeStyle='#c8c8d8';x.lineWidth=2;x.beginPath();for(let k=0;k<4;k++){const yy=h/2-4-(k+.5)*(h-4+ext)/4;x.moveTo(-len*.3,yy);x.lineTo(len*.3,yy);}x.stroke();
@@ -209,7 +234,7 @@ function drawObject(x,o,t,ctx){
   const by=o.bump>0?-Math.sin(o.bump/8*Math.PI)*3:0;x.save();x.translate(0,by);x.fillStyle='#2c2c34';x.fillRect(x0,y0,w,h);x.fillStyle='#b8b8c8';x.fillRect(x0+2,y0+2,w-4,h-8);x.fillStyle='#1a1a22';x.fillRect(x0+4,y0+4,w-8,h-13);
   x.save();x.beginPath();x.rect(x0+4,y0+4,w-8,h-13);x.clip();if(((t*30)|0)%9<7)monitorIcon(x,o.item,o.x,y0+4+(h-13)/2,ctx,null);else{x.fillStyle='#fff';for(let k=0;k<6;k++)x.fillRect(x0+4,y0+5+k*3,w-8,1);}x.restore();
   x.fillStyle='#606070';x.fillRect(x0+6,y0+h-5,4,5);x.fillRect(x0+w-10,y0+h-5,4,5);x.restore();return;}
- case 'badnik':if(o.alive)drawBadnik(x,o,t);return;
+ case 'badnik':if(o.alive||o.kind==='thrower')drawBadnik(x,o,t);return;
  case 'starpost':{if(spr(x,'starpost',o.lit?'lit':o.spin>0?'spin':'idle',o.lit?(t*4):o.spin>0?(60-o.spin)/3:0,o.x,o.y+24))return;x.fillStyle='#3848a8';x.fillRect(o.x-2,o.y-20,4,44);x.fillStyle='#202030';x.fillRect(o.x-5,o.y+20,10,4);const a=o.spin>0?o.spin*.4:0,bx=o.x+Math.sin(a)*8,by=o.y-22-Math.abs(Math.cos(a))*2;
   x.fillStyle=o.lit?'#ff3030':'#3070ff';x.beginPath();x.arc(bx,by,5,0,7);x.fill();x.fillStyle='rgba(255,255,255,.7)';x.beginPath();x.arc(bx-1.5,by-1.5,1.6,0,7);x.fill();return;}
  case 'wall':{const x0=o.x-o.w/2,y0=o.y-o.h/2;{const tile=SP.picture('jungle-rock');if(tile){x.save();x.beginPath();x.rect(x0,y0,o.w,o.h);x.clip();const sm=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;
@@ -253,9 +278,13 @@ function monitorIcon(x,item,cx,cy,ctx,pi){if(item!=='life'&&spr(x,'icons',ICON[i
  x.restore();}
 function shieldIcon(x,a,b){x.fillStyle=a;x.beginPath();x.arc(0,0,6.5,0,7);x.fill();x.fillStyle=b;x.beginPath();x.arc(-2,-2,2.4,0,7);x.fill();}
 // our own badnik designs (Sonic 3 first-zone kinds: a charger, a tree climber that throws, a plant that spits, a flyer)
+// the monkey robot's tree: a trunk from the ground up past the top of the screen, there whether or not the monkey is
+// (it used to be a 180 px stub drawn with the robot, so it popped in and out and vanished with it)
+function drawTrunk(x,o){if(!SP.picture('tree-trunk'))return;const bot=o.trunkY??o.y0+90;for(let yy=bot-34;yy>o.y0-700;yy-=34)pic(x,'tree-trunk',o.x+12,yy,.5,0);}
 function drawBadnik(x,o,t){
+ if(o.kind==='thrower')drawTrunk(x,o);if(o.alive===false)return;
  if(o.kind==='charger'&&SP.sheet('charger')){const row=o.state==='rev'?'rev':o.state==='charge'?'charge':'roll';spr(x,'charger',row,t*(row==='roll'?8:14),o.x,o.y+o.h,{flip:o.dir<0});return;}
- if(o.kind==='thrower'&&SP.sheet('thrower')){for(let yy=o.y0-90;yy<o.y0+90;yy+=34)pic(x,'tree-trunk',o.x+12,yy,.5,0);const cool=o.cool||0;
+ if(o.kind==='thrower'&&SP.sheet('thrower')){const cool=o.cool||0;
   spr(x,'thrower',cool>100?'throw':Math.abs(Math.cos(o.t/50))>.25?'climb':'idle',cool>100?(120-cool)/5:t*6,o.x-2,o.y,{flip:true});return;}
  if(o.kind==='shooter'&&SP.sheet('shooter')){const c=o.cool||0;spr(x,'shooter',c<14?'spit':c>80?'open':'closed',c<14?c/7:c>80?(c-80)/14:t*3,o.x,o.y+14);return;}
  if(o.kind==='flyer'&&SP.sheet('flyer')){spr(x,'flyer',o.state==='dive'?'dive':'fly',t*16,o.x,o.y,{flip:(o.dir||-1)<0});return;}
@@ -287,7 +316,13 @@ function drawLoose(x,r,t){if(r.animal&&spr(x,'critter',['bird','rabbit','squirre
 // quills, P2 a red-orange fox with three tails (they whirl when it flies), each wearing the player's face
 // sizes (owner, Nov 11): the fox's body was ~14% taller than the hedgehog's on the sheets, so the hedgehog is drawn 10%
 // bigger and the fox 3% smaller (they match); the hedgehog's ball 30% bigger; faces a little bigger than the 32 / 21 before
-const BODY_K={hog:1.1,fox:.97},BALL_K={hog:1.3,fox:1},RUN_HEAD=36,BALL_HEAD=24;
+const BODY_K={hog:1.1,fox:.97},RUN_HEAD=36;
+// curled up: the sheets' roll frames average 32 (hedgehog) / 29 (fox) px across; both are drawn BALL_D across so they match
+// and the face (RUN_HEAD, the same as standing) sits in the ball with a rim of quills/fur round it
+const BALL_D=42,BALL_SRC={hog:32.1,fox:29.3};
+// spin dash dust: puffs kicked out behind the ball
+function spinDust(x,px,py,f,t){x.save();for(let k=0;k<5;k++){const ph=(t*7+k/5)%1,d=8+ph*26,r=3+ph*6;x.globalAlpha=.85*(1-ph);x.fillStyle='#fff';
+ x.beginPath();x.arc(px-f*d,py-ph*10-k%2*3,r,0,7);x.fill();x.strokeStyle='rgba(120,130,160,.55)';x.lineWidth=1;x.stroke();}x.restore();}
 const looks=new WeakMap();
 function lookOf(p){let L=looks.get(p);if(!L){L={spin:0,cyc:0,idle:0,tw:0};looks.set(p,L);}return L;}
 // the angle the body is drawn at: follows the ground angle quickly (so the last degree or two of pixel-staircase noise
@@ -347,16 +382,20 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
  function sprites(){const nm='runner-p'+(tails?2:1),S=SP.sheet(nm),B=SP.sheet('ball-p'+(tails?2:1));if(!S||!B)return false;
   const frame=(Sh,row,fr,dx,dy)=>{const [fw,fh]=Sh.def.frame,ri=Object.keys(Sh.def.rows).indexOf(row),r=Sh.res;x.drawImage(Sh.img,fr*fw*r,ri*fh*r,fw*r,fh*r,dx,dy,fw,fh);};
   const was=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;
-  if(ball&&!p.dead){shieldUnder(x,p,t);const row=p.spindash?'spindash':'roll',n=B.def.rows[row],TAU=Math.PI*2,fr=p.spindash?Math.floor(t*24)%n:Math.floor((((L.spin*f)%TAU)+TAU)%TAU/TAU*n)%n,[bw,bh]=B.def.frame;
-   // the hedgehog's ball drawn bigger (owner); lifted off the surface by the extra size so it still sits on the ground
-   const bk=BALL_K[tails?'fox':'hog'],lift=14*(bk-1),ga=p.ground?p.ang:0;
-   x.save();x.translate(p.x-Math.sin(ga)*lift,p.y-Math.cos(ga)*lift);x.scale(bk,bk);x.save();x.scale(f,1);frame(B,row,fr,-B.def.foot[0],-B.def.foot[1]);x.restore();x.rotate(p.spindash?0:L.spin);head(x,i,0,0,BALL_HEAD,'angry');x.restore();
+  if(ball&&!p.dead){shieldUnder(x,p,t);
+   // the spin dash uses the roll frames spun fast: the sheet's spindash frames have dust painted to the cell edge, which
+   // showed as straight cut lines; the dust is drawn here instead
+   const row='roll',n=B.def.rows[row],TAU=Math.PI*2,fr=p.spindash?Math.floor(t*30)%n:Math.floor((((L.spin*f)%TAU)+TAU)%TAU/TAU*n)%n;
+   // both balls drawn BALL_D across (owner: same size, the face the same as standing); lifted so they sit on the ground
+   const bk=BALL_D/BALL_SRC[tails?'fox':'hog'],lift=BALL_D/2-14,ga=p.ground?p.ang:0,bx=p.x-Math.sin(ga)*lift,by=p.y-Math.cos(ga)*lift;
+   if(p.spindash)spinDust(x,bx,by+BALL_D/2-4,f,t);
+   x.save();x.translate(bx,by);x.save();x.scale(bk*f,bk);frame(B,row,fr,-B.def.foot[0],-B.def.foot[1]);x.restore();x.rotate(p.spindash?0:L.spin);head(x,i,0,0,RUN_HEAD,'angry');x.restore();
    x.imageSmoothingEnabled=was;x.restore();shieldOver(x,p,t);return true;}
   const N=r=>S.def.rows[r]||0,skid=p.ground&&run>1.5&&Math.sign(p.gsp)!==f&&!p.rolling;let row='stand',fr=0;const cyc=(r,v)=>{row=r;fr=Math.floor(v)%N(r);};
   if(p.dead){row='dead';fr=p.dead>24?1:0;}
   else if(p.hang)cyc('hang',t*6);
   else if(p.fly>1&&N('fly'))cyc('fly',t*20);
-  else if(p.fly===1&&N('tired'))cyc('tired',t*5);
+  else if(p.fly===1&&N('fly'))cyc('fly',t*5);// tired: the flying frames, rotor slowed (the sheet's tired row shows three arms; owner)
   else if(p.hurt)cyc('hurt',t*7);
   else if(p.spring){row='spring';fr=1;}
   else if(!p.ground){if(p.ysp>1.5)cyc('fall',t*8);else cyc('walk',L.cyc);}

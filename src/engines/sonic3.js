@@ -193,15 +193,16 @@ async function sonic3(s){
  function draw(t){const W=s.W,H=s.H;if(cam.W!==W||cam.H!==H){cam.resize(W,H);cam.clampIn();}
   x.save();x.imageSmoothingEnabled=false;back.draw(x,cam,t,Z.start.y-cam.vh*FOCUS_Y);
   const k=cam.k,cx=Math.round(cam.x*k)/k,cy=Math.round(cam.y*k)/k,v=cam.view(64);
-  const scenery=front=>{if(!Z.decor)return;x.save();x.scale(k,k);x.translate(-cx,-cy);for(const d of Z.decor)if(!!d.front===front&&(d.box?d.box[0]<v.x1&&d.box[2]>v.x0:d.x<v.x1+80&&d.x+(d.w||0)>v.x0-80))R.drawDecor(x,d,t);x.restore();};
+  const scenery=front=>{if(!Z.decor)return;x.save();x.scale(k,k);x.translate(-cx,-cy);for(const d of Z.decor)if(!d.over&&!!d.front===front&&(d.box?d.box[0]<v.x1&&d.box[2]>v.x0:d.x<v.x1+80&&d.x+(d.w||0)>v.x0-80))R.drawDecor(x,d,t);x.restore();};
   scenery(false);art.draw(x,cam,2);scenery(true);x.restore();
   x.save();x.scale(k,k);x.translate(-cx,-cy);
-  for(const o of w.objs)if(!o.gone||o.type==='monitor'){const ox=o.x??o.x0,oy=o.y??o.y0;if(o.type==='tube')continue;if(o.type!=='zipline'&&(ox<v.x0-80||ox>v.x1+80||oy<v.y0-140||oy>v.y1+140))continue;R.drawObject(x,o,t,{head,me:turns[turn]});}
+  for(const o of w.objs)if(!o.gone||o.type==='monitor'||o.kind==='thrower'){const ox=o.x??o.x0,oy=o.y??o.y0;if(o.type==='tube')continue;if(o.type!=='zipline'&&(ox<v.x0-80||ox>v.x1+80||(o.kind!=='thrower'&&(oy<v.y0-140||oy>v.y1+140))))continue;R.drawObject(x,o,t,{head,me:turns[turn]});}
   for(const r of w.loose)if(r.x>v.x0&&r.x<v.x1)R.drawLoose(x,r,t);
   for(const sh of w.shots)R.drawShot(x,sh,t);
   if(net&&q&&qs)R.drawRunner(x,q,them,t,head);// the partner, behind my runner
   p.x+=vis.x;p.y+=vis.y;R.drawRunner(x,p,turns[turn],t,head);p.x-=vis.x;p.y-=vis.y;
   fx.draw(x);x.restore();
+  loopFronts(k,cx,cy,v);
   if(net&&q&&qs)partnerArrow(s,x,{x:0,y:0,w:W,h:H},(q.x-cx)*k,(q.y-cy)*k,{player:them,color:PCOL[them],label:`${Math.round(Math.abs(q.x-p.x)/16)} m`,size:Math.round(Math.max(16,Math.min(26,k*9)))});
   // HUD
   const i=turns[turn];R.drawHUD(x,W,H,{score:(p.score|0)+(tally?Math.round((tally.time+tally.rings)*Math.min(1,tally.t/(tally.len-80))):0),rings:p.rings},tally?tally.clock:clock,{name:s.players[i].name.toUpperCase(),color:PCOL[i]});
@@ -213,6 +214,15 @@ async function sonic3(s){
   if(net&&phase==='netwait')banner(`WAITING FOR ${s.players[them].name.toUpperCase()}…`,W,H);
   else if(net&&phase==='play'&&!tally&&q?.through&&graceAt!==null)banner(`${s.players[them].name.toUpperCase()} IS THROUGH! ${Math.max(0,Math.ceil(NET_GRACE-(clock-graceAt)/60))}`,W,H);
  }
+ // the exit side of each loop drawn OVER the runner (owner: "an entrance you're in front of and an exit in front of you"):
+ // the lower right quarter of the loop's band (the terrain art again, clipped to that piece of ring) and the exit foot
+ function loopFronts(k,cx,cy,v){if(!Z.decor)return;for(const d of Z.decor){if(!d.over||d.type!=='loopfoot')continue;if(d.cx-d.R-120>v.x1||d.cx+d.R+160<v.x0)continue;
+  const sx=wx=>(wx-cx)*k,sy=wy=>(wy-cy)*k,n=16,a0=-.15,a1=Math.PI/2,ro=d.R+d.B+1,ri=d.R-1;
+  x.save();x.beginPath();for(let j=0;j<=n;j++){const a=a0+(a1-a0)*j/n;const px=sx(d.cx+Math.cos(a)*ro),py=sy(d.cy+Math.sin(a)*ro);j?x.lineTo(px,py):x.moveTo(px,py);}
+  for(let j=n;j>=0;j--){const a=a0+(a1-a0)*j/n;x.lineTo(sx(d.cx+Math.cos(a)*ri),sy(d.cy+Math.sin(a)*ri));}x.closePath();x.clip();art.draw(x,cam,0);x.restore();
+  // the exit foot: its outline raised 10 px along the top (so its grass blades come along), the two ground corners as they are
+  if(d.poly){const m=d.poly.length-2;x.save();x.beginPath();d.poly.forEach(([px,py],j)=>{const Y=sy(j<m?py-10:py),X=sx(px);j?x.lineTo(X,Y):x.moveTo(X,Y);});x.closePath();x.clip();art.draw(x,cam,0);x.restore();}
+  else{x.save();x.scale(k,k);x.translate(-cx,-cy);R.drawDecor(x,d,0);x.restore();}}}
  const FONT='italic 900 %spx "Arial Black",Impact,system-ui,sans-serif';
  function banner(text,W,H){const sz=Math.round(Math.min(W/9,H/7,60));x.save();x.font=FONT.replace('%s',sz);x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';x.lineWidth=Math.max(4,sz*.16);x.strokeStyle='#08103a';x.strokeText(text,W/2,H*.42);x.fillStyle='#fff';x.fillText(text,W/2,H*.42);x.restore();}
  function drawTally(W,H,i){const T=tally.t,sz=Math.round(Math.min(W/16,H/11,34)),k=Math.min(1,Math.max(0,(T-30)/(tally.len-110))),slide=Math.min(1,T/30);x.save();x.font=FONT.replace('%s',sz);x.textBaseline='middle';x.lineJoin='round';x.lineWidth=Math.max(4,sz*.18);x.strokeStyle='#08103a';
@@ -233,7 +243,7 @@ async function sonic3(s){
   get net(){return net?{me,partner:qs?{x:qs.a[0],y:qs.a[1],through:!!(qs.b&512),done:!!(qs.b&4096)}:null,taken:taken?taken.reduce((a,v)=>a+v,0):0,graceAt,phase}:null;},teleport(px,py){Object.assign(p,{x:px,y:py,xsp:0,ysp:0,gsp:0,ground:false});cam.snap(p);},skipCard(){card=100;phase='play';},
   rings(n){p.rings=n;},player(i){turns[turn]=i;p.body=i===1?'fox':'hog';p.canFly=i===1;},chunks:()=>art?.cache.size||0,music:()=>S3.nowPlaying(),seekSong:t=>S3.seekSong(t),SONGS:S3.SONGS,
   // tests: past the title (and the 1P select, picking CHARS[pick]: 0 hedgehog, 1 fox)
-  skipIntro(pick=0){intro.skip={pick};intro.pick=pick;advance();},intro:()=>({phase,pick:intro.pick,t:introT()}),introTap,choose,get body(){return p?.body||null;}};
+  skipIntro(pick=0){intro.skip={pick};intro.pick=pick;advance();},intro:()=>({phase,pick:intro.pick,t:introT()}),arrows:()=>I.selectArrows(s.W,s.H),introTap,choose,get body(){return p?.body||null;}};
  s.frame((dt,t)=>{if(!s.alive)return;if(phase==='title'||phase==='select'){introFrame();return;}if(phase==='idle'||phase==='done')return;
   const now=performance.now();acc+=Math.min(100,now-last);last=now;let n=0,res=null;
   while(acc>=STEP&&n<4&&!res){acc-=STEP;n++;res=stepFrame();}

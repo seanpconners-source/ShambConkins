@@ -45,7 +45,9 @@ function init(o,w){
  if(o.type==='platform'){o.w=o.w||64;o.h=o.h||16;o.solid=true;o.top=true;o.x0=o.x;o.y0=o.y;o.t=0;o.dx=0;o.dy=0;}
  if(o.type==='vine'){o.len=o.len||112;o.t=o.phase||0;o.hx=o.x;o.hy=o.y+o.len;}
  if(o.type==='zipline'){o.s=0;o.v=0;o.hx=o.x0;o.hy=o.y0;}
- if(o.type==='badnik'){o.alive=true;o.x0=o.x;o.y0=o.y;o.t=0;o.dir=o.dir||-1;o.cool=0;o.w=o.w||14;o.h=o.h||14;}
+ if(o.type==='badnik'){o.alive=true;o.x0=o.x;o.y0=o.y;o.t=0;o.dir=o.dir||-1;o.cool=0;o.w=o.w||14;o.h=o.h||14;
+  // the monkey's tree reaches down to the ground under it (drawing only)
+  if(o.kind==='thrower'){let gy=Math.round(o.y0);while(gy<w.T.h&&!w.T.solid(Math.round(o.x+12),gy,'a',true))gy++;o.trunkY=gy+6;}}
  if(o.type==='spring'){o.color=o.color||'yellow';o.dir=o.dir||'up';o.w=o.w||16;o.h=o.h||8;o.pop=0;}
  if(o.type==='spikes'){o.dir=o.dir||'up';o.w=o.w||16;o.h=o.h||16;o.solid=true;}
  if(o.type==='tube'&&o.path)tubePath(o);
