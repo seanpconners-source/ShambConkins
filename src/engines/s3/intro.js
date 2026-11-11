@@ -41,19 +41,33 @@ function runner(x,body,i,fx,fy,sc,t,head,opt={}){const p=dummies[body+(opt.fly?'
 const edgeCols=new WeakMap();
 function edgeColours(img){let e=edgeCols.get(img);if(e)return e;e=['#1b2d9a','#0a1150'];try{const c=document.createElement('canvas');c.width=1;c.height=2;const g=c.getContext('2d');
  g.drawImage(img,0,0,img.width,6,0,0,1,1);g.drawImage(img,0,img.height-6,img.width,6,0,1,1,1);const d=g.getImageData(0,0,1,2).data;e=[`rgb(${d[0]},${d[1]},${d[2]})`,`rgb(${d[4]},${d[5]},${d[6]})`];}catch{}edgeCols.set(img,e);return e;}
-function fitBg(x,img,W,H,anchor){const s=Math.max(W/img.width,H*.62/img.height),dw=img.width*s,dh=img.height*s,dx=(W-dw)/2,dy=anchor==='bottom'?H-dh:(H-dh)/2;
- const [top,bot]=edgeColours(img);if(dy>0){x.fillStyle=top;x.fillRect(0,0,W,Math.ceil(dy)+1);}if(dy+dh<H){x.fillStyle=bot;x.fillRect(0,Math.floor(dy+dh)-1,W,H-dy-dh+2);}
- x.save();x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(img,dx,dy,dw,dh);x.restore();}
+// a backdrop picture on any screen. 'cover' = fills the screen (sides or top/bottom cut off: for patterns like the select
+// backdrop); 'sky' = anchored at the bottom, at least 66% of the height, and on taller screens a sky carries on above it:
+// a gradient from deep blue into the picture's own top colour, the picture's top edge feathered into it, pixel clouds
+// drifting over the join (owner, Nov 11: a flat blue block with a hard seam over the title looked bad on tall phones)
+function fitBg(x,img,W,H,mode,t=0){const s=mode==='cover'?Math.max(W/img.width,H/img.height):Math.max(W/img.width,H*.66/img.height),dw=img.width*s,dh=img.height*s,dx=(W-dw)/2,dy=mode==='cover'?(H-dh)/2:H-dh;
+ x.save();x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(img,dx,dy,dw,dh);
+ if(dy>0){const [top]=edgeColours(img),fe=Math.min(dh*.14,dy*.8+20),y1=dy+fe;
+  const g=x.createLinearGradient(0,0,0,y1);g.addColorStop(0,'#0a1e8c');g.addColorStop(Math.max(.05,dy/y1*.55),mix(top,'#0a1e8c',.45));g.addColorStop(dy/y1,top);g.addColorStop(1,rgba(top,0));
+  x.fillStyle=g;x.fillRect(0,0,W,y1+1);
+  const cl=SP.picture('jungle-clouds');
+  if(cl){const ch=Math.max(18,Math.min(dw*.09,dy*.5)),cw=ch*cl.width/cl.height;// two rows: a big slow one over the join, a small faster one higher up
+   for(const [yy,hh,sp,al] of [[dy+fe*.35-ch*.75,ch,6,.95],[dy*.35-ch*.3,ch*.62,11,.5]]){if(yy+hh<0)continue;x.globalAlpha=al;const off=((t*sp*ch/40)%cw+cw)%cw;
+    for(let xx=-off;xx<W;xx+=cw-1)x.drawImage(cl,xx,yy,cw,hh);}x.globalAlpha=1;}}
+ x.restore();}
+const rgbOf=c=>{const m=/rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c);if(m)return [+m[1],+m[2],+m[3]];const n=parseInt(c.slice(1),16);return [n>>16,n>>8&255,n&255];};
+const rgba=(c,a)=>{const [r,g,b]=rgbOf(c);return `rgba(${r},${g},${b},${a})`;};
+const mix=(a,b,k)=>{const A=rgbOf(a),B=rgbOf(b);return `rgb(${A.map((v,i)=>Math.round(v+(B[i]-v)*k)).join(',')})`;};
 // ---------------- the title screen. t = seconds since it opened
 const backdrop=new R.Backdrop();
 function scene(x,W,H,t,u){const bg=SP.picture('title-bg');
- if(bg){fitBg(x,bg,W,H,'bottom');return;}
+ if(bg){fitBg(x,bg,W,H,'sky',t);return;}
  const k=Math.max(u,H/400),vh=H/k;backdrop.draw(x,{W,H,k,vh,x:t*48,y:-vh*.18},t,0);}
 function drawTitle(x,W,H,t,{head,i=0,foxI=1,mode='1 PLAYER',tap=true}){const u=Math.min(W/320,H/224);x.save();
  scene(x,W,H,t,u);
  // a soft vignette so the logo pops
  const g=x.createRadialGradient(W/2,H*.45,Math.min(W,H)*.2,W/2,H*.45,Math.max(W,H)*.75);g.addColorStop(0,'rgba(0,0,40,0)');g.addColorStop(1,'rgba(0,0,40,.45)');x.fillStyle=g;x.fillRect(0,0,W,H);
- const logo=logoPic(),lr=logo?logo.width/logo.height:2.12,lw=Math.min(W*.88,H*1.25,H*(W>H?.4:.3)*lr),lh=logo?lw*logo.height/logo.width:lw*.47,cx=W/2,cy=H*(W>H?.54:.44);
+ const logo=logoPic(),lr=logo?logo.width/logo.height:2.12,lw=Math.min(W*.88,H*1.25,H*(W>H?.4:.3)*lr),lh=logo?lw*logo.height/logo.width:lw*.47,cx=W/2,cy=H*(W>H?(H<480?.5:.54):.44);
  // the hedgehog (player 1's face) rises up behind the logo, the fox (player 2's: the other player, the CPU or the online
  // friend) pops up beside him a moment later, like the Sonic 2 title
  if(t>.75){const top=cy-lh*.5,h=lh*1.15;x.save();x.beginPath();x.rect(0,0,W,cy+lh*.1);x.clip();
@@ -74,9 +88,10 @@ function drawTitle(x,W,H,t,{head,i=0,foxI=1,mode='1 PLAYER',tap=true}){const u=M
  if(t>.7)for(let k=0;k<3;k++){const ph=(t*1.3+k*.37)%1.6;if(ph<.4){const a=Math.sin(ph/.4*Math.PI),sx=cx+(((k*97+Math.floor((t*1.3+k*.37)/1.6)*53)%100)/100-.5)*lw*.8,sy=cy+(((k*61+Math.floor((t*1.3+k*.37)/1.6)*29)%100)/100-.5)*lh*.6,r=lh*.08*a;
   x.fillStyle=`rgba(255,255,255,${a})`;x.beginPath();x.moveTo(sx,sy-r);x.lineTo(sx+r*.22,sy-r*.22);x.lineTo(sx+r,sy);x.lineTo(sx+r*.22,sy+r*.22);x.lineTo(sx,sy+r);x.lineTo(sx-r*.22,sy+r*.22);x.lineTo(sx-r,sy);x.lineTo(sx-r*.22,sy-r*.22);x.fill();}}
  // TAP TO START + mode
- const sz=Math.min(W/14,H/12,40);
- if(tap&&t>1.4&&Math.floor(t*2.2)%3!==2)text(x,'TAP TO START',cx,H*(W>H?.84:.8),sz,'#ffe23a');
- if(t>1.4)text(x,mode,cx,H*(W>H?.84:.8)+sz*1.25,sz*.55,'#fff');
+ // the mode line must end above the copyright line (they ran into each other on short landscape screens)
+ const sz=Math.min(W/14,H/12,40),tapY=Math.min(H*(W>H?.84:.8),H-sz*2.45);
+ if(tap&&t>1.4&&Math.floor(t*2.2)%3!==2)text(x,'TAP TO START',cx,tapY,sz,'#ffe23a');
+ if(t>1.4)text(x,mode,cx,tapY+sz*1.2,sz*.55,'#fff');
  text(x,'© 2026 SHAMBCONKINS',cx,H-sz*.6,sz*.36,'rgba(255,255,255,.85)','center','rgba(8,16,58,.8)');
  // white flash at the start
  if(t<.45){x.fillStyle=`rgba(255,255,255,${1-t/.45})`;x.fillRect(0,0,W,H);}
@@ -91,7 +106,7 @@ function selectLayout(W,H){const tall=H>W*1.1,m=Math.min(W,H),hh=m*.11,hy=m*.04+
  return {tall,m,hh,hy,mw,mh,cx,cy,scr,ph,doesY,tapY,arrowL:[cx-mw*.5-m*.08,cy],arrowR:[cx+mw*.5+m*.08,cy],plateY};}
 function drawSelect(x,W,H,t,{pick,slide=0,head,i=0}){const L=selectLayout(W,H),u=Math.min(W/320,H/224),m=Math.min(W,H);x.save();
  const bg=SP.picture('select-bg');
- if(bg)fitBg(x,bg,W,H,'centre');
+ if(bg)fitBg(x,bg,W,H,'cover',t);
  else{let g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#1b2d9a');g.addColorStop(1,'#0a1150');x.fillStyle=g;x.fillRect(0,0,W,H);
   // slanted stripes drifting, like the Mega Drive menus
   x.save();x.globalAlpha=.16;x.fillStyle='#6fb4ff';const st=m*.09,off=(t*m*.06)%(st*2);x.translate(-H,0);

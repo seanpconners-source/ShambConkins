@@ -221,6 +221,9 @@ async function sonic3(s){
   x.save();x.beginPath();for(let j=0;j<=n;j++){const a=a0+(a1-a0)*j/n;const px=sx(d.cx+Math.cos(a)*ro),py=sy(d.cy+Math.sin(a)*ro);j?x.lineTo(px,py):x.moveTo(px,py);}
   for(let j=n;j>=0;j--){const a=a0+(a1-a0)*j/n;x.lineTo(sx(d.cx+Math.cos(a)*ri),sy(d.cy+Math.sin(a)*ri));}x.closePath();x.clip();art.draw(x,cam,0);x.restore();
   // the exit foot: its outline raised 10 px along the top (so its grass blades come along), the two ground corners as they are
+  // the entrance side (owner, Nov 11): flat ground in FRONT of the runner from the outer end of the entrance foot to the
+  // bottom of the loop (where the exit quarter above takes over), so the ground reads as carrying on in front of the foot
+  x.save();x.scale(k,k);x.translate(-cx,-cy);R.frontGrass(x,d.cx-(d.R+d.B+44),d.cx+2,d.fy);x.restore();
   if(d.poly){const m=d.poly.length-2;x.save();x.beginPath();d.poly.forEach(([px,py],j)=>{const Y=sy(j<m?py-10:py),X=sx(px);j?x.lineTo(X,Y):x.moveTo(X,Y);});x.closePath();x.clip();art.draw(x,cam,0);x.restore();}
   else{x.save();x.scale(k,k);x.translate(-cx,-cy);R.drawDecor(x,d,0);x.restore();}}}
  const FONT='italic 900 %spx "Arial Black",Impact,system-ui,sans-serif';

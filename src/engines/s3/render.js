@@ -314,12 +314,14 @@ function drawLoose(x,r,t){if(r.animal&&spr(x,'critter',['bird','rabbit','squirre
 
 // ---------------- the runners (our own designs, as in the sprite kit): P1 a blue-purple hedgehog with a mane of back
 // quills, P2 a red-orange fox with three tails (they whirl when it flies), each wearing the player's face
-// sizes (owner, Nov 11): the fox's body was ~14% taller than the hedgehog's on the sheets, so the hedgehog is drawn 10%
-// bigger and the fox 3% smaller (they match); the hedgehog's ball 30% bigger; faces a little bigger than the 32 / 21 before
-const BODY_K={hog:1.1,fox:.97},RUN_HEAD=36;
-// curled up: the sheets' roll frames average 32 (hedgehog) / 29 (fox) px across; both are drawn BALL_D across so they match
-// and the face (RUN_HEAD, the same as standing) sits in the ball with a rim of quills/fur round it
-const BALL_D=42,BALL_SRC={hog:32.1,fox:29.3};
+// sizes (owner, Nov 11 night): hedgehog 5% smaller than the 1.1 before; the fox read bigger (ears + three tails add
+// bulk; the hedgehog's quills add height), so it comes down the same way: both sheets put the face spot at the same height
+// above the feet (38.0 / 38.2 of 80), so these numbers are directly comparable (tools/sonic3/runner-sizes.py prints them)
+const BODY_K={hog:1.045,fox:.92},RUN_HEAD=36;
+// curled up: matched by FILLED AREA, not outline width: the hedgehog's ball is spiky (outline ~31 px, filled area = a
+// 26.4 px disc), the fox's is solid fur (outline 30, area 28.7), so equal outlines made the fox's ball look ~19% bigger.
+// BALL_SRC = the source size that scales to BALL_D: the hedgehog's is unchanged (owner: its ball is right)
+const BALL_D=42,BALL_SRC={hog:32.1,fox:34.9},WALK_RUN=2.2;
 // spin dash dust: puffs kicked out behind the ball
 function spinDust(x,px,py,f,t){x.save();for(let k=0;k<5;k++){const ph=(t*7+k/5)%1,d=8+ph*26,r=3+ph*6;x.globalAlpha=.85*(1-ph);x.fillStyle='#fff';
  x.beginPath();x.arc(px-f*d,py-ph*10-k%2*3,r,0,7);x.fill();x.strokeStyle='rgba(120,130,160,.55)';x.lineWidth=1;x.stroke();}x.restore();}
@@ -333,7 +335,8 @@ function bodyAngle(p){const L=lookOf(p),want=p.dead?0:p.ground?-p.ang:0,now=perf
  L.da+=d*(1-Math.exp(-dt*(p.ground?30:9)));return L.da;}
 function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body==='fox':i===1,BODY=tails?'#f0541e':'#6a48e0',DARK=tails?'#96280a':'#32208c',SKIN=tails?'#fff0d0':'#cdbcff',ARM=BODY,SCARF=tails?'#fff0d0':'#8c70ff',SHOE=tails?'#18a8a0':'#ffd428',SOLE=tails?'#0c6660':'#b08400';
  const ball=p.rolling||p.jumping||p.spindash,sp=p.ground?p.gsp:p.xsp,run=Math.abs(sp),f=p.facing||1;
- L.spin+=p.spindash?.9:(ball?(.25+Math.abs(p.ground?p.gsp:Math.hypot(p.xsp,p.ysp))*.07):0)*(p.ground?Math.sign(p.gsp)||f:f);L.cyc+=1/Math.max(1,8-run);// Mega Drive timing: each walk/run frame lasts max(1, 8 - speed) game frames (the old rate slid the feet)L.idle=p.ground&&run<.05&&!p.crouch&&!p.lookUp?L.idle+1:0;
+ L.spin+=p.spindash?.9:(ball?(.25+Math.abs(p.ground?p.gsp:Math.hypot(p.xsp,p.ysp))*.07):0)*(p.ground?Math.sign(p.gsp)||f:f);L.cyc+=1/Math.max(1,8-run);// Mega Drive timing: each walk/run frame lasts max(1, 8 - speed) game frames (the old rate slid the feet)
+ L.idle=p.ground&&run<.05&&!p.crouch&&!p.lookUp?L.idle+1:0;
  x.save();x.globalAlpha*=alpha;
  if(p.inv>0&&!p.hurt&&(p.inv>>2)%2&&alpha===1)x.globalAlpha*=.3;
  if(sprites())return;
@@ -389,9 +392,9 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
    // both balls drawn BALL_D across (owner: same size, the face the same as standing); lifted so they sit on the ground
    const bk=BALL_D/BALL_SRC[tails?'fox':'hog'],lift=BALL_D/2-14,ga=p.ground?p.ang:0,bx=p.x-Math.sin(ga)*lift,by=p.y-Math.cos(ga)*lift;
    if(p.spindash)spinDust(x,bx,by+BALL_D/2-4,f,t);
-   x.save();x.translate(bx,by);x.save();x.scale(bk*f,bk);frame(B,row,fr,-B.def.foot[0],-B.def.foot[1]);x.restore();x.rotate(p.spindash?0:L.spin);head(x,i,0,0,RUN_HEAD,'angry');x.restore();
+   x.save();x.translate(bx,by);x.save();x.scale(bk*f,bk);frame(B,row,fr,-B.def.foot[0],-B.def.foot[1]);x.restore();x.rotate(p.spindash?0:L.spin);head(x,i,0,0,RUN_HEAD*BODY_K[tails?'fox':'hog'],'angry');x.restore();// the face as big as standing
    x.imageSmoothingEnabled=was;x.restore();shieldOver(x,p,t);return true;}
-  const N=r=>S.def.rows[r]||0,skid=p.ground&&run>1.5&&Math.sign(p.gsp)!==f&&!p.rolling;let row='stand',fr=0;const cyc=(r,v)=>{row=r;fr=Math.floor(v)%N(r);};
+  const N=r=>S.def.rows[r]||0,skid=p.ground&&run>1.5&&Math.sign(p.gsp)!==f&&!p.rolling;let row='stand',fr=0,upright=0;const cyc=(r,v)=>{row=r;fr=Math.floor(v)%N(r);};
   if(p.dead){row='dead';fr=p.dead>24?1:0;}
   else if(p.hang)cyc('hang',t*6);
   else if(p.fly>1&&N('fly'))cyc('fly',t*20);
@@ -404,10 +407,14 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
   else if(run>=9.5)cyc('dash',t*24);
   else if(run>=5.5)cyc('run',L.cyc);
   else if(run<.05){if(p.lookUp){row='lookUp';fr=1;}else if(L.idle>180)cyc('wait',L.idle/14);}
+  // the sheets' walk rows are mostly feet-together frames (owner: "shuffling their feet"): past a slow walk the run
+  // frames are used (real strides), leaned back a little at the low end so they read as a brisk walk. New walk rows
+  // are asked for in docs/sonic3-sprites/GPT-NIGHT-2026-11-11.md; when they come in, WALK_RUN can go back up to 5.5.
+  else if(run>=WALK_RUN){cyc('run',L.cyc);upright=Math.max(0,1-(run-WALK_RUN)/3.3)*.16;}
   else cyc('walk',L.cyc);
   if(!p.dead)shieldUnder(x,p,t);
   const [fx0,fy0]=S.def.foot,h=SP.spot(nm,row,fr)||{x:fx0,y:fy0-36};
-  x.translate(p.x,p.y);x.rotate(bodyAngle(p));x.translate(0,19);x.scale(BODY_K[tails?'fox':'hog'],BODY_K[tails?'fox':'hog']);// scaled about the feet
+  x.translate(p.x,p.y);x.rotate(bodyAngle(p));x.translate(0,19);if(upright)x.rotate(-f*upright);x.scale(BODY_K[tails?'fox':'hog'],BODY_K[tails?'fox':'hog']);// scaled about the feet
   x.save();x.scale(f,1);frame(S,row,fr,-fx0,-fy0);x.restore();
   const hx=(h.x-fx0)*f,hy=h.y-fy0;backOfHead(hx,hy,skid,false);
   head(x,i,hx,hy,RUN_HEAD,p.dead||p.hurt?'sad':skid?'angry':run>5?'happy':undefined);
@@ -485,4 +492,10 @@ function drawTitleCard(x,W,H,f,zone,act){const T=f/60,inT=Math.min(1,T/.35),outT
  if(act){const ax=W*.9-(1-e)*W*.2+o*W;x.font=HUD_FONT.replace('%s',Math.round(sz*1.5));x.fillStyle='#ffd21a';x.strokeText(String(act),ax,H*.48+sz*2.2);x.fillText(String(act),ax,H*.48+sz*2.2);}
  x.restore();return true;}
 
-Object.assign(exports,{PAL,TerrainArt,Backdrop,drawDecor,drawObject,drawShot,drawLoose,drawRunner,Fx,drawHUD,drawLives,drawTitleCard,fmtTime,CH});
+// flat ground drawn IN FRONT of the runner (owner, Nov 11: the loop's entrance foot should look like the ground carries on
+// in front of it): the grass strip with its blades above the surface line y (they hide the shoes, like ground in front);
+// the strip's solid band sits on the ground that is already there. It tiles on the same world grid as the terrain's own
+// grass (stripX phase 0 = multiples of the strip width), so where it stops on flat ground the join can't be seen.
+// Draw in world space (x scaled by the camera).
+function frontGrass(x,x0,x1,y){const X=texInfo();if(!X||x1<=x0)return false;return stripX(x,'jungle-grass',x0,x1,y-X.g0,X.G.h);}
+Object.assign(exports,{frontGrass,PAL,TerrainArt,Backdrop,drawDecor,drawObject,drawShot,drawLoose,drawRunner,Fx,drawHUD,drawLives,drawTitleCard,fmtTime,CH});
