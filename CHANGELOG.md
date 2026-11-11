@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.93.0
+
+- **Seanic Zone 1 Act 2** (new Arcade game, Emerald Hill Zone song): corkscrews, waterfall cliffs, a warp tube, a lagoon bridge with leaping robot fish, seesaws, a treetop high route, swinging platforms, a double loop, a spike log.
+- **Act 1 mini-boss** (Sonic 3 Miniboss song): a flame pod before the sign; six hits frees its pilot into your roster (the only unlock in Seanic games now).
+- **Seanic looks:** runner and ball sizes matched, real strides when walking, grass in front of loop entrances, a sky on tall title screens, the select background fills the screen.
+- **Uno:** a fresh deal every game (all Arcade games), no sudden end at 80 moves (300, with a countdown).
+- **Fixes:** drag race red light counted once; baseball catches before the bounce count, home runs called at once; Spinner Showdown CPU plays; SotN opening fence stays.
+- **Menus:** Online stays on the home screen (New Game = board game together); NEW HIGH SCORE badge; 🎲 picks from all games; Strategema and Four Lights own tiles; Pong pulled out.
+
 ## v0.92.0
 
 - **Seanic online: both at once.** Play Shamb Island together on two phones at the same time: you see each other running, with an arrow when your partner is off screen. Rings, item boxes, robots and walls one of you takes are gone for both. When one of you reaches the sign, the other has 10 seconds; the higher score wins.
