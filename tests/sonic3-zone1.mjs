@@ -18,14 +18,9 @@ for(const [w,h,tag] of [[390,780,'phone'],[844,390,'land']]){
  const st=await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug;return {chunks:d.chunks(),phase:d.state.phase};});
  check(st.chunks>4&&st.phase==='play',`${tag}: terrain drawn (${st.chunks} chunks), still playing`);
  if(tag==='phone'){
-  // the mini-boss arena before the sign: the autopilot steps in (camera locks, Miniboss song), beats it, the pilot is freed
+  // the last stretch to the sign (no boss in Act 1 since Nov 11 round 4: the mini-boss ends Act 2)
   await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug;d.rings(30);d.teleport(17700,1481);d.autopilot();});
-  let started=false,shot=false;for(let k=0;k<30&&!started;k++){await page.waitForTimeout(300);started=await page.evaluate(()=>!!window.ShambConkins.store.session.debug.boss?.fight);}
-  check(started,'phone: walking into the arena starts the mini-boss');
-  const song=await page.evaluate(()=>window.ShambConkins.store.session.debug.music());check(JSON.stringify(song).includes('miniboss'),`phone: the Miniboss song plays (${JSON.stringify(song)})`);
-  let b=null;for(let k=0;k<160;k++){await page.waitForTimeout(500);b=await page.evaluate(()=>window.ShambConkins.store.session.debug.boss);if(!shot&&b?.state==='flame'){shot=true;await page.screenshot({path:`${SHOTS}/z1-${tag}-miniboss.png`});}if(b?.done)break;}
-  check(b?.done,`phone: the autopilot beats the mini-boss (${JSON.stringify(b)})`);
-  if(b?.pilot)check(b.freed[0].includes(b.pilot),`phone: its pilot ${b.pilot} is freed`);
+  check(!(await page.evaluate(()=>window.ShambConkins.store.session.debug.boss)),'phone: Act 1 has no boss');
   let got=false;for(let k=0;k<40&&!got;k++){await page.waitForTimeout(500);got=await page.evaluate(()=>!!window.ShambConkins.store.session?.debug.state.tally);}
   check(got,'phone: reaching the sign starts the tally');await page.waitForTimeout(1200);await page.screenshot({path:`${SHOTS}/z1-${tag}-tally.png`});}
  check(!errors.length,`${tag}: no page errors${errors.length?': '+errors[0]:''}`);

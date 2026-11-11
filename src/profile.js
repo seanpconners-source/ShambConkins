@@ -36,6 +36,7 @@ function loadProfile() {
   for(const key of ['sound','music','reducedMotion','originalLogos','drinkStatus','devMode','pinballZoom','casinoMusic','chatClean'])if(typeof saved.settings?.[key]==='boolean')p.settings[key]=saved.settings[key];
   if(Number.isFinite(saved.settings?.flickSensitivity)&&saved.settings.flickSensitivity>0)p.settings.flickSensitivity=Math.min(1.35,Math.max(.65,saved.settings.flickSensitivity));
   {const v=saved.settings?.pinballView;if(v&&typeof v==='object'){const ok=(n,max)=>Number.isInteger(n)&&n>=0&&n<=max;if(ok(v.zoom,4)&&ok(v.speed,4))p.settings.pinballView={zoom:v.zoom,speed:v.speed};}}
+  {const v=saved.settings?.seanicZoom;if(v&&typeof v==='object'&&!Array.isArray(v)){const o={};for(const k of ['tall','square','wide'])if(Number.isFinite(v[k]))o[k]=Math.min(1.6,Math.max(.6,v[k]));p.settings.seanicZoom=o;}}   // Seanic camera zoom per screen shape (s3/camera.js)
   if(['auto','touch','pointer'].includes(saved.settings?.touchMode))p.settings.touchMode=saved.settings.touchMode;
   {const v=saved.settings?.casinoTips;if(v&&typeof v==='object'&&!Array.isArray(v)){const o={};for(const [k,b] of Object.entries(v))if(/^[a-z-]{1,24}$/.test(k)&&b===true)o[k]=true;p.settings.casinoTips=o;}}   // casino first-time tours seen (casinoFront.js)
   const solo=normalizeSoloSettings(saved.settings?.solo);if(solo)p.settings.solo=solo;

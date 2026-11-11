@@ -2,6 +2,37 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+SEANIC ROUND 4 (Nov 11 late, uncommitted on claude/seanic-loops-zoom, shared with the head-check + SotN sessions' edits):
+LOOPS: physics.js floor push sensor ignores a hit unless that surface is 50°+ steeper than the ground (a 9-10 ball took
+the loop's own curve at 45° for a wall); loop halves overlap .35 rad over the top (OV in zone1/act2/act3/testZone: a 11+
+px/f ball jumped the a/b seam before the switcher and fell); rolling loop assist .15 up / half pull down when steep
+(double loop as a ball works from ~6, exits ~10 not 15). Scratch sweeps loopsim2.mjs/looptrace.mjs (scratchpad).
+TOP SPEED 8.5 (shoes 13), acc unchanged. TUBES: entry event is 'tube' (was 'dash' = spin-dash camera lag = snap back 32
+frames); camera.js rewritten: MD box rules move an IDEAL camera, the seen one follows with a critically damped spring +
+feed-forward, speed change capped ACC 3/frame (tube jolts 19 -> 5 screen px/f²); dash lag only from a standstill.
+SCALE: DENSITY 1.3 CSS px per world px everywhere (Amber's 360x780 as it was), view clamped 256x200..980x660, FOCUS lower
+on tall views (<=190 px of ground); 🔍 pill (s3/zoomPanel.js) = slider .6-1.6 per screen shape tall/square/wide in
+profile.settings.seanicZoom (validated in profile.js). Title: picture's top band mirrored above it (palm crowns removed);
+select: fitted picture + checker/grid texture bars (selectBg). ACTS: mini-boss moved to the end of Act 2 (arena
+21400-21800, sign 21960); Act 1 has none. ACT 3 = s3/zone1act3.js, game sonic3-zone1-act3 (Angel Island Act 1 song;
+downhill loop, tube, lake + fish, cliff, treetops, spike pit + swings + zip, loop 2, arena 10600-11220, CAPSULE 11480
+= 'sign' event). ZONE BOSS objects.js kind 'big' (owner's boss sheet: pod + spiked mace; hover/dive/swing/tired/rise, 8
+HP, faster at half, wreck then flee; bigBot), song s3k-song-boss.flac (Sonic 3 'Robotnik', loop .95-32.95). RUNNERS:
+select has SEANIC, TAILS, KNUX (echidna: glide + wall climb + jmp 6), SHADE (dark hedgehog: homing attack / air dash),
+SEANIC & TAILS (CPU fox follows: sonic3.js buddyInput = Sonic 3 Tails AI, objects.js p.cpu never dies, flyInStep).
+2P on one phone: both pick, player 2 can't take bodies player 1's pick uses (I.CHARS uses/nextFree). Online keeps hog vs
+fox. Knux/Shade art = the hedgehog sheets recoloured at runtime (render.js recolour/tintSheet) until GPT sheets come.
+Tests: s3-zone1-act3.mjs + s3-moves.mjs (test:core), sonic3-zone1-act3.mjs (browser); all Seanic Node/browser tests pass.
+
+HEAD CHECK (Nov 11, unreleased, uncommitted on claude/seanic-loops-zoom; owner's idea): tools/head-check.py (OpenCV 4.x Haar:
+OpenCV 5 has no Haar files, `pip install opencv-python-headless<5`) reads every character picture (assets/portraits + built-in
+char:* raster art + face pack, 2,473) → src/data/headFacts.js HEAD_FACTS[key]=[face box, head box (fractions), look -1/0/1,
+conf, found, aspect] (face found 1,985, outline guess 488); contact sheets local-test-reports/head-check/all-NN.png +
+review-NN.png; hand fixes tools/head-check-fixes.json. src/headFacts.js headFacts/lookDir/flipFor/faceFit(id,mood,faceW)
+(matches portraitURL's picture back to its key). PROOF wired in Seanic only: sonic3.js `head(...,dir)` puts the face box
+(FACE_W .6 of the old box) on the spot and mirrors a face looking against the run (conf ≥ .45); render.js drawRunner passes f.
+WAITING: owner looks at the sheets, then wire SotN/Broforce/Sundown/baseball/DOOM/bosses.
+
 v0.94.0 READY (Nov 11 evening; main = claude/nov11-night, TESTver merged; owner pushes in GitHub Desktop): Seanic playtest
 round 3 (terrain cache sky bug, tube camera glide, loop assist in physics.js, acc 1.65x, DASH_RUN 4.6, monkey palms, bridge
 planks look:'bridge', boss flames/smoke in code, fox ball/quills smaller, corkscrew barrel-roll squash, title palm crowns), old
@@ -34,6 +65,8 @@ GROK ROUND 1 (Nov 10, owner out of GPT credits, sent a zip 'APPROVED' made with 
 ART TALLY ROUND 5 (Nov 9, owner: "Check tally. Should be new pics on drive"): GPT notes UPLOADS-GPT-2026-11-07-0546..1659 = Transparent Items Batches 11-14 (124 items, all imported lossless 512 px, originals assets/originals/items: 626 of 633 have art; GPT couldn't make matrix-emp, v43-sports-almanac, v43-fire-flower, v43-fulton-balloon, wz-bullet-bill, v43-jill-lockpick, v43-starman) + Arcade Art — Batch 01 (19KkFRC22ur5qjHMc-pBmy00LMZF4JNXC): icons + logos (keyart:<slot>-logo, trimmed ≤1100) for pinball, pokemon, shamb-uno, traitors-guess-who, deadite-checkers, megatouch-photohunt, angry-heads, neon-ball-storm, living-dead-horde; backgrounds for those minus pinball + chutes (1600x900 lossless), KEY_BOX added (main subject is often Mylo/KC/Loki). Backgrounds NOT locked yet: picker DhpZSVr98T1sEwzjux7AJ9 (now v9, see GROK ROUND 1); when the owner says they're locked: ArtifactData list bg → apply.py. Tally posted TALLY-CLAUDE-2026-11-09-2241.md (1oRX7rtw3IYpn4dB1OvQsCuQm1kAxqTXy). GPT's 'Arcade Art — Batch 02' (1xRX21_HqXdlmahvMTjUKHMXg9HDkUfum) was still empty. bg-picker/measure.mjs fixed for v0.88.7+ (skip .arc-tile-all, read .arc-key-front: it measured 20 of 43 pictures before). Drive downloads: every file ≥90 KB saves to tool-results; scratch decode.py writes them by title.
 
 SMB NES SOUND (Nov 7, owner's two packs in Claude Share; RELEASED as v0.88.9, no tests at owner's request, quick scratch check only): src/engines/smbAudio.js = songs (SONGS: head, skip, loop; 11 files assets/music/smb-song-*.mp3 stream copies, cut after one period, 4 MB) + 20 smb-sfx-*.wav byte for byte (SFX: NES channel, volume, lead-in ms; a sound on a channel cuts the one before). marioBros.js: sfx = NES[k] with the old table as synth fallback until a file is in; songFor() per frame (silence on cards, flag, axe, death; 1-2 intro = tunnel jingle; star over area; -hurry from 100). Hurry rips open with the jingle: hurry() makes the next hurry song start at head, otherwise at skip. Level clear starts as you step off the pole and the time tally waits for it. Pause sound from session.paused (hold(true) around hand-off s.pass). pwa.js LATER 'music:smb-'. Repeats aren't sample-exact: .08 s crossfade. Not in: Underwater, Ending, Game Over 2 (no water level or real ending yet; still in Claude Share). Not heard by ears.
+
+SOTN SWORD IN HAND (Nov 11, branch claude/seanic-loops-zoom, uncommitted; owner: sword drawn a bit above the hand, angles fine): the owner's hero sheets draw a bare fist (no sword) away from the template's yellow hand ring. tools/sotn/hero-hands.py (--debug png) finds the fist per frame (skin clump furthest up-and-forward, face skipped) in the swing rows slash/stab/cleave/crouchSlash of BOTH sheets → HERO_HANDS in sotnSprites.js (`handRows` per sheet; hero-p2 now its own def copy) + SP.handOf. sotnArt.js `swordAt(q)`: with a sheet, the grip's middle (L/14 behind the crossguard) sits on the fist, angle = bladePose ang+lean (no lean/crouch offset: frames don't lean), the fist's 7x7 px box is redrawn over the grip; bladeWorld (trail) uses swordAt too; vector hero unchanged. Idle/walk/jump/crouch frames have no sword in the sheets and the game draws none there (as before). FACES (owner: no bounce, move with the body, line up): sotn.js headFn passes `still:true` (session sprite bob/lean made them bounce, like Seanic); 13 HERO_HEADS spots were wrong (raised sword arm / streaming kick hair / cape flapped over the head in fall1-2 fooled hero-heads.py) and are now hand-read off gridded zooms, kept in hero-heads.py `FIX` (spot = top of the drawn hair dome, as stand0); a fist raised above the face's middle (slash0, cleave0/1, crouchSlash0) draws sword + fist in front of the face. tests/sotn-hands.mjs (4x contact sheets OUT/sotn-hands.png + sotn-heads-p1|p2-R|L.png, 228 grip/trail checks, face drawn twice 350 ms apart must match); sotn-combo.mjs now also shoots idle/crouch/crouchcut/jump. sotn.mjs 1100x700 fails timing checks (gate / axe swipe) on HEAD too.
 
 SOTN SOUNDTRACK (Nov 6, owner's album rips in Claude Share; RELEASED as v0.88.8, no tests for the release at owner's request): 10 of 34 tracks in assets/music/cv-symphony-<name>.mp3 (stream copies, no re-encoding, 28 MB; pwa.js LATER 'music:cv-symphony-'). Not named sotn-*: those are decoded up front as clips. sotnAudio SONGS (lufs, loop, next) + WebAudio player: album tracks are one pass ending in a fade over the repeat, repeat not sample-exact, so loop = .25 s equal-power crossfade of scheduled segments (segment/pump; pump runs from the watch timer because a pass card stops frames: SA.hold(true) around s.pass). Decoded songs ~40 MB each, KEEP 2. music(name) is safe per frame (songFor in sotn.js: area with a 24-unit door margin, Prologue in the Dracula scene, Dance of Illusions both forms, silence for the kill, Heavenly Doorway 2.2 s after the orb, Land of Benediction when time runs out; SA.after queues the card song behind it). SA.duck under cutscenes (.3 Death, .55 Dracula): whether the real game stops the music for Death could not be confirmed. Rest of the track map for the future castle: assets/music/README.md. tests/sotn-music.mjs (all songs, loop, card, pause), sotn.mjs, pwa-lazy, games.mjs pass. Not heard by ears.
 

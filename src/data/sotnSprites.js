@@ -20,15 +20,23 @@ const ease=u=>u*u*(3-2*u);
 const HF=[60,122],HEAD=[61,44];
 const flipHeads=n=>Array.from({length:n},(_,f)=>{const a=ease((f+.5)/n)*TAU,px=60,py=80;return [+(px+Math.cos(a)+36*Math.sin(a)).toFixed(1),+(py+Math.sin(a)-36*Math.cos(a)).toFixed(1),+a.toFixed(2)];});
 const deadHeads=n=>Array.from({length:n},(_,f)=>{const k=n>1?f/(n-1):1;return [+(61+(28-61)*k).toFixed(1),+(44+(100-44)*Math.pow(k,1.6)).toFixed(1),+(-1.45*k).toFixed(2)];});
-// face spots measured on the owner's hero sheet by tools/sotn/hero-heads.py (re-run it if the sheet is redrawn); the
-// template's own layout (a headless body, the face circle above it) was HEAD + flipHeads/deadHeads
-const HERO_HEADS={"stand":[[58,66],[57,65],[57,66],[58,66]],"walk":[[56,65],[57,66],[57,64],[56,65],[55,65],[55,66],[56,66],[55,64]],"crouch":[[61,82],[56,81]],"crouchSlash":[[61,74],[61,79],[63,80],[62,80]],"jump":[[54,64],[60,66],[57,64]],"fall":[[55,64],[52,64],[49,64]],"flip":[[59,69,0.07],[70,69,0.58],[73,77,1.46],[68,84,2.56],[55,90,3.73],[52,81,4.83],[55,69,5.7],[54,70,6.21]],"land":[[57,76],[62,70]],"dash":[[62,67],[62,67],[63,67],[64,68]],"kick":[[63,59],[64,58]],"hurt":[[64,69],[63,67]],"cast":[[59,65],[63,64],[61,61],[67,61]],"slash":[[60,61],[58,63],[59,63],[57,64]],"stab":[[51,65],[60,64],[57,65],[60,64],[59,64]],"cleave":[[57,58],[54,55],[60,62],[59,64],[59,63],[60,61]],"dead":[[58,66],[52,72,-0.29],[54,78,-0.58],[52,86,-0.87],[53,99,-1.16],[59,112,-1.45]]};
+// face spots measured on the owner's hero sheet by tools/sotn/hero-heads.py (re-run it if the sheet is redrawn; its FIX
+// table holds 13 spots read by hand where the raised sword arm, streaming hair or the flapping cape fooled it, Nov 11); the
+// face is drawn still (no bob of its own), so it moves only with these spots. The template's own layout (a headless body,
+// the face circle above it) was HEAD + flipHeads/deadHeads
+const HERO_HEADS={"stand":[[58,66],[57,65],[57,66],[58,66]],"walk":[[56,65],[57,66],[57,64],[56,65],[55,65],[55,66],[56,66],[55,64]],"crouch":[[61,82],[56,81]],"crouchSlash":[[57,79],[61,79],[63,80],[62,80]],"jump":[[54,64],[60,66],[57,64]],"fall":[[59,66],[62,66],[61,66]],"flip":[[59,69,0.07],[70,69,0.58],[73,77,1.46],[68,84,2.56],[55,90,3.73],[52,81,4.83],[55,69,5.7],[54,70,6.21]],"land":[[57,76],[62,70]],"dash":[[62,67],[62,67],[63,67],[64,68]],"kick":[[62,65],[63,65]],"hurt":[[64,69],[63,67]],"cast":[[59,65],[62,66],[61,65],[65,65]],"slash":[[58,64],[58,63],[59,63],[57,64]],"stab":[[51,65],[60,64],[57,65],[60,64],[59,64]],"cleave":[[59,65],[59,62],[61,64],[59,64],[59,63],[60,61]],"dead":[[58,66],[52,72,-0.29],[54,78,-0.58],[52,86,-0.87],[53,99,-1.16],[59,112,-1.45]]};
+// the sword hand (centre of the drawn fist, frame px) in the rows that swing the sword, measured on each owner sheet by
+// tools/sotn/hero-hands.py (re-run it if a sheet is redrawn): the game puts the middle of the sword's grip there. The
+// template's yellow sword-hand ring sat higher than the owner's fists, so the sword floated above the hand (R, Nov 11).
+const HERO_HANDS={
+ 'hero-p1':{"crouchSlash":[[64.5,69.7],[85.2,84.7],[84.1,85.1],[80.8,88.0]],"slash":[[66.5,53.5],[86.2,69.4],[84.4,71.8],[80.9,70.8]],"stab":[[53.5,66.2],[100.4,71.0],[104.0,71.2],[99.0,71.0],[91.8,71.0]],"cleave":[[55.5,53.3],[54.6,51.2],[82.2,75.0],[85.2,82.0],[83.3,82.8],[81.0,84.8]]},
+ 'hero-p2':{"crouchSlash":[[64.9,70.7],[85.6,84.8],[84.0,86.4],[81.0,88.4]],"slash":[[66.7,54.6],[86.5,70.2],[84.1,72.7],[81.6,70.9]],"stab":[[53.5,66.8],[100.2,71.8],[103.7,71.0],[97.2,71.0],[91.2,71.0]],"cleave":[[55.1,53.7],[53.8,51.1],[81.9,76.1],[84.4,83.3],[83.1,83.8],[79.9,85.2]]}};
 const SHEETS={
  // the hero (player 1: crimson cape lining; player 2: `hero-p2`, same layout, royal-blue lining; if only p1 is in, both use it)
  'hero-p1':{frame:[128,144],foot:HF,head:HEAD,headSize:40,
   rows:{stand:4,walk:8,crouch:2,crouchSlash:4,jump:3,fall:3,flip:8,land:2,dash:4,kick:2,hurt:2,cast:4,slash:4,stab:5,cleave:6,dead:6},
   // the owner's sheet (Nov 6) draws Alucard with a small head of his own: HERO_HEADS puts the face over it in every frame
-  headRows:HERO_HEADS},
+  headRows:HERO_HEADS,handRows:HERO_HANDS['hero-p1']},
  'hero-p2':null,
  // monsters (anchor = feet on the ground, except the bat: its body's centre)
  zombie:{frame:[96,96],foot:[40,92],rows:{rise:4,walk:6}},
@@ -53,7 +61,7 @@ const SHEETS={
  'holy-flame':{frame:[48,48],foot:[24,44],rows:{burn:3}},
  'fire-wave':{frame:[32,48],foot:[16,46],rows:{burn:3}},
 };
-SHEETS['hero-p2']=SHEETS['hero-p1'];
+SHEETS['hero-p2']={...SHEETS['hero-p1'],handRows:HERO_HANDS['hero-p2']};
 // Single PICTURES. `w` = drawn width in world units (the height follows the picture's own shape, so any resolution works);
 // `at` says where it sits: 'bottom' (bottom centre on the spot: items, props), 'centre' (shots), 'grip' (swords: left end =
 // pommel, crossguard 1/8 of the way in, blade pointing right; the game sizes swords by their blade length), 'top' (hanging from the spot), 'stretch' (fills a box the
@@ -106,6 +114,10 @@ function frameOf(def,row,{t=0,fps=8,k=null,index=null}={}){
 // The face spot of frame fr: {x,y,size,rot} in world units relative to the anchor (facing right).
 function headOf(def,fr){if(!def.head)return null;let h=def.headRows&&def.headRows[fr.row];if(h&&Array.isArray(h[0]))h=h[Math.min(fr.f,h.length-1)];h=h||def.head;
  return {x:(h[0]-def.foot[0])*S,y:(h[1]-def.foot[1])*S,size:def.headSize*S,rot:h[2]||0};}
+// The sword hand of frame fr: {x,y} in world units relative to the anchor (facing right) + {px,py} in frame px, or null
+// (the row has no hand spots).
+function handOf(def,fr){const r=def.handRows&&def.handRows[fr.row],h=r&&r[Math.min(fr.f,r.length-1)];
+ return h?{x:(h[0]-def.foot[0])*S,y:(h[1]-def.foot[1])*S,px:h[0],py:h[1]}:null;}
 // Draws a frame with its anchor at (x,y), facing f (1 right, -1 left). `tint` = a colour: the frame's silhouette in it
 // (after-images and ghosts). `scale` multiplies the size.
 const tints=new Map();
@@ -130,4 +142,4 @@ function drawStrip(g,name,x0,x1,y,{camX=0,follow=0,w=null,h=null,alpha=1}={}){co
  const tw=w||p.w||img.width*S,th=h||p.h||tw*img.height/img.width,base=camX*follow;let sx=x0-((((x0-base)%tw)+tw)%tw);
  const pa=g.globalAlpha;g.globalAlpha=pa*alpha;for(;sx<x1;sx+=tw)g.drawImage(img,sx,y,tw+.05,th);g.globalAlpha=pa;return true;}
 function preloadSotn(){for(const k of Object.keys(USER))if(k.startsWith('sotn:'))picture(k.slice(5));}
-Object.assign(exports,{S,SHEETS,PICTURES,picture,sheet,has,frameOf,headOf,drawFrame,drawPicture,drawBox,drawStrip,sizeOf,rowCount,preloadSotn});
+Object.assign(exports,{S,SHEETS,PICTURES,picture,sheet,has,frameOf,headOf,handOf,drawFrame,drawPicture,drawBox,drawStrip,sizeOf,rowCount,preloadSotn});

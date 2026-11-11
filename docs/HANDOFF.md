@@ -1,11 +1,26 @@
 # Handoff: where we left off (read this first in a fresh session)
 
-Last updated Nov 3 2026 (night): v0.79.0 prepared while the owner slept. Read "START HERE" first. Written for the next Claude session,
+Last updated Nov 11 2026 (late): v0.95.0 released from the laptop. Read "START HERE" first. Written for the next Claude session,
 which may run on a different account with none of the earlier conversation or memory. Everything needed is in the repo:
 this file, `CLAUDE.md`, `docs/ROADMAP.md` (the owner's to-do list, phases, statuses) and `docs/AI_STATE.md` (technical
 state, newest at the top).
 
-## START HERE (Nov 3, night): morning summary for v0.79.0
+## START HERE (Nov 11, late): v0.95.0 = Seanic Zone 1 complete; owner switching accounts
+
+Everything is on `main` (v0.95.0): Seanic Acts 1-3, the Act 2 mini-boss and Act 3 zone boss, new runners (Knux, Shade,
+Seanic & Tails with a CPU fox, no repeats on screen), loop/tube/camera fixes, per-device scale + 🔍 zoom, the SotN sword
+in hand + still faces, and the HEAD CHECK (tools/head-check.py → src/data/headFacts.js, wired into Seanic only). Details
+are at the top of `docs/AI_STATE.md`. Waiting on the owner:
+- **Head check:** review the contact sheets (`python -I tools/head-check.py` rebuilds them into
+  `local-test-reports/head-check/`, gitignored; the `review-NN.png` pages are the guessed/unsure ones), then wire
+  `src/headFacts.js` (faceSpot / looks-left) into SotN, Broforce, Sundown, baseball, DOOM and the bosses. Needs OpenCV 4.x
+  (5 dropped the Haar files).
+- **Knux / Shade art:** prompts in `docs/sonic3-sprites/GPT-KNUX-SHADE.md` (import steps at its end); until then they
+  use the hedgehog sheets recoloured at runtime.
+- Seanic next ideas: owner playtest of Act 3 + the new runners on the Fold, online character picks (online is still hog vs
+  fox), shoes-speed music, real walk rows (GPT-NIGHT-2026-11-11.md).
+
+## Earlier (Nov 3, night): morning summary for v0.79.0
 
 Owner asked (asleep): fix the soak report, add an Arcade Featured section, make Broforce one game with a world select, work the roadmap and game notes, then release.
 - **Final checks on this release**: 158/158 minigames clean; soak 22 runs, 2 failures, both test problems (pinball bot outlasted the time limit, Frank overlay timing under load: tests fixed, both pass). The owner's late art and intro words came after that soak: checked with the Arcade and Pro Mancala tests only.

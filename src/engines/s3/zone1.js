@@ -12,7 +12,7 @@
 //   finish      spikes and robots, spring-up ledges over loop 3, a log bridge with a crumbling middle over lake 2, the sign
 // Pure data: buildZone1Act1() gives the terrain (built once and reused) and a fresh list of objects for every run.
 const {Terrain,arc,ease}=require("src/engines/s3/terrain.js");
-const G=1500,W=18800,H=2400,R=112,BAND=24,TH=28;
+const G=1500,W=18800,H=2400,R=112,BAND=24,TH=28,OV=.35;
 const LG=G+60,P=G-200,LOW=G+180,GF=G+500,HT=G-260,LB=G+300;// loop-1 ground, plateau tops, low ground, gorge floor, hill top, lake-2 bed
 const MS=G-160,MT=G-320,CH=G+60,RUN=G+100;// mesa shelf, mesa top, chasm floor, the last run
 const LOOPS=[[1900,LG],[7000,LOW],[12500,G],[17200,RUN]];
@@ -39,8 +39,9 @@ function buildTerrain(){const T=new Terrain(W,H);
  T.poly(rect(4498,LG,6600,LOW),'all','cut');T.poly(rect(5350,LOW-2,5650,LOW+70),'all','cut');
  T.poly(rect(4800,LOW-40,4960,LOW+2));T.poly(rect(4880,LOW-76,4960,LOW-38));T.poly(rect(5900,LOW-40,6060,LOW+2));
  for(const [cx,fy] of LOOPS){const cy=fy-R;
-  T.poly([...arc(cx,cy,R+BAND,-Math.PI/2,Math.PI/2),...arc(cx,cy,R,Math.PI/2,-Math.PI/2)],'a');
-  T.poly([...arc(cx,cy,R+BAND,Math.PI/2,Math.PI*1.5),...arc(cx,cy,R,Math.PI*1.5,Math.PI/2)],'b');
+  // the two halves overlap OV over the top (Nov 11 round 4: a ball at 11+ px/frame jumped the seam before the path switch and fell off the top)
+  T.poly([...arc(cx,cy,R+BAND,-Math.PI/2-OV,Math.PI/2),...arc(cx,cy,R,Math.PI/2,-Math.PI/2-OV)],'a');
+  T.poly([...arc(cx,cy,R+BAND,Math.PI/2,Math.PI*1.5+OV),...arc(cx,cy,R,Math.PI*1.5+OV,Math.PI/2)],'b');
   // the loop's feet (owner: the bases looked silly): solid ground flaring out of the band, on the same collision path as
   // that half (exit foot = path A like the right half, entrance foot = path B), so the runner passes them exactly as it
   // passes the band; painted by the terrain art like any ground
@@ -111,10 +112,8 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  row(15140,MT-24,10,32);bad('thrower',15330,MT-60);mon(15500,MT,'lightning');
  [15690,15810].forEach((x,k)=>o.push({type:'vine',x,y:MT-200,len:120,amp:.9,period:150,phase:k*60}));
  row(15930,MT-24,8,32);bad('flyer',16100,MT-120,{w:12,h:12});mon(16240,MT,'shoes');land(16320,20,32);
- // ---- the last run: loop 4, the MINI-BOSS arena (owner's plan R59c: Sonic 3 puts one at the end of a zone's first act),
- // then the sign
- loopRings(17200,RUN);row(17360,RUN-24,4);land(17470,10,32);row(17640,G-24,4);mon(17760,G,'rings');// 10 rings for the fight
- o.push({type:'boss',kind:'mini',x0:17800,x1:18200,gy:G,x:18000,y:G-170});
+ // ---- the last run: loop 4, then the sign (the mini-boss moved to the end of Act 2, owner Nov 11 round 4: Act 1 has no boss)
+ loopRings(17200,RUN);row(17360,RUN-24,4);land(17470,10,32);row(17640,G-24,4);mon(17760,G,'rings');bad('charger',18050,G-14,{dir:-1});
  o.push({type:'sign',x:18350,y:G-16});
  return o;}
 // ground scenery: bushes, flowers and stone totems on flat ground (seeded, away from lakes and gaps)

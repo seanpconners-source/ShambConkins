@@ -26,12 +26,12 @@ assert.ok(T.solid(3700,FY-72,"a",true)&&!T.solid(3700,FY-72,"a",false),'one-way 
 
 const run=(p,frames,inp,watch)=>{for(let f=0;f<frames;f++){P.step(p,typeof inp==='function'?inp(p,f):inp,T,{switchers});watch?.(p,f);}return p;};
 const R_=(o={})=>({l:false,r:true,u:false,d:false,jump:false,jumpPress:false,...o});
-// 1. standing still on flat ground stays put; running reaches top speed 6 in ~128 frames
+// 1. standing still on flat ground stays put; running reaches top speed (C.top) in ~128 frames
 let p=P.makeRunner(200,FY-P.C.hr);run(p,30,R_({r:false}));
 assert.ok(p.ground&&Math.abs(p.y-(FY-19))<.6&&Math.abs(p.x-200)<.01,`stands still on the floor (${p.x},${p.y})`);
-run(p,128,R_());assert.ok(Math.abs(p.gsp-6)<1e-9,`top speed 6 after 128 frames (${p.gsp})`);
+run(p,128,R_());assert.ok(Math.abs(p.gsp-P.C.top)<1e-9,`top speed ${P.C.top} after 128 frames (${p.gsp})`);
 // 2. the valley: still grounded all the way through, speed regained climbing out
-let air=0;run(p,240,R_(),q=>{if(!q.ground)air++;});
+let air=0;for(let f=0;f<400&&p.x<1800;f++)run(p,1,R_(),q=>{if(!q.ground)air++;});// (stops before the loop: at top speed 8.5 240 frames ran into it)
 assert.ok(air<4,`stays on the ground through the valley (${air} air frames)`);assert.ok(p.x>1700,'got through the valley');
 // 3. the loop: run right at speed, go all the way round
 const modes=new Set();let left=0,minY=1e9;

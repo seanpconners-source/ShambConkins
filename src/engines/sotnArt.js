@@ -44,10 +44,17 @@ function bladePose(n,k){let hx,hy,ang,lean;
  else{// quick cut: a short flick across the chest, finishing level
   const u=ease(seg(k,.1,.38)),r=seg(k,.5,1);hx=lerp(1,12,u)-r*3;hy=lerp(-33,-28,u)+r*1.5;ang=lerp(-1.25,-.06,u)+r*.08;lean=.02+u*.03;}
  return {hx,hy,ang,lean};}
+// Where the swinging sword sits (hero space, facing right): crossguard hx,hy, blade angle ang, then the whole thing turned by
+// `lean` round the anchor and moved down dy; L = blade length. With the owner's hero sheet in, the middle of the grip goes in
+// the frame's drawn fist (sotnSprites HERO_HANDS) and the blade keeps bladePose's angle (the sheet frames don't lean: the
+// lean is folded into the angle); the vector hero keeps bladePose's own hand path.
+function swordAt(q){const n=q.atkN||0,bp=bladePose(n,q.atkK||0),bl=BLADES[q.weapon]||{len:7},L=bl.len*(n===1?1.08:1);
+ const sh=heroSheet(q),fr=sh&&heroFrame(sh.def,q),hd=fr&&SP.handOf(sh.def,fr);
+ if(hd){const a=bp.ang+bp.lean,d=L/14;return {hx:hd.x+Math.cos(a)*d,hy:hd.y+Math.sin(a)*d,ang:a,lean:0,dy:0,L,hand:hd,sh,fr};}
+ return {hx:bp.hx,hy:bp.hy,ang:bp.ang,lean:bp.lean,dy:q.pose==='crouchAtk'?8:0,L};}
 // world-space [hilt x, hilt y, tip x, tip y] of the swinging blade (for the sword trail)
-function bladeWorld(q){const n=q.atkN||0,k=q.atkK||0,f=q.facing||1,bp=bladePose(n,k),bl=BLADES[q.weapon]||{len:7},dy=q.pose==='crouchAtk'?8:0;
- const c=Math.cos(bp.lean),sn=Math.sin(bp.lean),P=(lx,ly)=>[q.x+f*(lx*c-ly*sn),q.y+dy+lx*sn+ly*c];
- const L=bl.len*(n===1?1.08:1),h=P(bp.hx+Math.cos(bp.ang)*L*.3,bp.hy+Math.sin(bp.ang)*L*.3),t=P(bp.hx+Math.cos(bp.ang)*L,bp.hy+Math.sin(bp.ang)*L);return [h[0],h[1],t[0],t[1]];}
+function bladeWorld(q){const s=swordAt(q),f=q.facing||1,c=Math.cos(s.lean),sn=Math.sin(s.lean),P=(lx,ly)=>[q.x+f*(lx*c-ly*sn),q.y+s.dy+lx*sn+ly*c];
+ const L=s.L,h=P(s.hx+Math.cos(s.ang)*L*.3,s.hy+Math.sin(s.ang)*L*.3),t=P(s.hx+Math.cos(s.ang)*L,s.hy+Math.sin(s.ang)*L);return [h[0],h[1],t[0],t[1]];}
 // the drop-in hero sheet: which row/frame shows this pose (see sotnSprites.js for the rows)
 function heroSheet(q){return SP.sheet('hero-p'+((q.i||0)+1))||SP.sheet('hero-p1');}
 function heroFrame(def,q){const pose=heroPose(q),t=q.t||0;let row=pose,o={t,fps:8};
@@ -66,11 +73,19 @@ function heroFrame(def,q){const pose=heroPose(q),t=q.t||0;let row=pose,o={t,fps:
  return SP.frameOf(def,row,o);}
 function drawHeroSprite(g,q,o,sh){const f=q.facing||1,fr=heroFrame(sh.def,q),pose=heroPose(q),sil=o.sil||null;
  SP.drawFrame(g,sh,fr,q.x,q.y,f,{tint:sil});
- // the sword: the same hand path as the drawn hero (bladePose), so the trail and the hit boxes line up
- if(pose==='attack'||pose==='crouchAtk'){const bl=BLADES[q.weapon];if(bl){const bp=bladePose(q.atkN||0,q.atkK||0);g.save();g.translate(q.x,q.y+(pose==='crouchAtk'?8:0));g.scale(f,1);g.rotate(bp.lean);
-  drawBlade(g,bp.hx,bp.hy,bp.ang,q.atkN===1?{...bl,len:bl.len*1.08}:bl,sil);g.restore();}}
- // the face (never mirrored: it is the player's portrait)
- if(o.head&&!sil){const h=SP.headOf(sh.def,fr);if(h){g.save();g.translate(q.x+f*h.x,q.y+h.y);if(h.rot)g.rotate(f*h.rot);o.head(g,0,0,h.size);g.restore();}}}
+ // the sword: grip in the frame's drawn fist, angle from bladePose (swordAt, the same as the trail's bladeWorld)
+ const bl=(pose==='attack'||pose==='crouchAtk')&&BLADES[q.weapon],s=bl&&swordAt(q),h=o.head&&!sil&&SP.headOf(sh.def,fr);
+ const sword=()=>{g.save();g.translate(q.x,q.y+s.dy);g.scale(f,1);g.rotate(s.lean);drawBlade(g,s.hx,s.hy,s.ang,{...bl,len:s.L},sil);g.restore();
+  // the fist again over the grip, so the hand closes round it (only the opaque sprite pixels of a small box are redrawn)
+  if(s.hand&&!sil){const d=sh.def,R=3,x0=Math.round(s.hand.px)-R,y0=Math.round(s.hand.py)-R;g.save();g.translate(q.x,q.y);g.scale(f*SP.S,SP.S);
+   const prev=g.imageSmoothingEnabled;g.imageSmoothingEnabled=false;g.drawImage(sh.img,fr.sx+x0,fr.sy+y0,R*2+1,R*2+1,x0-d.foot[0],y0-d.foot[1],R*2+1,R*2+1);g.imageSmoothingEnabled=prev;g.restore();}};
+ // a sword raised over the head (wind-ups: fist inside the face, above its middle) is held in front of the face, otherwise
+ // the big face would hide the fist; a fist drawn back beside the head (the stab's wind-up) stays behind it
+ const overFace=s&&s.hand&&h&&s.hand.y<h.y&&Math.hypot(s.hand.x-h.x,s.hand.y-h.y)<h.size*.45;
+ if(s&&!overFace)sword();
+ // the face (never mirrored: it is the player's portrait; drawn still, so it moves only with the frame's face spot)
+ if(h){g.save();g.translate(q.x+f*h.x,q.y+h.y);if(h.rot)g.rotate(f*h.rot);o.head(g,0,0,h.size);g.restore();}
+ if(overFace)sword();}
 function drawHero(g,q,o={}){
  const sheet=heroSheet(q);if(sheet){drawHeroSprite(g,q,o,sheet);return;}
  const sil=o.sil||null,pal=sil?null:(o.pal||HERO_PAL[q.i||0]),f=q.facing||1,pose=heroPose(q),t=q.t||0;
@@ -454,4 +469,4 @@ function candelabra(g,x,y,lit,t,kind){
 function throne(g,x,y){if(SP.drawPicture(g,'throne',x,y,{at:'bottom'}))return;poly(g,[x-18,y,x-18,y-40,x-14,y-62,x-6,y-52,x,y-70,x+6,y-52,x+14,y-62,x+18,y-40,x+18,y],'#1a0a10');poly(g,[x-12,y-6,x-12,y-36,x,y-46,x+12,y-36,x+12,y-6],'#6a0a1a');
  g.fillStyle='#8a6a2a';g.fillRect(x-20,y-24,40,3);g.fillRect(x-20,y-4,40,4);circ(g,x,y-58,2.4,'#c9a24a');}
 
-Object.assign(exports,{heroFrame,foeFrame,drawBlade,DAGGER,glow,GLOW,drawHero,drawAfterimage,bladePose,bladeWorld,drawFoe,drawCorpse,drawDeath,drawDracula,drawDemon,drawPickup,drawShot,drawHolyFlame,Scenery,archWindow,lightShaft,pillar,banner,statue,candelabra,throne,heartPath,poly,circ,ell,line,HERO_PAL,BLADES});
+Object.assign(exports,{heroFrame,foeFrame,drawBlade,DAGGER,glow,GLOW,drawHero,drawAfterimage,bladePose,bladeWorld,swordAt,drawFoe,drawCorpse,drawDeath,drawDracula,drawDemon,drawPickup,drawShot,drawHolyFlame,Scenery,archWindow,lightShaft,pillar,banner,statue,candelabra,throne,heartPath,poly,circ,ell,line,HERO_PAL,BLADES});

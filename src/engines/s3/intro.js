@@ -12,8 +12,17 @@ let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}ca
 const FONT='italic 900 %spx "Arial Black",Impact,system-ui,sans-serif';
 // faces drawn this much bigger than the painted face circle, so they cover it like the runners' heads in play (owner)
 const FACE_K=1.95;
-const CHARS=[{body:'hog',name:'SEANIC',pic:'select-hog',does:'SPIN DASH · INSTA-SHIELD · TOP SPEED'},
- {body:'fox',name:'TAILS',pic:'select-fox',does:'FLIES (TAP JUMP AGAIN, HOLD TO CLIMB) · SPIN DASH'}];
+// the runners (owner, Nov 11 round 4: an echidna who glides like the real game, a dark hedgehog with a homing attack, and the
+// hedgehog + CPU fox pair; two players never pick the same runner: uses = the bodies a pick puts on screen)
+const CHARS=[{body:'hog',name:'SEANIC',pic:'select-hog',uses:['hog'],does:'SPIN DASH · INSTA-SHIELD · TOP SPEED'},
+ {body:'fox',name:'TAILS',pic:'select-fox',uses:['fox'],does:'FLIES (TAP JUMP AGAIN, HOLD TO CLIMB) · SPIN DASH'},
+ {body:'knux',name:'KNUX',uses:['knux'],does:'GLIDES (TAP JUMP AGAIN, HOLD) · CLIMBS WALLS · LOWER JUMP'},
+ {body:'dark',name:'SHADE',uses:['dark'],does:'HOMING ATTACK (TAP JUMP AGAIN NEAR A ROBOT) · AIR DASH'},
+ {body:'hog',pair:true,name:'SEANIC & TAILS',pic:'select-hog',uses:['hog','fox'],does:'SEANIC, WITH TAILS FOLLOWING (CPU)'}];
+// can this pick be taken when the other player already uses these bodies?
+const free=(k,taken)=>!CHARS[k].uses.some(b=>taken&&taken.includes(b));
+// the next free pick from k in direction d (k itself when it's free and d is 0)
+function nextFree(k,d,taken){const n=CHARS.length,dir=d||1;for(let s=d?1:0;s<=n;s++){const j=((k+dir*s)%n+n)%n;if(free(j,taken))return j;}return k;}
 // the logo: the kit slot if it's in, else the Arcade logo the build already ships
 const keyImgs=new Map();
 function keyPic(key){const url=USER[key];if(!url||typeof Image==='undefined')return null;let e=keyImgs.get(key);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;};e.img.src=url;keyImgs.set(key,e);}return e.ok?e.img:null;}
@@ -46,26 +55,51 @@ function edgeColours(img){let e=edgeCols.get(img);if(e)return e;e=['#1b2d9a','#0
 // a gradient from deep blue into the picture's own top colour, the picture's top edge feathered into it, pixel clouds
 // drifting over the join (owner, Nov 11: a flat blue block with a hard seam over the title looked bad on tall phones)
 function fitBg(x,img,W,H,mode,t=0){const s=mode==='cover'?Math.max(W/img.width,H/img.height):Math.max(W/img.width,H*.66/img.height),dw=img.width*s,dh=img.height*s,dx=(W-dw)/2,dy=mode==='cover'?(H-dh)/2:H-dh;
- x.save();x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(img,dx,dy,dw,dh);
- if(dy>0){const [top]=edgeColours(img),fe=Math.min(dh*.14,dy*.8+20),y1=dy+fe;
-  const g=x.createLinearGradient(0,0,0,y1);g.addColorStop(0,'#0a1e8c');g.addColorStop(Math.max(.05,dy/y1*.55),mix(top,'#0a1e8c',.45));g.addColorStop(dy/y1,top);g.addColorStop(1,rgba(top,0));
-  x.fillStyle=g;x.fillRect(0,0,W,y1+1);
+ x.save();x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';
+ // taller screens (sky mode): the picture's top band MIRRORED above its top edge and faded into a deep-blue sky (owner, Nov 11
+ // round 4: the pasted palm crowns didn't line up with the picture's own palms; the fronds now carry on from the picture
+ // itself, no seam, no other art)
+ if(dy>0){const [top]=edgeColours(img),bh=Math.min(dy,dh*.32);
+  const g=x.createLinearGradient(0,0,0,dy+1);g.addColorStop(0,'#0a1e8c');g.addColorStop(Math.max(.05,(dy-bh)/dy*.8),mix(top,'#0a1e8c',.4));g.addColorStop(1,top);
+  x.fillStyle=g;x.fillRect(0,0,W,dy+1);
+  const m=mirrorBand(img,W,Math.ceil(bh),dx,dw,dh);if(m)x.drawImage(m,0,Math.floor(dy-bh));
   const cl=SP.picture('jungle-clouds');
-  if(cl){const ch=Math.max(18,Math.min(dw*.09,dy*.5)),cw=ch*cl.width/cl.height;// two rows: a big slow one over the join, a small faster one higher up
-   for(const [yy,hh,sp,al] of [[dy+fe*.35-ch*.75,ch,6,.95],[dy*.35-ch*.3,ch*.62,11,.5]]){if(yy+hh<0)continue;x.globalAlpha=al;const off=((t*sp*ch/40)%cw+cw)%cw;
-    for(let xx=-off;xx<W;xx+=cw-1)x.drawImage(cl,xx,yy,cw,hh);}x.globalAlpha=1;}
-  // the title picture's two palms run off its top edge, so on a tall screen their crowns ended in a straight cut (owner,
-  // Nov 11): a whole crown from the game's palm art is drawn over each one, crisp, on top of the fade
-  if(img===SP.picture('title-bg'))palmCrowns(x,dx,dy,dw/img.width,t);}
+  if(cl&&dy-bh>12){const ch=Math.max(16,Math.min(dw*.07,(dy-bh)*.45)),cw=ch*cl.width/cl.height,yy=(dy-bh)*.4-ch*.3,off=((t*11*ch/40)%cw+cw)%cw;// one slow row of small clouds high in the sky
+   x.globalAlpha=.55;for(let xx=-off;xx<W;xx+=cw-1)x.drawImage(cl,xx,yy,cw,ch);x.globalAlpha=1;}}
+ x.drawImage(img,dx,dy,dw,dh);
  x.restore();}
-// crown spots in title-bg pixels: centre x, centre y, width; flip = mirrored
-const TITLE_CROWNS=[[170,95,430,false],[1545,85,380,true]];
-function palmCrowns(x,dx,dy,k,t){const p=SP.picture('palm');if(!p)return;
- // the palm art's crown: the top 46% of the picture, centred at 44% across
- const cw=p.width,chh=p.height*.46;
- for(const [cx,cy,w,flip] of TITLE_CROWNS){const s=w*k/cw,sx=dx+cx*k,sy=dy+cy*k,sway=Math.sin(t*.9+cx)*.02;
-  x.save();x.translate(sx,sy);x.rotate(sway);if(flip)x.scale(-1,1);x.imageSmoothingEnabled=true;
-  x.drawImage(p,0,0,cw,chh,-cw*.44*s,-chh*.55*s,cw*s,chh*s);x.restore();}}
+// the picture's top band flipped upside down, transparent at its top: drawn right above the picture's top edge
+let mirrorC=null;
+function mirrorBand(img,W,bh,dx,dw,dh){if(bh<2||typeof document==='undefined')return null;mirrorC=mirrorC||document.createElement('canvas');
+ const c=mirrorC;if(c.width!==Math.ceil(W))c.width=Math.ceil(W);if(c.height!==bh)c.height=bh;const g=c.getContext('2d');g.clearRect(0,0,c.width,bh);
+ g.save();g.imageSmoothingEnabled=true;g.translate(0,bh);g.scale(1,-1);g.drawImage(img,dx,0,dw,dh);g.restore();
+ g.globalCompositeOperation='destination-in';const f=g.createLinearGradient(0,0,0,bh);f.addColorStop(0,'rgba(0,0,0,0)');f.addColorStop(.55,'rgba(0,0,0,.7)');f.addColorStop(1,'#000');g.fillStyle=f;g.fillRect(0,0,c.width,bh);
+ g.globalCompositeOperation='source-over';return c;}
+// the select backdrop (owner, Nov 11 round 4: 'cover' zoomed in to hide the blue bars; "make a texture to fill the bars
+// and keep it scaled to fit like we had"): the picture fitted as before (at least 62% of the screen tall, else full
+// width), the bars above/below filled with the same look: the picture's own edge colours, a big checkerboard at the
+// picture's square size drifting slowly, the floor grid carrying on below it; the picture's edges feathered into them
+const SEL_SQ=84,SEL_HORIZON=668;// checker square and the floor's horizon, in select-bg pixels
+function selectBg(x,img,W,H,t){const s=Math.max(W/img.width,H*.62/img.height),dw=img.width*s,dh=img.height*s,dx=(W-dw)/2,dy=(H-dh)/2;
+ if(dy<=1){x.drawImage(img,dx,dy,dw,dh);return;}
+ const [top,bot]=edgeColours(img),sq=SEL_SQ*s,hy=dy+SEL_HORIZON*s;x.save();
+ // top bar: edge colour darkening upward + the checkerboard (a light square every other one), drifting down-left
+ let g=x.createLinearGradient(0,0,0,dy);g.addColorStop(0,mix(top,'#000018',.55));g.addColorStop(1,top);x.fillStyle=g;x.fillRect(0,0,W,dy+2);
+ x.save();x.beginPath();x.rect(0,0,W,dy+2);x.clip();const ox=(t*sq*.15)%(sq*2),oy=(t*sq*.1)%(sq*2);
+ for(let yy=dy-sq*2+oy;yy>-sq*2;yy-=sq)for(let xx=-sq*2-ox,c=0;xx<W+sq;xx+=sq,c++){const r=Math.round((dy-yy)/sq);if((c+r)%2)continue;
+  x.globalAlpha=.18*Math.max(.25,Math.min(1,(yy+sq)/dy));x.fillStyle='#3d7dff';x.fillRect(xx,yy,sq-1,sq-1);}
+ x.restore();x.globalAlpha=1;
+ // bottom bar: edge colour + the floor grid's lines carrying on (radiating from the horizon's middle, rows spreading out)
+ g=x.createLinearGradient(0,dy+dh,0,H);g.addColorStop(0,bot);g.addColorStop(1,mix(bot,'#000018',.5));x.fillStyle=g;x.fillRect(0,dy+dh-2,W,H-dy-dh+2);
+ x.save();x.beginPath();x.rect(0,dy+dh-1,W,H);x.clip();x.strokeStyle='#4fc3ff';x.lineWidth=Math.max(1,s*3);x.globalAlpha=.35;
+ const cx=W/2,y0=dy+dh;for(let k=-14;k<=14;k++){const bx=cx+k*sq*1.15,sl=(bx-cx)/Math.max(1,y0-hy);x.beginPath();x.moveTo(bx,y0);x.lineTo(bx+sl*(H-y0),H);x.stroke();}
+ for(let r=1,yy=y0;yy<H;r++){yy=y0+sq*.55*r*r*.6+sq*.4*r;x.beginPath();x.moveTo(0,yy);x.lineTo(W,yy);x.stroke();}
+ x.restore();x.globalAlpha=1;
+ x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(img,dx,dy,dw,dh);
+ // feathered seams: the bar colour fading over the picture's top and bottom edges
+ const fe=Math.min(dh*.06,dy*.6);g=x.createLinearGradient(0,dy,0,dy+fe);g.addColorStop(0,top);g.addColorStop(1,rgba(top,0));x.fillStyle=g;x.fillRect(0,dy,W,fe);
+ g=x.createLinearGradient(0,dy+dh,0,dy+dh-fe);g.addColorStop(0,bot);g.addColorStop(1,rgba(bot,0));x.fillStyle=g;x.fillRect(0,dy+dh-fe,W,fe);
+ x.restore();}
 const rgbOf=c=>{const m=/rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c);if(m)return [+m[1],+m[2],+m[3]];const n=parseInt(c.slice(1),16);return [n>>16,n>>8&255,n&255];};
 const rgba=(c,a)=>{const [r,g,b]=rgbOf(c);return `rgba(${r},${g},${b},${a})`;};
 const mix=(a,b,k)=>{const A=rgbOf(a),B=rgbOf(b);return `rgb(${A.map((v,i)=>Math.round(v+(B[i]-v)*k)).join(',')})`;};
@@ -115,9 +149,9 @@ function selectLayout(W,H){const tall=H>W*1.1,m=Math.min(W,H),hh=m*.11,hy=m*.04+
  const top=hb+Math.max(0,(H-hb-mh-reserved)/2)*.7,cy=top+mh/2;
  const scr={x0:cx-mw*.38,y0:cy-mh*.375,x1:cx+mw*.38,y1:cy+mh*.235},plateY=cy+mh/2+g+ph/2,doesY=plateY+ph/2+g*.5+doesH/2,tapY=doesY+doesH/2+g+tapH/2;
  return {tall,m,hh,hy,mw,mh,cx,cy,scr,ph,doesY,tapY,arrowL:[cx-mw*.5-m*.08,cy],arrowR:[cx+mw*.5+m*.08,cy],plateY};}
-function drawSelect(x,W,H,t,{pick,slide=0,head,i=0}){const L=selectLayout(W,H),u=Math.min(W/320,H/224),m=Math.min(W,H);x.save();
+function drawSelect(x,W,H,t,{pick,slide=0,head,i=0,j=null,who=null,taken=null}){/* i = this player's face, j = the other face (the CPU fox of the pair), who = header for 2 players */const L=selectLayout(W,H),u=Math.min(W/320,H/224),m=Math.min(W,H);x.save();
  const bg=SP.picture('select-bg');
- if(bg)fitBg(x,bg,W,H,'cover',t);
+ if(bg)selectBg(x,bg,W,H,t);
  else{let g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#1b2d9a');g.addColorStop(1,'#0a1150');x.fillStyle=g;x.fillRect(0,0,W,H);
   // slanted stripes drifting, like the Mega Drive menus
   x.save();x.globalAlpha=.16;x.fillStyle='#6fb4ff';const st=m*.09,off=(t*m*.06)%(st*2);x.translate(-H,0);
@@ -128,16 +162,18 @@ function drawSelect(x,W,H,t,{pick,slide=0,head,i=0}){const L=selectLayout(W,H),u
  const hh=L.hh,hw=Math.min(W*.82,m*1.2,W-hh*.5-150),hy=L.hy;x.save();x.translate(0,hy);
  x.fillStyle='#ffe23a';x.beginPath();x.moveTo(-10,0);x.lineTo(hw+hh*.5+6,0);x.lineTo(hw+6,hh+6);x.lineTo(-10,hh+6);x.fill();
  x.fillStyle='#e8102a';x.beginPath();x.moveTo(-10,0);x.lineTo(hw+hh*.5,0);x.lineTo(hw,hh);x.lineTo(-10,hh);x.fill();x.restore();
- x.font=FONT.replace('%s',Math.round(hh*.56));const tw=x.measureText('SELECT PLAYER').width,hs=Math.min(hh*.56,hh*.56*(hw-m*.06)/tw);
- text(x,'SELECT PLAYER',m*.04,hy+hh*.52,hs,'#fff','left');
+ const head1=who||'SELECT PLAYER';x.font=FONT.replace('%s',Math.round(hh*.56));const tw=x.measureText(head1).width,hs=Math.min(hh*.56,hh*.56*(hw-m*.06)/tw);
+ text(x,head1,m*.04,hy+hh*.52,hs,'#fff','left');
  // the monitor
  const mon=SP.picture('select-monitor'),S=L.scr;
  // screen contents first (clipped), then the frame over it
  x.save();x.beginPath();x.rect(S.x0,S.y0,S.x1-S.x0,S.y1-S.y0);x.clip();
  let g=x.createLinearGradient(0,S.y0,0,S.y1);g.addColorStop(0,'#3d8cff');g.addColorStop(.7,'#bfe6ff');g.addColorStop(.7,'#2fa83a');g.addColorStop(1,'#1d6d24');x.fillStyle=g;x.fillRect(S.x0,S.y0,S.x1-S.x0,S.y1-S.y0);
  const sw=S.x1-S.x0,sh=S.y1-S.y0,show=(k,dx)=>{const c=CHARS[k],fx=(S.x0+S.x1)/2+dx*sw,fy=S.y0+sh*.86;
-  if(!picWithFace(x,c.pic,fx,S.y0+sh*.96,sh*.86,i,head,'win'))runner(x,c.body,i,fx,fy,sh*.7/44,t,head,{facing:1});};
- if(slide){const k=ease(1-Math.abs(slide)),d=Math.sign(slide);show(pick,d*(1-k));show((pick+(d>0?-1:1)+CHARS.length)%CHARS.length,-d*k);}else show(pick,0);
+  if(c.pair){// the pair: the hedgehog in front, the fox at his shoulder
+   runner(x,'fox',j??i,fx+sw*.2,fy-sh*.02,sh*.55/44,t,head,{facing:-1});if(!picWithFace(x,c.pic,fx-sw*.12,S.y0+sh*.96,sh*.8,i,head,'win'))runner(x,'hog',i,fx-sw*.12,fy,sh*.66/44,t,head,{facing:1});return;}
+  if(!c.pic||!picWithFace(x,c.pic,fx,S.y0+sh*.96,sh*.86,i,head,'win'))runner(x,c.body,i,fx,fy,sh*.7/44,t,head,{facing:1});};
+ if(slide){const k=ease(1-Math.abs(slide)),d=Math.sign(slide);show(pick,d*(1-k));show(nextFree(pick,d>0?-1:1,taken),-d*k);}else show(pick,0);
  x.fillStyle='rgba(0,0,0,.12)';for(let yy=S.y0;yy<S.y1;yy+=Math.max(2,u*1.5))x.fillRect(S.x0,yy,sw,Math.max(1,u*.5));// scanlines
  x.restore();
  if(mon){const d=SP.PICTURES['select-monitor'],[a0,b0,a1,b1]=d.screen,sx=sw/(a1-a0),sy=sh/(b1-b0);x.drawImage(mon,S.x0-a0*sx,S.y0-b0*sy,d.size[0]*sx,d.size[1]*sy);}
@@ -165,4 +201,4 @@ function selectHit(W,H,px,py){const L=selectLayout(W,H),m=Math.min(W,H),near=(a,
  // only the arrows change the runner; a tap anywhere else (the monitor, the name plate...) picks it (owner)
  if(near(L.arrowL,m*.12))return 'prev';if(near(L.arrowR,m*.12))return 'next';return 'go';}
 const selectArrows=(W,H)=>{const L=selectLayout(W,H);return {left:L.arrowL,right:L.arrowR};};
-Object.assign(exports,{CHARS,drawTitle,drawSelect,selectHit,selectArrows});
+Object.assign(exports,{CHARS,free,nextFree,drawTitle,drawSelect,selectHit,selectArrows});

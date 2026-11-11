@@ -113,7 +113,7 @@ r=second('bubble',60);assert.ok(r.evs.includes('bubble-bounce')&&r.evs.includes(
 r=second(null,16);assert.ok(r.evs.includes('insta-shield')&&r.p.insta>0,'insta-shield');
 
 // speed shoes: top speed 12
-w=new O.World(floor(),[]);p=runner(100);p.shoes=600;sim(w,[p],200,I({r:true}));assert.ok(Math.abs(p.gsp-12)<1e-9,`speed shoes top 12 (${p.gsp})`);
+w=new O.World(floor(),[]);p=runner(100);p.shoes=600;sim(w,[p],200,I({r:true}));assert.ok(Math.abs(p.gsp-P.SHOES.top)<1e-9,`speed shoes top ${P.SHOES.top} (${p.gsp})`);
 // falling into a pit kills
 w=new O.World(floor(400,800),[],{bottom:1400});p=runner(200);ev=sim(w,[p],300,I({r:true}));assert.ok(p.dead&&kinds(ev).includes('die'),'pit kills');
 console.log('s3-objects OK');

@@ -583,7 +583,8 @@ async function sotn(s){
  function vignette(){const k=`${Math.round(lay.vw*lay.sc)}x${Math.round(lay.vh)}`;if(k===vigKey&&vig)return vig;vigKey=k;const W=Math.max(2,Math.round(lay.vw*lay.sc)),H=Math.max(2,Math.round(lay.vh));
   vig=document.createElement('canvas');vig.width=W;vig.height=H;const q=vig.getContext('2d'),gr=q.createRadialGradient(W/2,H*.55,Math.min(W,H)*.25,W/2,H*.55,Math.max(W,H)*.75);
   gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.7,'rgba(0,0,0,.35)');gr.addColorStop(1,'rgba(0,0,0,.8)');q.fillStyle=gr;q.fillRect(0,0,W,H);return vig;}
- const headFn=(i,mood)=>(gg,x,y,size)=>s.sprite(gg,i,x,y,size,{exact:true,mood});
+ // the face moves only with the body (the sheet's per-frame face spots): `still` = no idle bob/lean of its own (owner, Nov 11)
+ const headFn=(i,mood)=>(gg,x,y,size)=>s.sprite(gg,i,x,y,size,{exact:true,mood,still:true});
  function drawRegionBack(w,r,cam,x0,x1){const t=simT,sk=scen;
   g.save();g.beginPath();g.rect(Math.max(r.x0,x0),0,Math.min(r.x1,x1)-Math.max(r.x0,x0),VH);g.clip();
   if(r.kind==='forest'||r.kind==='gate'){const skyP=SP.picture('forest-sky');if(skyP)g.drawImage(skyP,cam.x-1,0,cam.w+2,VH);else{g.drawImage(sk.L.sky,cam.x-1,0,cam.w+2,VH);sk.tiled(g,'stars',cam.x,.97,x0,x1,0,.9);}

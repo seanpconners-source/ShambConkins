@@ -24,7 +24,9 @@ class World{
  step(runners,inputs){this.frame++;
   for(let i=0;i<runners.length;i++){const p=runners[i];if(p.dead){deadStep(p,this);continue;}const inp=inputs[i]||{};
    if(p.grab>0)p.grab--;if(p.tubeCool>0)p.tubeCool--;p.py=p.y;
+   if(p.flyIn){flyInStep(p,runners,this);continue;}// the CPU partner flying back to its leader: no physics, touches nothing
    if(p.tube){p.ev.length=0;tubeStep(p,this);}else if(p.cork){p.ev.length=0;corkStep(p,inp,this,i);}else P.step(p,inp,this.T,{switchers:this.switchers});for(const e of p.ev)this.ev.push({k:e,p:i});
+   if(p.wantHome||p.home)homeStep(p,this,i);
    if(p.ground&&!p.rolling)p.chain=0;// the bounce chain ends back on your feet
    if(p.hang)hangStep(p,inp,this,i);
    for(const o of this.objs)if(!o.gone)touch(o,p,this,i,inp);
@@ -55,6 +57,7 @@ function init(o,w){
  if(o.type==='seesaw'){o.w=o.w||96;o.tilt=o.tilt||-1;o.h=8;o.gy=o.y;o.ball={side:o.tilt,y:0,vy:0,air:false};o.lift=0;o.top=seesawSurf(o,o.x);o.y=o.top+o.h/2;}
  if(o.type==='platform'&&o.move==='swing'){o.px=o.x;o.py=o.y;o.len=o.len||160;o.t=o.phase||0;swingPos(o);o.x0=o.x;o.y0=o.y;}
  if(o.type==='boss')bossInit(o);
+ if(o.type==='capsule'){o.w=56;o.h=56;o.gy=o.y;o.y=o.gy-o.h/2;o.solid=true;o.opened=false;o.t=0;}
  if(o.type==='spikelog'){o.w=o.w||64;o.h=o.h||22;o.solid=true;o.t=o.phase||0;o.y0=o.y;o.y=o.y0-o.h/2;}
 }
 // ---------------- warp tubes (owner, Nov 11: "launch you through the whole thing"; the physics roll snagged on the S-bends):
@@ -73,7 +76,7 @@ function tubeEnter(o,p,w,i){if(p.tube||p.dead||p.hang||p.tubeCool>0)return;const
   if(Math.abs(p.x-at.x)<22&&Math.abs(p.y-at.y)<30&&vx*out<-.5){
    const v=Math.max(11,Math.min(16,Math.abs(vx)*1.15));p.tube={o,d:end?o.total:0,dir:end?-1:1,v};
    if(!p.rolling)p.y+=C.hr-C.hrRoll;p.rolling=true;p.ground=false;p.jumping=false;p.spindash=false;p.crouch=false;p.onObj=null;p.fly=0;
-   w.ev.push({k:'dash',p:i});return;}}}
+   w.ev.push({k:'tube',p:i});return;}}}// (its own event: as 'dash' it set off the spin dash camera lag = a snap back 32 frames)
 function tubeStep(p,w){const T=p.tube,o=T.o;T.d+=T.dir*T.v;
  const done=T.dir>0?T.d>=o.total:T.d<=0,at=rideAt(o,T.d),dx=at.dx*T.dir,dy=at.dy*T.dir;
  p.x=at.x;p.y=at.y;p.xsp=dx*T.v;p.ysp=dy*T.v;p.gsp=p.xsp;p.facing=dx<0?-1:1;p.ground=false;p.rolling=true;
@@ -91,14 +94,14 @@ function touch(o,p,w,i,inp){const b=box(p);
  case 'seesaw':return seesawTouch(o,p,w,i);
  case 'spikelog':if(o.spiky&&p.onObj===o&&p.ground)hurt(p,w,i,o.x,'spike');return;
  case 'badnik':if(o.hidden)return;if(o.alive&&hit(b,o,o.w,o.h)){if(attacking(p))popBadnik(o,p,w,i);else hurt(p,w,i,o.x);}return;
- case 'starpost':if(!o.lit&&hit(b,o,8,24)){o.lit=true;o.spin=60;p.check={x:o.x,y:o.y-24,rings:p.rings,time:w.frame};w.ev.push({k:'starpost',p:i,x:o.x,y:o.y});}return;
- case 'vine':if(!p.hang&&!p.dead&&!(p.grab>0)&&Math.hypot(p.x-o.hx,p.y-o.hy-16)<20){p.hang=o;o.who=p;p.ground=false;p.jumping=false;p.rolling=false;p.xsp=p.ysp=0;w.ev.push({k:'grab',p:i});}return;
- case 'zipline':if(!p.hang&&!p.dead&&!(p.grab>0)&&!o.who&&Math.hypot(p.x-o.hx,p.y-o.hy-20)<18){p.hang=o;o.who=p;o.v=Math.max(2,Math.abs(p.xsp||p.gsp));p.ground=false;p.jumping=false;p.rolling=false;w.ev.push({k:'grab',p:i});}return;
+ case 'starpost':if(!p.cpu&&!o.lit&&hit(b,o,8,24)){o.lit=true;o.spin=60;p.check={x:o.x,y:o.y-24,rings:p.rings,time:w.frame};w.ev.push({k:'starpost',p:i,x:o.x,y:o.y});}return;
+ case 'vine':if(p.cpu)return;if(!p.hang&&!p.dead&&!(p.grab>0)&&Math.hypot(p.x-o.hx,p.y-o.hy-16)<20){p.hang=o;o.who=p;p.ground=false;p.jumping=false;p.rolling=false;p.xsp=p.ysp=0;w.ev.push({k:'grab',p:i});}return;
+ case 'zipline':if(p.cpu)return;if(!p.hang&&!p.dead&&!(p.grab>0)&&!o.who&&Math.hypot(p.x-o.hx,p.y-o.hy-20)<18){p.hang=o;o.who=p;o.v=Math.max(2,Math.abs(p.xsp||p.gsp));p.ground=false;p.jumping=false;p.rolling=false;w.ev.push({k:'grab',p:i});}return;
  // roll tunnel: inside it the runner curls up and keeps rolling forward (Green Hill style S-tube)
  case 'tube':if(o.path)return tubeEnter(o,p,w,i);if(Math.abs(p.x-o.x)<o.w/2&&Math.abs(p.y-o.y)<o.h/2&&p.ground&&!p.dead){const d=o.dir||1;
    if(!p.rolling){p.rolling=true;p.y+=C.hr-C.hrRoll;p.crouch=false;p.spindash=false;w.ev.push({k:'roll',p:i});}
    if(p.gsp*d<(o.min||6))p.gsp=(o.min||6)*d;p.facing=d;}return;
- case 'sign':if(!o.hit&&p.x>=o.x){o.hit=true;o.by=i;o.spin=150;w.ev.push({k:'sign',p:i,x:o.x,y:o.y});}return;
+ case 'sign':if(!o.hit&&!p.cpu&&p.x>=o.x){o.hit=true;o.by=i;o.spin=150;w.ev.push({k:'sign',p:i,x:o.x,y:o.y});}return;
  case 'goal':if(!o.done&&p.x>=o.x){o.done=true;w.ev.push({k:'goal',p:i});}return;
  }}
 function gain(p,w,i,n){const before=p.rings|0;p.rings=before+n;w.ev.push({k:'ring',p:i});
@@ -133,8 +136,27 @@ function popBadnik(o,p,w,i){o.alive=false;o.gone=true;
  if(!p.ground){if(p.y<o.y&&p.ysp>=0)p.ysp=-p.ysp;else if(p.ysp<0)p.ysp+=1;}
  p.chain=(p.chain|0)+1;const pts=p.chain>=16?10000:CHAIN[Math.min(3,p.chain-1)];p.score=(p.score|0)+pts;
  w.ev.push({k:'explode',p:i,x:o.x,y:o.y,pts});w.loose.push({x:o.x,y:o.y,vx:0,vy:-4,t:0,life:200,animal:true});}
+// ---------------- the dark hedgehog's HOMING ATTACK (owner, Nov 11 round 4: "does shadow do something?"): the second jump
+// press locks onto the nearest robot / monitor / boss ahead and below (within 190 px) and flies at it at 10 px a frame; a hit
+// bounces you up and the move is ready again (chains, like Sonic Adventure). Nothing in reach = an air dash ahead.
+function homeStep(p,w,i){
+ if(p.wantHome){p.wantHome=false;let best=null,bd=190;
+  for(const o of w.objs){if(o.gone)continue;const ok=o.type==='badnik'?o.alive&&!o.hidden:o.type==='monitor'?!o.broken:o.type==='boss'?o.active&&!o.done&&o.state!=='wreck'&&o.state!=='flee':false;if(!ok)continue;
+   const dx=o.x-p.x,dy=o.y-p.y,d=Math.hypot(dx,dy);if(d<bd&&dx*p.facing>-10&&dy>-80){bd=d;best=o;}}
+  if(best)p.home={o:best,t:0};else{p.xsp=p.facing*Math.max(9,Math.abs(p.xsp));p.ysp=Math.min(p.ysp,0);w.ev.push({k:'air-dash',p:i});return;}}
+ const h=p.home;if(!h)return;const o=h.o,hitIt=o.type==='badnik'?!o.alive:o.type==='monitor'?o.broken:o.type==='boss'?o.inv>0||o.done:false;
+ if(hitIt){p.home=null;p.ysp=-6.5;p.xsp*=.3;p.ability=false;return;}// bounce off, ready to home in again
+ if(p.ground||++h.t>40||o.gone){p.home=null;return;}
+ const dx=o.x-p.x,dy=o.y-p.y,d=Math.hypot(dx,dy)||1;p.xsp=dx/d*10;p.ysp=dy/d*10;p.facing=Math.sign(dx)||p.facing;}
+// ---------------- the CPU partner flying back in (Sonic 3's Tails): from above the screen, down to the leader's side
+function flyInStep(p,runners,w){const L=runners.find(r=>!r.cpu)||runners[0];if(!L)return;
+ if(p.flyIn===1){p.flyIn=2;p.x=L.x-(L.facing||1)*140;p.y=L.y-260;p.dead=0;p.hurt=false;p.hang=null;p.tube=null;p.cork=null;p.glide=0;p.climb=0;p.home=null;}
+ const tx=L.x-(L.facing||1)*26,ty=L.y-6,dx=tx-p.x,dy=ty-p.y,d=Math.hypot(dx,dy);p.fly=2;p.ground=false;p.rolling=false;p.jumping=false;p.facing=dx<0?-1:1;
+ if(d<10&&!L.dead){p.flyIn=0;p.fly=0;p.x=tx;p.y=ty;p.xsp=L.ground?L.gsp*Math.cos(L.ang):L.xsp;p.ysp=0;p.ability=false;p.inv=60;return;}
+ const v=Math.min(d,Math.max(5,Math.hypot(L.xsp||0,L.ysp||0)+3));p.xsp=dx/d*v;p.ysp=dy/d*v;p.x+=p.xsp;p.y+=p.ysp;}
 // a hit: shields absorb it, rings scatter, no rings = dead
 function hurt(p,w,i,fromX,why){if(invulnerable(p)||p.hang&&why!=='spike')return;
+ if(p.cpu){P.knock(p,fromX);return;}// the CPU partner (Sonic 3's Tails) is only knocked back: no rings to lose, never dies from a hit
  if(p.hang){p.hang.who=null;p.hang=null;}
  if(p.shield){p.shield=null;P.knock(p,fromX);w.ev.push({k:'hurt',p:i,why});return;}
  if((p.rings|0)>0){scatter(p,w,i);P.knock(p,fromX);w.ev.push({k:'ring-loss',p:i,why});return;}
@@ -144,12 +166,13 @@ function scatter(p,w,i){const n=Math.min(32,p.rings|0);p.rings=0;let ang=101.25*
  for(let k=0;k<n;k++){if(k===16){sp=2;ang=101.25*Math.PI/180;}
   let vx=Math.cos(ang)*sp,vy=-Math.sin(ang)*sp;if(flip){vx=-vx;ang+=22.5*Math.PI/180;}flip=!flip;
   w.loose.push({x:p.x,y:p.y,vx,vy,t:0,life:256});}}
-function die(p,w,i,why){if(p.dead)return;p.dead=1;p.lives=(p.lives|0)-1;p.ground=false;p.xsp=0;p.ysp=-7;p.hang=null;p.shield=null;p.onObj=null;
+function die(p,w,i,why){if(p.dead)return;if(p.cpu){p.flyIn=1;p.hurt=false;return;}// the CPU partner flies back in instead
+ p.dead=1;p.lives=(p.lives|0)-1;p.ground=false;p.xsp=0;p.ysp=-7;p.hang=null;p.shield=null;p.onObj=null;
  w.ev.push({k:'die',p:i,why});}
 function deadStep(p,w){if(p.dead>=1&&p.dead<200){p.dead++;p.y+=p.ysp;p.ysp+=C.grv;}}
 // respawn at the last starpost (or the start)
 function respawn(p,start){const c=p.check||start;Object.assign(p,{x:c.x,y:c.y,xsp:0,ysp:0,gsp:0,ang:0,ground:false,dead:0,hurt:false,inv:0,
- rings:0,rolling:false,jumping:false,spindash:false,hang:null,onObj:null,cork:null,tube:null,shield:null,shoes:0,star:0,chain:0});}
+ rings:0,rolling:false,jumping:false,spindash:false,hang:null,onObj:null,cork:null,tube:null,shield:null,shoes:0,star:0,chain:0,glide:0,climb:0,slide:false,drop:false,home:null,wantHome:false,fly:0});}
 // ---------------- solid objects (monitors, breakable walls, platforms): push the runner out, stand on tops
 function solids(p,w,i){if(p.dead||p.hang)return;const [wr,hr]=P.radii(p);
  for(const o of w.objs){if(o.gone||!o.solid)continue;const hw=o.w/2+wr,hh=o.h/2+hr;
@@ -180,6 +203,7 @@ function tick(o,w,runners){
  case 'platform':platform(o,w,runners);return;
  case 'seesaw':seesawTick(o,w,runners);return;
  case 'boss':bossTick(o,w,runners);return;
+ case 'capsule':capsuleTick(o,w,runners);return;
  case 'spikelog':o.t++;o.spin=o.t*2*Math.PI/(o.period||150);o.spiky=Math.cos(o.spin)>.55;return;
  case 'vine':{o.t++;const amp=o.amp??0.9,per=o.period??140;o.ang=amp*Math.sin(o.t*2*Math.PI/per);o.hx=o.x+Math.sin(o.ang)*o.len;o.hy=o.y+Math.cos(o.ang)*o.len;return;}
  case 'zipline':if(o.who){const dx=o.x1-o.x0,dy=o.y1-o.y0,L=Math.hypot(dx,dy);o.v=Math.min(10,o.v+0.21875*dy/L);o.s=Math.min(L,o.s+o.v);
@@ -260,7 +284,8 @@ function seesawTick(o,w,runners){if(o.lift>0)o.lift--;const b=o.ball;
 const BOSS={hp:6,hiY:-170,loY:-34,cycle:350,jet:78,jetH:12};// jet = how far the flames reach each side (as drawn on the sheet)
 // autopilot for the bots (tests, online test bot): keep ~135 px away while it hovers, sinks and fires; when it rises
 // again, run in and jump into it. Returns an input or null when no fight is on.
-function bossBot(w,p){const o=w.objs.find(o=>o.type==='boss'&&o.active&&!o.done&&o.state!=='wreck');if(!o||p.dead)return null;
+function bossBot(w,p){const o=w.objs.find(o=>o.type==='boss'&&o.active&&!o.done&&o.state!=='wreck'&&o.state!=='flee');if(!o||p.dead)return null;
+ if(o.kind==='big')return bigBot(o,w,p);
  const dx=o.x-p.x,ad=Math.abs(dx),inp={l:false,r:false,u:false,d:false,jump:false,jumpPress:false};
  if(!p.ground&&p.ysp<0)inp.jump=true;
  if(o.state==='cool'||o.state==='rise'&&o.y>o.gy-90){if(dx>0)inp.r=true;else inp.l=true;if(ad<50&&p.ground){inp.jump=inp.jumpPress=true;}return inp;}
@@ -271,9 +296,9 @@ function bossBot(w,p){const o=w.objs.find(o=>o.type==='boss'&&o.active&&!o.done&
  if(o.state==='hover'||o.state==='sink'&&o.y<o.gy-110||Math.abs(tx-p.x)>8&&want===side){if(tx>p.x+6)inp.r=true;else if(tx<p.x-6)inp.l=true;}
  return inp;}
 // (a reset, when everyone in the arena died, brings it back to full health)
-function bossInit(o){o.maxHp=o.maxHp||o.hp||BOSS.hp;o.hp=o.maxHp;o.state='wait';o.t=0;o.inv=0;o.x=o.x||(o.x0+o.x1)/2;o.y=o.gy+BOSS.hiY;o.vx=0;o.fire=0;o.w=52;o.h=40;o.done=false;o.active=false;}
+function bossInit(o){if(o.kind==='big')return bigInit(o);o.maxHp=o.maxHp||o.hp||BOSS.hp;o.hp=o.maxHp;o.state='wait';o.t=0;o.inv=0;o.x=o.x||(o.x0+o.x1)/2;o.y=o.gy+BOSS.hiY;o.vx=0;o.fire=0;o.w=52;o.h=40;o.done=false;o.active=false;}
 function bossBody(o){return {x:o.x,y:o.y-4};}
-function bossTouch(o,p,w,i){if(o.done||!o.active||p.dead||o.state==='wreck')return;const b=box(p),c=bossBody(o);
+function bossTouch(o,p,w,i){if(o.kind==='big')return bigTouch(o,p,w,i);if(o.done||!o.active||p.dead||o.state==='wreck')return;const b=box(p),c=bossBody(o);
  // the flame jets: hurt anyone level with them at the sides
  if(o.fire>0){const dx=Math.abs(p.x-o.x),dy=Math.abs(p.y-(o.y+6));if(dx>22&&dx<BOSS.jet+8&&dy<BOSS.jetH+b.h){hurt(p,w,i,o.x,'fire');return;}}
  if(!hit(b,c,24,20))return;
@@ -282,7 +307,7 @@ function bossTouch(o,p,w,i){if(o.done||!o.active||p.dead||o.state==='wreck')retu
   p.xsp=-(p.xsp||p.gsp||(p.x<o.x?2:-2))*.6-(p.x<o.x?2:-2)*.3;p.gsp=p.xsp;if(!p.ground)p.ysp=p.y<o.y?-4:Math.max(2,p.ysp);
   if(o.hp<=0){o.state='wreck';o.t=0;o.fire=0;p.score=(p.score||0)+1000;w.ev.push({k:'boss-wreck',p:i,x:o.x,y:o.y});}}
  else if(!attacking(p)&&o.inv<=0)hurt(p,w,i,o.x,'boss');}
-function bossTick(o,w,runners){if(o.maxHp===undefined)bossInit(o);if(o.done)return;if(o.inv>0)o.inv--;
+function bossTick(o,w,runners){if(o.kind==='big')return bigTick(o,w,runners);if(o.maxHp===undefined)bossInit(o);if(o.done)return;if(o.inv>0)o.inv--;
  const inside=runners.filter(p=>!p.dead&&p.x>o.x0&&p.x<o.x1);
  if(!o.active){if(inside.some(p=>p.x>o.x0+48)){o.active=true;o.state='hover';o.t=0;w.ev.push({k:'boss-start',x0:o.x0,x1:o.x1});}return;}
  // keep the fighters inside the closed arena
@@ -300,6 +325,61 @@ function bossTick(o,w,runners){if(o.maxHp===undefined)bossInit(o);if(o.done)retu
  else if(k<235){o.state='flame';o.fire=k-175+1;o.y=lo;if(k===175)w.ev.push({k:'boss-fire',x:o.x,y:o.y});}
  else if(k<315){o.state='cool';o.fire=0;o.y=lo;}
  else{o.state='rise';o.fire=0;o.y+=(hi-o.y)*.08;}}
+// ---------------- THE ZONE BOSS (Act 3, owner Nov 11 round 4: "the real boss at the end"): a flying pod with a spiked mace
+// on a chain arm (the owner's boss sheet). o.x/o.y = the pod's middle; o.f = which way it faces (the mace side). The cycle:
+//   HOVER  high up, drifting over the runner, the mace hanging on its front side (the mace always hurts)
+//   DIVE   down to swinging height, turned toward the runner
+//   SWING  three swings of the mace in front of it (the sheet's attack frames): stay back or get behind it
+//   TIRED  it sinks low, the mace drops to the floor and rests: the opening to hit the pod (from any side, or from above)
+//   RISE   back up. Eight hits; from half health it moves faster and rests shorter. Then WRECK (explosions), FLEE (up and
+//   off the screen) and 'boss-down' (the arena opens: the capsule)
+const BIG={hp:8,hiY:-200,midY:-96,loY:-46,r:30,mace:13};
+// the mace's middle relative to the pod (facing right), per sheet frame: hover, then attack frames 0-3 (measured on the sheet)
+const MACE={hover:[70,18],attack:[[71,12],[79,-22],[87,-12],[65,30]]};
+function bigInit(o){o.maxHp=o.maxHp||o.hp||BIG.hp;o.hp=o.maxHp;o.state='wait';o.t=0;o.k=0;o.inv=0;o.x=o.x||(o.x0+o.x1)/2;o.y=o.gy+BIG.hiY;o.f=-1;o.fire=0;o.w=60;o.h=48;o.done=false;o.active=false;o.mx=null;o.my=null;}
+const bigCycle=o=>{const fast=o.hp<=o.maxHp/2;return {hover:fast?80:120,dive:36,swing:fast?84:72,tired:fast?70:96,rise:40};};
+function bigMace(o){if(o.state==='tired'||o.state==='wreck'||o.state==='flee'||o.state==='down'){o.mx=null;return;}
+ const [mx,my]=o.state==='swing'?MACE.attack[Math.floor(o.k/6)%4]:MACE.hover;o.mx=o.x+o.f*mx;o.my=o.y+my;}
+function bigTouch(o,p,w,i){if(o.done||!o.active||p.dead||o.state==='wreck'||o.state==='flee')return;const b=box(p);
+ if(o.mx!==null&&o.inv<=0&&Math.hypot(p.x-o.mx,p.y-o.my)<BIG.mace+Math.max(b.w,b.h)*.6){hurt(p,w,i,o.mx,'boss');return;}
+ if(!hit(b,{x:o.x,y:o.y},BIG.r,BIG.r*.8))return;
+ if(attacking(p)&&o.inv<=0){o.hp--;o.inv=40;w.ev.push({k:'boss-hit',p:i,x:o.x,y:o.y,hp:o.hp});
+  p.xsp=-(p.xsp||p.gsp||(p.x<o.x?2:-2))*.6-(p.x<o.x?2:-2)*.3;p.gsp=p.xsp;if(!p.ground)p.ysp=p.y<o.y?-4.5:Math.max(2,p.ysp);
+  if(o.hp<=0){o.state='wreck';o.t=0;o.mx=null;p.score=(p.score||0)+1000;w.ev.push({k:'boss-wreck',p:i,x:o.x,y:o.y});}}
+ else if(!attacking(p)&&o.inv<=0)hurt(p,w,i,o.x,'boss');}
+function bigTick(o,w,runners){if(o.maxHp===undefined)bigInit(o);if(o.done)return;if(o.inv>0)o.inv--;
+ const inside=runners.filter(p=>!p.dead&&p.x>o.x0&&p.x<o.x1);
+ if(!o.active){if(inside.some(p=>p.x>o.x0+48)){o.active=true;o.state='hover';o.t=0;o.k=0;w.ev.push({k:'boss-start',x0:o.x0,x1:o.x1,kind:'big'});}return;}
+ const fleeing=o.state==='flee';
+ for(const p of runners){if(p.dead)continue;if(p.x<o.x0+12){p.x=o.x0+12;if(p.xsp<0)p.xsp=0;if(p.gsp<0)p.gsp=0;}if(p.x>o.x1-12&&!fleeing){p.x=o.x1-12;if(p.xsp>0)p.xsp=0;if(p.gsp>0)p.gsp=0;}}
+ if(!inside.length&&o.state!=='wreck'&&!fleeing){o.active=false;bigInit(o);w.ev.push({k:'boss-reset'});return;}
+ o.t++;o.k++;const p=inside[0]||runners[0],hi=o.gy+BIG.hiY,mid=o.gy+BIG.midY,lo=o.gy+BIG.loY,minX=o.x0+80,maxX=o.x1-80,C=bigCycle(o);
+ if(o.state==='wreck'){o.y=Math.min(o.gy-30,o.y+Math.min(3,o.t*.04));if(o.t%7===0)w.ev.push({k:'boss-boom',x:o.x+(Math.random()-.5)*60,y:o.y+(Math.random()-.5)*36});
+  if(o.t>=150){o.state='flee';o.t=0;}bigMace(o);return;}
+ if(fleeing){o.y-=Math.min(5,1+o.t*.08);o.x+=1.5+o.t*.04;if(o.t%10===0)w.ev.push({k:'boss-boom',x:o.x,y:o.y+20});
+  if(o.t>=110){o.done=true;o.state='down';o.gone=true;w.ev.push({k:'boss-down',x:(o.x0+o.x1)/2,y:o.gy-120});}return;}
+ const next=s=>{o.state=s;o.k=0;};
+ if(o.state==='hover'){const goal=Math.max(minX,Math.min(maxX,p.x-o.f*30));o.x+=Math.max(-2.2,Math.min(2.2,(goal-o.x)*.035));o.y+=(hi+Math.sin(o.t*.07)*8-o.y)*.08;
+  if(Math.abs(p.x-o.x)>40)o.f=p.x>o.x?1:-1;if(o.k>=C.hover)next('dive');}
+ else if(o.state==='dive'){o.f=p.x>o.x?1:-1;o.y+=(mid-o.y)*.12;o.x+=Math.max(-2,Math.min(2,(p.x-o.f*110-o.x)*.05));o.x=Math.max(minX,Math.min(maxX,o.x));if(o.k>=C.dive)next('swing');}
+ else if(o.state==='swing'){o.y=mid+Math.sin(o.k*.3)*2;o.x=Math.max(minX,Math.min(maxX,o.x+o.f*.5));if(o.k===1||o.k===25||o.k===49)w.ev.push({k:'boss-swing',x:o.x,y:o.y});if(o.k>=C.swing)next('tired');}
+ else if(o.state==='tired'){o.y+=(lo-o.y)*.1;if(o.k===12)w.ev.push({k:'boss-thud',x:o.x+o.f*70,y:o.gy});if(o.k>=C.tired)next('rise');}
+ else{o.y+=(hi-o.y)*.07;if(o.k>=C.rise)next('hover');}
+ bigMace(o);}
+// bots: keep away while it hovers/dives/swings (on the side away from the mace), run in and jump at it while it's tired
+function bigBot(o,w,p){const inp={l:false,r:false,u:false,d:false,jump:false,jumpPress:false};if(!p.ground&&p.ysp<0)inp.jump=true;
+ const dx=o.x-p.x,ad=Math.abs(dx);
+ if(o.state==='tired'||o.state==='rise'&&o.y>o.gy-110){if(dx>0)inp.r=true;else inp.l=true;if(ad<70&&p.ground){inp.jump=inp.jumpPress=true;}return inp;}
+ // stand 150 px out on the side the mace is NOT on (behind it) if there's room, else on the mace side out of reach
+ const behind=-o.f,room=s=>s<0?o.x-150>o.x0+20:o.x+150<o.x1-20,side=room(behind)?behind:-behind,tx=o.x+side*(side===behind?150:175);
+ if(o.mx!==null&&Math.abs(p.x-o.mx)<40&&p.ground&&o.my>o.gy-80){inp.jump=inp.jumpPress=true;}
+ if(tx>p.x+8)inp.r=true;else if(tx<p.x-8)inp.l=true;return inp;}
+// ---------------- the capsule at the end of Act 3: locked until the boss is down, then jumping onto its button opens it
+// (animals pour out) and the act is clear (the same 'sign' event the signposts send: the tally)
+function capsuleTick(o,w,runners){o.t++;if(o.opened){if(o.t===50)w.ev.push({k:'sign',p:o.by|0,x:o.x,y:o.y});if(o.t<40&&o.t%4===0)w.loose.push({x:o.x+(Math.random()-.5)*30,y:o.y,vx:(Math.random()<.5?-1:1)*(1+Math.random()*2),vy:-4-Math.random()*2,t:0,life:240,animal:true});return;}
+ const boss=w.objs.find(b=>b.type==='boss');if(boss&&!boss.done)return;
+ // on its top, or coming down onto the button (a forgiving reach: the button is small)
+ for(let i=0;i<runners.length;i++){const p=runners[i],hr=P.radii(p)[1],top=o.y-o.h/2;if(!p.dead&&(p.onObj===o||!p.ground&&p.ysp>=0&&Math.abs(p.x-o.x)<o.w/2+4&&p.y+hr>top-10&&p.y+hr<top+8)){o.opened=true;o.t=0;o.by=i;w.ev.push({k:'capsule',p:i,x:o.x,y:o.y});p.ysp=-4;p.ground=false;p.onObj=null;p.jumping=true;p.rolling=true;break;}}}
 // held on a vine or zip line: follow the handle; jump lets go with its swing
 function hangStep(p,inp,w,i){const o=p.hang;if(!o)return;
  p.x=o.hx;p.y=o.hy+(o.type==='vine'?16:20);p.facing=o.type==='zipline'?Math.sign(o.x1-o.x0)||1:p.facing;

@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.95.0
+
+- **Seanic Zone 1 is complete.** NEW **Act 3** (Angel Island song): a short, fast act with a downhill loop, a warp tube, a lake with leaping fish, the treetops and a spike pit, ending with **the zone boss**, a flying pod with a spiked mace (Robotnik song). Eight hits wreck it and free its pilot into your roster; then jump on the capsule. The mini-boss now ends **Act 2**; Act 1 has no boss.
+- **New runners:** **Knux** the echidna (glides, climbs walls), **Shade** the dark hedgehog (homing attack, air dash) and **Seanic & Tails** (a CPU fox follows you, like Sonic 3). Two players on one phone each pick, and nobody can pick a runner already on screen.
+- **Loops:** fast rolls no longer bounce back off the loop, and the ball no longer falls off the top at high speed, so the double loop works as a ball.
+- **Warp tubes:** no more snap back when you go in; the camera glides in and out smoothly.
+- **Faster top speed** (8.5, was 6), same acceleration.
+- **Zoom:** the game is drawn at the same size on every phone (big screens like an open Fold show more of the level) and a 🔍 button next to Pause sets your own zoom, remembered for each screen shape.
+- **Title and select:** the palms on the title carry on into the sky with no cut, and the select screen fits the whole picture with a matching pattern in the bars.
+- **Symphony of the Night:** the sword sits in the hero's hand, and faces stay on the neck without bouncing.
+- **Faces in Seanic** sit on the neck by the real face and turn to look the way you run (new head check of every portrait).
+
 ## v0.94.0
 
 - **Seanic fixes:** ground visible from the start; loops get you round at speed (fast rolls too); faster acceleration and an earlier spinning-legs dash; smooth warp-tube camera, zoomed out more; mini-boss flames and smoke no longer cut off; monkeys climb real palms; the crumbling bridge drops its own planks; corkscrew barrel roll; smaller fox ball and hedgehog quills; nothing buried in Act 2's hills; whole palms on the tall title screen.

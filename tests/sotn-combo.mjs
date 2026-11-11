@@ -78,6 +78,13 @@ for(const [w,h] of sizes){
  await dbg(`window.__f=0;window.__script=(inp,k,p)=>{inp.r=1;if(k===40)window.ShambConkins.store.session.paused=true;};`);await page.waitForTimeout(1200);await shot('run');await dbg(()=>{window.__script=null;window.ShambConkins.store.session.paused=false;});
  await tp(700);await dbg(()=>{window.ShambConkins.store.session.debug.pl[0].inv=0;});await page.waitForTimeout(300);
  await dbg(`window.__f=0;window.__script=(inp,k,p)=>{if(k===0)inp.dash=1;if(k===9)window.ShambConkins.store.session.paused=true;};`);await page.waitForTimeout(700);await shot('backdash');await dbg(()=>{window.__script=null;window.ShambConkins.store.session.paused=false;});
+ // stills for the sword-in-hand check (sotn-hands.mjs has the 4x close-ups): idle, crouch, crouching cut, jump
+ const still=async(name,src,wait=700)=>{await tp(700);await dbg(()=>{window.ShambConkins.store.session.debug.pl[0].inv=0;});await page.waitForTimeout(300);
+  await dbg(`window.__f=0;window.__script=${src};`);await page.waitForTimeout(wait);await shot(name);await dbg(()=>{window.__script=null;window.ShambConkins.store.session.paused=false;});};
+ await still('idle','(inp,k)=>{if(k===30)window.ShambConkins.store.session.paused=true;}');
+ await still('crouch','(inp,k)=>{inp.d=1;if(k===20)window.ShambConkins.store.session.paused=true;}');
+ await still('crouchcut','(inp,k,p)=>{inp.d=1;if(k===8)inp.atk=1;if(p.atk&&p.atk.t===5)window.ShambConkins.store.session.paused=true;}',900);
+ await still('jump','(inp,k)=>{if(k===0)inp.press=1;if(k<20)inp.jump=1;if(k===10)window.ShambConkins.store.session.paused=true;}');
  if(errors.length)fail(`${tag} errors ${errors.join(' ; ')}`);
  await browser.close();}
 console.log(ok?'sotn-combo OK':'sotn-combo FAILED');process.exit(ok?0:1);

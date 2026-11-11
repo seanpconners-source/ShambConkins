@@ -32,4 +32,12 @@ for r,(name,n) in enumerate(ROWS):
     e=[round(float(cx+LIFT*math.sin(a_))),round(float(cy-LIFT*math.cos(a_)))]
     fr_list.append(e+[round(a_,2)] if a_ else e)
   out[name]=fr_list
+# Frames this measuring gets wrong, read by hand off a gridded zoom of the sheet (Nov 11, owner: faces must sit on the necks):
+# the face spot = the top of the drawn hair dome (stand0: 1 px above it, 2 px forward of its middle). The raised sword arm
+# (slash0, cleave0/1, crouchSlash0, cast2/3) is the top of the figure there, the dive kick's hair streams above the head, and
+# in fall1/2 the cape flaps up over it (spot over the coat, not the cape). Both sheets share the layout.
+FIX={'slash':{0:[58,64]},'cleave':{0:[59,65],1:[59,62],2:[61,64]},'crouchSlash':{0:[57,79]},'fall':{0:[59,66],1:[62,66],2:[61,66]},
+     'cast':{1:[62,66],2:[61,65],3:[65,65]},'kick':{0:[62,65],1:[63,65]}}
+for name,fx in FIX.items():
+  for f,v in fx.items():out[name][f]=v
 print(json.dumps(out,separators=(',',':')))

@@ -240,7 +240,8 @@ function drawObject(x,o,t,ctx){
   x.fillStyle='#606070';x.fillRect(x0+6,y0+h-5,4,5);x.fillRect(x0+w-10,y0+h-5,4,5);x.restore();return;}
  case 'badnik':if(o.hidden)return;if(o.alive||o.kind==='thrower')drawBadnik(x,o,t);return;
  case 'corkscrew':drawCorkscrew(x,o,t,false);return;
- case 'boss':drawBoss(x,o,t,ctx);return;
+ case 'boss':if(o.kind==='big')drawBigBoss(x,o,t,ctx);else drawBoss(x,o,t,ctx);return;
+ case 'capsule':drawCapsule(x,o,t);return;
  case 'seesaw':drawSeesaw(x,o,t);return;
  case 'spikelog':drawSpikeLog(x,o,t);return;
  case 'starpost':{if(spr(x,'starpost',o.lit?'lit':o.spin>0?'spin':'idle',o.lit?(t*4):o.spin>0?(60-o.spin)/3:0,o.x,o.y+24))return;x.fillStyle='#3848a8';x.fillRect(o.x-2,o.y-20,4,44);x.fillStyle='#202030';x.fillRect(o.x-5,o.y+20,10,4);const a=o.spin>0?o.spin*.4:0,bx=o.x+Math.sin(a)*8,by=o.y-22-Math.abs(Math.cos(a))*2;
@@ -315,6 +316,28 @@ function drawSpikeLog(x,o,t){const w=o.w,h=o.h,cx=o.x,cy=o.y,R_=h/2;x.save();
  x.restore();}
 // MINI-BOSS: the owner's sheet (hover / attack = flames out both sides / wreck), the pilot's face in the dome; flashes
 // while it can't be hit. Before the fight starts it waits high over the arena; wrecked, it lies on the ground.
+// the zone boss (Act 3, objects.js kind 'big'): the owner's boss sheet (pod + mace arm), mirrored to face the runner; the
+// sheet's frames are anchored at its foot point, the pod's middle sits 17 px left of it and 2 px up (measured on the sheet),
+// the pilot's face in the dome. The empty 'hit' row isn't used: a hit flashes the hover frame. Stand-in when the sheet is missing.
+function drawBigBoss(x,o,t,ctx){if(o.state==='down')return;const f=o.f||1,flash=o.inv>0&&(o.inv>>1)%2,wreck=o.state==='wreck'||o.state==='flee',mood=wreck||o.inv>0?'sad':o.state==='tired'?'think':'angry';
+ const row=wreck?'wreck':o.state==='swing'?'attack':'hover',fr=wreck?Math.min(2,Math.floor(o.t/50)):row==='attack'?Math.floor(o.k/6)%4:t*6;
+ x.save();if(flash)x.globalAlpha=.45;if(wreck)bossSmoke(x,o,t,true);
+ // tired: the mace lies on the floor below its arm (drawn as its own ball + chain: the sheet only has it hanging)
+ if(o.state==='tired'){const ax=o.x+f*58,ay=o.y-6,bx=o.x+f*74,by=o.gy-12;x.strokeStyle='#5b5f6e';x.lineWidth=3;x.setLineDash([4,3]);x.beginPath();x.moveTo(ax,ay);x.quadraticCurveTo(ax+f*10,(ay+by)/2+12,bx,by);x.stroke();x.setLineDash([]);spikeBall(x,bx,by,12);}
+ const drawn=spr(x,'boss',row,fr,o.x+17*f,o.y+2,{flip:f<0});
+ if(!drawn){x.fillStyle='rgba(140,200,255,.6)';x.beginPath();x.arc(o.x,o.y-14,18,Math.PI,0);x.fill();x.strokeStyle='#14141c';x.lineWidth=1.5;x.stroke();
+  x.fillStyle='#8a8ea0';x.beginPath();x.ellipse(o.x,o.y+4,32,20,0,0,7);x.fill();x.stroke();x.fillStyle='#c83a3a';x.fillRect(o.x-26,o.y,52,7);
+  if(o.mx!==null&&o.mx!==undefined){x.strokeStyle='#5b5f6e';x.lineWidth=3;x.beginPath();x.moveTo(o.x+f*30,o.y-4);x.lineTo(o.mx,o.my);x.stroke();spikeBall(x,o.mx,o.my,13);}}
+ if(!(drawn&&o.state==='tired'&&false)){x.save();if(wreck)x.translate(Math.sin(t*40)*1.5,0);ctx?.pilot?.(x,o.x,o.y-20,30,mood);x.restore();}
+ if(o.state==='tired'){x.fillStyle='#ffe23a';for(let k=0;k<3;k++){const a=t*4+k*2.1;x.beginPath();x.arc(o.x+Math.cos(a)*22,o.y-44+Math.sin(a)*5,2.6,0,7);x.fill();}}// dizzy stars: hit it now
+ if(wreck)bossSmoke(x,o,t,false);x.restore();}
+function spikeBall(x,cx,cy,r){x.save();x.fillStyle='#4a4d5a';x.strokeStyle='#14141c';x.lineWidth=1.4;x.beginPath();for(let k=0;k<16;k++){const a=k*Math.PI/8,rr=k%2?r:r*1.45;x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}x.closePath();x.fill();x.stroke();
+ x.fillStyle='#9a9dab';x.beginPath();x.arc(cx-r*.3,cy-r*.3,r*.35,0,7);x.fill();x.restore();}
+// the end-of-act capsule: the owner's capsule sheet (shut; opening 3 frames) or a drawn stand-in
+function drawCapsule(x,o,t){const fr=o.opened?Math.min(2,Math.floor(o.t/6)):0;
+ if(spr(x,'capsule',o.opened?'open':'shut',fr,o.x,o.gy))return;
+ x.save();x.fillStyle='#b8bccb';x.strokeStyle='#14141c';x.lineWidth=1.5;x.fillRect(o.x-28,o.gy-50,56,44);x.strokeRect(o.x-28,o.gy-50,56,44);
+ x.fillStyle='#ffd23a';x.fillRect(o.x-28,o.gy-8,56,8);x.fillStyle=o.opened?'#7a1a1a':'#e0302a';x.beginPath();x.ellipse(o.x,o.gy-52,12,o.opened?3:7,0,Math.PI,0);x.fill();x.restore();}
 function drawBoss(x,o,t,ctx){const flash=o.inv>0&&(o.inv>>1)%2,mood=o.state==='wreck'||o.state==='down'||o.inv>0?'sad':'angry';
  // the sheet's flame and smoke frames were cut off at the frame edges (owner, Nov 11: "cropped in a square"), so the pod is
  // drawn from its clean frames (attack frame 0 = nozzles, no flames; the wreck frames clipped below their smoke) and the
@@ -431,31 +454,32 @@ const looks=new WeakMap();
 function lookOf(p){let L=looks.get(p);if(!L){L={spin:0,cyc:0,idle:0,tw:0};looks.set(p,L);}return L;}
 // the angle the body is drawn at: follows the ground angle quickly (so the last degree or two of pixel-staircase noise
 // doesn't shake the sprite) and turns back upright gently in the air instead of snapping (dropping off a loop, ramps)
-function bodyAngle(p){const L=lookOf(p),want=p.dead?0:p.ground?-p.ang:0,now=performance.now(),dt=Math.min(.1,L.at?(now-L.at)/1000:1/60);L.at=now;
+function bodyAngle(p){const L=lookOf(p),want=p.dead?0:p.glide?(p.facing||1)*1.3:p.ground?-p.ang:0,/* gliding: tipped forward, flat out */now=performance.now(),dt=Math.min(.1,L.at?(now-L.at)/1000:1/60);L.at=now;
  if(L.da===undefined||p.dead){L.da=want;return want;}
  let d=want-L.da;d=((d+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;
  L.da+=d*(1-Math.exp(-dt*(p.ground?30:9)));return L.da;}
-function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body==='fox':i===1,BODY=tails?'#f0541e':'#6a48e0',DARK=tails?'#96280a':'#32208c',SKIN=tails?'#fff0d0':'#cdbcff',ARM=BODY,SCARF=tails?'#fff0d0':'#8c70ff',SHOE=tails?'#18a8a0':'#ffd428',SOLE=tails?'#0c6660':'#b08400';
+function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body==='fox':i===1,kind=p.body==='knux'||p.body==='dark'?p.body:null,PAL=kind?STAND_PAL[kind]:null,
+  BODY=PAL?PAL[0]:tails?'#f0541e':'#6a48e0',DARK=PAL?PAL[1]:tails?'#96280a':'#32208c',SKIN=PAL?PAL[2]:tails?'#fff0d0':'#cdbcff',ARM=BODY,SCARF=PAL?PAL[3]:tails?'#fff0d0':'#8c70ff',SHOE=PAL?PAL[4]:tails?'#18a8a0':'#ffd428',SOLE=PAL?PAL[5]:tails?'#0c6660':'#b08400';
  const ball=p.rolling||p.jumping||p.spindash,sp=p.ground?p.gsp:p.xsp,run=Math.abs(sp),f=p.facing||1;
  L.spin+=p.spindash?.9:(ball?(.25+Math.abs(p.ground?p.gsp:Math.hypot(p.xsp,p.ysp))*.07):0)*(p.ground?Math.sign(p.gsp)||f:f);L.cyc+=1/Math.max(1,8-run);// Mega Drive timing: each walk/run frame lasts max(1, 8 - speed) game frames (the old rate slid the feet)
  L.idle=p.ground&&run<.05&&!p.crouch&&!p.lookUp?L.idle+1:0;
  x.save();x.globalAlpha*=alpha;
  if(p.inv>0&&!p.hurt&&(p.inv>>2)%2&&alpha===1)x.globalAlpha*=.3;
  if(sprites())return;
- if(p.dead){x.translate(p.x,p.y);x.rotate(Math.min(p.dead*.05,1.4));head(x,i,0,-4,34,'sad');x.restore();return;}
+ if(p.dead){x.translate(p.x,p.y);x.rotate(Math.min(p.dead*.05,1.4));head(x,i,0,-4,34,'sad',f);x.restore();return;}
  shieldUnder(x,p,t);
  if(ball){x.save();x.translate(p.x,p.y);x.rotate(L.spin);const r=13;
   x.fillStyle=DARK;x.beginPath();if(tails)x.arc(0,0,r+2,0,7);else for(let k=0;k<14;k++){const a=k*Math.PI/7,rr=k%2?r+1:r+5;x.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);}x.fill();
   if(tails){x.strokeStyle=SCARF;x.lineWidth=3;for(let k=0;k<3;k++){x.beginPath();x.arc(0,0,r+1,k*2.1,k*2.1+.9);x.stroke();}}
   x.fillStyle=tails?'#ff8a4a':'#8c70ff';x.beginPath();x.arc(0,0,r-1,0,7);x.fill();x.strokeStyle='rgba(255,255,255,.55)';x.lineWidth=2.4;x.beginPath();x.arc(0,0,r-4,.3,1.6);x.stroke();x.beginPath();x.arc(0,0,r-4,3.4,4.7);x.stroke();
-  head(x,i,0,0,21,'angry');x.restore();
+  head(x,i,0,0,21,'angry',f);x.restore();
   if(p.spindash){x.fillStyle='rgba(255,255,255,.75)';for(let k=0;k<4;k++){x.beginPath();x.arc(p.x-f*(16+k*6),p.y+10-k*1.5+Math.sin(t*40+k)*1.5,2+k*.8,0,7);x.fill();}}
   x.restore();shieldOver(x,p,t);return;}
  // standing body: feet origin at the surface below the centre, turned with the ground angle
  const ang=bodyAngle(p);x.translate(p.x,p.y);x.rotate(ang);x.translate(0,19);
  const skid=p.ground&&run>1.5&&Math.sign(p.gsp)!==f&&!p.rolling,peel=p.ground&&run>=DASH_RUN;
  x.save();x.scale(f,1);
- if(p.hang){legs(0,0);body();x.strokeStyle=ARM;x.lineWidth=3.5;x.lineCap='round';x.beginPath();x.moveTo(-3,-22);x.lineTo(-2,-35);x.moveTo(3,-22);x.lineTo(2,-35);x.stroke();glove(-2,-36);glove(2,-36);}
+ if(p.hang||p.climb){legs(0,0);body();x.strokeStyle=ARM;x.lineWidth=3.5;x.lineCap='round';x.beginPath();x.moveTo(-3,-22);x.lineTo(-2,-35);x.moveTo(3,-22);x.lineTo(2,-35);x.stroke();glove(-2,-36);glove(2,-36);}
  else if(p.spring||p.hurt){x.strokeStyle=BODY;x.lineWidth=5;x.lineCap='round';x.beginPath();x.moveTo(-2,-14);x.lineTo(-4,-2);x.moveTo(2,-14);x.lineTo(4,-2);x.stroke();shoe(-4,-1,0);shoe(4,-1,0);body();x.strokeStyle=ARM;x.lineWidth=3.5;x.beginPath();x.moveTo(-3,-22);x.lineTo(-8,-34);x.moveTo(3,-22);x.lineTo(8,-34);x.stroke();glove(-8,-35);glove(8,-35);}
  else if(p.crouch){shoe(-3,-1,0);shoe(5,-1,0);x.fillStyle=BODY;x.beginPath();x.ellipse(0,-9,9,8,0,0,7);x.fill();glove(7,-6);}
  else if(skid){x.save();x.rotate(-.3);legs(-.4,.4);body(-.1);arm(-1.2,1);x.restore();}
@@ -468,7 +492,7 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
  backOfHead(hx,hy,skid,true);
  // quills (hedgehog) or ears (+ the three tails for the stand-in fox body) behind the face
  function backOfHead(hx,hy,skid,withTails){const sw=Math.min(1,run/6),dir=skid?f:-f;x.fillStyle=BODY;x.strokeStyle=DARK;x.lineJoin='round';
-  const piece=SP.picture(tails?'ears-p2':'quills-p1');// the owner's head piece, when it is in: drawn centred on the face
+  const piece=kind?tintPicture(SP.picture('quills-p1'),kind):SP.picture(tails?'ears-p2':'quills-p1');// the owner's head piece, when it is in: drawn centred on the face (recoloured for the echidna / dark hedgehog)
   if(piece){x.save();x.translate(hx,hy);x.scale(f,1);if(!tails)x.scale(.9,.9);/* the hedgehog's quills 10% smaller (owner, Nov 11) */const sm=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;x.drawImage(piece,-piece.width/4,-piece.height/4,piece.width/2,piece.height/2);x.imageSmoothingEnabled=sm;x.restore();if(!tails||!withTails)return;}
   if(tails&&withTails){const bx=hx-f*5,by=hy+26,spin=p.fly>0;for(let k=0;k<3;k++){const a=spin?t*(p.fly>1?26:7)+k*2.094:(k-1)*.5+Math.sin(t*5+k)*.12-sw*.25,L=20;
     const ex=bx+dir*L*(spin?Math.cos(a)*.9:Math.cos(a)),ey=by+(spin?-10+Math.sin(a)*5:Math.sin(a)*L*.8-4);
@@ -479,12 +503,12 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
     const bx=hx+dir*ca*8,by=hy+sa*8,px=-sa*7.5,py=ca*7.5;x.beginPath();x.moveTo(bx+dir*px*-1,by-py);x.lineTo(hx+dir*ca*len,hy+sa*len+sw*2);x.lineTo(bx+dir*px,by+py);x.closePath();x.fill();x.stroke();}}
   if(tails&&!piece)for(const d of [-1,1]){const ex=hx+d*9-f*1,ey=hy-12;x.fillStyle=BODY;x.strokeStyle=DARK;x.lineWidth=1.3;x.beginPath();x.moveTo(ex-5,ey+3);x.lineTo(ex+d*2,ey-13);x.lineTo(ex+5,ey+3);x.closePath();x.fill();x.stroke();
    x.fillStyle=SCARF;x.beginPath();x.moveTo(ex-2,ey+2);x.lineTo(ex+d*1.5,ey-8);x.lineTo(ex+2.5,ey+2);x.closePath();x.fill();}}
- head(x,i,hx,hy+(p.lookUp?-1:0),32,p.hurt?'sad':skid?'angry':run>5?'happy':undefined);
+ head(x,i,hx,hy+(p.lookUp?-1:0),32,p.hurt?'sad':skid?'angry':run>5?'happy':undefined,f);// f: the face is placed by its face box and mirrored to look the way it runs (sonic3.js head)
  x.restore();
  if(skid&&(t*30|0)%3===0){}// dust is an effect (game)
  shieldOver(x,p,t);
  // the owner's sprite sheets (src/data/sonic3Sprites.js), when they are in: the body frame, then the face on its spot
- function sprites(){const nm='runner-p'+(tails?2:1),S=SP.sheet(nm),B=SP.sheet('ball-p'+(tails?2:1));if(!S||!B)return false;
+ function sprites(){const nm='runner-p'+(tails?2:1),S=kind?tintSheet(SP.sheet(nm),kind):SP.sheet(nm),B=kind?tintSheet(SP.sheet('ball-p1'),kind):SP.sheet('ball-p'+(tails?2:1));if(!S||!B)return false;
   const frame=(Sh,row,fr,dx,dy)=>{const [fw,fh]=Sh.def.frame,ri=Object.keys(Sh.def.rows).indexOf(row),r=Sh.res;x.drawImage(Sh.img,fr*fw*r,ri*fh*r,fw*r,fh*r,dx,dy,fw,fh);};
   const was=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;
   if(ball&&!p.dead){shieldUnder(x,p,t);
@@ -494,11 +518,12 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
    // both balls drawn BALL_D across (owner: same size, the face the same as standing); lifted so they sit on the ground
    const bk=BALL_D/BALL_SRC[tails?'fox':'hog'],lift=BALL_D/2-14,ga=p.ground?p.ang:0,bx=p.x-Math.sin(ga)*lift,by=p.y-Math.cos(ga)*lift;
    if(p.spindash)spinDust(x,bx,by+BALL_D/2-4,f,t);
-   x.save();x.translate(bx,by);x.save();x.scale(bk*f,bk);frame(B,row,fr,-B.def.foot[0],-B.def.foot[1]);x.restore();x.rotate(p.spindash?0:L.spin);head(x,i,0,0,RUN_HEAD*BODY_K[tails?'fox':'hog'],'angry');x.restore();// the face as big as standing
+   x.save();x.translate(bx,by);x.save();x.scale(bk*f,bk);frame(B,row,fr,-B.def.foot[0],-B.def.foot[1]);x.restore();x.rotate(p.spindash?0:L.spin);head(x,i,0,0,RUN_HEAD*BODY_K[tails?'fox':'hog'],'angry',f);x.restore();// the face as big as standing
    x.imageSmoothingEnabled=was;x.restore();shieldOver(x,p,t);return true;}
   const N=r=>S.def.rows[r]||0,skid=p.ground&&run>1.5&&Math.sign(p.gsp)!==f&&!p.rolling;let row='stand',fr=0,upright=0;const cyc=(r,v)=>{row=r;fr=Math.floor(v)%N(r);};
   if(p.dead){row='dead';fr=p.dead>24?1:0;}
-  else if(p.hang)cyc('hang',t*6);
+  else if(p.hang||p.climb)cyc('hang',p.climb?L.cyc*.5:t*6);// (climbing a wall: the hanging frames, arms up the wall)
+  else if(p.glide){row='spring';fr=1;}// gliding: arms up, tipped forward flat (bodyAngle)
   else if(p.fly>1&&N('fly'))cyc('fly',t*20);
   else if(p.fly===1&&N('fly'))cyc('fly',t*5);// tired: the flying frames, rotor slowed (the sheet's tired row shows three arms; owner)
   else if(p.hurt)cyc('hurt',t*7);
@@ -523,7 +548,7 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
   else{x.translate(p.x,p.y);x.rotate(bodyAngle(p));x.translate(0,19);}if(upright)x.rotate(-f*upright);x.scale(BODY_K[tails?'fox':'hog'],BODY_K[tails?'fox':'hog']);// scaled about the feet
   x.save();x.scale(f,1);frame(S,row,fr,-fx0,-fy0);x.restore();
   const hx=(h.x-fx0)*f,hy=h.y-fy0;backOfHead(hx,hy,skid,false);
-  head(x,i,hx,hy,RUN_HEAD,p.dead||p.hurt?'sad':skid?'angry':run>5?'happy':undefined);
+  head(x,i,hx,hy,RUN_HEAD,p.dead||p.hurt?'sad':skid?'angry':run>5?'happy':undefined,f);// f: face box on the spot, mirrored to the run (sonic3.js head)
   x.imageSmoothingEnabled=was;x.restore();if(!p.dead)shieldOver(x,p,t);return true;}
  function legs(a,b){x.strokeStyle=BODY;x.lineWidth=5;x.lineCap='round';x.beginPath();x.moveTo(-2,-12);x.lineTo(-3+a*6,-2);x.moveTo(2,-12);x.lineTo(3+b*6,-2);x.stroke();shoe(-3+a*6,-1,0);shoe(3+b*6,-1,0);}
  function shoe(sx,sy,rot){x.save();x.translate(sx,sy);x.rotate(rot);x.fillStyle=SHOE;x.beginPath();x.ellipse(2,-1.5,6.5,3.6,0,0,7);x.fill();x.fillStyle='#fff';x.fillRect(-1,-4.5,3,4);x.fillStyle=SOLE;x.fillRect(-3,0,10,1.6);x.restore();}
@@ -531,6 +556,19 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
  function arm(a,side){x.save();x.translate(side,-21);x.rotate(a);x.strokeStyle=ARM;x.lineWidth=3.2;x.lineCap='round';x.beginPath();x.moveTo(0,0);x.lineTo(5,8);x.stroke();glove(5.5,9);x.restore();}
  function glove(gx,gy){x.fillStyle='#fff';x.beginPath();x.arc(gx,gy,3.2,0,7);x.fill();x.strokeStyle='#aaa';x.lineWidth=.8;x.stroke();}
 }
+// ---------------- the echidna (red) and the dark hedgehog (black, red highlights): until their own sheets come in, the
+// hedgehog's sheets and quills recoloured once per kind (purple/blue fur only; gloves, shoes, eyes and outlines kept)
+// stand-in palettes (no sheets): body, dark, skin, scarf, shoe, sole
+const STAND_PAL={knux:['#d8263a','#7a0d1a','#ffe2c0','#ffe2c0','#2fbf4a','#13692a'],dark:['#2a2a33','#0c0c10','#e8d8c8','#e8102a','#e8102a','#7a0a14']};
+const tints=new Map();
+function recolour(img,kind){const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const g=c.getContext('2d');g.drawImage(img,0,0);
+ try{const d=g.getImageData(0,0,c.width,c.height),a=d.data;for(let k=0;k<a.length;k+=4){if(a[k+3]<8)continue;const r=a[k]/255,gg=a[k+1]/255,b=a[k+2]/255,mx=Math.max(r,gg,b),mn=Math.min(r,gg,b),l=(mx+mn)/2,dl=mx-mn;if(dl<.12)continue;
+   const s=dl/(1-Math.abs(2*l-1)||1);let h=mx===r?((gg-b)/dl)%6:mx===gg?(b-r)/dl+2:(r-gg)/dl+4;h=(h*60+360)%360;if(h<215||h>300||s<.18)continue;// the fur: blue to purple
+   let H,S,Lt;if(kind==='knux'){H=(h+112)%360;S=Math.min(1,s*1.1);Lt=l;}else if(l>.6){H=355;S=.85;Lt=.47;}else{H=h;S=s*.18;Lt=l*.38+.03;}
+   const C=(1-Math.abs(2*Lt-1))*S,X=C*(1-Math.abs((H/60)%2-1)),m=Lt-C/2,[R,Gg,B]=H<60?[C,X,0]:H<120?[X,C,0]:H<180?[0,C,X]:H<240?[0,X,C]:H<300?[X,0,C]:[C,0,X];
+   a[k]=(R+m)*255;a[k+1]=(Gg+m)*255;a[k+2]=(B+m)*255;}g.putImageData(d,0,0);}catch{return img;}return c;}
+function tintSheet(S,kind){if(!S||typeof document==='undefined')return S;const key=S.name+':'+kind;let e=tints.get(key);if(!e||e.src!==S.img){e={src:S.img,sheet:{...S,img:recolour(S.img,kind)}};tints.set(key,e);}return e.sheet;}
+function tintPicture(img,kind){if(!img||typeof document==='undefined')return img;const key='pic:'+kind;let e=tints.get(key);if(!e||e.src!==img){e={src:img,img:recolour(img,kind)};tints.set(key,e);}return e.img;}
 // shields + invincibility: behind (glow) and in front (sparks)
 function shieldUnder(x,p,t){if(!p.shield)return;const cy=p.y-(p.rolling||p.jumping?0:2);x.save();
  if(p.shield==='fire'){x.globalAlpha=.55+.15*Math.sin(t*20);const g=x.createRadialGradient(p.x,cy,4,p.x,cy,26);g.addColorStop(0,'#fff2a0');g.addColorStop(.5,'#ff8a1a');g.addColorStop(1,'rgba(255,40,0,0)');x.fillStyle=g;x.beginPath();x.arc(p.x,cy,26,0,7);x.fill();}

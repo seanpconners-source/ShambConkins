@@ -59,6 +59,7 @@ const SONGS={
  'green-hill':{loop:[15.4,53.84678],gain:.372},// Zone 1 Act 1 (owner's pick, Sonic 1 CD set, Mega Drive version): 14.5 s intro, period 1,695,503 samples
  'emerald-hill':{loop:[7.0,48.533855],gain:.403},// Zone 1 Act 2 (owner's pick, Sonic 2 on the Sonic 1&2 CD, Mega Drive version): period 1,831,643 samples (spectrogram lag, then the sample lag most windows agree on), joined at 7.0 s
  miniboss:{loop:[15.25,67.535215],gain:.437},// Sonic 3 Miniboss (owner's album): no clean whole-track period (the drums repeat every 8.72 s), 6 x 8.71 s = 2,305,778 samples joined at 15.25 s where both passes match (0.99)
+ boss:{loop:[.95,32.949977],gain:.422},// Sonic 3 'Robotnik' (owner's album; the Act 3 boss, Nov 11 round 4): period 1,411,199 samples (32.0 s), joined at 0.95 s where both passes match (0.9986)
  'angel-island-1':{loop:[.6,66.13522],gain:.556},// Angel Island Act 1: no intro, period 2,890,103 samples
  'azure-lake':{loop:[4.5,58.89998],gain:.407},// Azure Lake (competition): 1.8 s intro, period 2,399,039 samples
  invincible:{loop:[.35,10.65238],gain:.437},// period 454,335 samples

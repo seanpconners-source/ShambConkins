@@ -11,8 +11,8 @@ function buildTerrain(){const T=new Terrain(W,H);
  T.poly([[0,FY],[900,FY],...ease(900,FY,1300,FY+90).slice(1),...ease(1300,FY+90,1700,FY).slice(1),[PIT0,FY],[PIT0,H],[0,H]]);
  T.poly([[PIT1,FY],[6000,FY],...ease(6000,FY,6700,LOW).slice(1),[7600,LOW],[7600,LOW-700],[W,LOW-700],[W,H],[PIT1,H]]);
  // the loop: right half on path A, left half on path B
- T.poly([...arc(CX,CY,R+BAND,-Math.PI/2,Math.PI/2),...arc(CX,CY,R,Math.PI/2,-Math.PI/2)],'a');
- T.poly([...arc(CX,CY,R+BAND,Math.PI/2,Math.PI*1.5),...arc(CX,CY,R,Math.PI*1.5,Math.PI/2)],'b');
+ T.poly([...arc(CX,CY,R+BAND,-Math.PI/2-.35,Math.PI/2),...arc(CX,CY,R,Math.PI/2,-Math.PI/2-.35)],'a');// halves overlap over the top (fast balls jumped the seam)
+ T.poly([...arc(CX,CY,R+BAND,Math.PI/2,Math.PI*1.5+.35),...arc(CX,CY,R,Math.PI*1.5+.35,Math.PI/2)],'b');
  // upper route: a one-way ledge you jump up through
  T.poly([[3150,FY-200],[3950,FY-200],[3950,FY-184],[3150,FY-184]],'top');
  return T.build();}

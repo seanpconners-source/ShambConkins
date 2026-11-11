@@ -13,7 +13,7 @@
 //   finish       a waterfall drop, loop 4, the sign
 // Pure data like zone1.js: buildZone1Act2() gives the terrain (built once) and a fresh list of objects for every run.
 const {Terrain,arc,ease}=require("src/engines/s3/terrain.js");
-const G=1500,W=22400,H=2600,R=112,BAND=24,TH=28,FOOT=40;
+const G=1500,W=22400,H=2600,R=112,BAND=24,TH=28,FOOT=40,OV=.35;
 const CK1=G-120,LR=G+100,CL1=G-200,CL2=G-400,LB=G+300,SLT=G-220,PIT=G+250,HI=G-440,CK2=G-140,LOW2=G+80,RUN=G+100;
 const LOOPS=[[1700,G],[12600,G],[13020,G],[20300,RUN]];
 const CORKS=[{x0:2550,y:CK1,turns:2},{x0:15450,y:CK2,turns:3}],TURN=480,CR=64;
@@ -50,8 +50,9 @@ function buildTerrain(){const T=new Terrain(W,H);
  T.poly([...SURF,[W,H],[0,H]]);
  T.poly(tubePoly(TUBE),'all','cut');
  for(const [cx,fy] of LOOPS){const cy=fy-R;
-  T.poly([...arc(cx,cy,R+BAND,-Math.PI/2,Math.PI/2),...arc(cx,cy,R,Math.PI/2,-Math.PI/2)],'a');
-  T.poly([...arc(cx,cy,R+BAND,Math.PI/2,Math.PI*1.5),...arc(cx,cy,R,Math.PI*1.5,Math.PI/2)],'b');
+  // the two halves overlap OV over the top (Nov 11 round 4: a ball at 11+ px/frame jumped the seam before the path switch and fell off the top)
+  T.poly([...arc(cx,cy,R+BAND,-Math.PI/2-OV,Math.PI/2),...arc(cx,cy,R,Math.PI/2,-Math.PI/2-OV)],'a');
+  T.poly([...arc(cx,cy,R+BAND,Math.PI/2,Math.PI*1.5+OV),...arc(cx,cy,R,Math.PI*1.5+OV,Math.PI/2)],'b');
   T.poly(footPoly(cx,fy,1),'a');T.poly(footPoly(cx,fy,-1),'b');}
  const ledge=(x0,x1,y,kind)=>{T.poly(rect(x0,y,x1,y+16),'top');LEDGES.push([x0,x1,y,kind]);};LEDGES.length=0;
  // where each corkscrew comes down: a landing shelf at the track's height
@@ -72,7 +73,7 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  // rings round a corkscrew's helix (where the runner's middle passes)
  const corkRings=(c,n)=>{for(let k=0;k<n;k++){const x=c.x0+60+k*(TURN*c.turns-120)/(n-1),a=(x-c.x0)/TURN*2*Math.PI;ring(x,c.y-CR+Math.cos(a)*(CR-19));}};
  // ---- start, the hill, loop 1
- row(250,G-24,4);land(560,8,32);row(860,G-150,4,30);mon(900,G-110,'rings');// on the hilltop (it was at ground height on the slope: buried, owner Nov 11)loopRings(1700,G);row(1900,G-24,5);
+ row(250,G-24,4);land(560,8,32);row(860,G-150,4,30);mon(900,G-110,'rings');loopRings(1700,G);row(1900,G-24,5);// (monitor on the hilltop: at ground height on the slope it was buried, owner Nov 11)
  // ---- corkscrew 1 (raised) and the low road under it
  for(const c of CORKS)o.push({type:'corkscrew',x0:c.x0,y:c.y,turns:c.turns,turn:TURN,r:CR});
  land(2080,9,30);corkRings(CORKS[0],14);row(3540,CK1-24,8,30);
@@ -108,8 +109,10 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  row(17300,LOW2-24,10,32);bad('shooter',17700,LOW2-14);land(18000,10,32);
  // ---- finish: the drop, loop 4, the sign
  row(18400,G-24,8,30);bad('flyer',18900,G-140,{w:12,h:12});row(19000,G-24,8,30);row(19460,RUN-24,10,30);loopRings(20300,RUN);row(20500,RUN-24,8);
- land(20860,10,32);bad('charger',21400,G-14,{dir:-1});row(21500,G-24,8);
- o.push({type:'sign',x:21900,y:G-16});
+ // the MINI-BOSS arena before the sign (owner, Nov 11 round 4: Act 2 ends with the mini-boss, Act 3 with the real boss)
+ land(20860,10,32);row(21230,G-24,4);mon(21330,G,'rings');// 10 rings for the fight
+ o.push({type:'boss',kind:'mini',x0:21400,x1:21800,gy:G,x:21600,y:G-170});
+ o.push({type:'sign',x:21960,y:G-16});
  return o;}
 // ground scenery: bushes, flowers, totems on flat ground (seeded), away from water, pits, loops and seesaws
 const WET=[[8060,8940],[10060,11040],[16560,17240],[3860,4000],[14400,14520]];

@@ -6,12 +6,14 @@
 // pushed on p.ev for the game to turn into sounds/effects), so tests can run it in Node.
 // acceleration (owner, Nov 11: "should build more speed faster"): 1.65x the Mega Drive's 0.046875, so top speed comes in
 // about 1.2 s instead of 2 (air control the same factor); top speed, friction and the rest stay Mega Drive
-const C={acc:0.0775,dec:0.5,frc:0.046875,top:6,slp:0.125,slpUp:0.078125,slpDown:0.3125,rollFrc:0.0234375,rollDec:0.125,
+// top speed (owner, Nov 11 round 4: "i like the acceleration, but they need to go even faster top speed"): 8.5 (Mega Drive 6),
+// same acceleration per frame, so the last stretch to top speed takes a little longer; shoes 13
+const C={acc:0.0775,dec:0.5,frc:0.046875,top:8.5,slp:0.125,slpUp:0.078125,slpDown:0.3125,rollFrc:0.0234375,rollDec:0.125,
  air:0.155,grv:0.21875,jmp:6.5,jmpRelease:4,maxFall:16,maxSpeed:16,rollMin:1.03125,unroll:0.5,slipSpeed:2.5,lock:30,
  wr:9,hr:19,wrRoll:7,hrRoll:14,push:10};
 const TAU=Math.PI*2,D=Math.PI/180;
 // speed shoes double acceleration and top speed (Sonic 3 values)
-const SHOES={acc:0.155,frc:0.09375,top:12,air:0.31};
+const SHOES={acc:0.155,frc:0.09375,top:13,air:0.31};
 const st=p=>p.shoes>0?SHOES:C;
 const norm=a=>((a%TAU)+TAU)%TAU;
 // ground mode from the angle (Sonic 3 splits at 45° with the floor and ceiling taking the diagonals)
@@ -51,6 +53,7 @@ function surfAngle(T,hx,hy,mode,path,floor){const m=MODE_ANG[mode],[tx,ty]=tan(m
 function step(p,inp,T,opt={}){p.frames++;p.ev.length=0;if(p.lock>0&&p.ground)p.lock--;
  if(p.inv>0&&!p.hurt)p.inv--;if(p.shoes>0)p.shoes--;if(p.star>0)p.star--;if(p.insta>0)p.insta--;
  if(p.hang)return p;// held by a vine/zip line: objects.js moves the runner
+ if(p.climb){climbStep(p,inp,T);return p;}// the echidna on a wall
  if(p.ground)groundStep(p,inp,T);else airStep(p,inp,T);
  for(const s of opt.switchers||[])switcher(p,s);
  return p;}
@@ -71,11 +74,15 @@ function groundStep(p,inp,T){let [wr,hr]=radii(p);
  // real game"): on steep or upside-down track (past ~50°: loops and walls, not the hills) a moving runner loses less
  // than half the speed climbing, and a ball no rolling friction there. Pure Mega Drive numbers stalled a ball arriving at
  // 4-5 px/frame a quarter of the way up our 112 px loops; with this a roll at 4+ or a run gets round.
- const steep=(Math.abs(s)>.42||Math.cos(p.ang)<0)&&Math.abs(p.gsp)>=2,uphill=Math.sign(p.gsp)===Math.sign(s),assist=steep&&uphill?(p.rolling?.3:.42):1;
- if(p.rolling)p.gsp-=(uphill?C.slpUp*assist:C.slpDown)*s;
+ // Nov 11 round 4 (owner: "two loops in a row, you can't do them both as a ball"): a ball loses even less going up (.15)
+ // and gains only half the Mega Drive pull coming down on that steep track (it left a loop at 15 px/frame from 7 in)
+ const steep=(Math.abs(s)>.42||Math.cos(p.ang)<0)&&Math.abs(p.gsp)>=2,uphill=Math.sign(p.gsp)===Math.sign(s),assist=steep&&uphill?(p.rolling?.15:.35):1;
+ if(p.rolling)p.gsp-=(uphill?C.slpUp*assist:C.slpDown*(steep?.5:1))*s;
  else if(p.gsp!==0||Math.abs(s)>0.2)p.gsp-=C.slp*s*assist;
+ // the echidna's belly slide after a glide: no control, friction .125 a frame until it stops
+ if(p.slide){p.gsp-=Math.min(Math.abs(p.gsp),.125)*Math.sign(p.gsp);if(Math.abs(p.gsp)<.05||Math.abs(s)>.42){p.slide=false;p.gsp=Math.abs(p.gsp)<.05?0:p.gsp;}}
  // input
- const L=p.lock>0?false:inp.l,R=p.lock>0?false:inp.r;
+ const L=p.lock>0||p.slide?false:inp.l,R=p.lock>0||p.slide?false:inp.r;
  if(p.rolling){if(L&&p.gsp>0)p.gsp=Math.max(0,p.gsp-C.rollDec);else if(R&&p.gsp<0)p.gsp=Math.min(0,p.gsp+C.rollDec);
   if(!steep)p.gsp-=Math.min(Math.abs(p.gsp),C.rollFrc)*Math.sign(p.gsp);
   if(Math.abs(p.gsp)<C.unroll&&modeOf(p.ang)===0){p.rolling=false;p.gsp=0;p.y-=C.hr-C.hrRoll;[wr,hr]=radii(p);}}
@@ -95,7 +102,12 @@ function groundStep(p,inp,T){let [wr,hr]=radii(p);
  if(p.gsp!==0&&mode===0){const dir=Math.sign(p.gsp),m=MODE_ANG[mode],[tx,ty]=tan(m),[nx,ny]=down(m),flat=Math.abs(Math.sin(p.ang))<.09,off=flat&&!p.rolling?8:0;
   const ox=p.x+nx*off,oy=p.y+ny*off,d=sense(T,ox,oy,tx*dir,ty*dir,p.path,false);
   const reach=C.push+Math.abs(p.gsp);
-  if(d!==null&&d<reach){p.gsp=0;const gap=d-C.push;/* stop flush against the wall */p.x+=tx*dir*Math.min(0,gap);p.y+=ty*dir*Math.min(0,gap);p.ev.push('wall');}}
+  // only a real wall stops you: the surface where the cast hit must stand at least 50° steeper than the ground under you.
+  // (Nov 11 round 4: a ball at 9-10 px/frame reaching 45° on a loop's entry cast straight into the loop's own curve a few px
+  // ahead, took it for a wall and rolled back down; the curve there is only ~20° steeper than the ground.)
+  let real=true;if(d!==null&&d<reach&&Math.abs(Math.sin(p.ang))>.09){const hx=ox+tx*dir*(d+.5),hy=oy+ty*dir*(d+.5),wa=surfAngle(T,hx,hy,dir>0?1:3,p.path,false);
+   let diff=Math.abs(norm(wa-p.ang+Math.PI)-Math.PI);real=diff>50*D;}
+  if(d!==null&&d<reach&&real){p.gsp=0;const gap=d-C.push;/* stop flush against the wall */p.x+=tx*dir*Math.min(0,gap);p.y+=ty*dir*Math.min(0,gap);p.ev.push('wall');}}
  // move
  p.xsp=p.gsp*Math.cos(p.ang);p.ysp=-p.gsp*Math.sin(p.ang);p.x+=p.xsp;p.y+=p.ysp;
  // standing on a solid object (monitor, platform): stay on its top while over it
@@ -125,12 +137,22 @@ function airStep(p,inp,T){
  // the second press in a jump: the shield's move, or the insta-shield without one (Sonic 3 & Knuckles)
  // the fox (p.canFly): a second press with no shield starts flying: slow sink, hold jump to climb, 5.5 s then tired
  // (like Sonic 3's Tails the fox has no shield moves: with any shield the second press still flies; owner: no fly with a bubble)
- if(p.canFly&&inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt){p.ability=true;p.fly=330;p.jumping=false;p.rolling=false;p.y-=C.hr-C.hrRoll;p.ev.push('fly');}
+ // the echidna (p.canGlide): a second press GLIDES (Sonic 3 & Knuckles: from speed 4, slowly faster, sinking gently; let go of
+ // jump = drop); the dark hedgehog (p.homing): a second press is a HOMING ATTACK (objects.js picks the target, or dashes ahead)
+ if(p.canGlide&&inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt){p.ability=true;p.glide=1;p.jumping=false;p.rolling=false;p.y-=C.hr-C.hrRoll;
+  p.xsp=p.facing*Math.max(4,Math.abs(p.xsp)*.8);if(p.ysp<0)p.ysp=0;p.ev.push('glide');}
+ else if(p.homing&&inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt){p.ability=true;p.wantHome=true;p.ev.push('home');}
+ else if(p.canFly&&inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt){p.ability=true;p.fly=330;p.jumping=false;p.rolling=false;p.y-=C.hr-C.hrRoll;p.ev.push('fly');}
  else if(inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt&&p.star===0){p.ability=true;
   if(p.shield==='fire'){p.xsp=8*p.facing;p.ysp=0;p.ev.push('fire-dash');}
   else if(p.shield==='lightning'){p.ysp=-5.5;p.ev.push('lightning-jump');}
   else if(p.shield==='bubble'){p.xsp=0;p.ysp=8;p.bubble=true;p.ev.push('bubble-bounce');}
   else if(!p.shield){p.insta=16;p.ev.push('insta-shield');}}
+ if(p.glide&&!p.hurt){if(!inp.jump){p.glide=0;p.drop=true;p.xsp*=.25;}// let go: drop
+  else{const d=Math.sign(p.xsp)||p.facing,back=d>0?inp.l:inp.r;
+   if(back){p.xsp-=d*.125;if(Math.sign(p.xsp)!==d){p.xsp=-d*.5;}}else p.xsp=d*Math.min(24,Math.abs(p.xsp)+.015625);p.facing=Math.sign(p.xsp)||p.facing;
+   p.ysp=p.ysp<.5?Math.min(.5,p.ysp+.125):Math.max(.5,p.ysp-.125);
+   p.x+=p.xsp;p.y+=p.ysp;glideCollide(p,T);return;}}
  // air control (none while knocked back)
  if(!p.hurt){
   if(inp.r&&!p.airLock){if(p.xsp<S.top)p.xsp=Math.min(S.top,p.xsp+S.air);p.facing=1;}
@@ -153,6 +175,23 @@ function airStep(p,inp,T){
  if(p.ysp>=0){let best=null,hx=0,hy=0;for(const sx of [-wr,wr]){const d=sense(T,p.x+sx,p.y+hr,0,1,p.path,true);if(d!==null&&(best===null||d<best)){best=d;hx=p.x+sx;hy=p.y+hr+d;}}
   if(best!==null&&best<0&&best>=-(p.ysp+8)){p.y+=best;const ang=surfAngle(T,hx,hy,0,p.path,true);land(p,ang);}}
 }
+// gliding into things: a wall = grab it and climb (Sonic 3 & Knuckles), the floor = land in a belly slide, a ceiling = stop rising
+function glideCollide(p,T){const [wr,hr]=radii(p),d0=Math.sign(p.xsp)||p.facing;
+ const d=sense(T,p.x,p.y,d0,0,p.path,false);
+ if(d!==null&&d<C.push){p.x-=d0*(C.push-d);p.glide=0;p.climb=d0;p.facing=d0;p.xsp=p.ysp=0;p.ev.push('grab');return;}
+ let best=null,hx=0,hy=0;for(const sx of [-wr,wr]){const s=sense(T,p.x+sx,p.y+hr,0,1,p.path,true);if(s!==null&&(best===null||s<best)){best=s;hx=p.x+sx;hy=p.y+hr+s;}}
+ if(best!==null&&best<0&&best>=-(p.ysp+8)){p.y+=best;land(p,surfAngle(T,hx,hy,0,p.path,true));}}
+// on a wall (the echidna): up/down climb (1 px a frame up, 1.5 down), jump pushes off it; climbing past the top pulls up onto
+// the ledge, past the bottom lets go, reaching the floor stands
+function climbStep(p,inp,T){const dir=p.climb,[,hr]=radii(p);p.facing=dir;p.xsp=p.ysp=0;p.gsp=0;p.ground=false;
+ if(inp.jumpPress){p.climb=0;p.xsp=-dir*4;p.ysp=-4;p.facing=-dir;p.jumping=true;p.rolling=true;p.ability=false;p.y+=C.hr-C.hrRoll;p.ev.push('jump');return;}
+ if(inp.u){p.y-=1;const head=sense(T,p.x,p.y-hr,0,-1,p.path,false);if(head!==null&&head<0)p.y-=head;}else if(inp.d)p.y+=1.5;
+ const at=dy=>sense(T,p.x,p.y+dy,dir,0,p.path,false),near=v=>v!==null&&v<C.push+3;
+ if(!near(at(-hr+4))&&near(at(4))){if(inp.u){const nx=p.x+dir*(C.push+8);let yy=Math.floor(p.y+hr);while(yy>p.y-hr-40&&T.solid(nx,yy,p.path,true))yy--;// stand on the top edge
+  p.climb=0;p.x=nx;p.y=yy-hr+1;p.ysp=0;p.xsp=dir*.5;p.ability=true;p.ev.push('climb-top');}return;}// head over the top: pull up when climbing
+ if(!near(at(0))&&!near(at(hr-4))){p.climb=0;p.drop=true;p.ability=true;return;}// off the bottom (or the wall ended)
+ const w=at(0);if(w!==null)p.x+=dir*(w-C.push);
+ const f=sense(T,p.x,p.y+hr,0,1,p.path,true);if(inp.d&&f!==null&&f<=1){p.y+=f;p.climb=0;p.ground=true;p.ang=0;p.jumping=false;p.rolling=false;p.ability=false;p.drop=false;p.ev.push('land');}}
 // landing: ground speed from the air speed and how steep the ground is (Sonic Physics Guide rules)
 function land(p,ang){const deg=norm(ang)/D,a=deg>180?360-deg:deg;
  // bubble shield: bounce straight back up off the ground, still curled
@@ -161,14 +200,16 @@ function land(p,ang){const deg=norm(ang)/D,a=deg>180?360-deg:deg;
  if(a<=23)p.gsp=p.xsp;
  else if(a<=45)p.gsp=Math.abs(p.xsp)>Math.abs(p.ysp)?p.xsp:p.ysp*0.5*-Math.sign(Math.sin(ang));
  else p.gsp=Math.abs(p.xsp)>Math.abs(p.ysp)?p.xsp:p.ysp*-Math.sign(Math.sin(ang));
+ if(p.glide){p.glide=0;p.slide=true;p.gsp=p.xsp;}// a glide lands in a belly slide (no control until it stops)
+ p.drop=false;p.home=null;
  const wasBall=p.jumping||p.rolling;p.fly=0;p.ang=ang;p.ground=true;p.jumping=false;p.lock=0;p.ability=false;p.spring=false;
  if(wasBall){p.rolling=false;p.y-=C.hr-C.hrRoll;}
  p.ev.push('land');}
 // bounce off a spring or anything else that throws you: vx/vy in screen px/frame
 function launch(p,vx,vy,{roll=false}={}){if(vx!==null&&vx!==undefined)p.xsp=vx;p.ysp=vy;
  if(!p.rolling&&roll&&p.ground)p.y+=C.hr-C.hrRoll;if(p.rolling&&!roll)p.y-=C.hr-C.hrRoll;
- p.fly=0;p.ground=false;p.jumping=false;p.rolling=roll;p.spindash=false;p.crouch=false;p.onObj=null;p.ability=false;p.bubble=false;p.spring=!roll;}
+ p.fly=0;p.glide=0;p.climb=0;p.drop=false;p.slide=false;p.home=null;p.ground=false;p.jumping=false;p.rolling=roll;p.spindash=false;p.crouch=false;p.onObj=null;p.ability=false;p.bubble=false;p.spring=!roll;}
 // knocked back by a hit: away from the danger, up 4, no control until landing
 function knock(p,fromX){const dir=p.x<fromX?-1:1;if(p.rolling||p.jumping)p.y-=C.hr-C.hrRoll;p.xsp=2*dir;p.ysp=-4;p.ground=false;p.jumping=false;p.rolling=false;
- p.fly=0;p.spindash=false;p.hurt=true;p.inv=120;p.onObj=null;p.bubble=false;p.ability=false;p.hang=null;}
+ p.fly=0;p.glide=0;p.climb=0;p.drop=false;p.slide=false;p.home=null;p.spindash=false;p.hurt=true;p.inv=120;p.onObj=null;p.bubble=false;p.ability=false;p.hang=null;}
 Object.assign(exports,{C,SHOES,step,makeRunner,modeOf,radii,sense,launch,land,knock,down});
