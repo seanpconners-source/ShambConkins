@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.94.0
+
+- **Seanic fixes:** ground visible from the start; loops get you round at speed (fast rolls too); faster acceleration and an earlier spinning-legs dash; smooth warp-tube camera, zoomed out more; mini-boss flames and smoke no longer cut off; monkeys climb real palms; the crumbling bridge drops its own planks; corkscrew barrel roll; smaller fox ball and hedgehog quills; nothing buried in Act 2's hills; whole palms on the tall title screen.
+- **Old Sonic games retired** (Green Hill Boss Act, Goal Dash, Test Zone): the Green Hill warp zone deals Seanic Acts 1 and 2.
+- **Symphony of the Night:** flatter sword swipes.
+
 ## v0.93.0
 
 - **Seanic Zone 1 Act 2** (new Arcade game, Emerald Hill Zone song): corkscrews, waterfall cliffs, a warp tube, a lagoon bridge with leaping robot fish, seesaws, a treetop high route, swinging platforms, a double loop, a spike log.

@@ -99,7 +99,7 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  spring(11860,G,'up','yellow');row(11930,G-244,8,32);spring(12170,G-220,'up','yellow');row(12290,G-464,13,32);mon(12700,G-440,'life');bad('flyer',12050,G-330,{w:12,h:12});
  loopRings(12500,G);row(12680,G-24,8);
  // ---- lake 2: the bridge's middle crumbles; a red spring on the lake bed
- [13215,13285].forEach(x=>o.push({type:'platform',x,y:G+8,w:70,h:16,move:'collapse'}));row(13030,G-24,18,26);
+ [13215,13285].forEach(x=>o.push({type:'platform',x,y:G+8,w:70,h:16,move:'collapse',look:'bridge'}));// the bridge's own planks fallrow(13030,G-24,18,26);
  row(13080,LB-24,10);mon(13380,LB,'rings');spring(13484,LB,'up','red');
  bad('charger',13800,G-14,{dir:-1});row(13900,G-24,8);o.push({type:'starpost',x:14200,y:G-24});
  // ---- the mesa, ground: two straight roll tunnels with the chasm between them
@@ -134,12 +134,17 @@ function footPoly(cx,fy,s){const cy=fy-R,RB=R+BAND,ac=Math.asin(Math.min(1,R/RB)
  pts.push([ex,fy+4],[pts[0][0],fy+4]);return pts;}
 // exit feet are redrawn over the runner (with the band's lower right quarter; sonic3.js loopFronts)
 const loopFeet=()=>LOOPS.map(([cx,fy])=>({type:'loopfoot',cx,cy:fy-R,R,B:BAND,fy,side:1,poly:footPoly(cx,fy,1),over:true,x:cx,w:R+BAND+FOOT+20}));
+// the monkey robots climb a real palm (in the scenery, behind everything; owner, Nov 11), and no bush or totem stands at
+// its foot
+let MK=null;const MONKEYS=()=>MK||(MK=objects().filter(o=>o.kind==='thrower').map(o=>o.x+12));
+const monkeyPalms=()=>MONKEYS().map(x=>({type:'palm',x,y:gy(x)+5,s:1.22,flip:false,monkey:true}));
+const nearMonkey=x=>MONKEYS().some(m=>Math.abs(x-m)<70);
 const decor=()=>[
  ...loopFeet(),
  ...[180,460,1080,1700,2800,3300,4700,5400,5900,7600,8050,9100,9900,10700,11400,13650,14000,14450,16000,17600,18100,18500].filter(clearOfRock).map((x,k)=>{const h=(x*7919+k*104729)%997;// a fixed little hash per tree: mirror + size (owner: repetitive)
   // on a slope the trunk stands on the LOWER side, so its cut-off base never shows above the ground (owner)
   return {type:'palm',x,y:Math.max(gy(x-14),gy(x+14))+5,flip:h%2===1,s:.84+(h%33)/100,alt:h%3===0};}),// alt = the second palm (palm-2) once it's in
- ...groundProps().filter(o=>clearOfRock(o.x)),{type:'bridge',x0:3900,x1:4500,y:P,x:3900,w:600,front:true},{type:'bridge',x0:13000,x1:13500,y:G,x:13000,w:500,front:true},
+ ...monkeyPalms(),...groundProps().filter(o=>clearOfRock(o.x)&&!nearMonkey(o.x)),{type:'bridge',x0:3900,x1:4500,y:P,x:3900,w:600,front:true},{type:'bridge',x0:13000,x1:13500,y:G,x:13000,w:500,front:true,gaps:[[13180,13320]]},
  // ledges come three ways: a floating chunk, a tower of rock down to the ground, or a long shelf on rock legs
  ...LEDGES.flatMap(([x0,x1,y],k)=>{const w=x1-x0,ground=Math.max(gy(x0+8),gy((x0+x1)/2),gy(x1-8)),tall=ground-y,kind=w>=500?'legs':w>=280||k%2?'tower':'float';
   if(kind==='float'||tall<60)return [{type:'land',x0,x1,y,x:x0,w,depth:w<120?36:52,front:true}];

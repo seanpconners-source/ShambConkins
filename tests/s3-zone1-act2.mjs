@@ -31,6 +31,9 @@ function run(name,sx,sy,max=60*240){const {Z,w}=world();
  console.log(`${done?'ok  ':'FAIL'} ${name}: ${done?`sign in ${(f/60).toFixed(1)} s`:`stopped at x ${Math.round(p.x)} y ${Math.round(p.y)} (furthest ${Math.round(maxX)})`}, rings ${p.rings}, deaths ${deaths}, went through: ${[...seen].join(' ')||'-'}`);
  return {done,seen};}
 const Z0=buildZone1Act2();console.log('tiles in the pool:',Z0.T.tiles(),' objects:',Z0.objs.length,' rings:',Z0.objs.filter(o=>o.type==='ring').length);
+// nothing placed inside the ground (owner, Nov 11: a monitor at the start was buried in the hill)
+{const buried=Z0.objs.filter(o=>!['tube','zipline','corkscrew','boss','sign','vine','platform','seesaw','spikelog'].includes(o.type)&&o.kind!=='fish'&&Z0.T.solid(Math.round(o.x),Math.round(o.y-(o.type==='monitor'?4:0)),'a',false)&&Z0.T.solid(Math.round(o.x),Math.round(o.y-(o.type==='monitor'?4:0)),'b',false));
+ assert.equal(buried.length,0,'objects inside the ground: '+buried.map(o=>`${o.type} ${Math.round(o.x)},${Math.round(o.y)}`).join(' '));console.log('ok   nothing buried in the ground');}
 // ---- the new objects on their own
 {// corkscrew: fast in = carried round to the landing shelf; slow in = drops to the road below
  const c=CORKS[0];for(const [v,want] of [[6,'over'],[3,'drop']]){const {w}=world();const p=P.makeRunner(c.x0-40,c.y-19);p.gsp=v;p.facing=1;let rode=false,upside=false;

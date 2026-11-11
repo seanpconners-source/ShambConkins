@@ -72,7 +72,7 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  // rings round a corkscrew's helix (where the runner's middle passes)
  const corkRings=(c,n)=>{for(let k=0;k<n;k++){const x=c.x0+60+k*(TURN*c.turns-120)/(n-1),a=(x-c.x0)/TURN*2*Math.PI;ring(x,c.y-CR+Math.cos(a)*(CR-19));}};
  // ---- start, the hill, loop 1
- row(250,G-24,4);land(560,8,32);row(860,G-150,4,30);mon(1100,G,'rings');loopRings(1700,G);row(1900,G-24,5);
+ row(250,G-24,4);land(560,8,32);row(860,G-150,4,30);mon(900,G-110,'rings');// on the hilltop (it was at ground height on the slope: buried, owner Nov 11)loopRings(1700,G);row(1900,G-24,5);
  // ---- corkscrew 1 (raised) and the low road under it
  for(const c of CORKS)o.push({type:'corkscrew',x0:c.x0,y:c.y,turns:c.turns,turn:TURN,r:CR});
  land(2080,9,30);corkRings(CORKS[0],14);row(3540,CK1-24,8,30);
@@ -84,7 +84,7 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  row(5560,CL2-24,6,30);bad('thrower',5800,CL2-60);mon(6000,CL2,'shoes');land(6140,14,40);
  // ---- the hill with the warp tube under it, out onto the lagoon
  o.push({type:'tube',x:(6780+8020)/2,y:G+60,w:8020-6780,h:400,dir:1,min:8,path:TUBE});
- row(6960,G-60,4,28);row(7240,G-244,10,32);bad('flyer',7450,G-360,{w:12,h:12});
+ land(6960,4,28,40);row(7240,G-244,10,32);bad('flyer',7450,G-360,{w:12,h:12});
  // ---- lagoon: bridge with leaping fish, the lake bed below
  row(8160,G-24,22,30);[8300,8520,8740].forEach((x,k)=>bad('fish',x,G+70,{w:12,h:12,period:150,phase:k*48,jump:200,still:false}));
  row(8200,LB-24,12,40);mon(8500,LB,'bubble');mon(8540,LB,'rings');spring(8860,LB,'up','red');
@@ -118,11 +118,15 @@ const groundProps=()=>{const o=[];let r=7331;const rnd=()=>(r=(r*16807)%21474836
   const y=gy(x);if(Math.abs(gy(x+24)-gy(x-24))>5)continue;const k=rnd();o.push(k<.5?{type:'bush',x,y}:k<.85?{type:'flower',x,y}:{type:'totem',x,y});}return o;};
 const clearOfRock=x=>!LEDGES.some(([x0,x1,y])=>{const tall=Math.max(gy(x0+8),gy(x1-8))-y;return tall>=60&&x>x0-70&&x<x1+70;});
 const loopFeet=()=>LOOPS.map(([cx,fy])=>({type:'loopfoot',cx,cy:fy-R,R,B:BAND,fy,side:1,poly:footPoly(cx,fy,1),over:true,x:cx,w:R+BAND+FOOT+20}));
+// the monkey robots climb a real palm (in the scenery, behind everything), and no bush or totem stands at its foot
+let MK=null;const MONKEYS=()=>MK||(MK=objects().filter(o=>o.kind==='thrower').map(o=>o.x+12));
+const monkeyPalms=()=>MONKEYS().map(x=>({type:'palm',x,y:gy(x)+5,s:1.22,flip:false,monkey:true}));
+const nearMonkey=x=>MONKEYS().some(m=>Math.abs(x-m)<70);
 const decor=()=>[
  ...loopFeet(),
  ...[180,1150,2250,4500,5350,6400,7000,9050,11600,13600,14000,15200,18500,18950,19700,21300,21700].filter(clearOfRock).filter(x=>!LOOPS.some(([cx])=>Math.abs(x-cx)<R+BAND+FOOT+30)).map((x,k)=>{const h=(x*7919+k*104729)%997;
   return {type:'palm',x,y:Math.max(gy(x-14),gy(x+14))+5,flip:h%2===1,s:.84+(h%33)/100,alt:h%3===0};}),
- ...groundProps().filter(o=>clearOfRock(o.x)),{type:'bridge',x0:8100,x1:8900,y:G,x:8100,w:800,front:true},{type:'bridge',x0:16600,x1:17200,y:LOW2,x:16600,w:600,front:true},
+ ...monkeyPalms(),...groundProps().filter(o=>clearOfRock(o.x)&&!nearMonkey(o.x)),{type:'bridge',x0:8100,x1:8900,y:G,x:8100,w:800,front:true},{type:'bridge',x0:16600,x1:17200,y:LOW2,x:16600,w:600,front:true},
  ...LEDGES.flatMap(([x0,x1,y,force],k)=>{const w=x1-x0,ground=Math.max(gy(x0+8),gy((x0+x1)/2),gy(x1-8)),tall=ground-y,kind=force||(w>=500?'legs':w>=280||k%2?'tower':'float');
   if(kind==='float'||tall<60)return [{type:'land',x0,x1,y,x:x0,w,depth:w<120?36:52,front:true}];
   return [{type:'cliff',x0,x1,y,y1:ground+6,x:x0,w,legs:kind==='legs'?(w>=900?4:3):0},{type:'land',x0,x1,y,x:x0,w,depth:kind==='legs'?30:18,front:true}];}),
