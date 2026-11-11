@@ -107,7 +107,7 @@ const WARP_ITEMS=[
   ['chaos-emerald','Chaos Emerald','💎','gateDividend',6],
   ['yellow-spring','Yellow Spring','🌀','forward',5]
  ],'wz-').map(rare),
- challenge('giant-ring','Giant Ring','Sonic the Hedgehog','💍','sonic-ring-rush','Jump into the Giant Ring: start the Green Hill Boss Act right now.'),
- challenge('end-signpost','End-of-Act Signpost','Sonic the Hedgehog','🪧','sonic-goal-dash','Spin the signpost: start Green Hill Goal Dash right now.')
+ challenge('giant-ring','Giant Ring','Sonic the Hedgehog','💍','sonic3-zone1','Jump into the Giant Ring: start Seanic, Shamb Island Act 1, right now.'),
+ challenge('end-signpost','End-of-Act Signpost','Sonic the Hedgehog','🪧','sonic3-zone1-act2','Spin the signpost: start Seanic, Shamb Island Act 2, right now.')
 ];
 Object.assign(exports,{WARP_ITEMS});

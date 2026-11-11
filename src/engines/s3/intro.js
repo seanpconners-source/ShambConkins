@@ -53,8 +53,19 @@ function fitBg(x,img,W,H,mode,t=0){const s=mode==='cover'?Math.max(W/img.width,H
   const cl=SP.picture('jungle-clouds');
   if(cl){const ch=Math.max(18,Math.min(dw*.09,dy*.5)),cw=ch*cl.width/cl.height;// two rows: a big slow one over the join, a small faster one higher up
    for(const [yy,hh,sp,al] of [[dy+fe*.35-ch*.75,ch,6,.95],[dy*.35-ch*.3,ch*.62,11,.5]]){if(yy+hh<0)continue;x.globalAlpha=al;const off=((t*sp*ch/40)%cw+cw)%cw;
-    for(let xx=-off;xx<W;xx+=cw-1)x.drawImage(cl,xx,yy,cw,hh);}x.globalAlpha=1;}}
+    for(let xx=-off;xx<W;xx+=cw-1)x.drawImage(cl,xx,yy,cw,hh);}x.globalAlpha=1;}
+  // the title picture's two palms run off its top edge, so on a tall screen their crowns ended in a straight cut (owner,
+  // Nov 11): a whole crown from the game's palm art is drawn over each one, crisp, on top of the fade
+  if(img===SP.picture('title-bg'))palmCrowns(x,dx,dy,dw/img.width,t);}
  x.restore();}
+// crown spots in title-bg pixels: centre x, centre y, width; flip = mirrored
+const TITLE_CROWNS=[[170,95,430,false],[1545,85,380,true]];
+function palmCrowns(x,dx,dy,k,t){const p=SP.picture('palm');if(!p)return;
+ // the palm art's crown: the top 46% of the picture, centred at 44% across
+ const cw=p.width,chh=p.height*.46;
+ for(const [cx,cy,w,flip] of TITLE_CROWNS){const s=w*k/cw,sx=dx+cx*k,sy=dy+cy*k,sway=Math.sin(t*.9+cx)*.02;
+  x.save();x.translate(sx,sy);x.rotate(sway);if(flip)x.scale(-1,1);x.imageSmoothingEnabled=true;
+  x.drawImage(p,0,0,cw,chh,-cw*.44*s,-chh*.55*s,cw*s,chh*s);x.restore();}}
 const rgbOf=c=>{const m=/rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c);if(m)return [+m[1],+m[2],+m[3]];const n=parseInt(c.slice(1),16);return [n>>16,n>>8&255,n&255];};
 const rgba=(c,a)=>{const [r,g,b]=rgbOf(c);return `rgba(${r},${g},${b},${a})`;};
 const mix=(a,b,k)=>{const A=rgbOf(a),B=rgbOf(b);return `rgb(${A.map((v,i)=>Math.round(v+(B[i]-v)*k)).join(',')})`;};

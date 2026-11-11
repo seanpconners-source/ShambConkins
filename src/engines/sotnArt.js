@@ -39,9 +39,10 @@ function bladePose(n,k){let hx,hy,ang,lean;
   const u=ease(seg(k,.12,.34)),r=seg(k,.55,1);hx=lerp(-4,16,u)-r*5;hy=lerp(-27,-29.5,u)+r*2;lean=.05+u*.2-r*.12;ang=r*.3-lean;}
  else if(n===2){// cleave: over the shoulder, then a full arc down in front
   const w=seg(k,0,.18),u=ease(seg(k,.18,.48)),r=seg(k,.6,1);
-  hx=lerp(lerp(2,-3,w),11,u)-r*2;hy=lerp(lerp(-30,-38,w),-21,u)+r*1.5;ang=lerp(lerp(-1.2,-2.6,w),1.05,u)+r*.15;lean=-.06*w+u*.18-r*.08;}
- else{// quick cut: a short flick across the chest
-  const u=ease(seg(k,.1,.38)),r=seg(k,.5,1);hx=lerp(1,11,u)-r*3;hy=lerp(-33,-27,u)+r*2;ang=lerp(-1.25,.3,u)+r*.15;lean=.03+u*.06;}
+  // (owner, Nov 10 R45: the swipe tilted too far down; it ended 60°+ below level, now ~25°, nearer SotN's flat slashes)
+  hx=lerp(lerp(2,-3,w),12,u)-r*2;hy=lerp(lerp(-30,-38,w),-24,u)+r*1.5;ang=lerp(lerp(-1.2,-2.6,w),.42,u)+r*.08;lean=-.06*w+u*.1-r*.05;}
+ else{// quick cut: a short flick across the chest, finishing level
+  const u=ease(seg(k,.1,.38)),r=seg(k,.5,1);hx=lerp(1,12,u)-r*3;hy=lerp(-33,-28,u)+r*1.5;ang=lerp(-1.25,-.06,u)+r*.08;lean=.02+u*.03;}
  return {hx,hy,ang,lean};}
 // world-space [hilt x, hilt y, tip x, tip y] of the swinging blade (for the sword trail)
 function bladeWorld(q){const n=q.atkN||0,k=q.atkK||0,f=q.facing||1,bp=bladePose(n,k),bl=BLADES[q.weapon]||{len:7},dy=q.pose==='crouchAtk'?8:0;
