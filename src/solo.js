@@ -25,7 +25,7 @@ const SOLO_IDS={
  'taskmaster-fruit-ninja':'turns','angry-heads':'turns','neon-ball-storm':'turns','home-alone-paint-can':'turns','tm-cones':'turns',
  'paper-route':'turns','warehouse-shift':'turns','matrix-hardline-hack':'turns','alien-sonar-grid':'turns','kitchen-service':'turns',
  'space-swarm':'turns','taskmaster-micro-relay':'turns','kingpin-bowling':'turns',
- 'major-league-fielding':'cpu','flipadelphia-cup':'turns','office-hockey-shootout':'turns','chutes-spinner-showdown':'turns',
+ 'major-league-fielding':'cpu','flipadelphia-cup':'turns','office-hockey-shootout':'turns','chutes-spinner-showdown':'cpu',
  'smb3-spade-slots':'turns',
  // batch 3: CPU opponents (cpuKit / cpuBoards)
  'matrix-ultimate':'cpu','greed-island-mancala':'cpu','deadite-checkers':'cpu','ten-forward-chess':'cpu','office-dots-boxes':'cpu',

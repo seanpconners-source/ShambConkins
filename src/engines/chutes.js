@@ -92,7 +92,10 @@ async function chutes(s){
  const layout=()=>{const wide=s.W>s.H*1.05,size=wide?Math.min(s.H*.94,s.W*.6):Math.min(s.W*.96,s.H*.6),cell=size/10,bx=wide?s.W*.03:(s.W-size)/2,by=wide?(s.H-size)/2:s.H*.03;
   return {cell,bx,by,size,sx:wide?bx+size+(s.W-bx-size)/2:s.W/2,sy:wide?s.H*.56:by+size+(s.H-by-size)*.55,sr:wide?Math.min((s.W-bx-size)*.36,s.H*.26):Math.min(s.W*.26,(s.H-by-size)*.36),wide};};
  const say=(m,d=1.4)=>{msg=m;msgT=d;};
- const tap=()=>{if(phase!=='play'||winner>=0)return;if(state==='ready'){state='spin';spinV=10.5;snd(400,.06,{type:'square',vol:.03});return;}if(state==='spin'&&spinV>9){state='stop';snd(600,.06,{type:'square',vol:.03});}};
+ // vs CPU (owner, Nov 10: "the CPU doesn't play"): on the CPU's turn it starts the arrow after a beat and stops it a
+ // moment later; the human's taps do nothing then (the result is pure chance either way)
+ const cpu=isCpu(s);let cpuWait=0;const human=()=>!(cpu&&turn===1);
+ const tap=(byCpu)=>{if(phase!=='play'||winner>=0)return;if(!byCpu&&!human())return;if(state==='ready'){state='spin';spinV=10.5;snd(400,.06,{type:'square',vol:.03});return;}if(state==='spin'&&spinV>9){state='stop';snd(600,.06,{type:'square',vol:.03});}};
  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();tap();});
  s.on(document,'keydown',ev=>{if(s.paused||!s.alive||ev.repeat)return;if([' ','enter','w','arrowup'].includes(ev.key.toLowerCase())){ev.preventDefault();tap();}});
  s.debug={pos,spins,get state(){return state;},get turn(){return turn;},tap,get phase(){return phase;}};
@@ -100,6 +103,7 @@ async function chutes(s){
  s.frame(dt=>{t+=dt;fx.update(dt);if(msgT>0)msgT-=dt;const L=layout();
   if(phase==='count'){if(!cd.update(dt))phase='play';}
   else if(phase==='play'){
+   if(!human()&&(state==='ready'||state==='spin')&&winner<0){cpuWait-=dt;if(cpuWait<=0){tap(true);cpuWait=state==='spin'?.6+Math.random()*.9:.7;}}else if(human())cpuWait=.9;
    if(state==='spin')angle+=spinV*dt;
    if(state==='stop'){angle+=spinV*dt;spinV*=Math.pow(.02,dt);if(spinV<.25){spinV=0;const a=((angle%(Math.PI*2))+Math.PI*2)%(Math.PI*2);result=Math.floor(a/(Math.PI/3))+1;state='move';moveLeft=result;moveT=.1;spins[turn]++;say(`${result}!`,1);snd(880,.12,{type:'square',vol:.035});}}
    if(state==='move'){moveT-=dt;if(moveT<=0){if(moveLeft>0){pos[turn]=Math.min(100,pos[turn]+1);moveLeft--;moveT=.2;snd(500+pos[turn]*5,.05,{type:'triangle',vol:.03});if(pos[turn]>=100)moveLeft=0;}
@@ -125,7 +129,7 @@ async function chutes(s){
   const {sx,sy,sr}=L;x.fillStyle='#fff';x.beginPath();x.arc(sx,sy,sr*1.08,0,7);x.fill();x.strokeStyle=INK;x.lineWidth=4;x.stroke();
   const cols=['#ee4b5b','#f4902c','#f6d93a','#4ccc6a','#3a8ff0','#a85bd6'];for(let k=0;k<6;k++){x.fillStyle=cols[k];x.beginPath();x.moveTo(sx,sy);x.arc(sx,sy,sr,k*Math.PI/3-Math.PI/2,(k+1)*Math.PI/3-Math.PI/2);x.closePath();x.fill();const a=(k+.5)*Math.PI/3-Math.PI/2;outlined(x,String(k+1),sx+Math.cos(a)*sr*.66,sy+Math.sin(a)*sr*.66,{size:sr*.28,fill:'#fff',stroke:INK});}
   x.save();x.translate(sx,sy);x.rotate(angle);x.fillStyle='#111';x.beginPath();x.moveTo(0,-sr*.92);x.lineTo(sr*.09,0);x.lineTo(0,sr*.22);x.lineTo(-sr*.09,0);x.closePath();x.fill();x.fillStyle='#ffd21c';x.beginPath();x.arc(0,0,sr*.1,0,7);x.fill();x.restore();
-  const size=Math.max(14,sr*.2);outlined(x,phase==='end'?'':state==='ready'?'TAP TO SPIN':state==='spin'?'TAP TO STOP':'',sx,sy+sr*1.3,{size,fill:'#fff',stroke:INK});
+  const size=Math.max(14,sr*.2);outlined(x,phase==='end'?'':!human()&&(state==='ready'||state==='spin')?`${s.players[1].name.toUpperCase()} SPINS…`:state==='ready'?'TAP TO SPIN':state==='spin'?'TAP TO STOP':'',sx,sy+sr*1.3,{size,fill:'#fff',stroke:INK});
   for(let i=0;i<2;i++){const hx=L.wide?sx+(i?sr*.7:-sr*.7):s.W*(i?.78:.22),hy=L.wide?s.H*.12:sy-sr*1.35,hs=Math.max(28,sr*.42);x.globalAlpha=turn===i||phase==='end'?1:.45;s.sprite(x,i,hx,hy,hs,{exact:true});outlined(x,`${pos[i]}`,hx,hy+hs*.75,{size:size*.9,fill:PCOL[i],stroke:'#fff'});outlined(x,`${Math.max(0,SPINS-spins[i])} left`,hx,hy+hs*.75+size,{size:size*.6,fill:INK,stroke:'#fff'});x.globalAlpha=1;}
   if(msgT>0){const sz=Math.min(s.W*.07,s.H*.07,48);x.save();x.globalAlpha=clamp(msgT*3,0,1);outlined(x,msg,L.bx+L.size/2,L.by+L.size/2,{size:sz,fill:'#ffd21c',stroke:INK});x.restore();}
   fx.draw(x);if(phase==='count')cd.draw(x,s.W,s.H);
