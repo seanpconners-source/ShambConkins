@@ -114,7 +114,7 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  // ---- the last run: loop 4, the MINI-BOSS arena (owner's plan R59c: Sonic 3 puts one at the end of a zone's first act),
  // then the sign
  loopRings(17200,RUN);row(17360,RUN-24,4);land(17470,10,32);row(17640,G-24,4);mon(17760,G,'rings');// 10 rings for the fight
- o.push({type:'boss',kind:'mini',x0:17800,x1:18200,gy:G});
+ o.push({type:'boss',kind:'mini',x0:17800,x1:18200,gy:G,x:18000,y:G-170});
  o.push({type:'sign',x:18350,y:G-16});
  return o;}
 // ground scenery: bushes, flowers and stone totems on flat ground (seeded, away from lakes and gaps)
