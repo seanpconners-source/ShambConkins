@@ -2,6 +2,15 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+v0.94.0 READY (Nov 11 evening; main = claude/nov11-night, TESTver merged; owner pushes in GitHub Desktop): Seanic playtest
+round 3 (terrain cache sky bug, tube camera glide, loop assist in physics.js, acc 1.65x, DASH_RUN 4.6, monkey palms, bridge
+planks look:'bridge', boss flames/smoke in code, fox ball/quills smaller, corkscrew barrel-roll squash, title palm crowns), old
+Sonic games in cutGames.js, SotN flatter swipe. WAITING: owner's art batch 1 (walk-p1/p2, tired-frames, fish, spike-log,
+seesaw plank/base/ball, corkscrew-band = a whole 2-turn helix (split into front/back by brightness and fit to the helix),
+corkscrew-post) in the session upload zip, not imported (owner may send more first); icon audit picks at
+https://claude.ai/artifact/WDxvHkX8w5FVUkYbMp2p6R (ArtifactData list collection 'icons'); prompts in
+docs/art-for-gpt/NOV11-ARCADE-ART.md + docs/sonic3-sprites/GPT-NIGHT-2026-11-11.md.
+
 NOV 11 NIGHT (branch claude/nov11-night from main v0.92.0, unreleased, not pushed: laptop git can't push). DONE: Seanic sizes
 (BODY_K hog 1.045 fox .92; balls matched by filled area BALL_SRC fox 34.9; ball face = standing face; tools/sonic3/runner-sizes.py),
 walk rows are mostly feet-together frames so run frames are used past WALK_RUN 2.2 (leaned back), idle counter bug fixed,
