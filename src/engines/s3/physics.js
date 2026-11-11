@@ -32,13 +32,18 @@ function sense(T,x,y,dx,dy,path,floor){
  const S=k=>ax?T.solid(k,o,path,floor):T.solid(o,k,path,floor);
  if(S(ci)){for(let k=1;k<=16;k++){const r=ci-dir*k;if(!S(r))return dir>0?-(c-(r+1)):-((r)-c);}return -16;}
  for(let k=1;k<=32;k++){const r=ci+dir*k;if(S(r))return dir>0?r-c:c-(r+1);}return null;}
-// the surface angle where a sensor hit, from two probes either side along the surface
-function surfAngle(T,hx,hy,mode,path,floor){const m=MODE_ANG[mode],[tx,ty]=tan(m),[nx,ny]=down(m),h=4;
- const a=sense(T,hx-tx*h-nx*8,hy-ty*h-ny*8,nx,ny,path,floor),b=sense(T,hx+tx*h-nx*8,hy+ty*h-ny*8,nx,ny,path,floor);
- if(a===null||b===null)return m;
- // points on the surface
- const ax=hx-tx*h-nx*8+nx*a,ay=hy-ty*h-ny*8+ny*a,bx=hx+tx*h-nx*8+nx*b,by=hy+ty*h-ny*8+ny*b;
- return norm(Math.atan2(-(by-ay),bx-ax));}
+// the surface angle where a sensor hit: seven probes across 24 px along the surface and a straight-line fit. (Two probes
+// 8 px apart on whole pixels gave the angle in ~6° steps that rocked back and forth, so the runner wobbled round loops,
+// worst when slow; the fit is good to about a degree, close to the Mega Drive's per-tile angles.)
+const PROBES=[-12,-8,-4,0,4,8,12];
+function surfAngle(T,hx,hy,mode,path,floor){const m=MODE_ANG[mode],[tx,ty]=tan(m),[nx,ny]=down(m);
+ let n=0,su=0,sv=0,suu=0,suv=0;
+ for(const u of PROBES){const d=sense(T,hx+tx*u-nx*8,hy+ty*u-ny*8,nx,ny,path,floor);if(d===null)continue;const v=d-8;// depth along "down" past the hit point
+  n++;su+=u;sv+=v;suu+=u*u;suv+=u*v;}
+ if(n<2)return m;const den=n*suu-su*su;if(Math.abs(den)<1e-9)return m;
+ const k=(n*suv-su*sv)/den;// surface drops k px (along down) per px along the tangent
+ // surface direction in screen coords = tangent + k * down
+ const dx=tx+k*nx,dy=ty+k*ny;return norm(Math.atan2(-dy,dx));}
 // ---------------- one frame
 // inp = {l,r,u,d,jump (held),jumpPress (this frame)}; T = terrain; objs = plane switchers etc. (optional)
 function step(p,inp,T,opt={}){p.frames++;p.ev.length=0;if(p.lock>0&&p.ground)p.lock--;
@@ -75,9 +80,12 @@ function groundStep(p,inp,T){let [wr,hr]=radii(p);
   p.crouch=!!inp.d&&Math.abs(p.gsp)<.1&&modeOf(p.ang)===0;p.lookUp=!!inp.u&&Math.abs(p.gsp)<.1&&modeOf(p.ang)===0;
   if(inp.d&&Math.abs(p.gsp)>=C.rollMin){p.rolling=true;p.y+=C.hr-C.hrRoll;[wr,hr]=radii(p);p.ev.push('roll');}}
  p.gsp=Math.max(-C.maxSpeed,Math.min(C.maxSpeed,p.gsp));
- // walls ahead (push sensors), only on floor-ish and wall modes when moving
+ // walls ahead (push sensors) while moving, on floor-mode ground only: on a loop's walls and ceiling the cast ran into
+ // the loop's own curve ahead and stopped the runner dead (rolling down the back of a loop at 9.9 -> 0)
  const mode=modeOf(p.ang);
- if(p.gsp!==0){const dir=Math.sign(p.gsp),m=MODE_ANG[mode],[tx,ty]=tan(m),[nx,ny]=down(m),off=mode===0&&!p.rolling?8:0;
+ // the sensor drops 8 px only on flat ground (like the Mega Drive): on a slope it took the start of a loop's curve for a
+ // wall at speed (10.7 -> 0 at 42°)
+ if(p.gsp!==0&&mode===0){const dir=Math.sign(p.gsp),m=MODE_ANG[mode],[tx,ty]=tan(m),[nx,ny]=down(m),flat=Math.abs(Math.sin(p.ang))<.09,off=flat&&!p.rolling?8:0;
   const ox=p.x+nx*off,oy=p.y+ny*off,d=sense(T,ox,oy,tx*dir,ty*dir,p.path,false);
   const reach=C.push+Math.abs(p.gsp);
   if(d!==null&&d<reach){p.gsp=0;const gap=d-C.push;/* stop flush against the wall */p.x+=tx*dir*Math.min(0,gap);p.y+=ty*dir*Math.min(0,gap);p.ev.push('wall');}}
@@ -92,20 +100,26 @@ function groundStep(p,inp,T){let [wr,hr]=radii(p);
  const da=sense(T,ax,ay,nx,ny,p.path,true),db=sense(T,bx,by,nx,ny,p.path,true);
  let d=null,hx=0,hy=0;
  if(da!==null&&(db===null||da<=db)){d=da;hx=ax+nx*da;hy=ay+ny*da;}else if(db!==null){d=db;hx=bx+nx*db;hy=by+ny*db;}
- const snap=Math.min(Math.abs(p.xsp)+4,14);
+ // how far the ground may fall away and still be stuck to (Sonic 2+): by the speed across the sensors' direction
+ const md0=modeOf(p.ang),snap=Math.min(Math.abs(md0===1||md0===3?p.ysp:p.xsp)+4,14);
  if(d===null||d>snap){p.ground=false;p.jumping=false;p.ev.push('leave');return;}
  p.x+=nx*d;p.y+=ny*d;
  p.ang=surfAngle(T,hx,hy,modeOf(p.ang),p.path,true);
- // slip off walls and ceilings when too slow
- const md=modeOf(p.ang);
- if(md!==0&&Math.abs(p.gsp)<C.slipSpeed&&p.lock===0){const deg=norm(p.ang)/D;
-  if(deg>=90&&deg<=270){p.ground=false;p.jumping=false;p.xsp=p.gsp*Math.cos(p.ang);p.ysp=-p.gsp*Math.sin(p.ang);p.ang=0;p.ev.push('fall');}
-  else p.lock=C.lock;}}
+ // too slow on a steep slope, wall or ceiling (Sonic 3 & Knuckles rules): steeper than 69° = drop off it; 35-69° =
+ // slide back down (ground speed pushed .5 down the slope); either way 30 frames without control. (The old rule only
+ // dropped off past 90°, so a slow runner hung on a loop's wall at ~70° with no speed before sliding back.)
+ if(Math.abs(p.gsp)<C.slipSpeed&&p.lock===0){const deg=norm(p.ang)/D;
+  if(deg>=35&&deg<=326){p.lock=C.lock;
+   if(deg>=69&&deg<=293){p.ground=false;p.jumping=false;p.xsp=p.gsp*Math.cos(p.ang);p.ysp=-p.gsp*Math.sin(p.ang);p.ang=0;p.ev.push('fall');}
+   else p.gsp+=deg<180?-.5:.5;}}}
 
 function airStep(p,inp,T){
  const S=st(p);
  // the second press in a jump: the shield's move, or the insta-shield without one (Sonic 3 & Knuckles)
- if(inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt&&p.star===0){p.ability=true;
+ // the fox (p.canFly): a second press with no shield starts flying: slow sink, hold jump to climb, 5.5 s then tired
+ // (like Sonic 3's Tails the fox has no shield moves: with any shield the second press still flies; owner: no fly with a bubble)
+ if(p.canFly&&inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt){p.ability=true;p.fly=330;p.jumping=false;p.rolling=false;p.y-=C.hr-C.hrRoll;p.ev.push('fly');}
+ else if(inp.jumpPress&&p.jumping&&!p.ability&&!p.hurt&&p.star===0){p.ability=true;
   if(p.shield==='fire'){p.xsp=8*p.facing;p.ysp=0;p.ev.push('fire-dash');}
   else if(p.shield==='lightning'){p.ysp=-5.5;p.ev.push('lightning-jump');}
   else if(p.shield==='bubble'){p.xsp=0;p.ysp=8;p.bubble=true;p.ev.push('bubble-bounce');}
@@ -116,7 +130,9 @@ function airStep(p,inp,T){
   if(inp.l&&!p.airLock){if(p.xsp>-S.top)p.xsp=Math.max(-S.top,p.xsp-S.air);p.facing=-1;}
   if(p.ysp<0&&p.ysp>-4)p.xsp-=Math.trunc(p.xsp/0.125)/256;
   if(p.jumping&&!inp.jump&&p.ysp<-C.jmpRelease)p.ysp=-C.jmpRelease;}
- p.x+=p.xsp;p.y+=p.ysp;p.ysp=Math.min(C.maxFall,p.ysp+(p.hurt?0.1875:C.grv));
+ p.x+=p.xsp;p.y+=p.ysp;
+ if(p.fly>0&&!p.hurt){if(p.fly>1)p.fly--;p.xsp=Math.max(-4,Math.min(4,p.xsp));if(inp.jump&&p.fly>1){if(p.ysp>-1)p.ysp-=0.125;}else p.ysp=Math.min(p.fly>1?2:4,p.ysp+0.03125);}
+ else p.ysp=Math.min(C.maxFall,p.ysp+(p.hurt?0.1875:C.grv));
  const [wr,hr]=radii(p);
  // walls (push sensors at the middle)
  for(const dir of [-1,1]){if(dir<0&&p.xsp>0||dir>0&&p.xsp<0)continue;const d=sense(T,p.x,p.y,dir,0,p.path,false);
@@ -138,14 +154,14 @@ function land(p,ang){const deg=norm(ang)/D,a=deg>180?360-deg:deg;
  if(a<=23)p.gsp=p.xsp;
  else if(a<=45)p.gsp=Math.abs(p.xsp)>Math.abs(p.ysp)?p.xsp:p.ysp*0.5*-Math.sign(Math.sin(ang));
  else p.gsp=Math.abs(p.xsp)>Math.abs(p.ysp)?p.xsp:p.ysp*-Math.sign(Math.sin(ang));
- const wasBall=p.jumping||p.rolling;p.ang=ang;p.ground=true;p.jumping=false;p.lock=0;p.ability=false;p.spring=false;
+ const wasBall=p.jumping||p.rolling;p.fly=0;p.ang=ang;p.ground=true;p.jumping=false;p.lock=0;p.ability=false;p.spring=false;
  if(wasBall){p.rolling=false;p.y-=C.hr-C.hrRoll;}
  p.ev.push('land');}
 // bounce off a spring or anything else that throws you: vx/vy in screen px/frame
 function launch(p,vx,vy,{roll=false}={}){if(vx!==null&&vx!==undefined)p.xsp=vx;p.ysp=vy;
  if(!p.rolling&&roll&&p.ground)p.y+=C.hr-C.hrRoll;if(p.rolling&&!roll)p.y-=C.hr-C.hrRoll;
- p.ground=false;p.jumping=false;p.rolling=roll;p.spindash=false;p.crouch=false;p.onObj=null;p.ability=false;p.bubble=false;p.spring=!roll;}
+ p.fly=0;p.ground=false;p.jumping=false;p.rolling=roll;p.spindash=false;p.crouch=false;p.onObj=null;p.ability=false;p.bubble=false;p.spring=!roll;}
 // knocked back by a hit: away from the danger, up 4, no control until landing
 function knock(p,fromX){const dir=p.x<fromX?-1:1;if(p.rolling||p.jumping)p.y-=C.hr-C.hrRoll;p.xsp=2*dir;p.ysp=-4;p.ground=false;p.jumping=false;p.rolling=false;
- p.spindash=false;p.hurt=true;p.inv=120;p.onObj=null;p.bubble=false;p.ability=false;p.hang=null;}
+ p.fly=0;p.spindash=false;p.hurt=true;p.inv=120;p.onObj=null;p.bubble=false;p.ability=false;p.hang=null;}
 Object.assign(exports,{C,SHOES,step,makeRunner,modeOf,radii,sense,launch,land,knock,down});

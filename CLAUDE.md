@@ -37,7 +37,7 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
   fuzz of every minigame). Must end `EXIT 0` / "N/N games ran clean".
 - Focused tests (Playwright, headless Chromium at /opt/pw-browsers/chromium-1194/chrome-linux/chrome,
   module at /node-tools/node_modules): `tests/bossgate.mjs`, `tests/warpflow.mjs`, `tests/warp.mjs`,
-  `tests/levels.mjs`, `tests/boss.mjs`, `tests/photohunt.mjs`, `tests/sotn-music.mjs`, `tests/controls-audit.mjs`, `tests/music.mjs`, `tests/pwa.mjs`, `tests/online.mjs` + `tests/online-board.mjs` (need `wrangler dev`, see cloudflare/README.md), `node tests/games.mjs 5 3 <id-regex>`.
+  `tests/levels.mjs`, `tests/boss.mjs`, `tests/photohunt.mjs`, `tests/sotn-music.mjs`, `tests/sonic3-music.mjs`, `tests/controls-audit.mjs`, `tests/music.mjs`, `tests/pwa.mjs`, `tests/online.mjs` + `tests/online-board.mjs` (need `wrangler dev`, see cloudflare/README.md), `node tests/games.mjs 5 3 <id-regex>`.
   Tests open the game through `appURL()` (tests/lib.mjs): they serve dist/pwa on a free port themselves; `SHAMB_URL` = an
   already served copy (e.g. a private `--pwa` build behind serve-static), `SHAMB_FILE` = a `--single` file.
 - Release: bump `src/version.js` (VERSION + the RELEASED month shown in About) + `package.json` (`version` AND the folder

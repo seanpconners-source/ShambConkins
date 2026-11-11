@@ -1,5 +1,41 @@
 # Changelog
 
+## v0.93.0
+
+- **Seanic Zone 1 Act 2** (new Arcade game, Emerald Hill Zone song): corkscrews, waterfall cliffs, a warp tube, a lagoon bridge with leaping robot fish, seesaws, a treetop high route, swinging platforms, a double loop, a spike log.
+- **Act 1 mini-boss** (Sonic 3 Miniboss song): a flame pod before the sign; six hits frees its pilot into your roster (the only unlock in Seanic games now).
+- **Seanic looks:** runner and ball sizes matched, real strides when walking, grass in front of loop entrances, a sky on tall title screens, the select background fills the screen.
+- **Uno:** a fresh deal every game (all Arcade games), no sudden end at 80 moves (300, with a countdown).
+- **Fixes:** drag race red light counted once; baseball catches before the bounce count, home runs called at once; Spinner Showdown CPU plays; SotN opening fence stays.
+- **Menus:** Online stays on the home screen (New Game = board game together); NEW HIGH SCORE badge; 🎲 picks from all games; Strategema and Four Lights own tiles; Pong pulled out.
+
+## v0.92.0
+
+- **Seanic online: both at once.** Play Shamb Island together on two phones at the same time: you see each other running, with an arrow when your partner is off screen. Rings, item boxes, robots and walls one of you takes are gone for both. When one of you reaches the sign, the other has 10 seconds; the higher score wins.
+- **Warp tubes.** Roll tubes now grab you and shoot you through at speed, no more getting stuck in the bends.
+- **Loops like the real game.** Loops stand on solid feet with grass; you run in front of the entrance and come out behind the exit. Fixed a stop at the start of loops at high speed.
+- **Springs** stand tall, squash when you land, then spring back up.
+- **Runners:** the hedgehog is a little bigger and the fox a little smaller so they match; both balls the same size; bigger faces that move with the body; Tails flies with any shield; better walk animation; Tails' face stays on when flying.
+- **Title and character select:** new art, bigger faces, and they fit your phone's screen. Only the arrows change the character; tap anywhere else to pick.
+- **Camera** a bit higher and zoomed out; the game runs a touch faster.
+- Fixed: falling off either end of the level, the spin dash dust cut off, the monkey's tree popping in and out, a floating zip line post, palms floating on slopes. Backgrounds tile seamlessly and palms vary.
+
+## v0.91.0
+
+- **Seanic title screen.** The SEANIC logo bursts in to the real Sonic 3 Title Screen music, with the hedgehog (player 1's face) and the three-tailed fox (player 2's face) popping up behind it over a sea-and-waterfall scene. TAP TO START.
+- **Pick your runner (1 player).** A Sonic 3 Data Select style screen, with its music: swipe or use the arrows to choose Seanic or Tails, then tap the monitor. Tails can fly.
+- **Green Hill Zone music** for Shamb Island Act 1.
+- **Smoother loops.** No more hanging on the wall or sudden stops when you take a loop too slowly. You drop off or slide back like Sonic 3, and the runner turns smoothly round the curve.
+- **Better balance.** Sounds (especially rings) no longer drown out the music.
+- **Camera** shows less ground; the runner sits a little lower on screen.
+- Fixed a palm tree stuck inside the rocks at the start of Act 1.
+
+## v0.90.0
+
+- **Seanic the Hedgehog, Zone 1 Act 1.** The Sonic 3 rebuild gets its first real level, Shamb Island Act 1: roll tunnels that curve, four loops, stairs, high ledges and a sky route that crumbles, a cave, two lakes with bridges and waterfalls (with a secret room behind one), a vine gorge, a zip line, a mesa with a chasm, and the end sign. Player 1 runs as a blue-purple hedgehog, player 2 as a red-orange fox with three tails who can fly (tap jump again in the air, hold it to climb).
+- **Real art.** The runners, rings, springs, monitors, robots, scenery, ground and title card are all drawn from the new sprite sheets.
+- **Sonic 3 music.** Act 1 plays Angel Island Zone Act 1 from the title card on (the Test Zone plays Azure Lake). There's the Invincibility song while a star lasts, the 1-Up jingle (the song comes back where it was), Act Complete at the sign with a tally that waits for it, and Game Over / Time Over. Songs loop without the album's fade-out and stop when you pause.
+
 ## v0.89.0
 
 - **Sonic 3 Test Zone (new engine preview).** Arcade → Sonic: a first look at the Sonic 3 rebuild. Real Mega Drive physics (loops, slopes, rolling, spin dash), the Mega Drive camera, springs, the fire, bubble and lightning shields with their moves, badniks, a zip line, a swing vine, breakable walls, moving and falling platforms, and the end sign with the Sonic 3 score tally. P1 runs as Sonic, then P2 as Tails, with your faces. Placeholder art; the real Zone 1 comes next.

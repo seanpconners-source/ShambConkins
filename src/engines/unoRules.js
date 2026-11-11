@@ -24,9 +24,12 @@ function take(state,owner,count,random){
   const card=state.draw.pop();if(!card)break;state.hands[owner].push(card);added.push(card);
  }return added;
 }
+// a safety cap so a game can't go on forever. It was 80 moves (every card, draw and pass counts), which a normal game
+// reached, so games ended suddenly with "lower card value wins" (owner, Nov 10, R1: "it was my turn and the CPU won")
+const UNO_CAP=300;
 function endTurn(state,next){
  state.moves++;state.phase='playing';state.drawnId=null;state.called=false;state.turn=next;
- if(state.moves>=80&&!state.ended){const pips=state.hands.map(h=>h.reduce((n,c)=>n+unoPoints(c),0));state.ended=true;state.winner=pips[0]===pips[1]?null:pips[0]<pips[1]?0:1;state.reason='80-turn limit · lower remaining card value wins';}
+ if(state.moves>=UNO_CAP&&!state.ended){const pips=state.hands.map(h=>h.reduce((n,c)=>n+unoPoints(c),0));state.ended=true;state.winner=pips[0]===pips[1]?null:pips[0]<pips[1]?0:1;state.reason=`${UNO_CAP}-move limit · lower remaining card value wins`;}
 }
 function unoCall(state){if(state.ended||state.hands[state.turn].length!==2)return false;state.called=true;return true;}
 function unoPlay(state,id,color=null,random=Math.random){
@@ -49,4 +52,4 @@ function unoResult(state){
  return state.winner===null?[0,0]:state.winner===0?[100+pips[1],0]:[0,100+pips[0]];
 }
 
-Object.assign(exports,{UNO_COLORS,unoDeck,unoPoints,newUno,unoCanPlay,unoLegalCards,unoCall,unoPlay,unoDraw,unoPass,unoResult});
+Object.assign(exports,{UNO_CAP,UNO_COLORS,unoDeck,unoPoints,newUno,unoCanPlay,unoLegalCards,unoCall,unoPlay,unoDraw,unoPass,unoResult});

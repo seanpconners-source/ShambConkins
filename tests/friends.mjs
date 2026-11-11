@@ -54,7 +54,7 @@ const inRoom=async p=>until(p,()=>{const n=window.ShambConkins.net.state();retur
 check(await inRoom(amber)&&await inRoom(sean),'Join puts both phones in a room with each other');
 const rooms=await Promise.all([sean,amber].map(p=>p.evaluate(()=>window.ShambConkins.net.state().room)));
 check(rooms[0]===rooms[1]&&/^f-/.test(rooms[0]),`same room on both (${rooms.join(' / ')})`);
-check(await until(sean,()=>window.ShambConkins.store.view==='arcade'&&window.ShambConkins.store.online),'Sean lands in the Arcade, Online mode');
+check(await until(sean,()=>window.ShambConkins.store.online),'Sean is in Online mode (he stays on the screen he was on: R10)');
 check(await until(sean,()=>window.ShambConkins.friends().presence.some(p=>p.st==='online')),'friends now see each other as playing online');
 // Amber closes the game: Sean sees her go
 await amber.context().close();

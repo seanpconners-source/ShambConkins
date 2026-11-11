@@ -713,8 +713,9 @@ async function sotn(s){
   g.lineCap='round';g.lineJoin='round';
   const x0=cam.x-4,x1=cam.x+cam.w+4;
   for(const r of L.regions)if(r.x1>x0&&r.x0<x1)drawRegionBack(w,r,cam,x0,x1);
-  for(const d of L.decor)if(d.x>x0-220&&d.x<x1+40&&d.type!=='tree'&&d.type!=='fence')drawDecor(w,d,cam);
-  for(const d of L.decor)if((d.type==='tree'||d.type==='fence')&&d.x>x0-120&&d.x<x1+760)drawDecor(w,d,cam);
+  for(const d of L.decor)if(d.x+(d.w||0)>x0-220&&d.x<x1+40&&d.type!=='tree'&&d.type!=='fence')drawDecor(w,d,cam);
+  // culled by their whole width (owner, Nov 10, R7: the 720-long fence vanished once the camera passed its left end)
+  for(const d of L.decor)if((d.type==='tree'||d.type==='fence')&&d.x+(d.w||0)>x0-120&&d.x<x1+760)drawDecor(w,d,cam);
   drawTerrain(w,cam,x0,x1);drawDecals(w,x0,x1);drawCandles(w,x0,x1);
   for(const it of w.items){if(it.altar||it.fixed&&!it.ground)continue;const bob=it.fixed?Math.sin(simT*3+it.x)*2-4:0;if(it.t>480&&!it.fixed&&it.type!=='orb'&&(frames>>2)%2)continue;A.drawPickup(g,it.type,it.x,it.y+bob,simT);}
   for(const it of w.items)if(it.altar)A.drawPickup(g,it.type,it.x,it.y-2+Math.sin(simT*3)*2,simT);

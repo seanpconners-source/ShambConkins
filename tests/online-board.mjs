@@ -33,7 +33,7 @@ const A=await phone('Sean'),B=await phone('Amber');
 for(const [ph,who] of [[A,0],[B,1]]){
  await act(ph,'online-home');await waitDialog(ph,/Play online/);
  await ph.p.fill('#net-room',process.env.ROOM||'Board Night');await ph.p.check(`input[name="net-who"][value="${who}"]`);await choose(ph,'Join room');
- await ph.p.waitForSelector('.net-room');
+ await act(ph,'arcade');await ph.p.waitForSelector('.net-room');// joining stays on the home screen now (R10): the room line is in the Arcade
 }
 await A.p.waitForFunction(()=>/Amber is here/.test(document.querySelector('.net-room')?.innerText||''),null,{timeout:15000});
 check(await A.p.$('[data-action="online-board"]')!==null,'the room line offers "Board game together"');

@@ -29,6 +29,19 @@ tile-for-tile copy of the real zones) and our own art; the owner's own sound rip
   Still to come in the game: acts, lives/continues across acts, online, music. Takes over the ids `sonic-ring-rush` /
   `sonic-goal-dash` when Zone 1 is ready (old engine stays until then).
 
+## Zone 1 status (Nov 10)
+- Act 1 DONE as a first playable: `src/engines/s3/zone1.js` (game id `sonic3-zone1`, "Shamb Island Zone"): 14600 px, two
+  roll tunnels (S-tubes: object `tube` forces a roll), three loops, plateaus with two tiers of spring-up ledges, a cave
+  route, three lakes with log bridges (one crumbles), waterfalls, a vine gorge, a zip line, two starposts. Scenery list
+  `decor` (lake / waterfall / palm / hollow = dark tunnel interior) drawn by `render.js drawDecor`.
+- Owner asked (Nov 10) for the first level to be modelled on a real Sonic level map he sent. We build the same KINDS of
+  set pieces in our own layout (the ground rule above), not a copy of that map.
+- Map preview: `node tools/s3-map.mjs` → `docs/sonic3/maps/zone1-act1.png`. Tests: `tests/s3-zone1.mjs` (Node bot, every
+  route reaches the sign; in test:core), `tests/sonic3-zone1.mjs` (browser, screenshots).
+- Next: owner's map review + playtest notes, mini-boss at the end, then Act 2.
+- Nov 11: title screen + 1P character select (src/engines/s3/intro.js, art brief docs/sonic3-sprites/TITLE-SELECT-BRIEF.md),
+  loop feel fixes (smooth angles, Sonic 3 slip rule, no false walls on loops). Roadmap R59a: a CPU fox following the hedgehog.
+
 ## Zone 1 (jungle island, Sonic 3's first-zone style)
 - Act 1: ~2-3 minutes, three height bands (high fast route over the canopy, middle, low slower route with secrets),
   routes crossing at a few points, loops, swing vines, zip lines, breakable walls, springs, a mid-act starpost or two,
@@ -36,10 +49,14 @@ tile-for-tile copy of the real zones) and our own art; the owner's own sound rip
 - Act 2: the zone after the fire bombing (scorched look, new hazards), longer, then the zone boss.
 - Map review: every act gets a preview picture/page of the whole map before the owner plays it.
 
-## Art (after the levels play right)
+## Art (kit DONE Nov 10: docs/sonic3-sprites/, src/data/sonic3Sprites.js; wiring into render.js when art arrives)
 - Sprite kit like Castlevania/Sundown: templates + a brief for GPT/Grok: player body sheets (head slot = the player's
   face), badniks, objects, terrain tiles/chunks, parallax backgrounds, title card, results screen.
 
 ## Sound
 - Owner's Sonic 3 & Knuckles sound effects: in (`assets/music/s3k-sfx-*`, `src/engines/sonicAudio.js`).
-- Music: the owner is gathering it.
+- Music: the owner's Sonic 3 soundtrack (Claude Share) in `assets/music/s3k-song-*.flac`: title, data select, Angel Island
+  Act 1, Azure Lake (Test Zone), invincibility, 1-up, act clear, game over. Next to add with their set pieces: Miniboss,
+  Robotnik (boss), Angel Island Act 2, Drowning (water).
+- Owner's music plan for Zone 1 (Nov 11, "not yet, just take note"): level 1 = Sonic 1 Green Hill Zone (in), level 2 = Sonic 2 Emerald Hill Zone (owner confirmed Nov 11; still the Green Hill look; in the S1/S2 CD album, 1-18), level 3 = Sonic 3 Angel Island
+  Zone Act 1 (already in: `s3k-song-angel-island-1.flac`), boss = boss music to be picked together.

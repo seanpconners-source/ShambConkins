@@ -30,7 +30,7 @@ function objects(){const o=[],ring=(x,y)=>o.push({type:'ring',x,y}),row=(x0,y,n,
  // spring up to the ledge; upper route
  o.push({type:'spring',x:3090,y:FY-4,dir:'up',color:'yellow'});
  row(3300,FY-224,8,32);o.push({type:'badnik',kind:'shooter',x:3700,y:FY-214,still:false});
- o.push({type:'zipline',x0:3960,y0:FY-240,x1:4740,y1:FY-90});
+ o.push({type:'zipline',x0:3960,y0:FY-240,x1:4740,y1:FY-90,g1:FY});
  // lower route under it
  o.push({type:'spikes',x:3480,y:FY-8,dir:'up',w:64,h:16});
  o.push({type:'wall',x:3860,y:FY-32,w:32,h:64});row(3950,FY-24,5);

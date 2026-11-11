@@ -22,21 +22,21 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 ### Owner's notes, Nov 10 2026 (all `[todo]` unless tagged; "ASK" = waiting for the owner's answer)
 
 **Bugs first**
-- **R1** `[bug]` Uno vs CPU: "It was my turn and CPU won", and the same hand is dealt over and over. Also wanted: more animations, clearer progress (whose turn, cards left), table music.
-- **R2** `[bug]` Drag race: the owner beats the CPU every time but the game says the CPU wins. Game also "sucks, could be fun": rework after the fix.
-- **R3** `[bug]` Chutes and Ladders: the CPU doesn't play. Board is lame: make it look awesome.
-- **R4** `[bug]` 🎲 Random must pick from ALL games, not from the current category.
+- **R1** `[verify]` (Nov 11 night: the same hand came from a session seed that stopped changing, every game now deals fresh; the game ended at an 80-move cap a normal game reached, now 300 with a countdown; animations/music still to do) Uno vs CPU: "It was my turn and CPU won", and the same hand is dealt over and over. Also wanted: more animations, clearer progress (whose turn, cards left), table music.
+- **R2** `[verify]` (Nov 11 night: a red light was counted twice, so crossing first could still lose; rework still to do) Drag race: the owner beats the CPU every time but the game says the CPU wins. Game also "sucks, could be fun": rework after the fix.
+- **R3** `[part]` (Nov 11 night: Spinner Showdown CPU takes its spins; the board look is still to do) Chutes and Ladders: the CPU doesn't play. Board is lame: make it look awesome.
+- **R4** `[verify]` (Nov 11 night) 🎲 Random must pick from ALL games, not from the current category.
 - **R5** `[bug]` Tony Hawk's Pro Mancala intro: very low frame rate on PC (installed app from Edge).
-- **R6** `[bug]` Baseball: a caught ball doesn't register until it's thrown to first; a ball the CPU didn't field became a home run instead of a single; on a home run the fielder runs to the wall and nothing happens.
-- **R7** `[bug]` SotN: fence sprites disappear in the intro part, then come back.
+- **R6** `[part]` (Nov 11 night: catches before the bounce always count; home runs called at once, fielders stop, quick trot. The CPU-not-fielding home run not found in the code: describe it if it happens again) Baseball: a caught ball doesn't register until it's thrown to first; a ball the CPU didn't field became a home run instead of a single; on a home run the fielder runs to the wall and nothing happens.
+- **R7** `[verify]` (Nov 11 night: scenery culled by its whole width) SotN: fence sprites disappear in the intro part, then come back.
 
 **Arcade and menus**
 - **R8** Game groups everywhere, not just Home: like games are one tile on every shelf (tic-tac-toes, board games, retro games, trivia game shows...), then picked on their sub-menu.
 - **R9** The version sub-menu looks like the main Arcade screen: background on display, logo at the top, version tiles along the bottom; no scrolling, scales to the screen. No "x2 / x3" badges on tiles.
-- **R10** Online must not jump to the Arcade: stay on the home screen so New Game, Arcade etc. can be picked.
-- **R11** High scores: tell the player clearly when they set a high score; a high-score list on the main (or Arcade) screen.
+- **R10** `[verify]` (Nov 11 night: stays home; New Game in a room = board game together) Online must not jump to the Arcade: stay on the home screen so New Game, Arcade etc. can be picked.
+- **R11** `[verify]` (Nov 11 night: NEW HIGH SCORE! badge on result cards; the Arcade already has the 🏆 board per game) High scores: tell the player clearly when they set a high score; a high-score list on the main (or Arcade) screen.
 - **R12** `[idea]` Collection screen "isn't mainly the characters": owner (Nov 10) is gathering thoughts; an audit step for much later.
-- **R13** Search bar on character select.
+- **R13** `[verify]` Search bar on character select (it exists on the Characters screen, #cs-search: say if you meant somewhere else).
 - **R14** Game logos must not be pulled from online (slow, look bad): revise them all to built-in art.
 - **R15** `[verify]` Recent games at the front of the Featured shelf, no separate Recent (done in v0.88.7). (The cut-off View all note: dropped by the owner.)
 
@@ -47,7 +47,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **R17** Fruit Ninja, Stacker, Sumo and Curling leave the Taskmaster brand: each needs its own real reference. Then redo the actual Taskmaster games properly. TABLED (owner, Nov 10): nobody recognises the themes; either lean hard into a theme or go plain. Decide later.
 - **R18** Matrix "Nine Realities": cooler name, could be sweet. Hardline Hack: separate entry (don't merge), cooler too, maybe techno. The Matrix games need graphics and music: digital raves, gunfights, kung fu.
 - **R19** Kingpin bowling → "Don't F*** with the Jesus" bowling (The Big Lebowski).
-- **R20** Strategema and Connect 4 each become their own tile.
+- **R20** `[verify]` (Nov 11 night) Strategema and Connect 4 each become their own tile.
 - **R21** Who Wants to Be a Millionaire: own logo, background, a Trivia game shows group; real sounds, Regis clips (owner supplies).
 
 **Games to rebuild or make great**
@@ -63,7 +63,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **R31** Crossy Road: too hard; the screen jump when it scrolls up is jarring.
 - **R32** Temple Run for real: look just like it.
 - **R33** Tapper: prettier, smoother, sprites.
-- **R34** Pong: too zoomed in, pull out a bit.
+- **R34** `[verify]` (Nov 11 night: margin round the court, pieces ~15% smaller) Pong: too zoomed in, pull out a bit.
 - **R35** Flip cup: 3D looks kind of bad; improve. Real gang chant clip "flip, flip, Flipadelphia" (owner supplies).
 - **R36** Beer Pong: Paddy's sounds and gang quotes arguing behind us; rebuttal when the final shot is made; Frank clip "I love this feeling!" on a bonus shot (owner supplies clips).
 - **R37** Paddy's bar games are sweet: any more to add?
@@ -97,6 +97,22 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **R55** `[idea]` "Conners 4 real": a silly game, for later (owner will explain).
 - **R58** `[idea]` Game shows: a chunky game show like ITYSL; Jeopardy, Wheel of Fortune, Deal or No Deal style games; polish Millionaire and Price Is Right to look like the real shows (Price Is Right also needs to be much more fun).
 - **R59** `[part]` Sonic rebuild (owner, Nov 10, NOW; owner then chose SONIC 3, plan docs/sonic3/PLAN.md; engine terrain + physics done, sounds in): Sonic 2 style zones: big acts with many routes, loops, springs, spikes, then a boss; a few acts per zone, more zones later. Then full stage + character sprite kits (bodies that take the players' faces). Owner is gathering sounds and music.
+  Status Nov 11: engine, Zone 1 Act 1 (Shamb Island), sprites and Sonic 3 music in (v0.90.0); title screen + 1P character
+  select (hedgehog or fox) with their songs, loop feel fixes. Next: R59c mini-boss at the end of Act 1, then Act 2 + boss.
+- **R59a** `[idea]` (owner, Nov 11: "later... too much for now") Seanic 1P: a third choice on the character select,
+  SEANIC & TAILS: the hedgehog with a CPU fox following him like Sonic 2/3 (copies your moves a moment later, flies back in
+  when left behind, can't lose you lives).
+- **R59d** `[idea]` (owner, Nov 11: "later tho") More playable runners on the Seanic character select, our own designs in
+  the spirit of: a Knuckles-style one (an echidna-ish bruiser: glides on a second jump press, climbs walls, punches through
+  rock; secret routes only he can reach), a Shadow-style one (a dark rival hedgehog: air dash / skate boost), maybe others.
+  Each = a body sheet + ball sheet (same kit as runner-p1/p2), their moves in physics.js, a name plate on the select.
+- **R59e** `[todo]` Seanic art fixes from GPT: `docs/sonic3-sprites/FIXES-2026-11-11.md` (second palm, a whole-canopy
+  near jungle strip, Tails' two tired frames with two arms).
+- **R59b** `[verify]` Seanic title/select art from GPT: brief `docs/sonic3-sprites/TITLE-SELECT-BRIEF.md` (title-bg,
+  title-hero, title-fox, select-bg, select-monitor, select-hog, select-fox); stand-ins drawn until they arrive.
+- **R59c** `[part]` (Nov 11 night: mini-boss + Act 2 + both songs built, `[verify]`; the zone boss + capsule still to do) Seanic Act 1 mini-boss (the miniboss sheet is already imported), then Act 2 (the scorched jungle) and the
+  zone boss (boss + capsule sheets imported). Music (owner, Nov 11): level 2 = Sonic 2 Emerald Hill Zone,
+  level 3 = Sonic 3 Angel Island Act 1 (file already in), boss music picked together later.
 
 **New characters**
 - **R56** Connor O'Malley, Bart Harley Jarvis, Taffy Lee Fubbins, Michael Patrick Porkins; Amy the gorilla + the Congo people; Corey Feldman + The Goonies; Randal and Dante; The Mask / Stanley Ipkiss; Surf Nazis, more Troma, Mad Cowboy; Sin City people; Wes Anderson people; M. Night Shyamalan; Captain Dissolution, Drew Gooden, memoria, Danny Gonzalez.
@@ -596,6 +612,15 @@ Other boss items
 - **P12** `[todo]` (owner, Nov 3) Sound effects and background music to match: Sonic, Mario, Castlevania and the rest. Sound-alike
   effects and music made in the real chips' style (NES pulse/triangle/noise, Mega Drive FM), our own tunes; the owner's
   drop-in music slots stay (see "Owner-supplied music/art").
+- **P14** `[todo]` (owner, Nov 11, "roadmap but very soon") HEAD CIRCLES + FACING, one pass over every portrait: (a) find the
+  main circle of each head (the face itself, not the hair/ears/fur around it): Loki's head sits low in the body slots
+  because his ears and fur count as head; characters with big hair or ears are the same. Save centre + size per
+  portrait/mood so every game that puts a face in a slot scales and places it by the real face. (b) Faces that look where they're going: scan the portraits (at least the main ones: Sean,
+  Amber, the dogs, the most-used characters) and work out which way each face is looking (left / right / straight on), then
+  flip the face in our games so it faces the direction of travel (Sonic, Mario, Broforce, kart, SotN...). Approach: a
+  head-pose estimate per portrait (face landmarks: nose tip vs the eye/jaw midline gives the yaw) run once by a tool, saved
+  as a small table (`src/data/faceLook.js`: id/mood -> 'l'|'r'|'c' + strength), then `s.sprite` flips a face that looks the
+  wrong way; straight-on faces stay as they are. Check a contact sheet by eye before using it.
 
 ## Testing and stability (section 14; ongoing)
 

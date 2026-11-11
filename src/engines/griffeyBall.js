@@ -175,16 +175,18 @@ async function griffeyBall(s){
    if(best)return best.b;const lead=runners.filter(r=>r.state==='run').sort((a,b)=>b.base-a.base)[0];return lead?Math.min(4,lead.base+1):null;};
   P.step=dt=>{if(P.ended)return;P.t+=dt;const t=P.t,bp=P.ballPos();
    // fielders: the chaser runs to the ball (steered by the human if they're dragging), others cover bases
-   if(P.ball.mode==='flight'&&Math.floor(t*2)!==P.rechase){P.rechase=Math.floor(t*2);P.chase=pickChaser();}
+   if(P.ball.mode==='flight'&&!P.hrDone&&Math.floor(t*2)!==P.rechase){P.rechase=Math.floor(t*2);P.chase=pickChaser();}
    const ch=P.chase?.fe;for(const fe of fielders){const sp=27*(.85+.3*fe.r.speed);let tx=fe.x,ty=fe.y;
     if(P.ball.mode==='flight'&&fe===ch){const it=P.chase.it,steer=st.steer&&ctrl(1-st.half)==='local';if(steer){tx=fe.x+st.steer.x*50;ty=fe.y+st.steer.y*50;}else{tx=it.x;ty=it.y;}}
     else if(P.ball.mode!=='flight'&&P.ball.holder===fe.i){const steer=st.steer&&ctrl(1-st.half)==='local';if(steer){tx=fe.x+st.steer.x*50;ty=fe.y+st.steer.y*50;}}
     else{const covers=[1,2,coverOf(2),5].indexOf(fe.i);if(covers>=0&&(P.ball.mode!=='flight'||fe!==ch)){const b=R.BASES[[0,1,2,3][covers]];tx=b.x;ty=b.y;}}
     const dx=tx-fe.x,dy=ty-fe.y,d=Math.hypot(dx,dy),mv=Math.min(d,sp*dt);if(d>.1){fe.x+=dx/d*mv;fe.y+=dy/d*mv;}}
    // the ball: caught in the air, picked up, or thrown to a base
-   if(P.ball.mode==='flight'){if(P.hr){if(t>f.T+.2&&!P.hrDone){P.hrDone=true;for(const r of runners){r.state='trot';}}}
+   // a home run: the moment it clears the fence it's called (banner + crowd), the fielders give up the chase and the
+   // runners trot round briskly (owner, Nov 10, R6: the fielder ran to the wall and nothing happened for ~13 s)
+   if(P.ball.mode==='flight'){if(P.hr){if(t>f.T&&!P.hrDone){P.hrDone=true;P.chase=null;for(const r of runners){r.state='trot';}banner(`HOME RUN! ${Math.round(f.dist)} FT`,'#ffd23f',1.8);snd.crowd?.(1.3);}}
     else{const landedNow=f.landed&&t>=f.landed.t;if(landedNow&&!P.landed){P.landed=true;for(const r of runners)if(r.state==='tag')r.state='run';}
-     for(const fe of fielders){const reach=fe===P.chase?.fe?5.5:3.5;if(t<.4&&bp.z>.4)break;if(Math.hypot(fe.x-bp.x,fe.y-bp.y)<reach&&bp.z<8){if(!P.landed&&bp.z>.4){P.caught=true;P.ball={mode:'held',holder:fe.i,since:t};P.outs++;runners[0].state='out';snd.pop();P.lastEvent=t;
+     for(const fe of fielders){const reach=fe===P.chase?.fe?5.5:3.5;if(t<.4&&bp.z>.4)break;if(Math.hypot(fe.x-bp.x,fe.y-bp.y)<reach&&bp.z<8){if(!P.landed){P.caught=true;/* any ball that hasn't touched the ground is a catch (it needed 0.4 ft of air: shoestring catches counted as pickups, so the batter was only out after a throw to first: owner, R6) */P.ball={mode:'held',holder:fe.i,since:t};P.outs++;runners[0].state='out';snd.pop();P.lastEvent=t;
         // after a catch the runners go back; a runner on third tags up on a deep fly
         for(const r of runners.slice(1)){r.state='safe';r.k=0;if(r.base===3&&Math.hypot(bp.x,bp.y)>235&&P.outs+st.outs<3){r.state='run';r.k=0;r.delay=.3;}}}
        else{P.ball={mode:'held',holder:fe.i,since:t};snd.pop();P.lastEvent=t;for(const r of runners)if(r.state==='tag')r.state='run';}break;}}}}
@@ -196,7 +198,7 @@ async function griffeyBall(s){
     const human=ctrl(1-st.half)==='local'&&!st.auto;if(st.throwReq!=null){const b=st.throwReq;st.throwReq=null;throwTo(h,b===4?0:b);}
     else if(!human||t-P.ball.since>2.2){if(P.thrown<3&&runners.some(r=>r.state==='run')){const b=bestThrow(h);if(b!=null&&t-P.ball.since>(human?2.2:.25)){throwTo(h,b===4?0:b);}}}}
    // runners
-   for(const r of runners){if(r.state==='trot'){r.k+=dt*runSpeed(r)/90*1.1;if(r.k>=1){r.base++;r.k=0;if(r.base>=4){r.state='scored';P.runs++;}}continue;}
+   for(const r of runners){if(r.state==='trot'){r.k+=dt*runSpeed(r)/90*2.4;if(r.k>=1){r.base++;r.k=0;if(r.base>=4){r.state='scored';P.runs++;}}continue;}
     if(r.state!=='run')continue;if(r.delay>0){r.delay-=dt;continue;}
     if(st.runCmd==='back'&&!r.batter&&r.dir>0&&r.k<.6){r.dir=-1;}
     r.k+=r.dir*dt*runSpeed(r)/90;

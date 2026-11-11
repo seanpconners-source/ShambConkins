@@ -105,11 +105,18 @@ if (fs.existsSync(sotnDir)) for (const f of fs.readdirSync(sotnDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('sotn:' + m[1].toLowerCase(), MIME[ext], ext, path.join(sotnDir, f));
 }
-// Drop-in music: assets/music/<name>.(mp3|ogg|m4a|wav) -> USER_PORTRAITS['music:<name>'] (e.g. cv-symphony, cv-symphony-boss).
-const AUDIO = {mp3: 'audio/mpeg', ogg: 'audio/ogg', m4a: 'audio/mp4', wav: 'audio/wav'};
+// Sonic 3 style game sprite sheets and stage art: assets/sonic3/<name>.(webp|png) -> s3:<name>
+// (names and layout: src/data/sonic3Sprites.js, docs/sonic3-sprites/README.md).
+const s3Dir = path.join(root, 'assets/sonic3');
+if (fs.existsSync(s3Dir)) for (const f of fs.readdirSync(s3Dir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('s3:' + m[1].toLowerCase(), MIME[ext], ext, path.join(s3Dir, f));
+}
+// Drop-in music: assets/music/<name>.(mp3|ogg|m4a|wav|flac) -> USER_PORTRAITS['music:<name>'] (e.g. cv-symphony, cv-symphony-boss).
+const AUDIO = {mp3: 'audio/mpeg', ogg: 'audio/ogg', m4a: 'audio/mp4', wav: 'audio/wav', flac: 'audio/flac'};
 const musicDir = path.join(root, 'assets/music');
 if (fs.existsSync(musicDir)) for (const f of fs.readdirSync(musicDir)) {
-  const m = f.match(/^([a-z0-9-]+)\.(mp3|ogg|m4a|wav)$/i), ext = m && m[2].toLowerCase();
+  const m = f.match(/^([a-z0-9-]+)\.(mp3|ogg|m4a|wav|flac)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('music:' + m[1].toLowerCase(), AUDIO[ext], ext, path.join(musicDir, f));
 }
 // Doom: assets/doom/<name>.pack.gz (Freedoom, made by tools/doom-pack.mjs) -> USER_PORTRAITS['doom:pack:<name>'];
@@ -208,7 +215,7 @@ async function game(e){const c=await caches.open(CACHE),saved=await c.match('ind
  if(res.status===200&&res.body){const h=new Headers(res.headers),[a,b]=res.body.tee();e.waitUntil(save(c,new Response(b,{status:200,headers:h})));return new Response(counted(a,e.resultingClientId||e.clientId,'page',+h.get('content-length')||0),{status:200,headers:h});}
  return saved||res;}
 // ---- pictures and sounds: a/<content hash>.<type>, cache ART for every release
-const ART='sc-assets',KEEP=2,TYPES={webp:'image/webp',png:'image/png',jpg:'image/jpeg',svg:'image/svg+xml',mp3:'audio/mpeg',ogg:'audio/ogg',m4a:'audio/mp4',wav:'audio/wav',bin:'application/octet-stream',js:'text/javascript'};
+const ART='sc-assets',KEEP=2,TYPES={webp:'image/webp',png:'image/png',jpg:'image/jpeg',svg:'image/svg+xml',mp3:'audio/mpeg',ogg:'audio/ogg',m4a:'audio/mp4',wav:'audio/wav',flac:'audio/flac',bin:'application/octet-stream',js:'text/javascript'};
 const at=n=>new URL('a/'+n,self.registration.scope).href,LISTS=()=>at('lists.json');
 const typed=(blob,name)=>new Response(blob,{headers:{'content-type':TYPES[name.split('.').pop()]||'application/octet-stream'}});
 const tell=m=>self.clients.matchAll({includeUncontrolled:true}).then(cs=>cs.forEach(c=>c.postMessage(m)));

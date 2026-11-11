@@ -112,7 +112,7 @@ function refreshSetup(){if(store.view!=='setup'&&store.view!=='players')return;c
 initCpuBoard({roll:()=>roll(),useItem:i=>useBagItem(i)});
 initDuel({start:(id,duel)=>requestGame({id,origin:'arcade',solo:true,duel,difficulty:duel.difficulty??null}),refresh:()=>{if(store.view==='arcade'&&!store.session&&!store.dialog)showView('arcade',{query:catalogQuery,filter:catalogFilter,page:catalogPage});}});
 // friend invites (src/friends.js): both phones go to the Arcade's Online mode in the same room
-initFriends({openRoom:async room=>{if(store.view!=='arcade')showCatalog('arcade');await enterRoom(room);}});
+initFriends({openRoom:async room=>{await enterRoom(room);if(store.view==='home')home();}});// a friend's invite joins the room where you are (R10)
 initChat();
 const random=()=>store.run?runRandom(store.run):Math.random();
 function focusEffect(before){const run=store.run;if(!run)return;const after=effectSnapshot(run),ids=[run.players[run.current].node];for(let i=0;i<2;i++)if(before?.players[i]&&JSON.stringify(before.players[i])!==JSON.stringify(after.players[i])){ids.push(run.players[i].node);if(before.players[i].node!==run.players[i].node)ids.push(before.players[i].node);}focusBoardAction(run,ids);}
@@ -598,7 +598,9 @@ async function runAction(name,target){
  switch(name){
   case 'home':home();break;
   case 'quit-app':await quitApp();break;
-  case 'setup':captureSetup();showView('setup',{selected:setupSelected,names:setupNames});break;
+  // in an online room with a friend, New Game on the home screen invites them to a board game together (owner, Nov 10,
+  // R10: going online stays on the home screen, so New Game and the Arcade both work from there)
+  case 'setup':if(store.view==='home'&&store.online&&netState().peer&&!store.netBoard){await inviteBoard();break;}captureSetup();showView('setup',{selected:setupSelected,names:setupNames});break;
   case 'players':captureSetup();store.playersFrom=store.view==='setup'?'setup':'home';showView('players',{selected:setupSelected,names:setupNames});break;
   // Character Select's Done/back: to New Game when it was opened from there (always online), else to the title screen.
   case 'players-done':captureSetup();if(store.netSetup||store.playersFrom==='setup')showView('setup',{selected:setupSelected,names:setupNames});else home();break;
@@ -620,7 +622,8 @@ async function runAction(name,target){
   case 'duel-propose':await proposeDuel(target.dataset.id);break;
   case 'online-mode':await setOnlineMode(true);break;
   case 'online-leave':leaveOnline();break;
-  case 'online-home':showCatalog('arcade');await setOnlineMode(true);break;
+  // the title screen's Online tile: join a room and stay on the home screen (owner, Nov 10: R10)
+  case 'online-home':await setOnlineMode(true);{const n=netState();if(store.online&&n.room){if(store.view==='home')home();toast(n.peer?`In “${n.room}” with ${n.peer.name}: New Game = the board game together, Arcade = challenges`:`In “${n.room}”: waiting for player 2. New Game and the Arcade work once they join.`);}}break;
   case 'online-board':await inviteBoard();break;
   case 'online-rejoin':rejoinBoard();break;
   case 'arcade-random':{const g=randomArcadePick();if(!g){toast('No playable games in this list');break;}

@@ -54,10 +54,11 @@ async function pong(s){
  keyboard(s,(i,name,down)=>{if(name==='u'||name==='d')keys[on?me:i][name]=down;});
  const heads=[null,null];let headAge=99;
  let L=1,Wd=1,fx=0,fy=0,portrait=false;
- function layout(){const W=s.W,H=s.H;portrait=H>W*1.08;if(portrait){const top=48;fx=0;fy=top;L=H-top-8;Wd=W;}else{fx=0;fy=0;L=W;Wd=H;}}
+ // pulled out a little (owner, Nov 10, R34: too zoomed in): the court sits inside a margin instead of touching the edges
+ function layout(){const W=s.W,H=s.H;portrait=H>W*1.08;if(portrait){const top=48+H*.03;fx=W*.05;fy=top;L=H-top-8-H*.03;Wd=W*.9;}else{fx=W*.04;fy=H*.06;L=W*.92;Wd=H*.88;}}
  // field (u along play, v across; both 0..1) -> screen
  const sx=(u,v)=>{if(flip){u=1-u;v=1-v;}return portrait?fx+v*Wd:fx+u*L;}, sy=(u,v)=>{if(flip){u=1-u;v=1-v;}return portrait?fy+(1-u)*L:fy+v*Wd;};
- const dims=()=>{const k=Math.min(L,Wd),b=clamp(k*.026,8,18),hs=clamp(k*.13,40,80),len=Math.max(Wd*.165,58),inset=hs+b*1.6+8;return {k,b,hs,len,inset};};
+ const dims=()=>{const k=Math.min(L,Wd),b=clamp(k*.022,7,15),hs=clamp(k*.11,34,68),len=Math.max(Wd*.15,50),inset=hs+b*1.6+8;return {k,b,hs,len,inset};};
  // pointer ownership: P1 left (landscape) or bottom (portrait)
  const fingers=new Map();
  const cpu=isCpu(s);let cpuHits=-1,cpuErr=0;
