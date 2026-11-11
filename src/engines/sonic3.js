@@ -2,7 +2,10 @@
 // plays the engine's TEST ZONE (s3/testZone.js) so the feel can be tried on a phone; Zone 1 replaces it later.
 // Players take turns like the old Sonic game: P1 runs the act, then P2 (as Tails). Score = badniks + the Sonic 3 tally
 // at the sign (time bonus + 100 a ring); higher wins. 1P: one run on your own. Full screen (fullBleed), physics at a fixed
-// 60 steps a second, Mega Drive camera, the owner's Sonic 3 & Knuckles sounds (sonicAudio.js).
+// 60 steps a second, Mega Drive camera, the owner's Sonic 3 & Knuckles sounds and Sonic 3 soundtrack (sonicAudio.js):
+// the act song starts with the title card (Act 1 = Angel Island Act 1, the Test Zone = Azure Lake), Invincibility while a
+// star lasts (then the act song from the top), the 1-Up jingle over it, Act Complete at the sign (the tally waits for it),
+// Game Over / Time Over, silence on the hand-off cards; a respawn starts the act song again.
 // Touch: drag anywhere on the left 55% = a floating d-pad (left/right run, down = crouch/roll/spin dash charge, up =
 // look up); touch the right side = jump (hold for a full jump, tap in the air for the shield move / insta-shield).
 // Keys: A/D/W/S or arrows to move, Space or Enter to jump.
@@ -25,12 +28,12 @@ const PCOL=['#78b6ff','#ffb85a'],NONE={l:false,r:false,u:false,d:false,jump:fals
 async function sonic3(s){
  const [c,x]=s.canvas(900,600,{fill:true});const fb=fullBleed(s,{bg:'#000'});s.body.classList.add('drag-arena-body');
  if(!await settle(s))return;
- S3.open();
+ S3.open(s);s.cleanup(()=>S3.stopAll());
  const head=(g,i,cx,cy,size,mood)=>s.sprite(g,i,cx,cy,size,{exact:true,mood,noBadge:true});
  const turns=s.solo?[0]:[0,1],score=[0,0],result=[null,null];
- const zone1=s.game?.s3zone==='zone1',buildZone=zone1?buildZone1Act1:buildTestZone,LABEL=zone1?'Shamb Island Act 1':'Sonic 3 Test Zone';
+ const zone1=s.game?.s3zone==='zone1',buildZone=zone1?buildZone1Act1:buildTestZone,LABEL=zone1?'Shamb Island Act 1':'Sonic 3 Test Zone',ACT_SONG=zone1?'angel-island-1':'azure-lake';
  let turn=0,Z=null,w=null,p=null,cam=null,art=null,back=null,fx=null;
- let phase='idle',frames=0,clock=0,acc=0,last=0,card=0,endF=0,tally=null,overText='',dbg=null;
+ let phase='idle',frames=0,clock=0,acc=0,last=0,card=0,endF=0,overLen=150,tally=null,overText='',dbg=null;
  // ---------------- input
  const kb=arenaKeys(s),inp={l:false,r:false,u:false,d:false,jump:false,jumpPress:false};let press=false;
  kb.onDown((i,k)=>{if(k==='fire')press=true;});
@@ -56,8 +59,13 @@ async function sonic3(s){
   if(e.k==='break')fx.debris(e.x,e.y);
   if(e.k==='skid')fx.dust(p.x,p.y+18,Math.sign(p.gsp));
   if(e.k==='dash')cam.dash((Math.abs(p.gsp)-8)*2);
-  if(e.k==='sign'&&!tally){tally={time:timeBonus(clock),rings:(p.rings|0)*100,t:0,clock};S3.play('signpost');}
+  if(e.k==='sign'&&!tally){S3.music(null);const sang=S3.jingle('act-clear');
+   tally={time:timeBonus(clock),rings:(p.rings|0)*100,t:0,clock,len:Math.max(TALLY,sang?Math.ceil(S3.jingleLen('act-clear')*60)+20:0)};S3.play('signpost');}
+  if(e.k==='life')S3.jingle('1up');
   if(e.k==='die'){overText=p.lives<=0?'GAME OVER':'';}}}
+ // the song this moment wants: the act song from the title card on, Invincibility while a star lasts
+ const songFor=()=>(phase==='card'||phase==='play')&&!tally?(p.star>0&&!p.dead?'invincible':ACT_SONG):null;
+ function gameOver(text){overText=text;phase='over';S3.music(null);const sang=S3.jingle('game-over');endF=0;overLen=Math.max(150,sang?Math.ceil(S3.jingleLen('game-over')*60)+20:0);}
  // ---------------- a turn
  async function startTurn(k){turn=k;const i=turns[k],nm=s.players[i].name;
   const desc=zone1&&s.solo?`Shamb Island Zone, Act 1. Roll tunnels, loops, high ledges, a cave, lakes and waterfalls. Reach the sign: time bonus + 100 a ring.`
@@ -72,7 +80,7 @@ async function sonic3(s){
   frames=0;clock=0;acc=0;last=performance.now();card=0;endF=0;tally=null;overText='';phase='card';return true;}
  function endTurn(){const i=turns[turn];score[i]=(p.score|0)+(tally?tally.time+tally.rings:0);result[i]={got:!!tally,clock:tally?tally.clock:clock,score:score[i]};
   s.setScores(score);}
- async function next(){endTurn();
+ async function next(){endTurn();S3.music(null);
   if(turn+1<turns.length){phase='idle';if(await startTurn(turn+1))return;return;}
   phase='done';const r0=result[0];
   if(s.solo){soloFinish(s,score[0],r0.got?1:0,`${LABEL}: ${score[0].toLocaleString()} points${r0.got?` (through in ${R.fmtTime(r0.clock)})`:''}.`,r0.got);return;}
@@ -85,10 +93,10 @@ async function sonic3(s){
   w.step([p],[ctl]);
   if(phase==='play'&&!tally&&!p.dead)clock++;
   events();fx.step();cam.update(p);
-  if(p.dead&&p.dead>=120&&phase==='play'){if((p.lives|0)<=0){phase='over';endF=0;}else{O.respawn(p,{x:Z.start.x,y:Z.start.y});p.y-=1;cam.snap(p);}}
-  if(tally){tally.t++;if(tally.t===TALLY-60)S3.play('register');if(tally.t>=TALLY)return 'next';}
-  if(phase==='over'){if(++endF>150)return 'next';}
-  if(phase==='play'&&clock>=TIME_CAP){overText='TIME OVER';phase='over';endF=0;}
+  if(p.dead&&p.dead>=120&&phase==='play'){if((p.lives|0)<=0)gameOver('GAME OVER');else{O.respawn(p,{x:Z.start.x,y:Z.start.y});p.y-=1;cam.snap(p);S3.restart();}}
+  if(tally){tally.t++;if(tally.t===tally.len-60)S3.play('register');if(tally.t>=tally.len)return 'next';}
+  if(phase==='over'){if(++endF>overLen)return 'next';}
+  if(phase==='play'&&clock>=TIME_CAP)gameOver('TIME OVER');
   return null;}
  // ---------------- drawing
  function draw(t){const W=s.W,H=s.H;if(cam.W!==W||cam.H!==H){cam.resize(W,H);cam.clampIn();}
@@ -103,7 +111,7 @@ async function sonic3(s){
   R.drawRunner(x,p,turns[turn],t,head);
   fx.draw(x);x.restore();
   // HUD
-  const i=turns[turn];R.drawHUD(x,W,H,{score:(p.score|0)+(tally?Math.round((tally.time+tally.rings)*Math.min(1,tally.t/(TALLY-80))):0),rings:p.rings},tally?tally.clock:clock,{name:s.players[i].name.toUpperCase(),color:PCOL[i]});
+  const i=turns[turn];R.drawHUD(x,W,H,{score:(p.score|0)+(tally?Math.round((tally.time+tally.rings)*Math.min(1,tally.t/(tally.len-80))):0),rings:p.rings},tally?tally.clock:clock,{name:s.players[i].name.toUpperCase(),color:PCOL[i]});
   R.drawLives(x,W,H,p,i,head);
   drawPad(W,H);
   if(phase==='card')R.drawTitleCard(x,W,H,card,`${Z.zone}`,Z.act);
@@ -112,7 +120,7 @@ async function sonic3(s){
  }
  const FONT='italic 900 %spx "Arial Black",Impact,system-ui,sans-serif';
  function banner(text,W,H){const sz=Math.round(Math.min(W/9,H/7,60));x.save();x.font=FONT.replace('%s',sz);x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';x.lineWidth=Math.max(4,sz*.16);x.strokeStyle='#08103a';x.strokeText(text,W/2,H*.42);x.fillStyle='#fff';x.fillText(text,W/2,H*.42);x.restore();}
- function drawTally(W,H,i){const T=tally.t,sz=Math.round(Math.min(W/16,H/11,34)),k=Math.min(1,Math.max(0,(T-30)/(TALLY-110))),slide=Math.min(1,T/30);x.save();x.font=FONT.replace('%s',sz);x.textBaseline='middle';x.lineJoin='round';x.lineWidth=Math.max(4,sz*.18);x.strokeStyle='#08103a';
+ function drawTally(W,H,i){const T=tally.t,sz=Math.round(Math.min(W/16,H/11,34)),k=Math.min(1,Math.max(0,(T-30)/(tally.len-110))),slide=Math.min(1,T/30);x.save();x.font=FONT.replace('%s',sz);x.textBaseline='middle';x.lineJoin='round';x.lineWidth=Math.max(4,sz*.18);x.strokeStyle='#08103a';
   const L=(txt,col,yy,align,xx)=>{x.textAlign=align;x.strokeText(txt,xx,yy);x.fillStyle=col;x.fillText(txt,xx,yy);};
   const cxm=W/2,y0=H*.3;L(`${s.players[i].name.toUpperCase()} GOT`,'#fff',y0,'center',cxm-(1-slide)*W);L('THROUGH ACT 1','#fff',y0+sz*1.2,'center',cxm+(1-slide)*W);
   const rows=[['TIME BONUS',Math.round(tally.time*(1-k))],['RING BONUS',Math.round(tally.rings*(1-k))],['TOTAL',Math.round((tally.time+tally.rings)*k)]];
@@ -125,12 +133,13 @@ async function sonic3(s){
  // ---------------- tests
  s.debug={get state(){return {phase,frames,clock,turn,p,w,cam,score:[...score],tally};},
   set bot(f){dbg={...(dbg||{}),bot:f};},teleport(px,py){Object.assign(p,{x:px,y:py,xsp:0,ysp:0,gsp:0,ground:false});cam.snap(p);},skipCard(){card=100;phase='play';},
-  rings(n){p.rings=n;},player(i){turns[turn]=i;p.canFly=i===1;},chunks:()=>art?.cache.size||0};
+  rings(n){p.rings=n;},player(i){turns[turn]=i;p.canFly=i===1;},chunks:()=>art?.cache.size||0,music:()=>S3.nowPlaying(),seekSong:t=>S3.seekSong(t),SONGS:S3.SONGS};
  if(!await startTurn(0))return;
  s.frame((dt,t)=>{if(!s.alive||phase==='idle'||phase==='done')return;
   const now=performance.now();acc+=Math.min(100,now-last);last=now;let n=0,res=null;
   while(acc>=STEP&&n<4&&!res){acc-=STEP;n++;res=stepFrame();}
   if(n===4)acc=0;
+  S3.tick();S3.music(songFor());
   draw(t);
   if(res==='next'){phase='idle';next();}});
 }

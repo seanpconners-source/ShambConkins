@@ -2,7 +2,7 @@
 //   node tools/build.mjs --pwa <dir>; node tools/serve-static.mjs <dir> 8123; then SHAMB_URL=http://localhost:8123/ node tests/...
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 const [dir, port = 8123] = process.argv.slice(2);
-const T = {'.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg', '.gz': 'application/gzip', '.wad': 'application/octet-stream', '.svg': 'image/svg+xml', '.css': 'text/css'};
+const T = {'.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg', '.flac': 'audio/flac','.gz': 'application/gzip', '.wad': 'application/octet-stream', '.svg': 'image/svg+xml', '.css': 'text/css'};
 http.createServer((q, r) => {
   let f = path.join(dir, decodeURIComponent(q.url.split('?')[0]));
   if (f.endsWith(path.sep) || f === path.resolve(dir)) f = path.join(f, 'index.html');

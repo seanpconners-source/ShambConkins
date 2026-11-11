@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.90.0
+
+- **Seanic the Hedgehog, Zone 1 Act 1.** The Sonic 3 rebuild gets its first real level, Shamb Island Act 1: roll tunnels that curve, four loops, stairs, high ledges and a sky route that crumbles, a cave, two lakes with bridges and waterfalls (with a secret room behind one), a vine gorge, a zip line, a mesa with a chasm, and the end sign. Player 1 runs as a blue-purple hedgehog, player 2 as a red-orange fox with three tails who can fly (tap jump again in the air, hold it to climb).
+- **Real art.** The runners, rings, springs, monitors, robots, scenery, ground and title card are all drawn from the new sprite sheets.
+- **Sonic 3 music.** Act 1 plays Angel Island Zone Act 1 from the title card on (the Test Zone plays Azure Lake). There's the Invincibility song while a star lasts, the 1-Up jingle (the song comes back where it was), Act Complete at the sign with a tally that waits for it, and Game Over / Time Over. Songs loop without the album's fade-out and stop when you pause.
+
 ## v0.89.0
 
 - **Sonic 3 Test Zone (new engine preview).** Arcade → Sonic: a first look at the Sonic 3 rebuild. Real Mega Drive physics (loops, slopes, rolling, spin dash), the Mega Drive camera, springs, the fire, bubble and lightning shields with their moves, badniks, a zip line, a swing vine, breakable walls, moving and falling platforms, and the end sign with the Sonic 3 score tally. P1 runs as Sonic, then P2 as Tails, with your faces. Placeholder art; the real Zone 1 comes next.
