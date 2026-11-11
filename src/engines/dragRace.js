@@ -26,7 +26,7 @@ async function dualrace(s){
  function startRace(){cars=fresh();msg=[null,null];result=null;tree={t:0,amber:1.0+rand()*1.2};state='stage';t=0;if(nf){nf.push();if(early?.r===race)apply(nf.remote,early);early=null;}}
  function say(i,text,col='#fff'){msg[i]={text,t:1.1,col};}
  function launch(cr,early){if(cr.launched)return;cr.launched=true;
-  if(early){cr.foul=true;cr.penalty=.7;say(cr.i,'RED LIGHT!','#ff3b3b');voice(160,.3,.06,'square');return;}
+  if(early){cr.foul=true;cr.penalty=.7;say(cr.i,'RED LIGHT! HELD 0.7s','#ff3b3b');voice(160,.3,.06,'square');return;}
   cr.react=t-tree.green;const r=cr.rpm;if(r>=5600&&r<=7000){cr.v=3.2;say(cr.i,'PERFECT LAUNCH','#7dff6a');}else if(r<4200){cr.penalty=0;cr.bog=.9;say(cr.i,'BOGGED','#ffd23f');}else if(r>7400){cr.spin=1;say(cr.i,'WHEELSPIN','#ffd23f');}else{cr.v=1.5;say(cr.i,'GOOD LAUNCH');}
   noise(.5,.08,{f0:600,f1:200});}
  function shift(cr){if(state!=='race'||!cr.launched||cr.foul&&cr.penT<cr.penalty||cr.et!==null)return;if(cr.g>=RATIO.length-1){return;}
@@ -91,7 +91,7 @@ async function dualrace(s){
   if(state==='race'){for(const cr of cars)if(!cr.launched&&t-tree.green>3&&!(nf&&cr.i===nf.remote))launch(cr,false);
    if(nf&&cars[nf.me].et!==null&&!cars[nf.me].sent){cars[nf.me].sent=true;nf.push();}
    if(cars.every(cr=>cr.et!==null)||!nf&&cars.some(cr=>cr.et!==null)&&t-tree.green>(Math.min(...cars.map(cr=>cr.et??99))+4)){
-    const ets=cars.map(cr=>(cr.et??99)+cr.penalty);const w=ets[0]<ets[1]?0:ets[1]<ets[0]?1:-1;if(w>=0){wins[w]++;s.react?.(w,'win',2);s.react?.(1-w,'sad',1.5);}s.setScores(wins);result={w,ets,t:3};state='result';[523,659,784,1046].forEach((f,k)=>voice(f,.14,.05,'triangle',{delay:k*.09}));}}
+    const ets=cars.map(cr=>cr.et??99);/* owner, Nov 10 (R2): a red light already holds the car on the line for its penalty, so it isn't added to the time again (you could cross first and still lose) */const w=ets[0]<ets[1]?0:ets[1]<ets[0]?1:-1;if(w>=0){wins[w]++;s.react?.(w,'win',2);s.react?.(1-w,'sad',1.5);}s.setScores(wins);result={w,ets,t:3};state='result';[523,659,784,1046].forEach((f,k)=>voice(f,.14,.05,'triangle',{delay:k*.09}));}}
   if(state==='result'){result.t-=dt;if(result.t<=0){if(wins.some(v=>v>=2)||race>=2){state='over';s.finish(wins,`Quarter mile · ${wins[0]}–${wins[1]} · best ${best.map(b=>b?b.toFixed(2)+'s':'—').join(' / ')}`);return;}race++;startRace();}}
   // ---------- draw
   x.setTransform(1,0,0,1,0,0);const portrait=H>W*1.05,trackH=portrait?H*.42:H*.5,top=44;
@@ -112,7 +112,7 @@ async function dualrace(s){
   const R=Math.min(portrait?W*.23:W*.14,(H-top-trackH)*.4);for(const cr of cars){const cx=portrait?(cr.i?W*.75:W*.25):(cr.i?W*.8:W*.2),cy=top+trackH+(H-top-trackH)*.5;drawTach(cr,cx,cy,R);
    label(x,`${s.players[cr.i].name} · ${CAR[cr.i]}`,cx,cy-R-14,Math.max(11,R*.12),{fill:ACCENT[cr.i],font:`900 ${Math.max(11,R*.12)}px ${SANS}`});
    const m=msg[cr.i];if(m&&m.t>0)label(x,m.text,cx,cy+R+16,Math.max(14,R*.17),{fill:m.col,alpha:clamp(m.t*2,0,1)});
-   if(cr.et!==null)label(x,`${(cr.et+cr.penalty).toFixed(3)}s`,cx,cy-R-34,Math.max(14,R*.17),{fill:'#fff'});}
+   if(cr.et!==null)label(x,`${cr.et.toFixed(3)}s`,cx,cy-R-34,Math.max(14,R*.17),{fill:'#fff'});}
   // centre info
   const midX=W/2,midY=top+trackH+(H-top-trackH)*.5;
   label(x,`RACE ${race+1}`,midX,portrait?top+trackH+16:midY-30,16,{fill:'#ffffffaa'});for(let i=0;i<2;i++)for(let k=0;k<2;k++){x.fillStyle=k<wins[i]?ACCENT[i]:'#ffffff22';x.fillRect(midX+(i?10+k*14:-22-k*14),portrait?top+trackH+30:midY-14,10,6);}
