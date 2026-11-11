@@ -9,8 +9,16 @@ loop entrance grass in front (R.frontGrass from sonic3.js loopFronts), title sky
 select backdrop covers ('cover'); ZONE 1 ACT 2 = s3/zone1act2.js, game sonic3-zone1-act2 (corkscrew/seesaw/fish/swing
 platform/spikelog in objects.js + drawn stand-ins in render.js; Emerald Hill song; tests s3-zone1-act2.mjs (test:core) +
 sonic3-zone1-act2.mjs; map docs/sonic3/maps/zone1-act2.png); R4 dice picks from all games; R3 Spinner Showdown CPU (kind 'cpu').
-NOT DONE from the night list: GPT art brief (walk rows, title redo if wanted, Act 2 objects, FIXES-2026-11-11 items), drag race
-R2, SotN fence R7, mini-boss/zone boss, Uno/baseball/Pro Mancala fps, menus C1-C6, polish D1-D13, soak.
+Continued (same branch): GPT brief docs/sonic3-sprites/GPT-NIGHT-2026-11-11.md (walk rows = the shuffle cause, Act 2 pieces);
+ACT 1 MINI-BOSS (objects.js type 'boss': arena 17800-18200 closes, hover/sink/windup/FLAME/COOL/rise cycle 350 frames, 6 hits,
+resets to full HP if everyone dies; bossBot() autopilot; drawBoss = owner's miniboss sheet + pilot face in the dome; pilot =
+locked character via gameRecruitPool, freed into s.gameRecruits; sonic3 is a cageGame now (no random unlock); song
+s3k-song-miniboss.flac); drag race red light no longer counted twice (R2); SotN scenery culled by width (R7); session seed is
+unique per session (was profile.played.length: same Uno hand every time) + Uno cap 300 moves (R1); baseball catch before the
+bounce always counts, home run called at once + quick trot (R6); Online tile stays home, New Game in a room = board game
+together (R10; online tests patched, not run: no wrangler); NEW HIGH SCORE badge (R11); Strategema/Four Lights own tiles (R20);
+Pong margin (R34). test:core EXIT 0 after the seed change; Seanic, baseball, arcade-console, fuzz pass.
+NOT DONE: zone boss + capsule, R5 Pro Mancala fps, C5/C6 (groups everywhere, built-in logos), D2-D13 polish, soak.
 
 GROK ROUND 1 (Nov 10, owner out of GPT credits, sent a zip 'APPROVED' made with Grok): derezzed-cycles, radical-bike, sewer-clash art/icon/logo imported (art 1792x1008 → 1600x900, real alpha on icons/logos), KEY_BOX added. Weak spot: faces are pasted photos (same Sean grin in all 3). docs/art-for-gpt/GROK.md = Grok kit (fixes, cast, rules, Batch 01 prompts for the next 10 slots, flat #00FF00 background allowed: import-arcade-art.py green_out keys it; the script now also imports <slot>-logo and keeps key art at 1600). Nov 10 later: owner locked all 12 new backgrounds on all 12 screens → apply.py (KEY_PLACE now 50 pictures, 17 on every screen); measure.mjs on the built game matches the locks (phone 0, amber-phone ≤.0004). Picker v12 (Nov 10) = the older 29 backgrounds; their 8 old screens were copied from KEY_PLACE into the picker db (so they show Locked), owner then locked my-fold-closed(-land) + amber-phone(-land) on all 29 → apply.py: 116 new screens, 0 changed; KEY_PLACE = 50 pictures, 46 on all 12 screens (only black-sabbath-pinball, bosses, doom-2, king-gizzard-pinball are on no shelf, so never measured). measure.mjs on the built game: my-fold-closed ≤.0006, amber-phone ≤.0004 vs the locks. RELEASED in v0.89.0.
 

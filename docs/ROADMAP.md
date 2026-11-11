@@ -22,21 +22,21 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 ### Owner's notes, Nov 10 2026 (all `[todo]` unless tagged; "ASK" = waiting for the owner's answer)
 
 **Bugs first**
-- **R1** `[bug]` Uno vs CPU: "It was my turn and CPU won", and the same hand is dealt over and over. Also wanted: more animations, clearer progress (whose turn, cards left), table music.
-- **R2** `[bug]` Drag race: the owner beats the CPU every time but the game says the CPU wins. Game also "sucks, could be fun": rework after the fix.
-- **R3** `[bug]` Chutes and Ladders: the CPU doesn't play. Board is lame: make it look awesome.
-- **R4** `[bug]` 🎲 Random must pick from ALL games, not from the current category.
+- **R1** `[verify]` (Nov 11 night: the same hand came from a session seed that stopped changing, every game now deals fresh; the game ended at an 80-move cap a normal game reached, now 300 with a countdown; animations/music still to do) Uno vs CPU: "It was my turn and CPU won", and the same hand is dealt over and over. Also wanted: more animations, clearer progress (whose turn, cards left), table music.
+- **R2** `[verify]` (Nov 11 night: a red light was counted twice, so crossing first could still lose; rework still to do) Drag race: the owner beats the CPU every time but the game says the CPU wins. Game also "sucks, could be fun": rework after the fix.
+- **R3** `[part]` (Nov 11 night: Spinner Showdown CPU takes its spins; the board look is still to do) Chutes and Ladders: the CPU doesn't play. Board is lame: make it look awesome.
+- **R4** `[verify]` (Nov 11 night) 🎲 Random must pick from ALL games, not from the current category.
 - **R5** `[bug]` Tony Hawk's Pro Mancala intro: very low frame rate on PC (installed app from Edge).
-- **R6** `[bug]` Baseball: a caught ball doesn't register until it's thrown to first; a ball the CPU didn't field became a home run instead of a single; on a home run the fielder runs to the wall and nothing happens.
-- **R7** `[bug]` SotN: fence sprites disappear in the intro part, then come back.
+- **R6** `[part]` (Nov 11 night: catches before the bounce always count; home runs called at once, fielders stop, quick trot. The CPU-not-fielding home run not found in the code: describe it if it happens again) Baseball: a caught ball doesn't register until it's thrown to first; a ball the CPU didn't field became a home run instead of a single; on a home run the fielder runs to the wall and nothing happens.
+- **R7** `[verify]` (Nov 11 night: scenery culled by its whole width) SotN: fence sprites disappear in the intro part, then come back.
 
 **Arcade and menus**
 - **R8** Game groups everywhere, not just Home: like games are one tile on every shelf (tic-tac-toes, board games, retro games, trivia game shows...), then picked on their sub-menu.
 - **R9** The version sub-menu looks like the main Arcade screen: background on display, logo at the top, version tiles along the bottom; no scrolling, scales to the screen. No "x2 / x3" badges on tiles.
-- **R10** Online must not jump to the Arcade: stay on the home screen so New Game, Arcade etc. can be picked.
-- **R11** High scores: tell the player clearly when they set a high score; a high-score list on the main (or Arcade) screen.
+- **R10** `[verify]` (Nov 11 night: stays home; New Game in a room = board game together) Online must not jump to the Arcade: stay on the home screen so New Game, Arcade etc. can be picked.
+- **R11** `[verify]` (Nov 11 night: NEW HIGH SCORE! badge on result cards; the Arcade already has the 🏆 board per game) High scores: tell the player clearly when they set a high score; a high-score list on the main (or Arcade) screen.
 - **R12** `[idea]` Collection screen "isn't mainly the characters": owner (Nov 10) is gathering thoughts; an audit step for much later.
-- **R13** Search bar on character select.
+- **R13** `[verify]` Search bar on character select (it exists on the Characters screen, #cs-search: say if you meant somewhere else).
 - **R14** Game logos must not be pulled from online (slow, look bad): revise them all to built-in art.
 - **R15** `[verify]` Recent games at the front of the Featured shelf, no separate Recent (done in v0.88.7). (The cut-off View all note: dropped by the owner.)
 
@@ -47,7 +47,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **R17** Fruit Ninja, Stacker, Sumo and Curling leave the Taskmaster brand: each needs its own real reference. Then redo the actual Taskmaster games properly. TABLED (owner, Nov 10): nobody recognises the themes; either lean hard into a theme or go plain. Decide later.
 - **R18** Matrix "Nine Realities": cooler name, could be sweet. Hardline Hack: separate entry (don't merge), cooler too, maybe techno. The Matrix games need graphics and music: digital raves, gunfights, kung fu.
 - **R19** Kingpin bowling → "Don't F*** with the Jesus" bowling (The Big Lebowski).
-- **R20** Strategema and Connect 4 each become their own tile.
+- **R20** `[verify]` (Nov 11 night) Strategema and Connect 4 each become their own tile.
 - **R21** Who Wants to Be a Millionaire: own logo, background, a Trivia game shows group; real sounds, Regis clips (owner supplies).
 
 **Games to rebuild or make great**
@@ -63,7 +63,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 - **R31** Crossy Road: too hard; the screen jump when it scrolls up is jarring.
 - **R32** Temple Run for real: look just like it.
 - **R33** Tapper: prettier, smoother, sprites.
-- **R34** Pong: too zoomed in, pull out a bit.
+- **R34** `[verify]` (Nov 11 night: margin round the court, pieces ~15% smaller) Pong: too zoomed in, pull out a bit.
 - **R35** Flip cup: 3D looks kind of bad; improve. Real gang chant clip "flip, flip, Flipadelphia" (owner supplies).
 - **R36** Beer Pong: Paddy's sounds and gang quotes arguing behind us; rebuttal when the final shot is made; Frank clip "I love this feeling!" on a bonus shot (owner supplies clips).
 - **R37** Paddy's bar games are sweet: any more to add?
@@ -110,7 +110,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   near jungle strip, Tails' two tired frames with two arms).
 - **R59b** `[verify]` Seanic title/select art from GPT: brief `docs/sonic3-sprites/TITLE-SELECT-BRIEF.md` (title-bg,
   title-hero, title-fox, select-bg, select-monitor, select-hog, select-fox); stand-ins drawn until they arrive.
-- **R59c** `[todo]` Seanic Act 1 mini-boss (the miniboss sheet is already imported), then Act 2 (the scorched jungle) and the
+- **R59c** `[part]` (Nov 11 night: mini-boss + Act 2 + both songs built, `[verify]`; the zone boss + capsule still to do) Seanic Act 1 mini-boss (the miniboss sheet is already imported), then Act 2 (the scorched jungle) and the
   zone boss (boss + capsule sheets imported). Music (owner, Nov 11): level 2 = Sonic 2 Emerald Hill Zone,
   level 3 = Sonic 3 Angel Island Act 1 (file already in), boss music picked together later.
 
