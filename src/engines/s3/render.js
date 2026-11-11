@@ -421,7 +421,9 @@ const BODY_K={hog:1.045,fox:.92},RUN_HEAD=36;
 // curled up: matched by FILLED AREA, not outline width: the hedgehog's ball is spiky (outline ~31 px, filled area = a
 // 26.4 px disc), the fox's is solid fur (outline 30, area 28.7), so equal outlines made the fox's ball look ~19% bigger.
 // BALL_SRC = the source size that scales to BALL_D: the hedgehog's is unchanged (owner: its ball is right)
-const BALL_D=42,BALL_SRC={hog:32.1,fox:38.8},WALK_RUN=2.2;// fox ball 10% smaller again (owner, Nov 11 round 3)
+// DASH_RUN: from here the legs are the spinning circle (owner, Nov 11: it took forever to kick in at 9.5, above the
+// normal top speed of 6, so it showed only with speed shoes or downhill; now it comes as you build real speed)
+const BALL_D=42,BALL_SRC={hog:32.1,fox:38.8},WALK_RUN=2.2,DASH_RUN=4.6;// fox ball 10% smaller again (owner, Nov 11 round 3)
 // spin dash dust: puffs kicked out behind the ball
 function spinDust(x,px,py,f,t){x.save();for(let k=0;k<5;k++){const ph=(t*7+k/5)%1,d=8+ph*26,r=3+ph*6;x.globalAlpha=.85*(1-ph);x.fillStyle='#fff';
  x.beginPath();x.arc(px-f*d,py-ph*10-k%2*3,r,0,7);x.fill();x.strokeStyle='rgba(120,130,160,.55)';x.lineWidth=1;x.stroke();}x.restore();}
@@ -451,7 +453,7 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
   x.restore();shieldOver(x,p,t);return;}
  // standing body: feet origin at the surface below the centre, turned with the ground angle
  const ang=bodyAngle(p);x.translate(p.x,p.y);x.rotate(ang);x.translate(0,19);
- const skid=p.ground&&run>1.5&&Math.sign(p.gsp)!==f&&!p.rolling,peel=p.ground&&run>=6;
+ const skid=p.ground&&run>1.5&&Math.sign(p.gsp)!==f&&!p.rolling,peel=p.ground&&run>=DASH_RUN;
  x.save();x.scale(f,1);
  if(p.hang){legs(0,0);body();x.strokeStyle=ARM;x.lineWidth=3.5;x.lineCap='round';x.beginPath();x.moveTo(-3,-22);x.lineTo(-2,-35);x.moveTo(3,-22);x.lineTo(2,-35);x.stroke();glove(-2,-36);glove(2,-36);}
  else if(p.spring||p.hurt){x.strokeStyle=BODY;x.lineWidth=5;x.lineCap='round';x.beginPath();x.moveTo(-2,-14);x.lineTo(-4,-2);x.moveTo(2,-14);x.lineTo(4,-2);x.stroke();shoe(-4,-1,0);shoe(4,-1,0);body();x.strokeStyle=ARM;x.lineWidth=3.5;x.beginPath();x.moveTo(-3,-22);x.lineTo(-8,-34);x.moveTo(3,-22);x.lineTo(8,-34);x.stroke();glove(-8,-35);glove(8,-35);}
@@ -504,7 +506,7 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
   else if(!p.ground){if(p.ysp>1.5)cyc('fall',t*8);else cyc('walk',L.cyc);}
   else if(p.crouch){row='crouch';fr=1;}
   else if(skid)cyc('skid',t*10);
-  else if(run>=9.5)cyc('dash',t*24);
+  else if(run>=DASH_RUN)cyc('dash',t*(16+run*1.4));// the circle legs = the full-speed run, as on the Mega Drive
   else if(run>=5.5)cyc('run',L.cyc);
   else if(run<.05){if(p.lookUp){row='lookUp';fr=1;}else if(L.idle>180)cyc('wait',L.idle/14);}
   // the sheets' walk rows are mostly feet-together frames (owner: "shuffling their feet"): past a slow walk the run
