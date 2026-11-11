@@ -24,14 +24,18 @@ SEANIC & TAILS (CPU fox follows: sonic3.js buddyInput = Sonic 3 Tails AI, object
 fox. Knux/Shade art = the hedgehog sheets recoloured at runtime (render.js recolour/tintSheet) until GPT sheets come.
 Tests: s3-zone1-act3.mjs + s3-moves.mjs (test:core), sonic3-zone1-act3.mjs (browser); all Seanic Node/browser tests pass.
 
-HEAD CHECK (Nov 11, RELEASED in v0.95.0; owner's idea): tools/head-check.py (OpenCV 4.x Haar:
-OpenCV 5 has no Haar files, `pip install opencv-python-headless<5`) reads every character picture (assets/portraits + built-in
-char:* raster art + face pack, 2,473) → src/data/headFacts.js HEAD_FACTS[key]=[face box, head box (fractions), look -1/0/1,
-conf, found, aspect] (face found 1,985, outline guess 488); contact sheets local-test-reports/head-check/all-NN.png +
-review-NN.png; hand fixes tools/head-check-fixes.json. src/headFacts.js headFacts/lookDir/flipFor/faceFit(id,mood,faceW)
-(matches portraitURL's picture back to its key). PROOF wired in Seanic only: sonic3.js `head(...,dir)` puts the face box
-(FACE_W .6 of the old box) on the spot and mirrors a face looking against the run (conf ≥ .45); render.js drawRunner passes f.
-WAITING: owner looks at the sheets, then wire SotN/Broforce/Sundown/baseball/DOOM/bosses.
+HEAD CHECK (Nov 11; round 2 Nov 11 late, branch claude/gracious-rubin-6l85xp, unreleased): tools/head-check.py measures
+every character picture (2,474) → src/data/headFacts.js HEAD_FACTS[key]=[face box, head box, look, conf, found, aspect].
+Round 2 (owner: face size jumped between moods, faces looked the wrong way): YuNet landmarks (tools/models/
+face_detection_yunet_2023mar.onnx, MIT; `pip install "opencv-python-headless<5"`) are the main detector: face width =
+2.39 x eye distance (turn-corrected, mixed with eye-to-mouth on strong turns; 2.39 = old median, so faces kept their
+average size), centre .48 S below the eyes, look = nose vs eye/mouth middle (|yaw| ≥ .08). even() per character: moods
+without landmarks take the character's face/head ratio, sure landmark faces clamp to ±30% of it (helmets). Haar/outline =
+fallback only (found 2,199). Was: Sean's two pictures measured .99 and .56 of the picture. src/headFacts.js
+drawFace(s,g,i,cx,cy,size,mood,dir,faceK=.6) = face on the spot + mirror against the body's facing; used by Seanic
+(sonic3.js head) and SotN (sotn.js headFn, sotnArt passes facing). Check sheets: local-test-reports/head-check.
+Not wired yet: Broforce/Sundown/baseball/DOOM/bosses. Sean's happy/walk/mad/horror picture is a car selfie with the
+background (no cut-out): shows as a rectangle on bodies.
 
 v0.94.0 READY (Nov 11 evening; main = claude/nov11-night, TESTver merged; owner pushes in GitHub Desktop): Seanic playtest
 round 3 (terrain cache sky bug, tube camera glide, loop assist in physics.js, acc 1.65x, DASH_RUN 4.6, monkey palms, bridge
