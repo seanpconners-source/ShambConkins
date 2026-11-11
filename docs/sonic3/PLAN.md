@@ -58,6 +58,5 @@ tile-for-tile copy of the real zones) and our own art; the owner's own sound rip
 - Music: the owner's Sonic 3 soundtrack (Claude Share) in `assets/music/s3k-song-*.flac`: title, data select, Angel Island
   Act 1, Azure Lake (Test Zone), invincibility, 1-up, act clear, game over. Next to add with their set pieces: Miniboss,
   Robotnik (boss), Angel Island Act 2, Drowning (water).
-- Owner's music plan for Zone 1 (Nov 11, "not yet, just take note"): level 1 = Sonic 1 Green Hill Zone (in), level 2 = a
-  song the owner named as "this song" without saying which (ask; still the Green Hill look), level 3 = Sonic 3 Angel Island
+- Owner's music plan for Zone 1 (Nov 11, "not yet, just take note"): level 1 = Sonic 1 Green Hill Zone (in), level 2 = Sonic 2 Emerald Hill Zone (owner confirmed Nov 11; still the Green Hill look; in the S1/S2 CD album, 1-18), level 3 = Sonic 3 Angel Island
   Zone Act 1 (already in: `s3k-song-angel-island-1.flac`), boss = boss music to be picked together.

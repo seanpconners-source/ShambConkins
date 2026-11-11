@@ -41,10 +41,15 @@ function drawTitle(x,W,H,t,{head,i=0,foxI=1,mode='1 PLAYER'}){const u=Math.min(W
  // the hedgehog (player 1's face) rises up behind the logo, the fox (player 2's: the other player, the CPU or the online
  // friend) pops up beside him a moment later, like the Sonic 2 title
  if(t>.75){const top=cy-lh*.5,h=lh*1.15;x.save();x.beginPath();x.rect(0,0,W,cy+lh*.1);x.clip();
-  if(t>1.05&&foxI!==null){const rf=ease((t-1.05)/.5),fh=h*.86,fx=cx+lw*.2,fby=top+lh*.66+(1-rf)*fh*.9;
-   if(!picWithFace(x,'title-fox',fx,fby,fh,foxI,head,'win'))runner(x,'fox',foxI,fx,fby,fh/44,t,head,{facing:-1});}
-  const rise=ease((t-.75)/.55),hx=foxI!==null?cx-lw*.06:cx,by=top+lh*.62+(1-rise)*h*.9;
-  if(!picWithFace(x,'title-hero',hx,by,h,i,head,'win')){const sc=h/44;runner(x,'hog',i,hx,by,sc,t,head);}x.restore();}
+  // the kit pictures are drawn waist up and anchored at that cut line: it sits behind the logo's letters, the faces
+  // just above the logo's top edge (the stand-in runners are full bodies with their feet lower down)
+  const heroPic=!!SP.picture('title-hero'),foxPic=!!SP.picture('title-fox');
+  if(t>1.05&&foxI!==null){const rf=ease((t-1.05)/.5),fx=cx+lw*(foxPic?.23:.2);
+   if(foxPic){const fh=lh*1.25;picWithFace(x,'title-fox',fx,top+lh*.5+(1-rf)*lh*1.2,fh,foxI,head,'win');}
+   else{const fh=h*.86;runner(x,'fox',foxI,fx,top+lh*.66+(1-rf)*fh*.9,fh/44,t,head,{facing:-1});}}
+  const rise=ease((t-.75)/.55),hx=foxI!==null?cx-lw*(heroPic?.1:.06):cx;
+  if(heroPic)picWithFace(x,'title-hero',hx,top+lh*.46+(1-rise)*lh*1.3,lh*1.4,i,head,'win');
+  else{const by=top+lh*.62+(1-rise)*h*.9;runner(x,'hog',i,hx,by,h/44,t,head);}x.restore();}
  // the logo zooms in with a bounce out of the flash
  const z=t<.15?0:back((t-.15)/.5),sc=t<.15?0:.15+.85*z+(1-Math.min(1,(t-.15)/.5))*1.2;
  if(logo&&sc>0){x.save();x.translate(cx,cy);x.scale(sc,sc);x.imageSmoothingEnabled=true;x.drawImage(logo,-lw/2,-lh/2,lw,lh);x.restore();}
@@ -89,7 +94,7 @@ function drawSelect(x,W,H,t,{pick,slide=0,head,i=0}){const L=selectLayout(W,H),u
  x.save();x.beginPath();x.rect(S.x0,S.y0,S.x1-S.x0,S.y1-S.y0);x.clip();
  let g=x.createLinearGradient(0,S.y0,0,S.y1);g.addColorStop(0,'#3d8cff');g.addColorStop(.7,'#bfe6ff');g.addColorStop(.7,'#2fa83a');g.addColorStop(1,'#1d6d24');x.fillStyle=g;x.fillRect(S.x0,S.y0,S.x1-S.x0,S.y1-S.y0);
  const sw=S.x1-S.x0,sh=S.y1-S.y0,show=(k,dx)=>{const c=CHARS[k],fx=(S.x0+S.x1)/2+dx*sw,fy=S.y0+sh*.86;
-  if(!picWithFace(x,c.pic,fx,fy,sh*.8,i,head,'win'))runner(x,c.body,i,fx,fy,sh*.7/44,t,head,{facing:1});};
+  if(!picWithFace(x,c.pic,fx,S.y0+sh*.97,sh*.98,i,head,'win'))runner(x,c.body,i,fx,fy,sh*.7/44,t,head,{facing:1});};
  if(slide){const k=ease(1-Math.abs(slide)),d=Math.sign(slide);show(pick,d*(1-k));show((pick+(d>0?-1:1)+CHARS.length)%CHARS.length,-d*k);}else show(pick,0);
  x.fillStyle='rgba(0,0,0,.12)';for(let yy=S.y0;yy<S.y1;yy+=Math.max(2,u*1.5))x.fillRect(S.x0,yy,sw,Math.max(1,u*.5));// scanlines
  x.restore();
