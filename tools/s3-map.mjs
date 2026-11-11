@@ -6,7 +6,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium, browserLaunchOptions} from '../tests/lib.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const ACTS = {'zone1-act1': ['src/engines/s3/zone1.js', 'buildZone1Act1']};
+const ACTS = {'zone1-act1': ['src/engines/s3/zone1.js', 'buildZone1Act1'], 'zone1-act2': ['src/engines/s3/zone1act2.js', 'buildZone1Act2']};
 const which = process.argv[2] || 'zone1-act1', [file, fn] = ACTS[which];
 const mods = Object.fromEntries(['src/engines/s3/terrain.js', file].map(f => [f, fs.readFileSync(path.join(root, f), 'utf8')]));
 const browser = await chromium.launch(browserLaunchOptions());

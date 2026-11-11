@@ -55,7 +55,7 @@ function buildTerrain(){const T=new Terrain(W,H);
   T.poly(footPoly(cx,fy,1),'a');T.poly(footPoly(cx,fy,-1),'b');}
  const ledge=(x0,x1,y,kind)=>{T.poly(rect(x0,y,x1,y+16),'top');LEDGES.push([x0,x1,y,kind]);};LEDGES.length=0;
  // where each corkscrew comes down: a landing shelf at the track's height
- for(const c of CORKS){const x1=c.x0+TURN*c.turns;ledge(x1,x1+(c.turns>2?360:290),c.y);}
+ for(const c of CORKS){const x1=c.x0+TURN*c.turns;ledge(x1,x1+(c.turns>2?360:290),c.y,c.turns>2?'float':undefined);}// (corkscrew 2's shelf is over the lake: no rock under it)
  ledge(3880,4060,G-200);// over the first seesaw (low road): a 1-up
  ledge(4880,5240,CL1-150);// over the first cliff top
  ledge(8100,8900,G);LEDGES.pop();// the lagoon bridge (stays planks)
