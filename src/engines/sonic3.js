@@ -19,6 +19,7 @@ const {Camera,FOCUS_Y}=require("src/engines/s3/camera.js");
 const R=require("src/engines/s3/render.js");
 const {buildTestZone}=require("src/engines/s3/testZone.js");
 const {buildZone1Act1}=require("src/engines/s3/zone1.js");
+const {buildZone1Act2}=require("src/engines/s3/zone1act2.js");
 const I=require("src/engines/s3/intro.js");
 const {netField}=require("src/engines/netField.js");
 const {partnerArrow}=require("src/engines/partnerArrow.js");
@@ -43,7 +44,9 @@ async function sonic3(s){
  const net=s.online||null,me=net?net.me:0,them=1-me,NET_GRACE=10;
  const turns=net?[me]:s.solo?[0]:[0,1],score=[0,0],result=[null,null];
  let q=null,qs=null,taken=null,graceAt=null,netDone=false;// partner runner + its latest snapshot; objects taken; grace start
- const zone1=s.game?.s3zone==='zone1',buildZone=zone1?buildZone1Act1:buildTestZone,LABEL=zone1?'Shamb Island Act 1':'Sonic 3 Test Zone',ACT_SONG=zone1?'green-hill':'azure-lake';// owner, Nov 11: Green Hill Zone for Act 1
+ // the act: Zone 1 Act 1 (Green Hill Zone song, owner Nov 11), Act 2 (Emerald Hill Zone song, owner's plan) or the Test Zone
+ const ZONES={zone1:[buildZone1Act1,'Shamb Island Act 1','green-hill'],zone1act2:[buildZone1Act2,'Shamb Island Act 2','emerald-hill']};
+ const [buildZone,LABEL,ACT_SONG]=ZONES[s.game?.s3zone]||[buildTestZone,'Sonic 3 Test Zone','azure-lake'];
  let turn=0,Z=null,w=null,p=null,cam=null,art=null,back=null,fx=null;
  let phase='idle',frames=0,clock=0,acc=0,last=0,card=0,endF=0,overLen=150,tally=null,overText='',dbg=null;const vis={x:0,y:0};
  // which runner each player is: 2P = P1 the hedgehog, P2 the fox; 1P = picked on the character select
@@ -140,11 +143,13 @@ async function sonic3(s){
   if(b.stuck>90&&p.ground){b.mode=40;b.stuck=0;return o;}
   if(b.stuck>12&&p.ground){o.press=true;o.jump=true;}
   if(!p.ground&&p.ysp<0)o.jump=true;return o;};})();
+ const zone1=!!ZONES[s.game?.s3zone],act2=s.game?.s3zone==='zone1act2';
  const netBot=zone1?zoneBot:testBot;
  function gameOver(text){overText=text;phase='over';S3.music(null);const sang=S3.jingle('game-over');endF=0;overLen=Math.max(150,sang?Math.ceil(S3.jingleLen('game-over')*SIM_HZ)+20:0);}
  // ---------------- a turn
  async function startTurn(k,{noCard=false}={}){turn=k;const i=turns[k],nm=s.players[i].name;
-  const desc=zone1&&s.solo?`Shamb Island Zone, Act 1. Roll tunnels, loops, high ledges, a cave, lakes and waterfalls. Reach the sign: time bonus + 100 a ring.`
+  const desc=act2&&s.solo?`Shamb Island Zone, Act 2. Corkscrews, waterfall cliffs, a warp tube, leaping fish, seesaws and a double loop. Reach the sign: time bonus + 100 a ring.`
+   :zone1&&s.solo?`Shamb Island Zone, Act 1. Roll tunnels, loops, high ledges, a cave, lakes and waterfalls. Reach the sign: time bonus + 100 a ring.`
    :s.solo?`Sonic 3 engine test: run the Test Zone. Loops, springs, shields, badniks, a zip line and a swing vine. Reach the sign: time bonus + 100 a ring.`
    :k===0?`${nm} runs first as Seanic the hedgehog. Reach the sign at the end: badniks + time bonus + 100 a ring. Then ${s.players[1].name} runs it as the three-tailed fox, who can fly.`
    :`${nm}, you're the fox: tap jump again in the air to fly, hold it to climb. Beat ${s.players[0].name}'s ${score[0].toLocaleString()} points.`;
@@ -196,11 +201,13 @@ async function sonic3(s){
   const scenery=front=>{if(!Z.decor)return;x.save();x.scale(k,k);x.translate(-cx,-cy);for(const d of Z.decor)if(!d.over&&!!d.front===front&&(d.box?d.box[0]<v.x1&&d.box[2]>v.x0:d.x<v.x1+80&&d.x+(d.w||0)>v.x0-80))R.drawDecor(x,d,t);x.restore();};
   scenery(false);art.draw(x,cam,2);scenery(true);x.restore();
   x.save();x.scale(k,k);x.translate(-cx,-cy);
-  for(const o of w.objs)if(!o.gone||o.type==='monitor'||o.kind==='thrower'){const ox=o.x??o.x0,oy=o.y??o.y0;if(o.type==='tube')continue;if(o.type!=='zipline'&&(ox<v.x0-80||ox>v.x1+80||(o.kind!=='thrower'&&(oy<v.y0-140||oy>v.y1+140))))continue;R.drawObject(x,o,t,{head,me:turns[turn]});}
+  for(const o of w.objs)if(!o.gone||o.type==='monitor'||o.kind==='thrower'){const ox=o.x??o.x0,oy=o.y??o.y0,half=o.type==='corkscrew'?o.w/2:0;if(o.type==='tube')continue;if(o.type!=='zipline'&&(ox+half<v.x0-80||ox-half>v.x1+80||(o.kind!=='thrower'&&(oy<v.y0-140||oy>v.y1+140))))continue;R.drawObject(x,o,t,{head,me:turns[turn]});}
   for(const r of w.loose)if(r.x>v.x0&&r.x<v.x1)R.drawLoose(x,r,t);
   for(const sh of w.shots)R.drawShot(x,sh,t);
   if(net&&q&&qs)R.drawRunner(x,q,them,t,head);// the partner, behind my runner
   p.x+=vis.x;p.y+=vis.y;R.drawRunner(x,p,turns[turn],t,head);p.x-=vis.x;p.y-=vis.y;
+  // going round the back of a corkscrew: its front half passes in front of the runner
+  if(p.cork&&Math.sin(p.cork.a||0)<0)R.drawCorkscrew(x,p.cork.o,t,true);
   fx.draw(x);x.restore();
   loopFronts(k,cx,cy,v);
   if(net&&q&&qs)partnerArrow(s,x,{x:0,y:0,w:W,h:H},(q.x-cx)*k,(q.y-cy)*k,{player:them,color:PCOL[them],label:`${Math.round(Math.abs(q.x-p.x)/16)} m`,size:Math.round(Math.max(16,Math.min(26,k*9)))});
@@ -230,7 +237,7 @@ async function sonic3(s){
  function banner(text,W,H){const sz=Math.round(Math.min(W/9,H/7,60));x.save();x.font=FONT.replace('%s',sz);x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';x.lineWidth=Math.max(4,sz*.16);x.strokeStyle='#08103a';x.strokeText(text,W/2,H*.42);x.fillStyle='#fff';x.fillText(text,W/2,H*.42);x.restore();}
  function drawTally(W,H,i){const T=tally.t,sz=Math.round(Math.min(W/16,H/11,34)),k=Math.min(1,Math.max(0,(T-30)/(tally.len-110))),slide=Math.min(1,T/30);x.save();x.font=FONT.replace('%s',sz);x.textBaseline='middle';x.lineJoin='round';x.lineWidth=Math.max(4,sz*.18);x.strokeStyle='#08103a';
   const L=(txt,col,yy,align,xx)=>{x.textAlign=align;x.strokeText(txt,xx,yy);x.fillStyle=col;x.fillText(txt,xx,yy);};
-  const cxm=W/2,y0=H*.3;L(`${s.players[i].name.toUpperCase()} GOT`,'#fff',y0,'center',cxm-(1-slide)*W);L('THROUGH ACT 1','#fff',y0+sz*1.2,'center',cxm+(1-slide)*W);
+  const cxm=W/2,y0=H*.3;L(`${s.players[i].name.toUpperCase()} GOT`,'#fff',y0,'center',cxm-(1-slide)*W);L(`THROUGH ACT ${Z?.act||1}`,'#fff',y0+sz*1.2,'center',cxm+(1-slide)*W);
   const rows=[['TIME BONUS',Math.round(tally.time*(1-k))],['RING BONUS',Math.round(tally.rings*(1-k))],['TOTAL',Math.round((tally.time+tally.rings)*k)]];
   rows.forEach(([lab,val],r)=>{const yy=y0+sz*(2.8+r*1.25);L(lab,'#ffe23a',yy,'left',cxm-sz*6);L(String(val),'#fff',yy,'right',cxm+sz*6);});x.restore();}
  function drawPad(W,H){if(phase!=='play')return;const coarse=typeof matchMedia==='function'&&matchMedia('(pointer: coarse)').matches;if(!coarse&&!pad.stick&&!pad.jump)return;

@@ -57,6 +57,7 @@ function hush(){for(const v of slots.values())try{v.src.stop();}catch{}slots.cle
 // on each pass, so the join is a short crossfade). gain = to -19 LUFS integrated (jingles -17), measured with ebur128.
 const SONGS={
  'green-hill':{loop:[15.4,53.84678],gain:.372},// Zone 1 Act 1 (owner's pick, Sonic 1 CD set, Mega Drive version): 14.5 s intro, period 1,695,503 samples
+ 'emerald-hill':{loop:[7.0,48.533855],gain:.403},// Zone 1 Act 2 (owner's pick, Sonic 2 on the Sonic 1&2 CD, Mega Drive version): period 1,831,643 samples (spectrogram lag, then the sample lag most windows agree on), joined at 7.0 s
  'angel-island-1':{loop:[.6,66.13522],gain:.556},// Angel Island Act 1: no intro, period 2,890,103 samples
  'azure-lake':{loop:[4.5,58.89998],gain:.407},// Azure Lake (competition): 1.8 s intro, period 2,399,039 samples
  invincible:{loop:[.35,10.65238],gain:.437},// period 454,335 samples

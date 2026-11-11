@@ -24,7 +24,7 @@ class World{
  step(runners,inputs){this.frame++;
   for(let i=0;i<runners.length;i++){const p=runners[i];if(p.dead){deadStep(p,this);continue;}const inp=inputs[i]||{};
    if(p.grab>0)p.grab--;if(p.tubeCool>0)p.tubeCool--;p.py=p.y;
-   if(p.tube){p.ev.length=0;tubeStep(p,this);}else P.step(p,inp,this.T,{switchers:this.switchers});for(const e of p.ev)this.ev.push({k:e,p:i});
+   if(p.tube){p.ev.length=0;tubeStep(p,this);}else if(p.cork){p.ev.length=0;corkStep(p,inp,this,i);}else P.step(p,inp,this.T,{switchers:this.switchers});for(const e of p.ev)this.ev.push({k:e,p:i});
    if(p.ground&&!p.rolling)p.chain=0;// the bounce chain ends back on your feet
    if(p.hang)hangStep(p,inp,this,i);
    for(const o of this.objs)if(!o.gone)touch(o,p,this,i,inp);
@@ -51,6 +51,10 @@ function init(o,w){
  if(o.type==='spring'){o.color=o.color||'yellow';o.dir=o.dir||'up';o.w=o.w||16;o.h=o.h||8;o.pop=0;}
  if(o.type==='spikes'){o.dir=o.dir||'up';o.w=o.w||16;o.h=o.h||16;o.solid=true;}
  if(o.type==='tube'&&o.path)tubePath(o);
+ if(o.type==='corkscrew'){o.turn=o.turn||480;o.r=o.r||64;o.x1=o.x0+o.turn*(o.turns||2);o.x=(o.x0+o.x1)/2;o.w=o.x1-o.x0;}
+ if(o.type==='seesaw'){o.w=o.w||96;o.tilt=o.tilt||-1;o.h=8;o.gy=o.y;o.ball={side:o.tilt,y:0,vy:0,air:false};o.lift=0;o.top=seesawSurf(o,o.x);o.y=o.top+o.h/2;}
+ if(o.type==='platform'&&o.move==='swing'){o.px=o.x;o.py=o.y;o.len=o.len||160;o.t=o.phase||0;swingPos(o);o.x0=o.x;o.y0=o.y;}
+ if(o.type==='spikelog'){o.w=o.w||64;o.h=o.h||22;o.solid=true;o.t=o.phase||0;o.y0=o.y;o.y=o.y0-o.h/2;}
 }
 // ---------------- warp tubes (owner, Nov 11: "launch you through the whole thing"; the physics roll snagged on the S-bends):
 // a tube with a `path` (its centre line) carries a runner who reaches either mouth along the line at warp speed, then
@@ -81,7 +85,10 @@ function touch(o,p,w,i,inp){const b=box(p);
   return;
  case 'spring':return spring(o,p,w,i);
  case 'monitor':return monitor(o,p,w,i);
- case 'badnik':if(o.alive&&hit(b,o,o.w,o.h)){if(attacking(p))popBadnik(o,p,w,i);else hurt(p,w,i,o.x);}return;
+ case 'corkscrew':return corkEnter(o,p,w,i);
+ case 'seesaw':return seesawTouch(o,p,w,i);
+ case 'spikelog':if(o.spiky&&p.onObj===o&&p.ground)hurt(p,w,i,o.x,'spike');return;
+ case 'badnik':if(o.hidden)return;if(o.alive&&hit(b,o,o.w,o.h)){if(attacking(p))popBadnik(o,p,w,i);else hurt(p,w,i,o.x);}return;
  case 'starpost':if(!o.lit&&hit(b,o,8,24)){o.lit=true;o.spin=60;p.check={x:o.x,y:o.y-24,rings:p.rings,time:w.frame};w.ev.push({k:'starpost',p:i,x:o.x,y:o.y});}return;
  case 'vine':if(!p.hang&&!p.dead&&!(p.grab>0)&&Math.hypot(p.x-o.hx,p.y-o.hy-16)<20){p.hang=o;o.who=p;p.ground=false;p.jumping=false;p.rolling=false;p.xsp=p.ysp=0;w.ev.push({k:'grab',p:i});}return;
  case 'zipline':if(!p.hang&&!p.dead&&!(p.grab>0)&&!o.who&&Math.hypot(p.x-o.hx,p.y-o.hy-20)<18){p.hang=o;o.who=p;o.v=Math.max(2,Math.abs(p.xsp||p.gsp));p.ground=false;p.jumping=false;p.rolling=false;w.ev.push({k:'grab',p:i});}return;
@@ -140,7 +147,7 @@ function die(p,w,i,why){if(p.dead)return;p.dead=1;p.lives=(p.lives|0)-1;p.ground
 function deadStep(p,w){if(p.dead>=1&&p.dead<200){p.dead++;p.y+=p.ysp;p.ysp+=C.grv;}}
 // respawn at the last starpost (or the start)
 function respawn(p,start){const c=p.check||start;Object.assign(p,{x:c.x,y:c.y,xsp:0,ysp:0,gsp:0,ang:0,ground:false,dead:0,hurt:false,inv:0,
- rings:0,rolling:false,jumping:false,spindash:false,hang:null,onObj:null,shield:null,shoes:0,star:0,chain:0});}
+ rings:0,rolling:false,jumping:false,spindash:false,hang:null,onObj:null,cork:null,tube:null,shield:null,shoes:0,star:0,chain:0});}
 // ---------------- solid objects (monitors, breakable walls, platforms): push the runner out, stand on tops
 function solids(p,w,i){if(p.dead||p.hang)return;const [wr,hr]=P.radii(p);
  for(const o of w.objs){if(o.gone||!o.solid)continue;const hw=o.w/2+wr,hh=o.h/2+hr;
@@ -169,19 +176,76 @@ function tick(o,w,runners){
  case 'starpost':if(o.spin>0)o.spin--;return;
  case 'sign':if(o.spin>0)o.spin--;return;
  case 'platform':platform(o,w,runners);return;
+ case 'seesaw':seesawTick(o,w,runners);return;
+ case 'spikelog':o.t++;o.spin=o.t*2*Math.PI/(o.period||150);o.spiky=Math.cos(o.spin)>.55;return;
  case 'vine':{o.t++;const amp=o.amp??0.9,per=o.period??140;o.ang=amp*Math.sin(o.t*2*Math.PI/per);o.hx=o.x+Math.sin(o.ang)*o.len;o.hy=o.y+Math.cos(o.ang)*o.len;return;}
  case 'zipline':if(o.who){const dx=o.x1-o.x0,dy=o.y1-o.y0,L=Math.hypot(dx,dy);o.v=Math.min(10,o.v+0.21875*dy/L);o.s=Math.min(L,o.s+o.v);
    o.hx=o.x0+dx*o.s/L;o.hy=o.y0+dy*o.s/L;if(o.s>=L){release(o.who,w,0,0);}}
   else if(o.s>0){o.s=Math.max(0,o.s-6);const dx=o.x1-o.x0,dy=o.y1-o.y0,L=Math.hypot(dx,dy);o.hx=o.x0+dx*o.s/L;o.hy=o.y0+dy*o.s/L;}return;
  case 'badnik':if(o.alive&&!o.still)badnik(o,w,runners);return;}}
 function platform(o,w,runners){const px=o.x,py=o.y;o.t++;
- if(o.move==='h')o.x=o.x0+Math.sin(o.t*2*Math.PI/(o.period||180))*(o.range||64);
+ if(o.move==='swing')swingPos(o);
+ else if(o.move==='h')o.x=o.x0+Math.sin(o.t*2*Math.PI/(o.period||180))*(o.range||64);
  else if(o.move==='v')o.y=o.y0+Math.sin(o.t*2*Math.PI/(o.period||180))*(o.range||64);
  else if(o.move==='fall'||o.move==='collapse'){if(o.stood&&!o.drop)o.drop=o.move==='collapse'?24:30;if(o.drop>0){o.drop--;if(o.drop===0)o.falling=true;}
   if(o.falling){o.vy=(o.vy||0)+0.21875;o.y+=o.vy;if(o.move==='collapse'&&o.vy>1)o.solid=false;if(o.y>w.bottom+200)o.gone=true;}}
  o.dx=o.x-px;o.dy=o.y-py;o.stood=false;
  // carry whoever stands on it
  for(const p of runners)if(p.onObj===o&&p.ground){p.x+=o.dx;p.y+=o.dy;}}
+// ---------------- Act 2 set pieces (our own versions of the classic second-zone kinds)
+// SWINGING PLATFORM: hangs from (px,py) on a chain `len` long and swings `amp` radians either way; carries riders
+function swingPos(o){const a=(o.amp??.55)*Math.sin(o.t*2*Math.PI/(o.period||170));o.ang=a;o.x=o.px+Math.sin(a)*o.len;o.y=o.py+Math.cos(a)*o.len;}
+// CORKSCREW: a raised track that twists round once every `turn` px from x0 for `turns` turns; its floor is at y at both
+// ends. A runner who reaches the start on its feet at speed (>= ENTER) is carried round it (centre on a circle of r - hr
+// round the axis, body turned with it, so it runs upside down over the top like a loop); its ground speed works as on
+// flat ground (hold forward to keep top speed). Slower than STAY and it drops off; jump lets go along the body's up.
+// There is no floor under it: too slow at the start and you fall to the road below (as in the second zone of Sonic 2).
+const CORK_ENTER=4,CORK_STAY=2.5;
+function corkPhase(o,x){return (x-o.x0)/o.turn*2*Math.PI;}
+function corkEnter(o,p,w,i){if(p.cork||p.tube||p.dead||p.hang||!p.ground)return;const [,hr]=P.radii(p);
+ if(Math.abs(p.x-o.x0)<10&&Math.abs(p.y+hr-o.y)<14&&p.gsp>=CORK_ENTER){p.cork={o};p.onObj=null;corkPlace(p,o);}}
+function corkPlace(p,o){const [,hr]=P.radii(p),a=corkPhase(o,p.x),axis=o.y-o.r;p.y=axis+Math.cos(a)*(o.r-hr);p.ang=a;p.ground=true;p.cork.a=a;}
+function corkStep(p,inp,w,i){const o=p.cork.o;p.frames++;
+ const top=p.shoes>0?P.SHOES.top:C.top,acc=p.shoes>0?P.SHOES.acc:C.acc;
+ if(inp.jumpPress){const a=corkPhase(o,p.x);p.cork=null;p.ground=false;p.xsp=p.gsp;p.ysp=-C.jmp*Math.cos(a);
+  if(!p.rolling)p.y+=C.hr-C.hrRoll;p.jumping=true;p.rolling=true;p.ang=0;p.ev.push('jump');return;}
+ if(p.rolling){p.gsp=Math.max(0,p.gsp-C.rollFrc-(inp.l?C.rollDec:0));}
+ else if(inp.r){if(p.gsp<top)p.gsp=Math.min(top,p.gsp+acc);}
+ else if(inp.l){p.gsp-=C.dec;}
+ else p.gsp=Math.max(0,p.gsp-C.frc);
+ p.facing=1;p.x+=p.gsp;p.xsp=p.gsp;p.ysp=0;
+ if(p.x>=o.x1){const [,hr]=P.radii(p);p.cork=null;p.x=Math.max(p.x,o.x1);p.y=o.y-hr;p.ang=0;p.ground=true;return;}
+ if(p.gsp<CORK_STAY){p.cork=null;p.ground=false;p.ang=0;p.xsp=p.gsp;p.ysp=0;return;}
+ corkPlace(p,o);}
+// SEESAW: a plank on a pivot at (x,y) (y = the ground under it), a heavy ball resting on the low end. Land on the high end
+// and your end goes down, flinging the ball up; it comes down on the end that is now high, which slams down and fires
+// whoever stands on the other end high into the air (Sonic 2's seesaw). o.tilt = which end is down (-1 left, 1 right).
+const SEE_H=24;// the high end stands 24 px above the low end
+// the plank's top at x: the low end 6 px above the ground (o.gy), the high end SEE_H above that
+function seesawSurf(o,x,tilt=o.tilt){const u=Math.max(-1,Math.min(1,(x-o.x)/(o.w/2)));return o.gy-6-SEE_H*(1-u*tilt)/2;}
+function seesawTouch(o,p,w,i){if(p.dead||p.hang||p.tube||p.cork)return;const [wr,hr]=P.radii(p);if(Math.abs(p.x-o.x)>o.w/2+wr*.5)return;
+ const s=seesawSurf(o,p.x),feet=p.y+hr;
+ if(p.onObj===o)return;
+ // land on it from above, or step onto the low end from the ground beside it
+ const landing=!p.ground&&p.ysp>=0&&feet>=s-2&&p.py+hr<=s+8,stepping=p.ground&&Math.abs(feet-s)<10;
+ if(!landing&&!stepping)return;
+ const side=p.x<o.x?-1:1,hard=landing&&p.ysp>=1.5;
+ if(!p.ground){const vx=p.xsp;P.land(p,0);p.gsp=vx;}p.onObj=o;p.ang=0;p.y=seesawSurf(o,p.x)-P.radii(p)[1];
+ if(hard&&side!==o.tilt){// came down on the high end: it goes down, the ball flies
+  o.tilt=side;o.lift=10;const b=o.ball;if(b.side!==side){b.air=true;b.vy=-Math.min(11,6+p.ysp*.6);b.y=0;w.ev.push({k:'seesaw',x:o.x,y:o.y});}}}
+function seesawTick(o,w,runners){if(o.lift>0)o.lift--;const b=o.ball;
+ if(b.air){b.y+=b.vy;b.vy+=0.21875;
+  if(b.y>=0&&b.vy>0){b.y=0;b.air=false;const v=b.vy;// lands on its end: that end slams down, the other end fires its rider
+   o.tilt=b.side;o.lift=10;w.ev.push({k:'seesaw',x:o.x,y:o.y});
+   // fired like a spring (not a jump: letting go of jump would cut a jump's rise short), curled up
+   for(const p of runners)if(p.onObj===o&&!p.dead&&Math.sign(p.x-o.x||1)!==b.side){p.onObj=null;P.launch(p,0,-Math.max(10.5,v*1.15),{roll:true});p.gsp=0;w.ev.push({k:'spring',p:runners.indexOf(p)});}}}
+ // keep riders on the plank (it is a slope that changes with the tilt)
+ // o.y is what physics reads while someone stands on it (physics.js: y = o.y - o.h/2 - hr): parked so that is the plank
+ // under the rider (or under the middle when nobody is on it)
+ o.top=seesawSurf(o,o.x);
+ for(const p of runners){if(p.onObj!==o)continue;const [,hr]=P.radii(p);if(!p.ground||Math.abs(p.x-o.x)>o.w/2+4){p.onObj=null;continue;}
+  o.top=seesawSurf(o,p.x);p.y=o.top-hr;}
+ o.y=o.top+o.h/2;}
 // held on a vine or zip line: follow the handle; jump lets go with its swing
 function hangStep(p,inp,w,i){const o=p.hang;if(!o)return;
  p.x=o.hx;p.y=o.hy+(o.type==='vine'?16:20);p.facing=o.type==='zipline'?Math.sign(o.x1-o.x0)||1:p.facing;
@@ -198,6 +262,10 @@ function release(p,w,vx,vy,jumped){const o=p.hang;if(o)o.who=null;p.hang=null;p.
 //  flyer:   hovers in a figure-eight and dives at a runner below
 function nearest(o,runners){let best=null,bd=1e9;for(const p of runners){if(p.dead)continue;const d=Math.abs(p.x-o.x);if(d<bd){bd=d;best=p;}}return best;}
 function badnik(o,w,runners){o.t++;const T=w.T,p=nearest(o,runners);
+ // fish: waits under the water (o.y0 = the surface) and leaps out in an arc every `period` frames, through the bridge
+ // planks above it (only touchable while out of the water)
+ if(o.kind==='fish'){const per=o.period||150,u=((o.t+(o.phase||0))%per)/84;
+  if(u<1){o.hidden=false;o.y=o.y0-Math.sin(u*Math.PI)*(o.jump||190);o.up=u<.5;}else{o.hidden=true;o.y=o.y0+16;}return;}
  if(o.kind==='charger'){
   if(o.state==='rev'){if(--o.cool<=0){o.state='charge';}return;}
   const sp=o.state==='charge'?4:1;const nx=o.x+o.dir*sp;

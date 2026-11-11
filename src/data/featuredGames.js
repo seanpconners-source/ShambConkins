@@ -1,6 +1,8 @@
 // The Arcade's Featured shelf, in the order shown (owner picks these: add a game's id when it has just been worked on,
 // take one out when it has had its turn). Ids are game ids from gameRegistry.js and packs/; an unknown id is skipped.
 const FEATURED_GAMES=[
+ 'sonic3-zone1-act2',         // Seanic Act 2 (Nov 11 night)
+ 'sonic3-zone1',              // Seanic Act 1
  'major-league-fielding',     // Major League Baseball (Nov 4)
  'blackjack',                 // Vegas blackjack (new table, Nov 4)
  'bond-baccarat',             // Casino Royale baccarat (Nov 4)

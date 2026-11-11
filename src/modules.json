@@ -471,7 +471,8 @@
   "src/data/sonic3Sprites.js",
   "src/engines/s3/zone1.js",
   "src/data/sonic3Heads.js",
-  "src/engines/s3/intro.js"
+  "src/engines/s3/intro.js",
+  "src/engines/s3/zone1act2.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

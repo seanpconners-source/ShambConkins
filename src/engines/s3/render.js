@@ -234,13 +234,16 @@ function drawObject(x,o,t,ctx){
   const by=o.bump>0?-Math.sin(o.bump/8*Math.PI)*3:0;x.save();x.translate(0,by);x.fillStyle='#2c2c34';x.fillRect(x0,y0,w,h);x.fillStyle='#b8b8c8';x.fillRect(x0+2,y0+2,w-4,h-8);x.fillStyle='#1a1a22';x.fillRect(x0+4,y0+4,w-8,h-13);
   x.save();x.beginPath();x.rect(x0+4,y0+4,w-8,h-13);x.clip();if(((t*30)|0)%9<7)monitorIcon(x,o.item,o.x,y0+4+(h-13)/2,ctx,null);else{x.fillStyle='#fff';for(let k=0;k<6;k++)x.fillRect(x0+4,y0+5+k*3,w-8,1);}x.restore();
   x.fillStyle='#606070';x.fillRect(x0+6,y0+h-5,4,5);x.fillRect(x0+w-10,y0+h-5,4,5);x.restore();return;}
- case 'badnik':if(o.alive||o.kind==='thrower')drawBadnik(x,o,t);return;
+ case 'badnik':if(o.hidden)return;if(o.alive||o.kind==='thrower')drawBadnik(x,o,t);return;
+ case 'corkscrew':drawCorkscrew(x,o,t,false);return;
+ case 'seesaw':drawSeesaw(x,o,t);return;
+ case 'spikelog':drawSpikeLog(x,o,t);return;
  case 'starpost':{if(spr(x,'starpost',o.lit?'lit':o.spin>0?'spin':'idle',o.lit?(t*4):o.spin>0?(60-o.spin)/3:0,o.x,o.y+24))return;x.fillStyle='#3848a8';x.fillRect(o.x-2,o.y-20,4,44);x.fillStyle='#202030';x.fillRect(o.x-5,o.y+20,10,4);const a=o.spin>0?o.spin*.4:0,bx=o.x+Math.sin(a)*8,by=o.y-22-Math.abs(Math.cos(a))*2;
   x.fillStyle=o.lit?'#ff3030':'#3070ff';x.beginPath();x.arc(bx,by,5,0,7);x.fill();x.fillStyle='rgba(255,255,255,.7)';x.beginPath();x.arc(bx-1.5,by-1.5,1.6,0,7);x.fill();return;}
  case 'wall':{const x0=o.x-o.w/2,y0=o.y-o.h/2;{const tile=SP.picture('jungle-rock');if(tile){x.save();x.beginPath();x.rect(x0,y0,o.w,o.h);x.clip();const sm=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;
    for(let yy=y0;yy<y0+o.h;yy+=32)x.drawImage(tile,x0,yy,32,32);x.imageSmoothingEnabled=sm;x.fillStyle='rgba(0,0,0,.12)';x.fillRect(x0,y0,o.w,o.h);x.restore();x.strokeStyle='#2a1a10';x.lineWidth=1.5;x.strokeRect(x0+.5,y0+.5,o.w-1,o.h-1);return;}}x.fillStyle='#8a7a6a';x.fillRect(x0,y0,o.w,o.h);x.fillStyle='#a89888';for(let yy=0;yy<o.h;yy+=16)for(let xx=(yy/16&1)*8;xx<o.w;xx+=16)x.fillRect(x0+xx,y0+yy,14,14);
   x.strokeStyle='#4a3a2a';x.lineWidth=1.5;x.strokeRect(x0+.5,y0+.5,o.w-1,o.h-1);x.beginPath();x.moveTo(x0+o.w*.3,y0);x.lineTo(x0+o.w*.5,y0+o.h*.4);x.lineTo(x0+o.w*.35,y0+o.h*.7);x.stroke();return;}
- case 'platform':{if(SP.picture(o.move==='collapse'?'platform-crumble':'platform')){const nm=o.move==='collapse'?'platform-crumble':'platform',sh=o.drop>0&&(o.drop>>1)%2?1:0;pic(x,nm,o.x+sh,o.y-o.h/2-4,.5,0,{w:o.w+8});return;}
+ case 'platform':{if(o.move==='swing')drawChain(x,o.px,o.py,o.x,o.y-o.h/2);if(SP.picture(o.move==='collapse'?'platform-crumble':'platform')){const nm=o.move==='collapse'?'platform-crumble':'platform',sh=o.drop>0&&(o.drop>>1)%2?1:0;pic(x,nm,o.x+sh,o.y-o.h/2-4,.5,0,{w:o.w+8});return;}
   if(o.move!=='collapse'||!(o.drop>0)){drawDecor(x,{type:'land',x0:o.x-o.w/2,x1:o.x+o.w/2,y:o.y-o.h/2,depth:o.move==='collapse'?26:34},t);if(o.move==='collapse'){x.strokeStyle='#5a3214';x.lineWidth=1;for(let xx=12;xx<o.w;xx+=18){x.beginPath();x.moveTo(o.x-o.w/2+xx,o.y-o.h/2+7);x.lineTo(o.x-o.w/2+xx+4,o.y-o.h/2+22);x.stroke();}}return;}const x0=o.x-o.w/2,y0=o.y-o.h/2;x.fillStyle=o.move==='collapse'?'#9a6a3a':'#c27a34';x.fillRect(x0,y0+4,o.w,o.h-4);x.fillStyle='#58c428';x.fillRect(x0-2,y0,o.w+4,6);x.fillStyle='#c8f070';x.fillRect(x0-2,y0,o.w+4,2);
   x.fillStyle='#1e6e18';for(let xx=0;xx<o.w;xx+=6)x.fillRect(x0+xx,y0+6,3,2);if(o.drop>0&&(o.drop>>1)%2){x.fillStyle='rgba(0,0,0,.25)';x.fillRect(x0,y0,o.w,o.h);}
   if(o.move==='collapse'){x.strokeStyle='#5a3214';x.lineWidth=1;for(let xx=12;xx<o.w;xx+=18){x.beginPath();x.moveTo(x0+xx,y0+6);x.lineTo(x0+xx+4,y0+o.h);x.stroke();}}return;}
@@ -263,6 +266,50 @@ function drawObject(x,o,t,ctx){
   if(o.hit&&cw>0&&ctx?.head){x.restore();x.save();x.translate(o.x,o.y-30);x.scale(Math.max(.1,cw),1);ctx.head(x,o.by,0,0,26,'win');}
   else{x.fillStyle='#ffd23a';x.font='bold 18px Arial Black,Arial';x.textAlign='center';x.textBaseline='middle';x.fillText('?',0,1);}x.restore();return;}
  }}
+// ---------------- Act 2 set pieces (drawn by code until their art comes in: slots corkscrew, seesaw, seesaw-ball,
+// spike-log, chain, fish in docs/sonic3-sprites/GPT-NIGHT-2026-11-11.md)
+// CORKSCREW: the track's floor y = axis + cos(phase) * r, drawn as a thick earth band with a grass edge on the side the
+// runner stands on. The half facing us (sin(phase) > 0) is lighter; front=true draws only that half (over a runner who
+// is going round the back)
+function drawCorkscrew(x,o,t,front){const r=o.r,axis=o.y-r,n=Math.ceil((o.x1-o.x0)/6),ph=xx=>(xx-o.x0)/o.turn*2*Math.PI;
+ x.save();x.lineCap='round';
+ if(!front){// posts at both ends down to the ground below, and a rail along the axis
+  x.fillStyle='#6a4018';x.strokeStyle='#2a1408';x.lineWidth=1.5;for(const px of [o.x0+6,o.x1-6]){x.fillRect(px-6,o.y+4,12,220);x.strokeRect(px-6,o.y+4,12,220);}
+  x.strokeStyle='rgba(40,20,6,.55)';x.lineWidth=5;x.beginPath();x.moveTo(o.x0,axis);x.lineTo(o.x1,axis);x.stroke();}
+ for(const pass of front?[1]:[0,1]){
+  for(let k=0;k<n;k++){const xa=o.x0+k*6,xb=Math.min(o.x1,xa+7),a=ph(xa+3),s=Math.sin(a);if(pass===0?s>0:s<=0)continue;
+   const ya=axis+Math.cos(ph(xa))*r,yb=axis+Math.cos(ph(xb))*r,depth=.55+.45*Math.max(0,s);
+   x.strokeStyle='#2a1408';x.lineWidth=17;x.beginPath();x.moveTo(xa,ya);x.lineTo(xb,yb);x.stroke();
+   x.strokeStyle=`rgb(${Math.round(194*depth)},${Math.round(122*depth)},${Math.round(52*depth)})`;x.lineWidth=13;x.beginPath();x.moveTo(xa,ya);x.lineTo(xb,yb);x.stroke();
+   // grass on the floor side (toward the axis), checker marks on the band
+   const c=Math.cos(a),gx=0,gyo=c>0?-5:5;x.strokeStyle=`rgb(${Math.round(88*depth)},${Math.round(196*depth)},${Math.round(40*depth)})`;x.lineWidth=4;x.beginPath();x.moveTo(xa+gx,ya+gyo);x.lineTo(xb+gx,yb+gyo);x.stroke();
+   if(k%4===0){x.fillStyle=`rgba(90,48,14,${.5*depth})`;x.fillRect(xa,(ya+yb)/2-2,4,4);}}}
+ x.restore();}
+// SEESAW: a pivot block, the plank (low end 6 px over the ground), the spiked ball on its end
+function drawSeesaw(x,o,t){const w=o.w,gy=o.gy,tilt=o.tilt,ang=Math.atan2(24,w)*tilt,lift=o.lift>0?Math.sin(o.lift/10*Math.PI)*2:0;
+ x.save();x.fillStyle='#5a5a66';x.strokeStyle='#22222a';x.lineWidth=1.5;x.beginPath();x.moveTo(o.x-12,gy);x.lineTo(o.x,gy-18-6);x.lineTo(o.x+12,gy);x.closePath();x.fill();x.stroke();
+ x.translate(o.x,gy-6-12-lift*0);x.rotate(ang);
+ x.fillStyle='#c89040';x.fillRect(-w/2,-4,w,8);x.strokeStyle='#5a3214';x.strokeRect(-w/2,-4,w,8);x.fillStyle='#e8b860';x.fillRect(-w/2,-4,w,2);
+ x.fillStyle='#ffd23a';x.fillRect(-w/2,-4,8,8);x.fillRect(w/2-8,-4,8,8);x.restore();
+ const b=o.ball,bx=o.x+b.side*(w/2-12),u=(bx-o.x)/(w/2),by=gy-6-24*(1-u*tilt)/2-11+b.y;
+ x.save();x.translate(bx,by);x.rotate(t*(b.air?6:0));x.fillStyle='#d8d8e4';for(let k=0;k<8;k++){const a=k*Math.PI/4;x.beginPath();x.moveTo(Math.cos(a-.25)*9,Math.sin(a-.25)*9);x.lineTo(Math.cos(a)*15,Math.sin(a)*15);x.lineTo(Math.cos(a+.25)*9,Math.sin(a+.25)*9);x.fill();}
+ const g=x.createRadialGradient(-3,-3,1,0,0,10);g.addColorStop(0,'#8a8aa0');g.addColorStop(1,'#2a2a38');x.fillStyle=g;x.beginPath();x.arc(0,0,10,0,7);x.fill();x.strokeStyle='#14141c';x.lineWidth=1.2;x.stroke();x.restore();}
+// SPIKE LOG: a log on the bridge turning over; its row of spikes comes round to the top every turn
+function drawSpikeLog(x,o,t){const w=o.w,h=o.h,cx=o.x,cy=o.y,R_=h/2;x.save();
+ const spikes=[0,1,2].map(k=>o.spin+k*2*Math.PI/3);
+ const spike=a=>{const c=Math.cos(a),s=Math.sin(a);if(s<-.2)return;const y0=cy-c*R_*.9,dir=-c;x.fillStyle=s>.3?'#ecebf6':'#a8a8b8';for(let j=0;j<4;j++){const sx=cx-w/2+8+j*(w-16)/3;x.beginPath();x.moveTo(sx-5,y0);x.lineTo(sx,y0+dir*11*Math.max(.25,Math.abs(c)+.2*s));x.lineTo(sx+5,y0);x.fill();}};
+ for(const a of spikes)if(Math.sin(a)<.3)spike(a);
+ const g=x.createLinearGradient(0,cy-R_,0,cy+R_);g.addColorStop(0,'#c88a48');g.addColorStop(.5,'#8a5424');g.addColorStop(1,'#5a3412');x.fillStyle=g;x.fillRect(cx-w/2,cy-R_,w,h);
+ x.strokeStyle='#2a1408';x.lineWidth=1.5;x.strokeRect(cx-w/2,cy-R_,w,h);
+ // bark rings turning
+ x.strokeStyle='rgba(60,30,8,.6)';x.lineWidth=1;for(let k=0;k<3;k++){const yy=cy-Math.cos(o.spin*1+k*2.1)*R_*.8;if(Math.sin(o.spin+k*2.1)>0){x.beginPath();x.moveTo(cx-w/2+2,yy);x.lineTo(cx+w/2-2,yy);x.stroke();}}
+ x.fillStyle='#d8a868';for(const ex of [cx-w/2,cx+w/2]){x.beginPath();x.ellipse(ex,cy,4,R_,0,0,7);x.fill();x.stroke();}
+ for(const a of spikes)if(Math.sin(a)>=.3)spike(a);
+ x.restore();}
+// a chain from a pivot down to a swinging platform
+function drawChain(x,x0,y0,x1,y1){const n=Math.max(2,Math.round(Math.hypot(x1-x0,y1-y0)/10));x.save();x.fillStyle='#8a8a98';x.strokeStyle='#3a3a48';x.lineWidth=1;
+ for(let k=0;k<=n;k++){const u=k/n,cx=x0+(x1-x0)*u,cy=y0+(y1-y0)*u;x.beginPath();x.ellipse(cx,cy,3,4.5,Math.atan2(y1-y0,x1-x0),0,7);x.fill();x.stroke();}
+ x.fillStyle='#5a5a66';x.beginPath();x.arc(x0,y0,5,0,7);x.fill();x.stroke();x.restore();}
 const ICON={rings:'rings',shoes:'shoes',star:'star',fire:'fire',bubble:'bubble',lightning:'lightning',eggman:'trap',plain:'shield'};
 function monitorIcon(x,item,cx,cy,ctx,pi){if(item!=='life'&&spr(x,'icons',ICON[item]||'shield',0,cx,cy))return;x.save();x.translate(cx,cy);
  switch(item){
@@ -288,7 +335,13 @@ function drawBadnik(x,o,t){
   spr(x,'thrower',cool>100?'throw':Math.abs(Math.cos(o.t/50))>.25?'climb':'idle',cool>100?(120-cool)/5:t*6,o.x-2,o.y,{flip:true});return;}
  if(o.kind==='shooter'&&SP.sheet('shooter')){const c=o.cool||0;spr(x,'shooter',c<14?'spit':c>80?'open':'closed',c<14?c/7:c>80?(c-80)/14:t*3,o.x,o.y+14);return;}
  if(o.kind==='flyer'&&SP.sheet('flyer')){spr(x,'flyer',o.state==='dive'?'dive':'fly',t*16,o.x,o.y,{flip:(o.dir||-1)<0});return;}
+ if(o.kind==='fish'&&spr(x,'fish','leap',t*10,o.x,o.y,{rot:o.up?-Math.PI/2:Math.PI/2}))return;
  x.save();x.translate(o.x,o.y);
+ if(o.kind==='fish'){// a robot piranha: nose up on the way out, nose down on the way back
+  x.rotate(o.up?-Math.PI/2:Math.PI/2);x.fillStyle='#e83a3a';x.beginPath();x.ellipse(0,0,13,9,0,0,7);x.fill();x.strokeStyle='#5a0a0a';x.lineWidth=1.2;x.stroke();
+  x.fillStyle='#ffe0e0';x.beginPath();x.ellipse(2,4,8,3.5,0,0,7);x.fill();x.fillStyle='#fff';x.beginPath();x.moveTo(12,-2);x.lineTo(7,1);x.lineTo(12,3);x.fill();
+  x.fillStyle='#b81818';x.beginPath();x.moveTo(-11,0);x.lineTo(-19,-7);x.lineTo(-19,7);x.closePath();x.fill();x.beginPath();x.moveTo(-2,-8);x.lineTo(4,-14);x.lineTo(6,-8);x.fill();
+  x.fillStyle='#fff';x.beginPath();x.arc(5,-3,3,0,7);x.fill();x.fillStyle='#000';x.fillRect(5,-4,2,2);x.fillStyle='#a0a0b0';x.fillRect(-4,-2,2,6);x.restore();return;}
  if(o.kind==='charger'){const f=o.dir<0?1:-1;x.scale(f,1);const shake=o.state==='rev'?Math.sin(t*80)*1.2:0;x.translate(shake,0);
   x.fillStyle='#283050';x.beginPath();x.arc(-7,10,4,0,7);x.arc(7,10,4,0,7);x.fill();
   x.fillStyle='#d83a2a';x.beginPath();x.ellipse(0,0,15,11,0,Math.PI,0);x.lineTo(15,8);x.lineTo(-15,8);x.fill();x.fillStyle='#ffcc3a';for(let k=-1;k<=1;k++)x.fillRect(k*7-2,-9,4,16);
@@ -498,4 +551,4 @@ function drawTitleCard(x,W,H,f,zone,act){const T=f/60,inT=Math.min(1,T/.35),outT
 // grass (stripX phase 0 = multiples of the strip width), so where it stops on flat ground the join can't be seen.
 // Draw in world space (x scaled by the camera).
 function frontGrass(x,x0,x1,y){const X=texInfo();if(!X||x1<=x0)return false;return stripX(x,'jungle-grass',x0,x1,y-X.g0,X.G.h);}
-Object.assign(exports,{frontGrass,PAL,TerrainArt,Backdrop,drawDecor,drawObject,drawShot,drawLoose,drawRunner,Fx,drawHUD,drawLives,drawTitleCard,fmtTime,CH});
+Object.assign(exports,{drawCorkscrew,frontGrass,PAL,TerrainArt,Backdrop,drawDecor,drawObject,drawShot,drawLoose,drawRunner,Fx,drawHUD,drawLives,drawTitleCard,fmtTime,CH});
