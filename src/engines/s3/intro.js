@@ -10,6 +10,8 @@ const R=require("src/engines/s3/render.js");
 const P=require("src/engines/s3/physics.js");
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
 const FONT='italic 900 %spx "Arial Black",Impact,system-ui,sans-serif';
+// faces drawn this much bigger than the painted face circle, so they cover it like the runners' heads in play (owner)
+const FACE_K=1.5;
 const CHARS=[{body:'hog',name:'SEANIC',pic:'select-hog',does:'SPIN DASH · INSTA-SHIELD · TOP SPEED'},
  {body:'fox',name:'TAILS',pic:'select-fox',does:'FLIES (TAP JUMP AGAIN, HOLD TO CLIMB) · SPIN DASH'}];
 // the logo: the kit slot if it's in, else the Arcade logo the build already ships
@@ -21,7 +23,7 @@ const back=k=>{k=Math.max(0,Math.min(1,k));const c=1.9;return 1+(c+1)*Math.pow(k
 function text(x,str,cx,cy,sz,fill,align='center',stroke='#08103a'){x.font=FONT.replace('%s',Math.round(sz));x.textAlign=align;x.textBaseline='middle';x.lineJoin='round';x.lineWidth=Math.max(3,sz*.2);x.strokeStyle=stroke;x.strokeText(str,cx,cy);x.fillStyle=fill;x.fillText(str,cx,cy);}
 // a picture from the kit with the player's face on its head spot; h = drawn height; (cx,by) = its anchor point
 function picWithFace(x,name,cx,by,h,i,head,mood){const img=SP.picture(name),d=SP.PICTURES[name];if(!img||!d)return false;const s=h/d.size[1],w=d.size[0]*s;
- const [ax,ay]=d.anchor;x.drawImage(img,cx-ax*s,by-ay*s,w,h);if(d.head){const [hx,hy,hd]=d.head;head(x,i,cx+(hx-ax)*s,by+(hy-ay)*s,hd*s,mood);}return true;}
+ const [ax,ay]=d.anchor;x.drawImage(img,cx-ax*s,by-ay*s,w,h);if(d.head){const [hx,hy,hd]=d.head;head(x,i,cx+(hx-ax)*s,by+(hy-ay)*s,hd*s*FACE_K,mood);}return true;}
 // a game runner (the real sprite sheets or their stand-in) drawn big: feet at (fx,fy), sc = screen px per world px
 const dummies={};
 function runner(x,body,i,fx,fy,sc,t,head,opt={}){const p=dummies[body+(opt.fly?'f':'')]||(dummies[body+(opt.fly?'f':'')]=P.makeRunner(0,-19));
