@@ -477,7 +477,11 @@
   "src/headFacts.js",
   "src/engines/s3/zoomPanel.js",
   "src/engines/s3/zone1act3.js",
-  "src/gifts.js"
+  "src/gifts.js",
+  "src/engines/sqwordle.js",
+  "src/data/sqwordleWords.js",
+  "src/packs/wordPack.js",
+  "src/engines/sqwordleRules.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

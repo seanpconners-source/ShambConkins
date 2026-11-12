@@ -24,6 +24,23 @@ SEANIC & TAILS (CPU fox follows: sonic3.js buddyInput = Sonic 3 Tails AI, object
 fox. Knux/Shade art = the hedgehog sheets recoloured at runtime (render.js recolour/tintSheet) until GPT sheets come.
 Tests: s3-zone1-act3.mjs + s3-moves.mjs (test:core), sonic3-zone1-act3.mjs (browser); all Seanic Node/browser tests pass.
 
+SQWORDLE + LYDIA GIFT (Nov 12, branch claude/gracious-rubin-6l85xp, unreleased). SQWORDLE = game id `sqwordle` (src/packs/wordPack.js,
+engine src/engines/sqwordle.js, rules src/engines/sqwordleRules.js grade/points, words src/data/sqwordleWords.js: 1,800 answers ranked
+by wordfreq with plurals/past tenses/names/crude words removed by hand + 12,653 guesses from word-list (MIT); credits in CREDITS.md).
+Looks like the real Wordle (header, 6x5 grid, flip/shake/bounce, toasts, QWERTY keys; light/dark from the phone); Squirtle theme =
+blue (#3a95d6) right spot, shell gold (#d39a3a) elsewhere, our own drawn Squirtle (squirtle()) in the title and popping up on the
+result (happy + water splash / sad + tear), win messages Squirtle Squirt!..Phew. 2P = same word one after the other (pass card),
+points = 100 per guess saved + up to 90 for speed, miss = 10 per blue tile; results card with both grids. 1P soloKind 'levels' =
+word after word until a miss (soloProgress/soloFinish), so online duels work too. Side layout on short wide screens. In collection
+Mobile Hits + category puzzle. s.debug: board, phase, answer(), type(w), bot. tests/sqwordle.mjs (rules + 3 sizes + 1P) and
+games.mjs fuzz pass. ART LATER: no art slots yet (owner wants GPT pictures after: logo, mascot moods, background, icon).
+GIFT: src/gifts.js GIFTS lydia-crew: a saved player name matching /^lyd(ia)?\b/i (her Hole.it score shows "Lyd") → stage 1 at start
+(app.js bootGifts): uss-lydia + houston into profile.shared + hello dialog; stage 2 (pickedGifts on players-done / startRun) with
+uss-lydia + houston as P1/P2 → ezra + reveal dialog. profile.gifts {id:'given'|'done'} validated. Owner may send her invite code
+(friends.js sc-friend-code) to match on instead. New characters houston + ezra (legendsPack2, ShambConkins Friends, Garage
+visitors); owner's photos: assets/portraits/ezra(.think/.win), houston(.win), uss-lydia(.sad) (lossless 480, originals kept).
+tests/gifts.mjs in test:core. GPT kit for the 8 group icons: docs/art-for-gpt/GROUP-ICONS.md (zip sent).
+
 ARCADE GROUPS (Nov 11 late, branch claude/gracious-rubin-6l85xp, unreleased; owner: groups everywhere, a group opens as the
 SAME Arcade screen (no card page), groups nest: Console Classics › Seanic › Act 1-3; Home shows group tiles; categories as
 they were). arcadeConsole.js COLLECTIONS = top shelves [key,title,sub,cover game,children: game ids | '@family'] (console,
