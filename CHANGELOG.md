@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.96.3
+
+- **Symphony of the Night:** faces are smaller and sit on the neck; swords (and how far they reach) are 20% smaller; the fog no longer lays a light band over the bottom of the stage.
+- **Sqwordle online:** the chat button has its own spot in the header and the other player's status moved clear of the Exit button, so nothing covers the game on narrow phones.
+- **Chat:** hold the 💬 button, then drag it anywhere on screen; it remembers the spot. The chat opens scrolled to the newest message.
+
 ## v0.96.2
 
 - **Sqwordle online:** once you finish a word, you see the other player's whole board, letters and all, while you watch them finish.

@@ -152,12 +152,15 @@ function openChat(to='room'){
  </form>`;
  renderLog();
  if(!dlg.open)try{dlg.showModal();}catch{dlg.setAttribute('open','');}
+ renderLog();
  return true;
 }
 function renderLog(){
  const el=dlg?.querySelector('#chat-log');if(!el)return;const to=target||'room',rows=log.filter(m=>m.to===to).slice(-6);
  el.innerHTML=rows.length?rows.map(m=>`<p class="chat-msg ${m.dir}">${m.dir==='in'?face(m.character,'tiny'):''}<span>${e(m.text)}</span></p>`).join(''):`<p class="chat-empty">No messages yet. Pick a line or type one.</p>`;
- el.scrollTop=el.scrollHeight;
+ // newest message in view: now, after layout (the sheet may still be closed) and as the faces load
+ const down=()=>{el.scrollTop=el.scrollHeight;};down();requestAnimationFrame(()=>{down();requestAnimationFrame(down);});
+ for(const im of el.querySelectorAll('img'))if(!im.complete)im.addEventListener('load',down,{once:true});
 }
 function onSheetClick(ev){
  const b=ev.target.closest?.('button');if(!b)return;
