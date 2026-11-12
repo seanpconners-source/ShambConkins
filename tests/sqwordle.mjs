@@ -1,6 +1,6 @@
 // SQWORDLE (engines/sqwordle.js): the rules in Node (colours with repeated letters, points, word lists), then real games
 // in the browser at three screen sizes: typing on the real keyboard and on the drawn keys, a word not in the list shakes,
-// ENTER flips a row, a win, the two-player results card and the finish; then 1 Player word after word until a miss.
+// ENTER flips a row, a win (and Squirtle's move for it), the two-player results card and the finish; then 1 Player word after word until a miss.
 // Usage: node tests/sqwordle.mjs   (SHAMB_URL=... for a served build); screenshots sqw-*.png
 import {launchBrowser,screenshotPath,appURL} from './lib.mjs';
 import {req} from './load.mjs';
@@ -25,6 +25,7 @@ for(const [w,h] of [[390,780],[844,390],[1100,700]]){const tag=`${w}x${h}`,page=
  await page.keyboard.type('qzxvj');await page.keyboard.press('Enter');await page.waitForTimeout(250);
  let b=await D(page,()=>{const b=window.ShambConkins.store.session.debug.board;return {rows:b.rows.length,cur:b.cur,shake:!!b.shake};});
  check(b.rows===0&&b.cur==='qzxvj'&&b.shake,tag+' a word not in the list shakes and uses no row');
+ check((await D(page,()=>window.ShambConkins.store.session.debug.react()?.mood))==='think',tag+' the head by the title looks puzzled');
  for(let k=0;k<5;k++)await page.keyboard.press('Backspace');
  await page.screenshot({path:screenshotPath(`sqw-shake-${tag}.png`)});
  // one wrong guess typed on the drawn keys (tap them like a player)
@@ -35,6 +36,7 @@ for(const [w,h] of [[390,780],[844,390],[1100,700]]){const tag=`${w}x${h}`,page=
  await page.screenshot({path:screenshotPath(`sqw-row-${tag}.png`)});
  await page.keyboard.type(ans);await page.keyboard.press('Enter');await page.waitForTimeout(2300);
  b=await D(page,()=>window.ShambConkins.store.session.debug.board.done);check(b==='win',tag+' the answer wins');
+ b=await D(page,()=>window.ShambConkins.store.session.debug.show());check(b?.kind==='hydro'&&b.run,tag+' two guesses = Squirtle\'s Hydro Pump plays '+JSON.stringify(b));
  await page.screenshot({path:screenshotPath(`sqw-win-${tag}.png`)});
  // player 2: the same word, a miss in six
  await ready(page);const ans2=await D(page,()=>window.ShambConkins.store.session.debug.answer());check(ans2===ans,tag+' player 2 gets the same word');
