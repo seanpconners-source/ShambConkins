@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.96.0
+
+- **Arcade groups everywhere.** All games opens on shelves of groups: Console Classics, Arcade Classics, Board Games, Mobile Hits, Sports, Paddy's Pub, Party Games, Game Shows & Trivia, Movie Night, Casino Night, Pinball Tables and Boss Select. A group opens as the same Arcade screen (backgrounds, logos, swipes), and groups nest: Console Classics › Seanic the Hedgehog › Act 1, 2, 3. Home and Favorites show a franchise as one tile; categories work as before. Groups without their own art show a mosaic of four of their games for now.
+- **NEW: Sqwordle**, Wordle with a Squirtle theme: blue for the right spot, shell gold for the wrong spot, a little turtle that cheers or cries. Two players get the same word one after the other (fewer guesses and speed win); one player goes word after word until a miss. In Mobile Hits.
+- **New characters:** Houston and Ezra (ShambConkins Friends; meet them at the Garage). New photos for Ezra, Houston and the USS Lydia.
+- **A gift for Lydia** the next time she opens the game.
+- **Faces:** the head check now finds eyes, nose and mouth, so a character's face stays the same size in every mood and looks the right way in Seanic and Symphony of the Night.
+- Art slots ready for Sqwordle's own pictures (turtle moods, logo).
+
 ## v0.95.0
 
 - **Seanic Zone 1 is complete.** NEW **Act 3** (Angel Island song): a short, fast act with a downhill loop, a warp tube, a lake with leaping fish, the treetops and a spike pit, ending with **the zone boss**, a flying pod with a spiked mace (Robotnik song). Eight hits wreck it and free its pilot into your roster; then jump on the capsule. The mini-boss now ends **Act 2**; Act 1 has no boss.

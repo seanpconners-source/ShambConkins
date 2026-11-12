@@ -53,15 +53,15 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "Castlevania" (Castlevania: Symphony of the Night tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
-## Sonic the Hedgehog · `sonic`
+## Seanic the Hedgehog · `sonic`
 
 **Key art** ✅
 
-> Key art for "Sonic the Hedgehog", a minigame in a party video game that pays tribute to Sonic the Hedgehog. Scene: Green Hill Zone. Green Hill Zone Act 3, full screen: P1 runs as Sonic, then P2 runs as Tails against P1’s ghost. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Seanic the Hedgehog", a minigame in a party video game that pays tribute to Sonic the Hedgehog. Scene: Green Hill Zone. Green Hill Zone Act 3, full screen: P1 runs as Sonic, then P2 runs as Tails against P1’s ghost. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** ✅
 
-> Square game icon for "Sonic the Hedgehog" (Sonic the Hedgehog tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+> Square game icon for "Seanic the Hedgehog" (Sonic the Hedgehog tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## DOOM · `doom`
 
@@ -167,7 +167,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 **Key art** ✅
 
-> Key art for "Star Trek Game Night", a minigame in a party video game that pays tribute to Star Trek. Scene: Chess, Tri-D, Strategema, Four Lights. Star Trek: full legal chess with your heads, piece-role badges, checkmate, castling, en passant and queen/rook/bishop/knight promotions. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Star Trek Game Night", a minigame in a party video game that pays tribute to Star Trek. Scene: Chess and Tri-D chess. Star Trek: full legal chess with your heads, piece-role badges, checkmate, castling, en passant and queen/rook/bishop/knight promotions. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** ✅
 
@@ -633,6 +633,26 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "Starship Troopers · Klendathu Scorched Earth" (Starship Troopers tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
+## Strategema Grid · `strategema-grid`
+
+**Key art** 
+
+> Key art for "Strategema Grid", a minigame in a party video game that pays tribute to Star Trek: The Next Generation. Scene: Trap lines of enemy discs to flip them. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Strategema Grid" (Star Trek: The Next Generation tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## There Are Four Lights! · `four-lights`
+
+**Key art** 
+
+> Key art for "There Are Four Lights!", a minigame in a party video game that pays tribute to Star Trek: The Next Generation. Scene: Drop a disc into a column. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "There Are Four Lights!" (Star Trek: The Next Generation tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
 ## Alien · Motion Tracker · `alien-sonar-grid`
 
 **Key art** 
@@ -993,6 +1013,16 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "Bricks Breaker Quest" (Bricks Breaker Quest tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
+## Sqwordle · `sqwordle`
+
+**Key art** 
+
+> Key art for "Sqwordle", a minigame in a party video game that pays tribute to Pokémon. Scene: Guess the five-letter word in six tries, Squirtle style. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Sqwordle" (Pokémon tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
 ## Sundown Showdown · `sundown-showdown`
 
 **Key art** ✅
@@ -1202,26 +1232,6 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 **Icon** 
 
 > Square game icon for "Hardline Hack" (The Matrix tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
-
-## Strategema Grid · `strategema-grid`
-
-**Key art** 
-
-> Key art for "Strategema Grid", a minigame in a party video game that pays tribute to Star Trek: The Next Generation. Scene: Trap lines of enemy discs to flip them. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
-
-**Icon** 
-
-> Square game icon for "Strategema Grid" (Star Trek: The Next Generation tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
-
-## There Are Four Lights! · `four-lights`
-
-**Key art** 
-
-> Key art for "There Are Four Lights!", a minigame in a party video game that pays tribute to Star Trek: The Next Generation. Scene: Drop a disc into a column. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
-
-**Icon** 
-
-> Square game icon for "There Are Four Lights!" (Star Trek: The Next Generation tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Paddy’s Darts · `paddys-darts`
 
@@ -1792,6 +1802,46 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 **Icon** 
 
 > Square game icon for "Sonic the Hedgehog · Green Hill Goal Dash" (Sonic the Hedgehog tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Seanic the Hedgehog · Shamb Island Zone Act 1 · `sonic3-zone1`
+
+**Key art** 
+
+> Key art for "Seanic the Hedgehog · Shamb Island Zone Act 1", a minigame in a party video game that pays tribute to Sonic the Hedgehog 3. Scene: Zone 1, Act 1 on the new Sonic 3 engine: roll tunnels through the hills, three loops, spring-up ledges high above, a cave underneath, swing vines over a waterfall gorge, a zip line, lakes and bridges. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Seanic the Hedgehog · Shamb Island Zone Act 1" (Sonic the Hedgehog 3 tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Seanic the Hedgehog · Shamb Island Zone Act 2 · `sonic3-zone1-act2`
+
+**Key art** 
+
+> Key art for "Seanic the Hedgehog · Shamb Island Zone Act 2", a minigame in a party video game that pays tribute to Sonic the Hedgehog 2. Scene: Zone 1, Act 2, to the Emerald Hill Zone song: two corkscrews (keep your speed up or drop to the road below), waterfall cliffs with red springs, a warp tube through a hill, a lagoon bridge with leaping. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Seanic the Hedgehog · Shamb Island Zone Act 2" (Sonic the Hedgehog 2 tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Seanic the Hedgehog · Shamb Island Zone Act 3 · `sonic3-zone1-act3`
+
+**Key art** 
+
+> Key art for "Seanic the Hedgehog · Shamb Island Zone Act 3", a minigame in a party video game that pays tribute to Sonic the Hedgehog 3. Scene: Zone 1, Act 3, to the Angel Island Zone song: a short, fast act. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Seanic the Hedgehog · Shamb Island Zone Act 3" (Sonic the Hedgehog 3 tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Sonic 3 · Test Zone (new engine preview) · `sonic3-test`
+
+**Key art** 
+
+> Key art for "Sonic 3 · Test Zone (new engine preview)", a minigame in a party video game that pays tribute to Sonic the Hedgehog 3. Scene: Try out the new Sonic 3 engine before Zone 1 is built: real Mega Drive physics and camera, loops, springs, the three elemental shields (tap jump in the air for their moves), badniks, a zip line, a swi. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Sonic 3 · Test Zone (new engine preview)" (Sonic the Hedgehog 3 tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Space Invaders · Mars Attacks! Versus · `space-swarm-versus`
 

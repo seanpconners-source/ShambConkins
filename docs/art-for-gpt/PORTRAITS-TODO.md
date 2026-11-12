@@ -1,6 +1,6 @@
 # Characters that still need a portrait
 
-Made by `node tools/gpt-art-todo.mjs` (681 of 737 have one).
+Made by `node tools/gpt-art-todo.mjs` (684 of 739 have one).
 Rules are in START-HERE.md → "Character portraits". File name = `<id>.png`, extra faces `<id>.<mood>.png`.
 
 | id (file name) | name | from |
@@ -31,7 +31,6 @@ Rules are in START-HERE.md → "Character portraits". File name = `<id>.png`, ex
 | `ref-themidnightsociety` | The Midnight Society | Are You Afraid of the Dark? |
 | `ref-tarman` | Tarman | Return of the Living Dead |
 | `ref-commandcenter` | Command Center | Power Rangers |
-| `uss-lydia` | Lydia | Unlimited Savory Systems |
 | `uss-steve` | Steve | Unlimited Savory Systems |
 | `uss-hannah` | Hannah | Unlimited Savory Systems |
 | `uss-carson` | Carson | Unlimited Savory Systems |

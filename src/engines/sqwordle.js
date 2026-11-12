@@ -44,6 +44,15 @@ function squirtle(x,cx,cy,r,mood='idle',t=0){
  else{x.beginPath();x.arc(0,r*.25,r*.2,Math.PI*.15,Math.PI*.85);x.stroke();}
  x.restore();
 }
+// ART SLOTS (docs/art-for-gpt/SQWORDLE-ART.md): assets/sqwordle/<name>.webp → USER_PORTRAITS['sqwordle:<name>'] (tools/build.mjs).
+// Each one replaces our drawing when it's there: mascot / mascot-happy / mascot-sad = the turtle's head (square, transparent,
+// face centred), logo = the title wordmark in the header (wide, transparent).
+let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
+const imgs=new Map();
+function picture(name){const url=USER['sqwordle:'+name];if(!url||typeof Image==='undefined')return null;
+ let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;};e.img.src=url;imgs.set(name,e);}return e.ok?e.img:null;}
+function mascot(x,cx,cy,r,mood,t){const im=picture(mood==='happy'?'mascot-happy':mood==='sad'?'mascot-sad':'mascot')||(mood!=='idle'&&picture('mascot'));
+ if(!im){squirtle(x,cx,cy,r,mood,t);return;}const k=r*2.3/Math.max(im.naturalWidth,im.naturalHeight);x.drawImage(im,cx-im.naturalWidth*k/2,cy-im.naturalHeight*k/2,im.naturalWidth*k,im.naturalHeight*k);}
 const rr=(x,X,Y,w,h,r)=>{x.beginPath();if(x.roundRect)x.roundRect(X,Y,w,h,r);else x.rect(X,Y,w,h);};
 
 async function sqwordle(s){
@@ -125,7 +134,8 @@ async function sqwordle(s){
   const r=hh*.3,lo=hh*1.1,hi=W-136;let fs=Math.round(hh*.56);x.font=`bold ${fs}px Georgia,"Times New Roman",serif`;let tw=x.measureText('Sqwordle').width;
   if(tw+r*2.6>hi-lo){fs=Math.max(14,Math.floor(fs*(hi-lo)/(tw+r*2.6)));x.font=`bold ${fs}px Georgia,"Times New Roman",serif`;tw=x.measureText('Sqwordle').width;}
   const mid=Math.min(W/2,(lo+hi)/2),tx=mid+r*1.3;
-  x.fillText('Sqwordle',tx,hh/2+hh*.03);squirtle(x,tx-tw/2-r*1.25,hh/2-r*.1,r,'idle',now/1000);}
+  const logo=picture('logo');if(logo){const lh=hh*.78,lw=Math.min(hi-lo,logo.naturalWidth*lh/logo.naturalHeight),k=lw/logo.naturalWidth;x.drawImage(logo,mid-lw/2,hh/2-logo.naturalHeight*k/2,lw,logo.naturalHeight*k);return;}
+  x.fillText('Sqwordle',tx,hh/2+hh*.03);mascot(x,tx-tw/2-r*1.25,hh/2-r*.1,r,'idle',now/1000);}
  function drawInfo(b,now){if(!L.info)return;const {W,hh}=L,y=hh+L.info/2+3,p=s.players[b.i],secs=((b.done?b.t1:now)-b.t0)/1000;
   const label=s.solo?`${p.name} · word ${streak.n+1}${streak.total?` · ${streak.total} pts`:''}`:`${p.name}'s word`;
   x.font=`bold 13px "Helvetica Neue",Arial,sans-serif`;const w=x.measureText(label).width+40,X=W/2-w/2-26;
@@ -133,7 +143,7 @@ async function sqwordle(s){
   x.fillStyle=P.soft;x.font=`13px "Helvetica Neue",Arial,sans-serif`;x.fillText(`${Math.floor(secs/60)}:${String(Math.floor(secs%60)).padStart(2,'0')}`,X+26+w-30,y);}
  function drawMascot(b,now){if(!b||!b.done)return;const end=b.revealAt[b.revealAt.length-1]+STAG*(COLS-1)+FLIP;if(now<end)return;
   const k=Math.min(1,(now-end)/350),r=Math.min(L.t*.9,46),cx=L.gx+(L.t*COLS+L.gap*4)/2,cy=L.gy+L.t*ROWS+L.gap*5-r*(.2+.75*k);
-  x.save();x.beginPath();x.rect(0,0,L.W,L.gy+L.t*ROWS+L.gap*5+2);x.clip();squirtle(x,cx,cy,r,b.done==='win'?'happy':'sad',now/1000);x.restore();}
+  x.save();x.beginPath();x.rect(0,0,L.W,L.gy+L.t*ROWS+L.gap*5+2);x.clip();mascot(x,cx,cy,r,b.done==='win'?'happy':'sad',now/1000);x.restore();}
  function drawParts(dt){x.fillStyle=dark?'#7cc8ff':'#4aa8e8';for(const p of parts){p.vy+=900*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;x.globalAlpha=Math.max(0,Math.min(1,p.life));x.beginPath();x.ellipse(p.x,p.y,p.r*.7,p.r,Math.atan2(p.vy,p.vx)+Math.PI/2,0,Math.PI*2);x.fill();}x.globalAlpha=1;parts=parts.filter(p=>p.life>0&&p.y<L.H+20);}
  function drawToast(now){if(!toast||now>toast.until)return;x.font=`bold 15px "Helvetica Neue",Arial,sans-serif`;const w=x.measureText(toast.text).width+32,h=40,X=(L.W-w)/2,Y=L.gy+8;
   x.globalAlpha=Math.min(1,(toast.until-now)/200);x.fillStyle=P.toast;rr(x,X,Y,w,h,4);x.fill();x.fillStyle=P.toastText;x.textAlign='center';x.textBaseline='middle';x.fillText(toast.text,L.W/2,Y+h/2);x.globalAlpha=1;}
@@ -142,7 +152,7 @@ async function sqwordle(s){
   for(const line of ['Guess the Sqwordle in 6 tries.','Each guess must be a real 5-letter word.','The tiles change colour to show how close you are.']){x.fillText(line,X,y);y+=24;}
   y+=8;const ex=[['shell',0,2,'S is in the word and in the right spot.'],['water',1,1,'A is in the word but in the wrong spot.'],['squid',2,0,'U is not in the word in any spot.']];
   for(const [w2,at,v,txt] of ex){for(let i=0;i<5;i++)tile(X+i*(t+4)+t/2,y+t/2,t,w2[i]||'e',0,0,{colour:i===at?COL[v]:null,border:P.filled});y+=t+6;x.fillStyle=P.text;x.textAlign='left';x.textBaseline='top';x.font=`15px "Helvetica Neue",Arial,sans-serif`;x.fillText(txt,X,y);y+=28;}
-  squirtle(x,X+w-40,y+30,30,'happy',0);x.font=`italic 14px "Helvetica Neue",Arial,sans-serif`;x.fillStyle=P.soft;x.fillText('Squirtle squirt! Tap anywhere to play.',X,y+20);}
+  mascot(x,X+w-40,y+30,30,'happy',0);x.font=`italic 14px "Helvetica Neue",Arial,sans-serif`;x.fillStyle=P.soft;x.fillText('Squirtle squirt! Tap anywhere to play.',X,y+20);}
  function drawResults(now){const {W,H}=L;x.fillStyle=P.bg;x.fillRect(0,L.hh,W,H-L.hh);const R=results;
   x.fillStyle=P.text;x.textAlign='center';x.textBaseline='middle';x.font=`bold ${Math.round(Math.min(30,W*.07))}px Georgia,serif`;x.fillText(R.title,W/2,L.hh+40);
   x.font=`15px "Helvetica Neue",Arial,sans-serif`;x.fillStyle=P.soft;x.fillText(`The word was`,W/2,L.hh+72);

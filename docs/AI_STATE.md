@@ -24,7 +24,8 @@ SEANIC & TAILS (CPU fox follows: sonic3.js buddyInput = Sonic 3 Tails AI, object
 fox. Knux/Shade art = the hedgehog sheets recoloured at runtime (render.js recolour/tintSheet) until GPT sheets come.
 Tests: s3-zone1-act3.mjs + s3-moves.mjs (test:core), sonic3-zone1-act3.mjs (browser); all Seanic Node/browser tests pass.
 
-SQWORDLE + LYDIA GIFT (Nov 12, branch claude/gracious-rubin-6l85xp, unreleased). SQWORDLE = game id `sqwordle` (src/packs/wordPack.js,
+v0.96.0 RELEASED (Nov 12, owner: "release to main"; test:core EXIT 0 + sqwordle.mjs): Arcade groups, Sqwordle, Lydia gift, head check round 2. ART KIT Nov 12 (zip sent in chat; guide docs/art-for-gpt/KIT-NOV12.md): 8 group icons (GROUP-ICONS.md), Sqwordle (SQWORDLE-ART.md: Arcade sqwordle/-icon/-logo + in-game assets/sqwordle/mascot|mascot-happy|mascot-sad|logo → sqwordle:<name>, drawn turtle = fallback), 56 games without Arcade art (ARCADE-GAMES.md) + hyrule-logo, Seanic open asks, Castlevania own art, 55 portraits, 7 items.
+SQWORDLE + LYDIA GIFT (Nov 12, released in v0.96.0). SQWORDLE = game id `sqwordle` (src/packs/wordPack.js,
 engine src/engines/sqwordle.js, rules src/engines/sqwordleRules.js grade/points, words src/data/sqwordleWords.js: 1,800 answers ranked
 by wordfreq with plurals/past tenses/names/crude words removed by hand + 12,653 guesses from word-list (MIT); credits in CREDITS.md).
 Looks like the real Wordle (header, 6x5 grid, flip/shake/bounce, toasts, QWERTY keys; light/dark from the phone); Squirtle theme =
@@ -41,7 +42,7 @@ uss-lydia + houston as P1/P2 → ezra + reveal dialog. profile.gifts {id:'given'
 visitors); owner's photos: assets/portraits/ezra(.think/.win), houston(.win), uss-lydia(.sad) (lossless 480, originals kept).
 tests/gifts.mjs in test:core. GPT kit for the 8 group icons: docs/art-for-gpt/GROUP-ICONS.md (zip sent).
 
-ARCADE GROUPS (Nov 11 late, branch claude/gracious-rubin-6l85xp, unreleased; owner: groups everywhere, a group opens as the
+ARCADE GROUPS (Nov 11 late, released in v0.96.0; owner: groups everywhere, a group opens as the
 SAME Arcade screen (no card page), groups nest: Console Classics › Seanic › Act 1-3; Home shows group tiles; categories as
 they were). arcadeConsole.js COLLECTIONS = top shelves [key,title,sub,cover game,children: game ids | '@family'] (console,
 arcadecl, boardgames, mobile, sports, paddys (replaces the Paddy's family), party, shows, movies) + '@casino','@pinball',
@@ -56,7 +57,7 @@ ui.js passes `pool` (every Arcade game, for group screens). Tests: tests/arcade-
 exactly one place), arcade-console.mjs (group/nested/back), vault, boss-ladder, solo, arcade-swipe-smooth pass; scoreboard.mjs +
 online.mjs patched (need wrangler, not run); bg-picker/measure.mjs walks into groups (not run).
 
-HEAD CHECK (Nov 11; round 2 Nov 11 late, branch claude/gracious-rubin-6l85xp, unreleased): tools/head-check.py measures
+HEAD CHECK (Nov 11; round 2 Nov 11 late, released in v0.96.0): tools/head-check.py measures
 every character picture (2,474) → src/data/headFacts.js HEAD_FACTS[key]=[face box, head box, look, conf, found, aspect].
 Round 2 (owner: face size jumped between moods, faces looked the wrong way): YuNet landmarks (tools/models/
 face_detection_yunet_2023mar.onnx, MIT; `pip install "opencv-python-headless<5"`) are the main detector: face width =

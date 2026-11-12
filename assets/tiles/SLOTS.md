@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 187 slots: 51 have key art, 50 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 192 slots: 51 have key art, 50 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -12,7 +12,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `smb` | Super Mario Bros. (smb-world-1, smb-coin-rush, smb-castle-dash, smb3-nspade, smb3-spade-slots) | family | ✅ / ✅ |
 | `kart` | Mario Kart (rainbow-road-kart, kart-grand-prix-pass, kart-time-trial, rainbow-balloon-battle) | family | ✅ / ✅ |
 | `castlevania` | Castlevania (cv-symphony, cv-vampire-killer, cv-candle-hunt) | family | ✅ / ✅ |
-| `sonic` | Sonic the Hedgehog (sonic-ring-rush, sonic-goal-dash) | family | ✅ / ✅ |
+| `sonic` | Seanic the Hedgehog (sonic-ring-rush, sonic-goal-dash, sonic3-zone1, sonic3-zone1-act2, sonic3-zone1-act3, sonic3-test) | family | ✅ / ✅ |
 | `doom` | DOOM (doom, doom-2) | family | ✅ / ✅ |
 | `hangman` | Hangman Unchained (django-hangman, django-hangman-showdown, django-hangman-wanted) | family | ✅ / ✅ |
 | `invaders` | Space Invaders (space-swarm, space-swarm-versus, space-swarm-coop) | family | ✅ / ✅ |
@@ -23,7 +23,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `casino` | Casino Night (blackjack, five-card, roulette, bond-baccarat, liars-dice) | family | ✅ / ✅ |
 | `trivia` | Trivia Night (trivia-mixed, trivia-hardcore, trivia-lightning, trivia-wager, trivia-survival, trivia-sitcom, trivia-nick90, trivia-dbz, trivia-hxh) | family | ✅ / ✅ |
 | `taskmaster` | Taskmaster (taskmaster-micro-relay, taskmaster-fruit-ninja, taskmaster-sumo, task-tallest-thing, taskmaster-curling, tm-cones) | family | ✅ / ✅ |
-| `trek` | Star Trek Game Night (ten-forward-chess, trek-mini-chess, strategema-grid, four-lights) | family | ✅ / ✅ |
+| `trek` | Star Trek Game Night (ten-forward-chess, trek-mini-chess) | family | ✅ / ✅ |
 | `rush` | Microgame Rush (microgame-rush, rush-marathon) | family | ✅ / ✅ |
 | `hyrule` | The Legend of Zelda (hyrule-rupee-rush, hyrule-sword-duel) | family | ✅ / ✅ |
 | `clue` | Clue (clue-whodunit, clue-lineup) | family | ✅ / ✅ |
@@ -70,6 +70,8 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `moonraker-lander` | Lunar Lander · Moonraker | game | · / · |
 | `mars-missile-defense` | Missile Command · Mars Attacks! | game | · / · |
 | `bug-artillery` | Starship Troopers · Klendathu Scorched Earth | game | · / · |
+| `strategema-grid` | Strategema Grid | game | · / · |
+| `four-lights` | There Are Four Lights! | game | · / · |
 | `alien-sonar-grid` | Alien · Motion Tracker | game | · / · |
 | `happy-gilmore-golf` | Happy Gilmore × Caddyshack · Putt-Putt | game | · / · |
 | `kingpin-bowling` | Kingpin · Hook & Hustle | game | · / · |
@@ -106,6 +108,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `broforce-desert` | Sean of a Gun: Desert Assault | game | · / · |
 | `frogger-heads` | Frogger | game | · / · |
 | `bricks-breaker-quest` | Bricks Breaker Quest | game | ✅ / ✅ |
+| `sqwordle` | Sqwordle | game | · / · |
 | `sundown-showdown` | Sundown Showdown | game | ✅ / ✅ |
 | `bucketheadland-pinball` | Bucketheadland · Buckethead Pinball | version of pinball | ✅ / ✅ |
 | `major-league-fielding` | Major League Baseball | version of baseball | · / · |
@@ -127,8 +130,6 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `terminator-scan` | Skynet Identification | version of terminator | · / · |
 | `task-tallest-thing` | Taskmaster · Stacker | version of taskmaster | · / · |
 | `matrix-hardline-hack` | Hardline Hack | version of matrix | · / · |
-| `strategema-grid` | Strategema Grid | version of trek | · / · |
-| `four-lights` | There Are Four Lights! | version of trek | · / · |
 | `paddys-darts` | Paddy’s Darts | version of paddys | · / · |
 | `taskmaster-curling` | Taskmaster · Olympic Curling | version of taskmaster | · / · |
 | `office-hockey-shootout` | The Mighty Ducks · Hockey Shootout | version of ducks | · / · |
@@ -186,6 +187,10 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `rainbow-balloon-battle` | Mario Kart · Balloon Battle (VS) | version of kart | · / · |
 | `sonic-ring-rush` | Sonic the Hedgehog · Green Hill Boss Act | version of sonic | · / · |
 | `sonic-goal-dash` | Sonic the Hedgehog · Green Hill Goal Dash | version of sonic | · / · |
+| `sonic3-zone1` | Seanic the Hedgehog · Shamb Island Zone Act 1 | version of sonic | · / · |
+| `sonic3-zone1-act2` | Seanic the Hedgehog · Shamb Island Zone Act 2 | version of sonic | · / · |
+| `sonic3-zone1-act3` | Seanic the Hedgehog · Shamb Island Zone Act 3 | version of sonic | · / · |
+| `sonic3-test` | Sonic 3 · Test Zone (new engine preview) | version of sonic | · / · |
 | `space-swarm-versus` | Space Invaders · Mars Attacks! Versus | version of invaders | · / · |
 | `space-swarm-coop` | Space Invaders · Mars Attacks! Co-op | version of invaders | · / · |
 | `django-hangman-showdown` | Hangman Unchained · Showdown | version of hangman | · / · |
