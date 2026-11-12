@@ -131,6 +131,9 @@ const ROWS2=[
  ['shane-over','Shane Over','ShambConkins Friends','🍻','','explorer','Sean’s friend Shane. Shows up at every landmark with a story.'],
  ['carlos-valle','Carlos Valle','ShambConkins Friends','🎸','','scavenger','Sean’s friend Carlos. Always brings something to the party.'],
  ['bert','Bert','ShambConkins Friends','🎲','','survivor','Sean’s friend Bert. Rolls with the penalties.'],
+ // Lydia's crew (owner, Nov 12): normal unlocks for everyone; Lydia's own phone gets them as a gift (src/gifts.js)
+ ['houston','Houston','ShambConkins Friends','🚀','','explorer','Houston, we have a landmark. Always lands exactly where the points are.'],
+ ['ezra','Ezra','ShambConkins Friends','🌟','','competitor','The secret third member of Lydia’s crew. Turns up for the win.'],
  ['flarpy','Flarpy','ShambConkins','🐴','','explorer','A brown horse named Flarpy. Gallops straight to the landmark.'],
  ['david-bowie','David Bowie','David Bowie','⚡','David Bowie','explorer','Ziggy played guitar. Also finds every landmark.'],
  ['bowie-jareth','Jareth, the Goblin King','Labyrinth','🔮','David Bowie','scavenger','You remind him of the babe. Gives you a supply.'],

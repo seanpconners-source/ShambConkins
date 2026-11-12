@@ -48,6 +48,8 @@ function loadProfile() {
   for(const [k,n] of [['recent',RECENT_MAX],['favorites',200]])if(Array.isArray(saved[k]))p[k]=[...new Set(saved[k].filter(x=>typeof x==='string'))].slice(0,n);
   for(const key of ['wins','best'])if(saved[key]&&typeof saved[key]==='object'&&!Array.isArray(saved[key]))p[key]=Object.fromEntries(Object.entries(saved[key]).filter(([,v])=>Number.isFinite(v)&&v>=0));
   for(const key of ['migrated','horrorSeen','equipment'])if(saved[key]===true)p[key]=true;
+  // one-off friend gifts (src/gifts.js): {giftId: 'given'|'done'}
+  if(saved.gifts&&typeof saved.gifts==='object'&&!Array.isArray(saved.gifts)){p.gifts={};for(const [k,v] of Object.entries(saved.gifts))if(/^[a-z0-9-]{1,40}$/.test(k)&&['given','done'].includes(v))p.gifts[k]=v;}
   if(Number.isFinite(saved.backup?.at)&&Number.isFinite(saved.backup?.mark)&&saved.backup.mark>=0)p.backup={at:saved.backup.at,mark:Math.floor(saved.backup.mark)};
   if(Number.isFinite(saved.holeItLevel)&&saved.holeItLevel>=1)p.holeItLevel=Math.min(9999,Math.floor(saved.holeItLevel));
   // ROADMAP C8 checkpoints: the highest board level reached (1 Mind .. 4 Horror); New Game can start there

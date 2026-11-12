@@ -66,7 +66,7 @@ const LOCATIONS = [
  ['valentine-saloon','Valentine Saloon','Red Dead Redemption 2','body','🤠',['rdr-arthur-morgan','rdr-john-marston','rdr-dutch','rdr-hosea','rdr-sadie-adler','rdr-micah-bell'],'The gang is camped outside town. Everyone has a plan.'],
  ['capital-knot-city','Capital Knot City','Death Stranding','mind','📦',['ds-fragile','ds-deadman','ds-heartman','ds-die-hardman','ds-mama','ds-higgs','ds-cliff-unger'],'Deliver the package. Do not step on the BT.'],
  ['the-beach','The Beach','Death Stranding','spirit','🏖️',['ds-amelie','ds-lockne','ds-bb'],'The tide goes out and takes something with it.'],
- ['friends-garage','The Garage','ShambConkins Friends','spirit','🍻',['shane-over','carlos-valle','bert'],'Plastic chairs, a mini fridge and the best stories.'],
+ ['friends-garage','The Garage','ShambConkins Friends','spirit','🍻',['shane-over','carlos-valle','bert','houston','ezra'],'Plastic chairs, a mini fridge and the best stories.'],
  ['flarpy-stable','Flarpy’s Stable','ShambConkins','mind','🐴',['flarpy'],'A very brown horse is waiting. He has opinions.'],
  ['the-labyrinth','The Labyrinth','Labyrinth','spirit','🔮',['bowie-jareth','david-bowie'],'You have thirteen hours. Maybe less.'],
  ['pearly-gates','The Pearly Gates','Bruce Almighty','mind','☁️',['god'],'There is a queue, a desk and a very patient man.'],
