@@ -31,7 +31,7 @@ online branch via netField: NET_WORDS 3 same words from the seed, each word star
 {g:[w,colours]}, {d:[w,result]} (never letters); opp[w] = their board (oppOf), mini colour grid at the right of the info line
 while you play, phase 'watch' = their board (blank tiles, colours) + your result where the keys were; results card with totals,
 Next word → "Waiting for X" until nf.sync('n'+w); duel chip hidden (body.sqw-net); debug.bot getter = one step for
-online-native. online-native sqwordle ± LAG pass; scratch sqnet.mjs screenshots checked.
+online-native. online-native sqwordle ± LAG pass; scratch sqnet.mjs screenshots checked. v0.96.2 (owner: once done, see their letters; release, no tests): {g} and {c} also carry the letters; drawn only in the watch view (mini grid stays colours only).
 SQWORDLE + LYDIA GIFT (Nov 12, released in v0.96.0). SQWORDLE = game id `sqwordle` (src/packs/wordPack.js,
 engine src/engines/sqwordle.js, rules src/engines/sqwordleRules.js grade/points, words src/data/sqwordleWords.js: 1,800 answers ranked
 by wordfreq with plurals/past tenses/names/crude words removed by hand + 12,653 guesses from word-list (MIT); credits in CREDITS.md).
