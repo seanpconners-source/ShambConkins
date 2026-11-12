@@ -25,7 +25,7 @@ fox. Knux/Shade art = the hedgehog sheets recoloured at runtime (render.js recol
 Tests: s3-zone1-act3.mjs + s3-moves.mjs (test:core), sonic3-zone1-act3.mjs (browser); all Seanic Node/browser tests pass.
 
 v0.96.0 RELEASED (Nov 12, owner: "release to main"; test:core EXIT 0 + sqwordle.mjs): Arcade groups, Sqwordle, Lydia gift, head check round 2. ART KIT Nov 12 (zip sent in chat; guide docs/art-for-gpt/KIT-NOV12.md): 8 group icons (GROUP-ICONS.md), Sqwordle (SQWORDLE-ART.md: Arcade sqwordle/-icon/-logo + in-game assets/sqwordle/mascot|mascot-happy|mascot-sad|logo → sqwordle:<name>, drawn turtle = fallback), 56 games without Arcade art (ARCADE-GAMES.md) + hyrule-logo, Seanic open asks, Castlevania own art, 55 portraits, 7 items.
-SQWORDLE ONLINE (Nov 12, after v0.96.0, branch claude/gracious-rubin-6l85xp, unreleased; owner: see how the other is doing without
+SQWORDLE ONLINE (Nov 12, RELEASED as v0.96.1, owner: "Release. Skip tests"; owner: see how the other is doing without
 giving anything away, the one who finishes first watches the other, next word together): sqwordle in NET_NATIVE; sqwordle.js
 online branch via netField: NET_WORDS 3 same words from the seed, each word starts with nf.start('w'+n); events {c:[w,typed]},
 {g:[w,colours]}, {d:[w,result]} (never letters); opp[w] = their board (oppOf), mini colour grid at the right of the info line

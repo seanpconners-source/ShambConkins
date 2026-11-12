@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.96.1
 
 - **Sqwordle online:** both phones play the same word at the same time (three words a match). You see the other player's colours as they go (never their letters); whoever finishes first watches the other finish, then you both start the next word together.
 
