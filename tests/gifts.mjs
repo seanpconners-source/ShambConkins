@@ -17,6 +17,13 @@ check(!G.startGifts(p,['Lydia']).length,'stage 1 happens once');
 check(!G.pickGifts(p,['uss-lydia','sean']).length&&!p.shared.includes('ezra'),'Lydia with someone else: no Ezra yet');
 const r=G.pickGifts(p,['houston','uss-lydia']);check(r.length===1&&r[0].added.join()==='ezra'&&p.shared.includes('ezra'),'Lydia + Houston picked: Ezra joins');
 check(!G.pickGifts(p,['houston','uss-lydia']).length,'stage 2 happens once');
+// Hannah's gift: Hannah at start, Carson once Hannah is picked as either player
+{let h=prof();check(!G.startGifts(h,['Sean','Hannahs']).length,'"Hannahs" is not Hannah');
+ h=prof();const g=G.startGifts(h,['Hannah','Amber']);check(g.length===1&&g[0].gift.id==='hannah-lab'&&h.shared.includes('uss-hannah')&&!h.shared.includes('uss-carson'),'Hannah\'s phone: Hannah joins, not Carson');
+ check(!G.pickGifts(h,['sean','amber']).length,'no Carson without Hannah picked');
+ const r2=G.pickGifts(h,['amber','uss-hannah']);check(r2.length===1&&r2[0].added.join()==='uss-carson'&&P.availableCharacters(h,'Sean').includes('uss-carson'),'Hannah as player 2: Carson joins both rosters');
+ check(!G.pickGifts(h,['uss-hannah','sean']).length,'Carson only once');
+ const l=prof();G.startGifts(l,['Hannah']);check(G.pickGifts(l,['uss-hannah','sean']).length===1,'Hannah as player 1 works too');}
 // the gift state survives a save/load
 {const m=new Map();globalThis.localStorage??={getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,String(v)),removeItem:k=>m.delete(k)};
  try{P.saveProfile(p);const q=P.loadProfile();check(q.gifts?.['lydia-crew']==='done'&&q.shared.includes('ezra'),'gift state and Ezra are kept in the save');}catch(e){check(false,'save/load: '+e.message);}}

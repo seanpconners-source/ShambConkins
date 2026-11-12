@@ -1,14 +1,18 @@
 // One-off gifts for a particular friend's phone (owner, Nov 12). Saves live on each phone, so a gift finds its phone by the
 // player names saved there (Characters / New Game names, the saved run): Lydia holds the Hole.it record as "Lyd" (owner's screenshot, Nov 12): "Lyd" or "Lydia" matches.
 // Stage 1, the next time the game starts on her phone: `give` joins BOTH rosters (so either player slot can pick them).
-// Stage 2, when she leaves Characters (or starts a New Game) with every `pair` character picked as players 1 and 2: `then`
+// Stage 2, when she leaves Characters (or starts a New Game) with every `pair` character among players 1 and 2: `then`
 // joins too, with its own message. Each stage happens once (profile.gifts[id] = 'given' → 'done'). Everyone else unlocks
 // these characters the normal way. Pure data + rules here; app.js shows the dialogs.
 const {characterIdentity}=require("src/characters.js");
 const GIFTS=[
  {id:'lydia-crew',who:/^\s*lyd(ia)?\b/i,give:['uss-lydia','houston'],pair:['uss-lydia','houston'],then:['ezra'],
   hello:{title:'Hey Lydia!',body:'A little something for the Hole.it champion: Lydia and Houston just joined your roster. Pick the two of them as players 1 and 2 on Characters and see who turns up…'},
-  reveal:{title:'Somebody heard the crew was back together',body:'Lydia and Houston, together again — and look who came along. Ezra joins your roster!'}}
+  reveal:{title:'Somebody heard the crew was back together',body:'Lydia and Houston, together again — and look who came along. Ezra joins your roster!'}},
+ // Hannah (owner, Nov 12): her saved name is "Hannah". Hannah joins at start; picking Hannah as player 1 OR 2 brings Carson.
+ {id:'hannah-lab',who:/^\s*hannah\b/i,give:['uss-hannah'],pair:['uss-hannah'],then:['uss-carson'],
+  hello:{title:'Hey Hannah!',body:'Welcome back to the lab! Hannah just joined your roster. Pick her as player 1 or 2 on Characters and see who turns up…'},
+  reveal:{title:'Somebody followed you out of the lab',body:'Hannah’s on the team — and look who came along. Carson joins your roster!'}}
 ];
 const has=(profile,id)=>[...profile.shared,...Object.values(profile.rosters||{}).flat()].some(c=>characterIdentity(c)===characterIdentity(id));
 const add=(profile,ids)=>{const out=[];for(const id of ids)if(!profile.shared.some(c=>characterIdentity(c)===characterIdentity(id))){profile.shared.push(id);out.push(id);}return out;};
