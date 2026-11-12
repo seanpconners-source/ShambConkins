@@ -9,9 +9,9 @@ const GIFTS=[
  {id:'lydia-crew',who:/^\s*lyd(ia)?\b/i,give:['uss-lydia','houston'],pair:['uss-lydia','houston'],then:['ezra'],
   hello:{title:'Hey Lydia!',body:'A little something for the Hole.it champion: Lydia and Houston just joined your roster. Pick the two of them as players 1 and 2 on Characters and see who turns up…'},
   reveal:{title:'Somebody heard the crew was back together',body:'Lydia and Houston, together again — and look who came along. Ezra joins your roster!'}},
- // Hannah (owner, Nov 12): her saved name is "Hannah". Hannah joins at start; picking Hannah as player 1 OR 2 brings Carson.
+ // Hannah (owner, Nov 12): her saved name is "Hannah". Hannah joins at start; picking Hannah as player 1 OR 2 brings Carson (owner: the hello must NOT hint at Carson).
  {id:'hannah-lab',who:/^\s*hannah\b/i,give:['uss-hannah'],pair:['uss-hannah'],then:['uss-carson'],
-  hello:{title:'Hey Hannah!',body:'Welcome back to the lab! Hannah just joined your roster. Pick her as player 1 or 2 on Characters and see who turns up…'},
+  hello:{title:'Hey Hannah!',body:'Welcome back to the lab! Hannah just joined your roster. Have fun!'},
   reveal:{title:'Somebody followed you out of the lab',body:'Hannah’s on the team — and look who came along. Carson joins your roster!'}}
 ];
 const has=(profile,id)=>[...profile.shared,...Object.values(profile.rosters||{}).flat()].some(c=>characterIdentity(c)===characterIdentity(id));

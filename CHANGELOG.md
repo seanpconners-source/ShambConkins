@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.96.5
+
+- **Characters:** Hannah and Carson (Unlimited Savory Systems lab) have their own photos now.
+- A little surprise for a friend.
+
 ## v0.96.4
 
 - **Chat:** when the phone keyboard comes up, the chat sits on top of it so you can see what you type (the ready-made lines fold away while you type).

@@ -2,6 +2,8 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+HANNAH GIFT (Nov 12, RELEASED as v0.96.5, owner: release with only the gift test): owner's photos for uss-hannah + uss-carson (assets/portraits lossless 480; originals uss-hannah.png, uss-carson.nov12.png (an older uss-carson.png original was already there)); src/gifts.js 'hannah-lab': saved name /^hannah\b/i → uss-hannah at start; Hannah picked as player 1 OR 2 (players-done / New Game) → uss-carson. Owner: the hello must not hint at Carson (changelog says only 'a surprise for a friend'). tests/gifts.mjs covers it.
+
 SEANIC ROUND 4 (Nov 11 late; RELEASED as v0.95.0 on main with the head-check + SotN sessions' work; owner: release, skip tests (test:core passed up to s3-moves before it was stopped)):
 LOOPS: physics.js floor push sensor ignores a hit unless that surface is 50°+ steeper than the ground (a 9-10 ball took
 the loop's own curve at 45° for a wall); loop halves overlap .35 rad over the top (OV in zone1/act2/act3/testZone: a 11+
