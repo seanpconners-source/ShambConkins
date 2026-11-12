@@ -8,6 +8,8 @@ for(const id of ['houston','ezra','uss-lydia'])check(!!character(id)&&CATALOG.ch
 check(!character('houston').unlockBy&&!character('ezra').unlockBy,'Houston and Ezra unlock the normal way');
 const prof=()=>{const p=JSON.parse(JSON.stringify(P.freshProfile()));p.shared=['sean','amber'];p.rosters={Sean:[],Amber:[]};return p;};
 let p=prof();check(!G.startGifts(p,['Sean','Amber']).length&&!p.shared.includes('houston'),'a phone without Lydia gets nothing');
+for(const n of ['Lyd','lyd ','Lydia','LYDIA B']){const q=prof();check(G.startGifts(q,['Sean',n]).length===1,`the name "${n}" counts as Lydia`);}
+for(const n of ['Lydon','Clyde','Lydian']){const q=prof();check(!G.startGifts(q,[n]).length,`the name "${n}" does not`);}
 p=prof();const got=G.startGifts(p,['Sean','lydia ']);
 check(got.length===1&&p.shared.includes('uss-lydia')&&p.shared.includes('houston')&&!p.shared.includes('ezra'),'Lydia\'s phone: Lydia + Houston join both rosters, not Ezra');
 check(P.availableCharacters(p,'Sean').includes('houston')&&P.availableCharacters(p,'Amber').includes('uss-lydia'),'both player slots can pick them');

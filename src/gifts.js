@@ -1,12 +1,12 @@
 // One-off gifts for a particular friend's phone (owner, Nov 12). Saves live on each phone, so a gift finds its phone by the
-// player names saved there (Characters / New Game names, the saved run): Lydia holds the Hole.it record as "Lydia".
+// player names saved there (Characters / New Game names, the saved run): Lydia holds the Hole.it record as "Lyd" (owner's screenshot, Nov 12): "Lyd" or "Lydia" matches.
 // Stage 1, the next time the game starts on her phone: `give` joins BOTH rosters (so either player slot can pick them).
 // Stage 2, when she leaves Characters (or starts a New Game) with every `pair` character picked as players 1 and 2: `then`
 // joins too, with its own message. Each stage happens once (profile.gifts[id] = 'given' → 'done'). Everyone else unlocks
 // these characters the normal way. Pure data + rules here; app.js shows the dialogs.
 const {characterIdentity}=require("src/characters.js");
 const GIFTS=[
- {id:'lydia-crew',who:/^\s*lydia\b/i,give:['uss-lydia','houston'],pair:['uss-lydia','houston'],then:['ezra'],
+ {id:'lydia-crew',who:/^\s*lyd(ia)?\b/i,give:['uss-lydia','houston'],pair:['uss-lydia','houston'],then:['ezra'],
   hello:{title:'Hey Lydia!',body:'A little something for the Hole.it champion: Lydia and Houston just joined your roster. Pick the two of them as players 1 and 2 on Characters and see who turns up…'},
   reveal:{title:'Somebody heard the crew was back together',body:'Lydia and Houston, together again — and look who came along. Ezra joins your roster!'}}
 ];
