@@ -3,7 +3,12 @@
 // letter that's in the word somewhere else, grey for a letter that isn't in it. Typing pops the tile, ENTER flips the row
 // one tile at a time, a word not in the list shakes the row, a win bounces it and Squirtle pops up squirting water.
 // Two players: the same word for both, one after the other (a hand-off card hides it); fewer guesses wins, the clock breaks
-// ties. One player (Arcade 1P, online duels): word after word until a miss, every solved word adds to the streak score.
+// ties. One player (Arcade 1P): word after word until a miss, every solved word adds to the streak score.
+// Online (owner, Nov 12): both phones get the same NET_WORDS words and play each one at the same time (netField start).
+// Each phone sends only colours ({g:[word,res]}), how many letters are typed ({c:[word,n]}) and its result ({d:[word,res]}),
+// never letters: you see the other's little colour grid while you play, and once you're done you watch their board fill
+// in (colours, blank tiles) until they finish. Then both see the word's result; the next word starts once both tapped
+// Next word (sync) at the same moment on both phones. Most points over the words wins.
 // Squirtle here is our own drawing (a little blue turtle with a shell): art slots for the owner's pictures come later.
 // Light or dark like the phone (the real game's two looks). Touch the on-screen keys or type on a real keyboard.
 const {fullBleed}=require("src/engines/fullBleed.js");
@@ -12,11 +17,13 @@ const {ANSWERS,VALID}=require("src/data/sqwordleWords.js");
 const {tone,vibrate}=require("src/audio.js");
 const {store}=require("src/state.js");
 const {soloProgress,soloFinish}=require("src/solo.js");
+const {netField}=require("src/engines/netField.js");
 
 const {ROWS,COLS,grade,points}=require("src/engines/sqwordleRules.js");
 const FLIP=480,STAG=280,BOUNCE=110;
 // win messages by number of guesses (the real game's six, Squirtle style)
 const WIN=['SQUIRTLE SQUIRT!','Hydro Pump!','Bubble Beam!','Water Gun!','Withdraw…','Phew! Close one'];
+const NET_WORDS=3;
 const KEYROWS=['qwertyuiop','asdfghjkl','+zxcvbnm<'];// + = ENTER, < = backspace
 
 // ---- Squirtle (our own drawing): head with big eyes, a peek of the shell; mood 'happy' | 'sad' | 'idle'
@@ -65,11 +72,14 @@ async function sqwordle(s){
  const fb=fullBleed(s,{bg:P.bg});
  s.hint('Guess the five-letter word in six tries. Tap the keys (or type) and press ENTER. Blue = right letter in the right spot, gold = in the word but somewhere else, grey = not in the word.');
  let dpr=1,L=null,board=null,toast=null,help=false,results=null,parts=[],keyDown=null,phase='play';
+ // online: nf = the move channel, word = the word being played, opp[word] = the other phone's board (colours only)
+ let nf=null,word=0;const opp={},tot=[0,0];
+ const tell=e=>{if(nf&&board&&board.i===nf.me)nf.event(e);};
  const sfx=(f,d=.05,v=.04,w='triangle')=>{if(store.profile?.settings.sound!==false)tone(f,d,v,w);};
 
  function newBoard(i,ans){return {i,ans,rows:[],cur:'',done:null,t0:performance.now(),t1:0,shake:0,pop:[],revealAt:[],winAt:0,doneAt:0};}
  // layout for this screen: header, info line, grid, keyboard (side by side on short wide screens)
- function layout(){const W=s.W,H=s.H,side=W>H*1.25&&H<600,hh=Math.round(Math.max(40,Math.min(62,H*.075))),info=board?28:0,bot=fullscreenSupported()?40:12;// room for the ⤢ toggle at the bottom centre
+ function layout(){const W=s.W,H=s.H,side=W>H*1.25&&H<600,hh=Math.round(Math.max(40,Math.min(62,H*.075))),info=board?(nf?40:28):0,bot=fullscreenSupported()?40:12;// room for the ⤢ toggle at the bottom centre
   const gx0=0,gy0=hh+info+6;let kbX,kbY,kbW,keyH,gW,gH;
   if(side){gW=W*.5;gH=H-gy0-8;kbW=Math.min(W*.46,480);keyH=Math.max(34,Math.min(54,(H-gy0-bot)/3.6));kbX=W*.52;kbY=gy0+(H-gy0-bot-(keyH*3+16))/2;}
   else{kbW=Math.min(W-12,500);keyH=Math.round(Math.max(36,Math.min(58,H*.072)));kbY=H-bot-(keyH*3+16);kbX=(W-kbW)/2;gW=W;gH=kbY-gy0-8;}
@@ -80,19 +90,19 @@ async function sqwordle(s){
  // letter states on the keyboard: only from rows that have finished flipping
  function keyState(b,now){const st={};b.rows.forEach((row,ri)=>{if(now<b.revealAt[ri]+STAG*(COLS-1)+FLIP)return;[...row.word].forEach((ch,i)=>{st[ch]=Math.max(st[ch]??-1,row.res[i]);});});return st;}
  function say(text,ms=1100){toast={text,until:performance.now()+ms};}
- function press(k){if(help){help=false;return;}if(phase==='results'){if(results&&performance.now()>results.at+600)results.done();return;}
+ function press(k){if(help){help=false;return;}if(phase==='results'){if(results&&!results.waiting&&performance.now()>results.at+600)results.done();return;}
   const b=board;if(!b||b.done||s.paused)return;const now=performance.now();
   if(b.revealAt.length&&now<b.revealAt[b.revealAt.length-1]+STAG*(COLS-1)+FLIP)return;// wait for the last row to finish flipping
-  if(k==='<'){if(b.cur.length){b.cur=b.cur.slice(0,-1);sfx(330,.04,.03);}return;}
+  if(k==='<'){if(b.cur.length){b.cur=b.cur.slice(0,-1);sfx(330,.04,.03);tell({c:[word,b.cur.length]});}return;}
   if(k==='+'){if(b.cur.length<COLS){b.shake=now;say('Not enough letters');sfx(150,.12,.05,'square');vibrate(30);return;}
    if(!VALID.has(b.cur)){b.shake=now;say('Not in word list');sfx(150,.12,.05,'square');vibrate(30);return;}
-   const res=grade(b.cur,b.ans);b.rows.push({word:b.cur,res});b.revealAt.push(now);b.cur='';
+   const res=grade(b.cur,b.ans);b.rows.push({word:b.cur,res});b.revealAt.push(now);b.cur='';tell({g:[word,res]});
    for(let i=0;i<COLS;i++)setTimeout(()=>{if(s.alive)sfx([392,440,494,523,587][i],.06,.035);},STAG*i+FLIP/2);
    const end=now+STAG*(COLS-1)+FLIP;
    if(res.every(v=>v===2)){b.done='win';b.t1=now;b.winAt=end;b.doneAt=end+BOUNCE*COLS+1500;setTimeout(()=>{if(!s.alive)return;say(WIN[b.rows.length-1],1800);splash();sfx(659,.12,.05);setTimeout(()=>sfx(784,.12,.05),120);setTimeout(()=>sfx(1047,.2,.05),240);},end-now);}
    else if(b.rows.length>=ROWS){b.done='lose';b.t1=now;b.doneAt=end+2200;setTimeout(()=>{if(!s.alive)return;say(b.ans.toUpperCase(),2200);sfx(220,.25,.05,'sine');},end-now);}
    return;}
-  if(/^[a-z]$/.test(k)&&b.cur.length<COLS){b.pop[b.cur.length]=now;b.cur+=k;sfx(520,.03,.025);}
+  if(/^[a-z]$/.test(k)&&b.cur.length<COLS){b.pop[b.cur.length]=now;b.cur+=k;sfx(520,.03,.025);tell({c:[word,b.cur.length]});}
  }
  // water squirting out of Squirtle's mouth when you get it
  function splash(){if(!L)return;const cx=L.gx+(L.t*COLS+L.gap*4)/2,cy=L.gy+L.t*ROWS+L.gap*5;
@@ -136,11 +146,33 @@ async function sqwordle(s){
   const mid=Math.min(W/2,(lo+hi)/2),tx=mid+r*1.3;
   const logo=picture('logo');if(logo){const lh=hh*.78,lw=Math.min(hi-lo,logo.naturalWidth*lh/logo.naturalHeight),k=lw/logo.naturalWidth;x.drawImage(logo,mid-lw/2,hh/2-logo.naturalHeight*k/2,lw,logo.naturalHeight*k);return;}
   x.fillText('Sqwordle',tx,hh/2+hh*.03);mascot(x,tx-tw/2-r*1.25,hh/2-r*.1,r,'idle',now/1000);}
- function drawInfo(b,now){if(!L.info)return;const {W,hh}=L,y=hh+L.info/2+3,p=s.players[b.i],secs=((b.done?b.t1:now)-b.t0)/1000;
-  const label=s.solo?`${p.name} · word ${streak.n+1}${streak.total?` · ${streak.total} pts`:''}`:`${p.name}'s word`;
+ function drawInfo(b,now){if(!L.info)return;const watch=phase==='watch'&&nf;if(watch)b=oppOf(word);const {W,hh}=L,y=hh+L.info/2+3,p=s.players[b.i],secs=((b.done?b.t1||now:now)-b.t0)/1000;
+  const label=watch?`Watching ${p.name} · word ${word+1}/${NET_WORDS}`:nf?`${p.name} · word ${word+1}/${NET_WORDS}${tot[b.i]?` · ${tot[b.i]} pts`:''}`:s.solo?`${p.name} · word ${streak.n+1}${streak.total?` · ${streak.total} pts`:''}`:`${p.name}'s word`;
   x.font=`bold 13px "Helvetica Neue",Arial,sans-serif`;const w=x.measureText(label).width+40,X=W/2-w/2-26;
   s.sprite(x,b.i,X+11,y,22,{exact:true,still:true,noBadge:true});x.fillStyle=P.text;x.textAlign='left';x.textBaseline='middle';x.fillText(label,X+26,y);
-  x.fillStyle=P.soft;x.font=`13px "Helvetica Neue",Arial,sans-serif`;x.fillText(`${Math.floor(secs/60)}:${String(Math.floor(secs%60)).padStart(2,'0')}`,X+26+w-30,y);}
+  x.fillStyle=P.soft;x.font=`13px "Helvetica Neue",Arial,sans-serif`;x.fillText(`${Math.floor(secs/60)}:${String(Math.floor(secs%60)).padStart(2,'0')}`,X+26+w-30,y);
+  if(nf&&!watch){const o=oppOf(word),cell=5,gw=cell*5+4,gx=W-14-gw,gy=hh+3;// the other player's colours, no letters
+   s.sprite(x,o.i,gx-15,y,22,{exact:true,still:true,noBadge:true,mood:o.done==='win'?'win':o.done?'sad':undefined});miniGrid(o,gx,gy,cell,now);}}
+ // a small colour-only grid of board b (rows that have flipped, the typed letters of the row being written as grey cells)
+ function miniGrid(b,gx,gy,cell,now){for(let r=0;r<ROWS;r++)for(let i=0;i<COLS;i++){const row=b.rows[r],X=gx+i*(cell+1),Y=gy+r*(cell+1);
+   if(row&&now>=b.revealAt[r]+STAG*i+FLIP/2)x.fillStyle=COL[row.res[i]];else if(!row&&r===b.rows.length&&!b.done&&i<b.cur.length)x.fillStyle=P.filled;else{x.strokeStyle=P.empty;x.lineWidth=1;x.strokeRect(X+.5,Y+.5,cell-1,cell-1);continue;}
+   x.fillRect(X,Y,cell,cell);}}
+ // the other phone's board for word w (made on their first message, or when the word starts)
+ function oppOf(w){return opp[w]||(opp[w]=Object.assign(newBoard(nf?nf.remote:1,''),{t0:performance.now()}));}
+ function onEvent(e){const now=performance.now();
+  if(Array.isArray(e?.c)){const o=oppOf(e.c[0]);if(!o.done){const n=Math.max(0,Math.min(COLS,e.c[1]|0));if(n>o.cur.length)o.pop[n-1]=now;o.cur=' '.repeat(n);}}
+  else if(Array.isArray(e?.g)&&Array.isArray(e.g[1])){const o=oppOf(e.g[0]);if(o.done||o.rows.length>=ROWS)return;o.rows.push({word:'',res:e.g[1].map(v=>v|0)});o.revealAt.push(now);o.cur='';
+   if(phase==='watch'&&e.g[0]===word)for(let i=0;i<COLS;i++)setTimeout(()=>{if(s.alive)sfx([392,440,494,523,587][i],.06,.025);},STAG*i+FLIP/2);}
+  else if(Array.isArray(e?.d)&&e.d[1]){const w=e.d[0],o=oppOf(w),r=e.d[1];if(o.res)return;o.res=r;o.done=r.win?'win':'lose';o.t1=o.t0+(+r.secs||0)*1000;
+   const end=Math.max(now,(o.revealAt[o.revealAt.length-1]||0)+STAG*(COLS-1)+FLIP),watching=phase==='watch'&&w===word;o.winAt=end;o.doneAt=watching?end+(r.win?BOUNCE*COLS+1600:2400):now;
+   const name=s.players[o.i].name;setTimeout(()=>{if(!s.alive||w!==word)return;if(r.win){say(`${name} got it in ${r.n}!`,1800);if(watching){splash();sfx(659,.12,.05);setTimeout(()=>sfx(784,.12,.05),120);}}else say(`${name} missed it`,1800);},end-now);}}
+ // after your board is done: their board up top, your result where the keys were
+ function drawWatch(now){const o=oppOf(word),b=board,top=L.keys.length?Math.min(...L.keys.map(q=>q.y)):L.H*.7,left=L.side?L.W*.52:0,w=L.side?L.W*.46:L.W,cx=left+w/2;
+  x.fillStyle=P.text;x.textAlign='center';x.textBaseline='middle';x.font=`bold 16px "Helvetica Neue",Arial,sans-serif`;
+  const r=b.done==='win';x.fillText(r?`You got it in ${b.rows.length}!`:`Missed it: ${b.ans.toUpperCase()}`,cx,top+14);
+  const cell=8,gw=cell*5+4*2;b.rows.forEach((row,k)=>row.res.forEach((v,i)=>{x.fillStyle=COL[v];x.fillRect(cx-gw/2+i*(cell+2),top+32+k*(cell+2),cell,cell);}));
+  x.fillStyle=P.soft;x.font=`14px "Helvetica Neue",Arial,sans-serif`;const dots='.'.repeat(1+Math.floor(now/400)%3);
+  x.fillText(o.done?`${s.players[o.i].name} is done`:`Waiting for ${s.players[o.i].name} to finish${dots}`,cx,top+40+6*(cell+2)+14);}
  function drawMascot(b,now){if(!b||!b.done)return;const end=b.revealAt[b.revealAt.length-1]+STAG*(COLS-1)+FLIP;if(now<end)return;
   const k=Math.min(1,(now-end)/350),r=Math.min(L.t*.9,46),cx=L.gx+(L.t*COLS+L.gap*4)/2,cy=L.gy+L.t*ROWS+L.gap*5-r*(.2+.75*k);
   x.save();x.beginPath();x.rect(0,0,L.W,L.gy+L.t*ROWS+L.gap*5+2);x.clip();mascot(x,cx,cy,r,b.done==='win'?'happy':'sad',now/1000);x.restore();}
@@ -162,8 +194,11 @@ async function sqwordle(s){
    x.fillStyle=P.text;x.font=`bold 16px "Helvetica Neue",Arial,sans-serif`;x.fillText(s.players[r.i].name,cx,y0+56);
    x.font=`14px "Helvetica Neue",Arial,sans-serif`;x.fillStyle=P.soft;x.fillText(`${r.res.win?r.res.n:'X'}/6 · ${Math.floor(r.res.secs/60)}:${String(Math.round(r.res.secs%60)).padStart(2,'0')}`,cx,y0+78);
    r.res.grid.forEach((row,k)=>row.forEach((v,i)=>{x.fillStyle=COL[v];x.fillRect(cx-(mt*5+12)/2+i*(mt+3),y0+94+k*(mt+3),mt,mt);}));
-   x.fillStyle=P.text;x.font=`bold 18px "Helvetica Neue",Arial,sans-serif`;x.fillText(`${points(r.res)} pts`,cx,y0+104+6*(mt+3)+8);});
-  if(now>R.at+600){x.fillStyle=P.correct;const bw=180,bh=46,bx=W/2-bw/2,by=Math.min(H-bh-44,y0+150+6*(mt+3));rr(x,bx,by,bw,bh,23);x.fill();x.fillStyle='#fff';x.font=`bold 16px "Helvetica Neue",Arial,sans-serif`;x.fillText('Continue',W/2,by+bh/2);}}
+   x.fillStyle=P.text;x.font=`bold 18px "Helvetica Neue",Arial,sans-serif`;x.fillText(`${points(r.res)} pts`,cx,y0+104+6*(mt+3)+8);
+   if(R.tot){x.fillStyle=P.soft;x.font=`14px "Helvetica Neue",Arial,sans-serif`;x.fillText(`${R.tot[r.i]} total`,cx,y0+104+6*(mt+3)+30);}});
+  const by0=Math.min(H-46-44,y0+150+6*(mt+3)+(R.tot?16:0));
+  if(R.waiting){x.fillStyle=P.soft;x.font=`15px "Helvetica Neue",Arial,sans-serif`;x.fillText(R.waiting+'.'.repeat(1+Math.floor(now/400)%3),W/2,by0+23);}
+  else if(now>R.at+600){x.fillStyle=P.correct;const bw=180,bh=46,bx=W/2-bw/2,by=by0;rr(x,bx,by,bw,bh,23);x.fill();x.fillStyle='#fff';x.font=`bold 16px "Helvetica Neue",Arial,sans-serif`;x.fillText(R.btn||'Continue',W/2,by+bh/2);}}
 
  let last=performance.now();
  s.frame(()=>{const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;
@@ -171,6 +206,7 @@ async function sqwordle(s){
   x.setTransform(dpr,0,0,dpr,0,0);L=layout();x.fillStyle=P.bg;x.fillRect(0,0,L.W,L.H);
   drawHeader(now);
   if(phase==='results'&&results)drawResults(now);
+  else if(board&&phase==='watch'){drawInfo(board,now);const o=oppOf(word);drawBoard(o,now);drawMascot(o,now);drawWatch(now);drawToast(now);}
   else if(board){drawInfo(board,now);drawBoard(board,now);drawMascot(board,now);drawKeys(board,now);drawToast(now);}
   drawParts(dt);if(help)drawHelp();
   if(board&&board.done&&!board.reported&&now>board.doneAt){board.reported=true;board.finish?.();}});
@@ -181,10 +217,36 @@ async function sqwordle(s){
  const streak={n:0,total:0};
  // test hooks: the answer, type a word, an autopilot that guesses two random words then the answer
  s.debug={get board(){return board;},get phase(){return phase;},answer:()=>board?.ans,type(w){for(const ch of w)press(ch);press('+');},grade,points,
-  set bot(on){if(!on)return;const tick=()=>{if(!s.alive)return;if(phase==='results'){if(results&&performance.now()>results.at+700)results.done();}
-   else if(board&&!board.done&&!board.cur){const n=board.rows.length;this.type(n<2?ANSWERS[Math.floor(Math.random()*ANSWERS.length)]:board.ans);}setTimeout(tick,400);};tick();}};
+  set bot(on){if(!on)return;const tick=()=>{if(!s.alive)return;botStep();setTimeout(tick,400);};tick();},
+  // online tests: one step per call (tests/online-native.mjs)
+  get bot(){return nf?botStep:undefined;},get opp(){return oppOf(word);},get word(){return word;},get totals(){return tot.slice();}};
+ let botAt=0;
+ function botStep(){const now=performance.now();if(now<botAt)return 'wait';botAt=now+400+Math.random()*900;
+  if(phase==='results'){if(results&&!results.waiting&&now>results.at+700){results.done();return 'next';}return 'results';}
+  if(board&&!board.done&&!board.cur&&!(board.revealAt.length&&now<board.revealAt[board.revealAt.length-1]+STAG*(COLS-1)+FLIP)){const n=board.rows.length;
+   s.debug.type(n<1+Math.floor(Math.random()*3)?ANSWERS[Math.floor(Math.random()*ANSWERS.length)]:board.ans);return 'guess';}
+  return 'play';}
 
- if(s.solo){// Arcade 1P and online duels: word after word until a miss
+ nf=netField(s,{pack:()=>0,unpack(){},onEvent,hz:1});
+ if(nf){// online: the same words for both phones, played at the same time
+  // the duel score chip would sit on the ? and the title; the game shows both players' points itself
+  if(!document.getElementById('sqw-net-css'))document.head.append(Object.assign(document.createElement('style'),{id:'sqw-net-css',textContent:'body.sqw-net #duel-chip{display:none}'}));
+  document.body.classList.add('sqw-net');s.cleanup(()=>document.body.classList.remove('sqw-net'));
+  const words=Array.from({length:NET_WORDS},pick),me=nf.me,them=nf.remote,wait=ok=>new Promise(r=>{const t=setInterval(()=>{if(!s.alive||nf.gone||ok()){clearInterval(t);r();}},100);});
+  for(word=0;word<NET_WORDS;word++){const ans=words[word];board=null;phase='play';
+   await nf.start('w'+word);if(!s.alive)return;if(nf.gone)break;
+   oppOf(word).t0=performance.now();
+   const mine=await play(me,ans);if(!s.alive)return;nf.event({d:[word,mine]});
+   const o=oppOf(word);if(!o.res)phase='watch';
+   await wait(()=>o.res&&performance.now()>o.doneAt);if(!s.alive)return;if(nf.gone)break;
+   tot[me]+=points(mine);tot[them]+=points(o.res);s.setScores(tot.slice());
+   const last=word===NET_WORDS-1,pm=points(mine),po=points(o.res),wr=pm===po?-1:pm>po?me:them,wt=tot[0]===tot[1]?-1:tot[0]>tot[1]?0:1;
+   const title=last?(wt<0?'Dead even!':`${s.players[wt].name} wins!`):wr<0?`Word ${word+1}: dead even`:`${s.players[wr].name} takes word ${word+1}`;
+   await new Promise(done=>{phase='results';results={ans,rows:[{i:0,res:me===0?mine:o.res},{i:1,res:me===1?mine:o.res}],title,tot:tot.slice(),btn:last?'Finish':'Next word',at:performance.now(),done};});
+   if(last)break;results.waiting=`Waiting for ${s.players[them].name}`;await nf.sync('n'+word);if(!s.alive)return;if(nf.gone)break;results=null;}
+  results=null;
+  s.finish(tot.slice(),`${s.players[0].name} ${tot[0]} · ${s.players[1].name} ${tot[1]} over ${Math.min(NET_WORDS,word+1)} word${word?'s':''}`);return;}
+ if(s.solo){// Arcade 1P: word after word until a miss
   for(;;){const r=await play(0,pick());if(!s.alive)return;
    if(r.win){streak.total+=points(r);streak.n++;s.setScores([streak.total,0]);soloProgress(s,streak.total,streak.n,`${streak.n} word${streak.n===1?'':'s'} in a row`);
     board=null;if(!await s.pass(0,`Word ${streak.n+1}. Keep the streak going!`,'Next word',{soloTitle:`Word ${streak.n+1}`}))return;continue;}

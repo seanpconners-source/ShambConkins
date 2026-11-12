@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Sqwordle online:** both phones play the same word at the same time (three words a match). You see the other player's colours as they go (never their letters); whoever finishes first watches the other finish, then you both start the next word together.
+
 ## v0.96.0
 
 - **Arcade groups everywhere.** All games opens on shelves of groups: Console Classics, Arcade Classics, Board Games, Mobile Hits, Sports, Paddy's Pub, Party Games, Game Shows & Trivia, Movie Night, Casino Night, Pinball Tables and Boss Select. A group opens as the same Arcade screen (backgrounds, logos, swipes), and groups nest: Console Classics › Seanic the Hedgehog › Act 1, 2, 3. Home and Favorites show a franchise as one tile; categories work as before. Groups without their own art show a mosaic of four of their games for now.
