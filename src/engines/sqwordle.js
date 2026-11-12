@@ -9,7 +9,8 @@
 // While you play you only see the other's little colour grid (no letters drawn); once you're done you watch their whole
 // board, letters and all (owner, Nov 12), until they finish. Then both see the word's result; the next word starts once both tapped
 // Next word (sync) at the same moment on both phones. Most points over the words wins.
-// Squirtle here is our own drawing (a little blue turtle with a shell): art slots for the owner's pictures come later.
+// Squirtle is our own drawing until the owner's pictures come in (slots in sqwordleArt.js). Getting the word plays one of
+// Squirtle's moves by the number of guesses (Water Gun, Bubble Beam, Hydro Pump...), and the head by the title reacts to each guess.
 // Light or dark like the phone (the real game's two looks). Touch the on-screen keys or type on a real keyboard.
 const {fullBleed}=require("src/engines/fullBleed.js");
 const {fullscreenSupported}=require("src/fullscreen.js");
@@ -27,40 +28,8 @@ const WIN=['SQUIRTLE SQUIRT!','Hydro Pump!','Bubble Beam!','Water Gun!','Withdra
 const NET_WORDS=3;
 const KEYROWS=['qwertyuiop','asdfghjkl','+zxcvbnm<'];// + = ENTER, < = backspace
 
-// ---- Squirtle (our own drawing): head with big eyes, a peek of the shell; mood 'happy' | 'sad' | 'idle'
-function squirtle(x,cx,cy,r,mood='idle',t=0){
- x.save();x.translate(cx,cy);
- // shell rim behind the head
- x.fillStyle='#b8733a';x.beginPath();x.ellipse(0,r*.95,r*1.15,r*.55,0,Math.PI,0);x.fill();
- x.fillStyle='#f1d58e';x.beginPath();x.ellipse(0,r*1.02,r*.95,r*.42,0,Math.PI,0);x.fill();
- // head
- const g=x.createRadialGradient(-r*.3,-r*.4,r*.2,0,0,r*1.1);g.addColorStop(0,'#a6dcf6');g.addColorStop(1,'#5aaee0');
- x.fillStyle=g;x.beginPath();x.ellipse(0,0,r,r*.92,0,0,Math.PI*2);x.fill();x.strokeStyle='#2c6d96';x.lineWidth=Math.max(1,r*.06);x.stroke();
- // eyes
- const blink=mood==='idle'&&((t%4)>3.85);
- for(const s of [-1,1]){const ex=s*r*.38,ey=-r*.12;
-  if(mood==='sad'||blink){x.strokeStyle='#3a2318';x.lineWidth=r*.09;x.lineCap='round';x.beginPath();x.arc(ex,ey+(mood==='sad'?r*.12:0),r*.17,mood==='sad'?Math.PI*1.15:Math.PI*.15,mood==='sad'?Math.PI*1.85:Math.PI*.85);x.stroke();continue;}
-  x.fillStyle='#fff';x.beginPath();x.ellipse(ex,ey,r*.22,r*.28,0,0,Math.PI*2);x.fill();
-  x.fillStyle='#7a2e1e';x.beginPath();x.ellipse(ex+s*r*.03,ey+r*.04,r*.15,r*.2,0,0,Math.PI*2);x.fill();
-  x.fillStyle='#1b0b06';x.beginPath();x.ellipse(ex+s*r*.03,ey+r*.06,r*.08,r*.11,0,0,Math.PI*2);x.fill();
-  x.fillStyle='#fff';x.beginPath();x.arc(ex-r*.04,ey-r*.06,r*.06,0,Math.PI*2);x.fill();}
- // mouth
- x.strokeStyle='#2c4f66';x.lineWidth=r*.07;x.lineCap='round';
- if(mood==='happy'){x.fillStyle='#8a2b2b';x.beginPath();x.arc(0,r*.32,r*.22,0,Math.PI);x.closePath();x.fill();x.stroke();x.fillStyle='#f28b8b';x.beginPath();x.arc(0,r*.44,r*.1,0,Math.PI*2);x.fill();}
- else if(mood==='sad'){x.beginPath();x.arc(0,r*.55,r*.18,Math.PI*1.15,Math.PI*1.85);x.stroke();
-  x.fillStyle='#8fd3ff';x.beginPath();x.ellipse(r*.42,r*.2+((t*40)%(r*.6)),r*.06,r*.1,0,0,Math.PI*2);x.fill();}
- else{x.beginPath();x.arc(0,r*.25,r*.2,Math.PI*.15,Math.PI*.85);x.stroke();}
- x.restore();
-}
-// ART SLOTS (docs/art-for-gpt/SQWORDLE-ART.md): assets/sqwordle/<name>.webp → USER_PORTRAITS['sqwordle:<name>'] (tools/build.mjs).
-// Each one replaces our drawing when it's there: mascot / mascot-happy / mascot-sad = the turtle's head (square, transparent,
-// face centred), logo = the title wordmark in the header (wide, transparent).
-let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
-const imgs=new Map();
-function picture(name){const url=USER['sqwordle:'+name];if(!url||typeof Image==='undefined')return null;
- let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;};e.img.src=url;imgs.set(name,e);}return e.ok?e.img:null;}
-function mascot(x,cx,cy,r,mood,t){const im=picture(mood==='happy'?'mascot-happy':mood==='sad'?'mascot-sad':'mascot')||(mood!=='idle'&&picture('mascot'));
- if(!im){squirtle(x,cx,cy,r,mood,t);return;}const k=r*2.3/Math.max(im.naturalWidth,im.naturalHeight);x.drawImage(im,cx-im.naturalWidth*k/2,cy-im.naturalHeight*k/2,im.naturalWidth*k,im.naturalHeight*k);}
+// Squirtle (our drawing, or the owner's pictures when they're in), backgrounds and the six moves: src/engines/sqwordleArt.js
+const ART=require("src/engines/sqwordleArt.js"),{picture,mascot}=ART;
 const rr=(x,X,Y,w,h,r)=>{x.beginPath();if(x.roundRect)x.roundRect(X,Y,w,h,r);else x.rect(X,Y,w,h);};
 
 async function sqwordle(s){
@@ -72,7 +41,7 @@ async function sqwordle(s){
  const COL=[P.absent,P.present,P.correct];
  const fb=fullBleed(s,{bg:P.bg});
  s.hint('Guess the five-letter word in six tries. Tap the keys (or type) and press ENTER. Blue = right letter in the right spot, gold = in the word but somewhere else, grey = not in the word.');
- let dpr=1,L=null,board=null,toast=null,help=false,results=null,parts=[],keyDown=null,phase='play';
+ let dpr=1,L=null,board=null,toast=null,help=false,results=null,parts=[],keyDown=null,phase='play',react=null,hasBg=false;
  // online: nf = the move channel, word = the word being played, opp[word] = the other phone's board (colours only)
  let nf=null,word=0;const opp={},tot=[0,0];
  const tell=e=>{if(nf&&board&&board.i===nf.me)nf.event(e);};
@@ -91,17 +60,21 @@ async function sqwordle(s){
  // letter states on the keyboard: only from rows that have finished flipping
  function keyState(b,now){const st={};b.rows.forEach((row,ri)=>{if(now<b.revealAt[ri]+STAG*(COLS-1)+FLIP)return;[...row.word].forEach((ch,i)=>{st[ch]=Math.max(st[ch]??-1,row.res[i]);});});return st;}
  function say(text,ms=1100){toast={text,until:performance.now()+ms};}
- function press(k){if(help){help=false;return;}if(phase==='results'){if(results&&!results.waiting&&performance.now()>results.at+600)results.done();return;}
+ function press(k){if(help){help=false;return;}if(skipShow())return;if(phase==='results'){if(results&&!results.waiting&&performance.now()>results.at+600)results.done();return;}
   const b=board;if(!b||b.done||s.paused)return;const now=performance.now();
   if(b.revealAt.length&&now<b.revealAt[b.revealAt.length-1]+STAG*(COLS-1)+FLIP)return;// wait for the last row to finish flipping
   if(k==='<'){if(b.cur.length){b.cur=b.cur.slice(0,-1);sfx(330,.04,.03);tell({c:[word,b.cur.length,b.cur]});}return;}
   if(k==='+'){if(b.cur.length<COLS){b.shake=now;say('Not enough letters');sfx(150,.12,.05,'square');vibrate(30);return;}
-   if(!VALID.has(b.cur)){b.shake=now;say('Not in word list');sfx(150,.12,.05,'square');vibrate(30);return;}
+   if(!VALID.has(b.cur)){b.shake=now;say('Not in word list');react={mood:'think',at:now,until:now+1500};sfx(150,.12,.05,'square');vibrate(30);return;}
    const res=grade(b.cur,b.ans);b.rows.push({word:b.cur,res});b.revealAt.push(now);b.cur='';tell({g:[word,res,b.rows[b.rows.length-1].word]});
    for(let i=0;i<COLS;i++)setTimeout(()=>{if(s.alive)sfx([392,440,494,523,587][i],.06,.035);},STAG*i+FLIP/2);
    const end=now+STAG*(COLS-1)+FLIP;
-   if(res.every(v=>v===2)){b.done='win';b.t1=now;b.winAt=end;b.doneAt=end+BOUNCE*COLS+1500;setTimeout(()=>{if(!s.alive)return;say(WIN[b.rows.length-1],1800);splash();sfx(659,.12,.05);setTimeout(()=>sfx(784,.12,.05),120);setTimeout(()=>sfx(1047,.2,.05),240);},end-now);}
-   else if(b.rows.length>=ROWS){b.done='lose';b.t1=now;b.doneAt=end+2200;setTimeout(()=>{if(!s.alive)return;say(b.ans.toUpperCase(),2200);sfx(220,.25,.05,'sine');},end-now);}
+   if(res.every(v=>v===2)){b.done='win';b.t1=now;b.winAt=end;const kind=ART.moveFor(b.rows.length,true);b.show={kind,at:end};b.doneAt=end+ART.LEN[kind]+500;
+    setTimeout(()=>{if(!s.alive)return;say(WIN[b.rows.length-1],1800);sfx(659,.12,.05);setTimeout(()=>sfx(784,.12,.05),120);setTimeout(()=>sfx(1047,.2,.05),240);},end-now);}
+   else if(b.rows.length>=ROWS){b.done='lose';b.t1=now;b.show={kind:'sad',at:end};b.doneAt=end+ART.LEN.sad+200;setTimeout(()=>{if(!s.alive)return;say(b.ans.toUpperCase(),2200);sfx(220,.25,.05,'sine');},end-now);}
+   else{// the head by the title reacts once the row has flipped: new blue tiles = happy, nothing at all = sad
+    const before=b.rows.slice(0,-1),newBlue=res.filter((v,i)=>v===2&&!before.some(r=>r.res[i]===2)).length,blank=res.every(v=>v===0);
+    if(newBlue>=2||blank)setTimeout(()=>{if(s.alive&&board===b&&!b.done)react={mood:blank?'sad':'happy',at:performance.now(),until:performance.now()+1600};},end-now);}
    return;}
   if(/^[a-z]$/.test(k)&&b.cur.length<COLS){b.pop[b.cur.length]=now;b.cur+=k;sfx(520,.03,.025);tell({c:[word,b.cur.length,b.cur]});}
  }
@@ -109,9 +82,26 @@ async function sqwordle(s){
  function splash(){if(!L)return;const cx=L.gx+(L.t*COLS+L.gap*4)/2,cy=L.gy+L.t*ROWS+L.gap*5;
   for(let k=0;k<60;k++){const a=-Math.PI/2+(Math.random()-.5)*1.6,v=260+Math.random()*420;parts.push({x:cx,y:cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1.4+Math.random()*.6,r:2+Math.random()*4});}}
 
+ // tap during Squirtle's move (after a moment) = on to the next screen
+ function skipShow(){const b=board,now=performance.now();if(!b||!b.done||!b.show||b.reported||now<b.show.at+800)return false;b.doneAt=Math.min(b.doneAt,now);return true;}
+ // Squirtle stands where the keyboard was (not needed once the word is done) and aims at the last row
+ function stageFor(b){const ks=L.keys;if(!ks.length)return null;const x0=Math.min(...ks.map(q=>q.x)),x1=Math.max(...ks.map(q=>q.x+q.w)),y0=Math.min(...ks.map(q=>q.y)),y1=Math.max(...ks.map(q=>q.y+q.h));
+  const r=Math.max(0,b.rows.length-1),tx=L.gx+(L.t*COLS+L.gap*4)/2,ty=L.gy+r*(L.t+L.gap)+L.t/2,h=Math.min(240,Math.max(90,(y1-y0)*1.08),L.H*.34);
+  const left=L.side?false:true;return {gw:L.t*COLS+L.gap*4,x:left?Math.max(x0+(x1-x0)*.24,x0+h*.42):Math.min(x0+(x1-x0)*.75,x1-h*.42),y:y1+2,h,face:left?1:-1,tx,ty,W:L.W,H:L.H};}
+ function showSfx(e){if(e==='gun'){for(let k=0;k<8;k++)setTimeout(()=>sfx(700+k*60,.05,.025,'sine'),k*70);}
+  else if(e==='hydro'){for(let k=0;k<10;k++)setTimeout(()=>sfx(110+Math.random()*40,.09,.04,'sawtooth'),k*90);}
+  else if(e==='bubble'){for(let k=0;k<12;k++)setTimeout(()=>sfx(900+Math.random()*500,.03,.025,'sine'),k*110);}
+  else if(e==='pop')sfx(1100+Math.random()*300,.03,.03,'sine');
+  else if(e==='spin'){for(let k=0;k<6;k++)setTimeout(()=>sfx([523,659,784][k%3],.05,.03),k*160);}
+  else if(e==='phew'){sfx(500,.12,.03,'sine');setTimeout(()=>sfx(350,.2,.03,'sine'),130);}
+  else if(e==='cheer'){sfx(784,.08,.04);setTimeout(()=>sfx(1047,.15,.04),100);}}
+ function drawShow(b,now,dt){if(!b||!b.show||now<b.show.at)return 0;const st=stageFor(b);if(!st)return 0;
+  if(!b.showRun)b.showRun=ART.createShow(b.show.kind,st,b.show.at);b.showRun.stage=st;
+  return ART.drawShow(x,b.showRun,now,dt,dark,showSfx).shake||0;}
+ function keysAlpha(b,now){return b&&b.show&&now>b.show.at?Math.max(.1,1-(now-b.show.at)/350):1;}
  s.on(c,'pointerdown',ev=>{ev.preventDefault();if(!L)return;const pt=s.pointer(ev);
   if(pt.y<L.hh&&pt.x<L.hh*1.2){help=!help;return;}// ? opens How to play
-  if(help||phase==='results'){press('');return;}
+  if(help||phase==='results'){press('');return;}if(skipShow())return;
   const k=L.keys.find(q=>pt.x>=q.x&&pt.x<=q.x+q.w&&pt.y>=q.y&&pt.y<=q.y+q.h);if(k){keyDown={k:k.k,at:performance.now()};press(k.k);}});
  s.on(document,'keydown',ev=>{if(s.paused||ev.metaKey||ev.ctrlKey||ev.altKey)return;const k=ev.key;
   if(k==='Enter'){ev.preventDefault();press('+');}else if(k==='Backspace'){ev.preventDefault();press('<');}else if(/^[a-zA-Z]$/.test(k))press(k.toLowerCase());});
@@ -133,7 +123,7 @@ async function sqwordle(s){
     else tile(cx,cy,t,'',0,now,{border:P.empty});}}}
  function drawKeys(b,now){const st=b?keyState(b,now):{};
   for(const q of L.keys){const v=st[q.k],down=keyDown&&keyDown.k===q.k&&now-keyDown.at<120;
-   x.fillStyle=v===undefined?P.key:COL[v];if(down)x.globalAlpha=.7;rr(x,q.x,q.y,q.w,q.h,4);x.fill();x.globalAlpha=1;
+   x.fillStyle=v===undefined?P.key:COL[v];const ga=x.globalAlpha;if(down)x.globalAlpha=ga*.7;rr(x,q.x,q.y,q.w,q.h,4);x.fill();x.globalAlpha=ga;
    x.fillStyle=v===undefined?P.keyText:'#fff';x.textAlign='center';x.textBaseline='middle';
    if(q.k==='+'){x.font=`bold ${Math.round(Math.min(q.h*.24,q.w*.2))}px "Helvetica Neue",Arial,sans-serif`;x.fillText('ENTER',q.x+q.w/2,q.y+q.h/2);}
    else if(q.k==='<'){const cx=q.x+q.w/2,cy=q.y+q.h/2,u=Math.min(q.h,q.w)*.18;x.strokeStyle=x.fillStyle;x.lineWidth=2;x.beginPath();x.moveTo(cx-u*1.9,cy);x.lineTo(cx-u*.9,cy-u);x.lineTo(cx+u*1.8,cy-u);x.lineTo(cx+u*1.8,cy+u);x.lineTo(cx-u*.9,cy+u);x.closePath();x.stroke();x.beginPath();x.moveTo(cx-u*.1,cy-u*.5);x.lineTo(cx+u*.9,cy+u*.5);x.moveTo(cx+u*.9,cy-u*.5);x.lineTo(cx-u*.1,cy+u*.5);x.stroke();}
@@ -145,8 +135,12 @@ async function sqwordle(s){
   const r=hh*.3,lo=nf?chatSlot(hh).x+31:hh*1.1,hi=W-136;let fs=Math.round(hh*.56);x.font=`bold ${fs}px Georgia,"Times New Roman",serif`;let tw=x.measureText('Sqwordle').width;
   if(tw+r*2.6>hi-lo){fs=Math.max(14,Math.floor(fs*(hi-lo)/(tw+r*2.6)));x.font=`bold ${fs}px Georgia,"Times New Roman",serif`;tw=x.measureText('Sqwordle').width;}
   const mid=Math.min(W/2,(lo+hi)/2),tx=mid+r*1.3;
-  const logo=picture('logo');if(logo){const lh=hh*.78,lw=Math.min(hi-lo,logo.naturalWidth*lh/logo.naturalHeight),k=lw/logo.naturalWidth;x.drawImage(logo,mid-lw/2,hh/2-logo.naturalHeight*k/2,lw,logo.naturalHeight*k);return;}
-  x.fillText('Sqwordle',tx,hh/2+hh*.03);mascot(x,tx-tw/2-r*1.25,hh/2-r*.1,r,'idle',now/1000);}
+  // the head reacts to the last guess: a hop when happy, a shake when sad or puzzled
+  const re=react&&now<react.until?react:null,q=re?(now-re.at)/1000:0,mood=re?re.mood:'idle',
+   hop=re&&mood==='happy'?-Math.abs(Math.sin(q*9))*r*.5*Math.max(0,1-q/1.4):0,wig=re&&mood!=='happy'?Math.sin(q*22)*r*.18*Math.max(0,1-q/1.2):0;
+  const logo=picture('logo');if(logo){const lh=hh*.78,lw=Math.min(hi-lo-r*2.6,logo.naturalWidth*lh/logo.naturalHeight),k=lw/logo.naturalWidth;x.drawImage(logo,mid-lw/2+r*1.3,hh/2-logo.naturalHeight*k/2,lw,logo.naturalHeight*k);
+   mascot(x,mid-lw/2-r*.1+wig,hh/2-r*.1+hop,r,mood,now/1000);return;}
+  x.fillText('Sqwordle',tx,hh/2+hh*.03);mascot(x,tx-tw/2-r*1.25+wig,hh/2-r*.1+hop,r,mood,now/1000);}
  function drawInfo(b,now){if(!L.info)return;const watch=phase==='watch'&&nf;if(watch)b=oppOf(word);const {W,hh}=L,y=hh+L.info/2+3,p=s.players[b.i],secs=((b.done?b.t1||now:now)-b.t0)/1000;
   const label=watch?`Watching ${p.name} · word ${word+1}/${NET_WORDS}`:nf?`${p.name} · word ${word+1}/${NET_WORDS}${tot[b.i]?` · ${tot[b.i]} pts`:''}`:s.solo?`${p.name} · word ${streak.n+1}${streak.total?` · ${streak.total} pts`:''}`:`${p.name}'s word`;
   // online while you play: the other player's face + colour grid on the LEFT (the top-right corner belongs to Pause/Exit),
@@ -184,7 +178,14 @@ async function sqwordle(s){
  function drawMascot(b,now){if(!b||!b.done)return;const end=b.revealAt[b.revealAt.length-1]+STAG*(COLS-1)+FLIP;if(now<end)return;
   const k=Math.min(1,(now-end)/350),r=Math.min(L.t*.9,46),cx=L.gx+(L.t*COLS+L.gap*4)/2,cy=L.gy+L.t*ROWS+L.gap*5-r*(.2+.75*k);
   x.save();x.beginPath();x.rect(0,0,L.W,L.gy+L.t*ROWS+L.gap*5+2);x.clip();mascot(x,cx,cy,r,b.done==='win'?'happy':'sad',now/1000);x.restore();}
- function drawParts(dt){x.fillStyle=dark?'#7cc8ff':'#4aa8e8';for(const p of parts){p.vy+=900*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;x.globalAlpha=Math.max(0,Math.min(1,p.life));x.beginPath();x.ellipse(p.x,p.y,p.r*.7,p.r,Math.atan2(p.vy,p.vx)+Math.PI/2,0,Math.PI*2);x.fill();}x.globalAlpha=1;parts=parts.filter(p=>p.life>0&&p.y<L.H+20);}
+ // with a background picture: soft frosted panels behind the grid and the keys so the tiles still read like the real game
+ function drawPanels(){const {gx,gy,t,gap}=L,gw=t*COLS+gap*4,gh=t*ROWS+gap*5,pad=Math.max(8,t*.2);x.save();x.fillStyle=P.bg;x.globalAlpha=.86;
+  if(phase==='results'){rr(x,8,L.hh+8,L.W-16,L.H-L.hh-16,18);x.fill();x.restore();return;}
+  rr(x,gx-pad,gy-pad,gw+pad*2,gh+pad*2,16);x.fill();
+  if(L.keys.length){const x0=Math.min(...L.keys.map(q=>q.x)),x1=Math.max(...L.keys.map(q=>q.x+q.w)),y0=Math.min(...L.keys.map(q=>q.y)),y1=Math.max(...L.keys.map(q=>q.y+q.h));
+   if(!(board&&board.show&&performance.now()>board.show.at)){rr(x,x0-6,y0-6,x1-x0+12,y1-y0+12,14);x.fill();}}
+  x.restore();}
+ function drawParts(dt){for(const p of parts){p.vy+=900*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;x.globalAlpha=Math.max(0,Math.min(1,p.life));ART.drop(x,p,dark);}x.globalAlpha=1;parts=parts.filter(p=>p.life>0&&p.y<L.H+20);}
  function drawToast(now){if(!toast||now>toast.until)return;x.font=`bold 15px "Helvetica Neue",Arial,sans-serif`;const w=x.measureText(toast.text).width+32,h=40,X=(L.W-w)/2,Y=L.gy+8;
   x.globalAlpha=Math.min(1,(toast.until-now)/200);x.fillStyle=P.toast;rr(x,X,Y,w,h,4);x.fill();x.fillStyle=P.toastText;x.textAlign='center';x.textBaseline='middle';x.fillText(toast.text,L.W/2,Y+h/2);x.globalAlpha=1;}
  function drawHelp(){const {W,H}=L;x.fillStyle=dark?'#000c':'#fffe';x.fillRect(0,0,W,H);const w=Math.min(W-24,420),X=(W-w)/2,t=Math.min(40,(w-40)/5.6);let y=Math.max(L.hh+10,H*.08);
@@ -193,7 +194,7 @@ async function sqwordle(s){
   y+=8;const ex=[['shell',0,2,'S is in the word and in the right spot.'],['water',1,1,'A is in the word but in the wrong spot.'],['squid',2,0,'U is not in the word in any spot.']];
   for(const [w2,at,v,txt] of ex){for(let i=0;i<5;i++)tile(X+i*(t+4)+t/2,y+t/2,t,w2[i]||'e',0,0,{colour:i===at?COL[v]:null,border:P.filled});y+=t+6;x.fillStyle=P.text;x.textAlign='left';x.textBaseline='top';x.font=`15px "Helvetica Neue",Arial,sans-serif`;x.fillText(txt,X,y);y+=28;}
   mascot(x,X+w-40,y+30,30,'happy',0);x.font=`italic 14px "Helvetica Neue",Arial,sans-serif`;x.fillStyle=P.soft;x.fillText('Squirtle squirt! Tap anywhere to play.',X,y+20);}
- function drawResults(now){const {W,H}=L;x.fillStyle=P.bg;x.fillRect(0,L.hh,W,H-L.hh);const R=results;
+ function drawResults(now){const {W,H}=L;if(!hasBg){x.fillStyle=P.bg;x.fillRect(0,L.hh,W,H-L.hh);}const R=results;
   x.fillStyle=P.text;x.textAlign='center';x.textBaseline='middle';x.font=`bold ${Math.round(Math.min(30,W*.07))}px Georgia,serif`;x.fillText(R.title,W/2,L.hh+40);
   x.font=`15px "Helvetica Neue",Arial,sans-serif`;x.fillStyle=P.soft;x.fillText(`The word was`,W/2,L.hh+72);
   const t=Math.min(40,(W-40)/7);for(let i=0;i<COLS;i++)tile(W/2+(i-2)*(t+4),L.hh+100+t/2,t,R.ans[i],0,now,{colour:P.correct});
@@ -212,10 +213,12 @@ async function sqwordle(s){
  s.frame(()=>{const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;
   dpr=Math.min(2,window.devicePixelRatio||1);const cw=Math.round(s.W*dpr),ch=Math.round(s.H*dpr);if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}
   x.setTransform(dpr,0,0,dpr,0,0);L=layout();x.fillStyle=P.bg;x.fillRect(0,0,L.W,L.H);
+  hasBg=ART.drawBackground(x,L.W,L.H,dark,L.hh);if(hasBg)drawPanels();
   drawHeader(now);
   if(phase==='results'&&results)drawResults(now);
   else if(board&&phase==='watch'){drawInfo(board,now);const o=oppOf(word);drawBoard(o,now);drawMascot(o,now);drawWatch(now);drawToast(now);}
-  else if(board){drawInfo(board,now);drawBoard(board,now);drawMascot(board,now);drawKeys(board,now);drawToast(now);}
+  else if(board){drawInfo(board,now);const sh=board.shakeK||0;if(sh){x.save();x.translate((Math.random()-.5)*sh*2,(Math.random()-.5)*sh*2);}drawBoard(board,now);if(sh)x.restore();
+   x.save();x.globalAlpha=keysAlpha(board,now);drawKeys(board,now);x.restore();board.shakeK=drawShow(board,now,dt);drawToast(now);}
   drawParts(dt);if(help)drawHelp();
   if(board&&board.done&&!board.reported&&now>board.doneAt){board.reported=true;board.finish?.();}});
 
@@ -224,7 +227,7 @@ async function sqwordle(s){
  const pick=()=>ANSWERS[Math.floor(s.random()*ANSWERS.length)];
  const streak={n:0,total:0};
  // test hooks: the answer, type a word, an autopilot that guesses two random words then the answer
- s.debug={get board(){return board;},get phase(){return phase;},answer:()=>board?.ans,type(w){for(const ch of w)press(ch);press('+');},grade,points,
+ s.debug={get board(){return board;},get phase(){return phase;},answer:()=>board?.ans,show:()=>board?.show&&{kind:board.show.kind,at:board.show.at,run:!!board.showRun},react:()=>react,type(w){for(const ch of w)press(ch);press('+');},grade,points,
   set bot(on){if(!on)return;const tick=()=>{if(!s.alive)return;botStep();setTimeout(tick,400);};tick();},
   // online tests: one step per call (tests/online-native.mjs)
   get bot(){return nf?botStep:undefined;},get opp(){return oppOf(word);},get word(){return word;},get totals(){return tot.slice();}};
