@@ -1202,6 +1202,7 @@ body #dialog .fr-panel button.fr-x{min-height:30px!important;width:30px!importan
 .chat-face.tiny{width:24px;height:24px;border-width:1px}
 #sc-chat-dlg.chat-sheet{position:fixed;inset:auto 0 0 0;margin:0 auto;width:100%;max-width:560px;max-height:none;padding:0;border:0;background:transparent;color:#fff;overflow:visible}
 #sc-chat-dlg.chat-sheet::backdrop{background:#0007}
+#sc-chat-dlg.typing .chat-lines,#sc-chat-dlg.typing .chat-emotes{display:none}
 #sc-chat-dlg .chat-card{background:#120d1c;border:2px solid #c99a3d88;border-bottom:0;border-radius:20px 20px 0 0;padding:10px 12px calc(12px + env(safe-area-inset-bottom));max-height:82dvh;overflow:auto;font:700 14px/1.25 system-ui,sans-serif;box-shadow:0 -8px 30px #000b}
 #sc-chat-dlg .chat-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 #sc-chat-dlg .chat-head b{flex:1;font-size:16px}

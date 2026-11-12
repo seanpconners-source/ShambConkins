@@ -85,6 +85,14 @@ function ensureUI(){
  dlg=document.createElement('dialog');dlg.id='sc-chat-dlg';dlg.className='chat-sheet';document.body.append(dlg);
  dlg.addEventListener('click',onSheetClick);
  dlg.addEventListener('cancel',ev=>{ev.preventDefault();closeChat();});
+ // the phone keyboard (owner, Nov 12: it covered the text box): while typing, the sheet sits on top of the keyboard (the
+ // visual viewport tells how much of the screen it takes) and the canned lines fold away so the box and the log fit
+ const kb=()=>{if(!dlg?.open)return;const v=window.visualViewport;const cover=v?Math.max(0,innerHeight-(v.height+v.offsetTop)):0;
+  dlg.style.bottom=cover>40?cover+'px':'';const card=dlg.querySelector('.chat-card');if(card)card.style.maxHeight=v&&cover>40?Math.round(v.height*.92)+'px':'';};
+ if(window.visualViewport){visualViewport.addEventListener('resize',kb);visualViewport.addEventListener('scroll',kb);}
+ dlg.addEventListener('focusin',ev=>{if(!ev.target.matches?.('.chat-input'))return;dlg.classList.add('typing');setTimeout(()=>{kb();ev.target.scrollIntoView?.({block:'nearest'});},350);});
+ dlg.addEventListener('focusout',ev=>{if(!ev.target.matches?.('.chat-input'))return;setTimeout(()=>{if(!dlg.contains(document.activeElement)||!document.activeElement.matches?.('.chat-input')){dlg.classList.remove('typing');kb();}},150);});
+ dlg.addEventListener('close',()=>{dlg.classList.remove('typing');dlg.style.bottom='';});
  dlg.addEventListener('submit',ev=>{ev.preventDefault();const i=dlg.querySelector('.chat-input');if(i&&send(i.value)){i.value='';closeChat();}});
  // keys typed in the chat never reach a game (registered at boot, before any game's own listeners)
  for(const t of ['keydown','keyup','keypress'])addEventListener(t,ev=>{if(dlg?.open){ev.stopImmediatePropagation();if(ev.type==='keydown'&&ev.key==='Escape'){ev.preventDefault();closeChat();}}},true);

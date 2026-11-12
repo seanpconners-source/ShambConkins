@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.96.4
+
+- **Chat:** when the phone keyboard comes up, the chat sits on top of it so you can see what you type (the ready-made lines fold away while you type).
+
 ## v0.96.3
 
 - **Symphony of the Night:** faces are smaller and sit on the neck; swords (and how far they reach) are 20% smaller; the fog no longer lays a light band over the bottom of the stage.
