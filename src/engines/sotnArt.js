@@ -27,8 +27,9 @@ function ell(g,x,y,rx,ry,fill,rot=0){g.beginPath();g.ellipse(x,y,rx,ry,rot,0,TAU
 // ------------------------------------------------------------------ the hero
 const HERO_PAL=[{coat:'#1d1528',coat2:'#2c2140',trim:'#c9a24a',cape:'#0a0609',lining:'#9e0f22',hair:'#e8edf5',hair2:'#a9b3c6',pants:'#141018',boot:'#2d201a',boot2:'#4a352a'},
  {coat:'#16182c',coat2:'#232846',trim:'#b8c4d8',cape:'#07080d',lining:'#1f45a8',hair:'#eef0f6',hair2:'#a7afc3',pants:'#11121a',boot:'#251c19',boot2:'#3d302a'}];
-const BLADES={alucard:{len:30,w:1.7,col:'#d6ecff',edge:'#7fa6d6',guard:'#d8b04a',glow:GLOW.blue,pic:'sword-alucard'},short:{len:18,w:1.4,col:'#dfe3ea',edge:'#8a93a3',guard:'#a8884a',pic:'sword-short'},
- claymore:{len:32,w:2.4,col:'#d2d6de',edge:'#7a8090',guard:'#8a6a3a',pic:'sword-claymore'}};
+// (owner, Nov 12: swords 20% smaller than before: 30/18/32 long, 1.7/1.4/2.4 wide)
+const BLADES={alucard:{len:24,w:1.4,col:'#d6ecff',edge:'#7fa6d6',guard:'#d8b04a',glow:GLOW.blue,pic:'sword-alucard'},short:{len:14.4,w:1.1,col:'#dfe3ea',edge:'#8a93a3',guard:'#a8884a',pic:'sword-short'},
+ claymore:{len:25.6,w:1.9,col:'#d2d6de',edge:'#7a8090',guard:'#8a6a3a',pic:'sword-claymore'}};
 const DAGGER={len:12,w:1.1,col:'#e6eaf0',edge:'#8a93a3',guard:'#a8884a',pic:'dagger'};
 // q: {x,y,facing,pose,anim,vx,vy,t,atkK (0..1 swing), atkN (combo hit 0..2), flip (0..1 somersault), land, weapon, i}
 function heroPose(q){return q.pose||'stand';}
@@ -419,8 +420,11 @@ class Scenery{
    const tree=(x,h,s)=>{q.lineWidth=5*s;q.beginPath();q.moveTo(x,VH);q.lineTo(x+2*s,VH-h);q.stroke();const br=(bx,by,a,len,w)=>{if(len<5||w<.6)return;const ex=bx+Math.cos(a)*len,ey=by+Math.sin(a)*len;q.lineWidth=w;q.beginPath();q.moveTo(bx,by);q.lineTo(ex,ey);q.stroke();br(ex,ey,a-.45-r()*.3,len*.68,w*.62);br(ex,ey,a+.35+r()*.3,len*.62,w*.6);};
     br(x+2*s,VH-h,-Math.PI/2-.3,h*.32,3.6*s);br(x+2*s,VH-h*.7,-Math.PI/2+.7,h*.28,3*s);br(x+2*s,VH-h*.55,-Math.PI/2-1,h*.26,2.6*s);};
    tree(40,150,1.1);tree(150,120,.9);tree(250,170,1.2);});
+  // fog: soft blobs, then faded out at the top and bottom of the strip (owner, Nov 12: the blobs were cut off flat at
+  // the layer's top edge, a light hard-edged band over the bottom of the stage and the player)
   this.L.fog=this.layer(512,60,q=>{for(let k=0;k<26;k++){const x=r()*512,y=20+r()*30,w=40+r()*70;const gr=q.createRadialGradient(x,y,0,x,y,w*.5);gr.addColorStop(0,'rgba(170,160,210,.16)');gr.addColorStop(1,'rgba(170,160,210,0)');q.fillStyle=gr;q.fillRect(x-w/2,y-w/2,w,w);
-    if(x>512-w/2){q.fillStyle=gr;q.save();q.translate(-512,0);q.fillRect(x-w/2,y-w/2,w,w);q.restore();}if(x<w/2){q.save();q.translate(512,0);q.fillStyle=gr;q.fillRect(x-w/2,y-w/2,w,w);q.restore();}}});
+    if(x>512-w/2){q.fillStyle=gr;q.save();q.translate(-512,0);q.fillRect(x-w/2,y-w/2,w,w);q.restore();}if(x<w/2){q.save();q.translate(512,0);q.fillStyle=gr;q.fillRect(x-w/2,y-w/2,w,w);q.restore();}}
+   q.globalCompositeOperation='destination-in';const fade=q.createLinearGradient(0,0,0,60);fade.addColorStop(0,'rgba(0,0,0,0)');fade.addColorStop(.45,'rgba(0,0,0,1)');fade.addColorStop(.7,'rgba(0,0,0,1)');fade.addColorStop(1,'rgba(0,0,0,0)');q.fillStyle=fade;q.fillRect(0,0,512,60);q.globalCompositeOperation='source-over';});
   // wall textures (patterns): castle stone, cave rock, marble, throne room
   const brick=(w,h,base,mortar,hi,lo,bw,bh,vary)=>this.layer(w,h,q=>{q.fillStyle=mortar;q.fillRect(0,0,w,h);for(let y=0;y<h;y+=bh){const off=(y/bh)%2?bw/2:0;for(let x=-bw;x<w+bw;x+=bw){const v=r()*vary;q.fillStyle=base;q.globalAlpha=1;q.fillRect(x+off+.6,y+.6,bw-1.2,bh-1.2);q.fillStyle=`rgba(0,0,0,${v})`;q.fillRect(x+off+.6,y+.6,bw-1.2,bh-1.2);
     q.fillStyle=hi;q.fillRect(x+off+.6,y+.6,bw-1.2,.8);q.fillStyle=lo;q.fillRect(x+off+.6,y+bh-1.4,bw-1.2,.8);if(r()<.25){q.fillStyle='rgba(0,0,0,.25)';q.fillRect(x+off+r()*bw*.6,y+r()*bh*.6,2+r()*4,.6);}}}});

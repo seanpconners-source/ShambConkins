@@ -11,7 +11,7 @@
 // cleave; presses are buffered), up + attack or swipe up for the sub-weapon (hearts), hold attack and release for
 // Hellfire (MP). Blue after-images trail the hero and the blade. The simulation is a fixed 60 Hz; drawing interpolates. Monsters split in half and burn; blood stains the floor. Art: sotnArt.js; sound: sotnAudio.js.
 const {clamp,seededRandom}=require("src/utils.js");
-const {drawFace}=require("src/headFacts.js");
+const {drawFace,faceFit}=require("src/headFacts.js");
 const {soloFinish,soloProgress}=require("src/solo.js");
 const {arenaTouch,outlined,PCOL,Countdown,settle}=require("src/engines/arenaKit.js");
 const {fullBleed}=require("src/engines/fullBleed.js");
@@ -35,8 +35,9 @@ const WALK=1.9,JUMPV=5.7,DJUMPV=5.3,GRAV=.28,MAXFALL=6.6,HP_MAX=100,MP_MAX=50,ST
 // time and a jump buffer so jumps never get eaten, a lighter apex and a heavier fall for the floaty-but-snappy arc
 const ACC=.42,FRIC=.36,TURN=.7,AIR_ACC=.3,AIR_FRIC=.12,COYOTE=6,JBUF=7,APEX=.62,FALL_G=1.18,CUT_G=2.3;
 // spd scales every frame count of the combo: the Alucard Sword is quick, the Claymore heavy
-const WEAPONS={alucard:{name:'Alucard Sword',dmg:42,reach:46,spd:1},fist:{name:'Fists',dmg:5,reach:16,spd:.8},
- short:{name:'Short Sword',dmg:10,reach:28,spd:.9},claymore:{name:'Claymore',dmg:20,reach:40,spd:1.3}};
+// reach follows the drawn blades (owner, Nov 12: swords 20% smaller; was 46/28/40)
+const WEAPONS={alucard:{name:'Alucard Sword',dmg:42,reach:37,spd:1},fist:{name:'Fists',dmg:5,reach:16,spd:.8},
+ short:{name:'Short Sword',dmg:10,reach:22,spd:.9},claymore:{name:'Claymore',dmg:20,reach:32,spd:1.3}};
 // the three-hit combo: a quick cut, a lunging stab, a big overhead slash. act = live frames, cancel = when the next
 // hit (or a jump / backdash / walk) may interrupt, len = full recovery. dmg/reach are multipliers of the weapon's.
 const COMBO=[{n:'Slash',act:[2,5],cancel:7,len:13,dmg:.75,reach:.8,lunge:1.4,box:[-11,6],stop:2},
@@ -587,8 +588,14 @@ async function sotn(s){
  // the face moves only with the body (the sheet's per-frame face spots): `still` = no idle bob/lean of its own (owner, Nov 11)
  // On the sprite hero (dir = facing) the FACE sits on the frame's face spot, HERO_FACE x size wide, and a face looking
  // against the way the hero faces is mirrored (src/headFacts.js drawFace: one face size through every mood).
- const HERO_FACE=.6;
- const headFn=(i,mood)=>(gg,x,y,size,dir)=>dir?drawFace(s,gg,i,x,y,size,mood,dir,HERO_FACE):s.sprite(gg,i,x,y,size,{exact:true,mood,still:true});
+ // Owner, Nov 12: faces were too big and sat back from the neck: the face is now HERO_FACE x size wide (was .6), its chin
+ // on the neck (NECK x size below the frame's face spot, which is the top of the sheet's own little head) and FWD x size
+ // forward, the way the hero faces.
+ const HERO_FACE=.48,NECK=.26,FWD=.06;
+ const heroFace=(i,mood,gg,x,y,size,dir)=>{const id=s.players[i]?.character,m=mood||s.spriteMood(i),fw=size*HERO_FACE,fit=id&&faceFit(id,m,fw);let fh=fw*1.25;
+  if(fit){const f=fit.facts,wk=f.aspect>=1?1:f.aspect,hk=f.aspect>=1?1/f.aspect:1;fh=fw*(f.face.h*hk)/(f.face.w*wk);}
+  drawFace(s,gg,i,x+dir*size*FWD,y+size*NECK-fh/2,size,mood,dir,HERO_FACE);};
+ const headFn=(i,mood)=>(gg,x,y,size,dir)=>dir?heroFace(i,mood,gg,x,y,size,dir):s.sprite(gg,i,x,y,size,{exact:true,mood,still:true});
  function drawRegionBack(w,r,cam,x0,x1){const t=simT,sk=scen;
   g.save();g.beginPath();g.rect(Math.max(r.x0,x0),0,Math.min(r.x1,x1)-Math.max(r.x0,x0),VH);g.clip();
   if(r.kind==='forest'||r.kind==='gate'){const skyP=SP.picture('forest-sky');if(skyP)g.drawImage(skyP,cam.x-1,0,cam.w+2,VH);else{g.drawImage(sk.L.sky,cam.x-1,0,cam.w+2,VH);sk.tiled(g,'stars',cam.x,.97,x0,x1,0,.9);}
@@ -749,7 +756,7 @@ async function sotn(s){
   for(const b of w.eshots)A.drawShot(g,b,simT);for(const b of w.shots)if(b.t>=0)A.drawShot(g,b,simT);
   drawParts(w);drawWater(x0,x1);
   // foreground fog outdoors and in the caverns
-  const reg=regionAt(cam.x+cam.w/2).kind;if(reg==='forest'||reg==='gate'||reg==='cave'){g.globalAlpha=reg==='cave'?.5:.8;scen.tiled(g,'fog',cam.x-simT*6,1.15,x0,x1,reg==='cave'?170:158);g.globalAlpha=1;}
+  const reg=regionAt(cam.x+cam.w/2).kind;if(reg==='forest'||reg==='gate'||reg==='cave'){g.globalAlpha=reg==='cave'?.4:.55;scen.tiled(g,'fog',cam.x-simT*6,1.15,x0,x1,reg==='cave'?176:170);g.globalAlpha=1;}
   drawNums(w);
   g.restore();
   // screen space: vignette, flashes, scene text, HUD
