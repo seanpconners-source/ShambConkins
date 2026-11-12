@@ -432,6 +432,9 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
 - **M18** `[todo]` (owner, Nov 3) The Back button on menus is weak: make it a cool arrow (owner will generate the image: slot
   `assets/ui/back.*` to be added). Maybe rethink a few other buttons too (offer options when we get there).
   Owner, Nov 5: generate a back-button sprite (art kit slot for GPT) and maybe reposition it. "Come back to this."
+- **M26** `[todo]` (owner, Nov 12, later) Each Arcade group gets its OWN themed menu screen (same tiles/hero/swipe, its own
+  look): Arcade Classics = Atari game boxes and an Atari-style font; Paddy's Pub = a shitty bar-top machine with a
+  flickering neon sign; and so on for every group. First the group icons (docs/art-for-gpt/GROUP-ICONS.md).
 
 ## Phase H — new content (sections 3 + 7)
 
@@ -495,9 +498,12 @@ Reuse engines with new skins wherever possible.
   the camera down a jungle path, spin attack, crates, boulder chase. Our character heads with their expressions.
 - **H27** `[idea]` (owner, Nov 5, very excited) **Prince of Persia-style platformer**: the original PC game's feel (rotoscoped
   movement, ledge grabs, careful jumps, traps, sword fights, a clock). Our heads on the hero and the guards.
-- **H28** `[idea]` (owner, Nov 5) **Wordle-style word game** with a crazy, unexpected theme (Crazy Taxi?).
+- **H28** `[part]` (owner, Nov 5) **Wordle-style word game** with a crazy, unexpected theme (Crazy Taxi?). Nov 12: owner picked
+  **SQWORDLE**: looks like the real Wordle, the whole game themed on Squirtle; pictures generated after it's built.
 - **H29** `[idea]` (owner, Nov 5) **Boggle-style word grid**.
-- **H30** `[idea]` (owner, Nov 5) **Words With Friends-style crossword board**, also with a crazy theme.
+- **H30** `[idea]` (owner, Nov 5) **Words With Friends-style crossword board**, also with a crazy theme. Nov 12 (owner, later):
+  a Scrabble clone; online multiplayer works exactly like Words With Friends (each phone takes its turn whenever, games
+  wait for the other player, several games at once, nudges). Needs async online turns (the rooms today are live only).
 - **H31** `[idea]` (owner, Nov 5) **Cine2Nerdle-style movie link game**: generate real puzzles, and they have to be good
   (link films by shared actors/directors; checked so every puzzle is solvable and fair).
 - **H32** `[idea]` (owner, Nov 5) **Box-office guessing game** in the style of the box office game websites (guess a
