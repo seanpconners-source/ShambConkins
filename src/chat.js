@@ -78,7 +78,8 @@ function receive(m,via){
 function ensureUI(){
  if(btn||typeof document==='undefined')return;
  btn=document.createElement('button');btn.type='button';btn.id='sc-chat';btn.className='chat-fab';btn.hidden=true;btn.setAttribute('aria-label','Chat');btn.innerHTML='<span>💬</span><i></i>';
- btn.addEventListener('click',ev=>{ev.preventDefault();ev.stopPropagation();openChat('room');});
+ btn.addEventListener('click',ev=>{ev.preventDefault();ev.stopPropagation();if(Date.now()<noClickUntil)return;openChat('room');});
+ installDrag();
  document.body.append(btn);
  bubbles=document.createElement('div');bubbles.id='sc-chat-bubbles';bubbles.className='chat-bubbles';if('popover' in HTMLElement.prototype)bubbles.setAttribute('popover','manual');document.body.append(bubbles);
  dlg=document.createElement('dialog');dlg.id='sc-chat-dlg';dlg.className='chat-sheet';document.body.append(dlg);
@@ -88,8 +89,35 @@ function ensureUI(){
  // keys typed in the chat never reach a game (registered at boot, before any game's own listeners)
  for(const t of ['keydown','keyup','keypress'])addEventListener(t,ev=>{if(dlg?.open){ev.stopImmediatePropagation();if(ev.type==='keydown'&&ev.key==='Escape'){ev.preventDefault();closeChat();}}},true);
 }
+// ---- where the 💬 button sits (owner, Nov 12): hold it, then drag it anywhere, like an app icon on an Android home screen;
+// the spot is remembered (localStorage, as a fraction of the screen). Until moved, a game may offer a home for it that
+// covers nothing (setChatHome(fn): fn() → {x,y} screen px of the button's centre, or null), else the right edge.
+const POS_KEY='sc-chat-pos',HOLD_MS=380,HALF=23;
+let home=null,drag=null,noClickUntil=0;
+function savedPos(){try{const v=JSON.parse(localStorage.getItem(POS_KEY)||'null');return v&&Number.isFinite(v.x)&&Number.isFinite(v.y)?v:null;}catch{return null;}}
+function savePos(x,y){try{localStorage.setItem(POS_KEY,JSON.stringify({x:+(x/innerWidth).toFixed(4),y:+(y/innerHeight).toFixed(4)}));}catch{}}
+function placeButton(){
+ if(!btn)return;const W=innerWidth,H=innerHeight,sp=savedPos();let c=null;
+ if(drag?.on)c={x:drag.x,y:drag.y};else if(sp)c={x:sp.x*W,y:sp.y*H};else if(home){try{c=home();}catch{c=null;}}
+ if(!c||!Number.isFinite(c.x)||!Number.isFinite(c.y)){btn.style.left=btn.style.top=btn.style.right='';return;}
+ const m=HALF+4,x=Math.min(W-m,Math.max(m,c.x)),y=Math.min(H-m,Math.max(m,c.y));
+ btn.style.left=Math.round(x-HALF)+'px';btn.style.top=Math.round(y-HALF)+'px';btn.style.right='auto';}
+function setChatHome(fn){home=typeof fn==='function'?fn:null;placeButton();if(home)requestAnimationFrame(placeButton);}
+function installDrag(){
+ btn.addEventListener('pointerdown',ev=>{if(ev.button>0)return;const r=btn.getBoundingClientRect();
+  drag={id:ev.pointerId,sx:ev.clientX,sy:ev.clientY,ox:ev.clientX-(r.left+HALF),oy:ev.clientY-(r.top+HALF),x:r.left+HALF,y:r.top+HALF,on:false};
+  drag.timer=setTimeout(()=>{if(!drag)return;drag.on=true;btn.classList.add('dragging');try{btn.setPointerCapture(drag.id);}catch{}try{vibrate?.(20);}catch{}},HOLD_MS);});
+ btn.addEventListener('pointermove',ev=>{if(!drag||ev.pointerId!==drag.id)return;
+  if(!drag.on){if(Math.hypot(ev.clientX-drag.sx,ev.clientY-drag.sy)>12){clearTimeout(drag.timer);drag=null;}return;}
+  ev.preventDefault();drag.x=ev.clientX-drag.ox;drag.y=ev.clientY-drag.oy;placeButton();});
+ const end=ev=>{if(!drag||ev.pointerId!==drag.id)return;clearTimeout(drag.timer);
+  if(drag.on){const r=btn.getBoundingClientRect();savePos(r.left+HALF,r.top+HALF);noClickUntil=Date.now()+400;btn.classList.remove('dragging');}
+  drag=null;placeButton();};
+ btn.addEventListener('pointerup',end);btn.addEventListener('pointercancel',end);
+ btn.addEventListener('contextmenu',ev=>ev.preventDefault());
+ addEventListener('resize',()=>requestAnimationFrame(placeButton));}
 function updateButton(){
- if(!btn)return;const show=roomOpen();btn.hidden=!show;btn.classList.toggle('has-unread',unread>0);
+ if(!btn)return;const show=roomOpen();btn.hidden=!show;btn.classList.toggle('has-unread',unread>0);placeButton();
  btn.querySelector('i').textContent=unread?String(Math.min(9,unread)):'';
  // a modal dialog makes everything outside it untappable: sit inside it while it's open
  const host=document.querySelector('#dialog[open]')||document.body;if(btn.parentElement!==host)host.append(btn);
@@ -149,4 +177,4 @@ function initChat(){
 }
 // tests: open the sheet, send a line, read the log
 function chatDebug(){return {log:log.slice(),open:!!dlg?.open,target,unread,deal,send,openChat,closeChat,button:()=>btn&&!btn.hidden};}
-Object.assign(exports,{initChat,openChat,closeChat,chatDebug});
+Object.assign(exports,{initChat,openChat,closeChat,chatDebug,setChatHome});

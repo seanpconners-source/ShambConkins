@@ -18,6 +18,7 @@ const {tone,vibrate}=require("src/audio.js");
 const {store}=require("src/state.js");
 const {soloProgress,soloFinish}=require("src/solo.js");
 const {netField}=require("src/engines/netField.js");
+let CHAT=null;try{CHAT=require("src/chat.js");}catch{}
 
 const {ROWS,COLS,grade,points}=require("src/engines/sqwordleRules.js");
 const FLIP=480,STAG=280,BOUNCE=110;
@@ -79,7 +80,7 @@ async function sqwordle(s){
 
  function newBoard(i,ans){return {i,ans,rows:[],cur:'',done:null,t0:performance.now(),t1:0,shake:0,pop:[],revealAt:[],winAt:0,doneAt:0};}
  // layout for this screen: header, info line, grid, keyboard (side by side on short wide screens)
- function layout(){const W=s.W,H=s.H,side=W>H*1.25&&H<600,hh=Math.round(Math.max(40,Math.min(62,H*.075))),info=board?(nf?40:28):0,bot=fullscreenSupported()?40:12;// room for the ⤢ toggle at the bottom centre
+ function layout(){const W=s.W,H=s.H,side=W>H*1.25&&H<600,hh=Math.max(Math.round(Math.max(40,Math.min(62,H*.075))),(fb?.top||0)+4),info=board?(nf?40:28):0,bot=fullscreenSupported()?40:12;// room for the ⤢ toggle at the bottom centre
   const gx0=0,gy0=hh+info+6;let kbX,kbY,kbW,keyH,gW,gH;
   if(side){gW=W*.5;gH=H-gy0-8;kbW=Math.min(W*.46,480);keyH=Math.max(34,Math.min(54,(H-gy0-bot)/3.6));kbX=W*.52;kbY=gy0+(H-gy0-bot-(keyH*3+16))/2;}
   else{kbW=Math.min(W-12,500);keyH=Math.round(Math.max(36,Math.min(58,H*.072)));kbY=H-bot-(keyH*3+16);kbX=(W-kbW)/2;gW=W;gH=kbY-gy0-8;}
@@ -141,18 +142,25 @@ async function sqwordle(s){
   // ? help (left), the title with Squirtle (centre); the right side stays clear for Pause/Exit
   x.strokeStyle=P.text;x.lineWidth=2;x.beginPath();x.arc(hh*.55,hh/2,hh*.2,0,Math.PI*2);x.stroke();x.fillStyle=P.text;x.font=`bold ${Math.round(hh*.26)}px "Helvetica Neue",Arial,sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText('?',hh*.55,hh/2+1);
   // centred between the ? and the Pause/Exit pills (about 130 px at the top right), smaller if it doesn't fit
-  const r=hh*.3,lo=hh*1.1,hi=W-136;let fs=Math.round(hh*.56);x.font=`bold ${fs}px Georgia,"Times New Roman",serif`;let tw=x.measureText('Sqwordle').width;
+  const r=hh*.3,lo=nf?chatSlot(hh).x+31:hh*1.1,hi=W-136;let fs=Math.round(hh*.56);x.font=`bold ${fs}px Georgia,"Times New Roman",serif`;let tw=x.measureText('Sqwordle').width;
   if(tw+r*2.6>hi-lo){fs=Math.max(14,Math.floor(fs*(hi-lo)/(tw+r*2.6)));x.font=`bold ${fs}px Georgia,"Times New Roman",serif`;tw=x.measureText('Sqwordle').width;}
   const mid=Math.min(W/2,(lo+hi)/2),tx=mid+r*1.3;
   const logo=picture('logo');if(logo){const lh=hh*.78,lw=Math.min(hi-lo,logo.naturalWidth*lh/logo.naturalHeight),k=lw/logo.naturalWidth;x.drawImage(logo,mid-lw/2,hh/2-logo.naturalHeight*k/2,lw,logo.naturalHeight*k);return;}
   x.fillText('Sqwordle',tx,hh/2+hh*.03);mascot(x,tx-tw/2-r*1.25,hh/2-r*.1,r,'idle',now/1000);}
  function drawInfo(b,now){if(!L.info)return;const watch=phase==='watch'&&nf;if(watch)b=oppOf(word);const {W,hh}=L,y=hh+L.info/2+3,p=s.players[b.i],secs=((b.done?b.t1||now:now)-b.t0)/1000;
   const label=watch?`Watching ${p.name} · word ${word+1}/${NET_WORDS}`:nf?`${p.name} · word ${word+1}/${NET_WORDS}${tot[b.i]?` · ${tot[b.i]} pts`:''}`:s.solo?`${p.name} · word ${streak.n+1}${streak.total?` · ${streak.total} pts`:''}`:`${p.name}'s word`;
-  x.font=`bold 13px "Helvetica Neue",Arial,sans-serif`;const w=x.measureText(label).width+40,X=W/2-w/2-26;
+  // online while you play: the other player's face + colour grid on the LEFT (the top-right corner belongs to Pause/Exit),
+  // your own line centred in the room that's left
+  let lo=8;if(nf&&!watch){const o=oppOf(word),cell=5,gw=cell*5+4,gx=12+26,gy=y-(cell*6+5)/2;
+   s.sprite(x,o.i,12+11,y,22,{exact:true,still:true,noBadge:true,mood:o.done==='win'?'win':o.done?'sad':undefined});miniGrid(o,gx,gy,cell,now);lo=gx+gw+10;}
+  let fs=13;x.font=`bold ${fs}px "Helvetica Neue",Arial,sans-serif`;let w=x.measureText(label).width+66;const room=W-8-lo;
+  if(w>room){fs=Math.max(9,Math.floor(fs*(room-66)/(w-66)));x.font=`bold ${fs}px "Helvetica Neue",Arial,sans-serif`;w=x.measureText(label).width+66;}
+  const X=lo+Math.max(0,(room-w)/2);
   s.sprite(x,b.i,X+11,y,22,{exact:true,still:true,noBadge:true});x.fillStyle=P.text;x.textAlign='left';x.textBaseline='middle';x.fillText(label,X+26,y);
-  x.fillStyle=P.soft;x.font=`13px "Helvetica Neue",Arial,sans-serif`;x.fillText(`${Math.floor(secs/60)}:${String(Math.floor(secs%60)).padStart(2,'0')}`,X+26+w-30,y);
-  if(nf&&!watch){const o=oppOf(word),cell=5,gw=cell*5+4,gx=W-14-gw,gy=hh+3;// the other player's colours, no letters
-   s.sprite(x,o.i,gx-15,y,22,{exact:true,still:true,noBadge:true,mood:o.done==='win'?'win':o.done?'sad':undefined});miniGrid(o,gx,gy,cell,now);}}
+  x.fillStyle=P.soft;x.font=`${fs}px "Helvetica Neue",Arial,sans-serif`;x.fillText(`${Math.floor(secs/60)}:${String(Math.floor(secs%60)).padStart(2,'0')}`,X+w-34,y);}
+ // online: the chat button's own spot in the header, right of the ? (src/chat.js setChatHome; the player can still drag it
+ // anywhere and it remembers that)
+ function chatSlot(hh){return {x:hh*.75+31,y:hh/2};}
  // a small colour-only grid of board b (rows that have flipped, the typed letters of the row being written as grey cells)
  function miniGrid(b,gx,gy,cell,now){for(let r=0;r<ROWS;r++)for(let i=0;i<COLS;i++){const row=b.rows[r],X=gx+i*(cell+1),Y=gy+r*(cell+1);
    if(row&&now>=b.revealAt[r]+STAG*i+FLIP/2)x.fillStyle=COL[row.res[i]];else if(!row&&r===b.rows.length&&!b.done&&i<b.cur.length)x.fillStyle=P.filled;else{x.strokeStyle=P.empty;x.lineWidth=1;x.strokeRect(X+.5,Y+.5,cell-1,cell-1);continue;}
@@ -232,6 +240,7 @@ async function sqwordle(s){
   // the duel score chip would sit on the ? and the title; the game shows both players' points itself
   if(!document.getElementById('sqw-net-css'))document.head.append(Object.assign(document.createElement('style'),{id:'sqw-net-css',textContent:'body.sqw-net #duel-chip{display:none}'}));
   document.body.classList.add('sqw-net');s.cleanup(()=>document.body.classList.remove('sqw-net'));
+  if(CHAT?.setChatHome){CHAT.setChatHome(()=>{if(!L)return null;const r=c.getBoundingClientRect(),q=chatSlot(L.hh);return {x:r.left+q.x,y:r.top+q.y};});s.cleanup(()=>CHAT.setChatHome(null));}
   const words=Array.from({length:NET_WORDS},pick),me=nf.me,them=nf.remote,wait=ok=>new Promise(r=>{const t=setInterval(()=>{if(!s.alive||nf.gone||ok()){clearInterval(t);r();}},100);});
   for(word=0;word<NET_WORDS;word++){const ans=words[word];board=null;phase='play';
    await nf.start('w'+word);if(!s.alive)return;if(nf.gone)break;
