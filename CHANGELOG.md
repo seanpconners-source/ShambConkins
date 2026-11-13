@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.96.10
+
+- **Sean of the Dead 2.0:** six tower lines (Boomstick, Rifles, Fighters, Fire, Explosives, Jukebox), each with three tiers and then a choice of two super paths with a MAX tier (Ash's chainsaw hand, Dragon's Breath, a .50 cal, twin miniguns, a katana squad, a SWAT team, napalm, an inferno tank, a minefield, a Daisy Cutter, Bohemian Rhapsody, a doomsday siren). Heroes level up, have a SMASH special and a weapon path (cricket bat → Lucille → chainsaw → boomstick + chainsaw). Pub upgrades, the Dawn of the Dead armoured bus and a petrol strike. New zombies (runners, crawlers, riot cops, bloaters, screamers, brutes) over 15 waves. Bigger characters, no green tint, heroes no longer wander off mid-fight or flicker when hit.
+
 ## v0.96.9
 
 - **Sqwordle:** Squirtle now acts out the move when you get the word, aimed at your winning row: Squirtle Squirt! (1 guess), Hydro Pump (2), Bubble Beam (3), Water Gun (4), Withdraw (5) and Phew (6); a miss makes it cry. Tap to skip ahead. The little head by the title reacts to each guess too (puzzled at a non-word, happy at new blue tiles, sad at an all-grey row).
