@@ -141,8 +141,7 @@ const KEY_BOX={baseball:[.32,.13,.55,.46], 'black-sabbath-pinball':[.674,.299,.8
  terminator:[.474,.378,.772,.597], trek:[.454,.218,.748,.478], trivia:[.44,.244,.829,.57],
  'angry-heads':[.51,.08,.84,.62], chutes:[.53,.04,.77,.40], 'deadite-checkers':[.70,.17,.93,.67], 'living-dead-horde':[.52,.03,.84,.86],
  'megatouch-photohunt':[.47,.06,.75,.70], 'neon-ball-storm':[.65,.04,.93,.55], pokemon:[.50,.08,.86,.73], 'shamb-uno':[.34,.02,.90,.56], 'traitors-guess-who':[.40,.18,.69,.73],
- // Arcade art batch 02 (GPT, Nov 13): main face of each picture
- 'radical-bike':[.53,.01,.81,.39], 'flappy-disaster':[.66,.19,.90,.78], 'wopr-grid':[.58,.15,.86,.73], 'sewer-clash':[.61,.05,.81,.51], 'derezzed-cycles':[.44,.08,.87,.60], 'brawndo-fruit-merge':[.43,.02,.80,.66], 'home-alone-paint-can':[.62,.07,.85,.52], 'league-penalties':[.51,.18,.95,.66], 'fast-quarter-mile':[.75,.13,.91,.54], 'snake-v-snake':[.34,.19,.81,.71], 'banana-money-grab':[.56,.02,.88,.63], 'baseketball-shootout':[.39,.11,.72,.37]};
+ 'derezzed-cycles':[.33,.04,.86,.40], 'radical-bike':[.68,.03,.81,.28], 'sewer-clash':[.58,.05,.88,.45]};
 const KEY_BOX_DEFAULT=[.28,.15,.72,.85];
 const keyBox=it=>KEY_BOX[it.fam?.key]||KEY_BOX[it.g?.id]||KEY_BOX[familyOf(it.g)]||KEY_BOX_DEFAULT;
 // Behind the picture: a blurred copy covering the whole screen, shown only when the picture had to zoom out (no bare backdrop).
