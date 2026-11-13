@@ -69,3 +69,15 @@ players' real photo faces, so the sailor bodies are drawn WITHOUT heads.
 - Rows: **stand 2** (at the deck gun, hands forward on the gun) · **cheer 2** (both arms up, celebrating the hit) ·
   **fall 2** (jumping overboard, arms and legs flailing) · **swim 4** (in the water up to the chest, arms waving for help;
   the game hides the lower body under the waves).
+
+## BATCH 2: the last hand-drawn bits (Nov 13; owner: "I want everything that we can to be a sprite so it looks legit")
+Same photoreal style as the batch 1 art you delivered (see `style-reference/`). Real transparency unless marked opaque.
+
+| file | size | frames | what |
+|---|---|---|---|
+| ship-fire.png | 128×160 per frame | 6 in one row (loops) | **Flames and black smoke burning on the hit warship's deck.** The red cross = where the fire sits on the deck (bottom centre); flames lick upward, smoke rolls off the top. The game puts three on the warship. |
+| gun-flash.png | 160×96 per frame | 4 in one row | **The deck gun firing**: a big muzzle blast + smoke shooting RIGHT from the red cross (the muzzle), then dying away. The game turns it to the barrel's angle. |
+| shell.png | 96×48 | still | **The shell in flight**, pointing RIGHT, glowing hot with a short smoke/heat streak behind it. Drawn about 40 px long. |
+| torpedo-wake.png | 512×48 | still | **The white foaming wake** a torpedo leaves on the water, running left to right; its RIGHT end is where the torpedo is (strongest foam there, fading to the left). Stretched to the length of the run. |
+| cut-sea.png | 1600×640 | still, OPAQUE | **The open sea** of the cut scenes seen from deck height, from the horizon (top edge, must meet the sunset sky's horizon) down to the bottom of the screen: a sunset reflection near the horizon, darker swells close up. |
+| cut-sea-front.png | 1024×192 | still | **The near wave band** drawn over the ships' waterline: rolling foamy crests across the top third, solid water below, TRANSPARENT above the crests. Must tile seamlessly left-right (the game scrolls it). |

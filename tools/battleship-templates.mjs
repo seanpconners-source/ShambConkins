@@ -44,7 +44,7 @@ const save = (name, data) => fs.writeFileSync(path.join(outDir, name + '.png'), 
 const ZOOMS = standin ? [1] : [1, 2];
 
 // ---------------------------------------------------------------- sheets
-for (const name of ['hit', 'boom', 'splash', 'sailor']) for (const zoom of ZOOMS) {
+for (const name of ['hit', 'boom', 'splash', 'sailor', 'ship-fire', 'gun-flash']) for (const zoom of ZOOMS) {
   const data = await page.evaluate(({name, zoom, standin}) => {
     const BS = require('src/data/battleshipSprites.js'), TAU = Math.PI * 2;
     const def = BS.SHEETS[name], rows = Object.entries(def.rows), [fw, fh] = def.frame, cols = Math.max(...rows.map(r => r[1]));
@@ -57,6 +57,8 @@ for (const name of ['hit', 'boom', 'splash', 'sailor']) for (const zoom of ZOOMS
         gr.addColorStop(0, '#fff3a0'); gr.addColorStop(.5, '#ff8a1f'); gr.addColorStop(1, `rgba(80,80,80,${.9 - k * .8})`); g.fillStyle = gr; g.beginPath(); g.arc(fw / 2, fh / 2, r, 0, TAU); g.fill(); }
       else if (name === 'splash') { g.strokeStyle = '#e8f7ff'; g.lineWidth = 4; g.beginPath(); g.ellipse(fw / 2, fh * .75, fw * (.1 + .35 * k), fh * (.04 + .1 * k), 0, 0, TAU); g.stroke();
         g.fillStyle = '#e8f7ff'; for (let i = 0; i < 7; i++) { const a = -Math.PI / 2 + (i - 3) * .3, d = fh * .5 * Math.sin(Math.PI * Math.min(1, k * 1.2)); g.beginPath(); g.arc(fw / 2 + Math.cos(a) * d * .7, fh * .72 + Math.sin(a) * d, 5, 0, TAU); g.fill(); } }
+      else if (name === 'ship-fire') { const hh = fh * (.5 + .4 * Math.sin(f * 1.3) ** 2); g.fillStyle = '#ff8a1f'; g.beginPath(); g.ellipse(def.foot[0], def.foot[1] - hh / 2, fw * .3, hh / 2, 0, 0, TAU); g.fill(); g.fillStyle = '#ffe07a'; g.beginPath(); g.ellipse(def.foot[0], def.foot[1] - hh * .3, fw * .14, hh * .3, 0, 0, TAU); g.fill(); }
+      else if (name === 'gun-flash') { const L2 = (fw - 16) * (.5 + .5 * Math.sin(Math.PI * (f + 1) / (n + 1))); g.fillStyle = '#ffd27a'; g.beginPath(); g.moveTo(def.pivot[0], def.pivot[1] - 14); g.lineTo(def.pivot[0] + L2, def.pivot[1]); g.lineTo(def.pivot[0], def.pivot[1] + 14); g.closePath(); g.fill(); }
       else { const C = CUT(g), U = def.U, arms = {stand: 0, cheer: -.5 - .1 * f, fall: -.35, swim: -.45 * (1 + Math.sin(f * 1.6) * .3)}[row];
         C.sailor(def.head[0], def.head[1], U, 0, '', 0, arms); }
       return o;
@@ -72,6 +74,7 @@ for (const name of ['hit', 'boom', 'splash', 'sailor']) for (const zoom of ZOOMS
         const o = guide(row, f, n);
         if (standin) { x.drawImage(o, X, Y); continue; }
         x.globalAlpha = .3; x.drawImage(o, X, Y); x.globalAlpha = 1;
+        { const pt = def.foot || def.pivot; if (pt) { x.fillStyle = 'rgba(220,30,30,.9)'; x.fillRect(X + pt[0] - 4, Y + pt[1], 9, 1); x.fillRect(X + pt[0], Y + pt[1] - 4, 1, 5); } }
         if (def.head) { const [hx, hy] = def.head, R = def.headSize / 2;
           x.strokeStyle = 'rgba(30,90,230,.9)'; x.lineWidth = 1.5; x.beginPath(); x.arc(X + hx, Y + hy, R, 0, TAU); x.stroke();
           x.beginPath(); x.moveTo(X + hx, Y + hy - R); x.lineTo(X + hx, Y + hy - R + 6); x.stroke();
@@ -102,9 +105,13 @@ for (const name of picNames) for (const zoom of ZOOMS) {
     else if (d.kind === 'deck') { g.fillStyle = '#39424e'; g.fillRect(0, 0, W, H); }
     else if (d.kind === 'gun') { g.fillStyle = '#232a33'; g.fillRect(0, 0, W, H); }
     else if (d.kind === 'torpedo') { g.fillStyle = '#10161e'; g.fillRect(0, H * .25, W, H * .5); }
+    else if (d.kind === 'shot') { const TAU = Math.PI * 2; g.fillStyle = '#fff6c8'; g.beginPath(); g.ellipse(W * .6, H / 2, W * .3, H * .28, 0, 0, TAU); g.fill(); g.fillStyle = 'rgba(255,246,200,.4)'; g.fillRect(0, H * .4, W * .4, H * .2); }
+    else if (d.kind === 'wake') { g.fillStyle = 'rgba(255,255,255,.7)'; g.fillRect(0, H * .44, W, H * .12); }
+    else if (d.kind === 'cutsea') { g.fillStyle = '#14527e'; g.fillRect(0, 0, W, H); }
+    else if (d.kind === 'front') { g.fillStyle = '#0c3a5e'; g.beginPath(); g.moveTo(0, H); for (let i = 0; i <= W; i += 8) g.lineTo(i, H * .35 + Math.sin(i / W * Math.PI * 2 * 4) * H * .08); g.lineTo(W, H); g.fill(); }
     else if (d.kind === 'cap') { g.fillStyle = '#fff'; g.beginPath(); g.ellipse(W / 2, H * .6, W * .43, H * .3, 0, 0, 7); g.fill(); }
     if (standin) { x.drawImage(o, 0, 0); return c.toDataURL('image/png'); }
-    const opaque = d.kind === 'sea' || d.kind === 'bg' || d.kind === 'sky';
+    const opaque = d.kind === 'sea' || d.kind === 'bg' || d.kind === 'sky' || d.kind === 'cutsea';
     if (!opaque) { x.fillStyle = 'rgba(80,120,200,.10)'; x.fillRect(0, 0, W, H); }
     x.globalAlpha = opaque ? .55 : .3; x.drawImage(o, 0, 0); x.globalAlpha = 1;
     x.strokeStyle = 'rgba(40,60,120,.8)'; x.lineWidth = 1 / zoom; x.strokeRect(.5 / zoom, .5 / zoom, W - 1 / zoom, H - 1 / zoom);

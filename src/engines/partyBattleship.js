@@ -123,10 +123,10 @@ async function battleship(s){
  const cellIn=(r,px,py)=>{const cx=Math.floor((px-r.x)/r.c),cy=Math.floor((py-r.y)/r.c);return cx>=0&&cy>=0&&cx<N&&cy<N?[cx,cy]:null;};
  const boardPx=(r,cx,cy)=>[r.x+(cx+.5)*r.c,r.y+(cy+.5)*r.c];
 
- function splash(v,r,cx,cy){const [px,py]=boardPx(r,cx,cy);for(let i=0;i<18;i++){const a=-Math.PI/2+(Math.random()-.5)*1.6,sp=60+Math.random()*130;v.parts.push({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:380,life:.9,max:.9,r:2+Math.random()*3,col:'#e8f7ff'});}
-  v.rings.push({x:px,y:py,r:2,max:r.c*.9,life:.9,col:'255,255,255'},{x:px,y:py,r:2,max:r.c*.55,life:.6,col:'200,235,255'});if(BS.has('splash'))v.anims.push({k:'splash',x:px,y:py,sz:r.c*1.6,t:0});sfx.splash();}
- function boom(v,r,cx,cy,big){const [px,py]=boardPx(r,cx,cy),n=big?46:24;for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,sp=40+Math.random()*(big?260:160);v.parts.push({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-30,g:60,life:.7+Math.random()*.6,max:1.3,r:3+Math.random()*(big?7:4),col:['#ffd24d','#ff8a1f','#e8381a','#4a4a4a'][i%4]});}
-  v.rings.push({x:px,y:py,r:3,max:r.c*(big?2.4:1.3),life:.5,col:'255,190,80'});if(BS.has('boom'))v.anims.push({k:'boom',x:px,y:py,sz:r.c*(big?3:1.8),t:0});v.shake=big?14:7;sfx.boom();}
+ function splash(v,r,cx,cy){const [px,py]=boardPx(r,cx,cy);if(!BS.has('splash'))for(let i=0;i<18;i++){const a=-Math.PI/2+(Math.random()-.5)*1.6,sp=60+Math.random()*130;v.parts.push({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:380,life:.9,max:.9,r:2+Math.random()*3,col:'#e8f7ff'});}
+  if(!BS.has('splash'))v.rings.push({x:px,y:py,r:2,max:r.c*.9,life:.9,col:'255,255,255'},{x:px,y:py,r:2,max:r.c*.55,life:.6,col:'200,235,255'});if(BS.has('splash'))v.anims.push({k:'splash',x:px,y:py,sz:r.c*1.6,t:0});sfx.splash();}
+ function boom(v,r,cx,cy,big){const [px,py]=boardPx(r,cx,cy),n=BS.has('boom')?(big?8:4):big?46:24;for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,sp=40+Math.random()*(big?260:160);v.parts.push({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-30,g:60,life:.7+Math.random()*.6,max:1.3,r:3+Math.random()*(big?7:4),col:['#ffd24d','#ff8a1f','#e8381a','#4a4a4a'][i%4]});}
+  if(!BS.has('boom'))v.rings.push({x:px,y:py,r:3,max:r.c*(big?2.4:1.3),life:.5,col:'255,190,80'});if(BS.has('boom'))v.anims.push({k:'boom',x:px,y:py,sz:r.c*(big?3:1.8),t:0});v.shake=big?14:7;sfx.boom();}
 
  function render(dt){
   const v=view;if(!v||!v.cv.isConnected)return;
