@@ -10,9 +10,11 @@ const CELL=96;
 // U = template px per `size` (the game's sailor size unit). The game adds the white sailor cap (or 'sailor-cap').
 const SHEETS={
  hit:{frame:[CELL,CELL],rows:{burn:4},board:true},            // a hit cell on the board: burning wreckage, looped
- boom:{frame:[128,128],rows:{boom:8},fx:true},                 // explosion, played once (board hits + cut scenes)
- splash:{frame:[128,128],rows:{splash:6},fx:true},             // water splash, played once (board misses + sailors landing)
- sailor:{frame:[120,160],U:100,head:[60,50],headSize:80,rows:{stand:2,cheer:2,fall:2,swim:4}},
+ boom:{frame:[128,128],rows:{boom:8},fx:true,foot:122/128},   // foot = where the blast meets the water (fraction of the frame height)                 // explosion, played once (board hits + cut scenes)
+ splash:{frame:[128,128],rows:{splash:6},fx:true,foot:122/128},             // water splash, played once (board misses + sailors landing)
+ sailor:{frame:[120,160],U:100,head:[60,50],headSize:80,rows:{stand:2,cheer:2,fall:2,swim:4},
+  // measured collar (template px) per frame of the owner's sheet (Nov 13): the face's chin sits here (src/headFacts.js)
+  neckRows:{stand:[[55,84.5],[56,84]],cheer:[[57.5,84],[58,83]],fall:[[57,80.5],[55.5,78]],swim:[[53.5,84],[53,82.5],[61.5,82.5],[57,81]]}},
 };
 // PICTURES: stills. `size` = template [w,h] px.
 //  ship-<id>: a ship seen from above, BOW TO THE RIGHT, filling `len` cells (the game turns it for up/down). -sunk = the
@@ -34,7 +36,7 @@ const PICTURES={
  'board-bg':{kind:'bg',size:[1080,1920]},
  'board-bg-wide':{kind:'bg',size:[1920,1080]},
  'cut-sky':{kind:'sky',size:[1600,1000]},
- 'warship':{kind:'warship',size:[1280,480],water:[640,380],L:1200},
+ 'warship':{kind:'warship',size:[1280,480],water:[640,380],L:1074},   // L = the owner's hull length (1200 in the template)
  'deck':{kind:'deck',size:[800,400]},
  'deck-gun':{kind:'gun',size:[440,72],pivot:[0,36]},
  'torpedo':{kind:'torpedo',size:[224,64]},
@@ -56,6 +58,8 @@ function picture(name){
 function preloadBattleship(){for(const k of Object.keys(USER))if(k.startsWith('battleship:'))picture(k.slice(11));}
 // {img, def, k} for a sheet that is in (k = picture px per template px), else null
 function sheet(name){const def=SHEETS[name],img=def&&picture(name);if(!img)return null;const cols=Math.max(...Object.values(def.rows));return {img,def,k:img.width/(cols*def.frame[0])};}
+// Neck spot [x,y] (template px) of frame f of a row, or null.
+function neckAt(def,row,f){const r=def.neckRows&&def.neckRows[row];if(!r||!r.length)return null;return r[((f%r.length)+r.length)%r.length];}
 function frameRect(sh,row,f){
  const rows=Object.keys(sh.def.rows),r=Math.max(0,rows.indexOf(row)),n=sh.def.rows[rows[r]]||1,[fw,fh]=sh.def.frame;
  f=((f%n)+n)%n;return {sx:f*fw*sh.k,sy:r*fh*sh.k,sw:fw*sh.k,sh:fh*sh.k,n};
@@ -67,4 +71,4 @@ function tinted(img,col,a){
  c=document.createElement('canvas');c.width=img.width;c.height=img.height;const g=c.getContext('2d');g.drawImage(img,0,0);
  g.globalCompositeOperation='source-atop';g.globalAlpha=a;g.fillStyle=col;g.fillRect(0,0,c.width,c.height);tints.set(key,c);return c;
 }
-Object.assign(exports,{CELL,SHEETS,PICTURES,SHIP_SLOT,has,url,picture,preloadBattleship,sheet,frameRect,tinted});
+Object.assign(exports,{CELL,SHEETS,PICTURES,SHIP_SLOT,has,url,picture,preloadBattleship,sheet,frameRect,tinted,neckAt});

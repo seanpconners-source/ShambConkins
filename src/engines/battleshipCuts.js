@@ -3,7 +3,9 @@
 // nothing in the game's rules or online moves waits on anything but the promise, and each phone plays its own.
 const {store}=require('src/state.js');
 const {sfx}=require('src/engines/partyKit.js');
-const BS=require('src/data/battleshipSprites.js');   // owner drop-in art (falls back to the drawn scenes)
+const BS=require('src/data/battleshipSprites.js');
+const HF=require('src/headFacts.js');
+const SAILOR_FACE=.5;   // sailor's face width (brow to chin) in sailor sizes   // owner drop-in art (falls back to the drawn scenes)
 
 function navalCut(s,{kind,shooter,victim,ship=''}){return new Promise(done=>{
  const calm=!!store.profile?.settings.reducedMotion,dur=(kind==='sunk'?3.4:1.5)*(calm?.6:1),cv=document.createElement('canvas');
@@ -18,7 +20,7 @@ function navalCut(s,{kind,shooter,victim,ship=''}){return new Promise(done=>{
  const P=BS.PICTURES,fxs=[];   // fxs: drop-in boom/splash animations
  const cover=(img,x0,y0,w,h)=>{const k=Math.max(w/img.width,h/img.height),dw=img.width*k,dh=img.height*k;x.drawImage(img,x0+(w-dw)/2,y0+h-dh,dw,dh);};
  const anim=(k,px,py,sz)=>{if(BS.has(k))fxs.push({k,x:px,y:py,sz,t:0});};
- function drawFx(dt){for(const a of fxs){a.t+=dt;const sh=BS.sheet(a.k);if(!sh)continue;const f=Math.floor(a.t*16);if(f>=sh.def.rows[a.k]){a.done=1;continue;}const r=BS.frameRect(sh,a.k,f);x.drawImage(sh.img,r.sx,r.sy,r.sw,r.sh,a.x-a.sz/2,a.y-a.sz/2,a.sz,a.sz);}for(let i=fxs.length-1;i>=0;i--)if(fxs[i].done)fxs.splice(i,1);}
+ function drawFx(dt){for(const a of fxs){a.t+=dt;const sh=BS.sheet(a.k);if(!sh)continue;const f=Math.floor(a.t*16);if(f>=sh.def.rows[a.k]){a.done=1;continue;}const r=BS.frameRect(sh,a.k,f);x.drawImage(sh.img,r.sx,r.sy,r.sw,r.sh,a.x-a.sz/2,a.y+a.sz*.15-a.sz*(sh.def.foot??.5),a.sz,a.sz);}for(let i=fxs.length-1;i>=0;i--)if(fxs[i].done)fxs.splice(i,1);}
  function sky(){const sp=BS.picture('cut-sky');if(sp){x.save();x.beginPath();x.rect(0,0,W,seaY()+2);x.clip();cover(sp,0,0,W,seaY()+2);x.restore();return;}const g=x.createLinearGradient(0,0,0,seaY());g.addColorStop(0,'#172a52');g.addColorStop(.7,'#c8603a');g.addColorStop(1,'#f0a860');x.fillStyle=g;x.fillRect(0,0,W,seaY()+2);}
  function sea(front=false){const y0=seaY()+(front?H*.05:0);x.fillStyle=front?'#0c3a5e':'#14527e';x.beginPath();x.moveTo(0,H);x.lineTo(0,y0);for(let i=0;i<=W;i+=12)x.lineTo(i,y0+Math.sin(i*.03+t*(front?3:2))*(front?7:4));x.lineTo(W,y0);x.lineTo(W,H);x.fill();}
  function warship(cx,cy,L,tilt=0,burn=false){x.save();x.translate(cx,cy);x.rotate(tilt);const h=L*.13,wp=BS.picture('warship');
@@ -28,7 +30,12 @@ function navalCut(s,{kind,shooter,victim,ship=''}){return new Promise(done=>{
   if(burn)for(let i=0;i<3;i++){const fx=-L*.25+i*L*.25,f=1+Math.sin(t*14+i)*.2;x.fillStyle='#ff8a1f';x.beginPath();x.ellipse(fx,-h*.6,h*.3*f,h*.6*f,0,0,7);x.fill();x.fillStyle='#ffe07a';x.beginPath();x.ellipse(fx,-h*.5,h*.14*f,h*.3*f,0,0,7);x.fill();}
   x.restore();}
  function sailor(px,py,size,who,mood,rot=0,arms=0,row=null){x.save();x.translate(px,py);x.rotate(rot);const body=BS.sheet('sailor');
-  if(body){const d=body.def,k=size/d.U,r=BS.frameRect(body,row||'stand',Math.floor(t*(row==='swim'?6:4)+px*.01));x.drawImage(body.img,r.sx,r.sy,r.sw,r.sh,-d.head[0]*k,-d.head[1]*k,d.frame[0]*k,d.frame[1]*k);
+  if(body){const d=body.def,k=size/d.U,rw=row||'stand',fi=Math.floor(t*(rw==='swim'?6:4)+px*.01),r=BS.frameRect(body,rw,fi);x.drawImage(body.img,r.sx,r.sy,r.sw,r.sh,-d.head[0]*k,-d.head[1]*k,d.frame[0]*k,d.frame[1]*k);
+   // face like Seanic/SotN: FACE wide, chin on this frame's collar, mirrored only if it looks against the sailor; cap on the brow
+   const id=s.players[who]?.character,m=mood||s.spriteMood(who),nk=BS.neckAt(d,rw,fi),fw=size*SAILOR_FACE,fit=id&&HF.faceFit(id,m,fw);
+   if(nk&&fit){const nx=(nk[0]-d.head[0])*k,ny=(nk[1]-d.head[1])*k,cy=ny-HF.faceHeight(id,m,fw)*.44;HF.drawFace(s,x,who,nx,cy,fw/.6,m,1,.6);
+    const g=HF.faceGeom(id,m,fw,nx,cy,HF.flipFor(id,m,1)),cap=BS.picture('sailor-cap'),w=Math.max(g.head.w*1.05,fw*1.45),bx=g.face.x+g.face.w/2,by=g.face.y+g.face.h*.18;
+    if(cap)x.drawImage(cap,bx-w/2,by-w*cap.height/cap.width*.8,w,w*cap.height/cap.width);else{x.fillStyle='#fff';x.beginPath();x.ellipse(bx,by-w*.05,w*.45,w*.12,0,0,7);x.fill();}x.restore();return;}
    s.sprite(x,who,0,0,size*.8,{exact:true,mood});const cap=BS.picture('sailor-cap');if(cap){const w=size*.6;x.drawImage(cap,-w/2,-size*.34-w*.22,w,w*cap.height/cap.width);}else{x.fillStyle='#fff';x.beginPath();x.ellipse(0,-size*.34,size*.26,size*.07,0,0,7);x.fill();}x.restore();return;}
   x.fillStyle='#f2f5f8';x.fillRect(-size*.2,size*.25,size*.4,size*.55);x.fillStyle='#1f3a68';x.fillRect(-size*.2,size*.6,size*.4,size*.42);x.strokeStyle='#f2f5f8';x.lineWidth=size*.12;x.lineCap='round';x.beginPath();x.moveTo(-size*.2,size*.35);x.lineTo(-size*.48,size*(.35+arms));x.moveTo(size*.2,size*.35);x.lineTo(size*.48,size*(.35+arms));x.stroke();x.lineCap='butt';s.sprite(x,who,0,0,size*.8,{exact:true,mood});x.fillStyle='#fff';x.beginPath();x.ellipse(0,-size*.34,size*.26,size*.07,0,0,7);x.fill();x.restore();}
  function caption(big,small){const px=Math.min(W*.1,H*.09,52);x.textAlign='center';x.textBaseline='middle';x.font=`900 ${px}px Impact,"Arial Black",sans-serif`;x.lineWidth=px*.14;x.strokeStyle='#000';x.lineJoin='round';x.strokeText(big,W/2,H*.15);x.fillStyle='#ffd24d';x.fillText(big,W/2,H*.15);if(small){x.font=`800 ${px*.36}px Arial`;x.lineWidth=3;x.strokeText(small,W/2,H*.15+px*.72);x.fillStyle='#fff';x.fillText(small,W/2,H*.15+px*.72);}}
