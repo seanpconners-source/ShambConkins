@@ -2,6 +2,7 @@
 const {PartyUI,sfx,head,pname,esc,burst,banner,titleCard,shuffle,extraCSS,tone}=require("src/engines/partyKit.js");
 const {isCpu,isOnline,cpuSkill,cpuBlunder,pickRandom}=require("src/engines/cpuKit.js");
 const {navalCut}=require("src/engines/battleshipCuts.js");
+const BS=require("src/data/battleshipSprites.js");   // owner drop-in art (falls back to the drawn art)
 
 const N=8;
 const SHIPS=[['Battleship',4],['Cruiser',3],['Submarine',3],['Destroyer',2],['Patrol Boat',2]];
@@ -48,6 +49,12 @@ function drawShip(x,px,py,c,sh,mode){
  // mode: 'own' | 'ghost-ok' | 'ghost-bad' | 'sunk'
  const L=sh.len*c,h=c;x.save();
  if(sh.dir){x.translate(px+c,py);x.rotate(Math.PI/2);}else x.translate(px,py);
+ const slot=BS.SHIP_SLOT[sh.name],pic=slot&&BS.picture(slot);
+ if(pic){   // drop-in ship (bow right): wreck picture or red-darkened, placing ghosts tinted green/red
+  const wreck=mode==='sunk'&&BS.picture(slot+'-sunk');
+  const img=wreck||(mode==='sunk'?BS.tinted(pic,'#3a0805',.55):mode==='ghost-ok'?BS.tinted(pic,'#3cff7a',.35):mode==='ghost-bad'?BS.tinted(pic,'#ff3b2b',.5):pic);
+  if(mode==='ghost-ok'||mode==='ghost-bad')x.globalAlpha=.85;x.drawImage(img,0,0,L,h);x.restore();return;
+ }
  const g=x.createLinearGradient(0,0,0,h);
  const pal=mode==='sunk'?['#7a2b25','#3d0f0c']:mode==='ghost-ok'?['#7be495','#2b9f58']:mode==='ghost-bad'?['#ff8f85','#c0392b']:['#c3ccd6','#6c7a8a'];
  g.addColorStop(0,pal[0]);g.addColorStop(1,pal[1]);
@@ -60,18 +67,20 @@ function drawShip(x,px,py,c,sh,mode){
  x.restore();
 }
 function drawFire(x,px,py,c,t,k=0){
+ const hs=BS.sheet('hit');if(hs){const r=BS.frameRect(hs,'burn',Math.floor(t*8+k*1.7));x.drawImage(hs.img,r.sx,r.sy,r.sw,r.sh,px,py,c,c);return;}
  const cx=px+c/2,cy=py+c/2,f=1+Math.sin(t*14+k)*.1;
  const g=x.createRadialGradient(cx,cy,1,cx,cy,c*.42*f);g.addColorStop(0,'#fff3a0');g.addColorStop(.35,'#ffa51f');g.addColorStop(.75,'#e8381a');g.addColorStop(1,'rgba(120,20,10,0)');
  x.fillStyle=g;x.beginPath();x.arc(cx,cy,c*.42*f,0,Math.PI*2);x.fill();
  x.strokeStyle='#2a0a05';x.lineWidth=Math.max(2,c*.07);x.lineCap='round';x.beginPath();x.moveTo(cx-c*.17,cy-c*.17);x.lineTo(cx+c*.17,cy+c*.17);x.moveTo(cx+c*.17,cy-c*.17);x.lineTo(cx-c*.17,cy+c*.17);x.stroke();
 }
-function drawMiss(x,px,py,c){x.fillStyle='rgba(255,255,255,.88)';x.beginPath();x.arc(px+c/2,py+c/2,c*.13,0,Math.PI*2);x.fill();x.strokeStyle='rgba(255,255,255,.4)';x.lineWidth=Math.max(1,c*.04);x.beginPath();x.arc(px+c/2,py+c/2,c*.26,0,Math.PI*2);x.stroke();}
+function drawMiss(x,px,py,c){const mp=BS.picture('miss');if(mp){x.drawImage(mp,px,py,c,c);return;}x.fillStyle='rgba(255,255,255,.88)';x.beginPath();x.arc(px+c/2,py+c/2,c*.13,0,Math.PI*2);x.fill();x.strokeStyle='rgba(255,255,255,.4)';x.lineWidth=Math.max(1,c*.04);x.beginPath();x.arc(px+c/2,py+c/2,c*.26,0,Math.PI*2);x.stroke();}
 function drawGrid(x,r,t,labels){
  const {x:gx,y:gy,s:sz,c}=r;
  const g=x.createLinearGradient(0,gy,0,gy+sz);g.addColorStop(0,'#2a8bc4');g.addColorStop(1,'#14608f');
  x.fillStyle=g;x.beginPath();x.roundRect?x.roundRect(gx-3,gy-3,sz+6,sz+6,8):x.rect(gx-3,gy-3,sz+6,sz+6);x.fill();
  x.save();x.beginPath();x.rect(gx,gy,sz,sz);x.clip();
- x.strokeStyle='rgba(255,255,255,.09)';x.lineWidth=2;
+ const sea=BS.picture('grid-sea');if(sea)x.drawImage(sea,gx,gy,sz,sz);   // drop-in water; the moving wave lines stay, fainter
+ x.strokeStyle=sea?'rgba(255,255,255,.05)':'rgba(255,255,255,.09)';x.lineWidth=2;
  for(let i=0;i<N*2;i++){const yy=gy+(i+.5)*c/2;x.beginPath();for(let k=0;k<=sz;k+=6){const yv=yy+Math.sin(k*.07+t*1.6+i)*1.8;k?x.lineTo(gx+k,yv):x.moveTo(gx,yv);}x.stroke();}
  x.restore();
  x.strokeStyle='rgba(255,255,255,.35)';x.lineWidth=1;
@@ -81,7 +90,7 @@ function drawGrid(x,r,t,labels){
 
 async function battleship(s){
  extraCSS('bs-css',CSS);
- const ui=new PartyUI(s,{theme:'bs',scroll:false});
+ const ui=new PartyUI(s,{theme:'bs',scroll:false});BS.preloadBattleship();
  const rand=s.random,names=[pname(s,0),pname(s,1)];
  const fleets=[null,null],shots=[Array.from({length:N},()=>Array(N).fill(0)),Array.from({length:N},()=>Array(N).fill(0))];// shots[p][y][x]: p's shots at the enemy: 1 miss, 2 hit
  const sunk=[0,0],log=[[],[]],cpu=isCpu(s),bot=P=>cpu&&P===1;if(cpu)s.hotseat=true;
@@ -104,7 +113,7 @@ async function battleship(s){
 
  function mkView(mode,P){
   const cv=ui.root.querySelector('canvas'),x=cv.getContext('2d');
-  const v={cv,x,mode,P,W:0,H:0,sel:null,drag:null,t:0,parts:[],rings:[],shake:0,flash:null,denied:0};
+  const v={cv,x,mode,P,W:0,H:0,sel:null,drag:null,t:0,parts:[],rings:[],anims:[],shake:0,flash:null,denied:0};
   v.size=()=>{const b=cv.parentElement.getBoundingClientRect(),d=Math.min(2,window.devicePixelRatio||1),w=Math.max(10,Math.floor(b.width)),h=Math.max(10,Math.floor(b.height));
    if(cv.width!==Math.round(w*d)||cv.height!==Math.round(h*d)){cv.width=Math.round(w*d);cv.height=Math.round(h*d);}
    x.setTransform(cv.width/w,0,0,cv.height/h,0,0);v.W=w;v.H=h;v.lay=layoutFor(w,h,mode);};
@@ -115,9 +124,9 @@ async function battleship(s){
  const boardPx=(r,cx,cy)=>[r.x+(cx+.5)*r.c,r.y+(cy+.5)*r.c];
 
  function splash(v,r,cx,cy){const [px,py]=boardPx(r,cx,cy);for(let i=0;i<18;i++){const a=-Math.PI/2+(Math.random()-.5)*1.6,sp=60+Math.random()*130;v.parts.push({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:380,life:.9,max:.9,r:2+Math.random()*3,col:'#e8f7ff'});}
-  v.rings.push({x:px,y:py,r:2,max:r.c*.9,life:.9,col:'255,255,255'},{x:px,y:py,r:2,max:r.c*.55,life:.6,col:'200,235,255'});sfx.splash();}
+  v.rings.push({x:px,y:py,r:2,max:r.c*.9,life:.9,col:'255,255,255'},{x:px,y:py,r:2,max:r.c*.55,life:.6,col:'200,235,255'});if(BS.has('splash'))v.anims.push({k:'splash',x:px,y:py,sz:r.c*1.6,t:0});sfx.splash();}
  function boom(v,r,cx,cy,big){const [px,py]=boardPx(r,cx,cy),n=big?46:24;for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,sp=40+Math.random()*(big?260:160);v.parts.push({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-30,g:60,life:.7+Math.random()*.6,max:1.3,r:3+Math.random()*(big?7:4),col:['#ffd24d','#ff8a1f','#e8381a','#4a4a4a'][i%4]});}
-  v.rings.push({x:px,y:py,r:3,max:r.c*(big?2.4:1.3),life:.5,col:'255,190,80'});v.shake=big?14:7;sfx.boom();}
+  v.rings.push({x:px,y:py,r:3,max:r.c*(big?2.4:1.3),life:.5,col:'255,190,80'});if(BS.has('boom'))v.anims.push({k:'boom',x:px,y:py,sz:r.c*(big?3:1.8),t:0});v.shake=big?14:7;sfx.boom();}
 
  function render(dt){
   const v=view;if(!v||!v.cv.isConnected)return;
@@ -155,11 +164,15 @@ async function battleship(s){
   x.globalAlpha=1;v.parts=v.parts.filter(p=>p.life>0);
   for(const r of v.rings){r.life-=dt;const k=1-Math.max(0,r.life)/(r.max/(r.max)*.9);r.r+=(r.max-r.r)*Math.min(1,dt*5);x.strokeStyle=`rgba(${r.col},${Math.max(0,r.life)})`;x.lineWidth=2.5;x.beginPath();x.arc(r.x,r.y,r.r,0,Math.PI*2);x.stroke();}
   v.rings=v.rings.filter(r=>r.life>0);
+  for(const a of v.anims){a.t+=dt;const sh=BS.sheet(a.k);if(!sh)continue;const n=sh.def.rows[a.k],f=Math.floor(a.t*16);if(f>=n){a.done=1;continue;}const r=BS.frameRect(sh,a.k,f);x.drawImage(sh.img,r.sx,r.sy,r.sw,r.sh,a.x-a.sz/2,a.y-a.sz/2,a.sz,a.sz);}
+  v.anims=v.anims.filter(a=>!a.done&&a.t<2);
   x.restore();
  }
  s.frame(render);
 
- const screen=(status,btns,P)=>{ui.set(`<div class="bs-wrap"><div class="bs-status" data-status><span>${status}</span></div><div class="bs-cv"><canvas></canvas></div><div class="bs-btns">${btns}</div></div>`);view=null;};
+ const bgPic=()=>{const wide=innerWidth>innerHeight*1.1,u=BS.url(wide&&BS.has('board-bg-wide')?'board-bg-wide':'board-bg')||BS.url('board-bg-wide');
+  if(u){ui.root.style.backgroundImage=`linear-gradient(rgba(5,20,35,.25),rgba(5,20,35,.25)),url("${u}")`;ui.root.style.backgroundSize='cover';ui.root.style.backgroundPosition='center';}};
+ const screen=(status,btns,P)=>{bgPic();ui.set(`<div class="bs-wrap"><div class="bs-status" data-status><span>${status}</span></div><div class="bs-cv"><canvas></canvas></div><div class="bs-btns">${btns}</div></div>`);view=null;};
  const setStatus=h=>{const el=ui.root.querySelector('[data-status]');if(el)el.innerHTML='<span>'+h+'</span>';};
  const blank=()=>{view=null;ui.set(`<div class="pk-screen"><div class="pk-q" style="font-size:54px">⚓</div><div class="pk-sub">Pass the phone…</div></div>`);};
 

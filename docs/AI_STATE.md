@@ -2,6 +2,17 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+BATTLESHIP SPRITE KIT (Nov 13, branch ccr-e01b44c2-wuca1t, unreleased; owner: "make sprite templates for battleship"):
+src/data/battleshipSprites.js = SHEETS hit (4x96, burning cell), boom (8x128), splash (6x128), sailor (120x160 headless, U 100,
+face (60,50) 80; rows stand/cheer/fall/swim) + PICTURES ship-<battleship|cruiser|submarine|destroyer|patrol> (len x 96 by 96,
+bow right) + -sunk, miss 96, grid-sea 768, board-bg 1080x1920 / -wide, cut-sky 1600x1000, warship 1280x480 (water 640,380, L
+1200), deck 800x400, deck-gun 440x72 (pivot 0,36), torpedo 224x64, sailor-cap 128x56; tinted() cache (ghost green/red, sunk red).
+assets/battleship → battleship:<name> (build.mjs), pwa.js LATER 'battleship:'. WIRED with drawn fallback in partyBattleship.js
+(drawShip/drawFire/drawMiss/drawGrid, v.anims boom/splash, root CSS background) and battleshipCuts.js (sky cover, warship,
+sailor sheet + cap, deck cover, deck-gun, torpedo, fxs anims). Templates `node tools/battleship-templates.mjs` (guides = the
+game's own draw code read from the source) → docs/battleship-sprites/templates; `--standin` checked in a build (board + both cut
+scenes match the drawn game); battleship-cuts + games.mjs battleship pass. Brief/README there, START-HERE row. No owner art yet.
+
 HORDE SPRITE KIT (Nov 13, branch ccr-e01b44c2-wuca1t, unreleased; owner: "make sprite templates for living dead horde"): src/data/hordeSprites.js
 = SHEETS survivor-p1/p2 (112x128 headless bodies, rows idle 4/walk 6/hurt 2/down 2, face circle (56,52) 104 px = the game's 52-unit
 head) + enemy-<id> for all 18 (square 2 x sz, walk 4 at 8 fps, feet at 44/48) + PICTURES props (grave-1..3, tree-1..3, car-1/2, lamp

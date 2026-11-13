@@ -98,6 +98,13 @@ if (fs.existsSync(hordeDir)) for (const f of fs.readdirSync(hordeDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('horde:' + m[1].toLowerCase(), MIME[ext], ext, path.join(hordeDir, f));
 }
+// Battleship drop-in art: assets/battleship/<name>.(webp|png) -> battleship:<name>
+// (names and layout: src/data/battleshipSprites.js, docs/battleship-sprites/README.md).
+const battleshipDir = path.join(root, 'assets/battleship');
+if (fs.existsSync(battleshipDir)) for (const f of fs.readdirSync(battleshipDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('battleship:' + m[1].toLowerCase(), MIME[ext], ext, path.join(battleshipDir, f));
+}
 // Major League Baseball sprite sheets and pictures: assets/baseball/<name>.(webp|png) -> baseball:<name>
 // (names and layout: src/data/baseballSprites.js, docs/baseball-sprites/README.md).
 const baseballDir = path.join(root, 'assets/baseball');
