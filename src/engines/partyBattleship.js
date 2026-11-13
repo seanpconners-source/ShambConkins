@@ -164,7 +164,7 @@ async function battleship(s){
   x.globalAlpha=1;v.parts=v.parts.filter(p=>p.life>0);
   for(const r of v.rings){r.life-=dt;const k=1-Math.max(0,r.life)/(r.max/(r.max)*.9);r.r+=(r.max-r.r)*Math.min(1,dt*5);x.strokeStyle=`rgba(${r.col},${Math.max(0,r.life)})`;x.lineWidth=2.5;x.beginPath();x.arc(r.x,r.y,r.r,0,Math.PI*2);x.stroke();}
   v.rings=v.rings.filter(r=>r.life>0);
-  for(const a of v.anims){a.t+=dt;const sh=BS.sheet(a.k);if(!sh)continue;const n=sh.def.rows[a.k],f=Math.floor(a.t*16);if(f>=n){a.done=1;continue;}const r=BS.frameRect(sh,a.k,f);x.drawImage(sh.img,r.sx,r.sy,r.sw,r.sh,a.x-a.sz/2,a.y-a.sz/2,a.sz,a.sz);}
+  for(const a of v.anims){a.t+=dt;const sh=BS.sheet(a.k);if(!sh)continue;const n=sh.def.rows[a.k],f=Math.floor(a.t*16);if(f>=n){a.done=1;continue;}const r=BS.frameRect(sh,a.k,f);x.drawImage(sh.img,r.sx,r.sy,r.sw,r.sh,a.x-a.sz/2,a.y+a.sz*.15-a.sz*(sh.def.foot??.5),a.sz,a.sz);/* side-view blast/splash rising from the cell */}
   v.anims=v.anims.filter(a=>!a.done&&a.t<2);
   x.restore();
  }
