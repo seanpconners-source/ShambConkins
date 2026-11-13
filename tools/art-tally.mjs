@@ -21,8 +21,10 @@ const kits = [];
 for (const [mod, dir, label, brief] of [
   ['src/data/sotnSprites.js', 'sotn', 'Symphony of the Night', 'docs/sotn-sprites/GPT-SPRITE-BRIEF.md'],
   ['src/data/baseballSprites.js', 'baseball', 'Major League Baseball', 'docs/baseball-sprites/GPT-SPRITE-BRIEF.md'],
-  ['src/data/sundownSprites.js', 'sundown', 'Sundown Showdown', 'docs/sundown-sprites/GPT-SPRITE-BRIEF.md']]) {
-  const S = req(mod), have = names('assets/' + dir);
+  ['src/data/sundownSprites.js', 'sundown', 'Sundown Showdown', 'docs/sundown-sprites/GPT-SPRITE-BRIEF.md'],
+  ['src/data/hordeSprites.js', 'horde', 'Living Dead Horde', 'docs/horde-sprites/GPT-SPRITE-BRIEF.md'],
+  ['src/data/battleshipSprites.js', 'battleship', 'Battleship', 'docs/battleship-sprites/GPT-SPRITE-BRIEF.md']]) {
+  const S = req(mod), have = fs.existsSync(path.join(root, 'assets/' + dir)) ? names('assets/' + dir) : new Set();
   const slots = [...Object.keys(S.SHEETS || {}).filter(k => S.SHEETS[k] !== null || true), ...Object.keys(S.PICTURES || {})];
   if (S.THEME_IDS && S.SCENERY) for (const t of S.THEME_IDS) for (const part of S.SCENERY) {
     if (part.startsWith('building') && !(S.BUILDING_ART || {})[t]) continue;

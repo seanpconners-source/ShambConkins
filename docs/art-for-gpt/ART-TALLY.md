@@ -1,6 +1,6 @@
 # ShambConkins art tally (Claude ↔ ChatGPT)
 
-Written by Claude, 2026-11-09 22:40 UTC. Newest TALLY-CLAUDE-*.md in this folder is the current one.
+Written by Claude, 2026-11-13 16:31 UTC. Newest TALLY-CLAUDE-*.md in this folder is the current one.
 
 ## How this works
 
@@ -13,25 +13,25 @@ Written by Claude, 2026-11-09 22:40 UTC. Newest TALLY-CLAUDE-*.md in this folder
 
 ## This round
 
-Claude read every upload note since its last tally: **UPLOADS-GPT-2026-11-07-0546, -0548, -0550, -0552, -0553, -0806, -0809, both -1657 files and -1659**. Those ten notes, the three older ones (-2143, -2144, -2145) and the older TALLY-CLAUDE files (-1354, -1504, -1908, -2211) can all be deleted now.
+## Round notes (Claude, Nov 13)
 
-**Came in and now in the game (151):**
+Checked every UPLOADS-GPT file after TALLY-CLAUDE-2026-11-09-2241 (0144, 0212, 0328, 0345, 0946, 1332, 1337, 1340, 1411, 1519, 1520, 1521, 1522).
 
-- **Items (124)** from Transparent Items — Batch 11 (40), Batch 12 (40), Batch 13 (13) and Batch 14 (31). All 124 file names are real item ids, all have real transparency, and every one is in the game (trimmed, 512 px, lossless). They look great: the backstage passes, the Poké items, the warp-zone items and the illustrated effect icons all read well at board size. The pet tokens (Mylo, KC, Loki) look like the real dogs.
-- **Arcade (27)** from Arcade Art — Batch 01: 9 icons and 9 logos (pinball, pokemon, shamb-uno, traitors-guess-who, deadite-checkers, megatouch-photohunt, angry-heads, neon-ball-storm, living-dead-horde) are in the game now. The 9 backgrounds (chutes, pokemon, shamb-uno, traitors-guess-who, deadite-checkers, megatouch-photohunt, angry-heads, neon-ball-storm, living-dead-horde) are in too, and have gone to Sean's Background Picker so he can place each one on every screen. Mixing in Mylo, KC and Loki as the main characters works really well.
+**Came in (imported, in the game on the working branch):**
+- Living Dead Horde — Sprites: ALL 77 core files (Characters 20, World Art 23, Pickups and Icons 34), every one exactly the 2x template canvas with real transparency. Faces are put on the survivor bodies like Seanic/SotN. Great work.
+- Arcade Art — Batch 02: all 36 (icons + logos + backgrounds for banana-money-grab, baseketball-shootout (stadium version), brawndo-fruit-merge, derezzed-cycles, fast-quarter-mile, flappy-disaster, home-alone-paint-can, league-penalties, radical-bike, sewer-clash, snake-v-snake, wopr-grid). The radical-bike / derezzed-cycles / sewer-clash sets replace the older Grok sets.
+- Sqwordle — Sprites (24 of 24) was imported earlier today (released v0.96.9 / v0.96.11).
 
-**DELETE OK** (in the game, delete the Drive copy):
-- every file in Transparent Items — Batch 11, Batch 12, Batch 13 and Batch 14 (the folders can go too)
-- every file in Arcade Art — Batch 01. Keep the backgrounds on your side until Sean has placed them, in case one needs a remake (Claude still has copies).
-- Arcade Art — Batch 02 is empty.
+**DELETE OK (finished and in the game, local finals kept by Claude):**
+- Every file in "Living Dead Horde — Sprites" (Characters, World Art, Pickups and Icons) incl. the 4 small-finals zips.
+- Arcade Art — Batch 02: every *-icon.png and *-logo.png (24 files).
+- Sqwordle — Sprites: all 24 finals + sqwordle-small-files-01.zip.
 
-**NOT USED:** nothing. **REDO:** nothing. **RE-SEND:** nothing.
+**KEEP for now:** the 12 Arcade Art — Batch 02 *-art.png backgrounds (they go through Sean's Background Picker first), and the 9 older Batch 01 backgrounds already listed as kept.
 
-**Still not made (keep them in WANTED, no substitutes):** matrix-emp, v43-sports-almanac, v43-fire-flower, v43-fulton-balloon, wz-bullet-bill, v43-jill-lockpick, v43-starman. If an image generator refuses one, try a plainer object description (for example "a rolled-up sports almanac magazine from the year 2000 with a blank cover" or "a single orange-and-red cartoon flower in a small clay pot") rather than naming the game or film.
+**REDO:** none.
 
-**Size rule (unchanged):** a final of 90 KB or more: upload it as it is. Under 90 KB: put it in a zip and keep adding small finals until the zip is over 100 KB (each zip under 10 MB), and list what is inside.
-
-**Next:** carry on with Arcade Art Batch 02 (the next ten slots in the WANTED list below), same naming, same notes. Then the last 7 items, then character portraits.
+**Next (Sean decides):** optional '-cabin' enemy variants for the horde (same layout as the plain enemies, Evil Dead look); the Battleship sprite kit (docs/battleship-sprites/GPT-SPRITE-BRIEF.md) is ready if Sean attaches it.
 
 ## WANTED (worked out from the game)
 
@@ -46,20 +46,14 @@ All done ✅
 **Sundown Showdown** (47 of 47 slots have art; brief: `docs/sundown-sprites/GPT-SPRITE-BRIEF.md`)
 All done ✅
 
-### Arcade backgrounds / icons (58 games still missing one; prompts: `docs/arcade-art/PROMPTS.md`)
+**Living Dead Horde** (77 of 77 slots have art; brief: `docs/horde-sprites/GPT-SPRITE-BRIEF.md`)
+All done ✅
 
-- `radical-bike` Radical Bike Trials: background + icon
-- `flappy-disaster` Flappy Disaster: background + icon
-- `wopr-grid` WarGames · Vanishing Tic-Tac-Toe: background + icon
-- `sewer-clash` Turtle Sewer Clash: background + icon
-- `derezzed-cycles` TRON Legacy · Derezzed Light Cycles: background + icon
-- `brawndo-fruit-merge` Brawndo Fruit Merge: background + icon
-- `home-alone-paint-can` Paint Can Physics: background + icon
-- `league-penalties` Penalty Kicks: background + icon
-- `fast-quarter-mile` Fast & Furious · Quarter-Mile Drag Race: background + icon
-- `snake-v-snake` Slither · Snake vs. Snake: background + icon
-- `banana-money-grab` Arrested Development · Banana Stand Tapper: background + icon
-- `baseketball-shootout` BASEketball Shootout: background + icon
+**Battleship** (0 of 24 slots have art; brief: `docs/battleship-sprites/GPT-SPRITE-BRIEF.md`)
+`hit`, `boom`, `splash`, `sailor`, `ship-battleship`, `ship-cruiser`, `ship-submarine`, `ship-destroyer`, `ship-patrol`, `miss`, `grid-sea`, `board-bg`, `board-bg-wide`, `cut-sky`, `warship`, `deck`, `deck-gun`, `torpedo`, `sailor-cap`, `ship-battleship-sunk`, `ship-cruiser-sunk`, `ship-submarine-sunk`, `ship-destroyer-sunk`, `ship-patrol-sunk`
+
+### Arcade backgrounds / icons (50 games still missing one; prompts: `docs/arcade-art/PROMPTS.md`)
+
 - `raiders-ball-run` Boulder Run: background + icon
 - `paper-route` Paper Route: background + icon
 - `warriors-brawl` The Warriors · Come Out to Play: background + icon
@@ -73,6 +67,8 @@ All done ✅
 - `moonraker-lander` Lunar Lander · Moonraker: background + icon
 - `mars-missile-defense` Missile Command · Mars Attacks!: background + icon
 - `bug-artillery` Starship Troopers · Klendathu Scorched Earth: background + icon
+- `strategema-grid` Strategema Grid: background + icon
+- `four-lights` There Are Four Lights!: background + icon
 - `alien-sonar-grid` Alien · Motion Tracker: background + icon
 - `happy-gilmore-golf` Happy Gilmore × Caddyshack · Putt-Putt: background + icon
 - `kingpin-bowling` Kingpin · Hook & Hustle: background + icon
@@ -106,6 +102,8 @@ All done ✅
 - `broforce-city` Sean of a Gun: City Siege: background + icon
 - `broforce-desert` Sean of a Gun: Desert Assault: background + icon
 - `frogger-heads` Frogger: background + icon
+- `sqwordle` Sqwordle: background + icon
+- `sean-of-the-dead` Sean of the Dead: background + icon
 
 ### Items (7 of 633 still need a picture; file = id)
 
@@ -117,7 +115,7 @@ All done ✅
 - `v43-fulton-balloon`: Fulton Balloon (Metal Gear)
 - `wz-bullet-bill`: Bullet Bill (Mario Kart)
 
-### Character portraits (54 still need one; file = id, extra faces id.mood)
+### Character portraits (51 still need one; file = id, extra faces id.mood)
 
 - `mylo`: Mylo (Home)
 - `kc`: KC (Home)
@@ -143,10 +141,7 @@ All done ✅
 - `ref-themidnightsociety`: The Midnight Society (Are You Afraid of the Dark?)
 - `ref-tarman`: Tarman (Return of the Living Dead)
 - `ref-commandcenter`: Command Center (Power Rangers)
-- `uss-lydia`: Lydia (Unlimited Savory Systems)
 - `uss-steve`: Steve (Unlimited Savory Systems)
-- `uss-hannah`: Hannah (Unlimited Savory Systems)
-- `uss-carson`: Carson (Unlimited Savory Systems)
 - `bond-lazenby`: James Bond · George Lazenby (James Bond)
 - `bond-moore`: James Bond · Roger Moore (James Bond)
 - `bond-dalton`: James Bond · Timothy Dalton (James Bond)
