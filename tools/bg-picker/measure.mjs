@@ -27,7 +27,7 @@ for(const sc of SCREENS.filter(s=>!only.length||only.includes(s.id))){
  const walk=async(shelf,depth=0)=>{
   const n=await page.locator('.arc-row .arc-tile:not(.arc-tile-all)').count();
   for(let i=0;i<n;i++){
-   await page.evaluate(i=>{const t=document.querySelectorAll('.arc-row .arc-tile:not(.arc-tile-all)')[i];if(!t)return;t.scrollIntoView({inline:'center'});t.click();},i);await page.waitForTimeout(650);
+   await page.evaluate(i=>{const t=document.querySelectorAll('.arc-row .arc-tile:not(.arc-tile-all)')[i];if(!t)return;t.scrollIntoView({inline:'center'});if(!t.classList.contains('on'))t.click();},i);await page.waitForTimeout(650);  // a tap on the focused group tile would open it
    let r=null;for(let k=0;k<6&&!r;k++){if(k)await page.waitForTimeout(400);r=await page.evaluate(()=>{const root=document.querySelector('.arcade-console');if(!root.classList.contains('has-key'))return null;
     const im=(document.querySelector('.arc-keyart .arc-key-front')||[...document.querySelectorAll('.arc-keyart .arc-layer')].pop())?.querySelector('img:not(.arc-keyfill)');if(!im||!im.classList.contains('placed'))return null;
     const R=root.getBoundingClientRect(),rel=q=>{const e=root.querySelector(q),b=e&&e.getBoundingClientRect();return b&&b.height?[b.left-R.left,b.top-R.top,b.right-R.left,b.bottom-R.top].map(Math.round):null;};
@@ -45,8 +45,8 @@ for(const sc of SCREENS.filter(s=>!only.length||only.includes(s.id))){
    (res.info[r.slot]||=[]).push({v:tag,rect:I,file});}
   if(shelf==='featured')return;
   for(let i=0;i<n;i++){const grp=await page.evaluate(i=>!!document.querySelectorAll('.arc-row .arc-tile:not(.arc-tile-all)')[i]?.querySelector('.arc-count'),i);if(!grp||depth>2)continue;
-   await page.evaluate(i=>{const t=document.querySelectorAll('.arc-row .arc-tile:not(.arc-tile-all)')[i];if(!t)return;t.scrollIntoView({inline:'center'});t.click();},i);await page.waitForTimeout(400);
-   await page.click('.arc-info [data-arc-open]').catch(()=>{});await page.waitForTimeout(700);await walk(shelf,depth+1);
+   const was=await page.evaluate(i=>{const t=document.querySelectorAll('.arc-row .arc-tile:not(.arc-tile-all)')[i];if(!t)return null;t.scrollIntoView({inline:'center'});const on=t.classList.contains('on');t.click();return on;},i);await page.waitForTimeout(400);
+   if(was===null)continue;if(!was)await page.click('.arc-info [data-arc-open]').catch(()=>{});await page.waitForTimeout(700);await walk(shelf,depth+1);   // tapping the focused group tile opens it already
    await page.click('[data-arc-up]').catch(()=>{});await page.waitForTimeout(600);}};
  for(const shelf of ['featured','all']){
   await page.click(`.arc-pill[data-id="${shelf}"]`);await page.waitForTimeout(700);await walk(shelf);}
