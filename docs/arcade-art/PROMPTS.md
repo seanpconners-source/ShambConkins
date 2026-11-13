@@ -399,7 +399,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Key art for "Flappy Disaster", a minigame in a party video game that pays tribute to Flappy Bird. Scene: the most iconic moment of Flappy Disaster. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Flappy Disaster" (Flappy Bird tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -409,7 +409,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Key art for "WarGames · Vanishing Tic-Tac-Toe", a minigame in a party video game that pays tribute to WarGames. Scene: Tic-tac-toe on the Wopr where each player keeps only three heads: your fourth move erases your oldest. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "WarGames · Vanishing Tic-Tac-Toe" (WarGames tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -439,7 +439,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Key art for "Brawndo Fruit Merge", a minigame in a party video game that pays tribute to Idiocracy. Scene: Suika-style physics, both at once. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Brawndo Fruit Merge" (Idiocracy tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -449,7 +449,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Key art for "Paint Can Physics", a minigame in a party video game that pays tribute to Home Alone. Scene: Home Alone: defend the top of the stairs against the opposing player’s heads below. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Paint Can Physics" (Home Alone tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -459,7 +459,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Key art for "Penalty Kicks", a minigame in a party video game that pays tribute to The League. Scene: Real-time on one phone. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Penalty Kicks" (The League tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -469,7 +469,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Key art for "Fast & Furious · Quarter-Mile Drag Race", a minigame in a party video game that pays tribute to Fast & Furious. Scene: A real drag race, both at once: Charger (left half) vs Supra (right half). Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Fast & Furious · Quarter-Mile Drag Race" (Fast & Furious tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -479,7 +479,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Key art for "Slither · Snake vs. Snake", a minigame in a party video game that pays tribute to slither.io. Scene: slither.io style, both at once: P1 steers on the left half, P2 on the right. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Slither · Snake vs. Snake" (slither.io tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -489,7 +489,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Key art for "Arrested Development · Banana Stand Tapper", a minigame in a party video game that pays tribute to Arrested Development. Scene: Shove one out the door for +50 and tap loose cash for +150. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Arrested Development · Banana Stand Tapper" (Arrested Development tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -499,7 +499,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Key art for "BASEketball Shootout", a minigame in a party video game that pays tribute to BASEketball. Scene: Baseball rules with a basketball. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "BASEketball Shootout" (BASEketball tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -1032,6 +1032,16 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 **Icon** ✅
 
 > Square game icon for "Sundown Showdown" (Sunset Riders tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Sean of the Dead · `sean-of-the-dead`
+
+**Key art** 
+
+> Key art for "Sean of the Dead", a minigame in a party video game that pays tribute to Shaun of the Dead. Scene: The dead are coming up the street to the Winchester. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Sean of the Dead" (Shaun of the Dead tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Bucketheadland · Buckethead Pinball · `bucketheadland-pinball`
 
