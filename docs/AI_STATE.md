@@ -2,6 +2,21 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+HORDE ART + ARCADE BATCH 02 (Nov 13, branch claude/cool-shannon-lw8o5h, unreleased; built on ccr-e01b44c2-wuca1t = the
+horde + Battleship sprite KITS (slots/templates/briefs), fast-forwarded in). HORDE: GPT's whole 77-picture kit from Drive
+'Living Dead Horde — Sprites' (Characters/World Art/Pickups and Icons; notes UPLOADS-GPT-2026-11-13-1519..1522) in
+assets/horde (lossless WebP, every file exactly 2x template; originals assets/originals/horde). Faces now like Seanic/SotN
+(owner): horde.js drawPlayer → headFacts drawFace, FACE_W 24 units, chin on the frame's measured collar
+(hordeSprites.js neckRows + neckAt, measured per frame of both survivor sheets), mirrored only when the face looks against
+the body, HUD arrow over the real head top. Owner asked for bodies 2x (BODY_K 2, faces unchanged): screenshots sent,
+WAITING for his verdict. Optional '-cabin' enemy variants not made (kit says later). games.mjs horde fuzz OK.
+ARCADE BATCH 02 (Drive 'Arcade Art — Batch 02', notes 1332/1337/1340/1411): icons + logos for banana-money-grab,
+baseketball-shootout, brawndo-fruit-merge, derezzed-cycles, fast-quarter-mile, flappy-disaster, home-alone-paint-can,
+league-penalties, radical-bike, sewer-clash, snake-v-snake, wopr-grid imported (Grok ones replaced, kept as *-previous in
+assets/originals/keyart); their 12 backgrounds imported + KEY_BOX, old locks of the 3 replaced ones removed from
+KEY_PLACE; NOT locked in the Background Picker yet (measure → assemble → publish → owner locks → apply.py before release).
+GPT's new style note: busier full-frame backgrounds, no blank menu third (baseketball's stadium is the first).
+
 BATTLESHIP SPRITE KIT (Nov 13, branch ccr-e01b44c2-wuca1t, unreleased; owner: "make sprite templates for battleship"):
 src/data/battleshipSprites.js = SHEETS hit (4x96, burning cell), boom (8x128), splash (6x128), sailor (120x160 headless, U 100,
 face (60,50) 80; rows stand/cheer/fall/swim) + PICTURES ship-<battleship|cruiser|submarine|destroyer|patrol> (len x 96 by 96,
