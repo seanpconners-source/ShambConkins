@@ -26,6 +26,31 @@ const ENEMY_SIZES={shambler:46,runner:42,crawler:38,bloater:72,bat:34,spitter:48
 // BODY_K) a 46-unit shambler only came up to the survivor's shoulders. Feet stay on the same spot; hitboxes unchanged.
 const ENEMY_ART_K=1.5;
 for(const [id,sz] of Object.entries(ENEMY_SIZES)){const w=sz*PX;SHEETS['enemy-'+id]={frame:[w,w],foot:[w/2,Math.round(w*44/48)],rows:{walk:4},enemy:id,sz};}
+// WEAPON + EFFECT SHEETS (Nov 13, owner: 'cool sprites for the nails, the chainsaw swipe, the shells, the explosions... all of
+// it'). Top-down like the rest of the map, transparent, frames left to right in one row. `pivot` = the point that sits on
+// the spot the game gives (blast centre, the player for the swipe, the barrel end for the muzzle flash, the ground for
+// gore); `R` = the radius the game scales to (template px). Played once over the effect's life unless `loop` (fps).
+//  fx-explosion: grenades, barrels, bloaters, bombs (R = the blast radius).  fx-slash: the chainsaw swipe around the player,
+//  pointing RIGHT, the blade sweeping through a 100° wedge (R = the reach; a wider swing repeats it round the circle).
+//  fx-muzzle: the boomstick's flash at the barrel, pointing right.  fx-pulse: the Hurricane Lantern's ring of light (R =
+//  the ring at its widest, last frame).  fx-bolt: a lightning strike from top (pivot) to bottom, stretched between the
+//  two points.  fx-impact: the flash where a shot hits.  fx-gore: a zombie bursting (pivot = the ground under it; drawn
+//  about 1.3 x the zombie's size).  pool-fire (barrel pool: green Trioxin / cabin: burning kerosene), pool-goo (bloater
+//  acid), pool-tar (Tarman's tar), aura-goo (the Tarman Goo weapon around the player): looped ellipses filling the frame.
+const FX={
+ 'fx-explosion':{frame:[192,192],rows:{boom:8},pivot:[96,96],R:80},
+ 'fx-slash':{frame:[256,256],rows:{swing:6},pivot:[128,128],R:120,arc:1.75},
+ 'fx-muzzle':{frame:[96,64],rows:{flash:4},pivot:[8,32]},
+ 'fx-pulse':{frame:[256,256],rows:{pulse:6},pivot:[128,128],R:120},
+ 'fx-bolt':{frame:[64,512],rows:{bolt:4},pivot:[32,0]},
+ 'fx-impact':{frame:[96,96],rows:{hit:5},pivot:[48,48],R:40},
+ 'fx-gore':{frame:[128,128],rows:{splat:6},pivot:[64,100],R:48},
+ 'pool-fire':{frame:[192,144],rows:{loop:4},pivot:[96,72],R:96,loop:8},
+ 'pool-goo':{frame:[192,144],rows:{loop:4},pivot:[96,72],R:96,loop:6},
+ 'pool-tar':{frame:[192,144],rows:{loop:4},pivot:[96,72],R:96,loop:5},
+ 'aura-goo':{frame:[192,144],rows:{loop:4},pivot:[96,72],R:96,loop:6},
+};
+for(const [k,d] of Object.entries(FX))SHEETS[k]={...d,fx:true};
 // PICTURES: one still picture each. `size` = template [w,h] px; `foot` = the ground point (props/building: bottom-centre
 // anchor), `light` = where the lamp/torch glow is centred. kind: prop (type + variant in the game), building, ground (a
 // seamless tile repeated over the whole map, 256 world units), gem (XP gem tier 0..3), icon (64-unit glyph box: weapons,
@@ -63,6 +88,10 @@ const ICON_IDS=['boomstick','chainsaw','necro','barrel','goo','crowbar','nailgun
  'might','armor','maxhp','recovery','cooldown','area','pspeed','duration','magnet','luck','growth','greed','revive',
  'chicken','chest','bomb','coin','skull'];
 for(const id of ICON_IDS)PICTURES['icon-'+id]={kind:'icon',icon:id,size:[128,128]};
+// Shots (stills, pointing RIGHT, centre = the shot's position; the game turns them along the flight): proj-shell (a boomstick
+// pellet), proj-nail; enemy spit: shot-spit (green, spitters), shot-fire (orange), shot-curse (purple, bosses).
+Object.assign(PICTURES,{'proj-shell':{kind:'shot',size:[32,16]},'proj-nail':{kind:'shot',size:[48,12]},
+ 'shot-spit':{kind:'shot',size:[32,32]},'shot-fire':{kind:'shot',size:[32,32]},'shot-curse':{kind:'shot',size:[32,32]}});
 
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
 const imgs=new Map();
@@ -85,6 +114,7 @@ function targetW(name,w){
  if(d.kind==='icon')return Math.min(w,96);            // baked into <=64 px cards and glyphs
  if(d.kind==='gem')return Math.min(w,32);             // drawn 12-24 px
  const tw=d.frame?Math.max(...Object.values(d.rows))*d.frame[0]:d.size[0];   // template px (PX per world unit)
+ if(d.fx)return Math.min(w,tw);                   // effects are drawn up to template size or bigger: keep template px
  const k=d.enemy?ENEMY_ART_K:/^survivor-/.test(base)?SURVIVOR_K:1;          // drawn this many times the template size
  return Math.min(w,Math.ceil(tw/PX*k*OUT_PX));
 }

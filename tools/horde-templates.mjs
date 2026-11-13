@@ -46,6 +46,16 @@ for (const name of sheetNames) for (const zoom of ZOOMS) {
     const guide = (row, f, n) => {
       const o = document.createElement('canvas'); o.width = fw; o.height = fh; const g = o.getContext('2d');
       if (baked) { g.drawImage(baked.img, (f & 1) * baked.cell, 0, baked.cell, baked.cell, 0, 0, fw, fh); return o; }
+      if (def.fx) {   // effect guide: where it sits (pivot), how far it reaches (R), which way it points
+        const [px, py] = def.pivot, R = def.R, u = (f + 1) / n; g.lineWidth = 3; g.strokeStyle = '#ff9a2a'; g.fillStyle = 'rgba(255,154,42,.35)';
+        if (name === 'fx-slash') { g.beginPath(); g.moveTo(px, py); g.arc(px, py, R, -def.arc / 2, -def.arc / 2 + def.arc * u); g.closePath(); g.fill(); g.stroke(); }
+        else if (name === 'fx-muzzle') { g.beginPath(); g.moveTo(px, py - 10); g.lineTo(px + 70 * u + 10, py); g.lineTo(px, py + 10); g.closePath(); g.fill(); g.stroke(); }
+        else if (name === 'fx-bolt') { g.beginPath(); g.moveTo(px, 0); for (let k = 1; k <= 8; k++) g.lineTo(px + (k % 2 ? 10 : -10) * (k < 8), fh * k / 8); g.stroke(); }
+        else if (name.startsWith('pool-') || name === 'aura-goo') { g.beginPath(); g.ellipse(px, py, fw / 2 - 2, fh / 2 - 2, 0, 0, TAU); g.fill(); g.stroke(); }
+        else if (name === 'fx-gore') { g.beginPath(); g.ellipse(px, py, R * u, R * u * .45, 0, 0, TAU); g.fill(); g.stroke(); }
+        else { const r = name === 'fx-pulse' ? R * u : R * Math.min(1, .3 + u); g.beginPath(); g.arc(px, py, r, 0, TAU); if (name !== 'fx-pulse') g.fill(); g.stroke(); }
+        return o;
+      }
       // survivor body as drawPlayer draws it (2 px per unit, feet on the foot point); the head is the game's job
       g.translate(def.foot[0], def.foot[1]); g.scale(HS.PX, HS.PX); g.translate(0, -16);
       const ph = row === 'walk' ? f / n * TAU : 0, mov = row === 'walk', bob = mov ? Math.abs(Math.sin(ph)) * 3 : Math.sin(f / n * TAU);
@@ -67,7 +77,8 @@ for (const name of sheetNames) for (const zoom of ZOOMS) {
         const o = guide(row, f, n);
         if (standin) { x.drawImage(o, X, Y); continue; }
         x.globalAlpha = .3; x.drawImage(o, X, Y); x.globalAlpha = 1;
-        x.fillStyle = 'rgba(220,30,30,.9)'; x.fillRect(X + def.foot[0] - 4, Y + def.foot[1], 9, 1); x.fillRect(X + def.foot[0], Y + def.foot[1] - 4, 1, 5);
+        const ft = def.foot || def.pivot; x.fillStyle = 'rgba(220,30,30,.9)'; x.fillRect(X + ft[0] - 4, Y + ft[1], 9, 1); x.fillRect(X + ft[0], Y + ft[1] - 4, 1, 5);
+        if (def.fx && def.R && !name.startsWith('pool-') && name !== 'aura-goo') { x.setLineDash([4, 3]); x.strokeStyle = 'rgba(30,90,230,.8)'; x.lineWidth = 1; x.beginPath(); x.arc(X + ft[0], Y + ft[1], def.R, 0, TAU); x.stroke(); x.setLineDash([]); }
         if (def.head) {
           const [hx, hy] = def.head, R = def.headSize / 2;
           x.strokeStyle = 'rgba(30,90,230,.9)'; x.lineWidth = 1.5; x.beginPath(); x.arc(X + hx, Y + hy, R, 0, TAU); x.stroke();
@@ -100,6 +111,8 @@ for (const name of picNames) for (const zoom of ZOOMS) {
     else if (d.kind === 'ground') g.drawImage(HD.groundTile(d.theme, 12345), 0, 0, W, H);
     else if (d.kind === 'gem') { const cols = ['#58b8ff', '#62e08a', '#ff6a6a', '#d98cff'];
       g.translate(W / 2, H / 2); g.scale(W / 28, H / 28); g.lineWidth = 1.6; HD.poly(g, [0, -11, 8, -2, 0, 11, -8, -2], cols[d.tier], '#10150f'); g.globalAlpha = .55; HD.poly(g, [0, -9, 5, -2, 0, 0, -5, -2], '#fff'); }
+    else if (d.kind === 'shot') { g.fillStyle = name === 'shot-spit' ? '#8cff4a' : name === 'shot-fire' ? '#ffb04a' : name === 'shot-curse' ? '#c07aff' : name === 'proj-nail' ? '#e7edf2' : '#ffd27a';
+      g.beginPath(); g.ellipse(W / 2, H / 2, W * .42, H * .38, 0, 0, TAU); g.fill(); g.strokeStyle = 'rgba(220,30,30,.9)'; g.lineWidth = 1; g.beginPath(); g.moveTo(W * .2, H / 2); g.lineTo(W - 2, H / 2); g.lineTo(W - 6, H / 2 - 3); g.moveTo(W - 2, H / 2); g.lineTo(W - 6, H / 2 + 3); g.stroke(); }
     else if (d.kind === 'icon') g.drawImage(HD.bakeIcon(d.icon, W * 64 / 60.8, false), -(W * 64 / 60.8 - W) / 2, -(W * 64 / 60.8 - W) / 2);
     if (standin) { x.drawImage(o, 0, 0); return c.toDataURL('image/png'); }
     x.globalAlpha = d.kind === 'ground' ? .45 : .3; x.drawImage(o, 0, 0); x.globalAlpha = 1;
