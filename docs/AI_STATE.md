@@ -2,6 +2,14 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+BATCH 2 ART + ZONES (Nov 13 late, branch claude/cool-shannon-lw8o5h): GPT's 22 batch 2 pictures from Drive (notes UPLOADS-GPT-2026-11-13-2239/-2240;
+Horde 'Effects' folder + batch2-small-finals.zip, Battleship 'Batch 2'): all exactly 2x template, pivots match, SHA as noted; lossless WebP in
+assets/horde + assets/battleship (originals assets/originals/*). Horde gore now .38 size and GORE_MAX 8 on screen (bosses/elites always).
+Battleship cap: brim from the FACE box (face.y+.04h); the whole-head box made it float on some moods. ZONES BUG (old): zone() never pushes into Z,
+and 4 callers forgot to: Trioxin Barrel puddles (owner: 'does nothing'), Trioxin Rain circles, two boss push-shockwaves: all push now.
+PICKER: owner locked the 16 (batch 02 12 + black-sabbath/bosses/doom-2/king-gizzard) in N1zQ42 → apply.py on those 16 only: KEY_PLACE 59/59 on all 12.
+Freeze (owner): Pause/✕ dead and all sound stops = the page's main thread is stuck (or the tab died); black box will say where.
+
 HORDE FREEZE ROUND 2 (Nov 13 night, after v0.96.14, branch claude/cool-shannon-lw8o5h, unreleased): owner: froze 3 runs in a row
 on the 12:00 night at ~7:39 left (= 261 s in). Not reproduced headless: real-time bot nights past 4:45, every weapon evolved
 (2-3 ms/frame), chargers (start at curM 3.8 = 7:26 left), the 2nd hazard (Dawn 250 s / Full 225 s). Found: Trioxin Rain made
