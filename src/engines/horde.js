@@ -5,6 +5,7 @@ const {store}=require("src/state.js");
 const {soloProgress}=require("src/solo.js");
 const {netField}=require("src/engines/netField.js");
 const HD=require("src/engines/hordeData.js");
+const HS=require("src/data/hordeSprites.js");
 const {WEAPONS,PASSIVES,ENEMIES,MODES,WEAPON_IDS,PASSIVE_IDS,MAX_LEVEL,weaponStats,calcStats,xpNeed}=HD;
 
 const CS=480,CELL=56,HB=1024,MAXE=440,PSPD=176,PRAD=14,TAU=Math.PI*2,RW=120;
@@ -38,14 +39,17 @@ async function horde(s){
  s.hint(alone?'SURVIVE THE NIGHT. Drag anywhere: your head walks the way you drag (or WASD / arrow keys). Weapons fire by themselves. Pick up gems to level up and choose upgrades. Smash lamps and barrels for pickups. Open chests (from elites and bosses) to evolve a maxed weapon that has its matching passive. Survive until dawn, or kill the final boss.':'SURVIVE THE NIGHT TOGETHER. Each player touches their own half and drags: the head walks the way you drag (or P1 WASD / P2 arrow keys). Weapons fire by themselves. Pick up gems to level up and choose upgrades. Smash lamps and barrels for pickups. Open chests (from elites and bosses) to evolve a maxed weapon that has its matching passive. Stand next to a fallen partner for 2.5 s to revive. Survive until dawn, or kill the final boss.');
 
  // ---------- art ----------
+ await HS.loadHorde();   // the owner's drop-in pictures (assets/horde), if any, before the art is baked
  const enemyArt=HD.bakeEnemies(theme),propArt=HD.bakeProps(theme),building=HD.bakeBuilding(theme);
  const iconUI={},iconG={};
- for(const id of WEAPON_IDS)iconUI[id]=HD.bakeIcon(WEAPONS[id].icon,64,true,'#e0b64a');
- for(const id of PASSIVE_IDS)iconUI[id]=HD.bakeIcon(PASSIVES[id].icon,64,true,'#5fd3c4');
- for(const id of ['chicken','chest','bomb','magnet','coin','skull','medic','growth','revive'])iconG[id]=HD.bakeIcon(id,48,false);
- for(const id of WEAPON_IDS)iconG[id]=HD.bakeIcon(WEAPONS[id].icon,48,false);
- const gemArt=HD.XP_TIERS.map(([v,col])=>{const cv=HD.mk(28,28),g=cv.getContext('2d');g.translate(14,14);g.lineWidth=1.6;g.strokeStyle='#10150f';HD.poly(g,[0,-11,8,-2,0,11,-8,-2],col,'#10150f');g.globalAlpha=.55;HD.poly(g,[0,-9,5,-2,0,0,-5,-2],'#fff');return cv;});
- const groundPat=x.createPattern(HD.groundTile(theme,wseed^0x9e37),'repeat');
+ for(const id of WEAPON_IDS)iconUI[id]=HD.bakeIcon(WEAPONS[id].icon,64,true,'#e0b64a',theme);
+ for(const id of PASSIVE_IDS)iconUI[id]=HD.bakeIcon(PASSIVES[id].icon,64,true,'#5fd3c4',theme);
+ for(const id of ['chicken','chest','bomb','magnet','coin','skull','medic','growth','revive'])iconG[id]=HD.bakeIcon(id,48,false,null,theme);
+ for(const id of WEAPON_IDS)iconG[id]=HD.bakeIcon(WEAPONS[id].icon,48,false,null,theme);
+ const GEM_PIC=['gem-blue','gem-green','gem-red','gem-purple'].map(n=>HS.picture(n,theme));
+ const gemArt=HD.XP_TIERS.map(([v,col],ti)=>{if(GEM_PIC[ti])return GEM_PIC[ti];const cv=HD.mk(28,28),g=cv.getContext('2d');g.translate(14,14);g.lineWidth=1.6;g.strokeStyle='#10150f';HD.poly(g,[0,-11,8,-2,0,11,-8,-2],col,'#10150f');g.globalAlpha=.55;HD.poly(g,[0,-9,5,-2,0,0,-5,-2],'#fff');return cv;});
+ const groundPic=HS.picture('ground-'+theme),groundPat=x.createPattern(groundPic||HD.groundTile(theme,wseed^0x9e37),'repeat');
+ if(groundPic&&groundPat.setTransform&&typeof DOMMatrix!=='undefined')groundPat.setTransform(new DOMMatrix().scale(256/groundPic.width));   // drop-in tile = 256 units
  const lightBig=HD.lightSprite(128,.3),lightSoft=HD.lightSprite(128,.05);
  const glowOrange=HD.glowSprite(64,'255,170,60'),glowGreen=HD.glowSprite(64,'110,255,90'),glowWhite=HD.glowSprite(64,'255,255,235'),glowRed=HD.glowSprite(64,'255,70,60');
  const lc=document.createElement('canvas'),lx=lc.getContext('2d');
@@ -691,10 +695,10 @@ async function horde(s){
   x.drawImage(a.img,p.x-a.ax*sc+sh,p.y-a.ay*sc,a.w*sc,a.h*sc);
  }
  function drawEnemy(e,t){
-  const a=enemyArt[e.type],dsz=a.sz*e.sc,f=((t*4+e.ph)|0)&1,cy=e.y+e.r-dsz*20/48-(e.fly?8+Math.sin(t*6+e.ph)*3:0);
+  const a=enemyArt[e.type],dsz=a.sz*e.sc,f=((t*a.fps+e.ph)|0)%a.n,cy=e.y+e.r-dsz*20/48-(e.fly?8+Math.sin(t*6+e.ph)*3:0);
   let row=e.fl>0?1:0;if(e.fuse>0&&((t*14)&1))row=1;if(e.ai===AI.charger&&e.st===1&&((t*12)&1))row=1;
   if(e.phase)x.globalAlpha=.6+.2*Math.sin(t*3+e.ph);
-  x.drawImage(a.img,((e.face<0?2:0)+f)*a.cell,row*a.cell,a.cell,a.cell,e.x-dsz/2,cy-dsz/2,dsz,dsz);
+  x.drawImage(a.img,((e.face<0?a.n:0)+f)*a.cell,row*a.cell,a.cell,a.cell,e.x-dsz/2,cy-dsz/2,dsz,dsz);
   if(e.phase)x.globalAlpha=1;
   if(e.elite||e.boss){const w=Math.max(30,e.r*2.2),by=e.y-e.r-(e.boss?22:14);x.fillStyle='rgba(0,0,0,.6)';x.fillRect(e.x-w/2-1,by-1,w+2,6);x.fillStyle=e.immune?'#9a6aff':e.boss?'#ff4a3a':'#ff8a3a';x.fillRect(e.x-w/2,by,w*clamp(e.hp/e.mhp,0,1),4);}
  }
@@ -703,13 +707,18 @@ async function horde(s){
   x.fillStyle='rgba(0,0,0,.35)';x.beginPath();x.ellipse(p.x,p.y+16,14,5,0,0,TAU);x.fill();
   x.strokeStyle=PCOL[i];x.lineWidth=2;x.globalAlpha=p.down?.4:.85;x.beginPath();x.ellipse(p.x,p.y+16,17,6.5,0,0,TAU);x.stroke();
   if(p.inv>0&&!p.down&&((t*16)&1))x.globalAlpha=.45;else x.globalAlpha=p.down?.55:1;
-  if(!p.down){const lg=Math.sin(p.walk)*(p.moving?5:0);x.strokeStyle='#1a1d26';x.lineWidth=4;x.lineCap='round';x.beginPath();x.moveTo(p.x-4,p.y+6);x.lineTo(p.x-4+lg,p.y+16);x.moveTo(p.x+4,p.y+6);x.lineTo(p.x+4-lg,p.y+16);x.stroke();
+  const body=HS.sheet('survivor-p'+(i+1),theme);   // drop-in body (no head): rows idle walk hurt down
+  if(body){const row=p.down?'down':p.hurt>0?'hurt':p.moving?'walk':'idle',d=body.def;
+   const f=row==='walk'?Math.floor(((p.walk%TAU)+TAU)%TAU/TAU*d.rows.walk):Math.floor(t*(row==='idle'?5:row==='hurt'?8:3)),r=HS.frameRect(body,row,f);
+   const dw=d.frame[0]/HS.PX,dh=d.frame[1]/HS.PX,fx=d.foot[0]/HS.PX,fy=d.foot[1]/HS.PX;
+   x.save();x.translate(p.x,p.y+16);if(p.face<0)x.scale(-1,1);x.drawImage(body.img,r.sx,r.sy,r.sw,r.sh,-fx,-fy,dw,dh);x.restore();}
+  else if(!p.down){const lg=Math.sin(p.walk)*(p.moving?5:0);x.strokeStyle='#1a1d26';x.lineWidth=4;x.lineCap='round';x.beginPath();x.moveTo(p.x-4,p.y+6);x.lineTo(p.x-4+lg,p.y+16);x.moveTo(p.x+4,p.y+6);x.lineTo(p.x+4-lg,p.y+16);x.stroke();
    HD.rr(x,p.x-8,p.y-5-bob*.5,16,15,5);x.fillStyle=PCOL[i];x.fill();x.lineWidth=1.5;x.strokeStyle='#10150f';x.stroke();}
   const hy=p.y-20-bob;x.save();x.translate(p.x,hy);if(p.face<0)x.scale(-1,1);
   s.sprite(x,i,0,0,52,{exact:true,mood:p.hurt>0||p.down?'sad':undefined});x.restore();x.globalAlpha=1;
   if(!p.down){x.fillStyle=PCOL[i];x.beginPath();x.moveTo(p.x-5,p.y-58-bob);x.lineTo(p.x+5,p.y-58-bob);x.lineTo(p.x,p.y-51-bob);x.closePath();x.fill();
    if(p.hp<p.maxHp){x.fillStyle='rgba(0,0,0,.65)';x.fillRect(p.x-18,p.y+22,36,5);x.fillStyle=p.hp<p.maxHp*.3?'#ff4a4a':'#5fe08a';x.fillRect(p.x-17,p.y+23,34*p.hp/p.maxHp,3);}}
-  else{x.strokeStyle='#e8e2cf';x.lineWidth=3;x.beginPath();x.moveTo(p.x,p.y-8);x.lineTo(p.x,p.y+14);x.moveTo(p.x-7,p.y);x.lineTo(p.x+7,p.y);x.stroke();
+  else{if(!body){x.strokeStyle='#e8e2cf';x.lineWidth=3;x.beginPath();x.moveTo(p.x,p.y-8);x.lineTo(p.x,p.y+14);x.moveTo(p.x-7,p.y);x.lineTo(p.x+7,p.y);x.stroke();}
    x.strokeStyle='rgba(255,255,255,.25)';x.lineWidth=5;x.beginPath();x.arc(p.x,p.y-4,26,0,TAU);x.stroke();x.strokeStyle='#7dff9a';x.beginPath();x.arc(p.x,p.y-4,26,-Math.PI/2,-Math.PI/2+TAU*clamp(p.revT/2.5,0,1));x.stroke();
    txt('HELP!',p.x,p.y-42,12,'#ffe27a',  'center',true);}
  }
@@ -752,7 +761,7 @@ async function horde(s){
   for(let i=0;i<E.length;i++){const e=E[i];if(e.dead||Math.abs(e.x-camX)>hw+70||Math.abs(e.y-camY)>hh+90)continue;e.sy=e.y+e.r*.5;DL.push(e);}
   for(const p of P){p.sy=p.y;DL.push(p);}
   DL.sort(byY);
-  for(let i=0;i<DL.length;i++){const o=DL[i];if(o.dk===1)drawEnemy(o,t);else if(o.dk===2)drawPlayer(o,t);else if(o.type==='building'){x.drawImage(building.img,o.x-building.w/2,o.y-building.h+10);}else drawProp(o,t);}
+  for(let i=0;i<DL.length;i++){const o=DL[i];if(o.dk===1)drawEnemy(o,t);else if(o.dk===2)drawPlayer(o,t);else if(o.type==='building'){x.drawImage(building.img,o.x-building.w/2,o.y-building.h+10,building.w,building.h);}else drawProp(o,t);}
   // orbiters
   for(const p of P){if(p.down)continue;for(const w of p.weapons){if(w.kind!=='orbit'||!w.on)continue;const n=Math.round(w.st.count),rad=w.st.radius*p.st.area,sz=w.st.size*p.st.area*2.6;for(let j=0;j<n;j++){const a=w.ang+j*TAU/n;x.drawImage(iconG.necro,p.x+Math.cos(a)*rad-sz/2,p.y+Math.sin(a)*rad*.9-sz/2-8,sz,sz);}}}
   // projectiles

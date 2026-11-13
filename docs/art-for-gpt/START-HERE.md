@@ -16,6 +16,7 @@ time, in order, skipping anything marked done (✅). Name every file exactly as 
 | **Sundown Showdown stages** (skies, backgrounds, ground, building fronts, canyon rock, street props) | `docs/sundown-sprites/GPT-SPRITE-BRIEF.md` → "Stage art" | `docs/sundown-sprites/templates/*-building-*@2x.png` | which files are in `assets/sundown/` |
 | **Major League Baseball sprites** (batters, pitchers, fielders, catcher, umpire, helmets/caps, ball, stadium, logos) | `docs/baseball-sprites/GPT-SPRITE-BRIEF.md` | `docs/baseball-sprites/templates/*@2x.png` | which files are in `assets/baseball/` |
 | **Symphony of the Night sprites + stages** (hero, monsters, Death, Dracula + true form, candles, swords/items, skies, room walls, floors, props) | `docs/sotn-sprites/GPT-SPRITE-BRIEF.md` | `docs/sotn-sprites/templates/*@2x.png` | which files are in `assets/sotn/` |
+| **Living Dead Horde sprites** (headless survivor bodies, 18 zombies + bosses, graveyard props, buildings, ground tiles, gems, weapon/upgrade icons) | `docs/horde-sprites/GPT-SPRITE-BRIEF.md` | `docs/horde-sprites/templates/*@2x.png` | which files are in `assets/horde/` |
 | **Sonic 3 style game sprites + jungle zone** (headless runners + ball, rings, springs, item boxes, robots, terrain, backdrop, bosses; made with Grok) | `docs/sonic3-sprites/GROK-SPRITE-BRIEF.md` | `docs/sonic3-sprites/templates/*@4x.png` (+ `rows/`) | which files are in `assets/sonic3/` |
 | **Seanic title screen + character select** (scene, hedgehog title pose, flying fox, menu backdrop, TV monitor, two standing runners) | `docs/sonic3-sprites/TITLE-SELECT-BRIEF.md` | `docs/sonic3-sprites/templates/title-*.png`, `select-*.png` | which `title-*` / `select-*` files are in `assets/sonic3/` |
 | **Arcade key art, logos, icons** (picture behind each game, its logo, its tile icon) | `docs/arcade-art/PROMPTS.md` (a ready prompt per slot; ✅ = done) | | `assets/tiles/SLOTS.md` |
@@ -63,7 +64,7 @@ them, which is why every update is a new file.
 
 ## Hand back (owner)
 Best: GitHub, which Claude can always read. In the browser, open the repository → folder **`art-inbox/<area>/`** (for example
-`art-inbox/sundown/`, `art-inbox/baseball/`, `art-inbox/sotn/`, `art-inbox/sonic3/`, `art-inbox/items/`, `art-inbox/arcade/`, `art-inbox/portraits/`) → **Add file → Upload files** →
+`art-inbox/sundown/`, `art-inbox/baseball/`, `art-inbox/sotn/`, `art-inbox/horde/`, `art-inbox/sonic3/`, `art-inbox/items/`, `art-inbox/arcade/`, `art-inbox/portraits/`) → **Add file → Upload files** →
 commit. Character portraits can also go straight to `assets/portraits/` on main, as always.
 Google Drive also works when Claude runs on the laptop, but a cloud session can only pull tiny files from Drive.
 
@@ -72,6 +73,7 @@ Google Drive also works when Claude runs on the laptop, but a cloud session can 
   - sundown → check frame sizes against `src/data/sundownSprites.js` (4x art: downscale with nearest-neighbour), `assets/sundown/`
   - baseball → check frame sizes against `src/data/baseballSprites.js` (2x art: downscale to the frame size), `assets/baseball/`
   - sotn → check frame sizes against `src/data/sotnSprites.js` (steps in `docs/sotn-sprites/README.md` → Importing), `assets/sotn/`
+  - horde → check sizes against `src/data/hordeSprites.js` (steps in `docs/horde-sprites/README.md` → Importing), `assets/horde/`
   - sonic3 → steps in `docs/sonic3-sprites/README.md` → Importing, `assets/sonic3/`
   - items → trim, 512 px LOSSLESS WebP into `assets/items/<id>.webp`, original into `assets/originals/items/`
   - arcade → `python3 tools/import-arcade-art.py art-inbox/arcade` (key art then goes through the Background Picker)

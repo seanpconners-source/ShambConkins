@@ -91,6 +91,13 @@ if (fs.existsSync(sundownDir)) for (const f of fs.readdirSync(sundownDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('sundown:' + m[1].toLowerCase(), MIME[ext], ext, path.join(sundownDir, f));
 }
+// Living Dead Horde / Evil Dead Cabin drop-in art: assets/horde/<name>.(webp|png) -> horde:<name>
+// (names and layout: src/data/hordeSprites.js, docs/horde-sprites/README.md).
+const hordeDir = path.join(root, 'assets/horde');
+if (fs.existsSync(hordeDir)) for (const f of fs.readdirSync(hordeDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('horde:' + m[1].toLowerCase(), MIME[ext], ext, path.join(hordeDir, f));
+}
 // Major League Baseball sprite sheets and pictures: assets/baseball/<name>.(webp|png) -> baseball:<name>
 // (names and layout: src/data/baseballSprites.js, docs/baseball-sprites/README.md).
 const baseballDir = path.join(root, 'assets/baseball');

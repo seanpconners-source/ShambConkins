@@ -41,7 +41,7 @@ const LATER={'music:bhpin-':['bucketheadland-pinball'],'music:kgpin-':['king-giz
  'music:sunset-':['django-hangman','django-hangman-showdown','django-hangman-wanted','sundown-showdown'],'doom:':['doom','doom-2'],
  // each game's own pictures (owner, Nov 6: lots more art and sounds coming): fetched the first time that game starts
  'photohunt:':['megatouch-photohunt'],'pinball:buckethead:':['bucketheadland-pinball'],'pinball:black-sabbath:':['black-sabbath-pinball'],
- 'pinball:king-gizzard:':['king-gizzard-pinball'],'sundown:':['sundown-showdown'],'baseball:':['major-league-fielding','major-league-bats'],'sotn:':['cv-symphony'],'sqwordle:':['sqwordle']};
+ 'pinball:king-gizzard:':['king-gizzard-pinball'],'sundown:':['sundown-showdown'],'baseball:':['major-league-fielding','major-league-bats'],'sotn:':['cv-symphony'],'sqwordle:':['sqwordle'],'horde:':['living-dead-horde','evil-dead-cabin']};
 // [name, bytes] of the later files (all, or only those of prefixes that pass `which`)
 function laterFiles(which=()=>true){if(!APP_FILES)return [];let up={};try{up=require("src/data/userPortraits.js").USER_PORTRAITS;}catch{}
  const names=new Set();for(const [k,url] of Object.entries(up))for(const pre of Object.keys(LATER))if(k.startsWith(pre)&&which(pre)&&typeof url==='string')names.add(url.replace(/^a\//,''));

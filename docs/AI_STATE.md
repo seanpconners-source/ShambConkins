@@ -2,6 +2,18 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+HORDE SPRITE KIT (Nov 13, branch ccr-e01b44c2-wuca1t, unreleased; owner: "make sprite templates for living dead horde"): src/data/hordeSprites.js
+= SHEETS survivor-p1/p2 (112x128 headless bodies, rows idle 4/walk 6/hurt 2/down 2, face circle (56,52) 104 px = the game's 52-unit
+head) + enemy-<id> for all 18 (square 2 x sz, walk 4 at 8 fps, feet at 44/48) + PICTURES props (grave-1..3, tree-1..3, car-1/2, lamp
+(+broken), torch (+out), barrel/-red/-toxic, crate, bush, bones, rubble; foot anchors), building-dead/-cabin 600x380, ground-dead/-cabin
+512 seamless (pattern scaled to 256 units), gem-blue/green/red/purple, icon-<30 glyphs> 128 (= the 64-unit box in bakeIcon); 2 px per
+unit, 2x/4x deliveries scale by width; `<name>-cabin` used first in the Evil Dead variant. assets/horde → horde:<name> (build.mjs),
+pwa.js LATER 'horde:'. WIRED with drawn fallback: horde.js awaits HS.loadHorde() before baking; hordeData bakeEnemies (n frames, fps),
+bakeProps, bakeBuilding, bakeIcon(theme), gems, ground; drawPlayer draws the body sheet under the face. Templates `node
+tools/horde-templates.mjs` → docs/horde-sprites/templates (+@2x; faint drawn guide), `--standin <dir>` = drawn art in every slot:
+checked in a build, both themes look the same as the drawn game. Brief docs/horde-sprites/GPT-SPRITE-BRIEF.md, README, START-HERE row.
+games.mjs living-dead-horde clean. No owner art yet.
+
 SQWORDLE ART IN (Nov 13, RELEASED as v0.96.11, owner's GPT set from Drive 'Sqwordle — Sprites' 1kbWGQBOSj-0HjlXdZ08rrISsgKjpYA3l + sqwordle-small-files-01.zip):
 22 pictures in assets/sqwordle (lossless WebP; originals assets/originals/sqwordle as delivered): mascot/-happy/-sad/-think, body-idle/
 blow/cheer/phew/sad/shell (768 template canvas, feet on y 737, real alpha), fx-jet/hydro/bubble/drop/splash/rainbow/sparkle,

@@ -1,5 +1,6 @@
 // Data tables for the Horde engine (weapons, passives, enemies, modes, schedule). Pure data + tiny helpers: no DOM here.
 const {clamp}=require("src/utils.js");
+const HS=require("src/data/hordeSprites.js");   // owner drop-in art (falls back to the drawn art below)
 
 // ---------- weapons ----------
 // lv[i] = [card text, modifier] for level i+2. Modifier keys: plain = add, "xxx x" suffix x = multiply (dmgx -> dmg*=).
@@ -257,18 +258,21 @@ const THEMES={
  cabin:{name:'cabin',skin:'#b4bfae',skin2:'#c4cdb8',eye:'#f4f6ee',glow:'#ff5a3a',glowEye:'#ff6a4a',ground:'#1d261b',ground2:'#27301f',road:'#3a2f22',sign:'KNOWBY CABIN',dirt:'#3a2d1f',leaf:'#4a3a1e'}
 };
 const ESS=1;
-// bake: per type one canvas, 4 columns (right f0,f1, left f0,f1) x 2 rows (normal, flash)
+// bake: per type one canvas, 2n columns (right f0..fn-1, left f0..fn-1) x 2 rows (normal, flash). Drawn art n=2 at 4 fps;
+// a drop-in sheet 'enemy-<id>' (hordeSprites.js) n=4 at 8 fps, baked at the template's 2 px per unit.
 function bakeEnemies(theme){
  const th=THEMES[theme]||THEMES.dead,out={};
  for(const id of ENEMY_IDS){
-  const def=ENEMIES[id],art=ARTS[id]||ARTS[({elite:'sergeant'})[id]]||ARTS.shambler,cell=Math.ceil(def.sz*ESS),cv=mk(cell*4,cell*2),c=cv.getContext('2d'),k=def.sz/48*ESS;
-  for(let col=0;col<4;col++){
-   c.save();c.translate(col*cell+cell/2,cell/2);c.scale(k,k);if(col>=2)c.scale(-1,1);
+  const def=ENEMIES[id],art=ARTS[id]||ARTS[({elite:'sergeant'})[id]]||ARTS.shambler,sh=HS.sheet('enemy-'+id,theme);
+  const n=sh?sh.def.rows.walk:2,cell=sh?sh.def.frame[0]:Math.ceil(def.sz*ESS),cv=mk(cell*n*2,cell*2),c=cv.getContext('2d'),k=sh?cell/48:def.sz/48*ESS;
+  for(let col=0;col<n*2;col++){
+   c.save();c.translate(col*cell+cell/2,cell/2);c.scale(k,k);if(col>=n)c.scale(-1,1);
    if(!def.fly)ell(c,0,20,12,4,'rgba(0,0,0,.35)');
-   art(c,col&1,th);c.restore();
+   if(sh){const r=HS.frameRect(sh,'walk',col%n);c.drawImage(sh.img,r.sx,r.sy,r.sw,r.sh,-24,-24,48,48);}
+   else art(c,col&1,th);c.restore();
   }
-  c.drawImage(cv,0,0,cell*4,cell,0,cell,cell*4,cell);c.globalCompositeOperation='source-atop';c.fillStyle='rgba(255,255,255,.82)';c.fillRect(0,cell,cell*4,cell);c.globalCompositeOperation='source-over';
-  out[id]={img:cv,cell,sz:def.sz};
+  c.drawImage(cv,0,0,cell*n*2,cell,0,cell,cell*n*2,cell);c.globalCompositeOperation='source-atop';c.fillStyle='rgba(255,255,255,.82)';c.fillRect(0,cell,cell*n*2,cell);c.globalCompositeOperation='source-over';
+  out[id]={img:cv,cell,sz:def.sz,n,fps:sh?8:4};
  }
  return out;
 }
@@ -325,11 +329,12 @@ const ICONS={
  medic(c){ICONS.medics(c);},
  skull(c){ell(c,0,-4,18,16,'#ece6d0',OL);rr(c,-9,8,18,12,3);c.fillStyle='#ece6d0';c.fill();c.stroke();ell(c,-7,-4,5,6,'#111');ell(c,7,-4,5,6,'#111');poly(c,[0,2,-3,8,3,8],'#111');}
 };
-function bakeIcon(id,size,bg,accent){
+function bakeIcon(id,size,bg,accent,theme){
  const cv=mk(size,size),c=cv.getContext('2d'),k=size/64;c.translate(size/2,size/2);c.scale(k,k);
  if(bg){rr(c,-30,-30,60,60,12);c.fillStyle=grad(c,0,-30,0,30,'#2c3a52','#171d2c');c.fill();c.lineWidth=3;c.strokeStyle=accent||'#d9b24a';c.stroke();c.scale(.78,.78);}
  else c.scale(.95,.95);
- (ICONS[id]||ICONS.skull)(c);return cv;
+ const pic=HS.picture('icon-'+(ICONS[id]?id:'skull'),theme);   // drop-in glyph: fills the 64-unit box
+ if(pic){c.imageSmoothingQuality='high';c.drawImage(pic,-32,-32,64,64);}else (ICONS[id]||ICONS.skull)(c);return cv;
 }
 function lightSprite(r,hard=.35){const cv=mk(r*2,r*2),c=cv.getContext('2d'),g=c.createRadialGradient(r,r,0,r,r,r);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(hard,'rgba(255,255,255,.8)');g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.fillRect(0,0,r*2,r*2);return cv;}
 function glowSprite(r,rgb){const cv=mk(r*2,r*2),c=cv.getContext('2d'),g=c.createRadialGradient(r,r,0,r,r,r);g.addColorStop(0,`rgba(${rgb},.9)`);g.addColorStop(.4,`rgba(${rgb},.35)`);g.addColorStop(1,`rgba(${rgb},0)`);c.fillStyle=g;c.fillRect(0,0,r*2,r*2);return cv;}
@@ -366,11 +371,13 @@ const PROPS={
  rubble:[(c,t)=>{c.lineWidth=1.5;c.strokeStyle=OL;for(const [x,y,r,col] of[[-8,-3,6,'#6a7279'],[6,-2,7,'#7a8288'],[0,-8,5,'#59606a']])ell(c,x,y,r,r*.7,col,OL);}]
 };
 function bakeProps(theme){
- const th=THEMES[theme]||THEMES.dead,out={};
- for(const key in PROPS){out[key]=PROPS[key].map(fn=>{const S=2,w=130*S,h=140*S,cv=mk(w,h),c=cv.getContext('2d');c.translate(w/2,h-10*S);c.scale(S,S);fn(c,th);return {img:cv,w:w/S,h:h/S,ax:w/2/S,ay:(h-10*S)/S};});}
+ const th=THEMES[theme]||THEMES.dead,out={},drop={};
+ for(const [name,d] of Object.entries(HS.PICTURES))if(d.kind==='prop'){const img=HS.picture(name,theme);if(img)drop[d.type+':'+d.v]={img,w:d.size[0]/HS.PX,h:d.size[1]/HS.PX,ax:d.foot[0]/HS.PX,ay:d.foot[1]/HS.PX};}
+ for(const key in PROPS){out[key]=PROPS[key].map((fn,v)=>{if(drop[key+':'+v])return drop[key+':'+v];const S=2,w=130*S,h=140*S,cv=mk(w,h),c=cv.getContext('2d');c.translate(w/2,h-10*S);c.scale(S,S);fn(c,th);return {img:cv,w:w/S,h:h/S,ax:w/2/S,ay:(h-10*S)/S};});}
  return out;
 }
 function bakeBuilding(theme){
+ const pic=HS.picture('building-'+theme);if(pic)return {img:pic,w:300,h:190};
  const th=THEMES[theme]||THEMES.dead,w=300,h=190,cv=mk(w,h),c=cv.getContext('2d');c.lineWidth=2.4;c.strokeStyle=OL;c.lineJoin='round';
  if(theme==='cabin'){
   rr(c,20,66,260,112,4);c.fillStyle='#5a3e26';c.fill();c.stroke();for(let y=76;y<176;y+=14)seg(c,22,y,278,y,1.4,'#3a2616');
