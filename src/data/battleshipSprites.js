@@ -12,6 +12,11 @@ const SHEETS={
  hit:{frame:[CELL,CELL],rows:{burn:4},board:true},            // a hit cell on the board: burning wreckage, looped
  boom:{frame:[128,128],rows:{boom:8},fx:true,foot:122/128},   // foot = where the blast meets the water (fraction of the frame height)                 // explosion, played once (board hits + cut scenes)
  splash:{frame:[128,128],rows:{splash:6},fx:true,foot:122/128},             // water splash, played once (board misses + sailors landing)
+ // Batch 2 (Nov 13, owner: 'everything that we can to be a sprite'): ship-fire = flames on a hit warship in the cut scenes
+ // (bottom-centre `foot` sits on the deck, looped 10 fps); gun-flash = the deck gun's blast, pointing RIGHT from `pivot`
+ // (the muzzle), played once.
+ 'ship-fire':{frame:[128,160],rows:{burn:6},foot:[64,152]},
+ 'gun-flash':{frame:[160,96],rows:{flash:4},pivot:[8,48]},
  sailor:{frame:[120,160],U:100,head:[60,50],headSize:80,rows:{stand:2,cheer:2,fall:2,swim:4},
   // measured collar (template px) per frame of the owner's sheet (Nov 13): the face's chin sits here (src/headFacts.js)
   neckRows:{stand:[[55,84.5],[56,84]],cheer:[[57.5,84],[58,83]],fall:[[57,80.5],[55.5,78]],swim:[[53.5,84],[53,82.5],[61.5,82.5],[57,81]]}},
@@ -41,6 +46,14 @@ const PICTURES={
  'deck-gun':{kind:'gun',size:[440,72],pivot:[0,36]},
  'torpedo':{kind:'torpedo',size:[224,64]},
  'sailor-cap':{kind:'cap',size:[128,56]},
+ // Batch 2: shell = the shell in flight (pointing right, drawn 40 px long, turned along the arc); torpedo-wake = the white wake
+ // behind the torpedo (its right end touches the torpedo; stretched to the run); cut-sea = the sea of the cut scenes from the
+ // horizon (top edge) down, cover-fitted, opaque; cut-sea-front = the near wave band drawn over the ships' waterline
+ // (transparent above the crests; tiles sideways and scrolls).
+ 'shell':{kind:'shot',size:[96,48]},
+ 'torpedo-wake':{kind:'wake',size:[512,48]},
+ 'cut-sea':{kind:'cutsea',size:[1600,640]},
+ 'cut-sea-front':{kind:'front',size:[1024,192]},
 };
 for(const [k,d] of Object.entries({...PICTURES}))if(d.kind==='ship')PICTURES[k+'-sunk']={...d,sunk:true};
 const SHIP_SLOT={'Battleship':'ship-battleship','Cruiser':'ship-cruiser','Submarine':'ship-submarine','Destroyer':'ship-destroyer','Patrol Boat':'ship-patrol'};

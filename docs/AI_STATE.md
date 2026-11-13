@@ -2,6 +2,18 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+NOV 13 LATE (after v0.96.13, branch claude/cool-shannon-lw8o5h, unreleased): HORDE FREEZE (owner: froze the whole game
+halfway through a night, twice): not reproduced headless (whole night simulated + real frames from 3:00 to 6:00, 250 enemies,
+canvas memory flat 39 MB); but session.js frame() only re-armed requestAnimationFrame AFTER the game's frame code, so ONE
+exception froze every canvas game for good. Now raf first + try/catch → frameError (console + localStorage sc-errors, last
+12: ask the owner for it if it happens again). FACES: headFacts couldn't find facts for supplied faces shown through a
+crop frame (suppliedPortraits FACE_FRAMES: only doubtfire normal → face:005) → horde fell back to the old head spot (chest);
+now framedFace() maps the facts into the frame (all games). Horde: steady mood (no walking/thinking cycle), no-facts
+pictures sit on the collar too, CHIN .24 + FWD .1 (owner: high and back). Battleship: cap brim at the hairline; BATCH 2
+slots ship-fire, gun-flash, shell, torpedo-wake, cut-sea, cut-sea-front (drawn fallback each; board/cut debris dots and
+rings skipped once boom/splash sprites exist); templates + brief 'BATCH 2'; kit zip = horde 16 + battleship 6 sent
+(scratchpad sprite-kit-batch2.zip). Fuzz 8 games clean, battleship-cuts OK.
+
 v0.96.13 RELEASED (Nov 13; owner: horde framerate 'mostly very slow and mucky', heads float, release even without the
 picker): hordeSprites shrink() resamples every drop-in once on load to its drawn size (OUT_PX 1.25 px/unit; icons 96,
 gems 32, survivors x SURVIVOR_K, enemies x ENEMY_ART_K; fx sheets keep template px): decoded 72 → 15 MB, enemy sheets

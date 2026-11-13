@@ -13,6 +13,14 @@ let SESSION_N=0;// counts sessions, part of each session's seed
 // Auto-sized heads (no {exact:true}) are drawn large enough to read faces and expressions on a phone.
 const spriteSize=size=>clamp(size*1.9,50,96);
 function canvasFitSize(W,H,width,height){if(![W,H,width,height].every(Number.isFinite)||W<=0||H<=0||width<=0||height<=0)return {width:0,height:0};const scale=Math.min(width/W,height/H);return {width:W*scale,height:H*scale};}
+// A game's frame code that throws must not stop the loop (owner, Nov 13: the horde 'froze the entire program' halfway
+// through a night: one exception and requestAnimationFrame was never called again). The error is logged and kept in
+// localStorage sc-errors (last 12) so it can be read back; the game carries on with the next frame.
+function frameError(s,e){
+ s.frameErrors=(s.frameErrors||0)+1;if(s.frameErrors>3&&s.frameErrors%600)return;
+ console.error('frame error in',s.game?.id,e);
+ try{const L=JSON.parse(localStorage.getItem('sc-errors')||'[]');L.push({at:new Date().toISOString(),game:s.game?.id,n:s.frameErrors,msg:String(e&&e.message||e).slice(0,200),stack:String(e&&e.stack||'').split('\n').slice(0,4).join(' | ').slice(0,500)});localStorage.setItem('sc-errors',JSON.stringify(L.slice(-12)));}catch{}
+}
 class GameSession {
  constructor(game,players,onFinish){try{require("src/pwa.js").wantGameFiles(game?.id);}catch{}this.game=game;this.players=players;this.onFinish=onFinish;this.abort=new AbortController();this.cleanups=[];this.inputResets=[];this.reactions=[null,null];this.lastScoreReaction=[-Infinity,-Infinity];this.paused=false;this.waiting=false;this.finished=false;this.active=0;this.score=[0,0];this.seed=`${store.run?.seed||'arcade'}-${game.id}-${Date.now().toString(36)}-${++SESSION_N}`;/* every session its own deal (owner, Nov 10, R1: Uno dealt the same hand every time: the seed used profile.played.length, which stops growing once every game has been played once). Online games replace it with the shared seed (gameLauncher duelSeed). */this.random=seededRandom(this.seed);this.debug={};this.flickSensitivity=Math.min(1.35,Math.max(.65,Number(store.profile?.settings.flickSensitivity)||1));this.inputMode=inputMode(store.profile?.settings.touchMode);this.mount();}
  get alive(){return !this.abort.signal.aborted&&!this.finished;}
@@ -61,7 +69,7 @@ class GameSession {
   });
  }
  manualPause(){if(!this.alive||this.waiting)return;void this.pass(this.active,'Take your time. The clock is paused.','Resume game',{pause:true});}
- frame(fn){let last=0,raf=0;const pace=(store.arcade?1:store.run?pairPace(store.run):1)*(this.solo?.speed||1);const loop=t=>{if(!this.alive)return;const dt=last?clamp((t-last)/1000,0,.04):1/60;last=t;if(!this.paused)fn(dt*pace,t/1000);raf=requestAnimationFrame(loop);};raf=requestAnimationFrame(loop);this.cleanup(()=>cancelAnimationFrame(raf));}
+ frame(fn){let last=0,raf=0;const pace=(store.arcade?1:store.run?pairPace(store.run):1)*(this.solo?.speed||1);const loop=t=>{if(!this.alive)return;const dt=last?clamp((t-last)/1000,0,.04):1/60;last=t;raf=requestAnimationFrame(loop);if(!this.paused){try{fn(dt*pace,t/1000);}catch(e){frameError(this,e);}}};raf=requestAnimationFrame(loop);this.cleanup(()=>cancelAnimationFrame(raf));}
  timer(seconds,tick,end){let left=seconds,last=performance.now(),ended=false;const pace=(store.arcade?1:store.run?pairPace(store.run):1)*(this.solo?.speed||1);const id=setInterval(()=>{const now=performance.now();if(this.alive&&!this.paused){left-=Math.min(.3,(now-last)/1000)*pace;tick(Math.max(0,left));if(left<=0&&!ended){ended=true;clearInterval(id);end();}}last=now;},100);this.cleanup(()=>clearInterval(id));return ()=>clearInterval(id);}
  async wait(ms){return new Promise(resolve=>{if(!this.alive)return resolve(false);let left=ms,last=performance.now();const complete=value=>{clearInterval(id);const index=this.cleanups.indexOf(cancel);if(index>=0)this.cleanups.splice(index,1);resolve(value);},cancel=()=>complete(false);const id=setInterval(()=>{const now=performance.now();if(!this.paused)left-=Math.min(100,now-last);last=now;if(left<=0)complete(this.alive);},20);this.cleanup(cancel);});}
  async delay(ms){return new Promise(resolve=>{if(!this.alive)return resolve(false);const id=setTimeout(()=>resolve(this.alive),ms);this.cleanup(()=>{clearTimeout(id);resolve(false);});});}

@@ -7,6 +7,7 @@ const {HEAD_FACTS}=require("src/data/headFacts.js");
 const {portraitURL}=require("src/assets.js");
 const {ART}=require("src/data/art.js");
 const {FACE_ART}=require("src/data/faceArt.js");
+const {framedFace}=require("src/suppliedPortraits.js");
 require("src/data/userPortraits.js");// puts the owner's portraits into ART
 
 let byUrl=null;
@@ -22,7 +23,11 @@ function headFacts(id,mood='normal'){
  let url;try{url=portraitURL(id,mood);}catch{return null;}
  if(!url)return null;
  if(memo.has(url))return memo.get(url);
- const a=HEAD_FACTS[keyOf(url)],f=a?{face:{x:a[0],y:a[1],w:a[2],h:a[3]},head:{x:a[4],y:a[5],w:a[6],h:a[7]},look:a[8],conf:a[9],found:!!a[10],aspect:a[11]||1}:null;
+ let a=HEAD_FACTS[keyOf(url)],f=a?{face:{x:a[0],y:a[1],w:a[2],h:a[3]},head:{x:a[4],y:a[5],w:a[6],h:a[7]},look:a[8],conf:a[9],found:!!a[10],aspect:a[11]||1}:null;
+ // a supplied face shown through a crop frame (suppliedPortraits FACE_FRAMES, e.g. Mrs Doubtfire's normal face): the facts
+ // were measured on the whole picture, so map them into the frame (owner, Nov 13: her face jumped to the chest between moods)
+ if(!f){const fr=framedFace(url),b=fr&&HEAD_FACTS[fr.key];if(b){const {width:W,height:H,bounds:[L,T,R,B]}=fr.frame,fw=R-L,fh=B-T;
+  const box=(x,y,w,h)=>({x:(x*W-L)/fw,y:(y*H-T)/fh,w:w*W/fw,h:h*H/fh});f={face:box(b[0],b[1],b[2],b[3]),head:box(b[4],b[5],b[6],b[7]),look:b[8],conf:b[9],found:!!b[10],aspect:fw/fh};}}
  memo.set(url,f);return f;
 }
 // Which way the face looks, only when the check is sure enough: -1 left, 1 right, 0 straight on / not sure.

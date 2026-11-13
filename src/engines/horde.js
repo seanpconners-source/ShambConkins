@@ -8,7 +8,7 @@ const HD=require("src/engines/hordeData.js");
 const HS=require("src/data/hordeSprites.js");
 const HF=require("src/headFacts.js");
 const BODY_K=HS.SURVIVOR_K;   // drop-in survivor bodies drawn at 2x the template size (owner, Nov 13); faces stay FACE_W
-const CHIN=.32;   // face centre this many face heights above the collar (owner, Nov 13: .44 floated above the body)
+const CHIN=.24,FWD=.1;   // face centre CHIN face heights above the collar, FWD face widths forward (owner, Nov 13: .44 / .32 sat high and back)
 const FACE_W=24;   // players' face width (brow to chin) in world units: big chibi heads that still show the drop-in jackets (the old 52-unit head picture showed a ~31-unit face)
 const {WEAPONS,PASSIVES,ENEMIES,MODES,WEAPON_IDS,PASSIVE_IDS,MAX_LEVEL,weaponStats,calcStats,xpNeed}=HD;
 
@@ -731,9 +731,11 @@ async function horde(s){
   // neck, mirrored only when it looks against the way the body faces; one size through every mood. Pictures without
   // head facts (online photos) keep the old centred 52-unit head.
   if(!neck)neck={x:p.x,y:p.y-5-bob*.5};
-  const mood=p.hurt>0||p.down?'sad':s.spriteMood(i),id=s.players[i]?.character,fh=HF.faceHeight(id,mood,FACE_W),cy=HF.faceFit(id,mood,FACE_W)?neck.y-fh*CHIN:p.y-20-bob;
-  HF.drawFace(s,x,i,neck.x,cy,FACE_W/.6,mood,p.face<0?-1:1,.6);x.globalAlpha=1;
-  const geo=HF.faceGeom(id,mood,FACE_W,neck.x,cy,HF.flipFor(id,mood,p.face<0?-1:1)),top=geo?Math.min(geo.head.y,geo.face.y):cy-26;
+  // one steady mood (the menu's walking/thinking cycle made the face change picture every 3 s); reactions (level up) still show
+  const rx=s.reactions?.[i],mood=p.hurt>0||p.down?'sad':rx&&rx.until>performance.now()/1000?rx.mood:'normal',id=s.players[i]?.character,dir=p.face<0?-1:1;
+  const fit=HF.faceFit(id,mood,FACE_W),fh=HF.faceHeight(id,mood,FACE_W),fx=neck.x+dir*FACE_W*FWD,cy=fit?neck.y-fh*CHIN:neck.y-FACE_W/.6*.42;   // no facts: the whole picture sits on the collar
+  HF.drawFace(s,x,i,fx,cy,FACE_W/.6,mood,dir,.6);x.globalAlpha=1;
+  const geo=HF.faceGeom(id,mood,FACE_W,fx,cy,HF.flipFor(id,mood,dir)),top=geo?Math.min(geo.head.y,geo.face.y):cy-FACE_W/.6*.5;
   if(!p.down){x.fillStyle=PCOL[i];x.beginPath();x.moveTo(p.x-5,top-9);x.lineTo(p.x+5,top-9);x.lineTo(p.x,top-2);x.closePath();x.fill();
    if(p.hp<p.maxHp){x.fillStyle='rgba(0,0,0,.65)';x.fillRect(p.x-18,p.y+22,36,5);x.fillStyle=p.hp<p.maxHp*.3?'#ff4a4a':'#5fe08a';x.fillRect(p.x-17,p.y+23,34*p.hp/p.maxHp,3);}}
   else{if(!body){x.strokeStyle='#e8e2cf';x.lineWidth=3;x.beginPath();x.moveTo(p.x,p.y-8);x.lineTo(p.x,p.y+14);x.moveTo(p.x-7,p.y);x.lineTo(p.x+7,p.y);x.stroke();}
@@ -1034,6 +1036,7 @@ async function horde(s){
   event:(type,k)=>fireEvent({type,k:k||0}),chest:i=>{const got=openChest(P[i],true);modalQ.push({type:'chest',pi:i,got});nextModal();},
   level:i=>gainXp(P[i],P[i].need),
   gem:(n)=>{for(let i=0;i<n;i++)dropGem(cam.x+(rnd()-.5)*300,cam.y+(rnd()-.5)*300,1);},
+  faceProbe:(i,m)=>{const id=s.players[i].character,f=HF.headFacts(id,m);return {id,m,f:f&&{face:f.face,look:f.look,aspect:f.aspect}};},
   frame:{render:()=>render(performance.now()/1000)}};
 
  // ---------- loop ----------
