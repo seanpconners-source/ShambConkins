@@ -71,14 +71,37 @@ const has=name=>!!USER['horde:'+name];
 function picture(name,theme){
  if(theme&&has(name+'-'+theme))name=name+'-'+theme;
  const url=USER['horde:'+name];if(!url||typeof Image==='undefined')return null;
- let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;};e.img.src=url;imgs.set(name,e);}
+ let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.img=shrink(name,e.img);e.ok=true;};e.img.src=url;imgs.set(name,e);}
  return e.ok?e.img:null;
 }
+// PERFORMANCE (owner, Nov 13: horde 'mostly very slow and mucky' on the phone): the deliveries are 4 px per world unit and
+// were drawn scaled down every frame (~100 MB of textures: hundreds of 112 px gems drawn at 12-24 px, 1344 px survivor
+// sheets, a 1024 px ground tile), so the phone's GPU cache thrashed. Each picture is resampled ONCE on load to about the
+// size it is drawn at (the game canvas is CSS px; zoom <= 1.15) and the decoded original is dropped.
+const OUT_PX=1.25,SURVIVOR_K=2;   // SURVIVOR_K = horde.js BODY_K
+// OUT_PX = screen px per world unit kept (>= the game's largest zoom)
+function targetW(name,w){
+ const base=name.replace(/-(dead|cabin)$/,''),d=SHEETS[name]||PICTURES[name]||SHEETS[base]||PICTURES[base];if(!d)return w;
+ if(d.kind==='icon')return Math.min(w,96);            // baked into <=64 px cards and glyphs
+ if(d.kind==='gem')return Math.min(w,32);             // drawn 12-24 px
+ const tw=d.frame?Math.max(...Object.values(d.rows))*d.frame[0]:d.size[0];   // template px (PX per world unit)
+ const k=d.enemy?ENEMY_ART_K:/^survivor-/.test(base)?SURVIVOR_K:1;          // drawn this many times the template size
+ return Math.min(w,Math.ceil(tw/PX*k*OUT_PX));
+}
+function shrink(name,img){
+ if(typeof document==='undefined')return img;
+ const tw=targetW(name,img.naturalWidth||img.width);let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;if(tw>=w*.9)return img;
+ const th=Math.max(1,Math.round(h*tw/w));let src=img;
+ while(w/2>=tw){const c=document.createElement('canvas');c.width=Math.round(w/2);c.height=Math.round(h/2);const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(src,0,0,c.width,c.height);src=c;w=c.width;h=c.height;}
+ const c=document.createElement('canvas');c.width=tw;c.height=th;const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(src,0,0,tw,th);return c;
+}
+// Free a picture once it has been baked into the game's own canvases (enemy sheets).
+function release(name){imgs.delete(name);}
 // Load every horde picture that is in the build (waits at most `ms`); the engine bakes its art after this.
 function loadHorde(ms=4000){
  const names=Object.keys(USER).filter(k=>k.startsWith('horde:')).map(k=>k.slice(6));
  if(!names.length||typeof Image==='undefined')return Promise.resolve();
- const all=names.map(n=>{picture(n);const e=imgs.get(n);return e.ok?null:new Promise(res=>{e.img.addEventListener('load',res,{once:true});e.img.addEventListener('error',res,{once:true});});}).filter(Boolean);
+ const all=names.map(n=>{picture(n);const e=imgs.get(n);return e.ok?null:new Promise(res=>{e.img.addEventListener('load',()=>setTimeout(res,0),{once:true});e.img.addEventListener('error',res,{once:true});});}).filter(Boolean);
  return Promise.race([Promise.all(all),new Promise(res=>setTimeout(res,ms))]);
 }
 // {img, def, k} for an animated sheet that is in (k = picture px per template px), else null
@@ -93,4 +116,4 @@ function frameRect(sh,row,f){
 }
 // Neck spot [x,y] (template px) of frame f of a row, or null when the sheet has none.
 function neckAt(def,row,f){const r=def.neckRows&&def.neckRows[row];if(!r||!r.length)return null;return r[((f%r.length)+r.length)%r.length];}
-Object.assign(exports,{PX,SHEETS,PICTURES,ENEMY_SIZES,ENEMY_ART_K,ICON_IDS,has,picture,loadHorde,sheet,frameRect,neckAt});
+Object.assign(exports,{PX,SHEETS,PICTURES,ENEMY_SIZES,ENEMY_ART_K,ICON_IDS,SURVIVOR_K,has,picture,loadHorde,sheet,frameRect,neckAt,release});

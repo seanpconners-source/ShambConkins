@@ -7,7 +7,8 @@ const {netField}=require("src/engines/netField.js");
 const HD=require("src/engines/hordeData.js");
 const HS=require("src/data/hordeSprites.js");
 const HF=require("src/headFacts.js");
-const BODY_K=2;   // drop-in survivor bodies drawn at 2x the template size (owner, Nov 13); faces stay FACE_W
+const BODY_K=HS.SURVIVOR_K;   // drop-in survivor bodies drawn at 2x the template size (owner, Nov 13); faces stay FACE_W
+const CHIN=.32;   // face centre this many face heights above the collar (owner, Nov 13: .44 floated above the body)
 const FACE_W=24;   // players' face width (brow to chin) in world units: big chibi heads that still show the drop-in jackets (the old 52-unit head picture showed a ~31-unit face)
 const {WEAPONS,PASSIVES,ENEMIES,MODES,WEAPON_IDS,PASSIVE_IDS,MAX_LEVEL,weaponStats,calcStats,xpNeed}=HD;
 
@@ -723,7 +724,7 @@ async function horde(s){
   // neck, mirrored only when it looks against the way the body faces; one size through every mood. Pictures without
   // head facts (online photos) keep the old centred 52-unit head.
   if(!neck)neck={x:p.x,y:p.y-5-bob*.5};
-  const mood=p.hurt>0||p.down?'sad':s.spriteMood(i),id=s.players[i]?.character,fh=HF.faceHeight(id,mood,FACE_W),cy=HF.faceFit(id,mood,FACE_W)?neck.y-fh*.44:p.y-20-bob;
+  const mood=p.hurt>0||p.down?'sad':s.spriteMood(i),id=s.players[i]?.character,fh=HF.faceHeight(id,mood,FACE_W),cy=HF.faceFit(id,mood,FACE_W)?neck.y-fh*CHIN:p.y-20-bob;
   HF.drawFace(s,x,i,neck.x,cy,FACE_W/.6,mood,p.face<0?-1:1,.6);x.globalAlpha=1;
   const geo=HF.faceGeom(id,mood,FACE_W,neck.x,cy,HF.flipFor(id,mood,p.face<0?-1:1)),top=geo?Math.min(geo.head.y,geo.face.y):cy-26;
   if(!p.down){x.fillStyle=PCOL[i];x.beginPath();x.moveTo(p.x-5,top-9);x.lineTo(p.x+5,top-9);x.lineTo(p.x,top-2);x.closePath();x.fill();
