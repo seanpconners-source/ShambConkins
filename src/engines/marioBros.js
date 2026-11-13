@@ -33,6 +33,8 @@ const STEP=1/60,LIVES=3,COIN_TIME=60,RACE_CAP=150,NET_GRACE=10,BUBBLE=120;
 const PH={minWalk:.07421875,walkAcc:.037109375,runAcc:.0556640625,rel:.05078125,skid:.1015625,walk:1.5625,run:2.5625,skidTurn:.5625,backFast:1.8125,maxFall:4.5,fallReset:4};
 const JUMP=[[1,-4,.125,.4375],[2.3125,-4,.1171875,.375],[Infinity,-5,.15625,.5625]];
 const COMBO=[100,200,400,500,800,1000,2000,4000,5000,8000],SHELL_CHAIN=[500,800,1000,2000,4000,5000,8000];
+const HF=require("src/headFacts.js");
+const FACE_W=15;   // face width (brow to chin box) on big Mario, world px
 const PALS=[{cap:C.red,shirt:C.brown,over:C.red,shoe:C.brown},{cap:C.green,shirt:C.green,over:C.white,shoe:C.green}];
 const FIRE_PAL={cap:C.white,shirt:C.red,over:C.white,shoe:C.red};
 const STAR_PALS=[FIRE_PAL,{cap:'#000',shirt:C.brick,over:'#000',shoe:C.brick},{cap:C.green,shirt:C.white,over:C.green,shoe:C.brown},{cap:C.red,shirt:C.brown,over:C.red,shoe:C.brown}];
@@ -549,10 +551,16 @@ async function marioBros(s){
    R(pal.over,-5,-6,4,3);R(pal.over,1,-6,4,3);R(pal.shoe,-6,-3,5,3);R(pal.shoe,1,-3,5,3);}
   // the head, then a NES cap sized to it: a crown hugging the top of the head and a short brim on the facing side
   function head(bg,mood,crouchK,fc){
-   const size=bg&&!crouchK?30:26,hy=bg?(crouchK?-22:-33):-20,hx=fc,box={w:0,h:0};
-   s.sprite(g,i,hx,hy,size,{exact:true,mood,still:true,noBadge:true,box});
-   const bw=box.w||size*.62,bh=box.h||size*.8,topY=hy-bh/2;
-   const cw=Math.min(bw*1.04,size*.84),ch=clamp(bh*.24,3.6,size*.25),cx=hx+fc*(cw*.05-.7);
+   const size=bg&&!crouchK?30:26,hy=bg?(crouchK?-22:-33):-20,hx=fc,box={w:0,h:0},id=s.players[i]?.character;
+   // like Seanic/SotN (owner, Nov 13): the FACE (src/headFacts.js) is FACE_W wide with its chin on the shirt collar, hair
+   // sticks out round it, it is mirrored only when it looks against the way Mario faces, and the cap hugs the measured top
+   // of the head with its brim at the brow. Without facts (online photo) the old centred picture box is used.
+   const fw=bg?FACE_W:FACE_W*.86,chin=bg?(crouchK?-14:-20):-10,fh=HF.faceHeight(id,mood,fw),fy=chin-fh*.44,geo=HF.faceGeom(id,mood,fw,hx,fy,HF.flipFor(id,mood,fc));
+   let bw,topY,ch,cw,cx;
+   if(geo){HF.drawFace(s,g,i,hx,fy,fw/.6,mood,fc,.6);bw=geo.head.w;topY=Math.min(geo.head.y,geo.face.y);const brow=geo.face.y+geo.face.h*.14;
+    cw=Math.max(bw*1.04,fw*1.12);ch=clamp((brow-topY)/1.36,3,size*.3);cx=geo.head.x+geo.head.w/2+fc*(cw*.05-.7);}
+   else{s.sprite(g,i,hx,hy,size,{exact:true,mood,still:true,noBadge:true,box});
+    bw=box.w||size*.62;const bh=box.h||size*.8;topY=hy-bh/2;cw=Math.min(bw*1.04,size*.84);ch=clamp(bh*.24,3.6,size*.25);cx=hx+fc*(cw*.05-.7);}
    g.fillStyle=pal.cap;g.beginPath();g.ellipse(cx,topY+ch*.92,cw/2,ch*1.08,0,Math.PI,0);g.fill();
    g.fillRect(cx-cw/2,topY+ch*.9,cw,ch*.46);
    const b0=cx+fc*cw*.08,b1=cx+fc*(cw*.5+clamp(bw*.18,2.8,6));const bh2=Math.max(1.8,ch*.38);g.fillRect(Math.min(b0,b1),topY+ch*1.36-bh2,Math.abs(b1-b0),bh2);

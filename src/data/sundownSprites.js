@@ -13,7 +13,14 @@ const SHEETS={
   rows:{idle:4,run:8,runShoot:8,shoot:2,shootUp:2,shootDiagUp:2,shootDiagDown:2,duck:2,duckShoot:2,jump:4,slide:3,death:6},
   headRows:{duck:[33,27],duckShoot:[33,27],slide:[[38,40],[38,40],[38,40]],death:[[33,15],[30,20],[26,30],[22,42],[20,52],[20,56]]},
   // the muzzle in each shooting row (frame pixels): bullets and the flash start here
-  gun:{shoot:[60,19],runShoot:[60,18],shootUp:[27,3],shootDiagUp:[54,8],shootDiagDown:[54,45],duckShoot:[60,35]}},
+  gun:{shoot:[60,19],runShoot:[60,18],shootUp:[27,3],shootDiagUp:[54,8],shootDiagDown:[54,45],duckShoot:[60,35]},
+  // the NECK (top of the collar the face's chin rests on) in every frame of the owner's sheets (Nov 13: their bodies sit
+  // higher in the frame than the template's head spot, so faces landed on the chest); measured from the art (topmost body
+  // pixels round the head column), a raised arm read by eye. Rows without an entry (death) keep the old head spot.
+  neckRows:{idle:[[34,10],[34,10],[34,10],[34,10]],run:[[35,10],[36,11],[38,8],[39,11],[36,10],[34,10],[36,10],[39,11]],
+   runShoot:[[31,11],[32,11],[37,11],[39,12],[34,12],[32,12],[34,12],[36,13]],shoot:[[29,14],[27,14]],shootUp:[[31,16],[30,16]],
+   shootDiagUp:[[29,17],[30,17]],shootDiagDown:[[28,16],[28,17]],duck:[[34,28],[36,33]],duckShoot:[[30,29],[32,31]],
+   jump:[[36,20],[34,10],[34,4],[33,5]],slide:[[33,31],[35,40],[36,48]]}},
  'cowboy-p2':null,   // same layout as cowboy-p1 (filled in below)
  bandit:{frame:[64,64],foot:[32,63],scale:.75,rows:{idle:2,walk:6,shoot:2,cover:2,death:6}},
  knife:{frame:[64,64],foot:[32,63],scale:.75,rows:{run:6,slash:2,death:6}},
@@ -22,7 +29,9 @@ const SHEETS={
  rider:{frame:[112,96],foot:[56,95],scale:.75,rows:{gallop:6,shoot:2,fall:6}},
  horse:{frame:[112,80],foot:[56,79],scale:.75,rows:{gallop:6}},
  boss:{frame:[96,96],foot:[48,95],scale:.8,head:[48,16],headSize:28,rows:{idle:4,walk:6,shoot:3,throw:3,hurt:2,death:8},
-  headRows:{death:[[48,18],[44,24],[38,36],[32,52],[28,68],[26,80],[26,86],[26,88]]}},
+  headRows:{death:[[48,18],[44,24],[38,36],[32,52],[28,68],[26,80],[26,86],[26,88]]},
+  neckRows:{idle:[[45,20],[44,18],[44,18],[45,20]],walk:[[48,19],[48,17],[50,17],[51,18],[50,15],[50,15]],shoot:[[44,27],[43,28],[44,27]],
+   throw:[[46,30],[41,31],[46,31]],hurt:[[41,27],[41,35]]}},
  explosion:{frame:[64,64],foot:[32,48],scale:.9,rows:{boom:8}},
  muzzle:{frame:[24,16],foot:[2,8],scale:.75,rows:{flash:3}},
 };
@@ -68,6 +77,7 @@ function frameOf(def,row,t,{fps=10,loop=true,index=null}={}){
  return {sx:f*def.frame[0],sy:r*def.frame[1],w:def.frame[0],h:def.frame[1],f,row:rows[r]};
 }
 // Head centre (frame pixels) for a row/frame, or null when the sheet carries no head slot.
+function neckAt(def,row,f){const o=def.neckRows?.[row];if(!o)return null;return o[f]||o[o.length-1];}
 function headAt(def,row,f){if(!def.head)return null;const o=def.headRows?.[row];if(!o)return def.head;return Array.isArray(o[0])?(o[f]||o[o.length-1]):o;}
 function preloadSundown(){for(const k of Object.keys(USER))if(k.startsWith('sundown:'))picture(k.slice(8));}
-Object.assign(exports,{BUILDING_ART,SCENE_SCALE,SHEETS,PICTURES,SCENERY,THEME_IDS,picture,sheet,frameOf,headAt,has,preloadSundown});
+Object.assign(exports,{BUILDING_ART,SCENE_SCALE,SHEETS,PICTURES,SCENERY,THEME_IDS,picture,sheet,frameOf,headAt,neckAt,has,preloadSundown});

@@ -49,4 +49,29 @@ function drawFace(s,g,i,cx,cy,size,mood,dir,faceK=.6){
  s.sprite(g,i,fit.dx,fit.dy,fit.size/k,{exact:true,mood:m,noBadge:true,still:true});g.restore();
 }
 
-Object.assign(exports,{headFacts,lookDir,flipFor,faceFit,drawFace});
+// Where the face and the whole head (hair, ears) land on screen when a face faceW wide is centred on (cx,cy), as boxes
+// {x,y,w,h}; a mirrored head mirrors round cx. For hats and caps that must hug the real top of the head (Sundown, Mario).
+// Returns null without facts.
+function faceGeom(id,mood,faceW,cx,cy,flip=false){
+ const fit=faceFit(id,mood,faceW);if(!fit)return null;const f=fit.facts,ar=f.aspect,wk=ar>=1?1:ar,hk=ar>=1?1/ar:1,L=fit.size-3,pw=L*wk,ph=L*hk;
+ const px=cx+fit.dx-pw/2,py=cy+fit.dy-ph/2;
+ const box=b=>{let x=px+b.x*pw;const w=b.w*pw;if(flip)x=2*cx-x-w;return {x,y:py+b.y*ph,w,h:b.h*ph};};
+ return {face:box(f.face),head:box(f.head)};
+}
+// The face's height for a face faceW wide (brow to chin), or faceW x 1.25 without facts.
+function faceHeight(id,mood,faceW){const fit=faceFit(id,mood,faceW);if(!fit)return faceW*1.25;const f=fit.facts,wk=f.aspect>=1?1:f.aspect,hk=f.aspect>=1?1/f.aspect:1;return faceW*(f.face.h*hk)/(f.face.w*wk);}
+// drawFace for a character who is not one of the session's players (a boss, a pilot): same placement and mirroring,
+// the picture loaded here (cached). Without facts the whole picture is centred, faceW/.6 across.
+const IMG=new Map();
+function picture(id,mood){
+ let url;try{url=portraitURL(id,mood);}catch{url=null;}if(!url)return null;let im=IMG.get(url);
+ if(!im){im=new Image();try{im.src=require("src/headCutouts.js").headDisplayURL(url);}catch{im.src=url;}IMG.set(url,im);}
+ return im.complete&&im.naturalWidth?im:null;
+}
+function drawFaceById(g,id,mood,cx,cy,faceW,dir){
+ const im=picture(id,mood)||picture(id,'normal');if(!im)return false;const fit=faceFit(id,mood,faceW);
+ const size=fit?fit.size-3:faceW/.6,sc=size/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*sc,h=im.naturalHeight*sc;
+ g.save();g.translate(cx,cy);if(fit&&flipFor(id,mood,dir))g.scale(-1,1);g.drawImage(im,(fit?fit.dx:0)-w/2,(fit?fit.dy:0)-h/2,w,h);g.restore();return true;
+}
+
+Object.assign(exports,{headFacts,lookDir,flipFor,faceFit,drawFace,faceGeom,faceHeight,drawFaceById});

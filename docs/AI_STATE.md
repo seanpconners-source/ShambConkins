@@ -2,6 +2,16 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+HEADS SUNDOWN + MARIO (Nov 13, branch ccr-6ef4a2f9-zjxoma, not released; owner: like Seanic/SotN: size, placement, hair, direction): src/headFacts.js
+gains faceGeom (face + whole-head boxes on screen, mirrored round cx), faceHeight, drawFaceById (non-player faces, own image
+cache). SUNDOWN: sundownSprites neckRows/neckAt = measured neck (collar top) per frame for cowboy-p1/p2 (shared table; the
+owner's bodies sit ~10 px higher than the template head spot, faces landed on the chest) and boss (death rows keep headRows);
+sundown.js headJob → fw = headSize x FACE_K .66, chin on the neck (face centre = neck - .44 fh), drawFace (players, pi) /
+drawFaceById (boss), mirrored only when the face looks against the body (flipFor), hat on the brow (face top + .2 fh) sized to
+max(head w x1.1, face x1.55), P1/P2 label above it. MARIO: marioBros.js head() → FACE_W 15 (small .86), chin on the shirt collar
+(big -20, crouch -14, small -10), cap from faceGeom (crown at the head top, brim at the brow); no facts = old picture box.
+Checked: crops at 752x835 (Sundown) and tests/mario.mjs world screenshots; sundown.mjs, mario.mjs world, games.mjs fuzz pass.
+
 SUNDOWN FILL (Nov 13, released in v0.96.7; owner: letterboxed on his Fold): tall screens keep the gameplay band (layout() view) but sundown.js draw() now fills above it with the buffer's top row stretched + darkening gradient, and below with the ground rows (GY+4..VH) repeated mirrored + shade, so controls float over the scene. tests/sundown.mjs passes; checked 752x835 + 390x780.
 
 SEAN OF THE DEAD (Nov 13, RELEASED as v0.96.7 with the Sundown fill fix; owner: release, play it; ROADMAP H33): tower defense on Shaun of the Dead, game id
