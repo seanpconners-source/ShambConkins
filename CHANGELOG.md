@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.96.11
+
+- **Sqwordle gets its real art:** the Squirtle-style turtle is now painted everywhere: the head by the title (calm, happy, puzzled, sad), every move when you get the word (Squirtle Squirt!, Hydro Pump, Bubble Beam, Water Gun, Withdraw, Phew, and crying on a miss), painted water jets, bubbles, splashes and the rainbow, a sunny lake behind the board (a moonlit one in dark mode), and the Sqwordle logo in the title bar.
+
 ## v0.96.10
 
 - **Sean of the Dead 2.0:** six tower lines (Boomstick, Rifles, Fighters, Fire, Explosives, Jukebox), each with three tiers and then a choice of two super paths with a MAX tier (Ash's chainsaw hand, Dragon's Breath, a .50 cal, twin miniguns, a katana squad, a SWAT team, napalm, an inferno tank, a minefield, a Daisy Cutter, Bohemian Rhapsody, a doomsday siren). Heroes level up, have a SMASH special and a weapon path (cricket bat → Lucille → chainsaw → boomstick + chainsaw). Pub upgrades, the Dawn of the Dead armoured bus and a petrol strike. New zombies (runners, crawlers, riot cops, bloaters, screamers, brutes) over 15 waves. Bigger characters, no green tint, heroes no longer wander off mid-fight or flicker when hit.
