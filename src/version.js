@@ -1,4 +1,4 @@
-const VERSION='0.96.11';
+const VERSION='0.96.12';
 // Month of this release, shown in About (title screen). Update it with VERSION when releasing, together with
 // package.json's "version" AND the folder name in its "release" script (the release build checks all three).
 const RELEASED='November 2026';

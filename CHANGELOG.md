@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.96.12
+
+- **Living Dead Horde gets its real art:** new painted survivors (headless outfits with your faces on them), all 18 zombies and bosses (Tarman, the Colonel, the Banshee, Mama Bloat, the Trioxin Titan, the Hunger...), graves, trees, cars, lamps, torches, barrels, crates, the Uneeda Medical Supply and the Knowby cabin, new ground for both nights, XP gems and every weapon, upgrade and pickup icon. Works in Evil Dead · Cabin Defense too.
+- **Horde faces sit right:** like Seanic and Symphony of the Night, each face is sized by the face itself, its chin rests on the jacket collar in every step, and it turns to match the way you walk. Survivors are drawn bigger, and the zombies are sized to match them.
+- **New Arcade icons and logos** for Radical Bike Trials, Flappy Disaster, WarGames, Turtle Sewer Clash, Derezzed Light Cycles, Brawndo Fruit Merge, Paint Can Physics, Penalty Kicks, Quarter-Mile Drag Race, Snake vs. Snake, Banana Stand Tapper and BASEketball Shootout.
+
 ## v0.96.11
 
 - **Sqwordle gets its real art:** the Squirtle-style turtle is now painted everywhere: the head by the title (calm, happy, puzzled, sad), every move when you get the word (Squirtle Squirt!, Hydro Pump, Bubble Beam, Water Gun, Withdraw, Phew, and crying on a miss), painted water jets, bubbles, splashes and the rainbow, a sunny lake behind the board (a moonlit one in dark mode), and the Sqwordle logo in the title bar.
