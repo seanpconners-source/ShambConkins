@@ -487,7 +487,8 @@
   "src/engines/sotd/data.js",
   "src/engines/sqwordleArt.js",
   "src/data/hordeSprites.js",
-  "src/data/battleshipSprites.js"
+  "src/data/battleshipSprites.js",
+  "src/blackBox.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

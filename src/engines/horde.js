@@ -200,7 +200,7 @@ async function horde(s){
  function gainXp(p,v){const o=mate(p),rb=1+clamp((o.lvl-p.lvl)*.04,0,.3);p.xp+=v*p.st.growth*mode.xp*rb;while(p.xp>=p.need){p.xp-=p.need;p.lvl++;p.need=xpNeed(p.lvl);queueLevel(p.i);text(p.x,p.y-48,'LEVEL UP!','#ffe27a',15,1.1);s.react?.(p.i,'win');sfx('lvl',200,()=>chime([523,659,784,1047]));scoreDirty=1;}}
  function nextModal(){
   if(modal||state==='ending')return;
-  const q=modalQ.shift();if(!q)return;
+  const q=modalQ.shift();if(!q)return;s.crumb?.('card '+q.type+' P'+(q.pi+1));
   const p=P[q.pi];
   if(q.type==='level'){const n=3+(rnd()<Math.min(1,p.st.luck*.35)?1:0);modal={type:'level',pi:q.pi,title:'LEVEL UP!',sub:`${s.players[q.pi].name} · level ${p.lvl}`,cards:pickCards(p,n),sel:0,age:0};}
   else if(q.type==='start'){const ids=[...HD.STARTERS].sort(()=>rnd()-.5).slice(0,3);modal={type:'level',start:true,pi:q.pi,title:'CHOOSE YOUR WEAPON',sub:s.players[q.pi].name,cards:ids.map(id=>cardFor(p,{k:'w',id})),sel:0,age:0};}
@@ -209,7 +209,7 @@ async function horde(s){
  }
  function chooseCard(idx){
   if(!modal)return;const m=modal;
-  if(m.type==='level'){const card=m.cards[idx];if(!card)return;const p=P[m.pi];applyCard(p,card);sound('pickup');}
+  if(m.type==='level'){const card=m.cards[idx];if(!card)return;const p=P[m.pi];s.crumb?.('P'+(m.pi+1)+' picks '+(card.title||card.k)+(card.lvl?' '+card.lvl:''));applyCard(p,card);sound('pickup');}
   modal=null;nextModal();
  }
 
@@ -331,6 +331,7 @@ async function horde(s){
  }
  function announce(text,sub,col){showBanner(text,sub,col,2.6);sfx('boss',400,()=>{tone(70,.7,.08,'sawtooth');tone(52,.9,.06,'square');setTimeout(()=>tone(98,.4,.05,'sawtooth'),250);});addShake(8);}
  function fireEvent(ev){
+  s.crumb?.('event '+ev.type+(ev.k?' '+ev.k:'')+' at '+fmtTime(D-clock)+' left');
   const mid={x:P.reduce((a,p)=>a+p.x,0)/P.length,y:P.reduce((a,p)=>a+p.y,0)/P.length};
   switch(ev.type){
    case 'elite':{edgePos(60);const t=ev.k%2?'nurse':'sergeant',e=spawnEnemy(t,SP.x,SP.y);if(e){e.chest=1;toast(foe(t)+' approaches. Kill it for a chest!','#ffb0a0');}break;}
@@ -350,7 +351,7 @@ async function horde(s){
   const cap=HD.capAt(curM,mode);spAcc+=HD.rateAt(curM,mode)*dt;
   let guard=0;while(spAcc>=1&&guard++<6){spAcc-=1;if(E.length<Math.min(cap,MAXE-30))spawnPack();}
   if(spAcc>8)spAcc=8;
-  if(clock<stormUntil){stormAcc-=dt;if(stormAcc<=0){stormAcc=.38;for(const p of P){if(p.down||rnd()<.35)continue;const a=rnd()*TAU,r=40+rnd()*170;const z=zone(3,p.x+Math.cos(a)*r,p.y+Math.sin(a)*r,58,1.1,16,0,0);z.a=60;}}}
+  if(clock<stormUntil){stormAcc-=dt;if(stormAcc<=0){stormAcc=.38;for(const p of P){if(p.down||rnd()<.35)continue;const a=rnd()*TAU,r=40+rnd()*170;const z=zone(3,p.x+Math.cos(a)*r,p.y+Math.sin(a)*r,58,1.1,16,0,0);z.a=60;if(Z.length<60)Z.push(z);}}}
  }
 
  // ---------- weapons ----------
@@ -670,7 +671,7 @@ async function horde(s){
  function startRun(idx,go=false){
   if(state!=='menu')return;
   // online player 1 picks the night; both start together
-  if(net&&!go){if(host&&!netPick){netPick=true;menuSel=idx;nf.event({night:idx});nf.start('go').then(()=>startRun(idx,true));}return;}mode=alone?soloMode(MODES[idx]):MODES[idx];D=mode.time;sched=HD.buildSchedule(mode);evI=0;clock=0;curM=0;state='play';
+  if(net&&!go){if(host&&!netPick){netPick=true;menuSel=idx;nf.event({night:idx});nf.start('go').then(()=>startRun(idx,true));}return;}mode=alone?soloMode(MODES[idx]):MODES[idx];D=mode.time;s.crumb?.('night '+mode.id+(alone?' alone':'')+(net?' online':''));sched=HD.buildSchedule(mode);evI=0;clock=0;curM=0;state='play';
   if(alone){P[0].x=0;P[0].y=70;}else{P[0].x=-64;P[1].x=64;P[0].y=P[1].y=70;}cam.x=0;cam.y=70;updateCamera(0,true);
   modalQ.push(...P.filter(p=>!net||p.i===me).map(p=>({type:'start',pi:p.i})));nextModal();sound('start');
   showBanner(cabin?'DEFEND THE CABIN':'SURVIVE THE NIGHT',`${mode.label} · until dawn`,'#ffd23a',2.6);
@@ -1028,6 +1029,7 @@ async function horde(s){
  s.debug={engine:'horde',skip,dragOnly:true,players:P,enemies:E,get net(){return net?{me,netE:netE.size,hSent,hAck,pv,G:G.length,K:K.length,view:[Math.round(cam.x),Math.round(cam.y),Math.round(W/zoom/2),Math.round(H/zoom/2)]}:null;},
   get state(){return state;},get clock(){return clock;},get modal(){return modal;},get kills(){return totalKills;},get counts(){return{E:E.length,PR:PR.length,G:G.length,K:K.length,PT:PT.length,Z:Z.length,ES:ES.length};},
   get perf(){return perf;},get won(){return won;},get endKind(){return endKind;},
+  brief:()=>{const f=perf.n?Math.round((perf.u+perf.d)/perf.n*10)/10:0;return {left:fmtTime(D-clock),night:mode?.id,state,modal:modal?.type||'',E:E.length,PR:PR.length,G:G.length,K:K.length,PT:PT.length,Z:Z.length,ES:ES.length,ms:f,hunger:hungerOn?1:0,boss:finalBoss?Math.ceil(finalBoss.hp):0,p:P.map(p=>({lv:p.lvl,hp:Math.round(p.hp),w:p.weapons.map(w=>w.id+w.lvl+(w.evo?'*':'')).join(' '),pa:Object.entries(p.passives).map(([k,v])=>k+v).join(' ')}))};},
   start:i=>startRun(i),sim,botOn:v=>{bot.on=v;},choose:i=>chooseCard(i),
   fill(n,type){for(let i=0;i<n;i++){edgePos(-80+rnd()*60);spawnEnemy(type||'shambler',SP.x,SP.y);}},
   setClock(v){clock=v;curM=clock/D*mode.mt;evI=0;while(evI<sched.length&&sched[evI].t<v)evI++;},

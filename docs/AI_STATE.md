@@ -2,6 +2,14 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+HORDE FREEZE ROUND 2 (Nov 13 night, after v0.96.14, branch claude/cool-shannon-lw8o5h, unreleased): owner: froze 3 runs in a row
+on the 12:00 night at ~7:39 left (= 261 s in). Not reproduced headless: real-time bot nights past 4:45, every weapon evolved
+(2-3 ms/frame), chargers (start at curM 3.8 = 7:26 left), the 2nd hazard (Dawn 250 s / Full 225 s). Found: Trioxin Rain made
+its red circles but never pushed them into Z (fixed: they land now). BLACK BOX src/blackBox.js: session mount/dispose =
+boxStart/boxEnd, every 2 s localStorage sc-blackbox {game,v,brief: s.debug.brief(),crumbs (s.crumb),slow frames >250 ms};
+app.js showLastCrash() at start shows it once (kept in sc-crashes, last 5). Horde brief/crumbs: left, night, counts, ms/frame,
+levels, weapons (* = evolved), passives; crumbs for night/events/cards/picks/errors. Next: owner's screenshot of that dialog.
+
 NOV 13 LATE (after v0.96.13, branch claude/cool-shannon-lw8o5h, unreleased): HORDE FREEZE (owner: froze the whole game
 halfway through a night, twice): not reproduced headless (whole night simulated + real frames from 3:00 to 6:00, 250 enemies,
 canvas memory flat 39 MB); but session.js frame() only re-armed requestAnimationFrame AFTER the game's frame code, so ONE
