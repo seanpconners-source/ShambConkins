@@ -7,6 +7,7 @@ const {netField}=require("src/engines/netField.js");
 const HD=require("src/engines/hordeData.js");
 const HS=require("src/data/hordeSprites.js");
 const HF=require("src/headFacts.js");
+const BODY_K=2;   // drop-in survivor bodies drawn at 2x the template size (owner, Nov 13); faces stay FACE_W
 const FACE_W=24;   // players' face width (brow to chin) in world units: big chibi heads that still show the drop-in jackets (the old 52-unit head picture showed a ~31-unit face)
 const {WEAPONS,PASSIVES,ENEMIES,MODES,WEAPON_IDS,PASSIVE_IDS,MAX_LEVEL,weaponStats,calcStats,xpNeed}=HD;
 
@@ -713,9 +714,9 @@ async function horde(s){
   let neck=null;   // where the chin goes: the drop-in frame's measured collar, else the top of the drawn body
   if(body){const row=p.down?'down':p.hurt>0?'hurt':p.moving?'walk':'idle',d=body.def;
    const f=row==='walk'?Math.floor(((p.walk%TAU)+TAU)%TAU/TAU*d.rows.walk):Math.floor(t*(row==='idle'?5:row==='hurt'?8:3)),r=HS.frameRect(body,row,f);
-   const dw=d.frame[0]/HS.PX,dh=d.frame[1]/HS.PX,fx=d.foot[0]/HS.PX,fy=d.foot[1]/HS.PX;
+   const k=BODY_K/HS.PX,dw=d.frame[0]*k,dh=d.frame[1]*k,fx=d.foot[0]*k,fy=d.foot[1]*k;
    x.save();x.translate(p.x,p.y+16);if(p.face<0)x.scale(-1,1);x.drawImage(body.img,r.sx,r.sy,r.sw,r.sh,-fx,-fy,dw,dh);x.restore();
-   const nk=HS.neckAt(d,row,f)||d.head;neck={x:p.x+(nk[0]-d.foot[0])/HS.PX*(p.face<0?-1:1),y:p.y+16+(nk[1]-d.foot[1])/HS.PX};}
+   const nk=HS.neckAt(d,row,f)||d.head;neck={x:p.x+(nk[0]-d.foot[0])*k*(p.face<0?-1:1),y:p.y+16+(nk[1]-d.foot[1])*k};}
   else if(!p.down){const lg=Math.sin(p.walk)*(p.moving?5:0);x.strokeStyle='#1a1d26';x.lineWidth=4;x.lineCap='round';x.beginPath();x.moveTo(p.x-4,p.y+6);x.lineTo(p.x-4+lg,p.y+16);x.moveTo(p.x+4,p.y+6);x.lineTo(p.x+4-lg,p.y+16);x.stroke();
    HD.rr(x,p.x-8,p.y-5-bob*.5,16,15,5);x.fillStyle=PCOL[i];x.fill();x.lineWidth=1.5;x.strokeStyle='#10150f';x.stroke();}
   // Face like Seanic/SotN (src/headFacts.js): the FACE is FACE_W wide whatever the picture's hair/ears, its chin on the
