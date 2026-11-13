@@ -2,14 +2,23 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-HORDE ART + ARCADE BATCH 02 (Nov 13, branch claude/cool-shannon-lw8o5h, unreleased; built on ccr-e01b44c2-wuca1t = the
+BATTLESHIP ART (Nov 13, after v0.96.12, same branch, unreleased): GPT's 24 photoreal pictures from Drive 'Battleship —
+Sprites' (notes UPLOADS-GPT-2026-11-13-1621 + -1705) in assets/battleship (lossless; originals assets/originals/battleship),
+all exactly 2x template. battleshipSprites: warship L 1074 (owner's hull length), boom/splash foot 122/128 (drawn from the
+water-contact point in partyBattleship + battleshipCuts), sailor neckRows (measured collars) → battleshipCuts sailor() uses
+headFacts drawFace (SAILOR_FACE .5 sizes, chin on the collar) + cap on the brow from faceGeom. battleship-cuts.mjs + fuzz pass.
+v0.96.12 RELEASED (Nov 13, owner: release so he can playtest the horde): horde art + faces + BODY_K 2 (owner: 'great') +
+zombie art 1.5x (hordeSprites ENEMY_ART_K; owner saw tiny zombies) + batch 02 icons/logos. The 12 batch 02 BACKGROUNDS were
+reverted out of the release commit and re-applied on the branch (picker locks still needed).
+bg-picker/measure.mjs was broken since the Nov 11 groups (tapping a focused group tile opens it → walk stayed inside the
+first group, 11 of 59 pictures): fixed; a full 12-screen measure was running in the scratchpad (bgp/).
+HORDE ART + ARCADE BATCH 02 (Nov 13, branch claude/cool-shannon-lw8o5h; built on ccr-e01b44c2-wuca1t = the
 horde + Battleship sprite KITS (slots/templates/briefs), fast-forwarded in). HORDE: GPT's whole 77-picture kit from Drive
 'Living Dead Horde — Sprites' (Characters/World Art/Pickups and Icons; notes UPLOADS-GPT-2026-11-13-1519..1522) in
 assets/horde (lossless WebP, every file exactly 2x template; originals assets/originals/horde). Faces now like Seanic/SotN
 (owner): horde.js drawPlayer → headFacts drawFace, FACE_W 24 units, chin on the frame's measured collar
 (hordeSprites.js neckRows + neckAt, measured per frame of both survivor sheets), mirrored only when the face looks against
-the body, HUD arrow over the real head top. Owner asked for bodies 2x (BODY_K 2, faces unchanged): screenshots sent,
-WAITING for his verdict. Optional '-cabin' enemy variants not made (kit says later). games.mjs horde fuzz OK.
+the body, HUD arrow over the real head top. Owner asked for bodies 2x (BODY_K 2, faces unchanged): approved. Optional '-cabin' enemy variants not made (kit says later). games.mjs horde fuzz OK.
 ARCADE BATCH 02 (Drive 'Arcade Art — Batch 02', notes 1332/1337/1340/1411): icons + logos for banana-money-grab,
 baseketball-shootout, brawndo-fruit-merge, derezzed-cycles, fast-quarter-mile, flappy-disaster, home-alone-paint-can,
 league-penalties, radical-bike, sewer-clash, snake-v-snake, wopr-grid imported (Grok ones replaced, kept as *-previous in
