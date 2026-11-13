@@ -97,7 +97,7 @@ function drawnBody(x,pose,h,t){const u=h;x.lineCap='round';x.lineJoin='round';
 // the owner's pictures (Nov 13): mouth/eye spots measured on each one (assets/originals/sqwordle/body-*.png, 768 canvas,
 // ground y 737, body box 691 px). A pose without its own picture borrows the nearest one (POSE_ALIAS) so the drawn turtle
 // never pops up next to the painted one: Water Gun (aim) and Hydro Pump (brace) use the puffed-cheek blow picture.
-const ART_POSES={idle:{mouth:[.624,.368],eye:[.697,.269]},blow:{mouth:[.636,.353],eye:[.711,.255]},cheer:{mouth:[.622,.36],eye:[.711,.259]},
+const ART_POSES={aim:{mouth:[.682,.36],eye:[.762,.245]},brace:{mouth:[.69,.411],eye:[.784,.245]},idle:{mouth:[.624,.368],eye:[.697,.269]},blow:{mouth:[.636,.353],eye:[.711,.255]},cheer:{mouth:[.622,.36],eye:[.711,.259]},
  phew:{mouth:[.598,.342],eye:[.679,.237]},sad:{mouth:[.668,.36],eye:[.762,.295]},shell:{mouth:[.525,.702],eye:[.525,.702]}};
 const POSE_ALIAS={aim:['blow','idle'],brace:['blow','cheer','idle'],blow:['idle'],cheer:['idle'],phew:['idle'],sad:['idle'],shell:[],idle:[]};
 function poseArt(pose){let fr=frames('body-'+pose);if(fr.length)return {fr,key:pose};
