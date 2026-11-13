@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 193 slots: 51 have key art, 59 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 193 slots: 60 have key art, 59 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -46,17 +46,17 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `living-dead-horde` | Return of the Living Dead · Horde | game | ✅ / ✅ |
 | `paddys-hole` | Hole.it | game | ✅ / ✅ |
 | `radical-bike` | Radical Bike Trials | game | ✅ / ✅ |
-| `flappy-disaster` | Flappy Disaster | game | · / ✅ |
-| `wopr-grid` | WarGames · Vanishing Tic-Tac-Toe | game | · / ✅ |
+| `flappy-disaster` | Flappy Disaster | game | ✅ / ✅ |
+| `wopr-grid` | WarGames · Vanishing Tic-Tac-Toe | game | ✅ / ✅ |
 | `sewer-clash` | Turtle Sewer Clash | game | ✅ / ✅ |
 | `derezzed-cycles` | TRON Legacy · Derezzed Light Cycles | game | ✅ / ✅ |
-| `brawndo-fruit-merge` | Brawndo Fruit Merge | game | · / ✅ |
-| `home-alone-paint-can` | Paint Can Physics | game | · / ✅ |
-| `league-penalties` | Penalty Kicks | game | · / ✅ |
-| `fast-quarter-mile` | Fast & Furious · Quarter-Mile Drag Race | game | · / ✅ |
-| `snake-v-snake` | Slither · Snake vs. Snake | game | · / ✅ |
-| `banana-money-grab` | Arrested Development · Banana Stand Tapper | game | · / ✅ |
-| `baseketball-shootout` | BASEketball Shootout | game | · / ✅ |
+| `brawndo-fruit-merge` | Brawndo Fruit Merge | game | ✅ / ✅ |
+| `home-alone-paint-can` | Paint Can Physics | game | ✅ / ✅ |
+| `league-penalties` | Penalty Kicks | game | ✅ / ✅ |
+| `fast-quarter-mile` | Fast & Furious · Quarter-Mile Drag Race | game | ✅ / ✅ |
+| `snake-v-snake` | Slither · Snake vs. Snake | game | ✅ / ✅ |
+| `banana-money-grab` | Arrested Development · Banana Stand Tapper | game | ✅ / ✅ |
+| `baseketball-shootout` | BASEketball Shootout | game | ✅ / ✅ |
 | `raiders-ball-run` | Boulder Run | game | · / · |
 | `paper-route` | Paper Route | game | · / · |
 | `warriors-brawl` | The Warriors · Come Out to Play | game | · / · |
