@@ -104,3 +104,33 @@ cabin game instead: pale Deadites with white eyes, flannel and torn clothes, the
   cooldown (stopwatch), area (rings), pspeed (bullet), duration (hourglass), magnet, luck (clover), growth (brains: also
   the healing pickup), greed (gold coin $), revive (heart with a heartbeat line) · chicken (roast drumstick), chest
   (treasure chest), bomb, coin, skull.
+
+## BATCH 2: weapons and effects (Nov 13; owner: "cool sprites for the nail gun nails and the chainsaw arm weapon... the shotgun shells, the explosions... all of it")
+Same rules as above, with three differences: **seen from straight above** (the effects lie on the ground or fly over
+it), **match the delivered Batch 1 art** (the painted zombies, props and icons in `style-reference/`: same outline,
+the same grimy horror-comedy palette; the owner wants these MEATY and loud: big flames, sparks, smoke, blood, toxic
+green goo), and **no green screen**: real transparency only (the effects are full of greens and glows).
+Templates: the orange shape in each frame shows how far the effect reaches in that frame, the dashed blue ring is the
+radius the game scales the sheet to (`R`), the red cross is the pivot (the point the game puts on the spot). Frames are
+played left to right ONCE over the effect's short life (about 0.2-0.5 s), except the 4 pools, which loop.
+
+| file | frame | frames | what |
+|---|---|---|---|
+| fx-slash.png | 256×256 | 6 | **The chainsaw swipe**: the survivor's chainsaw arm ripping through a 100° wedge pointing RIGHT from the pivot (= the survivor, centre). Show the roaring chainsaw itself at the end of the arc (blade, teeth, motion blur), a hot spark/blood trail along the arc, chunks flying. The blade's tip reaches the dashed ring. Frame 1 = start of the swing (top of the wedge), frame 6 = the swing finished (bottom), fading. |
+| fx-muzzle.png | 96×64 | 4 | **Boomstick blast** at the barrel (pivot at the left edge, middle): a fat shotgun flash and smoke puff shooting RIGHT, then dying away. |
+| proj-shell.png | 32×16 | still | **A shotgun pellet / slug in flight**, pointing RIGHT (a hot glowing pellet with a short streak behind it). Drawn about 16×8 px in the game, many at once: keep it bold and simple. |
+| proj-nail.png | 48×12 | still | **A nail in flight**, point to the RIGHT: steel nail, flat head on the left, a little motion streak. Drawn about 24×6 px. |
+| fx-impact.png | 96×96 | 5 | The **hit flash** where a shot lands (pivot centre): a quick white-yellow spark burst with a little blood mist, shrinking away. |
+| fx-explosion.png | 192×192 | 8 | **The big explosion** for grenades, barrels, bombs and bursting bloaters, from above: a flash, a fireball filling the dashed ring around frame 4, then black smoke and embers breaking up. Must work at any size (the game scales it to the blast). |
+| fx-pulse.png | 256×256 | 6 | **The Hurricane Lantern pulse**: a ring of warm holy light expanding from the pivot to the dashed ring, with dust and sparks blown outward. |
+| fx-bolt.png | 64×512 | 4 | **The Reanimation Bolt**: a crackling lightning strike from the TOP edge (pivot) to the bottom edge, flickering between frames, with a burst at the bottom. The game stretches it between the sky and the zombie it hits. |
+| fx-gore.png | 128×128 | 6 | **A zombie bursting** when it dies, pivot = the ground under it: a splash of dark blood, guts and bone bits flying up and out, then a splat left on the ground. Gross but cartoony (this game is a horror-comedy). |
+| pool-fire.png | 192×144 | 4 (loop) | The **Trioxin barrel pool** on the ground: bubbling, glowing toxic green goo with little green flames, filling the ellipse. (Optional Evil Dead copy **pool-fire-cabin.png**: burning kerosene, orange flames.) |
+| pool-goo.png | 192×144 | 4 (loop) | **Bloater acid** splashed on the ground: yellow-green bubbling bile. |
+| pool-tar.png | 192×144 | 4 (loop) | **Tarman's tar**: black glossy tar with slow bubbles and a dull sheen. |
+| aura-goo.png | 192×144 | 4 (loop) | The **Tarman Goo weapon**: a ring of sticky black-purple ooze around the survivor's feet (keep the middle fairly see-through: the survivor stands in it). |
+| shot-spit.png | 32×32 | still | A **spitter's green glob** flying RIGHT. |
+| shot-fire.png | 32×32 | still | An **orange fireball** flying RIGHT. |
+| shot-curse.png | 32×32 | still | A **purple curse orb** flying RIGHT (boss attack). |
+
+Deliver at 2x (the `@2x` templates), PNG with real alpha, file names exactly as above.

@@ -2,6 +2,14 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+v0.96.13 RELEASED (Nov 13; owner: horde framerate 'mostly very slow and mucky', heads float, release even without the
+picker): hordeSprites shrink() resamples every drop-in once on load to its drawn size (OUT_PX 1.25 px/unit; icons 96,
+gems 32, survivors x SURVIVOR_K, enemies x ENEMY_ART_K; fx sheets keep template px): decoded 72 → 15 MB, enemy sheets
+released after baking (HS.release); headless can't show GPU cost, so not measured on a phone. Faces lowered: horde CHIN
+.32 (was .44), Battleship sailor .38. Batch 02 backgrounds again held out (cherry-picked release branch).
+HORDE BATCH 2 SLOTS (Nov 13, after v0.96.13, unreleased): 16 weapon/effect slots (hordeSprites FX + shot PICTURES; README),
+template tool draws their guides, brief section 'BATCH 2' in GPT-SPRITE-BRIEF.md, kit zip sent to the owner (scratchpad
+horde-effects-kit.zip). Checked with stand-ins (all draw, no errors), fallbacks unchanged.
 BATTLESHIP ART (Nov 13, after v0.96.12, same branch, unreleased): GPT's 24 photoreal pictures from Drive 'Battleship —
 Sprites' (notes UPLOADS-GPT-2026-11-13-1621 + -1705) in assets/battleship (lossless; originals assets/originals/battleship),
 all exactly 2x template. battleshipSprites: warship L 1074 (owner's hull length), boom/splash foot 122/128 (drawn from the

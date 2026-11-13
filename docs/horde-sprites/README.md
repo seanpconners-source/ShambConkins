@@ -28,6 +28,11 @@ into `assets/horde/` and building gives the same picture as the drawn game: that
 All at 2 template px per world unit; 2x/4x deliveries are fine (the game scales by the picture's width).
 Cabin theme: `<name>-cabin` is used first when present (zombies, props, icons, gems), else `<name>`.
 
+- **Batch 2 (weapons + effects, Nov 13)**: fx-slash, fx-muzzle, fx-impact, fx-explosion, fx-pulse, fx-bolt, fx-gore
+  (one-shot sheets, `pivot` + `R` in hordeSprites FX), pool-fire/-goo/-tar + aura-goo (looped), proj-shell, proj-nail,
+  shot-spit/-fire/-curse (stills, pointing right). horde.js looks them up once (FXS/SHOT) and draws fxDraw/shotDraw;
+  each one falls back to the drawn effect. Kit zip = templates + brief section 'BATCH 2' + style-reference pictures.
+
 ## Importing
 1. Owner uploads to `art-inbox/horde/` (or chat). Check each picture against its template size/proportions.
 2. Green background → key it out (tight key, see the Seanic notes in AI_STATE: foliage greens carry red).
