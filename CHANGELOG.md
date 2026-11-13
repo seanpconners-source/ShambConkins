@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.96.8
+
+- **Sundown Showdown and Super Mario Bros.:** faces sit on the neck at the right size (like Seanic and Symphony of the Night), turn the right way, and the cowboy hats / Mario caps sit on the forehead.
+
 ## v0.96.7
 
 - **New game: Sean of the Dead** (Arcade › Movie Night). A tower defense at the Winchester: the dead shamble up the street, you hold the pub with Vinyl Toss, the Pool Cue Crew, The Winchester rifle and the Jukebox (three levels each), and your two characters fight as heroes with cricket bats. The zombies wear other characters' faces. Survive 10 waves; kill the last boss to cure them and they join your roster.

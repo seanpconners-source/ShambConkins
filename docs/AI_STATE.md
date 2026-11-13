@@ -2,7 +2,7 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-HEADS SUNDOWN + MARIO (Nov 13, branch ccr-6ef4a2f9-zjxoma, not released; owner: like Seanic/SotN: size, placement, hair, direction): src/headFacts.js
+HEADS SUNDOWN + MARIO (Nov 13, RELEASED as v0.96.8; owner: like Seanic/SotN: size, placement, hair, direction): src/headFacts.js
 gains faceGeom (face + whole-head boxes on screen, mirrored round cx), faceHeight, drawFaceById (non-player faces, own image
 cache). SUNDOWN: sundownSprites neckRows/neckAt = measured neck (collar top) per frame for cowboy-p1/p2 (shared table; the
 owner's bodies sit ~10 px higher than the template head spot, faces landed on the chest) and boss (death rows keep headRows);
