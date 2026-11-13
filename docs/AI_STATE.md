@@ -2,6 +2,19 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+SEAN OF THE DEAD (Nov 13, branch ccr-6ef4a2f9-zjxoma, NOT released; ROADMAP H33): tower defense on Shaun of the Dead, game id
+`sean-of-the-dead` (src/packs/deadPack.js, engine src/engines/seanOfTheDead.js; Arcade only: randomEligible false; Movie Night
+collection; category coop; soloKind 'alone'). Owner: Winchester obvious (pub at the top: sign, warm windows, swinging W sign,
+rifle over the door), NO character towers (picking from hundreds = chore) → 4 fixed towers x 3 levels (Vinyl Toss, Pool Cue
+Crew = blockers, The Winchester rifle = strongest target, Jukebox = slow + pulse), heroes = the players' picks with cricket bats
+(drag or tap ground), zombies = 18 random roster faces with own art tinted green (zhead), boss in wave 10 = a locked character
+from gameRecruitPool (themed: usually Shaun/Ed) → s.gameRecruits to whoever did most boss damage; cageGame now includes
+seanOfTheDead and co-op survival's 50% random recruit skips cage games (gameLauncher). 2P: spots split by side (owner colour),
+own money, kills pay the owner; s.cooperative + teamResult survival; 20 pints. Layout portrait, wide screens = map transposed
+(layout() picked on the first frames, re-laid out if the phone turns before anything is built). Balance: random autopilot
+(debug.bot, speed(n)) drops to ~6 pints by wave 9 (never lost a pint before the last tuning). Checked: scratch sotd.mjs/sotd2.mjs
+screenshots 390x780 + 844x390 + solo, games.mjs fuzz, solo.mjs, unlocks, arcade-groups. Not felt on a phone; no music yet.
+
 ONLINE EXTRAS (Nov 13, RELEASED as v0.96.6; owner: message/invite a friend who is online in a solo game, console style): chat sheet hangs from the TOP while typing (chat.js kb(): top = visualViewport.offsetTop, card max 46% of the screen; box under the header (theme.css .typing order) — the installed full-screen app on his Fold never reported the keyboard, so 'sit on the keyboard' failed); unread per conversation (chat.js unreadBy): 💬 shows also outside a room for a friend's message, opens that conversation, hides once read; Lobby keeps messages to a friend whose game is closed (worker.js table mail, a week, 40 per friend, delivered after 'hi'; chat-sent {held}) and the friends list has 💬 for offline friends too; invite while busy = popover banner #sc-invite (friends.js syncBanner: Join → app hook leaveGame = exitGame's own question, then straight into the room; ✕ = decline); Online while in a room = duel.js roomMenu (Stay / Switch room by name / Leave room + friends list; enterRoom quits a running challenge first). tests/online-extras.mjs (wrangler + served --pwa) + chat.mjs pass. Worker part goes live with the next release.
 
 HANNAH GIFT (Nov 12, RELEASED as v0.96.5, owner: release with only the gift test): owner's photos for uss-hannah + uss-carson (assets/portraits lossless 480; originals uss-hannah.png, uss-carson.nov12.png (an older uss-carson.png original was already there)); src/gifts.js 'hannah-lab': saved name /^hannah\b/i → uss-hannah at start; Hannah picked as player 1 OR 2 (players-done / New Game) → uss-carson. Owner: the hello must not hint at Carson (changelog says only 'a surprise for a friend'). tests/gifts.mjs covers it.

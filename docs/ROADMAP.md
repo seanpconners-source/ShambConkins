@@ -439,6 +439,11 @@ Design reference: the PS5 home screen (feel, motion, layout ideas), but its own 
 ## Phase H — new content (sections 3 + 7)
 
 Reuse engines with new skins wherever possible.
+- **H33** (owner, Nov 13) SEAN OF THE DEAD: tower defense on Shaun of the Dead, Kingdom Rush style. Make it obvious it's the
+  Winchester. Fixed towers from the film (not character towers: picking from hundreds every build is a chore), the two
+  players' characters as heroes, zombies wear random roster faces, the last boss is a locked character (kill = cured, recruited).
+  v1 built (one map, 10 waves, 4 towers x 3 levels, Arcade only). Next: owner playtest, more maps, branching upgrades, hero
+  specials, online versus (send zombies, Bloons Battles style), maybe a board version with fewer waves.
 - **M19** `[verify]` (v0.80.7: the title tiles' 1.2 s fade was switched off by an older CSS rule, one-frame cuts, fixed; slow pictures in the installed app = the service worker's ignoreSearch lookup, fixed. Nov 3: measured with frame captures: changing screens showed a near-black frame (new screen invisible while pictures decoded) and taps that re-render a screen blanked every picture for 2+ frames. Fixed: ui.js renderInto reuses decoded <img>s, a frozen ghost of the old screen covers the change until the new pictures are ready (≤.4 s), entrance moves keep their motion without the fade (--enter-op)) (owner, Nov 3) The title screen and menus still flicker sometimes: find every cause (re-renders that replace the
   whole view, reels/pictures swapping, entrance animations replaying, fonts/images popping in) and make every screen smooth and polished.
 - **M20** `[verify]` (Nov 4: all 34 locked on every screen and in the game (v0.80.5); every new background goes through it from now on; how-to tools/bg-picker/README.md. Nov 3: picker live at https://claude.ai/artifact/N1zQ42EPkUqJf8AzpmdmPT, db collection `bg`, doc id = key-art slot {screens:{<screen>:{z,fx,fy}},verdict,note}; game reads `src/data/keyPlacements.js` KEY_PLACE (fill it from the db), nearest of KEY_SCREENS by shape then size, `lockedPlace` in arcadeConsole.js) (owner, Nov 3, VERY SOON) **Background picker**: an interactive page (like the Look Book

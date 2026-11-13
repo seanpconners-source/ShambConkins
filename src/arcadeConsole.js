@@ -63,7 +63,7 @@ const COLLECTIONS=[
  ['paddys',"Paddy's Pub",'Beer pong, flip cup, darts, pool and the bar machine','paddys-beer-pong',['paddys-beer-pong','flipadelphia-cup','paddys-darts','color-of-money','megatouch-photohunt']],
  ['party','Party Games','Quick, loud and stupid','taskmaster-micro-relay',['@taskmaster','@rush','@southpark','hungry-hungry-heads','review-pancakes','kitchen-service','gopher-hunt','warehouse-shift','rainbow-rivals']],
  ['shows','Game Shows & Trivia','Quiz nights and TV game shows','trivia-hardcore',['@trivia','price-bid-off','newlywed-spirit','roast-battle','draw-it']],
- ['movies','Movie Night','Tarantino, Bond, Terminator and friends','tarantino-crazy88',['@tarantino','@bond','@terminator','@hangman','raiders-ball-run','alien-sonar-grid']],
+ ['movies','Movie Night','Tarantino, Bond, Terminator and friends','tarantino-crazy88',['@tarantino','@bond','@terminator','@hangman','raiders-ball-run','alien-sonar-grid','sean-of-the-dead']],
  ['@casino'],['@pinball'],['@bosses']];
 // A collection that is just one franchise ('@casino') puts that franchise on the top shelf as it is.
 const GROUP=new Map();// key -> {key,title,sub,hero,cover,kids:[{f:key}|{id}],collection}
