@@ -6,6 +6,8 @@ const {soloProgress}=require("src/solo.js");
 const {netField}=require("src/engines/netField.js");
 const HD=require("src/engines/hordeData.js");
 const HS=require("src/data/hordeSprites.js");
+const HF=require("src/headFacts.js");
+const FACE_W=24;   // players' face width (brow to chin) in world units: big chibi heads that still show the drop-in jackets (the old 52-unit head picture showed a ~31-unit face)
 const {WEAPONS,PASSIVES,ENEMIES,MODES,WEAPON_IDS,PASSIVE_IDS,MAX_LEVEL,weaponStats,calcStats,xpNeed}=HD;
 
 const CS=480,CELL=56,HB=1024,MAXE=440,PSPD=176,PRAD=14,TAU=Math.PI*2,RW=120;
@@ -708,15 +710,22 @@ async function horde(s){
   x.strokeStyle=PCOL[i];x.lineWidth=2;x.globalAlpha=p.down?.4:.85;x.beginPath();x.ellipse(p.x,p.y+16,17,6.5,0,0,TAU);x.stroke();
   if(p.inv>0&&!p.down&&((t*16)&1))x.globalAlpha=.45;else x.globalAlpha=p.down?.55:1;
   const body=HS.sheet('survivor-p'+(i+1),theme);   // drop-in body (no head): rows idle walk hurt down
+  let neck=null;   // where the chin goes: the drop-in frame's measured collar, else the top of the drawn body
   if(body){const row=p.down?'down':p.hurt>0?'hurt':p.moving?'walk':'idle',d=body.def;
    const f=row==='walk'?Math.floor(((p.walk%TAU)+TAU)%TAU/TAU*d.rows.walk):Math.floor(t*(row==='idle'?5:row==='hurt'?8:3)),r=HS.frameRect(body,row,f);
    const dw=d.frame[0]/HS.PX,dh=d.frame[1]/HS.PX,fx=d.foot[0]/HS.PX,fy=d.foot[1]/HS.PX;
-   x.save();x.translate(p.x,p.y+16);if(p.face<0)x.scale(-1,1);x.drawImage(body.img,r.sx,r.sy,r.sw,r.sh,-fx,-fy,dw,dh);x.restore();}
+   x.save();x.translate(p.x,p.y+16);if(p.face<0)x.scale(-1,1);x.drawImage(body.img,r.sx,r.sy,r.sw,r.sh,-fx,-fy,dw,dh);x.restore();
+   const nk=HS.neckAt(d,row,f)||d.head;neck={x:p.x+(nk[0]-d.foot[0])/HS.PX*(p.face<0?-1:1),y:p.y+16+(nk[1]-d.foot[1])/HS.PX};}
   else if(!p.down){const lg=Math.sin(p.walk)*(p.moving?5:0);x.strokeStyle='#1a1d26';x.lineWidth=4;x.lineCap='round';x.beginPath();x.moveTo(p.x-4,p.y+6);x.lineTo(p.x-4+lg,p.y+16);x.moveTo(p.x+4,p.y+6);x.lineTo(p.x+4-lg,p.y+16);x.stroke();
    HD.rr(x,p.x-8,p.y-5-bob*.5,16,15,5);x.fillStyle=PCOL[i];x.fill();x.lineWidth=1.5;x.strokeStyle='#10150f';x.stroke();}
-  const hy=p.y-20-bob;x.save();x.translate(p.x,hy);if(p.face<0)x.scale(-1,1);
-  s.sprite(x,i,0,0,52,{exact:true,mood:p.hurt>0||p.down?'sad':undefined});x.restore();x.globalAlpha=1;
-  if(!p.down){x.fillStyle=PCOL[i];x.beginPath();x.moveTo(p.x-5,p.y-58-bob);x.lineTo(p.x+5,p.y-58-bob);x.lineTo(p.x,p.y-51-bob);x.closePath();x.fill();
+  // Face like Seanic/SotN (src/headFacts.js): the FACE is FACE_W wide whatever the picture's hair/ears, its chin on the
+  // neck, mirrored only when it looks against the way the body faces; one size through every mood. Pictures without
+  // head facts (online photos) keep the old centred 52-unit head.
+  if(!neck)neck={x:p.x,y:p.y-5-bob*.5};
+  const mood=p.hurt>0||p.down?'sad':s.spriteMood(i),id=s.players[i]?.character,fh=HF.faceHeight(id,mood,FACE_W),cy=HF.faceFit(id,mood,FACE_W)?neck.y-fh*.44:p.y-20-bob;
+  HF.drawFace(s,x,i,neck.x,cy,FACE_W/.6,mood,p.face<0?-1:1,.6);x.globalAlpha=1;
+  const geo=HF.faceGeom(id,mood,FACE_W,neck.x,cy,HF.flipFor(id,mood,p.face<0?-1:1)),top=geo?Math.min(geo.head.y,geo.face.y):cy-26;
+  if(!p.down){x.fillStyle=PCOL[i];x.beginPath();x.moveTo(p.x-5,top-9);x.lineTo(p.x+5,top-9);x.lineTo(p.x,top-2);x.closePath();x.fill();
    if(p.hp<p.maxHp){x.fillStyle='rgba(0,0,0,.65)';x.fillRect(p.x-18,p.y+22,36,5);x.fillStyle=p.hp<p.maxHp*.3?'#ff4a4a':'#5fe08a';x.fillRect(p.x-17,p.y+23,34*p.hp/p.maxHp,3);}}
   else{if(!body){x.strokeStyle='#e8e2cf';x.lineWidth=3;x.beginPath();x.moveTo(p.x,p.y-8);x.lineTo(p.x,p.y+14);x.moveTo(p.x-7,p.y);x.lineTo(p.x+7,p.y);x.stroke();}
    x.strokeStyle='rgba(255,255,255,.25)';x.lineWidth=5;x.beginPath();x.arc(p.x,p.y-4,26,0,TAU);x.stroke();x.strokeStyle='#7dff9a';x.beginPath();x.arc(p.x,p.y-4,26,-Math.PI/2,-Math.PI/2+TAU*clamp(p.revT/2.5,0,1));x.stroke();

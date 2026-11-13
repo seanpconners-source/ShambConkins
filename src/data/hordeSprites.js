@@ -12,7 +12,12 @@ const SHEETS={
  'survivor-p1':{frame:[112,128],foot:[56,124],head:[56,52],headSize:104,rows:{idle:4,walk:6,hurt:2,down:2}},
  'survivor-p2':null,   // same layout as survivor-p1 (filled in below)
 };
-SHEETS['survivor-p2']=SHEETS['survivor-p1'];
+SHEETS['survivor-p2']={...SHEETS['survivor-p1']};
+// Measured neck (top of the collar, template px) per frame of the owner's survivor sheets (Nov 13): the face's chin sits
+// here (src/headFacts.js drawFace), so it moves with the body's bob/stride like Seanic and SotN. A sheet without
+// neckRows falls back to the template's head spot.
+SHEETS['survivor-p1'].neckRows={idle:[[56.5,83],[56,81.5],[56.5,79.5],[56,83.5]],walk:[[56,78.5],[55.5,79],[56.5,77.5],[56,78.5],[56,78.5],[56,78.5]],hurt:[[56,78.5],[57.5,76]],down:[[55.5,88],[56,88.5]]};
+SHEETS['survivor-p2'].neckRows={idle:[[55.5,84],[56,82.5],[56,80.5],[55.5,84]],walk:[[55.5,79.5],[56,80],[55.5,78.5],[56,79.5],[55.5,80],[56,80]],hurt:[[55.5,79],[57,77.5]],down:[[56,88.5],[56.5,89.5]]};
 // Enemies: one walk cycle (4 frames, played at 8 a second) in a square frame of 2 x the enemy's size; the feet sit at 44/48 of
 // the frame height (flyers hover round that point). The game adds the shadow, the white hit flash and the mirror image.
 const ENEMY_SIZES={shambler:46,runner:42,crawler:38,bloater:72,bat:34,spitter:48,barrel:54,charger:58,ghost:52,armored:56,
@@ -83,4 +88,6 @@ function frameRect(sh,row,f){
  const rows=Object.keys(sh.def.rows),r=Math.max(0,rows.indexOf(row)),n=sh.def.rows[rows[r]]||1,[fw,fh]=sh.def.frame;
  f=((f%n)+n)%n;return {sx:f*fw*sh.k,sy:r*fh*sh.k,sw:fw*sh.k,sh:fh*sh.k,n};
 }
-Object.assign(exports,{PX,SHEETS,PICTURES,ENEMY_SIZES,ICON_IDS,has,picture,loadHorde,sheet,frameRect});
+// Neck spot [x,y] (template px) of frame f of a row, or null when the sheet has none.
+function neckAt(def,row,f){const r=def.neckRows&&def.neckRows[row];if(!r||!r.length)return null;return r[((f%r.length)+r.length)%r.length];}
+Object.assign(exports,{PX,SHEETS,PICTURES,ENEMY_SIZES,ICON_IDS,has,picture,loadHorde,sheet,frameRect,neckAt});
