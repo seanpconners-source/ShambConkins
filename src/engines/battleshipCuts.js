@@ -33,7 +33,7 @@ function navalCut(s,{kind,shooter,victim,ship=''}){return new Promise(done=>{
   if(body){const d=body.def,k=size/d.U,rw=row||'stand',fi=Math.floor(t*(rw==='swim'?6:4)+px*.01),r=BS.frameRect(body,rw,fi);x.drawImage(body.img,r.sx,r.sy,r.sw,r.sh,-d.head[0]*k,-d.head[1]*k,d.frame[0]*k,d.frame[1]*k);
    // face like Seanic/SotN: FACE wide, chin on this frame's collar, mirrored only if it looks against the sailor; cap on the brow
    const id=s.players[who]?.character,m=mood||s.spriteMood(who),nk=BS.neckAt(d,rw,fi),fw=size*SAILOR_FACE,fit=id&&HF.faceFit(id,m,fw);
-   if(nk&&fit){const nx=(nk[0]-d.head[0])*k,ny=(nk[1]-d.head[1])*k,cy=ny-HF.faceHeight(id,m,fw)*.44;HF.drawFace(s,x,who,nx,cy,fw/.6,m,1,.6);
+   if(nk&&fit){const nx=(nk[0]-d.head[0])*k,ny=(nk[1]-d.head[1])*k,cy=ny-HF.faceHeight(id,m,fw)*.38;HF.drawFace(s,x,who,nx,cy,fw/.6,m,1,.6);
     const g=HF.faceGeom(id,m,fw,nx,cy,HF.flipFor(id,m,1)),cap=BS.picture('sailor-cap'),w=Math.max(g.head.w*1.05,fw*1.45),bx=g.face.x+g.face.w/2,by=g.face.y+g.face.h*.18;
     if(cap)x.drawImage(cap,bx-w/2,by-w*cap.height/cap.width*.8,w,w*cap.height/cap.width);else{x.fillStyle='#fff';x.beginPath();x.ellipse(bx,by-w*.05,w*.45,w*.12,0,0,7);x.fill();}x.restore();return;}
    s.sprite(x,who,0,0,size*.8,{exact:true,mood});const cap=BS.picture('sailor-cap');if(cap){const w=size*.6;x.drawImage(cap,-w/2,-size*.34-w*.22,w,w*cap.height/cap.width);}else{x.fillStyle='#fff';x.beginPath();x.ellipse(0,-size*.34,size*.26,size*.07,0,0,7);x.fill();}x.restore();return;}

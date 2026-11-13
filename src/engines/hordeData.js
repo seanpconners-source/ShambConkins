@@ -264,7 +264,7 @@ function bakeEnemies(theme){
  const th=THEMES[theme]||THEMES.dead,out={};
  for(const id of ENEMY_IDS){
   const def=ENEMIES[id],art=ARTS[id]||ARTS[({elite:'sergeant'})[id]]||ARTS.shambler,sh=HS.sheet('enemy-'+id,theme);
-  const n=sh?sh.def.rows.walk:2,cell=sh?sh.def.frame[0]:Math.ceil(def.sz*ESS),cv=mk(cell*n*2,cell*2),c=cv.getContext('2d'),k=sh?cell/48:def.sz/48*ESS;
+  const n=sh?sh.def.rows.walk:2,cell=sh?Math.ceil(def.sz*HS.ENEMY_ART_K*1.25):Math.ceil(def.sz*ESS),cv=mk(cell*n*2,cell*2),c=cv.getContext('2d'),k=sh?cell/48:def.sz/48*ESS;
   for(let col=0;col<n*2;col++){
    c.save();c.translate(col*cell+cell/2,cell/2);c.scale(k,k);if(col>=n)c.scale(-1,1);
    if(!def.fly)ell(c,0,20,12,4,'rgba(0,0,0,.35)');
@@ -272,6 +272,7 @@ function bakeEnemies(theme){
    else art(c,col&1,th);c.restore();
   }
   c.drawImage(cv,0,0,cell*n*2,cell,0,cell,cell*n*2,cell);c.globalCompositeOperation='source-atop';c.fillStyle='rgba(255,255,255,.82)';c.fillRect(0,cell,cell*n*2,cell);c.globalCompositeOperation='source-over';
+  if(sh)HS.release('enemy-'+id);   // baked: the picture is no longer needed
   out[id]={img:cv,cell,sz:def.sz,n,fps:sh?8:4,k:sh?HS.ENEMY_ART_K:1};
  }
  return out;
