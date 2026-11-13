@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.96.9
+
+- **Sqwordle:** Squirtle now acts out the move when you get the word, aimed at your winning row: Squirtle Squirt! (1 guess), Hydro Pump (2), Bubble Beam (3), Water Gun (4), Withdraw (5) and Phew (6); a miss makes it cry. Tap to skip ahead. The little head by the title reacts to each guess too (puzzled at a non-word, happy at new blue tiles, sad at an all-grey row).
+- **Sqwordle art slots:** room for whole-body Squirtle poses, water effects and light/dark backgrounds; until the pictures arrive, everything is drawn in the game.
+
 ## v0.96.8
 
 - **Sundown Showdown and Super Mario Bros.:** faces sit on the neck at the right size (like Seanic and Symphony of the Night), turn the right way, and the cowboy hats / Mario caps sit on the forehead.
