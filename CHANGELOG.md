@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.96.6
+
+- **Chat:** while you type, the chat sits at the top of the screen so the phone keyboard can't cover the text box.
+- **Messages to friends anywhere:** a message to a friend who's in a solo game (or anywhere outside a room with you) pops up over their game and leaves the 💬 button with a red count until they read it. A friend who isn't in the game at all gets it the next time they open it.
+- **Invites while playing:** a friend in the middle of a game sees a banner "… wants to play online · Join". Join ends their game (they're asked first) and puts you both in a room; ✕ says not now.
+- **Rooms:** tapping Online while in a room lets you stay, switch to another room, or leave it.
+
 ## v0.96.5
 
 - **Characters:** Hannah and Carson (Unlimited Savory Systems lab) have their own photos now.
