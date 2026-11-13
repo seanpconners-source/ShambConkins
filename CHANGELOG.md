@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.96.15
+
+- **Living Dead Horde effects are real art now:** chainsaw swipes, muzzle flashes, shotgun pellets, nails, impacts, explosions, the lantern's pulse, lightning, gore, burning/goo/tar puddles, the goo aura and the zombies' spit, fire and curses.
+- **The Trioxin Barrel works:** its green puddle now actually forms and hurts zombies (it never did). The Trioxin Rain now really drops its red circles, and two bosses' shockwaves finally land.
+- **Less gore spam:** splats are smaller, with a few on screen at a time, so big kills don't paint the whole screen red.
+- **Battleship finished:** a real stormy sea in the cut scenes, burning ships, the deck gun's flash, the shell in flight and the torpedo's wake. Sailor caps stay on their heads when they jump overboard.
+- **12 new Arcade backgrounds** (Banana Money Grab, BASEketball, Brawndo, Derezzed, Fast Quarter Mile, Flappy, Home Alone, League Penalties, Radical Bike, Sewer Clash, Snake v Snake, WOPR), each placed by hand for every screen.
+- **Freeze report:** if a game ever freezes or the app gets closed in the middle of one, the next start shows what it was doing, so the cause can be found.
+
 ## v0.96.14
 
 - **No more freezes:** a single hiccup in a game's drawing used to stop the whole screen for good (the Horde froze halfway through a night). Games now keep running, and the error is saved so it can be fixed.
