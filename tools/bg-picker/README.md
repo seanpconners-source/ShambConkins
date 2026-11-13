@@ -8,7 +8,7 @@ The owner chooses exactly how every Arcade background (`assets/keyart/<slot>.web
 (see the list below): drag to move,
 pinch/scroll to zoom, **Lock in**, plus a verdict (perfect / small tweak / needs an edit / remake) and a note.
 
-- Picker page (always republish to this same URL): **https://claude.ai/artifact/DhpZSVr98T1sEwzjux7AJ9** (since Nov 3; the first
+- Picker page: **https://claude.ai/artifact/DhpZSVr98T1sEwzjux7AJ9** on the owner's main account; sessions on the other account publish to **https://claude.ai/artifact/N1zQ42EPkUqJf8AzpmdmPT** (Nov 13: batch 02 + 4 never-shelved pictures, old files cleared with `null` first) (since Nov 3; the first
   picker, https://claude.ai/artifact/N1zQ42EPkUqJf8AzpmdmPT, belongs to the owner's other account and can't be republished from this one; its locks
   are all in keyPlacements.js already). A publish takes at most 255 files: send the files list in two or three publishes.
   A version holds at most 511 files, so assemble.py leaves out the logo when every screen has the game's captured text

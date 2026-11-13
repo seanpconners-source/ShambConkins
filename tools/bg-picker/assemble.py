@@ -14,7 +14,7 @@ ONLY = set(x for x in ONLY.split(',') if x)
 M = json.load(open(os.path.join(M_DIR, 'measure.json')))
 SCREENS = json.load(open(os.path.join(T, 'screens.json')))
 src = open(os.path.join(R, 'src', 'arcadeConsole.js')).read()
-box_js = re.search(r'const KEY_BOX=(\{.*?\});', src, re.S).group(1)
+box_js = re.search(r'const KEY_BOX=(\{.*?\});', src, re.S).group(1); box_js = re.sub(r'//[^\n]*', '', box_js)
 BOX = json.loads(re.sub(r'([{,]\s*)([a-z][a-z0-9]*):', r'\1"\2":', box_js.replace("'", '"')).replace(':[.', ':[0.').replace(',.', ',0.'))
 DEFAULT = [.28, .15, .72, .85]
 kp = open(os.path.join(R, 'src', 'data', 'keyPlacements.js')).read(); m = re.search(r'/\*PLACE\*/(.*?)/\*END\*/', kp, re.S)
