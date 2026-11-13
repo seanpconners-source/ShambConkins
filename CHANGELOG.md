@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.96.14
+
+- **No more freezes:** a single hiccup in a game's drawing used to stop the whole screen for good (the Horde froze halfway through a night). Games now keep running, and the error is saved so it can be fixed.
+- **Faces stay put:** pictures shown through a frame (like Mrs. Doubtfire's) jumped between the head and the chest; now every face sits on the collar in every pose, in every game that uses the new face placement.
+- **Horde heads** sit a little lower and further forward, and keep one steady expression.
+- **Battleship caps** sit on top of the sailors' heads instead of across their faces.
+- Ready for the next art batch: slots for chainsaw swipes, muzzle flashes, nails, pellets, explosions, lightning, gore and pools in the Horde, and ship fires, gun flashes, shells, torpedo wakes and the cut-scene sea in Battleship (drawn effects stay until the pictures arrive).
+
 ## v0.96.13
 
 - **Battleship gets real art:** photoreal warships seen from above (and wrecked versions when sunk), burning hits, splashes and explosions, a real sea under the grid, the chart-table room behind it, and new cut scenes: a stormy sunset, a battleship on the horizon, the deck gun, torpedoes and sailors wearing your faces under their caps.
