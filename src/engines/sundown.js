@@ -559,8 +559,17 @@ async function sundown(s){
   for(const e of E)if(e.dead)drawEnemy(e);for(const e of E)if(!e.dead)drawEnemy(e);for(const p of P)drawPlayer(p);drawShots();
   if(L.night){const gr=pg.createRadialGradient(PW/2,PH/2,PH*.35,PW/2,PH/2,PW*.75);gr.addColorStop(0,'#0000');gr.addColorStop(1,'#000a');pg.fillStyle=gr;pg.fillRect(0,0,PW,PH);}
   pg.restore();
-  if(view.y>0){cx.fillStyle='#1a0c10';cx.fillRect(0,0,W,view.y);cx.fillStyle='#120808';cx.fillRect(0,view.y+view.h,W,H-view.y-view.h);}
-  cx.imageSmoothingEnabled=false;cx.drawImage(pb,0,0,PW,PH,view.x,view.y,PW*K,view.h);cx.imageSmoothingEnabled=true;
+  cx.imageSmoothingEnabled=false;cx.drawImage(pb,0,0,PW,PH,view.x,view.y,PW*K,view.h);
+  // tall screens (owner, Nov 13: fill the whole screen like SotN/Mario/Sonic, no dark bars): the sky carries on above the band
+  // (its top pixel row stretched up, then darkened toward the top) and the street's ground below it (its last rows repeated,
+  // shaded deeper as it goes), so the touch controls float over the scene instead of a black strip
+  if(view.y>0){cx.drawImage(pb,0,0,PW,1,view.x,0,PW*K,view.y+1);
+   const g=cx.createLinearGradient(0,0,0,view.y);g.addColorStop(0,'rgba(0,0,0,.45)');g.addColorStop(1,'rgba(0,0,0,0)');cx.fillStyle=g;cx.fillRect(0,0,W,view.y);}
+  const y1=view.y+view.h;
+  if(y1<H){const rows=Math.max(4,Math.round((VH-GY-4)*S)),h=rows*K;let flip=false;
+   for(let y=y1-1;y<H;y+=h-1){cx.save();if(flip){cx.translate(0,y+h);cx.scale(1,-1);cx.drawImage(pb,0,PH-rows,PW,rows,view.x,0,PW*K,h);}else cx.drawImage(pb,0,PH-rows,PW,rows,view.x,y,PW*K,h);cx.restore();flip=!flip;}
+   const g=cx.createLinearGradient(0,y1,0,H);g.addColorStop(0,'rgba(0,0,0,.15)');g.addColorStop(1,'rgba(0,0,0,.6)');cx.fillStyle=g;cx.fillRect(0,y1,W,H-y1);}
+  cx.imageSmoothingEnabled=true;
   drawHeads();drawTexts();drawHUD();
   if(phase==='bossintro')bossIntro();if(L.boss?.say&&!L.boss.dead&&T-L.boss.say.t<2.6)speech(L.boss);
   if(banner?.why==='warn')warnBanner();if(T-goT<2.2&&phase==='play'&&Math.floor((T-goT)*3)%2===0)goArrow();

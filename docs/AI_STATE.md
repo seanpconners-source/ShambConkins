@@ -2,7 +2,9 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-SEAN OF THE DEAD (Nov 13, branch ccr-6ef4a2f9-zjxoma, NOT released; ROADMAP H33): tower defense on Shaun of the Dead, game id
+SUNDOWN FILL (Nov 13, released in v0.96.7; owner: letterboxed on his Fold): tall screens keep the gameplay band (layout() view) but sundown.js draw() now fills above it with the buffer's top row stretched + darkening gradient, and below with the ground rows (GY+4..VH) repeated mirrored + shade, so controls float over the scene. tests/sundown.mjs passes; checked 752x835 + 390x780.
+
+SEAN OF THE DEAD (Nov 13, RELEASED as v0.96.7 with the Sundown fill fix; owner: release, play it; ROADMAP H33): tower defense on Shaun of the Dead, game id
 `sean-of-the-dead` (src/packs/deadPack.js, engine src/engines/seanOfTheDead.js; Arcade only: randomEligible false; Movie Night
 collection; category coop; soloKind 'alone'). Owner: Winchester obvious (pub at the top: sign, warm windows, swinging W sign,
 rifle over the door), NO character towers (picking from hundreds = chore) → 4 fixed towers x 3 levels (Vinyl Toss, Pool Cue
