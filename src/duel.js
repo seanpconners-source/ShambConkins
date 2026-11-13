@@ -8,7 +8,7 @@ const {portraitHTML,gameArtHTML}=require("src/assets.js");
 const {gameById}=require("src/gameRegistry.js");
 const {duelOK,soloSettings}=require("src/solo.js");
 const {escapeHTML:e}=require("src/utils.js");
-const {joinRoom,leaveRoom,sendNet,onNet,netState,netLogText}=require("src/net.js");
+const {joinRoom,leaveRoom,sendNet,onNet,netState,netLogText,roomKey}=require("src/net.js");
 const {VERSION}=require("src/version.js");
 const {friendsPanelHTML,handleFriendChoice,noteMet,myCode}=require("src/friends.js");
 const {openChat}=require("src/chat.js");
@@ -31,7 +31,7 @@ function setLive(id,text){const el=document.getElementById(id);if(el)el.textCont
 function lastRoom(){try{return localStorage.getItem('sc-room')||'';}catch{return '';}}
 function names(){return [0,1].map(i=>store.setupNames?.[i]||(i?'Amber':'Sean'));}
 async function openOnline(){
- const net=netState();if(net.room&&net.status!=='off'){store.online=true;hooks.refresh();return;}
+ const net=netState();if(net.room&&net.status!=='off'){if(store.netBoard||!store.online){store.online=true;hooks.refresh();return;}return roomMenu();}
  const who=soloSettings(store.profile).who,[n0,n1]=names();
  const html=`<label class="net-field"><span>Room name</span><input id="net-room" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="e.g. pizza night" value="${e(lastRoom())}"></label>
   <div class="net-who" role="radiogroup" aria-label="You are"><span>You are</span><label><input type="radio" name="net-who" value="0"${who?'':' checked'}> ${e(n0)}</label><label><input type="radio" name="net-who" value="1"${who?' checked':''}> ${e(n1)}</label></div>
@@ -48,9 +48,31 @@ async function openOnline(){
  const ok=await enterRoom(room,me);
  if(ok==='again')return openOnline();
 }
+// Already in a room (owner, Nov 12): stay, leave it, switch to another room by name, or invite / message a friend from
+// the list (an accepted invite moves this phone into the new room). Returns 'menu' so the title screen adds no toast.
+async function roomMenu(){
+ const net=netState(),peer=net.peer;
+ const html=`<p class="net-note net-here">You’re in room <b>${e(net.room)}</b>${peer?` with <b>${e(peer.name)}</b>`:': waiting for player 2'}.</p>`+friendsPanelHTML()
+  +`<h3 class="net-or">Or switch to another room</h3><label class="net-field"><span>Room name</span><input id="net-room" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="e.g. pizza night"></label>`;
+ const choice=await showDialog({local:true,title:'Play online',html,choices:[{label:'Stay here',value:'stay',primary:true},{label:'Switch room',value:'join'},{label:'Leave room',value:'leave',danger:true}]});
+ const room=document.getElementById('net-room')?.value.trim()||'';
+ const fr=await handleFriendChoice(choice);
+ if(typeof fr==='string'&&fr.startsWith('chat:')){openChat(fr.slice(5));return 'menu';}
+ if(fr){if(fr==='joined')return 'menu';return roomMenu();}
+ if(choice==='leave'){leaveOnline();return 'menu';}
+ if(choice==='join'){
+  if(!room){toast('Type the room name to switch to');return roomMenu();}
+  if(roomKey(room)===netState().room){toast('You’re already in that room');return roomMenu();}
+  try{localStorage.setItem('sc-room',room);}catch{}
+  const ok=await enterRoom(room,store.onlineWho??soloSettings(store.profile).who);if(ok==='again')return roomMenu();
+ }
+ return 'menu';
+}
 // Join a room as player me (0 Sean side, 1 Amber side; default = this phone's 1P pick): the room dialog and friend invites.
 async function enterRoom(room,me=soloSettings(store.profile).who){
  const character=store.setupSelected?.[me]||(me?'amber':'sean');
+ // switching rooms: drop any challenge in the old one first (joinRoom closes the old connection)
+ if(netState().room){if(match)sendNet({k:'quit',mid:match.mid});endMatch();}
  toast(`Joining “${room}”…`);
  try{
   const {peer}=await joinRoom(room,{name:names()[me],character,owner:me?'Amber':'Sean',code:myCode()});

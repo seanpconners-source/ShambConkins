@@ -79,12 +79,12 @@ function onMessage(m){
  else if(m.t==='added'&&m.by&&cleanCode(m.by.code)){const known=friends().some(f=>f.code===m.by.code);addFriendEntry(m.by,true);if(!known)toast(`${m.by.name||'Someone'} added you as a friend`);}
  else if(m.t==='invite'&&m.from&&cleanCode(m.from.code)&&typeof m.room==='string'){addFriendEntry(m.from,true);
   if(invites.some(i=>i.id===m.id))return;invites.push({id:String(m.id),room:m.room,from:m.from,at:Date.now()});
-  if(!canInterrupt())toast(`${m.from.name} invited you to play online`);pump();}
- else if(m.t==='cancel'){const i=invites.findIndex(x=>x.id===m.id);if(i>=0)invites.splice(i,1);if(showing===m.id)resolveDialog('cancelled');}
+  pump();syncBanner();}
+ else if(m.t==='cancel'){const i=invites.findIndex(x=>x.id===m.id);if(i>=0){invites.splice(i,1);toast(`${m.from?.name||'Your friend'} cancelled the invite`);}if(showing===m.id)resolveDialog('cancelled');syncBanner();}
  else if(m.t==='reply'&&outgoing?.id===m.id)resolveDialog(m.ok?'accepted':'declined');
  else if(m.t==='sent'&&outgoing?.id===m.id&&!m.ok)resolveDialog('offline');
  else if(m.t==='chat'&&m.from&&cleanCode(m.from.code)&&typeof m.text==='string'){addFriendEntry(m.from,true);chatHook?.(m);}
- else if(m.t==='chat-sent'&&!m.ok)toast('Your message didn’t arrive: they went offline');
+ else if(m.t==='chat-sent'){if(!m.ok)toast('Your message didn’t arrive: they went offline');else if(m.held)toast('They’re not in the game right now: they’ll get your message when they open it');}
 }
 // newer names/faces for friends who are online
 function learn(list){const l=friends();let dirty=false;for(const p of list){const f=l.find(x=>x.code===p.code);if(f&&(f.name!==p.name||f.character!==p.character)){f.name=p.name;f.character=p.character;f.owner=p.owner;dirty=true;}}if(dirty)saveFriends(l);}
@@ -108,7 +108,7 @@ function rowsHTML(){
  const rank=f=>{const p=presence.get(f.code);return p?(p.st==='free'?0:1):2;};
  return l.slice().sort((a,b)=>rank(a)-rank(b)||String(a.name).localeCompare(String(b.name))).map(f=>{const p=presence.get(f.code),st=p?p.st:'off',name=f.name||`Friend ${showCode(f.code)}`;
   const text=p?(p.what||LABEL[st]||'Online'):'Offline';
-  return `<li class="fr-row fr-${st}"><span class="fr-face">${portraitHTML(f.character||'sean','portrait mini')}</span><span class="fr-text"><b>${e(name)}</b><small><i class="fr-dot"></i>${e(text)}</small></span>${p?`<button type="button" class="fr-chat" data-fr="chat:${f.code}" aria-label="Message ${e(name)}">💬</button><button type="button" class="fr-invite" data-fr="invite:${f.code}">Invite</button>`:''}<button type="button" class="fr-x" data-fr="remove:${f.code}" aria-label="Remove ${e(name)}">✕</button></li>`;}).join('');
+  return `<li class="fr-row fr-${st}"><span class="fr-face">${portraitHTML(f.character||'sean','portrait mini')}</span><span class="fr-text"><b>${e(name)}</b><small><i class="fr-dot"></i>${e(text)}</small></span><button type="button" class="fr-chat" data-fr="chat:${f.code}" aria-label="Message ${e(name)}">💬</button>${p?`<button type="button" class="fr-invite" data-fr="invite:${f.code}">Invite</button>`:''}<button type="button" class="fr-x" data-fr="remove:${f.code}" aria-label="Remove ${e(name)}">✕</button></li>`;}).join('');
 }
 function friendsPanelHTML(){
  enableFriends();
@@ -161,16 +161,40 @@ async function pump(){
   while(invites.length){
    const now=Date.now();while(invites.length&&now-invites[0].at>150000)invites.shift();   // two and a half minutes, then it's stale
    if(!invites.length||!canInterrupt())break;
-   const inv=invites.shift();showing=inv.id;
+   const inv=invites.shift();syncBanner();
+   if(inv.accept){send({t:'reply',to:inv.from.code,id:inv.id,ok:true});invites.length=0;syncBanner();await hooks.openRoom(inv.room);break;}
+   showing=inv.id;
    try{navigator.vibrate?.([60,80,60]);}catch{}
    const board=store.view==='board'&&store.run;
    const ans=await showDialog({local:true,title:`${inv.from.name||'A friend'} wants to play!`,html:`<div class="result-portraits"><div>${portraitHTML(inv.from.character||'amber','portrait mini','win')}<b>${e(inv.from.name||'')}</b></div></div><p class="net-note">Join an online room together and pick games to play.${board?' Your board game is saved: Continue it later from the title screen.':''}</p>`,choices:[{label:'Join',value:'join',primary:true},{label:'Not now',value:'no'}],seconds:45,timeoutValue:'no'});
    showing=null;
    if(ans==='cancelled'){toast(`${inv.from.name} cancelled the invite`);continue;}
    send({t:'reply',to:inv.from.code,id:inv.id,ok:ans==='join'});
-   if(ans==='join'){invites.length=0;await hooks.openRoom(inv.room);break;}
+   if(ans==='join'){invites.length=0;syncBanner();await hooks.openRoom(inv.room);break;}
   }
- }finally{pumping=false;}
+ }finally{pumping=false;syncBanner();}
+}
+// While this phone is busy (in a game, a dialog, the CPU's turn) an invite can't pop up as a card, so a small banner at the
+// top says so (owner, Nov 12): Join = leave the game (the game's own "End this?" question) and go straight into the room
+// once it's over; ✕ = no thanks. It stays until the invite is answered, cancelled or goes stale.
+let banner=null,bannerOver=-1;
+function syncBanner(){
+ if(typeof document==='undefined')return;
+ const inv=invites.find(i=>Date.now()-i.at<=150000);
+ if(!inv||canInterrupt()){if(banner){try{banner.hidePopover?.();}catch{}banner.remove();banner=null;}return;}
+ if(!banner||banner.dataset.id!==inv.id||banner.dataset.accept!==String(!!inv.accept)){
+  banner?.remove();banner=document.createElement('div');banner.id='sc-invite';banner.className='invite-banner';banner.dataset.id=inv.id;banner.dataset.accept=String(!!inv.accept);
+  if('popover' in HTMLElement.prototype)banner.setAttribute('popover','manual');
+  const name=e(inv.from.name||'A friend');
+  banner.innerHTML=`<span class="ib-face">${portraitHTML(inv.from.character||'amber','portrait mini','win')}</span><span class="ib-text"><b>${name} wants to play online</b><small>${inv.accept?'Joining as soon as this game is over…':store.session?'Join leaves this game.':'It pops up as soon as you’re free.'}</small></span>${inv.accept?'':`<button type="button" class="ib-join">Join</button>`}<button type="button" class="ib-x" aria-label="Not now">✕</button>`;
+  banner.querySelector('.ib-join')?.addEventListener('click',ev=>{ev.preventDefault();ev.stopPropagation();inv.accept=true;inv.at=Date.now();syncBanner();if(store.session)hooks.leaveGame?.();});
+  banner.querySelector('.ib-x').addEventListener('click',ev=>{ev.preventDefault();ev.stopPropagation();const i=invites.indexOf(inv);if(i>=0)invites.splice(i,1);send({t:'reply',to:inv.from.code,id:inv.id,ok:false});syncBanner();});
+  document.body.append(banner);bannerOver=-1;
+  try{navigator.vibrate?.([60,80,60]);}catch{}
+ }
+ // a popover sits over every dialog opened before it: show it again when a new one opens
+ const over=document.querySelectorAll('dialog[open]').length;
+ if(banner.popover&&over!==bannerOver){bannerOver=over;try{if(banner.matches(':popover-open'))banner.hidePopover();banner.showPopover();}catch{}}
 }
 
 // ---- running ----
@@ -179,6 +203,7 @@ function tick(){
  if(!lobby.ws&&Date.now()>=lobby.next)connect();
  if(lobby.open){const st=statusNow(),k=JSON.stringify(st);if(k!==lobby.sent){lobby.sent=k;send({t:'status',...st});}}
  if(invites.length)pump();
+ syncBanner();
 }
 function initFriends(h){
  hooks={...hooks,...h};
@@ -190,7 +215,7 @@ function initFriends(h){
  setTimeout(connect,2500);
 }
 // tests: drop and reopen the lobby connection (a new hello), what the lobby told us
-function friendsDebug(){return {code:myCode(),open:lobby.open,presence:[...presence.values()],friends:friends(),invites:invites.length,reconnect(){disconnect();lobby.next=0;lobby.tries=0;connect();}};}
+function friendsDebug(){return {code:myCode(),open:lobby.open,presence:[...presence.values()],friends:friends(),invites:invites.length,reconnect(){disconnect();lobby.next=0;lobby.tries=0;connect();},invite:inviteFriend,banner:()=>!!document.getElementById("sc-invite")};}
 // ---- messages (src/chat.js): to a friend through the lobby, wherever they are in the game ----
 let chatHook=null;
 function onFriendChat(fn){chatHook=fn;}

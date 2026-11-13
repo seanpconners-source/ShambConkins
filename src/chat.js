@@ -25,7 +25,12 @@ const MAX=160,LOG_MAX=40;
 const log=[];            // {dir:'in'|'out', name, character, text, at, to: 'room'|code}
 const seen=new Set();    // message ids already shown (a resend after a reconnect)
 const recent=[];         // lines dealt lately: the next hands avoid them
-let target=null,unread=0,lastSend=0,btn=null,dlg=null,bubbles=null;
+let target=null,lastSend=0,btn=null,dlg=null,bubbles=null;
+// unread messages per conversation ('room' or a friend code), newest last: the 💬 button shows the total, also outside a
+// room (a friend's message from the lobby), and opens the conversation that's waiting; reading it clears it
+const unreadBy=new Map();
+const unreadTotal=()=>{let n=0;for(const v of unreadBy.values())n+=v;return n;};
+const waitingFor=()=>{let last=null;for(const [k,v] of unreadBy)if(v>0&&(k!=='room'||roomOpen()))last=k;return last;};
 const rid=()=>Math.random().toString(36).slice(2,10);
 const pick=(list,n,avoid)=>{const pool=list.filter(x=>!avoid.has(x)),src=pool.length>=n?pool:list.slice(),out=[];while(out.length<n&&src.length)out.push(src.splice(Math.floor(Math.random()*src.length),1)[0]);return out;};
 const crude=()=>!store.profile?.settings?.chatClean;
@@ -69,7 +74,7 @@ function receive(m,via){
  const text=m.text.replace(/\s+/g,' ').trim().slice(0,MAX),name=String(m.name||'Friend').slice(0,24),character=String(m.character||'amber').slice(0,64);
  note({dir:'in',name,character,text,to:via});
  if(dlg?.open&&(target||'room')===via)return;      // already reading this conversation
- unread++;updateButton();bubble({name,character,text,via});
+ unreadBy.delete(via);unreadBy.set(via,1+(unreadBy.get(via)||0));updateButton();bubble({name,character,text,via});
  try{tone(660,.06,.035,'triangle');setTimeout(()=>tone(990,.08,.03,'triangle'),70);}catch{}
  try{vibrate?.(30);}catch{}
 }
@@ -78,7 +83,7 @@ function receive(m,via){
 function ensureUI(){
  if(btn||typeof document==='undefined')return;
  btn=document.createElement('button');btn.type='button';btn.id='sc-chat';btn.className='chat-fab';btn.hidden=true;btn.setAttribute('aria-label','Chat');btn.innerHTML='<span>💬</span><i></i>';
- btn.addEventListener('click',ev=>{ev.preventDefault();ev.stopPropagation();if(Date.now()<noClickUntil)return;openChat('room');});
+ btn.addEventListener('click',ev=>{ev.preventDefault();ev.stopPropagation();if(Date.now()<noClickUntil)return;openChat(waitingFor()||'room');});
  installDrag();
  document.body.append(btn);
  bubbles=document.createElement('div');bubbles.id='sc-chat-bubbles';bubbles.className='chat-bubbles';if('popover' in HTMLElement.prototype)bubbles.setAttribute('popover','manual');document.body.append(bubbles);
@@ -88,11 +93,15 @@ function ensureUI(){
  // the phone keyboard (owner, Nov 12: it covered the text box): while typing, the sheet sits on top of the keyboard (the
  // visual viewport tells how much of the screen it takes) and the canned lines fold away so the box and the log fit
  const kb=()=>{if(!dlg?.open)return;const v=window.visualViewport;const cover=v?Math.max(0,innerHeight-(v.height+v.offsetTop)):0;
-  dlg.style.bottom=cover>40?cover+'px':'';const card=dlg.querySelector('.chat-card');if(card)card.style.maxHeight=v&&cover>40?Math.round(v.height*.92)+'px':'';};
+  const typing=dlg.classList.contains('typing'),card=dlg.querySelector('.chat-card');
+  // while typing the sheet hangs from the TOP of what's visible (owner, Nov 12: the installed full-screen app on his Fold
+  // never reports the keyboard, so sitting on top of it still left the box under it); a known keyboard also caps the height
+  dlg.style.top=typing&&v?Math.round(v.offsetTop)+'px':'';dlg.style.bottom='';
+  if(card)card.style.maxHeight=typing?Math.round(Math.min(v&&cover>40?v.height*.94:Infinity,innerHeight*.46))+'px':'';};
  if(window.visualViewport){visualViewport.addEventListener('resize',kb);visualViewport.addEventListener('scroll',kb);}
- dlg.addEventListener('focusin',ev=>{if(!ev.target.matches?.('.chat-input'))return;dlg.classList.add('typing');setTimeout(()=>{kb();ev.target.scrollIntoView?.({block:'nearest'});},350);});
+ dlg.addEventListener('focusin',ev=>{if(!ev.target.matches?.('.chat-input'))return;dlg.classList.add('typing');kb();setTimeout(kb,350);});
  dlg.addEventListener('focusout',ev=>{if(!ev.target.matches?.('.chat-input'))return;setTimeout(()=>{if(!dlg.contains(document.activeElement)||!document.activeElement.matches?.('.chat-input')){dlg.classList.remove('typing');kb();}},150);});
- dlg.addEventListener('close',()=>{dlg.classList.remove('typing');dlg.style.bottom='';});
+ dlg.addEventListener('close',()=>{dlg.classList.remove('typing');dlg.style.bottom=dlg.style.top='';const c=dlg.querySelector('.chat-card');if(c)c.style.maxHeight='';});
  dlg.addEventListener('submit',ev=>{ev.preventDefault();const i=dlg.querySelector('.chat-input');if(i&&send(i.value)){i.value='';closeChat();}});
  // keys typed in the chat never reach a game (registered at boot, before any game's own listeners)
  for(const t of ['keydown','keyup','keypress'])addEventListener(t,ev=>{if(dlg?.open){ev.stopImmediatePropagation();if(ev.type==='keydown'&&ev.key==='Escape'){ev.preventDefault();closeChat();}}},true);
@@ -125,7 +134,7 @@ function installDrag(){
  btn.addEventListener('contextmenu',ev=>ev.preventDefault());
  addEventListener('resize',()=>requestAnimationFrame(placeButton));}
 function updateButton(){
- if(!btn)return;const show=roomOpen();btn.hidden=!show;btn.classList.toggle('has-unread',unread>0);placeButton();
+ if(!btn)return;if(!roomOpen())unreadBy.delete('room');const unread=unreadTotal(),show=roomOpen()||unread>0;btn.hidden=!show;btn.classList.toggle('has-unread',unread>0);placeButton();
  btn.querySelector('i').textContent=unread?String(Math.min(9,unread)):'';
  // a modal dialog makes everything outside it untappable: sit inside it while it's open
  const host=document.querySelector('#dialog[open]')||document.body;if(btn.parentElement!==host)host.append(btn);
@@ -144,7 +153,7 @@ function peerOf(to){
  const f=F.friendOf?.(to);return {name:f?.name||'Friend',character:f?.character||'amber'};
 }
 function openChat(to='room'){
- ensureUI();target=to;if(to==='room'&&!roomOpen())return false;unread=0;updateButton();
+ ensureUI();target=to;if(to==='room'&&!roomOpen())return false;unreadBy.delete(to);updateButton();
  const p=peerOf(to),h=deal(),line=(t,cls='')=>`<button type="button" class="chat-line ${cls}" data-say="${e(t)}">${e(t)}</button>`;
  dlg.innerHTML=`<form method="dialog" class="chat-card">
   <header class="chat-head">${face(p.character)}<b>To ${e(p.name)}</b><button type="button" class="chat-x" data-chat="close" aria-label="Close">✕</button></header>
@@ -187,5 +196,5 @@ function initChat(){
  setInterval(updateButton,1000);
 }
 // tests: open the sheet, send a line, read the log
-function chatDebug(){return {log:log.slice(),open:!!dlg?.open,target,unread,deal,send,openChat,closeChat,button:()=>btn&&!btn.hidden};}
+function chatDebug(){return {log:log.slice(),open:!!dlg?.open,target,unread:unreadTotal(),unreadBy:Object.fromEntries(unreadBy),deal,send,openChat,closeChat,button:()=>btn&&!btn.hidden};}
 Object.assign(exports,{initChat,openChat,closeChat,chatDebug,setChatHome});

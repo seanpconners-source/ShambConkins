@@ -240,6 +240,8 @@ export class Lobby extends DurableObject {
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'));
     this.sql = ctx.storage.sql;
     this.sql.exec('CREATE TABLE IF NOT EXISTS adds (to_code TEXT, from_code TEXT, entry TEXT, at INTEGER, PRIMARY KEY (to_code, from_code))');
+    // messages to a friend whose game was closed: kept a week, handed over the next time their game connects (owner, Nov 12)
+    this.sql.exec('CREATE TABLE IF NOT EXISTS mail (to_code TEXT, id TEXT, entry TEXT, text TEXT, at INTEGER, PRIMARY KEY (to_code, id))');
     this.rate = new Map();
   }
   async fetch() {
@@ -275,6 +277,9 @@ export class Lobby extends DurableObject {
       this.sql.exec('DELETE FROM adds WHERE to_code = ? OR at <= ?', code, week);
       this.send(ws, { t: 'hi', presence: this.presence(a) });
       for (const r of adds) { try { this.send(ws, { t: 'added', by: JSON.parse(r.entry) }); } catch {} }
+      const mail = this.sql.exec('SELECT id, entry, text, at FROM mail WHERE to_code = ? AND at > ? ORDER BY at', code, week).toArray();
+      this.sql.exec('DELETE FROM mail WHERE to_code = ? OR at <= ?', code, week);
+      for (const r of mail) { try { this.send(ws, { t: 'chat', id: r.id, text: r.text, from: JSON.parse(r.entry), at: r.at, held: true }); } catch {} }
       this.announce(code);
       return;
     }
@@ -295,7 +300,14 @@ export class Lobby extends DurableObject {
     const id = clean(m.id, 24);
     if (m.t === 'invite') { const room = clean(m.room, 40); const n = this.to(target, { t: 'invite', id, room, from: entryOf(a) }); this.send(ws, { t: 'sent', id, ok: n > 0 }); return; }
     // a message to a friend (src/chat.js): text only, short; tells the sender whether it reached an open game
-    if (m.t === 'chat') { const text = clean(m.text, 160).trim(); if (!text) return; const n = this.to(target, { t: 'chat', id, text, from: entryOf(a) }); this.send(ws, { t: 'chat-sent', id, ok: n > 0 }); return; }
+    // their game closed: the message waits on the site (up to 40 per friend) and arrives when they next open the game
+    if (m.t === 'chat') {
+      const text = clean(m.text, 160).trim(); if (!text) return;
+      if (this.to(target, { t: 'chat', id, text, from: entryOf(a) })) { this.send(ws, { t: 'chat-sent', id, ok: true }); return; }
+      this.sql.exec('INSERT OR REPLACE INTO mail (to_code, id, entry, text, at) VALUES (?, ?, ?, ?, ?)', target, id, JSON.stringify(entryOf(a)), text, now);
+      this.sql.exec('DELETE FROM mail WHERE to_code = ? AND id NOT IN (SELECT id FROM mail WHERE to_code = ? ORDER BY at DESC LIMIT 40)', target, target);
+      this.send(ws, { t: 'chat-sent', id, ok: true, held: true }); return;
+    }
     if (m.t === 'reply') { this.to(target, { t: 'reply', id, ok: !!m.ok, from: entryOf(a) }); return; }
     if (m.t === 'cancel') { this.to(target, { t: 'cancel', id, from: entryOf(a) }); return; }
   }

@@ -1369,3 +1369,21 @@ body .arcade-console select.arc-cat-select{background:transparent!important;box-
 .arcade-console .arc-ver-tag{position:absolute;top:5px;left:5px;right:5px;z-index:2;font:800 9px/1.15 "SC Nunito",system-ui,sans-serif;color:#fff;text-align:left;text-shadow:0 1px 3px #000,0 0 6px #000;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;pointer-events:none}
 @media (min-width:700px){.arcade-console .arc-ver-tag{font-size:11px}}
 .arcade-console .arc-ver-name{color:#fff;font-weight:900}
+
+/* Chat while typing (owner, Nov 12): the sheet hangs from the top of the screen, box right under the header, so the phone
+   keyboard can't cover it even when the installed full-screen app never reports the keyboard's size */
+#sc-chat-dlg.chat-sheet.typing{inset:0 0 auto 0}
+#sc-chat-dlg.typing .chat-card{display:flex;flex-direction:column;border:2px solid #c99a3d88;border-top:0;border-radius:0 0 20px 20px;padding-top:calc(10px + env(safe-area-inset-top));padding-bottom:12px;overflow:hidden;box-shadow:0 8px 30px #000b}
+#sc-chat-dlg.typing .chat-type{order:1;flex:none}
+#sc-chat-dlg.typing .chat-log{order:2;flex:1 1 auto;min-height:0;max-height:none;overflow:auto;margin-top:8px}
+#sc-chat-dlg.typing .chat-head{order:0;flex:none}
+
+/* A friend's invite while this phone is busy (src/friends.js syncBanner) */
+#sc-invite.invite-banner{position:fixed;inset:auto;top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(94vw,460px);margin:0;padding:8px 8px 8px 8px;display:flex;align-items:center;gap:10px;border-radius:18px;background:#160f20f2;border:2px solid #4d8dff;color:#fff;font:800 14px/1.25 system-ui,sans-serif;box-shadow:0 8px 24px #000b;z-index:2147481003;animation:chat-in .28s cubic-bezier(.2,.9,.3,1.2);overflow:visible}
+#sc-invite .ib-face{flex:none;width:42px;height:42px;display:grid;place-items:center}
+#sc-invite .ib-face .portrait{width:42px;height:42px}
+#sc-invite .ib-text{flex:1;min-width:0;display:flex;flex-direction:column}
+#sc-invite .ib-text small{font-weight:600;color:#c9d3ff;font-size:12px}
+#sc-invite button{min-height:0;margin:0;border-radius:999px;cursor:pointer;font:900 14px/1 system-ui,sans-serif}
+#sc-invite .ib-join{padding:10px 16px;background:#4d8dff;color:#fff;border:0}
+#sc-invite .ib-x{width:34px;height:34px;padding:0;background:transparent;color:#fff;border:1px solid #fff4}

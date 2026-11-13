@@ -113,7 +113,7 @@ function refreshSetup(){if(store.view!=='setup'&&store.view!=='players')return;c
 initCpuBoard({roll:()=>roll(),useItem:i=>useBagItem(i)});
 initDuel({start:(id,duel)=>requestGame({id,origin:'arcade',solo:true,duel,difficulty:duel.difficulty??null}),refresh:()=>{if(store.view==='arcade'&&!store.session&&!store.dialog)showView('arcade',{query:catalogQuery,filter:catalogFilter,page:catalogPage});}});
 // friend invites (src/friends.js): both phones go to the Arcade's Online mode in the same room
-initFriends({openRoom:async room=>{await enterRoom(room);if(store.view==='home')home();}});// a friend's invite joins the room where you are (R10)
+initFriends({openRoom:async room=>{await enterRoom(room);if(store.view==='home')home();},leaveGame:()=>exitGame()});// a friend's invite joins the room where you are (R10)
 initChat();
 const random=()=>store.run?runRandom(store.run):Math.random();
 function focusEffect(before){const run=store.run;if(!run)return;const after=effectSnapshot(run),ids=[run.players[run.current].node];for(let i=0;i<2;i++)if(before?.players[i]&&JSON.stringify(before.players[i])!==JSON.stringify(after.players[i])){ids.push(run.players[i].node);if(before.players[i].node!==run.players[i].node)ids.push(before.players[i].node);}focusBoardAction(run,ids);}
@@ -629,7 +629,7 @@ async function runAction(name,target){
   case 'online-mode':await setOnlineMode(true);break;
   case 'online-leave':leaveOnline();break;
   // the title screen's Online tile: join a room and stay on the home screen (owner, Nov 10: R10)
-  case 'online-home':await setOnlineMode(true);{const n=netState();if(store.online&&n.room){if(store.view==='home')home();toast(n.peer?`In “${n.room}” with ${n.peer.name}: New Game = the board game together, Arcade = challenges`:`In “${n.room}”: waiting for player 2. New Game and the Arcade work once they join.`);}}break;
+  case 'online-home':if(await setOnlineMode(true)==='menu')break;{const n=netState();if(store.online&&n.room){if(store.view==='home')home();toast(n.peer?`In “${n.room}” with ${n.peer.name}: New Game = the board game together, Arcade = challenges`:`In “${n.room}”: waiting for player 2. New Game and the Arcade work once they join.`);}}break;
   case 'online-board':await inviteBoard();break;
   case 'online-rejoin':rejoinBoard();break;
   case 'arcade-random':{const g=randomArcadePick();if(!g){toast('No playable games in this list');break;}
