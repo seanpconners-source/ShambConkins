@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.96.16
+
+- **Battleship:** a sinking ship no longer shows through under the waves.
+
 ## v0.96.15
 
 - **Living Dead Horde effects are real art now:** chainsaw swipes, muzzle flashes, shotgun pellets, nails, impacts, explosions, the lantern's pulse, lightning, gore, burning/goo/tar puddles, the goo aura and the zombies' spit, fire and curses.
