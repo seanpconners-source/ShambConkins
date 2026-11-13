@@ -22,6 +22,9 @@ SHEETS['survivor-p2'].neckRows={idle:[[55.5,84],[56,82.5],[56,80.5],[55.5,84]],w
 // the frame height (flyers hover round that point). The game adds the shadow, the white hit flash and the mirror image.
 const ENEMY_SIZES={shambler:46,runner:42,crawler:38,bloater:72,bat:34,spitter:48,barrel:54,charger:58,ghost:52,armored:56,
  sergeant:72,nurse:68,tarman:112,colonel:108,banshee:100,mama:140,titan:170,hunger:120};
+// The owner's enemy sheets are drawn ART_K x their template size (Nov 13): with the survivor bodies at 2x (horde.js
+// BODY_K) a 46-unit shambler only came up to the survivor's shoulders. Feet stay on the same spot; hitboxes unchanged.
+const ENEMY_ART_K=1.5;
 for(const [id,sz] of Object.entries(ENEMY_SIZES)){const w=sz*PX;SHEETS['enemy-'+id]={frame:[w,w],foot:[w/2,Math.round(w*44/48)],rows:{walk:4},enemy:id,sz};}
 // PICTURES: one still picture each. `size` = template [w,h] px; `foot` = the ground point (props/building: bottom-centre
 // anchor), `light` = where the lamp/torch glow is centred. kind: prop (type + variant in the game), building, ground (a
@@ -90,4 +93,4 @@ function frameRect(sh,row,f){
 }
 // Neck spot [x,y] (template px) of frame f of a row, or null when the sheet has none.
 function neckAt(def,row,f){const r=def.neckRows&&def.neckRows[row];if(!r||!r.length)return null;return r[((f%r.length)+r.length)%r.length];}
-Object.assign(exports,{PX,SHEETS,PICTURES,ENEMY_SIZES,ICON_IDS,has,picture,loadHorde,sheet,frameRect,neckAt});
+Object.assign(exports,{PX,SHEETS,PICTURES,ENEMY_SIZES,ENEMY_ART_K,ICON_IDS,has,picture,loadHorde,sheet,frameRect,neckAt});

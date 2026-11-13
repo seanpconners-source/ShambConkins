@@ -698,12 +698,12 @@ async function horde(s){
   x.drawImage(a.img,p.x-a.ax*sc+sh,p.y-a.ay*sc,a.w*sc,a.h*sc);
  }
  function drawEnemy(e,t){
-  const a=enemyArt[e.type],dsz=a.sz*e.sc,f=((t*a.fps+e.ph)|0)%a.n,cy=e.y+e.r-dsz*20/48-(e.fly?8+Math.sin(t*6+e.ph)*3:0);
+  const a=enemyArt[e.type],dsz=a.sz*e.sc*a.k,f=((t*a.fps+e.ph)|0)%a.n,cy=e.y+e.r-dsz*20/48-(e.fly?8+Math.sin(t*6+e.ph)*3:0);
   let row=e.fl>0?1:0;if(e.fuse>0&&((t*14)&1))row=1;if(e.ai===AI.charger&&e.st===1&&((t*12)&1))row=1;
   if(e.phase)x.globalAlpha=.6+.2*Math.sin(t*3+e.ph);
   x.drawImage(a.img,((e.face<0?a.n:0)+f)*a.cell,row*a.cell,a.cell,a.cell,e.x-dsz/2,cy-dsz/2,dsz,dsz);
   if(e.phase)x.globalAlpha=1;
-  if(e.elite||e.boss){const w=Math.max(30,e.r*2.2),by=e.y-e.r-(e.boss?22:14);x.fillStyle='rgba(0,0,0,.6)';x.fillRect(e.x-w/2-1,by-1,w+2,6);x.fillStyle=e.immune?'#9a6aff':e.boss?'#ff4a3a':'#ff8a3a';x.fillRect(e.x-w/2,by,w*clamp(e.hp/e.mhp,0,1),4);}
+  if(e.elite||e.boss){const w=Math.max(30,e.r*2.2),by=Math.min(e.y-e.r-(e.boss?22:14),e.y+e.r-dsz*.86-6);/* above the art's head */x.fillStyle='rgba(0,0,0,.6)';x.fillRect(e.x-w/2-1,by-1,w+2,6);x.fillStyle=e.immune?'#9a6aff':e.boss?'#ff4a3a':'#ff8a3a';x.fillRect(e.x-w/2,by,w*clamp(e.hp/e.mhp,0,1),4);}
  }
  function drawPlayer(p,t){
   const i=p.i,bob=p.moving?Math.abs(Math.sin(p.walk))*3:Math.sin(t*3+i)*1;

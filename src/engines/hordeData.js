@@ -272,7 +272,7 @@ function bakeEnemies(theme){
    else art(c,col&1,th);c.restore();
   }
   c.drawImage(cv,0,0,cell*n*2,cell,0,cell,cell*n*2,cell);c.globalCompositeOperation='source-atop';c.fillStyle='rgba(255,255,255,.82)';c.fillRect(0,cell,cell*n*2,cell);c.globalCompositeOperation='source-over';
-  out[id]={img:cv,cell,sz:def.sz,n,fps:sh?8:4};
+  out[id]={img:cv,cell,sz:def.sz,n,fps:sh?8:4,k:sh?HS.ENEMY_ART_K:1};
  }
  return out;
 }
