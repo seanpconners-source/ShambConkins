@@ -1,5 +1,8 @@
 # Sqwordle art (Nov 12; moves, effects and backgrounds added later the same day)
 
+**Status (Nov 13):** everything in sections B-E is in the game except `body-aim.png` and `body-brace.png` (Water Gun and
+Hydro Pump use body-blow until they come). Section A (Arcade icon/logo/background) not delivered yet.
+
 Sqwordle is our Wordle-style word game, the whole thing themed on Squirtle (the little blue turtle Pokémon). The game
 works now with a placeholder turtle we drew in code; these pictures replace it. Same rules as `START-HERE.md`.
 

@@ -97,7 +97,8 @@ async function sqwordle(s){
   else if(e==='cheer'){sfx(784,.08,.04);setTimeout(()=>sfx(1047,.15,.04),100);}}
  function drawShow(b,now,dt){if(!b||!b.show||now<b.show.at)return 0;const st=stageFor(b);if(!st)return 0;
   if(!b.showRun)b.showRun=ART.createShow(b.show.kind,st,b.show.at);b.showRun.stage=st;
-  return ART.drawShow(x,b.showRun,now,dt,dark,showSfx).shake||0;}
+  x.save();x.beginPath();x.rect(0,L.hh,L.W,L.H-L.hh);x.clip();// the title bar stays clear (the rainbow used to cover the logo)
+  const r=ART.drawShow(x,b.showRun,now,dt,dark,showSfx);x.restore();return r.shake||0;}
  function keysAlpha(b,now){return b&&b.show&&now>b.show.at?Math.max(.1,1-(now-b.show.at)/350):1;}
  s.on(c,'pointerdown',ev=>{ev.preventDefault();if(!L)return;const pt=s.pointer(ev);
   if(pt.y<L.hh&&pt.x<L.hh*1.2){help=!help;return;}// ? opens How to play
@@ -138,7 +139,7 @@ async function sqwordle(s){
   // the head reacts to the last guess: a hop when happy, a shake when sad or puzzled
   const re=react&&now<react.until?react:null,q=re?(now-re.at)/1000:0,mood=re?re.mood:'idle',
    hop=re&&mood==='happy'?-Math.abs(Math.sin(q*9))*r*.5*Math.max(0,1-q/1.4):0,wig=re&&mood!=='happy'?Math.sin(q*22)*r*.18*Math.max(0,1-q/1.2):0;
-  const logo=picture('logo');if(logo){const lh=hh*.78,lw=Math.min(hi-lo-r*2.6,logo.naturalWidth*lh/logo.naturalHeight),k=lw/logo.naturalWidth;x.drawImage(logo,mid-lw/2+r*1.3,hh/2-logo.naturalHeight*k/2,lw,logo.naturalHeight*k);
+  const logo=picture('logo');if(logo){const lh=hh*.78,lw=Math.min(hi-lo-r*2.6,logo.naturalWidth*lh/logo.naturalHeight),k=lw/logo.naturalWidth;if(dark)x.filter='brightness(0) invert(1)';x.drawImage(logo,mid-lw/2+r*1.3,hh/2-logo.naturalHeight*k/2,lw,logo.naturalHeight*k);x.filter='none';// navy letters vanish on the dark bar: white in dark mode
    mascot(x,mid-lw/2-r*.1+wig,hh/2-r*.1+hop,r,mood,now/1000);return;}
   x.fillText('Sqwordle',tx,hh/2+hh*.03);mascot(x,tx-tw/2-r*1.25+wig,hh/2-r*.1+hop,r,mood,now/1000);}
  function drawInfo(b,now){if(!L.info)return;const watch=phase==='watch'&&nf;if(watch)b=oppOf(word);const {W,hh}=L,y=hh+L.info/2+3,p=s.players[b.i],secs=((b.done?b.t1||now:now)-b.t0)/1000;

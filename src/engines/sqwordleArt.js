@@ -94,11 +94,20 @@ function drawnBody(x,pose,h,t){const u=h;x.lineCap='round';x.lineJoin='round';
  x.save();x.translate(u*.1,-u*.72);head(x,u*.22,L.mood,t);x.restore();x.restore();}
 
 // draw a pose with its feet at (fx,fy), h tall, face +1 right / -1 left; returns the mouth and eye points on screen
-function drawBody(x,pose,fx,fy,h,face,t,{rot=0,alpha=1}={}){const fr=frames('body-'+pose),A=POSES[pose]||POSES.idle;
+// the owner's pictures (Nov 13): mouth/eye spots measured on each one (assets/originals/sqwordle/body-*.png, 768 canvas,
+// ground y 737, body box 691 px). A pose without its own picture borrows the nearest one (POSE_ALIAS) so the drawn turtle
+// never pops up next to the painted one: Water Gun (aim) and Hydro Pump (brace) use the puffed-cheek blow picture.
+const ART_POSES={idle:{mouth:[.624,.368],eye:[.697,.269]},blow:{mouth:[.636,.353],eye:[.711,.255]},cheer:{mouth:[.622,.36],eye:[.711,.259]},
+ phew:{mouth:[.598,.342],eye:[.679,.237]},sad:{mouth:[.668,.36],eye:[.762,.295]},shell:{mouth:[.525,.702],eye:[.525,.702]}};
+const POSE_ALIAS={aim:['blow','idle'],brace:['blow','cheer','idle'],blow:['idle'],cheer:['idle'],phew:['idle'],sad:['idle'],shell:[],idle:[]};
+function poseArt(pose){let fr=frames('body-'+pose);if(fr.length)return {fr,key:pose};
+ for(const alt of POSE_ALIAS[pose]||[]){fr=frames('body-'+alt);if(fr.length)return {fr,key:alt};}return null;}
+function drawBody(x,pose,fx,fy,h,face,t,{rot=0,alpha=1}={}){const art=poseArt(pose),fr=art?art.fr:[],A=art?(ART_POSES[art.key]||POSES[art.key]||POSES.idle):(POSES[pose]||POSES.idle);
  x.save();x.globalAlpha*=alpha;x.translate(fx,fy);if(face<0)x.scale(-1,1);
- // a picture is the whole template canvas: ground line at 96% of its height, the body box (h) = 90% of it
+ // a picture is the whole template canvas: ground line at 96% of its height, the body box (h) = 90% of it;
+ // it turns round a point .3 h up (the middle of the shell in the Withdraw spin), like the drawn turtle
  if(fr.length){const im=fr[Math.floor(t*FPS)%fr.length],k=h/.9/im.naturalHeight,iw=im.naturalWidth*k,ih=im.naturalHeight*k;
-  x.translate(0,-h/2);x.rotate(rot);x.drawImage(im,-iw/2,h/2-ih*.96,iw,ih);}
+  x.translate(0,-h*.3);x.rotate(rot);x.drawImage(im,-iw/2,h*.3-ih*.96,iw,ih);}
  else{x.translate(0,-h*.3);x.rotate(rot);x.translate(0,h*.3);drawnBody(x,pose,h,t);}
  x.restore();
  const pt=([u,v])=>({x:fx+face*(u-.5)*h,y:fy-(1-v)*h});return {mouth:pt(A.mouth),eye:pt(A.eye)};}
@@ -188,4 +197,4 @@ function drawShow(x,S,now,dt,dark,sfx=()=>{}){const st=S.stage,T=now-S.t0,t=now/
  S.drops=S.drops.filter(p=>p.life>0&&p.y<st.H+20);
  return {shake};}
 
-Object.assign(exports,{picture,frames,mascot,squirtle,drawBackground,background,drawBody,createShow,drawShow,moveFor,MOVES,POSES,LEN,drop,bubble,stream});
+Object.assign(exports,{poseArt,ART_POSES,picture,frames,mascot,squirtle,drawBackground,background,drawBody,createShow,drawShow,moveFor,MOVES,POSES,LEN,drop,bubble,stream});

@@ -2,6 +2,14 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+SQWORDLE ART IN (Nov 13, owner's GPT set from Drive 'Sqwordle — Sprites' 1kbWGQBOSj-0HjlXdZ08rrISsgKjpYA3l + sqwordle-small-files-01.zip):
+22 pictures in assets/sqwordle (lossless WebP; originals assets/originals/sqwordle as delivered): mascot/-happy/-sad/-think, body-idle/
+blow/cheer/phew/sad/shell (768 template canvas, feet on y 737, real alpha), fx-jet/hydro/bubble/drop/splash/rainbow/sparkle,
+bg/bg-dark/bg-wide/bg-wide-dark, logo (trimmed). body-aim + body-brace NOT delivered: sqwordleArt POSE_ALIAS uses body-blow for
+Water Gun/Hydro Pump (never the drawn turtle beside painted ones); ART_POSES = mouth/eye spots measured on the pictures; pictures
+spin round .3 h (Withdraw). Logo drawn white in dark mode (navy vanished). Moves clipped below the title bar (rainbow covered it).
+pwa.js LATER 'sqwordle:' (8 MB fetched when the game first opens). Checked: all 7 moves light 390x780, dark, 844x390 light/dark.
+
 HEADS SUNDOWN + MARIO (Nov 13, RELEASED as v0.96.8; owner: like Seanic/SotN: size, placement, hair, direction): src/headFacts.js
 gains faceGeom (face + whole-head boxes on screen, mirrored round cx), faceHeight, drawFaceById (non-player faces, own image
 cache). SUNDOWN: sundownSprites neckRows/neckAt = measured neck (collar top) per frame for cowboy-p1/p2 (shared table; the
