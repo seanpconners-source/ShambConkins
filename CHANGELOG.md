@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.96.13
+
+- **Battleship gets real art:** photoreal warships seen from above (and wrecked versions when sunk), burning hits, splashes and explosions, a real sea under the grid, the chart-table room behind it, and new cut scenes: a stormy sunset, a battleship on the horizon, the deck gun, torpedoes and sailors wearing your faces under their caps.
+- **Living Dead Horde runs much smoother:** the new pictures are prepared once at their real size instead of being shrunk every frame, so the phone isn't overloaded (it used to stutter in waves).
+- **Faces sit right:** in the Horde and on the Battleship sailors, heads sit down on the collar instead of floating above the body.
+
 ## v0.96.12
 
 - **Living Dead Horde gets its real art:** new painted survivors (headless outfits with your faces on them), all 18 zombies and bosses (Tarman, the Colonel, the Banshee, Mama Bloat, the Trioxin Titan, the Hunger...), graves, trees, cars, lamps, torches, barrels, crates, the Uneeda Medical Supply and the Knowby cabin, new ground for both nights, XP gems and every weapon, upgrade and pickup icon. Works in Evil Dead · Cabin Defense too.
