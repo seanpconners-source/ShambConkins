@@ -83,7 +83,10 @@ async function minigolf(s){
  }
  // ------------------------------------------------------------ holes
  function startHole(i){hi=i;hole=plan.list[i];course=courseById(hole.course);C=P.compile(hole);T=0;fx=[];hits={};overview=false;camMode='auto';manual=null;
-  const rot=(W>H*1.1)!==((C.bbox[2]-C.bbox[0])>(C.bbox[3]-C.bbox[1]));cam.rot=rot?1:0;
+  // a hole is turned (tee on the left) when that fits the screen better, but never one with a set piece built to face
+  // the tee (windmill, clown head): those are pictures standing up toward the camera, so turned they'd sit sideways
+  const facing=(hole.movers||[]).some(m=>m.kind==='windmill')||(hole.blocks||[]).some(b=>b.look==='clown');
+  const rot=!facing&&((W>H*1.1)!==((C.bbox[2]-C.bbox[0])>(C.bbox[3]-C.bbox[1])));cam.rot=rot?1:0;
   balls=[0,1].map(pi=>{const b=P.newBall(hole.tee[0]+(pi?1.6:-1.6),hole.tee[1],C);b.rest=true;return {b,i:pi,col:COL[pi],strokes:0,done:false,picked:false,orient:R.newOrient(cam.rot),face:faceFn(pi),lie:{x:b.x,y:b.y,z:b.z},vis:1.3,cup:hole.cup};});
   phase='intro';flyT=0;const f=frame('overview');cam={...f,rot:cam.rot};tcam=null;callout=null;
   snd.ambience(0,course.id);}

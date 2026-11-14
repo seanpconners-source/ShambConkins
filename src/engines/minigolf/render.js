@@ -210,7 +210,9 @@ function groundThings(x,W,H,cam,st){
  for(const b of C.boost){const g=C.topAt((b.box[0]+b.box[2])/2,(b.box[1]+b.box[3])/2),z=g?g.z:0,cx=(b.box[0]+b.box[2])/2,cy=(b.box[1]+b.box[3])/2,w=b.box[2]-b.box[0],h=b.box[3]-b.box[1],ang=Math.atan2(b.dir[1],b.dir[0])+Math.PI/2;
   flat(x,W,H,cam,'boost',cx,cy,z+.02,Math.max(w,h),ang,{draw:g2=>{g2.fillStyle='rgba(20,10,60,.85)';g2.fillRect(-w/2,-h/2,w,h);for(let i=0;i<4;i++){const f=((T*2.5+i/4)%1);g2.fillStyle=`hsla(${(T*200+i*40)%360},100%,60%,${.4+.6*(1-f)})`;const yy=h/2-f*h;g2.beginPath();g2.moveTo(-w*.35,yy+2);g2.lineTo(0,yy-1.5);g2.lineTo(w*.35,yy+2);g2.lineTo(w*.35,yy+3.2);g2.lineTo(0,yy-.3);g2.lineTo(-w*.35,yy+3.2);g2.fill();}g2.strokeStyle='#57e1ff';g2.lineWidth=.4;g2.strokeRect(-w/2,-h/2,w,h);}});}
  for(const c of C.conv){const g=C.topAt(c.pts[0][0]+.5,c.pts[0][1]+.5),z=g?g.z:0;const A=aff(cam,W,H,z+.02);x.setTransform(...A);x.beginPath();c.pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();x.save();x.clip();const pat=pattern(x,'conveyor|'+st.course.id,st.course.look,12),sp=Math.hypot(c.v[0],c.v[1]),off=(T*sp)%12;x.translate(0,c.v[1]<0?-off:off);x.fillStyle=pat;x.fillRect(c.box[0]-1,c.box[1]-13,c.box[2]-c.box[0]+2,c.box[3]-c.box[1]+26);x.restore();x.setTransform(1,0,0,1,0,0);}
- for(const t of C.tunnels){const sp=st.course.look.space;for(const [p,z,s] of [[t.a,t.z,1],[t.b,t.zb,.7]])flat(x,W,H,cam,sp?'portal':'tunnel',p[0],p[1],z+.02,7*s,0,{draw:g=>{if(sp){for(let i=0;i<3;i++){g.strokeStyle=['#ff4dd2','#57e1ff','#ffe14d'][i];g.lineWidth=.5;g.beginPath();g.arc(0,0,2.9-i*.6+Math.sin(T*4+i)*.2,0,7);g.stroke();}g.fillStyle='#000';g.beginPath();g.arc(0,0,1.9,0,7);g.fill();}else{g.fillStyle='#6b7280';g.beginPath();g.arc(0,0,3.1,0,7);g.fill();g.fillStyle='#111';g.beginPath();g.arc(0,0,2.4,0,7);g.fill();g.fillStyle='rgba(255,255,255,.2)';g.beginPath();g.arc(0,0,3.1,3.6,5.2);g.lineTo(0,0);g.fill();}}});}
+ // a tunnel mouth right in front of the clown head is the clown's own mouth: no pipe drawn there
+ const inClown=p=>C.blocks.some(b=>b.look==='clown'&&p[0]>=b.box[0]&&p[0]<=b.box[2]&&p[1]>=b.box[1]&&p[1]<=b.box[3]+4);
+ for(const t of C.tunnels){const sp=st.course.look.space;for(const [p,z,s] of [[t.a,t.z,1],[t.b,t.zb,.7]])if(!inClown(p))flat(x,W,H,cam,sp?'portal':'tunnel',p[0],p[1],z+.02,7*s,0,{draw:g=>{if(sp){for(let i=0;i<3;i++){g.strokeStyle=['#ff4dd2','#57e1ff','#ffe14d'][i];g.lineWidth=.5;g.beginPath();g.arc(0,0,2.9-i*.6+Math.sin(T*4+i)*.2,0,7);g.stroke();}g.fillStyle='#000';g.beginPath();g.arc(0,0,1.9,0,7);g.fill();}else{g.fillStyle='#6b7280';g.beginPath();g.arc(0,0,3.1,0,7);g.fill();g.fillStyle='#111';g.beginPath();g.arc(0,0,2.4,0,7);g.fill();g.fillStyle='rgba(255,255,255,.2)';g.beginPath();g.arc(0,0,3.1,3.6,5.2);g.lineTo(0,0);g.fill();}}});}
  for(const t of C.tramps)flat(x,W,H,cam,'tramp',t.x,t.y,t.z+.05,t.r*2.3,0,{draw:g=>{g.fillStyle='#333';g.beginPath();g.arc(0,0,t.r*1.12,0,7);g.fill();g.fillStyle='#2d7dff';g.beginPath();g.arc(0,0,t.r*.9,0,7);g.fill();g.strokeStyle='#ffd23f';g.lineWidth=.3;for(let i=0;i<12;i++){const a=i/12*Math.PI*2;g.beginPath();g.moveTo(Math.cos(a)*t.r*.9,Math.sin(a)*t.r*.9);g.lineTo(Math.cos(a)*t.r*1.1,Math.sin(a)*t.r*1.1);g.stroke();}}});
  for(const [mi,m] of C.movers.entries())if(m.kind==='gophers')for(const h of m.holes){const g=C.topAt(h[0],h[1]),z=g?g.z:0;flat(x,W,H,cam,'gopher-hole',h[0],h[1],z+.02,4,0,{draw:g2=>{g2.fillStyle='#6b4a2a';g2.beginPath();g2.ellipse(0,0,2,1.7,0,0,7);g2.fill();g2.fillStyle='#1a0f06';g2.beginPath();g2.ellipse(0,0,1.25,1.05,0,0,7);g2.fill();}});}
  // cup
@@ -227,36 +229,39 @@ function moverItems(x,W,H,cam,st,m,items){
   items.push({y:Y,f:()=>{const c=Math.cos(a)*m.len,s=Math.sin(a)*m.len,w=.9;const pts=[[m.x-c-s/m.len*w,m.y-s+c/m.len*w],[m.x+c-s/m.len*w,m.y+s+c/m.len*w],[m.x+c+s/m.len*w,m.y+s-c/m.len*w],[m.x-c+s/m.len*w,m.y-s-c/m.len*w]];drawBlock(x,W,H,cam,pts,z,z+2,'spin',st.course.look);
    const [X2,Y2]=proj(cam,W,H,m.x,m.y,z+2);x.fillStyle='#ffd23f';x.beginPath();x.arc(X2,Y2,Math.max(2,cam.k*1.1),0,7);x.fill();}});}
  else if(m.kind==='gate'){const shut=parts.segs.some(s=>s.kind==='gate'&&Math.abs(s.x1-m.a[0])<.01&&Math.abs(s.y1-m.a[1])<.01),g=C.topAt(m.a[0],m.a[1]-2),z=g?g.z:0;
-  if(m.look==='teeth'){const blk=C.blocks.find(b=>b.look==='clown');const cx=(m.a[0]+m.b[0])/2,[X,Y]=proj(cam,W,H,cx,blk?blk.box[3]:m.a[1],z);items.push({y:Y,f:()=>drawClown(x,X,Y,cam.k,blk?blk.box[2]-blk.box[0]:22,shut,T)});}
+  if(m.look==='teeth'){const blk=C.blocks.find(b=>b.look==='clown');const cx=(m.a[0]+m.b[0])/2,[X,Y]=proj(cam,W,H,cx,blk?blk.box[3]:m.a[1],z),[,GY]=proj(cam,W,H,cx,m.a[1],z),gw=Math.abs(m.b[0]-m.a[0]);items.push({y:Y,f:()=>drawClown(x,X,Y,cam.k,blk?(blk.artW||blk.box[2]-blk.box[0]):22,shut,T,GY,gw)});}
   else{const [,Y]=proj(cam,W,H,m.a[0],m.a[1],z);items.push({y:Y,f:()=>{if(!shut)return;const pts=[[m.a[0],m.a[1]-.5],[m.b[0],m.b[1]-.5],[m.b[0],m.b[1]+.5],[m.a[0],m.a[1]+.5]];drawBlock(x,W,H,cam,pts,z,z+2.2,'gate',st.course.look);}});}}
  else if(m.kind==='gator'){const p=P.gatorAt(m,T),g=C.topAt(p.x,p.y),z=g?g.z:0,[,Y]=proj(cam,W,H,p.x,p.y,z);
   items.push({y:Y,f:()=>{flat(x,W,H,cam,'gator',p.x,p.y,z+.3,16,p.ang,{frame:Math.floor(T*4)%2,draw:g2=>drawGator(g2,T)});}});}
  else if(m.kind==='gophers'){const mi=C.movers.indexOf(m),go=P.gopherAt(m,T,mi);if(go.up>0){const g=C.topAt(go.x,go.y),z=g?g.z:0,[X,Y]=proj(cam,W,H,go.x,go.y,z);items.push({y:Y+.1,f:()=>drawGopher(x,X,Y,cam.k,go.up)});}}
 }
+// the house picture is sized so its door is exactly the lane's door (m.w) and the sails turn at the height physics.js
+// blocks them at (m.hub, reach m.r): what you see stopping the ball is what stops it
 function drawWindmill(x,X,Y,k,hw,m,T){
- const W2=hw*k,img=S.picture('windmill-house'),bl=S.picture('windmill-blades');
- if(img){const d=S.PICTURES['windmill-house'],sc=W2/img.width;x.drawImage(img,X-d.foot[0]/d.size[0]*img.width*sc,Y-d.foot[1]/d.size[1]*img.height*sc,img.width*sc,img.height*sc);}
+ const img=S.picture('windmill-house'),bl=S.picture('windmill-blades'),d=S.PICTURES['windmill-house'],dw=(d.door[1][0]-d.door[0][0])/d.size[0];
+ const W2=(img?m.w/dw:hw)*k;
+ if(img){const sc=W2/img.width,dx=((d.door[0][0]+d.door[1][0])/2-d.foot[0])/d.size[0]*W2;x.drawImage(img,X-dx-d.foot[0]/d.size[0]*img.width*sc,Y-d.foot[1]/d.size[1]*img.height*sc,img.width*sc,img.height*sc);}
  else{const h=W2*.9;x.fillStyle='#b9874f';x.beginPath();x.moveTo(X-W2*.5,Y);x.lineTo(X-W2*.38,Y-h);x.lineTo(X+W2*.38,Y-h);x.lineTo(X+W2*.5,Y);x.closePath();x.fill();x.fillStyle='rgba(0,0,0,.15)';for(let i=1;i<6;i++){x.fillRect(X-W2*.46+i*0,Y-h*i/6,W2*.92,1.2);}
   x.fillStyle='#8a2f2a';x.beginPath();x.moveTo(X-W2*.46,Y-h);x.lineTo(X,Y-h-W2*.42);x.lineTo(X+W2*.46,Y-h);x.fill();
   const dw=m.w*k;x.fillStyle='#1a0f08';x.beginPath();x.moveTo(X-dw/2,Y);x.lineTo(X-dw/2,Y-dw*.8);x.arc(X,Y-dw*.8,dw/2,Math.PI,0);x.lineTo(X+dw/2,Y);x.fill();
   x.fillStyle='#ffe9a0';x.fillRect(X-W2*.25,Y-h*.62,W2*.12,W2*.12);x.fillRect(X+W2*.13,Y-h*.62,W2*.12,W2*.12);}
- const hubY=Y-(m.r+1)*k,a=T*(m.speed||1.4)+(m.ph||0),n=m.blades||4,R=m.r*k;
+ const hubY=Y-(m.hub||m.r)*k,a=T*(m.speed||1.4)+(m.ph||0),n=m.blades||4,R=m.r*k,bw=R*.13;
  x.save();x.translate(X,hubY);
- if(bl){const sc=(m.r*2.2*k)/img_w(bl);x.rotate(a-Math.PI/2);x.drawImage(bl,-bl.width*sc/2,-bl.height*sc/2,bl.width*sc,bl.height*sc);}
- else for(let i=0;i<n;i++){x.save();x.rotate(a+i*Math.PI*2/n);x.fillStyle='#6b4423';x.fillRect(0,-R*.03,R,R*.06);x.fillStyle='rgba(245,240,225,.95)';x.fillRect(R*.18,R*.04,R*.82,R*.2);x.strokeStyle='#6b4423';x.lineWidth=Math.max(1,R*.015);for(let j=1;j<5;j++){x.beginPath();x.moveTo(R*(.18+j*.164),R*.04);x.lineTo(R*(.18+j*.164),R*.24);x.stroke();}x.restore();}
+ if(bl){const bd=S.PICTURES['windmill-blades'],sc=(2*m.r*k/(bd.reach||1))/img_w(bl);x.rotate(a-Math.PI/2);x.drawImage(bl,-bl.width*sc/2,-bl.height*sc/2,bl.width*sc,bl.height*sc);}
+ else for(let i=0;i<n;i++){x.save();x.rotate(a+i*Math.PI*2/n);x.fillStyle='#6b4423';x.fillRect(0,-R*.03,R,R*.06);x.fillStyle='rgba(245,240,225,.95)';x.fillRect(R*.3,-bw,R*.7,bw*2);x.strokeStyle='#6b4423';x.lineWidth=Math.max(1,R*.015);x.strokeRect(R*.3,-bw,R*.7,bw*2);for(let j=1;j<5;j++){x.beginPath();x.moveTo(R*(.3+j*.14),-bw);x.lineTo(R*(.3+j*.14),bw);x.stroke();}x.restore();}
  x.fillStyle='#3a2a1a';x.beginPath();x.arc(0,0,Math.max(3,R*.08),0,7);x.fill();x.restore();
 }
 const img_w=im=>im.width||im.naturalWidth||1;
-function drawClown(x,X,Y,k,wU,shut,T){
- const W2=wU*k,img=S.picture('clown-head'),tt=S.picture('clown-teeth'),mw=9.5*k;
+function drawClown(x,X,Y,k,wU,shut,T,GY=Y,gw=9.5){
+ const W2=wU*k,img=S.picture('clown-head'),tt=S.picture('clown-teeth'),mw=gw*k;
  if(img){const d=S.PICTURES['clown-head'],sc=W2/img.width;x.drawImage(img,X-d.foot[0]/d.size[0]*img.width*sc,Y-d.foot[1]/d.size[1]*img.height*sc,img.width*sc,img.height*sc);}
  else{const r=W2*.5,cy=Y-r*1.05;x.fillStyle='#ff6fa8';x.beginPath();x.arc(X-r*.95,cy-r*.45,r*.4,0,7);x.arc(X+r*.95,cy-r*.45,r*.4,0,7);x.fill();
   x.fillStyle='#fff3e4';x.beginPath();x.arc(X,cy,r,0,7);x.fill();x.fillStyle='#ff2d55';x.beginPath();x.arc(X,cy-r*.05,r*.16,0,7);x.fill();
   for(const s of [-1,1]){x.fillStyle='#111';x.beginPath();x.ellipse(X+s*r*.38,cy-r*.38,r*.1,r*.14,0,0,7);x.fill();x.fillStyle='#4da6ff';x.beginPath();x.moveTo(X+s*r*.38,cy-r*.62);x.lineTo(X+s*r*.3,cy-r*.75);x.lineTo(X+s*r*.46,cy-r*.75);x.fill();}
   x.fillStyle='#ffd23f';x.beginPath();x.moveTo(X-r*.45,cy-r*.85);x.lineTo(X,cy-r*1.75);x.lineTo(X+r*.45,cy-r*.85);x.fill();x.fillStyle='#ff2d55';x.beginPath();x.arc(X,cy-r*1.75,r*.1,0,7);x.fill();
   x.fillStyle='#c4002f';x.beginPath();x.moveTo(X-mw/2-r*.12,Y-r*.08);x.quadraticCurveTo(X,Y-r*.75,X+mw/2+r*.12,Y-r*.08);x.lineTo(X+mw/2,Y);x.lineTo(X-mw/2,Y);x.fill();x.fillStyle='#0b0b0b';x.beginPath();x.moveTo(X-mw/2,Y);x.quadraticCurveTo(X,Y-r*.58,X+mw/2,Y);x.fill();}
- // teeth: down = shut
- const ty=shut?Y-1:Y-mw*.55;x.fillStyle='#fffdf2';x.strokeStyle='#333';x.lineWidth=1;
+ // teeth: down = shut, drawn on the line where the jaw stops the ball (physics gate), as wide as it
+ const ty=shut?GY-1:Y-mw*.55;x.fillStyle='#fffdf2';x.strokeStyle='#333';x.lineWidth=1;
  if(tt){const sc=mw/tt.width;x.drawImage(tt,X-mw/2,ty-tt.height*sc,mw,tt.height*sc);}else{for(let i=0;i<5;i++){const tx=X-mw/2+i*mw/5;x.beginPath();x.moveTo(tx,ty-mw*.32);x.lineTo(tx+mw/5,ty-mw*.32);x.lineTo(tx+mw/10,ty);x.closePath();x.fill();x.stroke();}}
 }
 function drawGator(g,T){const w=Math.sin(T*8)*.5;g.fillStyle='#3d7a34';g.beginPath();g.ellipse(0,0,5,1.8,0,0,7);g.fill();g.beginPath();g.moveTo(-4,0);g.quadraticCurveTo(-7,w*2,-8,w*3);g.lineTo(-4,1);g.fill();g.fillStyle='#4f9a44';g.beginPath();g.moveTo(4,-1.3);g.lineTo(8,-.6);g.lineTo(8,.6);g.lineTo(4,1.3);g.fill();for(const [lx,ly] of [[2.5,-1.8],[2.5,1.8],[-2.5,-1.8],[-2.5,1.8]]){g.fillStyle='#2f6228';g.beginPath();g.ellipse(lx+w*.3,ly*1.25,.8,.5,0,0,7);g.fill();}g.fillStyle='#ffe14d';g.beginPath();g.arc(5,-.8,.35,0,7);g.arc(5,.8,.35,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=.15;g.beginPath();for(let i=0;i<5;i++){g.moveTo(5.4+i*.5,-.6);g.lineTo(5.6+i*.5,-.3);}g.stroke();}

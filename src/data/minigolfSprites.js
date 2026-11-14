@@ -48,9 +48,9 @@ const PICTURES={
  magnet:{kind:'prop',size:[512,512],foot:[256,500],w:18,note:'Mega Maid\'s giant vacuum nozzle standing over the black hole'},
  'black-hole':{kind:'flat',size:[256,256],w:14,note:'a swirling black hole on the floor (seen from above)'},
  conveyor:{kind:'tile',size:[256,256],world:12,note:'conveyor belt from above, ridges across, moving UP the picture'},
- 'windmill-house':{kind:'prop',size:[640,640],foot:[320,630],w:28,door:[[272,630],[368,630]],note:'Dutch windmill house seen from the front; the DOOR opening at the bottom middle between x 272 and 368 stays open (the ball rolls through)'},
- 'windmill-blades':{kind:'prop',size:[640,640],hub:[320,320],w:34,note:'the four windmill sails, hub in the middle (the game spins this picture)'},
- 'clown-head':{kind:'prop',size:[640,520],foot:[320,510],w:24,mouth:[[262,510],[378,510]],note:'a giant mini-golf clown head seen from the front; the MOUTH opening at the bottom middle (x 262-378) stays open (the ball rolls in)'},
+ 'windmill-house':{kind:'prop',size:[640,640],foot:[320,630],w:28,door:[[272,630],[368,630]],hub:[320,294],note:'Dutch windmill house seen from the front; the DOOR opening at the bottom middle between x 272 and 368 stays open (the ball rolls through); the sails turn on the hub mount at (320,294). The game sizes the picture so its door is exactly the lane\'s door'},
+ 'windmill-blades':{kind:'prop',size:[640,640],hub:[320,320],reach:.986,w:34,note:'the four windmill sails, hub in the middle (the game spins this picture; reach = sail tip / half the width)'},
+ 'clown-head':{kind:'prop',size:[640,520],foot:[320,510],w:24,mouth:[[250,510],[390,510]],note:'a giant mini-golf clown head seen from the front; the MOUTH opening at the bottom middle (x 262-378) stays open (the ball rolls in)'},
  'clown-teeth':{kind:'prop',size:[256,96],foot:[128,92],w:9.5,note:'the clown\'s teeth / jaw bar that opens and shuts the mouth'},
  // scenery
  oak:{kind:'prop',size:[512,640],foot:[256,620],w:20,note:'a big leafy oak (country club)'},

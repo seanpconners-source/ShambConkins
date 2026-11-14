@@ -63,6 +63,19 @@ at 2x as lossless WebP in assets/pool (originals assets/originals/pool). Table f
 (game draws the screens after the frame). poolSprites: preloadPool(names) = only the current loadout's pictures (all 66 decoded
 = ~300 MB), version() bumps on each load and is in the table/floor layer cache keys (a late picture used to stay drawn-fallback).
 
+SITABOUT ART IN + WINDMILL FIX (Nov 14, branch claude/minigolf-sprites-windmill-ud5bpf; owner: sprites were made but not in,
+invisible wall in front of the windmill, windmill sideways): GPT's set from Drive 'Sitabout Mini Golf — Sprites' (Course Textures /
+Props & Obstacles / Screens + minigolf-small-finals.zip = cup): 60 of 61 slots, every one exactly 2x template, lossless WebP in
+assets/minigolf (originals assets/originals/minigolf). title-bg.png (11 MB) is over the Drive connector's 10 MB limit: NOT in (ask
+for a smaller copy or art-inbox/minigolf). WINDMILL: the door used to count as shut ~55% of the time (any blade within .42 rad of
+down, whole door width) = blocked when no sail was in front: physics.js millBlock(m,T) now blocks only the x range a sail covers at
+ball height (hub height m.hub, reach m.r, sail half-width .13 r; ~25% of the time); hole data door 6 wide (blocks R(18,60,11,12)/
+R(35,60,11,12)), w 6, r 21, hub 21, house drawn 40 wide; render sizes the house picture so its door = m.w and turns the sails on
+the picture's hub mount (PICTURES windmill-house hub [320,294], blades reach .986). Sideways = cam.rot (tee on the left on wide
+screens) with an upright picture: puttPutt startHole never turns a hole with a windmill or clown head. Clown: picture artW 29
+(mouth measured 250-390 px), teeth drawn on the physics gate line at its width, no pipe drawn at a tunnel mouth in the clown.
+Checked: minigolf-sim (all holes reachable, CPU holes them), screenshots 390x780/844x390/752x835.
+
 SITABOUT MINI GOLF (Nov 14, branch ccr-2919e73f-r0ea94, unreleased; owner: complete overhaul of putt-putt, "best putt putt
 android game ever", name Sitabout (Walkabout parody), make art templates; another account works on another game: touch
 nothing else). Engine name `minigolf` + ids kept (happy-gilmore-golf = Arcade game retitled 'Sitabout Mini Golf', source
