@@ -37,7 +37,8 @@ const {shootoutLine}=require("src/data/shootoutLines.js");
 const ROUNDS=10,CLOCK=25,RELOAD=1.15,GAP=.42,LIGHT_N=3,LIGHT_BONUS=5,PSYCHS=2,SHAKEN=3.2;
 const depthOf=n=>1/(1+.14*(n-1));                 // the hoop's size / lane spread, round n
 const flightOf=n=>.78+.05*(n-1);                  // seconds from release to the rim
-const periodOf=n=>Math.max(1.35,3.3-.2*(n-1));    // seconds for the hoop to go across and back
+const periodOf=n=>Math.max(1.6,8*Math.pow(.82,n-1)); // seconds for the hoop to go across and back: 8 s in round 1 (owner: way too
+                                                     // hard at 3.3), then 6.6, 5.4, 4.4, 3.6, 3.0, 2.4, 2.0, 1.6, 1.6
 const targetOf=n=>18+5*(n-1);                     // points needed to clear round n
 const LED='#ff3b2f',LED2='#ffb02f',DIGI='"Courier New",monospace',FONT='Impact,"Arial Black",sans-serif';
 const HOME=['#1f3a8a','#c8102e'];   // Beers navy / red
