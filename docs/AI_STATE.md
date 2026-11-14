@@ -2,7 +2,7 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-NOV 14 (branch claude/cool-edison-ma0a0l, unreleased): HORDE CRASH FIX (owner's black-box report v0.96.16, solo, 9:12 left):
+NOV 14 (RELEASED as v0.97.0, test:core EXIT 0; branch claude/cool-edison-ma0a0l = main): HORDE CRASH FIX (owner's black-box report v0.96.16, solo, 9:12 left):
 rain blasts credited a random owner 0/1 and solo has no P[1] → 'dmgDone' of undefined in hitEnemy; now owner 0 in solo +
 hitEnemy guards (repro: storm + packed zombies, old code throws). Chainsaw drop-in drawn hand-sized (SAW_R 46) at the END of
 its reach, swung across the arc (no wedge; owner). Paramedics = running medics (hordeData bakeMedic; slot 'ally-medic').
