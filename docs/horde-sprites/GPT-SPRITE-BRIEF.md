@@ -134,3 +134,14 @@ played left to right ONCE over the effect's short life (about 0.2-0.5 s), except
 | shot-curse.png | 32×32 | still | A **purple curse orb** flying RIGHT (boss attack). |
 
 Deliver at 2x (the `@2x` templates), PNG with real alpha, file names exactly as above.
+
+## BATCH 3: paramedics and Trioxin Rain (Nov 14; owner: "the paramedic weapon has no image" / "trioxin rain doesn't have an image yet either")
+Same rules as Batch 2 (match the delivered art in `style-reference/`, real transparency, no green screen), deliver at 2x
+(`@2x` templates). The game already draws simple stand-ins for all four; yours replace them.
+
+| file | frame / size | frames | what |
+|---|---|---|---|
+| ally-medic.png | 80×128 | 4 (run, loop) | **"Send More Paramedics"** (Return of the Living Dead): a paramedic in a white uniform with a red cross, white cap, carrying a red kit bag, RUNNING to the RIGHT (side view, like the zombies' walk sheets; the game mirrors it). Feet on the red cross near the bottom, full figure about 60 px of the 64-unit frame. Several run at once, about 46 px tall on screen: bold outline, simple shapes. With the Code Blue upgrade they spark blue (the game adds that). |
+| rain-drop.png | 64×128 | still | **Trioxin Rain**: a dented olive-drab Trioxin 245 canister with a yellow label band, falling nose DOWN with a green toxic streak trailing above it. Bottom of the picture = where it lands. Drawn about 34 px wide. (Optional Evil Dead copy **rain-drop-cabin.png**: a burning deadite skull falling.) |
+| rain-mark.png | 128×96 | still | The **red warning circle** painted on the ground where a canister will land: a glowing red hazard ring with a faint cross-hair, filling the frame (the game stretches it to the blast size and makes it pulse). |
+| fx-rain.png | 192×192 | 6 | The **canister landing**: a burst of glowing green toxic splash and goo droplets flying out from the pivot (centre) to the dashed ring, then fizzling. (Optional **fx-rain-cabin.png**: a fiery skull explosion, orange.) |

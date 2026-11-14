@@ -82,8 +82,8 @@ for (const [name, d] of Object.entries(TS.PICTURES)) {
       for (let r = 0; r < 4; r++) { const y = barsTop + (H - barsTop) * (r + .68) / 4; x.fillStyle = 'rgba(0,0,0,.08)'; x.fillRect(W * .1, y, W * .8, (H - barsTop) / 4 * .3); }
       dash(); x.strokeRect(W * .05, barsTop, W * .9, H - barsTop - 4); x.setLineDash([]);
       tag('BARS + PEOPLE GO HERE (keep it calm: plain wall, floor)', W * .07, barsTop + 30, Math.round(W / 50));
-      tag(L.title + ' · ' + L.sub, W * .07, Math.min(barsTop * .5, H * .1) + 20, Math.round(W / 34));
-      tag('Interesting stuff along the top and the edges. White walls, Arrested Development look.', W * .07, Math.min(barsTop * .5, H * .1) + 20 + W / 26, Math.round(W / 60), 'rgba(0,0,0,.45)');
+      const ty = Math.min(barsTop * .4, H * .1) + 20; tag(L.title, W * .07, ty, Math.round(W / 26)); tag(L.sub, W * .07, ty + W / 22, Math.round(W / 44), 'rgba(0,0,0,.5)');
+      tag('Interesting stuff along the top and the edges. White walls, Arrested Development look.', W * .07, ty + W / 22 + W / 30, Math.round(W / 60), 'rgba(0,0,0,.45)');
     } else if (d.kind === 'floor') {
       x.fillStyle = ink.floor; x.fillRect(0, 0, W, H); x.strokeStyle = ink.plank; x.lineWidth = 3; for (let y = 0; y < H; y += H / 8) { x.beginPath(); x.moveTo(0, y); x.lineTo(W, y); x.stroke(); }
       dash('rgba(30,90,230,.8)'); x.strokeRect(2, 2, W - 4, H - 4); x.setLineDash([]); tag('SEAMLESS TILE: left↔right and top↔bottom must join', 16, 30, 16);

@@ -2,6 +2,24 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+NOV 14 (branch claude/cool-edison-ma0a0l, unreleased): HORDE CRASH FIX (owner's black-box report v0.96.16, solo, 9:12 left):
+rain blasts credited a random owner 0/1 and solo has no P[1] → 'dmgDone' of undefined in hitEnemy; now owner 0 in solo +
+hitEnemy guards (repro: storm + packed zombies, old code throws). Chainsaw drop-in drawn hand-sized (SAW_R 46) at the END of
+its reach, swung across the arc (no wedge; owner). Paramedics = running medics (hordeData bakeMedic; slot 'ally-medic').
+Trioxin Rain: falling canisters + splash + green rain streaks (slots rain-drop, rain-mark, fx-rain; drawn stand-ins). Horde
+BATCH 3 brief + templates (only these 4 slots lack art). 40 characters: 25 Vanderpump Rules (vpr-*), 14 Secret Lives of
+Mormon Wives (mw-*, new referencePack source + iconicPlaces MomTok House), weird-al (UHF); unlocks audit 780/0.
+TAPPER REBUILD (banana-money-grab, engine moneygrab, src/engines/bananaTapper.js): random characters with face art as
+customers (pool() = catalog with raster art), speech bubbles (characterQuotes or bar lines, ANGRY lines), levels =
+tapperSprites LEVELS stand/penthouse/modelhome (quota, item/empty, AD-look drawn fallback: white walls, Helvetica), level
+card + clear card (+tip jar), 90 s turns (turnRunner; 1P = soloTurnRuns). ONLINE (NET_NATIVE): both at once, netField
+snapshots of own bars (hz 15), remote drawn mirrored (wide = one room, doors back to back in the middle; tall = theirs on
+top 40%), shoved-out customers cross over ({x}), speech {say}; finish {score}. Bot: s.debug._bot / online debug.bot.
+Art slots src/data/tapperSprites.js (assets/tapper → tapper:<name>, LATER), templates tools/tapper-templates.mjs, brief
+docs/tapper-sprites/GPT-SPRITE-BRIEF.md (START-HERE row). Music/narrator drop-ins src/engines/tapperAudio.js
+(tapper-song-<level>, tapper-narr-<moment>-<n>). online-native banana-money-grab (390x780 + 844x390) and fuzz pass.
+Roadmap: H33-H36 + TAP1 (SUR bartending, Housewives balloons, Pee-wee balance, pool soon, Crash).
+
 BATCH 2 ART + ZONES (Nov 13 late, branch claude/cool-shannon-lw8o5h): GPT's 22 batch 2 pictures from Drive (notes UPLOADS-GPT-2026-11-13-2239/-2240;
 Horde 'Effects' folder + batch2-small-finals.zip, Battleship 'Batch 2'): all exactly 2x template, pivots match, SHA as noted; lossless WebP in
 assets/horde + assets/battleship (originals assets/originals/*). Horde gore now .38 size and GORE_MAX 8 on screen (bosses/elites always).
