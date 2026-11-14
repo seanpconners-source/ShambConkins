@@ -9,7 +9,7 @@ const SOLO_LEVEL_NAMES={easy:'Easy',normal:'Normal',hard:'Hard'};
 // CPU skill 0..1 per difficulty; engines scale reaction time, aim error and speed from it.
 const SOLO_SKILL={easy:.35,normal:.65,hard:.9};
 const SOLO_IDS={
- 'broforce':'levels','broforce-jungle':'levels','broforce-factory':'levels','broforce-city':'levels','broforce-desert':'levels',
+ 'broforce':'levels','broforce-jungle':'levels','broforce-factory':'levels','broforce-city':'levels','broforce-desert':'levels','broforce-space':'levels','broforce-hell':'levels','broforce-dimension':'levels','broforce-games':'levels',
  'smb-world-1':'levels','smb-coin-rush':'levels','smb-castle-dash':'levels',
  'sonic-ring-rush':'levels','sonic-goal-dash':'levels','sonic3-test':'game','sonic3-zone1':'game','sonic3-zone1-act2':'game','sonic3-zone1-act3':'game',
  'cv-vampire-killer':'levels','cv-candle-hunt':'levels','cv-symphony':'levels',
@@ -102,7 +102,7 @@ const NET_NATIVE=new Set(['banana-money-grab','major-league-fielding','major-lea
  'rainbow-road-kart','rainbow-balloon-battle','kart-time-trial','kart-grand-prix-pass',
  // online co-op / live races (Oct 26): one shared world instead of two separate solo runs
  'sonic-ring-rush','sonic-goal-dash','smb-world-1','smb-coin-rush','smb-castle-dash','sonic3-zone1','sonic3-zone1-act2','sonic3-zone1-act3','sonic3-test',
- 'broforce','broforce-jungle','broforce-factory','broforce-city','broforce-desert','cv-vampire-killer','cv-candle-hunt','cv-symphony','warriors-brawl','megatouch-photohunt','doom','doom-2',
+ 'broforce','broforce-jungle','broforce-factory','broforce-city','broforce-desert','broforce-space','broforce-hell','broforce-dimension','broforce-games','cv-vampire-killer','cv-candle-hunt','cv-symphony','warriors-brawl','megatouch-photohunt','doom','doom-2',
  'raiders-ball-run','sewer-clash','league-penalties','fight-night','hyrule-rupee-rush','hyrule-sword-duel']);
 // whole engines that play natively online (every boss fight is co-op on two phones; pinball = one machine, balls
 // alternate between the phones like a real one)

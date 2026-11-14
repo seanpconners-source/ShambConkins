@@ -500,7 +500,10 @@
   "src/data/poolSprites.js",
   "src/engines/pool/art.js",
   "src/engines/pool/cpu.js",
-  "src/engines/paddysPool.js"
+  "src/engines/paddysPool.js",
+  "src/engines/broforce/worlds.js",
+  "src/engines/broforce/ext.js",
+  "src/data/broforceSprites.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

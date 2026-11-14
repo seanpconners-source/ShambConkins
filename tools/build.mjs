@@ -112,6 +112,13 @@ if (fs.existsSync(tapperDir)) for (const f of fs.readdirSync(tapperDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('tapper:' + m[1].toLowerCase(), MIME[ext], ext, path.join(tapperDir, f));
 }
+// Sean of a Gun (Broforce) drop-in art: assets/broforce/<name>.(webp|png) -> bf:<name> (names and layout:
+// src/data/broforceSprites.js, docs/broforce-sprites/README.md).
+const bfDir = path.join(root, 'assets/broforce');
+if (fs.existsSync(bfDir)) for (const f of fs.readdirSync(bfDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('bf:' + m[1].toLowerCase(), MIME[ext], ext, path.join(bfDir, f));
+}
 // Paddy's Pool drop-in art: assets/pool/<name>.(webp|png) -> pool:<name> (names and layout: src/data/poolSprites.js,
 // docs/pool-sprites/README.md).
 const poolDir = path.join(root, 'assets/pool');

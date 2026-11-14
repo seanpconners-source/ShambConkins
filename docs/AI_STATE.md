@@ -2,6 +2,25 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+SEAN OF A GUN NEW WORLDS + SPRITES (Nov 14, unreleased, same branch; owner: 4 more worlds, crazy, not straight lines, mini + end
+bosses, tanks, more weapons, don't touch the first four's design; sprite support for all + GPT templates): src/engines/broforce/
+worlds.js THEMES_EXT (broforce-space/-hell/-dimension/-games, ext:true, stagePal per stage, foes mix, bosses per stage, weapons,
+pools) + buildStageExt (segments ridge/citadel/split/shaft/islands/maze/tankyard/turretwall/airlock/bonebridge/geysers/portals/
+qrow/pipes/stairs/springs/glitchy, arena on EVERY stage, chopper; portals/haz/rings). src/engines/broforce/ext.js makeExt(C) = 25
+foes (archetypes shooter/leaper/brute/thrower/flier/tank/turret/popup/stomper/shell/teleporter/cannon), 12 bosses (one state
+machine: volley/ring/missiles/leap/charge/spin/summon/rain/beam/slam/drop/dive/teleport + a drawing each), 10 guns (WEAPONS2;
+old worlds still deal weaponFor's first five; new worlds wpnFor(theme.weapons)), ext shots (sh.ext), danger zones W.zones
+({zn} online), hazards (lava/spike tiles, pads, firebars, geysers, portals, rings, stomps, ? blocks via bonk), vehicles.
+broforce.js hooks only when theme.ext / e.ext / B.kind: tiles 11-18 (LAVA SPIKE PAD GLASS QBLOCK PIPE GOO CRYST), GK gravity,
+heli 'away' when S.boss, boss name banners/HUD, pierce/rail bullets, arena lock full height in ext, TH (stage palette).
+New ids Arcade-only (randomEligible:false; not in persistence BROFORCE_IDS = board attempts). s.debug goStage/toBoss/immortal/
+autobot/boss. Sprites: src/data/broforceSprites.js (assets/broforce → bf:<name>, LATER 'bf:'): bro-body (headless, neck/hand),
+foe-<30>, boss-<13 incl devil>, tiles/top/sky/far/mid/vehicle/tree per world, cage(-gold), flag(-up), pickups; wired in drawWorld/
+drawBro/drawFoe/drawBoss/drawHeli/drawCage/drawFlag/drawPickup/drawParallax. Templates tools/broforce-templates.mjs (106; ext foes/
+bosses drawn as guides), brief docs/broforce-sprites/GPT-SPRITE-BRIEF.md, START-HERE row. Tests: games.mjs fuzz all 9 broforce ids,
+broforce-turns/board/solo pass, online-native broforce-hell pass, scratch bf4 (boss→chopper→stage flow, all 4 worlds + jungle).
+Balance only bot-tested: the dumb runner bot dies earlier in new worlds' stage 1 than in Desert (stage-1 fire slowed x1.45).
+
 PADDY'S POOL (Nov 14, unreleased, branch claude/cool-edison-ma0a0l; owner: pro revamp, 8 + 9 ball, felts/tables/cues, Paddy's theme, ratty
 first table, upgrades for the table + the bar + TVs, then GPT templates): src/engines/paddysPool.js (engine key pool → themedPool in
 engines/index.js routes ids color-of-money (9-ball, old id) + NEW paddys-eight-ball (remakePack, poolGame 'eight') here; board event
