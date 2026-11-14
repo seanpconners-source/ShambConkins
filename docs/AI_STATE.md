@@ -2,6 +2,22 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+v0.99.0 (Nov 14): BASEKETBALL SHOOTOUT = the Megatouch Hoop Jones machine (owner's screenshot; Merit: time each shot,
+hoop moves back each round and side to side, 3 straight = lightning bonus). src/engines/hoopJones.js; engine key
+basketball2p (baseketball.js is now a 3-line hand-off; the movie-rules code is in git history before 0.99.0). Id
+baseketball-shootout (title from the catalog, keeps its Arcade art/scores), baseketball-hoop-jones is CUT (cutGames.js)
+but still loads; arcadeConsole family 'baseketball' removed; solo 'levels' (1P high-score run, crowd heckles). Four
+shooters alternate shooter-p1/p2 (Coop/Remer) sheets, HOLD ball spots from GPT's note; tap a column = shoot; RELOAD 1.15 s
+per shooter, GAP .42 s between any shots; flightOf/periodOf/depthOf/targetOf per round (10 rounds, 25 s clock, target
+18+5(n-1)); 2/3 points, every 3rd straight +5; judge by lane x vs hoop x at arrival. Callouts src/data/shootoutLines.js
+(crude; CLEAN set if settings.chatClean). Psych-outs: 2P waiting player 2 per round (DOM button + sheet from the old game),
+online netField event {ps}, shaken = wobble + lane offset. Art in (Drive 'BASEketball — Sprites' + owner's chat stadium
+4800x2400): all 13 slots in assets/baseketball (lossless, originals assets/originals/baseketball); stadium-hoop and
+logo-hoop now unused. TAPPER (same release): arcade rules in bananaTapper.js: pushDist .32 (-.015/level, min .22), out
+the door = gone (serveVal 50/75/100/150), else drink + ALWAYS an empty; tips 14% on a catch (1500) start Gob's show
+(SHOW 4 s, walkers freeze); group burst at level start; bonus round phase 'bonus' (6 cans, 5 shaken, swaps, pick, +3000).
+The autopilot serves too fast to ever see an empty; the rule itself was checked by placing customers (scratch tap2.mjs).
+
 SITABOUT MINI GOLF (Nov 14, branch ccr-2919e73f-r0ea94, unreleased; owner: complete overhaul of putt-putt, "best putt putt
 android game ever", name Sitabout (Walkabout parody), make art templates; another account works on another game: touch
 nothing else). Engine name `minigolf` + ids kept (happy-gilmore-golf = Arcade game retitled 'Sitabout Mini Golf', source

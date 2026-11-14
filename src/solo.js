@@ -39,7 +39,7 @@ const SOLO_IDS={
  'hyrule-rupee-rush':'cpu','hyrule-sword-duel':'cpu','chutes-ladder-rush':'cpu','candy-gumdrop-catch':'cpu','candy-color-dash':'cpu',
  'derezzed-cycles':'cpu','bomber-duel':'cpu','pac-maze-duel':'cpu','block-battle':'cpu','shred-hero':'cpu','underdog-dodgeball':'cpu','fight-night':'cpu',
  'color-of-money':'cpu','task-tallest-thing':'cpu','bug-artillery':'cpu','taskmaster-curling':'cpu','happy-gilmore-golf':'cpu','space-swarm-versus':'cpu',
- 'sewer-clash':'cpu','paddys-beer-pong':'cpu','baseketball-shootout':'cpu','baseketball-hoop-jones':'levels','django-hangman':'cpu','django-hangman-showdown':'cpu',
+ 'sewer-clash':'cpu','paddys-beer-pong':'cpu','baseketball-shootout':'levels','baseketball-hoop-jones':'levels','django-hangman':'cpu','django-hangman-showdown':'cpu',
  // batch 4: trivia, cards, dice and table games vs CPU
  'trivia-mixed':'cpu','trivia-nick90':'cpu','trivia-dbz':'cpu','trivia-hxh':'cpu','trivia-sitcom':'cpu','trivia-hardcore':'cpu',
  'trivia-lightning':'cpu','trivia-wager':'cpu','trivia-survival':'cpu',

@@ -75,10 +75,10 @@ async function moneygrab(s){
  const diff=w=>1+.08*w.cleared+Math.min(.12,w.levelT/300);
  const quotaFor=n=>8+3*n;
  const maxOn=w=>Math.min(10,3+w.cleared);
- const pushDist=w=>Math.max(.3,.44-.02*w.cleared);
+ const pushDist=w=>Math.max(.22,.32-.015*w.cleared);
  const serveVal=w=>[50,75,100,150][Math.min(3,w.lv)];
  const TIP=1500,BONUS=3000,SHOW=4;
- function startLevel(w){w.phase='card';w.card=2.2;w.spawned=0;w.levelT=0;w.cust=[];w.nanas=[];w.sticks=[];w.cash=[];w.spawnT=1.2;w.say=[];w.show=0;w.bonusR=null;if(w===cur){audio.level(lvOf(w).id);audio.narrate(w.cleared?'level':'start',.8);}}
+ function startLevel(w){w.phase='card';w.card=2.2;w.spawned=0;w.levelT=0;w.cust=[];w.nanas=[];w.sticks=[];w.cash=[];w.spawnT=1.2;w.say=[];w.show=0;w.bonusR=null;w.burst=Math.min(4,2+Math.floor(w.cleared/2));   /* like the arcade: a group walks in as the level opens */if(w===cur){audio.level(lvOf(w).id);audio.narrate(w.cleared?'level':'start',.8);}}
  function talk(w,cu,text,t=2.6){if(w.say.length>=2&&!/!/.test(text))return;w.say=w.say.filter(b=>b.cid!==cu.id);w.say.push({cid:cu.id,text,t});if(net&&w===cur)nf?.event({say:[cu.id,text]});}
  function spawnCust(w,row,char,sent){
   const r=w.rand,cu={id:w.uid++,row,u:-.04,state:'walk',hop:r()*.6,timer:0,char,body:Math.floor(r()*4),shirt:SHIRTS[Math.floor(r()*SHIRTS.length)],sent:sent||null,talkT:.4+r()*1.2,talks:r()<.3};
@@ -126,14 +126,14 @@ async function moneygrab(s){
   // arrivals: the level's crowd, plus anyone the other player shoved over (online)
   if(w.sent.length){const [row,char,from]=w.sent.shift();if(w.cust.filter(cu=>cu.row===row).length<4){const cu=spawnCust(w,row,char,from);cu.talks=false;}}
   w.spawnT-=dt;if(w.spawnT<=0&&w.spawned<quota&&w.cust.length>=maxOn(w))w.spawnT=.5;
-  else if(w.spawnT<=0&&w.spawned<quota){w.spawnT=clamp(2.6/k,.8,2.6)*(.6+w.rand()*.8);const r=Math.floor(w.rand()*ROWS),P=pool(),ch=P[Math.floor(w.rand()*P.length)];
+  else if(w.spawnT<=0&&w.spawned<quota){w.spawnT=(w.burst>0?(w.burst--,.25):clamp(1.7/k,.6,1.7))*(.6+w.rand()*.8);const r=Math.floor(w.rand()*ROWS),P=pool(),ch=P[Math.floor(w.rand()*P.length)];
    if(w.cust.filter(cu=>cu.row===r).length<3){spawnCust(w,r,ch);w.spawned++;}}
   w.show=Math.max(0,w.show-dt);
   for(const m of w.cash)m.t-=dt;w.cash=w.cash.filter(m=>m.t>0&&!m.got);
   for(const cu of w.cust){cu.timer-=dt;
    if(cu.talks&&cu.state==='walk'){cu.talkT-=dt;if(cu.talkT<=0){cu.talks=false;talk(w,cu,lineFor(cu.char,w.rand));}}
    if(cu.state==='walk'&&w.show>0){/* everybody stops to watch Gob's show */}
-   else if(cu.state==='walk'){cu.hop-=dt;if(cu.hop<=0){cu.hop=clamp(.9/k,.36,.9);cu.target=cu.u+.055;}if(cu.target!==undefined&&cu.u<cu.target)cu.u=Math.min(cu.target,cu.u+dt*.35);
+   else if(cu.state==='walk'){cu.hop-=dt;if(cu.hop<=0){cu.hop=clamp(.75/k,.3,.75);cu.target=cu.u+.055;}if(cu.target!==undefined&&cu.u<cu.target)cu.u=Math.min(cu.target,cu.u+dt*.35);
     if(cu.u>=.93){cu.state='angry';talk(w,cu,ANGRY[Math.floor(w.rand()*ANGRY.length)],1.6);lose(w,'TOO SLOW!',cu.row);return;}}
    else if(cu.state==='push'){cu.u-=dt*.9;
     if(cu.u<-.05){cu.gone=true;const v=serveVal(w);w.score+=v;w.pops.push({x:0,y:cu.row,text:'+'+v,t:.8,c:'#b8860b'});if(net&&w===cur)nf?.event({x:[cu.row,cu.char]});}
