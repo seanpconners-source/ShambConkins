@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Paddy's Pool, rebuilt:** a modern pool game in Paddy's Pub with real ball physics (spin: follow, draw and english), 8-ball (new) and 9-ball. Drag to swing the cue, fine-aim wheel, pull the power bar to shoot, ghost ball and shot-path guides (Full / Standard / Pro), ball in hand, calling the 8, an optional shot clock, instant replays, banners for banks, combos, kicks and run-outs, and the gang heckling from the bar. Plays against the CPU and online.
+- **The Paddy's Pool Hall:** win cash and spend it on six tables (the starting Paddy's table is ripped, stained, leans and has dead cushions; better tables play better), 13 felts, 8 cues (power, spin, aim lines), ball sets, chalk, and upgrades for the whole bar: the room, the table light, TVs, the bar itself, neon signs, a jukebox, a dartboard, the Rum Ham, a crowd of regulars and more.
+
 ## v0.97.6
 
 - **BASEketball, rebuilt:** you shoot from behind the shooter like a bar-top machine, in a night-time stadium like the movie's, with a jumbo baseball scoreboard. Pick your base (single to home run), flick the ball up to shoot. The defender psychs you out with a list of filthy lines or types their own (online too), and your hands shake for that shot.

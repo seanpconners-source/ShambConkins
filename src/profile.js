@@ -8,6 +8,7 @@ const {cpuBlocksRecruit}=require("src/cpuHooks.js");
 const {LAB_TEAM}=require("src/data/savoryLab.js");
 const {isMovieBond, missingMovieBonds}=require("src/data/movieBonds.js");
 const {normalizeSoloSettings, normalizeSoloBest}=require("src/solo.js");
+const {validHall}=require("src/data/poolHall.js");
 function freshProfile() { return { version: 20, starterPolicy:22, holeItLevel:1, earnedUnlocks:{}, xp: 0, runs: 0, completed: 0, minigames:0, modes:['versus'], boards:['Mashup'], played: [], recentGames: [], recentTrivia: [], triviaDifficultyBag: [], recruitDryStreak:{Sean:0,Amber:0}, pairDiscoveries: [], boardUnlocks: [], shared: ['sean','amber'], rosters: { Sean: ['sean'], Amber: ['amber'] }, itemsSeen: [], itemFinds:{Sean:[],Amber:[]},recentItemFinds:{Sean:[],Amber:[]}, locations: [], settings: { sound: true, music: true, reducedMotion: false, originalLogos:true,drinkStatus:true,devMode:false,touchMode:'auto',flickSensitivity:1 }, wins: {}, best: {}, migrated: false }; }
 // Arcade shelves (ROADMAP M14): the last games started, newest first, and the games starred with the hero's ☆.
 const RECENT_MAX=20;
@@ -54,6 +55,8 @@ function loadProfile() {
   if(Number.isFinite(saved.holeItLevel)&&saved.holeItLevel>=1)p.holeItLevel=Math.min(9999,Math.floor(saved.holeItLevel));
   // ROADMAP C8 checkpoints: the highest board level reached (1 Mind .. 4 Horror); New Game can start there
   if(Number.isFinite(saved.levelReached)&&saved.levelReached>=1)p.levelReached=Math.min(4,Math.floor(saved.levelReached));
+  // Paddy's Pool Hall: cash, bought tables/felts/cues/room upgrades, settings (src/data/poolHall.js)
+  if(saved.poolHall)p.poolHall=validHall(saved.poolHall);
   if(Number.isFinite(saved.holeItCoins)&&saved.holeItCoins>=0)p.holeItCoins=Math.min(1e9,Math.floor(saved.holeItCoins));
   // boss tier ladder: bossId → highest tier cleared, 0 Easy .. 3 Extreme (ROADMAP K5)
   if(saved.bossTiers&&typeof saved.bossTiers==='object'&&!Array.isArray(saved.bossTiers))p.bossTiers=Object.fromEntries(Object.entries(saved.bossTiers).filter(([id,v])=>/^[a-z0-9-]{1,40}$/.test(id)&&[0,1,2,3].includes(v)));

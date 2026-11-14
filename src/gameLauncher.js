@@ -256,7 +256,7 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
  // Restart from the pause card (owner, Nov 3): the same game again from the start, same players and settings, no Start card.
  // Not online (both phones would have to agree) and not a board Broforce attempt (its result is guarded against retries).
  if(!duel&&!(origin==='board'&&(bfGame(game)||hooks.onlineGames())))session.restart=origin==='board'?{id:game.id,origin,resume:true,returnToRoll,difficulty}:{id:game.id,origin,solo,difficulty,filter};
- session.practice=origin==='dev';session.returnToRoll=returnToRoll;if(difficulty!=null)session.difficulty=difficulty;curDifficulty=difficulty|0;store.session=session;session.active=origin==='board'?run.current:0;session.updateScores();launching=false;
+ session.practice=origin==='dev';session.origin=origin;session.returnToRoll=returnToRoll;if(difficulty!=null)session.difficulty=difficulty;curDifficulty=difficulty|0;store.session=session;session.active=origin==='board'?run.current:0;session.updateScores();launching=false;
  try{await ENGINES[game.engine](session);}catch(error){console.error('Game engine failure',game.id,error);if(valid()&&session.alive){session.dispose();store.session=null;store.busy=false;await showDialog({title:'Let’s get you back to the board',body:'This challenge was interrupted. No rewards were applied.',choices:[{label:'Continue',value:'ok',primary:true}]});if(!valid())return false;if(origin==='board')returnToRoll?hooks.beforeRoll():hooks.endTurn();else hooks.arcade();}return false;}return valid();
 }
 // Games that hand out their own recruits (Broforce gold cages, the Sonic boss pilot) skip the random winner recruit.

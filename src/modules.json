@@ -492,7 +492,15 @@
   "src/data/tapperSprites.js",
   "src/engines/tapperAudio.js",
   "src/data/psychOuts.js",
-  "src/data/baseketballSprites.js"
+  "src/data/baseketballSprites.js",
+  "src/engines/pool/physics.js",
+  "src/engines/pool/rules.js",
+  "src/data/poolHall.js",
+  "src/engines/pool/balls.js",
+  "src/data/poolSprites.js",
+  "src/engines/pool/art.js",
+  "src/engines/pool/cpu.js",
+  "src/engines/paddysPool.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

@@ -112,6 +112,13 @@ if (fs.existsSync(tapperDir)) for (const f of fs.readdirSync(tapperDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('tapper:' + m[1].toLowerCase(), MIME[ext], ext, path.join(tapperDir, f));
 }
+// Paddy's Pool drop-in art: assets/pool/<name>.(webp|png) -> pool:<name> (names and layout: src/data/poolSprites.js,
+// docs/pool-sprites/README.md).
+const poolDir = path.join(root, 'assets/pool');
+if (fs.existsSync(poolDir)) for (const f of fs.readdirSync(poolDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('pool:' + m[1].toLowerCase(), MIME[ext], ext, path.join(poolDir, f));
+}
 // BASEketball drop-in art: assets/baseketball/<name>.(webp|png) -> baseketball:<name>
 // (names and layout: src/data/baseketballSprites.js, docs/baseketball-sprites/README.md).
 const bkDir = path.join(root, 'assets/baseketball');

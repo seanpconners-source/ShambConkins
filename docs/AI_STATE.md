@@ -2,6 +2,21 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+PADDY'S POOL (Nov 14, unreleased, branch claude/cool-edison-ma0a0l; owner: pro revamp, 8 + 9 ball, felts/tables/cues, Paddy's theme, ratty
+first table, upgrades for the table + the bar + TVs, then GPT templates): src/engines/paddysPool.js (engine key pool → themedPool in
+engines/index.js routes ids color-of-money (9-ball, old id) + NEW paddys-eight-ball (remakePack, poolGame 'eight') here; board event
+paddys-pool keeps old pool.js). pool/physics.js = inches, 88x44 bed, spin model (slide → roll, 7/2 rule; cushions = segments with jaws,
+side spin bends rebounds, SIDE_SIGN -1 checked), fixed STEP 1/120 so both phones replay a shot alike; pool/rules.js judge/apply/nextRack
+(WPA 8/9-ball, bar rule 8 on the break wins, 3 fouls lose in 9-ball); pool/cpu.js planShot (ghost-ball pots tried with the physics,
+position value, safeties; ~0.1-0.2 s); pool/balls.js per-pixel rolling spheres; pool/art.js table/wear/cue/room/wall/TVs/neon + Pool
+Hall scene (straight-on bar, drawHall with `only` for templates). src/data/poolHall.js = catalog (TABLES with feel: ecush/slope/rough/
+cloth, FELTS, CUES stats power/spin/aim, BALLSETS, CHALKS, ROOM tiers reno/light/tv/bar, DECOR 14) + CASH + validHall (profile.poolHall,
+validated in profile.js). Arcade launch shows the Hall (DOM .pp-hall over the drawn bar; side panel on wide screens) → race to 1/2/3/5;
+board/online skip it (race 1). Online: {setup} (seat 0's table), {cue}, {aim}, {bh}, {call}, {f} shot, {fin} exact result, {to} clock.
+session.origin set by gameLauncher. Tests: tests/pool-rules.mjs (39 checks, Node); online-native 8-ball pass; games.mjs fuzz both ids.
+Art slots src/data/poolSprites.js (assets/pool → pool:<name>, LATER 'pool:'), templates tools/pool-templates.mjs (66), brief
+docs/pool-sprites/GPT-SPRITE-BRIEF.md, START-HERE row. Not on a real phone; sounds not heard.
+
 v0.97.6 (Nov 14): BASEKETBALL REBUILT (owner: like Megatouch Hoop Jones, movie rules, stadium like the movie, jumbo
 scoreboard, choose base, crass psych-outs from a list or typed, online too; GPT sprites). src/engines/baseketball.js (engine
 key basketball2p kept; game.bkMode 'movie' = baseketball-shootout, 'hoop' = NEW baseketball-hoop-jones in remakePack, family
