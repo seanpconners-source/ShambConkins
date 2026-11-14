@@ -17,6 +17,13 @@ logo-hoop now unused. TAPPER (same release): arcade rules in bananaTapper.js: pu
 the door = gone (serveVal 50/75/100/150), else drink + ALWAYS an empty; tips 14% on a catch (1500) start Gob's show
 (SHOW 4 s, walkers freeze); group burst at level start; bonus round phase 'bonus' (6 cans, 5 shaken, swaps, pick, +3000).
 The autopilot serves too fast to ever see an empty; the rule itself was checked by placing customers (scratch tap2.mjs).
+SEAN OF A GUN ART IN (Nov 14, RELEASED as v0.99.1 with the BASEketball Shootout/Tapper branch ccr-2919e73f merged): GPT's whole
+106-slot kit from Drive 'Sean of a Gun (Broforce) — Sprites' (notes UPLOADS-GPT-2026-11-14-1909..1916 + broforce-props/terrain-small-finals.zip),
+every file exactly 2x template, lossless WebP in assets/broforce (originals assets/originals/broforce). HELD BACK: foe-hog (= Sonic) and
+boss-eggbot (= Dr. Eggman): Sega's real characters, drawn fallback kept (PNGs only in the scratchpad, not committed). broforce.js
+preloadArt() = only the current world's pictures (+ its foes/bosses), re-run after the world pick. Checked: scratch bfart.mjs
+(every world, 3 stages + bosses, 844x390), no errors.
+
 SEAN OF A GUN NEW WORLDS + SPRITES (Nov 14, unreleased, same branch; owner: 4 more worlds, crazy, not straight lines, mini + end
 bosses, tanks, more weapons, don't touch the first four's design; sprite support for all + GPT templates): src/engines/broforce/
 worlds.js THEMES_EXT (broforce-space/-hell/-dimension/-games, ext:true, stagePal per stage, foes mix, bosses per stage, weapons,
