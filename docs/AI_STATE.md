@@ -63,6 +63,8 @@ at 2x as lossless WebP in assets/pool (originals assets/originals/pool). Table f
 (game draws the screens after the frame). poolSprites: preloadPool(names) = only the current loadout's pictures (all 66 decoded
 = ~300 MB), version() bumps on each load and is in the table/floor layer cache keys (a late picture used to stay drawn-fallback).
 
+BASEKETBALL ART WAIT (Nov 14, v0.99.2; owner: 'sprites not in'): they WERE in since v0.99.0 (13 files, drawn fine once loaded), but they're LATER files (~24 MB, fetched on first open) and picture() returned null until each loaded, so a first round played on the drawn stand-ins. baseketballSprites readyBaseketball(ms)/allLoaded(); hoopJones play() waits up to 8 s after the pass card (before nf.start) with a 'Filling the stadium' screen. Other LATER-art games (minigolf, pool, horde, broforce...) may show the same first-open stand-ins.
+
 SITABOUT ART IN + WINDMILL FIX (Nov 14, branch claude/minigolf-sprites-windmill-ud5bpf; owner: sprites were made but not in,
 invisible wall in front of the windmill, windmill sideways): GPT's set from Drive 'Sitabout Mini Golf — Sprites' (Course Textures /
 Props & Obstacles / Screens + minigolf-small-finals.zip = cup): 60 of 61 slots, every one exactly 2x template, lossless WebP in

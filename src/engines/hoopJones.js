@@ -270,9 +270,15 @@ async function hoopJones(s){
  // ------------------------------------------------------------ the runs
  const intro=who=>`BASEKETBALL SHOOTOUT${s.players.length>1&&!s.solo&&!net?' · '+s.players[who].name:''}. Four shooters, unlimited balls: tap a shooter to shoot up his lane. The hoop slides side to side and the ball takes a moment to get there, so lead it. Each shooter waits for his ball to come back. Make the round's target before the shot clock runs out; every round the hoop moves back. Every third basket in a row = lightning bonus.${s.solo?' The crowd heckles.':net?' Psych out '+s.players[them].name+' from your phone.':' '+s.players[1-who].name+': you get 2 PSYCH OUTS a round.'}`;
  async function play(who,label){cur=newRun(who);layout();
-  if(!await s.pass(net?me:who,intro(who),label||'Shoot'))return null;if(net)await nf.start('go');
+  if(!await s.pass(net?me:who,intro(who),label||'Shoot'))return null;
+  // first open: the stadium/shooter pictures may still be downloading; hold the run (clock stopped) until they're in
+  if(!BK.allLoaded()){loading=true;await BK.readyBaseketball(8000);loading=false;if(!s.alive)return null;}
+  if(net)await nf.start('go');
   return await new Promise(res=>{cur.onEnd=won=>{setTimeout(()=>res({score:cur.score,round:cur.round,won}),2600);};});}
+ let loading=false;
  s.frame(dt=>{if(!s.alive)return;if(nf)nf.tick(dt);shake.step(dt);if(!cur){x.fillStyle='#05081a';x.fillRect(0,0,s.W,s.H);return;}
+  if(loading){x.fillStyle='#05081a';x.fillRect(0,0,s.W,s.H);x.fillStyle='#fff';x.font='700 18px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';
+   x.fillText('Filling the stadium'+'.'.repeat(1+Math.floor(performance.now()/400)%3),s.W/2,s.H/2);return;}
   step(cur,dt);botStep(cur);placeButton();
   if(net){const sc=[0,0];sc[me]=cur.score;sc[them]=rival.sc;s.setScores(sc);}else if(s.solo)s.setScores([cur.score,0]);
   draw(cur);});

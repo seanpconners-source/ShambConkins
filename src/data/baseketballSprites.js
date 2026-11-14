@@ -52,13 +52,21 @@ const has=name=>!!url(name);
 const imgs=new Map();
 function picture(name){
  const u=url(name);if(!u||typeof Image==='undefined')return null;
- let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;};e.img.src=u;imgs.set(name,e);}
+ let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.done=new Promise(r=>{e.img.onload=()=>{e.ok=true;r();};e.img.onerror=()=>r();});e.img.src=u;imgs.set(name,e);}
  return e.ok?e.img:null;
 }
 function preloadBaseketball(){for(const k of Object.keys(USER))if(k.startsWith('baseketball:'))picture(k.slice(12));}
+// the pictures come down the first time the game opens (pwa.js LATER, ~24 MB): wait for the big ones (max `ms`) so the
+// first turn isn't played on the drawn stand-ins. Resolves true once everything that exists has loaded.
+const MAIN=['stadium','shooter-p1','shooter-p2','backboard','net','pole','ball','jumbotron','court-logo','logo'];
+function readyBaseketball(ms=8000){
+ const ps=MAIN.filter(has).map(n=>{picture(n);return imgs.get(n).done;});
+ return Promise.race([Promise.all(ps).then(()=>true),new Promise(r=>setTimeout(()=>r(false),ms))]);
+}
+const allLoaded=()=>MAIN.filter(has).every(n=>imgs.get(n)?.ok);
 function sheet(name){const def=SHEETS[name],img=def&&picture(name);if(!img)return null;const cols=Math.max(...Object.values(def.rows));return {img,def,k:img.width/(cols*def.frame[0])};}
 function frameRect(sh,row,f){
  const d=sh.def,names=Object.keys(d.rows),r=Math.max(0,names.indexOf(row)),n=d.rows[names[r]]||1,i=((f%n)+n)%n;
  return {sx:i*d.frame[0]*sh.k,sy:r*d.frame[1]*sh.k,sw:d.frame[0]*sh.k,sh:d.frame[1]*sh.k};
 }
-Object.assign(exports,{SHEETS,PICTURES,has,url,picture,preloadBaseketball,sheet,frameRect});
+Object.assign(exports,{SHEETS,PICTURES,has,url,picture,preloadBaseketball,readyBaseketball,allLoaded,sheet,frameRect});

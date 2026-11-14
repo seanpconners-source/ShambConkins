@@ -6,6 +6,7 @@
 - **Windmill fixed:** no more invisible wall in front of it. The door is only blocked while a sail is actually in front of it, the windmill's door is exactly the opening in the lane, and the sails turn on the windmill and sweep down past the door.
 - The windmill and the clown head always face the tee now (on wide screens they used to sit sideways).
 - The clown's teeth are drawn where they really stop the ball.
+- **BASEketball Shootout:** the first time the game opens, it now waits (a few seconds at most) for its stadium, shooters and hoop pictures to download, so the first round no longer plays on the plain stand-in drawings.
 
 ## v0.99.1
 
