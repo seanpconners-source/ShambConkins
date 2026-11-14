@@ -35,6 +35,11 @@ board/online skip it (race 1). Online: {setup} (seat 0's table), {cue}, {aim}, {
 session.origin set by gameLauncher. Tests: tests/pool-rules.mjs (39 checks, Node); online-native 8-ball pass; games.mjs fuzz both ids.
 Art slots src/data/poolSprites.js (assets/pool → pool:<name>, LATER 'pool:'), templates tools/pool-templates.mjs (66), brief
 docs/pool-sprites/GPT-SPRITE-BRIEF.md, START-HERE row. Not on a real phone; sounds not heard.
+POOL ART IN (Nov 14, RELEASED as v0.99.0 with Pool + the Sean of a Gun worlds): owner's GPT set from Drive 'Paddy's Pool — Sprites'
+(Tables & Cues / Room Upgrades / Decor & Logo + pool-room/decor-small-finals.zip): all 66 slots, every one exactly 2x template, kept
+at 2x as lossless WebP in assets/pool (originals assets/originals/pool). Table felt windows transparent, TV screens opaque black
+(game draws the screens after the frame). poolSprites: preloadPool(names) = only the current loadout's pictures (all 66 decoded
+= ~300 MB), version() bumps on each load and is in the table/floor layer cache keys (a late picture used to stay drawn-fallback).
 
 SITABOUT MINI GOLF (Nov 14, branch ccr-2919e73f-r0ea94, unreleased; owner: complete overhaul of putt-putt, "best putt putt
 android game ever", name Sitabout (Walkabout parody), make art templates; another account works on another game: touch

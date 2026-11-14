@@ -50,7 +50,6 @@ async function paddysPool(s){
  const P=store.profile;if(P)P.poolHall=HALL.validHall(P.poolHall);
  const hall=P?.poolHall||HALL.freshHall();
  const save=()=>{if(P){P.poolHall=hall;try{saveProfile(P);}catch{}}};
- PS.preloadPool();
  const art=BA.makeBallArt(),snd=tableSound(s);
  let dpr=1,W=0,H=0,L=null,t=0;
  // ---------------------------------------------------------------- sound
@@ -69,6 +68,7 @@ async function paddysPool(s){
  const showDecor=id=>loadout.decor.includes(id);
  // ---------------------------------------------------------------- loadout + table
  let loadout=HALL.loadout(hall),T=PH.buildTable(loadout.table.feel),theirCue=loadout.cue;
+ {const r=hall.room||{},w=loadout.table.look&&loadout.table.look.wear;PS.preloadPool(['logo','table-'+loadout.table.id,'hall-table-'+loadout.table.id,'cue-'+loadout.cue.id,w?'wear-'+w:'','floor-'+r.reno,'wall-'+r.reno,'hall-'+r.reno,'hall-bar-'+r.bar,'hall-light-'+r.light,r.tv?'hall-tv-'+r.tv:'',...(hall.decor||[]).map(d=>'decor-'+d)]);}
  const cueOf=p=>net?(p===me?loadout.cue:theirCue):loadout.cue;
  // ---------------------------------------------------------------- state
  const S={phase:'wait',m:null,balls:[],angle:0,power:0,side:0,vert:0,spinOpen:false,call:-1,clock:CLOCK,rec:null,on:[],
@@ -98,12 +98,12 @@ async function paddysPool(s){
  const sw=(sx,sy)=>L.rot?{x:-(sy-L.cy)/L.k,y:(sx-L.cx)/L.k}:{x:(sx-L.cx)/L.k,y:(sy-L.cy)/L.k};
  // ---------------------------------------------------------------- cached layers
  const layers={table:null,floor:null};
- function tableLayer(){const key=[L.W,L.H,dpr,loadout.table.id,loadout.felt.id].join();if(layers.table&&layers.table.key===key)return layers.table;
+ function tableLayer(){const key=[L.W,L.H,dpr,loadout.table.id,loadout.felt.id,PS.version()].join();if(layers.table&&layers.table.key===key)return layers.table;
   const pw=(L.rot?TH:TW)*L.k+40,ph=(L.rot?TW:TH)*L.k+40,cv=document.createElement('canvas');cv.width=Math.ceil(pw*dpr);cv.height=Math.ceil(ph*dpr);const g=cv.getContext('2d');
   g.setTransform(dpr,0,0,dpr,0,0);g.translate(pw/2,ph/2);if(L.rot)g.rotate(-Math.PI/2);g.scale(L.k,L.k);
   ART.drawTable(g,T,{look:loadout.table.look,felt:loadout.felt,wear:loadout.table.look.wear,rough:loadout.table.feel.rough||[],id:loadout.table.id,k:L.k});
   return layers.table={key,cv,pw,ph};}
- function floorLayer(){const key=[L.W,L.H,dpr,loadout.room.reno].join();if(layers.floor&&layers.floor.key===key)return layers.floor;
+ function floorLayer(){const key=[L.W,L.H,dpr,loadout.room.reno,PS.version()].join();if(layers.floor&&layers.floor.key===key)return layers.floor;
   const cv=document.createElement('canvas');cv.width=Math.ceil(L.W*dpr);cv.height=Math.ceil(L.H*dpr);const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
   ART.drawFloor(g,L.W,L.H,loadout.room.reno);
   // light pool around the table + darker corners

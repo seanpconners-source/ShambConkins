@@ -44,8 +44,12 @@ for(const d of DECOR)if(d.id!=='crowd'){const r=HALL.decor[d.id];PICTURES['decor
 const url=name=>USER['pool:'+name]||null;
 const has=name=>!!url(name);
 const imgs=new Map();
-function picture(name){const u=url(name);if(!u||typeof Image==='undefined')return null;let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;};e.img.src=u;imgs.set(name,e);}return e.ok?e.img:null;}
-function preloadPool(){for(const k of Object.keys(USER))if(k.startsWith('pool:'))picture(k.slice(5));}
+// ver goes up each time a picture finishes loading, so cached layers (table, floor) know to redraw with it
+let ver=0;
+function picture(name){const u=url(name);if(!u||typeof Image==='undefined')return null;let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;ver++;};e.img.src=u;imgs.set(name,e);}return e.ok?e.img:null;}
+// the pictures are big (2x the templates), so only the ones in use are fetched up front; the rest load when first drawn
+function preloadPool(names){for(const n of names||[])if(has(n))picture(n);}
+const version=()=>ver;
 const pending=()=>[...imgs.values()].some(e=>!e.ok);
 void ROOM;
-Object.assign(exports,{HALL,SHEETS,PICTURES,has,url,picture,preloadPool,pending});
+Object.assign(exports,{HALL,SHEETS,PICTURES,has,url,picture,preloadPool,pending,version});
