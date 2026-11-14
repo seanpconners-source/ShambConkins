@@ -827,10 +827,9 @@ async function horde(s){
   for(let i=0;i<FX.length;i++){const f=FX[i],u=f.t/f.dur,a=1-u;
    switch(f.k){
     case 0:{if(FXS['fx-explosion']){const S=FXS['fx-explosion'];fxDraw(S,u,f.x,f.y,f.r/S.def.R);addLight(f.x,f.y,f.r*1.5);break;}const r=f.r*(1-(1-u)*(1-u));x.strokeStyle=f.col;x.globalAlpha=a*.9;x.lineWidth=5*a+1;x.beginPath();x.arc(f.x,f.y,r,0,TAU);x.stroke();x.globalAlpha=a*.25;x.fillStyle=f.col;x.fill();x.globalAlpha=1;addLight(f.x,f.y,f.r*1.5);break;}
-    case 1:{if(FXS['fx-slash']){   // ONE hand-sized saw (SAW_R units long, owner Nov 14: 'way too big and looks silly'), swept through the whole arc; a faint wedge shows the real reach
-      const S=FXS['fx-slash'],k=SAW_R/S.def.R,wide=f.b>S.def.arc*1.1,an=wide?f.a+(u-.5)*f.b:f.a;   // wide swing: the middle frame (saw pointing out) carried round the arc
-      x.globalAlpha=a*.22;x.fillStyle='#ffe6d0';x.beginPath();x.moveTo(f.x,f.y);x.arc(f.x,f.y,f.r,f.a-f.b/2,f.a-f.b/2+f.b*Math.min(1,u*1.4));x.closePath();x.fill();x.globalAlpha=1;
-      fxDraw(S,wide?.5:u,f.x,f.y,k,an);break;}x.globalAlpha=a;x.fillStyle='rgba(235,245,255,.35)';x.strokeStyle='#fff';x.lineWidth=3;x.beginPath();x.moveTo(f.x,f.y);x.arc(f.x,f.y,f.r*(.55+.45*u),f.a-f.b/2,f.a+f.b/2);x.closePath();x.fill();x.stroke();x.globalAlpha=1;break;}
+    case 1:{if(FXS['fx-slash']){   // owner, Nov 14: a hand-sized saw (SAW_R units long) OUT AT THE END of the reach, swung across the whole arc; no wedge
+      const S=FXS['fx-slash'],k=SAW_R/S.def.R,an=f.a+(Math.min(1,u*1.25)-.5)*f.b,off=Math.max(0,f.r-SAW_R);
+      x.globalAlpha=Math.min(1,a*3);fxDraw(S,3.5/6,f.x+Math.cos(an)*off,f.y+Math.sin(an)*off,k,an);x.globalAlpha=1;break;}x.globalAlpha=a;x.fillStyle='rgba(235,245,255,.35)';x.strokeStyle='#fff';x.lineWidth=3;x.beginPath();x.moveTo(f.x,f.y);x.arc(f.x,f.y,f.r*(.55+.45*u),f.a-f.b/2,f.a+f.b/2);x.closePath();x.fill();x.stroke();x.globalAlpha=1;break;}
     case 2:{if(FXS['fx-impact']){const S=FXS['fx-impact'];fxDraw(S,u,f.x,f.y,Math.max(f.r,10)/S.def.R);break;}x.globalAlpha=a;x.drawImage(glowWhite,f.x-f.r,f.y-f.r,f.r*2,f.r*2);x.globalAlpha=1;break;}
     case 3:{if(FXS['fx-pulse']){const S=FXS['fx-pulse'];fxDraw(S,u,f.x,f.y,f.r/S.def.R);addLight(f.x,f.y,f.r*1.3);break;}const r=f.r*u;x.strokeStyle=f.col;x.globalAlpha=a;x.lineWidth=10*a+2;x.beginPath();x.arc(f.x,f.y,r,0,TAU);x.stroke();x.globalAlpha=1;addLight(f.x,f.y,f.r*1.3);break;}
     case 4:{x.globalAlpha=a*.45;x.fillStyle=f.col;x.beginPath();x.arc(f.x,f.y,f.r*Math.min(1,u*3),0,TAU);x.fill();x.globalAlpha=1;break;}

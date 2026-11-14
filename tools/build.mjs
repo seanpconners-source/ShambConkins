@@ -105,6 +105,13 @@ if (fs.existsSync(battleshipDir)) for (const f of fs.readdirSync(battleshipDir))
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('battleship:' + m[1].toLowerCase(), MIME[ext], ext, path.join(battleshipDir, f));
 }
+// Banana Stand Tapper drop-in art: assets/tapper/<name>.(webp|png) -> tapper:<name>
+// (names and layout: src/data/tapperSprites.js, docs/tapper-sprites/README.md).
+const tapperDir = path.join(root, 'assets/tapper');
+if (fs.existsSync(tapperDir)) for (const f of fs.readdirSync(tapperDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('tapper:' + m[1].toLowerCase(), MIME[ext], ext, path.join(tapperDir, f));
+}
 // Major League Baseball sprite sheets and pictures: assets/baseball/<name>.(webp|png) -> baseball:<name>
 // (names and layout: src/data/baseballSprites.js, docs/baseball-sprites/README.md).
 const baseballDir = path.join(root, 'assets/baseball');

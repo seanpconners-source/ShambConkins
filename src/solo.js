@@ -80,7 +80,7 @@ async function soloNext(s,{title='Level cleared!',body='',level=1,score=0,label=
 // solo run ends in a score qualify; CPU-opponent games need real head-to-head play: those whose engine plays natively
 // online (src/netPlay.js: both phones run the 2P game, each plays its own player) are listed in NET_NATIVE.
 const DUEL_KINDS=new Set(['levels','rounds','turns','game','alone']);
-const NET_NATIVE=new Set(['major-league-fielding','major-league-bats','trivia-mixed','trivia-nick90','trivia-dbz','trivia-hxh','trivia-sitcom','trivia-hardcore','trivia-lightning','trivia-wager','trivia-survival',
+const NET_NATIVE=new Set(['banana-money-grab','major-league-fielding','major-league-bats','trivia-mixed','trivia-nick90','trivia-dbz','trivia-hxh','trivia-sitcom','trivia-hardcore','trivia-lightning','trivia-wager','trivia-survival',
  'paddys-beer-pong','shamb-uno','ten-forward-chess','deadite-checkers',
  'four-lights','strategema-grid','full-shambyahtzee','cheaters-yahtzee',
  'blackjack','five-card','roulette','bond-baccarat','traitors-guess-who','battleship-fog',
