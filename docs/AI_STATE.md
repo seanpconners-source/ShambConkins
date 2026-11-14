@@ -30,6 +30,14 @@ far/mid strips stretch their bottom 3 rows to the screen bottom + far follows li
 dead, seamless) + brief ROUND 2 section + kit zip (scratchpad sean-of-a-gun-round2-kit.zip). Checked with the templates as stand-ins
 in a private build (scratch bfstand.mjs): all play, no errors. Rock tiles inside dirt still show square edges until rock-<world> art.
 
+SEAN OF A GUN HEADS (Nov 14, unreleased; owner: head sizes all over the place, chins cut off, keep the outline + general size,
+~10% smaller, account for hair/ears/facing): broforce.js headCanvas(id,mood,72,face=true) → renderFaceHead uses headFacts: face
+width = FACE_W 35 of the 72-unit box (same for everyone), whole head kept (hair/ears/hats; neck under the chin narrowed to the
+face), canvas 96, dark outline as before, c.face={cx,cy,w,chin,S}. drawHead(id,mood,x,y,size,dir,neck): neck=true puts the chin
+on the body's neck spot (bro-body neck / drawn bro y-18), mirrored by headFacts flipFor against the body's facing; pictures
+without facts keep the old box. Corpses use the face mode at the dead-bro face spot (x2). HUD/ext boss heads unchanged.
+Checked: scratch bfheads.mjs contact sheet (19 characters, both facings).
+
 SEAN OF A GUN ART IN (Nov 14, RELEASED as v0.99.1 with the BASEketball Shootout/Tapper branch ccr-2919e73f merged): GPT's whole
 106-slot kit from Drive 'Sean of a Gun (Broforce) — Sprites' (notes UPLOADS-GPT-2026-11-14-1909..1916 + broforce-props/terrain-small-finals.zip),
 every file exactly 2x template, lossless WebP in assets/broforce (originals assets/originals/broforce). HELD BACK: foe-hog (= Sonic) and

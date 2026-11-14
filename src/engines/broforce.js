@@ -154,8 +154,9 @@ function buildStage(seed,si){
 // ------------------------------------------------------------------ portrait heads (oval photos or outlined cut-outs)
 const HEADS=new Map();
 // size: the head canvas's side in px (72 for the bros; games that draw faces big, like Pro Mancala, ask for more)
-function headCanvas(id,mood='normal',size=72){
- const sk=size!==72?':'+size:'',key=id+':'+mood+sk,ready=()=>mood!=='normal'&&HEADS.get(id+':normal'+sk)?.c||placeholderHead(id);let h=HEADS.get(key);if(h)return h.c||ready();
+// face=true (Sean of a Gun's own heads): sized and placed by the FACE from src/headFacts.js, see renderHead
+function headCanvas(id,mood='normal',size=72,face=false){
+ const sk=(size!==72?':'+size:'')+(face?':f':''),key=id+':'+mood+sk,ready=()=>mood!=='normal'&&HEADS.get(id+':normal'+sk)?.c||placeholderHead(id);let h=HEADS.get(key);if(h)return h.c||ready();
  h={c:null};HEADS.set(key,h);
  try{
   const {portraitURL,portraitFallbackURL}=require('src/assets.js'),{headDisplayURL}=require('src/headCutouts.js');
@@ -166,9 +167,10 @@ function headCanvas(id,mood='normal',size=72){
   let src=portraitURL(id,mood);if(!src||/^data:image\/svg/.test(src)&&id!=='mars-attacker'&&!framed?.(src))src=portraitFallbackURL(id);
   // online photos (Wikimedia) are requested with CORS so their pixels can be read and the backdrop cut away;
   // if that request is refused, load them plainly (oval), then fall back to the stand-in head
+  let facts=null;if(face&&src===portraitURL(id,mood)){try{facts=require('src/headFacts.js').headFacts(id,mood);}catch{}}
   const url=headDisplayURL(src),remote=/^https:/.test(url);let step=0;
   const load=()=>{const img=new Image();if(remote&&step===0)img.crossOrigin='anonymous';
-   img.onload=()=>{h.c=renderHead(img,size)||placeholderHead(id);};
+   img.onload=()=>{h.c=(facts&&renderFaceHead(img,size,facts))||renderHead(img,size)||placeholderHead(id);};
    img.onerror=()=>{step++;if(remote&&step===1)load();else if(step<=2&&img.src!==portraitFallbackURL(id)){const fb=new Image();fb.onload=()=>{h.c=renderHead(fb,size)||placeholderHead(id);};fb.onerror=()=>{h.c=placeholderHead(id);};fb.src=portraitFallbackURL(id);}else h.c=placeholderHead(id);};
    img.src=url;};
   load();
@@ -213,6 +215,40 @@ function renderHead(img,S=72){
  sx2.globalCompositeOperation='source-in';sx2.fillStyle='#140c08';sx2.fillRect(0,0,S,S);
  for(let a=0;a<16;a++){const r=2.6*f;x.drawImage(sil,Math.cos(a*Math.PI/8)*r,Math.sin(a*Math.PI/8)*r);}
  x.drawImage(work,x0,y0,bw,bh,ox,oy,dw,dh);
+ return c;
+}
+// FACE-SIZED HEAD (Sean of a Gun, owner Nov 14: sizes all over the place, chins cut off, faces looking the wrong way):
+// the face (brow to chin, measured offline per picture and evened per character) is always FACE_W of the 72-unit box,
+// the whole head comes along (hair, ears, hats: every opaque pixel from the top of the picture down to just under the
+// chin, so shoulders stay out and nothing above the chin is cut), on a bigger canvas (HEAD_CANVAS) so tall hair fits,
+// with the same dark outline. c.face = {cx,cy,w,chin} in canvas px; drawHead places the chin on the neck and mirrors a
+// face that looks against the body. Needs see-through pixels (a cut-out or a removable backdrop), else null = old way.
+const FACE_W=35,HEAD_CANVAS=96/72;
+function renderFaceHead(img,S,facts){
+ const w=img.naturalWidth,h=img.naturalHeight;if(!w||!h)return null;const f=S/72,SC=Math.round(S*HEAD_CANVAS);
+ const k=Math.min(1,Math.max(220,S*2.4)/Math.max(w,h)),cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k));
+ const work=document.createElement('canvas');work.width=cw;work.height=ch;const wx=work.getContext('2d',{willReadFrequently:true});wx.drawImage(img,0,0,cw,ch);
+ let data;try{data=wx.getImageData(0,0,cw,ch);}catch{return null;}
+ const px=data.data,n=cw*ch;let clear=0;for(let i=0;i<n;i++)if(px[i*4+3]<40)clear++;
+ if(clear/n<=.05){if(removeBackdrop(px,cw,ch,30,95)||removeBackdrop(px,cw,ch,46,150))wx.putImageData(data,0,0);else return null;}
+ const F=facts.face,fx=F.x*cw,fy=F.y*ch,fw=F.w*cw,fh=F.h*ch;if(fw<4)return null;
+ const chin=fy+fh,bottom=Math.min(ch,Math.round(chin+fh*.1));
+ // opaque bounds from the top down to just under the chin (hair, ears, hats; no shoulders)
+ let x0=cw,x1=-1,y0=ch;for(let yy=0;yy<bottom;yy++)for(let xx=0;xx<cw;xx++)if(px[(yy*cw+xx)*4+3]>60){if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(yy<y0)y0=yy;}
+ if(x1<0)return null;
+ // the neck under the chin narrows to the face's width so a collar/shoulder line never sticks out
+ const nx0=Math.max(x0,Math.round(fx+fw*.12)),nx1=Math.min(x1,Math.round(fx+fw*.88));
+ let sc=FACE_W*f/fw;const CX=SC/2,CY=SC*.56,fcx=fx+fw/2,fcy=fy+fh/2,M=4*f;
+ // shrink only if the head would not fit the canvas (huge hair/hats)
+ const need=Math.max((fcx-x0)/(CX-M),(x1-fcx)/(SC-M-CX),(fcy-y0)/(CY-M),(bottom-fcy)/(SC-M-CY));if(need*sc>1)sc=1/need;
+ const dx=CX-fcx*sc,dy=CY-fcy*sc,sil=document.createElement('canvas');sil.width=sil.height=SC;const sx=sil.getContext('2d');
+ sx.drawImage(work,x0,y0,x1-x0+1,Math.max(1,Math.round(chin)-y0),dx+x0*sc,dy+y0*sc,(x1-x0+1)*sc,(Math.round(chin)-y0)*sc);
+ sx.drawImage(work,nx0,Math.round(chin),nx1-nx0+1,bottom-Math.round(chin),dx+nx0*sc,dy+Math.round(chin)*sc,(nx1-nx0+1)*sc,(bottom-Math.round(chin))*sc);
+ const c=document.createElement('canvas');c.width=c.height=SC;const x=c.getContext('2d');c.headKind='face';
+ const ol=document.createElement('canvas');ol.width=ol.height=SC;const ox=ol.getContext('2d');ox.drawImage(sil,0,0);ox.globalCompositeOperation='source-in';ox.fillStyle='#140c08';ox.fillRect(0,0,SC,SC);
+ for(let a=0;a<16;a++){const r=2.6*f;x.drawImage(ol,Math.cos(a*Math.PI/8)*r,Math.sin(a*Math.PI/8)*r);}
+ x.drawImage(sil,0,0);
+ c.face={cx:CX,cy:CY,w:fw*sc,chin:dy+chin*sc,S};
  return c;
 }
 // Flood-fill the backdrop in from the image border: a neighbour joins when it is close to the pixel it came from
@@ -303,12 +339,12 @@ async function broforce(s){
  let anims=[],animT=null;   // sprite effects (spriteFx/drawAnims)
  let W=null,P=null,fx=new Fx(),banner=null,cam={x:0,y:0},Z=2,stageT=0,stageIdx=0,shake=0;
  // the new worlds' enemies, bosses, guns and hazards (src/engines/broforce/ext.js) see the game through this
- const X=EXT.makeExt({T,ROWS,MAXW,K:KC,get W(){return W;},get P(){return P;},get R(){return R;},get theme(){return theme;},get frames(){return frames;},get stageIdx(){return stageIdx;},get net(){return net;},get host(){return host;},get fx(){return fx;},get inp(){return inp;},
+ const X=EXT.makeExt({T,ROWS,MAXW,K:KC,get W(){return W;},get P(){return P;},get R(){return R;},get cam(){return cam;},get theme(){return theme;},get frames(){return frames;},get stageIdx(){return stageIdx;},get net(){return net;},get host(){return host;},get fx(){return fx;},get inp(){return inp;},
   sfx:new Proxy({},{get:(o,k)=>sfx[k]||(()=>{})}),snd:(...a)=>snd(...a),get outbox(){return outbox;},ev:e=>ev(e),hitF:(...a)=>hitF(...a),hitB:(...a)=>hitB(...a),killFoe:(...a)=>killFoe(...a),openCage:c=>openCage(c),quietDeath:e=>quietDeath(e),
   foeTarget:e=>foeTarget(e),upBro:b=>upBro(b),makeFoe:(f,k)=>makeFoe(f,k),moveBody:(b,dt,o)=>moveBody(b,dt,o),hurtPlayer:(d,x)=>hurtPlayer(d,x),queueBoom:(...a)=>queueBoom(...a),los:(...a)=>los(...a),
   addScore:(...a)=>addScore(...a),viewW:()=>viewW(),tileAt:(x,y)=>tileAt(x,y),solidAt:(x,y)=>solidAt(x,y),T_AT:(c,r)=>T_AT(c,r),headCanvas:(id,m)=>headCanvas(id,m),partnerHere:()=>partnerHere(),bossWakes:()=>devilWakes()});
  const results=[null,null];
- for(const id of [...s.players.map(p=>p.character)])headCanvas(id);
+ for(const id of [...s.players.map(p=>p.character)])headCanvas(id,'normal',72,true);
 
  // ---------------------------------------------------------------- input: the whole screen belongs to whoever's turn it is
  const kb=arenaKeys(s);const inp={l:0,r:0,u:0,d:0,fire:0,jumpPress:0,jumpHeld:0,gren:0,downPress:0};
@@ -407,7 +443,7 @@ async function broforce(s){
    if(netCages){const nc=netCages[si]?.[k];id=nc?.[0]||others[0];vip=!!(cg.vip&&nc?.[1]);}
    else if(vip){id=free.splice(Math.floor(rng()*free.length),1)[0];}
    else id=others[Math.floor(rng()*others.length)];
-   W.cages.push({x:cg.x,y:cg.y,vip,id,hp:3,open:false,t:rng()*3});headCanvas(id);
+   W.cages.push({x:cg.x,y:cg.y,vip,id,hp:3,open:false,t:rng()*3});headCanvas(id,'sad',72,true);
   });
   if(keepPlayer){Object.assign(P,{x:S.spawn.x,y:S.spawn.y,vx:0,vy:0,grenades:3,inv:1.5,board:0,boarded:false});}
   cam.x=clamp(S.spawn.x-viewW()*.35,0,W.W*T-viewW());cam.y=clamp(S.spawn.y-viewH()*.62,0,ROWS*T-viewH());
@@ -424,7 +460,7 @@ async function broforce(s){
  function newPlayer(i){return {i,x:0,y:0,vx:0,vy:0,w:5,h:20,grounded:false,facing:1,climb:false,ladder:false,anim:0,hp:2,inv:0,dead:0,lives:3,grenades:3,
   bro:s.players[i].character,weapon:wpnFor(s.players[i].character),fireCD:0,jumpBuf:0,coyote:0,score:0,kills:0,rescues:0,gold:0,stageTimes:[],combo:0,comboT:0,
   muzzle:0,recoil:0,board:0,boarded:false,stagesCleared:0,deaths:0,mood:'normal',moodT:0,lastHurt:0,walled:0};}
- function setBro(id){P.bro=id;P.weapon=wpnFor(id);for(const m of MOODS)headCanvas(id,m);}
+ function setBro(id){P.bro=id;P.weapon=wpnFor(id);for(const m of MOODS)headCanvas(id,m,72,true);}
  // the bro's face follows what they are doing: angry firing (or hit), sad when dead, win after a rescue or stage clear,
  // think in the air, walk when running, silly after standing still a while, normal otherwise
  const MOODS=['normal','angry','sad','win','think','walk','silly'];
@@ -832,7 +868,7 @@ async function broforce(s){
  const packBro=p=>{let fl=0;BF.forEach((k,j)=>{if(p[k])fl|=1<<j;});return [r1(p.x),r1(p.y),Math.round(p.vx),Math.round(p.vy),p.facing,fl,p.hp,p.lives,p.grenades,p.score,p.bro,p.inv>0?1:0,p.muzzle>0?1:0,p.kills,p.stagesCleared,stageIdx,Math.round(viewW())];};
  function unpackBro(a){if(!Array.isArray(a)||a.length<16||!R)return;const first=!R.net||R.si!==a[15];R.net={a,at:performance.now()};
   R.vx=a[2];R.vy=a[3];R.facing=a[4]||1;BF.forEach((k,j)=>{R[k]=!!(a[5]&1<<j);});R.dead=R.dead?1:0;R.hp=a[6];R.lives=a[7];R.grenades=a[8];R.score=a[9];
-  if(R.bro!==a[10]){R.bro=a[10];R.weapon=wpnFor(R.bro);for(const m of MOODS)headCanvas(R.bro,m);}R.inv=a[11]?1:0;if(a[12]){R.muzzle=.06;R.fireT=0;}R.kills=a[13];R.stagesCleared=a[14];R.si=a[15];R.vw=a[16]||0;
+  if(R.bro!==a[10]){R.bro=a[10];R.weapon=wpnFor(R.bro);for(const m of MOODS)headCanvas(R.bro,m,72,true);}R.inv=a[11]?1:0;if(a[12]){R.muzzle=.06;R.fireT=0;}R.kills=a[13];R.stagesCleared=a[14];R.si=a[15];R.vw=a[16]||0;
   if(first){R.x=a[0];R.y=a[1];}if(R.out&&P?.out)netEnd('lives');}
  function stepRemote(dt){if(!R?.net)return;const a=R.net.a,age=clamp((performance.now()-R.net.at)/1000,0,.25),tx=a[0]+R.vx*age,ty=a[1]+(R.grounded?0:R.vy*age),k=1-Math.exp(-dt*16);
   if(Math.abs(tx-R.x)>80||Math.abs(ty-R.y)>80){R.x=tx;R.y=ty;}else{R.x+=(tx-R.x)*k;R.y+=(ty-R.y)*k;}
@@ -909,7 +945,7 @@ async function broforce(s){
   if(net){phase='handoff';clearInput();if(host){netCages=pickNetCages();ev({setup:{cages:netCages}});}
    await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;
    if(!host){if(!setupMsg)await new Promise(r=>{setupWait=r;});netCages=setupMsg?.cages||null;}
-   clock=0;acc=0;P=newPlayer(me);setBro(P.bro);R=newPlayer(them);R.net=null;R.si=-1;for(const m of MOODS)headCanvas(R.bro,m);
+   clock=0;acc=0;P=newPlayer(me);setBro(P.bro);R=newPlayer(them);R.net=null;R.si=-1;for(const m of MOODS)headCanvas(R.bro,m,72,true);
    loadStage(0,false);P.x=W.S.spawn.x+(me?8:-8);P.y=W.S.spawn.y;P.inv=1.5;computeZoom();updateCamera(0,true);cd=new Countdown(3);phase='count';return;}
   phase='handoff';turn=i;clearInput();
   const n0=s.players[0].name;
@@ -1062,7 +1098,14 @@ async function broforce(s){
   const wv=Math.sin(time*5+f.x)*1.2;
   if(f.up){const y=top+2;g.fillStyle='#fff';g.fillRect(f.x+1,y,18,11);g.fillStyle='#c22';for(let k=0;k<6;k+=2)g.fillRect(f.x+1,y+k*1.85,18,1.85);g.fillStyle='#22c';g.fillRect(f.x+1,y,8,6);g.fillStyle='#fff';g.fillRect(f.x+3,y+2,1,1);g.fillRect(f.x+6,y+3,1,1);}
   else{const y=f.y-16;g.fillStyle='#8a1010';g.beginPath();g.moveTo(f.x+1,y);g.lineTo(f.x+15,y+3+wv);g.lineTo(f.x+1,y+9);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(f.x+6,y+4.5,1.8,0,7);g.fill();}}
- function drawHead(id,mood,x,y,size,flip=1){const img=headCanvas(id,mood);g.save();g.translate(x,y);if(flip<0)g.scale(-1,1);g.drawImage(img,-size/2,-size/2,size,size);g.restore();}
+ // a bro's head: size = the old 72-unit head box in world px. neck=true: (x,y) is the neck, the chin sits on it; else (x,y) is
+ // the face's middle. dir = the way the body faces (-1/1): a face looking the other way is mirrored (0 = never).
+ // Pictures without face facts (online photos, stand-ins) keep the old centred box.
+ const HF=require('src/headFacts.js');
+ function drawHead(id,mood,x,y,size,dir=0,neck=false){const img=headCanvas(id,mood,72,true),fc=img.face;g.save();g.translate(x,y);
+  if(fc){const u=size/fc.S;if(dir&&HF.flipFor(id,mood,dir))g.scale(-1,1);g.drawImage(img,-fc.cx*u,-(neck?fc.chin:fc.cy)*u,img.width*u,img.height*u);}
+  else{if(neck)g.translate(0,-7*size/17);g.drawImage(img,-size/2,-size/2,size,size);}
+  g.restore();}
  function drawBro(p,time){
   if(p.inv>0&&(frames>>2)%2&&p.inv<2)g.globalAlpha=.45;
   const f=p.facing,run=p.grounded&&Math.abs(p.vx)>10,ph=p.anim,air=!p.grounded&&!p.ladder;
@@ -1070,7 +1113,7 @@ async function broforce(s){
   if(bsh){const d=bsh.def,row=p.ladder?'ladder':p.climb&&!p.grounded?'climb':air?(p.vy<0?'jump':'fall'):run?'run':'idle',fr=Math.floor(row==='idle'?time*2:ph*1.6);
    g.save();g.translate(p.x,p.y);g.scale(f,1);BS.drawFrame(g,bsh,row,fr,0,0,1);
    if(!p.ladder){const hx=(d.hand[0]-d.feet[0])/BS.K,hy=(d.hand[1]-d.feet[1])/BS.K;drawGun(p.weapon,hx-p.recoil*1.5,hy);if(p.muzzle>0&&p.weapon!=='flame'){const mx=hx+(WEAPON_LEN[p.weapon]||10);if(!BS.drawFx(g,'fx-muzzle',mx,hy-.5,1-p.muzzle/.06)){g.fillStyle='#fff3a0';g.beginPath();g.arc(mx,hy-.5,3,0,7);g.fill();}}}
-   g.restore();const ny=(d.neck[1]-d.feet[1])/BS.K,nx=(d.neck[0]-d.feet[0])/BS.K;drawHead(p.bro,broMood(p),p.x+f*nx,p.y+ny-6,17,1);g.globalAlpha=1;return;}
+   g.restore();const ny=(d.neck[1]-d.feet[1])/BS.K,nx=(d.neck[0]-d.feet[0])/BS.K;drawHead(p.bro,broMood(p),p.x+f*nx,p.y+ny+1,17,f,true);g.globalAlpha=1;return;}
   g.save();g.translate(p.x,p.y);g.scale(f,1);
   const col=PCOL[p.i],dark=p.i?'#7a2a52':'#1f3a7a';
   // legs
@@ -1089,7 +1132,7 @@ async function broforce(s){
   g.restore();
   // head: the character's own face, big-head style
   const bob=run?Math.abs(Math.sin(ph*1.6))*-1:0;
-  drawHead(p.bro,broMood(p),p.x+f*.5,p.y-25+bob,17,1);
+  drawHead(p.bro,broMood(p),p.x+f*.5,p.y-18+bob,17,f,true);
   g.globalAlpha=1;
   if(p.climb&&!p.grounded){g.fillStyle='rgba(255,255,255,.6)';for(let k=0;k<2;k++)g.fillRect(p.x+f*(p.w+1),p.y-8-k*7-(time*40%7),1,3);}
  }
@@ -1144,7 +1187,7 @@ async function broforce(s){
  }
  function drawCorpse(cp){const dk='dead-'+cp.kind,dp=BS.picture(dk);
   if(dp){const pd=BS.PICTURES[dk],[pw,ph]=pd.size,fl=cp.vx<0?-1:1,air=cp.vy!==0;g.save();g.globalAlpha=Math.min(1,cp.t);g.translate(cp.x,cp.y);if(air)g.rotate(cp.rot*.5);g.scale(fl/BS.K,1/BS.K);g.drawImage(dp,-pw/2,-ph,pw,ph);g.restore();
-   if(cp.kind==='bro'&&pd.face){g.save();g.globalAlpha=Math.min(1,cp.t);drawHead(cp.id,'sad',cp.x+fl*(pd.face[0]-pw/2)/BS.K,cp.y+(pd.face[1]-ph)/BS.K,pd.face[2]/BS.K*1.6);g.restore();}return;}
+   if(cp.kind==='bro'&&pd.face){g.save();g.globalAlpha=Math.min(1,cp.t);drawHead(cp.id,'sad',cp.x+fl*(pd.face[0]-pw/2)/BS.K,cp.y+(pd.face[1]-ph)/BS.K,pd.face[2]/BS.K*2,fl);g.restore();}return;}
   if(theme.ext&&X.drawCorpse(g,cp))return;g.save();g.translate(cp.x,cp.y-4);g.rotate(cp.rot+(cp.vy===0?Math.PI/2*(cp.vx>=0?1:-1):0));g.globalAlpha=Math.min(1,cp.t);
   if(cp.kind==='bro'){g.fillStyle=PCOL[cp.i];g.fillRect(-4,-8,8,9);g.restore();drawHead(cp.id,'sad',cp.x,cp.y-12,14);return;}
   if(cp.kind==='dog'){g.fillStyle='#1a1410';g.fillRect(-6,-4,12,5);}else{g.fillStyle=cp.kind==='bomber'?'#e8e2d0':cp.kind==='bruiser'?'#4a4a3a':'#8a7a4a';g.fillRect(-4,-9,8,10);g.fillStyle='#1a1a1a';g.beginPath();g.arc(0,-11,3.6,0,7);g.fill();g.fillStyle='#a00';g.fillRect(-2,-4,4,2);}
@@ -1275,7 +1318,7 @@ async function broforce(s){
  }
 
  // ---------------------------------------------------------------- debug hooks for tests
- s.debug={engine:'broforce',get phase(){return phase;},get turn(){return turn;},get stage(){return stageIdx;},get P(){return P;},get R(){return R;},get W(){return W;},get viewW(){return viewW();},STAGES,results,get clock(){return clock;},
+ s.debug={engine:'broforce',get phase(){return phase;},get turn(){return turn;},get stage(){return stageIdx;},get P(){return P;},get R(){return R;},get cam(){return cam;},get W(){return W;},get viewW(){return viewW();},STAGES,results,get clock(){return clock;},
   setClock(v){clock=v;},teleport(x,y){if(!P)return;P.x=x;P.y=y??W.S.surfAt(Math.floor(x/T))*T;P.vx=P.vy=0;updateCamera(0,true);},
   killAll(){for(const e of W.foes)if(e.alive)killFoe(e,P.x,false);},killBoss(){if(W.boss){W.boss.state='walk';hitBoss(999,P.x);}},
   freeCage(k){const cg=W.cages[k];if(cg)openCage(cg);},board(){W.heli.state='hover';W.heli.y=W.exit.y-6.5*T;Object.assign(P,{x:W.heli.x-8,y:W.exit.y,dead:0,hp:2,inv:2});},
