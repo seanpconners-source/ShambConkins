@@ -2,7 +2,7 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-TAPPER ROUND 3 + HORDE PICKS (Nov 14, RELEASED as v0.97.2): Tapper: tapBar = move to another bar / serve on your own bar
+TAPPER ROUND 3 + HORDE PICKS (Nov 14, RELEASED as v0.97.2; v0.97.3 = faces lower, owner saw them floating: FACE_K .64, CHIN .18 fh above the collar, FACE_FWD 0): Tapper: tapBar = move to another bar / serve on your own bar
 (one tap used to do both: walking to catch an empty threw an order down an empty bar); shoved-out customers leave WITHOUT an
 empty again, but a first-timer shoved to the door stops there and drinks (cu.drinks) = every customer gives one empty; shove
 .22 s (~.17 bar). OWNER'S ART IN (Drive tapper-images-part-1/2-of-2.zip): all 35 slots (assets/tapper lossless, originals

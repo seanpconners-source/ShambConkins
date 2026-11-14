@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.97.3
+
+- **Tapper faces sit on the bodies:** every customer's and bartender's chin now tucks into the collar (they looked like they were floating above the shirts).
+
 ## v0.97.2
 
 - **Tapper controls fixed:** tap another bar to walk to it, tap the bar you're at to slide an order. Walking over to catch an empty no longer throws an order down an empty bar.
