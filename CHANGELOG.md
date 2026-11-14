@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.97.0
+
+- **Banana Stand Tapper rebuilt:** every customer is a random character from the game, and now and then one says something (a famous line of theirs, or yells when they reach you). Three bars in an Arrested Development look: the Banana Stand, the Balboa Towers penthouse (vodka martinis) and the Sudden Valley model home (hot ham water). Serve everyone to open the next bar.
+- **Tapper online:** both of you play at the same time in the same room, you at one end and your rival at the other, watching each other live. Anyone you shove out your door walks over to their bar.
+- **Living Dead Horde crash fixed:** a solo night could crash when the Trioxin Rain blasted zombies.
+- **Horde looks:** the chainsaw is hand-sized and swings out at the end of its reach; the paramedics are little running medics; Trioxin Rain drops real canisters that splash, with rain falling during the storm.
+- **New characters:** the Vanderpump Rules cast (Giggy too), The Secret Lives of Mormon Wives cast, and "Weird Al" Yankovic.
+
 ## v0.96.16
 
 - **Battleship:** a sinking ship no longer shows through under the waves.
