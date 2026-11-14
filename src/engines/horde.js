@@ -802,7 +802,7 @@ async function horde(s){
    if(z.k===0){const a=.5*Math.min(1,(z.dur-z.t)*1.5);x.fillStyle=cabin?`rgba(255,120,30,${a*.55})`:`rgba(90,230,60,${a*.5})`;x.beginPath();x.ellipse(z.x,z.y,z.r,z.r*.72,0,0,TAU);x.fill();x.strokeStyle=cabin?`rgba(255,200,80,${a})`:`rgba(180,255,120,${a})`;x.lineWidth=2;x.stroke();addLight(z.x,z.y,z.r*2.2);}
    else if(z.k===1){const a=.4*Math.min(1,(z.dur-z.t));x.fillStyle=`rgba(150,170,60,${a})`;x.beginPath();x.ellipse(z.x,z.y,z.r,z.r*.75,0,0,TAU);x.fill();}
    else if(z.k===2){const a=.7*Math.min(1,(z.dur-z.t));x.fillStyle=`rgba(10,10,14,${a})`;x.beginPath();x.ellipse(z.x,z.y,z.r,z.r*.7,0,0,TAU);x.fill();}
-   else if(z.a>0&&!z.st){const f=clamp(z.t/z.dur,0,1),h=(1-f)*(1-f)*520;   // RAIN: a red warning mark, then a Trioxin canister (cabin: a burning deadite skull) drops onto it
+   else if(z.a>0&&!z.st){const f=clamp(z.t/z.dur,0,1),h=(1-f)*(1+.8*f)*520;   /* falls faster and faster into the mark (owner, Nov 14: the old ease-out all but stopped just above the ground) */   // RAIN: a red warning mark, then a Trioxin canister (cabin: a burning deadite skull) drops onto it
     if(rainMark){x.globalAlpha=.55+.35*Math.sin(t*20)*(1-f);x.drawImage(rainMark,z.x-z.r,z.y-z.r*.8,z.r*2,z.r*1.6);x.globalAlpha=1;}
     else{x.strokeStyle=`rgba(255,70,50,${.4+.4*Math.sin(t*20)*(1-f)})`;x.lineWidth=3;x.fillStyle=`rgba(255,40,30,${.12+.18*f})`;x.beginPath();x.ellipse(z.x,z.y,z.r,z.r*.8,0,0,TAU);x.fill();x.stroke();x.beginPath();x.ellipse(z.x,z.y,z.r*f,z.r*f*.8,0,0,TAU);x.stroke();}
     x.fillStyle=`rgba(0,0,0,${.15+.3*f})`;x.beginPath();x.ellipse(z.x,z.y,8+14*f,(8+14*f)*.4,0,0,TAU);x.fill();
