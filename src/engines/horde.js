@@ -10,6 +10,7 @@ const HF=require("src/headFacts.js");
 const BODY_K=HS.SURVIVOR_K;   // drop-in survivor bodies drawn at 2x the template size (owner, Nov 13); faces stay FACE_W
 const CHIN=.24,FWD=.1;   // face centre CHIN face heights above the collar, FWD face widths forward (owner, Nov 13: .44 / .32 sat high and back)
 const FACE_W=24;
+const NET_PICK=10;   // online: seconds to choose an upgrade before the top card is taken
 const SAW_R=46,MEDIC_H=46;   // chainsaw drop-in reach and paramedic height, world units   // players' face width (brow to chin) in world units: big chibi heads that still show the drop-in jackets (the old 52-unit head picture showed a ~31-unit face)
 const {WEAPONS,PASSIVES,ENEMIES,MODES,WEAPON_IDS,PASSIVE_IDS,MAX_LEVEL,weaponStats,calcStats,xpNeed}=HD;
 
@@ -215,11 +216,18 @@ async function horde(s){
   if(!modal)return;const m=modal;
   if(m.type==='level'){const card=m.cards[idx];if(!card)return;const p=P[m.pi];s.crumb?.('P'+(m.pi+1)+' picks '+(card.title||card.k)+(card.lvl?' '+card.lvl:''));applyCard(p,card);sound('pickup');}
   modal=null;nextModal();
+  if(net&&!modal&&state==='play')pickBlast(P[m.pi]);   // back in the game: a small blast so upgrading isn't a punishment
  }
+ // online (Nov 14, owner): leaving the upgrade menu sets off a small explosion round the survivor: damages the nearest
+ // enemies, knocks them back a little, and a short shield while they get their bearings
+ function pickBlast(p){if(!p||p.down)return;const R=150,dmg=22+p.lvl*5;
+  areaHit(p.x,p.y,R,dmg,p.i,320);fx(0,p.x,p.y,R*.8,.45,'#ffd27a');fx(2,p.x,p.y,R*.5,.18,'#fff');burst(p.x,p.y,16,'#ffd27a',R*1.6,.45,2.6);addShake(6);
+  p.inv=Math.max(p.inv,1);sfx('pickblast',100,()=>{tone(110,.3,.07,'sawtooth');tone(70,.4,.06,'square');});}
 
  // ---------- damage ----------
  function hurtPlayer(p,amt,pct){
   if(p.down||p.inv>0||state!=='play'||net&&p.i!==me)return false;
+  if(net&&modal&&modal.pi===p.i)return false;   // online: choosing an upgrade = can't be hurt
   const d=pct?p.maxHp*pct:Math.max(1,amt-p.st.armor);
   p.hp-=d;p.inv=pct?1.1:.55;p.hurt=.3;hurtFlash=Math.min(.7,hurtFlash+.35);addShake(pct?10:3.5);
   text(p.x,p.y-34,'-'+Math.round(d),'#ff6a6a',13,.8);vibrate(18);s.react?.(p.i,'sad',.5);burst(p.x,p.y,5,'#ff3a3a',110,.4,2.4);
@@ -923,7 +931,10 @@ async function horde(s){
   s.sprite(x,m.pi,Math.max(hs/2+6,W/2-tw0/2-hs*.7),top+hs/2,hs,{exact:true,mood:'win'});
   txt(m.title,W/2,top+Math.round(14*ui),Math.round(26*ui),m.title==='EVOLUTION!'?'#ffd23a':PCOL[m.pi],'center',true);
   txt(m.sub,W/2,top+Math.round(38*ui),Math.round(13*ui),'#e8ecf5','center',true);
-  const wide=W>=H*1.15&&W>=640,areaTop=top+hs+Math.round(12*ui),areaH=H-areaTop-Math.round(30*ui),gap=10;cardRects.length=0;
+  let barH=0;if(net){const left=Math.max(0,NET_PICK-m.age),f=left/NET_PICK,bw=Math.min(W*.62,380*ui),bx=W/2-bw/2,by=top+hs+Math.round(6*ui),bh=Math.max(6,Math.round(8*ui));
+   panel(bx,by,bw,bh,bh/2,'rgba(255,255,255,.14)');panel(bx,by,Math.max(bh,bw*f),bh,bh/2,left<3?'#ff5a4a':left<6?'#ffc23a':'#5fe08a');
+   txt(`${Math.ceil(left)}s to pick · you can't be hurt`,W/2,by+bh+Math.round(11*ui),Math.round(12*ui),left<3?'#ff8a7a':'#cfd8ea','center',false);barH=Math.round(30*ui);}
+  const wide=W>=H*1.15&&W>=640,areaTop=top+hs+Math.round(12*ui)+barH,areaH=H-areaTop-Math.round(30*ui),gap=10;cardRects.length=0;
   let cw,ch;if(wide){cw=Math.min(260*ui,(W-30-gap*(n-1))/n);ch=Math.min(areaH,290*ui);}else{cw=Math.min(W-24,520);ch=Math.min((areaH-gap*(n-1))/n,128*ui);}
   const tot=wide?cw*n+gap*(n-1):ch*n+gap*(n-1),ox=wide?W/2-tot/2:W/2-cw/2,oy=wide?areaTop+(areaH-ch)/2:areaTop+(areaH-tot)/2;
   for(let i=0;i<n;i++){
@@ -1085,7 +1096,7 @@ async function horde(s){
   if(state==='menu'){render(t);drawMenu(t);return;}
   if(modal&&bot.on&&modal.age>.3)botModal();
   // online the night goes on while a card is picked (12 s, then the bot picks)
-  if(modal&&net){modal.age+=dt;if(modal.age>12)botModal();}
+  if(modal&&net){modal.age+=dt;if(modal.age>NET_PICK){if(modal.type==='chest')chooseCard(0);else chooseCard(0);}}   // online: 10 s to pick, then the top card
   else if(modal){modal.age+=dt;render(t);drawHUD(t);drawModal(t);return;}
   if(state==='ending'){const sl=endKind==='lose'?.35:1;step(dt*sl);if(endT>3.4){render(t);drawHUD(t);finishRun();return;}}
   else step(dt);

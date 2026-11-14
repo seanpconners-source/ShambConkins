@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.97.2
+
+- **Tapper controls fixed:** tap another bar to walk to it, tap the bar you're at to slide an order. Walking over to catch an empty no longer throws an order down an empty bar.
+- **Tapper empties make sense again:** every customer has one drink and slides the empty back; after that, an order that shoves them out the door sends them home (+50). No more empties from customers who already left.
+- **Tapper has its real art:** all three bars (banana stand, Balboa Towers, Sudden Valley) with backgrounds, floors, bar tops, coolers/stations, doors, orders, empties, bartenders, customers, title cards and logo. Faces sit on the collars and face the right way.
+- **Horde online upgrades:** while you pick an upgrade you can't be hurt, a 10-second countdown shows at the top (then the top card is taken), and when you go back to playing a small blast knocks back and hurts the zombies around you.
+
 ## v0.97.1
 
 - **Tapper, no clock:** play until your three lives are gone. Every level has more customers than the last (10, 15, 20, ...) and runs faster, cycling through the three bars. Your money keeps adding up across levels; one run, no rounds.

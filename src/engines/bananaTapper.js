@@ -8,7 +8,9 @@
 // bar opens (src/data/tapperSprites.js LEVELS: banana stand → Balboa Towers penthouse → Sudden Valley model home → again,
 // faster). NO CLOCK (owner, Nov 14): three lives, levels until you're out; each level has more customers than the last
 // (quotaFor: 10, 15, 20, ...) and runs faster (diff), the score keeps adding up. Every customer who catches an order
-// slides the empty back, even one shoved out the door (owner: empties stopped coming when orders met them at the door).
+// slides the empty back unless shoved out the door (real Tapper). Tap another bar = walk there, tap your bar = serve
+// (Nov 14: one tap did both, so walking over to catch an empty threw an order down an empty bar, and fast serving met
+// customers at the door, where they leave without an empty).
 // Pass and play: P1's whole run, then P2's on the same seeded crowd. 1P arcade: one run until you're out (solo 'levels').
 // ONLINE (owner: "watching the opponent play live while you play... they are on one side and you are on the other"): both
 // shifts at once. Each phone runs its own bars and streams them (netField snapshots); the other phone draws them at the far
@@ -28,6 +30,7 @@ const {createTapperAudio}=require("src/engines/tapperAudio.js");
 const {store}=require("src/state.js");
 const {soloProgress,soloFinish}=require("src/solo.js");
 
+const FACE_K=.62,CHIN=.4,FACE_FWD=0;   // faces: width = shoulders x FACE_K, centre CHIN face heights above the collar, nudged forward (owner: heads floated)
 const ROWS=4,SECONDS=Infinity,FONT='"Helvetica Neue",Helvetica,Arial,sans-serif';
 const INK='#111111',GREY='#8a8a8a',BLUTH='#ffd84a',BLUE='#2f6fd8';
 const SHIRTS=['#5b7fb5','#c8553d','#6a994e','#e3b23c','#7d5ba6','#2d3142','#e07a5f','#f4f1de','#3d405b','#81b29a','#b56576','#457b9d'];
@@ -74,7 +77,10 @@ async function moneygrab(s){
   if(w===cur){noise(.5,.1,{f0:900,f1:100});voice(150,.4,.07,'sawtooth',{slide:.5,lp:700});shake.kick(8);vibrate(40);s.react?.(w.player,'sad',1.4);audio.narrate('lose',.5);}
   const back=w.cust.filter(cu=>!cu.sent).length;w.spawned=Math.max(0,w.spawned-back);
  }
- function serve(w,r){if(w.pause>0||w.ending||w.phase!=='play')return;if(w.row!==r){w.row=r;w.act='run';w.actT=.18;}if(w.cd>0)return;w.cd=.22;w.act='serve';w.actT=.25;w.nanas.push({row:r,u:.97});
+ function moveTo(w,r){if(w.pause>0||w.ending||w.row===r)return;w.row=r;w.act='run';w.actT=.18;if(w===cur)noise(.05,.02,{type:'highpass',f0:4000});}
+ // owner, Nov 14: tapping a bar used to move AND serve, so walking over to catch an empty threw an order down an empty bar
+ function tapBar(w,r){if(w.row!==r)moveTo(w,r);else serve(w,r);}
+ function serve(w,r){if(w.pause>0||w.ending||w.phase!=='play')return;if(w.row!==r)return;if(w.cd>0)return;w.cd=.22;w.act='serve';w.actT=.25;w.nanas.push({row:r,u:.97});
   if(w===cur){voice(520,.05,.04,'square');noise(.12,.03,{type:'highpass',f0:2500});}}
  function grabCash(w,m){m.got=true;w.score+=150;w.pops.push({x:m.u,y:m.row,text:'+150',t:1,c:'#2e8b3a'});if(w===cur){[988,1319].forEach((f,k)=>voice(f,.07,.05,'square',{delay:k*.06}));s.react?.(w.player,'win',1);}}
  function step(w,dt){
@@ -95,11 +101,12 @@ async function moneygrab(s){
    if(cu.talks&&cu.state==='walk'){cu.talkT-=dt;if(cu.talkT<=0){cu.talks=false;talk(w,cu,lineFor(cu.char,w.rand));}}
    if(cu.state==='walk'){cu.hop-=dt;if(cu.hop<=0){cu.hop=clamp(.9/k,.36,.9);cu.target=cu.u+.055;}if(cu.target!==undefined&&cu.u<cu.target)cu.u=Math.min(cu.target,cu.u+dt*.35);
     if(cu.u>=.93){cu.state='angry';talk(w,cu,ANGRY[Math.floor(w.rand()*ANGRY.length)],1.6);lose(w,'TOO SLOW!',cu.row);return;}}
-   else if(cu.state==='push'){cu.u-=dt*.75;if(cu.u<-.05){cu.gone=true;w.score+=50;w.pops.push({x:0,y:cu.row,text:'+50',t:.8,c:'#b8860b'});w.sticks.push({row:cu.row,u:-.02,wait:.5+w.rand()*.5});w.empties++;if(net&&w===cur)nf?.event({x:[cu.row,cu.char]});}else if(cu.timer<=0){cu.state='eat';cu.timer=1.1;}}
-   else if(cu.state==='eat'&&cu.timer<=0){cu.state='walk';cu.hop=.6;cu.target=undefined;w.sticks.push({row:cu.row,u:cu.u+.03});w.empties++;if(w===cur)voice(330,.05,.03,'square');}}
+   else if(cu.state==='push'){cu.u-=dt*.75;if(cu.u<-.05&&!cu.drinks){cu.u=-.04;cu.state='eat';cu.timer=1.1;}   // everyone gets one drink: a first-timer stops at the door, drinks, slides the empty back
+    else if(cu.u<-.05){cu.gone=true;w.score+=50;w.pops.push({x:0,y:cu.row,text:'+50',t:.8,c:'#b8860b'});if(net&&w===cur)nf?.event({x:[cu.row,cu.char]});}else if(cu.timer<=0){cu.state='eat';cu.timer=1.1;}}
+   else if(cu.state==='eat'&&cu.timer<=0){cu.drinks=(cu.drinks||0)+1;cu.state='walk';cu.hop=.6;cu.target=undefined;w.sticks.push({row:cu.row,u:cu.u+.03});w.empties++;if(w===cur)voice(330,.05,.03,'square');}}
   w.cust=w.cust.filter(cu=>!cu.gone);
   for(const n of w.nanas){n.u-=dt*1.05*Math.min(1.4,.85+k*.15);const hit=w.cust.filter(cu=>cu.row===n.row&&cu.state==='walk'&&cu.u<n.u+.01&&cu.u>n.u-.06).sort((a,b)=>b.u-a.u)[0];
-   if(hit){n.dead=true;w.caught++;hit.state='push';hit.timer=.45;hit.target=undefined;if(w===cur)voice(880,.05,.04,'triangle');}
+   if(hit){n.dead=true;w.caught++;hit.state='push';hit.timer=.22;   /* shoved back ~.17 of the bar: only customers right by the door go out */hit.target=undefined;if(w===cur)voice(880,.05,.04,'triangle');}
    else if(n.u<=-.02){lose(w,'WASTED!',n.row);return;}}
   w.nanas=w.nanas.filter(n=>!n.dead);
   for(const st of w.sticks){if(st.wait>0){st.wait-=dt;continue;}st.u+=dt*.55*Math.min(1.3,.9+k*.1);if(st.u>=1){if(w.row===st.row){st.dead=true;w.score+=100;w.act='catch';w.actT=.25;w.pops.push({x:1,y:st.row,text:'+100',t:.8,c:'#b8860b'});if(w===cur)voice(1175,.06,.05,'square');}else{lose(w,'DROPPED IT!',st.row);return;}}}
@@ -164,8 +171,9 @@ async function moneygrab(s){
  // a person behind the bar: sheet frame (headless) or the drawn stand-in, then the face
  function person(b,px,r,{sheetName,row,f,shirt,apron,face,dir,size}){
   const yb=b.barY(r),k=b.head/TS.BODY.headSize*(size||1),sh=sheetName&&TS.sheet(sheetName);
-  const hx=px,hy=yb-(TS.BODY.bar-TS.BODY.head[1])*k;
-  if(sh){const d=sh.def,fr=TS.frameRect(sh,row,f);x.save();x.translate(px,yb);if(dir<0)x.scale(-1,1);x.drawImage(sh.img,fr.sx,fr.sy,fr.sw,fr.sh,-d.head[0]*k,-d.bar*k,d.frame[0]*k,d.frame[1]*k);x.restore();}
+  const hx=px,hy=yb-(TS.BODY.bar-TS.BODY.head[1])*k;let nx=px,ny=hy+b.head*.42,fw=b.head*.74;   // drawn stand-in: collar at the top of the torso
+  if(sh){const d=sh.def,fr=TS.frameRect(sh,row,f);x.save();x.translate(px,yb);if(dir<0)x.scale(-1,1);x.drawImage(sh.img,fr.sx,fr.sy,fr.sw,fr.sh,-d.head[0]*k,-d.bar*k,d.frame[0]*k,d.frame[1]*k);x.restore();
+   const nk=TS.neckAt(sheetName,row,f),sw=TS.NECKS[sheetName]?.shoulders||66;if(nk){nx=px+(nk[0]-d.head[0])*k*(dir<0?-1:1);ny=yb-(d.bar-nk[1])*k;}fw=sw*FACE_K*k;}
   else{const tw=b.head*1.25,top=hy+b.head*.42;x.save();x.translate(px,0);if(dir<0)x.scale(-1,1);
    x.fillStyle=shirt;x.strokeStyle=INK;x.lineWidth=1.5;rr(x,-tw/2,top,tw,yb-top+4,tw*.25);x.fill();x.stroke();
    if(apron){x.fillStyle=apron[0];rr(x,-tw*.36,top+tw*.25,tw*.72,yb-top,4);x.fill();x.fillStyle=apron[1];x.fillRect(-tw*.36,top+tw*.42,tw*.72,tw*.08);}
@@ -178,7 +186,7 @@ async function moneygrab(s){
    else if(row==='push'||row==='serve'||row==='catch'){arm(-tw*.42,.3);arm(tw*.42,-1.3);}
    else{arm(-tw*.42,.15+sw);arm(tw*.42,-.15-sw);}
    x.restore();}
-  face(hx,hy);
+  face(nx,ny,fw);
  }
  function drawBar(w,b,r){
   const L=lvOf(w),ink=L.ink,img=pic('bar-'+L.id),yb=b.barY(r),x0=Math.min(b.X(-.04),b.tapX),x1=Math.max(b.X(-.04),b.tapX),bh=b.B*.32;
@@ -191,8 +199,8 @@ async function moneygrab(s){
   x.strokeStyle=INK;x.lineWidth=1.2;x.strokeRect(xa,yb-bh*.3,xb-xa,bh*1.15);
  }
  function drawTap(w,b,r){
-  const L=lvOf(w),img=pic('tap-'+L.id),yb=b.barY(r),def=TS.PICTURES['tap-'+L.id],tx=b.tapX+(b.mirror?b.B*.16:-b.B*.16);
-  if(img){const h=b.B*.9,ww=h*img.width/img.height,k=h/def.size[1];x.save();x.translate(tx,0);if(b.mirror)x.scale(-1,1);x.drawImage(img,-ww/2,yb-def.bar*k,ww,h);x.restore();return;}
+  const L=lvOf(w),img=pic('tap-'+L.id),yb=b.barY(r),def=TS.PICTURES['tap-'+L.id],tx=b.tapX+(b.mirror?b.B*.44:-b.B*.44);
+  if(img){const h=b.B*.5,ww=h*img.width/img.height;x.save();x.translate(tx,0);if(b.mirror)x.scale(-1,1);x.drawImage(img,-ww/2,yb-h+b.B*.02,ww,h);x.restore();return;}   // the owner's art = a countertop station: stands on the bar top
   const s1=b.B*.2;x.fillStyle=L.ink.tap;x.strokeStyle=INK;x.lineWidth=1.3;rr(x,tx-s1*.5,yb-s1*1.4,s1,s1*1.2,3);x.fill();x.stroke();
   x.fillStyle=INK;x.fillRect(tx-s1*.08,yb-s1*.25,s1*.16,s1*.25);
  }
@@ -229,26 +237,26 @@ async function moneygrab(s){
    drawDoor(w,b,r);
    const here=w.cust.filter(cu=>cu.row===r).sort((a,bb)=>a.u-bb.u);
    for(const cu of here){const px=b.X(cu.u),f=Math.floor(w.bob*6+cu.id),row=cu.state,dir=(cu.state==='push'?-1:1)*b.dir;
-    person(b,px,r,{sheetName:'customer-'+(cu.body+1),row,f,shirt:cu.shirt,dir,face:(hx,hy)=>{if(!HF.drawFaceById(x,cu.char,MOOD[cu.state],hx,hy,b.head*.74,dir)){x.fillStyle='#ddd';x.beginPath();x.arc(hx,hy,b.head*.4,0,Math.PI*2);x.fill();}}});
+    person(b,px,r,{sheetName:'customer-'+(cu.body+1),row,f,shirt:cu.shirt,dir,face:(nx,ny,fw)=>{const m=MOOD[cu.state],fh=HF.faceHeight(cu.char,m,fw),cx=nx+dir*fw*FACE_FWD,cy=ny-fh*CHIN;if(!HF.drawFaceById(x,cu.char,m,cx,cy,fw,dir)){x.fillStyle='#ddd';x.beginPath();x.arc(cx,cy,fw*.55,0,Math.PI*2);x.fill();}}});
     if(cu.state==='eat')drawItem(w,b,cu.u+.02,r,false);}
    // the bartender (this world's player) at the tap end of the row they're on
    if(w.row===r){const f=Math.floor(w.bob*8),row=w.pause>0?'lose':w.act==='idle'?'idle':w.act,mood=w.pause>0?'sad':w.act==='catch'?'win':null;
-    person(b,b.tapX,r,{sheetName:'bartender-p'+(who+1),row,f,shirt:'#ffffff',apron:who?['#d64545','#ffffff']:[BLUTH,BLUE],dir:-b.dir,size:1.05,
-     face:(hx,hy)=>HF.drawFace(s,x,who,hx,hy,b.head/.6*1.05,mood||(w.act==='serve'?'normal':null),-b.dir)});}
+    person(b,b.tapX,r,{sheetName:'bartender-p'+(who+1),row,f,shirt:'#ffffff',apron:who?['#d64545','#ffffff']:[BLUTH,BLUE],dir:TS.sheet('bartender-p'+(who+1))?b.dir:-b.dir,/* the sheet already faces down the bar (left) */size:1.05,
+     face:(nx,ny,fw)=>{const m=mood||(w.act==='serve'?'normal':null),id=s.players[who]?.character,fh=HF.faceHeight(id,m||'normal',fw);HF.drawFace(s,x,who,nx-b.dir*fw*FACE_FWD,ny-fh*CHIN,fw/.6,m,-b.dir);}});}
    drawBar(w,b,r);drawTap(w,b,r);
    for(const m of w.cash)if(m.row===r)drawCash(b,m);
    for(const n of w.nanas)if(n.row===r)drawItem(w,b,n.u,r,false);
    for(const st of w.sticks)if(st.row===r)drawItem(w,b,st.u,r,true);
   }
   // speech bubbles over the faces
-  for(const sb of w.say){const cu=w.cust.find(q=>q.id===sb.cid);if(!cu)continue;const px=b.X(cu.u),py=b.barY(cu.row)-(TS.BODY.bar-TS.BODY.head[1])*b.head/TS.BODY.headSize-b.head*.45;bubble(b,px,py,sb.text,small?'':nameOf(cu.char),clamp(sb.t*3,0,1));}
+  for(const sb of w.say){const cu=w.cust.find(q=>q.id===sb.cid);if(!cu)continue;const px=b.X(cu.u),py=b.barY(cu.row)-(TS.BODY.bar-TS.BODY.head[1])*b.head/TS.BODY.headSize-b.head*.2;bubble(b,px,py,sb.text,small?'':nameOf(cu.char),clamp(sb.t*3,0,1));}
   if(!small)for(const cu of w.cust)if(cu.sent&&cu.u<.08&&cu.state==='walk'){text('from '+cu.sent,b.X(cu.u),b.barY(cu.row)+b.B*.2,clamp(b.B*.12,8,12),{align:'center',fill:'#7d5ba6',weight:700});}
   for(const p of w.pops){const px=b.X(p.x),sz0=p.big?clamp(b.B*.3,14,34):clamp(b.B*.18,11,20),py=Math.max(b.top+sz0,b.barY(p.y)-b.B*.5-(1.6-p.t)*b.B*.2),sz=p.big?clamp(b.B*.3,14,34):clamp(b.B*.18,11,20);text(p.text,clamp(px,b.R.x+sz*2,b.R.x+b.R.w-sz*2),py,sz,{align:'center',fill:p.c,weight:900,alpha:clamp(p.t*2,0,1)});}
   if(w.flash>0){x.fillStyle=`rgba(214,42,42,${w.flash*.18})`;x.fillRect(b.R.x,b.R.y,b.R.w,b.R.h);}
   // level title card / level clear: a plain white card with black lettering
   if(w.phase==='card'||w.phase==='clear'){const R=b.R,a=clamp(Math.min(w.card*3,(w.phase==='card'?2.2:2.4)-w.card+.3)*2,0,1),card=w.phase==='card'&&pic('card-'+L.id);
    x.save();x.globalAlpha=a;x.fillStyle='#ffffff';x.fillRect(R.x,R.y,R.w,R.h);
-   if(card)cover(card,R.x,R.y,R.w,R.h);
+   if(card){const k=Math.min(R.w/card.width,R.h/card.height),w=card.width*k,h=card.height*k;x.drawImage(card,R.x+(R.w-w)/2,R.y+(R.h-h)/2,w,h);}   // fitted, never cropped (white around it)
    else{const big=fitText(w.phase==='clear'?'Level cleared':L.title,R.w*.84,clamp(Math.min(R.w,R.h)*.09,14,44));
     const title=w.phase==='clear'?'Level cleared':L.title,sub=w.phase==='clear'?`Tip jar +$${w.bonus}`:L.sub;
     const sm=Math.max(small?9:12,big*.45),cy=R.y+R.h*.46;
@@ -283,9 +291,9 @@ async function moneygrab(s){
  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||!cur||!lay)return;ev.preventDefault();const p=s.pointer(ev),b=lay.mine;
   if(net&&(p.y<b.R.y||p.x<b.R.x))return;   // the other player's bars are just to watch
   for(const m of cur.cash){const X=b.X(m.u),Y=b.barY(m.row)-b.B*.15;if(Math.abs(p.x-X)<b.B*.32&&Math.abs(p.y-Y)<b.B*.25){grabCash(cur,m);nf?.push();return;}}
-  serve(cur,rowAt(b,p.y));nf?.push();});
- s.on(document,'keydown',ev=>{if(!cur||s.paused)return;const k=ev.key;if(k==='ArrowUp'||k==='w'){cur.row=Math.max(0,cur.row-1);}else if(k==='ArrowDown'||k==='s'){cur.row=Math.min(ROWS-1,cur.row+1);}else if(k===' '||k==='Enter')serve(cur,cur.row);else return;ev.preventDefault();});
- s.hint('Tap a bar to jump there and slide the order down it. Shove customers out the door, then be on their bar to catch the empty they slide back. Don\'t serve an empty bar, drop an empty, or let anyone reach you. Tap loose cash for +150. Clear every customer to open the next bar. Keys: ↑/↓ + Space.');
+  tapBar(cur,rowAt(b,p.y));nf?.push();});
+ s.on(document,'keydown',ev=>{if(!cur||s.paused)return;const k=ev.key;if(k==='ArrowUp'||k==='w'){moveTo(cur,Math.max(0,cur.row-1));}else if(k==='ArrowDown'||k==='s'){moveTo(cur,Math.min(ROWS-1,cur.row+1));}else if(k===' '||k==='Enter')serve(cur,cur.row);else return;ev.preventDefault();});
+ s.hint('Tap a bar to walk to it; tap the bar you are at to slide an order down it. Customers who catch one drink and slide the empty back (unless you shove them out the door): be on that bar to catch it. Don\'t serve an empty bar, drop an empty, or let anyone reach you. Tap loose cash for +150. Clear every customer to open the next bar. Keys: ↑/↓ + Space.');
  s.debug={engine:'moneygrab',get world(){return cur;},set world(v){},get remote(){return remote;},pool,lose:()=>cur&&lose(cur,'TEST',0),clearLevel:()=>{if(!cur)return;cur.spawned=99;cur.cust=[];cur.sticks=[];cur.nanas=[];},
   say:t=>{const cu=cur?.cust[0];if(cu)talk(cur,cu,t||lineFor(cu.char,Math.random));}};
  // autopilot (tests): serve a bar with someone walking and nothing on the way, catch empties first
@@ -293,7 +301,7 @@ async function moneygrab(s){
   const st=w.sticks.filter(q=>q.u>.55).sort((a,b)=>b.u-a.u)[0];if(st){if(w.row!==st.row){w.row=st.row;w.act='run';w.actT=.15;}return;}
   const m=w.cash[0];if(m&&Math.random()<.02){grabCash(w,m);return;}
   const need=[0,1,2,3].map(r=>({r,c:w.cust.filter(cu=>cu.row===r&&cu.state==='walk').length-w.nanas.filter(n=>n.row===r).length,lead:Math.max(0,...w.cust.filter(cu=>cu.row===r&&cu.state==='walk').map(cu=>cu.u))})).filter(q=>q.c>0).sort((a,b)=>b.lead-a.lead)[0];
-  if(need&&w.cd<=0)serve(w,need.r);}
+  if(need&&w.cd<=0){if(w.row!==need.r)moveTo(w,need.r);else serve(w,need.r);}}
 
  // ---------------------------------------------------------------- online: both shifts at once
  let nf=null;
@@ -349,7 +357,7 @@ async function moneygrab(s){
  // ---------------------------------------------------------------- 1P arcade: one run, level after level, until you're out
  if(s.solo){
   cur=make(0);
-  if(!await s.pass(0,`Tapper at the Bluths' bars. The customers are anybody and everybody. Tap a bar to slide an order down it, catch the empties they slide back, grab loose cash. Serve everyone and the next bar opens, each one longer and faster. Three lives; no clock.`,'Ready — open the bar',{countdown:3}))return;
+  if(!await s.pass(0,`Tapper at the Bluths' bars. The customers are anybody and everybody. Tap a bar to walk to it, tap it again to slide an order down it, catch the empties they slide back, grab loose cash. Serve everyone and the next bar opens, each one longer and faster. Three lives; no clock.`,'Ready — open the bar',{countdown:3}))return;
   startLevel(cur);let over=0,done=false;
   s.frame(dt=>{if(done)return;shake.step(dt);audio.tick();cur.time+=dt;step(cur,dt);if(s.debug._bot)botStep(cur);s.setScores([cur.score,0]);
    if(!cur.ending&&cur.lives<=0&&cur.pause<=0){cur.ending=1.6;cur.endReason='over';audio.narrate('end',.8);}
@@ -359,7 +367,7 @@ async function moneygrab(s){
  }
  // ---------------------------------------------------------------- pass and play: each player's whole run
  const scores=await turnRunner(s,{seconds:SECONDS,
-  intro:(i,sc)=>i===0?`Tapper at the Bluths' bars. ${s.players[0].name} goes first; the customers are anybody and everybody. Tap a bar to slide an order down it, catch the empties they slide back, grab loose cash. Serve everyone and the next bar opens, each one longer and faster. Three lives, no clock: play until you're out.`:`${s.players[1].name}, your shift. Same crowd. Beat $${sc[0]}.`,
+  intro:(i,sc)=>i===0?`Tapper at the Bluths' bars. ${s.players[0].name} goes first; the customers are anybody and everybody. Tap a bar to walk to it, tap it again to slide an order down it, catch the empties they slide back, grab loose cash. Serve everyone and the next bar opens, each one longer and faster. Three lives, no clock: play until you're out.`:`${s.players[1].name}, your shift. Same crowd. Beat $${sc[0]}.`,
   make:i=>{cur=make(i);startLevel(cur);return cur;},
   step:(w,dt)=>{shake.step(dt);audio.tick();step(w,dt);if(s.debug._bot)botStep(w);},
   draw,done:w=>w.lives<=0&&w.pause<=0,score:w=>w.score});

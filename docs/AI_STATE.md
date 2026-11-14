@@ -2,6 +2,16 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+TAPPER ROUND 3 + HORDE PICKS (Nov 14, RELEASED as v0.97.2): Tapper: tapBar = move to another bar / serve on your own bar
+(one tap used to do both: walking to catch an empty threw an order down an empty bar); shoved-out customers leave WITHOUT an
+empty again, but a first-timer shoved to the door stops there and drinks (cu.drinks) = every customer gives one empty; shove
+.22 s (~.17 bar). OWNER'S ART IN (Drive tapper-images-part-1/2-of-2.zip): all 35 slots (assets/tapper lossless, originals
+assets/originals/tapper; people sheets 2x). tapperSprites NECKS = per-frame collar [x,y] + shoulder width (scratch tapnecks.py);
+person() puts the chin on the collar (face w = shoulders x FACE_K .62, centre CHIN .4 fh above), bartender sheet NOT mirrored
+(already faces the bar), stations stand on the bar (h .5 U, .44 U toward the lane), title card fitted (not cropped).
+HORDE online pick: hurtPlayer refuses while your own modal is open, NET_PICK 10 s then card 0, countdown bar + "you can't be
+hurt" under the title, pickBlast on close (R 150, dmg 22+5*lvl, kb 320, 1 s shield). online-native horde + tapper pass.
+
 TAPPER ROUND 2 (Nov 14, RELEASED as v0.97.1; owner: empties stopped coming, levels too short, no timer, scale on all screens):
 no clock (SECONDS Infinity): 3 lives, quotaFor(n)=10+5n customers per level, diff = 1+.16n (+ up to .25 over a level),
 cumulative score; 1P = solo kind 'levels' (own run loop in the engine, soloProgress per level, soloFinish at game over);

@@ -69,6 +69,11 @@ for(const l of LEVELS){
  PICTURES['card-'+l.id]={kind:'card',level:l.id,size:[1600,900]};
 }
 
+// NECKS (Nov 14, owner's art): per frame [x,y] of the collar (template px) measured on the delivered sheets (scratch
+// tapnecks.py: topmost opaque pixel round the torso centre), and the shoulder width: the face's chin sits on the collar and
+// its width follows the shoulders (src/engines/bananaTapper.js person()). Re-measure if a sheet is replaced.
+const NECKS={"bartender-p1":{"neck":{"idle":[[80.5,80.0],[79.5,80.0]],"pour":[[72.5,81.0],[72.0,81.0],[72.0,81.0]],"serve":[[88.0,81.0],[89.0,81.0]],"run":[[80.0,78.5],[80.0,78.5],[79.5,78.5],[80.0,78.5]],"catch":[[89.0,80.5],[88.5,80.5]],"lose":[[80.0,81.0],[78.5,80.5]]},"shoulders":71.0},"bartender-p2":{"neck":{"idle":[[80.0,80.0],[79.5,80.0]],"pour":[[71.5,80.0],[72.0,80.0],[72.5,80.0]],"serve":[[80.0,80.0],[90.5,81.0]],"run":[[79.0,79.5],[79.5,79.5],[79.0,79.5],[78.5,79.5]],"catch":[[80.0,79.5],[89.5,81.0]],"lose":[[79.0,82.5],[78.5,82.5]]},"shoulders":65.0},"customer-1":{"neck":{"walk":[[81.0,80.0],[81.0,80.0],[79.0,80.0],[82.0,80.0]],"push":[[59.5,80.0],[51.5,80.0]],"eat":[[76.5,81.0],[76.0,81.0]],"angry":[[76.0,82.0],[77.5,80.0]]},"shoulders":65.8},"customer-2":{"neck":{"walk":[[78.0,80.5],[82.5,80.0],[81.0,80.0],[79.0,80.0]],"push":[[65.0,91.0],[53.0,91.0]],"eat":[[77.5,86.0],[77.5,86.0]],"angry":[[80.5,80.0],[77.5,80.5]]},"shoulders":72.5},"customer-3":{"neck":{"walk":[[81.5,88.0],[81.5,87.5],[80.0,88.0],[82.0,88.5]],"push":[[58.0,90.5],[53.5,89.5]],"eat":[[75.5,86.0],[75.5,86.0]],"angry":[[80.5,90.0],[79.5,88.5]]},"shoulders":85.8},"customer-4":{"neck":{"walk":[[79.5,81.0],[80.0,80.5],[76.5,80.5],[76.0,80.5]],"push":[[49.5,84.0],[51.5,83.5]],"eat":[[72.0,78.5],[69.5,65.0]],"angry":[[76.5,80.5],[81.5,80.5]]},"shoulders":72.2}};
+function neckAt(name,row,f){const n=NECKS[name];const r=n&&n.neck[row];if(!r||!r.length)return null;return r[((f%r.length)+r.length)%r.length];}
 const url=name=>USER['tapper:'+name]||null;
 const has=name=>!!url(name);
 const imgs=new Map();
@@ -83,4 +88,4 @@ function frameRect(sh,row,f){
  const d=sh.def,names=Object.keys(d.rows),r=Math.max(0,names.indexOf(row)),n=d.rows[names[r]]||1,i=((f%n)+n)%n;
  return {sx:i*d.frame[0]*sh.k,sy:r*d.frame[1]*sh.k,sw:d.frame[0]*sh.k,sh:d.frame[1]*sh.k};
 }
-Object.assign(exports,{LEVELS,LEVEL_IDS,BODY,SHEETS,PICTURES,has,url,picture,preloadTapper,sheet,frameRect});
+Object.assign(exports,{LEVELS,LEVEL_IDS,BODY,SHEETS,PICTURES,NECKS,neckAt,has,url,picture,preloadTapper,sheet,frameRect});
