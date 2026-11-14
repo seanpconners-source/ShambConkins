@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **BASEketball Shootout, rebuilt like the Megatouch Hoop Jones machine** (one game now; the old movie-rules game and the separate Hoop Jones entry are gone). Four shooters seen from behind (Coop and Remer, alternating), unlimited balls: tap a shooter to shoot up his lane. The hoop slides side to side and the ball takes a moment to get there, so you lead it; each shooter waits for his ball to come back, so no spamming. Beat the round's target before the 25-second shot clock runs out and the hoop moves back, ten rounds. Every third basket in a row is a lightning bonus.
+- In the Milwaukee Beers' stadium, with the new BASEketball art: shooters, LA-Z-BOY ball, backboard, net, pole, jumbotron score strip, court logo, logo.
+- The callouts are pure trash talk: "FUCK YEA!" when you make it, filth when you brick or airball (Settings → Clean chat tones it down). Psych-outs are back: in 2P the waiting player gets two a round (pick a filthy line or type one) and the shooter's next shots wobble; online you psych out your rival from your phone; in 1P the crowd heckles you.
+- **Tapper plays like the arcade:** a customer shoved out the door is gone for good and never sends an empty back; one who doesn't make it out drinks, always slides the empty back, then comes on again. Customers come in groups. Points like the arcade (50/75/100/150 a customer by level, 100 an empty), tips are left by served customers (+1500) and start Gob's magic show, which stops the whole bar. After every level: the bonus round, where Gob shakes five of six cans and shuffles them; pick the one he didn't shake (+3000).
+
 ## v0.99.0
 
 - **Sean of a Gun: four new worlds.** Space (moon base, orbital station, alien hive, low gravity), Hell (lava, fire bars, geysers), the Upside Down (warp portals, floating islands) and Game World (8-bit kingdom with ? blocks, pipes and stompable walkers, a turbo zone with springs and rings, a glitch castle). Every stage ends in a boss: two mini-bosses and a world boss per world (War Mech, the Mothership, Alien Queen, Cerberus, Bone Dragon, the Beast, the Face-Flower, the Void Eye, the Shadow King, King Shellbeard, Dr. Eggbert, MISSING.EXE). Twenty-five new enemy types (tanks, turrets, fliers, pop-up plants and tentacles, kickable shells, teleporters), ten new guns (laser, plasma, railgun, lightning, holy water, fire flower, boomerang, ring blaster and more) and weapon crates. Levels climb up and down: three-floor forts, split routes over lava, deep shafts, mazes, turret walls. The first four worlds play as before.
