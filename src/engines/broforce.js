@@ -150,7 +150,10 @@ function headCanvas(id,mood='normal',size=72){
  try{
   const {portraitURL,portraitFallbackURL}=require('src/assets.js'),{headDisplayURL}=require('src/headCutouts.js');
   // generated SVG cards (initials on a square) look like a box: use the head-shaped stand-in for those
-  let src=portraitURL(id,mood);if(!src||/^data:image\/svg/.test(src)&&id!=='mars-attacker')src=portraitFallbackURL(id);
+  // (a supplied photo shown through a crop frame is also an SVG data URL, but a real picture: owner, Nov 14, Mrs Doubtfire's
+  // normal face came out as the drawn stand-in in Sean of the Dead while her other moods showed)
+  let framed=null;try{framed=require('src/suppliedPortraits.js').framedFace;}catch{}
+  let src=portraitURL(id,mood);if(!src||/^data:image\/svg/.test(src)&&id!=='mars-attacker'&&!framed?.(src))src=portraitFallbackURL(id);
   // online photos (Wikimedia) are requested with CORS so their pixels can be read and the backdrop cut away;
   // if that request is refused, load them plainly (oval), then fall back to the stand-in head
   const url=headDisplayURL(src),remote=/^https:/.test(url);let step=0;

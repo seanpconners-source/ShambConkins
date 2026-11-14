@@ -79,4 +79,21 @@ function drawFaceById(g,id,mood,cx,cy,faceW,dir){
  g.save();g.translate(cx,cy);if(fit&&flipFor(id,mood,dir))g.scale(-1,1);g.drawImage(im,(fit?fit.dx:0)-w/2,(fit?fit.dy:0)-h/2,w,h);g.restore();return true;
 }
 
-Object.assign(exports,{headFacts,lookDir,flipFor,faceFit,drawFace,faceGeom,faceHeight,drawFaceById});
+// drawFaceById, pre-drawn: the face as a small canvas already the size it shows at (a 480 px portrait shrunk to ~40 px
+// every frame, a dozen times over, was what made Tapper crawl on a phone). Returns {cv,x,y} = draw cv at (cx+x,cy+y),
+// or null until the picture has loaded. Cached per character, mood, size (whole px) and facing.
+const SPR=new Map();
+function shrinkTo(img,w,h){let src=img,sw=img.naturalWidth||img.width,sh=img.naturalHeight||img.height;
+ while(sw/2>=w*1.5&&sh/2>=h*1.5){const c=document.createElement('canvas');c.width=Math.max(1,Math.round(sw/2));c.height=Math.max(1,Math.round(sh/2));c.getContext('2d').drawImage(src,0,0,c.width,c.height);src=c;sw=c.width;sh=c.height;}
+ return src;}
+function faceSprite(id,mood,faceW,dir){
+ const fw=Math.max(4,Math.round(faceW)),im=picture(id,mood)||picture(id,'normal');if(!im)return null;const fit=faceFit(id,mood,fw),flip=!!(fit&&flipFor(id,mood,dir));
+ const key=id+'|'+mood+'|'+fw+'|'+(flip?1:0)+'|'+im.src.length;let e=SPR.get(key);if(e)return e;
+ const size=fit?fit.size-3:fw/.6,sc=size/Math.max(im.naturalWidth,im.naturalHeight),w=Math.max(1,Math.ceil(im.naturalWidth*sc)),h=Math.max(1,Math.ceil(im.naturalHeight*sc));
+ const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d');g.imageSmoothingQuality='high';
+ if(flip){g.translate(w,0);g.scale(-1,1);}g.drawImage(shrinkTo(im,w,h),0,0,w,h);
+ const dx=fit?fit.dx:0;e={cv,x:(flip?-dx:dx)-w/2,y:(fit?fit.dy:0)-h/2};
+ if(SPR.size>400)SPR.clear();SPR.set(key,e);return e;
+}
+
+Object.assign(exports,{headFacts,lookDir,flipFor,faceFit,drawFace,faceGeom,faceHeight,drawFaceById,faceSprite});

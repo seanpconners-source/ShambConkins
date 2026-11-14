@@ -128,6 +128,7 @@ async function horde(s){
  // landmark: the starting building
  {const b={dk:0,type:'building',sy:-130,x:0,y:-130};LM.push(b);for(let i=-2;i<=2;i++)LM.push({x:i*52,y:-140,r:40,p:null,col:true});}
  function solidPush(e,r){
+  if(insane(e.x,e.y,r)){insaneHit('solidPush');if(!e.dead&&E.includes(e))e.dead=1;return;}
   const x0=Math.floor((e.x-r-24)/CS),x1=Math.floor((e.x+r+24)/CS),y0=Math.floor((e.y-r-24)/CS),y1=Math.floor((e.y+r+24)/CS);
   for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){const cols=getChunk(cx,cy).cols;for(let i=0;i<cols.length;i++){const o=cols[i];if(o.p&&o.p.dead)continue;const dx=e.x-o.x,dy=e.y-o.y,rr=r+o.r,d2=dx*dx+dy*dy;if(d2<rr*rr){const d=Math.sqrt(d2)||.01;const k=(rr-d)/d;e.x+=dx*k;e.y+=dy*k;}}}
   if(Math.abs(e.x)<330&&e.y>-230&&e.y<30)for(let i=1;i<LM.length;i++){const o=LM[i],dx=e.x-o.x,dy=e.y-o.y,rr=r+o.r,d2=dx*dx+dy*dy;if(d2<rr*rr){const d=Math.sqrt(d2)||.01;const k=(rr-d)/d;e.x+=dx*k;e.y+=dy*k;}}
@@ -147,10 +148,20 @@ async function horde(s){
  function toast(txt,col){if(net&&host)outbox.ts.push([txt,col]);toasts.push({txt,col:col||'#ffe9a8',t:3});if(toasts.length>3)toasts.shift();}
  function showBanner(text,sub,col,dur){if(net&&host)outbox.bn.push([text,sub,col,dur]);banner.text=text;banner.sub=sub||'';banner.col=col||'#ff5a4a';banner.t=banner.dur=dur||2.6;}
 
+ // ---------- runaway numbers ----------
+ // FREEZE FIX (owner, Nov 14: froze ~3-4 min into Dawn, twice, Vinyl Record 3 in the kit): a returning record sped up 12%
+ // EVERY FRAME; one that kept missing a moving survivor reached x = -3.5e17 in a few seconds, and the cell loops below
+ // (cx++ on a number that big never changes it) never ended. Now the return speed is capped and the record is caught as
+ // soon as a step would reach its owner; and no area loop runs on a position that isn't a sane world number.
+ const RET_MAX=1400,WORLD_MAX=1e7,insane=(px,py,r)=>!(Math.abs(px)<WORLD_MAX&&Math.abs(py)<WORLD_MAX&&r>=0&&r<1e5);
+ let insaneN=0;function insaneHit(where){if(insaneN++<3)s.crumb?.('runaway position in '+where);}
+ function homeBack(q,p,dt){if(!p){q.dead=1;return;}const dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy)||1,sp=Math.min(RET_MAX,Math.max(120,Math.sqrt(q.vx*q.vx+q.vy*q.vy))*Math.pow(1.12,dt*60));
+  q.vx=dx/d*sp;q.vy=dy/d*sp;if(d<22||sp*dt>=d||q.t>7){q.dead=1;return;}q.x+=q.vx*dt;q.y+=q.vy*dt;}
  // ---------- spatial hash ----------
  let qid=0;const mark=new Int32Array(HB);let uidN=1;
  function buildHash(){head.fill(-1);bigs.length=0;for(let i=0;i<E.length;i++){const e=E[i];e.idx=i;if(e.dead)continue;if(e.r>24){bigs.push(e);continue;}const b=hashOf(Math.floor(e.x/CELL),Math.floor(e.y/CELL));nxt[i]=head[b];head[b]=i;}}
  function forNear(px,py,r,cb,a,b){
+  if(insane(px,py,r)){insaneHit('forNear');return;}
   if(r>240){for(let i=0;i<E.length;i++){const e=E[i];if(e.dead)continue;const dx=e.x-px,dy=e.y-py,rr=r+e.r;if(dx*dx+dy*dy<rr*rr)cb(e,a,b);}return;}
   qid++;const x0=Math.floor((px-r-24)/CELL),x1=Math.floor((px+r+24)/CELL),y0=Math.floor((py-r-24)/CELL),y1=Math.floor((py+r+24)/CELL);
   for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){const bk=hashOf(cx,cy);if(mark[bk]===qid)continue;mark[bk]=qid;for(let i=head[bk];i>=0;i=nxt[i]){const e=E[i];if(e.dead)continue;const dx=e.x-px,dy=e.y-py,rr=r+e.r;if(dx*dx+dy*dy<rr*rr)cb(e,a,b);}}
@@ -268,6 +279,7 @@ async function horde(s){
  }
  // ---------- props ----------
  function damageProps(px,py,r,dmg,o){
+  if(insane(px,py,r)){insaneHit('damageProps');return;}
   const x0=Math.floor((px-r)/CS),x1=Math.floor((px+r)/CS),y0=Math.floor((py-r)/CS),y1=Math.floor((py+r)/CS);
   for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){const ch=getChunk(cx,cy);if(ch.dn<=0)continue;for(let i=0;i<ch.dest.length;i++){const p=ch.dest[i];if(p.dead)continue;const dx=p.x-px,dy=p.y-py;if(dx*dx+dy*dy<(r+10)*(r+10))hitProp(p,dmg,o);}}
  }
@@ -439,7 +451,7 @@ async function horde(s){
  }
  // online: the partner's shots are only shown here (their phone does the hitting)
  function visualProj(q,dt){q.t+=dt;q.life-=dt;
-  if(q.k===2){q.ang+=dt*14;if(q.a===0){q.x+=q.vx*dt;q.y+=q.vy*dt;q.b+=Math.hypot(q.vx,q.vy)*dt;if(q.b>=q.tx)q.a=1;}else{const p=P[q.o],dx=p.x-q.x,dy=p.y-q.y,d=Math.hypot(dx,dy)||1,sp=Math.hypot(q.vx,q.vy)*1.12;q.vx=dx/d*sp;q.vy=dy/d*sp;q.x+=q.vx*dt;q.y+=q.vy*dt;if(d<22||q.t>7)q.dead=1;}}
+  if(q.k===2){q.ang+=dt*14;if(q.a===0){q.x+=q.vx*dt;q.y+=q.vy*dt;q.b+=Math.hypot(q.vx,q.vy)*dt;if(q.b>=q.tx)q.a=1;}else homeBack(q,P[q.o],dt);}
   else if(q.k===5||q.k===6){const f=Math.min(1,q.t/q.a);q.x=q.sx+(q.tx-q.sx)*f;q.y=q.sy+(q.ty-q.sy)*f;if(q.t>=q.a+(q.k===5?q.b:0))q.dead=1;}
   else{if(q.k===3)q.ang+=dt*12;q.x+=q.vx*dt;q.y+=q.vy*dt;}
   if(q.life<=0)q.dead=1;}
@@ -450,7 +462,7 @@ async function horde(s){
     case 0:case 1:{for(let s2=0;s2<2&&!q.dead;s2++){q.x+=q.vx*dt*.5;q.y+=q.vy*dt*.5;forNear(q.x,q.y,q.r,projCb);}if(((frameNo+i)&3)===0)damageProps(q.x,q.y,q.r+2,q.dmg*p.st.might*.6,q.o);break;}
     case 2:{q.ang+=dt*14;const dx0=q.vx,dy0=q.vy;
      if(q.a===0){q.x+=q.vx*dt;q.y+=q.vy*dt;q.b+=Math.sqrt(q.vx*q.vx+q.vy*q.vy)*dt;if(q.b>=q.tx){q.a=1;q.hits.length=0;}}
-     else{const dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy)||1,sp=Math.sqrt(q.vx*q.vx+q.vy*q.vy)*1.12;q.vx=dx/d*sp;q.vy=dy/d*sp;q.x+=q.vx*dt;q.y+=q.vy*dt;if(d<22||q.t>7)q.dead=1;}
+     else homeBack(q,p,dt);
      forNear(q.x,q.y,q.r,projCb);if(((frameNo+i)&3)===0)damageProps(q.x,q.y,q.r+4,q.dmg*p.st.might,q.o);break;}
     case 3:{q.ang+=dt*12;q.x+=q.vx*dt;q.y+=q.vy*dt;forNear(q.x,q.y,q.r,projCb);if(q.life<=0)q.dead=1;break;}
     case 4:{q.hh-=dt;if(q.hh<=0){q.hh=.3;if(!q.st||q.st.dead||q.st.uid!==q.b){q.st=nearestEnemy(q.x,q.y,440);q.b=q.st?q.st.uid:0;}}

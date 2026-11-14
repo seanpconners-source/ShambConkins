@@ -2,6 +2,17 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+v0.97.4 (Nov 14): TAPPER FPS (owner: unplayable on his phone): bananaTapper caches the room (bg + floor + doors) and each bar
+(+ station) as canvases per layout (layer()/paint() swap the drawing context x), sheets shrunk once to the drawn scale (sheetAt),
+faces via new headFacts faceSprite (per char/mood/size/flip canvas), bubble word wrap cached, fonts rounded to .5 px; 4x CPU
+headless 32 -> 55 fps (scratch tapperf.mjs). HORDE FREEZE (owner: froze ~3-4 min into Dawn again; black box: vinyl3): case-2
+returning projectiles grew speed x1.12 PER FRAME; a miss sent x to -3.5e17 and forNear's cx++ never ended (repro scratch
+hfreeze.mjs: d.sim with the owner's kit from clock 140, hung on run 2). homeBack() caps RET_MAX 1400 + catches when a step
+reaches the owner; insane() guards forNear/damageProps/solidPush (crumb 'runaway position'). SEAN OF THE DEAD: early call
+during a wave pays BREAK*1.2+25 (earlyBonus; skull label shows it), crawlers drawn at walker scale with a lying body,
+broforce headCanvas accepts supplied framed faces (framedFace: doubtfire normal was treated as an SVG card -> stand-in);
+debug.clear(). games.mjs fuzz 4/4.
+
 TAPPER ROUND 3 + HORDE PICKS (Nov 14, RELEASED as v0.97.2; v0.97.3 = faces lower, owner saw them floating: FACE_K .64, CHIN .18 fh above the collar, FACE_FWD 0): Tapper: tapBar = move to another bar / serve on your own bar
 (one tap used to do both: walking to catch an empty threw an order down an empty bar); shoved-out customers leave WITHOUT an
 empty again, but a first-timer shoved to the door stops there and drinks (cu.drinks) = every customer gives one empty; shove

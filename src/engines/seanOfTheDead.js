@@ -93,9 +93,13 @@ async function seanOfTheDead(s){
   shake=Math.max(shake,Math.min(12,r/6));sfx(70+fxr()*30,.22,.07,'sawtooth');}
 
  // ---------------------------------------------------------------- waves
+ function earlyBonus(){return phase==='break'?(wave?Math.ceil(breakT*1.2):0):phase==='wave'&&!queue.length?Math.ceil(BREAK*1.2)+25:0;}
  function startWave(early=false){
   if(wave>=WAVES.length||phase==='wave'&&queue.length)return;
-  if(early&&phase==='break'){const bonus=Math.ceil(breakT*1.2);for(let i=0;i<np;i++)money[i]+=bonus;pop(spawnBtn.x,spawnBtn.y-24,`+£${bonus} each`,'#ffd23a');sound('pickup');}
+  // calling early pays (owner, Nov 14: 'you don't get the extra money for starting the wave early'): in the break, for the
+  // time left; DURING a wave (all spawned, some still walking) for the whole break skipped plus the +£25 clear bonus that
+  // wave would have paid (the two waves now end together, so it never came)
+  if(early){const bonus=earlyBonus();if(bonus>0){for(let i=0;i<np;i++)money[i]+=bonus;pop(spawnBtn.x,spawnBtn.y-24,`+£${bonus} each`,'#ffd23a');say('EARLY CALL',`+£${bonus} each`,'#ffd23a',1.2);sound('pickup');}}
   const w=WAVES[wave];wave++;phase='wave';const list=[];
   for(const [t,n] of Object.entries(w))for(let i=0;i<n;i++)if(t!=='boss')list.push(t);
   for(let i=list.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[list[i],list[j]]=[list[j],list[i]];}
@@ -286,7 +290,7 @@ async function seanOfTheDead(s){
   const h=heroAt(wx,wy);if(h){sel={type:'hero',h};sound('tap');return;}
   const sp=spots.find(q=>Math.hypot(q.x-wx,q.y-wy)<SPOT+6);if(sp){sel={type:sp.t?'tower':'spot',sp,line:null};sound('tap');return;}
   if(wx>pub.x&&wx<pub.x+pub.w&&wy>pub.y-30&&wy<pub.y+pub.h){sel={type:'pub'};sound('tap');return;}
-  if(Math.hypot(wx-spawnBtn.x,wy-spawnBtn.y)<30&&(phase==='break'||phase==='wave'&&!queue.length)&&wave<WAVES.length){startWave(phase==='break');sel=null;return;}
+  if(Math.hypot(wx-spawnBtn.x,wy-spawnBtn.y)<30&&(phase==='break'||phase==='wave'&&!queue.length)&&wave<WAVES.length){startWave(true);sel=null;return;}
   sel=null;
  }
  s.on(c,'pointerdown',ev=>{ev.preventDefault();const p=s.pointer(ev);
@@ -357,10 +361,14 @@ async function seanOfTheDead(s){
   x.restore();
  }
  function drawZ(z){
-  const X=SX(z.x),Y=SY(z.y),t=z.t,sc=k*1.75*t.size,al=z.dead?Math.max(0,z.dead/.7):Math.min(1,z.spawnT*3);x.globalAlpha=al;
+  const X=SX(z.x),Y=SY(z.y),t=z.t,sc=k*1.75*(t.crawl?1:t.size),al=z.dead?Math.max(0,z.dead/.7):Math.min(1,z.spawnT*3);x.globalAlpha=al;
   const dir=Math.cos(z.ang)<-.2?-1:1,fall=z.dead?(1-z.dead/.7)*1.4*dir:0;
   x.fillStyle='rgba(0,0,0,.32)';x.beginPath();x.ellipse(X,Y+9*sc,9*sc,3.4*sc,0,0,7);x.fill();
-  if(t.crawl){x.save();x.translate(X,Y+5*sc);x.fillStyle=t.shirt;rr(-10*sc,-6*sc,20*sc,9*sc,3*sc);x.fill();x.strokeStyle='#8a9a72';x.lineWidth=2.4*sc;x.beginPath();x.moveTo(dir*9*sc,-2*sc);x.lineTo(dir*15*sc,3*sc+Math.sin(z.wob)*2*sc);x.stroke();x.restore();}
+  if(t.crawl){   // lying on its belly: legs dragging behind, torso, both arms clawing forward (drawn as big as a walker: owner, Nov 14)
+   const w=Math.sin(z.wob)*2*sc;x.save();x.translate(X,Y+5*sc);x.lineCap='round';
+   x.strokeStyle=t.pants;x.lineWidth=4.2*sc;x.beginPath();x.moveTo(-dir*6*sc,0);x.lineTo(-dir*17*sc,2*sc+w*.5);x.moveTo(-dir*6*sc,-2*sc);x.lineTo(-dir*16*sc,-3*sc-w*.5);x.stroke();
+   x.fillStyle=t.shirt;rr(-11*sc,-7*sc,22*sc,10*sc,4*sc);x.fill();x.strokeStyle='rgba(0,0,0,.35)';x.lineWidth=1.2*sc;x.stroke();
+   x.strokeStyle='#8a9a72';x.lineWidth=2.8*sc;x.beginPath();x.moveTo(dir*7*sc,-4*sc);x.lineTo(dir*17*sc,-1*sc+w);x.moveTo(dir*6*sc,1*sc);x.lineTo(dir*16*sc,4*sc-w);x.stroke();x.restore();}
   else body(X,Y-2*sc,sc,t.shirt,t.pants,z.wob,z.hitT>0,z.blocker?dir*.6:dir,fall+Math.sin(z.wob*.5)*.06);
   if(!z.dead){x.fillStyle='rgba(120,10,10,.55)';x.beginPath();x.arc(X-2*sc,Y-10*sc,2.4*sc,0,7);x.arc(X+3*sc,Y-5*sc,1.6*sc,0,7);x.fill();}
   const hs=(t.boss?28:21)*sc/(t.boss?1.35:1),hx=X+(t.crawl?dir*8*sc:fall*8*sc),hy=t.crawl?Y-2*sc:Y-15*sc-hs*.4;const hc=head(z.face,'normal',t.boss?160:96);
@@ -509,7 +517,7 @@ async function seanOfTheDead(s){
   txt('💀',X,Y+1,19*k);
   const w=WAVES[wave];if(w){const types=Object.keys(w);const lw=types.length*24*k+12*k,lx=X+r+6*k,ly=Y-12*k;rr(lx,ly,lw,24*k,8*k);x.fillStyle='rgba(0,0,0,.7)';x.fill();
    types.forEach((t,j)=>{txt(ZICON[t]||'🧟',lx+12*k+j*24*k,ly+12*k,13*k);});}
-  txt(phase==='break'?(wave?`NEXT WAVE +£${Math.ceil(breakT*1.2)}`:'START'):'NEXT WAVE',X,Y+r+10*k,10*k,'#fff',900);
+  txt(phase==='break'&&!wave?'START':earlyBonus()>0?`NEXT WAVE +£${earlyBonus()}`:'NEXT WAVE',X,Y+r+10*k,10*k,'#fff',900);
  }
  function draw(){
   view();btns=[];const W=s.W,H=s.H;
@@ -579,7 +587,7 @@ async function seanOfTheDead(s){
   build:(i,line)=>build(spots[i],line),upgrade:(i,b)=>upgrade(spots[i],b),startWave:()=>{if(phase==='intro')phase='break';startWave(true);},give:(n=1000)=>{for(let i=0;i<np;i++)money[i]+=n;},
   speed:v=>{speed=v;},win:()=>{wave=WAVES.length;queue=[];for(const z of living())z.gone=1;end(true);},lose:()=>{pints=0;end(false);},power:(kk,a,b)=>usePower(kk,a,b),smash:i=>smash(heroes[i]),
   spots:()=>spots.map(q=>({x:SX(q.x),y:SY(q.y),owner:q.owner,t:q.t?q.t.line+q.t.tier:null})),heroXY:i=>({x:SX(heroes[i].x),y:SY(heroes[i].y)}),select:o=>{sel=o;},spotObj:i=>spots[i],hero:i=>heroes[i],
-  wave:n=>{wave=n;},spawn:(t,d=0)=>spawnZ(t,d)};
+  wave:n=>{wave=n;},spawn:(t,d=0)=>spawnZ(t,d),clear:()=>{queue=[];for(const z of living())z.gone=1;}};
 
  // ---------------------------------------------------------------- loop
  await new Promise(resolve=>{

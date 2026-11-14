@@ -51,7 +51,8 @@ function lineFor(id,rand){try{const {quoteOf}=require("src/data/characterQuotes.
 const nameOf=id=>{try{const {ACTIVE_CATALOG}=require("src/contentPolicy.js");return ACTIVE_CATALOG.characters.find(c=>c.id===id)?.name||'';}catch{return '';}};
 
 async function moneygrab(s){
- const [c,x]=s.canvas(680,420,{fill:true});fullBleed(s,{bg:'#ffffff'});s.body.classList.add('drag-arena-body');s.controls([]);
+ // x = where drawing goes: the screen, or a cached layer while one is painted
+ const [c,x0]=s.canvas(680,420,{fill:true});let x=x0;fullBleed(s,{bg:'#ffffff'});s.body.classList.add('drag-arena-body');s.controls([]);
  TS.preloadTapper();
  const shake=makeShake();
  const net=isOnline(s)?s.online:null,me=net?net.me:0,them=1-me;
@@ -141,8 +142,31 @@ async function moneygrab(s){
  // ---------------------------------------------------------------- drawing
  const pic=n=>TS.picture(n);
  function cover(img,rx,ry,rw,rh){const k=Math.max(rw/img.width,rh/img.height),w=img.width*k,h=img.height*k;x.drawImage(img,rx+(rw-w)/2,ry+(rh-h)/2,w,h);}
- function text(t,px,py,size,{fill=INK,align='left',weight=700,alpha=1,base='middle'}={}){x.save();x.globalAlpha*=alpha;x.font=`${weight} ${size}px ${FONT}`;x.fillStyle=fill;x.textAlign=align;x.textBaseline=base;x.fillText(t,px,py);x.restore();}
- function fitText(t,maxW,size,weight=800){x.font=`${weight} ${size}px ${FONT}`;const w=x.measureText(t).width;return w>maxW?Math.max(8,size*maxW/w):size;}
+ // sizes rounded to half pixels: the canvas keeps parsed fonts by their text, and every label used a new fractional size
+ const fontOf=(weight,size)=>`${weight} ${Math.round(size*2)/2}px ${FONT}`;
+ function text(t,px,py,size,{fill=INK,align='left',weight=700,alpha=1,base='middle'}={}){const ga=x.globalAlpha;if(alpha!==1)x.globalAlpha=ga*alpha;x.font=fontOf(weight,size);x.fillStyle=fill;x.textAlign=align;x.textBaseline=base;x.fillText(t,px,py);x.globalAlpha=ga;}
+ function fitText(t,maxW,size,weight=800){x.font=fontOf(weight,size);const w=x.measureText(t).width;return w>maxW?Math.max(8,size*maxW/w):size;}
+ // ---- pre-shrunk art (owner, Nov 14: 'crazy low framerate on my phone'): every frame used to shrink the 1920 px room
+ // picture, a floor pattern made anew, 1024 px bar tiles, 1280x2400 body sheets and 480 px portraits down to a phone
+ // screen. Now the room (wall, floor, doors) and each bar with its station are painted once per layout into their own
+ // canvases, sheets are shrunk once to the size people are drawn, faces once per character (HF.faceSprite).
+ const mk=(w,h)=>{const cv=document.createElement('canvas');cv.width=Math.max(1,Math.ceil(w));cv.height=Math.max(1,Math.ceil(h));return cv;};
+ function paint(cv,ox,oy,fn){const keep=x;x=cv.getContext('2d');x.translate(-ox,-oy);try{fn();}finally{x=keep;}}
+ const layers=new Map();
+ function layer(key,bx,by,bw,bh,fn){let e=layers.get(key);if(!e){if(layers.size>40)layers.clear();e=mk(bw,bh);paint(e,bx,by,fn);layers.set(key,e);}x.drawImage(e,bx,by);}
+ const loaded=(...names)=>names.map(n=>pic(n)?1:0).join('');
+ function drawRoomLayer(w,b){const {R}=b,L=lvOf(w),wide=R.w>R.h*1.1;
+  layer(['room',L.id,R.x,R.y,R.w,R.h,b.mirror?1:0,b.B.toFixed(1),loaded('bg-'+L.id,'bg-'+L.id+'-wide','floor-'+L.id,'door-'+L.id),wide].join('|'),R.x,R.y,R.w,R.h,()=>{drawRoom(w,b);for(let r=0;r<ROWS;r++)drawDoor(w,b,r);});}
+ function drawBarLayer(w,b,r){const {R}=b,L=lvOf(w),yb=b.barY(r),y0=Math.floor(yb-b.B*.62),y1=Math.ceil(yb+b.B*.4);
+  layer(['bar',L.id,R.x,R.w,yb.toFixed(1),b.mirror?1:0,b.B.toFixed(1),loaded('bar-'+L.id,'tap-'+L.id)].join('|'),R.x,y0,R.w,y1-y0,()=>{drawBar(w,b,r);drawTap(w,b,r);});}
+ // a body sheet shrunk to k (template px -> screen px), every frame cell a whole number of pixels
+ const sheets=new Map();
+ function sheetAt(name,k){const sh=TS.sheet(name);if(!sh)return null;const d=sh.def,cw=Math.max(2,Math.round(d.frame[0]*k)),ch=Math.max(2,Math.round(d.frame[1]*k)),key=name+'|'+cw+'|'+ch;
+  let e=sheets.get(key);if(e)return e;const names=Object.keys(d.rows),cols=Math.max(...Object.values(d.rows)),W0=cols*cw,H0=names.length*ch;
+  let src=sh.img,sw=src.width,sh0=src.height;while(sw/2>=W0*1.5&&sh0/2>=H0*1.5){const t=mk(sw/2,sh0/2);t.getContext('2d').drawImage(src,0,0,t.width,t.height);src=t;sw=t.width;sh0=t.height;}
+  const cv=mk(W0,H0),g=cv.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(src,0,0,W0,H0);
+  e={cv,def:d,cw,ch,names};if(sheets.size>24)sheets.clear();sheets.set(key,e);return e;}
+ const names=new Map(),nameFor=id=>{if(!names.has(id))names.set(id,nameOf(id));return names.get(id);};
  function drawRoom(w,b){
   const {R}=b,L=lvOf(w),ink=L.ink;x.save();x.beginPath();x.rect(R.x,R.y,R.w,R.h);x.clip();
   const bg=pic('bg-'+L.id+(R.w>R.h*1.1?'-wide':''))||pic('bg-'+L.id)||pic('bg-'+L.id+'-wide');
@@ -172,7 +196,8 @@ async function moneygrab(s){
  function person(b,px,r,{sheetName,row,f,shirt,apron,face,dir,size}){
   const yb=b.barY(r),k=b.head/TS.BODY.headSize*(size||1),sh=sheetName&&TS.sheet(sheetName);
   const hx=px,hy=yb-(TS.BODY.bar-TS.BODY.head[1])*k;let nx=px,ny=hy+b.head*.42,fw=b.head*.74;   // drawn stand-in: collar at the top of the torso
-  if(sh){const d=sh.def,fr=TS.frameRect(sh,row,f);x.save();x.translate(px,yb);if(dir<0)x.scale(-1,1);x.drawImage(sh.img,fr.sx,fr.sy,fr.sw,fr.sh,-d.head[0]*k,-d.bar*k,d.frame[0]*k,d.frame[1]*k);x.restore();
+  if(sh){const d=sh.def,ss=sheetAt(sheetName,k),ri=Math.max(0,ss.names.indexOf(row)),n=d.rows[ss.names[ri]]||1,fi=((f%n)+n)%n;
+   x.save();x.translate(px,yb);if(dir<0)x.scale(-1,1);x.drawImage(ss.cv,fi*ss.cw,ri*ss.ch,ss.cw,ss.ch,-d.head[0]*k,-d.bar*k,d.frame[0]*k,d.frame[1]*k);x.restore();
    const nk=TS.neckAt(sheetName,row,f),sw=TS.NECKS[sheetName]?.shoulders||66;if(nk){nx=px+(nk[0]-d.head[0])*k*(dir<0?-1:1);ny=yb-(d.bar-nk[1])*k;}fw=sw*FACE_K*k;}
   else{const tw=b.head*1.25,top=hy+b.head*.42;x.save();x.translate(px,0);if(dir<0)x.scale(-1,1);
    x.fillStyle=shirt;x.strokeStyle=INK;x.lineWidth=1.5;rr(x,-tw/2,top,tw,yb-top+4,tw*.25);x.fill();x.stroke();
@@ -219,10 +244,13 @@ async function moneygrab(s){
  }
  function drawCash(b,m){const px=b.X(m.u),yb=b.barY(m.row)-b.B*.05,img=pic('cash'),wd=b.B*.34;x.globalAlpha=m.t<1&&Math.floor(m.t*10)%2?.4:1;
   if(img){x.drawImage(img,px-wd/2,yb-wd*.62,wd,wd*.62);}else{x.fillStyle='#6fbf73';x.strokeStyle=INK;x.lineWidth=1.2;rr(x,px-wd/2,yb-wd*.32,wd,wd*.3,2);x.fill();x.stroke();text('$',px,yb-wd*.17,wd*.24,{align:'center',weight:800,fill:'#ffffff'});}x.globalAlpha=1;}
+ const wraps=new Map();
  function bubble(b,px,py,t,name,alpha){
-  const fs=clamp(b.B*.15,10,20);x.font=`700 ${fs}px ${FONT}`;const maxW=Math.min(b.R.w*.6,fs*18),words=t.split(' '),lines=[];let ln='';
-  for(const wd of words){const tr=ln?ln+' '+wd:wd;if(x.measureText(tr).width>maxW&&ln){lines.push(ln);ln=wd;}else ln=tr;}if(ln)lines.push(ln);
-  const lw=Math.max(...lines.map(l=>x.measureText(l).width),name?x.measureText(name).width*.8:0)+fs*1.1,lh=fs*1.2*lines.length+(name?fs*.95:0)+fs*.7;
+  const fs=clamp(b.B*.15,10,20),maxW=Math.min(b.R.w*.6,fs*18),key=t+'|'+name+'|'+fs.toFixed(1)+'|'+maxW.toFixed(0);let wr=wraps.get(key);
+  if(!wr){x.font=fontOf(700,fs);const words=t.split(' '),lines=[];let ln='';   // word wrap measured once per line of speech (it was every frame)
+   for(const wd of words){const tr=ln?ln+' '+wd:wd;if(x.measureText(tr).width>maxW&&ln){lines.push(ln);ln=wd;}else ln=tr;}if(ln)lines.push(ln);
+   wr={lines,lw:Math.max(...lines.map(l=>x.measureText(l).width),name?x.measureText(name).width*.8:0)+fs*1.1};if(wraps.size>200)wraps.clear();wraps.set(key,wr);}
+  const lines=wr.lines,lw=wr.lw,lh=fs*1.2*lines.length+(name?fs*.95:0)+fs*.7;
   let bx=clamp(px-lw/2,b.R.x+4,b.R.x+b.R.w-lw-4),by=py-lh-fs*.6;
   if(by<b.top+2){by=Math.max(b.top+2,py-lh*.5);const side=px+b.head*.75+lw<b.R.x+b.R.w-4?1:-1;bx=clamp(side>0?px+b.head*.75:px-b.head*.75-lw,b.R.x+4,b.R.x+b.R.w-lw-4);}
   x.save();x.globalAlpha=alpha;x.fillStyle='#ffffff';x.strokeStyle=INK;x.lineWidth=1.5;rr(x,bx,by,lw,lh,fs*.5);x.fill();x.stroke();
@@ -232,24 +260,24 @@ async function moneygrab(s){
  }
  // a whole set of bars: w = a world (own or remote), b = its block, who = player index wearing the apron
  function drawBars(w,b,who,{small}={}){
-  drawRoom(w,b);const L=lvOf(w);
+  drawRoomLayer(w,b);const L=lvOf(w);
   for(let r=0;r<ROWS;r++){
-   drawDoor(w,b,r);
    const here=w.cust.filter(cu=>cu.row===r).sort((a,bb)=>a.u-bb.u);
    for(const cu of here){const px=b.X(cu.u),f=Math.floor(w.bob*6+cu.id),row=cu.state,dir=(cu.state==='push'?-1:1)*b.dir;
-    person(b,px,r,{sheetName:'customer-'+(cu.body+1),row,f,shirt:cu.shirt,dir,face:(nx,ny,fw)=>{const m=MOOD[cu.state],fh=HF.faceHeight(cu.char,m,fw),cx=nx+dir*fw*FACE_FWD,cy=ny-fh*CHIN;if(!HF.drawFaceById(x,cu.char,m,cx,cy,fw,dir)){x.fillStyle='#ddd';x.beginPath();x.arc(cx,cy,fw*.55,0,Math.PI*2);x.fill();}}});
+    person(b,px,r,{sheetName:'customer-'+(cu.body+1),row,f,shirt:cu.shirt,dir,face:(nx,ny,fw)=>{const m=MOOD[cu.state],fh=HF.faceHeight(cu.char,m,fw),cx=nx+dir*fw*FACE_FWD,cy=ny-fh*CHIN;const fs=HF.faceSprite(cu.char,m,fw,dir);if(fs)x.drawImage(fs.cv,Math.round(cx+fs.x),Math.round(cy+fs.y));else{x.fillStyle='#ddd';x.beginPath();x.arc(cx,cy,fw*.55,0,Math.PI*2);x.fill();}}});
     if(cu.state==='eat')drawItem(w,b,cu.u+.02,r,false);}
    // the bartender (this world's player) at the tap end of the row they're on
    if(w.row===r){const f=Math.floor(w.bob*8),row=w.pause>0?'lose':w.act==='idle'?'idle':w.act,mood=w.pause>0?'sad':w.act==='catch'?'win':null;
     person(b,b.tapX,r,{sheetName:'bartender-p'+(who+1),row,f,shirt:'#ffffff',apron:who?['#d64545','#ffffff']:[BLUTH,BLUE],dir:TS.sheet('bartender-p'+(who+1))?b.dir:-b.dir,/* the sheet already faces down the bar (left) */size:1.05,
-     face:(nx,ny,fw)=>{const m=mood||(w.act==='serve'?'normal':null),id=s.players[who]?.character,fh=HF.faceHeight(id,m||'normal',fw);HF.drawFace(s,x,who,nx-b.dir*fw*FACE_FWD,ny-fh*CHIN,fw/.6,m,-b.dir);}});}
-   drawBar(w,b,r);drawTap(w,b,r);
+     face:(nx,ny,fw)=>{const m=mood||(w.act==='serve'?'normal':null),id=s.players[who]?.character,fh=HF.faceHeight(id,m||'normal',fw);const fx=nx-b.dir*fw*FACE_FWD,fy=ny-fh*CHIN,P=s.players[who],fs=P&&!P.large&&HF.faceSprite(id,m||s.spriteMood?.(who)||'normal',fw,-b.dir);
+      if(fs)x.drawImage(fs.cv,Math.round(fx+fs.x),Math.round(fy+fs.y));else HF.drawFace(s,x,who,fx,fy,fw/.6,m,-b.dir);}});}
+   drawBarLayer(w,b,r);
    for(const m of w.cash)if(m.row===r)drawCash(b,m);
    for(const n of w.nanas)if(n.row===r)drawItem(w,b,n.u,r,false);
    for(const st of w.sticks)if(st.row===r)drawItem(w,b,st.u,r,true);
   }
   // speech bubbles over the faces
-  for(const sb of w.say){const cu=w.cust.find(q=>q.id===sb.cid);if(!cu)continue;const px=b.X(cu.u),py=b.barY(cu.row)-(TS.BODY.bar-TS.BODY.head[1])*b.head/TS.BODY.headSize-b.head*.2;bubble(b,px,py,sb.text,small?'':nameOf(cu.char),clamp(sb.t*3,0,1));}
+  for(const sb of w.say){const cu=w.cust.find(q=>q.id===sb.cid);if(!cu)continue;const px=b.X(cu.u),py=b.barY(cu.row)-(TS.BODY.bar-TS.BODY.head[1])*b.head/TS.BODY.headSize-b.head*.2;bubble(b,px,py,sb.text,small?'':nameFor(cu.char),clamp(sb.t*3,0,1));}
   if(!small)for(const cu of w.cust)if(cu.sent&&cu.u<.08&&cu.state==='walk'){text('from '+cu.sent,b.X(cu.u),b.barY(cu.row)+b.B*.2,clamp(b.B*.12,8,12),{align:'center',fill:'#7d5ba6',weight:700});}
   for(const p of w.pops){const px=b.X(p.x),sz0=p.big?clamp(b.B*.3,14,34):clamp(b.B*.18,11,20),py=Math.max(b.top+sz0,b.barY(p.y)-b.B*.5-(1.6-p.t)*b.B*.2),sz=p.big?clamp(b.B*.3,14,34):clamp(b.B*.18,11,20);text(p.text,clamp(px,b.R.x+sz*2,b.R.x+b.R.w-sz*2),py,sz,{align:'center',fill:p.c,weight:900,alpha:clamp(p.t*2,0,1)});}
   if(w.flash>0){x.fillStyle=`rgba(214,42,42,${w.flash*.18})`;x.fillRect(b.R.x,b.R.y,b.R.w,b.R.h);}
@@ -269,7 +297,7 @@ async function moneygrab(s){
   const R=b.R,fs=lay.fs,y=R.y+(lay.kind==='tall'&&R.y>0?fs*1.2:lay.kind!=='solo'&&watch?50+fs*.9:fs*1.5),left=R.x+fs*.7;   // online: the rival's panel sits under the duel chip
   // one panel at the top LEFT (the right side belongs to Pause/Exit): $score + name (P2: the score to beat), lives + level
   const name=!net&&who===1?`beat $${w.scores?.[0]??0}`:(s.players[who]?.name||''),lvl=`Level ${w.cleared+1}`;
-  x.font=`800 ${fs*1.2}px ${FONT}`;const sw=x.measureText(`$${w.score}`).width;x.font=`700 ${fs*.7}px ${FONT}`;const nw=x.measureText(name).width;x.font=`800 ${fs*.75}px ${FONT}`;const lw2=x.measureText(lvl).width;
+  x.font=fontOf(800,fs*1.2);const sw=x.measureText(`$${w.score}`).width;x.font=fontOf(700,fs*.7);const nw=x.measureText(name).width;x.font=fontOf(800,fs*.75);const lw2=x.measureText(lvl).width;
   const pw=Math.min(R.w*.6,Math.max(sw+fs*.6+nw,sw+fs*.5+3*fs*1.1+fs*.2+lw2)+fs*.9);
   x.save();x.fillStyle='rgba(255,255,255,.9)';rr(x,left-fs*.4,y-fs*.95,pw,fs*1.9,fs*.4);x.fill();x.restore();
   text(`$${w.score}`,left,y-fs*.1,fs*1.2,{weight:800});

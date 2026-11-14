@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.97.4
+
+- **Banana Stand Tapper runs smoothly on phones:** the room, bars, bodies and faces are shrunk once to the size they show at instead of every frame (about twice the frame rate).
+- **Horde freeze fixed:** a returning Vinyl Record that kept missing a moving survivor sped up every frame until the game locked up, a few minutes into a night. Its speed is capped now, and the game can no longer get stuck on a runaway position.
+- **Sean of the Dead:** calling the next wave while the last zombies are still walking now pays too (the skipped break plus the wave-clear bonus); crawlers are drawn as big as the walkers; Mrs. Doubtfire (and anyone else with a cropped photo) shows her real face instead of the drawn stand-in.
+
 ## v0.97.3
 
 - **Tapper faces sit on the bodies:** every customer's and bartender's chin now tucks into the collar (they looked like they were floating above the shirts).
