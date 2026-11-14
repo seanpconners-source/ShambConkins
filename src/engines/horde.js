@@ -239,6 +239,7 @@ async function horde(s){
  function areaHit(px,py,r,dmg,o,kb){kcbDmg=dmg;kcbO=o;kcbX=px;kcbY=py;kcbKb=kb||0;forNear(px,py,r,areaCb);}
  function hitEnemy(e,dmg,o,kx,ky,crit,ignoreArmor){
   if(e.dead||e.immune)return;
+  if(!P[o])o=0;   // a hit credited to a player who isn't in the game (solo) goes to player 1
   if(e.armor&&!ignoreArmor)dmg=Math.max(1,dmg-e.armor);
   // online, the other phone reports the hit (batched) and only guesses the kill until player 1's phone confirms it
   // (e.pd = [batch, dmg, ...] not yet confirmed by player 1's phone: its snapshots' hp don't include them yet)
@@ -470,7 +471,7 @@ async function horde(s){
     case 2:for(const p of P)if(!p.down&&(p.x-z.x)**2+(p.y-z.y)**2<z.r*z.r)p.slow=.4;if(z.t>=z.dur)done=true;break;
     case 3:if(z.t>=z.dur){if(z.a>0&&!z.st)fx(8,z.x,z.y,z.r,.5,cabin?'#ff8a3a':'#9aff6a');else fx(0,z.x,z.y,z.r,.4,z.st==='push'?'#e0c8ff':'#ff8a3a');fx(2,z.x,z.y,z.r*.6,.15,'#fff');burst(z.x,z.y,10,z.st==='push'?'#e0c8ff':'#ff8a3a',z.r*2,.4,2.6);addShake(z.st==='push'?7:3);sfx('zap',80,()=>tone(90,.2,.06,'sawtooth'));
       for(const p of P)if(!p.down&&(p.x-z.x)**2+(p.y-z.y)**2<(z.r+PRAD)**2){hurtPlayer(p,z.dmg);if(z.st==='push'){const dx=p.x-z.x,dy=p.y-z.y,d=Math.sqrt(dx*dx+dy*dy)||1;p.vx+=dx/d*420;p.vy+=dy/d*420;}}
-      if(z.a>0&&host){areaHit(z.x,z.y,z.r,z.a,net?me:rnd()<.5?0:1,200);damageProps(z.x,z.y,z.r,20,0);}
+      if(z.a>0&&host){areaHit(z.x,z.y,z.r,z.a,net?me:P.length>1&&rnd()<.5?1:0,200);damageProps(z.x,z.y,z.r,20,0);}
       if(z.st==='push')forNear(z.x,z.y,z.r,knockCb,z.x,z.y);done=true;}break;
    }
    if(done)release(Z,Zpool,i);
