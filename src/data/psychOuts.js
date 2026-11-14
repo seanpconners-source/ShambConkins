@@ -1,0 +1,56 @@
+// BASEketball psych-outs (owner, Nov 14: "really hardcore offensively bad, hilariously crass and vulgar and mean").
+// The defender throws one of these (or types their own) while the shooter lines up, like the movie. {name} = the shooter.
+// Crude, filthy, personal; no slurs and nothing about race, religion, disability or sexuality as an insult.
+const PSYCH_LINES=[
+ 'Your mom called. She wants her dignity back, {name}.',
+ 'I banged your mom so hard she started tipping me.',
+ '{name}, your dad left for milk. The milk came back.',
+ 'You shoot like you wipe: three tries and it\'s still a mess.',
+ 'Nice form, {name}. Did you learn that from a cardboard box?',
+ 'Your breath smells like a hobo\'s sock drawer.',
+ 'I\'ve seen better arcs on a guy peeing into the wind.',
+ '{name}, your browser history just texted your grandma.',
+ 'Miss this and I\'m telling everyone what you do in the shower.',
+ 'You throw like your arms were installed by IKEA.',
+ 'Your sister swiped right on me. Twice. Out of pity.',
+ 'The last time you scored, it was a STD.',
+ 'Hey {name}, is that a basketball or your last chance at love?',
+ 'Even your therapist puts you on mute.',
+ 'You smell like a gas station hot dog that lost a fight.',
+ 'Your mom\'s so loose she has her own ZIP code.',
+ 'Brick it, {name}. Just like your personality.',
+ 'You couldn\'t hit water if you fell out of a boat.',
+ 'I just farted. That\'s the smartest thing that\'ll happen this inning.',
+ '{name}, your nudes are mid. Everyone agrees.',
+ 'Your hairline is running away faster than your dad did.',
+ 'Nobody came to your birthday. Not even you.',
+ 'Shoot already. Your mom\'s waiting for me in the parking lot.',
+ 'That\'s a lot of confidence for someone with a micro-everything.',
+ 'Your shooting coach was a toilet plunger.',
+ '{name} peaked in the third grade and it was a nosebleed.',
+ 'I hope you miss as hard as your parents did with you.',
+ 'Somewhere a village is missing its idiot, {name}.',
+ 'You\'ve got the touch of a drunk raccoon in oven mitts.',
+ 'Your Spotify wrapped was just crying noises.',
+ 'Hey {name}, the herpes clinic says your results are in. Congrats!',
+ 'Your ex is in the crowd. With your cousin. Wave!',
+ 'I\'ve dropped deuces with better aim than that.',
+ 'If you make this, you still have to go home and be you.',
+ 'Fun fact: your mom\'s safeword is my name.',
+ '{name}, your whole family tree is one stick.',
+ 'You look like a foot that learned to talk.',
+ 'Shoot it like you mean it. Oh wait, you\'ve never meant anything.',
+ 'Pants down, {name}? No? Then why do you look so small?',
+ 'Your diet is ranch dressing and disappointment.',
+ 'BOOGERS ON THE BALL! Just kidding. Or am I?',
+ 'Your grandma has a better jump shot. And she\'s dead.',
+ 'Miss and I get your PlayStation and your mom.',
+ 'You smell like you bathe in Cheeto dust and regret.',
+ '{name}, the Milwaukee Beers just cut you from the parking lot.',
+ 'I\'ve seen more hustle from a sloth on Xanax.',
+];
+// Short loud ones for the CPU and the air-horn feel
+const PSYCH_SHOUTS=['YOUR MOM!','*AIR HORN*','BRICK!','AIRBALL!','CHOKE!','SMELLS LIKE A MISS!','NICE PANTS, NERD!','BOOOOOOO!'];
+function dealPsych(rand=Math.random,n=6,avoid=[]){const pool=PSYCH_LINES.filter(l=>!avoid.includes(l)),out=[];while(out.length<n&&pool.length)out.push(pool.splice(Math.floor(rand()*pool.length),1)[0]);return out;}
+const fillPsych=(line,name)=>String(line).replace(/\{name\}/g,name||'Rookie');
+Object.assign(exports,{PSYCH_LINES,PSYCH_SHOUTS,dealPsych,fillPsych});

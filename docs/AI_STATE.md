@@ -2,6 +2,24 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+v0.97.6 (Nov 14): BASEKETBALL REBUILT (owner: like Megatouch Hoop Jones, movie rules, stadium like the movie, jumbo
+scoreboard, choose base, crass psych-outs from a list or typed, online too; GPT sprites). src/engines/baseketball.js (engine
+key basketball2p kept; game.bkMode 'movie' = baseketball-shootout, 'hoop' = NEW baseketball-hoop-jones in remakePack, family
+'baseketball' in arcadeConsole, solo 'levels', NET_NATIVE). 3D in feet: rim (hx,10,0), board face z 1.25, camera behind the
+shooter (CAM_UP 9.5, BACK 7, PITCH -.14) yawed to the rim, P() projection, launch angle 58° (52 came in too flat: front rim),
+rim rod lim BALL_R+.025, ball/board/rim/floor physics at 240 Hz. Flick: dy/(.42H) = power, dx/dy = aim; ASSIST (assisted()):
+power error x.33*sqrt(12/D), aim x.5 (hoop .8), centred +3%..+.7% by distance (sweep scratch bk4.mjs with debug.simShot):
+make windows 1B ±12%, 2B ±7%, 3B ±5%, HR ±5%. Movie: pick base buttons (1B 12ft, 2B 17, 3B 22, HR 28 at angles), 3 innings,
+max 10 shots a half, psych 3/half via DOM button + sheet (dealPsych 6 of 46 lines in src/data/psychOuts.js + typed, shaken 3.2 s
+= extra power/aim error after the assist), CPU psychs/shoots. Online movie: batter judges {sp},{l},{res}, defender {ps} ->
+batter {psd}. Hoop: 4 spots x 4 balls (last = money x2), 40 s, goal 12+4n, dist 13+1.6(n-1), basket amp/speed grow; online =
+netField both runs at once. Stand-in art drawn (stadium cached layer, shooter from behind, jumbotron line score + face).
+Slots src/data/baseketballSprites.js (assets/baseketball, LATER), templates tools/baseketball-templates.mjs, brief
+docs/baseketball-sprites/GPT-SPRITE-BRIEF.md, START-HERE row. online-native both ids + fuzz pass.
+TAPPER DIFFICULTY (owner: level 4 impossible): diff +8%/level, quota 8+3n, maxOn 2+floor(.7n) (cap 8), shoveT .38-.03n,
+first-timer door drink 50%+5%/level (always an empty), other empties 55%+8%/level; out the door otherwise = no empty.
+Same autopilot (scratch tapdiff.mjs SKIP=.93): old L3 = 10 on bars, 51 empties/min, died L4; new L1-3 = 2 on bars, ~12/min.
+
 v0.97.5 (Nov 14): SEAN OF THE DEAD BALANCE (owner: tier 4+ never affordable, ranges drop): kill gold x waveGold()
 (1+.07/wave, x1.25 in 2P), clearBonus 25+10*wave, earlyBonus scales; tier 4/5 costs ~-20% (sotd/data.js), ranges monotonic
 per path (gun A4 94/A5 108, fire t3 108/B 120/136, boom A 160/180, rifle B 190/210), Chainsaw Hand dps 110/220; HP growth

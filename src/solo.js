@@ -39,7 +39,7 @@ const SOLO_IDS={
  'hyrule-rupee-rush':'cpu','hyrule-sword-duel':'cpu','chutes-ladder-rush':'cpu','candy-gumdrop-catch':'cpu','candy-color-dash':'cpu',
  'derezzed-cycles':'cpu','bomber-duel':'cpu','pac-maze-duel':'cpu','block-battle':'cpu','shred-hero':'cpu','underdog-dodgeball':'cpu','fight-night':'cpu',
  'color-of-money':'cpu','task-tallest-thing':'cpu','bug-artillery':'cpu','taskmaster-curling':'cpu','happy-gilmore-golf':'cpu','space-swarm-versus':'cpu',
- 'sewer-clash':'cpu','paddys-beer-pong':'cpu','baseketball-shootout':'cpu','django-hangman':'cpu','django-hangman-showdown':'cpu',
+ 'sewer-clash':'cpu','paddys-beer-pong':'cpu','baseketball-shootout':'cpu','baseketball-hoop-jones':'levels','django-hangman':'cpu','django-hangman-showdown':'cpu',
  // batch 4: trivia, cards, dice and table games vs CPU
  'trivia-mixed':'cpu','trivia-nick90':'cpu','trivia-dbz':'cpu','trivia-hxh':'cpu','trivia-sitcom':'cpu','trivia-hardcore':'cpu',
  'trivia-lightning':'cpu','trivia-wager':'cpu','trivia-survival':'cpu',
@@ -88,7 +88,7 @@ const NET_NATIVE=new Set(['banana-money-grab','major-league-fielding','major-lea
  'simon-faceoff','price-bid-off','paddys-darts','django-hangman-showdown','django-hangman-wanted',
  'matrix-ultimate','greed-island-mancala','office-dots-boxes',
  'trek-mini-chess','wopr-grid','smb3-nspade','sqwordle','clue-lineup','django-hangman',
- 'taskmaster-curling','bug-artillery','happy-gilmore-golf','color-of-money','baseketball-shootout',
+ 'taskmaster-curling','bug-artillery','happy-gilmore-golf','color-of-money','baseketball-shootout','baseketball-hoop-jones',
  'task-tallest-thing','fast-quarter-mile','block-battle','shred-hero','candy-color-dash','chutes-ladder-rush',
  'brawndo-fruit-merge','candy-gumdrop-catch','review-pancakes','terminator-scan','microgame-rush','rush-marathon',
  'pong-duel','derezzed-cycles','snake-v-snake','metal-gear-tank-duel','kill-bill-duel',

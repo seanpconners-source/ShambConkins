@@ -112,6 +112,13 @@ if (fs.existsSync(tapperDir)) for (const f of fs.readdirSync(tapperDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('tapper:' + m[1].toLowerCase(), MIME[ext], ext, path.join(tapperDir, f));
 }
+// BASEketball drop-in art: assets/baseketball/<name>.(webp|png) -> baseketball:<name>
+// (names and layout: src/data/baseketballSprites.js, docs/baseketball-sprites/README.md).
+const bkDir = path.join(root, 'assets/baseketball');
+if (fs.existsSync(bkDir)) for (const f of fs.readdirSync(bkDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('baseketball:' + m[1].toLowerCase(), MIME[ext], ext, path.join(bkDir, f));
+}
 // Major League Baseball sprite sheets and pictures: assets/baseball/<name>.(webp|png) -> baseball:<name>
 // (names and layout: src/data/baseballSprites.js, docs/baseball-sprites/README.md).
 const baseballDir = path.join(root, 'assets/baseball');

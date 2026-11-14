@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.97.6
+
+- **BASEketball, rebuilt:** you shoot from behind the shooter like a bar-top machine, in a night-time stadium like the movie's, with a jumbo baseball scoreboard. Pick your base (single to home run), flick the ball up to shoot. The defender psychs you out with a list of filthy lines or types their own (online too), and your hands shake for that shot.
+- **New: BASEketball · Hoop Jones:** four spots, money balls, 40-second levels with a goal; every level the shots get longer and the basket slides faster.
+- **Banana Stand Tapper difficulty:** levels climb gently like the real Tapper: fewer customers at once early on, longer shoves, empties only some of the time at first, and each level only a little faster.
+
 ## v0.97.5
 
 - **Sean of the Dead, rebalanced:** zombies pay more as the waves get tougher, wave-clear and early-call bonuses grow each wave, and tier 4 and 5 upgrades cost less, so you can actually reach the super paths. No upgrade lowers a tower's range any more (Chainsaw Hand, Flamethrower, Claymores and the Gatling used to), and the Chainsaw Hand hits much harder. In 2P kills pay a little extra.

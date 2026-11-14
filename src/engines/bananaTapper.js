@@ -7,7 +7,7 @@
 // Tap loose cash on the bars (+150: there's always money in the banana stand). Serve a level's last customer and the next
 // bar opens (src/data/tapperSprites.js LEVELS: banana stand → Balboa Towers penthouse → Sudden Valley model home → again,
 // faster). NO CLOCK (owner, Nov 14): three lives, levels until you're out; each level has more customers than the last
-// (quotaFor: 10, 15, 20, ...) and runs faster (diff), the score keeps adding up. Every customer who catches an order
+// (quotaFor: 8, 11, 14, ...) and runs faster (diff), the score keeps adding up. A customer who catches an order
 // slides the empty back unless shoved out the door (real Tapper). Tap another bar = walk there, tap your bar = serve
 // (Nov 14: one tap did both, so walking over to catch an empty threw an order down an empty bar, and fast serving met
 // customers at the door, where they leave without an empty).
@@ -65,8 +65,17 @@ async function moneygrab(s){
   return {player,rand:seededRandom(s.seed+':tapper'),lv:0,cleared:0,row:1,cd:0,lives:3,score:0,cust:[],nanas:[],sticks:[],cash:[],spawnT:1.2,cashT:7,
    pause:0,flash:0,bob:0,pops:[],spawned:0,phase:'card',card:2.2,uid:1,act:'idle',actT:0,say:[],sent:[],time:0,cap:SECONDS,lost:'',levelT:0,caught:0,empties:0};
  }
- const diff=w=>1+.16*w.cleared+Math.min(.25,w.levelT/240);   // faster every level, a little faster the longer a level runs
- const quotaFor=n=>10+5*n;   // customers in the n-th level played (0-based): every level runs longer than the one before
+ // DIFFICULTY (owner, Nov 14: 'too hard too soon... level 4 is like impossible, level 1 isn't too bad', make it climb like the
+ // real Tapper): each level a little faster (+8%, was +16%) and longer (8, 11, 14... customers, was 10, 15, 20), never more
+ // than 2-8 customers on the bars at once (growing slowly), a catch shoves them further back early on (a third of the bar on level 1,
+ // shrinking each level), a first-timer shoved out the door stops and drinks half the time (+5% a level) and sends that empty
+ // back, anyone else shoved out just leaves, and a drink finished on the bar sends the empty back 55% of the time (+8% a level).
+ const diff=w=>1+.08*w.cleared+Math.min(.15,w.levelT/300);
+ const quotaFor=n=>8+3*n;
+ const maxOn=w=>Math.min(8,2+Math.floor(w.cleared*.7));   // 2, 2, 3, 4, 4, 5, 6, 6, 7, 8 on the bars at once
+ const shoveT=w=>Math.max(.22,.38-.03*w.cleared);
+ const doorDrink=w=>Math.min(.8,.5+.05*w.cleared);   // a first-timer shoved out the door stops there and drinks this often (always sends that empty back)
+ const emptyChance=w=>Math.min(.9,.55+.08*w.cleared);
  function startLevel(w){w.phase='card';w.card=2.2;w.spawned=0;w.levelT=0;w.cust=[];w.nanas=[];w.sticks=[];w.cash=[];w.spawnT=1.2;w.say=[];if(w===cur){audio.level(lvOf(w).id);audio.narrate(w.cleared?'level':'start',.8);}}
  function talk(w,cu,text,t=2.6){if(w.say.length>=2&&!/!/.test(text))return;w.say=w.say.filter(b=>b.cid!==cu.id);w.say.push({cid:cu.id,text,t});if(net&&w===cur)nf?.event({say:[cu.id,text]});}
  function spawnCust(w,row,char,sent){
@@ -94,7 +103,8 @@ async function moneygrab(s){
   w.levelT+=dt;const k=diff(w),quota=quotaFor(w.cleared);
   // arrivals: the level's crowd, plus anyone the other player shoved over (online)
   if(w.sent.length){const [row,char,from]=w.sent.shift();if(w.cust.filter(cu=>cu.row===row).length<4){const cu=spawnCust(w,row,char,from);cu.talks=false;}}
-  w.spawnT-=dt;if(w.spawnT<=0&&w.spawned<quota){w.spawnT=clamp(2.2/k,.65,2.2)*(.6+w.rand()*.8);const r=Math.floor(w.rand()*ROWS),P=pool(),ch=P[Math.floor(w.rand()*P.length)];
+  w.spawnT-=dt;if(w.spawnT<=0&&w.spawned<quota&&w.cust.length>=maxOn(w))w.spawnT=.5;
+  else if(w.spawnT<=0&&w.spawned<quota){w.spawnT=clamp(3/k,1,3)*(.6+w.rand()*.8);const r=Math.floor(w.rand()*ROWS),P=pool(),ch=P[Math.floor(w.rand()*P.length)];
    if(w.cust.filter(cu=>cu.row===r).length<3){spawnCust(w,r,ch);w.spawned++;}}
   w.cashT-=dt;if(w.cashT<=0){w.cashT=7+w.rand()*5;w.cash.push({row:Math.floor(w.rand()*ROWS),u:.2+w.rand()*.55,t:4});}
   for(const m of w.cash)m.t-=dt;w.cash=w.cash.filter(m=>m.t>0&&!m.got);
@@ -102,12 +112,13 @@ async function moneygrab(s){
    if(cu.talks&&cu.state==='walk'){cu.talkT-=dt;if(cu.talkT<=0){cu.talks=false;talk(w,cu,lineFor(cu.char,w.rand));}}
    if(cu.state==='walk'){cu.hop-=dt;if(cu.hop<=0){cu.hop=clamp(.9/k,.36,.9);cu.target=cu.u+.055;}if(cu.target!==undefined&&cu.u<cu.target)cu.u=Math.min(cu.target,cu.u+dt*.35);
     if(cu.u>=.93){cu.state='angry';talk(w,cu,ANGRY[Math.floor(w.rand()*ANGRY.length)],1.6);lose(w,'TOO SLOW!',cu.row);return;}}
-   else if(cu.state==='push'){cu.u-=dt*.75;if(cu.u<-.05&&!cu.drinks){cu.u=-.04;cu.state='eat';cu.timer=1.1;}   // everyone gets one drink: a first-timer stops at the door, drinks, slides the empty back
+   else if(cu.state==='push'){cu.u-=dt*.75;
+    if(cu.u<-.05&&!cu.drinks&&!cu.doorChecked&&(cu.doorChecked=1)&&w.rand()<doorDrink(w)){cu.u=-.04;cu.state='eat';cu.timer=1.1;cu.doorSure=1;}
     else if(cu.u<-.05){cu.gone=true;w.score+=50;w.pops.push({x:0,y:cu.row,text:'+50',t:.8,c:'#b8860b'});if(net&&w===cur)nf?.event({x:[cu.row,cu.char]});}else if(cu.timer<=0){cu.state='eat';cu.timer=1.1;}}
-   else if(cu.state==='eat'&&cu.timer<=0){cu.drinks=(cu.drinks||0)+1;cu.state='walk';cu.hop=.6;cu.target=undefined;w.sticks.push({row:cu.row,u:cu.u+.03});w.empties++;if(w===cur)voice(330,.05,.03,'square');}}
+   else if(cu.state==='eat'&&cu.timer<=0){cu.drinks=(cu.drinks||0)+1;cu.state='walk';cu.hop=.6;cu.target=undefined;if(cu.doorSure||w.rand()<emptyChance(w)){cu.doorSure=0;w.sticks.push({row:cu.row,u:cu.u+.03});w.empties++;if(w===cur)voice(330,.05,.03,'square');}}}
   w.cust=w.cust.filter(cu=>!cu.gone);
   for(const n of w.nanas){n.u-=dt*1.05*Math.min(1.4,.85+k*.15);const hit=w.cust.filter(cu=>cu.row===n.row&&cu.state==='walk'&&cu.u<n.u+.01&&cu.u>n.u-.06).sort((a,b)=>b.u-a.u)[0];
-   if(hit){n.dead=true;w.caught++;hit.state='push';hit.timer=.22;   /* shoved back ~.17 of the bar: only customers right by the door go out */hit.target=undefined;if(w===cur)voice(880,.05,.04,'triangle');}
+   if(hit){n.dead=true;w.caught++;hit.state='push';hit.timer=shoveT(w);   /* shoved back .34 of the bar on level 1, down to ~.17 */hit.target=undefined;if(w===cur)voice(880,.05,.04,'triangle');}
    else if(n.u<=-.02){lose(w,'WASTED!',n.row);return;}}
   w.nanas=w.nanas.filter(n=>!n.dead);
   for(const st of w.sticks){if(st.wait>0){st.wait-=dt;continue;}st.u+=dt*.55*Math.min(1.3,.9+k*.1);if(st.u>=1){if(w.row===st.row){st.dead=true;w.score+=100;w.act='catch';w.actT=.25;w.pops.push({x:1,y:st.row,text:'+100',t:.8,c:'#b8860b'});if(w===cur)voice(1175,.06,.05,'square');}else{lose(w,'DROPPED IT!',st.row);return;}}}
@@ -325,7 +336,7 @@ async function moneygrab(s){
  s.debug={engine:'moneygrab',get world(){return cur;},set world(v){},get remote(){return remote;},pool,lose:()=>cur&&lose(cur,'TEST',0),clearLevel:()=>{if(!cur)return;cur.spawned=99;cur.cust=[];cur.sticks=[];cur.nanas=[];},
   say:t=>{const cu=cur?.cust[0];if(cu)talk(cur,cu,t||lineFor(cu.char,Math.random));}};
  // autopilot (tests): serve a bar with someone walking and nothing on the way, catch empties first
- function botStep(w){if(!w||w.phase!=='play'||w.pause>0||w.ending)return;if(Math.random()<Math.min(.95,.35+w.cleared*.2))return;   // sloppier every level, so test runs end
+ function botStep(w){if(!w||w.phase!=='play'||w.pause>0||w.ending)return;if(Math.random()<(s.debug.botSkip??Math.min(.95,.35+w.cleared*.2)))return;   // botSkip: fixed skill for balance runs   // sloppier every level, so test runs end
   const st=w.sticks.filter(q=>q.u>.55).sort((a,b)=>b.u-a.u)[0];if(st){if(w.row!==st.row){w.row=st.row;w.act='run';w.actT=.15;}return;}
   const m=w.cash[0];if(m&&Math.random()<.02){grabCash(w,m);return;}
   const need=[0,1,2,3].map(r=>({r,c:w.cust.filter(cu=>cu.row===r&&cu.state==='walk').length-w.nanas.filter(n=>n.row===r).length,lead:Math.max(0,...w.cust.filter(cu=>cu.row===r&&cu.state==='walk').map(cu=>cu.u))})).filter(q=>q.c>0).sort((a,b)=>b.lead-a.lead)[0];
