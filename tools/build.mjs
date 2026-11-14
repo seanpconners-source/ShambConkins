@@ -133,6 +133,13 @@ if (fs.existsSync(bkDir)) for (const f of fs.readdirSync(bkDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('baseketball:' + m[1].toLowerCase(), MIME[ext], ext, path.join(bkDir, f));
 }
+// Sitabout Mini Golf drop-in art: assets/minigolf/<name>.(webp|png) -> minigolf:<name>
+// (names and layout: src/data/minigolfSprites.js, docs/minigolf-sprites/README.md).
+const mgDir = path.join(root, 'assets/minigolf');
+if (fs.existsSync(mgDir)) for (const f of fs.readdirSync(mgDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('minigolf:' + m[1].toLowerCase(), MIME[ext], ext, path.join(mgDir, f));
+}
 // Major League Baseball sprite sheets and pictures: assets/baseball/<name>.(webp|png) -> baseball:<name>
 // (names and layout: src/data/baseballSprites.js, docs/baseball-sprites/README.md).
 const baseballDir = path.join(root, 'assets/baseball');

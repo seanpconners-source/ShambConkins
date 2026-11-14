@@ -1,11 +1,20 @@
 # Changelog
 
-## Unreleased
+## v0.99.0
 
 - **Sean of a Gun: four new worlds.** Space (moon base, orbital station, alien hive, low gravity), Hell (lava, fire bars, geysers), the Upside Down (warp portals, floating islands) and Game World (8-bit kingdom with ? blocks, pipes and stompable walkers, a turbo zone with springs and rings, a glitch castle). Every stage ends in a boss: two mini-bosses and a world boss per world (War Mech, the Mothership, Alien Queen, Cerberus, Bone Dragon, the Beast, the Face-Flower, the Void Eye, the Shadow King, King Shellbeard, Dr. Eggbert, MISSING.EXE). Twenty-five new enemy types (tanks, turrets, fliers, pop-up plants and tentacles, kickable shells, teleporters), ten new guns (laser, plasma, railgun, lightning, holy water, fire flower, boomerang, ring blaster and more) and weapon crates. Levels climb up and down: three-floor forts, split routes over lava, deep shafts, mazes, turret walls. The first four worlds play as before.
 - **Sean of a Gun art slots:** every world's tiles, backgrounds, choppers and props, the hero body, all enemies and bosses can now be replaced with pictures (GPT templates included).
 - **Paddy's Pool, rebuilt:** a modern pool game in Paddy's Pub with real ball physics (spin: follow, draw and english), 8-ball (new) and 9-ball. Drag to swing the cue, fine-aim wheel, pull the power bar to shoot, ghost ball and shot-path guides (Full / Standard / Pro), ball in hand, calling the 8, an optional shot clock, instant replays, banners for banks, combos, kicks and run-outs, and the gang heckling from the bar. Plays against the CPU and online.
 - **The Paddy's Pool Hall:** win cash and spend it on six tables (the starting Paddy's table is ripped, stained, leans and has dead cushions; better tables play better), 13 felts, 8 cues (power, spin, aim lines), ball sets, chalk, and upgrades for the whole bar: the room, the table light, TVs, the bar itself, neon signs, a jukebox, a dartboard, the Rum Ham, a crowd of regulars and more.
+- **Paddy's Pool art is in:** all 66 pictures (6 tables top-down and in the hall, wear stains, 8 cues, 5 floors, 5 walls, 5 hall rooms, bars, lights, TVs, 13 decor pieces and the logo).
+
+## v0.98.0
+
+- **New: Sitabout Mini Golf** (the putt-putt game, rebuilt from scratch). Three themed courses of six holes: **Bushwood** (Caddyshack: windmill, gopher holes, the pool, Carl's dynamite), **Waterbury Putt-Putt** (Happy Gilmore: the clown's mouth, Chubbs' gator, a run-up jump over the water, Happy Place in the clouds) and **Spaceball City** (Spaceballs: low gravity, Ludicrous Speed pads, Schwartz portals, Mega Maid's vacuum). Play the front 3, all 6, or the Grand Tour of 18.
+- Real ball physics: slopes and hills that bend your putt, ramps and jumps, raised greens, sand, water and drop-offs (+1 stroke), balls that lip out of the cup.
+- Flyover of every hole, drag back from anywhere to putt (the guide shows the first bounce), follow camera, pinch to look around, the eye button shows the whole hole. Pull into the red for a wild Happy Gilmore drive.
+- Real golf etiquette: the better score last hole tees off first, then whoever is farther from the cup putts. Birdie/Eagle/Hole-in-one callouts, a paper scorecard, a hidden lost ball on every hole, best rounds and aces saved.
+- Your ball is your head: your face is printed on the ball and rolls with it. Plays vs the CPU (it times the windmill) and online. Art slots and templates are ready for new pictures.
 
 ## v0.97.6
 
