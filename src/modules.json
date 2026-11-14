@@ -492,7 +492,13 @@
   "src/data/tapperSprites.js",
   "src/engines/tapperAudio.js",
   "src/data/psychOuts.js",
-  "src/data/baseketballSprites.js"
+  "src/data/baseketballSprites.js",
+  "src/engines/minigolf/physics.js",
+  "src/engines/minigolf/courses.js",
+  "src/engines/minigolf/render.js",
+  "src/engines/minigolf/cpu.js",
+  "src/engines/minigolf/sound.js",
+  "src/data/minigolfSprites.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require('src/app.js');})();"
 }

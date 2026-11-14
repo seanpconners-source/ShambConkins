@@ -2,6 +2,28 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+SITABOUT MINI GOLF (Nov 14, branch ccr-2919e73f-r0ea94, unreleased; owner: complete overhaul of putt-putt, "best putt putt
+android game ever", name Sitabout (Walkabout parody), make art templates; another account works on another game: touch
+nothing else). Engine name `minigolf` + ids kept (happy-gilmore-golf = Arcade game retitled 'Sitabout Mini Golf', source
+still Happy Gilmore; caddyshack-golf = Bushwood only; walkabout-golf). src/engines/puttPutt.js = flow (canvas course picker
+3 courses + Grand Tour 18, front 3 / all 6; board = 3 holes, random course+side from s.random; flyover intro + card; honours
++ away rule by cupField path distance; drag back anywhere (power = drag/.34 min(W,H), >100% = Happy Gilmore wobble drive),
+aim guide = physics aimRay with first bounce; pinch/2-finger pan, eye = whole hole; limit par+3, picked up = par+4; points
+30*(par+4-strokes) (strokes only); par names, scorecard birdies circled/bogeys boxed; lost ball per hole; profile.sitabout
+{best,holes,aces,lost,rounds} (validated in profile.js); CPU = minigolf/cpu.js plan() generator time-sliced, errOf(skill),
+fires at a planned hole time so it times windmills; online: setup {setup}, shots {sh:[vx,vy,T0,happy]}, result {fin}).
+src/engines/minigolf/: physics.js (fixed 240 Hz, ball R 1, cup 2.3, greens = polygons with plane z + gaussian hills,
+edges auto-classed in 1.5-unit pieces: same-height overlap = open, else rail (+ cliff face); drop:true greens fall off;
+water cuts every green except bridge:true; air/jumps, landings, rails only block below their top; movers by hole clock T:
+windmill/slider/spinner/gate/gator(chomp)/gophers; bumpers, boost, tunnels (+links for the CPU field), magnets, tramps,
+conveyors; lip-outs), courses.js (Bushwood/Caddyshack, Waterbury Putt-Putt/Happy Gilmore incl. clown's mouth + gator +
+Happy Place, Spaceball City/Spaceballs G .55), render.js (tilted 3/4 view TC .86/TS .5, affine plane drawing, beds with
+skirts, 3D rails, ponds with banks, billboards, ball with the face decal that rolls (rollOrient) and settles face-up),
+sound.js, cpu.js. Art: src/data/minigolfSprites.js (61 slots), assets/minigolf → minigolf:<name> (build.mjs), pwa LATER
+'minigolf:', templates tools/minigolf-templates.mjs → docs/minigolf-sprites/templates, brief GPT-SPRITE-BRIEF.md, START-HERE
+row. Tests: tests/minigolf-sim.mjs (Node: every hole reachable + CPU holes it), tests/minigolf.mjs (browser 2P + vs CPU),
+games.mjs golf fuzz, online-native happy-gilmore-golf. CPU sim: normal ~par-0.3, easy ~par+1. Not on a real phone yet.
+
 v0.97.6 (Nov 14): BASEKETBALL REBUILT (owner: like Megatouch Hoop Jones, movie rules, stadium like the movie, jumbo
 scoreboard, choose base, crass psych-outs from a list or typed, online too; GPT sprites). src/engines/baseketball.js (engine
 key basketball2p kept; game.bkMode 'movie' = baseketball-shootout, 'hoop' = NEW baseketball-hoop-jones in remakePack, family
