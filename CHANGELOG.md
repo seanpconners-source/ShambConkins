@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.98.0
+
+- **New: Sitabout Mini Golf** (the putt-putt game, rebuilt from scratch). Three themed courses of six holes: **Bushwood** (Caddyshack: windmill, gopher holes, the pool, Carl's dynamite), **Waterbury Putt-Putt** (Happy Gilmore: the clown's mouth, Chubbs' gator, a run-up jump over the water, Happy Place in the clouds) and **Spaceball City** (Spaceballs: low gravity, Ludicrous Speed pads, Schwartz portals, Mega Maid's vacuum). Play the front 3, all 6, or the Grand Tour of 18.
+- Real ball physics: slopes and hills that bend your putt, ramps and jumps, raised greens, sand, water and drop-offs (+1 stroke), balls that lip out of the cup.
+- Flyover of every hole, drag back from anywhere to putt (the guide shows the first bounce), follow camera, pinch to look around, the eye button shows the whole hole. Pull into the red for a wild Happy Gilmore drive.
+- Real golf etiquette: the better score last hole tees off first, then whoever is farther from the cup putts. Birdie/Eagle/Hole-in-one callouts, a paper scorecard, a hidden lost ball on every hole, best rounds and aces saved.
+- Your ball is your head: your face is printed on the ball and rolls with it. Plays vs the CPU (it times the windmill) and online. Art slots and templates are ready for new pictures.
+
 ## v0.97.6
 
 - **BASEketball, rebuilt:** you shoot from behind the shooter like a bar-top machine, in a night-time stadium like the movie's, with a jumbo baseball scoreboard. Pick your base (single to home run), flick the ball up to shoot. The defender psychs you out with a list of filthy lines or types their own (online too), and your hands shake for that shot.
