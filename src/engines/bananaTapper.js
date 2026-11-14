@@ -30,7 +30,7 @@ const {createTapperAudio}=require("src/engines/tapperAudio.js");
 const {store}=require("src/state.js");
 const {soloProgress,soloFinish}=require("src/solo.js");
 
-const FACE_K=.62,CHIN=.4,FACE_FWD=0;   // faces: width = shoulders x FACE_K, centre CHIN face heights above the collar, nudged forward (owner: heads floated)
+const FACE_K=.64,CHIN=.18,FACE_FWD=0;   // faces: width = shoulders x FACE_K, centre CHIN face heights above the collar, nudged forward (owner: heads floated)
 const ROWS=4,SECONDS=Infinity,FONT='"Helvetica Neue",Helvetica,Arial,sans-serif';
 const INK='#111111',GREY='#8a8a8a',BLUTH='#ffd84a',BLUE='#2f6fd8';
 const SHIRTS=['#5b7fb5','#c8553d','#6a994e','#e3b23c','#7d5ba6','#2d3142','#e07a5f','#f4f1de','#3d405b','#81b29a','#b56576','#457b9d'];
