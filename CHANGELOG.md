@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.2
+
+- **Sitabout Mini Golf art is in:** GPT's pictures for all three courses: turf, lawns, rails and raised-green sides, sand, water, ice, carpet, conveyor, the windmill and its sails, the clown head and teeth, the gator, gophers, bumpers, tunnels, trampolines, portals, Mega Maid's vacuum, trees, bushes, flowers, carts, signs, the flag and cup, the logo, the scorecard and the three course cards.
+- **Windmill fixed:** no more invisible wall in front of it. The door is only blocked while a sail is actually in front of it, the windmill's door is exactly the opening in the lane, and the sails turn on the windmill and sweep down past the door.
+- The windmill and the clown head always face the tee now (on wide screens they used to sit sideways).
+- The clown's teeth are drawn where they really stop the ball.
+
 ## v0.99.1
 
 - **Sean of a Gun art is in:** GPT's whole kit for all eight worlds: the bro's body, 28 enemies, 12 bosses, terrain tiles and ground edges, skies and two parallax layers per world, choppers, trees, cages, flags and pickups. (The Game World's hedgehog enemy and egg-pod boss keep the game's own drawings: GPT drew Sega's real characters.)
