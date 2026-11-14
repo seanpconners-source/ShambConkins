@@ -45,17 +45,27 @@ const FX={
  'fx-bolt':{frame:[64,512],rows:{bolt:4},pivot:[32,0]},
  'fx-impact':{frame:[96,96],rows:{hit:5},pivot:[48,48],R:40},
  'fx-gore':{frame:[128,128],rows:{splat:6},pivot:[64,100],R:48},
+ 'fx-rain':{frame:[192,192],rows:{splash:6},pivot:[96,96],R:58},   // Trioxin Rain landing: green toxic splash (cabin: fire); R = the red circle
  'pool-fire':{frame:[192,144],rows:{loop:4},pivot:[96,72],R:96,loop:8},
  'pool-goo':{frame:[192,144],rows:{loop:4},pivot:[96,72],R:96,loop:6},
  'pool-tar':{frame:[192,144],rows:{loop:4},pivot:[96,72],R:96,loop:5},
  'aura-goo':{frame:[192,144],rows:{loop:4},pivot:[96,72],R:96,loop:6},
 };
 for(const [k,d] of Object.entries(FX))SHEETS[k]={...d,fx:true};
+// ALLY: the Send More Paramedics weapon's runner (Nov 14, owner: 'the paramedic weapon has no image'). Side view facing
+// RIGHT (the game mirrors it), 4 run frames, 80x128 template px = 40x64 units, feet on `foot`. Drawn fallback =
+// hordeData bakeMedic().
+SHEETS['ally-medic']={frame:[80,128],rows:{run:4},foot:[40,124],ally:true};
 // PICTURES: one still picture each. `size` = template [w,h] px; `foot` = the ground point (props/building: bottom-centre
 // anchor), `light` = where the lamp/torch glow is centred. kind: prop (type + variant in the game), building, ground (a
 // seamless tile repeated over the whole map, 256 world units), gem (XP gem tier 0..3), icon (64-unit glyph box: weapons,
 // passives, pickups; the game draws the card frame round it).
 const PICTURES={
+ // Trioxin Rain (Nov 14, owner: 'trioxin rain doesnt have an image'): rain-drop = the falling Trioxin 245 canister seen
+ // from the side, pointing DOWN, drawn 34 units wide (bottom = where it lands); rain-mark = the red warning circle painted
+ // on the ground, filling the frame (drawn as an ellipse the size of the blast). '-cabin' = the Evil Storm versions.
+ 'rain-drop':{kind:'fx',size:[64,128]},
+ 'rain-mark':{kind:'fx',size:[128,96]},
  'grave-1':{kind:'prop',type:'grave',v:0,size:[64,84],foot:[32,76]},
  'grave-2':{kind:'prop',type:'grave',v:1,size:[64,84],foot:[32,76]},
  'grave-3':{kind:'prop',type:'grave',v:2,size:[64,84],foot:[32,76]},
@@ -112,7 +122,8 @@ const OUT_PX=1.25,SURVIVOR_K=2;   // SURVIVOR_K = horde.js BODY_K
 function targetW(name,w){
  const base=name.replace(/-(dead|cabin)$/,''),d=SHEETS[name]||PICTURES[name]||SHEETS[base]||PICTURES[base];if(!d)return w;
  if(d.kind==='icon')return Math.min(w,96);            // baked into <=64 px cards and glyphs
- if(d.kind==='gem')return Math.min(w,32);             // drawn 12-24 px
+ if(d.kind==='gem')return Math.min(w,32);
+ if(d.kind==='fx')return Math.min(w,d.size[0]);        // rain pictures: keep template px             // drawn 12-24 px
  const tw=d.frame?Math.max(...Object.values(d.rows))*d.frame[0]:d.size[0];   // template px (PX per world unit)
  if(d.fx)return Math.min(w,tw);                   // effects are drawn up to template size or bigger: keep template px
  const k=d.enemy?ENEMY_ART_K:/^survivor-/.test(base)?SURVIVOR_K:1;          // drawn this many times the template size

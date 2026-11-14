@@ -340,6 +340,29 @@ function bakeIcon(id,size,bg,accent,theme){
 function lightSprite(r,hard=.35){const cv=mk(r*2,r*2),c=cv.getContext('2d'),g=c.createRadialGradient(r,r,0,r,r,r);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(hard,'rgba(255,255,255,.8)');g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.fillRect(0,0,r*2,r*2);return cv;}
 function glowSprite(r,rgb){const cv=mk(r*2,r*2),c=cv.getContext('2d'),g=c.createRadialGradient(r,r,0,r,r,r);g.addColorStop(0,`rgba(${rgb},.9)`);g.addColorStop(.4,`rgba(${rgb},.35)`);g.addColorStop(1,`rgba(${rgb},0)`);c.fillStyle=g;c.fillRect(0,0,r*2,r*2);return cv;}
 
+// Send More Paramedics: a running paramedic (Return of the Living Dead's ambulance crew), side view facing RIGHT, 4 run
+// frames, 40x64 units (feet at y 62 = bottom-centre anchor). The drop-in sheet 'ally-medic' (hordeSprites) replaces it.
+function bakeMedic(){
+ const out=[];for(let f=0;f<4;f++){const cv=mk(80,128),c=cv.getContext('2d');c.scale(2,2);c.lineJoin='round';c.lineCap='round';
+  const ph=f/4*Math.PI*2,sw=Math.sin(ph),bob=Math.abs(Math.cos(ph))*2,OL='#1b1d22';c.translate(20,0);
+  const leg=(a,col)=>{c.save();c.translate(0,40-bob);c.rotate(a);c.fillStyle=col;c.strokeStyle=OL;c.lineWidth=1.6;rr(c,-3.5,0,7,19,3);c.fill();c.stroke();c.fillStyle='#2a2a2a';rr(c,-4,17,10,5,2);c.fill();c.stroke();c.restore();};
+  leg(-sw*.7,'#24365e');leg(sw*.7,'#2d4373');
+  c.save();c.translate(0,-bob);
+  // back arm with the red kit bag
+  c.save();c.translate(-1,26);c.rotate(sw*.8);c.fillStyle='#e9ecef';c.strokeStyle=OL;c.lineWidth=1.6;rr(c,-2.5,0,5,13,2.5);c.fill();c.stroke();c.fillStyle='#c8242a';rr(c,-6,11,12,9,2);c.fill();c.stroke();c.fillStyle='#fff';c.fillRect(-1,12.5,2,6);c.fillRect(-3,14.5,6,2);c.restore();
+  // body: white tunic, reflective stripe, red cross on the chest
+  c.fillStyle='#f4f6f8';c.strokeStyle=OL;c.lineWidth=1.8;rr(c,-8,22,16,21,5);c.fill();c.stroke();
+  c.fillStyle='#e8c33a';c.fillRect(-7.2,36,14.4,2.4);c.fillStyle='#d62a2a';c.fillRect(1.5,25,3,9);c.fillRect(-1.5,28,9,3);
+  // head: skin, white cap with a red cross, brim forward
+  ell(c,1,15,7.5,7.5,'#e9b48c',OL);c.fillStyle='#1b1d22';c.beginPath();c.arc(4.5,14,1.1,0,Math.PI*2);c.fill();
+  c.fillStyle='#f4f6f8';c.strokeStyle=OL;c.lineWidth=1.6;c.beginPath();c.arc(1,13,7.8,Math.PI,0);c.closePath();c.fill();c.stroke();rr(c,4,11.5,7,2.6,1.2);c.fill();c.stroke();
+  c.fillStyle='#d62a2a';c.fillRect(-.6,6.5,2.2,5);c.fillRect(-2,8,5,2.2);
+  // front arm pumping
+  c.save();c.translate(2,26);c.rotate(-sw*.9);c.fillStyle='#f4f6f8';c.strokeStyle=OL;c.lineWidth=1.6;rr(c,-2.5,0,5,13,2.5);c.fill();c.stroke();ell(c,0,14,2.6,2.6,'#e9b48c',OL);c.restore();
+  c.restore();out.push(cv);}
+ return out;
+}
+
 // ---------- ground & props ----------
 function groundTile(theme,seed){
  const th=THEMES[theme]||THEMES.dead,S=256,cv=mk(S,S),c=cv.getContext('2d');let n=seed>>>0||1;const R=()=>{n=Math.imul(n^n>>>15,n|1);n^=n+Math.imul(n^n>>>7,n|61);return((n^n>>>14)>>>0)/4294967296;};
@@ -394,5 +417,5 @@ function bakeBuilding(theme){
  }
  return {img:cv,w,h};
 }
-Object.assign(exports,{THEMES,ICONS,bakeEnemies,bakeIcon,bakeProps,bakeBuilding,lightSprite,glowSprite,groundTile,mk,rr,ell,poly,seg,star});
+Object.assign(exports,{THEMES,ICONS,bakeEnemies,bakeIcon,bakeMedic,bakeProps,bakeBuilding,lightSprite,glowSprite,groundTile,mk,rr,ell,poly,seg,star});
 Object.assign(exports,{WEAPONS,WEAPON_IDS,STARTERS,MAX_LEVEL,PASSIVES,PASSIVE_IDS,ENEMIES,ENEMY_IDS,MINIS,SPAWNS,MODES,DROPS,XP_TIERS,applyMod,weaponStats,weaponText,freshStats,calcStats,hpMul,capAt,rateAt,spawnWeights,buildSchedule,xpNeed});

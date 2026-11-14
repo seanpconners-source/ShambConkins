@@ -514,6 +514,19 @@ Reuse engines with new skins wherever possible.
 - **H32** `[idea]` (owner, Nov 5) **Box-office guessing game** in the style of the box office game websites (guess a
   film's gross / rank films by box office).
   Note for H26-H32: we build our own levels, art, words and music in those games' style, not copies of the originals.
+- **H33** `[idea]` (owner, Nov 14) **Vanderpump Rules bartending game at SUR**: a bartending/serving game set in SUR (the
+  cast as customers and coworkers, Lisa watching, drama interrupting service). Builds on the Tapper rebuild (TAP1).
+- **H34** `[idea]` (owner, Nov 14) **Real Housewives balloon game**: pump to inflate a Housewife's boobs and lips; too much
+  and they POP (push-your-luck like Balloon Fight / "pump it" games). Quotes from the shows when players win and lose.
+- **H35** `[idea]` (owner, Nov 14) **Balance game in the Pee-wee bar dance**: balance on a bar top while dodging bottles,
+  the character dressed like Pee-wee Herman in the "Tequila" bar scene (Pee-wee's Big Adventure); "Tequila" playing
+  (owner supplies the song file).
+- **H36** `[soon]` (owner, Nov 14: "I want to make pool very fun!!!") Pool overhaul: see R27 (power control, graphics,
+  sounds, sprites, a full game). Owner wants this soon.
+- **H26 note** (owner, Nov 14: "really want to get on that Crash Bandicoot game too!!!!"): H26 is high on the wish list.
+- **TAP1** `[part]` (owner, Nov 14) **Tapper (Banana Stand) rebuild**: random characters as customers who sometimes talk,
+  live online play (you at one end of the bar, your rival at the other), levels with their own backdrop/floor/bar top in
+  the Arrested Development look (white, clean sans, Bluth colours); LATER: narrator clips + show music (owner adds files).
 
 ## Phase I — online and Pokémon online (sections 9 + 12)
 

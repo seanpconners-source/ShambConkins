@@ -45,6 +45,7 @@ for (const name of sheetNames) for (const zoom of ZOOMS) {
     // the game's drawn version of a frame, in an offscreen frame
     const guide = (row, f, n) => {
       const o = document.createElement('canvas'); o.width = fw; o.height = fh; const g = o.getContext('2d');
+      if (def.ally) { g.drawImage(HD.bakeMedic()[f % 4], 0, 0, fw, fh); return o; }
       if (baked) { g.drawImage(baked.img, (f & 1) * baked.cell, 0, baked.cell, baked.cell, 0, 0, fw, fh); return o; }
       if (def.fx) {   // effect guide: where it sits (pivot), how far it reaches (R), which way it points
         const [px, py] = def.pivot, R = def.R, u = (f + 1) / n; g.lineWidth = 3; g.strokeStyle = '#ff9a2a'; g.fillStyle = 'rgba(255,154,42,.35)';
@@ -113,6 +114,8 @@ for (const name of picNames) for (const zoom of ZOOMS) {
       g.translate(W / 2, H / 2); g.scale(W / 28, H / 28); g.lineWidth = 1.6; HD.poly(g, [0, -11, 8, -2, 0, 11, -8, -2], cols[d.tier], '#10150f'); g.globalAlpha = .55; HD.poly(g, [0, -9, 5, -2, 0, 0, -5, -2], '#fff'); }
     else if (d.kind === 'shot') { g.fillStyle = name === 'shot-spit' ? '#8cff4a' : name === 'shot-fire' ? '#ffb04a' : name === 'shot-curse' ? '#c07aff' : name === 'proj-nail' ? '#e7edf2' : '#ffd27a';
       g.beginPath(); g.ellipse(W / 2, H / 2, W * .42, H * .38, 0, 0, TAU); g.fill(); g.strokeStyle = 'rgba(220,30,30,.9)'; g.lineWidth = 1; g.beginPath(); g.moveTo(W * .2, H / 2); g.lineTo(W - 2, H / 2); g.lineTo(W - 6, H / 2 - 3); g.moveTo(W - 2, H / 2); g.lineTo(W - 6, H / 2 + 3); g.stroke(); }
+    else if (d.kind === 'fx' && name.startsWith('rain-drop')) { g.fillStyle = '#6d7a2e'; g.strokeStyle = '#1b1d22'; g.lineWidth = 3; HD.rr(g, W * .22, H * .3, W * .56, H * .6, 8); g.fill(); g.stroke(); g.fillStyle = '#e8d24a'; g.fillRect(W * .22, H * .5, W * .56, H * .16); g.strokeStyle = '#9aff6a'; g.lineWidth = 6; g.beginPath(); g.moveTo(W / 2, 0); g.lineTo(W / 2, H * .28); g.stroke(); }
+    else if (d.kind === 'fx') { g.fillStyle = 'rgba(255,40,30,.3)'; g.strokeStyle = '#ff4632'; g.lineWidth = 4; g.beginPath(); g.ellipse(W / 2, H / 2, W / 2 - 3, H / 2 - 3, 0, 0, TAU); g.fill(); g.stroke(); }
     else if (d.kind === 'icon') g.drawImage(HD.bakeIcon(d.icon, W * 64 / 60.8, false), -(W * 64 / 60.8 - W) / 2, -(W * 64 / 60.8 - W) / 2);
     if (standin) { x.drawImage(o, 0, 0); return c.toDataURL('image/png'); }
     x.globalAlpha = d.kind === 'ground' ? .45 : .3; x.drawImage(o, 0, 0); x.globalAlpha = 1;
