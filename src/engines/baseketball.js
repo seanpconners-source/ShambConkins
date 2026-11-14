@@ -33,6 +33,8 @@ const V0=vFor(6),V1=vFor(38),speedOf=p=>V0+p*(V1-V0),powerFor=D=>(vFor(D)-V0)/(V
 const HOME=['#1f6b3a','#f2c230'],AWAY=['#e0601a','#161616'];   // Beers green/gold, visitors orange/black
 
 async function basketball2p(s){
+ // Hoop Jones is its own game now (owner, Nov 14 round 2: four shooters, tap to shoot, like the Megatouch machine)
+ if(s.game?.bkMode==='hoop')return require("src/engines/hoopJones.js").hoopJones(s);
  const mode=s.game?.bkMode==='hoop'?'hoop':'movie';
  const [c,x]=s.canvas(760,560,{fill:true});const fb=fullBleed(s,{bg:'#05081a'});s.body.classList.add('drag-arena-body');s.controls([]);
  const fx=makeFx(),shake=makeShake(),net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=isCpu(s);if(net&&mode==='movie')s.hotseat=true;

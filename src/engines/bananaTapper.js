@@ -2,8 +2,8 @@
 // the Arrested Development look (owner, Nov 14: white backgrounds, plain bold sans lettering, the show's colours).
 // Four bars; customers (random characters from the whole game, who now and then say something) shuffle toward you. Tap a
 // bar to jump there and slide the level's item down it (frozen banana / vodka martini / hot ham water). A customer who
-// catches one is shoved back (out the door = +50), eats or drinks, then slides the empty back: catch it at the end of that
-// bar (+100). An item that reaches the empty end, an empty that hits the floor, or a customer reaching you costs a life.
+// catches one is shoved back: out the door = gone (+50/75/100 by level, no empty), else they eat or drink and ALWAYS slide
+// the empty back: catch it at the end of that bar (+100). Tips (+1500) start Gob's show (customers stop); bonus round after each level. An item that reaches the empty end, an empty that hits the floor, or a customer reaching you costs a life.
 // Tap loose cash on the bars (+150: there's always money in the banana stand). Serve a level's last customer and the next
 // bar opens (src/data/tapperSprites.js LEVELS: banana stand → Balboa Towers penthouse → Sudden Valley model home → again,
 // faster). NO CLOCK (owner, Nov 14): three lives, levels until you're out; each level has more customers than the last
@@ -65,18 +65,20 @@ async function moneygrab(s){
   return {player,rand:seededRandom(s.seed+':tapper'),lv:0,cleared:0,row:1,cd:0,lives:3,score:0,cust:[],nanas:[],sticks:[],cash:[],spawnT:1.2,cashT:7,
    pause:0,flash:0,bob:0,pops:[],spawned:0,phase:'card',card:2.2,uid:1,act:'idle',actT:0,say:[],sent:[],time:0,cap:SECONDS,lost:'',levelT:0,caught:0,empties:0};
  }
- // DIFFICULTY (owner, Nov 14: 'too hard too soon... level 4 is like impossible, level 1 isn't too bad', make it climb like the
- // real Tapper): each level a little faster (+8%, was +16%) and longer (8, 11, 14... customers, was 10, 15, 20), never more
- // than 2-8 customers on the bars at once (growing slowly), a catch shoves them further back early on (a third of the bar on level 1,
- // shrinking each level), a first-timer shoved out the door stops and drinks half the time (+5% a level) and sends that empty
- // back, anyone else shoved out just leaves, and a drink finished on the bar sends the empty back 55% of the time (+8% a level).
- const diff=w=>1+.08*w.cleared+Math.min(.15,w.levelT/300);
+ // THE ARCADE'S RULES (owner, Nov 14 round 2: "people don't go away, too many empty returns, play EXACTLY like Tapper"):
+ // a customer who catches one is shoved back PUSH of the bar; shoved past the door = gone for good (scores SERVE, no empty);
+ // otherwise they stop, drink, ALWAYS slide the empty back and come on again. So serve them while they're near the door.
+ // Served customers sometimes leave a TIP (1500): grab it and Gob puts on a show that the whole bar stops to watch.
+ // Points like the arcade: 50 / 75 / 100 / 150 a customer by level, 100 an empty. After each level a BONUS ROUND (the
+ // arcade's soda shake): Gob shakes five of six cans and shuffles them, pick the one he didn't shake (+3000).
+ // Each level a little faster and busier (more customers at once, more in the level).
+ const diff=w=>1+.08*w.cleared+Math.min(.12,w.levelT/300);
  const quotaFor=n=>8+3*n;
- const maxOn=w=>Math.min(8,2+Math.floor(w.cleared*.7));   // 2, 2, 3, 4, 4, 5, 6, 6, 7, 8 on the bars at once
- const shoveT=w=>Math.max(.22,.38-.03*w.cleared);
- const doorDrink=w=>Math.min(.8,.5+.05*w.cleared);   // a first-timer shoved out the door stops there and drinks this often (always sends that empty back)
- const emptyChance=w=>Math.min(.9,.55+.08*w.cleared);
- function startLevel(w){w.phase='card';w.card=2.2;w.spawned=0;w.levelT=0;w.cust=[];w.nanas=[];w.sticks=[];w.cash=[];w.spawnT=1.2;w.say=[];if(w===cur){audio.level(lvOf(w).id);audio.narrate(w.cleared?'level':'start',.8);}}
+ const maxOn=w=>Math.min(10,3+w.cleared);
+ const pushDist=w=>Math.max(.3,.44-.02*w.cleared);
+ const serveVal=w=>[50,75,100,150][Math.min(3,w.lv)];
+ const TIP=1500,BONUS=3000,SHOW=4;
+ function startLevel(w){w.phase='card';w.card=2.2;w.spawned=0;w.levelT=0;w.cust=[];w.nanas=[];w.sticks=[];w.cash=[];w.spawnT=1.2;w.say=[];w.show=0;w.bonusR=null;if(w===cur){audio.level(lvOf(w).id);audio.narrate(w.cleared?'level':'start',.8);}}
  function talk(w,cu,text,t=2.6){if(w.say.length>=2&&!/!/.test(text))return;w.say=w.say.filter(b=>b.cid!==cu.id);w.say.push({cid:cu.id,text,t});if(net&&w===cur)nf?.event({say:[cu.id,text]});}
  function spawnCust(w,row,char,sent){
   const r=w.rand,cu={id:w.uid++,row,u:-.04,state:'walk',hop:r()*.6,timer:0,char,body:Math.floor(r()*4),shirt:SHIRTS[Math.floor(r()*SHIRTS.length)],sent:sent||null,talkT:.4+r()*1.2,talks:r()<.3};
@@ -92,38 +94,59 @@ async function moneygrab(s){
  function tapBar(w,r){if(w.row!==r)moveTo(w,r);else serve(w,r);}
  function serve(w,r){if(w.pause>0||w.ending||w.phase!=='play')return;if(w.row!==r)return;if(w.cd>0)return;w.cd=.22;w.act='serve';w.actT=.25;w.nanas.push({row:r,u:.97});
   if(w===cur){voice(520,.05,.04,'square');noise(.12,.03,{type:'highpass',f0:2500});}}
- function grabCash(w,m){m.got=true;w.score+=150;w.pops.push({x:m.u,y:m.row,text:'+150',t:1,c:'#2e8b3a'});if(w===cur){[988,1319].forEach((f,k)=>voice(f,.07,.05,'square',{delay:k*.06}));s.react?.(w.player,'win',1);}}
+ function grabCash(w,m){m.got=true;w.score+=TIP;w.show=SHOW;w.pops.push({x:m.u,y:m.row,text:'TIP +'+TIP,t:1.2,c:'#2e8b3a'});if(w===cur){[988,1319,1568].forEach((f,k)=>voice(f,.08,.05,'square',{delay:k*.07}));s.react?.(w.player,'win',1.4);}}
+ // ---- the bonus round (the arcade's soda shake): six cans on the bar, Gob shakes five of them one by one, shuffles them
+ // round, you tap the one he didn't shake. Seeded (w.rand), so both pass-and-play turns get the same shuffle.
+ const CAN_N=6;
+ function startBonus(w){const r=w.rand,good=Math.floor(r()*CAN_N),order=[...Array(CAN_N).keys()].filter(i=>i!==good);for(let i=order.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
+  const swaps=[],n=5+Math.min(7,w.cleared);for(let i=0;i<n;i++){const a=Math.floor(r()*CAN_N);let b2=Math.floor(r()*(CAN_N-1));if(b2>=a)b2++;swaps.push([a,b2]);}
+  w.phase='bonus';w.bonusR={good,order,swaps,slot:[...Array(CAN_N).keys()],stage:'show',t:0,pick:-1,shake:-1,sw:-1,dur:Math.max(.28,.5-.03*w.cleared)};
+  if(w===cur)audio.narrate('any',.3);}
+ function stepBonus(w,dt){const B=w.bonusR;if(!B){w.lv++;startLevel(w);return;}B.t+=dt;
+  if(B.stage==='show'&&B.t>1.4){B.stage='shake';B.t=0;}
+  else if(B.stage==='shake'){B.shake=Math.floor(B.t/.55);if(B.shake>=B.order.length){B.stage='shuffle';B.t=0;B.shake=-1;}else if(w===cur&&Math.abs(B.t%.55)<dt)noise(.25,.03,{type:'bandpass',f0:1800,f1:900});}
+  else if(B.stage==='shuffle'){const i=Math.floor(B.t/B.dur);if(i!==B.sw){if(B.sw>=0){const [a,b2]=B.swaps[B.sw];const ca=B.slot.indexOf(a),cb=B.slot.indexOf(b2);[B.slot[ca],B.slot[cb]]=[B.slot[cb],B.slot[ca]];}B.sw=i;if(w===cur&&i<B.swaps.length)voice(300+i*20,.04,.02,'triangle');}if(B.sw>=B.swaps.length){B.stage='pick';B.t=0;B.sw=-1;}}
+  else if(B.stage==='pick'&&B.t>9)pickCan(w,Math.floor(w.rand()*CAN_N));
+  else if(B.stage==='reveal'&&B.t>2.2){w.bonusR=null;w.lv++;startLevel(w);}}
+ // slot -> which can sits there; a can's position mid-swap is eased between two slots
+ function canPos(B,can){const s0=B.slot.indexOf(can);if(B.stage!=='shuffle'||B.sw<0||B.sw>=B.swaps.length)return s0;const [a,b2]=B.swaps[B.sw];if(can!==a&&can!==b2)return s0;
+  const other=can===a?b2:a,s1=B.slot.indexOf(other),f=clamp((B.t-B.sw*B.dur)/B.dur,0,1),e=f*f*(3-2*f);return s0+(s1-s0)*e;}
+ function pickCan(w,slotI){const B=w.bonusR;if(!B||B.stage!=='pick')return;const can=B.slot[slotI];B.pick=can;B.stage='reveal';B.t=0;const ok=can===B.good;
+  if(ok){w.score+=BONUS;w.pops.push({x:.5,y:1,text:'BONUS +'+BONUS,t:2,c:'#2e8b3a',big:true});}else w.pops.push({x:.5,y:1,text:'SPRAYED!',t:2,c:'#d62a2a',big:true});
+  if(w===cur){if(ok){[523,659,784,1047,1319].forEach((f,i)=>voice(f,.1,.05,'triangle',{delay:i*.07}));s.react?.(w.player,'win',2);}else{noise(.8,.08,{type:'highpass',f0:1500,f1:600});s.react?.(w.player,'sad',1.6);}}}
  function step(w,dt){
   w.bob+=dt;w.cd=Math.max(0,w.cd-dt);w.actT-=dt;if(w.actT<=0&&w.act!=='idle')w.act='idle';w.flash=Math.max(0,w.flash-dt*2);
   for(const p of w.pops)p.t-=dt;w.pops=w.pops.filter(p=>p.t>0);for(const b of w.say)b.t-=dt;w.say=w.say.filter(b=>b.t>0&&w.cust.some(cu=>cu.id===b.cid));
   if(w.phase==='card'){w.time-=dt;w.card-=dt;if(w.card<=0)w.phase='play';return;}
-  if(w.phase==='clear'){w.time-=dt;w.card-=dt;if(w.card<=0){w.lv++;startLevel(w);}return;}
+  if(w.phase==='clear'){w.time-=dt;w.card-=dt;if(w.card<=0)startBonus(w);return;}
+  if(w.phase==='bonus'){stepBonus(w,dt);return;}
   if(w.pause>0){w.pause-=dt;if(w.pause<=0){w.cust=[];w.nanas=[];w.sticks=[];w.say=[];w.lost='';}return;}
   if(w.ending)return;
   w.levelT+=dt;const k=diff(w),quota=quotaFor(w.cleared);
   // arrivals: the level's crowd, plus anyone the other player shoved over (online)
   if(w.sent.length){const [row,char,from]=w.sent.shift();if(w.cust.filter(cu=>cu.row===row).length<4){const cu=spawnCust(w,row,char,from);cu.talks=false;}}
   w.spawnT-=dt;if(w.spawnT<=0&&w.spawned<quota&&w.cust.length>=maxOn(w))w.spawnT=.5;
-  else if(w.spawnT<=0&&w.spawned<quota){w.spawnT=clamp(3/k,1,3)*(.6+w.rand()*.8);const r=Math.floor(w.rand()*ROWS),P=pool(),ch=P[Math.floor(w.rand()*P.length)];
+  else if(w.spawnT<=0&&w.spawned<quota){w.spawnT=clamp(2.6/k,.8,2.6)*(.6+w.rand()*.8);const r=Math.floor(w.rand()*ROWS),P=pool(),ch=P[Math.floor(w.rand()*P.length)];
    if(w.cust.filter(cu=>cu.row===r).length<3){spawnCust(w,r,ch);w.spawned++;}}
-  w.cashT-=dt;if(w.cashT<=0){w.cashT=7+w.rand()*5;w.cash.push({row:Math.floor(w.rand()*ROWS),u:.2+w.rand()*.55,t:4});}
+  w.show=Math.max(0,w.show-dt);
   for(const m of w.cash)m.t-=dt;w.cash=w.cash.filter(m=>m.t>0&&!m.got);
   for(const cu of w.cust){cu.timer-=dt;
    if(cu.talks&&cu.state==='walk'){cu.talkT-=dt;if(cu.talkT<=0){cu.talks=false;talk(w,cu,lineFor(cu.char,w.rand));}}
-   if(cu.state==='walk'){cu.hop-=dt;if(cu.hop<=0){cu.hop=clamp(.9/k,.36,.9);cu.target=cu.u+.055;}if(cu.target!==undefined&&cu.u<cu.target)cu.u=Math.min(cu.target,cu.u+dt*.35);
+   if(cu.state==='walk'&&w.show>0){/* everybody stops to watch Gob's show */}
+   else if(cu.state==='walk'){cu.hop-=dt;if(cu.hop<=0){cu.hop=clamp(.9/k,.36,.9);cu.target=cu.u+.055;}if(cu.target!==undefined&&cu.u<cu.target)cu.u=Math.min(cu.target,cu.u+dt*.35);
     if(cu.u>=.93){cu.state='angry';talk(w,cu,ANGRY[Math.floor(w.rand()*ANGRY.length)],1.6);lose(w,'TOO SLOW!',cu.row);return;}}
-   else if(cu.state==='push'){cu.u-=dt*.75;
-    if(cu.u<-.05&&!cu.drinks&&!cu.doorChecked&&(cu.doorChecked=1)&&w.rand()<doorDrink(w)){cu.u=-.04;cu.state='eat';cu.timer=1.1;cu.doorSure=1;}
-    else if(cu.u<-.05){cu.gone=true;w.score+=50;w.pops.push({x:0,y:cu.row,text:'+50',t:.8,c:'#b8860b'});if(net&&w===cur)nf?.event({x:[cu.row,cu.char]});}else if(cu.timer<=0){cu.state='eat';cu.timer=1.1;}}
-   else if(cu.state==='eat'&&cu.timer<=0){cu.drinks=(cu.drinks||0)+1;cu.state='walk';cu.hop=.6;cu.target=undefined;if(cu.doorSure||w.rand()<emptyChance(w)){cu.doorSure=0;w.sticks.push({row:cu.row,u:cu.u+.03});w.empties++;if(w===cur)voice(330,.05,.03,'square');}}}
+   else if(cu.state==='push'){cu.u-=dt*.9;
+    if(cu.u<-.05){cu.gone=true;const v=serveVal(w);w.score+=v;w.pops.push({x:0,y:cu.row,text:'+'+v,t:.8,c:'#b8860b'});if(net&&w===cur)nf?.event({x:[cu.row,cu.char]});}
+    else if(cu.u<=cu.back){cu.state='eat';cu.timer=1.1;}}
+   else if(cu.state==='eat'&&cu.timer<=0){cu.drinks=(cu.drinks||0)+1;cu.state='walk';cu.hop=.6;cu.target=undefined;w.sticks.push({row:cu.row,u:cu.u+.03});w.empties++;if(w===cur)voice(330,.05,.03,'square');}}
   w.cust=w.cust.filter(cu=>!cu.gone);
   for(const n of w.nanas){n.u-=dt*1.05*Math.min(1.4,.85+k*.15);const hit=w.cust.filter(cu=>cu.row===n.row&&cu.state==='walk'&&cu.u<n.u+.01&&cu.u>n.u-.06).sort((a,b)=>b.u-a.u)[0];
-   if(hit){n.dead=true;w.caught++;hit.state='push';hit.timer=shoveT(w);   /* shoved back .34 of the bar on level 1, down to ~.17 */hit.target=undefined;if(w===cur)voice(880,.05,.04,'triangle');}
+   if(hit){n.dead=true;w.caught++;hit.state='push';hit.back=hit.u-pushDist(w);hit.target=undefined;if(w.rand()<.14&&!w.cash.length)w.cash.push({row:hit.row,u:clamp(hit.u,.12,.8),t:6,tip:true});if(w===cur)voice(880,.05,.04,'triangle');}
    else if(n.u<=-.02){lose(w,'WASTED!',n.row);return;}}
   w.nanas=w.nanas.filter(n=>!n.dead);
   for(const st of w.sticks){if(st.wait>0){st.wait-=dt;continue;}st.u+=dt*.55*Math.min(1.3,.9+k*.1);if(st.u>=1){if(w.row===st.row){st.dead=true;w.score+=100;w.act='catch';w.actT=.25;w.pops.push({x:1,y:st.row,text:'+100',t:.8,c:'#b8860b'});if(w===cur)voice(1175,.06,.05,'square');}else{lose(w,'DROPPED IT!',st.row);return;}}}
   w.sticks=w.sticks.filter(st=>!st.dead);
-  if(w.spawned>=quota&&!w.cust.length&&!w.sticks.length&&!w.nanas.length&&!w.sent.length){const bonus=500*(w.cleared+1);w.score+=bonus;w.cleared++;w.phase='clear';w.card=2.4;w.bonus=bonus;if(w===cur&&s.solo)soloProgress(s,w.score,w.cleared,`Level ${w.cleared+1}`);
+  if(w.spawned>=quota&&!w.cust.length&&!w.sticks.length&&!w.nanas.length&&!w.sent.length){w.cleared++;w.phase='clear';w.card=2.2;w.bonus=0;if(w===cur&&s.solo)soloProgress(s,w.score,w.cleared,`Level ${w.cleared+1}`);
    if(w===cur){[523,659,784,1047].forEach((f,i)=>voice(f,.12,.05,'triangle',{delay:i*.09}));s.react?.(w.player,'win',2);audio.narrate('clear',.8);}}
   if(w===cur&&w.phase==='play'&&Math.random()<dt*.012)audio.narrate('any',.5);
  }
@@ -292,18 +315,33 @@ async function moneygrab(s){
   if(!small)for(const cu of w.cust)if(cu.sent&&cu.u<.08&&cu.state==='walk'){text('from '+cu.sent,b.X(cu.u),b.barY(cu.row)+b.B*.2,clamp(b.B*.12,8,12),{align:'center',fill:'#7d5ba6',weight:700});}
   for(const p of w.pops){const px=b.X(p.x),sz0=p.big?clamp(b.B*.3,14,34):clamp(b.B*.18,11,20),py=Math.max(b.top+sz0,b.barY(p.y)-b.B*.5-(1.6-p.t)*b.B*.2),sz=p.big?clamp(b.B*.3,14,34):clamp(b.B*.18,11,20);text(p.text,clamp(px,b.R.x+sz*2,b.R.x+b.R.w-sz*2),py,sz,{align:'center',fill:p.c,weight:900,alpha:clamp(p.t*2,0,1)});}
   if(w.flash>0){x.fillStyle=`rgba(214,42,42,${w.flash*.18})`;x.fillRect(b.R.x,b.R.y,b.R.w,b.R.h);}
+  if(w.show>0&&w.phase==='play'){const R=b.R,sz=clamp(Math.min(R.w,R.h)*.06,12,30),a=clamp(w.show*2,0,1),y=b.top+sz*1.6;x.save();x.globalAlpha=a;x.fillStyle=BLUTH;x.fillRect(R.x+R.w*.18,y-sz,R.w*.64,sz*2);x.restore();
+   text('GOB\'S MAGIC SHOW!',R.x+R.w/2,y-sz*.18,sz,{align:'center',weight:900,alpha:a});text('everybody stops to watch',R.x+R.w/2,y+sz*.62,sz*.45,{align:'center',weight:700,fill:INK,alpha:a});
+   for(let i=0;i<8;i++){const t=w.bob*3+i,px=R.x+R.w*(.2+.6*((i*.37+w.bob*.15)%1)),py=y+sz*(1.6+Math.sin(t)*.4);x.fillStyle=`hsla(${i*45},90%,55%,${a})`;x.beginPath();x.arc(px,py,sz*.12,0,7);x.fill();}}
+  if(w.phase==='bonus')drawBonus(w,b,small);
   // level title card / level clear: a plain white card with black lettering
   if(w.phase==='card'||w.phase==='clear'){const R=b.R,a=clamp(Math.min(w.card*3,(w.phase==='card'?2.2:2.4)-w.card+.3)*2,0,1),card=w.phase==='card'&&pic('card-'+L.id);
    x.save();x.globalAlpha=a;x.fillStyle='#ffffff';x.fillRect(R.x,R.y,R.w,R.h);
    if(card){const k=Math.min(R.w/card.width,R.h/card.height),w=card.width*k,h=card.height*k;x.drawImage(card,R.x+(R.w-w)/2,R.y+(R.h-h)/2,w,h);}   // fitted, never cropped (white around it)
    else{const big=fitText(w.phase==='clear'?'Level cleared':L.title,R.w*.84,clamp(Math.min(R.w,R.h)*.09,14,44));
-    const title=w.phase==='clear'?'Level cleared':L.title,sub=w.phase==='clear'?`Tip jar +$${w.bonus}`:L.sub;
+    const title=w.phase==='clear'?'Level cleared':L.title,sub=w.phase==='clear'?'Bonus round next':L.sub;
     const sm=Math.max(small?9:12,big*.45),cy=R.y+R.h*.46;
     if(w.phase==='card')text(`Level ${w.cleared+1}`,R.x+R.w*.08,cy-big*1.05,Math.max(sm,big*.5),{fill:GREY,weight:800});
     text(title,R.x+R.w*.08,cy,big,{weight:800});text(sub,R.x+R.w*.08,cy+big*.75+sm*.6,sm,{fill:GREY,weight:600});
     if(w.phase==='card'&&!small)text(`Serve ${L.item.toLowerCase()} · catch the ${L.empty.toLowerCase()} · ${quotaFor(w.cleared)} customers`,R.x+R.w*.08,cy+big*.75+sm*2,Math.max(11,sm*.85),{fill:INK,weight:500});}
    x.restore();}
  }
+ function drawBonus(w,b,small){const R=b.R,B=w.bonusR;x.save();x.fillStyle='#ffffff';x.fillRect(R.x,R.y,R.w,R.h);x.restore();if(!B){text('Bonus round',R.x+R.w*.08,R.y+R.h*.4,clamp(Math.min(R.w,R.h)*.07,12,40),{weight:800});return;}
+  const big=clamp(Math.min(R.w,R.h)*.07,14,40),L=lvOf(w);text('Bonus round',R.x+R.w*.08,R.y+R.h*.16,big,{weight:800});
+  const msg=B.stage==='show'?`Gob shakes five of these six. Keep your eye on the one he doesn't.`:B.stage==='shake'?'Shake, shake, shake…':B.stage==='shuffle'?'Now he shuffles them.':B.stage==='pick'?'Tap the one he didn\'t shake.':B.pick===B.good?`Right! +${BONUS}`:'Sprayed. Come on!';
+  text(msg,R.x+R.w*.08,R.y+R.h*.16+big*1.05,Math.max(10,fitText(msg,R.w*.84,big*.45,600)),{fill:GREY,weight:600});
+  const barY=R.y+R.h*.72,gap=R.w*.8/CAN_N,cw=Math.min(gap*.62,R.h*.16),ch=cw*1.6;x.fillStyle=INK;x.fillRect(R.x+R.w*.06,barY,R.w*.88,Math.max(3,R.h*.012));
+  B.hit=[];for(let can=0;can<CAN_N;can++){const pos=canPos(B,can),cx=R.x+R.w*.1+gap*(pos+.5),shaking=B.stage==='shake'&&B.order[B.shake]===can,wob=shaking?Math.sin(B.t*60)*cw*.12:0,lift=B.stage==='reveal'&&(can===B.good||can===B.pick)?ch*.15:0;
+   x.save();x.translate(cx+wob,barY-lift);x.rotate(shaking?Math.sin(B.t*50)*.15:0);x.fillStyle=can===B.good&&B.stage==='reveal'?'#2e8b3a':BLUTH;x.strokeStyle=INK;x.lineWidth=2;x.beginPath();x.rect(-cw/2,-ch,cw,ch);x.fill();x.stroke();
+   x.fillStyle='#ffffff';x.fillRect(-cw/2,-ch*.62,cw,ch*.28);x.fillStyle=INK;x.font=fontOf(800,cw*.22);x.textAlign='center';x.textBaseline='middle';x.fillText(L.id==='stand'?'BANANA':L.id==='penthouse'?'TONIC':'HAM',0,-ch*.48);
+   x.fillStyle=GREY;x.fillRect(-cw/2,-ch-cw*.08,cw,cw*.08);x.restore();
+   if(B.stage==='reveal'&&can===B.pick&&can!==B.good){for(let i=0;i<14;i++){const a=-Math.PI/2+(i-7)*.12,d=(B.t*2%1+i*.07)*ch;x.fillStyle='rgba(180,140,60,.6)';x.beginPath();x.arc(cx+Math.cos(a)*d,barY-ch+Math.sin(a)*d,cw*.08,0,7);x.fill();}}
+   B.hit.push({slot:B.slot.indexOf(can),x:cx,y:barY-ch/2,w:cw*1.2,h:ch*1.3});}}
  function hud(w,b,who,{watch}={}){
   const R=b.R,fs=lay.fs,y=R.y+(lay.kind==='tall'&&R.y>0?fs*1.2:lay.kind!=='solo'&&watch?50+fs*.9:fs*1.5),left=R.x+fs*.7;   // online: the rival's panel sits under the duel chip
   // one panel at the top LEFT (the right side belongs to Pause/Exit): $score + name (P2: the score to beat), lives + level
@@ -329,14 +367,16 @@ async function moneygrab(s){
  function rowAt(b,py){return clamp(Math.floor((py-b.y0)/b.P),0,ROWS-1);}
  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||!cur||!lay)return;ev.preventDefault();const p=s.pointer(ev),b=lay.mine;
   if(net&&(p.y<b.R.y||p.x<b.R.x))return;   // the other player's bars are just to watch
+  if(cur.phase==='bonus'){const B=cur.bonusR;if(B&&B.stage==='pick'&&B.hit)for(const h of B.hit)if(Math.abs(p.x-h.x)<h.w/2&&Math.abs(p.y-h.y)<h.h/2){pickCan(cur,h.slot);nf?.push();return;}return;}
   for(const m of cur.cash){const X=b.X(m.u),Y=b.barY(m.row)-b.B*.15;if(Math.abs(p.x-X)<b.B*.32&&Math.abs(p.y-Y)<b.B*.25){grabCash(cur,m);nf?.push();return;}}
   tapBar(cur,rowAt(b,p.y));nf?.push();});
  s.on(document,'keydown',ev=>{if(!cur||s.paused)return;const k=ev.key;if(k==='ArrowUp'||k==='w'){moveTo(cur,Math.max(0,cur.row-1));}else if(k==='ArrowDown'||k==='s'){moveTo(cur,Math.min(ROWS-1,cur.row+1));}else if(k===' '||k==='Enter')serve(cur,cur.row);else return;ev.preventDefault();});
- s.hint('Tap a bar to walk to it; tap the bar you are at to slide an order down it. Customers who catch one drink and slide the empty back (unless you shove them out the door): be on that bar to catch it. Don\'t serve an empty bar, drop an empty, or let anyone reach you. Tap loose cash for +150. Clear every customer to open the next bar. Keys: ↑/↓ + Space.');
+ s.hint('Like the arcade Tapper. Tap a bar to walk to it; tap the bar you are at to slide an order down it. A customer who catches one is shoved back: out the door and they are gone for good, otherwise they drink and slide the empty back, so serve them while they are near the door. Be on a bar to catch its empty. Don\'t serve an empty bar, drop an empty, or let anyone reach you. Grab a tip (+1500) and the whole bar stops to watch Gob\'s show. Clear every customer for the bonus round: pick the can Gob didn\'t shake. Keys: ↑/↓ + Space.');
  s.debug={engine:'moneygrab',get world(){return cur;},set world(v){},get remote(){return remote;},pool,lose:()=>cur&&lose(cur,'TEST',0),clearLevel:()=>{if(!cur)return;cur.spawned=99;cur.cust=[];cur.sticks=[];cur.nanas=[];},
   say:t=>{const cu=cur?.cust[0];if(cu)talk(cur,cu,t||lineFor(cu.char,Math.random));}};
  // autopilot (tests): serve a bar with someone walking and nothing on the way, catch empties first
- function botStep(w){if(!w||w.phase!=='play'||w.pause>0||w.ending)return;if(Math.random()<(s.debug.botSkip??Math.min(.95,.35+w.cleared*.2)))return;   // botSkip: fixed skill for balance runs   // sloppier every level, so test runs end
+ function botStep(w){if(w&&w.phase==='bonus'&&w.bonusR?.stage==='pick'&&w.bonusR.t>.6){pickCan(w,Math.random()<.5?w.bonusR.slot.indexOf(w.bonusR.good):Math.floor(Math.random()*CAN_N));return;}
+  if(!w||w.phase!=='play'||w.pause>0||w.ending)return;if(Math.random()<(s.debug.botSkip??Math.min(.95,.35+w.cleared*.2)))return;   // botSkip: fixed skill for balance runs   // sloppier every level, so test runs end
   const st=w.sticks.filter(q=>q.u>.55).sort((a,b)=>b.u-a.u)[0];if(st){if(w.row!==st.row){w.row=st.row;w.act='run';w.actT=.15;}return;}
   const m=w.cash[0];if(m&&Math.random()<.02){grabCash(w,m);return;}
   const need=[0,1,2,3].map(r=>({r,c:w.cust.filter(cu=>cu.row===r&&cu.state==='walk').length-w.nanas.filter(n=>n.row===r).length,lead:Math.max(0,...w.cust.filter(cu=>cu.row===r&&cu.state==='walk').map(cu=>cu.u))})).filter(q=>q.c>0).sort((a,b)=>b.lead-a.lead)[0];
@@ -346,10 +386,10 @@ async function moneygrab(s){
  let nf=null;
  if(net){
   remote=make(them);remote.phase='card';
-  const packW=w=>({lv:w.lv,cl:w.cleared,sc:w.score,li:w.lives,r:w.row,ph:w.phase,cd:+w.card.toFixed(2),pa:+Math.max(0,w.pause).toFixed(2),a:w.act,fl:+w.flash.toFixed(2),bo:w.bonus||0,
+  const packW=w=>({lv:w.lv,cl:w.cleared,sc:w.score,li:w.lives,r:w.row,ph:w.phase,cd:+w.card.toFixed(2),pa:+Math.max(0,w.pause).toFixed(2),a:w.act,fl:+w.flash.toFixed(2),bo:w.bonus||0,sh:+(w.show||0).toFixed(1),
    c:w.cust.map(cu=>[cu.id,cu.row,Math.round(cu.u*1000),ST.indexOf(cu.state),cu.char,cu.body,cu.shirt,cu.sent||0]),n:w.nanas.map(q=>[q.row,Math.round(q.u*1000)]),k:w.sticks.map(q=>[q.row,Math.round(q.u*1000)]),m:w.cash.map(q=>[q.row,Math.round(q.u*1000)]),t:+w.time.toFixed(1)});
   nf=netField(s,{hz:15,pack:()=>packW(cur||remote),
-   unpack:(i,d)=>{const w=remote;if(!d)return;w.lv=d.lv|0;w.cleared=d.cl|0;w.score=d.sc|0;w.lives=d.li|0;w.row=d.r|0;w.phase=d.ph||'play';w.card=+d.cd||0;w.pause=+d.pa||0;w.act=d.a||'idle';w.actT=.2;w.flash=Math.max(w.flash,+d.fl||0);w.bonus=d.bo|0;w.time=+d.t||0;
+   unpack:(i,d)=>{const w=remote;if(!d)return;w.lv=d.lv|0;w.cleared=d.cl|0;w.score=d.sc|0;w.lives=d.li|0;w.row=d.r|0;w.phase=d.ph||'play';w.card=+d.cd||0;w.pause=+d.pa||0;w.act=d.a||'idle';w.actT=.2;w.flash=Math.max(w.flash,+d.fl||0);w.bonus=d.bo|0;w.time=+d.t||0;w.show=+d.sh||0;if(w.phase==='bonus'&&!w.bonusR)w.bonusR=null;
     const old=new Map(w.cust.map(cu=>[cu.id,cu]));w.cust=(d.c||[]).map(([id,row,u,st,char,body,shirt,sent])=>{const o=old.get(id)||{id,u:u/1000};return Object.assign(o,{row,tu:u/1000,state:ST[st]||'walk',char,body,shirt,sent:sent||null});});
     const lists=(arr,prev)=>(arr||[]).map(([row,u],j)=>{const o=prev.find(q=>q.row===row&&Math.abs(q.u-u/1000)<.15)||{row,u:u/1000};o.tu=u/1000;return o;});
     w.nanas=lists(d.n,w.nanas);w.sticks=lists(d.k,w.sticks);w.cash=(d.m||[]).map(([row,u])=>({row,u:u/1000,t:4}));},
@@ -396,7 +436,7 @@ async function moneygrab(s){
  // ---------------------------------------------------------------- 1P arcade: one run, level after level, until you're out
  if(s.solo){
   cur=make(0);
-  if(!await s.pass(0,`Tapper at the Bluths' bars. The customers are anybody and everybody. Tap a bar to walk to it, tap it again to slide an order down it, catch the empties they slide back, grab loose cash. Serve everyone and the next bar opens, each one longer and faster. Three lives; no clock.`,'Ready — open the bar',{countdown:3}))return;
+  if(!await s.pass(0,`Tapper at the Bluths' bars. The customers are anybody and everybody. Tap a bar to walk to it, tap it again to slide an order down it, catch the empties they slide back (shove them out the door and they're gone), grab the tips. Serve everyone and the next bar opens, each one longer and faster. Three lives; no clock.`,'Ready — open the bar',{countdown:3}))return;
   startLevel(cur);let over=0,done=false;
   s.frame(dt=>{if(done)return;shake.step(dt);audio.tick();cur.time+=dt;step(cur,dt);if(s.debug._bot)botStep(cur);s.setScores([cur.score,0]);
    if(!cur.ending&&cur.lives<=0&&cur.pause<=0){cur.ending=1.6;cur.endReason='over';audio.narrate('end',.8);}
@@ -406,7 +446,7 @@ async function moneygrab(s){
  }
  // ---------------------------------------------------------------- pass and play: each player's whole run
  const scores=await turnRunner(s,{seconds:SECONDS,
-  intro:(i,sc)=>i===0?`Tapper at the Bluths' bars. ${s.players[0].name} goes first; the customers are anybody and everybody. Tap a bar to walk to it, tap it again to slide an order down it, catch the empties they slide back, grab loose cash. Serve everyone and the next bar opens, each one longer and faster. Three lives, no clock: play until you're out.`:`${s.players[1].name}, your shift. Same crowd. Beat $${sc[0]}.`,
+  intro:(i,sc)=>i===0?`Tapper at the Bluths' bars. ${s.players[0].name} goes first; the customers are anybody and everybody. Tap a bar to walk to it, tap it again to slide an order down it, catch the empties they slide back (shove them out the door and they're gone), grab the tips. Serve everyone and the next bar opens, each one longer and faster. Three lives, no clock: play until you're out.`:`${s.players[1].name}, your shift. Same crowd. Beat $${sc[0]}.`,
   make:i=>{cur=make(i);startLevel(cur);return cur;},
   step:(w,dt)=>{shake.step(dt);audio.tick();step(w,dt);if(s.debug._bot)botStep(w);},
   draw,done:w=>w.lives<=0&&w.pause<=0,score:w=>w.score});
