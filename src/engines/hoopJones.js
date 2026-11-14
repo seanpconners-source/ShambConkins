@@ -256,7 +256,8 @@ async function hoopJones(s){
  // autopilot (tests): shoot with whoever's lane the hoop will be over when the ball gets there
  let botOn=false;
  function botStep(run){if(!botOn||!run||run.phase!=='play')return;const tf=flightOf(run.round),bx=basketX(run,run.bph+phaseRate(run)*tf);
-  for(let i=0;i<4;i++){if(Math.abs(L.lane(i)-bx)<L.rimR*.55&&Math.random()<.5){shoot(run,i);return;}}
+  const tol=L.rimR*(.35+.2*run.round);   // sloppier every round, so test runs end
+  for(let i=0;i<4;i++){if(Math.abs(L.lane(i)-bx)<tol&&Math.random()<.5){shoot(run,i);return;}}
   if(net&&canPsych()&&Math.random()<.004)sendPsych(fillPsych(PSYCH_SHOUTS[Math.floor(Math.random()*PSYCH_SHOUTS.length)],s.players[them]?.name));}
  s.debug={engine:'shootout',get run(){return cur;},set run(v){},shoot:i=>shoot(cur,i),get bot(){return ()=>{if(!botOn){botOn=true;return 'drive';}return '';};},
   psych:t=>{if(applyPsych(cur,t||'TEST PSYCH',psycher()))cur.psychLeft--;},skipRound(){if(cur){cur.rscore=targetOf(cur.round);cur.clock=.01;}},
