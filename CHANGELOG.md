@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.97.5
+
+- **Sean of the Dead, rebalanced:** zombies pay more as the waves get tougher, wave-clear and early-call bonuses grow each wave, and tier 4 and 5 upgrades cost less, so you can actually reach the super paths. No upgrade lowers a tower's range any more (Chainsaw Hand, Flamethrower, Claymores and the Gatling used to), and the Chainsaw Hand hits much harder. In 2P kills pay a little extra.
+- **Endless mode:** hold all 15 waves, then keep going. Endless waves keep getting tougher (a boss every 5) until the Winchester falls, and your score keeps counting.
+- **Horde:** Trioxin Rain canisters now speed up all the way into the ground instead of hanging just above it.
+
 ## v0.97.4
 
 - **Banana Stand Tapper runs smoothly on phones:** the room, bars, bodies and faces are shrunk once to the size they show at instead of every frame (about twice the frame rate).

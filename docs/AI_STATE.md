@@ -2,6 +2,15 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+v0.97.5 (Nov 14): SEAN OF THE DEAD BALANCE (owner: tier 4+ never affordable, ranges drop): kill gold x waveGold()
+(1+.07/wave, x1.25 in 2P), clearBonus 25+10*wave, earlyBonus scales; tier 4/5 costs ~-20% (sotd/data.js), ranges monotonic
+per path (gun A4 94/A5 108, fire t3 108/B 120/136, boom A 160/180, rifle B 190/210), Chainsaw Hand dps 110/220; HP growth
+.016*(w-1)^2 (was .013). Autopilot (scratch sotdecon.mjs, speed 3): old = first tier 4 at wave 15, 10 pints lost; new = all
+tier 3 by ~10-11, tier 4 at 12-13, tier 5 at 14-15, 3 pints lost (2P 0). ENDLESS: wave 15 cleared -> phase 'victory' card
+(winBonus once, KEEP GOING = goEndless / CALL IT A NIGHT); endlessWave(n) grows, boss every 5 (hp +12%/wave past 15); pints
+out in endless = end with won=true, 'held to wave N'; debug endless()/night()/state().earned. Horde rain canister fall
+h=(1-f)(1+.8f)*520 (accelerates; old ease-out stalled).
+
 v0.97.4 (Nov 14): TAPPER FPS (owner: unplayable on his phone): bananaTapper caches the room (bg + floor + doors) and each bar
 (+ station) as canvases per layout (layer()/paint() swap the drawing context x), sheets shrunk once to the drawn scale (sheetAt),
 faces via new headFacts faceSprite (per char/mood/size/flip canvas), bubble word wrap cached, fonts rounded to .5 px; 4x CPU

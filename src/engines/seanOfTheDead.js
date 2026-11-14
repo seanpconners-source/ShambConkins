@@ -77,7 +77,15 @@ async function seanOfTheDead(s){
 
  // ---------------------------------------------------------------- state
  let phase='intro',phaseT=0,wave=0,pints=PINTS,maxPints=PINTS,breakT=BREAK,speed=1,clock=0,ended=false,won=false;
- const money=[solo?300:180,180],score=[0,0],kills=[0,0],bossDmg=[0,0];
+ const money=[solo?300:180,180],score=[0,0],kills=[0,0],bossDmg=[0,0],earned=[0,0];
+ // ECONOMY (owner, Nov 14: 'upgrading past 3 doesn't seem worth it, you never make enough'): zombies get ~8x tougher by
+ // wave 15, so their pay grows with the wave too (x2.1 at 15), the wave-clear bonus grows, and in 2P (each player earns
+ // only their own kills) kills pay a bit more. Apex tiers cost less (sotd/data.js) and no upgrade shrinks a tower's range.
+ const waveGold=()=>(1+.07*Math.max(0,wave-1))*(np===2?1.25:1),clearBonus=()=>25+10*wave;
+ let endless=false,victoryT=0;   // after wave 15: call it a night, or keep going (endless waves until the pub falls)
+ const waveAt=i=>i<WAVES.length?WAVES[i]:endlessWave(i-WAVES.length+1);
+ function endlessWave(n){const w={shambler:30+4*n,runner:24+3*n,riot:16+2*n,crawler:16+3*n,bloater:6+n,screamer:5+Math.ceil(n/2),brute:4+n};if(n%5===0)w.boss=1;return w;}
+ const totalWaves=()=>endless?Infinity:WAVES.length;
  const Z=[],SHELL=[],FX=[],TXT=[],DECAL=[],MINES=[],POOLS=[],LINESFX=[],RINGS=[];
  const pubLv={door:0,turret:0,tab:0};let pubCool=0;
  const powers={bus:{cd:10},strike:{cd:6}};let bus=null,aiming=null;
@@ -93,14 +101,14 @@ async function seanOfTheDead(s){
   shake=Math.max(shake,Math.min(12,r/6));sfx(70+fxr()*30,.22,.07,'sawtooth');}
 
  // ---------------------------------------------------------------- waves
- function earlyBonus(){return phase==='break'?(wave?Math.ceil(breakT*1.2):0):phase==='wave'&&!queue.length?Math.ceil(BREAK*1.2)+25:0;}
+ function earlyBonus(){return phase==='break'?(wave?Math.ceil(breakT*1.2*(1+.05*wave)):0):phase==='wave'&&!queue.length?Math.ceil(BREAK*1.2*(1+.05*wave))+clearBonus():0;}
  function startWave(early=false){
-  if(wave>=WAVES.length||phase==='wave'&&queue.length)return;
+  if(wave>=totalWaves()||phase==='wave'&&queue.length)return;
   // calling early pays (owner, Nov 14: 'you don't get the extra money for starting the wave early'): in the break, for the
   // time left; DURING a wave (all spawned, some still walking) for the whole break skipped plus the +£25 clear bonus that
   // wave would have paid (the two waves now end together, so it never came)
-  if(early){const bonus=earlyBonus();if(bonus>0){for(let i=0;i<np;i++)money[i]+=bonus;pop(spawnBtn.x,spawnBtn.y-24,`+£${bonus} each`,'#ffd23a');say('EARLY CALL',`+£${bonus} each`,'#ffd23a',1.2);sound('pickup');}}
-  const w=WAVES[wave];wave++;phase='wave';const list=[];
+  if(early){const bonus=earlyBonus();if(bonus>0){for(let i=0;i<np;i++){money[i]+=bonus;earned[i]+=bonus;}pop(spawnBtn.x,spawnBtn.y-24,`+£${bonus} each`,'#ffd23a');say('EARLY CALL',`+£${bonus} each`,'#ffd23a',1.2);sound('pickup');}}
+  const w=waveAt(wave);wave++;phase='wave';const list=[];
   for(const [t,n] of Object.entries(w))for(let i=0;i<n;i++)if(t!=='boss')list.push(t);
   for(let i=list.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[list[i],list[j]]=[list[j],list[i]];}
   if(w.boss)list.splice(Math.floor(list.length*.5),0,'boss');
@@ -109,7 +117,7 @@ async function seanOfTheDead(s){
   sound('rare');try{vibrate(30);}catch{}
  }
  function spawnZ(type,d=0){
-  const t=ZOMBIES[type],hpK=t.boss?(np===2?1.3:1):(1+.3*(wave-1)+.013*(wave-1)*(wave-1))*(np===2?1.35:1),hp=Math.round(t.hp*hpK);
+  const t=ZOMBIES[type],hpK=t.boss?(np===2?1.3:1)*(1+Math.max(0,wave-WAVES.length)*.12):(1+.3*(wave-1)+.016*(wave-1)*(wave-1))*(np===2?1.35:1),hp=Math.round(t.hp*hpK);
   const id=t.boss&&bossId?bossId:faces[Math.floor(R()*faces.length)];
   Z.push({id:nextId++,type,t,face:id,hp,max:hp,d,lane:(R()-.5)*(t.size>1.5?6:20),slow:0,stun:0,vuln:0,haste:0,burn:0,burnT:0,blocker:null,dead:0,gone:0,wob:R()*6,hitT:0,x:0,y:0,dmgBy:[0,0],spawnT:0,ang:0});
  }
@@ -122,8 +130,8 @@ async function seanOfTheDead(s){
  }
  function burnZ(z,dps,t=3){if(z.dead)return;z.burn=Math.max(z.burn,dps);z.burnT=Math.max(z.burnT,t);}
  function kill(z,src){
-  z.dead=.7;const o=src?.owner??(z.dmgBy[1]>z.dmgBy[0]?1:0),gold=Math.round(z.t.gold*(1+(PUB.tab.levels[pubLv.tab-1]?.gold||0)));
-  money[o]+=gold;score[o]+=z.t.gold*10;kills[o]++;s.setScores?.(score.slice());
+  z.dead=.7;const o=src?.owner??(z.dmgBy[1]>z.dmgBy[0]?1:0),gold=Math.round(z.t.gold*waveGold()*(1+(PUB.tab.levels[pubLv.tab-1]?.gold||0)));
+  money[o]+=gold;earned[o]+=gold;score[o]+=z.t.gold*10;kills[o]++;s.setScores?.(score.slice());
   pop(z.x,z.y-26,`+£${gold}`,'#ffd23a');DECAL.push({x:z.x,y:z.y+4,r:8+z.t.size*7,a:.6,seed:fxr()});if(DECAL.length>90)DECAL.shift();
   for(let i=0;i<10;i++)FX.push({x:z.x,y:z.y-10,vx:(fxr()-.5)*110,vy:-30-fxr()*90,t:.6,col:'#8a0f0f',r:2+fxr()*2,g:260});
   if(z.blocker){if(z.blocker.foe===z)z.blocker.foe=null;if(z.blocker.target===z)z.blocker.target=null;z.blocker=null;}
@@ -253,7 +261,7 @@ async function seanOfTheDead(s){
   const [px,py]=posAt(z.d),g=segAt(z.d),nx=-(g.by-g.ay)/g.l,ny=(g.bx-g.ax)/g.l;
   z.x=px+nx*z.lane;z.y=py+ny*z.lane;z.ang=Math.atan2(g.by-g.ay,g.bx-g.ax);
   if(z.d>=total){z.gone=1;pints=Math.max(0,pints-z.t.pints);shake=10;try{vibrate(40);}catch{}sound('lose');pop(door[0],door[1]+24,`-${z.t.pints} 🍺`,'#ff6a5a',true);
-   for(const h of heroes){h.moodT=0;setMood(h,'angry');}if(pints<=0)end(false);}
+   for(const h of heroes){h.moodT=0;setMood(h,'angry');}if(pints<=0)end(endless);}
  }
  // ---------------------------------------------------------------- pub, powers
  function pubUpgrade(key){const L=PUB[key].levels[pubLv[key]];if(!L)return;const share=np>1?Math.ceil(L.cost/2):L.cost;
@@ -268,14 +276,20 @@ async function seanOfTheDead(s){
   for(const z of living())if(!bus.hit.has(z)&&Math.hypot(z.x-bx,z.y-by)<26){bus.hit.add(z);hurt(z,POWERS.bus.dmg*(z.t.boss?1.5:1),'true',{owner:z.id%np});if(!z.t.boss){z.d=Math.max(0,z.d-30);}
    for(let i=0;i<6;i++)FX.push({x:z.x,y:z.y-10,vx:(fxr()-.5)*140,vy:-60-fxr()*80,t:.5,col:'#8a0f0f',r:2.2,g:260});shake=Math.max(shake,5);sfx(80,.08,.05,'square');}
   if(bus.d<=0)bus=null;}
+ // the pints-left bonus is paid once, when wave 15 falls (before the endless choice)
+ let winPaid=-1;const starsNow=()=>pints>=maxPints?3:pints>=maxPints/2?2:1;
+ function winBonus(){if(winPaid>=0)return winPaid;winPaid=pints*25;for(let i=0;i<np;i++)score[i]+=winPaid;s.setScores?.(score.slice());return winPaid;}
+ function goEndless(){if(phase!=='victory')return;endless=true;phase='break';breakT=BREAK;sel=null;say('ENDLESS','Every wave tougher, every kill worth more. How long can you hold?','#ff8a3a',3);sound('pickup');}
+ function callItANight(){if(phase!=='victory')return;phase='wave';end(true);}
  function end(win){if(ended)return;ended=true;won=win;phase='end';phaseT=0;
-  if(win){const bonus=pints*25;for(let i=0;i<np;i++)score[i]+=bonus;const stars=pints>=maxPints?3:pints>=maxPints/2?2:1;say('THE WINCHESTER STANDS',`${'★'.repeat(stars)}${'☆'.repeat(3-stars)}  +${bonus} each for the pints left`,'#ffd23a',4);sound('win');}
+  if(endless){say('LAST ORDERS',`Endless: you held the Winchester to wave ${wave}`,'#ffd23a',4);sound('lose');}
+  else if(win){const bonus=winBonus();const stars=starsNow();say('THE WINCHESTER STANDS',`${'★'.repeat(stars)}${'☆'.repeat(3-stars)}  +${bonus} each for the pints left`,'#ffd23a',4);sound('win');}
   else{say('THE WINCHESTER HAS FALLEN','The dead are at the bar.','#ff5a4a',4);sound('lose');}
   for(const h of heroes){h.moodT=0;setMood(h,win?'win':'sad');h.moodT=99;}s.setScores?.(score.slice());}
- function finish(){const totalS=score[0]+(np>1?score[1]:0),secs=Math.floor(clock),cleared=won?WAVES.length:Math.max(0,wave-1);
+ function finish(){const totalS=score[0]+(np>1?score[1]:0),secs=Math.floor(clock),cleared=endless?Math.max(WAVES.length,wave-1):won?WAVES.length:Math.max(0,wave-1);
   s.teamResult={kind:'survival',won,tied:false,humanTotal:totalS,cpuTotal:0,cpuScores:[0,0],duration:secs};
   if(solo){soloProgress(s,score[0],cleared,`wave ${cleared}`);s.solo.won=won;}
-  s.finish(np>1?score.slice():[score[0],0],`${won?'The Winchester stands!':'The Winchester fell'} · Sean of the Dead: ${cleared} of ${WAVES.length} waves · ${kills[0]+(kills[1]||0)} zombies · ${pints} pints left.`);}
+  s.finish(np>1?score.slice():[score[0],0],`${endless?`Endless: held to wave ${wave}`:won?'The Winchester stands!':'The Winchester fell'} · Sean of the Dead: ${endless?cleared+' waves':cleared+' of '+WAVES.length+' waves'} · ${kills[0]+(kills[1]||0)} zombies · ${pints} pints left.`);}
 
  // ---------------------------------------------------------------- input
  let drag=null;
@@ -284,13 +298,14 @@ async function seanOfTheDead(s){
  function tapAt(px,py){
   const wx=WX(px),wy=WY(py);
   for(let i=btns.length-1;i>=0;i--){const b=btns[i];if(px>=b.x&&px<=b.x+b.w&&py>=b.y&&py<=b.y+b.h){b.act();return;}}
+  if(phase==='victory')return;
   if(aiming){if(py>top&&py<s.H-bot){usePower('strike',wx,wy);aiming=null;}else aiming=null;return;}
   if(sel?.type==='spot'&&!sel.sp.t){const it=radial(sel.sp).find(m=>Math.hypot(m.x-wx,m.y-wy)<22);if(it){if(sel.line===it.line)build(sel.sp,it.line),sel=null;else{sel.line=it.line;sound('tap');}return;}}
   if(sel?.type==='hero'&&!heroAt(wx,wy)){const h=sel.h;if(wx>=0&&wy>=0&&wx<=MW&&wy<=MH){const onPub=wx>pub.x&&wx<pub.x+pub.w&&wy<pub.y+pub.h;h.hx=onPub?door[0]:wx;h.hy=onPub?door[1]+(wide?0:18):wy;h.target=null;RINGS.push({x:wx,y:wy,r:16,t:.5,max:.5,col:PCOL[h.i]});sound('tap');}sel=null;return;}
   const h=heroAt(wx,wy);if(h){sel={type:'hero',h};sound('tap');return;}
   const sp=spots.find(q=>Math.hypot(q.x-wx,q.y-wy)<SPOT+6);if(sp){sel={type:sp.t?'tower':'spot',sp,line:null};sound('tap');return;}
   if(wx>pub.x&&wx<pub.x+pub.w&&wy>pub.y-30&&wy<pub.y+pub.h){sel={type:'pub'};sound('tap');return;}
-  if(Math.hypot(wx-spawnBtn.x,wy-spawnBtn.y)<30&&(phase==='break'||phase==='wave'&&!queue.length)&&wave<WAVES.length){startWave(true);sel=null;return;}
+  if(Math.hypot(wx-spawnBtn.x,wy-spawnBtn.y)<30&&(phase==='break'||phase==='wave'&&!queue.length)&&wave<totalWaves()){startWave(true);sel=null;return;}
   sel=null;
  }
  s.on(c,'pointerdown',ev=>{ev.preventDefault();const p=s.pointer(ev);
@@ -491,7 +506,7 @@ async function seanOfTheDead(s){
  function hud(){
   const Ht=34,t0=4;x.textBaseline='middle';
   rr(6,t0,60,Ht,10);x.fillStyle='#000a';x.fill();txt(speed===1?'▶ 1x':speed===2?'⏩ 2x':'⏩ 3x',36,t0+Ht/2,14,'#fff',900);
-  const wt=`WAVE ${wave}/${WAVES.length}`;x.font='900 14px system-ui';const ww=x.measureText(wt).width+20;rr(72,t0,ww,Ht,10);x.fillStyle='#000a';x.fill();txt(wt,72+ww/2,t0+Ht/2,14,'#ffd23a',900);
+  const wt=endless?`WAVE ${wave} · ENDLESS`:`WAVE ${wave}/${WAVES.length}`;x.font='900 14px system-ui';const ww=x.measureText(wt).width+20;rr(72,t0,ww,Ht,10);x.fillStyle='#000a';x.fill();txt(wt,72+ww/2,t0+Ht/2,14,'#ffd23a',900);
   rr(78+ww,t0,70,Ht,10);x.fillStyle='#000a';x.fill();txt(`🍺 ${pints}`,113+ww,t0+Ht/2,14,pints<6?'#ff8a7a':'#fff',900);
   const y2=t0+Ht+6;
   for(let i=0;i<np;i++){const t=`£${money[i]}`;x.font='900 15px system-ui';const w=x.measureText(t).width+46,px=i===0?6:s.W-6-w;
@@ -511,11 +526,11 @@ async function seanOfTheDead(s){
  }
  const ZICON={shambler:'🧟',runner:'🏃',crawler:'🐛',riot:'🛡️',bloater:'🤢',screamer:'😱',brute:'💪',boss:'👑'};
  function drawSpawn(){
-  const X=SX(spawnBtn.x),Y=SY(spawnBtn.y),can=(phase==='break'||phase==='wave'&&!queue.length)&&wave<WAVES.length;if(!can)return;
+  const X=SX(spawnBtn.x),Y=SY(spawnBtn.y),can=(phase==='break'||phase==='wave'&&!queue.length)&&wave<totalWaves();if(!can)return;
   const pulse=1+Math.sin(clock*5)*.08,r=22*k*pulse;x.fillStyle='rgba(150,20,20,.9)';x.beginPath();x.arc(X,Y,r,0,7);x.fill();x.strokeStyle='#ffd23a';x.lineWidth=2;x.stroke();
   if(phase==='break'){x.strokeStyle='#fff';x.lineWidth=3;x.beginPath();x.arc(X,Y,r+3,-Math.PI/2,-Math.PI/2+Math.PI*2*(breakT/BREAK));x.stroke();}
   txt('💀',X,Y+1,19*k);
-  const w=WAVES[wave];if(w){const types=Object.keys(w);const lw=types.length*24*k+12*k,lx=X+r+6*k,ly=Y-12*k;rr(lx,ly,lw,24*k,8*k);x.fillStyle='rgba(0,0,0,.7)';x.fill();
+  const w=waveAt(wave);if(w){const types=Object.keys(w);const lw=types.length*24*k+12*k,lx=X+r+6*k,ly=Y-12*k;rr(lx,ly,lw,24*k,8*k);x.fillStyle='rgba(0,0,0,.7)';x.fill();
    types.forEach((t,j)=>{txt(ZICON[t]||'🧟',lx+12*k+j*24*k,ly+12*k,13*k);});}
   txt(phase==='break'&&!wave?'START':earlyBonus()>0?`NEXT WAVE +£${earlyBonus()}`:'NEXT WAVE',X,Y+r+10*k,10*k,'#fff',900);
  }
@@ -554,6 +569,18 @@ async function seanOfTheDead(s){
    let fs=Math.min(42,W/11);x.font=`900 ${fs}px Georgia,serif`;while(x.measureText(banner.text).width>W-20&&fs>12){fs--;x.font=`900 ${fs}px Georgia,serif`;}x.fillStyle=banner.col;x.textAlign='center';x.textBaseline='middle';x.fillText(banner.text,W/2,H*.41);
    if(banner.sub)txt(banner.sub,W/2,H*.465,Math.min(16,W/26),'#fff',700,'center',W-20);x.globalAlpha=1;}
   if(phase==='intro')drawIntro();
+  if(phase==='victory')drawVictory();
+ }
+ function drawVictory(){
+  const W=s.W,H=s.H,u=Math.min(1.3,Math.max(.8,Math.min(W,H)/390));x.fillStyle='rgba(8,10,6,.8)';x.fillRect(0,0,W,H);
+  const cw=Math.min(W-24,380*u),ch=330*u,cx=W/2-cw/2,cy=H/2-ch/2;rr(cx,cy,cw,ch,18);x.fillStyle='#1b1712';x.fill();x.strokeStyle='#ffd23a';x.lineWidth=2;x.stroke();
+  btns.push({x:0,y:0,w:W,h:H,act:()=>{}});   // nothing behind the card takes taps
+  const st=starsNow();txt('THE WINCHESTER STANDS',W/2,cy+38*u,22*u,'#ffd23a',900,'center',cw-24);
+  txt(`${'★'.repeat(st)}${'☆'.repeat(3-st)}`,W/2,cy+72*u,26*u,'#ffd23a',900);
+  txt(`All ${WAVES.length} waves held · +${winPaid} each for ${pints} pints left`,W/2,cy+104*u,13*u,'#e8e0c8',700,'center',cw-24);
+  txt('Keep going? Endless waves get tougher',W/2,cy+138*u,13*u,'#aaa',700,'center',cw-24);txt('(and pay more) until the pub falls.',W/2,cy+156*u,13*u,'#aaa',700,'center',cw-24);
+  button(cx+18*u,cy+182*u,cw-36*u,54*u,'KEEP GOING · ENDLESS','score keeps counting',goEndless,{col:'#ff8a3a'});
+  button(cx+18*u,cy+250*u,cw-36*u,50*u,'CALL IT A NIGHT','finish with the win',callItANight,{dark:true});
  }
  function drawBus(){const X=SX(bus.x),Y=SY(bus.y),g=segAt(bus.d),a=Math.atan2(g.ay-g.by,g.ax-g.bx);x.save();x.translate(X,Y-8*k);x.rotate(a);const L=46*k,Wd=22*k;
   x.fillStyle='#c8a020';rr(-L/2,-Wd/2,L,Wd,4*k);x.fill();x.fillStyle='#333';for(let i=0;i<5;i++)x.fillRect(-L/2+4*k+i*8.5*k,-Wd/2+2*k,6*k,4*k);x.fillStyle='#777';x.fillRect(-L/2,-Wd/2-2*k,L,3*k);x.fillRect(-L/2,Wd/2-1*k,L,3*k);
@@ -573,6 +600,7 @@ async function seanOfTheDead(s){
  let auto=false,botT=0;
  function botStep(dt){botT-=dt;if(botT>0)return;botT=.4;
   if(phase==='intro')phase='break';
+  if(phase==='victory'){if(s.debug.goEndless)goEndless();else callItANight();return;}
   for(let i=0;i<np;i++){const own=spots.filter(sp=>sp.owner===i),empty=own.filter(sp=>!sp.t);
    if(empty.length){const ln=LINES[Math.floor(fxr()*LINES.length)];if(money[i]>=node(ln,1).cost)build(empty[Math.floor(fxr()*empty.length)],ln);}
    else{const up=own.filter(sp=>sp.t.tier<5).sort((a,b)=>a.t.tier-b.t.tier)[0];if(up){const b=up.t.branch||(fxr()<.5?'A':'B'),nx=node(up.t.line,up.t.tier+1,b);if(money[i]>=nx.cost)upgrade(up,b);}}}
@@ -583,11 +611,11 @@ async function seanOfTheDead(s){
   if(pubLv.turret<2&&money.slice(0,np).every(m=>m>500))pubUpgrade('turret');
  }
  s.debug={get bot(){return auto;},set bot(v){auto=!!v;},
-  state:()=>({phase,wave,pints,money:money.slice(0,np),score:score.slice(0,np),towers:spots.filter(q=>q.t).map(q=>q.t.line+q.t.tier+(q.t.branch||'')),zombies:living().length,wide,bossId,heroes:heroes.map(h=>({lvl:h.lvl,w:h.w,hp:Math.round(h.hp),dead:h.dead>0})),sel:sel?.type||null}),
+  state:()=>({phase,wave,pints,endless,earned:earned.slice(0,np),money:money.slice(0,np),score:score.slice(0,np),towers:spots.filter(q=>q.t).map(q=>q.t.line+q.t.tier+(q.t.branch||'')),zombies:living().length,wide,bossId,heroes:heroes.map(h=>({lvl:h.lvl,w:h.w,hp:Math.round(h.hp),dead:h.dead>0})),sel:sel?.type||null}),
   build:(i,line)=>build(spots[i],line),upgrade:(i,b)=>upgrade(spots[i],b),startWave:()=>{if(phase==='intro')phase='break';startWave(true);},give:(n=1000)=>{for(let i=0;i<np;i++)money[i]+=n;},
-  speed:v=>{speed=v;},win:()=>{wave=WAVES.length;queue=[];for(const z of living())z.gone=1;end(true);},lose:()=>{pints=0;end(false);},power:(kk,a,b)=>usePower(kk,a,b),smash:i=>smash(heroes[i]),
+  speed:v=>{speed=v;},win:()=>{wave=WAVES.length;queue=[];for(const z of living())z.gone=1;if(phase==='wave'||phase==='break'){phase='victory';winBonus();}},lose:()=>{pints=0;end(false);},power:(kk,a,b)=>usePower(kk,a,b),smash:i=>smash(heroes[i]),
   spots:()=>spots.map(q=>({x:SX(q.x),y:SY(q.y),owner:q.owner,t:q.t?q.t.line+q.t.tier:null})),heroXY:i=>({x:SX(heroes[i].x),y:SY(heroes[i].y)}),select:o=>{sel=o;},spotObj:i=>spots[i],hero:i=>heroes[i],
-  wave:n=>{wave=n;},spawn:(t,d=0)=>spawnZ(t,d),clear:()=>{queue=[];for(const z of living())z.gone=1;}};
+  wave:n=>{wave=n;},spawn:(t,d=0)=>spawnZ(t,d),endless:()=>goEndless(),night:()=>callItANight(),clear:()=>{queue=[];for(const z of living())z.gone=1;}};
 
  // ---------------------------------------------------------------- loop
  await new Promise(resolve=>{
@@ -624,8 +652,8 @@ async function seanOfTheDead(s){
      for(let i=Z.length-1;i>=0;i--)if(Z[i].gone)Z.splice(i,1);
     }
     if(phase==='wave'&&!queue.length&&!living().length&&!Z.some(z=>z.dead)&&!ended){
-     if(wave>=WAVES.length)end(true);
-     else{phase='break';breakT=BREAK;if(solo)soloProgress(s,score[0],wave,`wave ${wave}`);for(let i=0;i<np;i++)money[i]+=25;say(`WAVE ${wave} CLEARED`,`+£25 each · ${WAVES.length-wave} to go`,'#7dff8a',2.2);sound('pickup');for(const hr of heroes){hr.moodT=0;setMood(hr,'win');}}}
+     if(wave===WAVES.length&&!endless){phase='victory';victoryT=0;winBonus();sel=null;}
+     else{phase='break';breakT=BREAK;if(solo)soloProgress(s,score[0],wave,`wave ${wave}`);const cb=clearBonus();for(let i=0;i<np;i++){money[i]+=cb;earned[i]+=cb;}say(`WAVE ${wave} CLEARED`,`+£${cb} each · ${endless?'endless':WAVES.length-wave+' to go'}`,'#7dff8a',2.2);sound('pickup');for(const hr of heroes){hr.moodT=0;setMood(hr,'win');}}}
    }
    if(phase==='end'){phaseT+=dt;for(const z of Z)if(z.dead)stepZ(z,dt);if(phaseT>3.8&&s.alive){phase='done';finish();resolve();}}
    for(let i=FX.length-1;i>=0;i--){const f=FX[i];f.t-=dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=(f.g||0)*dt;if(f.t<=0)FX.splice(i,1);}if(FX.length>500)FX.splice(0,FX.length-500);
