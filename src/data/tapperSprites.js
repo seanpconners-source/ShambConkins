@@ -7,14 +7,14 @@
 // not frames or logos from the show.
 const {USER_PORTRAITS:USER}=require("src/data/userPortraits.js");
 
-// LEVELS: one bar per level, played in this order (then round again, faster). `item` slides down the bar, the customer eats
+// LEVELS: one bar per level, played in this order, then round again (each level longer and faster: bananaTapper quotaFor/diff). `item` slides down the bar, the customer eats
 // or drinks it and slides `empty` back. `ink` = the drawn fallback's colours.
 const LEVELS=[
- {id:'stand',title:'Bluth’s Original Frozen Banana',sub:'The banana stand, Newport Beach boardwalk',item:'Frozen banana',empty:'Banana stick',quota:8,
+ {id:'stand',title:'Bluth’s Original Frozen Banana',sub:'The banana stand, Newport Beach boardwalk',item:'Frozen banana',empty:'Banana stick',
   ink:{wall:'#ffffff',trim:'#2f6fd8',floor:'#efe6d2',plank:'#e2d5b8',top:'#ffd84a',topEdge:'#d9a91c',front:'#2f6fd8',front2:'#ffffff',tap:'#ffd84a'}},
- {id:'penthouse',title:'Balboa Towers',sub:'The penthouse wet bar',item:'Vodka martini',empty:'Empty glass',quota:11,
+ {id:'penthouse',title:'Balboa Towers',sub:'The penthouse wet bar',item:'Vodka martini',empty:'Empty glass',
   ink:{wall:'#ffffff',trim:'#9aa3ad',floor:'#f4f4f2',plank:'#dcdcd8',top:'#26292d',topEdge:'#0f1113',front:'#e9e9e6',front2:'#cfd2d6',tap:'#b9c2cc'}},
- {id:'modelhome',title:'Sudden Valley',sub:'The model home kitchen',item:'Hot ham water',empty:'Empty mug',quota:14,
+ {id:'modelhome',title:'Sudden Valley',sub:'The model home kitchen',item:'Hot ham water',empty:'Empty mug',
   ink:{wall:'#ffffff',trim:'#c9a46c',floor:'#e4d3b3',plank:'#d4bf98',top:'#cfa66a',topEdge:'#a57c43',front:'#f3ead9',front2:'#e4d6bd',tap:'#cfa66a'}},
 ];
 const LEVEL_IDS=LEVELS.map(l=>l.id);

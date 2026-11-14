@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.97.1
+
+- **Tapper, no clock:** play until your three lives are gone. Every level has more customers than the last (10, 15, 20, ...) and runs faster, cycling through the three bars. Your money keeps adding up across levels; one run, no rounds.
+- **Empties always come back:** every customer who catches an order slides the empty back, even one you shove out the door.
+- **Tapper fits every screen:** the bars use the whole height on upright phones, everything scales on Folds, tablets and desktops, and nothing sits under the Pause/Exit buttons. Score, lives and level live in one panel at the top left.
+- **Living Dead Horde art:** real paramedics for Send More Paramedics, and Trioxin Rain canisters, warning circles and green splashes.
+
 ## v0.97.0
 
 - **Banana Stand Tapper rebuilt:** every customer is a random character from the game, and now and then one says something (a famous line of theirs, or yells when they reach you). Three bars in an Arrested Development look: the Banana Stand, the Balboa Towers penthouse (vodka martinis) and the Sudden Valley model home (hot ham water). Serve everyone to open the next bar.

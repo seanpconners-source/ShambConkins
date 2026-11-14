@@ -18,7 +18,7 @@ const SOLO_IDS={
  // batch 2: timed turn games replayed in faster rounds (retroKit turnRunner → soloTurnRuns)
  'warriors-brawl':'rounds','paddys-darts':'cpu','duck-hunt-turn':'rounds','snake-run':'rounds','mars-missile-defense':'rounds',
  'moonraker-lander':'rounds','t800-scan-long':'rounds','bond-facility':'rounds','major-league-bats':'cpu','asteroid-drift':'rounds',
- 'breakout-party':'rounds','banana-money-grab':'rounds',
+ 'breakout-party':'rounds','banana-money-grab':'levels',
  // arcadeRounds (arcade.js → soloArcadeRounds)
  'radical-bike':'rounds','flappy-disaster':'rounds','crossy-chaos':'rounds','frogger-heads':'rounds','gopher-hunt':'rounds','wind-archery':'rounds',
  // pass-and-play engines run once per round by the launcher (soloTurnRounds); the hand-off to P2 ends the round

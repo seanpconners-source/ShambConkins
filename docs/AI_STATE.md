@@ -2,6 +2,19 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+TAPPER ROUND 2 (Nov 14, RELEASED as v0.97.1; owner: empties stopped coming, levels too short, no timer, scale on all screens):
+no clock (SECONDS Infinity): 3 lives, quotaFor(n)=10+5n customers per level, diff = 1+.16n (+ up to .25 over a level),
+cumulative score; 1P = solo kind 'levels' (own run loop in the engine, soloProgress per level, soloFinish at game over);
+2P = turnRunner each until out; online ends when both are out. Empties: a customer shoved out the door also slides its
+empty back (st.wait .5-1 s) = every catch makes an empty (w.caught == w.empties checked). LAYOUT: block() = size unit U
+(<= avail/4, <= .279 W) + row pitch P (<= 1.45 U, uses the height on upright phones), safe top band = max(56, fs*2.7+8)
+(online max(top, 50+2.1 fs) under the duel chip), HUD = one panel top-left ($, name or 'beat $', lives, Level N),
+bubbles never above the band (beside the head instead), chat button home (seam bottom / right of my panel). Checked
+360x780..1920x1080 + both online layouts (scratch tapsizes.mjs). Test bot gets sloppier per level so runs end.
+HORDE BATCH 3 ART IN (Drive 'Tapper + Horde Batch 3 — Generated Art' horde-batch3-generated-art.zip): ally-medic, fx-rain,
+rain-drop, rain-mark (exact 2x; lossless WebP, originals assets/originals/horde). tapper-generated-art.zip (16 MB) is over
+the Drive connector's 10 MB limit: NOT imported; asked the owner to split it or put it in art-inbox/tapper.
+
 NOV 14 (RELEASED as v0.97.0, test:core EXIT 0; branch claude/cool-edison-ma0a0l = main): HORDE CRASH FIX (owner's black-box report v0.96.16, solo, 9:12 left):
 rain blasts credited a random owner 0/1 and solo has no P[1] → 'dmgDone' of undefined in hitEnemy; now owner 0 in solo +
 hitEnemy guards (repro: storm + packed zombies, old code throws). Chainsaw drop-in drawn hand-sized (SAW_R 46) at the END of
