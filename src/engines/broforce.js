@@ -281,7 +281,12 @@ async function broforce(s){
  const mkStages=sd=>[0,1,2].map(si=>theme.ext?WX.buildStageExt(sd+si*7919,si,theme,KC):buildStage(sd+si*7919,si));
  const wpnFor=id=>theme.ext?theme.weapons[hash('bro:'+id)%theme.weapons.length]:weaponFor(id);
  let TH=theme,GK=1;   // TH = the theme with this stage's palette (new worlds change colours per stage), GK = gravity
- BS.preload();
+ // drop-in pictures: only this world's (the full kit is ~1 GB decoded); others load if ever drawn
+ const preloadArt=()=>{const wk=worldKey(),names=['bro-body','cage','cage-gold','flag','flag-up','pickup-gun','pickup-nade',...['tiles','top','sky','far','mid','vehicle','tree'].map(k=>k+'-'+wk)];
+  if(theme.ext){for(const f of theme.foes||[])for(const l of Object.values(f))for(const t of l)names.push('foe-'+t);for(const b of theme.bosses||[])names.push('boss-'+b);}
+  else names.push('foe-mook','foe-bomber','foe-grenadier','foe-bruiser','foe-dog','boss-devil');
+  BS.preload([...new Set(names)]);};
+ preloadArt();
  let STAGES=mkStages(seed);
  // Solo: mission after mission (a fresh 3-stage map each time) until a mission fails or the player banks the run.
  let soloTotal=0,soloCleared=0;
@@ -1273,7 +1278,7 @@ async function broforce(s){
    for(const b of box.querySelectorAll('.bf-world'))s.on(b,'click',()=>go(b.dataset.world));
   });
   if(!s.alive)return;
-  theme=THEMES[picked]||theme;TH=theme;TILEART=makeTileArt(theme);if(theme.ext){STAGES=mkStages(seed);s.debug.STAGES=STAGES;}box.remove();titleT=0;phase='title';
+  theme=THEMES[picked]||theme;TH=theme;preloadArt();TILEART=makeTileArt(theme);if(theme.ext){STAGES=mkStages(seed);s.debug.STAGES=STAGES;}box.remove();titleT=0;phase='title';
  }
  if(worldSelect)void chooseWorld();
  computeZoom();

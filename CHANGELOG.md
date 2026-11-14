@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## v0.99.1
+
+- **Sean of a Gun art is in:** GPT's whole kit for all eight worlds: the bro's body, 28 enemies, 12 bosses, terrain tiles and ground edges, skies and two parallax layers per world, choppers, trees, cages, flags and pickups. (The Game World's hedgehog enemy and egg-pod boss keep the game's own drawings: GPT drew Sega's real characters.)
 
 - **BASEketball Shootout, rebuilt like the Megatouch Hoop Jones machine** (one game now; the old movie-rules game and the separate Hoop Jones entry are gone). Four shooters seen from behind (Coop and Remer, alternating), unlimited balls: tap a shooter to shoot up his lane. The hoop slides side to side and the ball takes a moment to get there, so you lead it; each shooter waits for his ball to come back, so no spamming. Beat the round's target before the 25-second shot clock runs out and the hoop moves back, ten rounds. Every third basket in a row is a lightning bonus.
 - In the Milwaukee Beers' stadium, with the new BASEketball art: shooters, LA-Z-BOY ball, backboard, net, pole, jumbotron score strip, court logo, logo.

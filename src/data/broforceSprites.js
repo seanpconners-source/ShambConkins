@@ -44,7 +44,7 @@ const url=name=>USER['bf:'+name]||null;
 const has=name=>!!url(name);
 const imgs=new Map();
 function picture(name){const u=url(name);if(!u||typeof Image==='undefined')return null;let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;};e.img.src=u;imgs.set(name,e);}return e.ok?e.img:null;}
-function preload(){for(const k of Object.keys(USER))if(k.startsWith('bf:'))picture(k.slice(3));}
+function preload(names){for(const n of names||[])if(has(n))picture(n);}
 function sheet(name){const def=SHEETS[name],img=def&&picture(name);if(!img)return null;const cols=Math.max(...Object.values(def.rows));return {img,def,k:img.width/(cols*def.frame[0])};}
 function frameRect(sh,row,f){const d=sh.def,names=Object.keys(d.rows),r=Math.max(0,names.indexOf(row)),n=d.rows[names[r]]||1,i=((f%n)+n)%n;return {sx:i*d.frame[0]*sh.k,sy:r*d.frame[1]*sh.k,sw:d.frame[0]*sh.k,sh:d.frame[1]*sh.k};}
 // draw one frame with its feet at (x,y) in world px, mirrored when dir < 0
