@@ -41,6 +41,15 @@ for (const name of names) {
     const C = {T: 16, K: {}, W: {foes: [], shots: [], zones: [], arcs: []}, P: {x: -999, y: 0, facing: 1, bro: 'x'}, theme: {decor: 'space'}, frames: 0, fx: {}, sfx: {}, headCanvas: () => { const k = document.createElement('canvas'); k.width = k.height = 4; return k; }};
     const X = EXT.makeExt(C);
     const def = B.SHEETS[name];
+    const wrap = (txt, X, Y, maxW, col = '#036', size = 10) => { x.font = `bold ${size}px Arial`; let line = '', yy = Y; for (const wd of txt.split(' ')) { if (line && x.measureText(line + wd).width > maxW) { label(line, X, yy, col, size); line = ''; yy += size + 2; } line += wd + ' '; } if (line) label(line, X, yy, col, size); return yy; };
+    if (def && def.fx) { // effect strip: one row of frames, the anchor cross, frame numbers, the note
+      const n = def.rows.play, [fw, fh] = def.frame; c.width = n * fw; c.height = fh; x.clearRect(0, 0, c.width, c.height);
+      for (let f = 0; f < n; f++) { const X0 = f * fw; x.fillStyle = 'rgba(80,120,200,.08)'; x.fillRect(X0, 0, fw, fh); x.strokeStyle = 'rgba(0,0,0,.35)'; x.strokeRect(X0 + .5, .5, fw - 1, fh - 1);
+        const k = (f + 1) / n; x.globalAlpha = .25; x.fillStyle = '#f80'; x.beginPath(); x.ellipse(X0 + fw / 2, fh / 2, fw * .42 * (name.includes('muzzle') || name.includes('lightning') ? 1 : .35 + .65 * k), fh * .42 * (name.includes('muzzle') || name.includes('lightning') ? 1 : .35 + .65 * k), 0, 0, 7); x.fill(); x.globalAlpha = 1;
+        cross(X0 + def.feet[0], def.feet[1], '#e00'); label(String(f + 1), X0 + 3, 11, '#003', 10); }
+      if (fh >= 96) wrap(name + ': ' + def.note + (def.loop ? ' (loops)' : ' (plays once, left to right)'), 4, fh - 26, c.width - 8, '#036', 11);
+      return c.toDataURL('image/png');
+    }
     if (def) {
       const rows = Object.entries(def.rows), [fw, fh] = def.frame, cols = Math.max(...rows.map(r => r[1]));
       c.width = cols * fw; c.height = rows.length * fh; x.clearRect(0, 0, c.width, c.height);
@@ -74,6 +83,23 @@ for (const name of names) {
     }
     const pd = B.PICTURES[name], [w, h] = pd.size; c.width = w; c.height = h; x.clearRect(0, 0, w, h);
     const th = pd.world ? themes['broforce-' + pd.world] : null;
+    if (pd.seamless) { // big ground / rock picture: tile grid, seam marks, the world's colours as a hint
+      const rock = name.startsWith('rock'); x.fillStyle = th ? (rock ? th.rock[0] : th.dirt[0]) : '#6a4a2a'; x.globalAlpha = .45; x.fillRect(0, 0, w, h); x.globalAlpha = 1;
+      x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = 1; for (let k = 64; k < w; k += 64) { x.beginPath(); x.moveTo(k + .5, 0); x.lineTo(k + .5, h); x.stroke(); x.beginPath(); x.moveTo(0, k + .5); x.lineTo(w, k + .5); x.stroke(); }
+      x.strokeStyle = '#e0f'; x.lineWidth = 3; x.setLineDash([14, 10]); x.strokeRect(1.5, 1.5, w - 3, h - 3); x.setLineDash([]);
+      wrap(`${name}: ONE big seamless picture of ${rock ? 'rock / stone' : 'packed earth / soil'} for the ${pd.world} world, seen from the side like a cut through the ground. The game lays it across every ${rock ? 'rock' : 'dirt'} block, so the land looks like one piece, not squares. It MUST tile: the left edge joins the right edge and the top joins the bottom (magenta = seams). Grey grid = one block each (64 px); no block outlines, no grass on top (the grass strip is separate). Fully opaque.`, 20, 40, w - 40, '#000', 22);
+      return c.toDataURL('image/png');
+    }
+    const note = (txt, Y = 14) => { if (w >= 200 && h >= 96) wrap(txt, 4, Y, w - 8, '#036', 11); };
+    if (pd.kind === 'gun') { x.globalAlpha = .35; x.fillStyle = '#333'; const [ax, ay] = pd.anchor; x.fillRect(ax - 16, ay - 6, 76, 10); x.fillRect(ax - 32, ay - 4, 18, 12); x.fillRect(ax + 4, ay + 4, 8, 14); x.globalAlpha = 1;
+      cross(ax, ay, '#e00'); x.strokeStyle = '#c90'; x.lineWidth = 2; x.beginPath(); x.moveTo(w - 22, ay); x.lineTo(w - 4, ay); x.lineTo(w - 10, ay - 5); x.moveTo(w - 4, ay); x.lineTo(w - 10, ay + 5); x.stroke(); note(pd.note); return c.toDataURL('image/png'); }
+    if (pd.kind === 'dead') { x.globalAlpha = .3; x.fillStyle = '#556'; x.beginPath(); x.ellipse(w / 2, h - h * .28, w * .42, h * .24, 0, 0, 7); x.fill(); x.globalAlpha = 1;
+      x.strokeStyle = '#e00'; x.setLineDash([6, 4]); x.beginPath(); x.moveTo(0, h - 1.5); x.lineTo(w, h - 1.5); x.stroke(); x.setLineDash([]);
+      if (pd.face) { x.strokeStyle = '#08a'; x.lineWidth = 2; x.beginPath(); x.arc(pd.face[0], pd.face[1], pd.face[2] / 2, 0, 7); x.stroke(); }
+      note(pd.note); return c.toDataURL('image/png'); }
+    if (pd.kind === 'shot' || pd.kind === 'bullet' || pd.kind === 'fx') { x.strokeStyle = 'rgba(0,160,255,.9)'; x.setLineDash([4, 3]); x.lineWidth = 1; x.strokeRect(1, 1, w - 2, h - 2); x.setLineDash([]);
+      if (pd.kind === 'bullet') cross(w - 3, h / 2, '#e00'); else if (/tentacle/.test(name)) cross(w / 2, h - 3, '#e00'); else cross(w / 2, h / 2, '#e00');
+      if (w >= 48 && h >= 24) note(pd.note); return c.toDataURL('image/png'); }
     if (name.startsWith('tiles-')) {
       const cw = 64;
       B.TILE_NAMES.forEach((tn, i) => { for (let v = 0; v < 3; v++) {

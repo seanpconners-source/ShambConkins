@@ -17,6 +17,19 @@ logo-hoop now unused. TAPPER (same release): arcade rules in bananaTapper.js: pu
 the door = gone (serveVal 50/75/100/150), else drink + ALWAYS an empty; tips 14% on a catch (1500) start Gob's show
 (SHOW 4 s, walkers freeze); group burst at level start; bonus round phase 'bonus' (6 cans, 5 shaken, swaps, pick, +3000).
 The autopilot serves too fast to ever see an empty; the rule itself was checked by placing customers (scratch tap2.mjs).
+SEAN OF A GUN ROUND 2 (Nov 14, after v0.99.1, unreleased; owner: images for everything still drawn, sky under the land when high,
+ground looks like blocks): broforceSprites.js +107 slots (213 total): ground-/rock-<world> 1024 seamless (BS.macro(world,id): the
+owner's picture, else a stand-in made at runtime from the tiles sheet = feathered tile-middle patches scattered + wrapped, so the
+grid is gone already; drawWorld samples it per tile by world position; dirt cave back walls use it darkened), gun-<15> (anchor =
+grip), dead-<30 foes>/dead-bro (face circle), shot-<16>, bullet-<7> (head at the right end), fx sheets (rows.play, feet=anchor,
+fx:true, loop) explosion/smoke/blood/gibs/impact/dust/rubble/fire/rescue/muzzle/firewave/geyser/beam/pillar/lightning/portal,
+stills fx-tentacle/firebar-ball/ring-pickup/shell-casing/crack-1/2. BS.drawFx/drawPic. broforce.js: spriteFx(name,x,y,o) + anims
+list drawn in drawWorld (every particle burst call site falls back to its burst), drawGun/drawCorpse/drawNade/drawShot/bullets/
+flames/waves/cracks/muzzle try pictures first; ext.js drawStage hazards/zones/arcs too. preloadArt adds them. HORIZON: picture
+far/mid strips stretch their bottom 3 rows to the screen bottom + far follows lift a little. Templates (tool knows fx strips, guns,
+dead, seamless) + brief ROUND 2 section + kit zip (scratchpad sean-of-a-gun-round2-kit.zip). Checked with the templates as stand-ins
+in a private build (scratch bfstand.mjs): all play, no errors. Rock tiles inside dirt still show square edges until rock-<world> art.
+
 SEAN OF A GUN ART IN (Nov 14, RELEASED as v0.99.1 with the BASEketball Shootout/Tapper branch ccr-2919e73f merged): GPT's whole
 106-slot kit from Drive 'Sean of a Gun (Broforce) — Sprites' (notes UPLOADS-GPT-2026-11-14-1909..1916 + broforce-props/terrain-small-finals.zip),
 every file exactly 2x template, lossless WebP in assets/broforce (originals assets/originals/broforce). HELD BACK: foe-hog (= Sonic) and
