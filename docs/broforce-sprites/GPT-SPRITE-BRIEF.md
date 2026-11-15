@@ -133,3 +133,53 @@ cracks laid over a damaged block, light and heavy; transparent except the cracks
 designs, same template: foe-hog = a rolling spiked armadillo-hedgehog robot (not blue, no Sonic look); boss-eggbot =
 "Dr. Eggbert", a bald mad scientist with a huge grey moustache and goggles in a round hover pod with a wrecking ball on a
 chain (no red jacket, no Eggman face).
+
+# ROUND 3 (Nov 15): the hero holds his guns, a real run cycle, the last drawn props
+
+Rounds 1 and 2 are in and the owner loves the style: **keep exactly the same look** (same muscular headless bro, same
+gun pictures, same painted props). Same scale (4 px per game pixel), everything faces RIGHT, transparent background,
+deliver at the template size or exactly 2x. Templates: `docs/broforce-sprites/templates/<slot>.png`.
+Marks: **red cross** = anchor, **magenta circle + cross** = shoulder, **yellow ring** = the hand on the gun's grip,
+**cyan** = where the game puts the player's face (leave it empty: NO HEAD).
+
+## R3-1. The hero WITHOUT arms (`bro-torso`, 7 rows, 64 x 96 frames)
+
+The same bro as `bro-body`, but with **no arms**: the shoulder ends in a clean rounded deltoid on the magenta cross
+(the arms come as a separate picture per gun, R3-2). The faint figure in each frame is the current body: match its
+size, proportions, colours and camo exactly.
+- `idle` 2 frames: standing, slight breathing.
+- `walk` 8 frames: a calm walk cycle (right foot contact, down, passing, up, then the left leg the same).
+- `run` 8 frames: a smooth, even run cycle (contact, down, passing, up for each leg), torso leaning forward a little,
+  small even bob. The current run row is the problem (knee-up kicks): do NOT copy it.
+- `jump` 1, `fall` 1, `climb` 2 (pushing up a wall, legs scrambling).
+- `ladder` 2: this row KEEPS both arms, hands on the rungs (no gun).
+- Keep the shoulder on (or very near) the magenta cross in every frame; feet on the red cross.
+
+## R3-2. Arms holding each gun (`arms-<weapon>`, 15 sheets, 160 x 80 frames: `hold` 1 + `fire` 4)
+
+Both muscular arms + gloved hands + the gun as ONE picture. The faint gun in every frame is the existing `gun-<weapon>`
+picture: use **the same gun at the same size**. The upper arm starts at the magenta shoulder, the front hand closes
+round the gun's grip on the yellow ring, the barrel tip sits on the red cross (in `hold`). The back arm supports the
+gun (fore-grip / under the barrel / on the tube) and is mostly behind it. Nothing above the shoulder line except a
+shoulder-mounted rocket tube (the game draws the face on top of everything).
+- `hold`: aiming straight forward.
+- `fire` 1-4 (the game plays them on every shot; fast guns loop 1-2): the label under each frame says what happens, e.g.
+  rifle = kick back + muzzle rises / recover / bolt back / forward; shotgun = big kick / recover / pump back / pump
+  forward; rocket = jolt / recover / back hand loads a new rocket / settle; minigun = barrels spinning (motion blur) in
+  all four; pistols = front pistol kicks / recovers / back pistol kicks / recovers; holy water, fire flower, boomerang
+  = a throwing motion (the thing leaves the hand in frame 2, a new one is back in frame 4).
+- NO muzzle flash, smoke or bullets: the game adds those at the red cross.
+
+## R3-3. Props the game still draws (bottom middle = where it stands unless noted)
+
+- `prop-brazier` (sheet, `burn` 4 frames, 64 x 96): a rusty oil-drum fire barrel, flames roaring out of the top, looping.
+- `prop-banner` (sheet, `wave` 4 frames, 96 x 128): enemy war banner, pole at the LEFT edge, cloth waving.
+- `prop-tower` 192 x 384: wooden enemy watchtower, roofed lookout at the top, ladder on one leg (the game stretches it).
+- `prop-lamp` 32 x 64: hanging cage lamp on a short cord; TOP middle = where it hangs (the game adds the glow).
+- `prop-post` 24 x 64: one wooden fence post (the game strings rope between two).
+- `prop-wire` 96 x 32: coiled barbed wire on the ground, tiles left to right seamlessly.
+- `prop-searchlight` 64 x 192: searchlight on a tall pole, lamp head at the top (the game draws the beam).
+- `prop-helipad` 256 x 24: flat helipad slab, side view, yellow H on the front edge.
+- `prop-sign` 112 x 96: wooden arrow sign on a post pointing RIGHT, blank board (the game writes BRO ZONE).
+- `firebar-base` 32 x 32: the bolted metal hub a spinning fire bar turns on (centre = the hub).
+Optional: a world-specific look for any prop as `<prop>-<world>` (e.g. `prop-brazier-hell`), same size.

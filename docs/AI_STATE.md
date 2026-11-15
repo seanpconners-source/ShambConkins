@@ -33,6 +33,18 @@ far/mid strips stretch their bottom 3 rows to the screen bottom + far follows li
 dead, seamless) + brief ROUND 2 section + kit zip (scratchpad sean-of-a-gun-round2-kit.zip). Checked with the templates as stand-ins
 in a private build (scratch bfstand.mjs): all play, no errors. Rock tiles inside dirt still show square edges until rock-<world> art.
 
+SEAN OF A GUN ROUND 3 (Nov 15, unreleased, branch claude/cool-edison-ma0a0l; owner: guns float over the hands, bullets not from
+the guns, funny walk, bodies float, fire barrels still drawn, minigunners too big, every gun must dig): bro-body `hands` = the fist
+measured per frame (was a fixed hand 8 px behind the fist; the fist rises 10 px running) → handAt(d,p) via p.bodyRow/bodyFr;
+gunTip(p) = barrel tip (gun-<id> PICTURES.muzzle measured, or arms-<id> muzzle) → bullets + flash start there; foeTip(e) = enemy
+shots from FOE_MUZZLE spots (mook/bruiser/robot/mechtank/cultist/chariot/plumber/cannon); STRIDE run 58 / walk 40 world px per cycle;
+CORPSE_SINK 2.5; bruiser 1.75; holy/fireball/boomerang/lightning dig (C.digTile; zap bites the first block in range; flame stays
+slowest). NEW SLOTS (owner picked): bro-torso (armless, idle/walk 8/run 8/jump/fall/climb/ladder-with-arms, shoulder [26,37]) +
+arms-<15 guns> (160x80, hold 1 + fire 4, shoulder [32,28], grip [62,42], muzzle per gun; fireFrame: cycle per shot, fast guns
+loop); an arms sheet replaces bro-body + gun picture only for that gun. Props: prop-brazier/banner sheets, prop-tower/lamp/post/wire/
+searchlight/helipad/sign, firebar-base (drawPropPic; '<prop>-<world>' override). Templates (26, guides = current body/guns) + brief
+ROUND 3 + kit zip (scratchpad sean-of-a-gun-round3-kit.zip). Checked with stand-ins in a private build; games.mjs broforce 9/9.
+
 SEAN OF A GUN ROUND 2 ART IN (Nov 15, released as v0.99.7 after merging main v0.99.6): GPT's 109 round-2 pictures from Drive
 (notes UPLOADS-GPT-2026-11-15-0218..0222 + 0317; 'Sean of a Gun (Broforce) — Sprites / Round 2 — *' + round2-*-small-finals zips),
 every one exactly 2x template, lossless WebP in assets/broforce (originals assets/originals/broforce): ground-/rock-<8 worlds> 2048

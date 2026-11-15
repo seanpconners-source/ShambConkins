@@ -58,7 +58,7 @@ Object.assign(FOES,EXT.FOES2);
 // round its feet; hitboxes grow with it (collision height capped at 30 so foes still fit 2-tile corridors). The bro's BODY is
 // drawn BRO_K bigger (his head keeps its size), regular troops come out about the bro's full height, heavies about 2x him.
 const BRO_K=1.3,FOE_K=1.45,BOSS_K=1.2,CAGE_K=1.3;
-const SIZE={bruiser:2,demon:1.9,mechtank:1.7,chariot:1.7,tentacle:1.35,chomper:1.3,turret:1.5,cannon:1.5,shelly:1.35,shroom:1.4};
+const SIZE={bruiser:1.75,demon:1.9,mechtank:1.7,chariot:1.7,tentacle:1.35,chomper:1.3,turret:1.5,cannon:1.5,shelly:1.35,shroom:1.4};
 const sizeOf=t=>t==='bro'?BRO_K:SIZE[t]||FOE_K;
 const CG_W=9*CAGE_K,CG_H=24*CAGE_K;
 const WORLD_ICON={jungle:'🌴',factory:'🏭',city:'🏙️',desert:'🏜️',space:'🚀',hell:'🔥',dimension:'🌀',pixel:'🍄'};
@@ -331,7 +331,7 @@ async function broforce(s){
   if(theme.ext){for(const f of theme.foes||[])for(const l of Object.values(f))for(const t of l)names.push('foe-'+t);for(const b of theme.bosses||[])names.push('boss-'+b);}
   else names.push('foe-mook','foe-bomber','foe-grenadier','foe-bruiser','foe-dog','boss-devil');
   for(const n of [...names])if(n.startsWith('foe-'))names.push('dead-'+n.slice(4));
-  names.push('dead-bro',...Object.keys(BS.SHEETS).filter(k=>BS.SHEETS[k].fx),...Object.keys(BS.PICTURES).filter(k=>/^(gun-|shot-|bullet-|fx-|crack-|firebar-|ring-pickup|shell-casing)/.test(k)));
+  names.push('dead-bro',...Object.keys(BS.SHEETS).filter(k=>BS.SHEETS[k].fx),...Object.keys(BS.PICTURES).filter(k=>/^(gun-|shot-|bullet-|fx-|crack-|firebar-|ring-pickup|shell-casing|prop-)/.test(k)),'bro-torso',...Object.keys(BS.SHEETS).filter(k=>/^(arms-|prop-)/.test(k)));
   BS.preload([...new Set(names)]);};
  preloadArt();
  let STAGES=mkStages(seed);
@@ -351,7 +351,7 @@ async function broforce(s){
  const X=EXT.makeExt({T,ROWS,MAXW,K:KC,get W(){return W;},get P(){return P;},get R(){return R;},get cam(){return cam;},get theme(){return theme;},get frames(){return frames;},get stageIdx(){return stageIdx;},get net(){return net;},get host(){return host;},get fx(){return fx;},get inp(){return inp;},
   sfx:new Proxy({},{get:(o,k)=>sfx[k]||(()=>{})}),snd:(...a)=>snd(...a),get outbox(){return outbox;},ev:e=>ev(e),hitF:(...a)=>hitF(...a),hitB:(...a)=>hitB(...a),killFoe:(...a)=>killFoe(...a),openCage:c=>openCage(c),quietDeath:e=>quietDeath(e),
   foeTarget:e=>foeTarget(e),upBro:b=>upBro(b),makeFoe:(f,k)=>makeFoe(f,k),moveBody:(b,dt,o)=>moveBody(b,dt,o),hurtPlayer:(d,x)=>hurtPlayer(d,x),queueBoom:(...a)=>queueBoom(...a),los:(...a)=>los(...a),
-  addScore:(...a)=>addScore(...a),viewW:()=>viewW(),tileAt:(x,y)=>tileAt(x,y),solidAt:(x,y)=>solidAt(x,y),T_AT:(c,r)=>T_AT(c,r),headCanvas:(id,m)=>headCanvas(id,m),partnerHere:()=>partnerHere(),bossWakes:()=>devilWakes()});
+  addScore:(...a)=>addScore(...a),viewW:()=>viewW(),tileAt:(x,y)=>tileAt(x,y),solidAt:(x,y)=>solidAt(x,y),digTile:(x,y,d)=>damageTile(Math.floor(x/T),Math.floor(y/T),d),foeTip:(e,ox,oy)=>foeTip(e,ox,oy),T_AT:(c,r)=>T_AT(c,r),headCanvas:(id,m)=>headCanvas(id,m),partnerHere:()=>partnerHere(),bossWakes:()=>devilWakes()});
  const results=[null,null];
  for(const id of [...s.players.map(p=>p.character)])headCanvas(id,'normal',72,true);
 
@@ -577,7 +577,7 @@ async function broforce(s){
   p.x=clamp(p.x,T+p.w,(W.W-1)*T-p.w);
  }
  function fireWeapon(p,w){
-  p.shotsFired=(p.shotsFired||0)+1;p.fireT=0;const mx=p.x+p.facing*12*BRO_K,my=p.y-11*BRO_K;p.muzzle=.06;p.recoil=1;
+  p.shotsFired=(p.shotsFired||0)+1;p.fireT=0;const tip=gunTip(p),mx=p.x+p.facing*tip[0]*BRO_K,my=p.y+tip[1]*BRO_K;p.muzzle=.06;p.recoil=1;
   if(net)outbox.sh.push([Math.round(mx),Math.round(my),p.facing,p.weapon]);   // the partner's phone shows the shot
   if(w.ext){X.fire(p,w,mx,my);return;}
   if(w.rocket){W.shots.push({x:mx,y:my,vx:p.facing*w.speed,vy:0,life:w.life,owner:'p',kind:'rocket',trail:0});sfx.rocket();p.vx-=p.facing*40;return;}
@@ -700,8 +700,10 @@ async function broforce(s){
   if(mine&&e.type!=='dog'&&e.type!=='bomber'&&e.alive&&!P.dead&&!P.boarded&&Math.abs(dx)<8&&Math.abs(dy)<14&&P.inv<=0)hurtPlayer(1,e.x);
   if(e.y>ROWS*T){e.alive=false;quietDeath(e);}
  }
+ // an enemy's shot starts at its gun in the picture (owner: bullets didn't come from the weapons), else at the old spot
+ function foeTip(e,ox,oy){const sh=BS.sheet('foe-'+e.type),m=sh&&sh.def.muzzle,d=e.dir||1;if(!m)return [e.x+d*ox,e.y+oy];const k=e.sz||1;return [e.x+d*(m[0]-sh.def.feet[0])/BS.K*k,e.y+(m[1]-sh.def.feet[1])/BS.K*k];}
  function shootFoe(e,dx,dy){const a=Math.atan2(clamp(dy,-Math.abs(dx)*.5,Math.abs(dx)*.5),Math.abs(dx))+(Math.random()-.5)*.08;
-  const b={x:e.x+e.dir*10,y:e.y-e.h*.55,vx:Math.cos(a)*e.dir*215,vy:Math.sin(a)*215,life:1.5,owner:'e',dmg:1,tile:.35};W.bullets.push(b);e.muzzle=.06;sfx.enemy();
+  const [bx,by]=foeTip(e,10,-e.h*.55),b={x:bx,y:by,vx:Math.cos(a)*e.dir*215,vy:Math.sin(a)*215,life:1.5,owner:'e',dmg:1,tile:.35};W.bullets.push(b);e.muzzle=.06;sfx.enemy();
   if(net)outbox.fb.push([Math.round(b.x),Math.round(b.y),Math.round(b.vx),Math.round(b.vy)]);}
 
  // ---------------------------------------------------------------- boss: the Devil (stage 3)
@@ -1096,8 +1098,22 @@ async function broforce(s){
   else if(tt==='pixel'||tt==='turbo'){g.fillStyle='#8a5a2a';g.fillRect(d.x-2,d.y-20,4,20);g.fillStyle=tt==='turbo'?'#2ad02a':'#3ab43a';g.beginPath();g.arc(d.x,d.y-26,11,0,7);g.fill();g.fillStyle='rgba(255,255,255,.25)';g.beginPath();g.arc(d.x-4,d.y-30,4,0,7);g.fill();}
   else{for(let k=0;k<6;k++){g.fillStyle=['#ff2a8a','#2affe0','#ffe02a'][k%3];g.fillRect(d.x-6+((k*5)%12)+(Math.random()<.1?4:0),d.y-8-k*6,6,6);}}
  }
+ // round 3 props: the owner's picture when there is one (lamp glow, searchlight beam, sign text and rope stay drawn)
+ function drawPropPic(d,time){const wk=worldKey(),P=n=>BS.prop(n,wk),has=n=>BS.picture(P(n)),pic=(n,x,y,sc)=>BS.drawPic(g,P(n),x,y,{scale:sc||1});
+  if(d.k==='tower'&&has('prop-tower')){g.drawImage(has('prop-tower'),d.x,d.top,d.x2-d.x,d.y-d.top);return true;}
+  if(d.k==='banner'){const sh=BS.propSheet('prop-banner',wk);if(!sh)return false;BS.drawFrame(g,sh,'wave',Math.floor(time*8+d.x),d.x,d.y,1);return true;}
+  if(d.k==='brazier'){const sh=BS.propSheet('prop-brazier',wk);if(!sh)return false;g.save();g.translate(d.x,d.y);g.scale(.85,.85);BS.drawFrame(g,sh,'burn',Math.floor(time*10+d.x),0,0,1);g.restore();
+   const gr=g.createRadialGradient(d.x,d.y-18,1,d.x,d.y-18,30);gr.addColorStop(0,'rgba(255,140,40,.28)');gr.addColorStop(1,'rgba(255,140,40,0)');g.fillStyle=gr;g.fillRect(d.x-30,d.y-48,60,60);return true;}
+  if(d.k==='lamp'&&has('prop-lamp')){pic('prop-lamp',d.x+.5,d.y);const gr=g.createRadialGradient(d.x,d.y+12,1,d.x,d.y+12,42);gr.addColorStop(0,'rgba(255,200,120,.35)');gr.addColorStop(1,'rgba(255,200,120,0)');g.fillStyle=gr;g.globalAlpha=.8+Math.sin(time*7+d.x)*.1;g.fillRect(d.x-42,d.y-30,84,84);return true;}
+  if(d.k==='posts'&&has('prop-post')){for(const x of [d.x,d.x2])pic('prop-post',x,d.y,.8);g.strokeStyle='#c8b080';g.lineWidth=1;g.beginPath();g.moveTo(d.x,d.y-11);g.quadraticCurveTo((d.x+d.x2)/2,d.y-4,d.x2,d.y-11);g.stroke();return true;}
+  if(d.k==='wire'&&has('prop-wire')){const img=has('prop-wire'),tw=24,th=8;for(let x=d.x;x<d.x2;x+=tw){const w=Math.min(tw,d.x2-x);g.drawImage(img,0,0,img.width*w/tw,img.height,x,d.y-th,w,th);}return true;}
+  if(d.k==='spot'&&has('prop-searchlight')){pic('prop-searchlight',d.x,d.y,.95);const a=Math.sin(time*.8)*.5-1.9;g.globalAlpha=.13;g.fillStyle='#fff8c0';g.beginPath();g.moveTo(d.x-3,d.y-42);g.lineTo(d.x+Math.cos(a-.15)*160,d.y-42-Math.sin(a-.15)*-160);g.lineTo(d.x+Math.cos(a+.15)*160,d.y-42-Math.sin(a+.15)*-160);g.fill();g.globalAlpha=1;return true;}
+  if(d.k==='pad'&&has('prop-helipad')){pic('prop-helipad',d.x,d.y,.82);return true;}
+  if(d.k==='sign'&&has('prop-sign')){pic('prop-sign',d.x,d.y,.9);g.fillStyle='#3a2010';g.font='bold 5px Arial';g.textAlign='center';g.fillText('BRO ZONE',d.x-1,d.y-15.5);return true;}
+  return false;}
  function drawDecor(d,time){
   const vw=viewW();if(d.x+200<cam.x||d.x-200>cam.x+vw)return;g.save();
+  if(drawPropPic(d,time)){g.restore();return;}
   if(d.k==='tree'){const tt=TH.decor,tp=BS.picture('tree-'+worldKey());
    if(tp){g.drawImage(tp,d.x-16,d.y-56,32,56);}
    else if(TH.ext){drawTreeX(tt,d,time);}
@@ -1134,10 +1150,13 @@ async function broforce(s){
  function drawBro0(p,time){
   if(p.inv>0&&(frames>>2)%2&&p.inv<2)g.globalAlpha=.45;
   const f=p.facing,run=p.grounded&&Math.abs(p.vx)>10,ph=p.anim,air=!p.grounded&&!p.ladder;
-  const bsh=BS.sheet('bro-body');
-  if(bsh){const d=bsh.def,row=p.ladder?'ladder':p.climb&&!p.grounded?'climb':air?(p.vy<0?'jump':'fall'):run?'run':'idle',fr=Math.floor(row==='idle'?time*2:ph*1.6);
-   g.save();g.translate(p.x,p.y);g.scale(f,1);BS.drawFrame(g,bsh,row,fr,0,0,1);
-   if(!p.ladder){const hx=(d.hand[0]-d.feet[0])/BS.K,hy=(d.hand[1]-d.feet[1])/BS.K;drawGun(p.weapon,hx-p.recoil*1.5,hy);if(p.muzzle>0&&p.weapon!=='flame'){const mx=hx+(WEAPON_LEN[p.weapon]||10);if(!BS.drawFx(g,'fx-muzzle',mx,hy-.5,1-p.muzzle/.06)){g.fillStyle='#fff3a0';g.beginPath();g.arc(mx,hy-.5,3,0,7);g.fill();}}}
+  const ts=BS.sheet('bro-torso'),as=ts&&!p.ladder&&BS.sheet('arms-'+p.weapon),bsh=as?ts:BS.sheet('bro-body');
+  if(bsh){const d=bsh.def,walk=as&&Math.abs(p.vx)<70?'walk':'run',row=p.ladder?'ladder':p.climb&&!p.grounded?'climb':air?(p.vy<0?'jump':'fall'):run?walk:'idle';
+   const fr=row==='idle'?Math.floor(time*2):row==='run'||row==='walk'?Math.floor(ph/.09/STRIDE[row]*(d.rows[row]||1)):Math.floor(ph*1.6);
+   p.bodyRow=row;p.bodyFr=fr;g.save();g.translate(p.x,p.y);g.scale(f,1);BS.drawFrame(g,bsh,row,fr,0,0,1);
+   if(as){const ad=as.def,sx=(d.shoulder[0]-d.feet[0])/BS.K,sy=(d.shoulder[1]-d.feet[1])/BS.K,[frow,ff]=fireFrame(p,time);BS.drawFrame(g,as,frow,ff,sx,sy,1);}
+   else if(!p.ladder){const [hx,hy]=handAt(d,p);drawGun(p.weapon,hx-p.recoil*1.5,hy);}
+   if(!p.ladder&&p.muzzle>0&&p.weapon!=='flame'){const [mx,my]=gunTip(p),rc=as?0:p.recoil*1.5;if(!BS.drawFx(g,'fx-muzzle',mx-rc,my,1-p.muzzle/.06)){g.fillStyle='#fff3a0';g.beginPath();g.arc(mx-rc,my,3,0,7);g.fill();}}
    g.restore();const ny=(d.neck[1]-d.feet[1])/BS.K,nx=(d.neck[0]-d.feet[0])/BS.K;drawHead(p.bro,broMood(p),p.x+f*nx,p.y+ny+1/BRO_K,17/BRO_K,f,true);g.globalAlpha=1;return;}
   g.save();g.translate(p.x,p.y);g.scale(f,1);
   const col=PCOL[p.i],dark=p.i?'#7a2a52':'#1f3a7a';
@@ -1152,7 +1171,7 @@ async function broforce(s){
   const rc=p.recoil*1.5;
   g.fillStyle='#d9a070';
   if(p.ladder){g.fillRect(-5,-21,2,6);g.fillRect(3,-21,2,6);}else{g.fillRect(1-rc,-15,6,2.4);g.fillRect(-3-rc,-14,5,2.4);drawGun(p.weapon,6-rc,-14);}
-  if(p.muzzle>0&&!p.ladder&&p.weapon!=='flame'&&!BS.drawFx(g,'fx-muzzle',(WEAPON_LEN[p.weapon]||10)+6-rc,-14.5,1-p.muzzle/.06)){g.fillStyle='#fff3a0';g.beginPath();const mx=(WEAPON_LEN[p.weapon]||10)+6-rc;g.moveTo(mx,-14.5);g.lineTo(mx+7,-17);g.lineTo(mx+5,-14);g.lineTo(mx+8,-11.5);g.closePath();g.fill();}
+  if(p.muzzle>0&&!p.ladder&&p.weapon!=='flame'&&!BS.drawFx(g,'fx-muzzle',gunTip(p)[0]-rc,gunTip(p)[1],1-p.muzzle/.06)){g.fillStyle='#fff3a0';g.beginPath();const mx=(WEAPON_LEN[p.weapon]||10)+6-rc;g.moveTo(mx,-14.5);g.lineTo(mx+7,-17);g.lineTo(mx+5,-14);g.lineTo(mx+8,-11.5);g.closePath();g.fill();}
   if(p.weapon==='flame'&&p.muzzle>0){g.fillStyle='#ffb02a';g.beginPath();g.arc(WEAPON_LEN.flame+7,-13.5,2.4,0,7);g.fill();}
   g.restore();
   // head: the character's own face, big-head style
@@ -1162,6 +1181,21 @@ async function broforce(s){
   if(p.climb&&!p.grounded){g.fillStyle='rgba(255,255,255,.6)';for(let k=0;k<2;k++)g.fillRect(p.x+f*(p.w+1),p.y-8-k*7-(time*40%7),1,3);}
  }
  const WEAPON_LEN={rifle:10,shotgun:9,rocket:11,flame:9,pistols:5,laser:11,plasma:11,railgun:13,pulse:8,minigun:11,lightning:9,holy:5,fireball:5,boomerang:6,ring:8};
+ // one full run / walk cycle (both legs) covers this many world px, so the feet don't slide or race (owner: walk looked funny)
+ const STRIDE={run:58,walk:40};
+ // where the barrel tip is, from the bro's feet, facing right, before BRO_K: arms-<gun> muzzle on the torso's shoulder, else
+ // the gun picture's measured muzzle at the body's hand, else the drawn gun's length
+ // the fist of the body frame drawn last (bro-body hands table), from the feet in world px
+ function handAt(d,p){const t=d.hands&&d.hands[p.bodyRow],h=t?t[((p.bodyFr||0)%t.length+t.length)%t.length]:d.hand;return [(h[0]-d.feet[0])/BS.K,(h[1]-d.feet[1])/BS.K];}
+ function gunTip(p){const w=p.weapon,ts=BS.sheet('bro-torso'),as=ts&&BS.sheet('arms-'+w);
+  if(as){const td=ts.def,ad=as.def;return [(td.shoulder[0]-td.feet[0]+ad.muzzle[0]-ad.shoulder[0])/BS.K,(td.shoulder[1]-td.feet[1]+ad.muzzle[1]-ad.shoulder[1])/BS.K];}
+  const bs=BS.sheet('bro-body');let hx=6,hy=-14;if(bs)[hx,hy]=handAt(bs.def,p);
+  const gp=BS.picture('gun-'+w)&&BS.PICTURES['gun-'+w];if(gp&&gp.muzzle)return [hx+(gp.muzzle[0]-gp.anchor[0])/BS.K,hy+(gp.muzzle[1]-gp.anchor[1])/BS.K];
+  return [hx+(WEAPON_LEN[w]||10),hy-.5];}
+ // arms sheet frame: the 4-frame fire cycle after each shot (fast guns loop it while the trigger is held), else hold
+ function fireFrame(p,time){const w=WEAPONS[p.weapon]||{rate:.3},rate=w.rate||.3;
+  if(rate<.1)return p.fireT<.12?['fire',Math.floor(time*(p.weapon==='minigun'?30:22))%(p.weapon==='minigun'?4:2)]:['hold',0];
+  const D=Math.min(.36,Math.max(.14,rate*.9));return p.fireT<D?['fire',Math.min(3,Math.floor(p.fireT/D*4))]:['hold',0];}
  function drawGun(w,x,y){
   if(BS.drawPic(g,'gun-'+w,x,y))return;
   const wx=WEAPONS[w];if(wx&&wx.ext){drawGunX(wx.ext,x,y);return;}
@@ -1211,7 +1245,9 @@ async function broforce(s){
   if(e.bubble){const y=e.y-e.h/(e.sz||1)-12+Math.sin(time*12)*.8;g.fillStyle='#fff';g.strokeStyle='#000';g.lineWidth=1;g.beginPath();g.roundRect?.(e.x-4,y-6,8,9,2);g.fill();g.stroke();
    g.fillStyle=e.bubble.ch==='!'?'#d00':'#c90';g.font='bold 8px Arial';g.textAlign='center';g.textBaseline='middle';g.fillText(e.bubble.ch,e.x,y-1.3);}
  }
- function drawCorpse(cp){const k=sizeOf(cp.kind);g.save();g.translate(cp.x,cp.y);g.scale(k,k);g.translate(-cp.x,-cp.y);drawCorpse0(cp);g.restore();}
+ // landed bodies sink into the grass a little (owner: they floated on the ground's top edge)
+ const CORPSE_SINK=2.5;
+ function drawCorpse(cp){const k=sizeOf(cp.kind);g.save();g.translate(cp.x,cp.y+(cp.vy===0?CORPSE_SINK:0));g.scale(k,k);g.translate(-cp.x,-cp.y);drawCorpse0(cp);g.restore();}
  function drawCorpse0(cp){const dk='dead-'+cp.kind,dp=BS.picture(dk);
   if(dp){const pd=BS.PICTURES[dk],[pw,ph]=pd.size,fl=cp.vx<0?-1:1,air=cp.vy!==0;g.save();g.globalAlpha=Math.min(1,cp.t);g.translate(cp.x,cp.y);if(air)g.rotate(cp.rot*.5);g.scale(fl/BS.K,1/BS.K);g.drawImage(dp,-pw/2,-ph,pw,ph);g.restore();
    if(cp.kind==='bro'&&pd.face){g.save();g.globalAlpha=Math.min(1,cp.t);drawHead(cp.id,'sad',cp.x+fl*(pd.face[0]-pw/2)/BS.K,cp.y+(pd.face[1]-ph)/BS.K,17/BRO_K,fl);g.restore();}return;}

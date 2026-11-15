@@ -28,10 +28,14 @@ await page.evaluate(([mods, oldThemes]) => {
   window.OLD_THEMES = new Function('return ' + oldThemes)();
 }, [mods, oldThemes]);
 const names = await page.evaluate(() => { const B = require('src/data/broforceSprites.js'); return [...Object.keys(B.SHEETS), ...Object.keys(B.PICTURES)]; });
+// round 3 guides: the owner's current gun pictures and bro body, drawn faintly so the new art keeps their size and look
+const guide = n => { const f = path.join(root, 'assets/broforce', n + '.webp'); return fs.existsSync(f) ? 'data:image/webp;base64,' + fs.readFileSync(f).toString('base64') : null; };
 let n = 0;
 for (const name of names) {
   if (only.length && !only.includes(name)) continue;
-  const data = await page.evaluate(name => {
+  const gsrc = name === 'bro-torso' ? guide('bro-body') : name.startsWith('arms-') ? guide('gun-' + name.slice(5)) : null;
+  const data = await page.evaluate(async ([name, gsrc]) => {
+    const gimg = gsrc ? await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = gsrc; }) : null;
     const B = require('src/data/broforceSprites.js'), EXT = require('src/engines/broforce/ext.js'), WX = require('src/engines/broforce/worlds.js');
     const themes = {...window.OLD_THEMES, ...WX.THEMES_EXT};
     const c = document.getElementById('c'), x = c.getContext('2d');
@@ -62,6 +66,21 @@ for (const name of names) {
           const [ax, ay] = def.feet;
           x.save(); x.globalAlpha = .4; x.translate(X0 + ax, Y0 + ay); x.scale(B.K, B.K);
           const kind = name.replace(/^(foe|boss)-/, ''), t = f * .2 + r;
+          if (name === 'bro-torso' || name.startsWith('arms-') || name.startsWith('prop-')) { x.restore();
+            if (name === 'bro-torso' && gimg) { // the current body (WITH arms) faintly, same row (walk = run frames), for size and style
+              const bd = B.SHEETS['bro-body'], br = {walk: 'idle', run: 'idle'}[row] || row, bn = Object.keys(bd.rows), ri = Math.max(0, bn.indexOf(br)), bc = bd.rows[bn[ri]], s2 = gimg.width / (Math.max(...Object.values(bd.rows)) * bd.frame[0]);
+              const fi = row === 'run' || row === 'walk' ? 0 : f % bc; x.globalAlpha = .28; x.drawImage(gimg, fi * bd.frame[0] * s2, ri * bd.frame[1] * s2, bd.frame[0] * s2, bd.frame[1] * s2, X0, Y0, fw, fh); x.globalAlpha = 1;
+              if (row !== 'ladder') { x.strokeStyle = '#d0f'; x.lineWidth = 2; x.beginPath(); x.arc(X0 + def.shoulder[0], Y0 + def.shoulder[1], 7, 0, 7); x.stroke(); cross(X0 + def.shoulder[0], Y0 + def.shoulder[1], '#d0f'); } }
+            if (name.startsWith('arms-')) { const [sx, sy] = def.shoulder, [gx, gy] = def.grip, [mx, my] = def.muzzle;
+              if (gimg) { const gd = B.PICTURES['gun-' + def.gun], k2 = gimg.width / gd.size[0], kick = row === 'fire' && f === 0 ? -3 : 0; x.globalAlpha = .3; x.drawImage(gimg, X0 + gx - gd.anchor[0] + kick, Y0 + gy - gd.anchor[1] + (kick ? -1 : 0), gd.size[0], gd.size[1]); x.globalAlpha = 1; }
+              x.globalAlpha = .3; x.strokeStyle = '#a66'; x.lineWidth = 7; x.lineCap = 'round'; x.beginPath(); x.moveTo(X0 + sx, Y0 + sy); x.lineTo(X0 + sx + 6, Y0 + gy + 2); x.lineTo(X0 + gx, Y0 + gy); x.stroke(); x.beginPath(); x.moveTo(X0 + sx - 3, Y0 + sy + 2); x.lineTo(X0 + gx + 22, Y0 + gy - 3); x.stroke(); x.globalAlpha = 1; x.lineCap = 'butt';
+              x.strokeStyle = '#d0f'; x.lineWidth = 2; x.beginPath(); x.arc(X0 + sx, Y0 + sy, 7, 0, 7); x.stroke(); cross(X0 + sx, Y0 + sy, '#d0f');
+              x.strokeStyle = '#c90'; x.beginPath(); x.arc(X0 + gx, Y0 + gy, 5, 0, 7); x.stroke(); cross(X0 + mx, Y0 + my, '#e00');
+              label(row === 'hold' ? 'hold' : 'fire ' + (f + 1) + ': ' + (def.note.split('fire: ')[1] || '').split(', ')[f], X0 + 4, Y0 + fh - 5, '#036', 9); label(`${row} ${f + 1}`, X0 + 4, Y0 + 12, '#003', 10); continue; }
+            if (name.startsWith('prop-')) { x.globalAlpha = .25; x.fillStyle = '#865'; x.fillRect(X0 + fw * .2, Y0 + fh * .25, fw * .6, fh * .72); x.globalAlpha = 1; }
+            cross(X0 + ax, Y0 + ay, '#e00');
+            if (def.neck) { x.strokeStyle = '#08a'; x.lineWidth = 2; x.beginPath(); x.arc(X0 + def.neck[0], Y0 + def.neck[1] - 24, 22, 0, 7); x.stroke(); cross(X0 + def.neck[0], Y0 + def.neck[1], '#08a'); }
+            label(`${row} ${f + 1}`, X0 + 4, Y0 + 12, '#003', 10); continue; }
           try {
             if (name.startsWith('foe-') && EXT.FOES2[kind]) { const e = X.makeFoe2({type: kind, x: 0, y: 0, k: f}); Object.assign(e, {dir: 1, anim: f * 1.3, vx: row === 'walk' ? 10 : 0, state: row === 'attack' ? 'attack' : 'patrol', muzzle: row === 'attack' && f === 1 ? .05 : 0, charge: row === 'attack' ? 1 : 0, whip: row === 'attack' ? .2 : 0, popT: 1, hidden: 0, flash: 0}); C.W.foes = [e]; X.drawFoe(x, e, t); }
             else if (name.startsWith('boss-') && EXT.BOSSES[kind]) { const Bo = {x: 0, y: 0, dir: 1, alive: true, dead: 0, flash: 0, anim: t, vx: row === 'move' ? 20 : 0, kind, att: row === 'attack' ? ['volley', 'charge', 'spin', 'beam', 'drop'][f % 5] : 'idle', t: 1, state: row, fade: 0}; X.drawBoss(x, Bo, t); }
@@ -78,6 +97,7 @@ for (const name of names) {
           label(`${row} ${f + 1}`, X0 + 4, Y0 + 12, '#003', 10);
         }
       });
+      if (name === 'bro-torso') { label('NO ARMS (ladder rows keep them). Faint = the current body, for size and style only', 4, c.height - 20, '#036', 10); label('(walk/run: NEW smooth cycles). Magenta = shoulder, cyan = face spot (NO HEAD)', 4, c.height - 6, '#036', 10); }
       if (name === 'bro-body') label('cyan circle = the face goes here (leave it empty: NO HEAD), yellow = gun hand', 4, c.height - 6, '#036', 11);
       return c.toDataURL('image/png');
     }
@@ -100,6 +120,8 @@ for (const name of names) {
     if (pd.kind === 'shot' || pd.kind === 'bullet' || pd.kind === 'fx') { x.strokeStyle = 'rgba(0,160,255,.9)'; x.setLineDash([4, 3]); x.lineWidth = 1; x.strokeRect(1, 1, w - 2, h - 2); x.setLineDash([]);
       if (pd.kind === 'bullet') cross(w - 3, h / 2, '#e00'); else if (/tentacle/.test(name)) cross(w / 2, h - 3, '#e00'); else cross(w / 2, h / 2, '#e00');
       if (w >= 48 && h >= 24) note(pd.note); return c.toDataURL('image/png'); }
+    if (pd.kind === 'prop') { x.strokeStyle = 'rgba(0,160,255,.9)'; x.setLineDash([6, 4]); x.lineWidth = 2; x.strokeRect(2, 2, w - 4, h - 4); x.setLineDash([]);
+      const a = pd.anchor || [w / 2, h / 2]; cross(a[0], Math.min(h - 3, Math.max(3, a[1])), '#e00'); label(name, 6, 16, '#000', 11); if (w >= 96 && h >= 64) wrap(pd.note, 6, 32, w - 12, '#036', 10); return c.toDataURL('image/png'); }
     if (name.startsWith('tiles-')) {
       const cw = 64;
       B.TILE_NAMES.forEach((tn, i) => { for (let v = 0; v < 3; v++) {
@@ -119,7 +141,7 @@ for (const name of names) {
     label(name, 6, 16, '#000', 12); if (key) { x.font = 'bold 10px Arial'; const words = notes[key].split(' '); let line = '', yy = 32; for (const wd of words) { if (x.measureText(line + wd).width > w - 12) { label(line, 6, yy, '#036', 10); line = ''; yy += 12; } line += wd + ' '; } label(line, 6, yy, '#036', 10); }
     cross(w / 2, h - 3, '#e00');
     return c.toDataURL('image/png');
-  }, name);
+  }, [name, gsrc]);
   fs.writeFileSync(path.join(outDir, name + '.png'), Buffer.from(data.split(',')[1], 'base64')); n++;
 }
 await browser.close();
