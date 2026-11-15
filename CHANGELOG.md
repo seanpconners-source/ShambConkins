@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.99.6
+
+- **Sitabout Mini Golf:** the title backdrop is now the full-quality picture (3840x2160, no compression loss) instead of the small copy from chat.
+
+## v0.99.5
+
+- **Sitabout Mini Golf:** the course picker now has your title backdrop (Sean and Amber putting with the dogs, the clown head, the windmill, the castle and Mega Maid). On upright phones the picture stays centred on the two of you.
+
+## v0.99.4
+
+- **BASEketball Shootout:** the ball in each shooter's hands is bigger and sits behind his hands, as if he's holding it up toward the hoop (it used to sit in front of his hands, on the screen side).
+- New rim: your GPT picture of the orange rim replaces the drawn one. The ball passes behind the back of the ring and in front of the front.
+
+## v0.99.3
+
+- **BASEketball Shootout:** your stadium with the garage, the base pads and the 1998 banners is now the backdrop (the game had the earlier crowd-and-wall picture).
+- The hoop moves much slower in the early rounds: 8 seconds to go across and back in round 1 (was 3.3), speeding up a little every round to 1.6 seconds by round 9.
+
+## v0.99.2
+
+- **Sitabout Mini Golf art is in:** GPT's pictures for all three courses: turf, lawns, rails and raised-green sides, sand, water, ice, carpet, conveyor, the windmill and its sails, the clown head and teeth, the gator, gophers, bumpers, tunnels, trampolines, portals, Mega Maid's vacuum, trees, bushes, flowers, carts, signs, the flag and cup, the logo, the scorecard and the three course cards.
+- **Windmill fixed:** no more invisible wall in front of it. The door is only blocked while a sail is actually in front of it, the windmill's door is exactly the opening in the lane, and the sails turn on the windmill and sweep down past the door.
+- The windmill and the clown head always face the tee now (on wide screens they used to sit sideways).
+- The clown's teeth are drawn where they really stop the ball.
+- **BASEketball Shootout:** the first time the game opens, it now waits (a few seconds at most) for its stadium, shooters and hoop pictures to download, so the first round no longer plays on the plain stand-in drawings.
+
 ## v0.99.1
 
 - **Sean of a Gun art is in:** GPT's whole kit for all eight worlds: the bro's body, 28 enemies, 12 bosses, terrain tiles and ground edges, skies and two parallax layers per world, choppers, trees, cages, flags and pickups. (The Game World's hedgehog enemy and egg-pod boss keep the game's own drawings: GPT drew Sega's real characters.)

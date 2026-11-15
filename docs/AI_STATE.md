@@ -2,6 +2,9 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+v0.99.4 RELEASED (Nov 15, owner: "release it!"; fuzz only): bigger held ball behind the hands + owner rim picture.
+v0.99.5 RELEASED (Nov 15): Sitabout title-bg IN (owner's chat attachment 2000x1125 WebP, copied byte for byte to assets/minigolf + originals; the 11 MB Drive PNG never fetched); PICTURES title-bg focus [.38,.45] = cover crop centred on the couple (puttPutt drawMenu). Minigolf art now 61/61.
+v0.99.6 RELEASED (Nov 15): owner uploaded the real title-bg PNG to main via GitHub web upload (repo root 'title-bg(1).png'; the upload page has no name/folder field, so expect root uploads): 3840x2160 = 2x slot, now lossless assets/minigolf/title-bg.webp (7.5 MB, LATER), original assets/originals/minigolf/title-bg.png (moved out of the root). Chat attachments always arrive as ~0.4 MB WebP: ask for GitHub uploads when quality matters.
 v0.99.0 (Nov 14): BASEKETBALL SHOOTOUT = the Megatouch Hoop Jones machine (owner's screenshot; Merit: time each shot,
 hoop moves back each round and side to side, 3 straight = lightning bonus). src/engines/hoopJones.js; engine key
 basketball2p (baseketball.js is now a 3-line hand-off; the movie-rules code is in git history before 0.99.0). Id
@@ -93,6 +96,20 @@ POOL ART IN (Nov 14, RELEASED as v0.99.0 with Pool + the Sean of a Gun worlds): 
 at 2x as lossless WebP in assets/pool (originals assets/originals/pool). Table felt windows transparent, TV screens opaque black
 (game draws the screens after the frame). poolSprites: preloadPool(names) = only the current loadout's pictures (all 66 decoded
 = ~300 MB), version() bumps on each load and is in the table/floor layer cache keys (a late picture used to stay drawn-fallback).
+
+BASEKETBALL ART WAIT (Nov 14, v0.99.2; owner: 'sprites not in'): they WERE in since v0.99.0 (13 files, drawn fine once loaded), but they're LATER files (~24 MB, fetched on first open) and picture() returned null until each loaded, so a first round played on the drawn stand-ins. baseketballSprites readyBaseketball(ms)/allLoaded(); hoopJones play() waits up to 8 s after the pass card (before nf.start) with a 'Filling the stadium' screen. Other LATER-art games (minigolf, pool, horde, broforce...) may show the same first-open stand-ins. Hoop speed (owner: way too hard): periodOf = max(1.6, 8*.82^(n-1)) s (was 3.3-.2(n-1)). v0.99.3 (Nov 15): owner's REVISED stadium (garage + base pads + 1998 banners; came again as a 2000x1000 chat attachment, the Drive copy 1dO8fECVTdNJEQJHHVeyBlwynoJ7-G4-m is 10.7 MB = over the connector limit) is assets/baseketball/stadium.webp (lossless; original assets/originals/baseketball/stadium.png, the old crowd-wall one = stadium-previous.png); PICTURES stadium horizon 738 (field meets the wall at 61.5%). The court-logo decal still sits over the middle base pad. Nov 15 later (unreleased): held ball drawn BEHIND the shooter sheet (hands wrap it), HOLD p1 [162,68] / p2 [164,104] measured on the sheets, HOLD_R 62 (was 44 on top), ballR0 = HOLD_R*shK; new slot `rim` 512x160 ring [256,72,232,62] (whole ring, cut at cy: back half behind ball/net, front half in front; checked with a stand-in), drawn rim now a shaded tube + net hooks; template + brief row added. Owner's GPT rim.png IN (Drive, 1024x320 = exact 2x, ring centre line measured = template ring x2; assets/baseketball/rim.webp lossless, original assets/originals/baseketball/rim.png); drawn tube = fallback only.
+
+SITABOUT ART IN + WINDMILL FIX (Nov 14, branch claude/minigolf-sprites-windmill-ud5bpf; owner: sprites were made but not in,
+invisible wall in front of the windmill, windmill sideways): GPT's set from Drive 'Sitabout Mini Golf — Sprites' (Course Textures /
+Props & Obstacles / Screens + minigolf-small-finals.zip = cup): 60 of 61 slots, every one exactly 2x template, lossless WebP in
+assets/minigolf (originals assets/originals/minigolf). title-bg came later as a chat attachment (v0.99.5). WINDMILL: the door used to count as shut ~55% of the time (any blade within .42 rad of
+down, whole door width) = blocked when no sail was in front: physics.js millBlock(m,T) now blocks only the x range a sail covers at
+ball height (hub height m.hub, reach m.r, sail half-width .13 r; ~25% of the time); hole data door 6 wide (blocks R(18,60,11,12)/
+R(35,60,11,12)), w 6, r 21, hub 21, house drawn 40 wide; render sizes the house picture so its door = m.w and turns the sails on
+the picture's hub mount (PICTURES windmill-house hub [320,294], blades reach .986). Sideways = cam.rot (tee on the left on wide
+screens) with an upright picture: puttPutt startHole never turns a hole with a windmill or clown head. Clown: picture artW 29
+(mouth measured 250-390 px), teeth drawn on the physics gate line at its width, no pipe drawn at a tunnel mouth in the clown.
+Checked: minigolf-sim (all holes reachable, CPU holes them), screenshots 390x780/844x390/752x835.
 
 SITABOUT MINI GOLF (Nov 14, branch ccr-2919e73f-r0ea94, unreleased; owner: complete overhaul of putt-putt, "best putt putt
 android game ever", name Sitabout (Walkabout parody), make art templates; another account works on another game: touch

@@ -86,15 +86,15 @@ const EMPTY=[],NOPARTS={segs:[],hazards:[]};
 const norm=([x,y])=>{const l=Math.hypot(x,y)||1;return [x/l,y/l];};
 
 // ---------------------------------------------------------------- moving parts at hole time T
-// windmill {x,y,w,r,speed,blades}: a house across the lane; its door (w wide, centred on x at y) is shut while a blade
-//   points down. slider {pts,a:[dx,dy],period,ph}: a box gliding a->+a and back. spinner {x,y,len,speed}: a bar turning
+// windmill {x,y,w,r,hub,speed,blades}: a house across the lane; its door is w wide, centred on x, front at y. The sails
+//   turn upright in front of the house (hub = hub height, r = sail reach, both in the units render.js draws the house
+//   in); the door is blocked only across the part a sail covers at ball height, so what blocks is what you see. slider {pts,a:[dx,dy],period,ph}: a box gliding a->+a and back. spinner {x,y,len,speed}: a bar turning
 //   flat on the green. gate {a,b,period,ph,duty}: a bar that is shut for `duty` of each period. gator {path,speed,r}: an
 //   alligator swimming a loop; touching it = chomp. gophers {holes,period}: one gopher pops up at a time.
 function moverParts(C,T){
  const segs=[],hazards=[];
  for(const [mi,m] of C.movers.entries()){
-  if(m.kind==='windmill'){const n=m.blades||4,a=T*(m.speed||1.4)+(m.ph||0);let shut=0;for(let k=0;k<n;k++){let d=((a+k*Math.PI*2/n)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);d=Math.abs(d-Math.PI/2);shut=Math.max(shut,1-d/.42);}
-   if(shut>0){const hw=m.w/2;segs.push({x1:m.x-hw,y1:m.y,x2:m.x+hw,y2:m.y,t1:99,t2:99,kind:'blade',e:.55,vx:0,vy:0});}}
+  if(m.kind==='windmill'){for(const [x0,x1] of millBlock(m,T))segs.push({x1:x0,y1:m.y,x2:x1,y2:m.y,t1:99,t2:99,kind:'blade',e:.55,vx:0,vy:0});}
   else if(m.kind==='slider'){const per=m.period||3,ph=(m.ph||0),f=.5-.5*Math.cos((T/per+ph)*Math.PI*2),df=Math.PI/per*Math.sin((T/per+ph)*Math.PI*2);const ox=m.a[0]*f,oy=m.a[1]*f,vx=m.a[0]*df,vy=m.a[1]*df;
    const p=m.pts;for(let i=0;i<p.length;i++){const A=p[i],B=p[(i+1)%p.length];segs.push({x1:A[0]+ox,y1:A[1]+oy,x2:B[0]+ox,y2:B[1]+oy,t1:99,t2:99,kind:'slider',e:.6,vx,vy});}}
   else if(m.kind==='spinner'){const a=T*(m.speed||1.5)+(m.ph||0),c=Math.cos(a),s=Math.sin(a),L=m.len,w=m.speed||1.5;
@@ -105,6 +105,18 @@ function moverParts(C,T){
  }
  return {segs,hazards};
 }
+// the x ranges of a windmill's door a sail covers at hole time T. Sail angle 0 = pointing straight down (render.js turns
+// the sails by T*speed+ph on screen, y down, so a blade at angle th points (cos th, sin th) and is down at th = PI/2).
+// Seen from the tee the house stands upright, so at height h above the green a sail at offset phi from straight down is
+// (hub-h)*tan(phi) to the side; it covers ball height (0..1: the ball is 2 tall, drawn at half height) where it reaches.
+const MILL_SAIL=.13;  // half the width of a sail frame, as a share of its reach (measured on the sails picture)
+function millBlock(m,T){
+ const n=m.blades||4,a=T*(m.speed||1.4)+(m.ph||0),R=m.r||15,hub=m.hub||R,bw=R*MILL_SAIL,d0=m.x-m.w/2,d1=m.x+m.w/2,out=[];
+ for(let k=0;k<n;k++){let phi=((a+k*Math.PI*2/n-Math.PI/2)%(Math.PI*2)+Math.PI*3)%(Math.PI*2)-Math.PI;if(Math.abs(phi)>1.2)continue;
+  const c=Math.cos(phi),t=Math.tan(phi);let lo=1e9,hi=-1e9;
+  for(const h of [0,.5,1]){if((hub-h)/c>R+bw*.5)continue;const xc=m.x-(hub-h)*t,hw=bw/c;lo=Math.min(lo,xc-hw);hi=Math.max(hi,xc+hw);}
+  lo=Math.max(lo,d0);hi=Math.min(hi,d1);if(hi>lo)out.push([lo,hi]);}
+ return out;}
 function pathPoint(path,f){let L=0;const seg=[];for(let i=0;i<path.length;i++){const a=path[i],b=path[(i+1)%path.length],l=Math.hypot(b[0]-a[0],b[1]-a[1]);seg.push([a,b,l]);L+=l;}
  let d=((f%1)+1)%1*L;for(const [a,b,l] of seg){if(d<=l){const k=l?d/l:0;return {x:a[0]+(b[0]-a[0])*k,y:a[1]+(b[1]-a[1])*k,ang:Math.atan2(b[1]-a[1],b[0]-a[0])};}d-=l;}return {x:path[0][0],y:path[0][1],ang:0};}
 function gatorAt(m,T){let L=0;for(let i=0;i<m.path.length;i++){const a=m.path[i],b=m.path[(i+1)%m.path.length];L+=Math.hypot(b[0]-a[0],b[1]-a[1]);}return pathPoint(m.path,T*(m.speed||10)/L+(m.ph||0));}
@@ -244,4 +256,4 @@ function aimRay(C,x,y,dx,dy,len,T){
  return pts;
 }
 
-Object.assign(exports,{BALL_R,CUP_R,HZ,DT,SURF,R,circ,compile,surfZ,surfGrad,inPoly,bboxOf,moverParts,gatorAt,gopherAt,newBall,launch,stepBall,runShot,cupField,aimRay,hashN,MAX_ROLL});
+Object.assign(exports,{millBlock,BALL_R,CUP_R,HZ,DT,SURF,R,circ,compile,surfZ,surfGrad,inPoly,bboxOf,moverParts,gatorAt,gopherAt,newBall,launch,stepBall,runShot,cupField,aimRay,hashN,MAX_ROLL});
