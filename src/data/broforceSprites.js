@@ -104,7 +104,7 @@ SHEETS['bro-torso']={frame:[64,96],rows:{idle:2,walk:8,run:8,jump:1,fall:1,climb
 // bro-run: the bro-body exactly as it is (arms, fist forward, same size) with a smooth 8-frame walk and run; the gun is drawn
 // in the fist as now (owner, Nov 15: GPT's separate arms came out ~40% too big, the old body looked better). Fist spots per frame
 // get measured on import (`hands`), like bro-body's.
-SHEETS['bro-run']={frame:[64,96],rows:{walk:8,run:8},feet:[32,94],neck:[32,22],hand:[56,50],shoulder:[26,37],
+SHEETS['bro-run']={frame:[64,96],rows:{walk:8,run:8},feet:[32,94],neck:[32,22],hand:[56,51],shoulder:[26,37],
  note:'the bro-body, same arms and fist, same size: only the legs move (8-frame walk, 8-frame run), the upper body bobs a little'};
 // arms + gun: both arms, hands and the gun as one piece, the shoulder on the red cross, the hand on the grip ring, the barrel tip on
 // the muzzle cross. hold = 1 frame; fire = 4 frames played on every shot (kick, recover, then the gun's own cycle).
@@ -120,8 +120,11 @@ const ARMS={frame:[160,80],shoulder:[32,28],grip:[62,42]};   // grip = shoulder 
 for(const id of GUN_IDS){const gm=GUN_MUZZLE[id],ga=[48,24];
  SHEETS['arms-'+id]={frame:ARMS.frame,rows:{hold:1,fire:4},feet:ARMS.shoulder,shoulder:ARMS.shoulder,grip:ARMS.grip,muzzle:[ARMS.grip[0]+gm[0]-ga[0],ARMS.grip[1]+gm[1]-ga[1]],gun:id,
   note:'both arms holding the '+id+' (same gun picture as gun-'+id+', grip in the hand on the ring, barrel tip on the muzzle cross). hold: aiming forward. fire: '+ARMS_FIRE[id]};}
-// the owner approved a different shotgun for the arms (double-bell scatter cannon): its mouths sit higher (measured)
-SHEETS['arms-shotgun'].muzzle=[118,22.5];
+// barrel tips measured on GPT's corrected arm sheets (Nov 15, hold frame, template px): bullets + flash start here.
+// shotgun = the approved double-bell cannon (middle of the two mouths), pistols = the lower pistol, thrown items = the hand.
+const ARMS_TIP={rifle:[120.5,29],shotgun:[118,19.5],rocket:[115.5,31],flame:[125,33],pistols:[109.5,40],laser:[124,35],plasma:[124.5,31.5],
+ railgun:[123,36],pulse:[125,34],minigun:[123,42],holy:[123,28],fireball:[124,31.5],boomerang:[105,44],ring:[120,30]};
+for(const [id,m] of Object.entries(ARMS_TIP))SHEETS['arms-'+id].muzzle=m;
 // props: bottom middle = where it stands (props drawn by the game until a picture is in). Sheets loop.
 Object.assign(PICTURES,{
  'prop-tower':{size:[192,384],anchor:[96,384],kind:'prop',note:'wooden enemy watchtower with a roofed lookout platform at the top, ladder up one leg; the game stretches it to the tower\'s width/height'},

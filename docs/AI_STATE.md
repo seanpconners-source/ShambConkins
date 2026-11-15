@@ -45,6 +45,13 @@ loop); an arms sheet replaces bro-body + gun picture only for that gun. Props: p
 searchlight/helipad/sign, firebar-base (drawPropPic; '<prop>-<world>' override). Templates (26, guides = current body/guns) + brief
 ROUND 3 + kit zip (scratchpad sean-of-a-gun-round3-kit.zip). Checked with stand-ins in a private build; games.mjs broforce 9/9.
 
+SEAN OF A GUN ROUND 3 CORRECTIONS IN (Nov 15 late, branch, unreleased; owner saw screenshots, not yet approved for release): GPT's
+corrections (UPLOADS-GPT-2026-11-15-1834 + -2115): bro-run (bro-body upper pixels + torso legs; fist fixed at [56,51]), prop-tower
+without its ladder, 14 arm sheets at the corrected size (all but lightning; rifle = GPT's resize of our composite) + bro-torso back in
+assets/broforce: the hero now = torso + arms-<gun> for 14 guns, lightning = bro-body (+ bro-run legs) + gun in the fist. ARMS_TIP =
+barrel tips measured on the new sheets (shotgun = middle of the two bells, pistols = lower pistol). GPT couldn't: lightning arms,
+bigger minigun, most firing frames (code kick covers it). games.mjs broforce 9/9.
+
 SEAN OF A GUN ROUND 3 ART (Nov 15, branch, unreleased): GPT's round 3 from Drive (UPLOADS-GPT-2026-11-15-1121/1126/1726): 10 props IN
 (assets/broforce prop-*/firebar-base, lossless; originals assets/originals/broforce), drawn by drawPropPic. bro-torso + 14 arms-* sheets
 came ~40% too big (owner: 'ridiculous, looked better before') = kept ONLY as originals (assets/originals/broforce; arms-rifle-composite.png
