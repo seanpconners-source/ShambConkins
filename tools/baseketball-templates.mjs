@@ -59,8 +59,8 @@ for (const [name, def] of Object.entries(BK.SHEETS)) {
           }
           x.restore();
           x.setLineDash([5, 3]); x.lineWidth = 1.5;
-          if (def.ball) { const [bx, by] = def.ball; x.strokeStyle = 'rgba(230,110,20,.95)'; x.beginPath(); x.arc(X + bx, Y + by, 43, 0, 7); x.stroke();
-            x.fillStyle = 'rgba(230,110,20,.95)'; x.font = '10px Arial'; x.fillText('ball (the game draws it)', X + bx - 52, Y + by - 48); }
+          if (def.ball) { const [bx, by] = def.ball; x.strokeStyle = 'rgba(230,110,20,.95)'; x.beginPath(); x.arc(X + bx, Y + by, 62, 0, 7); x.stroke();
+            x.fillStyle = 'rgba(230,110,20,.95)'; x.font = '10px Arial'; x.fillText('ball (the game draws it, BEHIND the hands)', X + bx - 90, Y + by - 66); }
           if (def.nameBar) { const [nx, ny, nw, nh] = def.nameBar; x.strokeStyle = 'rgba(30,90,230,.9)'; x.strokeRect(X + nx, Y + ny, nw, nh); x.fillStyle = 'rgba(30,90,230,.9)'; x.font = '10px Arial'; x.fillText('blank name bar', X + nx, Y + ny - 3); }
           if (def.rim) { x.strokeStyle = 'rgba(220,40,40,.95)'; for (const rx of def.rim) { x.beginPath(); x.moveTo(X + rx, Y); x.lineTo(X + rx, Y + 30); x.stroke(); } x.fillStyle = 'rgba(220,40,40,.95)'; x.font = '10px Arial'; x.fillText('rim ends', X + def.rim[0] + 4, Y + 28); }
           x.setLineDash([]); x.fillStyle = 'rgba(0,0,0,.7)'; x.font = 'bold 11px Arial'; x.fillText(row + ' ' + (f + 1), X + 4, Y + fh - 6);
@@ -94,6 +94,13 @@ for (const [name, def] of Object.entries(BK.PICTURES)) {
         x.fillStyle = 'rgba(235,240,248,.9)'; x.fillRect(10, 10, w - 20, h - 40); x.strokeStyle = '#c8202a'; x.lineWidth = 8; x.strokeRect(10, 10, w - 20, h - 40);
         const [rx, ry] = def.rim; x.strokeRect(rx - 100, ry - 150, 200, 150);
         x.fillStyle = 'rgba(255,90,26,.9)'; x.beginPath(); x.arc(rx, ry, 9, 0, 7); x.fill(); label('rim attaches here (' + rx + ',' + ry + '): the game draws the rim + net', rx - 200, ry + 30, '#c8202a', 14);
+      } else if (def.kind === 'rim') {
+        const [cx, cy, rx, ry] = def.ring;
+        x.strokeStyle = 'rgba(232,87,26,.55)'; x.lineWidth = 16; x.beginPath(); x.ellipse(cx, cy, rx, ry, 0, 0, 7); x.stroke();
+        x.strokeStyle = 'rgba(0,0,0,.8)'; x.lineWidth = 1.5; x.setLineDash([6, 4]); x.beginPath(); x.ellipse(cx, cy, rx, ry, 0, 0, 7); x.stroke();
+        x.strokeStyle = 'rgba(220,40,40,.9)'; x.beginPath(); x.moveTo(0, cy); x.lineTo(w, cy); x.stroke(); x.setLineDash([]);
+        label('tube centre line (dashed). Red line = where the game cuts it: back half behind the ball, front half in front', 8, 16, '#c8202a', 11);
+        label('transparent inside the ring and around it; small net hooks under the tube', 8, h - 30, 'rgba(0,0,0,.75)', 11);
       } else if (def.kind === 'pole') {
         x.fillStyle = 'rgba(60,65,80,.6)'; x.fillRect(w / 2 - 22, 0, 44, h - 30); x.fillRect(w / 2 - 55, h - 30, 110, 24); label('top centre = board bottom', 4, 20);
       } else if (def.kind === 'ball') {

@@ -43,7 +43,9 @@ const targetOf=n=>18+5*(n-1);                     // points needed to clear roun
 const LED='#ff3b2f',LED2='#ffb02f',DIGI='"Courier New",monospace',FONT='Impact,"Arial Black",sans-serif';
 const HOME=['#1f3a8a','#c8102e'];   // Beers navy / red
 // where the ball sits in each sheet's ready frame (1x template px; GPT's delivery note), the blank name bar's middle row
-const HOLD={'shooter-p1':[160,70],'shooter-p2':[160,100]},NAME_Y=304;
+// the ball sits between the raised hands (measured on the owner's sheets, Nov 15): drawn BEHIND the sheet so the hands wrap it
+// from behind; HOLD_R = its radius in the same 1x frame px (it was 44 and sat on top of the hands)
+const HOLD={'shooter-p1':[162,68],'shooter-p2':[164,104]},HOLD_R=62,NAME_Y=304;
 const sheetOf=i=>i%2?'shooter-p2':'shooter-p1';
 
 async function hoopJones(s){
@@ -67,7 +69,7 @@ async function hoopJones(s){
   const wallH=L.floorY-L.wallTop;L.rimR=Math.min(W*.095,wallH*.15)*dd;
   const hz=L.floorY-wallH*.18,hi0=L.wallTop+L.rimR*3.6/dd+8;L.horizon=hz;L.rimY=hz-(hz-hi0)*dd;
   L.poleFoot=L.floorY+(L.H-L.floorY)*.12*dd;
-  L.ballR0=L.colW*.15;L.ballR1=L.rimR*.55;
+  L.ballR0=HOLD_R*L.shK;L.ballR1=L.rimR*.55;
   L.lane=i=>W/2+((i+.5)*L.colW-W/2)*.66*dd;L.shooterX=i=>(i+.5)*L.colW;L.handY=i=>L.shTop+HOLD[sheetOf(i)][1]*L.shK;
   L.amp=Math.abs(L.lane(3)-W/2)+L.rimR*1.2;}
  const basketX=(run,ph)=>{const n=run.round,f=Math.sin(ph)+(n>=5?.28*Math.sin(2.3*ph+1):0);return L.W/2+L.amp*f/(n>=5?1.28:1);};
@@ -189,12 +191,24 @@ async function hoopJones(s){
    if(pole)x.drawImage(pole,bx-pw/2,ry+r*.2,pw,ph);else{x.fillStyle=HOME[0];x.fillRect(bx-pw/2,ry+r*.2,pw,ph);}
    const bxl=bx-bw/2,byt=ry-bh*(def.rim[1]/def.size[1]);
    if(img)x.drawImage(img,bxl,byt,bw,bh);else{x.fillStyle='rgba(240,240,240,.92)';x.fillRect(bxl,byt,bw,bh);x.strokeStyle='#d62a2a';x.lineWidth=Math.max(2,bw*.025);x.strokeRect(bxl,byt,bw,bh);x.strokeRect(bx-bw*.17,ry-bh*.42,bw*.34,bh*.34);}
-   x.strokeStyle='#e8571a';x.lineWidth=Math.max(2,r*.13);x.beginPath();x.ellipse(bx,ry,r,r*.28,0,Math.PI,Math.PI*2);x.stroke();return;}
+   drawRim(bx,ry,r,false);return;}
   const net=BK.sheet('net');
   if(net){const d=net.def,swishing=run.netT<.45,f=swishing?Math.min(2,Math.floor(run.netT/.15)):0,fr=BK.frameRect(net,swishing?'swish':'rest',f),k=(2*r)/(d.rim[1]-d.rim[0]),w=d.frame[0]*k,h=d.frame[1]*k;
    x.drawImage(net.img,fr.sx,fr.sy,fr.sw,fr.sh,bx-(d.rim[0]+(d.rim[1]-d.rim[0])/2)*k,ry,w,h);}
   else{x.strokeStyle='rgba(255,255,255,.85)';x.lineWidth=Math.max(1,r*.05);const sw=run.netT<.45?Math.sin(run.netT*30)*r*.15:0;for(let k=0;k<=8;k++){x.beginPath();x.moveTo(bx-r+2*r*k/8,ry);x.lineTo(bx-r*.55+1.1*r*k/8+sw,ry+r*1.5);x.stroke();}}
-  x.strokeStyle='#ff6a1f';x.lineWidth=Math.max(2,r*.15);x.beginPath();x.ellipse(bx,ry,r,r*.28,0,0,Math.PI);x.stroke();}
+  drawRim(bx,ry,r,true);}
+ // the rim: the owner's `rim` picture (the whole ring, split at its centre line: back half behind the ball and net, front
+ // half in front), else a drawn steel ring: dark underside, orange tube, a highlight along the top, shaded back half
+ function drawRim(bx,ry,r,front){const img=BK.picture('rim'),d=BK.PICTURES.rim;
+  if(img){const [cx,cy,rx]=d.ring,k=r/rx*(img.width/d.size[0])**-1,w=img.width*k,h=img.height*k,X=bx-cx/d.size[0]*w,Y=ry-cy/d.size[1]*h;
+   x.save();x.beginPath();if(front)x.rect(X,ry,w,h);else x.rect(X,Y,w,ry-Y);x.clip();x.drawImage(img,X,Y,w,h);x.restore();return;}
+  const t=Math.max(2,r*.16),ry2=r*.28,a0=front?0:Math.PI,a1=front?Math.PI:Math.PI*2;
+  x.save();x.lineCap='round';
+  x.strokeStyle=front?'#7a2406':'#4a1604';x.lineWidth=t*1.25;x.beginPath();x.ellipse(bx,ry+t*.12,r,ry2,0,a0,a1);x.stroke();
+  x.strokeStyle=front?'#ef5f1c':'#b3420f';x.lineWidth=t*.85;x.beginPath();x.ellipse(bx,ry,r,ry2,0,a0,a1);x.stroke();
+  x.strokeStyle=front?'rgba(255,200,150,.85)':'rgba(255,170,120,.35)';x.lineWidth=Math.max(1,t*.22);x.beginPath();x.ellipse(bx,ry-t*.22,r*.99,ry2,0,a0+(front?.25:0),a1-(front?.25:0));x.stroke();
+  if(front){x.fillStyle='#7a2406';for(let k=1;k<12;k++){const a=k/12*Math.PI;x.beginPath();x.arc(bx+Math.cos(a)*r,ry+Math.sin(a)*ry2+t*.45,Math.max(1,t*.18),0,7);x.fill();}}
+  x.restore();}
  function ballPic(px,py,pr,rot){const img=BK.picture('ball');x.save();x.translate(px,py);x.rotate(rot);if(img)x.drawImage(img,-pr,-pr,pr*2,pr*2);else{x.fillStyle='#f4f1e6';x.beginPath();x.arc(0,0,pr,0,7);x.fill();x.strokeStyle='#c8102e';x.lineWidth=Math.max(1,pr*.08);x.beginPath();x.arc(-pr*.9,0,pr*.7,-1,1);x.arc(pr*.9,0,pr*.7,Math.PI-1,Math.PI+1);x.stroke();}x.restore();}
  function ballPos(run,b){const xe=laneOf(b),ye=L.rimY-L.ballR1*.3,arc=(b.y0-L.rimY)*.55+L.rimR*2.5;
   if(b.state==='fly'){const u=b.u;return {x:b.x0+(xe-b.x0)*u,y:b.y0+(ye-b.y0)*u-arc*Math.sin(Math.PI*u),r:L.ballR0+(L.ballR1-L.ballR0)*Math.pow(u,.7),behind:u>.6};}
@@ -207,12 +221,12 @@ async function hoopJones(s){
   for(const p of run.shooters){const name=sheetOf(p.i),sh=BK.sheet(name),cx=L.shooterX(p.i),ready=p.reload<=0,row=p.pose,
    f=row==='shoot'?Math.min(3,Math.floor(p.poseT/.09)):row==='ready'?Math.floor((run.t*1.6+p.i*.4)%2):Math.floor(p.poseT*5)%2;
    const wob=run.shaken>0?Math.sin(run.t*48+p.i*2)*L.frameW*.025:0,top=L.shTop,left=cx-L.frameW/2+wob;
+   if(ready&&p.pose==='ready'){const [hx,hy]=HOLD[name];ballPic(left+hx*L.shK,top+hy*L.shK,HOLD_R*L.shK,0);}
    x.save();if(!ready&&p.pose==='ready')x.globalAlpha=.75;
    if(sh){const fr=BK.frameRect(sh,row,f);x.drawImage(sh.img,fr.sx,fr.sy,fr.sw,fr.sh,left,top,L.frameW,L.frameH);}
    else{x.fillStyle='#f2f2f2';x.beginPath();x.roundRect(left+L.frameW*.12,top+L.frameH*.4,L.frameW*.76,L.frameH*.7,L.frameW*.2);x.fill();x.fillStyle=p.i%2?'#3a2414':'#b8863a';x.beginPath();x.ellipse(cx,top+L.frameH*.32,L.frameW*.17,L.frameW*.2,0,0,7);x.fill();
     x.strokeStyle='#d8a07a';x.lineWidth=L.frameW*.08;x.lineCap='round';const ay=row==='shoot'?top+L.frameH*.05:top+L.frameH*.2;x.beginPath();x.moveTo(cx-L.frameW*.3,top+L.frameH*.45);x.lineTo(cx-L.frameW*.12,ay);x.moveTo(cx+L.frameW*.3,top+L.frameH*.45);x.lineTo(cx+L.frameW*.12,ay);x.stroke();}
    x.restore();
-   if(ready&&p.pose==='ready'){const [hx,hy]=HOLD[name];ballPic(left+hx*L.shK,top+hy*L.shK,44*L.shK,0);}
    const nm=(s.players[run.who]?.name||'').toUpperCase().slice(0,9);if(nm){x.font=`900 ${Math.max(8,L.frameW*.07)}px ${FONT}`;x.textAlign='center';x.textBaseline='middle';x.fillStyle='rgba(20,30,70,.85)';x.fillText(nm,cx+wob,top+NAME_Y*L.shK);}
    if(!ready){const k=1-p.reload/RELOAD;x.strokeStyle='rgba(255,210,63,.85)';x.lineWidth=3;x.beginPath();x.arc(cx,L.H-18,10,-Math.PI/2,-Math.PI/2+k*Math.PI*2);x.stroke();}}}
  function drawHud(run){const {hudX:X,hudY:Y,hudW:Wd,hudH:Hh}=L,img=BK.picture('jumbotron'),def=BK.PICTURES.jumbotron;let sx=X,sy=Y,sw=Wd,sh=Hh;
