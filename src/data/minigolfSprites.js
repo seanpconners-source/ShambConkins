@@ -69,7 +69,7 @@ const PICTURES={
  dish:{kind:'prop',size:[384,384],foot:[192,370],w:12,note:'a satellite dish'},
  // screens
  logo:{kind:'pic',size:[1200,520],note:'SITABOUT MINI GOLF title lettering, transparent'},
- 'title-bg':{kind:'pic',size:[1920,1080],note:'title screen backdrop: a sunny mini golf park at golden hour, lots of sky in the middle for the logo'},
+ 'title-bg':{kind:'pic',size:[1920,1080],focus:[.38,.45],note:'title screen backdrop: a sunny mini golf park at golden hour, lots of sky in the middle for the logo'},
  scorecard:{kind:'pic',size:[1024,640],note:'a paper scorecard texture (cream paper, faint pencil lines, a little coffee ring); the game writes the scores on it'},
  ...Object.fromEntries(C3.map(c=>[`${c}-card`,{kind:'pic',size:[960,540],note:`course picture for the course picker (${c==='bushwood'?'Bushwood Country Club: clubhouse, oaks, a gopher':c==='gilmore'?'Waterbury Putt-Putt: clown head, windmill, palm trees, an alligator pond':'Spaceball City Links: mini golf on a space station, planets and stars'})`}])),
 };

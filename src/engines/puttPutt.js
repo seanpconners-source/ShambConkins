@@ -274,7 +274,7 @@ async function minigolf(s){
   else text('tap to continue',W/2,Y+h-18,12,'#6a5a3a','center',UI,800);}
  // ------------------------------------------------------------ the course picker (Arcade)
  function drawMenu(){menuHits=[];W=s.W;H=s.H;
-  const bg=SP.picture('title-bg');if(bg){const sc=Math.max(W/bg.width,H/bg.height);x.drawImage(bg,(W-bg.width*sc)/2,(H-bg.height*sc)/2,bg.width*sc,bg.height*sc);}
+  const bg=SP.picture('title-bg');if(bg){const sc=Math.max(W/bg.width,H/bg.height),bw=bg.width*sc,bh=bg.height*sc,f=SP.PICTURES['title-bg'].focus||[.5,.5];x.drawImage(bg,clamp(W/2-f[0]*bw,W-bw,0),clamp(H/2-f[1]*bh,H-bh,0),bw,bh);}
   else{const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#7cc8ff');g.addColorStop(.55,'#c8ecff');g.addColorStop(.56,'#4fb04a');g.addColorStop(1,'#2d6e2a');x.fillStyle=g;x.fillRect(0,0,W,H);
    x.fillStyle='rgba(255,255,255,.8)';for(const [cx,cy,r] of [[.2,.12,.06],[.27,.1,.045],[.75,.18,.05],[.82,.16,.04]]){x.beginPath();x.arc(cx*W,cy*H,r*Math.max(W,H),0,7);x.fill();}
    R.drawProp(x,'oak',W*.1,H*.6,W*.22,{});R.drawProp(x,'pine',W*.9,H*.6,W*.14,{});R.drawProp(x,'flag',W*.72,H*.62,W*.06,{t:T});}

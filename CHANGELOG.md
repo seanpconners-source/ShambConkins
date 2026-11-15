@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.99.5
+
+- **Sitabout Mini Golf:** the course picker now has your title backdrop (Sean and Amber putting with the dogs, the clown head, the windmill, the castle and Mega Maid). On upright phones the picture stays centred on the two of you.
+
 ## v0.99.4
 
 - **BASEketball Shootout:** the ball in each shooter's hands is bigger and sits behind his hands, as if he's holding it up toward the hoop (it used to sit in front of his hands, on the screen side).
