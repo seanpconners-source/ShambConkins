@@ -331,7 +331,7 @@ async function broforce(s){
   if(theme.ext){for(const f of theme.foes||[])for(const l of Object.values(f))for(const t of l)names.push('foe-'+t);for(const b of theme.bosses||[])names.push('boss-'+b);}
   else names.push('foe-mook','foe-bomber','foe-grenadier','foe-bruiser','foe-dog','boss-devil');
   for(const n of [...names])if(n.startsWith('foe-'))names.push('dead-'+n.slice(4));
-  names.push('dead-bro',...Object.keys(BS.SHEETS).filter(k=>BS.SHEETS[k].fx),...Object.keys(BS.PICTURES).filter(k=>/^(gun-|shot-|bullet-|fx-|crack-|firebar-|ring-pickup|shell-casing|prop-)/.test(k)),'bro-torso',...Object.keys(BS.SHEETS).filter(k=>/^(arms-|prop-)/.test(k)));
+  names.push('dead-bro',...Object.keys(BS.SHEETS).filter(k=>BS.SHEETS[k].fx),...Object.keys(BS.PICTURES).filter(k=>/^(gun-|shot-|bullet-|fx-|crack-|firebar-|ring-pickup|shell-casing|prop-)/.test(k)),'bro-torso','bro-run',...Object.keys(BS.SHEETS).filter(k=>/^(arms-|prop-)/.test(k)));
   BS.preload([...new Set(names)]);};
  preloadArt();
  let STAGES=mkStages(seed);
@@ -1151,12 +1151,17 @@ async function broforce(s){
   if(p.inv>0&&(frames>>2)%2&&p.inv<2)g.globalAlpha=.45;
   const f=p.facing,run=p.grounded&&Math.abs(p.vx)>10,ph=p.anim,air=!p.grounded&&!p.ladder;
   const ts=BS.sheet('bro-torso'),as=ts&&!p.ladder&&BS.sheet('arms-'+p.weapon),bsh=as?ts:BS.sheet('bro-body');
-  if(bsh){const d=bsh.def,walk=as&&Math.abs(p.vx)<70?'walk':'run',row=p.ladder?'ladder':p.climb&&!p.grounded?'climb':air?(p.vy<0?'jump':'fall'):run?walk:'idle';
+  // bro-run = the same armed body with a smooth 8-frame walk + run (replaces bro-body's run row when it's in)
+  const rsh=!as&&BS.sheet('bro-run');
+  if(bsh){const walk=(as||rsh)&&Math.abs(p.vx)<70?'walk':'run',row=p.ladder?'ladder':p.climb&&!p.grounded?'climb':air?(p.vy<0?'jump':'fall'):run?walk:'idle';
+   const S=rsh&&(row==='run'||row==='walk')?rsh:bsh,d=S.def;
    const fr=row==='idle'?Math.floor(time*2):row==='run'||row==='walk'?Math.floor(ph/.09/STRIDE[row]*(d.rows[row]||1)):Math.floor(ph*1.6);
-   p.bodyRow=row;p.bodyFr=fr;g.save();g.translate(p.x,p.y);g.scale(f,1);BS.drawFrame(g,bsh,row,fr,0,0,1);
-   if(as){const ad=as.def,sx=(d.shoulder[0]-d.feet[0])/BS.K,sy=(d.shoulder[1]-d.feet[1])/BS.K,[frow,ff]=fireFrame(p,time);BS.drawFrame(g,as,frow,ff,sx,sy,1);}
-   else if(!p.ladder){const [hx,hy]=handAt(d,p);drawGun(p.weapon,hx-p.recoil*1.5,hy);}
-   if(!p.ladder&&p.muzzle>0&&p.weapon!=='flame'){const [mx,my]=gunTip(p),rc=as?0:p.recoil*1.5;if(!BS.drawFx(g,'fx-muzzle',mx-rc,my,1-p.muzzle/.06)){g.fillStyle='#fff3a0';g.beginPath();g.arc(mx-rc,my,3,0,7);g.fill();}}
+   p.bodyRow=row;p.bodyFr=fr;p.bodyDef=d;g.save();g.translate(p.x,p.y);g.scale(f,1);BS.drawFrame(g,S,row,fr,0,0,1);
+   const ks=p.ladder?null:kickAt(p,time,d);
+   if(as){const sx=(d.shoulder[0]-d.feet[0])/BS.K,sy=(d.shoulder[1]-d.feet[1])/BS.K,[frow,ff]=fireFrame(p,time);g.save();kickXf(ks);BS.drawFrame(g,as,frow,ff,sx,sy,1);g.restore();}
+   // the old body's fist doesn't move: the gun kicks round the hand so it stays in the fist
+   let kf=ks;if(!as&&!p.ladder){const [hx,hy]=handAt(d,p);if(ks)kf={...ks,x:ks.x*.6,sx:hx,sy:hy};g.save();kickXf(kf);drawGun(p.weapon,hx-(ks?0:p.recoil*1.5),hy);g.restore();}
+   if(!p.ladder&&p.muzzle>0&&p.weapon!=='flame'){const [mx,my]=gunTip(p),rc=as||ks?0:p.recoil*1.5;g.save();if(kf)kickXf(kf);if(!BS.drawFx(g,'fx-muzzle',mx-rc,my,1-p.muzzle/.06)){g.fillStyle='#fff3a0';g.beginPath();g.arc(mx-rc,my,3,0,7);g.fill();}g.restore();}
    g.restore();const ny=(d.neck[1]-d.feet[1])/BS.K,nx=(d.neck[0]-d.feet[0])/BS.K;drawHead(p.bro,broMood(p),p.x+f*nx,p.y+ny+1/BRO_K,17/BRO_K,f,true);g.globalAlpha=1;return;}
   g.save();g.translate(p.x,p.y);g.scale(f,1);
   const col=PCOL[p.i],dark=p.i?'#7a2a52':'#1f3a7a';
@@ -1189,9 +1194,17 @@ async function broforce(s){
  function handAt(d,p){const t=d.hands&&d.hands[p.bodyRow],h=t?t[((p.bodyFr||0)%t.length+t.length)%t.length]:d.hand;return [(h[0]-d.feet[0])/BS.K,(h[1]-d.feet[1])/BS.K];}
  function gunTip(p){const w=p.weapon,ts=BS.sheet('bro-torso'),as=ts&&BS.sheet('arms-'+w);
   if(as){const td=ts.def,ad=as.def;return [(td.shoulder[0]-td.feet[0]+ad.muzzle[0]-ad.shoulder[0])/BS.K,(td.shoulder[1]-td.feet[1]+ad.muzzle[1]-ad.shoulder[1])/BS.K];}
-  const bs=BS.sheet('bro-body');let hx=6,hy=-14;if(bs)[hx,hy]=handAt(bs.def,p);
+  const bs=BS.sheet('bro-body');let hx=6,hy=-14;if(bs)[hx,hy]=handAt(p.bodyDef&&p.bodyDef.hand?p.bodyDef:bs.def,p);
   const gp=BS.picture('gun-'+w)&&BS.PICTURES['gun-'+w];if(gp&&gp.muzzle)return [hx+(gp.muzzle[0]-gp.anchor[0])/BS.K,hy+(gp.muzzle[1]-gp.anchor[1])/BS.K];
   return [hx+(WEAPON_LEN[w]||10),hy-.5];}
+ // the kick on every shot, drawn in code on top of the arms sheet (GPT's fire frames barely move: 1-4 px): [push back px,
+ // tip up rad]; negative = a throw (lunge forward, tip down). Turns round the shoulder.
+ const KICK={rocket:[3,.12],railgun:[3.2,.1],shotgun:[2.6,.14],plasma:[2.2,.08],rifle:[1.4,.05],laser:[1.2,.04],ring:[1.2,.05],lightning:[.8,.03],
+  pulse:[.9,.035],minigun:[.9,.02],pistols:[1,.06],flame:[.5,.015],holy:[-1.5,-.08],fireball:[-1.2,-.06],boomerang:[-2,-.1]};
+ function kickAt(p,time,d){const k=KICK[p.weapon];if(!k)return null;const w=WEAPONS[p.weapon]||{},t=p.fireT??9;let e;
+  if((w.rate||1)<.1)e=t<.12?.55+.45*Math.abs(Math.sin(time*45)):0;else e=t<.04?t/.04:Math.max(0,1-(t-.04)/.16);
+  if(e<=0)return null;return {x:k[0]*e,r:k[1]*e,sx:(d.shoulder[0]-d.feet[0])/BS.K,sy:(d.shoulder[1]-d.feet[1])/BS.K};}
+ function kickXf(k){if(!k)return;g.translate(k.sx,k.sy);g.rotate(-k.r);g.translate(-k.x-k.sx,-k.sy);}
  // arms sheet frame: the 4-frame fire cycle after each shot (fast guns loop it while the trigger is held), else hold
  function fireFrame(p,time){const w=WEAPONS[p.weapon]||{rate:.3},rate=w.rate||.3;
   if(rate<.1)return p.fireT<.12?['fire',Math.floor(time*(p.weapon==='minigun'?30:22))%(p.weapon==='minigun'?4:2)]:['hold',0];

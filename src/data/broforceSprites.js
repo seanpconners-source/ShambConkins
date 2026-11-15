@@ -15,7 +15,7 @@ const SMALL=[64,96],BIG=[128,128],TANK=[160,96],FLY=[64,64];
 const foeSheet=(frame,rows)=>({frame,rows,feet:[frame[0]/2,frame[1]-2]});
 const SHEETS={
  // the bro: headless soldier body (vest + bandolier + arms, no gun: the game draws each bro's own gun at `hand`)
- 'bro-body':{frame:[64,96],rows:{idle:2,run:6,jump:1,fall:1,climb:2,ladder:2},feet:[32,94],neck:[32,22],hand:[56,50],
+ 'bro-body':{frame:[64,96],rows:{idle:2,run:6,jump:1,fall:1,climb:2,ladder:2},feet:[32,94],neck:[32,22],hand:[56,50],shoulder:[26,37],
   // the fist in every frame of the owner's sheet (measured: it rises up to 10 px while running), so the gun sits in it
   hands:{idle:[[56,51],[56,51]],run:[[56,49.7],[56,45.3],[56,45.6],[56,46.6],[56,41],[56,43]],jump:[[56,48]],fall:[[56,45]],climb:[[56,39.2],[56,40.9]]}},
  // the first four worlds' enemies
@@ -101,6 +101,11 @@ Object.assign(PICTURES,{
 // `shoulder`; with no arms picture for the gun in hand the old bro-body + gun picture is drawn instead.
 SHEETS['bro-torso']={frame:[64,96],rows:{idle:2,walk:8,run:8,jump:1,fall:1,climb:2,ladder:2},feet:[32,94],neck:[32,22],shoulder:[26,37],
  note:'the same headless bro as bro-body, but with NO ARMS (the shoulder is a clean rounded stump on the red cross; the arms come as a separate picture per gun). Ladder rows keep both arms on the rungs. walk = 8-frame slow walk, run = 8-frame smooth run cycle (contact, down, pass, up, for each leg), the shoulder stays on the cross in every frame'};
+// bro-run: the bro-body exactly as it is (arms, fist forward, same size) with a smooth 8-frame walk and run; the gun is drawn
+// in the fist as now (owner, Nov 15: GPT's separate arms came out ~40% too big, the old body looked better). Fist spots per frame
+// get measured on import (`hands`), like bro-body's.
+SHEETS['bro-run']={frame:[64,96],rows:{walk:8,run:8},feet:[32,94],neck:[32,22],hand:[56,50],shoulder:[26,37],
+ note:'the bro-body, same arms and fist, same size: only the legs move (8-frame walk, 8-frame run), the upper body bobs a little'};
 // arms + gun: both arms, hands and the gun as one piece, the shoulder on the red cross, the hand on the grip ring, the barrel tip on
 // the muzzle cross. hold = 1 frame; fire = 4 frames played on every shot (kick, recover, then the gun's own cycle).
 const ARMS_FIRE={rifle:'kick back + muzzle rises, recover, bolt/charging handle back, forward',shotgun:'big kick back, recover, pump slide BACK, pump slide forward',
@@ -115,6 +120,8 @@ const ARMS={frame:[160,80],shoulder:[32,28],grip:[62,42]};   // grip = shoulder 
 for(const id of GUN_IDS){const gm=GUN_MUZZLE[id],ga=[48,24];
  SHEETS['arms-'+id]={frame:ARMS.frame,rows:{hold:1,fire:4},feet:ARMS.shoulder,shoulder:ARMS.shoulder,grip:ARMS.grip,muzzle:[ARMS.grip[0]+gm[0]-ga[0],ARMS.grip[1]+gm[1]-ga[1]],gun:id,
   note:'both arms holding the '+id+' (same gun picture as gun-'+id+', grip in the hand on the ring, barrel tip on the muzzle cross). hold: aiming forward. fire: '+ARMS_FIRE[id]};}
+// the owner approved a different shotgun for the arms (double-bell scatter cannon): its mouths sit higher (measured)
+SHEETS['arms-shotgun'].muzzle=[118,22.5];
 // props: bottom middle = where it stands (props drawn by the game until a picture is in). Sheets loop.
 Object.assign(PICTURES,{
  'prop-tower':{size:[192,384],anchor:[96,384],kind:'prop',note:'wooden enemy watchtower with a roofed lookout platform at the top, ladder up one leg; the game stretches it to the tower\'s width/height'},

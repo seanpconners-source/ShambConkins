@@ -34,8 +34,10 @@ let n = 0;
 for (const name of names) {
   if (only.length && !only.includes(name)) continue;
   const gsrc = name === 'bro-torso' ? guide('bro-body') : name.startsWith('arms-') ? guide('gun-' + name.slice(5)) : null;
-  const data = await page.evaluate(async ([name, gsrc]) => {
-    const gimg = gsrc ? await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = gsrc; }) : null;
+  const bsrc = name.startsWith('arms-') ? guide('bro-body') : null;
+  const data = await page.evaluate(async ([name, gsrc, bsrc]) => {
+    const load = u => u ? new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = u; }) : null;
+    const gimg = await load(gsrc), bimg = await load(bsrc);
     const B = require('src/data/broforceSprites.js'), EXT = require('src/engines/broforce/ext.js'), WX = require('src/engines/broforce/worlds.js');
     const themes = {...window.OLD_THEMES, ...WX.THEMES_EXT};
     const c = document.getElementById('c'), x = c.getContext('2d');
@@ -72,8 +74,10 @@ for (const name of names) {
               const fi = row === 'run' || row === 'walk' ? 0 : f % bc; x.globalAlpha = .28; x.drawImage(gimg, fi * bd.frame[0] * s2, ri * bd.frame[1] * s2, bd.frame[0] * s2, bd.frame[1] * s2, X0, Y0, fw, fh); x.globalAlpha = 1;
               if (row !== 'ladder') { x.strokeStyle = '#d0f'; x.lineWidth = 2; x.beginPath(); x.arc(X0 + def.shoulder[0], Y0 + def.shoulder[1], 7, 0, 7); x.stroke(); cross(X0 + def.shoulder[0], Y0 + def.shoulder[1], '#d0f'); } }
             if (name.startsWith('arms-')) { const [sx, sy] = def.shoulder, [gx, gy] = def.grip, [mx, my] = def.muzzle;
+              if (bimg) { // the current body's own arm (right size!) faintly, its shoulder on the magenta cross
+                const bd = B.SHEETS['bro-body'], s2 = bimg.width / (Math.max(...Object.values(bd.rows)) * bd.frame[0]); x.save(); x.beginPath(); x.rect(X0, Y0, fw, fh); x.clip(); x.globalAlpha = .3;
+                x.drawImage(bimg, 0, 0, bd.frame[0] * s2, bd.frame[1] * s2, X0 + sx - bd.shoulder[0], Y0 + sy - bd.shoulder[1], bd.frame[0], bd.frame[1]); x.restore(); }
               if (gimg) { const gd = B.PICTURES['gun-' + def.gun], k2 = gimg.width / gd.size[0], kick = row === 'fire' && f === 0 ? -3 : 0; x.globalAlpha = .3; x.drawImage(gimg, X0 + gx - gd.anchor[0] + kick, Y0 + gy - gd.anchor[1] + (kick ? -1 : 0), gd.size[0], gd.size[1]); x.globalAlpha = 1; }
-              x.globalAlpha = .3; x.strokeStyle = '#a66'; x.lineWidth = 7; x.lineCap = 'round'; x.beginPath(); x.moveTo(X0 + sx, Y0 + sy); x.lineTo(X0 + sx + 6, Y0 + gy + 2); x.lineTo(X0 + gx, Y0 + gy); x.stroke(); x.beginPath(); x.moveTo(X0 + sx - 3, Y0 + sy + 2); x.lineTo(X0 + gx + 22, Y0 + gy - 3); x.stroke(); x.globalAlpha = 1; x.lineCap = 'butt';
               x.strokeStyle = '#d0f'; x.lineWidth = 2; x.beginPath(); x.arc(X0 + sx, Y0 + sy, 7, 0, 7); x.stroke(); cross(X0 + sx, Y0 + sy, '#d0f');
               x.strokeStyle = '#c90'; x.beginPath(); x.arc(X0 + gx, Y0 + gy, 5, 0, 7); x.stroke(); cross(X0 + mx, Y0 + my, '#e00');
               label(row === 'hold' ? 'hold' : 'fire ' + (f + 1) + ': ' + (def.note.split('fire: ')[1] || '').split(', ')[f], X0 + 4, Y0 + fh - 5, '#036', 9); label(`${row} ${f + 1}`, X0 + 4, Y0 + 12, '#003', 10); continue; }
@@ -141,7 +145,7 @@ for (const name of names) {
     label(name, 6, 16, '#000', 12); if (key) { x.font = 'bold 10px Arial'; const words = notes[key].split(' '); let line = '', yy = 32; for (const wd of words) { if (x.measureText(line + wd).width > w - 12) { label(line, 6, yy, '#036', 10); line = ''; yy += 12; } line += wd + ' '; } label(line, 6, yy, '#036', 10); }
     cross(w / 2, h - 3, '#e00');
     return c.toDataURL('image/png');
-  }, [name, gsrc]);
+  }, [name, gsrc, bsrc]);
   fs.writeFileSync(path.join(outDir, name + '.png'), Buffer.from(data.split(',')[1], 'base64')); n++;
 }
 await browser.close();

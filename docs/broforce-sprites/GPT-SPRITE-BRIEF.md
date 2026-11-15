@@ -183,3 +183,7 @@ shoulder-mounted rocket tube (the game draws the face on top of everything).
 - `prop-sign` 112 x 96: wooden arrow sign on a post pointing RIGHT, blank board (the game writes BRO ZONE).
 - `firebar-base` 32 x 32: the bolted metal hub a spinning fire bar turns on (centre = the hub).
 Optional: a world-specific look for any prop as `<prop>-<world>` (e.g. `prop-brazier-hell`), same size.
+
+# ROUND 3 CORRECTIONS (Nov 15)
+See GPT-CORRECTIONS-ROUND3.md: new `bro-run` slot (the current armed body with a smooth walk/run), arm sheets redrawn at the
+body's own arm size, position-worded motion frames, tower without its ladder, rifle arms from the supplied gun picture.

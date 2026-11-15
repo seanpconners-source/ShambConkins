@@ -45,6 +45,15 @@ loop); an arms sheet replaces bro-body + gun picture only for that gun. Props: p
 searchlight/helipad/sign, firebar-base (drawPropPic; '<prop>-<world>' override). Templates (26, guides = current body/guns) + brief
 ROUND 3 + kit zip (scratchpad sean-of-a-gun-round3-kit.zip). Checked with stand-ins in a private build; games.mjs broforce 9/9.
 
+SEAN OF A GUN ROUND 3 ART (Nov 15, branch, unreleased): GPT's round 3 from Drive (UPLOADS-GPT-2026-11-15-1121/1126/1726): 10 props IN
+(assets/broforce prop-*/firebar-base, lossless; originals assets/originals/broforce), drawn by drawPropPic. bro-torso + 14 arms-* sheets
+came ~40% too big (owner: 'ridiculous, looked better before') = kept ONLY as originals (assets/originals/broforce; arms-rifle-composite.png
+= tools/broforce/rifle-arms.py from the laser arms); game = old bro-body + gun in the fist. KICK in code on every shot (KICK table,
+kickAt/kickXf; round the hand on bro-body, round the shoulder with arms sheets; fast guns shudder). New slot bro-run (bro-body + 8-frame
+walk/run; template tools/broforce/bro-run-template.py uses the torso's legs). Arms templates now show the body's own arm faintly.
+GPT list docs/broforce-sprites/GPT-CORRECTIONS-ROUND3.md (bro-run first, tower without ladder, arms at the arm's size, position-worded
+motion, rifle as 'supplied prop'); kit zip scratchpad sean-of-a-gun-round3-corrections.zip. games.mjs broforce 9/9.
+
 SEAN OF A GUN ROUND 2 ART IN (Nov 15, released as v0.99.7 after merging main v0.99.6): GPT's 109 round-2 pictures from Drive
 (notes UPLOADS-GPT-2026-11-15-0218..0222 + 0317; 'Sean of a Gun (Broforce) — Sprites / Round 2 — *' + round2-*-small-finals zips),
 every one exactly 2x template, lossless WebP in assets/broforce (originals assets/originals/broforce): ground-/rock-<8 worlds> 2048
