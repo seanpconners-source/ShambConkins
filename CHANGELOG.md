@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.99.8
+
+- **Sean of a Gun, guns in hand:** the bro now holds each gun in his own arms (14 guns drawn with both hands on the gun; the lightning gun keeps the gun in the fist), and every shot kicks the gun back and up. Bullets and the muzzle flash come out of the barrel tip, for enemies too.
+- **Smooth run:** a new 8-step run and walk instead of the knee-up shuffle.
+- **Every gun digs:** holy water, fire flower, boomerang and the lightning gun break ground now (the flamethrower is still the slowest).
+- **Props are pictures:** fire barrels, waving banners, watchtowers, hanging lamps, fence posts, barbed wire, searchlights, the helipad, the BRO ZONE sign and the fire bar hub.
+- Dead bodies lie in the grass instead of floating on it, and the minigun troops are a little smaller.
+
 ## v0.99.7
 
 - **Sean of a Gun, every picture in:** the last 109 pictures from the art kit. Each world's ground and rock is now one big painted piece of earth (no more block grid), all 15 guns are drawn in the bro's hand, every enemy (and a dead bro wearing your face) leaves a body, and the explosions, smoke, blood, gibs, fire, muzzle flashes, lightning, beams, portals, shots and bullets are all pictures now. The Game World's spiked hog robot and the egg-pod boss got their own new designs.
