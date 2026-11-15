@@ -30,6 +30,16 @@ far/mid strips stretch their bottom 3 rows to the screen bottom + far follows li
 dead, seamless) + brief ROUND 2 section + kit zip (scratchpad sean-of-a-gun-round2-kit.zip). Checked with the templates as stand-ins
 in a private build (scratch bfstand.mjs): all play, no errors. Rock tiles inside dirt still show square edges until rock-<world> art.
 
+SEAN OF A GUN SIZES + GUNS + PIPES (Nov 15, unreleased; owner: all weapons on all worlds, every gun frees cages, flamethrower
+digs, pipes one big tube, bodies bigger, relative sizes all over the place): broforce.js WEAPON_IDS = all 15 (old 5 + EXT.WEAPONS2):
+wpnFor = weaponFor (hash over all), crates/? blocks anyGun(); X.updateStage/X.drawStage now run on every world (lightning arcs,
+zones). Lightning gun zaps a cage in reach when no foe is (ext.js fire). Flames damageTile .07 on soft ground (.25 wood/crates).
+drawPipes(): one tube per run of PIPE tiles (cap = top of the sheet's pipe cell, body stretched), PIPE skipped in the tile loop.
+SIZES: BRO_K 1.3 (drawBro scales the body round the feet; head size param /BRO_K so the head stays as it was), FOE_K 1.45,
+SIZE table (bruiser 2, demon 1.9, tanks 1.7, ...), sizeOf(type); makeFoe scales w/h (collision h capped 30, w 7.5), e.sz drives
+drawFoe/drawCorpse; bubbles use e.h/e.sz. Bosses BOSS_K 1.2 (sz + hw/hh, devil too). Cages CAGE_K 1.3 (CG_W/CG_H hit box).
+P.h 24, muzzle at 12*BRO_K / -11*BRO_K. Checked: scratch bfsize/bfsize2 screenshots (jungle, games, hell, space).
+
 SEAN OF A GUN HEADS (Nov 14, unreleased; owner: head sizes all over the place, chins cut off, keep the outline + general size,
 ~10% smaller, account for hair/ears/facing): broforce.js headCanvas(id,mood,72,face=true) → renderFaceHead uses headFacts: face
 width = FACE_W 35 of the 72-unit box (same for everyone), whole head kept (hair/ears/hats; neck under the chin narrowed to the
