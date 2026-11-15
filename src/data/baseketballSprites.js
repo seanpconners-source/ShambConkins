@@ -36,7 +36,7 @@ const SHEETS={
 //  court-logo: a centre-court logo painted on the floor (seen straight down; the game lays it flat), transparent around it.
 //  logo / logo-hoop: the game's title lettering for each mode, transparent.
 const PICTURES={
- stadium:{kind:'bg',size:[2400,1200],horizon:780},
+ stadium:{kind:'bg',size:[2400,1200],horizon:738},   // owner's garage stadium (Nov 15): field meets the wall at 61.5%
  'stadium-hoop':{kind:'bg',size:[2400,1200],horizon:780},
  backboard:{kind:'board',size:[600,420],rim:[300,380]},
  pole:{kind:'pole',size:[120,600]},

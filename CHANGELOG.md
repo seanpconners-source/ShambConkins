@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.99.3
+
+- **BASEketball Shootout:** your stadium with the garage, the base pads and the 1998 banners is now the backdrop (the game had the earlier crowd-and-wall picture).
+- The hoop moves much slower in the early rounds: 8 seconds to go across and back in round 1 (was 3.3), speeding up a little every round to 1.6 seconds by round 9.
+
 ## v0.99.2
 
 - **Sitabout Mini Golf art is in:** GPT's pictures for all three courses: turf, lawns, rails and raised-green sides, sand, water, ice, carpet, conveyor, the windmill and its sails, the clown head and teeth, the gator, gophers, bumpers, tunnels, trampolines, portals, Mega Maid's vacuum, trees, bushes, flowers, carts, signs, the flag and cup, the logo, the scorecard and the three course cards.
