@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.99.6
+
+- **Sitabout Mini Golf:** the title backdrop is now the full-quality picture (3840x2160, no compression loss) instead of the small copy from chat.
+
 ## v0.99.5
 
 - **Sitabout Mini Golf:** the course picker now has your title backdrop (Sean and Amber putting with the dogs, the clown head, the windmill, the castle and Mega Maid). On upright phones the picture stays centred on the two of you.
