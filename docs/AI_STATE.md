@@ -2,6 +2,7 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+v0.99.4 RELEASED (Nov 15, owner: "release it!"; fuzz only): bigger held ball behind the hands + owner rim picture.
 v0.99.0 (Nov 14): BASEKETBALL SHOOTOUT = the Megatouch Hoop Jones machine (owner's screenshot; Merit: time each shot,
 hoop moves back each round and side to side, 3 straight = lightning bonus). src/engines/hoopJones.js; engine key
 basketball2p (baseketball.js is now a 3-line hand-off; the movie-rules code is in git history before 0.99.0). Id

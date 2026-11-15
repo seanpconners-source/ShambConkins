@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.99.4
+
+- **BASEketball Shootout:** the ball in each shooter's hands is bigger and sits behind his hands, as if he's holding it up toward the hoop (it used to sit in front of his hands, on the screen side).
+- New rim: your GPT picture of the orange rim replaces the drawn one. The ball passes behind the back of the ring and in front of the front.
+
 ## v0.99.3
 
 - **BASEketball Shootout:** your stadium with the garage, the base pads and the 1998 banners is now the backdrop (the game had the earlier crowd-and-wall picture).
