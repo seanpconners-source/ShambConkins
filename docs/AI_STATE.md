@@ -33,6 +33,13 @@ far/mid strips stretch their bottom 3 rows to the screen bottom + far follows li
 dead, seamless) + brief ROUND 2 section + kit zip (scratchpad sean-of-a-gun-round2-kit.zip). Checked with the templates as stand-ins
 in a private build (scratch bfstand.mjs): all play, no errors. Rock tiles inside dirt still show square edges until rock-<world> art.
 
+SEAN OF A GUN ROUND 2 ART IN (Nov 15, released as v0.99.7 after merging main v0.99.6): GPT's 109 round-2 pictures from Drive
+(notes UPLOADS-GPT-2026-11-15-0218..0222 + 0317; 'Sean of a Gun (Broforce) — Sprites / Round 2 — *' + round2-*-small-finals zips),
+every one exactly 2x template, lossless WebP in assets/broforce (originals assets/originals/broforce): ground-/rock-<8 worlds> 2048
+seamless (macro s = width/16), 15 guns, 31 dead-*, 16 fx, 16 shots, 7 bullets, cracks/firebar/ring/casing/portal + NEW foe-hog
+(bronze armadillo robot) and boss-eggbot (grey-moustached scientist, copper pod): original designs, so the held-back slots are filled.
+All 213 slots now have art; assets/broforce 181 MB (LATER 'bf:', per-world preload). Checked: scratch bfart.mjs jungle/games/hell.
+
 SEAN OF A GUN SIZES + GUNS + PIPES (Nov 15, unreleased; owner: all weapons on all worlds, every gun frees cages, flamethrower
 digs, pipes one big tube, bodies bigger, relative sizes all over the place): broforce.js WEAPON_IDS = all 15 (old 5 + EXT.WEAPONS2):
 wpnFor = weaponFor (hash over all), crates/? blocks anyGun(); X.updateStage/X.drawStage now run on every world (lightning arcs,
