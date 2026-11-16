@@ -243,7 +243,7 @@ async function paddysPool(s){
   if(drag.kind==='spin'){const sp=spinBig();setSpin((p.x-sp.x)/sp.r,(p.y-sp.y)/sp.r);return;}
   if(S.phase!=='aim'){drag=null;return;}
   if(drag.kind==='power'){const d=L.power.vert?p.y-drag.from.y:Math.abs(p.x-drag.from.x);S.power=Math.max(0,Math.min(1,(L.power.vert?Math.max(0,d):d)/((L.power.vert?L.power.h:L.power.w)*.9)));return;}
-  if(drag.kind==='wheel'){const d=L.wheel.vert?p.y-drag.last.y:p.x-drag.last.x;drag.last=p;S.angle+=d*.0022*(L.wheel.vert?1:-1);S.wheelOff=(S.wheelOff||0)+d;netAim();return;}
+  if(drag.kind==='wheel'){const d=L.wheel.vert?p.y-drag.last.y:p.x-drag.last.x;drag.last=p;S.angle+=d*.0011*(L.wheel.vert?1:-1);S.wheelOff=(S.wheelOff||0)+d;netAim();return;}
   const w=sw(p.x,p.y),cb=cueBall();
   if(drag.kind==='place'){placeCue(w);netPlace();return;}
   drag.moved=Math.max(drag.moved,Math.hypot(p.x-drag.from.x,p.y-drag.from.y));
@@ -337,14 +337,14 @@ async function paddysPool(s){
  // ---------------------------------------------------------------- drawing
  const faceFn=(id,mood)=>(cx,cy,w)=>{try{HF.drawFaceById(x,id,mood,cx,cy,w);}catch{}};
  let hallCache=null;
- function drawHallScene(){if(hallEl){const sd=W>H*1.15;if(hallEl.classList.contains('side')!==sd){hallEl.classList.toggle('side',sd);hallCache=null;}}const key=[W,H,dpr,JSON.stringify(hall.room),hall.decor.join(),hall.hide.join(),loadout.table.id,loadout.felt.id,hallSel,Math.floor(t*10)].join('|');
+ function drawHallScene(){if(hallEl){const sd=W>H*1.15;if(hallEl.classList.contains('side')!==sd){hallEl.classList.toggle('side',sd);hallCache=null;}}const key=[W,H,dpr,JSON.stringify(hall.room),hall.decor.join(),hall.hide.join(),loadout.table.id,loadout.felt.id,loadout.balls.id,hallSel,Math.floor(t*10)].join('|');
   if(hallCache&&hallCache.key===key){x.drawImage(hallCache.cv,0,0,W,H);return;}
   const cv=hallCache?.cv||document.createElement('canvas');cv.width=Math.ceil(W*dpr);cv.height=Math.ceil(H*dpr);const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
   const faces=[(cx,cy,w)=>{try{s.sprite(g,0,cx,cy,w,{exact:true,noBadge:true,still:true});}catch{}},null,(cx,cy,w)=>{try{HF.drawFaceById(g,'dennis','win',cx,cy,w);}catch{}},...['charlie','frank','mac','dee','cricket','artemis'].map(id=>(cx,cy,w)=>{try{HF.drawFaceById(g,id,'normal',cx,cy,w);}catch{}})];
   const pan=hallEl?.querySelector('.pp-panel'),cr=c.getBoundingClientRect();let view=[0,0,W,H];
   if(pan){const r=pan.getBoundingClientRect();if(hallEl.classList.contains('side'))view=[0,0,Math.max(120,r.left-cr.left),H];else view=[0,0,W,Math.max(140,r.top-cr.top+30)];}
   const [pk,pid]=(hallSel||'').split(':'),pvT=pk==='table'&&HALL.byId(HALL.TABLES,pid)||loadout.table,pvF=pk==='felt'&&HALL.byId(HALL.FELTS,pid)||loadout.felt;
-  ART.drawHall(g,W,H,hall,t,{faces,feltColor:pvF.color,table:pvT,view,highlight:pk==='table'||pk==='felt'?'table':null});
+  ART.drawHall(g,W,H,hall,t,{faces,feltColor:pvF.color,table:pvT,view,highlight:pk==='table'||pk==='felt'?'table':null,ballset:pk==='balls'&&HALL.byId(HALL.BALLSETS,pid)||loadout.balls});
   // logo
   const lg=PS.picture('logo');const lw=Math.min(view[2]*.7,420),lh=lw*.4,ly=Math.max(fb.top+(hallEl?.classList.contains('side')?6:30),view[3]*.05);if(lg)g.drawImage(lg,view[2]/2-lw/2,ly,lw,lh);else drawLogo(g,view[2]/2,ly+lw*.08,lw);
   hallCache={key,cv};x.drawImage(cv,0,0,W,H);}

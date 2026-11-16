@@ -45,6 +45,15 @@ loop); an arms sheet replaces bro-body + gun picture only for that gun. Props: p
 searchlight/helipad/sign, firebar-base (drawPropPic; '<prop>-<world>' override). Templates (26, guides = current body/guns) + brief
 ROUND 3 + kit zip (scratchpad sean-of-a-gun-round3-kit.zip). Checked with stand-ins in a private build; games.mjs broforce 9/9.
 
+POOL FIXES (Nov 16, branch, unreleased; owner's screenshots): fine-aim wheel half as sensitive (.0011 rad/px); Pool Hall rack =
+the game's own rendered balls (balls.js makeBallArt, real 8-ball rack, squashed .8 to the slant, follows the chosen/previewed
+ball set; was flat drawn dots); table picture: floor shadow drawn from the picture's own outline (a black rounded box showed past
+its carved corners) and the pocket throat between the jaws = radial shade from the hole out to dark felt (was a flat black square).
+GPT BODY KIT v2 (Nov 16): tools/broforce/body-kit.py → template (every cell = the current stocky body faint), REFERENCE, HOW-ARMS-
+ATTACH, PASTE-THIS-TO-GPT.md (same poses/size redrawn as one body, 768x1344, rows idle 2/walk 6/run 6/jump/fall/climb 2/ladder 2);
+zip local-test-reports/sean-of-a-gun-body-v2-kit.zip sent. On import: lossless WebP to assets/broforce/bro-torso.webp (original to
+assets/originals/broforce), check feet/shoulder/neck spots, no code change if the layout matches.
+
 SEAN OF A GUN STOCKY BODY (Nov 16, same branch, unreleased; owner: legs much smaller than the arms, the old walk looked better,
 'make it look professional'): cause = GPT's armless bro-torso is a slimmer man than the old bro-body (chest ~35% narrower, waist
 6 px higher, thin legs) while the arm sheets fit the old body. tools/broforce/stocky-torso.py rebuilds assets/broforce/bro-torso
