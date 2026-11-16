@@ -81,27 +81,34 @@ const ROOM={
 const ROOM_SLOTS=Object.keys(ROOM);
 const DECOR=[
  {id:'neon-paddys',name:"Paddy's Pub Neon",price:120,desc:'Green shamrock neon.'},
- {id:'chalkboard',name:'Chalkboard',price:80,desc:'Keeps the match score in chalk.'},
+ {id:'chalkboard',name:'Chalkboard',price:80,desc:'Keeps the match score in chalk: hangs on the wall while you play (race, racks, whose break).'},
  {id:'dartboard',name:'Dartboard',price:150,desc:'Mostly hit by bottles.'},
- {id:'rum-ham',name:'Rum Ham',price:90,desc:'On the bar. Nobody touch it.'},
+ {id:'rum-ham',name:'Rum Ham',price:90,desc:'On the bar, and on a stool by the table. Nobody touch it.'},
  {id:'neon-fight-milk',name:'Fight Milk Neon',price:180,desc:'The first alcoholic protein drink for bodyguards.'},
  {id:'neon-kitten',name:'Kitten Mittens Neon',price:180,desc:'Mew mew. Mew mew mew.'},
  {id:'neon-wolf',name:'Wolf Cola Neon',price:180,desc:'For closers.'},
- {id:'fan',name:'Ceiling Fan',price:120,desc:'Wobbles. Do not look directly at it.'},
+ {id:'fan',name:'Ceiling Fan',price:120,desc:'Wobbles. Its shadow turns slowly over the table.'},
  {id:'pepe-board',name:'Pepe Silvia Board',price:220,desc:'Charlie\'s conspiracy wall. Carol in HR.'},
  {id:'dennis-portrait',name:'Portrait of Dennis',price:260,desc:'Five stars. Golden. Watching.'},
- {id:'megatouch',name:'Megatouch Machine',price:350,desc:'A bar-top game machine with Photo Hunt.'},
- {id:'jukebox',name:'Jukebox',price:400,desc:'Plays music while you shoot.'},
- {id:'trophy-case',name:'Trophy Case',price:500,desc:'Shows off every rack you win.'},
+ {id:'megatouch',name:'Megatouch Machine',price:350,desc:'A bar-top game machine. By the table it keeps your shot stats: pots, best run, accuracy.'},
+ {id:'jukebox',name:'Jukebox',price:400,desc:'Stands by the table and plays music while you shoot.'},
+ {id:'trophy-case',name:'Trophy Case',price:500,desc:'Stands by the table with every rack you\'ve won (count on the chalkboard too).'},
  {id:'crowd',name:'The Regulars',price:600,desc:'A crowd round the table that cheers your shots (and boos the misses).'},
 ];
+// house upgrades: things that change how a night at the table feels (owner, Nov 16: fix the lighting, quality of life)
+const PERKS=[
+ {id:'new-bulb',name:'New Light Bulb',price:30,desc:'Charlie finally swaps the dying bulb. No more flicker (the neon behaves too).'},
+ {id:'fast-forward',name:'Fast Forward',price:120,desc:'Tap the table while the balls roll to run them 3x faster.'},
+ {id:'tip-jar',name:'Tip Jar',price:400,desc:'Regulars tip the winner: +15% cash from every rack.'},
+];
+const TIP=.15;
 // ---------------------------------------------------------------- cash
 const CASH={pot:10,bank:25,combo:25,kick:20,multi:15,rack:100,runout:150,breakrun:250,golden:200,break8:200,match:150};
 const CPU_K={easy:.7,normal:1,hard:1.4};
 const START_CASH=100;   // "grand re-opening" money on the first visit
 // ---------------------------------------------------------------- the save
 const byId=(list,id)=>list.find(q=>q.id===id);
-function freshHall(){return {cash:START_CASH,own:[],eq:{table:'paddys-wreck',felt:'paddys-green',cue:'house',balls:'bar',chalk:'blue'},room:{reno:0,light:0,tv:0,bar:0},decor:[],hide:[],stats:{racks:0,matches:0,runs:0,golden:0,best:0,earned:0},set:{assist:'full',clock:false,race:1,game:'eight',seen:false}};}
+function freshHall(){return {cash:START_CASH,own:[],eq:{table:'paddys-wreck',felt:'paddys-green',cue:'house',balls:'bar',chalk:'blue'},room:{reno:0,light:0,tv:0,bar:0},decor:[],hide:[],perks:[],stats:{racks:0,matches:0,runs:0,golden:0,best:0,earned:0},set:{assist:'full',clock:false,race:1,game:'eight',seen:false}};}
 const LISTS={table:TABLES,felt:FELTS,cue:CUES,balls:BALLSETS,chalk:CHALKS};
 function validHall(saved){
  const h=freshHall();if(!saved||typeof saved!=='object'||Array.isArray(saved))return h;
@@ -113,6 +120,7 @@ function validHall(saved){
  if(saved.eq&&typeof saved.eq==='object')for(const k of Object.keys(LISTS)){const v=saved.eq[k];if(typeof v==='string'&&byId(LISTS[k],v)&&(byId(LISTS[k],v).price===0||h.own.includes(k+':'+v)))h.eq[k]=v;}
  if(saved.room&&typeof saved.room==='object')for(const k of ROOM_SLOTS)h.room[k]=int(saved.room[k],0,ROOM[k].tiers.length-1);
  if(Array.isArray(saved.decor))h.decor=[...new Set(saved.decor.filter(d=>DECOR.some(q=>q.id===d)))];
+ if(Array.isArray(saved.perks))h.perks=[...new Set(saved.perks.filter(d=>PERKS.some(q=>q.id===d)))];
  if(Array.isArray(saved.hide))h.hide=[...new Set(saved.hide.filter(d=>h.decor.includes(d)))];
  if(saved.stats&&typeof saved.stats==='object')for(const k of Object.keys(h.stats))h.stats[k]=int(saved.stats[k],0);
  const st=saved.set;if(st&&typeof st==='object'){if(['full','std','pro'].includes(st.assist))h.set.assist=st.assist;h.set.clock=!!st.clock;if([1,2,3,5].includes(st.race))h.set.race=st.race;if(['eight','nine'].includes(st.game))h.set.game=st.game;h.set.seen=!!st.seen;}
@@ -123,9 +131,11 @@ function buy(h,kind,id){const it=byId(LISTS[kind]||[],id);if(!it||owns(h,kind,id
 function equip(h,kind,id){if(!owns(h,kind,id))return false;h.eq[kind]=id;return true;}
 function buyRoom(h,slot){const r=ROOM[slot],n=h.room[slot]+1;if(!r||n>=r.tiers.length||h.cash<r.tiers[n].price)return false;h.cash-=r.tiers[n].price;h.room[slot]=n;return true;}
 function buyDecor(h,id){const d=byId(DECOR,id);if(!d||h.decor.includes(id)||h.cash<d.price)return false;h.cash-=d.price;h.decor.push(id);return true;}
+function buyPerk(h,id){const d=byId(PERKS,id);if(!d||(h.perks||[]).includes(id)||h.cash<d.price)return false;h.cash-=d.price;(h.perks||=[]).push(id);return true;}
+const hasPerk=(h,id)=>(h.perks||[]).includes(id);
 const showsDecor=(h,id)=>h.decor.includes(id)&&!h.hide.includes(id);
-function loadout(h){return {table:byId(TABLES,h.eq.table)||TABLES[0],felt:byId(FELTS,h.eq.felt)||FELTS[0],cue:byId(CUES,h.eq.cue)||CUES[0],balls:byId(BALLSETS,h.eq.balls)||BALLSETS[0],chalk:byId(CHALKS,h.eq.chalk)||CHALKS[0],room:{...h.room},decor:h.decor.filter(d=>!h.hide.includes(d))};}
+function loadout(h){return {table:byId(TABLES,h.eq.table)||TABLES[0],felt:byId(FELTS,h.eq.felt)||FELTS[0],cue:byId(CUES,h.eq.cue)||CUES[0],balls:byId(BALLSETS,h.eq.balls)||BALLSETS[0],chalk:byId(CHALKS,h.eq.chalk)||CHALKS[0],room:{...h.room},decor:h.decor.filter(d=>!h.hide.includes(d)),perks:[...(h.perks||[])]};}
 // how much of the hall is done (for the menu): spent / total
 function progress(h){let tot=0,got=0;for(const k of Object.keys(LISTS))for(const it of LISTS[k]){tot+=it.price;if(owns(h,k,it.id))got+=it.price;}
- for(const k of ROOM_SLOTS)ROOM[k].tiers.forEach((t,i)=>{tot+=t.price;if(i<=h.room[k])got+=t.price;});for(const d of DECOR){tot+=d.price;if(h.decor.includes(d.id))got+=d.price;}return got/tot;}
-Object.assign(exports,{TABLES,FELTS,CUES,BALLSETS,CHALKS,ROOM,ROOM_SLOTS,DECOR,CASH,CPU_K,START_CASH,LISTS,byId,freshHall,validHall,owns,buy,equip,buyRoom,buyDecor,showsDecor,loadout,progress});
+ for(const k of ROOM_SLOTS)ROOM[k].tiers.forEach((t,i)=>{tot+=t.price;if(i<=h.room[k])got+=t.price;});for(const d of DECOR){tot+=d.price;if(h.decor.includes(d.id))got+=d.price;}for(const d of PERKS){tot+=d.price;if((h.perks||[]).includes(d.id))got+=d.price;}return got/tot;}
+Object.assign(exports,{TABLES,FELTS,CUES,BALLSETS,CHALKS,ROOM,ROOM_SLOTS,DECOR,PERKS,TIP,buyPerk,hasPerk,CASH,CPU_K,START_CASH,LISTS,byId,freshHall,validHall,owns,buy,equip,buyRoom,buyDecor,showsDecor,loadout,progress});

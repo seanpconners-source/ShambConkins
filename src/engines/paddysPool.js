@@ -72,7 +72,7 @@ async function paddysPool(s){
  const cueOf=p=>net?(p===me?loadout.cue:theirCue):loadout.cue;
  // ---------------------------------------------------------------- state
  const S={phase:'wait',m:null,balls:[],angle:0,power:0,side:0,vert:0,spinOpen:false,call:-1,clock:CLOCK,rec:null,on:[],
-  pots:[[],[]],cash:[{},{}],potCount:[0,0],banner:[],quip:null,pops:[],sinking:[],replay:null,frames:[],lastFrames:null,cueT:0,aiming:false,lastShot:null,
+  pots:[[],[]],cash:[{},{}],potCount:[0,0],shots:[0,0],made:[0,0],bestRun:[0,0],run:{p:0,n:0},ff:false,banner:[],quip:null,pops:[],sinking:[],replay:null,frames:[],lastFrames:null,cueT:0,aiming:false,lastShot:null,
   plan:null,planBusy:false,botT:0,hover:null,tray:[[],[]],summary:null,rackWin:null,shooter:0,foulMsg:''};
  const rackRand=n=>{let h=2166136261;for(const ch of String(s.seed||'pool')+':'+n){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}let a=h>>>0;return()=>{a=a+0x6D2B79F5|0;let q=Math.imul(a^a>>>15,1|a);q=q+Math.imul(q^q>>>7,61|q)^q;return((q^q>>>14)>>>0)/4294967296;};};
  const cueBall=()=>S.balls[0];
@@ -103,12 +103,20 @@ async function paddysPool(s){
   g.setTransform(dpr,0,0,dpr,0,0);g.translate(pw/2,ph/2);if(L.rot)g.rotate(-Math.PI/2);g.scale(L.k,L.k);
   ART.drawTable(g,T,{look:loadout.table.look,felt:loadout.felt,wear:loadout.table.look.wear,rough:loadout.table.feel.rough||[],id:loadout.table.id,k:L.k});
   return layers.table={key,cv,pw,ph};}
- function floorLayer(){const key=[L.W,L.H,dpr,loadout.room.reno,PS.version()].join();if(layers.floor&&layers.floor.key===key)return layers.floor;
+ const perk=id=>(loadout.perks||[]).includes(id);
+ // the free floor round the table (screen rects), for the jukebox / trophy case / Megatouch / rum ham
+ function floorRegions(){const tl=tableLayer(),tx=L.cx-tl.pw/2+14,ty=L.cy-tl.ph/2+14,tw=tl.pw-28,th=tl.ph-28,out=[];
+  if(L.rot){const top=L.wall[3]+6,bot=L.power.y-8;out.push([0,ty,tx-6,th],[tx+tw+6,ty,L.W-tx-tw-6,th],[6,top,L.W-12,ty-top-6],[6,ty+th+6,L.W-12,bot-ty-th-6]);}
+  else{const top=L.hudY+L.hudH+8;out.push([L.power.x+L.power.w+8,top,tx-6-(L.power.x+L.power.w+8),L.H-6-top],[tx+tw+6,L.spin.y+L.spin.r+26,L.wheel.x-8-(tx+tw+6),L.H-6-(L.spin.y+L.spin.r+26)]);}
+  return out.filter(r=>r[2]>0&&r[3]>0);}
+ function floorLayer(){const key=[L.W,L.H,dpr,loadout.room.reno,PS.version(),loadout.decor.join(),hall.stats.racks].join();if(layers.floor&&layers.floor.key===key)return layers.floor;
   const cv=document.createElement('canvas');cv.width=Math.ceil(L.W*dpr);cv.height=Math.ceil(L.H*dpr);const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
   ART.drawFloor(g,L.W,L.H,loadout.room.reno);
   // light pool around the table + darker corners
   const rg=g.createRadialGradient(L.cx,L.cy,Math.min(L.W,L.H)*.2,L.cx,L.cy,Math.max(L.W,L.H)*.75);rg.addColorStop(0,'rgba(255,230,170,.12)');rg.addColorStop(1,'rgba(0,0,0,.6)');g.fillStyle=rg;g.fillRect(0,0,L.W,L.H);
-  return layers.floor={key,cv};}
+  // the decorations you bought stand round the table where the screen has room
+  let props={};try{props=ART.drawFloorProps(g,floorRegions(),loadout.decor,hall.stats.racks);}catch(e){console.warn(e);}
+  return layers.floor={key,cv,props};}
  // ---------------------------------------------------------------- the match
  function newRack(){const m=S.m,rr=rackRand(m.rackNo);S.balls=PH.rack(game,rr);S.pots=[[],[]];S.tray=[[],[]];S.call=-1;S.side=S.vert=0;S.angle=0;S.lastFrames=null;S.replay=null;
   S.rackT=t;aimAtRack();}
@@ -116,7 +124,7 @@ async function paddysPool(s){
  const targetIds=()=>{const on=S.balls.filter(b=>b.on&&b.id).map(b=>b.id);return RU.targets(S.m,on);};
  function banner(text,sub='',col='#ffd23f',dur=1.8){S.banner.push({text,sub,col,dur,t0:null});}
  function quip(kind){if(Math.random()<.45&&kind!=='win'&&kind!=='runout')return;const list=QUIPS[kind];if(!list)return;const [id,line]=list[Math.floor(Math.random()*list.length)];S.quip={id,line,t0:t,dur:3.2};}
- function earn(p,key,n=1){const v=HALL.CASH[key]*n;if(!v)return;S.cash[p][key]=(S.cash[p][key]||0)+v;}
+ function earn(p,key,n=1){const v=Math.round(HALL.CASH[key]*n*(perk('tip-jar')?1+HALL.TIP:1));if(!v)return;S.cash[p][key]=(S.cash[p][key]||0)+v;}
  // ---------------------------------------------------------------- shooting
  function shotParams(){const st=cueOf(S.m.turn).stats,dir=[Math.cos(S.angle),Math.sin(S.angle)];return {dir,speed:Math.max(8,S.power*330*st.power),side:S.side,vert:S.vert};}
  function fire(p=shotParams(),remote=false){
@@ -128,13 +136,13 @@ async function paddysPool(s){
   const ev=S.ev,o={ball:ev.ball,rail:ev.rail,pocket:ev.pocket};
   S.events={ball:(a,b,v)=>{o.ball(a,b);sfx.clack(v);},rail:(b,v,kind)=>{o.rail(b,v,kind);sfx.rail(v);},pocket:(b,i)=>{o.pocket(b,i);sfx.pocket(b.sinkV||60);S.sinking.push({id:b.id,x:b.x,y:b.y,p:T.pockets[i],t0:t});if(b.id){const pp=T.pockets[i],q=ws(pp.x,pp.y);S.pops.push({x:q.x,y:q.y,text:b.id===0?'SCRATCH':'',t0:t});}}};
   PH.strike(cb,p.dir,p.speed,p.side,p.vert);sfx.cue(Math.min(1,p.speed/330));vibrate(Math.round(8+p.speed/20));
-  S.phase='roll';S.rollT=0;S.acc=0;S.cueT=t;S.lastShot={...p,from:{x:cb.x,y:cb.y}};S.frames=[];S.frameT=0;S.spinOpen=false;S.shooter=S.m.turn;S.power=0;
+  S.phase='roll';S.ff=false;S.rollT=0;S.acc=0;S.cueT=t;S.lastShot={...p,from:{x:cb.x,y:cb.y}};S.frames=[];S.frameT=0;S.spinOpen=false;S.shooter=S.m.turn;S.power=0;
  }
  function autoCall(){const cb=cueBall(),hit=PH.castAim(S.balls,T,cb,[Math.cos(S.angle),Math.sin(S.angle)]);if(!hit.ball||hit.ball.id!==8)return nearestPocket(S.balls.find(b=>b.id===8));
   const nx=hit.ball.x-hit.ghost.x,ny=hit.ball.y-hit.ghost.y,l=Math.hypot(nx,ny)||1;let best=0,bv=-1e9;T.pockets.forEach((p,i)=>{const [ax,ay]=CPU.aimPoint(p),dx=ax-hit.ball.x,dy=ay-hit.ball.y,d=Math.hypot(dx,dy),v=(dx*nx+dy*ny)/(d*l)-d*.002;if(v>bv){bv=v;best=i;}});return best;}
  function nearestPocket(b){if(!b)return 0;let best=0,bd=1e9;T.pockets.forEach((p,i)=>{const d=Math.hypot(p.x-b.x,p.y-b.y);if(d<bd){bd=d;best=i;}});return best;}
  function rollStep(dt){
-  S.acc+=Math.min(dt,.1);let moved=false;
+  S.acc+=Math.min(dt,.1)*(S.ff?3:1);let moved=false;
   while(S.acc>=STEP){S.acc-=STEP;S.rollT+=STEP;moved=PH.step(S.balls,T,STEP,S.events)||moved;
    S.frameT-=STEP;if(S.frameT<=0){S.frameT=1/30;S.frames.push(S.balls.map(b=>[b.x,b.y,b.on?1:0,b.o.slice()]));}
    if(PH.settled(S.balls)||S.rollT>16)break;}
@@ -153,6 +161,8 @@ async function paddysPool(s){
   for(const id of out.pots){const owner=game==='nine'?who:RU.groupOf(id)==='solid'?groupOwner('solid',out):RU.groupOf(id)==='stripe'?groupOwner('stripe',out):who;if(owner!==null)S.tray[owner].push(id);}
   const legalPots=out.foul?0:out.pots.filter(id=>game==='nine'||id===8||!m.group[who]&&!out.assign||RU.groupOf(id)===(out.assign||m.group[who])).length;
   if(legalPots){earn(who,'pot',legalPots);S.potCount[who]+=legalPots;}
+  // shot stats (the Megatouch shows them): shots, shots that potted, the best run of balls
+  S.shots[who]++;if(legalPots)S.made[who]++;if(legalPots&&!out.foul){S.run=S.run.p===who?{p:who,n:S.run.n+legalPots}:{p:who,n:legalPots};S.bestRun[who]=Math.max(S.bestRun[who],S.run.n);}else S.run={p:who,n:0};
   const tags=new Set(out.tags);
   if(!out.foul){if(tags.has('bank')){earn(who,'bank');banner('BANK SHOT!','+$'+HALL.CASH.bank,'#7df9ff',1.5);quip('bank');}
    if(tags.has('combo')){earn(who,'combo');banner('COMBO!','+$'+HALL.CASH.combo,'#ff9df0',1.5);quip('combo');}
@@ -202,7 +212,7 @@ async function paddysPool(s){
  }
  function affordable(){const out=[];for(const [k,list] of Object.entries(HALL.LISTS))for(const it of list)if(!HALL.owns(hall,k,it.id)&&it.price<=hall.cash)out.push(it.name);
   for(const k of HALL.ROOM_SLOTS){const n=hall.room[k]+1,tr=HALL.ROOM[k].tiers[n];if(tr&&tr.price<=hall.cash)out.push(`${HALL.ROOM[k].name}: ${tr.name}`);}
-  for(const d of HALL.DECOR)if(!hall.decor.includes(d.id)&&d.price<=hall.cash)out.push(d.name);return out;}
+  for(const d of HALL.DECOR)if(!hall.decor.includes(d.id)&&d.price<=hall.cash)out.push(d.name);for(const d of HALL.PERKS)if(!HALL.hasPerk(hall,d.id)&&d.price<=hall.cash)out.push(d.name);return out;}
  function endGame(){const m=S.m,sc=[0,1].map(p=>m.racks[p]*1000+S.potCount[p]*10);s.setScores(sc);
   const w=m.over;s.react?.(w,'win',3);s.react?.(1-w,'sad',3);
   s.finish(sc,`Paddy's Pool · ${game==='eight'?'8-Ball':'9-Ball'}: ${name(w)} wins ${m.racks[w]}-${m.racks[1-w]}`);}
@@ -225,6 +235,8 @@ async function paddysPool(s){
   if(S.replay){S.replay=null;return;}
   if(S.coach){S.coach=false;hall.set.seen=true;save();return;}
   if(S.phase==='hall')return;
+  // Fast Forward (house upgrade): a tap while the balls roll runs them 3x
+  if(S.phase==='roll'&&perk('fast-forward')){S.ff=!S.ff;sfx.tap();return;}
   // replay pill
   if(S.replayBtn&&S.lastFrames&&inBox(p,S.replayBtn)&&S.phase==='aim'){S.replay={i:0,t0:t,frames:S.lastFrames};sfx.tap();return;}
   if(S.phase!=='aim'||!myTurn())return;
@@ -308,7 +320,7 @@ async function paddysPool(s){
   const render=()=>{const set=hall.set;hallEl.innerHTML=`<div class="pp-top"><div class="pp-cash">$${hall.cash.toLocaleString()}</div><div class="pp-prog">Hall ${Math.round(HALL.progress(hall)*100)}% done</div></div>
    <div class="pp-panel"><div class="pp-row"><div class="pp-seg" data-k="game"><button data-v="eight" class="${set.game==='eight'?'on':''}">8-BALL</button><button data-v="nine" class="${set.game==='nine'?'on':''}">9-BALL</button></div>
     <div class="pp-seg" data-k="race"><span class="pp-lbl">RACE TO</span>${[1,2,3,5].map(n=>`<button data-v="${n}" class="${set.race===n?'on':''}">${n}</button>`).join('')}</div><button class="pp-go" data-act="play">PLAY ▶</button></div>
-    <div class="pp-tabs">${[['table','Tables'],['felt','Felt'],['cue','Cues'],['balls','Balls'],['chalk','Chalk'],['room','The Bar'],['decor','Decor'],['settings','Settings']].map(([k,l])=>`<button data-tab="${k}" class="${hallTab===k?'on':''}">${l}</button>`).join('')}</div>
+    <div class="pp-tabs">${[['table','Tables'],['felt','Felt'],['cue','Cues'],['balls','Balls'],['chalk','Chalk'],['room','The Bar'],['decor','Decor'],['perks','Upgrades'],['settings','Settings']].map(([k,l])=>`<button data-tab="${k}" class="${hallTab===k?'on':''}">${l}</button>`).join('')}</div>
     <div class="pp-shelf">${shelfHTML()}</div></div>`;
    hallEl.querySelectorAll('.pp-card canvas[data-kind]').forEach(cv=>{const kind=cv.dataset.kind,it=HALL.byId(HALL.LISTS[kind],cv.dataset.id);if(!it)return;try{const pv=ART.preview(kind,it,140,72,loadout);cv.width=pv.width;cv.height=pv.height;cv.getContext('2d').drawImage(pv,0,0);}catch(e){console.warn(e);}});};
   const shelfHTML=()=>{
@@ -316,6 +328,7 @@ async function paddysPool(s){
     <div class="pp-card" style="width:200px"><b>Shot clock</b><small>${CLOCK} seconds a shot; run out and it's a foul. Always on online.</small><div class="pp-seg" data-k="clock"><button data-v="0" class="${!set.clock?'on':''}">Off</button><button data-v="1" class="${set.clock?'on':''}">On</button></div></div>
     <div class="pp-card" style="width:200px"><b>Your hall</b><small>Racks won ${hall.stats.racks} · matches ${hall.stats.matches} · golden breaks ${hall.stats.golden} · cash earned $${hall.stats.earned.toLocaleString()}</small></div>`;}
    if(hallTab==='room')return HALL.ROOM_SLOTS.map(k=>{const r=HALL.ROOM[k],n=hall.room[k],nx=r.tiers[n+1];return `<div class="pp-card" style="width:178px"><b>${r.name}: ${r.tiers[n].name}</b><div class="pp-pips">${r.tiers.map((q,i)=>`<i class="${i<=n?'f':''}"></i>`).join('')}</div><small>${nx?`Next: <b>${nx.name}</b>. ${nx.desc}`:r.tiers[n].desc+' Maxed out!'}</small>${nx?`<button class="pp-buy" data-room="${k}" ${hall.cash<nx.price?'disabled':''}>Upgrade $${nx.price.toLocaleString()}</button>`:`<button class="pp-on" disabled>MAX</button>`}</div>`;}).join('');
+   if(hallTab==='perks')return HALL.PERKS.map(d=>{const own=HALL.hasPerk(hall,d.id);return `<div class="pp-card"><b>${d.name}</b><small>${d.desc}</small>${own?`<button class="pp-on" disabled>Installed</button>`:`<button class="pp-buy" data-perk="${d.id}" ${hall.cash<d.price?'disabled':''}>Buy $${d.price.toLocaleString()}</button>`}</div>`;}).join('');
    if(hallTab==='decor')return HALL.DECOR.map(d=>{const own=hall.decor.includes(d.id),shown=own&&!hall.hide.includes(d.id);return `<div class="pp-card"><b>${d.name}</b><small>${d.desc}</small>${own?`<button class="${shown?'pp-on':'pp-eq'}" data-show="${d.id}">${shown?'Showing':'Hidden'}</button>`:`<button class="pp-buy" data-decor="${d.id}" ${hall.cash<d.price?'disabled':''}>Buy $${d.price.toLocaleString()}</button>`}</div>`;}).join('');
    const kind=hallTab,list=HALL.LISTS[kind];return list.map(it=>{const own=HALL.owns(hall,kind,it.id),eq=hall.eq[kind]===it.id;
     const st=kind==='cue'?`<div class="pp-stats">⚡${Math.round(it.stats.power*100)} 🌀${Math.round(it.stats.spin*200)} 🎯${Math.round(it.stats.aim*100)}</div>`:kind==='table'?`<div class="pp-stats">${(it.tips||[]).join(' · ')}</div>`:'';
@@ -329,6 +342,7 @@ async function paddysPool(s){
    if(b.dataset.eq){const [k,id]=b.dataset.eq.split(':');if(HALL.equip(hall,k,id)){sfx.tap();refresh();}return;}
    if(b.dataset.room){if(HALL.buyRoom(hall,b.dataset.room)){sfx.buy();refresh();}return;}
    if(b.dataset.decor){if(HALL.buyDecor(hall,b.dataset.decor)){sfx.buy();refresh();}return;}
+   if(b.dataset.perk){if(HALL.buyPerk(hall,b.dataset.perk)){sfx.buy();refresh();}return;}
    if(b.dataset.show){const id=b.dataset.show;hall.hide=hall.hide.includes(id)?hall.hide.filter(q=>q!==id):[...hall.hide,id];sfx.tap();refresh();return;}
    if(b.dataset.pick){hallSel=b.dataset.pick;sfx.tap();render();}
   });
@@ -337,7 +351,7 @@ async function paddysPool(s){
  // ---------------------------------------------------------------- drawing
  const faceFn=(id,mood)=>(cx,cy,w)=>{try{HF.drawFaceById(x,id,mood,cx,cy,w);}catch{}};
  let hallCache=null;
- function drawHallScene(){if(hallEl){const sd=W>H*1.15;if(hallEl.classList.contains('side')!==sd){hallEl.classList.toggle('side',sd);hallCache=null;}}const key=[W,H,dpr,JSON.stringify(hall.room),hall.decor.join(),hall.hide.join(),loadout.table.id,loadout.felt.id,hallSel,Math.floor(t*10)].join('|');
+ function drawHallScene(){if(hallEl){const sd=W>H*1.15;if(hallEl.classList.contains('side')!==sd){hallEl.classList.toggle('side',sd);hallCache=null;}}const key=[W,H,dpr,JSON.stringify(hall.room),hall.decor.join(),hall.hide.join(),(hall.perks||[]).join(),loadout.table.id,loadout.felt.id,hallSel,Math.floor(t*10)].join('|');
   if(hallCache&&hallCache.key===key){x.drawImage(hallCache.cv,0,0,W,H);return;}
   const cv=hallCache?.cv||document.createElement('canvas');cv.width=Math.ceil(W*dpr);cv.height=Math.ceil(H*dpr);const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
   const faces=[(cx,cy,w)=>{try{s.sprite(g,0,cx,cy,w,{exact:true,noBadge:true,still:true});}catch{}},null,(cx,cy,w)=>{try{HF.drawFaceById(g,'dennis','win',cx,cy,w);}catch{}},...['charlie','frank','mac','dee','cricket','artemis'].map(id=>(cx,cy,w)=>{try{HF.drawFaceById(g,id,'normal',cx,cy,w);}catch{}})];
@@ -346,19 +360,35 @@ async function paddysPool(s){
   const [pk,pid]=(hallSel||'').split(':'),pvT=pk==='table'&&HALL.byId(HALL.TABLES,pid)||loadout.table,pvF=pk==='felt'&&HALL.byId(HALL.FELTS,pid)||loadout.felt;
   ART.drawHall(g,W,H,hall,t,{faces,feltColor:pvF.color,table:pvT,view,highlight:pk==='table'||pk==='felt'?'table':null});
   // logo
-  const lg=PS.picture('logo');const lw=Math.min(view[2]*.7,420),lh=lw*.4,ly=Math.max(fb.top+(hallEl?.classList.contains('side')?6:30),view[3]*.05);if(lg)g.drawImage(lg,view[2]/2-lw/2,ly,lw,lh);else drawLogo(g,view[2]/2,ly+lw*.08,lw);
+  const lg=PS.picture('logo');const lw=Math.min(view[2]*.58,360),lh=lw*.4,ly=Math.max(fb.top+(hallEl?.classList.contains('side')?6:30),view[3]*.05);if(lg)g.drawImage(lg,view[2]/2-lw/2,ly,lw,lh);else drawLogo(g,view[2]/2,ly+lw*.08,lw);
   hallCache={key,cv};x.drawImage(cv,0,0,W,H);}
  function drawLogo(g,cx,cy,w){g.save();g.textAlign='center';g.textBaseline='middle';g.font=`900 ${w*.15}px "SC Bangers",Impact,sans-serif`;g.lineWidth=w*.025;g.strokeStyle='#0a2a10';g.shadowColor='#3bff7a';g.shadowBlur=w*.05;g.strokeText("PADDY'S POOL",cx,cy);g.fillStyle='#3bff7a';g.fillText("PADDY'S POOL",cx,cy);g.shadowBlur=0;g.font=`800 ${w*.045}px system-ui`;g.fillStyle='#ffe9a0';g.fillText('HALL OF FAME · EST. WHENEVER',cx,cy+w*.1);g.restore();}
+// the Chalkboard: the match score in chalk on the wall strip
+ function drawBoard(g,bx,by,bw,bh){const m=S.m;g.save();g.fillStyle='#5a3a1e';g.fillRect(bx,by,bw,bh);g.fillStyle='#1d2b24';g.fillRect(bx+3,by+3,bw-6,bh-6);
+  g.fillStyle='rgba(255,255,255,.05)';g.fillRect(bx+6,by+bh*.55,bw-12,2);const pad=6,fs=Math.max(8,Math.min(bh*.3,bw*.11));g.fillStyle='#ecebe2';g.textBaseline='middle';
+  if(!m){g.restore();return;}
+  const lines=[`RACK ${m.rackNo|0}${m.race>1?` · RACE TO ${m.race}`:''}${showDecor('trophy-case')?` · 🏆${hall.stats.racks}`:''}`,`${name(0).slice(0,8)} ${m.racks[0]} – ${m.racks[1]} ${name(1).slice(0,8)}`];
+  g.font=`700 ${Math.round(fs*.82)}px "SC Nunito",system-ui,sans-serif`;g.textAlign='center';g.fillText(lines[0],bx+bw/2,by+bh*.3,bw-pad*2);
+  g.font=`700 ${Math.round(fs)}px "SC Nunito",system-ui,sans-serif`;g.fillText(lines[1],bx+bw/2,by+bh*.72,bw-pad*2);g.restore();}
+ // the Megatouch by the table shows the match's shot stats on its screen
+ function drawMegaStats(){const at=layers.floor?.props?.megatouch;if(!at||!S.m)return;const [mx,my,mw,mh]=at,f=ART.MEGA_SCREEN,sx=mx+mw*f[0],sy=my+mh*f[1],sw=mw*(f[2]-f[0]),sh=mh*(f[3]-f[1]);
+  x.save();x.fillStyle='#071a2e';x.fillRect(sx,sy,sw,sh);const fs=Math.min(sh/4.6,sw/9);if(fs<6){x.restore();return;}x.font=`800 ${fs}px system-ui`;x.textAlign='left';x.textBaseline='top';
+  const pct=p=>S.shots[p]?Math.round(100*S.made[p]/S.shots[p])+'%':'–';x.fillStyle='#57e1ff';x.fillText('SHOT STATS',sx+3,sy+2,sw-6);
+  [0,1].forEach(p=>{x.fillStyle=p?'#ff9df0':'#ffd23f';x.fillText(`${name(p).slice(0,6)} ${S.potCount[p]} · ${pct(p)} · run ${S.bestRun[p]}`,sx+3,sy+2+fs*(1.25+p*1.2),sw-6);});x.restore();}
  function draw(){
   x.setTransform(dpr,0,0,dpr,0,0);
   if(S.phase==='hall'){drawHallScene();return;}
   x.drawImage(floorLayer().cv,0,0,W,H);
   // wall band
   const pw=Math.min(W*.4,250),strip=game==='nine'?9*Math.min(8,W*.018)*2.3+24:0,ax0=8+pw*2+20+strip,area=L.rot?[4,2,W-160,Math.max(18,L.hudY-4)]:[ax0,4,Math.max(0,W-150-ax0),L.hudH];
-  ART.drawWall(x,0,0,W,L.wall[3],loadout.room,loadout.decor,t,(cx,cy,w)=>{try{s.sprite(x,S.m?S.m.turn:0,cx,cy,w,{exact:true,noBadge:true,still:true});}catch{}},area);
+  ART.drawWall(x,0,0,W,L.wall[3],loadout.room,loadout.decor,t,(cx,cy,w)=>{try{s.sprite(x,S.m?S.m.turn:0,cx,cy,w,{exact:true,noBadge:true,still:true});}catch{}},area,{board:drawBoard,steady:perk('new-bulb'),dennis:(cx,cy,w)=>{try{HF.drawFaceById(x,'dennis','win',cx,cy,w);}catch{}}});
   // light pool on the table
   const tl=tableLayer();x.drawImage(tl.cv,L.cx-tl.pw/2,L.cy-tl.ph/2,tl.pw,tl.ph);
-  if(loadout.room.light===0&&Math.sin(t*17)>.92){x.fillStyle='rgba(0,0,0,.18)';x.fillRect(0,0,W,H);}
+  // the ceiling fan's shadow turns slowly over the table
+  if(showDecor('fan')){const a=t*.9;x.save();x.beginPath();x.rect(L.cx-tl.pw/2,L.cy-tl.ph/2,tl.pw,tl.ph);x.clip();x.translate(L.cx,L.cy);x.rotate(a);x.fillStyle='rgba(0,0,0,.07)';const r=Math.max(tl.pw,tl.ph)*.42;for(let i=0;i<4;i++){x.rotate(Math.PI/2);x.beginPath();x.ellipse(r*.55,0,r*.5,r*.09,0,0,6.28);x.fill();}x.restore();}
+  // the dying bulb stutters now and then (New Light Bulb fixes it)
+  if(loadout.room.light===0&&!perk('new-bulb')&&ART.flickerAt(t)){x.fillStyle='rgba(0,0,0,.07)';x.fillRect(0,0,W,H);}
+  drawMegaStats();
   // kitchen line for ball in hand behind the head string
   if(S.phase==='aim'&&S.m?.bih?.kitchen){const a=ws(-HX/2,-HY),b=ws(-HX/2,HY);x.strokeStyle='rgba(255,255,255,.4)';x.setLineDash([6,6]);x.lineWidth=1.5;x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();x.setLineDash([]);}
   // balls
@@ -376,6 +406,7 @@ async function paddysPool(s){
   if(S.m)drawHUD();
   if(S.m&&myTurn()&&S.phase==='aim')drawControls();
   drawFX();
+  if(S.phase==='roll'&&S.ff){x.fillStyle='rgba(255,210,63,.95)';x.font='900 15px system-ui';x.textAlign='left';x.fillText('▶▶ 3x',12,L.hudY+L.hudH+22);}
   if(S.replay){x.fillStyle='rgba(220,30,30,.9)';x.font='900 15px system-ui';x.textAlign='left';x.fillText('● REPLAY',12,L.hudY+L.hudH+22);if(t-S.replay.t0>S.replay.frames.length/30+.6)S.replay=null;}
   if(S.spinOpen)drawSpinBig();
   if(S.coach)drawCoach();
@@ -512,7 +543,7 @@ async function paddysPool(s){
   if(S.phase==='summary'&&!S.ended&&t-S.summary.t0>(net||s.debug?._bot?5:12)){S.ended=true;endGame();}
   if(S.phase==='aim'&&S.m&&S.m.turn!==S.lastTurn){S.lastTurn=S.m.turn;S.turnAt=t;S.turnsThisRack=S.turnsThisRack||[0,0];if(!S.m.isBreak)S.turnsThisRack[S.m.turn]++;}
   draw();
-  s.debug={...(s.debug||{}),phase:S.phase,match:S.m,balls:S.balls,hall,fire:p=>fire(p),state:()=>({phase:S.phase,turn:S.m?.turn,racks:S.m?.racks,over:S.m?.over,shots:S.m?.shots,group:S.m?.group,cash:S.cash}),
+  s.debug={...(s.debug||{}),phase:S.phase,match:S.m,balls:S.balls,hall,fire:p=>fire(p),state:()=>({phase:S.phase,ff:S.ff,coach:!!S.coach,turn:S.m?.turn,racks:S.m?.racks,over:S.m?.over,shots:S.m?.shots,group:S.m?.group,cash:S.cash}),
    play:()=>{if(hallEl)hallEl.querySelector('[data-act=play]')?.click();},bot:net?()=>{s.debug._bot=true;return 'bot';}:s.debug?.bot,
    aimAt:id=>{const b=S.balls.find(q=>q.id===id),cb=cueBall();if(b)S.angle=Math.atan2(b.y-cb.y,b.x-cb.x);},skip:()=>{if(S.phase==='summary'&&!S.ended){S.ended=true;endGame();}}};
  });
