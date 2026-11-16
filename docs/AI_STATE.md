@@ -45,6 +45,15 @@ loop); an arms sheet replaces bro-body + gun picture only for that gun. Props: p
 searchlight/helipad/sign, firebar-base (drawPropPic; '<prop>-<world>' override). Templates (26, guides = current body/guns) + brief
 ROUND 3 + kit zip (scratchpad sean-of-a-gun-round3-kit.zip). Checked with stand-ins in a private build; games.mjs broforce 9/9.
 
+SEAN OF A GUN STOCKY BODY (Nov 16, same branch, unreleased; owner: legs much smaller than the arms, the old walk looked better,
+'make it look professional'): cause = GPT's armless bro-torso is a slimmer man than the old bro-body (chest ~35% narrower, waist
+6 px higher, thin legs) while the arm sheets fit the old body. tools/broforce/stocky-torso.py rebuilds assets/broforce/bro-torso
+= GPT's armless chest (assets/originals/broforce/bro-torso-slim.png, stretched KX 1.38 / to the old chest box) + the OLD body's legs
+and its 6-frame run (rows idle 2, walk 6 = run 6, jump, fall; climb/ladder = GPT rows stretched); old arm pixels dropped by colour
+(camo R-G<=24 & G-B>=7, skin R-G>24, glove neutral) and only pixels joined to the legs kept (raised thighs pass over the belt).
+STRIDE 42/42 = the old run pace; bro-run retired (lightning uses bro-body's own run). SEE_THRU barrel/bags/crate/glass get the back
+wall behind them (sky squares showed round barrels inside bunkers). Run clip local-test-reports/sog-run-nov16.gif.
+
 SEAN OF A GUN HEADS + GUNS (Nov 16, branch claude/cool-edison-ma0a0l, unreleased; owner: heads too high / not facing the way
 they move / cut off at the bottom; stage guns again; hated shotgun; boomerang gun; see the rocket leave): broforce.js headCut()
 finds where each picture's head really ends (picture end, or the neck down to where the shoulders widen; the face box used to

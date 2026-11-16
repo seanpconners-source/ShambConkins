@@ -34,6 +34,7 @@ const E=0,DIRT=1,BRICK=2,STEEL=3,WOOD=4,LADDER=5,BARREL=6,BAGS=7,PLAT=8,CRATE=9,
 const LAVA=11,SPIKE=12,PAD=13,GLASS=14,QBLOCK=15,PIPE=16,GOO=17,CRYST=18;
 const HP=[0,3,7,1e9,2,1,1,3,2,2,10,1e9,1e9,6,1,3,1e9,2,1];
 const SOLID=[0,1,1,1,1,0,1,1,0,1,1,0,0,1,1,1,1,1,1];
+const SEE_THRU={[BARREL]:1,[BAGS]:1,[CRATE]:1,[GLASS]:1};
 const KC={T:16,ROWS:34,MAXW:260,G:19,E,DIRT,BRICK,STEEL,WOOD,LADDER,BARREL,BAGS,PLAT,CRATE,ROCK,LAVA,SPIKE,PAD,GLASS,QBLOCK,PIPE,GOO,CRYST,SOLID};
 const TURN_TIME=300,PAR=[80,95,120];
 const WEAPONS={
@@ -340,7 +341,7 @@ async function broforce(s){
   if(theme.ext){for(const f of theme.foes||[])for(const l of Object.values(f))for(const t of l)names.push('foe-'+t);for(const b of theme.bosses||[])names.push('boss-'+b);}
   else names.push('foe-mook','foe-bomber','foe-grenadier','foe-bruiser','foe-dog','boss-devil');
   for(const n of [...names])if(n.startsWith('foe-'))names.push('dead-'+n.slice(4));
-  names.push('dead-bro',...Object.keys(BS.SHEETS).filter(k=>BS.SHEETS[k].fx),...Object.keys(BS.PICTURES).filter(k=>/^(gun-|shot-|bullet-|fx-|crack-|firebar-|ring-pickup|shell-casing|prop-)/.test(k)),'bro-torso','bro-run',...Object.keys(BS.SHEETS).filter(k=>/^(arms-|prop-)/.test(k)));
+  names.push('dead-bro',...Object.keys(BS.SHEETS).filter(k=>BS.SHEETS[k].fx),...Object.keys(BS.PICTURES).filter(k=>/^(gun-|shot-|bullet-|fx-|crack-|firebar-|ring-pickup|shell-casing|prop-)/.test(k)),'bro-torso',...Object.keys(BS.SHEETS).filter(k=>/^(arms-|prop-)/.test(k)));
   BS.preload([...new Set(names)]);};
  preloadArt();
  let STAGES=mkStages(seed);
@@ -1009,7 +1010,10 @@ async function broforce(s){
   // back walls (dug-out caves, building interiors)
   const c0=Math.max(0,Math.floor(cam.x/T)),c1=Math.min(W.W-1,Math.ceil((cam.x+vw)/T)),r0=Math.max(0,Math.floor(cam.y/T)),r1=Math.min(ROWS-1,Math.ceil((cam.y+vh)/T)),wk=worldKey(),topPic=BS.picture('top-'+wk);
   const px=c=>Math.round(c*T*Z)-sx,py=r=>Math.round(r*T*Z)-sy;
-  for(let r=r0;r<=r1;r++){const y=py(r),h=py(r+1)-y;for(let cc=c0;cc<=c1;cc++){const k=r*MAXW+cc,t=W.tiles[k];if(SOLID[t])continue;const b=W.back[k];if(!b)continue;const x=px(cc),w=px(cc+1)-x;const bm=b===1&&BS.macro(wk,DIRT);
+  // barrels, sandbags, crates and glass have see-through edges: they get the wall behind them too (owner saw sky squares
+  // round the fire barrels inside bunkers), borrowed from a neighbour when the level didn't mark one under the tile
+  for(let r=r0;r<=r1;r++){const y=py(r),h=py(r+1)-y;for(let cc=c0;cc<=c1;cc++){const k=r*MAXW+cc,t=W.tiles[k];if(SOLID[t]&&!SEE_THRU[t])continue;
+   const b=W.back[k]||(SEE_THRU[t]?W.back[k-1]||W.back[k+1]||W.back[k-MAXW]||0:0);if(!b)continue;const x=px(cc),w=px(cc+1)-x;const bm=b===1&&BS.macro(wk,DIRT);
    if(bm){const S=bm.s;g.drawImage(bm.img,(cc*S)%bm.img.width,(r*S)%bm.img.height,S,S,x,y,w,h);g.fillStyle='rgba(8,4,2,.62)';g.fillRect(x,y,w,h);}else g.drawImage(TILEART.back[b][(cc*7+r*3)%3],x,y,w,h);}}
   // decorations behind the action
   g.setTransform(Z,0,0,Z,-sx,-sy);
@@ -1165,7 +1169,7 @@ async function broforce(s){
   const f=p.facing,run=p.grounded&&Math.abs(p.vx)>10,ph=p.anim,air=!p.grounded&&!p.ladder;
   const ts=BS.sheet('bro-torso'),as=ts&&!p.ladder&&BS.sheet('arms-'+p.weapon),bsh=as?ts:BS.sheet('bro-body');
   // bro-run = the same armed body with a smooth 8-frame walk + run (replaces bro-body's run row when it's in)
-  const rsh=!as&&BS.sheet('bro-run');
+  const rsh=null;// bro-run (GPT's 8-frame walk) retired Nov 16: the owner liked the old body's run better
   if(bsh){const walk=(as||rsh)&&Math.abs(p.vx)<70?'walk':'run',row=p.ladder?'ladder':p.climb&&!p.grounded?'climb':air?(p.vy<0?'jump':'fall'):run?walk:'idle';
    const S=rsh&&(row==='run'||row==='walk')?rsh:bsh,d=S.def;
    const fr=row==='idle'?Math.floor(time*2):row==='run'||row==='walk'?Math.floor(ph/.09/STRIDE[row]*(d.rows[row]||1)):Math.floor(ph*1.6);
@@ -1204,7 +1208,7 @@ async function broforce(s){
  }
  const WEAPON_LEN={rifle:10,shotgun:9,rocket:11,flame:9,pistols:5,laser:11,plasma:11,railgun:13,pulse:8,minigun:11,lightning:9,holy:5,fireball:5,boomerang:6,ring:8};
  // one full run / walk cycle (both legs) covers this many world px, so the feet don't slide or race (owner: walk looked funny)
- const STRIDE={run:58,walk:40};
+ const STRIDE={run:42,walk:42};// world px per run cycle: the old bro-body run's own pace (6 frames, p.anim*1.6)
  // where the barrel tip is, from the bro's feet, facing right, before BRO_K: arms-<gun> muzzle on the torso's shoulder, else
  // the gun picture's measured muzzle at the body's hand, else the drawn gun's length
  // the fist of the body frame drawn last (bro-body hands table), from the feet in world px
