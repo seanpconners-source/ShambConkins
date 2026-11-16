@@ -11,7 +11,7 @@ for tall canopies, gems x1.2; evolution pairs = profile.hordeEvos (weapon ids ev
 v0.99.4 RELEASED (Nov 15, owner: "release it!"; fuzz only): bigger held ball behind the hands + owner rim picture.
 v0.99.5 RELEASED (Nov 15): Sitabout title-bg IN (owner's chat attachment 2000x1125 WebP, copied byte for byte to assets/minigolf + originals; the 11 MB Drive PNG never fetched); PICTURES title-bg focus [.38,.45] = cover crop centred on the couple (puttPutt drawMenu). Minigolf art now 61/61.
 v0.99.6 RELEASED (Nov 15): owner uploaded the real title-bg PNG to main via GitHub web upload (repo root 'title-bg(1).png'; the upload page has no name/folder field, so expect root uploads): 3840x2160 = 2x slot, now lossless assets/minigolf/title-bg.webp (7.5 MB, LATER), original assets/originals/minigolf/title-bg.png (moved out of the root). Chat attachments always arrive as ~0.4 MB WebP: ask for GitHub uploads when quality matters.
-WORDS N' SHIT + SQWORDLE HINT (Nov 16, branch claude/minigolf-sprites-windmill-ud5bpf, unreleased; owner: Words With Friends clone,
+WORDS N' SHIT + SQWORDLE HINT (Nov 16, RELEASED as v0.99.10; owner: Words With Friends clone,
 "as close to the real one as possible", name Words n' Shit; online + board space; Sqwordle hint button): game id words-n-shit (wordPack,
 engine wordsnshit = src/engines/wordsNShit.js, soloKind cpu, NET_NATIVE, Mobile Hits + puzzle). src/engines/wns/rules.js = WWF board
 (TW 8/DW 12/TL 16/DL 24, star = no bonus), values/104-tile bag, evaluate (line, gaps, joined, cross words, scoring, bingo 35), refill;
@@ -25,7 +25,7 @@ end card. Our own logo (orange speech bubble); no art slots yet. Tests: tests/wn
 2 sizes with a real drag, 2P hand-off), online-native words-n-shit ± LAG, games.mjs fuzz. SQWORDLE HINT: sqwordleRules HINTS 2 /
 HINT_COST 40 (points never below 0), Hint pill on the info line (L.hintBtn) = leftmost unsolved spot as a ghost letter + blue key,
 result carries hints; tests/sqwordle.mjs checks it.
-MINIGOLF FRAME RATE (Nov 16, same branch, unreleased; owner: too low a framerate to play): render.js used to repaint the whole
+MINIGOLF FRAME RATE (Nov 16, RELEASED as v0.99.10; owner: too low a framerate to play): render.js used to repaint the whole
 course every frame (lawn/green patterns, clipped rail faces with gradients, shading, big pictures) = ~18-30 fps at 4x CPU. The
 view is affine (camera = pan + zoom), so now: groundRuns = lawn/shadows/greens/still ground pieces painted into 1-2 screen-aligned
 layers round the view (margin .3 x screen, LAYER_PX 4.5M budget, world origin on a whole layer pixel), anim steps (water ripples,
@@ -37,6 +37,27 @@ clown, gator, gopher, bumpers, balls, props) shrunk once in 1.25x steps. Also fi
 the picture loaded after first use (the turf/rail/space art often never showed). 4x CPU headless: plain holes 26 -> 50-58 fps,
 windmill/gator/spinner holes 17-24 -> 30-45 (rest = big live pictures + scaled layer copies, cheap on a phone GPU). Checked:
 cached vs fully repainted frames match on all 18 holes at 390x780 and 844x390 (only moving things differ). Not on a real phone.
+Round 2 (owner: still slightly low): the ground is 256 px TILES in layer space (groundTiles/prepareTiles/drawGround in
+render.js): painted 2 a frame ahead of the camera (4 when still), a zoom starts a new set while the old one fills holes
+(clipped, never drawn twice), a still camera gets a set at its exact zoom; a run that drew nothing in a tile keeps no canvas
+(x._drew from drawGreen/flat/lawn; water holes' upper run is mostly empty); onCanvas() culls greens per tile. puttPutt.js: HUD
+plate + chips cached (signature), camera snaps when within .4% / .6 px, stars painted once and slid (drawStars). Headless fps
+is too noisy to tune further (software raster: one full-screen copy 3.6 ms at 4x, scaled 7.3 ms): measure ms/frame with CDP
+TaskDuration instead (scratch perf2.mjs). Not on a real phone.
+SEAN OF A GUN NO TIMER (Nov 16, v0.99.10, owner): turn clock removed (TURN_TIME gone, HUD clock line gone, progress strip moved
+up); a turn ends on the chopper or out of bros; s.debug.outOfBros() for broforce-turns/board tests.
+PADDY'S POOL ROUND 2 (Nov 16, v0.99.10; owner: flicker too much, an upgrade to fix the lighting, rum ham floating, decor only on
+the title screen, chalkboard behind the logo, QoL upgrades): art.js flickerAt(t) = a .42 s stutter every 5.3 s (bulb dims .07,
+hall light .32->.27, neon alpha .7); poolHall.js PERKS (new-bulb $30 = no flicker, fast-forward $120 = tap during the roll
+toggles S.ff 3x physics, tip-jar $400 = TIP .15 in earn()), hall.perks validated, buyPerk/hasPerk, 'Upgrades' tab. In game:
+drawWall(...,opts) chalkboard = scoreboard (drawBoard: rack, race, trophies, score) placed first in the strip, then TVs, then
+neons + WALL_DECOR (dennis-portrait with Dennis's face at PORTRAIT_FACE, dartboard, pepe-board) alternating sides;
+drawFloorProps in floorLayer (regions from floorRegions(): beside the table on wide screens, round it on tall ones; jukebox,
+trophy-case with drawTrophies at SHELVES, megatouch (drawMegaStats live in MEGA_SCREEN: pots/accuracy/best run from
+S.shots/made/bestRun), rum ham on a stool); fan = rotating shadow over the table. Hall: COUNTER per bar tier (612/626/640/
+628/648, measured on the art) puts the ham and Megatouch on the counter; HALL.decor neon-paddys -> top right, chalkboard ->
+[690,428] (both were under the logo); logo .58 x view (max 360). Checked: hall + play at 390x780/844x390/752x835/1100x700,
+fast-forward 5.0 s -> 1.8 s, pool-rules, fuzz, online-native 8-ball.
 v0.99.0 (Nov 14): BASEKETBALL SHOOTOUT = the Megatouch Hoop Jones machine (owner's screenshot; Merit: time each shot,
 hoop moves back each round and side to side, 3 straight = lightning bonus). src/engines/hoopJones.js; engine key
 basketball2p (baseketball.js is now a 3-line hand-off; the movie-rules code is in git history before 0.99.0). Id

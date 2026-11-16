@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.99.10
+
+- **Words n' Shit (new game):** a Words With Friends style word game. Drag tiles from your rack onto the board, SWAP, PASS, SHUFFLE and the live score bubble, with a real dictionary of 168,000 words. Play a quick or full game vs the CPU, pass the phone, or play online between two phones. It also turns up as a board-game space.
+- **Sqwordle hint:** a Hint button (twice a word) shows one letter in its spot, for -40 points each.
+- **Sitabout Mini Golf runs much faster:** the course is no longer repainted from scratch every frame. The still parts are painted once and reused, the camera really settles, and the scoreboard and star field are saved pictures. Your course art (turf, rails, the Spaceballs panels) now always shows; it used to stay on the drawn stand-in if the picture loaded late.
+- **Sean of a Gun has no timer:** a turn ends only when you run out of bros (or the chopper leaves).
+- **Paddy's Pool:**
+  - The dying bulb flickers much more gently.
+  - A new **Upgrades** tab: New Light Bulb (no flicker at all), Fast Forward (tap the table to run the rolling balls 3x faster) and Tip Jar (+15% cash every rack).
+  - Your decorations now show in the game: the Chalkboard is the match scoreboard on the wall, and the neon signs, Dennis portrait (with Dennis's face), dartboard and Pepe board hang beside the TVs. The jukebox, trophy case (with your trophies), Megatouch (showing your shot stats) and the rum ham on a stool stand round the table when the screen has room, and the ceiling fan's shadow turns over the table.
+  - In the Pool Hall, the rum ham and the Megatouch sit on the bar counter, and the chalkboard and the Paddy's neon are no longer hidden behind the logo.
+
 ## v0.99.9
 
 - **Sean of a Gun, new body:** one clean, stocky body redrawn as a single drawing, so the legs finally match the big arms, with the chunky run you liked before. Heads sit on the shoulders instead of floating, beards and chins are no longer cut off, and faces turn the way the bro runs.
