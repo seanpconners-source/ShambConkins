@@ -99,8 +99,8 @@ Object.assign(PICTURES,{
 // a smoother run + a slow walk, and pictures for the props that were still drawn (fire barrels, watchtowers, lamps...).
 // bro-torso = the bro-body again WITHOUT ARMS (ladder rows keep theirs: both hands on the rungs). The game pins arms-<gun> on at
 // `shoulder`; with no arms picture for the gun in hand the old bro-body + gun picture is drawn instead.
-// Nov 16 (owner: legs too small next to the arms, the old walk looked better): tools/broforce/stocky-torso.py builds this one =
-// GPT's armless chest stretched to the old bro-body's chest + the old body's chunky legs and 6-frame run (walk row = same frames)
+// Nov 16 (owner: legs too small next to the arms, the old walk looked better): GPT's body v2 = one clean redraw of the stocky stand-in
+// (tools/broforce/stocky-torso.py made the master, tools/broforce/body-kit.py the kit); original assets/originals/broforce/bro-torso-v2.png
 SHEETS['bro-torso']={frame:[64,96],rows:{idle:2,walk:6,run:6,jump:1,fall:1,climb:2,ladder:2},feet:[32,94],neck:[32,22],shoulder:[26,37],
  note:'the same headless bro as bro-body, but with NO ARMS (the shoulder is a clean rounded stump on the red cross; the arms come as a separate picture per gun). Ladder rows keep both arms on the rungs. walk = 8-frame slow walk, run = 8-frame smooth run cycle (contact, down, pass, up, for each leg), the shoulder stays on the cross in every frame'};
 // bro-run: the bro-body exactly as it is (arms, fist forward, same size) with a smooth 8-frame walk and run; the gun is drawn

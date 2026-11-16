@@ -8,7 +8,7 @@ import sys,os,numpy as np,cv2
 from PIL import Image
 A=os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','assets','broforce')+'/'
 O=os.path.join(A,'..','originals','broforce')+'/'
-out=sys.argv[1] if len(sys.argv)>1 else A+'bro-torso.webp'
+out=sys.argv[1]   # (the game now uses GPT's body v2; this stitched stand-in was its master)
 FW,FH=128,192                                      # 2x frames
 tor=Image.open(O+'bro-torso-slim.png').convert('RGBA')   # GPT's corrected armless torso (was assets/broforce/bro-torso)
 if tor.size!=(1024,1344):tor=tor.resize((1024,1344),Image.LANCZOS)

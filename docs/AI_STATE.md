@@ -2,6 +2,12 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+v0.99.9 RELEASED (Nov 16, owner: "When finished please release!!"; tests: games.mjs broforce/horde/pool 12/12, smoke, backup, pool-rules):
+the Sean of a Gun/pool work below + GPT's BODY V2 (UPLOADS-GPT-2026-11-16-0052, Drive 1rAG2FwJqB37wgvZMD7dx-Pf_pP3p5tP6, SHA 5c104287...):
+assets/broforce/bro-torso.webp (lossless; original assets/originals/broforce/bro-torso-v2.png), 768x1344 = same 6x7 layout as the def,
+feet/neck checked (soles y94, neck top 22). HORDE: TREE_K/CAR_K 1.75 (draw sc + collision r/col2 + spot spacing), cull margins widened
+for tall canopies, gems x1.2; evolution pairs = profile.hordeEvos (weapon ids evolved once, validated in profile.js; learnEvo on evolve)
+→ cardFor pairs: weapon card shows its passive icon, passive card shows its known weapons (gold '+' badge; not on evolved cards).
 v0.99.4 RELEASED (Nov 15, owner: "release it!"; fuzz only): bigger held ball behind the hands + owner rim picture.
 v0.99.5 RELEASED (Nov 15): Sitabout title-bg IN (owner's chat attachment 2000x1125 WebP, copied byte for byte to assets/minigolf + originals; the 11 MB Drive PNG never fetched); PICTURES title-bg focus [.38,.45] = cover crop centred on the couple (puttPutt drawMenu). Minigolf art now 61/61.
 v0.99.6 RELEASED (Nov 15): owner uploaded the real title-bg PNG to main via GitHub web upload (repo root 'title-bg(1).png'; the upload page has no name/folder field, so expect root uploads): 3840x2160 = 2x slot, now lossless assets/minigolf/title-bg.webp (7.5 MB, LATER), original assets/originals/minigolf/title-bg.png (moved out of the root). Chat attachments always arrive as ~0.4 MB WebP: ask for GitHub uploads when quality matters.

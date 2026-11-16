@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.99.9
+
+- **Sean of a Gun, new body:** one clean, stocky body redrawn as a single drawing, so the legs finally match the big arms, with the chunky run you liked before. Heads sit on the shoulders instead of floating, beards and chins are no longer cut off, and faces turn the way the bro runs.
+- **Guns that suit the stage again:** the first four worlds deal their original five guns and the new worlds their own six; crates drop only the stage's guns.
+- **New shotgun:** a real pump shotgun in both hands that racks after every shot (the bell cannon is saved for a future elephant gun).
+- **Boomerang gun:** the boomerang sits on the front of a rifle like a crossbow, flies out and comes back to reload it.
+- **Rocket launcher:** you see the rocket leave the tube; the next warhead loads just before you can fire again.
+- Barrels and sandbags inside bunkers no longer show a square of sky behind them.
+- **Living Dead Horde:** cars and trees are much bigger, gems are 20% bigger, and once you've evolved a weapon its level-up cards show the item it pairs with (and the item's card shows the weapon), like Vampire Survivors.
+- **Paddy's Pool:** fine aim is half as sensitive, the Pool Hall table shows real balls from your ball set, and the black squares at the pockets and the black table corners are gone.
+
 ## v0.99.8
 
 - **Sean of a Gun, guns in hand:** the bro now holds each gun in his own arms (14 guns drawn with both hands on the gun; the lightning gun keeps the gun in the fist), and every shot kicks the gun back and up. Bullets and the muzzle flash come out of the barrel tip, for enemies too.

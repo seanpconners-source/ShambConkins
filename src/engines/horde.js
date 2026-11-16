@@ -2,6 +2,7 @@ const {clamp}=require("src/utils.js");
 const {ownedPointers}=require("src/engines/duelControls.js");
 const {sound,tone,vibrate,pickupSound}=require("src/audio.js");
 const {store}=require("src/state.js");
+const {saveProfile}=require("src/profile.js");
 const {soloProgress}=require("src/solo.js");
 const {netField}=require("src/engines/netField.js");
 const HD=require("src/engines/hordeData.js");
@@ -101,6 +102,8 @@ async function horde(s){
  const chunks=new Map();let lastCh=null;const LM=[];
  const isRoadRow=cy=>cy!==0&&mulberry(Math.imul(cy,2654435761)^wseed)()<.2;
  const isRoadCol=cx=>cx!==0&&mulberry(Math.imul(cx,40503)^wseed^0x55)()<.17;
+ // owner, Nov 16: cars and trees read tiny next to the survivors (bodies are 2x): drawn and collided this much bigger
+ const TREE_K=1.75,CAR_K=1.75;
  function genChunk(cx,cy){
   const r=mulberry(Math.imul(cx,374761393)^Math.imul(cy,668265263)^wseed),ch={cx,cy,props:[],cols:[],dest:[],dn:0,roadH:isRoadRow(cy),roadV:isRoadCol(cx),decals:[]};
   const x0=cx*CS,y0=cy*CS,ry=y0+CS/2,rx=x0+CS/2;
@@ -110,7 +113,7 @@ async function horde(s){
   const spot=(m,road)=>{for(let k=0;k<8;k++){const px=x0+30+r()*(CS-60),py=y0+30+r()*(CS-60);if(bad(px,py,m))continue;if(!road&&onRoad(px,py,m))continue;let ok=true;for(const q of ch.props)if((q.x-px)**2+(q.y-py)**2<(m+22)**2){ok=false;break;}if(ok)return[px,py];}return null;};
   const b=r(),yard=b<.38,clear=b>=.38&&b<.6;
   const nTree=cabin?(yard?3:clear?1:9):(yard?2:clear?0:7);
-  for(let i=0;i<nTree;i++){const p=spot(24);if(p)add('tree',cabin&&r()<.6?2:Math.floor(r()*2),p[0],p[1],{r:9,sc:.9+r()*.35});}
+  for(let i=0;i<nTree;i++){const p=spot(24*TREE_K);if(p)add('tree',cabin&&r()<.6?2:Math.floor(r()*2),p[0],p[1],{r:9*TREE_K*.85,sc:(.9+r()*.35)*TREE_K});}
   if(yard||(!clear&&r()<.4)){const n=cabin?3+Math.floor(r()*4):6+Math.floor(r()*7);const gx=x0+80+r()*(CS-160),gy=y0+80+r()*(CS-160);for(let i=0;i<n;i++){const px=gx+(r()-.5)*190,py=gy+(r()-.5)*150;if(bad(px,py,10)||onRoad(px,py,10)||px<x0+20||px>x0+CS-20||py<y0+20||py>y0+CS-20)continue;const v=Math.floor(r()*3);add('grave',v,px,py,{r:v===2?5:8,sc:.95+r()*.15});}}
   const nb=clear?3+Math.floor(r()*3):r()<.3?1:0;
   for(let i=0;i<nb;i++){const p=spot(14);if(!p)continue;const v=r()<.22?1:r()<.3?2:0;add('barrel',v,p[0],p[1],{r:11,hp:v===1?8:10,drop:true,expl:v===1||v===2});}
@@ -119,7 +122,7 @@ async function horde(s){
   if(r()<.6){const p=spot(8,true);if(p)add(r()<.5?'bones':'rubble',0,p[0],p[1]);}
   if(ch.roadH||ch.roadV){
    const n=ch.roadH&&ch.roadV?0:r()<.7?1+Math.floor(r()*2):0;
-   for(let i=0;i<n;i++){const px=ch.roadH?x0+60+r()*(CS-120):rx+(r()-.5)*50,py=ch.roadH?ry+(r()-.5)*40:y0+60+r()*(CS-120);add('car',Math.floor(r()*2),px,py,{r:16,col2:22});}
+   for(let i=0;i<n;i++){const px=ch.roadH?x0+60+r()*(CS-120):rx+(r()-.5)*50,py=ch.roadH?ry+(r()-.5)*40:y0+60+r()*(CS-120);add('car',Math.floor(r()*2),px,py,{r:16*CAR_K,col2:22*CAR_K,sc:CAR_K});}
    for(let i=0;i<2;i++){const lp=ch.roadH?[x0+90+i*270+r()*60,ry+(i?-1:1)*(RW/2+16)]:[rx+(i?-1:1)*(RW/2+16),y0+90+i*270+r()*60];if(!bad(lp[0],lp[1],6))add(cabin?'torch':'lamp',0,lp[0],lp[1],{r:5,hp:16,drop:true,lit:true});}
   }else if(r()<.35){const p=spot(10);if(p)add(cabin?'torch':'lamp',0,p[0],p[1],{r:5,hp:16,drop:true,lit:true});}
   return ch;
@@ -188,7 +191,17 @@ async function horde(s){
   for(const id of PASSIVE_IDS){const l=p.passives[id]||0;if(l>=PASSIVES[id].max)continue;if(l>0)o.push({k:'p',id,wt:2.2});else if(nPass(p)<6){let wt=1.3;for(const w of p.weapons)if(WEAPONS[w.id].pass===id)wt=w.lvl>=MAX_LEVEL-2?6:3;o.push({k:'p',id,wt});}}
   return o;
  }
- function cardFor(p,o){
+ // Like Vampire Survivors: once a weapon has been evolved (ever, saved in profile.hordeEvos), its cards show the item it
+ // evolves with and that item's cards show the weapon (owner, Nov 16)
+ const evoKnown=id=>!!store.profile?.hordeEvos?.includes(id);
+ function learnEvo(id){const pr=store.profile;if(!pr||evoKnown(id))return;pr.hordeEvos=[...(pr.hordeEvos||[]),id];try{saveProfile(pr);}catch{}}
+ function pairsOf(o){
+  if(o.k==='w'){const ps=WEAPONS[o.id]?.pass;return evoKnown(o.id)&&ps&&iconUI[ps]?[iconUI[ps]]:[];}
+  if(o.k==='p')return WEAPON_IDS.filter(w=>WEAPONS[w].pass===o.id&&evoKnown(w)&&iconUI[w]).map(w=>iconUI[w]);
+  return [];
+ }
+ function cardFor(p,o){const c=cardFor0(p,o);c.pairs=pairsOf(o);return c;}
+ function cardFor0(p,o){
   if(o.k==='w'){const w=p.weapons.find(q=>q.id===o.id),lvl=w?w.lvl+1:1,d=WEAPONS[o.id];return{k:'w',id:o.id,lvl,title:wname(o.id,w&&w.evo),sub:w?`Lv ${w.lvl} → ${lvl}`:'NEW WEAPON',text:HD.weaponText(o.id,lvl)+(lvl===MAX_LEVEL?` MAX! Evolves with ${PASSIVES[d.pass].name}.`:''),icon:iconUI[o.id],col:'#e0b64a'};}
   if(o.k==='p'){const l=p.passives[o.id]||0,d=PASSIVES[o.id];return{k:'p',id:o.id,lvl:l+1,title:d.name,sub:l?`Lv ${l} → ${l+1}`:'NEW PASSIVE',text:d.text,icon:iconUI[o.id],col:'#5fd3c4'};}
   if(o.k==='coins')return{k:'coins',title:'Take 20 coins',sub:'EVERYTHING MAXED',text:'Nothing left to upgrade. Cash in instead.',icon:iconUI.greed,col:'#f6cd3a'};
@@ -207,7 +220,7 @@ async function horde(s){
  function addCoins(p,v){const g=Math.round(v*p.st.greed);p.coins+=g;coinsTeam+=g;scoreDirty=1;}
  function openChest(p,big){
   const evos=p.weapons.filter(w=>evoReady(p,w)),got=[];
-  if(evos.length){for(const w of evos){w.evo=true;w.st=weaponStats(w.id,w.lvl,true);got.push({k:'w',id:w.id,title:wname(w.id,true),sub:'EVOLVED!',text:WEAPONS[w.id].evo.text,icon:iconUI[w.id],col:'#ffd23a',evo:true});}}
+  if(evos.length){for(const w of evos){w.evo=true;w.st=weaponStats(w.id,w.lvl,true);learnEvo(w.id);got.push({k:'w',id:w.id,title:wname(w.id,true),sub:'EVOLVED!',text:WEAPONS[w.id].evo.text,icon:iconUI[w.id],col:'#ffd23a',evo:true});}}
   else{let n=1+(big?1:0)+(rnd()<.3+.12*p.st.luck?1:0);for(let i=0;i<n;i++){const o=options(p);if(!o.length)break;const pick=o[(rnd()*o.length)|0],card=cardFor(p,pick);applyCard(p,card);got.push({...card,sub:'FOUND'});}
    if(!got.length){addCoins(p,50);p.hp=Math.min(p.maxHp,p.hp+p.maxHp*.5);got.push({k:'coins',title:'50 coins + a snack',sub:'BONUS',text:'Your loadout is already maxed out.',icon:iconUI.greed,col:'#f6cd3a'});}}
   scoreDirty=1;return got;
@@ -786,13 +799,13 @@ async function horde(s){
   const vx0=camX-hw-60,vx1=camX+hw+60,vy0=camY-hh-60,vy1=camY+hh+80;
   if(!skip.ground){x.fillStyle=groundPat;x.fillRect(vx0,vy0,vx1-vx0,vy1-vy0);}
   DL.length=0;nLights=0;
-  const cx0=Math.floor((vx0-120)/CS),cx1=Math.floor((vx1+120)/CS),cy0=Math.floor((vy0-120)/CS),cy1=Math.floor((vy1+120)/CS);
+  const cx0=Math.floor((vx0-160)/CS),cx1=Math.floor((vx1+160)/CS),cy0=Math.floor((vy0-160)/CS),cy1=Math.floor((vy1+300)/CS);
   const th=HD.THEMES[theme];
   for(let cy=cy0;cy<=cy1;cy++)for(let cx=cx0;cx<=cx1;cx++){const ch=getChunk(cx,cy);
    if(ch.roadH||ch.roadV){x.fillStyle=th.road;if(ch.roadH)x.fillRect(cx*CS,cy*CS+CS/2-RW/2,CS,RW);if(ch.roadV)x.fillRect(cx*CS+CS/2-RW/2,cy*CS,RW,CS);
     x.fillStyle=cabin?'rgba(0,0,0,.18)':'rgba(230,210,120,.35)';if(!cabin){if(ch.roadH)for(let k=0;k<CS;k+=60)x.fillRect(cx*CS+k,cy*CS+CS/2-2,32,4);if(ch.roadV)for(let k=0;k<CS;k+=60)x.fillRect(cx*CS+CS/2-2,cy*CS+k,4,32);}}
   }
-  for(let cy=cy0;cy<=cy1;cy++)for(let cx=cx0;cx<=cx1;cx++){const ps=getChunk(cx,cy).props;for(let i=0;i<ps.length;i++){const p=ps[i];if(p.x<vx0-60||p.x>vx1+60||p.y<vy0||p.y>vy1+120)continue;
+  for(let cy=cy0;cy<=cy1;cy++)for(let cx=cx0;cx<=cx1;cx++){const ps=getChunk(cx,cy).props;for(let i=0;i<ps.length;i++){const p=ps[i];if(p.x<vx0-140||p.x>vx1+140||p.y<vy0-20||p.y>vy1+280)continue;
    if(p.type==='bones'||p.type==='rubble'){drawProp(p,t);continue;}p.sy=p.y;DL.push(p);
    if(p.lit&&!p.dead)addLight(p.x,p.y-48,200);}}
   {const b=LM[0];if(Math.abs(b.x-camX)<hw+200&&Math.abs(b.y-camY)<hh+200){b.sy=b.y;DL.push(b);}}
@@ -812,7 +825,7 @@ async function horde(s){
    if(w.kind==='aura'){const rad=w.st.radius*p.st.area,pl=w.pulse;if(FXS['aura-goo']){x.globalAlpha=.75+pl*.25;fxDraw(FXS['aura-goo'],t,p.x,p.y+8,rad/FXS['aura-goo'].def.R,0,rad*.75/72);x.globalAlpha=1;continue;}x.fillStyle=`rgba(20,22,28,${.28+pl*.15})`;x.beginPath();x.ellipse(p.x,p.y+8,rad,rad*.75,0,0,TAU);x.fill();x.strokeStyle=`rgba(${w.evo?'255,210,90':'90,100,120'},${.5+pl*.4})`;x.lineWidth=2;x.stroke();}}}
   for(let i=0;i<E.length;i++){const e=E[i];if(!e.elite&&!e.boss)continue;const c2=e.boss?(e.immune?'160,100,255':'255,60,60'):'255,110,60';x.strokeStyle=`rgba(${c2},${.5+.25*Math.sin(t*5)})`;x.lineWidth=2;x.beginPath();x.ellipse(e.x,e.y+e.r*.7,e.r+8,(e.r+8)*.45,0,0,TAU);x.stroke();if(e.aura){x.strokeStyle=`rgba(${c2},.15)`;x.beginPath();x.ellipse(e.x,e.y+e.r*.7,150,110,0,0,TAU);x.stroke();}}
   // pickups below actors
-  for(let i=0;i<G.length;i++){const g=G[i];if(!gemRect(g,vx0,vx1,vy0,vy1))continue;const gi=gemArt[g.tier],sz=g.tier===0?12:g.tier===1?15:g.tier===2?19:24;x.drawImage(gi,g.x-sz/2,g.y-sz/2+Math.sin(t*4+g.x)*1.2,sz,sz);}
+  for(let i=0;i<G.length;i++){const g=G[i];if(!gemRect(g,vx0,vx1,vy0,vy1))continue;const gi=gemArt[g.tier],sz=(g.tier===0?12:g.tier===1?15:g.tier===2?19:24)*1.2;x.drawImage(gi,g.x-sz/2,g.y-sz/2+Math.sin(t*4+g.x)*1.2,sz,sz);}
   for(let i=0;i<K.length;i++){const q=K[i];if(!gemRect(q,vx0,vx1,vy0,vy1))continue;const bob=Math.sin(t*3+q.x)*2;
    if(q.k==='coin'){const w=18*Math.abs(Math.cos(t*5+q.x));x.drawImage(iconG.coin,q.x-w/2,q.y-9+bob,Math.max(2,w),18);continue;}
    if(q.k==='chest'){x.globalAlpha=.6+.3*Math.sin(t*4);x.drawImage(glowWhite,q.x-40,q.y-40,80,80);x.globalAlpha=1;x.drawImage(iconG.chest,q.x-18,q.y-18+bob,36,36);addLight(q.x,q.y,130);continue;}
@@ -957,6 +970,11 @@ async function horde(s){
     wrap(c2.text,Math.round(13*ui),cw-24).forEach((l,k)=>txt(l,cx2+cw/2,cy2+is+80*ui+k*Math.round(17*ui),Math.round(13*ui),'#d4dcee','center',false,'normal'));}
    else{const is=Math.min(ch-16,76*ui);x.drawImage(c2.icon,cx2+10,cy2+(ch-is)/2,is,is);const tx=cx2+is+22,tw=cw-is-32;txt(c2.title,tx,cy2+ch*.2,Math.round(17*ui),'#fff','left',true);txt(c2.sub,cx2+cw-12,cy2+ch*.2,Math.round(11*ui),c2.col,'right',false);
     wrap(c2.text,Math.round(12*ui),tw).slice(0,3).forEach((l,k)=>txt(l,tx,cy2+ch*.46+k*Math.round(15*ui),Math.round(12*ui),'#d4dcee','left',false,'normal'));}
+   if(c2.pairs&&c2.pairs.length&&!c2.evo){   // evolution pair icons (gold ring), top right on wide cards, bottom right on rows
+    const ps=Math.round(Math.min(26*ui,(wide?cw:ch)*.2)),n2=c2.pairs.length,px0=cx2+cw-10-n2*(ps+4),py0=wide?cy2+10:cy2+ch-ps-8;
+    panel(px0-6-ps*.55,py0-3,n2*(ps+4)+ps*.55+8,ps+6,(ps+6)/2,'rgba(10,8,2,.7)','#ffd23a',1.5);
+    txt('+',px0-ps*.3,py0+ps/2,Math.round(ps*.7),'#ffd23a','center',true);
+    c2.pairs.forEach((ic,k)=>x.drawImage(ic,px0+k*(ps+4),py0,ps,ps));}
    if(!chest&&!m.start)txt(String(i+1),cx2+10,cy2+10,Math.round(10*ui),'#7f8db0','left',false);
   }
   if(m.age<.45){x.fillStyle='rgba(5,7,16,.5)';x.fillRect(0,areaTop,W,H-areaTop);}
