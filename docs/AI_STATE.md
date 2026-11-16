@@ -45,6 +45,20 @@ loop); an arms sheet replaces bro-body + gun picture only for that gun. Props: p
 searchlight/helipad/sign, firebar-base (drawPropPic; '<prop>-<world>' override). Templates (26, guides = current body/guns) + brief
 ROUND 3 + kit zip (scratchpad sean-of-a-gun-round3-kit.zip). Checked with stand-ins in a private build; games.mjs broforce 9/9.
 
+SEAN OF A GUN HEADS + GUNS (Nov 16, branch claude/cool-edison-ma0a0l, unreleased; owner: heads too high / not facing the way
+they move / cut off at the bottom; stage guns again; hated shotgun; boomerang gun; see the rocket leave): broforce.js headCut()
+finds where each picture's head really ends (picture end, or the neck down to where the shoulders widen; the face box used to
+cut beards/masks flat) → c.face.base; drawHead(neck) seats base on the shoulder line (NECK_DROP 7 sheet px under the neck stub
+top = covers the red neck scarf). headFacts.js lookDir: no sure look → hairLook (face middle vs head middle, |off|>=.05;
+agrees with measured looks 896:83) so 'straight on' faces turn too (all games using flipFor). Weapons: old four worlds deal the
+original five, new worlds theme.weapons (stageGuns(), read live: theme changes on the world pick); crates/? blocks from the stage
+list. tools/broforce/compose-guns.py (no GPT): arms-shotgun = laser arms' two-hand hold + gun-shotgun, pump racks back/forward
+on fire; bell cannon kept as assets/originals/broforce/arms-elephant-gun.png for a later elephant gun. BOOMERANG GUN = rifle with
+the boomerang mounted across the muzzle (gun-boomerang + arms-boomerang; hold = loaded, fire frames = empty), one boomerang:
+fires again only once it's back (boomerOut), returns sooner (t .38, 520). arms-rocket-empty = warhead cut past the gold mouth
+ring, shown for RELOAD_SHOW .5 s after a shot; rocket spawns 5 px back so it leaves the tube. ARMS_TIP shotgun/boomerang removed
+(default from GUN_MUZZLE; boomerang [107,14]). Checked: head sheet 19 chars, scratch bfguns3.mjs, games.mjs broforce 9/9.
+
 SEAN OF A GUN ROUND 3 CORRECTIONS IN (Nov 15 late, RELEASED as v0.99.8, owner: "Release to main"; fuzz only): GPT's
 corrections (UPLOADS-GPT-2026-11-15-1834 + -2115): bro-run (bro-body upper pixels + torso legs; fist fixed at [56,51]), prop-tower
 without its ladder, 14 arm sheets at the corrected size (all but lightning; rifle = GPT's resize of our composite) + bro-torso back in

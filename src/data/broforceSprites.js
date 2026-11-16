@@ -55,7 +55,7 @@ const GUN_IDS=['rifle','shotgun','rocket','flame','pistols','laser','plasma','ra
 for(const id of GUN_IDS)PICTURES['gun-'+id]={size:[112,48],anchor:[48,24],kind:'gun',note:'the '+id+' held in the bro\'s hand, side view: the grip/hand point on the red cross, barrel pointing RIGHT, muzzle at the right'};
 // muzzle = the barrel tip in each gun picture (template px), measured on the owner's pictures; bullets and the flash start there
 const GUN_MUZZLE={rifle:[106,11],shotgun:[110,16],rocket:[102,13],flame:[110,15.5],pistols:[96,23],laser:[110,14],plasma:[110,13.5],railgun:[110,16.5],pulse:[110,14.5],
- minigun:[110,25],lightning:[110,14.5],holy:[110,10],fireball:[110,13.5],boomerang:[48,32],ring:[106,12]};
+ minigun:[110,25],lightning:[110,14.5],holy:[110,10],fireball:[110,13.5],boomerang:[107,14],ring:[106,12]};
 for(const id of GUN_IDS)PICTURES['gun-'+id].muzzle=GUN_MUZZLE[id];
 // dead bodies lying on the ground (bottom middle = where they lie). dead-bro is headless: the game puts the player's face in the circle.
 const deadSize=([fw,fh])=>{const tank=fw>=160;if(tank)return [fw,fh];const w=Math.ceil(Math.max(fw*1.25,fh*1.15)/16)*16,h=Math.max(32,Math.round(Math.min(fw,fh)*.6/16)*16);return [w,h];};
@@ -108,13 +108,13 @@ SHEETS['bro-run']={frame:[64,96],rows:{walk:8,run:8},feet:[32,94],neck:[32,22],h
  note:'the bro-body, same arms and fist, same size: only the legs move (8-frame walk, 8-frame run), the upper body bobs a little'};
 // arms + gun: both arms, hands and the gun as one piece, the shoulder on the red cross, the hand on the grip ring, the barrel tip on
 // the muzzle cross. hold = 1 frame; fire = 4 frames played on every shot (kick, recover, then the gun's own cycle).
-const ARMS_FIRE={rifle:'kick back + muzzle rises, recover, bolt/charging handle back, forward',shotgun:'big kick back, recover, pump slide BACK, pump slide forward',
+const ARMS_FIRE={rifle:'kick back + muzzle rises, recover, bolt/charging handle back, forward',shotgun:'pump shotgun: big kick back, recover, pump slide BACK, pump slide forward',
  rocket:'tube jolts back on the shoulder, recover, back hand loads a new rocket into the rear, tube settles',flame:'nozzle jolts forward a little, pilot light flares, nozzle sways up, sways down',
  pistols:'front pistol kicks up, front recovers, back pistol kicks up, back recovers (they fire in turn)',laser:'glow brightens + small kick, recover, cooling vents open, vents close',
  plasma:'heavy kick back, recover, core glows dim, core glows bright again',railgun:'violent kick back + arms brace, slide back, rails spark, settle',
  pulse:'small kick, recover, small kick, recover (fast SMG)',minigun:'barrels spin (blur) + body shakes, spin, spin, spin (frames loop while firing)',
  lightning:'coil crackles + kick, recover, arc between the prongs, arc gone',holy:'arm swings back, arm throws forward (flask leaves the hand), empty hand, new flask in hand',
- fireball:'hand pulls back, hand thrusts forward, open palm, flower/flame back in hand',boomerang:'arm cocks back, arm whips forward (boomerang leaves), empty hand follow-through, hand ready',
+ fireball:'hand pulls back, hand thrusts forward, open palm, flower/flame back in hand',boomerang:'BOOMERANG GUN (rifle with the boomerang mounted across the muzzle like a crossbow): hold = loaded; fire = the boomerang gone (shown until it comes back)',
  ring:'small kick, recover, rings glow, glow fades'};
 const ARMS={frame:[160,80],shoulder:[32,28],grip:[62,42]};   // grip = shoulder + (30,14), the reach of the current body's arm
 for(const id of GUN_IDS){const gm=GUN_MUZZLE[id],ga=[48,24];
@@ -122,8 +122,11 @@ for(const id of GUN_IDS){const gm=GUN_MUZZLE[id],ga=[48,24];
   note:'both arms holding the '+id+' (same gun picture as gun-'+id+', grip in the hand on the ring, barrel tip on the muzzle cross). hold: aiming forward. fire: '+ARMS_FIRE[id]};}
 // barrel tips measured on GPT's corrected arm sheets (Nov 15, hold frame, template px): bullets + flash start here.
 // shotgun = the approved double-bell cannon (middle of the two mouths), pistols = the lower pistol, thrown items = the hand.
-const ARMS_TIP={rifle:[120.5,29],shotgun:[118,19.5],rocket:[115.5,31],flame:[125,33],pistols:[109.5,40],laser:[124,35],plasma:[124.5,31.5],
- railgun:[123,36],pulse:[125,34],minigun:[123,42],holy:[123,28],fireball:[124,31.5],boomerang:[105,44],ring:[120,30]};
+const ARMS_TIP={rifle:[120.5,29],rocket:[115.5,31],flame:[125,33],pistols:[109.5,40],laser:[124,35],plasma:[124.5,31.5],
+ railgun:[123,36],pulse:[125,34],minigun:[123,42],holy:[123,28],fireball:[124,31.5],ring:[120,30]};
+// owner, Nov 15: the rocket leaves the launcher = the same arms with the warhead cut off at the tube mouth, shown until the
+// reload (tools/broforce/compose-guns.py builds it, and the pump shotgun + boomerang gun arms)
+SHEETS['arms-rocket-empty']={...SHEETS['arms-rocket'],note:'arms-rocket with the warhead gone (fired, not reloaded yet)'};
 for(const [id,m] of Object.entries(ARMS_TIP))SHEETS['arms-'+id].muzzle=m;
 // props: bottom middle = where it stands (props drawn by the game until a picture is in). Sheets loop.
 Object.assign(PICTURES,{

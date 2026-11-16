@@ -50,7 +50,7 @@ const WEAPONS2={
  lightning:{name:'LIGHTNING GUN',rate:.15,dmg:1.6,range:112,tile:1,ext:'zap'},
  holy:{name:'HOLY WATER',rate:.42,dmg:2,speed:230,tile:1.5,ext:'holy'},
  fireball:{name:'FIRE FLOWER',rate:.26,dmg:1.6,speed:250,tile:1,ext:'fireball'},
- boomerang:{name:'BOOMERANG',rate:.5,dmg:2.2,speed:320,tile:1.5,ext:'boomer'},
+ boomerang:{name:'BOOMERANG GUN',rate:.5,dmg:2.2,speed:320,tile:1.5,ext:'boomer'},
  ring:{name:'RING BLASTER',rate:.3,dmg:1.1,speed:430,life:.6,tile:.5,ext:'ring',pellets:3,spread:.32},
 };
 const BOSSES={
@@ -95,7 +95,7 @@ function makeExt(C){
   if(w.ext==='plasma'){W.shots.push({ext:1,kind:'plasma',x:mx,y:my,vx:f*w.speed,vy:0,life:w.life,owner:own,dmg:w.dmg,t:0});C.snd(300,.2,{type:'sine',vol:.04,to:900});return;}
   if(w.ext==='holy'){W.shots.push({ext:1,kind:'holy',dig:remote?0:w.tile,x:mx,y:my-2,vx:f*w.speed+p.vx*.3,vy:-170,g:600,life:2,owner:own,dmg:w.dmg,t:0,spin:0});C.snd(900,.05,{type:'triangle',vol:.03});return;}
   if(w.ext==='fireball'){W.shots.push({ext:1,kind:'fireP',dig:remote?0:w.tile,x:mx,y:my,vx:f*w.speed,vy:120,g:800,life:1.8,owner:own,dmg:w.dmg,t:0,bounces:0});C.snd(700,.06,{type:'square',vol:.025,to:300});return;}
-  if(w.ext==='boomer'){W.shots.push({ext:1,kind:'boomer',dig:remote?0:w.tile,dug:new Set(),x:mx,y:my,vx:f*w.speed,vy:0,life:1.6,owner:own,dmg:w.dmg,t:0,ox:p,hits:new Set(),f});C.snd(500,.15,{type:'triangle',vol:.03,to:800});return;}
+  if(w.ext==='boomer'){W.shots.push({ext:1,kind:'boomer',dig:remote?0:w.tile,dug:new Set(),x:mx,y:my,vx:f*w.speed,vy:0,life:1.4,owner:own,dmg:w.dmg,t:0,ox:p,hits:new Set(),f});C.snd(500,.15,{type:'triangle',vol:.03,to:800});return;}
   // straight bullets with looks (laser, rail, pulse, minigun, rings)
   const n=w.pellets||1;
   for(let k=0;k<n;k++){const sp=n>1?(k/(n-1)-.5)*w.spread:(w.spread?(rnd()-.5)*w.spread:(rnd()-.5)*.03);
@@ -109,7 +109,7 @@ function makeExt(C){
  function stepShot(sh,dt){
   const W=C.W,P=C.P;sh.t+=dt;sh.life-=dt;
   if(sh.homing&&sh.t<sh.homing&&!P.dead){const a=Math.atan2(P.y-12-sh.y,P.x-sh.x),sp=Math.hypot(sh.vx,sh.vy),cur=Math.atan2(sh.vy,sh.vx);let d=a-cur;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;const na=cur+Math.max(-3*dt,Math.min(3*dt,d));sh.vx=Math.cos(na)*sp;sh.vy=Math.sin(na)*sp;}
-  if(sh.kind==='boomer'){const back=sh.t>.45;if(back&&sh.ox){const dx=sh.ox.x-sh.x,dy=sh.ox.y-14-sh.y,d=Math.hypot(dx,dy)||1;sh.vx+=(dx/d*420-sh.vx)*Math.min(1,dt*5);sh.vy+=(dy/d*420-sh.vy)*Math.min(1,dt*5);if(d<10&&sh.t>.6)sh.life=0;}else sh.vx*=1-dt*1.2;}
+  if(sh.kind==='boomer'){const back=sh.t>.38;if(back&&sh.ox){const dx=sh.ox.x-sh.x,dy=sh.ox.y-14-sh.y,d=Math.hypot(dx,dy)||1;sh.vx+=(dx/d*520-sh.vx)*Math.min(1,dt*6);sh.vy+=(dy/d*520-sh.vy)*Math.min(1,dt*6);if(d<12&&sh.t>.5)sh.life=0;}else sh.vx*=1-dt*1.2;}
   sh.vy+=(sh.g||0)*dt;const nx=sh.x+sh.vx*dt,ny=sh.y+sh.vy*dt;
   const solid=C.solidAt(nx,ny);
   if(sh.kind==='fireP'||sh.kind==='fireE'){if(C.solidAt(nx,sh.y)){if(sh.dig)C.digTile(nx,sh.y,sh.dig);sh.vx=-sh.vx*.9;sh.bounces=(sh.bounces||0)+1;}else sh.x=nx;if(C.solidAt(sh.x,ny)){if(sh.dig&&sh.vy>0)C.digTile(sh.x,ny,sh.dig*.35);sh.vy=-Math.abs(sh.vy)*.78-60;if(sh.vy>-140)sh.vy=-180;sh.bounces=(sh.bounces||0)+1;}else sh.y=ny;if(sh.bounces>5)sh.life=0;}

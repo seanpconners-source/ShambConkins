@@ -43,9 +43,8 @@ const WEAPONS={
  flame:{name:'FLAMETHROWER',rate:.045,dmg:.4,speed:190,life:.36,tile:.25,flame:true},
  pistols:{name:'TWIN PISTOLS',rate:.13,dmg:1.6,speed:600,life:.5,tile:1.4}
 };
-Object.assign(WEAPONS,EXT.WEAPONS2);
-// every gun on every world (owner, Nov 15): bros and crates deal from all fifteen
-const WEAPON_IDS=Object.keys(WEAPONS);
+const WEAPON_IDS=Object.keys(WEAPONS);// the first four worlds deal these five
+Object.assign(WEAPONS,EXT.WEAPONS2);// the new worlds deal their own six (theme.weapons); owner, Nov 15: guns that suit the stage again
 const FOES={
  mook:{hp:1,w:5,h:20,speed:28,sight:175,score:100},
  bomber:{hp:1,w:5,h:20,speed:30,sight:160,score:150},
@@ -232,6 +231,13 @@ function renderHead(img,S=72){
 // with the same dark outline. c.face = {cx,cy,w,chin} in canvas px; drawHead places the chin on the neck and mirrors a
 // face that looks against the body. Needs see-through pixels (a cut-out or a removable backdrop), else null = old way.
 const FACE_W=35,HEAD_CANVAS=96/72;
+function headCut(px,cw,ch,fx,fy,fw,fh){
+ const a0=Math.max(0,Math.round(fx-fw*.2)),a1=Math.min(cw-1,Math.round(fx+fw*1.2)),wid=y=>{let n=0;for(let x=a0;x<=a1;x++)if(px[(y*cw+x)*4+3]>60)n++;return n;};
+ const y0=Math.round(fy+fh*.8),yMax=Math.min(ch-1,Math.round(fy+fh*1.45));if(y0>=ch)return ch;
+ let wmin=1e9,ym=y0;for(let y=y0;y<=yMax;y++){const w=wid(y);if(w<fw*.06)return Math.max(Math.round(fy+fh*.9),y);if(w<wmin){wmin=w;ym=y;}}
+ for(let y=ym;y<=yMax;y++)if(wid(y)>wmin*1.3+fw*.04)return Math.max(Math.round(fy+fh*1.04),y);
+ return Math.min(yMax,Math.max(Math.round(fy+fh*1.04),ym+Math.round(fh*.12)));
+}
 function renderFaceHead(img,S,facts){
  const w=img.naturalWidth,h=img.naturalHeight;if(!w||!h)return null;const f=S/72,SC=Math.round(S*HEAD_CANVAS);
  const k=Math.min(1,Math.max(220,S*2.4)/Math.max(w,h)),cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k));
@@ -240,7 +246,9 @@ function renderFaceHead(img,S,facts){
  const px=data.data,n=cw*ch;let clear=0;for(let i=0;i<n;i++)if(px[i*4+3]<40)clear++;
  if(clear/n<=.05){if(removeBackdrop(px,cw,ch,30,95)||removeBackdrop(px,cw,ch,46,150))wx.putImageData(data,0,0);else return null;}
  const F=facts.face,fx=F.x*cw,fy=F.y*ch,fw=F.w*cw,fh=F.h*ch;if(fw<4)return null;
- const chin=fy+fh,bottom=Math.min(ch,Math.round(chin+fh*.1));
+ // where the head really ends: the face box often stops above the real chin (beards, masks, long jaws: owner saw them cut
+ // flat), so walk down from the box bottom: stop where the picture ends, or keep the neck until the shoulders widen out
+ const chin=fy+fh,bottom=headCut(px,cw,ch,fx,fy,fw,fh);
  // opaque bounds from the top down to just under the chin (hair, ears, hats; no shoulders)
  let x0=cw,x1=-1,y0=ch;for(let yy=0;yy<bottom;yy++)for(let xx=0;xx<cw;xx++)if(px[(yy*cw+xx)*4+3]>60){if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(yy<y0)y0=yy;}
  if(x1<0)return null;
@@ -256,7 +264,7 @@ function renderFaceHead(img,S,facts){
  const ol=document.createElement('canvas');ol.width=ol.height=SC;const ox=ol.getContext('2d');ox.drawImage(sil,0,0);ox.globalCompositeOperation='source-in';ox.fillStyle='#140c08';ox.fillRect(0,0,SC,SC);
  for(let a=0;a<16;a++){const r=2.6*f;x.drawImage(ol,Math.cos(a*Math.PI/8)*r,Math.sin(a*Math.PI/8)*r);}
  x.drawImage(sil,0,0);
- c.face={cx:CX,cy:CY,w:fw*sc,chin:dy+chin*sc,S};
+ c.face={cx:CX,cy:CY,w:fw*sc,chin:dy+chin*sc,base:dy+bottom*sc,S};
  return c;
 }
 // Flood-fill the backdrop in from the image border: a neighbour joins when it is close to the pixel it came from
@@ -323,8 +331,9 @@ async function broforce(s){
  const seed=Math.floor(s.random()*4294967296);
  const worldKey=()=>(Object.keys(THEMES).find(k=>THEMES[k]===theme)||'broforce-jungle').replace('broforce-','');
  const mkStages=sd=>[0,1,2].map(si=>theme.ext?WX.buildStageExt(sd+si*7919,si,theme,KC):buildStage(sd+si*7919,si));
- const wpnFor=id=>weaponFor(id);
- const anyGun=()=>WEAPON_IDS[Math.floor(Math.random()*WEAPON_IDS.length)];
+ const stageGuns=()=>theme.ext?theme.weapons:WEAPON_IDS;// theme changes on the world pick, so read it each time
+ const wpnFor=id=>{const L=stageGuns();return L[hash('bro:'+id)%L.length];};
+ const anyGun=()=>{const L=stageGuns();return L[Math.floor(Math.random()*L.length)];};
  let TH=theme,GK=1;   // TH = the theme with this stage's palette (new worlds change colours per stage), GK = gravity
  // drop-in pictures: only this world's (the full kit is ~1 GB decoded); others load if ever drawn
  const preloadArt=()=>{const wk=worldKey(),names=['bro-body','cage','cage-gold','flag','flag-up','pickup-gun','pickup-nade',...['tiles','top','sky','far','mid','vehicle','tree','ground','rock'].map(k=>k+'-'+wk)];
@@ -568,7 +577,8 @@ async function broforce(s){
   }
   // fire
   const wpn=WEAPONS[p.weapon];
-  if(inp.fire&&p.fireCD<=0){p.fireCD=wpn.rate;fireWeapon(p,wpn);}
+  // the boomerang gun has ONE boomerang mounted: it fires again once that one is back (or lost)
+  if(inp.fire&&p.fireCD<=0&&!(p.weapon==='boomerang'&&boomerOut(p))){p.fireCD=wpn.rate;fireWeapon(p,wpn);}
   if(inp.gren){inp.gren=0;if(p.grenades>0){p.grenades--;const nv=[p.x+p.facing*6,p.y-16,p.facing*190+p.vx*.3,-230];throwNade(...nv,'p');if(net)outbox.gr.push(nv.map(Math.round));}}
   inp.downPress=0;
   // fell into the abyss? (bedrock makes this rare) — or squashed inside rebuilt rock
@@ -580,7 +590,7 @@ async function broforce(s){
   p.shotsFired=(p.shotsFired||0)+1;p.fireT=0;const tip=gunTip(p),mx=p.x+p.facing*tip[0]*BRO_K,my=p.y+tip[1]*BRO_K;p.muzzle=.06;p.recoil=1;
   if(net)outbox.sh.push([Math.round(mx),Math.round(my),p.facing,p.weapon]);   // the partner's phone shows the shot
   if(w.ext){X.fire(p,w,mx,my);return;}
-  if(w.rocket){W.shots.push({x:mx,y:my,vx:p.facing*w.speed,vy:0,life:w.life,owner:'p',kind:'rocket',trail:0});sfx.rocket();p.vx-=p.facing*40;return;}
+  if(w.rocket){W.shots.push({x:mx-p.facing*5,y:my,vx:p.facing*w.speed,vy:0,life:w.life,owner:'p',kind:'rocket',trail:0});sfx.rocket();p.vx-=p.facing*40;return;}
   if(w.flame){for(let k=0;k<2;k++)W.flames.push({x:mx,y:my+(Math.random()-.5)*3,vx:p.facing*w.speed*(0.8+Math.random()*.4)+p.vx*.5,vy:(Math.random()-.5)*50-20,life:w.life*(0.8+Math.random()*.4),max:w.life,dmg:w.dmg});if(frames%6===0)sfx.flame();return;}
   const n=w.pellets||1;
   for(let k=0;k<n;k++){const sp=n>1?(k/(n-1)-.5)*w.spread+(Math.random()-.5)*.06:(Math.random()-.5)*.05;
@@ -1142,8 +1152,11 @@ async function broforce(s){
  // the face's middle. dir = the way the body faces (-1/1): a face looking the other way is mirrored (0 = never).
  // Pictures without face facts (online photos, stand-ins) keep the old centred box.
  const HF=require('src/headFacts.js');
+ // the head's base (where its own neck ends) sits on the body's shoulder line: 7 sheet px under the top of the neck stub
+ // (the chin used to sit on the very tip of the stub, so a strip of bare neck showed: owner, Nov 15 'heads sit too high')
+ const NECK_DROP=7;
  function drawHead(id,mood,x,y,size,dir=0,neck=false){const img=headCanvas(id,mood,72,true),fc=img.face;g.save();g.translate(x,y);
-  if(fc){const u=size/fc.S;if(dir&&HF.flipFor(id,mood,dir))g.scale(-1,1);g.drawImage(img,-fc.cx*u,-(neck?fc.chin:fc.cy)*u,img.width*u,img.height*u);}
+  if(fc){const u=size/fc.S;if(dir&&HF.flipFor(id,mood,dir))g.scale(-1,1);g.drawImage(img,-fc.cx*u,-(neck?fc.base??fc.chin:fc.cy)*u,img.width*u,img.height*u);}
   else{if(neck)g.translate(0,-7*size/17);g.drawImage(img,-size/2,-size/2,size,size);}
   g.restore();}
  function drawBro(p,time){g.save();g.translate(p.x,p.y);g.scale(BRO_K,BRO_K);g.translate(-p.x,-p.y);drawBro0(p,time);g.restore();}
@@ -1158,11 +1171,15 @@ async function broforce(s){
    const fr=row==='idle'?Math.floor(time*2):row==='run'||row==='walk'?Math.floor(ph/.09/STRIDE[row]*(d.rows[row]||1)):Math.floor(ph*1.6);
    p.bodyRow=row;p.bodyFr=fr;p.bodyDef=d;g.save();g.translate(p.x,p.y);g.scale(f,1);BS.drawFrame(g,S,row,fr,0,0,1);
    const ks=p.ladder?null:kickAt(p,time,d);
-   if(as){const sx=(d.shoulder[0]-d.feet[0])/BS.K,sy=(d.shoulder[1]-d.feet[1])/BS.K,[frow,ff]=fireFrame(p,time);g.save();kickXf(ks);BS.drawFrame(g,as,frow,ff,sx,sy,1);g.restore();}
+   if(as){const sx=(d.shoulder[0]-d.feet[0])/BS.K,sy=(d.shoulder[1]-d.feet[1])/BS.K;let [frow,ff]=fireFrame(p,time),A=as;
+    // the rocket is seen leaving: an empty tube until the reload; the boomerang gun stays empty while its boomerang is out
+    if(p.weapon==='rocket'&&(p.fireT??9)<RELOAD_SHOW){const e=BS.sheet('arms-rocket-empty');if(e)A=e;}
+    if(p.weapon==='boomerang'&&boomerOut(p)){frow='fire';ff=Math.max(ff,1);}
+    g.save();kickXf(ks);BS.drawFrame(g,A,frow,ff,sx,sy,1);g.restore();}
    // the old body's fist doesn't move: the gun kicks round the hand so it stays in the fist
    let kf=ks;if(!as&&!p.ladder){const [hx,hy]=handAt(d,p);if(ks)kf={...ks,x:ks.x*.6,sx:hx,sy:hy};g.save();kickXf(kf);drawGun(p.weapon,hx-(ks?0:p.recoil*1.5),hy);g.restore();}
    if(!p.ladder&&p.muzzle>0&&p.weapon!=='flame'){const [mx,my]=gunTip(p),rc=as||ks?0:p.recoil*1.5;g.save();if(kf)kickXf(kf);if(!BS.drawFx(g,'fx-muzzle',mx-rc,my,1-p.muzzle/.06)){g.fillStyle='#fff3a0';g.beginPath();g.arc(mx-rc,my,3,0,7);g.fill();}g.restore();}
-   g.restore();const ny=(d.neck[1]-d.feet[1])/BS.K,nx=(d.neck[0]-d.feet[0])/BS.K;drawHead(p.bro,broMood(p),p.x+f*nx,p.y+ny+1/BRO_K,17/BRO_K,f,true);g.globalAlpha=1;return;}
+   g.restore();const ny=(d.neck[1]-d.feet[1])/BS.K,nx=(d.neck[0]-d.feet[0])/BS.K;drawHead(p.bro,broMood(p),p.x+f*nx,p.y+ny+NECK_DROP/BS.K,17/BRO_K,f,true);g.globalAlpha=1;return;}
   g.save();g.translate(p.x,p.y);g.scale(f,1);
   const col=PCOL[p.i],dark=p.i?'#7a2a52':'#1f3a7a';
   // legs
@@ -1181,7 +1198,7 @@ async function broforce(s){
   g.restore();
   // head: the character's own face, big-head style
   const bob=run?Math.abs(Math.sin(ph*1.6))*-1:0;
-  drawHead(p.bro,broMood(p),p.x+f*.5,p.y-18+bob,17/BRO_K,f,true);
+  drawHead(p.bro,broMood(p),p.x+f*.5,p.y-18+NECK_DROP/BS.K+bob,17/BRO_K,f,true);
   g.globalAlpha=1;
   if(p.climb&&!p.grounded){g.fillStyle='rgba(255,255,255,.6)';for(let k=0;k<2;k++)g.fillRect(p.x+f*(p.w+1),p.y-8-k*7-(time*40%7),1,3);}
  }
@@ -1200,12 +1217,14 @@ async function broforce(s){
  // the kick on every shot, drawn in code on top of the arms sheet (GPT's fire frames barely move: 1-4 px): [push back px,
  // tip up rad]; negative = a throw (lunge forward, tip down). Turns round the shoulder.
  const KICK={rocket:[3,.12],railgun:[3.2,.1],shotgun:[2.6,.14],plasma:[2.2,.08],rifle:[1.4,.05],laser:[1.2,.04],ring:[1.2,.05],lightning:[.8,.03],
-  pulse:[.9,.035],minigun:[.9,.02],pistols:[1,.06],flame:[.5,.015],holy:[-1.5,-.08],fireball:[-1.2,-.06],boomerang:[-2,-.1]};
+  pulse:[.9,.035],minigun:[.9,.02],pistols:[1,.06],flame:[.5,.015],holy:[-1.5,-.08],fireball:[-1.2,-.06],boomerang:[1.8,.08]};
  function kickAt(p,time,d){const k=KICK[p.weapon];if(!k)return null;const w=WEAPONS[p.weapon]||{},t=p.fireT??9;let e;
   if((w.rate||1)<.1)e=t<.12?.55+.45*Math.abs(Math.sin(time*45)):0;else e=t<.04?t/.04:Math.max(0,1-(t-.04)/.16);
   if(e<=0)return null;return {x:k[0]*e,r:k[1]*e,sx:(d.shoulder[0]-d.feet[0])/BS.K,sy:(d.shoulder[1]-d.feet[1])/BS.K};}
  function kickXf(k){if(!k)return;g.translate(k.sx,k.sy);g.rotate(-k.r);g.translate(-k.x-k.sx,-k.sy);}
  // arms sheet frame: the 4-frame fire cycle after each shot (fast guns loop it while the trigger is held), else hold
+ const RELOAD_SHOW=.5;// rocket rate .62: the new warhead shows just before the next shot can go
+ const boomerOut=p=>W.shots.some(sh=>sh.kind==='boomer'&&sh.life>0&&sh.ox===p);
  function fireFrame(p,time){const w=WEAPONS[p.weapon]||{rate:.3},rate=w.rate||.3;
   if(rate<.1)return p.fireT<.12?['fire',Math.floor(time*(p.weapon==='minigun'?30:22))%(p.weapon==='minigun'?4:2)]:['hold',0];
   const D=Math.min(.36,Math.max(.14,rate*.9));return p.fireT<D?['fire',Math.min(3,Math.floor(p.fireT/D*4))]:['hold',0];}

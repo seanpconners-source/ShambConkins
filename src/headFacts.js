@@ -31,7 +31,11 @@ function headFacts(id,mood='normal'){
  memo.set(url,f);return f;
 }
 // Which way the face looks, only when the check is sure enough: -1 left, 1 right, 0 straight on / not sure.
-function lookDir(id,mood,minConf=.45){const f=headFacts(id,mood);return f&&f.look&&f.conf>=minConf?f.look:0;}
+function lookDir(id,mood,minConf=.45){const f=headFacts(id,mood);if(!f)return 0;if(f.look&&f.conf>=minConf)return f.look;return hairLook(f);}
+// A face the check called straight on (or wasn't sure of) still leans one way: the hair/back of the head sits behind the
+// face, so the face's middle is off the head's middle toward where it looks (agrees with the measured look 896 to 83).
+// Owner, Nov 15: heads didn't face the way the bro runs (~1,150 pictures never turned).
+function hairLook(f){const off=(f.face.x+f.face.w/2-(f.head.x+f.head.w/2))/(f.face.w||1);return Math.abs(off)>=.05?Math.sign(off):0;}
 // Mirror the head? body = which way the body moves or faces (-1 left, 1 right).
 function flipFor(id,mood,body,minConf){const d=lookDir(id,mood,minConf);return !!d&&!!body&&d!==Math.sign(body);}
 // For drawers that fit the whole picture in a square box of `size` (session.sprite, fitted <img>): the box size and the
