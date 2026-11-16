@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.12
+
+- **Sitabout Mini Golf, steadier frame rate:** on fast-refresh screens (like the Fold's 120 Hz) the game now runs at an even 60 frames a second, so each frame gets the full time instead of landing on random screen refreshes. When a frame runs late, the background painting of the hole eases off for a moment.
+- **FPS meter:** a new button on the mini golf course picker shows frames per second, the slowest frame and how much of the hole is still being painted, in the corner while you play.
+- **New Arcade art:** icons and title logos for 50 games (Alien Motion Tracker, TowerFall, Asteroids, Battle Royale, Tetris Block Battle, Bomb Grid, Breakout, Puzzle Bobble, Starship Troopers, The Color of Money, Crossy Road, Windjammers, Pictionary, Mr. Driller, Duck Hunt, Rocky, There Are Four Lights, Frogger, Full Shambyahtzee, Caddyshack, Hungry Hungry Heads, Kingpin, Dinner Service, Mars Attacks, Metal Gear, Moonraker, Newlywed Game, Pac-Maze, Paper Route, Pong, The Price Is Right, Boulder Run, Rainbow Rivals, Pancakes, Roast Battle, Sean of the Dead, Shred Hero, Simon, Snake II, Sqwordle, Strategema, Dodgeball, Warehouse Shift, The Warriors, Brave and the four Sean of a Gun worlds), new pictures on the Sean of a Gun world cards, and the Sitabout logo on its Arcade page. Their new backgrounds wait for the Background Picker.
+- **Seanic:** Knux's and Shade's hanging frames now have whole fists.
+
 ## v0.99.11
 
 - **Sitabout Mini Golf, smooth at last:** each hole is now painted once (during the flyover) at one sharpness, and moving or zooming the camera never repaints anything. Before, the camera zooming with the ball's speed made the game repaint course pieces, rails and pictures all the way through a roll, which was the choppiness. Big pictures are shrunk ahead of time on a short loading bar, and the face on your ball no longer gets remade every frame. Long holes on big screens like the Fold are painted a little softer so they don't use too much memory.

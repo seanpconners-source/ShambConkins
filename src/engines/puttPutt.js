@@ -207,7 +207,7 @@ async function minigolf(s){
  // ------------------------------------------------------------ drawing
  function drawWorld(){
   const parts=C.movers.length?P.moverParts(C,T):{segs:[],hazards:[]};const near=balls.some(bb=>!bb.done&&!bb.hidden&&Math.hypot(bb.b.x-hole.cup[0],bb.b.y-hole.cup[1])<14);
-  R.drawHole(x,W,H,cam,{C,course,T,kc:kCeil(),paintMs:phase==='roll'||phase==='fin'?2:phase==='intro'?7:5,parts,fx,hit:hits,trail:phase==='roll'||phase==='fin'?trail:null,balls:balls.filter(bb=>!bb.done||bb.sinkT<.5).map(bb=>({...bb,ghost:phase!=='intro'&&bb.i!==turn&&!bb.done,sinkDip:bb.done&&!bb.picked?Math.min(1,bb.sinkT*3)*2.2:0})),flag:near?.35:1,lost:hole.lost,lostFound:lostFound[hole.key]||saved().lost?.includes(hole.key)});}
+  R.drawHole(x,W,H,cam,{C,course,T,kc:kCeil(),paintMs:(phase==='roll'||phase==='fin'?2:phase==='intro'?7:5)*pace.paintK,parts,fx,hit:hits,trail:phase==='roll'||phase==='fin'?trail:null,balls:balls.filter(bb=>!bb.done||bb.sinkT<.5).map(bb=>({...bb,ghost:phase!=='intro'&&bb.i!==turn&&!bb.done,sinkDip:bb.done&&!bb.picked?Math.min(1,bb.sinkT*3)*2.2:0})),flag:near?.35:1,lost:hole.lost,lostFound:lostFound[hole.key]||saved().lost?.includes(hole.key)});}
  function drawAim(){
   const bb=balls[turn];if(!bb)return;const b=bb.b,[BX,BY]=R.proj(cam,W,H,b.x,b.y,b.z+P.BALL_R);
   let v=aim?shotVec():null;
@@ -298,7 +298,7 @@ async function minigolf(s){
  let menuCv=null,menuSig='';
  function drawMenuCached(){W=s.W;H=s.H;const ready=SP.MENU_PICTURES.every(n=>!SP.has(n)||SP.picture(n));
   if(!ready){drawMenu();return;}
-  const sig=[W,H,menu.c,menu.n,SP.version(),fb.top].join('|');
+  const sig=[W,H,menu.c,menu.n,SP.version(),fb.top,pace.meter].join('|');
   if(!menuCv||sig!==menuSig){menuSig=sig;if(!menuCv)menuCv=document.createElement('canvas');menuCv.width=W;menuCv.height=H;x=menuCv.getContext('2d');try{drawMenu();}finally{x=x0;}}
   x.drawImage(menuCv,0,0);}
  function drawMenu(){menuHits=[];W=s.W;H=s.H;
@@ -328,6 +328,8 @@ async function minigolf(s){
   if(menu.c!=='tour'){const lens=[3,6],bw=Math.min(130,(W-40)/2);lens.forEach((n,i)=>{const bx=W/2-(lens.length*bw+(lens.length-1)*10)/2+i*(bw+10),sel=menu.n===n;pill(bx,y,bw,38,sel?'#ffd23f':'rgba(0,0,0,.55)','rgba(255,255,255,.4)');text(n===3?'FRONT 3':'ALL 6 HOLES',bx+bw/2,y+19,14,sel?'#1a1a1a':'#fff','center');menuHits.push({x:bx,y,w:bw,h:38,f:()=>{menu.n=n;}});});y+=48;}
   const gw=Math.min(W*.7,320),gh=Math.min(64,H*.09),gx2=(W-gw)/2,gy=Math.min(y+6,H-gh-40);pill(gx2,gy,gw,gh,'#2fbf4a','#fff');text('TEE OFF',W/2,gy+gh/2,gh*.48,'#fff','center',FONT,400);
   menuHits.push({x:gx2,y:gy,w:gw,h:gh,f:()=>{if(menu.go){const g=menu.go;menu.go=null;snd.putt(.6);g();}}});
+  {const fs=clamp(W*.03,11,14),bw=fs*7.4,bh=fs*2.3,bx=10,by=H-bh-10;pill(bx,by,bw,bh,pace.meter?'rgba(255,210,63,.9)':'rgba(0,0,0,.5)','rgba(255,255,255,.3)');
+   text(pace.meter?'FPS METER ON':'FPS METER',bx+bw/2,by+bh/2,fs*.82,pace.meter?'#000':'#fff','center');menuHits.push({x:bx,y:by,w:bw,h:bh,f:()=>{pace.meter=!pace.meter;try{localStorage.setItem('sc-mg-fps',pace.meter?'1':'');}catch{}}});}
   const lostN=(sv.lost||[]).length;text(`Lost balls found: ${lostN}/18   ·   Aces: ${sv.aces||0}`,W/2,Math.min(H-18,gy+gh+22),12,'rgba(255,255,255,.85)','center',UI,800);
  }
  function drawMenuWait(){x.fillStyle='#0b1a10';x.fillRect(0,0,W,H);text(`${s.players[0].name} is picking the course…`,W/2,H/2,clamp(W*.045,14,20),'#fff','center');}
@@ -339,14 +341,32 @@ async function minigolf(s){
   else if(Array.isArray(m.fin)){await wait(()=>phase==='fin'&&waitFin);if(!s.alive)return;const {bb}=waitFin,[fx0,fy0,fz0,k,n]=m.fin;waitFin=null;const b=bb.b;
    if(k!=='splash'&&k!=='ob'&&k!=='chomp'){b.x=+fx0;b.y=+fy0;b.z=+fz0;}if(Number.isFinite(n))bb.strokes=n;b.vx=b.vy=0;settle(k,bb);}}})();
  // ------------------------------------------------------------ test hooks
- s.debug={engine:'minigolf',get phase(){return phase;},get hole(){return hole?.key;},get hi(){return hi;},get turn(){return turn;},get balls(){return balls;},get cards(){return cards;},get T(){return T;},gfx(){return R.cacheStats(C);},
+ s.debug={engine:'minigolf',get phase(){return phase;},get hole(){return hole?.key;},get hi(){return hi;},get turn(){return turn;},get balls(){return balls;},get cards(){return cards;},get T(){return T;},gfx(){return R.cacheStats(C);},pace(){const now=performance.now();return {fps:pace.win.filter(w=>now-w[0]<1000).length,vs:pace.vs,paintK:pace.paintK};},
   pick(cid,n){menu.c=cid;menu.n=n||menu.n;if(menu.go)menu.go();else menu.auto=true;},skipIntro(){flyT=99;},go(i){startHole(i);},place(x0,y0){const bb=balls[turn];Object.assign(bb.b,P.newBall(x0,y0,C));},fire(vx,vy){fire(vx,vy,false,false);},aimAt(sx,sy,ex,ey){aim={id:-1,sx,sy,x:ex,y:ey,t0:performance.now()};},
   // one good shot for whoever is up (tests / online bot); returns a word when it acts
   shoot(skill=.8){if(phase!=='aim')return '';const bb=balls[turn],r=CPU.planNow(C,{x:bb.b.x,y:bb.b.y,z:bb.b.z},T,{skill,fine:false}),v=r.p*VMAX;fire(Math.cos(r.a)*v,Math.sin(r.a)*v,false,false);return 'shot';},
   get bot(){return ()=>{if(phase==='loading')return '';if(phase==='menu'&&menu.go){menu.go();return 'menu';}if(phase==='intro'){flyT=99;return 'skip';}if(phase==='card'&&scoreUI&&cardT>.8){scoreUI.next();return 'card';}if(phase==='aim'&&myTurn())return s.debug.shoot(.6);return '';};},
   state(){return {phase,hole:hole?.key,turn,strokes:balls.map(b=>b.strokes),cards,points:plan?pointsNow():[0,0]};}};
+ // ------------------------------------------------------------ frame pacing + the FPS meter (toggle on the course picker)
+ const pace={last0:0,ivs:[],n:0,vs:16.7,lastDraw:0,acc:0,slowT:0,paintK:1,meter:(()=>{try{return !!localStorage.getItem('sc-mg-fps');}catch{return false;}})(),
+  win:[],jsWin:[],shown:null,frame(g){this.win.push([performance.now(),g]);},js(ms){this.jsWin.push(ms);}};
+ function drawMeter(){const now=performance.now();while(pace.win.length&&now-pace.win[0][0]>1000)pace.win.shift();if(pace.jsWin.length>pace.win.length)pace.jsWin.splice(0,pace.jsWin.length-pace.win.length);
+  if(!pace.shown||now-pace.shown.at>500){const g=pace.win.map(w=>w[1]),j=[...pace.jsWin].sort((a,b)=>a-b);pace.shown={at:now,fps:pace.win.length,worst:g.length?Math.max(...g):0,miss:g.filter(v=>v>24).length,
+   js:j.length?j[Math.floor(j.length/2)]:0,js9:j.length?j[Math.floor(j.length*.9)]:0,hz:Math.round(1000/pace.vs),gfx:R.cacheStats(C)};}
+  const m=pace.shown,fs=11,lines=[`${m.fps} fps  (screen ${m.hz} Hz)`,`worst gap ${m.worst.toFixed(0)} ms · missed ${m.miss}`,`frame work ${m.js.toFixed(1)} / ${m.js9.toFixed(1)} ms`,`ground ${m.gfx.tiles} done ${m.gfx.todo} to go`];
+  x.setTransform(1,0,0,1,0,0);const w=170,h=lines.length*14+8,X=W-w-8,Y=H-h-8;x.fillStyle='rgba(0,0,0,.7)';x.fillRect(X,Y,w,h);x.font=`700 ${fs}px monospace`;x.textAlign='left';x.textBaseline='top';
+  lines.forEach((l,i)=>{x.fillStyle=i===0?(m.fps>=55?'#7dff8a':m.fps>=40?'#ffd23f':'#ff6b6b'):'#fff';x.fillText(l,X+6,Y+5+i*14);});}
  // ------------------------------------------------------------ main loop
- s.frame(dt=>{
+ // frame pacing: on 120 Hz screens (the Fold) every other vsync is skipped, so frames come evenly at 60 and each gets the
+ // whole 16.7 ms (a frame that ran past 8.3 ms used to land on a random later vsync = judder); the time skipped is added on
+ s.frame((dt0,tS)=>{const t=tS*1000;
+  if(pace.last0){const iv=t-pace.last0;if(iv>=4)pace.ivs.push(iv);if(pace.ivs.length>60)pace.ivs.shift();}pace.last0=t;pace.acc+=dt0;
+  if(pace.ivs.length>=30&&++pace.n%30===0){const a=[...pace.ivs].sort((p,q)=>p-q);pace.vs=a[Math.floor(a.length*.15)];}
+  if(pace.lastDraw&&pace.vs<10.5&&t-pace.lastDraw<16.67-pace.vs*.5)return;
+  const gap=pace.lastDraw?t-pace.lastDraw:16.7;pace.lastDraw=t;const dt=Math.min(pace.acc,.05);pace.acc=0;
+  // a missed frame turns the background painting down for a while (it is the one thing that can wait)
+  if(gap>24)pace.slowT=1.5;else pace.slowT=Math.max(0,pace.slowT-dt);pace.paintK=pace.slowT>0?.35:1;
+  const f0=performance.now();pace.frame(gap);
   W=s.W;H=s.H;x.setTransform(1,0,0,1,0,0);
   if(phase==='loading'){T+=dt;drawLoading();return;}
   if(phase==='menu'){T+=dt;drawMenuCached();return;}
@@ -366,6 +386,7 @@ async function minigolf(s){
   if(phase==='intro')drawIntroCard();
   if(phase==='card')drawCard(false);
   if(phase==='over')drawCard(true);
+  pace.js(performance.now()-f0);if(pace.meter)drawMeter();
  });
  plan=await chooseRound();if(!plan||!s.alive)return;
  // the course's own pictures (ground, rails, props) before the first hole, so its ground is painted once with them

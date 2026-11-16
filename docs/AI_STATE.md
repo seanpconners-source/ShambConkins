@@ -2,6 +2,21 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+v0.99.12 (Nov 16): MINIGOLF PACING (owner: better but still low fps on the Fold): puttPutt.js `pace` = 60 fps lock on >95 Hz
+screens (draws when vsync time since the last draw >= 16.67 - vsync/2; skipped vsyncs add their dt; vsync = 15th percentile of
+rAF intervals >= 4 ms), a missed frame (gap > 24 ms) sets pace.paintK .35 for 1.5 s (background tile painting), FPS METER toggle
+on the course picker (localStorage sc-mg-fps; corner box: fps, screen Hz, worst gap/missed, frame work median/p90, ground tiles
+done/to go); debug.pace(). Profiled at 6x CPU: JS ~10 ms/frame median (physics ~10%, rest drawing calls), the rest of headless
+time is software raster. Ask the owner for an FPS-meter screenshot before more work (if the meter says 60 but it feels choppy,
+the cause is elsewhere). Checked: fake 120 Hz rAF locks to <=60, real 60 Hz unchanged.
+ARCADE BATCH 03-07 (GPT, UPLOADS-GPT-2026-11-16-1605/1618/1623, inventory arcade-wanted-coverage.json in Batch 07): 149 PNGs for
+50 slots. IN (SHA-checked, import-arcade-art.py): 50 icons, 49 logos (happy-gilmore-golf's said 'Happy Gilmore x Caddyshack':
+not used, assets/minigolf/logo.webp trimmed in as its Arcade logo instead; pac-maze-duel logo replaced, old one
+originals/keyart/pac-maze-duel-logo-previous.webp), broforce-<world> art = the world-select cards (keyart:<world id>, not Arcade
+backgrounds). WAITING: 45 Arcade backgrounds -> Background Picker (KEY_BOX + measure + publish; scratch copies drive07/ are not
+kept: re-download by Drive id from the inventory). Seanic hang rows for runner-p3/p4 (whole fists) pasted in (nearest /2, face
+spots unchanged [48,42]).
+
 SEANIC ART BATCH (Nov 16, RELEASED as v0.99.11 with the minigolf work below (owner: "release to main"; test:core EXIT 0 + Seanic/minigolf tests); GPT UPLOADS-GPT-2026-11-16-1213, Drive folder 1Jfd4NltIdRz6tsJCR9_Xt_t2zjK3x5sD, all 19 SHA-checked):
 KNUX = runner-p3/ball-p3/dreads-p3, SHADE = runner-p4/ball-p4/quills-p4 (own sheets; rows + glide/climb/slide, ball homing;
 render.js falls back to the recoloured hedgehog when missing; BALL_SRC knux 25.6 / dark 24); walk-p1/p2 pasted into the walk

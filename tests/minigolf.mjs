@@ -18,7 +18,7 @@ async function playOut(page,limitS=240){const t0=Date.now();let end='';while(Dat
 {const page=await open();await page.waitForFunction(()=>window.ShambConkins.store.session.debug.phase!=='loading',null,{timeout:20000});await page.waitForTimeout(300);await page.screenshot({path:screenshotPath(`mg-menu-${tag}.png`)});
  check((await dbg(page)).phase==='menu','the Arcade opens on the course picker');
  // tap the Spaceballs card then FRONT 3 then TEE OFF through the real canvas
- await D(page,()=>window.ShambConkins.store.session.debug.pick('bushwood',3));await page.waitForTimeout(800);
+ await D(page,()=>window.ShambConkins.store.session.debug.pick('bushwood',3));await page.waitForFunction(()=>window.ShambConkins.store.session.debug.phase!=='loading'&&window.ShambConkins.store.session.debug.phase!=='menu',null,{timeout:20000}).catch(()=>{});await page.waitForTimeout(300);
  let st=await dbg(page);check(st.phase==='intro'&&st.hole==='bushwood-1','TEE OFF starts hole 1 with the flyover');await page.screenshot({path:screenshotPath(`mg-intro-${tag}.png`)});
  const cv=await page.$('.game-canvas'),R=await cv.boundingBox();await page.mouse.click(R.x+R.width/2,R.y+R.height/2);await page.waitForTimeout(700);
  st=await dbg(page);check(st.phase==='aim'&&st.turn===0,'a tap skips the flyover; player 1 has the honour');

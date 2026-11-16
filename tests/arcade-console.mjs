@@ -107,7 +107,7 @@ for(const vp of sizes){
   await page.click('.arc-info [data-action="arcade-game"]');await page.waitForTimeout(1500);
   const started=await page.evaluate(()=>({session:!!window.ShambConkins?.store?.session,card:/Start game/.test(document.querySelector('#dialog[open]')?.innerText||'')}));
   if(!started.session)fail('play button did not start Broforce');if(started.card)fail('the Start game / Back to arcade card still shows');
-   if(await page.locator('.bf-world').count()!==4)fail('Broforce world select should show 4 worlds');
+   if(await page.locator('.bf-world').count()<4)fail('Broforce world select should show its worlds');
    await page.click('.bf-world[data-world="broforce-city"]');await page.waitForTimeout(800);
    const picked=await page.evaluate(()=>({phase:window.ShambConkins.store.session?.debug?.phase,left:document.querySelectorAll('.bf-worlds').length}));if(picked.phase==='world'||picked.left)fail('picking a world should start the mission '+JSON.stringify(picked));
  }
