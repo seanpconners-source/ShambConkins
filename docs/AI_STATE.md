@@ -2,6 +2,12 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+v0.99.9 RELEASED (Nov 16, owner: "When finished please release!!"; tests: games.mjs broforce/horde/pool 12/12, smoke, backup, pool-rules):
+the Sean of a Gun/pool work below + GPT's BODY V2 (UPLOADS-GPT-2026-11-16-0052, Drive 1rAG2FwJqB37wgvZMD7dx-Pf_pP3p5tP6, SHA 5c104287...):
+assets/broforce/bro-torso.webp (lossless; original assets/originals/broforce/bro-torso-v2.png), 768x1344 = same 6x7 layout as the def,
+feet/neck checked (soles y94, neck top 22). HORDE: TREE_K/CAR_K 1.75 (draw sc + collision r/col2 + spot spacing), cull margins widened
+for tall canopies, gems x1.2; evolution pairs = profile.hordeEvos (weapon ids evolved once, validated in profile.js; learnEvo on evolve)
+→ cardFor pairs: weapon card shows its passive icon, passive card shows its known weapons (gold '+' badge; not on evolved cards).
 v0.99.4 RELEASED (Nov 15, owner: "release it!"; fuzz only): bigger held ball behind the hands + owner rim picture.
 v0.99.5 RELEASED (Nov 15): Sitabout title-bg IN (owner's chat attachment 2000x1125 WebP, copied byte for byte to assets/minigolf + originals; the 11 MB Drive PNG never fetched); PICTURES title-bg focus [.38,.45] = cover crop centred on the couple (puttPutt drawMenu). Minigolf art now 61/61.
 v0.99.6 RELEASED (Nov 15): owner uploaded the real title-bg PNG to main via GitHub web upload (repo root 'title-bg(1).png'; the upload page has no name/folder field, so expect root uploads): 3840x2160 = 2x slot, now lossless assets/minigolf/title-bg.webp (7.5 MB, LATER), original assets/originals/minigolf/title-bg.png (moved out of the root). Chat attachments always arrive as ~0.4 MB WebP: ask for GitHub uploads when quality matters.
@@ -46,6 +52,104 @@ logo-hoop now unused. TAPPER (same release): arcade rules in bananaTapper.js: pu
 the door = gone (serveVal 50/75/100/150), else drink + ALWAYS an empty; tips 14% on a catch (1500) start Gob's show
 (SHOW 4 s, walkers freeze); group burst at level start; bonus round phase 'bonus' (6 cans, 5 shaken, swaps, pick, +3000).
 The autopilot serves too fast to ever see an empty; the rule itself was checked by placing customers (scratch tap2.mjs).
+SEAN OF A GUN ROUND 2 (Nov 14, after v0.99.1, unreleased; owner: images for everything still drawn, sky under the land when high,
+ground looks like blocks): broforceSprites.js +107 slots (213 total): ground-/rock-<world> 1024 seamless (BS.macro(world,id): the
+owner's picture, else a stand-in made at runtime from the tiles sheet = feathered tile-middle patches scattered + wrapped, so the
+grid is gone already; drawWorld samples it per tile by world position; dirt cave back walls use it darkened), gun-<15> (anchor =
+grip), dead-<30 foes>/dead-bro (face circle), shot-<16>, bullet-<7> (head at the right end), fx sheets (rows.play, feet=anchor,
+fx:true, loop) explosion/smoke/blood/gibs/impact/dust/rubble/fire/rescue/muzzle/firewave/geyser/beam/pillar/lightning/portal,
+stills fx-tentacle/firebar-ball/ring-pickup/shell-casing/crack-1/2. BS.drawFx/drawPic. broforce.js: spriteFx(name,x,y,o) + anims
+list drawn in drawWorld (every particle burst call site falls back to its burst), drawGun/drawCorpse/drawNade/drawShot/bullets/
+flames/waves/cracks/muzzle try pictures first; ext.js drawStage hazards/zones/arcs too. preloadArt adds them. HORIZON: picture
+far/mid strips stretch their bottom 3 rows to the screen bottom + far follows lift a little. Templates (tool knows fx strips, guns,
+dead, seamless) + brief ROUND 2 section + kit zip (scratchpad sean-of-a-gun-round2-kit.zip). Checked with the templates as stand-ins
+in a private build (scratch bfstand.mjs): all play, no errors. Rock tiles inside dirt still show square edges until rock-<world> art.
+
+SEAN OF A GUN ROUND 3 (Nov 15, unreleased, branch claude/cool-edison-ma0a0l; owner: guns float over the hands, bullets not from
+the guns, funny walk, bodies float, fire barrels still drawn, minigunners too big, every gun must dig): bro-body `hands` = the fist
+measured per frame (was a fixed hand 8 px behind the fist; the fist rises 10 px running) → handAt(d,p) via p.bodyRow/bodyFr;
+gunTip(p) = barrel tip (gun-<id> PICTURES.muzzle measured, or arms-<id> muzzle) → bullets + flash start there; foeTip(e) = enemy
+shots from FOE_MUZZLE spots (mook/bruiser/robot/mechtank/cultist/chariot/plumber/cannon); STRIDE run 58 / walk 40 world px per cycle;
+CORPSE_SINK 2.5; bruiser 1.75; holy/fireball/boomerang/lightning dig (C.digTile; zap bites the first block in range; flame stays
+slowest). NEW SLOTS (owner picked): bro-torso (armless, idle/walk 8/run 8/jump/fall/climb/ladder-with-arms, shoulder [26,37]) +
+arms-<15 guns> (160x80, hold 1 + fire 4, shoulder [32,28], grip [62,42], muzzle per gun; fireFrame: cycle per shot, fast guns
+loop); an arms sheet replaces bro-body + gun picture only for that gun. Props: prop-brazier/banner sheets, prop-tower/lamp/post/wire/
+searchlight/helipad/sign, firebar-base (drawPropPic; '<prop>-<world>' override). Templates (26, guides = current body/guns) + brief
+ROUND 3 + kit zip (scratchpad sean-of-a-gun-round3-kit.zip). Checked with stand-ins in a private build; games.mjs broforce 9/9.
+
+POOL FIXES (Nov 16, branch, unreleased; owner's screenshots): fine-aim wheel half as sensitive (.0011 rad/px); Pool Hall rack =
+the game's own rendered balls (balls.js makeBallArt, real 8-ball rack, squashed .8 to the slant, follows the chosen/previewed
+ball set; was flat drawn dots); table picture: floor shadow drawn from the picture's own outline (a black rounded box showed past
+its carved corners) and the pocket throat between the jaws = radial shade from the hole out to dark felt (was a flat black square).
+GPT BODY KIT v2 (Nov 16): tools/broforce/body-kit.py → template (every cell = the current stocky body faint), REFERENCE, HOW-ARMS-
+ATTACH, PASTE-THIS-TO-GPT.md (same poses/size redrawn as one body, 768x1344, rows idle 2/walk 6/run 6/jump/fall/climb 2/ladder 2);
+zip local-test-reports/sean-of-a-gun-body-v2-kit.zip sent. On import: lossless WebP to assets/broforce/bro-torso.webp (original to
+assets/originals/broforce), check feet/shoulder/neck spots, no code change if the layout matches.
+
+SEAN OF A GUN STOCKY BODY (Nov 16, same branch, unreleased; owner: legs much smaller than the arms, the old walk looked better,
+'make it look professional'): cause = GPT's armless bro-torso is a slimmer man than the old bro-body (chest ~35% narrower, waist
+6 px higher, thin legs) while the arm sheets fit the old body. tools/broforce/stocky-torso.py rebuilds assets/broforce/bro-torso
+= GPT's armless chest (assets/originals/broforce/bro-torso-slim.png, stretched KX 1.38 / to the old chest box) + the OLD body's legs
+and its 6-frame run (rows idle 2, walk 6 = run 6, jump, fall; climb/ladder = GPT rows stretched); old arm pixels dropped by colour
+(camo R-G<=24 & G-B>=7, skin R-G>24, glove neutral) and only pixels joined to the legs kept (raised thighs pass over the belt).
+STRIDE 42/42 = the old run pace; bro-run retired (lightning uses bro-body's own run). SEE_THRU barrel/bags/crate/glass get the back
+wall behind them (sky squares showed round barrels inside bunkers). Run clip local-test-reports/sog-run-nov16.gif.
+
+SEAN OF A GUN HEADS + GUNS (Nov 16, branch claude/cool-edison-ma0a0l, unreleased; owner: heads too high / not facing the way
+they move / cut off at the bottom; stage guns again; hated shotgun; boomerang gun; see the rocket leave): broforce.js headCut()
+finds where each picture's head really ends (picture end, or the neck down to where the shoulders widen; the face box used to
+cut beards/masks flat) → c.face.base; drawHead(neck) seats base on the shoulder line (NECK_DROP 7 sheet px under the neck stub
+top = covers the red neck scarf). headFacts.js lookDir: no sure look → hairLook (face middle vs head middle, |off|>=.05;
+agrees with measured looks 896:83) so 'straight on' faces turn too (all games using flipFor). Weapons: old four worlds deal the
+original five, new worlds theme.weapons (stageGuns(), read live: theme changes on the world pick); crates/? blocks from the stage
+list. tools/broforce/compose-guns.py (no GPT): arms-shotgun = laser arms' two-hand hold + gun-shotgun, pump racks back/forward
+on fire; bell cannon kept as assets/originals/broforce/arms-elephant-gun.png for a later elephant gun. BOOMERANG GUN = rifle with
+the boomerang mounted across the muzzle (gun-boomerang + arms-boomerang; hold = loaded, fire frames = empty), one boomerang:
+fires again only once it's back (boomerOut), returns sooner (t .38, 520). arms-rocket-empty = warhead cut past the gold mouth
+ring, shown for RELOAD_SHOW .5 s after a shot; rocket spawns 5 px back so it leaves the tube. ARMS_TIP shotgun/boomerang removed
+(default from GUN_MUZZLE; boomerang [107,14]). Checked: head sheet 19 chars, scratch bfguns3.mjs, games.mjs broforce 9/9.
+
+SEAN OF A GUN ROUND 3 CORRECTIONS IN (Nov 15 late, RELEASED as v0.99.8, owner: "Release to main"; fuzz only): GPT's
+corrections (UPLOADS-GPT-2026-11-15-1834 + -2115): bro-run (bro-body upper pixels + torso legs; fist fixed at [56,51]), prop-tower
+without its ladder, 14 arm sheets at the corrected size (all but lightning; rifle = GPT's resize of our composite) + bro-torso back in
+assets/broforce: the hero now = torso + arms-<gun> for 14 guns, lightning = bro-body (+ bro-run legs) + gun in the fist. ARMS_TIP =
+barrel tips measured on the new sheets (shotgun = middle of the two bells, pistols = lower pistol). GPT couldn't: lightning arms,
+bigger minigun, most firing frames (code kick covers it). games.mjs broforce 9/9.
+
+SEAN OF A GUN ROUND 3 ART (Nov 15, branch, unreleased): GPT's round 3 from Drive (UPLOADS-GPT-2026-11-15-1121/1126/1726): 10 props IN
+(assets/broforce prop-*/firebar-base, lossless; originals assets/originals/broforce), drawn by drawPropPic. bro-torso + 14 arms-* sheets
+came ~40% too big (owner: 'ridiculous, looked better before') = kept ONLY as originals (assets/originals/broforce; arms-rifle-composite.png
+= tools/broforce/rifle-arms.py from the laser arms); game = old bro-body + gun in the fist. KICK in code on every shot (KICK table,
+kickAt/kickXf; round the hand on bro-body, round the shoulder with arms sheets; fast guns shudder). New slot bro-run (bro-body + 8-frame
+walk/run; template tools/broforce/bro-run-template.py uses the torso's legs). Arms templates now show the body's own arm faintly.
+GPT list docs/broforce-sprites/GPT-CORRECTIONS-ROUND3.md (bro-run first, tower without ladder, arms at the arm's size, position-worded
+motion, rifle as 'supplied prop'); kit zip scratchpad sean-of-a-gun-round3-corrections.zip. games.mjs broforce 9/9.
+
+SEAN OF A GUN ROUND 2 ART IN (Nov 15, released as v0.99.7 after merging main v0.99.6): GPT's 109 round-2 pictures from Drive
+(notes UPLOADS-GPT-2026-11-15-0218..0222 + 0317; 'Sean of a Gun (Broforce) — Sprites / Round 2 — *' + round2-*-small-finals zips),
+every one exactly 2x template, lossless WebP in assets/broforce (originals assets/originals/broforce): ground-/rock-<8 worlds> 2048
+seamless (macro s = width/16), 15 guns, 31 dead-*, 16 fx, 16 shots, 7 bullets, cracks/firebar/ring/casing/portal + NEW foe-hog
+(bronze armadillo robot) and boss-eggbot (grey-moustached scientist, copper pod): original designs, so the held-back slots are filled.
+All 213 slots now have art; assets/broforce 181 MB (LATER 'bf:', per-world preload). Checked: scratch bfart.mjs jungle/games/hell.
+
+SEAN OF A GUN SIZES + GUNS + PIPES (Nov 15, unreleased; owner: all weapons on all worlds, every gun frees cages, flamethrower
+digs, pipes one big tube, bodies bigger, relative sizes all over the place): broforce.js WEAPON_IDS = all 15 (old 5 + EXT.WEAPONS2):
+wpnFor = weaponFor (hash over all), crates/? blocks anyGun(); X.updateStage/X.drawStage now run on every world (lightning arcs,
+zones). Lightning gun zaps a cage in reach when no foe is (ext.js fire). Flames damageTile .07 on soft ground (.25 wood/crates).
+drawPipes(): one tube per run of PIPE tiles (cap = top of the sheet's pipe cell, body stretched), PIPE skipped in the tile loop.
+SIZES: BRO_K 1.3 (drawBro scales the body round the feet; head size param /BRO_K so the head stays as it was), FOE_K 1.45,
+SIZE table (bruiser 2, demon 1.9, tanks 1.7, ...), sizeOf(type); makeFoe scales w/h (collision h capped 30, w 7.5), e.sz drives
+drawFoe/drawCorpse; bubbles use e.h/e.sz. Bosses BOSS_K 1.2 (sz + hw/hh, devil too). Cages CAGE_K 1.3 (CG_W/CG_H hit box).
+P.h 24, muzzle at 12*BRO_K / -11*BRO_K. Checked: scratch bfsize/bfsize2 screenshots (jungle, games, hell, space).
+
+SEAN OF A GUN HEADS (Nov 14, unreleased; owner: head sizes all over the place, chins cut off, keep the outline + general size,
+~10% smaller, account for hair/ears/facing): broforce.js headCanvas(id,mood,72,face=true) → renderFaceHead uses headFacts: face
+width = FACE_W 35 of the 72-unit box (same for everyone), whole head kept (hair/ears/hats; neck under the chin narrowed to the
+face), canvas 96, dark outline as before, c.face={cx,cy,w,chin,S}. drawHead(id,mood,x,y,size,dir,neck): neck=true puts the chin
+on the body's neck spot (bro-body neck / drawn bro y-18), mirrored by headFacts flipFor against the body's facing; pictures
+without facts keep the old box. Corpses use the face mode at the dead-bro face spot (x2). HUD/ext boss heads unchanged.
+Checked: scratch bfheads.mjs contact sheet (19 characters, both facings).
+
 SEAN OF A GUN ART IN (Nov 14, RELEASED as v0.99.1 with the BASEketball Shootout/Tapper branch ccr-2919e73f merged): GPT's whole
 106-slot kit from Drive 'Sean of a Gun (Broforce) — Sprites' (notes UPLOADS-GPT-2026-11-14-1909..1916 + broforce-props/terrain-small-finals.zip),
 every file exactly 2x template, lossless WebP in assets/broforce (originals assets/originals/broforce). HELD BACK: foe-hog (= Sonic) and

@@ -16,7 +16,10 @@ function noise(){if(noiseCv)return noiseCv;const S=192,cv=document.createElement
 function drawTable(g,T,{look,felt,wear=0,rough=[],id,k=8}){
  const pic=PS.picture('table-'+id);
  // shadow on the floor
- g.save();g.shadowColor='rgba(0,0,0,.65)';g.shadowBlur=6*k;g.shadowOffsetY=1.6*k;g.fillStyle='#000';rr(g,-HX-RAIL-CUSH,-HY-RAIL-CUSH,2*(HX+RAIL+CUSH),2*(HY+RAIL+CUSH),3);g.fill();g.restore();
+ // (with a picture the shadow follows the picture's own outline: a black rounded box showed past its carved corners)
+ g.save();g.shadowColor='rgba(0,0,0,.65)';g.shadowBlur=6*k;g.shadowOffsetY=1.6*k;
+ if(pic)g.drawImage(pic,-HX-CUSH-RAIL,-HY-CUSH-RAIL,2*(HX+CUSH+RAIL),2*(HY+CUSH+RAIL));
+ else{g.fillStyle='#000';rr(g,-HX-RAIL-CUSH,-HY-RAIL-CUSH,2*(HX+RAIL+CUSH),2*(HY+RAIL+CUSH),3);g.fill();}g.restore();
  if(!pic)drawRails(g,look,k);
  // cushions (felt, a shade darker), then the bed
  g.fillStyle=shade(felt.color,-.28);g.fillRect(-HX-CUSH,-HY-CUSH,2*(HX+CUSH),2*(HY+CUSH));
@@ -89,7 +92,12 @@ function drawWear(g,wear,rough,k){
 function drawPockets(g,T,look,felt,pic){
  for(const p of T.pockets){
   // the mouth: from the jaw points back to the hole
-  g.fillStyle='#050505';g.beginPath();g.moveTo(p.mouth[0][0],p.mouth[0][1]);g.lineTo(p.jaw[0][0],p.jaw[0][1]);g.lineTo(p.jaw[1][0],p.jaw[1][1]);g.lineTo(p.mouth[1][0],p.mouth[1][1]);g.closePath();g.fill();
+  // with a table picture the hole is painted in the rail: the gap between the jaws is its throat, shaded from the felt down
+  // into the dark (owner, Nov 16: a flat black square sat in front of every pocket)
+  if(pic){const jx=(p.jaw[0][0]+p.jaw[1][0])/2,jy=(p.jaw[0][1]+p.jaw[1][1])/2,hx=p.x,hy=p.y,R0=Math.hypot(jx-hx,jy-hy)*1.05,tg=g.createRadialGradient(hx,hy,R0*.25,hx,hy,R0);
+   tg.addColorStop(0,'#060403');tg.addColorStop(.62,'rgba(12,9,7,.9)');tg.addColorStop(1,shade(felt.color,-.42));g.fillStyle=tg;}
+  else g.fillStyle='#050505';
+  g.beginPath();g.moveTo(p.mouth[0][0],p.mouth[0][1]);g.lineTo(p.jaw[0][0],p.jaw[0][1]);g.lineTo(p.jaw[1][0],p.jaw[1][1]);g.lineTo(p.mouth[1][0],p.mouth[1][1]);g.closePath();g.fill();
   // jaw faces (cushion rubber edge)
   g.strokeStyle=shade(felt.color,-.45);g.lineWidth=.35;g.beginPath();g.moveTo(p.mouth[0][0],p.mouth[0][1]);g.lineTo(p.jaw[0][0],p.jaw[0][1]);g.moveTo(p.mouth[1][0],p.mouth[1][1]);g.lineTo(p.jaw[1][0],p.jaw[1][1]);g.stroke();
   if(pic)continue;
@@ -188,7 +196,7 @@ function flickerAt(t){const ph=t%5.3;return ph<.42&&Math.sin(ph*52)>0;}
 // ---------------------------------------------------------------- the Pool Hall scene (straight-on view of Paddy's)
 const H=PS.HALL;
 function hallCover(W,Hh){const k=Math.max(W/H.W,Hh/H.H);return {k,ox:(W-H.W*k)/2,oy:(Hh-H.H*k)/2};}
-function drawHall(g,W,Hh,hall,t,{faces=[],feltColor,table,highlight,view,only=null}={}){
+function drawHall(g,W,Hh,hall,t,{faces=[],feltColor,table,highlight,view,only=null,ballset=null}={}){
  const want=k=>!only||only===k;
  const v=view||[0,0,W,Hh],k=Math.max(v[2]/H.W,v[3]/H.H),cv={k,ox:v[0]+(v[2]-H.W*k)/2,oy:v[1]+(v[3]-H.H*k)/2};
  if(!only){g.fillStyle='#0d0907';g.fillRect(0,0,W,Hh);}g.save();g.translate(cv.ox,cv.oy);g.scale(cv.k,cv.k);
@@ -219,7 +227,7 @@ function drawHall(g,W,Hh,hall,t,{faces=[],feltColor,table,highlight,view,only=nu
  // bar
  if(want('bar'))drawBar(g,room.bar,t,dec('megatouch'),dec('rum-ham'));else if(dec('megatouch')||dec('rum-ham'))drawBar(g,-1,t,dec('megatouch'),dec('rum-ham'),room.bar);
  // pool table
- if(want('table'))drawHallTable(g,table,feltColor,highlight==='table');
+ if(want('table'))drawHallTable(g,table,feltColor,highlight==='table',ballset);
  // light over the table
  if(want('light'))drawHallLight(g,room.light,t,steady);
  // the regulars
@@ -282,7 +290,8 @@ function drawBar(g,tier,t,mega,ham,onTier=tier){
  if(mega){const m=onBar(H.decor.megatouch);if(!PS.picture('decor-megatouch')){g.fillStyle='#1a1a20';g.fillRect(m[0],m[1],m[2],m[3]);g.fillStyle=`hsl(${(t*40)%360},70%,45%)`;g.fillRect(m[0]+12,m[1]+12,m[2]-24,m[3]-40);g.fillStyle='#fff';g.font='bold 13px Arial';g.textAlign='center';g.fillText('PHOTO HUNT',m[0]+m[2]/2,m[1]+m[3]-12);}else g.drawImage(PS.picture('decor-megatouch'),...m);}
  if(ham){const m=onBar(H.decor['rum-ham']);if(!PS.picture('decor-rum-ham')){g.fillStyle='#e6e6e6';g.beginPath();g.ellipse(m[0]+m[2]/2,m[1]+m[3]*.8,m[2]*.5,m[3]*.18,0,0,6.28);g.fill();g.fillStyle='#b8542a';g.beginPath();g.ellipse(m[0]+m[2]/2,m[1]+m[3]*.5,m[2]*.36,m[3]*.36,0,0,6.28);g.fill();g.fillStyle='#e0d0a0';g.fillRect(m[0]+m[2]*.8,m[1]+m[3]*.38,22,10);}else g.drawImage(PS.picture('decor-rum-ham'),...m);}
 }
-function drawHallTable(g,table,feltColor,glow){
+let hallBalls=null;
+function drawHallTable(g,table,feltColor,glow,ballset){
  const r=H.table,fq=r.felt.map(([a,b])=>[r.x+a,r.y+b]),look=table.look,pic=PS.picture('hall-table-'+table.id);
  // felt quad
  const fg=g.createLinearGradient(0,fq[0][1],0,fq[2][1]);fg.addColorStop(0,shade(feltColor,-.2));fg.addColorStop(1,shade(feltColor,.12));g.fillStyle=fg;g.beginPath();fq.forEach(p=>g.lineTo(p[0],p[1]));g.closePath();g.fill();
@@ -303,9 +312,15 @@ function drawHallTable(g,table,feltColor,glow){
   // wear on the felt
   if(look.wear>=2){g.fillStyle='rgba(40,20,5,.3)';g.beginPath();g.ellipse(r.x+420,r.y+170,60,16,0,0,6.28);g.fill();g.fillStyle='#d8cfbd';g.beginPath();g.ellipse(r.x+620,r.y+120,26,5,.2,0,6.28);g.fill();}}
  // racked balls
- const bx=r.x+r.w*.64,by=r.y+r.h*.34,COLS=['#f2c12e','#1f4fbf','#d42a2a','#5b2a8a','#111114','#f07b1a','#13804a','#7a1f22','#f2c12e','#1f4fbf'];let i=0;
- for(let c=0;c<4;c++)for(let q=0;q<=c;q++){const x=bx+c*20,y=by+(q-c/2)*16;g.fillStyle=COLS[i++%COLS.length];g.beginPath();g.ellipse(x,y,10,8,0,0,6.28);g.fill();g.fillStyle='rgba(255,255,255,.5)';g.beginPath();g.arc(x-3,y-3,2.5,0,6.28);g.fill();}
- g.fillStyle='#f5f2e6';g.beginPath();g.ellipse(r.x+r.w*.3,r.y+r.h*.36,10,8,0,0,6.28);g.fill();
+ // the game's own rendered balls (owner, Nov 16: the hall had flat drawn dots), racked like a real 8-ball rack, squashed to
+ // the table's slant; a soft shadow under each
+ const bx=r.x+r.w*.64,by=r.y+r.h*.34,RACK=[1,9,2,10,8,3,11,4,12,5,13,6,14,7,15],set=ballset||{id:'classic',age:0},BR=10,sq=.8;let i=0;
+ if(!hallBalls)hallBalls=require("src/engines/pool/balls.js").makeBallArt();
+ const put=(id,x,y)=>{const b=PH.makeBall(id,0,0);PH.rotate(b.o,[1,0,0],.55+id*.37);PH.rotate(b.o,[0,1,0],.25+id*.21);
+  g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(x+3,y+5,BR*.95,BR*.55,0,0,6.28);g.fill();
+  const S=3,cv=hallBalls.draw(b,BR*S,0,set);g.drawImage(cv,x-cv.width/S/2,y-cv.height/S/2*sq,cv.width/S,cv.height/S*sq);};
+ for(let c=0;c<5;c++)for(let q=0;q<=c;q++){if(i>=RACK.length)break;put(RACK[i++],bx+c*19,by+(q-c/2)*17);}
+ put(0,r.x+r.w*.3,r.y+r.h*.36);
  if(glow){g.strokeStyle='rgba(255,215,90,.8)';g.lineWidth=5;g.beginPath();fq.forEach(p=>g.lineTo(p[0],p[1]));g.closePath();g.stroke();}
 }
 function drawHallLight(g,tier,t,steady){

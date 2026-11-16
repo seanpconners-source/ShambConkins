@@ -1,5 +1,32 @@
 # Changelog
 
+## v0.99.9
+
+- **Sean of a Gun, new body:** one clean, stocky body redrawn as a single drawing, so the legs finally match the big arms, with the chunky run you liked before. Heads sit on the shoulders instead of floating, beards and chins are no longer cut off, and faces turn the way the bro runs.
+- **Guns that suit the stage again:** the first four worlds deal their original five guns and the new worlds their own six; crates drop only the stage's guns.
+- **New shotgun:** a real pump shotgun in both hands that racks after every shot (the bell cannon is saved for a future elephant gun).
+- **Boomerang gun:** the boomerang sits on the front of a rifle like a crossbow, flies out and comes back to reload it.
+- **Rocket launcher:** you see the rocket leave the tube; the next warhead loads just before you can fire again.
+- Barrels and sandbags inside bunkers no longer show a square of sky behind them.
+- **Living Dead Horde:** cars and trees are much bigger, gems are 20% bigger, and once you've evolved a weapon its level-up cards show the item it pairs with (and the item's card shows the weapon), like Vampire Survivors.
+- **Paddy's Pool:** fine aim is half as sensitive, the Pool Hall table shows real balls from your ball set, and the black squares at the pockets and the black table corners are gone.
+
+## v0.99.8
+
+- **Sean of a Gun, guns in hand:** the bro now holds each gun in his own arms (14 guns drawn with both hands on the gun; the lightning gun keeps the gun in the fist), and every shot kicks the gun back and up. Bullets and the muzzle flash come out of the barrel tip, for enemies too.
+- **Smooth run:** a new 8-step run and walk instead of the knee-up shuffle.
+- **Every gun digs:** holy water, fire flower, boomerang and the lightning gun break ground now (the flamethrower is still the slowest).
+- **Props are pictures:** fire barrels, waving banners, watchtowers, hanging lamps, fence posts, barbed wire, searchlights, the helipad, the BRO ZONE sign and the fire bar hub.
+- Dead bodies lie in the grass instead of floating on it, and the minigun troops are a little smaller.
+
+## v0.99.7
+
+- **Sean of a Gun, every picture in:** the last 109 pictures from the art kit. Each world's ground and rock is now one big painted piece of earth (no more block grid), all 15 guns are drawn in the bro's hand, every enemy (and a dead bro wearing your face) leaves a body, and the explosions, smoke, blood, gibs, fire, muzzle flashes, lightning, beams, portals, shots and bullets are all pictures now. The Game World's spiked hog robot and the egg-pod boss got their own new designs.
+- **Bigger, matching sizes:** the bro's body is drawn bigger (the head stays as it was), regular troops stand about as tall as you, the big gunner and demons are about twice your size, tanks and bosses grew to match, cages fit a bro.
+- **New heads:** every face is the same size (a little smaller than before), with the hair, ears and hats kept and the chin no longer cut off; the head sits on the neck and turns with the bro. The black outline stays.
+- **All guns on all worlds:** bros and crates deal from all fifteen guns everywhere. Every gun frees prisoners (the lightning gun zaps cages too), and the flamethrower now burns through the ground, slower than bullets.
+- **Pipes** are one tall tube each instead of a stack of little pipes.
+
 ## v0.99.6
 
 - **Sitabout Mini Golf:** the title backdrop is now the full-quality picture (3840x2160, no compression loss) instead of the small copy from chat.

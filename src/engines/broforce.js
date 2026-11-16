@@ -34,6 +34,7 @@ const E=0,DIRT=1,BRICK=2,STEEL=3,WOOD=4,LADDER=5,BARREL=6,BAGS=7,PLAT=8,CRATE=9,
 const LAVA=11,SPIKE=12,PAD=13,GLASS=14,QBLOCK=15,PIPE=16,GOO=17,CRYST=18;
 const HP=[0,3,7,1e9,2,1,1,3,2,2,10,1e9,1e9,6,1,3,1e9,2,1];
 const SOLID=[0,1,1,1,1,0,1,1,0,1,1,0,0,1,1,1,1,1,1];
+const SEE_THRU={[BARREL]:1,[BAGS]:1,[CRATE]:1,[GLASS]:1};
 const KC={T:16,ROWS:34,MAXW:260,G:19,E,DIRT,BRICK,STEEL,WOOD,LADDER,BARREL,BAGS,PLAT,CRATE,ROCK,LAVA,SPIKE,PAD,GLASS,QBLOCK,PIPE,GOO,CRYST,SOLID};
 const PAR=[80,95,120];
 const WEAPONS={
@@ -43,8 +44,8 @@ const WEAPONS={
  flame:{name:'FLAMETHROWER',rate:.045,dmg:.4,speed:190,life:.36,tile:.25,flame:true},
  pistols:{name:'TWIN PISTOLS',rate:.13,dmg:1.6,speed:600,life:.5,tile:1.4}
 };
-const WEAPON_IDS=Object.keys(WEAPONS);
-Object.assign(WEAPONS,EXT.WEAPONS2);   // the new worlds' guns (old worlds keep dealing the first five)
+const WEAPON_IDS=Object.keys(WEAPONS);// the first four worlds deal these five
+Object.assign(WEAPONS,EXT.WEAPONS2);// the new worlds deal their own six (theme.weapons); owner, Nov 15: guns that suit the stage again
 const FOES={
  mook:{hp:1,w:5,h:20,speed:28,sight:175,score:100},
  bomber:{hp:1,w:5,h:20,speed:30,sight:160,score:150},
@@ -53,6 +54,13 @@ const FOES={
  grenadier:{hp:1,w:5,h:20,speed:26,sight:200,score:150}
 };
 Object.assign(FOES,EXT.FOES2);
+// SIZES (owner, Nov 15: bodies too small to see the sprites, relative sizes all over the place). Everything is drawn scaled
+// round its feet; hitboxes grow with it (collision height capped at 30 so foes still fit 2-tile corridors). The bro's BODY is
+// drawn BRO_K bigger (his head keeps its size), regular troops come out about the bro's full height, heavies about 2x him.
+const BRO_K=1.3,FOE_K=1.45,BOSS_K=1.2,CAGE_K=1.3;
+const SIZE={bruiser:1.75,demon:1.9,mechtank:1.7,chariot:1.7,tentacle:1.35,chomper:1.3,turret:1.5,cannon:1.5,shelly:1.35,shroom:1.4};
+const sizeOf=t=>t==='bro'?BRO_K:SIZE[t]||FOE_K;
+const CG_W=9*CAGE_K,CG_H=24*CAGE_K;
 const WORLD_ICON={jungle:'🌴',factory:'🏭',city:'🏙️',desert:'🏜️',space:'🚀',hell:'🔥',dimension:'🌀',pixel:'🍄'};
 const THEMES={
  'broforce-jungle':{name:'JUNGLE',op:'OPERATION GREEN HELL',stages:['VILLAGE INSERTION','PRISON CAMP','TEMPLE OF THE DEVIL'],
@@ -154,8 +162,9 @@ function buildStage(seed,si){
 // ------------------------------------------------------------------ portrait heads (oval photos or outlined cut-outs)
 const HEADS=new Map();
 // size: the head canvas's side in px (72 for the bros; games that draw faces big, like Pro Mancala, ask for more)
-function headCanvas(id,mood='normal',size=72){
- const sk=size!==72?':'+size:'',key=id+':'+mood+sk,ready=()=>mood!=='normal'&&HEADS.get(id+':normal'+sk)?.c||placeholderHead(id);let h=HEADS.get(key);if(h)return h.c||ready();
+// face=true (Sean of a Gun's own heads): sized and placed by the FACE from src/headFacts.js, see renderHead
+function headCanvas(id,mood='normal',size=72,face=false){
+ const sk=(size!==72?':'+size:'')+(face?':f':''),key=id+':'+mood+sk,ready=()=>mood!=='normal'&&HEADS.get(id+':normal'+sk)?.c||placeholderHead(id);let h=HEADS.get(key);if(h)return h.c||ready();
  h={c:null};HEADS.set(key,h);
  try{
   const {portraitURL,portraitFallbackURL}=require('src/assets.js'),{headDisplayURL}=require('src/headCutouts.js');
@@ -166,9 +175,10 @@ function headCanvas(id,mood='normal',size=72){
   let src=portraitURL(id,mood);if(!src||/^data:image\/svg/.test(src)&&id!=='mars-attacker'&&!framed?.(src))src=portraitFallbackURL(id);
   // online photos (Wikimedia) are requested with CORS so their pixels can be read and the backdrop cut away;
   // if that request is refused, load them plainly (oval), then fall back to the stand-in head
+  let facts=null;if(face&&src===portraitURL(id,mood)){try{facts=require('src/headFacts.js').headFacts(id,mood);}catch{}}
   const url=headDisplayURL(src),remote=/^https:/.test(url);let step=0;
   const load=()=>{const img=new Image();if(remote&&step===0)img.crossOrigin='anonymous';
-   img.onload=()=>{h.c=renderHead(img,size)||placeholderHead(id);};
+   img.onload=()=>{h.c=(facts&&renderFaceHead(img,size,facts))||renderHead(img,size)||placeholderHead(id);};
    img.onerror=()=>{step++;if(remote&&step===1)load();else if(step<=2&&img.src!==portraitFallbackURL(id)){const fb=new Image();fb.onload=()=>{h.c=renderHead(fb,size)||placeholderHead(id);};fb.onerror=()=>{h.c=placeholderHead(id);};fb.src=portraitFallbackURL(id);}else h.c=placeholderHead(id);};
    img.src=url;};
   load();
@@ -213,6 +223,49 @@ function renderHead(img,S=72){
  sx2.globalCompositeOperation='source-in';sx2.fillStyle='#140c08';sx2.fillRect(0,0,S,S);
  for(let a=0;a<16;a++){const r=2.6*f;x.drawImage(sil,Math.cos(a*Math.PI/8)*r,Math.sin(a*Math.PI/8)*r);}
  x.drawImage(work,x0,y0,bw,bh,ox,oy,dw,dh);
+ return c;
+}
+// FACE-SIZED HEAD (Sean of a Gun, owner Nov 14: sizes all over the place, chins cut off, faces looking the wrong way):
+// the face (brow to chin, measured offline per picture and evened per character) is always FACE_W of the 72-unit box,
+// the whole head comes along (hair, ears, hats: every opaque pixel from the top of the picture down to just under the
+// chin, so shoulders stay out and nothing above the chin is cut), on a bigger canvas (HEAD_CANVAS) so tall hair fits,
+// with the same dark outline. c.face = {cx,cy,w,chin} in canvas px; drawHead places the chin on the neck and mirrors a
+// face that looks against the body. Needs see-through pixels (a cut-out or a removable backdrop), else null = old way.
+const FACE_W=35,HEAD_CANVAS=96/72;
+function headCut(px,cw,ch,fx,fy,fw,fh){
+ const a0=Math.max(0,Math.round(fx-fw*.2)),a1=Math.min(cw-1,Math.round(fx+fw*1.2)),wid=y=>{let n=0;for(let x=a0;x<=a1;x++)if(px[(y*cw+x)*4+3]>60)n++;return n;};
+ const y0=Math.round(fy+fh*.8),yMax=Math.min(ch-1,Math.round(fy+fh*1.45));if(y0>=ch)return ch;
+ let wmin=1e9,ym=y0;for(let y=y0;y<=yMax;y++){const w=wid(y);if(w<fw*.06)return Math.max(Math.round(fy+fh*.9),y);if(w<wmin){wmin=w;ym=y;}}
+ for(let y=ym;y<=yMax;y++)if(wid(y)>wmin*1.3+fw*.04)return Math.max(Math.round(fy+fh*1.04),y);
+ return Math.min(yMax,Math.max(Math.round(fy+fh*1.04),ym+Math.round(fh*.12)));
+}
+function renderFaceHead(img,S,facts){
+ const w=img.naturalWidth,h=img.naturalHeight;if(!w||!h)return null;const f=S/72,SC=Math.round(S*HEAD_CANVAS);
+ const k=Math.min(1,Math.max(220,S*2.4)/Math.max(w,h)),cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k));
+ const work=document.createElement('canvas');work.width=cw;work.height=ch;const wx=work.getContext('2d',{willReadFrequently:true});wx.drawImage(img,0,0,cw,ch);
+ let data;try{data=wx.getImageData(0,0,cw,ch);}catch{return null;}
+ const px=data.data,n=cw*ch;let clear=0;for(let i=0;i<n;i++)if(px[i*4+3]<40)clear++;
+ if(clear/n<=.05){if(removeBackdrop(px,cw,ch,30,95)||removeBackdrop(px,cw,ch,46,150))wx.putImageData(data,0,0);else return null;}
+ const F=facts.face,fx=F.x*cw,fy=F.y*ch,fw=F.w*cw,fh=F.h*ch;if(fw<4)return null;
+ // where the head really ends: the face box often stops above the real chin (beards, masks, long jaws: owner saw them cut
+ // flat), so walk down from the box bottom: stop where the picture ends, or keep the neck until the shoulders widen out
+ const chin=fy+fh,bottom=headCut(px,cw,ch,fx,fy,fw,fh);
+ // opaque bounds from the top down to just under the chin (hair, ears, hats; no shoulders)
+ let x0=cw,x1=-1,y0=ch;for(let yy=0;yy<bottom;yy++)for(let xx=0;xx<cw;xx++)if(px[(yy*cw+xx)*4+3]>60){if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(yy<y0)y0=yy;}
+ if(x1<0)return null;
+ // the neck under the chin narrows to the face's width so a collar/shoulder line never sticks out
+ const nx0=Math.max(x0,Math.round(fx+fw*.12)),nx1=Math.min(x1,Math.round(fx+fw*.88));
+ let sc=FACE_W*f/fw;const CX=SC/2,CY=SC*.56,fcx=fx+fw/2,fcy=fy+fh/2,M=4*f;
+ // shrink only if the head would not fit the canvas (huge hair/hats)
+ const need=Math.max((fcx-x0)/(CX-M),(x1-fcx)/(SC-M-CX),(fcy-y0)/(CY-M),(bottom-fcy)/(SC-M-CY));if(need*sc>1)sc=1/need;
+ const dx=CX-fcx*sc,dy=CY-fcy*sc,sil=document.createElement('canvas');sil.width=sil.height=SC;const sx=sil.getContext('2d');
+ sx.drawImage(work,x0,y0,x1-x0+1,Math.max(1,Math.round(chin)-y0),dx+x0*sc,dy+y0*sc,(x1-x0+1)*sc,(Math.round(chin)-y0)*sc);
+ sx.drawImage(work,nx0,Math.round(chin),nx1-nx0+1,bottom-Math.round(chin),dx+nx0*sc,dy+Math.round(chin)*sc,(nx1-nx0+1)*sc,(bottom-Math.round(chin))*sc);
+ const c=document.createElement('canvas');c.width=c.height=SC;const x=c.getContext('2d');c.headKind='face';
+ const ol=document.createElement('canvas');ol.width=ol.height=SC;const ox=ol.getContext('2d');ox.drawImage(sil,0,0);ox.globalCompositeOperation='source-in';ox.fillStyle='#140c08';ox.fillRect(0,0,SC,SC);
+ for(let a=0;a<16;a++){const r=2.6*f;x.drawImage(ol,Math.cos(a*Math.PI/8)*r,Math.sin(a*Math.PI/8)*r);}
+ x.drawImage(sil,0,0);
+ c.face={cx:CX,cy:CY,w:fw*sc,chin:dy+chin*sc,base:dy+bottom*sc,S};
  return c;
 }
 // Flood-fill the backdrop in from the image border: a neighbour joins when it is close to the pixel it came from
@@ -279,12 +332,16 @@ async function broforce(s){
  const seed=Math.floor(s.random()*4294967296);
  const worldKey=()=>(Object.keys(THEMES).find(k=>THEMES[k]===theme)||'broforce-jungle').replace('broforce-','');
  const mkStages=sd=>[0,1,2].map(si=>theme.ext?WX.buildStageExt(sd+si*7919,si,theme,KC):buildStage(sd+si*7919,si));
- const wpnFor=id=>theme.ext?theme.weapons[hash('bro:'+id)%theme.weapons.length]:weaponFor(id);
+ const stageGuns=()=>theme.ext?theme.weapons:WEAPON_IDS;// theme changes on the world pick, so read it each time
+ const wpnFor=id=>{const L=stageGuns();return L[hash('bro:'+id)%L.length];};
+ const anyGun=()=>{const L=stageGuns();return L[Math.floor(Math.random()*L.length)];};
  let TH=theme,GK=1;   // TH = the theme with this stage's palette (new worlds change colours per stage), GK = gravity
  // drop-in pictures: only this world's (the full kit is ~1 GB decoded); others load if ever drawn
- const preloadArt=()=>{const wk=worldKey(),names=['bro-body','cage','cage-gold','flag','flag-up','pickup-gun','pickup-nade',...['tiles','top','sky','far','mid','vehicle','tree'].map(k=>k+'-'+wk)];
+ const preloadArt=()=>{const wk=worldKey(),names=['bro-body','cage','cage-gold','flag','flag-up','pickup-gun','pickup-nade',...['tiles','top','sky','far','mid','vehicle','tree','ground','rock'].map(k=>k+'-'+wk)];
   if(theme.ext){for(const f of theme.foes||[])for(const l of Object.values(f))for(const t of l)names.push('foe-'+t);for(const b of theme.bosses||[])names.push('boss-'+b);}
   else names.push('foe-mook','foe-bomber','foe-grenadier','foe-bruiser','foe-dog','boss-devil');
+  for(const n of [...names])if(n.startsWith('foe-'))names.push('dead-'+n.slice(4));
+  names.push('dead-bro',...Object.keys(BS.SHEETS).filter(k=>BS.SHEETS[k].fx),...Object.keys(BS.PICTURES).filter(k=>/^(gun-|shot-|bullet-|fx-|crack-|firebar-|ring-pickup|shell-casing|prop-)/.test(k)),'bro-torso',...Object.keys(BS.SHEETS).filter(k=>/^(arms-|prop-)/.test(k)));
   BS.preload([...new Set(names)]);};
  preloadArt();
  let STAGES=mkStages(seed);
@@ -298,14 +355,15 @@ async function broforce(s){
  const net=s.online||null,me=net?net.me:0,them=1-me,host=!net||me===0;
  let phase=worldSelect?'world':'title',titleT=0,cd=new Countdown(3),acc=0,endT=0,turn=net?me:0,clock=0,frames=0,simT=0,winner=-1;
  let R=null,netCages=null,setupMsg=null,setupWait=null,worldMsg=null,worldWait=null,netStarted=false,nf=null;   // online: the partner's bro, the host's cage line-up
+ let anims=[],animT=null;   // sprite effects (spriteFx/drawAnims)
  let W=null,P=null,fx=new Fx(),banner=null,cam={x:0,y:0},Z=2,stageT=0,stageIdx=0,shake=0;
  // the new worlds' enemies, bosses, guns and hazards (src/engines/broforce/ext.js) see the game through this
- const X=EXT.makeExt({T,ROWS,MAXW,K:KC,get W(){return W;},get P(){return P;},get R(){return R;},get theme(){return theme;},get frames(){return frames;},get stageIdx(){return stageIdx;},get net(){return net;},get host(){return host;},get fx(){return fx;},get inp(){return inp;},
+ const X=EXT.makeExt({T,ROWS,MAXW,K:KC,get W(){return W;},get P(){return P;},get R(){return R;},get cam(){return cam;},get theme(){return theme;},get frames(){return frames;},get stageIdx(){return stageIdx;},get net(){return net;},get host(){return host;},get fx(){return fx;},get inp(){return inp;},
   sfx:new Proxy({},{get:(o,k)=>sfx[k]||(()=>{})}),snd:(...a)=>snd(...a),get outbox(){return outbox;},ev:e=>ev(e),hitF:(...a)=>hitF(...a),hitB:(...a)=>hitB(...a),killFoe:(...a)=>killFoe(...a),openCage:c=>openCage(c),quietDeath:e=>quietDeath(e),
   foeTarget:e=>foeTarget(e),upBro:b=>upBro(b),makeFoe:(f,k)=>makeFoe(f,k),moveBody:(b,dt,o)=>moveBody(b,dt,o),hurtPlayer:(d,x)=>hurtPlayer(d,x),queueBoom:(...a)=>queueBoom(...a),los:(...a)=>los(...a),
-  addScore:(...a)=>addScore(...a),viewW:()=>viewW(),tileAt:(x,y)=>tileAt(x,y),solidAt:(x,y)=>solidAt(x,y),T_AT:(c,r)=>T_AT(c,r),headCanvas:(id,m)=>headCanvas(id,m),partnerHere:()=>partnerHere(),bossWakes:()=>devilWakes()});
+  addScore:(...a)=>addScore(...a),viewW:()=>viewW(),tileAt:(x,y)=>tileAt(x,y),solidAt:(x,y)=>solidAt(x,y),digTile:(x,y,d)=>damageTile(Math.floor(x/T),Math.floor(y/T),d),foeTip:(e,ox,oy)=>foeTip(e,ox,oy),T_AT:(c,r)=>T_AT(c,r),headCanvas:(id,m)=>headCanvas(id,m),partnerHere:()=>partnerHere(),bossWakes:()=>devilWakes()});
  const results=[null,null];
- for(const id of [...s.players.map(p=>p.character)])headCanvas(id);
+ for(const id of [...s.players.map(p=>p.character)])headCanvas(id,'normal',72,true);
 
  // ---------------------------------------------------------------- input: the whole screen belongs to whoever's turn it is
  const kb=arenaKeys(s);const inp={l:0,r:0,u:0,d:0,fire:0,jumpPress:0,jumpHeld:0,gren:0,downPress:0};
@@ -385,7 +443,7 @@ async function broforce(s){
  }
 
  // ---------------------------------------------------------------- world (a fresh copy of the stage for each run)
- function loadStage(si,keepPlayer){
+ function loadStage(si,keepPlayer){anims.length=0;
   const S=STAGES[si];stageIdx=si;stageT=0;
   W={S,W:S.W,tiles:S.tiles.slice(),back:S.back,hp:new Float32Array(MAXW*ROWS),flags:S.flags.map(f=>({...f})),
    foes:S.foes.map((f,k)=>makeFoe(f,k)),cages:[],bullets:[],shots:[],nades:[],booms:[],pickups:[],corpses:[],flames:[],waves:[],
@@ -404,7 +462,7 @@ async function broforce(s){
    if(netCages){const nc=netCages[si]?.[k];id=nc?.[0]||others[0];vip=!!(cg.vip&&nc?.[1]);}
    else if(vip){id=free.splice(Math.floor(rng()*free.length),1)[0];}
    else id=others[Math.floor(rng()*others.length)];
-   W.cages.push({x:cg.x,y:cg.y,vip,id,hp:3,open:false,t:rng()*3});headCanvas(id);
+   W.cages.push({x:cg.x,y:cg.y,vip,id,hp:3,open:false,t:rng()*3});headCanvas(id,'sad',72,true);
   });
   if(keepPlayer){Object.assign(P,{x:S.spawn.x,y:S.spawn.y,vx:0,vy:0,grenades:3,inv:1.5,board:0,boarded:false});}
   cam.x=clamp(S.spawn.x-viewW()*.35,0,W.W*T-viewW());cam.y=clamp(S.spawn.y-viewH()*.62,0,ROWS*T-viewH());
@@ -414,14 +472,14 @@ async function broforce(s){
  const tileAt=(px,py)=>T_AT(Math.floor(px/T),Math.floor(py/T));
  const solidAt=(px,py)=>SOLID[tileAt(px,py)]===1;
  const viewW=()=>s.W/Z,viewH=()=>s.H/Z;
- function makeFoe(f,k){const st=FOES[f.type];const e={...f,k,hp:st.hp,w:st.w,h:st.h,vx:0,vy:0,dir:k%2?1:-1,state:'patrol',t:Math.random()*2,cool:0,burst:0,lost:0,seenX:0,grounded:false,alive:true,active:false,anim:0,flash:0,bubble:null,fuse:0,lunge:0};return EXT.FOES2[f.type]?X.makeFoe2(e):e;}
- function makeBoss(b){return {x:b.x,y:b.y,vx:0,vy:0,hp:200,max:200,dir:-1,state:'wait',t:0,flash:0,anim:0,grounded:true,w:16,h:52,alive:true,dead:0,move:0,summons:0};}
+ function makeFoe(f,k){const st=FOES[f.type];const e={...f,k,hp:st.hp,w:st.w,h:st.h,vx:0,vy:0,dir:k%2?1:-1,state:'patrol',t:Math.random()*2,cool:0,burst:0,lost:0,seenX:0,grounded:false,alive:true,active:false,anim:0,flash:0,bubble:null,fuse:0,lunge:0};const o=EXT.FOES2[f.type]?X.makeFoe2(e):e;o.sz=sizeOf(o.type);o.w=Math.min(o.w*o.sz,Math.max(o.w,7.5));o.h=Math.min(o.h*o.sz,Math.max(o.h,30));if(!o.fly)o.h=Math.max(o.h,16);return o;}
+ function makeBoss(b){return {x:b.x,y:b.y,vx:0,vy:0,hp:200,max:200,dir:-1,state:'wait',t:0,flash:0,anim:0,grounded:true,w:16,h:52,hw:18*BOSS_K,hh:56*BOSS_K,sz:BOSS_K,alive:true,dead:0,move:0,summons:0};}
 
  // ---------------------------------------------------------------- player
- function newPlayer(i){return {i,x:0,y:0,vx:0,vy:0,w:5,h:20,grounded:false,facing:1,climb:false,ladder:false,anim:0,hp:2,inv:0,dead:0,lives:3,grenades:3,
+ function newPlayer(i){return {i,x:0,y:0,vx:0,vy:0,w:5,h:24,grounded:false,facing:1,climb:false,ladder:false,anim:0,hp:2,inv:0,dead:0,lives:3,grenades:3,
   bro:s.players[i].character,weapon:wpnFor(s.players[i].character),fireCD:0,jumpBuf:0,coyote:0,score:0,kills:0,rescues:0,gold:0,stageTimes:[],combo:0,comboT:0,
   muzzle:0,recoil:0,board:0,boarded:false,stagesCleared:0,deaths:0,mood:'normal',moodT:0,lastHurt:0,walled:0};}
- function setBro(id){P.bro=id;P.weapon=wpnFor(id);for(const m of MOODS)headCanvas(id,m);}
+ function setBro(id){P.bro=id;P.weapon=wpnFor(id);for(const m of MOODS)headCanvas(id,m,72,true);}
  // the bro's face follows what they are doing: angry firing (or hit), sad when dead, win after a rescue or stage clear,
  // think in the air, walk when running, silly after standing still a while, normal otherwise
  const MOODS=['normal','angry','sad','win','think','walk','silly'];
@@ -437,13 +495,13 @@ async function broforce(s){
  function addScore(n,x,y,col='#ffe23a'){P.score+=n;if(x!==undefined)fx.pop(x,y,`+${n}`,{color:col,stroke:'#000',size:9,rise:22,life:.8});}
  function hurtPlayer(dmg,fromX){
   if(P.dead||P.inv>0||P.boarded)return;P.hp-=dmg;P.inv=1.1;P.lastHurt=.3;sfx.hit();fx.shake(5);
-  fx.burst(P.x,P.y-12,{n:8,colors:['#c00','#900','#e33'],speed:120,life:.5,size:1.6,gravity:500});
+  if(!spriteFx('fx-blood',P.x,P.y-12,{size:12,dur:.4}))fx.burst(P.x,P.y-12,{n:8,colors:['#c00','#900','#e33'],speed:120,life:.5,size:1.6,gravity:500});
   P.vx=(P.x<fromX?-1:1)*120;P.vy=-150;
   if(P.hp<=0)killPlayer();else{P.mood='angry';P.moodT=.8;}
  }
  function killPlayer(){
   P.dead=1.8;P.deaths++;P.hp=0;sfx.die();fx.shake(9);P.mood='sad';
-  fx.burst(P.x,P.y-12,{n:26,colors:['#b00','#800','#e22','#f55'],speed:220,life:.9,size:2,gravity:600});
+  if(!spriteFx('fx-gibs',P.x,P.y-12,{size:30,dur:.7}))fx.burst(P.x,P.y-12,{n:26,colors:['#b00','#800','#e22','#f55'],speed:220,life:.9,size:2,gravity:600});
   W.corpses.push({x:P.x,y:P.y,vx:P.vx*.5+(Math.random()-.5)*60,vy:-220,rot:0,vr:(Math.random()-.5)*12,t:6,kind:'bro',id:P.bro,i:P.i});
   banner={big:P.lives>0?'BRO DOWN!':'OUT OF BROS',small:P.lives>0?`${P.lives} ${P.lives===1?'BRO':'BROS'} LEFT`:'MISSION OVER',t:1.7};
  }
@@ -510,17 +568,18 @@ async function broforce(s){
     if(!solidAt(p.x+want*(p.w+2),p.y-p.h-6)&&!solidAt(p.x+want*(p.w+2),p.y-16)){p.vy=-215;p.vx=want*80;}}
    else{p.walled=Math.max(0,p.walled-dt);if(p.walled<=0)p.climb=false;}
    if(p.jumpBuf>0&&(p.coyote>0||p.climb)){p.vy=p.climb&&!p.grounded?-250:-330;p.jumpBuf=0;p.coyote=0;p.grounded=false;sfx.jump();
-    fx.burst(p.x,p.y,{n:5,color:'#d8c8a8',speed:50,life:.3,size:1.4});}
+    if(!spriteFx('fx-dust',p.x,p.y,{size:10,dur:.35,flip:-p.facing}))fx.burst(p.x,p.y,{n:5,color:'#d8c8a8',speed:50,life:.3,size:1.4});}
    if(!inp.jumpHeld&&!inp.u&&p.vy<-120&&!p.climb)p.vy+=(-120-p.vy)*.25;
    const drop=inp.d&&p.grounded&&[PLAT,LADDER].includes(tileAt(p.x,p.y+2));
    if(drop){p.y+=2;}
    const fall=p.vy,res=moveBody(p,dt,{grav:p.climb?600:900,maxFall:420,drop,step:true});if(res.bonk&&theme.ext)X.bonk(p);
-   if(res.landed&&fall>300)fx.burst(p.x,p.y,{n:6,color:'#bba98a',speed:60,life:.3,size:1.4});
+   if(res.landed&&fall>300&&!spriteFx('fx-dust',p.x,p.y,{size:16,dur:.4}))fx.burst(p.x,p.y,{n:6,color:'#bba98a',speed:60,life:.3,size:1.4});
    p.anim+=p.grounded?Math.abs(p.vx)*dt*.09:dt*4;
   }
   // fire
   const wpn=WEAPONS[p.weapon];
-  if(inp.fire&&p.fireCD<=0){p.fireCD=wpn.rate;fireWeapon(p,wpn);}
+  // the boomerang gun has ONE boomerang mounted: it fires again once that one is back (or lost)
+  if(inp.fire&&p.fireCD<=0&&!(p.weapon==='boomerang'&&boomerOut(p))){p.fireCD=wpn.rate;fireWeapon(p,wpn);}
   if(inp.gren){inp.gren=0;if(p.grenades>0){p.grenades--;const nv=[p.x+p.facing*6,p.y-16,p.facing*190+p.vx*.3,-230];throwNade(...nv,'p');if(net)outbox.gr.push(nv.map(Math.round));}}
   inp.downPress=0;
   // fell into the abyss? (bedrock makes this rare) — or squashed inside rebuilt rock
@@ -529,15 +588,15 @@ async function broforce(s){
   p.x=clamp(p.x,T+p.w,(W.W-1)*T-p.w);
  }
  function fireWeapon(p,w){
-  p.shotsFired=(p.shotsFired||0)+1;p.fireT=0;const mx=p.x+p.facing*12,my=p.y-11+(p.ladder?0:0);p.muzzle=.06;p.recoil=1;
+  p.shotsFired=(p.shotsFired||0)+1;p.fireT=0;const tip=gunTip(p),mx=p.x+p.facing*tip[0]*BRO_K,my=p.y+tip[1]*BRO_K;p.muzzle=.06;p.recoil=1;
   if(net)outbox.sh.push([Math.round(mx),Math.round(my),p.facing,p.weapon]);   // the partner's phone shows the shot
   if(w.ext){X.fire(p,w,mx,my);return;}
-  if(w.rocket){W.shots.push({x:mx,y:my,vx:p.facing*w.speed,vy:0,life:w.life,owner:'p',kind:'rocket',trail:0});sfx.rocket();p.vx-=p.facing*40;return;}
+  if(w.rocket){W.shots.push({x:mx-p.facing*5,y:my,vx:p.facing*w.speed,vy:0,life:w.life,owner:'p',kind:'rocket',trail:0});sfx.rocket();p.vx-=p.facing*40;return;}
   if(w.flame){for(let k=0;k<2;k++)W.flames.push({x:mx,y:my+(Math.random()-.5)*3,vx:p.facing*w.speed*(0.8+Math.random()*.4)+p.vx*.5,vy:(Math.random()-.5)*50-20,life:w.life*(0.8+Math.random()*.4),max:w.life,dmg:w.dmg});if(frames%6===0)sfx.flame();return;}
   const n=w.pellets||1;
   for(let k=0;k<n;k++){const sp=n>1?(k/(n-1)-.5)*w.spread+(Math.random()-.5)*.06:(Math.random()-.5)*.05;
    W.bullets.push({x:mx,y:my+(p.weapon==='pistols'?(frames%2?-2:1):0),vx:Math.cos(sp)*p.facing*w.speed,vy:Math.sin(sp)*w.speed,life:w.life,owner:'p',dmg:w.dmg,tile:w.tile});}
-  fx.burst(mx,my+1,{n:1,color:'#d8b040',speed:60,life:.6,size:1,gravity:500,angle:-Math.PI/2-p.facing*.6,spread:.6,shape:'square'});
+  if(!spriteFx('shell-casing',mx-p.facing*4,my+1,{pic:true,dur:.6,vx:-p.facing*(30+Math.random()*30),vy:-70-Math.random()*40,g:520,spin:22}))fx.burst(mx,my+1,{n:1,color:'#d8b040',speed:60,life:.6,size:1,gravity:500,angle:-Math.PI/2-p.facing*.6,spread:.6,shape:'square'});
   sfx[p.weapon]?.();if(p.weapon==='shotgun'){p.vx-=p.facing*60;fx.shake(2);}
   if(frames%12===0)for(const e of W.foes)if(e.alive&&e.active&&e.state==='patrol'&&Math.abs(e.x-p.x)<120&&Math.abs(e.y-p.y)<64){e.state='search';e.seenX=p.x;e.t=3;e.bubble={ch:'?',t:1};}
  }
@@ -548,16 +607,16 @@ async function broforce(s){
   const t=T_AT(c,r);if(t===E||t===STEEL||r<0||c<=0||c>=W.W-1||r>=ROWS-1)return false;
   const k=r*MAXW+c;W.hp[k]-=dmg;
   if(W.hp[k]<=0){breakTile(c,r,t);return true;}
-  if(Math.random()<.5)fx.burst((c+.5)*T,(r+.5)*T,{n:2,colors:tileColors(t),speed:70,life:.35,size:1.3,gravity:500,shape:'square'});
+  if(Math.random()<.5&&!spriteFx('fx-impact',(c+.5)*T,(r+.5)*T,{size:7,dur:.2}))fx.burst((c+.5)*T,(r+.5)*T,{n:2,colors:tileColors(t),speed:70,life:.35,size:1.3,gravity:500,shape:'square'});
   return false;
  }
  function breakTile(c,r,t){
   W.tiles[r*MAXW+c]=E;if(net)outbox.tb.push(r*MAXW+c);
-  fx.burst((c+.5)*T,(r+.5)*T,{n:t===BARREL?2:6,colors:tileColors(t),speed:110,life:.6,size:2,gravity:600,shape:'square'});
+  if(!spriteFx('fx-rubble',(c+.5)*T,(r+.5)*T,{size:20,dur:.55}))fx.burst((c+.5)*T,(r+.5)*T,{n:t===BARREL?2:6,colors:tileColors(t),speed:110,life:.6,size:2,gravity:600,shape:'square'});
   if(t===BARREL||t===CRYST)queueBoom((c+.5)*T,(r+.5)*T,44,4,'env',.06);
   else if(t===GLASS){sfx.glass?.();snd(2400,.12,{type:'triangle',vol:.03,to:900});}
-  else if(t===QBLOCK){W.pickups.push({x:(c+.5)*T,y:(r+1)*T,vy:-120,vx:0,w:4,h:7,kind:Math.random()<.5?'nade':'gun',weapon:theme.ext?theme.weapons[Math.floor(Math.random()*theme.weapons.length)]:null,t:12});}
-  else if(t===CRATE){if(Math.random()<.55)W.pickups.push({x:(c+.5)*T,y:(r+1)*T,vy:-120,vx:0,w:4,h:7,kind:theme.ext&&Math.random()<.35?'gun':'nade',weapon:theme.ext?theme.weapons[Math.floor(Math.random()*theme.weapons.length)]:null,t:12});addScore(25);}
+  else if(t===QBLOCK){W.pickups.push({x:(c+.5)*T,y:(r+1)*T,vy:-120,vx:0,w:4,h:7,kind:Math.random()<.5?'nade':'gun',weapon:anyGun(),t:12});}
+  else if(t===CRATE){if(Math.random()<.55)W.pickups.push({x:(c+.5)*T,y:(r+1)*T,vy:-120,vx:0,w:4,h:7,kind:Math.random()<.35?'gun':'nade',weapon:anyGun(),t:12});addScore(25);}
   else if(t===WOOD||t===BAGS)addScore(10);
  }
  const tileColors=t=>t===DIRT||t===GOO?TH.dirt:t===BRICK||t===QBLOCK?TH.brick:t===ROCK?TH.rock:t===GLASS?['#cfe8ff','#9fd0e8','#fff']:t===CRYST?['#c84aff','#ff8af0']:t===WOOD||t===CRATE||t===PLAT||t===LADDER?[theme.wood,'#5a3a1a']:t===BAGS?['#b8a77a','#8f8058']:t===BARREL?['#c33','#f80','#222']:['#888'];
@@ -568,14 +627,20 @@ async function broforce(s){
   const c0=Math.floor((x-r)/T),c1=Math.floor((x+r)/T),r0=Math.floor((y-r)/T),r1=Math.floor((y+r)/T);
   for(let cc=c0;cc<=c1;cc++)for(let rr=r0;rr<=r1;rr++){const d=Math.hypot((cc+.5)*T-x,(rr+.5)*T-y);if(d<r)damageTile(cc,rr,d<r*.7?99:2.5);}
   for(const e of W.foes)if(e.alive){const d=Math.hypot(e.x-x,e.y-e.h/2-y);if(d<r+e.w)hitF(e,dmg*(d<r*.6?1.6:1),x,true);}
-  for(const cg of W.cages)if(!cg.open&&Math.hypot(cg.x-x,cg.y-10-y)<r+8)openCage(cg);
+  for(const cg of W.cages)if(!cg.open&&Math.hypot(cg.x-x,cg.y-13-y)<r+10)openCage(cg);
   if(W.boss&&W.boss.alive){const B=W.boss,d=Math.hypot(B.x-x,B.y-(B.hh||60)*.5-y);if(d<r+(B.hw||24))hitB(dmg*3,x);}
   if(owner!=='p'&&!P.dead&&Math.hypot(P.x-x,P.y-10-y)<r*.95)hurtPlayer(2,x);
  }
+ // sprite effects (fx-* sheets / small pictures) on top of the action; every call site keeps its particle burst as the
+ // fallback while the picture isn't in. Purely visual (each phone plays its own).
+ function spriteFx(name,x,y,o={}){if(o.pic?!BS.picture(name):!BS.sheet(name))return false;if(anims.length>240)anims.shift();
+  anims.push({name,x,y,t:0,dur:o.dur||.5,size:o.size,flip:o.flip||1,rot:o.rot||0,vx:o.vx||0,vy:o.vy||0,gr:o.g||0,spin:o.spin||0,pic:!!o.pic});return true;}
+ function drawAnims(time){const dt=animT==null?0:Math.min(.1,Math.max(0,time-animT));animT=time;
+  for(let i=anims.length-1;i>=0;i--){const a=anims[i];a.t+=dt;a.vy+=a.gr*dt;a.x+=a.vx*dt;a.y+=a.vy*dt;a.rot+=a.spin*dt;if(a.t>=a.dur){anims.splice(i,1);continue;}
+   if(a.pic)BS.drawPic(g,a.name,a.x,a.y,{rot:a.rot,alpha:Math.min(1,(a.dur-a.t)*5)});else BS.drawFx(g,a.name,a.x,a.y,a.t/a.dur,{size:a.size,flip:a.flip,rot:a.rot});}}
  function blastFx(x,y,r){sfx.boom(r>40);fx.shake(r>40?12:8);
-  fx.burst(x,y,{n:20,colors:['#fff6b0','#ffd23a','#ff8a1a','#ff4a10'],speed:r*5,life:.45,size:r*.12,drag:3});
-  fx.burst(x,y,{n:12,colors:['#3a3330','#5a524c','#2a2624'],speed:r*2.4,life:1.3,size:r*.14,drag:2.4,gravity:-60,grow:6});
-  fx.ring(x,y,{color:'#fff3c4',r0:4,r1:r*1.25,life:.3,width:4});
+  const xp=spriteFx('fx-explosion',x,y,{size:r*2.6,dur:.6});if(!xp){fx.burst(x,y,{n:20,colors:['#fff6b0','#ffd23a','#ff8a1a','#ff4a10'],speed:r*5,life:.45,size:r*.12,drag:3});fx.ring(x,y,{color:'#fff3c4',r0:4,r1:r*1.25,life:.3,width:4});}
+  if(!spriteFx('fx-smoke',x,y-r*.3,{size:r*2.2,dur:1.2}))fx.burst(x,y,{n:12,colors:['#3a3330','#5a524c','#2a2624'],speed:r*2.4,life:1.3,size:r*.14,drag:2.4,gravity:-60,grow:6});
   for(const cp of W.corpses){const d=Math.hypot(cp.x-x,cp.y-y);if(d<r*1.5){cp.vx+=(cp.x-x)/(d+1)*260;cp.vy-=200;cp.vr+=(Math.random()-.5)*20;}}}
  // online, the other phone's blast: the bang, and this phone's bro takes it unless the partner set it off (the partner's
  // phone deals with terrain, enemies, cages and the Devil and sends what changed)
@@ -588,17 +653,17 @@ async function broforce(s){
  function hitFoe(e,dmg,fromX,blast=false,by='p'){
   if(!e.alive)return;e.hp-=dmg;e.flash=.08;
   if(e.state==='patrol'||e.state==='search'){e.state='alert';e.t=.25;e.dir=fromX>e.x?1:-1;e.bubble={ch:'!',t:.8};}
-  fx.burst(e.x,e.y-e.h*.6,{n:3,colors:['#b00','#e22'],speed:90,life:.4,size:1.4,gravity:500});
+  if(!spriteFx('fx-blood',e.x,e.y-e.h*.6,{size:10,dur:.35}))fx.burst(e.x,e.y-e.h*.6,{n:3,colors:['#b00','#e22'],speed:90,life:.4,size:1.4,gravity:500});
   if(e.hp<=0)killFoe(e,fromX,blast,by);
  }
  // online the other phone only reports its hits (batched, see netFlush); the foe flashes at once
- function hitF(e,dmg,fromX,blast=false){if(net&&!host){if(!e.alive)return;e.flash=.08;fx.burst(e.x,e.y-e.h*.6,{n:3,colors:['#b00','#e22'],speed:90,life:.4,size:1.4,gravity:500});const h=outbox.fh.get(e.k)||[e.k,0,Math.round(fromX),blast?1:0];h[1]+=dmg;if(blast)h[3]=1;outbox.fh.set(e.k,h);return;}hitFoe(e,dmg,fromX,blast,'p');}
+ function hitF(e,dmg,fromX,blast=false){if(net&&!host){if(!e.alive)return;e.flash=.08;if(!spriteFx('fx-blood',e.x,e.y-e.h*.6,{size:10,dur:.35}))fx.burst(e.x,e.y-e.h*.6,{n:3,colors:['#b00','#e22'],speed:90,life:.4,size:1.4,gravity:500});const h=outbox.fh.get(e.k)||[e.k,0,Math.round(fromX),blast?1:0];h[1]+=dmg;if(blast)h[3]=1;outbox.fh.set(e.k,h);return;}hitFoe(e,dmg,fromX,blast,'p');}
  function hitB(dmg,fromX){if(net&&!host){const B=W.boss;if(!B?.alive||B.state==='wait')return;B.flash=.07;outbox.bh+=dmg;outbox.bx=fromX;return;}hitBoss(dmg,fromX);}
  function killFoe(e,fromX,blast,by='p'){
   e.alive=false;if(net&&host)ev({fk:[stageIdx,e.k,Math.round(fromX),blast?1:0,by==='p'?me:them]});
   if(by==='p')foeScore(e);
-  sfx.splat();fx.burst(e.x,e.y-e.h*.5,{n:blast?22:12,colors:['#a00','#d11','#700','#f44'],speed:blast?220:140,life:.8,size:1.8,gravity:600});
-  if(blast)fx.burst(e.x,e.y-e.h*.5,{n:5,colors:['#7a1010','#e8c0a0','#5a5a2a'],speed:200,life:1,size:2.4,gravity:700,shape:'square'});
+  sfx.splat();const gib=spriteFx(blast?'fx-gibs':'fx-blood',e.x,e.y-e.h*.5,{size:blast?28:18,dur:blast?.7:.5});if(!gib)fx.burst(e.x,e.y-e.h*.5,{n:blast?22:12,colors:['#a00','#d11','#700','#f44'],speed:blast?220:140,life:.8,size:1.8,gravity:600});
+  if(blast&&!gib)fx.burst(e.x,e.y-e.h*.5,{n:5,colors:['#7a1010','#e8c0a0','#5a5a2a'],speed:200,life:1,size:2.4,gravity:700,shape:'square'});
   const dir=Math.sign(e.x-fromX)||1;W.corpses.push({x:e.x,y:e.y,vx:dir*(blast?220:90),vy:blast?-260:-110,rot:0,vr:dir*(blast?14:6),t:5,kind:e.type,flip:e.dir});
   if(e.type==='bomber'&&host)queueBoom(e.x,e.y-10,40,4,'env',.25);
   if(e.type==='grenadier'&&Math.random()<.5)W.pickups.push({x:e.x,y:e.y-6,vy:-140,vx:0,w:4,h:7,kind:'nade',t:12});
@@ -646,8 +711,10 @@ async function broforce(s){
   if(mine&&e.type!=='dog'&&e.type!=='bomber'&&e.alive&&!P.dead&&!P.boarded&&Math.abs(dx)<8&&Math.abs(dy)<14&&P.inv<=0)hurtPlayer(1,e.x);
   if(e.y>ROWS*T){e.alive=false;quietDeath(e);}
  }
+ // an enemy's shot starts at its gun in the picture (owner: bullets didn't come from the weapons), else at the old spot
+ function foeTip(e,ox,oy){const sh=BS.sheet('foe-'+e.type),m=sh&&sh.def.muzzle,d=e.dir||1;if(!m)return [e.x+d*ox,e.y+oy];const k=e.sz||1;return [e.x+d*(m[0]-sh.def.feet[0])/BS.K*k,e.y+(m[1]-sh.def.feet[1])/BS.K*k];}
  function shootFoe(e,dx,dy){const a=Math.atan2(clamp(dy,-Math.abs(dx)*.5,Math.abs(dx)*.5),Math.abs(dx))+(Math.random()-.5)*.08;
-  const b={x:e.x+e.dir*10,y:e.y-e.h*.55,vx:Math.cos(a)*e.dir*215,vy:Math.sin(a)*215,life:1.5,owner:'e',dmg:1,tile:.35};W.bullets.push(b);e.muzzle=.06;sfx.enemy();
+  const [bx,by]=foeTip(e,10,-e.h*.55),b={x:bx,y:by,vx:Math.cos(a)*e.dir*215,vy:Math.sin(a)*215,life:1.5,owner:'e',dmg:1,tile:.35};W.bullets.push(b);e.muzzle=.06;sfx.enemy();
   if(net)outbox.fb.push([Math.round(b.x),Math.round(b.y),Math.round(b.vx),Math.round(b.vy)]);}
 
  // ---------------------------------------------------------------- boss: the Devil (stage 3)
@@ -691,7 +758,7 @@ async function broforce(s){
  // ---------------------------------------------------------------- cages & rescue
  function openCage(cg){
   if(cg.open||P.out)return;cg.open=true;cg.freeT=1.2;P.rescues++;sfx.clink();
-  fx.burst(cg.x,cg.y-12,{n:14,colors:cg.vip?['#ffd84a','#fff1a0','#c9902a']:[theme.wood,'#5a3a1a'],speed:130,life:.7,size:1.8,gravity:600,shape:'square'});
+  if(!spriteFx('fx-rubble',cg.x,cg.y-12,{size:26,dur:.55}))fx.burst(cg.x,cg.y-12,{n:14,colors:cg.vip?['#ffd84a','#fff1a0','#c9902a']:[theme.wood,'#5a3a1a'],speed:130,life:.7,size:1.8,gravity:600,shape:'square'});
   const nm=nameOf(cg.id).toUpperCase();
   if(cg.vip){P.gold++;if(!s.broforceRecruits[P.i].includes(cg.id))s.broforceRecruits[P.i].push(cg.id);}
   // online: a partner who is out of bros comes back as this prisoner instead of the extra life
@@ -701,7 +768,7 @@ async function broforce(s){
   if(cg.vip){sfx.gold();banner={big:'NEW RECRUIT!',small:net?`${nm} JOINS BOTH ROSTERS`:`${nm} JOINS ${s.players[P.i].name.toUpperCase()}’S ROSTER`,t:2.6,gold:true,id:cg.id};}
   else{sfx.rescue();banner={big:'BRO IN!',small:`${nm} · ${WEAPONS[wpnFor(cg.id)].name}`,t:1.8};}
   setBro(cg.id);P.hp=2;P.inv=Math.max(P.inv,.8);P.mood='win';P.moodT=1.2;
-  fx.ring(P.x,P.y-10,{color:cg.vip?'#ffd84a':'#9cf',r0:4,r1:34,life:.5,width:3});
+  if(!spriteFx('fx-rescue',P.x,P.y-12,{size:40,dur:.6}))fx.ring(P.x,P.y-10,{color:cg.vip?'#ffd84a':'#9cf',r0:4,r1:34,life:.5,width:3});
  }
 
  // ---------------------------------------------------------------- projectiles
@@ -710,10 +777,10 @@ async function broforce(s){
    const sub=2;for(let k=0;k<sub&&b.life>0;k++){b.x+=b.vx*dt/sub;b.y+=b.vy*dt/sub;
     const c=Math.floor(b.x/T),r=Math.floor(b.y/T),t=T_AT(c,r);
     // only the phone that owns a shot damages terrain with it (online: own shots; enemy shots on player 1's phone)
-    if(SOLID[t]){const broke=ownsShot(b.owner)&&damageTile(c,r,b.tile);if(b.kind==='rail'&&broke)continue;b.life=0;fx.burst(b.x,b.y,{n:2,colors:['#fff6b0','#ffd23a'],speed:80,life:.15,size:1});break;}
+    if(SOLID[t]){const broke=ownsShot(b.owner)&&damageTile(c,r,b.tile);if(b.kind==='rail'&&broke)continue;b.life=0;if(!spriteFx('fx-impact',b.x,b.y,{size:8,dur:.2}))fx.burst(b.x,b.y,{n:2,colors:['#fff6b0','#ffd23a'],speed:80,life:.15,size:1});break;}
     if(b.owner==='p'){
      for(const e of W.foes)if(e.alive&&e.active&&Math.abs(b.x-e.x)<e.w+2&&b.y>e.y-e.h&&b.y<e.y+1){if(b.pierce>0){if(!b.hits)b.hits=new Set();if(b.hits.has(e))continue;b.hits.add(e);b.pierce--;hitF(e,b.dmg,b.x-b.vx*.05);continue;}hitF(e,b.dmg,b.x-b.vx*.05);b.life=0;break;}
-     if(b.life>0)for(const cg of W.cages)if(!cg.open&&Math.abs(b.x-cg.x)<9&&b.y>cg.y-24&&b.y<cg.y){cg.hp-=b.dmg;b.life=0;if(cg.hp<=0)openCage(cg);break;}
+     if(b.life>0)for(const cg of W.cages)if(!cg.open&&Math.abs(b.x-cg.x)<CG_W&&b.y>cg.y-CG_H&&b.y<cg.y){cg.hp-=b.dmg;b.life=0;if(cg.hp<=0)openCage(cg);break;}
      const B=W.boss;if(b.life>0&&B&&B.alive&&Math.abs(b.x-B.x)<(B.hw||18)&&b.y>B.y-(B.hh||56)&&b.y<B.y+2){hitB(b.dmg,b.x);b.life=0;}
     }else if(b.owner==='r'){for(const e of W.foes)if(e.alive&&e.active&&Math.abs(b.x-e.x)<e.w+2&&b.y>e.y-e.h&&b.y<e.y+1){b.life=0;break;}}
     else if(!P.dead&&!P.boarded&&!P.out&&Math.abs(b.x-P.x)<P.w+1&&b.y>P.y-P.h&&b.y<P.y){hurtPlayer(b.dmg,b.x-b.vx);b.life=0;}
@@ -724,11 +791,11 @@ async function broforce(s){
   for(const sh of W.shots){
    if(sh.ext){X.stepShot(sh,dt);continue;}
    sh.vy+=(sh.g||0)*dt;sh.x+=sh.vx*dt;sh.y+=sh.vy*dt;sh.life-=dt;
-   if(sh.kind==='rocket'){sh.trail-=dt;if(sh.trail<=0){sh.trail=.02;fx.burst(sh.x-Math.sign(sh.vx)*6,sh.y,{n:1,colors:['#bbb','#888'],speed:20,life:.5,size:2,grow:6});}}
-   else fx.burst(sh.x,sh.y,{n:1,colors:['#ff4a10','#ffd23a'],speed:20,life:.25,size:2});
+   if(sh.kind==='rocket'){sh.trail-=dt;if(sh.trail<=0){sh.trail=.02;if(!spriteFx('fx-smoke',sh.x-Math.sign(sh.vx)*6,sh.y,{size:8,dur:.5}))fx.burst(sh.x-Math.sign(sh.vx)*6,sh.y,{n:1,colors:['#bbb','#888'],speed:20,life:.5,size:2,grow:6});}}
+   else if(!spriteFx('fx-fire',sh.x,sh.y+2,{size:6,dur:.25}))fx.burst(sh.x,sh.y,{n:1,colors:['#ff4a10','#ffd23a'],speed:20,life:.25,size:2});
    let hit=solidAt(sh.x,sh.y)||sh.life<=0;
    if(sh.owner==='p'||sh.owner==='r'){for(const e of W.foes)if(e.alive&&e.active&&Math.abs(sh.x-e.x)<e.w+3&&sh.y>e.y-e.h&&sh.y<e.y+2)hit=true;
-    for(const cg of W.cages)if(!cg.open&&Math.abs(sh.x-cg.x)<9&&sh.y>cg.y-24&&sh.y<cg.y)hit=true;
+    for(const cg of W.cages)if(!cg.open&&Math.abs(sh.x-cg.x)<CG_W&&sh.y>cg.y-CG_H&&sh.y<cg.y)hit=true;
     const B=W.boss;if(B&&B.alive&&Math.abs(sh.x-B.x)<(B.hw||18)&&sh.y>B.y-(B.hh||56)&&sh.y<B.y+2)hit=true;}
    else if(!P.dead&&!P.out&&Math.abs(sh.x-P.x)<P.w+3&&sh.y>P.y-P.h&&sh.y<P.y)hit=true;
    // online a shot this phone doesn't own just vanishes: its blast comes from the owner's phone ({ex})
@@ -736,10 +803,10 @@ async function broforce(s){
   }
   W.shots=W.shots.filter(sh=>sh.life>0);
   for(const f of W.flames){f.life-=dt;f.vx*=Math.exp(-2.5*dt);f.vy-=60*dt;f.x+=f.vx*dt;f.y+=f.vy*dt;
-   const c=Math.floor(f.x/T),r=Math.floor(f.y/T),t=T_AT(c,r);if(SOLID[t]){if(!f.r&&(t===WOOD||t===CRATE||t===BAGS||t===BARREL))damageTile(c,r,.25);f.life=Math.min(f.life,.05);f.vx=0;}
+   const c=Math.floor(f.x/T),r=Math.floor(f.y/T),t=T_AT(c,r);if(SOLID[t]){if(!f.r)damageTile(c,r,t===WOOD||t===CRATE||t===BAGS||t===BARREL?.25:.07);f.life=Math.min(f.life,.05);f.vx=0;}
    if(f.r)continue;   // the partner's flames (online) are only for show here
    for(const e of W.foes)if(e.alive&&e.active&&Math.abs(f.x-e.x)<e.w+4&&f.y>e.y-e.h-2&&f.y<e.y+2){hitF(e,f.dmg*dt*20,f.x-f.vx);e.burning=1.5;}
-   for(const cg of W.cages)if(!cg.open&&Math.abs(f.x-cg.x)<10&&f.y>cg.y-24&&f.y<cg.y){cg.hp-=dt*6;if(cg.hp<=0)openCage(cg);}
+   for(const cg of W.cages)if(!cg.open&&Math.abs(f.x-cg.x)<CG_W+1&&f.y>cg.y-CG_H&&f.y<cg.y){cg.hp-=dt*6;if(cg.hp<=0)openCage(cg);}
    const B=W.boss;if(B&&B.alive&&Math.abs(f.x-B.x)<(B.hw||18)+2&&f.y>B.y-(B.hh||56)&&f.y<B.y+2)hitB(f.dmg*dt*3,f.x);}
   W.flames=W.flames.filter(f=>f.life>0);
   for(const n of W.nades){n.t-=dt;n.spin+=n.vx*dt*.2;const vx=n.vx;const res=moveBody(n,dt,{grav:700,maxFall:500});
@@ -747,7 +814,7 @@ async function broforce(s){
    if(n.owner==='p')for(const e of W.foes)if(e.alive&&e.active&&Math.abs(n.x-e.x)<e.w+3&&n.y>e.y-e.h&&n.y<e.y+3)n.t=Math.min(n.t,0);
    if(n.t<=0&&ownsShot(n.owner)){queueBoom(n.x,n.y-3,40,4,n.owner);}}
   W.nades=W.nades.filter(n=>n.t>0);
-  for(const w of W.waves){w.t-=dt;w.x+=w.dir*170*dt;if(solidAt(w.x,w.y-4))w.t=0;if(frames%3===0)fx.burst(w.x,w.y,{n:2,colors:['#ff6a1a','#ffd23a','#7a2a10'],speed:60,life:.35,size:2.2,angle:-Math.PI/2,spread:.8});
+  for(const w of W.waves){w.t-=dt;w.x+=w.dir*170*dt;if(solidAt(w.x,w.y-4))w.t=0;if(frames%3===0&&!BS.sheet('fx-firewave'))fx.burst(w.x,w.y,{n:2,colors:['#ff6a1a','#ffd23a','#7a2a10'],speed:60,life:.35,size:2.2,angle:-Math.PI/2,spread:.8});
    if(!P.dead&&!P.out&&Math.abs(P.x-w.x)<8&&P.y>w.y-12&&P.y<=w.y+1)hurtPlayer(1,w.x-w.dir*5);}
   W.waves=W.waves.filter(w=>w.t>0);
   for(const b of W.booms)b.delay-=dt;const go=W.booms.filter(b=>b.delay<=0);W.booms=W.booms.filter(b=>b.delay>0);for(const b of go)explode(b);
@@ -761,7 +828,7 @@ async function broforce(s){
 
  // ---------------------------------------------------------------- stage flow: flags, chopper, timers
  function updateStage(dt){
-  if(theme.ext)X.updateStage(dt,simT);
+  X.updateStage(dt,simT);
   for(const f of W.flags)if(!f.up&&!P.dead&&!P.out&&Math.abs(P.x-f.x)<14&&Math.abs(P.y-f.y)<40){f.up=true;W.checkpoint={x:f.x,y:f.y};addScore(250,f.x,f.y-40,'#9cf');sfx.flag();fx.pop(f.x,f.y-56,'CHECKPOINT',{color:'#fff',stroke:'#036',size:9,rise:16,life:1.2});if(net)ev({fl:[stageIdx,W.flags.indexOf(f)]});}
   const H=W.heli;H.t+=dt;
   if(H.state==='arrive'){H.y+=(W.exit.y-6.5*T-H.y)*Math.min(1,dt*1.6);if(Math.abs(H.y-(W.exit.y-6.5*T))<2)H.state='hover';}
@@ -823,7 +890,7 @@ async function broforce(s){
  const packBro=p=>{let fl=0;BF.forEach((k,j)=>{if(p[k])fl|=1<<j;});return [r1(p.x),r1(p.y),Math.round(p.vx),Math.round(p.vy),p.facing,fl,p.hp,p.lives,p.grenades,p.score,p.bro,p.inv>0?1:0,p.muzzle>0?1:0,p.kills,p.stagesCleared,stageIdx,Math.round(viewW())];};
  function unpackBro(a){if(!Array.isArray(a)||a.length<16||!R)return;const first=!R.net||R.si!==a[15];R.net={a,at:performance.now()};
   R.vx=a[2];R.vy=a[3];R.facing=a[4]||1;BF.forEach((k,j)=>{R[k]=!!(a[5]&1<<j);});R.dead=R.dead?1:0;R.hp=a[6];R.lives=a[7];R.grenades=a[8];R.score=a[9];
-  if(R.bro!==a[10]){R.bro=a[10];R.weapon=wpnFor(R.bro);for(const m of MOODS)headCanvas(R.bro,m);}R.inv=a[11]?1:0;if(a[12]){R.muzzle=.06;R.fireT=0;}R.kills=a[13];R.stagesCleared=a[14];R.si=a[15];R.vw=a[16]||0;
+  if(R.bro!==a[10]){R.bro=a[10];R.weapon=wpnFor(R.bro);for(const m of MOODS)headCanvas(R.bro,m,72,true);}R.inv=a[11]?1:0;if(a[12]){R.muzzle=.06;R.fireT=0;}R.kills=a[13];R.stagesCleared=a[14];R.si=a[15];R.vw=a[16]||0;
   if(first){R.x=a[0];R.y=a[1];}if(R.out&&P?.out)netEnd('lives');}
  function stepRemote(dt){if(!R?.net)return;const a=R.net.a,age=clamp((performance.now()-R.net.at)/1000,0,.25),tx=a[0]+R.vx*age,ty=a[1]+(R.grounded?0:R.vy*age),k=1-Math.exp(-dt*16);
   if(Math.abs(tx-R.x)>80||Math.abs(ty-R.y)>80){R.x=tx;R.y=ty;}else{R.x+=(tx-R.x)*k;R.y+=(ty-R.y)*k;}
@@ -864,7 +931,7 @@ async function broforce(s){
    else{const n=w.pellets||1;for(let k=0;k<n;k++){const sp=n>1?(k/(n-1)-.5)*w.spread:0;W.bullets.push({x,y,vx:Math.cos(sp)*f*w.speed,vy:Math.sin(sp)*w.speed,life:w.life,owner:'r',dmg:0,tile:0});}}
    if(R&&Math.abs(x-P.x)<viewW())sfx[wp]?.();}
   if(e.gr)for(const [x,y,vx,vy] of e.gr)W.nades.push({x,y,vx,vy,t:1.3,owner:'r',w:2,h:4,grounded:false,spin:0});
-  if(e.tb)for(const k of e.tb){const t=W.tiles[k];if(t!==E&&t!==STEEL){W.tiles[k]=E;const c=k%MAXW,r=Math.floor(k/MAXW);fx.burst((c+.5)*T,(r+.5)*T,{n:t===BARREL?2:5,colors:tileColors(t),speed:100,life:.5,size:2,gravity:600,shape:'square'});}}
+  if(e.tb)for(const k of e.tb){const t=W.tiles[k];if(t!==E&&t!==STEEL){W.tiles[k]=E;const c=k%MAXW,r=Math.floor(k/MAXW);if(!spriteFx('fx-rubble',(c+.5)*T,(r+.5)*T,{size:20,dur:.55}))fx.burst((c+.5)*T,(r+.5)*T,{n:t===BARREL?2:5,colors:tileColors(t),speed:100,life:.5,size:2,gravity:600,shape:'square'});}}
   if(e.fb)for(const [x,y,vx,vy] of e.fb)W.bullets.push({x,y,vx,vy,life:1.5,owner:'e',dmg:1,tile:.35});
   if(e.fn)for(const [x,y,vx,vy] of e.fn)W.nades.push({x,y,vx,vy,t:1.6,owner:'e',w:2,h:4,grounded:false,spin:0});
   if(e.fs)for(const [x,y,vx,vy] of e.fs)W.shots.push({x,y,vx,vy,life:3,owner:'e',kind:'fireball',g:420});
@@ -874,7 +941,7 @@ async function broforce(s){
   if(e.bh&&host){const B=W.boss;if(B?.alive)hitBoss(e.bh[0],e.bh[1]);}
   if(e.ex){const [si,x,y,r,owner]=e.ex;if(si===stageIdx)remoteBlast(x,y,r,owner);}
   if(e.fk&&!host){const [si,k,fx0,bl,by,quiet]=e.fk,f=si===stageIdx&&foeByK(k);if(f&&f.alive&&quiet){f.alive=false;}else if(f&&f.alive){f.alive=false;if(by===me)foeScore(f);sfx.splat();
-   fx.burst(f.x,f.y-f.h*.5,{n:bl?22:12,colors:['#a00','#d11','#700','#f44'],speed:bl?220:140,life:.8,size:1.8,gravity:600});
+   if(!spriteFx(bl?'fx-gibs':'fx-blood',f.x,f.y-f.h*.5,{size:bl?28:18,dur:bl?.7:.5}))fx.burst(f.x,f.y-f.h*.5,{n:bl?22:12,colors:['#a00','#d11','#700','#f44'],speed:bl?220:140,life:.8,size:1.8,gravity:600});
    const dir=Math.sign(f.x-fx0)||1;W.corpses.push({x:f.x,y:f.y,vx:dir*(bl?220:90),vy:bl?-260:-110,rot:0,vr:dir*(bl?14:6),t:5,kind:f.type,flip:f.dir});}}
   if(e.cg){const [si,k,rv]=e.cg,cg=si===stageIdx&&W.cages[k];if(cg&&!cg.open){cg.open=true;cg.freeT=1.2;sfx.clink();
    if(cg.vip&&!s.broforceRecruits[me].includes(cg.id)){s.broforceRecruits[me].push(cg.id);sfx.gold();banner={big:'NEW RECRUIT!',small:`${nameOf(cg.id).toUpperCase()} JOINS BOTH ROSTERS`,t:2.6,gold:true,id:cg.id};}
@@ -900,7 +967,7 @@ async function broforce(s){
   if(net){phase='handoff';clearInput();if(host){netCages=pickNetCages();ev({setup:{cages:netCages}});}
    await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;
    if(!host){if(!setupMsg)await new Promise(r=>{setupWait=r;});netCages=setupMsg?.cages||null;}
-   clock=0;acc=0;P=newPlayer(me);setBro(P.bro);R=newPlayer(them);R.net=null;R.si=-1;for(const m of MOODS)headCanvas(R.bro,m);
+   clock=0;acc=0;P=newPlayer(me);setBro(P.bro);R=newPlayer(them);R.net=null;R.si=-1;for(const m of MOODS)headCanvas(R.bro,m,72,true);
    loadStage(0,false);P.x=W.S.spawn.x+(me?8:-8);P.y=W.S.spawn.y;P.inv=1.5;computeZoom();updateCamera(0,true);cd=new Countdown(3);phase='count';return;}
   phase='handoff';turn=i;clearInput();
   const n0=s.players[0].name;
@@ -918,6 +985,20 @@ async function broforce(s){
 
  // ---------------------------------------------------------------- drawing: tiles (pre-rendered per theme)
  let TILEART=makeTileArt(theme);
+ // Warp pipes: one tube per run of PIPE tiles (owner, Nov 15: the tiles sheet's pipe was repeated in every cell = a stack of
+ // tiny pipes). Top-left cell of a run = PIPE with no PIPE to its left or above; width/height = the run. Cap from the top of the
+ // sheet's pipe cell, body = its lower part stretched down (vertical stripes stretch cleanly). Drawn fallback without art.
+ function drawPipes(c0,c1,px,py,wk){
+  const spr=BS.tile(wk,PIPE,0),at=(c,r)=>c>=0&&r>=0&&r<ROWS&&c<W.W&&W.tiles[r*MAXW+c]===PIPE;
+  for(let cc=Math.max(0,c0-4);cc<=c1;cc++)for(let r=0;r<ROWS;r++){if(!at(cc,r)||at(cc-1,r)||at(cc,r-1))continue;
+   let w=1,h=1;while(at(cc+w,r))w++;while(at(cc,r+h))h++;
+   const x=px(cc),X1=px(cc+w),y=py(r),Y1=py(r+h),W2=X1-x,H2=Y1-y;
+   if(spr){const [img,sx,sy,cw,ch]=spr,c0y=sy+ch*.07,c1y=sy+ch*.375,capH=Math.min(H2*.55,W2*(c1y-c0y)/cw);
+    g.drawImage(img,sx,c1y,cw,ch*.6,x,y+capH-1,W2,H2-capH+1);g.drawImage(img,sx,c0y,cw,c1y-c0y,x,y,W2,capH);}
+   else{const capH=Math.min(H2*.5,W2*.3),inset=W2*.07,bw=W2-2*inset;
+    g.fillStyle='#0a3a0a';g.fillRect(x+inset,y,bw,H2);g.fillStyle='#22a022';g.fillRect(x+inset+bw*.06,y,bw*.82,H2);g.fillStyle='#8af08a';g.fillRect(x+inset+bw*.22,y,bw*.12,H2);g.fillStyle='#0f6a0f';g.fillRect(x+inset+bw*.66,y,bw*.18,H2);
+    g.fillStyle='#0a3a0a';g.fillRect(x,y,W2,capH);g.fillStyle='#2ab02a';g.fillRect(x+W2*.04,y+capH*.12,W2*.92,capH*.76);g.fillStyle='#8af08a';g.fillRect(x+W2*.2,y+capH*.12,W2*.1,capH*.76);}}
+ }
  function drawWorld(time){
   const vw=viewW(),vh=viewH();
   // sky & parallax
@@ -929,18 +1010,25 @@ async function broforce(s){
   // back walls (dug-out caves, building interiors)
   const c0=Math.max(0,Math.floor(cam.x/T)),c1=Math.min(W.W-1,Math.ceil((cam.x+vw)/T)),r0=Math.max(0,Math.floor(cam.y/T)),r1=Math.min(ROWS-1,Math.ceil((cam.y+vh)/T)),wk=worldKey(),topPic=BS.picture('top-'+wk);
   const px=c=>Math.round(c*T*Z)-sx,py=r=>Math.round(r*T*Z)-sy;
-  for(let r=r0;r<=r1;r++){const y=py(r),h=py(r+1)-y;for(let cc=c0;cc<=c1;cc++){const k=r*MAXW+cc,t=W.tiles[k];if(SOLID[t])continue;const b=W.back[k];if(!b)continue;const x=px(cc),w=px(cc+1)-x;g.drawImage(TILEART.back[b][(cc*7+r*3)%3],x,y,w,h);}}
+  // barrels, sandbags, crates and glass have see-through edges: they get the wall behind them too (owner saw sky squares
+  // round the fire barrels inside bunkers), borrowed from a neighbour when the level didn't mark one under the tile
+  for(let r=r0;r<=r1;r++){const y=py(r),h=py(r+1)-y;for(let cc=c0;cc<=c1;cc++){const k=r*MAXW+cc,t=W.tiles[k];if(SOLID[t]&&!SEE_THRU[t])continue;
+   const b=W.back[k]||(SEE_THRU[t]?W.back[k-1]||W.back[k+1]||W.back[k-MAXW]||0:0);if(!b)continue;const x=px(cc),w=px(cc+1)-x;const bm=b===1&&BS.macro(wk,DIRT);
+   if(bm){const S=bm.s;g.drawImage(bm.img,(cc*S)%bm.img.width,(r*S)%bm.img.height,S,S,x,y,w,h);g.fillStyle='rgba(8,4,2,.62)';g.fillRect(x,y,w,h);}else g.drawImage(TILEART.back[b][(cc*7+r*3)%3],x,y,w,h);}}
   // decorations behind the action
   g.setTransform(Z,0,0,Z,-sx,-sy);
   for(const d of W.S.decor)drawDecor(d,time);
   g.setTransform(1,0,0,1,0,0);
   // tiles
-  for(let r=r0;r<=r1;r++){const y=py(r),h=py(r+1)-y;for(let cc=c0;cc<=c1;cc++){const k=r*MAXW+cc,t=W.tiles[k];if(t===E)continue;const x=px(cc),w=px(cc+1)-x;
-   const art=TILEART.t[t],vi=t===LAVA?(cc+(time*5|0))%art.length:(cc*13+r*7)%art.length,spr=BS.tile(wk,t,vi);if(spr)g.drawImage(spr[0],spr[1],spr[2],spr[3],spr[4],x,y,w,h);else g.drawImage(art[vi],x,y,w,h);
+  for(let r=r0;r<=r1;r++){const y=py(r),h=py(r+1)-y;for(let cc=c0;cc<=c1;cc++){const k=r*MAXW+cc,t=W.tiles[k];if(t===E||t===PIPE)continue;const x=px(cc),w=px(cc+1)-x;
+   const art=TILEART.t[t],vi=t===LAVA?(cc+(time*5|0))%art.length:(cc*13+r*7)%art.length,mac=BS.macro(wk,t);
+   if(mac){const S=mac.s,mw=mac.img.width,mh=mac.img.height;g.drawImage(mac.img,(cc*S)%mw,(r*S)%mh,S,S,x,y,w,h);}
+   else{const spr=BS.tile(wk,t,vi);if(spr)g.drawImage(spr[0],spr[1],spr[2],spr[3],spr[4],x,y,w,h);else g.drawImage(art[vi],x,y,w,h);}
    if((t===DIRT||t===GOO)&&r>0&&!SOLID[W.tiles[k-MAXW]]&&W.tiles[k-MAXW]!==LADDER&&!W.back[k-MAXW]&&W.tiles[k-MAXW]!==LAVA){const tp=topPic;if(tp){const tw=tp.width/3;g.drawImage(tp,((cc+r)%3)*tw,0,tw,tp.height,x,y-Math.round(3*Z),w,Math.round(9*Z));}else g.drawImage(TILEART.top[(cc+r)%3],x,y-Math.round(3*Z),w,Math.round(9*Z));}
    if(SOLID[t]&&t!==BARREL){if(cc>0&&!SOLID[W.tiles[k-1]]){g.fillStyle='rgba(0,0,0,.28)';g.fillRect(x,y,Math.max(1,Z),h);}if(cc<W.W-1&&!SOLID[W.tiles[k+1]]){g.fillStyle='rgba(0,0,0,.28)';g.fillRect(x+w-Math.max(1,Z),y,Math.max(1,Z),h);}
     if(r<ROWS-1&&!SOLID[W.tiles[k+MAXW]]){g.fillStyle='rgba(0,0,0,.35)';g.fillRect(x,y+h-Math.max(1,Z*1.5),w,Math.max(1,Z*1.5));}}
-   const hp=W.hp[k],max=HP[t];if(hp<max&&max<100){const d=hp/max;g.drawImage(TILEART.crack[d<.4?1:0],x,y,w,h);}}}
+   const hp=W.hp[k],max=HP[t];if(hp<max&&max<100){const d=hp/max,cp=BS.picture(d<.4?'crack-2':'crack-1');g.drawImage(cp||TILEART.crack[d<.4?1:0],x,y,w,h);}}}
+  drawPipes(c0,c1,px,py,wk);
   g.setTransform(Z,0,0,Z,-sx,-sy);
   // actors
   g.imageSmoothingEnabled=true;
@@ -950,15 +1038,16 @@ async function broforce(s){
   for(const cp of W.corpses)drawCorpse(cp);
   for(const e of W.foes)if(e.alive&&e.active)drawFoe(e,time);
   if(W.boss)drawBoss(W.boss,time);
-  if(theme.ext)X.drawStage(g,time);
+  X.drawStage(g,time);
   if(net&&partnerHere()&&!R.dead&&!R.boarded&&!R.out)drawBro(R,time);
   if(!P.dead&&!P.boarded&&!P.out)drawBro(P,time);
   drawHeli(W.heli,time);
   for(const n of W.nades)drawNade(n);
   for(const sh of W.shots)drawShot(sh);
-  for(const b of W.bullets){if(b.kind){X.drawBullet(g,b);continue;}g.strokeStyle=b.owner==='p'?'#fff3a0':'#ff8a3a';g.lineWidth=b.owner==='p'?1.6:2;g.beginPath();g.moveTo(b.x,b.y);g.lineTo(b.x-b.vx*.018,b.y-b.vy*.018);g.stroke();}
-  for(const f of W.flames){const k=f.life/f.max;g.fillStyle=k>.6?'#fff3a0':k>.35?'#ffb02a':'#e8401a';g.globalAlpha=Math.min(1,k*1.8);g.beginPath();g.arc(f.x,f.y,2+(1-k)*5,0,7);g.fill();}g.globalAlpha=1;
-  for(const w of W.waves){g.fillStyle='#ff6a1a';g.beginPath();g.moveTo(w.x-7,w.y);g.lineTo(w.x,w.y-12-Math.sin(time*30)*2);g.lineTo(w.x+7,w.y);g.fill();}
+  for(const b of W.bullets){const bn=b.kind?'bullet-'+b.kind:b.owner==='p'?'bullet-p':'bullet-e';if(BS.picture(bn)){const sp=Math.hypot(b.vx,b.vy);BS.drawPic(g,bn,b.x,b.y,{rot:sp?Math.atan2(b.vy,b.vx):0,anchor:[BS.PICTURES[bn].size[0],BS.PICTURES[bn].size[1]/2]});continue;}if(b.kind){X.drawBullet(g,b);continue;}g.strokeStyle=b.owner==='p'?'#fff3a0':'#ff8a3a';g.lineWidth=b.owner==='p'?1.6:2;g.beginPath();g.moveTo(b.x,b.y);g.lineTo(b.x-b.vx*.018,b.y-b.vy*.018);g.stroke();}
+  for(const f of W.flames){const k=f.life/f.max;if(BS.drawFx(g,'fx-fire',f.x,f.y+3,1-k,{size:6+(1-k)*8,alpha:Math.min(1,k*1.8)}))continue;g.fillStyle=k>.6?'#fff3a0':k>.35?'#ffb02a':'#e8401a';g.globalAlpha=Math.min(1,k*1.8);g.beginPath();g.arc(f.x,f.y,2+(1-k)*5,0,7);g.fill();}g.globalAlpha=1;
+  for(const w of W.waves){if(BS.drawFx(g,'fx-firewave',w.x,w.y,time,{size:16,flip:w.dir<0?-1:1}))continue;g.fillStyle='#ff6a1a';g.beginPath();g.moveTo(w.x-7,w.y);g.lineTo(w.x,w.y-12-Math.sin(time*30)*2);g.lineTo(w.x+7,w.y);g.fill();}
+  drawAnims(time);
   fx.draw(g);
   g.setTransform(1,0,0,1,0,0);g.restore();
  }
@@ -966,8 +1055,10 @@ async function broforce(s){
  function drawParallax(time,hell){
   const wk=worldKey(),sky=BS.picture('sky-'+wk),far=BS.picture('far-'+wk),mid=BS.picture('mid-'+wk);
   if(sky||far||mid){const H=s.H;if(sky){const k=Math.max(s.W/sky.width,H/sky.height);g.drawImage(sky,(s.W-sky.width*k)/2,(H-sky.height*k)/2,sky.width*k,sky.height*k);}
-   const strip=(img,f,yk)=>{if(!img)return;const h=H*.62,w=img.width*h/img.height,x0=-((cam.x*Z*f)%w);for(let x=x0-w;x<s.W+w;x+=w)g.drawImage(img,x,H*yk-h,w,h);};
-   strip(far,.15,.86);strip(mid,.4,1.02-(cam.y-(G*T-viewH()*.58))*Z*.3/H);return;}
+   // each strip's bottom rows are stretched down to the screen bottom: climbing high (chopper) used to open a band of sky under the land
+   const lift=(cam.y-(G*T-viewH()*.58))*Z/H,strip=(img,f,yk)=>{if(!img)return;const h=H*.62,w=img.width*h/img.height,x0=-((cam.x*Z*f)%w),bot=H*yk;
+    for(let x=x0-w;x<s.W+w;x+=w){g.drawImage(img,x,bot-h,w,h);if(bot<H)g.drawImage(img,0,img.height-3,img.width,3,x,bot-1,w,H-bot+2);}};
+   strip(far,.15,.86-lift*.12);strip(mid,.4,1.02-lift*.3);return;}
   if(TH.ext){drawParallaxExt(time);return;}
   const H=s.H;g.save();
   // far mountains / skyline
@@ -1021,8 +1112,22 @@ async function broforce(s){
   else if(tt==='pixel'||tt==='turbo'){g.fillStyle='#8a5a2a';g.fillRect(d.x-2,d.y-20,4,20);g.fillStyle=tt==='turbo'?'#2ad02a':'#3ab43a';g.beginPath();g.arc(d.x,d.y-26,11,0,7);g.fill();g.fillStyle='rgba(255,255,255,.25)';g.beginPath();g.arc(d.x-4,d.y-30,4,0,7);g.fill();}
   else{for(let k=0;k<6;k++){g.fillStyle=['#ff2a8a','#2affe0','#ffe02a'][k%3];g.fillRect(d.x-6+((k*5)%12)+(Math.random()<.1?4:0),d.y-8-k*6,6,6);}}
  }
+ // round 3 props: the owner's picture when there is one (lamp glow, searchlight beam, sign text and rope stay drawn)
+ function drawPropPic(d,time){const wk=worldKey(),P=n=>BS.prop(n,wk),has=n=>BS.picture(P(n)),pic=(n,x,y,sc)=>BS.drawPic(g,P(n),x,y,{scale:sc||1});
+  if(d.k==='tower'&&has('prop-tower')){g.drawImage(has('prop-tower'),d.x,d.top,d.x2-d.x,d.y-d.top);return true;}
+  if(d.k==='banner'){const sh=BS.propSheet('prop-banner',wk);if(!sh)return false;BS.drawFrame(g,sh,'wave',Math.floor(time*8+d.x),d.x,d.y,1);return true;}
+  if(d.k==='brazier'){const sh=BS.propSheet('prop-brazier',wk);if(!sh)return false;g.save();g.translate(d.x,d.y);g.scale(.85,.85);BS.drawFrame(g,sh,'burn',Math.floor(time*10+d.x),0,0,1);g.restore();
+   const gr=g.createRadialGradient(d.x,d.y-18,1,d.x,d.y-18,30);gr.addColorStop(0,'rgba(255,140,40,.28)');gr.addColorStop(1,'rgba(255,140,40,0)');g.fillStyle=gr;g.fillRect(d.x-30,d.y-48,60,60);return true;}
+  if(d.k==='lamp'&&has('prop-lamp')){pic('prop-lamp',d.x+.5,d.y);const gr=g.createRadialGradient(d.x,d.y+12,1,d.x,d.y+12,42);gr.addColorStop(0,'rgba(255,200,120,.35)');gr.addColorStop(1,'rgba(255,200,120,0)');g.fillStyle=gr;g.globalAlpha=.8+Math.sin(time*7+d.x)*.1;g.fillRect(d.x-42,d.y-30,84,84);return true;}
+  if(d.k==='posts'&&has('prop-post')){for(const x of [d.x,d.x2])pic('prop-post',x,d.y,.8);g.strokeStyle='#c8b080';g.lineWidth=1;g.beginPath();g.moveTo(d.x,d.y-11);g.quadraticCurveTo((d.x+d.x2)/2,d.y-4,d.x2,d.y-11);g.stroke();return true;}
+  if(d.k==='wire'&&has('prop-wire')){const img=has('prop-wire'),tw=24,th=8;for(let x=d.x;x<d.x2;x+=tw){const w=Math.min(tw,d.x2-x);g.drawImage(img,0,0,img.width*w/tw,img.height,x,d.y-th,w,th);}return true;}
+  if(d.k==='spot'&&has('prop-searchlight')){pic('prop-searchlight',d.x,d.y,.95);const a=Math.sin(time*.8)*.5-1.9;g.globalAlpha=.13;g.fillStyle='#fff8c0';g.beginPath();g.moveTo(d.x-3,d.y-42);g.lineTo(d.x+Math.cos(a-.15)*160,d.y-42-Math.sin(a-.15)*-160);g.lineTo(d.x+Math.cos(a+.15)*160,d.y-42-Math.sin(a+.15)*-160);g.fill();g.globalAlpha=1;return true;}
+  if(d.k==='pad'&&has('prop-helipad')){pic('prop-helipad',d.x,d.y,.82);return true;}
+  if(d.k==='sign'&&has('prop-sign')){pic('prop-sign',d.x,d.y,.9);g.fillStyle='#3a2010';g.font='bold 5px Arial';g.textAlign='center';g.fillText('BRO ZONE',d.x-1,d.y-15.5);return true;}
+  return false;}
  function drawDecor(d,time){
   const vw=viewW();if(d.x+200<cam.x||d.x-200>cam.x+vw)return;g.save();
+  if(drawPropPic(d,time)){g.restore();return;}
   if(d.k==='tree'){const tt=TH.decor,tp=BS.picture('tree-'+worldKey());
    if(tp){g.drawImage(tp,d.x-16,d.y-56,32,56);}
    else if(TH.ext){drawTreeX(tt,d,time);}
@@ -1047,15 +1152,38 @@ async function broforce(s){
   const wv=Math.sin(time*5+f.x)*1.2;
   if(f.up){const y=top+2;g.fillStyle='#fff';g.fillRect(f.x+1,y,18,11);g.fillStyle='#c22';for(let k=0;k<6;k+=2)g.fillRect(f.x+1,y+k*1.85,18,1.85);g.fillStyle='#22c';g.fillRect(f.x+1,y,8,6);g.fillStyle='#fff';g.fillRect(f.x+3,y+2,1,1);g.fillRect(f.x+6,y+3,1,1);}
   else{const y=f.y-16;g.fillStyle='#8a1010';g.beginPath();g.moveTo(f.x+1,y);g.lineTo(f.x+15,y+3+wv);g.lineTo(f.x+1,y+9);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(f.x+6,y+4.5,1.8,0,7);g.fill();}}
- function drawHead(id,mood,x,y,size,flip=1){const img=headCanvas(id,mood);g.save();g.translate(x,y);if(flip<0)g.scale(-1,1);g.drawImage(img,-size/2,-size/2,size,size);g.restore();}
- function drawBro(p,time){
+ // a bro's head: size = the old 72-unit head box in world px. neck=true: (x,y) is the neck, the chin sits on it; else (x,y) is
+ // the face's middle. dir = the way the body faces (-1/1): a face looking the other way is mirrored (0 = never).
+ // Pictures without face facts (online photos, stand-ins) keep the old centred box.
+ const HF=require('src/headFacts.js');
+ // the head's base (where its own neck ends) sits on the body's shoulder line: 7 sheet px under the top of the neck stub
+ // (the chin used to sit on the very tip of the stub, so a strip of bare neck showed: owner, Nov 15 'heads sit too high')
+ const NECK_DROP=7;
+ function drawHead(id,mood,x,y,size,dir=0,neck=false){const img=headCanvas(id,mood,72,true),fc=img.face;g.save();g.translate(x,y);
+  if(fc){const u=size/fc.S;if(dir&&HF.flipFor(id,mood,dir))g.scale(-1,1);g.drawImage(img,-fc.cx*u,-(neck?fc.base??fc.chin:fc.cy)*u,img.width*u,img.height*u);}
+  else{if(neck)g.translate(0,-7*size/17);g.drawImage(img,-size/2,-size/2,size,size);}
+  g.restore();}
+ function drawBro(p,time){g.save();g.translate(p.x,p.y);g.scale(BRO_K,BRO_K);g.translate(-p.x,-p.y);drawBro0(p,time);g.restore();}
+ function drawBro0(p,time){
   if(p.inv>0&&(frames>>2)%2&&p.inv<2)g.globalAlpha=.45;
   const f=p.facing,run=p.grounded&&Math.abs(p.vx)>10,ph=p.anim,air=!p.grounded&&!p.ladder;
-  const bsh=BS.sheet('bro-body');
-  if(bsh){const d=bsh.def,row=p.ladder?'ladder':p.climb&&!p.grounded?'climb':air?(p.vy<0?'jump':'fall'):run?'run':'idle',fr=Math.floor(row==='idle'?time*2:ph*1.6);
-   g.save();g.translate(p.x,p.y);g.scale(f,1);BS.drawFrame(g,bsh,row,fr,0,0,1);
-   if(!p.ladder){const hx=(d.hand[0]-d.feet[0])/BS.K,hy=(d.hand[1]-d.feet[1])/BS.K;drawGun(p.weapon,hx-p.recoil*1.5,hy);if(p.muzzle>0&&p.weapon!=='flame'){g.fillStyle='#fff3a0';g.beginPath();g.arc(hx+(WEAPON_LEN[p.weapon]||10),hy-.5,3,0,7);g.fill();}}
-   g.restore();const ny=(d.neck[1]-d.feet[1])/BS.K,nx=(d.neck[0]-d.feet[0])/BS.K;drawHead(p.bro,broMood(p),p.x+f*nx,p.y+ny-6,17,1);g.globalAlpha=1;return;}
+  const ts=BS.sheet('bro-torso'),as=ts&&!p.ladder&&BS.sheet('arms-'+p.weapon),bsh=as?ts:BS.sheet('bro-body');
+  // bro-run = the same armed body with a smooth 8-frame walk + run (replaces bro-body's run row when it's in)
+  const rsh=null;// bro-run (GPT's 8-frame walk) retired Nov 16: the owner liked the old body's run better
+  if(bsh){const walk=(as||rsh)&&Math.abs(p.vx)<70?'walk':'run',row=p.ladder?'ladder':p.climb&&!p.grounded?'climb':air?(p.vy<0?'jump':'fall'):run?walk:'idle';
+   const S=rsh&&(row==='run'||row==='walk')?rsh:bsh,d=S.def;
+   const fr=row==='idle'?Math.floor(time*2):row==='run'||row==='walk'?Math.floor(ph/.09/STRIDE[row]*(d.rows[row]||1)):Math.floor(ph*1.6);
+   p.bodyRow=row;p.bodyFr=fr;p.bodyDef=d;g.save();g.translate(p.x,p.y);g.scale(f,1);BS.drawFrame(g,S,row,fr,0,0,1);
+   const ks=p.ladder?null:kickAt(p,time,d);
+   if(as){const sx=(d.shoulder[0]-d.feet[0])/BS.K,sy=(d.shoulder[1]-d.feet[1])/BS.K;let [frow,ff]=fireFrame(p,time),A=as;
+    // the rocket is seen leaving: an empty tube until the reload; the boomerang gun stays empty while its boomerang is out
+    if(p.weapon==='rocket'&&(p.fireT??9)<RELOAD_SHOW){const e=BS.sheet('arms-rocket-empty');if(e)A=e;}
+    if(p.weapon==='boomerang'&&boomerOut(p)){frow='fire';ff=Math.max(ff,1);}
+    g.save();kickXf(ks);BS.drawFrame(g,A,frow,ff,sx,sy,1);g.restore();}
+   // the old body's fist doesn't move: the gun kicks round the hand so it stays in the fist
+   let kf=ks;if(!as&&!p.ladder){const [hx,hy]=handAt(d,p);if(ks)kf={...ks,x:ks.x*.6,sx:hx,sy:hy};g.save();kickXf(kf);drawGun(p.weapon,hx-(ks?0:p.recoil*1.5),hy);g.restore();}
+   if(!p.ladder&&p.muzzle>0&&p.weapon!=='flame'){const [mx,my]=gunTip(p),rc=as||ks?0:p.recoil*1.5;g.save();if(kf)kickXf(kf);if(!BS.drawFx(g,'fx-muzzle',mx-rc,my,1-p.muzzle/.06)){g.fillStyle='#fff3a0';g.beginPath();g.arc(mx-rc,my,3,0,7);g.fill();}g.restore();}
+   g.restore();const ny=(d.neck[1]-d.feet[1])/BS.K,nx=(d.neck[0]-d.feet[0])/BS.K;drawHead(p.bro,broMood(p),p.x+f*nx,p.y+ny+NECK_DROP/BS.K,17/BRO_K,f,true);g.globalAlpha=1;return;}
   g.save();g.translate(p.x,p.y);g.scale(f,1);
   const col=PCOL[p.i],dark=p.i?'#7a2a52':'#1f3a7a';
   // legs
@@ -1069,17 +1197,43 @@ async function broforce(s){
   const rc=p.recoil*1.5;
   g.fillStyle='#d9a070';
   if(p.ladder){g.fillRect(-5,-21,2,6);g.fillRect(3,-21,2,6);}else{g.fillRect(1-rc,-15,6,2.4);g.fillRect(-3-rc,-14,5,2.4);drawGun(p.weapon,6-rc,-14);}
-  if(p.muzzle>0&&!p.ladder&&p.weapon!=='flame'){g.fillStyle='#fff3a0';g.beginPath();const mx=(WEAPON_LEN[p.weapon]||10)+6-rc;g.moveTo(mx,-14.5);g.lineTo(mx+7,-17);g.lineTo(mx+5,-14);g.lineTo(mx+8,-11.5);g.closePath();g.fill();}
+  if(p.muzzle>0&&!p.ladder&&p.weapon!=='flame'&&!BS.drawFx(g,'fx-muzzle',gunTip(p)[0]-rc,gunTip(p)[1],1-p.muzzle/.06)){g.fillStyle='#fff3a0';g.beginPath();const mx=(WEAPON_LEN[p.weapon]||10)+6-rc;g.moveTo(mx,-14.5);g.lineTo(mx+7,-17);g.lineTo(mx+5,-14);g.lineTo(mx+8,-11.5);g.closePath();g.fill();}
   if(p.weapon==='flame'&&p.muzzle>0){g.fillStyle='#ffb02a';g.beginPath();g.arc(WEAPON_LEN.flame+7,-13.5,2.4,0,7);g.fill();}
   g.restore();
   // head: the character's own face, big-head style
   const bob=run?Math.abs(Math.sin(ph*1.6))*-1:0;
-  drawHead(p.bro,broMood(p),p.x+f*.5,p.y-25+bob,17,1);
+  drawHead(p.bro,broMood(p),p.x+f*.5,p.y-18+NECK_DROP/BS.K+bob,17/BRO_K,f,true);
   g.globalAlpha=1;
   if(p.climb&&!p.grounded){g.fillStyle='rgba(255,255,255,.6)';for(let k=0;k<2;k++)g.fillRect(p.x+f*(p.w+1),p.y-8-k*7-(time*40%7),1,3);}
  }
  const WEAPON_LEN={rifle:10,shotgun:9,rocket:11,flame:9,pistols:5,laser:11,plasma:11,railgun:13,pulse:8,minigun:11,lightning:9,holy:5,fireball:5,boomerang:6,ring:8};
+ // one full run / walk cycle (both legs) covers this many world px, so the feet don't slide or race (owner: walk looked funny)
+ const STRIDE={run:42,walk:42};// world px per run cycle: the old bro-body run's own pace (6 frames, p.anim*1.6)
+ // where the barrel tip is, from the bro's feet, facing right, before BRO_K: arms-<gun> muzzle on the torso's shoulder, else
+ // the gun picture's measured muzzle at the body's hand, else the drawn gun's length
+ // the fist of the body frame drawn last (bro-body hands table), from the feet in world px
+ function handAt(d,p){const t=d.hands&&d.hands[p.bodyRow],h=t?t[((p.bodyFr||0)%t.length+t.length)%t.length]:d.hand;return [(h[0]-d.feet[0])/BS.K,(h[1]-d.feet[1])/BS.K];}
+ function gunTip(p){const w=p.weapon,ts=BS.sheet('bro-torso'),as=ts&&BS.sheet('arms-'+w);
+  if(as){const td=ts.def,ad=as.def;return [(td.shoulder[0]-td.feet[0]+ad.muzzle[0]-ad.shoulder[0])/BS.K,(td.shoulder[1]-td.feet[1]+ad.muzzle[1]-ad.shoulder[1])/BS.K];}
+  const bs=BS.sheet('bro-body');let hx=6,hy=-14;if(bs)[hx,hy]=handAt(p.bodyDef&&p.bodyDef.hand?p.bodyDef:bs.def,p);
+  const gp=BS.picture('gun-'+w)&&BS.PICTURES['gun-'+w];if(gp&&gp.muzzle)return [hx+(gp.muzzle[0]-gp.anchor[0])/BS.K,hy+(gp.muzzle[1]-gp.anchor[1])/BS.K];
+  return [hx+(WEAPON_LEN[w]||10),hy-.5];}
+ // the kick on every shot, drawn in code on top of the arms sheet (GPT's fire frames barely move: 1-4 px): [push back px,
+ // tip up rad]; negative = a throw (lunge forward, tip down). Turns round the shoulder.
+ const KICK={rocket:[3,.12],railgun:[3.2,.1],shotgun:[2.6,.14],plasma:[2.2,.08],rifle:[1.4,.05],laser:[1.2,.04],ring:[1.2,.05],lightning:[.8,.03],
+  pulse:[.9,.035],minigun:[.9,.02],pistols:[1,.06],flame:[.5,.015],holy:[-1.5,-.08],fireball:[-1.2,-.06],boomerang:[1.8,.08]};
+ function kickAt(p,time,d){const k=KICK[p.weapon];if(!k)return null;const w=WEAPONS[p.weapon]||{},t=p.fireT??9;let e;
+  if((w.rate||1)<.1)e=t<.12?.55+.45*Math.abs(Math.sin(time*45)):0;else e=t<.04?t/.04:Math.max(0,1-(t-.04)/.16);
+  if(e<=0)return null;return {x:k[0]*e,r:k[1]*e,sx:(d.shoulder[0]-d.feet[0])/BS.K,sy:(d.shoulder[1]-d.feet[1])/BS.K};}
+ function kickXf(k){if(!k)return;g.translate(k.sx,k.sy);g.rotate(-k.r);g.translate(-k.x-k.sx,-k.sy);}
+ // arms sheet frame: the 4-frame fire cycle after each shot (fast guns loop it while the trigger is held), else hold
+ const RELOAD_SHOW=.5;// rocket rate .62: the new warhead shows just before the next shot can go
+ const boomerOut=p=>W.shots.some(sh=>sh.kind==='boomer'&&sh.life>0&&sh.ox===p);
+ function fireFrame(p,time){const w=WEAPONS[p.weapon]||{rate:.3},rate=w.rate||.3;
+  if(rate<.1)return p.fireT<.12?['fire',Math.floor(time*(p.weapon==='minigun'?30:22))%(p.weapon==='minigun'?4:2)]:['hold',0];
+  const D=Math.min(.36,Math.max(.14,rate*.9));return p.fireT<D?['fire',Math.min(3,Math.floor(p.fireT/D*4))]:['hold',0];}
  function drawGun(w,x,y){
+  if(BS.drawPic(g,'gun-'+w,x,y))return;
   const wx=WEAPONS[w];if(wx&&wx.ext){drawGunX(wx.ext,x,y);return;}
   if(w==='rifle'){g.fillStyle='#2a2a2a';g.fillRect(x-3,y-1.5,12,2.6);g.fillStyle='#6a4022';g.fillRect(x-6,y-1,4,3);g.fillStyle='#2a2a2a';g.fillRect(x+2,y+1,2,3);}
   else if(w==='shotgun'){g.fillStyle='#3a3a3a';g.fillRect(x-2,y-1.6,11,2);g.fillStyle='#7a4a24';g.fillRect(x-6,y-1,5,3);g.fillRect(x+2,y+.4,4,1.8);}
@@ -1094,7 +1248,8 @@ async function broforce(s){
   g.fillStyle='#2a2e36';g.fillRect(x-5,y-2.4,k==='rail'?16:13,3.8);g.fillStyle=col;g.fillRect(x-2,y-3.4,k==='rail'?12:8,1.2);g.fillRect(x+(k==='rail'?11:8),y-1.6,2,2);g.fillStyle='#1a1a1a';g.fillRect(x-1,y+1,2,3);
   if(k==='plasma'){g.fillStyle=col;g.beginPath();g.arc(x+9,y-.6,2.2,0,7);g.fill();}
  }
- function drawFoe(e,time){
+ function drawFoe(e,time){const k=e.sz||1;g.save();g.translate(e.x,e.y);g.scale(k,k);g.translate(-e.x,-e.y);drawFoe0(e,time);g.restore();}
+ function drawFoe0(e,time){
   if(e.ext){X.drawFoe(g,e,time);return;}
   const spr=BS.drawFoe(g,e,time);
   const run=Math.abs(e.vx)>3,ph=e.anim;if(!spr){g.save();g.translate(e.x,e.y);g.scale(e.dir,1);
@@ -1123,14 +1278,21 @@ async function broforce(s){
     if(e.muzzle>0){g.fillStyle='#ffb02a';g.beginPath();g.arc(12.5,-15,2.4,0,7);g.fill();}}}
   g.restore();g.filter='none';}
   if(e.muzzle>0)e.muzzle-=1/60;
-  if(e.bubble){const y=e.y-e.h-12+Math.sin(time*12)*.8;g.fillStyle='#fff';g.strokeStyle='#000';g.lineWidth=1;g.beginPath();g.roundRect?.(e.x-4,y-6,8,9,2);g.fill();g.stroke();
+  if(e.bubble){const y=e.y-e.h/(e.sz||1)-12+Math.sin(time*12)*.8;g.fillStyle='#fff';g.strokeStyle='#000';g.lineWidth=1;g.beginPath();g.roundRect?.(e.x-4,y-6,8,9,2);g.fill();g.stroke();
    g.fillStyle=e.bubble.ch==='!'?'#d00':'#c90';g.font='bold 8px Arial';g.textAlign='center';g.textBaseline='middle';g.fillText(e.bubble.ch,e.x,y-1.3);}
  }
- function drawCorpse(cp){if(theme.ext&&X.drawCorpse(g,cp))return;g.save();g.translate(cp.x,cp.y-4);g.rotate(cp.rot+(cp.vy===0?Math.PI/2*(cp.vx>=0?1:-1):0));g.globalAlpha=Math.min(1,cp.t);
-  if(cp.kind==='bro'){g.fillStyle=PCOL[cp.i];g.fillRect(-4,-8,8,9);g.restore();drawHead(cp.id,'sad',cp.x,cp.y-12,14);return;}
+ // landed bodies sink into the grass a little (owner: they floated on the ground's top edge)
+ const CORPSE_SINK=2.5;
+ function drawCorpse(cp){const k=sizeOf(cp.kind);g.save();g.translate(cp.x,cp.y+(cp.vy===0?CORPSE_SINK:0));g.scale(k,k);g.translate(-cp.x,-cp.y);drawCorpse0(cp);g.restore();}
+ function drawCorpse0(cp){const dk='dead-'+cp.kind,dp=BS.picture(dk);
+  if(dp){const pd=BS.PICTURES[dk],[pw,ph]=pd.size,fl=cp.vx<0?-1:1,air=cp.vy!==0;g.save();g.globalAlpha=Math.min(1,cp.t);g.translate(cp.x,cp.y);if(air)g.rotate(cp.rot*.5);g.scale(fl/BS.K,1/BS.K);g.drawImage(dp,-pw/2,-ph,pw,ph);g.restore();
+   if(cp.kind==='bro'&&pd.face){g.save();g.globalAlpha=Math.min(1,cp.t);drawHead(cp.id,'sad',cp.x+fl*(pd.face[0]-pw/2)/BS.K,cp.y+(pd.face[1]-ph)/BS.K,17/BRO_K,fl);g.restore();}return;}
+  if(theme.ext&&X.drawCorpse(g,cp))return;g.save();g.translate(cp.x,cp.y-4);g.rotate(cp.rot+(cp.vy===0?Math.PI/2*(cp.vx>=0?1:-1):0));g.globalAlpha=Math.min(1,cp.t);
+  if(cp.kind==='bro'){g.fillStyle=PCOL[cp.i];g.fillRect(-4,-8,8,9);g.restore();drawHead(cp.id,'sad',cp.x,cp.y-12,14/BRO_K);return;}
   if(cp.kind==='dog'){g.fillStyle='#1a1410';g.fillRect(-6,-4,12,5);}else{g.fillStyle=cp.kind==='bomber'?'#e8e2d0':cp.kind==='bruiser'?'#4a4a3a':'#8a7a4a';g.fillRect(-4,-9,8,10);g.fillStyle='#1a1a1a';g.beginPath();g.arc(0,-11,3.6,0,7);g.fill();g.fillStyle='#a00';g.fillRect(-2,-4,4,2);}
   g.restore();}
- function drawCage(cg,time){
+ function drawCage(cg,time){g.save();g.translate(cg.x,cg.y);g.scale(CAGE_K,CAGE_K);g.translate(-cg.x,-cg.y);drawCage0(cg,time);g.restore();}
+ function drawCage0(cg,time){
   const x=cg.x,y=cg.y;
   if(cg.open){if(cg.freeT>0){cg.freeT-=1/60;g.globalAlpha=Math.max(0,cg.freeT);g.fillStyle=cg.vip?'#ffd84a':'#fff';outlined(g,cg.vip?'★ FREE! ★':'FREE!',x,y-30-(1.2-cg.freeT)*16,{size:7,fill:cg.vip?'#ffd84a':'#fff',stroke:'#000'});g.globalAlpha=1;}
    g.strokeStyle=cg.vip?'#a07a20':'#5a3a1a';g.lineWidth=1.5;g.beginPath();g.moveTo(x-9,y);g.lineTo(x-12,y-4);g.moveTo(x+9,y);g.lineTo(x+12,y-3);g.stroke();return;}
@@ -1150,13 +1312,16 @@ async function broforce(s){
   else if(Math.sin(cg.t*1.7)>.5)outlined(g,'HELP!',x,y-32,{size:6,fill:'#fff',stroke:'#000'});
  }
  function drawPickup(pk,time){const ppic=BS.picture(pk.kind==='gun'?'pickup-gun':'pickup-nade');if(ppic){const w=pk.kind==='gun'?16:12;g.drawImage(ppic,pk.x-w/2,pk.y-12+Math.sin(time*5)*.6,w,12);return;}if(pk.kind==='gun'){g.save();g.translate(pk.x,pk.y-5+Math.sin(time*5)*.6);g.fillStyle='#2a2e36';g.fillRect(-6,-3,12,6);g.fillStyle='#7df9ff';g.fillRect(-4,-1.5,8,3);g.globalAlpha=.4+.3*Math.sin(time*8);g.strokeStyle='#7df9ff';g.strokeRect(-7,-4,14,8);g.restore();return;}g.save();g.translate(pk.x,pk.y-4+Math.sin(time*5)*.6);g.fillStyle='#3a4a2a';g.beginPath();g.ellipse(0,0,3,3.6,0,0,7);g.fill();g.fillStyle='#888';g.fillRect(-1,-5,2,2);g.fillStyle='#bdf06a';g.globalAlpha=.5+Math.sin(time*8)*.3;g.beginPath();g.arc(0,0,6,0,7);g.strokeStyle='#bdf06a';g.lineWidth=.8;g.stroke();g.restore();}
- function drawNade(n){g.save();g.translate(n.x,n.y-2);g.rotate(n.spin);g.fillStyle=n.owner==='p'?'#3a4a2a':'#2a2a2a';g.beginPath();g.ellipse(0,0,2.4,3,0,0,7);g.fill();g.fillStyle='#999';g.fillRect(-.8,-4,1.6,1.5);g.restore();
+ function drawNade(n){if(BS.drawPic(g,'shot-nade',n.x,n.y-2,{rot:n.spin}))return;g.save();g.translate(n.x,n.y-2);g.rotate(n.spin);g.fillStyle=n.owner==='p'?'#3a4a2a':'#2a2a2a';g.beginPath();g.ellipse(0,0,2.4,3,0,0,7);g.fill();g.fillStyle='#999';g.fillRect(-.8,-4,1.6,1.5);g.restore();
   if((n.t*8|0)%2){g.fillStyle='#f33';g.beginPath();g.arc(n.x,n.y-6,1,0,7);g.fill();}}
- function drawShot(sh){if(sh.ext){X.drawShot(g,sh,simT);return;}if(sh.kind==='rocket'){g.save();g.translate(sh.x,sh.y);g.scale(Math.sign(sh.vx)||1,1);g.fillStyle='#5a6a3a';g.fillRect(-5,-1.5,8,3);g.fillStyle='#c22';g.beginPath();g.moveTo(3,-1.5);g.lineTo(6,0);g.lineTo(3,1.5);g.fill();g.fillStyle='#ffb02a';g.fillRect(-7,-1,2,2);g.restore();}
+ const SHOT_PIC={fireP:'fire',fireE:'fire',fire:'fire',fireball:'fire',laser:'orb',laserP:'orb',orb:'orb'};
+ function drawShot(sh){const sk=SHOT_PIC[sh.kind]||sh.kind,sn='shot-'+sk,sd=BS.PICTURES[sn];
+  if(sd&&BS.picture(sn)){const m=sd.mode,rot=m==='aim'?Math.atan2(sh.vy||0,sh.vx||1):m==='spin'?(sh.t||simT)*14:0;if(BS.drawPic(g,sn,sh.x,sh.y,{rot,flip:m==='flip'&&sh.vx<0?-1:1}))return;}
+  if(sh.ext){X.drawShot(g,sh,simT);return;}if(sh.kind==='rocket'){g.save();g.translate(sh.x,sh.y);g.scale(Math.sign(sh.vx)||1,1);g.fillStyle='#5a6a3a';g.fillRect(-5,-1.5,8,3);g.fillStyle='#c22';g.beginPath();g.moveTo(3,-1.5);g.lineTo(6,0);g.lineTo(3,1.5);g.fill();g.fillStyle='#ffb02a';g.fillRect(-7,-1,2,2);g.restore();}
   else{g.fillStyle='#ff4a10';g.beginPath();g.arc(sh.x,sh.y,3.4,0,7);g.fill();g.fillStyle='#fff3a0';g.beginPath();g.arc(sh.x,sh.y,1.6,0,7);g.fill();}}
  function drawBoss(B,time){
   if(B.kind){X.drawBoss(g,B,time);return;}
-  if(!B.alive&&B.dead<=0)return;g.save();g.translate(B.x,B.y);
+  if(!B.alive&&B.dead<=0)return;g.save();g.translate(B.x,B.y);g.scale(BOSS_K,BOSS_K);
   if(!B.alive){g.globalAlpha=Math.max(0,B.dead/3);g.translate((Math.random()-.5)*3,0);}
   if(BS.drawBoss(g,B,time)){g.restore();return;}g.scale(B.dir,1);
   if(B.flash>0)g.filter='brightness(2.6)';
@@ -1251,7 +1416,7 @@ async function broforce(s){
  }
 
  // ---------------------------------------------------------------- debug hooks for tests
- s.debug={engine:'broforce',get phase(){return phase;},get turn(){return turn;},get stage(){return stageIdx;},get P(){return P;},get R(){return R;},get W(){return W;},get viewW(){return viewW();},STAGES,results,get clock(){return clock;},
+ s.debug={engine:'broforce',get phase(){return phase;},get turn(){return turn;},get stage(){return stageIdx;},get P(){return P;},get R(){return R;},get cam(){return cam;},get W(){return W;},get viewW(){return viewW();},STAGES,results,get clock(){return clock;},
   setClock(v){clock=v;},outOfBros(){if(!P||phase!=='play')return;P.lives=0;P.inv=0;if(!P.dead)killPlayer();},teleport(x,y){if(!P)return;P.x=x;P.y=y??W.S.surfAt(Math.floor(x/T))*T;P.vx=P.vy=0;updateCamera(0,true);},
   killAll(){for(const e of W.foes)if(e.alive)killFoe(e,P.x,false);},killBoss(){if(W.boss){W.boss.state='walk';hitBoss(999,P.x);}},
   freeCage(k){const cg=W.cages[k];if(cg)openCage(cg);},board(){W.heli.state='hover';W.heli.y=W.exit.y-6.5*T;Object.assign(P,{x:W.heli.x-8,y:W.exit.y,dead:0,hp:2,inv:2});},
