@@ -2,6 +2,17 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+SEANIC ART BATCH (Nov 16, GPT UPLOADS-GPT-2026-11-16-1213, Drive folder 1Jfd4NltIdRz6tsJCR9_Xt_t2zjK3x5sD, all 19 SHA-checked):
+KNUX = runner-p3/ball-p3/dreads-p3, SHADE = runner-p4/ball-p4/quills-p4 (own sheets; rows + glide/climb/slide, ball homing;
+render.js falls back to the recoloured hedgehog when missing; BALL_SRC knux 25.6 / dark 24); walk-p1/p2 pasted into the walk
+rows (cell 0 = our stand cell byte for byte) → WALK_RUN 5.5; runner-p2 tired row (used for p.fly===1); cork-p1/p2 sheets (12
+frames, foot = axis, face table in tools/sonic3/import-rows.py, null = no face; frame = round(-a/2π·12)); corkscrew-band/post,
+seesaw-plank/base/ball, chain-link, fish (sheet), spike-log (sheet, frame from spin: up = frame 2), palm-2 (root 48/112),
+jungle-near (new 1024x320 used instead of the darkened far layer). Tools: import-sheet.py --order/--grid, import-rows.py,
+import-stage.py (docs/sonic3-sprites/README.md). Checked: s3-* Node tests, sonic3/intro/zone1/act2/act3/music browser tests,
+pose contact sheets (stand/walk/run per runner, glide, climb, tired, corkscrew ride). tests/sonic3.mjs bot now lets go of a
+vine after a second (it hung there now and then on old builds too). Shade's dead frame 2 uses the template face spot.
+
 MINIGOLF FRAME RATE ROUND 3 (Nov 16, branch ccr-7982f835-hqy3s1, unreleased; owner: still choppy, picker flashes the drawn
 art): cause = the roll camera zooms with ball speed, and every zoom step repainted ground tiles (new canvases) + rail
 sprites, made new shrunk() copies and a new face sprite per pixel of ball size. Now render.js caches each hole ONCE at a
@@ -16,6 +27,8 @@ and, after TEE OFF, the course's (12 s) + mips; picker drawn once into menuCv (w
 ball face sprites in 2^(1/6) size steps; freeHole(C) on hole change/exit; debug.gfx() = cacheStats (tiles/todo/sprites).
 Headless 4x CPU: first frame of a hole 836 -> 150 ms JS, roll frame JS p99 35 -> 11 ms, picker JS 10 -> 0.1 ms; cache
 done by the end of the flyover on gilmore 1-3. Headless frame intervals are software-raster bound (not phone-like).
+Verified: minigolf.mjs (390x780 + 844x390), minigolf-sim, games.mjs golf fuzz; old vs new screenshots of all 18 holes
+(aim + whole-hole views, both sizes) match apart from moving things. Not on a real phone.
 
 v0.99.9 RELEASED (Nov 16, owner: "When finished please release!!"; tests: games.mjs broforce/horde/pool 12/12, smoke, backup, pool-rules):
 the Sean of a Gun/pool work below + GPT's BODY V2 (UPLOADS-GPT-2026-11-16-0052, Drive 1rAG2FwJqB37wgvZMD7dx-Pf_pP3p5tP6, SHA 5c104287...):

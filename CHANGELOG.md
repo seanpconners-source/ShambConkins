@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.99.11
+
+- **Sitabout Mini Golf, smooth at last:** each hole is now painted once (during the flyover) at one sharpness, and moving or zooming the camera never repaints anything. Before, the camera zooming with the ball's speed made the game repaint course pieces, rails and pictures all the way through a roll, which was the choppiness. Big pictures are shrunk ahead of time on a short loading bar, and the face on your ball no longer gets remade every frame. Long holes on big screens like the Fold are painted a little softer so they don't use too much memory.
+- **No more drawn stand-ins on the mini golf course picker:** it waits a moment for the real pictures (with a loading bar) instead of flashing the old drawn art, and it no longer redraws the big backdrop every frame.
+- **Seanic, new art:**
+  - **Knux and Shade have their own sprites** (bodies, Knux's dreadlocks, Shade's quills) instead of a red or black copy of Seanic. Knux has real glide, wall-climb and belly-slide frames, and Shade's homing attack shows a growing streak.
+  - **Real walk cycles** for Seanic and Tails (no more shuffling feet).
+  - **Corkscrews:** runners barrel-roll round the track with proper frames, upside down at the top.
+  - **Tails' tired frames** after flying now have two arms.
+  - **Act 2 set pieces** drawn for real: the corkscrew track and posts, the seesaw (plank, base and spiked ball), the turning spike log, the robot piranha, and the chains of the swinging platforms.
+  - A second kind of palm tree and a new jungle layer in the background with whole treetops.
+
 ## v0.99.10
 
 - **Words n' Shit (new game):** a Words With Friends style word game. Drag tiles from your rack onto the board, SWAP, PASS, SHUFFLE and the live score bubble, with a real dictionary of 168,000 words. Play a quick or full game vs the CPU, pass the phone, or play online between two phones. It also turns up as a board-game space.

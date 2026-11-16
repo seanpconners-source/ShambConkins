@@ -22,7 +22,7 @@ def stats(img, fx, fy, fw, fh):
     if not bb: return None
     n = a.histogram()[255]
     return dict(y0=bb[1]/R, y1=bb[3]/R, x0=bb[0]/R, x1=bb[2]/R, area=n/R/R)
-for nm in ('runner-p1', 'runner-p2'):
+for nm in ('runner-p1', 'runner-p2', 'runner-p3', 'runner-p4'):
     im = Image.open(f'{root}/assets/sonic3/{nm}.webp')
     for r in ('stand', 'walk', 'run'):
         ri = rows1.index(r); out = []
@@ -32,7 +32,7 @@ for nm in ('runner-p1', 'runner-p2'):
             sp = H.get(nm, {}).get(r, [[None, None]]); sp = sp[min(f, len(sp)-1)]
             out.append(f'{f}: y {s["y0"]:.0f}-{s["y1"]:.0f} w {s["x1"]-s["x0"]:.1f} face {sp}')
         print(nm, r, ' | '.join(out))
-for nm in ('ball-p1', 'ball-p2'):
+for nm in ('ball-p1', 'ball-p2', 'ball-p3', 'ball-p4'):
     im = Image.open(f'{root}/assets/sonic3/{nm}.webp')
     ws, eq = [], []
     for f in range(8):

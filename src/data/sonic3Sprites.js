@@ -32,6 +32,27 @@ const SHEETS={
  'ball-p1':{frame:[48,48],foot:[24,24],head:[24,24],headSize:21,rows:{roll:8,spindash:6},
   headRows:{roll:Array.from({length:8},(_,f)=>[24,24,+(f/8*TAU).toFixed(2)])}},
  'ball-p2':{same:'ball-p1'},
+ // KNUX the echidna (select's third runner) and SHADE the dark hedgehog (fourth): their own sheets (GPT, Nov 16; until
+ // then the hedgehog's were recoloured). Knux adds glide / climb (on a wall, facing it) / slide (belly landing after a
+ // glide); Shade's ball adds homing (the attack dash, streak behind)
+ 'runner-p3':{frame:[64,64],foot:RF,head:RH,headSize:30,
+  rows:{stand:1,wait:4,lookUp:2,crouch:2,walk:8,run:8,dash:4,skid:3,push:4,balance:3,spring:2,fall:2,hurt:2,hang:4,win:4,dead:2,glide:2,climb:4,slide:2},
+  headRows:{run:[38,23],dash:[40,24],spring:[32,20],fall:[33,21],hang:[32,26],dead:[[32,26],[32,30]],glide:[44,30],climb:[34,22],slide:[46,40]},
+  note:'headless echidna body; the dreads are the separate picture dreads-p3'},
+ 'runner-p4':{frame:[64,64],foot:RF,head:RH,headSize:30,
+  rows:{stand:1,wait:4,lookUp:2,crouch:2,walk:8,run:8,dash:4,skid:3,push:4,balance:3,spring:2,fall:2,hurt:2,hang:4,win:4,dead:2},
+  headRows:{run:[38,23],dash:[40,24],spring:[32,20],fall:[33,21],hang:[32,26],dead:[[32,26],[32,30]]},
+  note:'headless dark hedgehog body; the quills are the separate picture quills-p4'},
+ 'ball-p3':{same:'ball-p1'},
+ 'ball-p4':{frame:[48,48],foot:[24,24],head:[24,24],headSize:21,rows:{roll:8,spindash:6,homing:4},
+  headRows:{roll:Array.from({length:8},(_,f)=>[24,24,+(f/8*TAU).toFixed(2)])}},
+ // on a corkscrew: one full barrel roll round the track's axis, 12 frames; foot = the middle of the body (the axis the
+ // pose turns round). Face spots measured per frame (sonic3Heads.js); null = the neck points away (no face drawn)
+ 'cork-p1':{frame:[96,80],foot:[48,40],head:[49,20],headSize:30,rows:{cork:12}},
+ 'cork-p2':{same:'cork-p1'},
+ // Act 2 set pieces (GPT, Nov 16; drawn at 4x, kept so: sheet() works out the scale)
+ fish:{frame:[40,28],foot:[20,14],rows:{leap:2},note:'robot piranha facing right, mouth shut / open; the game turns it nose up or down'},
+ 'spike-log':{frame:[72,48],foot:[36,24],rows:{turn:4},note:'a log turning over: spikes at the back / coming over the top / straight up / down the front; each frame centred on the log'},
  // robots (our own designs)
  charger:{frame:[48,40],foot:[24,38],rows:{roll:4,rev:2,charge:4}},
  thrower:{frame:[48,48],foot:[24,24],rows:{idle:2,climb:4,throw:4}},
@@ -58,7 +79,7 @@ const SHEETS={
 };
 // the runner cells are wider and taller than the 64x64 the poses were planned in, so dust, tails and flung arms fit:
 // same layout moved 16 px right and 16 px down inside a 96x80 cell
-for(const n of ['runner-p1','runner-p2']){const d=SHEETS[n],mv=h=>h&&(Array.isArray(h[0])?h.map(mv):[h[0]+16,h[1]+16,...h.slice(2)]);
+for(const n of ['runner-p1','runner-p2','runner-p3','runner-p4']){const d=SHEETS[n],mv=h=>h&&(Array.isArray(h[0])?h.map(mv):[h[0]+16,h[1]+16,...h.slice(2)]);
  d.frame=[96,80];d.foot=[d.foot[0]+16,d.foot[1]+16];d.head=mv(d.head);d.headRows=Object.fromEntries(Object.entries(d.headRows).map(([k,v])=>[k,mv(v)]));}
 // One-off pictures: size [w,h] px, `anchor` = the pixel on the object's position. tile 'x' = repeats sideways,
 // 'xy' = repeats both ways; opaque = no transparency.
@@ -94,9 +115,18 @@ const PICTURES={
  'jungle-near':{size:[512,160],anchor:[0,160],tile:'x',note:'near trunks and leaves, darker'},
  // screens
  'title-card':{size:[320,224],anchor:[0,0],note:'zone title card shapes, no words'},
+ // Act 2 set pieces (GPT, Nov 16)
+ 'corkscrew-band':{size:[64,24],anchor:[0,12],tile:'x',note:'a strip of the corkscrew track, grass edge along the top; the game bends it along the twist'},
+ 'corkscrew-post':{size:[16,240],anchor:[8,0],note:'wooden post holding up a corkscrew end, its top under the track'},
+ 'seesaw-plank':{size:[96,10],anchor:[48,5],note:'the plank, straight (the game tilts it round its middle)'},
+ 'seesaw-base':{size:[28,26],anchor:[14,26],note:'the pivot block'},
+ 'seesaw-ball':{size:[32,32],anchor:[16,16],note:'the spiked ball'},
+ 'chain-link':{size:[8,12],anchor:[4,6],note:'one chain link, repeated from the pivot to a swinging platform'},
  // head pieces, drawn BEHIND the player's face (centre + size of the face given by `head`); they turn with the head
  'quills-p1':{size:[96,72],anchor:[62,36],head:[62,36,30],note:'the hedgehog: big quills sweeping back from behind the face'},
  'ears-p2':{size:[72,72],anchor:[36,44],head:[36,44,30],note:'the fox: two ears and cheek fur around the face'},
+ 'dreads-p3':{size:[96,96],anchor:[48,48],head:[48,48,30],note:'Knux: crimson dreadlock spines hanging back, two round ears'},
+ 'quills-p4':{size:[96,96],anchor:[48,48],head:[48,48,30],note:'Shade: black quills with crimson stripes swept up and back, pointed ears'},
  logo:{size:[1100,520],anchor:[550,260],note:'SEANIC THE HEDGEHOG game logo'},
  // title screen + character select (docs/sonic3-sprites/TITLE-SELECT-BRIEF.md); src/engines/s3/intro.js draws a stand-in
  // for each until it is in. head = [x,y,size] (centre + diameter) of the plain face circle the player's face is drawn over; screen = the monitor's
@@ -120,7 +150,7 @@ function picture(name){const url=USER['s3:'+name];if(!url||typeof Image==='undef
 // {img,def,name,res,cols} for a sheet that is in (res = art pixels per frame pixel: sheets may be drawn bigger)
 function sheet(name){const def=sheetOf(name),img=def&&picture(name);if(!img)return null;const cols=Math.max(...Object.values(def.rows));return {img,def,name,cols,res:img.width/(cols*def.frame[0])};}
 // where the face goes in a frame: measured on the imported art when there is a measurement, else the template's spot
-function spot(name,row,f=0){const m=MEASURED[name]&&MEASURED[name][row];if(m&&m.length){const q=m[Math.min(f,m.length-1)];return {x:q[0],y:q[1],rot:q[2]||0};}return headOf(name,row,f);}
+function spot(name,row,f=0){const m=MEASURED[name]&&MEASURED[name][row];if(m&&m.length){const q=m[Math.min(f,m.length-1)];return q?{x:q[0],y:q[1],rot:q[2]||0}:{hide:true};}return headOf(name,row,f);}
 const sheetOf=n=>{const d=SHEETS[n];return d&&d.same?SHEETS[d.same]:d;};
 // the face spot of a frame: {x,y,rot} in frame px, or null when the row shows no face
 function headOf(name,row,f=0){const d=sheetOf(name);if(!d||!d.head)return null;let h=d.head;

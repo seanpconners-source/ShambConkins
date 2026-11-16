@@ -136,8 +136,11 @@ class Backdrop{
    const jb=hz+110*k;if(hz<H){const sh=sea.height/2*k;for(let yy=hz,r=0;yy<jb;yy+=sh-1,r++)rep2(sea,.16+r*.04,yy,0,t*(4+r*2));
     // the near layer: the jungle-near strip has its canopies cut flat at the top (in the art; on the redo list), so the
     // far treetops are drawn again bigger and darker as the near layer until a new strip comes in
-    if(!this.nearAlt)this.nearAlt=darker(far,.62);
-    rep2(far,.3,jb-far.height/2*k);const nb=jb+90*k,nh=far.height/2*k*1.55;rep2(this.nearAlt,.45,nb-nh+8*k,nh);if(nb<H){x.fillStyle='#0f2a12';x.fillRect(0,Math.round(nb)-1,W,H-nb+1);}}
+    // (Nov 16: the redrawn jungle-near, 1024x320 = 2x its 512x160 slot, has whole treetops and is used; the old 2048 px
+    // strip with the cut canopies is replaced by darker far treetops)
+    const newNear=near.width<=1100;if(!newNear&&!this.nearAlt)this.nearAlt=darker(far,.62);
+    if(newNear&&!this.nearBot){try{const c=document.createElement('canvas');c.width=8;c.height=1;const g=c.getContext('2d');g.drawImage(near,0,near.height-2,near.width,1,0,0,8,1);const d=g.getImageData(0,0,8,1).data;let r=0,gg=0,b=0;for(let q=0;q<8;q++){r+=d[q*4];gg+=d[q*4+1];b+=d[q*4+2];}this.nearBot=`rgb(${r>>3},${gg>>3},${b>>3})`;}catch{this.nearBot='#0f2a12';}}
+    rep2(far,.3,jb-far.height/2*k);const nb=jb+90*k,nh=newNear?near.height/2*k:far.height/2*k*1.55;rep2(newNear?near:this.nearAlt,.45,nb-nh+8*k,nh);if(nb<H){x.fillStyle=newNear?this.nearBot:'#0f2a12';x.fillRect(0,Math.round(nb)-1,W,H-nb+1);}}
    x.imageSmoothingEnabled=sm;return;}
   let g=x.createLinearGradient(0,Math.min(0,hz-cam.vh*k),0,Math.max(1,hz));g.addColorStop(0,P.sky[0]);g.addColorStop(.6,P.sky[1]);g.addColorStop(1,P.sky[2]);x.fillStyle=g;x.fillRect(0,0,W,Math.max(0,hz));
   const rep=(c,f,yTop,drift=0)=>{const w=c.width*k,h=c.height*k;if(yTop>H||yTop+h<0)return;let ox=-((cam.x*f+drift)*k)%w;if(ox>0)ox-=w;for(let xx=ox;xx<W;xx+=w)x.drawImage(c,Math.round(xx),Math.round(yTop),Math.ceil(w)+1,Math.ceil(h));};
@@ -206,7 +209,7 @@ function drawDecor(x,d,t){
    x.beginPath();x.moveTo(bx-2.5,by+1);x.lineTo(bx+s*1.5,by-6-(k%3)*1.5);x.lineTo(bx+2.5,by+1);x.closePath();x.fill();x.stroke();}
   x.restore();return;}
  // palms vary (owner: repetitive): mirrored and a little bigger/smaller per tree (d.flip, d.s set by the zone)
- if(d.type==='palm'&&SP.picture('palm')){const nm=d.alt&&SP.picture('palm-2')?'palm-2':'palm',im=SP.picture(nm),s=d.s||1;pic(x,nm,d.x,d.y+3,.5,1,{w:im.width/2*s,h:im.height/2*s,flip:!!d.flip});return;}
+ if(d.type==='palm'&&SP.picture('palm')){const nm=d.alt&&SP.picture('palm-2')?'palm-2':'palm',im=SP.picture(nm),s=d.s||1;pic(x,nm,d.x,d.y+3,nm==='palm-2'?48/112:.5,1,{w:im.width/2*s,h:im.height/2*s,flip:!!d.flip});return;}// palm-2's root is 48 px from its left
  if(d.type==='palm'){x.fillStyle='#8a5a2a';x.fillRect(d.x-3,d.y-70,6,70);x.fillStyle='#5a3a1a';for(let k=0;k<7;k++)x.fillRect(d.x-3,d.y-66+k*10,6,2);
   x.fillStyle='#2e9a2c';for(let k=0;k<6;k++){const a=-Math.PI/2+(k-2.5)*.55+Math.sin(t*1.5+d.x)*.04;x.save();x.translate(d.x,d.y-70);x.rotate(a);x.beginPath();x.ellipse(18,0,20,5,0,0,7);x.fill();x.restore();}
   x.fillStyle='#58c428';for(let k=0;k<6;k++){const a=-Math.PI/2+(k-2.5)*.55;x.save();x.translate(d.x,d.y-70);x.rotate(a);x.beginPath();x.ellipse(16,-1,15,2.5,0,0,7);x.fill();x.restore();}return;}
@@ -280,6 +283,17 @@ function drawObject(x,o,t,ctx){
 // runner stands on. The half facing us (sin(phase) > 0) is lighter; front=true draws only that half (over a runner who
 // is going round the back)
 function drawCorkscrew(x,o,t,front){const r=o.r,axis=o.y-r,n=Math.ceil((o.x1-o.x0)/6),ph=xx=>(xx-o.x0)/o.turn*2*Math.PI;
+ const band=SP.picture('corkscrew-band'),post=SP.picture('corkscrew-post');
+ if(band){// the art (Nov 16): the band strip laid along each 6 px piece (grass edge toward the axis), darkened on the far half
+  x.save();if(!front)for(const px of [o.x0+6,o.x1-6]){if(!post||!pic(x,'corkscrew-post',px,o.y+4,.5,0)){x.fillStyle='#6a4018';x.fillRect(px-6,o.y+4,12,220);}}
+  const bw=band.width/2,bh=band.height/2,th=17,sm=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;
+  for(const pass of front?[1]:[0,1])for(let k=0;k<n;k++){const xa=o.x0+k*6,xb=Math.min(o.x1,xa+6.6),a=ph(xa+3),sn=Math.sin(a);if(pass===0?sn>0:sn<=0)continue;
+   const ya=axis+Math.cos(ph(xa))*r,yb=axis+Math.cos(ph(xb))*r,L=Math.hypot(xb-xa,yb-ya),u=((xa-o.x0)%bw+bw)%bw,up=Math.cos(a)>0;
+   x.save();x.translate(xa,ya);x.rotate(Math.atan2(yb-ya,xb-xa));if(!up)x.scale(1,-1);
+   const sw=Math.min(6.6,bw-u);x.drawImage(band,u*2,0,sw*2,band.height,0,-th/2,L*sw/6.6+.4,th);if(sw<6.6)x.drawImage(band,0,0,(6.6-sw)*2,band.height,L*sw/6.6,-th/2,L*(6.6-sw)/6.6+.4,th);
+   const dk=.45*(1-Math.max(0,sn));if(dk>.01){x.fillStyle=`rgba(0,0,0,${dk})`;x.fillRect(0,-th/2,L+.4,th);}
+   x.restore();}
+  x.imageSmoothingEnabled=sm;x.restore();return;}
  x.save();x.lineCap='round';
  if(!front){// posts at both ends down to the ground below, and a rail along the axis
   x.fillStyle='#6a4018';x.strokeStyle='#2a1408';x.lineWidth=1.5;for(const px of [o.x0+6,o.x1-6]){x.fillRect(px-6,o.y+4,12,220);x.strokeRect(px-6,o.y+4,12,220);}
@@ -295,6 +309,9 @@ function drawCorkscrew(x,o,t,front){const r=o.r,axis=o.y-r,n=Math.ceil((o.x1-o.x
  x.restore();}
 // SEESAW: a pivot block, the plank (low end 6 px over the ground), the spiked ball on its end
 function drawSeesaw(x,o,t){const w=o.w,gy=o.gy,tilt=o.tilt,ang=Math.atan2(24,w)*tilt,lift=o.lift>0?Math.sin(o.lift/10*Math.PI)*2:0;
+ if(SP.picture('seesaw-plank')&&SP.picture('seesaw-base')&&SP.picture('seesaw-ball')){// the art (Nov 16)
+  pic(x,'seesaw-base',o.x,gy,.5,1);pic(x,'seesaw-plank',o.x,gy-18,.5,.5,{w,h:10,rot:ang});
+  const b=o.ball,bx=o.x+b.side*(w/2-12),u=(bx-o.x)/(w/2),by=gy-6-24*(1-u*tilt)/2-11+b.y;pic(x,'seesaw-ball',bx,by,.5,.5,{w:32,rot:t*(b.air?6:0)});return;}
  x.save();x.fillStyle='#5a5a66';x.strokeStyle='#22222a';x.lineWidth=1.5;x.beginPath();x.moveTo(o.x-12,gy);x.lineTo(o.x,gy-18-6);x.lineTo(o.x+12,gy);x.closePath();x.fill();x.stroke();
  x.translate(o.x,gy-6-12-lift*0);x.rotate(ang);
  x.fillStyle='#c89040';x.fillRect(-w/2,-4,w,8);x.strokeStyle='#5a3214';x.strokeRect(-w/2,-4,w,8);x.fillStyle='#e8b860';x.fillRect(-w/2,-4,w,2);
@@ -303,7 +320,11 @@ function drawSeesaw(x,o,t){const w=o.w,gy=o.gy,tilt=o.tilt,ang=Math.atan2(24,w)*
  x.save();x.translate(bx,by);x.rotate(t*(b.air?6:0));x.fillStyle='#d8d8e4';for(let k=0;k<8;k++){const a=k*Math.PI/4;x.beginPath();x.moveTo(Math.cos(a-.25)*9,Math.sin(a-.25)*9);x.lineTo(Math.cos(a)*15,Math.sin(a)*15);x.lineTo(Math.cos(a+.25)*9,Math.sin(a+.25)*9);x.fill();}
  const g=x.createRadialGradient(-3,-3,1,0,0,10);g.addColorStop(0,'#8a8aa0');g.addColorStop(1,'#2a2a38');x.fillStyle=g;x.beginPath();x.arc(0,0,10,0,7);x.fill();x.strokeStyle='#14141c';x.lineWidth=1.2;x.stroke();x.restore();}
 // SPIKE LOG: a log on the bridge turning over; its row of spikes comes round to the top every turn
-function drawSpikeLog(x,o,t){const w=o.w,h=o.h,cx=o.x,cy=o.y,R_=h/2;x.save();
+function drawSpikeLog(x,o,t){const w=o.w,h=o.h,cx=o.x,cy=o.y,R_=h/2;
+ // the art (Nov 16): one row of spikes, 4 frames back / coming over / straight up (hurts: objects.js cos(spin) > .55) /
+ // down the front; the log body is 61 of the frame's 72 px
+ if(SP.sheet('spike-log')){const fr=Math.round(((o.spin-Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)/(Math.PI/2))%4,k=w/61;if(spr(x,'spike-log','turn',fr,cx,cy,{sx:k,sy:k}))return;}
+ x.save();
  const spikes=[0,1,2].map(k=>o.spin+k*2*Math.PI/3);
  const spike=a=>{const c=Math.cos(a),s=Math.sin(a);if(s<-.2)return;const y0=cy-c*R_*.9,dir=-c;x.fillStyle=s>.3?'#ecebf6':'#a8a8b8';for(let j=0;j<4;j++){const sx=cx-w/2+8+j*(w-16)/3;x.beginPath();x.moveTo(sx-5,y0);x.lineTo(sx,y0+dir*11*Math.max(.25,Math.abs(c)+.2*s));x.lineTo(sx+5,y0);x.fill();}};
  for(const a of spikes)if(Math.sin(a)<.3)spike(a);
@@ -376,7 +397,8 @@ function bossSmoke(x,o,t,behind){x.save();for(let k=0;k<6;k++){const ph=((t*.55+
   x.strokeStyle='rgba(60,50,80,.35)';x.lineWidth=1;x.stroke();}x.restore();}
 // a chain from a pivot down to a swinging platform
 function drawChain(x,x0,y0,x1,y1){const n=Math.max(2,Math.round(Math.hypot(x1-x0,y1-y0)/10));x.save();x.fillStyle='#8a8a98';x.strokeStyle='#3a3a48';x.lineWidth=1;
- for(let k=0;k<=n;k++){const u=k/n,cx=x0+(x1-x0)*u,cy=y0+(y1-y0)*u;x.beginPath();x.ellipse(cx,cy,3,4.5,Math.atan2(y1-y0,x1-x0),0,7);x.fill();x.stroke();}
+ const link=SP.picture('chain-link'),ang=Math.atan2(y1-y0,x1-x0)-Math.PI/2;// the link art (Nov 16) stands along the chain
+ for(let k=0;k<=n;k++){const u=k/n,cx=x0+(x1-x0)*u,cy=y0+(y1-y0)*u;if(link){pic(x,'chain-link',cx,cy,.5,.5,{rot:ang});continue;}x.beginPath();x.ellipse(cx,cy,3,4.5,Math.atan2(y1-y0,x1-x0),0,7);x.fill();x.stroke();}
  x.fillStyle='#5a5a66';x.beginPath();x.arc(x0,y0,5,0,7);x.fill();x.stroke();x.restore();}
 const ICON={rings:'rings',shoes:'shoes',star:'star',fire:'fire',bubble:'bubble',lightning:'lightning',eggman:'trap',plain:'shield'};
 function monitorIcon(x,item,cx,cy,ctx,pi){if(item!=='life'&&spr(x,'icons',ICON[item]||'shield',0,cx,cy))return;x.save();x.translate(cx,cy);
@@ -446,7 +468,7 @@ const BODY_K={hog:1.045,fox:.92},RUN_HEAD=36;
 // BALL_SRC = the source size that scales to BALL_D: the hedgehog's is unchanged (owner: its ball is right)
 // DASH_RUN: from here the legs are the spinning circle (owner, Nov 11: it took forever to kick in at 9.5, above the
 // normal top speed of 6, so it showed only with speed shoes or downhill; now it comes as you build real speed)
-const BALL_D=42,BALL_SRC={hog:32.1,fox:38.8},WALK_RUN=2.2,DASH_RUN=4.6;// fox ball 10% smaller again (owner, Nov 11 round 3)
+const BALL_D=42,BALL_SRC={hog:32.1,fox:38.8,knux:25.6,dark:24.0},WALK_RUN=5.5,DASH_RUN=4.6;// knux/dark: their own balls (Nov 16) are drawn smaller in the sheet; scaled by the hedgehog's area ratio// fox ball 10% smaller again (owner, Nov 11 round 3)
 // spin dash dust: puffs kicked out behind the ball
 function spinDust(x,px,py,f,t){x.save();for(let k=0;k<5;k++){const ph=(t*7+k/5)%1,d=8+ph*26,r=3+ph*6;x.globalAlpha=.85*(1-ph);x.fillStyle='#fff';
  x.beginPath();x.arc(px-f*d,py-ph*10-k%2*3,r,0,7);x.fill();x.strokeStyle='rgba(120,130,160,.55)';x.lineWidth=1;x.stroke();}x.restore();}
@@ -454,7 +476,7 @@ const looks=new WeakMap();
 function lookOf(p){let L=looks.get(p);if(!L){L={spin:0,cyc:0,idle:0,tw:0};looks.set(p,L);}return L;}
 // the angle the body is drawn at: follows the ground angle quickly (so the last degree or two of pixel-staircase noise
 // doesn't shake the sprite) and turns back upright gently in the air instead of snapping (dropping off a loop, ramps)
-function bodyAngle(p){const L=lookOf(p),want=p.dead?0:p.glide?(p.facing||1)*1.3:p.ground?-p.ang:0,/* gliding: tipped forward, flat out */now=performance.now(),dt=Math.min(.1,L.at?(now-L.at)/1000:1/60);L.at=now;
+function bodyAngle(p,flatGlide){const L=lookOf(p),want=p.dead?0:p.glide&&!flatGlide?(p.facing||1)*1.3:p.ground?-p.ang:0,/* gliding: tipped forward, flat out (not when the sheet's own glide frames are flat already) */now=performance.now(),dt=Math.min(.1,L.at?(now-L.at)/1000:1/60);L.at=now;
  if(L.da===undefined||p.dead){L.da=want;return want;}
  let d=want-L.da;d=((d+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;
  L.da+=d*(1-Math.exp(-dt*(p.ground?30:9)));return L.da;}
@@ -492,7 +514,7 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
  backOfHead(hx,hy,skid,true);
  // quills (hedgehog) or ears (+ the three tails for the stand-in fox body) behind the face
  function backOfHead(hx,hy,skid,withTails){const sw=Math.min(1,run/6),dir=skid?f:-f;x.fillStyle=BODY;x.strokeStyle=DARK;x.lineJoin='round';
-  const piece=kind?tintPicture(SP.picture('quills-p1'),kind):SP.picture(tails?'ears-p2':'quills-p1');// the owner's head piece, when it is in: drawn centred on the face (recoloured for the echidna / dark hedgehog)
+  const own=kind&&SP.picture(kind==='knux'?'dreads-p3':'quills-p4'),piece=own||(kind?tintPicture(SP.picture('quills-p1'),kind):SP.picture(tails?'ears-p2':'quills-p1'));// the owner's head piece, when it is in: drawn centred on the face (Knux/Shade: their own, else the hedgehog's recoloured)
   if(piece){x.save();x.translate(hx,hy);x.scale(f,1);if(!tails)x.scale(.9,.9);/* the hedgehog's quills 10% smaller (owner, Nov 11) */const sm=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;x.drawImage(piece,-piece.width/4,-piece.height/4,piece.width/2,piece.height/2);x.imageSmoothingEnabled=sm;x.restore();if(!tails||!withTails)return;}
   if(tails&&withTails){const bx=hx-f*5,by=hy+26,spin=p.fly>0;for(let k=0;k<3;k++){const a=spin?t*(p.fly>1?26:7)+k*2.094:(k-1)*.5+Math.sin(t*5+k)*.12-sw*.25,L=20;
     const ex=bx+dir*L*(spin?Math.cos(a)*.9:Math.cos(a)),ey=by+(spin?-10+Math.sin(a)*5:Math.sin(a)*L*.8-4);
@@ -508,24 +530,29 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
  if(skid&&(t*30|0)%3===0){}// dust is an effect (game)
  shieldOver(x,p,t);
  // the owner's sprite sheets (src/data/sonic3Sprites.js), when they are in: the body frame, then the face on its spot
- function sprites(){const nm='runner-p'+(tails?2:1),S=kind?tintSheet(SP.sheet(nm),kind):SP.sheet(nm),B=kind?tintSheet(SP.sheet('ball-p1'),kind):SP.sheet('ball-p'+(tails?2:1));if(!S||!B)return false;
+ function sprites(){const pn=kind==='knux'?3:kind==='dark'?4:tails?2:1,ownS=SP.sheet('runner-p'+pn),ownB=SP.sheet('ball-p'+pn),mine=!kind||!!(ownS&&ownB);
+  // Knux / Shade: their own sheets (Nov 16), else the hedgehog's recoloured
+  const nm=mine?'runner-p'+pn:'runner-p1',S=mine?ownS:tintSheet(SP.sheet(nm),kind),B=mine?ownB:tintSheet(SP.sheet('ball-p1'),kind),bodyK=BODY_K[tails?'fox':'hog'];if(!S||!B)return false;
   const frame=(Sh,row,fr,dx,dy)=>{const [fw,fh]=Sh.def.frame,ri=Object.keys(Sh.def.rows).indexOf(row),r=Sh.res;x.drawImage(Sh.img,fr*fw*r,ri*fh*r,fw*r,fh*r,dx,dy,fw,fh);};
   const was=x.imageSmoothingEnabled;x.imageSmoothingEnabled=true;
   if(ball&&!p.dead){shieldUnder(x,p,t);
    // the spin dash uses the roll frames spun fast: the sheet's spindash frames have dust painted to the cell edge, which
    // showed as straight cut lines; the dust is drawn here instead
-   const row='roll',n=B.def.rows[row],TAU=Math.PI*2,fr=p.spindash?Math.floor(t*30)%n:Math.floor((((L.spin*f)%TAU)+TAU)%TAU/TAU*n)%n;
+   const homing=!!(p.home&&B.def.rows.homing),row=homing?'homing':'roll',n=B.def.rows[row],TAU=Math.PI*2,fr=homing?Math.min(n-1,Math.floor((p.home.t||0)/3)):p.spindash?Math.floor(t*30)%n:Math.floor((((L.spin*f)%TAU)+TAU)%TAU/TAU*n)%n;// Shade's homing attack: the streak grows
    // both balls drawn BALL_D across (owner: same size, the face the same as standing); lifted so they sit on the ground
-   const bk=BALL_D/BALL_SRC[tails?'fox':'hog'],lift=BALL_D/2-14,ga=p.ground?p.ang:0,bx=p.x-Math.sin(ga)*lift,by=p.y-Math.cos(ga)*lift;
+   const bk=BALL_D/BALL_SRC[mine&&kind?kind:tails?'fox':'hog'],lift=BALL_D/2-14,ga=p.ground?p.ang:0,bx=p.x-Math.sin(ga)*lift,by=p.y-Math.cos(ga)*lift;
    if(p.spindash)spinDust(x,bx,by+BALL_D/2-4,f,t);
-   x.save();x.translate(bx,by);x.save();x.scale(bk*f,bk);frame(B,row,fr,-B.def.foot[0],-B.def.foot[1]);x.restore();x.rotate(p.spindash?0:L.spin);head(x,i,0,0,RUN_HEAD*BODY_K[tails?'fox':'hog'],'angry',f);x.restore();// the face as big as standing
+   x.save();x.translate(bx,by);x.save();x.scale(bk*f,bk);frame(B,row,fr,-B.def.foot[0],-B.def.foot[1]);x.restore();x.rotate(p.spindash||homing?0:L.spin);head(x,i,0,0,RUN_HEAD*BODY_K[tails?'fox':'hog'],'angry',f);x.restore();// the face as big as standing
    x.imageSmoothingEnabled=was;x.restore();shieldOver(x,p,t);return true;}
   const N=r=>S.def.rows[r]||0,skid=p.ground&&run>1.5&&Math.sign(p.gsp)!==f&&!p.rolling;let row='stand',fr=0,upright=0;const cyc=(r,v)=>{row=r;fr=Math.floor(v)%N(r);};
   if(p.dead){row='dead';fr=p.dead>24?1:0;}
+  else if(p.climb&&N('climb')){L.climb=(L.climb||0)+Math.min(2,Math.abs(p.y-(L.cy??p.y)))*.12;L.cy=p.y;cyc('climb',L.climb);}// Knux on a wall: his own frames, stepping as he moves
   else if(p.hang||p.climb)cyc('hang',p.climb?L.cyc*.5:t*6);// (climbing a wall: the hanging frames, arms up the wall)
+  else if(p.glide&&N('glide'))cyc('glide',t*6);// Knux's own glide frames (flat out, mitts first)
   else if(p.glide){row='spring';fr=1;}// gliding: arms up, tipped forward flat (bodyAngle)
+  else if(p.slide&&N('slide')){row='slide';fr=run>.4?0:1;}// the belly landing after a glide, pushing up at the end
   else if(p.fly>1&&N('fly'))cyc('fly',t*20);
-  else if(p.fly===1&&N('fly'))cyc('fly',t*5);// tired: the flying frames, rotor slowed (the sheet's tired row shows three arms; owner)
+  else if(p.fly===1&&N('tired'))cyc('tired',t*3);// tired: the redrawn tired row (Nov 16: two arms, tails drooping)
   else if(p.hurt)cyc('hurt',t*7);
   else if(p.spring){row='spring';fr=1;}
   else if(!p.ground){if(p.ysp>1.5)cyc('fall',t*8);else cyc('walk',L.cyc);}
@@ -534,9 +561,7 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
   else if(run>=DASH_RUN)cyc('dash',t*(16+run*1.4));// the circle legs = the full-speed run, as on the Mega Drive
   else if(run>=5.5)cyc('run',L.cyc);
   else if(run<.05){if(p.lookUp){row='lookUp';fr=1;}else if(L.idle>180)cyc('wait',L.idle/14);}
-  // the sheets' walk rows are mostly feet-together frames (owner: "shuffling their feet"): past a slow walk the run
-  // frames are used (real strides), leaned back a little at the low end so they read as a brisk walk. New walk rows
-  // are asked for in docs/sonic3-sprites/GPT-NIGHT-2026-11-11.md; when they come in, WALK_RUN can go back up to 5.5.
+  // walk rows redrawn with real strides (Nov 16), so the walk row is used up to running speed again (WALK_RUN 5.5)
   else if(run>=WALK_RUN){cyc('run',L.cyc);upright=Math.max(0,1-(run-WALK_RUN)/3.3)*.16;}
   else cyc('walk',L.cyc);
   if(!p.dead)shieldUnder(x,p,t);
@@ -544,8 +569,17 @@ function drawRunner(x,p,i,t,head,alpha=1){const L=lookOf(p),tails=p.body?p.body=
   // on a corkscrew (owner, Nov 11: "like the real game"): Sonic 2 shows the runner barrel-rolling round the track's axis,
   // not spinning like a wheel: seen from the side that is a squash to a sliver and a flip upside down and back (height
   // x cos(phase), never thinner than 22%); a `cork-p1/p2` sheet (12 frames) can replace this later
+  // The cork-p1/p2 sheets (Nov 16) are that roll drawn: 12 frames starting upright, going round the FAR side first (feet
+  // toward us), so they run backwards against the track's phase (its first half is the near side). The axis = the middle
+  // of the cell; frame 0's feet are 13.5 px under it, so it is placed where an upright runner's feet would be. Frames
+  // where the neck points away have no face.
+  const CK=!kind&&SP.sheet('cork-p'+(tails?2:1));
+  if(p.cork&&CK){const TAU=Math.PI*2,fr=Math.round(((-(p.cork.a||0))%TAU+TAU)%TAU/TAU*12)%12,cs=SP.spot(CK.name,'cork',fr),[cx0,cy0]=CK.def.foot;
+   x.translate(p.x,p.y+19-13.5*bodyK);x.scale(bodyK,bodyK);x.save();x.scale(f,1);frame(CK,'cork',fr,-cx0,-cy0);x.restore();
+   if(cs&&!cs.hide){x.translate((cs.x-cx0)*f,cs.y-cy0);x.rotate((cs.rot||0)*f);backOfHead(0,0,false,false);head(x,i,0,0,RUN_HEAD,run>5?'happy':undefined,f);}
+   x.imageSmoothingEnabled=was;x.restore();shieldOver(x,p,t);return true;}
   if(p.cork){const c=Math.cos(p.cork.a||0),sy=Math.sign(c||1)*Math.max(.22,Math.abs(c));x.translate(p.x,p.y);bodyAngle(p);x.scale(1,sy);x.translate(0,19);}
-  else{x.translate(p.x,p.y);x.rotate(bodyAngle(p));x.translate(0,19);}if(upright)x.rotate(-f*upright);x.scale(BODY_K[tails?'fox':'hog'],BODY_K[tails?'fox':'hog']);// scaled about the feet
+  else{x.translate(p.x,p.y);x.rotate(bodyAngle(p,row==='glide'));x.translate(0,19);}if(upright)x.rotate(-f*upright);x.scale(bodyK,bodyK);// scaled about the feet
   x.save();x.scale(f,1);frame(S,row,fr,-fx0,-fy0);x.restore();
   const hx=(h.x-fx0)*f,hy=h.y-fy0;backOfHead(hx,hy,skid,false);
   head(x,i,hx,hy,RUN_HEAD,p.dead||p.hurt?'sad':skid?'angry':run>5?'happy':undefined,f);// f: face box on the spot, mirrored to the run (sonic3.js head)

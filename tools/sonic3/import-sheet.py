@@ -5,7 +5,11 @@ so the standing body matches the template, places each pose in its frame cell (f
 for air poses), finds the neck opening in every pose (its dark inside) and writes where the face goes.
   python3 tools/sonic3/import-sheet.py <picture> <runner-p1|runner-p2> [--x0 125] [--ball ball-p2] [--preview out.png]
 The picture's rows must be the sheet's rows in order (src/data/sonic3Sprites.js), then, with --ball, roll and spindash.
-Writes assets/sonic3/<name>.webp (2x the frame size, lossless) and the face spots into src/data/sonic3Heads.js."""
+Writes assets/sonic3/<name>.webp (2x the frame size, lossless) and the face spots into src/data/sonic3Heads.js.
+  --order stand,wait,...,roll,spindash,glide   the picture's rows in its own order (default: the sheet's rows, then the ball's)
+  --grid y0,dy,x0,dx   the picture is on a fixed cell grid (row k at y0+k*dy, column i at x0+i*dx): every drawn blob goes to
+                       the cell its middle is in and each pose keeps only its own blobs (raised hands reaching into the row
+                       above stay with their pose). Needs scipy (pip install scipy)."""
 import sys, json, re, subprocess, shutil, os
 import numpy as np
 from PIL import Image
@@ -32,12 +36,42 @@ def runs(v, gap=1):
         else: m.append(q)
     return [q for q in m]
 want = list(spec['main']['rows'].items()) + (list(spec['ball']['rows'].items()) if ball else [])
-bands = [q for q in runs(fgb.sum(1) > 0) if q[1] - q[0] > 12]
-while len(bands) < len(want):  # two rows touching: split the tallest band at its emptiest line
+if opt('--order'):
+    allrows = dict(want); want = [(r, allrows[r]) for r in opt('--order').split(',')]; assert len(want) == len(allrows), 'every row once'
+GRID = [float(v) for v in opt('--grid').split(',')] if opt('--grid') else None
+poses = []; MASK = {}
+if GRID:
+    from scipy import ndimage
+    gy0, gdy, gx0, gdx = GRID; lab, nl = ndimage.label(fg, structure=np.ones((3, 3))); cells = {}; blobs = []
+    for k, sl in enumerate(ndimage.find_objects(lab), 1):
+        m = lab[sl] == k; area = int(m.sum())
+        if area < 4: continue
+        ys, xs = np.nonzero(m); cy, cx = sl[0].start + ys.mean(), sl[1].start + xs.mean()
+        if cx < gx0: continue  # the label column
+        blobs.append((k, area, cx, cy, sl))
+    # big blobs (bodies) go to the cell their middle is in; small loose bits (a glove drawn apart from its arm, dust,
+    # motion lines) join the nearest big blob, so a hand raised into the row above stays with its pose
+    big = [b for b in blobs if b[1] >= 300]
+    def gap(b, c):
+        (s0, s1), (t0, t1) = b[4], c[4]
+        return max(0, t0.start - s0.stop, s0.start - t0.stop) + max(0, t1.start - s1.stop, s1.start - t1.stop)
+    for b in blobs:
+        sl = b[4]; bot = (lab[sl] == b[0])[-1]
+        if b[1] < 300 and bot.sum() >= .6 * bot.size: continue  # a bit cut flat along its bottom (a fist halved by the artist's packing)
+        home = b if b[1] >= 300 or not big else min(big, key=lambda c: gap(b, c))
+        cells.setdefault((int((home[3] - gy0) // gdy), int((home[2] - gx0) // gdx)), []).append(b[0])
+    for ri, (row, n) in enumerate(want):
+        for c in range(n):
+            ks = cells.get((ri, c)); assert ks, 'nothing drawn in row %s cell %d' % (row, c + 1)
+            m = np.isin(lab, ks); ys, xs = np.nonzero(m); box = (row, xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)
+            poses.append(box); MASK[box] = m[box[2]:box[4], box[1]:box[3]]
+        extra = [k for k in cells if k[0] == ri and k[1] >= n]
+        if extra: print('  row %s: blobs past its %d cells ignored' % (row, n))
+bands = [] if GRID else [q for q in runs(fgb.sum(1) > 0) if q[1] - q[0] > 12]
+while not GRID and len(bands) < len(want):  # two rows touching: split the tallest band at its emptiest line
     k = max(range(len(bands)), key=lambda i: bands[i][1] - bands[i][0]); s, e = bands[k]; p = fgb[s:e].sum(1); lo, hi = int(len(p) * .3), int(len(p) * .7)
     cut = s + lo + int(np.argmin(p[lo:hi])); bands[k:k + 1] = [[s, cut], [cut + 1, e]]
-assert len(bands) == len(want), (len(bands), len(want))
-poses = []
+assert GRID or len(bands) == len(want), (len(bands), len(want))
 for (row, n), (s, e) in zip(want, bands):
     raw = runs(fg[s:e].sum(0) > 0)  # the row's label = everything up to the last wide gap inside the label column
     lab = [k for k in range(len(raw) - 1) if raw[k][1] <= x0 and raw[k + 1][0] - raw[k][1] >= 7]
@@ -86,19 +120,21 @@ NECK = 9  # the neck opening sits this far under the face centre (frame px)
 scale = RES * (main['foot'][1] - (h0['y'] + NECK)) / (first[4] - nk[1])
 print('neck of the first pose at', [round(v) for v in nk], 'pose box', first[1:])
 print('scale %.3f, %d poses' % (scale, len(poses)))
-AIR = {'spring', 'fall', 'hurt', 'dead', 'fly', 'tired', 'hang'}
+AIR = {'spring', 'fall', 'hurt', 'dead', 'fly', 'tired', 'hang', 'glide', 'climb'}
 def build(sp, rowsel, key):
     fw, fh = sp['frame']; rows = list(sp['rows'].items()); cols = max(n for _, n in rows)
     sheet = Image.new('RGBA', (cols * fw * RES, len(rows) * fh * RES), (0, 0, 0, 0)); heads = {}
     for ri, (row, n) in enumerate(rows):
         heads[row] = []
         for f, p in enumerate([q for q in poses if q[0] == row and rowsel(q)]):
-            _, bx0, by0, bx1, by1 = p; cut = Image.fromarray(rgba[by0:by1, bx0:bx1], 'RGBA')
+            _, bx0, by0, bx1, by1 = p; px_ = rgba[by0:by1, bx0:bx1].copy()
+            if p in MASK: px_[..., 3] = px_[..., 3] * MASK[p]
+            cut = Image.fromarray(px_, 'RGBA')
             w, h = max(1, round((bx1 - bx0) * scale)), max(1, round((by1 - by0) * scale)); cut = cut.resize((w, h), Image.LANCZOS)
             al = np.asarray(cut)[..., 3]; cut.putalpha(Image.fromarray(((al > 110) * 255).astype(np.uint8)))
             hs = sp['heads'][row][f]; nkp = neck(p[1:]); cx, cy = f * fw * RES, ri * fh * RES
             if key == 'ball':
-                side = min(h, w); px = cx + fw * RES // 2 - (w - side // 2) ; py = cy + fh * RES // 2 - h // 2
+                side = min(h, w); px = cx + fw * RES // 2 - (w - side // 2); py = cy + fh * RES // 2 - (h - side // 2)  # the ball = the square at the lower right (dust/streaks trail up and left)
                 heads[row].append([fw // 2, fh // 2])
             else:
                 nx = (nkp[0] - bx0) * scale if nkp else w / 2; ny = (nkp[1] - by0) * scale if nkp else 0
@@ -107,7 +143,8 @@ def build(sp, rowsel, key):
                 px = min(max(px, cx), cx + fw * RES - w) if w <= fw * RES else cx; py = min(max(py, cy), cy + fh * RES - h) if h <= fh * RES else cy
                 if not nkp: print('  no neck found: %s %d' % (row, f + 1))
                 heads[row].append([round((px - cx + nx) / RES, 1), round((py - cy + ny) / RES - NECK, 1)] if nkp else [hs['x'], hs['y']])
-            sheet.alpha_composite(cut.crop((0, 0, min(w, fw * RES), min(h, fh * RES))), (px, py))
+            l, t = max(0, cx - px), max(0, cy - py); rr, bb = min(w, cx + fw * RES - px), min(h, cy + fh * RES - py)  # clipped to its own cell
+            if rr > l and bb > t: sheet.alpha_composite(cut.crop((l, t, rr, bb)), (px + l, py + t))
     return sheet, heads
 mainrows = set(main['rows']); out = {}
 sh, hd = build(main, lambda q: True, 'main'); sh.save(os.path.join(root, 'assets/sonic3', name + '.webp'), lossless=True, quality=100, method=6); out[name] = hd

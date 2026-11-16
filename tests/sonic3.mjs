@@ -16,6 +16,7 @@ const BOT=`(p,f)=>{const b=window.__bot||(window.__bot={stuck:0,last:0,mode:0,t:
  if(b.mode>0){b.mode--;o.r=false;o.d=true;if(b.mode%6===0&&b.mode>8)o.press=true;if(b.mode===0)o.d=false;return o;}
  if(b.stuck>40&&p.ground){b.mode=40;b.stuck=0;return o;}
  if(b.stuck>12&&p.ground){o.press=true;o.jump=true;}
+ b.hang=p.hang?(b.hang||0)+1:0;if(b.hang>60){o.press=true;o.jump=true;b.hang=0;}// caught on a vine (it swings, so x keeps changing): let go after a second
  if(!p.ground&&p.ysp<0)o.jump=true;return o;}`;
 for(const [w,h,tag] of [[390,780,'phone'],[844,390,'land'],[1100,700,'desktop']]){
  const {browser,page,errors}=await open({viewport:{width:w,height:h}});
