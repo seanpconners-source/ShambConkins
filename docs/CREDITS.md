@@ -4,6 +4,8 @@
   Bundled as `assets/doom/freedoom.pack.gz` (made with `tools/doom-pack.mjs`) for the DOOM / DOOM II minigames;
   licence text in `assets/doom/FREEDOOM-COPYING.txt`. https://freedoom.github.io
 - **cannon-es** 0.20.0 (Hole.it physics), MIT. `src/vendor/cannon.js`.
+- **ENABLE** (Enhanced North American Benchmark Lexicon, public domain; the copy from github.com/dolph/dictionary): the words
+  Words n' Shit accepts (`assets/wordsnshit/dict.bin.gz`, built by `tools/wns/build-dict.mjs`, slurs removed, a few modern words added).
 - **word-list** 2.0.0 by Sindre Sorhus, MIT: the five-letter words Sqwordle accepts as guesses (`src/data/sqwordleWords.js`).
 - **wordfreq** by Robyn Speer (Apache-2.0 code, CC BY-SA 4.0 data): used offline only to rank Sqwordle's answer words by
   how common they are; no wordfreq data ships beyond that ranked choice of ordinary English words.

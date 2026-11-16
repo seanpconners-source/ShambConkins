@@ -5,6 +5,20 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 v0.99.4 RELEASED (Nov 15, owner: "release it!"; fuzz only): bigger held ball behind the hands + owner rim picture.
 v0.99.5 RELEASED (Nov 15): Sitabout title-bg IN (owner's chat attachment 2000x1125 WebP, copied byte for byte to assets/minigolf + originals; the 11 MB Drive PNG never fetched); PICTURES title-bg focus [.38,.45] = cover crop centred on the couple (puttPutt drawMenu). Minigolf art now 61/61.
 v0.99.6 RELEASED (Nov 15): owner uploaded the real title-bg PNG to main via GitHub web upload (repo root 'title-bg(1).png'; the upload page has no name/folder field, so expect root uploads): 3840x2160 = 2x slot, now lossless assets/minigolf/title-bg.webp (7.5 MB, LATER), original assets/originals/minigolf/title-bg.png (moved out of the root). Chat attachments always arrive as ~0.4 MB WebP: ask for GitHub uploads when quality matters.
+WORDS N' SHIT + SQWORDLE HINT (Nov 16, branch claude/minigolf-sprites-windmill-ud5bpf, unreleased; owner: Words With Friends clone,
+"as close to the real one as possible", name Words n' Shit; online + board space; Sqwordle hint button): game id words-n-shit (wordPack,
+engine wordsnshit = src/engines/wordsNShit.js, soloKind cpu, NET_NATIVE, Mobile Hits + puzzle). src/engines/wns/rules.js = WWF board
+(TW 8/DW 12/TL 16/DL 24, star = no bonus), values/104-tile bag, evaluate (line, gaps, joined, cross words, scoring, bingo 35), refill;
+src/engines/wns/dict.js = DAWG (assets/wordsnshit/dict.bin.gz from tools/wns/build-dict.mjs: ENABLE minus an exact slur list + qi/za/ok...,
+168,509 words, 330 KB, 'wns:dict' LATER on first open) + findMoves (Appel-Jacobson anchors/cross checks, ~10-60 ms). CPU picks by
+cpuSkill percentile. Flow: length picker (Quick 6 turns each / Full; online seat 0 picks {len}), board origin = 3 turns each; 2P = s.pass
+hand-off hides racks (viewer -1); online moves {pl:[[r,c,ch,blank]]}/{sw:'letters'}/{pa}, bag from seededRandom(seed+':wns') so draws
+match; end = out + bag empty (rack values), 4 scoreless turns, or turn limit. UI: drag rack→board (tile drawn 1.4 cells above the finger),
+tap-tap, tap placed tile = back, blank letter picker, score bubble (green ok / red not a word), SWAP/PASS(tap twice)/SHUFFLE↔RECALL/PLAY,
+end card. Our own logo (orange speech bubble); no art slots yet. Tests: tests/wns.mjs (Node rules + dict + CPU-vs-CPU game; browser vs CPU
+2 sizes with a real drag, 2P hand-off), online-native words-n-shit ± LAG, games.mjs fuzz. SQWORDLE HINT: sqwordleRules HINTS 2 /
+HINT_COST 40 (points never below 0), Hint pill on the info line (L.hintBtn) = leftmost unsolved spot as a ghost letter + blue key,
+result carries hints; tests/sqwordle.mjs checks it.
 v0.99.0 (Nov 14): BASEKETBALL SHOOTOUT = the Megatouch Hoop Jones machine (owner's screenshot; Merit: time each shot,
 hoop moves back each round and side to side, 3 straight = lightning bonus). src/engines/hoopJones.js; engine key
 basketball2p (baseketball.js is now a 3-line hand-off; the movie-rules code is in git history before 0.99.0). Id

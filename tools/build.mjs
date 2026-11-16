@@ -174,6 +174,9 @@ if (fs.existsSync(musicDir)) for (const f of fs.readdirSync(musicDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(mp3|ogg|m4a|wav|flac)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('music:' + m[1].toLowerCase(), AUDIO[ext], ext, path.join(musicDir, f));
 }
+// Words n' Shit dictionary: assets/wordsnshit/dict.bin.gz (tools/wns/build-dict.mjs) -> USER_PORTRAITS['wns:dict'] (.bin in the app folder, like Doom's pack).
+const wnsDir = path.join(root, 'assets/wordsnshit');
+if (fs.existsSync(path.join(wnsDir, 'dict.bin.gz'))) drop('wns:dict', 'application/gzip', 'bin', path.join(wnsDir, 'dict.bin.gz'));
 // Doom: assets/doom/<name>.pack.gz (Freedoom, made by tools/doom-pack.mjs) -> USER_PORTRAITS['doom:pack:<name>'];
 // the owner's own IWADs in assets/doom/user/*.wad (git-ignored: never commit them) -> 'doom:wad:<name>', gzipped here.
 // In the app folder they are .bin files (a server could add "Content-Encoding: gzip" to a .gz and the browser would unpack it).
