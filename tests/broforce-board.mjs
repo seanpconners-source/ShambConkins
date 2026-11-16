@@ -17,10 +17,10 @@ await page.waitForTimeout(700);await page.evaluate(()=>[...document.querySelecto
 const D=()=>page.evaluate(()=>{const d=window.ShambConkins.store.session?.debug;return d&&{phase:d.phase,turn:d.turn,stage:d.stage};});
 for(const t of [0,1]){
  for(let i=0;i<80;i++){const d=await D();if(d?.phase==='play'&&d.turn===t)break;await page.evaluate(()=>document.querySelector('.pass-overlay [data-ready]')?.click());await page.waitForTimeout(150);}
- // P1 frees the gold cage and finishes the mission; P2 frees theirs and runs out of time on stage 1
+ // P1 frees the gold cage and finishes the mission; P2 frees theirs and runs out of bros on stage 1
  await page.evaluate(()=>{const d=window.ShambConkins.store.session.debug;const k=d.W.cages.findIndex(c=>c.vip);if(k>=0)d.freeCage(k);});
  if(t===0){for(let st=0;st<3;st++){if(st===2)await page.evaluate(()=>window.ShambConkins.store.session.debug.killBoss());await page.evaluate(()=>window.ShambConkins.store.session.debug.board());for(let i=0;i<40&&(await D())?.stage===st&&(await D())?.phase==='play';i++)await page.waitForTimeout(150);}}
- else await page.evaluate(()=>window.ShambConkins.store.session.debug.setClock(299.8));
+ else await page.evaluate(()=>window.ShambConkins.store.session.debug.outOfBros());
  for(let i=0;i<60&&(await D())?.phase==='play';i++)await page.waitForTimeout(150);
 }
 const recruits=await page.evaluate(()=>window.ShambConkins.store.session?.broforceRecruits?.map(r=>r.slice())||null);

@@ -76,8 +76,8 @@ for(const [w,h] of sizes){
   if(d.heli==='away')fail(`${tag} chopper never arrived after the Devil`);
   await page.screenshot({path:`${out}/${tag}-devil-dead${t}.png`});
   if(t===0){await page.evaluate(()=>window.ShambConkins.store.session.debug.board());}
-  else await page.evaluate(()=>window.ShambConkins.store.session.debug.setClock(299.5));
-  for(let i=0;i<40;i++){await page.waitForTimeout(150);d=await D();if(d.phase!=='play')break;}
+  else await page.evaluate(()=>window.ShambConkins.store.session.debug.outOfBros());
+  for(let i=0;i<100;i++){await page.waitForTimeout(150);d=await D();if(d.phase!=='play')break;}
   if(d.phase!==(t?'end':'turn-end'))fail(`${tag} turn ${t} did not end (${d.phase})`);
   await page.waitForTimeout(700);await page.screenshot({path:`${out}/${tag}-${t?'end':'turnend'}.png`});
  }

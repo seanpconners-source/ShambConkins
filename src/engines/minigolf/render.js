@@ -123,21 +123,20 @@ function drawHole(x,W,H,cam,st){
  const {C,course}=st,look=course.look;
  x.setTransform(1,0,0,1,0,0);
  // background (live: clouds drift, stars twinkle)
- if(look.space){x.fillStyle='#03021a';x.fillRect(0,0,W,H);drawStars(x,W,H,cam,st.T);}
+ if(look.space)drawStars(x,W,H,cam,st.T);
  else if(C.hole.sky){const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#8fd3ff');g.addColorStop(1,'#ffe3f4');x.fillStyle=g;x.fillRect(0,0,W,H);for(let i=0;i<9;i++){const px=((i*0.37+st.T*.01*(1+i%3))%1.3-.15)*W,py=(i*.137%1)*H,r=Math.min(W,H)*(.08+(i%4)*.03);x.fillStyle='rgba(255,255,255,.75)';for(const [dx,dy,rr] of [[0,0,1],[r*.8,r*.1,.8],[-r*.8,r*.15,.7]]){x.beginPath();x.arc(px+dx,py+dy,r*rr,0,7);x.fill();}}}
  // ground
  // a camera that has stopped zooming gets its layers and sprites repainted at exactly its zoom (copying pixels 1:1 is fastest)
  const still=C._still||(C._still={k:0,n:0});if(Math.abs(cam.k/(still.k||1)-1)<5e-4)still.n++;else{still.n=0;still.k=cam.k;}
- const G=groundLayers(C,course,cam,W,H,st,still.n>=STILL_N),[ox,oy]=proj(cam,W,H,0,0,0);
- for(const run of G.runs){x.setTransform(1,0,0,1,0,0);
-  if(run.anim){for(const f of run.steps)f(x,W,H,cam,st);continue;}
-  // the world origin sits on a whole pixel of the layer (and of every sprite), so 1:1 copies all land on the same grid
-  const s=cam.k/G.kc;if(Math.abs(s-1)<EXACT)x.drawImage(run.cv,Math.round(ox)-G.ox0,Math.round(oy)-G.oy0);else x.drawImage(run.cv,ox-G.ox0*s,oy-G.oy0*s,G.LW*s,G.LH*s);}
+ const isStill=still.n>=STILL_N,G=groundTiles(C,course,cam,W,H,st,isStill),TR=prepareTiles(G,cam,W,H,st,isStill),[ox,oy]=proj(cam,W,H,0,0,0);
+ G.runs.forEach((run,r)=>{x.setTransform(1,0,0,1,0,0);
+  if(run.anim){for(const f of run.steps)f(x,W,H,cam,st);return;}
+  drawGround(x,G,TR,r,cam,W,H);});
  x.setTransform(1,0,0,1,0,0);
  if(st.trail&&st.trail.pts.length>1){const t=st.trail.pts;x.lineCap='round';for(let i=1;i<t.length;i++){const a=proj(cam,W,H,t[i-1][0],t[i-1][1],t[i-1][2]),b=proj(cam,W,H,t[i][0],t[i][1],t[i][2]);x.strokeStyle=st.trail.col;x.globalAlpha=.5*i/t.length;x.lineWidth=Math.max(2,cam.k*1.1*i/t.length);x.beginPath();x.moveTo(...a);x.lineTo(...b);x.stroke();}x.globalAlpha=1;}
  // sorted standing things: still ones from their sprites, moving ones drawn live
  const items=[],dcam=depth(cam.rot,cam.x,cam.y,0);
- const SP=standingSprites(C,course,cam,still.n>=STILL_N);let budget=SP.redraw;
+ const SP=standingSprites(C,course,cam,isStill);let budget=SP.redraw;
  for(const it of SP.list){const sp=it.sp;if(!sp||!sp.cv)continue;const t0=cam.k/sp.kc,X0=ox+sp.bx*t0,Y0=oy+sp.by*t0,ww=sp.cv.width*t0,hh=sp.cv.height*t0;
   if(X0>W||Y0>H||X0+ww<0||Y0+hh<0)continue;
   items.push({y:H/2+cam.k*(it.d-dcam),f:()=>{let q=it.sp;if((q.kc!==SP.kc||q.ver!==SP.ver)&&budget>0){budget--;paintSprite(it,SP.kc,cam.rot,SP.ver);q=it.sp;}
@@ -160,8 +159,9 @@ function sortedGreens(C){return C._gs||(C._gs=C.greens.slice().sort((a,b)=>(a.wa
 function groundRuns(C,course){
  if(C._runs)return C._runs;
  const look=course.look,cid=course.id,greens=sortedGreens(C),waters=C.greens.filter(g=>g.water),sky=!!C.hole.sky,steps=[];
- steps.push({f:(x,W,H,cam)=>{if(sky)return;const lawnA=aff(cam,W,H,LAWN_Z);x.setTransform(...lawnA);x.fillStyle=pattern(x,`${cid}-lawn|${cid}`,look,tileWorld(`${cid}-lawn`));
-  if(!look.space){const [a,b]=unproj(cam,W,H,0,0,LAWN_Z),[c2,d]=unproj(cam,W,H,W,H,LAWN_Z),[e,f]=unproj(cam,W,H,W,0,LAWN_Z),[g2,h]=unproj(cam,W,H,0,H,LAWN_Z);const xs=[a,c2,e,g2],ys=[b,d,f,h];x.fillRect(Math.min(...xs)-2,Math.min(...ys)-2,Math.max(...xs)-Math.min(...xs)+4,Math.max(...ys)-Math.min(...ys)+4);}
+ steps.push({f:(x,W,H,cam)=>{if(sky)return;x._drew=true;const lawnA=aff(cam,W,H,LAWN_Z);x.setTransform(...lawnA);x.fillStyle=pattern(x,`${cid}-lawn|${cid}`,look,tileWorld(`${cid}-lawn`));
+  const cw=x.canvas.width,ch=x.canvas.height;
+  if(!look.space){const [a,b]=unproj(cam,W,H,0,0,LAWN_Z),[c2,d]=unproj(cam,W,H,cw,ch,LAWN_Z),[e,f]=unproj(cam,W,H,cw,0,LAWN_Z),[g2,h]=unproj(cam,W,H,0,ch,LAWN_Z);const xs=[a,c2,e,g2],ys=[b,d,f,h];x.fillRect(Math.min(...xs)-2,Math.min(...ys)-2,Math.max(...xs)-Math.min(...xs)+4,Math.max(...ys)-Math.min(...ys)+4);}
   else{x.globalAlpha=.85;for(const g of C.greens){if(g.water)continue;const pad=6;x.beginPath();x.rect(g.box[0]-pad,g.box[1]-pad,g.box[2]-g.box[0]+pad*2,g.box[3]-g.box[1]+pad*2);x.fill();}x.globalAlpha=1;}
   // shadows of rails/blocks on the lawn: a soft dark band round every green
   x.setTransform(...lawnA);x.fillStyle='rgba(0,0,0,.22)';for(const g of greens){if(g.water)continue;x.beginPath();g.pts.forEach((p,i)=>i?x.lineTo(p[0]+.9,p[1]+1.3):x.moveTo(p[0]+.9,p[1]+1.3));x.closePath();x.fill();}}});
@@ -170,9 +170,17 @@ function groundRuns(C,course){
  steps.push({anim:1,f:(x,W,H,cam,st)=>groundThings(x,W,H,cam,st,true)});
  const runs=[];for(const s of steps){const last=runs[runs.length-1];if(last&&!!last.anim===!!s.anim)last.steps.push(s.f);else runs.push({anim:!!s.anim,steps:[s.f]});}
  return C._runs=runs;}
+// is any of this green (with its skirt down to the lawn and its hills) on the canvas being drawn? (tiles skip the rest)
+function onCanvas(x,W,H,cam,g){
+ if(!g._zr){const [x0,y0,x1,y1]=g.box,zs=[[x0,y0],[x1,y0],[x0,y1],[x1,y1]].map(([px,py])=>g.a+g.b*px+g.c*py),hh=(g.hills||[]).reduce((m,h)=>m+Math.abs(h[3]||0),0);g._zr=[Math.min(LAWN_Z,...zs)-hh-3,Math.max(...zs)+hh+1];}
+ const [x0,y0,x1,y1]=g.box,cw=x.canvas.width,ch=x.canvas.height,pad=3*cam.k;let a=1e9,b=1e9,c=-1e9,d=-1e9;
+ for(const px of [x0,x1])for(const py of [y0,y1])for(const z of g._zr){const [X,Y]=proj(cam,W,H,px,py,z);a=Math.min(a,X);b=Math.min(b,Y);c=Math.max(c,X);d=Math.max(d,Y);}
+ return c+pad>=0&&a-pad<=cw&&d+pad>=0&&b-pad<=ch;}
 // one green: skirt, top, shading, fringe, banks (anim=false) or only its moving surface (anim=true: water ripples, the void)
 function drawGreen(x,W,H,cam,st,g,waters,anim){
  const {C,course}=st,look=course.look,cid=course.id;
+ if(!onCanvas(x,W,H,cam,g))return;
+ x._drew=true;
  if(!anim&&!g.water){x.setTransform(1,0,0,1,0,0);for(const e of g.edges){if(e.same||vOf(cam,e.nx,e.ny)<=.02)continue;const mx=(e.x1+e.x2)/2+e.nx*.5,my=(e.y1+e.y2)/2+e.ny*.5,below=C.topAt(mx,my);const zb=below&&below.z<Math.min(e.z1,e.z2)-.05?below.z:LAWN_Z;
    const a=proj(cam,W,H,e.x1,e.y1,e.z1),b=proj(cam,W,H,e.x2,e.y2,e.z2),c=proj(cam,W,H,e.x2,e.y2,zb),d=proj(cam,W,H,e.x1,e.y1,zb);if(Math.max(c[1],d[1])-Math.min(a[1],b[1])<.5)continue;
    faceQuad(x,a,b,c,d,pattern(x,`${cid}-cliff|${cid}`,look,24),e.x1,e.y1,e.x2,e.y2,cam,W,H);}}
@@ -196,29 +204,60 @@ function drawGreen(x,W,H,cam,st,g,waters,anim){
    x.fillStyle=look.space?'#2a1a50':'#5c4630';x.beginPath();x.moveTo(...a);x.lineTo(...b);x.lineTo(...c);x.lineTo(...d);x.closePath();x.fill();x.fillStyle='rgba(0,0,0,.25)';x.fill();}
   if(w.pool){x.setTransform(...A);x.strokeStyle='#f4f1ea';x.lineWidth=1.4;x.beginPath();w.pts.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();x.stroke();}}
 }
-// the layers: screen-aligned canvases centred on the view with a margin, painted at the zoom of the moment (kc). Repainted
-// when the view leaves them, the zoom drifts 12% in or 2x out, the camera stops at another zoom, the art changes or the hole turns.
-const LAYER_PX=4.5e6,MAXDIM=4096,EXACT=.002,STILL_N=8;
-function groundLayers(C,course,cam,W,H,st,still){
- const runs=groundRuns(C,course),ver=S.version?S.version():0;let G=C._layer;
- let zin=false;
- if(G){const s=cam.k/G.kc;zin=s>1.12&&!still;const [ox,oy]=proj(cam,W,H,0,0,0),l=ox-G.ox0*s,t=oy-G.oy0*s;
-  if(G.rot===cam.rot&&G.ver===ver&&s<=1.12&&s>=.5&&!(still&&Math.abs(s-1)>=EXACT)&&l<=0&&l+G.LW*s>=W&&t<=0&&t+G.LH*s>=H)return G;}
- // margin round the view, inside the pixel budget (big screens get a smaller margin, then a softer layer)
- // zooming in (the flyover, a slowing ball): paint 30% sharper so the next repaint is further off
- let M=.3*Math.max(W,H),r=1;
- const fit=m=>Math.sqrt(LAYER_PX/((W+2*m)*(H+2*m)));
- if(zin)r=Math.max(1,Math.min(1.3,fit(M)));
- if(fit(M)<1){let lo=0,hi=M;for(let i=0;i<20;i++){const mid=(lo+hi)/2;if(fit(mid)>=1)lo=mid;else hi=mid;}M=lo;r=Math.min(1,fit(M));}
- let LW=Math.ceil((W+2*M)*r),LH=Math.ceil((H+2*M)*r);if(LW>MAXDIM||LH>MAXDIM){const q=MAXDIM/Math.max(LW,LH);LW=Math.floor(LW*q);LH=Math.floor(LH*q);r*=q;}
- const kc=cam.k*r;let lc={x:cam.x,y:cam.y,k:kc,rot:cam.rot};
- {const [X0,Y0]=proj(lc,LW,LH,0,0,0),[nx,ny]=unproj(lc,LW,LH,LW/2-(Math.round(X0)-X0),LH/2-(Math.round(Y0)-Y0),0);lc={...lc,x:nx,y:ny};}
- const [ox0,oy0]=proj(lc,LW,LH,0,0,0);
- const old=C._layer,cvs=old&&old.LW===LW&&old.LH===LH?old.runs.map(r=>r.cv):[];
- G={kc,ox0:Math.round(ox0),oy0:Math.round(oy0),LW,LH,rot:cam.rot,ver,runs:runs.map((run,i)=>{if(run.anim)return run;
-  const cv=cvs[i]||canvas(LW,LH),g=cv.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,LW,LH);for(const f of run.steps){g.setTransform(1,0,0,1,0,0);f(g,LW,LH,lc,st);}g.setTransform(1,0,0,1,0,0);return {anim:false,cv};})};
- if(old)for(const r of old.runs)if(r.cv&&!G.runs.some(q=>q.cv===r.cv)){r.cv.width=r.cv.height=0;}
- C._layer=G;return G;}
+// the ground as tiles: TILE px squares in "layer space" (pixels at zoom kc with the world origin at 0,0), one canvas per
+// still run, painted a few a frame just before they come into view. A zoom change starts a new set at the new kc while the
+// old set still covers anything not painted yet (drawn scaled, only where the new set has a hole), so no frame ever has to
+// repaint the whole ground. A camera that stops at another zoom gets a set at exactly its zoom (1:1 copies, whole pixels).
+const MAXDIM=4096,EXACT=.002,STILL_N=8,TILE=256,TILE_MAX=160,PAINT_MOVING=2,PAINT_STILL=4;
+function tileSet(kc){return {kc,map:new Map(),painted:0};}
+function groundTiles(C,course,cam,W,H,st,still){
+ const runs=groundRuns(C,course),ver=S.version?S.version():0;let G=C._tiles;
+ if(!G||G.rot!==cam.rot||G.ver!==ver){if(G)freeSet(G.cur),G.prev&&freeSet(G.prev);G=C._tiles={rot:cam.rot,ver,cur:tileSet(cam.k),prev:null,fresh:true};}
+ const s=cam.k/G.cur.kc;let want=0;
+ if(s>1.1)want=cam.k*(still?1:1.15);else if(s<.8)want=cam.k;else if(still&&Math.abs(s-1)>=EXACT)want=cam.k;
+ if(want){// keep whichever older set covers more as the stand-in
+  if(G.prev&&G.prev.painted>=G.cur.painted)freeSet(G.cur);else{if(G.prev)freeSet(G.prev);G.prev=G.cur;}
+  G.cur=tileSet(want);}
+ G.runs=runs;return G;}
+function freeSet(set){for(const t of set.map.values())for(const cv of t.cvs)if(cv)cv.width=cv.height=0;set.map.clear();}
+function tileRange(set,cam,W,H,margin){const [ox,oy]=proj(cam,W,H,0,0,0),u=TILE*cam.k/set.kc;
+ return {ox,oy,u,i0:Math.floor((-margin-ox)/u),i1:Math.floor((W+margin-ox)/u),j0:Math.floor((-margin-oy)/u),j1:Math.floor((H+margin-oy)/u)};}
+function paintTile(G,set,i,j,st,cam){
+ const lc={x:0,y:0,k:set.kc,rot:cam.rot},n=TILE+2,cvs=G.runs.map(run=>{if(run.anim)return null;const cv=canvas(n,n),g=cv.getContext('2d');
+  g._drew=false;for(const f of run.steps){g.setTransform(1,0,0,1,0,0);f(g,-2*(i*TILE-1),-2*(j*TILE-1),lc,st);}g.setTransform(1,0,0,1,0,0);
+  if(!g._drew){cv.width=cv.height=0;return null;}return cv;});
+ const t={cvs,i,j};set.map.set(i+','+j,t);set.painted++;
+ if(set.map.size>TILE_MAX){// drop the tile furthest from this one
+  let far=null,fd=-1;for(const [k,q] of set.map){const d=Math.abs(q.i-i)+Math.abs(q.j-j);if(d>fd){fd=d;far=k;}}const q=set.map.get(far);for(const cv of q.cvs)if(cv)cv.width=cv.height=0;set.map.delete(far);}
+ return t;}
+// paint what this frame needs (and a few more round the view), then draw run r
+function prepareTiles(G,cam,W,H,st,still){
+ const cur=G.cur,R=tileRange(cur,cam,W,H,0),need=[],ahead=[];
+ for(let j=R.j0;j<=R.j1;j++)for(let i=R.i0;i<=R.i1;i++)if(!cur.map.has(i+','+j))need.push([i,j]);
+ // nothing to stand in for the missing ones (first frame of a hole): paint them all now
+ let budget=still?PAINT_STILL:PAINT_MOVING;const cx=(W/2-R.ox)/R.u,cy=(H/2-R.oy)/R.u,by=(a,b)=>Math.hypot(a[0]+.5-cx,a[1]+.5-cy)-Math.hypot(b[0]+.5-cx,b[1]+.5-cy);
+ need.sort(by);
+ if(!G.prev)for(const [i,j] of need)paintTile(G,cur,i,j,st,cam);
+ else for(const [i,j] of need){if(budget>0){budget--;paintTile(G,cur,i,j,st,cam);}else if(!covers(G.prev,cam,W,H,R.ox+i*R.u,R.oy+j*R.u,R.u))paintTile(G,cur,i,j,st,cam);}
+ if(budget>0){const A=tileRange(cur,cam,W,H,TILE*cam.k/cur.kc);for(let j=A.j0;j<=A.j1;j++)for(let i=A.i0;i<=A.i1;i++)if(!cur.map.has(i+','+j))ahead.push([i,j]);
+  ahead.sort(by);for(const [i,j] of ahead){if(budget<=0)break;budget--;paintTile(G,cur,i,j,st,cam);}}
+ // the old set can go once the new one covers the screen
+ if(G.prev){let full=true;for(let j=R.j0;j<=R.j1&&full;j++)for(let i=R.i0;i<=R.i1;i++)if(!cur.map.has(i+','+j)){full=false;break;}if(full){freeSet(G.prev);G.prev=null;}}
+ return R;}
+// does the set hold every tile under this screen square?
+function covers(set,cam,W,H,sx,sy,su){const [ox,oy]=proj(cam,W,H,0,0,0),u=TILE*cam.k/set.kc;
+ for(let j=Math.floor((sy-oy)/u);j<=Math.floor((sy+su-1e-6-oy)/u);j++)for(let i=Math.floor((sx-ox)/u);i<=Math.floor((sx+su-1e-6-ox)/u);i++)if(!set.map.has(i+','+j))return false;return true;}
+function drawTileSet(x,set,r,cam,W,H,holes){
+ const R=tileRange(set,cam,W,H,0),exact=Math.abs(R.u/TILE-1)<EXACT,rx=Math.round(R.ox),ry=Math.round(R.oy);
+ for(let j=R.j0;j<=R.j1;j++)for(let i=R.i0;i<=R.i1;i++){const t=set.map.get(i+','+j);if(!t||!t.cvs[r])continue;
+  let x0,y0,x1,y1;if(exact){x0=rx+i*TILE;y0=ry+j*TILE;x1=x0+TILE;y1=y0+TILE;}else{x0=Math.round(R.ox+i*R.u);y0=Math.round(R.oy+j*R.u);x1=Math.round(R.ox+(i+1)*R.u);y1=Math.round(R.oy+(j+1)*R.u);}
+  if(holes&&!holes.some(h=>x0<h[2]&&x1>h[0]&&y0<h[3]&&y1>h[1]))continue;
+  x.drawImage(t.cvs[r],1,1,TILE,TILE,x0,y0,x1-x0,y1-y0);}}
+function drawGround(x,G,R,r,cam,W,H){
+ if(G.prev){// holes in the new set, filled from the old one (clipped so nothing is drawn twice)
+  const holes=[];for(let j=R.j0;j<=R.j1;j++)for(let i=R.i0;i<=R.i1;i++)if(!G.cur.map.has(i+','+j))holes.push([Math.round(R.ox+i*R.u),Math.round(R.oy+j*R.u),Math.round(R.ox+(i+1)*R.u),Math.round(R.oy+(j+1)*R.u)]);
+  if(holes.length){x.save();x.beginPath();for(const h of holes)x.rect(h[0],h[1],h[2]-h[0],h[3]-h[1]);x.clip();drawTileSet(x,G.prev,r,cam,W,H,holes);x.restore();}}
+ drawTileSet(x,G.cur,r,cam,W,H,null);}
 // ---- the still standing things, each in its own sprite (sorted per frame with the moving ones)
 function standingSprites(C,course,cam,still){
  const ck='_sp'+cam.rot,ver=S.version?S.version():0;let SP=C[ck];
@@ -233,7 +272,7 @@ function standingSprites(C,course,cam,still){
   SP=C[ck]={list,live,kc:0,ver:-1};}
  // zoom of the sprites: repaint them (a few a frame) when the view is sharper than them or much smaller
  if(!SP.kc||cam.k>SP.kc*1.12||cam.k<SP.kc/1.6||SP.ver!==ver||(still&&Math.abs(cam.k/SP.kc-1)>=EXACT)){SP.kc=cam.k*(SP.kc&&cam.k>SP.kc*1.12&&!still?1.3:1);SP.ver=ver;}
- SP.redraw=SP.list.some(it=>!it.sp)?1e9:still?40:14;
+ SP.redraw=SP.list.some(it=>!it.sp)?1e9:still?12:4;
  for(const it of SP.list)if(!it.sp)paintSprite(it,SP.kc,cam.rot,SP.ver);
  return SP;}
 function paintSprite(it,kc,rot,ver){
@@ -250,8 +289,15 @@ function paintSprite(it,kc,rot,ver){
  it.draw(g,-2*bx,-2*by,c0);g.setTransform(1,0,0,1,0,0);
  if(old&&old!==cv)old.width=old.height=0;
  it.sp={cv,kc,ver,bx,by};}
-function drawStars(x,W,H,cam,T){const R=rnd(77);for(let i=0;i<160;i++){const px=R(),py=R(),d=.15+R()*.5,X=((px*W*2-cam.x*cam.k*d*.2)%W+W)%W,Y=((py*H*2-cam.y*cam.k*d*.2)%H+H)%H,tw=.5+.5*Math.sin(T*2+i);x.fillStyle=`rgba(255,255,255,${(.35+d)*tw})`;x.fillRect(X,Y,d*3,d*3);}
- const g=x.createRadialGradient(W*.8,H*.2,10,W*.8,H*.2,W*.5);g.addColorStop(0,'rgba(140,60,255,.25)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,W,H);
+// space backdrop: the star field is painted once and slid (wrapping) with the camera; a few stars twinkle live
+let STARS=null;
+function drawStars(x,W,H,cam,T){
+ if(!STARS||STARS.w!==W||STARS.h!==H){const c=canvas(W,H),g=c.getContext('2d');g.fillStyle='#03021a';g.fillRect(0,0,W,H);const R=rnd(77);
+  for(let i=0;i<160;i++){const px=R(),py=R(),d=.15+R()*.5;g.fillStyle=`rgba(255,255,255,${(.35+d)*.7})`;g.fillRect(px*W,py*H,d*3,d*3);}STARS={c,w:W,h:H};}
+ const ox=Math.round(((-(cam.rot?-cam.y:cam.x)*cam.k*.08)%W+W)%W),oy=Math.round(((-(cam.rot?cam.x:cam.y)*cam.k*.08)%H+H)%H);
+ for(const dx of [ox-W,ox])for(const dy of [oy-H,oy])if(dx<W&&dx+W>0&&dy<H&&dy+H>0)x.drawImage(STARS.c,dx,dy);
+ const R=rnd(91);for(let i=0;i<14;i++){const px=R()*W,py=R()*H,tw=.5+.5*Math.sin(T*2+i*1.7);x.fillStyle=`rgba(255,255,255,${.8*tw})`;x.fillRect((px+ox)%W,(py+oy)%H,2,2);}
+ const gx=W*.8,gy=H*.2,gr=W*.5,g=x.createRadialGradient(gx,gy,10,gx,gy,gr);g.addColorStop(0,'rgba(140,60,255,.25)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(gx-gr,gy-gr,gr*2,gr*2);
  x.fillStyle='#e8a04a';x.beginPath();x.arc(W*.12,H*.18,Math.min(W,H)*.07,0,7);x.fill();x.fillStyle='rgba(0,0,0,.25)';x.beginPath();x.arc(W*.12+Math.min(W,H)*.025,H*.18,Math.min(W,H)*.07,0,7);x.fill();}
 // fill the screen quad a,b,c,d with a strip pattern running along the world edge (x1,y1)->(x2,y2)
 function faceQuad(x,a,b,c,d,pat,x1,y1,x2,y2,cam,W,H){
@@ -288,6 +334,8 @@ function drawBumper(x,W,H,cam,p,since){
 }
 function flat(x,W,H,cam,name,cx,cy,z,w,ang,fb){
  // a picture lying on the ground centred on (cx,cy), w units across, turned by ang (radians, in world)
+ {const [X,Y]=proj(cam,W,H,cx,cy,z),r=w*cam.k;if(X+r<0||Y+r<0||X-r>x.canvas.width||Y-r>x.canvas.height)return;}
+ x._drew=true;
  const A=aff(cam,W,H,z);x.setTransform(...A);x.translate(cx,cy);if(ang)x.rotate(ang);
  let img=S.picture(name);const def=S.PICTURES[name];
  if(img&&def){img=shrunk(img,w*cam.k/((def.frame?def.frame[0]:def.size[0])*img.width/def.size[0]));const fw=def.frame?def.frame[0]:def.size[0],fh=def.frame?def.frame[1]:def.size[1],k=img.width/def.size[0],h=w*fh/fw,f=fb&&fb.frame||0;x.drawImage(img,f*fw*k,0,fw*k,fh*k,-w/2,-h/2,w,h);}

@@ -33,7 +33,7 @@ const limitOf=h=>h.par+3;           // most strokes on a hole; not holed by then
 const ptsOf=(h,n)=>30*(h.par+4-n);  // points (higher = better) for the launcher; only strokes count
 
 async function minigolf(s){
- const [c,x]=s.canvas(720,1280,{fill:true});const fb=fullBleed(s,{bg:'#0b1a10'});s.body.classList.add('drag-arena-body');s.controls([]);s.ownHud?.(true,true);
+ const [c,x0]=s.canvas(720,1280,{fill:true});let x=x0;const fb=fullBleed(s,{bg:'#0b1a10'});s.body.classList.add('drag-arena-body');s.controls([]);s.ownHud?.(true,true);
  SP.preloadMinigolf();
  const net=isOnline(s)?s.online:null,me=net?net.me:-1,cpu=isCpu(s),snd=createSound();if(net)s.hotseat=true;s.cleanup(()=>snd.stop());
  const board=!store.arcade,np=2,human=i=>!(cpu&&i===1)&&!(net&&i!==me);
@@ -198,7 +198,9 @@ async function minigolf(s){
   else if(phase==='aim'||phase==='wait'||phase==='sunk'||phase==='penalty')goal=(phase==='aim'||phase==='wait')&&balls[turn]&&!balls[turn].done?frame('aim'):tcam||frame('overview');
   else goal=frame('overview');
   if(phase==='aim'||phase==='roll')tcam=goal;
-  const a=1-Math.exp(-dt*(phase==='roll'?6:camMode==='manual'?20:3.2));cam.x+=(goal.x-cam.x)*a;cam.y+=(goal.y-cam.y)*a;cam.k+=(goal.k-cam.k)*a;}
+  const a=1-Math.exp(-dt*(phase==='roll'?6:camMode==='manual'?20:3.2));cam.x+=(goal.x-cam.x)*a;cam.y+=(goal.y-cam.y)*a;cam.k+=(goal.k-cam.k)*a;
+  // nearly there = there: an easing camera never quite stops, and a still one lets the course drawing copy 1:1
+  if(Math.abs(goal.k-cam.k)<cam.k*.004&&Math.abs(goal.x-cam.x)*cam.k<.6&&Math.abs(goal.y-cam.y)*cam.k<.6){cam.x=goal.x;cam.y=goal.y;cam.k=goal.k;}}
  // ------------------------------------------------------------ drawing
  function drawWorld(){
   const parts=C.movers.length?P.moverParts(C,T):{segs:[],hazards:[]};const near=balls.some(bb=>!bb.done&&!bb.hidden&&Math.hypot(bb.b.x-hole.cup[0],bb.b.y-hole.cup[1])<14);
@@ -226,8 +228,14 @@ async function minigolf(s){
  function text(t,X,Y,size,col='#fff',align='left',font=UI,weight=900){x.font=`${weight} ${Math.round(size)}px ${font}`;x.textAlign=align;x.textBaseline='middle';x.fillStyle=col;x.fillText(t,X,Y);}
  function fitText(t,size,maxW,font=UI,weight=900){x.font=`${weight} ${Math.round(size)}px ${font}`;const w=x.measureText(t).width;return w>maxW?size*maxW/w:size;}
  function faceAt(i,cx,cy,size){x.save();x.beginPath();x.arc(cx,cy,size/2,0,7);x.fillStyle='#fff';x.fill();x.clip();balls[i]?.face?balls[i].face(x,cx,cy,size*1.05):faceFn(i)(x,cx,cy,size*1.05);x.restore();x.strokeStyle=COL[i];x.lineWidth=2.5;x.beginPath();x.arc(cx,cy,size/2,0,7);x.stroke();}
+ let hudCv=null,hudSig='',hudAt=0;
  function drawHUD(){
   uiHits=[];const top=Math.max(8,(fb.top||0)>0?6:6),rw=Math.max(110,(fb.top?150:0));
+  // the plate and the player chips are drawn into their own canvas and only redrawn when something on them changes
+  const pw0=Math.min(W-rw-14,300),fs0=clamp(W*.036,12,17),hh=Math.ceil(top+fs0*2.6+8+2*(fs0*2+6)+6),hw=Math.ceil(pw0+16);
+  const sig=[W,H,hi,turn,phase==='aim'||phase==='roll'||phase==='fin',balls.map(b=>b?[b.done?1:0,b.picked?1:0,b.strokes].join(':'):'').join(','),cards.map(r=>r.join(':')).join(','),moods.map(m=>m.m).join(','),s.players.map(p=>p.name).join(',')].join('|'),now=performance.now();
+  if(!hudCv||sig!==hudSig||now-hudAt>1000){hudSig=sig;hudAt=now;if(!hudCv)hudCv=document.createElement('canvas');hudCv.width=hw;hudCv.height=hh;x=hudCv.getContext('2d');
+   try{
   // hole plate (top-left)
   const pw=Math.min(W-rw-14,300),fs=clamp(W*.036,12,17);pill(8,top,pw,fs*2.6,'rgba(8,20,12,.78)','rgba(255,255,255,.15)');
   text(`HOLE ${hi+1}`,20,top+fs*.85,fs*.8,'#ffd23f');const nm=hole.name.toUpperCase();text(nm,20,top+fs*1.85,fitText(nm,fs*1.05,pw-90,FONT,400),'#fff','left',FONT,400);
@@ -236,6 +244,8 @@ async function minigolf(s){
   for(let i=0;i<2;i++){const y=top+fs*2.6+8+i*(fs*2+6),w=Math.min(pw,230),act=i===turn&&(phase==='aim'||phase==='roll'||phase==='fin');pill(8,y,w,fs*2,act?'rgba(0,0,0,.72)':'rgba(0,0,0,.45)',act?COL[i]:null);
    faceAt(i,8+fs,y+fs,fs*1.7);const nm2=s.players[i].name+(cpu&&i===1?' (CPU)':'');text(nm2,8+fs*2.2,y+fs,fitText(nm2,fs*.9,w-fs*2.2-70),'#fff');
    const st=balls[i]?.done?(balls[i].picked?'X':String(cards[i][hi])):String(balls[i]?.strokes||0);text(`${st} · ${toPar(i)}`,8+w-10,y+fs,fs*.85,act?'#ffd23f':'#cfd8d0','right');}
+   }finally{x=x0;}}
+  x.drawImage(hudCv,0,0);
   // eye button (bottom-left) = the whole hole
   const bs=Math.max(40,Math.min(52,W*.11)),by=H-bs-14;pill(12,by,bs,bs,overview?'rgba(255,210,63,.9)':'rgba(0,0,0,.55)','rgba(255,255,255,.3)');
   x.strokeStyle=overview?'#000':'#fff';x.lineWidth=2.5;x.beginPath();x.ellipse(12+bs/2,by+bs/2,bs*.3,bs*.18,0,0,7);x.stroke();x.beginPath();x.arc(12+bs/2,by+bs/2,bs*.09,0,7);x.fillStyle=overview?'#000':'#fff';x.fill();

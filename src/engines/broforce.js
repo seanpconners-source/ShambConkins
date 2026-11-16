@@ -35,7 +35,7 @@ const LAVA=11,SPIKE=12,PAD=13,GLASS=14,QBLOCK=15,PIPE=16,GOO=17,CRYST=18;
 const HP=[0,3,7,1e9,2,1,1,3,2,2,10,1e9,1e9,6,1,3,1e9,2,1];
 const SOLID=[0,1,1,1,1,0,1,1,0,1,1,0,0,1,1,1,1,1,1];
 const KC={T:16,ROWS:34,MAXW:260,G:19,E,DIRT,BRICK,STEEL,WOOD,LADDER,BARREL,BAGS,PLAT,CRATE,ROCK,LAVA,SPIKE,PAD,GLASS,QBLOCK,PIPE,GOO,CRYST,SOLID};
-const TURN_TIME=300,PAR=[80,95,120];
+const PAR=[80,95,120];
 const WEAPONS={
  rifle:{name:'ASSAULT RIFLE',rate:.1,dmg:1,speed:520,life:.55,tile:1},
  shotgun:{name:'SHOTGUN',rate:.48,dmg:1.4,speed:460,life:.26,tile:1,pellets:6,spread:.32},
@@ -1203,12 +1203,10 @@ async function broforce(s){
   outlined(g,s.players[P.i].name.toUpperCase().slice(0,10),m+50*u,m+14*u,{size:Math.round(11*u),fill:PCOL[P.i],stroke:'#000',align:'left'});
   outlined(g,P.score.toLocaleString(),m+50*u,m+31*u,{size:Math.round(17*u),fill:'#fff',stroke:'#000',align:'left'});
   outlined(g,`BROS ×${P.lives+(P.dead?0:1)}  💣${P.grenades}  ${'♥'.repeat(Math.max(0,P.hp))}`,m+50*u,m+46*u,{size:Math.round(9.5*u),fill:'#ffd0a0',stroke:'#000',align:'left'});
-  // top-centre: stage + clock
-  const left=Math.max(0,TURN_TIME-clock);
+  // top-centre: stage (no clock: a turn ends only when the bros run out)
   outlined(g,`STAGE ${stageIdx+1}/3 · ${theme.stages[stageIdx]}`,s.W/2,m+10*u,{size:Math.round(10*u),fill:'#fff',stroke:'#000'});
-  outlined(g,fmt(left),s.W/2,m+27*u,{size:Math.round(15*u),fill:left<30&&(frames>>4)%2?'#ff5a3a':'#ffe23a',stroke:'#000'});
   // progress strip
-  const bw=Math.min(s.W*.3,180*u),bx=s.W/2-bw/2,by=m+42*u;g.fillStyle='rgba(0,0,0,.45)';g.fillRect(bx,by,bw,4*u);
+  const bw=Math.min(s.W*.3,180*u),bx=s.W/2-bw/2,by=m+24*u;g.fillStyle='rgba(0,0,0,.45)';g.fillRect(bx,by,bw,4*u);
   g.fillStyle=PCOL[P.i];g.fillRect(bx,by,bw*clamp(P.x/(W.W*T),0,1),4*u);
   for(const cg of W.cages){g.fillStyle=cg.open?'#555':cg.vip?'#ffd84a':'#9cf';g.fillRect(bx+bw*cg.x/(W.W*T)-1.5*u,by-2*u,3*u,8*u);}
   // online: the partner's line, the edge arrow, the chopper countdown and what this bro is waiting for
@@ -1254,7 +1252,7 @@ async function broforce(s){
 
  // ---------------------------------------------------------------- debug hooks for tests
  s.debug={engine:'broforce',get phase(){return phase;},get turn(){return turn;},get stage(){return stageIdx;},get P(){return P;},get R(){return R;},get W(){return W;},get viewW(){return viewW();},STAGES,results,get clock(){return clock;},
-  setClock(v){clock=v;},teleport(x,y){if(!P)return;P.x=x;P.y=y??W.S.surfAt(Math.floor(x/T))*T;P.vx=P.vy=0;updateCamera(0,true);},
+  setClock(v){clock=v;},outOfBros(){if(!P||phase!=='play')return;P.lives=0;P.inv=0;if(!P.dead)killPlayer();},teleport(x,y){if(!P)return;P.x=x;P.y=y??W.S.surfAt(Math.floor(x/T))*T;P.vx=P.vy=0;updateCamera(0,true);},
   killAll(){for(const e of W.foes)if(e.alive)killFoe(e,P.x,false);},killBoss(){if(W.boss){W.boss.state='walk';hitBoss(999,P.x);}},
   freeCage(k){const cg=W.cages[k];if(cg)openCage(cg);},board(){W.heli.state='hover';W.heli.y=W.exit.y-6.5*T;Object.assign(P,{x:W.heli.x-8,y:W.exit.y,dead:0,hp:2,inv:2});},
   hurt(){hurtPlayer(2,P.x+1);},goStage(n){loadStage(n,true);updateCamera(0,true);},toBoss(){if(W.arena){P.x=W.arena.x0+5*T;P.y=W.S.surfAt(Math.floor(P.x/T))*T;P.vx=P.vy=0;updateCamera(0,true);}},immortal(on=true){P.inv=on?1e9:0;},autobot(){bot={t:0,stuck:0};},get boss(){return W?.boss;},mood(){return broMood(P);},head(id){return headCanvas(id);},renderFrom(url){return new Promise(r=>{const i=new Image();i.onload=()=>r(renderHead(i));i.onerror=()=>r(null);i.src=url;});},ids(){return require('src/characters.js').CHARACTERS.map(ch=>ch.id);},portrait(id){const u=require('src/assets.js').portraitURL(id,'normal');return String(u).slice(0,300);},get recruits(){return s.broforceRecruits;}};
@@ -1298,7 +1296,7 @@ async function broforce(s){
      const vw=viewW();if(net&&!host)stepNetFoes(STEP);
      else for(const e of W.foes){if(!e.alive)continue;if(!e.active&&(Math.abs(e.x-(cam.x+vw/2))<vw*.5+90||partnerHere()&&Math.abs(e.x-R.x)<partnerVW()*.5+90))e.active=true;if(e.active)updateFoe(e,STEP);}
      updateBoss(STEP);stepBullets(STEP);updateStage(STEP);
-     if(clock>=(theme.ext?420:TURN_TIME)&&phase==='play'){banner={big:'TIME UP',small:'',t:2};endTurn('time');}}
+     /* no time limit (owner, Nov 16): a turn ends on the chopper or when the bros run out */}
     else{stepBullets(STEP);const H=W.heli;if(H.state==='leave'){H.t+=STEP;H.y-=STEP*(40+H.t*90);H.x+=STEP*(30+H.t*120);}}
     updateCamera(STEP);
    }
