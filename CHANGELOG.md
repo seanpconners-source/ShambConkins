@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.99.13
+
+- **Sitabout Mini Golf, much lighter on the phone's graphics chip:** each frame used to draw from about 85 separate pictures (every 256-pixel piece of the course and every rail section had its own). Now the course is painted into one or two big sheets and all the rails, blocks and props share one or two more, so a frame draws from about 10. This is the biggest cause we could find of the low frame rate on phones.
+- **Full 120 fps when the phone can keep up:** on a 120 Hz screen the game now runs at the full rate, and drops to an even 60 for a few seconds only when frames keep arriving late (no more jerky in-between).
+- The FPS meter now also says when the game is holding itself at 60, and how many picture sheets the hole uses.
+
 ## v0.99.12
 
 - **Sitabout Mini Golf, steadier frame rate:** on fast-refresh screens (like the Fold's 120 Hz) the game now runs at an even 60 frames a second, so each frame gets the full time instead of landing on random screen refreshes. When a frame runs late, the background painting of the hole eases off for a moment.

@@ -348,24 +348,27 @@ async function minigolf(s){
   get bot(){return ()=>{if(phase==='loading')return '';if(phase==='menu'&&menu.go){menu.go();return 'menu';}if(phase==='intro'){flyT=99;return 'skip';}if(phase==='card'&&scoreUI&&cardT>.8){scoreUI.next();return 'card';}if(phase==='aim'&&myTurn())return s.debug.shoot(.6);return '';};},
   state(){return {phase,hole:hole?.key,turn,strokes:balls.map(b=>b.strokes),cards,points:plan?pointsNow():[0,0]};}};
  // ------------------------------------------------------------ frame pacing + the FPS meter (toggle on the course picker)
- const pace={last0:0,ivs:[],n:0,vs:16.7,lastDraw:0,acc:0,slowT:0,paintK:1,meter:(()=>{try{return !!localStorage.getItem('sc-mg-fps');}catch{return false;}})(),
+ const pace={last0:0,ivs:[],n:0,vs:16.7,lastDraw:0,acc:0,slowT:0,paintK:1,half:false,halfUntil:0,miss:[],meter:(()=>{try{return !!localStorage.getItem('sc-mg-fps');}catch{return false;}})(),
   win:[],jsWin:[],shown:null,frame(g){this.win.push([performance.now(),g]);},js(ms){this.jsWin.push(ms);}};
  function drawMeter(){const now=performance.now();while(pace.win.length&&now-pace.win[0][0]>1000)pace.win.shift();if(pace.jsWin.length>pace.win.length)pace.jsWin.splice(0,pace.jsWin.length-pace.win.length);
   if(!pace.shown||now-pace.shown.at>500){const g=pace.win.map(w=>w[1]),j=[...pace.jsWin].sort((a,b)=>a-b);pace.shown={at:now,fps:pace.win.length,worst:g.length?Math.max(...g):0,miss:g.filter(v=>v>24).length,
    js:j.length?j[Math.floor(j.length/2)]:0,js9:j.length?j[Math.floor(j.length*.9)]:0,hz:Math.round(1000/pace.vs),gfx:R.cacheStats(C)};}
-  const m=pace.shown,fs=11,lines=[`${m.fps} fps  (screen ${m.hz} Hz)`,`worst gap ${m.worst.toFixed(0)} ms · missed ${m.miss}`,`frame work ${m.js.toFixed(1)} / ${m.js9.toFixed(1)} ms`,`ground ${m.gfx.tiles} done ${m.gfx.todo} to go`];
+  const m=pace.shown,fs=11,lines=[`${m.fps} fps  (screen ${m.hz} Hz${pace.half?', held at 60':''})`,`worst gap ${m.worst.toFixed(0)} ms · missed ${m.miss}`,`frame work ${m.js.toFixed(1)} / ${m.js9.toFixed(1)} ms`,`ground ${m.gfx.todo?m.gfx.todo+' to paint':'ready'} · ${(m.gfx.pages||0)+(m.gfx.atlas||0)} sheets`];
   x.setTransform(1,0,0,1,0,0);const w=170,h=lines.length*14+8,X=W-w-8,Y=H-h-8;x.fillStyle='rgba(0,0,0,.7)';x.fillRect(X,Y,w,h);x.font=`700 ${fs}px monospace`;x.textAlign='left';x.textBaseline='top';
   lines.forEach((l,i)=>{x.fillStyle=i===0?(m.fps>=55?'#7dff8a':m.fps>=40?'#ffd23f':'#ff6b6b'):'#fff';x.fillText(l,X+6,Y+5+i*14);});}
  // ------------------------------------------------------------ main loop
- // frame pacing: on 120 Hz screens (the Fold) every other vsync is skipped, so frames come evenly at 60 and each gets the
- // whole 16.7 ms (a frame that ran past 8.3 ms used to land on a random later vsync = judder); the time skipped is added on
+ // frame pacing: full speed (120 on a 120 Hz screen) while frames keep up; if a fast screen keeps missing frames, drop to an
+ // even 60 (every other vsync) for a few seconds rather than land on random vsyncs (judder), then try full speed again
  s.frame((dt0,tS)=>{const t=tS*1000;
   if(pace.last0){const iv=t-pace.last0;if(iv>=4)pace.ivs.push(iv);if(pace.ivs.length>60)pace.ivs.shift();}pace.last0=t;pace.acc+=dt0;
   if(pace.ivs.length>=30&&++pace.n%30===0){const a=[...pace.ivs].sort((p,q)=>p-q);pace.vs=a[Math.floor(a.length*.15)];}
-  if(pace.lastDraw&&pace.vs<10.5&&t-pace.lastDraw<16.67-pace.vs*.5)return;
+  if(pace.half&&pace.lastDraw&&t-pace.lastDraw<16.67-pace.vs*.5)return;
   const gap=pace.lastDraw?t-pace.lastDraw:16.7;pace.lastDraw=t;const dt=Math.min(pace.acc,.05);pace.acc=0;
+  if(pace.vs<10.5){if(pace.half){if(t>pace.halfUntil){pace.half=false;pace.miss=[];}}
+   else{pace.miss.push(gap>pace.vs*1.6?1:0);if(pace.miss.length>60)pace.miss.shift();if(pace.miss.length>=40&&pace.miss.reduce((a,b)=>a+b,0)>pace.miss.length*.25){pace.half=true;pace.halfUntil=t+4000;}}}
+  else pace.half=false;
   // a missed frame turns the background painting down for a while (it is the one thing that can wait)
-  if(gap>24)pace.slowT=1.5;else pace.slowT=Math.max(0,pace.slowT-dt);pace.paintK=pace.slowT>0?.35:1;
+  if(gap>Math.max(24,pace.vs*2.5))pace.slowT=1.5;else pace.slowT=Math.max(0,pace.slowT-dt);pace.paintK=pace.slowT>0?.35:1;
   const f0=performance.now();pace.frame(gap);
   W=s.W;H=s.H;x.setTransform(1,0,0,1,0,0);
   if(phase==='loading'){T+=dt;drawLoading();return;}

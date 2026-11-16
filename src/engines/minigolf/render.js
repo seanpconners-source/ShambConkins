@@ -140,12 +140,17 @@ function drawHole(x,W,H,cam,st){
  if(st.trail&&st.trail.pts.length>1){const t=st.trail.pts;x.lineCap='round';for(let i=1;i<t.length;i++){const a=proj(cam,W,H,t[i-1][0],t[i-1][1],t[i-1][2]),b=proj(cam,W,H,t[i][0],t[i][1],t[i][2]);x.strokeStyle=st.trail.col;x.globalAlpha=.5*i/t.length;x.lineWidth=Math.max(2,cam.k*1.1*i/t.length);x.beginPath();x.moveTo(...a);x.lineTo(...b);x.stroke();}x.globalAlpha=1;}
  // sorted standing things: still ones from their sprites, moving ones drawn live
  const items=[],dcam=depth(cam.rot,cam.x,cam.y,0);
- const SP=standingSprites(C,course,cam,st),later=[];
+ const SP=standingSprites(C,course,cam,st),later=[],vis=[];
  for(const it of SP.list){const b1=it.b1,X0=ox+b1.bx*cam.k,Y0=oy+b1.by*cam.k;
-  if(X0>W||Y0>H||X0+b1.w*cam.k<0||Y0+b1.h*cam.k<0){if(!it.sp||it.sp.stale)later.push(it);continue;}
-  items.push({y:H/2+cam.k*(it.d-dcam),f:()=>{let q=it.sp;if((!q||q.stale)&&timeLeft()){paintSprite(it,SP.kc);q=it.sp;}
+  if(X0>W||Y0>H||X0+b1.w*cam.k<0||Y0+b1.h*cam.k<0){if(!it.sp||it.sp.stale)later.push(it);continue;}vis.push(it);}
+ // all of this frame's sprite painting before any drawing from the atlas (writing to a canvas that was just drawn from
+ // makes the browser copy it), the ones on screen first
+ for(const it of vis)if((!it.sp||it.sp.stale)&&timeLeft())paintSprite(it,SP);
+ for(const it of later){if(!timeLeft())break;paintSprite(it,SP);}
+ for(const it of vis){
+  items.push({y:H/2+cam.k*(it.d-dcam),f:()=>{const q=it.sp;
    if(!q){it.draw(x,W,H,cam);return;}// not painted yet: drawn live this frame
-   if(!q.cv)return;const t=cam.k/q.kc;if(Math.abs(t-1)<EXACT)x.drawImage(q.cv,Math.round(ox+q.bx),Math.round(oy+q.by));else x.drawImage(q.cv,ox+q.bx*t,oy+q.by*t,q.cv.width*t,q.cv.height*t);}});}
+   if(!q.cv)return;const t=cam.k/q.kc;if(Math.abs(t-1)<EXACT)x.drawImage(q.cv,q.sx,q.sy,q.w,q.h,Math.round(ox+q.bx),Math.round(oy+q.by),q.w,q.h);else x.drawImage(q.cv,q.sx,q.sy,q.w,q.h,ox+q.bx*t,oy+q.by*t,q.w*t,q.h*t);}});}
  for(const m of C.movers)moverItems(x,W,H,cam,st,m,items);
  for(const [i,p] of C.bumpers.entries()){const y=proj(cam,W,H,p.x,p.y+p.r,p.z)[1];items.push({y,f:()=>drawBumper(x,W,H,cam,p,st.T-(st.hit&&st.hit['b'+i]||-9))});}
  for(const m of C.magnets){const g=C.topAt(m.x,m.y),z=g?g.z:0;const [X,Y]=proj(cam,W,H,m.x,m.y-6,z);items.push({y:Y,f:()=>drawProp(x,'magnet',X,Y,18*cam.k,{t:st.T})});}
@@ -153,7 +158,6 @@ function drawHole(x,W,H,cam,st){
  {const cz=C.cupZ,[X,Y]=proj(cam,W,H,C.hole.cup[0],C.hole.cup[1],cz);items.push({y:Y+.02,f:()=>{if(st.flag===0)return;x.globalAlpha=st.flag??1;drawProp(x,'flag',X,Y,3.4*cam.k,{t:st.T,col:look.space?'#ffd23f':'#ff3b5c'});x.globalAlpha=1;}});}
  for(const bb of st.balls){if(bb.hidden)continue;const b=bb.b,gr=C.topAt(b.x,b.y),gz=b.air?(C.ground(b.x,b.y,b.z+.05)||{z:LAWN_Z}).z:b.z;const [X,Y]=proj(cam,W,H,b.x,b.y,gz);items.push({y:Y+.05,f:()=>drawBall(x,W,H,cam,bb,gz,gr)});}
  items.sort((a,b)=>a.y-b.y);for(const it of items){x.setTransform(1,0,0,1,0,0);it.f();}
- for(const it of later){if(!timeLeft())break;paintSprite(it,SP.kc);}
  // particles
  KREF=1;x.setTransform(1,0,0,1,0,0);for(const p of st.fx||[]){const [X,Y]=proj(cam,W,H,p.x,p.y,p.z);const r=Math.max(1,p.s*cam.k);x.globalAlpha=Math.max(0,Math.min(1,p.life/p.max*1.5));x.fillStyle=p.col;if(p.kind==='confetti'){x.save();x.translate(X,Y);x.rotate(p.r);x.fillRect(-r,-r*.4,r*2,r*.8);x.restore();}else{x.beginPath();x.arc(X,Y,r,0,7);x.fill();}}x.globalAlpha=1;
 }
@@ -189,9 +193,9 @@ function groundRuns(C,course){
 // is any of this green (with its skirt down to the lawn and its hills) on the canvas being drawn? (tiles skip the rest)
 function onCanvas(x,W,H,cam,g,grow=0){
  zRange(g);
- const x0=g.box[0]-grow,y0=g.box[1]-grow,x1=g.box[2]+grow,y1=g.box[3]+grow,cw=x.canvas.width,ch=x.canvas.height,pad=3*cam.k;let a=1e9,b=1e9,c=-1e9,d=-1e9;
+ const x0=g.box[0]-grow,y0=g.box[1]-grow,x1=g.box[2]+grow,y1=g.box[3]+grow,cr=x._cr,cx0=cr?cr[0]:0,cy0=cr?cr[1]:0,cw=cr?cr[2]:x.canvas.width,ch=cr?cr[3]:x.canvas.height,pad=3*cam.k;let a=1e9,b=1e9,c=-1e9,d=-1e9;
  for(const px of [x0,x1])for(const py of [y0,y1])for(const z of g._zr){const [X,Y]=proj(cam,W,H,px,py,z);a=Math.min(a,X);b=Math.min(b,Y);c=Math.max(c,X);d=Math.max(d,Y);}
- return c+pad>=0&&a-pad<=cw&&d+pad>=0&&b-pad<=ch;}
+ return c+pad>=cx0&&a-pad<=cw&&d+pad>=cy0&&b-pad<=ch;}
 // one green: skirt, top, shading, fringe, banks (anim=false) or only its moving surface (anim=true: water ripples, the void)
 function drawGreen(x,W,H,cam,st,g,waters,anim){
  const {C,course}=st,look=course.look,cid=course.id;
@@ -234,22 +238,39 @@ function zRange(g){if(!g._zr){const [x0,y0,x1,y1]=g.box,zs=[[x0,y0],[x1,y0],[x0,
 function extentOf(C,rot){const c1={x:0,y:0,k:1,rot};let a=1e9,b=1e9,c=-1e9,d=-1e9;
  for(const g of C.greens){const [x0,y0,x1,y1]=g.box,p=8;for(const px of [x0-p,x1+p])for(const py of [y0-p,y1+p])for(const z of zRange(g)){const [X,Y]=proj(c1,0,0,px,py,z);a=Math.min(a,X);b=Math.min(b,Y);c=Math.max(c,X);d=Math.max(d,Y);}}
  return a<c?[a,b,c,d]:[0,0,1,1];}
-const tkey=(i,j)=>(i+4096)*8192+(j+4096);
+// The ground lives in a few big PAGES (PAGE px square in layer space at the cache zoom kc), painted TILE px block by block
+// within the frame's time budget. Few big canvases instead of ~100 small ones: a phone's GPU draws a handful of textures a
+// frame quickly, but switching between (or re-uploading) dozens of them every frame was what kept the frame rate down.
+const PAGE=3840,BPP=PAGE/TILE;// 15 blocks: page + its 1 px rim stays under 4096 (the largest texture many phone GPUs take)
+const pkey=(i,j)=>(i+512)*1024+(j+512);
 function groundCache(C,course,cam,st){
  const ver=S.version?S.version():0;let kc=st.kc>0?st.kc:cam.k,G=C._ground;
- if(G&&(G.rot!==cam.rot||Math.abs(G.want/kc-1)>.2)){freeHole(C);G=null;}
+ if(G&&(G.rot!==cam.rot||Math.abs(G.want/kc-1)>.2)){freeGround(C);G=null;}
  if(!G){const runs=groundRuns(C,course),E=extentOf(C,cam.rot),nr=runs.filter(r=>!r.anim).length,area=(E[2]-E[0])*(E[3]-E[1])*nr*kc*kc;
   // big screen + long hole: a softer cache rather than ~100 MB of canvases (the camera rarely sits that close anyway)
   if(area>GROUND_PX)kc*=Math.sqrt(GROUND_PX/area);const kl=Math.min(kc*LOW_K,LOW_MAX/Math.max(1,E[2]-E[0]),LOW_MAX/Math.max(1,E[3]-E[1]));
-  G=C._ground={rot:cam.rot,want:st.kc>0?st.kc:cam.k,kc,ver,runs,E,low:{k:kl,cvs:null,stale:true,x0:0,y0:0},tiles:new Map(),i0:Math.floor(E[0]*kc/TILE),i1:Math.floor(E[2]*kc/TILE),j0:Math.floor(E[1]*kc/TILE),j1:Math.floor(E[3]*kc/TILE),fresh:true,todo:null};}
- if(G.ver!==ver){G.ver=ver;G.low.stale=true;for(const t of G.tiles.values())t.stale=true;G.todo=null;}
+  G=C._ground={rot:cam.rot,want:st.kc>0?st.kc:cam.k,kc,ver,runs,E,low:{k:kl,cvs:null,stale:true,x0:0,y0:0},pages:new Map(),
+   i0:Math.floor(E[0]*kc/TILE),i1:Math.floor(E[2]*kc/TILE),j0:Math.floor(E[1]*kc/TILE),j1:Math.floor(E[3]*kc/TILE),fresh:true,todo:null};}
+ if(G.ver!==ver){G.ver=ver;G.low.stale=true;for(const P of G.pages.values())P.fresh.fill(0);G.todo=null;}
  return G;}
+// the page holding block (i,j); made (empty) on first use. Its canvases cover the page plus 1 px all round (smooth scaling)
+// pages are counted from the hole's first block and trimmed to its last one (no canvas past the hole)
+function pageOf(G,i,j,make){const pi=Math.floor((i-G.i0)/BPP),pj=Math.floor((j-G.j0)/BPP),k=pkey(pi,pj);let P=G.pages.get(k);
+ if(!P&&make){const x0=(G.i0+pi*BPP)*TILE-1,y0=(G.j0+pj*BPP)*TILE-1,w=Math.min(PAGE+2,(G.i1+1)*TILE+1-x0),h=Math.min(PAGE+2,(G.j1+1)*TILE+1-y0);
+  P={pi,pj,x0,y0,w,h,cvs:G.runs.map(()=>null),drew:G.runs.map(()=>false),has:new Uint8Array(BPP*BPP),fresh:new Uint8Array(BPP*BPP)};G.pages.set(k,P);}
+ return P;}
+const bix=(G,i,j)=>((j-G.j0)%BPP)*BPP+((i-G.i0)%BPP);
+const isFresh=(G,i,j)=>{const P=pageOf(G,i,j,false);return !!P&&!!P.fresh[bix(G,i,j)];};
+const hasBlock=(G,i,j)=>{const P=pageOf(G,i,j,false);return !!P&&!!P.has[bix(G,i,j)];};
 // how far the one-time painting of this hole has got (tests / tuning)
-function cacheStats(C){const G=C&&C._ground;let tiles=0,todo=0,stale=0,px=0;if(G){for(let j=G.j0;j<=G.j1;j++)for(let i=G.i0;i<=G.i1;i++){const t=G.tiles.get(tkey(i,j));if(!t)todo++;else{tiles++;if(t.stale)stale++;for(const cv of t.cvs)if(cv)px+=cv.width*cv.height;}}}
- let sp=0,spDone=0;for(const ck of ['_sp0','_sp1']){const SP=C&&C[ck];if(SP)for(const it of SP.list){sp++;if(it.sp&&!it.sp.stale)spDone++;}}
- return {kc:G&&G.kc,tiles,todo,stale,mpx:+(px/1e6).toFixed(2),low:G&&G.low.cvs?G.low.cvs.filter(Boolean).map(c=>c.width+'x'+c.height).join(','):'',sprites:sp,spDone};}
-function freeHole(C){if(!C)return;const G=C._ground;if(G){for(const t of G.tiles.values())for(const cv of t.cvs)if(cv)cv.width=cv.height=0;G.tiles.clear();if(G.low.cvs)for(const cv of G.low.cvs)if(cv)cv.width=cv.height=0;C._ground=null;}
- for(const ck of ['_sp0','_sp1']){const SP=C[ck];if(SP){for(const it of SP.list)if(it.sp&&it.sp.cv)it.sp.cv.width=it.sp.cv.height=0;C[ck]=null;}}}
+function cacheStats(C){const G=C&&C._ground;let tiles=0,todo=0,stale=0,px=0,pages=0;
+ if(G){for(let j=G.j0;j<=G.j1;j++)for(let i=G.i0;i<=G.i1;i++){if(isFresh(G,i,j))tiles++;else{todo++;if(hasBlock(G,i,j))stale++;}}
+  for(const P of G.pages.values())for(const cv of P.cvs)if(cv){pages++;px+=cv.width*cv.height;}}
+ let sp=0,spDone=0,atlas=0;for(const ck of ['_sp0','_sp1']){const SP=C&&C[ck];if(SP){atlas+=SP.atlas.pages.filter(p=>p.cv).length;for(const pg of SP.atlas.pages)if(pg.cv)px+=pg.cv.width*pg.cv.height;for(const it of SP.list){sp++;if(it.sp&&!it.sp.stale)spDone++;}}}
+ return {kc:G&&G.kc,tiles,todo,stale,pages,mpx:+(px/1e6).toFixed(2),low:G&&G.low.cvs?G.low.cvs.filter(Boolean).map(c=>c.width+'x'+c.height).join(','):'',sprites:sp,spDone,atlas};}
+function freeGround(C){const G=C._ground;if(!G)return;for(const P of G.pages.values())for(const cv of P.cvs)if(cv)cv.width=cv.height=0;G.pages.clear();if(G.low.cvs)for(const cv of G.low.cvs)if(cv)cv.width=cv.height=0;C._ground=null;}
+function freeHole(C){if(!C)return;freeGround(C);
+ for(const ck of ['_sp0','_sp1']){const SP=C[ck];if(SP){for(const pg of SP.atlas.pages)if(pg.cv)pg.cv.width=pg.cv.height=0;for(const it of SP.list)if(it.slot&&it.slot.own)it.slot.cv.width=it.slot.cv.height=0;C[ck]=null;}}}
 // paint the static runs into canvases: W/H passed to the steps put layer pixel (lx,ly) at canvas (lx-x0, ly-y0)
 function paintRuns(G,k,x0,y0,w,h,st,old){
  // (KREF 1: these are painted at the cache zoom, so pictures are picked for the size they are painted at)
@@ -259,15 +280,23 @@ function paintRuns(G,k,x0,y0,w,h,st,old){
   if(!g._drew){cv.width=cv.height=0;return null;}return cv;});}finally{KREF=kr;}}
 function paintLow(G,st){const L=G.low,[a,b,c,d]=G.E;L.x0=Math.floor(a*L.k)-1;L.y0=Math.floor(b*L.k)-1;
  L.cvs=paintRuns(G,L.k,L.x0,L.y0,Math.ceil(c*L.k)+2-L.x0,Math.ceil(d*L.k)+2-L.y0,st,L.cvs);L.stale=false;}
-function paintTile(G,i,j,st){const old=G.tiles.get(tkey(i,j));
- const t={i,j,cvs:paintRuns(G,G.kc,i*TILE-1,j*TILE-1,TILE+2,TILE+2,st,old&&old.cvs),stale:false};G.tiles.set(tkey(i,j),t);return t;}
+// one TILE block of a page, every static run, clipped to the block (+1 px so neighbouring blocks and pages agree at the seams)
+function paintTile(G,i,j,st){const P=pageOf(G,i,j,true),b=bix(G,i,j),lc={x:0,y:0,k:G.kc,rot:G.rot},kr=KREF;KREF=1;
+ const cx=Math.max(0,i*TILE-1-P.x0),cy=Math.max(0,j*TILE-1-P.y0),cw=Math.min(P.w,i*TILE+TILE+1-P.x0)-cx,ch=Math.min(P.h,j*TILE+TILE+1-P.y0)-cy;
+ try{if(cw>0&&ch>0)G.runs.forEach((run,r)=>{if(run.anim)return;let cv=P.cvs[r];if(!cv)cv=P.cvs[r]=canvas(P.w,P.h);const g=cv.getContext('2d');
+  g.setTransform(1,0,0,1,0,0);g.save();g.beginPath();g.rect(cx,cy,cw,ch);g.clip();g.clearRect(cx,cy,cw,ch);g._cr=[cx,cy,cx+cw,cy+ch];g._drew=false;
+  try{for(const f of run.steps){g.setTransform(1,0,0,1,0,0);f(g,-2*P.x0,-2*P.y0,lc,st);}}finally{g.setTransform(1,0,0,1,0,0);g.restore();g._cr=null;}
+  if(g._drew)P.drew[r]=true;});}finally{KREF=kr;}
+ P.has[b]=1;P.fresh[b]=1;
+ // a run that drew nothing on the whole page keeps no canvas
+ if(P.fresh.every(v=>v))P.cvs.forEach((cv,r)=>{if(cv&&!P.drew[r]){cv.width=cv.height=0;P.cvs[r]=null;}});}
 function visRange(G,cam,W,H){const [ox,oy]=proj(cam,W,H,0,0,0),u=TILE*cam.k/G.kc;
  return {ox,oy,u,i0:Math.max(G.i0,Math.floor(-ox/u)),i1:Math.min(G.i1,Math.floor((W-ox)/u)),j0:Math.max(G.j0,Math.floor(-oy/u)),j1:Math.min(G.j1,Math.floor((H-oy)/u))};}
 const usesLow=(G,cam)=>cam.k<=G.low.k*1.25;
 // paint what the view needs first, then the rest of the hole, until this frame's time is up
 function paintGround(G,cam,W,H,st){
  if(G.low.stale)paintLow(G,st);
- const R=visRange(G,cam,W,H),need=(i,j)=>{const t=G.tiles.get(tkey(i,j));return !t||t.stale;};
+ const R=visRange(G,cam,W,H),need=(i,j)=>!isFresh(G,i,j);
  if(!usesLow(G,cam)){const vis=[];for(let j=R.j0;j<=R.j1;j++)for(let i=R.i0;i<=R.i1;i++)if(need(i,j))vis.push([i,j]);
   const cx=(W/2-R.ox)/R.u,cy=(H/2-R.oy)/R.u;vis.sort((p,q)=>Math.hypot(p[0]+.5-cx,p[1]+.5-cy)-Math.hypot(q[0]+.5-cx,q[1]+.5-cy));
   for(const [i,j] of vis){if(!timeLeft())return;paintTile(G,i,j,st);}}
@@ -275,16 +304,19 @@ function paintGround(G,cam,W,H,st){
  if(!G.todo){// everything else, nearest to the view first
   const cx=(W/2-R.ox)/R.u,cy=(H/2-R.oy)/R.u;G.todo=[];for(let j=G.j0;j<=G.j1;j++)for(let i=G.i0;i<=G.i1;i++)G.todo.push([i,j]);G.todo.sort((p,q)=>Math.hypot(p[0]+.5-cx,p[1]+.5-cy)-Math.hypot(q[0]+.5-cx,q[1]+.5-cy));G.ti=0;}
  while(G.ti<G.todo.length&&timeLeft()){const [i,j]=G.todo[G.ti++];if(need(i,j))paintTile(G,i,j,st);}}
+// one drawImage per visible page (its own core square, edges on whole screen pixels), the low copy under blocks not painted yet
 function drawGround(x,G,r,cam,W,H){
  const [ox,oy]=proj(cam,W,H,0,0,0),L=G.low;
  const low=()=>{const cv=L.cvs&&L.cvs[r];if(!cv)return;const t=cam.k/L.k;x.drawImage(cv,ox+L.x0*t,oy+L.y0*t,cv.width*t,cv.height*t);};
  if(usesLow(G,cam)){low();return;}
- const R=visRange(G,cam,W,H),exact=Math.abs(R.u/TILE-1)<EXACT,rx=Math.round(ox),ry=Math.round(oy),holes=[];
- for(let j=R.j0;j<=R.j1;j++)for(let i=R.i0;i<=R.i1;i++){let x0,y0,x1,y1;
-  if(exact){x0=rx+i*TILE;y0=ry+j*TILE;x1=x0+TILE;y1=y0+TILE;}else{x0=Math.round(ox+i*R.u);y0=Math.round(oy+j*R.u);x1=Math.round(ox+(i+1)*R.u);y1=Math.round(oy+(j+1)*R.u);}
-  const t=G.tiles.get(tkey(i,j));if(!t){holes.push([x0,y0,x1-x0,y1-y0]);continue;}
-  const cv=t.cvs[r];if(cv)x.drawImage(cv,1,1,TILE,TILE,x0,y0,x1-x0,y1-y0);}
- if(holes.length){x.save();x.beginPath();for(const h of holes)x.rect(...h);x.clip();low();x.restore();}}
+ const R=visRange(G,cam,W,H),s=cam.k/G.kc,exact=Math.abs(s-1)<EXACT,sx=v=>exact?Math.round(ox)+v:Math.round(ox+v*s),sy=v=>exact?Math.round(oy)+v:Math.round(oy+v*s),holes=[];
+ for(let j=R.j0;j<=R.j1;j++)for(let i=R.i0;i<=R.i1;i++)if(!hasBlock(G,i,j)){const X0=sx(i*TILE),Y0=sy(j*TILE);holes.push([X0,Y0,sx(i*TILE+TILE)-X0,sy(j*TILE+TILE)-Y0]);}
+ if(holes.length){x.save();x.beginPath();for(const h of holes)x.rect(...h);x.clip();low();x.restore();}
+ const pi0=Math.floor((R.i0-G.i0)/BPP),pi1=Math.floor((R.i1-G.i0)/BPP),pj0=Math.floor((R.j0-G.j0)/BPP),pj1=Math.floor((R.j1-G.j0)/BPP);
+ for(let pj=pj0;pj<=pj1;pj++)for(let pi=pi0;pi<=pi1;pi++){const P=G.pages.get(pkey(pi,pj)),cv=P&&P.cvs[r];if(!cv)continue;
+  const a=P.x0+1,b=P.y0+1,c=Math.min(a+PAGE,P.x0+P.w-1),d=Math.min(b+PAGE,P.y0+P.h-1);if(c<=a||d<=b)continue;
+  const X0=sx(a),Y0=sy(b);x.drawImage(cv,a-P.x0,b-P.y0,c-a,d-b,X0,Y0,sx(c)-X0,sy(d)-Y0);}}
+
 // ---- the still standing things, each in its own sprite at the same fixed zoom kc (sorted per frame with the moving ones)
 function spriteBox(it,kc){
  const c0={x:0,y:0,k:kc,rot:it.rot};let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
@@ -305,16 +337,32 @@ function standingSprites(C,course,cam,st){
    list.push({rot,d,pts,draw:(x,W,H,cam)=>drawBlock(x,W,H,cam,b.pts,b.base,b.top,b.look,look)});}
   for(const dd of decorFor(C,look,rot)){const k=dd.k==='flag-sign'?'sign':dd.k;if(k==='beacon'&&!S.has(k)){live.push(dd);continue;}
    const g=C.topAt(dd.x,dd.y),z=g?g.z:LAWN_Z;list.push({rot,d:depth(rot,dd.x,dd.y,z),prop:{k,x:dd.x,y:dd.y,z,w:dd.w,text:dd.text},draw:(x,W,H,cam)=>{const [X,Y]=proj(cam,W,H,dd.x,dd.y,z);drawProp(x,k,X,Y,dd.w*cam.k,{t:0,text:dd.text});}});}
-  SP=C[ck]={list,live,kc,ver:-1};}
- if(SP.ver!==ver||Math.abs(SP.kc/kc-1)>.2){SP.ver=ver;SP.kc=kc;for(const it of SP.list){it.b1=spriteBox(it,1);if(it.sp)it.sp.stale=true;}}
+  SP=C[ck]={list,live,kc,ver:-1,atlas:{pages:[]}};}
+ if(SP.ver!==ver||Math.abs(SP.kc/kc-1)>.2){const repack=Math.abs(SP.kc/kc-1)>.2||!SP.packed;SP.ver=ver;SP.kc=kc;for(const it of SP.list){it.b1=spriteBox(it,1);if(it.sp)it.sp.stale=true;}
+  // every sprite gets its place in the atlas up front, tallest first (shelves stay full: ~1/3 the atlas memory of packing as they come)
+  if(repack){for(const pg of SP.atlas.pages)if(pg.cv)pg.cv.width=pg.cv.height=0;for(const it of SP.list){if(it.slot&&it.slot.own)it.slot.cv.width=it.slot.cv.height=0;it.slot=null;it.sp=null;}SP.atlas={pages:[]};SP.packed=true;
+   const bx=SP.list.map(it=>[it,spriteBox(it,kc)]).filter(([,b])=>b.w>0&&b.h>0&&isFinite(b.w+b.h)).sort((a,b)=>b[1].h-a[1].h);
+   for(const [it,b] of bx)it.slot={...atlasSpot(SP.atlas,b.w,b.h),cw:b.w,ch:b.h};}}
  return SP;}
-function paintSprite(it,kc){
- const {bx,by,w,h}=spriteBox(it,kc),old=it.sp&&it.sp.cv;
- if(!(w>0&&h>0)||!isFinite(w+h)){if(old)old.width=old.height=0;it.sp={cv:null,kc,bx:0,by:0};return;}
- const cv=old&&old.width===w&&old.height===h?old:canvas(w,h),g=cv.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,w,h);
- const kr=KREF;KREF=1;try{it.draw(g,-2*bx,-2*by,{x:0,y:0,k:kc,rot:it.rot});}finally{KREF=kr;}g.setTransform(1,0,0,1,0,0);
- if(old&&old!==cv)old.width=old.height=0;
- it.sp={cv,kc,bx,by};}
+// sprites share a few ATLAS px square canvases (shelf packing, 2 px gaps); one bigger than a page gets its own canvas
+const ATLAS=2048,GAP=2;
+// a place for a w x h sprite: {pg,sx,sy} on an atlas page (its canvas is made, at the size actually used, when first painted;
+// a page with a canvas takes no more sprites) or {cv,own} for one too big for a page
+function atlasSpot(A,w,h){
+ if(w+GAP>ATLAS||h+GAP>ATLAS)return {cv:canvas(w,h),sx:0,sy:0,own:true};
+ const fit=pg=>{if(pg.cv)return null;for(const sh of pg.shelves)if(h<=sh.h&&sh.x+w+GAP<=ATLAS){const at={pg,sx:sh.x,sy:sh.y};sh.x+=w+GAP;pg.wmax=Math.max(pg.wmax,sh.x);return at;}
+  if(pg.y+h+GAP<=ATLAS){const sh={y:pg.y,h,x:w+GAP};pg.shelves.push(sh);pg.y+=h+GAP;pg.wmax=Math.max(pg.wmax,sh.x);return {pg,sx:0,sy:sh.y};}return null;};
+ for(const pg of A.pages){const at=fit(pg);if(at)return at;}
+ const pg={cv:null,shelves:[],y:0,wmax:0};A.pages.push(pg);return fit(pg);}
+const slotCanvas=at=>at.own?at.cv:(at.pg.cv||(at.pg.cv=canvas(Math.max(1,at.pg.wmax),Math.max(1,at.pg.y))));
+function paintSprite(it,SP){
+ const kc=SP.kc,{bx,by,w,h}=spriteBox(it,kc);
+ if(!(w>0&&h>0)||!isFinite(w+h)){it.sp={cv:null,kc,bx:0,by:0,sx:0,sy:0,w:0,h:0};return;}
+ let at=it.slot&&w<=it.slot.cw&&h<=it.slot.ch?it.slot:null;
+ if(!at){if(it.slot&&it.slot.own)it.slot.cv.width=it.slot.cv.height=0;at=it.slot={...atlasSpot(SP.atlas,w,h),cw:w,ch:h};}
+ const cv=slotCanvas(at),g=cv.getContext('2d');g.setTransform(1,0,0,1,0,0);g.save();g.beginPath();g.rect(at.sx,at.sy,w,h);g.clip();g.clearRect(at.sx,at.sy,w,h);
+ const kr=KREF;KREF=1;try{it.draw(g,2*(at.sx-bx),2*(at.sy-by),{x:0,y:0,k:kc,rot:it.rot});}finally{KREF=kr;g.setTransform(1,0,0,1,0,0);g.restore();}
+ it.sp={cv,sx:at.sx,sy:at.sy,w,h,kc,bx,by};}
 // space backdrop: the star field is painted once and slid (wrapping) with the camera; a few stars twinkle live
 let STARS=null;
 function drawStars(x,W,H,cam,T){
@@ -360,7 +408,7 @@ function drawBumper(x,W,H,cam,p,since){
 }
 function flat(x,W,H,cam,name,cx,cy,z,w,ang,fb){
  // a picture lying on the ground centred on (cx,cy), w units across, turned by ang (radians, in world)
- {const [X,Y]=proj(cam,W,H,cx,cy,z),r=w*cam.k;if(X+r<0||Y+r<0||X-r>x.canvas.width||Y-r>x.canvas.height)return;}
+ {const [X,Y]=proj(cam,W,H,cx,cy,z),r=w*cam.k;const cr=x._cr;if(cr?(X+r<cr[0]||Y+r<cr[1]||X-r>cr[2]||Y-r>cr[3]):(X+r<0||Y+r<0||X-r>x.canvas.width||Y-r>x.canvas.height))return;}
  x._drew=true;
  const A=aff(cam,W,H,z);x.setTransform(...A);x.translate(cx,cy);if(ang)x.rotate(ang);
  let img=S.picture(name);const def=S.PICTURES[name];

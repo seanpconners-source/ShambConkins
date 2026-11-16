@@ -2,6 +2,18 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+v0.99.13 (Nov 16): MINIGOLF TEXTURES (owner: still ~14 fps on the Fold at 120 Hz, screenshot of the meter): a frame drew from
+~83 distinct canvases (256 px ground tiles x runs + one canvas per rail/block/prop sprite) = per-frame texture binds/uploads on
+a phone GPU. render.js now: ground PAGES (PAGE 3840 = 15 TILE blocks, +1 px rim = under 4096 max texture; counted from G.i0/j0,
+trimmed to the hole) painted block by block (paintTile clips to the block, x._cr makes onCanvas/flat cull to it), drawGround
+= one drawImage per visible page per run; sprites in shelf-packed ATLAS 2048 pages (atlasSpot; all slots packed tallest first
+when the sprite set is (re)made; page canvas made at its used size; >2048 own canvas); sprite painting runs before any atlas
+draw in a frame (no copy-on-write). Census (scratch census.mjs, 905x1000): drawImage sources/frame 83 -> 8-11. puttPutt pace:
+full rate on 120 Hz; >25% of 40 frames late (gap > 1.6 vsync) -> hold at 60 for 4 s (pace.half). Old-vs-new screenshots of all
+18 holes match (390x780); minigolf.mjs + golf fuzz pass. Still not measured on a real phone: ask for an FPS-meter screenshot.
+BG PICKER BATCH 07 (in progress): 45 backgrounds + KEY_BOX on branch bg-batch07 (worktree scratchpad wt/, not pushed yet);
+measure split over 4 OUT dirs (bgp, bgpB-E) to merge before assemble.py.
+
 v0.99.12 (Nov 16): MINIGOLF PACING (owner: better but still low fps on the Fold): puttPutt.js `pace` = 60 fps lock on >95 Hz
 screens (draws when vsync time since the last draw >= 16.67 - vsync/2; skipped vsyncs add their dt; vsync = 15th percentile of
 rAF intervals >= 4 ms), a missed frame (gap > 24 ms) sets pace.paintK .35 for 1.5 s (background tile painting), FPS METER toggle
