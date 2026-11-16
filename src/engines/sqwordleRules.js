@@ -6,5 +6,7 @@ function grade(guess,ans){const r=Array(COLS).fill(0),left={};
  for(let i=0;i<COLS;i++)if(r[i]!==2&&left[guess[i]]>0){r[i]=1;left[guess[i]]--;}
  return r;}
 // solved: fewer guesses first (100 a guess saved), then speed (up to 90 for under a minute and a half); a miss: 10 a blue tile
-const points=r=>r.win?100*(ROWS+1-r.n)+Math.max(0,90-Math.round(r.secs)):r.best*10;
-Object.assign(exports,{ROWS,COLS,grade,points});
+// each hint used (a letter shown in its spot) costs HINT_COST, never below 0
+const HINTS=2,HINT_COST=40;
+const points=r=>Math.max(0,(r.win?100*(ROWS+1-r.n)+Math.max(0,90-Math.round(r.secs)):r.best*10)-HINT_COST*(r.hints|0));
+Object.assign(exports,{ROWS,COLS,HINTS,HINT_COST,grade,points});

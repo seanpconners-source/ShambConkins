@@ -10,7 +10,8 @@ let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;
  check(g('sleep','shell')==='21200','S and the first E in place, L elsewhere, the second E and P grey'); check(g('allee','eagle')==='11012','the second L and the third E go grey once the answer\'s are used up');
  check(ANSWERS.length>=1500&&ANSWERS.every(w=>/^[a-z]{5}$/.test(w)&&VALID.has(w)),`${ANSWERS.length} answers, all real five-letter words the game accepts`);
  check(new Set(ANSWERS).size===ANSWERS.length,'no answer twice');check(VALID.size>10000,`${VALID.size} words accepted as guesses`);
- check(points({win:true,n:3,secs:30})>points({win:true,n:4,secs:5})&&points({win:true,n:3,secs:20})>points({win:true,n:3,secs:60})&&points({win:false,best:3})===30,'points: fewer guesses first, then the clock; a miss scores its blue tiles');}
+ check(points({win:true,n:3,secs:30})>points({win:true,n:4,secs:5})&&points({win:true,n:3,secs:20})>points({win:true,n:3,secs:60})&&points({win:false,best:3})===30,'points: fewer guesses first, then the clock; a miss scores its blue tiles');
+ check(points({win:true,n:3,secs:30,hints:1})===points({win:true,n:3,secs:30})-40&&points({win:false,best:1,hints:2})===0,'points: each hint costs 40, never below 0');}
 const browser=await launchBrowser();
 async function open(w,h,solo=false){const page=await (await browser.newContext({viewport:{width:w,height:h}})).newPage();page.__e=[];page.on('pageerror',e=>page.__e.push(e.message));
  await page.goto(await appURL(),{timeout:180000});await page.waitForSelector('.title-screen',{timeout:90000});await page.waitForFunction(()=>!document.getElementById('boot'),null,{timeout:90000});
@@ -27,6 +28,12 @@ for(const [w,h] of [[390,780],[844,390],[1100,700]]){const tag=`${w}x${h}`,page=
  check(b.rows===0&&b.cur==='qzxvj'&&b.shake,tag+' a word not in the list shakes and uses no row');
  check((await D(page,()=>window.ShambConkins.store.session.debug.react()?.mood))==='think',tag+' the head by the title looks puzzled');
  for(let k=0;k<5;k++)await page.keyboard.press('Backspace');
+ // the Hint pill: shows the first letter in its spot as a ghost in the row, turns its key blue, and counts down
+ {const hb=await D(page,()=>window.ShambConkins.store.session.debug.hintBtn),box=await page.locator('#game-layer canvas').first().boundingBox();
+  check(!!hb,tag+' a Hint pill on the info line');
+  if(hb){await page.mouse.click(box.x+hb.x+hb.w/2,box.y+hb.y+hb.h/2);await page.waitForTimeout(300);
+   const h=await D(page,()=>window.ShambConkins.store.session.debug.board.hints.slice());check(h.length===1&&h[0]===0,tag+' tapping Hint shows letter 1');
+   await page.screenshot({path:screenshotPath(`sqw-hint-${tag}.png`)});}}
  await page.screenshot({path:screenshotPath(`sqw-shake-${tag}.png`)});
  // one wrong guess typed on the drawn keys (tap them like a player)
  const wrong=ans==='crane'?'slate':'crane';
