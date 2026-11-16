@@ -19,6 +19,18 @@ end card. Our own logo (orange speech bubble); no art slots yet. Tests: tests/wn
 2 sizes with a real drag, 2P hand-off), online-native words-n-shit ± LAG, games.mjs fuzz. SQWORDLE HINT: sqwordleRules HINTS 2 /
 HINT_COST 40 (points never below 0), Hint pill on the info line (L.hintBtn) = leftmost unsolved spot as a ghost letter + blue key,
 result carries hints; tests/sqwordle.mjs checks it.
+MINIGOLF FRAME RATE (Nov 16, same branch, unreleased; owner: too low a framerate to play): render.js used to repaint the whole
+course every frame (lawn/green patterns, clipped rail faces with gradients, shading, big pictures) = ~18-30 fps at 4x CPU. The
+view is affine (camera = pan + zoom), so now: groundRuns = lawn/shadows/greens/still ground pieces painted into 1-2 screen-aligned
+layers round the view (margin .3 x screen, LAYER_PX 4.5M budget, world origin on a whole layer pixel), anim steps (water ripples,
+the void swirl, boost/conveyor/portal/lost ball) drawn live between them; standingSprites = every rail piece, block and scenery
+prop painted once into its own sprite, sorted per frame with the live things (movers, bumpers, magnets, flag, balls) by depth().
+Repaint: view leaves the layer, zoom 12% in (then 1.3x sharper) or 2x out, camera still for 8 frames at another zoom (exact 1:1
+copies, whole pixels), art version change (minigolfSprites version()), hole turn. shrunk(img,sc) = pictures drawn small (windmill,
+clown, gator, gopher, bumpers, balls, props) shrunk once in 1.25x steps. Also fixed: texture() kept a drawn stand-in forever if
+the picture loaded after first use (the turf/rail/space art often never showed). 4x CPU headless: plain holes 26 -> 50-58 fps,
+windmill/gator/spinner holes 17-24 -> 30-45 (rest = big live pictures + scaled layer copies, cheap on a phone GPU). Checked:
+cached vs fully repainted frames match on all 18 holes at 390x780 and 844x390 (only moving things differ). Not on a real phone.
 v0.99.0 (Nov 14): BASEKETBALL SHOOTOUT = the Megatouch Hoop Jones machine (owner's screenshot; Merit: time each shot,
 hoop moves back each round and side to side, 3 straight = lightning bonus). src/engines/hoopJones.js; engine key
 basketball2p (baseketball.js is now a 3-line hand-off; the movie-rules code is in git history before 0.99.0). Id

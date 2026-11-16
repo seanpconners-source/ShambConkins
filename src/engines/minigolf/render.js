@@ -20,10 +20,21 @@ const vOf=(cam,nx,ny)=>cam.rot?nx:ny;   // how much a ground direction points to
 const TEX=new Map();
 function rnd(seed){let n=seed>>>0||1;return ()=>{n^=n<<13;n^=n>>>17;n^=n<<5;return (n>>>0)/4294967296;};}
 function canvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+// a picture shrunk once to about the size it is drawn at (sc = drawn px per picture px; the art is 2x and bigger, and
+// shrinking a big picture every frame is slow on phones). Sizes come in steps of 1.25x, never smaller than drawn.
+const SHR=new WeakMap();
+function shrunk(img,sc){
+ if(!img||!(sc>0&&sc<.7))return img;
+ const b=Math.pow(1.25,Math.ceil(Math.log(sc)/Math.log(1.25)));let m=SHR.get(img);if(!m)SHR.set(img,m=new Map());let c=m.get(b);if(c)return c;
+ let src=img,w=img.width||img.naturalWidth,h=img.height||img.naturalHeight;const tw=Math.max(1,Math.round(w*b)),th=Math.max(1,Math.round(h*b));
+ while(w/2>=tw){const c2=canvas(Math.ceil(w/2),Math.ceil(h/2)),g=c2.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(src,0,0,c2.width,c2.height);src=c2;w=c2.width;h=c2.height;}
+ c=canvas(tw,th);const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(src,0,0,tw,th);
+ m.set(b,c);if(m.size>4)m.delete(m.keys().next().value);return c;}
 function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;if(f>0){r+=(255-r)*f;g+=(255-g)*f;b+=(255-b)*f;}else{r*=1+f;g*=1+f;b*=1+f;}return `rgb(${r|0},${g|0},${b|0})`;}
 function speckle(g,w,h,base,n,amp,r,seed){g.fillStyle=base;g.fillRect(0,0,w,h);const R=rnd(seed);for(let i=0;i<n;i++){g.fillStyle=shade(base,(R()-.5)*amp);const s=r*(.5+R());g.fillRect(R()*w,R()*h,s,s);}}
 function texture(key,look){
- if(TEX.has(key))return TEX.get(key);
+ // a drawn stand-in is replaced once the picture has loaded (it used to stay for good)
+ if(TEX.has(key)){const t=TEX.get(key);if(t.art||!S.picture(key.split('|')[0]))return t;}
  const art=S.picture(key.split('|')[0]);let c;
  if(art){c=art;}else{
   const [name,course]=key.split('|');c=canvas(256,256);const g=c.getContext('2d');
@@ -85,7 +96,7 @@ const FALLBACK={
 function drawProp(x,name,X,Y,wpx,o){
  const def=S.PICTURES[name],img=S.picture(name);
  if(img&&def){const sc=wpx/img.width,fx=def.foot?def.foot[0]/def.size[0]*img.width:img.width/2,fy=def.foot?def.foot[1]/def.size[1]*img.height:img.height;
-  x.drawImage(img,X-fx*sc,Y-fy*sc,img.width*sc,img.height*sc);return;}
+  x.drawImage(shrunk(img,sc),X-fx*sc,Y-fy*sc,img.width*sc,img.height*sc);return;}
  const f=FALLBACK[name];if(!f)return;x.save();x.translate(X,Y);x.scale(wpx,wpx);f(x,o);x.restore();
 }
 
@@ -104,63 +115,141 @@ function decorFor(C,look,rot){
 
 // ------------------------------------------------------------------ the frame
 // st = {C, course, T, balls:[{b, i, col, face(x,cx,cy,r), hidden, ghost}], cupFlag, fx (particles), lostFound, hit:{bumper:i->t}}
+// Speed: the view is affine (moving the camera only pans and zooms the picture), so everything that never moves is painted
+// once: the ground (lawn, greens, skirts, shading, banks, still ground pieces) into one or two big layers round the view,
+// every still standing thing (rail pieces, blocks, scenery) into its own small sprite. A frame draws those scaled and draws
+// only what moves (water ripples, pads, movers, bumpers, flag, balls) live, so it costs a handful of drawImage calls.
 function drawHole(x,W,H,cam,st){
- const {C,course}=st,look=course.look,cid=course.id;
- // background
+ const {C,course}=st,look=course.look;
  x.setTransform(1,0,0,1,0,0);
- const sky=!!C.hole.sky;
+ // background (live: clouds drift, stars twinkle)
  if(look.space){x.fillStyle='#03021a';x.fillRect(0,0,W,H);drawStars(x,W,H,cam,st.T);}
- else if(sky){const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#8fd3ff');g.addColorStop(1,'#ffe3f4');x.fillStyle=g;x.fillRect(0,0,W,H);for(let i=0;i<9;i++){const px=((i*0.37+st.T*.01*(1+i%3))%1.3-.15)*W,py=(i*.137%1)*H,r=Math.min(W,H)*(.08+(i%4)*.03);x.fillStyle='rgba(255,255,255,.75)';for(const [dx,dy,rr] of [[0,0,1],[r*.8,r*.1,.8],[-r*.8,r*.15,.7]]){x.beginPath();x.arc(px+dx,py+dy,r*rr,0,7);x.fill();}}}
- const lawnA=aff(cam,W,H,LAWN_Z);x.setTransform(...lawnA);x.fillStyle=pattern(x,`${cid}-lawn|${cid}`,look,tileWorld(`${cid}-lawn`));
- if(sky){}
- else if(!look.space){const [a,b]=unproj(cam,W,H,0,0,LAWN_Z),[c2,d]=unproj(cam,W,H,W,H,LAWN_Z),[e,f]=unproj(cam,W,H,W,0,LAWN_Z),[g2,h]=unproj(cam,W,H,0,H,LAWN_Z);const xs=[a,c2,e,g2],ys=[b,d,f,h];x.fillRect(Math.min(...xs)-2,Math.min(...ys)-2,Math.max(...xs)-Math.min(...xs)+4,Math.max(...ys)-Math.min(...ys)+4);}
- else{x.globalAlpha=.85;for(const g of C.greens){if(g.water)continue;const pad=6;x.beginPath();x.rect(g.box[0]-pad,g.box[1]-pad,g.box[2]-g.box[0]+pad*2,g.box[3]-g.box[1]+pad*2);x.fill();}x.globalAlpha=1;}
- const greens=C.greens.slice().sort((a,b)=>(a.water?-1:0)-(b.water?-1:0)||(a.a-b.a)||a.i-b.i);
- const waters=C.greens.filter(g=>g.water);
- // shadows of rails/blocks on the lawn: a soft dark band round every green
- x.setTransform(...lawnA);x.fillStyle='rgba(0,0,0,.22)';for(const g of greens){if(g.water)continue;x.beginPath();g.pts.forEach((p,i)=>i?x.lineTo(p[0]+.9,p[1]+1.3):x.moveTo(p[0]+.9,p[1]+1.3));x.closePath();x.fill();}
- for(const g of greens){
-  // skirt (the bed's side facing us)
-  if(!g.water){x.setTransform(1,0,0,1,0,0);for(const e of g.edges){if(e.same||vOf(cam,e.nx,e.ny)<=.02)continue;const mx=(e.x1+e.x2)/2+e.nx*.5,my=(e.y1+e.y2)/2+e.ny*.5,below=C.topAt(mx,my);const zb=below&&below.z<Math.min(e.z1,e.z2)-.05?below.z:LAWN_Z;
-    const a=proj(cam,W,H,e.x1,e.y1,e.z1),b=proj(cam,W,H,e.x2,e.y2,e.z2),c=proj(cam,W,H,e.x2,e.y2,zb),d=proj(cam,W,H,e.x1,e.y1,zb);if(Math.max(c[1],d[1])-Math.min(a[1],b[1])<.5)continue;
-    faceQuad(x,a,b,c,d,pattern(x,`${cid}-cliff|${cid}`,look,24),e.x1,e.y1,e.x2,e.y2,cam,W,H);}}
-  // top
-  const A=aff(cam,W,H,g.a,g.b,g.c);x.setTransform(...A);x.beginPath();g.pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();
-  if(!g.water&&!g.bridge)for(const w of waters){w.pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();}
-  x.save();x.clip('evenodd');
-  const tkey=g.water?(look.space?'water-space':'water'):g.bridge?'bridge':g.type==='turf'?`${cid}-turf`:g.type==='carpet'?'carpet':g.type==='rough'?`${cid}-lawn`:g.type;
-  x.fillStyle=pattern(x,tkey+'|'+cid,look,tileWorld(tkey));x.fillRect(g.box[0]-1,g.box[1]-1,g.box[2]-g.box[0]+2,g.box[3]-g.box[1]+2);
-  if(g.water){x.globalAlpha=.25;x.strokeStyle='#fff';x.lineWidth=.35;for(let i=0;i<6;i++){const yy=g.box[1]+((i*7+st.T*2.5)%(g.box[3]-g.box[1]+4));x.beginPath();for(let xx=g.box[0];xx<=g.box[2];xx+=2)x.lineTo(xx,yy+Math.sin(xx*.4+st.T*2+i)*.5);x.stroke();}x.globalAlpha=1;}
-  if(g.type==='out'){x.globalAlpha=.9;x.translate((g.box[0]+g.box[2])/2,(g.box[1]+g.box[3])/2);for(let i=0;i<3;i++){x.rotate(st.T*1.4+i*2.1);x.strokeStyle=['#8a4dff','#ff4dd2','#4dc3ff'][i];x.lineWidth=.6;x.beginPath();for(let a=0;a<9;a+=.3)x.lineTo(Math.cos(a)*a*.6,Math.sin(a)*a*.6);x.stroke();}x.globalAlpha=1;}
-  if(!g.water){const sh=shadeCanvas(g);if(sh)x.drawImage(sh.c,sh.x0,sh.y0,sh.c.width/sh.K,sh.c.height/sh.K);
-   // fringe: a darker band just inside every railed edge
-   x.lineWidth=1.6;x.strokeStyle='rgba(0,30,0,.18)';for(const e of g.edges){if(e.same)continue;x.beginPath();x.moveTo(e.x1,e.y1);x.lineTo(e.x2,e.y2);x.stroke();}}
-  x.restore();
-  // water banks: the far side of a pond (its wall faces us)
-  if(!g.water&&!g.bridge)for(const w of waters){if(!w.pts.some(p=>P.inPoly(g.pts,p[0],p[1])))continue;x.setTransform(1,0,0,1,0,0);const p=w.pts;
-   for(let i=0;i<p.length;i++){const a0=p[i],b0=p[(i+1)%p.length],ex=b0[0]-a0[0],ey=b0[1]-a0[1],L=Math.hypot(ex,ey)||1;let nx=ey/L,ny=-ex/L;if(P.inPoly(p,(a0[0]+b0[0])/2+nx*.05,(a0[1]+b0[1])/2+ny*.05)){nx=-nx;ny=-ny;}
-    if(vOf(cam,nx,ny)>=-.02)continue;const a=proj(cam,W,H,a0[0],a0[1],g.a),b=proj(cam,W,H,b0[0],b0[1],g.a),c=proj(cam,W,H,b0[0],b0[1],w.a),d=proj(cam,W,H,a0[0],a0[1],w.a);
-    x.fillStyle=look.space?'#2a1a50':'#5c4630';x.beginPath();x.moveTo(...a);x.lineTo(...b);x.lineTo(...c);x.lineTo(...d);x.closePath();x.fill();x.fillStyle='rgba(0,0,0,.25)';x.fill();}
-   if(w.pool){x.setTransform(...A);x.strokeStyle='#f4f1ea';x.lineWidth=1.4;x.beginPath();w.pts.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();x.stroke();}}
- }
- // ground things: boost pads, conveyors, tunnel mouths, tramps, gopher holes, the cup, lost ball
- groundThings(x,W,H,cam,st);
- if(st.trail&&st.trail.pts.length>1){const t=st.trail.pts;x.setTransform(1,0,0,1,0,0);x.lineCap='round';for(let i=1;i<t.length;i++){const a=proj(cam,W,H,t[i-1][0],t[i-1][1],t[i-1][2]),b=proj(cam,W,H,t[i][0],t[i][1],t[i][2]);x.strokeStyle=st.trail.col;x.globalAlpha=.5*i/t.length;x.lineWidth=Math.max(2,cam.k*1.1*i/t.length);x.beginPath();x.moveTo(...a);x.lineTo(...b);x.stroke();}x.globalAlpha=1;}
- // sorted standing things
- const items=[];const key=(X,Y)=>Y;
- for(const g of C.greens){if(g.water)continue;for(const e of g.edges){if(!e.rail)continue;const L=Math.hypot(e.x2-e.x1,e.y2-e.y1),n=Math.max(1,Math.ceil(L/7));for(let k=0;k<n;k++){const f0=k/n,f1=(k+1)/n,seg={x1:e.x1+(e.x2-e.x1)*f0,y1:e.y1+(e.y2-e.y1)*f0,x2:e.x1+(e.x2-e.x1)*f1,y2:e.y1+(e.y2-e.y1)*f1,z1:e.z1+(e.z2-e.z1)*f0,z2:e.z1+(e.z2-e.z1)*f1,nx:e.nx,ny:e.ny,h:g.rail};
-   const y1=proj(cam,W,H,seg.x1+seg.nx*RAIL_W*.5,seg.y1+seg.ny*RAIL_W*.5,seg.z1)[1],y2=proj(cam,W,H,seg.x2+seg.nx*RAIL_W*.5,seg.y2+seg.ny*RAIL_W*.5,seg.z2)[1];items.push({y:Math.max(y1,y2)-.01,f:()=>drawRail(x,W,H,cam,seg,cid,look)});}}}
- for(const b of C.blocks){if(b.look==='mill'||b.look==='clown')continue;let my=-1e9;for(const p of b.pts)my=Math.max(my,proj(cam,W,H,p[0],p[1],b.base)[1]);items.push({y:my,f:()=>drawBlock(x,W,H,cam,b.pts,b.base,b.top,b.look,look)});}
+ else if(C.hole.sky){const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#8fd3ff');g.addColorStop(1,'#ffe3f4');x.fillStyle=g;x.fillRect(0,0,W,H);for(let i=0;i<9;i++){const px=((i*0.37+st.T*.01*(1+i%3))%1.3-.15)*W,py=(i*.137%1)*H,r=Math.min(W,H)*(.08+(i%4)*.03);x.fillStyle='rgba(255,255,255,.75)';for(const [dx,dy,rr] of [[0,0,1],[r*.8,r*.1,.8],[-r*.8,r*.15,.7]]){x.beginPath();x.arc(px+dx,py+dy,r*rr,0,7);x.fill();}}}
+ // ground
+ // a camera that has stopped zooming gets its layers and sprites repainted at exactly its zoom (copying pixels 1:1 is fastest)
+ const still=C._still||(C._still={k:0,n:0});if(Math.abs(cam.k/(still.k||1)-1)<5e-4)still.n++;else{still.n=0;still.k=cam.k;}
+ const G=groundLayers(C,course,cam,W,H,st,still.n>=STILL_N),[ox,oy]=proj(cam,W,H,0,0,0);
+ for(const run of G.runs){x.setTransform(1,0,0,1,0,0);
+  if(run.anim){for(const f of run.steps)f(x,W,H,cam,st);continue;}
+  // the world origin sits on a whole pixel of the layer (and of every sprite), so 1:1 copies all land on the same grid
+  const s=cam.k/G.kc;if(Math.abs(s-1)<EXACT)x.drawImage(run.cv,Math.round(ox)-G.ox0,Math.round(oy)-G.oy0);else x.drawImage(run.cv,ox-G.ox0*s,oy-G.oy0*s,G.LW*s,G.LH*s);}
+ x.setTransform(1,0,0,1,0,0);
+ if(st.trail&&st.trail.pts.length>1){const t=st.trail.pts;x.lineCap='round';for(let i=1;i<t.length;i++){const a=proj(cam,W,H,t[i-1][0],t[i-1][1],t[i-1][2]),b=proj(cam,W,H,t[i][0],t[i][1],t[i][2]);x.strokeStyle=st.trail.col;x.globalAlpha=.5*i/t.length;x.lineWidth=Math.max(2,cam.k*1.1*i/t.length);x.beginPath();x.moveTo(...a);x.lineTo(...b);x.stroke();}x.globalAlpha=1;}
+ // sorted standing things: still ones from their sprites, moving ones drawn live
+ const items=[],dcam=depth(cam.rot,cam.x,cam.y,0);
+ const SP=standingSprites(C,course,cam,still.n>=STILL_N);let budget=SP.redraw;
+ for(const it of SP.list){const sp=it.sp;if(!sp||!sp.cv)continue;const t0=cam.k/sp.kc,X0=ox+sp.bx*t0,Y0=oy+sp.by*t0,ww=sp.cv.width*t0,hh=sp.cv.height*t0;
+  if(X0>W||Y0>H||X0+ww<0||Y0+hh<0)continue;
+  items.push({y:H/2+cam.k*(it.d-dcam),f:()=>{let q=it.sp;if((q.kc!==SP.kc||q.ver!==SP.ver)&&budget>0){budget--;paintSprite(it,SP.kc,cam.rot,SP.ver);q=it.sp;}
+   if(!q.cv)return;const t=cam.k/q.kc;if(Math.abs(t-1)<EXACT)x.drawImage(q.cv,Math.round(ox+q.bx),Math.round(oy+q.by));else x.drawImage(q.cv,ox+q.bx*t,oy+q.by*t,q.cv.width*t,q.cv.height*t);}});}
  for(const m of C.movers)moverItems(x,W,H,cam,st,m,items);
  for(const [i,p] of C.bumpers.entries()){const y=proj(cam,W,H,p.x,p.y+p.r,p.z)[1];items.push({y,f:()=>drawBumper(x,W,H,cam,p,st.T-(st.hit&&st.hit['b'+i]||-9))});}
  for(const m of C.magnets){const g=C.topAt(m.x,m.y),z=g?g.z:0;const [X,Y]=proj(cam,W,H,m.x,m.y-6,z);items.push({y:Y,f:()=>drawProp(x,'magnet',X,Y,18*cam.k,{t:st.T})});}
- for(const d of decorFor(C,look,cam.rot)){const g=C.topAt(d.x,d.y),z=g?g.z:LAWN_Z;const [X,Y]=proj(cam,W,H,d.x,d.y,z);if(X<-d.w*cam.k*1.2||X>W+d.w*cam.k*1.2||Y<-10||Y>H+d.w*cam.k*2.5)continue;items.push({y:Y,f:()=>drawProp(x,d.k==='flag-sign'?'sign':d.k,X,Y,d.w*cam.k,{t:st.T,text:d.text})});}
+ for(const d of SP.live){const g=C.topAt(d.x,d.y),z=g?g.z:LAWN_Z;const [X,Y]=proj(cam,W,H,d.x,d.y,z);if(X<-d.w*cam.k*1.2||X>W+d.w*cam.k*1.2||Y<-10||Y>H+d.w*cam.k*2.5)continue;items.push({y:Y,f:()=>drawProp(x,d.k==='flag-sign'?'sign':d.k,X,Y,d.w*cam.k,{t:st.T,text:d.text})});}
  {const cz=C.cupZ,[X,Y]=proj(cam,W,H,C.hole.cup[0],C.hole.cup[1],cz);items.push({y:Y+.02,f:()=>{if(st.flag===0)return;x.globalAlpha=st.flag??1;drawProp(x,'flag',X,Y,3.4*cam.k,{t:st.T,col:look.space?'#ffd23f':'#ff3b5c'});x.globalAlpha=1;}});}
  for(const bb of st.balls){if(bb.hidden)continue;const b=bb.b,gr=C.topAt(b.x,b.y),gz=b.air?(C.ground(b.x,b.y,b.z+.05)||{z:LAWN_Z}).z:b.z;const [X,Y]=proj(cam,W,H,b.x,b.y,gz);items.push({y:Y+.05,f:()=>drawBall(x,W,H,cam,bb,gz,gr)});}
- items.sort((a,b)=>a.y-b.y);for(const it of items)it.f();
+ items.sort((a,b)=>a.y-b.y);for(const it of items){x.setTransform(1,0,0,1,0,0);it.f();}
  // particles
  x.setTransform(1,0,0,1,0,0);for(const p of st.fx||[]){const [X,Y]=proj(cam,W,H,p.x,p.y,p.z);const r=Math.max(1,p.s*cam.k);x.globalAlpha=Math.max(0,Math.min(1,p.life/p.max*1.5));x.fillStyle=p.col;if(p.kind==='confetti'){x.save();x.translate(X,Y);x.rotate(p.r);x.fillRect(-r,-r*.4,r*2,r*.8);x.restore();}else{x.beginPath();x.arc(X,Y,r,0,7);x.fill();}}x.globalAlpha=1;
 }
+// screen depth of a world point at k = 1 with the camera at the origin: proj(...)[1] = H/2 + k*(depth(p) - depth(camera))
+const depth=(rot,x,y,z)=>(rot?x:y)*TC-z*TS;
+
+// ---- the ground, as steps (static ones go into cached layers, anim ones are drawn live in their place)
+function sortedGreens(C){return C._gs||(C._gs=C.greens.slice().sort((a,b)=>(a.water?-1:0)-(b.water?-1:0)||(a.a-b.a)||a.i-b.i));}
+function groundRuns(C,course){
+ if(C._runs)return C._runs;
+ const look=course.look,cid=course.id,greens=sortedGreens(C),waters=C.greens.filter(g=>g.water),sky=!!C.hole.sky,steps=[];
+ steps.push({f:(x,W,H,cam)=>{if(sky)return;const lawnA=aff(cam,W,H,LAWN_Z);x.setTransform(...lawnA);x.fillStyle=pattern(x,`${cid}-lawn|${cid}`,look,tileWorld(`${cid}-lawn`));
+  if(!look.space){const [a,b]=unproj(cam,W,H,0,0,LAWN_Z),[c2,d]=unproj(cam,W,H,W,H,LAWN_Z),[e,f]=unproj(cam,W,H,W,0,LAWN_Z),[g2,h]=unproj(cam,W,H,0,H,LAWN_Z);const xs=[a,c2,e,g2],ys=[b,d,f,h];x.fillRect(Math.min(...xs)-2,Math.min(...ys)-2,Math.max(...xs)-Math.min(...xs)+4,Math.max(...ys)-Math.min(...ys)+4);}
+  else{x.globalAlpha=.85;for(const g of C.greens){if(g.water)continue;const pad=6;x.beginPath();x.rect(g.box[0]-pad,g.box[1]-pad,g.box[2]-g.box[0]+pad*2,g.box[3]-g.box[1]+pad*2);x.fill();}x.globalAlpha=1;}
+  // shadows of rails/blocks on the lawn: a soft dark band round every green
+  x.setTransform(...lawnA);x.fillStyle='rgba(0,0,0,.22)';for(const g of greens){if(g.water)continue;x.beginPath();g.pts.forEach((p,i)=>i?x.lineTo(p[0]+.9,p[1]+1.3):x.moveTo(p[0]+.9,p[1]+1.3));x.closePath();x.fill();}}});
+ for(const g of greens){steps.push({f:(x,W,H,cam,st)=>drawGreen(x,W,H,cam,st,g,waters,false)});if(g.water||g.type==='out')steps.push({anim:1,f:(x,W,H,cam,st)=>drawGreen(x,W,H,cam,st,g,waters,true)});}
+ steps.push({f:(x,W,H,cam,st)=>groundThings(x,W,H,cam,st,false)});
+ steps.push({anim:1,f:(x,W,H,cam,st)=>groundThings(x,W,H,cam,st,true)});
+ const runs=[];for(const s of steps){const last=runs[runs.length-1];if(last&&!!last.anim===!!s.anim)last.steps.push(s.f);else runs.push({anim:!!s.anim,steps:[s.f]});}
+ return C._runs=runs;}
+// one green: skirt, top, shading, fringe, banks (anim=false) or only its moving surface (anim=true: water ripples, the void)
+function drawGreen(x,W,H,cam,st,g,waters,anim){
+ const {C,course}=st,look=course.look,cid=course.id;
+ if(!anim&&!g.water){x.setTransform(1,0,0,1,0,0);for(const e of g.edges){if(e.same||vOf(cam,e.nx,e.ny)<=.02)continue;const mx=(e.x1+e.x2)/2+e.nx*.5,my=(e.y1+e.y2)/2+e.ny*.5,below=C.topAt(mx,my);const zb=below&&below.z<Math.min(e.z1,e.z2)-.05?below.z:LAWN_Z;
+   const a=proj(cam,W,H,e.x1,e.y1,e.z1),b=proj(cam,W,H,e.x2,e.y2,e.z2),c=proj(cam,W,H,e.x2,e.y2,zb),d=proj(cam,W,H,e.x1,e.y1,zb);if(Math.max(c[1],d[1])-Math.min(a[1],b[1])<.5)continue;
+   faceQuad(x,a,b,c,d,pattern(x,`${cid}-cliff|${cid}`,look,24),e.x1,e.y1,e.x2,e.y2,cam,W,H);}}
+ const A=aff(cam,W,H,g.a,g.b,g.c);x.setTransform(...A);x.beginPath();g.pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();
+ if(!g.water&&!g.bridge)for(const w of waters){w.pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();}
+ x.save();x.clip('evenodd');
+ if(anim){
+  if(g.water){x.globalAlpha=.25;x.strokeStyle='#fff';x.lineWidth=.35;for(let i=0;i<6;i++){const yy=g.box[1]+((i*7+st.T*2.5)%(g.box[3]-g.box[1]+4));x.beginPath();for(let xx=g.box[0];xx<=g.box[2];xx+=2)x.lineTo(xx,yy+Math.sin(xx*.4+st.T*2+i)*.5);x.stroke();}x.globalAlpha=1;}
+  if(g.type==='out'){x.globalAlpha=.9;x.translate((g.box[0]+g.box[2])/2,(g.box[1]+g.box[3])/2);for(let i=0;i<3;i++){x.rotate(st.T*1.4+i*2.1);x.strokeStyle=['#8a4dff','#ff4dd2','#4dc3ff'][i];x.lineWidth=.6;x.beginPath();for(let a=0;a<9;a+=.3)x.lineTo(Math.cos(a)*a*.6,Math.sin(a)*a*.6);x.stroke();}x.globalAlpha=1;}
+  x.restore();return;}
+ const tkey=g.water?(look.space?'water-space':'water'):g.bridge?'bridge':g.type==='turf'?`${cid}-turf`:g.type==='carpet'?'carpet':g.type==='rough'?`${cid}-lawn`:g.type;
+ x.fillStyle=pattern(x,tkey+'|'+cid,look,tileWorld(tkey));x.fillRect(g.box[0]-1,g.box[1]-1,g.box[2]-g.box[0]+2,g.box[3]-g.box[1]+2);
+ if(!g.water){const sh=shadeCanvas(g);if(sh)x.drawImage(sh.c,sh.x0,sh.y0,sh.c.width/sh.K,sh.c.height/sh.K);
+  // fringe: a darker band just inside every railed edge
+  x.lineWidth=1.6;x.strokeStyle='rgba(0,30,0,.18)';for(const e of g.edges){if(e.same)continue;x.beginPath();x.moveTo(e.x1,e.y1);x.lineTo(e.x2,e.y2);x.stroke();}}
+ x.restore();
+ // water banks: the far side of a pond (its wall faces us)
+ if(!g.water&&!g.bridge)for(const w of waters){if(!w.pts.some(p=>P.inPoly(g.pts,p[0],p[1])))continue;x.setTransform(1,0,0,1,0,0);const p=w.pts;
+  for(let i=0;i<p.length;i++){const a0=p[i],b0=p[(i+1)%p.length],ex=b0[0]-a0[0],ey=b0[1]-a0[1],L=Math.hypot(ex,ey)||1;let nx=ey/L,ny=-ex/L;if(P.inPoly(p,(a0[0]+b0[0])/2+nx*.05,(a0[1]+b0[1])/2+ny*.05)){nx=-nx;ny=-ny;}
+   if(vOf(cam,nx,ny)>=-.02)continue;const a=proj(cam,W,H,a0[0],a0[1],g.a),b=proj(cam,W,H,b0[0],b0[1],g.a),c=proj(cam,W,H,b0[0],b0[1],w.a),d=proj(cam,W,H,a0[0],a0[1],w.a);
+   x.fillStyle=look.space?'#2a1a50':'#5c4630';x.beginPath();x.moveTo(...a);x.lineTo(...b);x.lineTo(...c);x.lineTo(...d);x.closePath();x.fill();x.fillStyle='rgba(0,0,0,.25)';x.fill();}
+  if(w.pool){x.setTransform(...A);x.strokeStyle='#f4f1ea';x.lineWidth=1.4;x.beginPath();w.pts.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));x.closePath();x.stroke();}}
+}
+// the layers: screen-aligned canvases centred on the view with a margin, painted at the zoom of the moment (kc). Repainted
+// when the view leaves them, the zoom drifts 12% in or 2x out, the camera stops at another zoom, the art changes or the hole turns.
+const LAYER_PX=4.5e6,MAXDIM=4096,EXACT=.002,STILL_N=8;
+function groundLayers(C,course,cam,W,H,st,still){
+ const runs=groundRuns(C,course),ver=S.version?S.version():0;let G=C._layer;
+ let zin=false;
+ if(G){const s=cam.k/G.kc;zin=s>1.12&&!still;const [ox,oy]=proj(cam,W,H,0,0,0),l=ox-G.ox0*s,t=oy-G.oy0*s;
+  if(G.rot===cam.rot&&G.ver===ver&&s<=1.12&&s>=.5&&!(still&&Math.abs(s-1)>=EXACT)&&l<=0&&l+G.LW*s>=W&&t<=0&&t+G.LH*s>=H)return G;}
+ // margin round the view, inside the pixel budget (big screens get a smaller margin, then a softer layer)
+ // zooming in (the flyover, a slowing ball): paint 30% sharper so the next repaint is further off
+ let M=.3*Math.max(W,H),r=1;
+ const fit=m=>Math.sqrt(LAYER_PX/((W+2*m)*(H+2*m)));
+ if(zin)r=Math.max(1,Math.min(1.3,fit(M)));
+ if(fit(M)<1){let lo=0,hi=M;for(let i=0;i<20;i++){const mid=(lo+hi)/2;if(fit(mid)>=1)lo=mid;else hi=mid;}M=lo;r=Math.min(1,fit(M));}
+ let LW=Math.ceil((W+2*M)*r),LH=Math.ceil((H+2*M)*r);if(LW>MAXDIM||LH>MAXDIM){const q=MAXDIM/Math.max(LW,LH);LW=Math.floor(LW*q);LH=Math.floor(LH*q);r*=q;}
+ const kc=cam.k*r;let lc={x:cam.x,y:cam.y,k:kc,rot:cam.rot};
+ {const [X0,Y0]=proj(lc,LW,LH,0,0,0),[nx,ny]=unproj(lc,LW,LH,LW/2-(Math.round(X0)-X0),LH/2-(Math.round(Y0)-Y0),0);lc={...lc,x:nx,y:ny};}
+ const [ox0,oy0]=proj(lc,LW,LH,0,0,0);
+ const old=C._layer,cvs=old&&old.LW===LW&&old.LH===LH?old.runs.map(r=>r.cv):[];
+ G={kc,ox0:Math.round(ox0),oy0:Math.round(oy0),LW,LH,rot:cam.rot,ver,runs:runs.map((run,i)=>{if(run.anim)return run;
+  const cv=cvs[i]||canvas(LW,LH),g=cv.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,LW,LH);for(const f of run.steps){g.setTransform(1,0,0,1,0,0);f(g,LW,LH,lc,st);}g.setTransform(1,0,0,1,0,0);return {anim:false,cv};})};
+ if(old)for(const r of old.runs)if(r.cv&&!G.runs.some(q=>q.cv===r.cv)){r.cv.width=r.cv.height=0;}
+ C._layer=G;return G;}
+// ---- the still standing things, each in its own sprite (sorted per frame with the moving ones)
+function standingSprites(C,course,cam,still){
+ const ck='_sp'+cam.rot,ver=S.version?S.version():0;let SP=C[ck];
+ if(!SP){const look=course.look,cid=course.id,rot=cam.rot,list=[],live=[];
+  for(const g of C.greens){if(g.water)continue;for(const e of g.edges){if(!e.rail)continue;const L=Math.hypot(e.x2-e.x1,e.y2-e.y1),n=Math.max(1,Math.ceil(L/7));for(let k=0;k<n;k++){const f0=k/n,f1=(k+1)/n,seg={x1:e.x1+(e.x2-e.x1)*f0,y1:e.y1+(e.y2-e.y1)*f0,x2:e.x1+(e.x2-e.x1)*f1,y2:e.y1+(e.y2-e.y1)*f1,z1:e.z1+(e.z2-e.z1)*f0,z2:e.z1+(e.z2-e.z1)*f1,nx:e.nx,ny:e.ny,h:g.rail};
+    const ox=seg.nx*RAIL_W,oy=seg.ny*RAIL_W,pts=[];for(const [px,py,pz] of [[seg.x1,seg.y1,seg.z1],[seg.x2,seg.y2,seg.z2]])for(const [qx,qy] of [[px,py],[px+ox,py+oy]])for(const z of [pz,pz+seg.h,LAWN_Z])pts.push([qx,qy,z]);
+    list.push({d:Math.max(depth(rot,seg.x1+ox*.5,seg.y1+oy*.5,seg.z1),depth(rot,seg.x2+ox*.5,seg.y2+oy*.5,seg.z2))-1e-4,pts,draw:(x,W,H,cam)=>drawRail(x,W,H,cam,seg,cid,look)});}}}
+  for(const b of C.blocks){if(b.look==='mill'||b.look==='clown')continue;let d=-1e9;const pts=[];for(const p of b.pts){d=Math.max(d,depth(rot,p[0],p[1],b.base));pts.push([p[0],p[1],b.base],[p[0],p[1],b.top]);}
+   list.push({d,pts,draw:(x,W,H,cam)=>drawBlock(x,W,H,cam,b.pts,b.base,b.top,b.look,look)});}
+  for(const dd of decorFor(C,look,rot)){const k=dd.k==='flag-sign'?'sign':dd.k;if(k==='beacon'&&!S.has(k)){live.push(dd);continue;}
+   const g=C.topAt(dd.x,dd.y),z=g?g.z:LAWN_Z;list.push({d:depth(rot,dd.x,dd.y,z),prop:{k,x:dd.x,y:dd.y,z,w:dd.w,text:dd.text},draw:(x,W,H,cam)=>{const [X,Y]=proj(cam,W,H,dd.x,dd.y,z);drawProp(x,k,X,Y,dd.w*cam.k,{t:0,text:dd.text});}});}
+  SP=C[ck]={list,live,kc:0,ver:-1};}
+ // zoom of the sprites: repaint them (a few a frame) when the view is sharper than them or much smaller
+ if(!SP.kc||cam.k>SP.kc*1.12||cam.k<SP.kc/1.6||SP.ver!==ver||(still&&Math.abs(cam.k/SP.kc-1)>=EXACT)){SP.kc=cam.k*(SP.kc&&cam.k>SP.kc*1.12&&!still?1.3:1);SP.ver=ver;}
+ SP.redraw=SP.list.some(it=>!it.sp)?1e9:still?40:14;
+ for(const it of SP.list)if(!it.sp)paintSprite(it,SP.kc,cam.rot,SP.ver);
+ return SP;}
+function paintSprite(it,kc,rot,ver){
+ const c0={x:0,y:0,k:kc,rot};let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+ const add=(X,Y)=>{x0=Math.min(x0,X);y0=Math.min(y0,Y);x1=Math.max(x1,X);y1=Math.max(y1,Y);};
+ if(it.prop){const p=it.prop,[X,Y]=proj(c0,0,0,p.x,p.y,p.z),wpx=p.w*kc,def=S.PICTURES[p.k],img=S.picture(p.k);
+  if(img&&def){const sc=wpx/img.width,fx=def.foot?def.foot[0]/def.size[0]*img.width:img.width/2,fy=def.foot?def.foot[1]/def.size[1]*img.height:img.height;add(X-fx*sc,Y-fy*sc);add(X-fx*sc+img.width*sc,Y-fy*sc+img.height*sc);}
+  else{add(X-wpx*.7,Y-wpx*1.8);add(X+wpx*.7,Y+wpx*.3);}}
+ else for(const [px,py,pz] of it.pts){const [X,Y]=proj(c0,0,0,px,py,pz);add(X,Y);}
+ const pad=3,bx=Math.floor(x0)-pad,by=Math.floor(y0)-pad,w=Math.min(MAXDIM,Math.ceil(x1)+pad-bx),h=Math.min(MAXDIM,Math.ceil(y1)+pad-by);
+ const old=it.sp&&it.sp.cv;
+ if(!(w>0&&h>0)||!isFinite(w+h)){it.sp={cv:null,kc,ver,bx:0,by:0};return;}
+ const cv=old&&old.width===w&&old.height===h?old:canvas(w,h),g=cv.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,w,h);
+ it.draw(g,-2*bx,-2*by,c0);g.setTransform(1,0,0,1,0,0);
+ if(old&&old!==cv)old.width=old.height=0;
+ it.sp={cv,kc,ver,bx,by};}
 function drawStars(x,W,H,cam,T){const R=rnd(77);for(let i=0;i<160;i++){const px=R(),py=R(),d=.15+R()*.5,X=((px*W*2-cam.x*cam.k*d*.2)%W+W)%W,Y=((py*H*2-cam.y*cam.k*d*.2)%H+H)%H,tw=.5+.5*Math.sin(T*2+i);x.fillStyle=`rgba(255,255,255,${(.35+d)*tw})`;x.fillRect(X,Y,d*3,d*3);}
  const g=x.createRadialGradient(W*.8,H*.2,10,W*.8,H*.2,W*.5);g.addColorStop(0,'rgba(140,60,255,.25)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,W,H);
  x.fillStyle='#e8a04a';x.beginPath();x.arc(W*.12,H*.18,Math.min(W,H)*.07,0,7);x.fill();x.fillStyle='rgba(0,0,0,.25)';x.beginPath();x.arc(W*.12+Math.min(W,H)*.025,H*.18,Math.min(W,H)*.07,0,7);x.fill();}
@@ -191,7 +280,7 @@ function drawBlock(x,W,H,cam,pts,base,top,lk,look){
 function drawBumper(x,W,H,cam,p,since){
  const flash=Math.max(0,1-since*4),[X,Y]=proj(cam,W,H,p.x,p.y,p.z),r=p.r*cam.k,h=2.2*TS*cam.k,img=S.picture('bumper');
  x.fillStyle='rgba(0,0,0,.3)';x.beginPath();x.ellipse(X+r*.15,Y+r*.15,r*1.05,r*TC*1.05,0,0,7);x.fill();
- if(img){x.drawImage(img,X-r*1.05,Y-h-r*TC*1.05,r*2.1,r*2.1*TC);}
+ if(img){x.drawImage(shrunk(img,r*2.1/img.width),X-r*1.05,Y-h-r*TC*1.05,r*2.1,r*2.1*TC);}
  else{x.fillStyle='#c0c6d2';x.fillRect(X-r,Y-h,r*2,h);x.beginPath();x.ellipse(X,Y,r,r*TC,0,0,Math.PI);x.fill();
   const g=x.createRadialGradient(X-r*.3,Y-h-r*.3,r*.1,X,Y-h,r);g.addColorStop(0,flash>0?'#fff':'#ff8ab0');g.addColorStop(1,flash>0?'#ffe14d':'#d81b60');x.fillStyle=g;x.beginPath();x.ellipse(X,Y-h,r,r*TC,0,0,7);x.fill();
   x.strokeStyle='#fff';x.lineWidth=Math.max(1,r*.12);x.beginPath();x.ellipse(X,Y-h,r*.6,r*.6*TC,0,0,7);x.stroke();}
@@ -200,24 +289,24 @@ function drawBumper(x,W,H,cam,p,since){
 function flat(x,W,H,cam,name,cx,cy,z,w,ang,fb){
  // a picture lying on the ground centred on (cx,cy), w units across, turned by ang (radians, in world)
  const A=aff(cam,W,H,z);x.setTransform(...A);x.translate(cx,cy);if(ang)x.rotate(ang);
- const img=S.picture(name),def=S.PICTURES[name];
- if(img&&def){const fw=def.frame?def.frame[0]:def.size[0],fh=def.frame?def.frame[1]:def.size[1],k=img.width/def.size[0],h=w*fh/fw,f=fb&&fb.frame||0;x.drawImage(img,f*fw*k,0,fw*k,fh*k,-w/2,-h/2,w,h);}
+ let img=S.picture(name);const def=S.PICTURES[name];
+ if(img&&def){img=shrunk(img,w*cam.k/((def.frame?def.frame[0]:def.size[0])*img.width/def.size[0]));const fw=def.frame?def.frame[0]:def.size[0],fh=def.frame?def.frame[1]:def.size[1],k=img.width/def.size[0],h=w*fh/fw,f=fb&&fb.frame||0;x.drawImage(img,f*fw*k,0,fw*k,fh*k,-w/2,-h/2,w,h);}
  else if(fb&&fb.draw)fb.draw(x);
  x.setTransform(1,0,0,1,0,0);
 }
-function groundThings(x,W,H,cam,st){
+function groundThings(x,W,H,cam,st,anim){
  const {C,T}=st;
- for(const b of C.boost){const g=C.topAt((b.box[0]+b.box[2])/2,(b.box[1]+b.box[3])/2),z=g?g.z:0,cx=(b.box[0]+b.box[2])/2,cy=(b.box[1]+b.box[3])/2,w=b.box[2]-b.box[0],h=b.box[3]-b.box[1],ang=Math.atan2(b.dir[1],b.dir[0])+Math.PI/2;
+ if(anim)for(const b of C.boost){const g=C.topAt((b.box[0]+b.box[2])/2,(b.box[1]+b.box[3])/2),z=g?g.z:0,cx=(b.box[0]+b.box[2])/2,cy=(b.box[1]+b.box[3])/2,w=b.box[2]-b.box[0],h=b.box[3]-b.box[1],ang=Math.atan2(b.dir[1],b.dir[0])+Math.PI/2;
   flat(x,W,H,cam,'boost',cx,cy,z+.02,Math.max(w,h),ang,{draw:g2=>{g2.fillStyle='rgba(20,10,60,.85)';g2.fillRect(-w/2,-h/2,w,h);for(let i=0;i<4;i++){const f=((T*2.5+i/4)%1);g2.fillStyle=`hsla(${(T*200+i*40)%360},100%,60%,${.4+.6*(1-f)})`;const yy=h/2-f*h;g2.beginPath();g2.moveTo(-w*.35,yy+2);g2.lineTo(0,yy-1.5);g2.lineTo(w*.35,yy+2);g2.lineTo(w*.35,yy+3.2);g2.lineTo(0,yy-.3);g2.lineTo(-w*.35,yy+3.2);g2.fill();}g2.strokeStyle='#57e1ff';g2.lineWidth=.4;g2.strokeRect(-w/2,-h/2,w,h);}});}
- for(const c of C.conv){const g=C.topAt(c.pts[0][0]+.5,c.pts[0][1]+.5),z=g?g.z:0;const A=aff(cam,W,H,z+.02);x.setTransform(...A);x.beginPath();c.pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();x.save();x.clip();const pat=pattern(x,'conveyor|'+st.course.id,st.course.look,12),sp=Math.hypot(c.v[0],c.v[1]),off=(T*sp)%12;x.translate(0,c.v[1]<0?-off:off);x.fillStyle=pat;x.fillRect(c.box[0]-1,c.box[1]-13,c.box[2]-c.box[0]+2,c.box[3]-c.box[1]+26);x.restore();x.setTransform(1,0,0,1,0,0);}
+ if(anim)for(const c of C.conv){const g=C.topAt(c.pts[0][0]+.5,c.pts[0][1]+.5),z=g?g.z:0;const A=aff(cam,W,H,z+.02);x.setTransform(...A);x.beginPath();c.pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();x.save();x.clip();const pat=pattern(x,'conveyor|'+st.course.id,st.course.look,12),sp=Math.hypot(c.v[0],c.v[1]),off=(T*sp)%12;x.translate(0,c.v[1]<0?-off:off);x.fillStyle=pat;x.fillRect(c.box[0]-1,c.box[1]-13,c.box[2]-c.box[0]+2,c.box[3]-c.box[1]+26);x.restore();x.setTransform(1,0,0,1,0,0);}
  // a tunnel mouth right in front of the clown head is the clown's own mouth: no pipe drawn there
  const inClown=p=>C.blocks.some(b=>b.look==='clown'&&p[0]>=b.box[0]&&p[0]<=b.box[2]&&p[1]>=b.box[1]&&p[1]<=b.box[3]+4);
- for(const t of C.tunnels){const sp=st.course.look.space;for(const [p,z,s] of [[t.a,t.z,1],[t.b,t.zb,.7]])if(!inClown(p))flat(x,W,H,cam,sp?'portal':'tunnel',p[0],p[1],z+.02,7*s,0,{draw:g=>{if(sp){for(let i=0;i<3;i++){g.strokeStyle=['#ff4dd2','#57e1ff','#ffe14d'][i];g.lineWidth=.5;g.beginPath();g.arc(0,0,2.9-i*.6+Math.sin(T*4+i)*.2,0,7);g.stroke();}g.fillStyle='#000';g.beginPath();g.arc(0,0,1.9,0,7);g.fill();}else{g.fillStyle='#6b7280';g.beginPath();g.arc(0,0,3.1,0,7);g.fill();g.fillStyle='#111';g.beginPath();g.arc(0,0,2.4,0,7);g.fill();g.fillStyle='rgba(255,255,255,.2)';g.beginPath();g.arc(0,0,3.1,3.6,5.2);g.lineTo(0,0);g.fill();}}});}
- for(const t of C.tramps)flat(x,W,H,cam,'tramp',t.x,t.y,t.z+.05,t.r*2.3,0,{draw:g=>{g.fillStyle='#333';g.beginPath();g.arc(0,0,t.r*1.12,0,7);g.fill();g.fillStyle='#2d7dff';g.beginPath();g.arc(0,0,t.r*.9,0,7);g.fill();g.strokeStyle='#ffd23f';g.lineWidth=.3;for(let i=0;i<12;i++){const a=i/12*Math.PI*2;g.beginPath();g.moveTo(Math.cos(a)*t.r*.9,Math.sin(a)*t.r*.9);g.lineTo(Math.cos(a)*t.r*1.1,Math.sin(a)*t.r*1.1);g.stroke();}}});
- for(const [mi,m] of C.movers.entries())if(m.kind==='gophers')for(const h of m.holes){const g=C.topAt(h[0],h[1]),z=g?g.z:0;flat(x,W,H,cam,'gopher-hole',h[0],h[1],z+.02,4,0,{draw:g2=>{g2.fillStyle='#6b4a2a';g2.beginPath();g2.ellipse(0,0,2,1.7,0,0,7);g2.fill();g2.fillStyle='#1a0f06';g2.beginPath();g2.ellipse(0,0,1.25,1.05,0,0,7);g2.fill();}});}
+ for(const t of C.tunnels){const sp=st.course.look.space,live=sp&&!S.has('portal');if(live!==!!anim)continue;for(const [p,z,s] of [[t.a,t.z,1],[t.b,t.zb,.7]])if(!inClown(p))flat(x,W,H,cam,sp?'portal':'tunnel',p[0],p[1],z+.02,7*s,0,{draw:g=>{if(sp){for(let i=0;i<3;i++){g.strokeStyle=['#ff4dd2','#57e1ff','#ffe14d'][i];g.lineWidth=.5;g.beginPath();g.arc(0,0,2.9-i*.6+Math.sin(T*4+i)*.2,0,7);g.stroke();}g.fillStyle='#000';g.beginPath();g.arc(0,0,1.9,0,7);g.fill();}else{g.fillStyle='#6b7280';g.beginPath();g.arc(0,0,3.1,0,7);g.fill();g.fillStyle='#111';g.beginPath();g.arc(0,0,2.4,0,7);g.fill();g.fillStyle='rgba(255,255,255,.2)';g.beginPath();g.arc(0,0,3.1,3.6,5.2);g.lineTo(0,0);g.fill();}}});}
+ if(!anim)for(const t of C.tramps)flat(x,W,H,cam,'tramp',t.x,t.y,t.z+.05,t.r*2.3,0,{draw:g=>{g.fillStyle='#333';g.beginPath();g.arc(0,0,t.r*1.12,0,7);g.fill();g.fillStyle='#2d7dff';g.beginPath();g.arc(0,0,t.r*.9,0,7);g.fill();g.strokeStyle='#ffd23f';g.lineWidth=.3;for(let i=0;i<12;i++){const a=i/12*Math.PI*2;g.beginPath();g.moveTo(Math.cos(a)*t.r*.9,Math.sin(a)*t.r*.9);g.lineTo(Math.cos(a)*t.r*1.1,Math.sin(a)*t.r*1.1);g.stroke();}}});
+ if(!anim)for(const [mi,m] of C.movers.entries())if(m.kind==='gophers')for(const h of m.holes){const g=C.topAt(h[0],h[1]),z=g?g.z:0;flat(x,W,H,cam,'gopher-hole',h[0],h[1],z+.02,4,0,{draw:g2=>{g2.fillStyle='#6b4a2a';g2.beginPath();g2.ellipse(0,0,2,1.7,0,0,7);g2.fill();g2.fillStyle='#1a0f06';g2.beginPath();g2.ellipse(0,0,1.25,1.05,0,0,7);g2.fill();}});}
  // cup
- const cz=C.cupZ;flat(x,W,H,cam,'cup',C.hole.cup[0],C.hole.cup[1],cz+.01,P.CUP_R*2.4,0,{draw:g=>{g.fillStyle='rgba(255,255,255,.9)';g.beginPath();g.arc(0,0,P.CUP_R+.35,0,7);g.fill();g.fillStyle='#0a0a0a';g.beginPath();g.arc(0,0,P.CUP_R,0,7);g.fill();g.fillStyle='rgba(255,255,255,.12)';g.beginPath();g.arc(0,P.CUP_R*.35,P.CUP_R*.7,3.3,6.1);g.fill();}});
- if(st.lost&&!st.lostFound){const [lx,ly]=st.lost,g=C.topAt(lx,ly),z=g?g.z:0,tw=.6+.4*Math.sin(T*6);flat(x,W,H,cam,'lost-ball',lx,ly,z+.03,3,0,{draw:g2=>{g2.fillStyle=`rgba(255,230,120,${.25*tw})`;g2.beginPath();g2.arc(0,0,2.6,0,7);g2.fill();g2.fillStyle='#ddd6c4';g2.beginPath();g2.arc(0,0,1,0,7);g2.fill();g2.fillStyle='rgba(120,90,40,.5)';g2.beginPath();g2.arc(.3,.2,.4,0,7);g2.fill();}});}
+ const cz=C.cupZ;if(!anim)flat(x,W,H,cam,'cup',C.hole.cup[0],C.hole.cup[1],cz+.01,P.CUP_R*2.4,0,{draw:g=>{g.fillStyle='rgba(255,255,255,.9)';g.beginPath();g.arc(0,0,P.CUP_R+.35,0,7);g.fill();g.fillStyle='#0a0a0a';g.beginPath();g.arc(0,0,P.CUP_R,0,7);g.fill();g.fillStyle='rgba(255,255,255,.12)';g.beginPath();g.arc(0,P.CUP_R*.35,P.CUP_R*.7,3.3,6.1);g.fill();}});
+ if(anim&&st.lost&&!st.lostFound){const [lx,ly]=st.lost,g=C.topAt(lx,ly),z=g?g.z:0,tw=.6+.4*Math.sin(T*6);flat(x,W,H,cam,'lost-ball',lx,ly,z+.03,3,0,{draw:g2=>{g2.fillStyle=`rgba(255,230,120,${.25*tw})`;g2.beginPath();g2.arc(0,0,2.6,0,7);g2.fill();g2.fillStyle='#ddd6c4';g2.beginPath();g2.arc(0,0,1,0,7);g2.fill();g2.fillStyle='rgba(120,90,40,.5)';g2.beginPath();g2.arc(.3,.2,.4,0,7);g2.fill();}});}
 }
 function moverItems(x,W,H,cam,st,m,items){
  const {C,T}=st,parts=st.parts||{segs:[],hazards:[]};
@@ -240,21 +329,21 @@ function moverItems(x,W,H,cam,st,m,items){
 function drawWindmill(x,X,Y,k,hw,m,T){
  const img=S.picture('windmill-house'),bl=S.picture('windmill-blades'),d=S.PICTURES['windmill-house'],dw=(d.door[1][0]-d.door[0][0])/d.size[0];
  const W2=(img?m.w/dw:hw)*k;
- if(img){const sc=W2/img.width,dx=((d.door[0][0]+d.door[1][0])/2-d.foot[0])/d.size[0]*W2;x.drawImage(img,X-dx-d.foot[0]/d.size[0]*img.width*sc,Y-d.foot[1]/d.size[1]*img.height*sc,img.width*sc,img.height*sc);}
+ if(img){const sc=W2/img.width,dx=((d.door[0][0]+d.door[1][0])/2-d.foot[0])/d.size[0]*W2;x.drawImage(shrunk(img,sc),X-dx-d.foot[0]/d.size[0]*img.width*sc,Y-d.foot[1]/d.size[1]*img.height*sc,img.width*sc,img.height*sc);}
  else{const h=W2*.9;x.fillStyle='#b9874f';x.beginPath();x.moveTo(X-W2*.5,Y);x.lineTo(X-W2*.38,Y-h);x.lineTo(X+W2*.38,Y-h);x.lineTo(X+W2*.5,Y);x.closePath();x.fill();x.fillStyle='rgba(0,0,0,.15)';for(let i=1;i<6;i++){x.fillRect(X-W2*.46+i*0,Y-h*i/6,W2*.92,1.2);}
   x.fillStyle='#8a2f2a';x.beginPath();x.moveTo(X-W2*.46,Y-h);x.lineTo(X,Y-h-W2*.42);x.lineTo(X+W2*.46,Y-h);x.fill();
   const dw=m.w*k;x.fillStyle='#1a0f08';x.beginPath();x.moveTo(X-dw/2,Y);x.lineTo(X-dw/2,Y-dw*.8);x.arc(X,Y-dw*.8,dw/2,Math.PI,0);x.lineTo(X+dw/2,Y);x.fill();
   x.fillStyle='#ffe9a0';x.fillRect(X-W2*.25,Y-h*.62,W2*.12,W2*.12);x.fillRect(X+W2*.13,Y-h*.62,W2*.12,W2*.12);}
  const hubY=Y-(m.hub||m.r)*k,a=T*(m.speed||1.4)+(m.ph||0),n=m.blades||4,R=m.r*k,bw=R*.13;
  x.save();x.translate(X,hubY);
- if(bl){const bd=S.PICTURES['windmill-blades'],sc=(2*m.r*k/(bd.reach||1))/img_w(bl);x.rotate(a-Math.PI/2);x.drawImage(bl,-bl.width*sc/2,-bl.height*sc/2,bl.width*sc,bl.height*sc);}
+ if(bl){const bd=S.PICTURES['windmill-blades'],sc=(2*m.r*k/(bd.reach||1))/img_w(bl);x.rotate(a-Math.PI/2);x.drawImage(shrunk(bl,sc),-bl.width*sc/2,-bl.height*sc/2,bl.width*sc,bl.height*sc);}
  else for(let i=0;i<n;i++){x.save();x.rotate(a+i*Math.PI*2/n);x.fillStyle='#6b4423';x.fillRect(0,-R*.03,R,R*.06);x.fillStyle='rgba(245,240,225,.95)';x.fillRect(R*.3,-bw,R*.7,bw*2);x.strokeStyle='#6b4423';x.lineWidth=Math.max(1,R*.015);x.strokeRect(R*.3,-bw,R*.7,bw*2);for(let j=1;j<5;j++){x.beginPath();x.moveTo(R*(.3+j*.14),-bw);x.lineTo(R*(.3+j*.14),bw);x.stroke();}x.restore();}
  x.fillStyle='#3a2a1a';x.beginPath();x.arc(0,0,Math.max(3,R*.08),0,7);x.fill();x.restore();
 }
 const img_w=im=>im.width||im.naturalWidth||1;
 function drawClown(x,X,Y,k,wU,shut,T,GY=Y,gw=9.5){
  const W2=wU*k,img=S.picture('clown-head'),tt=S.picture('clown-teeth'),mw=gw*k;
- if(img){const d=S.PICTURES['clown-head'],sc=W2/img.width;x.drawImage(img,X-d.foot[0]/d.size[0]*img.width*sc,Y-d.foot[1]/d.size[1]*img.height*sc,img.width*sc,img.height*sc);}
+ if(img){const d=S.PICTURES['clown-head'],sc=W2/img.width;x.drawImage(shrunk(img,sc),X-d.foot[0]/d.size[0]*img.width*sc,Y-d.foot[1]/d.size[1]*img.height*sc,img.width*sc,img.height*sc);}
  else{const r=W2*.5,cy=Y-r*1.05;x.fillStyle='#ff6fa8';x.beginPath();x.arc(X-r*.95,cy-r*.45,r*.4,0,7);x.arc(X+r*.95,cy-r*.45,r*.4,0,7);x.fill();
   x.fillStyle='#fff3e4';x.beginPath();x.arc(X,cy,r,0,7);x.fill();x.fillStyle='#ff2d55';x.beginPath();x.arc(X,cy-r*.05,r*.16,0,7);x.fill();
   for(const s of [-1,1]){x.fillStyle='#111';x.beginPath();x.ellipse(X+s*r*.38,cy-r*.38,r*.1,r*.14,0,0,7);x.fill();x.fillStyle='#4da6ff';x.beginPath();x.moveTo(X+s*r*.38,cy-r*.62);x.lineTo(X+s*r*.3,cy-r*.75);x.lineTo(X+s*r*.46,cy-r*.75);x.fill();}
@@ -262,10 +351,10 @@ function drawClown(x,X,Y,k,wU,shut,T,GY=Y,gw=9.5){
   x.fillStyle='#c4002f';x.beginPath();x.moveTo(X-mw/2-r*.12,Y-r*.08);x.quadraticCurveTo(X,Y-r*.75,X+mw/2+r*.12,Y-r*.08);x.lineTo(X+mw/2,Y);x.lineTo(X-mw/2,Y);x.fill();x.fillStyle='#0b0b0b';x.beginPath();x.moveTo(X-mw/2,Y);x.quadraticCurveTo(X,Y-r*.58,X+mw/2,Y);x.fill();}
  // teeth: down = shut, drawn on the line where the jaw stops the ball (physics gate), as wide as it
  const ty=shut?GY-1:Y-mw*.55;x.fillStyle='#fffdf2';x.strokeStyle='#333';x.lineWidth=1;
- if(tt){const sc=mw/tt.width;x.drawImage(tt,X-mw/2,ty-tt.height*sc,mw,tt.height*sc);}else{for(let i=0;i<5;i++){const tx=X-mw/2+i*mw/5;x.beginPath();x.moveTo(tx,ty-mw*.32);x.lineTo(tx+mw/5,ty-mw*.32);x.lineTo(tx+mw/10,ty);x.closePath();x.fill();x.stroke();}}
+ if(tt){const sc=mw/tt.width;x.drawImage(shrunk(tt,sc),X-mw/2,ty-tt.height*sc,mw,tt.height*sc);}else{for(let i=0;i<5;i++){const tx=X-mw/2+i*mw/5;x.beginPath();x.moveTo(tx,ty-mw*.32);x.lineTo(tx+mw/5,ty-mw*.32);x.lineTo(tx+mw/10,ty);x.closePath();x.fill();x.stroke();}}
 }
 function drawGator(g,T){const w=Math.sin(T*8)*.5;g.fillStyle='#3d7a34';g.beginPath();g.ellipse(0,0,5,1.8,0,0,7);g.fill();g.beginPath();g.moveTo(-4,0);g.quadraticCurveTo(-7,w*2,-8,w*3);g.lineTo(-4,1);g.fill();g.fillStyle='#4f9a44';g.beginPath();g.moveTo(4,-1.3);g.lineTo(8,-.6);g.lineTo(8,.6);g.lineTo(4,1.3);g.fill();for(const [lx,ly] of [[2.5,-1.8],[2.5,1.8],[-2.5,-1.8],[-2.5,1.8]]){g.fillStyle='#2f6228';g.beginPath();g.ellipse(lx+w*.3,ly*1.25,.8,.5,0,0,7);g.fill();}g.fillStyle='#ffe14d';g.beginPath();g.arc(5,-.8,.35,0,7);g.arc(5,.8,.35,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=.15;g.beginPath();for(let i=0;i<5;i++){g.moveTo(5.4+i*.5,-.6);g.lineTo(5.6+i*.5,-.3);}g.stroke();}
-function drawGopher(x,X,Y,k,up){const img=S.picture('gopher'),w=5*k;if(img){const d=S.PICTURES.gopher,f=up<.5?0:up<.9?1:2,fw=img.width/3;x.drawImage(img,f*fw,0,fw,img.height,X-w/2,Y-w*(d.foot[1]/d.frame[1]),w,w);return;}
+function drawGopher(x,X,Y,k,up){let img=S.picture('gopher');const w=5*k;if(img){img=shrunk(img,w/(img.width/3));const d=S.PICTURES.gopher,f=up<.5?0:up<.9?1:2,fw=img.width/3;x.drawImage(img,f*fw,0,fw,img.height,X-w/2,Y-w*(d.foot[1]/d.frame[1]),w,w);return;}
  const h=w*1.1*up;x.save();x.beginPath();x.rect(X-w,Y-w*2,w*2,w*2);x.clip();x.fillStyle='#8a6232';x.beginPath();x.ellipse(X,Y-h*.55,w*.32,h*.6,0,0,7);x.fill();x.fillStyle='#c9a06a';x.beginPath();x.ellipse(X,Y-h*.45,w*.18,h*.35,0,0,7);x.fill();
  x.fillStyle='#000';x.beginPath();x.arc(X-w*.1,Y-h*.9,w*.05,0,7);x.arc(X+w*.1,Y-h*.9,w*.05,0,7);x.fill();x.fillStyle='#fff';x.fillRect(X-w*.06,Y-h*.75,w*.12,w*.09);x.fillStyle='#3a2210';x.beginPath();x.arc(X,Y-h*.82,w*.05,0,7);x.fill();x.restore();}
 
@@ -278,7 +367,7 @@ function drawBall(x,W,H,cam,bb,gz,gr){
  x.globalAlpha=bb.ghost?.55:1;
  if(bb.glow){x.save();x.shadowColor=bb.col;x.shadowBlur=14;x.fillStyle='#fff';x.beginPath();x.arc(X,Y,r,0,7);x.fill();x.restore();}
  const img=S.picture('ball');
- if(img)x.drawImage(img,X-r,Y-r,r*2,r*2);else{const g=x.createRadialGradient(X-r*.35,Y-r*.4,r*.1,X,Y,r);g.addColorStop(0,'#ffffff');g.addColorStop(.7,'#eef0f2');g.addColorStop(1,'#b9bec6');x.fillStyle=g;x.beginPath();x.arc(X,Y,r,0,7);x.fill();}
+ if(img)x.drawImage(shrunk(img,2*r/img.width),X-r,Y-r,r*2,r*2);else{const g=x.createRadialGradient(X-r*.35,Y-r*.4,r*.1,X,Y,r);g.addColorStop(0,'#ffffff');g.addColorStop(.7,'#eef0f2');g.addColorStop(1,'#b9bec6');x.fillStyle=g;x.beginPath();x.arc(X,Y,r,0,7);x.fill();}
  // face decal on the sphere
  const o=bb.orient;if(bb.face&&o&&o.n[2]>.05){const n=o.n,su=cam.rot?-n[1]:n[0],sv=cam.rot?n[0]:n[1];const ox=su*r*.95,oy=sv*r*.95*TC,th=Math.atan2(oy,ox),fz=n[2];
   x.save();x.beginPath();x.arc(X,Y,r*.98,0,7);x.clip();x.translate(X+ox*.85,Y+oy*.85);x.rotate(th);x.scale(Math.max(.15,fz),1);x.rotate(-th);

@@ -75,11 +75,13 @@ const PICTURES={
 };
 const url=name=>USER['minigolf:'+name]||null;
 const has=name=>!!url(name);
-const imgs=new Map();
+const imgs=new Map();let ver=0;
+// version(): bumps every time a picture finishes loading (the game's cached layers and sprites repaint then)
+const version=()=>ver;
 function picture(name){
  const u=url(name);if(!u||typeof Image==='undefined')return null;
- let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;};e.img.src=u;imgs.set(name,e);}
+ let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;ver++;};e.img.src=u;imgs.set(name,e);}
  return e.ok?e.img:null;
 }
 function preloadMinigolf(){for(const k of Object.keys(USER))if(k.startsWith('minigolf:'))picture(k.slice(9));}
-Object.assign(exports,{PICTURES,has,url,picture,preloadMinigolf});
+Object.assign(exports,{PICTURES,has,url,picture,preloadMinigolf,version});
