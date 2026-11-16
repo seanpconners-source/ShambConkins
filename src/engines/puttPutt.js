@@ -35,12 +35,12 @@ const ptsOf=(h,n)=>30*(h.par+4-n);  // points (higher = better) for the launcher
 async function minigolf(s){
  const [c,x0]=s.canvas(720,1280,{fill:true});let x=x0;const fb=fullBleed(s,{bg:'#0b1a10'});s.body.classList.add('drag-arena-body');s.controls([]);s.ownHud?.(true,true);
  SP.preloadMinigolf();
- const net=isOnline(s)?s.online:null,me=net?net.me:-1,cpu=isCpu(s),snd=createSound();if(net)s.hotseat=true;s.cleanup(()=>snd.stop());
+ const net=isOnline(s)?s.online:null,me=net?net.me:-1,cpu=isCpu(s),snd=createSound();if(net)s.hotseat=true;s.cleanup(()=>{snd.stop();R.freeHole(C);});
  const board=!store.arcade,np=2,human=i=>!(cpu&&i===1)&&!(net&&i!==me);
  const variant=s.game?.id==='caddyshack-golf'?'bushwood':null;
  s.hint('Drag back from anywhere and let go: the dotted line shows where the ball starts and its first bounce, the ring the power. Pull all the way into the red for a wild Happy Gilmore drive. Pinch or use two fingers to look around; the eye button shows the whole hole. The player farther from the cup putts next. Sand slows you, water and falling off cost a stroke. Find the hidden lost ball on every hole.');
  // ------------------------------------------------------------ state
- let phase='menu',W=s.W,H=s.H,T=0,cam={x:30,y:60,k:6,rot:0},tcam=null,hole=null,C=null,course=null,plan=null,hi=0,turn=0,balls=[],cards=[[],[]],honor=0;
+ let phase='loading',W=s.W,H=s.H,T=0,cam={x:30,y:60,k:6,rot:0},tcam=null,hole=null,C=null,course=null,plan=null,hi=0,turn=0,balls=[],cards=[[],[]],honor=0;
  let aim=null,callout=null,fx=[],hits={},flyT=0,camMode='auto',manual=null,pinch=null,cpuJob=null,waitFin=null,lie=null,overview=false,scoreUI=null,menu={c:variant||'bushwood',n:board?3:6},menuHits=[],cardT=0,lostFound={},done=false;
  const moods=[{m:'normal',t:0},{m:'normal',t:0}],mood=(i,m,sec=1.6)=>{moods[i]={m,t:sec};if(m==='win')s.react?.(i,'happy',sec);else if(m==='sad'||m==='angry')s.react?.(i,'sad',sec);};
  const prof=()=>{const p=store.profile;if(!p)return null;const v=p.sitabout&&typeof p.sitabout==='object'?p.sitabout:{};p.sitabout={best:{...(v.best||{})},holes:{...(v.holes||{})},aces:+v.aces||0,lost:Array.isArray(v.lost)?v.lost.slice():[],rounds:+v.rounds||0};return p;};
@@ -78,11 +78,12 @@ async function minigolf(s){
   if(board){// board: three holes, a random course and side (both phones deal the same from the seed)
    const cid=variant||COURSES[Math.floor(s.random()*COURSES.length)].id,st=s.random()<.5?0:3;return {cid,list:holesFor(cid,3,st)};}
   if(net&&me!==0){phase='menu-wait';while(s.alive&&!gotSetup&&!netGone)await new Promise(r=>setTimeout(r,60));if(!gotSetup)return null;const {c:cid,n,st}=gotSetup;return {cid,list:holesFor(cid,n,st)};}
-  phase='menu';await new Promise(res=>{menu.go=res;});
+  await loadPictures(SP.MENU_PICTURES,10000);if(!s.alive)return null;
+  phase='menu';await new Promise(res=>{menu.go=res;if(menu.auto){menu.auto=false;menu.go=null;res();}});
   const r={cid:menu.c,list:holesFor(menu.c,menu.c==='tour'?18:menu.n,0)};if(net)net.send({setup:{c:menu.c,n:r.list.length,st:0}});return r;
  }
  // ------------------------------------------------------------ holes
- function startHole(i){hi=i;hole=plan.list[i];course=courseById(hole.course);C=P.compile(hole);T=0;fx=[];hits={};overview=false;camMode='auto';manual=null;
+ function startHole(i){hi=i;hole=plan.list[i];course=courseById(hole.course);R.freeHole(C);C=P.compile(hole);T=0;fx=[];hits={};overview=false;camMode='auto';manual=null;
   // a hole is turned (tee on the left) when that fits the screen better, but never one with a set piece built to face
   // the tee (windmill, clown head): those are pictures standing up toward the camera, so turned they'd sit sideways
   const facing=(hole.movers||[]).some(m=>m.kind==='windmill')||(hole.blocks||[]).some(b=>b.look==='clown');
@@ -90,7 +91,9 @@ async function minigolf(s){
   balls=[0,1].map(pi=>{const b=P.newBall(hole.tee[0]+(pi?1.6:-1.6),hole.tee[1],C);b.rest=true;return {b,i:pi,col:COL[pi],strokes:0,done:false,picked:false,orient:R.newOrient(cam.rot),face:faceFn(pi),lie:{x:b.x,y:b.y,z:b.z},vis:1.3,cup:hole.cup};});
   phase='intro';flyT=0;const f=frame('overview');cam={...f,rot:cam.rot};tcam=null;callout=null;
   snd.ambience(0,course.id);}
- function faceFn(i){return (g,cx,cy,size)=>{const id=s.players[i]?.character,m=moods[i].m,fw=size*.78,sp=id&&faceSprite(id,m,fw,1);if(sp){g.drawImage(sp.cv,cx+sp.x,cy+sp.y);}else s.sprite(g,i,cx,cy,size,{exact:true,mood:m,noBadge:true,still:true});};}
+ // the face is made at sizes in ~12% steps and scaled to the exact size (the ball changes size with every zoom step of the
+ // camera, and a new face picture per pixel of size was a fresh canvas almost every frame of a roll)
+ function faceFn(i){return (g,cx,cy,size)=>{const id=s.players[i]?.character,m=moods[i].m,fw=size*.78,q=Math.pow(2,Math.ceil(Math.log2(Math.max(4,fw))*6)/6),sp=id&&faceSprite(id,m,q,1);if(sp){const k=fw/q;g.drawImage(sp.cv,cx+sp.x*k,cy+sp.y*k,sp.cv.width*k,sp.cv.height*k);}else s.sprite(g,i,cx,cy,size,{exact:true,mood:m,noBadge:true,still:true});};}
  // who putts: on the tee the honour (best last hole), then whoever is away (farther from the cup along the greens)
  function nextPlayer(){const live=balls.filter(b=>!b.done);if(!live.length)return -1;if(live.length===1)return live[0].i;
   const a=balls[0],b=balls[1];if(a.strokes===0&&b.strokes===0)return honor;if(a.strokes===0)return 0;if(b.strokes===0)return 1;
@@ -204,7 +207,7 @@ async function minigolf(s){
  // ------------------------------------------------------------ drawing
  function drawWorld(){
   const parts=C.movers.length?P.moverParts(C,T):{segs:[],hazards:[]};const near=balls.some(bb=>!bb.done&&!bb.hidden&&Math.hypot(bb.b.x-hole.cup[0],bb.b.y-hole.cup[1])<14);
-  R.drawHole(x,W,H,cam,{C,course,T,parts,fx,hit:hits,trail:phase==='roll'||phase==='fin'?trail:null,balls:balls.filter(bb=>!bb.done||bb.sinkT<.5).map(bb=>({...bb,ghost:phase!=='intro'&&bb.i!==turn&&!bb.done,sinkDip:bb.done&&!bb.picked?Math.min(1,bb.sinkT*3)*2.2:0})),flag:near?.35:1,lost:hole.lost,lostFound:lostFound[hole.key]||saved().lost?.includes(hole.key)});}
+  R.drawHole(x,W,H,cam,{C,course,T,kc:kCeil(),paintMs:phase==='roll'||phase==='fin'?2:phase==='intro'?7:5,parts,fx,hit:hits,trail:phase==='roll'||phase==='fin'?trail:null,balls:balls.filter(bb=>!bb.done||bb.sinkT<.5).map(bb=>({...bb,ghost:phase!=='intro'&&bb.i!==turn&&!bb.done,sinkDip:bb.done&&!bb.picked?Math.min(1,bb.sinkT*3)*2.2:0})),flag:near?.35:1,lost:hole.lost,lostFound:lostFound[hole.key]||saved().lost?.includes(hole.key)});}
  function drawAim(){
   const bb=balls[turn];if(!bb)return;const b=bb.b,[BX,BY]=R.proj(cam,W,H,b.x,b.y,b.z+P.BALL_R);
   let v=aim?shotVec():null;
@@ -283,6 +286,21 @@ async function minigolf(s){
    text(`${s.players[0].name} ${a} (${toPar(0)})   ·   ${s.players[1].name} ${b} (${toPar(1)})`,W/2,Y+h-28,13,'#2a3a22','center',UI,800);}
   else text('tap to continue',W/2,Y+h-18,12,'#6a5a3a','center',UI,800);}
  // ------------------------------------------------------------ the course picker (Arcade)
+ // pictures arrive the first time the game opens (and decode a moment after): wait for what the next screen shows rather
+ // than flash the drawn stand-ins (a slow phone/network still gets in after ms)
+ let loadP={n:0,of:0};
+ async function loadPictures(names,ms){phase='loading';loadP={n:0,of:0};await SP.readyMinigolf(names,ms,(n,of)=>{loadP={n,of};});}
+ function drawLoading(){x.fillStyle='#0b1a10';x.fillRect(0,0,W,H);const bw=Math.min(W*.6,280),bx=(W-bw)/2,by=H*.55;
+  text('SITABOUT',W/2,H*.42,clamp(W*.11,30,64),'#ffd23f','center',FONT,400);text('MINI GOLF',W/2,H*.42+clamp(W*.07,22,40),clamp(W*.045,14,24),'#fff','center',FONT,400);
+  pill(bx,by,bw,10,'rgba(255,255,255,.15)');if(loadP.of)pill(bx,by,Math.max(10,bw*loadP.n/loadP.of),10,'#2fbf4a');text('mowing the greens…',W/2,by+30,clamp(W*.032,11,14),'rgba(255,255,255,.75)','center',UI,800);}
+ // the picker never changes while it sits there, so it is drawn once into its own canvas (the 4K backdrop used to be
+ // scaled down every frame); drawn live only while a picture is missing (its stand-in flag waves)
+ let menuCv=null,menuSig='';
+ function drawMenuCached(){W=s.W;H=s.H;const ready=SP.MENU_PICTURES.every(n=>!SP.has(n)||SP.picture(n));
+  if(!ready){drawMenu();return;}
+  const sig=[W,H,menu.c,menu.n,SP.version(),fb.top].join('|');
+  if(!menuCv||sig!==menuSig){menuSig=sig;if(!menuCv)menuCv=document.createElement('canvas');menuCv.width=W;menuCv.height=H;x=menuCv.getContext('2d');try{drawMenu();}finally{x=x0;}}
+  x.drawImage(menuCv,0,0);}
  function drawMenu(){menuHits=[];W=s.W;H=s.H;
   const bg=SP.picture('title-bg');if(bg){const sc=Math.max(W/bg.width,H/bg.height),bw=bg.width*sc,bh=bg.height*sc,f=SP.PICTURES['title-bg'].focus||[.5,.5];x.drawImage(bg,clamp(W/2-f[0]*bw,W-bw,0),clamp(H/2-f[1]*bh,H-bh,0),bw,bh);}
   else{const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#7cc8ff');g.addColorStop(.55,'#c8ecff');g.addColorStop(.56,'#4fb04a');g.addColorStop(1,'#2d6e2a');x.fillStyle=g;x.fillRect(0,0,W,H);
@@ -321,16 +339,17 @@ async function minigolf(s){
   else if(Array.isArray(m.fin)){await wait(()=>phase==='fin'&&waitFin);if(!s.alive)return;const {bb}=waitFin,[fx0,fy0,fz0,k,n]=m.fin;waitFin=null;const b=bb.b;
    if(k!=='splash'&&k!=='ob'&&k!=='chomp'){b.x=+fx0;b.y=+fy0;b.z=+fz0;}if(Number.isFinite(n))bb.strokes=n;b.vx=b.vy=0;settle(k,bb);}}})();
  // ------------------------------------------------------------ test hooks
- s.debug={engine:'minigolf',get phase(){return phase;},get hole(){return hole?.key;},get hi(){return hi;},get turn(){return turn;},get balls(){return balls;},get cards(){return cards;},get T(){return T;},
-  pick(cid,n){menu.c=cid;menu.n=n||menu.n;menu.go&&menu.go();},skipIntro(){flyT=99;},go(i){startHole(i);},place(x0,y0){const bb=balls[turn];Object.assign(bb.b,P.newBall(x0,y0,C));},fire(vx,vy){fire(vx,vy,false,false);},aimAt(sx,sy,ex,ey){aim={id:-1,sx,sy,x:ex,y:ey,t0:performance.now()};},
+ s.debug={engine:'minigolf',get phase(){return phase;},get hole(){return hole?.key;},get hi(){return hi;},get turn(){return turn;},get balls(){return balls;},get cards(){return cards;},get T(){return T;},gfx(){return R.cacheStats(C);},
+  pick(cid,n){menu.c=cid;menu.n=n||menu.n;if(menu.go)menu.go();else menu.auto=true;},skipIntro(){flyT=99;},go(i){startHole(i);},place(x0,y0){const bb=balls[turn];Object.assign(bb.b,P.newBall(x0,y0,C));},fire(vx,vy){fire(vx,vy,false,false);},aimAt(sx,sy,ex,ey){aim={id:-1,sx,sy,x:ex,y:ey,t0:performance.now()};},
   // one good shot for whoever is up (tests / online bot); returns a word when it acts
   shoot(skill=.8){if(phase!=='aim')return '';const bb=balls[turn],r=CPU.planNow(C,{x:bb.b.x,y:bb.b.y,z:bb.b.z},T,{skill,fine:false}),v=r.p*VMAX;fire(Math.cos(r.a)*v,Math.sin(r.a)*v,false,false);return 'shot';},
-  get bot(){return ()=>{if(phase==='menu'&&menu.go){menu.go();return 'menu';}if(phase==='intro'){flyT=99;return 'skip';}if(phase==='card'&&scoreUI&&cardT>.8){scoreUI.next();return 'card';}if(phase==='aim'&&myTurn())return s.debug.shoot(.6);return '';};},
+  get bot(){return ()=>{if(phase==='loading')return '';if(phase==='menu'&&menu.go){menu.go();return 'menu';}if(phase==='intro'){flyT=99;return 'skip';}if(phase==='card'&&scoreUI&&cardT>.8){scoreUI.next();return 'card';}if(phase==='aim'&&myTurn())return s.debug.shoot(.6);return '';};},
   state(){return {phase,hole:hole?.key,turn,strokes:balls.map(b=>b.strokes),cards,points:plan?pointsNow():[0,0]};}};
  // ------------------------------------------------------------ main loop
  s.frame(dt=>{
   W=s.W;H=s.H;x.setTransform(1,0,0,1,0,0);
-  if(phase==='menu'){T+=dt;drawMenu();return;}
+  if(phase==='loading'){T+=dt;drawLoading();return;}
+  if(phase==='menu'){T+=dt;drawMenuCached();return;}
   if(phase==='menu-wait'){drawMenuWait();return;}
   if(!hole)return;
   if(phase!=='fin'&&phase!=='roll')T+=dt;
@@ -349,6 +368,10 @@ async function minigolf(s){
   if(phase==='over')drawCard(true);
  });
  plan=await chooseRound();if(!plan||!s.alive)return;
+ // the course's own pictures (ground, rails, props) before the first hole, so its ground is painted once with them
+ phase='loading';const names=SP.coursePictures(plan.cid);await loadPictures(names,12000);if(!s.alive)return;
+ // and their shrunk copies, a few a frame while the bar fills (made mid-hole they were the long first frames of a hole)
+ for(let i=0;i<names.length;i+=4){R.warmPictures(names.slice(i,i+4));loadP={n:i,of:names.length};await new Promise(r=>requestAnimationFrame(()=>r()));if(!s.alive)return;}
  cards=[[],[]];startHole(0);
 }
 Object.assign(exports,{minigolf});

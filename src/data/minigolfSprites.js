@@ -78,10 +78,20 @@ const has=name=>!!url(name);
 const imgs=new Map();let ver=0;
 // version(): bumps every time a picture finishes loading (the game's cached layers and sprites repaint then)
 const version=()=>ver;
-function picture(name){
+// a picture counts as loaded only once it is decoded (img.decode() runs off the main thread; the first drawImage of a
+// picture that is only "loaded" decodes it right there, a visible hitch for the big ones)
+function load(name){
  const u=url(name);if(!u||typeof Image==='undefined')return null;
- let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;ver++;};e.img.src=u;imgs.set(name,e);}
- return e.ok?e.img:null;
-}
-function preloadMinigolf(){for(const k of Object.keys(USER))if(k.startsWith('minigolf:'))picture(k.slice(9));}
-Object.assign(exports,{PICTURES,has,url,picture,preloadMinigolf,version});
+ let e=imgs.get(name);if(!e){e={img:new Image(),ok:false,done:false};imgs.set(name,e);const ok=()=>{if(e.done)return;e.done=true;e.ok=!!(e.img.naturalWidth);if(e.ok)ver++;};
+  e.img.decoding='async';e.img.src=u;if(e.img.decode)e.img.decode().then(ok,()=>{e.img.complete?ok():e.img.addEventListener('load',ok,{once:true});e.img.addEventListener('error',()=>{e.done=true;},{once:true});});else{e.img.onload=ok;e.img.onerror=()=>{e.done=true;};}}
+ return e;}
+function picture(name){const e=load(name);return e&&e.ok?e.img:null;}
+function preloadMinigolf(){for(const k of Object.keys(USER))if(k.startsWith('minigolf:'))load(k.slice(9));}
+// wait until these pictures (the ones that exist) are decoded, or failed, or ms have passed; onProgress(done,total)
+function readyMinigolf(names,ms=10000,onProgress){
+ const list=names.filter(has).map(load).filter(Boolean),t0=Date.now();
+ return new Promise(res=>{const tick=()=>{const n=list.filter(e=>e.done).length;onProgress&&onProgress(n,list.length);if(n>=list.length||Date.now()-t0>ms)return res(n>=list.length);setTimeout(tick,50);};tick();});}
+// the pictures a course's holes use (ground per course + everything shared), and the course picker's
+const coursePictures=cid=>Object.keys(PICTURES).filter(n=>{const d=PICTURES[n];if(d.kind==='pic')return false;const c=C3.find(c=>n.startsWith(c+'-'));return !c||c===cid||cid==='tour';});
+const MENU_PICTURES=['title-bg','logo',...C3.map(c=>c+'-card')];
+Object.assign(exports,{PICTURES,has,url,picture,preloadMinigolf,readyMinigolf,coursePictures,MENU_PICTURES,version});

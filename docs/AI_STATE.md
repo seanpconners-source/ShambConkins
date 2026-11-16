@@ -2,6 +2,21 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+MINIGOLF FRAME RATE ROUND 3 (Nov 16, branch ccr-7982f835-hqy3s1, unreleased; owner: still choppy, picker flashes the drawn
+art): cause = the roll camera zooms with ball speed, and every zoom step repainted ground tiles (new canvases) + rail
+sprites, made new shrunk() copies and a new face sprite per pixel of ball size. Now render.js caches each hole ONCE at a
+fixed zoom st.kc (= puttPutt kCeil(), the closest the auto camera gets; capped by GROUND_PX 18 Mpx): 256 px ground tiles
+painted within st.paintMs per frame (intro 7, aim 5, roll 2 ms; visible first, then the whole extent) + one small `low`
+copy of the hole (LOW_K .4) that stands in for unpainted tiles and is used when zoomed far out; sprites at the same kc
+(unpainted ones drawn live); a picture loading later marks things stale (drawn as before until repainted). Lawn = live
+pattern from one prescaled square (drawLawn). Pictures: mip chains (mipChain/shrunk, halvings, picked by size at kc via
+KREF), made on the loading screen (warmPictures); minigolfSprites decode() before a picture counts as loaded,
+readyMinigolf/coursePictures/MENU_PICTURES. puttPutt: phase 'loading' (bar) waits for the picker's pictures (10 s cap)
+and, after TEE OFF, the course's (12 s) + mips; picker drawn once into menuCv (was the 4K title-bg scaled every frame);
+ball face sprites in 2^(1/6) size steps; freeHole(C) on hole change/exit; debug.gfx() = cacheStats (tiles/todo/sprites).
+Headless 4x CPU: first frame of a hole 836 -> 150 ms JS, roll frame JS p99 35 -> 11 ms, picker JS 10 -> 0.1 ms; cache
+done by the end of the flyover on gilmore 1-3. Headless frame intervals are software-raster bound (not phone-like).
+
 v0.99.9 RELEASED (Nov 16, owner: "When finished please release!!"; tests: games.mjs broforce/horde/pool 12/12, smoke, backup, pool-rules):
 the Sean of a Gun/pool work below + GPT's BODY V2 (UPLOADS-GPT-2026-11-16-0052, Drive 1rAG2FwJqB37wgvZMD7dx-Pf_pP3p5tP6, SHA 5c104287...):
 assets/broforce/bro-torso.webp (lossless; original assets/originals/broforce/bro-torso-v2.png), 768x1344 = same 6x7 layout as the def,

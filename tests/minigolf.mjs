@@ -15,7 +15,7 @@ async function playOut(page,limitS=240){const t0=Date.now();let end='';while(Dat
   const r=await D(page,()=>{const S=window.ShambConkins.store,dl=document.getElementById('dialog');if(dl.open&&!S.session)return 'END '+dl.innerText.replace(/\s+/g,' ').slice(0,160);const d=S.session?.debug;if(!d)return '';const st=d.state();if(st.phase==='aim'&&!(S.session.solo&&st.turn===1))d.shoot(.8);else d.bot();return '';});
   if(r.startsWith('END')){end=r;break;}await page.waitForTimeout(400);}return end;}
 // ---- 2P: picker, flyover, a real drag putt, then three holes to the end
-{const page=await open();await page.waitForTimeout(600);await page.screenshot({path:screenshotPath(`mg-menu-${tag}.png`)});
+{const page=await open();await page.waitForFunction(()=>window.ShambConkins.store.session.debug.phase!=='loading',null,{timeout:20000});await page.waitForTimeout(300);await page.screenshot({path:screenshotPath(`mg-menu-${tag}.png`)});
  check((await dbg(page)).phase==='menu','the Arcade opens on the course picker');
  // tap the Spaceballs card then FRONT 3 then TEE OFF through the real canvas
  await D(page,()=>window.ShambConkins.store.session.debug.pick('bushwood',3));await page.waitForTimeout(800);
