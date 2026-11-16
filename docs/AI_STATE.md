@@ -2,18 +2,18 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-SEANIC ART BATCH (Nov 16, GPT UPLOADS-GPT-2026-11-16-1213, Drive folder 1Jfd4NltIdRz6tsJCR9_Xt_t2zjK3x5sD, all 19 SHA-checked):
+SEANIC ART BATCH (Nov 16, RELEASED as v0.99.11 with the minigolf work below (owner: "release to main"; test:core EXIT 0 + Seanic/minigolf tests); GPT UPLOADS-GPT-2026-11-16-1213, Drive folder 1Jfd4NltIdRz6tsJCR9_Xt_t2zjK3x5sD, all 19 SHA-checked):
 KNUX = runner-p3/ball-p3/dreads-p3, SHADE = runner-p4/ball-p4/quills-p4 (own sheets; rows + glide/climb/slide, ball homing;
 render.js falls back to the recoloured hedgehog when missing; BALL_SRC knux 25.6 / dark 24); walk-p1/p2 pasted into the walk
 rows (cell 0 = our stand cell byte for byte) → WALK_RUN 5.5; runner-p2 tired row (used for p.fly===1); cork-p1/p2 sheets (12
 frames, foot = axis, face table in tools/sonic3/import-rows.py, null = no face; frame = round(-a/2π·12)); corkscrew-band/post,
 seesaw-plank/base/ball, chain-link, fish (sheet), spike-log (sheet, frame from spin: up = frame 2), palm-2 (root 48/112),
 jungle-near (new 1024x320 used instead of the darkened far layer). Tools: import-sheet.py --order/--grid, import-rows.py,
-import-stage.py (docs/sonic3-sprites/README.md). Checked: s3-* Node tests, sonic3/intro/zone1/act2/act3/music browser tests,
+import-stage.py (docs/sonic3-sprites/README.md). Tally posted on Drive: TALLY-CLAUDE-2026-11-16-1352.md (DELETE OK the whole Seanic folder). TESTver is stale (v0.96.10, separate history): not merged. Checked: s3-* Node tests, sonic3/intro/zone1/act2/act3/music browser tests,
 pose contact sheets (stand/walk/run per runner, glide, climb, tired, corkscrew ride). tests/sonic3.mjs bot now lets go of a
 vine after a second (it hung there now and then on old builds too). Shade's dead frame 2 uses the template face spot.
 
-MINIGOLF FRAME RATE ROUND 3 (Nov 16, branch ccr-7982f835-hqy3s1, unreleased; owner: still choppy, picker flashes the drawn
+MINIGOLF FRAME RATE ROUND 3 (Nov 16, RELEASED as v0.99.11; owner: still choppy, picker flashes the drawn
 art): cause = the roll camera zooms with ball speed, and every zoom step repainted ground tiles (new canvases) + rail
 sprites, made new shrunk() copies and a new face sprite per pixel of ball size. Now render.js caches each hole ONCE at a
 fixed zoom st.kc (= puttPutt kCeil(), the closest the auto camera gets; capped by GROUND_PX 18 Mpx): 256 px ground tiles
