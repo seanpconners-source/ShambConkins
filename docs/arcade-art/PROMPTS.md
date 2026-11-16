@@ -515,7 +515,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Boulder Run · `raiders-ball-run`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Boulder Run", a minigame in a party video game that pays tribute to Indiana Jones. Scene: Both run at once: top corridor is player 1, bottom is player 2, identical traps. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -525,7 +525,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Paper Route · `paper-route`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Paper Route", a minigame in a party video game that pays tribute to Paperboy. Scene: Ride the same street in turns. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -535,7 +535,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## The Warriors · Come Out to Play · `warriors-brawl`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "The Warriors · Come Out to Play", a minigame in a party video game that pays tribute to The Warriors. Scene: A Streets of Rage style beat 'em up on the Warriors' walk home to Coney Island, taking turns on the same waves. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -545,7 +545,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Battle Royale · The Island · `battle-royale-island`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Battle Royale · The Island", a minigame in a party video game that pays tribute to Battle Royale. Scene: The film's rules, both at once (P1 left half, P2 right half). Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -555,7 +555,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Pancakes, Divorce, Pancakes · `review-pancakes`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Pancakes, Divorce, Pancakes", a minigame in a party video game that pays tribute to Review. Scene: Both eat at once. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -565,7 +565,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Duck Hunt · Head Hunt · `duck-hunt-turn`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Duck Hunt · Head Hunt", a minigame in a party video game that pays tribute to Duck Hunt. Scene: NES Duck Hunt with your rival's head on every duck, taking turns on the same flight patterns. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -575,7 +575,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Crossy Road · `crossy-chaos`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Crossy Road", a minigame in a party video game that pays tribute to Crossy Road. Scene: Dodge cars and trains, ride the logs, grab coins and keep moving: the camera and the eagle won’t wait. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -585,7 +585,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Pong · Arcade 1972 · `pong-duel`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Pong · Arcade 1972", a minigame in a party video game that pays tribute to Pong. Scene: Atari 1972, two humans at once. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -595,7 +595,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## The Office · Warehouse Shift · `warehouse-shift`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "The Office · Warehouse Shift", a minigame in a party video game that pays tribute to The Office. Scene: Rush Hour in the Dunder Mifflin warehouse. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -605,7 +605,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Lunar Lander · Moonraker · `moonraker-lander`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Lunar Lander · Moonraker", a minigame in a party video game that pays tribute to Lunar Lander. Scene: Atari 1979 in vector lines, Moonraker edition; take turns on the same moon. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -615,7 +615,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Missile Command · Mars Attacks! · `mars-missile-defense`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Missile Command · Mars Attacks!", a minigame in a party video game that pays tribute to Missile Command. Scene: Atari 1980, Martian edition; take turns on the same attack. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -625,7 +625,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Starship Troopers · Klendathu Scorched Earth · `bug-artillery`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Starship Troopers · Klendathu Scorched Earth", a minigame in a party video game that pays tribute to Starship Troopers. Scene: Scorched Earth on Klendathu, taking turns. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -635,7 +635,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Strategema Grid · `strategema-grid`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Strategema Grid", a minigame in a party video game that pays tribute to Star Trek: The Next Generation. Scene: Trap lines of enemy discs to flip them. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -645,7 +645,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## There Are Four Lights! · `four-lights`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "There Are Four Lights!", a minigame in a party video game that pays tribute to Star Trek: The Next Generation. Scene: Drop a disc into a column. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -655,7 +655,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Alien · Motion Tracker · `alien-sonar-grid`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Alien · Motion Tracker", a minigame in a party video game that pays tribute to Alien. Scene: Motion tracker: blips only show on each ping, and pings speed up as they close in. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -665,7 +665,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Happy Gilmore × Caddyshack · Putt-Putt · `happy-gilmore-golf`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Happy Gilmore × Caddyshack · Putt-Putt", a minigame in a party video game that pays tribute to Happy Gilmore. Scene: Sitabout Mini Golf: pro-style putt-putt with your head as the ball. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -675,7 +675,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Kingpin · Hook & Hustle · `kingpin-bowling`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Kingpin · Hook & Hustle", a minigame in a party video game that pays tribute to Kingpin. Scene: the most iconic moment of Kingpin · Hook & Hustle. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -685,7 +685,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Breakout · Atari 1976 · `breakout-party`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Breakout · Atari 1976", a minigame in a party video game that pays tribute to Breakout. Scene: Atari 1976, take turns on the same serves. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -695,7 +695,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Asteroids · Atari 1979 · `asteroid-drift`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Asteroids · Atari 1979", a minigame in a party video game that pays tribute to Asteroids. Scene: Atari 1979 in glowing vector lines, take turns on the same rocks. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -705,7 +705,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Snake II · Nokia 3310 · `snake-run`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Snake II · Nokia 3310", a minigame in a party video game that pays tribute to Snake. Scene: Snake II from the Nokia 3310, taking turns on the same food. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -715,7 +715,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Bomb Grid · `bomber-duel`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Bomb Grid", a minigame in a party video game that pays tribute to Bomberman. Scene: Shared Bomberman arena. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -735,7 +735,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Combat · Metal Gear Tank Duel · `metal-gear-tank-duel`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Combat · Metal Gear Tank Duel", a minigame in a party video game that pays tribute to Combat. Scene: Atari 2600 Combat (Tank-Pong), both at once. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -745,7 +745,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Full ShambYahtzee · `full-shambyahtzee`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Full ShambYahtzee", a minigame in a party video game that pays tribute to Yahtzee. Scene: Full thirteen-category Yahtzee. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -755,7 +755,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Dinner Service · `kitchen-service`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Dinner Service", a minigame in a party video game that pays tribute to Kitchen Nightmares. Scene: Burger line, same tickets for both chefs. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -765,7 +765,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Rainbow Rivals · `rainbow-rivals`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Rainbow Rivals", a minigame in a party video game that pays tribute to Super Mario Bros.. Scene: the most iconic moment of Rainbow Rivals. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -775,7 +775,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Tetris · Block Battle · `block-battle`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Tetris · Block Battle", a minigame in a party video game that pays tribute to Tetris. Scene: 2+ line clears send garbage; last survivor wins. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -785,7 +785,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Guitar Hero · Shred Hero · `shred-hero`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Guitar Hero · Shred Hero", a minigame in a party video game that pays tribute to Guitar Hero. Scene: The same riff and chart for both players, side by side. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -795,7 +795,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Dodgeball · True Underdog Story · `underdog-dodgeball`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Dodgeball · True Underdog Story", a minigame in a party video game that pays tribute to Dodgeball. Scene: the most iconic moment of Dodgeball · True Underdog Story. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -805,7 +805,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Rocky · Fight Night · `fight-night`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Rocky · Fight Night", a minigame in a party video game that pays tribute to Rocky. Scene: the most iconic moment of Rocky · Fight Night. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -815,7 +815,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Caddyshack · Gopher Hunt · `gopher-hunt`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Caddyshack · Gopher Hunt", a minigame in a party video game that pays tribute to Caddyshack. Scene: Alternate turns, same pop pattern for both. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -825,7 +825,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Brave · Wind Archery · `wind-archery`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Brave · Wind Archery", a minigame in a party video game that pays tribute to Brave. Scene: Wind pushes the arrow and the target starts moving after the second shot. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -835,7 +835,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## The Newlywed Game · Spirit Battery · `newlywed-spirit`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "The Newlywed Game · Spirit Battery", a minigame in a party video game that pays tribute to The Newlywed Game. Scene: Answer a question about yourself in secret while your partner secretly guesses it. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -845,7 +845,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Roast Battle · Crowd Meter · `roast-battle`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Roast Battle · Crowd Meter", a minigame in a party video game that pays tribute to Roast Battle. Scene: Pick a roast card, read it out loud, and your opponent rates the burn with 1 to 3 Ohhhs. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -855,7 +855,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Pictionary · Draw It · `draw-it`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Pictionary · Draw It", a minigame in a party video game that pays tribute to Pictionary. Scene: Draw a secret pop-culture prompt with your finger in 25 seconds while the other player watches the replay and picks the right answer out of six. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -875,7 +875,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Simon · Face-Off · `simon-faceoff`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Simon · Face-Off", a minigame in a party video game that pays tribute to Simon. Scene: Pads light up in a growing pattern. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -885,7 +885,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## The Price Is Right · Come On Down! · `price-bid-off`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "The Price Is Right · Come On Down!", a minigame in a party video game that pays tribute to The Price Is Right. Scene: Three rounds on Contestants’ Row: bid on a prize, closest without going over wins it. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -895,7 +895,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Hungry Hungry Hippos · Hungry Hungry Heads · `hungry-hungry-heads`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Hungry Hungry Hippos · Hungry Hungry Heads", a minigame in a party video game that pays tribute to Hungry Hungry Hippos. Scene: Clumps give bonus chomps, golden marbles are worth 5 and the last ten seconds count double. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -905,7 +905,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Windjammers · Disc Duel · `disc-duel`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Windjammers · Disc Duel", a minigame in a party video game that pays tribute to Windjammers. Scene: One disc, two catchers. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -915,7 +915,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## TowerFall · Arrow Arena · `arrow-arena`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "TowerFall · Arrow Arena", a minigame in a party video game that pays tribute to TowerFall. Scene: Side-view arena that wraps left to right. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -925,7 +925,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Mr. Driller · Driller Duel · `driller-duel`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Mr. Driller · Driller Duel", a minigame in a party video game that pays tribute to Mr. Driller. Scene: Two shafts with identical blocks. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -935,7 +935,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Puzzle Bobble · Bubble Battle · `bubble-battle`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Puzzle Bobble · Bubble Battle", a minigame in a party video game that pays tribute to Puzzle Bobble. Scene: Two mirrored bubble fields with identical bubbles. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -1035,7 +1035,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Frogger · `frogger-heads`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Frogger", a minigame in a party video game that pays tribute to Frogger. Scene: The 1981 arcade game with your head on the frog. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -1065,7 +1065,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Sqwordle · `sqwordle`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Sqwordle", a minigame in a party video game that pays tribute to Pokémon. Scene: Guess the five-letter word in six tries, Squirtle style. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -1095,7 +1095,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Sean of the Dead · `sean-of-the-dead`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Sean of the Dead", a minigame in a party video game that pays tribute to Shaun of the Dead. Scene: The dead are coming up the street to the Winchester. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -1285,7 +1285,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Paddy's Pool · 9-Ball · `color-of-money`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Paddy's Pool · 9-Ball", a minigame in a party video game that pays tribute to Always Sunny. Scene: A foul gives ball in hand: touch to place the cue. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 

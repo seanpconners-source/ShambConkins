@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 201 slots: 64 have key art, 109 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 201 slots: 109 have key art, 109 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -58,49 +58,49 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `snake-v-snake` | Slither · Snake vs. Snake | game | ✅ / ✅ |
 | `banana-money-grab` | Arrested Development · Banana Stand Tapper | game | ✅ / ✅ |
 | `baseketball-shootout` | BASEketball Shootout | game | ✅ / ✅ |
-| `raiders-ball-run` | Boulder Run | game | · / ✅ |
-| `paper-route` | Paper Route | game | · / ✅ |
-| `warriors-brawl` | The Warriors · Come Out to Play | game | · / ✅ |
-| `battle-royale-island` | Battle Royale · The Island | game | · / ✅ |
-| `review-pancakes` | Pancakes, Divorce, Pancakes | game | · / ✅ |
-| `duck-hunt-turn` | Duck Hunt · Head Hunt | game | · / ✅ |
-| `crossy-chaos` | Crossy Road | game | · / ✅ |
-| `pong-duel` | Pong · Arcade 1972 | game | · / ✅ |
-| `warehouse-shift` | The Office · Warehouse Shift | game | · / ✅ |
-| `moonraker-lander` | Lunar Lander · Moonraker | game | · / ✅ |
-| `mars-missile-defense` | Missile Command · Mars Attacks! | game | · / ✅ |
-| `bug-artillery` | Starship Troopers · Klendathu Scorched Earth | game | · / ✅ |
-| `strategema-grid` | Strategema Grid | game | · / ✅ |
-| `four-lights` | There Are Four Lights! | game | · / ✅ |
-| `alien-sonar-grid` | Alien · Motion Tracker | game | · / ✅ |
-| `happy-gilmore-golf` | Happy Gilmore × Caddyshack · Putt-Putt | game | · / ✅ |
-| `kingpin-bowling` | Kingpin · Hook & Hustle | game | · / ✅ |
-| `breakout-party` | Breakout · Atari 1976 | game | · / ✅ |
-| `asteroid-drift` | Asteroids · Atari 1979 | game | · / ✅ |
-| `snake-run` | Snake II · Nokia 3310 | game | · / ✅ |
-| `bomber-duel` | Bomb Grid | game | · / ✅ |
+| `raiders-ball-run` | Boulder Run | game | ✅ / ✅ |
+| `paper-route` | Paper Route | game | ✅ / ✅ |
+| `warriors-brawl` | The Warriors · Come Out to Play | game | ✅ / ✅ |
+| `battle-royale-island` | Battle Royale · The Island | game | ✅ / ✅ |
+| `review-pancakes` | Pancakes, Divorce, Pancakes | game | ✅ / ✅ |
+| `duck-hunt-turn` | Duck Hunt · Head Hunt | game | ✅ / ✅ |
+| `crossy-chaos` | Crossy Road | game | ✅ / ✅ |
+| `pong-duel` | Pong · Arcade 1972 | game | ✅ / ✅ |
+| `warehouse-shift` | The Office · Warehouse Shift | game | ✅ / ✅ |
+| `moonraker-lander` | Lunar Lander · Moonraker | game | ✅ / ✅ |
+| `mars-missile-defense` | Missile Command · Mars Attacks! | game | ✅ / ✅ |
+| `bug-artillery` | Starship Troopers · Klendathu Scorched Earth | game | ✅ / ✅ |
+| `strategema-grid` | Strategema Grid | game | ✅ / ✅ |
+| `four-lights` | There Are Four Lights! | game | ✅ / ✅ |
+| `alien-sonar-grid` | Alien · Motion Tracker | game | ✅ / ✅ |
+| `happy-gilmore-golf` | Happy Gilmore × Caddyshack · Putt-Putt | game | ✅ / ✅ |
+| `kingpin-bowling` | Kingpin · Hook & Hustle | game | ✅ / ✅ |
+| `breakout-party` | Breakout · Atari 1976 | game | ✅ / ✅ |
+| `asteroid-drift` | Asteroids · Atari 1979 | game | ✅ / ✅ |
+| `snake-run` | Snake II · Nokia 3310 | game | ✅ / ✅ |
+| `bomber-duel` | Bomb Grid | game | ✅ / ✅ |
 | `pac-maze-duel` | Pac-Maze Duel | game | ✅ / ✅ |
-| `metal-gear-tank-duel` | Combat · Metal Gear Tank Duel | game | · / ✅ |
-| `full-shambyahtzee` | Full ShambYahtzee | game | · / ✅ |
-| `kitchen-service` | Dinner Service | game | · / ✅ |
-| `rainbow-rivals` | Rainbow Rivals | game | · / ✅ |
-| `block-battle` | Tetris · Block Battle | game | · / ✅ |
-| `shred-hero` | Guitar Hero · Shred Hero | game | · / ✅ |
-| `underdog-dodgeball` | Dodgeball · True Underdog Story | game | · / ✅ |
-| `fight-night` | Rocky · Fight Night | game | · / ✅ |
-| `gopher-hunt` | Caddyshack · Gopher Hunt | game | · / ✅ |
-| `wind-archery` | Brave · Wind Archery | game | · / ✅ |
-| `newlywed-spirit` | The Newlywed Game · Spirit Battery | game | · / ✅ |
-| `roast-battle` | Roast Battle · Crowd Meter | game | · / ✅ |
-| `draw-it` | Pictionary · Draw It | game | · / ✅ |
+| `metal-gear-tank-duel` | Combat · Metal Gear Tank Duel | game | ✅ / ✅ |
+| `full-shambyahtzee` | Full ShambYahtzee | game | ✅ / ✅ |
+| `kitchen-service` | Dinner Service | game | ✅ / ✅ |
+| `rainbow-rivals` | Rainbow Rivals | game | ✅ / ✅ |
+| `block-battle` | Tetris · Block Battle | game | ✅ / ✅ |
+| `shred-hero` | Guitar Hero · Shred Hero | game | ✅ / ✅ |
+| `underdog-dodgeball` | Dodgeball · True Underdog Story | game | ✅ / ✅ |
+| `fight-night` | Rocky · Fight Night | game | ✅ / ✅ |
+| `gopher-hunt` | Caddyshack · Gopher Hunt | game | ✅ / ✅ |
+| `wind-archery` | Brave · Wind Archery | game | ✅ / ✅ |
+| `newlywed-spirit` | The Newlywed Game · Spirit Battery | game | ✅ / ✅ |
+| `roast-battle` | Roast Battle · Crowd Meter | game | ✅ / ✅ |
+| `draw-it` | Pictionary · Draw It | game | ✅ / ✅ |
 | `battleship-fog` | Battleship · Fog of War | game | ✅ / ✅ |
-| `simon-faceoff` | Simon · Face-Off | game | · / ✅ |
-| `price-bid-off` | The Price Is Right · Come On Down! | game | · / ✅ |
-| `hungry-hungry-heads` | Hungry Hungry Hippos · Hungry Hungry Heads | game | · / ✅ |
-| `disc-duel` | Windjammers · Disc Duel | game | · / ✅ |
-| `arrow-arena` | TowerFall · Arrow Arena | game | · / ✅ |
-| `driller-duel` | Mr. Driller · Driller Duel | game | · / ✅ |
-| `bubble-battle` | Puzzle Bobble · Bubble Battle | game | · / ✅ |
+| `simon-faceoff` | Simon · Face-Off | game | ✅ / ✅ |
+| `price-bid-off` | The Price Is Right · Come On Down! | game | ✅ / ✅ |
+| `hungry-hungry-heads` | Hungry Hungry Hippos · Hungry Hungry Heads | game | ✅ / ✅ |
+| `disc-duel` | Windjammers · Disc Duel | game | ✅ / ✅ |
+| `arrow-arena` | TowerFall · Arrow Arena | game | ✅ / ✅ |
+| `driller-duel` | Mr. Driller · Driller Duel | game | ✅ / ✅ |
+| `bubble-battle` | Puzzle Bobble · Bubble Battle | game | ✅ / ✅ |
 | `broforce` | Sean of a Gun | game | ✅ / ✅ |
 | `broforce-jungle` | Sean of a Gun: Jungle | game | ✅ / ✅ |
 | `broforce-factory` | Sean of a Gun: Factory | game | ✅ / ✅ |
@@ -110,13 +110,13 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `broforce-hell` | Sean of a Gun: Hell | game | · / · |
 | `broforce-dimension` | Sean of a Gun: Upside Down | game | · / · |
 | `broforce-games` | Sean of a Gun: Game World | game | · / · |
-| `frogger-heads` | Frogger | game | · / ✅ |
+| `frogger-heads` | Frogger | game | ✅ / ✅ |
 | `baseketball-hoop-jones` | BASEketball · Hoop Jones | game | · / · |
 | `bricks-breaker-quest` | Bricks Breaker Quest | game | ✅ / ✅ |
-| `sqwordle` | Sqwordle | game | · / ✅ |
+| `sqwordle` | Sqwordle | game | ✅ / ✅ |
 | `words-n-shit` | Words n' Shit | game | · / · |
 | `sundown-showdown` | Sundown Showdown | game | ✅ / ✅ |
-| `sean-of-the-dead` | Sean of the Dead | game | · / ✅ |
+| `sean-of-the-dead` | Sean of the Dead | game | ✅ / ✅ |
 | `bucketheadland-pinball` | Bucketheadland · Buckethead Pinball | version of pinball | ✅ / ✅ |
 | `major-league-fielding` | Major League Baseball | version of baseball | · / · |
 | `taskmaster-micro-relay` | Taskmaster · Frantic Task Relay | version of taskmaster | · / · |
@@ -135,7 +135,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `kill-bill-duel` | Kill Bill · House of Blue Leaves Duel | version of tarantino | · / · |
 | `tm-cones` | Cone Chaos | version of taskmaster | · / · |
 | `terminator-scan` | Skynet Identification | version of terminator | · / · |
-| `color-of-money` | Paddy's Pool · 9-Ball | version of pool | · / ✅ |
+| `color-of-money` | Paddy's Pool · 9-Ball | version of pool | ✅ / ✅ |
 | `task-tallest-thing` | Taskmaster · Stacker | version of taskmaster | · / · |
 | `matrix-hardline-hack` | Hardline Hack | version of matrix | · / · |
 | `paddys-darts` | Paddy’s Darts | version of paddys | · / · |
