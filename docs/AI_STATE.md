@@ -2,7 +2,7 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-MINIGOLF HOLE-START + DIPS (Nov 17, branch claude/minigolf-performance-60fps-s7wclw, unreleased; owner: chugs at the start of holes,
+MINIGOLF HOLE-START + DIPS (Nov 17, RELEASED as v0.99.15 (owner: "Release"; test:core EXIT 0); owner: chugs at the start of holes,
 dips under 60; don't change the look): render.js prepareHole(C,course,rot,kc,until) paints a hole's caches ahead (slope shading per
 green, lawn square, low copy one run per call, big page canvases one per call, ground squares cup-first, every sprite); puttPutt
 prepStep(i,ms): hole 1 on the loading screen (bar 30-94%, max 6 s), each next hole while the scorecard is up (cardT>.3, 3 ms on

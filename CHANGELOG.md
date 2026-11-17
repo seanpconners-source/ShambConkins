@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.99.15
+
+- **Sitabout Mini Golf, no more chugging at the start of a hole:** each hole is now painted before you see it: the first one behind the loading bar, every next one while the scorecard of the hole before is up. The flyover has nothing left to paint, and the game looks exactly the same as before.
+- **Fewer dips during play:** working out who is away no longer stalls the second shot of every hole, saving your best scores waits for the scorecard instead of stalling each sunk ball, and a picture finishing loading in the background no longer makes the whole hole repaint.
+- **Steadier on 120 Hz screens:** after dropping to an even 60, the game only tries full speed again while someone is aiming, and waits longer after each try that doesn't hold. The CPU golfer thinks in smaller slices so its turn stays smooth.
+
 ## v0.99.14
 
 - **41 new Arcade backgrounds:** new key art for Pong, Breakout, Asteroids, Bomber, Paddy's Pool (9-ball), the Sitabout Mini Golf, Sean of the Dead, Sqwordle, Kingpin Bowling and 32 more games, each placed on every screen size exactly as locked in the Background Picker.
