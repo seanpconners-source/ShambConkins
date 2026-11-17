@@ -459,8 +459,10 @@ async function minigolf(s){
  function drawBenchLabel(){x0.setTransform(1,0,0,1,0,0);const fs=clamp(W*.035,12,16);x0.fillStyle='rgba(0,0,0,.6)';x0.fillRect(0,Math.max(fb.top,8),W,fs*3.6);
   const xs=x;x=x0;try{text(`SPEED TEST ${bench.index+1}/${bench.total}`,W/2,Math.max(fb.top,8)+fs*1.1,fs,'#ffd23f','center',UI,900);text(bench.name,W/2,Math.max(fb.top,8)+fs*2.5,fs*.85,'#fff','center',UI,800);}finally{x=xs;}}
  function drawBenchRes(){menuHits=[];const xs=x;x=x0;try{x.setTransform(1,0,0,1,0,0);x.fillStyle='#0b1a10';x.fillRect(0,0,W,H);
-  const r=lastBench,inf=r.info,fs=clamp(Math.min(W,H)*.032,10,15),lh=fs*1.6;let y=Math.max(fb.top+6,14)+fs;
-  text('SPEED TEST',W/2,y,fs*1.9,'#ffd23f','center',FONT,400);y+=fs*2.4;
+  const r=lastBench,inf=r.info,fs0=clamp(Math.min(W,H)*.032,10,15);let y=Math.max(fb.top+6,14)+fs0;
+  text('SPEED TEST',W/2,y,fs0*1.9,'#ffd23f','center',FONT,400);y+=fs0*2.4;
+  // every row fits above the buttons (12 tests + 4 info lines on a sideways phone)
+  const lh=Math.min(fs0*1.6,(H-y-Math.min(48,H*.07)-24)/(r.results.length+6.5)),fs=Math.min(fs0,lh/1.35);
   const ua=inf.ua||'',L=[`v${VERSION} · canvas ${W}x${H} · dpr ${inf.dpr} · ${inf.hz||Math.round(1000/pace.vs)} Hz`,`${(ua.match(/Chrome\/[\d.]+/)||['?'])[0]} · ${(ua.match(/Android [\d.]+/)||[''])[0]} · mem ${inf.mem||'?'} GB · ${inf.cores||'?'} cores`,
    `GPU ${(inf.gl&&inf.gl.renderer||'none').slice(0,64)}`,`2D readback ${inf.readback2D} ms · max texture ${inf.gl&&inf.gl.maxTex||'?'}`];
   for(const l of L){text(l,14,y,fitText(l,fs*.9,W-28,UI,800),'rgba(255,255,255,.85)','left',UI,800);y+=lh;}y+=lh*.3;

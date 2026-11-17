@@ -19,7 +19,12 @@ const vOf=(cam,nx,ny)=>cam.rot?nx:ny;   // how much a ground direction points to
 // ------------------------------------------------------------------ textures
 const TEX=new Map();
 function rnd(seed){let n=seed>>>0||1;return ()=>{n^=n<<13;n^=n>>>17;n^=n<<5;return (n>>>0)/4294967296;};}
-function canvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+// Every helper canvas lives in plain memory (willReadFrequently = not on the graphics chip). The owner's phone logs (Nov 17)
+// showed each ground square / sprite costing ~15-30 ms there while it costs ~0.3 ms to paint in memory: a canvas on the
+// graphics chip makes the page wait for the chip to finish drawing it before it can become a texture (reading one pixel
+// back from such a canvas took 22 ms on his phone). In memory, painting is quick and the copy into a texture is a plain copy.
+// Pictures drawn live onto the screen canvas from these are copied to the chip once and kept there by the browser.
+function canvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;try{c.getContext('2d',{willReadFrequently:true});}catch{}return c;}
 // the WebGL layer under the 2D canvas (glLayer.js) when puttPutt made one; null = everything on the 2D canvas as before
 let GL=null;
 function setGL(g){GL=g||null;}
@@ -146,7 +151,10 @@ function drawHole(x,W,H,cam,st){
  const {C,course}=st,look=course.look,pf=st.prof,t0=pf?performance.now():0,cov=st.cover,gx=glOn()&&GL.begin(W,H)?GL:null;
  x.setTransform(1,0,0,1,0,0);if(gx)x.clearRect(0,0,W,H);OCC=0;
  // background (live: clouds drift, stars twinkle); with the GL layer it goes on a canvas of its own under that layer
- const bx=gx?(look.space||C.hole.sky?gx.bg(W,H):null):x;
+ // (the GL layer draws them itself: a 2D backdrop canvas of its own was a third full-screen layer repainted every frame;
+ // Spaceballs ran ~40 fps on the owner's phone with it while the other courses held 60)
+ if(gx&&look.space)drawStarsGL(gx,W,H,cam,st.T);else if(gx&&C.hole.sky)drawSkyGL(gx,W,H,st.T);
+ const bx=gx?null:x;
  if(!bx);else if(look.space)drawStars(bx,W,H,cam,st.T);
  else if(C.hole.sky){const g=bx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#8fd3ff');g.addColorStop(1,'#ffe3f4');bx.fillStyle=g;bx.fillRect(0,0,W,H);for(let i=0;i<9;i++){const px=((i*0.37+st.T*.01*(1+i%3))%1.3-.15)*W,py=(i*.137%1)*H,r=Math.min(W,H)*(.08+(i%4)*.03);bx.fillStyle='rgba(255,255,255,.75)';for(const [dx,dy,rr] of [[0,0,1],[r*.8,r*.1,.8],[-r*.8,r*.15,.7]]){bx.beginPath();bx.arc(px+dx,py+dy,r*rr,0,7);bx.fill();}}}
  // ground: the lawn live (one pattern fill), then the cached runs with the moving bits (water, boosts...) between them
@@ -504,6 +512,27 @@ function drawStars(x,W,H,cam,T){
  const R=rnd(91);for(let i=0;i<14;i++){const px=R()*W,py=R()*H,tw=.5+.5*Math.sin(T*2+i*1.7);x.fillStyle=`rgba(255,255,255,${.8*tw})`;x.fillRect((px+ox)%W,(py+oy)%H,2,2);}
  const gx=W*.8,gy=H*.2,gr=W*.5,g=x.createRadialGradient(gx,gy,10,gx,gy,gr);g.addColorStop(0,'rgba(140,60,255,.25)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(gx-gr,gy-gr,gr*2,gr*2);
  x.fillStyle='#e8a04a';x.beginPath();x.arc(W*.12,H*.18,Math.min(W,H)*.07,0,7);x.fill();x.fillStyle='rgba(0,0,0,.25)';x.beginPath();x.arc(W*.12+Math.min(W,H)*.025,H*.18,Math.min(W,H)*.07,0,7);x.fill();}
+// the same backdrops through the GL layer: the star field, the glow + planet (fixed on screen) and a sky are textures made
+// once per screen size; the twinkling stars and the drifting clouds are quads (same positions and opacity as drawn above)
+let BGL=null;
+function bgTex(gx,W,H){if(!BGL||BGL.gl!==gx||BGL.w!==W||BGL.h!==H){if(BGL&&BGL.gl===gx){for(const k of ['stars','neb','sky','dot'])BGL[k]&&gx.free(BGL[k]);for(const cl of BGL.clouds.values())gx.free(cl.t);}
+  BGL={gl:gx,w:W,h:H,clouds:new Map()};}return BGL;}
+function dotTex(gx,B){if(!B.dot){const c=canvas(1,1),g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,1,1);B.dot=gx.from(c);}return B.dot;}
+function drawStarsGL(gx,W,H,cam,T){const B=bgTex(gx,W,H);
+ if(!B.stars){if(!STARS||STARS.w!==W||STARS.h!==H){const x0=canvas(1,1).getContext('2d');drawStars(x0,W,H,cam,T);}B.stars=gx.from(STARS.c);
+  const c=canvas(W,H),g=c.getContext('2d'),gX=W*.8,gY=H*.2,gr=W*.5,gd=g.createRadialGradient(gX,gY,10,gX,gY,gr);gd.addColorStop(0,'rgba(140,60,255,.25)');gd.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gd;g.fillRect(gX-gr,gY-gr,gr*2,gr*2);
+  g.fillStyle='#e8a04a';g.beginPath();g.arc(W*.12,H*.18,Math.min(W,H)*.07,0,7);g.fill();g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.arc(W*.12+Math.min(W,H)*.025,H*.18,Math.min(W,H)*.07,0,7);g.fill();B.neb=gx.from(c);c.width=c.height=0;}
+ const ox=Math.round(((-(cam.rot?-cam.y:cam.x)*cam.k*.08)%W+W)%W),oy=Math.round(((-(cam.rot?cam.x:cam.y)*cam.k*.08)%H+H)%H);
+ for(const dx of [ox-W,ox])for(const dy of [oy-H,oy])if(dx<W&&dx+W>0&&dy<H&&dy+H>0){const X0=Math.max(0,dx),Y0=Math.max(0,dy),X1=Math.min(W,dx+W),Y1=Math.min(H,dy+H);gx.quad(B.stars,X0-dx,Y0-dy,X1-X0,Y1-Y0,X0,Y0,X1-X0,Y1-Y0);}
+ const d=dotTex(gx,B),R=rnd(91);for(let i=0;i<14;i++){const px=R()*W,py=R()*H,tw=.5+.5*Math.sin(T*2+i*1.7);gx.alpha(.8*tw);gx.quad(d,0,0,1,1,(px+ox)%W,(py+oy)%H,2,2);}
+ gx.alpha(1);gx.quad(B.neb,0,0,W,H,0,0,W,H);}
+function drawSkyGL(gx,W,H,T){const B=bgTex(gx,W,H);
+ if(!B.sky){const c=canvas(W,H),g=c.getContext('2d'),gd=g.createLinearGradient(0,0,0,H);gd.addColorStop(0,'#8fd3ff');gd.addColorStop(1,'#ffe3f4');g.fillStyle=gd;g.fillRect(0,0,W,H);B.sky=gx.from(c);c.width=c.height=0;}
+ gx.quad(B.sky,0,0,W,H,0,0,W,H);
+ for(let i=0;i<9;i++){const px=((i*0.37+T*.01*(1+i%3))%1.3-.15)*W,py=(i*.137%1)*H,r=Math.min(W,H)*(.08+(i%4)*.03),k=i%4;
+  let cl=B.clouds.get(k);if(!cl){const x0=Math.ceil(1.6*r)+2,y0=Math.ceil(1.05*r)+2,w=x0+Math.ceil(1.7*r)+2,h=y0+Math.ceil(1*r)+2,c=canvas(w,h),g=c.getContext('2d');g.fillStyle='rgba(255,255,255,.75)';
+   for(const [dx,dy,rr] of [[0,0,1],[r*.8,r*.1,.8],[-r*.8,r*.15,.7]]){g.beginPath();g.arc(x0+dx,y0+dy,r*rr,0,7);g.fill();}cl={t:gx.from(c),x0,y0,w,h};c.width=c.height=0;B.clouds.set(k,cl);}
+  gx.quad(cl.t,0,0,cl.w,cl.h,px-cl.x0,py-cl.y0,cl.w,cl.h);}}
 // fill the screen quad a,b,c,d with a strip pattern running along the world edge (x1,y1)->(x2,y2)
 function faceQuad(x,a,b,c,d,pat,x1,y1,x2,y2,cam,W,H){
  const L=Math.hypot(x2-x1,y2-y1)||1,ux=(b[0]-a[0])/L,uy=(b[1]-a[1])/L,hy=TS*cam.k;

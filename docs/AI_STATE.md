@@ -2,6 +2,17 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+MINIGOLF PHONE LOGS ROUND 1 (Nov 17, after v0.99.17, unreleased; owner sent 11 frame logs (Fold 'Adreno 840', 833x750 canvas,
+60 Hz lock, readback2D 22 ms): Bushwood/Gilmore shots hold 60 (JS ~1 ms); dips = (1) scorecard prep 25-30 ms frames, a hole's prep
+~3.4 s of work on the phone vs 0.8 s headless 4x (headless: painting ~0.3 ms/item, the rest uploads) and the fly-in painting what
+the card didn't finish (owner taps through in ~1 s): 50-100 ms frames; (2) Spaceballs ~40 fps everywhere with 2-3 ms JS = the 2D
+star backdrop canvas (third full-screen layer redrawn every frame). Fixes: render.js canvas() = willReadFrequently (every helper
+canvas in plain memory: a chip canvas made each texture copy wait for the chip's drawing); stars/glow/planet/twinkles and the sky
+hole's gradient/clouds drawn by the GL layer (drawStarsGL/drawSkyGL, glLayer alpha(a)); bg canvas no longer used. SPEED TEST +2
+rows paintgpu/paintcpu (4 painted squares + copy, chip vs memory canvas) to confirm on the phone; results screen rows fit 844x390.
+Screenshots vs v0.99.17 (all 18 holes, both sizes): identical apart from the download toast and a few twinkle pixels.
+Scratch: logsum.py/logsum2.py/seg.py (log summaries by phase/course), prepms.mjs (prep ms + upload ms in the card).
+
 MINIGOLF GPU LAYER (Nov 17, RELEASED as v0.99.17 (owner: "Release"; minigolf tests + smoke); owner's meter screenshots:
 hole 1 close view 'ground 14-23 ms' (1-2 drawImages of 3840 px page canvases!), zoomed-out hole 3 'things 16 ms (139)', card frames
 0.4 ms work but 517 ms gaps, a first run at 4 fps): drawing big 2D canvases into the screen canvas costs per frame on his phone (the

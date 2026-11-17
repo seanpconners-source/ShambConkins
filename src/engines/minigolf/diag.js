@@ -33,7 +33,21 @@ const TESTS=[
  {id:'uploadgl',name:'GPU screen-size upload every frame',gl:true,setup(e){return {c:noise(mk(e.W,e.H),9),slot:{h:null}};},
   draw(e,s,f){const g=s.c.getContext('2d');g.fillStyle=`hsl(${f*9%360},70%,50%)`;g.fillRect((f*13)%e.W,(f*7)%e.H,60,60);if(!e.glx.begin(e.W,e.H))return;const h=e.glx.dyn(s.slot,s.c);e.glx.quad(h,0,0,e.W,e.H,0,0,e.W,e.H);e.glx.end();},
   free(e,s){if(s.slot.h)e.glx.free(s.slot.h);}},
+
+ {id:'paintgpu',name:'Paint + copy squares (chip canvas)',gl:true,setup(e){return paintSetup(e,false);},draw(e,s,f){paintDraw(e,s,f);},free(e,s){e.glx.free(s.t);}},
+ {id:'paintcpu',name:'Paint + copy squares (memory canvas)',gl:true,setup(e){return paintSetup(e,true);},draw(e,s,f){paintDraw(e,s,f);},free(e,s){e.glx.free(s.t);}},
 ];
+// what the game does while the scorecard is up: paint ground squares (clip, pattern, gradient, strokes) and copy each into
+// a texture; once in a canvas on the graphics chip, once in a canvas in plain memory (what the game uses since v0.99.18)
+function paintSetup(e,mem){const k=mem?{willReadFrequently:true}:undefined,src=mk(256,256),c=mk(258,258);src.getContext('2d',k);c.getContext('2d',k);noise(src,4);
+ return {src,c,g:c.getContext('2d'),p:c.getContext('2d').createPattern(src,'repeat'),t:e.glx.tex(1032,258)};}
+function paintDraw(e,s,f){const g=s.g;
+ for(let q=0;q<4;q++){g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,258,258);g.save();g.beginPath();g.moveTo(10+q*9,20);g.lineTo(240,8+f%30);g.lineTo(250,240);g.lineTo(18,230-q*7);g.closePath();g.clip();
+  g.setTransform(.9,.1*q,-.1,.86,f%40,q*11);g.fillStyle=s.p;g.fillRect(-60,-60,400,400);g.setTransform(1,0,0,1,0,0);
+  const gr=g.createLinearGradient(0,0,0,258);gr.addColorStop(0,'rgba(0,0,0,.05)');gr.addColorStop(1,'rgba(0,0,0,.4)');g.fillStyle=gr;g.fillRect(0,0,258,258);
+  g.strokeStyle='rgba(255,255,255,.3)';g.lineWidth=3;for(let i=0;i<12;i++){g.beginPath();g.arc(40+i*17,60+(i*37+f)%150,9+i%5,0,6.3);g.stroke();}g.restore();
+  e.glx.put(s.t,s.c,q*258,0);}
+ if(!e.glx.begin(e.W,e.H))return;e.glx.quad(s.t,0,0,1032,258,0,0,Math.min(e.W,1032),258*Math.min(e.W,1032)/1032);e.glx.end();}
 const q=(a,p)=>{if(!a.length)return 0;const s=[...a].sort((u,v)=>u-v);return s[Math.min(s.length-1,Math.floor(s.length*p))];};
 const r1=v=>Math.round(v*10)/10;
 function createBench(env){

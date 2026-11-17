@@ -4,12 +4,12 @@
 // the screen canvas every frame made the owner's phone (Galaxy Fold, Chrome) spend 14-23 ms on the ground alone and 16 ms
 // on 139 sprites: the browser kept sending the big pictures to the graphics chip again. Painting stays 2D canvas code
 // (same look); only the per-frame copying moved here. The 2D canvas on top keeps everything that moves.
-// API (all sizes in canvas pixels): begin(W,H) / end(); tex(w,h[,repeat]) -> handle; put(h,src,x,y); from(src[,repeat]);
+// API (all sizes in canvas pixels): begin(W,H) / end(); tex(w,h[,repeat]) -> handle; put(h,src,x,y); from(src[,repeat]); alpha(a);
 // quad(h,sx,sy,sw,sh,dx,dy,dw,dh); pattern(h,ox,oy,kx,ky); dyn(slot,src); free(h); bg(W,H) -> 2D context of a canvas
 // under the GL layer (sky/space backdrops) or null to hide it; tick() once per frame; destroy(); lost (context gone).
 
 const VS='#version 300 es\nin vec2 p;in vec2 t;uniform vec2 u_s;out vec2 v;void main(){v=t;gl_Position=vec4(p.x/u_s.x*2.-1.,1.-p.y/u_s.y*2.,0.,1.);}';
-const FS='#version 300 es\nprecision highp float;in vec2 v;uniform sampler2D u_t;out vec4 o;void main(){o=texture(u_t,v);}';
+const FS='#version 300 es\nprecision highp float;in vec2 v;uniform sampler2D u_t;uniform float u_a;out vec4 o;void main(){o=texture(u_t,v)*u_a;}';
 // the lawn: one small square repeated, sampled at each pixel's centre through the pattern's offset and scale
 const VS2='#version 300 es\nin vec2 p;in vec2 t;uniform vec2 u_s;out vec2 q;void main(){q=p;gl_Position=vec4(p.x/u_s.x*2.-1.,1.-p.y/u_s.y*2.,0.,1.);}';
 const FS2='#version 300 es\nprecision highp float;in vec2 q;uniform vec2 u_o;uniform vec2 u_k;uniform sampler2D u_t;out vec4 o;void main(){o=texture(u_t,(q-u_o)/u_k);}';
@@ -24,7 +24,7 @@ function createGL(main){
  const prog=(vs,fs)=>{const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_SHADER,vs));gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fs));gl.bindAttribLocation(p,0,'p');gl.bindAttribLocation(p,1,'t');gl.linkProgram(p);
   if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p)||'link');return p;};
  let P1,P2;try{P1=prog(VS,FS);P2=prog(VS2,FS2);}catch{return null;}
- const U1={s:gl.getUniformLocation(P1,'u_s'),t:gl.getUniformLocation(P1,'u_t')},U2={s:gl.getUniformLocation(P2,'u_s'),t:gl.getUniformLocation(P2,'u_t'),o:gl.getUniformLocation(P2,'u_o'),k:gl.getUniformLocation(P2,'u_k')};
+ const U1={s:gl.getUniformLocation(P1,'u_s'),t:gl.getUniformLocation(P1,'u_t'),a:gl.getUniformLocation(P1,'u_a')},U2={s:gl.getUniformLocation(P2,'u_s'),t:gl.getUniformLocation(P2,'u_t'),o:gl.getUniformLocation(P2,'u_o'),k:gl.getUniformLocation(P2,'u_k')};
  const vbo=gl.createBuffer(),vao=gl.createVertexArray(),buf=new Float32Array(MAXQ*24);
  gl.bindVertexArray(vao);gl.bindBuffer(gl.ARRAY_BUFFER,vbo);gl.bufferData(gl.ARRAY_BUFFER,buf.byteLength,gl.DYNAMIC_DRAW);
  gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,16,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,2,gl.FLOAT,false,16,8);
@@ -45,14 +45,16 @@ function createGL(main){
  if(typeof window!=='undefined')window.addEventListener('resize',placeAll);
  const api={cv,gl,maxTex,lost:false,bytes:0,texN:0,drawn:false,bgUsed:false,quads:0,uploads:0,upBytes:0};
  cv.addEventListener('webglcontextlost',()=>{api.lost=true;});
- let n=0,cur=null,W=1,H=1,mode=1;
+ let n=0,cur=null,W=1,H=1,mode=1,alpha=1;
  const flush=()=>{if(!n||!cur)return;gl.bindBuffer(gl.ARRAY_BUFFER,vbo);gl.bufferSubData(gl.ARRAY_BUFFER,0,buf,0,n*24);
   if(mode!==1){gl.useProgram(P1);gl.uniform2f(U1.s,W,H);gl.uniform1i(U1.t,0);mode=1;}
   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,cur.t);gl.drawArrays(gl.TRIANGLES,0,n*6);n=0;};
  const show=(c,on)=>{const want=on?'':'none';if(c.style.display!==want){c.style.display=want;if(on)place(c);}};
  api.tick=()=>{if(!api.drawn)show(cv,false);if(bgc&&!api.bgUsed)show(bgc,false);api.drawn=false;api.bgUsed=false;};
  api.begin=(w,h)=>{if(api.lost)return false;W=w;H=h;if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}show(cv,true);api.drawn=true;
-  gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.useProgram(P1);gl.uniform2f(U1.s,w,h);gl.uniform1i(U1.t,0);mode=1;gl.bindVertexArray(vao);n=0;cur=null;api.quads=0;return true;};
+  gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.useProgram(P1);gl.uniform2f(U1.s,w,h);gl.uniform1i(U1.t,0);gl.uniform1f(U1.a,1);alpha=1;mode=1;gl.bindVertexArray(vao);n=0;cur=null;api.quads=0;return true;};
+ // opacity for the quads that follow (like globalAlpha; 1 = as painted)
+ api.alpha=a=>{if(a===alpha||api.lost)return;flush();alpha=a;if(mode!==1){gl.useProgram(P1);gl.uniform2f(U1.s,W,H);gl.uniform1i(U1.t,0);mode=1;}gl.uniform1f(U1.a,a);};
  api.end=()=>{flush();cur=null;};
  const mk=(w,h,rep)=>{const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texStorage2D(gl.TEXTURE_2D,1,gl.RGBA8,w,h);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
