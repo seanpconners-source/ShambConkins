@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.17
+
+- **Sitabout Mini Golf, drawn by the graphics chip:** each hole's course, lawn, rails and props are now handed to the phone's graphics chip once and just placed on screen every frame, instead of being copied over from giant pre-painted pictures each time (that copying cost up to 23 ms a frame on the Fold). It looks the same as before; the ball, windmill, gator and other moving parts still disappear behind rails and props.
+- **Smoother scorecards:** the scorecard's paper is prepared on the loading screen, and the faces on it no longer make it redraw while it's up.
+- **SPEED TEST:** a new button on the course picker runs about 15 seconds of drawing tests on your phone, the old way against the new way, and shows the results (with a SAVE FILE button).
+- **Frame log:** with the FPS meter on, tap the meter during play to save the last minute of frame timings and your phone's details to Downloads.
+
 ## v0.99.16
 
 - **Sitabout Mini Golf, smoother against the CPU:** the CPU golfer now works out its shot on a separate thread, so its turn no longer takes time out of every frame. It plays exactly the same shots as before.

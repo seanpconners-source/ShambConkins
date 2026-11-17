@@ -2,7 +2,7 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-MINIGOLF GPU LAYER (Nov 17, after v0.99.16, branch claude/minigolf-performance-60fps-s7wclw, unreleased; owner's meter screenshots:
+MINIGOLF GPU LAYER (Nov 17, RELEASED as v0.99.17 (owner: "Release"; minigolf tests + smoke); owner's meter screenshots:
 hole 1 close view 'ground 14-23 ms' (1-2 drawImages of 3840 px page canvases!), zoomed-out hole 3 'things 16 ms (139)', card frames
 0.4 ms work but 517 ms gaps, a first run at 4 fps): drawing big 2D canvases into the screen canvas costs per frame on his phone (the
 browser re-sends them to the GPU). NEW src/engines/minigolf/glLayer.js = WebGL2 canvas UNDER the 2D game canvas (main canvas made
