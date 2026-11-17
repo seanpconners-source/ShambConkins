@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.99.18
+
+- **Sitabout Mini Golf, smaller dips on the scorecard and fly-in:** the next hole is now painted in plain memory and copied to the graphics chip in one quick step, instead of the phone waiting on the chip for every piece. The look is unchanged.
+- **Spaceballs course at full speed:** the star field, purple glow and planet (and the sky on the cloud hole) are now drawn with the rest of the course instead of on an extra full-screen layer that was redrawn every frame.
+- **SPEED TEST:** two new rows compare painting on the graphics chip with painting in memory on your phone.
+
 ## v0.99.17
 
 - **Sitabout Mini Golf, drawn by the graphics chip:** each hole's course, lawn, rails and props are now handed to the phone's graphics chip once and just placed on screen every frame, instead of being copied over from giant pre-painted pictures each time (that copying cost up to 23 ms a frame on the Fold). It looks the same as before; the ball, windmill, gator and other moving parts still disappear behind rails and props.

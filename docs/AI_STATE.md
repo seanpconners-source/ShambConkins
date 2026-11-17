@@ -2,7 +2,7 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-MINIGOLF PHONE LOGS ROUND 1 (Nov 17, after v0.99.17, unreleased; owner sent 11 frame logs (Fold 'Adreno 840', 833x750 canvas,
+MINIGOLF PHONE LOGS ROUND 1 (Nov 17, RELEASED as v0.99.18 (owner: "Release so i can try"; minigolf tests); owner sent 11 frame logs (Fold 'Adreno 840', 833x750 canvas,
 60 Hz lock, readback2D 22 ms): Bushwood/Gilmore shots hold 60 (JS ~1 ms); dips = (1) scorecard prep 25-30 ms frames, a hole's prep
 ~3.4 s of work on the phone vs 0.8 s headless 4x (headless: painting ~0.3 ms/item, the rest uploads) and the fly-in painting what
 the card didn't finish (owner taps through in ~1 s): 50-100 ms frames; (2) Spaceballs ~40 fps everywhere with 2-3 ms JS = the 2D
