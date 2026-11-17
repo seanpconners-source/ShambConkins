@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.99.14
+
+- **41 new Arcade backgrounds:** new key art for Pong, Breakout, Asteroids, Bomber, Paddy's Pool (9-ball), the Sitabout Mini Golf, Sean of the Dead, Sqwordle, Kingpin Bowling and 32 more games, each placed on every screen size exactly as locked in the Background Picker.
+
 ## v0.99.13
 
 - **Sitabout Mini Golf, much lighter on the phone's graphics chip:** each frame used to draw from about 85 separate pictures (every 256-pixel piece of the course and every rail section had its own). Now the course is painted into one or two big sheets and all the rails, blocks and props share one or two more, so a frame draws from about 10. This is the biggest cause we could find of the low frame rate on phones.

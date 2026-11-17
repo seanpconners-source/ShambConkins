@@ -11,14 +11,12 @@ when the sprite set is (re)made; page canvas made at its used size; >2048 own ca
 draw in a frame (no copy-on-write). Census (scratch census.mjs, 905x1000): drawImage sources/frame 83 -> 8-11. puttPutt pace:
 full rate on 120 Hz; >25% of 40 frames late (gap > 1.6 vsync) -> hold at 60 for 4 s (pace.half). Old-vs-new screenshots of all
 18 holes match (390x780); minigolf.mjs + golf fuzz pass. Still not measured on a real phone: ask for an FPS-meter screenshot.
-BG PICKER BATCH 07: 45 backgrounds + KEY_BOX committed on LOCAL branch bg-batch07 (worktree scratchpad wt/, not pushed: only
-the session branch may be pushed; Drive keeps the PNGs, ids in arcade-wanted-coverage.json). Measured on all 12 screens (merged
-scratchpad bgpAll/). Too many files for one artifact (511 cap), so TWO pickers: 1 = https://claude.ai/artifact/DhpZSVr98T1sEwzjux7AJ9
-(21: alien-sonar-grid..hungry-hungry-heads; old 29 slots' files removed, its db still holds their old locks = harmless) and 2 =
-https://claude.ai/artifact/KxMEokJErcUKzji1P1j18c (20: kingpin-bowling..wind-archery). When locked: ArtifactData list bg from
-BOTH into one dump dir, apply.py, cherry-pick bg-batch07 onto the release branch, release. draw-it, newlywed-spirit,
-rainbow-rivals, roast-battle are 2P-only (not on a 1P shelf), so measure.mjs never sees them: measure in 2P mode or leave them
-on automatic placement.
+v0.99.14 (Nov 17): ARCADE BATCH 07 BACKGROUNDS = 41 new assets/keyart backgrounds, owner locked all 41 on all 12 screens in two
+pickers (1 = https://claude.ai/artifact/DhpZSVr98T1sEwzjux7AJ9, 2 = https://claude.ai/artifact/KxMEokJErcUKzji1P1j18c; picker 1's db
+also holds the older 29 slots' locks): only the 41 new docs copied into one dump → apply.py (KEY_PLACE 100 pictures, all 12 screens).
+HELD OUT: draw-it, newlywed-spirit, rainbow-rivals, roast-battle backgrounds (2P-only games, never on a 1P shelf, so measure.mjs
+can't see them): PNGs on Drive (ids in arcade-wanted-coverage.json, Batch 07), KEY_BOX already in arcadeConsole.js. Owner to pick:
+measure in 2P mode + picker, or automatic placement.
 
 v0.99.12 (Nov 16): MINIGOLF PACING (owner: better but still low fps on the Fold): puttPutt.js `pace` = 60 fps lock on >95 Hz
 screens (draws when vsync time since the last draw >= 16.67 - vsync/2; skipped vsyncs add their dt; vsync = 15th percentile of
