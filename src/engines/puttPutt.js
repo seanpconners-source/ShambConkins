@@ -22,6 +22,9 @@ const {isCpu,isOnline,cpuSkill}=require("src/engines/cpuKit.js");
 const P=require("src/engines/minigolf/physics.js");
 const {COURSES,courseById}=require("src/engines/minigolf/courses.js");
 const R=require("src/engines/minigolf/render.js");
+const {createGL}=require("src/engines/minigolf/glLayer.js");
+const {createBench,deviceInfo,saveJSON}=require("src/engines/minigolf/diag.js");
+const {VERSION}=require("src/version.js");
 const CPU=require("src/engines/minigolf/cpu.js");
 const {createSound}=require("src/engines/minigolf/sound.js");
 const SP=require("src/data/minigolfSprites.js");
@@ -35,6 +38,10 @@ const ptsOf=(h,n)=>30*(h.par+4-n);  // points (higher = better) for the launcher
 async function minigolf(s){
  const [c,x0]=s.canvas(720,1280,{fill:true});let x=x0;const fb=fullBleed(s,{bg:'#0b1a10'});s.body.classList.add('drag-arena-body');s.controls([]);s.ownHud?.(true,true);
  SP.preloadMinigolf();
+ // the WebGL layer under the canvas: everything painted once per hole goes to the graphics chip once (glLayer.js);
+ // localStorage sc-mg-gl = '0' keeps it all on the 2D canvas (the old way), e.g. to compare on a phone
+ let glx=(()=>{try{if(localStorage.getItem('sc-mg-gl')==='0')return null;}catch{}return createGL(c);})();R.setGL(glx);
+ s.cleanup(()=>{R.setGL(null);if(glx)glx.destroy();glx=null;});
  const net=isOnline(s)?s.online:null,me=net?net.me:-1,cpu=isCpu(s),snd=createSound();if(net)s.hotseat=true;s.cleanup(()=>{snd.stop();R.freeHole(C);});
  const board=!store.arcade,np=2,human=i=>!(cpu&&i===1)&&!(net&&i!==me);
  const variant=s.game?.id==='caddyshack-golf'?'bushwood':null;
@@ -75,7 +82,8 @@ async function minigolf(s){
   return {vx:ux*sp,vy:uy*sp,pw,happy,ux,uy};}
  // HUD buttons
  let uiHits=[];
- function tapUI(X,Y){for(const h of uiHits)if(X>=h.x&&X<=h.x+h.w&&Y>=h.y&&Y<=h.y+h.h){h.f();snd.tick();return true;}if(phase==='menu'){for(const h of menuHits)if(X>=h.x&&X<=h.x+h.w&&Y>=h.y&&Y<=h.y+h.h){h.f();snd.tick();return true;}}return false;}
+ function tapUI(X,Y){if(pace.meter&&pace.box&&performance.now()-pace.boxT<600&&phase!=='menu'&&phase!=='benchres'){const [bx,by,bw,bh]=pace.box;if(X>=bx&&X<=bx+bw&&Y>=by&&Y<=by+bh){saveLog();return true;}}
+  for(const h of uiHits)if(X>=h.x&&X<=h.x+h.w&&Y>=h.y&&Y<=h.y+h.h){h.f();snd.tick();return true;}if(phase==='menu'||phase==='benchres'){for(const h of menuHits)if(X>=h.x&&X<=h.x+h.w&&Y>=h.y&&Y<=h.y+h.h){h.f();snd.tick();return true;}}return false;}
  // ------------------------------------------------------------ the round
  function holesFor(cid,n,st=0){if(cid==='tour')return COURSES.flatMap(c=>c.holes).slice(0,18);const co=courseById(cid);return co.holes.slice(st,st+n);}
  async function chooseRound(){
@@ -247,7 +255,7 @@ async function minigolf(s){
  // ------------------------------------------------------------ drawing
  function drawWorld(){
   const parts=C.movers.length?P.moverParts(C,T):{segs:[],hazards:[]};const near=balls.some(bb=>!bb.done&&!bb.hidden&&Math.hypot(bb.b.x-hole.cup[0],bb.b.y-hole.cup[1])<14);
-  R.drawHole(x,W,H,cam,{C,course,T,kc:kCeil(),paintMs:(phase==='roll'||phase==='fin'?2:phase==='intro'?7:5)*pace.paintK,parts,fx,hit:hits,trail:phase==='roll'||phase==='fin'?trail:null,balls:balls.filter(bb=>!bb.done||bb.sinkT<.5).map(bb=>({...bb,ghost:phase!=='intro'&&bb.i!==turn&&!bb.done,sinkDip:bb.done&&!bb.picked?Math.min(1,bb.sinkT*3)*2.2:0})),flag:near?.35:1,lost:hole.lost,lostFound:lostFound[hole.key]||saved().lost?.includes(hole.key),prof:pace.meter?pace.cur:null,cover:phase==='card'||phase==='over'?cardCover(phase==='over'):null});}
+  R.drawHole(x,W,H,cam,{C,course,T,kc:kCeil(),paintMs:(phase==='roll'||phase==='fin'?2:phase==='intro'?7:5)*pace.paintK,parts,fx,hit:hits,trail:phase==='roll'||phase==='fin'?trail:null,balls:balls.filter(bb=>!bb.done||bb.sinkT<.5).map(bb=>({...bb,ghost:phase!=='intro'&&bb.i!==turn&&!bb.done,sinkDip:bb.done&&!bb.picked?Math.min(1,bb.sinkT*3)*2.2:0})),flag:near?.35:1,lost:hole.lost,lostFound:lostFound[hole.key]||saved().lost?.includes(hole.key),prof:pace.cur,cover:phase==='card'||phase==='over'?cardCover(phase==='over'):null});}
  function drawAim(){
   const bb=balls[turn];if(!bb)return;const b=bb.b,[BX,BY]=R.proj(cam,W,H,b.x,b.y,b.z+P.BALL_R);
   let v=aim?shotVec():null;
@@ -269,7 +277,10 @@ async function minigolf(s){
  }
  function pill(X,Y,w,h,fill,stroke){x.beginPath();x.roundRect(X,Y,w,h,h/2);x.fillStyle=fill;x.fill();if(stroke){x.strokeStyle=stroke;x.lineWidth=2;x.stroke();}}
  function text(t,X,Y,size,col='#fff',align='left',font=UI,weight=900){x.font=`${weight} ${Math.round(size)}px ${font}`;x.textAlign=align;x.textBaseline='middle';x.fillStyle=col;x.fillText(t,X,Y);}
- function fitText(t,size,maxW,font=UI,weight=900){x.font=`${weight} ${Math.round(size)}px ${font}`;const w=x.measureText(t).width;return w>maxW?size*maxW/w:size;}
+ // text widths are remembered (measuring text every frame showed up on the phone: callouts and the card measure each frame)
+ const TW=new Map();
+ function fitText(t,size,maxW,font=UI,weight=900){const k=`${weight}|${Math.round(size)}|${font}|${t}`;let w=TW.get(k);
+  if(w===undefined){x.font=`${weight} ${Math.round(size)}px ${font}`;w=x.measureText(t).width;if(TW.size>600)TW.clear();TW.set(k,w);}return w>maxW?size*maxW/w:size;}
  function faceAt(i,cx,cy,size){x.save();x.beginPath();x.arc(cx,cy,size/2,0,7);x.fillStyle='#fff';x.fill();x.clip();balls[i]?.face?balls[i].face(x,cx,cy,size*1.05):faceFn(i)(x,cx,cy,size*1.05);x.restore();x.strokeStyle=COL[i];x.lineWidth=2.5;x.beginPath();x.arc(cx,cy,size/2,0,7);x.stroke();}
  let hudCv=null,hudSig='',hudAt=0;
  function drawHUD(){
@@ -299,7 +310,14 @@ async function minigolf(s){
  }
  function drawCallout(dt){if(!callout)return;callout.life-=dt;if(callout.life<=0){callout=null;return;}const c0=callout,age=c0.max-c0.life,pop=age<.18?.6+age/.18*.5:age<.3?1.1-(age-.18)/.12*.1:1,a=Math.min(1,c0.life*3);
   const big=c0.kind==='ace'?1.6:c0.kind==='turn'?.75:c0.kind==='fx'?.9:1.1,size=fitText(c0.t,clamp(W*.11,30,72)*big*pop,W*.92,FONT,400);
-  const cy=c0.kind==='turn'?Math.max(fb.top+150,H*.26):H*.36;x.globalAlpha=a;x.font=`400 ${Math.round(size)}px ${FONT}`;x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';x.lineWidth=Math.max(4,size*.14);x.strokeStyle='rgba(0,0,0,.7)';x.strokeText(c0.t,W/2,cy);
+  const cy=c0.kind==='turn'?Math.max(fb.top+150,H*.26):H*.36;
+  // while it sits still and fully visible (most of its time) it is a picture drawn once; the pop and the fade draw live
+  if(pop===1&&a>=1&&c0.kind!=='ace'&&!liveCallout){const fy=cy-Math.floor(cy),k=[c0.t,c0.sub||'',size,c0.kind,W,fy].join('|');
+   if(!coC||coC.k!==k){const c=coC?coC.c:document.createElement('canvas'),top=Math.ceil(size*.8),hh=Math.ceil(size*2);c.width=W;c.height=hh;const xs=x;x=c.getContext('2d');try{x.clearRect(0,0,W,hh);calloutText(c0,size,top+fy,1);}finally{x=xs;}coC={c,k,top};}
+   x.drawImage(coC.c,0,Math.floor(cy)-coC.top);return;}
+  calloutText(c0,size,cy,a);}
+ let coC=null,liveCallout=false;
+ function calloutText(c0,size,cy,a){x.globalAlpha=a;x.font=`400 ${Math.round(size)}px ${FONT}`;x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';x.lineWidth=Math.max(4,size*.14);x.strokeStyle='rgba(0,0,0,.7)';x.strokeText(c0.t,W/2,cy);
   const col={ace:'#ffd23f',good:'#7dff8a',bad:'#ff6b6b',happy:'#ff4d4d',fx:'#57e1ff',ok:'#ffffff',turn:'#ffffff'}[c0.kind]||'#fff';const g=x.createLinearGradient(0,cy-size/2,0,cy+size/2);g.addColorStop(0,'#fff');g.addColorStop(.55,col);g.addColorStop(1,col);x.fillStyle=c0.kind==='ace'?`hsl(${(T*240)%360},100%,65%)`:g;x.fillText(c0.t,W/2,cy);
   if(c0.sub){const ss=fitText(c0.sub,size*.32,W*.9);x.font=`800 ${Math.round(ss)}px ${UI}`;x.lineWidth=4;x.strokeText(c0.sub,W/2,cy+size*.62);x.fillStyle='#fff';x.fillText(c0.sub,W/2,cy+size*.62);}x.globalAlpha=1;}
  function drawIntroCard(){const t=flyT,a=clamp(Math.min(t*3,(3.1-t)*3),0,1);if(a<=0)return;x.globalAlpha=a;const w=Math.min(W*.92,520),h=Math.min(H*.3,190),X=(W-w)/2,Y=H*.58;
@@ -317,13 +335,20 @@ async function minigolf(s){
  function cardCover(final){const b=cardBox(final),m=SP.picture('scorecard')?2:16;return [b.X+m,b.Y+m,b.X+b.w-m,b.Y+b.h-m];}
  // The scorecard is painted into its own screen-size canvas and only repainted when something on it changes (about 60
  // text draws and the 2048 px paper picture every frame made every hole's card slow on a phone); a frame draws it once.
- let cardCv=null,cardKey='';
+ let cardCv=null,cardKey='',cardMoods='',cardFor='';
+ // the paper picture drawn once per screen size into its own screen-size layer (drawing the 2048 px picture was most of a
+ // card's first frame); the card copies it 1:1, so it looks exactly as before. Made on the loading screen.
+ const paperL=[null,null];
+ function paperLayer(final){const img=SP.picture('scorecard');if(!img)return null;const b=cardBox(final),k=[W,H,fb.top,b.X,b.Y,b.w,b.h,SP.version()].join('|'),i=final?1:0;let L=paperL[i];
+  if(!L||L.k!==k){const c=L?L.c:document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');g.clearRect(0,0,W,H);g.drawImage(img,b.X,b.Y,b.w,b.h);L=paperL[i]={c,k};}return L.c;}
  function drawCard(final){x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,0,W,H);
-  const key=[W,H,final?1:0,hi,fb.top,cards.map(r=>r.join(':')).join(','),moods.map(m=>m.m).join(','),s.players.map(p=>p.name+'/'+(p.character||'')).join(','),SP.version()].join('|');
+  // faces keep the mood they had when the card came up (a face easing back to normal used to repaint the whole card)
+  if(cardFor!==phase+hi){cardFor=phase+hi;cardMoods=moods.map(m=>m.m).join(',');}
+  const key=[W,H,final?1:0,hi,fb.top,cards.map(r=>r.join(':')).join(','),cardMoods,s.players.map(p=>p.name+'/'+(p.character||'')).join(','),SP.version()].join('|');
   if(!cardCv||key!==cardKey){cardKey=key;if(!cardCv)cardCv=document.createElement('canvas');const x0=x;x=fresh(cardCv,W,H);try{paintCard(final);}finally{x=x0;}}
   x.drawImage(cardCv,0,0);}
  function paintCard(final){const {list,n,rows,per,w,cell,rowH,h,X,Y}=cardBox(final);
-  const paper=SP.picture('scorecard');if(paper)x.drawImage(paper,X,Y,w,h);else{x.fillStyle='#f6f0dc';x.beginPath();x.roundRect(X,Y,w,h,14);x.fill();x.strokeStyle='#c9b98a';x.lineWidth=2;x.stroke();}
+  const paper=paperLayer(final);if(paper)x.drawImage(paper,0,0);else{x.fillStyle='#f6f0dc';x.beginPath();x.roundRect(X,Y,w,h,14);x.fill();x.strokeStyle='#c9b98a';x.lineWidth=2;x.stroke();}
   text(final?'FINAL SCORECARD':`AFTER HOLE ${hi+1}`,W/2,Y+24,clamp(w*.045,16,26),'#2a3a22','center',FONT,400);text(`${course.name}${plan.cid==='tour'?' · Grand Tour':''}`,W/2,Y+46,12,'#6a5a3a','center',UI,800);
   const lx=X+12,cw=cell,c0=lx+100;
   for(let r=0;r<rows;r++){const y0=Y+60+r*rowH*4.3,from=r*per,to=Math.min(n,from+per);
@@ -382,7 +407,8 @@ async function minigolf(s){
   const gw=Math.min(W*.7,320),gh=Math.min(64,H*.09),gx2=(W-gw)/2,gy=Math.min(y+6,H-gh-40);pill(gx2,gy,gw,gh,'#2fbf4a','#fff');text('TEE OFF',W/2,gy+gh/2,gh*.48,'#fff','center',FONT,400);
   menuHits.push({x:gx2,y:gy,w:gw,h:gh,f:()=>{if(menu.go){const g=menu.go;menu.go=null;snd.putt(.6);g();}}});
   {const fs=clamp(W*.03,11,14),bw=fs*7.4,bh=fs*2.3,bx=10,by=H-bh-10;pill(bx,by,bw,bh,pace.meter?'rgba(255,210,63,.9)':'rgba(0,0,0,.5)','rgba(255,255,255,.3)');
-   text(pace.meter?'FPS METER ON':'FPS METER',bx+bw/2,by+bh/2,fs*.82,pace.meter?'#000':'#fff','center');menuHits.push({x:bx,y:by,w:bw,h:bh,f:()=>{pace.meter=!pace.meter;try{localStorage.setItem('sc-mg-fps',pace.meter?'1':'');}catch{}}});}
+   text(pace.meter?'FPS METER ON':'FPS METER',bx+bw/2,by+bh/2,fs*.82,pace.meter?'#000':'#fff','center');menuHits.push({x:bx,y:by,w:bw,h:bh,f:()=>{pace.meter=!pace.meter;try{localStorage.setItem('sc-mg-fps',pace.meter?'1':'');}catch{}}});
+   if(!net){const b2=bx+bw+8;pill(b2,by,bw,bh,'rgba(0,0,0,.5)','rgba(255,255,255,.3)');text('SPEED TEST',b2+bw/2,by+bh/2,fs*.82,'#fff','center');menuHits.push({x:b2,y:by,w:bw,h:bh,f:()=>startBench()});}}
   const lostN=(sv.lost||[]).length;text(`Lost balls found: ${lostN}/18   ·   Aces: ${sv.aces||0}`,W/2,Math.min(H-18,gy+gh+22),12,'rgba(255,255,255,.85)','center',UI,800);
  }
  function drawMenuWait(){x.fillStyle='#0b1a10';x.fillRect(0,0,W,H);text(`${s.players[0].name} is picking the course…`,W/2,H/2,clamp(W*.045,14,20),'#fff','center');}
@@ -394,7 +420,7 @@ async function minigolf(s){
   else if(Array.isArray(m.fin)){await wait(()=>phase==='fin'&&waitFin);if(!s.alive)return;const {bb}=waitFin,[fx0,fy0,fz0,k,n]=m.fin;waitFin=null;const b=bb.b;
    if(k!=='splash'&&k!=='ob'&&k!=='chomp'){b.x=+fx0;b.y=+fy0;b.z=+fz0;}if(Number.isFinite(n))bb.strokes=n;b.vx=b.vy=0;settle(k,bb);}}})();
  // ------------------------------------------------------------ test hooks
- s.debug={engine:'minigolf',get phase(){return phase;},get hole(){return hole?.key;},get hi(){return hi;},get turn(){return turn;},get balls(){return balls;},get cards(){return cards;},get T(){return T;},gfx(){return R.cacheStats(C);},planCheck(lie,T0,skill=.6){const w=makePlanner(),opts={skill,fine:skill>.5},m=CPU.planNow(C,lie,T0,opts);if(!w)return Promise.resolve({main:[m.a,m.p],worker:null});const id=-(++planId);
+ s.debug={engine:'minigolf',get flog(){return {cols:FLOG_COLS,rows:flog.rows,events:flog.ev};},get bench(){return lastBench;},say(t,sub,sec,kind){say(t,sub,sec,kind);},set liveCallout(v){liveCallout=!!v;},startBench(){startBench();},get phase(){return phase;},get hole(){return hole?.key;},get hi(){return hi;},get turn(){return turn;},get balls(){return balls;},get cards(){return cards;},get T(){return T;},gfx(){return R.cacheStats(C);},planCheck(lie,T0,skill=.6){const w=makePlanner(),opts={skill,fine:skill>.5},m=CPU.planNow(C,lie,T0,opts);if(!w)return Promise.resolve({main:[m.a,m.p],worker:null});const id=-(++planId);
    return new Promise(res=>{const on=e=>{if(e.data.id!==id)return;w.removeEventListener('message',on);res({main:[m.a,m.p],worker:[e.data.a,e.data.p],err:e.data.err||null});};w.addEventListener('message',on);w.postMessage({id,key:hole.key,hole:plainHole(hole),lie,T0,opts});});},
   get planner(){return planner?'worker':planner===false?'frame':'none';},pace(){const now=performance.now();return {fps:pace.win.filter(w=>now-w[0]<1000).length,vs:pace.vs,paintK:pace.paintK};},
   pick(cid,n){menu.c=cid;menu.n=n||menu.n;if(menu.go)menu.go();else menu.auto=true;},skipIntro(){flyT=99;},go(i){startHole(i);},place(x0,y0){const bb=balls[turn];Object.assign(bb.b,P.newBall(x0,y0,C));},fire(vx,vy){fire(vx,vy,false,false);},aimAt(sx,sy,ex,ey){aim={id:-1,sx,sy,x:ex,y:ey,t0:performance.now()};},
@@ -411,14 +437,49 @@ async function minigolf(s){
    const med=k=>{const v=pace.parts.map(o=>o[k]||0).sort((a,b)=>a-b);return v.length?v[Math.floor(v.length/2)]:0;},f=v=>v<10?v.toFixed(1):v.toFixed(0);
    pace.shown.split=[`world ${f(med('world'))}: ground ${f(med('ground'))} things ${f(med('things'))} (${Math.round(med('n'))})`,
     `hud ${f(med('hud'))} ui ${f(med('ui'))} phys ${f(med('phys'))} cpu ${f(med('cpu'))}${planner?'*':''} prep ${f(med('prep'))}`];}
-  const m=pace.shown,fs=11,lines=[`${m.fps} fps  (screen ${m.hz} Hz${pace.half?', held at 60':''})`,`worst gap ${m.worst.toFixed(0)} ms · missed ${m.miss}`,`frame work ${m.js.toFixed(1)} / ${m.js9.toFixed(1)} ms`,`ground ${m.gfx.todo?m.gfx.todo+' to paint':'ready'} · ${(m.gfx.pages||0)+(m.gfx.atlas||0)} sheets`,...(m.split||[])];
-  x.setTransform(1,0,0,1,0,0);x.font=`700 ${fs}px monospace`;const w=Math.min(W-16,Math.max(170,...lines.map(l=>x.measureText(l).width+12))),h=lines.length*14+8,X=W-w-8,Y=H-h-8;x.fillStyle='rgba(0,0,0,.7)';x.fillRect(X,Y,w,h);x.textAlign='left';x.textBaseline='top';
-  lines.forEach((l,i)=>{x.fillStyle=i===0?(m.fps>=55?'#7dff8a':m.fps>=40?'#ffd23f':'#ff6b6b'):'#fff';x.fillText(l,X+6,Y+5+i*14);});}
+  const m=pace.shown,fs=11,lines=[`${m.fps} fps  (screen ${m.hz} Hz${pace.half?', held at 60':''})`,`worst gap ${m.worst.toFixed(0)} ms · missed ${m.miss}`,`frame work ${m.js.toFixed(1)} / ${m.js9.toFixed(1)} ms`,`ground ${m.gfx.todo?m.gfx.todo+' to paint':'ready'} · ${(m.gfx.pages||0)+(m.gfx.atlas||0)} sheets · ${glx?'GPU '+Math.round(glx.bytes/1048576)+' MB':'2D'}`,...(m.split||[])];
+  x.setTransform(1,0,0,1,0,0);x.font=`700 ${fs}px monospace`;const w=Math.min(W-16,Math.max(170,...lines.map(l=>x.measureText(l).width+12))),h=lines.length*14+8,X=W-w-8,Y=H-h-8;pace.box=[X,Y,w,h];pace.boxT=performance.now();x.fillStyle='rgba(0,0,0,.7)';x.fillRect(X,Y,w,h);x.textAlign='left';x.textBaseline='top';
+  lines.forEach((l,i)=>{x.fillStyle=i===0?(m.fps>=55?'#7dff8a':m.fps>=40?'#ffd23f':'#ff6b6b'):'#fff';x.fillText(l,X+6,Y+5+i*14);});
+  x.fillStyle='rgba(255,255,255,.55)';x.font=`700 ${fs-1}px monospace`;x.textAlign='right';x.fillText('tap: save log',X+w-6,Y-12);}
+ // ------------------------------------------------------------ frame log + speed test (diag.js): the phone's own numbers
+ // The last ~60 s of frames are always kept; tapping the FPS meter saves them (with the phone's details and the last speed
+ // test) as a file in Downloads to send for diagnosis. SPEED TEST on the course picker runs ~15 s of drawing tests.
+ const FLOG_COLS=['t','gap','work','prep','cpu','phys','world','ground','things','n','ui','hud','phase','hole','zoom','up','upKB','occ'];
+ const PHASES=['loading','menu','menu-wait','intro','aim','roll','fin','card','over','bench','benchres','sunk','wait','penalty'];
+ const flog={rows:[],ev:[],t0:performance.now(),up:0,upB:0};let bench=null,lastBench=null,benchMsg='';
+ function logEv(kind,o){flog.ev.push({t:Math.round(performance.now()-flog.t0),kind,...(o||{})});if(flog.ev.length>400)flog.ev.splice(0,100);}
+ function logFrame(gap,work,PC){const g=glx,up=g?g.uploads-flog.up:0,ub=g?g.upBytes-flog.upB:0;if(g){flog.up=g.uploads;flog.upB=g.upBytes;}const f=v=>Math.round((v||0)*100)/100;
+  flog.rows.push([Math.round(performance.now()-flog.t0),Math.round(gap*10)/10,f(work),f(PC.prep),f(PC.cpu),f(PC.phys),f(PC.world),f(PC.ground),f(PC.things),PC.n||0,f(PC.ui),f(PC.hud),PHASES.indexOf(phase),hi,Math.round(cam.k/(kCeil()||1)*1000)/1000,up,Math.round(ub/1024),PC.occ||0]);
+  if(flog.rows.length>4000)flog.rows.splice(0,1000);
+  if(gap>50)logEv('slow',{gap:Math.round(gap),work:f(work),phase,hole:hole&&hole.key,gfx:C?R.cacheStats(C):null});}
+ function infoNow(){return deviceInfo(glx,{v:VERSION,canvas:[W,H],css:[c.clientWidth,c.clientHeight],hz:Math.round(1000/pace.vs),half:pace.half,mode:glx?'gpu':'2d',glMB:glx?Math.round(glx.bytes/1048576):0,course:course&&course.id,hole:hole&&hole.key,gfx:C?R.cacheStats(C):null});}
+ function saveLog(){const ok=saveJSON('sitabout-frames',{format:'sitabout-frames',info:infoNow(),bench:lastBench,cols:FLOG_COLS,rows:flog.rows,events:flog.ev});
+  if(phase==='benchres')benchMsg=ok?'Saved to Downloads':'Could not save';else say(ok?'LOG SAVED':'NOT SAVED',ok?'in Downloads':'',2.2,'fx');return ok;}
+ function startBench(){bench=createBench({x:x0,get W(){return W;},get H(){return H;},glx});benchMsg='';phase='bench';logEv('bench');}
+ function drawBenchLabel(){x0.setTransform(1,0,0,1,0,0);const fs=clamp(W*.035,12,16);x0.fillStyle='rgba(0,0,0,.6)';x0.fillRect(0,Math.max(fb.top,8),W,fs*3.6);
+  const xs=x;x=x0;try{text(`SPEED TEST ${bench.index+1}/${bench.total}`,W/2,Math.max(fb.top,8)+fs*1.1,fs,'#ffd23f','center',UI,900);text(bench.name,W/2,Math.max(fb.top,8)+fs*2.5,fs*.85,'#fff','center',UI,800);}finally{x=xs;}}
+ function drawBenchRes(){menuHits=[];const xs=x;x=x0;try{x.setTransform(1,0,0,1,0,0);x.fillStyle='#0b1a10';x.fillRect(0,0,W,H);
+  const r=lastBench,inf=r.info,fs=clamp(Math.min(W,H)*.032,10,15),lh=fs*1.6;let y=Math.max(fb.top+6,14)+fs;
+  text('SPEED TEST',W/2,y,fs*1.9,'#ffd23f','center',FONT,400);y+=fs*2.4;
+  const ua=inf.ua||'',L=[`v${VERSION} · canvas ${W}x${H} · dpr ${inf.dpr} · ${inf.hz||Math.round(1000/pace.vs)} Hz`,`${(ua.match(/Chrome\/[\d.]+/)||['?'])[0]} · ${(ua.match(/Android [\d.]+/)||[''])[0]} · mem ${inf.mem||'?'} GB · ${inf.cores||'?'} cores`,
+   `GPU ${(inf.gl&&inf.gl.renderer||'none').slice(0,64)}`,`2D readback ${inf.readback2D} ms · max texture ${inf.gl&&inf.gl.maxTex||'?'}`];
+  for(const l of L){text(l,14,y,fitText(l,fs*.9,W-28,UI,800),'rgba(255,255,255,.85)','left',UI,800);y+=lh;}y+=lh*.3;
+  const c1=W*.66,c2=W*.82;text('test',14,y,fs,'#ffd23f','left');text('fps',c1,y,fs,'#ffd23f','right');text('ms',c2,y,fs,'#ffd23f','right');text('worst',W-14,y,fs,'#ffd23f','right');y+=lh;
+  for(const t of r.results){text(t.name,14,y,fitText(t.name,fs*.9,c1-60,UI,800),'#fff','left',UI,800);
+   if(t.skip)text(t.skip.slice(0,24),W-14,y,fs*.85,'#ff6b6b','right');else{text(String(t.fps),c1,y,fs,t.fps>=55?'#7dff8a':t.fps>=40?'#ffd23f':'#ff6b6b','right');text(String(t.js),c2,y,fs,'#fff','right');text(String(Math.round(t.gapMax)),W-14,y,fs,'#fff','right');}y+=lh;}
+  y+=lh*.2;text('fps = frames a second   ms = our drawing time   worst = longest gap (ms)',W/2,y,fitText('fps = frames a second   ms = our drawing time   worst = longest gap (ms)',fs*.8,W-24,UI,700),'rgba(255,255,255,.6)','center',UI,700);
+  const bw=Math.min(150,(W-40)/2),bh=Math.min(48,H*.07),by=Math.min(H-bh-14,y+lh),bx=W/2-bw-6;
+  pill(bx,by,bw,bh,'#2fbf4a','#fff');text('SAVE FILE',bx+bw/2,by+bh/2,bh*.36,'#fff','center',FONT,400);menuHits.push({x:bx,y:by,w:bw,h:bh,f:()=>saveLog()});
+  pill(W/2+6,by,bw,bh,'rgba(0,0,0,.55)','rgba(255,255,255,.4)');text('BACK',W/2+6+bw/2,by+bh/2,bh*.36,'#fff','center',FONT,400);menuHits.push({x:W/2+6,y:by,w:bw,h:bh,f:()=>{phase='menu';bench=null;}});
+  if(benchMsg)text(benchMsg,W/2,by+bh+18,fs*.9,'#7dff8a','center',UI,800);}finally{x=xs;}}
  // ------------------------------------------------------------ main loop
  // frame pacing: full speed (120 on a 120 Hz screen) while frames keep up; if a fast screen keeps missing frames, drop to an
  // even 60 (every other vsync) rather than land on random vsyncs (judder). It tries full speed again later, only while a
  // player is aiming (the calmest moment), and waits twice as long after every failed try (4 s, 8 s ... up to a minute)
  s.frame((dt0,tS)=>{const t=tS*1000;
+  if(phase==='bench'||phase==='benchres'){W=s.W;H=s.H;if(glx){if(glx.lost){R.setGL(null);glx.destroy();glx=null;}else glx.tick();}
+   if(phase==='bench'){bench.frame(t);if(bench.done){lastBench={at:new Date().toISOString(),info:infoNow(),results:bench.results};logEv('bench-done');phase='benchres';}else drawBenchLabel();return;}
+   drawBenchRes();return;}
   if(pace.last0){const iv=t-pace.last0;if(iv>=4)pace.ivs.push(iv);if(pace.ivs.length>60)pace.ivs.shift();}pace.last0=t;pace.acc+=dt0;
   if(pace.ivs.length>=30&&++pace.n%30===0){const a=[...pace.ivs].sort((p,q)=>p-q);pace.vs=a[Math.floor(a.length*.15)];}
   if(pace.half&&pace.lastDraw&&t-pace.lastDraw<16.67-pace.vs*.5)return;
@@ -430,6 +491,7 @@ async function minigolf(s){
   // a missed frame turns the background painting down for a while (it is the one thing that can wait)
   if(gap>Math.max(24,pace.vs*2.5))pace.slowT=1.5;else pace.slowT=Math.max(0,pace.slowT-dt);pace.paintK=pace.slowT>0?.35:1;
   const f0=performance.now();pace.frame(gap);
+  if(glx){if(glx.lost){R.setGL(null);glx.destroy();glx=null;}else glx.tick();}
   W=s.W;H=s.H;x.setTransform(1,0,0,1,0,0);
   if(phase==='loading'){T+=dt;drawLoading();return;}
   if(phase==='menu'){T+=dt;drawMenuCached();return;}
@@ -452,7 +514,7 @@ async function minigolf(s){
   if(phase==='intro')drawIntroCard();
   if(phase==='card')drawCard(false);
   if(phase==='over')drawCard(true);
-  lap('ui');pace.js(performance.now()-f0);pace.part(PC);if(pace.meter)drawMeter();
+  lap('ui');pace.js(performance.now()-f0);pace.part(PC);logFrame(gap,performance.now()-f0,PC);if(pace.meter)drawMeter();
  });
  plan=await chooseRound();if(!plan||!s.alive)return;
  // the course's own pictures (ground, rails, props) before the first hole, so its ground is painted once with them
@@ -462,6 +524,7 @@ async function minigolf(s){
  for(let i=0;i<names.length;i+=4){R.warmPictures(names.slice(i,i+4));loadP={n:i*.3,of:names.length};await frame1();if(!s.alive)return;}
  // then the first hole, painted while the bar fills (at most a few seconds: whatever is left is painted during its flyover)
  {const t0=performance.now();let f=0;while(f<1&&performance.now()-t0<6000){f=prepStep(0,12);loadP={n:30+64*f,of:100};await frame1();if(!s.alive)return;}}
+ W=s.W;H=s.H;paperLayer(false);await frame1();if(!s.alive)return;paperLayer(true);
  // the face on each ball at every size step the camera can show it at (made mid-flyover they were hitches of the first hole)
  for(const m of ['normal','win','sad','silly']){for(let i=0;i<2;i++){const id=s.players[i]?.character;if(!id)continue;const e1=Math.ceil(Math.log2(kCeil()*3)*6);for(let e=Math.floor(Math.log2(6)*6);e<=e1;e++)faceSprite(id,m,Math.pow(2,e/6),1);}
   loadP={n:loadP.n+1.5,of:100};await frame1();if(!s.alive)return;}

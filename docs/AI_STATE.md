@@ -2,6 +2,30 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+MINIGOLF GPU LAYER (Nov 17, after v0.99.16, branch claude/minigolf-performance-60fps-s7wclw, unreleased; owner's meter screenshots:
+hole 1 close view 'ground 14-23 ms' (1-2 drawImages of 3840 px page canvases!), zoomed-out hole 3 'things 16 ms (139)', card frames
+0.4 ms work but 517 ms gaps, a first run at 4 fps): drawing big 2D canvases into the screen canvas costs per frame on his phone (the
+browser re-sends them to the GPU). NEW src/engines/minigolf/glLayer.js = WebGL2 canvas UNDER the 2D game canvas (main canvas made
+position:relative z 1; GL absolute z 0, same box via ResizeObserver; bg 2D canvas under it for sky/space backdrops): textures (texStorage,
+premultiplied uploads), batched quads, repeat pattern (lawn), dyn/dynRect per-frame uploads (UNPACK_SKIP sub-rects), tick() hides it on
+frames that don't draw, lost -> puttPutt drops to 2D (caches rebuild: G.gl/SP.gl mismatch). render.js setGL(): ground tiles painted in a
+258 px scratch canvas then texSubImage2D into page textures (no 2D page canvases), low copy -> texture, lawn -> GL pattern, anim runs
+(water ripples; pads/conveyors/lost ball + the trail as 'tail') -> screen scratch, only the drawn box uploaded (x._bbx via onCanvas/flat/
+conveyor/trail), static sprites -> atlas textures (painted in a scratch), drawn as GL quads in depth order; live items (balls, movers,
+bumpers, magnets, flag, props drawn live) on the 2D canvas, each with a screen box (BB/propBB/ballBB/ptsBB/millBB/clownBB); a static
+sprite after a live item that overlaps it ERASES its shape from the 2D canvas (destination-out from a lazily painted own canvas, drawOcc)
+instead of being drawn twice (doubled its soft edges). localStorage sc-mg-gl='0' = old 2D path. Scorecard: paper picture pre-drawn per
+screen size on the loading screen (paperLayer, copied 1:1), faces keep the mood they had when the card came up (mood easing back used to
+repaint the card). Callouts: steady part drawn from a cached canvas (pixel-identical; pop + fade live); fitText widths cached.
+DIAGNOSTICS (src/engines/minigolf/diag.js): FPS meter tap = save 'sitabout-frames-<stamp>.json' to Downloads (device info, GPU string,
+2D readback probe, last speed test, last ~60 s of frames: cols t,gap,work,prep,cpu,phys,world,ground,things,n,ui,hud,phase,hole,zoom,up,
+upKB,occ; 'slow' events >50 ms with cacheStats); SPEED TEST pill on the course picker (not online) = 10 micro-tests 2D vs GPU (big
+sheet 1:1/scaled, 1024 tiles, 150 sprites from an atlas / own canvases, GPU sheet/sprites/screen upload), results screen + SAVE FILE.
+Checked: GPU vs 2D screenshots all 18 holes x aim/whole x 390x780/844x390 (max 40/255 on a few px, mean <1); headless 4x CPU JS per frame
+roll 38.6 -> 17.0 ms, aim 41.5 -> 18.3, sunk 35.3 -> 6.8; first card frame 76 -> 4.8 ms; forced context loss -> 2D, no errors; minigolf.mjs
+both sizes, minigolf-sim, golf fuzz, online-native +-LAG, smoke. Headless can't show his phone's GPU cost: NEXT = owner's SPEED TEST
+screenshot + a saved frame log after a round.
+
 MINIGOLF ROUND 2 (Nov 17, RELEASED as v0.99.16 (owner: "Release"; test:core EXIT 0 + minigolf tests); owner's meter on the final
 scorecard: 31 fps at 60 Hz, frame work 26.9/32.1 ms; rounds dip to ~45, mostly vs CPU): CPU planning in a Web Worker (puttPutt
 makePlanner: physics.js + cpu.js source via NEW loader hook `require.src(id)` in src/modules.json tail; worker caches C per hole key;
@@ -13,7 +37,6 @@ render.js full(img): pictures drawn at >= half size come from a one-time canvas 
 "Neo (CPU) (CPU)" label fixed. Card prep budget = the frame's spare time (prepBudget, 1-6 ms). FPS meter: box fits its text + 2
 breakdown lines (medians of ~90 frames: world = ground + things (items drawn), hud, ui, phys, cpu (* = worker), prep). Old vs new
 screenshots all 18 holes both sizes + scorecard: identical (toast only). minigolf.mjs both sizes, sim, fuzz, online-native ±LAG pass.
-NEXT: owner's meter screenshots on the phone (a dipping roll, the CPU's turn, a scorecard) say which part still costs.
 
 MINIGOLF HOLE-START + DIPS (Nov 17, RELEASED as v0.99.15 (owner: "Release"; test:core EXIT 0); owner: chugs at the start of holes,
 dips under 60; don't change the look): render.js prepareHole(C,course,rot,kc,until) paints a hole's caches ahead (slope shading per
