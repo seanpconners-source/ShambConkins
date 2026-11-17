@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.99.19
+
+- **Sitabout Mini Golf, smooth hole fly-ins:** if you tap past the scorecard before the next hole is ready, the scorecard waits a moment with a small "NEXT HOLE" bar (never more than 4 seconds), so the fly-in no longer stutters (it did on Spaceballs). The scorecard also gets the next hole ready faster while it's up.
+
 ## v0.99.18
 
 - **Sitabout Mini Golf, smaller dips on the scorecard and fly-in:** the next hole is now painted in plain memory and copied to the graphics chip in one quick step, instead of the phone waiting on the chip for every piece. The look is unchanged.

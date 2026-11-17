@@ -2,7 +2,7 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-MINIGOLF FLY-IN WAIT (Nov 17, after v0.99.18, unreleased; owner: whole round runs very well, only the Spaceballs fly-in stutters;
+MINIGOLF FLY-IN WAIT (Nov 17, RELEASED as v0.99.19 (owner: "Release!!"); owner: whole round runs very well, only the Spaceballs fly-in stutters;
 3 logs): he taps past the scorecard after ~1 s, a Spaceballs hole needs ~2.3-3 s of painting on his phone, so the rest landed
 in the fly-in (50-80 ms frames, 'ground' 30 + 'things' 20 ms). puttPutt: scoreUI.next waits while the next hole isn't prepped
 (prepReady: prep.done>=1 at the hole's rot/kc) = nextWait: prepStep 14 ms/frame + 'NEXT HOLE' bar (drawNextBar), goes at done or
