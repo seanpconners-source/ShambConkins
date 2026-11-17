@@ -2,6 +2,22 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+MINIGOLF HOLE-START + DIPS (Nov 17, branch claude/minigolf-performance-60fps-s7wclw, unreleased; owner: chugs at the start of holes,
+dips under 60; don't change the look): render.js prepareHole(C,course,rot,kc,until) paints a hole's caches ahead (slope shading per
+green, lawn square, low copy one run per call, big page canvases one per call, ground squares cup-first, every sprite); puttPutt
+prepStep(i,ms): hole 1 on the loading screen (bar 30-94%, max 6 s), each next hole while the scorecard is up (cardT>.3, 3 ms on
+120 Hz / 6 ms); P.compile keeps one C per hole so startHole just uses it (prepared C freed on exit/skip). Hole 1's first frame is
+drawn once under the loading screen (`warm`); ball faces for every size step x 4 moods made while loading. pic()/MISS in render.js:
+a cache repaints only when a picture IT was painted without arrives (any of the ~60 pictures loading used to repaint everything);
+lawn squares cached per course+turn (LAWNS). cupField: cell z cached + 4-unit wall buckets, identical distances (checked all 18), ~2x
+faster, computed in prep (was 3-50 ms mid-hole). saveProfile on sink/lost ball deferred to the scorecard/round end/exit (saveSoon;
+it re-reads the whole save: ~30 ms at 4x on every sink). Pacing: fallback to 60 retries full speed only while a person aims, hold
+doubles after a failed try (4 s .. 60 s); CPU thinks 3 ms/frame at full 120, else 7 (was 9). pace.win no longer grows unbounded.
+Measured headless 4x CPU with no-op drawing (scratch count.mjs): flyover frames now paint nothing (were 100-136 ms first frames),
+longest frames ~60 ms on the static scorecard. Old vs new screenshots, all 18 holes, aim + whole hole, 390x780 + 844x390, with a
+frame-locked clock (scratch shots.mjs): pixel-identical except the download toast. minigolf.mjs both sizes, minigolf-sim, golf fuzz,
+online-native happy-gilmore-golf (+LAG) pass. Not on a real phone. Idea if CPU turns still dip: run cpu.js plan in a Worker.
+
 v0.99.13 (Nov 16): MINIGOLF TEXTURES (owner: still ~14 fps on the Fold at 120 Hz, screenshot of the meter): a frame drew from
 ~83 distinct canvases (256 px ground tiles x runs + one canvas per rail/block/prop sprite) = per-frame texture binds/uploads on
 a phone GPU. render.js now: ground PAGES (PAGE 3840 = 15 TILE blocks, +1 px rim = under 4096 max texture; counted from G.i0/j0,

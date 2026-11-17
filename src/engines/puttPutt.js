@@ -45,6 +45,10 @@ async function minigolf(s){
  const moods=[{m:'normal',t:0},{m:'normal',t:0}],mood=(i,m,sec=1.6)=>{moods[i]={m,t:sec};if(m==='win')s.react?.(i,'happy',sec);else if(m==='sad'||m==='angry')s.react?.(i,'sad',sec);};
  const prof=()=>{const p=store.profile;if(!p)return null;const v=p.sitabout&&typeof p.sitabout==='object'?p.sitabout:{};p.sitabout={best:{...(v.best||{})},holes:{...(v.holes||{})},aces:+v.aces||0,lost:Array.isArray(v.lost)?v.lost.slice():[],rounds:+v.rounds||0};return p;};
  const saved=()=>store.profile?.sitabout||{best:{},holes:{},aces:0,lost:[],rounds:0};
+ // saving reads, checks and rewrites the whole save (tens of ms on a phone): a sunk ball or a found lost ball only marks
+ // it, and it is written while the scorecard is up, at the end of the round, or when the game is left
+ let profDirty=false;const saveSoon=()=>{profDirty=true;},flushSave=()=>{if(!profDirty)return;profDirty=false;const p=store.profile;if(p)saveProfile(p);};
+ s.cleanup(flushSave);
  // ------------------------------------------------------------ input
  const touches=new Map();
  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();const p=s.pointer(ev);touches.set(ev.pointerId,{x:p.x,y:p.y,sx:p.x,sy:p.y,t:performance.now()});s.capture(ev);
@@ -83,11 +87,23 @@ async function minigolf(s){
   const r={cid:menu.c,list:holesFor(menu.c,menu.c==='tour'?18:menu.n,0)};if(net)net.send({setup:{c:menu.c,n:r.list.length,st:0}});return r;
  }
  // ------------------------------------------------------------ holes
- function startHole(i){hi=i;hole=plan.list[i];course=courseById(hole.course);R.freeHole(C);C=P.compile(hole);T=0;fx=[];hits={};overview=false;camMode='auto';manual=null;
-  // a hole is turned (tee on the left) when that fits the screen better, but never one with a set piece built to face
-  // the tee (windmill, clown head): those are pictures standing up toward the camera, so turned they'd sit sideways
-  const facing=(hole.movers||[]).some(m=>m.kind==='windmill')||(hole.blocks||[]).some(b=>b.look==='clown');
-  const rot=!facing&&((W>H*1.1)!==((C.bbox[2]-C.bbox[0])>(C.bbox[3]-C.bbox[1])));cam.rot=rot?1:0;
+ // a hole is turned (tee on the left) when that fits the screen better, but never one with a set piece built to face
+ // the tee (windmill, clown head): those are pictures standing up toward the camera, so turned they'd sit sideways
+ function rotFor(h,c){const facing=(h.movers||[]).some(m=>m.kind==='windmill')||(h.blocks||[]).some(b=>b.look==='clown');
+  return !facing&&((W>H*1.1)!==((c.bbox[2]-c.bbox[0])>(c.bbox[3]-c.bbox[1])))?1:0;}
+ // A hole is painted before it is shown: the first one on the loading screen, every next one while the scorecard of the
+ // one before is up (P.compile keeps one C per hole, so the caches painted here are the ones the hole is drawn from).
+ // Painting it during the flyover (and the first frames' one-time setup) was what made the start of every hole chug.
+ let prep=null,warm=false;
+ // leaving mid-scorecard: the next hole's caches go too (each hole keeps its C between games)
+ s.cleanup(()=>{if(prep&&plan&&plan.list[prep.i]){const pc=P.compile(plan.list[prep.i]);if(pc!==C)R.freeHole(pc);}});
+ function prepStep(i,ms){if(!plan||i>=plan.list.length)return 1;const h=plan.list[i],c=P.compile(h),rot=rotFor(h,c),kc=kCeil();
+  if(!prep||prep.i!==i)prep={i,done:0};if(prep.done>=1&&prep.rot===rot&&prep.kc===kc)return 1;prep.rot=rot;prep.kc=kc;
+  const t0=performance.now();P.cupField(c);// who is away: worked out once per hole, 3-50 ms (it used to land mid-hole)
+  prep.done=R.prepareHole(c,courseById(h.course),rot,kc,t0+ms);return prep.done;}
+ function startHole(i){hi=i;hole=plan.list[i];course=courseById(hole.course);const next=P.compile(hole);if(C&&C!==next)R.freeHole(C);
+  if(prep&&prep.i!==i){const pc=plan.list[prep.i]&&P.compile(plan.list[prep.i]);if(pc&&pc!==next)R.freeHole(pc);prep=null;}C=next;T=0;fx=[];hits={};overview=false;camMode='auto';manual=null;
+  cam.rot=rotFor(hole,C);
   balls=[0,1].map(pi=>{const b=P.newBall(hole.tee[0]+(pi?1.6:-1.6),hole.tee[1],C);b.rest=true;return {b,i:pi,col:COL[pi],strokes:0,done:false,picked:false,orient:R.newOrient(cam.rot),face:faceFn(pi),lie:{x:b.x,y:b.y,z:b.z},vis:1.3,cup:hole.cup};});
   phase='intro';flyT=0;const f=frame('overview');cam={...f,rot:cam.rot};tcam=null;callout=null;
   snd.ambience(0,course.id);}
@@ -104,7 +120,7 @@ async function minigolf(s){
   say(`${s.players[turn].name.toUpperCase()}${s.players[turn].name.endsWith('s')?"'":"'S"} SHOT`,`stroke ${balls[turn].strokes+1} · par ${hole.par}`,1.1,'turn');
   if(cpu&&turn===1)startCpu();}
  function startCpu(){const bb=balls[1],tFire=T+1.4+Math.random()*.4,skill=cpuSkill(s),gen=CPU.plan(C,{x:bb.b.x,y:bb.b.y,z:bb.b.z},tFire,{skill,fine:skill>.5});cpuJob={gen,tFire,res:null,skill};}
- function stepCpu(){if(!cpuJob||phase!=='aim'||turn!==1)return;const j=cpuJob;if(!j.res){const t0=performance.now();while(performance.now()-t0<9){const r=j.gen.next();if(r.done){j.res=r.value;break;}}if(!j.res)return;}
+ function stepCpu(){if(!cpuJob||phase!=='aim'||turn!==1)return;const j=cpuJob;if(!j.res){const t0=performance.now(),ms=pace.vs<10.5&&!pace.half?3:7;while(performance.now()-t0<ms){const r=j.gen.next();if(r.done){j.res=r.value;break;}}if(!j.res)return;}
   if(T<j.tFire)return;const e=CPU.errOf(j.skill),a=j.res.a+CPU.gauss(Math.random)*e.a,p=clamp(j.res.p*(1+CPU.gauss(Math.random)*e.p),.03,1),v=p*VMAX;cpuJob=null;fire(Math.cos(a)*v,Math.sin(a)*v,false,false);}
  function fire(vx,vy,happy,remote){
   if(phase!=='aim')return;const bb=balls[turn];
@@ -136,7 +152,7 @@ async function minigolf(s){
   if(hole.lost&&!lostFound[hole.key]&&human(bb.i)&&Math.hypot(b.x-hole.lost[0],b.y-hole.lost[1])<2.6)findLost(bb);
  }
  function findLost(bb){lostFound[hole.key]=true;snd.lost();burst(hole.lost[0],hole.lost[1],1,['#ffe14d','#fff'],20);
-  const p=prof();if(p&&!p.sitabout.lost.includes(hole.key)){p.sitabout.lost.push(hole.key);saveProfile(p);say('LOST BALL FOUND!',`${p.sitabout.lost.length} of 18 found`,1.8,'good');}else say('LOST BALL!','already in your collection',1.2,'good');}
+  const p=prof();if(p&&!p.sitabout.lost.includes(hole.key)){p.sitabout.lost.push(hole.key);saveSoon();say('LOST BALL FOUND!',`${p.sitabout.lost.length} of 18 found`,1.8,'good');}else say('LOST BALL!','already in your collection',1.2,'good');}
  // a shot is over: sunk, stopped, or a penalty. Online the watching phone waits for the shooter's word on where it ended.
  function resolve(k,bb){
   snd.rolling(0);const b=bb.b;
@@ -157,7 +173,7 @@ async function minigolf(s){
   if(ace){snd.ace();say('HOLE IN ONE!!','',2.6,'ace');for(let k=0;k<4;k++)setTimeout(()=>s.alive&&burst(hole.cup[0]+(Math.random()-.5)*16,hole.cup[1]+(Math.random()-.5)*16,4,['#ffe14d','#ff5a8a','#57e1ff','#7dff8a','#fff'],40,'confetti'),k*260);}
   else{const nm=NAMES[String(clamp(d,-4,3))]||`+${d}`;d<0?snd.birdie():d===0?snd.par():snd.bogey();say(nm,d<0?'under par':d===0?'right on par':`${d} over par`,1.7,d<0?'good':d===0?'ok':'bad');if(d<0)burst(hole.cup[0],hole.cup[1],2,['#ffe14d','#fff','#7dff8a'],24,'confetti');}
   mood(bb.i,d<=0?'win':'sad',2.2);
-  if(human(bb.i)){const p=prof();if(p){const hs=p.sitabout.holes;if(!(hs[hole.key]<=bb.strokes))hs[hole.key]=bb.strokes;if(ace)p.sitabout.aces++;saveProfile(p);}}
+  if(human(bb.i)){const p=prof();if(p){const hs=p.sitabout.holes;if(!(hs[hole.key]<=bb.strokes))hs[hole.key]=bb.strokes;if(ace)p.sitabout.aces++;saveSoon();}}
   phase='sunk';setTimeout(()=>{if(s.alive&&phase==='sunk')afterSink();},ace?2600:1600);}
  function afterSink(){phase='wait';beginTurn();}
  function endHole(){// honour for the next tee: lower score on this hole (ties keep it)
@@ -168,7 +184,7 @@ async function minigolf(s){
  function pointsNow(){return [0,1].map(i=>plan.list.reduce((a,h,j)=>a+(cards[i][j]!=null?ptsOf(h,cards[i][j]):0),0));}
  const toPar=i=>{const d=strokesNow(i)-parNow(i);return d===0?'E':d>0?'+'+d:String(d);};
  function finishRound(){phase='over';done=true;const pts=pointsNow();s.setScores(pts);
-  const p=prof();if(p&&!board&&!net&&plan.list.length>=3){const key=plan.cid+'-'+plan.list.length;for(let i=0;i<2;i++){if(!human(i))continue;const n=strokesNow(i);if(!(p.sitabout.best[key]<=n))p.sitabout.best[key]=n;}p.sitabout.rounds++;saveProfile(p);}
+  const p=prof();if(p&&!board&&!net&&plan.list.length>=3){const key=plan.cid+'-'+plan.list.length;for(let i=0;i<2;i++){if(!human(i))continue;const n=strokesNow(i);if(!(p.sitabout.best[key]<=n))p.sitabout.best[key]=n;}p.sitabout.rounds++;profDirty=false;saveProfile(p);}
   const lbl=`Sitabout Mini Golf · ${s.players[0].name} ${strokesNow(0)} (${toPar(0)}) · ${s.players[1].name} ${strokesNow(1)} (${toPar(1)})`;
   setTimeout(()=>{if(s.alive)s.finish(pts,lbl);},2600);}
  // ------------------------------------------------------------ callouts + particles
@@ -348,8 +364,8 @@ async function minigolf(s){
   get bot(){return ()=>{if(phase==='loading')return '';if(phase==='menu'&&menu.go){menu.go();return 'menu';}if(phase==='intro'){flyT=99;return 'skip';}if(phase==='card'&&scoreUI&&cardT>.8){scoreUI.next();return 'card';}if(phase==='aim'&&myTurn())return s.debug.shoot(.6);return '';};},
   state(){return {phase,hole:hole?.key,turn,strokes:balls.map(b=>b.strokes),cards,points:plan?pointsNow():[0,0]};}};
  // ------------------------------------------------------------ frame pacing + the FPS meter (toggle on the course picker)
- const pace={last0:0,ivs:[],n:0,vs:16.7,lastDraw:0,acc:0,slowT:0,paintK:1,half:false,halfUntil:0,miss:[],meter:(()=>{try{return !!localStorage.getItem('sc-mg-fps');}catch{return false;}})(),
-  win:[],jsWin:[],shown:null,frame(g){this.win.push([performance.now(),g]);},js(ms){this.jsWin.push(ms);}};
+ const pace={last0:0,ivs:[],n:0,vs:16.7,lastDraw:0,acc:0,slowT:0,paintK:1,half:false,halfUntil:0,hold:4000,miss:[],meter:(()=>{try{return !!localStorage.getItem('sc-mg-fps');}catch{return false;}})(),
+  win:[],jsWin:[],shown:null,frame(g){this.win.push([performance.now(),g]);if(this.win.length>400)this.win.splice(0,200);},js(ms){this.jsWin.push(ms);if(this.jsWin.length>400)this.jsWin.splice(0,200);}};
  function drawMeter(){const now=performance.now();while(pace.win.length&&now-pace.win[0][0]>1000)pace.win.shift();if(pace.jsWin.length>pace.win.length)pace.jsWin.splice(0,pace.jsWin.length-pace.win.length);
   if(!pace.shown||now-pace.shown.at>500){const g=pace.win.map(w=>w[1]),j=[...pace.jsWin].sort((a,b)=>a-b);pace.shown={at:now,fps:pace.win.length,worst:g.length?Math.max(...g):0,miss:g.filter(v=>v>24).length,
    js:j.length?j[Math.floor(j.length/2)]:0,js9:j.length?j[Math.floor(j.length*.9)]:0,hz:Math.round(1000/pace.vs),gfx:R.cacheStats(C)};}
@@ -358,14 +374,16 @@ async function minigolf(s){
   lines.forEach((l,i)=>{x.fillStyle=i===0?(m.fps>=55?'#7dff8a':m.fps>=40?'#ffd23f':'#ff6b6b'):'#fff';x.fillText(l,X+6,Y+5+i*14);});}
  // ------------------------------------------------------------ main loop
  // frame pacing: full speed (120 on a 120 Hz screen) while frames keep up; if a fast screen keeps missing frames, drop to an
- // even 60 (every other vsync) for a few seconds rather than land on random vsyncs (judder), then try full speed again
+ // even 60 (every other vsync) rather than land on random vsyncs (judder). It tries full speed again later, only while a
+ // player is aiming (the calmest moment), and waits twice as long after every failed try (4 s, 8 s ... up to a minute)
  s.frame((dt0,tS)=>{const t=tS*1000;
   if(pace.last0){const iv=t-pace.last0;if(iv>=4)pace.ivs.push(iv);if(pace.ivs.length>60)pace.ivs.shift();}pace.last0=t;pace.acc+=dt0;
   if(pace.ivs.length>=30&&++pace.n%30===0){const a=[...pace.ivs].sort((p,q)=>p-q);pace.vs=a[Math.floor(a.length*.15)];}
   if(pace.half&&pace.lastDraw&&t-pace.lastDraw<16.67-pace.vs*.5)return;
   const gap=pace.lastDraw?t-pace.lastDraw:16.7;pace.lastDraw=t;const dt=Math.min(pace.acc,.05);pace.acc=0;
-  if(pace.vs<10.5){if(pace.half){if(t>pace.halfUntil){pace.half=false;pace.miss=[];}}
-   else{pace.miss.push(gap>pace.vs*1.6?1:0);if(pace.miss.length>60)pace.miss.shift();if(pace.miss.length>=40&&pace.miss.reduce((a,b)=>a+b,0)>pace.miss.length*.25){pace.half=true;pace.halfUntil=t+4000;}}}
+  if(pace.vs<10.5){if(pace.half){if(t>pace.halfUntil&&phase==='aim'&&!cpuJob){pace.half=false;pace.miss=[];pace.tryAt=t;}}
+   else{pace.miss.push(gap>pace.vs*1.6?1:0);if(pace.miss.length>60)pace.miss.shift();
+    if(pace.miss.length>=40&&pace.miss.reduce((a,b)=>a+b,0)>pace.miss.length*.25){pace.half=true;if(pace.tryAt&&t-pace.tryAt<20000)pace.hold=Math.min(60000,pace.hold*2);pace.halfUntil=t+pace.hold;}}}
   else pace.half=false;
   // a missed frame turns the background painting down for a while (it is the one thing that can wait)
   if(gap>Math.max(24,pace.vs*2.5))pace.slowT=1.5;else pace.slowT=Math.max(0,pace.slowT-dt);pace.paintK=pace.slowT>0?.35:1;
@@ -375,10 +393,11 @@ async function minigolf(s){
   if(phase==='menu'){T+=dt;drawMenuCached();return;}
   if(phase==='menu-wait'){drawMenuWait();return;}
   if(!hole)return;
+  if(warm){warm=false;drawWorld();drawHUD();drawIntroCard();x.setTransform(1,0,0,1,0,0);drawLoading();pace.js(performance.now()-f0);return;}
   if(phase!=='fin'&&phase!=='roll')T+=dt;
   for(const m of moods)if(m.t<90){m.t-=dt;if(m.t<=0)m.m='normal';}
   if(phase==='intro'){flyT+=dt;if(flyT>3.1){beginTurn();}}
-  if(phase==='card')cardT+=dt;
+  if(phase==='card'){cardT+=dt;if(cardT>.15)flushSave();if(cardT>.3&&hi+1<plan.list.length)prepStep(hi+1,pace.vs<10.5?3:6);}
   if(cpu)stepCpu();
   physics(dt);
   for(const bb of balls){if(bb.b.rest&&!bb.done&&phase!=='roll')R.settleOrient(bb.orient,dt,cam.rot);if(bb.done)bb.sinkT=(bb.sinkT||0)+dt;}
@@ -395,7 +414,13 @@ async function minigolf(s){
  // the course's own pictures (ground, rails, props) before the first hole, so its ground is painted once with them
  phase='loading';const names=SP.coursePictures(plan.cid);await loadPictures(names,12000);if(!s.alive)return;
  // and their shrunk copies, a few a frame while the bar fills (made mid-hole they were the long first frames of a hole)
- for(let i=0;i<names.length;i+=4){R.warmPictures(names.slice(i,i+4));loadP={n:i,of:names.length};await new Promise(r=>requestAnimationFrame(()=>r()));if(!s.alive)return;}
- cards=[[],[]];startHole(0);
+ const frame1=()=>new Promise(r=>requestAnimationFrame(()=>r()));
+ for(let i=0;i<names.length;i+=4){R.warmPictures(names.slice(i,i+4));loadP={n:i*.3,of:names.length};await frame1();if(!s.alive)return;}
+ // then the first hole, painted while the bar fills (at most a few seconds: whatever is left is painted during its flyover)
+ {const t0=performance.now();let f=0;while(f<1&&performance.now()-t0<6000){f=prepStep(0,12);loadP={n:30+64*f,of:100};await frame1();if(!s.alive)return;}}
+ // the face on each ball at every size step the camera can show it at (made mid-flyover they were hitches of the first hole)
+ for(const m of ['normal','win','sad','silly']){for(let i=0;i<2;i++){const id=s.players[i]?.character;if(!id)continue;const e1=Math.ceil(Math.log2(kCeil()*3)*6);for(let e=Math.floor(Math.log2(6)*6);e<=e1;e++)faceSprite(id,m,Math.pow(2,e/6),1);}
+  loadP={n:loadP.n+1.5,of:100};await frame1();if(!s.alive)return;}
+ cards=[[],[]];startHole(0);warm=true;
 }
 Object.assign(exports,{minigolf});

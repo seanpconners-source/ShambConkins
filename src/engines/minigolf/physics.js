@@ -225,15 +225,22 @@ function runShot(C,lie,vx,vy,T0,maxT=MAX_ROLL){
 // a wall' is not near. Cached per hole.
 function cupField(C){
  if(C._field)return C._field;
- const [x0,y0,x1,y1]=C.bbox,S=2,W=Math.ceil((x1-x0)/S)+1,H=Math.ceil((y1-y0)/S)+1,dist=new Float32Array(W*H).fill(1e9),ok=new Uint8Array(W*H);
- for(let j=0;j<H;j++)for(let i=0;i<W;i++){const x=x0+i*S,y=y0+j*S,g=C.topAt(x,y);ok[j*W+i]=g&&!g.g.water&&g.g.type!=='out'?1:0;}
- const blocked=(ax,ay,bx,by)=>{for(const s of C.segs){if(s.kind==='cliff'&&!s.g)continue;if(segX(ax,ay,bx,by,s.x1,s.y1,s.x2,s.y2))return s;}return null;};
+ const [x0,y0,x1,y1]=C.bbox,S=2,W=Math.ceil((x1-x0)/S)+1,H=Math.ceil((y1-y0)/S)+1,dist=new Float32Array(W*H).fill(1e9),ok=new Uint8Array(W*H),zc=new Float64Array(W*H);
+ // each cell's surface once (the flood used to ask topAt again for every cell it visited)
+ for(let j=0;j<H;j++)for(let i=0;i<W;i++){const x=x0+i*S,y=y0+j*S,g=C.topAt(x,y);ok[j*W+i]=g&&!g.g.water&&g.g.type!=='out'?1:0;zc[j*W+i]=g?g.z:0;}
+ // the walls in 4-unit buckets: a step only tests the walls near it, and still gets the first one in C.segs order that it crosses
+ const B=4,gx0=x0-2,gy0=y0-2,GW=Math.ceil((W*S+4)/B)+1,GH=Math.ceil((H*S+4)/B)+1,bk=Array.from({length:GW*GH},()=>[]),seen=new Int32Array(C.segs.length);let stamp=0;
+ const bi=(v,o,n)=>Math.max(0,Math.min(n-1,Math.floor((v-o)/B)));
+ C.segs.forEach((s,k)=>{if(s.kind==='cliff'&&!s.g)return;const i0=bi(Math.min(s.x1,s.x2)-1e-6,gx0,GW),i1=bi(Math.max(s.x1,s.x2)+1e-6,gx0,GW),j0=bi(Math.min(s.y1,s.y2)-1e-6,gy0,GH),j1=bi(Math.max(s.y1,s.y2)+1e-6,gy0,GH);for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++)bk[j*GW+i].push(k);});
+ const blocked=(ax,ay,bx,by)=>{stamp++;let best=-1;const i0=bi(Math.min(ax,bx)-1e-6,gx0,GW),i1=bi(Math.max(ax,bx)+1e-6,gx0,GW),j0=bi(Math.min(ay,by)-1e-6,gy0,GH),j1=bi(Math.max(ay,by)+1e-6,gy0,GH);
+  for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++)for(const k of bk[j*GW+i]){if(seen[k]===stamp)continue;seen[k]=stamp;if(best>=0&&k>best)continue;const s=C.segs[k];if(segX(ax,ay,bx,by,s.x1,s.y1,s.x2,s.y2))best=k;}
+  return best<0?null:C.segs[best];};
  const ci=Math.round((C.hole.cup[0]-x0)/S),cj=Math.round((C.hole.cup[1]-y0)/S),q=[];if(ci>=0&&cj>=0&&ci<W&&cj<H){dist[cj*W+ci]=0;q.push(cj*W+ci);}
  // Dijkstra-ish (BFS with 8 neighbours, few hundred cells: fine)
  const nb=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,1.414],[1,-1,1.414],[-1,1,1.414],[-1,-1,1.414]];
- const flood=()=>{for(let qi=0;qi<q.length;qi++){const c=q[qi],i=c%W,j=(c-i)/W,ax=x0+i*S,ay=y0+j*S,za=(C.topAt(ax,ay)||{z:0}).z;
+ const flood=()=>{for(let qi=0;qi<q.length;qi++){const c=q[qi],i=c%W,j=(c-i)/W,ax=x0+i*S,ay=y0+j*S,za=zc[c];
   for(const [di,dj,w] of nb){const ni=i+di,nj=j+dj;if(ni<0||nj<0||ni>=W||nj>=H)continue;const n=nj*W+ni;if(!ok[n])continue;const nd=dist[c]+w*S;if(nd>=dist[n])continue;const bx=x0+ni*S,by=y0+nj*S;
-   const s=blocked(ax,ay,bx,by);if(s){const zb=(C.topAt(bx,by)||{z:0}).z;/* rolling off a drop edge toward the cup side is fine, climbing a cliff is not */ if(s.kind!=='cliff'||za>zb+.3)continue;}
+   const s=blocked(ax,ay,bx,by);if(s){const zb=zc[n];/* rolling off a drop edge toward the cup side is fine, climbing a cliff is not */ if(s.kind!=='cliff'||za>zb+.3)continue;}
    dist[n]=nd;q.push(n);}}};
  flood();
  // a tunnel's mouth is as close as where it comes out
