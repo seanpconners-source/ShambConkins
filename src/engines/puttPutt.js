@@ -95,6 +95,10 @@ async function minigolf(s){
  // one before is up (P.compile keeps one C per hole, so the caches painted here are the ones the hole is drawn from).
  // Painting it during the flyover (and the first frames' one-time setup) was what made the start of every hole chug.
  let prep=null,warm=false;
+ // painting ahead while the scorecard is up only uses what the frame leaves over (its last frames' own work, median),
+ // so the card itself keeps its frame rate: 1-6 ms
+ function prepBudget(){const fr=pace.half||pace.vs>=10.5?16.7:pace.vs,L=pace.parts.slice(-12).map(o=>(o.world||0)+(o.hud||0)+(o.ui||0)+(o.phys||0)+(o.cpu||0)).sort((a,b)=>a-b),used=L.length?L[L.length>>1]:fr/2;
+  return Math.max(1,Math.min(6,fr-used-3));}
  // leaving mid-scorecard: the next hole's caches go too (each hole keeps its C between games)
  s.cleanup(()=>{if(prep&&plan&&plan.list[prep.i]){const pc=P.compile(plan.list[prep.i]);if(pc!==C)R.freeHole(pc);}});
  function prepStep(i,ms){if(!plan||i>=plan.list.length)return 1;const h=plan.list[i],c=P.compile(h),rot=rotFor(h,c),kc=kCeil();
@@ -119,8 +123,28 @@ async function minigolf(s){
   for(const bb of balls)bb.glow=bb.i===turn;mood(turn,'think',99);
   say(`${s.players[turn].name.toUpperCase()}${s.players[turn].name.endsWith('s')?"'":"'S"} SHOT`,`stroke ${balls[turn].strokes+1} · par ${hole.par}`,1.1,'turn');
   if(cpu&&turn===1)startCpu();}
- function startCpu(){const bb=balls[1],tFire=T+1.4+Math.random()*.4,skill=cpuSkill(s),gen=CPU.plan(C,{x:bb.b.x,y:bb.b.y,z:bb.b.z},tFire,{skill,fine:skill>.5});cpuJob={gen,tFire,res:null,skill};}
- function stepCpu(){if(!cpuJob||phase!=='aim'||turn!==1)return;const j=cpuJob;if(!j.res){const t0=performance.now(),ms=pace.vs<10.5&&!pace.half?3:7;while(performance.now()-t0<ms){const r=j.gen.next();if(r.done){j.res=r.value;break;}}if(!j.res)return;}
+ // The CPU golfer thinks on its own thread when the phone allows it: a Worker built from the physics + CPU modules' own source
+ // (require.src), so it plays exactly the shots the in-frame planner would. It used to think 7-9 ms of every frame while
+ // lining up, which on a phone pushed frames past 16.7 ms for seconds. No Worker, or one that fails = the old in-frame planner.
+ let planner=null,planId=0;
+ function makePlanner(){if(planner!==null)return planner;planner=false;
+  try{const ids=['src/engines/minigolf/physics.js','src/engines/minigolf/cpu.js'],src=typeof require.src==='function'?ids.map(id=>require.src(id)):[];
+   if(typeof Worker==='undefined'||typeof Blob==='undefined'||src.length!==ids.length||src.some(t=>!t))return planner;
+   const code="'use strict';const modules={"+ids.map((id,i)=>JSON.stringify(id)+':'+src[i]).join(',')+"};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}"+
+    "const P=require("+JSON.stringify(ids[0])+"),CPU=require("+JSON.stringify(ids[1])+"),HOLES=new Map();"+
+    "onmessage=e=>{const m=e.data;try{let C=HOLES.get(m.key);if(!C){C=P.compile(m.hole);HOLES.set(m.key,C);}const r=CPU.planNow(C,m.lie,m.T0,m.opts);postMessage({id:m.id,a:r.a,p:r.p});}catch(err){postMessage({id:m.id,err:String(err&&err.message||err)});}};";
+   const url=URL.createObjectURL(new Blob([code],{type:'text/javascript'})),w=new Worker(url);setTimeout(()=>URL.revokeObjectURL(url),10000);
+   const giveUp=()=>{const j=cpuJob;if(j&&j.worker&&!j.res)j.worker=false;};// back to the in-frame planner for this shot
+   w.onmessage=e=>{const m=e.data,j=cpuJob;if(!j||j.id!==m.id)return;if(m.err){giveUp();return;}j.res={a:m.a,p:m.p};};
+   w.onerror=ev=>{ev.preventDefault?.();planner=false;giveUp();try{w.terminate();}catch{}};
+   s.cleanup(()=>{try{w.terminate();}catch{}});planner=w;}catch{planner=false;}
+  return planner;}
+ const plainHole=h=>{const o={};for(const k of Object.keys(h))if(k[0]!=='_')o[k]=h[k];return o;};
+ function startCpu(){const bb=balls[1],tFire=T+1.4+Math.random()*.4,skill=cpuSkill(s),lie={x:bb.b.x,y:bb.b.y,z:bb.b.z},opts={skill,fine:skill>.5};
+  const j=cpuJob={id:++planId,lie,tFire,opts,gen:null,res:null,skill,worker:false},w=makePlanner();
+  if(w){try{w.postMessage({id:j.id,key:hole.key,hole:plainHole(hole),lie,T0:tFire,opts});j.worker=true;}catch{j.worker=false;}}}
+ function stepCpu(){if(!cpuJob||phase!=='aim'||turn!==1)return;const j=cpuJob;if(!j.res){if(j.worker)return;if(!j.gen)j.gen=CPU.plan(C,j.lie,j.tFire,j.opts);
+  const t0=performance.now(),ms=pace.vs<10.5&&!pace.half?3:7;while(performance.now()-t0<ms){const r=j.gen.next();if(r.done){j.res=r.value;break;}}if(!j.res)return;}
   if(T<j.tFire)return;const e=CPU.errOf(j.skill),a=j.res.a+CPU.gauss(Math.random)*e.a,p=clamp(j.res.p*(1+CPU.gauss(Math.random)*e.p),.03,1),v=p*VMAX;cpuJob=null;fire(Math.cos(a)*v,Math.sin(a)*v,false,false);}
  function fire(vx,vy,happy,remote){
   if(phase!=='aim')return;const bb=balls[turn];
@@ -223,7 +247,7 @@ async function minigolf(s){
  // ------------------------------------------------------------ drawing
  function drawWorld(){
   const parts=C.movers.length?P.moverParts(C,T):{segs:[],hazards:[]};const near=balls.some(bb=>!bb.done&&!bb.hidden&&Math.hypot(bb.b.x-hole.cup[0],bb.b.y-hole.cup[1])<14);
-  R.drawHole(x,W,H,cam,{C,course,T,kc:kCeil(),paintMs:(phase==='roll'||phase==='fin'?2:phase==='intro'?7:5)*pace.paintK,parts,fx,hit:hits,trail:phase==='roll'||phase==='fin'?trail:null,balls:balls.filter(bb=>!bb.done||bb.sinkT<.5).map(bb=>({...bb,ghost:phase!=='intro'&&bb.i!==turn&&!bb.done,sinkDip:bb.done&&!bb.picked?Math.min(1,bb.sinkT*3)*2.2:0})),flag:near?.35:1,lost:hole.lost,lostFound:lostFound[hole.key]||saved().lost?.includes(hole.key)});}
+  R.drawHole(x,W,H,cam,{C,course,T,kc:kCeil(),paintMs:(phase==='roll'||phase==='fin'?2:phase==='intro'?7:5)*pace.paintK,parts,fx,hit:hits,trail:phase==='roll'||phase==='fin'?trail:null,balls:balls.filter(bb=>!bb.done||bb.sinkT<.5).map(bb=>({...bb,ghost:phase!=='intro'&&bb.i!==turn&&!bb.done,sinkDip:bb.done&&!bb.picked?Math.min(1,bb.sinkT*3)*2.2:0})),flag:near?.35:1,lost:hole.lost,lostFound:lostFound[hole.key]||saved().lost?.includes(hole.key),prof:pace.meter?pace.cur:null,cover:phase==='card'||phase==='over'?cardCover(phase==='over'):null});}
  function drawAim(){
   const bb=balls[turn];if(!bb)return;const b=bb.b,[BX,BY]=R.proj(cam,W,H,b.x,b.y,b.z+P.BALL_R);
   let v=aim?shotVec():null;
@@ -253,7 +277,7 @@ async function minigolf(s){
   // the plate and the player chips are drawn into their own canvas and only redrawn when something on them changes
   const pw0=Math.min(W-rw-14,300),fs0=clamp(W*.036,12,17),hh=Math.ceil(top+fs0*2.6+8+2*(fs0*2+6)+6),hw=Math.ceil(pw0+16);
   const sig=[W,H,hi,turn,phase==='aim'||phase==='roll'||phase==='fin',balls.map(b=>b?[b.done?1:0,b.picked?1:0,b.strokes].join(':'):'').join(','),cards.map(r=>r.join(':')).join(','),moods.map(m=>m.m).join(','),s.players.map(p=>p.name).join(',')].join('|'),now=performance.now();
-  if(!hudCv||sig!==hudSig||now-hudAt>1000){hudSig=sig;hudAt=now;if(!hudCv)hudCv=document.createElement('canvas');hudCv.width=hw;hudCv.height=hh;x=hudCv.getContext('2d');
+  if(!hudCv||sig!==hudSig||now-hudAt>1000){hudSig=sig;hudAt=now;if(!hudCv)hudCv=document.createElement('canvas');x=fresh(hudCv,hw,hh);
    try{
   // hole plate (top-left)
   const pw=Math.min(W-rw-14,300),fs=clamp(W*.036,12,17);pill(8,top,pw,fs*2.6,'rgba(8,20,12,.78)','rgba(255,255,255,.15)');
@@ -261,7 +285,7 @@ async function minigolf(s){
   text(`PAR ${hole.par}`,8+pw-14,top+fs*1.3,fs*.95,'#fff','right');
   // player chips under it
   for(let i=0;i<2;i++){const y=top+fs*2.6+8+i*(fs*2+6),w=Math.min(pw,230),act=i===turn&&(phase==='aim'||phase==='roll'||phase==='fin');pill(8,y,w,fs*2,act?'rgba(0,0,0,.72)':'rgba(0,0,0,.45)',act?COL[i]:null);
-   faceAt(i,8+fs,y+fs,fs*1.7);const nm2=s.players[i].name+(cpu&&i===1?' (CPU)':'');text(nm2,8+fs*2.2,y+fs,fitText(nm2,fs*.9,w-fs*2.2-70),'#fff');
+   faceAt(i,8+fs,y+fs,fs*1.7);const nm2=s.players[i].name+(cpu&&i===1&&!/\(CPU\)\s*$/.test(s.players[i].name)?' (CPU)':'');text(nm2,8+fs*2.2,y+fs,fitText(nm2,fs*.9,w-fs*2.2-70),'#fff');
    const st=balls[i]?.done?(balls[i].picked?'X':String(cards[i][hi])):String(balls[i]?.strokes||0);text(`${st} · ${toPar(i)}`,8+w-10,y+fs,fs*.85,act?'#ffd23f':'#cfd8d0','right');}
    }finally{x=x0;}}
   x.drawImage(hudCv,0,0);
@@ -284,8 +308,21 @@ async function minigolf(s){
   if(hole.quote){const q=hole.quote;text(q,W/2,Y+h*.66,fitText(q,clamp(w*.03,10,14),w*.94,UI,700),'rgba(255,255,255,.85)','center',UI,700);}
   text('tap to skip',W/2,H-24,12,'rgba(255,255,255,.5)','center',UI,700);x.globalAlpha=1;}
  // the golf scorecard (birdies circled, bogeys boxed, like a real one)
- function drawCard(final){x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,0,W,H);const list=plan.list,n=list.length,rows=n>9?2:1,per=Math.ceil(n/rows);
+ // a canvas ready to draw on at w x h: same size = cleared and its state reset in place (no new texture), else resized
+ function fresh(cv,w,h){if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;return cv.getContext('2d');}const g=cv.getContext('2d');if(g.reset)g.reset();else{cv.width=w;}return g;}
+ function cardBox(final){const list=plan.list,n=list.length,rows=n>9?2:1,per=Math.ceil(n/rows);
   const w=Math.min(W*.94,760),cell=Math.min((w-110)/(per+1),46),rowH=Math.min(cell*.9,34),h=rows*rowH*4.3+(final?150:84),X=(W-w)/2,Y=Math.max(fb.top+6,(H-h)/2);
+  return {list,n,rows,per,w,cell,rowH,h,X,Y};}
+ // the part of the screen the card hides completely (the paper picture is opaque; the drawn stand-in has round corners)
+ function cardCover(final){const b=cardBox(final),m=SP.picture('scorecard')?2:16;return [b.X+m,b.Y+m,b.X+b.w-m,b.Y+b.h-m];}
+ // The scorecard is painted into its own screen-size canvas and only repainted when something on it changes (about 60
+ // text draws and the 2048 px paper picture every frame made every hole's card slow on a phone); a frame draws it once.
+ let cardCv=null,cardKey='';
+ function drawCard(final){x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,0,W,H);
+  const key=[W,H,final?1:0,hi,fb.top,cards.map(r=>r.join(':')).join(','),moods.map(m=>m.m).join(','),s.players.map(p=>p.name+'/'+(p.character||'')).join(','),SP.version()].join('|');
+  if(!cardCv||key!==cardKey){cardKey=key;if(!cardCv)cardCv=document.createElement('canvas');const x0=x;x=fresh(cardCv,W,H);try{paintCard(final);}finally{x=x0;}}
+  x.drawImage(cardCv,0,0);}
+ function paintCard(final){const {list,n,rows,per,w,cell,rowH,h,X,Y}=cardBox(final);
   const paper=SP.picture('scorecard');if(paper)x.drawImage(paper,X,Y,w,h);else{x.fillStyle='#f6f0dc';x.beginPath();x.roundRect(X,Y,w,h,14);x.fill();x.strokeStyle='#c9b98a';x.lineWidth=2;x.stroke();}
   text(final?'FINAL SCORECARD':`AFTER HOLE ${hi+1}`,W/2,Y+24,clamp(w*.045,16,26),'#2a3a22','center',FONT,400);text(`${course.name}${plan.cid==='tour'?' · Grand Tour':''}`,W/2,Y+46,12,'#6a5a3a','center',UI,800);
   const lx=X+12,cw=cell,c0=lx+100;
@@ -357,7 +394,9 @@ async function minigolf(s){
   else if(Array.isArray(m.fin)){await wait(()=>phase==='fin'&&waitFin);if(!s.alive)return;const {bb}=waitFin,[fx0,fy0,fz0,k,n]=m.fin;waitFin=null;const b=bb.b;
    if(k!=='splash'&&k!=='ob'&&k!=='chomp'){b.x=+fx0;b.y=+fy0;b.z=+fz0;}if(Number.isFinite(n))bb.strokes=n;b.vx=b.vy=0;settle(k,bb);}}})();
  // ------------------------------------------------------------ test hooks
- s.debug={engine:'minigolf',get phase(){return phase;},get hole(){return hole?.key;},get hi(){return hi;},get turn(){return turn;},get balls(){return balls;},get cards(){return cards;},get T(){return T;},gfx(){return R.cacheStats(C);},pace(){const now=performance.now();return {fps:pace.win.filter(w=>now-w[0]<1000).length,vs:pace.vs,paintK:pace.paintK};},
+ s.debug={engine:'minigolf',get phase(){return phase;},get hole(){return hole?.key;},get hi(){return hi;},get turn(){return turn;},get balls(){return balls;},get cards(){return cards;},get T(){return T;},gfx(){return R.cacheStats(C);},planCheck(lie,T0,skill=.6){const w=makePlanner(),opts={skill,fine:skill>.5},m=CPU.planNow(C,lie,T0,opts);if(!w)return Promise.resolve({main:[m.a,m.p],worker:null});const id=-(++planId);
+   return new Promise(res=>{const on=e=>{if(e.data.id!==id)return;w.removeEventListener('message',on);res({main:[m.a,m.p],worker:[e.data.a,e.data.p],err:e.data.err||null});};w.addEventListener('message',on);w.postMessage({id,key:hole.key,hole:plainHole(hole),lie,T0,opts});});},
+  get planner(){return planner?'worker':planner===false?'frame':'none';},pace(){const now=performance.now();return {fps:pace.win.filter(w=>now-w[0]<1000).length,vs:pace.vs,paintK:pace.paintK};},
   pick(cid,n){menu.c=cid;menu.n=n||menu.n;if(menu.go)menu.go();else menu.auto=true;},skipIntro(){flyT=99;},go(i){startHole(i);},place(x0,y0){const bb=balls[turn];Object.assign(bb.b,P.newBall(x0,y0,C));},fire(vx,vy){fire(vx,vy,false,false);},aimAt(sx,sy,ex,ey){aim={id:-1,sx,sy,x:ex,y:ey,t0:performance.now()};},
   // one good shot for whoever is up (tests / online bot); returns a word when it acts
   shoot(skill=.8){if(phase!=='aim')return '';const bb=balls[turn],r=CPU.planNow(C,{x:bb.b.x,y:bb.b.y,z:bb.b.z},T,{skill,fine:false}),v=r.p*VMAX;fire(Math.cos(r.a)*v,Math.sin(r.a)*v,false,false);return 'shot';},
@@ -365,12 +404,15 @@ async function minigolf(s){
   state(){return {phase,hole:hole?.key,turn,strokes:balls.map(b=>b.strokes),cards,points:plan?pointsNow():[0,0]};}};
  // ------------------------------------------------------------ frame pacing + the FPS meter (toggle on the course picker)
  const pace={last0:0,ivs:[],n:0,vs:16.7,lastDraw:0,acc:0,slowT:0,paintK:1,half:false,halfUntil:0,hold:4000,miss:[],meter:(()=>{try{return !!localStorage.getItem('sc-mg-fps');}catch{return false;}})(),
-  win:[],jsWin:[],shown:null,frame(g){this.win.push([performance.now(),g]);if(this.win.length>400)this.win.splice(0,200);},js(ms){this.jsWin.push(ms);if(this.jsWin.length>400)this.jsWin.splice(0,200);}};
+  win:[],jsWin:[],cur:{},parts:[],shown:null,part(o){this.parts.push(o);if(this.parts.length>90)this.parts.shift();},frame(g){this.win.push([performance.now(),g]);if(this.win.length>400)this.win.splice(0,200);},js(ms){this.jsWin.push(ms);if(this.jsWin.length>400)this.jsWin.splice(0,200);}};
  function drawMeter(){const now=performance.now();while(pace.win.length&&now-pace.win[0][0]>1000)pace.win.shift();if(pace.jsWin.length>pace.win.length)pace.jsWin.splice(0,pace.jsWin.length-pace.win.length);
   if(!pace.shown||now-pace.shown.at>500){const g=pace.win.map(w=>w[1]),j=[...pace.jsWin].sort((a,b)=>a-b);pace.shown={at:now,fps:pace.win.length,worst:g.length?Math.max(...g):0,miss:g.filter(v=>v>24).length,
-   js:j.length?j[Math.floor(j.length/2)]:0,js9:j.length?j[Math.floor(j.length*.9)]:0,hz:Math.round(1000/pace.vs),gfx:R.cacheStats(C)};}
-  const m=pace.shown,fs=11,lines=[`${m.fps} fps  (screen ${m.hz} Hz${pace.half?', held at 60':''})`,`worst gap ${m.worst.toFixed(0)} ms · missed ${m.miss}`,`frame work ${m.js.toFixed(1)} / ${m.js9.toFixed(1)} ms`,`ground ${m.gfx.todo?m.gfx.todo+' to paint':'ready'} · ${(m.gfx.pages||0)+(m.gfx.atlas||0)} sheets`];
-  x.setTransform(1,0,0,1,0,0);const w=170,h=lines.length*14+8,X=W-w-8,Y=H-h-8;x.fillStyle='rgba(0,0,0,.7)';x.fillRect(X,Y,w,h);x.font=`700 ${fs}px monospace`;x.textAlign='left';x.textBaseline='top';
+   js:j.length?j[Math.floor(j.length/2)]:0,js9:j.length?j[Math.floor(j.length*.9)]:0,hz:Math.round(1000/pace.vs),gfx:R.cacheStats(C)};
+   const med=k=>{const v=pace.parts.map(o=>o[k]||0).sort((a,b)=>a-b);return v.length?v[Math.floor(v.length/2)]:0;},f=v=>v<10?v.toFixed(1):v.toFixed(0);
+   pace.shown.split=[`world ${f(med('world'))}: ground ${f(med('ground'))} things ${f(med('things'))} (${Math.round(med('n'))})`,
+    `hud ${f(med('hud'))} ui ${f(med('ui'))} phys ${f(med('phys'))} cpu ${f(med('cpu'))}${planner?'*':''} prep ${f(med('prep'))}`];}
+  const m=pace.shown,fs=11,lines=[`${m.fps} fps  (screen ${m.hz} Hz${pace.half?', held at 60':''})`,`worst gap ${m.worst.toFixed(0)} ms · missed ${m.miss}`,`frame work ${m.js.toFixed(1)} / ${m.js9.toFixed(1)} ms`,`ground ${m.gfx.todo?m.gfx.todo+' to paint':'ready'} · ${(m.gfx.pages||0)+(m.gfx.atlas||0)} sheets`,...(m.split||[])];
+  x.setTransform(1,0,0,1,0,0);x.font=`700 ${fs}px monospace`;const w=Math.min(W-16,Math.max(170,...lines.map(l=>x.measureText(l).width+12))),h=lines.length*14+8,X=W-w-8,Y=H-h-8;x.fillStyle='rgba(0,0,0,.7)';x.fillRect(X,Y,w,h);x.textAlign='left';x.textBaseline='top';
   lines.forEach((l,i)=>{x.fillStyle=i===0?(m.fps>=55?'#7dff8a':m.fps>=40?'#ffd23f':'#ff6b6b'):'#fff';x.fillText(l,X+6,Y+5+i*14);});}
  // ------------------------------------------------------------ main loop
  // frame pacing: full speed (120 on a 120 Hz screen) while frames keep up; if a fast screen keeps missing frames, drop to an
@@ -397,18 +439,20 @@ async function minigolf(s){
   if(phase!=='fin'&&phase!=='roll')T+=dt;
   for(const m of moods)if(m.t<90){m.t-=dt;if(m.t<=0)m.m='normal';}
   if(phase==='intro'){flyT+=dt;if(flyT>3.1){beginTurn();}}
-  if(phase==='card'){cardT+=dt;if(cardT>.15)flushSave();if(cardT>.3&&hi+1<plan.list.length)prepStep(hi+1,pace.vs<10.5?3:6);}
-  if(cpu)stepCpu();
+  // each part of the frame timed for the FPS meter's breakdown (a phone's numbers, not a guess from a desktop)
+  const PC=pace.cur={};let tq=performance.now();const lap=k=>{const t=performance.now();PC[k]=(PC[k]||0)+t-tq;tq=t;};
+  if(phase==='card'){cardT+=dt;if(cardT>.15)flushSave();if(cardT>.3&&hi+1<plan.list.length)prepStep(hi+1,prepBudget());}
+  lap('prep');if(cpu)stepCpu();lap('cpu');
   physics(dt);
   for(const bb of balls){if(bb.b.rest&&!bb.done&&phase!=='roll')R.settleOrient(bb.orient,dt,cam.rot);if(bb.done)bb.sinkT=(bb.sinkT||0)+dt;}
-  stepFx(dt);stepCam(dt);snd.ambience(dt,course.id);
-  drawWorld();
-  if(phase==='aim')drawAim();
-  drawHUD();drawCallout(dt);
+  stepFx(dt);stepCam(dt);snd.ambience(dt,course.id);lap('phys');
+  drawWorld();lap('world');
+  if(phase==='aim')drawAim();lap('ui');
+  drawHUD();lap('hud');drawCallout(dt);
   if(phase==='intro')drawIntroCard();
   if(phase==='card')drawCard(false);
   if(phase==='over')drawCard(true);
-  pace.js(performance.now()-f0);if(pace.meter)drawMeter();
+  lap('ui');pace.js(performance.now()-f0);pace.part(PC);if(pace.meter)drawMeter();
  });
  plan=await chooseRound();if(!plan||!s.alive)return;
  // the course's own pictures (ground, rails, props) before the first hole, so its ground is painted once with them

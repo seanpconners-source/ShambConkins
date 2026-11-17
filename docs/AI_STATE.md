@@ -2,6 +2,19 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+MINIGOLF ROUND 2 (Nov 17, after v0.99.15, branch claude/minigolf-performance-60fps-s7wclw, unreleased; owner's meter on the final
+scorecard: 31 fps at 60 Hz, frame work 26.9/32.1 ms; rounds dip to ~45, mostly vs CPU): CPU planning in a Web Worker (puttPutt
+makePlanner: physics.js + cpu.js source via NEW loader hook `require.src(id)` in src/modules.json tail; worker caches C per hole key;
+plans identical to planNow on all 18 holes x 3 lies (debug.planCheck, debug.planner 'worker'|'frame'); fallback = in-frame generator).
+Scorecard painted once into a screen-size canvas (cardBox/paintCard/cardCover, key = hole, cards, moods, names, art version) and the
+sprites it hides are skipped (st.cover in render.js drawHole); card frames drew ~150 sprites + ~50 texts + the 2048 px paper picture.
+render.js full(img): pictures drawn at >= half size come from a one-time canvas copy (windmill/clown/portal were drawn from the
+<img> every frame; a phone may re-decode a dropped picture inside a frame). HUD canvas redrawn in place (fresh(): ctx.reset()).
+"Neo (CPU) (CPU)" label fixed. Card prep budget = the frame's spare time (prepBudget, 1-6 ms). FPS meter: box fits its text + 2
+breakdown lines (medians of ~90 frames: world = ground + things (items drawn), hud, ui, phys, cpu (* = worker), prep). Old vs new
+screenshots all 18 holes both sizes + scorecard: identical (toast only). minigolf.mjs both sizes, sim, fuzz, online-native ±LAG pass.
+NEXT: owner's meter screenshots on the phone (a dipping roll, the CPU's turn, a scorecard) say which part still costs.
+
 MINIGOLF HOLE-START + DIPS (Nov 17, RELEASED as v0.99.15 (owner: "Release"; test:core EXIT 0); owner: chugs at the start of holes,
 dips under 60; don't change the look): render.js prepareHole(C,course,rot,kc,until) paints a hole's caches ahead (slope shading per
 green, lawn square, low copy one run per call, big page canvases one per call, ground squares cup-first, every sprite); puttPutt

@@ -36,8 +36,13 @@ const MIPS=new WeakMap();let KREF=1;
 function mipChain(img){let m=MIPS.get(img);if(m)return m;m=[img];let src=img,w=img.width||img.naturalWidth,h=img.height||img.naturalHeight;
  while(w>48&&h>48){const c2=canvas(Math.ceil(w/2),Math.ceil(h/2)),g=c2.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(src,0,0,c2.width,c2.height);m.push(c2);src=c2;w=c2.width;h=c2.height;}
  MIPS.set(img,m);return m;}
+// A picture drawn at half its size or more comes from a canvas copy made once: a phone's browser may drop an <img>'s
+// decoded pixels to save memory and decode the whole picture again inside a frame (windmill, clown head: 1280 px)
+const FULL=new WeakMap();
+function full(img){let c=FULL.get(img);if(c)return c;const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;if(!(w>0&&h>0)||!(img instanceof HTMLImageElement))return img;
+ c=canvas(w,h);c.getContext('2d').drawImage(img,0,0);FULL.set(img,c);return c;}
 function shrunk(img,sc){
- if(!img||!(sc>0))return img;sc*=Math.max(1,KREF);if(sc>=.5)return img;
+ if(!img||!(sc>0))return img;sc*=Math.max(1,KREF);if(sc>=.5)return full(img);
  const m=mipChain(img),lv=Math.min(m.length-1,Math.floor(Math.log2(1/sc)));return m[lv];}
 function warmPictures(names){for(const n of names){const img=pic(n);if(img)mipChain(img);}}
 function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;if(f>0){r+=(255-r)*f;g+=(255-g)*f;b+=(255-b)*f;}else{r*=1+f;g*=1+f;b*=1+f;}return `rgb(${r|0},${g|0},${b|0})`;}
@@ -131,7 +136,7 @@ function decorFor(C,look,rot){
 // one pattern fill, and only what moves (water ripples, pads, movers, bumpers, flag, balls) live. Painting happens within
 // st.paintMs per frame (the flyover paints the hole); a camera that zooms or pans never causes any.
 function drawHole(x,W,H,cam,st){
- const {C,course}=st,look=course.look;
+ const {C,course}=st,look=course.look,pf=st.prof,t0=pf?performance.now():0,cov=st.cover;
  x.setTransform(1,0,0,1,0,0);
  // background (live: clouds drift, stars twinkle)
  if(look.space)drawStars(x,W,H,cam,st.T);
@@ -143,17 +148,18 @@ function drawHole(x,W,H,cam,st){
  G.runs.forEach((run,r)=>{x.setTransform(1,0,0,1,0,0);
   if(run.anim){for(const f of run.steps)f(x,W,H,cam,st);return;}
   drawGround(x,G,r,cam,W,H);});
- x.setTransform(1,0,0,1,0,0);
+ const t1=pf?performance.now():0;x.setTransform(1,0,0,1,0,0);
  if(st.trail&&st.trail.pts.length>1){const t=st.trail.pts;x.lineCap='round';for(let i=1;i<t.length;i++){const a=proj(cam,W,H,t[i-1][0],t[i-1][1],t[i-1][2]),b=proj(cam,W,H,t[i][0],t[i][1],t[i][2]);x.strokeStyle=st.trail.col;x.globalAlpha=.5*i/t.length;x.lineWidth=Math.max(2,cam.k*1.1*i/t.length);x.beginPath();x.moveTo(...a);x.lineTo(...b);x.stroke();}x.globalAlpha=1;}
  // sorted standing things: still ones from their sprites, moving ones drawn live
  const items=[],dcam=depth(cam.rot,cam.x,cam.y,0);
  const SP=standingSprites(C,course,cam,st),later=[],vis=[];
  for(const it of SP.list){const b1=it.b1,X0=ox+b1.bx*cam.k,Y0=oy+b1.by*cam.k;
-  if(X0>W||Y0>H||X0+b1.w*cam.k<0||Y0+b1.h*cam.k<0){if(!it.sp||it.sp.stale)later.push(it);continue;}vis.push(it);}
+  if(X0>W||Y0>H||X0+b1.w*cam.k<0||Y0+b1.h*cam.k<0||(cov&&X0>=cov[0]&&Y0>=cov[1]&&X0+b1.w*cam.k<=cov[2]&&Y0+b1.h*cam.k<=cov[3])){if(!it.sp||it.sp.stale)later.push(it);continue;}vis.push(it);}
  // all of this frame's sprite painting before any drawing from the atlas (writing to a canvas that was just drawn from
  // makes the browser copy it), the ones on screen first
  for(const it of vis)if((!it.sp||it.sp.stale)&&timeLeft())paintSprite(it,SP);
  for(const it of later){if(!timeLeft())break;paintSprite(it,SP);}
+ const t2=pf?performance.now():0;
  for(const it of vis){
   items.push({y:H/2+cam.k*(it.d-dcam),f:()=>{const q=it.sp;
    if(!q){it.draw(x,W,H,cam);return;}// not painted yet: drawn live this frame
@@ -165,8 +171,10 @@ function drawHole(x,W,H,cam,st){
  {const cz=C.cupZ,[X,Y]=proj(cam,W,H,C.hole.cup[0],C.hole.cup[1],cz);items.push({y:Y+.02,f:()=>{if(st.flag===0)return;x.globalAlpha=st.flag??1;drawProp(x,'flag',X,Y,3.4*cam.k,{t:st.T,col:look.space?'#ffd23f':'#ff3b5c'});x.globalAlpha=1;}});}
  for(const bb of st.balls){if(bb.hidden)continue;const b=bb.b,gr=C.topAt(b.x,b.y),gz=b.air?(C.ground(b.x,b.y,b.z+.05)||{z:LAWN_Z}).z:b.z;const [X,Y]=proj(cam,W,H,b.x,b.y,gz);items.push({y:Y+.05,f:()=>drawBall(x,W,H,cam,bb,gz,gr)});}
  items.sort((a,b)=>a.y-b.y);for(const it of items){x.setTransform(1,0,0,1,0,0);it.f();}
+ const t3=pf?performance.now():0;
  // particles
  KREF=1;x.setTransform(1,0,0,1,0,0);for(const p of st.fx||[]){const [X,Y]=proj(cam,W,H,p.x,p.y,p.z);const r=Math.max(1,p.s*cam.k);x.globalAlpha=Math.max(0,Math.min(1,p.life/p.max*1.5));x.fillStyle=p.col;if(p.kind==='confetti'){x.save();x.translate(X,Y);x.rotate(p.r);x.fillRect(-r,-r*.4,r*2,r*.8);x.restore();}else{x.beginPath();x.arc(X,Y,r,0,7);x.fill();}}x.globalAlpha=1;
+ if(pf){const t4=performance.now();pf.ground=t1-t0;pf.paint=t2-t1;pf.things=t3-t2;pf.fx=t4-t3;pf.n=items.length;}
 }
 // screen depth of a world point at k = 1 with the camera at the origin: proj(...)[1] = H/2 + k*(depth(p) - depth(camera))
 const depth=(rot,x,y,z)=>(rot?x:y)*TC-z*TS;
