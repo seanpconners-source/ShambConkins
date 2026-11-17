@@ -2,6 +2,13 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+MINIGOLF FLY-IN WAIT (Nov 17, after v0.99.18, unreleased; owner: whole round runs very well, only the Spaceballs fly-in stutters;
+3 logs): he taps past the scorecard after ~1 s, a Spaceballs hole needs ~2.3-3 s of painting on his phone, so the rest landed
+in the fly-in (50-80 ms frames, 'ground' 30 + 'things' 20 ms). puttPutt: scoreUI.next waits while the next hole isn't prepped
+(prepReady: prep.done>=1 at the hole's rot/kc) = nextWait: prepStep 14 ms/frame + 'NEXT HOLE' bar (drawNextBar), goes at done or
+4 s; card prep budget cap 10 ms once cardT>1 (card is one cached picture). Checked: scratch waitnext.mjs (4x CPU, early tap on
+Spaceballs: card held 2.1 s, fly-in started with todo 0/all sprites), minigolf.mjs both sizes, sim, fuzz, online-native.
+
 MINIGOLF PHONE LOGS ROUND 1 (Nov 17, RELEASED as v0.99.18 (owner: "Release so i can try"; minigolf tests); owner sent 11 frame logs (Fold 'Adreno 840', 833x750 canvas,
 60 Hz lock, readback2D 22 ms): Bushwood/Gilmore shots hold 60 (JS ~1 ms); dips = (1) scorecard prep 25-30 ms frames, a hole's prep
 ~3.4 s of work on the phone vs 0.8 s headless 4x (headless: painting ~0.3 ms/item, the rest uploads) and the fly-in painting what

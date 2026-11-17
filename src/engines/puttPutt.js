@@ -48,7 +48,7 @@ async function minigolf(s){
  s.hint('Drag back from anywhere and let go: the dotted line shows where the ball starts and its first bounce, the ring the power. Pull all the way into the red for a wild Happy Gilmore drive. Pinch or use two fingers to look around; the eye button shows the whole hole. The player farther from the cup putts next. Sand slows you, water and falling off cost a stroke. Find the hidden lost ball on every hole.');
  // ------------------------------------------------------------ state
  let phase='loading',W=s.W,H=s.H,T=0,cam={x:30,y:60,k:6,rot:0},tcam=null,hole=null,C=null,course=null,plan=null,hi=0,turn=0,balls=[],cards=[[],[]],honor=0;
- let aim=null,callout=null,fx=[],hits={},flyT=0,camMode='auto',manual=null,pinch=null,cpuJob=null,waitFin=null,lie=null,overview=false,scoreUI=null,menu={c:variant||'bushwood',n:board?3:6},menuHits=[],cardT=0,lostFound={},done=false;
+ let nextWait=0,aim=null,callout=null,fx=[],hits={},flyT=0,camMode='auto',manual=null,pinch=null,cpuJob=null,waitFin=null,lie=null,overview=false,scoreUI=null,menu={c:variant||'bushwood',n:board?3:6},menuHits=[],cardT=0,lostFound={},done=false;
  const moods=[{m:'normal',t:0},{m:'normal',t:0}],mood=(i,m,sec=1.6)=>{moods[i]={m,t:sec};if(m==='win')s.react?.(i,'happy',sec);else if(m==='sad'||m==='angry')s.react?.(i,'sad',sec);};
  const prof=()=>{const p=store.profile;if(!p)return null;const v=p.sitabout&&typeof p.sitabout==='object'?p.sitabout:{};p.sitabout={best:{...(v.best||{})},holes:{...(v.holes||{})},aces:+v.aces||0,lost:Array.isArray(v.lost)?v.lost.slice():[],rounds:+v.rounds||0};return p;};
  const saved=()=>store.profile?.sitabout||{best:{},holes:{},aces:0,lost:[],rounds:0};
@@ -105,8 +105,10 @@ async function minigolf(s){
  let prep=null,warm=false;
  // painting ahead while the scorecard is up only uses what the frame leaves over (its last frames' own work, median),
  // so the card itself keeps its frame rate: 1-6 ms
- function prepBudget(){const fr=pace.half||pace.vs>=10.5?16.7:pace.vs,L=pace.parts.slice(-12).map(o=>(o.world||0)+(o.hud||0)+(o.ui||0)+(o.phys||0)+(o.cpu||0)).sort((a,b)=>a-b),used=L.length?L[L.length>>1]:fr/2;
-  return Math.max(1,Math.min(6,fr-used-3));}
+ function prepBudget(cap=6){const fr=pace.half||pace.vs>=10.5?16.7:pace.vs,L=pace.parts.slice(-12).map(o=>(o.world||0)+(o.hud||0)+(o.ui||0)+(o.phys||0)+(o.cpu||0)).sort((a,b)=>a-b),used=L.length?L[L.length>>1]:fr/2;
+  return Math.max(1,Math.min(cap,fr-used-3));}
+ // the next hole is ready to fly over (painted at the zoom and turn it will be played with)
+ const prepReady=i=>!!(prep&&prep.i===i&&prep.done>=1&&prep.rot===rotFor(plan.list[i],P.compile(plan.list[i]))&&prep.kc===kCeil());
  // leaving mid-scorecard: the next hole's caches go too (each hole keeps its C between games)
  s.cleanup(()=>{if(prep&&plan&&plan.list[prep.i]){const pc=P.compile(plan.list[prep.i]);if(pc!==C)R.freeHole(pc);}});
  function prepStep(i,ms){if(!plan||i>=plan.list.length)return 1;const h=plan.list[i],c=P.compile(h),rot=rotFor(h,c),kc=kCeil();
@@ -210,7 +212,10 @@ async function minigolf(s){
  function afterSink(){phase='wait';beginTurn();}
  function endHole(){// honour for the next tee: lower score on this hole (ties keep it)
   const a=cards[0][hi],b=cards[1][hi];if(a<b)honor=0;else if(b<a)honor=1;
-  phase='card';cardT=0;s.setScores(pointsNow());scoreUI={next:()=>{scoreUI=null;if(hi+1<plan.list.length)startHole(hi+1);else finishRound();}};
+  // leaving the card before the next hole is painted waits for it (bar on the card, 4 s at most): the owner taps on after
+  // ~1 s and a Spaceballs hole takes 2-3 s to paint on his phone, so the rest used to land in the fly-in (50-80 ms frames)
+  const go=()=>{scoreUI=null;nextWait=0;if(hi+1<plan.list.length)startHole(hi+1);else finishRound();};
+  phase='card';cardT=0;nextWait=0;s.setScores(pointsNow());scoreUI={next:()=>{if(nextWait)return;if(hi+1<plan.list.length&&!prepReady(hi+1)){nextWait=performance.now();scoreUI.go=go;return;}go();}};
   setTimeout(()=>{if(s.alive&&phase==='card'&&scoreUI)scoreUI.next();},board?3600:5200);}
  const strokesNow=i=>cards[i].reduce((a,v)=>a+(v||0),0),parNow=i=>plan.list.reduce((a,h,j)=>a+(cards[i][j]!=null?h.par:0),0);
  function pointsNow(){return [0,1].map(i=>plan.list.reduce((a,h,j)=>a+(cards[i][j]!=null?ptsOf(h,cards[i][j]):0),0));}
@@ -341,6 +346,9 @@ async function minigolf(s){
  const paperL=[null,null];
  function paperLayer(final){const img=SP.picture('scorecard');if(!img)return null;const b=cardBox(final),k=[W,H,fb.top,b.X,b.Y,b.w,b.h,SP.version()].join('|'),i=final?1:0;let L=paperL[i];
   if(!L||L.k!==k){const c=L?L.c:document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');g.clearRect(0,0,W,H);g.drawImage(img,b.X,b.Y,b.w,b.h);L=paperL[i]={c,k};}return L.c;}
+ function drawNextBar(){const f=prep&&prep.i===hi+1?clamp(prep.done||0,0,1):0,w=Math.min(220,W*.5),h=8,X=W/2-w/2,Y=H-Math.max(60,H*.1);
+  x.setTransform(1,0,0,1,0,0);x.fillStyle='rgba(0,0,0,.55)';x.beginPath();x.roundRect(X-10,Y-24,w+20,h+34,10);x.fill();
+  text('NEXT HOLE',W/2,Y-9,12,'#fff','center',UI,800);x.fillStyle='rgba(255,255,255,.25)';x.fillRect(X,Y,w,h);x.fillStyle='#ffd23f';x.fillRect(X,Y,w*f,h);}
  function drawCard(final){x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,0,W,H);
   // faces keep the mood they had when the card came up (a face easing back to normal used to repaint the whole card)
   if(cardFor!==phase+hi){cardFor=phase+hi;cardMoods=moods.map(m=>m.m).join(',');}
@@ -505,7 +513,10 @@ async function minigolf(s){
   if(phase==='intro'){flyT+=dt;if(flyT>3.1){beginTurn();}}
   // each part of the frame timed for the FPS meter's breakdown (a phone's numbers, not a guess from a desktop)
   const PC=pace.cur={};let tq=performance.now();const lap=k=>{const t=performance.now();PC[k]=(PC[k]||0)+t-tq;tq=t;};
-  if(phase==='card'){cardT+=dt;if(cardT>.15)flushSave();if(cardT>.3&&hi+1<plan.list.length)prepStep(hi+1,prepBudget());}
+  if(phase==='card'){cardT+=dt;if(cardT>.15)flushSave();
+   if(nextWait&&scoreUI){prepStep(hi+1,14);if(prepReady(hi+1)||performance.now()-nextWait>4000)scoreUI.go();}
+   // the card is one cached picture once it has popped in, so painting ahead gets more of each frame then
+   else if(cardT>.3&&hi+1<plan.list.length)prepStep(hi+1,prepBudget(cardT>1?10:6));}
   lap('prep');if(cpu)stepCpu();lap('cpu');
   physics(dt);
   for(const bb of balls){if(bb.b.rest&&!bb.done&&phase!=='roll')R.settleOrient(bb.orient,dt,cam.rot);if(bb.done)bb.sinkT=(bb.sinkT||0)+dt;}
@@ -514,7 +525,7 @@ async function minigolf(s){
   if(phase==='aim')drawAim();lap('ui');
   drawHUD();lap('hud');drawCallout(dt);
   if(phase==='intro')drawIntroCard();
-  if(phase==='card')drawCard(false);
+  if(phase==='card'){drawCard(false);if(nextWait)drawNextBar();}
   if(phase==='over')drawCard(true);
   lap('ui');pace.js(performance.now()-f0);pace.part(PC);logFrame(gap,performance.now()-f0,PC);if(pace.meter)drawMeter();
  });
