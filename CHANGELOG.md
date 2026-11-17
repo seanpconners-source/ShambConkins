@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.99.16
+
+- **Sitabout Mini Golf, smoother against the CPU:** the CPU golfer now works out its shot on a separate thread, so its turn no longer takes time out of every frame. It plays exactly the same shots as before.
+- **Smoother scorecards:** the scorecard is drawn once and only redrawn when something on it changes, and the parts of the course hidden behind it are no longer drawn every frame.
+- **Big pictures no longer stall a frame:** the windmill, clown head and other large pictures are drawn from a copy made once, so the phone never has to unpack them again in the middle of a hole.
+- **FPS meter shows where the time goes:** two new lines split each frame into course, objects, HUD, overlays, physics and CPU thinking.
+- The CPU's name no longer says "(CPU)" twice.
+
 ## v0.99.15
 
 - **Sitabout Mini Golf, no more chugging at the start of a hole:** each hole is now painted before you see it: the first one behind the loading bar, every next one while the scorecard of the hole before is up. The flyover has nothing left to paint, and the game looks exactly the same as before.

@@ -2,7 +2,7 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-MINIGOLF ROUND 2 (Nov 17, after v0.99.15, branch claude/minigolf-performance-60fps-s7wclw, unreleased; owner's meter on the final
+MINIGOLF ROUND 2 (Nov 17, RELEASED as v0.99.16 (owner: "Release"; test:core EXIT 0 + minigolf tests); owner's meter on the final
 scorecard: 31 fps at 60 Hz, frame work 26.9/32.1 ms; rounds dip to ~45, mostly vs CPU): CPU planning in a Web Worker (puttPutt
 makePlanner: physics.js + cpu.js source via NEW loader hook `require.src(id)` in src/modules.json tail; worker caches C per hole key;
 plans identical to planNow on all 18 holes x 3 lies (debug.planCheck, debug.planner 'worker'|'frame'); fallback = in-frame generator).
