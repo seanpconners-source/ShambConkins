@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.99.22
+
+- **New Arcade backgrounds**, placed by hand on every screen: Console Classics, Arcade Classics, Board Games, Mobile Games, Sports, Party Games, Paddy's Pool and Darts.
+
 ## v0.99.21
 
 - **Crappy Crush: 576 stages** (was 95) in 72 themed worlds built from the game's own items: the 19 worlds you had, second worlds for the big franchises (Q Branch, City Wok, The Clock Tower, Pokémon Center, Death Mountain...) and themed mixes like Camp Crystal Lake, Action Heroes, Heavy Metal, Larry David's World, Snack Attack and Sewer Lair. Difficulty climbs slowly all the way through. Your saved stage numbers past Candy Land now point at the new stages.
