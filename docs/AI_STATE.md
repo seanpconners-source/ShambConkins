@@ -2,7 +2,11 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-CRAPPY CRUSH 576 STAGES (Nov 18, same branch, unreleased; owner: "way more stages... themes from groups of in-game items,
+v0.99.21 RELEASED (Nov 18, owner: "Release it all!!"; test:core EXIT 0): Crappy Crush 576 stages + coins, Tetris Classic, tile logos,
+batch 08 icons/logos. The 8 new BACKGROUNDS were held out of the release commit (picker not locked: only arcadecl on my-fold-open)
+and put back on the branch right after; next release once the owner locks them (ArtifactData list bg -> apply.py on the 8).
+
+CRAPPY CRUSH 576 STAGES (Nov 18, RELEASED in v0.99.21; owner: "way more stages... themes from groups of in-game items,
 Candy Land ridiculously easy as a tutorial, specials = the Loki/Mylo/KC coins"): crappyCrushWorlds.js 72 WORLDS (19 old +
 53 NW(key,name,source,hue,items): big franchises' second worlds + themed mixes; every piece id has art, none repeats, coin
 tokens never pieces; look-alike thin items swapped out after a contact sheet), PER 8 (old saves' stage numbers now point at
@@ -14,7 +18,7 @@ the points); 4 new shapes. tests/crappy-stages.mjs (Node: every stage + Remix sa
 {h,v:'mylo-token', w:'kc-token', b:'loki-token'}: coin + ring in the piece colour + badge of its item (+ arrows for Mylo);
 Loki = wildcard; drawn stand-ins (stripes/throne) if a picture is missing. Texts/rules say the coin names.
 
-TETRIS CLASSIC + BATCH 08 PART 1 ART + TILE LOGOS (Nov 18, branch ccr-bc26d42e-kn1noq, unreleased). R62: newGames.js blocks()
+TETRIS CLASSIC + BATCH 08 PART 1 ART + TILE LOGOS (Nov 18, RELEASED in v0.99.21 minus the 8 backgrounds). R62: newGames.js blocks()
 1P Arcade (not board/duel/online) shows pickBlockMode = CLASSIC (start level chips 1/5/10/15, remembered in localStorage
 sc-tetris-start) or VS CPU; classic sets s.solo.kind='levels', one well (drawClassic: NEXT x3, score/level/lines/lines to go,
 hue per level), level = start + lines/10, gravity (0.8-(lv-1)*.007)^(lv-1) s/row (min 1/120), LEVEL N banner, top out ->
