@@ -26,7 +26,9 @@ backgrounds pool (Paddy's Pool) + paddys-darts imported (the chat icons/logos of
 diff). KEY_BOX for all 8; originals assets/originals/keyart. TILES: a tile with a logo = picture in the top part
 (height 100% - --logo-band 24/32/20/16 px) + logo band at the bottom (theme.css end; was covering ~45% of the icon).
 WAITING: owner locks the 8 new backgrounds in Background Picker 1 (https://claude.ai/artifact/DhpZSVr98T1sEwzjux7AJ9),
-then ArtifactData list bg -> apply.py on those 8 only -> release.
+then ArtifactData list bg -> apply.py on those 8 only -> release. Picker v18 published Nov 18 with just these 8 (old files left on it).
+measure.mjs never captures pool/paddys-darts/megatouch-photohunt on amber-phone-land (780x360; 3 tries): no preview there for those.
+Tip: measure takes ~5-8 min per screen now; run screens in parallel processes with different OUT and merge measure.json + info/ + overlay-*.png.
 
 CRAPPY CRUSH + ARCADE CLEAN-UP (Nov 18, RELEASED as v0.99.20 (owner: "get images into game and release"; focused tests only:
 modules, build, crappy-sim, arcade-groups, pool-rules, fruit-swipe + phone screenshots; no full npm test, no playwright here). Owner asked (roadmap
