@@ -22,7 +22,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `paddys` | Paddy's Pub (paddys-beer-pong, flipadelphia-cup, paddys-darts) | family | ✅ / ✅ |
 | `casino` | Casino Night (blackjack, five-card, roulette, bond-baccarat, liars-dice) | family | ✅ / ✅ |
 | `trivia` | Trivia Night (trivia-mixed, trivia-hardcore, trivia-lightning, trivia-wager, trivia-survival, trivia-sitcom, trivia-nick90, trivia-dbz, trivia-hxh) | family | ✅ / ✅ |
-| `taskmaster` | Taskmaster (taskmaster-micro-relay, taskmaster-sumo, task-tallest-thing, taskmaster-curling, tm-cones) | family | ✅ / ✅ |
+| `taskmaster` | Taskmaster (taskmaster-micro-relay, taskmaster-sumo, tm-cones) | family | ✅ / ✅ |
 | `trek` | Star Trek Game Night (ten-forward-chess, trek-mini-chess) | family | ✅ / ✅ |
 | `rush` | Microgame Rush (microgame-rush, rush-marathon) | family | ✅ / ✅ |
 | `hyrule` | The Legend of Zelda (hyrule-rupee-rush, hyrule-sword-duel) | family | ✅ / ✅ |
@@ -70,9 +70,11 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `warehouse-shift` | The Office · Warehouse Shift | game | ✅ / ✅ |
 | `moonraker-lander` | Lunar Lander · Moonraker | game | ✅ / ✅ |
 | `mars-missile-defense` | Missile Command · Mars Attacks! | game | ✅ / ✅ |
+| `task-tallest-thing` | Stacker | game | · / · |
 | `bug-artillery` | Starship Troopers · Klendathu Scorched Earth | game | ✅ / ✅ |
 | `strategema-grid` | Strategema Grid | game | ✅ / ✅ |
 | `four-lights` | There Are Four Lights! | game | ✅ / ✅ |
+| `taskmaster-curling` | Olympic Curling | game | · / · |
 | `alien-sonar-grid` | Alien · Motion Tracker | game | ✅ / ✅ |
 | `happy-gilmore-golf` | Happy Gilmore × Caddyshack · Putt-Putt | game | ✅ / ✅ |
 | `kingpin-bowling` | Kingpin · Hook & Hustle | game | ✅ / ✅ |
@@ -136,10 +138,8 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `tm-cones` | Cone Chaos | version of taskmaster | · / · |
 | `terminator-scan` | Skynet Identification | version of terminator | · / · |
 | `color-of-money` | Paddy's Pool · 9-Ball | version of pool | ✅ / ✅ |
-| `task-tallest-thing` | Taskmaster · Stacker | version of taskmaster | · / · |
 | `matrix-hardline-hack` | Hardline Hack | version of matrix | · / · |
 | `paddys-darts` | Paddy’s Darts | version of paddys | · / · |
-| `taskmaster-curling` | Taskmaster · Olympic Curling | version of taskmaster | · / · |
 | `office-hockey-shootout` | The Mighty Ducks · Hockey Shootout | version of ducks | · / · |
 | `space-swarm` | Space Invaders · Mars Attacks! | version of invaders | · / · |
 | `t800-scan-long` | T-800 Freeway Chase | version of terminator | · / · |
