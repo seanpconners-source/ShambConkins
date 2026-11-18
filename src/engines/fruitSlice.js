@@ -51,7 +51,7 @@ async function fruitslice(s){
    s.setScores(scores);
   }
  }
- async function end(){if(phase!=='slice')return;phase='handoff';clear();if(actor===1)return s.finish(scores,'Taskmaster Fruit Ninja · identical waves of opponent heads, alternating human turns.');actor=1;clock=0;fruits=[];pieces=[];trail=[];popups=[];next=0;bombs=0;if(await s.pass(1,`${s.players[0].name} scored ${scores[0]}. Now it is your turn to slice ${s.players[0].name}'s flying heads: same waves, thirty seconds. Avoid the bombs.`))phase='slice';}
+ async function end(){if(phase!=='slice')return;phase='handoff';clear();if(actor===1)return s.finish(scores,'Fruit Ninja · identical waves of opponent heads, alternating human turns.');actor=1;clock=0;fruits=[];pieces=[];trail=[];popups=[];next=0;bombs=0;if(await s.pass(1,`${s.players[0].name} scored ${scores[0]}. Now it is your turn to slice ${s.players[0].name}'s flying heads: same waves, thirty seconds. Avoid the bombs.`))phase='slice';}
  function inputMove(p){
   const segment=fruitSwipeStep(drag,p,performance.now(),s.W,s.H);
   if(segment.reset)combo=0;
@@ -90,7 +90,7 @@ async function fruitslice(s){
   s.status(`${s.players[actor].name} · ${Math.ceil(Math.max(0,30-clock))}s · bombs ${bombs}/3 · score ${scores[actor]}${combo>=3?' · COMBO!':''}`);
   s.debug={actor,phase,fruits:fruits.map(f=>({...f,x:f.x*W,y:f.y*H,radius:r})),normalizedFruits:fruits,course,swipe,clock,scores,bombs,end,pieces};
  });
- await s.pass(0,`Fruit Ninja at Taskmaster’s buffet, except the fruit is ${s.players[1].name}’s head. Swipe to slice. Thirty seconds each, identical waves, combos, and dangerous bombs.`);
+ await s.pass(0,`Fruit Ninja, except the fruit is ${s.players[1].name}’s head. Swipe to slice. Thirty seconds each, identical waves, combos, and dangerous bombs.`);
 }
 
 Object.assign(exports,{sliceDistance,fruitCourse,fruitSwipeStep,SWIPE_LIMITS,fruitslice});

@@ -247,7 +247,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 **Key art** 
 
-> Key art for "Paddy's Pool", a minigame in a party video game that pays tribute to Always Sunny. Scene: 8-ball, 9-ball and the Pool Hall. Real 8-ball in Paddy's Pub. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Paddy's Pool", a minigame in a party video game that pays tribute to Always Sunny. Scene: 8-ball, 9-ball and the Pool Hall. Real pool in Paddy's Pub: pick 8-ball or 9-ball in the Pool Hall. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
@@ -342,6 +342,16 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 **Icon** ✅
 
 > Square game icon for "Call of Duty: Modern Stick Dot" (Call of Duty tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
+## Fruit Ninja · `taskmaster-fruit-ninja`
+
+**Key art** 
+
+> Key art for "Fruit Ninja", a minigame in a party video game that pays tribute to Fruit Ninja. Scene: Fruit Ninja, but the fruit is your opponent’s flying head: swipe to slice heads in half. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Fruit Ninja" (Fruit Ninja tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Megatouch · Photo Hunt · `megatouch-photohunt`
 
@@ -765,7 +775,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Rainbow Rivals · `rainbow-rivals`
 
-**Key art** ✅
+**Key art** 
 
 > Key art for "Rainbow Rivals", a minigame in a party video game that pays tribute to Super Mario Bros.. Scene: the most iconic moment of Rainbow Rivals. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -835,7 +845,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## The Newlywed Game · Spirit Battery · `newlywed-spirit`
 
-**Key art** ✅
+**Key art** 
 
 > Key art for "The Newlywed Game · Spirit Battery", a minigame in a party video game that pays tribute to The Newlywed Game. Scene: Answer a question about yourself in secret while your partner secretly guesses it. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -845,7 +855,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Roast Battle · Crowd Meter · `roast-battle`
 
-**Key art** ✅
+**Key art** 
 
 > Key art for "Roast Battle · Crowd Meter", a minigame in a party video game that pays tribute to Roast Battle. Scene: Pick a roast card, read it out loud, and your opponent rates the burn with 1 to 3 Ohhhs. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -855,7 +865,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Pictionary · Draw It · `draw-it`
 
-**Key art** ✅
+**Key art** 
 
 > Key art for "Pictionary · Draw It", a minigame in a party video game that pays tribute to Pictionary. Scene: Draw a secret pop-culture prompt with your finger in 25 seconds while the other player watches the replay and picks the right answer out of six. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -1182,16 +1192,6 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 **Icon** 
 
 > Square game icon for "Flipadelphia · Flip Cup" (Always Sunny tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
-
-## Taskmaster · Fruit Ninja Buffet · `taskmaster-fruit-ninja`
-
-**Key art** 
-
-> Key art for "Taskmaster · Fruit Ninja Buffet", a minigame in a party video game that pays tribute to Taskmaster. Scene: Taskmaster’s buffet, but the fruit is your opponent’s flying head: swipe to slice heads in half. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
-
-**Icon** 
-
-> Square game icon for "Taskmaster · Fruit Ninja Buffet" (Taskmaster tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Major League · Home Run Derby · `major-league-bats`
 
@@ -1943,15 +1943,15 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "Space Invaders · Mars Attacks! Co-op" (Space Invaders tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
-## Paddy's Pool · 8-Ball · `paddys-eight-ball`
+## Paddy's Pool · `paddys-eight-ball`
 
 **Key art** 
 
-> Key art for "Paddy's Pool · 8-Ball", a minigame in a party video game that pays tribute to Always Sunny. Scene: Real 8-ball in Paddy's Pub. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Paddy's Pool", a minigame in a party video game that pays tribute to Always Sunny. Scene: Real pool in Paddy's Pub: pick 8-ball or 9-ball in the Pool Hall. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** 
 
-> Square game icon for "Paddy's Pool · 8-Ball" (Always Sunny tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+> Square game icon for "Paddy's Pool" (Always Sunny tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Hangman Unchained · Showdown · `django-hangman-showdown`
 

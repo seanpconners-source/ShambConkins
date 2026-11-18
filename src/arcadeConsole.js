@@ -33,7 +33,7 @@ const FAMILIES=[
  ['paddys',"Paddy's Pub",'Beer pong, flip cup, darts','charlie',['paddys-beer-pong','flipadelphia-cup','paddys-darts']],
  ['casino','Casino Night','Cards, wheels and dice',null,['blackjack','five-card','roulette','bond-baccarat','liars-dice']],
  ['trivia','Trivia Night','Nine quiz shows',null,['trivia-mixed','trivia-hardcore','trivia-lightning','trivia-wager','trivia-survival','trivia-sitcom','trivia-nick90','trivia-dbz','trivia-hxh']],
- ['taskmaster','Taskmaster','Six tasks',null,['taskmaster-micro-relay','taskmaster-fruit-ninja','taskmaster-sumo','task-tallest-thing','taskmaster-curling','tm-cones']],
+ ['taskmaster','Taskmaster','Five tasks',null,['taskmaster-micro-relay','taskmaster-sumo','task-tallest-thing','taskmaster-curling','tm-cones']],
  ['trek','Star Trek Game Night','Chess and Tri-D chess',null,['ten-forward-chess','trek-mini-chess']],// Strategema (Reversi) and Four Lights (Connect 4) have their own tiles (owner, Nov 10: R20)
  ['rush','Microgame Rush','Rush and Marathon',null,['microgame-rush','rush-marathon']],
  ['hyrule','The Legend of Zelda','Rupee Rush and Sword Duel',null,['hyrule-rupee-rush','hyrule-sword-duel']],
@@ -59,7 +59,7 @@ const COLLECTIONS=[
  ['console','Console Classics','The big ones from the consoles','sonic3-zone1',['@sonic','@smb','@kart','@castlevania','@hyrule','@doom','broforce','sundown-showdown','warriors-brawl','@pokemon','living-dead-horde','battle-royale-island','radical-bike','shred-hero']],
  ['arcadecl','Arcade Classics','Atari, Namco and the arcade greats','pong-duel',['pong-duel','breakout-party','asteroid-drift','@invaders','pac-maze-duel','frogger-heads','mars-missile-defense','moonraker-lander','metal-gear-tank-duel','duck-hunt-turn','block-battle','derezzed-cycles','paper-route','banana-money-grab','driller-duel','bubble-battle','bomber-duel','neon-ball-storm','arrow-arena','disc-duel','sewer-clash','simon-faceoff','bug-artillery']],
  ['boardgames','Board Games','Cards, boards and dice at the table','greed-island-mancala',['greed-island-mancala','@trek','deadite-checkers','shamb-uno','traitors-guess-who','battleship-fog','four-lights','strategema-grid','full-shambyahtzee','office-dots-boxes','wopr-grid','@matrix','@clue','@monopoly','@candy','@chutes']],
- ['mobile','Mobile Hits','The games everyone had on their phone','paddys-hole',['sqwordle','words-n-shit','flappy-disaster','crossy-chaos','paddys-hole','bricks-breaker-quest','brawndo-fruit-merge','angry-heads','snake-run','snake-v-snake','home-alone-paint-can']],
+ ['mobile','Mobile Hits','The games everyone had on their phone','paddys-hole',['sqwordle','words-n-shit','taskmaster-fruit-ninja','flappy-disaster','crossy-chaos','paddys-hole','bricks-breaker-quest','brawndo-fruit-merge','angry-heads','snake-run','snake-v-snake','home-alone-paint-can']],
  ['sports','Sports','Ballparks, rinks, lanes and greens','major-league-bats',['@baseball','kingpin-bowling','league-penalties','happy-gilmore-golf','@ducks','underdog-dodgeball','fight-night','baseketball-shootout','wind-archery','fast-quarter-mile']],
  ['paddys',"Paddy's Pub",'Beer pong, flip cup, darts, pool and the bar machine','paddys-beer-pong',['@pool','paddys-beer-pong','flipadelphia-cup','paddys-darts','megatouch-photohunt']],
  ['party','Party Games','Quick, loud and stupid','taskmaster-micro-relay',['@taskmaster','@rush','@southpark','hungry-hungry-heads','review-pancakes','kitchen-service','gopher-hunt','warehouse-shift','rainbow-rivals']],

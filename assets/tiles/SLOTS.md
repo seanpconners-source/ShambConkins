@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 201 slots: 109 have key art, 109 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 201 slots: 105 have key art, 109 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -22,7 +22,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `paddys` | Paddy's Pub (paddys-beer-pong, flipadelphia-cup, paddys-darts) | family | ✅ / ✅ |
 | `casino` | Casino Night (blackjack, five-card, roulette, bond-baccarat, liars-dice) | family | ✅ / ✅ |
 | `trivia` | Trivia Night (trivia-mixed, trivia-hardcore, trivia-lightning, trivia-wager, trivia-survival, trivia-sitcom, trivia-nick90, trivia-dbz, trivia-hxh) | family | ✅ / ✅ |
-| `taskmaster` | Taskmaster (taskmaster-micro-relay, taskmaster-fruit-ninja, taskmaster-sumo, task-tallest-thing, taskmaster-curling, tm-cones) | family | ✅ / ✅ |
+| `taskmaster` | Taskmaster (taskmaster-micro-relay, taskmaster-sumo, task-tallest-thing, taskmaster-curling, tm-cones) | family | ✅ / ✅ |
 | `trek` | Star Trek Game Night (ten-forward-chess, trek-mini-chess) | family | ✅ / ✅ |
 | `rush` | Microgame Rush (microgame-rush, rush-marathon) | family | ✅ / ✅ |
 | `hyrule` | The Legend of Zelda (hyrule-rupee-rush, hyrule-sword-duel) | family | ✅ / ✅ |
@@ -41,6 +41,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `greed-island-mancala` | Tony Hawk’s Pro Mancala | game | ✅ / ✅ |
 | `deadite-checkers` | Army of Darkness · Deadite Checkers | game | ✅ / ✅ |
 | `office-dots-boxes` | Call of Duty: Modern Stick Dot | game | ✅ / ✅ |
+| `taskmaster-fruit-ninja` | Fruit Ninja | game | · / · |
 | `megatouch-photohunt` | Megatouch · Photo Hunt | game | ✅ / ✅ |
 | `angry-heads` | Angry Heads | game | ✅ / ✅ |
 | `neon-ball-storm` | Daft Punk · Neon Ball Storm | game | ✅ / ✅ |
@@ -83,16 +84,16 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `metal-gear-tank-duel` | Combat · Metal Gear Tank Duel | game | ✅ / ✅ |
 | `full-shambyahtzee` | Full ShambYahtzee | game | ✅ / ✅ |
 | `kitchen-service` | Dinner Service | game | ✅ / ✅ |
-| `rainbow-rivals` | Rainbow Rivals | game | ✅ / ✅ |
+| `rainbow-rivals` | Rainbow Rivals | game | · / ✅ |
 | `block-battle` | Tetris · Block Battle | game | ✅ / ✅ |
 | `shred-hero` | Guitar Hero · Shred Hero | game | ✅ / ✅ |
 | `underdog-dodgeball` | Dodgeball · True Underdog Story | game | ✅ / ✅ |
 | `fight-night` | Rocky · Fight Night | game | ✅ / ✅ |
 | `gopher-hunt` | Caddyshack · Gopher Hunt | game | ✅ / ✅ |
 | `wind-archery` | Brave · Wind Archery | game | ✅ / ✅ |
-| `newlywed-spirit` | The Newlywed Game · Spirit Battery | game | ✅ / ✅ |
-| `roast-battle` | Roast Battle · Crowd Meter | game | ✅ / ✅ |
-| `draw-it` | Pictionary · Draw It | game | ✅ / ✅ |
+| `newlywed-spirit` | The Newlywed Game · Spirit Battery | game | · / ✅ |
+| `roast-battle` | Roast Battle · Crowd Meter | game | · / ✅ |
+| `draw-it` | Pictionary · Draw It | game | · / ✅ |
 | `battleship-fog` | Battleship · Fog of War | game | ✅ / ✅ |
 | `simon-faceoff` | Simon · Face-Off | game | ✅ / ✅ |
 | `price-bid-off` | The Price Is Right · Come On Down! | game | ✅ / ✅ |
@@ -125,7 +126,6 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `ten-forward-chess` | Star Trek · Ten Forward Chess | version of trek | · / · |
 | `paddys-beer-pong` | Paddy’s Pub · Beer Pong | version of paddys | · / · |
 | `flipadelphia-cup` | Flipadelphia · Flip Cup | version of paddys | · / · |
-| `taskmaster-fruit-ninja` | Taskmaster · Fruit Ninja Buffet | version of taskmaster | · / · |
 | `major-league-bats` | Major League · Home Run Derby | version of baseball | · / · |
 | `bond-baccarat` | Casino Royale Baccarat-ish | version of casino | · / · |
 | `rink-rivals` | The Mighty Ducks · Air Hockey | version of ducks | · / · |
@@ -201,7 +201,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `sonic3-test` | Sonic 3 · Test Zone (new engine preview) | version of sonic | · / · |
 | `space-swarm-versus` | Space Invaders · Mars Attacks! Versus | version of invaders | · / · |
 | `space-swarm-coop` | Space Invaders · Mars Attacks! Co-op | version of invaders | · / · |
-| `paddys-eight-ball` | Paddy's Pool · 8-Ball | version of pool | · / · |
+| `paddys-eight-ball` | Paddy's Pool | version of pool | · / · |
 | `django-hangman-showdown` | Hangman Unchained · Showdown | version of hangman | · / · |
 | `django-hangman-wanted` | Hangman Unchained · Wanted | version of hangman | · / · |
 | `doom` | DOOM | version of doom | ✅ / ✅ |
