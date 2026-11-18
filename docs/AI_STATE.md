@@ -9,6 +9,9 @@ v0.99.21 RELEASED (Nov 18, owner: "Release it all!!"; test:core EXIT 0): Crappy 
 batch 08 icons/logos. The 8 new BACKGROUNDS were held out of the release commit (picker not locked: only arcadecl on my-fold-open)
 and put back on the branch right after; next release once the owner locks them (ArtifactData list bg -> apply.py on the 8).
 
+CRAPPY CRUSH 6 KINDS (Nov 18 later, owner: way too easy, one move and the chains never stop; like real Candy Crush): every
+stage now K 6 (tutorial was 4, worlds 2-3 were 5; random play: K4 3.1 waves/move + 1 special/move, K5 2.0, K6 1.5 + .1);
+tutorial 18-20 moves, scores 1500/2500/3000; worlds 2-3 targets on the K6 rate. Bot wins: tutorial 83-100%, early 75-100%.
 CRAPPY CRUSH 576 STAGES (Nov 18, RELEASED in v0.99.21; owner: "way more stages... themes from groups of in-game items,
 Candy Land ridiculously easy as a tutorial, specials = the Loki/Mylo/KC coins"): crappyCrushWorlds.js 72 WORLDS (19 old +
 53 NW(key,name,source,hue,items): big franchises' second worlds + themed mixes; every piece id has art, none repeats, coin

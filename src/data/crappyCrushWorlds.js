@@ -103,7 +103,8 @@ SHAPES.push(
 
 // Points and collected pieces per move on each shape vs the full board (casual bot, 30 games x 18 moves each, Nov 18)
 const SHAPE_PTS=[1,.51,.87,.69,.69,.58,.69,.51,.85,.49],SHAPE_COL=[1,.61,.82,.74,.72,.63,.68,.54,.79,.55];
-// Candy Land = the tutorial (owner, Nov 18: "ridiculously easy"): 4 kinds of piece, lots of moves, low goals, one tip each.
+// Candy Land = the tutorial: 6 kinds of piece like everywhere else (owner, Nov 18 later: 4 kinds = one swap set off chain
+// after chain, too easy; real Candy Crush uses 6), extra moves, low goals, one tip each.
 const TUTORIAL=[
  {kind:'score',tip:'Swipe a piece onto a neighbour to swap them. Line up 3 of the same and they clear.'},
  {kind:'score',tip:'Line up 4 in a row to make a MYLO COIN: match it (or swap it) and it clears a whole row or column.'},
@@ -123,19 +124,19 @@ const KINDS=['score','collect','crap','score','mix','collect','crap','crap'];
 const MAIN=()=>WORLDS.length*PER;
 function stage(n){n=Math.max(1,n|0);const wi=Math.floor((n-1)/PER)%WORLDS.length,loop=Math.floor((n-1)/(PER*WORLDS.length)),k=(n-1)%PER;
  const R=9,C=8,rnd=mulberry(n*9973+17);
- if(wi===0&&loop===0){const t=TUTORIAL[k],K=4,moves=k<2?30:26;// tutorial: K 4 = cascades everywhere
+ if(wi===0&&loop===0){const t=TUTORIAL[k],K=6,moves=k<2?18:20;
   const st={n,world:WORLDS[0],w:0,loop,kind:t.kind,K,R,C,moves,mask:null,collect:[],crap:[],drip:t.drip?7:0,tip:t.tip,d:0};
   if(t.kind==='collect'||t.kind==='mix'){const a=(rnd()*K)|0;st.collect=[[a,t.kind==='mix'?10:14]];}
   if(t.kind==='crap'||t.kind==='mix'){const cells=[];for(let i=0;i<R*C;i++)if(((i/C)|0)>=5)cells.push(i);for(let j=0;j<(t.kind==='mix'?3:4);j++)st.crap.push([cells.splice((rnd()*cells.length)|0,1)[0],1]);}
-  st.crapGoal=st.crap.reduce((a,[,l])=>a+l,0);const target=k===0?600:k===1?1000:1500;
+  st.crapGoal=st.crap.reduce((a,[,l])=>a+l,0);const target=k===0?1500:k===1?2500:3000;
   st.target=t.kind==='score'?target:300;st.s2=Math.round(target*1.6/50)*50;st.s3=Math.round(target*2.4/50)*50;return st;}
  const g=Math.max(0,(n-PER-1)/Math.max(1,MAIN()-PER-1)),saw=(k/(PER-1)-.5)*.14;
  const d=Math.max(0,Math.min(1.45,1.25*Math.pow(Math.min(1,g),.8)+saw+loop*.15));
- const K=n<=PER*3?5:6,kind=KINDS[k];
+ const K=6,kind=KINDS[k];// 6 kinds on every stage (with 4-5 one swap cascaded on and on: ~3 / ~2 waves a move vs 1.5)
  const mask=(d<.12||k===0||k===1)?null:SHAPES[1+((n*7+wi)%(SHAPES.length-1))];
  const moves=Math.round((kind==='score'?21:kind==='collect'?23:kind==='crap'?26:27)-d*(kind==='crap'||kind==='mix'?3:4.5));
  const si=mask?SHAPES.indexOf(mask):0,af=SHAPE_PTS[si]||1,cf=SHAPE_COL[si]||1;// a shaped board makes fewer points/pieces (measured)
- const per=((K===5?420:260)+d*60)*af;const target=Math.round(moves*per/50)*50;
+ const per=(260+d*60)*af;const target=Math.round(moves*per/50)*50;
  const st={n,world:WORLDS[wi],w:wi,loop,kind,K,R,C,moves,mask,collect:[],crap:[],drip:0,d:+d.toFixed(3)};
  if(kind==='collect'||kind==='mix'){const a=(rnd()*K)|0,b=(a+1+((rnd()*(K-1))|0))%K,c=Math.round(moves*(.8+d*.15)*(1+cf)/2);st.collect=d<.25?[[a,Math.round(c*1.1)]]:[[a,c],[b,Math.round(c*.7)]];if(kind==='mix')st.collect=[[a,Math.round(moves*(.8+d*.15)*cf*.7)]];}
  if(kind==='crap'||kind==='mix'){const fin=k===PER-1,want=Math.round((fin?6+d*3:kind==='mix'?4+d*3:6+d*4.5)*(.55+.45*cf)),layers=kind==='mix'?1:Math.min(fin&&d>1.1?3:2,1+Math.floor(d*1.1));const cells=[];
