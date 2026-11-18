@@ -2,6 +2,20 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+TETRIS CLASSIC + BATCH 08 PART 1 ART + TILE LOGOS (Nov 18, branch ccr-bc26d42e-kn1noq, unreleased). R62: newGames.js blocks()
+1P Arcade (not board/duel/online) shows pickBlockMode = CLASSIC (start level chips 1/5/10/15, remembered in localStorage
+sc-tetris-start) or VS CPU; classic sets s.solo.kind='levels', one well (drawClassic: NEXT x3, score/level/lines/lines to go,
+hue per level), level = start + lines/10, gravity (0.8-(lv-1)*.007)^(lv-1) s/row (min 1/120), LEVEL N banner, top out ->
+soloFinish (won = 10+ lines). s.debug.menu/pickMode/startLevel during the menu, s.debug.classic {start,level(),fall()}.
+tests/tetris.mjs (3 sizes, real chip/card taps, a real line clear, top-out result, VS CPU still Block Battle). ART: Drive
+'Arcade Art - Batch 08' part 1 (folder 1WIb8CKThIZ6fdu2ELtJ8xmtCVNg82f5Q; ~3 MB PNGs DO download through the Drive connector:
+the image lands in tool-results/ byte-exact) = console/arcadecl/boardgames/mobile/sports/party art+icon+logo; chat
+backgrounds pool (Paddy's Pool) + paddys-darts imported (the chat icons/logos of part 2 were already in, checked by pixel
+diff). KEY_BOX for all 8; originals assets/originals/keyart. TILES: a tile with a logo = picture in the top part
+(height 100% - --logo-band 24/32/20/16 px) + logo band at the bottom (theme.css end; was covering ~45% of the icon).
+WAITING: owner locks the 8 new backgrounds in Background Picker 1 (https://claude.ai/artifact/DhpZSVr98T1sEwzjux7AJ9),
+then ArtifactData list bg -> apply.py on those 8 only -> release.
+
 CRAPPY CRUSH + ARCADE CLEAN-UP (Nov 18, RELEASED as v0.99.20 (owner: "get images into game and release"; focused tests only:
 modules, build, crappy-sim, arcade-groups, pool-rules, fruit-swipe + phone screenshots; no full npm test, no playwright here). Owner asked (roadmap
 walkthrough paused after round 1; round 2 = bugs list is next): (1) cut games hidden in dev mode too (duplicate BASEketball tile);
