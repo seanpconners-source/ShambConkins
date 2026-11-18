@@ -50,6 +50,7 @@ async function paddysPool(s){
  const P=store.profile;if(P)P.poolHall=HALL.validHall(P.poolHall);
  const hall=P?.poolHall||HALL.freshHall();
  const save=()=>{if(P){P.poolHall=hall;try{saveProfile(P);}catch{}}};
+ if(arcade&&s.game?.id==='paddys-eight-ball')game=hall.set.game; // Paddy's Pool tile: start on the last game picked in the hall
  const art=BA.makeBallArt(),snd=tableSound(s);
  let dpr=1,W=0,H=0,L=null,t=0;
  // ---------------------------------------------------------------- sound
@@ -550,7 +551,7 @@ async function paddysPool(s){
  s.hint(`PADDY'S POOL · ${game==='eight'?'8-BALL':'9-BALL'}: drag on the table to swing the cue round the cue ball (tap a ball to aim at it), use FINE AIM for tiny turns, pull the POWER bar and let go to shoot. The cue-ball button sets spin: top = follow, bottom = draw, sides = english. ${game==='eight'?'Sink your group (solids or stripes), then call a pocket and sink the 8.':'Always hit the lowest ball first; sink the 9 to win the rack.'} Fouls give ball in hand: drag the cue ball.`);
  // ---------------------------------------------------------------- go
  layout();
- if(arcade){hall.set.game=game;await hallScreen();}
+ if(arcade){if(s.game?.id!=='paddys-eight-ball')hall.set.game=game;await hallScreen();} // Paddy's Pool tile (owner, Nov 18): keep the last pick
  if(arcade)game=hall.set.game;const gameNow=game;
  const race=arcade?hall.set.race:net?1:1;
  if(net){if(me===0){const st={t:loadout.table.id,f:loadout.felt.id,b:loadout.balls.id};net.send({setup:st});S.setupDone=true;}net.send({cue:loadout.cue.id});const t0=t;await until(()=>S.setupDone||t-t0>6);}
