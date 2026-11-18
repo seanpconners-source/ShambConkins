@@ -22,6 +22,11 @@ if not args:
     print(__doc__); sys.exit(1)
 src = args[0]
 slots = {p['slot'] for p in json.load(open(os.path.join(ROOT, 'docs/arcade-art/prompts.json')))}
+# Arcade groups (COLLECTIONS in src/arcadeConsole.js: console, arcadecl, boardgames, mobile, sports, paddys, party, shows, movies)
+# take <key>-icon / -logo / -art too: their tile is tile:<key>, their logo keyart:<key>-logo.
+_ac = open(os.path.join(ROOT, 'src/arcadeConsole.js'), encoding='utf-8').read()
+_cm = re.search(r'const COLLECTIONS=\[(.*?)\]\];', _ac, re.S)
+if _cm: slots |= set(re.findall(r"\[\s*'([a-z0-9-]+)'\s*,\s*[\"']", _cm.group(1)))
 slug = lambda s: re.sub(r'[^a-z0-9]+', '-', s.lower()).strip('-')
 done, skipped = [], []
 

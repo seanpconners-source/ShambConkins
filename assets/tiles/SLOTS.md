@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 202 slots: 105 have key art, 109 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 202 slots: 105 have key art, 114 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -31,7 +31,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `chutes` | Chutes and Ladders (chutes-ladder-rush, chutes-spinner-showdown) | family | ✅ / ✅ |
 | `candy` | Candy Land (candy-gumdrop-catch, candy-color-dash) | family | ✅ / ✅ |
 | `baseball` | Major League (major-league-bats, major-league-fielding) | family | ✅ / ✅ |
-| `pool` | Paddy's Pool (paddys-eight-ball, color-of-money) | family | · / · |
+| `pool` | Paddy's Pool (paddys-eight-ball, color-of-money) | family | · / ✅ |
 | `ducks` | The Mighty Ducks (rink-rivals, office-hockey-shootout) | family | ✅ / ✅ |
 | `matrix` | The Matrix (matrix-ultimate, matrix-hardline-hack) | family | ✅ / ✅ |
 | `terminator` | Terminator (terminator-scan, t800-scan-long) | family | ✅ / ✅ |
@@ -117,7 +117,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `baseketball-hoop-jones` | BASEketball · Hoop Jones | game | · / · |
 | `bricks-breaker-quest` | Bricks Breaker Quest | game | ✅ / ✅ |
 | `sqwordle` | Sqwordle | game | ✅ / ✅ |
-| `words-n-shit` | Words n' Shit | game | · / · |
+| `words-n-shit` | Words n' Shit | game | · / ✅ |
 | `crappy-crush` | Crappy Crush | game | · / · |
 | `sundown-showdown` | Sundown Showdown | game | ✅ / ✅ |
 | `sean-of-the-dead` | Sean of the Dead | game | ✅ / ✅ |
@@ -127,8 +127,8 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `django-hangman` | Hangman Unchained · Quick Draw | version of hangman | · / · |
 | `matrix-ultimate` | The Matrix · Nine Realities | version of matrix | · / · |
 | `ten-forward-chess` | Star Trek · Ten Forward Chess | version of trek | · / · |
-| `paddys-beer-pong` | Paddy’s Pub · Beer Pong | version of paddys | · / · |
-| `flipadelphia-cup` | Flipadelphia · Flip Cup | version of paddys | · / · |
+| `paddys-beer-pong` | Paddy’s Pub · Beer Pong | version of paddys | · / ✅ |
+| `flipadelphia-cup` | Flipadelphia · Flip Cup | version of paddys | · / ✅ |
 | `major-league-bats` | Major League · Home Run Derby | version of baseball | · / · |
 | `bond-baccarat` | Casino Royale Baccarat-ish | version of casino | · / · |
 | `rink-rivals` | The Mighty Ducks · Air Hockey | version of ducks | · / · |
@@ -140,7 +140,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `terminator-scan` | Skynet Identification | version of terminator | · / · |
 | `color-of-money` | Paddy's Pool · 9-Ball | version of pool | ✅ / ✅ |
 | `matrix-hardline-hack` | Hardline Hack | version of matrix | · / · |
-| `paddys-darts` | Paddy’s Darts | version of paddys | · / · |
+| `paddys-darts` | Paddy’s Darts | version of paddys | · / ✅ |
 | `office-hockey-shootout` | The Mighty Ducks · Hockey Shootout | version of ducks | · / · |
 | `space-swarm` | Space Invaders · Mars Attacks! | version of invaders | · / · |
 | `t800-scan-long` | T-800 Freeway Chase | version of terminator | · / · |
