@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.99.20
+
+- **New game: Crappy Crush** (Mobile Hits): Candy Crush where every piece is an item from the game, across 19 worlds (Candy Land, Paddy's Pub, Rainbow Road, Pokémon, South Park, The Office, Sonic and more). Match 4 for a striped piece, an L or T for a wrapped blast, 5 for the Golden Throne; crap piles only clear when you match next to them. 1 Player: the stage map (95 stages with goals, moves and stars, saved) or a race against the CPU. 2 players and online: race the same board for 90 seconds while your combos dump crap on the other board.
+- **One Paddy's Pool:** 8-ball and 9-ball are a single Arcade game in Paddy's Pub; pick the game in the Pool Hall (it remembers your last pick). New icon and logo.
+- **Fruit Ninja, Stacker and Olympic Curling** are their own games now (Mobile Hits, Arcade Classics, Sports) instead of Taskmaster tasks.
+- **No more duplicate tiles in Dev mode:** cut games (like the old BASEketball Hoop Jones entry) stay hidden.
+- **New Arcade icons:** Beer Pong, Flip Cup, Darts, Words n' Shit, Pinball, Game Shows & Trivia (plus its logo) and Movie Night.
+
 ## v0.99.19
 
 - **Sitabout Mini Golf, smooth hole fly-ins:** if you tap past the scorecard before the next hole is ready, the scorecard waits a moment with a small "NEXT HOLE" bar (never more than 4 seconds), so the fly-in no longer stutters (it did on Spaceballs). The scorecard also gets the next hole ready faster while it's up.

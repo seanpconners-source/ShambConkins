@@ -2,7 +2,8 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
-CRAPPY CRUSH + ARCADE CLEAN-UP (Nov 18, branch claude/arcade-merge-pool-hide-cut, NOT pushed/released yet). Owner asked (roadmap
+CRAPPY CRUSH + ARCADE CLEAN-UP (Nov 18, RELEASED as v0.99.20 (owner: "get images into game and release"; focused tests only:
+modules, build, crappy-sim, arcade-groups, pool-rules, fruit-swipe + phone screenshots; no full npm test, no playwright here). Owner asked (roadmap
 walkthrough paused after round 1; round 2 = bugs list is next): (1) cut games hidden in dev mode too (duplicate BASEketball tile);
 (2) one Paddy's Pool tile: color-of-money arcadeAs paddys-eight-ball (titled Paddy's Pool, hall remembers the last 8/9 pick),
 family 'pool' art slot; (3) Fruit Ninja / Stacker / Olympic Curling out of Taskmaster (Mobile Hits / Arcade Classics / Sports);
@@ -11,9 +12,10 @@ family 'pool' art slot; (3) Fruit Ninja / Stacker / Olympic Curling out of Taskm
 soloKind 'cpu': Arcade 1P asks STAGES (sets s.solo.kind='levels', map + profile.crappyCrush) or VS CPU; board/online = versus
 (90 s, cascades/specials send crap, Tetris-style cancel; netField events {crap:n}, snapshot board string). Online not tested
 (no wrangler here). Art brief docs/art-for-gpt/CRAPPY-CRUSH-ART.md (assets/crappycrush/<world>.webp, build drop-in 'crappy:').
-NEXT (owner): import batch 08 art (part 1 on Drive folder 'Arcade Art — Batch 08' = 6 group sets; part 2 = 12 attachments in
-the chat: pool art/icon/logo, darts art+icon, beer-pong icon, flip-cup icon, words-n-shit icon, shows icon+logo, pinball icon,
-movies icon), backgrounds via the Background Picker; then Tetris 1P classic levels (R62).
+Batch 08 part 2 icons/logos IN (v0.99.20). STILL TO DO: part 1 (Drive folder 'Arcade Art — Batch 08': console/arcadecl/boardgames/
+mobile/sports/party art+icon+logo) can't be pulled from a cloud session (Drive files too big): owner to upload to art-inbox/arcade/ on
+GitHub or attach in chat; backgrounds pool-art + paddys-darts-art (chat attachments, kept in /home/claude/inbox08/bg, gone with the
+session) + part 1 arts need the Background Picker. Then Tetris 1P classic levels (R62).
 
 MINIGOLF FLY-IN WAIT (Nov 17, RELEASED as v0.99.19 (owner: "Release!!"); owner: whole round runs very well, only the Spaceballs fly-in stutters;
 3 logs): he taps past the scorecard after ~1 s, a Spaceballs hole needs ~2.3-3 s of painting on his phone, so the rest landed
