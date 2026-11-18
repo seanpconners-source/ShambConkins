@@ -1110,6 +1110,16 @@
   "icon": "Square game icon for \"Words n' Shit\" (Words With Friends tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
+  "slot": "crappy-crush",
+  "title": "Crappy Crush",
+  "source": "Candy Crush Saga",
+  "kind": "game",
+  "hasKey": false,
+  "hasIcon": false,
+  "keyart": "Key art for \"Crappy Crush\", a minigame in a party video game that pays tribute to Candy Crush Saga. Scene: Candy Crush, but every piece is an item from the game. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "icon": "Square game icon for \"Crappy Crush\" (Candy Crush Saga tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
+ },
+ {
   "slot": "sundown-showdown",
   "title": "Sundown Showdown",
   "source": "Sunset Riders",

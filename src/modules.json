@@ -516,7 +516,11 @@
   "src/engines/wns/rules.js",
   "src/engines/wns/dict.js",
   "src/engines/minigolf/glLayer.js",
-  "src/engines/minigolf/diag.js"
+  "src/engines/minigolf/diag.js",
+  "src/engines/crappy/sim.js",
+  "src/data/crappyCrushWorlds.js",
+  "src/engines/crappyCrush.js",
+  "src/packs/crappyPack.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }

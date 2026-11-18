@@ -167,6 +167,12 @@ if (fs.existsSync(sqwDir)) for (const f of fs.readdirSync(sqwDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('sqwordle:' + m[1].toLowerCase(), MIME[ext], ext, path.join(sqwDir, f));
 }
+// Crappy Crush world backgrounds: assets/crappycrush/<world key>.(webp|png) -> crappy:<key> (keys in src/data/crappyCrushWorlds.js).
+const ccDir = path.join(root, 'assets/crappycrush');
+if (fs.existsSync(ccDir)) for (const f of fs.readdirSync(ccDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('crappy:' + m[1].toLowerCase(), MIME[ext], ext, path.join(ccDir, f));
+}
 // Drop-in music: assets/music/<name>.(mp3|ogg|m4a|wav|flac) -> USER_PORTRAITS['music:<name>'] (e.g. cv-symphony, cv-symphony-boss).
 const AUDIO = {mp3: 'audio/mpeg', ogg: 'audio/ogg', m4a: 'audio/mp4', wav: 'audio/wav', flac: 'audio/flac'};
 const musicDir = path.join(root, 'assets/music');

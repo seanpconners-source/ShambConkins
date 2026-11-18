@@ -2,6 +2,19 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+CRAPPY CRUSH + ARCADE CLEAN-UP (Nov 18, branch claude/arcade-merge-pool-hide-cut, NOT pushed/released yet). Owner asked (roadmap
+walkthrough paused after round 1; round 2 = bugs list is next): (1) cut games hidden in dev mode too (duplicate BASEketball tile);
+(2) one Paddy's Pool tile: color-of-money arcadeAs paddys-eight-ball (titled Paddy's Pool, hall remembers the last 8/9 pick),
+family 'pool' art slot; (3) Fruit Ninja / Stacker / Olympic Curling out of Taskmaster (Mobile Hits / Arcade Classics / Sports);
+(4) NEW crappy-crush: src/engines/crappyCrush.js + crappy/sim.js (pure board logic, tests/crappy-sim.mjs) + data/crappyCrushWorlds.js
+(19 franchise worlds x 5 stages, pieces = assets/items pictures, stage() tuned with a bot: early 80-100% win, late 50-80%);
+soloKind 'cpu': Arcade 1P asks STAGES (sets s.solo.kind='levels', map + profile.crappyCrush) or VS CPU; board/online = versus
+(90 s, cascades/specials send crap, Tetris-style cancel; netField events {crap:n}, snapshot board string). Online not tested
+(no wrangler here). Art brief docs/art-for-gpt/CRAPPY-CRUSH-ART.md (assets/crappycrush/<world>.webp, build drop-in 'crappy:').
+NEXT (owner): import batch 08 art (part 1 on Drive folder 'Arcade Art — Batch 08' = 6 group sets; part 2 = 12 attachments in
+the chat: pool art/icon/logo, darts art+icon, beer-pong icon, flip-cup icon, words-n-shit icon, shows icon+logo, pinball icon,
+movies icon), backgrounds via the Background Picker; then Tetris 1P classic levels (R62).
+
 MINIGOLF FLY-IN WAIT (Nov 17, RELEASED as v0.99.19 (owner: "Release!!"); owner: whole round runs very well, only the Spaceballs fly-in stutters;
 3 logs): he taps past the scorecard after ~1 s, a Spaceballs hole needs ~2.3-3 s of painting on his phone, so the rest landed
 in the fly-in (50-80 ms frames, 'ground' 30 + 'things' 20 ms). puttPutt: scoreUI.next waits while the next hole isn't prepped

@@ -1113,6 +1113,16 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 > Square game icon for "Words n' Shit" (Words With Friends tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
+## Crappy Crush · `crappy-crush`
+
+**Key art** 
+
+> Key art for "Crappy Crush", a minigame in a party video game that pays tribute to Candy Crush Saga. Scene: Candy Crush, but every piece is an item from the game. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+
+**Icon** 
+
+> Square game icon for "Crappy Crush" (Candy Crush Saga tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
+
 ## Sundown Showdown · `sundown-showdown`
 
 **Key art** ✅

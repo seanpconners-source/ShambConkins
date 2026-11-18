@@ -74,6 +74,9 @@ function loadProfile() {
   if(saved.bricksQuest&&typeof saved.bricksQuest==='object'&&!Array.isArray(saved.bricksQuest)){const q=saved.bricksQuest,int=(v,d)=>Number.isFinite(v)&&v>=0?Math.floor(v):d;
    p.bricksQuest={cleared:int(q.cleared,0),gems:int(q.gems,120),reward:int(q.reward,0)%10,gift:typeof q.gift==='string'?q.gift.slice(0,12):'',
     stars:Object.fromEntries(Object.entries(q.stars&&typeof q.stars==='object'?q.stars:{}).filter(([n,v])=>/^\d{1,6}$/.test(n)&&[1,2,3].includes(v)))};}
+  // Crappy Crush stage map (src/engines/crappyCrush.js): highest stage cleared, best stars and score per stage
+  if(saved.crappyCrush&&typeof saved.crappyCrush==='object'&&!Array.isArray(saved.crappyCrush)){const q=saved.crappyCrush,map=(o,ok)=>Object.fromEntries(Object.entries(o&&typeof o==='object'&&!Array.isArray(o)?o:{}).filter(([n,v])=>/^\d{1,5}$/.test(n)&&ok(v)).slice(0,2000));
+   p.crappyCrush={cleared:Number.isInteger(q.cleared)&&q.cleared>=0?Math.min(q.cleared,99999):0,stars:map(q.stars,v=>[1,2,3].includes(v)),best:map(q.best,v=>Number.isFinite(v)&&v>=0&&v<1e9)};}
   if(saved.earnedUnlocks&&typeof saved.earnedUnlocks==='object'&&!Array.isArray(saved.earnedUnlocks))p.earnedUnlocks=Object.fromEntries(Object.entries(saved.earnedUnlocks).map(([id,value])=>[mergedCharacterId(id),value]).filter(([id,value])=>ids.has(id)&&typeof value==='string'));
   if(saved.broforceClaims!==undefined){
    const claims=validatedBroforceClaims(saved.broforceClaims);

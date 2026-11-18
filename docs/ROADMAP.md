@@ -19,6 +19,11 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
   layouts, art and sounds, not a copy of the original's levels/mazes/music.
 
 ## Inbox (unsorted new notes)
+### Owner's notes, Nov 18 2026
+- **R60** `[verify]` Crappy Crush (crappy-crush): Candy Crush with our item pictures as the pieces. 1P = stage map (19 worlds x 5 stages, goals, stars) or vs CPU; 2P/online = 90 s race where combos dump crap on the other board. Art brief: docs/art-for-gpt/CRAPPY-CRUSH-ART.md (tile + 19 world backgrounds).
+- **R61** `[todo]` (soon) Bike game: "terrible", needs lots of work. ASK: which old apps the owner has in mind.
+- **R62** `[todo]` (next) Tetris / Block Battle 1P: keep vs CPU, add a classic 1P mode with levels that speed up.
+- **R63** `[verify]` Arcade clean-up: one Paddy's Pool tile (8/9-ball picked in the hall), Fruit Ninja / Stacker / Curling out of Taskmaster (Mobile Hits / Arcade Classics / Sports), cut games hidden in dev mode (no duplicate BASEketball).
 ### Owner's notes, Nov 10 2026 (all `[todo]` unless tagged; "ASK" = waiting for the owner's answer)
 
 **Bugs first**
@@ -336,7 +341,7 @@ Order to be set by the triage. Current candidates:
 - **D6** `[verify]` (Nov 2 night: classic ghost AI + waves + frightened, 75% ghost speed, arcade maze/ghosts/sounds; heads stay as the chompers) Pac-Maze Duel: much closer to classic Pac-Man (maze feel, ghost behavior, power pellets, speeds, sounds).
 - **D7** `[todo]` TowerFall Arrow Arena: confusing, not fun; proper competitive archery game.
 - **D8** `[todo]` Rocky boxing: two-player Punch-Out!! style.
-- **D9** `[todo]` Raiders Boulder Run: major improvement.
+- **D9** `[todo]` (soon; Nov 18) Raiders Boulder Run: huge revamp, a lot more like the real Temple Run. Guy body = Indiana Jones, girl body = Lara Croft (Tomb Raider).
 - **D10** `[todo]` South Park Dodgeball: decent; move toward Super Dodge Ball (NES).
 - **D11** `[verify]` (Nov 4: reworked rather than removed: real Punto Banco with the squeeze, see G1) Baccarat: rework a lot or remove.
 

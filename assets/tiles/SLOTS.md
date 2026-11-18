@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 201 slots: 105 have key art, 109 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 202 slots: 105 have key art, 109 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -118,6 +118,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `bricks-breaker-quest` | Bricks Breaker Quest | game | ✅ / ✅ |
 | `sqwordle` | Sqwordle | game | ✅ / ✅ |
 | `words-n-shit` | Words n' Shit | game | · / · |
+| `crappy-crush` | Crappy Crush | game | · / · |
 | `sundown-showdown` | Sundown Showdown | game | ✅ / ✅ |
 | `sean-of-the-dead` | Sean of the Dead | game | ✅ / ✅ |
 | `bucketheadland-pinball` | Bucketheadland · Buckethead Pinball | version of pinball | ✅ / ✅ |
