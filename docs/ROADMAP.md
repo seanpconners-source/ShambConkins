@@ -22,7 +22,8 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 ### Owner's notes, Nov 18 2026
 - **R60** `[verify]` Crappy Crush (crappy-crush): Candy Crush with our item pictures as the pieces. 1P = stage map (19 worlds x 5 stages, goals, stars) or vs CPU; 2P/online = 90 s race where combos dump crap on the other board. Art brief: docs/art-for-gpt/CRAPPY-CRUSH-ART.md (tile + 19 world backgrounds).
 - **R61** `[todo]` (soon) Bike game: "terrible", needs lots of work. ASK: which old apps the owner has in mind.
-- **R62** `[todo]` (next) Tetris / Block Battle 1P: keep vs CPU, add a classic 1P mode with levels that speed up.
+- **R62** `[verify]` Tetris / Block Battle 1P: Arcade 1P asks CLASSIC (start level 1/5/10/15; a level every 10 lines, guideline gravity, until you top out) or VS CPU (Block Battle as before). Board/online unchanged. tests/tetris.mjs.
+- **R64** `[verify]` Arcade tiles: a tile with a logo keeps the icon picture in the top part and the logo in its own band at the bottom (the logo used to cover the bottom ~45%: dice, cups, balls hidden).
 - **R63** `[verify]` Arcade clean-up: one Paddy's Pool tile (8/9-ball picked in the hall), Fruit Ninja / Stacker / Curling out of Taskmaster (Mobile Hits / Arcade Classics / Sports), cut games hidden in dev mode (no duplicate BASEketball).
 ### Owner's notes, Nov 10 2026 (all `[todo]` unless tagged; "ASK" = waiting for the owner's answer)
 

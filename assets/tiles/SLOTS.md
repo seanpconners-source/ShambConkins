@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 202 slots: 105 have key art, 114 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 202 slots: 107 have key art, 114 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -31,7 +31,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `chutes` | Chutes and Ladders (chutes-ladder-rush, chutes-spinner-showdown) | family | ✅ / ✅ |
 | `candy` | Candy Land (candy-gumdrop-catch, candy-color-dash) | family | ✅ / ✅ |
 | `baseball` | Major League (major-league-bats, major-league-fielding) | family | ✅ / ✅ |
-| `pool` | Paddy's Pool (paddys-eight-ball, color-of-money) | family | · / ✅ |
+| `pool` | Paddy's Pool (paddys-eight-ball, color-of-money) | family | ✅ / ✅ |
 | `ducks` | The Mighty Ducks (rink-rivals, office-hockey-shootout) | family | ✅ / ✅ |
 | `matrix` | The Matrix (matrix-ultimate, matrix-hardline-hack) | family | ✅ / ✅ |
 | `terminator` | Terminator (terminator-scan, t800-scan-long) | family | ✅ / ✅ |
@@ -140,7 +140,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `terminator-scan` | Skynet Identification | version of terminator | · / · |
 | `color-of-money` | Paddy's Pool · 9-Ball | version of pool | ✅ / ✅ |
 | `matrix-hardline-hack` | Hardline Hack | version of matrix | · / · |
-| `paddys-darts` | Paddy’s Darts | version of paddys | · / ✅ |
+| `paddys-darts` | Paddy’s Darts | version of paddys | ✅ / ✅ |
 | `office-hockey-shootout` | The Mighty Ducks · Hockey Shootout | version of ducks | · / · |
 | `space-swarm` | Space Invaders · Mars Attacks! | version of invaders | · / · |
 | `t800-scan-long` | T-800 Freeway Chase | version of terminator | · / · |

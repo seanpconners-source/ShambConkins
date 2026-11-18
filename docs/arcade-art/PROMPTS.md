@@ -245,7 +245,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Paddy's Pool · `pool`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Paddy's Pool", a minigame in a party video game that pays tribute to Always Sunny. Scene: 8-ball, 9-ball and the Pool Hall. Real pool in Paddy's Pub: pick 8-ball or 9-ball in the Pool Hall. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -1335,7 +1335,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Paddy’s Darts · `paddys-darts`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Paddy’s Darts", a minigame in a party video game that pays tribute to Always Sunny. Scene: Three games at Paddy’s: 301 (count down to exactly zero), Rickety Cricket’s Cricket (close 20 to 15 and the bull) and High Score. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 

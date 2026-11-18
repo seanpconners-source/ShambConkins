@@ -1387,3 +1387,12 @@ body .arcade-console select.arc-cat-select{background:transparent!important;box-
 #sc-invite button{min-height:0;margin:0;border-radius:999px;cursor:pointer;font:900 14px/1 system-ui,sans-serif}
 #sc-invite .ib-join{padding:10px 16px;background:#4d8dff;color:#fff;border:0}
 #sc-invite .ib-x{width:34px;height:34px;padding:0;background:transparent;color:#fff;border:1px solid #fff4}
+/* Nov 18 (owner: "the logo covers part of the icon and you can't tell what they are"): a tile with a logo keeps the
+   picture in the top part and the logo in its own band at the bottom, overlapping the picture's edge only a little. */
+.arcade-console .arc-tile:has(.arc-tile-name.has-logo) .arc-cut.arc-drop{height:calc(100% - var(--logo-band,24px));object-position:50% 58%}
+.arcade-console .arc-tile:has(.arc-tile-name.has-logo){--logo-band:24px}
+.arc-tile-name.has-logo{padding:0 3px 3px;background:linear-gradient(transparent,#060a18 38%);align-items:flex-end}
+.arc-tile-name.has-logo img{max-height:30px}
+@media (min-width:700px) and (min-height:641px){.arcade-console .arc-tile:has(.arc-tile-name.has-logo){--logo-band:32px}.arc-tile-name.has-logo img{max-height:40px}}
+@media (max-height:640px){.arcade-console .arc-tile:has(.arc-tile-name.has-logo){--logo-band:20px}.arc-tile-name.has-logo img{max-height:26px}}
+@media (max-height:480px){.arcade-console .arc-tile:has(.arc-tile-name.has-logo){--logo-band:16px}.arc-tile-name.has-logo img{max-height:20px}}

@@ -6,6 +6,7 @@ const {arcadeRounds}=require("src/engines/arcade.js");
 const {circle}=require("src/engines/session.js");
 const {isCpu,cpuSkill}=require("src/engines/cpuKit.js");
 const {netField,roundOutcome}=require("src/engines/netField.js");
+const {soloFinish,soloProgress}=require("src/solo.js");
 // v0.44 additions: Block Battle, Shred Hero, Dodgeball, Fight Night, Gopher Hunt, Archery.
 function relabel(i,key,text,label){const node=document.getElementById(`duel-${i}-${key}`);if(!node)return;node.textContent=text;node.setAttribute('aria-label',label);}
 const rr=(x,px,py,w,h,r)=>{x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath();};
@@ -31,18 +32,50 @@ function tryRotate(st){const rotated={...st.piece,cells:rotateCells(st.piece.cel
 function ghostY(st){let p={...st.piece};while(!collides(st.grid,{...p,y:p.y+1}))p.y++;return p.y;}
 // Online (netField): each phone plays its own board (touch anywhere) and sends it {g: rows as strings, p: piece, score,
 // lines, incoming, dead, index}; garbage goes over as {e:{g:n}}. The game ends on both phones from both final results.
+// 1P menu for Tetris (R62): CLASSIC (pick a start level) or VS CPU. Resolves {mode:'classic'|'cpu', lv}.
+const TETRIS_LOGO=[['T','#ef5a5a'],['E','#f0983c'],['T','#f2d54a'],['R','#66d17a'],['I','#4fd6e8'],['S','#b36be0']];
+function pickBlockMode(s,c,x){return new Promise(res=>{
+ const LVS=[1,5,10,15];let lv=1,done=false,T=0;try{lv=+localStorage.getItem('sc-tetris-start')||1;}catch(e){}if(!LVS.includes(lv))lv=1;
+ const hit=(p,b)=>p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h;
+ const lay=()=>{const W=s.W,H=s.H,wide=W>H*1.2,gap=18;let a,b;
+  if(wide){const cw=Math.min(W*.4,380),ch=Math.min(H*.5,220),y=Math.max(H*.34,110);a={x:W/2-cw-gap/2,y,w:cw,h:ch};b={x:W/2+gap/2,y,w:cw,h:ch};}
+  else{const cw=Math.min(W*.86,400),ch=Math.min(H*.27,200),y=Math.max(H*.3,150);a={x:(W-cw)/2,y,w:cw,h:ch};b={x:(W-cw)/2,y:y+ch+gap,w:cw,h:Math.min(ch*.66,130)};}
+  const chH=Math.min(a.h*.24,44),chW=(a.w-28-3*8)/4;return {a,b,chips:LVS.map((l,k)=>({lv:l,x:a.x+14+k*(chW+8),y:a.y+a.h-chH-14,w:chW,h:chH}))};};
+ const finish=mode=>{if(done)return;done=true;try{localStorage.setItem('sc-tetris-start',String(lv));}catch(e){}res({mode,lv});};
+ s.on(c,'pointerup',ev=>{if(done||s.paused)return;const p=s.pointer(ev),L=lay();for(const k of L.chips)if(hit(p,k)){lv=k.lv;tone(660,.05,.04,'square');return;}
+  if(hit(p,L.a)){sound('pickup');finish('classic');}else if(hit(p,L.b)){sound('pickup');finish('cpu');}});
+ s.debug={engine:'blocks',pickMode:(m,l)=>{if(LVS.includes(l))lv=l;finish(m);},menu:lay,startLevel:()=>lv};
+ s.frame(dt=>{if(done)return;T+=dt;const W=s.W,H=s.H,L=lay();x.fillStyle='#14122a';x.fillRect(0,0,W,H);
+  // a few pieces falling behind the menu
+  const cs=Math.max(14,Math.min(W,H)/18),keys=Object.keys(PIECES);for(let k=0;k<9;k++){const t=keys[k%7],px=((k*0.137+.05)%1)*W,py=((T*(.05+k%4*.012)+k*.23)%1.2-.1)*H;x.globalAlpha=.16;x.fillStyle=PIECES[t].c;for(const [dx,dy] of PIECES[t].cells)x.fillRect(px+dx*cs,py+dy*cs,cs-2,cs-2);}x.globalAlpha=1;
+  const ls=Math.min(W*.12,64),lw=ls*.78*TETRIS_LOGO.length;x.textAlign='center';x.textBaseline='middle';x.font=`900 ${ls}px monospace`;
+  TETRIS_LOGO.forEach(([ch,col],k)=>{const cx=W/2-lw/2+ls*.39+k*ls*.78,cy=Math.min(H*.15,L.a.y-ls*1.2)+Math.sin(T*3+k*.7)*3;x.lineWidth=ls*.16;x.strokeStyle='#000';x.strokeText(ch,cx,cy);x.fillStyle=col;x.fillText(ch,cx,cy);});
+  const card=(b,title,sub,col)=>{x.fillStyle='rgba(10,8,22,.85)';rr(x,b.x,b.y,b.w,b.h,20);x.fill();x.strokeStyle=col;x.lineWidth=4;rr(x,b.x,b.y,b.w,b.h,20);x.stroke();
+   x.textAlign='center';x.textBaseline='middle';x.fillStyle=col;x.font=`900 ${clamp(b.h*.2,20,40)}px monospace`;x.fillText(title,b.x+b.w/2,b.y+b.h*(b===L.a?.22:.38));
+   x.fillStyle='#fff';x.font=`${clamp(b.h*.085,11,16)}px sans-serif`;x.fillText(sub,b.x+b.w/2,b.y+b.h*(b===L.a?.43:.7));};
+  card(L.a,'CLASSIC','Levels that speed up, until you top out','#4fd6e8');card(L.b,'VS CPU','Block Battle: send garbage to the CPU','#ff9fc6');
+  x.fillStyle='#ffffffa0';x.font=`bold ${clamp(L.a.h*.065,10,14)}px sans-serif`;x.fillText('START AT LEVEL',L.a.x+L.a.w/2,L.chips[0].y-12);
+  for(const k of L.chips){const on=k.lv===lv;x.fillStyle=on?'#4fd6e8':'#ffffff18';rr(x,k.x,k.y,k.w,k.h,10);x.fill();x.fillStyle=on?'#07131a':'#fff';x.font=`900 ${clamp(k.h*.45,12,20)}px monospace`;x.fillText(String(k.lv),k.x+k.w/2,k.y+k.h/2+1);}
+  x.textBaseline='alphabetic';
+ });
+});}
 async function blocks(s){
- const[,x]=s.canvas(900,560,{fill:true});s.shared=true;s.updateScores();
+ const[cv,x]=s.canvas(900,560,{fill:true});s.shared=true;s.updateScores();
  const {keys,virt}=touchKeys(s),sequence=blockSequence(s.seed,600),random=seededRandom(s.seed+':garbage');
  const st=[blockState(sequence),blockState(sequence)];let left=150,over=null,netEnd=null;
  const nf=netField(s,{pack:i=>{const me=st[i];return {g:me.grid.map(r=>r.map(v=>v||'.').join('')),p:me.piece&&!me.dead?{type:me.piece.type,x:me.piece.x,y:me.piece.y,cells:me.piece.cells}:null,score:me.score,lines:me.lines,incoming:me.incoming,dead:me.dead,index:me.index};},
   unpack:(i,d)=>{const me=st[i];if(!Array.isArray(d.g))return;me.grid=d.g.map(r=>[...String(r)].map(v=>v==='.'?0:v));me.piece=d.p&&PIECES[d.p.type]?d.p:null;Object.assign(me,{score:+d.score||0,lines:+d.lines||0,incoming:+d.incoming||0,dead:!!d.dead,index:+d.index||0});},
   onEvent:e=>{if(Number.isInteger(e?.g)&&e.g>0&&e.g<20)st[nf.me].incoming+=e.g;}});
- const mine=i=>nf?nf.me:i;
- const level=p=>1+Math.floor(p.lines/8),fall=p=>Math.max(.07,.85-level(p)*.075);
+ // 1P Arcade (owner, Nov 18, R62): CLASSIC = one board, a level every 10 lines, faster each level (guideline gravity),
+ // until you top out; or VS CPU (the battle above). Board play and online stay Block Battle.
+ let classic=false,startLv=1,lvFlash=0,finished=false;
+ if(s.solo&&!s.solo.board&&!s.solo.duel&&!nf){const pick=await pickBlockMode(s,cv,x);if(!s.alive)return;if(pick.mode==='classic'){classic=true;startLv=pick.lv;s.solo.kind='levels';}}
+ const mine=i=>nf?nf.me:classic?0:i;
+ const level=p=>classic?startLv+Math.floor(p.lines/10):1+Math.floor(p.lines/8);
+ const fall=p=>classic?Math.max(1/120,Math.pow(Math.max(.05,.8-(level(p)-1)*.007),level(p)-1)):Math.max(.07,.85-level(p)*.075);
  const settle=(i)=>{
   const me=st[i],foe=st[1-i];lockPiece(me.grid,me.piece);const n=clearRows(me.grid);me.flash=n?[Date.now()]:[];
-  if(n){me.lines+=n;me.combo++;me.score+=[0,100,300,500,800][n]*level(me)+Math.max(0,me.combo-1)*50;let send=[0,0,1,2,4][n]+(me.combo>2?1:0);const cancel=Math.min(send,me.incoming);me.incoming-=cancel;send-=cancel;if(nf){if(send>0)nf.event({g:send});}else foe.incoming+=send;sound(n>=3?'win':'pickup');s.react?.(i,n>=3?'win':'happy');vibrate(10);}
+  if(n){const lv0=level(me);me.lines+=n;me.combo++;if(classic&&level(me)>lv0){lvFlash=1.6;tone(523,.08,.05,'square');setTimeout(()=>tone(784,.14,.05,'square'),90);soloProgress(s,me.score,level(me)-startLv,`Tetris Classic: level ${level(me)}, ${me.lines} lines`);}me.score+=[0,100,300,500,800][n]*level(me)+Math.max(0,me.combo-1)*50;let send=[0,0,1,2,4][n]+(me.combo>2?1:0);const cancel=Math.min(send,me.incoming);me.incoming-=cancel;send-=cancel;if(nf){if(send>0)nf.event({g:send});}else foe.incoming+=send;sound(n>=3?'win':'pickup');s.react?.(i,n>=3?'win':'happy');vibrate(10);}
   else{me.combo=0;if(me.incoming>0){addGarbage(me.grid,Math.min(8,me.incoming),random);me.incoming=0;sound('shot');}}
   spawn(me);nf?.push();
  };
@@ -62,10 +95,10 @@ async function blocks(s){
  },(i,id,info)=>{
   i=mine(i);const g=drags.get(id);drags.delete(id);if(!g)return;virt[i].d=false;
   if(!info.cancelled&&!g.dropped&&g.moved<12&&performance.now()-g.t0<350&&!st[i].dead&&tryRotate(st[i]))nudge(st[i]);
- });
+ },classic?()=>0:undefined);
  spawn(st[0]);spawn(st[1]);
  s.hint('Two boards, one shared piece sequence. On your half of the screen: drag left/right to shift the piece, tap to rotate, drag down to soft drop, flick down fast to hard drop. Clearing 2+ lines sends garbage to your rival. Keyboard: P1 A/D move, W rotate, S soft drop, Space hard drop; P2 arrows + Enter. Last survivor wins; after 2:30 the higher score wins.');
- s.debug={engine:'blocks',state:st,keys,bot:nf?()=>{const me=st[nf.me];if(me.dead||!me.piece||over!==null||Math.random()<.5)return '';const dx=Math.floor(Math.random()*7)-3;for(let k=Math.abs(dx);k--;)tryMove(me,Math.sign(dx),0);if(Math.random()<.4)tryRotate(me);hardDrop(nf.me);return 'drop';}:null};
+ s.debug={engine:'blocks',state:st,keys,classic:classic?{start:startLv,level:()=>level(st[0]),fall:()=>fall(st[0])}:null,bot:nf?()=>{const me=st[nf.me];if(me.dead||!me.piece||over!==null||Math.random()<.5)return '';const dx=Math.floor(Math.random()*7)-3;for(let k=Math.abs(dx);k--;)tryMove(me,Math.sign(dx),0);if(Math.random()<.4)tryRotate(me);hardDrop(nf.me);return 'drop';}:null};
  // vs CPU: board 2 scores every rotation and column (lines, height, holes, bumpiness), then rotates, shifts and drops at a skill pace
  const cpu=isCpu(s);let cpuPlan=null,cpuIdx=-1,cpuT=0;
  function cpuBlocks(dt){const me=st[1];if(me.dead||!me.piece)return;const sk=cpuSkill(s);
@@ -73,13 +106,40 @@ async function blocks(s){
     let agg=0,holes=0,bump=0,prevH=null;for(let x0=0;x0<BW;x0++){let h=0;for(let y=0;y<BH;y++)if(g[y][x0]){h=BH-y;break;}agg+=h;for(let y=BH-h;y<BH;y++)if(!g[y][x0])holes++;if(prevH!==null)bump+=Math.abs(h-prevH);prevH=h;}
     const v=-.51*agg+.76*lines-.36*holes*(.5+sk)-.18*bump+Math.random()*(1-sk)*3;if(v>bv){bv=v;best={r,x:p.x};}}}cpuPlan=best?{...best,rot:0}:null;}
   cpuT-=dt;if(cpuT>0||!cpuPlan)return;cpuT=.07+(1-sk)*.22;if(cpuPlan.rot<cpuPlan.r){cpuPlan.rot++;tryRotate(me);return;}if(me.piece.x!==cpuPlan.x){tryMove(me,Math.sign(cpuPlan.x-me.piece.x),0);return;}if(sk>.5||Math.random()<.3){hardDrop(1);cpuPlan=null;}}
- if(!await s.pass(0,'Block Battle: both players get the identical piece order. Clear lines to send garbage rows to the other board. Top out and you lose.','Both ready — drop!'))return;
+ // Tetris Classic: one well in the middle, NEXT x3 + score/lines/level beside it, the backdrop hue turns each level.
+ function drawClassic(){
+  const W=s.W,H=s.H,me=st[0],lv=level(me),port=W<H*1.05,top=port?56:14,side=port?4.8:0;
+  const cell=Math.max(8,Math.floor(port?Math.min((W-20)/(BW+side),(H-top-14)/BH):Math.min((H-28)/BH,W*.5/BW)));
+  const bw=cell*BW,bh=cell*BH,ox=port?Math.floor((W-bw-cell*side)/2):Math.floor((W-bw)/2),oy=port?Math.floor(top+(H-top-14-bh)/2):Math.floor((H-bh)/2);
+  const hue=(205+(lv-1)*47)%360,bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,`hsl(${hue} 48% 15%)`);bg.addColorStop(1,`hsl(${(hue+40)%360} 42% 6%)`);x.fillStyle=bg;x.fillRect(0,0,W,H);
+  x.fillStyle='#07060fee';x.fillRect(ox-5,oy-5,bw+10,bh+10);x.strokeStyle=`hsl(${hue} 80% 70%)`;x.lineWidth=3;x.strokeRect(ox-5,oy-5,bw+10,bh+10);
+  x.strokeStyle='#ffffff0d';x.lineWidth=1;for(let c=1;c<BW;c++){x.beginPath();x.moveTo(ox+c*cell,oy);x.lineTo(ox+c*cell,oy+bh);x.stroke();}for(let r=1;r<BH;r++){x.beginPath();x.moveTo(ox,oy+r*cell);x.lineTo(ox+bw,oy+r*cell);x.stroke();}
+  const block=(px,py,sz,color,alpha=1)=>{x.globalAlpha=alpha;x.fillStyle=color;x.fillRect(px+1,py+1,sz-2,sz-2);x.fillStyle='#ffffff55';x.fillRect(px+1,py+1,sz-2,Math.max(2,sz*.18));x.fillStyle='#00000033';x.fillRect(px+1,py+sz-Math.max(3,sz*.2),sz-2,Math.max(2,sz*.18)-1);x.globalAlpha=1;};
+  for(let r=0;r<BH;r++)for(let c=0;c<BW;c++){const v=me.grid[r][c];if(v)block(ox+c*cell,oy+r*cell,cell,v==='G'?'#6f7482':PIECES[v].c);}
+  if(!me.dead&&me.piece){const gy=ghostY(me);for(const [cx,cy] of me.piece.cells.map(([dx,dy])=>[me.piece.x+dx,gy+dy]))if(cy>=0)block(ox+cx*cell,oy+cy*cell,cell,PIECES[me.piece.type].c,.22);for(const [cx,cy] of pieceCells(me.piece))if(cy>=0)block(ox+cx*cell,oy+cy*cell,cell,PIECES[me.piece.type].c);}
+  // side columns: portrait = one column right of the well; wide = stats left, NEXT right
+  const colW=port?cell*side-cell*.6:Math.min(cell*6,(W-bw)/2-30),nx=ox+bw+(port?cell*.6:cell*1.2),sx=port?nx:ox-cell*1.2-colW,fs=Math.max(10,Math.min(port?cell*.62:Math.max(cell*.62,colW/7),22));
+  x.textAlign='left';x.textBaseline='alphabetic';x.fillStyle='#ffffffb0';x.font=`bold ${fs}px monospace`;x.fillText('NEXT',nx,oy+fs);
+  const pc=Math.min(cell*.62,colW/4.4);for(let k=0;k<3;k++){const t=sequence[me.index+k];if(!t)continue;const y0=oy+fs*1.6+k*pc*3.1;for(const [dx,dy] of PIECES[t].cells)block(nx+(dx+1)*pc+(t==='O'?pc*.5:0),y0+dy*pc+(t==='I'?pc*.5:0),pc,PIECES[t].c,k?.7:1);}
+  let sy=port?oy+fs*1.6+3*pc*3.1+fs:oy+cell*3.4;
+  const stat=(label,val)=>{x.fillStyle='#ffffff90';x.font=`bold ${fs*.8}px monospace`;x.fillText(label,sx,sy);x.fillStyle='#fff';x.font=`bold ${fs*1.25}px monospace`;x.fillText(String(val),sx,sy+fs*1.35);sy+=fs*2.6;};
+  stat('SCORE',me.score.toLocaleString());stat('LEVEL',lv);stat('LINES',me.lines);
+  stat('LINES TO GO',Math.max(0,(lv-startLv+1)*10-me.lines));
+  if(port)s.sprite(x,0,nx+colW/2,Math.min(sy+cell*1.2,oy+bh-cell*1.4),clamp(cell*2.4,30,64),{exact:true,mood:me.dead?'sad':lvFlash>0?'win':'walking'});
+  else s.sprite(x,0,sx+colW/2,oy+cell*1.4,clamp(cell*2.4,30,64),{exact:true,mood:me.dead?'sad':lvFlash>0?'win':'walking'});
+  if(lvFlash>0){const a=Math.min(1,lvFlash/.4);x.globalAlpha=a;x.textAlign='center';x.font=`900 ${cell*1.5}px monospace`;x.lineWidth=cell*.25;x.strokeStyle='#000';x.strokeText(`LEVEL ${lv}`,ox+bw/2,oy+bh*.38);x.fillStyle=`hsl(${hue} 95% 70%)`;x.fillText(`LEVEL ${lv}`,ox+bw/2,oy+bh*.38);
+   x.font=`bold ${cell*.6}px monospace`;x.fillStyle='#fff';x.fillText('FASTER!',ox+bw/2,oy+bh*.38+cell*1.1);x.globalAlpha=1;}
+  if(me.dead){x.fillStyle='#000a';x.fillRect(ox,oy,bw,bh);x.fillStyle='#ff8c7a';x.font=`bold ${cell*.9}px monospace`;x.textAlign='center';x.fillText('TOPPED OUT',ox+bw/2,oy+bh/2);}
+  s.setScores([me.score,0]);s.status(`Level ${lv} · ${me.lines} lines · ${me.score.toLocaleString()} points`);
+ }
+ if(classic){if(!await s.pass(0,`Tetris Classic from level ${startLv}: clear lines, every 10 lines is a new level and the pieces fall faster. How far can you get before you top out?`,'Start!'))return;}
+ else if(!await s.pass(0,'Block Battle: both players get the identical piece order. Clear lines to send garbage rows to the other board. Top out and you lose.','Both ready — drop!'))return;
  s.frame(dt=>{
   left-=dt;if(cpu)cpuBlocks(dt);
   nf?.tick(dt);
   for(let i=0;i<2;i++){
-   if(nf&&i!==nf.me)continue;
-   const me=st[i],k=nf?Object.fromEntries(['l','r','u','d','fire'].map(n=>[n,keys[0][n]||keys[1][n]])):keys[i];if(me.dead)continue;
+   if(nf&&i!==nf.me)continue;if(classic&&i)continue;
+   const me=st[i],k=nf||classic?Object.fromEntries(['l','r','u','d','fire'].map(n=>[n,keys[0][n]||keys[1][n]])):keys[i];if(me.dead)continue;
    for(const dir of ['l','r']){if(k[dir]){me.das[dir]+=dt;}else me.das[dir]=0;}
    const stepSide=(dir,dx)=>{if(k[dir]&&!me.prev[dir]){tryMove(me,dx,0);me.das[dir]=0;if(me.lock>0&&me.lockMoves<10){me.lock=0;me.lockMoves++;}}else if(k[dir]&&me.das[dir]>.17){while(me.das[dir]>.17){me.das[dir]-=.055;tryMove(me,dx,0);}}};
    stepSide('l',-1);stepSide('r',1);
@@ -90,6 +150,9 @@ async function blocks(s){
    if(collides(me.grid,{...me.piece,y:me.piece.y+1})){me.lock+=dt;if(me.lock>=.42){settle(i);}}else me.lock=0;
    for(const key of ['l','r','u','d','fire'])me.prev[key]=!!k[key];
   }
+  if(classic){lvFlash=Math.max(0,lvFlash-dt);const me=st[0];
+   if(me.dead&&!finished){finished=true;const lv=level(me);soloFinish(s,me.score,lv-startLv,`Tetris Classic: ${me.score.toLocaleString()} points, ${me.lines} lines, reached level ${lv}.`,me.lines>=10);}
+   drawClassic();return;}
   if(nf){if(!netEnd&&(st[0].dead||st[1].dead||left<=0)){const me=st[nf.me];netEnd='wait';nf.finish({score:me.score,dead:me.dead});nf.remoteDone().then(f=>{const r=st[nf.remote];if(f){r.score=+f.score||0;r.dead=!!f.dead;}netEnd='done';});}
    if(netEnd==='done'&&over===null)over=st[0].dead&&st[1].dead||!st[0].dead&&!st[1].dead?(st[0].score===st[1].score?'draw':st[0].score>st[1].score?0:1):st[0].dead?1:0;}
   else if(!over){if(st[0].dead||st[1].dead)over=st[0].dead&&st[1].dead?'draw':st[0].dead?1:0;else if(left<=0)over=st[0].score===st[1].score?'draw':st[0].score>st[1].score?0:1;}
