@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.99.23
+
+- **Crappy Crush plays like Candy Crush now:** every stage uses 6 kinds of piece (Candy Land had 4 and the next two worlds 5), so one swap no longer sets off chain after chain. Big combos and the dog coins come when you set them up. Candy Land is still the easy tutorial, with fewer moves and higher targets.
+
 ## v0.99.22
 
 - **New Arcade backgrounds**, placed by hand on every screen: Console Classics, Arcade Classics, Board Games, Mobile Games, Sports, Party Games, Paddy's Pool and Darts.
