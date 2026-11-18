@@ -1,6 +1,6 @@
 // Crappy Crush (crappy-crush): Candy Crush with the board game's items as the pieces (owner, Nov 18).
-// Swipe (or tap two neighbours) to swap; 3 in a row clear, 4 make a striped piece (clears its row/column), an L/T makes a
-// wrapped piece (blast), 5 make the Golden Throne (clears every piece of the kind it's swapped with). Crap piles never
+// Swipe (or tap two neighbours) to swap; 3 in a row clear, 4 make a Mylo Coin (= striped: clears its row/column), an L/T
+// a KC Coin (= wrapped: blast), 5 the Loki Coin (= colour bomb: clears every piece of the kind it's swapped with). Crap piles never
 // match: a match next to one, or a blast over it, knocks a layer off.
 // Modes
 //  1P stages: the real thing. A Candy Crush map of 5 stages per world (src/data/crappyCrushWorlds.js), goals (score,
@@ -25,6 +25,8 @@ const {ART}=require("src/data/art.js");
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
 
 const KCOL=['#ff4d6d','#ffa23a','#ffe14d','#4fd66a','#4ab6ff','#b779ff'];
+// Special pieces are the pack's coins (owner, Nov 18): 4 in a row = Mylo Coin, L/T = KC Coin, 5 = Loki Coin
+const COINS={h:'mylo-token',v:'mylo-token',w:'kc-token',b:'loki-token'};
 const VS_TIME=90,TAU=Math.PI*2;
 const CALLOUT=['','','','NICE!','HOLY CRAP!','CRAP-TASTIC!','ROYAL FLUSH!'];
 
@@ -57,8 +59,19 @@ function drawThrone(x,cx,cy,sz,t){const r=sz*.42;x.save();x.translate(cx,cy);x.r
  x.font=`${r*1.1}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText('🚽',0,r*.06);x.restore();}
 function drawPiece(x,world,p,cx,cy,sz,t,{alpha=1,scale=1}={}){if(!p)return;x.save();x.globalAlpha*=alpha;x.translate(cx,cy);x.scale(scale,scale);
  if(p.crap){drawCrap(x,0,0,sz,p.crap,t);x.restore();return;}
- if(p.sp==='b'){drawThrone(x,0,0,sz,t);x.restore();return;}
+ if(p.sp==='b'){const loki=itemPic(COINS.b);if(loki){// LOKI COIN: the wildcard (clears every piece of the kind it's swapped with)
+   x.rotate(Math.sin(t*3)*.08);const gl=.5+.5*Math.sin(t*5);x.fillStyle=`rgba(190,170,255,${.25+gl*.25})`;x.beginPath();x.arc(0,0,sz*.5,0,TAU);x.fill();
+   x.drawImage(loki,-sz*.47,-sz*.47,sz*.94,sz*.94);for(let j=0;j<6;j++){const a=t*1.6+j*TAU/6;x.fillStyle=KCOL[j];x.beginPath();x.arc(Math.cos(a)*sz*.47,Math.sin(a)*sz*.47,sz*.045,0,TAU);x.fill();}}
+  else drawThrone(x,0,0,sz,t);x.restore();return;}
  const col=KCOL[p.k]||'#888',r=sz*.44;
+ const coin=(p.sp==='h'||p.sp==='v'||p.sp==='w')&&itemPic(COINS[p.sp]);
+ if(coin){// MYLO COIN (4 in a row: clears a row/column) / KC COIN (L or T: blast). Ring = the piece's colour, badge = its item
+  x.fillStyle=col;x.beginPath();x.arc(0,0,r*1.08,0,TAU);x.fill();x.drawImage(coin,-r*.98,-r*.98,r*1.96,r*1.96);
+  const bp=itemPic(world.items[p.k]),br=r*.42,bx=r*.62,by=r*.62;x.fillStyle='#fff';x.beginPath();x.arc(bx,by,br,0,TAU);x.fill();x.strokeStyle=col;x.lineWidth=sz*.04;x.stroke();
+  if(bp)x.drawImage(bp,bx-br*.9,by-br*.9,br*1.8,br*1.8);
+  if(p.sp==='h'||p.sp==='v'){x.save();if(p.sp==='v')x.rotate(Math.PI/2);x.fillStyle='#fff';x.strokeStyle='#000';x.lineWidth=2;for(const d of [-1,1]){x.beginPath();x.moveTo(d*r*1.22,0);x.lineTo(d*r*.92,-r*.2);x.lineTo(d*r*.92,r*.2);x.closePath();x.stroke();x.fill();}x.restore();}
+  else{const k=.5+.5*Math.sin(t*6);x.strokeStyle=`rgba(255,215,90,${.6+k*.4})`;x.lineWidth=sz*.06;x.beginPath();x.arc(0,0,r*1.12,0,TAU);x.stroke();}
+  x.restore();return;}
  const g=x.createRadialGradient(0,-r*.2,r*.1,0,0,r);g.addColorStop(0,col+'99');g.addColorStop(1,col+'10');x.fillStyle=g;x.beginPath();x.arc(0,0,r,0,TAU);x.fill();
  const pic=itemPic(world.items[p.k]);
  if(pic)x.drawImage(pic,-sz*.46,-sz*.46,sz*.92,sz*.92);else{x.fillStyle=col;x.beginPath();x.arc(0,0,r*.7,0,TAU);x.fill();label(x,'?',0,0,r*.8);}
@@ -189,7 +202,7 @@ async function crappyCrush(s){
   const mapH=()=>nodeY(1)+160;
   const clampScroll=v2=>clamp(v2,0,Math.max(0,mapH()-s.H));
   const scrollTo=n=>{mapScroll=clampScroll(nodeY(n)-s.H*.55);};
-  s.hint('Stages: tap a stage on the map. Swap two neighbouring pieces (swipe, or tap one then the other) to line up 3 or more. 4 in a row = striped piece, an L or T = wrapped piece, 5 in a row = the Golden Throne. Crap never matches: match next to it to clear it. Meet the goal before the moves run out.');
+  s.hint('Stages: tap a stage on the map. Swap two neighbouring pieces (swipe, or tap one then the other) to line up 3 or more. 4 in a row = a Mylo Coin (clears its row or column), an L or T = a KC Coin (blast), 5 in a row = the Loki Coin (swap it with any piece to clear every piece of that kind). Crap never matches: match next to it to clear it. Meet the goal before the moves run out.');
   s.on(c,'pointerdown',ev=>{if(s.paused)return;const p=s.pointer(ev);
    if(view==='map'&&!panel){mapDrag={y:p.y,start:mapScroll,moved:0};return;}
    if(view==='play'&&v&&!panel&&!result)boardDown(v,p);});
@@ -277,9 +290,11 @@ async function crappyCrush(s){
    x.fillStyle='#24103a';rr(x,px,py,pw,ph,26);x.fill();x.strokeStyle=stg.world.tint[0];x.lineWidth=5;rr(x,px,py,pw,ph,26);x.stroke();
    label(x,`STAGE ${cur}`,px+pw/2,py+42,30,{fill:'#ffd23f'});label(x,stg.world.name+(stg.loop?' · REMIX':''),px+pw/2,py+76,17,{fill:'#fff',stroke:null});
    const gl=goalLines();label(x,stg.kind==='score'?'Reach the score':stg.kind==='collect'?'Collect them all':stg.kind==='crap'?'Clear the crap':'Collect AND clear the crap',px+pw/2,py+116,16,{fill:'#9dff5c',stroke:null});
-   gl.forEach((g,j)=>{const gx=px+pw/2+(j-(gl.length-1)/2)*96,gy=py+ph*.42;if(g.text){label(x,g.text,px+pw/2,gy,22,{fill:'#fff'});return;}
+   gl.forEach((g,j)=>{const gx=px+pw/2+(j-(gl.length-1)/2)*96,gy=py+ph*(stg.tip?.34:.42);if(g.text){label(x,g.text,px+pw/2,gy,22,{fill:'#fff'});return;}
     if(g.crap){drawCrap(x,gx,gy,56,1,T);label(x,'×'+g.crap,gx,gy+42,20);return;}drawPiece(x,stg.world,{k:g.k,sp:0},gx,gy,62,T);label(x,'×'+g.n,gx,gy+42,20);});
-   label(x,`${stg.moves} moves`,px+pw/2,py+ph*.64,18,{fill:'#fff',stroke:null});
+   label(x,`${stg.moves} moves`,px+pw/2,py+ph*(stg.tip?.675:.64),18,{fill:'#fff',stroke:null});
+   if(stg.tip){x.save();x.font=`700 ${clamp(pw*.038,12,15)}px sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#ffe9a8';const words=stg.tip.split(' '),lines=[];let ln='';for(const w of words){const t2=ln?ln+' '+w:w;if(x.measureText(t2).width>pw-44&&ln){lines.push(ln);ln=w;}else ln=t2;}lines.push(ln);
+    const lh=clamp(pw*.05,15,19),y0=py+ph*.565-(lines.length-1)*lh/2;x.fillStyle='rgba(255,210,63,.14)';rr(x,px+14,y0-lh*.8,pw-28,lines.length*lh+lh*.5,12);x.fill();x.fillStyle='#ffe9a8';lines.forEach((l,j)=>x.fillText(l,px+pw/2,y0+j*lh));x.restore();}
    const st3=+Q.stars[cur]||0;for(let k=0;k<3;k++)label(x,'★',px+pw/2+(k-1)*34,py+ph*.74,30,{fill:k<st3?'#ffd23f':'#4a3a5a'});
    if(Q.best[cur])label(x,`Best ${(+Q.best[cur]).toLocaleString()}`,px+pw/2,py+ph*.82,13,{fill:'#bbb',stroke:null});
    for(const b of L.btn){x.fillStyle=b.col;rr(x,b.x,b.y,b.w,b.h,b.h/2);x.fill();label(x,b.label,b.x+b.w/2,b.y+b.h/2,b.h*.42,{fill:'#fff'});}}
@@ -350,7 +365,7 @@ async function crappyCrush(s){
    move:(i,r)=>{if(phase!=='play')return;const v=P[i];if(!v.human)return;boardMove(v,{x:r.x,y:r.y});},
    up:(i)=>{const v=P[i];if(v)boardUp(v);}});
   keyboard(s,(i,k,down)=>{if(!down||phase!=='play')return;const v=solo1?P[me]:P[i];if(v&&v.human)keyMove(v,k);});
-  s.hint('Both race the same board for 90 seconds. Swipe a piece (or tap two neighbours) to swap: 3+ in a row clear, 4 = striped, L/T = wrapped, 5 = the Golden Throne. Cascades and specials dump crap on the other board; your own combos cancel crap coming at you first. Highest score wins.');
+  s.hint('Both race the same board for 90 seconds. Swipe a piece (or tap two neighbours) to swap: 3+ in a row clear, 4 = Mylo Coin, L/T = KC Coin, 5 = Loki Coin. Cascades and specials dump crap on the other board; your own combos cancel crap coming at you first. Highest score wins.');
   if(!await s.pass(0,`CRAPPY CRUSH · ${world.name}. ${cpu?`You vs ${names[1]}`:'Both of you'}: same board, 90 seconds. Line up 3+ of the same item. Big combos dump crap on the other board (and cancel crap coming at you).`,cpu?'Crush!':'Both ready — crush!',{countdown:3}))return;
   for(const v of P)v.banner={text:world.name.toUpperCase(),t:0,life:1.5,color:'#fff'};
   // a finished move: send crap, then take incoming

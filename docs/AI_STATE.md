@@ -2,6 +2,18 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+CRAPPY CRUSH 576 STAGES (Nov 18, same branch, unreleased; owner: "way more stages... themes from groups of in-game items,
+Candy Land ridiculously easy as a tutorial, specials = the Loki/Mylo/KC coins"): crappyCrushWorlds.js 72 WORLDS (19 old +
+53 NW(key,name,source,hue,items): big franchises' second worlds + themed mixes; every piece id has art, none repeats, coin
+tokens never pieces; look-alike thin items swapped out after a contact sheet), PER 8 (old saves' stage numbers now point at
+other stages past world 1: accepted). stage(): world 0 = TUTORIAL (K 4, 26-30 moves, tiny goals, stg.tip drawn on the intro
+card); then KINDS score/collect/crap/score/mix/collect/crap/crap+drip, d = 1.25*g^.8 + per-world saw +.15/Remix loop,
+K 5 for worlds 2-3; goals scaled per board shape by measured SHAPE_PTS/SHAPE_COL (pillars/windows/hole shapes make ~half
+the points); 4 new shapes. tests/crappy-stages.mjs (Node: every stage + Remix sane; casual bot win table; tutorial must be
+~100%): tutorial 100%, early 90-100, mid/late 60-90 with a few 20-40% spikes on the windows shape. crappyCrush.js COINS
+{h,v:'mylo-token', w:'kc-token', b:'loki-token'}: coin + ring in the piece colour + badge of its item (+ arrows for Mylo);
+Loki = wildcard; drawn stand-ins (stripes/throne) if a picture is missing. Texts/rules say the coin names.
+
 TETRIS CLASSIC + BATCH 08 PART 1 ART + TILE LOGOS (Nov 18, branch ccr-bc26d42e-kn1noq, unreleased). R62: newGames.js blocks()
 1P Arcade (not board/duel/online) shows pickBlockMode = CLASSIC (start level chips 1/5/10/15, remembered in localStorage
 sc-tetris-start) or VS CPU; classic sets s.solo.kind='levels', one well (drawClassic: NEXT x3, score/level/lines/lines to go,
