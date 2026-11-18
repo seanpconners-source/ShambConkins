@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.99.21
+
+- **Crappy Crush: 576 stages** (was 95) in 72 themed worlds built from the game's own items: the 19 worlds you had, second worlds for the big franchises (Q Branch, City Wok, The Clock Tower, Pokémon Center, Death Mountain...) and themed mixes like Camp Crystal Lake, Action Heroes, Heavy Metal, Larry David's World, Snack Attack and Sewer Lair. Difficulty climbs slowly all the way through. Your saved stage numbers past Candy Land now point at the new stages.
+- **Candy Land is the tutorial:** ridiculously easy, with a tip on every stage.
+- **The specials are the dog coins:** 4 in a row makes a Mylo Coin (clears a row or column), an L or T a KC Coin (blast), 5 the Loki Coin (clears every piece of the kind you swap it with).
+- **Tetris, Classic mode:** in 1 Player, Block Battle now asks Classic or VS CPU. Classic is one board: pick a start level (1, 5, 10, 15), every 10 lines is a new level and the pieces fall faster, until you top out.
+- **Arcade tiles:** a game's logo no longer covers its picture; the picture sits above and the logo has its own strip at the bottom.
+- **New Arcade icons and logos:** Console Classics, Arcade Classics, Board Games, Mobile Games, Sports and Party Games. (Their new backgrounds, and Paddy's Pool's and Darts', come once they're placed in the Background Picker.)
+
 ## v0.99.20
 
 - **New game: Crappy Crush** (Mobile Hits): Candy Crush where every piece is an item from the game, across 19 worlds (Candy Land, Paddy's Pub, Rainbow Road, Pokémon, South Park, The Office, Sonic and more). Match 4 for a striped piece, an L or T for a wrapped blast, 5 for the Golden Throne; crap piles only clear when you match next to them. 1 Player: the stage map (95 stages with goals, moves and stars, saved) or a race against the CPU. 2 players and online: race the same board for 90 seconds while your combos dump crap on the other board.
