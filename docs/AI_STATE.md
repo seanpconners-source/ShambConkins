@@ -9,7 +9,7 @@ v0.99.21 RELEASED (Nov 18, owner: "Release it all!!"; test:core EXIT 0): Crappy 
 batch 08 icons/logos. The 8 new BACKGROUNDS were held out of the release commit (picker not locked: only arcadecl on my-fold-open)
 and put back on the branch right after; next release once the owner locks them (ArtifactData list bg -> apply.py on the 8).
 
-POKEMON BATTLES WATCHED ONLINE (Nov 19, unreleased; owner: the other player's Pokémon encounters must show on your phone too):
+POKEMON BATTLES WATCHED ONLINE (Nov 19, RELEASED as v0.99.24; owner: the other player's Pokémon encounters must show on your phone too):
 netBoard.js mirrored(kind,name,here) wraps wild/trainer tasks on whichever phone runs them (host's own via netTask, guest's via
 guestTask) and pkmnBattle.setMirror streams {t:'pkv'} UNNUMBERED: a:'begin'/'open'/'f' (changed box of the 160x144 screen,
 palette + varint run lengths in base64, ~14/s, whole screen every 3 s)/'wipe' (board transition replayed)/'au' (every pkmnAudio

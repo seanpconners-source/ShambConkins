@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.99.24
+
+- **Online board game: watch each other's Pokémon battles.** When the other player runs into a wild Pokémon or a trainer, your phone now shows their Game Boy live (screen, the encounter wipe, music and sounds), with a "Watching ..." tag. It closes by itself when the battle ends.
+
 ## v0.99.23
 
 - **Crappy Crush plays like Candy Crush now:** every stage uses 6 kinds of piece (Candy Land had 4 and the next two worlds 5), so one swap no longer sets off chain after chain. Big combos and the dog coins come when you set them up. Candy Land is still the easy tutorial, with fewer moves and higher targets.
