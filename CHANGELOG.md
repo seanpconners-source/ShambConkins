@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.25
+
+- **Paddy's Pool, ball sets that really look different:** the Bar Set is yellowed, faded, matte and chipped; Classic is clean and shiny; Pro has deep tournament colours, mirror gloss, ringed numbers and a red-dot cue ball; Glow balls are fluorescent and light up the felt around them. New: the **Golden God Set** ($2,400), polished gold with metallic colours.
+- **Every upgrade shows on every screen:** when there's room above the table the back wall comes down and every sign, TV and picture fits on it; floor props (jukebox, Megatouch, rum ham, trophy case) can also stand in front of the table. Sideways on a Fold, everything you own now shows.
+- **Bigger fine aim:** on roomy upright screens (an open Fold) the fine-aim wheel runs tall down the right edge; on narrow phones the bottom wheel is about 50% wider.
+- **Pool Hall:** the whole bar always fits on screen (nothing cut off at the sides), and the sign no longer covers the decor or sits under Pause/Exit. The ceiling fan moved where you can see it.
+
 ## v0.99.24
 
 - **Online board game: watch each other's Pokémon battles.** When the other player runs into a wild Pokémon or a trainer, your phone now shows their Game Boy live (screen, the encounter wipe, music and sounds), with a "Watching ..." tag. It closes by itself when the battle ends.
