@@ -9,6 +9,17 @@ v0.99.21 RELEASED (Nov 18, owner: "Release it all!!"; test:core EXIT 0): Crappy 
 batch 08 icons/logos. The 8 new BACKGROUNDS were held out of the release commit (picker not locked: only arcadecl on my-fold-open)
 and put back on the branch right after; next release once the owner locks them (ArtifactData list bg -> apply.py on the 8).
 
+PADDY'S POOL ROUND 3 (Nov 19, unreleased; owner: ball sets look the same, upgrades show on some screens not others, fine aim
+too small in portrait on the Fold, the sign covers the Hall's upgrades): pool/balls.js STYLES per set (bar = yellowed/faded/matte +
+chips fixed on the ball surface, classic, pro = deep colours + mirror gloss + number ring + narrower stripe + measle cue ball,
+glow = fluorescent self-lit + coloured halo on the felt (BA.colorOf), NEW gold 'Golden God Set' $2,400 = gold for white + metallic
+room reflection); styleOf(set) falls back by flags. Play screen: when the HUD-to-table gap >= 70 px the back wall comes down
+(L.wall/L.deco) and drawWall fits EVERY wall item (scales all together, two rows of signs/pictures when tall); floorRegions add the
+floor in front of/behind the table (landscape) and drawFloorProps fills wide bands from both ends; upright screens with >= 110 px
+beside the table get a tall fine-aim wheel at the right edge (else the bottom wheel is 29% wide, was 19%). Hall: whole scene fitted
+(no side crop) below the Pause/Exit band, blurred copy behind, sign above the scene or small between the top pills; fan moved to
+[150,0]. Checked: screenshots 910x820/820x910/752x835/390x780/1100x700 (scratch ppshots.mjs, everything owned), ball sheet
+(scratch ballsheet.mjs), pool-rules, games.mjs fuzz both pool ids.
 POKEMON BATTLES WATCHED ONLINE (Nov 19, RELEASED as v0.99.24; owner: the other player's Pokémon encounters must show on your phone too):
 netBoard.js mirrored(kind,name,here) wraps wild/trainer tasks on whichever phone runs them (host's own via netTask, guest's via
 guestTask) and pkmnBattle.setMirror streams {t:'pkv'} UNNUMBERED: a:'begin'/'open'/'f' (changed box of the 160x144 screen,

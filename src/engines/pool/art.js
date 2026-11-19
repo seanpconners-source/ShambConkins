@@ -157,21 +157,29 @@ function drawWall(g,x0,y0,W,H,room,decor,t,face,area,opts={}){
   else if(room.reno<2){g.fillStyle='rgba(0,0,0,.2)';for(let x=x0;x<x0+W;x+=34)g.fillRect(x,y0+H*.4,2,H*.6);}
   else if(room.reno===4){g.fillStyle='rgba(255,230,140,.12)';for(let x=x0;x<x0+W;x+=60)g.fillRect(x+4,y0+6,52,H-12);}
   g.fillStyle='rgba(0,0,0,.45)';g.fillRect(x0,y0+H-6,W,6);}
- // TVs, neon signs and wall decor go in `area` [x,y,w,h] (the part of the strip the HUD leaves free); the chalkboard
- // scoreboard (opts.board) gets its spot first, then the TVs in the middle, then the rest as space allows
+ // TVs, neon signs and wall decor go in `area` [x,y,w,h]: the chalkboard scoreboard (opts.board) at the right end, the
+ // TVs in the middle, the rest outward from the TVs alternating sides. Everything is scaled down together until it all
+ // fits (owner, Nov 19: decorations you bought showed on some screens and not on others).
  let [ax,ay,aw,ah]=area||[x0,y0,W,H];if(aw<40||ah<16)return;
- if(decor.includes('chalkboard')&&opts.board){const cw=Math.min(ah*2.6,aw*.5);opts.board(g,ax+aw-cw,ay+ah*.04,cw,ah*.92);aw-=cw+6;}
- const tv=room.tv,cx=ax+aw/2,th=Math.min(ah*.8,aw*(tv===3?.12:tv===4?.18:.3));
- const screens=tv===1?[[cx-th*.7,th*.9]]:tv===2?[[cx-th*1.9,th*1.3],[cx+th*.6,th*1.3]]:tv===3?[[cx-th*3.2,th],[cx-th*2.05,th],[cx-th*.9,th],[cx+.25*th,th],[cx+1.4*th,th],[cx+2.55*th,th]]:tv===4?[[cx-th*1.9,th*3.8]]:[];
+ const tv=room.tv,items=[...decor.filter(d=>d.startsWith('neon-')).map(d=>[d,2.1,.82]),...WALL_DECOR.filter(([d])=>decor.includes(d)).map(([d,a])=>[d,a,.86])];
+ const board=decor.includes('chalkboard')&&opts.board,tvAsp=tv===1?[.9]:tv===2?[1.3,1.3]:tv===3?[1,1,1,1,1,1]:tv===4?[3.8]:[],tvGap=tv===3?.15:.6;
+ // a tall band takes the signs and pictures in two rows (columns of two)
+ const cols=rows=>{const out=[];for(let i=0;i<items.length;i+=rows)out.push(items.slice(i,i+rows));return out;};
+ const need=(f,rows)=>{const th=ah*f*.8,bw=board?Math.min(ah*f*2.2,aw*.4):0,tw=tvAsp.reduce((a,v)=>a+v*th,0)+Math.max(0,tvAsp.length-1)*th*tvGap,
+  iw=cols(rows).reduce((a,c)=>a+Math.max(...c.map(([,asp,hk])=>ah/rows*f*hk*asp))+6,0);return bw+(bw?6:0)+tw+16+iw;};
+ let f=1,rows=1;while(f>.6&&need(f,1)>aw)f-=.05;
+ if(need(f,1)>aw&&ah>=70&&items.length>1){rows=2;f=1;while(f>.45&&need(f,2)>aw)f-=.05;}else while(f>.45&&need(f,1)>aw)f-=.05;
+ if(board){const cw=Math.min(ah*f*2.2,aw*.4),ch=ah*Math.max(f,.7)*.92;opts.board(g,ax+aw-cw,ay+(ah-ch)/2,cw,ch);aw-=cw+6;}
+ const th=ah*f*.8,cx=ax+aw/2,tw=tvAsp.reduce((a,v)=>a+v*th,0)+Math.max(0,tvAsp.length-1)*th*tvGap;let sx0=cx-tw/2;const screens=[];
+ for(const asp of tvAsp){screens.push([sx0,asp*th]);sx0+=asp*th+th*tvGap;}
  screens.forEach(([sx,sw],i)=>{const sy=ay+(ah-th)/2;drawTvScreen(g,sx,sy,sw,th,tv,i,t,face);});
- // the rest fills outward from the TVs, alternating sides
- const tvL=screens.length?Math.min(...screens.map(([sx])=>sx))-8:cx,tvR=screens.length?Math.max(...screens.map(([sx,sw])=>sx+sw))+8:cx;let L0=tvL,R0=tvR;
- const items=[...decor.filter(d=>d.startsWith('neon-')).map(d=>[d,2.1]),...WALL_DECOR.filter(([d])=>decor.includes(d))];let side=-1;
- for(const [id,asp] of items){const ih=id.startsWith('neon-')?ah*.82:ah*.86,iw=ih*asp;
-  const fitsL=L0-iw>=ax,fitsR=R0+iw<=ax+aw;if(!fitsL&&!fitsR)continue;const left=side<0?fitsL:!fitsR;side=-side;
-  const bx=left?L0-iw:R0,by=ay+(ah-ih)/2;if(left)L0-=iw+6;else R0+=iw+6;
-  if(id.startsWith('neon-'))drawNeon(g,id,bx,by,iw,ih,t,opts.steady);
-  else{const at=fitPic(g,'decor-'+id,bx,by,iw,ih);if(at&&id==='dennis-portrait'&&opts.dennis)opts.dennis(at[0]+at[2]*PORTRAIT_FACE[0],at[1]+at[3]*PORTRAIT_FACE[1],at[2]*PORTRAIT_FACE[2]);}}
+ const tvL=screens.length?screens[0][0]-8:cx,tvR=screens.length?sx0-th*tvGap+8:cx;let L0=tvL,R0=tvR,side=-1;
+ for(const col of cols(rows)){const cw=Math.max(...col.map(([,asp,hk])=>ah/rows*f*hk*asp));
+  const fitsL=L0-cw>=ax,fitsR=R0+cw<=ax+aw;if(!fitsL&&!fitsR)continue;const left=side<0?fitsL:!fitsR;side=-side;
+  const cx0=left?L0-cw:R0;if(left)L0-=cw+6;else R0+=cw+6;
+  col.forEach(([id,asp,hk],r)=>{const ih=ah/rows*f*hk,iw=ih*asp,bx=cx0+(cw-iw)/2,by=ay+(ah/rows)*r+(ah/rows-ih)/2;
+   if(id.startsWith('neon-'))drawNeon(g,id,bx,by,iw,ih,t,opts.steady);
+   else{const at=fitPic(g,'decor-'+id,bx,by,iw,ih);if(at&&id==='dennis-portrait'&&opts.dennis)opts.dennis(at[0]+at[2]*PORTRAIT_FACE[0],at[1]+at[3]*PORTRAIT_FACE[1],at[2]*PORTRAIT_FACE[2]);}});}
 }
 function drawTvScreen(g,x,y,w,h,tier,i,t,face){
  g.fillStyle=tier===1?'#2b2b2b':'#0b0b0d';rr(g,x-3,y-3,w+6,h+6,tier===1?6:2);g.fill();
@@ -252,16 +260,21 @@ function fitPic(g,name,x,y,w,h){const p=PS.picture(name);if(!p)return null;const
 const FLOOR_DECOR=[['jukebox',.55],['trophy-case',.57],['megatouch',1.17],['rum-ham',1.67]];
 function drawFloorProps(g,regions,decor,racks){
  const out={},items=FLOOR_DECOR.filter(([id])=>decor.includes(id));if(!items.length)return out;
- const free=regions.map(r=>({r,y:r[1]+r[3]})).filter(f=>f.r[2]>=40&&f.r[3]>=50);let i=0;
- for(const [id,asp] of items){// fill each region from its bottom up, round-robin
-  for(let tries=0;tries<free.length;tries++){const f=free[(i+tries)%free.length],w=Math.min(f.r[2]*.86,150),h=Math.min(w/asp,(f.r[3])*.6);const ww=h*asp;
-   if(f.y-h<f.r[1]+4)continue;const box=[f.r[0]+(f.r[2]-ww)/2,f.y-h-4,ww,h];
-   g.save();g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(box[0]+ww/2,box[1]+h,ww*.48,Math.max(3,ww*.09),0,0,6.28);g.fill();g.restore();
-   if(id==='rum-ham'){// on a bar stool
-    g.fillStyle='#1a1a1a';g.fillRect(box[0]+ww*.47,box[1]+h*.55,ww*.06,h*.45);g.fillStyle='#7a1a1a';g.beginPath();g.ellipse(box[0]+ww/2,box[1]+h*.55,ww*.34,h*.1,0,0,6.28);g.fill();
-    fitPic(g,'decor-rum-ham',box[0],box[1],ww,h*.58);}
-   else{const at=fitPic(g,'decor-'+id,...box);if(at&&id==='trophy-case')drawTrophies(g,at,racks);if(at)out[id]=at;}
-   f.y-=h+8;i=(i+tries+1)%free.length;break;}}
+ // tall regions (beside the table) fill from the bottom up; wide ones (in front of / behind the table) fill from both ends
+ const free=regions.filter(r=>r[2]>=40&&r[3]>=50).map(r=>({r,wide:r[2]>r[3]*1.3,y:r[1]+r[3],l:r[0]+8,rt:r[0]+r[2]-8,n:0}));let i=0;
+ const put=(id,box)=>{const [bx,by,ww,h]=box;
+  g.save();g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(bx+ww/2,by+h,ww*.48,Math.max(3,ww*.09),0,0,6.28);g.fill();g.restore();
+  if(id==='rum-ham'){// on a bar stool
+   g.fillStyle='#1a1a1a';g.fillRect(bx+ww*.47,by+h*.55,ww*.06,h*.45);g.fillStyle='#7a1a1a';g.beginPath();g.ellipse(bx+ww/2,by+h*.55,ww*.34,h*.1,0,0,6.28);g.fill();
+   fitPic(g,'decor-rum-ham',bx,by,ww,h*.58);}
+  else{const at=fitPic(g,'decor-'+id,bx,by,ww,h);if(at&&id==='trophy-case')drawTrophies(g,at,racks);if(at)out[id]=at;}};
+ for(const [id,asp] of items){
+  for(let tries=0;tries<free.length;tries++){const f=free[(i+tries)%free.length];
+   if(f.wide){const h=Math.min(f.r[3]*.86,190,(f.r[2]-16)/asp),ww=h*asp;if(f.rt-f.l<ww)continue;
+    const left=f.n%2===0,bx=left?f.l:f.rt-ww;if(left)f.l+=ww+14;else f.rt-=ww+14;f.n++;put(id,[bx,f.r[1]+f.r[3]-h-4,ww,h]);}
+   else{const w=Math.min(f.r[2]*.86,150),h=Math.min(w/asp,f.r[3]*.6),ww=h*asp;if(f.y-h<f.r[1]+4)continue;
+    put(id,[f.r[0]+(f.r[2]-ww)/2,f.y-h-4,ww,h]);f.y-=h+8;}
+   i=(i+tries+1)%free.length;break;}}
  return out;}
 function drawJukebox(g,r,t){const [x,y,w,h]=r;const gr=g.createLinearGradient(x,0,x+w,0);gr.addColorStop(0,'#5a1a0a');gr.addColorStop(.5,'#b8401a');gr.addColorStop(1,'#5a1a0a');g.fillStyle=gr;g.beginPath();g.moveTo(x,y+h);g.lineTo(x,y+w/2);g.arc(x+w/2,y+w/2,w/2,Math.PI,0);g.lineTo(x+w,y+h);g.closePath();g.fill();
  for(let i=0;i<5;i++){g.strokeStyle=`hsl(${(t*60+i*50)%360},90%,60%)`;g.lineWidth=6;g.beginPath();g.arc(x+w/2,y+w/2+10,w/2-12-i*10,Math.PI,0);g.stroke();}

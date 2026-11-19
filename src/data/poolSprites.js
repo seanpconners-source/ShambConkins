@@ -35,7 +35,7 @@ const HALL={W:1600,H:1000,floorY:640,
  // are lifted onto the counter by the game (art.js COUNTER per bar), only their x matters here
  decor:{'neon-paddys':[1395,8,195,104],'neon-fight-milk':[1140,40,250,120],'neon-kitten':[1340,140,240,110],'neon-wolf':[30,300,230,120],
   jukebox:[20,440,210,380],dartboard:[310,380,130,130],chalkboard:[690,428,170,143],'pepe-board':[470,370,210,150],'dennis-portrait':[1180,170,120,150],
-  fan:[640,0,320,90],'trophy-case':[150,470,170,300],megatouch:[1215,490,140,120],'rum-ham':[1405,522,150,90],crowd:[0,640,1600,360]}};
+  fan:[150,0,320,90],'trophy-case':[150,470,170,300],megatouch:[1215,490,140,120],'rum-ham':[1405,522,150,90],crowd:[0,640,1600,360]}};
 const SHEETS={};
 const PICTURES={logo:{kind:'logo',size:[1200,480]},'wear-1':{kind:'wear',size:[880,440]},'wear-2':{kind:'wear',size:[880,440]},'wear-3':{kind:'wear',size:[880,440]}};
 for(const t of TABLES){PICTURES['table-'+t.id]={kind:'table',size:[1030,590]};PICTURES['hall-table-'+t.id]={kind:'hall-table',size:[HALL.table.w,HALL.table.h]};}

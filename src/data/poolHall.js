@@ -45,10 +45,11 @@ const CUES=[
  {id:'golden',name:'Golden God Cue',price:4200,stats:{power:1.05,spin:.5,aim:1.85},look:{butt:'#d1a22a',wrap:'#5a3c08',band:'#fff1b0',shaft:'#f6ebcf',gold:true},desc:'Perfect in every way. Like Dennis.'},
 ];
 const BALLSETS=[
- {id:'bar',name:"Paddy's Bar Set",price:0,desc:'Yellowed, chipped and one of them is sticky.',age:1},
- {id:'classic',name:'Classic Set',price:180,age:0},
- {id:'pro',name:'Pro Set',price:550,age:0,dots:true,desc:'Red-dot cue ball: you can see the spin.'},
- {id:'glow',name:'Glow Set',price:1100,age:0,glow:true,desc:'Neon balls for the after-hours crowd.'},
+ {id:'bar',name:"Paddy's Bar Set",price:0,desc:'Yellowed, faded, matte and chipped. One of them is sticky.',age:1},
+ {id:'classic',name:'Classic Set',price:180,age:0,desc:'Clean, bright, a proper shine.'},
+ {id:'pro',name:'Pro Set',price:550,age:0,dots:true,desc:'Deep tournament colours, mirror gloss, and the red-dot cue ball so you can see the spin.'},
+ {id:'glow',name:'Glow Set',price:1100,age:0,glow:true,desc:'Fluorescent balls that light up the felt round them.'},
+ {id:'gold',name:'Golden God Set',price:2400,age:0,desc:'Polished gold where the white should be. Dennis approves.'},
 ];
 const CHALKS=[{id:'blue',name:'Blue Chalk',price:0,color:'#3d78c8'},{id:'green',name:'Green Chalk',price:20,color:'#3c9a52'},{id:'red',name:'Red Chalk',price:20,color:'#b83a3a'},{id:'pink',name:'Pink Chalk',price:30,color:'#d667a3'},{id:'gold',name:'Gold Chalk',price:80,color:'#d9b13a'}];
 // room upgrades: tiers, bought in order
