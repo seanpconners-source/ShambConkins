@@ -18,7 +18,7 @@ const {animateDice,animateItemTransfers,boardFeedback,turnFeedback}=require("src
 const {playCutIn,playMarkHits}=require("src/itemFx.js");
 const {warpTransition}=require("src/warpFx.js");
 const {animateRoulette}=require("src/roulette.js");
-const {sound,soundRecent,setMusicZone,playFanfare,startMusic}=require("src/audio.js");
+const {sound,soundRecent,setMusicZone,playFanfare,startMusic,stopMusic}=require("src/audio.js");
 const {gameById,setPoolFilter}=require("src/gameRegistry.js");
 const {bossById}=require("src/bossGate.js");
 const {duelOK}=require("src/solo.js");
@@ -252,11 +252,78 @@ function resend(){
  if(nb.showing)send(nb.showing);
  for(const req of nb.pending.values()){send(req.msg);if(req.lost&&store.dialog&&!store.dialog.watch){closeDialog();}}
 }
+// ---------------------------------------------------------------- Pokémon battles, watched
+// A battle runs on the phone of the player it belongs to; that phone streams its Game Boy to the other one: the
+// changed box of the 160x144 screen (palette + run lengths, ~14 a second, a whole screen every 3 s), the board wipe
+// and every sound by name. Sent unnumbered ({t:'pkv'}), so a lost frame never makes the guest ask for a fresh start.
+const MIRRORED=new Set(['wild','trainer']);
+const PKB=()=>require("src/pkmn/pkmnBattle.js");
+const PKV_MS=70,PKV_KEY=3000;
+const pkWatch={on:false,active:false,label:'',dog:0};
+async function mirrored(kind,name,here){
+ const st={last:null,at:0,key:0},B=PKB();
+ const out=d=>{if(nb)sendNet({k:'nb',t:'pkv',...d});};
+ out({a:'begin',kind,name});
+ B.setMirror((k,a)=>{
+  if(k==='frame'){const now=performance.now();if(now-st.at<PKV_MS)return;const f=encodeScreen(a[0],st,now);if(f){st.at=now;out({a:'f',...f});}return;}
+  if(k==='open'){st.last=null;out({a:'open'});}
+  else if(k==='close')out({a:'close'});
+  else if(k==='wipe')out({a:'wipe',kind:a[0]});
+  else if(k==='au'){const [fn,args]=a;out({a:'au',fn,args:plain(args)});}
+ });
+ try{return await here();}finally{B.setMirror(null);out({a:'end'});}
+}
+// The changed box of the screen since the last frame sent (all of it every PKV_KEY ms): {x,y,w,h,p: colours, d: base64 of
+// varint (palette index, run length) pairs}. null = nothing changed.
+function encodeScreen(cv,st,now){
+ const W=cv.width,H=cv.height,px=new Uint32Array(cv.getContext('2d').getImageData(0,0,W,H).data.buffer.slice(0));
+ let x0=0,y0=0,x1=W-1,y1=H-1;
+ if(st.last&&now-st.key<PKV_KEY){
+  x0=W;y0=H;x1=-1;y1=-1;const L=st.last;
+  for(let y=0;y<H;y++)for(let x=0,o=y*W;x<W;x++,o++)if(px[o]!==L[o]){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;y1=y;}
+  if(x1<0)return null;
+ }else st.key=now;
+ st.last=px;
+ const pal=new Map(),bytes=[],put=v=>{while(v>127){bytes.push((v&127)|128);v>>>=7;}bytes.push(v);};
+ let run=-1,len=0;
+ for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const c=px[y*W+x];let i=pal.get(c);if(i===undefined){i=pal.size;pal.set(c,i);}if(i===run)len++;else{if(len){put(run);put(len);}run=i;len=1;}}
+ if(len){put(run);put(len);}
+ let bin='';for(let i=0;i<bytes.length;i+=4096)bin+=String.fromCharCode.apply(null,bytes.slice(i,i+4096));
+ return {x:x0,y:y0,w:x1-x0+1,h:y1-y0+1,p:[...pal.keys()],d:btoa(bin)};
+}
+function decodeScreen(f){
+ const w=f.w|0,h=f.h|0;if(!(w>0&&h>0&&w<=160&&h<=144)||!Array.isArray(f.p)||typeof f.d!=='string')return null;
+ const bin=atob(f.d),out=new Uint32Array(w*h);let i=0,o=0;
+ const get=()=>{let v=0,s=0,b;do{b=bin.charCodeAt(i++);v|=(b&127)<<s;s+=7;}while(b&128&&i<bin.length);return v>>>0;};
+ while(i<bin.length&&o<out.length){const c=f.p[get()]>>>0,n=get();out.fill(c,o,Math.min(out.length,o+n));o+=n;}
+ return new Uint8ClampedArray(out.buffer);
+}
+function gotPkv(m){
+ const B=PKB();
+ clearTimeout(pkWatch.dog);
+ if(m.a==='end'){pkWatchEnd();return;}
+ pkWatch.dog=setTimeout(pkWatchEnd,10000);   // a whole screen comes every 3 s while it runs: a lost 'end' never leaves this phone stuck
+ if(store.session||B.isOpen())return;   // this phone is busy with its own game / Game Boy
+ if(m.a==='begin'){pkWatch.label=m.name?`Watching ${m.name}'s ${m.kind==='trainer'?'trainer battle':'battle'}`:'Watching';if(!pkWatch.active){pkWatch.active=true;stopMusic();}return;}
+ if(m.a==='wipe'){if(!pkWatch.on){closeWatchDialog();void B.boardTransition(m.kind).catch(()=>{});}return;}
+ if(m.a==='close'){if(pkWatch.on){B.watchClose();pkWatch.on=false;}return;}
+ if(m.a==='open'||m.a==='f'){
+  if(!pkWatch.on){closeWatchDialog();B.watchOpen(pkWatch.label||'Watching');pkWatch.on=true;}
+  if(m.a==='f'){const rgba=decodeScreen(m);if(rgba)B.watchFrame(m.x|0,m.y|0,m.w|0,m.h|0,rgba);}
+  return;
+ }
+ if(m.a==='au'&&pkWatch.active){const AU=require("src/pkmn/pkmnAudio.js"),f=AU[m.fn];if(typeof f==='function'&&/^(playSong|stopSong|playJingle|sfx|cry|lowHpAlarm|stopAll)$/.test(m.fn))try{f(...(Array.isArray(m.args)?m.args:[]));}catch{}}
+}
+function pkWatchEnd(){
+ if(pkWatch.on){PKB().watchClose();pkWatch.on=false;}document.querySelectorAll('.gb-encounter').forEach(el=>el.remove());
+ if(pkWatch.active){pkWatch.active=false;try{require("src/pkmn/pkmnAudio.js").stopAll();}catch{}if(!store.session&&!PKB().isOpen())startMusic();}
+}
 // Pokémon battles, the Pokémon Center and the team screen run on the phone of the player they belong to.
 async function netTask(kind,args,here){
- if(!hosting()||store.run.current!==nb.peer||!nb.guestIn)return here();
+ if(!hosting()||!nb.guestIn)return here();
+ if(store.run.current!==nb.peer)return MIRRORED.has(kind)?mirrored(kind,nameOf(store.run.current),here):here();   // this phone's own battle: their phone watches it
  const id=++nb.seq;
- const out=await ask({t:'task',id,kind,args:plain(args)},{show:()=>openDialog({title:`${peerName()}'s ${kind==='team'?'team':kind==='center'?'Pokémon Center':'battle'}`,body:`${peerName()} plays this on their phone.`,choices:[],watch:'Waiting for their phone…'}),close:closeWatchDialog,local:here});
+ const out=await ask({t:'task',id,kind,args:plain(args)},{show:()=>{if(!pkWatch.on)openDialog({title:`${peerName()}'s ${kind==='team'?'team':kind==='center'?'Pokémon Center':'battle'}`,body:`${peerName()} plays this on their phone.`,choices:[],watch:'Waiting for their phone…'});},close:()=>{closeWatchDialog();pkWatchEnd();},local:here});
  if(out&&out.fromGuest){adopt(store.run,out);return out.result;}
  return out;
 }
@@ -313,6 +380,7 @@ async function takeOverAsk(){
 }
 function hostMsg(m){
  nb.heard=Date.now();if(m.t==='beat')return;
+ if(m.t==='pkv')return gotPkv(m);
  if(m.t==='in'){nb.guestIn=true;nb.heard=Date.now();setLive();updateBoardSafe();resend();return;}
  if(m.t==='hello'){sendStart();return;}
  if(m.t==='bye'){nb.guestIn=false;setLive();toast(`${peerName()} left the board game. Their turns are played on this phone now.`,{local:true});takeOver();return;}
@@ -400,7 +468,7 @@ async function guestTask(m){
  if(nb.answered.has(m.id)){send(nb.answered.get(m.id));return;}
  if(nb.asking===m.id)return;nb.asking=m.id;await afterLocal();if(!nb||nb.asking!==m.id)return;closeWatch();
  const run=store.run,p=run.players[run.current],fn=app.tasks?.[m.kind],before={};for(const k of BIG)before[k]=run[k]?JSON.stringify(run[k]):'';
- let result=null;trace('task-run',m);try{result=fn?await fn(run,p,...(m.args||[])):null;}catch(err){console.error('Online task failed',m.kind,err);}
+ let result=null;trace('task-run',m);try{result=fn?await (MIRRORED.has(m.kind)?mirrored(m.kind,nameOf(nb.me),()=>fn(run,p,...(m.args||[]))):fn(run,p,...(m.args||[]))):null;}catch(err){console.error('Online task failed',m.kind,err);}
  if(!nb||nb.asking!==m.id)return;nb.asking=null;
  const out={t:'done',id:m.id,result:plain(result),run:rest(run)};for(const k of BIG){const j=run[k]?JSON.stringify(run[k]):'';if(j!==before[k])out[k]=run[k]||null;}   // boards only if the task changed them
  nb.answered.set(m.id,out);send(out);showBoard();
@@ -439,7 +507,7 @@ async function guestLeave(){
  send({t:'bye'});setOffered({name:nameOf(nb.peer),declined:true});guestExit();
 }
 function guestExit(){
- if(nb?.role!=='guest')return;const own=nb.own;nb.drag?.close();closeWatch();nb=null;store.netBoard=null;
+ if(nb?.role!=='guest')return;pkWatchEnd();const own=nb.own;nb.drag?.close();closeWatch();nb=null;store.netBoard=null;
  const saved=readJSON(RUN_KEY);store.run=validRun(saved)?saved:own&&validRun(own)?own:null;store.busy=false;
  app.home?.();
 }
@@ -456,6 +524,7 @@ function guestMsg(m){
  // Not in the game any more (our "bye" may have been lost): say so again when the host asks us something.
  if(!nb||nb.role!=='guest'){if(['dlg','route','task','game'].includes(m.t)&&(m.own||m.t==='task'||m.t==='game'))send({t:'bye'});return;}
  nb.heard=Date.now();
+ if(m.t==='pkv')return gotPkv(m);   // unnumbered: the other phone's Game Boy
  // a message went missing: ask for a fresh start, and keep asking (every 3 s, at the latest with the next beat) until it comes
  if(m.n){if(nb.inN&&m.n>nb.inN+1)nb.resync=true;nb.inN=Math.max(nb.inN,m.n);if(nb.resync&&Date.now()-(nb.helloAt||0)>3000){nb.helloAt=Date.now();trace('gap',{t:'resync'});send({t:'hello'});}}
  if(m.t==='beat')return;
@@ -492,6 +561,7 @@ function initNetBoard(hooks){
   if(ev.t==='join'){if(setup&&store.netSetup)sendPick();if(nb?.role==='host')sendStart();return;}
   if(ev.t==='welcome'){if(nb?.role==='guest')send({t:'hello'});else if(nb?.role==='host')sendStart();if(setup)sendPick();return;}
   if(ev.t==='leave'){
+   pkWatchEnd();
    if(setup){leaveSetup(true);if(store.view==='setup')app.showSetup?.();}
    if(nb?.role==='host'&&nb.guestIn){if(nb.req)lost(nb.req);}
    if(nb?.role==='guest'&&!nb.lostOpen){nb.lostOpen=true;closeWatch();void openDialog({title:`${nameOf(nb.peer)}'s phone lost the connection`,body:'The game carries on here as soon as it comes back.',choices:[{label:'Leave the game',value:'leave'}],local:true}).then(c=>{if(nb)nb.lostOpen=false;if(c==='leave'){send({t:'bye'});setOffered({name:nameOf(nb?.peer??0),declined:true});guestExit();}});}

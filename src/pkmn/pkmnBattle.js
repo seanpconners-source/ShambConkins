@@ -8,7 +8,13 @@ const {seededRandom,clamp}=require("src/utils.js");
 const {drawText,wrapText,gbText}=require("src/pkmn/gbFont.js");
 const D=require("src/pkmn/pkmnData.js");
 const SP=require("src/pkmn/pkmnSprites.js");
-const AU=require("src/pkmn/pkmnAudio.js");
+const AU0=require("src/pkmn/pkmnAudio.js");
+// Online board game: the other phone watches this Game Boy (src/netBoard.js sets the mirror while a battle,
+// the Pokémon Center or the team screen runs here). It gets the screen, the board wipe and every sound by name.
+let mirror=null;
+function setMirror(fn){mirror=fn||null;}
+const mir=(k,...a)=>{if(mirror)try{mirror(k,a);}catch(err){console.error(err);}};
+const AU=Object.fromEntries(Object.entries(AU0).map(([k,f])=>[k,typeof f==='function'?(...a)=>{mir('au',k,a);return f(...a);}:f]));
 const {fullscreenSupported,fullscreenLabel,toggleFullscreen}=require("src/fullscreen.js");
 const {vibrate}=require("src/audio.js");
 const {MOVES,move,speciesFor,statsAt,movesAt,effectiveness,BAG_ITEMS,BAG_ORDER,expFor,levelForExp,expGain,ppLeft,ABILITIES}=D;
@@ -44,8 +50,34 @@ function openGB(){
  if(fs){on(fs,'click',e=>{e.preventDefault();e.stopPropagation();toggleFullscreen();});const sync=()=>{fs.textContent=fullscreenLabel('icon');};on(document,'fullscreenchange',sync);on(document,'webkitfullscreenchange',sync);}
  on(window,'resize',fit);
  fit();loop();
- document.body.classList.add('gb-open');
+ document.body.classList.add('gb-open');mir('open');
  return G;
+}
+// The other phone's Game Boy, watched: same shell, no input, a tag saying whose it is. Frames come from watchFrame.
+let WV=null;
+function watchOpen(label){
+ if(WV){WV.tag.textContent=label;return;}
+ const wrap=document.createElement('div');wrap.innerHTML=deviceHTML();const root=wrap.firstElementChild;root.classList.add('gb-watching');root.setAttribute('aria-label',label);
+ const tag=document.createElement('div');tag.className='gb-watch-tag';tag.textContent=label;root.append(tag);
+ document.querySelectorAll('.gb-encounter').forEach(el=>el.remove());document.body.append(root);
+ const canvas=root.querySelector('canvas'),ctx=canvas.getContext('2d');ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+ const fs=root.querySelector('[data-gb-fs]');const onFs=e=>{e.preventDefault();e.stopPropagation();toggleFullscreen();};fs?.addEventListener('click',onFs);
+ WV={root,canvas,ctx,tag,img:ctx.getImageData(0,0,W,H),fit:()=>fitTo(root,canvas)};
+ window.addEventListener('resize',WV.fit);WV.fit();document.body.classList.add('gb-open');
+}
+// rgba = the changed box (x,y,w,h) as RGBA bytes
+function watchFrame(x,y,w,h,rgba){
+ if(!WV)return;const d=WV.img.data;
+ for(let r=0;r<h;r++){const o=((y+r)*W+x)*4;d.set(rgba.subarray(r*w*4,(r+1)*w*4),o);}
+ WV.ctx.putImageData(WV.img,0,0);
+}
+function watchClose(){if(!WV)return;window.removeEventListener('resize',WV.fit);WV.root.remove();WV=null;document.querySelectorAll('.gb-encounter').forEach(el=>el.remove());if(!G)document.body.classList.remove('gb-open');AU0.stopAll();}
+const watching=()=>!!WV;
+function fitTo(root,canvas){
+ const r=root.getBoundingClientRect(),portrait=r.height>=r.width*1.05;root.dataset.layout=portrait?'portrait':'landscape';
+ const availW=portrait?Math.min(r.width-56,560):Math.min(r.width-360,820),availH=portrait?Math.min(r.height*.56,r.height-330):r.height-150;
+ let s=Math.min(availW/W,availH/H);if(s>=2)s=Math.floor(s*2)/2;s=Math.max(1,s);
+ canvas.style.width=Math.round(W*s)+'px';canvas.style.height=Math.round(H*s)+'px';
 }
 function fit(){
  if(!G)return;const r=G.root.getBoundingClientRect(),portrait=r.height>=r.width*1.05;G.root.dataset.layout=portrait?'portrait':'landscape';
@@ -55,7 +87,7 @@ function fit(){
 }
 function closeGB(){
  if(!G)return;G.closed=true;cancelAnimationFrame(G.raf);for(const off of G.listeners)off();G.root.remove();document.body.classList.remove('gb-open');document.querySelectorAll('.gb-encounter').forEach(el=>el.remove());
- for(const w of G.waiters)w.resolve(null);for(const w of G.frameWaiters)w.resolve();AU.stopAll();G=null;
+ for(const w of G.waiters)w.resolve(null);for(const w of G.frameWaiters)w.resolve();AU.stopAll();G=null;mir('close');
 }
 function press(btn,index){
  if(!G)return;if(btn!=='tap')vibrate(10);if(btn==='select'){SP.setPaletteMode(SP.paletteMode()==='dmg'?'color':'dmg');G.root.dataset.pal=SP.paletteMode();AU.sfx('press');return;}
@@ -133,6 +165,7 @@ function render(){
  const out=g.ctx;out.fillStyle=col('ui',1);out.fillRect(0,0,W,H);const [sx,sy]=S.shake;
  if(S.wave){for(let y=0;y<H;y++){const off=Math.round(Math.sin(y/6+g.frame/3)*S.wave);out.drawImage(g.buf,0,y,W,1,off+sx,y+sy,W,1);}}
  else out.drawImage(g.buf,sx,sy);
+ mir('frame',g.canvas);
 }
 
 // ---------------------------------------------------------------- text + menus
@@ -668,6 +701,7 @@ async function transition(kind='doubleCircle'){
 // On the board itself, before the Game Boy opens: a full-screen layer flashes and wipes whatever is
 // on screen (the board). Returns the black layer; it is removed once the Game Boy is up.
 async function boardTransition(kind){
+ mir('wipe',kind);
  const layer=document.createElement('canvas');layer.className='gb-encounter';
  const vw=Math.max(1,window.innerWidth),vh=Math.max(1,window.innerHeight),tile=Math.max(16,Math.round(Math.min(vw,vh)/18)),cols=Math.ceil(vw/tile),rows=Math.ceil(vh/tile);
  layer.width=cols*tile;layer.height=rows*tile;document.body.append(layer);const c=layer.getContext('2d');
@@ -733,4 +767,4 @@ async function gbMessages(lines,{song=null,jingle=null,keepOpen=false}={}){
  if(!keepOpen)closeGB();
 }
 
-Object.assign(exports,{askTeamSwap,gen1Catch,wipeKind,drawWipe,battle,openGB,closeGB,say,gbMessages,fieldMenu,useBagItem,setTestSpeed,setAutoPilot,transition,isOpen:()=>!!G});
+Object.assign(exports,{setMirror,watchOpen,watchFrame,watchClose,watching,boardTransition,askTeamSwap,gen1Catch,wipeKind,drawWipe,battle,openGB,closeGB,say,gbMessages,fieldMenu,useBagItem,setTestSpeed,setAutoPilot,transition,isOpen:()=>!!G});

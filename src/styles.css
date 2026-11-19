@@ -947,3 +947,8 @@ body.gb-open{overflow:hidden}
 #sc-ready[hidden]{display:none}
 #sc-ready button{border:0;border-radius:999px;padding:8px 16px;font:800 13px/1 system-ui,sans-serif;background:linear-gradient(#ffe2a6,#c99a3d);color:#1a1006;cursor:pointer}
 #sc-ready button.x{padding:8px 10px;background:transparent;color:#f1e6c8aa}
+/* Online board game: the other phone's Pokémon battle, watched (pkmnBattle watchOpen) */
+.gb-watching .gb-controls{opacity:.45;pointer-events:none}
+.gb-watching .gb-screen{pointer-events:none}
+.gb-watch-tag{position:absolute;top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);padding:6px 14px;border-radius:999px;background:rgba(12,9,19,.82);border:1px solid rgba(255,255,255,.18);color:#fff;font:700 13px/1.2 system-ui,sans-serif;letter-spacing:.02em;white-space:nowrap;max-width:calc(100vw - 24px);overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.gb-watch-tag::before{content:"";display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:#ff3b3b;box-shadow:0 0 6px #ff3b3b;vertical-align:1px}

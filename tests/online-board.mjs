@@ -63,6 +63,9 @@ const step=ph=>ph.p.evaluate(()=>{
   if(!s.solo&&s.online){if(!s.__t)s.__t=performance.now();if(!s.__bank&&s.alive&&performance.now()-s.__t>1200){s.__bank=true;const sc=s.score.slice();sc[s.online.me]=Math.floor(Math.random()*10);s.finish(sc,'bot bank');return 'nbank';}return 'native';}
   if(!s.solo)return 'game2p';if(!s.__t)s.__t=performance.now();
   if(!s.__bank&&s.alive&&performance.now()-s.__t>1200){s.__bank=true;s.solo.banked=true;s.solo.won=Math.random()<.5;s.finish([50+Math.floor(Math.random()*400),0],'bot bank');return 'bank';}return 'game';}
+ // the other phone's Pokémon battle, watched live (src/netBoard.js gotPkv): screen drawn, controls off
+ const gw=document.querySelector('.gb-watching');
+ if(gw){const c=gw.querySelector('canvas').getContext('2d').getImageData(0,0,160,144).data;let lit=0;for(let i=0;i<c.length;i+=4)if(c[i]+c[i+1]+c[i+2]>60)lit++;return 'pkwatch:'+(lit>500?'drawn':'blank')+':'+(gw.querySelector('.gb-watch-tag')?.innerText||'');}
  if(dlg.open){
   const title=dlg.querySelector('#dialog-title')?.innerText||'';
   if(dlg.querySelector('.dialog-watch'))return 'watch:'+title;
@@ -118,6 +121,7 @@ for(;;){
  const [sa,sb]=[await step(A),await step(B)];tally(A,sa);tally(B,sb);
  if(sb.startsWith('watch')&&!shots.has('gw')){shots.add('gw');await B.p.screenshot({path:screenshotPath('onb-guest-watching.png')});}
  if(sa.startsWith('watch')&&!shots.has('hw')){shots.add('hw');await A.p.screenshot({path:screenshotPath('onb-host-watching.png')});}
+ for(const [ph,st,k] of [[A,sa,'hp'],[B,sb,'gp']])if(st.startsWith('pkwatch:drawn')&&!shots.has(k)){shots.add(k);await ph.p.screenshot({path:screenshotPath(`onb-${ph.tag.toLowerCase()}-pkwatch.png`)});}
  if(sb==='roll'&&!shots.has('gr')){shots.add('gr');await A.p.screenshot({path:screenshotPath('onb-host-guest-turn.png')});}
  const [va,vb]=[await view(A),await view(B)];
  const key=JSON.stringify([sa,sb,va?.turn,va?.current,va?.players]);stuck=key===last?stuck+1:0;last=key;
@@ -144,7 +148,7 @@ check((B.stats.watch||0)>=1&&(A.stats.watch||0)>=1,'each phone showed the other\
 check(!A.stats.game2p&&!B.stats.game2p,'no pass-and-play 2P minigame started (both play the 1P version)');
 const played=st=>(st.bank||0)+(st.nbank||0);
 check(played(A.stats)>=1&&played(B.stats)>=1,`minigames were played on both phones (Sean ${played(A.stats)}, Amber ${played(B.stats)}; native head-to-head ${A.stats.nbank||0}/${B.stats.nbank||0})`);
-if(process.env.PKMN)check([...(A.titles||[])].some(t=>/battle|Pokémon Center|team/.test(t)),'a Pokémon battle on Amber\'s turn ran on her phone (Sean\'s phone watched)');
+if(process.env.PKMN){check(!!A.stats.pkwatch,`Sean's phone watched Amber's Pokémon battle live (${A.stats.pkwatch||0} steps)`);check(!!B.stats.pkwatch,`Amber's phone watched Sean's Pokémon battle live (${B.stats.pkwatch||0} steps)`);check(shots.has('hp')&&shots.has('gp'),'the watched Game Boy screen was drawn on both phones');}
 if(process.env.WARP)check(sawWarp,'the warp zone reached Amber\'s phone (both phones on the warp board)');
 if(STALL||LOSE)check(stalls>=2,`messages were ${STALL?'held back':'lost'} on both phones (${stalls} times)`);
 if(process.env.DROPGAME)check(dropped,'the guest connection was dropped at a minigame start card');
