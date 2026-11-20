@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.99.27
+
+- **Boulder Run: left and right fixed.** Swiping (or pressing) right now moves you right and takes right-hand turns, left goes left, and the corner arrows point the right way.
+
 ## v0.99.26
 
 - **Boulder Run is now a 3D Temple Run.** Run from the temple with the boulder right behind you: swipe up to jump, down to slide, left/right to turn at corners (or change lane on the straights). Roots trip you (trip twice and the boulder gets you); logs, low arches, fire jets, gaps and rubble end the run. Left and right corners plus T-junctions where you pick the way, coin trails, and you speed up the longer you last.

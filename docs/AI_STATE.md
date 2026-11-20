@@ -10,7 +10,7 @@ v0.99.21 RELEASED (Nov 18, owner: "Release it all!!"; test:core EXIT 0): Crappy 
 batch 08 icons/logos. The 8 new BACKGROUNDS were held out of the release commit (picker not locked: only arcadecl on my-fold-open)
 and put back on the branch right after; next release once the owner locks them (ArtifactData list bg -> apply.py on the 8).
 
-BOULDER RUN = TEMPLE RUN 3D (Nov 19-20, RELEASED as v0.99.26 (owner: "Yes release"; smoke, pwa-lazy, raiders fuzz, solo); power-ups magnet/boost/shield (sim.js POW, track.js pows) + trun/music.js in; owner: look and play just like the real Temple
+BOULDER RUN = TEMPLE RUN 3D (Nov 19-20, RELEASED as v0.99.26 (owner: "Yes release"; smoke, pwa-lazy, raiders fuzz, solo); power-ups magnet/boost/shield (sim.js POW, track.js pows) + trun/music.js in; v0.99.27 = screen left/right swapped in templeRun.js input + turn arrows (camera looking +Z puts the course's +X 'right' on the screen's left; sim/course L/R unchanged); owner: look and play just like the real Temple
 Run in 3D, guy = Indiana Jones body, girl = Tomb Raider body; chasers change per stage, stage 1 = the boulder; 2P take turns,
 1P endless high score; 3D models, no sprites). STEP 1 (runners): Quaternius CC0 packs (Universal Base Characters, Modular Outfits
 Fantasy, Universal Animation Library 1+2; one 65-joint skeleton) in assets/originals/trun; tools/trun/build-chars.py ->

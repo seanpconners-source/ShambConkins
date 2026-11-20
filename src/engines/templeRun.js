@@ -69,12 +69,14 @@ async function ballrun2p(s){
   return prop;}
 
  // ---------------------------------------------------------------- input
+ // The course's 'right' (+u = world +X when running +Z) shows on the SCREEN's left (the camera looks down +Z), so
+ // screen swipes/keys and the corner arrows are swapped here; the course and sim keep their own L/R.
  let input=null;const sw={id:null,x:0,y:0,t:0,fired:false};
  s.on(c,'pointerdown',e=>{sw.id=e.pointerId;sw.x=e.clientX;sw.y=e.clientY;sw.t=performance.now();sw.fired=false;try{c.setPointerCapture(e.pointerId);}catch{}});
  s.on(c,'pointermove',e=>{if(e.pointerId!==sw.id||sw.fired)return;const dx=e.clientX-sw.x,dy=e.clientY-sw.y;if(Math.hypot(dx,dy)<24)return;sw.fired=true;
-  input&&input(Math.abs(dx)>Math.abs(dy)?(dx<0?'left':'right'):(dy<0?'up':'down'));});
+  input&&input(Math.abs(dx)>Math.abs(dy)?(dx<0?'right':'left'):(dy<0?'up':'down'));});
  s.on(c,'pointerup',e=>{if(e.pointerId===sw.id)sw.id=null;});
- s.on(window,'keydown',e=>{const k={ArrowUp:'up',KeyW:'up',Space:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'}[e.code];if(k&&input){e.preventDefault();input(k);}});
+ s.on(window,'keydown',e=>{const k={ArrowUp:'up',KeyW:'up',Space:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'right',KeyA:'right',ArrowRight:'left',KeyD:'left'}[e.code];if(k&&input){e.preventDefault();input(k);}});
 
  // ---------------------------------------------------------------- sound
  const SFX={coin:()=>{voice(1320,.06,.035,'square');voice(1980,.09,.03,'square',{delay:.05});},jump:()=>noise(.16,.05,{f0:700,f1:2200}),slide:()=>noise(.35,.05,{f0:1600,f1:400}),
@@ -190,7 +192,7 @@ async function ballrun2p(s){
    x.lineWidth=fs*.22;x.strokeStyle='#1a1006';x.strokeText(banner[0],L.w/2,L.h*.24);x.fillStyle='#fff3b0';x.fillText(banner[0],L.w/2,L.h*.24);x.restore();}
   // turn arrows in the corner window
   if(phase==='play'&&Rn.alive&&Rn.inWindow()&&!Rn.turnQ){const tt=Rn.seg.turn,a=.35+.25*Math.sin(performance.now()/120);x.save();x.globalAlpha=a;x.fillStyle='#fff7d0';x.font=`900 ${fs*2.4}px system-ui, sans-serif`;x.textAlign='center';x.textBaseline='middle';
-   if(tt==='L'||tt==='T')x.fillText('⬅',L.w*.3,L.h*.62);if(tt==='R'||tt==='T')x.fillText('➡',L.w*.7,L.h*.62);x.restore();}
+   if(tt==='R'||tt==='T')x.fillText('⬅',L.w*.3,L.h*.62);if(tt==='L'||tt==='T')x.fillText('➡',L.w*.7,L.h*.62);x.restore();}
   if(phase==='dead'){const a=Math.min(1,pt);x.save();x.textAlign='center';x.textBaseline='middle';x.font=`900 ${fs*2.3}px Impact, "Arial Black", sans-serif`;
    x.lineWidth=fs*.3;x.strokeStyle='#2a0a04';const msg=DEATH[Rn.dead]||'OUCH!';x.globalAlpha=a;x.strokeText(msg,L.w/2,L.h*.34);x.fillStyle='#ff8a3a';x.fillText(msg,L.w/2,L.h*.34);x.restore();}
   if(!loaded&&phase!=='play'){x.fillStyle='rgba(0,0,0,.6)';x.fillRect(0,L.h*.45,L.w,L.h*.1);x.fillStyle='#fff';x.textAlign='center';x.textBaseline='middle';x.font=`700 ${fs*.8}px system-ui`;x.fillText(loadMsg,L.w/2,L.h*.5);}}
