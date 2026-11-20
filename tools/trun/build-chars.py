@@ -48,6 +48,21 @@ RECIPES = {
         paint=True,
         hair=(20, .6, .35),
     ),
+    # chasers (Hovitos warriors from Raiders' opening, Thuggee guards from Temple of Doom): no face decal, seen from behind/afar
+    'hovitos': dict(
+        body='bodies/Superhero_Male_FullBody.gltf', skin='T_Superhero_Male_Dark.png',
+        parts=[('hair/Hair_Long.gltf', ['Hair'], [])],
+        cloth={}, colors={}, paint='hovitos', hair=(20, .35, .14),
+    ),
+    'thuggee': dict(
+        body='bodies/Superhero_Male_FullBody.gltf', skin='T_Superhero_Male_Dark.png',
+        parts=[('outfits/Male_Peasant.gltf', ['Male_Peasant_Body', 'Male_Peasant_Arms', 'Male_Peasant_Legs', 'Male_Peasant_Feet'], ['MI_Regular_Male']),
+               ('hair/Hair_Buzzed.gltf', ['Hair'], [])],
+        atlas='T_Peasant_BaseColor.png', recolor_all=True,
+        cloth={'Male_Peasant_Body': 'robe', 'Male_Peasant_Arms': 'robe', 'Male_Peasant_Legs': 'trousers', 'Male_Peasant_Feet': 'wraps'},
+        colors={'robe': (356, .78, .42), 'trousers': (0, .10, .16), 'wraps': (28, .35, .30)},
+        hair=(10, .2, .12),
+    ),
 }
 
 CLIPS = {  # game name: (source clip, loop)
@@ -249,6 +264,40 @@ def paint_lara(skin_img, body, size):
     return Image.fromarray(out.clip(0, 255).astype(np.uint8)), mask
 
 
+def paint_hovitos(skin_img, body, size):
+    """Hovitos warrior: darker skin, a straw loincloth with a front flap, ochre stripes on chest and face."""
+    P = body['pos']
+    J = body['joints']
+    jw = np.zeros((len(P), len(J)), np.float32)
+    for k in range(4):
+        jw[np.arange(len(P)), body['jt'][:, k]] += body['wt'][:, k]
+    nm = {n: i for i, n in enumerate(J)}
+    arm = sum(jw[:, nm[n]] for n in ('upperarm_l', 'upperarm_r', 'lowerarm_l', 'lowerarm_r', 'hand_l', 'hand_r'))
+    mask, M = raster_uv([(body['uv'], body['idx'], np.concatenate([P, arm[:, None]], 1))], size)
+    x, y, z, A = M[..., 0], M[..., 1], M[..., 2], M[..., 3]
+    s = P[:, 1].max() / 1.75
+    a = np.asarray(skin_img.resize((size, size), Image.LANCZOS)).astype(np.float32)
+    lum = a.mean(-1, keepdims=True)
+    _, sat_, _ = rgb2hsv(a.astype(np.uint8))
+    under = (sat_ < .22)[..., None] & (lum < 110)
+    skin_med = float(np.median(lum[mask & ~under[..., 0]]))
+    sk = np.median(a[mask & ~under[..., 0]], 0) * np.array([.78, .66, .58])
+    rel = np.clip(np.where(under, skin_med, lum) / skin_med, .5, 1.4)
+    out = sk[None, None, :] * rel
+    cloth = mask & (A < .4) & (((y > .86 * s) & (y < 1.0 * s)) | ((y > .70 * s) & (y < 1.0 * s) & (np.abs(x) < .085 * s) & (np.abs(z) > .02 * s)))
+    straw = np.array([150, 118, 64], np.float32)
+    stripes = 1 + .18 * np.sin(y * 900 / s)[..., None]
+    out[cloth] = (straw * rel[cloth] * stripes[cloth]).clip(0, 255)
+    belt = mask & (np.abs(y - .99 * s) < .014 * s) & (A < .4)
+    out[belt] = np.array([70, 44, 24], np.float32)
+    ochre = np.array([200, 120, 40], np.float32)
+    chest = mask & (A < .3) & (z > 0) & (np.abs(y - 1.30 * s) < .012 * s)
+    chest |= mask & (A < .3) & (z > 0) & (np.abs(y - 1.25 * s) < .010 * s)
+    face = mask & (z > .03 * s) & (np.abs(y - 1.62 * s) < .012 * s)
+    out[chest | face] = ochre
+    return Image.fromarray(out.clip(0, 255).astype(np.uint8)), mask
+
+
 # ---------------------------------------------------------------- build one character
 def build_char(name, R, texsize):
     print(name)
@@ -278,7 +327,7 @@ def build_char(name, R, texsize):
     def mat_tex(p):
         if p['part'] == 'body':
             return 'skin'
-        if p['mat'] == 'MI_Ranger':
+        if p['mat'] in ('MI_Ranger', 'MI_Peasant'):
             return 'cloth'
         if p['mat'].startswith('MI_Hair'):
             return 'hair'
@@ -290,21 +339,23 @@ def build_char(name, R, texsize):
     # skin
     skin = tex(R['skin'])
     ssize = 1024
-    if R.get('paint'):
+    if R.get('paint') == 'hovitos':
+        skin, _ = paint_hovitos(skin, body, ssize)
+    elif R.get('paint'):
         skin, _ = paint_lara(skin, body, ssize)
     else:
         skin = skin.resize((ssize, ssize), Image.LANCZOS)
     mats['skin'] = skin
     # cloth (ranger atlas), recoloured per part inside each part's UV footprint
     if any(p['tex'] == 'cloth' for p in prims):
-        c = tex('T_Ranger_BaseColor.png').resize((texsize, texsize), Image.LANCZOS)
+        c = tex(R.get('atlas', 'T_Ranger_BaseColor.png')).resize((texsize, texsize), Image.LANCZOS)
         for part, garment in R['cloth'].items():
             ps = [p for p in prims if p['part'] == part]
             if not ps:
                 continue
             m, _ = raster_uv([(p['uv'], p['idx'], None) for p in ps], texsize)
             hue, sat, vk = R['colors'][garment]
-            c = recolor(c, dilate(m, 3), hue, sat, vk)
+            c = recolor(c, dilate(m, 3), hue, sat, vk, only_green=not R.get('recolor_all'))
         mats['cloth'] = c
     if any(p['tex'] == 'hair' for p in prims):
         hp = [p for p in prims if p['tex'] == 'hair']

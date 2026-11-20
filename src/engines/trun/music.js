@@ -14,7 +14,9 @@ const PAT={
  block:   [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1],
  roll:    [0,0,0,0, 0,0,0,0, 0,0,0,0, 1,1,1,1]};
 // per zone: root, scale, flute vibrato (temple D minor pentatonic, mines low B, tomb E 'Egyptian' scale, valley G)
-const ZK=[{root:146.83,scale:[0,3,5,7,10,12,15],vib:.012,anvil:0},{root:123.47,scale:[0,3,5,6,7,10,12],vib:.008,anvil:1},{root:164.81,scale:[0,1,4,5,7,8,12],vib:.03,anvil:0},{root:196,scale:[0,2,4,7,9,12,14],vib:.014,anvil:0}];
+// zone order as in track.js ZONES: temple, jungle (A, drums up front), mines, catacombs (low C# Phrygian), tomb, bridge (F# minor), valley
+const ZK=[{root:146.83,scale:[0,3,5,7,10,12,15],vib:.012,anvil:0},{root:110,scale:[0,2,3,7,9,12,14],vib:.02,anvil:0},{root:123.47,scale:[0,3,5,6,7,10,12],vib:.008,anvil:1},
+ {root:138.59,scale:[0,1,3,5,7,8,12],vib:.006,anvil:0},{root:164.81,scale:[0,1,4,5,7,8,12],vib:.03,anvil:0},{root:185,scale:[0,2,3,5,7,8,12],vib:.018,anvil:1},{root:196,scale:[0,2,4,7,9,12,14],vib:.014,anvil:0}];
 let SCALE=ZK[0].scale,ROOT=ZK[0].root,VIB=ZK[0].vib,ANVIL=0;
 // original flute phrases (scale degrees, -1 = rest), 16 steps each
 const PHRASES=[[4,-1,3,-1,2,-1,-1,-1,1,-1,2,-1,0,-1,-1,-1],[2,-1,4,-1,5,-1,4,3,2,-1,-1,-1,-1,-1,-1,-1],[5,-1,4,-1,2,-1,3,-1,4,-1,-1,-1,2,-1,1,-1],[0,-1,2,-1,3,-1,4,-1,6,-1,5,-1,4,-1,-1,-1]];

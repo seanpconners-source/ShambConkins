@@ -4,7 +4,7 @@
 // up to you, and a second stumble before it drops back again means it gets you.
 const T=require("src/engines/trun/track.js");
 
-const POW={magnet:12,boost:5,shield:20};
+const POW={magnet:12,boost:5,shield:20,idol:12};// idol (the golden idol): coins count double
 const ZONE_BONUS=250,V0=9,VMAX=17.5,ACC=.05,G=30,JUMP=10.4,SLIDE=.78,STAND=1.75,DUCK=.8,WINDOW=8,CHASE=14,CLOSE=2.2,BACK=1.1;
 
 function makeRunner(course,{who=0}={}){
@@ -47,17 +47,18 @@ function makeRunner(course,{who=0}={}){
    const seg=R.seg;
    for(const o of seg.obs){if(R.hit.has(o)||boost||R.safeT>0)continue;
     if(o.kind==='gap')continue;
-    const half=o.kind==='block'?.55:o.kind==='arch'||o.kind==='fire'?.35:.25;
+    const slideK=T.SLIDE_KINDS.has(o.kind),half=o.kind==='block'?.55:slideK?.35:o.kind==='spikes'?.4:.25;
     if(R.a+.25<o.at-half||a0-.25>o.at+half)continue;
     if(o.kind==='root'){if(R.y<.32){R.hit.add(o);R.stumble();}}
     else if(o.kind==='log'){if(R.y<.72){R.hit.add(o);R.kill('trip');}}
-    else if(o.kind==='arch'||o.kind==='fire'){const top=R.y+(R.slide>0?DUCK:STAND);if(top>1.12){R.hit.add(o);R.kill(o.kind==='fire'?'burn':'smack');}}
+    else if(o.kind==='spikes'){if(R.y<.5){R.hit.add(o);R.kill('spiked');}}
+    else if(slideK){const top=R.y+(R.slide>0?DUCK:STAND);if(top>1.12){R.hit.add(o);if(o.kind==='web')R.stumble();else R.kill({fire:'burn',blades:'sliced',darts:'darted'}[o.kind]||'smack');}}
     else if(o.kind==='block'){let worst=0;for(const l of o.lanes){const ov=(.55+.3)-Math.abs(R.u-C.laneU(l));if(ov>worst)worst=ov;}
      if(worst>.32){R.hit.add(o);R.kill('smack');}else if(worst>0){R.hit.add(o);R.stumble();R.u+=R.u>C.laneU(o.lanes[0])?.25:-.25;}}}
    // coins
    const mag=R.pow==='magnet'?7:0;
    for(const c of seg.coins){if(R.got.has(c))continue;if(c.at>R.a+.4+mag)break;if(c.at<a0-.4)continue;
-    const cu=C.laneU(c.lane),body=R.y+(R.slide>0?.4:.9);if(mag||Math.abs(cu-R.u)<.62&&Math.abs(body-c.y)<1){R.got.add(c);R.coins++;R.ev('coin',{mag:!!mag,c});}}
+    const cu=C.laneU(c.lane),body=R.y+(R.slide>0?.4:.9);if(mag||Math.abs(cu-R.u)<.62&&Math.abs(body-c.y)<1){R.got.add(c);R.coins+=R.pow==='idol'?2:1;R.ev('coin',{mag:!!mag,c,x2:R.pow==='idol'});}}
    for(const q of seg.pows||[]){if(R.got.has(q))continue;if(q.at>R.a+.5||q.at<a0-.5)continue;
     if(Math.abs(C.laneU(q.lane)-R.u)<.7&&R.y<1.6){R.got.add(q);R.pow=q.kind;R.powT=POW[q.kind];R.ev('power',{kind:q.kind});}}
    // corner
@@ -65,6 +66,12 @@ function makeRunner(course,{who=0}={}){
    if((boost||R.safeT>0)&&!R.turnQ&&R.a>seg.len-1)R.turnQ=seg.turn==='T'?(seg.k%2?'L':'R'):seg.turn,R.turnQT=1;
    if(R.turnQ){R.turnQT-=dt;if(R.a>=cc-.6||R.turnQT<0&&R.a>seg.len){R.doTurn(R.turnQ);}else if(R.turnQT<0)R.turnQ=null;}
    if(R.alive&&R.a>seg.len+T.CORNER-.2){R.y=0;R.kill('edge');}},
+  // Save Me (spend coins): back on your feet where you fell, the chaser knocked back, a moment of safety
+  revive(){if(R.alive)return;const seg=R.seg,how=R.dead;R.alive=true;R.dead=null;R.y=0;R.vy=0;R.air=false;R.slide=0;R.slideQ=false;R.jumpQ=0;
+   R.safeT=2.5;R.chase=CHASE;R.lastStumble=-99;R.slowT=0;
+   if(how==='fall'){const g=R.gapAt(R.a)||seg.obs.find(o=>o.kind==='gap'&&R.a>o.at-1&&R.a<o.at+o.len+1);if(g)R.a=g.at+g.len+.4;}
+   if(how==='edge'||R.a>seg.len){R.a=Math.min(R.a,seg.len+T.CORNER/2-.7);R.turnQ=seg.turn==='T'?'L':seg.turn;R.turnQT=1;}
+   for(const o of seg.obs)if(Math.abs(o.at-R.a)<3)R.hit.add(o);R.ev('revive');},
   gapAt(a){for(const o of R.seg.obs)if(o.kind==='gap'&&a>o.at+.15&&a<o.at+o.len-.15)return o;return null;},
   doTurn(side){const seg=R.seg,cc=seg.len+T.CORNER/2,over=R.a-cc;
    const n=C.follow(seg,side);R.seg=n;
@@ -87,9 +94,9 @@ function makeBot(R,{skill=.7,rnd=Math.random}={}){
    const key=seg.k+':'+o.at;if(done.has(key))continue;
    if(o.kind==='block'){const free=[0,1,2].filter(l=>!o.lanes.includes(l));if(!free.includes(R.lane)){const want=free.reduce((b,l)=>Math.abs(l-R.lane)<Math.abs(b-R.lane)?l:b,free[0]);
      if(d<v*.9){done.add(key);if(rnd()>err){laneFor=want;}else laneFor=null;}}else done.add(key);continue;}
-   const lead=o.kind==='gap'?v*.2:o.kind==='arch'||o.kind==='fire'?v*.22:v*.24;
+   const sl=T.SLIDE_KINDS.has(o.kind),lead=o.kind==='gap'?v*.2:sl?v*.22:o.kind==='spikes'?v*.22:v*.24;
    if(d<lead+v*.04){done.add(key);if(rnd()<err)continue;
-    if(o.kind==='arch'||o.kind==='fire')R.input('down');else R.input('up');}
+    if(sl)R.input('down');else R.input('up');}
    break;}
   if(laneFor!=null&&laneFor!==R.lane&&react<=0){R.input(laneFor<R.lane?'left':'right');react=.12;if(laneFor===R.lane)laneFor=null;}};}
 

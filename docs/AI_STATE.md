@@ -10,6 +10,19 @@ v0.99.21 RELEASED (Nov 18, owner: "Release it all!!"; test:core EXIT 0): Crappy 
 batch 08 icons/logos. The 8 new BACKGROUNDS were held out of the release commit (picker not locked: only arcadecl on my-fold-open)
 and put back on the branch right after; next release once the owner locks them (ArtifactData list bg -> apply.py on the 8).
 
+BOULDER RUN ROUND 4 (Nov 20, RELEASED as v0.99.28; owner: faces don't stretch onto the face, more chasers/levels/obstacles, max QoL): FACE = templeRun.js
+FACE_FIT {k .72, cy 151, sx 1.08} (portrait painted bigger + wider into the 256 decal), feather() blur-alpha edges, decal bumped forward over nose/mouth (model
+lips poked through), tintSkin() = model skin texture tinted to the photo's cheek median (cheekTone). Debug camFace({a,d}) (close-up along the head bone) +
+faceTune(q); scratch tr/facetune.mjs (WHO=0|1). ZONES now 7 (track.js order temple/jungle(hovitos)/mines/catacombs(rats)/tomb/bridge(thuggee)/valley; mix
+over KIND_IDS root,log,arch,fire,gap,block,blades,darts,spikes,web; SLIDE_KINDS/JUMP_KINDS; blades/darts/fire not before lvl .25). sim.js: spikes (jump,
+'spiked'), blades/darts (slide, 'sliced'/'darted'), web (slide, touch = stumble), POW idol 12 s = coins x2, revive() (Save Me). world.js BASE map (new
+zones borrow an old zone's obstacle/edge style) + own deck/scenery/gate/floor/tint (ZT), traps drawn animated (drawTraps), drawRats (dynamic mesh),
+idol mesh; bridge = rock spires below the deck (side cliffs crossed the next straight after a turn). Chaser bodies: tools/trun/build-chars.py recipes
+hovitos (painted loincloth/ochre, paint_hovitos) + thuggee (Male_Peasant recoloured, recolor_all) -> assets/trun/hovitos|thuggee.*; props.js headband+spear
+/ turban+blade (PAL +5 cells); templeRun loadCrew, V.gang 3 rigs each ('yes' clip on catch). music ZK 7 keys. QoL: STORE sc-trun-v1 adds coins (bank),
+slots/next/goals (GOAL_LIST + goalAt endless, rewards to the bank, goal pop-up, list on intro + end), Save Me (1P only, not online, cost 100*2^n, bank
+first then run coins; tapper() taps), zone progress bar + NEXT, vibrate on power/goal. Checked: Node bot (perfect 400 s; skill .9 median ~410 m), fuzz,
+solo, local 2P, online-native with kills (watching works), scratch zones/traps/save screenshots.
 BOULDER RUN = TEMPLE RUN 3D (Nov 19-20, RELEASED as v0.99.26 (owner: "Yes release"; smoke, pwa-lazy, raiders fuzz, solo); power-ups magnet/boost/shield (sim.js POW, track.js pows) + trun/music.js in; v0.99.27 = screen left/right swapped in templeRun.js input + turn arrows (camera looking +Z puts the course's +X 'right' on the screen's left; sim/course L/R unchanged); owner: look and play just like the real Temple
 Run in 3D, guy = Indiana Jones body, girl = Tomb Raider body; chasers change per stage, stage 1 = the boulder; 2P take turns,
 1P endless high score; 3D models, no sprites). STEP 1 (runners): Quaternius CC0 packs (Universal Base Characters, Modular Outfits

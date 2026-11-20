@@ -1,7 +1,7 @@
 // Temple Run (Boulder Run revamp): props built in code and glued to the runners' bones (bind pose space: Y up,
 // facing +Z, metres). Indy: fedora, satchel + strap, coiled whip. Lara: braid (swinging chain, drawn each frame),
 // thigh holsters, small backpack. Colours come from an 8x1 palette texture (uv picks a cell).
-const PAL=['#6a4120','#2a1a10','#6e4a2a','#3b2a1a','#8a6a44','#1e1e22','#7a5a30','#c9a46a'];// felt, band, satchel, strap, whip, gunmetal, leather2, brass
+const PAL=['#6a4120','#2a1a10','#6e4a2a','#3b2a1a','#8a6a44','#1e1e22','#7a5a30','#c9a46a','#ece2c8','#a8acb4','#8e1c1c','#d8b040','#3a6a8a'];// felt, band, satchel, strap, whip, gunmetal, leather2, brass, cloth, steel, red, gold, blue
 const CELL=i=>(i+.5)/PAL.length;
 
 function paletteCanvas(){const c=document.createElement('canvas');c.width=PAL.length;c.height=1;const g=c.getContext('2d');PAL.forEach((p,i)=>{g.fillStyle=p;g.fillRect(i,0,1,1);});return c;}
@@ -88,8 +88,23 @@ function holsters(B,F){for(const s of ['l','r']){const j=F.jointIndex('thigh_'+s
   B.box([t[0],y+.045,z],[.085,.012,.075],3,j);B.box([t[0],y-.04,z],[.083,.012,.073],3,j);}}
 function backpack(B,F){const j=F.jointIndex('spine_03'),c=F.pos.spine_03;B.box([c[0],c[1]-.03,c[2]-.135],[.085,.1,.045],6,j);B.box([c[0],c[1]+.05,c[2]-.135],[.07,.02,.04],3,j);}
 
+// ---------------------------------------------------------------- chasers' kit
+// a weapon held in the right fist: along +Z in the bind pose (a fist's grip axis), from -back to +front
+function held(B,F,cell,tipCell,back,front,w,tip){const j=F.jointIndex('hand_r'),h=F.pos.hand_r,c=[h[0]-.02,h[1]-.01,h[2]+(front-back)/2];
+ B.box(c,[w,w,(front+back)/2],cell,j);if(tip)B.box([h[0]-.02,h[1]-.01,h[2]+front+tip[2]],tip,tipCell,j);}
+// a squashed dome round the top of the head (turban)
+function turban(B,F,cell,topCell){const h=F.head,j=F.jointIndex('Head'),SEG=20,rx=h.r[0]*1.18,rz=h.r[2]*1.14,y0=h.hi[1]-h.r[1]*.62,rings=[];
+ for(const [hf,rf] of [[0,1],[.25,1.06],[.5,1.04],[.75,.88],[.92,.6],[1,.2]]){const ring=[];for(let k=0;k<SEG;k++){const a=k/SEG*Math.PI*2,wob=1+.04*Math.sin(a*3+hf*5);
+   ring.push({p:[h.c[0]+Math.sin(a)*rx*rf*wob,y0+hf*h.r[1]*.95,h.c[2]+Math.cos(a)*rz*rf*wob],n:[Math.sin(a),hf>.6?1:.2,Math.cos(a)]});}rings.push(ring);}
+ B.rings(rings,cell,j);B.box([h.c[0],y0+h.r[1]*.45,h.c[2]+rz*1.02],[.025,.03,.012],topCell,j);}
+// a red headband with two feathers at the back
+function headband(B,F){const h=F.head,j=F.jointIndex('Head'),SEG=20,rx=h.r[0]*1.05,rz=h.r[2]*1.05,y=h.hi[1]-h.r[1]*.55,ring=[[],[]];
+ for(let k=0;k<SEG;k++){const a=k/SEG*Math.PI*2;for(const [i,dy] of [[0,-.018],[1,.018]])ring[i].push({p:[h.c[0]+Math.sin(a)*rx,y+dy,h.c[2]+Math.cos(a)*rz],n:[Math.sin(a),0,Math.cos(a)]});}
+ B.rings(ring,10,j);for(const [dx,dz] of [[-.03,-rz],[.03,-rz*.95]])B.box([h.c[0]+dx,y+.09,h.c[2]+dz],[.012,.09,.006],8,j,[1,0,0,0,.96,-.28,0,.28,.96]);}
 function buildProps(kind,skm){const F=bindFacts(skm),B=builder();
  if(kind==='indy'){fedora(B,F);satchel(B,F);whip(B,F);}
+ else if(kind==='hovitos'){headband(B,F);held(B,F,0,9,.7,1.25,.018,[.035,.012,.09]);}// spear with a stone head
+ else if(kind==='thuggee'){turban(B,F,10,11);held(B,F,9,9,.08,.7,.02,null);}// red turban, a long blade
  else{holsters(B,F);backpack(B,F);}
  return {geo:B.out(),facts:F};}
 

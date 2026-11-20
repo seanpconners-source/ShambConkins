@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.99.28
+
+- **Boulder Run: faces fit.** Your photo now covers the runner's whole face, ear to ear and brow to chin, with soft edges, and the body's skin is tinted to match your photo.
+- **Three new zones and chasers.** The run now goes Temple (boulder) → Hovitos Jungle (Hovitos warriors with spears, from Raiders) → Pankot Mines (mine cart) → Venice Catacombs (a swarm of rats, from Last Crusade) → Well of Souls (cobra) → Rope Bridge (Mola Ram's Thuggee guards, from Temple of Doom) → Lost Valley (T-Rex), then round again.
+- **New traps.** Spinning blades ("only the penitent man shall pass": slide), poison dart walls (slide), spike beds (jump) and giant cobwebs with a tarantula (slide, or you stumble).
+- **Golden idol power-up:** coins count double for 12 seconds.
+- **Goals:** three goals at a time (run so far, grab coins, reach a zone, slide, jump, run without stumbling...). Each one done pays coins into your bank and the next one takes its place.
+- **Save Me:** in 1-player runs, tap SAVE ME after a crash to spend coins and keep running (100, then 200, 400...).
+- **Zone progress bar** under your score shows how far you are through this zone and what comes next. More vibration feedback on power-ups and goals.
+
 ## v0.99.27
 
 - **Boulder Run: left and right fixed.** Swiping (or pressing) right now moves you right and takes right-hand turns, left goes left, and the corner arrows point the right way.
