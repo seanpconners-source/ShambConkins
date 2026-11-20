@@ -38,6 +38,7 @@ RECIPES = {
                ('hair/Hair_SimpleParted.gltf', ['Hair'], [])],
         cloth={'Male_Ranger_Body': 'jacket', 'Male_Ranger_Arms': 'jacket', 'Male_Ranger_Legs': 'trousers'},
         colors={'jacket': (20, .60, .30), 'trousers': (38, .40, .50)},  # hue deg, sat, median value
+        cull_out=.13, cull_bones=['upperarm_l', 'upperarm_r', 'lowerarm_l', 'lowerarm_r'],
         hair=(25, .55, .30),
     ),
     'lara': dict(
@@ -159,10 +160,10 @@ def recolor(img, mask, hue, sat, vk, only_green=True):
 
 
 # ---------------------------------------------------------------- body under clothes
-def cull_hidden(body, cloth_prims):
+def cull_hidden(body, cloth_prims, OUT=.09, any_vert=False):
     """Drop body triangles hidden under cloth: a body vertex is covered if a cloth surface lies along its normal
-    within IN (inside the skin) .. OUT (outside). Triangles with every vertex covered go."""
-    IN, OUT = .045, .09
+    within IN (inside the skin) .. OUT (outside). Triangles with every vertex covered go (any_vert: any covered vertex)."""
+    IN = .045
     tris = []
     for p in cloth_prims:
         tris.append(p['pos'][p['idx']])
@@ -199,7 +200,7 @@ def cull_hidden(body, cloth_prims):
         hit = ok & (u >= 0) & (v >= 0) & (u + v <= 1) & (t >= 0) & (t <= L)
         cov[vi] = hit.any()
     idx = body['idx']
-    keep = ~(cov[idx].sum(1) >= 2)
+    keep = ~(cov[idx].sum(1) >= (1 if any_vert else 2))
     body = dict(body); body['idx'] = idx[keep]
     print('  cull: %d of %d body verts covered, %d of %d tris dropped' % (cov.sum(), len(P), (~keep).sum(), len(idx)))
     return body
@@ -320,8 +321,17 @@ def build_char(name, R, texsize):
                 cloth.append(p)
     body = [p for p in prims if p['part'] == 'body'][0]
     if cloth:
-        nb = cull_hidden(body, cloth)
+        nb = cull_hidden(body, cloth, OUT=R.get('cull_out', .09), any_vert=R.get('cull_any', False))
         body.update(nb)
+    if R.get('cull_bones'):  # skin the sleeves cover all the way: drop body triangles weighted to these bones (it pokes through when the arm swings)
+        J = body['joints']; nm = {n: i for i, n in enumerate(J)}
+        w = np.zeros(len(body['pos']), np.float32)
+        for b in R['cull_bones']:
+            if b in nm:
+                for k in range(4): w += np.where(body['jt'][:, k] == nm[b], body['wt'][:, k], 0)
+        idx = body['idx']; keep = ~((w[idx] > .5).all(1))
+        print('  cull bones: %d of %d tris dropped' % ((~keep).sum(), len(idx)))
+        body['idx'] = idx[keep]
     # ---- textures per material
     mats = {}
     def mat_tex(p):

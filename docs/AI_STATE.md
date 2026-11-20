@@ -10,6 +10,30 @@ v0.99.21 RELEASED (Nov 18, owner: "Release it all!!"; test:core EXIT 0): Crappy 
 batch 08 icons/logos. The 8 new BACKGROUNDS were held out of the release commit (picker not locked: only arcadecl on my-fold-open)
 and put back on the branch right after; next release once the owner locks them (ArtifactData list bg -> apply.py on the 8).
 
+BOULDER RUN ROUND 5 (Nov 20, branch ccr-bc26d42e-kn1noq, UNRELEASED; owner: faces miss mouth/chin, clothes through the arms, random stage
+order, walls/paths/obstacles in the way, more models/textures, lane gesture, a breather between stages): FACE_FIT {k .75, cy 166, sx 1.11,
+sy 1.22 (paint stretched vertically), ay0 -1.5 (patch reaches further down)}; tintSkin samples skin-coloured texels only, k within .8-1.22
+(Lara's painted tank top made her yellow). INDY rebuilt: build-chars.py cull_out .13 + cull_bones (upper/lower arm skin under the sleeves
+poked through). track.js: zone ORDER shuffled per seed (zoneOrder, reshuffled each cycle, course.zoneAt); turn rule in place(): never 3 same
+way in a row, net rotation over last 5 corners within ±2 (old code: 13% of nearby straight pairs overlapped; now 0 within the drawn window,
+scratch overlap.cjs); gate straights +34 m and obstacles from 46 m (the breather). world.js: T-junction parapets no longer block both arms
+(open() for T), scenery kept off the first 4 m and off the open side near the end, valley far cliffs removed (crossed later straights),
+blocks kept inside their lane, jungle edge ferns off the path, fire posts outside lanes 1/3. BREATHER: sim R.calm 3.1 s (jog .55x, chase
+held), templeRun setZone({brk}) keeps the old chaser V.prev (boulder/cart drop away, others fall behind), camera cranes over to the front
+looking back, ESCAPE banner, nextUp title + roar after BREAK 2.4, runner 'jog' clip. LEAN: body yaw + bank (bank()) from sideways speed,
+camera follows the lane slowly (V.cu); sim lane glide 12. Banner/title text fitted to width. W.t not overwritten in manual test mode.
+MODELS: tools/trun/build-props.py (Quaternius Stylized Nature + Fantasy Props MegaKits, CC0, packs from itch) -> assets/trun/props.bin.gz
+(PRP1: 23 nature + 18 props, 102k tris) + ptex-*.webp (16 textures incl. rocks/bark surfaces); build.mjs accepts <name>.bin.gz; templeRun
+loadProps -> WD.setProps; world.js prop() bakes models into per-texture 'p:<tex>[|c]' buckets per straight (cut-out leaves), treeOnRock,
+ledge() props beside mines/tomb/catacombs, crate stacks as mine blockers, cliff = rocks texture, wood = bark. Tris per straight median
+17-50k (scratch tris.cjs). Checked: bots (perfect 400 s, .9 median ~490 m), fuzz, solo, local 2P, online-native with kills, scratch
+facetune/arms/breather/zones/traps screenshots.
+ARCADE BATCH 09 (Nov 20, GPT UPLOADS-GPT-2026-11-20-0638, Drive 1Y3gooMXjzOOKQt4-VNm4xsA6pNfFvaqP, 15 files SHA-checked): imported crappy-crush
+art/icon/logo, shows art, movies art/logo, pinball art + paddys art (REPLACED, old ones originals/keyart/*-previous), paddys-beer-pong art/logo,
+flipadelphia-cup art/logo, paddys-darts logo, words-n-shit art/logo. KEY_BOX for the 8 backgrounds; old KEY_PLACE locks of pinball/paddys
+removed (and their picker db docs reset). PICKER v19 published (https://claude.ai/artifact/DhpZSVr98T1sEwzjux7AJ9) with these 8; amber-phone-land
+has no preview for paddys-beer-pong/flipadelphia-cup (measure misses them there). NEXT: owner locks -> ArtifactData list bg -> apply.py on
+the 8 only -> release. Crappy Crush World Art 01/02 folders were still empty (72 world backgrounds coming).
 BOULDER RUN ROUND 4 (Nov 20, RELEASED as v0.99.28; owner: faces don't stretch onto the face, more chasers/levels/obstacles, max QoL): FACE = templeRun.js
 FACE_FIT {k .72, cy 151, sx 1.08} (portrait painted bigger + wider into the 256 decal), feather() blur-alpha edges, decal bumped forward over nose/mouth (model
 lips poked through), tintSkin() = model skin texture tinted to the photo's cheek median (cheekTone). Debug camFace({a,d}) (close-up along the head bone) +

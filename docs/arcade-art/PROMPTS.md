@@ -527,7 +527,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 **Key art** ✅
 
-> Key art for "Boulder Run", a minigame in a party video game that pays tribute to Indiana Jones. Scene: Both run at once: top corridor is player 1, bottom is player 2, identical traps. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Boulder Run", a minigame in a party video game that pays tribute to Indiana Jones. Scene: Temple Run in 3D with the Raiders boulder behind you: swipe up to jump, down to slide, left/right to turn at corners and change lane. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** ✅
 
@@ -1105,7 +1105,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Words n' Shit · `words-n-shit`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Words n' Shit", a minigame in a party video game that pays tribute to Words With Friends. Scene: Words With Friends, our way. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -1115,11 +1115,11 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Crappy Crush · `crappy-crush`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Crappy Crush", a minigame in a party video game that pays tribute to Candy Crush Saga. Scene: Candy Crush, but every piece is an item from the game. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Crappy Crush" (Candy Crush Saga tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -1205,7 +1205,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Paddy’s Pub · Beer Pong · `paddys-beer-pong`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Paddy’s Pub · Beer Pong", a minigame in a party video game that pays tribute to Always Sunny. Scene: Two shots a turn; sink both and Bring it back for a third. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
@@ -1215,7 +1215,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Flipadelphia · Flip Cup · `flipadelphia-cup`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Flipadelphia · Flip Cup", a minigame in a party video game that pays tribute to Always Sunny. Scene: the most iconic moment of Flipadelphia · Flip Cup. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 

@@ -24,7 +24,7 @@ const G=require("src/engines/trun/render.js");
 const T=require("src/engines/trun/track.js");
 const SIM=require("src/engines/trun/sim.js");
 const PR=require("src/engines/trun/props.js");
-const {makeWorld,MB}=require("src/engines/trun/world.js");
+const WD=require("src/engines/trun/world.js"),{makeWorld,MB}=WD;
 const {makeMusic}=require("src/engines/trun/music.js");
 
 const DEATH={smack:'SMACK!',trip:'TRIPPED!',burn:'TORCHED!',fall:'FELL!',edge:'OFF THE EDGE!',spiked:'SPIKED!',sliced:'SLICED!',darted:'POISON DART!'};
@@ -83,17 +83,26 @@ async function ballrun2p(s){
  async function loadChar(b){if(chars[b])return chars[b];const M=await skm(b);const tex={};await Promise.all(M.groups.map(async g=>{tex[g.tex]=await pic(g.tex);}));
   const ch=R.character(M,n=>tex[n]);const pp=PR.buildProps(b,M);const prop=R.skinnedProp({...pp.geo,tex:palT});chars[b]={M,ch,prop,facts:pp.facts,img:tex};return chars[b];}
  // the T-Rex (Quaternius CC0, tools/trun/build-creature.py): mesh + its own clips; optional (a missing file = no dinosaur, the cart stands in)
+ // CC0 scenery models + their textures (tools/trun/build-props.py): optional, the world falls back to its drawn scenery
+ async function loadProps(){try{const u=USER_PORTRAITS['trun:props'];if(!u)return;const u8=await gunzip(await assetBytes(u));
+   if(String.fromCharCode(u8[0],u8[1],u8[2],u8[3])!=='PRP1')return;const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength),jl=dv.getUint32(4,true);
+   const J=JSON.parse(new TextDecoder().decode(u8.subarray(8,8+jl)));let off=8+jl;while(off%4)off++;const blob=u8.slice(off).buffer;
+   const P={models:J.models,vb:new Float32Array(blob,J.vb,J.verts*8),ib:new Uint32Array(blob,J.ib,(blob.byteLength-J.ib)/4),tex:{},surf:{}};
+   const names=new Set();for(const m of Object.values(J.models))for(const g of m.groups)names.add(g.tex);
+   await Promise.all([...names].map(async n=>{const im=await pic(n);if(im)P.tex[n]=R.texture(im,{mips:true});}));
+   for(const [k,n,rep2] of [['cliff','trun:ptex-rocks-diffuse',1],['wood','trun:ptex-bark-normaltree',1],['sstone2','trun:ptex-rocks-desert-diffuse',1]]){const im=await pic(n);if(im)P.surf[k]=R.texture(im,{repeat:!!rep2,mips:true});}
+   WD.setProps(P);}catch(e){console.warn('props',e);}}
  // the human chasers (Hovitos, Thuggee): optional like the T-Rex
  async function loadCrew(){crew={};for(const b of ['hovitos','thuggee'])try{crew[b]=await loadChar(b);}catch(e){console.warn(b,e);}}
  async function loadTrex(){try{const M=await skm('trex'),p=await pic('trun:trex-pal');trex={M,ch:R.character(M,()=>p),clips:S.makeClips(M)};}catch(e){console.warn('trex',e);trex=null;}}
- const ready=(async()=>{clips=S.makeClips(await skm('anims'));const need=on?bodies:s.solo?[bodies[0]]:bodies;for(const b of new Set(need))await loadChar(b);await loadTrex();await loadCrew();loaded=true;})()
+ const ready=(async()=>{clips=S.makeClips(await skm('anims'));const need=on?bodies:s.solo?[bodies[0]]:bodies;for(const b of new Set(need))await loadChar(b);await loadTrex();await loadCrew();await loadProps();loaded=true;})()
   .catch(e=>{console.error(e);loadMsg='The temple failed to load: '+e.message;});
 
  // ---------------------------------------------------------------- a face decal glued to the head bone, painted from the player's portrait
  const W={phase:'load',t:0,speed:1,faces:[]};
  // The portrait is painted bigger than its own face box (k = face width / texture width) and a little wider (sx) so it
  // reaches ear to ear and brow to chin on the model; edges feathered; the model's skin is tinted to the photo's skin.
- const FACE_FIT={k:.72,cy:151,sx:1.08};
+ const FACE_FIT={k:.75,cy:166,sx:1.11,sy:1.22,ay0:-1.5};
  function feather(cv){const g=cv.getContext('2d');if(!('filter' in g))return;const c2=document.createElement('canvas');c2.width=c2.height=256;const g2=c2.getContext('2d');
   g2.filter='blur(2.5px)';g2.drawImage(cv,0,0);g.globalCompositeOperation='destination-in';g.drawImage(c2,0,0);g.drawImage(c2,0,0);g.globalCompositeOperation='source-over';}
  // median colour of the cheeks (opaque, not beard-dark, not highlight) or null while the portrait is still loading
@@ -104,16 +113,16 @@ async function ballrun2p(s){
  const tinted=new Set();
  function tintSkin(b,tone){if(tinted.has(b))return;const C=chars[b],gr=C.M.groups.find(g=>/skin/.test(g.mat)||/skin/.test(g.tex));const img=gr&&C.img[gr.tex];if(!img)return;tinted.add(b);
   const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height,cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d');g.drawImage(img,0,0);
-  const id=g.getImageData(0,0,w,h),d=id.data,R0=[],G0=[],B0=[];for(let o=0;o<d.length;o+=4*7)if(d[o+3]>200){R0.push(d[o]);G0.push(d[o+1]);B0.push(d[o+2]);}
-  if(R0.length<50)return;const med=a=>a.sort((x,y)=>x-y)[a.length>>1],ref=[med(R0),med(G0),med(B0)],k=tone.map((v,c)=>Math.max(.55,Math.min(1.5,v/Math.max(1,ref[c]))));
-  for(let o=0;o<d.length;o+=4){const dr=d[o]-ref[0],dg=d[o+1]-ref[1],db=d[o+2]-ref[2],wt=.85*Math.exp(-(dr*dr+dg*dg+db*db)/(2*70*70));
+  const id=g.getImageData(0,0,w,h),d=id.data,R0=[],G0=[],B0=[],isSkin=o=>d[o+3]>200&&d[o]>d[o+1]&&d[o+1]>=d[o+2]&&d[o]-d[o+2]>18&&d[o]-d[o+2]<110&&d[o]>70;for(let o=0;o<d.length;o+=4*7)if(isSkin(o)){R0.push(d[o]);G0.push(d[o+1]);B0.push(d[o+2]);}
+  if(R0.length<50)return;const med=a=>a.sort((x,y)=>x-y)[a.length>>1],ref=[med(R0),med(G0),med(B0)],k0=tone.map((v,c)=>v/Math.max(1,ref[c])),avg=(k0[0]+k0[1]+k0[2])/3,k=k0.map(v=>Math.max(.8,Math.min(1.22,avg+(v-avg)*.6)));
+  for(let o=0;o<d.length;o+=4){if(!isSkin(o))continue;const dr=d[o]-ref[0],dg=d[o+1]-ref[1],db=d[o+2]-ref[2],wt=.75*Math.exp(-(dr*dr+dg*dg+db*db)/(2*60*60));
    for(let c=0;c<3;c++)d[o+c]=Math.min(255,d[o+c]*(1+(k[c]-1)*wt));}
   g.putImageData(id,0,0);C.ch.setTexture(gr.mat,cv);}
  function faceProp(b,i){const F=chars[b].facts,h=F.head,j=F.jointIndex('Head'),cvf=document.createElement('canvas');cvf.width=cvf.height=256;
-  const paint=()=>{const g=cvf.getContext('2d'),q=W.faceTune||FACE_FIT;g.clearRect(0,0,256,256);g.save();g.translate(128,q.cy);g.scale(q.sx,1);try{require("src/headFacts.js").drawFace(s,g,i,0,0,256,'normal',1,q.k);}catch{}g.restore();
+  const paint=()=>{const g=cvf.getContext('2d'),q=W.faceTune||FACE_FIT;g.clearRect(0,0,256,256);g.save();g.translate(128,q.cy);g.scale(q.sx,q.sy||1);try{require("src/headFacts.js").drawFace(s,g,i,0,0,256,'normal',1,q.k);}catch{}g.restore();
    let tone=null;try{tone=cheekTone(cvf,q);feather(cvf);if(tone&&!W.noTint)tintSkin(b,tone);}catch{}};paint();
   // patch: an ellipsoid shell just outside the head, pushed forward over the nose and mouth so the model's own lips and nose stay under it
-  const P=[],N=[],U=[],J=[],I=[],NX=16,NY=14,ax=2.9,ay0=-1.15,ay1=1.05,rx=h.r[0]*1.07,ry=h.r[1]*1.02,rz=h.r[2]*1.06,cyy=h.c[1]-h.r[1]*.08;
+  const P=[],N=[],U=[],J=[],I=[],NX=16,NY=16,ax=2.9,ay0=(W.faceTune&&W.faceTune.ay0)||FACE_FIT.ay0,ay1=1.05,rx=h.r[0]*1.07,ry=h.r[1]*1.02,rz=h.r[2]*1.06,cyy=h.c[1]-h.r[1]*.08;
   for(let yi=0;yi<=NY;yi++)for(let xi=0;xi<=NX;xi++){const u=xi/NX,v=yi/NY,th=(u-.5)*2*ax*.5,ph=ay1-(ay1-ay0)*v;
    const nx=Math.sin(th)*Math.cos(ph*.85),ny=Math.sin(ph*.85),nz=Math.cos(th)*Math.cos(ph*.85),bump=1+.1*Math.exp(-((th/.55)**2)-((ph+.4)/.5)**2);
    P.push(h.c[0]+nx*rx,cyy+ny*ry,h.c[2]+nz*rz*bump);N.push(nx,ny,nz);U.push(u,v);J.push(j);}
@@ -128,7 +137,7 @@ async function ballrun2p(s){
   const braid=body==='lara'?PR.makeBraid(ch.facts):null,braidMesh=braid?R.mesh({pos:braid.pos,nrm:braid.nrm,col:braid.col,idx:braid.idx},{dynamic:true}):null;
   const A={pi,body,ch,rig,face,braid,braidMesh,head:rig.jointIndex('Head'),last:'',
    play(n,o){if(A.last!==n||o?.restart){rig.play(n,o);A.last=n;}}};
-  A.play('idle',{fade:0});return A;}
+  A.play('idle',{fade:0});(W.actors=W.actors||[]).push(A);return A;}
 
  // ---------------------------------------------------------------- input (touch swipes, keys, optional tilt)
  // The course's 'right' (+u = world +X when running +Z) shows on the SCREEN's left (the camera looks down +Z), so
@@ -161,6 +170,7 @@ async function ballrun2p(s){
   zone:()=>{[392,523,659,784].forEach((f,i)=>voice(f,.32,.05,'triangle',{delay:i*.09}));noise(.9,.05,{f0:200,f1:60});},
   mile:()=>{[784,988,1175].forEach((f,i)=>voice(f,.14,.035,'square',{delay:i*.07}));},
   best:()=>{[523,659,784,1047,1319].forEach((f,i)=>voice(f,.18,.045,'triangle',{delay:i*.08}));},
+  phew:()=>{[523,659,784].forEach((f,i)=>voice(f,.22,.04,'triangle',{delay:i*.08}));noise(.6,.04,{f0:900,f1:200});},
   roar:()=>{voice(70,1.1,.12,'sawtooth',{slide:1.8});noise(1.1,.1,{f0:900,f1:140});},hiss:()=>noise(.9,.06,{f0:5200,f1:3800}),
   warcry:ch=>{for(let i=0;i<4;i++)voice((ch==='thuggee'?200:280)+i*37,.5,.05,'sawtooth',{slide:.7,delay:i*.12});noise(.6,.05,{f0:500,f1:200});},
   goal:()=>{[659,784,988,1319].forEach((f,i)=>voice(f,.16,.045,'triangle',{delay:i*.07}));},
@@ -182,33 +192,47 @@ async function ballrun2p(s){
  const poleMesh=(()=>{const b=MB();b.tube([0,0,0],[0,3.1,0],.06,.05,8,1,[230,230,230]);b.box(-T.HALF,T.HALF,0,.03,-.12,.12,1,[255,210,60]);return R.mesh(b.out());})();
 
  // ---------------------------------------------------------------- the scene: world, chaser, camera (one per course shown)
- function makeView(course){return {course,world:makeWorld(R,course),trail:[],yawV:course.yaw(0),camYaw:course.yaw(0),fovK:1,lastSeg:null,cd:-1,
-  zone:0,sky:SKIES.temple,skyFrom:SKIES.temple,skyK:1,chaser:'boulder',chaserT:-9,trexRig:trex?S.makeRig(trex.M,trex.clips):null,shake:0,
+ function makeView(course){const z0=course.get(0).zone,id0=T.ZONES[z0].id;return {course,world:makeWorld(R,course),trail:[],yawV:course.yaw(0),camYaw:course.yaw(0),fovK:1,lastSeg:null,cd:-1,
+  zone:z0,sky:SKIES[id0],skyFrom:SKIES[id0],skyK:1,chaser:'boulder',chaserT:-9,prev:null,lean:0,uv:0,lastU:null,cu:0,brk:-9,trexRig:trex?S.makeRig(trex.M,trex.clips):null,shake:0,
   gang:crew?Object.fromEntries(Object.keys(crew).map(b=>[b,[0,1,2].map(i=>{const g=S.makeRig(crew[b].M,clips);g.play('run',{fade:0});g.update(i*.27);return g;})])):{}};}
- function setZone(V,z,t){const id=T.ZONES[z].id;V.skyFrom=lerpSky(V.skyFrom,SKIES[T.ZONES[V.zone].id],V.skyK);V.zone=z;V.skyK=0;
-  let ch=T.ZONES[z].chaser;if(ch==='trex'&&!trex)ch='cart';if((ch==='hovitos'||ch==='thuggee')&&!V.gang[ch])ch='boulder';V.chaser=ch;V.chaserT=t;if(V.trexRig)V.trexRig.play('run',{fade:0});void id;}
+ function chaserFor(V,z){let ch=T.ZONES[z].chaser;if(ch==='trex'&&!trex)ch='cart';if((ch==='hovitos'||ch==='thuggee')&&!V.gang[ch])ch='boulder';return ch;}
+ // a new zone: the old chaser falls away (BREAK seconds of breather, camera swings round), then the new one charges in
+ const BREAK=2.4;
+ function setZone(V,z,t,{brk=true}={}){V.skyFrom=lerpSky(V.skyFrom,SKIES[T.ZONES[V.zone].id],V.skyK);V.zone=z;V.skyK=0;
+  if(brk){V.prev={kind:V.chaser,t0:t,bd:V.cd};V.brk=t;}const ch=chaserFor(V,z);V.chaser=ch;V.chaserT=t+(brk?BREAK:0);if(V.trexRig)V.trexRig.play('run',{fade:0});}
+ const ESCAPE={boulder:'THE BOULDER MISSED YOU!',cart:'THE CART DERAILED!',cobra:'THE COBRA GAVE UP!',trex:'YOU LOST THE T-REX!',hovitos:'YOU LOST THE HOVITOS!',rats:'THE RATS SCATTERED!',thuggee:'THE THUGGEE FELL BEHIND!'};
  // draw one frame of a runner (A = actor, Rn = runner or the partner's mirror) in view V
  function drawView(V,A,Rn,{phase,pt,dt,t,L,intro=false,bestDist=0,introLen=2.6}){
   const course=V.course,d=Rn.dist(),[px,pz]=course.pos(Rn.seg,Rn.a,Rn.u),py=Rn.y;
+  // side-step lean: the body turns and banks into a lane change (from how fast it slides sideways); the camera follows the lane slowly
+  if(V.lastU!==null&&dt>0){const vu=(Rn.u-V.lastU)/dt;V.uv+=(vu-V.uv)*Math.min(1,dt*18);}V.lastU=Rn.u;
+  V.lean+=(Math.max(-.42,Math.min(.42,V.uv*.075))-V.lean)*Math.min(1,dt*14);V.cu+=(Rn.u-V.cu)*Math.min(1,dt*5);
+  const [cx0,cz0]=course.pos(Rn.seg,Rn.a,Rn.u*.35+V.cu*.4);
   if(!V.trail.length||d-V.trail[V.trail.length-1].d>.25)V.trail.push({d,x:px,z:pz});if(V.trail.length>500)V.trail.shift();
   const tyaw=course.yaw(Rn.seg.dir);V.yawV=angLerp(V.yawV,tyaw,Math.min(1,dt*16));V.camYaw=angLerp(V.camYaw,tyaw,Math.min(1,dt*(phase==='play'?7:3)));
   V.skyK=Math.min(1,V.skyK+dt/2.2);const sky=lerpSky(V.skyFrom,SKIES[T.ZONES[V.zone].id],V.skyK*V.skyK*(3-2*V.skyK));
   // chaser distance: CHASE behind; a new zone's chaser charges in from further back; in the intro it bursts from the temple door
-  const fresh=Math.max(0,1-(t-V.chaserT)/2.4);let bd=d-Rn.chase-fresh*fresh*24;
+  const fresh=t<V.chaserT?9:Math.max(0,1-(t-V.chaserT)/2.4);let bd=d-Rn.chase-Math.min(fresh,1)*Math.min(fresh,1)*24-(fresh>1?60:0);
   if(intro)bd=Math.min(d-Rn.chase,-14+pt*6.5);
   const caught=phase==='dead'&&Rn.dead==='caught',fell=phase==='dead'&&(Rn.dead==='fall'||Rn.dead==='edge');
   if(phase==='dead'&&!fell)bd=Math.min(d+(caught?1.5:3),(V.cd<0?bd:V.cd)+dt*(caught?14:10));
   V.cd=bd;const at=x=>trailAt(V.trail,x,course),bp=at(bd);
-  const lift=LIFT[V.chaser]||3.8,close=Math.max(0,Math.min(1,(8-(d-bd))/6)),fwd=[Math.sin(V.camYaw),Math.cos(V.camYaw)];
+  const lift=LIFT[V.chaser]||3.8,close=fresh>1?0:Math.max(0,Math.min(1,(8-(d-bd))/6)),fwd=[Math.sin(V.camYaw),Math.cos(V.camYaw)];
   let back=5.1-close*2.4,up=3.25+close*lift;const sh=V.shake*(Math.random()-.5)*.35;V.shake=Math.max(0,V.shake-dt*2.5);
   let eye,look;
   if(intro){const k=Math.max(0,Math.min(1,(pt-introLen*.5)/(introLen*.5))),e2=k*k*(3-2*k),ang=V.camYaw+Math.PI*e2,dist=3.4+e2*1.3;
    eye=[px+Math.sin(ang)*dist,1.55+Math.sin(e2*Math.PI)*1.8+e2*1.2,pz+Math.cos(ang)*dist];look=[px+fwd[0]*e2*4,1.25-e2*.25,pz+fwd[1]*e2*4];}
-  else{eye=[px-fwd[0]*back+sh,(fell?2.8:py*.45+up)+sh,pz-fwd[1]*back];look=[px+fwd[0]*4.6,py*.3+1.05,pz+fwd[1]*4.6];}
+  else{eye=[cx0-fwd[0]*back+sh,(fell?2.8:py*.45+up)+sh,cz0-fwd[1]*back];look=[cx0+fwd[0]*4.6,py*.3+1.05,cz0+fwd[1]*4.6];
+   // the breather: the camera swings out to the side and lower, watching the runner get away, then back behind as the next chaser comes
+   const bk=phase==='play'?Math.max(0,Math.min(1,(t-V.brk)/.7,(V.brk+BREAK+.5-t)/.9)):0;
+   if(bk>0){const e=bk*bk*(3-2*bk),lift=Math.sin(e*Math.PI)*2.4;// crane up over the runner to the front, looking back down the path
+    const ex=px+fwd[0]*3.8,ez=pz+fwd[1]*3.8;eye=[eye[0]+(ex-eye[0])*e,eye[1]+(py+1.7-eye[1])*e+lift,eye[2]+(ez-eye[2])*e];
+    look=[look[0]+(px-fwd[0]*3-look[0])*e,look[1]+(py+1.1-look[1])*e,look[2]+(pz-fwd[1]*3-look[2])*e];}}
   if(fell)look=[px,Math.max(-6,py+.8),pz];
   if(W.camBack){eye=[px+fwd[0]*7,3.6,pz+fwd[1]*7];look=[px-fwd[0]*10,2,pz-fwd[1]*10];}// tests: look back at the chaser
-  if(W.camFace&&A){const hc=A.ch.facts.head.c,c0=rot(xf(A.rig,A.head,hc,1),V.yawV,px,py,pz),nf=rot(xf(A.rig,A.head,[0,0,1],0),V.yawV,0,0,0),sa=W.camFace.a||0,dd=W.camFace.d||.9,c=Math.cos(sa),sn=Math.sin(sa),fx=nf[0]*c-nf[2]*sn,fz=nf[2]*c+nf[0]*sn,fy=nf[1];
-   eye=[c0[0]+fx*dd,c0[1]+fy*dd,c0[2]+fz*dd];look=c0;}// tests: close-up of the face along the head's own forward
+  if(W.camFace&&A&&W.camFace.world){const q=W.camFace,ang=V.yawV+(q.a||0),c0=[px,py+(q.y||1.35),pz];eye=[c0[0]+Math.sin(ang)*(q.d||1.6),c0[1]+(q.dy||0),c0[2]+Math.cos(ang)*(q.d||1.6)];look=c0;}
+  else if(W.camFace&&A){const hc=A.ch.facts.head.c,c0=rot(xf(A.rig,A.head,hc,1),V.yawV,px,py,pz),nf=rot(xf(A.rig,A.head,[0,0,1],0),V.yawV,0,0,0),sa=W.camFace.a||0,dd=W.camFace.d||.9,c=Math.cos(sa),sn=Math.sin(sa),fx=nf[0]*c-nf[2]*sn,fz=nf[2]*c+nf[0]*sn,fy=nf[1];
+   const dy=W.camFace.dy||0;eye=[c0[0]+fx*dd,c0[1]+fy*dd+dy,c0[2]+fz*dd];look=[c0[0],c0[1]+dy,c0[2]];}// tests: close-up of the face along the head's own forward
   const aspect=L.w/Math.max(1,L.h);V.fovK+=((Rn.pow==='boost'?1.18:1)-V.fovK)*Math.min(1,dt*4);const fov=(aspect<1?1.18:.9)*V.fovK;
   const view=G.lookAt(eye,look),proj=G.perspective(fov,aspect,.1,240);
   R.begin({w:Math.round(L.w*L.k),h:Math.round(L.h*L.k),view,proj,eye,...sky});
@@ -218,20 +242,23 @@ async function ballrun2p(s){
   if(bestDist>30)for(const sg of segs)if(bestDist>=sg.s0&&bestDist<sg.s1+T.CORNER){const lz=bestDist-sg.s0,f=T.DIRS[sg.dir],rt=T.DIRS[(sg.dir+1)%4],yaw=course.yaw(sg.dir);
    const bx=sg.x+f[0]*lz,bz=sg.z+f[1]*lz;R.draw(poleMesh,G.placeY(bx,0,bz,yaw));R.draw(poleMesh,G.placeY(bx+rt[0]*(T.HALF+.2),0,bz+rt[1]*(T.HALF+.2),yaw));
    R.draw(flagMesh,G.placeY(bx+rt[0]*(T.HALF+.2),0,bz+rt[1]*(T.HALF+.2),yaw+Math.sin(t*3)*.15),{tex:flagTex});}
-  // the chaser
-  const k=V.chaser;
-  if(k==='boulder')V.world.drawBoulder(bp[0],2.3,bp[1],bp[2],bd/2.3);
-  else if(k==='cart')V.world.drawCart(bp[0],bp[1],bp[2],t,bd/.42);
-  else if(k==='cobra')V.world.drawCobra(at,bd+1.2,t,caught?1:close);
-  else if(k==='trex'&&trex&&V.trexRig){const c2=at(bd-4.2),rg=V.trexRig;
-   if(caught&&rg.clip()!=='attack')rg.play('attack',{fade:.15});else if(!caught&&rg.clip()!=='run')rg.play('run',{fade:.2});
-   if(rg.clip()==='run')rg.setSpeed(.75+Rn.v/SIM.VMAX*.55);rg.update(dt);R.drawChar(trex.ch,rg,G.placeY(c2[0],0,c2[1],c2[2]));}
-  else if(k==='rats')V.world.drawRats(at,bd+1.4,t);
-  else if(V.gang[k]){const C=crew[k];V.gang[k].forEach((rg,i)=>{const [ob,ol]=[[0,0],[1.5,-.85],[2.3,.9]][i],c2=at(bd+1-ob),side=[Math.cos(c2[2]),-Math.sin(c2[2])];
-    if(caught&&i===0&&rg.clip()!=='yes')rg.play('yes',{fade:.15});else if(!caught&&rg.clip()!=='run')rg.play('run',{fade:.2});
-    if(rg.clip()==='run')rg.setSpeed(.85+Rn.v/SIM.VMAX*.35+i*.04);rg.update(dt);const Mg=G.placeY(c2[0]+side[0]*ol,0,c2[1]+side[1]*ol,c2[2]);R.drawChar(C.ch,rg,Mg);R.drawProp(C.prop,rg,Mg);});}
+  // the chasers: the one that's after you, and during a breather the one you just got away from (falls behind / off the path)
+  const drawChaser=(k,bd,mood,drop=0)=>{const bp=at(bd);
+   if(k==='boulder')V.world.drawBoulder(bp[0],2.3-drop*9,bp[1],bp[2],bd/2.3);
+   else if(k==='cart')V.world.drawCart(bp[0],bp[1],bp[2],t,bd/.42,drop);
+   else if(k==='cobra')V.world.drawCobra(at,bd+1.2,t,mood==='caught'?1:mood==='close'?close:0,drop);
+   else if(k==='rats')V.world.drawRats(at,bd+1.4,t,56,drop);
+   else if(k==='trex'&&trex&&V.trexRig){const c2=at(bd-4.2),rg=V.trexRig,want=mood==='caught'||mood==='roar'?'attack':'run';
+    if(rg.clip()!==want)rg.play(want,{fade:.15});if(rg.clip()==='run')rg.setSpeed(.75+Rn.v/SIM.VMAX*.55);rg.update(dt);R.drawChar(trex.ch,rg,G.placeY(c2[0],-drop*9,c2[1],c2[2]));}
+   else if(V.gang[k]){const C=crew[k];V.gang[k].forEach((rg,i)=>{const [ob,ol]=[[0,0],[1.5,-.85],[2.3,.9]][i],c2=at(bd+1-ob),side=[Math.cos(c2[2]),-Math.sin(c2[2])];
+     const want=mood==='caught'&&i===0||mood==='roar'?'yes':'run';if(rg.clip()!==want)rg.play(want,{fade:.15});
+     if(rg.clip()==='run')rg.setSpeed(.85+Rn.v/SIM.VMAX*.35+i*.04);rg.update(dt);const Mg=G.placeY(c2[0]+side[0]*ol,-drop*9,c2[1]+side[1]*ol,c2[2]);R.drawChar(C.ch,rg,Mg);R.drawProp(C.prop,rg,Mg);});}};
+  if(V.prev){const e=t-V.prev.t0;if(e>BREAK+.5)V.prev=null;else{const pk=V.prev.kind,b0=V.prev.bd<0?d-14:V.prev.bd,
+    fall=pk==='boulder'||pk==='cart'?Math.max(0,e-.5)**2*.35:0,stay=pk==='trex'||pk==='hovitos'||pk==='thuggee';
+    drawChaser(pk,b0+(stay?0:e*Rn.v*.5)-(stay?e*2:0),stay&&e>.4?'roar':'run',fall);}}
+  if(fresh<=1||intro)drawChaser(V.chaser,bd,caught?'caught':'close');
   // the runner
-  const ry=V.yawV,M=G.placeY(px,py,pz,ry);R.drawChar(A.ch.ch,A.rig,M);R.drawProp(A.ch.prop,A.rig,M);if(A.face)R.drawProp(A.face,A.rig,M);
+  const ry=V.yawV+V.lean*.75,M=bank(G.placeY(px,py,pz,ry),-V.lean*.35);R.drawChar(A.ch.ch,A.rig,M);R.drawProp(A.ch.prop,A.rig,M);if(A.face)R.drawProp(A.face,A.rig,M);
   if(A.braid){const a=xf(A.rig,A.head,A.braid.anchorBind,1),b=xf(A.rig,A.head,[0,0,-1],0);const wa=rot(a,ry,px,py,pz),wb=rot(b,ry,0,0,0),bl=Math.hypot(wb[0],wb[2])||1;
    const sph=[['spine_03',[0,0,-.03],.17],['spine_02',[0,0,-.02],.15],['Head',[0,.08,0],.115]].map(([n,o,r])=>{const q=rot(xf(A.rig,A.rig.jointIndex(n),A.ch.facts.pos[n].map((v,k2)=>v+o[k2]),1),ry,px,py,pz);return [q[0],q[1],q[2],r];});
    R.update(A.braidMesh,A.braid.step(wa,[wb[0]/bl,0,wb[2]/bl],dt,phase==='play'&&Rn.alive?24:0,sph));R.draw(A.braidMesh,G.placeY(0,0,0));}
@@ -241,7 +268,7 @@ async function ballrun2p(s){
 
  // ---------------------------------------------------------------- layout + frame loop
  let onFrame=null;
- s.frame((dt,t)=>{W.t=t;if(!!s.paused!==wasPaused){wasPaused=!!s.paused;music.hold(wasPaused);}if(!onFrame||W.manual)return;const n=Math.max(1,Math.round(W.speed));for(let i=0;i<n&&onFrame;i++)onFrame(Math.min(dt,1/20),t,i<n-1);});
+ s.frame((dt,t)=>{if(!W.manual)W.t=t;if(!!s.paused!==wasPaused){wasPaused=!!s.paused;music.hold(wasPaused);}if(!onFrame||W.manual)return;const n=Math.max(1,Math.round(W.speed));for(let i=0;i<n&&onFrame;i++)onFrame(Math.min(dt,1/20),t,i<n-1);});
  function layout(){const r=c.getBoundingClientRect(),fr=frame.getBoundingClientRect(),w=Math.round(r.width),h=Math.round(r.height),k=dpr();
   for(const e of [glc,hud]){e.style.left=(r.left-fr.left)+'px';e.style.top=(r.top-fr.top)+'px';e.style.width=w+'px';e.style.height=h+'px';}
   const pw=Math.round(w*k),ph=Math.round(h*k);if(hud.width!==pw||hud.height!==ph){hud.width=pw;hud.height=ph;}return {w,h,k,pw,ph};}
@@ -252,15 +279,15 @@ async function ballrun2p(s){
   await ready;if(!loaded){resolve({score:0,dist:0,coins:0,dead:'load',zone:0});return;}
   const course=T.makeCourse(s.seed+':'+(on?'net':'run')),Rn=SIM.makeRunner(course,{who:pi});
   Rn.a=2;Rn.chase=7;
-  const A=makeActor(pi),V=makeView(course);
+  const A=makeActor(pi),V=makeView(course);V.chaser=chaserFor(V,V.zone);
   const best=store.best[nameOf(pi)]||{score:0,dist:0},bestDist=best.dist|0;let beatBest=false;
   const tut=store.runs<3,hintN={};let hint=null;
   const bot=SIM.makeBot(Rn,{skill:.97,rnd:seededRandom(s.seed+':auto:'+pi)});let auto=false;
   s.debug={engine:'templeRun',get save(){return save?{cost:save.cost}:null;},saveMe(){doSave(W.t);},get goals(){return store.slots.map(i=>({...goalAt(i),text:goalText(goalAt(i))}));},runner:Rn,course,faces:W.faces,get phase(){return W.phase;},autopilot(on2=true){auto=on2;},speed(k){W.speed=k;},manual(on2=true){W.manual=on2;},tick(dt=1/30){W.t+=dt;onFrame&&onFrame(dt,W.t,false);},kill(k='smack'){Rn.kill(k);},bodies,
    get zone(){return T.ZONES[V.zone].id;},get chaser(){return V.chaser;},warpZone(z){// jump ahead to straight z*ZLEN (tests)
-    let sg=Rn.seg;while(sg.k<z*T.ZLEN){sg=course.follow(sg,sg.turn==='T'?'L':sg.turn);}Rn.seg=sg;Rn.a=1;Rn.hit=new Set();Rn.got=new Set();Rn.zone=sg.zone;setZone(V,sg.zone,W.t);V.trail.length=0;},
-   get trex(){return !!trex;},camBack(on2=true){W.camBack=on2;},camFace(o){W.camFace=o||null;},faceTune(q){W.faceTune=q;for(const f of W.repaint||[])f&&f();},get bot(){if(on){auto=true;return 'drive';}return null;},store};
-  let banner=null,title=null,phase='intro',pt=0,deadT=0,introLen=2.6,ended=false;
+    let sg=Rn.seg;while(sg.k<z*T.ZLEN){sg=course.follow(sg,sg.turn==='T'?'L':sg.turn);}Rn.seg=sg;Rn.a=1;Rn.hit=new Set();Rn.got=new Set();Rn.zone=sg.zone;setZone(V,sg.zone,W.t,{brk:false});V.trail.length=0;},
+   get trex(){return !!trex;},camBack(on2=true){W.camBack=on2;},camFace(o){W.camFace=o||null;},faceTune(q){W.faceTune=q;for(const A2 of W.actors||[])A2.face=faceProp(A2.body,A2.pi);},get bot(){if(on){auto=true;return 'drive';}return null;},store};
+  let banner=null,title=null,phase='intro',pt=0,deadT=0,introLen=2.6,ended=false,nextUp=null;music.setZone(course.get(0).zone);
   input=k=>{if(phase!=='play')return;Rn.input(k);};
   // run stats for the goals; Save Me (1 player, not online): pay coins to get back up, cost doubles each time
   const st={jumps:0,slides:0,pows:0,idol:0,zones:1,clean:-1},goalsOn=!on;let saves=0,save=null,goalPop=null;
@@ -274,7 +301,7 @@ async function ballrun2p(s){
   onFrame=(dt,t,skipDraw)=>{
    const L=layout();pt+=dt;W.phase=phase;
    if(phase==='intro'){if(pt>introLen*.55)A.play('run',{fade:.25});if(pt>=introLen){phase='play';}if(pt>.3)music.start();}
-   music.setLevel(Rn.v<11?0:Rn.v<13?1:Rn.v<15.5?2:3);
+   music.setLevel(Rn.calm>0?0:Rn.v<11?0:Rn.v<13?1:Rn.v<15.5?2:3);
    if(phase==='play'){if(auto)bot(dt);tiltLane(Rn);Rn.step(dt);
     for(const e of Rn.events){if(e.t==='coin')coinSound(t);else if(SFX[e.t])SFX[e.t]();
      if(e.t==='jump')st.jumps++;else if(e.t==='slide')st.slides++;else if(e.t==='power'){st.pows++;if(e.kind==='idol')st.idol++;vibrate(25);}else if(e.t==='zone')st.zones++;else if(e.t==='stumble'&&st.clean<0)st.clean=Rn.dist();
@@ -285,19 +312,23 @@ async function ballrun2p(s){
      else if(e.t==='power'){banner=[{magnet:'COIN MAGNET!',boost:'SPEED BOOST!',shield:'SHIELD!',idol:'GOLDEN IDOL! COINS X2'}[e.kind],t];}
      else if(e.t==='shieldPop'){SFX.stumble();V.shake=.6;banner=['SHIELD SAVED YOU!',t];}
      else if(e.t==='turn'){V.shake=Math.max(V.shake,.08);hintN.turn=(hintN.turn||0)+1;onTurn&&onTurn(e.k,e.side);}
-     else if(e.t==='zone'){setZone(V,e.zone,t);music.setZone(e.zone);const ch=V.chaser;title=[T.ZONES[e.zone].name,CHASER_LINE[ch],t];vibrate([30,30,30]);s.react(pi,'win');
-      if(ch==='trex')setTimeout(()=>SFX.roar(),600);else if(ch==='cobra')setTimeout(()=>SFX.hiss(),500);else if(ch==='hovitos'||ch==='thuggee')setTimeout(()=>SFX.warcry(ch),450);else if(ch==='rats')setTimeout(()=>SFX.squeak(),400);s.setScores(scores());}
+     else if(e.t==='zone'){const old=V.chaser;setZone(V,e.zone,t);banner=[ESCAPE[old]||'GOT AWAY!',t];SFX.phew();s.react(pi,'win');A.play('jog',{fade:.3});
+      nextUp={z:e.zone,at:t+BREAK-.35};s.setScores(scores());}
      else if(e.t==='mile')banner=[e.m+' M!',t];}
     Rn.events.length=0;
     if(!beatBest&&bestDist>30&&Rn.dist()>bestDist){beatBest=true;SFX.best();banner=['NEW BEST!',t];vibrate([20,40,20]);}
     if(tut)hint=hintFor(Rn,hintN);
     checkGoals(t);
+    // end of the breather: zone title, the new chaser bursts in, back to a sprint
+    if(nextUp&&t>=nextUp.at){const z=nextUp.z,ch=V.chaser;nextUp=null;music.setZone(z);title=[T.ZONES[z].name,CHASER_LINE[ch],t];vibrate([30,30,30]);V.shake=.5;
+     if(A.last==='jog')A.play('run',{fade:.2});
+     if(ch==='trex')SFX.roar();else if(ch==='cobra')SFX.hiss();else if(ch==='hovitos'||ch==='thuggee')SFX.warcry(ch);else if(ch==='rats')SFX.squeak();else SFX.zone();}
     if(!Rn.alive){phase='dead';deadT=0;vibrate([60,40,90]);s.react(pi,'sad');V.shake=1;
      {const cost=100*2**saves;save=canSave()&&store.coins+Rn.coins>=cost?{cost,until:t+3.4}:null;}
      if(Rn.dead==='fall'||Rn.dead==='edge')A.play('hit',{fade:.1});else if(Rn.dead!=='caught')A.play('die',{fade:.08});else A.play('hit',{fade:.05});}
     if(Rn.alive){if(A.last==='ninjaStart'&&A.rig.done())A.play('ninjaAir',{fade:.1});if(A.last==='slideStart'&&A.rig.done())A.play('slide',{fade:.08});
      if(A.last==='slide'&&Rn.slide<=0)A.play('run',{fade:.14});if(A.last==='stumble'&&A.rig.done())A.play('run',{fade:.15});
-     if(A.last==='run')A.rig.setSpeed(.82+Rn.v/SIM.VMAX*.55);}
+     if(A.last==='run')A.rig.setSpeed(.82+Rn.v/SIM.VMAX*.55);if(A.last==='jog'&&!(Rn.calm>0)&&!nextUp)A.play('run',{fade:.2});}
     partnerTick&&partnerTick(Rn,dt);}
    if(phase==='dead'){deadT+=dt;if(Rn.dead==='fall'||Rn.dead==='edge'){Rn.y-=dt*(4+deadT*14);Rn.a+=dt*Rn.v*Math.max(0,.6-deadT);}
     if(save&&t>save.until)save=null;
@@ -305,7 +336,7 @@ async function ballrun2p(s){
    A.rig.update(dt);if(skipDraw)return;
    const g=drawView(V,A,Rn,{phase,pt,dt,t,L,intro:phase==='intro',bestDist,introLen});
    if(phase!=='dead'||Rn.dead==='fall'||Rn.dead==='edge')chaserSound(V.chaser,dt,g.gap,t);
-   drawHud(L,{pi,Rn,phase,pt,partner,banner,title,now:t,best:Math.max(best.score|0,beatBest?Rn.score():0),hint,gap:g.gap,chaser:V.chaser,save,goalPop,goals:goalsOn&&(phase==='intro'||phase==='dead'&&!save)?store.slots.map(i=>{const g=goalAt(i);return [goalText(g),Math.min(1,progress(g)/g.n)];}):null});};
+   drawHud(L,{pi,Rn,phase,pt,partner,banner,title,now:t,best:Math.max(best.score|0,beatBest?Rn.score():0),hint,gap:g.gap,chaser:V.chaser,next:course.zoneAt((Math.floor(Rn.seg.k/T.ZLEN)+1)*T.ZLEN),save,goalPop,goals:goalsOn&&(phase==='intro'||phase==='dead'&&!save)?store.slots.map(i=>{const g=goalAt(i);return [goalText(g),Math.min(1,progress(g)/g.n)];}):null});};
   function scores(){const a=[0,0];a[pi]=Rn.score();return a;}
   function finishRun(){onFrame=null;input=null;
    const res={score:Rn.score(),dist:Math.floor(Rn.dist()),coins:Rn.coins,dead:Rn.dead,zone:Rn.zone,chaser:V.chaser,best:false};
@@ -343,7 +374,7 @@ async function ballrun2p(s){
   // zone progress: how far through this zone, and what comes next
   if(phase==='play'||phase==='intro'){const zk=Rn.seg.k%T.ZLEN,f=Math.min(1,(zk+Math.max(0,Rn.a)/Rn.seg.len)/T.ZLEN),pw=Math.min(L.w*.52,240)-10,yb=top+ph+5;
    x.fillStyle='rgba(0,0,0,.45)';x.fillRect(10,yb,pw,5);x.fillStyle='#ffb347';x.fillRect(10,yb,pw*f,5);
-   x.font=`700 ${fs*.48}px "SC Nunito", system-ui, sans-serif`;x.fillStyle='rgba(255,236,200,.85)';x.fillText('NEXT ▸ '+T.ZONES[(Rn.zone+1)%T.ZONES.length].name,12,yb+8);}
+   x.font=`700 ${fs*.48}px "SC Nunito", system-ui, sans-serif`;x.fillStyle='rgba(255,236,200,.85)';if(o.next!=null)x.fillText('NEXT ▸ '+T.ZONES[o.next].name,12,yb+8);}
   if(partner){x.fillStyle='#9fd0ff';x.font=`700 ${fs*.6}px "SC Nunito", system-ui, sans-serif`;x.fillText(partner.text(),20,top+fs*3.4);}
   x.restore();
   if(Rn.pow){const tot=SIM.POW[Rn.pow],k2=Math.max(0,Rn.powT/tot),col={magnet:'#ff6a5a',boost:'#6aff7a',shield:'#7ac8ff',idol:'#ffd23a'}[Rn.pow],bw=Math.min(L.w*.4,170);
@@ -353,10 +384,10 @@ async function ballrun2p(s){
   if(title&&now-title[2]<2.8){const e=now-title[2],a=Math.min(1,e*3,(2.8-e)*2.5);x.save();x.globalAlpha=a;x.textAlign='center';x.textBaseline='middle';
    const y=L.h*.2,sc=1+Math.max(0,.25-e)*1.2;x.translate(L.w/2,y);x.scale(sc,sc);
    x.fillStyle='rgba(15,8,4,.6)';x.fillRect(-L.w/2,-fs*1.6,L.w,fs*3.4);
-   x.font=`900 ${Math.min(fs*1.9,L.w*.09)}px Impact, "Arial Black", sans-serif`;x.lineWidth=fs*.25;x.strokeStyle='#1a0c04';x.strokeText(title[0],0,-fs*.35);x.fillStyle='#ffd36a';x.fillText(title[0],0,-fs*.35);
+   {let tf=Math.min(fs*1.9,L.w*.09);x.font=`900 ${tf}px Impact, "Arial Black", sans-serif`;const tw=x.measureText(title[0]).width;if(tw>L.w*.9){tf*=L.w*.9/tw;x.font=`900 ${tf}px Impact, "Arial Black", sans-serif`;}}x.lineWidth=fs*.25;x.strokeStyle='#1a0c04';x.strokeText(title[0],0,-fs*.35);x.fillStyle='#ffd36a';x.fillText(title[0],0,-fs*.35);
    x.font=`800 ${Math.min(fs*.78,L.w*.04)}px "SC Nunito", system-ui, sans-serif`;x.fillStyle='#ffb0a0';x.fillText(title[1]+'  +'+SIM.ZONE_BONUS,0,fs*.95);x.restore();}
-  if(banner&&now-banner[1]<1.6){const a=Math.min(1,(1.6-(now-banner[1]))*2);x.save();x.globalAlpha=a;x.textAlign='center';x.textBaseline='middle';x.font=`900 ${fs*1.5}px Impact, "Arial Black", sans-serif`;
-   x.lineWidth=fs*.22;x.strokeStyle='#1a1006';const by=title&&now-title[2]<2.8?L.h*.34:L.h*.24;x.strokeText(banner[0],L.w/2,by);x.fillStyle='#fff3b0';x.fillText(banner[0],L.w/2,by);x.restore();}
+  if(banner&&now-banner[1]<1.6){const a=Math.min(1,(1.6-(now-banner[1]))*2);x.save();x.globalAlpha=a;x.textAlign='center';x.textBaseline='middle';let bf=fs*1.5;x.font=`900 ${bf}px Impact, "Arial Black", sans-serif`;const bw0=x.measureText(banner[0]).width;if(bw0>L.w*.92){bf*=L.w*.92/bw0;x.font=`900 ${bf}px Impact, "Arial Black", sans-serif`;}
+   x.lineWidth=bf*.15;x.strokeStyle='#1a1006';const by=title&&now-title[2]<2.8?L.h*.34:L.h*.24;x.strokeText(banner[0],L.w/2,by);x.fillStyle='#fff3b0';x.fillText(banner[0],L.w/2,by);x.restore();}
   if(phase==='play'&&Rn.alive&&Rn.inWindow()&&!Rn.turnQ){const tt=Rn.seg.turn,a=.35+.25*Math.sin(performance.now()/120);x.save();x.globalAlpha=a;x.fillStyle='#fff7d0';x.font=`900 ${fs*2.4}px system-ui, sans-serif`;x.textAlign='center';x.textBaseline='middle';
    if(tt==='R'||tt==='T')x.fillText('⬅',L.w*.3,L.h*.62);if(tt==='L'||tt==='T')x.fillText('➡',L.w*.7,L.h*.62);x.restore();}
   if(o.hint&&phase==='play'){const h=o.hint,a=.75+.25*Math.sin(now*8);x.save();x.globalAlpha=a;x.textAlign='center';x.textBaseline='middle';
@@ -407,12 +438,12 @@ async function ballrun2p(s){
   let done=false;fin.then(()=>{done=true;});
   if(!done&&their.al&&chars[bodies[1-me]]){
    const pc=T.makeCourse(s.seed+':net');let ti=0;
-   const mirror={seg:pc.get(0),a:0,u:0,y:0,slide:0,v:SIM.V0,alive:true,dead:null,chase:14,pow:null,safeT:0,coins:0,zone:0,got:{has:()=>false},
+   const mirror={seg:pc.get(0),a:0,u:0,y:0,slide:0,v:SIM.V0,alive:true,dead:null,chase:14,pow:null,safeT:0,coins:0,zone:pc.get(0).zone,got:{has:()=>false},
     dist(){return mirror.seg.s0+mirror.a;},score(){return their.sc;}};
    const taken=c2=>{// coins behind them on their straight are gone; ones on earlier straights too
     return mirror.seg.coins.includes(c2)?c2.at<mirror.a+.3:mirror.seg.pows?.includes(c2)?c2.at<mirror.a+.3:true;};
    mirror.got={has:taken};
-   const A=makeActor(1-me),V=makeView(pc);A.play('run',{fade:0});let ptS=0,lastZ=0,endT=0;tiltBtn.style.display='none';
+   const A=makeActor(1-me),V=makeView(pc);V.chaser=chaserFor(V,V.zone);A.play('run',{fade:0});let ptS=0,lastZ=pc.get(0).zone,endT=0;tiltBtn.style.display='none';
    onFrame=(dt,t,skipDraw)=>{const L=layout();ptS+=dt;
     while(ti<turns.length){const [k,side]=turns[ti];const sg=pc.get(k);if(!sg)break;pc.follow(sg,side);ti++;}
     const tgt=pc.get(their.k);
@@ -422,7 +453,7 @@ async function ballrun2p(s){
     if(their.al){mirror.a+=dt*(their.v||SIM.V0);const want=their.a+Math.min(.4,age)*(their.v||SIM.V0);mirror.a+=(want-mirror.a)*Math.min(1,dt*6);}
     mirror.u+=(their.u-mirror.u)*Math.min(1,dt*14);mirror.y+=(their.y-mirror.y)*Math.min(1,dt*16);
     mirror.slide=their.sl?1:0;mirror.chase+=(their.ch-mirror.chase)*Math.min(1,dt*4);mirror.pow=their.pw||null;mirror.coins=their.co|0;mirror.v=their.v||SIM.V0;
-    if(their.z!==lastZ){lastZ=their.z;setZone(V,their.z,t);}
+    if(their.z!==lastZ){lastZ=their.z;setZone(V,their.z,t,{brk:false});music.setZone(their.z);}
     if(!their.al&&mirror.alive){mirror.alive=false;mirror.dead=their.dd||'smack';A.play(mirror.dead==='fall'||mirror.dead==='edge'||mirror.dead==='caught'?'hit':'die',{fade:.08});endT=t;}
     if(mirror.alive){const want=mirror.y>.05?'ninjaAir':mirror.slide?'slide':'run';if(A.last!==want)A.play(want,{fade:.12});if(want==='run')A.rig.setSpeed(.82+mirror.v/SIM.VMAX*.55);}
     A.rig.update(dt);if(skipDraw)return;
@@ -458,6 +489,8 @@ async function ballrun2p(s){
 
 // ---------------------------------------------------------------- helpers
 function angLerp(a,b,k){let d=b-a;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;return a+d*k;}
+// roll a placement matrix about its own forward (Z) axis
+function bank(M,a){if(!a)return M;const c=Math.cos(a),n=Math.sin(a),o=new Float32Array(M);for(let r=0;r<3;r++){const x=M[r],y=M[4+r];o[r]=x*c+y*n;o[4+r]=-x*n+y*c;}return o;}
 function xf(rig,j,p,w){const s=rig.skin,o=j*12;return [s[o]*p[0]+s[o+1]*p[1]+s[o+2]*p[2]+s[o+3]*w,s[o+4]*p[0]+s[o+5]*p[1]+s[o+6]*p[2]+s[o+7]*w,s[o+8]*p[0]+s[o+9]*p[1]+s[o+10]*p[2]+s[o+11]*w];}
 function rot(p,yaw,tx,ty,tz){const c=Math.cos(yaw),n=Math.sin(yaw);return [c*p[0]+n*p[2]+tx,p[1]+ty,-n*p[0]+c*p[2]+tz];}
 // position + heading on the runner's trail at distance d (before the trail starts: straight back the way it began)

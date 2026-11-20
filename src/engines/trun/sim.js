@@ -5,12 +5,12 @@
 const T=require("src/engines/trun/track.js");
 
 const POW={magnet:12,boost:5,shield:20,idol:12};// idol (the golden idol): coins count double
-const ZONE_BONUS=250,V0=9,VMAX=17.5,ACC=.05,G=30,JUMP=10.4,SLIDE=.78,STAND=1.75,DUCK=.8,WINDOW=8,CHASE=14,CLOSE=2.2,BACK=1.1;
+const ZONE_BONUS=250,CALM=3.1,V0=9,VMAX=17.5,ACC=.05,G=30,JUMP=10.4,SLIDE=.78,STAND=1.75,DUCK=.8,WINDOW=8,CHASE=14,CLOSE=2.2,BACK=1.1;
 
 function makeRunner(course,{who=0}={}){
  const C=course;
- const R={who,seg:C.get(0),a:0,u:0,lane:1,y:0,vy:0,slide:0,v:V0,t:0,coins:0,alive:true,dead:null,deadAt:0,
-  turnQ:null,turnQT:0,lastStumble:-99,jumpQ:0,bonus:0,zone:0,mile:0,pow:null,powT:0,safeT:0,chase:CHASE,slowT:0,air:false,events:[],hit:new Set(),got:new Set(),
+ const R={who,seg:C.get(0),zone0:C.get(0).zone,a:0,u:0,lane:1,y:0,vy:0,slide:0,v:V0,t:0,coins:0,alive:true,dead:null,deadAt:0,
+  turnQ:null,turnQT:0,lastStumble:-99,jumpQ:0,bonus:0,calm:0,zone:C.get(0).zone,mile:0,pow:null,powT:0,safeT:0,chase:CHASE,slowT:0,air:false,events:[],hit:new Set(),got:new Set(),
   dist(){return R.seg.s0+R.a;},score(){return Math.floor(R.dist()+R.coins*10+R.bonus);},
   // a corner is near: inside the turn window of the current straight
   inWindow(){return R.a>R.seg.len-WINDOW;},
@@ -28,10 +28,11 @@ function makeRunner(course,{who=0}={}){
    R.t+=dt;R.v=Math.min(VMAX,V0+ACC*R.t);
    if(R.pow){R.powT-=dt;if(R.powT<=0){if(R.pow==='boost')R.safeT=1.2;R.pow=null;R.ev('powEnd');}}
    R.safeT=Math.max(0,R.safeT-dt);
-   const boost=R.pow==='boost',sp=R.v*(boost?1.6:R.slowT>0?.72:1);R.slowT=Math.max(0,R.slowT-dt);
+   R.calm=Math.max(0,R.calm-dt);const calmK=R.calm>.9?.55:R.calm>0?.55+.45*(1-R.calm/.9):1;
+   const boost=R.pow==='boost',sp=R.v*(boost?1.6:R.slowT>0?.72:1)*calmK;if(R.calm>0)R.chase=CHASE;R.slowT=Math.max(0,R.slowT-dt);
    const a0=R.a;R.a+=sp*dt;
    // lateral: glide to the lane
-   const tu=C.laneU(R.lane);R.u+=(tu-R.u)*Math.min(1,dt*14);
+   const tu=C.laneU(R.lane);R.u+=(tu-R.u)*Math.min(1,dt*12);
    // vertical
    if(R.air||R.y>0){R.vy-=G*dt;R.y+=R.vy*dt;if(R.y<=0){const overGap=R.gapAt(R.a);if(!overGap){R.y=0;R.vy=0;R.air=false;R.ev('land');if(R.slideQ){R.slideQ=false;R.slide=SLIDE;R.ev('slide');}else if(R.jumpQ>0){R.jumpQ=0;R.vy=JUMP;R.air=true;R.ev('jump');}}}}
    R.jumpQ=Math.max(0,R.jumpQ-dt);
@@ -77,7 +78,7 @@ function makeRunner(course,{who=0}={}){
    const n=C.follow(seg,side);R.seg=n;
    // keep moving: what was past the corner centre carries on along the new straight; sideways offset becomes along
    R.a=-T.CORNER/2+Math.max(-.5,over);R.turnQ=null;R.hit=new Set();R.got=new Set();R.ev('turn',{side,k:seg.k});
-   if(n.zone!==R.zone){R.zone=n.zone;R.bonus+=ZONE_BONUS;R.ev('zone',{zone:n.zone});}
+   if(n.zone!==R.zone){R.zone=n.zone;R.bonus+=ZONE_BONUS;R.calm=CALM;R.ev('zone',{zone:n.zone});}
    C.prune(n.k);}};
  return R;}
 

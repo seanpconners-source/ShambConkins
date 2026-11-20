@@ -43,17 +43,24 @@ const ZONES=[
  {id:'bridge',name:'ROPE BRIDGE',chaser:'thuggee',mix:[12,16,12,6,26,14,8,0,6,6]},
  {id:'valley',name:'LOST VALLEY',chaser:'trex',mix:[22,24,14,4,16,20,0,0,6,6]}];
 const ZLEN=5;
-const zoneAt=k=>Math.floor(k/ZLEN)%ZONES.length;
+// the order zones come in is shuffled per run (seed), and again each time round, never the same zone twice in a row
+function zoneOrder(seed){const cyc=[];let last=-1;
+ return c=>{while(cyc.length<=c){const r=seededRandom(seed+':zones:'+cyc.length),o=ZONES.map((_,i)=>i);
+   for(let i=o.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[o[i],o[j]]=[o[j],o[i]];}
+   if(o[0]===last){const j=1+Math.floor(r()*(o.length-1));[o[0],o[j]]=[o[j],o[0]];}last=o[o.length-1];cyc.push(o);}
+  return cyc[c];};}
+const zoneAt=(k,order=null)=>{const z=Math.floor(k/ZLEN);return order?order(Math.floor(z/ZONES.length))[z%ZONES.length]:z%ZONES.length;};
 
 function makeCourse(seed,{stage=0}={}){
  const segs=[];// built straights
+ const order=zoneOrder(seed);
  // content of straight k, independent of direction
  function content(k){const r=seededRandom(seed+':trun:'+k),lvl=Math.min(1,k/28);
-  const zone=zoneAt(k),gate=k>0&&k%ZLEN===0,mix=ZONES[zone].mix,tot=mix.reduce((x,y)=>x+y,0);
-  const len=k===0?70:Math.round(36+r()*34+lvl*18+(gate?14:0));
+  const zone=zoneAt(k,order),gate=k>0&&k%ZLEN===0,mix=ZONES[zone].mix,tot=mix.reduce((x,y)=>x+y,0);
+  const len=k===0?70:Math.round(36+r()*34+lvl*18+(gate?34:0));
   const turn=k===0?(r()<.5?'L':'R'):r()<.22?'T':r()<.5?'L':'R';
   const obs=[],coins=[];
-  let at=k===0?26:gate?22:10+r()*4;// a zone gate gets a clear run-in so the title card can be read
+  let at=k===0?26:gate?46:10+r()*4;// a zone gate gets a clear run-in so the title card can be read
   const end=len-9;// keep the corner run-up clear
   // room between obstacles grows with the speed you'll have by then (a jump covers ~.7 s of running)
   const gapBase=11+lvl*9;
@@ -83,17 +90,23 @@ function makeCourse(seed,{stage=0}={}){
     const q=r();pows.push({at:a,lane:Math.floor(r()*3),kind:q<.34?'magnet':q<.62?'shield':q<.86?'boost':'idol',y:.95});break;}}
   return {k,len,turn,obs,coins,pows,zone,gate};}
  // place straight k given the direction it runs and where it starts
- function place(k,dir,x,z,s0){const c=content(k);const f=DIRS[dir];
+ // the path must never run back into itself (a square spiral would)
+ function place(k,dir,x,z,s0,side){const c=content(k);const f=DIRS[dir];
+  // never three the same way in a row, and the net rotation over the last five corners stays within two quarter turns
+  const ch=[side||(segs[k-1]&&segs[k-1].choice)];for(let i=2;i<=4;i++)ch.push(segs[k-i]&&segs[k-i].choice);
+  const v=ch.map(x=>x==='R'?1:x==='L'?-1:0),net=v.reduce((x,y)=>x+y,0),bad=d=>(v[0]===d&&v[1]===d)||net+d>2||net+d<-2;
+  const want=c.turn==='T'?null:c.turn==='R'?1:-1;
+  if(want!==null&&bad(want))c.turn=want>0?'L':'R';else if(c.turn==='T'){const r=bad(1),l=bad(-1);if(r&&!l)c.turn='L';else if(l&&!r)c.turn='R';}
   const seg={...c,dir,x,z,s0,s1:s0+c.len,ex:x+f[0]*c.len,ez:z+f[1]*c.len,next:null,choice:null};segs[k]=seg;return seg;}
  place(0,0,0,0,0);
- const C={segs,LANE,HALF,CORNER,DIRS,KINDS,ZONES,seed,stage,
+ const C={segs,order,zoneAt:k=>zoneAt(k,order),LANE,HALF,CORNER,DIRS,KINDS,ZONES,seed,stage,
   // the straight that comes after seg when turning 'L' or 'R' (for a T the runner's pick; L/R corners only allow theirs)
   follow(seg,side){if(seg.next&&seg.choice===side)return seg.next;
    const dir=side==='L'?left(seg.dir):right(seg.dir),f=DIRS[seg.dir],g=DIRS[dir];
    // corner square: the path end + half a corner forward, then out sideways
    const cx=seg.ex+f[0]*CORNER/2,cz=seg.ez+f[1]*CORNER/2;
    const nx=cx+g[0]*CORNER/2,nz=cz+g[1]*CORNER/2;
-   const n=place(seg.k+1,dir,nx,nz,seg.s1+CORNER);seg.next=n;seg.choice=side;return n;},
+   const n=place(seg.k+1,dir,nx,nz,seg.s1+CORNER,side);seg.next=n;seg.choice=side;return n;},
   get(k){return segs[k];},
   // world position + heading of a point on straight seg at distance a along it, lateral u
   pos(seg,a,u){const f=DIRS[seg.dir],r=DIRS[right(seg.dir)];return [seg.x+f[0]*a+r[0]*u,seg.z+f[1]*a+r[1]*u];},

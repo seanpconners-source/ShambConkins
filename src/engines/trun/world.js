@@ -116,6 +116,27 @@ const nrm=a=>{const l=Math.hypot(...a)||1;return a.map(v=>v/l);};
 
 // ---------------------------------------------------------------- one straight + its corner, in local space
 const H=T.HALF,CW=T.CORNER,DEPTH=7;
+// CC0 scenery models (tools/trun/build-props.py), set once by the engine: PROPS={models,vb Float32 (pos3 nrm3 uv2),ib Uint32}
+let PROPS=null;const setProps=P=>{PROPS=P;};
+const has=n=>!!(PROPS&&PROPS.models[n]);
+// a model into the straight's per-texture buckets ('p:<tex>' or 'p:<tex>|c' for cut-out leaves), placed at x,y,z turned yaw, scaled s
+function prop(M,name,x,y,z,yaw=0,s=1){const m=PROPS&&PROPS.models[name];if(!m)return false;const vb=PROPS.vb,ib=PROPS.ib,c=Math.cos(yaw),n=Math.sin(yaw);
+ for(const g of m.groups){const key='p:'+g.tex+(g.cut?'|c':''),B=M[key]||(M[key]=MB());
+  if(g.v0==null){let lo=1e9,hi=-1;for(let i=g.first;i<g.first+g.count;i++){const v=ib[i];if(v<lo)lo=v;if(v>hi)hi=v;}g.v0=lo;g.v1=hi;}
+  const base=B.P.length/3;
+  for(let v=g.v0;v<=g.v1;v++){const o=v*8,px=vb[o],py=vb[o+1],pz=vb[o+2],nx=vb[o+3],nz=vb[o+5];
+   B.P.push(x+(px*c+pz*n)*s,y+py*s,z+(-px*n+pz*c)*s);B.N.push(nx*c+nz*n,vb[o+4],-nx*n+nz*c);B.U.push(vb[o+6],vb[o+7]);B.Cc.push(255,255,255,255);}
+  for(let i=g.first;i<g.first+g.count;i++)B.I.push(ib[i]-g.v0+base);}
+ return true;}
+const pick=(r,list)=>list[Math.floor(r()*list.length)];
+const TREES=['CommonTree_1','CommonTree_2','CommonTree_3','CommonTree_4','CommonTree_5'],PINES=['Pine_1','Pine_2','Pine_3'],
+ PLANTS=['Bush_Common','Bush_Common_Flowers','Fern_1','Plant_1_Big','Flower_3_Group','Flower_4_Group','Grass_Common_Tall'],ROCKS=['Rock_Medium_1','Rock_Medium_2','Rock_Medium_3'];
+// a tree on its own rock pillar rising out of the depths beside the path (so nothing floats)
+function treeOnRock(M,r,x,z,list,s){const top=-1.5-r()*3;M.cliff.box(x-1.1,x+1.1,-16,top,z-1.1,z+1.1,2.5);prop(M,pick(r,list),x,top,z,r()*6.28,s);
+ if(r()<.6)prop(M,pick(r,PLANTS),x+(r()-.5)*1.2,top,z+(r()-.5)*1.2,r()*6.28,.9+r()*.4);}
+// a ledge beside the path with props on it (mines, tomb, catacombs): kept outside the path edge
+function ledge(M,r,side,z,len,mat,list){const x0=side*(H+.25),x1=side*(H+1.9);M[mat].box(Math.min(x0,x1),Math.max(x0,x1),-.6,-.05,z,z+len,1.4);
+ for(let zz=z+.5;zz<z+len-.4;zz+=.9+r()*.8){const n=pick(r,list);prop(M,n,side*(H+1.05+(r()-.5)*.4),-.05,zz,r()*6.28,1+r()*.25);}}
 // a seated jackal statue (Well of Souls guardians): plinth, body, head with snout and ears; side turns it toward the path
 function jackal(M,x,z,side,k=1){const S=v=>v*k;M.sstone.box(x-S(.6),x+S(.6),-1,S(.5),z-S(.6),z+S(.6),1);M.cave.box(x-S(.42),x+S(.42),S(.5),S(1.7),z-S(.38),z+S(.38),1,[60,56,52]);
  M.cave.box(x-S(.28),x+S(.28),S(1.7),S(2.15),z-S(.3),z+S(.3),1,[60,56,52]);const fx=side?-side:0,fz=side?0:-1;
@@ -124,17 +145,18 @@ function jackal(M,x,z,side,k=1){const S=v=>v*k;M.sstone.box(x-S(.6),x+S(.6),-1,S
  M.glyph.box(x-S(.44),x+S(.44),S(1.35),S(1.62),z-S(.4),z+S(.4),1,[240,200,90]);}
 // new zones borrow an older zone's obstacle and edge styles, then add their own deck, scenery and gate
 const BASE={temple:'temple',jungle:'valley',mines:'mines',catacombs:'temple',tomb:'tomb',bridge:'valley',valley:'valley'};
-function skull(M,x,y,z,s=1){M.stone.blob([x,y,z],.16*s,8,1,[226,214,190],.08,Math.random,1.05);M.cave.box(x-.09*s,x-.02*s,y-.02*s,y+.05*s,z+.12*s,z+.15*s,1,[20,16,12]);M.cave.box(x+.02*s,x+.09*s,y-.02*s,y+.05*s,z+.12*s,z+.15*s,1,[20,16,12]);}
+function skull(M,x,y,z,s=1){M.stone.blob([x,y,z],.16*s,6,1,[226,214,190],.08,Math.random,1.05);M.cave.box(x-.09*s,x-.02*s,y-.02*s,y+.05*s,z+.12*s,z+.15*s,1,[20,16,12]);M.cave.box(x+.02*s,x+.09*s,y-.02*s,y+.05*s,z+.12*s,z+.15*s,1,[20,16,12]);}
 function buildStraight(seg,corner=true){const r=seededRandom('w:'+seg.k+':'+seg.len),Z0=T.ZONES[seg.zone||0].id,Z=BASE[Z0]||Z0;
  const M={stone:MB(),cliff:MB(),wood:MB(),leaf:MB(),plank:MB(),metal:MB(),sstone:MB(),glyph:MB(),sand:MB(),cave:MB(),glow:MB(),sign:MB(),fern:MB()};
  const L=seg.len,zEnd=L+(corner?CW:0);
  const deckM={temple:'stone',mines:'plank',tomb:'sstone',valley:'plank'}[Z],stoneM=Z==='tomb'?'sstone':Z==='mines'?'cave':'stone',rockM=Z==='tomb'?'glyph':Z==='mines'?'cave':'cliff';
+ const open=side=>corner&&(seg.turn==='T'||side===(seg.turn==='L'?-1:1));
  // deck pieces between gaps
  const gaps=seg.obs.filter(o=>o.kind==='gap').map(o=>[o.at,o.at+o.len]);
  let z=0;const spans=[];for(const [g0,g1] of gaps){if(g0>z)spans.push([z,g0]);z=g1;}spans.push([z,zEnd]);
  for(const [z0,z1] of spans){
   if(Z0==='jungle'){M.sand.box(-H,H,-.45,0,z0,z1,2,[120,92,64],{bottom:true});M.cliff.box(-H-.15,H+.15,-DEPTH,-.45,z0,z1,3,[90,100,70],{top:true,bottom:true});
-   for(const sx of [-1,1])for(let zz=z0+.3;zz<z1-.2;zz+=.9+r()*.6)M.fern.blob([sx*(H-.05),.05,zz],.22+r()*.18,7,1,undefined,.4,r,.6);}
+   for(const sx of [-1,1])for(let zz=z0+.3;zz<z1-.2;zz+=.9+r()*.6)if(!(zz>L-.5&&open(sx)))M.fern.blob([sx*(H+.22),.05,zz],.2+r()*.15,7,1,undefined,.4,r,.6);}
   else if(Z==='temple'||Z==='tomb'){M[deckM].box(-H,H,-.45,0,z0,z1,2.4,undefined,{bottom:true});M[Z==='tomb'?'glyph':'cliff'].box(-H-.15,H+.15,-DEPTH,-.45,z0,z1,3,undefined,{top:true,bottom:true});}
   else{// wooden deck: planks on beams, trestle legs into the depths
    M.plank.box(-H,H,-.22,0,z0,z1,1.6,undefined,{bottom:true});
@@ -145,7 +167,6 @@ function buildStraight(seg,corner=true){const r=seededRandom('w:'+seg.k+':'+seg.
  // broken pieces hanging at gap edges
  for(const [g0,g1] of gaps){for(const zz of [g0,g1])for(let i=0;i<3;i++){const x=-H+.4+r()*(2*H-.8);M[deckM].box(x-.25,x+.25,-.7-r()*.4,-.15,zz-.25,zz+.25,1);}}
  // edges: parapet stones / rope rails
- const open=side=>corner&&side===(seg.turn==='L'?-1:seg.turn==='R'?1:2);
  for(const side of [-1,1]){
   if(Z==='temple'||Z==='tomb'){let zz=.4;while(zz<zEnd-.3){if(r()>.12&&!gaps.some(([a,b])=>zz>a-.6&&zz<b+.6)&&!(zz>L-.2&&open(side))){
      const w=.7+r()*.5,h=.28+r()*.22,x=side*(H-.17);M[stoneM].box(x-.17,x+.17,0,h,zz,zz+w,1.2);}zz+=1.0+r()*.9;}}
@@ -209,7 +230,7 @@ function buildStraight(seg,corner=true){const r=seededRandom('w:'+seg.k+':'+seg.
     M[Z==='tomb'?'glyph':'cliff'].box(-.45,.45,1.28,1.72,a+.32,a+.38,1);}}
   else if(o.kind==='fire'){
    if(Z==='mines'){for(const side of [-1,1])M.metal.tube([side*(H-.05),0,a],[side*(H-.05),1.45,a],.16,.16,8,1);}
-   else{const sm=Z==='tomb'?'sstone':'stone';for(const side of [-1,1]){M[sm].box(side*(H-.05)-.3,side*(H-.05)+.3,0,1.5,a-.35,a+.35,1.2);M[Z==='tomb'?'glyph':'cliff'].box(side*(H-.05)-.36,side*(H-.05)+.36,1.5,1.62,a-.4,a+.4,1);}}}
+   else{const sm=Z==='tomb'?'sstone':'stone';for(const side of [-1,1]){M[sm].box(side*(H+.15)-.3,side*(H+.15)+.3,0,1.5,a-.35,a+.35,1.2);M[Z==='tomb'?'glyph':'cliff'].box(side*(H+.15)-.36,side*(H+.15)+.36,1.5,1.62,a-.4,a+.4,1);}}}
   else if(o.kind==='blades'){// stone frame; the blades themselves spin (drawTraps)
    for(const side of [-1,1]){M.stone.box(side*(H+.05)-.3,side*(H+.05)+.3,0,2.2,a-.3,a+.3,1.4,[130,125,118]);M.metal.tube([side*(H-.25),1.4,a],[side*(H+.1),1.4,a],.07,.07,6,1);}
    M.stone.box(-H-.4,H+.4,2.2,2.55,a-.35,a+.35,1.4,[130,125,118]);}
@@ -224,17 +245,24 @@ function buildStraight(seg,corner=true){const r=seededRandom('w:'+seg.k+':'+seg.
    M.cave.blob([.3,1.95,a-.04],.16,8,1,[40,30,24],.2,r,.8);M.cave.blob([.3,2.12,a-.04],.1,7,1,[60,40,28],.2,r);for(let i=0;i<4;i++)for(const sx of [-1,1])M.cave.tube([.3,1.95,a-.05],[.3+sx*(.22+i*.02),1.95+(i-1.5)*.1,a-.08],.018,.012,3,1,[40,30,24],false);}
   else if(o.kind==='block'){for(const l of o.lanes){const x=(l-1)*T.LANE,kind=r();
     if(Z==='mines'){if(kind<.55){// a derailed ore cart
-      M.metal.box(x-.5,x+.5,.3,1.3,a-.6,a+.6,1,undefined,{top:true});M.cave.blob([x,1.2,a],.42,8,1,undefined,.4,r,.7);
-      for(const wz of [-.4,.4])for(const sx of [-1,1])M.metal.tube([x+sx*.5,.25,a+wz],[x+sx*.62,.25,a+wz],.24,.24,10,1);}
+      M.metal.box(x-.42,x+.42,.3,1.3,a-.6,a+.6,1,undefined,{top:true});M.cave.blob([x,1.2,a],.36,8,1,undefined,.3,r,.7);
+      for(const wz of [-.4,.4])for(const sx of [-1,1])M.metal.tube([x+sx*.42,.25,a+wz],[x+sx*.52,.25,a+wz],.22,.22,10,1);}
+     else if(PROPS){prop(M,'Crate_Wooden',x,0,a,r()*.3,1.15);prop(M,r()<.5?'Crate_Metal':'Barrel',x,1.05,a,r()*6.28,.95);}
      else{M.wood.box(x-.5,x+.5,0,1,a-.5,a+.5,1);M.wood.box(x-.42,x+.38,1,1.75,a-.4,a+.4,1);}}
     else if(Z==='tomb'){if(kind<.5){M.sstone.box(x-.5,x+.5,0,.95,a-.7,a+.7,1);M.glyph.box(x-.52,x+.52,.95,1.25,a-.72,a+.72,1,[230,190,90]);}
      else jackal(M,x,a,0,.62);}
-    else if(Z==='valley'){M.cliff.blob([x,.75,a],.8,10,1.5,[150,160,130],.35,r,.95);if(kind<.4)M.stone.blob([x+.2,1.45,a],.4,8,1,[230,225,210],.2,r,.8);}
+    else if(Z==='valley'){M.cliff.blob([x,.7,a],.56,10,1.5,[150,160,130],.18,r,1.25);if(kind<.4)M.stone.blob([x+.1,1.45,a],.3,8,1,[230,225,210],.2,r,.8);}
     else if(kind<.5){M.stone.box(x-.5,x+.5,0,1.6,a-.5,a+.5,1.4);M.stone.box(x-.42,x+.42,1.6,2.3,a-.42,a+.42,1.2);M.cliff.box(x-.55,x+.55,2.3,2.45,a-.55,a+.55,1);}
     else{M.stone.box(x-.55,x+.55,0,.9,a-.55,a+.55,1.2);M.stone.box(x-.4,x+.45,.9,1.6,a-.4,a+.3,1.2);M.stone.box(x-.3,x+.25,1.6,2.1,a-.3,a+.2,1.1);}}}}
  // scenery beside the path
- for(const side of [-1,1]){let zz=r()*8;while(zz<zEnd){const k=r(),dx=side*(H+2.6+r()*7);
-   if(Z0==='jungle'){
+ for(const side of [-1,1]){let zz=4+r()*6;while(zz<zEnd){const k=r(),dx=side*(H+2.6+r()*7);if(zz>L-6&&open(side)){zz+=3+r()*4;continue;}if(zz>L+1){zz+=4;continue;}
+   if(PROPS&&(Z0==='jungle'||Z0==='temple')&&k<.3){treeOnRock(M,r,dx+side*1.5,zz,r()<.15&&Z0==='jungle'?['TwistedTree_1','TwistedTree_2']:TREES,Z0==='jungle'?1.5+r()*.5:1.3+r()*.4);}
+   else if(PROPS&&Z==='valley'&&Z0==='valley'&&k<.3){treeOnRock(M,r,dx+side*1.5,zz,r()<.6?PINES:TREES,1.6+r()*.6);}
+   else if(PROPS&&Z0==='valley'&&k<.55){const top=-1-r()*2;M.cliff.box(dx-1.6,dx+1.6,-18,top,zz-1.6,zz+1.6,2.5);prop(M,pick(r,ROCKS),dx,top,zz,r()*6.28,.8+r()*.5);prop(M,pick(r,PLANTS),dx+.8,top,zz-.6,r()*6.28,1);}
+   else if(PROPS&&Z0==='mines'&&k<.3&&zz<L-12){ledge(M,r,side,zz,3+r()*3,'plank',['Barrel','Crate_Wooden','Crate_Metal','Bucket_Wooden_1','Anvil','Pickaxe_Bronze','Barrel_Holder']);if(r()<.6)prop(M,'Lantern_Wall',side*(H+1.95),.9,zz+1.2,side>0?-Math.PI/2:Math.PI/2,1.2);}
+   else if(PROPS&&Z0==='tomb'&&k<.25&&zz<L-12){ledge(M,r,side,zz,3+r()*2,'sstone',['Vase_2','Vase_4','Vase_Rubble_Medium','Chest_Wood','Cauldron']);}
+   else if(PROPS&&Z0==='catacombs'&&k<.25&&zz<L-12){ledge(M,r,side,zz,3+r()*2,'stone',['Barrel','Vase_2','Vase_4','Vase_Rubble_Medium','Crate_Wooden','Chest_Wood']);prop(M,r()<.5?'Banner_1':'Banner_2',side*(H+2.2),0,zz+1,side>0?-Math.PI/2:Math.PI/2,1.2);}
+   else if(Z0==='jungle'){
     if(k<.55){const top=5+r()*8,base=-20;M.wood.tube([dx,base,zz],[dx+(r()-.5),top,zz+(r()-.5)],.55+r()*.3,.3,8,2,undefined,false);
      for(let i=0;i<4;i++)M.leaf.blob([dx+(r()-.5)*2.6,top+(r()-.3)*1.8,zz+(r()-.5)*2.6],1.7+r()*1.8,10,2,[90,150,80],.35,r,.7);
      for(let i=0;i<2;i++){const vx=dx-side*(r()*1.8);M.leaf.tube([vx,top,zz+i],[vx,top-3-r()*4,zz+i+.3],.06,.04,5,.5,[110,190,100],false);}}
@@ -243,8 +271,9 @@ function buildStraight(seg,corner=true){const r=seededRandom('w:'+seg.k+':'+seg.
    else if(Z0==='catacombs'){// tall walls of skull niches, coffins, torches; the path runs between them
     const x=side*(H+1.6+r()*1.2);
     if(k<.6&&zz<zEnd-3){const len=2.5+r()*2;M.stone.box(x-.4,x+.4,-6,5.5+r()*2,zz,zz+len,2,[110,112,124]);
-     for(let i=0;i<Math.floor(len/.45);i++)for(let row=0;row<3;row++)skull(M,x-side*.42,1.1+row*.9,zz+.25+i*.45,.9);
-     if(r()<.5){M.wood.tube([x-side*.45,2.6,zz+len/2],[x-side*.8,3,zz+len/2],.05,.05,5,1);M.glow.box(x-side*.85-.11,x-side*.85+.11,3,3.3,zz+len/2-.11,zz+len/2+.11,1);}}
+     for(let i=0;i<Math.floor(len/.8);i++)for(let row=0;row<2;row++)skull(M,x-side*.42,1.3+row*1.1,zz+.35+i*.8+(row?.4:0),1);
+     if(r()<.5){M.wood.tube([x-side*.45,2.6,zz+len/2],[x-side*.8,3,zz+len/2],.05,.05,5,1);M.glow.box(x-side*.85-.11,x-side*.85+.11,3,3.3,zz+len/2-.11,zz+len/2+.11,1);}
+     else if(PROPS&&r()<.35)prop(M,'CandleStick_Triple',x-side*.3,0,zz+len/2,side>0?-Math.PI/2:Math.PI/2,2.2);}
     else if(k<.8){M.wood.box(x-.45,x+.45,-.2,.6,zz,zz+2,1,[90,62,40]);M.wood.box(x-.5,x+.5,.6,.75,zz-.05,zz+2.05,1,[70,48,30]);}
     else{M.stone.tube([x,-6,zz],[x,6,zz],.5,.45,8,2,undefined,false);}}
    else if(Z0==='bridge'){// nothing beside a rope bridge but air: far cliffs (below), the odd crocodile rock and birds' perches
@@ -274,9 +303,6 @@ function buildStraight(seg,corner=true){const r=seededRandom('w:'+seg.k+':'+seg.
  // rope bridge: sheer cliff walls on both sides of the gorge, with waterfalls; jungle: a far canopy wall
  if(Z0==='bridge')for(const side of [-1,1])for(let zz=r()*6;zz<L;zz+=5+r()*7){const x=side*(7+r()*16),top=-4-r()*6;// rock spires rising out of the gorge, all below the deck
   M.cliff.tube([x,-52,zz],[x+(r()-.5)*2,top,zz+(r()-.5)*2],2.2+r()*1.6,.8+r()*.6,8,4,[140,110,90],true);if(r()<.5)M.fern.blob([x,top+.3,zz],1.2+r(),8,2,undefined,.4,r,.5);}
- // valley: distant cliff walls with waterfalls
- if(Z==='valley'&&seg.k%2===0)for(const side of [-1,1]){const x=side*(46+r()*10);M.cliff.box(x-4,x+4,-32,22+r()*10,0,L,6,[150,170,130]);
-  if(r()<.7){const wz=L*(.2+r()*.6),fx=x-side*4.05;M.glow.quad([fx,-30,wz-2],[fx,-30,wz+2],[fx,24,wz+2],[fx,24,wz-2],[-side,0,0],[0,6],[1,6],[1,0],[0,0],[160,210,240]);}}
  const out={};for(const [k,b] of Object.entries(M))if(b&&!b.empty())out[k]=b.out();
  // coins (positions only; drawn spinning)
  out.coins=seg.coins.map(c=>({c,x:(c.lane-1)*T.LANE,y:c.y,z:c.at}));
@@ -297,11 +323,12 @@ function makeWorld(R,course){
   signs:{temple:R.texture(signTex('THE TEMPLE','#6d5f4c','#ffd36a')),mines:R.texture(signTex('PANKOT MINES','#5a3d24','#ffcf8a')),
    tomb:R.texture(signTex('WELL OF SOULS','#b8935e','#4a2a10')),valley:R.texture(signTex('LOST VALLEY','#4a3a22','#d8ffb0')),
    jungle:R.texture(signTex('HOVITOS JUNGLE','#5a3a20','#ffd08a')),catacombs:R.texture(signTex('VENICE CATACOMBS','#5a5a66','#f0e6c8')),bridge:R.texture(signTex('ROPE BRIDGE','#7a3020','#ffe08a'))}});
+ if(PROPS&&PROPS.surf&&!tex._surf){tex._surf=1;if(PROPS.surf.cliff){tex.cliffOld=tex.cliff;tex.cliff=PROPS.surf.cliff;}if(PROPS.surf.wood)tex.wood=PROPS.surf.wood;}// the CC0 rock / bark surfaces
  const UNLIT={glow:1,lava:1,water:1};
  const DRAWN=['stone','cliff','wood','leaf','plank','metal','sstone','glyph','sand','cave','fern','glow'];
  const cache=new Map();
  // a straight, built once, in local space; the T-junction arms are previews of the next straight both ways
- function geo(seg){let g=cache.get(seg);if(!g){const b=buildStraight(seg);g={};for(const [k,v] of Object.entries(b)){if(k==='coins'||k==='fires'||k==='pows'||k==='traps')g[k]=v;else g[k]=R.mesh(v);}cache.set(seg,g);}return g;}
+ function geo(seg){let g=cache.get(seg);if(!g){const b=buildStraight(seg);g={};for(const [k,v] of Object.entries(b)){if(k==='coins'||k==='fires'||k==='pows'||k==='traps')g[k]=v;else g[k]=R.mesh(v);}g.pkeys=Object.keys(g).filter(k=>k.startsWith('p:'));cache.set(seg,g);}return g;}
  // coin + flame meshes
  const coinMesh=(()=>{const b=MB();b.tube([0,0,-.05],[0,0,.05],.32,.32,18,1,undefined,true);return R.mesh(b.out());})();
  const flameMesh=(()=>{const n=[0,0,1],b=MB();b.quad([-.5,-.5,0],[.5,-.5,0],[.5,.5,0],[-.5,.5,0],n,[0,1],[1,1],[1,0],[0,0]);return R.mesh(b.out());})();
@@ -334,7 +361,8 @@ function makeWorld(R,course){
    for(const s of segs){const g=geo(s),M=placeY(s.x,0,s.z,course.yaw(s.dir));
     const zid=T.ZONES[s.zone||0].id,zt=ZT[zid];
     for(const k of DRAWN)if(g[k])R.draw(g[k],M,{tex:tex[k],unlit:UNLIT[k]?1:0,tint:k==='glow'?GLOW[zid]:zt&&zt[k]});
-    if(g.sign)R.draw(g.sign,M,{tex:tex.signs[T.ZONES[s.zone||0].id]});}
+    if(g.sign)R.draw(g.sign,M,{tex:tex.signs[T.ZONES[s.zone||0].id]});
+    if(g.pkeys)for(const k of g.pkeys){const name=k.slice(2).replace('|c',''),t2=PROPS&&PROPS.tex[name];if(t2)R.draw(g[k],M,{tex:t2,cut:k.endsWith('|c')?.45:.02});}}
    const F=FLOORS[T.ZONES[zone].id];R.draw(F.mesh,placeY(eyeXZ[0],0,eyeXZ[1]),{tex:tex[F.tex],unlit:F.unlit?1:0,tint:F.tint});},
   drawCoins(segs,t,taken){for(const s of segs){const g=geo(s);const yaw=course.yaw(s.dir),f=T.DIRS[s.dir],rt=T.DIRS[(s.dir+1)%4];
     for(const c of g.coins){if(taken&&taken.has(c.c))continue;const wx=s.x+f[0]*c.z+rt[0]*c.x,wz=s.z+f[1]*c.z+rt[1]*c.x;
@@ -368,7 +396,7 @@ function makeWorld(R,course){
   drawBoulder(x,y,z,yaw,roll){const M=placeY(x,y,z,yaw);// roll about the local X axis
    const c=Math.cos(roll),s=Math.sin(roll),Rx=new Float32Array([1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]);R.draw(boulderMesh,mul4(M,Rx),{tex:tex.rock,tint:[.72,.68,.62,1]});},
   // runaway mine cart: iron tub with ore, wheels spinning, sparks drawn by the caller
-  drawCart(x,z,yaw,t,roll){const M=placeY(x,Math.abs(Math.sin(t*9))*.06,z,yaw+Math.sin(t*5)*.03);R.draw(cartMesh,M,{tex:tex.metal,tint:[1.4,1.3,1.2,1]});R.draw(cartOre,M,{tex:tex.cave});
+  drawCart(x,z,yaw,t,roll,drop=0){const M=placeY(x,Math.abs(Math.sin(t*9))*.06-drop*9,z,yaw+Math.sin(t*5)*.03+drop*.8);R.draw(cartMesh,M,{tex:tex.metal,tint:[1.4,1.3,1.2,1]});R.draw(cartOre,M,{tex:tex.cave});
    for(const wz of [-.85,.85]){const c=Math.cos(roll),s2=Math.sin(roll),W=mul4(mul4(M,new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,.42,wz,1])),new Float32Array([1,0,0,0, 0,c,s2,0, 0,-s2,c,0, 0,0,0,1]));R.draw(cartWheel,W,{tex:tex.metal,tint:[.6,.58,.55,1]});}},
   // giant cobra: body follows the path behind its raised head; at(d) -> [x,z,yaw] on the runner's trail
   drawCobra(at,hd,t,lunge=0){const P=[],N=24,STEP=.75;
@@ -383,7 +411,7 @@ function makeWorld(R,course){
    const hm=R._cobra?R.update(R._cobra,b.out())||R._cobra:(R._cobra=R.mesh(b.out(),{dynamic:true}));R.draw(hm,placeY(0,0,0),{tex:tex.snake});
    const e=MB();for(const sx of [-1,1]){e.blob(W(sx*.28,.28,.62),.09,6,1,[255,210,40]);e.tube(W(sx*.14,-.12,1.02),W(sx*.13,-.42,1.0),.045,.01,5,1,[245,240,225]);}
    const em=R._cobraEyes?R.update(R._cobraEyes,e.out())||R._cobraEyes:(R._cobraEyes=R.mesh(e.out(),{dynamic:true}));R.draw(em,placeY(0,0,0),{tex:tex.glow,unlit:1});void up;},
-  forget(keep){for(const [s,g] of cache)if(!keep.includes(s)){for(const [k,v] of Object.entries(g))if(k!=='coins'&&k!=='fires'&&k!=='pows'&&k!=='traps')R.freeMesh(v);cache.delete(s);}}};
+  forget(keep){for(const [s,g] of cache)if(!keep.includes(s)){for(const [k,v] of Object.entries(g))if(k!=='coins'&&k!=='fires'&&k!=='pows'&&k!=='traps'&&k!=='pkeys')R.freeMesh(v);cache.delete(s);}}};
  // a T-junction arm drawn before the runner picks a side
  const peeks=new Map();
  function peek(seg,side){const key=seg.k+side;let p=peeks.get(key);if(p&&p.of===seg)return p.seg;
@@ -395,4 +423,4 @@ function makeWorld(R,course){
 function mul4(a,b){const o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++){let v=0;for(let k=0;k<4;k++)v+=a[k*4+r]*b[c*4+k];o[c*4+r]=v;}return o;}
 function mulScale(m,s){for(let i=0;i<12;i++)if(i%4!==3)m[i]*=s;return m;}
 
-Object.assign(exports,{makeWorld,buildStraight,MB});
+Object.assign(exports,{makeWorld,buildStraight,MB,setProps});

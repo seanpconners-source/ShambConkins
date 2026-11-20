@@ -187,7 +187,7 @@ if (fs.existsSync(path.join(wnsDir, 'dict.bin.gz'))) drop('wns:dict', 'applicati
 // app folder) and their textures assets/trun/<name>.webp -> 'trun:<name>'.
 const trunDir = path.join(root, 'assets/trun');
 if (fs.existsSync(trunDir)) for (const f of fs.readdirSync(trunDir)) {
-  const m = f.match(/^([a-z0-9-]+)\.skm\.gz$/i), t = f.match(/^([a-z0-9-]+)\.(webp|png)$/i);
+  const m = f.match(/^([a-z0-9-]+)\.(?:skm|bin)\.gz$/i), t = f.match(/^([a-z0-9-]+)\.(webp|png)$/i);
   if (m) drop('trun:' + m[1].toLowerCase(), 'application/gzip', 'bin', path.join(trunDir, f));
   else if (t) drop('trun:' + t[1].toLowerCase(), MIME[t[2].toLowerCase()], t[2].toLowerCase(), path.join(trunDir, f));
 }
