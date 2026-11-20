@@ -10,7 +10,7 @@ v0.99.21 RELEASED (Nov 18, owner: "Release it all!!"; test:core EXIT 0): Crappy 
 batch 08 icons/logos. The 8 new BACKGROUNDS were held out of the release commit (picker not locked: only arcadecl on my-fold-open)
 and put back on the branch right after; next release once the owner locks them (ArtifactData list bg -> apply.py on the 8).
 
-BOULDER RUN ROUND 5 (Nov 20, branch ccr-bc26d42e-kn1noq, UNRELEASED; owner: faces miss mouth/chin, clothes through the arms, random stage
+BOULDER RUN ROUND 5 (Nov 20, RELEASED as v0.99.29 with the batch 09 backgrounds (owner: "All locked please release"; smoke, arcade-console, raiders fuzz); owner: faces miss mouth/chin, clothes through the arms, random stage
 order, walls/paths/obstacles in the way, more models/textures, lane gesture, a breather between stages): FACE_FIT {k .75, cy 166, sx 1.11,
 sy 1.22 (paint stretched vertically), ay0 -1.5 (patch reaches further down)}; tintSkin samples skin-coloured texels only, k within .8-1.22
 (Lara's painted tank top made her yellow). INDY rebuilt: build-chars.py cull_out .13 + cull_bones (upper/lower arm skin under the sleeves
@@ -32,8 +32,7 @@ ARCADE BATCH 09 (Nov 20, GPT UPLOADS-GPT-2026-11-20-0638, Drive 1Y3gooMXjzOOKQt4
 art/icon/logo, shows art, movies art/logo, pinball art + paddys art (REPLACED, old ones originals/keyart/*-previous), paddys-beer-pong art/logo,
 flipadelphia-cup art/logo, paddys-darts logo, words-n-shit art/logo. KEY_BOX for the 8 backgrounds; old KEY_PLACE locks of pinball/paddys
 removed (and their picker db docs reset). PICKER v19 published (https://claude.ai/artifact/DhpZSVr98T1sEwzjux7AJ9) with these 8; amber-phone-land
-has no preview for paddys-beer-pong/flipadelphia-cup (measure misses them there). NEXT: owner locks -> ArtifactData list bg -> apply.py on
-the 8 only -> release. Crappy Crush World Art 01/02 folders were still empty (72 world backgrounds coming).
+has no preview for paddys-beer-pong/flipadelphia-cup (measure misses them there). DONE: owner locked all 8 on all 12 screens -> apply.py on the 8 only (KEY_PLACE 114) -> v0.99.29. Crappy Crush World Art 01/02 folders were still empty (72 world backgrounds coming).
 BOULDER RUN ROUND 4 (Nov 20, RELEASED as v0.99.28; owner: faces don't stretch onto the face, more chasers/levels/obstacles, max QoL): FACE = templeRun.js
 FACE_FIT {k .72, cy 151, sx 1.08} (portrait painted bigger + wider into the 256 decal), feather() blur-alpha edges, decal bumped forward over nose/mouth (model
 lips poked through), tintSkin() = model skin texture tinted to the photo's cheek median (cheekTone). Debug camFace({a,d}) (close-up along the head bone) +

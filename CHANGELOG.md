@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.99.29
+
+- **Boulder Run: faces reach the chin.** Your photo now covers the mouth and chin too, and the body's skin tint no longer turns anyone yellow.
+- **No more sleeves poking through.** Indy's arm skin no longer shows through the back of his shirt.
+- **Random stage order.** Every run shuffles the zones, so you might start with the snake, the jungle tribe, the catacombs or the temple.
+- **Clear paths.** The course never turns back into itself where you can see it, and walls, trees, cliffs, boulders and carts no longer block the way or stick into the free lane.
+- **Side-step lean.** The runner leans and banks into every lane change, and the camera follows.
+- **A breather between stages.** You get away from the old chaser (the boulder misses, the cart falls off), the camera swings round to watch, then the next chaser bursts in and you run again.
+- **New scenery.** Trees on rock pillars, bushes, ferns, rocks and flowers, plus barrels, crates, tools, vases, chests, candles and banners in the mines, tomb and catacombs, with rock and bark textures (free CC0 models by Quaternius).
+- **New Arcade art:** backgrounds for Crappy Crush, TV Shows, Movie Night, Pinball, Paddy's, Paddy's Beer Pong, Flip Cup and Words n' Shit (placed by hand on every screen), new logos and the Crappy Crush icon.
+
 ## v0.99.28
 
 - **Boulder Run: faces fit.** Your photo now covers the runner's whole face, ear to ear and brow to chin, with soft edges, and the body's skin is tinted to match your photo.
