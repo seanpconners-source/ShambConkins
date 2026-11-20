@@ -268,7 +268,7 @@ async function crappyCrush(s){
   function drawMap(W,H){const top=mapScroll;drawBackdrop(x,WORLDS[(Math.floor((Q.cleared)/PER))%WORLDS.length],0,0,W,H,.45);
    // world bands
    for(let wi=0;wi*PER<maxShown();wi++){const w=WORLDS[wi%WORLDS.length],n0=wi*PER+1,n1=n0+PER-1,y0=nodeY(n1)-top-60,y1=nodeY(n0)-top+60;if(y1<-80||y0>H+80)continue;
-    const g=x.createLinearGradient(0,y0,0,y1);g.addColorStop(0,w.tint[1]+'cc');g.addColorStop(1,w.tint[0]+'88');x.fillStyle=g;x.fillRect(0,y0,W,y1-y0);
+    const g=x.createLinearGradient(0,y0,0,y1);const art=!!USER['crappy:'+w.key];g.addColorStop(0,w.tint[1]+(art?'66':'cc'));g.addColorStop(1,w.tint[0]+(art?'22':'88'));x.fillStyle=g;x.fillRect(0,y0,W,y1-y0);
     label(x,(wi>=WORLDS.length?'REMIX · ':'')+w.name.toUpperCase(),W/2,y0+26,clamp(W*.05,15,24),{fill:'#fff'});
     for(let k=0;k<6;k++){const pic=itemPic(w.items[k]),px=W/2+(k-2.5)*30;if(pic)x.drawImage(pic,px-13,y0+40,26,26);}}
    // path

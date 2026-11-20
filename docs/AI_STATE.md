@@ -3,6 +3,8 @@ SONIC 3 REBUILD (R59, Nov 10; Test Zone RELEASED as v0.89.0 (owner: release as i
 
 # AI state (keep short; update after meaningful work)
 
+v0.99.30 RELEASED (Nov 20, owner: "Check the tally... Release when finished"): CRAPPY CRUSH WORLD ART = GPT's 72 world backgrounds (UPLOADS-GPT-2026-11-20-0701/0711/0713/0715; Drive folders 1bQXFZa86AWzSG3JMvn1dUM9cfqa1M6jw, 19G9_OMndIyPC1m7JcRUD2CInouG7MGdJ, 15zCYYUo-A2lS92yGrsfTg_s9A6EicKgK, 1rbTbdsWJZ_LsL4OC0YlrVva3X15gefYb; all 1080x1920 RGB, byte counts checked) -> assets/crappycrush/<world>.webp lossless (149 MB, pixel-exact, LATER 'crappy:'); no PNG originals kept except sonic.png (assets/originals/crappycrush: it had a Gemini sparkle at the bottom right, patched from the checker square one period left). drawMap world bands lighter when the world has art. Checked: menu/map screenshots 390x780 + 844x390, crappy-sim, crappy-stages, games.mjs crappy, smoke. tests/pwa-lazy.mjs 'Download all now' step fails (~185-193 of ~202 song files even after 420 s) on v0.99.29 too: pre-existing, not looked into.
+
 v0.99.22 RELEASED (Nov 18, owner: "Backgrounds all locked. Please add and release!!"): the 8 batch 08 backgrounds (console,
 arcadecl, boardgames, mobile, sports, party, pool, paddys-darts) locked on all 12 screens in picker 1 → apply.py on those 8 only
 (KEY_PLACE 108 pictures, all on every screen); checked console/sports/party at 390x844 in a build.

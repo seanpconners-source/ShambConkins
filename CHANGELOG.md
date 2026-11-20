@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.99.30
+
+- **Crappy Crush worlds get their own backgrounds.** All 72 worlds now have a painted backdrop behind the board and on the stage map: Candy Land's candy kingdom, Paddy's Pub, Rainbow Road, Pallet Town, South Park, Dunder Mifflin, Green Hill, Hyrule, the Lebowski lanes, Dracula's castle, the Nostromo, the Q Branch garage, Kame House and the rest. Each picture is downloaded the first time you open Crappy Crush.
+- **Stage map shows the picture.** The coloured world bands on the stage map are lighter when a world has its picture, so you can see it.
+
 ## v0.99.29
 
 - **Boulder Run: faces reach the chin.** Your photo now covers the mouth and chin too, and the body's skin tint no longer turns anyone yellow.
