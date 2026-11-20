@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 202 slots: 111 have key art, 115 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 202 slots: 113 have key art, 117 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -41,7 +41,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `greed-island-mancala` | Tony Hawk’s Pro Mancala | game | ✅ / ✅ |
 | `deadite-checkers` | Army of Darkness · Deadite Checkers | game | ✅ / ✅ |
 | `office-dots-boxes` | Call of Duty: Modern Stick Dot | game | ✅ / ✅ |
-| `taskmaster-fruit-ninja` | Fruit Ninja | game | · / · |
+| `taskmaster-fruit-ninja` | Fruit Ninja | game | ✅ / ✅ |
 | `megatouch-photohunt` | Megatouch · Photo Hunt | game | ✅ / ✅ |
 | `angry-heads` | Angry Heads | game | ✅ / ✅ |
 | `neon-ball-storm` | Daft Punk · Neon Ball Storm | game | ✅ / ✅ |
@@ -70,7 +70,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `warehouse-shift` | The Office · Warehouse Shift | game | ✅ / ✅ |
 | `moonraker-lander` | Lunar Lander · Moonraker | game | ✅ / ✅ |
 | `mars-missile-defense` | Missile Command · Mars Attacks! | game | ✅ / ✅ |
-| `task-tallest-thing` | Stacker | game | · / · |
+| `task-tallest-thing` | Stacker | game | ✅ / ✅ |
 | `bug-artillery` | Starship Troopers · Klendathu Scorched Earth | game | ✅ / ✅ |
 | `strategema-grid` | Strategema Grid | game | ✅ / ✅ |
 | `four-lights` | There Are Four Lights! | game | ✅ / ✅ |

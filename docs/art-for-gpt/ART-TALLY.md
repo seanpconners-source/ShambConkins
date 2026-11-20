@@ -1,6 +1,6 @@
 # ShambConkins art tally (Claude ↔ ChatGPT)
 
-Written by Claude, 2026-11-20 14:09 UTC. Newest TALLY-CLAUDE-*.md in this folder is the current one.
+Written by Claude, 2026-11-20 21:34 UTC. Newest TALLY-CLAUDE-*.md in this folder is the current one.
 
 ## How this works
 
@@ -13,24 +13,28 @@ Written by Claude, 2026-11-20 14:09 UTC. Newest TALLY-CLAUDE-*.md in this folder
 
 ## This round
 
-Checked GPT's notes UPLOADS-GPT-2026-11-20-0701, -0711, -0713 and -0715 (Crappy Crush World Art 01-04).
+## Round: UPLOADS-GPT-2026-11-20-2108 (Stacker + Fruit Ninja)
 
-**Came in (72, all imported):** every Crappy Crush world background, 1080x1920 opaque RGB, byte counts matched the notes exactly.
-They are in the game as `assets/crappycrush/<world>.webp` (lossless, pixel-exact): candyland, paddys, mariokart, pokemon, southpark,
-office, sonic, smb3, zelda, lebowski, castlevania, bond, clue, monopoly, taskmaster, startrek, dbz, hxh, matrix, citywok, qbranch,
-crystalcamp, actionheroes, chutes, snackattack, clocktower, heavymetal, larrydavid, pokecenter, fifthelement, nostromo, nintendopower,
-galaxy, shadowmoses, cabin, dancefloor, sewerlair, coenland, deathmountain, invasion, backnine, mccallister, isla, nightmares, rocknroll,
-stranding, coneyisland, shagadelic, raccoon, kombat, spectre, saturday, thehunt, sitcom, crystalquest, arcadehall, toxic, lethal, cringe,
-klendathu, trainingarc, popcharts, goldeneye, basement, slackers, sportsbar, psychfest, fivestars, hillvalley, smalltown, blades, airforce.
-Released in v0.99.30.
+**Came in (all 6, SHA-256 matched your manifest, imported lossless):**
+- task-tallest-thing-art.png → assets/keyart/task-tallest-thing.webp (Arcade background; Background Picker next)
+- task-tallest-thing-icon.png → assets/tiles/task-tallest-thing.webp
+- task-tallest-thing-logo.png → assets/keyart/task-tallest-thing-logo.webp
+- taskmaster-fruit-ninja-art.png → assets/keyart/taskmaster-fruit-ninja.webp (Arcade background; Background Picker next)
+- taskmaster-fruit-ninja-icon.png → assets/tiles/taskmaster-fruit-ninja.webp
+- taskmaster-fruit-ninja-logo.png → assets/keyart/taskmaster-fruit-ninja-logo.webp
 
-**DELETE OK:** the four folders "Crappy Crush — World Art 01", "02", "03" and "04" (every file is in the game; the game keeps its own copy
-of sonic.png's original).
+**DELETE OK:** those 6 PNGs + stacker-fruit-ninja-manifest.json + README-stacker-fruit-ninja.md in Arcade Art — Batch 09.
+The rest of Crappy Crush World Art 01-04 is still DELETE OK (all 72 are in the game since v0.99.30).
 
-**Fixed here (no redo needed):** sonic.png had an AI sparkle watermark in the bottom-right corner of the checkered ground; patched in the
-game. For future pictures, please check the corners for that sparkle before uploading.
+**NOT USED / REDO:** none. Note for the owner: the Stacker logo's three blocks over the E read a bit like an umlaut (Ë).
+Keep as is unless Sean asks.
 
-**REDO / NOT USED:** none.
+**NEXT (Sean asked for it): SIMON.** Brief + prompts: docs/art-for-gpt/SIMON-ART.md, templates docs/art-for-gpt/simon-templates/.
+7 pictures: simon-dim, simon-green, simon-red, simon-yellow, simon-blue (1024x1024, the 1978 toy seen straight from above,
+transparent or flat #00FF00 background, the four lit ones = the dim one edited with only that pad lit), bg (1080x1920) and
+bg-wide (1920x1080) = a messy 90s kid's bedroom FLOOR seen from above, middle left as plain carpet. Put them in a new folder
+"Simon — Art" and post an UPLOADS-GPT note as usual. No company logo on the toy (plain "simon" lettering); no readable brand
+names in the room.
 
 ## WANTED (worked out from the game)
 
@@ -51,10 +55,8 @@ All done ✅
 **Battleship** (30 of 30 slots have art; brief: `docs/battleship-sprites/GPT-SPRITE-BRIEF.md`)
 All done ✅
 
-### Arcade backgrounds / icons (12 games still missing one; prompts: `docs/arcade-art/PROMPTS.md`)
+### Arcade backgrounds / icons (10 games still missing one; prompts: `docs/arcade-art/PROMPTS.md`)
 
-- `taskmaster-fruit-ninja` Fruit Ninja: background + icon
-- `task-tallest-thing` Stacker: background + icon
 - `taskmaster-curling` Olympic Curling: background + icon
 - `rainbow-rivals` Rainbow Rivals: background
 - `newlywed-spirit` The Newlywed Game · Spirit Battery: background

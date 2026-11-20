@@ -345,11 +345,11 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Fruit Ninja · `taskmaster-fruit-ninja`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Fruit Ninja", a minigame in a party video game that pays tribute to Fruit Ninja. Scene: Fruit Ninja, but the fruit is your opponent’s flying head: swipe to slice heads in half. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Fruit Ninja" (Fruit Ninja tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
@@ -635,11 +635,11 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Stacker · `task-tallest-thing`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Stacker", a minigame in a party video game that pays tribute to Stacker. Scene: The Stacker arcade cabinet, both players at once. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Stacker" (Stacker tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
