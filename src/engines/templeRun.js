@@ -79,7 +79,7 @@ async function ballrun2p(s){
  // ---------------------------------------------------------------- sound
  const SFX={coin:()=>{voice(1320,.06,.035,'square');voice(1980,.09,.03,'square',{delay:.05});},jump:()=>noise(.16,.05,{f0:700,f1:2200}),slide:()=>noise(.35,.05,{f0:1600,f1:400}),
   turn:()=>noise(.1,.035,{f0:2400,f1:900}),stumble:()=>{voice(150,.18,.08,'square',{slide:.6});noise(.2,.08,{f0:600,f1:120});},
-  dead:()=>{noise(.7,.16,{f0:400,f1:50});voice(90,.5,.09,'sawtooth',{slide:.4});},land:()=>noise(.06,.04,{f0:300,f1:120})};
+  dead:()=>{noise(.7,.16,{f0:400,f1:50});voice(90,.5,.09,'sawtooth',{slide:.4});},land:()=>noise(.06,.04,{f0:300,f1:120}),power:()=>{[660,880,1320].forEach((f,i)=>voice(f,.12,.04,'triangle',{delay:i*.06}));}};
  let rumbleT=0;function rumble(dt,close){rumbleT-=dt;if(rumbleT<=0){rumbleT=.22;const k=Math.max(0,Math.min(1,(16-close)/14));if(k>.02)noise(.3,.02+.07*k,{f0:180,f1:60});}}
 
  // ---------------------------------------------------------------- one run
@@ -101,7 +101,7 @@ async function ballrun2p(s){
   const bot=SIM.makeBot(Rn,{skill:.97,rnd:seededRandom(s.seed+':auto:'+pi)});let auto=false;
   s.debug={engine:'templeRun',runner:Rn,course,faces:W.faces,get phase(){return W.phase;},autopilot(on2=true){auto=on2;},speed(k){W.speed=k;},manual(on2=true){W.manual=on2;},tick(dt=1/30){W.t+=dt;onFrame&&onFrame(dt,W.t,false);},kill(k='smack'){Rn.kill(k);},bodies,
    get bot(){if(on){auto=true;return 'drive';}return null;}};
-  let lastSeg=null,phase='intro',pt=0,yawV=course.yaw(0),camYaw=yawV,lastClip='',deadT=0,introLen=2.6,ended=false,boulderD=-1;
+  let banner=null,fovK=1,lastSeg=null,phase='intro',pt=0,yawV=course.yaw(0),camYaw=yawV,lastClip='',deadT=0,introLen=2.6,ended=false,boulderD=-1;
   const trail=[];// recent runner world spots for the boulder
   const pos=()=>course.pos(Rn.seg,Rn.a,Rn.u);
   const play=(n,o)=>{if(lastClip!==n||o?.restart){rig.play(n,o);lastClip=n;}};
@@ -116,7 +116,9 @@ async function ballrun2p(s){
     for(const e of Rn.events){if(SFX[e.t])SFX[e.t]();if(e.t==='jump')play('ninjaStart',{fade:.06,speed:2.6,at:.25,restart:true});
      else if(e.t==='slide')play('slideStart',{fade:.06,speed:2.2,restart:true});else if(e.t==='land')play('run',{fade:.1});
      else if(e.t==='stumble'){play('stumble',{fade:.05,speed:1.6,restart:true});shake.k=.5;vibrate(40);s.react(pi,'sad');}
-     else if(e.t==='coin')s.setScores(scores());else if(e.t==='turn')shake.k=Math.max(shake.k,.08);}
+     else if(e.t==='coin')s.setScores(scores());
+     else if(e.t==='power'){SFX.power();banner=[{magnet:'COIN MAGNET!',boost:'SPEED BOOST!',shield:'SHIELD!'}[e.kind],t];}
+     else if(e.t==='shieldPop'){SFX.stumble();shake.k=.6;banner=['SHIELD SAVED YOU!',t];}else if(e.t==='turn')shake.k=Math.max(shake.k,.08);}
     Rn.events.length=0;
     if(!Rn.alive){phase='dead';deadT=0;vibrate([60,40,90]);s.react(pi,'sad');shake.k=1;
      if(Rn.dead==='fall'||Rn.dead==='edge')play('hit',{fade:.1});else if(Rn.dead!=='caught')play('die',{fade:.08});else play('hit',{fade:.05});}
@@ -144,11 +146,11 @@ async function ballrun2p(s){
     eye=[px+Math.sin(ang)*dist,1.55+Math.sin(e2*Math.PI)*1.8+e2*1.2,pz+Math.cos(ang)*dist];look=[px+fwd[0]*e2*4,1.25-e2*.25,pz+fwd[1]*e2*4];}
    else{eye=[px-fwd[0]*back+sh,(phase==='dead'&&(Rn.dead==='fall'||Rn.dead==='edge')?2.8:py*.45+up)+sh,pz-fwd[1]*back];look=[px+fwd[0]*4.6,py*.3+1.05,pz+fwd[1]*4.6];}
    if(phase==='dead'&&(Rn.dead==='fall'||Rn.dead==='edge')){look=[px,Math.max(-6,py+.8),pz];}
-   const aspect=L.w/Math.max(1,L.h),fov=aspect<1?1.18:.9;
+   const aspect=L.w/Math.max(1,L.h);fovK+=((Rn.pow==='boost'?1.18:1)-fovK)*Math.min(1,dt*4);const fov=(aspect<1?1.18:.9)*fovK;
    const view=G.lookAt(eye,look),proj=G.perspective(fov,aspect,.1,240);
    if(phase!=='dead'||Rn.dead==='fall'||Rn.dead==='edge')rumble(dt,d-bd);
    R.begin({w:Math.round(L.w*L.k),h:Math.round(L.h*L.k),view,proj,eye,...SKY});
-   const segs=world.visible(Rn.seg,3);if(Rn.seg!==lastSeg){lastSeg=Rn.seg;world.forget(segs);}world.draw(segs,t,[px,pz]);world.drawCoins(segs,t,Rn.got);
+   const segs=world.visible(Rn.seg,3);if(Rn.seg!==lastSeg){lastSeg=Rn.seg;world.forget(segs);}world.draw(segs,t,[px,pz]);world.drawCoins(segs,t,Rn.got);world.drawPows(segs,t,Rn.got,eye);
    // boulder
    world.drawBoulder(bp[0],2.3,bp[1],bp[2],bd/2.3);
    // the runner (facing the way the path goes; intro: turned to face the camera first)
@@ -157,16 +159,17 @@ async function ballrun2p(s){
    if(braid){const a=xf(rig,head,braid.anchorBind,1),b=xf(rig,head,[0,0,-1],0);const wa=rot(a,ry,px,py,pz),wb=rot(b,ry,0,0,0),bl=Math.hypot(wb[0],wb[2])||1;
     const sph=[['spine_03',[0,0,-.03],.17],['spine_02',[0,0,-.02],.15],['Head',[0,.08,0],.115]].map(([n,o,r])=>{const q=rot(xf(rig,rig.jointIndex(n),ch.facts.pos[n].map((v,k)=>v+o[k]),1),ry,px,py,pz);return [q[0],q[1],q[2],r];});
     R.update(braidMesh,braid.step(wa,[wb[0]/bl,0,wb[2]/bl],dt,phase==='play'&&Rn.alive?24:0,sph));R.draw(braidMesh,G.placeY(0,0,0));}
+   if(Rn.pow==='shield'||Rn.safeT>0&&Math.floor(t*10)%2)world.drawShield(px,py,pz,t);
    world.drawFires(segs,t,eye);
    // HUD
-   drawHud(L,pi,Rn,phase,pt,partner);};
+   drawHud(L,pi,Rn,phase,pt,partner,banner,t);};
   function scores(){const a=[0,0];a[pi]=Rn.score();return a;}
   function finishRun(){onFrame=null;input=null;world.forget([]);resolve({score:Rn.score(),dist:Math.floor(Rn.dist()),coins:Rn.coins,dead:Rn.dead});}
  });}
  let partnerTick=null;
 
  // ---------------------------------------------------------------- HUD (2D canvas over the 3D one)
- function drawHud(L,pi,Rn,phase,pt,partner){const x=hx,k=L.k;x.setTransform(k,0,0,k,0,0);x.clearRect(0,0,L.w,L.h);
+ function drawHud(L,pi,Rn,phase,pt,partner,banner,now){const x=hx,k=L.k;x.setTransform(k,0,0,k,0,0);x.clearRect(0,0,L.w,L.h);
   const top=Math.max(10,(fb&&fb.top)||0)+4,fs=Math.max(15,Math.min(26,L.w*.055));
   if(phase==='intro'&&pt>1.2){const a=Math.min(1,(pt-1.2)*2);x.save();x.globalAlpha=a;x.font=`900 ${fs*3}px Impact, "Arial Black", sans-serif`;x.textAlign='center';x.textBaseline='middle';
    x.lineWidth=fs*.35;x.strokeStyle='#2a1406';x.strokeText('RUN!',L.w/2,L.h*.36);x.fillStyle='#ffcf3a';x.fillText('RUN!',L.w/2,L.h*.36);x.restore();}
@@ -179,6 +182,12 @@ async function ballrun2p(s){
   x.font=`700 ${fs*.66}px "SC Nunito", system-ui, sans-serif`;x.fillStyle='#ffd23a';x.fillText(`● ${Rn.coins}`,20,top+fs*2.3);x.fillStyle='#cfe7d0';x.fillText(`${Math.floor(Rn.dist())} m`,20+fs*3.2,top+fs*2.3);
   if(partner){x.fillStyle='#9fd0ff';x.font=`700 ${fs*.6}px "SC Nunito", system-ui, sans-serif`;x.fillText(partner.text(),20,top+fs*3.5);}
   x.restore();
+  // power-up timer + banner
+  if(Rn.pow){const tot=SIM.POW[Rn.pow],k2=Math.max(0,Rn.powT/tot),col={magnet:'#ff6a5a',boost:'#6aff7a',shield:'#7ac8ff'}[Rn.pow],bw=Math.min(L.w*.4,170);
+   x.fillStyle='rgba(0,0,0,.45)';x.fillRect(L.w-bw-12,top+44,bw,10);x.fillStyle=col;x.fillRect(L.w-bw-12,top+44,bw*k2,10);
+   x.font=`800 ${fs*.6}px "SC Nunito", system-ui, sans-serif`;x.textAlign='right';x.textBaseline='bottom';x.fillText({magnet:'MAGNET',boost:'BOOST',shield:'SHIELD'}[Rn.pow],L.w-12,top+42);}
+  if(banner&&now-banner[1]<1.6){const a=Math.min(1,(1.6-(now-banner[1]))*2);x.save();x.globalAlpha=a;x.textAlign='center';x.textBaseline='middle';x.font=`900 ${fs*1.5}px Impact, "Arial Black", sans-serif`;
+   x.lineWidth=fs*.22;x.strokeStyle='#1a1006';x.strokeText(banner[0],L.w/2,L.h*.24);x.fillStyle='#fff3b0';x.fillText(banner[0],L.w/2,L.h*.24);x.restore();}
   // turn arrows in the corner window
   if(phase==='play'&&Rn.alive&&Rn.inWindow()&&!Rn.turnQ){const tt=Rn.seg.turn,a=.35+.25*Math.sin(performance.now()/120);x.save();x.globalAlpha=a;x.fillStyle='#fff7d0';x.font=`900 ${fs*2.4}px system-ui, sans-serif`;x.textAlign='center';x.textBaseline='middle';
    if(tt==='L'||tt==='T')x.fillText('⬅',L.w*.3,L.h*.62);if(tt==='R'||tt==='T')x.fillText('➡',L.w*.7,L.h*.62);x.restore();}

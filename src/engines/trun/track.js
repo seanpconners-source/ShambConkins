@@ -49,7 +49,11 @@ function makeCourse(seed,{stage=0}={}){
   // a coin line through the corner run-up
   if(r()<.5)for(let i=0;i<6;i++)coins.push({at:len-8.5+i*1.1,lane:1,y:.75});
   coins.sort((a,b)=>a.at-b.at);
-  return {k,len,turn,obs,coins};}
+  // power-ups: now and then one in a clear stretch (magnet / boost / shield)
+  const pows=[];
+  if(k>0&&r()<.34){for(let tries=0;tries<6;tries++){const a=8+r()*Math.max(1,len-22);if(obs.some(o=>a>o.at-5&&a<o.at+(o.len||0)+5))continue;
+    const q=r();pows.push({at:a,lane:Math.floor(r()*3),kind:q<.4?'magnet':q<.72?'shield':'boost',y:.95});break;}}
+  return {k,len,turn,obs,coins,pows};}
  // place straight k given the direction it runs and where it starts
  function place(k,dir,x,z,s0){const c=content(k);const f=DIRS[dir];
   const seg={...c,dir,x,z,s0,s1:s0+c.len,ex:x+f[0]*c.len,ez:z+f[1]*c.len,next:null,choice:null};segs[k]=seg;return seg;}

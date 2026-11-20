@@ -124,7 +124,7 @@ function buildStraight(seg,corner=true){const r=seededRandom('w:'+seg.k+':'+seg.
     if(kind<.5){M.stone.box(x-.5,x+.5,0,1.6,a-.5,a+.5,1.4);M.stone.box(x-.42,x+.42,1.6,2.3,a-.42,a+.42,1.2);M.cliff.box(x-.55,x+.55,2.3,2.45,a-.55,a+.55,1);}
     else{M.stone.box(x-.55,x+.55,0,.9,a-.55,a+.55,1.2);M.stone.box(x-.4,x+.45,.9,1.6,a-.4,a+.3,1.2);M.stone.box(x-.3,x+.25,1.6,2.1,a-.3,a+.2,1.1);}}}}
  // scenery: trees rising from the canyon, ruined pillars, the odd temple wall
- for(const side of [-1,1]){let zz=r()*8;while(zz<zEnd){const k=r(),dx=side*(H+1.6+r()*7);
+ for(const side of [-1,1]){let zz=r()*8;while(zz<zEnd){const k=r(),dx=side*(H+2.6+r()*7);
    if(k<.55){// jungle tree: trunk from far below, canopy above path height
     const top=4+r()*7,base=-14;M.wood.tube([dx,base,zz],[dx+(r()-.5),top,zz+(r()-.5)],.5+r()*.3,.28,8,2,undefined,false);
     for(let i=0;i<3;i++)M.leaf.blob([dx+(r()-.5)*2.2,top+(r()-.3)*1.6,zz+(r()-.5)*2.2],1.6+r()*1.6,10,2,undefined,.35,r,.7);
@@ -137,6 +137,7 @@ function buildStraight(seg,corner=true){const r=seededRandom('w:'+seg.k+':'+seg.
  const out={};for(const [k,b] of Object.entries(M))if(b&&!b.empty())out[k]=b.out();
  // coins (positions only; drawn spinning)
  out.coins=seg.coins.map(c=>({c,x:(c.lane-1)*T.LANE,y:c.y,z:c.at}));
+ out.pows=(seg.pows||[]).map(q=>({c:q,x:(q.lane-1)*T.LANE,y:q.y,z:q.at,kind:q.kind}));
  out.fires=seg.obs.filter(o=>o.kind==='fire').map(o=>o.at);
  return out;}
 
@@ -146,10 +147,11 @@ function makeWorld(R,course){
   leaf:R.texture(leafTex('leaf'),{repeat:true}),gold:R.texture(goldTex()),rock:R.texture(rockTex('rock'),{repeat:true}),flame:R.texture(flameTex(),{mips:false})};
  const cache=new Map();
  // a straight, built once, in local space; the T-junction arms are previews of the next straight both ways
- function geo(seg){let g=cache.get(seg);if(!g){const b=buildStraight(seg);g={};for(const [k,v] of Object.entries(b)){if(k==='coins'||k==='fires')g[k]=v;else g[k]=R.mesh(v);}cache.set(seg,g);}return g;}
+ function geo(seg){let g=cache.get(seg);if(!g){const b=buildStraight(seg);g={};for(const [k,v] of Object.entries(b)){if(k==='coins'||k==='fires'||k==='pows')g[k]=v;else g[k]=R.mesh(v);}cache.set(seg,g);}return g;}
  // coin + flame meshes
  const coinMesh=(()=>{const b=MB();b.tube([0,0,-.05],[0,0,.05],.32,.32,18,1,undefined,true);return R.mesh(b.out());})();
  const flameMesh=(()=>{const n=[0,0,1],b=MB();b.quad([-.5,-.5,0],[.5,-.5,0],[.5,.5,0],[-.5,.5,0],n,[0,1],[1,1],[1,0],[0,0]);return R.mesh(b.out());})();
+ const shieldMesh=(()=>{const b=MB();b.blob([0,1,0],1.15,18,1,undefined,0,Math.random,1.05);return R.mesh(b.out());})();
  const boulderMesh=(()=>{const b=MB();b.blob([0,0,0],2.3,22,1.5,undefined,.12,seededRandom('boulder'));return R.mesh(b.out());})();
  // far canyon floor: a huge dark jungle plane far below
  const floor=(()=>{const b=MB(),S=400;b.quad([-S,-24,-S],[-S,-24,S],[S,-24,S],[S,-24,-S],[0,1,0],[0,0],[0,40],[40,40],[40,0],[90,120,70]);return R.mesh(b.out());})();
@@ -166,13 +168,20 @@ function makeWorld(R,course){
   drawCoins(segs,t,taken){for(const s of segs){const g=geo(s);const yaw=course.yaw(s.dir),f=T.DIRS[s.dir],rt=T.DIRS[(s.dir+1)%4];
     for(const c of g.coins){if(taken&&taken.has(c.c))continue;const wx=s.x+f[0]*c.z+rt[0]*c.x,wz=s.z+f[1]*c.z+rt[1]*c.x;
      R.draw(coinMesh,placeY(wx,c.y+Math.sin(t*3+c.z)*.05,wz,yaw+t*3.2),{tex:tex.gold,tint:[1.35,1.25,1,1]});}}},
+  // power-ups: big spinning tokens in their colour, a soft halo behind
+  drawPows(segs,t,taken,eye){const TINT={magnet:[1.7,.45,.4,1],boost:[.5,1.7,.6,1],shield:[.5,.9,1.8,1]};
+   for(const s of segs){const g=geo(s);if(!g.pows)continue;const f=T.DIRS[s.dir],rt=T.DIRS[(s.dir+1)%4];
+    for(const q of g.pows){if(taken&&taken.has(q.c))continue;const wx=s.x+f[0]*q.z+rt[0]*q.x,wz=s.z+f[1]*q.z+rt[1]*q.x,y=q.y+Math.sin(t*2.5+q.z)*.12;
+     R.draw(coinMesh,mulScale(placeY(wx,y,wz,t*5),1.55),{tex:tex.gold,tint:TINT[q.kind]});
+     const yaw=Math.atan2(eye[0]-wx,eye[2]-wz);R.draw(flameMesh,mulScale(placeY(wx,y,wz,yaw),1.6+Math.sin(t*6)*.15),{tex:tex.flame,unlit:1,blend:true,noDepthWrite:true,alpha:.5,tint:TINT[q.kind]});}}},
+  drawShield(x,y,z,t){R.draw(shieldMesh,mulScale(placeY(x,y,z,t),1+Math.sin(t*7)*.03),{tex:tex.gold,tint:[.45,.75,1.4,.28],alpha:.28,blend:true,noDepthWrite:true,unlit:1});},
   drawFires(segs,t,eye){for(const s of segs){const g=geo(s);if(!g.fires.length)continue;const f=T.DIRS[s.dir],rt=T.DIRS[(s.dir+1)%4];
     for(const a of g.fires)for(let i=0;i<7;i++){const u=-T.HALF+.3+i*(2*T.HALF-.6)/6,h=1.45+Math.sin(t*11+i*1.7)*.08,wx=s.x+f[0]*a+rt[0]*u,wz=s.z+f[1]*a+rt[1]*u;
      const yaw=Math.atan2(eye[0]-wx,eye[2]-wz),sc=.75+Math.sin(t*17+i)*.12;
      R.draw(flameMesh,mulScale(placeY(wx,h,wz,yaw),sc),{tex:tex.flame,unlit:1,blend:true,noDepthWrite:true,alpha:.95});}}},
   drawBoulder(x,y,z,yaw,roll){const M=placeY(x,y,z,yaw);// roll about the local X axis
    const c=Math.cos(roll),s=Math.sin(roll),Rx=new Float32Array([1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]);R.draw(boulderMesh,mul4(M,Rx),{tex:tex.rock,tint:[.72,.68,.62,1]});},
-  forget(keep){for(const [s,g] of cache)if(!keep.includes(s)){for(const [k,v] of Object.entries(g))if(k!=='coins'&&k!=='fires')R.freeMesh(v);cache.delete(s);}}};
+  forget(keep){for(const [s,g] of cache)if(!keep.includes(s)){for(const [k,v] of Object.entries(g))if(k!=='coins'&&k!=='fires'&&k!=='pows')R.freeMesh(v);cache.delete(s);}}};
  // a T-junction arm drawn before the runner picks a side
  const peeks=new Map();
  function peek(seg,side){const key=seg.k+side;let p=peeks.get(key);if(p&&p.of===seg)return p.seg;
