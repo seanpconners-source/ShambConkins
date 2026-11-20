@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.99.31
 
 - **Boulder Run: the getaway.** Every new zone now opens with a little scene. The chaser that's been after you can't make the corner: the boulder rolls over the edge, the cart jumps the track, the T-Rex, the cobra and the rats go over, and the Hovitos and Thuggee lose their leader off the cliff while the other two shake their weapons at you. You slow down, stop, turn to look at the drop, and turn back relieved while the music goes quiet... then the next chaser bursts in from somewhere new (the boulder and the cart drop out of the sky, the Hovitos leap down from above, the rats and the cobra burst out of the floor, the Thuggee and the T-Rex climb up over the side), you flinch, and you're running again. The camera follows the whole thing, and nothing can hurt you while it plays. Online, whoever is watching sees the same scene.
 
