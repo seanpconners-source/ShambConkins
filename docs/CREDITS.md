@@ -11,7 +11,7 @@
   how common they are; no wordfreq data ships beyond that ranked choice of ordinary English words.
 - **Quaternius** (quaternius.com, CC0 1.0): Universal Base Characters, Modular Character Outfits - Fantasy and Universal
   Animation Library 1 + 2 (free Standard editions). Bodies, clothes and animations of the Boulder Run (Temple Run) runners;
-  sources in `assets/originals/trun/` (licences there), game files made by `tools/trun/build-chars.py`.
+  sources in `assets/originals/trun/` (licences there), game files made by `tools/trun/build-chars.py`. The Lost Valley T-Rex is from his Animated Lowpoly Dinosaurs pack (CC0), converted with FBX2glTF.
 - **YuNet** face detector (OpenCV model zoo, MIT): `tools/models/face_detection_yunet_2023mar.onnx`, used offline by
   `tools/head-check.py`.
 

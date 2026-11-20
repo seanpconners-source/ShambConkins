@@ -23,7 +23,7 @@ function mul(a,b,o){for(let c=0;c<4;c++){const b0=b[c*4],b1=b[c*4+1],b2=b[c*4+2]
 
 // ---------------------------------------------------------------- clips
 function makeClips(A){
- const names=A.joints,fps=A.fps,byName={};
+ const names=A.clipJoints||A.joints,fps=A.fps,byName={};// a creature file carries its own clips (clipJoints)
  for(const c of A.clips){c.q=new Int16Array(A.blob,c.rot,c.frames*names.length*4);c.p=new Float32Array(A.blob,c.pel,c.frames*3);c.len=c.loop?c.frames/fps:(c.frames-1)/fps;byName[c.n]=c;}
  const rest={};for(const r of A.rest||[])rest[r.n]=r;
  return {names,fps,byName,rest};}
@@ -45,7 +45,7 @@ function makeRig(mesh,clips){
  const joints=mesh.joints,N=joints.length,map=joints.map(j=>clips.names.indexOf(j.n));
  for(let i=0;i<N;i++)if(joints[i].p>=i)throw new Error('joint order: parent after child');
  const ibm=new Float32Array(mesh.blob,mesh.ibm,N*16),local=new Float32Array(16),world=new Float32Array(N*16),skin=new Float32Array(N*12),tmp=new Float32Array(16);
- const pelvis=joints.findIndex(j=>j.n==='pelvis'),mr=clips.rest.pelvis,pk=mr?Math.hypot(...joints[pelvis].t)/Math.max(1e-6,Math.hypot(...mr.t)):1;
+ const motion=mesh.rootMotion||'pelvis',pelvis=joints.findIndex(j=>j.n===motion),mr=!mesh.rootMotion&&clips.rest.pelvis,pk=mr&&pelvis>=0?Math.hypot(...joints[pelvis].t)/Math.max(1e-6,Math.hypot(...mr.t)):1;
  const CJ=clips.names.length,ra=new Float32Array(CJ*4),rb=new Float32Array(CJ*4),pa=new Float32Array(3),pb=new Float32Array(3);
  const rot=new Float32Array(N*4),tq=[0,0,0,1],tt=[0,0,0];for(let i=0;i<N;i++)rot.set(joints[i].r,i*4);
  // layers: current clip + the pose being faded out (snapshot of previous rotations)

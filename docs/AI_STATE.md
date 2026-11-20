@@ -33,7 +33,24 @@ headFacts.drawFace into a 256 canvas, ellipsoid patch ax 2.9), model eyes hidden
 {d,sc,al}, partner metres in the HUD, finish swap). s.debug: runner, course, phase, autopilot(), speed(k), manual()+tick(dt), kill(),
 faces, bot (online). build.mjs assets/trun -> trun:<name>, pwa LATER 'trun:'. Checked: Node sim bot table, games.mjs fuzz, tests/
 solo.mjs raiders, online-native raiders (wrangler) OK, scratch tr/play.mjs (+P2=1 second runner, FACE=1 dumps the face texture),
-tr/clip.mjs (frame-by-frame video). Headless 3D is software (~3 fps): use speed()/manual ticks in tests. NEXT: owner feedback from real play; tilt option, more stages + chasers, sounds by ear, real-phone fps.
+tr/clip.mjs (frame-by-frame video). Headless 3D is software (~3 fps): use speed()/manual ticks in tests.
+ROUND 3 (Nov 20, branch, unreleased; owner: watch the other player when out online, max QoL, new levels): ZONES = track.js ZONES/ZLEN 5
+straights each, cycling temple(boulder)/mines(Pankot, mine cart)/tomb(Well of Souls, cobra)/valley(Lost Valley, T-Rex); seg.zone/seg.gate,
+per-zone obstacle mix; sim 'zone' event +ZONE_BONUS 250 in score, 'mile' every 500 m, jump buffer (jumpQ .22 s). world.js themes per zone
+(decks stone/plank/sandstone, trestles, rails, cave stalagmites, columns + jackal statues, rope bridge, cliff waterfalls, gates with sign
+textures above camera height, floors leaf/lava/sand/fern, glow material unlit), chasers drawCart/drawCobra (dynamic tube chain on the trail).
+T-REX = Quaternius CC0 Animated Lowpoly Dinosaurs (itch quaternius.itch.io/animated-lowpoly-dinosaurs; FBX only) -> npm fbx2gltf
+FBX2glTF -> tools/trun/build-creature.py (bakes Armature into root joint, palette texture per material, own clips + rootMotion 'Body')
+-> assets/trun/trex.skm.gz + trex-pal.webp (5.6 m; skel.js makeClips clipJoints, makeRig mesh.rootMotion). templeRun.js rewritten:
+makeView/drawView (shared by your run and spectating), SKIES per zone lerped 2.2 s, title card + chaser line, chaser charges in from
+24 m back on a zone change, per-chaser catch text/sounds/camera lift, music.setZone (key/scale per zone). ONLINE: netField hz 10 snapshot
+{d,sc,al,k,a,u,y,sl,ch,z,dd,pw,co,v} + event {tn:[k,side]} per turn (nf.tick was never called before: partner metres only came at the
+end); when out, mirror runner on a second course built from their turns (WATCHING strip). QoL: localStorage sc-trun-v1 {runs,best{name:
+{score,dist}}} -> BEST in the panel, BEST flag on the path, NEW BEST banner; tutorial hints while runs<3; quick-flick swipes on release;
+TILT button (sc-trun-tilt, deviceorientation, iOS permission); red danger glow when the chaser is close; coin pitch rises in a chain.
+debug: warpZone(z), zone, chaser, camBack(), trex. Checked: Node bot (perfect 400 s, skill .9 median ~500 m), scratch tr/zones.mjs (each
+zone + look-back at each chaser), tr/natural.mjs (hint + title cards), fuzz, solo, local 2P, online-native with AT_JS kills (Sean watched
+Amber's run in step). NEXT: owner feedback from real play; sounds by ear, real-phone fps.
 PADDY'S POOL ROUND 3 (Nov 19, RELEASED as v0.99.25; owner: ball sets look the same, upgrades show on some screens not others, fine aim
 too small in portrait on the Fold, the sign covers the Hall's upgrades): pool/balls.js STYLES per set (bar = yellowed/faded/matte +
 chips fixed on the ball surface, classic, pro = deep colours + mirror gloss + number ring + narrower stripe + measle cue ball,

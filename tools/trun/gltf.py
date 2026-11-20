@@ -82,10 +82,10 @@ class Gltf:
                 bc = mat.get('pbrMetallicRoughness', {}).get('baseColorTexture')
                 if bc is not None:
                     img = j['images'][j['textures'][bc['index']]['source']]['uri']
-                d = dict(name=n['name'], mat=mat['name'], img=img,
+                d = dict(name=n['name'], mat=mat['name'], img=img, matIndex=pr['material'],
                          pos=self.acc(at['POSITION']).astype(np.float32),
                          nrm=self.acc(at['NORMAL']).astype(np.float32),
-                         uv=self.acc(at['TEXCOORD_0']).astype(np.float32),
+                         uv=self.acc(at['TEXCOORD_0']).astype(np.float32) if 'TEXCOORD_0' in at else np.zeros((j['accessors'][at['POSITION']]['count'], 2), np.float32),
                          jt=self.acc(at['JOINTS_0']).astype(np.int32),
                          wt=self.acc(at['WEIGHTS_0']).astype(np.float32),
                          idx=self.acc(pr['indices']).astype(np.int64).reshape(-1, 3),

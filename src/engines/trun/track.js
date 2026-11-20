@@ -18,25 +18,43 @@ const right=d=>(d+1)%4,left=d=>(d+3)%4;
 //  gap   broken path (jump over; fall = dead), len metres
 //  block statue/rubble on lanes[] (move to a free lane; hit = dead, clipping the edge = stumble)
 const KINDS={root:{h:.4,soft:true},log:{h:.85},arch:{low:1.15},fire:{low:1.15},gap:{},block:{h:2}};
+// ZONES: the run passes through themed stretches of ZLEN straights each, in this order, then round again. Each has its
+// own look (world.js), sky (templeRun.js) and chaser. All four are real places from the films/games:
+//  temple  the Chachapoyan temple (Raiders of the Lost Ark), chased by the boulder
+//  mines   the Pankot Palace mines (Temple of Doom), chased by a runaway mine cart
+//  tomb    the Well of Souls (Raiders: 'Snakes. Why'd it have to be snakes?'), chased by a giant cobra
+//  valley  the Lost Valley (Tomb Raider), chased by the T-Rex
+// mix = obstacle weights [root, log, arch, fire, gap, block] for the zone.
+const ZONES=[
+ {id:'temple',name:'THE TEMPLE',chaser:'boulder',mix:[20,16,16,8,14,26]},
+ {id:'mines',name:'PANKOT MINES',chaser:'cart',mix:[16,14,24,10,20,16]},
+ {id:'tomb',name:'WELL OF SOULS',chaser:'cobra',mix:[18,14,16,16,10,26]},
+ {id:'valley',name:'LOST VALLEY',chaser:'trex',mix:[22,24,14,4,16,20]}];
+const ZLEN=5;
+const zoneAt=k=>Math.floor(k/ZLEN)%ZONES.length;
 
 function makeCourse(seed,{stage=0}={}){
  const segs=[];// built straights
  // content of straight k, independent of direction
  function content(k){const r=seededRandom(seed+':trun:'+k),lvl=Math.min(1,k/28);
-  const len=k===0?70:Math.round(36+r()*34+lvl*18);
+  const zone=zoneAt(k),gate=k>0&&k%ZLEN===0,mix=ZONES[zone].mix,tot=mix.reduce((x,y)=>x+y,0);
+  const len=k===0?70:Math.round(36+r()*34+lvl*18+(gate?14:0));
   const turn=k===0?(r()<.5?'L':'R'):r()<.22?'T':r()<.5?'L':'R';
   const obs=[],coins=[];
-  let at=k===0?26:10+r()*4;
+  let at=k===0?26:gate?22:10+r()*4;// a zone gate gets a clear run-in so the title card can be read
   const end=len-9;// keep the corner run-up clear
   // room between obstacles grows with the speed you'll have by then (a jump covers ~.7 s of running)
   const gapBase=11+lvl*9;
   while(at<end){
-   const p=r();let o=null;
-   if(p<.2)o={kind:'root',at};
-   else if(p<.36)o={kind:'log',at};
-   else if(p<.52)o={kind:'arch',at};
-   else if(p<.6&&lvl>.25)o={kind:'fire',at};
-   else if(p<.74)o={kind:'gap',at,len:2.2+r()*(.6+lvl*1.2)};
+   // pick a kind by the zone's weights (fire only once the run has got going)
+   let p=r()*tot,ki=0;while(ki<5&&p>=mix[ki]){p-=mix[ki];ki++;}
+   if(ki===3&&lvl<=.25)ki=1;
+   let o=null;
+   if(ki===0)o={kind:'root',at};
+   else if(ki===1)o={kind:'log',at};
+   else if(ki===2)o={kind:'arch',at};
+   else if(ki===3)o={kind:'fire',at};
+   else if(ki===4)o={kind:'gap',at,len:2.2+r()*(.6+lvl*1.2)};
    else{// block one or two lanes, leave at least one free
     const free=Math.floor(r()*3),two=r()<.35+lvl*.3;const lanes=[0,1,2].filter(l=>l!==free&&(two||r()<.5));
     if(!lanes.length)lanes.push((free+1)%3);o={kind:'block',at,lanes};}
@@ -53,12 +71,12 @@ function makeCourse(seed,{stage=0}={}){
   const pows=[];
   if(k>0&&r()<.34){for(let tries=0;tries<6;tries++){const a=8+r()*Math.max(1,len-22);if(obs.some(o=>a>o.at-5&&a<o.at+(o.len||0)+5))continue;
     const q=r();pows.push({at:a,lane:Math.floor(r()*3),kind:q<.4?'magnet':q<.72?'shield':'boost',y:.95});break;}}
-  return {k,len,turn,obs,coins,pows};}
+  return {k,len,turn,obs,coins,pows,zone,gate};}
  // place straight k given the direction it runs and where it starts
  function place(k,dir,x,z,s0){const c=content(k);const f=DIRS[dir];
   const seg={...c,dir,x,z,s0,s1:s0+c.len,ex:x+f[0]*c.len,ez:z+f[1]*c.len,next:null,choice:null};segs[k]=seg;return seg;}
  place(0,0,0,0,0);
- const C={segs,LANE,HALF,CORNER,DIRS,KINDS,seed,stage,
+ const C={segs,LANE,HALF,CORNER,DIRS,KINDS,ZONES,seed,stage,
   // the straight that comes after seg when turning 'L' or 'R' (for a T the runner's pick; L/R corners only allow theirs)
   follow(seg,side){if(seg.next&&seg.choice===side)return seg.next;
    const dir=side==='L'?left(seg.dir):right(seg.dir),f=DIRS[seg.dir],g=DIRS[dir];
@@ -75,4 +93,4 @@ function makeCourse(seed,{stage=0}={}){
   prune(k){for(let i=0;i<k-2;i++)if(segs[i])segs[i]=null;}};
  return C;}
 
-Object.assign(exports,{makeCourse,KINDS,LANE,HALF,CORNER,DIRS});
+Object.assign(exports,{makeCourse,KINDS,LANE,HALF,CORNER,DIRS,ZONES,ZLEN,zoneAt});

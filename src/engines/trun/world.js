@@ -12,30 +12,30 @@ function cv(n){const c=document.createElement('canvas');c.width=c.height=n;retur
 function noiseFill(g,n,r,base,amp,blob=3){const im=g.getImageData(0,0,n,n),d=im.data;for(let i=0;i<d.length;i+=4){const k=(r()-.5)*amp;d[i]=Math.max(0,Math.min(255,d[i]+k));d[i+1]=Math.max(0,Math.min(255,d[i+1]+k));d[i+2]=Math.max(0,Math.min(255,d[i+2]+k));}g.putImageData(im,0,0);void base;void blob;}
 function blotch(g,n,r,count,col,rmin,rmax,alpha){for(let i=0;i<count;i++){const x=r()*n,y=r()*n,rad=rmin+r()*(rmax-rmin);const gr=g.createRadialGradient(x,y,0,x,y,rad);gr.addColorStop(0,col.replace('A',alpha));gr.addColorStop(1,col.replace('A',0));g.fillStyle=gr;
  for(const ox of [-n,0,n])for(const oy of [-n,0,n]){g.save();g.translate(ox,oy);g.beginPath();g.arc(x,y,rad,0,7);g.fill();g.restore();}}}
-function stoneTex(seed){const n=512,[c,g]=cv(n),r=seededRandom(seed);
- g.fillStyle='#8a7a62';g.fillRect(0,0,n,n);
+function stoneTex(seed,pal=[138,122,98],bg='#8a7a62',moss=.32){const n=512,[c,g]=cv(n),r=seededRandom(seed);
+ g.fillStyle=bg;g.fillRect(0,0,n,n);
  // big flagstones in rows, each its own tint, with a dark mortar line and a chipped bevel
  const rows=4;for(let y=0;y<rows;y++){const h=n/rows;let x=-(r()*n/3);while(x<n){const w=n/3*(.6+r()*.7);
-   const t=(r()-.5)*28,base=[138+t,122+t,98+t*.8];g.fillStyle=`rgb(${base.map(v=>v|0)})`;
+   const t=(r()-.5)*28,base=[pal[0]+t,pal[1]+t,pal[2]+t*.8];g.fillStyle=`rgb(${base.map(v=>v|0)})`;
    for(const ox of [0,n])g.fillRect(x+ox+3,y*h+3,w-6,h-6);
    const gr=g.createLinearGradient(0,y*h,0,y*h+h);gr.addColorStop(0,'rgba(255,240,210,.18)');gr.addColorStop(.12,'rgba(255,240,210,0)');gr.addColorStop(.85,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.28)');g.fillStyle=gr;for(const ox of [0,n])g.fillRect(x+ox+3,y*h+3,w-6,h-6);
    x+=w;}}
- blotch(g,n,r,40,'rgba(60,52,40,A)',8,40,.35);blotch(g,n,r,18,'rgba(70,110,50,A)',10,50,.32);blotch(g,n,r,30,'rgba(200,185,150,A)',4,18,.25);
+ blotch(g,n,r,40,'rgba(60,52,40,A)',8,40,.35);if(moss)blotch(g,n,r,18,'rgba(70,110,50,A)',10,50,moss);blotch(g,n,r,30,'rgba(200,185,150,A)',4,18,.25);
  // cracks
  g.strokeStyle='rgba(40,32,24,.55)';g.lineWidth=1.4;for(let i=0;i<14;i++){let x=r()*n,y=r()*n;g.beginPath();g.moveTo(x,y);for(let k=0;k<5;k++){x+=(r()-.5)*40;y+=(r()-.5)*40;g.lineTo(x,y);}g.stroke();}
  noiseFill(g,n,r,0,22);return c;}
-function cliffTex(seed){const n=512,[c,g]=cv(n),r=seededRandom(seed);
- g.fillStyle='#6d5f4c';g.fillRect(0,0,n,n);
+function cliffTex(seed,pal=[104,92,74],bg='#6d5f4c',moss=.4){const n=512,[c,g]=cv(n),r=seededRandom(seed);
+ g.fillStyle=bg;g.fillRect(0,0,n,n);
  // rough stacked blocks, darker and mossier than the path
- for(let y=0;y<8;y++){let x=-(r()*80);const h=n/8;while(x<n){const w=50+r()*90,t=(r()-.5)*30;g.fillStyle=`rgb(${(104+t)|0},${(92+t)|0},${(74+t*.8)|0})`;for(const ox of [0,n])g.fillRect(x+ox+2,y*h+2,w-4,h-4);x+=w;}}
- blotch(g,n,r,50,'rgba(55,95,40,A)',10,60,.4);blotch(g,n,r,40,'rgba(30,26,20,A)',10,50,.35);
- g.strokeStyle='rgba(60,110,45,.6)';g.lineWidth=3;for(let i=0;i<10;i++){let x=r()*n,y=0;g.beginPath();g.moveTo(x,y);while(y<n){y+=20;x+=(r()-.5)*14;g.lineTo(x,y);}g.stroke();}
+ for(let y=0;y<8;y++){let x=-(r()*80);const h=n/8;while(x<n){const w=50+r()*90,t=(r()-.5)*30;g.fillStyle=`rgb(${(pal[0]+t)|0},${(pal[1]+t)|0},${(pal[2]+t*.8)|0})`;for(const ox of [0,n])g.fillRect(x+ox+2,y*h+2,w-4,h-4);x+=w;}}
+ if(moss)blotch(g,n,r,50,'rgba(55,95,40,A)',10,60,moss);blotch(g,n,r,40,'rgba(30,26,20,A)',10,50,.35);
+ g.strokeStyle='rgba(60,110,45,.6)';g.lineWidth=3;for(let i=0;i<(moss?10:0);i++){let x=r()*n,y=0;g.beginPath();g.moveTo(x,y);while(y<n){y+=20;x+=(r()-.5)*14;g.lineTo(x,y);}g.stroke();}
  noiseFill(g,n,r,0,26);return c;}
 function woodTex(seed){const n=256,[c,g]=cv(n),r=seededRandom(seed);g.fillStyle='#5a3d24';g.fillRect(0,0,n,n);
  for(let i=0;i<70;i++){const x=r()*n,w=1+r()*4,t=(r()-.5)*40;g.fillStyle=`rgba(${(80+t)|0},${(56+t)|0},${(34+t*.6)|0},.8)`;g.fillRect(x,0,w,n);}
  blotch(g,n,r,12,'rgba(70,100,45,A)',8,30,.35);noiseFill(g,n,r,0,20);return c;}
-function leafTex(seed){const n=256,[c,g]=cv(n),r=seededRandom(seed);g.fillStyle='#2f5a24';g.fillRect(0,0,n,n);
- for(let i=0;i<500;i++){const x=r()*n,y=r()*n,s=3+r()*9,t=(r()-.5)*60;g.fillStyle=`rgba(${(50+t*.5)|0},${(100+t)|0},${(40+t*.4)|0},.85)`;g.beginPath();g.ellipse(x,y,s,s*.5,r()*3,0,7);g.fill();}
+function leafTex(seed,pal=[50,100,40]){const n=256,[c,g]=cv(n),r=seededRandom(seed);g.fillStyle=`rgb(${pal[0]*.9|0},${pal[1]*.85|0},${pal[2]*.85|0})`;g.fillRect(0,0,n,n);
+ for(let i=0;i<500;i++){const x=r()*n,y=r()*n,s=3+r()*9,t=(r()-.5)*60;g.fillStyle=`rgba(${(pal[0]+t*.5)|0},${(pal[1]+t)|0},${(pal[2]+t*.4)|0},.85)`;g.beginPath();g.ellipse(x,y,s,s*.5,r()*3,0,7);g.fill();}
  noiseFill(g,n,r,0,18);return c;}
 function goldTex(){const n=128,[c,g]=cv(n);const gr=g.createLinearGradient(0,0,n,n);gr.addColorStop(0,'#fff3a0');gr.addColorStop(.45,'#f2b630');gr.addColorStop(1,'#a8661a');g.fillStyle=gr;g.fillRect(0,0,n,n);
  g.strokeStyle='rgba(120,70,10,.7)';g.lineWidth=6;g.beginPath();g.arc(n/2,n/2,n*.33,0,7);g.stroke();g.fillStyle='rgba(255,250,200,.6)';g.font='bold 52px serif';g.textAlign='center';g.textBaseline='middle';g.fillText('★',n/2,n/2+2);return c;}
@@ -43,6 +43,42 @@ function rockTex(seed){const n=512,[c,g]=cv(n),r=seededRandom(seed);g.fillStyle=
  blotch(g,n,r,90,'rgba(50,44,38,A)',10,60,.4);blotch(g,n,r,60,'rgba(170,155,135,A)',8,40,.3);blotch(g,n,r,20,'rgba(80,100,60,A)',10,40,.25);
  g.strokeStyle='rgba(30,26,22,.7)';g.lineWidth=2.5;for(let i=0;i<22;i++){let x=r()*n,y=r()*n;g.beginPath();g.moveTo(x,y);for(let k=0;k<6;k++){x+=(r()-.5)*60;y+=(r()-.5)*60;g.lineTo(x,y);}g.stroke();}
  noiseFill(g,n,r,0,30);return c;}
+function plankTex(seed){const n=256,[c,g]=cv(n),r=seededRandom(seed);g.fillStyle='#4a321e';g.fillRect(0,0,n,n);
+ // boards run across the path (bands along v), each its own tint, with nail heads and dark gaps
+ for(let y=0;y<n;y+=32){const t=(r()-.5)*36;g.fillStyle=`rgb(${(104+t)|0},${(74+t)|0},${(46+t*.6)|0})`;g.fillRect(0,y+2,n,28);
+  for(let i=0;i<30;i++){g.fillStyle=`rgba(${(70+t)|0},${(48+t)|0},${(28+t)|0},.5)`;g.fillRect(0,y+2+r()*28,n,1+r()*2);}
+  g.fillStyle='rgba(30,24,20,.9)';for(const x of [20,n-20])g.fillRect(x+(r()-.5)*8,y+12,4,4);}
+ noiseFill(g,n,r,0,18);return c;}
+function metalTex(seed){const n=128,[c,g]=cv(n),r=seededRandom(seed);const gr=g.createLinearGradient(0,0,0,n);gr.addColorStop(0,'#8f9296');gr.addColorStop(1,'#4a4c50');g.fillStyle=gr;g.fillRect(0,0,n,n);
+ blotch(g,n,r,20,'rgba(120,70,40,A)',4,20,.45);noiseFill(g,n,r,0,24);return c;}
+function glyphTex(seed){const [c,g]=[stoneTex(seed,[178,148,98],'#a8875a',0),null];const x=c.getContext('2d'),n=c.width,r=seededRandom(seed+'g');
+ // rows of carved hieroglyphs (our own simple signs: eye, ankh, bird, wave, reed, sun disc)
+ x.strokeStyle='rgba(70,46,22,.75)';x.fillStyle='rgba(70,46,22,.6)';x.lineWidth=3;
+ for(let row=0;row<4;row++)for(let col=0;col<8;col++){const cx=32+col*64,cy=64+row*128,k=Math.floor(r()*6);x.beginPath();
+  if(k===0){x.ellipse(cx,cy,18,9,0,0,7);x.moveTo(cx+4,cy);x.arc(cx,cy,5,0,7);x.moveTo(cx-6,cy+9);x.lineTo(cx-12,cy+22);}
+  else if(k===1){x.arc(cx,cy-12,8,0,7);x.moveTo(cx,cy-4);x.lineTo(cx,cy+24);x.moveTo(cx-12,cy+2);x.lineTo(cx+12,cy+2);}
+  else if(k===2){x.moveTo(cx-14,cy+16);x.quadraticCurveTo(cx-4,cy-14,cx+12,cy-16);x.lineTo(cx+18,cy-10);x.moveTo(cx-4,cy+2);x.lineTo(cx+10,cy+16);}
+  else if(k===3){for(let w=0;w<3;w++){x.moveTo(cx-16,cy-8+w*8);for(let q=0;q<4;q++)x.lineTo(cx-12+q*8,cy-8+w*8+(q%2?-4:4));}}
+  else if(k===4){x.moveTo(cx,cy+22);x.lineTo(cx,cy-18);x.quadraticCurveTo(cx+14,cy-14,cx+4,cy-4);}
+  else{x.arc(cx,cy,13,0,7);x.moveTo(cx-20,cy+18);x.lineTo(cx+20,cy+18);}
+  x.stroke();}
+ x.fillStyle='rgba(60,40,20,.35)';for(const y of [0,128,256,384])x.fillRect(0,y,n,6);return c;}
+function sandTex(seed){const n=256,[c,g]=cv(n),r=seededRandom(seed);g.fillStyle='#c9a46a';g.fillRect(0,0,n,n);
+ for(let y=0;y<n;y+=6){g.strokeStyle=`rgba(${120+r()*30|0},${90+r()*20|0},50,.25)`;g.lineWidth=2;g.beginPath();g.moveTo(0,y);for(let x=0;x<=n;x+=16)g.lineTo(x,y+Math.sin(x*.05+y*.3)*3);g.stroke();}
+ noiseFill(g,n,r,0,16);return c;}
+function lavaTex(seed){const n=256,[c,g]=cv(n),r=seededRandom(seed);g.fillStyle='#5a1006';g.fillRect(0,0,n,n);
+ blotch(g,n,r,40,'rgba(255,120,20,A)',8,40,.75);blotch(g,n,r,30,'rgba(255,220,90,A)',3,14,.8);blotch(g,n,r,30,'rgba(40,6,2,A)',10,50,.6);return c;}
+function waterTex(seed){const n=128,[c,g]=cv(n),r=seededRandom(seed);g.fillStyle='rgba(150,200,230,.85)';g.fillRect(0,0,n,n);
+ for(let i=0;i<60;i++){g.fillStyle=`rgba(255,255,255,${.2+r()*.5})`;g.fillRect(r()*n,0,1+r()*3,n);}return c;}
+function snakeTex(seed){const n=256,[c,g]=cv(n),r=seededRandom(seed);g.fillStyle='#4a5a22';g.fillRect(0,0,n,n);
+ // diamond back pattern, banded belly colours
+ for(let y=0;y<n;y+=32)for(let x=0;x<n;x+=32){g.fillStyle=(x/32+y/32)%2?'#2e3a14':'#6b7a2c';g.beginPath();g.moveTo(x+16,y);g.lineTo(x+32,y+16);g.lineTo(x+16,y+32);g.lineTo(x,y+16);g.fill();}
+ g.fillStyle='rgba(210,190,110,.8)';for(let x=0;x<n;x+=64)g.fillRect(x,0,10,n);
+ for(let i=0;i<900;i++){g.fillStyle=`rgba(0,0,0,${r()*.25})`;g.beginPath();g.arc(r()*n,r()*n,2+r()*3,0,7);g.fill();}return c;}
+function signTex(text,bg,ink){const W=512,H=128,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+ g.fillStyle=bg;g.fillRect(0,0,W,H);g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=8;g.strokeRect(6,6,W-12,H-12);
+ g.font='900 64px Impact, "Arial Black", sans-serif';g.textAlign='center';g.textBaseline='middle';
+ g.fillStyle='rgba(0,0,0,.45)';g.fillText(text,W/2+3,H/2+4);g.fillStyle=ink;g.fillText(text,W/2,H/2);return c;}
 function flameTex(){const n=128,[c,g]=cv(n);const gr=g.createRadialGradient(n/2,n*.7,4,n/2,n*.55,n*.5);gr.addColorStop(0,'rgba(255,255,220,1)');gr.addColorStop(.25,'rgba(255,200,60,.95)');gr.addColorStop(.6,'rgba(255,90,20,.6)');gr.addColorStop(1,'rgba(200,30,0,0)');g.fillStyle=gr;g.fillRect(0,0,n,n);return c;}
 
 // ---------------------------------------------------------------- mesh builder (smooth or flat, uv in metres)
@@ -80,60 +116,121 @@ const nrm=a=>{const l=Math.hypot(...a)||1;return a.map(v=>v/l);};
 
 // ---------------------------------------------------------------- one straight + its corner, in local space
 const H=T.HALF,CW=T.CORNER,DEPTH=7;
-function buildStraight(seg,corner=true){const r=seededRandom('w:'+seg.k+':'+seg.len);
- const M={stone:MB(),cliff:MB(),wood:MB(),leaf:MB(),gold:null};
- const L=seg.len;
+// a seated jackal statue (Well of Souls guardians): plinth, body, head with snout and ears; side turns it toward the path
+function jackal(M,x,z,side,k=1){const S=v=>v*k;M.sstone.box(x-S(.6),x+S(.6),-1,S(.5),z-S(.6),z+S(.6),1);M.cave.box(x-S(.42),x+S(.42),S(.5),S(1.7),z-S(.38),z+S(.38),1,[60,56,52]);
+ M.cave.box(x-S(.28),x+S(.28),S(1.7),S(2.15),z-S(.3),z+S(.3),1,[60,56,52]);const fx=side?-side:0,fz=side?0:-1;
+ M.cave.box(x+fx*S(.3)-S(.14),x+fx*S(.3)+S(.14),S(1.8),S(2.0),z+fz*S(.3)-S(.14),z+fz*S(.3)+S(.14),1,[60,56,52]);
+ for(const e of [-1,1]){const ex=side?0:e*S(.16),ez=side?e*S(.16):0;M.cave.box(x+ex-S(.06),x+ex+S(.06),S(2.15),S(2.5),z+ez-S(.06),z+ez+S(.06),1,[60,56,52]);}
+ M.glyph.box(x-S(.44),x+S(.44),S(1.35),S(1.62),z-S(.4),z+S(.4),1,[240,200,90]);}
+function buildStraight(seg,corner=true){const r=seededRandom('w:'+seg.k+':'+seg.len),Z=T.ZONES[seg.zone||0].id;
+ const M={stone:MB(),cliff:MB(),wood:MB(),leaf:MB(),plank:MB(),metal:MB(),sstone:MB(),glyph:MB(),sand:MB(),cave:MB(),glow:MB(),sign:MB(),fern:MB()};
+ const L=seg.len,zEnd=L+(corner?CW:0);
+ const deckM={temple:'stone',mines:'plank',tomb:'sstone',valley:'plank'}[Z],stoneM=Z==='tomb'?'sstone':Z==='mines'?'cave':'stone',rockM=Z==='tomb'?'glyph':Z==='mines'?'cave':'cliff';
  // deck pieces between gaps
  const gaps=seg.obs.filter(o=>o.kind==='gap').map(o=>[o.at,o.at+o.len]);
- let z=0;const spans=[];for(const [g0,g1] of gaps){if(g0>z)spans.push([z,g0]);z=g1;}spans.push([z,L+(corner?CW:0)]);
- for(const [z0,z1] of spans){M.stone.box(-H,H,-.45,0,z0,z1,2.4,undefined,{bottom:true});
-  // the wall under the path, down into the mist
-  M.cliff.box(-H-.15,H+.15,-DEPTH,-.45,z0,z1,3,undefined,{top:true,bottom:true});}
- // broken stones hanging at gap edges
- for(const [g0,g1] of gaps){for(const zz of [g0,g1])for(let i=0;i<3;i++){const x=-H+.4+r()*(2*H-.8);M.stone.box(x-.25,x+.25,-.7-r()*.4,-.2,zz-.25,zz+.25,1);}}
- // parapet stones along both edges (gaps in them now and then)
- const zEnd=L+(corner?CW:0);
- for(const side of [-1,1]){let zz=.4;while(zz<zEnd-.3){if(r()>.12&&!gaps.some(([a,b])=>zz>a-.6&&zz<b+.6)&&!(corner&&zz>L-.2&&side===(seg.turn==='L'?-1:seg.turn==='R'?1:2))){
-    const w=.7+r()*.5,h=.28+r()*.22,x=side*(H-.17);M.stone.box(x-.17,x+.17,0,h,zz,zz+w,1.2);}
-   zz+=1.0+r()*.9;}}
- // corner: closing wall stones on the far edge (and the open side(s) get nothing)
- if(corner){const zc=L+CW;for(let x=-H+.2;x<H-.2;x+=.9){if(r()>.15)M.stone.box(x,x+.7,0,.3+r()*.2,zc-.34,zc,1.2);}
-  if(seg.turn==='L'){for(let zz=L+.2;zz<zc-.3;zz+=.9)M.stone.box(H-.34,H,0,.35,zz,zz+.7,1.2);}
-  if(seg.turn==='R'){for(let zz=L+.2;zz<zc-.3;zz+=.9)M.stone.box(-H,-H+.34,0,.35,zz,zz+.7,1.2);}}
+ let z=0;const spans=[];for(const [g0,g1] of gaps){if(g0>z)spans.push([z,g0]);z=g1;}spans.push([z,zEnd]);
+ for(const [z0,z1] of spans){
+  if(Z==='temple'||Z==='tomb'){M[deckM].box(-H,H,-.45,0,z0,z1,2.4,undefined,{bottom:true});M[Z==='tomb'?'glyph':'cliff'].box(-H-.15,H+.15,-DEPTH,-.45,z0,z1,3,undefined,{top:true,bottom:true});}
+  else{// wooden deck: planks on beams, trestle legs into the depths
+   M.plank.box(-H,H,-.22,0,z0,z1,1.6,undefined,{bottom:true});
+   for(const sx of [-1,1])M.wood.box(sx*(H-.12)-.14,sx*(H-.12)+.14,-.6,-.22,z0,z1,1.2);
+   for(let zz=z0+.6;zz<z1-.3;zz+=Z==='mines'?3.2:4.2)for(const sx of [-1,1]){const x=sx*(H-.3);M.wood.tube([x,-.5,zz],[x+sx*(Z==='valley'?1.2:.4),Z==='valley'?-30:-16,zz],.16,.2,6,1.5,undefined,false);}
+   if(Z==='mines')for(let l=0;l<3;l++)for(const o of [-.32,.32]){const x=(l-1)*T.LANE+o;M.metal.box(x-.035,x+.035,0,.07,z0,z1,1);}}}
+ // broken pieces hanging at gap edges
+ for(const [g0,g1] of gaps){for(const zz of [g0,g1])for(let i=0;i<3;i++){const x=-H+.4+r()*(2*H-.8);M[deckM].box(x-.25,x+.25,-.7-r()*.4,-.15,zz-.25,zz+.25,1);}}
+ // edges: parapet stones / rope rails
+ const open=side=>corner&&side===(seg.turn==='L'?-1:seg.turn==='R'?1:2);
+ for(const side of [-1,1]){
+  if(Z==='temple'||Z==='tomb'){let zz=.4;while(zz<zEnd-.3){if(r()>.12&&!gaps.some(([a,b])=>zz>a-.6&&zz<b+.6)&&!(zz>L-.2&&open(side))){
+     const w=.7+r()*.5,h=.28+r()*.22,x=side*(H-.17);M[stoneM].box(x-.17,x+.17,0,h,zz,zz+w,1.2);}zz+=1.0+r()*.9;}}
+  else if(Z==='valley'){const x=side*(H-.08),posts=[];for(let zz=.5;zz<(open(side)?L-.3:zEnd-.2);zz+=2.4)if(!gaps.some(([a,b])=>zz>a-.3&&zz<b+.3))posts.push(zz);
+   for(let i=0;i<posts.length;i++){const zz=posts[i];M.wood.tube([x,0,zz],[x,1.05,zz],.07,.06,6,1);if(i&&posts[i]-posts[i-1]<2.6)M.wood.tube([x,.98,posts[i-1]],[x,.9,zz],.03,.03,5,1,[200,175,120],false);}}}
+ // corner closing wall
+ if(corner){const zc=L+CW;
+  if(Z==='valley'){for(let x=-H+.1;x<=H;x+=1.1)M.wood.tube([x,0,zc-.1],[x,1.05,zc-.1],.07,.06,6,1);M.wood.tube([-H,.95,zc-.1],[H,.95,zc-.1],.03,.03,5,1,[200,175,120],false);}
+  else if(Z==='mines'){M.wood.box(-H,H,0,.55,zc-.4,zc-.1,1);M.wood.box(-H+.1,-H+.4,0,1.2,zc-.45,zc-.05,1);M.wood.box(H-.4,H-.1,0,1.2,zc-.45,zc-.05,1);}
+  else{for(let x=-H+.2;x<H-.2;x+=.9){if(r()>.15)M[stoneM].box(x,x+.7,0,.3+r()*.2,zc-.34,zc,1.2);}
+   if(seg.turn==='L'){for(let zz=L+.2;zz<zc-.3;zz+=.9)M[stoneM].box(H-.34,H,0,.35,zz,zz+.7,1.2);}
+   if(seg.turn==='R'){for(let zz=L+.2;zz<zc-.3;zz+=.9)M[stoneM].box(-H,-H+.34,0,.35,zz,zz+.7,1.2);}}}
  // the temple the boulder bursts out of, behind the start line
  if(seg.k===0){M.stone.box(-H,H,-.45,0,-12,0,2.4,undefined,{bottom:true});M.cliff.box(-H-.15,H+.15,-DEPTH,-.45,-12,0,3,undefined,{top:true,bottom:true});
   const zf=-1.6,D=2.75;// facade plane, doorway half width
   M.cliff.box(-9,-D,-DEPTH,8,zf-1.4,zf,2.5);M.cliff.box(D,9,-DEPTH,8,zf-1.4,zf,2.5);M.cliff.box(-D,D,5.4,8,zf-1.4,zf,2.5);
   M.stone.box(-D-.5,-D,0,5.4,zf-.2,zf+.25,1.4);M.stone.box(D,D+.5,0,5.4,zf-.2,zf+.25,1.4);M.stone.box(-D-.6,D+.6,5.4,6.1,zf-.25,zf+.35,1.4);
   for(let i=0;i<4;i++){const w=8.5-i*1.8,y=8+i*1.3;M.cliff.box(-w,w,y,y+1.3,zf-1.4-i*.6,zf-i*.6,2.5);}
-  // dark tunnel inside the door
   M.cliff.box(-D-.6,-D,0,5.4,-12,zf-1.4,2,[70,62,52]);M.cliff.box(D,D+.6,0,5.4,-12,zf-1.4,2,[70,62,52]);M.cliff.box(-D,D,5.4,6,-12,zf-1.4,2,[60,54,46]);
   M.cliff.box(-D,D,0,5.4,-12.4,-12,2,[25,22,18]);
-  // idol pedestal by the door
   for(const sx of [-1,1])M.stone.box(sx*(D+1.2)-.5,sx*(D+1.2)+.5,0,1.1,zf+.4,zf+1.4,1);}
+ // zone gate: a big entrance you run through at the start of the zone's first straight (kept above the camera)
+ if(seg.gate){const zg=6;
+  if(Z==='mines'){for(const sx of [-1,1]){M.wood.box(sx*(H+.6)-.35,sx*(H+.6)+.35,-1,9.6,zg-.35,zg+.35,1.6);M.cave.box(sx*(H+1)-1.4,sx*(H+1)+1.4,-1,10.5,zg+.4,zg+3,3);}
+   M.wood.box(-H-1.3,H+1.3,9.2,10,zg-.4,zg+.4,1.6);M.sign.quad([-2.6,9.25,zg-.42],[2.6,9.25,zg-.42],[2.6,10.55,zg-.42],[-2.6,10.55,zg-.42],[0,0,-1],[1,1],[0,1],[0,0],[1,0]);
+   for(const sx of [-1,1])M.glow.box(sx*(H+1.4)-.16,sx*(H+1.4)+.16,6.2,6.6,zg-.6,zg-.3,1);}
+  else if(Z==='tomb'){for(const sx of [-1,1]){M.glyph.box(sx*(H+1.4)-1.1,sx*(H+1.4)+1.1,-2,10.5,zg-1,zg+1,2.5);M.sstone.box(sx*(H+1.4)-1.3,sx*(H+1.4)+1.3,10.5,11.1,zg-1.2,zg+1.2,2);}
+   M.sstone.box(-H-2.6,H+2.6,9.6,10.8,zg-.9,zg+.9,2);M.sign.quad([-2.6,9.7,zg-.92],[2.6,9.7,zg-.92],[2.6,10.7,zg-.92],[-2.6,10.7,zg-.92],[0,0,-1],[1,1],[0,1],[0,0],[1,0]);
+   for(const sx of [-1,1])jackal(M,sx*(H+3.8),zg,sx);}
+  else if(Z==='valley'){for(const sx of [-1,1]){M.wood.tube([sx*(H+.7),-1,zg],[sx*(H+.7),10.4,zg],.38,.32,8,2);for(let i=0;i<4;i++)M.wood.box(sx*(H+.7)-.5,sx*(H+.7)+.5,2+i*2.1,2.6+i*2.1,zg-.45,zg+.45,1);}
+   M.wood.tube([-H-1.4,9.7,zg],[H+1.4,9.9,zg],.3,.3,8,2);M.sign.quad([-2.6,8.2,zg-.32],[2.6,8.2,zg-.32],[2.6,9.4,zg-.32],[-2.6,9.4,zg-.32],[0,0,-1],[1,1],[0,1],[0,0],[1,0]);
+   for(const sx of [-1,1])M.leaf.blob([sx*(H+.7),10.6,zg],1.5,10,2,undefined,.3,r,.6);}
+  else{for(const sx of [-1,1])M.cliff.box(sx*(H+1.2)-1,sx*(H+1.2)+1,-2,10,zg-1,zg+1,2.5);M.cliff.box(-H-2.2,H+2.2,9.2,10.6,zg-1,zg+1,2.5);
+   M.sign.quad([-2.6,9.3,zg-1.02],[2.6,9.3,zg-1.02],[2.6,10.5,zg-1.02],[-2.6,10.5,zg-1.02],[0,0,-1],[1,1],[0,1],[0,0],[1,0]);}}
  // obstacles
  for(const o of seg.obs){const a=o.at;
-  if(o.kind==='log'){M.wood.tube([-H-.6,.45,a],[H+.6,.48,a],.42,.38,12,1.2);for(let i=0;i<3;i++){const x=-1+r()*2;M.wood.tube([x,.7,a],[x+(r()-.5)*.6,1.25,a+(r()-.5)*.4],.08,.04,6,.6);}}
-  else if(o.kind==='root'){let px=-H-.3,py=.12;for(let i=0;i<6;i++){const nx=px+(2*H+.6)/6,ny=.1+r()*.28;M.wood.tube([px,py,a+(r()-.5)*.2],[nx,ny,a+(r()-.5)*.2],.14,.12,8,.8);px=nx;py=ny;}}
-  else if(o.kind==='arch'){for(const side of [-1,1])M.stone.box(side*(H+.05)-.32,side*(H+.05)+.32,0,2.3,a-.38,a+.38,1.6);
-   M.stone.box(-H-.4,H+.4,1.2,1.78,a-.32,a+.32,1.6);M.stone.box(-H-.5,H+.5,1.78,1.98,a-.42,a+.42,1.6);
-   // carved face stones on the beam
-   M.cliff.box(-.45,.45,1.28,1.72,a+.32,a+.38,1);}
-  else if(o.kind==='fire'){for(const side of [-1,1]){M.stone.box(side*(H-.05)-.3,side*(H-.05)+.3,0,1.5,a-.35,a+.35,1.2);M.cliff.box(side*(H-.05)-.36,side*(H-.05)+.36,1.5,1.62,a-.4,a+.4,1);}}
-  else if(o.kind==='block'){for(const l of o.lanes){const x=(l-1)*T.LANE;const kind=r();
-    if(kind<.5){M.stone.box(x-.5,x+.5,0,1.6,a-.5,a+.5,1.4);M.stone.box(x-.42,x+.42,1.6,2.3,a-.42,a+.42,1.2);M.cliff.box(x-.55,x+.55,2.3,2.45,a-.55,a+.55,1);}
+  if(o.kind==='log'){
+   if(Z==='mines'){M.wood.box(-H-.3,H+.3,0,.36,a-.25,a+.25,1);M.wood.box(-H-.1,H+.1,.36,.7,a-.2,a+.2,1);M.wood.box(-H+.4,-H+.75,0,.9,a-.3,a+.3,1);}
+   else if(Z==='tomb'){M.sstone.tube([-H-.5,.42,a],[H+.5,.42,a],.42,.42,12,1.2);for(const x of [-H-.5,H+.5])M.sstone.box(x-.2,x+.2,0,.95,a-.5,a+.5,1);}
+   else{M.wood.tube([-H-.6,.45,a],[H+.6,.48,a],.42,.38,12,1.2);for(let i=0;i<3;i++){const x=-1+r()*2;M.wood.tube([x,.7,a],[x+(r()-.5)*.6,1.25,a+(r()-.5)*.4],.08,.04,6,.6);}
+    if(Z==='valley')for(let i=0;i<3;i++)M.fern.blob([-1.2+r()*2.4,.8,a+(r()-.5)*.4],.35+r()*.2,8,1,undefined,.3,r,.6);}}
+  else if(o.kind==='root'){
+   if(Z==='mines'){for(let i=0;i<7;i++){const x=-H+.25+i*(2*H-.5)/6;M.cave.blob([x,.1,a+(r()-.5)*.3],.22+r()*.12,7,1,undefined,.4,r,.9);}}
+   else if(Z==='tomb'){for(let i=0;i<6;i++){const x=-H+.3+i*(2*H-.6)/5;M.sstone.box(x-.25,x+.25,0,.22+r()*.12,a-.2,a+.2,1);}}
+   else{let px=-H-.3,py=.12;for(let i=0;i<6;i++){const nx=px+(2*H+.6)/6,ny=.1+r()*.28;M.wood.tube([px,py,a+(r()-.5)*.2],[nx,ny,a+(r()-.5)*.2],.14,.12,8,.8);px=nx;py=ny;}}}
+  else if(o.kind==='arch'){
+   if(Z==='mines'){for(const side of [-1,1])M.wood.box(side*(H+.05)-.2,side*(H+.05)+.2,0,2,a-.2,a+.2,1);M.wood.box(-H-.3,H+.3,1.22,1.62,a-.24,a+.24,1);M.glow.box(-.15,.15,1.0,1.22,a-.15,a+.15,1);}
+   else if(Z==='valley'){M.wood.tube([-H-1.4,1.42,a],[H+1.4,1.5,a+.3],.24,.18,10,1);for(let i=0;i<5;i++)M.leaf.blob([-H+r()*2*H,1.65+r()*.3,a+(r()-.5)*.6],.45+r()*.3,8,1,undefined,.35,r,.7);}
+   else{const sm=Z==='tomb'?'sstone':'stone';for(const side of [-1,1])M[sm].box(side*(H+.05)-.32,side*(H+.05)+.32,0,2.3,a-.38,a+.38,1.6);
+    M[sm].box(-H-.4,H+.4,1.2,1.78,a-.32,a+.32,1.6);M[sm].box(-H-.5,H+.5,1.78,1.98,a-.42,a+.42,1.6);
+    M[Z==='tomb'?'glyph':'cliff'].box(-.45,.45,1.28,1.72,a+.32,a+.38,1);}}
+  else if(o.kind==='fire'){
+   if(Z==='mines'){for(const side of [-1,1])M.metal.tube([side*(H-.05),0,a],[side*(H-.05),1.45,a],.16,.16,8,1);}
+   else{const sm=Z==='tomb'?'sstone':'stone';for(const side of [-1,1]){M[sm].box(side*(H-.05)-.3,side*(H-.05)+.3,0,1.5,a-.35,a+.35,1.2);M[Z==='tomb'?'glyph':'cliff'].box(side*(H-.05)-.36,side*(H-.05)+.36,1.5,1.62,a-.4,a+.4,1);}}}
+  else if(o.kind==='block'){for(const l of o.lanes){const x=(l-1)*T.LANE,kind=r();
+    if(Z==='mines'){if(kind<.55){// a derailed ore cart
+      M.metal.box(x-.5,x+.5,.3,1.3,a-.6,a+.6,1,undefined,{top:true});M.cave.blob([x,1.2,a],.42,8,1,undefined,.4,r,.7);
+      for(const wz of [-.4,.4])for(const sx of [-1,1])M.metal.tube([x+sx*.5,.25,a+wz],[x+sx*.62,.25,a+wz],.24,.24,10,1);}
+     else{M.wood.box(x-.5,x+.5,0,1,a-.5,a+.5,1);M.wood.box(x-.42,x+.38,1,1.75,a-.4,a+.4,1);}}
+    else if(Z==='tomb'){if(kind<.5){M.sstone.box(x-.5,x+.5,0,.95,a-.7,a+.7,1);M.glyph.box(x-.52,x+.52,.95,1.25,a-.72,a+.72,1,[230,190,90]);}
+     else jackal(M,x,a,0,.62);}
+    else if(Z==='valley'){M.cliff.blob([x,.75,a],.8,10,1.5,[150,160,130],.35,r,.95);if(kind<.4)M.stone.blob([x+.2,1.45,a],.4,8,1,[230,225,210],.2,r,.8);}
+    else if(kind<.5){M.stone.box(x-.5,x+.5,0,1.6,a-.5,a+.5,1.4);M.stone.box(x-.42,x+.42,1.6,2.3,a-.42,a+.42,1.2);M.cliff.box(x-.55,x+.55,2.3,2.45,a-.55,a+.55,1);}
     else{M.stone.box(x-.55,x+.55,0,.9,a-.55,a+.55,1.2);M.stone.box(x-.4,x+.45,.9,1.6,a-.4,a+.3,1.2);M.stone.box(x-.3,x+.25,1.6,2.1,a-.3,a+.2,1.1);}}}}
- // scenery: trees rising from the canyon, ruined pillars, the odd temple wall
+ // scenery beside the path
  for(const side of [-1,1]){let zz=r()*8;while(zz<zEnd){const k=r(),dx=side*(H+2.6+r()*7);
-   if(k<.55){// jungle tree: trunk from far below, canopy above path height
-    const top=4+r()*7,base=-14;M.wood.tube([dx,base,zz],[dx+(r()-.5),top,zz+(r()-.5)],.5+r()*.3,.28,8,2,undefined,false);
-    for(let i=0;i<3;i++)M.leaf.blob([dx+(r()-.5)*2.2,top+(r()-.3)*1.6,zz+(r()-.5)*2.2],1.6+r()*1.6,10,2,undefined,.35,r,.7);
-    if(r()<.5){const vx=dx-side*(r()*1.5);M.leaf.tube([vx,top,zz],[vx,top-3-r()*3,zz+.3],.06,.04,5,.5,[120,200,110],false);}}
-   else if(k<.8){// ruined pillar
-    const h=1+r()*5;M.cliff.box(dx-.6,dx+.6,-10,h,zz-.6,zz+.6,2);if(r()<.6)M.stone.box(dx-.75,dx+.75,h,h+.35,zz-.75,zz+.75,1.4);}
-   else if(k<.9&&zz<zEnd-6){// low temple wall running alongside
-    M.cliff.box(dx-.4,dx+.4,-10,1.2+r()*1.5,zz,zz+5,3);}
+   if(Z==='temple'){
+    if(k<.55){const top=4+r()*7,base=-14;M.wood.tube([dx,base,zz],[dx+(r()-.5),top,zz+(r()-.5)],.5+r()*.3,.28,8,2,undefined,false);
+     for(let i=0;i<3;i++)M.leaf.blob([dx+(r()-.5)*2.2,top+(r()-.3)*1.6,zz+(r()-.5)*2.2],1.6+r()*1.6,10,2,undefined,.35,r,.7);
+     if(r()<.5){const vx=dx-side*(r()*1.5);M.leaf.tube([vx,top,zz],[vx,top-3-r()*3,zz+.3],.06,.04,5,.5,[120,200,110],false);}}
+    else if(k<.8){const h=1+r()*5;M.cliff.box(dx-.6,dx+.6,-10,h,zz-.6,zz+.6,2);if(r()<.6)M.stone.box(dx-.75,dx+.75,h,h+.35,zz-.75,zz+.75,1.4);}
+    else if(k<.9&&zz<zEnd-6){M.cliff.box(dx-.4,dx+.4,-10,1.2+r()*1.5,zz,zz+5,3);}}
+   else if(Z==='mines'){
+    if(k<.5){const h=-2+r()*9,b=-17;M.cave.tube([dx,b,zz],[dx+(r()-.5),h,zz],.9+r()*.8,.15,7,3,undefined,false);}
+    else if(k<.75){const h=6+r()*6;M.cave.tube([dx,14,zz],[dx+(r()-.5),h,zz],1+r()*.6,.12,7,3,undefined,false);}
+    else if(zz<zEnd-4){// timber frame with a lantern beside the track
+     const x=side*(H+1.9);M.wood.box(x-.17,x+.17,-.4,3.4,zz-.17,zz+.17,1);M.wood.box(x-.17-side*.5,x+.17,3.1,3.35,zz-.17,zz+.17,1);M.glow.box(x-side*.45-.11,x-side*.45+.11,2.2,2.55,zz-.11,zz+.11,1);}}
+   else if(Z==='tomb'){
+    if(k<.5){const x=side*(H+2.4+r()*3),h=5+r()*4;M.sstone.tube([x,-12,zz],[x,h,zz],.85,.75,10,2.5,undefined,false);M.sstone.box(x-1.05,x+1.05,h,h+.5,zz-1.05,zz+1.05,1.5);
+     if(r()<.6){M.wood.tube([x-side*.85,2.4,zz],[x-side*1.2,2.9,zz],.06,.06,5,1);M.glow.box(x-side*1.25-.12,x-side*1.25+.12,2.9,3.2,zz-.12,zz+.12,1);}}
+    else if(k<.7)jackal(M,side*(H+3+r()*3),zz,side,1.5+r()*.6);
+    else if(zz<zEnd-6)M.glyph.box(dx-.5,dx+.5,-12,2+r()*3,zz,zz+5,2.5);}
+   else{// valley: giant trees, ferns, dinosaur bones
+    if(k<.5){const top=6+r()*9,base=-30;M.wood.tube([dx,base,zz],[dx+(r()-.5)*1.5,top,zz+(r()-.5)],.7+r()*.5,.35,9,2.5,undefined,false);
+     for(let i=0;i<4;i++)M.fern.blob([dx+(r()-.5)*3,top+(r()-.3)*2,zz+(r()-.5)*3],1.8+r()*2,10,2,undefined,.4,r,.6);}
+    else if(k<.8){const y=-1.5+r()*1.5;for(let i=0;i<5;i++){const a2=r()*Math.PI*2;M.fern.tube([dx,y,zz],[dx+Math.cos(a2)*1.6,y+1+r(),zz+Math.sin(a2)*1.6],.18,.04,5,1,undefined,false);}}
+    else if(zz<zEnd-5){const x=side*(H+2.8);for(let i=0;i<5;i++)M.stone.tube([x,-1,zz+i*.7],[x-side*.9,1.4+Math.sin(i)*.3,zz+i*.7+.3],.07,.05,5,1,[225,218,200],false);}}
    zz+=3+r()*7;}}
+ // valley: distant cliff walls with waterfalls
+ if(Z==='valley'&&seg.k%2===0)for(const side of [-1,1]){const x=side*(46+r()*10);M.cliff.box(x-4,x+4,-32,22+r()*10,0,L,6,[150,170,130]);
+  if(r()<.7){const wz=L*(.2+r()*.6),fx=x-side*4.05;M.glow.quad([fx,-30,wz-2],[fx,-30,wz+2],[fx,24,wz+2],[fx,24,wz-2],[-side,0,0],[0,6],[1,6],[1,0],[0,0],[160,210,240]);}}
  const out={};for(const [k,b] of Object.entries(M))if(b&&!b.empty())out[k]=b.out();
  // coins (positions only; drawn spinning)
  out.coins=seg.coins.map(c=>({c,x:(c.lane-1)*T.LANE,y:c.y,z:c.at}));
@@ -143,8 +240,17 @@ function buildStraight(seg,corner=true){const r=seededRandom('w:'+seg.k+':'+seg.
 
 // ---------------------------------------------------------------- world: textures, segment cache, drawing
 function makeWorld(R,course){
- const tex={stone:R.texture(stoneTex('stone'),{repeat:true}),cliff:R.texture(cliffTex('cliff'),{repeat:true}),wood:R.texture(woodTex('wood'),{repeat:true}),
-  leaf:R.texture(leafTex('leaf'),{repeat:true}),gold:R.texture(goldTex()),rock:R.texture(rockTex('rock'),{repeat:true}),flame:R.texture(flameTex(),{mips:false})};
+ // textures are made once per renderer (both the run and the spectator view share them)
+ const tex=R._trunTex||(R._trunTex={stone:R.texture(stoneTex('stone'),{repeat:true}),cliff:R.texture(cliffTex('cliff'),{repeat:true}),wood:R.texture(woodTex('wood'),{repeat:true}),
+  leaf:R.texture(leafTex('leaf'),{repeat:true}),gold:R.texture(goldTex()),rock:R.texture(rockTex('rock'),{repeat:true}),flame:R.texture(flameTex(),{mips:false}),
+  plank:R.texture(plankTex('plank'),{repeat:true}),metal:R.texture(metalTex('metal'),{repeat:true}),sstone:R.texture(stoneTex('sstone',[196,164,112],'#b8935e',0),{repeat:true}),
+  glyph:R.texture(glyphTex('glyph'),{repeat:true}),sand:R.texture(sandTex('sand'),{repeat:true}),cave:R.texture(cliffTex('cave',[78,66,58],'#4a3e36',0),{repeat:true}),
+  glow:R.texture((()=>{const [c,g]=cv(8);g.fillStyle='#fff';g.fillRect(0,0,8,8);return c;})()),lava:R.texture(lavaTex('lava'),{repeat:true}),water:R.texture(waterTex('water'),{repeat:true}),snake:R.texture(snakeTex('snake'),{repeat:true}),
+  fern:R.texture(leafTex('fern',[60,140,40]),{repeat:true}),
+  signs:{temple:R.texture(signTex('THE TEMPLE','#6d5f4c','#ffd36a')),mines:R.texture(signTex('PANKOT MINES','#5a3d24','#ffcf8a')),
+   tomb:R.texture(signTex('WELL OF SOULS','#b8935e','#4a2a10')),valley:R.texture(signTex('LOST VALLEY','#4a3a22','#d8ffb0'))}});
+ const UNLIT={glow:1,lava:1,water:1};
+ const DRAWN=['stone','cliff','wood','leaf','plank','metal','sstone','glyph','sand','cave','fern','glow'];
  const cache=new Map();
  // a straight, built once, in local space; the T-junction arms are previews of the next straight both ways
  function geo(seg){let g=cache.get(seg);if(!g){const b=buildStraight(seg);g={};for(const [k,v] of Object.entries(b)){if(k==='coins'||k==='fires'||k==='pows')g[k]=v;else g[k]=R.mesh(v);}cache.set(seg,g);}return g;}
@@ -152,19 +258,27 @@ function makeWorld(R,course){
  const coinMesh=(()=>{const b=MB();b.tube([0,0,-.05],[0,0,.05],.32,.32,18,1,undefined,true);return R.mesh(b.out());})();
  const flameMesh=(()=>{const n=[0,0,1],b=MB();b.quad([-.5,-.5,0],[.5,-.5,0],[.5,.5,0],[-.5,.5,0],n,[0,1],[1,1],[1,0],[0,0]);return R.mesh(b.out());})();
  const shieldMesh=(()=>{const b=MB();b.blob([0,1,0],1.15,18,1,undefined,0,Math.random,1.05);return R.mesh(b.out());})();
+ const cartMesh=R._cart||(R._cart=(()=>{const b=MB();b.box(-1.15,1.15,.55,1.9,-1.45,1.45,1,[150,140,130],{top:true});b.box(-1.0,1.0,.6,1.85,-1.3,1.3,1,[60,55,50],{top:true,bottom:true});
+  for(const y of [1.9,1.2])b.box(-1.2,1.2,y-.08,y+.04,-1.5,1.5,1,[110,90,70],{top:false});b.box(-.18,.18,.2,.6,-1.6,1.6,1,[90,80,70]);return R.mesh(b.out());})());
+ const cartOre=R._cartOre||(R._cartOre=(()=>{const b=MB(),r=seededRandom('ore');for(let i=0;i<9;i++)b.blob([(r()-.5)*1.4,1.75+r()*.25,(r()-.5)*2],.32+r()*.18,7,1,i%3?[150,120,90]:[230,190,80],.4,r);return R.mesh(b.out());})());
+ const cartWheel=R._cartWheel||(R._cartWheel=(()=>{const b=MB();b.tube([-1.25,0,0],[1.25,0,0],.12,.12,6,1);for(const sx of [-1,1])b.tube([sx*1.18,0,0],[sx*1.32,0,0],.42,.42,12,1);return R.mesh(b.out());})());
  const boulderMesh=(()=>{const b=MB();b.blob([0,0,0],2.3,22,1.5,undefined,.12,seededRandom('boulder'));return R.mesh(b.out());})();
- // far canyon floor: a huge dark jungle plane far below
- const floor=(()=>{const b=MB(),S=400;b.quad([-S,-24,-S],[-S,-24,S],[S,-24,S],[S,-24,-S],[0,1,0],[0,0],[0,40],[40,40],[40,0],[90,120,70]);return R.mesh(b.out());})();
+ // far floor below the path, one per zone: jungle canopy, lava, sand, valley grass with a river
+ const plane=(y,rep,col)=>{const b=MB(),S=400;b.quad([-S,y,-S],[-S,y,S],[S,y,S],[S,y,-S],[0,1,0],[0,0],[0,rep],[rep,rep],[rep,0],col);return R.mesh(b.out());};
+ const FLOORS=R._trunFloors||(R._trunFloors={temple:{mesh:plane(-24,40,[90,120,70]),tex:'leaf'},mines:{mesh:plane(-15,60,[255,255,255]),tex:'lava',unlit:1,tint:[1.1,.8,.6,1]},
+  tomb:{mesh:plane(-13,90,[220,200,170]),tex:'sand'},valley:{mesh:plane(-30,50,[120,170,90]),tex:'fern'}});
+ const GLOW={temple:[1.6,1.3,.8,1],mines:[2.2,1.4,.6,1],tomb:[2.2,1.5,.7,1],valley:[1,1.1,1.2,1]};
  const W={tex,
   // the straights to draw: from the runner's straight on, following the course; T-junctions show both arms
   visible(seg,ahead=3){const out=[];const prev=seg.k>0&&course.segs[seg.k-1];if(prev&&prev.next===seg)out.push(prev);let s=seg,depth=0;
    while(s&&depth<=ahead){out.push(s);if(s.turn==='T'){if(s.next)s=s.next;else{for(const side of ['L','R'])out.push(peek(s,side));break;}}
     else s=s.next||course.follow(s,s.turn);depth++;}
    return out;},
-  draw(segs,t,eyeXZ){
+  draw(segs,t,eyeXZ,zone=0){
    for(const s of segs){const g=geo(s),M=placeY(s.x,0,s.z,course.yaw(s.dir));
-    for(const k of ['stone','cliff','wood','leaf'])if(g[k])R.draw(g[k],M,{tex:tex[k]});}
-   R.draw(floor,placeY(eyeXZ[0],0,eyeXZ[1]),{tex:tex.leaf});},
+    for(const k of DRAWN)if(g[k])R.draw(g[k],M,{tex:tex[k],unlit:UNLIT[k]?1:0,tint:k==='glow'?GLOW[T.ZONES[s.zone||0].id]:undefined});
+    if(g.sign)R.draw(g.sign,M,{tex:tex.signs[T.ZONES[s.zone||0].id]});}
+   const F=FLOORS[T.ZONES[zone].id];R.draw(F.mesh,placeY(eyeXZ[0],0,eyeXZ[1]),{tex:tex[F.tex],unlit:F.unlit?1:0,tint:F.tint});},
   drawCoins(segs,t,taken){for(const s of segs){const g=geo(s);const yaw=course.yaw(s.dir),f=T.DIRS[s.dir],rt=T.DIRS[(s.dir+1)%4];
     for(const c of g.coins){if(taken&&taken.has(c.c))continue;const wx=s.x+f[0]*c.z+rt[0]*c.x,wz=s.z+f[1]*c.z+rt[1]*c.x;
      R.draw(coinMesh,placeY(wx,c.y+Math.sin(t*3+c.z)*.05,wz,yaw+t*3.2),{tex:tex.gold,tint:[1.35,1.25,1,1]});}}},
@@ -181,6 +295,22 @@ function makeWorld(R,course){
      R.draw(flameMesh,mulScale(placeY(wx,h,wz,yaw),sc),{tex:tex.flame,unlit:1,blend:true,noDepthWrite:true,alpha:.95});}}},
   drawBoulder(x,y,z,yaw,roll){const M=placeY(x,y,z,yaw);// roll about the local X axis
    const c=Math.cos(roll),s=Math.sin(roll),Rx=new Float32Array([1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]);R.draw(boulderMesh,mul4(M,Rx),{tex:tex.rock,tint:[.72,.68,.62,1]});},
+  // runaway mine cart: iron tub with ore, wheels spinning, sparks drawn by the caller
+  drawCart(x,z,yaw,t,roll){const M=placeY(x,Math.abs(Math.sin(t*9))*.06,z,yaw+Math.sin(t*5)*.03);R.draw(cartMesh,M,{tex:tex.metal,tint:[1.4,1.3,1.2,1]});R.draw(cartOre,M,{tex:tex.cave});
+   for(const wz of [-.85,.85]){const c=Math.cos(roll),s2=Math.sin(roll),W=mul4(mul4(M,new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,.42,wz,1])),new Float32Array([1,0,0,0, 0,c,s2,0, 0,-s2,c,0, 0,0,0,1]));R.draw(cartWheel,W,{tex:tex.metal,tint:[.6,.58,.55,1]});}},
+  // giant cobra: body follows the path behind its raised head; at(d) -> [x,z,yaw] on the runner's trail
+  drawCobra(at,hd,t,lunge=0){const P=[],N=24,STEP=.75;
+   for(let i=0;i<N;i++){const d=hd-i*STEP,[x,z,yw]=at(d),wig=Math.sin(t*5-i*.55)*(.35+Math.min(1,i/6)*.9),rx=Math.cos(yw),rz=-Math.sin(yw);
+    const rise=i<6?(1-i/6)*(2.6+lunge*.8)*(1-i/6*.4):0;const rad=i<2?.55:i<5?.85:.85*(1-(i-5)/(N-4))+.12;P.push([x+rx*wig,.55+rise,z+rz*wig,rad]);}
+   const b=MB();for(let i=0;i<N-1;i++){const a=P[i],c=P[i+1];b.tube([c[0],c[1],c[2]],[a[0],a[1],a[2]],c[3],a[3],10,1.2,undefined,false);}
+   // head: snout pointing at the runner, hood behind it, eyes and fangs
+   const [hx,hy,hz]=P[0],[fx,fz]=[Math.sin(at(hd+1)[2]),Math.cos(at(hd+1)[2])],up=[0,1,0],rt=[fz,0,-fx];
+   const W=(u,v,w)=>[hx+rt[0]*u+fx*w,hy+v,hz+rt[2]*u+fz*w];
+   b.blob(W(0,.1,.35),.55,10,1,undefined,0,Math.random,.7);b.blob(W(0,.02,.85),.32,8,1,undefined,0,Math.random,.6);
+   b.tube(W(0,-.25,-.42),W(0,-.25,-.12),.82,.7,14,1,[205,190,120],true);// the hood: a wide disc behind the head
+   const hm=R._cobra?R.update(R._cobra,b.out())||R._cobra:(R._cobra=R.mesh(b.out(),{dynamic:true}));R.draw(hm,placeY(0,0,0),{tex:tex.snake});
+   const e=MB();for(const sx of [-1,1]){e.blob(W(sx*.28,.28,.62),.09,6,1,[255,210,40]);e.tube(W(sx*.14,-.12,1.02),W(sx*.13,-.42,1.0),.045,.01,5,1,[245,240,225]);}
+   const em=R._cobraEyes?R.update(R._cobraEyes,e.out())||R._cobraEyes:(R._cobraEyes=R.mesh(e.out(),{dynamic:true}));R.draw(em,placeY(0,0,0),{tex:tex.glow,unlit:1});void up;},
   forget(keep){for(const [s,g] of cache)if(!keep.includes(s)){for(const [k,v] of Object.entries(g))if(k!=='coins'&&k!=='fires'&&k!=='pows')R.freeMesh(v);cache.delete(s);}}};
  // a T-junction arm drawn before the runner picks a side
  const peeks=new Map();
