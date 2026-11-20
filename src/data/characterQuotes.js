@@ -167,5 +167,9 @@ const QUOTES={
  'gary-king':'Let’s boo-boo.', 'ref-yusukeurameshi':'Spirit Gun!', 'ref-kazumakuwabara':'Spirit Sword!', 'ref-hiei':'Dragon of the Darkness Flame!',
  'ref-kurama':'Rose Whip!', 'elliot-carver':'There’s no news like bad news.',
 };
-const quoteOf=id=>{const q=QUOTES[id];return Array.isArray(q)?q[Math.floor(Math.random()*q.length)]:q;};
-Object.assign(exports,{QUOTES,quoteOf});
+// quotesOf: every real line a character has (merged duplicate ids fall back to the kept id); quoteOf: one of them
+// (rand = a seeded random for games that must agree on both phones). No real line = nothing: a description is never a quote.
+let identity=null;
+function quotesOf(id){const q=QUOTES[id]??(()=>{try{identity??=require("src/characters.js").characterIdentity;const k=identity(id);return k!==id?QUOTES[k]:null;}catch{return null;}})();return q==null?[]:Array.isArray(q)?q:[q];}
+const quoteOf=(id,rand=Math.random)=>{const l=quotesOf(id);return l.length?l[Math.floor(rand()*l.length)]:undefined;};
+Object.assign(exports,{QUOTES,quoteOf,quotesOf});

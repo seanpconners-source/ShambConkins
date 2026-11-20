@@ -34,8 +34,6 @@ const FACE_K=.64,CHIN=.18,FACE_FWD=0;   // faces: width = shoulders x FACE_K, ce
 const ROWS=4,SECONDS=Infinity,FONT='"Helvetica Neue",Helvetica,Arial,sans-serif';
 const INK='#111111',GREY='#8a8a8a',BLUTH='#ffd84a',BLUE='#2f6fd8';
 const SHIRTS=['#5b7fb5','#c8553d','#6a994e','#e3b23c','#7d5ba6','#2d3142','#e07a5f','#f4f1de','#3d405b','#81b29a','#b56576','#457b9d'];
-const LINES=['Make it a double.','I’ll have what they’re having.','Is this place still open?','Hey! Over here!','I’ve been waiting forever!','Do you take Bluth Bucks?','Same again!','Put it on my tab.','I’m a regular, you know.','Something cold. Anything.','Light on the ice.','Who do I have to know to get served?','Is there a happy hour?','Two, please. One for me, one for me.'];
-const ANGRY=['HEY!','Where’s my order?!','Unbelievable.','I want to speak to the manager!','Do I have to do everything myself?'];
 const MOOD={walk:'normal',push:'sad',eat:'win',angry:'angry'};
 const ST=['walk','push','eat','angry'];
 // every character with real face art (a stand-in face would read as a blank circle), the same list on every phone
@@ -47,7 +45,8 @@ function pool(){
  catch{POOL=['sean','amber'];}
  return POOL;
 }
-function lineFor(id,rand){try{const {quoteOf}=require("src/data/characterQuotes.js"),q=quoteOf(id);if(q&&rand()<.7&&q.length<90)return q;}catch{}return LINES[Math.floor(rand()*LINES.length)];}
+// customers only ever say their own real quotes (owner, Nov 20); no quote = they stay quiet
+function lineFor(id,rand){try{const {quotesOf}=require("src/data/characterQuotes.js"),l=quotesOf(id).filter(q=>q.length<=110);return l.length?l[Math.floor(rand()*l.length)]:null;}catch{return null;}}
 const nameOf=id=>{try{const {ACTIVE_CATALOG}=require("src/contentPolicy.js");return ACTIVE_CATALOG.characters.find(c=>c.id===id)?.name||'';}catch{return '';}};
 
 async function moneygrab(s){
@@ -79,7 +78,7 @@ async function moneygrab(s){
  const serveVal=w=>[50,75,100,150][Math.min(3,w.lv)];
  const TIP=1500,BONUS=3000,SHOW=4;
  function startLevel(w){w.phase='card';w.card=2.2;w.spawned=0;w.levelT=0;w.cust=[];w.nanas=[];w.sticks=[];w.cash=[];w.spawnT=1.2;w.say=[];w.show=0;w.bonusR=null;w.burst=Math.min(4,2+Math.floor(w.cleared/2));   /* like the arcade: a group walks in as the level opens */if(w===cur){audio.level(lvOf(w).id);audio.narrate(w.cleared?'level':'start',.8);}}
- function talk(w,cu,text,t=2.6){if(w.say.length>=2&&!/!/.test(text))return;w.say=w.say.filter(b=>b.cid!==cu.id);w.say.push({cid:cu.id,text,t});if(net&&w===cur)nf?.event({say:[cu.id,text]});}
+ function talk(w,cu,text,t=2.6){if(!text)return;if(w.say.length>=2&&!/!/.test(text))return;w.say=w.say.filter(b=>b.cid!==cu.id);w.say.push({cid:cu.id,text,t});if(net&&w===cur)nf?.event({say:[cu.id,text]});}
  function spawnCust(w,row,char,sent){
   const r=w.rand,cu={id:w.uid++,row,u:-.04,state:'walk',hop:r()*.6,timer:0,char,body:Math.floor(r()*4),shirt:SHIRTS[Math.floor(r()*SHIRTS.length)],sent:sent||null,talkT:.4+r()*1.2,talks:r()<.3};
   w.cust.push(cu);return cu;
@@ -134,7 +133,7 @@ async function moneygrab(s){
    if(cu.talks&&cu.state==='walk'){cu.talkT-=dt;if(cu.talkT<=0){cu.talks=false;talk(w,cu,lineFor(cu.char,w.rand));}}
    if(cu.state==='walk'&&w.show>0){/* everybody stops to watch Gob's show */}
    else if(cu.state==='walk'){cu.hop-=dt;if(cu.hop<=0){cu.hop=clamp(.75/k,.3,.75);cu.target=cu.u+.055;}if(cu.target!==undefined&&cu.u<cu.target)cu.u=Math.min(cu.target,cu.u+dt*.35);
-    if(cu.u>=.93){cu.state='angry';talk(w,cu,ANGRY[Math.floor(w.rand()*ANGRY.length)],1.6);lose(w,'TOO SLOW!',cu.row);return;}}
+    if(cu.u>=.93){cu.state='angry';{const q=lineFor(cu.char,w.rand);if(q)talk(w,cu,q,1.6);}lose(w,'TOO SLOW!',cu.row);return;}}
    else if(cu.state==='push'){cu.u-=dt*.9;
     if(cu.u<-.05){cu.gone=true;const v=serveVal(w);w.score+=v;w.pops.push({x:0,y:cu.row,text:'+'+v,t:.8,c:'#b8860b'});if(net&&w===cur)nf?.event({x:[cu.row,cu.char]});}
     else if(cu.u<=cu.back){cu.state='eat';cu.timer=1.1;}}
