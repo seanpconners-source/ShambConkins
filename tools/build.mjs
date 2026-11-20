@@ -167,6 +167,12 @@ if (fs.existsSync(sqwDir)) for (const f of fs.readdirSync(sqwDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('sqwordle:' + m[1].toLowerCase(), MIME[ext], ext, path.join(sqwDir, f));
 }
+// Simon art (owner's GPT pictures): assets/simon/<name>.(webp|png) -> simon:<name> (slots in src/engines/simonArt.js).
+const simDir = path.join(root, 'assets/simon');
+if (fs.existsSync(simDir)) for (const f of fs.readdirSync(simDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('simon:' + m[1].toLowerCase(), MIME[ext], ext, path.join(simDir, f));
+}
 // Crappy Crush world backgrounds: assets/crappycrush/<world key>.(webp|png) -> crappy:<key> (keys in src/data/crappyCrushWorlds.js).
 const ccDir = path.join(root, 'assets/crappycrush');
 if (fs.existsSync(ccDir)) for (const f of fs.readdirSync(ccDir)) {

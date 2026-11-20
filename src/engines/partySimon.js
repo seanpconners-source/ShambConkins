@@ -1,84 +1,139 @@
 // Simon Says Face-Off: a shared, growing sequence. Repeat everything, then add one pad. First mistake loses.
-const {PartyUI,sfx,head,pname,esc,burst,banner,titleCard,extraCSS,tone,shake}=require("src/engines/partyKit.js");
+// Nov 20 rebuild (owner: look and sound like the real Simon, dead on; a 90s kid's room behind it): full-screen canvas, the
+// toy drawn from above (simonArt.js: owner's pictures when they're in, else drawn), real Simon tones and timing
+// (simonSound.js): a tone plays for as long as a pad is lit or held; playback 0.42 s per pad for 1-5, 0.32 s for 6-13,
+// 0.22 s from 14, 0.05 s dark between; 3 s to make each press like the toy (5 s to add the new pad); a mistake = the razz
+// while the right pad lights. Turns, the CPU, online moves {t: pad | -1 too slow} and s.debug.bot are as before.
 const {isCpu,isOnline,cpuSkill}=require("src/engines/cpuKit.js");
+const {fullBleed}=require("src/engines/fullBleed.js");
+const {vibrate}=require("src/audio.js");
+const A=require("src/engines/simonArt.js");
+const {createSimonSound}=require("src/engines/simonSound.js");
 
-const PADS=[{c:'#2fb86a',lit:'#9dffc4',f:415,s:'▲',n:'green'},{c:'#e0453a',lit:'#ffb0a8',f:310,s:'●',n:'red'},{c:'#f2b822',lit:'#fff0a0',f:252,s:'■',n:'yellow'},{c:'#2f6fe0',lit:'#a8c8ff',f:209,s:'★',n:'blue'}];
-const CSS=`
-.pk-simon{--pk-bg:radial-gradient(ellipse at 50% 0,#3a3a5c,#1a1a2e 70%);--pk-accent:#f2b822}
-.sm-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px 0}
-.sm-len{font:900 clamp(28px,8vw,44px)/1 Arial;text-align:center}
-.sm-len small{display:block;font:800 11px Arial;letter-spacing:.14em;opacity:.7}
-.sm-status{font:800 clamp(14px,3.6vw,19px)/1.2 Arial;text-align:center;min-height:2.4em;display:flex;align-items:center;justify-content:center;padding:0 12px}
-.sm-board{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:6px 10px 10px}
-.sm-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:clamp(8px,2vw,16px);width:min(100%,calc(100vh - 330px),560px);aspect-ratio:1;min-width:230px}
-.sm-pad{appearance:none;border:0;border-radius:24px;min-height:0;padding:0;color:rgba(255,255,255,.85);font:900 clamp(40px,12vw,84px)/1 Arial;background:var(--c);box-shadow:0 8px 0 rgba(0,0,0,.4),inset 0 -10px 0 rgba(0,0,0,.18),inset 0 8px 0 rgba(255,255,255,.2);filter:brightness(.62);transition:filter .08s,transform .08s;cursor:pointer;touch-action:manipulation}
-.sm-pad:hover,.sm-pad:active{background:var(--c);border:0}
-.sm-pad.on{filter:brightness(1.35) saturate(1.2);transform:scale(1.04);box-shadow:0 0 38px 8px var(--lit),inset 0 8px 0 rgba(255,255,255,.4)}
-.sm-pad.dead{filter:brightness(.4);pointer-events:none}
-.sm-dots{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:12px;padding:0 12px}
-.sm-dots i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.2)}
-.sm-dots i.d{background:#fff}
-`;
+const NAMES=['GREEN','RED','YELLOW','BLUE'];
+const toneMs=n=>n<=5?420:n<=13?320:220,GAP=50;
+const PRESS_S=3,ADD_S=5,RAZZ_MS=1500;
+const FONT='"SC Nunito","Arial Rounded MT Bold",Arial,sans-serif',HEAD='"SC Bangers",Impact,"Arial Black",sans-serif';
+const PCOL=['#78b6ff','#ff9fc6'];
 
 async function simon(s){
- extraCSS('sm-css',CSS);
- const ui=new PartyUI(s,{theme:'simon',scroll:false});
- const names=[pname(s,0),pname(s,1)],score=[0,0],seq=[];
- s.debug={seq,score};
- let phase='idle',onTap=null;
+ const [c,x]=s.canvas(420,760,{fill:true});
+ const fb=fullBleed(s,{bg:'#0d1f28'});
+ A.preload();
+ const snd=createSimonSound();snd.preload();s.cleanup(()=>snd.stopAll());
+ const names=[s.players[0].name,s.players[1].name],score=[0,0],seq=[];
+ let phase='idle',onTap=null,P=0,loser=-1,status='',sub='',k=0,need=0,result=null;
  const rand=s.random,cpu=isCpu(s),bot=P=>cpu&&P===1;if(cpu)s.hotseat=true;
  // Online (s.online): the player whose turn it is taps on their own phone; each tap {t: pad, or -1 = too slow} streams to
  // the other phone, which plays it like a CPU turn. Only the tapping phone runs the too-slow clock.
  const net=isOnline(s)?s.online:null,theirs=P=>!!net&&P===net.remote,auto=P=>bot(P)||theirs(P);if(net)s.hotseat=true;
- let botTap=null;
- s.debug.bot=net?()=>{if(s.paused)return null;if(phase==='input'&&botTap&&!auto(s.active)){botTap();return 'tap';}if(phase==='over'&&ui.handler){ui.handler('go');return 'go';}return null;}:null;
+ let botTap=null,finishNow=null;
+ s.debug={seq,score,phase:()=>phase,lit:()=>lit(),pad:q=>padPoint(q),finish:()=>finishNow?.(),btn:()=>Lo?.btn||null};
+ s.debug.bot=net?()=>{if(s.paused)return null;if(phase==='input'&&botTap&&!auto(s.active)){botTap();return 'tap';}if(phase==='over'&&finishNow){finishNow();return 'go';}return null;}:null;
+ s.hint('Watch the pads light up. On your turn repeat the whole sequence from the start, then tap one extra pad to add it. You get 3 seconds for each press, like the real toy. Make a mistake or run out of time and you lose.');
+
+ // ---- lights + tones: one entry per source; a tone lasts exactly as long as its light
+ const L=new Map();
+ function light(id,q,ms,{tone=q,held=false}={}){off(id);L.set(id,{q,until:performance.now()+ms,held});snd.start(id,tone);}
+ function off(id){if(L.delete(id))snd.stop(id);}
+ const offInput=()=>{for(const id of [...L.keys()])if(id!=='play')off(id);};
+ const lit=()=>[0,1,2,3].map(q=>[...L.values()].some(l=>l.q===q));
+
+ // ---- layout
+ let Lo=null;
+ function layout(){const W=s.W,H=s.H,top=(fb.top||40)+6,wide=W>H*1.15;
+  if(wide){const col=Math.min(150,W*.2),R=Math.max(60,Math.min((H-top-64)/2*.98,(W-col*2)/2*.94));
+   Lo={W,H,wide,R,cx:W/2,cy:top+(H-top-58)/2+4,face:Math.min(74,col*.55),f0:[col/2+6,H*.42],f1:[W-col/2-6,H*.42],cnt:[W/2,top+2]};}
+  else{const face=Math.max(40,Math.min(64,W*.15)),hb=top+face+30,R=Math.max(60,Math.min(W*.47,(H-hb-66)/2*.97));
+   Lo={W,H,wide,R,cx:W/2,cy:hb+(H-hb-62)/2,face,f0:[12+face/2+4,top+face/2],f1:[W-12-face/2-4,top+face/2],cnt:[W/2,top-2]};}
+  return Lo;}
+ const padPoint=q=>{const l=Lo||layout(),sx=q%2?1:-1,sy=q<2?-1:1,d=l.R*.48;return {x:l.cx+sx*d,y:l.cy+sy*d};};
+
+ // ---- input
+ const held=new Map();
+ s.on(c,'pointerdown',ev=>{ev.preventDefault();if(s.paused||!Lo)return;const pt=s.pointer(ev);
+  if(phase==='over'){if(finishNow&&Lo.btn&&pt.x>Lo.btn.x&&pt.x<Lo.btn.x+Lo.btn.w&&pt.y>Lo.btn.y&&pt.y<Lo.btn.y+Lo.btn.h)finishNow();return;}
+  const q=A.padAt(pt.x,pt.y,Lo.cx,Lo.cy,Lo.R);if(q<0||phase!=='input'||!onTap||auto(s.active))return;
+  s.capture(ev);held.set(ev.pointerId,'in'+ev.pointerId);onTap(q,false,'in'+ev.pointerId);});
+ const up=ev=>{const id=held.get(ev.pointerId);if(!id)return;held.delete(ev.pointerId);s.release(ev);const l=L.get(id);if(l)l.held=false;};
+ s.on(c,'pointerup',up);s.on(c,'pointercancel',up);
+ const KEYS={q:0,w:1,a:2,s:3,'7':0,'9':1,'1':2,'3':3};
+ s.on(document,'keydown',ev=>{const q=KEYS[ev.key?.toLowerCase?.()];if(q==null||ev.repeat||s.paused||phase!=='input'||!onTap||auto(s.active))return;onTap(q,false,'key');const l=L.get('key');if(l)l.held=true;});
+ s.on(document,'keyup',ev=>{if(KEYS[ev.key?.toLowerCase?.()]!=null){const l=L.get('key');if(l)l.held=false;}});
+
+ let idle=0,limit=0;
+ s.frame(dt=>{const now=performance.now();
+  if(s.paused){if(L.size){for(const id of [...L.keys()])off(id);}}
+  for(const [id,l] of [...L])if(!l.held&&now>=l.until)off(id);
+  if(limit>0&&phase==='input'&&!theirs(s.active)&&!s.paused){idle+=dt;if(idle>limit&&onTap){const f=onTap;f(-1);}}
+  draw(now);});
+
+ // ---- drawing
+ function pill(cx,cy,text,size,{bg='rgba(8,12,22,.78)',col='#fff',font=FONT,weight=800,maxW=1e9}={}){
+  x.font=`${weight} ${size}px ${font}`;let w=x.measureText(text).width;if(w>maxW){size*=maxW/w;x.font=`${weight} ${size}px ${font}`;w=maxW;}
+  const h=size*1.7;x.fillStyle=bg;rr(cx-w/2-size*.8,cy-h/2,w+size*1.6,h,h/2);x.fill();
+  x.fillStyle=col;x.textAlign='center';x.textBaseline='middle';x.fillText(text,cx,cy+size*.05);return h;}
+ function rr(x0,y0,w,h,r){x.beginPath();x.moveTo(x0+r,y0);x.arcTo(x0+w,y0,x0+w,y0+h,r);x.arcTo(x0+w,y0+h,x0,y0+h,r);x.arcTo(x0,y0+h,x0,y0,r);x.arcTo(x0,y0,x0+w,y0,r);x.closePath();}
+ function face(i,[fx,fy],f){const act=phase!=='over'&&s.active===i&&phase!=='idle',mood=phase==='over'?(i===loser?'sad':'win'):act?'think':'normal';
+  x.save();if(act){x.shadowColor=PCOL[i];x.shadowBlur=18;}x.fillStyle='rgba(8,12,22,.8)';x.beginPath();x.arc(fx,fy,f*.58,0,7);x.fill();x.restore();
+  x.lineWidth=act?4:2;x.strokeStyle=act?PCOL[i]:'rgba(255,255,255,.35)';x.beginPath();x.arc(fx,fy,f*.58,0,7);x.stroke();
+  s.sprite(x,i,fx,fy,f*.98,{mood,exact:true,still:true,noBadge:true});
+  pill(fx,fy+f*.58+13,`${names[i]}  ${score[i]}`,12,{maxW:f*1.9,col:act?PCOL[i]:'#fff'});}
+ function draw(now){const l=layout(),W=l.W,H=l.H;
+  A.drawRoom(x,W,H,l.cx,l.cy,l.R);
+  A.drawToy(x,l.cx,l.cy,l.R,lit(),now/1000);
+  face(0,l.f0,l.face);face(1,l.f1,l.face);
+  // pattern length
+  x.save();const cy=l.wide?l.cnt[1]+20:l.cnt[1]+l.face*.45;
+  x.font=`400 ${l.wide?30:34}px ${HEAD}`;const label=String(seq.length);
+  pill(l.cx,cy,'PATTERN  '+label,l.wide?17:18,{font:HEAD,weight:400,col:'#ffe14a'});x.restore();
+  // status under the toy
+  if(status)pill(l.cx,Math.min(H-24,l.cy+l.R+30),status,Math.max(13,Math.min(18,W/26)),{maxW:W-40});
+  if(sub&&phase!=='over')pill(l.cx,Math.min(H-24,l.cy+l.R+30)-34,sub,12,{bg:'rgba(8,12,22,.6)',col:'#cfe3ff',maxW:W-60});
+  if(phase==='over')drawResult(l);}
+ function drawResult(l){const win=1-loser,W=l.W,H=l.H;x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,0,W,H);
+  const pw=Math.min(W-28,420),ph=Math.min(H-40,330),px=(W-pw)/2,py=(H-ph)/2;
+  x.fillStyle='rgba(14,20,34,.94)';rr(px,py,pw,ph,22);x.fill();x.lineWidth=3;x.strokeStyle='#ffe14a';x.stroke();
+  const f=Math.min(110,ph*.34);
+  x.save();x.shadowColor='#ffe14a';x.shadowBlur=20;s.sprite(x,win,W/2-f*.45,py+20+f/2,f,{mood:'win',exact:true,still:true,noBadge:true});x.restore();
+  s.sprite(x,loser,W/2+f*.65,py+30+f/2,f*.7,{mood:'sad',exact:true,still:true,noBadge:true});
+  x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';
+  let t=`${names[win]} outlasts ${names[loser]}!`,sz=26;x.font=`400 ${sz}px ${HEAD}`;const w=x.measureText(t).width;if(w>pw-30){sz*=(pw-30)/w;x.font=`400 ${sz}px ${HEAD}`;}
+  x.fillText(t,W/2,py+f+52);
+  x.font=`700 14px ${FONT}`;x.fillStyle='#cfe3ff';x.fillText(`The pattern reached ${seq.length} before ${names[loser]} slipped.`,W/2,py+f+82,pw-24);
+  const bw=150,bh=46;l.btn={x:W/2-bw/2,y:py+ph-bh-18,w:bw,h:bh};
+  x.fillStyle='#ffd23f';rr(l.btn.x,l.btn.y,bw,bh,bh/2);x.fill();x.fillStyle='#1b1300';x.font=`900 18px ${FONT}`;x.fillText('FINISH',W/2,l.btn.y+bh/2+1);}
+
  // vs CPU: player 2 replays the pattern pad by pad; past its memory span (about 8 / 14 / 17 pads) slips get likely.
  async function cpuSimon(need){const span=4+14*cpuSkill(s);
   for(let k=0;k<=need;k++){if(!await s.wait(k?330+Math.random()*200:700)||!onTap)return;
    if(k===need){onTap(Math.floor(Math.random()*4));return;}
    const err=k+1<=span?.004:Math.min(.6,(k+1-span)*.12);onTap(Math.random()<err?(seq[k]+1+Math.floor(Math.random()*3))%4:seq[k]);}}
- s.hint('Watch the pads light up. On your turn repeat the whole sequence from the start, then tap one extra pad to add it. The sequence speeds up as it grows. Make a mistake or run out of time and you lose.');
- const render=(P,len)=>{ui.set(`<div class="sm-top">${head(s,0,P===0?'think':'normal','sm')}<div class="sm-len" data-len>${len}<small>SEQUENCE</small></div>${head(s,1,P===1?'think':'normal','sm')}</div>
-  <div class="sm-status" data-st>&nbsp;</div><div class="sm-dots" data-dots></div>
-  <div class="sm-board"><div class="sm-grid">${PADS.map((p,i)=>`<button class="sm-pad" data-pad="${i}" style="--c:${p.c};--lit:${p.lit}" aria-label="${p.n} pad">${p.s}</button>`).join('')}</div></div>`);};
- const st=h=>{const e=ui.root.querySelector('[data-st]');if(e)e.innerHTML='<span>'+h+'</span>';};
- const dots=(n,done)=>{const e=ui.root.querySelector('[data-dots]');if(e)e.innerHTML=Array.from({length:n},(_,i)=>`<i class="${i<done?'d':''}"></i>`).join('');};
- const pad=i=>ui.root.querySelector(`[data-pad="${i}"]`);
- async function flash(i,ms,sound=true){const e=pad(i);if(!e)return false;e.classList.add('on');if(sound)tone(PADS[i].f,Math.max(.12,ms/1000),.08,'triangle');if(!await s.wait(ms))return false;e.classList.remove('on');return true;}
- s.on(ui.root,'pointerdown',ev=>{const b=ev.target.closest?.('[data-pad]');if(!b||phase==='watch'||!onTap||s.paused||auto(s.active))return;ev.preventDefault?.();onTap(+b.dataset.pad);});
- let idle=0,limit=0;
- s.frame(dt=>{if(limit>0&&(phase==='input')&&!theirs(s.active)){idle+=dt;if(idle>limit&&onTap){const f=onTap;f(-1);}}});
- const speedFor=n=>Math.max(200,560-n*24);
 
- if(!await titleCard(s,'🔴','Pads light up in a growing pattern. Repeat the whole pattern from the start, then add one new pad for your opponent. First mistake loses.','Let’s play'))return;
- let P=0,loser=-1;
  while(loser<0){
-  render(P,seq.length);
-  phase='idle';onTap=null;
+  phase='idle';onTap=null;status='';sub='';
   if(!auto(P)&&!await s.pass(P,seq.length?`Watch the ${seq.length}-pad pattern, repeat it, then add ONE more pad.`:`You start! Tap any pad to begin the pattern.`,'Start my turn',{countdown:2}))return;
   s.shared=false;s.active=P;s.updateScores();
-  render(P,seq.length);
   if(seq.length){
-   phase='watch';st('👀 Watch closely…');dots(seq.length,0);
-   if(!await s.wait(500))return;
-   const d=speedFor(seq.length);
-   for(const i of seq){if(!await flash(i,d))return;if(!await s.wait(d*.45))return;}
+   phase='watch';status='Watch Simon…';sub='';
+   if(!await s.wait(800))return;
+   const d=toneMs(seq.length);
+   for(const q of seq){light('play',q,d);if(!await s.wait(d+GAP))return;}
   }
-  // input
-  let k=0;const need=seq.length;
-  const result=await new Promise(resolve=>{
-   phase='input';idle=0;limit=need?6:10;
-   st(need?`🎯 ${esc(names[P])}: repeat the pattern (0/${need})`:`✨ ${esc(names[P])}: tap any pad to start`);dots(need,0);
-   onTap=async (i,remote=false)=>{
-    if(phase!=='input')return;if(net&&!theirs(P)&&!remote)net.send({t:i});
-    if(i<0){phase='busy';onTap=null;resolve({fail:'slow'});return;}
-    idle=0;
+  k=0;need=seq.length;
+  result=await new Promise(resolve=>{
+   phase='input';idle=0;limit=need?PRESS_S:ADD_S;
+   status=need?`${names[P]}: repeat it  0 / ${need}`:`${names[P]}: tap any pad to start`;sub=auto(P)?(theirs(P)?'Playing on their phone':'CPU is playing'):'';
+   onTap=(q,remote=false,id='in')=>{
+    if(phase!=='input')return;if(net&&!theirs(P)&&!remote)net.send({t:q});
+    if(q<0){phase='busy';onTap=null;offInput();resolve({fail:'slow'});return;}
+    idle=0;offInput();vibrate?.(8);
     if(k<need){
-     if(i!==seq[k]){phase='busy';onTap=null;tone(120,.5,.1,'sawtooth');pad(i)?.classList.add('on');resolve({fail:'wrong',i});return;}
-     k++;dots(need,k);sfx.tap();flash(i,160);
-     st(k<need?`🎯 ${esc(names[P])}: repeat the pattern (${k}/${need})`:`➕ Now ADD one more pad!`);
-     if(k===need)idle=0;
-    }else{phase='busy';onTap=null;flash(i,260);resolve({add:i});}
+     if(q!==seq[k]){phase='busy';onTap=null;resolve({fail:'wrong',q});return;}
+     light(id,q,id==='in'||id==='key'?240:150,{held:id!=='in'});k++;
+     status=k<need?`${names[P]}: repeat it  ${k} / ${need}`:`Now ADD one more pad!`;
+     if(k===need){idle=0;limit=ADD_S;}else limit=PRESS_S;
+    }else{phase='busy';onTap=null;light(id,q,id==='in'||id==='key'?320:180,{held:id!=='in'});resolve({add:q});}
    };
    if(bot(P))void cpuSimon(need);
    else if(theirs(P))void (async()=>{while(s.alive&&phase==='input'&&onTap){const m=await net.next();if(!m||!s.alive||!onTap)return;if(Number.isInteger(m.t))onTap(m.t,true);}})();
@@ -87,26 +142,22 @@ async function simon(s){
   });
   if(!s.alive)return;
   if(result.fail){
-   loser=P;sfx.bad();shake(ui.root);
-   ui.root.querySelectorAll('.sm-pad').forEach(b=>b.classList.add('dead'));
-   banner(ui.root,result.fail==='slow'?'TOO SLOW!':'WRONG PAD!','#ffb3b3');
-   st(result.fail==='slow'?'Time ran out!':`It should have been ${PADS[seq[k]].n.toUpperCase()}.`);
-   if(result.fail==='wrong'&&seq[k]!=null){ui.root.querySelectorAll('.sm-pad.on').forEach(b=>b.classList.remove('on'));pad(seq[k])?.classList.remove('dead');pad(seq[k])?.classList.add('on');}
-   if(!await s.wait(2200))return;
+   loser=P;for(const id of [...L.keys()])off(id);
+   const right=seq[k];
+   status=result.fail==='slow'?'Too slow!':`Wrong! It was ${NAMES[right]}.`;sub='';
+   // the real toy: the razz buzz while the pad you should have pressed lights
+   light('razz',right??-9,RAZZ_MS,{tone:-1});vibrate?.([60,40,60]);
+   if(!await s.wait(RAZZ_MS+500))return;
   }else{
    seq.push(result.add);score[P]=seq.length;s.setScores([...score]);
-   st(`✅ Added! The pattern is now ${seq.length} long.`);
-   const l=ui.root.querySelector('[data-len]');if(l)l.innerHTML=`${seq.length}<small>SEQUENCE</small>`;
-   sfx.ok();if(!await s.wait(900))return;
+   status=`Added! The pattern is now ${seq.length} long.`;sub='';
+   if(!await s.wait(900))return;
    P=1-P;
   }
  }
  const win=1-loser;
- s.shared=true;s.updateScores();phase='idle';onTap=null;
- ui.set(`<div class="pk-screen"><div class="pk-over">Simon Says · result</div><div class="pk-row">${head(s,win,'win','xl')}${head(s,loser,'sad','lg')}</div>
-  <h1 class="pk-h1 pk-pop">${esc(names[win])} outlasts ${esc(names[loser])}!</h1><div class="pk-sub">The pattern reached ${seq.length} pads before ${esc(names[loser])} slipped.</div><button class="pk-btn" data-act="go">Finish</button></div>`);
- sfx.cheer();burst(ui.root,{emojis:['🔴','🟢','🟡','🔵','⭐'],n:30,spread:240});phase='over';
- await new Promise(res=>{ui.handler=a=>{if(a==='go')res(1);};});if(!s.alive)return;
+ s.shared=true;s.updateScores();onTap=null;status='';phase='over';
+ await new Promise(res=>{finishNow=()=>{finishNow=null;res(1);};});if(!s.alive)return;
  s.finish([...score],`${names[win]} won the memory duel; the longest pattern completed was ${Math.max(...score)}.`);
 }
 Object.assign(exports,{simon});
