@@ -183,6 +183,14 @@ if (fs.existsSync(musicDir)) for (const f of fs.readdirSync(musicDir)) {
 // Words n' Shit dictionary: assets/wordsnshit/dict.bin.gz (tools/wns/build-dict.mjs) -> USER_PORTRAITS['wns:dict'] (.bin in the app folder, like Doom's pack).
 const wnsDir = path.join(root, 'assets/wordsnshit');
 if (fs.existsSync(path.join(wnsDir, 'dict.bin.gz'))) drop('wns:dict', 'application/gzip', 'bin', path.join(wnsDir, 'dict.bin.gz'));
+// Boulder Run (Temple Run) 3D runners: assets/trun/<name>.skm.gz (tools/trun/build-chars.py) -> 'trun:<name>' (.bin in the
+// app folder) and their textures assets/trun/<name>.webp -> 'trun:<name>'.
+const trunDir = path.join(root, 'assets/trun');
+if (fs.existsSync(trunDir)) for (const f of fs.readdirSync(trunDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.skm\.gz$/i), t = f.match(/^([a-z0-9-]+)\.(webp|png)$/i);
+  if (m) drop('trun:' + m[1].toLowerCase(), 'application/gzip', 'bin', path.join(trunDir, f));
+  else if (t) drop('trun:' + t[1].toLowerCase(), MIME[t[2].toLowerCase()], t[2].toLowerCase(), path.join(trunDir, f));
+}
 // Doom: assets/doom/<name>.pack.gz (Freedoom, made by tools/doom-pack.mjs) -> USER_PORTRAITS['doom:pack:<name>'];
 // the owner's own IWADs in assets/doom/user/*.wad (git-ignored: never commit them) -> 'doom:wad:<name>', gzipped here.
 // In the app folder they are .bin files (a server could add "Content-Encoding: gzip" to a .gz and the browser would unpack it).

@@ -523,7 +523,12 @@
   "src/packs/crappyPack.js",
   "src/engines/trun/skel.js",
   "src/engines/trun/render.js",
-  "src/engines/trun/props.js"
+  "src/engines/trun/props.js",
+  "src/engines/trun/track.js",
+  "src/engines/trun/sim.js",
+  "src/engines/trun/world.js",
+  "src/engines/templeRun.js",
+  "src/engines/trun/music.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }

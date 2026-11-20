@@ -11,7 +11,7 @@ const {mul}=require("src/engines/trun/skel.js");
 const HEAD=`#version 300 es
 precision highp float;`;
 const LIGHT=`
-uniform vec3 uSun,uSunCol,uSky,uGround,uFogCol,uEye;uniform vec2 uFog;uniform float uUnlit,uAlpha;uniform vec4 uTint;
+uniform vec3 uSun,uSunCol,uSky,uGround,uFogCol,uEye;uniform vec2 uFog;uniform float uHFog;uniform float uUnlit,uAlpha;uniform vec4 uTint;
 vec3 toLin(vec3 c){return c*c;}
 vec4 shade(vec3 base,vec3 n,vec3 wp){
  vec3 N=normalize(n),V=normalize(uEye-wp);
@@ -22,7 +22,8 @@ vec4 shade(vec3 base,vec3 n,vec3 wp){
  float rim=pow(1.-max(dot(N,V),0.),3.);col+=lin*uSky*rim*.6;
  col=mix(col,lin,uUnlit);
  float dist=length(uEye-wp);float f=clamp((dist-uFog.x)/(uFog.y-uFog.x),0.,1.);
- col=mix(col,toLin(uFogCol),f*f*(3.-2.*f));
+ float hf=clamp((-wp.y-1.2)*uHFog,0.,1.);f=max(f*f*(3.-2.*f),hf*hf*(3.-2.*hf));
+ col=mix(col,toLin(uFogCol),f);
  return vec4(sqrt(max(col,0.)),uAlpha*uTint.a);}`;
 
 const VS_SKIN=HEAD+`
@@ -120,7 +121,7 @@ function createRenderer(canvas){
     gl.bindVertexArray(skyVao);gl.drawArrays(gl.TRIANGLES,0,3);gl.bindVertexArray(null);gl.depthMask(true);}
    return true;},
   _common(p,o){const u=p.u;gl.uniformMatrix4fv(u.uVP,false,VP);gl.uniform3fv(u.uSun,F.sun);gl.uniform3fv(u.uSunCol,F.sunCol||[1,.95,.85]);gl.uniform3fv(u.uSky,F.sky||[.5,.6,.7]);gl.uniform3fv(u.uGround,F.ground||[.25,.22,.18]);
-   gl.uniform3fv(u.uFogCol,F.fog||[.6,.65,.7]);gl.uniform2f(u.uFog,F.fogNear??30,F.fogFar??90);gl.uniform3fv(u.uEye,F.eye);gl.uniform1f(u.uUnlit,o.unlit||0);
+   gl.uniform3fv(u.uFogCol,F.fog||[.6,.65,.7]);gl.uniform2f(u.uFog,F.fogNear??30,F.fogFar??90);gl.uniform1f(u.uHFog,F.hfog??0);gl.uniform3fv(u.uEye,F.eye);gl.uniform1f(u.uUnlit,o.unlit||0);
    gl.uniform1f(u.uAlpha,o.alpha??1);gl.uniform4fv(u.uTint,o.tint||[1,1,1,1]);gl.uniform1f(u.uCut,o.cut??.02);
    if(o.alpha!=null&&o.alpha<1||o.blend){gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(!o.noDepthWrite);}else{gl.disable(gl.BLEND);gl.depthMask(true);}
    if(o.cull){gl.enable(gl.CULL_FACE);}else gl.disable(gl.CULL_FACE);},

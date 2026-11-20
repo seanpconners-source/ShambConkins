@@ -41,7 +41,7 @@ function builder(){const P=[],N=[],U=[],J=[],I=[];
 
 // ---------------------------------------------------------------- Indy
 function fedora(B,F){const h=F.head,j=F.jointIndex('Head'),SEG=28;
- const cx=h.c[0],cz=h.c[2]-.004,rx=h.r[0]*1.06,rz=h.r[2]*1.04,top=h.hi[1],base=top-.085;
+ const cx=h.c[0],cz=h.c[2]-.004,rx=h.r[0]*1.06,rz=h.r[2]*1.04,top=h.hi[1],base=top-.058;
  // crown: from the band up, pinched at the front, centre crease on top
  const crown=[];const prof=[[0,1],[.45,1],[.75,.97],[.92,.86],[1,.62],[1.04,.30],[1.05,0]];// [height frac, radius frac] bottom->top
  for(const [hf,rf] of prof){const ring=[];for(let k=0;k<SEG;k++){const a=k/SEG*Math.PI*2,sx=Math.sin(a),cz_=Math.cos(a);
