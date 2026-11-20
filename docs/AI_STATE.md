@@ -10,25 +10,31 @@ v0.99.21 RELEASED (Nov 18, owner: "Release it all!!"; test:core EXIT 0): Crappy 
 batch 08 icons/logos. The 8 new BACKGROUNDS were held out of the release commit (picker not locked: only arcadecl on my-fold-open)
 and put back on the branch right after; next release once the owner locks them (ArtifactData list bg -> apply.py on the 8).
 
-BOULDER RUN REVAMP = TEMPLE RUN (Nov 19, branch ccr-bc26d42e-kn1noq, step 1 of ~5, unreleased; owner: look and play just like the
-real Temple Run in 3D, guy body = Indiana Jones, girl body = Tomb Raider; chasers change per stage, stage 1 = the boulder; 2P take
-turns (online both at once), 1P endless high score; 3D models, no sprites). Cloud env 'ShambConkins' (personal) allows itch.io +
-its R2 storage host (itchio-mirror.cb031a832f44726753d6267436f3b414.r2.cloudflarestorage.com), quaternius.com, kenney.nl,
-opengameart.org, drive hosts; Quaternius free packs download via itch's free flow (scratch get.sh: POST /download_url with the page
-csrf, then POST /<slug>/file/<upload id>?source=game_download with the same csrf -> signed url). Packs (CC0): Universal Base
-Characters, Modular Character Outfits Fantasy, Universal Animation Library 1+2 (one 65-joint skeleton for all) in
-assets/originals/trun. tools/trun/build-chars.py -> assets/trun/{indy,lara}.skm.gz + <char>-<skin|cloth|hair|eyes>.webp +
-anims.skm.gz (22 clips at 30 fps; the TUCKED jump = ninjaStart/ninjaAir/ninjaLand looks like Temple Run, jumpAir has arms wide).
-Indy = Superhero_Male + Ranger body/belt/arms/legs/boots (hood/pauldron/bracers/Regular_Male hands dropped), body triangles under the
-clothes culled by normal rays (cull_hidden), clothes recoloured per part UV mask to a target median value; Lara = Superhero_Female +
-Ranger boots, tank top/shorts/belt/fingerless gloves PAINTED on the skin texture from each texel's 3D spot (paint_lara; bikini
-pixels count as skin). Runtime src/engines/trun/: skel.js (parseSKM, makeClips, makeRig: play/update/cross-fade, pelvis motion
-scaled by body/mannequin pelvis, 3x4 joint rows), render.js (WebGL2; skinned + mesh shaders, sky, fog; rim light must scale with
-albedo or dark things go grey), props.js (fedora/satchel/whip/holsters/backpack glued to one bone each via skinnedProp + palette
-texture; verlet braid with run wind + body spheres). Dev preview: scratch trdev/ (python http.server on 8141 with symlinks to src +
-assets, dev.html mini-require, dev-scene.js, shot.mjs/clip.mjs; ffmpeg works). Clip sent: runners-v2.mp4. NOT wired into the game
-yet: next = owner's verdict on the look, then the temple path world + controls + boulder, player faces on the heads, game hookup
-(engine ballrun2p, id raiders-ball-run), build.mjs drop-in 'trun:' + pwa LATER.
+BOULDER RUN = TEMPLE RUN 3D (Nov 19-20, branch ccr-bc26d42e-kn1noq, unreleased; owner: look and play just like the real Temple
+Run in 3D, guy = Indiana Jones body, girl = Tomb Raider body; chasers change per stage, stage 1 = the boulder; 2P take turns,
+1P endless high score; 3D models, no sprites). STEP 1 (runners): Quaternius CC0 packs (Universal Base Characters, Modular Outfits
+Fantasy, Universal Animation Library 1+2; one 65-joint skeleton) in assets/originals/trun; tools/trun/build-chars.py ->
+assets/trun/{indy,lara,anims}.skm.gz + <char>-<skin|cloth|hair|eyes>.webp (Indy = Superhero_Male + Ranger clothes recoloured,
+skin under clothes culled; Lara = Superhero_Female + Ranger boots, tank/shorts/gloves painted on the skin texture). Cloud env
+'ShambConkins' (personal) allows itch.io + its R2 host (itchio-mirror.cb031a832f44726753d6267436f3b414.r2.cloudflarestorage.com),
+quaternius.com, kenney.nl, opengameart.org, drive hosts (itch free flow: POST /download_url with the page csrf, then POST
+/<slug>/file/<upload id>?source=game_download -> signed url). STEP 2 (playable, Nov 20): engine ballrun2p = src/engines/templeRun.js
+(old 2D boulderRun.js unused). trun/track.js makeCourse(seed): straights with L/R/T corners built ahead (content from seed+straight
+number only, so 2P meet the same things; T arms previewed via world peek), obstacles root (jump; touch = stumble)/log/arch/fire/
+gap/block(lanes) + coin lines/arcs, spacing grows with speed (perfect bot survives 400 s). trun/sim.js makeRunner (lanes LANE
+1.05, jump 10.4/g 30, slide .78 s, turn window 8 m, corner snap at the corner centre, run off = 'edge', 2 stumbles within 7.5 s =
+'caught', chase CHASE 14 / CLOSE 2.2) + makeBot(skill) + simulate() (CPU opponent: skill .8+.16*cpuSkill on seed+':run'; skill .9
+~430 m median). trun/world.js: per-straight meshes in local space (stone deck + cliff wall into height fog, parapets, corner
+walls, temple facade + tunnel at straight 0, obstacles, trees/pillars/walls), canvas-painted textures, coins (spin), fire
+billboards, boulder (rolls on the runner's trail, camera lifts over it when close). render.js has height fog (hfog) + rim scaled
+by albedo. trun/music.js = original drum groove (levels by speed, Music setting). Face = decal patch on the Head bone (faceProp:
+headFacts.drawFace into a 256 canvas, ellipsoid patch ax 2.9), model eyes hidden. Intro 2.6 s: camera in front at the temple door
+(boulder rolls out), swings behind, RUN!. 2P = s.pass per runner (summary of P1 on P2's card); online = both run (netField hz 6
+{d,sc,al}, partner metres in the HUD, finish swap). s.debug: runner, course, phase, autopilot(), speed(k), manual()+tick(dt), kill(),
+faces, bot (online). build.mjs assets/trun -> trun:<name>, pwa LATER 'trun:'. Checked: Node sim bot table, games.mjs fuzz, tests/
+solo.mjs raiders, online-native raiders (wrangler) OK, scratch tr/play.mjs (+P2=1 second runner, FACE=1 dumps the face texture),
+tr/clip.mjs (frame-by-frame video). Headless 3D is software (~3 fps): use speed()/manual ticks in tests. NEXT: owner feedback on
+the clip; power-ups (magnet/boost/shield), tilt option, more stages + chasers, sounds by ear, real-phone fps.
 PADDY'S POOL ROUND 3 (Nov 19, RELEASED as v0.99.25; owner: ball sets look the same, upgrades show on some screens not others, fine aim
 too small in portrait on the Fold, the sign covers the Hall's upgrades): pool/balls.js STYLES per set (bar = yellowed/faded/matte +
 chips fixed on the ball surface, classic, pro = deep colours + mirror gloss + number ring + narrower stripe + measle cue ball,
