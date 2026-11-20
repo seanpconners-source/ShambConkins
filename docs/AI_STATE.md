@@ -10,7 +10,7 @@ v0.99.21 RELEASED (Nov 18, owner: "Release it all!!"; test:core EXIT 0): Crappy 
 batch 08 icons/logos. The 8 new BACKGROUNDS were held out of the release commit (picker not locked: only arcadecl on my-fold-open)
 and put back on the branch right after; next release once the owner locks them (ArtifactData list bg -> apply.py on the 8).
 
-BOULDER RUN = TEMPLE RUN 3D (Nov 19-20, branch ccr-bc26d42e-kn1noq, unreleased; owner: look and play just like the real Temple
+BOULDER RUN = TEMPLE RUN 3D (Nov 19-20, RELEASED as v0.99.26 (owner: "Yes release"; smoke, pwa-lazy, raiders fuzz, solo); power-ups magnet/boost/shield (sim.js POW, track.js pows) + trun/music.js in; owner: look and play just like the real Temple
 Run in 3D, guy = Indiana Jones body, girl = Tomb Raider body; chasers change per stage, stage 1 = the boulder; 2P take turns,
 1P endless high score; 3D models, no sprites). STEP 1 (runners): Quaternius CC0 packs (Universal Base Characters, Modular Outfits
 Fantasy, Universal Animation Library 1+2; one 65-joint skeleton) in assets/originals/trun; tools/trun/build-chars.py ->
@@ -33,8 +33,7 @@ headFacts.drawFace into a 256 canvas, ellipsoid patch ax 2.9), model eyes hidden
 {d,sc,al}, partner metres in the HUD, finish swap). s.debug: runner, course, phase, autopilot(), speed(k), manual()+tick(dt), kill(),
 faces, bot (online). build.mjs assets/trun -> trun:<name>, pwa LATER 'trun:'. Checked: Node sim bot table, games.mjs fuzz, tests/
 solo.mjs raiders, online-native raiders (wrangler) OK, scratch tr/play.mjs (+P2=1 second runner, FACE=1 dumps the face texture),
-tr/clip.mjs (frame-by-frame video). Headless 3D is software (~3 fps): use speed()/manual ticks in tests. NEXT: owner feedback on
-the clip; power-ups (magnet/boost/shield), tilt option, more stages + chasers, sounds by ear, real-phone fps.
+tr/clip.mjs (frame-by-frame video). Headless 3D is software (~3 fps): use speed()/manual ticks in tests. NEXT: owner feedback from real play; tilt option, more stages + chasers, sounds by ear, real-phone fps.
 PADDY'S POOL ROUND 3 (Nov 19, RELEASED as v0.99.25; owner: ball sets look the same, upgrades show on some screens not others, fine aim
 too small in portrait on the Fold, the sign covers the Hall's upgrades): pool/balls.js STYLES per set (bar = yellowed/faded/matte +
 chips fixed on the ball surface, classic, pro = deep colours + mirror gloss + number ring + narrower stripe + measle cue ball,

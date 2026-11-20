@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.26
+
+- **Boulder Run is now a 3D Temple Run.** Run from the temple with the boulder right behind you: swipe up to jump, down to slide, left/right to turn at corners (or change lane on the straights). Roots trip you (trip twice and the boulder gets you); logs, low arches, fire jets, gaps and rubble end the run. Left and right corners plus T-junctions where you pick the way, coin trails, and you speed up the longer you last.
+- **Power-ups:** coin magnet, speed boost (sprint through everything) and a shield that saves you once.
+- **Indy and Lara:** player 1 runs as an Indiana Jones-style adventurer, player 2 as a Tomb Raider-style explorer, both 3D with your own face. Original jungle drum music that builds with your speed.
+- **2 players take turns** on the same course (higher score wins); 1 player and the board game race a CPU run on the same course; online you both run at once and see each other's distance.
+
 ## v0.99.25
 
 - **Paddy's Pool, ball sets that really look different:** the Bar Set is yellowed, faded, matte and chipped; Classic is clean and shiny; Pro has deep tournament colours, mirror gloss, ringed numbers and a red-dot cue ball; Glow balls are fluorescent and light up the felt around them. New: the **Golden God Set** ($2,400), polished gold with metallic colours.
