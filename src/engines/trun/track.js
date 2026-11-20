@@ -57,10 +57,10 @@ function makeCourse(seed,{stage=0}={}){
  // content of straight k, independent of direction
  function content(k){const r=seededRandom(seed+':trun:'+k),lvl=Math.min(1,k/28);
   const zone=zoneAt(k,order),gate=k>0&&k%ZLEN===0,mix=ZONES[zone].mix,tot=mix.reduce((x,y)=>x+y,0);
-  const len=k===0?70:Math.round(36+r()*34+lvl*18+(gate?34:0));
+  const len=k===0?70:Math.round(36+r()*34+lvl*18+(gate?44:0));
   const turn=k===0?(r()<.5?'L':'R'):r()<.22?'T':r()<.5?'L':'R';
   const obs=[],coins=[];
-  let at=k===0?26:gate?46:10+r()*4;// a zone gate gets a clear run-in so the title card can be read
+  let at=k===0?26:gate?56:10+r()*4;// a zone gate gets a clear run-in so the title card can be read
   const end=len-9;// keep the corner run-up clear
   // room between obstacles grows with the speed you'll have by then (a jump covers ~.7 s of running)
   const gapBase=11+lvl*9;

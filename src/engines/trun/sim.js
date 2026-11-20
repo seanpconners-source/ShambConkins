@@ -3,15 +3,23 @@
 // corner's window, else move one lane. The chaser (the boulder on stage 1) is CHASE metres behind; a stumble lets it right
 // up to you, and a second stumble before it drops back again means it gets you.
 const T=require("src/engines/trun/track.js");
+// The getaway (entering a new zone): a short scene, the same on every phone. Seconds since the zone began:
+// keep running while the old chaser misses the corner and falls (to slow), ease to a stop (stop), look back at the drop (look..back),
+// turn round relieved (back..enter), the next chaser bursts in (enter, lands at land), the runner flinches, then sprints off (go..end).
+// No obstacles come before the run is back to full speed (track.js keeps a zone's first straight clear for long enough).
+const BRK={slow:1.6,stop:2.6,look:2.8,back:4.0,enter:5.0,land:5.8,go:6.3,end:7.3},CALM=BRK.end,BRK_GAP=10;
+function calmSpeed(e){if(e<BRK.slow)return 1-.5*e/BRK.slow;
+ if(e<BRK.stop){const k=(e-BRK.slow)/(BRK.stop-BRK.slow);return .5*(1-k)*(1-k);}
+ if(e<BRK.go)return 0;const k=Math.min(1,(e-BRK.go)/(BRK.end-BRK.go));return k*k*(3-2*k);}
 
 const POW={magnet:12,boost:5,shield:20,idol:12};// idol (the golden idol): coins count double
-const ZONE_BONUS=250,CALM=3.1,V0=9,VMAX=17.5,ACC=.05,G=30,JUMP=10.4,SLIDE=.78,STAND=1.75,DUCK=.8,WINDOW=8,CHASE=14,CLOSE=2.2,BACK=1.1;
+const ZONE_BONUS=250,V0=9,VMAX=17.5,ACC=.05,G=30,JUMP=10.4,SLIDE=.78,STAND=1.75,DUCK=.8,WINDOW=8,CHASE=14,CLOSE=2.2,BACK=1.1;
 
 function makeRunner(course,{who=0}={}){
  const C=course;
  const R={who,seg:C.get(0),zone0:C.get(0).zone,a:0,u:0,lane:1,y:0,vy:0,slide:0,v:V0,t:0,coins:0,alive:true,dead:null,deadAt:0,
   turnQ:null,turnQT:0,lastStumble:-99,jumpQ:0,bonus:0,calm:0,zone:C.get(0).zone,mile:0,pow:null,powT:0,safeT:0,chase:CHASE,slowT:0,air:false,events:[],hit:new Set(),got:new Set(),
-  dist(){return R.seg.s0+R.a;},score(){return Math.floor(R.dist()+R.coins*10+R.bonus);},
+  dist(){return R.seg.s0+R.a;},brkT(){return R.calm>0?CALM-R.calm:-1;},score(){return Math.floor(R.dist()+R.coins*10+R.bonus);},
   // a corner is near: inside the turn window of the current straight
   inWindow(){return R.a>R.seg.len-WINDOW;},
   input(k){if(!R.alive)return;
@@ -28,8 +36,10 @@ function makeRunner(course,{who=0}={}){
    R.t+=dt;R.v=Math.min(VMAX,V0+ACC*R.t);
    if(R.pow){R.powT-=dt;if(R.powT<=0){if(R.pow==='boost')R.safeT=1.2;R.pow=null;R.ev('powEnd');}}
    R.safeT=Math.max(0,R.safeT-dt);
-   R.calm=Math.max(0,R.calm-dt);const calmK=R.calm>.9?.55:R.calm>0?.55+.45*(1-R.calm/.9):1;
-   const boost=R.pow==='boost',sp=R.v*(boost?1.6:R.slowT>0?.72:1)*calmK;if(R.calm>0)R.chase=CHASE;R.slowT=Math.max(0,R.slowT-dt);
+   R.calm=Math.max(0,R.calm-dt);const ce=R.brkT(),calmK=ce>=0?calmSpeed(ce):1;
+   // the old chaser is gone; the new one lands BRK_GAP behind you and falls back to its usual distance once you're running
+   if(ce>=0){if(ce<BRK.enter)R.chase=CHASE;else if(!R.brkIn){R.brkIn=true;R.chase=Math.max(3,Math.min(BRK_GAP,R.a-1.5));}}
+   const boost=R.pow==='boost',sp=R.v*(boost?1.6:R.slowT>0?.72:1)*calmK;R.slowT=Math.max(0,R.slowT-dt);
    const a0=R.a;R.a+=sp*dt;
    // lateral: glide to the lane
    const tu=C.laneU(R.lane);R.u+=(tu-R.u)*Math.min(1,dt*12);
@@ -43,7 +53,7 @@ function makeRunner(course,{who=0}={}){
    if((boost||R.safeT>0)&&R.y<0&&R.y>-.6){R.y=0;R.vy=0;R.air=false;}
    if(R.y<-.6){R.kill('fall');return;}
    // chaser drops back
-   if(R.chase<CHASE)R.chase=Math.min(CHASE,R.chase+BACK*dt*(R.t-R.lastStumble>2?2.2:.6));
+   if(R.chase<CHASE&&ce<0)R.chase=Math.min(CHASE,R.chase+BACK*dt*(R.t-R.lastStumble>2?2.2:.6));
    // obstacles crossed this step
    const seg=R.seg;
    for(const o of seg.obs){if(R.hit.has(o)||boost||R.safeT>0)continue;
@@ -78,7 +88,7 @@ function makeRunner(course,{who=0}={}){
    const n=C.follow(seg,side);R.seg=n;
    // keep moving: what was past the corner centre carries on along the new straight; sideways offset becomes along
    R.a=-T.CORNER/2+Math.max(-.5,over);R.turnQ=null;R.hit=new Set();R.got=new Set();R.ev('turn',{side,k:seg.k});
-   if(n.zone!==R.zone){R.zone=n.zone;R.bonus+=ZONE_BONUS;R.calm=CALM;R.ev('zone',{zone:n.zone});}
+   if(n.zone!==R.zone){R.zone=n.zone;R.bonus+=ZONE_BONUS;R.calm=CALM;R.brkIn=false;R.ev('zone',{zone:n.zone});}
    C.prune(n.k);}};
  return R;}
 
@@ -107,4 +117,4 @@ function simulate(seed,{skill=.7,rnd,maxT=400,dt=1/30}={}){
  while(R.alive&&R.t<maxT){bot(dt);R.step(dt);R.events.length=0;}
  return {score:R.score(),dist:Math.floor(R.dist()),coins:R.coins,dead:R.dead,t:+R.t.toFixed(1)};}
 
-Object.assign(exports,{ZONE_BONUS,POW,makeRunner,makeBot,simulate,V0,VMAX,STAND,DUCK,CHASE,CLOSE,SLIDE});
+Object.assign(exports,{BRK,CALM,BRK_GAP,calmSpeed,ZONE_BONUS,POW,makeRunner,makeBot,simulate,V0,VMAX,STAND,DUCK,CHASE,CLOSE,SLIDE});
