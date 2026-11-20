@@ -128,7 +128,7 @@ const ROWS2=[
  ['ds-amelie','Amelie','Death Stranding','🏖️','Amelie (Death Stranding)','explorer','A beach in every landmark.'],
  ['ds-bb','BB','Death Stranding','🍼','BB (Death Stranding)','survivor','Bridge baby. Makes the BTs go away, and the penalties too.'],
  // ---- Friends, horses and icons
- ['shane-over','Shane Over','ShambConkins Friends','🍻','','explorer','Sean’s friend Shane. Shows up at every landmark with a story.'],
+ ['shane-over','Shane Ober','ShambConkins Friends','🍻','','explorer','Sean’s friend Shane. Shows up at every landmark with a story.'],
  ['carlos-valle','Carlos Valle','ShambConkins Friends','🎸','','scavenger','Sean’s friend Carlos. Always brings something to the party.'],
  ['bert','Bert','ShambConkins Friends','🎲','','survivor','Sean’s friend Bert. Rolls with the penalties.'],
  // Lydia's crew (owner, Nov 12): normal unlocks for everyone; Lydia's own phone gets them as a gift (src/gifts.js)

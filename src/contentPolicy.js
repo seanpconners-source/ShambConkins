@@ -61,6 +61,11 @@ ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>c.id==='batman89'?{..
 // The horror icons only appear in the Level IV horror route.
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.map(c=>HORROR_IDS.includes(c.id)?{...c,unlockBy:'horror',unlockHint:c.id==='satan'?c.unlockHint:'Only found in the Level IV horror route. Look for their landmark deep in the dark.'}:c);
 
+// Retired (owner, Nov 20): the REZN band members leave the lineup until they come back with their own pinball table
+// (ROADMAP). Saves that had them keep loading; the ids are only dropped from rosters. Their unlock card goes too.
+const RETIRED_CHARACTERS=['rob-mcwilliams','spencer-ouellette','patrick-dunn','phil-cangelosi'];
+ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.filter(c=>!RETIRED_CHARACTERS.includes(c.id));
+ACTIVE_CATALOG.cards=ACTIVE_CATALOG.cards.filter(c=>!(c.e?.[0]==='unlockChar'&&RETIRED_CHARACTERS.includes(c.e[1])));
 // Doubles (the same person under two ids): only the kept copy stays; cards that unlocked a double unlock the kept one.
 ACTIVE_CATALOG.characters=ACTIVE_CATALOG.characters.filter(c=>!Object.prototype.hasOwnProperty.call(MERGED_CHARACTERS,c.id));
 ACTIVE_CATALOG.cards=ACTIVE_CATALOG.cards.map(c=>c.e?.[0]==='unlockChar'&&MERGED_CHARACTERS[c.e[1]]?{...c,e:[c.e[0],mergedCharacterId(c.e[1]),...c.e.slice(2)],...(c.unlock?{unlock:mergedCharacterId(c.unlock)}:{})}:c);
