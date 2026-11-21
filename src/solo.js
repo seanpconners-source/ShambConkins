@@ -20,7 +20,7 @@ const SOLO_IDS={
  'moonraker-lander':'rounds','t800-scan-long':'rounds','bond-facility':'rounds','major-league-bats':'cpu','asteroid-drift':'rounds',
  'breakout-party':'rounds','banana-money-grab':'levels',
  // arcadeRounds (arcade.js → soloArcadeRounds)
- 'radical-bike':'rounds','flappy-disaster':'rounds','crossy-chaos':'rounds','frogger-heads':'rounds','gopher-hunt':'rounds','wind-archery':'rounds',
+ 'radical-bike':'rounds','flappy-disaster':'game','crossy-chaos':'rounds','frogger-heads':'rounds','gopher-hunt':'rounds','wind-archery':'rounds',
  // pass-and-play engines run once per round by the launcher (soloTurnRounds); the hand-off to P2 ends the round
  'taskmaster-fruit-ninja':'turns','angry-heads':'turns','neon-ball-storm':'turns','home-alone-paint-can':'turns','tm-cones':'turns',
  'paper-route':'turns','warehouse-shift':'turns','matrix-hardline-hack':'turns','alien-sonar-grid':'turns','kitchen-service':'turns',
@@ -80,7 +80,7 @@ async function soloNext(s,{title='Level cleared!',body='',level=1,score=0,label=
 // solo run ends in a score qualify; CPU-opponent games need real head-to-head play: those whose engine plays natively
 // online (src/netPlay.js: both phones run the 2P game, each plays its own player) are listed in NET_NATIVE.
 const DUEL_KINDS=new Set(['levels','rounds','turns','game','alone']);
-const NET_NATIVE=new Set(['banana-money-grab','major-league-fielding','major-league-bats','trivia-mixed','trivia-nick90','trivia-dbz','trivia-hxh','trivia-sitcom','trivia-hardcore','trivia-lightning','trivia-wager','trivia-survival',
+const NET_NATIVE=new Set(['flappy-disaster','banana-money-grab','major-league-fielding','major-league-bats','trivia-mixed','trivia-nick90','trivia-dbz','trivia-hxh','trivia-sitcom','trivia-hardcore','trivia-lightning','trivia-wager','trivia-survival',
  'paddys-beer-pong','shamb-uno','ten-forward-chess','deadite-checkers',
  'four-lights','strategema-grid','full-shambyahtzee','cheaters-yahtzee',
  'blackjack','five-card','roulette','bond-baccarat','traitors-guess-who','battleship-fog',
