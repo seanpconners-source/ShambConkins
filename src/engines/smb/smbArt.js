@@ -150,7 +150,7 @@ const hardTile=(base,light)=>mk(px=>{px(base,0,0,16,16);px(light,0,0,15,1);px(li
 const pipeTop=right=>mk(px=>{px(C.green,0,0,16,16);px('#000',0,0,16,1);px('#000',0,15,16,1);if(!right){px('#000',0,0,1,16);px(C.lime,2,1,2,14);px(C.lime,5,1,1,14);}else{px('#000',15,0,1,16);for(let y=1;y<15;y+=2){px('#000',10,y);px('#000',12,y+1);}px('#000',13,1,1,14);}});
 const pipeBody=right=>mk(px=>{if(!right){px('#000',2,0,1,16);px(C.green,3,0,13,16);px(C.lime,5,0,2,16);px(C.lime,8,0,1,16);}else{px(C.green,0,0,13,16);for(let y=0;y<16;y+=2){px('#000',8,y);px('#000',10,y+1);}px('#000',13,0,1,16);}});
 // sideways pipe: mouth (top/bottom half) and body (top/bottom half)
-const sideTile=(mouth,bottom)=>mk(px=>{px(C.green,0,0,16,16);
+const sideTile=(mouth,bottom)=>mk(px=>{if(mouth)px(C.green,0,0,16,16);else if(!bottom)px(C.green,0,2,16,14);else px(C.green,0,0,16,14);
  if(mouth){px('#000',0,0,1,16);if(!bottom){px('#000',0,0,16,1);px(C.lime,2,2,1,14);px(C.lime,4,3,12,2);}else{px('#000',0,15,16,1);px(C.lime,2,0,1,14);for(let x=3;x<16;x+=2)px('#000',x,12);}}
  else{if(!bottom){px('#000',0,2,16,1);px(C.lime,0,4,16,2);px(C.lime,0,7,16,1);}else{px('#000',0,13,16,1);for(let x=1;x<16;x+=2){px('#000',x,8);px('#000',x+1,10);}}}});
 const treeTile=kind=>mk(px=>{px(C.green,0,1,16,15);px('#000',0,0,16,1);px('#000',0,15,16,1);px(C.lime,0,2,16,2);
@@ -543,7 +543,10 @@ function drawFlame(g,f,simT){g.save();g.translate(f.x,f.y);
  if(f.look==='note'){g.fillStyle=Math.floor(simT*8)%2?'#f8c838':'#fcfcfc';g.beginPath();g.ellipse(-2,2,3,2.2,-.4,0,7);g.fill();g.fillRect(0,-8,1.5,10);g.fillRect(0,-8,5,2);g.restore();return;}
  if(f.look==='bolt'||f.look==='holy'){g.fillStyle=f.look==='holy'?'#fcfcfc':'#fcf03c';g.beginPath();g.moveTo(-8,0);g.lineTo(-2,-3);g.lineTo(0,1);g.lineTo(8,-2);g.lineTo(2,3);g.lineTo(0,-1);g.closePath();g.fill();if(f.look==='holy'){g.fillStyle='rgba(252,240,168,.5)';g.beginPath();g.ellipse(0,0,12,5,0,0,7);g.fill();}g.restore();return;}
  if(f.look==='arrow'){g.scale(Math.sign(f.vx)||1,1);g.fillStyle='#8c5c34';g.fillRect(-7,-.5,12,1.5);g.fillStyle='#bcbcbc';g.beginPath();g.moveTo(5,-2.5);g.lineTo(9,0);g.lineTo(5,2.5);g.fill();g.fillStyle='#fcfcfc';g.fillRect(-8,-2,3,4);g.restore();return;}
- if(f.look==='ice'){g.fillStyle='#8cd8fc';g.beginPath();g.ellipse(4,0,12,3.2,0,0,7);g.fill();g.fillStyle='#fcfcfc';g.fillRect(-8,-1,8,2);g.restore();return;}const fl=Math.floor(simT*12)%2;g.fillStyle=C.red;g.beginPath();g.ellipse(4,0,12,fl?3.5:3,0,0,7);g.fill();g.fillStyle=C.q;g.beginPath();g.ellipse(0,0,8,2.2,0,0,7);g.fill();g.fillStyle=C.white;g.fillRect(-8,-1,6,2);g.restore();}
+ if(f.look==='ice'){g.scale(-(Math.sign(f.vx)||-1),1);g.fillStyle='#8cd8fc';g.beginPath();g.ellipse(4,0,12,3.2,0,0,7);g.fill();g.fillStyle='#fcfcfc';g.fillRect(-8,-1,8,2);g.restore();return;}// Bowser's fire: a round white-hot head out in front, flickering tongues trailing behind it
+ g.scale(-(Math.sign(f.vx)||-1),1);const fl=Math.floor(simT*12)%2;g.fillStyle=C.red;g.beginPath();g.moveTo(-6,-5);g.quadraticCurveTo(-13,0,-6,5);
+ for(const [x,y] of [[2,3.5],[6,fl?5:2],[11,2.5],[15,fl?3:1],[20,0],[15,fl?-3:-1],[11,-2.5],[6,fl?-5:-2],[2,-3.5]])g.lineTo(x,y);g.closePath();g.fill();
+ g.fillStyle=C.q;g.beginPath();g.ellipse(-4,0,6,3,0,0,7);g.fill();g.beginPath();g.moveTo(0,-2);g.lineTo(fl?12:9,0);g.lineTo(0,2);g.fill();g.fillStyle=C.white;g.beginPath();g.ellipse(-6,0,3,1.6,0,0,7);g.fill();g.restore();}
 // a beanstalk: a stem with leaves on alternate sides and a curl at the tip
 function drawVine(g,x,top,bottom){if(bottom<=top)return;g.fillStyle='#00a800';g.fillRect(x-1,top,2,bottom-top);
  for(let y=bottom-6;y>top+4;y-=8){const sd=((y/8|0)%2)?1:-1;g.fillStyle='#b8f818';g.beginPath();g.ellipse(x+sd*4,y,4,2,sd*.5,0,7);g.fill();g.fillStyle='#00a800';g.fillRect(x+(sd>0?1:-4),y,3,1);}

@@ -279,14 +279,18 @@ async function paddysPool(s){
  s.on(document,'keydown',ev=>{if(!s.alive||s.paused||S.phase!=='aim'||!myTurn())return;const k=ev.key,f=ev.shiftKey?.0025:.02;
   if(k==='ArrowLeft'||k==='a')S.angle-=f;else if(k==='ArrowRight'||k==='d')S.angle+=f;else if(k==='ArrowUp'||k==='w')S.power=Math.min(1,S.power+.06);else if(k==='ArrowDown'||k==='s')S.power=Math.max(0,S.power-.06);
   else if((k===' '||k==='Enter')&&S.power>.02){ev.preventDefault();fire();}else return;netAim();});
- let aimSent=0;function netAim(){if(!net||!myTurn()||t-aimSent<.12)return;aimSent=t;net.send({aim:[+S.angle.toFixed(4),+S.power.toFixed(3),+S.side.toFixed(3),+S.vert.toFixed(3)]});}
+ // the aim goes out ~12 times a second (and once more when the finger stops, so the last move always arrives); the
+ // watching phone eases toward it every frame instead of jumping from one update to the next
+ let aimSent=0,aimDirty=false;function netAim(force){if(!net||!myTurn())return;aimDirty=true;if(!force&&t-aimSent<.08)return;aimSent=t;aimDirty=false;net.send({aim:[+S.angle.toFixed(4),+S.power.toFixed(3),+S.side.toFixed(3),+S.vert.toFixed(3)]});}
+ function easeAim(dt){if(aimDirty&&t-aimSent>=.08)netAim(true);const g=S.aimGoal;if(!g||myTurn()||S.phase!=='aim'){S.aimGoal=null;return;}
+  const k=1-Math.exp(-dt*14);let da=g[0]-S.angle;da=Math.atan2(Math.sin(da),Math.cos(da));S.angle+=da*k;S.power+=(g[1]-S.power)*k;S.side+=(g[2]-S.side)*k;S.vert+=(g[3]-S.vert)*k;}
  let placeSent=0;function netPlace(){if(!net||t-placeSent<.1)return;placeSent=t;const cb=cueBall();net.send({bh:[+cb.x.toFixed(3),+cb.y.toFixed(3)]});}
  function spinBig(){const r=Math.min(L.W,L.H)*.24;const sp={x:L.W/2,y:L.H/2,r};sp.reset={x:sp.x-50,y:sp.y+r+18,w:100,h:30};return sp;}
  // ---------------------------------------------------------------- online
  if(net)void (async()=>{for(;;){const m=await net.next();if(!m||!s.alive){if(s.alive&&S.m&&S.phase!=='summary'){S.m.over=me;finishMatch();}return;}
   if(m.setup){applySetup(m.setup);}
   else if(m.cue){const cq=HALL.byId(HALL.CUES,m.cue);if(cq)theirCue=cq;}
-  else if(Array.isArray(m.aim)){if(S.phase==='aim'&&!myTurn()){S.angle=+m.aim[0]||0;S.power=+m.aim[1]||0;S.side=+m.aim[2]||0;S.vert=+m.aim[3]||0;}}
+  else if(Array.isArray(m.aim)){if(S.phase==='aim'&&!myTurn()){const g=[+m.aim[0]||0,+m.aim[1]||0,+m.aim[2]||0,+m.aim[3]||0];if(!S.aimGoal){S.angle=g[0];S.power=g[1];S.side=g[2];S.vert=g[3];}S.aimGoal=g;}}
   else if(Array.isArray(m.bh)){if(S.phase==='aim'&&!myTurn()){const cb=cueBall();cb.x=+m.bh[0];cb.y=+m.bh[1];}}
   else if(Number.isFinite(m.call)){S.call=m.call;}
   else if(Array.isArray(m.f)){await until(()=>S.phase==='aim'&&!myTurn());if(!s.alive)return;const v=m.f.map(Number);const cb=cueBall();cb.x=v[5];cb.y=v[6];S.call=v[7];fire({dir:[v[0],v[1]],speed:v[2],side:v[3],vert:v[4]},true);}
@@ -553,7 +557,7 @@ async function paddysPool(s){
   if(e>1){x.fillStyle='rgba(255,255,255,'+(.6+.4*Math.sin(t*4))+')';x.font='800 14px system-ui';x.fillText('Tap to continue',W/2,Math.min(H-24,y+80));}
   x.restore();}
  // ---------------------------------------------------------------- frame
- s.frame(dt=>{t+=dt;layout();
+ s.frame(dt=>{t+=dt;easeAim(dt);layout();
   for(let i=waits.length-1;i>=0;i--)if(t>=waits[i].at){waits[i].r();waits.splice(i,1);}
   if(!s.paused&&S.m){
    if(S.phase==='roll')rollStep(dt);
