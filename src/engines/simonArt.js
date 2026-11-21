@@ -89,7 +89,7 @@ function drawToy(x,cx,cy,R,lit,t=0){
  const art=toyArt();
  if(art){const k=R/BODY,S=TEMPLATE*k,x0=cx-S/2,y0=cy-S/2;x.drawImage(art.dim,x0,y0,S,S);
   for(let q=0;q<4;q++)if(lit[q]){const p=art.lit[q];x.save();quarterClip(x,q,cx,cy,R*1.02);
-   if(p){x.beginPath();x.arc(cx,cy,R*1.0,0,7);x.arc(cx,cy,R*G.disc,0,7,true);x.clip();x.drawImage(p,x0,y0,S,S);}
+   if(p){x.beginPath();x.arc(cx,cy,R*1.0,0,Math.PI*2);x.moveTo(cx+R*G.disc,cy);x.arc(cx,cy,R*G.disc,0,Math.PI*2);x.clip('evenodd');x.drawImage(p,x0,y0,S,S);}
    else{padPath(x,q,cx,cy,R);x.clip();x.globalCompositeOperation='lighter';x.fillStyle=hexA(LIT[q],.75);x.fillRect(cx-R,cy-R,R*2,R*2);}
    x.restore();}}
  else drawToyShape(x,cx,cy,R,lit,t);

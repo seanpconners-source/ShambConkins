@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Simon Classic.** In 1 Player, the Simon itself is the menu: tap green for CLASSIC (the real toy: Simon adds a pad each round, you repeat it, 3 seconds per press, the razz when you slip, the winning flash at 8 / 14 / 20 / 31 depending on the SKILL switch, plus START, LAST and LONGEST) or red for the usual VS CPU face-off. Two players, board play and online are unchanged.
+- **Simon's blue pad** now lights all the way to its top edge.
+
 ## v0.99.32
 
 - **Simon, the real toy.** Simon Says Face-Off is rebuilt full screen: the 1978 Simon seen from above on the floor of a messy 90s kid's bedroom, with the real Simon tones (green 415 Hz, red 310, yellow 252, blue 209), a tone that lasts as long as you hold the pad, the toy's playback speeds (faster at 6 and 14), 3 seconds per press, and the low razz buzz with the right pad lit when someone slips. Slots for the owner's pictures (the toy dim + each pad lit, two backgrounds) and optional real recordings.

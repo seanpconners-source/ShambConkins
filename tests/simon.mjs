@@ -38,10 +38,41 @@ for(const [w,h] of [[390,780],[844,390],[1100,700]]){const tag=`${w}x${h}`,page=
  check(!(await D(page,()=>window.ShambConkins.store.session?.debug?.phase?.()==='over')),tag+' FINISH ends the game');
  check(!page.__e.length,tag+' no page errors '+page.__e.join(' | '));
  await page.context().close();}
-{const page=await open(390,780,true);await pass(page);
+// 1P: the toy is the menu; the red pad = VS CPU
+{const page=await open(390,780,true);await waitPhase(page,'menu');await page.waitForTimeout(400);
+ await page.screenshot({path:screenshotPath('simon-menu-390x780.png')});await tap(page,1);await pass(page);
  for(let r=0;r<12;r++){await waitPhase(page,'input',20000).catch(()=>{});const st=await S(page);if(!st||st.phase==='over')break;
   if(st.phase==='input'){for(const q of st.seq)await tap(page,q);await tap(page,r%4);}
   await page.waitForTimeout(400);if(await page.locator('.pass-overlay button').count())await pass(page).catch(()=>{});}
  const st=await S(page);check(st&&st.seq.length>=4,'1P vs CPU: the CPU repeats and adds (pattern '+st?.seq.length+')');
  check(!page.__e.length,'1P no page errors '+page.__e.join(' | '));await page.context().close();}
+// 1P CLASSIC: green pad; skill switch cycles; Simon adds a pad each round; skill 1 = win at 8; a slip = razz; LAST; FINISH
+for(const [w,h] of [[390,780],[844,390]]){const tag='classic-'+w+'x'+h,page=await open(w,h,true);await waitPhase(page,'menu');
+ const C=f=>D(page,f),box=await page.locator('#game-canvas').boundingBox();
+ const sk0=await C(()=>JSON.parse(localStorage.getItem('sc-simon-skill')||'1'));
+ const sp=await C(()=>window.ShambConkins.store.session.debug.spots());
+ await page.mouse.click(box.x+sp.skill.x+sp.skill.w/2,box.y+sp.skill.y+sp.skill.h/2);
+ const sk1=await C(()=>+localStorage.getItem('sc-simon-skill'));check(sk1===sk0%4+1,tag+' tapping SKILL moves the switch ('+sk0+' -> '+sk1+')');
+ await tap(page,0);await waitPhase(page,'ready');await C(()=>window.ShambConkins.store.session.debug.classic.skill(1));
+ await page.screenshot({path:screenshotPath(`simon-${tag}-ready.png`)});
+ const start=async()=>{const sp=await C(()=>window.ShambConkins.store.session.debug.spots());await page.mouse.click(box.x+sp.start.x,box.y+sp.start.y);};
+ await start();let won=false,shot=false;
+ for(let r=0;r<12;r++){await page.waitForFunction(()=>{const p=window.ShambConkins.store.session.debug.phase();return p==='input'||p==='ready';},null,{timeout:30000});
+  const st=await S(page);if(st.phase==='ready'){won=true;break;}
+  for(const q of st.seq){if(!shot&&q===3){await (async()=>{const p=await D(page,q=>window.ShambConkins.store.session.debug.pad(q),3);await page.mouse.move(box.x+p.x,box.y+p.y);await page.mouse.down();await page.waitForTimeout(150);
+     await page.screenshot({path:screenshotPath(`simon-${tag}-blue.png`)});await page.mouse.up();await page.waitForTimeout(120);})();shot=true;}else await tap(page,q);}}
+ let cs=await C(()=>window.ShambConkins.store.session.debug.classic.state());
+ check(won&&cs.lastLen===8&&cs.wonAny,tag+' Simon adds a pad each round; 8 in a row beats skill 1 ('+JSON.stringify(cs)+')');
+ await start();await waitPhase(page,'input',20000);await C(()=>window.ShambConkins.store.session.debug.classic.wrong());await page.waitForTimeout(200);
+ const lit=(await S(page)).lit;check(lit.some(Boolean),tag+' a slip: the razz with the right pad lit');
+ await waitPhase(page,'ready',8000);cs=await C(()=>window.ShambConkins.store.session.debug.classic.state());
+ check(cs.games===2&&cs.best===8&&cs.lastLen===0,tag+' game over after the slip, best stays 8');
+ const sp2=await C(()=>window.ShambConkins.store.session.debug.spots());await page.mouse.click(box.x+sp2.last.x,box.y+sp2.last.y);await page.waitForTimeout(100);
+ check((await S(page)).phase==='watch',tag+' LAST replays the last pattern');await waitPhase(page,'ready',8000);
+ await page.screenshot({path:screenshotPath(`simon-${tag}-over.png`)});
+ const b=await C(()=>window.ShambConkins.store.session.debug.btn());check(!!b,tag+' FINISH button shown');
+ if(b)await page.mouse.click(box.x+b.x+b.w/2,box.y+b.y+b.h/2);
+ await page.waitForFunction(()=>!window.ShambConkins.store.session||window.ShambConkins.store.session.finished,null,{timeout:15000}).catch(()=>{});
+ check(await C(()=>!window.ShambConkins.store.session||!!window.ShambConkins.store.session.finished),tag+' FINISH ends the run');
+ check(!page.__e.length,tag+' no page errors '+page.__e.join(' | '));await page.context().close();}
 await browser.close();console.log(bad?`${bad} FAILED`:'all ok');process.exit(bad?1:0);

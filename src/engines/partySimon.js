@@ -5,6 +5,7 @@
 // 0.22 s from 14, 0.05 s dark between; 3 s to make each press like the toy (5 s to add the new pad); a mistake = the razz
 // while the right pad lights. Turns, the CPU, online moves {t: pad | -1 too slow} and s.debug.bot are as before.
 const {isCpu,isOnline,cpuSkill}=require("src/engines/cpuKit.js");
+const {soloFinish,soloProgress}=require("src/solo.js");
 const {fullBleed}=require("src/engines/fullBleed.js");
 const {vibrate}=require("src/audio.js");
 const A=require("src/engines/simonArt.js");
@@ -15,6 +16,11 @@ const toneMs=n=>n<=5?420:n<=13?320:220,GAP=50;
 const PRESS_S=3,ADD_S=5,RAZZ_MS=1500;
 const FONT='"SC Nunito","Arial Rounded MT Bold",Arial,sans-serif',HEAD='"SC Bangers",Impact,"Arial Black",sans-serif';
 const PCOL=['#78b6ff','#ff9fc6'];
+// 1P Arcade (owner, Nov 21): a menu that IS the toy: green pad = CLASSIC (the real Simon, Game 1), red pad = VS CPU (the
+// face-off above). Classic: Simon adds a random pad each round and plays the whole pattern, you repeat it; SKILL 1-4 = win
+// at 8 / 14 / 20 / 31 like the toy, victory = the last pad flashing; START plays, LAST replays the last pattern, LONGEST the
+// longest one this session. Board, online and 2P are unchanged.
+const SKILL_LEN=[8,14,20,31];
 
 async function simon(s){
  const [c,x]=s.canvas(420,760,{fill:true});
@@ -22,7 +28,7 @@ async function simon(s){
  A.preload();
  const snd=createSimonSound();snd.preload();s.cleanup(()=>snd.stopAll());
  const names=[s.players[0].name,s.players[1].name],score=[0,0],seq=[];
- let phase='idle',onTap=null,P=0,loser=-1,status='',sub='',k=0,need=0,result=null;
+ let mode='duel',phase='idle',onTap=null,P=0,loser=-1,status='',sub='',k=0,need=0,result=null;
  const rand=s.random,cpu=isCpu(s),bot=P=>cpu&&P===1;if(cpu)s.hotseat=true;
  // Online (s.online): the player whose turn it is taps on their own phone; each tap {t: pad, or -1 = too slow} streams to
  // the other phone, which plays it like a CPU turn. Only the tapping phone runs the too-slow clock.
@@ -53,11 +59,31 @@ async function simon(s){
  const held=new Map();
  s.on(c,'pointerdown',ev=>{ev.preventDefault();if(s.paused||!Lo)return;const pt=s.pointer(ev);
   if(phase==='over'){if(finishNow&&Lo.btn&&pt.x>Lo.btn.x&&pt.x<Lo.btn.x+Lo.btn.w&&pt.y>Lo.btn.y&&pt.y<Lo.btn.y+Lo.btn.h)finishNow();return;}
+  if(phase==='menu'||phase==='ready'){consoleTap(pt,ev);return;}
   const q=A.padAt(pt.x,pt.y,Lo.cx,Lo.cy,Lo.R);if(q<0||phase!=='input'||!onTap||auto(s.active))return;
   s.capture(ev);held.set(ev.pointerId,'in'+ev.pointerId);onTap(q,false,'in'+ev.pointerId);});
  const up=ev=>{const id=held.get(ev.pointerId);if(!id)return;held.delete(ev.pointerId);s.release(ev);const l=L.get(id);if(l)l.held=false;};
  s.on(c,'pointerup',up);s.on(c,'pointercancel',up);
  const KEYS={q:0,w:1,a:2,s:3,'7':0,'9':1,'1':2,'3':3};
+ // ---- the console (menu + classic): pads, START / LAST / LONGEST, the SKILL switch, FINISH
+ let skill=1;try{skill=Math.min(4,Math.max(1,Math.round(+localStorage.getItem('sc-simon-skill'))||1));}catch{}
+ const target=()=>SKILL_LEN[skill-1];
+ let pickMode=null,classicStart=null,replay=null,classicDone=null;
+ const inBox=(p,b)=>b&&p.x>b.x&&p.x<b.x+b.w&&p.y>b.y&&p.y<b.y+b.h;
+ function consoleSpots(){const l=Lo||layout(),D=l.R*A.G.disc,by=l.cy+D*.06,r=D*.22;
+  return {last:{x:l.cx-D*.5,y:by,r},start:{x:l.cx,y:by,r},longest:{x:l.cx+D*.5,y:by,r},
+   skill:{x:l.cx+D*.3-D*.3,y:l.cy+D*.62-D*.12,w:D*.6,h:D*.3},D};}
+ const near=(p,b)=>Math.hypot(p.x-b.x,p.y-b.y)<b.r;
+ let refresh=null;
+ function setSkill(n){skill=(n-1)%4+1;try{localStorage.setItem('sc-simon-skill',String(skill));}catch{}if(mode==='menu')status=menuStatus();refresh?.();}
+ const menuStatus=()=>`SKILL ${skill}: win at ${SKILL_LEN[skill-1]} · tap SKILL to change`;
+ function consoleTap(pt,ev){const sp=consoleSpots();
+  if(phase==='ready'&&classicDone&&inBox(pt,Lo.btn)){classicDone();return;}
+  if(inBox(pt,sp.skill)){setSkill(skill+1);return;}
+  if(phase==='ready'){if(near(pt,sp.start)){classicStart?.();return;}if(near(pt,sp.last)){replay?.('last');return;}if(near(pt,sp.longest)){replay?.('longest');return;}}
+  const q=A.padAt(pt.x,pt.y,Lo.cx,Lo.cy,Lo.R);if(q<0)return;
+  if(phase==='menu'){light('btn',q,260);if(q<2)pickMode?.(q===0?'classic':'cpu');return;}
+  s.capture(ev);held.set(ev.pointerId,'in'+ev.pointerId);light('in'+ev.pointerId,q,200,{held:true});}
  s.on(document,'keydown',ev=>{const q=KEYS[ev.key?.toLowerCase?.()];if(q==null||ev.repeat||s.paused||phase!=='input'||!onTap||auto(s.active))return;onTap(q,false,'key');const l=L.get('key');if(l)l.held=true;});
  s.on(document,'keyup',ev=>{if(KEYS[ev.key?.toLowerCase?.()]!=null){const l=L.get('key');if(l)l.held=false;}});
 
@@ -82,15 +108,28 @@ async function simon(s){
  function draw(now){const l=layout(),W=l.W,H=l.H;
   A.drawRoom(x,W,H,l.cx,l.cy,l.R);
   A.drawToy(x,l.cx,l.cy,l.R,lit(),now/1000);
-  face(0,l.f0,l.face);face(1,l.f1,l.face);
+  const solo1=mode!=='duel';
+  if(solo1)drawConsole(l);
+  face(0,l.f0,l.face);if(!solo1)face(1,l.f1,l.face);
   // pattern length
   x.save();const cy=l.wide?l.cnt[1]+20:l.cnt[1]+l.face*.45;
   x.font=`400 ${l.wide?30:34}px ${HEAD}`;const label=String(seq.length);
-  pill(l.cx,cy,'PATTERN  '+label,l.wide?17:18,{font:HEAD,weight:400,col:'#ffe14a'});x.restore();
+  pill(l.cx,cy,mode==='menu'?'PICK A GAME':'PATTERN  '+label,l.wide?17:18,{font:HEAD,weight:400,col:'#ffe14a'});x.restore();
   // status under the toy
   if(status)pill(l.cx,Math.min(H-24,l.cy+l.R+30),status,Math.max(13,Math.min(18,W/26)),{maxW:W-40});
   if(sub&&phase!=='over')pill(l.cx,Math.min(H-24,l.cy+l.R+30)-34,sub,12,{bg:'rgba(8,12,22,.6)',col:'#cfe3ff',maxW:W-60});
   if(phase==='over')drawResult(l);}
+ // menu labels on the pads, the SKILL switch at its spot, and FINISH where the CPU's face sits in the duel
+ function drawConsole(l){const sp=consoleSpots(),D=sp.D,sw=D*.5,sh=D*.1,sx=l.cx+D*.3,sy=l.cy+D*.62;
+  x.fillStyle='#050505';x.fillRect(sx-sw/2-1,sy-sh/2-1,sw+2,sh+2);x.fillStyle='#a8a8a8';x.fillRect(sx-sw/2+sw*((skill-1)/3)*.8,sy-sh/2+1,sw*.2,sh-2);
+  if(mode==='menu'){const t=performance.now()/1000;
+   for(const [q,title,line] of [[0,'CLASSIC','the real Simon'],[1,'VS CPU','face-off']]){const p=padPoint(q),f=l.R*.13;
+    x.save();x.textAlign='center';x.textBaseline='middle';x.shadowColor='rgba(0,0,0,.85)';x.shadowBlur=8;
+    x.globalAlpha=.85+.15*Math.sin(t*3+q*Math.PI);x.fillStyle='#fff';x.font=`400 ${f}px ${HEAD}`;x.fillText(title,p.x,p.y-f*.2,l.R*.5);
+    x.font=`800 ${f*.42}px ${FONT}`;x.fillStyle='#e8f2ff';x.fillText(line,p.x,p.y+f*.62,l.R*.5);x.restore();}}
+  if(mode==='classic'&&phase==='ready'&&classicDone){const w=Math.max(96,l.face*1.6),h=40,[fx,fy]=l.f1;l.btn={x:fx-w/2,y:fy-h/2,w,h};
+   x.fillStyle='#ffd23f';rr(l.btn.x,l.btn.y,w,h,h/2);x.fill();x.fillStyle='#1b1300';x.textAlign='center';x.textBaseline='middle';x.font=`900 16px ${FONT}`;x.fillText('FINISH',fx,fy+1);}
+  else l.btn=null;}
  function drawResult(l){const win=1-loser,W=l.W,H=l.H;x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,0,W,H);
   const pw=Math.min(W-28,420),ph=Math.min(H-40,330),px=(W-pw)/2,py=(H-ph)/2;
   x.fillStyle='rgba(14,20,34,.94)';rr(px,py,pw,ph,22);x.fill();x.lineWidth=3;x.strokeStyle='#ffe14a';x.stroke();
@@ -110,6 +149,16 @@ async function simon(s){
    if(k===need){onTap(Math.floor(Math.random()*4));return;}
    const err=k+1<=span?.004:Math.min(.6,(k+1-span)*.12);onTap(Math.random()<err?(seq[k]+1+Math.floor(Math.random()*3))%4:seq[k]);}}
 
+ // ---- 1P Arcade: the toy is the menu
+ if(s.solo&&!s.solo.board&&!s.solo.duel&&!net){
+  mode='menu';phase='menu';status=menuStatus();sub='';s.active=0;
+  s.debug.spots=()=>consoleSpots();
+  const pick=await new Promise(res=>{pickMode=m=>{pickMode=null;res(m);};s.debug.pick=m=>pickMode?.(m);});
+  if(!s.alive)return;
+  if(!await s.wait(350))return;
+  if(pick==='classic'){s.solo.kind='levels';return classicRun();}
+  mode='duel';status='';
+ }
  while(loser<0){
   phase='idle';onTap=null;status='';sub='';
   if(!auto(P)&&!await s.pass(P,seq.length?`Watch the ${seq.length}-pad pattern, repeat it, then add ONE more pad.`:`You start! Tap any pad to begin the pattern.`,'Start my turn',{countdown:2}))return;
@@ -159,5 +208,57 @@ async function simon(s){
  s.shared=true;s.updateScores();onTap=null;status='';phase='over';
  await new Promise(res=>{finishNow=()=>{finishNow=null;res(1);};});if(!s.alive)return;
  s.finish([...score],`${names[win]} won the memory duel; the longest pattern completed was ${Math.max(...score)}.`);
+
+ // ---- CLASSIC: the real toy, one player
+ async function classicRun(){
+  mode='classic';phase='ready';s.active=0;s.shared=false;s.updateScores();
+  let lastSeq=[],longest=[],games=0,best=0,wonAny=false,lastLen=0;
+  const bestKey=()=>'sc-simon-best-'+skill;const readBest=()=>{try{return +localStorage.getItem(bestKey())||0;}catch{return 0;}};
+  const idleStatus=()=>{status=games?(lastLen>=target()&&lastLen>0?`YOU WIN! ${lastLen} in a row`:`Game over: ${lastLen}`):'Press START';
+   sub=`SKILL ${skill}: win at ${target()} · best ${Math.max(readBest(),0)}`;};
+  idleStatus();refresh=()=>{if(phase==='ready')idleStatus();};
+  async function play(list){const d=toneMs(list.length);for(const q of list){light('play',q,d);if(!await s.wait(d+GAP))return false;}return true;}
+  async function oneGame(){games++;seq.length=0;sub='';
+   while(true){
+    seq.push(Math.floor(rand()*4));phase='watch';status='';
+    if(!await s.wait(800))return null;
+    if(!await play(seq))return null;
+    k=0;need=seq.length;
+    const r=await new Promise(resolve=>{phase='input';idle=0;limit=PRESS_S;status=`Repeat it  0 / ${need}`;
+     onTap=(q,remote=false,id='in')=>{if(phase!=='input')return;
+      if(q<0){phase='busy';onTap=null;offInput();resolve({fail:'slow'});return;}
+      idle=0;offInput();vibrate?.(8);
+      if(q!==seq[k]){phase='busy';onTap=null;resolve({fail:'wrong'});return;}
+      light(id,q,id==='in'||id==='key'?240:150,{held:id!=='in'});k++;status=`Repeat it  ${k} / ${need}`;
+      if(k===need){phase='busy';onTap=null;resolve({ok:1});}};
+     botTap=()=>onTap?.(seq[k]);});
+    if(!s.alive)return null;
+    lastSeq=seq.slice();
+    if(r.fail){const len=seq.length-1;for(const id of [...L.keys()])off(id);
+     status=r.fail==='slow'?'Too slow!':`Wrong! It was ${NAMES[seq[k]]}.`;light('razz',seq[k],RAZZ_MS,{tone:-1});vibrate?.([60,40,60]);
+     if(!await s.wait(RAZZ_MS+400))return null;return {len,won:false};}
+    if(seq.length>longest.length)longest=seq.slice();
+    score[0]=Math.max(best,seq.length);
+    soloProgress(s,Math.max(best,seq.length),Math.max(best,seq.length),`Simon Classic: ${seq.length} in a row (skill ${skill})`);
+    if(seq.length>=target()){
+     // the toy's victory: the last pad flashes fast with its tone
+     if(!await s.wait(350))return null;const q=seq[seq.length-1];status='YOU WIN!';
+     for(let i=0;i<6;i++){light('play',q,70);if(!await s.wait(140))return null;}
+     return {len:seq.length,won:true};}
+   }}
+  replay=async which=>{if(phase!=='ready')return;const list=which==='last'?lastSeq:longest;if(!list.length)return;
+   phase='watch';status=which==='last'?'Last pattern':'Longest pattern';sub='';if(await play(list)&&s.alive){phase='ready';idleStatus();}};
+  await new Promise(done=>{
+   classicDone=()=>{classicDone=null;classicStart=null;replay=null;done(1);};
+   classicStart=async()=>{if(phase!=='ready')return;const res=await oneGame();if(!s.alive||!res)return;
+    lastLen=res.len;best=Math.max(best,res.len);wonAny=wonAny||res.won;
+    if(res.len>readBest()){try{localStorage.setItem(bestKey(),String(res.len));}catch{}}
+    score[0]=best;s.setScores([best,0]);soloProgress(s,best,best,`Simon Classic: best ${best} (skill ${skill})`);phase='ready';idleStatus();};
+   s.debug.classic={start:()=>classicStart?.(),finish:()=>classicDone?.(),replay:w=>replay?.(w),skill:n=>{if(n)setSkill(n);return skill;},
+    state:()=>({phase,len:seq.length,games,best,wonAny,lastLen,status}),tap:()=>botTap?.(),wrong:()=>onTap?.((seq[k]+1)%4)};});
+  if(!s.alive)return;
+  onTap=null;
+  soloFinish(s,best,best,`Simon Classic (skill ${skill}): best run ${best} of ${target()}${wonAny?' and beat the toy':''}.`,wonAny);
+ }
 }
 Object.assign(exports,{simon});
