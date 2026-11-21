@@ -531,7 +531,10 @@
   "src/engines/trun/music.js",
   "src/engines/simonArt.js",
   "src/engines/simonSound.js",
-  "src/engines/flappyDisaster.js"
+  "src/engines/flappyDisaster.js",
+  "src/engines/angryHeads.js",
+  "src/engines/angry/levels.js",
+  "src/engines/angry/physics.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }
