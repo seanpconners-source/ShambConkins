@@ -17,6 +17,8 @@ const BALL_R=8.5*IN/2,G=9.81,PIN_H=15*IN,PIN_M=1.53;
 // pin numbers 1..10: row 1 = 1; row 2 = 2 (left) 3; row 3 = 4 5 6; row 4 = 7 8 9 10
 const PIN_POS=(()=>{const out=[];let n=0;for(let r=0;r<4;r++)for(let j=0;j<=r;j++){out.push({n:++n,x:(j-r/2)*PIN_SP,z:Z1+r*ROW});}return out;})();
 // board number (1..39 from the RIGHT gutter, like a right-hander counts) <-> x
+// contact numbers (pin/pin, pin/ball, pin/deck friction + restitution), kept in one place for tuning
+const TUNE={ppF:.12,ppE:.65,pbF:.12,pbE:.62,pdF:.05,pdE:.35,bdF:.2,drive:1.6,drive0:.85,driveAng:5,seg:10,iters:18,shape:'balls',sap:true};
 const boardX=b=>HALF-(b-.5)*BOARD,xBoard=x=>(HALF-x)/BOARD+.5;
 
 // ---------------------------------------------------------------- the lane: oil pattern + wear
@@ -24,7 +26,7 @@ const boardX=b=>HALF-(b-.5)*BOARD,xBoard=x=>(HALF-x)/BOARD+.5;
 // from each gutter get less oil), dry (back end friction), spots [{x,z,r,k}] dead wood / dry patches, crown (sideways
 // slope, m/s^2 pull), spread (how soft the oil's end is, m)}
 function makeLane(cond={}){
- const c={len:12.2,mid:.04,edge:.075,wall:9,dry:.19,spread:1.6,spots:[],crown:0,...cond};
+ const c={len:13,mid:.02,edge:.06,wall:9,dry:.25,spread:1.6,spots:[],crown:0,...cond};
  const mu=(x,z)=>{
   if(z<0)return c.mid;
   const b=xBoard(x),fromEdge=Math.min(b,40-b);
@@ -76,14 +78,19 @@ function spin(s,dt){const q=s.q,wx=s.wx,wy=s.wy,wz=s.wz,h=dt*.5;
  const n=Math.sqrt(q[0]*q[0]+q[1]*q[1]+q[2]*q[2]+q[3]*q[3]);q[0]/=n;q[1]/=n;q[2]/=n;q[3]/=n;}
 
 // ---------------------------------------------------------------- the pin deck (cannon)
-const DT=1/600;
+const DT=1/400;
 const PIN_SHAPES=(()=>{// [radiusTop, radiusBottom, height, centreY above the base]; CoM ~5.9" above the base
  const com=.15,parts=[[.0590,.0290,.10,.05],[.0480,.0605,.06,.13],[.0240,.0480,.10,.21],[.0275,.0225,.065,.2925]];
- return {com,parts,head:{r:.031,y:.343}};})();
+ // the fast pin (default): a flat foot + a chain of spheres along the lathe outline [radius, centreY]: sphere contacts are
+ // ~5x cheaper than cylinder ones, so a phone keeps up with ten flying pins
+ const balls=[[.046,.056],[.0605,.114],[.054,.165],[.042,.207],[.03,.243],[.024,.276],[.031,.343]];
+ return {com,parts,balls,foot:{r:.028,h:.012},head:{r:.031,y:.343}};})();
 function pinBody(mat){
  const b=new C.Body({mass:PIN_M,material:mat});
- for(const [rt,rb,h,y] of PIN_SHAPES.parts)b.addShape(new C.Cylinder(rt,rb,h,10),new C.Vec3(0,y-PIN_SHAPES.com,0));
- b.addShape(new C.Sphere(PIN_SHAPES.head.r),new C.Vec3(0,PIN_SHAPES.head.y-PIN_SHAPES.com,0));
+ const P=PIN_SHAPES,dy=-P.com;
+ if(TUNE.shape==='lathe'){for(const [rt,rb,h,y] of P.parts)b.addShape(new C.Cylinder(rt,rb,h,TUNE.seg),new C.Vec3(0,y+dy,0));
+  b.addShape(new C.Sphere(P.head.r),new C.Vec3(0,P.head.y+dy,0));}
+ else{b.addShape(new C.Cylinder(P.foot.r,P.foot.r,P.foot.h,8),new C.Vec3(0,P.foot.h/2+dy,0));for(const [r,y] of P.balls)b.addShape(new C.Sphere(r),new C.Vec3(0,y+dy,0));}
  b.updateMassProperties();
  // the box inertia cannon guesses is too round for a pin: make it tall and tippy like a real pin (Ixx = Izz > Iyy)
  b.inertia.set(.0155,.0024,.0155);b.invInertia.set(1/.0155,1/.0024,1/.0155);b.updateInertiaWorld(true);
@@ -95,17 +102,25 @@ function makeRoll({lane,ball,rel,pins}){
  const R={phase:'lane',t:0,ball:st,lane,spec:ball,events:[],gutter:false,deckT:0,stillT:0,done:false,hitPin:false,
   path:[],pins:[],entry:null,firstHit:null};
  // ---- world
- const world=new C.World({gravity:new C.Vec3(0,-G,0)});world.allowSleep=true;world.solver.iterations=18;world.solver.tolerance=1e-4;
- world.broadphase=new C.NaiveBroadphase();
+ const world=new C.World({gravity:new C.Vec3(0,-G,0)});world.allowSleep=true;world.solver.iterations=TUNE.iters;world.solver.tolerance=1e-4;world.narrowphase.enableFrictionReduction=true;
+ world.broadphase=TUNE.sap?new C.SAPBroadphase(world):new C.NaiveBroadphase();world.broadphase.useBoundingBoxes=true;R.world=world;
  const mPin=new C.Material('pin'),mBall=new C.Material('ball'),mDeck=new C.Material('deck'),mWall=new C.Material('wall'),mPit=new C.Material('pit');
  const cm=(a,b,f,r)=>world.addContactMaterial(new C.ContactMaterial(a,b,{friction:f,restitution:r,contactEquationStiffness:5e7,contactEquationRelaxation:3,frictionEquationStiffness:5e7}));
- cm(mPin,mPin,.12,.5);cm(mPin,mBall,.12,.62);cm(mPin,mDeck,.22,.35);cm(mBall,mDeck,.2,.05);cm(mPin,mWall,.15,.55);cm(mBall,mWall,.1,.3);cm(mPin,mPit,.6,.05);cm(mBall,mPit,.6,.05);
+ const K=TUNE;cm(mPin,mPin,K.ppF,K.ppE);cm(mPin,mBall,K.pbF,K.pbE);cm(mPin,mDeck,K.pdF,K.pdE);cm(mBall,mDeck,K.bdF,.05);cm(mPin,mWall,.15,.55);cm(mBall,mWall,.1,.3);cm(mPin,mPit,.6,.05);cm(mBall,mPit,.6,.05);
  const box=(hx,hy,hz,x,y,z,mat)=>{const b=new C.Body({mass:0,material:mat,shape:new C.Box(new C.Vec3(hx,hy,hz))});b.position.set(x,y,z);world.addBody(b);return b;};
  const deckLen=DECK_END-(Z1-1.2);
- box(HALF,.05,deckLen/2,0,-.05,Z1-1.2+deckLen/2,mDeck);                         // the pin deck (the lane's last metres)
+ // the pin deck = a plane (cheap contacts) cut to the lane's last metres: contacts past its end or over the gutters are
+ // dropped each step, so pins fall off into the pit and the gutters
+ const deck=new C.Body({mass:0,material:mDeck,shape:new C.Plane()});deck.quaternion.setFromEuler(-Math.PI/2,0,0);world.addBody(deck);
+ deck.updateAABB=()=>{deck.aabb.lowerBound.set(-5,-1,-50);deck.aabb.upperBound.set(5,.05,50);deck.aabbNeedsUpdate=false;};deck.updateAABB();// (a plane's own box ends exactly at y 0: a pin standing on it never touched it)
+ const z0=Z1-1.2,keep=eq=>{const di=eq.bi===deck;if(!di&&eq.bj!==deck)return true;const o=di?eq.bj:eq.bi,r=di?eq.rj:eq.ri,x=o.position.x+r.x,z=o.position.z+r.z;
+  return z>=z0&&z<=DECK_END&&x>=-HALF&&x<=HALF&&o.position.y+r.y>-.025;};// (a pin under the deck's level, in a gutter or the pit, never gets shoved back up)
+ const np=world.narrowphase,orig=np.getContacts.bind(np);
+ np.getContacts=(p1,p2,w,result,old,fr,fpool)=>{orig(p1,p2,w,result,old,fr,fpool);
+  let j=0;for(let i=0;i<result.length;i++)if(keep(result[i]))result[j++]=result[i];result.length=j;j=0;for(let i=0;i<fr.length;i++)if(keep(fr[i]))fr[j++]=fr[i];else fpool.push(fr[i]);fr.length=j;};
  box(GUTTER_W/2,.05,deckLen/2+.3,HALF+GUTTER_W/2,-.115,Z1-1.2+deckLen/2,mWall);    // gutters (lower)
  box(GUTTER_W/2,.05,deckLen/2+.3,-HALF-GUTTER_W/2,-.115,Z1-1.2+deckLen/2,mWall);
- box(.02,.4,1.1,KICK_X,.3,Z1+.55,mWall);box(.02,.4,1.1,-KICK_X,.3,Z1+.55,mWall);   // kickbacks (side boards that throw pins back in)
+ box(.05,.6,1.1,KICK_X+.03,.5,Z1+.55,mWall);box(.05,.6,1.1,-KICK_X-.03,.5,Z1+.55,mWall);   // kickbacks (side boards that throw pins back in)
  box(1.2,.1,1.2,0,-.62,DECK_END+1.0,mPit);                                         // the pit floor
  box(1.2,.6,.05,0,.2,CURTAIN_Z+.5,mPit);                                           // the back curtain
  // ---- pins
@@ -116,9 +131,11 @@ function makeRoll({lane,ball,rel,pins}){
    if(o===R.ballBody&&!R.firstHit)R.firstHit={n:p.n,t:R.t};});}
  let ballBody=null;
  function toDeck(){
-  ballBody=new C.Body({mass:ball.m,material:mBall,shape:new C.Sphere(BALL_R)});const s=st;
+  // a ball that comes in at an angle with roll keeps driving through the pins; a straight ball deflects (game feel: hook pays)
+  const ent=Math.abs(Math.atan2(-st.vx,st.vz))*180/Math.PI,drv=TUNE.drive0+(TUNE.drive-TUNE.drive0)*Math.min(1,ent/TUNE.driveAng);
+  ballBody=new C.Body({mass:ball.m*drv,material:mBall,shape:new C.Sphere(BALL_R)});const s=st;
   ballBody.position.set(s.x,BALL_R,s.z);ballBody.velocity.set(s.vx,0,s.vz);ballBody.angularVelocity.set(s.wx,s.wy,s.wz);
-  const I=ball.I;ballBody.inertia.set(I,I,I);ballBody.invInertia.set(1/I,1/I,1/I);ballBody.updateInertiaWorld(true);
+  const I=ball.I*drv;ballBody.inertia.set(I,I,I);ballBody.invInertia.set(1/I,1/I,1/I);ballBody.updateInertiaWorld(true);
   ballBody.quaternion.set(st.q[0],st.q[1],st.q[2],st.q[3]);ballBody.allowSleep=false;ballBody.linearDamping=0;ballBody.angularDamping=0;
   world.addBody(ballBody);R.ballBody=ballBody;
   ballBody.addEventListener('collide',e=>{if(e.body.mass>0){const v=Math.abs(e.contact.getImpactVelocityAlongNormal());if(v>.2)R.events.push({t:R.t,k:'ball',v});R.hitPin=true;}});
@@ -139,10 +156,14 @@ function makeRoll({lane,ball,rel,pins}){
    if(st.z>PIT_Z+.3)R.phase='settle';
    world.step(DT);}
   else{world.step(DT);if(ballBody){const p=ballBody.position;st.x=p.x;st.z=p.z;st.y=p.y-BALL_R;const q=ballBody.quaternion;st.q=[q.x,q.y,q.z,q.w];
-    if(R.phase==='deck'&&(p.z>DECK_END+.2||p.y<-.2))R.phase='settle';}
+    if(R.phase==='deck'&&(p.z>DECK_END+.2||p.y<-.2)){R.phase='settle';world.removeBody(ballBody);}}
    if(R.phase==='deck'&&R.t>12)R.phase='settle';}
+  if(R.phase!=='lane')for(const p of R.pins){if(p.gone)continue;const b=p.b,q=b.position;
+   if(q.y<-.25||Math.abs(q.x)>KICK_X+.1||q.z>CURTAIN_Z+.6||q.y>2){p.gone=true;world.removeBody(b);continue;}// in the pit or flew off: gone (saves the phone the work)
+   if(!p.damped&&pinDown(b)){p.damped=true;b.linearDamping=.25;b.angularDamping=.5;}}
   if(R.phase==='settle'||R.phase==='dead'){R.deckT+=DT;
-   let moving=0;for(const p of R.pins){const b=p.b;if(b.sleepState!==C.Body.SLEEPING&&b.position.y>-.3&&(b.velocity.lengthSquared()>.004||b.angularVelocity.lengthSquared()>.04))moving++;}
+   let moving=0;for(const p of R.pins){const b=p.b;if(p.gone||b.sleepState===C.Body.SLEEPING)continue;const v2=b.velocity.lengthSquared();
+    if(pinDown(b)){if(b.position.y>-.05&&v2>.16)moving++;}else if(v2>.004||b.angularVelocity.lengthSquared()>.04)moving++;}
    R.stillT=moving?0:R.stillT+DT;
    if(R.stillT>.35||R.deckT>4.5)R.done=true;}
  }
@@ -169,5 +190,5 @@ function trace(lane,ball,rel,stepDt=1/240){const s={...rel,q:[0,0,0,1]};const pa
  while(s.z<Z1&&t<8){if(laneStep(s,stepDt,lane,ball)){g=true;break;}t+=stepDt;if(path.length===0||t-path[path.length-1][2]>.04)path.push([s.x,s.z,t]);if(s.vz<.05)break;}
  return {x:s.x,ang:Math.atan2(-s.vx,s.vz)*180/Math.PI,gutter:g,path,t};}
 
-Object.assign(exports,{IN,FT,LANE_W,HALF,BOARD,GUTTER_W,Z1,PIN_SP,ROW,ARROWS_Z,DOTS_Z,APPROACH,DECK_END,PIT_Z,CURTAIN_Z,KICK_X,BALL_R,PIN_H,PIN_POS,PIN_SHAPES,DT,
+Object.assign(exports,{TUNE,IN,FT,LANE_W,HALF,BOARD,GUTTER_W,Z1,PIN_SP,ROW,ARROWS_Z,DOTS_Z,APPROACH,DECK_END,PIT_Z,CURTAIN_Z,KICK_X,BALL_R,PIN_H,PIN_POS,PIN_SHAPES,DT,
  boardX,xBoard,makeLane,ballSpec,release,laneStep,makeRoll,pinDown,rack,trace});
