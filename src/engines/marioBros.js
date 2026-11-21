@@ -528,6 +528,11 @@ async function marioBros(s){
    if(geo){const topY=Math.min(geo.head.y,geo.face.y),brow=geo.face.y+geo.face.h*.14,ch=clamp((brow-topY)/1.36,3,size*.3);top=topY+ch*.92-ch*1.08;}}catch{}
   if(top===null)top=big?-34.5:-22;
   const k=clamp((big?NES_H_BIG:NES_H_SMALL)/-top,.5,1);if(id)runKs.set(key,k);return k;}
+ const caps=new Map();
+ function capOf(id,bg,crouchK,fw,chin,size){const key=id+'|'+bg+'|'+crouchK;if(caps.has(key))return caps.get(key);let c=null;
+  try{const fh=HF.faceHeight(id,'normal',fw),geo=HF.faceGeom(id,'normal',fw,0,chin-fh*.44,false);
+   if(geo)c={bw:geo.head.w,up:(geo.face.y+geo.face.h*.14)-Math.min(geo.head.y,geo.face.y)};}catch{}
+  if(id)caps.set(key,c);return c;}
  // Mario's body (P2 in Luigi colours) with the player's head under the cap. Feet at (0,0); facing right before mirroring.
  function drawRunner(p,alpha=1){
   const i=p.i;let thr=false;g.save();g.globalAlpha*=alpha;
@@ -576,8 +581,11 @@ async function marioBros(s){
    // of the head with its brim at the brow. Without facts (online photo) the old centred picture box is used.
    const fw=bg?FACE_W*HEAD_K:FACE_W*.86*HEAD_K_SMALL,chin=chin0,fh=HF.faceHeight(id,mood,fw),fy=chin-fh*.44,geo=HF.faceGeom(id,mood,fw,hx,fy,HF.flipFor(id,mood,fc));
    let bw,topY,ch,cw,cx;
-   if(geo){HF.drawFace(s,g,i,hx,fy,fw/.6,mood,fc,.6);bw=geo.head.w;topY=Math.min(geo.head.y,geo.face.y);const brow=geo.face.y+geo.face.h*.14;
-    cw=Math.max(bw*1.04,fw*1.12);ch=clamp((brow-topY)/1.36,3,size*.3);cx=geo.head.x+geo.head.w/2+fc*(cw*.05-.7);}
+   if(geo){HF.drawFace(s,g,i,hx,fy,fw/.6,mood,fc,.6);
+    // one cap per character (owner, Nov 21: the hat kept changing size): its size comes from the NORMAL face and only its
+    // spot follows the face showing now (brim on its brow, centred on it), so mood pictures can't grow or shrink it
+    const cap=capOf(id,bg,crouchK,fw,chin,size)||{bw:geo.head.w,up:(geo.face.y+geo.face.h*.14)-Math.min(geo.head.y,geo.face.y)};
+    const brow=geo.face.y+geo.face.h*.14;bw=cap.bw;cw=Math.max(bw*1.04,fw*1.12);ch=clamp(cap.up/1.36,3,size*.3);topY=brow-ch*1.36;cx=geo.face.x+geo.face.w/2+fc*(cw*.05-.7);}
    else{s.sprite(g,i,hx,hy,size,{exact:true,mood,still:true,noBadge:true,box});
     bw=box.w||size*.62;const bh=box.h||size*.8;topY=hy-bh/2;cw=Math.min(bw*1.04,size*.84);ch=clamp(bh*.24,3.6,size*.25);cx=hx+fc*(cw*.05-.7);}
    g.fillStyle=pal.cap;g.beginPath();g.ellipse(cx,topY+ch*.92,cw/2,ch*1.08,0,Math.PI,0);g.fill();
