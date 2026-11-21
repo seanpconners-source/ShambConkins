@@ -72,10 +72,15 @@ def main():
         cx, cy, r = (x0 + x1) / 2, (y0 + y1) / 2, ((x1 - x0) + (y1 - y0)) / 4
         print(f'toy circle centre ({cx:.1f},{cy:.1f}) radius {r:.1f}  aspect {(x1 - x0) / max(1, y1 - y0):.3f}')
         k = BODY / r
+        if im.size == (TEMPLATE, TEMPLATE) and abs(r - BODY) <= 1.5 and abs(cx - TEMPLATE / 2) <= 1.5 and abs(cy - TEMPLATE / 2) <= 1.5:
+            k, cx, cy = 1.0, TEMPLATE / 2, TEMPLATE / 2      # already on the template: keep the pixels as delivered
         keyed = Image.fromarray(a.astype(np.uint8), 'RGBA')
         big = keyed.resize((round(keyed.width * k), round(keyed.height * k)), Image.LANCZOS)
         out = Image.new('RGBA', (TEMPLATE, TEMPLATE), (0, 0, 0, 0))
-        out.paste(big, (round(TEMPLATE / 2 - cx * k), round(TEMPLATE / 2 - cy * k)), big)
+        if k == 1.0 and keyed.size == (TEMPLATE, TEMPLATE):
+            out = keyed                                    # pasting would re-blend the soft edge's alpha
+        else:
+            out.paste(big, (round(TEMPLATE / 2 - cx * k), round(TEMPLATE / 2 - cy * k)), big)
     else:
         raise SystemExit('unknown slot ' + slot)
     dst = os.path.join(ROOT, 'assets/simon', slot + '.webp')
