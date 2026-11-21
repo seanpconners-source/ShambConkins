@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.99.37
+
+- **Super Mario Bros. secrets and harder stages.** Worlds 4-8 are longer and busier, with a steady climb in difficulty from stage to stage.
+  - **Enterable pipes** lead to hidden coin rooms. There are no arrows over them any more, so you have to try them, like the real game.
+  - **Beanstalks** grow out of some blocks. Climb them up to secret cloud areas full of coins.
+  - **More 1-ups** are hidden around the stages.
+  - **5-1** is a cloud stage: a rider in the sky follows you and drops spiny shells until you jump high enough to stomp him.
+  - **4-2 has a secret Warp Zone** with pipes to Worlds 5, 6 and 7.
+  - **World 4** has more ski ramps, including big kickers up to a high route with coins and a 1-up, and you score points for big air.
+  - Climbers throw hammers, and penguins slide off ledges instead of turning round.
+- **World select:** once you beat a world's Bowser, you can start a new game from that world on the title screen. Warping past a world doesn't count.
+- **Mario on the board game is co-op.** It starts at the furthest world the two of you have reached this board game, with one life each. When one player dies, the other takes over from the same spot, and the game ends when both are out. The highest score wins.
+- **Coin Rush and Castle Dash are gone.** The full Super Mario Bros. game covers them.
+- **N-Spade and Spade Panel** (Super Mario Bros. 3) have their own icons and logos in the Mario group.
+
 ## v0.99.36
 
 - **Super Mario Bros. Worlds 3-8.** The game now runs all the way from 1-1 to 8-4, and every world has its own stages, enemies and Bowser. It gets harder world by world: faster enemies, faster fire bars, shorter clocks, and a Bowser that takes more hits.

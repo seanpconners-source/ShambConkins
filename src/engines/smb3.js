@@ -53,7 +53,7 @@ async function smb3(s){
   const finish=()=>{done=true;endT=0;s.setScores(score);const [a,b]=score;say(a===b?'TIE!':`${s.players[a>b?0:1].name.toUpperCase()} WINS!`,4);jingle([523,659,784,1047,1319,1568],{step:.1,type:'square',vol:.04});};
   s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||isCpu(s)&&turn===1||theirs())return;ev.preventDefault();const p=s.pointer(ev);layout().forEach((L,k)=>{if(Math.abs(p.x-L.x)<L.w/2&&Math.abs(p.y-L.y)<L.h/2)flip(k);});});
   s.on(document,'keydown',ev=>{if(s.paused||!s.alive)return;const k=ev.key.toLowerCase(),cols=s.W>s.H*1.15?6:3;const mv={arrowleft:-1,a:-1,arrowright:1,d:1,arrowup:-cols,w:-cols,arrowdown:cols,s:cols}[k];if(mv!==undefined){keyUsed=true;cursor=(cursor+mv+18)%18;ev.preventDefault();}else if((k===' '||k==='enter')&&!theirs()){keyUsed=true;flip(cursor);ev.preventDefault();}});
-  s.debug={cards,get score(){return score;},get turn(){return turn;},flip,get done(){return done;},bot:net?()=>{if(done||lock>0||open.length>=2||theirs()||s.paused)return '';const live=cards.filter(cd=>!cd.gone&&!cd.up),cd=live[Math.floor(Math.random()*live.length)];return cd&&flip(cd.k)!==false?'card'+cd.k:'';}:null};
+  s.debug={art:{drawIcon,cardBack,bg,rr},cards,get score(){return score;},get turn(){return turn;},flip,get done(){return done;},bot:net?()=>{if(done||lock>0||open.length>=2||theirs()||s.paused)return '';const live=cards.filter(cd=>!cd.gone&&!cd.up),cd=live[Math.floor(Math.random()*live.length)];return cd&&flip(cd.k)!==false?'card'+cd.k:'';}:null};
   if(net)void (async()=>{for(;;){const m=await net.next();if(!m||!s.alive)return;while(s.alive&&!done&&(s.paused||lock>0||open.length>=2||!theirs()))await new Promise(r=>setTimeout(r,60));if(!s.alive||done)return;if(Number.isInteger(m.k))flip(m.k,true);}})();
   // vs CPU: player 2 remembers each card it sees flipped (about 62% / 77% / 90% of them, by level), takes a known pair,
   // matches its first card from memory, and otherwise turns over a card nobody has seen.
@@ -88,7 +88,7 @@ async function smb3(s){
   if(state==='spin'){const r=reel,k=r.next;if(k>2)return;r.stopped[k]=true;r.slide[k]=.25;r.next++;snd(330+k*110,.08,{type:'square',vol:.035});noise(.05,{vol:.04,freq:2400});}};
  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive)return;ev.preventDefault();tap();});
  s.on(document,'keydown',ev=>{if(s.paused||!s.alive)return;if([' ','enter','w','arrowup'].includes(ev.key.toLowerCase())){ev.preventDefault();if(!ev.repeat)tap();}});
- s.debug={get score(){return score;},get state(){return state;},get spin(){return spin;},tap};
+ s.debug={art:{drawIcon,cardBack,bg,rr},get score(){return score;},get state(){return state;},get spin(){return spin;},tap};
  say(`${s.players[0].name.toUpperCase()} SPINS FIRST`,2);
  s.frame(dt=>{t+=dt;fx.update(dt);if(msgT>0)msgT-=dt;
   const W=s.W,H=s.H;bg(x,W,H,t);headBar(H*.08);
@@ -115,4 +115,5 @@ async function smb3(s){
   if(done){endT+=dt;if(endT>2.6)s.finish(score,`Spade Panel: ${s.players[0].name} ${score[0]} points, ${s.players[1].name} ${score[1]}.`);}
  });
 }
-Object.assign(exports,{smb3});
+// the drawing pieces are also used to paint the games' Arcade art (tools/smb3-art.mjs)
+Object.assign(exports,{smb3,ART:{drawIcon,cardBack,bg,rr}});
