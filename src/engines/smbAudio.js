@@ -19,7 +19,10 @@ const SONGS={
  'under-hurry':{head:.5,skip:3.35,loop:[3.7,20.499]},
  'castle-hurry':{head:.5,skip:3.35,loop:[3.7,10.103]},
  'star-hurry':{head:.5,skip:3.35,loop:[5,14.5991]},
- clear:{head:.5},'castle-clear':{head:.5},tunnel:{head:.5}
+ clear:{head:.5},'castle-clear':{head:.5},tunnel:{head:.5},
+ // underwater (owner, Nov 21): drop assets/music/smb-song-water.mp3 (+ smb-song-water-hurry.mp3) in and the swimming areas use
+ // it; until then they keep the underground song. No loop points yet: the whole file loops (set loop once it is measured)
+ water:{head:.5,loop:null},'water-hurry':{head:.5,skip:3.35,loop:null}
 };
 // file: [channel, volume, ms of silence at the start of the rip]. Channels as in the game's sound engine: 1 = square 1,
 // 2 = square 2, 3 = noise, 0 = the event music (death, game over)
@@ -54,7 +57,8 @@ function segment(S,when,from,join){const a=S.a,L=S.def.loop,t0=Math.max(when,a.c
   if(join)g.gain.setValueCurveAtTime(curveIn,t0,XF);g.gain.setValueCurveAtTime(curveOut,stopAt-XF,XF);
   src.start(t0,from,stopAt-t0);S.parts.push({src,when:t0,from,stopAt});S.next=stopAt-XF;}catch{}}
 function startSong(n,buf,from){const a=audioContext();if(!a||!buf)return;const out=a.createGain();out.gain.value=LEVEL;out.connect(a.destination);
- const S={name:n,def:SONGS[n],buf,a,out,parts:[],next:0,pos:from,paused:false};song=S;if(suspended)S.paused=true;else segment(S,a.currentTime,from,false);}
+ const d0=SONGS[n],def=d0.loop?d0:{...d0,loop:[d0.head,Math.max(d0.head+1,buf.duration-.02)]};
+ const S={name:n,def,buf,a,out,parts:[],next:0,pos:from,paused:false};song=S;if(suspended)S.paused=true;else segment(S,a.currentTime,from,false);}
 function dropSong(){const S=song;if(!S)return;song=null;for(const p of S.parts)try{p.src.stop();}catch{}try{S.out.disconnect();}catch{}}
 const songPos=S=>{const now=S.a.currentTime;let cur=null;for(const p of S.parts)if(p.when<=now&&(!cur||p.when>cur.when))cur=p;return cur?cur.from+now-cur.when:S.pos;};
 function pauseSong(){const S=song;if(!S||S.paused)return;S.pos=songPos(S);S.paused=true;for(const p of S.parts)try{p.src.stop();}catch{}S.parts=[];}
@@ -73,4 +77,5 @@ function tick(){lastTick=performance.now();if(suspended&&!document.hidden)wake()
   if(idle&&!suspended){suspended=true;manual=stopped&&!document.hidden;pauseSong();if(manual)play('pause');}pump();},100);}
 function stopAll(){clearInterval(watch);watch=0;suspended=false;held=false;manual=false;want=null;jingleNext=false;dropSong();stopJingle();hush();bufs.clear();fx.clear();session=null;}
 const nowPlaying=()=>({want,name:song?.name||null,pos:song?songPos(song):0,paused:!!song?.paused,jingle:!!one,sfx:[...fx.values()].filter(Boolean).length});
-Object.assign(exports,{SONGS,SFX,open,play,hush,jingle,jingleOn,music,hurry,hold,tick,stopAll,nowPlaying});
+const hasSong=n=>!!songURL(n);
+Object.assign(exports,{hasSong,SONGS,SFX,open,play,hush,jingle,jingleOn,music,hurry,hold,tick,stopAll,nowPlaying});

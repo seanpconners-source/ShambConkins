@@ -176,7 +176,9 @@ async function marioBros(s){
  // its pipe jingle; the star's song over everything; the fast versions from 100 on the clock
  function songFor(){if(phase!=='play')return null;const p=pl[turn],w=worlds[turn];if(!w||p.dead||p.flagged||p.inCastle||p.axe)return null;
   if(p.area==='intro'){if(p.tunnel!==p.lap+1){p.tunnel=p.lap+1;SA.jingle('tunnel');}return null;}
-  const k=AR(w,p.area).def.kind,fast=mode==='world'&&p.time<=100?'-hurry':'';return (p.star>0||p.mega>0?'star':k==='under'||k==='castle'?k:UNDER_K.has(k)?'under':CASTLE_K.has(k)?'castle':'over')+fast;}
+  const ad=AR(w,p.area).def,k=ad.kind,fast=mode==='world'&&p.time<=100?'-hurry':'';
+  if(ad.water&&!(p.star>0||p.mega>0)&&SA.hasSong('water'))return SA.hasSong('water'+fast)?'water'+fast:'water';// the NES underwater song when its file is in
+  return (p.star>0||p.mega>0?'star':k==='under'||k==='castle'?k:UNDER_K.has(k)?'under':CASTLE_K.has(k)?'castle':'over')+fast;}
  const UNDER_K=new Set(['subway','funhouse','icecave','dig','hellcave']),CASTLE_K=new Set(['tower','bigtop','icepalace','casino','volcano','fortress','throne']);
 
  // ---------------- map helpers
