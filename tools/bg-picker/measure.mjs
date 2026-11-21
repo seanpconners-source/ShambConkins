@@ -11,6 +11,8 @@ import path from 'node:path';
 const OUT=process.env.OUT||'local-test-reports/bg-picker';fs.mkdirSync(OUT,{recursive:true});
 const SCREENS=JSON.parse(fs.readFileSync(new URL('./screens.json',import.meta.url),'utf8'));
 const only=process.argv.slice(2);
+// WALK=<regex>: only open groups whose tile label matches (e.g. WALK='Console|Super Mario' to measure just new Mario art); skips the Featured shelf
+const WALK=process.env.WALK?new RegExp(process.env.WALK):null;
 // slot of each picture: the key-art box written on the <img> (data-slot since v0.80.4)
 const out=fs.existsSync(OUT+'/measure.json')?JSON.parse(fs.readFileSync(OUT+'/measure.json','utf8')):{};
 for(const sc of SCREENS.filter(s=>!only.length||only.includes(s.id))){
@@ -45,10 +47,11 @@ for(const sc of SCREENS.filter(s=>!only.length||only.includes(s.id))){
    (res.info[r.slot]||=[]).push({v:tag,rect:I,file});}
   if(shelf==='featured')return;
   for(let i=0;i<n;i++){const grp=await page.evaluate(i=>!!document.querySelectorAll('.arc-row .arc-tile:not(.arc-tile-all)')[i]?.querySelector('.arc-count'),i);if(!grp||depth>2)continue;
+   if(WALK&&!WALK.test(await page.evaluate(i=>document.querySelectorAll('.arc-row .arc-tile:not(.arc-tile-all)')[i]?.getAttribute('aria-label')||'',i)))continue;
    const was=await page.evaluate(i=>{const t=document.querySelectorAll('.arc-row .arc-tile:not(.arc-tile-all)')[i];if(!t)return null;t.scrollIntoView({inline:'center'});const on=t.classList.contains('on');t.click();return on;},i);await page.waitForTimeout(400);
    if(was===null)continue;if(!was)await page.click('.arc-info [data-arc-open]').catch(()=>{});await page.waitForTimeout(700);await walk(shelf,depth+1);   // tapping the focused group tile opens it already
    await page.click('[data-arc-up]').catch(()=>{});await page.waitForTimeout(600);}};
- for(const shelf of ['featured','all']){
+ for(const shelf of WALK?['all']:['featured','all']){
   await page.click(`.arc-pill[data-id="${shelf}"]`);await page.waitForTimeout(700);await walk(shelf);}
  await page.addStyleTag({content:`html,body,#app,.arcade-console{background:transparent!important}.arc-wash,.arc-shade,.arc-keyart,.arc-hero-art,.arc-info,#sc-dl,#sc-ready,.music-chip,.toast,.sc-ghost{visibility:hidden!important}`});
  await page.waitForTimeout(300);await page.screenshot({path:path.join(OUT,`overlay-${sc.id}.png`),omitBackground:true});
