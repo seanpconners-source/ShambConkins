@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.99.33
 
 - **Simon Classic.** In 1 Player, the Simon itself is the menu: tap green for CLASSIC (the real toy: Simon adds a pad each round, you repeat it, 3 seconds per press, the razz when you slip, the winning flash at 8 / 14 / 20 / 31 depending on the SKILL switch, plus START, LAST and LONGEST) or red for the usual VS CPU face-off. Two players, board play and online are unchanged.
 - **Simon's blue pad** now lights all the way to its top edge.
