@@ -13,7 +13,7 @@ const BACK=new Uint8Array(32);for(const t of [TRUNK,CHAIN])BACK[t]=1;
 
 function area(W,kind){
  const A={W,kind,tiles:new Uint8Array(W*ROWS),content:new Map(),coins:[],enemies:[],pipes:[],doors:[],decor:[],lifts:[],firebars:[],texts:[],scenery:kind==='over'};
- const tileFor=()=>kind==='castle'||kind==='tower'?CASTLE:GROUND;
+ const tileFor=()=>kind==='castle'||kind==='tower'||kind==='bigtop'?CASTLE:GROUND;
  Object.assign(A,{
   set(c,r,t,what){if(c<0||c>=W||r<0||r>=ROWS)return;A.tiles[r*W+c]=t;if(what)A.content.set(r*W+c,what);else A.content.delete(r*W+c);},
   fill(c0,c1,r0,r1,t){for(let c=c0;c<=c1;c++)for(let r=r0;r<=r1;r++)A.set(c,r,t);},
@@ -274,6 +274,103 @@ function w24(){
  return {name:'2-4',title:DORK,time:300,areas:{main:A},start:{area:'main',x:40,y:10*T},check:{area:'main',x:48*T,y:10*T}};
 }
 
-const STAGES=[w11,w12,w13,w14,w21,w22,w23,w24];
+// ================================================================== WORLD 3: THE HAUNTED BOARDWALK (our own world: a
+// run-down seaside amusement park at night; owner picked it from four ideas, Nov 21)
+const BOARD='HAUNTED BOARDWALK';
+// boardwalk props: carnival game stalls, balloon bunches, lamp posts
+function pierScenery(A,{from=0,to=A.W}={}){
+ const onGround=c=>A.tiles[13*A.W+c]===GROUND&&!A.tiles[12*A.W+c];
+ for(let c=from;c<to;c++){const m=c%28;
+  if(m===5&&onGround(c)&&onGround(c+1)&&onGround(c+2))A.decor.push({type:'stall',x:c*T,n:(c/28|0)%3});
+  else if((m===14||m===24)&&onGround(c))A.decor.push({type:'lamp',x:c*T+8});
+  else if(m===19&&onGround(c))A.decor.push({type:'balloons',x:c*T+8});}
+}
+
+// ------------------------------------------------------------------ 3-1 the pier
+function w31(){
+ const A=area(210,'pier');
+ A.ground(0,45);A.ground(49,95);A.ground(100,150);A.ground(156,209);
+ A.q(15,9);A.row(20,9,'B?B?B',{21:'power'});A.q(22,5);
+ A.pipe(30,2);A.pipe(40,3,{piranha:true});
+ A.coinRun(46,48,8);
+ A.row(64,9,'BBBB');A.row(68,5,'B?BB',{69:'power'});A.coinRun(64,67,8);A.hidden(78,8,'1up');
+ A.stairs(91,4,1);A.coinRun(96,99,6);
+ A.q(106,9,'coin');A.brick(108,9,'star');A.q(110,9,'coin');A.row(105,5,'BBBBBB');A.coinRun(105,110,4);
+ A.pipe(124,3,{piranha:true});A.pipe(134,2);
+ A.lift({x:153*T,y:11*T,kind:'h',x0:151*T,x1:155*T,vx:.6,w:48,look:'raft'});
+ A.row(164,9,'?B?',{166:'power'});A.stairs(178,8,1);A.col(186,8);
+ flagAndCastle(A,195,199);
+ for(const c of [24,38,52,53.5,82,83.5,114,115.5,140,160,161.5])A.foe('goomba',c);
+ A.foe('koopa',72);A.foe('koopa',128);A.foe('paraRed',97,8,{y0:5*T,y1:11*T});
+ for(const [c,r] of [[60,8],[88,6],[118,7],[170,7]])A.foe('ghost',c,r);
+ pierScenery(A);
+ return {name:'3-1',title:BOARD,time:400,areas:{main:A},start:{area:'main',x:40,y:13*T},check:{area:'main',x:102*T,y:13*T}};
+}
+
+// ------------------------------------------------------------------ 3-2 the funhouse (mirror maze: left and right swap)
+function w32(){
+ const I=area(16,'pier');I.ground(0,15);I.sidePipe(10,12,1,4,{cap:true,to:{area:'main',x:2*T+8,y:3*T,how:'drop'}});
+ I.decor.push({type:'funsign',x:3*T});
+ const A=area(180,'funhouse');
+ A.ground(0,59);A.ground(62,103);A.ground(107,139);A.ground(143,179);
+ A.fill(0,179,2,2,BRICK);A.fill(0,0,3,12,BRICK);
+ A.row(10,9,'?B?',{10:'power'});A.row(18,6,'BBBB');A.coinRun(18,21,5);
+ // mirror zone 1: a corridor of mirrors with a low ceiling
+ A.mirrors=[[30,52],[95,121],[146,164]];
+ A.fill(30,52,3,4,BRICK);A.coinRun(32,50,9);A.fill(40,41,10,12,HARD);
+ A.coinRun(60,61,10);A.q(70,9,'coin');A.brick(72,9,'multi');A.row(76,5,'B?B',{77:'power'});
+ A.fill(84,86,9,12,HARD);
+ // mirror zone 2: steps and a pit inside the mirrors
+ A.stairs(97,3,1);A.coinRun(104,106,8);A.fill(110,111,10,12,HARD);A.row(114,8,'BBB');A.coinRun(114,116,7);
+ A.lift({x:141*T,y:10*T,kind:'v',y0:6*T,y1:12*T,vy:-.6,w:48});
+ // mirror zone 3
+ A.fill(150,151,9,12,HARD);A.fill(157,158,8,12,HARD);A.coinRun(152,156,10);
+ A.sidePipe(168,12,1,3,{to:{area:'exit',pipe:2,how:'rise'}});A.fill(172,179,3,12,BRICK);
+ for(const c of [14,26,55,66,67.5,90,125,126.5,135])A.foe('goomba',c);
+ A.foe('koopa',80);A.foe('koopaRed',115,8);
+ for(const [c,r] of [[44,8],[78,7],[103,6],[132,8],[160,7]])A.foe('ghost',c,r);
+ const E=area(40,'pier');E.ground(0,39);E.pipe(2,2,{exitOf:'main'});E.stairs(8,8,1);E.col(16,8);flagAndCastle(E,25,29);pierScenery(E);
+ return {name:'3-2',title:BOARD,time:400,areas:{intro:I,main:A,exit:E},start:{area:'intro',x:40,y:13*T,auto:true},startPlay:{area:'main',x:2*T+8,y:3*T},check:{area:'main',x:64*T,y:13*T}};
+}
+
+// ------------------------------------------------------------------ 3-3 the rollercoaster (track tops on wooden scaffolds, coaster cars over the drops)
+function w33(){
+ const A=area(185,'coaster');
+ const tracks=[[0,12,9],[14,4,8],[21,5,10],[30,6,7],[44,4,9],[52,8,6],[66,4,9],[74,6,7],[86,5,10],[95,6,8],[108,4,6],[116,7,9],[128,5,7],[137,6,10],[149,5,8]];
+ for(const [c,w,top] of tracks)A.building(c,w,top);
+ A.lift({x:38*T,y:9*T,kind:'h',x0:37*T,x1:43*T,vx:.8,w:48,look:'coaster'});
+ A.lift({x:62*T,y:8*T,kind:'h',x0:60.5*T,x1:65*T,vx:-.8,w:48,look:'coaster'});
+ A.lift({x:83*T,y:8*T,kind:'h',x0:81*T,x1:85*T,vx:.8,w:48,look:'coaster'});
+ A.lift({x:104*T,y:9*T,kind:'h',x0:102*T,x1:107*T,vx:-.8,w:48,look:'coaster'});
+ A.lift({x:125*T,y:9*T,kind:'v',y0:6*T,y1:11*T,vy:-.7,w:48,look:'coaster'});
+ A.lift({x:146*T,y:9*T,kind:'h',x0:144*T,x1:148*T,vx:.8,w:48,look:'coaster'});
+ A.q(32,3,'power');A.row(55,2,'B?B',{56:'coin'});A.coinRun(15,17,5);A.coinRun(53,59,3);A.coinRun(96,100,5);A.coinRun(117,122,6);A.coinRun(138,142,7);
+ A.ground(157,184);A.stairs(159,3,1);A.col(162,3);
+ flagAndCastle(A,170,174);
+ A.foe('goomba',16,8);A.foe('goomba',76,7);A.foe('goomba',119,9);A.foe('goomba',166);
+ A.foe('koopaRed',33,7);A.foe('koopaRed',56,6);A.foe('koopaRed',98,8);A.foe('koopaRed',140,10);A.foe('koopa',131,7);
+ A.foe('paraRed',49,6,{y0:4*T,y1:9*T});A.foe('paraRed',112,4,{y0:3*T,y1:6*T});A.foe('ghost',90,5);
+ return {name:'3-3',title:BOARD,time:300,areas:{main:A},start:{area:'main',x:40,y:9*T},check:{area:'main',x:74*T+40,y:7*T}};
+}
+
+// ------------------------------------------------------------------ 3-4 the haunted big top: Bowser the ringmaster
+function w34(){
+ const A=area(160,'bigtop');A.scenery=false;
+ A.fill(0,159,2,2,CASTLE);A.fill(0,18,10,14,CASTLE);A.text('BOWSER BROS. CIRCUS',1,5);
+ A.lava(19,22);A.fill(23,40,10,14,CASTLE);A.firebar(28,6,1);A.firebar(35,9,-1);
+ // the trapeze over the fire pit
+ A.lava(41,46);A.lift({x:43.5*T,y:9*T,kind:'v',y0:5*T,y1:11*T,vy:-.6,w:32,look:'trapeze'});
+ A.fill(47,66,10,14,CASTLE);A.fill(50,62,3,5,CASTLE);A.q(56,7,'power');A.firebar(64,9,1);
+ A.lava(67,72);A.lift({x:69.5*T,y:9*T,kind:'h',x0:67.5*T,x1:71.5*T,vx:.6,w:32,look:'trapeze'});
+ A.fill(73,100,10,14,CASTLE);A.firebar(79,6,1);A.firebar(86,9,-1);A.firebar(94,6,1);A.foe('ghost',83,6);A.foe('ghost',97,5);
+ A.fill(101,112,8,14,CASTLE);A.fill(101,112,3,3,CASTLE);
+ A.fill(113,125,10,10,BRIDGE);A.lava(113,125);A.set(125,9,CHAIN);
+ A.fill(126,159,10,14,CASTLE);A.fill(158,159,2,9,CASTLE);
+ A.bridge={c0:113,c1:125,r:10};A.axe={x:126*T+8,y:9*T+8};A.bowser={x:121*T,y:10*T,home:121*T,ring:true};A.toad={x:141*T+8,y:10*T};
+ A.bowserFireFrom=80*T;A.toadLines=['BUT OUR PRINCESS RAN OFF','TO JOIN ANOTHER CIRCUS!'];
+ return {name:'3-4',title:BOARD,time:300,areas:{main:A},start:{area:'main',x:40,y:10*T},check:{area:'main',x:48*T,y:10*T}};
+}
+
+const STAGES=[w11,w12,w13,w14,w21,w22,w23,w24,w31,w32,w33,w34];
 const buildStage=i=>STAGES[i]();
 Object.assign(exports,{T,ROWS,TILE,SOLID,BACK,buildStage,STAGE_COUNT:STAGES.length});

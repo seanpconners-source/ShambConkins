@@ -108,12 +108,22 @@ if(!only.length||only.includes('world')){const t=await launch('smb-world-1',[110
  await dbg('d.teleport(0,60*16,6)');await page.waitForTimeout(400);await shot('2-3');
  await dbg('d.teleport(0,111*16,7)');await page.waitForTimeout(400);await shot('2-4');if(!(await dbg('return !!d.worlds[0].areas.main.bowser.ceo')))fail('2-4 Bowser is not the CEO');
  await dbg('d.pl[0].inv=0;d.pl[0].dead=0;d.teleport(0,126*16+2,7)');
- d=await until(d=>d.pl[0].done,20000);if(!d.pl[0].done)fail(`rescuing Toad in 2-4 did not finish P1's game (${JSON.stringify(d.pl[0])})`);
+ // World 3 (the Haunted Boardwalk): 2-4 leads on to 3-1; ghosts creep up only behind your back; 3-2's mirrors swap left/right; 3-4's axe ends the game
+ d=await until(d=>d.phase==='play'&&d.pl[0].st===8,20000);if(d.pl[0].st!==8)fail(`Toad in 2-4 did not lead on to World 3-1 (${JSON.stringify(d.pl[0])})`);else console.log('  ok   2-4 → 3-1');
+ const gh=await dbg(`const a=d.worlds[0].areas.main,p=d.pl[0];a.enemies.forEach(e=>e.alive=false);const k=d.spawn(0,'ghost',p.x-90,p.y-20);const e=a.enemies[k];p.facing=1;window.__g=e;return e.x;`);
+ await page.waitForTimeout(700);const gh1=await dbg('return window.__g.x');await dbg('d.pl[0].facing=-1');await page.waitForTimeout(300);const gh2=await dbg('return window.__g.x');await page.waitForTimeout(700);const gh3=await dbg('return window.__g.x');
+ check('ghost creeps up behind (px)',gh1-gh,8,80);check('ghost freezes when you face it (px)',Math.abs(gh3-gh2),0,1);await shot('3-1');
+ await dbg("d.teleport(0,34*16,9);d.worlds[0].areas.main.enemies.forEach(e=>e.alive=false);");await page.waitForTimeout(300);const mx0=await dbg('return d.pl[0].x');
+ await page.keyboard.down('d');await page.waitForTimeout(500);await page.keyboard.up('d');const mx1=await dbg('return d.pl[0].x');check('mirror maze: holding right walks left (px)',mx0-mx1,10,200);await shot('3-2');
+ await dbg('d.teleport(0,60*16,10)');await page.waitForTimeout(400);await shot('3-3');
+ await dbg('d.teleport(0,111*16,11)');await page.waitForTimeout(400);await shot('3-4');if(!(await dbg('return !!d.worlds[0].areas.main.bowser.ring')))fail('3-4 Bowser is not the ringmaster');
+ await dbg('d.pl[0].inv=0;d.pl[0].dead=0;d.teleport(0,126*16+2,11)');
+ d=await until(d=>d.pl[0].done,20000);if(!d.pl[0].done)fail(`rescuing Toad in 3-4 did not finish P1's game (${JSON.stringify(d.pl[0])})`);
  await ready();d=await until(d=>d.phase==='play'&&d.turn===1,8000);if(d.turn!==1)fail('P2 never got a turn');if(!(d.ghost>100))fail(`no ghost recorded (${d.ghost})`);
  // P2 loses three lives: GAME OVER and the result
  for(let k=0;k<3;k++){d=await until(d=>d.phase==='play'&&!d.pl[1].dead,9000);await dbg('d.kill(1)');d=await until(d=>d.phase!=='play',9000);if(k===2)await shot('gameover');}
  d=await until(d=>d.pl[1].over,6000);if(!d.pl[1].over)fail(`P2 should be game over (${JSON.stringify(d.pl[1])})`);
- const r=await t.result();console.log('  result:',r&&r.replace(/\n+/g,' | '));if(!r||!/Worlds 1-2/.test(r))fail('no Worlds 1-2 result dialog');
+ const r=await t.result();console.log('  result:',r&&r.replace(/\n+/g,' | '));if(!r||!/Worlds 1-3/.test(r))fail('no Worlds 1-3 result dialog');
  await done(t,'world');}
 
 // ---------------------------------------------------------------- World 1, 2 PLAYER GAME on a phone: Mario and Luigi swap on a lost life
