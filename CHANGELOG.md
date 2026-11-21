@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.99.35
+
+- **Super Mario Bros. World 2: New Dork City.** Beat Bowser in 1-4 (or take pipe 2 in the 1-2 Warp Zone) and the game carries on into a whole new city world with its own levels and art: 2-1 the streets (skyline, street lamps, construction girders, a taxi ride over the roadworks), 2-2 a flooded subway (a water stage: tap jump to swim, fish and squid), 2-3 the rooftops at dusk, and 2-4 Bowser's skyscraper HQ, where Bowser is the corporate CEO in a suit and tie and the axe hangs in an emergency glass case.
+- **Mario at NES size.** Big Mario is exactly 2 blocks tall and small Mario 1 block, like the real game, with the same view of the level. Bowser's bridge in 1-4 sits lower, so there's real room to jump over him.
+- **Fixes:** items now rise out of ? blocks (the 1-4 fire flower was stuck in the ceiling), Fire Mario has two arms when he throws, and the cap stays one size whatever face he's making.
+
 ## v0.99.34
 
 - **Super Mario Bros. at NES scale.** Mario is now the size he is on the NES: small Mario fits through a 1-block gap and big Mario stands about 2 blocks tall and fits through 2-block gaps, so 1-2's low passages work and there's room to jump over Bowser under 1-4's ceiling. His head is drawn smaller to match.
