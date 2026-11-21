@@ -305,6 +305,10 @@ async function marioBros(s){
    return;}
   // ride a lift
   if(p.ride){const l=p.ride;if(l.wrapped){p.ride=null;p.grounded=false;p.vy=0;}else{p.x+=l.dx;p.y=l.y;}}
+  // grind rails (the ski run): slide along at speed, points as you go, sparks off the skis
+  if(p.ride&&p.ride.kind==='rail'){p.grindT=(p.grindT||0)+1;if(p.skis&&Math.abs(p.vx)<2)p.vx=(Math.sign(p.vx)||p.facing)*2;
+   if(p.grindT===1)popText(w,'GRIND!',p.x,p.y-40);if(p.grindT%8===0){addScore(p,w,50,p.x,p.y-24);w.fx.burst(p.x-p.facing*6,p.y,{n:3,colors:['#fcf8b8','#fcfcfc','#f8a018'],speed:50,life:.25,size:1.2});}}
+  else p.grindT=0;
   // underwater (2-2): no running, a slow sink, every jump press is a swim stroke; the water's surface stops you rising
   p.swim=false;
   if(def.water){p.crouch=false;p.skidding=false;p.jumping=false;
@@ -344,7 +348,9 @@ async function marioBros(s){
   // riding Yoshi: B shoots out his tongue and swallows whatever it touches
   if(bPress&&p.yoshi&&!p.tongue){p.tongue=18;sfx.kick();}
   if(p.tongue>0){p.tongue--;const reach=8+30*Math.sin((18-p.tongue)/18*Math.PI);for(const e of a.enemies){if(!e.alive||!e.active||e.state==='dying'||e.type==='trex')continue;const ex=(e.x-p.x)*p.facing;if(ex>0&&ex<reach+6&&Math.abs((e.y-6)-(p.y-14))<16){e.state='dying';e.eaten=true;e.vy=8;e.vx=0;addScore(p,w,200,e.x,e.y-16);popText(w,'YUM',e.x,e.y-26);if(p.i===me)esync(w,e);}}}
-  if(bPress&&!p.yoshi&&p.fire&&!p.crouch&&w.fire.filter(f=>f.area===p.area&&!f.remote).length<2){const fb={x:p.x+p.facing*8,y:p.y-pH(p)*.55,vx:p.facing*4,vy:3,t:0,area:p.area};w.fire.push(fb);p.throwT=8;sfx.fire();
+  // on skis in the air, B is a trick: a spin, paid out on landing (up to three in one jump)
+  if(bPress&&p.skis&&!p.grounded&&!def.water&&!p.climb){p.spin=1;p.tricks=Math.min(3,(p.tricks||0)+1);sfx.kick();}
+  else if(bPress&&!p.yoshi&&p.fire&&!p.crouch&&w.fire.filter(f=>f.area===p.area&&!f.remote).length<2){const fb={x:p.x+p.facing*8,y:p.y-pH(p)*.55,vx:p.facing*4,vy:3,t:0,area:p.area};w.fire.push(fb);p.throwT=8;sfx.fire();
    if(net)ev({fb:[w.key,p.area,Math.round(fb.x*10)/10,Math.round(fb.y*10)/10,fb.vx,Math.round(performance.now()-netT0)]});}
   // ---- move and collide
   if(p.mega>0)megaSmash(p,w,a);
@@ -408,6 +414,7 @@ async function marioBros(s){
  function land(p){
   // ski airtime pays out on landing
   if(p.spin&&(p.airT||0)>45){const w=worlds[p.i],at=p.airT,pts=at>80?2000:at>60?1000:500;if(w){addScore(p,w,pts,p.x,p.y-40);popText(w,at>80?'HUGE AIR!':'BIG AIR!',p.x,p.y-56);}}
+  if(p.tricks){const w=worlds[p.i];if(w){addScore(p,w,500*p.tricks,p.x,p.y-24);popText(w,p.tricks>1?`TRICK x${p.tricks}!`:'TRICK!',p.x,p.y-72);}p.tricks=0;}
   p.airT=0;p.grounded=true;p.jumping=false;p.combo=0;p.skidding=false;}
  function stepPipe(p,w){
   const pp=p.pipe,d=pp.door;pp.t++;
@@ -417,7 +424,7 @@ async function marioBros(s){
  }
  function enterArea(p,to){
   const w=worlds[p.i],a=AR(w,to.area);flash[p.i]=.6;p.pipe=null;p.ride=null;p.climb=null;
-  if(to.how==='drop'){Object.assign(p,{area:to.area,x:to.x,y:to.y,prevY:to.y,vx:0,vy:0,grounded:false,jumping:false,jumpSpd:0});}
+  if(to.how==='drop'){Object.assign(p,{area:to.area,x:to.x,y:to.y,prevY:to.y,vx:0,vy:0,grounded:false,jumping:false,jumpSpd:0});if(a.def.skiRun&&!p.skis){p.skis=true;popText(w,'SKIS ON!',p.x,p.y-40);}}
   else{const pipe=a.def.pipes.find(q=>q.c===to.pipe);Object.assign(p,{area:to.area,x:(pipe.c+1)*T,y:pipe.top*T+pH(p)+2,prevY:pipe.top*T,vx:0,vy:0,grounded:false,facing:1});p.pipe={kind:'up',t:0,top:pipe.top*T};sfx.pipe();}
   cams[p.i].x=0;updateCamera(p,p.i,true);note(p,'enter '+to.area);
  }
@@ -1160,7 +1167,7 @@ async function marioBros(s){
   const ok=(c,r)=>solid(a.tiles[r*W+c])&&!a.tiles[(r-1)*W+c]&&!a.tiles[(r-2)*W+c];
   outer:for(;cc<W-1;cc++)for(r=13;r>=4;r--)if(ok(cc,r))break outer;
   Object.assign(q,{x:cc*T+8,y:r*T,prevY:r*T,vx:0,vy:0,grounded:true,pipe:null,flag:null,dead:0,tf:null,ride:null,axe:null,auto:false,climb:null});q.best=Math.max(q.best,q.x);cams[i].x=0;updateCamera(q,i,true);};
- s.debug={audio:SA,log,get phase(){return phase;},get clock(){return clock;},get turn(){return turn;},get twoPlayer(){return twoPlayer;},get warpMsg(){return warpMsg;},ghost,pl,STAGES,worlds,cams,view,PH,setClock(v){clock=v;},teleport,
+ s.debug={enter:(i,to)=>enterArea(pl[i],to),audio:SA,log,get phase(){return phase;},get clock(){return clock;},get turn(){return turn;},get twoPlayer(){return twoPlayer;},get warpMsg(){return warpMsg;},ghost,pl,STAGES,worlds,cams,view,PH,setClock(v){clock=v;},teleport,
   start(sel,world){menuSel=sel;titleT=1;if(world)startW=world;startFromTitle();},get startList(){return startList();},
   toWarp(i){const q=pl[i],st=STAGES[0];const e=st.areas.main.pipes.find(p=>p.to);Object.assign(q,{area:'main',x:(e.c+1)*T,y:e.top*T,prevY:e.top*T,vx:0,vy:0,grounded:true,pipe:null,dead:0,tf:null,ride:null});cams[i].x=0;updateCamera(q,i,true);},
   toWarpZone(i,n=4){const q=pl[i];if(q.stage!==1){q.stage=1;worlds[i]=net?stageWorld(1,q.lap):makeWorld(STAGES[1]);}const pp=STAGES[1].areas.main.pipes.find(p=>p.warp===n);Object.assign(q,{area:'main',x:(pp.c+1)*T,y:pp.top*T,prevY:pp.top*T,vx:0,vy:0,grounded:true,pipe:null,dead:0,tf:null,ride:null,auto:false});cams[i].x=0;updateCamera(q,i,true);},

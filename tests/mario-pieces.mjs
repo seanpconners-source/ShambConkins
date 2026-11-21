@@ -73,5 +73,17 @@ for(const c of census){const tags=Object.entries(c).filter(([k,v])=>k!=='name'&&
  await dbg('const p=d.pl[0];p.big=true;p.fire=true;');for(let k=0;k<6;k++){await page.keyboard.down(' ');await page.waitForTimeout(60);await page.keyboard.up(' ');await page.waitForTimeout(200);}
  const alive=await dbg(`return d.worlds[0].areas.main.enemies.filter(e=>e.type==='buzzy'&&e.alive&&e.state!=='dying').length;`);const tot=census[si-12].buzzy;
  if(alive<tot)fail(`fireballs killed a Buzzy Beetle (${alive}/${tot} left)`);else pass('Buzzy Beetles are fireproof');}
+// ---- World 4's beanstalk leads to the ski run: skis on, grind a rail, a trick in the air, then back down into 4-1
+{await go(12,20);await dbg(`d.enter(0,d.STAGES[12].areas.main.vineTo);`);await page.waitForTimeout(300);
+ const v=await dbg('const p=d.pl[0];return {a:p.area,skis:p.skis,run:!!d.worlds[0].areas.cloud.def.skiRun};');
+ if(v.a!=='cloud'||!v.skis||!v.run)fail('ski run entry '+JSON.stringify(v));else pass('beanstalk in 4-1 leads to the ski run, skis on');
+ await dbg(`const p=d.pl[0],l=d.worlds[0].areas.cloud.lifts.find(l=>l.kind==='rail');Object.assign(p,{x:l.x-l.w/2+10,y:l.y-2,prevY:l.y-4,vy:1,vx:2,grounded:false,facing:1});d.cams[0].x=Math.max(0,p.x-150);`);
+ await page.keyboard.down('d');await page.waitForTimeout(500);const g=await dbg('const p=d.pl[0];return {grind:p.grindT,ride:p.ride?.kind};');await shot('grind');
+ if(!(g.grind>5))fail('no grinding on the rail '+JSON.stringify(g));else pass('grinding the rail ('+g.grind+' frames)');
+ await dbg('const p=d.pl[0];p.ride=null;p.grounded=false;p.vy=-4;p.y-=20;');await page.keyboard.press(' ');await page.waitForTimeout(80);await page.keyboard.press(' ');
+ const tr=await dbg('return d.pl[0].tricks;');await page.waitForTimeout(1500);const sc=await dbg('return d.pl[0].tricks;');
+ if(!(tr>=1&&!sc))fail(`trick not paid out (${tr} → ${sc})`);else pass(`trick x${tr} landed`);
+ const back=await until('const p=d.pl[0];if(p.area==="cloud"){p.x=Math.max(p.x,143*16);}return p.area==="main";',9000);await page.keyboard.up('d');
+ if(!back)fail('the ski run did not drop back into 4-1');else pass('off the bottom of the ski run back into 4-1');}
 if(errors.length)fail('page errors: '+errors.slice(0,3).join(' | '));
 console.log(ok?'mario pieces OK':'mario pieces FAILED');await browser.close();process.exit(ok?0:1);

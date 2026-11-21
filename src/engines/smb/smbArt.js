@@ -500,6 +500,8 @@ function drawItem(g,it,simT){g.save();g.translate(it.x,it.y);
  g.restore();}
 function drawFireball(g,x,y,t){const a=Math.floor(t/3)%4;g.save();g.translate(x,y);g.rotate(a*Math.PI/2);g.fillStyle=C.red;g.fillRect(-3,-3,6,6);g.fillStyle=C.gold;g.fillRect(-2,-2,3,3);g.fillStyle=C.white;g.fillRect(-1,-1,1,1);g.restore();}
 function drawLift(g,l){const x0=l.x-l.w/2;
+ // a grind rail: a polished bar on posts that run down out of sight
+ if(l.look==='rail'){g.fillStyle='#3c4c6c';for(const X of [x0+6,x0+l.w-8])g.fillRect(X,l.y+3,2,240);g.fillStyle='#1c2440';g.fillRect(x0,l.y,l.w,4);g.fillStyle='#bcd8f8';g.fillRect(x0,l.y,l.w,1);g.fillStyle='#fcfcfc';g.fillRect(x0+2,l.y+1,l.w*.4,1);return;}
  if(l.look==='taxi'){const y=l.y,cx=l.x;g.fillStyle='#000';g.fillRect(x0-1,y+7,l.w+2,12);g.fillStyle=C.gold;g.fillRect(cx-14,y,28,9);g.fillRect(x0,y+8,l.w,10);g.fillStyle='#fcf078';g.fillRect(cx-14,y,28,2);g.fillRect(x0,y+8,l.w,2);
   g.fillStyle='#8cc8fc';g.fillRect(cx-12,y+3,10,5);g.fillRect(cx+2,y+3,10,5);g.fillStyle='#000';for(let x=x0+2;x<x0+l.w-2;x+=4)g.fillRect(x,y+13,2,2);g.fillStyle=C.white;g.fillRect(x0+l.w-3,y+10,3,3);g.fillStyle=C.red;g.fillRect(x0,y+10,2,3);
   g.fillStyle='#000';for(const X of [x0+10,x0+l.w-10]){g.beginPath();g.arc(X,y+19,5,0,7);g.fill();}g.fillStyle=C.gray;for(const X of [x0+10,x0+l.w-10])g.fillRect(X-1,y+18,3,3);return;}

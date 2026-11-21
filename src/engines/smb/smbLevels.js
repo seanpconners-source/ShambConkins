@@ -434,6 +434,26 @@ function cloudArea(r,landCol){const W=80,A=area(W,'sky');A.scenery=false;
  for(let c=6;c<W;c+=11)A.decor.push({type:'cloud',x:c*T,y:(2+(c*7)%3)*T,n:1+(c*3)%3});
  A.vines=[{c:1,top:8*T,bottom:ROWS*T+T,max:8*T}];
  A.fallTo={area:'main',x:landCol*T+8,y:-T,how:'drop'};return A;}
+// World 4's beanstalk leads up to a downhill ski run instead of clouds: skis on, terraces of snow stepping down the
+// mountain, kickers off their edges (one big one to a 1-up), grind rails over the gaps and above the slope, mogul
+// bumps, coins in the air, penguins; off the cliff at the bottom you drop back into the stage
+function skiRun(r,landCol){const W=150,A=area(W,'snow');A.ice=true;A.ramps=[];A.skiRun=true;
+ const plat=(c0,c1,top)=>A.fill(c0,c1,top,14,GROUND),rail=(c0,c1,row)=>A.lift({x:(c0+c1+1)/2*T,y:row*T,w:(c1-c0+1)*T,kind:'rail',look:'rail'});
+ const arc=(c0,c1,base,h)=>{for(let c=c0;c<=c1;c++)A.coin(c,Math.round(base-h*Math.sin((c-c0+.5)/(c1-c0+1)*Math.PI)));};
+ A.text('SKI RUN!',2.5,2);plat(0,11,5);A.ramps.push({c:10,r:5});arc(12,16,4,3);
+ plat(17,26,6);A.coinRun(19,23,4);rail(27,34,7);A.coinRun(28,33,5);
+ // moguls
+ plat(35,46,8);for(const m of [37,40,43])A.ramps.push({c:m,r:8});A.ramps.push({c:45,r:8});arc(47,52,6,3);A.foe('penguin',41,8);
+ // the big kicker over a wide gap: fly high enough and the 1-up is yours
+ plat(53,60,9);A.ramps.push({c:59,r:9,big:true});arc(61,70,6,4);A.q(66,2,'1up');
+ // a long rail above the slope to grind for points
+ plat(71,82,10);rail(73,80,7);A.coinRun(74,79,5);A.foe('penguin',81,10);
+ plat(87,100,11);A.ramps.push({c:85-0,r:10});A.ramps.push({c:99,r:11});rail(101,104,11);rail(106,110,10);A.coinRun(101,110,8);
+ plat(111,124,12);A.ramps.push({c:116,r:12});A.ramps.push({c:123,r:12});arc(125,129,10,3);A.foe('penguin',119,12);
+ plat(130,141,13);A.coinRun(131,140,11);A.text('FINISH',133,8);
+ // the kicker at the end of the second rail stretch sits on that terrace
+ A.ramps=A.ramps.filter(rp=>A.tiles[rp.r*W+rp.c]);
+ A.fallTo={area:'main',x:landCol*T+8,y:-T,how:'drop'};return A;}
 // the 4-2 secret: like 1-2's Warp Zone, a room of pipes to later worlds
 function warpRoom(kind,list){const A=area(24,kind);A.scenery=false;A.ground(0,23);A.fill(0,0,2,12,BRICK);A.fill(4,23,2,2,BRICK);A.fill(22,23,3,12,BRICK);
  list.forEach((n,k)=>{const c=4+k*6;A.pipe(c,3,{warp:n});A.text(String(n),c+.75,8.5);});A.text('WELCOME TO WARP ZONE!',2.75,5);A.coinRun(2,20,12);return A;}
@@ -441,7 +461,7 @@ function warpRoom(kind,list){const A=area(24,kind);A.scenery=false;A.ground(0,23
 // their own stretch of ground further on (see `pending` in the generators)
 function secrets(A,areas,r,cfg,{exitCol,vineAt,vineRow=9,landCol}){
  if(exitCol>=0)areas.bonus=coinRoom(cfg.roomKind||'under',r,exitCol);else A.doors=A.doors.filter(d=>d.to?.area!=='bonus');
- if(vineAt>=0){if(landCol>=0&&isFree(A,vineAt,vineAt,0,vineRow-1)){A.vineTo={area:'cloud',x:3*T+8,y:9*T,how:'drop'};areas.cloud=cloudArea(r,landCol);}else A.content.set(vineRow*A.W+vineAt,'coin');}
+ if(vineAt>=0){if(landCol>=0&&isFree(A,vineAt,vineAt,0,vineRow-1)){if(cfg.ice){A.vineTo={area:'cloud',x:3*T+8,y:5*T,how:'drop'};areas.cloud=skiRun(r,landCol);}else{A.vineTo={area:'cloud',x:3*T+8,y:9*T,how:'drop'};areas.cloud=cloudArea(r,landCol);}}else A.content.set(vineRow*A.W+vineAt,'coin');}
 }
 
 // ---- the real game's set pieces, shared by the stage builders. Each starts at column c and returns where the next
