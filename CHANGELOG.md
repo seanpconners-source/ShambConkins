@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.99.38
+
+- **Angry Heads rebuilt.** Endless levels, like the real game: every location in the game is an episode of five levels, and the heads in the forts are that location's characters. The fifth level is a castle with the crowned main character. Forts are real physics (towers topple, planks see-saw, TNT blows), get bigger and tougher as you go, and later levels give you special birds made from the location's items: split, speed boost, bomb, egg drop and giant. Episode map with stars, 1-player runs, pass and play for two, and online you watch the other player's shots live.
+- **Flappy Disaster rebuilt.** One endless run that keeps getting harder (narrower gaps, faster, moving pipes) until you crash. 16 looks picked at random every time: meat locker, fuzzy pink hell, Pokémon route, the ninth circle, space, Davy Jones' locker, Dunder Mifflap, graveyard, vaporwave, sugar rush, the Upside Down, sewers, Lost Wages, brain freeze, disco and the classic. Medals, best score, 1-player, pass and play, and online you watch the other player's run live.
+- **Super Mario Bros.**
+  - Every stage in Worlds 4-8 now has its own style, with more real-game pieces: Bill Blasters, Hammer Bros., Podoboos, leaping fish, springboards, Paratroopas, Buzzy Beetles, balance lifts, falling lifts and maze castles that loop you back if you take the wrong path. 2-1 and 3-1 got new layouts too.
+  - World 4's beanstalks now lead to a downhill ski run with jumps, moguls, grind rails and tricks.
+  - You can no longer walk into the side of the 1-2 Warp Zone pipes (it took you to the end of the level).
+  - The coin-room drop in 2-1/3-1 no longer lands you on the ceiling where you got stuck.
+  - Sideways pipes and Bowser's fire now face the right way.
+- **Paddy's Pool online:** the other player's aiming moves smoothly while you watch.
+- **Super Mario Bros. 3 Card Match and Picture Match** have new Arcade icons, logos and backgrounds.
+
 ## v0.99.37
 
 - **Super Mario Bros. secrets and harder stages.** Worlds 4-8 are longer and busier, with a steady climb in difficulty from stage to stage.
