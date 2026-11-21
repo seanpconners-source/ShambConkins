@@ -48,15 +48,17 @@ const SWIM=t=>t==='cheep'||t==='cheepRed'||t==='blooper'||t==='ghost';
 // Worlds 3-6 enemies (our own designs): walking speed, starting state, hit points for fireballs, body height
 const FOES={slasher:{vx:-.3,hp:3,h:26},dreamer:{vx:-.4,h:26},imp:{vx:0,h:12},climber:{vx:-.45,h:18},penguin:{vx:-.9,h:12},icicle:{vx:0,state:'hang',h:14},
  dice:{vx:0,h:14},chip:{vx:-1.1,h:12},card:{vx:-.6,state:'fly',h:12},cactus:{vx:0,state:'still',h:22},raptor:{vx:-.5,h:18},dilo:{vx:0,state:'still',h:20},trex:{vx:-.3,hp:6,h:32},ptero:{vx:-.7,state:'fly',h:12},
- brute:{vx:-.5,hp:2,h:20},skull:{vx:0,state:'fly',h:12},floater:{vx:0,state:'fly',hp:2,h:20},angel:{vx:-.5,state:'fly',hp:2,h:20},cherub:{vx:0,state:'fly',h:18}};
+ brute:{vx:-.5,hp:2,h:20},skull:{vx:0,state:'fly',h:12},floater:{vx:0,state:'fly',hp:2,h:20},angel:{vx:-.5,state:'fly',hp:2,h:20},cherub:{vx:0,state:'fly',h:18},
+ // 5-1: the cloud rider follows you along the sky, throwing spiky shells that hatch into walkers you can't stomp
+ rider:{vx:0,state:'fly',h:18},spiny:{vx:-.5,h:12}};
 // these hurt to touch and can't be stomped (the trex just bounces you off)
-const NO_STOMP=t=>SWIM(t)||t==='cactus'||t==='icicle';
+const NO_STOMP=t=>SWIM(t)||t==='cactus'||t==='icicle'||t==='spiny';
 const eHeight=e=>FOES[e.type]?.h??(e.type==='goomba'||e.state!=='walk'?14:22);
-function spawnFoe(e,k=1){const f=FOES[e.type];if(f)return {...e,vx:f.vx*k,vy:0,alive:true,active:false,state:f.state||'walk',hp:f.hp||1,t:0,off:0,grace:0,home:e.y,frame:0,ph:0};const piranha=e.type==='piranha',para=e.type==='paraRed',sw=SWIM(e.type);return {...e,vx:piranha||para||e.type==='blooper'||e.type==='ghost'?0:e.type==='cheepRed'?-.6:e.type==='cheep'?-.35:-.5,vy:0,alive:true,active:false,state:piranha?'hidden':sw?'swim':'walk',t:0,off:0,grace:0,home:e.y,frame:0,ph:0};}
+function spawnFoe(e,k=1){const f=FOES[e.type];if(f)return {...e,vx:f.vx*k,vy:0,alive:!e.pool,active:false,state:f.state||'walk',hp:f.hp||1,t:0,off:0,grace:0,home:e.y,frame:0,ph:0};const piranha=e.type==='piranha',para=e.type==='paraRed',sw=SWIM(e.type);return {...e,vx:piranha||para||e.type==='blooper'||e.type==='ghost'?0:e.type==='cheepRed'?-.6:e.type==='cheep'?-.35:-.5,vy:0,alive:true,active:false,state:piranha?'hidden':sw?'swim':'walk',t:0,off:0,grace:0,home:e.y,frame:0,ph:0};}
 function makeWorld(st){
- const areas={};let ai=0,wn=parseInt(st.name)||1,k=1+.07*(wn-1);
+ const areas={};let ai=0,wn=parseInt(st.name)||1,sn=parseInt(String(st.name).split('-')[1])||1,k=1+.07*(wn-1)+.0175*(sn-1);
  for(const [name,A] of Object.entries(st.areas))areas[name]={name,def:A,ai:ai++,tiles:A.tiles.slice(),content:new Map(A.content),got:new Uint8Array(A.coins.length),enemies:A.enemies.map(e=>spawnFoe(e,k)),fbK:1+.09*(wn-1),
-  lifts:A.lifts.map(l=>({...l,dx:0,dy:0})),bowser:A.bowser?{...A.bowser,vx:0,vy:0,dir:-1,hp:A.bowser.god?14:5+(wn-1),k:1+.12*(wn-1),state:'idle',t:0,fireT:150,jumpT:100,mouth:0,goal:A.bowser.x}:null,fbT:0};
+  lifts:A.lifts.map(l=>({...l,dx:0,dy:0})),vines:(A.vines||[]).map(v=>({...v})),k,bowser:A.bowser?{...A.bowser,vx:0,vy:0,dir:-1,hp:A.bowser.god?14:5+(wn-1),k:1+.12*(wn-1),state:'idle',t:0,fireT:150,jumpT:100,mouth:0,goal:A.bowser.x}:null,fbT:0};
  return {st,areas,items:[],fire:[],bubbles:[],yoshiRun:[],debris:[],bumps:new Map(),pops:[],multi:new Map(),fx:new Fx(),flagPos:0,castleFlag:0,flames:[],fireworks:[],bridge:null};
 }
 function makePlayer(i){return {i,stage:0,area:'main',x:40,y:13*T,prevY:13*T,vx:0,vy:0,grounded:true,facing:1,big:false,fire:false,star:0,inv:0,coins:0,score:0,lives:LIVES,time:400,timeAcc:0,
@@ -85,10 +87,18 @@ async function marioBros(s){
  const flash=[0,0];
  // P1's run is recorded every play step and replayed as a ghost during P2's turn (not in the NES hand-off mode)
  const ghost=[],ghostAt=i=>i===1&&!twoPlayer&&gi<ghost.length?ghost[gi]:null;
- const snap=p=>({yoshi:p.yoshi,tongue:p.tongue,swim:p.swim,strokeT:p.strokeT,mega:p.mega,megaIn:p.megaIn,cape:p.cape,skis:p.skis,spin:p.spin,spinA:p.spinA,flyT:p.flyT,i:p.i,stage:p.stage,area:p.area,x:p.x,y:p.y,big:p.big,fire:p.fire,star:p.star,inv:0,facing:p.facing,crouch:p.crouch,dead:p.dead,vx:p.vx,grounded:p.grounded,skidding:p.skidding,anim:p.anim,
+ const snap=p=>({climb:!!p.climb,yoshi:p.yoshi,tongue:p.tongue,swim:p.swim,strokeT:p.strokeT,mega:p.mega,megaIn:p.megaIn,cape:p.cape,skis:p.skis,spin:p.spin,spinA:p.spinA,flyT:p.flyT,i:p.i,stage:p.stage,area:p.area,x:p.x,y:p.y,big:p.big,fire:p.fire,star:p.star,inv:0,facing:p.facing,crouch:p.crouch,dead:p.dead,vx:p.vx,grounded:p.grounded,skidding:p.skidding,anim:p.anim,
   finished:p.finished,inCastle:p.inCastle,flag:!!p.flag,pipe:p.pipe&&{kind:p.pipe.kind},tf:p.tf&&{...p.tf}});
  // warp-zone recruits: characters each player has not unlocked yet
  const {store}=require('src/state.js');
+ // world select (owner, Nov 21): you may start from any world whose Bowser you have beaten at its axe (warping past a
+ // world doesn't count); World 1 is always there. Not online (both phones start in World 1).
+ const beatenWorlds=()=>{const b=store.profile?.smbBowsers;return Array.isArray(b)?b:[];};
+ const startList=()=>[...new Set([1,...beatenWorlds()])].filter(n=>n>=1&&(n-1)*4<=lastStage).sort((a,b)=>a-b);
+ let startW=1;const worldPick=()=>mode==='world'&&!net&&startList().length>1;
+ const cycleWorld=d=>{const L=startList();const k=L.indexOf(startW);startW=L[(k<0?0:k+d+L.length)%L.length];sfx.bump();};
+ function noteBowser(p){if(mode!=='world')return;const wn=parseInt(STAGES[p.stage]?.name)||0,pr=store.profile;if(!wn||!pr)return;const b=Array.isArray(pr.smbBowsers)?pr.smbBowsers:[];
+  if(b.includes(wn))return;pr.smbBowsers=[...b,wn].sort((x,y)=>x-y);try{require('src/profile.js').saveProfile(pr);}catch{}note(p,'bowser beaten '+wn);}
  const recruitPools=s.players.map(p=>{try{return require('src/rewards.js').gameRecruitPool(s.game,store.profile,p).map(ch=>ch.id);}catch{return [];}});
  s.gameRecruits=[[],[]];
  const charName=id=>{try{return require('src/characters.js').CHARACTERS.find(ch=>ch.id===id)?.name||id;}catch{return id;}};
@@ -96,11 +106,11 @@ async function marioBros(s){
 
  const kb=arenaKeys(s);
  kb.onDown((i,k)=>{
-  if(phase==='title'){if(k==='u'||k==='l')menuSel=0;else if(k==='d')menuSel=1;else if(k==='fire'||k==='r')startFromTitle();return;}
+  if(phase==='title'){if(k==='u')menuSel=0;else if(k==='d')menuSel=1;else if((k==='l'||k==='r')&&worldPick())cycleWorld(k==='r'?1:-1);else if(k==='fire'||k==='r')startFromTitle();return;}
   if(phase==='warp'){if(warpMsg&&warpMsg.t>90&&(k==='fire'||k==='u'))warpMsg.t=9999;return;}
   if(k==='u')inputs[turn].press=1;if(k==='fire')inputs[turn].bPress=1;});
  const HELP='Touch: drag on the left side to walk, drag further to run, drag down to duck or go down a pipe, tap there to throw fireballs. Tap the right side to jump; hold it to jump higher. Keys: A/D/S or arrows, W/Up jump, Space or Enter run/fire.';
- s.hint(mode==='world'?`SUPER MARIO BROS. WORLDS 1-8: eight worlds from 1-1 to Heaven. New Dork City (2-2 is underwater: tap jump to swim), the Haunted Boardwalk (ghosts creep up behind your back; 3-2's mirrors swap left and right), Frostbite Peaks (skis: fast on ice, hit the ramps), Lost Wages (the Elvis cape: run full speed and jump to fly, hold jump to glide), the Jurassic Jungle (the mega mushroom smashes everything), Hell (Yoshi! B = tongue, hold jump to flutter) and Heaven (every power-up; God waits in 8-4), three lives each, highest score wins. 1 PLAYER GAME: each of you plays a whole game in turn (P2 races P1's ghost). 2 PLAYER GAME: like the NES, Mario and Luigi swap whenever one loses a life. Find the Warp Zone in 1-2 (run along the ceiling past the exit pipe) and someone new joins your team. ${HELP}`
+ s.hint(mode==='world'?`SUPER MARIO BROS. WORLDS 1-8: eight worlds from 1-1 to Heaven. New Dork City (2-2 is underwater: tap jump to swim), the Haunted Boardwalk (ghosts creep up behind your back; 3-2's mirrors swap left and right), Frostbite Peaks (skis: fast on ice, hit the ramps), Lost Wages (the Elvis cape: run full speed and jump to fly, hold jump to glide), the Jurassic Jungle (the mega mushroom smashes everything), Hell (Yoshi! B = tongue, hold jump to flutter) and Heaven (every power-up; God waits in 8-4), three lives each, highest score wins. 1 PLAYER GAME: each of you plays a whole game in turn (P2 races P1's ghost). 2 PLAYER GAME: like the NES, Mario and Luigi swap whenever one loses a life. Find the Warp Zone in 1-2 (run along the ceiling past the exit pipe) and someone new joins your team. Some pipes lead down to bonus rooms (try them); hit the right block and a beanstalk grows up to a cloud area full of coins (hold jump to climb). Beat a world's Bowser and the title screen lets you start from that world (tap WORLD, or left/right). ${HELP}`
   :mode==='coins'?`COIN RUSH: grab the most coins in 60 seconds, starting in World 1-1; the flagpole takes you on to the next stage. Find the coin room under the fourth pipe in 1-1 and the Warp Zone in 1-2. Players take turns; P2 sees P1's ghost. ${HELP}`
   :`CASTLE DASH: fastest through World 1-1 to the flagpole wins. Falling in a pit sends you back to the last checkpoint. Players take turns; P2 races P1's ghost. ${HELP}`);
 
@@ -108,7 +118,8 @@ async function marioBros(s){
  const toView=f=>({x:f.x/view.sc,y:f.y/view.sc-view.band});
  arenaTouch(s,{owner:()=>turn,maxFingers:3,
   onDown:f=>{
-   if(phase==='title'){f.data.role='menu';const v=toView(f);if(mode==='world'&&v.x>view.fx+60&&v.x<view.fx+210&&v.y>136&&v.y<174){menuSel=v.y<156?0:1;}startFromTitle();return;}
+   if(phase==='title'){f.data.role='menu';const v=toView(f);if(worldPick()&&v.x>view.fx+60&&v.x<view.fx+210&&v.y>=170&&v.y<190){cycleWorld(1);return;}
+    if(mode==='world'&&v.x>view.fx+60&&v.x<view.fx+210&&v.y>136&&v.y<170){menuSel=v.y<156?0:1;}startFromTitle();return;}
    if(phase==='warp'){f.data.role='menu';if(warpMsg&&warpMsg.t>90)warpMsg.t=9999;return;}
    const pd=pads[f.owner];if(f.x>s.W*.56){f.data.role='jump';pd.jump=f;inputs[f.owner].press=1;}else{f.data.role='stick';pd.stick=f;}},
   onMove:f=>{if(f.data.role!=='stick')return;const dx=f.x-f.sx,dy=f.y-f.sy,lim=60;if(Math.hypot(dx,dy)>lim){const k=lim/Math.hypot(dx,dy);f.sx=f.x-dx*k;f.sy=f.y-dy*k;}
@@ -191,7 +202,7 @@ async function marioBros(s){
   if(p.yoshi){p.yoshi=false;p.inv=120;p.vy=-3;p.grounded=false;w.yoshiRun.push({x:p.x,y:p.y,dir:-p.facing,t:0,area:p.area});sfx.shrink();s.react(p.i,'sad');note(p,'lost yoshi');return;}
   if(p.cape||p.skis){if(p.cape)p.cape=false;else p.skis=false;p.flyT=0;p.inv=120;sfx.shrink();s.react(p.i,'sad');note(p,'lost power');return;}
   if(p.big){note(p,'shrink');p.tf={t:0,to:'small',from:p.fire?'fire':'big'};p.big=false;p.fire=false;p.inv=120;sfx.shrink();s.react(p.i,'sad');}else kill(p,'hit');};
- const kill=(p,kind)=>{if(p.dead)return;note(p,kind);p.dead=1;p.deadKind=kind;p.deaths++;p.vx=0;p.vy=0;p.big=false;p.fire=false;p.star=0;p.mega=0;p.cape=false;p.skis=false;p.yoshi=false;p.flyT=0;p.tf=null;p.ride=null;p.crouch=false;sfx.die();s.react(p.i,'sad');};
+ const kill=(p,kind)=>{if(p.dead)return;note(p,kind);p.dead=1;p.deadKind=kind;p.deaths++;p.vx=0;p.vy=0;p.big=false;p.fire=false;p.star=0;p.mega=0;p.cape=false;p.skis=false;p.yoshi=false;p.flyT=0;p.tf=null;p.ride=null;p.climb=null;p.crouch=false;sfx.die();s.react(p.i,'sad');};
  const grow=(p,to)=>{p.tf={t:0,to,from:p.fire?'fire':p.big?'big':'small'};p.big=true;if(to==='fire')p.fire=true;sfx.power();s.react(p.i,'happy');};
  const killFoe=(w,e,dir,p,n=100)=>{if(e.state==='dying')return;e.state='dying';e.vx=dir*1.1;e.vy=-3.4;e.active=true;if(p)addScore(p,w,n,e.x,e.y-16);sfx.kick();if(p&&p.i===me)esync(w,e);};
 
@@ -199,7 +210,7 @@ async function marioBros(s){
  function placeRunner(p,fresh){
   const st=stageOf(p),spot=p.checkOn?st.check:st.start;
   if(net)worlds[p.i]=stageWorld(p.stage,p.lap);else if(fresh||!worlds[p.i]||worlds[p.i].st!==st)worlds[p.i]=makeWorld(st);
-  Object.assign(p,{area:spot.area,x:spot.x,y:spot.y,prevY:spot.y,vx:0,vy:0,grounded:true,dead:0,deadKind:'',pipe:null,flag:null,tf:null,crouch:false,jumping:false,inv:0,star:0,skidding:false,combo:0,ride:null,
+  Object.assign(p,{area:spot.area,x:spot.x,y:spot.y,prevY:spot.y,vx:0,vy:0,grounded:true,dead:0,deadKind:'',pipe:null,flag:null,tf:null,crouch:false,jumping:false,inv:0,star:0,climb:null,skidding:false,combo:0,ride:null,
    inCastle:false,castleT:0,auto:!!spot.auto,flagged:false,axe:null,tally:null,runT:0,facing:1});
   if(mode==='world')p.time=st.time;
   p.best=Math.max(p.best,0);cams[p.i].x=0;updateCamera(p,p.i,true);
@@ -209,9 +220,11 @@ async function marioBros(s){
  }
  // coins/race: a death puts you back at the last checkpoint you passed with the world as you left it
  function respawnHere(p){const w=worlds[p.i],st=stageOf(p),spot=p.checkOn?st.check:st.start.auto?{...st.startPlay}:st.start;
-  Object.assign(p,{area:spot.area,x:spot.x,y:spot.y,prevY:spot.y,vx:0,vy:0,grounded:true,dead:0,deadKind:'',pipe:null,flag:null,tf:null,crouch:false,jumping:false,inv:60,star:0,skidding:false,combo:0,ride:null,auto:false});
+  Object.assign(p,{area:spot.area,x:spot.x,y:spot.y,prevY:spot.y,vx:0,vy:0,grounded:true,dead:0,deadKind:'',pipe:null,flag:null,tf:null,crouch:false,jumping:false,inv:60,star:0,climb:null,skidding:false,combo:0,ride:null,auto:false});
   const a=AR(w,spot.area);a.enemies=a.def.enemies.filter(e=>Math.abs(e.x-spot.x)>140).map(spawnFoe);w.items=[];w.fire=[];w.flames=[];cams[p.i].x=0;updateCamera(p,p.i,true);}
 
+ // a beanstalk grows up out of its block to the top of the screen (and on, into the cloud area if the stage has one)
+ function growVine(a,c,r){if(!a.vines.some(v=>v.c===c&&v.bottom===r*T))a.vines.push({c,top:r*T,bottom:r*T,max:-3*T});}
  // head bump on a tile (from below)
  function bumpTile(p,w,an,cc,r){
   const a=AR(w,an),t=tileAt(w,an,cc,r),idx=r*a.def.W+cc,key=a.ai*1e6+idx,what=a.content.get(idx);
@@ -219,6 +232,7 @@ async function marioBros(s){
    let spent=true;
    if(what==='coin'||what==='multi'||!what){gainCoin(p,w);w.pops.push({x:cc*T+8,y:r*T-8,vy:-5,t:0,area:an});
     if(what==='multi'){const m=w.multi.get(key)||{n:0,t:simT};m.n++;w.multi.set(key,m);spent=m.n>=10||simT-m.t>4;}}
+   else if(what==='vine'){growVine(a,cc,r);sfx.sprout();if(net)ev({vn:[w.key,an,cc,r]});}
    else if(what==='power'||what==='star'||what==='1up'||what==='skis'||what==='cape'||what==='mega'||what==='yoshi'){const it={type:what==='power'?(p.big?'flower':'mushroom'):what,x:cc*T+8,y:(r+1)*T,emerge:16,vx:0,vy:0,area:an,id:`${me}.${itemSeq++}`};w.items.push(it);sfx.sprout();
     if(net)ev({it:[w.key,an,it.id,it.type,it.x,it.y]});}
    if(spent){setTile(w,an,cc,r,TILE.USED);a.content.delete(idx);if(net)ev({tl:[w.key,an,idx,TILE.USED]});}
@@ -270,6 +284,15 @@ async function marioBros(s){
   let running=p.runT>0;
   if(p.auto){dir=1;jumpHeld=false;down=false;jumpPress=false;running=false;}
   if(!jumpHeld)p.jumping=false;
+  // on a beanstalk: hold jump to climb, down to climb down, left or right to let go; past the top of the screen it
+  // leads into the stage's cloud area
+  if(p.climb){const v=p.climb.v;p.climbT=(p.climbT||0)+1;p.vx=0;p.vy=0;p.grounded=false;p.crouch=false;p.skidding=false;p.ride=null;
+   if(dir&&!jumpHeld&&p.climbT>10){p.climb=null;p.facing=dir;p.vx=dir*1.25;p.vy=-2;p.jumpSpd=1.25;p.gHold=JUMP[0][2];p.gFall=JUMP[0][3];return;}
+   const hh=pH(p);if(jumpHeld)p.y-=1.1;else if(down)p.y+=1.4;if(jumpHeld||down)p.anim+=.12;
+   if(v){p.x=v.c*T+8-p.facing*5;if(p.y-hh<v.top+2)p.y=v.top+2+hh;
+    if(def.vineTo&&p.y-hh<-T*.6&&v.top<=-T){p.climb=null;enterArea(p,def.vineTo);note(p,'cloud area');return;}
+    if(p.y>=v.bottom){p.y=v.bottom;p.climb=null;}}
+   return;}
   // ride a lift
   if(p.ride){const l=p.ride;if(l.wrapped){p.ride=null;p.grounded=false;p.vy=0;}else{p.x+=l.dx;p.y=l.y;}}
   // underwater (2-2): no running, a slow sink, every jump press is a swim stroke; the water's surface stops you rising
@@ -294,7 +317,7 @@ async function marioBros(s){
    else{p.skidding=false;p.facing=dir;const cap=ski?(running?3.5:2.5):running?PH.run:PH.walk;
     if(sp<PH.minWalk)p.vx=dir*PH.minWalk;else if(sp<cap)p.vx=dir*Math.min(cap,sp+(running?PH.runAcc:PH.walkAcc)*kA);else if(sp>cap)p.vx=dir*Math.max(cap,sp-REL);}
    // ski jumps: hit a ramp on skis at speed and you fly (with a spin)
-   if(ski&&def.ramps&&!p.rampT&&Math.abs(p.vx)>1.6){for(const rp of def.ramps)if(p.x>rp.c*T+4&&p.x<(rp.c+1)*T+2&&Math.sign(p.vx)===1){p.vy=-(4.6+(Math.abs(p.vx)-1.6)*1.5);p.grounded=false;p.jumping=false;p.gHold=.12;p.gFall=.3;p.jumpSpd=Math.abs(p.vx);p.spin=1;p.rampT=40;addScore(p,w,200,p.x,p.y-40);popText(w,'NICE!',p.x,p.y-52);sfx.jump(true);note(p,'ramp');break;}}
+   if(ski&&def.ramps&&!p.rampT&&Math.abs(p.vx)>1.6){for(const rp of def.ramps)if(p.x>rp.c*T+4&&p.x<(rp.c+1)*T+2&&Math.abs(p.y-(rp.r||13)*T)<2&&Math.sign(p.vx)===1){p.vy=-(4.6+(Math.abs(p.vx)-1.6)*1.5)*(rp.big?1.25:1);p.airT=0;p.grounded=false;p.jumping=false;p.gHold=.12;p.gFall=.3;p.jumpSpd=Math.abs(p.vx);p.spin=1;p.rampT=40;addScore(p,w,200,p.x,p.y-40);popText(w,'NICE!',p.x,p.y-52);sfx.jump(true);note(p,'ramp');break;}}
    p.anim+=Math.abs(p.vx)*.11;p.idle=Math.abs(p.vx)<.01?p.idle+1:0;
    if(jumpPress){const s0=Math.abs(p.vx),j=JUMP.find(j=>s0<j[0])||JUMP[JUMP.length-1];if(p.cape&&s0>=PH.run-.1){p.flyT=150;note(p,'take off');}p.vy=j[1];p.gHold=j[2];p.gFall=j[3];p.jumpSpd=s0;p.grounded=false;p.jumping=true;p.ride=null;p.skidding=false;sfx.jump(p.big);}
   }else{
@@ -302,7 +325,7 @@ async function marioBros(s){
    if(dir){const sp=Math.abs(p.vx),fwd=p.vx===0||Math.sign(p.vx)===dir;
     const accel=fwd?(sp<PH.walk?PH.walkAcc:PH.runAcc):(sp>=PH.walk?PH.runAcc:p.jumpSpd>=PH.backFast?PH.rel:PH.walkAcc);
     p.vx+=dir*accel;const cap=Math.max(p.jumpSpd<PH.walk?PH.walk:PH.run,p.jumpSpd);if(Math.abs(p.vx)>cap)p.vx=Math.sign(p.vx)*cap;}
-   p.vy+=p.jumping&&p.vy<0?p.gHold:p.gFall;if(p.vy>=PH.maxFall)p.vy=PH.fallReset;
+   p.vy+=p.jumping&&p.vy<0?p.gHold:p.gFall;if(p.vy>=PH.maxFall)p.vy=PH.fallReset;if(p.spin)p.airT=(p.airT||0)+1;
    // the Elvis cape (World 5): take off at full run and hold jump to climb; afterwards hold jump to glide down
    // Yoshi's flutter: hold jump while falling to hover a moment
    if(p.yoshi&&!p.cape&&jumpHeld&&p.vy>0&&(p.flutter||0)<45){p.flutter=(p.flutter||0)+1;p.vy=Math.max(p.vy-.5,-.35);}
@@ -338,8 +361,11 @@ async function marioBros(s){
      const hit=hits(cc)?cc:hits(cl)?cl:hits(cr)?cr:null;
      if(hit!==null){p.y=(rh+1)*T+h;p.vy=1;p.jumping=false;bumpTile(p,w,p.area,hit,rh);}}}
   }
+  // grab a beanstalk you jump into
+  if(!p.grounded&&!p.mega&&!def.water&&a.vines.length){for(const v of a.vines)if(Math.abs(p.x-(v.c*T+8))<9&&p.y<=v.bottom+1&&p.y-h>=v.top-4){p.climb={v};p.climbT=0;p.vx=0;p.vy=0;p.jumping=false;note(p,'vine');break;}}
   p.swim=!!def.water&&!p.grounded;if(p.grounded){p.spin=0;p.flutter=0;}
-  if(p.y-h>ROWS*T+4){kill(p,'pit');return;}
+  // off the end of a cloud area you drop back into the stage further on
+  if(p.y-h>ROWS*T+4){if(def.fallTo){enterArea(p,def.fallTo);note(p,'back down');return;}kill(p,'pit');return;}
   if(isLava(tileAt(w,p.area,Math.floor(p.x/T),Math.floor((p.y-6)/T)))){kill(p,'lava');return;}
   // progress, the checkpoint
   const st=stageOf(p);if(p.area===st.check.area&&p.x>=st.check.x)p.checkOn=true;
@@ -356,11 +382,14 @@ async function marioBros(s){
    goalReached(p);
   }
   // the axe behind Bowser
-  if(def.axe&&!p.axe&&Math.abs(p.x-def.axe.x)<12&&p.y>def.axe.y-8&&p.y-h<def.axe.y+8){p.axe={t:0,phase:'bridge',next:def.bridge.c1};p.vx=0;p.vy=0;p.ride=null;p.grounded=true;p.y=Math.min(p.y,def.bridge.r*T);note(p,'axe');if(net)ev({ax:[w.key,p.area]});goalReached(p);}
+  if(def.axe&&!p.axe&&Math.abs(p.x-def.axe.x)<12&&p.y>def.axe.y-8&&p.y-h<def.axe.y+8){noteBowser(p);p.axe={t:0,phase:'bridge',next:def.bridge.c1};p.vx=0;p.vy=0;p.ride=null;p.grounded=true;p.y=Math.min(p.y,def.bridge.r*T);note(p,'axe');if(net)ev({ax:[w.key,p.area]});goalReached(p);}
   // walk into the castle door
   if(p.auto&&def.castle&&p.flagged&&p.x>=def.castle.door){p.inCastle=true;p.castleT=0;p.auto=false;p.vx=0;p.tally={phase:mode==='world'?'time':'flag',t:0};}
  }
- function land(p){p.grounded=true;p.jumping=false;p.combo=0;p.skidding=false;}
+ function land(p){
+  // ski airtime pays out on landing
+  if(p.spin&&(p.airT||0)>45){const w=worlds[p.i],at=p.airT,pts=at>80?2000:at>60?1000:500;if(w){addScore(p,w,pts,p.x,p.y-40);popText(w,at>80?'HUGE AIR!':'BIG AIR!',p.x,p.y-56);}}
+  p.airT=0;p.grounded=true;p.jumping=false;p.combo=0;p.skidding=false;}
  function stepPipe(p,w){
   const pp=p.pipe,d=pp.door;pp.t++;
   if(pp.kind==='down'){p.y+=.8;if(pp.t>=40){if(d.warp){p.pipe=null;warpFound(p,d.warp);return;}enterArea(p,d.to);}}
@@ -368,7 +397,7 @@ async function marioBros(s){
   else{p.y-=.8;if(p.y<=pp.top){p.y=pp.top;p.prevY=p.y;p.pipe=null;land(p);p.best=Math.max(p.best,p.x);}}
  }
  function enterArea(p,to){
-  const w=worlds[p.i],a=AR(w,to.area);flash[p.i]=.6;p.pipe=null;p.ride=null;
+  const w=worlds[p.i],a=AR(w,to.area);flash[p.i]=.6;p.pipe=null;p.ride=null;p.climb=null;
   if(to.how==='drop'){Object.assign(p,{area:to.area,x:to.x,y:to.y,prevY:to.y,vx:0,vy:0,grounded:false,jumping:false,jumpSpd:0});}
   else{const pipe=a.def.pipes.find(q=>q.c===to.pipe);Object.assign(p,{area:to.area,x:(pipe.c+1)*T,y:pipe.top*T+pH(p)+2,prevY:pipe.top*T,vx:0,vy:0,grounded:false,facing:1});p.pipe={kind:'up',t:0,top:pipe.top*T};sfx.pipe();}
   cams[p.i].x=0;updateCamera(p,p.i,true);note(p,'enter '+to.area);
@@ -438,7 +467,7 @@ async function marioBros(s){
   // firebars, Bowser and his flames
   for(const fb of def.firebars){const ang=fbAngle(fb,a);for(let k=0;k<fb.n;k++){const bx=fb.x+Math.cos(ang)*k*8,by=fb.y+Math.sin(ang)*k*8;if(hits(p,bx-3,by-3,bx+3,by+3)){hurt(p,w);break;}}}
   const b=a.bowser;if(b&&b.state!=='dead'&&b.state!=='fall'&&hits(p,b.x-12,b.y-30,b.x+12,b.y)){if(p.star>0||p.mega>0){b.state='dead';b.vy=-3;addScore(p,w,5000,b.x,b.y-40);if(net)ev({bd:[w.key,p.area,0]});}else hurt(p,w);}
-  for(const f of w.flames)if(f.area===p.area&&hits(p,f.x-10,f.y-3,f.x+14,f.y+3))hurt(p,w);
+  for(const f of w.flames)if(f.area===p.area&&(f.g?hits(p,f.x-5,f.y-5,f.x+5,f.y+5):hits(p,f.x-10,f.y-3,f.x+14,f.y+3)))hurt(p,w);
  }
  const fbAngle=(fb,a)=>{const step=Math.PI*2/32,raw=a.fbT*.04*(a.fbK||1)*fb.dir+(fb.c*.7);return Math.floor(raw/step)*step;};
 
@@ -450,6 +479,7 @@ async function marioBros(s){
   const auth=authHere(w,an);if(net){stepped.k=w.key;stepped.an=an;stepped.f=frames;}
   a.fbT=net?netStep:a.fbT+1;
   const ln=net?clamp(netStep-(a.lsN??0),0,40000):1;if(net)a.lsN=Math.max(a.lsN??0,netStep);
+  for(const v of a.vines)if(v.top>v.max)v.top=Math.max(v.max,v.top-1);
   for(const l of a.lifts){l.dx=0;l.dy=0;l.wrapped=false;}
   for(let k=0;k<ln;k++)for(const l of a.lifts){const ox=l.x,oy=l.y;let wr=false;
    if(l.kind==='loop'){l.y+=l.vy;if(l.vy>0&&l.y>ROWS*T+8){l.y=-8;wr=true;}if(l.vy<0&&l.y<-8){l.y=ROWS*T+8;wr=true;}}
@@ -490,7 +520,22 @@ async function marioBros(s){
      // hoppers: the little demon and the dice
      case 'imp':case 'dice':if(e.vy===0&&e.t>(e.type==='imp'?46:38)){e.vy=e.type==='imp'?-4.2:-3.4;e.vx=dir*(e.type==='imp'?.9:.6);e.t=0;}break;
      // parka climbers and penguins turn round at ledges
-     case 'climber':case 'penguin':if(e.vy===0){const fx=e.x+Math.sign(e.vx)*8,r=Math.floor((e.y+1)/T);if(!solid(tileAt(w,an,Math.floor(fx/T),r)))e.vx=-e.vx;}e.swing=Math.abs(dx)<30;break;
+     case 'climber':if(e.vy===0){const fx=e.x+Math.sign(e.vx)*8,r=Math.floor((e.y+1)/T);if(!solid(tileAt(w,an,Math.floor(fx/T),r)))e.vx=-e.vx;}e.swing=Math.abs(dx)<30;
+      // and they lob their mallets at you in an arc
+      if(e.mouth>0)e.mouth--;e.ham=(e.ham??50+Math.floor(e.x)%60)-1;
+      if(e.ham<=0){e.ham=Math.round((110+s.random()*70)/(a.k||1));if(Math.abs(dx)<170&&Math.abs(tg.y-e.y)<90&&!(net&&!auth)){e.dir=dir;e.mouth=14;const v=clamp(dx/48,-2.2,2.2);w.flames.push({x:e.x+dir*4,y:e.y-20,vx:Math.abs(v)<.8?dir*.8:v,vy:-3.8,g:.16,area:an,look:'hammer'});}}break;
+     // penguins belly-slide straight off ledges and keep going
+     case 'penguin':break;
+     // the cloud rider stays over you (stomp him from up high), dropping spiky shells; past the end of his patch he leaves
+     case 'rider':{if(e.mouth>0)e.mouth--;const gone=a.def.riderEnd&&tg.x>a.def.riderEnd,goal=gone?e.x+240:tg.x+tg.vx*30+Math.sin(e.t*.017)*56;
+      e.vx=clamp((goal-e.x)*.035,-2.7,2.7);e.x+=e.vx;e.y=e.home+Math.sin(e.t*.05)*3;e.dir=dir;
+      if(gone){if(e.x>reachR(cam,w,an)+40)e.alive=false;continue;}
+      e.thr=(e.thr??90)-1;
+      if(e.thr<=0&&!(net&&!auth)){const live=a.enemies.filter(o=>o.type==='spiny'&&o.alive).length,slot=a.enemies.find(o=>o.type==='spiny'&&!o.alive);
+       if(slot&&live<3+((a.k||1)>1.3?1:0)){Object.assign(slot,{alive:true,active:true,state:'egg',x:e.x,y:e.y-4,vx:clamp(dx*.012,-1,1),vy:-3,t:0,hp:1,home:e.y,eaten:false,remote:false,grace:0,hit:0});e.mouth=20;e.thr=Math.round((120+s.random()*70)/(a.k||1));}else e.thr=40;}
+      continue;}
+     // a spiky shell falls, lands and walks; it can't be stomped
+     case 'spiny':if(e.state==='egg'){const rr=moveBody(e,w,an,6,12,.2,4);if(rr.landed){e.state='walk';e.vx=(dx>0?1:-1)*.5*(a.k||1);}else if(rr.wall)e.vx=-e.vx;continue;}break;
      // icicles shake, then drop when somebody walks under
      case 'icicle':if(e.state==='hang'){if(Math.abs(dx)<20&&tg.y>e.y){e.state='shake';e.t=0;}continue;}
       if(e.state==='shake'){if(e.t>24){e.state='fall';e.vy=0;}continue;}
@@ -523,6 +568,8 @@ async function marioBros(s){
      const kp=e.remote?null:p;
      if(!(net&&e.remote&&!auth))for(const o of a.enemies)if(o!==e&&o.alive&&o.active&&o.state!=='dying'&&o.state!=='squash'&&Math.abs(o.x-e.x)<14&&(o.type==='piranha'?o.off>4&&e.y>o.home-o.off&&e.y-14<o.home:Math.abs(o.y-e.y)<16)){e.chain=(e.chain||0)+1;if(e.chain>7){killFoe(w,o,Math.sign(e.vx),null);if(kp)oneUp(p,w,o.x,o.y-16);}else killFoe(w,o,Math.sign(e.vx),kp,SHELL_CHAIN[e.chain-1]);}}}
   }
+  // a stomped cloud rider comes back from the right a few seconds later (until his patch runs out)
+  if(a.def.rider&&auth){const rd=a.enemies.find(o=>o.type==='rider');if(rd&&!rd.alive&&p.x<(a.def.riderEnd||1e9)-160){a.riderT=(a.riderT||0)+1;if(a.riderT>420){a.riderT=0;Object.assign(rd,{alive:true,active:true,state:'fly',x:cam.x+view.w+24,y:rd.home,vx:0,vy:0,t:0,thr:120,eaten:false,grace:0});}}else a.riderT=0;}
   // walkers turn round when they meet
   const ws=a.enemies.filter(e=>e.alive&&e.active&&e.state==='walk'&&e.type!=='piranha'&&e.type!=='paraRed');
   for(let i=0;i<ws.length;i++)for(let j=i+1;j<ws.length;j++){const A=ws[i],B=ws[j];if(Math.abs(A.x-B.x)<14&&Math.abs(A.y-B.y)<10&&(B.x-A.x)*(A.vx-B.vx)>0){A.vx=-A.vx;B.vx=-B.vx;}}
@@ -557,7 +604,7 @@ async function marioBros(s){
  // come in from the right
  function stepBowser(w,p,a,auth=true){
   const b=a.bowser,def=a.def,cam=cams[p.i];
-  for(let k=w.flames.length-1;k>=0;k--){const f=w.flames[k];f.t=(f.t||0)+1;f.x+=f.vx;if(Math.abs(f.y-f.ty)>.6)f.y+=Math.sign(f.ty-f.y)*.6;if(f.x<cam.x-40&&f.x<backX(cam,w,p.area)-40||f.t>420||f.look==='venom'&&solidAt(w,f.area,f.x,f.y))w.flames.splice(k,1);}
+  for(let k=w.flames.length-1;k>=0;k--){const f=w.flames[k];f.t=(f.t||0)+1;f.x+=f.vx;if(f.g){f.vy+=f.g;f.y+=f.vy;}else if(Math.abs(f.y-f.ty)>.6)f.y+=Math.sign(f.ty-f.y)*.6;if(f.y>ROWS*T+24||f.x<cam.x-40&&f.x<backX(cam,w,p.area)-40||f.t>420||f.look==='venom'&&solidAt(w,f.area,f.x,f.y))w.flames.splice(k,1);}
   if(!b)return;
   // the fall off the bridge: a moment's hang, then down at a capped speed so you watch him drop out of the screen
   if(b.state==='fall'){b.t=(b.t||0)+1;if(b.t>18){b.vy=Math.min(b.vy+.08,2.2);b.y+=b.vy;}return;}
@@ -618,12 +665,12 @@ async function marioBros(s){
  const qFrame=()=>[0,0,0,1,2,1][Math.floor(simT*8)%6];
  const tileImg=(kind,t)=>t===TILE.QBLOCK?tiles[kind].q[qFrame()]:tiles[kind][t];
  const kindOf=def=>def.kind==='athletic'?'athletic':def.kind;
- const BG={over:C.sky,athletic:C.sky,city:C.sky,roof:'#2c1c5c',subway:'#0c3070',tower:'#141c34',pier:'#160e36',coaster:'#160e36',funhouse:'#24082c',bigtop:'#2c040c',
+ const BG={over:C.sky,athletic:C.sky,sky:C.sky,city:C.sky,roof:'#2c1c5c',subway:'#0c3070',tower:'#141c34',pier:'#160e36',coaster:'#160e36',funhouse:'#24082c',bigtop:'#2c040c',
   snow:'#9cd0fc',skilift:'#9cd0fc',icecave:'#0c2c4c',icepalace:'#8cc0e8',strip:'#160a24',desert:'#f8a868',slots:'#2c0408',casino:'#3c0408',
   jungle:'#7cc8e8',ruins:'#7cc8e8',dig:'#2c1808',volcano:'#2c0c08',hell:'#2c0404',hellcave:'#1c0404',bones:'#2c0404',fortress:'#14141a',heaven:'#bcdcfc',gates:'#bcdcfc',throne:'#f4f0e4'};
  const LIGHT_K=new Set(['snow','skilift','icepalace','desert','heaven','gates','throne','city','jungle','ruins']);
  const PROPS=new Set(['pine','snowman','neon','cactusd','skull','fern','fence','fossil','torch','firepot','harp']);
- const NOEXT=new Set(['under','castle','subway','tower','funhouse','bigtop','icecave','icepalace','casino','dig','volcano','hellcave','fortress','throne']),THEMED=new Set(['snow','skilift','icecave','icepalace','strip','desert','slots','casino','jungle','ruins','dig','volcano','hell','hellcave','bones','fortress','heaven','gates','throne']);
+ const NOEXT=new Set(['sky','under','castle','subway','tower','funhouse','bigtop','icecave','icepalace','casino','dig','volcano','hellcave','fortress','throne']),THEMED=new Set(['snow','skilift','icecave','icepalace','strip','desert','slots','casino','jungle','ruins','dig','volcano','hell','hellcave','bones','fortress','heaven','gates','throne']);
  const bgOf=def=>BG[def.kind]||'#000';
  function drawTiles(w,an,x0,x1,y0,y1,back){
   const a=AR(w,an),def=a.def,kind=kindOf(def),W=def.W;
@@ -682,7 +729,7 @@ async function marioBros(s){
    g.closePath();g.fill();g.fillStyle='#f8c838';for(let k=0;k<4;k++)g.fillRect(fly?-5-k*len*.3:-5+k,cy+2+k*(fly?1:len*.22),1.5,1.5);g.fillStyle='#d8a000';g.fillRect(-3,cy-1,5,2);g.restore();}
   if(p.dead){body(false,'dead',0);head(false,'sad',0,f);g.restore();return;}
   const run=Math.abs(p.vx);let pose='stand';
-  if(p.flag)pose='pole';else if(p.pipe&&p.pipe.kind==='side')pose='walk';
+  if(p.flag||p.climb)pose='pole';else if(p.pipe&&p.pipe.kind==='side')pose='walk';
   else if(crouch)pose='crouch';else if(p.swim&&!p.pipe)pose='swim';else if(!p.grounded&&!p.pipe)pose='jump';else if(p.skidding&&p.vx!==0&&Math.sign(p.vx)!==f)pose='skid';else if(run>.05||p.auto)pose='walk';
   const frame=pose==='swim'?((p.strokeT||0)>14?1:(p.strokeT||0)>0?2:0):Math.floor(p.anim)%3;
   thr=p.throwT>0&&pose!=='crouch';g.save();g.scale(f,1);body(big,pose,frame);if(p.skis&&!p.dead){g.fillStyle='#e8203c';g.fillRect(-12,-1,24,2);g.fillRect(10,-3,3,2);g.fillStyle='#fcfcfc';g.fillRect(-9,-1,4,1);g.fillRect(3,-1,4,1);}if(thr){if(big){R(pal.shirt,4,-21,6,3);R(C.skin,10,-21,2,3);}else{R(pal.shirt,3,-10,5,2);R(C.skin,8,-10,2,2);}}g.restore();
@@ -758,6 +805,7 @@ async function marioBros(s){
   if(def.flag&&def.flag.x>x0-30&&def.flag.x<x1+30)A_.drawFlagpole(g,def.flag,w.flagPos);
   for(const tx of def.texts)nesText(g,tx.str,tx.x,tx.y);
   drawTiles(w,an,x0,x1,y0,y1,true);
+  for(const v of a.vines)if(v.c*T>x0-16&&v.c*T<x1)A_.drawVine(g,v.c*T+8,v.top,v.bottom);
   for(const e of a.enemies)if(e.alive&&e.type==='piranha'&&e.state!=='dying'&&e.x>x0&&e.x<x1)A_.drawPiranha(g,e);
   for(const it of w.items)if(it.area===an&&it.emerge>0)A_.drawItem(g,it,simT);
   // runners sit behind the tiles: a head that pokes into a block or a pipe disappears into it
@@ -766,7 +814,10 @@ async function marioBros(s){
   if(partnerIn(w,an)&&pl[them].x>x0-20&&pl[them].x<x1+20)drawRunner(pl[them]);
   if(!p.inCastle&&!p.out)drawRunner(p);
   drawTiles(w,an,x0,x1,y0,y1,false);
-  for(const rp of def.ramps||[]){const rx=rp.c*T;if(rx>x1||rx+T<x0)continue;g.fillStyle='#fcfcfc';g.beginPath();g.moveTo(rx-T,13*T);g.lineTo(rx+T,11*T+4);g.lineTo(rx+T,13*T);g.closePath();g.fill();g.fillStyle='#3c7cfc';g.fillRect(rx+T-2,11*T+4,2,2*T-4);g.fillStyle='#e8203c';g.fillRect(rx-4,12*T+2,3,2);}
+  // ski ramps (a big kicker is taller, with a flag)
+  for(const rp of def.ramps||[]){const rx=rp.c*T,b=(rp.r||13)*T,hh=rp.big?40:28,lo=rp.big?2*T:T;if(rx+T<x0||rx-lo>x1)continue;g.fillStyle='#fcfcfc';g.beginPath();g.moveTo(rx-lo,b);g.lineTo(rx+T,b-hh);g.lineTo(rx+T,b);g.closePath();g.fill();
+   g.fillStyle='#bcdcfc';g.beginPath();g.moveTo(rx-lo,b);g.lineTo(rx+T,b-hh);g.lineTo(rx+T,b-hh+3);g.lineTo(rx-lo+6,b);g.closePath();g.fill();g.fillStyle='#3c7cfc';g.fillRect(rx+T-2,b-hh,2,hh);g.fillStyle='#e8203c';g.fillRect(rx-4,b-hh/2+2,3,2);
+   if(rp.big){g.fillStyle='#5c5c6c';g.fillRect(rx+T-1,b-hh-14,1,14);g.fillStyle=(simT*3|0)%2?'#e8203c':'#f8c838';g.fillRect(rx+T,b-hh-14,7,5);}}
   for(const y of w.yoshiRun)if(y.area===an)drawYoshi(y.x,y.y,y.dir,y.t*.2,0);
   if(def.axe&&!pl[i].axe)A_.drawAxe(g,def.axe.x,def.axe.y,simT,def.axe.glass);
   if(def.toad)A_.drawToad(g,def.toad.x,def.toad.y);
@@ -824,7 +875,9 @@ async function marioBros(s){
   A_.drawLogo(g,40,32);
   nesText(g,net?'2 PLAYER ONLINE':'1 PLAYER GAME',88,144);if(!s.solo&&!net)nesText(g,'2 PLAYER GAME',88,160);
   const my=s.solo||net?144:mode==='world'?(menuSel?160:144):160;g.save();g.translate(80,my+8);A_.drawItem(g,{type:'mushroom',x:0,y:0},0);g.restore();
-  nesText(g,'TOP- '+String(top).padStart(6,'0'),96,184);
+  if(worldPick()){const t=`WORLD ${startW}`,wx=88+Math.round((textW('2 PLAYER GAME')-textW(t))/2);nesText(g,t,wx,176,'#fc9838');
+   g.fillStyle='#fc9838';const tri=(x,dir)=>{for(let k=0;k<4;k++)g.fillRect(dir>0?x+k:x+3-k,179-k,1,1+2*k);};tri(wx-12,-1);tri(wx+textW(t)+6,1);}
+  nesText(g,'TOP- '+String(top).padStart(6,'0'),96,worldPick()?196:184);
   g.restore();
  }
  // black interstitial: WORLD 1-x and lives, GAME OVER, or the Warp Zone message
@@ -872,7 +925,8 @@ async function marioBros(s){
   if(!soloOk)return soloFinish(s,soloTotal,soloCleared,mode==='coins'?`World 1 Coin Rush solo: ${soloCleared} round${soloCleared===1?'':'s'} beaten; ${p.coins}/${coinGoal()} coins on the last.`:`World 1-1 Castle Dash solo: ${soloCleared} dash${soloCleared===1?'':'es'} in time; last run ${score(p)}.`);
   soloCleared++;soloProgress(s,soloTotal,soloCleared,mode==='coins'?`World 1 Coin Rush solo: ${soloCleared} round${soloCleared===1?'':'s'} beaten.`:`World 1-1 Castle Dash solo: ${soloCleared} dash${soloCleared===1?'':'es'} in time.`);
   pl[0]=makePlayer(0);worlds[0]=makeWorld(STAGES[0]);cams[0].x=0;beginTurn(0);}
- function startFromTitle(){if(phase!=='title'||titleT<.4)return;twoPlayer=mode==='world'&&menuSel===1&&!s.solo&&!net;note(pl[0],twoPlayer?'2 player game':'1 player game');beginTurn(net?me:0);}
+ function startFromTitle(){if(phase!=='title'||titleT<.4)return;twoPlayer=mode==='world'&&menuSel===1&&!s.solo&&!net;
+  if(worldPick()&&startW>1){for(const q of pl)q.stage=(startW-1)*4;note(pl[0],'start world '+startW);}note(pl[0],twoPlayer?'2 player game':'1 player game');beginTurn(net?me:0);}
  async function beginTurn(i){
   // online: no hand-off; both phones show the WORLD card and start together
   if(net){phase='handoff';await nf.start('go');if(!s.alive||netStarted)return;netStarted=true;netT0=performance.now();netStep=0;clock=0;acc=0;startCard(i);return;}   // i = this phone's player
@@ -983,15 +1037,15 @@ async function marioBros(s){
  // a lost life: next to the partner in a bubble (same stage and area, partner up and running), else the checkpoint
  function netRespawn(p){const q=pl[them],st=stageOf(p),w=worlds[me];let spot=p.checkOn?st.check:st.start.auto?{...st.startPlay}:st.start,near=false;
   if(partnerIn(w,q.area)&&!q.dead&&!q.flag&&!q.axe&&!q.pipe){spot={area:q.area,x:q.x,y:Math.max(3*T,q.y-30)};near=true;}
-  Object.assign(p,{area:spot.area,x:spot.x,y:spot.y,prevY:spot.y,vx:0,vy:0,grounded:!near,dead:0,pipe:null,flag:null,tf:null,crouch:false,jumping:false,inv:near?0:60,star:0,skidding:false,combo:0,ride:null,auto:false,big:false,fire:false,bubble:near?BUBBLE:0});
+  Object.assign(p,{area:spot.area,x:spot.x,y:spot.y,prevY:spot.y,vx:0,vy:0,grounded:!near,dead:0,pipe:null,climb:null,flag:null,tf:null,crouch:false,jumping:false,inv:near?0:60,star:0,skidding:false,combo:0,ride:null,auto:false,big:false,fire:false,bubble:near?BUBBLE:0});
   if(mode==='world'&&p.deadKind==='time')p.time=st.time;p.deadKind='';cams[me].x=0;updateCamera(p,me,true);}
- const PF=['big','fire','star','inv','left','crouch','grounded','skidding','finished','inCastle','flag','sidePipe','out','done','dead','auto','axe','over'];
- function packP(p){const v={big:p.big,fire:p.fire,star:p.star>0,inv:p.inv>0,left:p.facing<0,crouch:p.crouch,grounded:p.grounded,skidding:p.skidding,finished:p.finished,inCastle:p.inCastle,flag:!!p.flag,sidePipe:p.pipe?.kind==='side',out:p.out,done:p.done,dead:p.dead>0,auto:p.auto,axe:!!p.axe,over:p.over};
+ const PF=['big','fire','star','inv','left','crouch','grounded','skidding','finished','inCastle','flag','sidePipe','out','done','dead','auto','axe','over','climb'];
+ function packP(p){const v={big:p.big,fire:p.fire,star:p.star>0,inv:p.inv>0,left:p.facing<0,crouch:p.crouch,grounded:p.grounded,skidding:p.skidding,finished:p.finished,inCastle:p.inCastle,flag:!!p.flag,sidePipe:p.pipe?.kind==='side',out:p.out,done:p.done,dead:p.dead>0,auto:p.auto,axe:!!p.axe,over:p.over,climb:!!p.climb};
   let fl=0;PF.forEach((k,j)=>{if(v[k])fl|=1<<j;});const r=n=>Math.round(n*10)/10;
   return [r(p.x),r(p.y),+p.vx.toFixed(3),+p.vy.toFixed(3),fl,p.area,p.stage,p.lap,p.score,p.coins,p.lives,Math.round(p.best),+p.finishT.toFixed(3),p.bubble,p.stagesCleared,wkey(p.stage,p.lap),p.pipe?.kind==='down'||p.pipe?.kind==='up'?Math.round(p.y):null,Math.round(cams[p.i].x),Math.round(view.w)];}
  function unpackP(a){const q=pl[them];if(!Array.isArray(a)||a.length<16)return;const first=!q.net||q.area!==a[5]||q.wk!==a[15];q.net={a,at:performance.now()};const fl=a[4],F=k=>!!(fl&1<<PF.indexOf(k));
   q.vx=a[2];q.vy=a[3];q.big=F('big');q.fire=F('fire');q.star=F('star')?60:0;q.inv=F('inv')?60:0;q.facing=F('left')?-1:1;q.crouch=F('crouch');q.grounded=F('grounded');q.skidding=F('skidding');
-  if(F('finished')&&!q.finished){q.finished=true;q.finishT=a[12];}q.inCastle=F('inCastle');q.flag=F('flag')?{t:0,phase:'slide'}:null;q.pipe=F('sidePipe')?{kind:'side'}:null;q.out=F('out');q.done=F('done');q.dead=F('dead')?1:0;q.auto=F('auto');q.axe=F('axe')?{}:null;q.over=F('over');
+  if(F('finished')&&!q.finished){q.finished=true;q.finishT=a[12];}q.inCastle=F('inCastle');q.flag=F('flag')?{t:0,phase:'slide'}:null;q.pipe=F('sidePipe')?{kind:'side'}:null;q.out=F('out');q.done=F('done');q.dead=F('dead')?1:0;q.auto=F('auto');q.axe=F('axe')?{}:null;q.over=F('over');q.climb=F('climb')?{v:null}:null;
   q.area=a[5];q.stage=a[6];q.lap=a[7];q.score=a[8];q.coins=a[9];q.lives=a[10];q.best=Math.max(q.best,a[11]);q.bubble=a[13];q.stagesCleared=a[14];q.wk=a[15];if(Number.isFinite(a[17]))q.cx=a[17];if(a[18]>0)q.vw=a[18];
   if(first){q.x=a[0];q.y=a[1];}if(q.out||q.done)checkNetEnd();if(q.out)tryAdvance();}
  // the partner is shown moved on by its speed for the time since the snapshot, the jump eased out
@@ -1014,6 +1068,7 @@ async function marioBros(s){
    const age=clamp((performance.now()-netT0-(+ms||0))*.06,0,120),f={x:x+vx*age,y,ty,vx,area:an};if(Math.abs(f.y-ty)>.6)f.y+=Math.sign(ty-f.y)*Math.min(Math.abs(ty-f.y),.6*age);w.flames.push(f);if(an===pl[me].area&&w===worlds[me])sfx.bowserFire();}
   // the partner's fireball: shown only (their phone judges what it hits)
   else if(e.fb){const [k,an,x,y,vx]=e.fb,w=W(k);if(w&&AR(w,an))w.fire.push({x,y,vx,vy:3,t:0,area:an,remote:true});}
+  else if(e.vn){const [k,an,c,r]=e.vn,w=W(k),a=w&&AR(w,an);if(a)growVine(a,c,r);}
   else if(e.bd){const [k,an,fake]=e.bd,w=W(k),b=w&&AR(w,an)?.bowser;if(b&&b.state!=='dead'){b.state='dead';b.vy=-3;if(fake)b.fake=true;}}
   else if(e.ax){const [k,an]=e.ax,w=W(k),b=w&&AR(w,an)?.bowser;if(b&&b.state!=='dead'&&b.state!=='fall'){b.state='fall';b.vy=0;b.t=0;}}
   else if(e.gl){const p=pl[me];if(mode==='world'&&p.stage===e.gl[0]&&!graceUntil&&phase==='play'&&!p.out)graceUntil=clock+NET_GRACE;}
@@ -1042,14 +1097,15 @@ async function marioBros(s){
  const teleport=(i,X,stage)=>{const q=pl[i];if(stage!==undefined&&stage!==q.stage){q.stage=stage;q.checkOn=false;worlds[i]=net?stageWorld(stage,q.lap):makeWorld(STAGES[stage]);q.area='main';}const w=worlds[i],a=AR(w,q.area),W=a.def.W;let cc=Math.floor(X/T),r=13;
   const ok=(c,r)=>solid(a.tiles[r*W+c])&&!a.tiles[(r-1)*W+c]&&!a.tiles[(r-2)*W+c];
   outer:for(;cc<W-1;cc++)for(r=13;r>=4;r--)if(ok(cc,r))break outer;
-  Object.assign(q,{x:cc*T+8,y:r*T,prevY:r*T,vx:0,vy:0,grounded:true,pipe:null,flag:null,dead:0,tf:null,ride:null,axe:null,auto:false});q.best=Math.max(q.best,q.x);cams[i].x=0;updateCamera(q,i,true);};
+  Object.assign(q,{x:cc*T+8,y:r*T,prevY:r*T,vx:0,vy:0,grounded:true,pipe:null,flag:null,dead:0,tf:null,ride:null,axe:null,auto:false,climb:null});q.best=Math.max(q.best,q.x);cams[i].x=0;updateCamera(q,i,true);};
  s.debug={audio:SA,log,get phase(){return phase;},get clock(){return clock;},get turn(){return turn;},get twoPlayer(){return twoPlayer;},get warpMsg(){return warpMsg;},ghost,pl,STAGES,worlds,cams,view,PH,setClock(v){clock=v;},teleport,
-  start(sel){menuSel=sel;titleT=1;startFromTitle();},
+  start(sel,world){menuSel=sel;titleT=1;if(world)startW=world;startFromTitle();},get startList(){return startList();},
   toWarp(i){const q=pl[i],st=STAGES[0];const e=st.areas.main.pipes.find(p=>p.to);Object.assign(q,{area:'main',x:(e.c+1)*T,y:e.top*T,prevY:e.top*T,vx:0,vy:0,grounded:true,pipe:null,dead:0,tf:null,ride:null});cams[i].x=0;updateCamera(q,i,true);},
   toWarpZone(i,n=4){const q=pl[i];if(q.stage!==1){q.stage=1;worlds[i]=net?stageWorld(1,q.lap):makeWorld(STAGES[1]);}const pp=STAGES[1].areas.main.pipes.find(p=>p.warp===n);Object.assign(q,{area:'main',x:(pp.c+1)*T,y:pp.top*T,prevY:pp.top*T,vx:0,vy:0,grounded:true,pipe:null,dead:0,tf:null,ride:null,auto:false});cams[i].x=0;updateCamera(q,i,true);},
   spawn(i,type,x,y=13*T){const a=AR(worlds[i],pl[i].area),e=spawnFoe({type,x,y});e.active=true;a.enemies.push(e);return a.enemies.length-1;},
   power(i,kind){const q=pl[i];q.big=kind!=='small';q.fire=kind==='fire';},
   kill(i){kill(pl[i],'hit');},
+  bump(i,c,r){bumpTile(pl[i],worlds[i],pl[i].area,c,r);},flames:()=>worlds[me]?.flames,
   skipCard(){if(phase==='card')cardT=99;}};
 
  // ---------------- main loop
@@ -1108,8 +1164,6 @@ async function marioBros(s){
    if(flash[turn]>0){g.fillStyle=`rgba(0,0,0,${flash[turn]})`;g.fillRect(0,-view.band,view.w,view.h);}
    const p=pl[turn];if(p.dead&&p.dead>25&&mode!=='world')outlined(g,p.deadKind==='pit'?'DOWN THE PIT!':'OUCH!',view.w/2,110,{size:14,fill:'#fff',stroke:'#000'});
    if(mode==='race'&&p.finished&&phase==='play')outlined(g,`${s.players[turn].name.toUpperCase()} REACHED THE CASTLE`,view.w/2,96,{size:12,fill:'#ffe23a',stroke:'#000'});
-   const def=worlds[turn]&&AR(worlds[turn],p.area).def;
-   if(def&&p.grounded&&!p.pipe&&(frames>>4)%2)for(const d of def.doors)if(d.kind==='down'&&Math.abs(p.y-d.top*T)<.5&&Math.abs(p.x-(d.c+1)*T)<=8)outlined(g,'▼',(d.c+1)*T-cx,d.top*T-48,{size:12,fill:'#fff',stroke:'#000'});
   }
   g.restore();
   if(net&&LIVE.includes(phase)&&phase!=='end'){const p=pl[me],nm=s.players[them].name.toUpperCase(),sz=Math.min(s.W*.05,22);

@@ -190,14 +190,14 @@ function w21(){
  const A=area(220,'city');
  A.ground(0,40);A.ground(43,90);A.ground(94,140);A.ground(148,219);
  A.q(14,9);A.row(18,9,'B?B?B',{19:'power'});A.q(20,5);
- A.pipe(26,2);A.pipe(36,3,{piranha:true});
+ A.pipe(26,2,{to:{area:'bonus',x:2*T+8,y:2*T,how:'drop'}});A.pipe(36,3,{piranha:true});
  // construction site: steel girders, a work elevator and coins in the air
  A.row(46,9,'HHHH');A.coinRun(46,49,8);A.row(51,6,'HHHH');A.coinRun(51,54,5);
  A.lift({x:58*T,y:10*T,kind:'v',y0:5*T,y1:11*T,vy:-.6,w:48});
  A.brick(62,9,'star');A.row(64,5,'BBBB?BBB',{68:'power'});
- A.pipe(72,4);A.hidden(80,8,'1up');
+ A.pipe(72,4,{exitOf:'bonus'});A.hidden(80,8,'1up');
  A.stairs(86,4,1);
- A.row(100,9,'B?B');A.brick(104,9,'multi');
+ A.row(100,9,'B?B',{100:'vine'});A.brick(104,9,'multi');
  A.fill(108,111,9,9,HARD);A.fill(112,115,6,6,HARD);A.coinRun(112,115,5);
  A.pipe(120,3,{piranha:true});A.pipe(128,4,{piranha:true});
  // the cab ride over the roadworks
@@ -208,7 +208,9 @@ function w21(){
  for(const c of [22,40,60,61.5,97,98.5,124,125.5,150,151.5,165,166.5])A.foe('goomba',c);
  A.foe('goomba',109,9);A.foe('koopa',113,6);A.foe('koopa',135);A.foe('koopa',170);
  cityScenery(A);
- return {name:'2-1',title:DORK,time:400,areas:{main:A},start:{area:'main',x:40,y:13*T},check:{area:'main',x:96*T+8,y:13*T}};
+ // down the first pipe: a subway coin room that comes up out of the tall pipe; the brick at 100 grows a beanstalk
+ A.vineTo={area:'cloud',x:3*T+8,y:9*T,how:'drop'};
+ return {name:'2-1',title:DORK,time:400,areas:{main:A,bonus:coinRoom('subway',rng(21),72),cloud:cloudArea(rng(211),152)},start:{area:'main',x:40,y:13*T},check:{area:'main',x:96*T+8,y:13*T}};
 }
 
 // ------------------------------------------------------------------ 2-2 the flooded subway (water stage)
@@ -292,12 +294,12 @@ function w31(){
  const A=area(210,'pier');
  A.ground(0,45);A.ground(49,95);A.ground(100,150);A.ground(156,209);
  A.q(15,9);A.row(20,9,'B?B?B',{21:'power'});A.q(22,5);
- A.pipe(30,2);A.pipe(40,3,{piranha:true});
+ A.pipe(30,2,{to:{area:'bonus',x:2*T+8,y:2*T,how:'drop'}});A.pipe(40,3,{piranha:true});
  A.coinRun(46,48,8);
- A.row(64,9,'BBBB');A.row(68,5,'B?BB',{69:'power'});A.coinRun(64,67,8);A.hidden(78,8,'1up');
+ A.row(64,9,'BBBB',{64:'vine'});A.row(68,5,'B?BB',{69:'power'});A.coinRun(64,67,8);A.hidden(78,8,'1up');
  A.stairs(91,4,1);A.coinRun(96,99,6);
  A.q(106,9,'coin');A.brick(108,9,'star');A.q(110,9,'coin');A.row(105,5,'BBBBBB');A.coinRun(105,110,4);
- A.pipe(124,3,{piranha:true});A.pipe(134,2);
+ A.pipe(124,3,{piranha:true});A.pipe(134,2,{exitOf:'bonus'});
  A.lift({x:153*T,y:11*T,kind:'h',x0:151*T,x1:155*T,vx:.6,w:48,look:'raft'});
  A.row(164,9,'?B?',{166:'power'});A.stairs(178,8,1);A.col(186,8);
  flagAndCastle(A,195,199);
@@ -306,7 +308,8 @@ function w31(){
  for(const [c,r] of [[60,8],[88,6],[118,7],[170,7]])A.foe('ghost',c,r);
  A.foe('slasher',74);A.foe('dreamer',132);A.foe('imp',146);A.foe('imp',168);
  pierScenery(A);
- return {name:'3-1',title:BOARD,time:400,areas:{main:A},start:{area:'main',x:40,y:13*T},check:{area:'main',x:102*T,y:13*T}};
+ A.vineTo={area:'cloud',x:3*T+8,y:9*T,how:'drop'};
+ return {name:'3-1',title:BOARD,time:400,areas:{main:A,bonus:coinRoom('under',rng(31),134),cloud:cloudArea(rng(311),101)},start:{area:'main',x:40,y:13*T},check:{area:'main',x:102*T,y:13*T}};
 }
 
 // ------------------------------------------------------------------ 3-2 the funhouse (mirror maze: left and right swap)
@@ -383,55 +386,169 @@ function themeFoe(A,cfg,r,c,row=13){const t=cfg.foes[Math.floor(r()*cfg.foes.len
 const pick=(r,a)=>a[Math.floor(r()*a.length)];
 function props(A,cfg,c0,c1,r){if(!cfg.props)return;for(let c=c0+2;c<c1-1;c+=5+Math.floor(r()*6)){if(A.tiles[13*A.W+c]&&!A.tiles[12*A.W+c])A.decor.push({type:pick(r,cfg.props),x:c*T+8});}}
 
-// an outdoor stage: flats, pits, pipes, stairs, block clusters, lift gaps and the world's own pieces (ramps, walls, cacti)
-function genOver(wn,n,cfg){const r=rng(wn*100+n*7+1),W=240,d=wn,A=area(W,cfg.kind);if(cfg.ice)A.ice=true;if(cfg.wind)A.wind=true;A.ramps=[];
- A.ground(0,15);A.row(10,9,'?B?',{10:cfg.power,12:'power'});A.q(12,5,'coin');let c=16,check=null;
- const flat=len=>{A.ground(c,c+len-1);const k=Math.round(r()*(1+d*.28));for(let j=0;j<k;j++)themeFoe(A,cfg,r,c+2+Math.floor(r()*(len-4)));
-  if(r()<.45){const pat=pick(r,['B?B','?B?B','BB?BB','???']);A.row(c+2,9,pat,{[c+2+Math.floor(pat.length/2)]:r()<.25?pick(r,cfg.extra||['power']):'coin'});if(r()<.5){A.row(c+3,5,'B?B');A.coinRun(c+3,c+5,4);}}
+// one difficulty number per stage (4-1 = 4, 4-4 = 4.75, ... 8-4 = 8.75): everything that makes a stage harder grows with it
+const lvOf=(wn,n)=>wn+(n-1)*.25;
+const isFree=(A,c0,c1,r0,r1)=>{for(let c=c0;c<=c1;c++)for(let r=Math.max(0,r0);r<=r1;r++)if(c<0||c>=A.W||A.tiles[r*A.W+c])return false;return true;};
+// enemies climb steadily from stage to stage (the random sections alone made it jumpy): add walkers on open ground
+// (solid at row 13, nothing in the four rows above) or take some away
+function evenFoes(A,cfg,r,target,c0,c1){const walkers=()=>A.enemies.filter(e=>!e.pool&&e.type!=='piranha');let n=walkers().length;
+ const open=[];for(let c=c0;c<c1;c++)if(A.tiles[13*A.W+c]&&!A.tiles[12*A.W+c]&&!A.tiles[11*A.W+c]&&!A.tiles[10*A.W+c]&&!A.tiles[9*A.W+c]&&!A.enemies.some(e=>Math.abs(e.x-(c*T+8))<24))open.push(c);
+ while(n<target&&open.length){const cc=open.splice(Math.floor(r()*open.length),1)[0];themeFoe(A,cfg,r,cc);n++;}
+ while(n>target+2){const w=walkers(),e=w[Math.floor(r()*w.length)];A.enemies.splice(A.enemies.indexOf(e),1);n--;}}
+// a coin room under a pipe: in through the pipe, out through a side pipe that comes up further along the stage
+function coinRoom(kind,r,exitCol){const R=area(17,kind);R.scenery=false;R.ground(0,16);R.fill(0,0,2,12,BRICK);R.fill(1,16,2,2,BRICK);
+ const v=Math.floor(r()*3);
+ if(v===0){R.fill(4,10,10,12,BRICK);for(let c=4;c<11;c++){R.coin(c,8);R.coin(c,9);}for(let c=5;c<10;c++)R.coin(c,5);}
+ else if(v===1){R.row(4,9,'BB?BB',{6:'1up'});R.coinRun(2,11,12);R.coinRun(3,10,11);R.coinRun(4,8,5);}
+ else{R.row(3,9,'BBBBBBBBB',{7:'multi'});R.coinRun(3,11,8);R.coinRun(3,11,12);R.coinRun(4,10,5);R.hidden(2,6,'1up');}
+ R.sidePipe(13,12,1,0,{to:{area:'main',pipe:exitCol,how:'rise'}});return R;}
+// the cloud area at the top of a beanstalk: a long walk on the clouds collecting coins, then drop back into the stage
+function cloudArea(r,landCol){const W=80,A=area(W,'sky');A.scenery=false;
+ A.fill(0,W-14,11,11,GROUND);
+ for(let c=5;c<W-18;c+=6+Math.floor(r()*3)){const pat=Math.floor(r()*3);
+  if(pat===0)A.coinRun(c,c+3,8);else if(pat===1){A.coinRun(c,c+4,9);A.coinRun(c+1,c+3,7);}else{A.coin(c,8);A.coin(c+1,7);A.coin(c+2,6);A.coin(c+3,7);A.coin(c+4,8);}}
+ A.q(Math.floor(W/2),7,'1up');A.coinRun(W-16,W-15,7);
+ for(let c=6;c<W;c+=11)A.decor.push({type:'cloud',x:c*T,y:(2+(c*7)%3)*T,n:1+(c*3)%3});
+ A.vines=[{c:1,top:8*T,bottom:ROWS*T+T,max:8*T}];
+ A.fallTo={area:'main',x:landCol*T+8,y:-T,how:'drop'};return A;}
+// the 4-2 secret: like 1-2's Warp Zone, a room of pipes to later worlds
+function warpRoom(kind,list){const A=area(24,kind);A.scenery=false;A.ground(0,23);A.fill(0,0,2,12,BRICK);A.fill(1,23,2,2,BRICK);A.fill(22,23,3,12,BRICK);
+ list.forEach((n,k)=>{const c=4+k*6;A.pipe(c,3,{warp:n});A.text(String(n),c+.75,8.5);});A.text('WELCOME TO WARP ZONE!',2.75,5);A.coinRun(2,20,12);return A;}
+// beanstalk + coin room bookkeeping shared by the outdoor and platform stages: the exit pipe and the landing spot get
+// their own stretch of ground further on (see `pending` in the generators)
+function secrets(A,areas,r,cfg,{exitCol,vineAt,vineRow=9,landCol}){
+ if(exitCol>=0)areas.bonus=coinRoom(cfg.roomKind||'under',r,exitCol);else A.doors=A.doors.filter(d=>d.to?.area!=='bonus');
+ if(vineAt>=0){if(landCol>=0&&isFree(A,vineAt,vineAt,0,vineRow-1)){A.vineTo={area:'cloud',x:3*T+8,y:9*T,how:'drop'};areas.cloud=cloudArea(r,landCol);}else A.content.set(vineRow*A.W+vineAt,'coin');}
+}
+
+// an outdoor stage: flats, pits, pipes (one leads to a coin room), stairs, block clusters, tiers, floating islands,
+// pipe hops over pits, brick bridges, lift gaps and the world's own pieces (ramps, walls, high ledges); a beanstalk
+// block grows up to a cloud area; 5-1 has the cloud rider throwing spiky shells all the way
+function genOver(wn,n,cfg){const r=rng(wn*100+n*7+1),lv=lvOf(wn,n),W=cfg.rider?260:250,A=area(W,cfg.kind);if(cfg.ice)A.ice=true;if(cfg.wind)A.wind=true;A.ramps=[];
+ const areas={main:A},flats=[];let c=16,check=null,bonusAt=-1,vineAt=-1,exitCol=-1,landCol=-1,ups=0,special=0;
+ A.ground(0,15);A.row(10,9,'?B?',{10:cfg.power,12:'power'});A.q(12,5,'coin');
+ // the coin room's pipe, its way out, and the landing spot under the cloud area each get a plain stretch of ground
+ const pending=()=>{
+  if(bonusAt<0&&c>W*.3){A.ground(c,c+9);bonusAt=c+4;A.pipe(bonusAt,2+Math.floor(r()*2),{to:{area:'bonus',x:2*T+8,y:2*T,how:'drop'}});themeFoe(A,cfg,r,c+8);c+=10;return true;}
+  if(bonusAt>=0&&exitCol<0&&c>bonusAt+26){A.ground(c,c+7);exitCol=c+3;A.pipe(exitCol,2,{exitOf:'bonus'});c+=8;return true;}
+  if(vineAt>=0&&landCol<0&&c>vineAt+30){A.ground(c,c+7);landCol=c+3;A.coinRun(c+2,c+4,6);c+=8;return true;}
+  if(vineAt<0&&cfg.vine!==false&&c>W*.42){A.ground(c,c+9);A.row(c+3,9,'?B?',{[c+3]:'coin',[c+5]:'coin',[c+4]:'vine'});vineAt=c+4;themeFoe(A,cfg,r,c+8);c+=10;return true;}
+  return false;};
+ const foes=(c0,len,row=13)=>{const k=Math.round(r()*(cfg.rider?.4+lv*.1:1+lv*.28));for(let j=0;j<k;j++)themeFoe(A,cfg,r,c0+2+Math.floor(r()*Math.max(1,len-4)),row);};
+ const flat=len=>{A.ground(c,c+len-1);flats.push([c,len]);foes(c,len);
+  if(r()<.5){const pat=pick(r,['B?B','?B?B','BB?BB','???','B?B?B']),mid=c+2+Math.floor(pat.length/2),sp={[mid]:r()<.22-.015*lv?pick(r,cfg.extra||['power']):'coin'};
+   const vine=vineAt<0&&cfg.vine!==false&&c>30&&c<W*.55;if(vine){sp[mid]='vine';vineAt=mid;}
+   A.row(c+2,9,pat,sp);if(!vine&&r()<.5){A.row(c+3,5,'B?B');A.coinRun(c+3,c+5,4);}}
+  else if(ups<2&&len>=8&&r()<.3){A.hidden(c+3+Math.floor(r()*(len-6)),9,'1up');ups++;}
+  // on skis every long stretch may end in a small ramp: launch off it into whatever comes next
+  if(cfg.special==='ramp'&&len>=8&&r()<.55)A.ramps.push({c:c+len-2});
   props(A,cfg,c,c+len,r);c+=len;};
+ // the world's own piece
+ const piece=()=>{special++;
+   // World 4 on skis: jumps over gaps, a high route up a big kicker, mogul runs
+   if(cfg.special==='ramp'){const v=Math.floor(r()*3);
+    if(v===0){A.ground(c,c+13);A.ramps.push({c:c+11});const gap=3+Math.floor(r()*Math.min(3,lv-2));
+     for(let k=0;k<gap+2;k++)A.coin(c+13+k,Math.round(8-3*Math.sin((k+.5)/(gap+2)*Math.PI)));c+=14+gap;flat(6);}
+    // the high route: only a full-speed run up the big kicker reaches the ice ledge (coins, a 1-up); its own ramp throws
+    // you back down further on, over the enemies on the low road underneath
+    else if(v===1){const L=52;A.ground(c,c+L-1);A.ramps.push({c:c+7,big:true});A.fill(c+13,c+33,7,7,HARD);A.coinRun(c+15,c+31,6);A.q(c+22,3,'1up');A.ramps.push({c:c+32,r:7});
+     A.row(c+18,10,'B?B',{[c+19]:'coin'});for(const dx of [16,25,38,45])themeFoe(A,cfg,r,c+dx);flats.push([c+36,14]);c+=L;}
+    else{for(let k=0;k<3;k++){A.ground(c,c+5);A.ramps.push({c:c+4});const gap=2+k;A.coinRun(c+6,c+5+gap,8-k);c+=6+gap;}flat(6);}}
+   else if(cfg.special==='wall'){A.ground(c,c+13);A.col(c+3,2);A.fill(c+5,c+8,9,12,BRICK);A.fill(c+5,c+8,5,5,BRICK);A.coinRun(c+5,c+8,4);themeFoe(A,cfg,r,c+11);c+=14;}
+   else if(cfg.special==='high'){A.ground(c,c+13);A.coinRun(c+2,c+11,3);A.row(c+4,6,'HHH');A.stairs(c+9,3,1);themeFoe(A,cfg,r,c+8);c+=14;}
+   else flat(10);};
+ const spd=.6+.04*lv;
  while(c<W-62){const roll=r();
   if(!check&&c>W*.45){flat(10);check={area:'main',x:(c-8)*T,y:13*T};continue;}
-  if(roll<.24)flat(8+Math.floor(r()*6));
-  else if(roll<.42){const gap=2+Math.floor(r()*Math.min(4,1+d/3));A.coinRun(c,c+gap-1,9);if(gap>=5)A.lift({x:(c+gap/2)*T,y:11*T,kind:'h',x0:(c+1)*T,x1:(c+gap-1)*T,vx:.6+.04*d,w:48,look:cfg.lift});c+=gap;flat(4+Math.floor(r()*3));}
-  else if(roll<.54){A.ground(c,c+13);for(const [dx,h] of [[2,2+Math.floor(r()*3)],[8,2+Math.floor(r()*3)]])A.pipe(c+dx,h,{piranha:r()<.25+.08*d});themeFoe(A,cfg,r,c+6);c+=14;}
-  else if(roll<.64){A.ground(c,c+5);A.stairs(c+1,4,1);c+=6;const gap=2+Math.floor(r()*2);c+=gap;A.ground(c,c+5);A.stairs(c,4,-1);c+=6;flat(6);}
-  else if(roll<.76){A.ground(c,c+13);A.row(c+2,9,'BB?BB?BB',{[c+4]:'coin',[c+7]:r()<.3?cfg.power:'coin'});themeFoe(A,cfg,r,c+5,9);themeFoe(A,cfg,r,c+10);A.row(c+5,5,'?B?');c+=14;}
-  else if(roll<.86){const gap=6+Math.floor(r()*3);A.lift({x:(c+gap/2)*T,y:10*T,kind:r()<.5?'h':'v',x0:(c+1)*T,x1:(c+gap-1)*T,y0:6*T,y1:12*T,vx:.6+.04*d,vy:-.6-.04*d,w:48,look:cfg.lift});A.coinRun(c+1,c+gap-2,7);c+=gap;flat(5);}
-  else{ // the world's own piece
-   if(cfg.special==='ramp'){A.ground(c,c+13);A.ramps.push({c:c+11});A.coinRun(c+14,c+17,6);c+=14;c+=3;flat(6);}
-   else if(cfg.special==='wall'){A.ground(c,c+13);A.col(c+3,2);A.fill(c+5,c+8,9,12,BRICK);A.fill(c+5,c+8,5,5,BRICK);A.coinRun(c+5,c+8,4);themeFoe(A,cfg,r,c+11);c+=14;}
-   else if(cfg.special==='high'){A.ground(c,c+13);A.coinRun(c+2,c+11,3);A.row(c+4,6,'HHH');themeFoe(A,cfg,r,c+8);c+=14;}
-   else flat(10);}
+  if(pending())continue;
+  if(cfg.special==='ramp'&&r()<.32){piece();continue;}
+  // every stage gets its world's own piece at least twice (ramps, walls, high ledges)
+  if(cfg.special&&special<2&&c>W*(special?.55:.2)){piece();continue;}
+  if(roll<.16)flat(8+Math.floor(r()*6));
+  else if(roll<.28){const gap=2+Math.floor(r()*Math.min(4,1+lv/3));A.coinRun(c,c+gap-1,9);if(gap>=5)A.lift({x:(c+gap/2)*T,y:11*T,kind:'h',x0:(c+1)*T,x1:(c+gap-1)*T,vx:spd,w:48,look:cfg.lift});c+=gap;flat(4+Math.floor(r()*3));}
+  else if(roll<.38){A.ground(c,c+13);
+   [[2,2+Math.floor(r()*3)],[8,2+Math.floor(r()*3)]].forEach(([dx,h],k)=>{const enter=k===0&&bonusAt<0&&c>24&&c<W*.6;
+    if(enter){A.pipe(c+dx,h,{to:{area:'bonus',x:2*T+8,y:2*T,how:'drop'}});bonusAt=c+dx;}else A.pipe(c+dx,h,{piranha:r()<.2+.07*lv});});
+   themeFoe(A,cfg,r,c+6);c+=14;}
+  else if(roll<.45){A.ground(c,c+5);A.stairs(c+1,4,1);c+=6;const gap=2+Math.floor(r()*Math.min(3,lv/3));c+=gap;A.ground(c,c+5);A.stairs(c,4,-1);c+=6;flat(6);}
+  else if(roll<.53){A.ground(c,c+13);A.row(c+2,9,'BB?BB?BB',{[c+4]:'coin',[c+7]:r()<.3?cfg.power:'coin'});themeFoe(A,cfg,r,c+5,9);themeFoe(A,cfg,r,c+10);A.row(c+5,5,'?B?');c+=14;}
+  else if(roll<.60){const gap=6+Math.floor(r()*3);A.lift({x:(c+gap/2)*T,y:10*T,kind:r()<.5?'h':'v',x0:(c+1)*T,x1:(c+gap-1)*T,y0:6*T,y1:12*T,vx:spd,vy:-spd,w:lv>=7?32:48,look:cfg.lift});A.coinRun(c+1,c+gap-2,7);c+=gap;flat(5);}
+  // tiers: a brick shelf, a high hard ledge above it with coins, enemies on every level
+  else if(roll<.68){A.ground(c,c+15);flats.push([c+12,4]);A.row(c+2,9,'BBBB?',{[c+6]:r()<.25?cfg.power:'coin'});A.fill(c+7,c+11,6,6,HARD);A.coinRun(c+7,c+11,5);
+   themeFoe(A,cfg,r,c+3,9);themeFoe(A,cfg,r,c+9,6);themeFoe(A,cfg,r,c+12);if(ups<2&&r()<.3){A.hidden(c+13,9,'1up');ups++;}c+=16;}
+  // floating islands over a long pit
+  else if(roll<.75){const gap=8+Math.floor(r()*Math.min(4,lv/2));let x=c+1;while(x<c+gap-2){const rr=9+Math.floor(r()*3);A.fill(x,x+1,rr,rr,HARD);A.coinRun(x,x+1,rr-2);if(r()<.25+.04*lv)themeFoe(A,cfg,r,x+1,rr);x+=3+Math.floor(r()*2);}c+=gap;flat(5);}
+  // pipe hops: pipes on stubs of ground with pits between them
+  else if(roll<.82){for(let k=0;k<3;k++){A.ground(c,c+2);A.pipe(c,2+Math.floor(r()*3),{piranha:r()<.15+.06*lv});c+=3;c+=2+Math.floor(r()*Math.min(2,lv/4));}flat(5);}
+  // a brick bridge over a pit, enemies walking across it
+  else if(roll<.88){const gap=6+Math.floor(r()*4);A.ground(c,c+1);c+=2;A.row(c,10,'B'.repeat(gap));A.coinRun(c+1,c+gap-2,6);themeFoe(A,cfg,r,c+Math.floor(gap/2),10);c+=gap;flat(5);}
+  else piece();
  }
+ while(pending()){}
+ secrets(A,areas,r,cfg,{exitCol,vineAt,landCol});
+ evenFoes(A,cfg,r,Math.round(cfg.rider?6+lv:4+2.1*lv),20,c);
  A.ground(c,W-1);A.stairs(c+2,8,1);A.col(c+10,8);flagAndCastle(A,c+19,c+23);props(A,cfg,c+24,W,r);
- return {name:`${wn}-${n}`,title:cfg.title,time:cfg.time||(wn>=7?350:400),areas:{main:A},start:{area:'main',x:40,y:13*T},check:check||{area:'main',x:(W/2|0)*T,y:13*T}};}
+ if(cfg.rider){A.foe('rider',22,4);for(let k=0;k<6;k++)A.foe('spiny',0,13,{pool:true});A.rider=true;A.riderEnd=(c-4)*T;}
+ return {name:`${wn}-${n}`,title:cfg.title,time:cfg.time||(wn>=7?350:400),areas,start:{area:'main',x:40,y:13*T},check:check||{area:'main',x:(W/2|0)*T,y:13*T}};}
 
-// an underground stage: street/scene intro, the cave, then out through a pipe to the flagpole
-function genUnder(wn,n,cfg){const r=rng(wn*100+n*7+2),W=200,d=wn;
+// an underground stage: street/scene intro, the cave (pits, low ceilings, hanging columns, lifts, pipes with plants and
+// one to a coin room, brick shelves, brick stairs), then out through a pipe to the flagpole; 4-2 hides a Warp Zone
+function genUnder(wn,n,cfg){const r=rng(wn*100+n*7+2),lv=lvOf(wn,n),W=210;
  const I=area(16,cfg.outKind);I.ground(0,15);I.sidePipe(10,12,1,4,{cap:true,to:{area:'main',x:2*T+8,y:3*T,how:'drop'}});
- const A=area(W,cfg.kind);if(cfg.ice)A.ice=true;A.ground(0,13);A.fill(0,W-1,2,2,BRICK);A.fill(0,0,3,12,BRICK);A.row(8,9,'?B?',{8:cfg.power,10:'power'});let c=14,check=null;
+ const A=area(W,cfg.kind);if(cfg.ice)A.ice=true;A.ramps=[];A.ground(0,13);A.fill(0,W-1,2,2,BRICK);A.fill(0,0,3,12,BRICK);A.row(8,9,'?B?',{8:cfg.power,10:'power'});
+ const areas={intro:I,main:A};let c=14,check=null,bonusAt=-1,exitCol=-1,warpDone=!cfg.warpRoom,ups=0;
+ const foes=(c0,len)=>{for(let j=0,k=Math.round(r()*(1+lv*.3));j<k;j++)themeFoe(A,cfg,r,c0+2+Math.floor(r()*(len-4)));};
+ const pending=()=>{
+  if(bonusAt<0&&c>W*.3){A.ground(c,c+9);bonusAt=c+4;A.pipe(bonusAt,2,{to:{area:'bonus',x:2*T+8,y:2*T,how:'drop'}});A.fill(c+1,c+8,3,4,BRICK);themeFoe(A,cfg,r,c+8);c+=10;return true;}
+  if(bonusAt>=0&&exitCol<0&&c>bonusAt+24){A.ground(c,c+7);exitCol=c+3;A.pipe(exitCol,2,{exitOf:'bonus'});c+=8;return true;}
+  return false;};
  while(c<W-34){const roll=r();
   if(!check&&c>W*.45){A.ground(c,c+9);check={area:'main',x:(c+3)*T,y:13*T};c+=10;continue;}
-  if(roll<.3){const len=9+Math.floor(r()*5);A.ground(c,c+len-1);for(let j=0,k=Math.round(r()*(1+d*.3));j<k;j++)themeFoe(A,cfg,r,c+2+Math.floor(r()*(len-4)));if(cfg.hang&&r()<.6)A.foe(cfg.hang,c+3+Math.floor(r()*(len-6)),4);if(r()<.5){A.row(c+2,9,'B?B?B');A.coinRun(c+2,c+6,8);}c+=len;}
-  else if(roll<.5){const gap=2+Math.floor(r()*Math.min(3,d/3));A.coinRun(c,c+gap-1,10);c+=gap;A.ground(c,c+4);c+=5;}
-  else if(roll<.65){const len=12;A.ground(c,c+len-1);A.fill(c+2,c+len-3,3,7,BRICK);A.coinRun(c+2,c+len-3,11);themeFoe(A,cfg,r,c+6);c+=len;}
-  else if(roll<.8){A.ground(c,c+13);for(const dx of [3,8])A.fill(c+dx,c+dx,3,4+Math.floor(r()*3),BRICK);A.fill(c+11,c+12,10,12,HARD);themeFoe(A,cfg,r,c+6);c+=14;}
-  else{const gap=5+Math.floor(r()*2);A.lift({x:(c+gap/2)*T,y:10*T,kind:'v',y0:6*T,y1:12*T,vy:-.6-.04*d,w:48,look:cfg.lift});c+=gap;A.ground(c,c+5);c+=6;}
+  if(pending())continue;
+  // 4-2: a pipe up on a brick shelf, only reachable from a hidden block (the coins on the shelf give it away)
+  if(!warpDone&&c>W*.55){const L=16;A.ground(c,c+L-1);A.hidden(c+3,10,'coin');A.row(c+6,7,'BBBBBBBB');A.pipe(c+9,2,{to:{area:'warp',x:2*T+8,y:3*T,how:'drop'}},7);A.coinRun(c+6,c+8,6);A.coinRun(c+11,c+13,6);themeFoe(A,cfg,r,c+12);c+=L;warpDone=true;continue;}
+  // the ice cave: ski ramps over its pits
+  if(cfg.ice&&r()<.28){A.ground(c,c+11);A.ramps.push({c:c+9});const gap=3+Math.floor(r()*2);A.coinRun(c+12,c+11+gap,7);c+=12+gap;A.ground(c,c+5);c+=6;continue;}
+  if(roll<.18){const len=9+Math.floor(r()*5);A.ground(c,c+len-1);foes(c,len);if(cfg.hang&&r()<.6)A.foe(cfg.hang,c+3+Math.floor(r()*(len-6)),4);
+   const v=r();if(v<.4){A.row(c+2,9,'B?B?B',{[c+4]:r()<.2?'multi':'coin'});A.coinRun(c+2,c+6,8);}
+   else if(v<.7){A.fill(c+2,c+len-3,3,5,BRICK);A.row(c+3,9,'?B?',{[c+3]:r()<.2?cfg.power:'coin'});A.coinRun(c+2,c+len-3,7);}
+   else{A.row(c+2,8,'BBB');A.row(c+len-5,10,'BBB');if(ups<2){A.hidden(c+Math.floor(len/2),9,'1up');ups++;}}c+=len;}
+  else if(roll<.34){const gap=2+Math.floor(r()*Math.min(3,lv/3));A.coinRun(c,c+gap-1,10);c+=gap;A.ground(c,c+4);c+=5;}
+  else if(roll<.44){const len=12;A.ground(c,c+len-1);A.fill(c+2,c+len-3,3,7,BRICK);A.coinRun(c+2,c+len-3,11);themeFoe(A,cfg,r,c+6);c+=len;}
+  else if(roll<.53){A.ground(c,c+13);for(const dx of [3,8])A.fill(c+dx,c+dx,3,4+Math.floor(r()*3),BRICK);A.fill(c+11,c+12,10,12,HARD);themeFoe(A,cfg,r,c+6);c+=14;}
+  else if(roll<.61){const gap=5+Math.floor(r()*2);A.lift({x:(c+gap/2)*T,y:10*T,kind:'v',y0:6*T,y1:12*T,vy:-.6-.04*lv,w:lv>=7?32:48,look:cfg.lift});c+=gap;A.ground(c,c+5);c+=6;}
+  // pipes with plants; the first good one before the middle leads down to a coin room
+  else if(roll<.72){A.ground(c,c+13);[[2,2+Math.floor(r()*2)],[8,3+Math.floor(r()*2)]].forEach(([dx,h],k)=>{const enter=k===0&&bonusAt<0&&c>20&&c<W*.55;
+    if(enter){A.pipe(c+dx,h,{to:{area:'bonus',x:2*T+8,y:2*T,how:'drop'}});bonusAt=c+dx;}else A.pipe(c+dx,h,{piranha:r()<.3+.07*lv});});themeFoe(A,cfg,r,c+6);c+=14;}
+  // a long brick shelf with enemies on top and underneath
+  else if(roll<.83){A.ground(c,c+15);A.row(c+3,9,'BBBBBBBBBB',{[c+7]:r()<.3?'multi':r()<.15?cfg.power:undefined});A.coinRun(c+3,c+12,8);themeFoe(A,cfg,r,c+6,9);themeFoe(A,cfg,r,c+9);if(r()<.5)themeFoe(A,cfg,r,c+13);c+=16;}
+  // brick stairs up and down over a pit
+  else{A.ground(c,c+5);for(let k=0;k<4;k++)A.fill(c+1+k,c+1+k,12-k,12,BRICK);c+=6;const gap=2+Math.floor(r()*Math.min(2,lv/4));c+=gap;A.ground(c,c+5);for(let k=0;k<4;k++)A.fill(c+k,c+k,9+k,12,BRICK);A.coinRun(c-gap,c-1,6);c+=6;}
  }
+ while(pending()){}
+ evenFoes(A,cfg,r,Math.round(3+1.9*lv),16,c);
+ if(exitCol>=0)areas.bonus=coinRoom(cfg.kind,r,exitCol);else A.doors=A.doors.filter(d=>d.to?.area!=='bonus');
+ if(cfg.warpRoom)areas.warp=warpRoom(cfg.kind,cfg.warpRoom);
  A.ground(c,W-1);A.sidePipe(W-12,12,1,3,{to:{area:'exit',pipe:2,how:'rise'}});A.fill(W-8,W-1,3,12,BRICK);
- const E=area(40,cfg.outKind);E.ground(0,39);E.pipe(2,2,{exitOf:'main'});E.stairs(8,8,1);E.col(16,8);flagAndCastle(E,25,29);props(E,cfg,18,39,r);
- return {name:`${wn}-${n}`,title:cfg.title,time:cfg.time||(wn>=7?350:400),areas:{intro:I,main:A,exit:E},start:{area:'intro',x:40,y:13*T,auto:true},startPlay:{area:'main',x:2*T+8,y:3*T},check:check||{area:'main',x:60*T,y:13*T}};}
+ const E=area(40,cfg.outKind);E.ground(0,39);E.pipe(2,2,{exitOf:'main'});E.stairs(8,8,1);E.col(16,8);flagAndCastle(E,25,29);props(E,cfg,18,39,r);areas.exit=E;
+ return {name:`${wn}-${n}`,title:cfg.title,time:cfg.time||(wn>=7?350:400),areas,start:{area:'intro',x:40,y:13*T,auto:true},startPlay:{area:'main',x:2*T+8,y:3*T},check:check||{area:'main',x:60*T,y:13*T}};}
 
-// a platform stage: towers/peaks with gaps, lifts over the wide ones
-function genAthletic(wn,n,cfg){const r=rng(wn*100+n*7+3),W=200,d=wn,A=area(W,cfg.kind);if(cfg.ice)A.ice=true;
- A.building(0,12,9);let c=12,top=9,check=null;A.row(4,5,'?B?',{4:cfg.power,6:'power'});
- while(c<W-46){const gapMax=Math.min(6,3+Math.floor(d/2)),gap=2+Math.floor(r()*(gapMax-1)),w=3+Math.floor(r()*5),nt=clamp(top+Math.floor(r()*7)-3,5,11),ny=nt-top<-3?top-3:nt;
-  if(gap>=4)A.lift({x:(c+gap/2)*T,y:Math.min(top,ny)*T,kind:r()<.6?'h':'v',x0:(c+.5)*T,x1:(c+gap-.5)*T,y0:(Math.min(top,ny)-3)*T,y1:(Math.max(top,ny)+1)*T,vx:.6+.05*d,vy:-.6-.05*d,w:48,look:cfg.lift});
-  c+=gap;A.building(c,w,ny);top=ny;if(w>=4&&r()<.6)themeFoe(A,cfg,r,c+Math.floor(w/2),top);if(r()<.5)A.coinRun(c,c+w-1,top-2);if(r()<.18&&top>5)A.q(c+1,top-4,r()<.5?cfg.power:'coin');
+// a platform stage: towers/peaks with gaps, lifts over the wide ones, ? blocks and a hidden 1-up above the tops,
+// and a beanstalk that grows up to a cloud area
+function genAthletic(wn,n,cfg){const r=rng(wn*100+n*7+3),lv=lvOf(wn,n),W=210,A=area(W,cfg.kind);if(cfg.ice)A.ice=true;
+ const areas={main:A},flats=[];A.ramps=[];A.building(0,12,9);let c=12,top=9,check=null,vineAt=-1,vineRow=0,ups=0;A.row(4,5,'?B?',{4:cfg.power,6:'power'});
+ while(c<W-46){const gapMax=Math.min(6,3+Math.floor(lv/2)),gap=2+Math.floor(r()*(gapMax-1)),w=3+Math.floor(r()*5),nt=clamp(top+Math.floor(r()*7)-3,5,11),ny=nt-top<-3?top-3:nt;
+  if(gap>=4)A.lift({x:(c+gap/2)*T,y:Math.min(top,ny)*T,kind:r()<.6?'h':'v',x0:(c+.5)*T,x1:(c+gap-.5)*T,y0:(Math.min(top,ny)-3)*T,y1:(Math.max(top,ny)+1)*T,vx:.6+.05*lv,vy:-.6-.05*lv,w:lv>=7?32:48,look:cfg.lift});
+  c+=gap;A.building(c,w,ny);top=ny;if(cfg.ice&&w>=5&&r()<.7)A.ramps.push({c:c+w-2,r:top});if(w>=4&&r()<.6)themeFoe(A,cfg,r,c+Math.floor(w/2),top);if(r()<.5)A.coinRun(c,c+w-1,top-2);
+  if(w>=4&&top>=8){if(vineAt<0&&c>40&&c<W*.5){A.brick(c+1,top-4,'vine');vineAt=c+1;vineRow=top-4;}else if(r()<.3)A.q(c+1,top-4,r()<.5?cfg.power:'coin');else if(ups<2&&r()<.2){A.hidden(c+2,top-4,'1up');ups++;}}
   if(r()<.35){const t2=cfg.foes.filter(t=>FLYERS.has(t));if(t2.length)A.foe(pick(r,t2),c,Math.max(3,top-4));}
+  // a beanstalk lands you on a later top; remember the tops (as 'flats': column, width)
+  if(w>=4)flats.push([c,w]);
   if(!check&&c>W*.45){check={area:'main',x:(c+1)*T,y:top*T};}c+=w;}
+ if(vineAt>=0){const vr=vineRow,land=flats.find(([c0,len])=>c0>vineAt+30&&c0<c-4);
+  secrets(A,areas,r,cfg,{exitCol:-2,vineAt,vineRow:vr,landCol:land?land[0]+1:-1});}
  A.ground(c+2,W-1);A.stairs(c+4,3,1);A.col(c+7,3);flagAndCastle(A,c+15,c+19);
- return {name:`${wn}-${n}`,title:cfg.title,time:cfg.time||300,areas:{main:A},start:{area:'main',x:40,y:9*T},check:check||{area:'main',x:40,y:9*T}};}
+ return {name:`${wn}-${n}`,title:cfg.title,time:cfg.time||300,areas,start:{area:'main',x:40,y:9*T},check:check||{area:'main',x:40,y:9*T}};}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 // a castle: rooms of fire bars over pits, lifts, the world's guards, then Bowser's bridge, the axe (and Toad)
@@ -449,27 +566,27 @@ function genCastle(wn,n,cfg){const r=rng(wn*100+n*7+4),d=wn,rooms=3+(d>=7?1:0);l
  return {name:`${wn}-${n}`,title:cfg.title,time:300,areas:{main:A},start:{area:'main',x:40,y:10*T},check:{area:'main',x:(19+25+5)*T,y:10*T}};}
 
 const WORLDS={
- 4:{title:'FROSTBITE PEAKS',power:'skis',lift:'chair',ice:true,stages:[
+ 4:{title:'FROSTBITE PEAKS',power:'skis',lift:'chair',ice:true,roomKind:'icecave',stages:[
   ['over',{kind:'snow',foes:['climber','climber','penguin','goomba'],props:['pine','pine','snowman'],special:'ramp'}],
-  ['under',{kind:'icecave',outKind:'snow',foes:['penguin','climber'],hang:'icicle',props:['pine']}],
+  ['under',{kind:'icecave',outKind:'snow',foes:['penguin','climber'],hang:'icicle',props:['pine'],warpRoom:[5,6,7]}],
   ['ath',{kind:'skilift',foes:['climber','penguin']}],
   ['castle',{kind:'icepalace',foes:['penguin','climber'],bowser:{ski:true},toad:['BUT OUR PRINCESS WENT','SKIING AT ANOTHER RESORT!']}]]},
- 5:{title:'LOST WAGES',power:'cape',extra:['cape','power','star'],stages:[
-  ['over',{kind:'strip',foes:['dice','chip','chip','card'],props:['neon'],special:'high'}],
+ 5:{title:'LOST WAGES',power:'cape',extra:['cape','power','star'],roomKind:'under',stages:[
+  ['over',{kind:'strip',foes:['dice','chip','card'],props:['neon'],special:'high',rider:true}],
   ['over',{kind:'desert',foes:['cactus','dice','card','chip'],props:['cactusd','skull'],wind:true,special:'high'}],
   ['ath',{kind:'slots',foes:['dice','chip','card']}],
   ['castle',{kind:'casino',foes:['dice','chip'],bowser:{elvis:true},toad:['BUT OUR PRINCESS HAS','LEFT THE BUILDING!']}]]},
- 6:{title:'JURASSIC JUNGLE',power:'mega',extra:['mega','power'],stages:[
+ 6:{title:'JURASSIC JUNGLE',power:'mega',extra:['mega','power'],roomKind:'dig',stages:[
   ['over',{kind:'jungle',foes:['raptor','raptor','dilo','ptero','goomba'],props:['fern','fern','fence'],special:'wall'}],
   ['under',{kind:'dig',outKind:'jungle',foes:['raptor','dilo'],props:['fern']}],
   ['ath',{kind:'ruins',foes:['raptor','ptero','dilo']}],
   ['castle',{kind:'volcano',foes:['raptor','trex','dilo'],bowser:{safari:true},toad:['BUT OUR PRINCESS IS IN','ANOTHER PARK!']}]]},
- 7:{title:'HELL',power:'yoshi',extra:['power','star','yoshi'],stages:[
+ 7:{title:'HELL',power:'yoshi',extra:['power','star','yoshi'],roomKind:'hellcave',stages:[
   ['over',{kind:'hell',foes:['imp','imp','brute','skull','floater'],props:['skull','firepot'],special:'wall'}],
   ['under',{kind:'hellcave',outKind:'hell',foes:['imp','brute','skull']}],
   ['ath',{kind:'bones',foes:['imp','skull','floater']}],
   ['castle',{kind:'fortress',foes:['brute','imp','floater'],bowser:{devil:true},toad:['BUT OUR PRINCESS IS IN','ANOTHER CIRCLE OF HELL!']}]]},
- 8:{title:'HEAVEN',power:'star',extra:['skis','cape','mega','yoshi','power','star'],stages:[
+ 8:{title:'HEAVEN',power:'star',extra:['skis','cape','mega','yoshi','power','star'],roomKind:'sky',stages:[
   ['over',{kind:'heaven',foes:['angel','cherub','koopaRed','brute'],props:['harp'],special:'high'}],
   ['ath',{kind:'gates',foes:['angel','cherub','koopaRed']}],
   ['over',{kind:'heaven',foes:['angel','cherub','skull','brute','koopaRed'],props:['harp'],special:'high'}],
@@ -477,7 +594,7 @@ const WORLDS={
 };
 const GEN={over:genOver,under:genUnder,ath:genAthletic,castle:genCastle};
 const worldStages=wn=>WORLDS[wn].stages.map(([type,cfg],k)=>()=>{const W=WORLDS[wn];const pw=wn===8?['cape','mega','skis','yoshi'][k]:W.power;
- return GEN[type](wn,k+1,{lift:W.lift,ice:W.ice,extra:W.extra,...cfg,power:pw,title:W.title});});
+ return GEN[type](wn,k+1,{lift:W.lift,ice:W.ice,extra:W.extra,roomKind:W.roomKind,...cfg,power:pw,title:W.title});});
 
 const STAGES=[w11,w12,w13,w14,w21,w22,w23,w24,w31,w32,w33,w34,...[4,5,6,7,8].flatMap(worldStages)];
 const buildStage=i=>STAGES[i]();

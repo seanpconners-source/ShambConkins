@@ -53,6 +53,8 @@ function loadProfile() {
   if(saved.gifts&&typeof saved.gifts==='object'&&!Array.isArray(saved.gifts)){p.gifts={};for(const [k,v] of Object.entries(saved.gifts))if(/^[a-z0-9-]{1,40}$/.test(k)&&['given','done'].includes(v))p.gifts[k]=v;}
   if(Number.isFinite(saved.backup?.at)&&Number.isFinite(saved.backup?.mark)&&saved.backup.mark>=0)p.backup={at:saved.backup.at,mark:Math.floor(saved.backup.mark)};
   if(Number.isFinite(saved.holeItLevel)&&saved.holeItLevel>=1)p.holeItLevel=Math.min(9999,Math.floor(saved.holeItLevel));
+  // Super Mario Bros.: the worlds whose Bowser has been beaten (the title screen lets you start from them)
+  if(Array.isArray(saved.smbBowsers))p.smbBowsers=[...new Set(saved.smbBowsers.filter(n=>Number.isInteger(n)&&n>=1&&n<=8))].sort((a,b)=>a-b);
   // ROADMAP C8 checkpoints: the highest board level reached (1 Mind .. 4 Horror); New Game can start there
   if(Number.isFinite(saved.levelReached)&&saved.levelReached>=1)p.levelReached=Math.min(4,Math.floor(saved.levelReached));
   // Paddy's Pool Hall: cash, bought tables/felts/cues/room upgrades, settings (src/data/poolHall.js)

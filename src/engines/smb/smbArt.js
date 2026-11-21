@@ -256,6 +256,8 @@ function tileSets(){
  sets.heaven=Wk(sets.over,{[TILE.GROUND]:cloudTile,[TILE.BRICK]:brickTile('#f8e8a8','#fcfcf0','#c8a848'),[TILE.HARD]:goldBlock,[TILE.USED]:usedTile('#c8a848')});
  sets.gates=Wk(sets.heaven,{[TILE.TREE_L]:capTop('#fcfcfc','#ffffff','#f8e8a8')('l'),[TILE.TREE_M]:capTop('#fcfcfc','#ffffff','#f8e8a8')('m'),[TILE.TREE_R]:capTop('#fcfcfc','#ffffff','#f8e8a8')('r'),[TILE.TRUNK]:marbleTile});
  sets.throne=Wk(sets.castle,{[TILE.CASTLE]:marbleTile,[TILE.HARD]:goldBlock,[TILE.BRIDGE]:goldBlock,[TILE.LAVA_TOP]:liquid('#fcfcfc','#ffffff','#bcd8f8')[0],[TILE.LAVA]:liquid('#fcfcfc','#ffffff','#bcd8f8')[1],[TILE.USED]:usedTile('#c8a848')});
+ // the cloud areas at the top of a beanstalk
+ sets.sky=Wk(sets.over,{[TILE.GROUND]:cloudTile,[TILE.HARD]:cloudTile});
  sets.bigtop={...sets.castle,[TILE.CASTLE]:circusTile,[TILE.GROUND]:circusTile,[TILE.HARD]:post,[TILE.BRIDGE]:tightTile,[TILE.USED]:usedTile('#5c0810'),q};
  return sets;
 }
@@ -436,7 +438,7 @@ function drawFoe(g,e,t){g.save();g.translate(e.x,e.y);if(e.state==='dying'){g.sc
   case 'imp':case 'brute':{const s2=e.type==='brute'?1.6:1;g.scale(f*s2,s2);R(e.type==='brute'?'#d8788c':'#a81418',-5,-11,10,8);R(e.type==='brute'?'#d8788c':'#a81418',-4,-3,3,3);R(e.type==='brute'?'#d8788c':'#a81418',1,-3,3,3);R('#fcf03c',-3,-9,2,2);R('#fcf03c',1,-9,2,2);R('#fcfcfc',-3,-6,6,1);
    R('#3c0808',-5,-14,2,3);R('#3c0808',3,-14,2,3);R('#a81418',5,-6,4,1);R('#a81418',8,-8,1,2);break;}
   case 'climber':{g.scale(f,1);const c=(e.x/16|0)%2?'#e85cbc':'#3c7cfc';R(c,-6,-18,12,12);R('#fcfcfc',-6,-19,12,2);R('#fcbc8c',-3,-15,6,5);R('#000',-2,-13,1,1);R('#000',1,-13,1,1);R('#2c2c2c',-5,-6,4,6-st*2);R('#2c2c2c',1,-6,4,4+st*2);
-   g.save();g.translate(-7,-12);g.rotate(e.swing?Math.sin(t*14)*1.2-.4:-.4);R('#8c5c34',-1,-12,2,12);R('#5c5c6c',-4,-15,8,4);g.restore();break;}
+   if(e.mouth>0){R(c,-8,-24,3,8);break;}g.save();g.translate(-7,-12);g.rotate(e.swing?Math.sin(t*14)*1.2-.4:-.4);R('#8c5c34',-1,-12,2,12);R('#5c5c6c',-4,-15,8,4);g.restore();break;}
   case 'penguin':g.scale(f,1);R('#1c1c2c',-8,-8,16,8);R('#fcfcfc',-6,-4,11,4);R('#f8a018',-10,-6,3,2);R('#fcfcfc',-7,-7,2,2);R('#000',-7,-7,1,1);R('#f8a018',6,-2,4,2);break;
   case 'icicle':{const sh=e.state==='shake'?Math.sin(t*60):0;g.translate(sh,0);g.fillStyle='#bcecff';g.beginPath();g.moveTo(-6,-14);g.lineTo(6,-14);g.lineTo(0,2);g.fill();R('#ffffff',-3,-13,2,8);break;}
   case 'dice':g.rotate(e.vy?e.frame*6:0);R('#fcfcfc',-7,-14,14,14);R('#9c9c9c',-7,-1,14,1);R('#e8203c',-1,-8,2,2);R('#000',-5,-12,2,2);R('#000',3,-4,2,2);break;
@@ -452,6 +454,16 @@ function drawFoe(g,e,t){g.save();g.translate(e.x,e.y);if(e.state==='dying'){g.sc
   case 'skull':{g.fillStyle=Math.floor(t*12)%2?'#fc7c1c':'#fcd84c';g.beginPath();g.moveTo(-6*f+0,-8);g.lineTo(14*f,-14);g.lineTo(14*f,-2);g.fill();R('#e8e0c8',-6,-14,12,10);R('#e8e0c8',-4,-4,8,3);R('#000',-4,-11,3,3);R('#000',1,-11,3,3);break;}
   case 'floater':R('#c8202c',-9,-20,18,16);R('#a81418',-9,-6,18,2);R('#e8e0c8',-9,-24,3,5);R('#e8e0c8',6,-24,3,5);R('#fcfcfc',-3,-17,6,6);R('#2c7c2c',-1,-15,2,2);if(e.mouth>0){R('#3c0808',-6,-9,12,4);R('#fcfcfc',-5,-9,1,2);R('#fcfcfc',3,-9,1,2);}break;
   case 'angel':{R('#fcfcfc',-5,-16,10,14);R('#fcbc8c',-3,-21,6,5);R('#f8c838',-5,-26,10,2);const fl=Math.floor(e.frame*5)%2;g.fillStyle='#fcfcfc';g.beginPath();g.ellipse(-8,-14,6,fl?8:4,-.5,0,7);g.ellipse(8,-14,6,fl?8:4,.5,0,7);g.fill();R('#f8c838',6,-22,1,14);break;}
+  // the cloud rider: a goggled pilot on a little cloud with a face; arm up with a spiky shell when he throws
+  case 'rider':{const bob=Math.sin(t*5+e.x)*1;g.translate(0,bob);
+   if(e.mouth>0){R('#e8203c',-3,-30,7,6);for(const [x,y] of [[-4,-31],[3,-31],[0,-33]])R('#fcfcfc',x,y,1,2);R('#fcbc8c',0,-25,2,4);}
+   R('#2c8c8c',-5,-22,10,7);R('#5cc8c8',-5,-22,10,2);R('#fcbc8c',-4,-16,8,4);R('#3c3c4c',-5,-19,10,3);R('#8cd8fc',-4,-19,3,2);R('#8cd8fc',1,-19,3,2);
+   g.fillStyle='#fcfcfc';for(const [x,y,rr] of [[-8,-8,6],[0,-10,7],[8,-8,6],[-3,-5,6],[4,-5,6]]){g.beginPath();g.arc(x,y,rr,0,7);g.fill();}
+   g.fillStyle='#bcd8f8';g.fillRect(-13,-4,26,2);R('#000',-4,-9,2,3);R('#000',2,-9,2,3);R('#e8786c',-1,-6,3,1);break;}
+  // the spiky shell: a red dome of white spikes on little orange feet; still curled up while it falls
+  case 'spiny':{if(e.state==='egg'){g.translate(0,-6);g.rotate(e.frame*8);g.fillStyle='#e8203c';g.beginPath();g.arc(0,0,5,0,7);g.fill();g.fillStyle='#fcfcfc';for(let k=0;k<6;k++){g.rotate(Math.PI/3);g.beginPath();g.moveTo(-1.5,-4);g.lineTo(0,-8);g.lineTo(1.5,-4);g.fill();}break;}
+   g.scale(f,1);g.fillStyle='#e8203c';g.beginPath();g.ellipse(1,-6,8,6,0,Math.PI,0);g.fill();R('#e8203c',-7,-6,16,3);g.fillStyle='#fcfcfc';for(const x of [-5,-1,3,7]){g.beginPath();g.moveTo(x-2,-8);g.lineTo(x,-14+Math.abs(x-1)*.5);g.lineTo(x+2,-8);g.fill();}
+   R('#f8a018',-9,-6,4,4);R('#000',-8,-5,1,1);R('#f8a018',-5,-2,3,2+st);R('#f8a018',3,-2,3,3-st);break;}
   case 'cherub':{R('#fcd0b0',-5,-12,10,9);R('#fcd0b0',-4,-18,8,6);R('#f8c838',-4,-20,8,2);R('#000',-2,-16,1,1);R('#000',1,-16,1,1);const fl=Math.floor(e.frame*8)%2;g.fillStyle='#fcfcfc';g.beginPath();g.ellipse(-7,-12,4,fl?6:3,-.5,0,7);g.ellipse(7,-12,4,fl?6:3,.5,0,7);g.fill();
    g.strokeStyle='#8c5c34';g.beginPath();g.arc(-(e.dir||-1)*6,-8,6,-1.2,1.2);g.stroke();break;}
  }g.restore();}
@@ -504,14 +516,19 @@ function drawBowser(g,b,simT){g.save();g.translate(b.x,b.y);if(b.dir>0)g.scale(-
  if(b.ring){g.fillStyle='#1c1c1c';g.fillRect(-17,-33,17,2);g.fillRect(-14,-43,11,10);g.fillStyle='#a8141c';g.fillRect(-14,-36,11,2);}
  g.restore();}
 function drawFlame(g,f,simT){g.save();g.translate(f.x,f.y);
+ if(f.look==='hammer'){g.rotate((f.t||0)*.35*(f.vx<0?-1:1));g.fillStyle='#8c5c34';g.fillRect(-1,-1,2,9);g.fillStyle='#5c5c6c';g.fillRect(-4,-5,8,5);g.fillStyle='#9c9cac';g.fillRect(-4,-5,8,1);g.restore();return;}
  if(f.look==='venom'){g.fillStyle='#8cf03c';g.beginPath();g.arc(0,0,3,0,7);g.fill();g.fillStyle='#e8fcb8';g.fillRect(-1,-1,1,1);g.restore();return;}
  if(f.look==='note'){g.fillStyle=Math.floor(simT*8)%2?'#f8c838':'#fcfcfc';g.beginPath();g.ellipse(-2,2,3,2.2,-.4,0,7);g.fill();g.fillRect(0,-8,1.5,10);g.fillRect(0,-8,5,2);g.restore();return;}
  if(f.look==='bolt'||f.look==='holy'){g.fillStyle=f.look==='holy'?'#fcfcfc':'#fcf03c';g.beginPath();g.moveTo(-8,0);g.lineTo(-2,-3);g.lineTo(0,1);g.lineTo(8,-2);g.lineTo(2,3);g.lineTo(0,-1);g.closePath();g.fill();if(f.look==='holy'){g.fillStyle='rgba(252,240,168,.5)';g.beginPath();g.ellipse(0,0,12,5,0,0,7);g.fill();}g.restore();return;}
  if(f.look==='arrow'){g.scale(Math.sign(f.vx)||1,1);g.fillStyle='#8c5c34';g.fillRect(-7,-.5,12,1.5);g.fillStyle='#bcbcbc';g.beginPath();g.moveTo(5,-2.5);g.lineTo(9,0);g.lineTo(5,2.5);g.fill();g.fillStyle='#fcfcfc';g.fillRect(-8,-2,3,4);g.restore();return;}
  if(f.look==='ice'){g.fillStyle='#8cd8fc';g.beginPath();g.ellipse(4,0,12,3.2,0,0,7);g.fill();g.fillStyle='#fcfcfc';g.fillRect(-8,-1,8,2);g.restore();return;}const fl=Math.floor(simT*12)%2;g.fillStyle=C.red;g.beginPath();g.ellipse(4,0,12,fl?3.5:3,0,0,7);g.fill();g.fillStyle=C.q;g.beginPath();g.ellipse(0,0,8,2.2,0,0,7);g.fill();g.fillStyle=C.white;g.fillRect(-8,-1,6,2);g.restore();}
+// a beanstalk: a stem with leaves on alternate sides and a curl at the tip
+function drawVine(g,x,top,bottom){if(bottom<=top)return;g.fillStyle='#00a800';g.fillRect(x-1,top,2,bottom-top);
+ for(let y=bottom-6;y>top+4;y-=8){const sd=((y/8|0)%2)?1:-1;g.fillStyle='#b8f818';g.beginPath();g.ellipse(x+sd*4,y,4,2,sd*.5,0,7);g.fill();g.fillStyle='#00a800';g.fillRect(x+(sd>0?1:-4),y,3,1);}
+ g.fillStyle='#b8f818';g.beginPath();g.arc(x+1,top+2,3,0,7);g.fill();g.fillStyle='#00a800';g.fillRect(x,top+1,2,2);}
 function drawToad(g,x,y){g.save();g.translate(x,y);g.fillStyle='#0058f8';g.fillRect(-5,-11,10,7);g.fillStyle=C.white;g.fillRect(-4,-4,8,2);g.fillStyle=C.olive;g.fillRect(-5,-2,4,2);g.fillRect(1,-2,4,2);
  g.fillStyle=C.skin;g.fillRect(-5,-17,10,6);g.fillStyle='#000';g.fillRect(-3,-15,1,2);g.fillRect(2,-15,1,2);
  g.fillStyle=C.white;g.beginPath();g.ellipse(0,-19,9,7,0,Math.PI,0);g.fill();g.fillRect(-9,-19,18,3);g.fillStyle=C.red;g.beginPath();g.arc(0,-23,3,0,7);g.arc(-6,-19,2,0,7);g.arc(6,-19,2,0,7);g.fill();g.restore();}
 function drawFirework(g,f){const k=f.t/30;g.save();g.translate(f.x,f.y);g.fillStyle=k<.33?C.white:k<.66?C.q:C.red;const r=4+k*14;for(let a=0;a<8;a++){const an=a*Math.PI/4;g.fillRect(Math.cos(an)*r-1.5,Math.sin(an)*r-1.5,3,3);}g.restore();}
 
-Object.assign(exports,{drawThemeBg,drawThemeProp,drawFoe,drawCarnivalNight,drawFunhouseBg,drawMirrors,drawBigTopBg,drawPierProp,drawGhost,drawSkyline,drawTowerGlass,drawCityProp,drawCheep,drawBlooper,C,nesText,textW,tileSets,drawCloud,drawHill,drawCastle,drawCastleFlag,drawFlagpole,drawLogo,drawCoin,drawGoomba,drawKoopa,drawPiranha,drawItem,drawFireball,drawLift,drawAxe,drawBowser,drawFlame,drawToad,drawFirework,star5});
+Object.assign(exports,{drawVine,drawThemeBg,drawThemeProp,drawFoe,drawCarnivalNight,drawFunhouseBg,drawMirrors,drawBigTopBg,drawPierProp,drawGhost,drawSkyline,drawTowerGlass,drawCityProp,drawCheep,drawBlooper,C,nesText,textW,tileSets,drawCloud,drawHill,drawCastle,drawCastleFlag,drawFlagpole,drawLogo,drawCoin,drawGoomba,drawKoopa,drawPiranha,drawItem,drawFireball,drawLift,drawAxe,drawBowser,drawFlame,drawToad,drawFirework,star5});
