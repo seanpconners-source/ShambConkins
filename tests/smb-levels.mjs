@@ -8,6 +8,11 @@ const L=m.exports,T=16;let bad=0;const fail=s=>{bad++;console.log('FAIL',s);};
 const solid=t=>L.SOLID[t]===1;
 for(let k=0;k<L.STAGE_COUNT;k++){const st=L.buildStage(k),A=st.areas;
  for(const [an,a] of Object.entries(A)){
+  // a drop-in spot must be open air with a floor somewhere below it (3-1's coin room used to drop you onto its ceiling)
+  for(const d of a.doors){const to=d.to;if(!to||to.how!=='drop'||!A[to.area])continue;const b=A[to.area],c=Math.floor(to.x/T),r0=Math.floor(to.y/T);
+   if(r0>=0&&solid(b.tiles[r0*b.W+c]))fail(`${st.name} ${an}: drop into ${to.area} lands inside a block`);
+   let rr=Math.max(0,r0+1);while(rr<15&&!solid(b.tiles[rr*b.W+c]))rr++;if(rr>=15)fail(`${st.name} ${an}: drop into ${to.area} falls into a pit`);
+   if(to.area==='bonus'&&rr<8)fail(`${st.name}: coin room drop lands at row ${rr} (on its ceiling?)`);}
   for(const d of a.doors){if(d.warp)continue;const to=d.to;if(!to||!A[to.area])fail(`${st.name} ${an}: door to missing area ${to&&to.area}`);
    else if(to.how==='rise'&&!A[to.area].pipes.some(p=>p.c===to.pipe))fail(`${st.name} ${an}: rises out of missing pipe ${to.pipe} in ${to.area}`);}
   for(const [key,what] of a.content)if(what==='vine'){const c=key%a.W,r=Math.floor(key/a.W);

@@ -404,7 +404,7 @@ function drawGoomba(g,e,ug){const body=ug?'#005c5c':C.brick,face=ug?C.tealLight:
 function drawKoopa(g,e){const red=e.type==='koopaRed'||e.type==='paraRed',shellC=red?C.red:C.green,rimC=red?C.white:C.white;g.save();g.translate(e.x,e.y);if(e.state==='dying'){g.scale(1,-1);g.translate(0,14);}const shell=e.state!=='walk';
  if(!shell){g.scale(e.vx>0?-1:1,1);const st=Math.floor(e.frame*6)%2;g.fillStyle=C.gold;g.fillRect(-7,-24,5,9);g.fillRect(-9,-22,3,4);g.fillStyle='#000';g.fillRect(-7,-21,1,2);g.fillStyle=C.white;g.fillRect(-6,-16,3,3);
   g.fillStyle=C.gold;g.fillRect(st?-5:-3,-3,4,3);g.fillRect(st?3:1,-3,4,3);
-  if(e.type==='paraRed'){const fl=Math.floor(e.frame*8)%2;g.fillStyle=C.white;g.beginPath();g.ellipse(6,fl?-20:-16,4,fl?6:4,-.4,0,7);g.fill();g.strokeStyle='#000';g.lineWidth=.8;g.stroke();}}
+  if(e.type==='paraRed'||e.type==='para'){const fl=Math.floor(e.frame*8)%2;g.fillStyle=C.white;g.beginPath();g.ellipse(6,fl?-20:-16,4,fl?6:4,-.4,0,7);g.fill();g.strokeStyle='#000';g.lineWidth=.8;g.stroke();}}
  const y0=shell?-1:-3,ox=shell?0:2;g.fillStyle=rimC;g.beginPath();g.ellipse(ox,y0-6,7.5,7,0,Math.PI,0);g.lineTo(9.5,y0);g.lineTo(-5.5+(shell?-2:0),y0);g.fill();
  g.fillStyle=shellC;g.beginPath();g.ellipse(ox,y0-6,6,6,0,Math.PI,0);g.fill();g.fillStyle=red?'#fc7460':C.lime;g.fillRect(ox-3,y0-10,2,2);g.fillRect(ox+1,y0-10,2,2);g.fillRect(ox-1,y0-7,2,2);
  if(shell&&e.vx===0&&e.t>380&&Math.floor(e.t/6)%2){g.fillStyle=C.gold;g.fillRect(-3,-3,6,2);}
@@ -466,7 +466,29 @@ function drawFoe(g,e,t){g.save();g.translate(e.x,e.y);if(e.state==='dying'){g.sc
    R('#f8a018',-9,-6,4,4);R('#000',-8,-5,1,1);R('#f8a018',-5,-2,3,2+st);R('#f8a018',3,-2,3,3-st);break;}
   case 'cherub':{R('#fcd0b0',-5,-12,10,9);R('#fcd0b0',-4,-18,8,6);R('#f8c838',-4,-20,8,2);R('#000',-2,-16,1,1);R('#000',1,-16,1,1);const fl=Math.floor(e.frame*8)%2;g.fillStyle='#fcfcfc';g.beginPath();g.ellipse(-7,-12,4,fl?6:3,-.5,0,7);g.ellipse(7,-12,4,fl?6:3,.5,0,7);g.fill();
    g.strokeStyle='#8c5c34';g.beginPath();g.arc(-(e.dir||-1)*6,-8,6,-1.2,1.2);g.stroke();break;}
+ // Bullet Bill: a black shell with a white eye and arms, a fin at the back
+  case 'bullet':{g.scale(-(e.dir||-1),1);g.translate(0,-7);g.fillStyle='#1c1c1c';g.beginPath();g.moveTo(8,-7);g.lineTo(-2,-7);g.arc(-2,0,7,-Math.PI/2,Math.PI/2,true);g.lineTo(8,7);g.closePath();g.fill();
+   R('#3c3c3c',4,-7,4,14);R('#fcfcfc',-6,-4,3,4);R('#000',-6,-3,1,2);R('#fcfcfc',-3,3,5,2);R('#5c5c5c',8,-5,2,10);break;}
+  // the Hammer Bro: a helmeted turtle that stands up tall, arm raised with a hammer when he throws
+  case 'hammerBro':{g.scale(-(e.dir||-1),1);R('#fcfcfc',-5,-18,10,12);R('#2c9c3c',-6,-19,9,11);R('#1c6c2c',-6,-12,9,1);R('#f8a018',-5,-6,4,6-st*2);R('#f8a018',1,-6,4,4+st*2);
+   R('#f8a018',-8,-25,7,7);R('#000',-7,-23,1,2);R('#5c5c6c',-7,-28,9,4);R('#3c3c4c',-7,-25,9,1);
+   if(e.mouth>0){R('#f8a018',-2,-32,3,9);R('#8c5c34',-1,-38,1,7);R('#9c9c9c',-3,-40,5,3);}else{R('#f8a018',2,-17,3,7);R('#8c5c34',3,-24,1,7);R('#9c9c9c',1,-26,5,3);}break;}
+  // a lava bubble: a fireball with eyes, flipped on the way down
+  case 'podoboo':{if(e.vy>0)g.scale(1,-1);g.translate(0,-7);const fl=Math.floor(t*12)%2;g.fillStyle=fl?'#fc9838':'#fcd84c';g.beginPath();g.ellipse(0,0,6,7,0,0,7);g.fill();g.fillStyle='#d82800';g.beginPath();g.moveTo(-5,3);g.lineTo(0,10+fl*2);g.lineTo(5,3);g.fill();
+   R('#fcfcfc',-3,-3,2,3);R('#fcfcfc',1,-3,2,3);R('#000',-3,-2,1,2);R('#000',1,-2,1,2);break;}
  }g.restore();}
+// Buzzy Beetle: a dark blue dome on little legs; fireballs bounce off it; stomped it is a shell like a Koopa's
+function drawBuzzy(g,e){g.save();g.translate(e.x,e.y);if(e.state==='dying'){g.scale(1,-1);g.translate(0,14);}const shell=e.state!=='walk',st=Math.floor(e.frame*6)%2;
+ if(!shell)g.scale(e.vx>0?-1:1,1);g.fillStyle='#1c2c7c';g.beginPath();g.ellipse(0,-6,8,7,0,Math.PI,0);g.lineTo(8,-1);g.lineTo(-8,-1);g.fill();g.fillStyle='#5c7cfc';g.fillRect(-4,-11,3,2);g.fillRect(1,-9,3,2);g.fillStyle='#0c1440';g.fillRect(-8,-2,16,2);
+ if(!shell){g.fillStyle='#f8b878';g.fillRect(-9,-5,3,3);g.fillStyle='#000';g.fillRect(-8,-4,1,1);g.fillStyle='#2c2c2c';g.fillRect(st?-6:-4,-1,4,2);g.fillRect(st?3:1,-1,4,2);}
+ if(shell&&e.vx===0&&e.t>380&&Math.floor(e.t/6)%2){g.fillStyle='#f8b878';g.fillRect(-3,-1,6,2);}g.restore();}
+// a springboard standing on the floor (squashed for a moment after a bounce)
+function drawSpring(g,x,base,sq){const h=14-(sq>6?7:sq>0?3:0),top=base-h;g.fillStyle='#000';g.fillRect(x-8,top,16,h);g.fillStyle='#d82800';g.fillRect(x-7,top+1,14,3);g.fillRect(x-7,base-4,14,3);
+ g.fillStyle='#fc9838';g.fillRect(x-7,top+1,14,1);for(let y=top+4;y<base-4;y+=2){g.fillStyle=(y/2|0)%2?'#bcbcbc':'#7c7c7c';g.fillRect(x-5,y,10,2);}}
+// a Bill Blaster: the cannon head with its skull badge, on a dark pillar down to the ground
+function drawCannon(g,X,Y,h){g.fillStyle='#000';g.fillRect(X,Y,T,h*T);g.fillStyle='#2c2c2c';g.fillRect(X+1,Y+1,T-2,T-2);g.fillStyle='#5c5c5c';g.fillRect(X+2,Y+2,T-4,2);g.fillStyle='#1c1c1c';g.fillRect(X+3,Y+5,T-6,T-8);
+ g.fillStyle='#fcfcfc';g.fillRect(X+6,Y+6,4,3);g.fillRect(X+7,Y+9,2,1);g.fillStyle='#000';g.fillRect(X+6,Y+7,1,1);g.fillRect(X+9,Y+7,1,1);
+ if(h>1){g.fillStyle='#3c3c3c';g.fillRect(X+2,Y+T,T-4,(h-1)*T);g.fillStyle='#5c5c5c';for(let y=Y+T+3;y<Y+h*T;y+=6)g.fillRect(X+3,y,T-6,1);g.fillStyle='#000';g.fillRect(X+1,Y+T,1,(h-1)*T);g.fillRect(X+T-2,Y+T,1,(h-1)*T);}}
 function drawItem(g,it,simT){g.save();g.translate(it.x,it.y);
  if(it.type==='mushroom'||it.type==='1up'){const cap=it.type==='1up'?C.green:C.red;g.fillStyle=C.light;g.fillRect(-4,-7,8,7);g.fillStyle='#000';g.fillRect(-2,-6,1,3);g.fillRect(1,-6,1,3);g.fillStyle=cap;g.beginPath();g.ellipse(0,-8,8,7,0,Math.PI,0);g.fill();g.fillRect(-8,-8,16,2);g.fillStyle=C.white;g.beginPath();g.arc(0,-11,2.6,0,7);g.arc(-5,-9,1.8,0,7);g.arc(5,-9,1.8,0,7);g.fill();}
  else if(it.type==='flower'){const cyc=[C.red,C.q,C.gold,C.white][Math.floor(simT*10)%4];g.fillStyle=C.green;g.fillRect(-1,-7,2,7);g.fillRect(-6,-5,4,2);g.fillRect(2,-5,4,2);g.fillStyle=cyc;g.beginPath();g.ellipse(0,-11,7,4.5,0,0,7);g.fill();g.fillStyle=C.gold;g.beginPath();g.ellipse(0,-11,4.5,2.8,0,0,7);g.fill();g.fillStyle=C.white;g.fillRect(-2,-12,4,2);}
@@ -531,4 +553,4 @@ function drawToad(g,x,y){g.save();g.translate(x,y);g.fillStyle='#0058f8';g.fillR
  g.fillStyle=C.white;g.beginPath();g.ellipse(0,-19,9,7,0,Math.PI,0);g.fill();g.fillRect(-9,-19,18,3);g.fillStyle=C.red;g.beginPath();g.arc(0,-23,3,0,7);g.arc(-6,-19,2,0,7);g.arc(6,-19,2,0,7);g.fill();g.restore();}
 function drawFirework(g,f){const k=f.t/30;g.save();g.translate(f.x,f.y);g.fillStyle=k<.33?C.white:k<.66?C.q:C.red;const r=4+k*14;for(let a=0;a<8;a++){const an=a*Math.PI/4;g.fillRect(Math.cos(an)*r-1.5,Math.sin(an)*r-1.5,3,3);}g.restore();}
 
-Object.assign(exports,{drawVine,drawThemeBg,drawThemeProp,drawFoe,drawCarnivalNight,drawFunhouseBg,drawMirrors,drawBigTopBg,drawPierProp,drawGhost,drawSkyline,drawTowerGlass,drawCityProp,drawCheep,drawBlooper,C,nesText,textW,tileSets,drawCloud,drawHill,drawCastle,drawCastleFlag,drawFlagpole,drawLogo,drawCoin,drawGoomba,drawKoopa,drawPiranha,drawItem,drawFireball,drawLift,drawAxe,drawBowser,drawFlame,drawToad,drawFirework,star5});
+Object.assign(exports,{drawBuzzy,drawSpring,drawCannon,drawVine,drawThemeBg,drawThemeProp,drawFoe,drawCarnivalNight,drawFunhouseBg,drawMirrors,drawBigTopBg,drawPierProp,drawGhost,drawSkyline,drawTowerGlass,drawCityProp,drawCheep,drawBlooper,C,nesText,textW,tileSets,drawCloud,drawHill,drawCastle,drawCastleFlag,drawFlagpole,drawLogo,drawCoin,drawGoomba,drawKoopa,drawPiranha,drawItem,drawFireball,drawLift,drawAxe,drawBowser,drawFlame,drawToad,drawFirework,star5});
