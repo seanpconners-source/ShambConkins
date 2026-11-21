@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.99.39
+
+- **Kingpin Bowling rebuilt from scratch.** A real 3D bowling alley: the ball skids on the oil, hooks on the dry back end and rolls into the pins, and the pins fly with real physics. Hit the pocket with a hook for strikes; light hits leave the 10-pin, nose hits leave splits.
+  - Controls like the top mobile bowling games: drag the ball to pick your spot, drag the lane to move the aim arrow, then swipe up to bowl. Swipe speed is ball speed and curving the swipe hooks the ball. Swipe too hard and you step over the line: "MARK IT ZERO!"
+  - Score-screen animations like a real alley's monitors: strike, spare, splits by name (Bedposts, the Big Four...), split pickups, gutter balls ("MUNSONED!"), fouls, doubles, turkeys, hambones, all the way to a perfect game.
+  - Upgrade the alley one part at a time (room, lanes, masking, score screens, lights, pins) through five eras: Ocelot Bowl 1979, Hollywood Star Lanes, Cosmic Bowl, the Reno Showdown and Gutterballs Galactic in space. Lanes play differently, and the lane reflects the pins.
+  - Pro shop: 11 balls that hook differently (The Dude Abides, The Jesus, Big Ern...), shoes, decor for the walls, and perks (aim line, spare ball, slow-motion strike replays, the oil man, a tip jar).
+  - 1 player vs a CPU bowler, 2 players frame by frame, online (the other phone watches every roll), and 3 frames on the board. Lebowski Bowling is now the same game.
+- **Super Mario Bros.**
+  - The title screen now shows the world you pick.
+  - No more getting stuck on top of the ceiling past the exit pipe in 3-2 (and the same spots in 4-2 and 6-2): each now ends in a secret roof room with coins, a 1-up and a pipe to the flagpole.
+  - The swimming stage is ready for the real underwater song: it plays as soon as the file is added (until then, the underground song).
+
 ## v0.99.38
 
 - **Angry Heads rebuilt.** Endless levels, like the real game: every location in the game is an episode of five levels, and the heads in the forts are that location's characters. The fifth level is a castle with the crowned main character. Forts are real physics (towers topple, planks see-saw, TNT blows), get bigger and tougher as you go, and later levels give you special birds made from the location's items: split, speed boost, bomb, egg drop and giant. Episode map with stars, 1-player runs, pass and play for two, and online you watch the other player's shots live.
