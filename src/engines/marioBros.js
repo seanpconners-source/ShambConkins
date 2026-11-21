@@ -611,7 +611,7 @@ async function marioBros(s){
   const tx=p.x-view.w*.44;if(tx>cam.x||snapNow)cam.x=snapNow?Math.max(0,tx):tx;
   // Bowser's bridge (like the NES): the screen stops with the axe at its right edge until Bowser has fallen, so the
   // whole fight and his fall stay in view; only the walk to Toad scrolls on
-  const ax=a.def.axe;let hi=W-view.w;if(ax&&!(p.axe&&(p.axe.phase==='walk'||p.axe.phase==='toad')))hi=Math.min(hi,ax.x+20-view.w);
+  const ax=a.def.axe;let hi=W-view.w;if(ax&&!(p.axe&&(p.axe.phase==='walk'||p.axe.phase==='toad'||p.axe.phase==='ascend')))hi=Math.min(hi,ax.x+20-view.w);
   cam.x=clamp(cam.x,0,Math.max(0,hi));};
 
  // ---------------- drawing
@@ -621,6 +621,7 @@ async function marioBros(s){
  const BG={over:C.sky,athletic:C.sky,city:C.sky,roof:'#2c1c5c',subway:'#0c3070',tower:'#141c34',pier:'#160e36',coaster:'#160e36',funhouse:'#24082c',bigtop:'#2c040c',
   snow:'#9cd0fc',skilift:'#9cd0fc',icecave:'#0c2c4c',icepalace:'#8cc0e8',strip:'#160a24',desert:'#f8a868',slots:'#2c0408',casino:'#3c0408',
   jungle:'#7cc8e8',ruins:'#7cc8e8',dig:'#2c1808',volcano:'#2c0c08',hell:'#2c0404',hellcave:'#1c0404',bones:'#2c0404',fortress:'#14141a',heaven:'#bcdcfc',gates:'#bcdcfc',throne:'#f4f0e4'};
+ const LIGHT_K=new Set(['snow','skilift','icepalace','desert','heaven','gates','throne','city','jungle','ruins']);
  const PROPS=new Set(['pine','snowman','neon','cactusd','skull','fern','fence','fossil','torch','firepot','harp']);
  const NOEXT=new Set(['under','castle','subway','tower','funhouse','bigtop','icecave','icepalace','casino','dig','volcano','hellcave','fortress','throne']),THEMED=new Set(['snow','skilift','icecave','icepalace','strip','desert','slots','casino','jungle','ruins','dig','volcano','hell','hellcave','bones','fortress','heaven','gates','throne']);
  const bgOf=def=>BG[def.kind]||'#000';
@@ -796,6 +797,8 @@ async function marioBros(s){
  // the NES status bar: NAME / score, coins, WORLD, TIME (in game pixels, inside the 256-wide frame)
  function drawHUD(i,{time=true}={}){
   const p=pl[i],fx=view.fx,y=hudY(),name=s.players[i].name.toUpperCase().replace(/[^A-Z0-9 ]/g,'').slice(0,8)||(i?'LUIGI':'MARIO');
+  // bright stages (snow, Heaven) get a soft dark band so the white status bar stays readable
+  {const w=worlds[i],k=w&&AR(w,p.area)?.def.kind;if(LIGHT_K.has(k)){g.fillStyle='rgba(0,0,0,.32)';g.fillRect(fx+18,y-3,226,20);}}
   nesText(g,name,fx+24,y);nesText(g,String(p.score%1e6).padStart(6,'0'),fx+24,y+8);
   g.save();g.translate(fx+92,y+12);g.scale(.55,.55);A_.drawCoin(g,0,0,phase==='play'?Math.floor(simT*3)%2*2:0);g.restore();
   nesText(g,'×'+String(mode==='world'?p.coins%100:p.coins).padStart(2,'0'),fx+96,y+8);
