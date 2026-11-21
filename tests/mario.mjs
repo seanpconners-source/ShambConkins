@@ -118,12 +118,34 @@ if(!only.length||only.includes('world')){const t=await launch('smb-world-1',[110
  await dbg('d.teleport(0,60*16,10)');await page.waitForTimeout(400);await shot('3-3');
  await dbg('d.teleport(0,111*16,11)');await page.waitForTimeout(400);await shot('3-4');if(!(await dbg('return !!d.worlds[0].areas.main.bowser.ring')))fail('3-4 Bowser is not the ringmaster');
  await dbg('d.pl[0].inv=0;d.pl[0].dead=0;d.teleport(0,126*16+2,11)');
- d=await until(d=>d.pl[0].done,20000);if(!d.pl[0].done)fail(`rescuing Toad in 3-4 did not finish P1's game (${JSON.stringify(d.pl[0])})`);
+ d=await until(d=>d.phase==='play'&&d.pl[0].st===12,20000);if(d.pl[0].st!==12)fail(`3-4 did not lead on to World 4-1 (${JSON.stringify(d.pl[0])})`);else console.log('  ok   3-4 → 4-1');
+ // World 4: skis go fast and launch off the ramps
+ const rc=await dbg("const p=d.pl[0],a=d.worlds[0].areas.main;a.enemies.forEach(e=>e.alive=false);p.skis=true;p.big=true;return a.def.ramps[0].c;");
+ await dbg(`d.teleport(0,${'${'}rc${'}'}*16-90,12);d.worlds[0].areas.main.enemies.forEach(e=>e.alive=false);d.pl[0].skis=true;`.replace('${rc}',String(rc)));await page.waitForTimeout(200);
+ await page.keyboard.down('d');await page.keyboard.down(' ');let vmax=0;for(let k=0;k<30;k++){vmax=Math.max(vmax,await dbg('return d.pl[0].vx'));await page.waitForTimeout(60);}await page.keyboard.up('d');await page.keyboard.up(' ');
+ check('skis: top speed (px/frame)',vmax,3,3.6);d=await D();if(!d.log.join().includes('ramp'))fail('skis: no ski jump off the ramp');else console.log('  ok   ski jump');await shot('4-1');
+ // World 5: the cape (fly from a full run), the sandstorm pushes you back
+ await dbg("d.teleport(0,8*16,16);const p=d.pl[0];p.cape=true;p.big=true;d.worlds[0].areas.main.enemies.forEach(e=>e.alive=false);const A=d.worlds[0].areas.main,W=A.def.W;for(let c=0;c<90;c++)for(let r=0;r<15;r++)A.tiles[r*W+c]=r>=13?1:0;");await page.waitForTimeout(200);
+ await page.keyboard.down('d');await page.keyboard.down(' ');await page.waitForTimeout(1400);await page.keyboard.down('w');let ymin=999;for(let k=0;k<20;k++){ymin=Math.min(ymin,await dbg('return d.pl[0].y'));await page.waitForTimeout(60);}
+ await page.keyboard.up('w');await page.keyboard.up('d');await page.keyboard.up(' ');d=await D();if(!d.log.join().includes('take off'))fail('cape: no take-off at full run');check('cape: flew up (px above the floor)',208-ymin,90,210);await shot('5-1');
+ await dbg("d.setClock(0);d.teleport(0,40*16,17);d.worlds[0].areas.main.enemies.forEach(e=>e.alive=false);");await page.waitForTimeout(300);const wx0=await dbg('return d.pl[0].x');await page.waitForTimeout(1800);check('sandstorm pushes you back (px)',wx0-(await dbg('return d.pl[0].x')),20,200);await shot('5-2');
+ // World 6: the mega mushroom smashes through blocks
+ await dbg("d.teleport(0,8*16,20);const A=d.worlds[0].areas.main,W=A.def.W;for(let c=0;c<90;c++)for(let r=0;r<15;r++)A.tiles[r*W+c]=r>=13?1:0;for(let c=24;c<27;c++)for(let r=9;r<13;r++)A.tiles[r*W+c]=2;const p=d.pl[0];p.mega=600;p.megaIn=1;p.big=true;window.__b=d.worlds[0].areas.main.tiles.filter(t=>t===2||t===3||t===5).length;");
+ await page.keyboard.down('d');await page.waitForTimeout(4000);await page.keyboard.up('d');const smashed=await dbg('return window.__b-d.worlds[0].areas.main.tiles.filter(t=>t===2||t===3||t===5).length');check('mega: blocks smashed',smashed,1,999);await shot('6-1');
+ // World 7: Yoshi's tongue swallows a demon
+ await dbg("d.teleport(0,30*16,24);const p=d.pl[0],a=d.worlds[0].areas.main;a.enemies.forEach(e=>e.alive=false);p.yoshi=true;p.facing=1;window.__e=a.enemies[d.spawn(0,'imp',p.x+22)];window.__e.vx=0;");await page.waitForTimeout(150);
+ await page.keyboard.press(' ');await page.waitForTimeout(500);if(!(await dbg('return !!window.__e.eaten')))fail('yoshi: tongue did not eat the imp');else console.log('  ok   yoshi tongue');await shot('7-1');
+ // every castle leads on; God's fall in 8-4 brings the ending
+ for(const [st,next] of [[15,16],[19,20],[23,24],[27,28]]){await dbg(`d.pl[0].inv=0;d.pl[0].dead=0;d.pl[0].yoshi=false;d.teleport(0,(d.STAGES[${st}].areas.main.axe.x|0)-6,${st})`);
+  d=await until(d=>d.phase==='play'&&d.pl[0].st===next,25000);if(d.pl[0].st!==next)fail(`castle ${st} did not lead on (${JSON.stringify(d.pl[0])})`);else console.log(`  ok   castle → stage ${next}`);}
+ await dbg('d.teleport(0,40*16,28)');await page.waitForTimeout(300);await shot('8-1');await dbg('d.teleport(0,40*16,29)');await page.waitForTimeout(300);await shot('8-2');
+ await dbg('d.pl[0].inv=0;d.pl[0].dead=0;d.teleport(0,(d.STAGES[31].areas.main.axe.x|0)-6,31)');await page.waitForTimeout(9000);await shot('finale-god');await page.waitForTimeout(5000);await shot('finale-evil');
+ d=await until(d=>d.pl[0].done,25000);if(!d.pl[0].done)fail(`the finale in 8-4 did not finish P1's game (${JSON.stringify(d.pl[0])})`);else console.log('  ok   finale → done');
  await ready();d=await until(d=>d.phase==='play'&&d.turn===1,8000);if(d.turn!==1)fail('P2 never got a turn');if(!(d.ghost>100))fail(`no ghost recorded (${d.ghost})`);
  // P2 loses three lives: GAME OVER and the result
  for(let k=0;k<3;k++){d=await until(d=>d.phase==='play'&&!d.pl[1].dead,9000);await dbg('d.kill(1)');d=await until(d=>d.phase!=='play',9000);if(k===2)await shot('gameover');}
  d=await until(d=>d.pl[1].over,6000);if(!d.pl[1].over)fail(`P2 should be game over (${JSON.stringify(d.pl[1])})`);
- const r=await t.result();console.log('  result:',r&&r.replace(/\n+/g,' | '));if(!r||!/Worlds 1-3/.test(r))fail('no Worlds 1-3 result dialog');
+ const r=await t.result();console.log('  result:',r&&r.replace(/\n+/g,' | '));if(!r||!/Worlds 1-8/.test(r))fail('no Worlds 1-8 result dialog');
  await done(t,'world');}
 
 // ---------------------------------------------------------------- World 1, 2 PLAYER GAME on a phone: Mario and Luigi swap on a lost life
