@@ -160,9 +160,10 @@ function w14(){
  A.lava(83,86);A.fill(87,100,10,14,CASTLE);A.firebar(93,9,1);
  A.fill(101,112,8,14,CASTLE);A.fill(101,112,3,3,CASTLE);
  // Bowser's bridge over the lava, the chain and the axe
- A.fill(113,125,8,8,BRIDGE);A.lava(113,125);A.set(125,7,CHAIN);
- A.fill(126,151,8,14,CASTLE);A.fill(150,151,2,7,CASTLE);
- A.bridge={c0:113,c1:125,r:8};A.axe={x:126*T+8,y:7*T+8};A.bowser={x:121*T,y:8*T,home:121*T};A.toad={x:141*T+8,y:8*T};
+// the bridge sits 2 blocks lower than the step before it, like the NES, so there is room to jump over Bowser
+ A.fill(113,125,10,10,BRIDGE);A.lava(113,125);A.set(125,9,CHAIN);
+ A.fill(126,151,10,14,CASTLE);A.fill(150,151,2,9,CASTLE);
+ A.bridge={c0:113,c1:125,r:10};A.axe={x:126*T+8,y:9*T+8};A.bowser={x:121*T,y:10*T,home:121*T};A.toad={x:141*T+8,y:10*T};
  A.bowserFireFrom=80*T;
  return {name:'1-4',time:300,areas:{main:A},start:{area:'main',x:40,y:8*T},check:{area:'main',x:66*T,y:10*T}};
 }

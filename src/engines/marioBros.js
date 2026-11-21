@@ -34,7 +34,9 @@ const PH={minWalk:.07421875,walkAcc:.037109375,runAcc:.0556640625,rel:.05078125,
 const JUMP=[[1,-4,.125,.4375],[2.3125,-4,.1171875,.375],[Infinity,-5,.15625,.5625]];
 const COMBO=[100,200,400,500,800,1000,2000,4000,5000,8000],SHELL_CHAIN=[500,800,1000,2000,4000,5000,8000];
 const HF=require("src/headFacts.js");
-const FACE_W=15;const HEAD_K=.72,HEAD_K_SMALL=.7;   // face width (brow to chin box) on big Mario, world px
+const FACE_W=15;const HEAD_K=.72,HEAD_K_SMALL=.7;
+// NES heights (owner, Nov 21: 'same view, Mario to NES size'): cap to boots, big Mario = 2 blocks, small Mario = 1 block
+const NES_H_BIG=32,NES_H_SMALL=16;   // face width (brow to chin box) on big Mario, world px
 const PALS=[{cap:C.red,shirt:C.brown,over:C.red,shoe:C.brown},{cap:C.green,shirt:C.green,over:C.white,shoe:C.green}];
 const FIRE_PAL={cap:C.white,shirt:C.red,over:C.white,shoe:C.red};
 const STAR_PALS=[FIRE_PAL,{cap:'#000',shirt:C.brick,over:'#000',shoe:C.brick},{cap:C.green,shirt:C.white,over:C.green,shoe:C.brown},{cap:C.red,shirt:C.brown,over:C.red,shoe:C.brown}];
@@ -204,7 +206,7 @@ async function marioBros(s){
    let spent=true;
    if(what==='coin'||what==='multi'||!what){gainCoin(p,w);w.pops.push({x:cc*T+8,y:r*T-8,vy:-5,t:0,area:an});
     if(what==='multi'){const m=w.multi.get(key)||{n:0,t:simT};m.n++;w.multi.set(key,m);spent=m.n>=10||simT-m.t>4;}}
-   else if(what==='power'||what==='star'||what==='1up'){const it={type:what==='power'?(p.big?'flower':'mushroom'):what,x:cc*T+8,y:r*T,emerge:16,vx:0,vy:0,area:an,id:`${me}.${itemSeq++}`};w.items.push(it);sfx.sprout();
+   else if(what==='power'||what==='star'||what==='1up'){const it={type:what==='power'?(p.big?'flower':'mushroom'):what,x:cc*T+8,y:(r+1)*T,emerge:16,vx:0,vy:0,area:an,id:`${me}.${itemSeq++}`};w.items.push(it);sfx.sprout();
     if(net)ev({it:[w.key,an,it.id,it.type,it.x,it.y]});}
    if(spent){setTile(w,an,cc,r,TILE.USED);a.content.delete(idx);if(net)ev({tl:[w.key,an,idx,TILE.USED]});}
    w.bumps.set(key,0);
@@ -517,20 +519,31 @@ async function marioBros(s){
     if(!t||t===TILE.HIDDEN||(BACK[t]===1)!==back)continue;
     g.drawImage(tileImg(kind,t),cc*T,r*T+bump);}}
  }
+ // how much to shrink the drawing so cap-to-boots is the NES height: measured from the character's normal face (hair and
+ // cap sit on the measured head, so a tall hairdo would otherwise make one player taller than the other); same formulas as head()
+ const runKs=new Map();
+ function runK(id,big){const key=id+'|'+big;if(runKs.has(key))return runKs.get(key);
+  const fw=big?FACE_W*HEAD_K:FACE_W*.86*HEAD_K_SMALL,chin=big?-20:-10,size=(big?30:26)*(big?HEAD_K:HEAD_K_SMALL);let top=null;
+  try{const fh=HF.faceHeight(id,'normal',fw),geo=HF.faceGeom(id,'normal',fw,1,chin-fh*.44,HF.flipFor(id,'normal',1));
+   if(geo){const topY=Math.min(geo.head.y,geo.face.y),brow=geo.face.y+geo.face.h*.14,ch=clamp((brow-topY)/1.36,3,size*.3);top=topY+ch*.92-ch*1.08;}}catch{}
+  if(top===null)top=big?-34.5:-22;
+  const k=clamp((big?NES_H_BIG:NES_H_SMALL)/-top,.5,1);if(id)runKs.set(key,k);return k;}
  // Mario's body (P2 in Luigi colours) with the player's head under the cap. Feet at (0,0); facing right before mirroring.
  function drawRunner(p,alpha=1){
-  const i=p.i;g.save();g.globalAlpha*=alpha;
+  const i=p.i;let thr=false;g.save();g.globalAlpha*=alpha;
   if(p.inv>0&&!p.tf&&(frames>>2)%2&&alpha===1)g.globalAlpha*=.35;
   let big=p.big,pal=p.fire?FIRE_PAL:PALS[i];
   if(p.tf){const flick=(p.tf.t>>2)%2;if(p.tf.to==='small')big=flick===0;else if(p.tf.from==='small')big=flick===1;if(p.tf.to==='fire'&&flick)pal=FIRE_PAL;else if(p.tf.to==='fire')pal=PALS[i];}
   if(p.star>0)pal=STAR_PALS[(frames>>(p.star<120?3:1))%4];
   const f=p.facing,crouch=p.crouch&&big;g.translate(p.x,p.y);
+  // NES scale (owner, Nov 21): big Mario stands 2 blocks tall, small Mario 1 block; the whole drawing (body, face, cap) shrinks evenly round the feet
+  {const k=runK(s.players[i]?.character,big);g.scale(k,k);}
   if(p.dead){body(false,'dead',0);head(false,'sad',0,f);g.restore();return;}
   const run=Math.abs(p.vx);let pose='stand';
   if(p.flag)pose='pole';else if(p.pipe&&p.pipe.kind==='side')pose='walk';
   else if(crouch)pose='crouch';else if(!p.grounded&&!p.pipe)pose='jump';else if(p.skidding&&p.vx!==0&&Math.sign(p.vx)!==f)pose='skid';else if(run>.05||p.auto)pose='walk';
   const frame=Math.floor(p.anim)%3;
-  g.save();g.scale(f,1);body(big,pose,frame);if(p.throwT>0&&pose!=='crouch'){if(big){R(pal.shirt,4,-21,6,3);R(C.skin,10,-21,2,3);}else{R(pal.shirt,3,-10,5,2);R(C.skin,8,-10,2,2);}}g.restore();
+  thr=p.throwT>0&&pose!=='crouch';g.save();g.scale(f,1);body(big,pose,frame);if(thr){if(big){R(pal.shirt,4,-21,6,3);R(C.skin,10,-21,2,3);}else{R(pal.shirt,3,-10,5,2);R(C.skin,8,-10,2,2);}}g.restore();
   head(big,p.finished||p.inCastle||p.axe?'win':p.star>0||run>2.3?'happy':'normal',crouch?1:0,f);
   // online: the bubble a lost life comes back in
   if(p.bubble>0){const r=big?24:17,cy=big?-20:-14,wob=Math.sin(simT*5)*1.2;g.globalAlpha=.85;g.fillStyle='rgba(160,220,255,.22)';g.strokeStyle='#bfe8ff';g.lineWidth=1.5;g.beginPath();g.ellipse(0,cy,r+wob,r-wob,0,0,7);g.fill();g.stroke();g.fillStyle='rgba(255,255,255,.75)';g.beginPath();g.ellipse(-r*.45,cy-r*.5,r*.22,r*.12,-.6,0,7);g.fill();}
@@ -540,18 +553,18 @@ async function marioBros(s){
    if(pose==='dead'){R(pal.shirt,-5,-10,10,6);R(C.skin,-7,-16,2,6);R(C.skin,5,-16,2,6);R(pal.over,-4,-7,8,5);R(pal.shoe,-5,-2,4,2);R(pal.shoe,1,-2,4,2);return;}
    if(!bg){
     R(pal.shirt,-4,-10,8,5);R(pal.over,-3,-7,6,5);R(pal.over,-3,-10,1,3);R(pal.over,2,-10,1,3);
-    if(pose==='jump'){R(pal.shirt,3,-15,2,6);R(C.skin,3,-17,2,2);R(pal.shirt,-6,-9,2,3);R(C.skin,-6,-6,2,2);R(pal.over,-4,-3,3,2);R(pal.over,1,-4,3,2);R(pal.shoe,-6,-2,4,2);R(pal.shoe,3,-4,4,2);return;}
+    if(pose==='jump'){if(!thr){R(pal.shirt,3,-15,2,6);R(C.skin,3,-17,2,2);}R(pal.shirt,-6,-9,2,3);R(C.skin,-6,-6,2,2);R(pal.over,-4,-3,3,2);R(pal.over,1,-4,3,2);R(pal.shoe,-6,-2,4,2);R(pal.shoe,3,-4,4,2);return;}
     if(pose==='pole'){R(pal.shirt,3,-14,2,5);R(C.skin,4,-16,2,2);R(pal.shirt,-5,-12,2,4);R(C.skin,-4,-13,2,2);R(pal.shoe,-2,-2,4,2);R(pal.shoe,2,-4,3,2);return;}
     if(pose==='skid'){R(pal.shirt,-6,-11,2,4);R(C.skin,-7,-12,2,2);R(pal.shoe,1,-2,5,2);R(pal.shoe,-4,-2,3,2);R(pal.over,-2,-3,4,1);return;}
-    R(pal.shirt,-6,-9,2,4);R(pal.shirt,4,-9,2,4);R(C.skin,-6,-5,2,2);R(C.skin,4,-5,2,2);
+    R(pal.shirt,-6,-9,2,4);R(C.skin,-6,-5,2,2);if(!thr){R(pal.shirt,4,-9,2,4);R(C.skin,4,-5,2,2);}
     if(pose==='walk'){const L0=[[-6,2],[-3,0],[-5,3]][fr],R0=[[2,2],[0,0],[3,1]][fr];R(pal.over,-3,-3,6,1);R(pal.shoe,L0[0],-2,4,2);R(pal.shoe,R0[0],-2-(fr===2?1:0),4,2);return;}
     R(pal.over,-3,-3,6,1);R(pal.shoe,-5,-2,4,2);R(pal.shoe,1,-2,4,2);return;}
    if(pose==='crouch'){R(pal.shirt,-5,-14,10,6);R(pal.over,-5,-10,10,6);R(pal.shirt,-7,-13,2,5);R(C.skin,-7,-8,2,2);R(pal.shoe,-6,-4,5,4);R(pal.shoe,1,-4,5,4);return;}
    R(pal.shirt,-5,-20,10,8);R(pal.over,-5,-14,10,8);R(pal.over,-4,-20,2,6);R(pal.over,2,-20,2,6);R('#fcbc3c',-3,-14,1,1);R('#fcbc3c',2,-14,1,1);
-   if(pose==='jump'){R(pal.shirt,5,-27,2,9);R(C.skin,5,-29,2,2);R(pal.shirt,-7,-19,2,6);R(C.skin,-7,-13,2,2);R(pal.over,-5,-6,4,3);R(pal.over,1,-8,4,3);R(pal.shoe,-7,-3,5,3);R(pal.shoe,3,-7,5,3);return;}
+   if(pose==='jump'){if(!thr){R(pal.shirt,5,-27,2,9);R(C.skin,5,-29,2,2);}R(pal.shirt,-7,-19,2,6);R(C.skin,-7,-13,2,2);R(pal.over,-5,-6,4,3);R(pal.over,1,-8,4,3);R(pal.shoe,-7,-3,5,3);R(pal.shoe,3,-7,5,3);return;}
    if(pose==='pole'){R(pal.shirt,4,-27,2,8);R(C.skin,5,-29,2,2);R(pal.shirt,-6,-24,2,6);R(C.skin,-5,-26,2,2);R(pal.over,-3,-6,4,3);R(pal.shoe,-3,-3,5,3);R(pal.shoe,2,-7,4,3);return;}
    if(pose==='skid'){R(pal.shirt,-8,-21,2,6);R(C.skin,-9,-22,2,2);R(pal.over,-3,-6,6,3);R(pal.shoe,1,-3,6,3);R(pal.shoe,-5,-3,4,3);return;}
-   R(pal.shirt,-7,-19,2,7);R(pal.shirt,5,-19,2,7);R(C.skin,-7,-12,2,2);R(C.skin,5,-12,2,2);
+   R(pal.shirt,-7,-19,2,7);R(C.skin,-7,-12,2,2);if(!thr){R(pal.shirt,5,-19,2,7);R(C.skin,5,-12,2,2);}
    if(pose==='walk'){const a=[[-7,3],[-4,1],[-6,4]][fr],b=[[3,2],[0,0],[2,1]][fr];R(pal.over,-4,-6,8,3);R(pal.shoe,a[0],-3,5,3);R(pal.shoe,b[0],-3-(fr===2?1:0),5,3);return;}
    R(pal.over,-5,-6,4,3);R(pal.over,1,-6,4,3);R(pal.shoe,-6,-3,5,3);R(pal.shoe,1,-3,5,3);}
   // the head, then a NES cap sized to it: a crown hugging the top of the head and a short brim on the facing side
