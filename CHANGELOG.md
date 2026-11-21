@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.99.36
+
+- **Super Mario Bros. Worlds 3-8.** The game now runs all the way from 1-1 to 8-4, and every world has its own stages, enemies and Bowser. It gets harder world by world: faster enemies, faster fire bars, shorter clocks, and a Bowser that takes more hits.
+  - **World 3, Haunted Boardwalk:** a pier, a funhouse mirror maze where left and right swap, a rollercoaster and a big top. Shy ghosts creep up when you look away, plus a masked slasher, a dream stalker and hopping imps. Ringmaster Bowser is the boss.
+  - **World 4, Frostbite Peaks:** slippery ice, and **skis**: much faster, with ski-jump ramps. Mallet-swinging climbers, penguins and falling icicles. Ski Bowser breathes frost.
+  - **World 5, Lost Wages:** the **cape**: run, jump and fly, hold jump to glide. Dice, chips, cards, cacti and a desert sandstorm. Elvis Bowser is the boss.
+  - **World 6, Jurassic Jungle:** the **mega mushroom** makes Mario huge enough to smash through blocks, pipes and enemies. Raptors, spitters, pterodactyls and a T-rex you can't stomp. Safari Bowser is the boss.
+  - **World 7, Hell:** **Yoshi** hatches. His tongue eats enemies, he flutters, and he runs off when you're hit. Imps, demons and flaming skulls. Devil Bowser is the boss.
+  - **World 8, Heaven:** every power-up, angels and cherubs, and the final fight against God Bowser. Beat him and see what happens next... TO BE CONTINUED.
+- **Warp Zone** pipes 2, 3 and 4 take you to those worlds.
+- **Small Mario** is a bit bigger, and swims like on the NES.
+- **Fixes:** building windows no longer reshuffle as you walk, the camera stops at Bowser's axe until he has fallen out of sight, and the status bar stays readable on bright stages.
+
 ## v0.99.35
 
 - **Super Mario Bros. World 2: New Dork City.** Beat Bowser in 1-4 (or take pipe 2 in the 1-2 Warp Zone) and the game carries on into a whole new city world with its own levels and art: 2-1 the streets (skyline, street lamps, construction girders, a taxi ride over the roadworks), 2-2 a flooded subway (a water stage: tap jump to swim, fish and squid), 2-3 the rooftops at dusk, and 2-4 Bowser's skyscraper HQ, where Bowser is the corporate CEO in a suit and tie and the axe hangs in an emergency glass case.
