@@ -182,8 +182,8 @@ function createScene(G){
    M.fix=G.mesh(b.done());S.fixCol=lc.light;}
   // ball returns (between lane pairs on the approach: yours on the left) + seats behind
   {const b=B(),cs=col4(ST[L.room].cap),hood=col4(ST[L.room].wall2||ST[L.room].wall);
-   for(let i=-NEIGH;i<NEIGH;i+=2){const ex=(i+.5)*PITCH;b.box(ex-.22,0,-3.6,ex+.22,.55,-1.4,cs);b.sphere(.3,16,8,ex,.55,-2.8,hood);
-    b.box(ex-.16,.55,-2.3,ex+.16,.62,-1.4,[30,30,30,255]);}
+   for(let i=-NEIGH;i<NEIGH;i+=2){const ex=(i+.5)*PITCH;b.box(ex-.22,0,-4.5,ex+.22,.55,-3.4,cs);b.sphere(.3,16,8,ex,.55,-4.1,hood);
+    b.box(ex-.16,.55,-3.7,ex+.16,.62,-3.4,[30,30,30,255]);}
    for(let i=-NEIGH;i<=NEIGH;i++){const ex=i*PITCH;b.box(ex-.7,0,-7.2,ex+.7,.45,-6.4,col4(ST[L.room].carpet2));b.box(ex-.7,.45,-7.2,ex+.7,.95,-7.0,col4(ST[L.room].carpet2));
     b.box(ex-.3,0,-5.6,ex+.3,.72,-5.2,col4(ST[L.room].cap));}
    M.ret=G.mesh(b.done());}

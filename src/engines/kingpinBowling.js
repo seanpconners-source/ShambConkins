@@ -73,6 +73,8 @@ async function kingpinBowling(s){
   aww(){for(let i=0;i<4;i++)voice(260+Math.random()*60,.7,.035,'sawtooth',{delay:Math.random()*.15,slide:.6,lp:900});},
   sweep(){noise(.25,.06,{type:'lowpass',f0:300});voice(70,.3,.06,'square',{lp:250,slide:.8});},
   thunk(){voice(90,.12,.1,'sine',{slide:.5});noise(.05,.06,{type:'lowpass',f0:600,delay:.05});},
+  far(){// another lane's ball hitting pins somewhere in the alley
+   const d=Math.random()*.08;noise(.5,.018,{type:'lowpass',f0:220,delay:d});for(let i=0;i<5;i++)voice(1700+Math.random()*900,.03,.012,'triangle',{delay:d+.42+i*.02+Math.random()*.05});noise(.3,.02,{type:'bandpass',f0:1800,q:.8,delay:d+.42});},
   tap(){voice(1300,.03,.04,'sine');vibrate(6);},
   buzz(){voice(130,.4,.08,'square',{lp:900});voice(97,.4,.06,'square',{lp:900,delay:.02});},
  };
@@ -99,7 +101,7 @@ async function kingpinBowling(s){
  function camFor(ph,ball){const T=tall(),bx=ball?ball.x:PL[S.cur].stanceX??0,ax=aimX();
   if(ph==='shop'||ph==='load'||ph==='summary'){const a=S.t*.12;return {eye:[Math.sin(a)*.9,T?1.6:1.5,T?-2.6:-3.2],tgt:[Math.sin(a)*.25,.25,PH.Z1],fov:T?44:40,lift:T&&ph==='shop'?.5:0};}
   if(ph==='intro'){const u=Math.min(1,(S.t-(S.introT||0))/2.4),e=u*u*(3-2*u);return {eye:[0,.5+e*1.25,PH.Z1-2.4-e*(PH.Z1+1.2)],tgt:[0,.2,PH.Z1+.4+e*8],fov:T?55:40};}
-  if(ph==='aim'||ph==='throw'){return {eye:[bx*.55,T?1.32:1.2,T?-3.35:-3.1],tgt:[bx*.2+ax*.25,0,T?7:9],fov:T?60:42};}
+  if(ph==='aim'||ph==='throw'){return {eye:[bx*.55,T?1.32:1.3,T?-3.35:-3.0],tgt:[bx*.2+ax*.25,0,T?7:5.2],fov:T?60:44};}
   if(ph==='roll'&&ball){const z=ball.z,k=Math.max(0,Math.min(1,(z-(PH.Z1-7.5))/3.5));
    const e0=[ball.x*.6,1.15,Math.max(-3,z-3.3)],t0=[ball.x*.4,.05,z+8],e1=[0,.62,PH.Z1-3],t1=[0,.15,PH.Z1+.7];
    const l=(a,b)=>a.map((v,i)=>v+(b[i]-v)*k*k*(3-2*k));return {eye:l(e0,e1),tgt:l(t0,t1),fov:T?50:36};}
@@ -248,7 +250,8 @@ async function kingpinBowling(s){
  function stanceDefault(p){p.stanceX=PH.boardX(p.hand>0?15:25);p.aimB=p.hand>0?10:30;}
  // ---------------------------------------------------------------- the frame loop
  S.t=0;let last=performance.now();
- s.frame(dt=>{S.t+=Math.min(.1,dt);resize();
+ let farT=3;
+ s.frame(dt=>{S.t+=Math.min(.1,dt);resize();if(!s.paused&&S.phase!=='summary'&&(farT-=dt)<0){farT=4+Math.random()*7;sfx.far();}
   if(S.roll&&!S.roll.done)stepRoll(dt);
   if(!look)return;
   const cam=camera(dt);

@@ -28,7 +28,7 @@ const CSS=`.bw-shop{position:absolute;inset:0;z-index:8;display:flex;flex-direct
 .bw-ball{width:46px;height:46px;border-radius:50%;flex:0 0 46px;box-shadow:inset -6px -8px 12px #0008,inset 4px 4px 8px #fff4}
 .bw-bars{display:grid;grid-template-columns:auto 1fr;gap:2px 6px;font-size:11px;color:#bfb29c;margin-top:3px;align-items:center}
 .bw-bars i{display:block;height:6px;border-radius:3px;background:#ffd23f}
-@media (orientation:landscape) and (min-width:700px){.bw-shop{flex-direction:row;justify-content:flex-end;align-items:stretch}.bw-panel{width:min(46%,460px);max-height:none;border-top:0;border-left:2px solid #ffd23f66;margin-top:0}.bw-top{right:auto}}`;
+@media (orientation:landscape) and (min-width:700px){.bw-shop{flex-direction:row;justify-content:flex-end;align-items:stretch}.bw-panel{width:min(46%,460px);max-height:none;border-top:0;border-left:2px solid #ffd23f66;margin-top:0;padding-top:44px}.bw-top{right:auto}}`;
 function alleyScreen(s,{alley,save,frame,preview,sfx}){return new Promise(resolve=>{
  const root=document.createElement('div');root.className='bw-shop';const st=document.createElement('style');st.textContent=CSS;root.appendChild(st);frame.appendChild(root);
  let tab='play',sel=null;const done=v=>{root.remove();resolve(v);};s.cleanup(()=>{if(root.isConnected)done(null);});
