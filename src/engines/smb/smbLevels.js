@@ -125,7 +125,7 @@ function w12(){
  // the exit scene: up out of a pipe, the staircase, the flagpole and the castle
  const E=area(40,'over');E.ground(0,39);E.pipe(2,2,{exitOf:'main'});E.stairs(8,8,1);E.col(16,8);flagAndCastle(E,25,29);overworldScenery(E,{hills:false});
  E.decor.push({type:'hill',x:0,w:5});
- return {name:'1-2',time:400,areas:{intro:I,main:A,exit:E},start:{area:'intro',x:40,y:13*T,auto:true},startPlay:{area:'main',x:2*T+8,y:2*T},check:{area:'main',x:85*T,y:13*T}};
+ return {name:'1-2',time:400,areas:{intro:I,main:A,exit:E},start:{area:'intro',x:40,y:13*T,auto:true},startPlay:{area:'main',x:2*T+8,y:2*T},check:{area:'main',x:85*T,y:9*T}};
 }
 
 // ------------------------------------------------------------------ 1-3
@@ -154,7 +154,7 @@ function w14(){
  A.fill(0,151,2,2,CASTLE);A.fill(0,12,3,4,CASTLE);
  A.fill(0,12,8,14,CASTLE);A.fill(13,13,9,14,CASTLE);A.fill(14,22,10,14,CASTLE);
  A.lava(23,25);A.fill(26,40,10,14,CASTLE);A.firebar(31,6,1);A.firebar(37,6,-1);
- A.lava(41,44);A.fill(45,58,10,14,CASTLE);A.fill(45,58,3,5,CASTLE);A.q(50,6,'power');A.firebar(55,9,1);
+ A.lava(41,44);A.fill(45,58,10,14,CASTLE);A.fill(45,58,3,4,CASTLE);A.q(50,6,'power');A.firebar(55,9,1);
  A.lava(59,63);A.lift({x:61*T,y:9*T,kind:'h',x0:59*T+8,x1:63*T+8,vx:.6,w:32});
  A.fill(64,82,10,14,CASTLE);A.firebar(69,9,-1);A.firebar(77,6,1);
  A.lava(83,86);A.fill(87,100,10,14,CASTLE);A.firebar(93,9,1);

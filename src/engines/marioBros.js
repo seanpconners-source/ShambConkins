@@ -151,7 +151,9 @@ async function marioBros(s){
  const tileAt=(w,an,cc,r)=>{if(r<0||r>=ROWS)return 0;const a=AR(w,an),W=a.def.W;if(cc<0||cc>=W)return TILE.HARD;return a.tiles[r*W+cc];};
  const setTile=(w,an,cc,r,t)=>{const a=AR(w,an);a.tiles[r*a.def.W+cc]=t;};
  const solidAt=(w,an,px,py)=>solid(tileAt(w,an,Math.floor(px/T),Math.floor(py/T)));
- const pH=p=>p.big&&!p.crouch?40:p.big?26:24;
+ // NES-sized bodies (owner, Nov 21: Mario was too tall for the real maps): small and crouching Mario fit a 1-block
+ // gap, big Mario a 2-block one, so 1-2's low passages and the jump over Bowser under 1-4's ceiling work like the NES
+ const pH=p=>p.big&&!p.crouch?30:15;
  const HW=5;
  const log=[];const note=(p,what)=>{log.push(`${clock.toFixed(1)} P${p.i+1} ${what} ${p.stage+1}:${p.area} x${Math.round(p.x)}`);if(log.length>80)log.shift();};
  const popText=(w,txt,px,py)=>w.fx.pop(px,py,txt,{color:'#fff',stroke:'#000',size:7,rise:20,life:.7});
@@ -186,6 +188,9 @@ async function marioBros(s){
    inCastle:false,castleT:0,auto:!!spot.auto,flagged:false,axe:null,tally:null,runT:0,facing:1});
   if(mode==='world')p.time=st.time;
   p.best=Math.max(p.best,0);cams[p.i].x=0;updateCamera(p,p.i,true);
+  // a restart at the checkpoint: like the NES (enemies only appear at the right edge) nothing that stood left of the
+  // restart spot or right beside it is there (a Koopa on 1-3's checkpoint tree killed a fresh life at once)
+  if(p.checkOn&&!net){const a=AR(worlds[p.i],spot.area);for(const e of a.enemies)if(e.x<spot.x+72)e.alive=false;}
  }
  // coins/race: a death puts you back at the last checkpoint you passed with the world as you left it
  function respawnHere(p){const w=worlds[p.i],st=stageOf(p),spot=p.checkOn?st.check:st.start.auto?{...st.startPlay}:st.start;
