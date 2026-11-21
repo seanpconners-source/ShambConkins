@@ -340,8 +340,8 @@ async function marioBros(s){
  function stepAxe(p,w){
   const ax=p.axe,a=AR(w,p.area),def=a.def,b=a.bowser;ax.t++;
   if(ax.phase==='bridge'){if(ax.t%4===0){if(ax.next>=def.bridge.c0){setTile(w,p.area,ax.next,def.bridge.r,0);ax.next--;sfx.bridge();if(ax.next===def.bridge.c0+6)setTile(w,p.area,def.bridge.c1,def.bridge.r-1,0);}
-    else{ax.phase='fall';ax.t=0;if(b&&b.state!=='dead'){b.state='fall';b.vy=0;sfx.bowserFall();}}}}
-  else if(ax.phase==='fall'){if(ax.t>90){ax.phase='walk';ax.t=0;p.facing=1;SA.jingle('castle-clear');}}
+    else{ax.phase='fall';ax.t=0;if(b&&b.state!=='dead'){b.state='fall';b.vy=0;b.t=0;sfx.bowserFall();}}}}
+  else if(ax.phase==='fall'){if(ax.t>90&&(!b||b.state!=='fall'||b.y>ROWS*T+40)){ax.phase='walk';ax.t=0;p.facing=1;SA.jingle('castle-clear');}}
   else if(ax.phase==='walk'){p.vx=PH.walk;p.x+=p.vx;p.anim+=.17;p.grounded=true;if(p.x>=def.toad.x-26){p.vx=0;ax.phase='toad';ax.t=0;s.react(p.i,'win');}}
   else if(ax.phase==='toad'){if(mode==='world'&&p.time>0){const n=Math.min(2,p.time);p.time-=n;p.score+=50*n;if(ax.t%3===0)sfx.tick();}
    if(ax.t>330){p.axe=null;stageClear(p);}}
@@ -472,7 +472,9 @@ async function marioBros(s){
   const b=a.bowser,def=a.def,cam=cams[p.i];
   for(let k=w.flames.length-1;k>=0;k--){const f=w.flames[k];f.x+=f.vx;if(Math.abs(f.y-f.ty)>.6)f.y+=Math.sign(f.ty-f.y)*.6;if(f.x<cam.x-40&&f.x<backX(cam,w,p.area)-40)w.flames.splice(k,1);}
   if(!b)return;
-  if(b.state==='dead'||b.state==='fall'){b.vy+=.2;b.y+=b.vy;return;}
+  // the fall off the bridge: a moment's hang, then down at a capped speed so you watch him drop out of the screen
+  if(b.state==='fall'){b.t=(b.t||0)+1;if(b.t>18){b.vy=Math.min(b.vy+.08,2.2);b.y+=b.vy;}return;}
+  if(b.state==='dead'){b.vy+=.2;b.y+=b.vy;return;}
   // online Bowser and his flames run on the phone that runs the castle; this one shows its snapshots and flames {fl}
   if(!auth){b.mouth=Math.max(0,b.mouth-1);return;}
   // online he goes after whichever runner is nearer (the partner's real screen counts for "on screen")
@@ -519,7 +521,11 @@ async function marioBros(s){
  }
  const updateCamera=(p,i,snapNow=false)=>{const cam=cams[i],a=worlds[i]&&AR(worlds[i],p.area);if(!a)return;const W=a.def.W*T;
   if(W<=view.w){cam.x=(W-view.w)/2;return;}
-  const tx=p.x-view.w*.44;if(tx>cam.x||snapNow)cam.x=snapNow?Math.max(0,tx):tx;cam.x=clamp(cam.x,0,W-view.w);};
+  const tx=p.x-view.w*.44;if(tx>cam.x||snapNow)cam.x=snapNow?Math.max(0,tx):tx;
+  // Bowser's bridge (like the NES): the screen stops with the axe at its right edge until Bowser has fallen, so the
+  // whole fight and his fall stay in view; only the walk to Toad scrolls on
+  const ax=a.def.axe;let hi=W-view.w;if(ax&&!(p.axe&&(p.axe.phase==='walk'||p.axe.phase==='toad')))hi=Math.min(hi,ax.x+20-view.w);
+  cam.x=clamp(cam.x,0,Math.max(0,hi));};
 
  // ---------------- drawing
  const qFrame=()=>[0,0,0,1,2,1][Math.floor(simT*8)%6];
@@ -887,7 +893,7 @@ async function marioBros(s){
   // the partner's fireball: shown only (their phone judges what it hits)
   else if(e.fb){const [k,an,x,y,vx]=e.fb,w=W(k);if(w&&AR(w,an))w.fire.push({x,y,vx,vy:3,t:0,area:an,remote:true});}
   else if(e.bd){const [k,an,fake]=e.bd,w=W(k),b=w&&AR(w,an)?.bowser;if(b&&b.state!=='dead'){b.state='dead';b.vy=-3;if(fake)b.fake=true;}}
-  else if(e.ax){const [k,an]=e.ax,w=W(k),b=w&&AR(w,an)?.bowser;if(b&&b.state!=='dead'&&b.state!=='fall'){b.state='fall';b.vy=0;}}
+  else if(e.ax){const [k,an]=e.ax,w=W(k),b=w&&AR(w,an)?.bowser;if(b&&b.state!=='dead'&&b.state!=='fall'){b.state='fall';b.vy=0;b.t=0;}}
   else if(e.gl){const p=pl[me];if(mode==='world'&&p.stage===e.gl[0]&&!graceUntil&&phase==='play'&&!p.out)graceUntil=clock+NET_GRACE;}
   else if(e.sc){const [st,next]=e.sc;theirDone.set(st,next);const p=pl[me];
    // out of lives: follow the partner on to the next stage (and come back with a life)

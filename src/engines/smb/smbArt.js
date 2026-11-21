@@ -222,7 +222,8 @@ function drawSkyline(g,camX,viewW,night){
   for(let i=i0;i<=i1;i++){const h=hash(i*7+(k*100|0)),w=sp*(.62+.3*hash(i*13+5)),hgt=T*(3+h*(k<.4?7:5)),x=camX-off+i*sp+(sp-w)/2,y=base-hgt;
    g.fillStyle=body;g.fillRect(x,y,w,hgt);
    if(hash(i*3+1)>.6){g.fillRect(x+w*.4,y-T*.8,w*.2,T*.8);g.fillRect(x+w*.48,y-T*1.6,2,T*.8);}
-   for(let yy=y+4;yy<base-6;yy+=7)for(let xx=x+3;xx<x+w-4;xx+=6){if(litP?hash(i*977+xx*3+yy)<litP:hash(i*31+((yy-y)|0))<.5){g.fillStyle=win;g.fillRect(xx,yy,3,3);}}}}
+   // windows are numbered inside their tower (column, row), so which ones are lit never changes as the camera moves
+   for(let r=0,yy=y+4;yy<base-6;r++,yy+=7)for(let c=0,xx=x+3;xx<x+w-4;c++,xx+=6){if(litP?hash(i*977+c*131+r*17+(k*100|0))<litP:hash(i*31+r)<.5){g.fillStyle=win;g.fillRect(xx,yy,3,3);}}}}
 }
 // a glass curtain wall inside the HQ tower: city lights outside, steel mullions in front
 function drawTowerGlass(g,camX,viewW,top,bottom){drawSkyline(g,camX,viewW,true);
