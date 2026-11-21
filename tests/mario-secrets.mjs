@@ -21,6 +21,7 @@ const ready=async()=>{for(let i=0;i<40;i++){if(await page.evaluate(()=>!!documen
 // ---- world select
 const list=await dbg('return d.startList;');if(JSON.stringify(list)!=='[1,3]')fail('start list '+JSON.stringify(list));else pass('start list = worlds 1 and 3');
 await page.keyboard.press('d');await page.waitForTimeout(200);await shot('title-world');
+{const sw=await dbg('return d.worlds[0].st===d.STAGES[8]&&d.pl[0].stage===8;');if(!sw)fail('title screen did not switch to 3-1 behind the menu');else pass('title shows 3-1 behind WORLD 3');}
 await dbg('d.start(0,3);');await ready();await until('return d.phase==="card"');const st=await dbg('return d.pl[0].stage;');
 if(st!==8)fail('world 3 start stage '+st);else pass('starts in 3-1');
 await until('if(d.phase==="card")d.skipCard();return d.phase==="play";');
@@ -49,6 +50,17 @@ const go=async(stage,area='main')=>{await dbg(`d.teleport(0,60,${stage});const w
   await dbg('const p=d.pl[0];p.x=10*16;p.y=13*16;p.grounded=true;');await page.keyboard.down('d');
   const outp=await until('return d.pl[0].area==="main"&&!d.pl[0].pipe;',6000);await page.keyboard.up('d');
   const ex=await dbg('return Math.round(d.pl[0].x/16);');if(!outp)fail('side pipe did not lead back out');else if(Math.abs(ex-pp.exit-1)>1)fail(`came out at ${ex}, exit pipe at ${pp.exit}`);else pass('out of the exit pipe at column '+ex);}}
+
+// ---- a ceiling run past the exit pipe drops into the secret roof room, whose pipe leads to the flagpole (3-2, 4-2)
+for(const [stage,nm] of [[9,'3-2'],[13,'4-2']]){await go(stage);
+ const rr=await dbg('const def=d.worlds[0].areas.main.def;return def.roofRoomX&&{x:def.roofRoomX,pipe:def.pipes.find(p=>p.to&&p.to.area==="exit"&&p.c*16>def.roofRoomX)};');
+ if(!rr||!rr.pipe){fail(nm+' has no roof room');continue;}
+ await dbg(`const p=d.pl[0];Object.assign(p,{x:${rr.x}-6*16,y:2*16,prevY:2*16,grounded:true,vx:0,vy:0});`);await page.keyboard.down('d');
+ const inRoom=await until(`const p=d.pl[0];return p.x>${rr.x}+16&&p.grounded&&p.y>=12*16;`,6000);await page.keyboard.up('d');await shot('roof-'+nm);
+ if(!inRoom)fail(nm+' roof run did not drop into the room '+JSON.stringify(await dbg('const p=d.pl[0];return {x:p.x,y:p.y,a:p.area};')));else pass(nm+' roof run drops into the secret room');
+ await dbg(`const p=d.pl[0];Object.assign(p,{x:(${rr.pipe.c}+1)*16,y:${rr.pipe.top}*16,prevY:${rr.pipe.top}*16,grounded:true,vx:0,vy:0});`);await page.keyboard.down('s');
+ const ex=await until('return d.pl[0].area==="exit";',5000);await page.keyboard.up('s');await page.waitForTimeout(600);
+ if(!ex)fail(nm+' roof room pipe did not lead to the flagpole area');else pass(nm+' roof room pipe → flagpole area');}
 
 // ---- 4-2: the hidden shelf pipe → Warp Zone → World 6
 {await go(13);const wp=await dbg(`const def=d.worlds[0].areas.main.def,dr=def.doors.find(x=>x.to&&x.to.area==='warp');return dr&&{c:dr.c,top:dr.top};`);

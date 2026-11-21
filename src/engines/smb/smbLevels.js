@@ -339,7 +339,7 @@ function w31(){
 function w32(){
  const I=area(16,'pier');I.ground(0,15);I.sidePipe(10,12,1,4,{cap:true,to:{area:'main',x:2*T+8,y:3*T,how:'drop'}});
  I.decor.push({type:'funsign',x:3*T});
- const A=area(180,'funhouse');
+ const A=area(196,'funhouse');
  A.ground(0,59);A.ground(62,103);A.ground(107,139);A.ground(143,179);
  A.fill(0,179,2,2,BRICK);A.fill(0,0,3,12,BRICK);
  A.row(10,9,'?B?',{10:'power'});A.row(18,6,'BBBB');A.coinRun(18,21,5);
@@ -353,7 +353,7 @@ function w32(){
  A.lift({x:141*T,y:10*T,kind:'v',y0:6*T,y1:12*T,vy:-.6,w:48});
  // mirror zone 3
  A.fill(150,151,9,12,HARD);A.fill(157,158,8,12,HARD);A.coinRun(152,156,10);
- A.sidePipe(168,12,1,3,{to:{area:'exit',pipe:2,how:'rise'}});A.fill(172,179,3,12,BRICK);
+ A.sidePipe(168,12,1,3,{to:{area:'exit',pipe:2,how:'rise'}});A.fill(172,179,3,12,BRICK);roofRoom(A,180,'BACKSTAGE PASS!');
  for(const c of [14,26,55,66,67.5,90,125,126.5,135])A.foe('goomba',c);
  A.foe('koopa',80);A.foe('koopaRed',115,8);
  for(const [c,r] of [[44,8],[78,7],[103,6],[132,8],[160,7]])A.foe('ghost',c,r);
@@ -454,6 +454,12 @@ function skiRun(r,landCol){const W=150,A=area(W,'snow');A.ice=true;A.ramps=[];A.
  // the kicker at the end of the second rail stretch sits on that terrace
  A.ramps=A.ramps.filter(rp=>A.tiles[rp.r*W+rp.c]);
  A.fallTo={area:'main',x:landCol*T+8,y:-T,how:'drop'};return A;}
+// the end of a ceiling run (owner, Nov 21: "got stuck here... if this is going to be accessible there should be a secret
+// area after it"): like 1-2's Warp Zone, the ceiling stops past the exit wall so a roof runner drops into a hidden room:
+// coins, a 1-up, and a pipe down to the flagpole. The room is the last 16 columns of the area (c0 = its first column).
+function roofRoom(A,c0,title='SECRET ROOF ROOM!'){A.ground(c0,c0+15);A.fill(c0+15,c0+15,0,12,BRICK);
+ A.coinRun(c0+2,c0+12,10);A.coinRun(c0+3,c0+11,8);A.q(c0+6,9,'1up');A.hidden(c0+4,9,'coin');
+ A.pipe(c0+10,2,{to:{area:'exit',pipe:2,how:'rise'}});A.text(title,c0+1.25,4);A.roofRoomX=c0*T;}
 // the 4-2 secret: like 1-2's Warp Zone, a room of pipes to later worlds
 function warpRoom(kind,list){const A=area(24,kind);A.scenery=false;A.ground(0,23);A.fill(0,0,2,12,BRICK);A.fill(4,23,2,2,BRICK);A.fill(22,23,3,12,BRICK);
  list.forEach((n,k)=>{const c=4+k*6;A.pipe(c,3,{warp:n});A.text(String(n),c+.75,8.5);});A.text('WELCOME TO WARP ZONE!',2.75,5);A.coinRun(2,20,12);return A;}
@@ -587,7 +593,7 @@ function genOver(wn,n,cfg){const r=rng(wn*100+n*7+1),lv=lvOf(wn,n),W=cfg.rider?2
 // one to a coin room, brick shelves, brick stairs), then out through a pipe to the flagpole; 4-2 hides a Warp Zone
 function genUnder(wn,n,cfg){const r=rng(wn*100+n*7+2),lv=lvOf(wn,n),W=210;
  const I=area(16,cfg.outKind);I.ground(0,15);I.sidePipe(10,12,1,4,{cap:true,to:{area:'main',x:2*T+8,y:3*T,how:'drop'}});
- const A=area(W,cfg.kind);if(cfg.ice)A.ice=true;A.ramps=[];A.ground(0,13);A.fill(0,W-1,2,2,BRICK);A.fill(0,0,3,12,BRICK);if((wn+n)%2)A.row(8,9,'?B?',{8:cfg.power,10:'power'});else{A.row(5,9,'BB?B',{7:cfg.power});A.fill(10,12,6,8,BRICK);A.coinRun(10,12,5);}
+ const A=area(W+16,cfg.kind);if(cfg.ice)A.ice=true;A.ramps=[];A.ground(0,13);A.fill(0,W-1,2,2,BRICK);A.fill(0,0,3,12,BRICK);if((wn+n)%2)A.row(8,9,'?B?',{8:cfg.power,10:'power'});else{A.row(5,9,'BB?B',{7:cfg.power});A.fill(10,12,6,8,BRICK);A.coinRun(10,12,5);}
  const areas={intro:I,main:A};let c=14,check=null,bonusAt=-1,exitCol=-1,warpDone=!cfg.warpRoom,ups=0,styled=0;
  const S={A,r,lv,cfg,foe:(cc,row=13)=>themeFoe(A,cfg,r,cc,row)},sty=STYLE_PIECES[cfg.style||'cave']||STYLE_PIECES.cave;
  const foes=(c0,len)=>{for(let j=0,k=Math.round(r()*(1+lv*.3));j<k;j++)themeFoe(A,cfg,r,c0+2+Math.floor(r()*(len-4)));};
@@ -623,7 +629,7 @@ function genUnder(wn,n,cfg){const r=rng(wn*100+n*7+2),lv=lvOf(wn,n),W=210;
  evenFoes(A,cfg,r,Math.round(3+1.9*lv),16,c);
  if(exitCol>=0)areas.bonus=coinRoom(cfg.kind,r,exitCol);else A.doors=A.doors.filter(d=>d.to?.area!=='bonus');
  if(cfg.warpRoom)areas.warp=warpRoom(cfg.kind,cfg.warpRoom);
- A.ground(c,W-1);A.sidePipe(W-12,12,1,3,{to:{area:'exit',pipe:2,how:'rise'}});A.fill(W-8,W-1,3,12,BRICK);
+ A.ground(c,W-1);A.sidePipe(W-12,12,1,3,{to:{area:'exit',pipe:2,how:'rise'}});A.fill(W-8,W-1,3,12,BRICK);roofRoom(A,W);
  const E=area(40,cfg.outKind);E.ground(0,39);E.pipe(2,2,{exitOf:'main'});E.stairs(8,8,1);E.col(16,8);flagAndCastle(E,25,29);props(E,cfg,18,39,r);areas.exit=E;
  return {name:`${wn}-${n}`,title:cfg.title,time:cfg.time||(wn>=7?350:400),areas,start:{area:'intro',x:40,y:13*T,auto:true},startPlay:{area:'main',x:2*T+8,y:3*T},check:check||{area:'main',x:60*T,y:13*T}};}
 

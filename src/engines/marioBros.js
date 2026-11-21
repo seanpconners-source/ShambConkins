@@ -929,9 +929,12 @@ async function marioBros(s){
  }
  // the title screen: World 1-1's first screen, the logo, the menu and TOP score
  function drawTitle(){
-  const fx=view.fx;cams[0].x=-fx;Object.assign(pl[0],{x:40,y:13*T,area:'main'});
+  // the world you're about to start shows behind the menu: its first stage's opening screen (owner, Nov 21)
+  const si=mode!=='world'?0:boardCoop?(coopWorld()-1)*4:worldPick()?(startW-1)*4:0,st=STAGES[si]||STAGES[0],sp=st.start||{x:40,y:13*T,area:'main'};
+  if(!worlds[0]||worlds[0].st!==st)worlds[0]=makeWorld(st);
+  const fx=view.fx;cams[0].x=Math.max(0,sp.x-40)-fx;Object.assign(pl[0],{stage:si,x:sp.x,y:sp.y,area:sp.area||'main'});
   g.save();g.translate(fx,0);
-  drawWorld(0);if(!s.solo)drawRunner({...pl[1],x:64,y:13*T});
+  drawWorld(0);if(!s.solo)drawRunner({...pl[1],stage:si,x:sp.x+24,y:sp.y,area:sp.area||'main'});
   A_.drawLogo(g,40,32);
   if(boardCoop){nesText(g,'2 PLAYER CO-OP',88,144);nesText(g,`WORLD ${coopWorld()}`,88+Math.round((textW('2 PLAYER CO-OP')-textW('WORLD 1'))/2),162,'#fc9838');}
   else{nesText(g,net?'2 PLAYER ONLINE':'1 PLAYER GAME',88,144);if(!s.solo&&!net)nesText(g,'2 PLAYER GAME',88,160);}
