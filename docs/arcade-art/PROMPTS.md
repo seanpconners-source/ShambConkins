@@ -27,7 +27,7 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 **Key art** ✅
 
-> Key art for "Super Mario Bros.", a minigame in a party video game that pays tribute to Super Mario Bros.. Scene: World 1, Coin Rush, Castle Dash, SMB3. The NES original, World 1-1 to Bowser’s castle in 1-4, with your head on Mario (P2 is Luigi). Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
+> Key art for "Super Mario Bros.", a minigame in a party video game that pays tribute to Super Mario Bros.. Scene: Worlds 1-8, N-Spade, Spade Panel. The NES original, World 1-1 to Bowser’s castle in 1-4, with your head on Mario (P2 is Luigi). Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
 **Icon** ✅
 
@@ -1815,21 +1815,21 @@ Made by `node tools/arcade-art-slots.mjs`. Paste a prompt into an image generato
 
 ## Super Mario Bros. 3 · N-Spade · `smb3-nspade`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Super Mario Bros. 3 · N-Spade", a minigame in a party video game that pays tribute to Super Mario Bros. 3. Scene: The card-matching bonus game from Super Mario Bros. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Super Mario Bros. 3 · N-Spade" (Super Mario Bros. 3 tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 
 ## Super Mario Bros. 3 · Spade Panel · `smb3-spade-slots`
 
-**Key art** 
+**Key art** ✅
 
 > Key art for "Super Mario Bros. 3 · Spade Panel", a minigame in a party video game that pays tribute to Super Mario Bros. 3. Scene: The picture-match bonus game from Super Mario Bros. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.
 
-**Icon** 
+**Icon** ✅
 
 > Square game icon for "Super Mario Bros. 3 · Spade Panel" (Super Mario Bros. 3 tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark.
 

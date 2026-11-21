@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 202 slots: 113 have key art, 117 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 202 slots: 115 have key art, 119 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -188,8 +188,8 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `smb-world-1` | Super Mario Bros. · World 1 | version of smb | · / · |
 | `smb-coin-rush` | Super Mario Bros. · World 1 Coin Rush | version of smb | · / · |
 | `smb-castle-dash` | Super Mario Bros. · Castle Dash | version of smb | · / · |
-| `smb3-nspade` | Super Mario Bros. 3 · N-Spade | version of smb | · / · |
-| `smb3-spade-slots` | Super Mario Bros. 3 · Spade Panel | version of smb | · / · |
+| `smb3-nspade` | Super Mario Bros. 3 · N-Spade | version of smb | ✅ / ✅ |
+| `smb3-spade-slots` | Super Mario Bros. 3 · Spade Panel | version of smb | ✅ / ✅ |
 | `rainbow-road-kart` | Mario Kart · Grand Prix (VS) | version of kart | · / · |
 | `kart-grand-prix-pass` | Mario Kart · Grand Prix (Pass & Play) | version of kart | · / · |
 | `kart-time-trial` | Mario Kart · Time Trials (Pass & Play) | version of kart | · / · |
