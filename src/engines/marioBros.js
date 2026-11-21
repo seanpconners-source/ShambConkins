@@ -34,7 +34,7 @@ const PH={minWalk:.07421875,walkAcc:.037109375,runAcc:.0556640625,rel:.05078125,
 const JUMP=[[1,-4,.125,.4375],[2.3125,-4,.1171875,.375],[Infinity,-5,.15625,.5625]];
 const COMBO=[100,200,400,500,800,1000,2000,4000,5000,8000],SHELL_CHAIN=[500,800,1000,2000,4000,5000,8000];
 const HF=require("src/headFacts.js");
-const FACE_W=15;   // face width (brow to chin box) on big Mario, world px
+const FACE_W=15;const HEAD_K=.72,HEAD_K_SMALL=.7;   // face width (brow to chin box) on big Mario, world px
 const PALS=[{cap:C.red,shirt:C.brown,over:C.red,shoe:C.brown},{cap:C.green,shirt:C.green,over:C.white,shoe:C.green}];
 const FIRE_PAL={cap:C.white,shirt:C.red,over:C.white,shoe:C.red};
 const STAR_PALS=[FIRE_PAL,{cap:'#000',shirt:C.brick,over:'#000',shoe:C.brick},{cap:C.green,shirt:C.white,over:C.green,shoe:C.brown},{cap:C.red,shirt:C.brown,over:C.red,shoe:C.brown}];
@@ -556,11 +556,12 @@ async function marioBros(s){
    R(pal.over,-5,-6,4,3);R(pal.over,1,-6,4,3);R(pal.shoe,-6,-3,5,3);R(pal.shoe,1,-3,5,3);}
   // the head, then a NES cap sized to it: a crown hugging the top of the head and a short brim on the facing side
   function head(bg,mood,crouchK,fc){
-   const size=bg&&!crouchK?30:26,hy=bg?(crouchK?-22:-33):-20,hx=fc,box={w:0,h:0},id=s.players[i]?.character;
+   // heads at NES scale (owner, Nov 21): big Mario stands ~2 blocks tall and small Mario ~1.3, like the NES sprites
+   const chin0=bg?(crouchK?-14:-20):-10,size=(bg&&!crouchK?30:26)*(bg?HEAD_K:HEAD_K_SMALL),hy=chin0-size*.45,hx=fc,box={w:0,h:0},id=s.players[i]?.character;
    // like Seanic/SotN (owner, Nov 13): the FACE (src/headFacts.js) is FACE_W wide with its chin on the shirt collar, hair
    // sticks out round it, it is mirrored only when it looks against the way Mario faces, and the cap hugs the measured top
    // of the head with its brim at the brow. Without facts (online photo) the old centred picture box is used.
-   const fw=bg?FACE_W:FACE_W*.86,chin=bg?(crouchK?-14:-20):-10,fh=HF.faceHeight(id,mood,fw),fy=chin-fh*.44,geo=HF.faceGeom(id,mood,fw,hx,fy,HF.flipFor(id,mood,fc));
+   const fw=bg?FACE_W*HEAD_K:FACE_W*.86*HEAD_K_SMALL,chin=chin0,fh=HF.faceHeight(id,mood,fw),fy=chin-fh*.44,geo=HF.faceGeom(id,mood,fw,hx,fy,HF.flipFor(id,mood,fc));
    let bw,topY,ch,cw,cx;
    if(geo){HF.drawFace(s,g,i,hx,fy,fw/.6,mood,fc,.6);bw=geo.head.w;topY=Math.min(geo.head.y,geo.face.y);const brow=geo.face.y+geo.face.h*.14;
     cw=Math.max(bw*1.04,fw*1.12);ch=clamp((brow-topY)/1.36,3,size*.3);cx=geo.head.x+geo.head.w/2+fc*(cw*.05-.7);}

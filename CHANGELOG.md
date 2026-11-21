@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.99.34
+
+- **Super Mario Bros. at NES scale.** Mario is now the size he is on the NES: small Mario fits through a 1-block gap and big Mario stands about 2 blocks tall and fits through 2-block gaps, so 1-2's low passages work and there's room to jump over Bowser under 1-4's ceiling. His head is drawn smaller to match.
+- **1-4's ? block** no longer pushes its mushroom up into the castle ceiling.
+- **Checkpoint restarts are safe.** The 1-2 restart spot no longer sits inside a brick wall, and enemies left of the restart spot or right beside it are gone, like on the NES (a Koopa on 1-3's checkpoint tree used to kill a fresh life at once).
+
 ## v0.99.33
 
 - **Simon Classic.** In 1 Player, the Simon itself is the menu: tap green for CLASSIC (the real toy: Simon adds a pad each round, you repeat it, 3 seconds per press, the razz when you slip, the winning flash at 8 / 14 / 20 / 31 depending on the SKILL switch, plus START, LAST and LONGEST) or red for the usual VS CPU face-off. Two players, board play and online are unchanged.
