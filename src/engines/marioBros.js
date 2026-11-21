@@ -95,7 +95,13 @@ async function marioBros(s){
  // world doesn't count); World 1 is always there. Not online (both phones start in World 1).
  const beatenWorlds=()=>{const b=store.profile?.smbBowsers;return Array.isArray(b)?b:[];};
  const startList=()=>[...new Set([1,...beatenWorlds()])].filter(n=>n>=1&&(n-1)*4<=lastStage).sort((a,b)=>a-b);
- let startW=1;const worldPick=()=>mode==='world'&&!net&&startList().length>1;
+ let startW=1;const worldPick=()=>mode==='world'&&!net&&!boardCoop&&startList().length>1;
+ // BOARD CO-OP (owner, Nov 21): on the board (one phone) the two of you share one run, one life each: whoever dies hands
+ // the phone over and the other carries on from the same spot. It starts in the furthest world this board game has
+ // reached (run.smbWorld, saved with the run) and ends when you have both died. Highest score wins.
+ const boardCoop=mode==='world'&&s.origin==='board'&&!net&&!s.solo;
+ const coopWorld=()=>clamp(parseInt(store.run?.smbWorld)||1,1,Math.floor(lastStage/4)+1);
+ const noteWorld=p=>{if(!boardCoop||!store.run)return;const wn=parseInt(STAGES[p.stage]?.name)||1;if(!(store.run.smbWorld>=wn))store.run.smbWorld=wn;};
  const cycleWorld=d=>{const L=startList();const k=L.indexOf(startW);startW=L[(k<0?0:k+d+L.length)%L.length];sfx.bump();};
  function noteBowser(p){if(mode!=='world')return;const wn=parseInt(STAGES[p.stage]?.name)||0,pr=store.profile;if(!wn||!pr)return;const b=Array.isArray(pr.smbBowsers)?pr.smbBowsers:[];
   if(b.includes(wn))return;pr.smbBowsers=[...b,wn].sort((x,y)=>x-y);try{require('src/profile.js').saveProfile(pr);}catch{}note(p,'bowser beaten '+wn);}
@@ -640,6 +646,7 @@ async function marioBros(s){
   if(mode==='race'){p.inCastle=true;return;}
   if(net&&mode==='world'){netStageDone(p,p.stage>=lastStage?-1:p.stage+1);return;}
   if(p.stage>=lastStage){
+   if(boardCoop){p.done=true;p.stage=lastStage;for(const q of pl)if(!q.over)q.done=true;endGame();return;}
    if(mode==='world'&&!s.solo){p.done=true;p.stage=lastStage;advanceTurn();return;}
    p.lap++;p.stage=0;
   }else p.stage++;
@@ -873,8 +880,9 @@ async function marioBros(s){
   g.save();g.translate(fx,0);
   drawWorld(0);if(!s.solo)drawRunner({...pl[1],x:64,y:13*T});
   A_.drawLogo(g,40,32);
-  nesText(g,net?'2 PLAYER ONLINE':'1 PLAYER GAME',88,144);if(!s.solo&&!net)nesText(g,'2 PLAYER GAME',88,160);
-  const my=s.solo||net?144:mode==='world'?(menuSel?160:144):160;g.save();g.translate(80,my+8);A_.drawItem(g,{type:'mushroom',x:0,y:0},0);g.restore();
+  if(boardCoop){nesText(g,'2 PLAYER CO-OP',88,144);nesText(g,`WORLD ${coopWorld()}`,88+Math.round((textW('2 PLAYER CO-OP')-textW('WORLD 1'))/2),162,'#fc9838');}
+  else{nesText(g,net?'2 PLAYER ONLINE':'1 PLAYER GAME',88,144);if(!s.solo&&!net)nesText(g,'2 PLAYER GAME',88,160);}
+  const my=s.solo||net||boardCoop?144:mode==='world'?(menuSel?160:144):160;g.save();g.translate(80,my+8);A_.drawItem(g,{type:'mushroom',x:0,y:0},0);g.restore();
   if(worldPick()){const t=`WORLD ${startW}`,wx=88+Math.round((textW('2 PLAYER GAME')-textW(t))/2);nesText(g,t,wx,176,'#fc9838');
    g.fillStyle='#fc9838';const tri=(x,dir)=>{for(let k=0;k<4;k++)g.fillRect(dir>0?x+k:x+3-k,179-k,1,1+2*k);};tri(wx-12,-1);tri(wx+textW(t)+6,1);}
   nesText(g,'TOP- '+String(top).padStart(6,'0'),96,worldPick()?196:184);
@@ -925,7 +933,8 @@ async function marioBros(s){
   if(!soloOk)return soloFinish(s,soloTotal,soloCleared,mode==='coins'?`World 1 Coin Rush solo: ${soloCleared} round${soloCleared===1?'':'s'} beaten; ${p.coins}/${coinGoal()} coins on the last.`:`World 1-1 Castle Dash solo: ${soloCleared} dash${soloCleared===1?'':'es'} in time; last run ${score(p)}.`);
   soloCleared++;soloProgress(s,soloTotal,soloCleared,mode==='coins'?`World 1 Coin Rush solo: ${soloCleared} round${soloCleared===1?'':'s'} beaten.`:`World 1-1 Castle Dash solo: ${soloCleared} dash${soloCleared===1?'':'es'} in time.`);
   pl[0]=makePlayer(0);worlds[0]=makeWorld(STAGES[0]);cams[0].x=0;beginTurn(0);}
- function startFromTitle(){if(phase!=='title'||titleT<.4)return;twoPlayer=mode==='world'&&menuSel===1&&!s.solo&&!net;
+ function startFromTitle(){if(phase!=='title'||titleT<.4)return;twoPlayer=mode==='world'&&menuSel===1&&!s.solo&&!net||boardCoop;
+  if(boardCoop){const st=(coopWorld()-1)*4;for(const q of pl){q.stage=st;q.lives=1;}note(pl[0],'board co-op world '+coopWorld());}
   if(worldPick()&&startW>1){for(const q of pl)q.stage=(startW-1)*4;note(pl[0],'start world '+startW);}note(pl[0],twoPlayer?'2 player game':'1 player game');beginTurn(net?me:0);}
  async function beginTurn(i){
   // online: no hand-off; both phones show the WORLD card and start together
@@ -934,6 +943,10 @@ async function marioBros(s){
   const n0=s.players[0].name,n1=s.players[1].name,me=s.players[i].name,other=s.players[1-i].name;let desc,summary=null;
   if(s.solo){desc=mode==='world'?`Play World 1 with ${LIVES} lives. Rescue Toad and the world starts over with your score and lives; keep going until game over.`:mode==='coins'?`Round ${soloCleared+1}: grab at least ${coinGoal()} coins in 60 seconds to reach the next round.`:`Dash ${soloCleared+1}: reach the flagpole within ${dashCap()} seconds to go again with less time.`;
    if(soloCleared)summary=`${soloTotal.toLocaleString()} points so far.`;}
+  else if(boardCoop){const wn=stageName(pl[i]);
+   desc=pl[1-i].over?`${me}, take over in World ${wn}, right where ${other} fell. One life: keep going as far as you can. Highest score wins.`
+    :`Co-op from World ${wn}: one life each. ${me} goes first; when you die, ${other} carries on from the same spot. The furthest world you reach is where the next Mario game on this board starts. Highest score wins.`;
+   if(pl[1-i].over)summary=`${n0}: ${pl[0].score} · ${n1}: ${pl[1].score}`;}
   else if(mode==='world'){
    if(twoPlayer)desc=pl[i].deaths===0&&pl[i].stagesCleared===0?`${me}, you are ${i?'Luigi':'Mario'}. Play until you lose a life, then hand the phone to ${other}. Three lives each; the highest score wins.`:`${me}'s turn: World ${stageName(pl[i])}, ${pl[i].lives} ${pl[i].lives===1?'life':'lives'} left.`;
    else desc=i===0?`You go first: play World 1 until you rescue Toad or run out of lives. ${n1} plays next against your ghost. Highest score wins.`:`Beat ${n0}'s score of ${pl[0].score}. ${n0}'s ghost runs beside you.`;
@@ -948,13 +961,14 @@ async function marioBros(s){
   startCard(i);
  }
  function startCard(i){
-  phase='card';cardKind='world';cardT=0;turn=i;const p=pl[i];
+  phase='card';cardKind='world';cardT=0;turn=i;const p=pl[i];noteWorld(p);
   placeRunner(p,true);
  }
  function deathDone(p){
   if(net){if(mode==='world'){p.lives--;if(p.lives<=0){p.lives=0;p.out=true;p.dead=0;note(p,'out');ev({out:1});checkNetEnd();return;}}netRespawn(p);return;}
   if(mode!=='world'){respawnHere(p);return;}
   p.lives--;
+  if(boardCoop){noteWorld(p);const q=pl[1-p.i];if(!q.over&&!q.done){q.stage=p.stage;q.checkOn=p.checkOn;worlds[q.i]=null;}}
   if(p.lives<=0){p.over=true;phase='card';cardKind='gameover';cardT=0;sfx.over();return;}
   if(twoPlayer&&!pl[1-p.i].over&&!pl[1-p.i].done){beginTurn(1-p.i);return;}
   startCard(p.i);
@@ -1116,7 +1130,7 @@ async function marioBros(s){
   if(!s.alive)return;
   SA.tick();SA.music(songFor());layoutView();
   if(net&&netStarted){nf.tick(dt);stepRemote(dt);}
-  if(phase==='title'){titleT+=dt;simT+=dt;if((mode!=='world'||net)&&titleT>3.2)startFromTitle();}
+  if(phase==='title'){titleT+=dt;simT+=dt;if((mode!=='world'||net||boardCoop)&&titleT>(boardCoop?2.2:3.2))startFromTitle();}
   else if(phase==='card'){cardT+=dt;const p=pl[turn];
    if(cardT>(cardKind==='gameover'?3:2.4)){if(cardKind==='gameover')advanceTurn();else{phase='play';for(const inp of inputs){inp.press=0;inp.bPress=0;}note(p,'play '+stageName(p));}}}
   else if(phase==='warp'){acc+=dt;while(acc>=STEP){acc-=STEP;warpMsg.t++;frames++;}if(warpMsg.t>720){const p=pl[warpMsg.i],m0=warpMsg.world;warpMsg=null;

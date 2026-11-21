@@ -20,7 +20,7 @@ const {portraitURL,setTileFamily}=require("src/assets.js");
 const FAMILIES=[
  ['bosses','Boss Select','Every boss you have beaten','king-kandy',null],
  ['pinball','Pinball Tables','Bucketheadland · Black Sabbath · King Gizzard','buckethead',['bucketheadland-pinball','black-sabbath-pinball','king-gizzard-pinball']],
- ['smb','Super Mario Bros.','World 1, Coin Rush, Castle Dash, SMB3','mario',['smb-world-1','smb-coin-rush','smb-castle-dash','smb3-nspade','smb3-spade-slots']],
+ ['smb','Super Mario Bros.','Worlds 1-8, N-Spade, Spade Panel','mario',['smb-world-1','smb-coin-rush','smb-castle-dash','smb3-nspade','smb3-spade-slots']],
  ['kart','Mario Kart','Grand Prix, time trials, battle','bowser',['rainbow-road-kart','kart-grand-prix-pass','kart-time-trial','rainbow-balloon-battle']],
  ['castlevania','Castlevania','NES and Symphony of the Night','alucard',['cv-symphony','cv-vampire-killer','cv-candle-hunt']],
  ['sonic','Seanic the Hedgehog','Green Hill Zone',null,['sonic-ring-rush','sonic-goal-dash','sonic3-zone1','sonic3-zone1-act2','sonic3-zone1-act3','sonic3-test']],
