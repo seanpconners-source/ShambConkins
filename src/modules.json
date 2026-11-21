@@ -534,7 +534,17 @@
   "src/engines/flappyDisaster.js",
   "src/engines/angryHeads.js",
   "src/engines/angry/levels.js",
-  "src/engines/angry/physics.js"
+  "src/engines/angry/physics.js",
+  "src/engines/kingpinBowling.js",
+  "src/engines/bowl/rules.js",
+  "src/engines/bowl/cpu.js",
+  "src/engines/bowl/gl.js",
+  "src/engines/bowl/scene.js",
+  "src/engines/bowl/screens.js",
+  "src/engines/bowl/shop.js",
+  "src/engines/bowl/physics.js",
+  "src/data/bowlAlley.js",
+  "src/data/bowlSprites.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }

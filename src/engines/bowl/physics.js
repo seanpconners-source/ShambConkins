@@ -173,7 +173,7 @@ function makeRoll({lane,ball,rel,pins}){
  R.run=(cap=16)=>{while(!R.done&&R.t<cap)step();return R;};
  // poses for drawing: ball {x,y,z,q}, pins [{n,x,y,z,q,down}]
  R.ballPose=()=>({x:st.x,y:R.phase==='gutter'?-.09:(st.y||0),z:st.z,q:st.q,phase:R.phase});
- R.pinPoses=()=>R.pins.map(p=>{const b=p.b,q=b.quaternion;return {n:p.n,x:b.position.x,y:b.position.y-PIN_SHAPES.com,z:b.position.z,q:[q.x,q.y,q.z,q.w],down:pinDown(b)};});
+ R.pinPoses=()=>R.pins.map(p=>{const b=p.b,q=b.quaternion;return {n:p.n,x:b.position.x,y:b.position.y-PIN_SHAPES.com,z:b.position.z,q:[q.x,q.y,q.z,q.w],down:pinDown(b),gone:!!p.gone};});
  // the result: standing pins with where they stand now
  R.result=()=>{const standing=[];for(const p of R.pins){const b=p.b;if(!pinDown(b)){const q=b.quaternion;standing.push({n:p.n,x:+b.position.x.toFixed(4),z:+b.position.z.toFixed(4),qx:+q.x.toFixed(4),qy:+q.y.toFixed(4),qz:+q.z.toFixed(4),qw:+q.w.toFixed(4)});}}
   return {standing,gutter:R.gutter,entry:R.entry,firstHit:R.firstHit?.n||0,hitPin:R.hitPin};};

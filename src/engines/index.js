@@ -30,6 +30,7 @@ const {pong}=require("src/engines/atariPong.js");
 const {pool}=require("src/engines/pool.js");
 const {nineball}=require("src/engines/nineball.js");
 const {paddysPool}=require("src/engines/paddysPool.js");
+const {kingpinBowling}=require("src/engines/kingpinBowling.js");// Kingpin Bowling rebuild (old 2D lane: movieSports.js bowling, unused)
 const {hangman}=require("src/engines/hangman.js");
 const {photohunt}=require("src/engines/photohunt.js");
 const {headlaunch}=require("src/engines/angryHeads.js");
@@ -76,6 +77,6 @@ const {blocks,shred,dodgeball,boxing,gophers,archery}=require("src/engines/newGa
 // Paddy's Pool (8-ball / 9-ball with the upgrade hall) for the Arcade ids; the board event 'paddys-pool' keeps the old quick table
 function themedPool(s){const id=s.game?.id;return id==='color-of-money'||id==='paddys-eight-ball'?paddysPool(s):s.game?.source==='The Color of Money'?nineball(s):pool(s);}
 const PACKS=require("src/packs/index.js");
-const ENGINES=Object.freeze({blocks,shred,dodgeball,boxing,gophers,archery,sokoban,pipeconnect,sonargrid:motionTracker,connect4,reversi,blackjack:vegasBlackjack,poker:vegasPoker,roulette:rouletteGame,baccarat:vegasBaccarat,yahtzee,trivia,millionaire,stickdot,towerstack,darts,kitchen,task,hole,bike,baseball:griffeyBall,baseballfield:griffeyBall,pinball,coopRivals,artillery,airshootout,curling,minigolf,bowling,lander,missiledefense,breakout,asteroids,galaga,snake,bomber,pacmaze,tank,chase,crossy,frogger,pong,pool:themedPool,airhockey,flappy,tictactoe,sewer,bondmission,lightcycle,minichess,fruitmerge,slingshot,penalty,sumo,dualrace,snakeduel,moneygrab,sword2p,basketball2p,ballrun2p,conesort,paperboy,brawler,battleroyale,skynetid,pancakes,duckturn,hangman,photohunt,headlaunch,ballvolley,horde,ultimate,mancala,dots,checkers,chess,guesswho,beerpong,flipcup,fruitslice,uno,microrelay,...PACKS.engines});
+const ENGINES=Object.freeze({blocks,shred,dodgeball,boxing,gophers,archery,sokoban,pipeconnect,sonargrid:motionTracker,connect4,reversi,blackjack:vegasBlackjack,poker:vegasPoker,roulette:rouletteGame,baccarat:vegasBaccarat,yahtzee,trivia,millionaire,stickdot,towerstack,darts,kitchen,task,hole,bike,baseball:griffeyBall,baseballfield:griffeyBall,pinball,coopRivals,artillery,airshootout,curling,minigolf,bowling:kingpinBowling,lander,missiledefense,breakout,asteroids,galaga,snake,bomber,pacmaze,tank,chase,crossy,frogger,pong,pool:themedPool,airhockey,flappy,tictactoe,sewer,bondmission,lightcycle,minichess,fruitmerge,slingshot,penalty,sumo,dualrace,snakeduel,moneygrab,sword2p,basketball2p,ballrun2p,conesort,paperboy,brawler,battleroyale,skynetid,pancakes,duckturn,hangman,photohunt,headlaunch,ballvolley,horde,ultimate,mancala,dots,checkers,chess,guesswho,beerpong,flipcup,fruitslice,uno,microrelay,...PACKS.engines});
 
 Object.assign(exports,{ENGINES});

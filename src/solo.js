@@ -24,7 +24,7 @@ const SOLO_IDS={
  // pass-and-play engines run once per round by the launcher (soloTurnRounds); the hand-off to P2 ends the round
  'taskmaster-fruit-ninja':'turns','angry-heads':'levels','neon-ball-storm':'turns','home-alone-paint-can':'turns','tm-cones':'turns',
  'paper-route':'turns','warehouse-shift':'turns','matrix-hardline-hack':'turns','alien-sonar-grid':'turns','kitchen-service':'turns',
- 'space-swarm':'turns','taskmaster-micro-relay':'turns','kingpin-bowling':'turns',
+ 'space-swarm':'turns','taskmaster-micro-relay':'turns','kingpin-bowling':'cpu','lebowski-bowling':'cpu',
  'major-league-fielding':'cpu','flipadelphia-cup':'turns','office-hockey-shootout':'turns','chutes-spinner-showdown':'cpu',
  'smb3-spade-slots':'turns',
  // batch 3: CPU opponents (cpuKit / cpuBoards)
@@ -88,7 +88,7 @@ const NET_NATIVE=new Set(['flappy-disaster','angry-heads','banana-money-grab','m
  'simon-faceoff','price-bid-off','paddys-darts','django-hangman-showdown','django-hangman-wanted',
  'matrix-ultimate','greed-island-mancala','office-dots-boxes',
  'trek-mini-chess','wopr-grid','smb3-nspade','sqwordle','words-n-shit','crappy-crush','clue-lineup','django-hangman',
- 'taskmaster-curling','bug-artillery','happy-gilmore-golf','color-of-money','paddys-eight-ball','baseketball-shootout','baseketball-hoop-jones',
+ 'taskmaster-curling','bug-artillery','happy-gilmore-golf','color-of-money','paddys-eight-ball','kingpin-bowling','lebowski-bowling','baseketball-shootout','baseketball-hoop-jones',
  'task-tallest-thing','fast-quarter-mile','block-battle','shred-hero','candy-color-dash','chutes-ladder-rush',
  'brawndo-fruit-merge','candy-gumdrop-catch','review-pancakes','terminator-scan','microgame-rush','rush-marathon',
  'pong-duel','derezzed-cycles','snake-v-snake','metal-gear-tank-duel','kill-bill-duel',

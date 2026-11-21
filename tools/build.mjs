@@ -126,6 +126,13 @@ if (fs.existsSync(poolDir)) for (const f of fs.readdirSync(poolDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('pool:' + m[1].toLowerCase(), MIME[ext], ext, path.join(poolDir, f));
 }
+// Kingpin Bowling drop-in art: assets/bowling/<name>.(webp|png) -> bowl:<name> (names and layout: src/data/bowlSprites.js,
+// docs/bowling-sprites/README.md).
+const bowlDir = path.join(root, 'assets/bowling');
+if (fs.existsSync(bowlDir)) for (const f of fs.readdirSync(bowlDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('bowl:' + m[1].toLowerCase(), MIME[ext], ext, path.join(bowlDir, f));
+}
 // BASEketball drop-in art: assets/baseketball/<name>.(webp|png) -> baseketball:<name>
 // (names and layout: src/data/baseketballSprites.js, docs/baseketball-sprites/README.md).
 const bkDir = path.join(root, 'assets/baseketball');
