@@ -13,7 +13,7 @@ const BACK=new Uint8Array(32);for(const t of [TRUNK,CHAIN])BACK[t]=1;
 
 function area(W,kind){
  const A={W,kind,tiles:new Uint8Array(W*ROWS),content:new Map(),coins:[],enemies:[],pipes:[],doors:[],decor:[],lifts:[],firebars:[],texts:[],scenery:kind==='over'};
- const tileFor=()=>kind==='castle'?CASTLE:GROUND;
+ const tileFor=()=>kind==='castle'||kind==='tower'?CASTLE:GROUND;
  Object.assign(A,{
   set(c,r,t,what){if(c<0||c>=W||r<0||r>=ROWS)return;A.tiles[r*W+c]=t;if(what)A.content.set(r*W+c,what);else A.content.delete(r*W+c);},
   fill(c0,c1,r0,r1,t){for(let c=c0;c<=c1;c++)for(let r=r0;r<=r1;r++)A.set(c,r,t);},
@@ -35,6 +35,8 @@ function area(W,kind){
   coinRun(c0,c1,r){for(let c=c0;c<=c1;c++)A.coin(c,r);},
   // enemies stand with their feet on row r (x is the column centre unless a fractional column is given)
   foe(type,c,r=13,o={}){A.enemies.push({type,x:type==='piranha'?c*T:c*T+8,y:r*T,...o});},
+  // a city building for the rooftop stage: roof row on top (solid), facade below it (scenery, drawn behind the runner)
+  building(c,w,top){A.set(c,top,TREE_L);for(let k=1;k<w-1;k++)A.set(c+k,top,TREE_M);A.set(c+w-1,top,TREE_R);for(let r=top+1;r<ROWS;r++)for(let k=0;k<w;k++)A.set(c+k,r,TRUNK);},
   tree(c,w,top){A.set(c,top,TREE_L);for(let k=1;k<w-1;k++)A.set(c+k,top,TREE_M);A.set(c+w-1,top,TREE_R);for(let r=top+1;r<ROWS;r++)for(let k=1;k<w-1;k++)A.set(c+k,r,TRUNK);},
   lava(c0,c1,top=12){A.fill(c0,c1,top,top,LAVA_TOP);A.fill(c0,c1,top+1,14,LAVA);},
   lift(o){A.lifts.push({w:48,vx:0,vy:0,...o});},
@@ -168,6 +170,110 @@ function w14(){
  return {name:'1-4',time:300,areas:{main:A},start:{area:'main',x:40,y:8*T},check:{area:'main',x:66*T,y:10*T}};
 }
 
-const STAGES=[w11,w12,w13,w14];
+// ================================================================== WORLD 2: NEW DORK CITY (our own city world: own
+// layouts, own city art in smbArt.js; owner, Nov 21: streets, a flooded subway water stage, rooftops, and Bowser's
+// skyscraper HQ with Bowser as the corporate CEO)
+// street props: lamps, hydrants, newspaper boxes and benches on open sidewalk
+function cityScenery(A,{from=0,to=A.W}={}){
+ const onGround=c=>A.tiles[13*A.W+c]===GROUND&&!A.tiles[12*A.W+c];
+ for(let c=from;c<to;c++){const m=c%24;
+  if((m===3||m===15)&&onGround(c))A.decor.push({type:'lamp',x:c*T+8});
+  else if(m===9&&onGround(c))A.decor.push({type:'hydrant',x:c*T+8});
+  else if(m===20&&onGround(c)&&onGround(c+1))A.decor.push({type:'bench',x:c*T+8});
+  else if(m===6&&onGround(c))A.decor.push({type:'news',x:c*T+8});}
+}
+const DORK='NEW DORK CITY';
+
+// ------------------------------------------------------------------ 2-1 the streets
+function w21(){
+ const A=area(220,'city');
+ A.ground(0,40);A.ground(43,90);A.ground(94,140);A.ground(148,219);
+ A.q(14,9);A.row(18,9,'B?B?B',{19:'power'});A.q(20,5);
+ A.pipe(26,2);A.pipe(36,3,{piranha:true});
+ // construction site: steel girders, a work elevator and coins in the air
+ A.row(46,9,'HHHH');A.coinRun(46,49,8);A.row(51,6,'HHHH');A.coinRun(51,54,5);
+ A.lift({x:58*T,y:10*T,kind:'v',y0:5*T,y1:11*T,vy:-.6,w:48});
+ A.brick(62,9,'star');A.row(64,5,'BBBB?BBB',{68:'power'});
+ A.pipe(72,4);A.hidden(80,8,'1up');
+ A.stairs(86,4,1);
+ A.row(100,9,'B?B');A.brick(104,9,'multi');
+ A.fill(108,111,9,9,HARD);A.fill(112,115,6,6,HARD);A.coinRun(112,115,5);
+ A.pipe(120,3,{piranha:true});A.pipe(128,4,{piranha:true});
+ // the cab ride over the roadworks
+ A.lift({x:139*T,y:11*T+8,kind:'h',x0:139*T,x1:148*T,vx:.7,w:48,look:'taxi'});A.coinRun(142,145,8);
+ A.row(156,9,'?B?',{156:'power'});A.row(164,5,'BBBB');A.coinRun(164,167,4);
+ A.stairs(172,4,1);A.stairs(181,8,1);A.col(189,8);
+ flagAndCastle(A,198,202);
+ for(const c of [22,40,60,61.5,97,98.5,124,125.5,150,151.5,165,166.5])A.foe('goomba',c);
+ A.foe('goomba',109,9);A.foe('koopa',113,6);A.foe('koopa',135);A.foe('koopa',170);
+ cityScenery(A);
+ return {name:'2-1',title:DORK,time:400,areas:{main:A},start:{area:'main',x:40,y:13*T},check:{area:'main',x:96*T+8,y:13*T}};
+}
+
+// ------------------------------------------------------------------ 2-2 the flooded subway (water stage)
+function w22(){
+ // the street above: walk into the subway entrance
+ const I=area(16,'city');I.ground(0,15);I.sidePipe(10,12,1,4,{cap:true,to:{area:'main',x:3*T,y:5*T,how:'drop'}});
+ I.decor.push({type:'subway',x:6*T});cityScenery(I);
+ const A=area(190,'subway');A.water=true;
+ A.ground(0,39);A.ground(44,87);A.ground(93,139);A.ground(145,189);
+ A.fill(0,189,2,2,HARD);A.fill(0,0,3,12,HARD);
+ // the tunnel: pillars hanging from the ceiling, posts standing on the tracks, platforms and sunken train cars
+ for(const c of [20,50,76,126,160])A.fill(c,c,3,6,HARD);
+ for(const c of [30,64,99,134])A.fill(c,c,9,12,HARD);
+ A.fill(55,60,8,8,HARD);A.coinRun(55,60,7);
+ A.fill(108,121,10,12,HARD);A.coinRun(109,120,9);
+ A.fill(150,156,7,7,HARD);A.coinRun(150,156,6);
+ A.q(35,8,'power');A.q(84,6,'coin');A.q(140,8,'power');
+ A.coinRun(40,43,11);A.coinRun(88,92,11);A.coinRun(140,144,4);
+ for(const [c,r] of [[16,7],[26,10],[38,5],[47,9],[58,4],[70,8],[82,11],[95,5],[104,8],[118,4],[129,10],[138,6],[148,9],[166,5],[171,10]])A.foe('cheep',c,r);
+ for(const [c,r] of [[60,6],[124,7]])A.foe('cheepRed',c,r);
+ for(const [c,r] of [[44,7],[101,6],[155,11]])A.foe('blooper',c,r);
+ // the exit pipe sits in the end wall
+ A.sidePipe(178,12,1,3,{to:{area:'exit',pipe:2,how:'rise'}});A.fill(182,189,3,12,HARD);
+ const E=area(40,'city');E.ground(0,39);E.pipe(2,2,{exitOf:'main'});E.stairs(8,8,1);E.col(16,8);flagAndCastle(E,25,29);cityScenery(E);
+ return {name:'2-2',title:DORK,time:400,areas:{intro:I,main:A,exit:E},start:{area:'intro',x:40,y:13*T,auto:true},startPlay:{area:'main',x:3*T,y:5*T},check:{area:'main',x:95*T,y:13*T}};
+}
+
+// ------------------------------------------------------------------ 2-3 the rooftops
+function w23(){
+ const A=area(180,'roof');
+ const blds=[[0,14,9],[16,5,7],[23,4,10],[30,7,7],[40,4,8],[47,6,11],[57,8,8],[69,5,9],[78,6,6],[88,4,10],[96,7,8],[107,5,5],[116,6,9],[126,4,7],[134,8,10],[146,5,8]];
+ for(const [c,w,top] of blds)A.building(c,w,top);
+ // steel beams and window-washer platforms over the gaps
+ A.lift({x:55*T,y:9*T,kind:'h',x0:53*T+8,x1:56*T+8,vx:.6,w:48});
+ A.lift({x:86*T,y:10*T,kind:'v',y0:6*T,y1:12*T,vy:-.7,w:48});
+ A.lift({x:142*T,y:8*T,kind:'h',x0:141*T,x1:145*T,vx:-.6,w:48});
+ A.row(42,4,'HHH');A.coinRun(42,44,3);A.row(103,6,'HHHH');A.coinRun(103,106,5);
+ A.q(33,3,'power');A.row(60,4,'B?B',{61:'coin'});
+ A.coinRun(17,20,5);A.coinRun(79,83,4);A.coinRun(117,121,7);A.coinRun(135,140,8);
+ A.ground(154,179);A.stairs(156,3,1);A.col(159,3);
+ flagAndCastle(A,167,171);
+ A.foe('goomba',18,7);A.foe('goomba',72,9);A.foe('goomba',120,9);A.foe('goomba',162);
+ A.foe('koopaRed',33,7);A.foe('koopaRed',60,8);A.foe('koopaRed',99,8);A.foe('koopaRed',137,10);A.foe('koopa',81,6);
+ A.foe('paraRed',91,6,{y0:4*T,y1:10*T});A.foe('paraRed',129,5,{y0:3*T,y1:7*T});
+ return {name:'2-3',title:DORK,time:300,areas:{main:A},start:{area:'main',x:40,y:9*T},check:{area:'main',x:78*T+40,y:6*T}};
+}
+
+// ------------------------------------------------------------------ 2-4 Bowser's HQ tower
+function w24(){
+ const A=area(160,'tower');A.scenery=false;
+ A.fill(0,159,2,2,CASTLE);A.fill(0,20,10,14,CASTLE);A.text('KOOPA HOLDINGS INC.',2,5);
+ A.lava(21,23);A.fill(24,40,10,14,CASTLE);A.firebar(29,6,1);A.firebar(35,9,-1);
+ // the elevator shaft
+ A.lava(41,46);A.lift({x:43.5*T,y:9*T,kind:'v',y0:5*T,y1:11*T,vy:-.6,w:48,look:'elevator'});
+ A.fill(47,70,10,14,CASTLE);A.fill(52,64,3,5,CASTLE);A.q(58,7,'power');A.firebar(67,9,1);
+ A.lava(71,75);A.lift({x:73*T,y:9*T,kind:'h',x0:71*T+8,x1:75*T+8,vx:.6,w:32,look:'elevator'});
+ A.fill(76,100,10,14,CASTLE);A.firebar(81,6,1);A.firebar(88,9,-1);A.firebar(95,6,1);
+ A.fill(101,112,8,14,CASTLE);A.fill(101,112,3,3,CASTLE);
+ // the boardroom catwalk over the shaft: the CEO, the emergency axe and Toad
+ A.fill(113,125,10,10,BRIDGE);A.lava(113,125);A.set(125,9,CHAIN);
+ A.fill(126,159,10,14,CASTLE);A.fill(158,159,2,9,CASTLE);
+ A.bridge={c0:113,c1:125,r:10};A.axe={x:126*T+8,y:9*T+8,glass:true};A.bowser={x:121*T,y:10*T,home:121*T,ceo:true};A.toad={x:141*T+8,y:10*T};
+ A.bowserFireFrom=80*T;A.toadLines=['BUT OUR PRINCESS GOT','TRANSFERRED TO ANOTHER BRANCH!'];
+ return {name:'2-4',title:DORK,time:300,areas:{main:A},start:{area:'main',x:40,y:10*T},check:{area:'main',x:48*T,y:10*T}};
+}
+
+const STAGES=[w11,w12,w13,w14,w21,w22,w23,w24];
 const buildStage=i=>STAGES[i]();
 Object.assign(exports,{T,ROWS,TILE,SOLID,BACK,buildStage,STAGE_COUNT:STAGES.length});

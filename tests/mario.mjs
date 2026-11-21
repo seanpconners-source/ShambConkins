@@ -85,6 +85,10 @@ if(!only.length||only.includes('world')){const t=await launch('smb-world-1',[110
  if(d.phase!=='warp')fail('warp pipe did not open the Warp Zone message');else{console.log('  warp recruit',d.warp.id);if(d.warp.world!==3)fail(`pipe 3 reported world ${d.warp.world}`);if(d.warp.id&&!d.rec[0].includes(d.warp.id))fail('recruit not recorded in gameRecruits');}
  await page.waitForTimeout(2400);await shot('warpmsg');await page.keyboard.press('Enter');
  d=await until(d=>d.phase==='play'&&d.pl[0].st===2,9000);if(d.pl[0].st!==2)fail(`warp did not continue in 1-3 (${d.pl[0].st})`);await page.waitForTimeout(300);await shot('1-3');
+ // pipe 2 of the Warp Zone goes to World 2-1
+ await dbg('d.toWarpZone(0,2)');await page.waitForTimeout(250);await page.keyboard.down('s');d=await until(d=>d.phase==='warp',4000);await page.keyboard.up('s');
+ if(d.phase!=='warp'||d.warp.world!==2)fail(`pipe 2 did not open the Warp Zone message (${d.phase})`);await page.waitForTimeout(2400);await shot('warp2');await page.keyboard.press('Enter');
+ d=await until(d=>d.phase==='play'&&d.pl[0].st===4,12000);if(d.pl[0].st!==4)fail(`pipe 2 did not lead to World 2-1 (${d.pl[0].st})`);else console.log('  ok   warp pipe 2 → 2-1');
  // 1-4: Bowser's bridge, the axe, Toad; the 1 PLAYER GAME then hands over to P2
  await dbg('d.teleport(0,108*16,3)');await page.waitForTimeout(500);await shot('1-4');
  // Bowser takes five fireballs, then flips over as the Goomba he really is (1-4)
@@ -94,12 +98,22 @@ if(!only.length||only.includes('world')){const t=await launch('smb-world-1',[110
  await dbg('d.pl[0].inv=0;d.pl[0].dead=0;d.pl[0].big=false;');
  await dbg('d.teleport(0,126*16+2,3)');d=await until(d=>d.log.join().includes('axe'),3000);if(!d.log.join().includes('axe'))fail('axe not reached');
  await page.waitForTimeout(5200);await shot('toad');
- d=await until(d=>d.pl[0].done,12000);if(!d.pl[0].done)fail(`rescuing Toad did not finish P1's World 1 (${JSON.stringify(d.pl[0])})`);
+ // World 2 (New Dork City): 1-4 leads on to 2-1, 2-2 is underwater (jump = swim stroke, the surface stops you), 2-4's axe ends the game
+ d=await until(d=>d.phase==='play'&&d.pl[0].st===4,15000);if(d.pl[0].st!==4)fail(`Toad in 1-4 did not lead on to World 2-1 (${JSON.stringify(d.pl[0])})`);else console.log('  ok   1-4 → 2-1');
+ await page.waitForTimeout(400);await shot('2-1');
+ await dbg("d.teleport(0,24*16,5);d.worlds[0].areas.main.enemies.forEach(e=>e.alive=false);");await page.waitForTimeout(300);
+ const swim=[];for(let k=0;k<12;k++){await page.keyboard.press('w');await page.waitForTimeout(110);swim.push(await dbg('return d.pl[0].y-(d.pl[0].big?30:15)'));}
+ check('swim: highest head (px, surface 49)',Math.min(...swim),49,120);await shot('2-2');
+ await page.waitForTimeout(2600);check('swim: sinks back to the floor (feet y)',await dbg('return d.pl[0].y'),207,209);
+ await dbg('d.teleport(0,60*16,6)');await page.waitForTimeout(400);await shot('2-3');
+ await dbg('d.teleport(0,111*16,7)');await page.waitForTimeout(400);await shot('2-4');if(!(await dbg('return !!d.worlds[0].areas.main.bowser.ceo')))fail('2-4 Bowser is not the CEO');
+ await dbg('d.pl[0].inv=0;d.pl[0].dead=0;d.teleport(0,126*16+2,7)');
+ d=await until(d=>d.pl[0].done,20000);if(!d.pl[0].done)fail(`rescuing Toad in 2-4 did not finish P1's game (${JSON.stringify(d.pl[0])})`);
  await ready();d=await until(d=>d.phase==='play'&&d.turn===1,8000);if(d.turn!==1)fail('P2 never got a turn');if(!(d.ghost>100))fail(`no ghost recorded (${d.ghost})`);
  // P2 loses three lives: GAME OVER and the result
  for(let k=0;k<3;k++){d=await until(d=>d.phase==='play'&&!d.pl[1].dead,9000);await dbg('d.kill(1)');d=await until(d=>d.phase!=='play',9000);if(k===2)await shot('gameover');}
  d=await until(d=>d.pl[1].over,6000);if(!d.pl[1].over)fail(`P2 should be game over (${JSON.stringify(d.pl[1])})`);
- const r=await t.result();console.log('  result:',r&&r.replace(/\n+/g,' | '));if(!r||!/World 1/.test(r))fail('no World 1 result dialog');
+ const r=await t.result();console.log('  result:',r&&r.replace(/\n+/g,' | '));if(!r||!/Worlds 1-2/.test(r))fail('no Worlds 1-2 result dialog');
  await done(t,'world');}
 
 // ---------------------------------------------------------------- World 1, 2 PLAYER GAME on a phone: Mario and Luigi swap on a lost life
