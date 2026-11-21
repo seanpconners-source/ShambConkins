@@ -1,8 +1,13 @@
 # Changelog
 
-## Unreleased
+## v0.99.32
 
 - **Simon, the real toy.** Simon Says Face-Off is rebuilt full screen: the 1978 Simon seen from above on the floor of a messy 90s kid's bedroom, with the real Simon tones (green 415 Hz, red 310, yellow 252, blue 209), a tone that lasts as long as you hold the pad, the toy's playback speeds (faster at 6 and 14), 3 seconds per press, and the low razz buzz with the right pad lit when someone slips. Slots for the owner's pictures (the toy dim + each pad lit, two backgrounds) and optional real recordings.
+- **Simon art.** The toy is now a real photo-style Simon (dim and each pad lit) on a 90s bedroom floor packed with slime, foam darts, consoles, pogs and a pizza box, upright and sideways.
+- **Real quotes only.** Characters now only ever say their real lines from their movie or show (175 more real quotes added); the made-up description lines are gone. Tapper customers say only their own quotes, or nothing.
+- **REZN out of the lineup** for now (a pinball table for them is on the to-do list). Shane Ober's name is spelled right.
+- **New faces:** Stassi Schroeder, Carlos Valle, Upgrayedd, President Camacho and Not Sure, with more moods.
+- **New Arcade art:** Stacker and Fruit Ninja icon, logo and background (placed by hand on every screen).
 
 ## v0.99.31
 
