@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.99.41
+
+- **Sewer Clash rebuilt as an arcade sewer brawl** (played like the 1983 Mario Bros. arcade game, with our own sewer and enemies). You can't jump through ledges: jump under one to flip the enemy standing on it, then touch it to kick it out. Foot Soldiers flip with one bump, Mousers need two (the first just makes them mad), Krang Pods only while they're down. Flipped enemies get back up faster; the last one turns blue and fast. Every kick sends a pizza slice out of a pipe, the POW block flips everything on the ground, ooze blobs drift across, and every few phases there's a Pizza Party bonus round. 1 player plays phase after phase until the last life; 2 players share the screen; online works too.
+- **Driller Duel is now Dig Duel** (played like Dig Dug). Tunnel through four layers of dirt, pump Mole Rats and Fire Newts with your air hose until they pop, and dig under rocks to drop them on them. Enemies float through the dirt as ghost eyes, newts breathe fire, the last one runs for the exit, and two dropped rocks bring out a bonus pickle. 1 player plays round after round; 2 players take turns on the same field; online you both dig at once.
+- **Flappy Disaster feels like it used to again:** the old floaty gravity and gentle flap, slower start, and no more zoomed-in view. The 16 new looks stay.
+- **Angry Heads camera:** zoom in and out (pinch, the +/- buttons or the mouse wheel; it remembers), drag to look around up and down as well as sideways, the slingshot starts on screen, a full pull fits on any phone (pull from wherever you grab), and the next shot comes as soon as things settle (no more waiting while the head rolls away).
+- **Breakout** speeds up sooner. **Pong** keeps getting faster every hit until someone misses.
+- **Super Mario Bros.**
+  - Every world's beanstalk now climbs to its own sky area: penthouse rooftops, the top of the coaster, a neon skywalk, treetops, the Devil's balcony and the Pearly Gates.
+  - Flying or jumping over the flagpole now catches you at the top for full points (no more getting stuck behind the castle).
+  - The title screen lets you start from any world you reached by beating the castle before it (warping there doesn't count).
+  - A ski flip is a weapon: flip off a ramp or press B in the air on skis and you take out any enemy you touch until you land.
+  - Super Stars are hidden in bricks from World 4 on.
+  - Hammer throwers keep one colour, throw a bit less often and reach for a new hammer after each throw.
+
 ## v0.99.40
 
 - **Super Mario Bros. castle fixes.**
