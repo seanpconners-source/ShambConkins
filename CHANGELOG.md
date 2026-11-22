@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.99.40
+
+- **Super Mario Bros. castle fixes.**
+  - Castle rooms have real headroom now, and the fire bars down by the floor are shorter and turn so they come round behind you instead of up in front of you.
+  - The castle mazes (4-4, 7-4, 8-4): stairs up to the top path, both paths tall enough to jump in, short fire bars with room to get past, and a trail of coins on the right way. Go the wrong way twice and it tells you to try the top or bottom path.
+  - The flowers in 1-4, 2-4 and 3-4 could get stuck under the ceiling where you couldn't reach them: fixed (and a hidden 1-up in 4-2).
+- **Super Mario Bros. secrets and new pieces.**
+  - 4-2's room over the ceiling is now a Warp Zone, like 1-2: pipes to Worlds 5, 6 and 7. (The hidden pipe on the ledge still works too.)
+  - Rows of one-block gaps: run over them at full speed and you skim across, walk and you drop in (5-1, 5-2, 7-1, 8-1).
+  - Flying fish leap at you all through 4-3.
+
 ## v0.99.39
 
 - **Kingpin Bowling rebuilt from scratch.** A real 3D bowling alley: the ball skids on the oil, hooks on the dry back end and rolls into the pins, and the pins fly with real physics. Hit the pocket with a hook for strikes; light hits leave the 10-pin, nose hits leave splits.
