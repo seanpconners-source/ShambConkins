@@ -7,17 +7,21 @@
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const DIRS=[[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];
 
-function createControls(s,c,{np=2,solo=false,onDown=null}={}){
+function createControls(s,c,{np=2,solo=false,onDown=null,jumpOnly=false}={}){
  const st=[0,1].slice(0,np).map(()=>({stick:null,fire:null,jump:null,jumpN:0,keys:{},padJump:false,bot:null,lastTouch:0}));
  let W=s.W,H=s.H,Z=[],touched=false,R=40;
  const coarse=typeof matchMedia==='function'&&matchMedia('(pointer: coarse)').matches;
 
  function layout(w,h){W=w;H=h;
   const r=clamp(Math.min(W,H)*.085,30,54),m=Math.max(14,r*.45);R=r*1.15;
-  if(solo||np===1){Z=[{x0:0,x1:W,stickX1:W*.5,fire:{x:W-m-r*2.45,y:H-m-r,r},jump:{x:W-m-r*.85,y:H-m-r*2.35,r:r*.82},rest:{x:m+R*1.3,y:H-m-R*1.3},side:1}];return;}
+  if(solo||np===1){Z=[{x0:0,x1:W,stickX1:W*.5,fire:{x:W-m-r*2.45,y:H-m-r,r},jump:{x:W-m-r*.85,y:H-m-r*2.35,r:r*.82},rest:{x:m+R*1.3,y:H-m-R*1.3},side:1}];
+   if(jumpOnly){Z[0].jump={x:W-m-r*1.1,y:H-m-r*1.1,r:r*1.12};Z[0].fire={x:-1e4,y:-1e4,r:0};}return;}
   const half=W/2;
   Z=[{x0:0,x1:half,stickX1:half*.56,fire:{x:half-m-r,y:H-m-r,r},jump:{x:half-m-r*.95,y:H-m-r*3.15,r:r*.82},rest:{x:m+R*1.3,y:H-m-R*1.3},side:1},
      {x0:half,x1:W,stickX1:half+half*.44,fire:{x:half+m+r,y:H-m-r,r},jump:{x:half+m+r*.95,y:H-m-r*3.15,r:r*.82},rest:{x:W-m-R*1.3,y:H-m-R*1.3},side:-1}];
+
+  // jumpOnly (platformers with one button): a single big JUMP where FIRE was, no FIRE button
+  if(jumpOnly)for(const z of Z){z.jump={...z.fire,r:z.fire.r*1.12};z.fire={x:-1e4,y:-1e4,r:0};}
  }
  const zoneOf=px=>solo||np===1?0:px<W/2?0:1;
  const near=(b,p,k=1.45)=>Math.hypot(p.x-b.x,p.y-b.y)<=b.r*k;
@@ -79,7 +83,7 @@ function createControls(s,c,{np=2,solo=false,onDown=null}={}){
    x.lineWidth=3;x.strokeStyle=`rgba(${col},${k?.55:.28})`;x.fillStyle=`rgba(0,0,0,${k?.22:.12})`;x.beginPath();x.arc(cx,cy,R,0,7);x.fill();x.stroke();
    let kx=cx,ky=cy;if(k){const dx=k.x-k.ox,dy=k.y-k.oy,d=Math.hypot(dx,dy)||1,m=Math.min(d,R);kx=cx+dx/d*m;ky=cy+dy/d*m;}
    x.fillStyle=`rgba(${col},${k?.75:.35})`;x.beginPath();x.arc(kx,ky,R*.42,0,7);x.fill();
-   for(const [b,label,on] of [[z.fire,'FIRE',!!q.fire],[z.jump,'JUMP',!!q.jump]]){
+   for(const [b,label,on] of [[z.fire,'FIRE',!!q.fire],[z.jump,'JUMP',!!q.jump]]){if(!b.r)continue;
     x.fillStyle=on?`rgba(${col},.55)`:'rgba(0,0,0,.28)';x.strokeStyle=`rgba(${col},${on?.95:.5})`;x.lineWidth=on?4:3;
     x.beginPath();x.arc(b.x,b.y,b.r*(on?.94:1),0,7);x.fill();x.stroke();
     x.fillStyle=on?'#fff':`rgba(${col},.85)`;x.font=`900 ${Math.round(b.r*.36)}px "SC Nunito",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText(label,b.x,b.y);}
