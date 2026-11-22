@@ -81,7 +81,7 @@ async function ballrun2p(s){
  const bodies=[bodyOf(0),bodyOf(1)];if(bodies[0]===bodies[1]&&!s.solo)bodies[1]=bodies[0]==='indy'?'lara':'indy';
  let clips=null,trex=null,crew=null;const chars={};const palT=R.texture(PR.paletteCanvas(),{mips:false});
  async function loadChar(b){if(chars[b])return chars[b];const M=await skm(b);const tex={};await Promise.all(M.groups.map(async g=>{tex[g.tex]=await pic(g.tex);}));
-  const ch=R.character(M,n=>tex[n]);const pp=PR.buildProps(b,M);const prop=R.skinnedProp({...pp.geo,tex:palT});chars[b]={M,ch,prop,facts:pp.facts,img:tex};return chars[b];}
+  const pp=PR.buildProps(b,M);if(b==='indy'||b==='lara')tuckFace(M,pp.facts);const ch=R.character(M,n=>tex[n]);const prop=R.skinnedProp({...pp.geo,tex:palT});chars[b]={M,ch,prop,facts:pp.facts,img:tex};return chars[b];}
  // the T-Rex (Quaternius CC0, tools/trun/build-creature.py): mesh + its own clips; optional (a missing file = no dinosaur, the cart stands in)
  // CC0 scenery models + their textures (tools/trun/build-props.py): optional, the world falls back to its drawn scenery
  async function loadProps(){try{const u=USER_PORTRAITS['trun:props'];if(!u)return;const u8=await gunzip(await assetBytes(u));
@@ -102,7 +102,7 @@ async function ballrun2p(s){
  const W={phase:'load',t:0,speed:1,faces:[]};
  // The portrait is painted bigger than its own face box (k = face width / texture width) and a little wider (sx) so it
  // reaches ear to ear and brow to chin on the model; edges feathered; the model's skin is tinted to the photo's skin.
- const FACE_FIT={k:.75,cy:166,sx:1.11,sy:1.22,ay0:-1.5};
+ const FACE_FIT={k:.72,cy:144,sx:1.14,sy:1.1,ay0:-1.6};// chin and beard inside the texture (cy 166 cut them off below the mouth)
  function feather(cv){const g=cv.getContext('2d');if(!('filter' in g))return;const c2=document.createElement('canvas');c2.width=c2.height=256;const g2=c2.getContext('2d');
   g2.filter='blur(2.5px)';g2.drawImage(cv,0,0);g.globalCompositeOperation='destination-in';g.drawImage(c2,0,0);g.drawImage(c2,0,0);g.globalCompositeOperation='source-over';}
  // median colour of the cheeks (opaque, not beard-dark, not highlight) or null while the portrait is still loading
@@ -118,6 +118,17 @@ async function ballrun2p(s){
   for(let o=0;o<d.length;o+=4){if(!isSkin(o))continue;const dr=d[o]-ref[0],dg=d[o+1]-ref[1],db=d[o+2]-ref[2],wt=.75*Math.exp(-(dr*dr+dg*dg+db*db)/(2*60*60));
    for(let c=0;c<3;c++)d[o+c]=Math.min(255,d[o+c]*(1+(k[c]-1)*wt));}
   g.putImageData(id,0,0);C.ch.setTexture(gr.mat,cv);}
+ // The model's own nose, lips, jaw and chin stick out past the face patch (the photo then looks cut off at the mouth with
+ // the model's chin hanging below it). Before the mesh is uploaded, every front-of-head vertex inside the patch's reach is
+ // pulled in to TUCK of the patch shell, so only the photo shows there. Ears, hair and the back of the head stay as they are.
+ const TUCK=.9;
+ function tuckFace(M,F){const h=F.head,j=F.jointIndex('Head'),f=new Float32Array(M.blob,M.vb,M.verts*7),u8=new Uint8Array(M.blob,M.vb,M.verts*28);
+  const rx=h.r[0]*1.07,ry=h.r[1]*1.02,rz=h.r[2]*1.06,cx=h.c[0],cy=h.c[1]-h.r[1]*.08,cz=h.c[2];let n=0;
+  for(let i=0;i<M.verts;i++){const o=i*28;let w=0;for(let k=0;k<4;k++)if(u8[o+20+k]===j)w+=u8[o+24+k];if(w<20)continue;
+   const dx=(f[i*7]-cx)/rx,dy=(f[i*7+1]-cy)/ry,dz=(f[i*7+2]-cz)/rz;if(dz<=.02)continue;const e=Math.hypot(dx,dy,dz),th=Math.atan2(dx,dz),ph=Math.asin(Math.max(-1,Math.min(1,dy/e)));
+   if(Math.abs(th)>1.25||ph>.8||ph<-1.45||e<=TUCK)continue;const k=1-(1-TUCK/e)*Math.min(1,w/200);
+   f[i*7]=cx+dx*k*rx;f[i*7+1]=cy+dy*k*ry;f[i*7+2]=cz+dz*k*rz;n++;}
+  return n;}
  function faceProp(b,i){const F=chars[b].facts,h=F.head,j=F.jointIndex('Head'),cvf=document.createElement('canvas');cvf.width=cvf.height=256;
   const paint=()=>{const g=cvf.getContext('2d'),q=W.faceTune||FACE_FIT;g.clearRect(0,0,256,256);g.save();g.translate(128,q.cy);g.scale(q.sx,q.sy||1);try{require("src/headFacts.js").drawFace(s,g,i,0,0,256,'normal',1,q.k);}catch{}g.restore();
    let tone=null;try{tone=cheekTone(cvf,q);feather(cvf);if(tone&&!W.noTint)tintSkin(b,tone);}catch{}};paint();
