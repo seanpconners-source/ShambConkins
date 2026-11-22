@@ -29,6 +29,7 @@ time, in order, skipping anything marked done (✅). Name every file exactly as 
 | **Simon** (the real 1978 toy from above: all pads dark + each pad lit, and a messy 90s kid's bedroom floor, tall + wide) | `docs/art-for-gpt/SIMON-ART.md` | `docs/art-for-gpt/simon-templates/` | which files are in `assets/simon/` |
 | **Strands & Ladders** (Chutes and Ladders as a Death Stranding board game: printed board, spinner, standee pawns, table, logo, event card, 19 deed/slip pictures) | `docs/art-for-gpt/STRANDS-ART.md` | `docs/art-for-gpt/strands-templates/` | which files are in `assets/strands/` |
 | **Shooter McGavin's Pro Tour** (arcade trackball golf: 2 golfer sheets, 3 skies, 11 trees, trackball, flag, logo, title backdrop, textures) | `docs/art-for-gpt/GOLF-ART.md` | `docs/art-for-gpt/golf-templates/` | which files are in `assets/golf/` |
+| **Plinko + The Big Wheel** (game-show studio, curtain, Plinko board/chip/logo, wheel cabinet/logo, our own host + 2 assistants, name tag) | `docs/art-for-gpt/GAMESHOW-ART.md` | `docs/art-for-gpt/gameshow-templates/` | which files are in `assets/gameshow/` |
 | **Arcade key art, logos, icons** (picture behind each game, its logo, its tile icon) | `docs/arcade-art/PROMPTS.md` (a ready prompt per slot; ✅ = done) | | `assets/tiles/SLOTS.md` |
 | **Item pictures** | this file → "Item pictures" | `docs/art-for-gpt/ITEMS-TODO.md` (every item still without art) | same list |
 | **Character portraits** | this file → "Character portraits" | `docs/art-for-gpt/PORTRAITS-TODO.md` | same list |

@@ -63,7 +63,7 @@ const COLLECTIONS=[
  ['sports','Sports','Ballparks, rinks, lanes and greens','major-league-bats',['@baseball','mcgavin-pro-tour','kingpin-bowling','league-penalties','happy-gilmore-golf','taskmaster-curling','@ducks','underdog-dodgeball','fight-night','baseketball-shootout','wind-archery','fast-quarter-mile']],
  ['paddys',"Paddy's Pub",'Beer pong, flip cup, darts, pool and the bar machine','paddys-beer-pong',['@pool','paddys-beer-pong','flipadelphia-cup','paddys-darts','megatouch-photohunt']],
  ['party','Party Games','Quick, loud and stupid','taskmaster-micro-relay',['@taskmaster','@rush','@southpark','hungry-hungry-heads','review-pancakes','kitchen-service','gopher-hunt','warehouse-shift','rainbow-rivals']],
- ['shows','Game Shows & Trivia','Quiz nights and TV game shows','trivia-hardcore',['@trivia','price-bid-off','newlywed-spirit','roast-battle','draw-it']],
+ ['shows','Game Shows & Trivia','Quiz nights and TV game shows','trivia-hardcore',['@trivia','price-bid-off','plinko-show','big-wheel','newlywed-spirit','roast-battle','draw-it']],
  ['movies','Movie Night','Tarantino, Bond, Terminator and friends','tarantino-crazy88',['@tarantino','@bond','@terminator','@hangman','raiders-ball-run','alien-sonar-grid','sean-of-the-dead']],
  ['@casino'],['@pinball'],['@bosses']];
 // A collection that is just one franchise ('@casino') puts that franchise on the top shelf as it is.

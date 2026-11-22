@@ -1,7 +1,7 @@
 // Content pack: partyPack. Slow, social pass-and-play games (hidden information, bluffing, drawing, prediction).
 // Engines are required lazily: packs load early, and the engine modules pull in assets/characters (circular otherwise).
 const lazy=(file,name)=>s=>require(file)[name](s);
-const engines={partyNewlywed:lazy("src/engines/partyNewlywed.js","newlywed"),partyRoast:lazy("src/engines/partyRoast.js","roast"),partyLiarsDice:lazy("src/engines/partyLiarsDice.js","liarsDice"),partyDrawIt:lazy("src/engines/partyDrawIt.js","drawIt"),partyBattleship:lazy("src/engines/partyBattleship.js","battleship"),partySimon:lazy("src/engines/partySimon.js","simon"),partyPrice:lazy("src/engines/priceShow.js","priceShow")};
+const engines={plinko:lazy("src/engines/plinkoShow.js","plinko"),bigwheel:lazy("src/engines/bigWheel.js","bigWheel"),partyNewlywed:lazy("src/engines/partyNewlywed.js","newlywed"),partyRoast:lazy("src/engines/partyRoast.js","roast"),partyLiarsDice:lazy("src/engines/partyLiarsDice.js","liarsDice"),partyDrawIt:lazy("src/engines/partyDrawIt.js","drawIt"),partyBattleship:lazy("src/engines/partyBattleship.js","battleship"),partySimon:lazy("src/engines/partySimon.js","simon"),partyPrice:lazy("src/engines/priceShow.js","priceShow")};
 const games=[
  {id:'newlywed-spirit',engine:'partyNewlywed',family:'partyNewlywed',title:'The Newlywed Game · Spirit Battery',source:'The Newlywed Game',icon:'💞',category:'puzzle',level:'spirit',duration:'7 rounds',
   rules:'Answer a question about yourself in secret while your partner secretly guesses it. Matches charge the sync battery and score points; the last round is worth double.'},
@@ -17,6 +17,10 @@ const games=[
   rules:'Pads light up in a growing pattern. Repeat the whole pattern from the start, then add one new pad for your opponent. The first mistake loses, and the pattern speeds up as it grows.'}
  ,{id:'price-bid-off',engine:'partyPrice',family:'partyPrice',title:'The Price Is Right · Come On Down!',source:'The Price Is Right',icon:'🎡',category:'puzzle',level:'mind',duration:'a whole episode',
   rules:'Three rounds on Contestants’ Row: bid on a prize, closest without going over wins it. Then Plinko, Cliff Hangers (don’t let the yodeler fall) and the Big Wheel. Most money wins.'}
+ ,{id:'plinko-show',engine:'plinko',family:'plinko',title:'Plinko',source:'The Price Is Right',icon:'🔵',category:'puzzle',level:'mind',duration:'a contestant each',noBleed:true,
+  rules:'Come on down! Price four small prizes (one digit in each price is right) to win up to five Plinko chips, then drag a chip along the top of the board and let it go. It rattles down the pegs into $100, $500, $1,000, $0 or the $10,000 slot in the middle. Most money wins.'}
+ ,{id:'big-wheel',engine:'bigwheel',family:'bigwheel',title:'The Big Wheel',source:'The Price Is Right',icon:'🎡',category:'puzzle',level:'mind',duration:'a showdown',noBleed:true,
+  rules:'Three contestants take turns at the Big Wheel: pull it down hard enough to go all the way round, then spin once more if you like. Closest to $1.00 without going over wins; hit exactly $1.00 for $1,000 and a bonus spin.'}
 ];
 const events=[];
 Object.assign(exports,{engines,games,events});
