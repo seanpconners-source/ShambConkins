@@ -75,6 +75,21 @@ Pieces (transparent around them, sizes on their templates):
   as a plain dark oval), `fan` (ceiling fan, wobbly), `trophy-case` (glass case, shelves empty: the game adds trophies),
   `megatouch` (bar-top game machine, screen dark), `rum-ham` (a glazed ham on a platter).
 
+## 5b. Cue racks on the Pool Hall wall (`rack-<id>`, 280 x 564, added Nov 22)
+
+The player's cue hangs on the hall's back wall in a rack. The game draws the equipped cue standing on the template's dashed
+line (butt in a cup at the bottom, shaft through a clip at the top), so leave that middle slot EMPTY. Transparent around the
+rack. Seen straight on, lit like the rest of the hall (warm light from the table lamp on the right).
+
+| Slot | Picture |
+|---|---|
+| `rack-plywood` | Charlie's Plywood Rack: two crooked scraps of plywood nailed together, bent nails, a strip of grey duct tape as the top clip, an old coffee can screwed on as the butt cup. Leans a little. Ugly and rickety. |
+| `rack-pallet` | Pallet-Wood Rack: horizontal pallet slats on two uprights, rusty nails, rough edges. |
+| `rack-pine` | Hardware-Store Pine Rack: clean pale pine board, a drilled top rail and a bottom shelf with three holes. |
+| `rack-oak` | Oak Wall Rack: dark stained oak, brass clips, a small chalk shelf with a blue cube on it. |
+| `rack-case` | Lit Glass Case: black frame, glass door with reflections, an LED strip along the top, felt backing, chrome lock. |
+| `rack-golden` | Golden God Shrine: arched gold frame, red velvet lining, a gold star at the base, its own warm spotlight glow. |
+
 ## 6. Logo (`logo`, 1200 x 480)
 "PADDY'S POOL" in a bold neon-sign style (green and gold), maybe an 8-ball in the lettering. Transparent around it.
 

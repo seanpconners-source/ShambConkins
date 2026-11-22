@@ -54,6 +54,14 @@ for (const name of names) {
       const cu = HALL.byId(HALL.CUES, id);
       fade(g => ART.drawCue(g, {...cu, chalk: '#3d78c8'}, w - 2, h / 2, 0, w - 4, h * .9, {shadow: false}), .6);
       x.strokeStyle = cyan; x.lineWidth = 2; x.beginPath(); x.moveTo(w - 3, 0); x.lineTo(w - 3, h); x.stroke(); label('TIP →', w - 70, 18, '#006a8a', 14); label(`cue-${id}: ${cu.name} (butt on the left)`, 10, 18, '#000', 14);
+    } else if (def.kind === 'rack') {
+      const rk = HALL.byId(HALL.RACKS, name.slice(5)), cue = HALL.CUES[0];
+      fade(g => { ART.drawRackBody(g, rk, 0, 0, w, h, 0); }, .55);
+      x.strokeStyle = cyan; x.lineWidth = 3; x.setLineDash([8, 6]); x.beginPath(); x.moveTo(w / 2, h * .03); x.lineTo(w / 2, h * .95); x.stroke(); x.setLineDash([]);
+      x.beginPath(); x.arc(w / 2, h * .1, 10, 0, 6.28); x.stroke(); x.beginPath(); x.arc(w / 2, h * .93, 14, 0, 6.28); x.stroke();
+      label(`${name}: ${rk.name}`, 6, 22, '#000', 15); label('cue stands on the dashed line', 6, h * .5, '#006a8a', 14);
+      label('top clip (y .1)', 6, h * .1 + 26, '#006a8a', 13); label('butt cup (y .93)', 6, h * .93 - 18, '#006a8a', 13);
+      label('transparent around the rack', 6, h - 6, '#a0007a', 13);
     } else if (def.kind === 'floor') {
       fade(g => ART.drawFloor(g, w, h, +name.slice(-1)), .55); label(`floor-${name.slice(-1)} (must tile)`, 10, 24);
     } else if (def.kind === 'wall') {

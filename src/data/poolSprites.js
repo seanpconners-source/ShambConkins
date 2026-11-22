@@ -6,7 +6,7 @@
 // table is a ratty bar table (ripped felt, spills, cigarette burns); every upgrade makes the table and the bar fancier.
 // Our own drawings: no logos from the show, no real brands (Wolf Cola, Fight Milk, Kitten Mittens are the show's own jokes).
 const {USER_PORTRAITS:USER}=require("src/data/userPortraits.js");
-const {TABLES,CUES,DECOR,ROOM}=require("src/data/poolHall.js");
+const {TABLES,CUES,DECOR,ROOM,RACKS}=require("src/data/poolHall.js");
 // TOP VIEW (play screen), 10 px per inch. The playing bed is 88 x 44 in, the cushions 2 in, the rails 5.5 in:
 //  table-<id>: the table seen straight down, 1030 x 590 (outside edge of the rails), bed centre at (515,295). TRANSPARENT
 //   inside the rails (x 55..975, y 55..535: the 2 in cushions + the 88 x 44 in bed) except the six pocket holes: the game
@@ -26,9 +26,12 @@ const {TABLES,CUES,DECOR,ROOM}=require("src/data/poolHall.js");
 //   felt quad `felt` with the chosen colour behind it).
 //  decor-<id>: one picture per decoration, placed at HALL.decor[id].
 //  logo: "PADDY'S POOL" title lettering, 1200 x 480, transparent.
+//  rack-<id>: the wall cue rack at HALL.rack (140 x 282 design px, picture 280 x 564), transparent around it; the game stands
+//   your equipped cue in its middle slot (cue butt in the bottom cup at y .93, shaft through the top clip at y .1).
 const HALL={W:1600,H:1000,floorY:640,
  tv:{x:150,y:96,w:600,h:250,screens:[[[0,0,0,0]],[[205,40,190,150]],[[40,50,240,140],[320,50,240,140]],[[20,20,180,100],[210,20,180,100],[400,20,180,100],[20,130,180,100],[210,130,180,100],[400,130,180,100]],[[30,20,540,210]]]},
  bar:{x:1050,y:300,w:550,h:640},
+ rack:{x:14,y:34,w:140,h:282},
  light:{x:480,y:0,w:640,h:360},
  table:{x:300,y:560,w:1000,h:400,felt:[[160,40],[840,40],[930,250],[70,250]]},
  // (Nov 16) the Paddy's neon and the chalkboard moved out from under the PADDY'S POOL logo; the Megatouch and the rum ham
@@ -40,6 +43,7 @@ const SHEETS={};
 const PICTURES={logo:{kind:'logo',size:[1200,480]},'wear-1':{kind:'wear',size:[880,440]},'wear-2':{kind:'wear',size:[880,440]},'wear-3':{kind:'wear',size:[880,440]}};
 for(const t of TABLES){PICTURES['table-'+t.id]={kind:'table',size:[1030,590]};PICTURES['hall-table-'+t.id]={kind:'hall-table',size:[HALL.table.w,HALL.table.h]};}
 for(const c of CUES)PICTURES['cue-'+c.id]={kind:'cue',size:[1200,48]};
+for(const r of RACKS)PICTURES['rack-'+r.id]={kind:'rack',size:[280,564]};
 for(let n=0;n<5;n++){PICTURES['floor-'+n]={kind:'floor',size:[512,512]};PICTURES['wall-'+n]={kind:'wall',size:[1600,320]};PICTURES['hall-'+n]={kind:'hall',size:[1600,1000]};}
 for(const slot of ['bar','light','tv'])for(let n=slot==='tv'?1:0;n<5;n++)PICTURES[`hall-${slot}-${n}`]={kind:'hall-'+slot,size:[HALL[slot].w,HALL[slot].h]};
 for(const d of DECOR)if(d.id!=='crowd'){const r=HALL.decor[d.id];PICTURES['decor-'+d.id]={kind:'decor',size:[r[2],r[3]]};}

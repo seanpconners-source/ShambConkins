@@ -204,7 +204,7 @@ function flickerAt(t){const ph=t%5.3;return ph<.42&&Math.sin(ph*52)>0;}
 // ---------------------------------------------------------------- the Pool Hall scene (straight-on view of Paddy's)
 const H=PS.HALL;
 function hallCover(W,Hh){const k=Math.max(W/H.W,Hh/H.H);return {k,ox:(W-H.W*k)/2,oy:(Hh-H.H*k)/2};}
-function drawHall(g,W,Hh,hall,t,{faces=[],feltColor,table,highlight,view,only=null,ballset=null}={}){
+function drawHall(g,W,Hh,hall,t,{faces=[],feltColor,felt=null,table,highlight,view,only=null,ballset=null,rack=null,cue=null,chalk=null}={}){
  const want=k=>!only||only===k;
  const v=view||[0,0,W,Hh],k=Math.max(v[2]/H.W,v[3]/H.H),cv={k,ox:v[0]+(v[2]-H.W*k)/2,oy:v[1]+(v[3]-H.H*k)/2};
  if(!only){g.fillStyle='#0d0907';g.fillRect(0,0,W,Hh);}g.save();g.translate(cv.ox,cv.oy);g.scale(cv.k,cv.k);
@@ -232,10 +232,12 @@ function drawHall(g,W,Hh,hall,t,{faces=[],feltColor,table,highlight,view,only=nu
  if(dec('fan')){const r=D.fan;if(!put('decor-fan',...r)){const cx=r[0]+r[2]/2,a=t*7;g.fillStyle='#3a2a1a';g.fillRect(cx-6,0,12,30);g.save();g.translate(cx,40);g.scale(1,.18);for(let i=0;i<4;i++){g.rotate(Math.PI/2);g.fillStyle='#5a4028';g.fillRect(10,-14+Math.sin(a+i)*2,r[2]*.45,28);}g.restore();g.fillStyle='#2a1e12';g.beginPath();g.ellipse(cx,42,22,12,0,0,6.28);g.fill();}}
  if(dec('jukebox')){const r=D.jukebox;if(!put('decor-jukebox',...r))drawJukebox(g,r,t);}
  if(dec('trophy-case')){const r=D['trophy-case'];if(put('decor-trophy-case',...r))drawTrophies(g,r,hall.stats.racks);else{g.fillStyle='#3a2414';g.fillRect(...r);g.fillStyle='rgba(180,220,255,.15)';g.fillRect(r[0]+10,r[1]+10,r[2]-20,r[3]-20);const n=Math.min(12,hall.stats.racks);for(let i=0;i<n;i++){const tx=r[0]+30+(i%3)*45,ty=r[1]+60+Math.floor(i/3)*55;g.fillStyle='#e6c04a';g.fillRect(tx-6,ty,12,16);g.beginPath();g.arc(tx,ty,13,Math.PI,0);g.fill();g.fillRect(tx-12,ty+16,24,6);}}}
+ // the cue rack on the wall with your cue in it (owner, Nov 22)
+ if(rack&&want('rack'))drawHallRack(g,rack,cue,chalk,t);
  // bar
  if(want('bar'))drawBar(g,room.bar,t,dec('megatouch'),dec('rum-ham'));else if(dec('megatouch')||dec('rum-ham'))drawBar(g,-1,t,dec('megatouch'),dec('rum-ham'),room.bar);
  // pool table
- if(want('table'))drawHallTable(g,table,feltColor,highlight==='table',ballset);
+ if(want('table'))drawHallTable(g,table,felt||{color:feltColor},highlight==='table',ballset);
  // light over the table
  if(want('light'))drawHallLight(g,room.light,t,steady);
  // the regulars
@@ -304,10 +306,19 @@ function drawBar(g,tier,t,mega,ham,onTier=tier){
  if(ham){const m=onBar(H.decor['rum-ham']);if(!PS.picture('decor-rum-ham')){g.fillStyle='#e6e6e6';g.beginPath();g.ellipse(m[0]+m[2]/2,m[1]+m[3]*.8,m[2]*.5,m[3]*.18,0,0,6.28);g.fill();g.fillStyle='#b8542a';g.beginPath();g.ellipse(m[0]+m[2]/2,m[1]+m[3]*.5,m[2]*.36,m[3]*.36,0,0,6.28);g.fill();g.fillStyle='#e0d0a0';g.fillRect(m[0]+m[2]*.8,m[1]+m[3]*.38,22,10);}else g.drawImage(PS.picture('decor-rum-ham'),...m);}
 }
 let hallBalls=null;
-function drawHallTable(g,table,feltColor,glow,ballset){
- const r=H.table,fq=r.felt.map(([a,b])=>[r.x+a,r.y+b]),look=table.look,pic=PS.picture('hall-table-'+table.id);
- // felt quad
- const fg=g.createLinearGradient(0,fq[0][1],0,fq[2][1]);fg.addColorStop(0,shade(feltColor,-.2));fg.addColorStop(1,shade(feltColor,.12));g.fillStyle=fg;g.beginPath();fq.forEach(p=>g.lineTo(p[0],p[1]));g.closePath();g.fill();
+// the chosen felt as the play screen paints it (colour, pattern, cloth grain, lamp light), cached per felt
+const feltCache=new Map();
+function feltBed(felt){const key=felt.id||felt.color;if(feltCache.has(key))return feltCache.get(key);
+ const k=6,cv=document.createElement('canvas');cv.width=Math.round(2*HX*k);cv.height=Math.round(2*HY*k);const g=cv.getContext('2d');g.translate(cv.width/2,cv.height/2);g.scale(k,k);drawBed(g,felt,k);
+ if(feltCache.size>12)feltCache.clear();feltCache.set(key,cv);return cv;}
+function drawHallTable(g,table,felt,glow,ballset){
+ const r=H.table,fq=r.felt.map(([a,b])=>[r.x+a,r.y+b]),look=table.look,pic=PS.picture('hall-table-'+table.id),feltColor=felt.color||'#2f6b44';
+ // felt quad: the real felt (pattern + grain + lamp) mapped strip by strip onto the table's perspective
+ {const bed=feltBed(felt),N=48;g.save();g.beginPath();fq.forEach(p=>g.lineTo(p[0],p[1]));g.closePath();g.clip();
+  g.fillStyle=feltColor;g.fillRect(fq[3][0],fq[0][1],fq[2][0]-fq[3][0],fq[2][1]-fq[0][1]);
+  for(let j=0;j<N;j++){const v0=j/N,v1=(j+1)/N,y0=fq[0][1]+(fq[3][1]-fq[0][1])*v0,y1=fq[0][1]+(fq[3][1]-fq[0][1])*v1,xl=fq[0][0]+(fq[3][0]-fq[0][0])*v0,xr=fq[1][0]+(fq[2][0]-fq[1][0])*v0;
+   const sy=bed.height*v0,sh=Math.max(1,bed.height/N);g.drawImage(bed,0,sy,bed.width,sh,xl,y0,xr-xl,y1-y0+.8);}
+  const fg=g.createLinearGradient(0,fq[0][1],0,fq[2][1]);fg.addColorStop(0,'rgba(0,0,0,.28)');fg.addColorStop(1,'rgba(255,255,255,.04)');g.fillStyle=fg;g.fillRect(fq[3][0],fq[0][1],fq[2][0]-fq[3][0],fq[2][1]-fq[0][1]);g.restore();}
  if(pic){g.drawImage(pic,r.x,r.y,r.w,r.h);}
  else{const fr=look.frame,fr2=look.frame2;
   // rails around the felt
@@ -331,11 +342,52 @@ function drawHallTable(g,table,feltColor,glow,ballset){
  if(!hallBalls)hallBalls=require("src/engines/pool/balls.js").makeBallArt();
  const put=(id,x,y)=>{const b=PH.makeBall(id,0,0);PH.rotate(b.o,[1,0,0],.55+id*.37);PH.rotate(b.o,[0,1,0],.25+id*.21);
   g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(x+3,y+5,BR*.95,BR*.55,0,0,6.28);g.fill();
-  const S=3,cv=hallBalls.draw(b,BR*S,0,set);g.drawImage(cv,x-cv.width/S/2,y-cv.height/S/2*sq,cv.width/S,cv.height/S*sq);};
+  // rendered at the screen's own pixel size (it was a fixed 30 px picture shrunk or blown up: looked flat), then the lamp's
+  // hot spot and the shade underneath so it reads as a sphere sitting on the cloth
+  const S=Math.max(2,Math.min(8,scr)),cv=hallBalls.draw(b,BR*S,0,set),dw=cv.width/S,dh=cv.height/S;g.drawImage(cv,x-dw/2,y-dh/2*sq,dw,dh*sq);
+  g.save();g.beginPath();g.ellipse(x,y,BR,BR*sq,0,0,6.28);g.clip();
+  const sh=g.createRadialGradient(x+BR*.35,y+BR*.55*sq,BR*.2,x,y,BR*1.15);sh.addColorStop(0,'rgba(0,0,0,0)');sh.addColorStop(.55,'rgba(0,0,0,0)');sh.addColorStop(1,'rgba(0,0,0,.45)');g.fillStyle=sh;g.fillRect(x-BR,y-BR,BR*2,BR*2);
+  const hl=g.createRadialGradient(x-BR*.32,y-BR*.42*sq,0,x-BR*.32,y-BR*.42*sq,BR*.55);hl.addColorStop(0,'rgba(255,255,250,.95)');hl.addColorStop(.3,'rgba(255,255,250,.35)');hl.addColorStop(1,'rgba(255,255,250,0)');g.fillStyle=hl;g.fillRect(x-BR,y-BR,BR*2,BR*2);g.restore();};
+ const tf=g.getTransform?g.getTransform():{a:1,b:0},scr=Math.hypot(tf.a,tf.b);
  for(let c=0;c<5;c++)for(let q=0;q<=c;q++){if(i>=RACK.length)break;put(RACK[i++],bx+c*19,by+(q-c/2)*17);}
  put(0,r.x+r.w*.3,r.y+r.h*.36);
  if(glow){g.strokeStyle='rgba(255,215,90,.8)';g.lineWidth=5;g.beginPath();fq.forEach(p=>g.lineTo(p[0],p[1]));g.closePath();g.stroke();}
 }
+// the wall cue rack (HALL.rack) with the player's cue standing in its middle slot
+function drawRackBody(g,rk,x,y,w,h,t=0){const L=rk.look||{},wd=L.wood||'#a07a4c',w2=L.wood2||'#6e5232',k=L.kind;
+ const sh=()=>{g.fillStyle='rgba(0,0,0,.35)';g.fillRect(x+6,y+8,w,h);};
+ if(k==='ply'){ // two crooked scraps of plywood, nails, duct tape, a coffee can for the butt
+  g.save();g.translate(x+w/2,y+h/2);g.rotate(-.045);g.translate(-w/2,-h/2);g.fillStyle='rgba(0,0,0,.35)';g.fillRect(6,8,w*.8,h);
+  g.fillStyle=wd;g.fillRect(w*.08,0,w*.78,h*.96);g.strokeStyle='rgba(60,40,20,.5)';g.lineWidth=1;for(let i=0;i<7;i++){g.beginPath();g.moveTo(w*.08,h*(.08+i*.13));g.bezierCurveTo(w*.35,h*(.1+i*.13),w*.55,h*(.06+i*.13),w*.86,h*(.09+i*.13));g.stroke();}
+  g.fillStyle=w2;g.fillRect(w*.08,h*.02,w*.78,3);g.fillRect(w*.8,0,w*.06,h*.96);
+  g.fillStyle='#9a9a9a';g.fillRect(w*.04,h*.1,w*.86,h*.05);g.fillStyle='rgba(255,255,255,.25)';g.fillRect(w*.04,h*.1,w*.86,h*.012);   // duct tape across the top clip
+  g.fillStyle='#4a3a2a';for(const [nx,ny] of [[.15,.04],[.78,.05],[.14,.5],[.8,.48],[.16,.92],[.76,.9]]){g.beginPath();g.arc(w*nx,h*ny,2.2,0,6.28);g.fill();}
+  g.strokeStyle='#7a7a7a';g.lineWidth=2;g.beginPath();g.moveTo(w*.62,h*.14);g.lineTo(w*.7,h*.17);g.lineTo(w*.68,h*.22);g.stroke();     // a bent nail
+  g.fillStyle='#8a8f96';g.fillRect(w*.34,h*.86,w*.32,h*.12);g.fillStyle='#6a7076';g.fillRect(w*.34,h*.86,w*.32,h*.02);g.fillStyle='#b8342a';g.fillRect(w*.34,h*.9,w*.32,h*.04);  // coffee can
+  g.restore();return;}
+ sh();
+ if(k==='pallet'){g.fillStyle=w2;g.fillRect(x+w*.1,y,w*.08,h);g.fillRect(x+w*.82,y,w*.08,h);g.fillStyle=wd;for(let i=0;i<6;i++){g.fillRect(x,y+h*(.02+i*.165),w,h*.12);g.fillStyle=i%2?wd:shade(wd,-.08);}
+  g.fillStyle='#3a2a1a';for(let i=0;i<6;i++)for(const nx of [.14,.86]){g.beginPath();g.arc(x+w*nx,y+h*(.08+i*.165),1.8,0,6.28);g.fill();}}
+ else if(k==='pine'){g.fillStyle=wd;g.fillRect(x+w*.06,y,w*.88,h);g.fillStyle=w2;g.fillRect(x,y+h*.08,w,h*.07);g.fillRect(x,y+h*.86,w,h*.1);
+  g.fillStyle='#2a1c10';for(const nx of [.2,.5,.8]){g.beginPath();g.ellipse(x+w*nx,y+h*.115,w*.07,h*.02,0,0,6.28);g.fill();g.beginPath();g.ellipse(x+w*nx,y+h*.9,w*.08,h*.025,0,0,6.28);g.fill();}}
+ else if(k==='oak'){const gr=g.createLinearGradient(x,0,x+w,0);gr.addColorStop(0,w2);gr.addColorStop(.5,wd);gr.addColorStop(1,w2);g.fillStyle=gr;g.fillRect(x+w*.04,y,w*.92,h);
+  g.strokeStyle='rgba(0,0,0,.25)';g.lineWidth=1;for(let i=0;i<9;i++){g.beginPath();g.moveTo(x+w*(.1+i*.09),y);g.lineTo(x+w*(.1+i*.09),y+h);g.stroke();}
+  g.fillStyle=L.metal;for(const nx of [.2,.5,.8]){g.fillRect(x+w*nx-6,y+h*.1,12,h*.03);g.fillRect(x+w*nx-8,y+h*.86,16,h*.05);}
+  g.fillStyle=w2;g.fillRect(x-4,y+h*.62,w+8,h*.04);g.fillStyle='#3d78c8';g.fillRect(x+w*.7,y+h*.585,10,8);}
+ else if(k==='case'){g.fillStyle=wd;g.fillRect(x,y,w,h);g.fillStyle='#202634';g.fillRect(x+6,y+6,w-12,h-12);g.fillStyle=L.led;g.globalAlpha=.6+.2*Math.sin(t*2);g.fillRect(x+6,y+6,w-12,3);g.globalAlpha=1;
+  const gl=g.createLinearGradient(x,y,x+w,y+h);gl.addColorStop(0,'rgba(127,214,255,.10)');gl.addColorStop(.5,'rgba(127,214,255,.02)');gl.addColorStop(1,'rgba(255,255,255,.08)');g.fillStyle=gl;g.fillRect(x+6,y+6,w-12,h-12);
+  g.strokeStyle=L.metal;g.lineWidth=2;g.strokeRect(x+3,y+3,w-6,h-6);g.fillStyle=L.metal;g.fillRect(x+w-10,y+h*.5,4,14);}
+ else if(k==='shrine'){if(L.spot){const sp=g.createRadialGradient(x+w/2,y+h*.4,4,x+w/2,y+h*.4,h*.7);sp.addColorStop(0,'rgba(255,240,180,.35)');sp.addColorStop(1,'rgba(255,240,180,0)');g.fillStyle=sp;g.fillRect(x-w*.4,y-h*.2,w*1.8,h*1.4);}
+  g.fillStyle=wd;g.beginPath();g.moveTo(x,y+h);g.lineTo(x,y+h*.12);g.quadraticCurveTo(x+w/2,y-h*.06,x+w,y+h*.12);g.lineTo(x+w,y+h);g.closePath();g.fill();
+  g.fillStyle=L.velvet;g.beginPath();g.moveTo(x+8,y+h-8);g.lineTo(x+8,y+h*.15);g.quadraticCurveTo(x+w/2,y+h*.02,x+w-8,y+h*.15);g.lineTo(x+w-8,y+h-8);g.closePath();g.fill();
+  g.fillStyle=L.metal;g.fillRect(x+w/2-8,y+h*.1,16,h*.03);g.fillRect(x+w/2-12,y+h*.86,24,h*.06);g.font=`bold ${Math.round(w*.12)}px Georgia`;g.textAlign='center';g.fillText('★',x+w/2,y+h*.97);}}
+function drawHallRack(g,rk,cue,chalk,t){const r=H.rack,pic=PS.picture('rack-'+rk.id);
+ if(pic)g.drawImage(pic,r.x,r.y,r.w,r.h);else drawRackBody(g,rk,r.x,r.y,r.w,r.h,t);
+ if(cue){const ply=rk.look?.kind==='ply',cx=r.x+r.w/2+(ply?4:0),top=r.y+r.h*.03,bot=r.y+r.h*.95;g.save();if(ply){g.translate(cx,bot);g.rotate(-.06);g.translate(-cx,-bot);}
+  drawCue(g,{...cue,chalk:chalk?.color||'#3d78c8'},cx,top,-Math.PI/2,bot-top,Math.max(7,r.w*.1),{shadow:false});g.restore();
+  // the top clip goes back over the shaft
+  if(!pic){const L=rk.look||{};if(L.kind==='pine'||L.kind==='oak'){g.fillStyle=L.kind==='oak'?L.metal:L.wood2;g.fillRect(cx-8,r.y+r.h*.1,16,r.h*.03);}
+   if(L.kind==='case'){g.fillStyle='rgba(127,214,255,.08)';g.fillRect(r.x+6,r.y+6,r.w-12,r.h-12);}}}}
 function drawHallLight(g,tier,t,steady){
  const r=H.light,cx=r.x+r.w/2,pic=PS.picture('hall-light-'+tier);
  // light cone onto the table
@@ -359,8 +411,9 @@ function preview(kind,item,w,h,hall){
  const cv=document.createElement('canvas'),dpr=Math.min(2,window.devicePixelRatio||1);cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);const g=cv.getContext('2d');g.scale(dpr,dpr);
  if(kind==='table'||kind==='felt'){const T=PH.buildTable(),k=Math.min(w/104,h/60);g.translate(w/2,h/2);g.scale(k,k);const tb=kind==='table'?item:hall.table,fe=kind==='felt'?item:hall.felt;drawTable(g,T,{look:tb.look,felt:fe,wear:tb.look.wear,rough:tb.feel.rough||[],id:tb.id,k});}
  else if(kind==='cue'){drawCue(g,{...item,chalk:hall.chalk.color},w-6,h/2,0,w-12,Math.max(6,h*.22),{shadow:false});}
+ else if(kind==='rack'){const rh=h-6,rw=rh*140/282;drawRackBody(g,item,w/2-rw/2,3,rw,rh,0);drawCue(g,{...hall.cue,chalk:hall.chalk.color},w/2,3+rh*.03,-Math.PI/2,rh*.92,Math.max(4,rw*.1),{shadow:false});}
  else if(kind==='chalk'){g.fillStyle=item.color;rr(g,w/2-h*.3,h*.2,h*.6,h*.6,4);g.fill();g.fillStyle='rgba(255,255,255,.25)';g.fillRect(w/2-h*.3,h*.2,h*.6,h*.12);}
  else if(kind==='balls'){const ids=[1,9,8,0];const B=require("src/engines/pool/balls.js");const art=B.makeBallArt();ids.forEach((id,i)=>{const b=PH.makeBall(id,0,0);PH.rotate(b.o,[1,0,0],.5+i);PH.rotate(b.o,[0,1,0],.3);const px=Math.min(h*.32,w/10)*dpr,c=art.draw(b,px,0,item);g.drawImage(c,w*(.17+i*.22)-c.width/dpr/2,h/2-c.height/dpr/2,c.width/dpr,c.height/dpr);});}
  return cv;
 }
-Object.assign(exports,{drawTable,drawCue,drawFloor,drawWall,drawHall,hallCover,preview,shade,rr,RAIL,CUSH,flickerAt,drawFloorProps,drawTrophies,MEGA_SCREEN,PORTRAIT_FACE});
+Object.assign(exports,{drawRackBody,drawHallRack,drawTable,drawCue,drawFloor,drawWall,drawHall,hallCover,preview,shade,rr,RAIL,CUSH,flickerAt,drawFloorProps,drawTrophies,MEGA_SCREEN,PORTRAIT_FACE});

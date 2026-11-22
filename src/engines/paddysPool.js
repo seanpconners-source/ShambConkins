@@ -311,11 +311,12 @@ async function paddysPool(s){
   .pp-hall *{box-sizing:border-box}.pp-top{position:absolute;left:10px;top:max(8px,env(safe-area-inset-top));display:flex;gap:8px;align-items:center;pointer-events:auto}
   .pp-cash{background:linear-gradient(#2c7a3a,#1b5426);border:2px solid #7fe08a;border-radius:999px;padding:5px 14px;font:900 17px "SC Bangers",Impact,sans-serif;letter-spacing:.5px;box-shadow:0 3px 10px #0008}
   .pp-prog{font-size:11px;opacity:.85;background:#000a;border-radius:999px;padding:4px 9px}
-  .pp-panel{pointer-events:auto;background:linear-gradient(180deg,#120c0bcc,#0b0706f2 30%);backdrop-filter:none;border-top:1px solid #ffffff22;padding:10px 10px max(10px,env(safe-area-inset-bottom));max-height:60%;display:flex;flex-direction:column;gap:8px}
+  .pp-panel{pointer-events:auto;background:linear-gradient(180deg,#120c0bcc,#0b0706f2 30%);backdrop-filter:none;border-top:1px solid #ffffff22;padding:10px 10px max(10px,env(safe-area-inset-bottom));max-height:60%;display:flex;flex-direction:column;gap:8px;overflow-y:auto;overscroll-behavior:contain}
+  @media (pointer:fine){.pp-shelf{scrollbar-width:thin}.pp-panel{scrollbar-width:thin}}
   .pp-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pp-seg{display:flex;background:#ffffff14;border-radius:12px;padding:3px}
   .pp-seg button{border:0;background:transparent;color:#ddd;font:800 14px system-ui;padding:8px 12px;border-radius:9px;min-height:38px}.pp-seg button.on{background:#ffd23f;color:#201300}
   .pp-lbl{font:800 10px system-ui;opacity:.7;align-self:center;padding:0 6px 0 8px}.pp-go{margin-left:auto;flex:1 0 auto;border:0;border-radius:14px;padding:10px 28px;min-height:48px;font:900 24px "SC Bangers",Impact,sans-serif;letter-spacing:1px;color:#1a1000;background:linear-gradient(#ffe27a,#f2a81d);box-shadow:0 4px 0 #9a5a00,0 6px 16px #000a}
-  .pp-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}.pp-tabs::-webkit-scrollbar{display:none}
+  .pp-tabs{display:flex;gap:4px;flex-wrap:wrap}
   .pp-tabs button{flex:none;border:1px solid #ffffff22;background:#ffffff10;color:#eee;font:800 12px system-ui;padding:7px 11px;border-radius:999px;min-height:34px}.pp-tabs button.on{background:#fff;color:#111}
   .pp-shelf{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}.pp-card{flex:none;width:156px;scroll-snap-align:start;background:#ffffff0d;border:1px solid #ffffff1f;border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:5px}
   .pp-card.sel{border-color:#ffd23f;box-shadow:0 0 0 1px #ffd23f inset}.pp-card canvas{width:100%;height:72px;border-radius:8px;background:#0006}
@@ -332,7 +333,7 @@ async function paddysPool(s){
   const render=()=>{const set=hall.set;hallEl.innerHTML=`<div class="pp-top"><div class="pp-cash">$${hall.cash.toLocaleString()}</div><div class="pp-prog">Hall ${Math.round(HALL.progress(hall)*100)}% done</div></div>
    <div class="pp-panel"><div class="pp-row"><div class="pp-seg" data-k="game"><button data-v="eight" class="${set.game==='eight'?'on':''}">8-BALL</button><button data-v="nine" class="${set.game==='nine'?'on':''}">9-BALL</button></div>
     <div class="pp-seg" data-k="race"><span class="pp-lbl">RACE TO</span>${[1,2,3,5].map(n=>`<button data-v="${n}" class="${set.race===n?'on':''}">${n}</button>`).join('')}</div><button class="pp-go" data-act="play">PLAY ▶</button></div>
-    <div class="pp-tabs">${[['table','Tables'],['felt','Felt'],['cue','Cues'],['balls','Balls'],['chalk','Chalk'],['room','The Bar'],['decor','Decor'],['perks','Upgrades'],['settings','Settings']].map(([k,l])=>`<button data-tab="${k}" class="${hallTab===k?'on':''}">${l}</button>`).join('')}</div>
+    <div class="pp-tabs">${[['table','Tables'],['felt','Felt'],['cue','Cues'],['rack','Racks'],['balls','Balls'],['chalk','Chalk'],['room','The Bar'],['decor','Decor'],['perks','Upgrades'],['settings','Settings']].map(([k,l])=>`<button data-tab="${k}" class="${hallTab===k?'on':''}">${l}</button>`).join('')}</div>
     <div class="pp-shelf">${shelfHTML()}</div></div>`;
    hallEl.querySelectorAll('.pp-card canvas[data-kind]').forEach(cv=>{const kind=cv.dataset.kind,it=HALL.byId(HALL.LISTS[kind],cv.dataset.id);if(!it)return;try{const pv=ART.preview(kind,it,140,72,loadout);cv.width=pv.width;cv.height=pv.height;cv.getContext('2d').drawImage(pv,0,0);}catch(e){console.warn(e);}});};
   const shelfHTML=()=>{
@@ -358,12 +359,14 @@ async function paddysPool(s){
    if(b.dataset.show){const id=b.dataset.show;hall.hide=hall.hide.includes(id)?hall.hide.filter(q=>q!==id):[...hall.hide,id];sfx.tap();refresh();return;}
    if(b.dataset.pick){hallSel=b.dataset.pick;sfx.tap();render();}
   });
+  // a mouse wheel scrolls the card shelf sideways (it only scrolled with a finger swipe: desktop browsers couldn't reach the end)
+  hallEl.addEventListener('wheel',ev=>{const sh=ev.target.closest('.pp-shelf');if(!sh||sh.scrollWidth<=sh.clientWidth+2||Math.abs(ev.deltaX)>Math.abs(ev.deltaY))return;sh.scrollLeft+=ev.deltaY;ev.preventDefault();},{passive:false});
   render();
  });}
  // ---------------------------------------------------------------- drawing
  const faceFn=(id,mood)=>(cx,cy,w)=>{try{HF.drawFaceById(x,id,mood,cx,cy,w);}catch{}};
  let hallCache=null,hallScene=null,hallTiny=null;const HW=PS.HALL.W,HH=PS.HALL.H;
- function drawHallScene(){if(hallEl){const sd=W>H*1.15;if(hallEl.classList.contains('side')!==sd){hallEl.classList.toggle('side',sd);hallCache=null;}}const key=[W,H,dpr,JSON.stringify(hall.room),hall.decor.join(),hall.hide.join(),(hall.perks||[]).join(),loadout.table.id,loadout.felt.id,loadout.balls.id,hallSel,Math.floor(t*10)].join('|');
+ function drawHallScene(){if(hallEl){const sd=W>H*1.15;if(hallEl.classList.contains('side')!==sd){hallEl.classList.toggle('side',sd);hallCache=null;}}const key=[W,H,dpr,JSON.stringify(hall.room),hall.decor.join(),hall.hide.join(),(hall.perks||[]).join(),loadout.table.id,loadout.felt.id,loadout.balls.id,loadout.rack?.id,loadout.cue.id,loadout.chalk.id,hallSel,Math.floor(t*10)].join('|');
   if(hallCache&&hallCache.key===key){x.drawImage(hallCache.cv,0,0,W,H);return;}
   const cv=hallCache?.cv||document.createElement('canvas');cv.width=Math.ceil(W*dpr);cv.height=Math.ceil(H*dpr);const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
   const pan=hallEl?.querySelector('.pp-panel'),cr=c.getBoundingClientRect(),side=!!hallEl?.classList.contains('side');let view=[0,0,W,H];
@@ -374,7 +377,8 @@ async function paddysPool(s){
   const scv=hallScene||(hallScene=document.createElement('canvas'));scv.width=Math.ceil(sw*dpr);scv.height=Math.ceil(sh*dpr);const sg=scv.getContext('2d');sg.setTransform(dpr,0,0,dpr,0,0);
   const faces=[(cx,cy,w)=>{try{s.sprite(sg,0,cx,cy,w,{exact:true,noBadge:true,still:true});}catch{}},null,(cx,cy,w)=>{try{HF.drawFaceById(sg,'dennis','win',cx,cy,w);}catch{}},...['charlie','frank','mac','dee','cricket','artemis'].map(id=>(cx,cy,w)=>{try{HF.drawFaceById(sg,id,'normal',cx,cy,w);}catch{}})];
   const [pk,pid]=(hallSel||'').split(':'),pvT=pk==='table'&&HALL.byId(HALL.TABLES,pid)||loadout.table,pvF=pk==='felt'&&HALL.byId(HALL.FELTS,pid)||loadout.felt;
-  ART.drawHall(sg,sw,sh,hall,t,{faces,feltColor:pvF.color,table:pvT,view:[0,0,sw,sh],highlight:pk==='table'||pk==='felt'?'table':null,ballset:pk==='balls'&&HALL.byId(HALL.BALLSETS,pid)||loadout.balls});
+  const pvR=pk==='rack'&&HALL.byId(HALL.RACKS,pid)||loadout.rack,pvC=pk==='cue'&&HALL.byId(HALL.CUES,pid)||loadout.cue;
+  ART.drawHall(sg,sw,sh,hall,t,{faces,feltColor:pvF.color,felt:pvF,rack:pvR,cue:pvC,chalk:loadout.chalk,table:pvT,view:[0,0,sw,sh],highlight:pk==='table'||pk==='felt'?'table':null,ballset:pk==='balls'&&HALL.byId(HALL.BALLSETS,pid)||loadout.balls});
   // soft side edges where the scene doesn't reach the screen edges
   if(sx>view[0]+1){sg.save();sg.setTransform(1,0,0,1,0,0);sg.globalCompositeOperation='destination-in';const fe=Math.min(40*dpr,scv.width*.06),eg=sg.createLinearGradient(0,0,scv.width,0);eg.addColorStop(0,'rgba(0,0,0,0)');eg.addColorStop(fe/scv.width,'#000');eg.addColorStop(1-fe/scv.width,'#000');eg.addColorStop(1,'rgba(0,0,0,0)');sg.fillStyle=eg;sg.fillRect(0,0,scv.width,scv.height);sg.restore();}
   // behind it: the same scene, tiny and stretched (a soft blur), darkened

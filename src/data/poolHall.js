@@ -51,6 +51,15 @@ const BALLSETS=[
  {id:'glow',name:'Glow Set',price:1100,age:0,glow:true,desc:'Fluorescent balls that light up the felt round them.'},
  {id:'gold',name:'Golden God Set',price:2400,age:0,desc:'Polished gold where the white should be. Dennis approves.'},
 ];
+// CUE RACKS (owner, Nov 22): your cue hangs on the hall's wall. The first rack is scrap plywood nailed together; better
+// racks are bought like the other upgrades. Only the look changes. Picture slots rack-<id> in poolSprites.js.
+const RACKS=[
+ {id:'plywood',name:"Charlie's Plywood Rack",price:0,look:{wood:'#a07a4c',wood2:'#6e5232',kind:'ply'},desc:'Scrap plywood, bent nails and duct tape. It leans. It holds your cue if you ask nicely.'},
+ {id:'pallet',name:'Pallet-Wood Rack',price:90,look:{wood:'#b8935e',wood2:'#7a5a34',kind:'pallet'},desc:'Frank found it behind a liquor store. Mostly splinter-free.'},
+ {id:'pine',name:'Hardware-Store Pine Rack',price:260,look:{wood:'#d9b47a',wood2:'#a07a46',kind:'pine'},desc:'Six slots, pre-drilled, almost level. Charlie only lost one screw.'},
+ {id:'oak',name:'Oak Wall Rack',price:700,look:{wood:'#7a4a24',wood2:'#4a2a12',metal:'#d4a933',kind:'oak'},desc:'Stained oak, brass clips and a little chalk shelf.'},
+ {id:'case',name:'Lit Glass Case',price:1600,look:{wood:'#1c1c22',wood2:'#0c0c10',metal:'#c9ced6',glass:true,led:'#7fd6ff',kind:'case'},desc:'Locking glass door, LED strip, felt backing. Nobody touches it.'},
+ {id:'golden',name:'Golden God Shrine',price:3400,look:{wood:'#d1a22a',wood2:'#7a5a10',metal:'#fff1b0',velvet:'#6a0d1a',spot:true,kind:'shrine'},desc:'A velvet-lined gold shrine with its own spotlight. For your cue. And for Dennis.'}];
 const CHALKS=[{id:'blue',name:'Blue Chalk',price:0,color:'#3d78c8'},{id:'green',name:'Green Chalk',price:20,color:'#3c9a52'},{id:'red',name:'Red Chalk',price:20,color:'#b83a3a'},{id:'pink',name:'Pink Chalk',price:30,color:'#d667a3'},{id:'gold',name:'Gold Chalk',price:80,color:'#d9b13a'}];
 // room upgrades: tiers, bought in order
 const ROOM={
@@ -109,15 +118,15 @@ const CPU_K={easy:.7,normal:1,hard:1.4};
 const START_CASH=100;   // "grand re-opening" money on the first visit
 // ---------------------------------------------------------------- the save
 const byId=(list,id)=>list.find(q=>q.id===id);
-function freshHall(){return {cash:START_CASH,own:[],eq:{table:'paddys-wreck',felt:'paddys-green',cue:'house',balls:'bar',chalk:'blue'},room:{reno:0,light:0,tv:0,bar:0},decor:[],hide:[],perks:[],stats:{racks:0,matches:0,runs:0,golden:0,best:0,earned:0},set:{assist:'full',clock:false,race:1,game:'eight',seen:false}};}
-const LISTS={table:TABLES,felt:FELTS,cue:CUES,balls:BALLSETS,chalk:CHALKS};
+function freshHall(){return {cash:START_CASH,own:[],eq:{table:'paddys-wreck',felt:'paddys-green',cue:'house',balls:'bar',chalk:'blue',rack:'plywood'},room:{reno:0,light:0,tv:0,bar:0},decor:[],hide:[],perks:[],stats:{racks:0,matches:0,runs:0,golden:0,best:0,earned:0},set:{assist:'full',clock:false,race:1,game:'eight',seen:false}};}
+const LISTS={table:TABLES,felt:FELTS,cue:CUES,rack:RACKS,balls:BALLSETS,chalk:CHALKS};
 function validHall(saved){
  const h=freshHall();if(!saved||typeof saved!=='object'||Array.isArray(saved))return h;
  const int=(v,d,max=1e9)=>Number.isFinite(v)&&v>=0?Math.min(max,Math.floor(v)):d;
  h.cash=int(saved.cash,START_CASH);
  const ids=new Set([...TABLES,...FELTS,...CUES,...BALLSETS,...CHALKS].map(q=>q.id+'@'));
  // owned items are stored as "<kind>:<id>" (ids repeat across kinds)
- if(Array.isArray(saved.own))h.own=[...new Set(saved.own.filter(k=>typeof k==='string'&&/^(table|felt|cue|balls|chalk):/.test(k)&&LISTS[k.split(':')[0]].some(q=>q.id===k.split(':')[1])))];
+ if(Array.isArray(saved.own))h.own=[...new Set(saved.own.filter(k=>typeof k==='string'&&/^(table|felt|cue|rack|balls|chalk):/.test(k)&&LISTS[k.split(':')[0]].some(q=>q.id===k.split(':')[1])))];
  if(saved.eq&&typeof saved.eq==='object')for(const k of Object.keys(LISTS)){const v=saved.eq[k];if(typeof v==='string'&&byId(LISTS[k],v)&&(byId(LISTS[k],v).price===0||h.own.includes(k+':'+v)))h.eq[k]=v;}
  if(saved.room&&typeof saved.room==='object')for(const k of ROOM_SLOTS)h.room[k]=int(saved.room[k],0,ROOM[k].tiers.length-1);
  if(Array.isArray(saved.decor))h.decor=[...new Set(saved.decor.filter(d=>DECOR.some(q=>q.id===d)))];
@@ -135,8 +144,8 @@ function buyDecor(h,id){const d=byId(DECOR,id);if(!d||h.decor.includes(id)||h.ca
 function buyPerk(h,id){const d=byId(PERKS,id);if(!d||(h.perks||[]).includes(id)||h.cash<d.price)return false;h.cash-=d.price;(h.perks||=[]).push(id);return true;}
 const hasPerk=(h,id)=>(h.perks||[]).includes(id);
 const showsDecor=(h,id)=>h.decor.includes(id)&&!h.hide.includes(id);
-function loadout(h){return {table:byId(TABLES,h.eq.table)||TABLES[0],felt:byId(FELTS,h.eq.felt)||FELTS[0],cue:byId(CUES,h.eq.cue)||CUES[0],balls:byId(BALLSETS,h.eq.balls)||BALLSETS[0],chalk:byId(CHALKS,h.eq.chalk)||CHALKS[0],room:{...h.room},decor:h.decor.filter(d=>!h.hide.includes(d)),perks:[...(h.perks||[])]};}
+function loadout(h){return {table:byId(TABLES,h.eq.table)||TABLES[0],felt:byId(FELTS,h.eq.felt)||FELTS[0],cue:byId(CUES,h.eq.cue)||CUES[0],balls:byId(BALLSETS,h.eq.balls)||BALLSETS[0],chalk:byId(CHALKS,h.eq.chalk)||CHALKS[0],rack:byId(RACKS,h.eq.rack)||RACKS[0],room:{...h.room},decor:h.decor.filter(d=>!h.hide.includes(d)),perks:[...(h.perks||[])]};}
 // how much of the hall is done (for the menu): spent / total
 function progress(h){let tot=0,got=0;for(const k of Object.keys(LISTS))for(const it of LISTS[k]){tot+=it.price;if(owns(h,k,it.id))got+=it.price;}
  for(const k of ROOM_SLOTS)ROOM[k].tiers.forEach((t,i)=>{tot+=t.price;if(i<=h.room[k])got+=t.price;});for(const d of DECOR){tot+=d.price;if(h.decor.includes(d.id))got+=d.price;}for(const d of PERKS){tot+=d.price;if((h.perks||[]).includes(d.id))got+=d.price;}return got/tot;}
-Object.assign(exports,{TABLES,FELTS,CUES,BALLSETS,CHALKS,ROOM,ROOM_SLOTS,DECOR,PERKS,TIP,buyPerk,hasPerk,CASH,CPU_K,START_CASH,LISTS,byId,freshHall,validHall,owns,buy,equip,buyRoom,buyDecor,showsDecor,loadout,progress});
+Object.assign(exports,{TABLES,FELTS,CUES,RACKS,BALLSETS,CHALKS,ROOM,ROOM_SLOTS,DECOR,PERKS,TIP,buyPerk,hasPerk,CASH,CPU_K,START_CASH,LISTS,byId,freshHall,validHall,owns,buy,equip,buyRoom,buyDecor,showsDecor,loadout,progress});
