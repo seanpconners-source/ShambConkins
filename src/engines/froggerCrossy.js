@@ -9,6 +9,17 @@ const {turnRunner}=require('src/engines/retroKit.js');
 const {directionGestures}=require('src/engines/directionGestures.js');
 
 const hopSound=()=>tone(520,.07,.04,'square'),splat=()=>{tone(120,.25,.09,'sawtooth');tone(70,.3,.08,'square');},plunk=()=>{tone(300,.12,.07,'sine');tone(160,.2,.06,'sine');},cheer=()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,.12,.05,'square'),i*90));
+// Frogger's sounds are Atari 2600 TIA effects (tiaSound: real chip waveforms, 60 Hz frames [AUDC,AUDF,vol,frames]):
+// the hop chirp, a crunchy noise squash, a hissing splash with a falling bloop, a rising chirp for a bay, an arpeggio when
+// all five bays fill, a low buzz countdown in the last five seconds of a frog's clock, and a sliding-down "you died" tune.
+const {tiaPlay}=require('src/engines/tiaSound.js');
+const ATARI={hop:()=>tiaPlay([[4,14,8,2],[4,10,7,2],[4,8,4,1]]),
+ squash:()=>tiaPlay([[8,3,14,3],[8,6,12,3],[8,10,10,4],[8,16,8,4],[8,22,5,4],[8,28,3,4]]),
+ splash:()=>tiaPlay([[8,1,12,3],[8,2,10,4],[8,4,8,4],[4,12,8,3],[4,16,7,3],[4,21,5,3],[4,26,3,3]]),
+ dead:()=>tiaPlay([[12,9,0,20],[12,9,8,6],[12,11,8,6],[12,13,8,6],[12,16,8,6],[12,19,8,6],[12,23,7,8],[6,9,8,14]]),
+ home:()=>tiaPlay([[4,24,8,3],[4,19,8,3],[4,15,8,3],[4,12,8,3],[4,9,9,6]]),
+ level:()=>tiaPlay([[4,19,9,5],[4,15,9,5],[4,12,9,5],[4,9,9,5],[4,12,9,5],[4,9,9,5],[4,7,10,12]]),
+ tick:()=>tiaPlay([[6,7,9,4]]),start:()=>tiaPlay([[4,12,7,3],[4,9,7,3]])};
 const wrap=(v,n)=>((v%n)+n)%n;
 
 // ==================================================================== FROGGER
@@ -23,10 +34,10 @@ const diving=(lane,o,t)=>LANES[lane][0]==='turtle'&&o.i===0&&wrap(t,9)>6;   // t
 async function frogger(s){
  const [,g]=s.canvas(680,780,{fill:true});let world=null;
  const reset=w=>{w.x=6;w.row=0;w.hopT=0;w.fromX=6;w.fromRow=0;w.frogT=30;w.maxRow=0;};
- const hop=(dx,dy)=>{const w=world;if(!w||s.paused||w.dead>0||w.hopT>0||w.ending)return;const nx=clamp(w.x+dx,0,COLS-1),row=clamp(w.row-dy,0,HOME);if(nx===w.x&&row===w.row)return;w.fromX=w.x;w.fromRow=w.row;w.x=nx;w.row=row;w.hopT=.13;hopSound();if(row>w.maxRow){w.maxRow=row;w.score+=10;}};
+ const hop=(dx,dy)=>{const w=world;if(!w||s.paused||w.dead>0||w.hopT>0||w.ending)return;const nx=clamp(w.x+dx,0,COLS-1),row=clamp(w.row-dy,0,HOME);if(nx===w.x&&row===w.row)return;w.fromX=w.x;w.fromRow=w.row;w.x=nx;w.row=row;w.hopT=.13;ATARI.hop();if(row>w.maxRow){w.maxRow=row;w.score+=10;}};
  directionGestures(s,(i,dx,dy)=>hop(dx,dy),{repeat:0,tap:[0,-1]});
  s.hint('Swipe or drag to hop one square; a tap hops up. Cross the road, ride the logs and turtles, fill all five bays. Turtles that are going under won’t hold you.');
- const die=(w,why)=>{if(w.dead>0)return;w.lives--;w.dead=1;w.why=why;w.deadX=w.x;w.deadRow=w.row;why==='water'?plunk():splat();s.react?.(w.player,'sad');};
+ const die=(w,why)=>{if(w.dead>0)return;w.lives--;w.dead=1;w.why=why;w.deadX=w.x;w.deadRow=w.row;why==='water'?ATARI.splash():ATARI.squash();ATARI.dead();s.react?.(w.player,'sad');};
  const geo=()=>{const W=s.W,H=s.H,top=Math.max(48,H*.07),bot=46,c=Math.min(W/COLS,(H-top-bot)/14),ox=(W-c*COLS)/2,oy=top+(H-top-bot-c*14)/2;return {W,H,c,ox,oy,X:x=>ox+x*c,Y:r=>oy+(HOME+1-r)*c};};
  const scores=await turnRunner(s,{seconds:300,endDelay:1.4,readyText:'Hop to it',
   intro:i=>`${s.players[i].name}: get your frog across the road and the river into all five bays. Three lives, and a clock on every frog.`,
@@ -35,10 +46,10 @@ async function frogger(s){
   done:w=>w.lives<=0&&w.dead<=0,score:w=>w.score,
   step(w,dt){w.t+=dt;w.hopT=Math.max(0,w.hopT-dt);w.flyT-=dt;if(w.flyT<=0){w.flyT=5+Math.random()*4;const open=w.homes.map((h,i)=>h?-1:i).filter(i=>i>=0);w.fly=w.fly>=0||!open.length?-1:open[Math.floor(Math.random()*open.length)];}
    if(w.dead>0){w.dead-=dt;if(w.dead<=0&&w.lives>0)reset(w);return;}if(w.lives<=0)return;
-   w.frogT-=dt;if(w.frogT<=0)return die(w,'time');if(w.hopT>0)return;
+   {const was=Math.ceil(w.frogT);w.frogT-=dt;if(w.frogT>0&&w.frogT<5&&Math.ceil(w.frogT)<was)ATARI.tick();}if(w.frogT<=0)return die(w,'time');if(w.hopT>0)return;
    const lane=LANES[w.row];
    if(w.row===HOME){const bay=BAYS.findIndex(b=>Math.abs(w.x+.5-b)<.8);if(bay<0||w.homes[bay])return die(w,'hedge');w.homes[bay]=true;const fly=w.fly===bay;if(fly)w.fly=-1;w.score+=50+Math.round(w.frogT)*10+(fly?200:0);s.react?.(w.player,'win');
-    if(w.homes.every(Boolean)){w.score+=1000;w.level++;w.homes=[false,false,false,false,false];w.t=0;cheer();}else tone(880,.12,.05,'square');reset(w);return;}
+    if(w.homes.every(Boolean)){w.score+=1000;w.level++;w.homes=[false,false,false,false,false];w.t=0;ATARI.level();}else ATARI.home();reset(w);return;}
    if(!lane)return;const objs=froggerObjects(w.row,w.t,w.level),at=w.x+.5;
    if(lane[0]==='log'||lane[0]==='turtle'){const on=objs.find(o=>at>o.x-.15&&at<o.x+o.len+.15&&!diving(w.row,o,w.t));if(!on)return die(w,'water');w.x+=lane[1]*(1+.18*w.level)*dt;if(w.x<-.5||w.x>COLS-.5)die(w,'water');}
    else if(objs.some(o=>at>o.x+.1&&at<o.x+o.len-.1+.25))die(w,'car');},
