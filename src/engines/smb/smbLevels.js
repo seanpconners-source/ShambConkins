@@ -761,7 +761,13 @@ const WORLDS={
 };
 const GEN={over:genOver,under:genUnder,ath:genAthletic,castle:genCastle};
 const worldStages=wn=>WORLDS[wn].stages.map(([type,cfg],k)=>()=>{const W=WORLDS[wn];const pw=wn===8?['cape','mega','skis','yoshi'][k]:W.power;
- return GEN[type](wn,k+1,{lift:W.lift,ice:W.ice,extra:W.extra,roomKind:W.roomKind,...cfg,power:pw,title:W.title,wn});});
+ const st=GEN[type](wn,k+1,{lift:W.lift,ice:W.ice,extra:W.extra,roomKind:W.roomKind,...cfg,power:pw,title:W.title,wn});
+ if(type!=='castle')hideStar(st.areas.main,rng(wn*977+k*31+5));return st;});
+// every stage outside the castles hides one Super Star in a plain brick (like 1-1's): a brick you can bump from below with
+// room above it, high bricks first, never one of the first 20 columns
+function hideStar(A,r){for(const v of A.content.values())if(v==='star')return;const W=A.W,t=(c,rr)=>rr<0?0:A.tiles[rr*W+c],cand=[];
+ for(let rr=4;rr<=10;rr++)for(let c=20;c<W-30;c++)if(t(c,rr)===BRICK&&!A.content.has(rr*W+c)&&!t(c,rr+1)&&!t(c,rr+2)&&!t(c,rr-1)&&!t(c,rr-2))cand.push([c,rr]);
+ if(!cand.length)return;const hi=cand.filter(([,rr])=>rr<=8),pool=hi.length?hi:cand,[c,rr]=pool[Math.floor(r()*pool.length)];A.content.set(rr*W+c,'star');}
 
 const STAGES=[w11,w12,w13,w14,w21,w22,w23,w24,w31,w32,w33,w34,...[4,5,6,7,8].flatMap(worldStages)];
 const buildStage=i=>STAGES[i]();

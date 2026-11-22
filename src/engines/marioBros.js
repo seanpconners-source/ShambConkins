@@ -192,6 +192,8 @@ async function marioBros(s){
  // gap, big Mario a 2-block one, so 1-2's low passages and the jump over Bowser under 1-4's ceiling work like the NES
  const pH=p=>p.mega>0?70:(p.big&&!p.crouch?30:15)+(p.yoshi?12:0);
  const HW=5;
+ // hammer throwers: frames from a throw until the next hammer is back in the hand (the last 12 = pulling it out)
+ const RELOAD=40;
  // running over a row of one-block gaps: a body already dipping into a gap gets back onto the next block only if it
  // sank less than this (full run speed sinks at most ~4.4-5.6 px, walking 6.6+ px = you fall in, like the NES)
  const GAP_TOL=5.7;
@@ -468,6 +470,8 @@ async function marioBros(s){
    if(Math.abs(p.x-e.x)>=(p.mega>0?15:HW)+ew||p.y<=eTop||topY>=eBot)continue;
    if(p.star>0){p.combo++;killFoe(w,e,e.x>p.x?1:-1,p,COMBO[Math.min(p.combo,9)]);continue;}
    if(p.mega>0){p.combo++;killFoe(w,e,e.x>p.x?1:-1,p,COMBO[Math.min(p.combo,9)]);continue;}
+   // spinning a trick off a ski jump mows down whatever you hit
+   if(p.spin&&p.skis&&!p.grounded){p.combo++;killFoe(w,e,e.x>p.x?1:-1,p,COMBO[Math.min(p.combo,9)]);continue;}
    if(e.type==='dreamer'&&e.state!=='walk'||e.type==='slasher'&&e.state==='down'||e.type==='podoboo'&&e.state==='wait')continue;
    if(e.type==='piranha'||NO_STOMP(e.type)){hurt(p,w);continue;}
    const stomp=p.vy>0&&p.prevY<=eTop+7;
@@ -564,8 +568,8 @@ async function marioBros(s){
      // parka climbers and penguins turn round at ledges
      case 'climber':if(e.vy===0){const fx=e.x+Math.sign(e.vx)*8,r=Math.floor((e.y+1)/T);if(!solid(tileAt(w,an,Math.floor(fx/T),r)))e.vx=-e.vx;}e.swing=Math.abs(dx)<30;
       // and they lob their mallets at you in an arc
-      if(e.mouth>0)e.mouth--;e.ham=(e.ham??50+Math.floor(e.x)%60)-1;
-      if(e.ham<=0){e.ham=Math.round((110+s.random()*70)/(a.k||1));if(Math.abs(dx)<170&&Math.abs(tg.y-e.y)<90&&!(net&&!auth)){e.dir=dir;e.mouth=14;const v=clamp(dx/48,-2.2,2.2);w.flames.push({x:e.x+dir*4,y:e.y-20,vx:Math.abs(v)<.8?dir*.8:v,vy:-3.8,g:.16,area:an,look:'hammer'});}}break;
+      e.pc??=Math.floor(e.x/T)%2;if(e.mouth>0)e.mouth--;if(e.reload>0)e.reload--;e.ham=(e.ham??50+Math.floor(e.x)%60)-1;
+      if(e.ham<=0){e.ham=Math.round((128+s.random()*80)/(a.k||1));if(Math.abs(dx)<170&&Math.abs(tg.y-e.y)<90&&!(net&&!auth)){e.dir=dir;e.mouth=14;e.reload=RELOAD;const v=clamp(dx/48,-2.2,2.2);w.flames.push({x:e.x+dir*4,y:e.y-20,vx:Math.abs(v)<.8?dir*.8:v,vy:-3.8,g:.16,area:an,look:'hammer'});}}break;
      // penguins belly-slide straight off ledges and keep going
      case 'penguin':break;
      // the cloud rider stays over you (stomp him from up high), dropping spiky shells; past the end of his patch he leaves
@@ -583,8 +587,8 @@ async function marioBros(s){
      case 'bullet':e.x+=e.vx;e.y=e.home;e.dir=Math.sign(e.vx)||-1;if(e.x>reachR(cam,w,an)+64)e.alive=false;continue;
      case 'hammerBro':{e.dir=dir;if(e.hx===undefined)e.hx=e.x;e.vx=Math.floor(e.t/70)%2?.4:-.4;if(e.x<e.hx-14)e.vx=.4;if(e.x>e.hx+14)e.vx=-.4;
       if(e.vy===0){const fx=e.x+Math.sign(e.vx)*8,r=Math.floor((e.y+1)/T);if(!solid(tileAt(w,an,Math.floor(fx/T),r)))e.vx=0;if(e.t%150===75)e.vy=-3.6;}
-      if(e.mouth>0)e.mouth--;e.ham=(e.ham??30+Math.floor(e.x)%40)-1;
-      if(e.ham<=0){e.ham=Math.round((60+s.random()*55)/(a.k||1));if(Math.abs(dx)<190&&!(net&&!auth)){e.mouth=12;w.flames.push({x:e.x+dir*4,y:e.y-26,vx:dir*(.9+s.random()*1.1),vy:-4.3,g:.18,area:an,look:'hammer'});}}break;}
+      if(e.mouth>0)e.mouth--;if(e.reload>0)e.reload--;e.ham=(e.ham??30+Math.floor(e.x)%40)-1;
+      if(e.ham<=0){e.ham=Math.round((70+s.random()*64)/(a.k||1));if(Math.abs(dx)<190&&!(net&&!auth)){e.mouth=12;e.reload=RELOAD;w.flames.push({x:e.x+dir*4,y:e.y-26,vx:dir*(.9+s.random()*1.1),vy:-4.3,g:.18,area:an,look:'hammer'});}}break;}
      case 'podoboo':if(e.state==='wait'){e.y=e.home+20;if(e.t>(e.wait??60+Math.floor(e.x)%90)){e.state='up';e.vy=-(e.pow||5.4);e.t=0;}continue;}
       e.vy+=.15;e.y+=e.vy;if(e.vy>0&&e.y>=e.home+20){e.state='wait';e.t=0;e.wait=70+Math.floor(e.x*7+e.t)%80;}continue;
      case 'leaper':e.vy+=.12;e.x+=e.vx;e.y+=e.vy;if(e.vy>0&&e.y>ROWS*T+12)e.alive=false;continue;

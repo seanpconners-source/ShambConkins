@@ -426,6 +426,8 @@ function drawGhost(g,e,t){g.save();g.translate(e.x,e.y-8+Math.sin(t*3+e.x)*1.5);
  if(e.shy){g.fillStyle='#fcbcd8';g.fillRect(-6,1,3,2);g.fillRect(3,1,3,2);g.fillStyle='#d8d8ec';g.fillRect(-7,-4,5,4);g.fillRect(2,-4,5,4);}
  else{g.fillStyle='#000';g.fillRect(-5,-4,3,4);g.fillRect(1,-4,3,4);g.fillStyle='#e8203c';g.fillRect(-3,2,5,3);}g.restore();}
 // Worlds 3-8 enemies (our own designs; feet at x,y)
+// how much of a hammer thrower's next hammer is in its hand: 0 right after a throw, growing back in over the last 12 frames
+const handK=e=>e.reload>0?Math.max(0,1-e.reload/12):1;
 function drawFoe(g,e,t){g.save();g.translate(e.x,e.y);if(e.state==='dying'){g.scale(1,-1);g.translate(0,e.type==='trex'?32:20);}
  if(e.hit>0&&(e.hit>>1)%2)g.globalAlpha*=.4;const f=(e.vx>0||e.dir>0&&!e.vx)?-1:1,st=Math.floor(e.frame*7)%2,R=(c,x,y,w,h)=>{g.fillStyle=c;g.fillRect(x,y,w,h);};
  switch(e.type){
@@ -437,8 +439,8 @@ function drawFoe(g,e,t){g.save();g.translate(e.x,e.y);if(e.state==='dying'){g.sc
    R('#6c4c2c',-6,-28,12,3);R('#6c4c2c',-4,-31,8,3);R('#c8645c',-9,-15,3,5);for(let k=0;k<4;k++)R('#d8d8e8',-11-k%2,-17+k*2,4,1);break;
   case 'imp':case 'brute':{const s2=e.type==='brute'?1.6:1;g.scale(f*s2,s2);R(e.type==='brute'?'#d8788c':'#a81418',-5,-11,10,8);R(e.type==='brute'?'#d8788c':'#a81418',-4,-3,3,3);R(e.type==='brute'?'#d8788c':'#a81418',1,-3,3,3);R('#fcf03c',-3,-9,2,2);R('#fcf03c',1,-9,2,2);R('#fcfcfc',-3,-6,6,1);
    R('#3c0808',-5,-14,2,3);R('#3c0808',3,-14,2,3);R('#a81418',5,-6,4,1);R('#a81418',8,-8,1,2);break;}
-  case 'climber':{g.scale(f,1);const c=(e.x/16|0)%2?'#e85cbc':'#3c7cfc';R(c,-6,-18,12,12);R('#fcfcfc',-6,-19,12,2);R('#fcbc8c',-3,-15,6,5);R('#000',-2,-13,1,1);R('#000',1,-13,1,1);R('#2c2c2c',-5,-6,4,6-st*2);R('#2c2c2c',1,-6,4,4+st*2);
-   if(e.mouth>0){R(c,-8,-24,3,8);break;}g.save();g.translate(-7,-12);g.rotate(e.swing?Math.sin(t*14)*1.2-.4:-.4);R('#8c5c34',-1,-12,2,12);R('#5c5c6c',-4,-15,8,4);g.restore();break;}
+  case 'climber':{g.scale(f,1);const c=(e.pc??(e.x/16|0)%2)?'#e85cbc':'#3c7cfc';R(c,-6,-18,12,12);R('#fcfcfc',-6,-19,12,2);R('#fcbc8c',-3,-15,6,5);R('#000',-2,-13,1,1);R('#000',1,-13,1,1);R('#2c2c2c',-5,-6,4,6-st*2);R('#2c2c2c',1,-6,4,4+st*2);
+   if(e.mouth>0){R(c,-8,-24,3,8);break;}const hk=handK(e);if(hk<=0)break;g.save();g.translate(-7,-12);g.rotate(e.swing&&hk>=1?Math.sin(t*14)*1.2-.4:-.4);g.scale(hk,hk);R('#8c5c34',-1,-12,2,12);R('#5c5c6c',-4,-15,8,4);g.restore();break;}
   case 'penguin':g.scale(f,1);R('#1c1c2c',-8,-8,16,8);R('#fcfcfc',-6,-4,11,4);R('#f8a018',-10,-6,3,2);R('#fcfcfc',-7,-7,2,2);R('#000',-7,-7,1,1);R('#f8a018',6,-2,4,2);break;
   case 'icicle':{const sh=e.state==='shake'?Math.sin(t*60):0;g.translate(sh,0);g.fillStyle='#bcecff';g.beginPath();g.moveTo(-6,-14);g.lineTo(6,-14);g.lineTo(0,2);g.fill();R('#ffffff',-3,-13,2,8);break;}
   case 'dice':g.rotate(e.vy?e.frame*6:0);R('#fcfcfc',-7,-14,14,14);R('#9c9c9c',-7,-1,14,1);R('#e8203c',-1,-8,2,2);R('#000',-5,-12,2,2);R('#000',3,-4,2,2);break;
@@ -472,7 +474,7 @@ function drawFoe(g,e,t){g.save();g.translate(e.x,e.y);if(e.state==='dying'){g.sc
   // the Hammer Bro: a helmeted turtle that stands up tall, arm raised with a hammer when he throws
   case 'hammerBro':{g.scale(-(e.dir||-1),1);R('#fcfcfc',-5,-18,10,12);R('#2c9c3c',-6,-19,9,11);R('#1c6c2c',-6,-12,9,1);R('#f8a018',-5,-6,4,6-st*2);R('#f8a018',1,-6,4,4+st*2);
    R('#f8a018',-8,-25,7,7);R('#000',-7,-23,1,2);R('#5c5c6c',-7,-28,9,4);R('#3c3c4c',-7,-25,9,1);
-   if(e.mouth>0){R('#f8a018',-2,-32,3,9);R('#8c5c34',-1,-38,1,7);R('#9c9c9c',-3,-40,5,3);}else{R('#f8a018',2,-17,3,7);R('#8c5c34',3,-24,1,7);R('#9c9c9c',1,-26,5,3);}break;}
+   if(e.mouth>0){R('#f8a018',-2,-32,3,9);}else{R('#f8a018',2,-17,3,7);const hk=handK(e);if(hk>0){g.save();g.translate(3.5,-17);g.scale(hk,hk);R('#8c5c34',-.5,-7,1,7);R('#9c9c9c',-2.5,-9,5,3);g.restore();}}break;}
   // a lava bubble: a fireball with eyes, flipped on the way down
   case 'podoboo':{if(e.vy>0)g.scale(1,-1);g.translate(0,-7);const fl=Math.floor(t*12)%2;g.fillStyle=fl?'#fc9838':'#fcd84c';g.beginPath();g.ellipse(0,0,6,7,0,0,7);g.fill();g.fillStyle='#d82800';g.beginPath();g.moveTo(-5,3);g.lineTo(0,10+fl*2);g.lineTo(5,3);g.fill();
    R('#fcfcfc',-3,-3,2,3);R('#fcfcfc',1,-3,2,3);R('#000',-3,-2,1,2);R('#000',1,-2,1,2);break;}
