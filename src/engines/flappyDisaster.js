@@ -11,10 +11,14 @@ const {soloFinish,soloProgress}=require("src/solo.js");
 const {netField}=require("src/engines/netField.js");
 const {snd}=require("src/engines/arenaKit.js");
 
-// ---- the world: logical units, 512 tall like the original screen; the ground band at the bottom
-const VH=512,GROUND=80,FLOOR=VH-GROUND,PIPE_W=76,BIRD_R=17,G=1650,FLAP=-500,BIRD_X=.3;
-// difficulty by pipe number: gap, distance to the next pipe, speed, how far the gap jumps, moving pipes
-const gapOf=i=>Math.max(136,196-i*1.05),spaceOf=i=>Math.max(196,262-i*1.1),speedOf=n=>Math.min(250,150+n*1.7);
+// ---- the world: logical units, 720 tall (about one phone screen, no zoom-in); the ground band at the bottom
+// the world is ~one phone screen tall (no zoom-in) and the flap/gravity are the old game's (floaty, gentle taps):
+// gravity 540, flap -235, pipes 140 px/s at the start; owner (Nov 22): 'like it was before, with the new looks'
+const VH=720,GROUND=96,FLOOR=VH-GROUND,PIPE_W=64,BIRD_R=18,G=540,FLAP=-235,FALL_MAX=560,BIRD_X=.3;
+// bird's x on screen: 30% in on phones, never more than 170 units (wide screens see more pipes ahead, same timing)
+
+// difficulty by pipe number: gap, distance to the next pipe, speed, how far the gap jumps, moving pipes (slow ramps)
+const gapOf=i=>Math.max(150,176-i*.45),spaceOf=i=>Math.max(200,236-i*.4),speedOf=n=>Math.min(215,140+n);
 const jumpOf=i=>i<8?.28:i<20?.42:i<40?.55:.68,moveOf=i=>i<22?0:Math.min(58,18+(i-22)*1.2);
 function course(seed){const r=seededRandom(seed+':flap-course'),P=[];let x=520,y=FLOOR/2;
  return k=>{while(P.length<=k){const i=P.length,gap=gapOf(i),lo=70+gap/2,hi=FLOOR-70-gap/2,jump=(hi-lo)*jumpOf(i);
@@ -171,7 +175,7 @@ async function flappy(s){
  const sfx={flap:()=>snd(520,.07,{type:'triangle',vol:.05,to:760}),point:()=>{snd(880,.06,{type:'square',vol:.035});snd(1320,.09,{type:'square',vol:.035,delay:.06});},
   hit:()=>{snd(120,.14,{type:'sawtooth',vol:.07,to:60});snd(800,.05,{type:'square',vol:.04});},die:()=>snd(500,.5,{type:'triangle',vol:.05,to:90}),
   card:()=>{snd(392,.1,{type:'square',vol:.03});snd(523,.1,{type:'square',vol:.03,delay:.1});snd(659,.18,{type:'square',vol:.03,delay:.2});}};
- const layout=()=>{k=s.H/VH;vw=s.W/k;};
+ const layout=()=>{k=s.H/VH;vw=s.W/k;},birdX=()=>Math.min(vw*BIRD_X,170);
  const me=()=>online?nf.me:cur,mine=()=>!online||cur===nf?.me;
  // online: the runner's phone streams its bird; the watcher extrapolates between snapshots
  const nf=online?netField(s,{hz:20,pack:()=>({c:cur,y:Math.round(B.y*10)/10,v:Math.round(B.vy),tr:Math.round(B.travel*10)/10,sc:B.score,d:B.dead?1:0,st:B.started?1:0}),
@@ -186,15 +190,15 @@ async function flappy(s){
  const reset=()=>Object.assign(B,{y:FLOOR*.45,vy:0,travel:0,score:0,dead:false,wing:0,next:0,started:false,deadT:0});
  function step(dt){B.wing-=dt;
   if(phase==='ready'){B.y=FLOOR*.45+Math.sin(t*6)*8;return;}
-  if(B.dead){B.deadT+=dt;if(B.y<FLOOR-BIRD_R){B.vy=Math.min(B.vy+G*dt,900);B.y=Math.min(FLOOR-BIRD_R,B.y+B.vy*dt);}return;}
-  const sp=speedOf(B.score);B.travel+=sp*dt;B.vy=Math.min(B.vy+G*dt,720);B.y+=B.vy*dt;if(B.y<-60){B.y=-60;B.vy=0;}
-  const bx=B.travel+vw*BIRD_X;let hit=B.y>FLOOR-BIRD_R;
+  if(B.dead){B.deadT+=dt;if(B.y<FLOOR-BIRD_R){B.vy=Math.min(B.vy+G*2*dt,900);B.y=Math.min(FLOOR-BIRD_R,B.y+B.vy*dt);}return;}
+  const sp=speedOf(B.score);B.travel+=sp*dt;B.vy=Math.min(B.vy+G*dt,FALL_MAX);B.y+=B.vy*dt;if(B.y<-60){B.y=-60;B.vy=0;}
+  const bx=B.travel+birdX();let hit=B.y>FLOOR-BIRD_R;
   for(let i=Math.max(0,B.next-2);i<B.next+3;i++){const p=pipeAt(i),gy=gapY(p,B.travel),half=p.gap/2;
    if(bx+BIRD_R*.8>p.x&&bx-BIRD_R*.8<p.x+PIPE_W&&(B.y-BIRD_R*.8<gy-half||B.y+BIRD_R*.8>gy+half))hit=true;
    if(i===B.next&&bx>p.x+PIPE_W/2){B.next++;B.score++;sfx.point();soloProgress(s,B.score,B.score,`${stage.name} · ${B.score}`);}}
   if(hit)die();}
  function die(){if(B.dead)return;B.dead=true;B.deadT=0;B.vy=Math.min(B.vy,-120);shake=.35;flash=1;sfx.hit();setTimeout(()=>s.alive&&sfx.die(),250);
-  for(let i=0;i<18;i++)parts.push({x:vw*BIRD_X,y:B.y,vx:(Math.random()-.5)*400,vy:-Math.random()*300,life:.8,c:stage.drip||stage.spark||stage.wing});
+  for(let i=0;i<18;i++)parts.push({x:birdX(),y:B.y,vx:(Math.random()-.5)*400,vy:-Math.random()*300,life:.8,c:stage.drip||stage.spark||stage.wing});
   s.react?.(cur,'sad');nf?.push();}
  // ---- flow: the stage card, then every player's run
  const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -213,7 +217,7 @@ async function flappy(s){
   if(solo)soloFinish(s,scores[0],scores[0],`${stage.name} · ${scores[0]} pipes${scores[0]>best?' · NEW BEST':''}`,scores[0]>best&&scores[0]>0);
   else s.finish([...scores],`Flappy Disaster · ${stage.name}`);}
  // ---- drawing
- function bird(y,vy,wing,dead,i){x.save();x.translate(vw*BIRD_X,y);x.rotate(dead?Math.min(1.5,.4+B.deadT*3):clamp(vy/600,-.45,1.2));const r=BIRD_R*1.55;
+ function bird(y,vy,wing,dead,i){x.save();x.translate(birdX(),y);x.rotate(dead?Math.min(1.5,.4+B.deadT*3):clamp(vy/600,-.45,1.2));const r=BIRD_R*1.55;
   const up=wing>0;x.fillStyle=stage.wing;x.strokeStyle='#0008';x.lineWidth=2;x.beginPath();x.ellipse(-r*.55,up?-r*.5:r*.2,r*.62,r*.3,up?-.5:.3,0,7);x.fill();x.stroke();
   s.sprite(x,i,0,0,r*2.05,{exact:true,mood:dead?'sad':vy<-200?'happy':undefined});x.restore();}
  function draw(){layout();x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,s.W,s.H);
@@ -253,7 +257,7 @@ async function flappy(s){
  s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;phaseT+=dt;if(shake>0)shake-=dt;if(flash>0)flash=Math.max(0,flash-dt*4);layout();
   if(phase==='ready'||phase==='play'||phase==='over'){if(mine()){step(dt);nf?.tick(dt);}}
   for(let i=parts.length-1;i>=0;i--){const q=parts[i];q.vy+=900*dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;if(q.life<=0)parts.splice(i,1);}
-  if(s.debug?.autopilot&&mine()&&(phase==='ready'||phase==='play')&&!B.dead){const p=pipeAt(B.next),gy=gapY(p,B.travel+60);if(phase==='ready'||B.y>gy+8&&B.vy>-50)flap();}
+  if(s.debug?.autopilot&&mine()&&(phase==='ready'||phase==='play')&&!B.dead){const bx=B.travel+birdX(),q=B.next>0&&bx<pipeAt(B.next-1).x+PIPE_W+BIRD_R?pipeAt(B.next-1):pipeAt(B.next),gy=gapY(q,B.travel+40);if(phase==='ready'||B.y>gy+14&&B.vy>-20)flap();}
   draw();});
  s.debug={engine:'flappy',stage:stage.id,STAGES:STAGES.map(t=>t.id),get phase(){return phase;},B,scores,pipeAt,flap,die,autopilot:false,
   // online test bot: fly this phone's turn a little way, then crash
