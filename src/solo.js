@@ -34,7 +34,7 @@ const SOLO_IDS={
  'raiders-ball-run':'cpu','battle-royale-island':'cpu','metal-gear-tank-duel':'cpu',
  'league-penalties':'cpu','brawndo-fruit-merge':'cpu','terminator-scan':'cpu','review-pancakes':'cpu','tarantino-standoff':'cpu',
  'tarantino-twist':'cpu','tarantino-adrenaline':'cpu','tarantino-crazy88':'cpu','tarantino-bounty':'cpu','tarantino-chase':'cpu',
- 'hungry-hungry-heads':'cpu','snowball-fight':'cpu','disc-duel':'cpu','arrow-arena':'cpu','driller-duel':'cpu','bubble-battle':'cpu',
+ 'hungry-hungry-heads':'cpu','snowball-fight':'cpu','disc-duel':'cpu','arrow-arena':'cpu','driller-duel':'levels','bubble-battle':'cpu',
  'sp-dodgeball':'cpu','sp-cheesy-poofs':'cpu','sp-killed-kenny':'cpu','bond-laser-vault':'cpu','bond-golden-gun':'cpu','bond-goldfinger-bomb':'cpu',
  'hyrule-rupee-rush':'cpu','hyrule-sword-duel':'cpu','chutes-ladder-rush':'cpu','candy-gumdrop-catch':'cpu','candy-color-dash':'cpu',
  'derezzed-cycles':'cpu','bomber-duel':'cpu','pac-maze-duel':'cpu','block-battle':'cpu','shred-hero':'cpu','underdog-dodgeball':'cpu','fight-night':'cpu',

@@ -2,7 +2,7 @@
 // Engines live in src/engines/arena*.js; shared helpers in src/engines/arenaKit.js.
 // Engines load lazily so this pack can be required early without circular module imports.
 const lazy=(file,name)=>s=>require(file)[name](s);
-const engines={hippos:lazy("src/engines/arenaHippos.js","hippos"),snow:lazy("src/engines/arenaSnow.js","snow"),disc:lazy("src/engines/arenaDisc.js","disc"),arrow:lazy("src/engines/arenaArrow.js","arrow"),driller:lazy("src/engines/arenaDriller.js","driller"),bubble:lazy("src/engines/arenaBubble.js","bubble")};
+const engines={hippos:lazy("src/engines/arenaHippos.js","hippos"),snow:lazy("src/engines/arenaSnow.js","snow"),disc:lazy("src/engines/arenaDisc.js","disc"),arrow:lazy("src/engines/arenaArrow.js","arrow"),driller:lazy("src/engines/digDuel.js","driller"),bubble:lazy("src/engines/arenaBubble.js","bubble")};
 const games=[
  {id:'hungry-hungry-heads',engine:'hippos',title:'Hungry Hungry Hippos · Hungry Hungry Heads',source:'Hungry Hungry Hippos',icon:'🦛',category:'arcade',level:'body',duration:'60 seconds',
   rules:'Your head is the hippo. Tap your half to snap your neck out to that spot and chomp the marbles there; hold to keep your mouth open and steer it (it tires after a second). Clumps give bonus chomps, golden marbles are worth 5 and the last ten seconds count double. Most marbles wins. P1 WASD + Space, P2 arrows + Enter.'}
@@ -12,8 +12,8 @@ const games=[
   rules:'One disc, two catchers. Drag to run, touch near the disc to dive for it. Holding it, swipe to throw: faster is harder, a curved swipe curves the disc, a tap lobs. Goals pay 3 in the corners and 5 in the middle; a lob that lands uncaught is 2. First to 12, or most points at 75 seconds. P1 WASD + Space, E lob; P2 arrows + Enter, period lob.'}
  ,{id:'arrow-arena',engine:'arrow',title:'TowerFall · Arrow Arena',source:'TowerFall',icon:'🏹',category:'duel',level:'body',duration:'first to 3 rounds',
   rules:'Side-view arena that wraps left to right. Drag to run, flick up to jump, tap to shoot toward the tap (tap beside your archer to shoot the way you face). Three arrows each: pick stuck ones back up. One hit kills and you can stomp heads. First to three rounds. P1 A/D, W jump, Space shoot; P2 arrows + Enter.'}
- ,{id:'driller-duel',engine:'driller',title:'Mr. Driller · Driller Duel',source:'Mr. Driller',icon:'⛏️',category:'arcade',level:'body',duration:'first to 120 m or 75s',
-  rules:'Two shafts with identical blocks. Drag to walk, tap beside your driller to drill sideways, tap or hold on its column to drill down. Four or more same-colour blocks that touch pop; undermined blocks wobble, then fall and crush. Air drains: grab AIR capsules (hard brown blocks cost air). Three lives. First to 120 m, or deepest at 75 seconds. P1 A/D + S, P2 arrows (Down drills).'}
+ ,{id:'driller-duel',engine:'driller',title:'Dig Duel',source:'Dig Dug',icon:'⛏️',category:'arcade',level:'body',duration:'3-5 minutes',
+  rules:'Dig Dug style. Drag to tunnel through four layers of dirt. PUMP fires your air hose down the tunnel: keep pumping a Mole Rat or Fire Newt until it pops (deeper = more points, a newt pumped sideways pays double). Dig under rocks to drop them on enemies. Enemies drift through dirt as ghost eyes; newts breathe fire along their row. Clear every enemy for the next round. 2P take turns on the same field; online you both dig at once. Most points wins.'}
  ,{id:'bubble-battle',engine:'bubble',title:'Puzzle Bobble · Bubble Battle',source:'Puzzle Bobble',icon:'🫧',category:'puzzle',level:'mind',duration:'90 seconds',
   rules:'Two mirrored bubble fields with identical bubbles. Drag to aim, release to fire, tap your cannon to swap. Match three or more to pop; bubbles left hanging drop and send grey garbage to your rival. A new row drops every 14 seconds and bubbles reaching the red line lose. Higher score at 90 seconds wins. P1 A/D aim, Space fire, S swap; P2 left/right, Enter, Down.'}
 ];
