@@ -400,7 +400,9 @@ async function marioBros(s){
   if(p.grounded&&(dir>0)){for(const d of def.doors)if(d.kind==='side'&&p.x+HW>=d.c*T-.6&&p.x+HW<=d.c*T+6&&Math.abs(p.y-(d.r+1)*T)<1){p.pipe={kind:'side',t:0,door:d};p.vx=0;p.auto=false;sfx.pipe();note(p,'side pipe');return;}}
   // the flagpole
   const f=def.flag;
-  if(f&&!p.flag&&!p.flagged&&p.x+HW>=f.x-8.5&&p.x<f.x+12&&p.y>f.top){
+  // flying (cape) or jumping right over the pole counts as grabbing it at the very top: past it there's only the castle
+  if(f&&!p.flag&&!p.flagged&&p.x+HW>=f.x-8.5&&(p.x<f.x+12&&p.y>f.top||p.x>=f.x+12)){
+   if(p.y<=f.top+2){p.y=f.top+2;p.flyT=0;p.grounded=false;}
    const grab=clamp(f.base-p.y,0,10*T),pts=grab>8.5*T?5000:grab>6*T?2000:grab>4*T?800:grab>2*T?400:100;
    p.flag={t:0,phase:'slide'};p.flagged=true;p.x=f.x-6;p.vx=0;p.vy=0;p.facing=1;p.crouch=false;p.ride=null;addScore(p,w,pts,f.x+14,p.y-30);sfx.flag();note(p,'flag');
    p.fireworksDue=mode==='world'&&[1,3,6].includes(p.time%10)?p.time%10:0;
@@ -860,7 +862,8 @@ async function marioBros(s){
   else if(kind==='pier'||kind==='coaster')A_.drawCarnivalNight(g,cam.x,view.w,simT,kind==='coaster');else if(kind==='funhouse')A_.drawFunhouseBg(g,cam.x,view.w,y0,y1);else if(kind==='bigtop')A_.drawBigTopBg(g,cam.x,view.w,y0,y1,simT);
   else if(THEMED.has(kind))A_.drawThemeBg(g,cam.x,view.w,kind,simT,y0,y1,!!def.wind&&windOn());
   for(const [m0,m1] of def.mirrors||[])if(m1*T>x0&&m0*T<x1){A_.drawMirrors(g,m0*T,m1*T,3*T,13*T,simT);nesText(g,'MIRROR MAZE',m0*T+8,5*T+4,'#f8d878');}
-  for(const d of def.decor){if(d.x>x1+40||d.x+120<x0)continue;if(d.type==='hill')A_.drawHill(g,d.x,d.w);else if(d.type==='bush'){g.save();g.translate(0,13*T-8);A_.drawCloud(g,d.x,0,d.n,C.bush,C.green);g.restore();}else if(d.type==='castle')A_.drawCastle(g,tiles.over[TILE.BRICK],d.x-T*1.5);else if(d.type==='stall'||d.type==='balloons'||d.type==='funsign')A_.drawPierProp(g,d,simT);else if(PROPS.has(d.type))A_.drawThemeProp(g,d,simT);else if(d.type!=='cloud')A_.drawCityProp(g,d);else A_.drawCloud(g,d.x,d.y,d.n,C.white,C.cloud);}
+  for(const d of def.decor){if(d.x>x1+40||d.x+120<x0)continue;if(d.gy){g.save();g.translate(0,(d.gy-13)*T);}
+   if(d.type==='hill')A_.drawHill(g,d.x,d.w);else if(d.type==='bush'){g.save();g.translate(0,13*T-8);A_.drawCloud(g,d.x,0,d.n,C.bush,C.green);g.restore();}else if(d.type==='castle')A_.drawCastle(g,tiles.over[TILE.BRICK],d.x-T*1.5);else if(d.type==='stall'||d.type==='balloons'||d.type==='funsign')A_.drawPierProp(g,d,simT);else if(PROPS.has(d.type))A_.drawThemeProp(g,d,simT);else if(d.type!=='cloud')A_.drawCityProp(g,d);else A_.drawCloud(g,d.x,d.y,d.n,C.white,C.cloud);if(d.gy)g.restore();}
   if(def.castle&&def.castle.x<x1&&def.castle.x+5*T>x0){A_.drawCastleFlag(g,def.castle.x+2.5*T,w.castleFlag);A_.drawCastle(g,(tiles[kind]||tiles.over)[TILE.BRICK],def.castle.x,true,bgOf(def));}
   if(def.flag&&def.flag.x>x0-30&&def.flag.x<x1+30)A_.drawFlagpole(g,def.flag,w.flagPos);
   for(const tx of def.texts)nesText(g,tx.str,tx.x,tx.y);

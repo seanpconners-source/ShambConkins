@@ -65,6 +65,12 @@ for(const [stage,nm] of [[9,'3-2'],[13,'4-2']]){await go(stage);
  const ex=await until('return d.pl[0].area==="exit";',5000);await page.keyboard.up('s');await page.waitForTimeout(600);
  if(!ex)fail(nm+' roof room pipe did not lead to the flagpole area');else pass(nm+' roof room pipe → flagpole area');}
 
+// ---- flying over the flagpole (cape) still catches the flag at the top: past it there's only the castle
+{await go(18);const f=await dbg('const f=d.worlds[0].areas.main.def.flag;return {x:f.x,top:f.top};');
+ await dbg(`const p=d.pl[0];Object.assign(p,{area:'main',x:${f.x}+30,y:${f.top}-30,prevY:${f.top}-30,vx:2.5,vy:0,grounded:false,flag:null,flagged:false});`);
+ const got=await until('return !!d.pl[0].flag;',3000);if(!got)fail('flying over the 5-3 flagpole did not catch the flag');else pass('flew over the flagpole: caught at the top');
+ await until('if(d.phase==="card")d.skipCard();return d.phase==="play"&&d.pl[0].stage!==18;',15000);}
+
 // ---- 4-2: the hidden shelf pipe → Warp Zone → World 6
 {await go(13);const wp=await dbg(`const def=d.worlds[0].areas.main.def,dr=def.doors.find(x=>x.to&&x.to.area==='warp');return dr&&{c:dr.c,top:dr.top};`);
  if(!wp)fail('4-2 warp pipe missing');else{

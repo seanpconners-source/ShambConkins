@@ -228,7 +228,7 @@ function w21(){
  cityScenery(A);
  // down the first pipe: a subway coin room that comes up out of the tall pipe; the brick at 100 grows a beanstalk
  A.vineTo={area:'cloud',x:3*T+8,y:9*T,how:'drop'};
- return {name:'2-1',title:DORK,time:400,areas:{main:A,bonus:coinRoom('subway',rng(21),74),cloud:cloudArea(rng(211),152)},start:{area:'main',x:40,y:13*T},check:{area:'main',x:96*T+8,y:13*T}};
+ return {name:'2-1',title:DORK,time:400,areas:{main:A,bonus:coinRoom('subway',rng(21),74),cloud:cloudArea(rng(211),152,2)},start:{area:'main',x:40,y:13*T},check:{area:'main',x:96*T+8,y:13*T}};
 }
 
 // ------------------------------------------------------------------ 2-2 the flooded subway (water stage)
@@ -332,7 +332,7 @@ function w31(){
  A.foe('slasher',74);A.foe('dreamer',138);A.foe('imp',150);A.foe('imp',176);
  pierScenery(A);
  A.vineTo={area:'cloud',x:3*T+8,y:9*T,how:'drop'};
- return {name:'3-1',title:BOARD,time:400,areas:{main:A,bonus:coinRoom('under',rng(31),134),cloud:cloudArea(rng(311),101)},start:{area:'main',x:40,y:13*T},check:{area:'main',x:102*T,y:13*T}};
+ return {name:'3-1',title:BOARD,time:400,areas:{main:A,bonus:coinRoom('under',rng(31),134),cloud:cloudArea(rng(311),101,3)},start:{area:'main',x:40,y:13*T},check:{area:'main',x:102*T,y:13*T}};
 }
 
 // ------------------------------------------------------------------ 3-2 the funhouse (mirror maze: left and right swap)
@@ -426,12 +426,31 @@ function coinRoom(kind,r,exitCol){const R=area(17,kind);R.scenery=false;R.ground
  else{R.row(3,9,'BBBBBBBBB',{7:'multi'});R.coinRun(3,11,8);R.coinRun(3,11,12);R.coinRun(4,10,5);R.hidden(2,6,'1up');}
  R.sidePipe(13,12,1,0,{to:{area:'main',pipe:exitCol,how:'rise'}});return R;}
 // the cloud area at the top of a beanstalk: a long walk on the clouds collecting coins, then drop back into the stage
-function cloudArea(r,landCol){const W=80,A=area(W,'sky');A.scenery=false;
- A.fill(0,W-14,11,11,GROUND);
- for(let c=5;c<W-18;c+=6+Math.floor(r()*3)){const pat=Math.floor(r()*3);
-  if(pat===0)A.coinRun(c,c+3,8);else if(pat===1){A.coinRun(c,c+4,9);A.coinRun(c+1,c+3,7);}else{A.coin(c,8);A.coin(c+1,7);A.coin(c+2,6);A.coin(c+3,7);A.coin(c+4,8);}}
- A.q(Math.floor(W/2),7,'1up');A.coinRun(W-16,W-15,7);
- for(let c=6;c<W;c+=11)A.decor.push({type:'cloud',x:c*T,y:(2+(c*7)%3)*T,n:1+(c*3)%3});
+// the bonus area at the top of a beanstalk: World 1's coin clouds, and every other world its own high place (World 4 = the
+// ski run below). Fall off any gap or the far end and you drop back into the stage at the landing spot.
+const SKY_THEMES={
+ 2:{kind:'roof',title:'PENTHOUSE ROOFTOPS',shape:'roofs',props:['lamp','bench','lamp']},
+ 3:{kind:'coaster',title:'TOP OF THE COASTER',shape:'track'},
+ 5:{kind:'strip',title:'HIGH ROLLER SKYWALK',shape:'flat',props:['neon'],gap:13},
+ 6:{kind:'jungle',title:'TREETOP CANOPY',shape:'islands',props:['fern']},
+ 7:{kind:'bones',title:"THE DEVIL'S BALCONY",shape:'islands',props:['skull','firepot']},
+ 8:{kind:'gates',title:'THE PEARLY GATES',shape:'flat',props:['harp']},
+};
+function cloudArea(r,landCol,wn=1){const th=SKY_THEMES[wn],W=80,A=area(W,th?th.kind:'sky');A.scenery=false;A.skyRoom=wn;
+ // the ground: [c0,c1,top] pieces; the first always under the beanstalk
+ const segs=[];const shape=th?th.shape:'flat';
+ if(shape==='flat')segs.push([0,W-14,11]);
+ else{let c=0,top=11;while(c<W-16){const w=c===0?10:5+Math.floor(r()*(shape==='islands'?3:6));const t=c===0?11:shape==='roofs'?10+Math.floor(r()*2):shape==='track'?clamp(top+Math.floor(r()*3)-1,9,11):9+Math.floor(r()*3);
+  const c1=Math.min(c+w-1,W-14);segs.push([c,c1,t]);top=t;c=c1+1+(c1>=W-14?0:2+Math.floor(r()*(shape==='islands'?2:1)));}}
+ for(const [c0,c1,t] of segs){if(shape==='roofs'||shape==='track')A.building(c0,c1-c0+1,t);else A.fill(c0,c1,t,t,GROUND);}
+ const topAt=c=>{const sg=segs.find(([a,b])=>c>=a&&c<=b);return sg?sg[2]:null;};
+ // coins: patterns over the ground, an arc over every gap
+ for(let c=5;c<W-18;c+=6+Math.floor(r()*3)){const t=topAt(c+2);if(t===null)continue;const pat=Math.floor(r()*3);
+  if(pat===0)A.coinRun(c,c+3,t-3);else if(pat===1){A.coinRun(c,c+4,t-2);A.coinRun(c+1,c+3,t-4);}else{A.coin(c,t-3);A.coin(c+1,t-4);A.coin(c+2,t-5);A.coin(c+3,t-4);A.coin(c+4,t-3);}}
+ for(let k=1;k<segs.length;k++){const g0=segs[k-1][1]+1,g1=segs[k][0]-1;for(let c=g0;c<=g1;c++)A.coin(c,Math.min(segs[k-1][2],segs[k][2])-3);}
+ const mid=Math.floor(W/2),mt=topAt(mid)??topAt(mid+3)??11,mc=topAt(mid)!==null?mid:mid+3;A.q(mc,mt-4,'1up');A.coinRun(W-16,W-15,(topAt(W-16)??11)-4);
+ if(th){A.text(th.title,2,3);if(th.props)for(const [c0,c1,t] of segs)for(let c=c0+2;c<c1-1;c+=(th.gap||4)+Math.floor(r()*4))if(!A.tiles[(t-1)*W+c])A.decor.push({type:pick(r,th.props),x:c*T+8,gy:t});}
+ else for(let c=6;c<W;c+=11)A.decor.push({type:'cloud',x:c*T,y:(2+(c*7)%3)*T,n:1+(c*3)%3});
  A.vines=[{c:1,top:8*T,bottom:ROWS*T+T,max:8*T}];
  A.fallTo={area:'main',x:landCol*T+8,y:-T,how:'drop'};return A;}
 // World 4's beanstalk leads up to a downhill ski run instead of clouds: skis on, terraces of snow stepping down the
@@ -468,7 +487,7 @@ function warpRoom(kind,list){const A=area(24,kind);A.scenery=false;A.ground(0,23
 // their own stretch of ground further on (see `pending` in the generators)
 function secrets(A,areas,r,cfg,{exitCol,vineAt,vineRow=9,landCol}){
  if(exitCol>=0)areas.bonus=coinRoom(cfg.roomKind||'under',r,exitCol);else A.doors=A.doors.filter(d=>d.to?.area!=='bonus');
- if(vineAt>=0){if(landCol>=0&&isFree(A,vineAt,vineAt,0,vineRow-1)){if(cfg.ice){A.vineTo={area:'cloud',x:3*T+8,y:5*T,how:'drop'};areas.cloud=skiRun(r,landCol);}else{A.vineTo={area:'cloud',x:3*T+8,y:9*T,how:'drop'};areas.cloud=cloudArea(r,landCol);}}else A.content.set(vineRow*A.W+vineAt,'coin');}
+ if(vineAt>=0){if(landCol>=0&&isFree(A,vineAt,vineAt,0,vineRow-1)){if(cfg.ice){A.vineTo={area:'cloud',x:3*T+8,y:5*T,how:'drop'};areas.cloud=skiRun(r,landCol);}else{A.vineTo={area:'cloud',x:3*T+8,y:9*T,how:'drop'};areas.cloud=cloudArea(r,landCol,cfg.wn||1);}}else A.content.set(vineRow*A.W+vineAt,'coin');}
 }
 
 // ---- the real game's set pieces, shared by the stage builders. Each starts at column c and returns where the next
@@ -742,7 +761,7 @@ const WORLDS={
 };
 const GEN={over:genOver,under:genUnder,ath:genAthletic,castle:genCastle};
 const worldStages=wn=>WORLDS[wn].stages.map(([type,cfg],k)=>()=>{const W=WORLDS[wn];const pw=wn===8?['cape','mega','skis','yoshi'][k]:W.power;
- return GEN[type](wn,k+1,{lift:W.lift,ice:W.ice,extra:W.extra,roomKind:W.roomKind,...cfg,power:pw,title:W.title});});
+ return GEN[type](wn,k+1,{lift:W.lift,ice:W.ice,extra:W.extra,roomKind:W.roomKind,...cfg,power:pw,title:W.title,wn});});
 
 const STAGES=[w11,w12,w13,w14,w21,w22,w23,w24,w31,w32,w33,w34,...[4,5,6,7,8].flatMap(worldStages)];
 const buildStage=i=>STAGES[i]();
