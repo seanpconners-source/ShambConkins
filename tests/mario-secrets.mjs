@@ -10,8 +10,8 @@ const browser=await chromium.launch(browserLaunchOptions()),page=await browser.n
 page.on('pageerror',e=>errors.push(e.message));
 await page.goto(await appURL(),{waitUntil:'domcontentloaded',timeout:120000});
 await page.waitForFunction(()=>window.ShambConkins?.requestGame,null,{timeout:60000});await page.waitForTimeout(400);
-// pretend Bowser has been beaten in Worlds 1 and 3 (not 2: warped past it)
-await page.evaluate(()=>{window.ShambConkins.store.profile.smbBowsers=[1,3];window.ShambConkins.requestGame({id:'smb-world-1',origin:'arcade'});});await page.waitForTimeout(400);
+// pretend Bowser has been beaten in Worlds 2 and 4 (2-4 beaten = World 3 unlocked; World 4 was warped to, so it doesn't count)
+await page.evaluate(()=>{window.ShambConkins.store.profile.smbBowsers=[2,4];window.ShambConkins.requestGame({id:'smb-world-1',origin:'arcade'});});await page.waitForTimeout(400);
 await page.evaluate(()=>[...document.querySelectorAll('#dialog button')].find(b=>/start/i.test(b.textContent))?.click());await page.waitForTimeout(900);
 const dbg=(fn,arg)=>page.evaluate(([fn,arg])=>{const d=window.ShambConkins.store.session.debug;return new Function('d','arg',fn)(d,arg);},[fn,arg]);
 const shot=n=>page.screenshot({path:`${out}/smbx-${n}.png`});
@@ -19,7 +19,7 @@ const until=async(fn,ms=8000)=>{const t0=Date.now();let v;while(Date.now()-t0<ms
 const ready=async()=>{for(let i=0;i<40;i++){if(await page.evaluate(()=>!!document.querySelector('.pass-overlay [data-ready]')))break;await page.waitForTimeout(120);}await page.evaluate(()=>document.querySelector('.pass-overlay [data-ready]')?.click());await page.waitForTimeout(250);};
 
 // ---- world select
-const list=await dbg('return d.startList;');if(JSON.stringify(list)!=='[1,3]')fail('start list '+JSON.stringify(list));else pass('start list = worlds 1 and 3');
+const list=await dbg('return d.startList;');if(JSON.stringify(list)!=='[1,3,5]')fail('start list '+JSON.stringify(list));else pass('start list = worlds 1, 3 and 5 (Bowsers 2 and 4 beaten)');
 await page.keyboard.press('d');await page.waitForTimeout(200);await shot('title-world');
 {const sw=await dbg('return d.worlds[0].st===d.STAGES[8]&&d.pl[0].stage===8;');if(!sw)fail('title screen did not switch to 3-1 behind the menu');else pass('title shows 3-1 behind WORLD 3');}
 await dbg('d.start(0,3);');await ready();await until('return d.phase==="card"');const st=await dbg('return d.pl[0].stage;');

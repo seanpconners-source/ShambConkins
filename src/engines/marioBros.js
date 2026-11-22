@@ -98,7 +98,9 @@ async function marioBros(s){
  // world select (owner, Nov 21): you may start from any world whose Bowser you have beaten at its axe (warping past a
  // world doesn't count); World 1 is always there. Not online (both phones start in World 1).
  const beatenWorlds=()=>{const b=store.profile?.smbBowsers;return Array.isArray(b)?b:[];};
- const startList=()=>[...new Set([1,...beatenWorlds()])].filter(n=>n>=1&&(n-1)*4<=lastStage).sort((a,b)=>a-b);
+ // worlds you can start from on the title: World 1 + every world you walked into by beating the Bowser before it (a world
+ // reached through a warp pipe doesn't count until you beat the castle before it)
+ const startList=()=>[...new Set([1,...beatenWorlds().map(n=>n+1)])].filter(n=>n>=1&&(n-1)*4<=lastStage).sort((a,b)=>a-b);
  let startW=1;const worldPick=()=>mode==='world'&&!net&&!boardCoop&&startList().length>1;
  // BOARD CO-OP (owner, Nov 21): on the board (one phone) the two of you share one run, one life each: whoever dies hands
  // the phone over and the other carries on from the same spot. It starts in the furthest world this board game has
