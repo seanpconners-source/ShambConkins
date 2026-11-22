@@ -554,7 +554,12 @@
   "src/engines/tiaSound.js",
   "src/data/strandsArt.js",
   "src/engines/strandsDraw.js",
-  "src/engines/strandsLadders.js"
+  "src/engines/strandsLadders.js",
+  "src/packs/golfPack.js",
+  "src/engines/golfGame.js",
+  "src/engines/golf/render.js",
+  "src/engines/golf/art.js",
+  "src/data/golfSprites.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }

@@ -180,6 +180,12 @@ if (fs.existsSync(simDir)) for (const f of fs.readdirSync(simDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('simon:' + m[1].toLowerCase(), MIME[ext], ext, path.join(simDir, f));
 }
+// Shooter McGavin's Pro Tour art: assets/golf/<slot>.(webp|png) -> golf:<slot> (slots in src/data/golfSprites.js).
+const golfDir = path.join(root, 'assets/golf');
+if (fs.existsSync(golfDir)) for (const f of fs.readdirSync(golfDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('golf:' + m[1].toLowerCase(), MIME[ext], ext, path.join(golfDir, f));
+}
 // Strands & Ladders art (owner's GPT pictures): assets/strands/<slot>.(webp|png) -> strands:<slot> (slots in src/data/strandsArt.js).
 const strDir = path.join(root, 'assets/strands');
 if (fs.existsSync(strDir)) for (const f of fs.readdirSync(strDir)) {

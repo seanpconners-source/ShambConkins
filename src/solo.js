@@ -39,7 +39,7 @@ const SOLO_IDS={
  'hyrule-rupee-rush':'cpu','hyrule-sword-duel':'cpu','chutes-ladder-rush':'cpu','candy-gumdrop-catch':'cpu','candy-color-dash':'cpu',
  'derezzed-cycles':'cpu','bomber-duel':'cpu','pac-maze-duel':'cpu','block-battle':'cpu','shred-hero':'cpu','underdog-dodgeball':'cpu','fight-night':'cpu',
  'color-of-money':'cpu','paddys-eight-ball':'cpu','task-tallest-thing':'cpu','bug-artillery':'cpu','taskmaster-curling':'cpu','happy-gilmore-golf':'cpu','space-swarm-versus':'cpu',
- 'sewer-clash':'levels','paddys-beer-pong':'cpu','baseketball-shootout':'levels','baseketball-hoop-jones':'levels','django-hangman':'cpu','django-hangman-showdown':'cpu',
+ 'sewer-clash':'levels','mcgavin-pro-tour':'cpu','paddys-beer-pong':'cpu','baseketball-shootout':'levels','baseketball-hoop-jones':'levels','django-hangman':'cpu','django-hangman-showdown':'cpu',
  // batch 4: trivia, cards, dice and table games vs CPU
  'trivia-mixed':'cpu','trivia-nick90':'cpu','trivia-dbz':'cpu','trivia-hxh':'cpu','trivia-sitcom':'cpu','trivia-hardcore':'cpu',
  'trivia-lightning':'cpu','trivia-wager':'cpu','trivia-survival':'cpu',
@@ -89,7 +89,7 @@ const NET_NATIVE=new Set(['flappy-disaster','angry-heads','banana-money-grab','m
  'matrix-ultimate','greed-island-mancala','office-dots-boxes',
  'trek-mini-chess','wopr-grid','smb3-nspade','sqwordle','words-n-shit','crappy-crush','clue-lineup','django-hangman',
  'taskmaster-curling','bug-artillery','happy-gilmore-golf','color-of-money','paddys-eight-ball','kingpin-bowling','lebowski-bowling','baseketball-shootout','baseketball-hoop-jones',
- 'task-tallest-thing','fast-quarter-mile','block-battle','shred-hero','candy-color-dash','chutes-ladder-rush','chutes-spinner-showdown',
+ 'task-tallest-thing','fast-quarter-mile','block-battle','shred-hero','candy-color-dash','chutes-ladder-rush','chutes-spinner-showdown','mcgavin-pro-tour',
  'brawndo-fruit-merge','candy-gumdrop-catch','review-pancakes','terminator-scan','microgame-rush','rush-marathon',
  'pong-duel','derezzed-cycles','snake-v-snake','metal-gear-tank-duel','kill-bill-duel',
  'arrow-arena','battle-royale-island','bomber-duel','pac-maze-duel',

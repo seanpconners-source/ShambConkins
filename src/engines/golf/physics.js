@@ -59,7 +59,8 @@ function makeShot(hole,sh,club,lie){const s=launch(sh,club,lie);
  // spin + = more backspin (bites, climbs) / - = topspin (runs), side + = bends right. Live play pushes them with S.english(),
  // a replay (online watcher, CPU) passes sh.eng. They only act while the ball is in the air.
  const eng=(sh.eng||[]).slice();S.engLog=[];
- S.english=(spin,side)=>{if(S.phase!=='air'||S.done)return;const ev=[+S.t.toFixed(3),+spin.toFixed(3),+side.toFixed(3)];S.engLog.push(ev);applyEng(ev);};
+ // live aftertouch is queued for the NEXT step (a replay of the same event lands on the very same step: both phones agree)
+ S.english=(spin,side)=>{if(S.phase!=='air'||S.done)return null;const ev=[+(S.t+DT).toFixed(4),+spin.toFixed(3),+side.toFixed(3)];eng.push(ev);eng.sort((a,b)=>a[0]-b[0]);return ev;};
  function applyEng([,spin,side]){const w=S.b.w,vx=S.b.vx,vz=S.b.vz,h=Math.hypot(vx,vz)||1,dx=vx/h,dz=vz/h;
   const back=Math.hypot(w[0],w[2])*(1+Math.max(-.9,Math.min(.9,spin)));w[0]=-dz*back;w[2]=dx*back;w[1]-=side*260;}
  function air(dt){const b=S.b,ax0=b.vx-wind.x,ay0=b.vy,az0=b.vz-wind.z,v=Math.hypot(ax0,ay0,az0)||1e-6;

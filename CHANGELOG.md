@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.99.43
+
+- **New game: Shooter McGavin's Pro Tour**, arcade trackball golf like the bar-cabinet golf games (our own courses and art). Three 9-hole courses (Bushwood Country Club, Waterbury Pro-Am, Bat Country Links in the desert), play 3 or 9 holes.
+  - Swing with the trackball: pull back on it, then roll it forward. How hard you roll is the power, rolling crooked hooks or slices. While the ball flies, spin the trackball for aftertouch (top spin, back spin, a little side).
+  - A fly-over of every hole, a hole map (tap it to aim), club picker with the caddie's suggestion, wind, live yardage, putting grid on the greens with moving dots that show the slope, scorecard with birdies circled.
+  - 1 player vs the CPU, 2 players on one phone, or online. On the board it's a quick 2-hole match.
+  - Art: drawn for now; templates and prompts for every picture (golfers, skies, trees, trackball, logo) are ready for GPT.
+- **Paddy's Pool hall:**
+  - The table on the start screen now shows the felt you are using, and the balls on it are round and shiny like in the game.
+  - Your cue now hangs on a cue rack on the wall. You start with a rickety plywood rack nailed together badly; nicer racks are in the new Racks tab of the upgrades (templates ready for GPT pictures).
+  - The menu no longer gets cut off in a browser window: tabs wrap and the panel scrolls (mouse wheel too).
+
 ## v0.99.42
 
 - **Chutes and Ladders is now one full game: Strands & Ladders**, the classic board dressed as a Death Stranding board game. Porters carry cargo from Capital Knot City (square 1) to Edge Knot City (100); good deeds (rebuilding a bridge, singing BB a lullaby, paving the highway...) climb ladders, slips (breathing near a BT, napping in the open, a voidout...) slide you down black tar.
