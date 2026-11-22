@@ -18,6 +18,7 @@ const SLOTS={
  'ground-detail':{w:512,h:512,what:'seamless grey grass/soil detail texture (multiplied over the course colours)'},
  water:{w:512,h:512,what:'seamless water ripple texture (light, tinted by the game)'},
  flag:{w:256,h:160,what:'the pin flag cloth, attached on its LEFT edge, transparent'},
+ 'control-panel':{w:1800,h:1800,what:'the cabinet control panel behind the big trackball (square; the ball sits in the middle, ring radius 464 px): plain deck, NO arrows or text (the game draws the lit arrows)'},
  trackball:{w:512,h:512,what:'the cabinet trackball seen from above: a glossy ball in a chrome ring, transparent outside'},
  logo:{w:1600,h:700,what:"title logo SHOOTER McGAVIN'S PRO TOUR, transparent"},
  'title-bg':{w:1920,h:1080,what:'title screen backdrop: a gorgeous golf hole at golden hour'},

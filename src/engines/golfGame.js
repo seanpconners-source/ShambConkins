@@ -2,8 +2,9 @@
 // cabinets. Our own courses (golf/courses.js), physics (golf/physics.js), swing model (golf/trackball.js), CPU (golf/cpu.js),
 // rules (golf/rules.js), 3D scene (golf/render.js) and art (golf/art.js + src/data/golfSprites.js picture slots).
 // A shot: the camera sits behind the ball; drag the course left/right (or tap the hole map) to aim, ◀ ▶ picks a club (the
-// caddie picks one first), then the TRACKBALL: roll it down (backswing) and up hard (the swing). Speed = power, a stroke that
-// leans left/right draws/fades (hooks/slices when you over-swing). Keep rolling right after the hit for AFTERTOUCH: up = run,
+// caddie picks one first), then tap the small TRACKBALL: it comes up big on the cabinet panel. Roll it DOWN (A/B/C), let go if
+// you like (it keeps rolling, like the real ball), then UP (1/2/3): back + forward pick the shot shape (trackball.js COMBOS),
+// speed through impact = power, too fast = over-swing. Keep rolling right after the hit for AFTERTOUCH: up = run,
 // down = backspin, sideways = bend. On the green the grid shows the slope (dots run downhill) and the same stroke putts.
 // Turns: the player whose ball is furthest from the hole plays next (honours on the tee). Stroke play; picked up at par + 4.
 // 1P = vs a CPU golfer (solo kind 'cpu'). 2P = one phone. Board game: 2 holes. Online: turn by turn; the player's phone sends
@@ -46,7 +47,7 @@ async function arcadegolf(s){
  let set={course:'bushwood',holes:3};
  const PL=[0,1].map(i=>({i,ball:{x:0,z:0},lie:'tee',strokes:0,done:false,cards:[],total:0,dist:0}));
  let course=null,hole=null,holeIdx=0,mapC=null,mode='loading',t=0,banner=null,cur=0,yaw=0,clubI=0,swing=null,shot=null,trail=[],cam={eye:[0,3,-8],tgt:[0,0,40],fov:50},camGoal=null;
- let fastK=1,flyU=0,result=null,card=null,frameNo=0,after=0,aftT=0,engBuf=[],remoteAim=null,autopilot=false,tbRot={x:0,y:0},swingFrame=0,followT=-1,birdT=4,pickBtns=[],hudBtns=[];
+ let fastK=1,flyU=0,result=null,card=null,frameNo=0,after=0,aftT=0,engBuf=[],remoteAim=null,autopilot=false,ballM=TB.ROT0(),tball=TB.makeBall(),tbHold=null,tbOpen=0,tbGoal=0,spinOn=false,comboTag=null,clubFlash=null,aftAcc=null,swingFrame=0,followT=-1,birdT=4,pickBtns=[],hudBtns=[];
  const mine=i=>net?i===me:!(cpu&&i===1);
  const lieName=l=>({tee:'TEE',fair:'FAIRWAY',fringe:'FRINGE',green:'GREEN',rough:'ROUGH',deep:'DEEP ROUGH',sand:'BUNKER',waste:'DESERT',water:'WATER',ob:'OUT OF BOUNDS',cup:'IN THE CUP',path:'CART PATH'})[l]||String(l||'').toUpperCase();
  const clubsFor=lie=>P.CLUBS.filter(cl=>(cl.id!=='dr'||lie==='tee')&&(lie==='green'?true:cl.kind!=='putter'||lie==='fringe'));
@@ -56,8 +57,15 @@ async function arcadegolf(s){
  let W=s.W,H=s.H,dpr=1,L={};
  function layout(){W=s.W;H=s.H;dpr=Math.min(1.75,window.devicePixelRatio||1);for(const e of [glc,hud]){e.style.width=W+'px';e.style.height=H+'px';}
   const cw=Math.round(W*dpr),ch=Math.round(H*dpr);if(hud.width!==cw||hud.height!==ch){hud.width=cw;hud.height=ch;}
-  const tall=H>W*1.1,m=Math.min(W,H),tbR=clamp(m*(tall?.15:.13),46,96);
-  L={tall,tbR,tbX:W-tbR*1.35-8,tbY:H-tbR*1.45-10,top:(fb.top||40)+6,fs:clamp(m*.036,12,19)};
+  const tall=H>W*1.1,m=Math.min(W,H),tbR=clamp(m*(tall?.1:.085),30,62);
+  L={tall,tbR,tbX:W-tbR*1.45-8,tbY:H-tbR*1.55-10,top:(fb.top||40)+6,fs:clamp(m*.036,12,19)};
+  // the big cabinet panel: chart card (.86 R) over a panel of 4.5 x 4.05 R, centred
+  const avail=H-L.top-14;
+  if(W>H*1.35){// wide: the chart is a 3x3 card beside the panel
+   const bigR=clamp(Math.min(avail/4.55,W*.96/7.2),40,150),gw=bigR*7.1,x0=(W-gw)/2,top=L.top+Math.max(0,(avail-bigR*4.5)/2);
+   L.bigR=bigR;L.chart={x:x0,y:top+bigR*.6,w:bigR*2.5,h:bigR*3.3,cols:3};L.bigX=x0+bigR*2.6+bigR*2.25;L.bigY=top+bigR*2.25;}
+  else{const bigR=clamp(Math.min(W*.97/4.5,avail/5.5),40,150),total=bigR*5.48,top=Math.max(L.top+2,L.top+(avail-total)/2);
+   L.bigR=bigR;L.chart={x:W/2-bigR*2.25,y:top,w:bigR*4.5,h:bigR*.86,cols:9};L.bigX=W/2;L.bigY=top+bigR*.98+bigR*2.25;}
   L.mapW=clamp(m*(tall?.27:.22),90,180);L.mapH=L.mapW*1.45;L.mapX=W-L.mapW-10;L.mapY=L.top+4;}
  // ---- course picker (Arcade); online seat 0 picks, board takes a course from the seed
  async function pickCourse(){
@@ -93,7 +101,7 @@ async function arcadegolf(s){
   const reach=P.clubDistance(list[clubI],1,p.lie).total*(P.LIES[p.lie]?.next||1),D=dToCup(p);
   const tgt=putt||D<reach*1.05?hole.cup:CPU.along(hole,p.ball.x,p.ball.z,Math.min(reach*.95,D-40));yaw=CPU.yawTo(p.ball.x,p.ball.z,tgt.x,tgt.z);return {putt,list,D};}
  async function takeShot(i){cur=i;const p=PL[i];const {putt,list,D}=initAim(p);
-  swing=null;shot=null;trail=[];followT=-1;swingFrame=0;banner={t:1.4,big:`${names[i].toUpperCase()}`,small:`${lieName(p.lie)} · ${putt?Math.round(D/FT)+' FT':Math.round(D/YD)+' YDS'} TO THE PIN`};
+  swing=mine(i)?TB.newSwing():null;tbGoal=0;tbHold=null;comboTag=null;spinOn=false;shot=null;trail=[];followT=-1;swingFrame=0;banner={t:1.4,big:`${names[i].toUpperCase()}`,small:`${lieName(p.lie)} · ${putt?Math.round(D/FT)+' FT':Math.round(D/YD)+' YDS'} TO THE PIN`};
   mode='aim';
   let sh=null;
   if(mine(i)&&!(net&&false)){sh=await new Promise(res=>{onImpact=res;});}
@@ -102,7 +110,7 @@ async function arcadegolf(s){
   if(!sh||!s.alive)return;
   // fly it
   const club=P.CLUBS.find(q=>q.id===sh.c)||list[clubI];
-  const shotIn={x:p.ball.x,y:hole.height(p.ball.x,p.ball.z),z:p.ball.z,yaw:sh.yaw,power:sh.power,curve:sh.curve,eng:sh.eng||[]};
+  const shotIn={x:p.ball.x,y:hole.height(p.ball.x,p.ball.z),z:p.ball.z,yaw:sh.yaw,power:sh.power,curve:sh.curve,spin:sh.spin?1:0,eng:sh.eng||[]};
   shot=P.makeShot(hole,shotIn,club,p.lie);shot.club=club;shot.owner=i;shot.live=mine(i)&&!sh.replay;trail=[[shotIn.x,shotIn.y+.05,shotIn.z]];
   if(club.kind==='putter')sfx.putt();else{sfx.whoosh(1);sfx.crack(club.kind!=='wood');}vibrate(12);
   followT=0;mode='flight';aftT=0;
@@ -124,7 +132,7 @@ async function arcadegolf(s){
   const list=clubsFor(p.lie);clubI=Math.max(0,list.findIndex(q=>q.id===pl.club.id));const y0=yaw,dy=pl.yaw-y0;
   for(let k=1;k<=20;k++){yaw=y0+dy*k/20;await new Promise(r=>setTimeout(r,30));}
   const pts=TB.strokeFor(pl.power,pl.curve),t0=performance.now();
-  await new Promise(res=>{const go=()=>{if(!s.alive)return res();const tt=(performance.now()-t0)/1000*.9;const q=pts.find(q=>q.t>=tt)||pts[pts.length-1];tbRot={x:q.x*3,y:q.y*3};const back=Math.max(0,q.y);swingFrame=q.t<pts[12].t?Math.min(3,Math.round(back/1.1*3)):3;if(tt>=pts[pts.length-1].t)return res();setTimeout(go,16);};go();});
+  await new Promise(res=>{const go=()=>{if(!s.alive)return res();const tt=(performance.now()-t0)/1000*.9;const q=pts.find(q=>q.t>=tt)||pts[pts.length-1];ballM=TB.rollRot(ballM,q.x-(go.px||0),q.y-(go.py||0));go.px=q.x;go.py=q.y;const back=Math.max(0,q.y);swingFrame=q.t<pts[12].t?Math.min(3,Math.round(back/1.1*3)):3;if(tt>=pts[pts.length-1].t)return res();setTimeout(go,16);};go();});
   return {c:pl.club.id,yaw:r4(pl.yaw),power:r4(pl.power),curve:r4(pl.curve),eng:[]};}
  // the other phone: aim stream, then the shot at impact, its aftertouch, and the go
  async function remoteShot(p){let sh=null;const eng=[];
@@ -135,30 +143,55 @@ async function arcadegolf(s){
    else if(m.ef&&sh){return {...sh,eng};}}}
  // ---- input: aim drag on the course, the trackball, the buttons
  const ptrs=new Map();let aimDrag=null,lastAimSend=0;
- const inTB=(px,py)=>Math.hypot(px-L.tbX,py-L.tbY)<L.tbR*1.55||py>H*.62&&px>W*.45;
+ // the trackball: small in the corner; tap it on your turn and it comes up big in the middle of the cabinet panel
+ const nowS=()=>performance.now()/1000,evT=ev=>Math.min(nowS(),(ev.timeStamp||performance.now())/1000);
+ const tbView=()=>{const k=easeIO(clamp(tbOpen,0,1));return {k,x:L.tbX+(L.bigX-L.tbX)*k,y:L.tbY+(L.bigY-L.tbY)*k,r:L.tbR+(L.bigR-L.tbR)*k};};
+ const canSwing=()=>mode==='aim'&&mine(cur)&&!!onImpact&&!autopilot;
+ function openTB(){if(!canSwing())return;tbGoal=1;if(!swing||swing.state==='done')swing=TB.newSwing();TB.recentre(swing,{x:tball.x,y:tball.y,t:nowS()});sfx.tick();}
+ function closeTB(){tbGoal=0;if(tbHold){TB.release(tball,nowS());tbHold=null;}if(swing&&swing.state!=='done')TB.recentre(swing,{x:tball.x,y:tball.y,t:nowS()});}
+ const inBox=(pt,b)=>b&&pt.x>=b.x&&pt.x<=b.x+b.w&&pt.y>=b.y&&pt.y<=b.y+b.h;
+ function grabBall(ev,pt,after){tbHold={id:ev.pointerId,after,t0:nowS()};TB.grab(tball,{x:pt.x/L.bigR,y:pt.y/L.bigR,t:evT(ev)});if(after)aftAcc={dx:0,dy:0,t:nowS()};s.capture?.(ev);}
+ // feed the swing reader with where the BALL is (it may still be rolling after you let go)
+ function feedSwing(){feedSwingAt(nowS());}
+ function feedSwingAt(tt){if(!swing||swing.state==='done'||!canSwing()||tbOpen<.5)return;const e=TB.feed(swing,{x:tball.x,y:tball.y,t:Math.max(tt,(swing.pts.length?swing.pts[swing.pts.length-1].t:0))});
+  const S=swing;swingFrame=S.state==='back'?Math.min(3,1+Math.floor(S.back/1.1*2.2)):S.state==='forward'?4:0;
+  if(net&&performance.now()-lastAimSend>120){lastAimSend=performance.now();net.send({am:[r4(yaw),clubI,swingFrame]});}
+  if(e==='club+'||e==='club-'){club(e==='club+'?1:-1);clubFlash={id:e,t:nowS()};return;}
+  if(e==='impact'){const im=S.impact,putt=clubOf().kind==='putter',sh=TB.toShot(im,{putt});
+   const out={c:clubOf().id,yaw:r4(yaw+(sh.push||0)),power:r4(clamp(sh.power,.02,1.25)),curve:r4(sh.curve||0),spin:spinOn?1:0};
+   comboTag={combo:sh.combo,name:putt?'PUTT':sh.name,over:sh.over,pw:Math.round(sh.power*100),t:2.4};tbGoal=0;
+   if(tbHold){tbHold.after=true;tbHold.t0=nowS();aftAcc={dx:0,dy:0,t:nowS()};}
+   if(net)net.send({sh:out});const f=onImpact;onImpact=null;f?.(out);}}
  s.on(c,'pointerdown',ev=>{if(s.paused)return;const pt=s.pointer(ev);ev.preventDefault();
   if(mode==='pick'){for(const b of pickBtns)if(pt.x>=b.x&&pt.x<=b.x+b.w&&pt.y>=b.y&&pt.y<=b.y+b.h){b.act();sfx.tick();return;}return;}
   if(mode==='fly'){flyU=Math.max(flyU,.999);return;}
   if(mode==='result'&&result){if(result.t<1.4)result.tap=true;return;}
   if(mode==='card'&&card){if(card.t>.8)card.tap=true;return;}
+  // the big panel is up: ball, club arrows, backspin, close
+  if(canSwing()&&tbGoal===1){const v=tbView(),G=A.panelGeom(v.x,v.y,v.r);
+   if(Math.hypot(pt.x-v.x,pt.y-v.y)<v.r*1.25){grabBall(ev,pt,false);return;}
+   if(inBox(pt,G.close)){closeTB();return;}
+   if(inBox(pt,G.spin)){spinOn=!spinOn;sfx.tick();return;}
+   for(const a of G.arrows)if(a.id.startsWith('club')&&Math.hypot(pt.x-a.x,pt.y-a.y)<a.s*1.1){club(a.id==='club+'?1:-1);clubFlash={id:a.id,t:nowS()};return;}
+   if(!inBox(pt,G.box)&&!inBox(pt,L.chart)&&(!swing||swing.state==='address'))closeTB();
+   return;}
   for(const b of hudBtns)if(pt.x>=b.x&&pt.x<=b.x+b.w&&pt.y>=b.y&&pt.y<=b.y+b.h){if(mode==='aim'&&mine(cur))b.act();return;}
   if(mode==='aim'&&mine(cur)){
+   if(Math.hypot(pt.x-L.tbX,pt.y-L.tbY)<L.tbR*1.6){openTB();return;}
    // tap the hole map = aim there
    if(pt.x>=L.mapX&&pt.x<=L.mapX+L.mapW&&pt.y>=L.mapY&&pt.y<=L.mapY+L.mapH&&mapC){const m=mapToWorld(pt.x,pt.y);if(m){yaw=CPU.yawTo(PL[cur].ball.x,PL[cur].ball.z,m.x,m.z);sendAim();}return;}
-   if(inTB(pt.x,pt.y)){swing={sw:TB.newSwing(),id:ev.pointerId,x0:pt.x,y0:pt.y,lx:pt.x,ly:pt.y,t0:performance.now()};s.capture?.(ev);return;}
    aimDrag={id:ev.pointerId,x:pt.x};s.capture?.(ev);return;}
-  if(mode==='flight'&&shot&&shot.live&&aftT<ENG_WINDOW&&inTB(pt.x,pt.y)){after={id:ev.pointerId,x:pt.x,y:pt.y,t:performance.now()};s.capture?.(ev);}});
+  // aftertouch: any touch while your ball is in the air (first second)
+  if(mode==='flight'&&shot&&shot.live&&aftT<ENG_WINDOW){grabBall(ev,pt,true);}});
  s.on(c,'pointermove',ev=>{const pt=s.pointer(ev);
   if(aimDrag&&ev.pointerId===aimDrag.id&&mode==='aim'){const putt=clubOf().kind==='putter';yaw-=(pt.x-aimDrag.x)*(putt?.0012:.0028);aimDrag.x=pt.x;sendAim();return;}
-  if(swing&&ev.pointerId===swing.id&&mode==='aim'){const R=L.tbR,q={x:(pt.x-swing.x0)/R,y:(pt.y-swing.y0)/R,t:(performance.now()-swing.t0)/1000};tbRot.x+= (pt.x-swing.lx)/R*1.2;tbRot.y+=(pt.y-swing.ly)/R*1.2;swing.lx=pt.x;swing.ly=pt.y;
-   const ev2=TB.feed(swing.sw,q);const S=swing.sw;swingFrame=S.state==='back'?Math.min(3,1+Math.floor(S.back/1.1*2.2)):S.state==='forward'?4:swingFrame;
-   if(net&&performance.now()-lastAimSend>120){lastAimSend=performance.now();net.send({am:[r4(yaw),clubI,swingFrame]});}
-   if(ev2==='impact'){const im=swing.sw.impact,putt=clubOf().kind==='putter',sh=TB.toShot(im,{putt});const out={c:clubOf().id,yaw:r4(yaw+(sh.push||0)),power:r4(clamp(sh.power,.02,1.25)),curve:r4(sh.curve||0)};
-    swing=null;after={id:ev.pointerId,x:pt.x,y:pt.y,t:performance.now()};if(net)net.send({sh:out});const f=onImpact;onImpact=null;f?.(out);}
-   return;}
-  if(after&&ev.pointerId===after.id&&shot&&shot.live&&shot.phase==='air'&&aftT<ENG_WINDOW){const now=performance.now();if(now-after.t<70)return;const R=L.tbR,dx=(pt.x-after.x)/R,dy=(pt.y-after.y)/R;after.x=pt.x;after.y=pt.y;after.t=now;tbRot.x+=dx*1.2;tbRot.y+=dy*1.2;
-   const [spin,side]=TB.english(dx,dy);if(Math.abs(spin)+Math.abs(side)>.01){const evn=shot.english(spin,side);if(net&&evn)net.send({en:evn});}}});
- const up=ev=>{if(aimDrag&&ev.pointerId===aimDrag.id)aimDrag=null;if(swing&&ev.pointerId===swing.id){swing=null;swingFrame=0;}if(after&&ev.pointerId===after.id)after=null;s.release?.(ev);};
+  if(tbHold&&ev.pointerId===tbHold.id){const [dx,dy]=TB.drag(tball,{x:pt.x/L.bigR,y:pt.y/L.bigR,t:evT(ev)});feedSwingAt(evT(ev));ballM=TB.rollRot(ballM,dx,dy);
+   if(!tbHold.after)return;
+   // aftertouch from the hand on the ball (the swing's own follow-through doesn't count for the first .15 s)
+   if(mode==='flight'&&shot&&shot.live&&shot.phase==='air'&&aftT<ENG_WINDOW&&nowS()-tbHold.t0>.15&&aftAcc){aftAcc.dx+=dx;aftAcc.dy+=dy;
+    if(nowS()-aftAcc.t>.07){const [spin,side]=TB.english(aftAcc.dx,aftAcc.dy);aftAcc={dx:0,dy:0,t:nowS()};
+     if(Math.abs(spin)+Math.abs(side)>.01){const evn=shot.english(spin,side);if(net&&evn)net.send({en:evn});}}}}});
+ const up=ev=>{if(aimDrag&&ev.pointerId===aimDrag.id)aimDrag=null;if(tbHold&&ev.pointerId===tbHold.id){TB.release(tball,evT(ev));tbHold=null;}s.release?.(ev);};
  s.on(c,'pointerup',up);s.on(c,'pointercancel',up);
  s.on(window,'keydown',ev=>{if(mode!=='aim'||!mine(cur))return;const k=ev.key;if(k==='ArrowLeft'){yaw+=.02;sendAim();}else if(k==='ArrowRight'){yaw-=.02;sendAim();}else if(k==='ArrowUp')club(-1);else if(k==='ArrowDown')club(1);else if(k===' '){ev.preventDefault();botSwing(.95,0);}});
  function sendAim(){if(net&&performance.now()-lastAimSend>100){lastAimSend=performance.now();net.send({am:[r4(yaw),clubI,swingFrame]});}}
@@ -174,9 +207,14 @@ async function arcadegolf(s){
   if(mode==='fly'){flyU=Math.min(1,flyU+dt/3.8);}
   if(result)result.t-=dt;if(card)card.t+=dt;
   if(shot){if(!shot.done)shot.advance(dt);else shot.endT=(shot.endT||0)+dt;const b=shot.b;if(!shot.done&&frameNo%2===0){trail.push([b.x,b.y+.05,b.z]);if(trail.length>160)trail.shift();}
-   if(shot.live&&mode==='flight'){aftT+=dt;if(aftT>=ENG_WINDOW&&!shot.efSent){shot.efSent=true;after=null;if(net)net.send({ef:1});}}
+   if(shot.live&&mode==='flight'){aftT+=dt;if(aftT>=ENG_WINDOW&&!shot.efSent){shot.efSent=true;aftAcc=null;if(net)net.send({ef:1});}}
    for(const e of shot.events.splice(0))sfxEvent(e);}
   if(followT>=0)followT+=dt;
+  {const rd=Math.min(.05,dt/fastK),[dx,dy]=TB.step(tball,rd,nowS());if(dx||dy)ballM=TB.rollRot(ballM,dx,dy);
+   tbOpen+=(tbGoal-tbOpen)*Math.min(1,rd*9);if(Math.abs(tbGoal-tbOpen)<.01)tbOpen=tbGoal;if(!canSwing()&&tbGoal&&!comboTag)tbGoal=0;
+   if(canSwing()&&tbGoal)feedSwing();
+   if(swing&&(swing.state==='back'||swing.state==='forward')&&!TB.spinning(tball)&&nowS()-tball.moveT>4.5){TB.recentre(swing,{x:tball.x,y:tball.y,t:nowS()});swingFrame=0;banner={t:1.1,big:'SWING RESET',small:'Roll back, then forward'};}
+   if(comboTag){comboTag.t-=rd;if(comboTag.t<=0)comboTag=null;}}
   birdT-=dt;if(birdT<=0){birdT=3+Math.random()*6;if(course&&course.theme!=='desert')sfx.bird();}
   if(autopilot&&mode==='aim'&&mine(cur)&&onImpact){const p=PL[cur],putt=clubOf().kind==='putter';const pl=putt?CPU.planPutt(hole,p.ball,p.lie,.7,Math.random):CPU.plan(hole,p.ball,p.lie,{skill:.7,rand:Math.random});
    const l=clubsFor(p.lie);clubI=Math.max(0,l.findIndex(q=>q.id===pl.club.id));yaw=pl.yaw;botSwing(pl.power,pl.curve);}
@@ -243,11 +281,25 @@ async function arcadegolf(s){
    if(mine(cur)){const bh=fs*1.6,bwid=fs*2.2;for(const [d,lbl,x0] of [[-1,'◀',14],[1,'▶',8+bw-bwid-6]]){const b={x:x0,y:by0+fs*.25,w:bwid,h:bh,act:()=>club(d)};hudBtns.push(b);x.fillStyle='rgba(255,255,255,.12)';x.beginPath();x.roundRect(b.x,b.y,b.w,b.h,8);x.fill();txt(lbl,b.x+b.w/2,b.y+b.h/2,{size:fs,align:'center'});}}
    if(!mine(cur))txt(cpu&&cur===1?`${names[1]} is lining it up…`:`${names[cur]} is lining it up…`,8+bw/2,by0+fs*4.35,{size:fs*.7,align:'center',col:'#fff'});
    else txt(putt?'Read the grid: dots run downhill':'Drag the course to aim · tap the map',8+bw/2,by0+fs*4.35,{size:fs*.62,align:'center',col:'#bcd'});}
-  // trackball + power
-  const glow=mode==='aim'&&mine(cur)?.35+.25*Math.sin(t*4):0;A.drawTrackball(x,L.tbX,L.tbY,L.tbR,tbRot.x,tbRot.y,{glow});
-  if(mode==='aim'&&mine(cur)&&!swing){txt('ROLL ↓ THEN ↑',L.tbX,L.tbY-L.tbR*1.42,{size:fs*.72,align:'center',w:'900',col:'#ffe07a'});}
-  if(swing){const S=swing.sw,k=clamp(S.back/1.1,0,1);x.strokeStyle='rgba(255,226,120,.95)';x.lineWidth=L.tbR*.12;x.beginPath();x.arc(L.tbX,L.tbY,L.tbR*1.28,Math.PI*.5,Math.PI*.5+k*Math.PI*1.6);x.stroke();}
-  if(mode==='flight'&&shot&&shot.live&&aftT<ENG_WINDOW){txt('AFTERTOUCH!',L.tbX,L.tbY-L.tbR*1.42,{size:fs*.8,align:'center',w:'900',col:'#7fd6ff'});}
+  // trackball: small in the corner, or up big on the cabinet panel
+  const v=tbView(),myTurn=mode==='aim'&&mine(cur);
+  if(v.k>.02){x.save();x.globalAlpha=v.k*.55;x.fillStyle='#000';x.fillRect(0,0,W,H);x.restore();
+   x.save();x.globalAlpha=Math.min(1,v.k*1.4);const R=L.bigR,la=swing?TB.liveAngles(swing):{back:null,fwd:null},lit={};
+   const bl=TB.letter(la.back,TB.BACKS),fl=TB.letter(la.fwd,TB.FWDS);if(bl)lit[bl]=1;if(fl)lit[fl]=1;if(clubFlash&&nowS()-clubFlash.t<.35)lit[clubFlash.id]=1;
+   const cl=clubOf(),st=swing?swing.state:'address',putt=cl.kind==='putter';
+   const hint=st==='address'?(putt?'ROLL BACK · THEN THROUGH':'ROLL DOWN · THEN UP'):st==='back'?'NOW ROLL UP!':'';
+   A.drawComboChart(x,L.chart.x,L.chart.y,L.chart.w,L.chart.h,{TB,cols:L.chart.cols,lit:bl&&fl?bl+fl:null});
+   A.drawPanel(x,L.bigX,L.bigY,R,{lit,backspin:spinOn,club:cl.name.toUpperCase(),hint});
+   // back swing meter at the panel's left edge
+   if(swing&&(st==='back'||st==='forward')){const k=clamp(swing.back/1.1,0,1),bx=L.bigX-R*2.06,by0=L.bigY-R*.95,bh=R*1.9;x.fillStyle='rgba(255,255,255,.12)';x.fillRect(bx,by0,R*.1,bh);
+    x.fillStyle=k>=1?'#ff5a3c':'#ffd23f';x.fillRect(bx,by0,R*.1,bh*k);}
+   x.restore();}
+  A.drawTrackball(x,v.x,v.y,v.r,ballM,{glow:myTurn&&v.k<.05&&canSwing()?.35+.25*Math.sin(t*4):0});
+  if(myTurn&&v.k<.05&&canSwing())txt('TAP TO SWING',L.tbX,L.tbY-L.tbR*1.5,{size:fs*.72,align:'center',w:'900',col:'#ffe07a'});
+  if(mode==='flight'&&shot&&shot.live&&aftT<ENG_WINDOW&&v.k<.3)txt('SPIN IT! AFTERTOUCH',W/2,H*.62,{size:fs*1.05,align:'center',w:'900',col:'#7fd6ff'});
+  if(comboTag&&v.k<.5){const tx=W/2,ty=L.top+fs*6.4,tw=fs*12;panel(tx-tw/2,ty-fs*1.3,tw,fs*2.6);
+   txt(`${comboTag.combo} · ${comboTag.name}`,tx,ty-fs*.2,{size:fs*1.15,w:'900',align:'center',col:'#ffe07a',font:'"SC Bangers","SC Nunito",sans-serif'});
+   txt(comboTag.over?`OVERSWING! ${comboTag.pw}%`:`POWER ${comboTag.pw}%`,tx,ty+fs*.75,{size:fs*.7,align:'center',col:comboTag.over?'#ff8a6a':'#cfe'});}
   // live distance in flight
   if((mode==='flight'||mode==='result')&&shot){const b=shot.b,st=shot.start||{x:0,z:0},yd=Math.round(Math.hypot(b.x-st.x,b.z-st.z)/YD);panel(W/2-fs*3.5,H-fs*3.4-8,fs*7,fs*2.6);txt(`${yd} YDS`,W/2,H-fs*2.1-8,{size:fs*1.3,w:'900',align:'center',font:'"SC Bangers","SC Nunito",sans-serif'});}
   // banners
@@ -280,11 +332,11 @@ async function arcadegolf(s){
  function finishRound(){const tot=PL.map(q=>q.cards.reduce((a,b)=>a+(b||0),0)),par=course.holes.slice(set.start||0,(set.start||0)+set.holes).reduce((a,h)=>a+h.par,0);
   const sc=tot.map(v=>Math.max(1,200-(v-par)*10));const rel=v=>{const d=v-par;return d===0?'E':d>0?'+'+d:String(d);};
   s.finish(sc,`${course.name}: ${names[0]} ${tot[0]} (${rel(tot[0])}) · ${names[1]} ${tot[1]} (${rel(tot[1])})`);}
- s.debug={get mode(){return mode;},PL,get hole(){return hole;},get cur(){return cur;},get shot(){return shot;},set autopilot(v){autopilot=!!v;},set fast(v){fastK=Math.max(1,+v||1);},get autopilot(){return autopilot;},
+ s.debug={get mode(){return mode;},PL,get hole(){return hole;},get cur(){return cur;},get shot(){return shot;},set autopilot(v){autopilot=!!v;},get L(){return L;},get swingState(){return swing&&swing.state;},get impact(){return swing&&swing.impact;},get combo(){return comboTag;},get tbOpen(){return tbOpen;},set fast(v){fastK=Math.max(1,+v||1);},get autopilot(){return autopilot;},
   place:(i,dx,dz)=>{const p=PL[i],c0=hole.cup;p.ball={x:c0.x+dx,z:c0.z+dz};p.lie=hole.lie(p.ball.x,p.ball.z);p.strokes=Math.max(p.strokes,1);if(i===cur)initAim(p);},
   pick:(co,n)=>{set.course=co||set.course;set.holes=n||set.holes;const f=pickDone;pickDone=null;f?.();},swing:(pw=.9,cv=0)=>botSwing(pw,cv),aim:(y)=>{yaw=y;},skipFly:()=>{flyU=1;},
   bot:net?()=>{if(!autopilot){autopilot=true;fastK=5;return 'auto';}if(mode==='pick'&&pickDone){s.debug.pick(null,3);return 'pick';}if(mode==='fly')flyU=1;if(mode==='result'&&result)result.tap=true;if(mode==='card'&&card)card.tap=true;return '';}:null};
- const intro=net?"Shooter McGavin's Pro Tour online: take turns; the ball furthest from the hole plays next.":cpu?`Shooter McGavin's Pro Tour vs ${names[1]}. Aim by dragging the course, then roll the trackball DOWN and UP to swing.`:"Shooter McGavin's Pro Tour: two golfers, one phone. Aim by dragging the course, roll the trackball DOWN and UP to swing.";
+ const intro=net?"Shooter McGavin's Pro Tour online: take turns; the ball furthest from the hole plays next.":cpu?`Shooter McGavin's Pro Tour vs ${names[1]}. Aim by dragging the course, tap the trackball, roll it DOWN then UP to swing.`:"Shooter McGavin's Pro Tour: two golfers, one phone. Aim by dragging the course, tap the trackball, roll it DOWN then UP to swing.";
  if(!await s.pass(0,intro,'Tee it up'))return;
  await play();
 }

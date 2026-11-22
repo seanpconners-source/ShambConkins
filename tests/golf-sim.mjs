@@ -19,6 +19,15 @@ let fails=0;const ok=(c,m)=>{if(!c){fails++;console.log('FAIL',m);}else if(proce
 {const run=(pts)=>{const S=TB.newSwing();for(const q of pts)if(TB.feed(S,q)==='impact')return TB.toShot(S.impact);return null;};
  const s=run(TB.strokeFor(.95,0));ok(s&&Math.abs(s.power-.95)<.12&&s.curve===0,'trackball straight ('+(s&&s.power.toFixed(2))+')');
  const r=run(TB.strokeFor(.9,.6));ok(r&&r.curve>.2,'trackball lean right = slice ('+(r&&r.curve.toFixed(2))+')');
+ // the cabinet's 9 back/forward combos: back A/B/C (-40/0/40 deg) x forward 1/2/3
+ const want={A1:'BIG SLICE',A2:'FADE',A3:'PUSH',B1:'PULL FADE',B2:'STRAIGHT',B3:'PUSH DRAW',C1:'PULL',C2:'DRAW',C3:'BIG HOOK'};
+ for(const [bi,b] of [-40,0,40].entries())for(const [fi,f] of [-40,0,40].entries()){const sh=run(TB.strokePath(.9,b,f)),k='ABC'[bi]+'123'[fi];
+  const sign=Math.sign(+(sh&&sh.curve||0).toFixed(2)),exp={A1:1,A2:1,A3:0,B1:1,B2:0,B3:-1,C1:0,C2:-1,C3:-1}[k];ok(sh&&sh.combo===k&&sh.name===want[k]&&sign===exp,'combo '+k+' -> '+(sh&&sh.combo+' '+sh.curve.toFixed(2)));}
+ // let go mid-swing: roll back, release (the ball rolls on), then flick up and release before impact
+ {const B=TB.makeBall(),S=TB.newSwing();let t=0,hit=null;const f=()=>{if(TB.feed(S,{x:B.x,y:B.y,t})==='impact')hit=TB.toShot(S.impact);};
+  TB.grab(B,{x:0,y:0,t});for(let i=1;i<=20;i++){t+=1/60;TB.drag(B,{x:0,y:i*.05,t});f();}TB.release(B,t);for(let i=0;i<60;i++){t+=1/60;TB.step(B,1/60,t);f();}
+  TB.grab(B,{x:0,y:0,t});for(let i=1;i<=6;i++){t+=1/60;TB.drag(B,{x:0,y:-i*.14,t});f();}TB.release(B,t);for(let i=0;i<120&&!hit;i++){t+=1/60;TB.step(B,1/60,t);f();}
+  ok(hit&&hit.combo==='B2'&&hit.power>.4,'let go mid-swing still swings ('+(hit&&hit.combo+' '+hit.power.toFixed(2))+')');}
  ok(run([{x:0,y:0,t:0},{x:0,y:.1,t:.1},{x:0,y:-.1,t:.2}])===null,'a wiggle is not a swing');}
 // putting: a 3 m putt on a flat green with the right speed drops
 {const G={...P.FLAT,lie:()=>'green',cup:{x:0,z:3}};const pt=P.CLUBS.find(c=>c.kind==='putter');let holed=0;for(const pw of [.3,.33,.36,.39,.42]){const r=P.makeShot(G,{x:0,y:0,z:0,yaw:0,power:pw},pt,'green').run();if(r.why==='holed')holed++;}

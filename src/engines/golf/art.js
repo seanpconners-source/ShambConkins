@@ -80,21 +80,76 @@ function drawGolfer(g,i,frame,x,y,h,{flip=false}={}){const pic=GS.picture('golfe
  g.restore();return {x:x+(flip?-1:1)*(hd.x-F.feet[0])*k,y:y+(hd.y-F.feet[1])*k,d:hd.d*k};}
 
 // ---- the trackball (cabinet ball seen from above), rolled by rx/ry (radians turned)
-function drawTrackball(g,cx,cy,r,rx=0,ry=0,{glow=0}={}){const pic=GS.picture('trackball');
+// the cabinet trackball seen from above. rot = 3x3 orientation (trackball.js rollRot) or the old {x,y} offsets; marks fixed on the
+// ball's surface turn with it, so it rolls like the real one.
+const TB_MARKS=(()=>{const out=[],n=46,ga=Math.PI*(3-Math.sqrt(5));for(let i=0;i<n;i++){const y=1-2*(i+.5)/n,r=Math.sqrt(1-y*y),a=i*ga;out.push([Math.cos(a)*r,y,Math.sin(a)*r,i%3]);}return out;})();
+function drawTrackball(g,cx,cy,r,rot,opts={}){let M=rot;if(!Array.isArray(M)){const rx=(rot&&rot.x)||0,ry=(rot&&rot.y)||0;M=rollM([1,0,0,0,1,0,0,0,1],rx/3,ry/3);}
+ const {glow=0,ring=true}=opts,pic=GS.picture('trackball');
  g.save();g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.arc(cx+r*.06,cy+r*.1,r*1.18,0,6.28);g.fill();
- const ring=g.createLinearGradient(cx-r,cy-r,cx+r,cy+r);ring.addColorStop(0,'#f2f4f7');ring.addColorStop(.5,'#7a8088');ring.addColorStop(1,'#e6e9ee');g.fillStyle=ring;g.beginPath();g.arc(cx,cy,r*1.16,0,6.28);g.fill();
- g.fillStyle='#14161a';g.beginPath();g.arc(cx,cy,r*1.04,0,6.28);g.fill();
+ if(ring){const rg=g.createLinearGradient(cx-r,cy-r,cx+r,cy+r);rg.addColorStop(0,'#f2f4f7');rg.addColorStop(.5,'#7a8088');rg.addColorStop(1,'#e6e9ee');g.fillStyle=rg;g.beginPath();g.arc(cx,cy,r*1.16,0,6.28);g.fill();
+  g.fillStyle='#14161a';g.beginPath();g.arc(cx,cy,r*1.04,0,6.28);g.fill();}
  if(pic)g.drawImage(pic,cx-r*1.16,cy-r*1.16,r*2.32,r*2.32);
- else{const bg=g.createRadialGradient(cx-r*.35,cy-r*.4,r*.1,cx,cy,r);bg.addColorStop(0,'#ffcf5a');bg.addColorStop(.5,'#e8961a');bg.addColorStop(1,'#7a3a06');g.fillStyle=bg;g.beginPath();g.arc(cx,cy,r,0,6.28);g.fill();}
- // marks on the ball's surface that move as it rolls (so a swing shows)
+ else{const bg=g.createRadialGradient(cx-r*.35,cy-r*.4,r*.1,cx,cy,r);bg.addColorStop(0,'#ffd877');bg.addColorStop(.45,'#ef9d1c');bg.addColorStop(1,'#6e3205');g.fillStyle=bg;g.beginPath();g.arc(cx,cy,r,0,6.28);g.fill();}
+ // marks on the surface, turned by the ball's orientation (only the near half shows)
  g.save();g.beginPath();g.arc(cx,cy,r,0,6.28);g.clip();
- for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++){const u=((i*.55+rx/3)%3.3+3.3)%3.3-1.65,v=((j*.55+ry/3)%3.3+3.3)%3.3-1.65;const d=Math.hypot(u,v);if(d>1.05)continue;const z=Math.sqrt(Math.max(0,1-d*d));
-  g.fillStyle=`rgba(${pic?'255,255,255':'120,50,0'},${.25*z})`;g.beginPath();g.ellipse(cx+u*r*.95,cy+v*r*.95,r*.07*(.4+.6*z),r*.07*(.4+.6*z),Math.atan2(v,u),0,6.28);g.fill();}
- const sp=g.createRadialGradient(cx-r*.38,cy-r*.45,0,cx-r*.38,cy-r*.45,r*.6);sp.addColorStop(0,'rgba(255,255,255,.7)');sp.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=sp;g.fillRect(cx-r,cy-r,r*2,r*2);g.restore();
+ for(const [px,py,pz,kind] of TB_MARKS){const qx=M[0]*px+M[1]*py+M[2]*pz,qy=M[3]*px+M[4]*py+M[5]*pz,qz=M[6]*px+M[7]*py+M[8]*pz;if(qz<=0)continue;
+  const d=Math.hypot(qx,qy),sz=r*(kind?.055:.085),a=Math.atan2(qy,qx);g.fillStyle=pic?`rgba(255,255,255,${.12+.3*qz})`:kind?`rgba(255,236,170,${.18+.4*qz})`:`rgba(110,45,0,${.18+.35*qz})`;
+  g.beginPath();g.ellipse(cx+qx*r,cy+qy*r,sz*Math.max(.15,qz),sz,a,0,6.28);g.fill();}
+ const sp=g.createRadialGradient(cx-r*.38,cy-r*.45,0,cx-r*.38,cy-r*.45,r*.65);sp.addColorStop(0,'rgba(255,255,255,.75)');sp.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=sp;g.fillRect(cx-r,cy-r,r*2,r*2);
+ const rim=g.createRadialGradient(cx,cy,r*.75,cx,cy,r);rim.addColorStop(0,'rgba(0,0,0,0)');rim.addColorStop(1,'rgba(0,0,0,.35)');g.fillStyle=rim;g.fillRect(cx-r,cy-r,r*2,r*2);g.restore();
  if(glow){g.strokeStyle=`rgba(255,226,120,${glow})`;g.lineWidth=r*.08;g.beginPath();g.arc(cx,cy,r*1.1,0,6.28);g.stroke();}
+ g.restore();}
+function rollM(M,dx,dy){const a=Math.hypot(dx,dy);if(a<1e-6)return M;const ax=-dy/a,ay=dx/a,c=Math.cos(a),s=Math.sin(a),t=1-c;
+ const R=[t*ax*ax+c,t*ax*ay,s*ay,t*ax*ay,t*ay*ay+c,-s*ax,-s*ay,s*ax,c],o=[];for(let i=0;i<3;i++)for(let j=0;j<3;j++)o[i*3+j]=R[i*3]*M[j]+R[i*3+1]*M[3+j]+R[i*3+2]*M[6+j];return o;}
+// ---- the CONTROL PANEL around the big trackball (our own cabinet: brushed black deck, gold block arrows that light up)
+// geometry for a ball of radius R at (cx,cy): panel box, the 8 arrows (6 swing + 2 club), the backspin button
+function panelGeom(cx,cy,R){const ar=R*1.55,as=R*.36,w=R*4.5,h=R*4.5,box={x:cx-w/2,y:cy-h*.5,w,h};
+ const arrows=[['1',-135],['2',-90],['3',-45],['A',135],['B',90],['C',45],['club-',180],['club+',0]].map(([id,a])=>{const t=a*Math.PI/180;return {id,ang:t,x:cx+Math.cos(t)*ar,y:cy+Math.sin(t)*ar,s:as};});
+ const spin={x:box.x+w-R*1.02,y:box.y+h-R*.62,w:R*.92,h:R*.46},close={x:box.x+w-R*.5,y:box.y+R*.12,w:R*.38,h:R*.38};
+ return {box,arrows,spin,close,R};}
+function blockArrow(g,x,y,ang,s,fill,edge){g.save();g.translate(x,y);g.rotate(ang);g.beginPath();
+ g.moveTo(s*.95,0);g.lineTo(s*.12,-s*.78);g.lineTo(s*.12,-s*.36);g.lineTo(-s*.78,-s*.36);g.lineTo(-s*.78,s*.36);g.lineTo(s*.12,s*.36);g.lineTo(s*.12,s*.78);g.closePath();
+ g.fillStyle=fill;g.fill();g.lineWidth=Math.max(1.5,s*.08);g.strokeStyle=edge;g.stroke();g.restore();}
+// state: {lit:{A:1,...}, backspin, club:'7 IRON', hint, done:{combo,name}}
+function drawPanel(g,cx,cy,R,st={}){const G=panelGeom(cx,cy,R),{box}=G,pic=GS.picture('control-panel');g.save();
+ if(pic){g.drawImage(pic,box.x,box.y,box.w,box.h);}
+ else{g.fillStyle='rgba(0,0,0,.5)';g.beginPath();g.roundRect(box.x+4,box.y+8,box.w,box.h,R*.3);g.fill();
+  const bg=g.createLinearGradient(0,box.y,0,box.y+box.h);bg.addColorStop(0,'#2b2f36');bg.addColorStop(.5,'#16181c');bg.addColorStop(1,'#0c0d10');g.fillStyle=bg;g.beginPath();g.roundRect(box.x,box.y,box.w,box.h,R*.3);g.fill();
+  g.save();g.beginPath();g.roundRect(box.x,box.y,box.w,box.h,R*.3);g.clip();g.globalAlpha=.08;g.strokeStyle='#fff';g.lineWidth=1;for(let yy=box.y;yy<box.y+box.h;yy+=3){g.beginPath();g.moveTo(box.x,yy);g.lineTo(box.x+box.w,yy+1.5);g.stroke();}g.restore();
+  g.lineWidth=Math.max(2,R*.05);g.strokeStyle='#c9a227';g.beginPath();g.roundRect(box.x+R*.08,box.y+R*.08,box.w-R*.16,box.h-R*.16,R*.24);g.stroke();
+  g.strokeStyle='rgba(255,210,63,.25)';g.lineWidth=R*.03;g.beginPath();g.arc(cx,cy,R*1.55,0,6.28);g.stroke();}
+ const font=(px,w=900)=>`${w} ${px}px "SC Bangers","SC Nunito",Impact,sans-serif`,lit=st.lit||{};
+ g.textAlign='center';g.textBaseline='middle';
+ for(const a of G.arrows){const on=lit[a.id],club=a.id.startsWith('club');const fill=on?'#fff27a':club?'#9aa3ad':'#d7a21c',edge=on?'#ffffff':'#3a2a05';
+  if(on){g.save();g.shadowColor='#ffe066';g.shadowBlur=R*.35;blockArrow(g,a.x,a.y,a.ang,a.s,fill,edge);g.restore();}else blockArrow(g,a.x,a.y,a.ang,a.s,fill,edge);
+  if(!club){g.font=font(a.s*.62);g.fillStyle='#1a1304';g.fillText(a.id,a.x-Math.cos(a.ang)*a.s*.18,a.y-Math.sin(a.ang)*a.s*.18+1);}}
+ g.font=font(R*.19);g.fillStyle='#ffd23f';g.fillText('FORWARD SWING',cx,G.box.y+R*.19);g.fillText('BACK SWING',cx,G.box.y+G.box.h-R*.19);
+ g.font=font(R*.15,800);g.fillStyle='#cfd6de';const cl=G.arrows.find(a=>a.id==='club-'),cr=G.arrows.find(a=>a.id==='club+');
+ g.fillText('CLUB',cl.x,cl.y-R*.36);g.fillText('CLUB',cr.x,cr.y-R*.36);
+ if(st.club){g.textAlign='left';g.font=font(R*.14,800);g.fillStyle='#9fb0c0';g.fillText('CLUB',box.x+R*.22,box.y+R*.3);g.font=font(R*.2);g.fillStyle='#fff';g.fillText(st.club,box.x+R*.22,box.y+R*.52);g.textAlign='center';}
+ // backspin button + close
+ const b=G.spin;g.fillStyle=st.backspin?'#ff5a3c':'#3a3f47';g.beginPath();g.roundRect(b.x,b.y,b.w,b.h,b.h/2);g.fill();g.lineWidth=2;g.strokeStyle=st.backspin?'#ffd1c4':'#7b838d';g.stroke();
+ g.font=font(b.h*.42);g.fillStyle='#fff';g.fillText(st.backspin?'BACKSPIN ON':'BACKSPIN',b.x+b.w/2,b.y+b.h/2+1);
+ const c=G.close;g.fillStyle='rgba(255,255,255,.14)';g.beginPath();g.arc(c.x+c.w/2,c.y+c.h/2,c.w/2,0,6.28);g.fill();g.strokeStyle='#fff';g.lineWidth=Math.max(2,R*.04);g.beginPath();
+ g.moveTo(c.x+c.w*.3,c.y+c.h*.3);g.lineTo(c.x+c.w*.7,c.y+c.h*.7);g.moveTo(c.x+c.w*.7,c.y+c.h*.3);g.lineTo(c.x+c.w*.3,c.y+c.h*.7);g.stroke();
+ if(st.hint){g.textAlign='left';g.font=font(R*.14,800);g.fillStyle='#bfe7ff';const words=st.hint.split(' · ');words.forEach((w,k)=>g.fillText(w,box.x+R*.22,box.y+box.h-R*(.3+.2*(words.length-1-k))));g.textAlign='center';}
+ g.restore();return G;}
+// the combo card over the panel: 9 cells, hand motion arrows + the ball's flight path; lit = the combo just played
+function drawComboChart(g,X,Y,W,H,{lit=null,TB,cols=9}={}){g.save();g.fillStyle='rgba(8,14,40,.92)';g.beginPath();g.roundRect(X,Y,W,H,8);g.fill();g.strokeStyle='#c9a227';g.lineWidth=2;g.stroke();
+ const rows=9/cols,cw=W/cols,h=H/rows;g.textAlign='center';g.textBaseline='middle';let i=0;
+ for(const b of ['A','B','C'])for(const f of ['1','2','3']){const col=i%cols,row=Math.floor(i/cols),x0=X+cw*col,y=Y+h*row,cx=x0+cw/2,on=lit===b+f;i++;
+  if(on){g.fillStyle='rgba(255,226,102,.28)';g.fillRect(x0+1,y+1,cw-2,h-2);}
+  g.strokeStyle='rgba(255,255,255,.18)';g.lineWidth=1;if(col){g.beginPath();g.moveTo(x0,y+3);g.lineTo(x0,y+h-3);g.stroke();}if(row&&!col){g.beginPath();g.moveTo(X+3,y);g.lineTo(X+W-3,y);g.stroke();}
+  const s=Math.min(cw*.22,h*.17),ay=y+h*.21;
+  blockArrow(g,cx-cw*.22,ay,{A:135,B:90,C:45}[b]*Math.PI/180,s,'#d7a21c','#3a2a05');blockArrow(g,cx+cw*.22,ay,{1:-135,2:-90,3:-45}[f]*Math.PI/180,s,'#d7a21c','#3a2a05');
+  g.font=`900 ${s*.95}px "SC Bangers",Impact,sans-serif`;g.fillStyle='#1a1304';g.fillText(b,cx-cw*.22,ay+1);g.fillText(f,cx+cw*.22,ay+1);
+  if(TB){const pts=TB.comboPath(b,f),sc=h*.5,bx=cx,by=y+h*.92;g.strokeStyle=on?'#fff27a':'#fff';g.lineWidth=Math.max(1.6,h*.05);g.lineCap='round';g.beginPath();
+   pts.forEach(([px,py],k)=>{const X=bx+px*sc,Y=by-py*sc;k?g.lineTo(X,Y):g.moveTo(X,Y);});g.stroke();
+   const [lx,ly]=pts[pts.length-1],[qx,qy]=pts[pts.length-3],an=Math.atan2(-(ly-qy),lx-qx);g.fillStyle=g.strokeStyle;g.beginPath();const X=bx+lx*sc,Y=by-ly*sc,hs=h*.09;
+   g.moveTo(X+Math.cos(an)*hs,Y+Math.sin(an)*hs);g.lineTo(X+Math.cos(an+2.4)*hs,Y+Math.sin(an+2.4)*hs);g.lineTo(X+Math.cos(an-2.4)*hs,Y+Math.sin(an-2.4)*hs);g.fill();}}
  g.restore();}
 function drawLogo(g,cx,cy,w){const pic=GS.picture('logo');if(pic){const h=w*pic.height/pic.width;g.drawImage(pic,cx-w/2,cy-h/2,w,h);return h;}
  g.save();g.textAlign='center';g.textBaseline='middle';const fs=w*.1;g.font=`900 ${fs*.42}px "SC Nunito",Georgia,serif`;g.fillStyle='#ffd23f';g.fillText("SHOOTER McGAVIN'S",cx,cy-fs*.62);
  g.font=`900 ${fs}px "SC Bangers",Impact,sans-serif`;g.lineWidth=fs*.14;g.strokeStyle='#0b2a14';g.strokeText('PRO TOUR',cx,cy+fs*.18);const gr=g.createLinearGradient(0,cy-fs*.3,0,cy+fs*.6);gr.addColorStop(0,'#fff6c8');gr.addColorStop(1,'#e8a91a');g.fillStyle=gr;g.fillText('PRO TOUR',cx,cy+fs*.18);
  g.font=`800 ${fs*.22}px "SC Nunito",sans-serif`;g.fillStyle='#e8f2e0';g.fillText('ARCADE TRACKBALL GOLF',cx,cy+fs*.85);g.restore();return fs*1.9;}
-Object.assign(exports,{drawTree,treeCanvas,drawSky,skyCanvas,detailCanvas,waterCanvas,flagCanvas,drawGolferFrame,drawGolfer,drawTrackball,drawLogo,shadeHex,POSE});
+Object.assign(exports,{drawTree,treeCanvas,drawSky,skyCanvas,detailCanvas,waterCanvas,flagCanvas,drawGolferFrame,drawGolfer,drawTrackball,drawPanel,panelGeom,drawComboChart,blockArrow,drawLogo,shadeHex,POSE});
