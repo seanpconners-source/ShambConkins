@@ -1,4 +1,4 @@
-// Tin Cup Tour courses: every hole is made from a seed (same holes every time, on both phones). Terrain is ANALYTIC
+// Shooter McGavin's Pro Tour courses: every hole is made from a seed (same holes every time, on both phones). Terrain is ANALYTIC
 // (no grid): height(x,z) = rolling ground + the shapes laid on it (tee pad, green tilt + breaks, bunkers dug in, lakes
 // flattened); lie(x,z) from the same shapes (green / fringe / fairway along the centre line / bunkers / water / rough
 // bands / OB). Physics and the renderer ask the same functions, so what you see is what the ball rolls on.
@@ -13,14 +13,14 @@ function noise2(seed){const r=rng('n'+seed),P=new Float32Array(512);for(let i=0;
   return (v(i,j)*(1-u)+v(i+1,j)*u)*(1-w)+(v(i,j+1)*(1-u)+v(i+1,j+1)*u)*w;};}
 // THEMES: the look + what grows there (the renderer reads look/trees; physics reads lies)
 const THEMES={
- desert:{name:'Tin Cup Range',sub:'Salome, West Texas',source:'Tin Cup',amp:7,lakes:.25,trees:['cactus','cactus2','joshua','mesquite'],treeK:.55,
+ desert:{name:'Bat Country Links',sub:'Las Vegas desert, 1971',source:'Fear and Loathing in Las Vegas',amp:7,lakes:.25,trees:['cactus','cactus2','joshua','mesquite'],treeK:.55,
   rough:'waste',wind:[2,7],sky:['#7fb3e0','#f6d7a6'],far:'#b7764a',ground:'#c9a46a'},
  park:{name:'Bushwood Country Club',sub:'members only',source:'Caddyshack',amp:5,lakes:.5,trees:['oak','oak2','elm','pine'],treeK:1,
   rough:'rough',wind:[0,5],sky:['#6aa7e6','#d9ecff'],far:'#4f7d4a',ground:'#5d9a4a'},
  lake:{name:'Waterbury Pro-Am',sub:'tour stop',source:'Happy Gilmore',amp:6,lakes:.85,trees:['pine','pine2','birch','maple'],treeK:1.1,
   rough:'rough',wind:[1,6],sky:['#5f9ee0','#e8f1ff'],far:'#3e6a5c',ground:'#4f8f46'},
 };
-const COURSES=[{id:'tincup',theme:'desert',pars:[4,4,3,5,4,4,3,4,5]},{id:'bushwood',theme:'park',pars:[4,5,4,3,4,4,5,3,4]},{id:'waterbury',theme:'lake',pars:[4,3,5,4,4,3,4,5,4]}];
+const COURSES=[{id:'batcountry',theme:'desert',pars:[4,4,3,5,4,4,3,4,5]},{id:'bushwood',theme:'park',pars:[4,5,4,3,4,4,5,3,4]},{id:'waterbury',theme:'lake',pars:[4,3,5,4,4,3,4,5,4]}];
 // distance from p to a polyline: [dist, t along (m), side (+ = right of travel)]
 function polyDist(pts,x,z){let best=1e9,along=0,acc=0,side=0;
  for(let i=0;i+1<pts.length;i++){const a=pts[i],b=pts[i+1],dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1;

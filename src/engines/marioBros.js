@@ -190,6 +190,9 @@ async function marioBros(s){
  // gap, big Mario a 2-block one, so 1-2's low passages and the jump over Bowser under 1-4's ceiling work like the NES
  const pH=p=>p.mega>0?70:(p.big&&!p.crouch?30:15)+(p.yoshi?12:0);
  const HW=5;
+ // running over a row of one-block gaps: a body already dipping into a gap gets back onto the next block only if it
+ // sank less than this (full run speed sinks at most ~4.4-5.6 px, walking 6.6+ px = you fall in, like the NES)
+ const GAP_TOL=5.7;
  const log=[];const note=(p,what)=>{log.push(`${clock.toFixed(1)} P${p.i+1} ${what} ${p.stage+1}:${p.area} x${Math.round(p.x)}`);if(log.length>80)log.shift();};
  const popText=(w,txt,px,py)=>w.fx.pop(px,py,txt,{color:'#fff',stroke:'#000',size:7,rise:20,life:.7});
  const addScore=(p,w,n,px,py)=>{p.score+=n;if(px!==undefined)popText(w,String(n),px,py);};
@@ -373,7 +376,7 @@ async function marioBros(s){
    p.y+=p.vy;
    if(p.vy>=0&&springAt(p,a,def,jumpHeld)){}
    else if(p.vy>=0){const r=Math.floor(p.y/T);
-    if(r>=0&&r<ROWS&&p.prevY<=r*T+5&&p.y-r*T<=Math.max(5,p.vy+1)&&(solid(tileAt(w,p.area,footL,r))||solid(tileAt(w,p.area,footR,r)))){p.y=r*T;p.vy=0;land(p);}
+    if(r>=0&&r<ROWS&&(p.prevY<=r*T+.5?p.y-r*T<=Math.max(5,p.vy+1):p.prevY<=r*T+5&&p.y-r*T<=GAP_TOL)&&(solid(tileAt(w,p.area,footL,r))||solid(tileAt(w,p.area,footR,r)))){p.y=r*T;p.vy=0;land(p);}
     else for(const l of a.lifts){if(Math.abs(p.x-l.x)<=l.w/2+HW-1&&p.prevY<=l.y-l.dy+2&&p.y>=l.y){p.y=l.y;p.vy=0;p.ride=l;land(p);break;}}}
    else{const rh=Math.floor((p.y-h)/T);
     if(rh>=0){const cc=Math.floor(p.x/T),cl=Math.floor((p.x-HW+2)/T),cr=Math.floor((p.x+HW-2)/T),hits=c=>{const t=tileAt(w,p.area,c,rh);return solid(t)||t===TILE.HIDDEN;};

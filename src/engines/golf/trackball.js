@@ -1,4 +1,4 @@
-// Tin Cup Tour: the simulated TRACKBALL. A swing is read from the finger's path over the ball (in trackball radii, y down):
+// Shooter McGavin's Pro Tour: the simulated TRACKBALL. A swing is read from the finger's path over the ball (in trackball radii, y down):
 // roll it DOWN (toward you) = backswing (how far = how big the swing), then roll it UP: the moment it passes the address point
 // is IMPACT. Speed through impact = power, the stroke's angle off straight up = curve (up-left draws/hooks, up-right
 // fades/slices, for a right-hander), a backswing that drifts sideways and comes back square = nothing (only the forward

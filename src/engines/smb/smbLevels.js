@@ -496,12 +496,16 @@ const PIECES={
  // a low passage full of Buzzy Beetles (fireballs bounce off them: stomp and kick them)
  buzzies(S,c){const {A,lv}=S;A.ground(c,c+15);A.fill(c+3,c+12,3,9,BRICK);for(let k=0,n=2+Math.floor(lv/3);k<n;k++)A.foe('buzzy',c+4+k*3,13);A.coinRun(c+4,c+11,11);return c+16;},
  // a pyramid of blocks either side of a pit
+ // a run of one-block gaps: run at full speed and you skim over them, walk and you drop in (coins over the gaps)
+ gapRun(S,c){const {A,r,lv}=S;A.ground(c,c+8);A.coinRun(c+4,c+7,11);let x=c+9;const n=4+Math.floor(r()*3)+(lv>=6?2:0);
+  for(let k=0;k<n;k++){A.coinRun(x,x,11);x++;const w=r()<.6?1:2;A.ground(x,x+w-1);x+=w;}
+  A.ground(x,x+5);S.foe(x+4);return x+6;},
  stairsPit(S,c){const {A,r,lv}=S,h=4+Math.floor(r()*3),gap=2+Math.floor(r()*Math.min(3,lv/2.5));A.ground(c,c+h);A.stairs(c+1,h,1);c+=h+1+gap;A.ground(c,c+h+1);A.stairs(c,h,-1);if(lv>=5)S.foe(c+h+1);return c+h+2;},
  // a field of pipes, plants in most of them, a Paratroopa over the top
  pipeField(S,c){const {A,r,lv}=S;A.ground(c,c+19);for(let k=0;k<4;k++)A.pipe(c+2+k*5,2+Math.floor(r()*3),{piranha:r()<.35+.06*lv});if(r()<.6)A.foe('para',c+9,8);return c+20;},
 };
-const STYLE_PIECES={classic:['springWall','stairsPit','paras'],fortress:['cannons','hammers','cannons','stairsPit'],bridge:['bridge','bridge','falls','paras'],
- pipes:['pipeField','paras','springWall','pipeField'],hammer:['hammers','cannons','paras','hammers'],
+const STYLE_PIECES={classic:['springWall','gapRun','stairsPit','paras'],fortress:['cannons','hammers','gapRun','cannons','stairsPit'],bridge:['bridge','bridge','falls','paras'],
+ pipes:['pipeField','gapRun','paras','springWall','pipeField'],hammer:['hammers','cannons','gapRun','paras','hammers'],
  cave:['stairsPit'],buzzy:['buzzies','buzzies','loopLifts'],lifts:['loopLifts','falls','loopLifts'],pipemaze:['pipeField','paras','buzzies']};
 
 // an outdoor stage: flats, pits, pipes (one leads to a coin room), stairs, block clusters, tiers, floating islands,
@@ -519,10 +523,11 @@ function genOver(wn,n,cfg){const r=rng(wn*100+n*7+1),lv=lvOf(wn,n),W=cfg.rider?2
  const S={A,r,lv,cfg,foe:(cc,row=13)=>themeFoe(A,cfg,r,cc,row)},sty=STYLE_PIECES[cfg.style||'classic']||STYLE_PIECES.classic;let styled=0;
  // the coin room's pipe, its way out, and the landing spot under the cloud area each get a plain stretch of ground
  const pending=()=>{
+  // the beanstalk first once it is due: it needs ~30 columns after it for the landing spot
+  if(vineAt<0&&cfg.vine!==false&&c>W*.42){A.ground(c,c+9);A.row(c+3,9,'?B?',{[c+3]:'coin',[c+5]:'coin',[c+4]:'vine'});vineAt=c+4;themeFoe(A,cfg,r,c+8);c+=10;return true;}
   if(bonusAt<0&&c>W*.3){A.ground(c,c+9);bonusAt=c+4;A.pipe(bonusAt,2+Math.floor(r()*2),{to:{area:'bonus',x:2*T+8,y:2*T,how:'drop'}});themeFoe(A,cfg,r,c+8);c+=10;return true;}
   if(bonusAt>=0&&exitCol<0&&c>bonusAt+26){A.ground(c,c+7);exitCol=c+3;A.pipe(exitCol,2,{exitOf:'bonus'});c+=8;return true;}
   if(vineAt>=0&&landCol<0&&c>vineAt+30){A.ground(c,c+7);landCol=c+3;A.coinRun(c+2,c+4,6);c+=8;return true;}
-  if(vineAt<0&&cfg.vine!==false&&c>W*.42){A.ground(c,c+9);A.row(c+3,9,'?B?',{[c+3]:'coin',[c+5]:'coin',[c+4]:'vine'});vineAt=c+4;themeFoe(A,cfg,r,c+8);c+=10;return true;}
   return false;};
  const foes=(c0,len,row=13)=>{const k=Math.round(r()*(cfg.rider?.4+lv*.1:1+lv*.28));for(let j=0;j<k;j++)themeFoe(A,cfg,r,c0+2+Math.floor(r()*Math.max(1,len-4)),row);};
  const flat=len=>{A.ground(c,c+len-1);flats.push([c,len]);foes(c,len);
@@ -584,6 +589,8 @@ function genOver(wn,n,cfg){const r=rng(wn*100+n*7+1),lv=lvOf(wn,n),W=cfg.rider?2
   else piece();
  }
  while(pending()){}
+ // a late beanstalk still gets its landing spot (a long set piece can carry the builder past the usual distance)
+ if(vineAt>=0&&landCol<0){A.ground(c,c+7);landCol=c+3;A.coinRun(c+2,c+4,6);c+=8;}
  secrets(A,areas,r,cfg,{exitCol,vineAt,landCol});
  evenFoes(A,cfg,r,Math.round(cfg.rider?6+lv:4+2.1*lv),20,c);
  A.ground(c,W-1);A.stairs(c+2,8,1);A.col(c+10,8);flagAndCastle(A,c+19,c+23);props(A,cfg,c+24,W,r);
@@ -656,7 +663,7 @@ function genAthletic(wn,n,cfg){const r=rng(wn*100+n*7+3),lv=lvOf(wn,n),W=210,A=a
  if(vineAt>=0){const vr=vineRow,land=flats.find(([c0,len])=>c0>vineAt+30&&c0<c-4);
   secrets(A,areas,r,cfg,{exitCol:-2,vineAt,vineRow:vr,landCol:land?land[0]+1:-1});}
  // fish leaping up out of the drop all the way along
- if(cfg.style==='cheep')A.cheeps(14,c);
+ if(cfg.style==='cheep'||cfg.fish)A.cheeps(14,c);
  A.ground(c+2,W-1);A.stairs(c+4,3,1);A.col(c+7,3);flagAndCastle(A,c+15,c+19);
  return {name:`${wn}-${n}`,title:cfg.title,time:cfg.time||300,areas,start:{area:'main',x:40,y:9*T},check:check||{area:'main',x:40,y:9*T}};}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -710,7 +717,7 @@ const WORLDS={
  4:{title:'FROSTBITE PEAKS',power:'skis',lift:'chair',ice:true,roomKind:'icecave',stages:[
   ['over',{kind:'snow',style:'pipes',foes:['climber','climber','penguin','goomba'],props:['pine','pine','snowman'],special:'ramp'}],
   ['under',{kind:'icecave',style:'buzzy',outKind:'snow',foes:['penguin','climber'],hang:'icicle',props:['pine'],warpRoom:[5,6,7]}],
-  ['ath',{kind:'skilift',style:'balance',foes:['climber','penguin']}],
+  ['ath',{kind:'skilift',style:'balance',foes:['climber','penguin'],fish:true}],
   ['castle',{kind:'icepalace',style:'maze',foes:['penguin','climber'],bowser:{ski:true},toad:['BUT OUR PRINCESS WENT','SKIING AT ANOTHER RESORT!']}]]},
  5:{title:'LOST WAGES',power:'cape',extra:['cape','power','star'],roomKind:'under',stages:[
   ['over',{kind:'strip',style:'classic',foes:['dice','chip','card'],props:['neon'],special:'high',rider:true}],

@@ -1,4 +1,4 @@
-// Tin Cup Tour (arcade trackball golf) physics: plain data, Node-testable (tests/golf-sim.mjs).
+// Shooter McGavin's Pro Tour (arcade trackball golf) physics: plain data, Node-testable (tests/golf-sim.mjs).
 // Units: metres, seconds, radians. World: x east, z north, y up. A COURSE HOLE gives height(x,z), normal(x,z), lie(x,z),
 // trees [{x,z,r,h,cr,ch}] (trunk radius r to height h, canopy radius cr at height ch), cup {x,z}, wind {x,z} m/s.
 // FLIGHT: a golf ball with drag and lift from its spin (backspin climbs, side spin curves: draw/fade/hook/slice), wind;

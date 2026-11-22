@@ -1,4 +1,4 @@
-// Tin Cup Tour rules (plain data, Node-testable): stroke play, water = 1 stroke + a drop where the ball went in,
+// Shooter McGavin's Pro Tour rules (plain data, Node-testable): stroke play, water = 1 stroke + a drop where the ball went in,
 // out of bounds = stroke and distance (play again from where you hit), pick up at par + 4 (arcade pace),
 // score names (ace, albatross, eagle, birdie, par, bogey...). settle(hole, before, result) -> what happens next.
 const NAMES={'-4':'CONDOR!','-3':'ALBATROSS!','-2':'EAGLE!','-1':'BIRDIE!','0':'PAR','1':'BOGEY','2':'DOUBLE BOGEY','3':'TRIPLE BOGEY'};

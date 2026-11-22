@@ -1,4 +1,4 @@
-// Tin Cup Tour CPU golfer (and the "caddie" that picks a club for a person). Plays like a person would: from far away it
+// Shooter McGavin's Pro Tour CPU golfer (and the "caddie" that picks a club for a person). Plays like a person would: from far away it
 // lays up along the hole to a spot in the fairway, in range it goes at the flag; it TRIES shots with the real physics (wind,
 // slopes, trees, water) and keeps the best, then its hand shakes by skill. Putts: reads the break by trying lines.
 const P=require("src/engines/golf/physics.js");

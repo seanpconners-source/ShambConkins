@@ -1,4 +1,4 @@
-// Tin Cup Tour (Node): physics numbers, the trackball model, every hole is playable, CPU rounds by skill.
+// Shooter McGavin's Pro Tour (Node): physics numbers, the trackball model, every hole is playable, CPU rounds by skill.
 // Usage: node tests/golf-sim.mjs [--quick]
 import {readFileSync} from 'node:fs';
 const mods={};function req(id){if(mods[id])return mods[id].exports;const src=readFileSync(new URL('../'+id,import.meta.url),'utf8');const m={exports:{}};mods[id]=m;
@@ -29,7 +29,7 @@ function playHole(h,skill,seed){let r=0;const rand=()=>{r=(r*1103515245+12345+se
  while(guard++<14){const pl=CPU.plan(h,st.ball,st.lie,{skill,rand});const S=P.makeShot(h,{x:st.ball.x,y:h.height(st.ball.x,st.ball.z),z:st.ball.z,yaw:pl.yaw,power:pl.power,curve:pl.curve},pl.club,st.lie);
   const res=S.run();const nx=RU.settle(h,st,res,S);st={...st,...nx};if(nx.holed||nx.picked)return nx.strokes;}
  return 99;}
-const courses=quick?['bushwood']:['tincup','bushwood','waterbury'];
+const courses=quick?['bushwood']:['batcountry','bushwood','waterbury'];
 for(const id of courses){const c=C.getCourse(id);const t0=Date.now();const pro=[],hack=[];
  for(const h of c.holes){pro.push(playHole(h,.95,h.n*7));if(!quick)hack.push(playHole(h,.3,h.n*13));}
  const sum=a=>a.reduce((x,y)=>x+y,0);console.log(`${c.name} par ${c.par}: skilled ${sum(pro)} [${pro.join(' ')}]`+(quick?'':` weak ${sum(hack)} [${hack.join(' ')}]`)+` (${((Date.now()-t0)/1000).toFixed(1)} s)`);
