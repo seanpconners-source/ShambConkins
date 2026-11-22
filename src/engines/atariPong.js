@@ -68,7 +68,7 @@ async function pong(s){
  s.on(c,'pointermove',ev=>{const i=fingers.get(ev.pointerId);if(i===undefined||s.paused)return;ev.preventDefault();aim(i,s.pointer(ev));});
  for(const t of ['pointerup','pointercancel'])s.on(c,t,ev=>{fingers.delete(ev.pointerId);s.release(ev);});
  s.resetOnPause(()=>{fingers.clear();for(const k of keys)k.u=k.d=false;});
- s.hint('Drag on your own side to move your paddle (P1 left or bottom, P2 right or top). Where the ball hits the paddle sets the angle; it speeds up after 4 and 12 hits. First to 7. Keys: P1 W/S, P2 ↑/↓.');
+ s.hint('Drag on your own side to move your paddle (P1 left or bottom, P2 right or top). Where the ball hits the paddle sets the angle; it speeds up with every hit until someone misses. First to 7. Keys: P1 W/S, P2 ↑/↓.');
  // CRT overlay pieces
  let scan=null,vig=null,vigKey='';
  function crt(W,H){if(!scan){const t=document.createElement('canvas');t.width=1;t.height=3;const g=t.getContext('2d');g.fillStyle='rgba(0,0,0,.28)';g.fillRect(0,2,1,1);scan=x.createPattern(t,'repeat');}
@@ -85,7 +85,8 @@ const FIELD={L:724,W:390};
   const W=s.W,H=s.H;layout();const D=dims();st.time+=dt;headAge+=dt;
   if(headAge>.6&&st.time<8){headAge=0;const n=Math.round(D.hs/2);heads[0]=ditherHead(s,0,n);heads[1]=ditherHead(s,1,n);}
   const hl=on?canon.len/2/FIELD.W:D.len/2/Wd,bu=on?canon.b/FIELD.L:D.b/L,bv=on?canon.b/FIELD.W:D.b/Wd,pu=on?[canon.inset/FIELD.L,1-canon.inset/FIELD.L]:[D.inset/L,1-D.inset/L],aspect=on?FIELD.L/FIELD.W:L/Wd,court=on?1.12:(L>Wd?1:1.12);
-  const speedNow=()=>(.52+Math.min(st.hits,30)*.006)*(st.hits>=12?1.5:st.hits>=4?1.22:1)*court;
+  // the rally keeps getting faster with every hit, with no ceiling, until someone misses
+  const speedNow=()=>.52*(1+st.hits*.035)*(st.hits>=12?1.5:st.hits>=4?1.22:1)*court;
   // online: after waiting at the other paddle for their call, fly the ball on by the time it waited
   catchUp=w=>{let t=Math.min(w,.5);const b=st.ball,sp=speedNow();while(t>0){const h=Math.min(t,1/60);t-=h;b.u+=Math.sign(b.du)*sp*h;b.v+=b.dv*sp*h*aspect;if(b.v<bv/2){b.v=bv/2;b.dv=Math.abs(b.dv);}if(b.v>1-bv/2){b.v=1-bv/2;b.dv=-Math.abs(b.dv);}}};
   if(nf){nf.tick(dt);st.pv[1-me]+=(pvT-st.pv[1-me])*Math.min(1,dt*20);if(hold)hold.t+=dt;const k=Math.exp(-dt*9);off.u*=k;off.v*=k;}

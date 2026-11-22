@@ -1,5 +1,5 @@
 // Breakout (Atari, 1976) remake: eight rows of bricks under the cabinet's red/orange/green/yellow cellophane bands,
-// grey walls, blocky score digits, the ball speeding up after 4 and 12 hits and on first reaching the orange and red
+// grey walls, blocky score digits, the ball speeding up after 2 and 6 hits (then a little on every hit) and on first reaching the orange and red
 // rows, and the paddle shrinking to half once the ball touches the top wall. Neon glow, brick shatter, your head
 // riding the paddle. Turn-based on the same seeded serves.
 const {clamp,seededRandom}=require("src/utils.js");
@@ -44,7 +44,8 @@ async function breakout(s){
    if(b.y<top()-6){b.y=top()-6;b.vy=Math.abs(b.vy);voice(330,.02,.04,'square');if(!w.half){w.half=true;w.pops.push({x:FW/2,y:top()+2,text:'HALF PADDLE!',t:1.2,color:'#ff9b21'});}}
    // paddle
    if(b.vy>0&&pyb<=py-2&&b.y>=py-2&&Math.abs(b.x-w.paddle)<=pw/2+2){const f=clamp((b.x-w.paddle)/(pw/2+2),-1,1),ang=f*1.05,s0=sp(w);b.vx=Math.sin(ang)*s0;b.vy=-Math.cos(ang)*s0;b.y=py-2;w.hits++;voice(220,.03,.06,'square');
-    if(w.hits===4)setSpeed(w,1.18*w.speed);if(w.hits===12)setSpeed(w,1.36*w.speed);}
+    // faster sooner than the 1976 cabinet (after 2 and 6 paddle hits), then a little faster on every hit after that
+    if(w.hits===2)setSpeed(w,1.18*w.speed);if(w.hits===6)setSpeed(w,1.36*w.speed);if(w.hits>6)setSpeed(w,Math.min(2.4,1.36+(w.hits-6)*.035)*w.speed);}
    // bricks
    const col=Math.floor((b.x-6)/BW),row=Math.floor((b.y-top())/BH);
    if(row>=0&&row<ROWS&&col>=0&&col<COLS&&w.bricks[row][col]){
