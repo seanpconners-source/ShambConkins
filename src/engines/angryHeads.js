@@ -45,7 +45,13 @@ async function headlaunch(s){
  const online=!!s.online,solo=!!s.solo&&!online,board=s.origin==='board'&&!online,nP=solo?1:2,LEVELS=board?2:3;
  const names=s.players.map(p=>p.name||'Player'),total=[0,0];
  let t=0,phase='map',phaseT=0,cur=0,levelN=0,E=null,LV=null,ph=null,score=0,birdQ=[],birdI=0,flying=null,aim=null,pan=null,popups=[],parts=[],trail=[],lastTrail=[],result=null,shake=0,mapSel=0,mapX=0,mapDrag=null;
- const cam={x:-6,sc:20,tx:-6,follow:null};let W=s.W,H=s.H,GY=0;
+ // camera: cam.x = world x at the left edge, cam.yb = world height at the ground line (lifts the view when you look up),
+ // cam.z = zoom between the whole level (0) and close up (1); pinch, the +/- buttons or the wheel change it (kept per phone)
+ const ZKEY='sc-ah-zoom',loadZ=()=>{try{const v=parseFloat(localStorage.getItem(ZKEY));return Number.isFinite(v)?clamp(v,0,1):dz0();}catch{return dz0();}};
+ // first time: closer on tall screens (they have the height for big heads and pan sideways), halfway on wide ones
+ function dz0(){return s.H>s.W*.9?.7:.5;}
+ const cam={x:-6,sc:20,tx:-6,yb:0,tyb:0,z:loadZ(),follow:null};let W=s.W,H=s.H,GY=0,GG=0;
+ const saveZ=()=>{try{localStorage.setItem(ZKEY,String(+cam.z.toFixed(3)));}catch{}};
  const sfx={pull:()=>snd(300,.12,{type:'triangle',vol:.03,to:520}),fling:()=>{snd(700,.12,{type:'triangle',vol:.05,to:200});snd(160,.25,{type:'sawtooth',vol:.03,to:80,delay:.03});},
   wood:()=>snd(180,.08,{type:'square',vol:.04,to:90}),glass:()=>{snd(2200,.06,{type:'triangle',vol:.04,to:3200});snd(1700,.08,{type:'triangle',vol:.03,delay:.03});},stone:()=>snd(90,.12,{type:'sawtooth',vol:.05,to:60}),
   pop:()=>{snd(520,.08,{type:'square',vol:.05,to:900});snd(140,.15,{type:'sawtooth',vol:.04,to:70,delay:.04});},boom:()=>{snd(60,.5,{type:'sawtooth',vol:.08,to:30});snd(240,.3,{type:'square',vol:.04,to:40});},
@@ -59,12 +65,22 @@ async function headlaunch(s){
    if(e?.pw&&watchPh)powerFx(e.pw);}}):null;
  let mapPick=null,watchPh=null;
  function packSnap(){if(!ph||!mine())return {c:cur,n:levelN,ph:phase};const b=[];for(const it of ph.items)if(!it.static&&!it.gone&&(it.b.sleepState!==C.Body.SLEEPING||it.sent!==true)){const p=it.b.position,q=it.b.quaternion;b.push([it.i,+p.x.toFixed(2),+p.y.toFixed(2),+(2*Math.atan2(q.z,q.w)).toFixed(3),it.hp<it.max?1:0]);it.sent=it.b.sleepState===C.Body.SLEEPING;}
-  return {c:cur,n:levelN,ph:phase,sc:score,bi:birdI,b,d:[...ph.dead],f:ph.birds.filter(bd=>!bd.gone).map(bd=>[+bd.b.position.x.toFixed(2),+bd.b.position.y.toFixed(2),+bd.r.toFixed(2),bd.kind==='item'?birdQ[birdI]?.item||bd.item||'':bd.kind,bd.egg?1:0]),a:aim?[+aim.x.toFixed(2),+aim.y.toFixed(2)]:null,cx:+cam.x.toFixed(2),tr:trail.slice(-60).map(p=>[+p[0].toFixed(1),+p[1].toFixed(1)])};}
+  return {c:cur,n:levelN,ph:phase,sc:score,bi:birdI,b,d:[...ph.dead],f:ph.birds.filter(bd=>!bd.gone).map(bd=>[+bd.b.position.x.toFixed(2),+bd.b.position.y.toFixed(2),+bd.r.toFixed(2),bd.kind==='item'?birdQ[birdI]?.item||bd.item||'':bd.kind,bd.egg?1:0]),a:aim?[+aim.x.toFixed(2),+aim.y.toFixed(2)]:null,cc:+(cam.x+viewW()/2).toFixed(2),cy:+cam.yb.toFixed(2),tr:trail.slice(-60).map(p=>[+p[0].toFixed(1),+p[1].toFixed(1)])};}
  // ---- layout and camera: world units → screen
- const layout=()=>{W=s.W;H=s.H;GY=H*.84;};
- const sx=X=>(X-cam.x)*cam.sc,sy=Y=>GY-Y*cam.sc;
+ const layout=()=>{W=s.W;H=s.H;GY=H*.86;GG=GY+cam.yb*cam.sc;};
+ const sx=X=>(X-cam.x)*cam.sc,sy=Y=>GG-Y*cam.sc;
  // close like the real game: the whole level when it fits at a good size, else the camera pans between sling and fort
- function fitCam(){if(!LV)return;const u=Math.min(W,H)/420,span=LV.width+8,top=Math.max(10,...LV.bodies.map(b=>b.y+(b.h||b.r||b.s||1)))+2;cam.sc=Math.min(Math.max(W/span,W/34),Math.max(W/span,(GY-fb.top-30)/top),40*u);}
+ // the zoom range: 0 = the whole level (sling to the far side of the fort, ground to the top) fits, 1 = close up (~7.5 units of
+ // height); between them on a log scale. Heads are never drawn smaller than min(W,H)/24 per unit unless you zoom all the way out.
+ function zoomRange(){const top=Math.max(8,...LV.bodies.map(b=>b.y+(b.h||b.r||b.s||1)))+2,span=LV.width+PULL+6,avH=Math.max(80,GY-fb.top-34);
+  const whole=Math.min(W/span,avH/(top+1)),close=Math.max(whole,Math.min(avH/7.5,Math.min(W,H)/9));return {whole,close,top};}
+ function fitCam(){if(!LV)return;const {whole,close}=zoomRange();cam.sc=whole*Math.pow(close/whole,cam.z);GG=GY+cam.yb*cam.sc;}
+ const xMin=()=>SLING.x-PULL-3,xMax=()=>Math.max(xMin(),LV.width+3-viewW()),viewH=()=>(GY-fb.top-20)/cam.sc;
+ const yMax=()=>Math.max(0,zoomRange().top+1-viewH());
+ const clampCam=()=>{cam.x=clamp(cam.x,xMin(),xMax());cam.yb=clamp(cam.yb,0,yMax());};
+ // where the camera rests while you aim: the sling near the left with room to pull back, the view as low as it goes
+ const aimX=()=>SLING.x-PULL-2.2;
+ function zoomBy(dz,fx=W/2,fy=GY){const before=toWorld(fx,fy);cam.z=clamp(cam.z+dz,0,1);fitCam();cam.x=before.x-fx/cam.sc;cam.yb=before.y-(GY-fy)/cam.sc;clampCam();cam.tx=cam.x;cam.tyb=cam.yb;saveZ();}
  const viewW=()=>W/cam.sc;
  // ---- the level
  function startLevel(n){levelN=n;({e:E,lv:LV}=levelData(n));score=0;birdI=0;birdQ=LV.birds.map(b=>({...b}));popups=[];parts=[];trail=[];lastTrail=[];result=null;flying=null;aim=null;watch=null;
@@ -72,24 +88,36 @@ async function headlaunch(s){
    onPig:it=>{const v=it.s.king?10000:5000;score+=v;popup(it.b.position.x,it.b.position.y+it.s.r,v,true);puff(it.b.position.x,it.b.position.y,it.s.r);sfx.pop();},
    onBoom:(X,Y,R)=>{shake=.5;sfx.boom();for(let i=0;i<40;i++){const a=Math.random()*6.28,v=4+Math.random()*12;parts.push({x:X,y:Y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.7,c:i%3?'#ff9c1c':'#fff3a0',sz:.25});}},
    onBonus:it=>{score+=3000;popup(it.b.position.x,it.b.position.y,3000,true,it.s.item);sfx.win();}});
-  layout();fitCam();cam.x=Math.max(-3,LV.width-viewW()+2);cam.tx=-3;phase='intro';phaseT=0;}
+  layout();fitCam();cam.yb=0;cam.x=xMax();cam.tx=aimX();cam.tyb=0;phase='intro';phaseT=0;}
  const popup=(X,Y,v,big,item)=>popups.push({x:X,y:Y,v,t:0,big,item});
  function debris(it,m){const p=it.b.position,col={wood:['#b07838','#7a4a1c'],glass:['#bce8ff','#ffffff'],stone:['#9c9c9c','#6c6c6c'],ice:['#d8f4ff','#8cc8e8']}[m];
   for(let i=0;i<10;i++)parts.push({x:p.x+(Math.random()-.5)*it.s.w,y:p.y+(Math.random()-.5)*it.s.h,vx:(Math.random()-.5)*8,vy:Math.random()*7,life:.9,c:col[i%2],sz:.18+Math.random()*.15,rot:Math.random()*6,g:1});}
  function puff(X,Y,r){for(let i=0;i<16;i++){const a=i/16*6.28;parts.push({x:X+Math.cos(a)*r*.6,y:Y+Math.sin(a)*r*.6,vx:Math.cos(a)*2.5,vy:Math.sin(a)*2.5+1,life:.8,c:'#f0f0f0',sz:.35+Math.random()*.2,smoke:1});}}
  // ---- input: pull the head back in the sling and let go; tap in the air for the special bird's power; drag elsewhere to look around
- let drag=null;
- const toWorld=(px,py)=>({x:px/cam.sc+cam.x,y:(GY-py)/cam.sc});
- s.on(c,'pointerdown',ev=>{ev.preventDefault();const p=pos(ev);if(phase==='map')return mapDown(p);if(phase==='result')return resultTap(p);if(phase==='intro'){phaseT=99;return;}
-  if(!mine())return;
-  if(phase==='fly'&&flying&&!flying.usedTap){const r=ph.power(flying.bd);flying.usedTap=true;if(r){sfx.power();powerFx(r);nf?.event({pw:r});}return;}
-  if(phase!=='aim')return;const w=toWorld(p.x,p.y),d=Math.hypot(w.x-SLING.x,w.y-SLING.y);
-  if(d<2.6*Math.max(1,22/cam.sc)){drag={kind:'sling'};aim={x:0,y:0};sfx.pull();}else drag={kind:'pan',x0:p.x,cx:cam.x};});
- s.on(c,'pointermove',ev=>{const p=pos(ev);if(phase==='map')return mapMove(p);if(!drag)return;
-  if(drag.kind==='pan'){cam.x=clamp(drag.cx-(p.x-drag.x0)/cam.sc,-5,Math.max(-3,LV.width-viewW()+2));cam.tx=cam.x;return;}
-  const w=toWorld(p.x,p.y);let dx=w.x-SLING.x,dy=w.y-SLING.y;const d=Math.hypot(dx,dy);if(d>PULL){dx*=PULL/d;dy*=PULL/d;}if(SLING.y+dy<.5)dy=.5-SLING.y;aim={x:dx,y:dy};});
- s.on(window,'pointerup',ev=>{if(phase==='map')return mapUp(pos(ev));const d=drag;drag=null;if(!d||d.kind!=='sling'||!aim)return;
+ let drag=null;const ptrs=new Map();let pinch=null;
+ const toWorld=(px,py)=>({x:px/cam.sc+cam.x,y:(GG-py)/cam.sc});
+ // the zoom buttons (bottom right, in the ground) and how far a finger drags for a full pull (any spot on the screen works:
+ // the pull is measured from where you grabbed the head, so the sling's place on the screen never limits it)
+ const zoomBtns=()=>{const u=Math.min(W,H)/420,r=19*u,y=H-26*u-r;return [{id:'out',x:W-20*u-r,y,r,label:'−'},{id:'in',x:W-20*u-r*3.4,y,r,label:'+'}];};
+ const pullPx=()=>clamp(PULL*cam.sc,90,Math.min(W,H)*.3);
+ s.on(c,'pointerdown',ev=>{ev.preventDefault();const p=pos(ev);ptrs.set(ev.pointerId,p);
+  if(phase==='map')return mapDown(p);if(phase==='result')return resultTap(p);if(phase==='intro'){phaseT=99;return;}
+  if(ptrs.size===2&&ph){const [a1,a2]=[...ptrs.values()];pinch={d0:Math.hypot(a1.x-a2.x,a1.y-a2.y),z0:cam.z,mx:(a1.x+a2.x)/2,my:(a1.y+a2.y)/2};if(drag?.kind==='sling')aim=null;drag=null;return;}
+  for(const b of zoomBtns())if(Math.hypot(p.x-b.x,p.y-b.y)<b.r+6){zoomBy(b.id==='in'?.25:-.25);return;}
+  if(phase==='fly'&&flying&&!flying.usedTap&&mine()){const r=ph.power(flying.bd);flying.usedTap=true;if(r){sfx.power();powerFx(r);nf?.event({pw:r});}return;}
+  if(phase==='aim'&&mine()){const w=toWorld(p.x,p.y),d=Math.hypot(w.x-SLING.x,w.y-SLING.y);
+   if(d<Math.max(2.6,64/cam.sc)){drag={kind:'sling',x0:p.x,y0:p.y};aim={x:0,y:0};sfx.pull();cam.tx=cam.x;return;}}
+  if(ph)drag={kind:'pan',x0:p.x,y0:p.y,cx:cam.x,cy:cam.yb};});
+ s.on(c,'pointermove',ev=>{const p=pos(ev);if(ptrs.has(ev.pointerId))ptrs.set(ev.pointerId,p);if(phase==='map')return mapMove(p);
+  if(pinch&&ptrs.size>=2){const [a1,a2]=[...ptrs.values()],d=Math.hypot(a1.x-a2.x,a1.y-a2.y);const want=clamp(pinch.z0+Math.log(Math.max(.2,d/Math.max(20,pinch.d0)))/Math.log(3),0,1);zoomBy(want-cam.z,pinch.mx,pinch.my);return;}
+  if(!drag)return;
+  if(drag.kind==='pan'){cam.x=drag.cx-(p.x-drag.x0)/cam.sc;cam.yb=drag.cy+(p.y-drag.y0)/cam.sc;clampCam();cam.tx=cam.x;cam.tyb=cam.yb;drag.moved=true;return;}
+  const k=PULL/pullPx();let dx=(p.x-drag.x0)*k,dy=-(p.y-drag.y0)*k;const d=Math.hypot(dx,dy);if(d>PULL){dx*=PULL/d;dy*=PULL/d;}if(SLING.y+dy<.5)dy=.5-SLING.y;aim={x:dx,y:dy};});
+ const lift=ev=>{ptrs.delete(ev.pointerId);if(pinch&&ptrs.size<2){pinch=null;drag=null;return true;}return false;};
+ s.on(window,'pointercancel',ev=>{lift(ev);drag=null;if(phase==='aim')aim=null;});
+ s.on(window,'pointerup',ev=>{if(lift(ev))return;if(phase==='map')return mapUp(pos(ev));const d=drag;drag=null;if(!d||d.kind!=='sling'||!aim)return;
   const pl=Math.hypot(aim.x,aim.y);if(pl<.6){aim=null;return;}fire(-aim.x/PULL*VMAX,-aim.y/PULL*VMAX);aim=null;});
+ s.on(c,'wheel',ev=>{if(!ph||phase==='map')return;ev.preventDefault();const p=pos(ev);zoomBy(ev.deltaY<0?.08:-.08,p.x,p.y);},{passive:false});
  const pos=ev=>{const r=c.getBoundingClientRect();return {x:(ev.clientX-r.left)*(W/r.width),y:(ev.clientY-r.top)*(H/r.height)};};
  function fire(vx,vy){const b=birdQ[birdI];if(!b)return;const bd=ph.launch(SLING.x+(aim?aim.x:0),SLING.y+(aim?aim.y:0),vx,vy,{ability:b.ability,kind:b.kind,item:b.item});
   flying={bd,usedTap:!b.ability};lastTrail=trail;trail=[];phase='fly';phaseT=0;sfx.fling();s.react?.(cur,'angry');nf?.push();}
@@ -98,11 +126,15 @@ async function headlaunch(s){
  const until=fn=>new Promise(r=>{const id=setInterval(()=>{if(!s.alive||fn()){clearInterval(id);r();}},50);});
  let mapResolve=null;
  async function playTurn(n){startLevel(n);await until(()=>phase==='result'&&result&&(solo||result.ready));return result;}
+ // the fort is quiet when nothing loose still moves fast (tiny wobbles and slow slides don't hold the next shot up)
+ function quietFort(){for(const it of ph.items){if(it.gone||it.static||it.b.sleepState===C.Body.SLEEPING)continue;const v=it.b.velocity;if(Math.hypot(v.x,v.y)>1.1||Math.abs(it.b.angularVelocity.z)>1.2)return false;}return true;}
+ // where the action is after the bird stops: the middle of whatever still moves, else the bird
+ function actionX(){let n=0,sx0=0;for(const it of ph.items){if(it.gone||it.static||it.b.sleepState===C.Body.SLEEPING)continue;const v=it.b.velocity;if(Math.hypot(v.x,v.y)>.5){sx0+=it.b.position.x;n++;}}return n?sx0/n:null;}
  function endShot(){if(!ph)return;ph.clearBirds();flying=null;birdI++;
   if(!ph.pigsLeft()){const left=birdQ.length-birdI;for(let i=0;i<left;i++)setTimeout(()=>{if(!s.alive)return;score+=10000;popup(SLING.x-1.5-i*1.4,1.5,10000,true);sfx.star(i);},300+i*350);
    setTimeout(()=>finishLevel(true),400+left*350+500);phase='won';return;}
   if(birdI>=birdQ.length){phase='lost';setTimeout(()=>finishLevel(false),900);return;}
-  phase='aim';phaseT=0;cam.tx=-3;}
+  phase='aim';phaseT=0;cam.tx=aimX();cam.tyb=0;}
  function finishLevel(won){const st=won?(score>=LV.stars[2]?3:score>=LV.stars[1]?2:1):0;result={won,score,stars:st,t:0,ready:false};phase='result';phaseT=0;(won?sfx.win:sfx.lose)();
   if(won&&(solo||!online&&!board)){const P=progress();P.stars[levelN]=Math.max(P.stars[levelN]||0,st);P.best[levelN]=Math.max(P.best[levelN]||0,score);try{saveProfile(store.profile);}catch{}}
   if(mine())nf?.event({done:[cur,levelN,score,st]});
@@ -147,13 +179,25 @@ async function headlaunch(s){
   fitCam();
   if(watchPh&&!mine())applyWatch();
   else if(ph&&(phase==='fly'||phase==='aim'||phase==='won'||phase==='lost'||phase==='intro'||phase==='result')){ph.step(dt);
-   if(flying){const p=flying.bd.b.position;trail.push([p.x,p.y]);if(trail.length>400)trail.shift();
-    const v=flying.bd.b.velocity;if((phaseT>1.2&&ph.settled())||phaseT>11||p.y<-8||p.x>LV.width+40){endShot();}}
+   if(flying){const p=flying.bd.b.position,bb=flying.bd.b;
+    // the dotted path stops at the first thing the head hits (like the real game)
+    if(!flying.bd.touched&&!flying.hitT)trail.push([p.x,p.y]);if(trail.length>400)trail.shift();if(flying.bd.touched)flying.hitT=1;
+    // a head rolling along the ground stops quickly instead of trundling off past the fort
+    if(p.y<flying.bd.r+.2&&Math.abs(bb.velocity.y)<2){flying.ground=(flying.ground||0)+dt;const k=Math.max(0,1-dt*2.6);bb.velocity.x*=k;bb.angularVelocity.z*=k;}
+    const v=bb.velocity,gone=flying.bd.gone||p.y<-8||p.x>LV.width+8;if(gone||Math.hypot(v.x,v.y)<.8)flying.still=(flying.still||0)+dt;else flying.still=0;
+    flying.quiet=quietFort()?(flying.quiet||0)+dt:0;
+    if(phaseT>1&&(flying.still>.5&&(ph.settled()||flying.quiet>.45)||flying.still>3.2||(flying.ground||0)>1.6&&flying.quiet>.45)||phaseT>9){endShot();}}
    nf?.tick(dt);}
   // camera: intro pan from the fort to the sling, follow the bird, back to the sling for the next one
-  if(phase==='intro'){cam.x+=(-3-cam.x)*Math.min(1,dt*1.3);if(phaseT>2.6||Math.abs(cam.x+3)<.3){phase='aim';phaseT=0;cam.x=-3;}}
-  else if(phase==='fly'&&flying){const p=flying.bd.b.position;cam.tx=clamp(p.x-viewW()*.35,-3,Math.max(-3,LV.width-viewW()+2));cam.x+=(cam.tx-cam.x)*Math.min(1,dt*5);}
-  else if(phase==='aim'&&!drag){cam.x+=(cam.tx-cam.x)*Math.min(1,dt*3);}
+  const ease=k=>Math.min(1,dt*k);
+  if(phase==='intro'){cam.x+=(aimX()-cam.x)*ease(1.6);cam.yb+=(0-cam.yb)*ease(3);if(phaseT>2.4||Math.abs(cam.x-aimX())<.3){phase='aim';phaseT=0;cam.x=aimX();cam.tx=cam.x;}}
+  else if(phase==='fly'&&flying&&!(watchPh&&!mine())){const p=flying.bd.b.position;let fx=p.x,fy=p.y;
+   // once the bird has stopped, look at whatever is still falling
+   if((flying.still||0)>.25){const ax=actionX();if(ax!==null)fx=ax;fy=0;}
+   cam.tx=fx-viewW()*.42;cam.tyb=fy-viewH()*.55;const ox=cam.x,oy=cam.yb;cam.x=cam.tx;cam.yb=cam.tyb;clampCam();cam.tx=cam.x;cam.tyb=cam.yb;cam.x=ox;cam.yb=oy;
+   cam.x+=(cam.tx-cam.x)*ease(5);cam.yb+=(cam.tyb-cam.yb)*ease(4);}
+  else if((phase==='aim'||phase==='won'||phase==='lost')&&!drag&&!pinch){cam.x+=(cam.tx-cam.x)*ease(4);cam.yb+=(cam.tyb-cam.yb)*ease(4);}
+  clampCam();GG=GY+cam.yb*cam.sc;
   for(let i=parts.length-1;i>=0;i--){const q=parts[i];q.vy-=(q.g?18:q.smoke?-1:6)*dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;q.rot=(q.rot||0)+dt*8;if(q.life<=0)parts.splice(i,1);}
   for(let i=popups.length-1;i>=0;i--){popups[i].t+=dt;if(popups[i].t>1.4)popups.splice(i,1);}
   // the autopilot (tests): aim at the nearest head with a found shot
@@ -167,7 +211,7 @@ async function headlaunch(s){
   for(const i of d.d||[]){const it=ph.items.find(q=>q.i===i);if(!it||it.gone)continue;it.gone=true;const s0=it.s;
    if(s0.kind==='pig'){puff(it.b.position.x,it.b.position.y,s0.r);popup(it.b.position.x,it.b.position.y+s0.r,s0.king?10000:5000,true);sfx.pop();}
    else if(s0.kind==='block'){debris(it,s0.mat);popup(it.b.position.x,it.b.position.y,MAT[s0.mat].score);}else if(s0.kind==='tnt'){shake=.5;sfx.boom();}}
-  watchBirds=d.f||[];if(d.a)aim={x:d.a[0],y:d.a[1]};else aim=null;cam.x+=((d.cx??cam.x)-cam.x)*.3;trail=(d.tr||[]).map(p=>[p[0],p[1]]);}
+  watchBirds=d.f||[];if(d.a)aim={x:d.a[0],y:d.a[1]};else aim=null;if(d.cc!=null){cam.x+=((d.cc-viewW()/2)-cam.x)*.3;cam.yb+=((d.cy||0)-cam.yb)*.3;}trail=(d.tr||[]).map(p=>[p[0],p[1]]);}
  let watchBirds=null;
  function autoShot(){if(!ph||s.debug._aiming)return;const tgt=ph.items.find(it=>!it.gone&&it.s.kind==='pig');if(!tgt)return;const tx=tgt.b.position.x,ty=tgt.b.position.y;
   // simple ballistic solve for a flat-ish shot at full power, else a lob
@@ -178,14 +222,14 @@ async function headlaunch(s){
  function hudText(str,X,Y,size,fill='#fff',al='center',font='"SC Bangers",Impact,sans-serif'){x.font=`${size}px ${font}`;x.textAlign=al;x.textBaseline='middle';x.lineJoin='round';x.lineWidth=size*.2;x.strokeStyle='#000c';x.strokeText(str,X,Y);x.fillStyle=fill;x.fillText(str,X,Y);}
  function small(str,X,Y,size,fill='#fff',al='center'){x.font=`800 ${size}px "SC Nunito",sans-serif`;x.textAlign=al;x.textBaseline='middle';x.lineWidth=size*.25;x.strokeStyle='#0009';x.strokeText(str,X,Y);x.fillStyle=fill;x.fillText(str,X,Y);}
  const SKIES={mind:['#7ec8f8','#d8f0ff'],body:['#f8b878','#ffe8c8'],spirit:['#8c6cd8','#e8d8ff'],horror:['#2c2038','#6c4c6c']};
- function drawBg(){const sk=SKIES[E?.realm]||SKIES.mind,g=x.createLinearGradient(0,0,0,GY);g.addColorStop(0,sk[0]);g.addColorStop(1,sk[1]);x.fillStyle=g;x.fillRect(0,0,W,GY);
+ function drawBg(){const GY=GG,sk=SKIES[E?.realm]||SKIES.mind,g=x.createLinearGradient(0,0,0,Math.max(1,GY));g.addColorStop(0,sk[0]);g.addColorStop(1,sk[1]);x.fillStyle=g;x.fillRect(0,0,W,GY);
   // the location's own picture (when the game has one) as the far backdrop
   const la=img(E&&ART['photo:location:'+E.id]);if(la){const k=Math.max(W/la.naturalWidth,GY*.8/la.naturalHeight),w=la.naturalWidth*k,h=la.naturalHeight*k;x.globalAlpha=.85;x.drawImage(la,(W-w)/2-cam.x*cam.sc*.08,GY-h,w,h);x.globalAlpha=1;}
   else{x.font=`${Math.min(W,H)*.34}px sans-serif`;x.textAlign='center';x.textBaseline='middle';x.globalAlpha=.16;x.fillText(E?.icon||'',W*.62-cam.x*cam.sc*.06,GY*.45);x.globalAlpha=1;}
   // clouds and two rows of hills, parallax
   x.fillStyle='#ffffffcc';for(let i=0;i<6;i++){const X=((i*260-cam.x*cam.sc*.15+t*6)%(W+400)+W+400)%(W+400)-200,Y=40+((i*67)%120);for(const [dx,dy,r] of [[0,0,26],[28,-10,32],[60,0,24]]){x.beginPath();x.arc(X+dx,Y+dy,r,0,7);x.fill();}}
   for(const [k,col,hh] of [[.25,'#8cc87c',.3],[.5,'#5ca84c',.18]]){x.fillStyle=col;x.beginPath();x.moveTo(0,GY);for(let X=0;X<=W+20;X+=20){const wx=X/cam.sc+cam.x*k;x.lineTo(X,GY-(Math.sin(wx*.12)*.5+.6+Math.sin(wx*.031)*.4)*GY*hh);}x.lineTo(W,GY);x.fill();}}
- function drawGround(){R('#6cbc3c',0,GY,W,6);R('#8c5c2c',0,GY+6,W,H-GY);x.fillStyle='#7a4c22';for(let X=((-cam.x*cam.sc)%40+40)%40-40;X<W;X+=40)x.fillRect(X,GY+16,20,6);}
+ function drawGround(){const GY=GG;R('#6cbc3c',0,GY,W,6);R('#8c5c2c',0,GY+6,W,H-GY);x.fillStyle='#7a4c22';for(let X=((-cam.x*cam.sc)%40+40)%40-40;X<W;X+=40)x.fillRect(X,GY+16,20,6);}
  function drawSling(front){const X=sx(0),Y=sy(0),k=cam.sc;x.fillStyle='#6c3c1c';x.strokeStyle='#3c1c0c';x.lineWidth=2;
   if(!front){x.beginPath();x.moveTo(X-.25*k,Y);x.lineTo(X-.2*k,Y-2*k);x.lineTo(X-.7*k,Y-3.3*k);x.lineTo(X-.35*k,Y-3.4*k);x.lineTo(X+.05*k,Y-2.3*k);x.lineTo(X+.25*k,Y);x.fill();x.stroke();return;}
   x.beginPath();x.moveTo(X+.05*k,Y-2.3*k);x.lineTo(X+.55*k,Y-3.4*k);x.lineTo(X+.85*k,Y-3.3*k);x.lineTo(X+.3*k,Y-2*k);x.fill();x.stroke();}
@@ -235,6 +279,7 @@ async function headlaunch(s){
    x.globalAlpha=Math.min(1,(1.4-p.t)*2);hudText(String(p.v),sx(p.x),sy(p.y)-p.t*40,p.big?26:16,p.big?'#ffd84c':'#ffffff');x.globalAlpha=1;}
   x.setTransform(1,0,0,1,0,0);hud();if(phase==='result')drawResult();}
  function hud(){const u=Math.min(W,H)/420,top=fb.top+4;
+  if(ph&&phase!=='result')for(const b of zoomBtns()){x.fillStyle='#0008';x.beginPath();x.arc(b.x,b.y,b.r,0,7);x.fill();x.strokeStyle='#ffffffcc';x.lineWidth=2;x.stroke();hudText(b.label,b.x,b.y+1,b.r*1.3);}
   // level name (left), score (right, under the Pause/Exit pills)
   small(`${E?.name||''}  ${Math.floor(levelN/LPE)+1}-${levelN%LPE+1}`,14,top+12*u,13*u,'#fff','left');
   if(nP>1)small(online&&!mine()?`WATCHING ${names[cur].toUpperCase()}`:names[cur].toUpperCase(),14,top+32*u,12*u,'#ffd84c','left');
@@ -274,7 +319,7 @@ async function headlaunch(s){
   for(let k=0;k<LPE;k++){const n=e*LPE+k,X=W/2+(k-2)*Math.min(70*u,W/6),open=unlocked(n),boss=k===LPE-1,r=(boss?30:24)*u,y=by+(k%2?14*u:0);
    mapBubbles.push({n,x:X,y,r,open});x.fillStyle=open?(boss?'#c8381c':'#4d8dff'):'#3c3c4c';x.beginPath();x.arc(X,y,r,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=2.5;x.stroke();
    hudText(open?(boss?'👑':String(k+1)):'🔒',X,y+1,r*.9);const st=P.stars[n]||0;for(let j=0;j<3;j++)star(X+(j-1)*13*u,y+r+12*u,6*u,j<st);}}
- s.debug={engine:'headlaunch',get phase(){return phase;},get level(){return LV;},get ph(){return ph;},get score(){return score;},total,episodes,startLevel,pick:n=>{mapResolve?.(n);mapResolve=null;},choose:id=>result?.choose?.(id),autopilot:false,
+ s.debug={engine:'headlaunch',get phase(){return phase;},get level(){return LV;},get ph(){return ph;},get score(){return score;},total,episodes,startLevel,pick:n=>{mapResolve?.(n);mapResolve=null;},choose:id=>result?.choose?.(id),autopilot:false,get cam(){return {...cam,viewW:viewW(),whole:LV?zoomRange().whole:0};},zoomBy,get aim(){return aim;},
   fire:(a,sp)=>{if(phase==='aim')fire(Math.cos(a)*sp,Math.sin(a)*sp);},
   // online test bot: start the first level on the map, fire at the heads, tap through results
   bot(){if(phase==='map'&&!(online&&nf.me!==0)&&mapResolve){mapResolve(0);mapResolve=null;return 'pick';}if(!mine())return null;s.debug.autopilot=true;if(phase==='intro'){phaseT=99;return 'skip';}return null;}};
