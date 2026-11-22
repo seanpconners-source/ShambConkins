@@ -26,5 +26,8 @@ if(!s42.areas.main.doors.some(d=>d.to&&d.to.area==='warp'))fail('4-2 has no pipe
 if(!L.buildStage(16).areas.main.rider)fail('5-1 has no cloud rider');
 for(let k=12;k<32;k++){const st=L.buildStage(k);if(k%4===3)continue;const a=st.areas.main;if(k%4!==1&&!a.vineTo)fail(`${st.name} has no beanstalk`);
  if(k<16&&k%4===0&&!(a.ramps||[]).length)fail(`${st.name} has no ski ramp`);}
+// every block with a power-up/1-up/vine needs two free rows above it (a flower under a ceiling can't be reached)
+for(let k=0;k<L.STAGE_COUNT;k++){const st=L.buildStage(k);for(const [an,a] of Object.entries(st.areas))for(const [i,v] of a.content){if(!/power|1up|multi|star|vine|skis|cape|mega|yoshi/.test(String(v)))continue;
+ const c=i%a.W,r=Math.floor(i/a.W);if(r>=2&&(a.tiles[(r-1)*a.W+c]||a.tiles[(r-2)*a.W+c]))fail(`${st.name} ${an}: ${v} block at ${c},${r} has no room above`);}}
 for(const k of [4,8,12,16,20,24,28])if(!L.buildStage(k).areas.bonus)fail(`${L.buildStage(k).name} has no coin room`);
 console.log(bad?`smb levels: ${bad} problem(s)`:`smb levels OK (${L.STAGE_COUNT} stages)`);process.exit(bad?1:0);

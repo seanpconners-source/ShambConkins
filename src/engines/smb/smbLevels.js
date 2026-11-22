@@ -172,7 +172,7 @@ function w14(){
  A.fill(0,151,2,2,CASTLE);A.fill(0,12,3,4,CASTLE);
  A.fill(0,12,8,14,CASTLE);A.fill(13,13,9,14,CASTLE);A.fill(14,22,10,14,CASTLE);
  A.lava(23,25);A.fill(26,40,10,14,CASTLE);A.firebar(31,6,1);A.firebar(37,6,-1);
- A.lava(41,44);A.fill(45,58,10,14,CASTLE);A.fill(45,58,3,4,CASTLE);A.q(50,6,'power');A.firebar(55,9,1);
+ A.lava(41,44);A.fill(45,58,10,14,CASTLE);A.fill(45,58,3,3,CASTLE);A.q(50,6,'power');A.firebar(55,9,1);
  A.lava(59,63);A.lift({x:61*T,y:9*T,kind:'h',x0:59*T+8,x1:63*T+8,vx:.6,w:32});
  A.fill(64,82,10,14,CASTLE);A.firebar(69,9,-1);A.firebar(77,6,1);
  A.lava(83,86);A.fill(87,100,10,14,CASTLE);A.firebar(93,9,1);
@@ -283,7 +283,7 @@ function w24(){
  A.lava(21,23);A.fill(24,40,10,14,CASTLE);A.firebar(29,6,1);A.firebar(35,9,-1);
  // the elevator shaft
  A.lava(41,46);A.lift({x:43.5*T,y:9*T,kind:'v',y0:5*T,y1:11*T,vy:-.6,w:48,look:'elevator'});A.podoboo(42,4.6);A.podoboo(45,5);
- A.fill(47,70,10,14,CASTLE);A.fill(52,64,3,5,CASTLE);A.q(58,7,'power');A.firebar(67,9,1);
+ A.fill(47,70,10,14,CASTLE);A.fill(52,64,3,4,CASTLE);A.q(58,7,'power');A.firebar(67,9,1);
  A.lava(71,75);A.lift({x:73*T,y:9*T,kind:'h',x0:71*T+8,x1:75*T+8,vx:.6,w:32,look:'elevator'});A.podoboo(73,5);
  A.fill(76,100,10,14,CASTLE);A.firebar(81,6,1);A.firebar(88,9,-1);A.firebar(95,6,1);
  A.fill(101,112,8,14,CASTLE);A.fill(101,112,3,3,CASTLE);
@@ -389,7 +389,7 @@ function w34(){
  A.lava(19,22);A.fill(23,40,10,14,CASTLE);A.firebar(28,6,1);A.firebar(35,9,-1);
  // the trapeze over the fire pit
  A.lava(41,46);A.lift({x:43.5*T,y:9*T,kind:'v',y0:5*T,y1:11*T,vy:-.6,w:32,look:'trapeze'});A.podoboo(42,4.8);A.podoboo(45,5.2);
- A.fill(47,66,10,14,CASTLE);A.fill(50,62,3,5,CASTLE);A.q(56,7,'power');A.firebar(64,9,1);
+ A.fill(47,66,10,14,CASTLE);A.fill(50,62,3,4,CASTLE);A.q(56,7,'power');A.firebar(64,9,1);
  A.lava(67,72);A.lift({x:69.5*T,y:9*T,kind:'h',x0:67.5*T,x1:71.5*T,vx:.6,w:32,look:'trapeze'});A.podoboo(69,5.2);
  A.fill(73,100,10,14,CASTLE);A.firebar(79,6,1);A.firebar(86,9,-1);A.firebar(94,6,1);A.foe('ghost',83,6);A.foe('ghost',97,5);A.foe('slasher',90,10);A.foe('imp',33,10);A.foe('imp',58,10);
  A.fill(101,112,8,14,CASTLE);A.fill(101,112,3,3,CASTLE);
@@ -457,9 +457,10 @@ function skiRun(r,landCol){const W=150,A=area(W,'snow');A.ice=true;A.ramps=[];A.
 // the end of a ceiling run (owner, Nov 21: "got stuck here... if this is going to be accessible there should be a secret
 // area after it"): like 1-2's Warp Zone, the ceiling stops past the exit wall so a roof runner drops into a hidden room:
 // coins, a 1-up, and a pipe down to the flagpole. The room is the last 16 columns of the area (c0 = its first column).
-function roofRoom(A,c0,title='SECRET ROOF ROOM!'){A.ground(c0,c0+15);A.fill(c0+15,c0+15,0,12,BRICK);
+function roofRoom(A,c0,title='SECRET ROOF ROOM!',warps){A.ground(c0,c0+15);A.fill(c0+15,c0+15,0,12,BRICK);A.roofRoomX=c0*T;
+ if(warps){warps.forEach((n,k)=>{const c=c0+2+k*4;A.pipe(c,3,{warp:n});A.text(String(n),c+.75,8.5);});A.text('WELCOME TO WARP ZONE!',c0+.75,5);A.coinRun(c0+1,c0+13,12);return;}
  A.coinRun(c0+2,c0+12,10);A.coinRun(c0+3,c0+11,8);A.q(c0+6,9,'1up');A.hidden(c0+4,9,'coin');
- A.pipe(c0+10,2,{to:{area:'exit',pipe:2,how:'rise'}});A.text(title,c0+1.25,4);A.roofRoomX=c0*T;}
+ A.pipe(c0+10,2,{to:{area:'exit',pipe:2,how:'rise'}});A.text(title,c0+1.25,4);}
 // the 4-2 secret: like 1-2's Warp Zone, a room of pipes to later worlds
 function warpRoom(kind,list){const A=area(24,kind);A.scenery=false;A.ground(0,23);A.fill(0,0,2,12,BRICK);A.fill(4,23,2,2,BRICK);A.fill(22,23,3,12,BRICK);
  list.forEach((n,k)=>{const c=4+k*6;A.pipe(c,3,{warp:n});A.text(String(n),c+.75,8.5);});A.text('WELCOME TO WARP ZONE!',2.75,5);A.coinRun(2,20,12);return A;}
@@ -612,7 +613,7 @@ function genUnder(wn,n,cfg){const r=rng(wn*100+n*7+2),lv=lvOf(wn,n),W=210;
   if(roll<.18){const len=9+Math.floor(r()*5);A.ground(c,c+len-1);foes(c,len);if(cfg.hang&&r()<.6)A.foe(cfg.hang,c+3+Math.floor(r()*(len-6)),4);
    const v=r();if(v<.4){A.row(c+2,9,'B?B?B',{[c+4]:r()<.2?'multi':'coin'});A.coinRun(c+2,c+6,8);}
    else if(v<.7){A.fill(c+2,c+len-3,3,5,BRICK);A.row(c+3,9,'?B?',{[c+3]:r()<.2?cfg.power:'coin'});A.coinRun(c+2,c+len-3,7);}
-   else{A.row(c+2,8,'BBB');A.row(c+len-5,10,'BBB');if(ups<2){A.hidden(c+Math.floor(len/2),9,'1up');ups++;}}c+=len;}
+   else{A.row(c+2,8,'BBB');A.row(c+len-5,10,'BBB');if(ups<2){A.hidden(c+len-4,7,'1up');ups++;}}c+=len;}
   else if(roll<.34){const gap=2+Math.floor(r()*Math.min(3,lv/3));A.coinRun(c,c+gap-1,10);c+=gap;A.ground(c,c+4);c+=5;}
   else if(roll<.44){const len=12;A.ground(c,c+len-1);A.fill(c+2,c+len-3,3,7,BRICK);A.coinRun(c+2,c+len-3,11);themeFoe(A,cfg,r,c+6);c+=len;}
   else if(roll<.53){A.ground(c,c+13);for(const dx of [3,8])A.fill(c+dx,c+dx,3,4+Math.floor(r()*3),BRICK);A.fill(c+11,c+12,10,12,HARD);themeFoe(A,cfg,r,c+6);c+=14;}
@@ -629,7 +630,7 @@ function genUnder(wn,n,cfg){const r=rng(wn*100+n*7+2),lv=lvOf(wn,n),W=210;
  evenFoes(A,cfg,r,Math.round(3+1.9*lv),16,c);
  if(exitCol>=0)areas.bonus=coinRoom(cfg.kind,r,exitCol);else A.doors=A.doors.filter(d=>d.to?.area!=='bonus');
  if(cfg.warpRoom)areas.warp=warpRoom(cfg.kind,cfg.warpRoom);
- A.ground(c,W-1);A.sidePipe(W-12,12,1,3,{to:{area:'exit',pipe:2,how:'rise'}});A.fill(W-8,W-1,3,12,BRICK);roofRoom(A,W);
+ A.ground(c,W-1);A.sidePipe(W-12,12,1,3,{to:{area:'exit',pipe:2,how:'rise'}});A.fill(W-8,W-1,3,12,BRICK);roofRoom(A,W,undefined,cfg.warpRoom);
  const E=area(40,cfg.outKind);E.ground(0,39);E.pipe(2,2,{exitOf:'main'});E.stairs(8,8,1);E.col(16,8);flagAndCastle(E,25,29);props(E,cfg,18,39,r);areas.exit=E;
  return {name:`${wn}-${n}`,title:cfg.title,time:cfg.time||(wn>=7?350:400),areas,start:{area:'intro',x:40,y:13*T,auto:true},startPlay:{area:'main',x:2*T+8,y:3*T},check:check||{area:'main',x:60*T,y:13*T}};}
 
@@ -675,17 +676,17 @@ function genCastle(wn,n,cfg){const r=rng(wn*100+n*7+4),d=wn,plan=CASTLE_PLANS[cf
   room(){const pit=3+Math.floor(r()*Math.min(4,d/2));A.lava(c,c+pit-1);if(pit>=4)A.lift({x:(c+pit/2)*T,y:9*T,kind:r()<.5?'h':'v',x0:(c+.5)*T,x1:(c+pit-.5)*T,y0:5*T,y1:11*T,vx:sp,vy:-sp,w:32,look:cfg.lift});
    if(d>=4)A.podoboo(c+Math.floor(pit/2),4.6+.1*d);
    c+=pit;const len=25-pit;A.fill(c,c+len-1,10,14,CASTLE);
-   const bars=1+Math.floor(r()*(1+d/3)),fbn=d>=6?8:6;for(let j=0;j<bars;j++){const fc=c+5+Math.floor((len-8)*(j+.5)/bars);A.firebar(fc,r()<.5?6:9,r()<.5?1:-1,fbn);}
-   if(!qDone){A.fill(c+4,c+len-5,3,5,CASTLE);A.q(c+1,7,'power');qDone=true;}
+   const bars=1+Math.floor(r()*(1+d/3)),fbn=d>=6?7:6;for(let j=0;j<bars;j++){const fc=c+5+Math.floor((len-8)*(j+.5)/bars);if(r()<.5)A.firebar(fc,6,r()<.5?1:-1,fbn);else A.firebar(fc,9,1,d>=6?5:4);}
+   if(!qDone){A.fill(c+4,c+len-5,3,3,CASTLE);A.q(c+1,7,'power');qDone=true;}
    guards(c,len);c+=len;},
-  // the maze: an upper and a lower corridor; only one of them goes on (a few coins at its start hint which), the other
+  // the maze: stairs, then an upper and a lower corridor (both tall enough to jump in); only one of them goes on (a few coins at its start hint which), the other
   // loops you back to the start of the room
-  maze(){const L=28;A.fill(c,c+L-1,10,14,CASTLE);A.fill(c+3,c+L-1,6,6,CASTLE);A.set(c+1,9,CASTLE);A.set(c+1,8,CASTLE);
-   const up=r()<.5;A.loop(c+L-2,L-4,up?3:7,up?5:9);A.coinRun(c+4,c+6,up?4:8);
-   A.firebar(c+11,6,r()<.5?1:-1,d>=6?6:5);A.firebar(c+20,6,r()<.5?1:-1,d>=6?6:5);
-   // a lava gap in the lower corridor, a bubble in it
-   A.fill(c+15,c+16,10,14,EMPTY);A.lava(c+15,c+16,12);A.podoboo(c+15,3.6);
-   themeFoe(A,cfg,r,c+8,6);themeFoe(A,cfg,r,c+22,10);if(d>=6)themeFoe(A,cfg,r,c+24,6);c+=L;},
+  maze(){const L=28;A.fill(c,c+1,10,14,CASTLE);A.fill(c+2,c+L-1,11,14,CASTLE);A.fill(c+4,c+L-1,6,6,CASTLE);A.fill(c+2,c+2,9,10,CASTLE);A.set(c+L-1,10,CASTLE);
+   const up=r()<.5;A.loop(c+L-2,L-5,up?3:7,up?5:10);A.coinRun(c+5,c+9,up?4:9);A.coinRun(c+18,c+20,up?4:9);
+   A.firebar(c+11,2,1,4);A.firebar(c+21,11,1,4);
+   // a one-block lava gap in the lower corridor (the low ceiling keeps jumps short), a bubble in it
+   A.fill(c+15,c+15,11,14,EMPTY);A.lava(c+15,c+15,12);A.podoboo(c+15,3.6);
+   themeFoe(A,cfg,r,c+8,6);themeFoe(A,cfg,r,c+22,11);if(d>=6)themeFoe(A,cfg,r,c+24,6);c+=L;},
   // a lava lake: pillars to stand on, lifts between them, lava bubbles jumping all over
   lava(){const L=22;A.lava(c,c+L-1);A.fill(c+6,c+7,9,14,CASTLE);A.fill(c+14,c+15,8,14,CASTLE);
    A.lift({x:(c+3)*T,y:10*T,kind:'h',x0:(c+1.5)*T,x1:(c+4.5)*T,vx:sp,w:liftW,look:cfg.lift});
@@ -693,10 +694,10 @@ function genCastle(wn,n,cfg){const r=rng(wn*100+n*7+4),d=wn,plan=CASTLE_PLANS[cf
    A.lift({x:(c+19)*T,y:10*T,kind:d>=5?'v':'h',x0:(c+17.5)*T,x1:(c+20.5)*T,y0:7*T,y1:11*T,vx:sp,vy:sp,w:liftW,look:cfg.lift});
    for(const dx of [3,10,18])A.podoboo(c+dx,4.8+.12*d);if(d>=5)A.firebar(c+14,7,r()<.5?1:-1,6);A.coinRun(c+9,c+12,5);c+=L;A.fill(c,c+1,10,14,CASTLE);},
   // a low corridor: fire bars hanging from the ceiling and turning in the floor, a lava gap with a bubble
-  gaunt(){const L=24;A.fill(c,c+L-1,10,14,CASTLE);A.fill(c,c+L-1,3,5,CASTLE);
-   A.firebar(c+5,5,1,4);A.firebar(c+10,10,-1,4);A.firebar(c+15,5,-1,4);
+  gaunt(){const L=24;A.fill(c,c+L-1,10,14,CASTLE);A.fill(c,c+L-1,3,4,CASTLE);
+   A.firebar(c+5,4,1,4);A.firebar(c+10,10,1,4);A.firebar(c+15,4,-1,4);
    A.fill(c+18,c+20,10,14,EMPTY);A.lava(c+18,c+20,12);A.podoboo(c+19,4.2);
-   guards(c,16,10,1+Math.floor(d/4));if(d>=7)A.firebar(c+22,10,1,4);c+=L;},
+   guards(c,16,10,1+Math.floor(d/4));if(d>=7)A.firebar(c+22,10,1,3);c+=L;},
  };
  plan.forEach((k,i)=>{SEG[k]();if(!check&&i>=Math.floor(plan.length/2)-1)check={area:'main',x:(c-6)*T,y:10*T};});
  A.fill(c,c+11,8,14,CASTLE);A.fill(c,c+11,3,3,CASTLE);if(d>=6)A.foe('hammerBro',c+8,8);c+=12;const b0=c;

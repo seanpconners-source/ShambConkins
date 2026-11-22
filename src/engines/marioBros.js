@@ -388,8 +388,8 @@ async function marioBros(s){
   if(isLava(tileAt(w,p.area,Math.floor(p.x/T),Math.floor((p.y-6)/T)))){kill(p,'lava');return;}
   // castle mazes: pass the gate on the wrong level and the castle loops you back (the right way gets a chime)
   if(def.loops&&!p.auto)for(const lp of def.loops)if(p.x>=lp.x&&p.x-p.vx-.6<lp.x){const rr=Math.floor((p.y-1)/T);
-   if(rr<lp.r0||rr>lp.r1){p.x-=lp.back;cams[p.i].x=0;updateCamera(p,p.i,true);sfx.bump();popText(w,'WRONG WAY!',p.x,p.y-40);note(p,'maze loop');}
-   else if(!(p.mazeOk||(p.mazeOk=new Set())).has(lp.x)){p.mazeOk.add(lp.x);sfx.coin();note(p,'maze right');}}
+   if(rr<lp.r0||rr>lp.r1){p.x-=lp.back;cams[p.i].x=0;updateCamera(p,p.i,true);sfx.bump();p.mazeMiss=(p.mazeMiss||0)+1;w.fx.pop(p.x,p.y-40,p.mazeMiss>=2?(lp.r0<6?'WRONG WAY! TRY THE TOP PATH':'WRONG WAY! TRY THE BOTTOM PATH'):'WRONG WAY!',{color:'#fff',stroke:'#000',size:7,rise:20,life:p.mazeMiss>=2?2.2:.9});note(p,'maze loop');}
+   else if(!(p.mazeOk||(p.mazeOk=new Set())).has(lp.x)){p.mazeOk.add(lp.x);p.mazeMiss=0;sfx.coin();note(p,'maze right');}}
   // progress, the checkpoint
   const st=stageOf(p);if(p.area===st.check.area&&p.x>=st.check.x)p.checkOn=true;
   if(p.area==='main')p.best=Math.max(p.best,p.x);

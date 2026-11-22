@@ -53,12 +53,15 @@ const go=async(stage,area='main')=>{await dbg(`d.teleport(0,60,${stage});const w
 
 // ---- a ceiling run past the exit pipe drops into the secret roof room, whose pipe leads to the flagpole (3-2, 4-2)
 for(const [stage,nm] of [[9,'3-2'],[13,'4-2']]){await go(stage);
- const rr=await dbg('const def=d.worlds[0].areas.main.def;return def.roofRoomX&&{x:def.roofRoomX,pipe:def.pipes.find(p=>p.to&&p.to.area==="exit"&&p.c*16>def.roofRoomX)};');
+ const rr=await dbg('const def=d.worlds[0].areas.main.def;return def.roofRoomX&&{x:def.roofRoomX,pipe:def.pipes.find(p=>(p.warp||p.to&&p.to.area==="exit")&&p.c*16>def.roofRoomX),warps:def.pipes.filter(p=>p.warp&&p.c*16>def.roofRoomX).map(p=>p.warp)};');
  if(!rr||!rr.pipe){fail(nm+' has no roof room');continue;}
  await dbg(`const p=d.pl[0];Object.assign(p,{x:${rr.x}-6*16,y:2*16,prevY:2*16,grounded:true,vx:0,vy:0});`);await page.keyboard.down('d');
  const inRoom=await until(`const p=d.pl[0];return p.x>${rr.x}+16&&p.grounded&&p.y>=12*16;`,6000);await page.keyboard.up('d');await shot('roof-'+nm);
  if(!inRoom)fail(nm+' roof run did not drop into the room '+JSON.stringify(await dbg('const p=d.pl[0];return {x:p.x,y:p.y,a:p.area};')));else pass(nm+' roof run drops into the secret room');
  await dbg(`const p=d.pl[0];Object.assign(p,{x:(${rr.pipe.c}+1)*16,y:${rr.pipe.top}*16,prevY:${rr.pipe.top}*16,grounded:true,vx:0,vy:0});`);await page.keyboard.down('s');
+ if(rr.warps.length){if(JSON.stringify(rr.warps)!=='[5,6,7]')fail(nm+' roof Warp Zone pipes '+JSON.stringify(rr.warps));
+  const m=await until('return d.warpMsg&&d.warpMsg.world;',4000);await page.keyboard.up('s');if(m!==rr.warps[0])fail(nm+' roof warp went to world '+m);else pass(nm+' roof room = Warp Zone 5/6/7 (pipe → World '+m+')');
+  await dbg('if(d.warpMsg)d.warpMsg.t=9999;');await until('if(d.phase==="card")d.skipCard();return d.phase==="play";',8000);continue;}
  const ex=await until('return d.pl[0].area==="exit";',5000);await page.keyboard.up('s');await page.waitForTimeout(600);
  if(!ex)fail(nm+' roof room pipe did not lead to the flagpole area');else pass(nm+' roof room pipe → flagpole area');}
 
