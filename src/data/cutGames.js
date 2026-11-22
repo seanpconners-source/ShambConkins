@@ -4,6 +4,7 @@
 // Nov 11 (owner): the old Sonic games are replaced by Seanic (Shamb Island Acts 1 and 2); the Test Zone was the engine preview
 // Nov 14 (owner): BASEketball Shootout is now the Hoop Jones machine; the separate Hoop Jones entry is gone.
 // Nov 21 (owner): Super Mario Bros. Coin Rush and Castle Dash are gone now that the full game runs Worlds 1-8.
-const CUT_GAMES=new Set(['sonic-ring-rush','sonic-goal-dash','sonic3-test','baseketball-hoop-jones','smb-coin-rush','smb-castle-dash']);
+// Nov 22 (owner): Chutes and Ladders is one full game (Strands & Ladders, id chutes-spinner-showdown); Ladder Rush is gone.
+const CUT_GAMES=new Set(['sonic-ring-rush','sonic-goal-dash','sonic3-test','baseketball-hoop-jones','smb-coin-rush','smb-castle-dash','chutes-ladder-rush']);
 const isCut=g=>!!g&&CUT_GAMES.has(typeof g==='string'?g:g.id);
 Object.assign(exports,{CUT_GAMES,isCut});

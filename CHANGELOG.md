@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.99.42
+
+- **Chutes and Ladders is now one full game: Strands & Ladders**, the classic board dressed as a Death Stranding board game. Porters carry cargo from Capital Knot City (square 1) to Edge Knot City (100); good deeds (rebuilding a bridge, singing BB a lullaby, paving the highway...) climb ladders, slips (breathing near a BT, napping in the open, a voidout...) slide you down black tar.
+  - A real spinner: flick the arrow (or tap it) and it spins and slows down by itself. Nobody can stop it.
+  - It looks like a printed board game on a table: cardboard board, a plastic spinner card, standee pawns with your faces, an event card for every ladder and chute.
+  - Easy to play: the landing square lights up when the arrow stops, tap a ladder or chute square to see where it goes, tap anywhere to hurry a move, the last few moves are listed, and the CPU spins by itself. Options: exact spin to finish (like the box) and normal/fast speed.
+  - 1 player vs the CPU, 2 players on one phone, or online. Ladder Rush is gone.
+  - The pictures are ready to be made with GPT (templates and a prompt for every picture); until then the game draws its own.
+- **Frogger** now sounds like the Atari 2600 version: real Atari sound-chip hops, squashes, splashes, the bay chirp and the countdown buzz.
+
 ## v0.99.41
 
 - **Sewer Clash rebuilt as an arcade sewer brawl** (played like the 1983 Mario Bros. arcade game, with our own sewer and enemies). You can't jump through ledges: jump under one to flip the enemy standing on it, then touch it to kick it out. Foot Soldiers flip with one bump, Mousers need two (the first just makes them mad), Krang Pods only while they're down. Flipped enemies get back up faster; the last one turns blue and fast. Every kick sends a pizza slice out of a pipe, the POW block flips everything on the ground, ooze blobs drift across, and every few phases there's a Pizza Party bonus round. 1 player plays phase after phase until the last life; 2 players share the screen; online works too.

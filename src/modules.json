@@ -551,7 +551,10 @@
   "src/engines/golf/cpu.js",
   "src/engines/golf/rules.js",
   "src/engines/digDuel.js",
-  "src/engines/tiaSound.js"
+  "src/engines/tiaSound.js",
+  "src/data/strandsArt.js",
+  "src/engines/strandsDraw.js",
+  "src/engines/strandsLadders.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }

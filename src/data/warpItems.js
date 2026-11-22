@@ -69,7 +69,7 @@ const WARP_ITEMS=[
   ['chute-wax','Slippery Chute Wax','🛝','pushOther',4],
   ['kaa-coils','Kaa’s Coils','🐍','gamble',8]
  ],'wz-').map(rare),
- challenge('ladder-rung','Spare Ladder Rung','Chutes and Ladders','🪜','chutes-ladder-rush','Start Chutes and Ladders Ladder Rush right now.'),
+ challenge('ladder-rung','Spare Ladder Rung','Chutes and Ladders','🪜','chutes-spinner-showdown','Start a game of Strands & Ladders right now.'),
  ...packItems('Monopoly',[
   ['jail-free','Get Out of Jail Free Card','🔓','bundle',{cleanse:true,ward:2}],
   ['pass-go','Pass GO · Collect $200','💵','bundle',{points:6}],

@@ -180,6 +180,12 @@ if (fs.existsSync(simDir)) for (const f of fs.readdirSync(simDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('simon:' + m[1].toLowerCase(), MIME[ext], ext, path.join(simDir, f));
 }
+// Strands & Ladders art (owner's GPT pictures): assets/strands/<slot>.(webp|png) -> strands:<slot> (slots in src/data/strandsArt.js).
+const strDir = path.join(root, 'assets/strands');
+if (fs.existsSync(strDir)) for (const f of fs.readdirSync(strDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('strands:' + m[1].toLowerCase(), MIME[ext], ext, path.join(strDir, f));
+}
 // Crappy Crush world backgrounds: assets/crappycrush/<world key>.(webp|png) -> crappy:<key> (keys in src/data/crappyCrushWorlds.js).
 const ccDir = path.join(root, 'assets/crappycrush');
 if (fs.existsSync(ccDir)) for (const f of fs.readdirSync(ccDir)) {

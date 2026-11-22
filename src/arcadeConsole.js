@@ -39,7 +39,7 @@ const FAMILIES=[
  ['hyrule','The Legend of Zelda','Rupee Rush and Sword Duel',null,['hyrule-rupee-rush','hyrule-sword-duel']],
  ['clue','Clue','Whodunit and Lineup',null,['clue-whodunit','clue-lineup']],
  ['monopoly','Monopoly','Speed Die and Auction',null,['monopoly-speed-die','monopoly-auction']],
- ['chutes','Chutes and Ladders','Ladder Rush and Spinner Showdown',null,['chutes-ladder-rush','chutes-spinner-showdown']],
+ ['chutes','Chutes and Ladders','Strands & Ladders, the Death Stranding edition',null,['chutes-spinner-showdown']],
  ['candy','Candy Land','Gumdrop Catch and Color Card Dash',null,['candy-gumdrop-catch','candy-color-dash']],
  ['baseball','Major League','Home Run Derby and Bat & Field',null,['major-league-bats','major-league-fielding']],
  ['pool',"Paddy's Pool",'8-ball, 9-ball and the Pool Hall',null,['paddys-eight-ball','color-of-money']],

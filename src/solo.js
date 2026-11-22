@@ -89,7 +89,7 @@ const NET_NATIVE=new Set(['flappy-disaster','angry-heads','banana-money-grab','m
  'matrix-ultimate','greed-island-mancala','office-dots-boxes',
  'trek-mini-chess','wopr-grid','smb3-nspade','sqwordle','words-n-shit','crappy-crush','clue-lineup','django-hangman',
  'taskmaster-curling','bug-artillery','happy-gilmore-golf','color-of-money','paddys-eight-ball','kingpin-bowling','lebowski-bowling','baseketball-shootout','baseketball-hoop-jones',
- 'task-tallest-thing','fast-quarter-mile','block-battle','shred-hero','candy-color-dash','chutes-ladder-rush',
+ 'task-tallest-thing','fast-quarter-mile','block-battle','shred-hero','candy-color-dash','chutes-ladder-rush','chutes-spinner-showdown',
  'brawndo-fruit-merge','candy-gumdrop-catch','review-pancakes','terminator-scan','microgame-rush','rush-marathon',
  'pong-duel','derezzed-cycles','snake-v-snake','metal-gear-tank-duel','kill-bill-duel',
  'arrow-arena','battle-royale-island','bomber-duel','pac-maze-duel',
