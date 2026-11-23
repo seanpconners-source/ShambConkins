@@ -8,6 +8,7 @@ make the SCENERY behind the pipes and the GROUND strip under them, for every sta
 | Picture | Size | What it is |
 |---|---|---|
 | `bg-<stage>.png` | **2048 x 1248** | The scenery from the top of the screen down to the ground line. It scrolls slowly behind the pipes and **repeats side to side**: the right edge must flow into the left edge with no seam (same sky colour, same horizon height, objects not cut at the edges). One picture covers every screen shape (phones, 16:9, Sean's Fold): wider screens just see more of the strip, so no separate phone/16:9/Fold versions are needed for this game. |
+| `bg-<stage>-tall.png` / `bg-<stage>-fold.png` | **1080 x 1920** / **1504 x 1670** | The same scene framed for an upright phone and for Sean's open Fold. The game uses the picture made for the screen shape (wide `bg-<stage>` on landscape screens) and still scrolls it side to side (mirroring every other copy). Bottom edge = the ground line. |
 | `ground-<stage>.png` | **512 x 192** | The ground strip under the pipes. The top edge is the ground line. Also repeats side to side seamlessly. (Backgrounds no longer need seamless edges: the game mirrors every other copy, and any 16:9 size works.) |
 
 ## Rules
@@ -45,6 +46,6 @@ Upload the 32 PNGs to Drive with an UPLOADS-GPT note and a manifest (file, size,
 identically named ZIP. Claude imports them losslessly to `assets/flappy/<file>.webp`.
 
 ## For Claude
-Slots in `src/data/flappySprites.js` (STAGE_ART); `flappyDisaster.js` draws `bg-<id>` tiled from the top to FLOOR at .25 parallax and
+Slots in `src/data/flappySprites.js` (STAGE_ART); `flappyDisaster.js` draws `bg-<id>` (or `bg-<id>-tall` / `-fold`, picked by src/bgShape.js for the screen shape) tiled from the top to FLOOR at .25 parallax and
 `ground-<id>` tiled under FLOOR with the pipes; each stage's drawn bg()/ground() stays as the fallback. Templates
 `python3 tools/flappy-templates.py`; references = screenshots of the drawn stages at 1100x620 (localStorage sc-flappy-stage forces one).

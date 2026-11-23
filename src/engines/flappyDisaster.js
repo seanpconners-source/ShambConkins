@@ -11,6 +11,7 @@ const {soloFinish,soloProgress}=require("src/solo.js");
 const {netField}=require("src/engines/netField.js");
 const {snd}=require("src/engines/arenaKit.js");
 const FS=require("src/data/flappySprites.js");
+const BG=require("src/bgShape.js");
 
 // ---- the world: logical units, 720 tall (about one phone screen, no zoom-in); the ground band at the bottom
 // the world is ~one phone screen tall (no zoom-in) and the flap/gravity are the old game's (floaty, gentle taps):
@@ -169,7 +170,7 @@ async function flappy(s){
  const [c,x]=s.canvas(680,420,{fill:true});const fb=fullBleed(s,{bg:'#000'});
  const online=!!s.online,solo=!!s.solo&&!online,nP=solo?1:2;
  const rnd=seededRandom((s.seed||1)+':flappy-stage'),forced=(()=>{try{return localStorage.getItem('sc-flappy-stage');}catch{return null;}})(),stage=STAGES.find(t=>t.id===forced)||STAGES[Math.floor(rnd()*STAGES.length)];
- await FS.ready(['bg-'+stage.id,'ground-'+stage.id],3000);   // the stage's pictures (when GPT's art is in)
+ await FS.ready(['bg-'+stage.id,'bg-'+stage.id+'-tall','bg-'+stage.id+'-fold','ground-'+stage.id],3000);   // the stage's pictures (when GPT's art is in)
  const pipeAt=course(s.seed||1),names=s.players.map(p=>p.name||'Player'),scores=[0,0],best=(()=>{try{return +localStorage.getItem('sc-flappy-best')||0;}catch{return 0;}})();
  let k=1,vw=680,t=0,phase='intro',phaseT=0,cur=0,shake=0,flash=0;
  const B={y:FLOOR*.45,vy:0,travel:0,score:0,dead:false,wing:0,next:0,started:false,deadT:0};
@@ -230,7 +231,8 @@ async function flappy(s){
   // the watched run: the runner's last snapshot moved on by the time since
   let tr=B.travel,by=B.y,bvy=B.vy,dead=B.dead,sc=B.score,wing=B.wing;
   if(!mine()&&remote){const age=clamp((performance.now()-remote.at)/1000,0,.35);tr=remote.tr+(remote.st&&!remote.d?speedOf(remote.sc)*age:0);by=remote.d?remote.y:remote.y+remote.v*age;bvy=remote.v;dead=!!remote.d;sc=remote.sc;}
-  const bgPic=FS.picture('bg-'+stage.id),gPic=FS.picture('ground-'+stage.id);
+  // the backdrop made for this screen shape (tall phone / Fold / wide), else the nearest shape; scrolls side to side
+  const bgPic=BG.pick(s.W,s.H,{wide:'bg-'+stage.id,tall:'bg-'+stage.id+'-tall',fold:'bg-'+stage.id+'-fold'},FS.picture),gPic=FS.picture('ground-'+stage.id);
   if(bgPic)tile(bgPic,0,FLOOR,tr*.25,true);else{sky(x,vw,stage.sky[0],stage.sky[1]);stage.bg(x,vw,tr,t);}
   for(let i=Math.max(0,Math.floor(sc)-3);i<sc+8;i++){const p=pipeAt(i),px=p.x-tr;if(px>vw+40)break;if(px<-PIPE_W-20)continue;const gy=gapY(p,tr),h=p.gap/2;
    if(stage.pipe){stage.pipe.call(stage,x,px,-220,gy-h,true,t,s);stage.pipe.call(stage,x,px,gy+h,FLOOR,false,t,s);}else{column(x,px,-220,gy-h,true,stage,t);column(x,px,gy+h,FLOOR,false,stage,t);}}

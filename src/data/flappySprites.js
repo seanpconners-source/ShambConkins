@@ -4,6 +4,8 @@
 //   bg-<id>     2048 x 1248: the scenery behind the pipes, from the top of the screen down to the ground line. It REPEATS
 //               side to side as the bird flies (the right edge must join the left edge seamlessly) and scrolls slowly
 //               (parallax), so one picture fits every screen shape: phones, 16:9 and the Fold see more or less of the strip.
+//   bg-<id>-tall 1080 x 1920 / bg-<id>-fold 1504 x 1670: the same scene framed for an upright phone / the open Fold
+//               (src/bgShape.js picks the one for the screen, falling back to the nearest shape); repeated mirrored.
 //   ground-<id> 512 x 192: the ground strip under the pipes; repeats side to side, scrolls with the pipes.
 // Brief docs/art-for-gpt/FLAPPY-ART.md, templates + references: python3 tools/flappy-templates.py.
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
@@ -28,6 +30,8 @@ const STAGE_ART={
 const SLOTS={};
 for(const [id,a] of Object.entries(STAGE_ART)){
  SLOTS['bg-'+id]={w:2048,h:1248,stage:id,what:`${a.name}: ${a.bg}. Repeats side to side (seamless left/right edges), bottom edge = the ground line.`};
+ SLOTS['bg-'+id+'-tall']={w:1080,h:1920,stage:id,what:`${a.name}: ${a.bg}. Upright phone framing (1080x1920), bottom edge = the ground line.`};
+ SLOTS['bg-'+id+'-fold']={w:1504,h:1670,stage:id,what:`${a.name}: ${a.bg}. Galaxy Fold framing (1504x1670), bottom edge = the ground line.`};
  SLOTS['ground-'+id]={w:512,h:192,stage:id,what:`${a.name} ground strip: ${a.ground}. Repeats side to side (seamless).`};}
 const imgs=new Map();let ver=0;
 function picture(name){const url=USER['flappy:'+name];if(!url||typeof Image==='undefined')return null;
