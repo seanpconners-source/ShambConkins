@@ -8,7 +8,7 @@ make the SCENERY behind the pipes and the GROUND strip under them, for every sta
 | Picture | Size | What it is |
 |---|---|---|
 | `bg-<stage>.png` | **2048 x 1248** | The scenery from the top of the screen down to the ground line. It scrolls slowly behind the pipes and **repeats side to side**: the right edge must flow into the left edge with no seam (same sky colour, same horizon height, objects not cut at the edges). One picture covers every screen shape (phones, 16:9, Sean's Fold): wider screens just see more of the strip, so no separate phone/16:9/Fold versions are needed for this game. |
-| `ground-<stage>.png` | **512 x 192** | The ground strip under the pipes. The top edge is the ground line. Also repeats side to side seamlessly. |
+| `ground-<stage>.png` | **512 x 192** | The ground strip under the pipes. The top edge is the ground line. Also repeats side to side seamlessly. (Backgrounds no longer need seamless edges: the game mirrors every other copy, and any 16:9 size works.) |
 
 ## Rules
 - Exactly these sizes, PNG, no transparency, no text, no logos, no UI, no bird, no pipes, no score.

@@ -223,14 +223,15 @@ async function flappy(s){
   const up=wing>0;x.fillStyle=stage.wing;x.strokeStyle='#0008';x.lineWidth=2;x.beginPath();x.ellipse(-r*.55,up?-r*.5:r*.2,r*.62,r*.3,up?-.5:.3,0,7);x.fill();x.stroke();
   s.sprite(x,i,0,0,r*2.05,{exact:true,mood:dead?'sad':vy<-200?'happy':undefined});x.restore();}
  // a picture that repeats side to side: y0..y0+h tall, scrolled by off (world units)
- function tile(img,y0,h,off){const tw=h*img.width/img.height;let X=-(((off%tw)+tw)%tw);for(;X<vw;X+=tw)x.drawImage(img,X,y0,tw+.5,h);}
+ // mirror = every other copy flipped, so any picture joins without a seam (GPT's backgrounds aren't always seamless)
+ function tile(img,y0,h,off,mirror=false){const tw=h*img.width/img.height,o=((off%(tw*2))+tw*2)%(tw*2);let X=-o,k=0;for(;X<vw;X+=tw,k++){if(mirror&&k%2){x.save();x.translate(X+tw,y0);x.scale(-1,1);x.drawImage(img,0,0,tw+.5,h);x.restore();}else x.drawImage(img,X,y0,tw+.5,h);}}
  function draw(){layout();x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,s.W,s.H);
   const sh=shake>0?(Math.random()-.5)*shake*22:0;x.setTransform(k,0,0,k,sh*k,0);
   // the watched run: the runner's last snapshot moved on by the time since
   let tr=B.travel,by=B.y,bvy=B.vy,dead=B.dead,sc=B.score,wing=B.wing;
   if(!mine()&&remote){const age=clamp((performance.now()-remote.at)/1000,0,.35);tr=remote.tr+(remote.st&&!remote.d?speedOf(remote.sc)*age:0);by=remote.d?remote.y:remote.y+remote.v*age;bvy=remote.v;dead=!!remote.d;sc=remote.sc;}
   const bgPic=FS.picture('bg-'+stage.id),gPic=FS.picture('ground-'+stage.id);
-  if(bgPic)tile(bgPic,0,FLOOR,tr*.25);else{sky(x,vw,stage.sky[0],stage.sky[1]);stage.bg(x,vw,tr,t);}
+  if(bgPic)tile(bgPic,0,FLOOR,tr*.25,true);else{sky(x,vw,stage.sky[0],stage.sky[1]);stage.bg(x,vw,tr,t);}
   for(let i=Math.max(0,Math.floor(sc)-3);i<sc+8;i++){const p=pipeAt(i),px=p.x-tr;if(px>vw+40)break;if(px<-PIPE_W-20)continue;const gy=gapY(p,tr),h=p.gap/2;
    if(stage.pipe){stage.pipe.call(stage,x,px,-220,gy-h,true,t,s);stage.pipe.call(stage,x,px,gy+h,FLOOR,false,t,s);}else{column(x,px,-220,gy-h,true,stage,t);column(x,px,gy+h,FLOOR,false,stage,t);}}
   if(gPic)tile(gPic,FLOOR,GROUND,tr);else stage.ground(x,vw,tr,t);
