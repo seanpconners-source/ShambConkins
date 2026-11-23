@@ -186,6 +186,12 @@ if (fs.existsSync(golfDir)) for (const f of fs.readdirSync(golfDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('golf:' + m[1].toLowerCase(), MIME[ext], ext, path.join(golfDir, f));
 }
+// The Warriors (Double Dragon style) art: assets/warriors/<slot>.(webp|png) -> ww:<slot> (slots in src/data/ddSprites.js).
+const wwDir = path.join(root, 'assets/warriors');
+if (fs.existsSync(wwDir)) for (const f of fs.readdirSync(wwDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('ww:' + m[1].toLowerCase(), MIME[ext], ext, path.join(wwDir, f));
+}
 // Flappy Disaster stage art: assets/flappy/<slot>.(webp|png) -> flappy:<slot> (slots in src/data/flappySprites.js).
 const flapDir = path.join(root, 'assets/flappy');
 if (fs.existsSync(flapDir)) for (const f of fs.readdirSync(flapDir)) {

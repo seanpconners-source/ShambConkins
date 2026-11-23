@@ -16,7 +16,7 @@ const SOLO_IDS={
  'bricks-breaker-quest':'levels','doom':'levels','doom-2':'levels','paddys-hole':'levels','megatouch-photohunt':'levels',
  'kart-grand-prix-pass':'levels','kart-time-trial':'levels','rainbow-road-kart':'cpu',
  // batch 2: timed turn games replayed in faster rounds (retroKit turnRunner → soloTurnRuns)
- 'warriors-brawl':'rounds','paddys-darts':'cpu','duck-hunt-turn':'rounds','snake-run':'rounds','mars-missile-defense':'rounds',
+ 'warriors-brawl':'levels','paddys-darts':'cpu','duck-hunt-turn':'rounds','snake-run':'rounds','mars-missile-defense':'rounds',
  'moonraker-lander':'rounds','t800-scan-long':'rounds','bond-facility':'rounds','major-league-bats':'cpu','asteroid-drift':'rounds',
  'breakout-party':'rounds','banana-money-grab':'levels',
  // arcadeRounds (arcade.js → soloArcadeRounds)
