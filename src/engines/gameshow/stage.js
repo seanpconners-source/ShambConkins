@@ -9,7 +9,7 @@ const TAU=Math.PI*2;
 // ---- pictures
 function cover(g,img,W,H){const k=Math.max(W/img.width,H/img.height),w=img.width*k,h=img.height*k;g.drawImage(img,(W-w)/2,(H-h)/2,w,h);}
 // the studio behind everything; kind 'plinko' | 'wheel'
-function drawStage(g,W,H,kind,t){const tall=H>W*1.05,pic=SS.picture(`stage-${kind}${tall?'-tall':''}`)||SS.picture(`stage-${kind}`);
+function drawStage(g,W,H,kind,t){const pic=require("src/bgShape.js").pick(W,H,{tall:`stage-${kind}-tall`,wide:`stage-${kind}`,fold:`stage-${kind}-fold`},SS.picture);
  if(pic){cover(g,pic,W,H);return;}
  const bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,kind==='wheel'?'#1a0a3a':'#2a0a2e');bg.addColorStop(.62,kind==='wheel'?'#3a1666':'#5a1240');bg.addColorStop(.63,'#1a1410');bg.addColorStop(1,'#060504');g.fillStyle=bg;g.fillRect(0,0,W,H);
  // big round bulb discs and colour stripes like a 70s set

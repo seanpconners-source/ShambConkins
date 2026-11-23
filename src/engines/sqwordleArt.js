@@ -6,7 +6,7 @@
 //          (a pose may come as frames body-<pose>-1, -2, ... played at FPS; the plain name wins if both exist)
 //  effects fx-jet (water stream, tiles left to right), fx-hydro (thick blast stream, tiles), fx-bubble, fx-drop,
 //          fx-splash (impact burst), fx-rainbow, fx-sparkle
-//  backgrounds bg (light, tall 1080x1920), bg-dark, bg-wide (1920x1080), bg-wide-dark
+//  backgrounds bg (light, tall 1080x1920), bg-dark, bg-wide (1920x1080), bg-wide-dark, bg-fold / bg-fold-dark (1504x1670, near-square screens)
 // MOVES are played when you get the word, one per guess count like the real game's six messages:
 //  1 squirt (SQUIRTLE SQUIRT!), 2 hydro (Hydro Pump!), 3 bubble (Bubble Beam!), 4 gun (Water Gun!), 5 withdraw, 6 phew;
 //  a miss = sad. Squirtle rises over the keyboard (not needed once the word is done) and aims at the winning row.
@@ -56,9 +56,10 @@ function mascot(x,cx,cy,r,mood,t){const im=picture(HEAD[mood]||'mascot')||(mood!
  if(!im){squirtle(x,cx,cy,r,mood,t);return;}const k=r*2.3/Math.max(im.naturalWidth,im.naturalHeight);x.drawImage(im,cx-im.naturalWidth*k/2,cy-im.naturalHeight*k/2,im.naturalWidth*k,im.naturalHeight*k);}
 
 // ---- background: cover the screen, keep the middle; null when the owner hasn't sent one
-function background(dark,wide){const order=wide?(dark?['bg-wide-dark','bg-dark','bg-wide','bg']:['bg-wide','bg','bg-wide-dark','bg-dark']):(dark?['bg-dark','bg','bg-wide-dark','bg-wide']:['bg','bg-wide','bg-dark','bg-wide-dark']);
- for(const n of order){const p=picture(n);if(p)return p;}return null;}
-function drawBackground(x,W,H,dark,top=0){const im=background(dark,W>H*1.1);if(!im)return false;
+const BGS=require("src/bgShape.js");
+function background(dark,W,H){const d=dark?'-dark':'',v=n=>({tall:'bg'+n,wide:'bg-wide'+n,fold:'bg-fold'+n});
+ return BGS.pick(W,H,v(d),picture)||BGS.pick(W,H,v(dark?'':'-dark'),picture);}
+function drawBackground(x,W,H,dark,top=0){const im=background(dark,W,H-top);if(!im)return false;
  const k=Math.max(W/im.naturalWidth,(H-top)/im.naturalHeight),w=im.naturalWidth*k,h=im.naturalHeight*k;x.drawImage(im,(W-w)/2,top+(H-top-h)/2,w,h);return true;}
 
 // ---- the whole body (our own drawing), facing right, in a box h tall with the feet at (0,0)

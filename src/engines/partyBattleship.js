@@ -170,7 +170,7 @@ async function battleship(s){
  }
  s.frame(render);
 
- const bgPic=()=>{const wide=innerWidth>innerHeight*1.1,u=BS.url(wide&&BS.has('board-bg-wide')?'board-bg-wide':'board-bg')||BS.url('board-bg-wide');
+ const bgPic=()=>{const u=require("src/bgShape.js").pick(innerWidth,innerHeight,{tall:'board-bg',wide:'board-bg-wide',fold:'board-bg-fold'},n=>BS.has(n)?BS.url(n):null);
   if(u){ui.root.style.backgroundImage=`linear-gradient(rgba(5,20,35,.25),rgba(5,20,35,.25)),url("${u}")`;ui.root.style.backgroundSize='cover';ui.root.style.backgroundPosition='center';}};
  const screen=(status,btns,P)=>{bgPic();ui.set(`<div class="bs-wrap"><div class="bs-status" data-status><span>${status}</span></div><div class="bs-cv"><canvas></canvas></div><div class="bs-btns">${btns}</div></div>`);view=null;};
  const setStatus=h=>{const el=ui.root.querySelector('[data-status]');if(el)el.innerHTML='<span>'+h+'</span>';};

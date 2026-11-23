@@ -104,7 +104,7 @@ function drawCard(x,cx,cy,w,n,{line1='',line2='',ladder=true}={}){const img=pict
  let yy=wrap(line1,Y+h*.12,w*.052,'800');x.fillStyle=ladder?'#7a5a10':'#7a1a2a';yy=wrap(line2,yy+w*.01,w*.06,'900');
  x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.font=`900 ${w*.055}px "SC Bangers","SC Nunito",sans-serif`;x.fillText(ladder?`CLIMB TO ${LADDERS[n]}`:`SLIDE TO ${CHUTES[n]}`,cx,Y+h-w*.078);
  x.restore();}
-function drawTable(x,W,H){const img=picture(W>H?'table-wide':'table')||picture(W>H?'table':'table-wide');
+function drawTable(x,W,H){const img=require("src/bgShape.js").pick(W,H,{tall:'table',wide:'table-wide',fold:'table-fold'},picture);
  if(img){const s=Math.max(W/img.width,H/img.height);x.drawImage(img,(W-img.width*s)/2,(H-img.height*s)/2,img.width*s,img.height*s);return;}
  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#2a2622');g.addColorStop(1,'#14120f');x.fillStyle=g;x.fillRect(0,0,W,H);
  x.globalAlpha=.08;x.strokeStyle='#d8c8a8';x.lineWidth=2;for(let yy=0;yy<H;yy+=26){x.beginPath();x.moveTo(0,yy);for(let xx=0;xx<=W;xx+=40)x.lineTo(xx,yy+Math.sin(xx*.02+yy)*4);x.stroke();}x.globalAlpha=1;}

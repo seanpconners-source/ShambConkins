@@ -7,7 +7,7 @@ let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}ca
 // front of their feet to the right. One row of 10 frames, 256 x 384 each (sheet 2560 x 384). FEET = where the feet meet the
 // ground (the game stands them there), HEAD = the face circle the game paints the player's face into [x, y, diameter].
 const GOLFER={w:256,h:384,frames:['address','back1','back2','top','down','impact','follow','finish','putt','putt-through'],
- feet:[118,372],head:[[112,74,76],[110,74,76],[108,72,76],[104,72,76],[108,74,76],[112,76,76],[122,70,76],[134,64,76],[112,92,76],[112,92,76]]};
+ feet:[118,372],head:[[110,85,70],[106,86,70],[111,82,70],[106,83,70],[97,80,70],[103,86,70],[119,80,70],[110,64,70],[118,101,70],[119,100,70]]};
 const TREES=['oak','oak2','elm','pine','pine2','birch','maple','cactus','cactus2','joshua','mesquite'];
 const SLOTS={
  'golfer-p1':{w:2560,h:384,what:'player 1 golfer sheet: 10 frames (see GOLFER), headless, red/white polo, khaki trousers'},

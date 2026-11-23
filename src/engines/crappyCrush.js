@@ -38,7 +38,7 @@ function itemPic(id){let e=pics.get(id);if(e)return e.ok?e.cv:null;e={ok:false,c
   g.shadowColor='rgba(0,0,0,.45)';g.shadowBlur=8;g.shadowOffsetY=4;g.drawImage(img,(N-w)/2,(N-h)/2-2,w,h);e.cv=cv;e.ok=true;};img.src=url;return null;}
 const bgs=new Map();
 function worldBg(key){const url=USER['crappy:'+key];if(!url||typeof Image==='undefined')return null;let e=bgs.get(key);if(!e){e={img:new Image(),ok:false};e.img.onload=()=>{e.ok=true;};e.img.src=url;bgs.set(key,e);}return e.ok?e.img:null;}
-function drawBackdrop(x,world,X,Y,W,H,dim=.35){const img=world&&worldBg(world.key);
+function drawBackdrop(x,world,X,Y,W,H,dim=.35){const img=world&&require("src/bgShape.js").pick(W,H,{tall:world.key,fold:world.key+'-fold',wide:world.key+'-wide'},worldBg);
  if(img){const sc=Math.max(W/img.naturalWidth,H/img.naturalHeight);x.drawImage(img,X+(W-img.naturalWidth*sc)/2,Y+(H-img.naturalHeight*sc)/2,img.naturalWidth*sc,img.naturalHeight*sc);x.fillStyle=`rgba(10,4,16,${dim})`;x.fillRect(X,Y,W,H);return;}
  const [a,b]=world?.tint||['#6a2a8a','#14061e'];const g=x.createLinearGradient(X,Y,X,Y+H);g.addColorStop(0,a);g.addColorStop(1,b);x.fillStyle=g;x.fillRect(X,Y,W,H);
  // soft polka dots so the empty backdrop isn't flat

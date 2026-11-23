@@ -45,6 +45,10 @@ time, in order, skipping anything marked done (✅). Name every file exactly as 
 - **Exact sizes** when a brief or template gives one; the game lines things up by pixel.
 - One picture per file, named exactly as listed, lowercase.
 
+- **Backgrounds come in three shapes:** TALL 1080x1920 (phones upright), WIDE 1920x1080 (16:9) and FOLD 1504x1670 (near-square:
+  Sean's open Galaxy Fold). Whenever you make a game backdrop, make all three (same scene, reframed) and name the third
+  `<name>-fold`. Fold versions still to make for older games: [FOLD-BACKGROUNDS.md](FOLD-BACKGROUNDS.md).
+
 ## Item pictures
 - One object, centred, filling most of the frame, **transparent background**, cropped tight. About 1024 px on the long side
   (the game shrinks it to 512).

@@ -60,6 +60,7 @@ const PICTURES={
 for(const l of LEVELS){
  PICTURES['bg-'+l.id]={kind:'bg',level:l.id,size:[1080,1920]};
  PICTURES['bg-'+l.id+'-wide']={kind:'bg',level:l.id,wide:true,size:[1920,1080]};
+ PICTURES['bg-'+l.id+'-fold']={kind:'bg',level:l.id,fold:true,size:[1504,1670]};   // near-square screens (the owner's open Fold)
  PICTURES['floor-'+l.id]={kind:'floor',level:l.id,size:[512,512]};
  PICTURES['bar-'+l.id]={kind:'bar',level:l.id,size:[1024,200]};
  PICTURES['tap-'+l.id]={kind:'tap',level:l.id,size:[200,280],bar:110};

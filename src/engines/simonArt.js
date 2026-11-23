@@ -3,7 +3,7 @@
 // everything is drawn here. Brief + sizes: docs/art-for-gpt/SIMON-ART.md, templates: node tools/simon-templates.mjs.
 //  simon-dim                      the toy seen straight from above, all four pads dark, 1024x1024, transparent round it
 //  simon-green|red|yellow|blue    the SAME picture with only that pad lit (the game shows only that pad's quarter of it)
-//  bg (1080x1920 tall) / bg-wide (1920x1080)   the kid's bedroom floor seen from above; the toy sits in the middle
+//  bg (1080x1920 tall) / bg-wide (1920x1080) / bg-fold (1504x1670, near-square)   the kid's bedroom floor seen from above; the toy sits in the middle
 // The toy's body circle is centred on the 1024 square with radius BODY (481 px); tools/simon/import.py finds the circle on
 // the owner's pictures and scales/moves them to that.
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
@@ -19,7 +19,7 @@ const imgs=new Map();
 function picture(name){const url=USER['simon:'+name];if(!url||typeof Image==='undefined')return null;
  let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.decoding='async';e.img.onload=()=>{e.ok=true;};e.img.src=url;imgs.set(name,e);}return e.ok?e.img:null;}
 const has=name=>!!USER['simon:'+name];
-function preload(){for(const n of ['simon-dim',...NAMES.map(n=>'simon-'+n),'bg','bg-wide'])if(has(n))picture(n);}
+function preload(){for(const n of ['simon-dim',...NAMES.map(n=>'simon-'+n),'bg','bg-wide','bg-fold'])if(has(n))picture(n);}
 // art is ready to draw when the dim toy (and every lit one that exists) has loaded
 function toyArt(){const d=picture('simon-dim');return d?{dim:d,lit:NAMES.map(n=>picture('simon-'+n))}:null;}
 
@@ -99,7 +99,7 @@ function drawToy(x,cx,cy,R,lit,t=0){
 // ---- the room: picture (cover) or drawn: looking down at a 90s kid's bedroom carpet, stuff all over it, middle clear
 const roomCache={key:'',cv:null};
 function drawRoom(x,W,H,cx,cy,R){
- const pic=W>H*1.15?(picture('bg-wide')||picture('bg')):(picture('bg')||picture('bg-wide'));
+ const pic=require("src/bgShape.js").pick(W,H,{tall:'bg',wide:'bg-wide',fold:'bg-fold'},picture);
  if(pic){const k=Math.max(W/pic.naturalWidth,H/pic.naturalHeight),w=pic.naturalWidth*k,h=pic.naturalHeight*k;x.drawImage(pic,(W-w)/2,(H-h)/2,w,h);return;}
  const key=[W,H,Math.round(cx),Math.round(cy),Math.round(R)].join(',');
  if(roomCache.key!==key&&typeof document!=='undefined'){const cv=document.createElement('canvas');cv.width=W;cv.height=H;paintRoom(cv.getContext('2d'),W,H,cx,cy,R);roomCache.key=key;roomCache.cv=cv;}

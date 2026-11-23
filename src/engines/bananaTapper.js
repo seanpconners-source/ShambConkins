@@ -189,7 +189,7 @@ async function moneygrab(s){
  function layer(key,bx,by,bw,bh,fn){let e=layers.get(key);if(!e){if(layers.size>40)layers.clear();e=mk(bw,bh);paint(e,bx,by,fn);layers.set(key,e);}x.drawImage(e,bx,by);}
  const loaded=(...names)=>names.map(n=>pic(n)?1:0).join('');
  function drawRoomLayer(w,b){const {R}=b,L=lvOf(w),wide=R.w>R.h*1.1;
-  layer(['room',L.id,R.x,R.y,R.w,R.h,b.mirror?1:0,b.B.toFixed(1),loaded('bg-'+L.id,'bg-'+L.id+'-wide','floor-'+L.id,'door-'+L.id),wide].join('|'),R.x,R.y,R.w,R.h,()=>{drawRoom(w,b);for(let r=0;r<ROWS;r++)drawDoor(w,b,r);});}
+  layer(['room',L.id,R.x,R.y,R.w,R.h,b.mirror?1:0,b.B.toFixed(1),loaded('bg-'+L.id,'bg-'+L.id+'-wide','bg-'+L.id+'-fold','floor-'+L.id,'door-'+L.id),wide].join('|'),R.x,R.y,R.w,R.h,()=>{drawRoom(w,b);for(let r=0;r<ROWS;r++)drawDoor(w,b,r);});}
  function drawBarLayer(w,b,r){const {R}=b,L=lvOf(w),yb=b.barY(r),y0=Math.floor(yb-b.B*.62),y1=Math.ceil(yb+b.B*.4);
   layer(['bar',L.id,R.x,R.w,yb.toFixed(1),b.mirror?1:0,b.B.toFixed(1),loaded('bar-'+L.id,'tap-'+L.id)].join('|'),R.x,y0,R.w,y1-y0,()=>{drawBar(w,b,r);drawTap(w,b,r);});}
  // a body sheet shrunk to k (template px -> screen px), every frame cell a whole number of pixels
@@ -202,7 +202,7 @@ async function moneygrab(s){
  const names=new Map(),nameFor=id=>{if(!names.has(id))names.set(id,nameOf(id));return names.get(id);};
  function drawRoom(w,b){
   const {R}=b,L=lvOf(w),ink=L.ink;x.save();x.beginPath();x.rect(R.x,R.y,R.w,R.h);x.clip();
-  const bg=pic('bg-'+L.id+(R.w>R.h*1.1?'-wide':''))||pic('bg-'+L.id)||pic('bg-'+L.id+'-wide');
+  const bg=require("src/bgShape.js").pick(R.w,R.h,{tall:'bg-'+L.id,wide:'bg-'+L.id+'-wide',fold:'bg-'+L.id+'-fold'},pic);
   if(bg)cover(bg,R.x,R.y,R.w,R.h);
   else{x.fillStyle=ink.wall;x.fillRect(R.x,R.y,R.w,R.h);
    // a calm white room: a thin trim line, a framed picture or two, the level's sign in plain lettering

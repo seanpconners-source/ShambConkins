@@ -16,6 +16,8 @@ const SLOTS={
  'stage-plinko-tall':{w:1080,h:1920,what:'the same studio for upright phones'},
  'stage-wheel':{w:1920,h:1080,what:'the Big Wheel studio, wide: set with flashing bulbs, the wheel stands in the middle (leave the middle 40% calm)'},
  'stage-wheel-tall':{w:1080,h:1920,what:'the same studio for upright phones'},
+ 'stage-plinko-fold':{w:1504,h:1670,what:'the same studio for near-square screens (the open Fold)'},
+ 'stage-wheel-fold':{w:1504,h:1670,what:'the same studio for near-square screens (the open Fold)'},
  curtain:{w:1920,h:1080,what:'the sparkly studio curtain that rises at the start (fills the screen)'},
  'plinko-board':{w:1800,h:2544,what:'the Plinko board without pegs, chips or prize numbers: frame, backing, top lights, the 9 slot boxes at the bottom (game prints the prizes)'},
  'plinko-chip':{w:256,h:256,what:'one Plinko chip seen face on (a thick round puck), transparent around'},

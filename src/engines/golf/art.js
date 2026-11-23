@@ -93,7 +93,7 @@ function drawTrackball(g,cx,cy,r,rot,opts={}){let M=rot;if(!Array.isArray(M)){co
  // marks on the surface, turned by the ball's orientation (only the near half shows)
  g.save();g.beginPath();g.arc(cx,cy,r,0,6.28);g.clip();
  for(const [px,py,pz,kind] of TB_MARKS){const qx=M[0]*px+M[1]*py+M[2]*pz,qy=M[3]*px+M[4]*py+M[5]*pz,qz=M[6]*px+M[7]*py+M[8]*pz;if(qz<=0)continue;
-  const d=Math.hypot(qx,qy),sz=r*(kind?.055:.085),a=Math.atan2(qy,qx);g.fillStyle=pic?`rgba(255,255,255,${.12+.3*qz})`:kind?`rgba(255,236,170,${.18+.4*qz})`:`rgba(110,45,0,${.18+.35*qz})`;
+  const d=Math.hypot(qx,qy),sz=r*(kind?.055:.085),a=Math.atan2(qy,qx);g.fillStyle=pic?`rgba(24,44,120,${.1+.28*qz})`:kind?`rgba(255,236,170,${.18+.4*qz})`:`rgba(110,45,0,${.18+.35*qz})`;
   g.beginPath();g.ellipse(cx+qx*r,cy+qy*r,sz*Math.max(.15,qz),sz,a,0,6.28);g.fill();}
  const sp=g.createRadialGradient(cx-r*.38,cy-r*.45,0,cx-r*.38,cy-r*.45,r*.65);sp.addColorStop(0,'rgba(255,255,255,.75)');sp.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=sp;g.fillRect(cx-r,cy-r,r*2,r*2);
  const rim=g.createRadialGradient(cx,cy,r*.75,cx,cy,r);rim.addColorStop(0,'rgba(0,0,0,0)');rim.addColorStop(1,'rgba(0,0,0,.35)');g.fillStyle=rim;g.fillRect(cx-r,cy-r,r*2,r*2);g.restore();

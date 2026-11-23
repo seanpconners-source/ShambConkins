@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.99.44
+
+- **New game: Plinko.** Its own game-show game: a 70s/80s studio with a curtain that rises, our own host and two show assistants, a lit-up Plinko board, brass fanfares and a studio crowd. First guess the prices of small prizes to win chips, then drag each chip along the top and let go. Slots pay $100 up to $10,000. 1 player vs the CPU, 2 players, or online.
+- **New game: The Big Wheel.** A showdown with three contestants (both players plus a studio guest). Pull the big wheel all the way round to spin it; stay or spin again; go over $1.00 and you're out. Hit exactly $1.00 for a bonus spin. Ties go to a spin-off. 1P, 2P or online.
+- **Shooter McGavin's Pro Tour, trackball like the real cabinet:** a small trackball sits in the corner; tap it and it comes up big in the middle on the cabinet's panel. Roll back in one of three directions (A, B, C) and forward in one of three (1, 2, 3): you can let go between back and forward and roll forward in a new direction, like the real ball. The lit arrows and a combo card show what you rolled (A1 big slice ... B2 straight ... C3 big hook). The ball keeps rolling and slows down when you let go. Backspin button on the panel.
+- **Golf art is in:** GPT's golfers (your face on them), skies for all three courses, 11 kinds of trees and cactus, water, grass detail, the flag, cup, tee markers, trackball, title screen and the SHOOTER McGAVIN'S PRO TOUR logo.
+- **Strands & Ladders art is in:** the printed board, the tables, the spinner dial and arrow, both porter standees, ladder and tar textures, the event card, the logo and a picture for every ladder and chute story.
+- **Paddy's Pool:** pictures for all six cue racks (plywood, pallet, pine, oak, glass case, Golden God).
+- **Boulder Run:** the faces now cover the whole lower head (the model's jaw and chin no longer poke out under the photo).
+- **Backgrounds for near-square screens:** games with phone and widescreen backdrops can now also have a third, Fold-shaped one (Sqwordle, Simon, Battleship, Strands & Ladders, Tapper, Crappy Crush, Plinko, Big Wheel). The pictures come next from GPT; until then the closest one is used as before.
+
 ## v0.99.43
 
 - **New game: Shooter McGavin's Pro Tour**, arcade trackball golf like the bar-cabinet golf games (our own courses and art). Three 9-hole courses (Bushwood Country Club, Waterbury Pro-Am, Bat Country Links in the desert), play 3 or 9 holes.

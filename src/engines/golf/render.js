@@ -47,7 +47,7 @@ function createScene(G,hole,theme){
   treeMeshes.push({m:keep(G.mesh(B.done())),t:tex(A.treeCanvas(kind)),kind});}
  // sky dome around the camera
  const skyTex=tex(A.skyCanvas(theme)),sky=(()=>{const B=GLm.builder(),R=120,yT=R*.9,yB=-R*.3,N=48,hv=400/512;const rows=[[yT,0],[0,hv],[yB,1]];const idx=[];
-  for(const [y,v] of rows){const row=[];for(let i=0;i<=N;i++){const a=i/N*6.283;row.push(B.v(Math.sin(a)*R,y,Math.cos(a)*R,0,1,0,i/N*2,v,[255,255,255,255]));}idx.push(row);}
+  for(const [y,v] of rows){const row=[];for(let i=0;i<=N;i++){const a=(i%N)/N*6.283185307;row.push(B.v(Math.sin(a)*R,y,Math.cos(a)*R,0,1,0,i/N*2,v,[255,255,255,255]));}idx.push(row);}
   for(let k=0;k<2;k++)for(let i=0;i<N;i++){const a=idx[k][i],b=idx[k][i+1],c=idx[k+1][i+1],d=idx[k+1][i];B.tri(a,b,c);B.tri(a,c,d);}return keep(G.mesh(B.done()));})();
  // flag pole + cup + tee markers (static)
  const cup=hole.cup,cupY=hole.height(cup.x,cup.z),deco=(()=>{const B=GLm.builder();

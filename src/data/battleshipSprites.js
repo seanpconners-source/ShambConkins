@@ -40,6 +40,7 @@ const PICTURES={
  'grid-sea':{kind:'sea',size:[8*CELL,8*CELL]},
  'board-bg':{kind:'bg',size:[1080,1920]},
  'board-bg-wide':{kind:'bg',size:[1920,1080]},
+ 'board-bg-fold':{kind:'bg',size:[1504,1670]},   // near-square screens (the owner's open Fold)
  'cut-sky':{kind:'sky',size:[1600,1000]},
  'warship':{kind:'warship',size:[1280,480],water:[640,380],L:1074},   // L = the owner's hull length (1200 in the template)
  'deck':{kind:'deck',size:[800,400]},

@@ -43,6 +43,7 @@ const SLOTS={
  board:{w:2048,h:2048,what:'the printed game board: frame + 100 squares, no numbers, no ladders, no chutes'},
  table:{w:1080,h:1920,what:'tall phone backdrop: the table the board sits on'},
  'table-wide':{w:1920,h:1080,what:'wide backdrop: the table the board sits on'},
+ 'table-fold':{w:1504,h:1670,what:'near-square backdrop (the open Fold): the same table'},
  'ladder-tile':{w:256,h:256,what:'one section of a ladder, repeats upward (rails at x 64 and 192, one rung)'},
  'tar-tile':{w:256,h:256,what:'seamless black tar texture for the chutes'},
  'spinner-face':{w:1024,h:1024,what:'the spinner dial: 6 equal sectors numbered 1-6 clockwise, 1 at the top'},
