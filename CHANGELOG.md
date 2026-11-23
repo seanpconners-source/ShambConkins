@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.48
+
+- **Judgment Day Chase (new):** the Terminator freeway chase is rebuilt as a fast top-down chase in five Terminator 2 stages: the Harley through the Galleria and the storm drain (tow truck boss), the T-1000 on foot, Pescadero at night (his police bike), Cyberdyne in the SWAT van (the helicopter) and the liquid nitrogen tanker. The T-800 aims and shoots by himself while you drive; tap M79 for a grenade, hold NITRO to boost. You have health instead of one-hit deaths, a warning arrow shows before anything comes from behind, and you repair after a few calm seconds. Ram cops into walls, skim past traffic and chain kills for points; pick upgrade cards at the weapons rig and Sarah's stash. Cutscenes, slow motion on takedowns, night stages lit by headlights and sirens, and a steel-mill finale. 1 player = the whole run with 2 continues, then an endless harder loop; 2 players take turns stage by stage.
+- **Head Hunt:** NES-style rounds that keep getting harder: hit the quota of ducks (6 of 10, rising to 10) or your turn ends; the ducks fly faster, swerve more and escape sooner every round; a perfect round pays a big bonus.
+- **Play alone or vs CPU:** in 1 player, bowling, every trivia game and Millionaire ask whether you want a game by yourself or against the CPU (it remembers your last pick). Alone, you play for your best score.
+- **New pictures:** Flappy Disaster's last 10 worlds (all 16 now have backgrounds for every screen shape); Fold backgrounds for all 72 Crappy Crush worlds, Sqwordle, Simon, Battleship, Strands & Ladders and Tapper; and a full classic game-show look for Plinko and The Big Wheel (studio, curtain, board, chip, logos, wheel cabinet, host and assistants).
+
 ## v0.99.47
 
 - **Flappy Disaster:** new painted backgrounds for six worlds (Flappy Classic, The Meat Locker, Fuzzy Wuzzy Hell, Route 1, The Ninth Circle, Zero-G), each made in three shapes: the game shows the one made for your screen (upright phone, Fold, or wide) and scrolls it behind the pipes.
