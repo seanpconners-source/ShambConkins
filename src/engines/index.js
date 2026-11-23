@@ -73,7 +73,8 @@ const {baseball}=require("src/engines/homeRunDerby.js");
 const {pacmaze, airshootout}=require("src/engines/duels.js");
 const {tank}=require("src/engines/atariCombat.js");
 const {coopRivals}=require("src/engines/coop.js");
-const {blocks,shred,dodgeball,boxing,gophers,archery}=require("src/engines/newGames.js");
+const {blocks,shred,dodgeball,gophers,archery}=require("src/engines/newGames.js");
+const {boxing}=require("src/engines/fightNight.js");
 // Paddy's Pool (8-ball / 9-ball with the upgrade hall) for the Arcade ids; the board event 'paddys-pool' keeps the old quick table
 function themedPool(s){const id=s.game?.id;return id==='color-of-money'||id==='paddys-eight-ball'?paddysPool(s):s.game?.source==='The Color of Money'?nineball(s):pool(s);}
 const PACKS=require("src/packs/index.js");

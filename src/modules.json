@@ -572,7 +572,11 @@
   "src/data/ddSprites.js",
   "src/engines/penaltyShootout.js",
   "src/engines/pk/art.js",
-  "src/data/pkSprites.js"
+  "src/data/pkSprites.js",
+  "src/engines/fightNight.js",
+  "src/engines/po/art.js",
+  "src/data/poSprites.js",
+  "src/data/poCircuit.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }

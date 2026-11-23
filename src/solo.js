@@ -37,7 +37,7 @@ const SOLO_IDS={
  'hungry-hungry-heads':'cpu','snowball-fight':'cpu','disc-duel':'cpu','arrow-arena':'cpu','driller-duel':'levels','bubble-battle':'cpu',
  'sp-dodgeball':'cpu','sp-cheesy-poofs':'cpu','sp-killed-kenny':'cpu','bond-laser-vault':'cpu','bond-golden-gun':'cpu','bond-goldfinger-bomb':'cpu',
  'hyrule-rupee-rush':'cpu','hyrule-sword-duel':'cpu','chutes-ladder-rush':'cpu','candy-gumdrop-catch':'cpu','candy-color-dash':'cpu',
- 'derezzed-cycles':'cpu','bomber-duel':'cpu','pac-maze-duel':'cpu','block-battle':'cpu','shred-hero':'cpu','underdog-dodgeball':'cpu','fight-night':'cpu',
+ 'derezzed-cycles':'cpu','bomber-duel':'cpu','pac-maze-duel':'cpu','block-battle':'cpu','shred-hero':'cpu','underdog-dodgeball':'cpu','fight-night':'levels',
  'color-of-money':'cpu','paddys-eight-ball':'cpu','task-tallest-thing':'cpu','bug-artillery':'cpu','taskmaster-curling':'cpu','happy-gilmore-golf':'cpu','space-swarm-versus':'cpu',
  'sewer-clash':'levels','mcgavin-pro-tour':'cpu','paddys-beer-pong':'cpu','baseketball-shootout':'levels','baseketball-hoop-jones':'levels','django-hangman':'cpu','django-hangman-showdown':'cpu',
  // batch 4: trivia, cards, dice and table games vs CPU
