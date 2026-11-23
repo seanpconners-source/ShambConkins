@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.99.45
+
+- **New: Rocky · Fight Night is now a Punch-Out style boxing game.** You box from behind against a big opponent facing you.
+  - Tap the top half to punch the head, the bottom half for the body (left or right side = which hand). Swipe left/right to dodge, down to duck, hold to block, swipe up for a STAR PUNCH.
+  - Every opponent is a character from the game with their own style: Creed, Master Roshi, Krillin, Johnny Cage, Zangief, Bane, Rambo, the T-800, Goro, Ivan Drago and a secret dream fight. They flash their eyes and wind up before the big ones, have signature specials, guards to work around and their own trash talk.
+  - Dodge the big punch and hit them while they're open for a COUNTER; hit them during the wind-up for a counter and a star. Hearts are your stamina: run out and you're tired until you dodge your way back.
+  - Knockdowns with the ref's count (tap like mad to get up), three in a round is a TKO, 3-minute rounds, decisions on points.
+  - Alone: a career through the Minor, Major and World circuits to the title fight, with Rocky in your corner between rounds. Beat a locked fighter and they join your roster. 2 players: you both box the same opponent, best score wins. Board: one round each. Online: both box at once.
+  - Drawn for now; templates and a brief for every picture are ready for GPT.
+- **New: Penalty Shootout (The League) is now a flick-kick football game.** The camera sits behind the ball: swipe it at the goal (the angle aims, a longer swipe lifts it, a faster swipe hits harder, a curved swipe bends it). In goal, swipe or tap the way you dive.
+  - Shootout: 5 each then sudden death, vs the CPU, 2 players on one phone (striker swipes from the bottom, keeper in the goal) or online.
+  - Alone also: CHALLENGE, a ladder of levels with targets, free-kick walls, wind and moving keepers, with stars per level, and TOURNAMENT, a knockout against teams from the game's places whose faces keep goal; win the cup and a locked character joins you.
+  - Slow-motion goal replays, the net bulges, posts clang, crowd and commentary lines. Templates and a brief for GPT pictures.
+- **New: The Warriors is now a Double Dragon style street brawler.** Missions through the game's places with gangs made of its characters and a boss at the end, a move ladder that unlocks new moves as you level up (jump kick, hair grab, throws, elbow, uppercut, cyclone kick), three special moves on a meter, weapons, barrels, food and pits, easy phone controls. Templates and a brief for GPT sprites.
+- **Strands & Ladders:** the camera now zooms in on the porter who is moving and back out to the whole board for the spin; the spinner is as big as it can be; small -/+ buttons zoom in and you can drag to look around.
+- **Flappy Disaster:** the first GPT stage background is in (the classic stage). Every stage can now have its own picture (brief ready for GPT).
+
 ## v0.99.44
 
 - **New game: Plinko.** Its own game-show game: a 70s/80s studio with a curtain that rises, our own host and two show assistants, a lit-up Plinko board, brass fanfares and a studio crowd. First guess the prices of small prizes to win chips, then drag each chip along the top and let go. Slots pay $100 up to $10,000. 1 player vs the CPU, 2 players, or online.
