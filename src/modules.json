@@ -564,7 +564,8 @@
   "src/engines/gameshow/stage.js",
   "src/engines/plinkoShow.js",
   "src/engines/bigWheel.js",
-  "src/bgShape.js"
+  "src/bgShape.js",
+  "src/data/flappySprites.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }

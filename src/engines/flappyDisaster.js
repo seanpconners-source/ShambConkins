@@ -10,6 +10,7 @@ const {fullBleed}=require("src/engines/fullBleed.js");
 const {soloFinish,soloProgress}=require("src/solo.js");
 const {netField}=require("src/engines/netField.js");
 const {snd}=require("src/engines/arenaKit.js");
+const FS=require("src/data/flappySprites.js");
 
 // ---- the world: logical units, 720 tall (about one phone screen, no zoom-in); the ground band at the bottom
 // the world is ~one phone screen tall (no zoom-in) and the flap/gravity are the old game's (floaty, gentle taps):
@@ -168,6 +169,7 @@ async function flappy(s){
  const [c,x]=s.canvas(680,420,{fill:true});const fb=fullBleed(s,{bg:'#000'});
  const online=!!s.online,solo=!!s.solo&&!online,nP=solo?1:2;
  const rnd=seededRandom((s.seed||1)+':flappy-stage'),forced=(()=>{try{return localStorage.getItem('sc-flappy-stage');}catch{return null;}})(),stage=STAGES.find(t=>t.id===forced)||STAGES[Math.floor(rnd()*STAGES.length)];
+ await FS.ready(['bg-'+stage.id,'ground-'+stage.id],3000);   // the stage's pictures (when GPT's art is in)
  const pipeAt=course(s.seed||1),names=s.players.map(p=>p.name||'Player'),scores=[0,0],best=(()=>{try{return +localStorage.getItem('sc-flappy-best')||0;}catch{return 0;}})();
  let k=1,vw=680,t=0,phase='intro',phaseT=0,cur=0,shake=0,flash=0;
  const B={y:FLOOR*.45,vy:0,travel:0,score:0,dead:false,wing:0,next:0,started:false,deadT:0};
@@ -220,15 +222,18 @@ async function flappy(s){
  function bird(y,vy,wing,dead,i){x.save();x.translate(birdX(),y);x.rotate(dead?Math.min(1.5,.4+B.deadT*3):clamp(vy/600,-.45,1.2));const r=BIRD_R*1.55;
   const up=wing>0;x.fillStyle=stage.wing;x.strokeStyle='#0008';x.lineWidth=2;x.beginPath();x.ellipse(-r*.55,up?-r*.5:r*.2,r*.62,r*.3,up?-.5:.3,0,7);x.fill();x.stroke();
   s.sprite(x,i,0,0,r*2.05,{exact:true,mood:dead?'sad':vy<-200?'happy':undefined});x.restore();}
+ // a picture that repeats side to side: y0..y0+h tall, scrolled by off (world units)
+ function tile(img,y0,h,off){const tw=h*img.width/img.height;let X=-(((off%tw)+tw)%tw);for(;X<vw;X+=tw)x.drawImage(img,X,y0,tw+.5,h);}
  function draw(){layout();x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,s.W,s.H);
   const sh=shake>0?(Math.random()-.5)*shake*22:0;x.setTransform(k,0,0,k,sh*k,0);
   // the watched run: the runner's last snapshot moved on by the time since
   let tr=B.travel,by=B.y,bvy=B.vy,dead=B.dead,sc=B.score,wing=B.wing;
   if(!mine()&&remote){const age=clamp((performance.now()-remote.at)/1000,0,.35);tr=remote.tr+(remote.st&&!remote.d?speedOf(remote.sc)*age:0);by=remote.d?remote.y:remote.y+remote.v*age;bvy=remote.v;dead=!!remote.d;sc=remote.sc;}
-  sky(x,vw,stage.sky[0],stage.sky[1]);stage.bg(x,vw,tr,t);
+  const bgPic=FS.picture('bg-'+stage.id),gPic=FS.picture('ground-'+stage.id);
+  if(bgPic)tile(bgPic,0,FLOOR,tr*.25);else{sky(x,vw,stage.sky[0],stage.sky[1]);stage.bg(x,vw,tr,t);}
   for(let i=Math.max(0,Math.floor(sc)-3);i<sc+8;i++){const p=pipeAt(i),px=p.x-tr;if(px>vw+40)break;if(px<-PIPE_W-20)continue;const gy=gapY(p,tr),h=p.gap/2;
    if(stage.pipe){stage.pipe.call(stage,x,px,-220,gy-h,true,t,s);stage.pipe.call(stage,x,px,gy+h,FLOOR,false,t,s);}else{column(x,px,-220,gy-h,true,stage,t);column(x,px,gy+h,FLOOR,false,stage,t);}}
-  stage.ground(x,vw,tr,t);
+  if(gPic)tile(gPic,FLOOR,GROUND,tr);else stage.ground(x,vw,tr,t);
   // weather
   if(stage.snow||stage.spore||stage.ember||stage.bubble||stage.paper)for(let i=0;i<34;i++){const X=(hash(i)*vw*1.3-tr*.6*(stage.bubble?.2:1)+t*(stage.snow?20:0))%(vw*1.3),Y=stage.ember||stage.bubble?FLOOR-((t*(30+hash(i+5)*40)+hash(i+3)*FLOOR)%FLOOR):((t*(30+hash(i+5)*30)+hash(i+3)*FLOOR)%FLOOR);
    const XX=(X+vw*1.3)%(vw*1.3)-vw*.15;if(stage.snow)circ(x,'#fff',XX,Y,2);else if(stage.spore)circ(x,'#c8c8b8aa',XX,Y,1.6);else if(stage.ember)circ(x,i%2?'#ff8c1c':'#ffd84c',XX,Y,1.8);else if(stage.bubble){x.strokeStyle='#bce8ff';x.lineWidth=1;x.beginPath();x.arc(XX,Y,3,0,7);x.stroke();}else{R(x,'#fff',XX,Y,7,9);R(x,'#ccc',XX+1,Y+2,5,1);}}

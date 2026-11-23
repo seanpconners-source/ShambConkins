@@ -186,6 +186,12 @@ if (fs.existsSync(golfDir)) for (const f of fs.readdirSync(golfDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('golf:' + m[1].toLowerCase(), MIME[ext], ext, path.join(golfDir, f));
 }
+// Flappy Disaster stage art: assets/flappy/<slot>.(webp|png) -> flappy:<slot> (slots in src/data/flappySprites.js).
+const flapDir = path.join(root, 'assets/flappy');
+if (fs.existsSync(flapDir)) for (const f of fs.readdirSync(flapDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('flappy:' + m[1].toLowerCase(), MIME[ext], ext, path.join(flapDir, f));
+}
 // Game-show art (Plinko, The Big Wheel): assets/gameshow/<slot>.(webp|png) -> show:<slot> (slots in src/data/showSprites.js).
 const showDir = path.join(root, 'assets/gameshow');
 if (fs.existsSync(showDir)) for (const f of fs.readdirSync(showDir)) {
