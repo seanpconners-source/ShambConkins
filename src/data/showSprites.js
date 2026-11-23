@@ -1,7 +1,8 @@
 // Game-show art slots for PLINKO (plinko-show) and THE BIG WHEEL (big-wheel). Every picture is optional:
 // assets/gameshow/<slot>.webp|png -> USER_PORTRAITS['show:<slot>'] (tools/build.mjs); a missing one is drawn by the game
 // (src/engines/gameshow/stage.js). Templates: node tools/gameshow-templates.mjs -> docs/art-for-gpt/gameshow-templates,
-// brief docs/art-for-gpt/GAMESHOW-ART.md. Our own studio, host and models (original designs, no real people, no show logos).
+// brief docs/art-for-gpt/GAMESHOW-ART.md. The owner later had GPT paint the classic-era show look (host + two assistants as
+// photoreal people, Nov 23 delivery UPLOADS-GPT-2026-11-23-2100); the drawn studio/host stay as the fallback.
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
 // people sheets: one row of poses, each frame w x h, feet at the bottom middle
 const HOST={w:512,h:1024,frames:['talk','point','cheer'],feet:[256,1004]};
