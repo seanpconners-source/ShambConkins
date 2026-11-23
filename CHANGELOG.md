@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.46
+
+- **The Warriors:** the camera is pulled back on the Fold and tablets, so the fighters are smaller and you see more of the street.
+- **The Warriors:** punches and kicks connect: they land on an enemy standing right on top of you, a little further out, and when you're a step above or below them on the street. Attacking while walking toward an enemy lines you up with them.
+- **The Warriors:** every face is the same size, with the chin on the neck; heads lean with the body and look the way the fighter faces. A hit now flashes only the fighter (it used to light up a white box).
+- **Shooter McGavin's Pro Tour:** the big trackball panel uses GPT's new black-and-gold cabinet deck.
+
 ## v0.99.45
 
 - **New: Rocky · Fight Night is now a Punch-Out style boxing game.** You box from behind against a big opponent facing you.
