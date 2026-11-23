@@ -78,7 +78,8 @@ function stroke(g,pts,w,col){g.strokeStyle=col;g.lineWidth=w;g.lineCap='round';g
 function drawBody(g,pose,{x,y,face=1,k=1,o=OUTFIT.thug,big=1,flash=0,alpha=1,shadow=true,z=0}){
  const J=joints(pose),lie=pose.lie||0;g.save();
  if(shadow){g.globalAlpha=.32*alpha;g.fillStyle='#000';g.beginPath();g.ellipse(x,y,22*k*big,6*k,0,0,7);g.fill();}
- g.globalAlpha=alpha;g.translate(x,y-z*k);g.scale(face*k*big,k);
+ g.globalAlpha=alpha;if(flash>0&&'filter' in g)g.filter=`brightness(${1+Math.min(1,flash)*1.6})`;   // hit flash: the body lights up white
+ g.translate(x,y-z*k);g.scale(face*k*big,k);
  if(lie){g.translate(0,-6);g.rotate(-Math.PI/2*lie);}   // lying: whole body on its back, head behind
  if(pose.rot){g.translate(0,-48);g.rotate(pose.rot*D2R);g.translate(0,48);}
  const W=big;const dark=c=>shade(c,-.28),ol='rgba(0,0,0,.55)';
@@ -98,7 +99,7 @@ function drawBody(g,pose,{x,y,face=1,k=1,o=OUTFIT.thug,big=1,flash=0,alpha=1,sha
  // neck
  stroke(g,[J.top,J.neck],6,o.skin);
  limb(J.B,9,o.bare?o.skin:o.shirt,o.glove||o.skin);
- if(flash>0){g.globalCompositeOperation='source-atop';g.globalAlpha=flash;g.fillStyle='#fff';g.fillRect(-60,-120,120,130);}
+ 
  g.restore();
  // head spot and the front hand in screen space
  const tr=p=>{let px=p[0],py=p[1];

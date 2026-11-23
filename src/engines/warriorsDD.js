@@ -21,9 +21,9 @@ const {store}=require("src/state.js");
 const BD=require("src/engines/dd/body.js");
 const ST=require("src/engines/dd/stages.js");
 const DS=require("src/data/ddSprites.js");
-const {faceSprite}=require("src/headFacts.js");
+const {faceSprite,drawFace,faceHeight,headFacts}=require("src/headFacts.js");
 
-const VH=250,BACK=150,DEPTH=ST.DEPTH,FRONT=BACK+DEPTH,FIG=.9,G=980,SAVE='sc-warriors-v1';
+const FACE_W=15,FACE_UP=.42,VH=250,BACK=150,DEPTH=ST.DEPTH,FRONT=BACK+DEPTH,FIG=.9,G=980,SAVE='sc-warriors-v1';
 // levels (hearts): XP needed for each level, and what it unlocks (the NES game's move ladder)
 const LV_XP=[0,14,34,62,98,142,196];
 const UNLOCK={2:['JUMP KICK','JUMP, then KICK in the air'],3:['HAIR GRAB + KNEE','Walk into a dazed enemy, then PUNCH'],4:['SHOULDER THROW','While holding someone, press KICK'],
@@ -31,15 +31,15 @@ const UNLOCK={2:['JUMP KICK','JUMP, then KICK in the air'],3:['HAIR GRAB + KNEE'
 const SPECIALS=[{lv:1,bars:1,name:'RISING FIST',how:'1 bar · tap SPECIAL'},{lv:3,bars:2,name:'TWISTER',how:'2 bars · hold the stick forward + SPECIAL'},{lv:5,bars:3,name:"WARRIOR'S FURY",how:'3 bars (full) · tap SPECIAL'}];
 // moves: seq = [pose, seconds] key poses, act = active segments, reach = [from,to] in front (negative = behind)
 const MV={
- jab:{seq:[['jabC',.05],['jab',.07],['stand',.12]],act:[1],dmg:2,reach:[6,38],kind:'light',sfx:'p',next:'cross'},
- cross:{seq:[['stand',.03],['cross',.07],['stand',.13]],act:[1],dmg:2,reach:[6,40],kind:'light',sfx:'p',next:'hook'},
- hook:{seq:[['hookC',.07],['hook',.08],['stand',.2]],act:[1],dmg:3,reach:[6,40],kind:'knock',kb:150,sfx:'P'},
- kick:{seq:[['kickC',.07],['kick',.09],['kickC',.06],['stand',.1]],act:[1],dmg:3,reach:[8,52],kind:'push',kb:120,sfx:'k',next:'kick2'},
- kick2:{seq:[['kickC',.05],['kick',.09],['stand',.16]],act:[1],dmg:3,reach:[8,54],kind:'knock',kb:170,sfx:'K'},
+ jab:{seq:[['jabC',.05],['jab',.07],['stand',.12]],act:[1],dmg:2,reach:[-12,48],kind:'light',sfx:'p',next:'cross'},
+ cross:{seq:[['stand',.03],['cross',.07],['stand',.13]],act:[1],dmg:2,reach:[-12,50],kind:'light',sfx:'p',next:'hook'},
+ hook:{seq:[['hookC',.07],['hook',.08],['stand',.2]],act:[1],dmg:3,reach:[-12,50],kind:'knock',kb:150,sfx:'P'},
+ kick:{seq:[['kickC',.07],['kick',.09],['kickC',.06],['stand',.1]],act:[1],dmg:3,reach:[-12,60],kind:'push',kb:120,sfx:'k',next:'kick2'},
+ kick2:{seq:[['kickC',.05],['kick',.09],['stand',.16]],act:[1],dmg:3,reach:[-12,62],kind:'knock',kb:170,sfx:'K'},
  bkick:{seq:[['stand',.03],['bkick',.1],['stand',.15]],act:[1],dmg:3,reach:[-54,-6],kind:'knock',kb:150,sfx:'k'},
  elbow:{seq:[['elbowC',.05],['elbow',.08],['stand',.15]],act:[1],dmg:6,reach:[-42,-4],kind:'knock',kb:170,sfx:'P'},
- up:{seq:[['upC',.08],['up',.11],['stand',.22]],act:[1],dmg:7,reach:[2,40],kind:'launch',kb:130,sfx:'U'},
- dashp:{seq:[['cross',.16],['stand',.16]],act:[0],dmg:3,reach:[4,42],kind:'knock',kb:180,sfx:'P',lunge:[170,0]},
+ up:{seq:[['upC',.08],['up',.11],['stand',.22]],act:[1],dmg:7,reach:[-12,48],kind:'launch',kb:130,sfx:'U'},
+ dashp:{seq:[['cross',.16],['stand',.16]],act:[0],dmg:3,reach:[-12,52],kind:'knock',kb:180,sfx:'P',lunge:[170,0]},
  knee:{seq:[['kneeC',.06],['knee',.08],['kneeC',.1]],grab:true,dmg:3,sfx:'K'},
  throw:{seq:[['throw1',.14],['throw2',.18],['stand',.18]],grab:true,throwAt:1,dmg:6,sfx:'U'},
  swing:{seq:[['swing1',.1],['swing2',.1],['stand',.2]],act:[1],dmg:4,reach:[8,60],kind:'knock',kb:150,sfx:'B'},
@@ -91,7 +91,7 @@ async function warriorsDD(s){
  // ---- layout: the street band (world units) scaled to the screen; controls float in the corners / below the band
  let k=1,vw=600,bandY=0,portrait=false,U=40,BTN={},stickHome={x:0,y:0};
  function layout(){const W=s.W,H=s.H,top=(fb.top||40);portrait=H>W*1.05;
-  if(portrait){k=Math.min(W/235,(H-top-60)*.64/VH);bandY=top+46;}else if(W<H*1.4){k=Math.min(W/290,(H-top-40)*.82/VH);bandY=top+46;portrait=true;}else{k=H/VH;bandY=0;}vw=W/k;
+  if(portrait){k=Math.min(W/235,(H-top-60)*.64/VH,W>=560?W/480:1e9);bandY=top+46;}else if(W<H*1.4){k=Math.min(W/290,(H-top-40)*.82/VH,W>=560?W/480:1e9);bandY=top+46;portrait=true;}else{k=H/VH;bandY=0;}vw=W/k;
   U=clamp(Math.min(W,H)*.072,27,48);const m=Math.max(12,U*.4),bx=W-m,by=H-m;
   BTN={punch:{x:bx-U*3.15,y:by-U,r:U,label:'PUNCH',col:'#e84a3c'},kick:{x:bx-U,y:by-U*1.7,r:U,label:'KICK',col:'#3c8ce8'},
    jump:{x:bx-U*1.05,y:by-U*4.05,r:U*.74,label:'JUMP',col:'#4cb85c'},special:{x:bx-U*3.4,y:by-U*3.45,r:U*.74,label:'SPECIAL',col:'#e8b83c'}};
@@ -176,7 +176,7 @@ async function warriorsDD(s){
  const canBeHit=v=>v&&v.inv<=0&&!['down','dead','getup','fall','pit','gone'].includes(v.st)&&!v.gone;
  function attackCheck(f,def,m){const foes=f.side==='hero'?living('foe'):living('hero');
   for(const v of foes){if(m.hit.has(v)||!canBeHit(v))continue;const dx=(v.x-f.x)*f.dir,dd=Math.abs(v.d-f.d),zz=Math.abs(v.z-f.z);
-   const lo=def.reach[0]*f.big,hi=def.reach[1]*f.big;if(dd>11*Math.max(f.big,v.big)||zz>50)continue;
+   const lo=def.reach[0]*f.big,hi=def.reach[1]*f.big;if(dd>(f.side==='hero'?17:11)*Math.max(f.big,v.big)||zz>50)continue;
    if(!(dx>=Math.min(lo,hi)&&dx<=Math.max(lo,hi)))continue;
    m.hit.add(v);const kind=def.spin&&f.mv&&f.mv.seg===0&&f.mv.segT>def.seq[0][1]-.13?def.finish:def.kind;
    if(def.grabber)continue;
@@ -299,8 +299,8 @@ async function warriorsDD(s){
  function bufferChain(h){const m=h.mv;if(!m||m.chainQ||!m.def.next)return;const actEnd=Math.max(...(m.def.act||[0]));if(m.seg<actEnd)return;
   if(m.def.next==='kick2'?took('kick',.25):took('punch',.25))m.chainQ=m.def.next;}
  const faceTo=h=>h.dir;
- function autoFace(h,sx){if(Math.abs(sx)>.2)return;let best=null,bd=80;for(const v of living('foe')){if(!canBeHit(v)&&v.st!=='dizzy')continue;const d=Math.abs(v.x-h.x)+Math.abs(v.d-h.d)*2;if(d<bd){bd=d;best=v;}}
-  if(best){h.dir=Math.sign(best.x-h.x)||h.dir;if(Math.abs(best.d-h.d)<16)h.d+=(best.d-h.d)*.5;}}   // QoL: face and line up with the nearest enemy
+ function autoFace(h,sx){const moving=Math.abs(sx)>.2;let best=null,bd=moving?70:90;for(const v of living('foe')){if(!canBeHit(v)&&v.st!=='dizzy')continue;if(moving&&(v.x-h.x)*Math.sign(sx)<-14)continue;const d=Math.abs(v.x-h.x)+Math.abs(v.d-h.d)*2;if(d<bd){bd=d;best=v;}}
+  if(best){if(!moving)h.dir=Math.sign(best.x-h.x)||h.dir;if(Math.abs(best.d-h.d)<24)h.d+=(best.d-h.d)*.8;}}   // QoL: face and line up with the nearest enemy
  const enemyNear=(h,r)=>living('foe').some(v=>Math.abs(v.x-h.x)<r&&Math.abs(v.d-h.d)<14);
  function special(h,sx){const bars=Math.floor(run.meter/100);if(bars<1){fx.push({kind:'txt',txt:'NEED 1 BAR',x:h.x,d:h.d,z:110,t:.8});return;}
   if(bars>=3&&run.lv>=5){run.meter-=300;fury(h);return;}
@@ -366,18 +366,22 @@ async function warriorsDD(s){
   const name=f.poseName||'stand',sheet=DS.picture(f.sheet),cell=sheet?DS.cellOf(f.sheet,name):null;let spots;
   const face=f.st==='atk'&&f.mv?.def.spin||f.airAtk==='spin'?(Math.floor(t*28)%2?1:-1)*f.dir:f.dir;
   if(cell){const sc=kk*f.big/DS.UNIT;x.save();x.globalAlpha=.32;x.fillStyle='#000';x.beginPath();x.ellipse(sx,sy,22*kk*f.big,6*kk,0,0,7);x.fill();x.restore();
-   x.save();x.translate(sx,sy-f.z*kk);x.scale(face*sc,sc);const ft=DS.footOf(name);x.drawImage(sheet,cell.sx,cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);
-   if(f.flash>0){x.globalCompositeOperation='source-atop';x.globalAlpha=f.flash*4;x.fillStyle='#fff';x.fillRect(-ft[0],-ft[1],DS.CELL,DS.CELL);}x.restore();
-   const J=BD.joints(BD.P[name]||BD.P.stand);spots={head:{x:sx+J.head[0]*face*kk*f.big,y:sy-f.z*kk+J.head[1]*kk*f.big},hand:{x:sx+J.B[2][0]*face*kk*f.big,y:sy-f.z*kk+J.B[2][1]*kk*f.big},handAng:0};}
+   x.save();x.translate(sx,sy-f.z*kk);x.scale(face*sc,sc);const ft=DS.footOf(name);if(f.flash>0&&'filter' in x)x.filter=`brightness(${1+Math.min(1,f.flash*5)*1.6})`;x.drawImage(sheet,cell.sx,cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);x.restore();
+   const J=BD.joints(BD.P[name]||BD.P.stand);spots={head:{x:sx+J.head[0]*face*kk*f.big,y:sy-f.z*kk+J.head[1]*kk*f.big},neck:{x:sx+J.neck[0]*face*kk*f.big,y:sy-f.z*kk+J.neck[1]*kk*f.big},hand:{x:sx+J.B[2][0]*face*kk*f.big,y:sy-f.z*kk+J.B[2][1]*kk*f.big},handAng:0};}
   else spots=BD.drawBody(x,f.pose,{x:sx,y:sy,face,k:kk,o:f.o,big:f.big,flash:f.flash*5,z:f.z});
   // weapon or carried thing
   if(f.weapon)drawWeapon(f.weapon.kind,spots.hand.x,spots.hand.y,face,kk,f);
   if(f.carry){const im=DS.picture(f.carry.kind);const w=(f.carry.kind==='barrel'?30:26)*kk;if(im)x.drawImage(im,spots.head.x-w/2,spots.head.y-w*1.5,w,w*im.height/im.width);else{x.fillStyle=f.carry.kind==='barrel'?'#7c4c1c':'#8c8c8c';x.beginPath();x.roundRect(spots.head.x-w/2,spots.head.y-w*1.6,w,w*1.1,5);x.fill();}}
   // the face on the neck
-  const fw=22*kk*f.big,mood=f.st==='hurt'||f.st==='fall'||f.st==='held'?'sad':f.st==='dizzy'||f.st==='grabbed'?'sad':f.st==='down'||f.st==='dead'?'sad':f.st==='win'?'win':f.st==='atk'?'angry':'normal';
-  if(f.side==='hero'){s.sprite(x,f.pi,spots.head.x,spots.head.y,fw*1.25,{exact:true,still:true,mood:mood==='angry'?'happy':mood,noBadge:true});}
-  else{const sp=f.face?faceSprite(f.face,mood==='angry'?'angry':mood,fw,face):null;if(sp)x.drawImage(sp.cv,spots.head.x+sp.x,spots.head.y+sp.y);else{x.fillStyle=f.o.skin;x.strokeStyle='#000';x.lineWidth=2;x.beginPath();x.arc(spots.head.x,spots.head.y,fw*.5,0,7);x.fill();x.stroke();}}
-  if(f.st==='dizzy'){for(let i=0;i<3;i++){const a=t*6+i*2.1;x.fillStyle='#ffe85c';x.font=`${10*kk}px sans-serif`;x.fillText('★',spots.head.x+Math.cos(a)*14*kk-4,spots.head.y-fw*.7+Math.sin(a)*4*kk);}}}
+  // the face on the neck: every face (yours and theirs) the same width (brow to chin), chin on the neck, the head tilted
+  // with the body (lying poses too), turned to look the way the fighter faces (headFacts, like Seanic/SotN)
+  const fw=FACE_W*kk*f.big,mood=f.st==='hurt'||f.st==='fall'||f.st==='held'?'sad':f.st==='dizzy'||f.st==='grabbed'?'sad':f.st==='down'||f.st==='dead'?'sad':f.st==='win'?'win':f.st==='atk'?'angry':'normal';
+  const nk=spots.neck||spots.head,ux=spots.head.x-nk.x,uy=spots.head.y-nk.y,ul=Math.hypot(ux,uy)||1;
+  const fid=f.side==='hero'?s.players[f.pi]?.character:f.face;let fm=f.side==='hero'?(mood==='angry'?'happy':mood):(mood==='angry'?'angry':mood);if(fid&&fm!=='normal'&&!headFacts(fid,fm))fm='normal';   // a mood never measured would come out at another size
+  const fh=fid?faceHeight(fid,fm,fw):fw*1.25,cx=nk.x+ux/ul*fh*FACE_UP,cy=nk.y+uy/ul*fh*FACE_UP;spots.face={x:cx,y:cy};
+  if(f.side==='hero')drawFace(s,x,f.pi,cx,cy,fw/.6,fm,face,.6);
+  else{const sp=f.face?faceSprite(f.face,fm,fw,face):null;if(sp)x.drawImage(sp.cv,cx+sp.x,cy+sp.y);else{x.fillStyle=f.o.skin;x.strokeStyle='#000';x.lineWidth=2;x.beginPath();x.arc(cx,cy,fw*.5,0,7);x.fill();x.stroke();}}
+  if(f.st==='dizzy'){for(let i=0;i<3;i++){const a=t*6+i*2.1;x.fillStyle='#ffe85c';x.font=`${10*kk}px sans-serif`;x.fillText('★',spots.face.x+Math.cos(a)*14*kk-4,spots.face.y-fh*.75+Math.sin(a)*4*kk);}}}
  function drawWeapon(kind,hx,hy,face,kk,f){const im=DS.picture(kind),L=(kind==='knife'?16:kind==='whip'?(f.mv?.name==='whip'&&f.mv.seg===1?70:22):30)*kk,a=f.ground?0:f.mv&&f.mv.seg===0?-1.6:f.mv&&f.mv.seg===1?(kind==='whip'?.05:.2):-1.1;
   x.save();x.translate(hx,hy);x.scale(face,1);x.rotate(a);
   if(im){x.drawImage(im,-L*.12,-L*im.height/im.width/2,L,L*im.height/im.width);}
@@ -489,7 +493,7 @@ async function warriorsDD(s){
   draw();});
  s.debug={get phase(){return phase;},get run(){return run;},get hero(){return hero;},get st(){return st;},get foes(){return living('foe');},MISS,MV,
   set bot(v){bot.on=!!v;},get bot(){return online?()=>{bot.on=true;if(phase==='title')titleDone?.(0);}:bot.on;},
-  start:(n=0)=>titleDone?.(n),killAll:()=>{for(const f of living('foe'))damage(hero,f,999,'knock',100,{});},lv:n=>{run.xp=LV_XP[n-1];run.lv=n;},meter:v=>{run.meter=v;},
+  start:(n=0)=>titleDone?.(n),press:b=>{pressBtn(b);setTimeout(()=>{inp.held[b]=false;},60);},killAll:()=>{for(const f of living('foe'))damage(hero,f,999,'knock',100,{});},lv:n=>{run.xp=LV_XP[n-1];run.lv=n;},meter:v=>{run.meter=v;},
   boss:()=>{if(!st)return;wave=st.waves.length-1;waveQ=[];for(const f of living('foe'))f.gone=true;hero.x=st.boss.at+5;cam.x=Math.max(0,st.boss.at-vw*.4);}};
 
  async function turn(pi,startAt,count){cur=pi;run={lives:board?2:3,lv:1,xp:0,meter:0,score:0,hurt:false};let n=startAt,cleared=0,conts=solo?2:0;
