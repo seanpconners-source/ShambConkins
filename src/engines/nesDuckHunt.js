@@ -2,6 +2,9 @@
 // dog who pops up with your catch (or laughs at you), and the classic bottom bar with R=, SHOT, HIT and SCORE.
 // The ducks wear your rival's head. Ten ducks a round, two at a time, three shots per pair; a pair that survives too
 // long flies away and the sky flashes pink. Black 500, blue 1000, red 1500; all ten = PERFECT bonus. Turn-based.
+// Like the NES, rounds go on until you miss the round's quota, and every round is harder (DIFF): faster, more erratic
+// ducks that leave sooner, more red ones, a smaller shot window and a higher quota. 2P: each plays until out (same
+// flight patterns per round); 1P solo: one solo round = one NES round (retroKit ownPace: no extra clock speed-up).
 const {clamp,seededRandom}=require("src/utils.js");
 const {voice,noise,makeShake}=require("src/engines/tarantinoKit.js");
 const {pixText,drawSprite,fitField,turnRunner}=require("src/engines/retroKit.js");
@@ -17,13 +20,23 @@ const DUCK_KIND=[{c:'#2a2a2a',w:'#7c7c7c',pts:500,sp:62},{c:'#2038ec',w:'#7ca0fc
 async function duckturn(s){
  const [c,x]=s.canvas(680,420,{fill:true});s.body.classList.add('drag-arena-body');s.controls([]);s.ownHud(true,true);
  const shake=makeShake();let cur=null,L=null;
- const rnd=seededRandom(s.seed+':duckhunt');const PAIRS=Array.from({length:5},(_,p)=>[0,1].map(()=>({kind:rnd()<.2+p*.06?2:rnd()<.45?1:0,x:40+rnd()*176,a:-Math.PI/2+(rnd()-.5)*1.6})));
- function make(){return {pair:-1,ducks:[],shots:3,hits:Array(10).fill(0),score:0,state:'start',t:0,flash:0,dog:{mode:'hide',t:0,y:0,n:0},sky:0,shotFx:[]};}
- function nextPair(w){w.pair++;w.shots=3;w.t=0;if(w.pair>=5){w.state='done';if(w.hits.every(h=>h===1)){w.score+=10000;w.perfect=true;voice(784,.3,.05,'square');}return;}
-  w.ducks=PAIRS[w.pair].map((d,i)=>{const K=DUCK_KIND[d.kind];return {i:w.pair*2+i,kind:d.kind,x:d.x,y:L.FH*.72,vx:Math.cos(d.a)*K.sp*(1+w.pair*.1),vy:Math.sin(d.a)*K.sp*(1+w.pair*.1),state:'fly',flap:0,turn:.8+rnd()*.6,fall:0};});
+ // per-round difficulty (r = 0-based round): speed x, seconds before they fly away, seconds between swerves, hit radius, quota
+ const DIFF=r=>({sp:Math.min(3.2,1+.16*r),away:Math.max(3.6,8.5-.55*r),turn:Math.max(.22,.75-.06*r),swerve:Math.min(2.6,1.4+.12*r),hitR:Math.max(13,22-r),quota:Math.min(10,6+Math.floor(r/2)),red:Math.min(.75,.2+.05*r)});
+ const pairsCache=new Map();
+ function roundPairs(r){if(!pairsCache.has(r)){const rnd=seededRandom(s.seed+':duckhunt:'+r),D=DIFF(r);pairsCache.set(r,Array.from({length:5},(_,p)=>[0,1].map(()=>({kind:rnd()<D.red+p*.06?2:rnd()<.45+r*.03?1:0,x:40+rnd()*176,a:-Math.PI/2+(rnd()-.5)*1.6}))));}return pairsCache.get(r);}
+ const single=!!s.solo;   // solo: one world = one round (the solo runner strings the rounds together)
+ const capSecs=s.solo?600:s.origin==='board'?150:900;
+ function make(){return {rnd:null,pair:-1,ducks:[],shots:3,hits:Array(10).fill(0),score:0,state:'start',t:0,flash:0,dog:{mode:'hide',t:0,y:0,n:0},sky:0,shotFx:[],cleared:0};}
+ function newRound(w){w.pair=-1;w.hits=Array(10).fill(0);w.state='start';w.t=0;w.perfect=false;}
+ function nextPair(w){w.pair++;w.shots=3;w.t=0;if(w.pair>=5){endRound(w);return;}
+  const D=DIFF(w.rnd);w.ducks=roundPairs(w.rnd)[w.pair].map((d,i)=>{const K=DUCK_KIND[d.kind],sp=K.sp*(1+w.pair*.1)*D.sp;return {i:w.pair*2+i,kind:d.kind,x:d.x,y:L.FH*.72,vx:Math.cos(d.a)*sp,vy:Math.sin(d.a)*sp,state:'fly',flap:0,turn:D.turn+Math.random()*D.turn,fall:0};});
   w.state='fly';voice(1046,.08,.04,'square');voice(1318,.08,.04,'square',{delay:.1});}
+ function endRound(w){const got=w.hits.filter(Boolean).length,D=DIFF(w.rnd);w.passed=got>=D.quota;
+  if(w.hits.every(h=>h===1)){w.score+=10000;w.perfect=true;voice(784,.3,.05,'square');}
+  if(single||!w.passed){w.state='done';w.over=!w.passed;if(!w.passed){for(let k=0;k<5;k++)voice(330-k*40,.16,.05,'square',{delay:k*.16});}return;}
+  w.cleared++;w.score+=500*(w.rnd+1);w.state='clear';w.t=0;voice(659,.1,.05,'square');voice(784,.1,.05,'square',{delay:.12});voice(1046,.25,.05,'square',{delay:.24});}
  function shoot(w,px,py){if(w.state!=='fly'||w.shots<=0)return;w.shots--;w.flash=.06;noise(.18,.12,{f0:2600,f1:300});voice(120,.12,.06,'square',{slide:.4});w.shotFx.push({x:px,y:py,t:.25});
-  for(const d of w.ducks)if(d.state==='fly'&&Math.hypot(d.x-px,d.y-py)<22){d.state='hit';d.t=.5;w.hits[d.i]=1;w.score+=DUCK_KIND[d.kind].pts;s.react?.(w.player,'happy',.8);vibrate(15);return;}
+  for(const d of w.ducks)if(d.state==='fly'&&Math.hypot(d.x-px,d.y-py)<DIFF(w.rnd).hitR){d.state='hit';d.t=.5;w.hits[d.i]=1;w.score+=DUCK_KIND[d.kind].pts;s.react?.(w.player,'happy',.8);vibrate(15);return;}
   if(w.shots<=0&&w.ducks.some(d=>d.state==='fly'))w.t=Math.max(w.t,9);}
  s.on(c,'pointerdown',ev=>{if(s.paused||!s.alive||!cur||!L)return;ev.preventDefault();const p=s.pointer(ev),f=L.toField(p.x,p.y);shoot(cur,f.x,f.y);});
  s.on(document,'keydown',ev=>{if((ev.key===' '||ev.key==='Enter')&&cur){const d=cur.ducks.find(q=>q.state==='fly');if(d){ev.preventDefault();shoot(cur,d.x+(Math.random()-.5)*20,d.y+(Math.random()-.5)*20);}}});
@@ -31,15 +44,18 @@ async function duckturn(s){
  function step(w,dt){
   shake.step(dt);w.t+=dt;w.flash=Math.max(0,w.flash-dt);w.sky=Math.max(0,w.sky-dt*.6);for(const f of w.shotFx)f.t-=dt;w.shotFx=w.shotFx.filter(f=>f.t>0);
   const dog=w.dog;dog.t+=dt;
-  if(w.state==='start'){if(w.t>1.2)nextPair(w);return;}
+  if(w.rnd==null)w.rnd=w.round||0;   // the solo runner sets w.round after make()
+  if(w.state==='start'){if(w.t>1.4)nextPair(w);return;}
+  if(w.state==='clear'){if(w.t>2.2){w.rnd++;newRound(w);}return;}
+  const D=DIFF(w.rnd);
   if(w.state==='fly'){
    for(const d of w.ducks){d.flap+=dt*10;
-    if(d.state==='fly'){if(w.t>8.5){d.state='away';w.sky=1;}d.turn-=dt;if(d.turn<=0){d.turn=.6+Math.random()*.8;const a=Math.atan2(d.vy,d.vx)+(Math.random()-.5)*1.4,sp=Math.hypot(d.vx,d.vy);d.vx=Math.cos(a)*sp;d.vy=Math.sin(a)*sp;}
+    if(d.state==='fly'){if(w.t>D.away){d.state='away';w.sky=1;}d.turn-=dt;if(d.turn<=0){d.turn=D.turn+Math.random()*D.turn;const a=Math.atan2(d.vy,d.vx)+(Math.random()-.5)*D.swerve,sp=Math.hypot(d.vx,d.vy);d.vx=Math.cos(a)*sp;d.vy=Math.sin(a)*sp;}
      d.x+=d.vx*dt;d.y+=d.vy*dt;if(d.x<10||d.x>FW-10){d.vx*=-1;d.x=clamp(d.x,10,FW-10);}if(d.y<14){d.vy=Math.abs(d.vy);}if(d.y>L.FH*.66){d.vy=-Math.abs(d.vy);}}
     else if(d.state==='away'){d.y-=110*dt;d.vx*=.98;d.x+=d.vx*dt*.3;}
     else if(d.state==='hit'){d.t-=dt;if(d.t<=0){d.state='fall';voice(900,.5,.04,'square',{slide:.3});}}
     else if(d.state==='fall'){d.y+=130*dt;if(d.y>L.FH*.8){d.state='down';}}}
-   if(w.t>8.5&&w.ducks.some(d=>d.state==='fly')){for(const d of w.ducks)if(d.state==='fly'){d.state='away';}w.sky=1;}
+   if(w.t>D.away&&w.ducks.some(d=>d.state==='fly')){for(const d of w.ducks)if(d.state==='fly'){d.state='away';}w.sky=1;}
    if(w.ducks.every(d=>d.state==='down'||d.state==='away'&&d.y<-30)){const got=w.ducks.filter(d=>d.state==='down').length;w.state='dog';dog.mode=got?'show':'laugh';dog.n=got;dog.t=0;dog.x=got?w.ducks.find(d=>d.state==='down').x:FW/2;
     if(got){voice(523,.1,.05,'square');voice(659,.1,.05,'square',{delay:.1});voice(784,.2,.05,'square',{delay:.2});}else{for(let k=0;k<4;k++)voice(400-k*30,.1,.04,'square',{delay:k*.12});s.react?.(w.player,'sad',1.2);}}}
   if(w.state==='dog'){const up=dog.t<.5?dog.t/.5:dog.t<1.4?1:Math.max(0,1-(dog.t-1.4)/.4);dog.y=up;if(dog.t>1.9){dog.mode='hide';nextPair(w);}}
@@ -67,20 +83,23 @@ async function duckturn(s){
   x.fillStyle='#887000';x.fillRect(-ox/k-2,ground-2,FW+ox*2/k+4,FH-ground+40);x.fillStyle='#503000';for(let q=0;q<40;q++)x.fillRect((q*37)%FW,ground+4+(q*13)%(FH-ground-30),3,2);
   // bottom bar: R=, SHOT, HIT, SCORE
   const by=FH-26;x.fillStyle='#000';x.fillRect(4,by,40,22);x.fillRect(50,by,120,22);x.fillRect(176,by,76,22);
-  pixText(x,`R=${w.player+1}`,8,by+2,.9,'#80d010');pixText(x,'SHOT',8,by+12,.8,'#3cbcfc');for(let q=0;q<3;q++){x.fillStyle=q<w.shots?'#fcfcfc':'#383838';x.fillRect(30+q*4,by+11,2.4,6);}
+  pixText(x,`R=${(w.rnd??0)+1}`,8,by+2,.9,'#80d010');pixText(x,'SHOT',8,by+12,.8,'#3cbcfc');for(let q=0;q<3;q++){x.fillStyle=q<w.shots?'#fcfcfc':'#383838';x.fillRect(30+q*4,by+11,2.4,6);}
   pixText(x,'HIT',54,by+3,.8,'#80d010');for(let q=0;q<10;q++){x.fillStyle=w.hits[q]?'#f83800':(q>=(w.pair*2)&&q<w.pair*2+2&&Math.floor(w.t*6)%2?'#fcfcfc':'#fcfcfc88');drawSprite(x,['.##.','####','.##.'],56+q*11,by+12,1.6,x.fillStyle,{res:Math.max(1,Math.round(k))});}
+  {const qn=DIFF(w.rnd??0).quota;x.fillStyle='#3cbcfc';for(let q=0;q<qn;q++)x.fillRect(56+q*11,by+19,8,1.5);}   // the quota bar under HIT, like the NES
   pixText(x,String(w.score).padStart(6,'0'),246,by+3,.9,'#fcfcfc',{align:'right'});pixText(x,'SCORE',246,by+13,.8,'#fcfcfc',{align:'right'});
-  if(w.state==='start')pixText(x,`ROUND ${w.player+1}`,FW/2,FH*.3,1.6,'#fcfcfc',{align:'center'});
+  if(w.state==='start'){pixText(x,`ROUND ${(w.rnd??0)+1}`,FW/2,FH*.3,1.6,'#fcfcfc',{align:'center'});pixText(x,`HIT ${DIFF(w.rnd??0).quota} OF 10`,FW/2,FH*.3+18,.9,'#fcfcfc',{align:'center'});}
+  if(w.state==='clear')pixText(x,`ROUND ${w.rnd+1} CLEAR!`,FW/2,FH*.3,1.4,'#fcfcfc',{align:'center'});
+  if(w.state==='done'&&w.over)pixText(x,'GAME OVER',FW/2,FH*.42,1.6,'#f83800',{align:'center'});
   if(w.sky>0&&w.ducks.some(d=>d.state==='away'))pixText(x,'FLY AWAY',FW/2,FH*.3,1.6,'#000',{align:'center'});
   if(w.perfect&&w.state==='done')pixText(x,'PERFECT!! 10000',FW/2,FH*.3,1.4,'#fcfcfc',{align:'center'});
   if(w.player===1&&w.state!=='done')pixText(x,`BEAT ${w.scores[0]}`,FW/2,6,.8,'#ffffff',{align:'center'});
   for(const f of w.shotFx){x.strokeStyle=`rgba(255,255,255,${f.t*4})`;x.lineWidth=1;x.beginPath();x.arc(f.x,f.y,6+(.25-f.t)*30,0,Math.PI*2);x.stroke();}
   x.setTransform(1,0,0,1,0,0);
-  s.debug={engine:'duckturn',world:w};
+  s.debug={engine:'duckturn',world:w,DIFF,shootAll:()=>{for(const d of w.ducks)if(d.state==='fly')shoot(w,d.x,d.y);}};
  }
- const scores=await turnRunner(s,{seconds:120,endDelay:1.4,
-  intro:(i,sc)=>i===0?`Duck Hunt, except every duck is wearing ${s.players[1].name}'s head. ${s.players[0].name} shoots first: tap the ducks, three shots per pair, ten ducks in all.`:`${s.players[1].name}, same flight patterns (and now they look like ${s.players[0].name}). Beat ${sc[0]}.`,
-  make:()=>{cur=make();cur.dog={mode:'hide',t:0,y:0,n:0,x:FW/2};return cur;},step,draw,done:w=>w.state==='done',soloPass:(w,sc,r)=>w.hits.filter(Boolean).length>=Math.min(9,6+r),soloGoal:r=>`Hit at least ${Math.min(9,6+r)} of the 10 ducks to reach the next round.`,score:w=>w.score});
+const scores=await turnRunner(s,{seconds:capSecs,endDelay:2,ownPace:true,
+  intro:(i,sc)=>i===0?`Duck Hunt, except every duck is wearing ${s.players[1].name}'s head. ${s.players[0].name} shoots first: tap the ducks, three shots per pair. Hit the round's quota to go on; every round is faster and harder. Miss it and you're out.`:`${s.players[1].name}, same flight patterns (and now they look like ${s.players[0].name}). Beat ${sc[0]}.`,
+  make:()=>{cur=make();cur.dog={mode:'hide',t:0,y:0,n:0,x:FW/2};return cur;},step,draw,done:w=>w.state==='done',soloPass:(w,sc,r)=>!!w.passed,soloGoal:r=>`Hit at least ${DIFF(r).quota} of the 10 ducks to reach round ${r+2}. The ducks get faster and wilder every round.`,score:w=>w.score});
  if(!scores)return;
  s.finish(scores,`Head Hunt · ${scores[0]} vs ${scores[1]}`);
 }

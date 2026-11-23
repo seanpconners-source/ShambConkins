@@ -115,8 +115,8 @@ async function soloTurnRuns(s,cfg){
   cfg.draw(w,dt);s.setScores([total+Math.max(0,Math.round(cfg.score(w))),0]);});
  const goal=r=>cfg.soloTarget?`Score at least ${cfg.soloTarget(r)} to reach round ${r+2}.`:cfg.soloGoal?cfg.soloGoal(r):'Last until the clock runs out to reach the next round.';
  for(;;){
-  w=cfg.make(0);w.player=0;w.time=0;w.ending=0;w.cap=cfg.seconds;w.scores=[total,0];w.round=round;w.soloK=soloSpeed(round);
-  const body=round?`${goal(round)} Everything moves ${Math.round(w.soloK*100-100)}% faster than round 1.`:`${cfg.intro(0,[0,0])} ${goal(0)} Each round after that runs faster.`;
+  w=cfg.make(0);w.player=0;w.time=0;w.ending=0;w.cap=cfg.seconds;w.scores=[total,0];w.round=round;w.soloK=cfg.ownPace?1:soloSpeed(round);   // ownPace: the game makes each round harder itself
+  const body=round?(cfg.ownPace?goal(round):`${goal(round)} Everything moves ${Math.round(w.soloK*100-100)}% faster than round 1.`):`${cfg.intro(0,[0,0])} ${goal(0)}${cfg.ownPace?'':' Each round after that runs faster.'}`;
   if(!await s.pass(0,body,cfg.readyText||'Ready — start my countdown',{countdown:3,soloTitle:`Round ${round+1}`,summary:round?`Round ${round} beaten. ${total} points so far.`:null}))return null;
   running=true;await new Promise(r=>res=r);if(!s.alive)return null;
   const sc=Math.max(0,Math.round(cfg.score(w)));total+=sc;s.setScores([total,0]);

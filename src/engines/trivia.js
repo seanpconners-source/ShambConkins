@@ -61,11 +61,13 @@ async function trivia(s) {
  const drawn=net?chooseTriviaDifficulty(tag,s.random):TRIVIA_LEVELS.includes(s.game.triviaDifficulty)?s.game.triviaDifficulty:s.practice?chooseTriviaDifficulty(tag,s.random):drawTriviaDifficulty(store.profile,tag,s.random);
  const difficulty=TRIVIA_LEVELS.includes(drawn)?drawn:'varied',pool=triviaPool(tag,difficulty==='varied'?null:difficulty);
  // Limit a small authored topic to distinct, on-topic questions, split evenly for lightning.
- const count=mode==='lightning'?Math.min(24,Math.floor(pool.length/2)*2):Math.min(tag==='lore'?6:8,pool.length);
+ const count=mode==='lightning'?Math.min(24,Math.floor(pool.length/2)*2):Math.min(tag==='lore'?6:s.players.length<2?10:8,pool.length);
  if(count<(mode==='lightning'?2:1))throw new Error('No playable trivia questions for topic '+tag);
  const rounds=selectTrivia(tag,net?[]:store.profile.recentTrivia||[],net?[]:store.run?.triviaSeen||[],s.random,count,difficulty==='varied'?null:difficulty);
  // vs CPU: one human, so hand-off cards are skipped; the CPU answers its own turns and steals (cpuKit.cpuTriviaPick)
  const cpu=isCpu(s);if(cpu||net)s.hotseat=true;
+ // Played alone (launcher 'Play alone', one player): every question is yours, a miss just shows the answer.
+ const alone=s.players.length<2;
  if(mode)return playTriviaMode(s,{difficulty,rounds,seconds:triviaSeconds,points:triviaPoints,introHTML:difficultyDrawHTML(difficulty)});
  const score=[0,0];let round=0,lead=0,q,wrong=-1,locked=false,answers=[],stopClock=null,clockToken=0;
  const clearClock=()=>{clockToken++;stopClock?.();stopClock=null;};s.cleanup(clearClock);
@@ -89,14 +91,15 @@ async function trivia(s) {
   if(net&&!remote)net.send({a:choice?choice.index:null});button?.classList.add(correct?'correct':'wrong');
   s.body.querySelectorAll('[data-answer]').forEach(b=>b.disabled=true);const feedback=document.getElementById('trivia-feedback');
   if(correct) {const pts=triviaAward(q.difficulty,steal);score[player]+=pts;s.setScores(score);s.react?.(player,'win');triviaMark(feedback,'correct');feedback.textContent=`✨ ${who}${steal?'STEAL!':'CORRECT!'} +${pts} points! ✨ ${q.answers[q.correct]}.`;resolved();}
+  else if(!steal&&alone) {s.react?.(player,'sad');triviaMark(feedback,choice?'wrong':'timeout');feedback.textContent=`${choice?'BUZZ! Wrong — this does not represent me.':'Time’s up!'} The answer: ${q.answers[q.correct]}.`;s.body.querySelectorAll('[data-answer]').forEach((b,j)=>{if(answers[j]?.index===q.correct)b.classList.add('correct');});resolved();}
   else if(!steal) {wrong=choice?.index??-1;s.react?.(player,'sad');triviaMark(feedback,choice?'wrong':'timeout');feedback.textContent=`${who}${choice?'BUZZ! Wrong — this does not represent me.':'Time’s up!'} The answer stays hidden. ${s.players[1-lead].name} gets a steal.`;s.debug.phase='pass-steal';nextButton(`Pass to ${s.players[1-lead].name}`,async()=>{if(!await s.pass(1-lead,`Steal chance: ${difficulty.toUpperCase()} · ${triviaSeconds(q.difficulty)} seconds. Same question${wrong<0?'':', with the previous wrong answer removed'}.`))return;questionView(1-lead,true);});}
   else {s.react?.(player,'sad');triviaMark(feedback,choice?'wrong':'timeout');feedback.textContent=`${who}${choice?'BUZZ! No steal — this does not represent me.':'Time’s up on the steal.'} Correct answer: ${q.answers[q.correct]}.`;s.body.querySelectorAll('[data-answer]').forEach((b,i)=>{if(answers[i].index===q.correct)b.classList.add('correct');});resolved();}
  }
  async function startRound() {
-  clearClock();if(round>=rounds.length)return s.finish(score,`${difficulty.toUpperCase()} · ${rounds.length} timed shared rounds complete.`);
-  lead=round%2;q=rounds[round];wrong=-1;
+  clearClock();if(round>=rounds.length)return s.finish(alone?[score[0]]:score,alone?`${difficulty.toUpperCase()} · ${score[0]} points from ${rounds.length} questions.`:`${difficulty.toUpperCase()} · ${rounds.length} timed shared rounds complete.`);
+  lead=alone?0:round%2;q=rounds[round];wrong=-1;
   if(!s.practice) {store.profile.recentTrivia=[...store.profile.recentTrivia.filter(id=>id!==q.id),q.id].slice(-TRIVIA.length);if(store.run)store.run.triviaSeen=[...(store.run.triviaSeen||[]).filter(id=>id!==q.id),q.id].slice(-TRIVIA.length);saveProfile(store.profile);}
-  if(!await s.pass(lead,`${difficulty.toUpperCase()} · Round ${round+1} of ${rounds.length}. ${triviaSeconds(q.difficulty)} seconds per answer; a miss or timeout passes this question to ${s.players[1-lead].name}.`,'Ready — answer',{introHTML:round===0?difficultyDrawHTML(difficulty):''}))return;
+  if((!alone||round===0)&&!await s.pass(lead,alone?`${difficulty.toUpperCase()} · ${rounds.length} questions, all yours. ${triviaSeconds(q.difficulty)} seconds per answer; harder questions pay more.`:`${difficulty.toUpperCase()} · Round ${round+1} of ${rounds.length}. ${triviaSeconds(q.difficulty)} seconds per answer; a miss or timeout passes this question to ${s.players[1-lead].name}.`,'Ready — answer',{introHTML:round===0?difficultyDrawHTML(difficulty):''}))return;
   questionView(lead,false);
  }
  await startRound();

@@ -72,6 +72,10 @@ const cpuSkill=s=>s?.solo?.skill??SOLO_SKILL.normal;
 // Engines keep s.soloProgress = {score, level, label} current so Exit can bank the run.
 function soloProgress(s,score,level,label=''){if(s?.solo)s.soloProgress={score:Math.max(0,Math.floor(score)||0),level:Math.max(0,Math.floor(level)||0),label};}
 // End a solo run: scores [player, 0]; won = cleared at least one level (or beat the CPU).
+// 1P 'cpu' games that also make sense on your own (owner, Nov 23): the launcher asks Play alone / Vs CPU. Alone = one player,
+// kind 'game', the engine plays a whole game for one; won = a new personal best.
+const SOLO_ALONE_ENGINES=new Set(['bowling','trivia','millionaire']);
+const soloAloneOK=g=>!!g&&soloKind(g)==='cpu'&&SOLO_ALONE_ENGINES.has(g.engine);
 function soloFinish(s,score,level,label,won=level>0){if(!s?.solo||!s.alive)return;soloProgress(s,score,level,label);s.solo.won=!!won;s.finish([Math.max(0,Math.floor(score)||0),0],label);}
 // Between levels: a card with the run so far. Resolves true to keep going (Exit on the card banks the run).
 async function soloNext(s,{title='Level cleared!',body='',level=1,score=0,label='Next level'}={}){if(!s?.alive)return false;return s.pass(0,body,label,{summary:`${title} Level ${level} · ${Number(score).toLocaleString()} points so far.`,soloTitle:title});}
@@ -112,4 +116,4 @@ function duelOK(g){return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&(DUEL_KINDS.h
 // 1P board game (src/cpuBoard.js): the human plays games with a real CPU opponent ('cpu') or co-op games alone ('alone':
 // bosses, the horde); score-attack kinds can't decide a head-to-head board game, and CPU-teammate games are left out.
 function boardCpuKind(g){const k=soloKind(g);return !!g&&!g.pokemon&&!SOLO_HIDDEN.has(g.id)&&!SOLO_COOP.has(g.id)&&(k==='cpu'||k==='alone')?k:null;}
-Object.assign(exports,{boardCpuKind,duelOK,netNative,NET_NATIVE,SOLO_LEVELS,SOLO_LEVEL_NAMES,SOLO_SKILL,soloKind,soloHidden,soloCoop,soloSettings,setSolo,normalizeSoloSettings,normalizeSoloBest,soloBest,recordSolo,soloBestText,isSolo,cpuSkill,soloProgress,soloFinish,soloNext});
+Object.assign(exports,{soloAloneOK,boardCpuKind,duelOK,netNative,NET_NATIVE,SOLO_LEVELS,SOLO_LEVEL_NAMES,SOLO_SKILL,soloKind,soloHidden,soloCoop,soloSettings,setSolo,normalizeSoloSettings,normalizeSoloBest,soloBest,recordSolo,soloBestText,isSolo,cpuSkill,soloProgress,soloFinish,soloNext});

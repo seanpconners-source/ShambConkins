@@ -8,6 +8,7 @@ const {isCpu,isOnline,cpuSkill,cpuTriviaPick,cpuThinkTime,cpuTriviaTurn}=require
 async function playTriviaMode(s,{difficulty,rounds,seconds,points,introHTML}){
  const mode=s.game.triviaMode,lightning=mode==='lightning',survival=mode==='survival',lightningPerPlayer=lightning?rounds.length/2:0,score=survival?[0,0]:mode==='wager'?[10,10]:[0,0],lives=[3,3],answersByPlayer=[null,null],bets=[1,1],streak=[0,0],time=[60,60];
  let round=0,player=0,q=null,choices=[],phase='handoff',stop=null,token=0,first=0;
+ const alone=s.players.length<2; // played alone: only player 0, every answer settles at once
  const cpu=isCpu(s); // vs CPU: the CPU wagers, answers and passes on its own turns; result screens wait for the human
  // Online: the other phone's wagers and answers arrive as moves ({w} / {a, t}: answer index or null, lightning seconds left).
  const net=isOnline(s)?s.online:null,theirs=()=>!!net&&player===net.remote;
@@ -32,9 +33,10 @@ async function playTriviaMode(s,{difficulty,rounds,seconds,points,introHTML}){
    net.next().then(async m=>{if(!m||guard!==token||phase!=='answer'||!await live())return;if(lightning&&Number.isFinite(m.t))time[player]=Math.max(0,m.t);const pos=m.a==null?-1:choices.findIndex(c=>c.index===m.a);answer(pos<0?null:pos,true);});}
   if(cpu&&player===1)cpuTriviaTurn(s,{q,choices,buttons:[...s.body.querySelectorAll('[data-answer]')],feedback:document.getElementById('mode-feedback'),hidden:!lightning,live:()=>guard===token&&phase==='answer'&&s.alive,pick:pos=>answer(pos)});
  }
- function finish(){clear();phase='finished';const result=survival?score.map((v,i)=>lives[i]*100+v):score;s.finish(result,survival?`Lives ${lives[0]}–${lives[1]}; correct points ${score[0]}–${score[1]}.`:mode==='wager'?`Quiz bankrolls ${score[0]}–${score[1]}.`:`Lightning points ${score[0]}–${score[1]}.`);}
+ function finish(){clear();phase='finished';const result=survival?score.map((v,i)=>lives[i]*100+v):score;if(alone)return s.finish([result[0]],survival?`${lives[0]} lives left · ${score[0]} correct points.`:mode==='wager'?`Bankroll ${score[0]} chips.`:`${score[0]} lightning points.`);s.finish(result,survival?`Lives ${lives[0]}–${lives[1]}; correct points ${score[0]}–${score[1]}.`:mode==='wager'?`Quiz bankrolls ${score[0]}–${score[1]}.`:`Lightning points ${score[0]}–${score[1]}.`);}
  async function beginPlayer(intro=false){
-  clear();phase='handoff';s.body.innerHTML=frameHTML();debug();const description=lightning?`${s.players[player].name}: sixty seconds of answer time. Twelve questions maximum. Feedback pauses the clock. ${difficulty.toUpperCase()} questions.`:survival?'Private answer: three misses ends your run. Both players get the same question.':'Choose your wager BEFORE seeing the question. Both players answer privately before the result is revealed.';
+  clear();phase='handoff';s.body.innerHTML=frameHTML();debug();const description=lightning?`${s.players[player].name}: sixty seconds of answer time. Twelve questions maximum. Feedback pauses the clock. ${difficulty.toUpperCase()} questions.`:survival?(alone?'Three misses ends your run. Every right answer scores.':'Private answer: three misses ends your run. Both players get the same question.'):(alone?'Choose your wager BEFORE seeing the question. Right answers win the chips, wrong ones lose them.':'Choose your wager BEFORE seeing the question. Both players answer privately before the result is revealed.');
+  if(alone&&!intro&&!lightning){if(mode==='wager')wagerView();else questionView();return;}
   if(!await s.pass(player,description,'Ready — my turn',{countdown:lightning?3:0,introHTML:intro?introHTML:''}))return;
   if(mode==='wager')wagerView();else questionView();
  }
@@ -50,14 +52,14 @@ async function playTriviaMode(s,{difficulty,rounds,seconds,points,introHTML}){
    phase='feedback';const who=(cpu||net)?`${s.players[player].name}: `:'',message=who+(correct?'✨ CORRECT! ✨':selected?'BUZZ! MISSED — this does not represent me':'TIME’S UP');
    s.body.innerHTML=frameHTML(`<div class="trivia-question trivia-result ${correct?'trivia-celebrate'+motion():'trivia-incorrect'}">${message} · ${escapeHTML(q.answers[q.correct])}</div>${triviaExplanationHTML(q)}`);debug();
    const ended=time[player]<=.05||round+1>=lightningPerPlayer;
-   action(ended?(player===0?'Pass to player 2':'See the result'):'Next lightning question',async()=>{round++;if(ended){if(player===1)return finish();player=1;round=0;q=rounds[lightningPerPlayer];await beginPlayer();}else{q=rounds[player*lightningPerPlayer+round];questionView();}});return;
+   action(ended?(player===0&&!alone?'Pass to player 2':'See the result'):'Next lightning question',async()=>{round++;if(ended){if(player===1||alone)return finish();player=1;round=0;q=rounds[lightningPerPlayer];await beginPlayer();}else{q=rounds[player*lightningPerPlayer+round];questionView();}});return;
   }
   // Wagers, selected answers and correctness remain hidden until BOTH commit.
   s.body.innerHTML=frameHTML(`<div class="trivia-question">Answer locked.</div><p class="trivia-feedback">The answer stays hidden until both players finish.</p>`);debug();
-  if(player===first){action('Pass to '+s.players[1-first].name,async()=>{player=1-first;await beginPlayer();});return;}
-  for(let i=0;i<2;i++){const correct=answersByPlayer[i]===q.correct;if(survival){if(correct)score[i]+=value();else lives[i]--;}else score[i]=Math.max(0,score[i]+(correct?bets[i]:-bets[i]));s.react?.(i,correct?'win':'sad');}
+  if(player===first&&!alone){action('Pass to '+s.players[1-first].name,async()=>{player=1-first;await beginPlayer();});return;}
+  for(let i=0;i<(alone?1:2);i++){const correct=answersByPlayer[i]===q.correct;if(survival){if(correct)score[i]+=value();else lives[i]--;}else score[i]=Math.max(0,score[i]+(correct?bets[i]:-bets[i]));s.react?.(i,correct?'win':'sad');}
   s.setScores(score);phase='feedback';const somebodyRight=answersByPlayer.some(a=>a===q.correct),somebodyWrong=answersByPlayer.some(a=>a!==null&&a!==q.correct);triviaCue(somebodyRight&&somebodyWrong?'mixed':somebodyRight?'correct':somebodyWrong?'wrong':'timeout');s.body.innerHTML=frameHTML(`<div class="trivia-question trivia-result ${somebodyRight?'trivia-celebrate'+motion():'trivia-incorrect'}">${somebodyRight?'✨ CORRECT! ✨ · ':''}${escapeHTML(q.answers[q.correct])}</div><p class="trivia-feedback">${s.players.map((p,i)=>escapeHTML(p.name)+': '+(answersByPlayer[i]===q.correct?'correct!':answersByPlayer[i]===null?'time’s up':'BUZZ! this does not represent me')+(mode==='wager'?' · '+(answersByPlayer[i]===q.correct?'+':'−')+bets[i]+' chips':'')).join(' · ')}</p>${triviaExplanationHTML(q)}`);debug();
-  const over=round>=rounds.length-1||(survival?lives.some(v=>v===0):score.some(v=>v===0));action(over?'See the result':'Next shared question',async()=>{if(over)return finish();round++;first=round%2;player=first;q=rounds[round];answersByPlayer.fill(null);await beginPlayer();});
+  const over=round>=rounds.length-1||(survival?lives.some(v=>v===0):score.some(v=>v===0));action(over?'See the result':'Next shared question',async()=>{if(over)return finish();round++;first=alone?0:round%2;player=first;q=rounds[round];answersByPlayer.fill(null);await beginPlayer();});
  }
  q=rounds[0];await beginPlayer(true);
 }

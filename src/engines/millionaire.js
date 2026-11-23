@@ -165,6 +165,8 @@ async function millionaire(s){
   const bank=await playLadder(me);if(!s.alive)return;scores[me]=bank;net.send({fin:bank});st.phase='wait';st.q=null;st.order=[];draw(`You banked ${money(bank)}. Waiting for ${e(s.players[1-me].name)}…`);
   await read;if(!s.alive)return;scores[1-me]=theirBank||0;s.setScores(scores);
   s.finish(scores,`${s.players[0].name} ${money(scores[0])} · ${s.players[1].name} ${money(scores[1])}.`);return;}
+ // played alone (one player): one ladder, the bank is the score
+ if(s.players.length<2){if(!await s.pass(0,`Fifteen questions to $1,000,000. Tap an answer, then FINAL ANSWER. A wrong answer drops you to the last safe haven ($1,000, then $32,000). You have 50:50, Ask the Audience and Phone a Friend, once each.`,'Let’s play'))return;scores[0]=await playLadder(0);if(!s.alive)return;s.setScores(scores);s.finish([scores[0]],`${s.players[0].name} banked ${money(scores[0])}.`);return;}
  for(const i of [0,1]){
   if(!await s.pass(i,`Fifteen questions to $1,000,000. Tap an answer, then FINAL ANSWER. A wrong answer drops you to the last safe haven ($1,000, then $32,000). You have 50:50, Ask the Audience and Phone a Friend, once each.`,'Let’s play',i?{summary:`${s.players[0].name} banked ${money(scores[0])}.`}:{}))return;
   scores[i]=await playLadder(i);if(!s.alive)return;s.setScores(scores);}
