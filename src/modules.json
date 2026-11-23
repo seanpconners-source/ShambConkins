@@ -581,7 +581,10 @@
   "src/engines/tchase/road.js",
   "src/engines/tchase/sim.js",
   "src/engines/tchase/art.js",
-  "src/data/tchaseSprites.js"
+  "src/data/tchaseSprites.js",
+  "src/engines/terminatorChase.js",
+  "src/engines/tchase/sound.js",
+  "src/engines/tchase/cut.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }

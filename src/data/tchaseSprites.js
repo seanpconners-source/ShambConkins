@@ -9,12 +9,12 @@ let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}ca
 const PX=2;
 // sheets: frames side by side, every frame the same cell size
 const SHEETS={
- bike:{cell:[72,128],frames:['lean-left','straight','lean-right'],face:[36,62,30],what:'the hero\'s black Harley-Davidson Fat Boy seen from straight above, nose up, with the rider (black leather jacket, broad shoulders) HEADLESS: the face spot is the top of his head. lean frames tilt the bike and rider ~12 degrees'},
+ bike:{cell:[72,128],frames:['lean-left','straight','lean-right'],face:[36,58,40],what:'the hero\'s black Harley-Davidson Fat Boy seen from straight above, nose up, with the rider (black leather jacket, broad shoulders) HEADLESS: the face spot is the top of his head. lean frames tilt the bike and rider ~12 degrees'},
  moto:{cell:[64,120],frames:['straight','lean'],what:'police motorcycle from above, nose up, white with blue stripes, light bar at the back, the officer in a dark-blue uniform and white helmet'},
  cruiser:{cell:[88,152],frames:['lights-a','lights-b'],what:'1990s police cruiser from above, nose up: black body with white doors and roof, light bar across the roof (frame a = left red lit, frame b = right blue lit), roof number, windows dark'},
- 't1000-run':{cell:[80,96],frames:['run1','run2','run3','run4','run5','run6'],face:[40,30,30],what:'the T-1000 as a police officer (dark-blue uniform, black belt) running UP the screen, seen from above and a little behind, arms pumping; HEADLESS (face spot = top of the head)'},
+ 't1000-run':{cell:[96,128],frames:['run1','run2','run3','run4','run5','run6'],face:[48,36,52],what:'the T-1000 as a police officer (dark-blue uniform, black belt) running UP the screen, seen from above and a little behind, arms pumping; HEADLESS (face spot = top of the head)'},
  't1000-splash':{cell:[96,96],frames:['hit1','hit2','puddle','reform'],what:'liquid-metal T-1000 being knocked down: chrome splashes, then a silver puddle, then rising back up (chrome, reflective, no face)'},
- 't1000-bike':{cell:[64,120],frames:['straight','blade'],face:[32,54,26],what:'the T-1000 on a police motorcycle from above, nose up; blade = one arm turned into a long chrome blade held out to the side; HEADLESS'},
+ 't1000-bike':{cell:[64,120],frames:['straight','blade'],face:[32,64,44],what:'the T-1000 on a police motorcycle from above, nose up; blade = one arm turned into a long chrome blade held out to the side; HEADLESS'},
  explosion:{cell:[192,192],frames:['1','2','3','4','5','6','7','8'],what:'big fireball from above, 8 frames from flash to smoke, orange and yellow fire, black smoke, transparent'},
  smoke:{cell:[96,96],frames:['1','2','3','4','5','6'],what:'grey smoke puff from above growing and fading, transparent'},
  fire:{cell:[96,96],frames:['1','2','3','4','5','6'],what:'burning flames from above, looping, transparent'},
@@ -24,9 +24,9 @@ const SHEETS={
  ln2:{cell:[128,128],frames:['1','2','3','4'],what:'liquid nitrogen fog cloud, icy white-blue mist, transparent'}};
 // single pictures
 const PICTURES={
- wagon:{w:96,h:160,face:[48,70,26],what:'brown 1980s station wagon from above, nose up, wood-panel sides, roof rack; the driver\'s seat area under the open sunroof = face spot (the game draws the driver\'s face)'},
- van:{w:112,h:192,face:[56,60,28],what:'navy-blue SWAT van from above, nose up, SWAT on the roof, a side door open with a minigun barrel poking out on the right; roof hatch = face spot'},
- pickup:{w:100,h:176,face:[50,62,26],what:'dark 4x4 pickup truck from above, nose up, open bed with crates; the cab roof hatch = face spot'},
+ wagon:{w:96,h:160,face:[48,70,48],what:'brown 1980s station wagon from above, nose up, wood-panel sides, roof rack; the driver\'s seat area under the open sunroof = face spot (the game draws the driver\'s face)'},
+ van:{w:112,h:192,face:[56,60,48],what:'navy-blue SWAT van from above, nose up, SWAT on the roof, a side door open with a minigun barrel poking out on the right; roof hatch = face spot'},
+ pickup:{w:100,h:176,face:[50,62,48],what:'dark 4x4 pickup truck from above, nose up, open bed with crates; the cab roof hatch = face spot'},
  swat:{w:112,h:196,what:'enemy armored SWAT truck from above, nose up, black with grey armor plates, gun ports, light bar'},
  heli:{w:200,h:240,what:'police helicopter from above WITHOUT its main rotor (the game spins it), nose up, dark blue and white, skids, tail boom with tail rotor'},
  'heli-rotor':{w:260,h:260,what:'helicopter main rotor seen from above: 2 long dark blades crossing at the centre hub, transparent (the game spins and blurs it)'},

@@ -52,7 +52,7 @@ function threat(w){let s=0;for(const e of w.E)if(!e.dead)s+={cruiser:1,moto:.7,s
 function pickMix(w){const m=w.st.mix,keys=Object.keys(m).filter(k=>!['spikes','roadblock','civ'].includes(k));let tot=0;for(const k of keys)tot+=m[k];let r=w.rand()*tot;for(const k of keys){r-=m[k];if(r<=0)return k;}return keys[0];}
 function spawnStep(w,dt){const P=w.P,top=P.y+w.viewAhead+120,bot=P.y-w.viewBehind-60;
  // warnings: the chaser drives in once its arrow has shown
- for(const k of w.warns){k.t-=dt;if(k.t<=0&&!k.done){k.done=true;const type=k.type,y=w.camY-w.viewBehind-50;
+ for(const k of w.warns){k.t-=dt;if(k.t<=0&&!k.done){k.done=true;const type=k.type,y=w.P.y-w.viewBehind-50;
   if(type==='cruiser')foe(w,'cruiser',k.x,y,w.speed+150,{state:'chase'});
   else if(type==='moto')foe(w,'moto',k.x,y,w.speed+180,{state:'chase'});
   else if(type==='boss')spawnBoss(w,k.o.kind,k.x,y);}}
@@ -246,7 +246,8 @@ function step(w,dt,inp={}){
  if(P.air<=0&&!P.dead&&w.course.rampAt(P.x,P.y)){P.air=.85+(nOn?.25:0);P.airT=P.air;addScore(w,100,P.x,P.y+30,'AIR');w.log.push(['jump']);}
  if(P.air>0){P.air-=sd;if(P.air<=0){w.shake=Math.max(w.shake,5);burst(w,P.x,P.y,'dust',10,{vy:w.speed});w.log.push(['land']);}}
  P.invT=Math.max(0,P.invT-sd);P.hitT=Math.max(0,P.hitT-sd);P.slowT=Math.max(0,P.slowT-sd);P.freeze=Math.max(0,P.freeze-sd*.6);
- if(w.cards.regen&&!P.dead)P.hp=Math.min(P.maxHp,P.hp+sd*.8*w.cards.regen);
+ // modern chase-game health: after 4 s without a hit the car patches itself up (the regen card adds more)
+ P.calm=(P.hitT>0?0:(P.calm||0)+sd);if(!P.dead&&P.calm>4)P.hp=Math.min(P.maxHp,P.hp+sd*(2.2+.8*(w.cards.regen|0)));else if(w.cards.regen&&!P.dead)P.hp=Math.min(P.maxHp,P.hp+sd*.8*w.cards.regen);
  if(w.cards.shield){P.shieldCD-=sd;if(P.shieldCD<=0&&P.shieldT<=0){P.shieldT=999;P.shieldCD=20;}}
  w.comboT-=sd;if(w.comboT<=0)w.combo=1;
  // weapons
@@ -260,7 +261,7 @@ function step(w,dt,inp={}){
   if(!w.rigDone&&w.progress>.42&&w.stage!==1){w.rigDone=true;const x=w.course.road(P.y+w.viewAhead+200).c;foe(w,'truck',x,P.y+w.viewAhead+200,w.speed*.9,{rig:true,state:'rig',hp:9e9,max:9e9});w.banner={text:'WEAPONS RIG! DRIVE INTO THE RAMP',t:3};}
   if(P.y>=w.st.len)startBoss(w);}
  else if(w.phase==='boss'){spawnStep(w,sd);
-  if(w.boss?.type==='t1000foot'&&w.rand()<sd*.22)drop(w,w.course.road(P.y+w.viewAhead).c+(w.rand()-.5)*120,P.y+w.viewAhead,'grenade');
+  if(w.boss?.type==='t1000foot'&&w.rand()<sd*.3)drop(w,w.course.road(P.y+w.viewAhead).c+(w.rand()-.5)*120,P.y+w.viewAhead,'grenade');
   if(w.boss?.type==='tanker'&&w.boss.m79&&P.grenades<=0&&!w.K.some(k=>k.kind==='grenade'))drop(w,P.x,P.y+w.viewAhead*.6,'grenade');
   if(w.boss?.type==='t1000foot'&&!w.bossDone&&w.t-(w.bossT??(w.bossT=w.t))>75)bossBeaten(w,w.boss);}
  else if(w.phase==='outro'){w.outro.t+=sd;}

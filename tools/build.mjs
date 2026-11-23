@@ -204,6 +204,12 @@ if (fs.existsSync(pkDir)) for (const f of fs.readdirSync(pkDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('pk:' + m[1].toLowerCase(), MIME[ext], ext, path.join(pkDir, f));
 }
+// Judgment Day Chase art: assets/tchase/<slot>.(webp|png) -> tc:<slot> (slots in src/data/tchaseSprites.js).
+const tcDir = path.join(root, 'assets/tchase');
+if (fs.existsSync(tcDir)) for (const f of fs.readdirSync(tcDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('tc:' + m[1].toLowerCase(), MIME[ext], ext, path.join(tcDir, f));
+}
 // Flappy Disaster stage art: assets/flappy/<slot>.(webp|png) -> flappy:<slot> (slots in src/data/flappySprites.js).
 const flapDir = path.join(root, 'assets/flappy');
 if (fs.existsSync(flapDir)) for (const f of fs.readdirSync(flapDir)) {
