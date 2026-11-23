@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.99.47
+
+- **Flappy Disaster:** new painted backgrounds for six worlds (Flappy Classic, The Meat Locker, Fuzzy Wuzzy Hell, Route 1, The Ninth Circle, Zero-G), each made in three shapes: the game shows the one made for your screen (upright phone, Fold, or wide) and scrolls it behind the pipes.
+
 ## v0.99.46
 
 - **The Warriors:** the camera is pulled back on the Fold and tablets, so the fighters are smaller and you see more of the street.
