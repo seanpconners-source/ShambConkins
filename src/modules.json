@@ -569,7 +569,10 @@
   "src/engines/warriorsDD.js",
   "src/engines/dd/body.js",
   "src/engines/dd/stages.js",
-  "src/data/ddSprites.js"
+  "src/data/ddSprites.js",
+  "src/engines/penaltyShootout.js",
+  "src/engines/pk/art.js",
+  "src/data/pkSprites.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }
